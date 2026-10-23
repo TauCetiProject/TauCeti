@@ -44,7 +44,8 @@ every such `g` satisfies `g j ≤ λ_j`.
 * `ZLattice.prod_mul_measure_le_two_pow_mul_covolume`:
   `(∏ i, g i) * μ K ≤ 2 ^ n * covolume L μ`.
 * `ZLattice.prod_successiveMin_mul_measure_le_two_pow_mul_covolume`: the classical form
-  `λ₀ ⋯ λₙ₋₁ · μ K ≤ 2ⁿ · covolume L μ` for a symmetric convex body `K` with `0` in its interior.
+  `λ₀ ⋯ λₙ₋₁ · μ K ≤ 2ⁿ · covolume L μ` for a symmetric convex body `K` with `0` in its interior,
+  and its real-valued form `ZLattice.prod_successiveMin_mul_measureReal_le_two_pow_mul_covolume`.
 
 ## Proof
 
@@ -555,5 +556,17 @@ theorem prod_successiveMin_mul_measure_le_two_pow_mul_covolume (L : Submodule �
   exact prod_mul_measure_le_two_pow_mul_covolume L μ K.convex hKs rfl (fun i ↦ (haL i).1) ha
     (successiveMin_nonneg L K) fun j v hvL hv ↦ mem_span_image_Iio_of_gauge_lt_successiveMin hK ha
       (fun i ↦ (haL i).1) (fun i ↦ (haL i).2.le) hvL hv
+
+/-- **Minkowski's second theorem**, upper bound, in terms of the successive minima and with real
+measures: `λ₀ ⋯ λₙ₋₁ · μ.real K ≤ 2ⁿ · covolume L μ`. -/
+theorem prod_successiveMin_mul_measureReal_le_two_pow_mul_covolume (L : Submodule ℤ E)
+    [DiscreteTopology L] [IsZLattice ℝ L] (μ : Measure E := by volume_tac) [μ.IsAddHaarMeasure]
+    {K : ConvexBody E} (hK : 0 ∈ interior (K : Set E)) (hKs : ∀ x ∈ K, -x ∈ K) :
+    (∏ i, successiveMin L K i) * μ.real K ≤ 2 ^ finrank ℝ E * ZLattice.covolume L μ := by
+  have h := ENNReal.toReal_mono (by finiteness)
+    (prod_successiveMin_mul_measure_le_two_pow_mul_covolume L μ hK hKs)
+  rwa [ENNReal.toReal_mul, ENNReal.toReal_mul, ENNReal.toReal_ofReal
+    (Finset.prod_nonneg fun i _ ↦ successiveMin_nonneg L K i), ENNReal.toReal_ofReal
+    (ZLattice.covolume_pos L μ).le, ENNReal.toReal_pow, ENNReal.toReal_ofNat] at h
 
 end ZLattice

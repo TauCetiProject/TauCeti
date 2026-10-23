@@ -199,8 +199,8 @@ theorem exists_isMaxRank_prod_sum_abs_logEmbedding_le :
     hBc ▸ zero_mem_interior_logBall K
   obtain ⟨a, ha, haL⟩ := ZLattice.exists_linearIndependent_gauge_eq_successiveMin
     (unitLattice K) hB
-  have hmink := ZLattice.prod_successiveMin_mul_measure_le_two_pow_mul_covolume (unitLattice K)
-    (hK := hB) (hKs := fun x hx ↦ by
+  have hmink := ZLattice.prod_successiveMin_mul_measureReal_le_two_pow_mul_covolume
+    (unitLattice K) (hK := hB) (hKs := fun x hx ↦ by
       rw [← SetLike.mem_coe, hBc] at hx ⊢
       exact (neg_mem_logBall K x).2 hx)
   -- Reindex the minima by `Fin (rank K)` and lift their witnesses to units.
@@ -215,18 +215,15 @@ theorem exists_isMaxRank_prod_sum_abs_logEmbedding_le :
   · have : (fun i ↦ logEmbedding K (Additive.ofMul (u i))) = a ∘ e.symm := funext hu
     rw [IsMaxRank, this]
     exact ha.comp _ e.symm.injective
-  -- Minkowski's bound `(∏ λ) * 2 ^ r / r! ≤ 2 ^ r * regulator K`, divided by `2 ^ r / r!`.
-  have hvol : MeasureTheory.volume (B : Set (logSpace K)) =
-      ENNReal.ofReal ((2 : ℝ) ^ rank K / (rank K).factorial) := hBc ▸ volume_logBall K
-  have htwo : (2 : ENNReal) ^ finrank ℝ (logSpace K) = ENNReal.ofReal (2 ^ rank K) := by
-    rw [Units.finrank_eq_rank, ENNReal.ofReal_pow zero_le_two, ENNReal.ofReal_ofNat]
-  rw [hvol, ← ENNReal.ofReal_mul (Finset.prod_nonneg fun i _ ↦
-    ZLattice.successiveMin_nonneg _ _ i), htwo, ← regulator, ← ENNReal.ofReal_mul (by positivity),
-    ENNReal.ofReal_le_ofReal_iff (mul_nonneg (by positivity) (regulator_pos K).le)] at hmink
-  rw [hprod]
-  have hfac : (0 : ℝ) < (rank K).factorial := Nat.cast_pos.2 (Nat.factorial_pos _)
-  rw [mul_div_assoc', div_le_iff₀ hfac] at hmink
-  exact le_of_mul_le_mul_right (by linarith) (by positivity : (0 : ℝ) < 2 ^ rank K)
+  -- Minkowski's bound `(∏ λ) * (2 ^ r / r!) ≤ 2 ^ r * covolume`, divided by `2 ^ r / r!`.
+  have hvol : MeasureTheory.volume.real (B : Set (logSpace K)) =
+      (2 : ℝ) ^ rank K / (rank K).factorial := by
+    rw [MeasureTheory.measureReal_def, hBc, volume_logBall, ENNReal.toReal_ofReal (by positivity)]
+  rw [hvol, ← hprod, Units.finrank_eq_rank, ← le_div_iff₀ (by positivity)] at hmink
+  -- `regulator K` is by definition the covolume of the unit lattice.
+  refine hmink.trans_eq ?_
+  rw [regulator]
+  field_simp
 
 open Classical in
 /-- **A reduced fundamental system** (Bugeaud–Győry). Some fundamental system `ε` of units has
