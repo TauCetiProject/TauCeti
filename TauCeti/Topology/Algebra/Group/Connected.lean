@@ -166,7 +166,7 @@ theorem _root_.ContinuousMulEquiv.map_connectedComponentOfOne {G' : Type*} [Grou
     (Subgroup.connectedComponentOfOne G).map e.toMulEquiv.toMonoidHom =
       Subgroup.connectedComponentOfOne G' := by
   apply SetLike.coe_injective
-  simpa [Subgroup.coe_map, Subgroup.connectedComponentOfOne, map_one] using
+  simpa [Subgroup.coe_map, Subgroup.coe_connectedComponentOfOne, map_one] using
     e.toHomeomorph.image_connectedComponent 1
 
 open scoped Pointwise in
