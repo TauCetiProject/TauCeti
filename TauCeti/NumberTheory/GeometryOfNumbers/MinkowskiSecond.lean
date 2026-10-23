@@ -12,6 +12,8 @@ import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.Algebra.Module.ZLattice.AdaptedBasis
 import TauCeti.Algebra.Module.ZLattice.Covolume
 import TauCeti.LinearAlgebra.Basis.Triangular
+import TauCeti.LinearAlgebra.Pi
+import TauCeti.MeasureTheory.Constructions.Pi
 
 /-!
 # Minkowski's second theorem: the upper bound
@@ -285,25 +287,6 @@ private theorem fiber_fold (m : ℕ) (Y : Set (Fin n → ℝ)) (z : {i : Fin n /
     ext i
     by_cases h : (i : ℕ) < m <;> simp [splitEquiv_symm_apply, h]
 
-private theorem volume_eq_lintegral_fiber (m : ℕ) {S : Set (Fin n → ℝ)} (hS : MeasurableSet S) :
-    volume S = ∫⁻ z, volume {y | (splitEquiv n m).symm (y, z) ∈ S} := by
-  rw [← ((volume_preserving_piEquivPiSubtypeProd (fun _ : Fin n ↦ ℝ)
-    (fun i : Fin n ↦ (i : ℕ) < m)).symm).measure_preimage hS.nullMeasurableSet,
-    Measure.volume_eq_prod, Measure.prod_apply_symm ((splitEquiv n m).symm.measurable hS)]
-  rfl
-
-private theorem convex_fiber {X : Set (Fin n → ℝ)} (hX : Convex ℝ X) (m : ℕ)
-    (z : {i : Fin n // ¬(i : ℕ) < m} → ℝ) :
-    Convex ℝ {y | (splitEquiv n m).symm (y, z) ∈ X} := by
-  intro y₁ hy₁ y₂ hy₂ a b ha hb hab
-  rw [mem_ofPred_eq, show (splitEquiv n m).symm (a • y₁ + b • y₂, z) =
-    a • (splitEquiv n m).symm (y₁, z) + b • (splitEquiv n m).symm (y₂, z) from ?_]
-  · exact hX hy₁ hy₂ ha hb hab
-  ext i
-  by_cases h : (i : ℕ) < m
-  · simp [splitEquiv_symm_apply, h]
-  · simp [splitEquiv_symm_apply, h, ← add_mul, hab]
-
 /-- **Dilation.** Dilating a convex set by `ρ ≥ 1` multiplies the volume of its `m`-fold by at
 least `ρ ^ (n - m)`. Dividing the last `n - m` coordinates by `ρ` multiplies volumes by
 `ρ ^ -(n - m)` and commutes with folding, and fibrewise it turns the dilate into `ρ` times a convex
@@ -346,12 +329,26 @@ private theorem volume_fold_smul {X : Set (Fin n → ℝ)} (hX : MeasurableSet X
     rw [show D ((splitEquiv n m).symm (ρ⁻¹ • y, z)) = ρ⁻¹ • (splitEquiv n m).symm (y, z) from ?_]
     ext i
     by_cases h : (i : ℕ) < m <;> simp [hD, d, h]
-  rw [← hvol, volume_eq_lintegral_fiber m (measurableSet_fold m hX'),
-    volume_eq_lintegral_fiber m (measurableSet_fold m (hX.const_smul₀ ρ))]
-  refine lintegral_mono fun z ↦ ?_
+  -- Compare the folds fibrewise over the last `n - m` coordinates.
+  have hsplit := fun S : Set (Fin n → ℝ) ↦ Measure.pi_apply_eq_lintegral_piEquivPiSubtypeProd_symm
+    (fun _ : Fin n ↦ (volume : Measure ℝ)) (fun i : Fin n ↦ (i : ℕ) < m) (s := S)
+  rw [← hvol]
+  refine (hsplit _ (measurableSet_fold m hX')).trans_le ((lintegral_mono fun z ↦ ?_).trans_eq
+    (hsplit _ (measurableSet_fold m (hX.const_smul₀ ρ))).symm)
   rw [fiber_fold, fiber_fold, hfib]
+  -- The fibre of the convex set `X'` is the preimage under an affine map.
+  have hc : Convex ℝ {y | (splitEquiv n m).symm (y, z) ∈ X'} := by
+    convert ((hXc.linear_preimage D).linear_preimage (LinearEquiv.piEquivPiSubtypeProd ℝ
+      (fun i : Fin n ↦ (i : ℕ) < m) fun _ ↦ ℝ).symm.toLinearMap).affine_preimage
+      ((AffineMap.id ℝ _).prod (AffineMap.const ℝ _ z)) using 1
+    ext y
+    simp only [mem_ofPred_eq, mem_preimage, AffineMap.prod_apply, AffineMap.id_apply,
+      AffineMap.const_apply, LinearEquiv.coe_coe, X']
+    congr! 2
+    ext i
+    simp [splitEquiv_symm_apply]
   exact volume_foldPi_le_smul ((splitEquiv n m).symm.measurable.comp measurable_prodMk_right hX')
-    (convex_fiber (hXc.linear_preimage D) m z) hρ
+    hc hρ
 
 end Fold
 
