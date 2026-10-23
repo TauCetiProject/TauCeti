@@ -30,6 +30,9 @@ The phases are exact: no root of unity is lost to a choice of branch.
 ## Main definitions and results
 
 * `TauCeti.ModularForm.siegelFunction r τ`: the Siegel function `g_r(τ)`.
+* `TauCeti.ModularForm.siegelFunction_eq_qTheta`,
+  `TauCeti.ModularForm.siegelFunction_eq_mul_tprod_mul_tprod`: `g_r` as a phase times the theta
+  product `θ_q(w)`, and as a phase times `1 - w` and its two half products.
 * `TauCeti.ModularForm.hasProdLocallyUniformlyOn_siegelFunction`: the defining product
   `∏_{n ≥ 1} (1 - qⁿ w) (1 - qⁿ w⁻¹)` converges locally uniformly on the upper half-plane.
 * `TauCeti.ModularForm.differentiableOn_siegelFunction`: `g_r` is holomorphic on the upper
@@ -77,8 +80,10 @@ theorem siegelFunction_def (r : Fin 2 → ℝ) (τ : ℂ) :
           (1 - cexp (2 * π * I * τ) ^ (n + 1) * cexp (-(2 * π * I * (r 0 * τ + r 1)))) :=
   (rfl)
 
-/-- The Siegel function as a phase times the theta product `θ_q(w)`. -/
-private theorem siegelFunction_eq_qTheta (r : Fin 2 → ℝ) (τ : ℂ) :
+/-- The Siegel function as a phase times the theta product `θ_q(w)`:
+`g_r(τ) = -e^{π i B₂(r₁) τ} e^{π i r₂ (r₁ - 1)} θ_q(w)` with `q = e^{2π i τ}` and
+`w = e^{2π i (r₁ τ + r₂)}`. -/
+theorem siegelFunction_eq_qTheta (r : Fin 2 → ℝ) (τ : ℂ) :
     siegelFunction r τ =
       -cexp (π * I * bernoulliFun 2 (r 0) * τ) * cexp (π * I * r 1 * (r 0 - 1)) *
         qTheta (cexp (2 * π * I * τ)) (cexp (2 * π * I * (r 0 * τ + r 1))) := by
@@ -89,8 +94,10 @@ section Analytic
 
 /-! ### Convergence and holomorphy on the upper half-plane -/
 
-/-- On the upper half-plane the Siegel function is the product of its two half products. -/
-private theorem siegelFunction_eq_mul_tprod_mul_tprod (r : Fin 2 → ℝ) {τ : ℂ} (hτ : 0 < τ.im) :
+/-- On the upper half-plane the Siegel function splits into its two half products,
+`g_r(τ) = -e^{π i B₂(r₁) τ} e^{π i r₂ (r₁ - 1)} (1 - w) P(w) P(w⁻¹)` where
+`P(v) = ∏_{n ≥ 1} (1 - qⁿ v)`, with `q = e^{2π i τ}` and `w = e^{2π i (r₁ τ + r₂)}`. -/
+theorem siegelFunction_eq_mul_tprod_mul_tprod (r : Fin 2 → ℝ) {τ : ℂ} (hτ : 0 < τ.im) :
     siegelFunction r τ =
       -cexp (π * I * bernoulliFun 2 (r 0) * τ) * cexp (π * I * r 1 * (r 0 - 1)) *
         (1 - cexp (2 * π * I * (r 0 * τ + r 1))) *
@@ -134,31 +141,18 @@ theorem differentiableOn_siegelFunction (r : Fin 2 → ℝ) :
 theorem siegelFunction_ne_zero {r : Fin 2 → ℝ} (hr : ∀ s : Fin 2 → ℤ, r ≠ fun i ↦ (s i : ℝ))
     {τ : ℂ} (hτ : 0 < τ.im) : siegelFunction r τ ≠ 0 := by
   have hq : ‖cexp (2 * π * I * τ)‖ < 1 := norm_exp_two_pi_I_lt_one ⟨τ, hτ⟩
-  have hint : ∀ a b : ℤ, r 0 ≠ a ∨ r 1 ≠ b := fun a b ↦ by
-    by_contra! h
-    exact hr ![a, b] (funext <| Fin.forall_fin_two.mpr ⟨by simp [h.1], by simp [h.2]⟩)
-  have hneg : cexp (-(2 * π * I * (r 0 * τ + r 1))) =
-      cexp (2 * π * I * (((-r 0 : ℝ) : ℂ) * τ + ((-r 1 : ℝ) : ℂ))) := by
-    push_cast
-    ring_nf
-  rw [siegelFunction_eq_mul_tprod_mul_tprod r hτ]
-  refine mul_ne_zero (mul_ne_zero (by simp [exp_ne_zero]) ?_) (mul_ne_zero ?_ ?_)
-  · exact UpperHalfPlane.one_sub_exp_two_pi_I_ne_zero hτ fun k h0 h1 ↦
-      (hint 0 k).elim (· (by simpa using h0)) (· h1)
-  · refine tprod_one_sub_pow_mul_ne_zero hq fun n ↦ ?_
-    rw [UpperHalfPlane.exp_two_pi_I_pow_mul_exp]
-    refine UpperHalfPlane.one_sub_exp_two_pi_I_ne_zero hτ fun k h0 h1 ↦
-      (hint (-(n + 1)) k).elim (· ?_) (· h1)
-    push_cast
-    linarith
-  · refine tprod_one_sub_pow_mul_ne_zero hq fun n ↦ ?_
-    rw [hneg, UpperHalfPlane.exp_two_pi_I_pow_mul_exp]
-    refine UpperHalfPlane.one_sub_exp_two_pi_I_ne_zero hτ fun k h0 h1 ↦
-      (hint (n + 1) (-k)).elim (· ?_) (· ?_)
-    · push_cast
-      linarith
-    · push_cast
-      linarith
+  rw [siegelFunction_eq_qTheta]
+  refine mul_ne_zero (by simp [exp_ne_zero]) (qTheta_ne_zero hq fun k hk ↦ ?_)
+  have h : cexp (2 * π * I * τ) ^ (-k) * cexp (2 * π * I * (r 0 * τ + r 1)) = 1 := by
+    rw [hk, ← zpow_add₀ (exp_ne_zero _), neg_add_cancel, zpow_zero]
+  rw [UpperHalfPlane.exp_two_pi_I_zpow_mul_exp] at h
+  refine UpperHalfPlane.one_sub_exp_two_pi_I_ne_zero hτ (fun j h0 h1 ↦ hr ![k, j] ?_)
+    (sub_eq_zero.mpr h.symm)
+  ext i
+  fin_cases i
+  · push_cast at h0
+    simpa using (neg_add_eq_zero.mp h0).symm
+  · simpa using h1
 
 end Analytic
 

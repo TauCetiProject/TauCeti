@@ -16,9 +16,9 @@ For `‖q‖ < 1` in a complete normed field, the product `∏_{n ≥ 1} (1 - q�
 symbol `(q w; q)_∞`) converges absolutely. This file records its convergence, the shift identity
 obtained by splitting off the first factor, and its nonvanishing. It also introduces the theta
 product `θ_q(w) = (w; q)_∞ (q w⁻¹; q)_∞ = (1 - w) ∏_{n ≥ 1} (1 - qⁿ w) (1 - qⁿ w⁻¹)` and proves its
-quasi-periodicity `θ_q(q w) = -w⁻¹ θ_q(w)`. With `q = e^{2π i τ}` and `w`
-depending continuously on `τ`, the product converges locally uniformly on the upper half-plane,
-and is holomorphic there when `w` is entire.
+convergence, its nonvanishing and its quasi-periodicity `θ_q(q w) = -w⁻¹ θ_q(w)`. With
+`q = e^{2π i τ}` and `w` depending continuously on `τ`, the product converges locally uniformly on
+the upper half-plane, and is holomorphic there when `w` is entire.
 
 ## Main results
 
@@ -27,6 +27,8 @@ and is holomorphic there when `w` is entire.
 * `TauCeti.tprod_one_sub_pow_mul_eq`: `∏_{n ≥ 1} (1 - qⁿ w) = (1 - q w) ∏_{n ≥ 1} (1 - qⁿ (q w))`.
 * `TauCeti.tprod_one_sub_pow_mul_ne_zero`: the product is nonzero when all of its factors are.
 * `TauCeti.qTheta`: the theta product `θ_q(w) = (1 - w) ∏_{n ≥ 1} (1 - qⁿ w) (1 - qⁿ w⁻¹)`.
+* `TauCeti.multipliable_qTheta`, `TauCeti.qTheta_ne_zero`: for `‖q‖ < 1` the product in
+  `θ_q(w)` converges, and `θ_q(w) ≠ 0` when `w` is not an integral power of `q`.
 * `TauCeti.qTheta_mul_left`: its quasi-periodicity `θ_q(q w) = -w⁻¹ θ_q(w)` for `‖q‖ < 1`.
 * `TauCeti.hasProdLocallyUniformlyOn_one_sub_pow_mul`: for continuous `w`, the product
   `∏_{n ≥ 1} (1 - e^{2π i n τ} w(τ))` converges locally uniformly on the upper half-plane.
@@ -94,6 +96,26 @@ theorem tprod_one_sub_pow_mul_ne_zero {q : 𝕜} (hq : ‖q‖ < 1) {w : 𝕜}
     (h : ∀ n : ℕ, 1 - q ^ (n + 1) * w ≠ 0) : ∏' n : ℕ, (1 - q ^ (n + 1) * w) ≠ 0 := by
   simp_rw [sub_eq_add_neg] at h ⊢
   exact tprod_one_add_ne_zero_of_summable h (by simpa using summable_norm_pow_succ_mul hq w)
+
+/-- For `‖q‖ < 1` the product `∏_{n ≥ 1} (1 - qⁿ w) (1 - qⁿ w⁻¹)` in the theta product
+converges. -/
+theorem multipliable_qTheta {q : 𝕜} (hq : ‖q‖ < 1) (w : 𝕜) :
+    Multipliable fun n : ℕ ↦ (1 - q ^ (n + 1) * w) * (1 - q ^ (n + 1) * w⁻¹) :=
+  (multipliable_one_sub_pow_mul hq w).mul (multipliable_one_sub_pow_mul hq w⁻¹)
+
+/-- For `‖q‖ < 1` the theta product `θ_q(w)` is nonzero when `w` is not an integral power of
+`q`. -/
+theorem qTheta_ne_zero {q : 𝕜} (hq : ‖q‖ < 1) {w : 𝕜} (hw : ∀ k : ℤ, w ≠ q ^ k) :
+    qTheta q w ≠ 0 := by
+  rw [qTheta_def,
+    (multipliable_one_sub_pow_mul hq _).tprod_mul (multipliable_one_sub_pow_mul hq _)]
+  refine mul_ne_zero (sub_ne_zero.mpr fun h ↦ hw 0 (by simp [← h])) (mul_ne_zero ?_ ?_)
+  · refine tprod_one_sub_pow_mul_ne_zero hq fun n h ↦ hw (-(n + 1 : ℕ)) ?_
+    rw [zpow_neg, zpow_natCast]
+    exact eq_inv_of_mul_eq_one_right (sub_eq_zero.mp h).symm
+  · refine tprod_one_sub_pow_mul_ne_zero hq fun n h ↦ hw (n + 1 : ℕ) ?_
+    rw [zpow_natCast, ← inv_inj]
+    exact eq_inv_of_mul_eq_one_right (sub_eq_zero.mp h).symm
 
 /-- **Quasi-periodicity of the theta product**: `θ_q(q w) = -w⁻¹ θ_q(w)` for `0 < ‖q‖ < 1` and
 `w ≠ 0`. -/

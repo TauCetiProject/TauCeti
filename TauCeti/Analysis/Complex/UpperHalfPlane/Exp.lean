@@ -19,8 +19,8 @@ complementing `Mathlib.Analysis.Complex.UpperHalfPlane.Exp`.
   upper half-plane, `‖e^{2π i τ}‖` is bounded by a constant `< 1`.
 * `TauCeti.UpperHalfPlane.one_sub_exp_two_pi_I_ne_zero`: `1 - e^{2π i (x τ + y)}` has no zero in
   the upper half-plane unless `x = 0` and `y ∈ ℤ`.
-* `TauCeti.UpperHalfPlane.exp_two_pi_I_pow_mul_exp`:
-  `qⁿ⁺¹ e^{2π i (x τ + y)} = e^{2π i ((n + 1 + x) τ + y)}`.
+* `TauCeti.UpperHalfPlane.exp_two_pi_I_zpow_mul_exp`:
+  `qᵏ e^{2π i (x τ + y)} = e^{2π i ((k + x) τ + y)}` for `k ∈ ℤ`.
 -/
 
 public section
@@ -59,11 +59,11 @@ theorem one_sub_exp_two_pi_I_ne_zero {x y : ℝ} {τ : ℂ} (hτ : 0 < τ.im)
     · exact absurd h (ne_of_gt hτ)
   exact h k hx (by simpa [hx] using hre)
 
-/-- `qⁿ⁺¹ e^{2π i (x τ + y)} = e^{2π i ((n + 1 + x) τ + y)}` for `q = e^{2π i τ}`. -/
-theorem exp_two_pi_I_pow_mul_exp (n : ℕ) (x y : ℝ) (τ : ℂ) :
-    cexp (2 * π * I * τ) ^ (n + 1) * cexp (2 * π * I * (x * τ + y)) =
-      cexp (2 * π * I * (((n + 1 + x : ℝ) : ℂ) * τ + y)) := by
-  rw [← Complex.exp_nat_mul, ← Complex.exp_add]
+/-- `qᵏ e^{2π i (x τ + y)} = e^{2π i ((k + x) τ + y)}` for `q = e^{2π i τ}` and `k ∈ ℤ`. -/
+theorem exp_two_pi_I_zpow_mul_exp (k : ℤ) (x y : ℝ) (τ : ℂ) :
+    cexp (2 * π * I * τ) ^ k * cexp (2 * π * I * (x * τ + y)) =
+      cexp (2 * π * I * (((k + x : ℝ) : ℂ) * τ + y)) := by
+  rw [← Complex.exp_int_mul, ← Complex.exp_add]
   push_cast
   ring_nf
 
