@@ -91,23 +91,16 @@ theorem iSup_basicOpen_ι_eq_top {κ : Type*} (v : κ → M)
   refine Proj.iSup_basicOpen_eq_top' _ _ (fun j ↦ ⟨1, ι_mem_homogeneousSubmodule R M _⟩)
     (top_unique ?_)
   rintro a -
-  induction a using _root_.SymmetricAlgebra.induction with
+  -- The images of `v` generate over `R` because they span the generators `range ι`.
+  have ha : a ∈ Algebra.adjoin R (Set.range fun j ↦ _root_.SymmetricAlgebra.ι R M (v j)) := by
+    rw [← Algebra.adjoin_span, Set.range_comp', ← Submodule.map_span, hv, Submodule.map_top,
+      LinearMap.coe_range, adjoin_range_ι]
+    exact Algebra.mem_top
+  induction ha using Algebra.adjoin_induction with
+  | mem x hx => exact Algebra.subset_adjoin hx
   | algebraMap r => exact Subalgebra.algebraMap_mem _ (algebraMap R (homogeneousSubmodule R M 0) r)
-  | ι m =>
-    have hm : m ∈ Submodule.span R (Set.range v) := hv ▸ Submodule.mem_top
-    induction hm using Submodule.span_induction with
-    | mem x hx =>
-      obtain ⟨j, rfl⟩ := hx
-      exact Algebra.subset_adjoin ⟨j, rfl⟩
-    | zero => simp
-    | add x y _ _ hx hy =>
-      rw [map_add]
-      exact add_mem hx hy
-    | smul c x _ hx =>
-      rw [map_smul, Algebra.smul_def]
-      exact mul_mem (Subalgebra.algebraMap_mem _ (algebraMap R (homogeneousSubmodule R M 0) c)) hx
-  | mul a b ha hb => exact mul_mem ha hb
-  | add a b ha hb => exact add_mem ha hb
+  | add x y _ _ hx hy => exact add_mem hx hy
+  | mul x y _ _ hx hy => exact mul_mem hx hy
 
 /-- The projective spectrum of a finite module is proper over the coefficient ring.
 Freeness and projectivity are not required. -/
