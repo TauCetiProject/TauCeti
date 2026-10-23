@@ -89,6 +89,12 @@ theorem IsAdmissible.inter [DecidableEq V] {A B S T : Finset V}
     IsAdmissible A B (S ∩ T) :=
   ⟨subset_inter hS.1 hT.1, hS.2.mono_left inter_subset_left⟩
 
+/-- For disjoint terminal sets, adding `A` to any vertex set and removing `B` gives an admissible
+side. -/
+theorem isAdmissible_union_sdiff [DecidableEq V] {A B : Finset V} (hAB : Disjoint A B)
+    (S : Finset V) : IsAdmissible A B ((S ∪ A) \ B) :=
+  ⟨fun _ ha ↦ mem_sdiff.mpr ⟨mem_union_right S ha, disjoint_left.mp hAB ha⟩, sdiff_disjoint⟩
+
 /-- A minimum terminal cut is an admissible side minimizing `f` over all admissible sides. -/
 def IsMinimum [Preorder K] (f : Finset V → K) (A B S : Finset V) : Prop :=
   IsAdmissible A B S ∧ IsMinOn f {T | IsAdmissible A B T} S

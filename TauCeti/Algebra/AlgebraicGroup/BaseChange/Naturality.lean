@@ -156,9 +156,10 @@ lemma _root_.BialgHom.mapDomain_pointsBaseChange (φ : A →ₐc[k] B) (f : With
 
 variable (K) in
 /-- Base change of base-valued points preserves a commuting square: if families of points
-`ψ : M →* B(k)` and `ψ' : N →* A(k)` satisfy `φ ∘ ψ = ψ' ∘ g` on points, then so do their base
-changes along `k → K`, with `φ` replaced by its scalar extension. -/
-lemma _root_.BialgHom.mapDomain_comp_pointsBaseChange_comp {M N : Type*} [Monoid M] [Monoid N]
+`ψ : M →* B(k)` and `ψ' : N →* A(k)` satisfy `mapDomain φ ∘ ψ = ψ' ∘ g`, then so do their base
+changes along `k → K`, with `φ` replaced by its scalar extension. Only multiplication and a
+distinguished unit are required on the parameter types `M` and `N`. -/
+lemma _root_.BialgHom.mapDomain_comp_pointsBaseChange_comp {M N : Type*} [MulOne M] [MulOne N]
     (φ : A →ₐc[k] B) {ψ : M →* WithConv (B →ₐ[k] k)} {ψ' : N →* WithConv (A →ₐ[k] k)}
     {g : M →* N} (h : (BialgHom.mapDomain φ).comp ψ = ψ'.comp g) :
     (BialgHom.mapDomain (A := K)

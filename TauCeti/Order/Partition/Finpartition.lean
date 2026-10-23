@@ -20,10 +20,13 @@ import Mathlib.Data.Set.Finite.Range
 
 This file contains general-purpose constructions and facts about finite partitions: the partition
 of the top element into an element and its complement, the decidability of the refinement order,
-the single part of the coarsest partition of a non-bottom element, the partition of a type into the
+the single part of the coarsest partition of a non-bottom element, the fact that a partition having
+the whole element as a part is the coarsest, the partition of a type into the
 fibres of a map to a finite type, the associated indexed partition, the sizes of the traces of a
 subset on the parts, cardinality bounds for common refinements, a bound on the sum of the squared
 part sizes, the refinement relations of `Finpartition.bind` and of a refining partition's parts,
+the monotonicity of `Finpartition.bind`, products over its parts, its parts through each point,
+and the fact that it is inverse to restricting a refinement to the parts of the coarser partition,
 the behavior of intersections of parts under refinement, the symmetry of lying in a common part,
 the determination of a partition by its parts through each point, the parts of a restriction, the
 monotonicity of `Finpartition.part` under refinement, the coarse parent
@@ -83,6 +86,11 @@ theorem parts_top {α : Type*} [Lattice α] [OrderBot α] {a : α} [Decidable (a
   obtain rfl := Finset.mem_singleton.1 (parts_top_subset a hb)
   exact Finset.singleton_subset_iff.2 hb
 
+/-- A finite partition of `a` that has `a` itself as a part is the partition into one part. -/
+theorem eq_top_of_mem_parts {α : Type*} [Lattice α] [OrderBot α] {a : α} [Decidable (a = ⊥)]
+    {P : Finpartition a} (h : a ∈ P.parts) : P = ⊤ :=
+  top_le_iff.1 fun _ hb => ⟨a, h, (Finset.mem_singleton.1 (parts_top_subset a hb)).le⟩
+
 /-- The number of parts in a common refinement is at most the product of the two part counts. -/
 theorem card_parts_inf_le_mul {α : Type*} [DistribLattice α] [OrderBot α] [DecidableEq α]
     {a : α} (P Q : Finpartition a) :
@@ -105,6 +113,34 @@ theorem bind_le {α : Type*} [Lattice α] [OrderBot α] [IsModularLattice α] [D
   intro b hb
   obtain ⟨A, hA, hb⟩ := mem_bind.1 hb
   exact ⟨A, hA, (Q A hA).le hb⟩
+
+/-- Juxtaposition is monotone in the finite partitions of the parts. -/
+theorem bind_mono {α : Type*} [Lattice α] [OrderBot α] [IsModularLattice α] [DecidableEq α]
+    {a : α} {P : Finpartition a} {Q Q' : ∀ i ∈ P.parts, Finpartition i}
+    (h : ∀ i hi, Q i hi ≤ Q' i hi) : P.bind Q ≤ P.bind Q' := by
+  intro b hb
+  obtain ⟨A, hA, hb⟩ := mem_bind.1 hb
+  obtain ⟨c, hc, hbc⟩ := h A hA hb
+  exact ⟨c, mem_bind.2 ⟨A, hA, hc⟩, hbc⟩
+
+/-- A sum over the parts of the juxtaposition `P.bind Q` is the sum, over the parts `A` of `P`,
+of the sums over the parts of `Q A`. -/
+theorem sum_parts_bind {α M : Type*} [Lattice α] [OrderBot α] [IsModularLattice α]
+    [DecidableEq α] [AddCommMonoid M] {a : α} (P : Finpartition a)
+    (Q : ∀ i ∈ P.parts, Finpartition i) (g : α → M) :
+    ∑ b ∈ (P.bind Q).parts, g b = ∑ A ∈ P.parts.attach, ∑ b ∈ (Q A.1 A.2).parts, g b := by
+  rw [bind_parts, ← combine_parts (fun A : P.parts => Q A.1 A.2) P.supIndep.attach, sum_combine]
+
+/-- A product over the parts of the juxtaposition `P.bind Q` is the product, over the parts `A`
+of `P`, of the products over the parts of `Q A`. -/
+@[to_additive existing]
+theorem prod_parts_bind {α M : Type*} [Lattice α] [OrderBot α] [IsModularLattice α]
+    [DecidableEq α] [CommMonoid M] {a : α} (P : Finpartition a)
+    (Q : ∀ i ∈ P.parts, Finpartition i) (g : α → M) :
+    ∏ b ∈ (P.bind Q).parts, g b = ∏ A ∈ P.parts.attach, ∏ b ∈ (Q A.1 A.2).parts, g b :=
+  -- Mathlib only provides the additive `Finpartition.sum_combine`, so we transfer `sum_parts_bind`
+  -- through `Additive M`, whose finite sums are by definition the finite products in `M`.
+  sum_parts_bind (M := Additive M) P Q (Additive.ofMul ∘ g)
 
 /-- If `Q` refines `P`, then each part of `P` is the union of the parts of `Q` it contains. -/
 theorem biUnion_filter_subset_eq_of_le {ι : Type*} [DecidableEq ι] {s B : Finset ι}
@@ -376,6 +412,26 @@ theorem eq_bot_or_eq_top_of_pair {i j : α} (P : Finpartition ({i, j} : Finset �
       · rw [P.mem_part_iff_part_eq_part hi hj] at hy
         exact absurd (hy ▸ P.mem_part hj) hji
       · exact mem_singleton.1 hy'
+
+/-- In the juxtaposition `P.bind Q`, the part through a point of a part `B` of `P` is its part in
+`Q B`. -/
+theorem part_bind {Q : ∀ i ∈ P.parts, Finpartition i} {B : Finset α} (hB : B ∈ P.parts) {a : α}
+    (ha : a ∈ B) : (P.bind Q).part a = (Q B hB).part a :=
+  part_eq_of_mem _ (mem_bind.2 ⟨B, hB, (Q B hB).part_mem.2 ha⟩) ((Q B hB).mem_part_self.2 ha)
+
+/-- Restricting the juxtaposition `P.bind Q` to a part `B` of `P` recovers `Q B`. -/
+@[simp]
+theorem restrict_bind {Q : ∀ i ∈ P.parts, Finpartition i} {B : Finset α} (hB : B ∈ P.parts) :
+    (P.bind Q).restrict (P.le hB) = Q B hB :=
+  ext_of_part fun a ha => by
+    rw [part_restrict _ _ ha, part_bind hB ha, inter_eq_left.2 ((Q B hB).part_subset a)]
+
+/-- Juxtaposing the restrictions of a refinement `Q ≤ P` to the parts of `P` recovers `Q`. -/
+@[simp]
+theorem bind_restrict (h : Q ≤ P) : (P.bind fun _ hB => Q.restrict (P.le hB)) = Q :=
+  ext_of_part fun a ha => by
+    rw [part_bind (P.part_mem.2 ha) (P.mem_part_self.2 ha),
+      part_restrict _ _ (P.mem_part_self.2 ha), inter_eq_left.2 (part_mono h a)]
 
 end FinsetRefinement
 

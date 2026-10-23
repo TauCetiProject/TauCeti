@@ -280,7 +280,7 @@ private theorem inflateZ2_quadratic_sub_mem_B2 {a b : Kˣ} {α β : (SeparableCl
     simp only [hg, hk, or_self, ↓reduceIte]
     ext
     simp
-  simp only [Pi.sub_apply, hW, TwoCocycle.coe_inflateZ2, TwoCocycle.coe_toCocycles₂,
+  simp only [Pi.sub_apply, hW, TwoCocycle.coe_inflateZ2,
     TwoCocycle.inflate_toFun, hq]
   apply Additive.toMul.injective
   simp only [toMul_add, toMul_sub, Additive.toMul_smul, toMul_ofMul, apply_ite Additive.toMul,

@@ -99,11 +99,10 @@ theorem spinSixWedgeForm_isSymm : (spinSixWedgeForm K).IsSymm := by
   apply AlternatingMap.ext
   intro v
   simp only [LinearMap.compAlternatingMap_apply, LinearMap.flip_apply, spinSixWedgeForm,
-    exteriorPower.wedgePairing, LinearMap.compr₂_apply, exteriorPower.wedge,
-    DirectSum.gMulLHom_apply_apply]
+    exteriorPower.wedgePairing, LinearMap.compr₂_apply]
   congr 1
   apply Subtype.ext
-  simp only [SetLike.coe_gMul, exteriorPower.ιMulti_apply_coe]
+  simp only [exteriorPower.coe_wedge, exteriorPower.ιMulti_apply_coe]
   rw [ExteriorAlgebra.ιMulti_mul_ιMulti_anticomm]
   have hsign : (-1 : ℤˣ) ^ 4 = 1 := by
     apply Units.ext
