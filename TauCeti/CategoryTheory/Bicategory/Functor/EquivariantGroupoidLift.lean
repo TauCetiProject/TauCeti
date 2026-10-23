@@ -313,7 +313,7 @@ lemma transportComp_inv_app {p q r : Γ} (g : p ⟶ q) (h : q ⟶ r) (gh : p ⟶
   simp [transportComp, transport]
 
 /-- Left unitality of the composition comparisons of the joint pseudofunctor along `Γ`. -/
-lemma jointMapComp_id_left_inv_app {p q : Γ} (g : p ⟶ q) (hg : 𝟙 p ≫ g = g)
+lemma jointMapComp_id_comp_inv_app {p q : Γ} (g : p ⟶ q) (hg : 𝟙 p ≫ g = g)
     (Y : L.jointFiber p) :
     (L.jointMapComp (𝟙 p) g g hg).inv.app Y = (L.jointMap g).map ((L.jointMapId p).hom.app Y) := by
   have := L.joint.mapComp'_id_comp_inv_app (g ×ₘ 𝟙 (SingleObj.star H)).toLoc Y
@@ -322,7 +322,7 @@ lemma jointMapComp_id_left_inv_app {p q : Γ} (g : p ⟶ q) (hg : 𝟙 p ≫ g =
   exact this
 
 /-- Right unitality of the composition comparisons of the joint pseudofunctor along `Γ`. -/
-lemma jointMapComp_id_right_inv_app {p q : Γ} (g : p ⟶ q) (hg : g ≫ 𝟙 q = g)
+lemma jointMapComp_comp_id_inv_app {p q : Γ} (g : p ⟶ q) (hg : g ≫ 𝟙 q = g)
     (Y : L.jointFiber p) :
     (L.jointMapComp g (𝟙 q) g hg).inv.app Y = (L.jointMapId q).hom.app ((L.jointMap g).obj Y) := by
   have := L.joint.mapComp'_comp_id_inv_app (g ×ₘ 𝟙 (SingleObj.star H)).toLoc Y
@@ -378,7 +378,7 @@ lemma transportComp_left_unitality {p q : Γ} (g : p ⟶ q) (hg : 𝟙 p ≫ g =
     (X : fiber actions p) :
     (L.transportComp (𝟙 p) g g hg).hom.app X =
       (L.transport g).map ((L.transportId p).hom.app X) := by
-  simp only [transportComp_hom_app, transportId_hom_app, jointMapComp_id_left_inv_app, transport,
+  simp only [transportComp_hom_app, transportId_hom_app, jointMapComp_id_comp_inv_app, transport,
     Functor.comp_map, ← Functor.map_comp]
   congr 2
   rw [Functor.map_comp, Equivalence.inv_fun_map]
@@ -390,7 +390,7 @@ lemma transportComp_right_unitality {p q : Γ} (g : p ⟶ q) (hg : g ≫ 𝟙 q 
     (X : fiber actions p) :
     (L.transportComp g (𝟙 q) g hg).hom.app X =
       (L.transportId q).hom.app ((L.transport g).obj X) := by
-  simp only [transportComp_hom_app, transportId_hom_app, jointMapComp_id_right_inv_app, transport,
+  simp only [transportComp_hom_app, transportId_hom_app, jointMapComp_comp_id_inv_app, transport,
     Functor.comp_obj]
   -- As in `transportComp_associativity`, `rw` does not locate the naturality square of the
   -- unit comparison, so it is applied through `congrArg`.
@@ -399,9 +399,8 @@ lemma transportComp_right_unitality {p q : Γ} (g : p ⟶ q) (hg : g ≫ 𝟙 q 
   simp
 
 /-- For an isomorphism `g : p ≅ q` of `Γ`, the transport functor `E_g` is an equivalence
-`C p ≌ C q` with inverse `E_(g⁻¹)`; its unit and counit come from `transportId` and
-`transportComp`, and the triangle identity follows from `transportComp_associativity` and the
-unitality of `transportComp`. -/
+`C p ≌ C q` with inverse `E_(g⁻¹)`; its unit and counit are built from `transportId` and
+`transportComp`. -/
 @[expose] noncomputable def transportEquivalence {p q : Γ} (g : p ≅ q) :
     fiber actions p ≌ fiber actions q where
   functor := L.transport g.hom
@@ -409,6 +408,7 @@ unitality of `transportComp`. -/
   unitIso := (L.transportId p).symm ≪≫ (L.transportComp g.hom g.inv (𝟙 p)).symm
   counitIso := L.transportComp g.inv g.hom (𝟙 q) ≪≫ L.transportId q
   functor_unitIso_comp X := by
+    -- The triangle identity follows from the associativity and unitality of `transportComp`.
     have h := L.transportComp_associativity g.hom g.inv g.hom (𝟙 p) (𝟙 q) g.hom
       (by simp) (by simp) (by simp) X
     rw [L.transportComp_left_unitality, L.transportComp_right_unitality] at h
