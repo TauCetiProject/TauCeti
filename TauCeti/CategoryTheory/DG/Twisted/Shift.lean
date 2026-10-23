@@ -47,14 +47,15 @@ degree-zero morphism `u : P ⟶ Q` of twisted objects, along the closed degree-o
 
 ## Main results
 
-* `TauCeti.DGTwistedObject.matrixEquiv_twist_shiftFunctor_obj` and
-  `TauCeti.DGTwistedObject.matrixEquiv_dgMap_shiftFunctor`: the shift does not change the matrix
+* `TauCeti.DGTwistedObject.dgHomEquiv_twist_shiftFunctor_obj` and
+  `TauCeti.DGTwistedObject.dgHomEquiv_dgMap_shiftFunctor`: the shift does not change the matrix
   entries of the twist or of a morphism, as morphisms of `C`.
 * `TauCeti.DGTwistedObject.dgDifferential_toShift` and
   `TauCeti.DGTwistedObject.dgDifferential_fromShift`: the comparison morphisms are closed.
 * `TauCeti.DGTwistedObject.dgComp_toShift_fromShift` and
   `TauCeti.DGTwistedObject.dgComp_fromShift_toShift`: they are mutually inverse.
-* `TauCeti.DGTwistedObject.dgComp_toShift`: they are natural up to the Koszul sign.
+* `TauCeti.DGTwistedObject.dgComp_toShift` and `TauCeti.DGTwistedObject.dgComp_fromShift`: they
+  are natural up to the Koszul sign.
 
 ## References
 
@@ -95,7 +96,7 @@ noncomputable abbrev shiftFunctor (n : ℤ) :
 variable {R}
 
 /-- The shift does not change the entries of the twisting matrix, as morphisms of `C`. -/
-theorem matrixEquiv_twist_shiftFunctor_obj (n : ℤ)
+theorem dgHomEquiv_twist_shiftFunctor_obj (n : ℤ)
     (P : DGTwistedObject R (DGAdditiveClosure (DGShiftClosure C))) (i j : P.obj.ι) :
     matrixEquiv R _ _ 1 ((shiftFunctor R n).obj P).twist i j =
       DGShiftClosure.shiftHomEquiv R _ _ n 1 (matrixEquiv R _ _ 1 P.twist i j) := by
@@ -105,7 +106,7 @@ theorem matrixEquiv_twist_shiftFunctor_obj (n : ℤ)
     (DGShiftClosure.dgMap_shiftFunctor R n _)
 
 /-- The shift does not change the entries of a morphism, as morphisms of `C`. -/
-theorem matrixEquiv_dgMap_shiftFunctor (n : ℤ)
+theorem dgHomEquiv_dgMap_shiftFunctor (n : ℤ)
     {P Q : DGTwistedObject R (DGAdditiveClosure (DGShiftClosure C))} {p : ℤ} (f : DGHom R p P Q)
     (i : P.obj.ι) (j : Q.obj.ι) :
     matrixEquiv R _ _ p (dgHomEquiv R _ _ p ((shiftFunctor R n).dgMap p f)) i j =
@@ -123,12 +124,12 @@ private noncomputable def matrixToShift (M : DGAdditiveClosure (DGShiftClosure C
     classical
     exact Pi.single i (DGShiftClosure.toShift R (M.X i) n)
 
-private theorem matrixEquiv_matrixToShift_self (M : DGAdditiveClosure (DGShiftClosure C)) (n : ℤ)
+private theorem dgHomEquiv_matrixToShift_self (M : DGAdditiveClosure (DGShiftClosure C)) (n : ℤ)
     (i : M.ι) :
     matrixEquiv R _ _ (-n) (matrixToShift M n) i i = DGShiftClosure.toShift R (M.X i) n := by
   simp [matrixToShift]
 
-private theorem matrixEquiv_matrixToShift_of_ne (M : DGAdditiveClosure (DGShiftClosure C)) (n : ℤ)
+private theorem dgHomEquiv_matrixToShift_of_ne (M : DGAdditiveClosure (DGShiftClosure C)) (n : ℤ)
     {i j : M.ι} (h : i ≠ j) : matrixEquiv R _ _ (-n) (matrixToShift M n) i j = 0 := by
   classical
   simp [matrixToShift, Pi.single_eq_of_ne (Ne.symm h)]
@@ -141,12 +142,12 @@ private noncomputable def matrixFromShift (M : DGAdditiveClosure (DGShiftClosure
     classical
     exact Pi.single i (DGShiftClosure.fromShift R (M.X i) n)
 
-private theorem matrixEquiv_matrixFromShift_self (M : DGAdditiveClosure (DGShiftClosure C))
+private theorem dgHomEquiv_matrixFromShift_self (M : DGAdditiveClosure (DGShiftClosure C))
     (n : ℤ) (i : M.ι) :
     matrixEquiv R _ _ n (matrixFromShift M n) i i = DGShiftClosure.fromShift R (M.X i) n := by
   simp [matrixFromShift]
 
-private theorem matrixEquiv_matrixFromShift_of_ne (M : DGAdditiveClosure (DGShiftClosure C))
+private theorem dgHomEquiv_matrixFromShift_of_ne (M : DGAdditiveClosure (DGShiftClosure C))
     (n : ℤ) {i j : M.ι} (h : i ≠ j) : matrixEquiv R _ _ n (matrixFromShift M n) i j = 0 := by
   classical
   simp [matrixFromShift, Pi.single_eq_of_ne (Ne.symm h)]
@@ -158,8 +159,8 @@ private theorem sum_dgComp_matrixToShift {M : DGAdditiveClosure (DGShiftClosure 
     ∑ j, dgComp R (matrixEquiv R _ _ (-n) (matrixToShift M n) i j) (g j) h =
       dgComp R (DGShiftClosure.toShift R (M.X i) n) (g i) h := by
   rw [Finset.sum_eq_single i (fun j _ hj ↦ by
-    rw [matrixEquiv_matrixToShift_of_ne M n (Ne.symm hj), zero_dgComp]) (by simp),
-    matrixEquiv_matrixToShift_self]
+    rw [dgHomEquiv_matrixToShift_of_ne M n (Ne.symm hj), zero_dgComp]) (by simp),
+    dgHomEquiv_matrixToShift_self]
 
 /-- Multiplying a row on the right by the diagonal comparison matrix picks out one entry. -/
 private theorem sum_matrixToShift_dgComp {M : DGAdditiveClosure (DGShiftClosure C)} {n p m : ℤ}
@@ -167,8 +168,32 @@ private theorem sum_matrixToShift_dgComp {M : DGAdditiveClosure (DGShiftClosure 
     ∑ j, dgComp R (f j) (matrixEquiv R _ _ (-n) (matrixToShift M n) j k) h =
       dgComp R (f k) (DGShiftClosure.toShift R (M.X k) n) h := by
   rw [Finset.sum_eq_single k (fun j _ hj ↦ by
-    rw [matrixEquiv_matrixToShift_of_ne M n hj, dgComp_zero]) (by simp),
-    matrixEquiv_matrixToShift_self]
+    rw [dgHomEquiv_matrixToShift_of_ne M n hj, dgComp_zero]) (by simp),
+    dgHomEquiv_matrixToShift_self]
+
+/-- Multiplying a column on the left by the diagonal inverse comparison matrix picks out one
+entry. -/
+private theorem sum_dgComp_matrixFromShift {M : DGAdditiveClosure (DGShiftClosure C)} {n q m : ℤ}
+    {Z : DGShiftClosure C} (g : ∀ j, DGHom R q (M.X j) Z) (h : n + q = m) (i : M.ι) :
+    ∑ j, dgComp R (matrixEquiv R _ _ n (matrixFromShift M n) i j) (g j) h =
+      dgComp R (DGShiftClosure.fromShift R (M.X i) n) (g i) h := by
+  rw [Finset.sum_eq_single i (fun j _ hj ↦ by
+    rw [dgHomEquiv_matrixFromShift_of_ne M n (Ne.symm hj), zero_dgComp]) (by simp),
+    dgHomEquiv_matrixFromShift_self]
+
+/-- Multiplying a row on the right by the diagonal inverse comparison matrix picks out one
+entry. -/
+-- The sum runs over the summands of the shift of `M`, as in a product with `matrixFromShift M n`,
+-- so that it matches such products syntactically.
+private theorem sum_matrixFromShift_dgComp {M : DGAdditiveClosure (DGShiftClosure C)} {n p m : ℤ}
+    {Z : DGShiftClosure C} (f : ∀ j, DGHom R p Z ((DGShiftClosure.shiftFunctor R n).obj (M.X j)))
+    (h : p + n = m) (k : M.ι) :
+    ∑ j : ((DGAdditiveClosure.map R (DGShiftClosure.shiftFunctor R n)).obj M).ι,
+      dgComp R (f j) (matrixEquiv R _ _ n (matrixFromShift M n) j k) h =
+      dgComp R (f k) (DGShiftClosure.fromShift R (M.X k) n) h := by
+  rw [Finset.sum_eq_single k (fun j _ hj ↦ by
+    rw [dgHomEquiv_matrixFromShift_of_ne M n hj, dgComp_zero]) (by simp),
+    dgHomEquiv_matrixFromShift_self]
 
 /-- The diagonal comparison matrices are natural up to the Koszul sign. -/
 private theorem dgComp_matrixToShift {M N : DGAdditiveClosure (DGShiftClosure C)} (n : ℤ)
@@ -181,22 +206,33 @@ private theorem dgComp_matrixToShift {M N : DGAdditiveClosure (DGShiftClosure C)
       DGAdditiveClosure.dgMap_map, DGAdditiveClosure.dgHomEquiv_mapHom,
       DGShiftClosure.dgComp_toShift]
 
+/-- The diagonal inverse comparison matrices are natural up to the Koszul sign. -/
+private theorem dgComp_matrixFromShift {M N : DGAdditiveClosure (DGShiftClosure C)} (n : ℤ)
+    {p m : ℤ} (f : DGHom R p M N) (h : p + n = m) :
+    dgComp R ((DGAdditiveClosure.map R (DGShiftClosure.shiftFunctor R n)).dgMap p f)
+      (matrixFromShift N n) h = (n * p).negOnePow • dgComp R (matrixFromShift M n) f (by omega) :=
+  DGAdditiveClosure.dgHom_ext R fun i k ↦ by
+    rw [map_zsmul_unit, Pi.smul_apply, Pi.smul_apply, DGAdditiveClosure.dgHomEquiv_dgComp,
+      DGAdditiveClosure.dgHomEquiv_dgComp, sum_matrixFromShift_dgComp, sum_dgComp_matrixFromShift,
+      DGAdditiveClosure.dgMap_map, DGAdditiveClosure.dgHomEquiv_mapHom,
+      DGShiftClosure.dgComp_fromShift]
+
 private theorem dgDifferential_matrixToShift (M : DGAdditiveClosure (DGShiftClosure C)) (n : ℤ) :
     dgDifferential R (-n) (matrixToShift M n) = 0 :=
   DGAdditiveClosure.dgHom_ext R fun i j ↦ by
     rw [DGAdditiveClosure.dgHomEquiv_dgDifferential, map_zero, Pi.zero_apply, Pi.zero_apply]
     rcases eq_or_ne i j with rfl | h
-    · rw [matrixEquiv_matrixToShift_self, DGShiftClosure.dgDifferential_toShift]
-    · rw [matrixEquiv_matrixToShift_of_ne M n h, map_zero]
+    · rw [dgHomEquiv_matrixToShift_self, DGShiftClosure.dgDifferential_toShift]
+    · rw [dgHomEquiv_matrixToShift_of_ne M n h, map_zero]
 
 private theorem dgComp_matrixToShift_matrixFromShift (M : DGAdditiveClosure (DGShiftClosure C))
     (n : ℤ) : dgComp R (matrixToShift M n) (matrixFromShift M n) (neg_add_cancel n) = dgId R M :=
   DGAdditiveClosure.dgHom_ext R fun i k ↦ by
     rw [DGAdditiveClosure.dgHomEquiv_dgComp, sum_dgComp_matrixToShift]
     rcases eq_or_ne i k with rfl | h
-    · rw [matrixEquiv_matrixFromShift_self, DGShiftClosure.dgComp_toShift_fromShift,
+    · rw [dgHomEquiv_matrixFromShift_self, DGShiftClosure.dgComp_toShift_fromShift,
         DGAdditiveClosure.dgHomEquiv_dgId_self]
-    · rw [matrixEquiv_matrixFromShift_of_ne M n h, dgComp_zero,
+    · rw [dgHomEquiv_matrixFromShift_of_ne M n h, dgComp_zero,
         DGAdditiveClosure.dgHomEquiv_dgId_of_ne R M h]
 
 private theorem dgComp_matrixFromShift_matrixToShift (M : DGAdditiveClosure (DGShiftClosure C))
@@ -205,9 +241,9 @@ private theorem dgComp_matrixFromShift_matrixToShift (M : DGAdditiveClosure (DGS
   DGAdditiveClosure.dgHom_ext R fun i k ↦ by
     rw [DGAdditiveClosure.dgHomEquiv_dgComp, sum_matrixToShift_dgComp]
     rcases eq_or_ne i k with rfl | h
-    · rw [matrixEquiv_matrixFromShift_self, DGShiftClosure.dgComp_fromShift_toShift,
+    · rw [dgHomEquiv_matrixFromShift_self, DGShiftClosure.dgComp_fromShift_toShift,
         DGAdditiveClosure.dgHomEquiv_dgId_self]
-    · rw [matrixEquiv_matrixFromShift_of_ne M n h, zero_dgComp,
+    · rw [dgHomEquiv_matrixFromShift_of_ne M n h, zero_dgComp,
         DGAdditiveClosure.dgHomEquiv_dgId_of_ne R _ h]
 
 /-! ### The comparison morphisms of twisted objects -/
@@ -226,29 +262,29 @@ noncomputable def fromShift : DGHom R n ((shiftFunctor R n).obj P) P :=
 
 /-- The diagonal entries of `P ⟶ P⟦n⟧` are the comparison morphisms of the summands. -/
 @[simp]
-theorem matrixEquiv_toShift_self (i : P.obj.ι) :
+theorem dgHomEquiv_toShift_self (i : P.obj.ι) :
     matrixEquiv R _ _ (-n) (dgHomEquiv R _ _ (-n) (toShift P n)) i i =
       DGShiftClosure.toShift R (P.obj.X i) n := by
-  rw [toShift, LinearEquiv.apply_symm_apply, matrixEquiv_matrixToShift_self]
+  rw [toShift, LinearEquiv.apply_symm_apply, dgHomEquiv_matrixToShift_self]
 
 /-- The off-diagonal entries of `P ⟶ P⟦n⟧` vanish. -/
 @[simp]
-theorem matrixEquiv_toShift_of_ne {i j : P.obj.ι} (h : i ≠ j) :
+theorem dgHomEquiv_toShift_of_ne {i j : P.obj.ι} (h : i ≠ j) :
     matrixEquiv R _ _ (-n) (dgHomEquiv R _ _ (-n) (toShift P n)) i j = 0 := by
-  rw [toShift, LinearEquiv.apply_symm_apply, matrixEquiv_matrixToShift_of_ne _ _ h]
+  rw [toShift, LinearEquiv.apply_symm_apply, dgHomEquiv_matrixToShift_of_ne _ _ h]
 
 /-- The diagonal entries of `P⟦n⟧ ⟶ P` are the inverse comparison morphisms of the summands. -/
 @[simp]
-theorem matrixEquiv_fromShift_self (i : P.obj.ι) :
+theorem dgHomEquiv_fromShift_self (i : P.obj.ι) :
     matrixEquiv R _ _ n (dgHomEquiv R _ _ n (fromShift P n)) i i =
       DGShiftClosure.fromShift R (P.obj.X i) n := by
-  rw [fromShift, LinearEquiv.apply_symm_apply, matrixEquiv_matrixFromShift_self]
+  rw [fromShift, LinearEquiv.apply_symm_apply, dgHomEquiv_matrixFromShift_self]
 
 /-- The off-diagonal entries of `P⟦n⟧ ⟶ P` vanish. -/
 @[simp]
-theorem matrixEquiv_fromShift_of_ne {i j : P.obj.ι} (h : i ≠ j) :
+theorem dgHomEquiv_fromShift_of_ne {i j : P.obj.ι} (h : i ≠ j) :
     matrixEquiv R _ _ n (dgHomEquiv R _ _ n (fromShift P n)) i j = 0 := by
-  rw [fromShift, LinearEquiv.apply_symm_apply, matrixEquiv_matrixFromShift_of_ne _ _ h]
+  rw [fromShift, LinearEquiv.apply_symm_apply, dgHomEquiv_matrixFromShift_of_ne _ _ h]
 
 /-- **The comparison morphisms are natural up to the Koszul sign**: for `f : P ⟶ Q` of degree
 `p`, `f` followed by `Q ⟶ Q⟦n⟧` is `(-1)^(n * p)` times `P ⟶ P⟦n⟧` followed by the shift of
@@ -261,6 +297,18 @@ theorem dgComp_toShift {P Q : DGTwistedObject R (DGAdditiveClosure (DGShiftClosu
     rw [map_zsmul_unit, dgHomEquiv_dgComp, dgHomEquiv_dgComp, toShift, toShift,
       LinearEquiv.apply_symm_apply, LinearEquiv.apply_symm_apply, dgMap_map, dgHomEquiv_mapHom,
       dgComp_matrixToShift]
+
+/-- **The inverse comparison morphisms are natural up to the Koszul sign**: for `f : P ⟶ Q` of
+degree `p`, the shift of `f` followed by `Q⟦n⟧ ⟶ Q` is `(-1)^(n * p)` times `P⟦n⟧ ⟶ P` followed
+by `f`. -/
+theorem dgComp_fromShift {P Q : DGTwistedObject R (DGAdditiveClosure (DGShiftClosure C))}
+    {p m : ℤ} (f : DGHom R p P Q) (h : p + n = m) :
+    dgComp R ((shiftFunctor R n).dgMap p f) (fromShift Q n) h =
+      (n * p).negOnePow • dgComp R (fromShift P n) f (by omega) :=
+  (dgHomEquiv R _ _ _).injective <| by
+    rw [map_zsmul_unit, dgHomEquiv_dgComp, dgHomEquiv_dgComp, fromShift, fromShift,
+      LinearEquiv.apply_symm_apply, LinearEquiv.apply_symm_apply, dgMap_map, dgHomEquiv_mapHom,
+      dgComp_matrixFromShift]
 
 /-- **The comparison morphism `P ⟶ P⟦n⟧` is closed** for the twisted differential: by
 naturality, `δ ≫ σ = (-1)^n • σ ≫ δ⟦n⟧`, which cancels the twisting terms of `D σ`. -/

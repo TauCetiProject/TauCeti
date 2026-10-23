@@ -37,7 +37,7 @@ underlying morphisms of `C`.  The objects `X[r]` and `X[r + n]` are related by t
 morphism `TauCeti.DGShiftClosure.toShift : X[r] ⟶ X[r + n]` of degree `-n` and its inverse
 `TauCeti.DGShiftClosure.fromShift` of degree `n`, whose underlying morphisms are `(-1)^(n * r)`
 times the identity of `X`.  With this sign, `toShift` is natural up to the Koszul sign:
-`f ≫ toShift = (-1)^(n * p) • toShift ≫ f[n]` for `f` of degree `p`.
+`f ≫ toShift = (-1)^(n * p) • toShift ≫ f[n]` for `f` of degree `p`, and so is `fromShift`.
 
 The shift closure is the home of the matrix entries of one-sided twisted complexes, the objects
 `(⊕ᵢ Xᵢ[rᵢ], δ)` of the pretriangulated envelope of Bondal and Kapranov.
@@ -65,8 +65,8 @@ The shift closure is the home of the matrix entries of one-sided twisted complex
 * `TauCeti.DGShiftClosure.dgComp_toShift_fromShift` and
   `TauCeti.DGShiftClosure.dgComp_fromShift_toShift`: the comparison morphisms are mutually
   inverse.
-* `TauCeti.DGShiftClosure.dgComp_toShift`: the comparison morphisms are natural up to the Koszul
-  sign.
+* `TauCeti.DGShiftClosure.dgComp_toShift` and `TauCeti.DGShiftClosure.dgComp_fromShift`: the
+  comparison morphisms are natural up to the Koszul sign.
 
 ## References
 
@@ -436,6 +436,22 @@ theorem dgComp_toShift {X Y : DGShiftClosure C} (n : ℤ) {p m : ℤ} (f : DGHom
     congr 1
     simp only [← Int.negOnePow_add, Int.negOnePow_eq_iff]
     exact ⟨n * (Y.shift - X.shift), by ring⟩
+
+/-- **The inverse comparison morphisms are natural up to the Koszul sign**: for
+`f : X[r] ⟶ Y[s]` of degree `p`, the shift of `f` followed by `Y[s + n] ⟶ Y[s]` is
+`(-1)^(n * p)` times `X[r + n] ⟶ X[r]` followed by `f`. -/
+theorem dgComp_fromShift {X Y : DGShiftClosure C} (n : ℤ) {p m : ℤ} (f : DGHom R p X Y)
+    (h : p + n = m) :
+    dgComp R ((shiftFunctor R n).dgMap p f) (fromShift R Y n) h =
+      (n * p).negOnePow • dgComp R (fromShift R X n) f (by omega) :=
+  (dgHomEquiv R _ _ _).injective <| by
+    rw [dgMap_shiftFunctor, map_zsmul_unit, dgHomEquiv_dgComp, dgHomEquiv_dgComp,
+      dgHomEquiv_fromShift, dgHomEquiv_fromShift, dgHomEquiv_shiftHomEquiv, dgComp_units_smul,
+      dgComp_castDeg_dgId, units_smul_dgComp, castDeg_dgId_dgComp, castDeg_castDeg, smul_smul,
+      smul_smul, smul_smul]
+    congr 1
+    simp only [← Int.negOnePow_add, Int.negOnePow_eq_iff]
+    exact ⟨-(n * p), by ring⟩
 
 end DGShiftClosure
 
