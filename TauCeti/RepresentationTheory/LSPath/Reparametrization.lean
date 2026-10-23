@@ -9,6 +9,7 @@ public import TauCeti.RepresentationTheory.LSPath.PLPath
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Module
+import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.Algebra.Order.Field.MinMax
 import TauCeti.Algebra.Order.Group.MinMax
 
@@ -84,7 +85,7 @@ variable {𝕜 : Type u} {V : Type v}
 
 section Duration
 
-variable [AddCommMonoid 𝕜]
+variable [AddMonoid 𝕜]
 
 /-- The total duration of a list of `(duration, segment)` pairs. -/
 def duration (p : List (𝕜 × V)) : 𝕜 :=
@@ -184,7 +185,9 @@ theorem evalTimed_eq_zero_of_forall {p : List (𝕜 × V)} (h : ∀ x ∈ p, x.2
 
 end Eval
 
-variable [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] {p q r : List (𝕜 × V)} {d e t : 𝕜}
+section DurationOrder
+
+variable [AddCommMonoid 𝕜] [PartialOrder 𝕜] [IsOrderedAddMonoid 𝕜] {p : List (𝕜 × V)}
 
 theorem duration_nonneg (hp : ∀ x ∈ p, 0 ≤ x.1) : 0 ≤ duration p :=
   List.sum_nonneg (by simpa using fun d v h ↦ hp (d, v) h)
@@ -196,6 +199,10 @@ theorem IsTimed.duration_pos (hp : IsTimed p) (hne : p ≠ []) : 0 < duration p 
 theorem IsTimed.eq_nil_of_duration_nonpos (hp : IsTimed p) (h : duration p ≤ 0) : p = [] := by
   by_contra hne
   exact (hp.duration_pos hne).not_ge h
+
+end DurationOrder
+
+variable [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] {p q r : List (𝕜 × V)} {d e t : 𝕜}
 
 variable [AddCommGroup V] [Module 𝕜 V] {v w : V}
 
@@ -465,14 +472,6 @@ theorem isReparam_cons_cons_add (hd : 0 < d) (he : 0 < e) (hvw : SameRay 𝕜 v 
 
 /-! ### Composites of parametrized paths -/
 
-/-- In the last case of `TauCeti.PLPath.timedComp`, where a piece `(d, a)` of the timing overruns
-the current segment of duration `e`, the piece is split at the positive time `d * e / a < d`. -/
-private theorem timedComp_split_aux {a : 𝕜} (hd : 0 < d) (he : 0 < e) (hae : ¬ a < e)
-    (hae' : a ≠ e) : e < a ∧ 0 < d * e / a ∧ d * e / a < d := by
-  have hea := (not_lt.1 hae).lt_of_ne' hae'
-  have ha := he.trans hea
-  exact ⟨hea, div_pos (mul_pos hd he) ha, (div_lt_iff₀ ha).2 (mul_lt_mul_of_pos_left hea hd)⟩
-
 /-- A list of `(duration, segment)` pairs presenting the composite `evalTimed q ∘ evalTimed φ` of
 the parametrized path of `q` with a timing `φ` in `𝕜`, when `q` and `φ` are timed presentations
 and every segment of `φ` is nonnegative (see `TauCeti.PLPath.evalTimed_timedComp`). It runs
@@ -519,7 +518,9 @@ theorem evalTimed_timedComp {φ : List (𝕜 × 𝕜)} (hq : IsTimed q) (hφ : I
     obtain ⟨hd, hφ⟩ := isTimed_cons.1 hφ
     obtain ⟨-, hφ'⟩ := List.forall_mem_cons.1 hφ'
     dsimp only at he hd
-    obtain ⟨hea, hpos, hlt⟩ := timedComp_split_aux hd he hae hae'
+    have hea := (not_lt.1 hae).lt_of_ne' hae'
+    have hpos : 0 < d * e / a := div_pos (mul_pos hd he) (he.trans hea)
+    have hlt := mul_div_lt_self hd he.le hea
     have ha : a ≠ 0 := (he.trans hea).ne'
     have hφ₂ : IsTimed ((d - d * e / a, a - e) :: φ) := isTimed_cons.2 ⟨sub_pos.2 hlt, hφ⟩
     have hφ₂' : ∀ x ∈ (d - d * e / a, a - e) :: φ, 0 ≤ x.2 :=
@@ -549,7 +550,9 @@ theorem isTimed_timedComp {φ : List (𝕜 × 𝕜)} (hq : IsTimed q) (hφ : IsT
     obtain ⟨he, hq⟩ := isTimed_cons.1 hq
     obtain ⟨hd, hφ⟩ := isTimed_cons.1 hφ
     dsimp only at he hd
-    obtain ⟨-, hpos, hlt⟩ := timedComp_split_aux hd he hae hae'
+    have hea := (not_lt.1 hae).lt_of_ne' hae'
+    have hpos : 0 < d * e / a := div_pos (mul_pos hd he) (he.trans hea)
+    have hlt := mul_div_lt_self hd he.le hea
     simp only [timedComp.eq_3, hae, hae', ↓reduceIte]
     exact isTimed_cons.2 ⟨hpos, ih hq (isTimed_cons.2 ⟨sub_pos.2 hlt, hφ⟩)⟩
 
