@@ -350,6 +350,25 @@ theorem ofBaseChange_map_reverse (x : A ⊗[R] CliffordAlgebra Q) :
 
 variable {Q}
 
+/-- The averaging projections `z ↦ ⅟2 • (z ± involute z)` of the tensor carrier land in the scalar
+extensions of the even and odd parts respectively. -/
+private theorem invOf_two_smul_add_sub_map_involute_mem (z : A ⊗[R] CliffordAlgebra Q) :
+    (⅟2 : R) • (z + TensorProduct.map LinearMap.id involute.toLinearMap z) ∈
+        (evenOdd Q 0).baseChange A ∧
+      (⅟2 : R) • (z - TensorProduct.map LinearMap.id involute.toLinearMap z) ∈
+        (evenOdd Q 1).baseChange A := by
+  induction z using TensorProduct.inductionOn with
+  | tmul a c =>
+    simp only [TensorProduct.map_tmul, LinearMap.id_apply, ← TensorProduct.tmul_add,
+      ← TensorProduct.tmul_sub, ← TensorProduct.tmul_smul]
+    refine ⟨Submodule.tmul_mem_baseChange_of_mem a (involute_eq_self_iff.mp ?_),
+      Submodule.tmul_mem_baseChange_of_mem a (involute_eq_neg_iff.mp ?_)⟩
+    · simp [add_comm]
+    · simp [smul_sub]
+  | add z w hz hw =>
+    rw [map_add, add_add_add_comm, add_sub_add_comm, smul_add, smul_add (⅟2 : R) (z - _)]
+    exact ⟨add_mem hz.1 hw.1, add_mem hz.2 hw.2⟩
+
 /-- **The even part of the tensor carrier is the fixed space of the grade involution**: an element
 of `A ⊗[R] Cℓ(M, Q)` lies in the scalar extension of the even part exactly when the grade
 involution of the right factor fixes it. -/
@@ -361,21 +380,7 @@ theorem mem_baseChange_evenOdd_zero_iff {y : A ⊗[R] CliffordAlgebra Q} :
     induction t using TensorProduct.inductionOn with
     | tmul a c => simp [involute_eq_of_mem_even c.2]
     | add s t hs ht => simp only [map_add, hs, ht]
-  · -- The averaging projection `y ↦ ⅟2 • (y + involute y)` lands in the extended even part.
-    have key (z : A ⊗[R] CliffordAlgebra Q) :
-        (⅟2 : R) • (z + TensorProduct.map LinearMap.id involute.toLinearMap z) ∈
-          (evenOdd Q 0).baseChange A := by
-      induction z using TensorProduct.inductionOn with
-      | tmul a c =>
-        rw [TensorProduct.map_tmul, LinearMap.id_apply, ← TensorProduct.tmul_add,
-          ← TensorProduct.tmul_smul]
-        refine Submodule.tmul_mem_baseChange_of_mem a (involute_eq_self_iff.mp ?_)
-        simp [add_comm]
-      | add z w hz hw =>
-        rw [map_add, add_add_add_comm, smul_add]
-        exact add_mem hz hw
-    have hkey := key y
-    rwa [hy, ← two_smul R y, smul_smul, invOf_mul_self, one_smul] at hkey
+  · simpa [hy, ← two_smul R y, smul_smul] using (invOf_two_smul_add_sub_map_involute_mem y).1
 
 /-- **The odd part of the tensor carrier is the `-1`-eigenspace of the grade involution**: an
 element of `A ⊗[R] Cℓ(M, Q)` lies in the scalar extension of the odd part exactly when the grade
@@ -388,21 +393,7 @@ theorem mem_baseChange_evenOdd_one_iff {y : A ⊗[R] CliffordAlgebra Q} :
     induction t using TensorProduct.inductionOn with
     | tmul a c => simp [involute_eq_of_mem_odd c.2, TensorProduct.tmul_neg]
     | add s t hs ht => simp only [map_add, hs, ht, neg_add]
-  · -- The averaging projection `y ↦ ⅟2 • (y - involute y)` lands in the extended odd part.
-    have key (z : A ⊗[R] CliffordAlgebra Q) :
-        (⅟2 : R) • (z - TensorProduct.map LinearMap.id involute.toLinearMap z) ∈
-          (evenOdd Q 1).baseChange A := by
-      induction z using TensorProduct.inductionOn with
-      | tmul a c =>
-        rw [TensorProduct.map_tmul, LinearMap.id_apply, ← TensorProduct.tmul_sub,
-          ← TensorProduct.tmul_smul]
-        refine Submodule.tmul_mem_baseChange_of_mem a (involute_eq_neg_iff.mp ?_)
-        rw [AlgHom.toLinearMap_apply, map_smul, map_sub, involute_involute, ← smul_neg, neg_sub]
-      | add z w hz hw =>
-        rw [map_add, add_sub_add_comm, smul_add]
-        exact add_mem hz hw
-    have hkey := key y
-    rwa [hy, sub_neg_eq_add, ← two_smul R y, smul_smul, invOf_mul_self, one_smul] at hkey
+  · simpa [hy, ← two_smul R y, smul_smul] using (invOf_two_smul_add_sub_map_involute_mem y).2
 
 /-- **The `ℤ/2`-grading is compatible with extension of scalars**: an element of `Cℓ(A ⊗ M, Q_A)`
 is homogeneous of parity `i` exactly when its image under `CliffordAlgebra.toBaseChange` lies in
