@@ -29,7 +29,7 @@ open scoped CategoryTheory.MonObj
 
 universe u
 
-namespace TauCeti
+namespace CommRingCat
 
 variable (R : CommRingCat.{u}) (G : Scheme.{u}) [G.Over (Spec R)]
   [GrpObj (G.asOver (Spec R))] [IsAffine G]
@@ -132,4 +132,4 @@ theorem globalSectionsHopfSpecIso_inv_apply (x : H) :
   exact congrArg (fun f : CommRingCat.of H ⟶ Γ(Spec (CommRingCat.of H), ⊤) ↦ f x)
     (globalSectionsHopfSpecIso_inv_toRingHom R H)
 
-end TauCeti
+end CommRingCat
