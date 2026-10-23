@@ -44,8 +44,7 @@ The two characterizations below show that the definition is intrinsic.
 * `TauCeti.mlieDerivFormWithin_eq_lieDerivFormWithin`: over the model space, the manifold Lie
   derivative is the flat one.
 * `TauCeti.SmoothForm.mlieDerivForm_eq_interior_mextDeriv_add`,
-  `TauCeti.SmoothForm.mlieDerivForm_eq_mextDeriv_interior`, and
-  `TauCeti.SmoothForm.mlieDerivForm_eq_interior_mextDeriv`: bundled smooth-form entry points.
+  `TauCeti.SmoothForm.mlieDerivForm_eq_mextDeriv_interior`: bundled smooth-form entry points.
 
 ## References
 
@@ -331,12 +330,6 @@ theorem mlieDerivForm_eq_mextDeriv_interior {φ : SmoothForm I M F (k + 1)}
     (hdφ : mextDeriv φ.1 = 0) :
     mlieDerivForm V φ.1 = mextDeriv (φ.1.interior V) := by
   exact TauCeti.mlieDerivForm_eq_mextDeriv_interior φ.mdifferentiable hV hdφ
-
-/-- In degree zero, Cartan's formula holds for every smooth form and vector field. -/
-theorem mlieDerivForm_eq_interior_mextDeriv (φ : SmoothForm I M F 0)
-    (V : (x : M) → TangentSpace I x) :
-    mlieDerivForm V φ.1 = (mextDeriv φ.1).interior V :=
-  TauCeti.mlieDerivForm_eq_interior_mextDeriv V φ.1
 
 end SmoothForm
 
