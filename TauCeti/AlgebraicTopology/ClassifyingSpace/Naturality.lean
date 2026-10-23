@@ -23,6 +23,9 @@ labels. Thus the forward map of `TauCeti.universalGSpaceStandardHomotopyEquiv` i
 in the group. Restriction of the target action makes the square a square in `Rep k G`,
 without any injectivity assumption on the homomorphism.
 
+The join chain maps preserve augmentation by
+`MulActionHom.toRepRes_comp_permutationAugmentation` and its reassociated form.
+
 ## References
 
 * J. Milnor, *Construction of universal bundles, II*, Ann. of Math. 63 (1956), 430--436.
@@ -118,14 +121,6 @@ theorem universalGSpaceChainMap_comp {K : Type u} [Group K] (ψ : H →* K) (φ 
     MulActionHom.ext (universalGSpaceCellMap_comp ψ φ)
   exact (congrArg (fun f : X →ₑ[ψ.comp φ] Z => f.toRepRes (k := k) (φ := ψ.comp φ)) h).trans
     (MulActionHom.toRepRes_comp g f)
-
-/-- Relabelling simplices preserves the degree-zero augmentation. -/
-@[reassoc (attr := simp)]
-theorem universalGSpaceChainHom_comp_permutationAugmentation (φ : G →* H) :
-    φ.universalGSpaceChainHom (k := k) 0 ≫
-        (Rep.resFunctor φ).map (permutationAugmentation k H _) =
-      permutationAugmentation k G _ := by
-  exact MulActionHom.toRepRes_comp_permutationAugmentation _
 
 end Ring
 
