@@ -33,7 +33,8 @@ with the unit isomorphisms `E_(𝟙 p) ≅ 𝟭`, the composition isomorphisms
 `E_g ⋙ E_h ≅ E_(g ≫ h)` and the commuting isomorphisms `T_a ⋙ E_g ≅ E_g ⋙ T_a` with the
 actions. The composition isomorphisms are associative and unital, and for an isomorphism `g`
 of `Γ` (so for every arrow when `Γ` is a groupoid) `E_g` is an equivalence with inverse
-`E_(g⁻¹)`.
+`E_(g⁻¹)`. In particular the endomorphism monoid `End p` of each object acts on the fiber
+`C p` by transport, coherently, through these unit and composition isomorphisms.
 
 The composition order follows `Γ × SingleObj H`: in `SingleObj H` the composite `a ≫ b` is the
 product `b * a`, so the commuting isomorphisms compare the two factorizations
@@ -51,7 +52,11 @@ product `b * a`, so the commuting isomorphisms compare the two factorizations
 * `TauCeti.EquivariantGroupoidLift.transportCommIso`: the isomorphisms
   `T_a ⋙ E_g ≅ E_g ⋙ T_a` commuting transport with the actions;
 * `TauCeti.EquivariantGroupoidLift.transportEquivalence`: for an isomorphism `g : p ≅ q`, the
-  equivalence `C p ≌ C q` with functor `E_g` and inverse `E_(g⁻¹)`.
+  equivalence `C p ≌ C q` with functor `E_g` and inverse `E_(g⁻¹)`;
+* `TauCeti.EquivariantGroupoidLift.endAction`: the action of the endomorphism monoid `End p` on
+  `C p` by the transport functors, as a pseudofunctor `LocallyDiscrete (SingleObj (End p)) ⥤ᵖ Cat`.
+  When `Γ` is a groupoid this is the action of the automorphism group of `p` on its fiber, so a
+  lift retains the isotropy of `Γ`.
 
 ## References
 
@@ -502,6 +507,124 @@ lemma transportCommIso_inv_app {p q : Γ} (g : p ⟶ q) (a : SingleObj.star H �
           ((L.jointActCommIso g a).inv.app ((L.fiberEquivalence p).inverse.obj X) ≫
             (L.jointMap g).map ((L.actInverseIso p a).inv.app X)) := by
   simp [transportCommIso, transport]
+
+/-! ### The action of the endomorphism monoid of an object on its fiber -/
+
+-- The three lemmas below are the coherence conditions of `endAction`. In them the composite
+-- arrows of `Γ` appear in two forms that agree only propositionally (for instance
+-- `(f ≫ g) ≫ h` and `f ≫ g ≫ h`), so they are stated for arbitrary composites, related by
+-- `eqToHom`.
+
+private lemma transportComp_inv_associativity_eqToHom {p q r s : Γ} (f : p ⟶ q) (g : q ⟶ r)
+    (h : r ⟶ s) (fg : p ⟶ r) (gh : q ⟶ s) (fgh fgh' : p ⟶ s) (hfg : f ≫ g = fg)
+    (hgh : g ≫ h = gh) (hfgh : fg ≫ h = fgh) (hfgh' : f ≫ gh = fgh') (X : fiber actions p)
+    (hX : (L.transport fgh).obj X = (L.transport fgh').obj X) :
+    (L.transportComp fg h fgh hfgh).inv.app X ≫
+        (L.transport h).map ((L.transportComp f g fg hfg).inv.app X) ≫
+          (L.transportComp g h gh hgh).hom.app ((L.transport f).obj X) ≫
+            (L.transportComp f gh fgh' hfgh').hom.app X = eqToHom hX := by
+  obtain rfl : fgh' = fgh := by rw [← hfgh', ← hfgh, ← hfg, ← hgh, Category.assoc]
+  rw [← L.transportComp_associativity f g h fg gh _ hfg hgh hfgh X]
+  simp only [← Functor.map_comp_assoc, Iso.inv_hom_id_app, CategoryTheory.Functor.map_id,
+    Category.id_comp, eqToHom_refl]
+
+private lemma transportComp_inv_left_unitality_eqToHom {p q : Γ} (g k : p ⟶ q)
+    (hk : 𝟙 p ≫ g = k) (X : fiber actions p)
+    (hX : (L.transport k).obj X = (L.transport g).obj X) :
+    (L.transportComp (𝟙 p) g k hk).inv.app X ≫ (L.transport g).map ((L.transportId p).hom.app X) =
+      eqToHom hX := by
+  obtain rfl : k = g := hk.symm.trans (Category.id_comp g)
+  rw [← L.transportComp_left_unitality _ hk X, Iso.inv_hom_id_app, eqToHom_refl]
+
+private lemma transportComp_inv_right_unitality_eqToHom {p q : Γ} (g k : p ⟶ q)
+    (hk : g ≫ 𝟙 q = k) (X : fiber actions p)
+    (hX : (L.transport k).obj X = (L.transport g).obj X) :
+    (L.transportComp g (𝟙 q) k hk).inv.app X ≫ (L.transportId q).hom.app ((L.transport g).obj X) =
+      eqToHom hX := by
+  obtain rfl : k = g := hk.symm.trans (Category.comp_id g)
+  rw [← L.transportComp_right_unitality _ hk X, Iso.inv_hom_id_app, eqToHom_refl]
+
+/-- The action of the endomorphism monoid `End p` on the prescribed fiber `C p` by transport,
+as a pseudofunctor `LocallyDiscrete (SingleObj (End p)) ⥤ᵖ Cat` with value `C p`. It sends `g`
+to `E_g`; its unit comparison is `transportId` and its composition comparison at `g ≫ h` is the
+inverse of `transportComp`. Since `(g * h).asHom = h.asHom ≫ g.asHom` in `End p`, this is a
+left action: `E_(g * h) ≅ E_h ⋙ E_g`. When `Γ` is a groupoid, `End p` is the automorphism group
+of `p`, so this is the action of the isotropy group of `p` on its fiber. -/
+-- The body is exposed so that the value `(L.endAction p).obj b` is definitionally the fiber
+-- `C p`, as needed to state the component formulas below in terms of objects of `C p`.
+@[expose] noncomputable def endAction (p : Γ) : LocallyDiscrete (SingleObj (End p)) ⥤ᵖ Cat.{v, w} :=
+  LocallyDiscrete.mkPseudofunctor (fun _ ↦ fiber actions p)
+    (fun g ↦ (L.transport g.asHom).toCatHom)
+    (fun _ ↦ Cat.Hom.isoMk (L.transportId p))
+    (fun g h ↦ Cat.Hom.isoMk (L.transportComp g.asHom h.asHom (g ≫ h).asHom rfl).symm)
+    (fun f g h ↦ by
+      ext X
+      simp only [Cat.Hom.isoMk_hom, Cat.Hom.isoMk_inv, Iso.symm_hom, Iso.symm_inv,
+        Cat.Hom.toNatTrans_comp, Cat.whiskerRight_toNatTrans, Cat.associator_hom_toNatTrans,
+        Cat.whiskerLeft_toNatTrans, NatTrans.comp_app, Functor.whiskerRight_app,
+        Functor.whiskerLeft_app, Functor.associator_hom_app, Category.id_comp,
+        Cat.Hom₂.eqToHom_toNatTrans, eqToHom_app, NatTrans.toCatHom₂_toNatTrans,
+        Functor.toCatHom_toFunctor, Cat.Hom.comp_toFunctor, Functor.comp_obj]
+      exact L.transportComp_inv_associativity_eqToHom _ _ _ _ _ _ _ _ _ _ _ _ _)
+    (fun f ↦ by
+      ext X
+      simp only [Cat.Hom.isoMk_hom, Iso.symm_hom, Cat.Hom.toNatTrans_comp,
+        Cat.whiskerRight_toNatTrans, Cat.leftUnitor_hom_toNatTrans, NatTrans.comp_app,
+        Functor.whiskerRight_app, Functor.leftUnitor_hom_app, Cat.Hom₂.eqToHom_toNatTrans,
+        eqToHom_app, NatTrans.toCatHom₂_toNatTrans, Functor.toCatHom_toFunctor,
+        Cat.Hom.comp_toFunctor, Functor.comp_obj, Cat.Hom.id_toFunctor]
+      -- The left unitor of `Cat` contributes an identity whose object is only definitionally
+      -- that of the goal, so it is removed through `congrArg` rather than by `rw`.
+      exact (congrArg (_ ≫ ·) (Category.comp_id _)).trans
+        (L.transportComp_inv_left_unitality_eqToHom _ _ _ _ _))
+    (fun f ↦ by
+      ext X
+      simp only [Cat.Hom.isoMk_hom, Iso.symm_hom, Cat.Hom.toNatTrans_comp,
+        Cat.whiskerLeft_toNatTrans, Cat.rightUnitor_hom_toNatTrans, NatTrans.comp_app,
+        Functor.whiskerLeft_app, Functor.rightUnitor_hom_app, Cat.Hom₂.eqToHom_toNatTrans,
+        eqToHom_app, NatTrans.toCatHom₂_toNatTrans, Functor.toCatHom_toFunctor,
+        Cat.Hom.comp_toFunctor, Functor.comp_obj, Cat.Hom.id_toFunctor]
+      -- As for the left unitor.
+      exact (congrArg (_ ≫ ·) (Category.comp_id _)).trans
+        (L.transportComp_inv_right_unitality_eqToHom _ _ _ _ _))
+
+@[simp]
+lemma endAction_obj (p : Γ) (b : LocallyDiscrete (SingleObj (End p))) :
+    (L.endAction p).obj b = fiber actions p :=
+  rfl
+
+@[simp]
+lemma endAction_map_toFunctor (p : Γ) {b b' : LocallyDiscrete (SingleObj (End p))}
+    (g : b ⟶ b') : ((L.endAction p).map g).toFunctor = L.transport g.as.asHom :=
+  rfl
+
+@[simp]
+lemma endAction_mapId_hom_toNatTrans_app (p : Γ) (b : LocallyDiscrete (SingleObj (End p)))
+    (X : fiber actions p) :
+    ((L.endAction p).mapId b).hom.toNatTrans.app X = (L.transportId p).hom.app X :=
+  rfl
+
+@[simp]
+lemma endAction_mapId_inv_toNatTrans_app (p : Γ) (b : LocallyDiscrete (SingleObj (End p)))
+    (X : fiber actions p) :
+    ((L.endAction p).mapId b).inv.toNatTrans.app X = (L.transportId p).inv.app X :=
+  rfl
+
+@[simp]
+lemma endAction_mapComp_hom_toNatTrans_app (p : Γ)
+    {b₀ b₁ b₂ : LocallyDiscrete (SingleObj (End p))} (g : b₀ ⟶ b₁) (h : b₁ ⟶ b₂)
+    (X : fiber actions p) :
+    ((L.endAction p).mapComp g h).hom.toNatTrans.app X =
+      (L.transportComp g.as.asHom h.as.asHom (g.as ≫ h.as).asHom rfl).inv.app X :=
+  rfl
+
+@[simp]
+lemma endAction_mapComp_inv_toNatTrans_app (p : Γ)
+    {b₀ b₁ b₂ : LocallyDiscrete (SingleObj (End p))} (g : b₀ ⟶ b₁) (h : b₁ ⟶ b₂)
+    (X : fiber actions p) :
+    ((L.endAction p).mapComp g h).inv.toNatTrans.app X =
+      (L.transportComp g.as.asHom h.as.asHom (g.as ≫ h.as).asHom rfl).hom.app X :=
+  rfl
 
 end EquivariantGroupoidLift
 
