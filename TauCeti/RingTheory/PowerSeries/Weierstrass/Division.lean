@@ -149,9 +149,8 @@ theorem IsDistinguished.gaussNorm_le_gaussNorm_mul_add (hf : IsDistinguished c s
     hasGaussNorm_of_isRestricted (isRestricted_of_forall_coeff_eq_zero hr)
   have hbsum : (q * f + r).HasGaussNorm norm c := hasGaussNorm_add hc.le hbqf hbr
   have hqf : (q * f).gaussNorm norm c ≤ (q * f + r).gaussNorm norm c :=
-    (MvPowerSeries.gaussNorm_mul_le norm (fun _ : Unit ↦ c) q f (fun _ ↦ hc.le)
-      norm_nonneg norm_mul_le IsUltrametricDist.isNonarchimedean_norm norm_zero
-      (hasGaussNorm_of_isRestricted hq).hasMvGaussNorm hf.hasGaussNorm.hasMvGaussNorm).trans
+    (gaussNorm_mul_le hc.le (hasGaussNorm_of_isRestricted hq) hf.hasGaussNorm :
+      (q * f).gaussNorm norm c ≤ _).trans
       (hf.le_gaussNorm_mul_add hc hmul hq hr)
   have hbneg : (-(q * f)).HasGaussNorm norm c := by
     simpa only [PowerSeries.HasGaussNorm, map_neg, norm_neg] using hbqf
@@ -182,9 +181,7 @@ theorem IsDistinguished.gaussNorm_mul_add_eq_max (hf : IsDistinguished c s f) (h
   refine le_antisymm ?_ (max_le (hf.le_gaussNorm_mul_add hc hmul hq hr)
     (hf.gaussNorm_le_gaussNorm_mul_add hc hmul hq hr))
   have hqf : (q * f).gaussNorm norm c ≤ q.gaussNorm norm c * f.gaussNorm norm c :=
-    MvPowerSeries.gaussNorm_mul_le norm (fun _ : Unit ↦ c) q f (fun _ ↦ hc.le)
-      norm_nonneg norm_mul_le IsUltrametricDist.isNonarchimedean_norm norm_zero
-      (hasGaussNorm_of_isRestricted hq).hasMvGaussNorm hf.hasGaussNorm.hasMvGaussNorm
+    gaussNorm_mul_le hc.le (hasGaussNorm_of_isRestricted hq) hf.hasGaussNorm
   exact (PowerSeries.gaussNorm_add_le_max norm c (q * f) r hc.le norm_nonneg
     IsUltrametricDist.isNonarchimedean_norm
     (hasGaussNorm_mul hc.le (hasGaussNorm_of_isRestricted hq) hf.hasGaussNorm)
@@ -382,10 +379,8 @@ private theorem exists_gaussNorm_sub_mul_add_le (hg : IsMulDistinguished c s g) 
           * (Qp : PowerSeries R)).gaussNorm norm c
         ≤ (g - ((g.trunc (s + 1) : Polynomial R) : PowerSeries R)).gaussNorm norm c
           * (Qp : PowerSeries R).gaussNorm norm c :=
-          MvPowerSeries.gaussNorm_mul_le norm (fun _ : Unit ↦ c) _ _ (fun _ ↦ hc.le)
-            norm_nonneg norm_mul_le IsUltrametricDist.isNonarchimedean_norm norm_zero
-            (hasGaussNorm_of_isRestricted htailr).hasMvGaussNorm
-            (hasGaussNorm_of_isRestricted hQr).hasMvGaussNorm
+          gaussNorm_mul_le hc.le (hasGaussNorm_of_isRestricted htailr)
+            (hasGaussNorm_of_isRestricted hQr)
       _ ≤ θ * g.gaussNorm norm c * (Qp : PowerSeries R).gaussNorm norm c :=
           mul_le_mul_of_nonneg_right hθg (PowerSeries.gaussNorm_nonneg norm c _ norm_nonneg)
       _ = θ * (g.gaussNorm norm c * (Qp : PowerSeries R).gaussNorm norm c) := by ring
