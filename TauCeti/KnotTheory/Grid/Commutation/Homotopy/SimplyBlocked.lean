@@ -65,7 +65,7 @@ theorem simplyBlockedCommutationHomotopy_single_apply (i : Fin n) (x y : GridSta
     commutationHomotopy_single_apply, simplyBlockedRingHom_apply]
 
 /-- The simply blocked homotopy multiplies a chain by the specialized hexagon matrix. -/
-@[simp]
+@[simp 900] -- Prefer the generator formula to the general chain expansion.
 theorem simplyBlockedCommutationHomotopy_apply_apply (i : Fin n)
     (c : GridChainHat R n i) (y : GridState n) :
     G.simplyBlockedCommutationHomotopy R C i c y =
