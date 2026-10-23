@@ -358,7 +358,7 @@ theorem mayerVietoris_one {X : Type} [TopologicalSpace X] {U V : Set X} (hU : Is
     exact congr($(hc).hom x)
   refine ⟨fun x hx hx' ↦ ?_, fun c ↦ ?_⟩
   · have h0 : P.hom x = 0 :=
-      Prod.ext ((hfst x).trans hx) ((hsnd x).trans (by rw [hx', neg_zero]; rfl))
+      Prod.ext ((hfst x).trans hx) ((hsnd x).trans (neg_eq_zero.2 hx'))
     exact hP.1 (h0.trans (map_zero P.hom).symm)
   · obtain ⟨x, hx⟩ := hP.2 (0, -c)
     exact ⟨x, (hfst x).symm.trans (congrArg Prod.fst hx),

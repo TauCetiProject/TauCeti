@@ -60,6 +60,8 @@ public section
 
 noncomputable section
 
+open ContinuousMap (firstHomologyMap firstHomologyMap_torusClass)
+
 open CategoryTheory unitInterval TauCeti.HurewiczOne
 
 namespace TauCeti
@@ -83,15 +85,22 @@ def ofHomeomorph (e : Circle × Circle ≃ₜ Y) : FramedBoundaryTorus where
 variable (e : Circle × Circle ≃ₜ Y)
 
 /-- The homology class of the `(p, q)` curve `t ↦ e (exp (2πipt), exp (2πiqt))` on the torus
-framed by `e`. -/
+framed by `e`: the image under `e` of the class `TauCeti.torusClass p q` of the `(p, q)` curve of
+`S¹ × S¹`. -/
 def torusCurveClass (p q : ℤ) : (ofHomeomorph e).H :=
-  H₁AddEquivHomology (TopCat.of Y) (loopClass ((torusCurve p q).map e.continuous))
+  firstHomologyMap (e : C(Circle × Circle, Y)) (torusClass p q)
+
+/-- The class of the `(p, q)` curve on the torus framed by `e` is the image under `e` of the class
+of the `(p, q)` curve of `S¹ × S¹`. -/
+theorem torusCurveClass_eq_firstHomologyMap (p q : ℤ) :
+    torusCurveClass e p q = firstHomologyMap (e : C(Circle × Circle, Y)) (torusClass p q) :=
+  (rfl)
 
 /-- The class of the `(p, q)` curve is its Hurewicz class in `H₁(Y; ℤ)`. -/
 theorem torusCurveClass_def (p q : ℤ) :
     torusCurveClass e p q =
       H₁AddEquivHomology (TopCat.of Y) (loopClass ((torusCurve p q).map e.continuous)) :=
-  (rfl)
+  firstHomologyMap_torusClass (e : C(Circle × Circle, Y)) p q
 
 /-- **The coordinates of the `(p, q)` curve.** For the torus framed by a parametrization `e`, the
 homology class of the curve `t ↦ e (exp (2πipt), exp (2πiqt))` has `(μ, λ)`-coordinates
@@ -102,7 +111,8 @@ theorem coord_torusCurveClass (p q : ℤ) :
   have hE : (ofHomeomorph e).basis.equivFun (torusCurveClass e p q) = ![p, q] :=
     (congrArg (· (torusCurveClass e p q))
       (Module.Basis.equivFun_ofEquivFun (circleProdFirstHomologyEquiv e))).trans
-      (circleProdFirstHomologyEquiv_torusCurve e p q)
+      ((congrArg (circleProdFirstHomologyEquiv e) (torusCurveClass_def e p q)).trans
+        (circleProdFirstHomologyEquiv_torusCurve e p q))
   rw [← LinearEquiv.eq_symm_apply, coord_symm_apply]
   apply (ofHomeomorph e).basis.equivFun.injective
   rw [hE]

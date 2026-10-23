@@ -292,7 +292,7 @@ private theorem eq_zero_of_H1map_puncturedToOpen_eq_zero (h : IsSolidTorusNeighb
   have hq : firstHomologyMap h.openToTorus (firstHomologyMap (puncturedToOpen f Φ)
       (firstHomologyMap h.torusHomotopyEquiv.toFun (torusClass p q))) = torusClass 0 q := by
     rw [← firstHomologyMap_comp, ← firstHomologyMap_comp,
-      hprojection, firstHomologyMap_torusClass]
+      hprojection, firstHomologyMap_torusClass, torusClass_def]
     exact congrArg _ (loopClass_eq_of_apply_eq _ _ fun t ↦ by simp)
   rw [hpq, map_zero, eq_comm, torusClass_eq_zero_iff] at hq
   exact hq.2
@@ -390,9 +390,8 @@ private theorem boundaryHomologyMap_torusCurveClass (h : IsSolidTorusNeighborhoo
         (firstHomologyMap h.torusHomotopyEquiv.toFun (torusClass p q)) := by
   have hH := LinearMap.congr_fun (firstHomologyMap_eq_of_homotopic ⟨h.expandHomotopy⟩)
     (torusClass p q)
-  rw [firstHomologyMap_comp, firstHomologyMap_comp,
-    firstHomologyMap_torusClass ⟨h.exteriorFrontierHomeomorph, by fun_prop⟩,
-    ← FramedBoundaryTorus.torusCurveClass_def] at hH
+  rw [firstHomologyMap_comp, firstHomologyMap_comp] at hH
+  rw [FramedBoundaryTorus.torusCurveClass_eq_firstHomologyMap]
   exact hH.symm
 
 /-- The boundary meridian represents the meridian at radius `1 / 2` in the complement. -/

@@ -176,9 +176,15 @@ end Parametrized
 /-! ### Classes of curves on the standard torus -/
 
 /-- The class of the `(p, q)` curve of `S¹ × S¹`. -/
-abbrev torusClass (p q : ℤ) :
+def torusClass (p q : ℤ) :
     ((singularChains ℤ).obj (TopCat.of (Circle × Circle))).homology 1 :=
   H₁AddEquivHomology (TopCat.of (Circle × Circle)) (loopClass (torusCurve p q))
+
+/-- The class of the `(p, q)` curve is its Hurewicz class in `H₁(S¹ × S¹; ℤ)`. -/
+theorem torusClass_def (p q : ℤ) :
+    torusClass p q =
+      H₁AddEquivHomology (TopCat.of (Circle × Circle)) (loopClass (torusCurve p q)) :=
+  (rfl)
 
 end TauCeti
 

@@ -446,6 +446,7 @@ theorem value_longitude : T.value T.longitude = (0 : ℚ) := by
 
 /-- The change of `(μ, λ)`-coordinates `(p, q) ↦ (p - n q, q)` that accompanies replacing the
 longitude `λ` by `λ + n · μ`. -/
+@[simps apply]
 private def shiftCoord (n : ℤ) : (ℤ × ℤ) ≃ₗ[ℤ] ℤ × ℤ where
   toFun v := (v.1 - n * v.2, v.2)
   invFun v := (v.1 + n * v.2, v.2)
@@ -478,8 +479,7 @@ theorem coord_shiftLongitude (n : ℤ) (x : T.H) :
       T.coord ≪≫ₗ shiftCoord n ≪≫ₗ (LinearEquiv.finTwoArrow ℤ ℤ).symm :=
     Basis.equivFun_ofEquivFun _
   rw [coord, LinearEquiv.trans_apply, h]
-  simp only [LinearEquiv.trans_apply, LinearEquiv.apply_symm_apply]
-  rfl
+  simp only [LinearEquiv.trans_apply, LinearEquiv.apply_symm_apply, shiftCoord_apply]
 
 /-- The shifted framing keeps the meridian. -/
 @[simp]
