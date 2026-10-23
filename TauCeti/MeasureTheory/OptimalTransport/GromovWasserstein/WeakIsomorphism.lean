@@ -33,10 +33,10 @@ whenever their target discrepancy vanishes on the diagonal; no topology, symmetr
 inequality is needed for this implication. The converse requires an attainment theorem and is
 not asserted here.
 
-Raw kernels admit pullback along a transport map whose target carrier has measurable equality
-and whose source measure is s-finite. The identity case gives reflexivity under measurable
-carrier equality. These laws require no structure on the kernel values. The extended-metric
-pullback and reflexivity laws use a.e. strong measurability without measurable carrier equality.
+Raw kernels admit pullback along a transport map whose target carrier has measurable equality.
+The identity case gives reflexivity under measurable carrier equality. These laws require no
+structure on the kernel values. The extended-metric pullback and reflexivity laws use a.e.
+strong measurability without measurable carrier equality.
 
 ## References
 

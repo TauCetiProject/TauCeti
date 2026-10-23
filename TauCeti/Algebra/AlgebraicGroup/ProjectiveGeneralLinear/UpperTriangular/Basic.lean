@@ -59,6 +59,7 @@ theorem restriction_apply (x : ProjectiveGeneralLinear.coordinateHopfAlgebra n k
     (restriction k n).hom x = Ideal.Quotient.mkₐ k
       (GeneralLinear.UpperTriangular.definingHopfIdeal k n).toIdeal
       ((ProjectiveGeneralLinear.conjugationMap n k).hom x) := by
+  rw [restriction_def, _root_.CommHopfAlgCat.hom_comp, BialgHom.comp_apply]
   exact GeneralLinear.UpperTriangular.coordinateMap_apply k n _
 
 variable {A : Type w} [CommRing A] [Algebra k A]
@@ -77,8 +78,8 @@ theorem mapPointsFunctor_restriction
   apply WithConv.ofConv_injective
   ext x
   rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply_apply, restriction_apply,
-    WithConv.ofConv_toConv, AlgHom.comp_apply, CommHopfAlgCat.quotientPointsHom_apply_apply]
-  rfl
+    WithConv.ofConv_toConv, AlgHom.comp_apply, CommHopfAlgCat.quotientPointsHom_apply_apply,
+    BialgHom.coe_toAlgHom]
 
 /-- Restriction on points sends an upper-triangular matrix to its inner automorphism. -/
 @[simp]

@@ -91,8 +91,7 @@ theorem preprojectiveMk_ginzburgRetraction_ginzburgTwoDifferential
     | cons p e ih =>
       have he := preprojectiveMk_ginzburgRetraction_ginzburgTwoArrowRelator k e
       rw [← ofArrow_mul_ofPath, ginzburgTwoDifferential_ofArrow_mul]
-      simp only [Units.smul_def, map_add, map_mul, map_zsmul, he, ih, zero_mul, mul_zero,
-        smul_zero, add_zero]
+      simp [Units.smul_def, he, ih, -preprojectiveMk_eq_zero_iff]
   induction x using induction_linear with
   | zero => rw [map_zero, map_zero, map_zero]
   | add x y hx hy => rw [map_add, map_add, map_add, hx, hy, add_zero]
