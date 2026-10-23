@@ -123,6 +123,16 @@ theorem affineSpaceAlgebraicComplexPointEquiv_apply_eq_character
   rw [← ofAffinePoint_faceAffinePointMap hσ, affineSpaceAlgebraicComplexPointEquiv_ofAffinePoint,
     character_ofAffinePoint]
 
+/-- The character function of the coordinate character `b.coord j`, at the complex point of the
+toric scheme of the fan of affine space with coordinates `z`, is `z j`. -/
+@[simp]
+theorem character_affineSpaceAlgebraicComplexPointEquiv_symm (z : ι → ℂ) (j : ι) :
+    character (affineSpace b hi) (b.coord j).toAddMonoidHom
+        (coord_mem_dualSemigroup_affineSpace b hi j)
+        ((affineSpaceAlgebraicComplexPointEquiv b hi).symm z) =
+      z j := by
+  rw [← affineSpaceAlgebraicComplexPointEquiv_apply_eq_character, Equiv.apply_symm_apply]
+
 /-- The algebraic–analytic comparison commutes with the identifications of both sides with
 `ι → ℂ`: the analytic coordinates of the point corresponding to a complex point of the toric scheme
 are its algebraic coordinates in `𝔸(ι; Spec ℂ)`. -/
@@ -132,6 +142,16 @@ theorem affineSpaceHomeomorph_algebraicAnalyticEquiv
       affineSpaceAlgebraicComplexPointEquiv b hi p := by
   funext j
   simp
+
+/-- The inverse algebraic identification of complex points with `ι → ℂ` is the inverse analytic
+identification, read through the algebraic–analytic comparison. -/
+theorem affineSpaceAlgebraicComplexPointEquiv_symm_eq :
+    ⇑(affineSpaceAlgebraicComplexPointEquiv b hi).symm =
+      (algebraicAnalyticEquiv (isRegular_affineSpace b hi)).symm ∘
+        (affineSpaceHomeomorph b hi).symm := by
+  funext z
+  rw [Function.comp_apply, Equiv.symm_apply_eq, ← affineSpaceHomeomorph_algebraicAnalyticEquiv,
+    Equiv.apply_symm_apply, Homeomorph.apply_symm_apply]
 
 /-- Torus translation scales each algebraic coordinate of a complex point of the toric scheme of
 the fan of affine space by the corresponding character value. -/
@@ -151,12 +171,10 @@ noncomputable def affineSpaceAlgebraicComplexPointHomeomorph :
       (algebraicAnalyticHomeomorph (isRegular_affineSpace b hi)).continuous).congr fun p ↦ by
         rw [Function.comp_apply, coe_algebraicAnalyticHomeomorph,
           affineSpaceHomeomorph_algebraicAnalyticEquiv, Equiv.toFun_as_coe]
-  continuous_invFun :=
-    ((algebraicAnalyticHomeomorph (isRegular_affineSpace b hi)).symm.continuous.comp
-      (affineSpaceHomeomorph b hi).symm.continuous).congr fun z ↦ by
-        rw [Function.comp_apply, coe_algebraicAnalyticHomeomorph_symm, Equiv.invFun_as_coe,
-          eq_comm, Equiv.symm_apply_eq, ← affineSpaceHomeomorph_algebraicAnalyticEquiv,
-          Equiv.apply_symm_apply, Homeomorph.apply_symm_apply]
+  continuous_invFun := by
+    simp only [Equiv.invFun_as_coe, affineSpaceAlgebraicComplexPointEquiv_symm_eq,
+      ← coe_algebraicAnalyticHomeomorph_symm]
+    fun_prop
 
 /-- The homeomorphism is the identification `affineSpaceAlgebraicComplexPointEquiv`. -/
 @[simp]
