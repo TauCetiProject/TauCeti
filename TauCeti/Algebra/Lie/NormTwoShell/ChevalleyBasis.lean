@@ -20,28 +20,28 @@ the opposite bracket is `⁅x_a, x_(-a)⁆ = ε(a, -a) H_a`, where `ε` is the o
 
 This file rescales the root vectors of the negative roots by the signs of inverse lifts. In the
 cover, `⟨1, a⟩⁻¹ = ε(a, a) ⟨1, -a⟩` (`Matrix.SignCover.inv_canonicalSection`), so for a positive
-root `a` the normalized root vector of `-a` is `x̃_(-a) = ε(a, a) x_(-a)`, the sign being that of
+root `a` the normalized root vector of `-a` is `e_(-a) = ε(a, a) x_(-a)`, the sign being that of
 the inverse lift of `⟨1, a⟩`
 (`Matrix.ShellLieAlgebra.inv_canonicalSection_eq_inl_normalizationSign_mul`), while the positive
-root vectors are kept: `x̃_a = s(a) x_a` with `s(a) = 1` for `a ≥ 0` and `s(a) = ε(a, a)` otherwise
+root vectors are kept: `e_a = s(a) x_a` with `s(a) = 1` for `a ≥ 0` and `s(a) = ε(a, a)` otherwise
 (`Matrix.ShellLieAlgebra.normalizationSign`). Every root is positive or negative, and in the
 normalized basis (`Matrix.ShellLieAlgebra.normalizedBasis`) the bracket takes the form of a
 Chevalley basis:
 
-* `⁅H_h, x̃_a⁆ = ⟪h, a⟫ x̃_a`;
-* `⁅x̃_a, x̃_(-a)⁆ = H_a` for every root `a`;
-* `⁅x̃_a, x̃_b⁆ = N(a, b) x̃_(a + b)` if `a + b ∈ Φ`, with a unit `N(a, b) = ±1`
+* `⁅H_h, e_a⁆ = ⟪h, a⟫ e_a`;
+* `⁅e_a, e_(-a)⁆ = H_a` for every root `a`;
+* `⁅e_a, e_b⁆ = N(a, b) e_(a + b)` if `a + b ∈ Φ`, with a unit `N(a, b) = ±1`
   (`Matrix.ShellLieAlgebra.structureConstant`), and `0` if `a + b` is neither a root nor zero;
 * `N(-a, -b) = -N(a, b)`.
 
 For a simple root `αᵢ` the ordered sign `ε(αᵢ, αᵢ)` is `1`, so the normalization does not change
-the Chevalley generators: `x̃_(αᵢ) = Eᵢ` and `x̃_(-αᵢ) = Fᵢ`, the images of the generators of the
+the Chevalley generators: `e_(αᵢ) = Eᵢ` and `e_(-αᵢ) = Fᵢ`, the images of the generators of the
 Serre presentation in `TauCeti.Algebra.Lie.NormTwoShell.Serre`.
 
 ## Main definitions
 
 * `Matrix.ShellLieAlgebra.normalizationSign`: the sign `s(a)`.
-* `Matrix.ShellLieAlgebra.normalizedRoot`: the normalized root vector `x̃_a = s(a) x_a`.
+* `Matrix.ShellLieAlgebra.normalizedRoot`: the normalized root vector `e_a = s(a) x_a`.
 * `Matrix.ShellLieAlgebra.structureConstant`: the structure constant `N(a, b)`.
 * `Matrix.ShellLieAlgebra.normalizedBasis`: the integral basis of Cartan vectors `H_(αᵢ)` and
   normalized root vectors.
@@ -51,9 +51,9 @@ Serre presentation in `TauCeti.Algebra.Lie.NormTwoShell.Serre`.
 * `Matrix.ShellLieAlgebra.inv_canonicalSection_eq_inl_normalizationSign_mul`: for a positive root
   `a`, the sign `s(-a)` is the sign of the inverse lift `⟨1, a⟩⁻¹` over `-a`.
 * `Matrix.ShellLieAlgebra.normalizedRoot_lie_normalizedRoot_of_add_eq_zero`:
-  `⁅x̃_a, x̃_(-a)⁆ = H_a`.
+  `⁅e_a, e_(-a)⁆ = H_a`.
 * `Matrix.ShellLieAlgebra.normalizedRoot_lie_normalizedRoot_of_mem`:
-  `⁅x̃_a, x̃_b⁆ = N(a, b) x̃_(a + b)` when `a + b` is a root.
+  `⁅e_a, e_b⁆ = N(a, b) e_(a + b)` when `a + b` is a root.
 * `Matrix.ShellLieAlgebra.structureConstant_neg_neg`: `N(-a, -b) = -N(a, b)`.
 * `Matrix.ShellLieAlgebra.normalizedRoot_single` and
   `Matrix.ShellLieAlgebra.normalizedRoot_neg_single`: the normalized simple root vectors are the
@@ -82,20 +82,20 @@ noncomputable def normalizationSign (a : I → ℤ) : ℤˣ := by
   classical
   exact if 0 ≤ a then 1 else (B.orderedSignForm a a).negOnePow
 
-/-- **The normalized root vector** `x̃_a = s(a) x_a` of a vector `a` of the norm-two shell: the
+/-- **The normalized root vector** `e_a = s(a) x_a` of a vector `a` of the norm-two shell: the
 root vector `x_a` itself for a nonnegative root, and `ε(a, a) x_a` otherwise. -/
 noncomputable def normalizedRoot (a : B.normTwoShell) : ShellLieAlgebra B :=
   normalizationSign B a • root B a
 
 /-- **The structure constant** `N(a, b) = s(a) s(b) s(a + b) ε(a, b)` of a pair of lattice vectors.
-When `a`, `b` and `a + b` are roots it is the coefficient of `x̃_(a + b)` in `⁅x̃_a, x̃_b⁆`, see
+When `a`, `b` and `a + b` are roots it is the coefficient of `e_(a + b)` in `⁅e_a, e_b⁆`, see
 `Matrix.ShellLieAlgebra.normalizedRoot_lie_normalizedRoot_of_mem`. -/
 noncomputable def structureConstant (a b : I → ℤ) : ℤˣ :=
   normalizationSign B a * normalizationSign B b * normalizationSign B (a + b) *
     (B.orderedSignForm a b).negOnePow
 
 /-- **The normalized basis** of `Matrix.ShellLieAlgebra B`: the Cartan vectors `H_(αᵢ)` of the
-coordinate vectors `αᵢ = Pi.single i 1`, followed by the normalized root vectors `x̃_a`. -/
+coordinate vectors `αᵢ = Pi.single i 1`, followed by the normalized root vectors `e_a`. -/
 noncomputable def normalizedBasis :
     Module.Basis (I ⊕ B.normTwoShell) ℤ (ShellLieAlgebra B) :=
   (basis B).unitsSMul (Sum.elim 1 fun a ↦ normalizationSign B a)
@@ -186,13 +186,13 @@ theorem normalizedRoot_neg_single (hdiag : ∀ i, B i i = 2) (i : I) :
 
 /-! ### The bracket in the normalized basis -/
 
-/-- The Cartan vector `H_h` acts on the normalized root vector `x̃_a` by the pairing `⟪h, a⟫`. -/
+/-- The Cartan vector `H_h` acts on the normalized root vector `e_a` by the pairing `⟪h, a⟫`. -/
 @[simp]
 theorem cartan_lie_normalizedRoot (h : I → ℤ) (a : B.normTwoShell) :
     ⁅cartan B h, normalizedRoot B a⁆ = (h ⬝ᵥ B *ᵥ (a : I → ℤ)) • normalizedRoot B a := by
   rw [normalizedRoot_def, ShellLieAlgebra.lie_units_smul, cartan_lie_root, smul_comm]
 
-/-- **Opposite normalized root vectors bracket to the coroot**: `⁅x̃_a, x̃_(-a)⁆ = H_a`, for a
+/-- **Opposite normalized root vectors bracket to the coroot**: `⁅e_a, e_(-a)⁆ = H_a`, for a
 positive definite `B` with even diagonal and nonpositive off-diagonal entries. -/
 theorem normalizedRoot_lie_normalizedRoot_of_add_eq_zero (hB : B.PosDef)
     (hev : ∀ i, Even (B i i)) (hoff : ∀ i j, i ≠ j → B i j ≤ 0) {a b : B.normTwoShell}
@@ -208,7 +208,7 @@ theorem normalizedRoot_lie_normalizedRoot_of_add_eq_zero (hB : B.PosDef)
     smul_smul, hb, key, one_smul]
 
 /-- **The structure constants of the normalized basis**: if `a + b` is a root, then
-`⁅x̃_a, x̃_b⁆ = N(a, b) x̃_(a + b)`. -/
+`⁅e_a, e_b⁆ = N(a, b) e_(a + b)`. -/
 theorem normalizedRoot_lie_normalizedRoot_of_mem {a b : B.normTwoShell}
     (h : (a : I → ℤ) + b ∈ B.normTwoShell) :
     ⁅normalizedRoot B a, normalizedRoot B b⁆ =
