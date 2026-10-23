@@ -12,14 +12,14 @@ public import TauCeti.Geometry.Manifold.Riemannian.Pullback
 public import TauCeti.Geometry.Manifold.VectorBundle.Tangent
 
 /-!
-# Riemannian metrics on open submanifolds
+# Restrictions of Riemannian metrics
 
 This file restricts a `C^n` Riemannian metric to an open submanifold. Mathlib models the tangent
 space of a manifold on the model vector space itself, so the restricted metric is pointwise the
 ambient metric; the content is that this family is `C^n` for the inherited manifold and tangent
 bundle structures.
 
-It also restricts a smooth metric on `M × ℝ` to the manifold with boundary `M × [a, b]`, as the
+It also restricts a `C^n` metric on `M × ℝ` to the manifold with boundary `M × [a, b]`, as the
 pullback along the inclusion, whose differential is invertible also at the boundary.
 
 ## Main definitions
@@ -422,16 +422,16 @@ open Set
 
 variable
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} {n : ℕ∞ω}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M] {a b : ℝ} [Fact (a < b)]
-  (G : ContMDiffRiemannianMetric (I.prod 𝓘(ℝ)) ∞ (E × ℝ)
+  (G : ContMDiffRiemannianMetric (I.prod 𝓘(ℝ)) n (E × ℝ)
     (fun p : M × ℝ ↦ TangentSpace (I.prod 𝓘(ℝ)) p))
 
 variable (a b) in
 /-- The restriction of a metric `G` on `M × ℝ` to the manifold with boundary `M × [a, b]`: the
 pullback of `G` along the inclusion. -/
 noncomputable def restrictIcc :
-    ContMDiffRiemannianMetric (I.prod (𝓡∂ 1)) ∞ (E × EuclideanSpace ℝ (Fin 1))
+    ContMDiffRiemannianMetric (I.prod (𝓡∂ 1)) n (E × EuclideanSpace ℝ (Fin 1))
       (fun p : M × Icc a b ↦ TangentSpace (I.prod (𝓡∂ 1)) p) :=
   G.pullback (Prod.map id Subtype.val) (contMDiff_id.prodMap contMDiff_subtypeVal_Icc)
     fun p ↦ (TauCeti.Manifold.isInvertible_mfderiv_prodMap_id_subtypeVal_Icc p).injective
@@ -456,7 +456,7 @@ theorem restrictIcc_inner (p : M × Icc a b) (v w : TangentSpace (I.prod (𝓡�
 variable {G} in
 /-- The restriction of `G` to `M × [a, b]` at `(x, t)` only depends on `G` at `(x, t)`. -/
 theorem restrictIcc_inner_congr
-    {G' : ContMDiffRiemannianMetric (I.prod 𝓘(ℝ)) ∞ (E × ℝ)
+    {G' : ContMDiffRiemannianMetric (I.prod 𝓘(ℝ)) n (E × ℝ)
       (fun p : M × ℝ ↦ TangentSpace (I.prod 𝓘(ℝ)) p)} {p : M × Icc a b}
     (h : G.inner (p.1, p.2) = G'.inner (p.1, p.2)) :
     (G.restrictIcc a b).inner p = (G'.restrictIcc a b).inner p := by
