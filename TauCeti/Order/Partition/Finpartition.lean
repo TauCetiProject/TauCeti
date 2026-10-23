@@ -33,8 +33,11 @@ monotonicity of `Finpartition.part` under refinement, the coarse parent
 `Finpartition.refinementParent` of a part of a finer partition, together with decomposition and
 summation formulas for the fine parts below a coarse part and for sums over points of functions of
 the fine and coarse parts through them, the fact that a set with at most two elements has no finite
-partitions other than the finest and the coarsest, and the position of the parts of
-`Finpartition.atomise` relative to the sets it cuts along.
+partitions other than the finest and the coarsest, the position of the parts of
+`Finpartition.atomise` relative to the sets it cuts along, and the pullback `Finpartition.comap`
+of a finite partition of the image `f '' s` to a finite partition of `s`, which is an order
+embedding whose image consists of the partitions coarser than the partition of `s` into the fibres
+of `f`.
 -/
 
 public section
@@ -449,5 +452,151 @@ theorem subset_or_disjoint_of_mem_atomise {F : Finset (Finset α)} {t u : Finset
       huR (((Finset.mem_filter.1 hi).2 u hu).2 hiu)
 
 end Atomise
+
+section Comap
+
+variable {α β : Type*} [DecidableEq α] [DecidableEq β] {s : Finset α} {f : α → β}
+  {P Q : Finpartition (s.image f)}
+
+variable (f) in
+/-- The pullback along `f` of a finite partition `P` of the image `f '' s`: the partition of `s`
+whose parts are the preimages in `s` of the parts of `P`, so that two points of `s` lie in a common
+part exactly when their images do. -/
+def comap (P : Finpartition (s.image f)) : Finpartition s where
+  parts := P.parts.image fun C => {x ∈ s | f x ∈ C}
+  supIndep := by
+    rw [supIndep_iff_pairwiseDisjoint]
+    rintro _ hX _ hY hXY
+    obtain ⟨C, hC, rfl⟩ := mem_image.1 (mem_coe.1 hX)
+    obtain ⟨D, hD, rfl⟩ := mem_image.1 (mem_coe.1 hY)
+    refine disjoint_left.2 fun x hxC hxD => hXY ?_
+    rw [P.eq_of_mem_parts hC hD (mem_filter.1 hxC).2 (mem_filter.1 hxD).2]
+  sup_parts := by
+    ext x
+    simp only [sup_image, Function.id_comp, mem_sup, mem_filter]
+    refine ⟨fun ⟨_, _, hx, _⟩ => hx, fun hx => ?_⟩
+    obtain ⟨C, hC, hxC⟩ := P.exists_mem (mem_image_of_mem f hx)
+    exact ⟨C, hC, hx, hxC⟩
+  bot_notMem h := by
+    obtain ⟨C, hC, hCe⟩ := mem_image.1 h
+    obtain ⟨y, hy⟩ := P.nonempty_of_mem_parts hC
+    obtain ⟨x, hx, rfl⟩ := mem_image.1 (P.le hC hy)
+    exact (eq_empty_iff_forall_notMem.1 hCe x) (mem_filter.2 ⟨hx, hy⟩)
+
+variable (f) in
+/-- The parts of the pullback `P.comap f` are the preimages in `s` of the parts of `P`. -/
+theorem parts_comap (P : Finpartition (s.image f)) :
+    (P.comap f).parts = P.parts.image fun C => {x ∈ s | f x ∈ C} :=
+  (rfl)
+
+/-- The part of the pullback `P.comap f` through a point `x` of `s` consists of the points of `s`
+whose images lie in the part of `P` through `f x`. -/
+theorem part_comap {x : α} (hx : x ∈ s) :
+    (P.comap f).part x = {y ∈ s | f y ∈ P.part (f x)} :=
+  part_eq_of_mem _ (mem_image_of_mem _ (P.part_mem.2 (mem_image_of_mem f hx)))
+    (mem_filter.2 ⟨hx, P.mem_part_self.2 (mem_image_of_mem f hx)⟩)
+
+/-- Two points of `s` lie in a common part of the pullback `P.comap f` exactly when their images
+lie in a common part of `P`. -/
+theorem mem_part_comap {x y : α} (hx : x ∈ s) :
+    y ∈ (P.comap f).part x ↔ y ∈ s ∧ f y ∈ P.part (f x) := by
+  rw [part_comap hx, mem_filter]
+
+/-- A product over the parts of the pullback `P.comap f` is the product over the parts `C` of `P`
+of their preimages `{x ∈ s | f x ∈ C}`. -/
+theorem prod_parts_comap {M : Type*} [CommMonoid M] (P : Finpartition (s.image f))
+    (g : Finset α → M) :
+    ∏ X ∈ (P.comap f).parts, g X = ∏ C ∈ P.parts, g {x ∈ s | f x ∈ C} := by
+  refine prod_image fun C hC D hD hCD => ?_
+  obtain ⟨y, hy⟩ := P.nonempty_of_mem_parts hC
+  obtain ⟨x, hx, rfl⟩ := mem_image.1 (P.le hC hy)
+  have hxD : x ∈ {x ∈ s | f x ∈ D} := hCD ▸ mem_filter.2 ⟨hx, hy⟩
+  exact P.eq_of_mem_parts hC hD hy (mem_filter.1 hxD).2
+
+/-- Pulling back along `f` reflects and preserves refinement. -/
+theorem comap_le_comap_iff : P.comap f ≤ Q.comap f ↔ P ≤ Q := by
+  refine ⟨fun h C hC => ?_, fun h X hX => ?_⟩
+  · obtain ⟨D', hD', hCD⟩ := h (mem_image_of_mem (fun C => {x ∈ s | f x ∈ C}) hC)
+    obtain ⟨D, hD, rfl⟩ := mem_image.1 hD'
+    refine ⟨D, hD, fun y hy => ?_⟩
+    obtain ⟨x, hx, rfl⟩ := mem_image.1 (P.le hC hy)
+    exact (mem_filter.1 (hCD (mem_filter.2 ⟨hx, hy⟩))).2
+  · obtain ⟨C, hC, rfl⟩ := mem_image.1 hX
+    obtain ⟨D, hD, hCD⟩ := h hC
+    exact ⟨_, mem_image_of_mem _ hD, fun x hx =>
+      mem_filter.2 ⟨(mem_filter.1 hx).1, hCD (mem_filter.1 hx).2⟩⟩
+
+/-- Pulling back along `f` is monotone. -/
+@[gcongr]
+theorem comap_mono (h : P ≤ Q) : P.comap f ≤ Q.comap f :=
+  comap_le_comap_iff.2 h
+
+/-- Pulling back along `f` is injective. -/
+theorem comap_injective :
+    Function.Injective (comap f : Finpartition (s.image f) → Finpartition s) :=
+  fun _ _ h => le_antisymm (comap_le_comap_iff.1 h.le) (comap_le_comap_iff.1 h.ge)
+
+@[simp]
+theorem comap_inj : P.comap f = Q.comap f ↔ P = Q :=
+  comap_injective.eq_iff
+
+/-- The pullback of the coarsest partition of `f '' s` is the coarsest partition of `s`. -/
+@[simp]
+theorem comap_top : (⊤ : Finpartition (s.image f)).comap f = ⊤ := by
+  refine top_le_iff.1 fun X hX => ?_
+  have hXs := mem_singleton.1 (parts_top_subset s hX)
+  have hs : s.image f ≠ ∅ :=
+    (image_nonempty.2 (nonempty_of_ne_empty (hXs ▸ (⊤ : Finpartition s).ne_empty hX))).ne_empty
+  rw [hXs]
+  refine ⟨_, mem_image_of_mem _ (by rw [parts_top hs]; exact mem_singleton_self _), fun x hx =>
+    mem_filter.2 ⟨hx, mem_image_of_mem f hx⟩⟩
+
+/-- The parts of the pullback of the finest partition of `f '' s` are the fibres of `f` in `s`. -/
+theorem part_comap_bot {x : α} (hx : x ∈ s) :
+    ((⊥ : Finpartition (s.image f)).comap f).part x = {y ∈ s | f y = f x} := by
+  rw [part_comap hx, part_eq_of_mem _ (mem_bot_iff.2 ⟨f x, mem_image_of_mem f hx, rfl⟩)
+    (mem_singleton_self (f x))]
+  simp only [mem_singleton]
+
+/-- A finite partition `Q` of `s` is a pullback along `f` exactly when it is coarser than the
+partition of `s` into the fibres of `f`; it is then the pullback of the partition of `f '' s`
+into the images of the parts of `Q`. -/
+theorem exists_comap_eq_iff {Q : Finpartition s} :
+    (∃ P : Finpartition (s.image f), P.comap f = Q) ↔
+      (⊥ : Finpartition (s.image f)).comap f ≤ Q := by
+  refine ⟨fun ⟨P, hP⟩ => hP ▸ comap_mono bot_le, fun h => ?_⟩
+  -- A point of `s` with the same image as a point of a part `B` of `Q` lies in `B`.
+  have hsat {B : Finset α} (hB : B ∈ Q.parts) {x y : α} (hx : x ∈ B) (hy : y ∈ s)
+      (hxy : f y = f x) : y ∈ B := by
+    rw [← Q.part_eq_of_mem hB hx]
+    refine part_mono h x ?_
+    rw [part_comap_bot (Q.le hB hx)]
+    exact mem_filter.2 ⟨hy, hxy⟩
+  refine ⟨{
+    parts := Q.parts.image (image f)
+    supIndep := by
+      rw [supIndep_iff_pairwiseDisjoint]
+      rintro _ hX _ hY hXY
+      obtain ⟨B, hB, rfl⟩ := mem_image.1 (mem_coe.1 hX)
+      obtain ⟨C, hC, rfl⟩ := mem_image.1 (mem_coe.1 hY)
+      refine disjoint_left.2 fun z hzB hzC => hXY ?_
+      obtain ⟨x, hx, rfl⟩ := mem_image.1 hzB
+      obtain ⟨y, hy, hyx⟩ := mem_image.1 hzC
+      rw [Q.eq_of_mem_parts hB hC hx (hsat hC hy (Q.le hB hx) hyx.symm)]
+    sup_parts := by
+      rw [sup_image, Function.id_comp, sup_eq_biUnion]
+      conv_rhs => rw [← Q.biUnion_parts, biUnion_image]
+      rfl
+    bot_notMem := fun h => by
+      obtain ⟨B, hB, hBe⟩ := mem_image.1 h
+      exact Q.ne_empty hB (image_eq_empty.1 hBe) }, ?_⟩
+  refine Finpartition.ext ?_
+  rw [parts_comap, image_image]
+  refine (image_congr fun B hB => ?_).trans image_id
+  ext x
+  simp only [Function.comp_apply, mem_filter, mem_image, id]
+  exact ⟨fun ⟨hx, y, hy, hyx⟩ => hsat hB hy hx hyx.symm, fun hx => ⟨Q.le hB hx, x, hx, rfl⟩⟩
+
+end Comap
 
 end Finpartition
