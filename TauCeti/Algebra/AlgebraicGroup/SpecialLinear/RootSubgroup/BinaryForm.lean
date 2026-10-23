@@ -38,11 +38,15 @@ field this is stronger than a statement about rational points.
 * `TauCeti.SpecialLinear.columnOrbitHom_two_injective`: for `SL₂` and the first column it is
   injective.
 * `TauCeti.SpecialLinear.range_columnOrbitHom_two_eq_coinvariants`: its range is `O(SL₂)^{N⁺}`.
-* `TauCeti.SpecialLinear.ofConv_mul_columnOrbitHom_two_of_diagonal`: right translation by
-  `diag(t, t⁻¹)` acts on the degree-`d` forms by `tᵈ`.
+* `TauCeti.SpecialLinear.ofConv_mul_columnOrbitHom_two_of_upperTriangular`: right translation by
+  an upper-triangular point with first column `(t, 0)` acts on the degree-`d` forms by `tᵈ`.
+* `TauCeti.SpecialLinear.ofConv_mul_columnOrbitHom_two_of_diagonal`: in particular, right
+  translation by `diag(t, t⁻¹)` acts on the degree-`d` forms by `tᵈ`.
 * `TauCeti.SpecialLinear.binaryFormFunctions`: the degree-`d` polynomials in `a` and `c`, as a
   subcomodule of the left regular comodule; it is the injective image of the binary forms
   `R[x, y]_d` under `columnOrbitHom`.
+* `TauCeti.SpecialLinear.binaryFormFunctionsEquiv`: the binary forms of degree `d` are linearly
+  equivalent to `binaryFormFunctions R d` through the comodule morphism `columnOrbitHom`.
 
 ## References
 
@@ -83,8 +87,9 @@ def columnOrbitHom (j : Fin n) :
     map_coact := by
       rw [polynomialComodule_coact, Comodule.leftRegular_coact,
         ← Comodule.toLinearMap_leftRegularCoactAlgHom, ← AlgHom.comp_toLinearMap,
-        Comodule.leftRegularCoactAlgHom_comp_polynomialOrbitCoordinates, AlgHom.comp_toLinearMap]
-      rfl }
+        Comodule.leftRegularCoactAlgHom_comp_polynomialOrbitCoordinates, AlgHom.comp_toLinearMap,
+        Algebra.TensorProduct.toLinearMap_map, TensorProduct.AlgebraTensorModule.map_eq,
+        AlgHom.toLinearMap_id] }
 
 variable {R n}
 
@@ -151,11 +156,46 @@ theorem range_columnOrbitHom_two_eq_coinvariants :
     AlgHom.mem_range]
   exact exists_congr fun f ↦ by rw [columnOrbitHom_two_zero_apply]
 
+/-- **Right translation by the upper Borel subgroup on binary forms.** Right translation by an
+upper-triangular point `h` with first column `(t, 0)` scales the first column by `t`, so it
+multiplies the image of a binary form of degree `d` by `tᵈ`. The statement holds for points `x`
+and `h` over every commutative `R`-algebra `A`. The product `x * h` is the convolution product,
+which `pointsMulEquiv` sends to the matrix product of `x` and `h`, so this is right translation by
+`B⁺ = T N⁺` on the functor of points. -/
+theorem ofConv_mul_columnOrbitHom_two_of_upperTriangular {A : Type v} [CommRing A] [Algebra R A]
+    (x h : WithConv (coordinateHopfAlgebra R 2 →ₐ[R] A)) (t : A)
+    (hh₀ : (pointsMulEquiv (R := R) (A := A) 2 h : Matrix (Fin 2) (Fin 2) A) 0 0 = t)
+    (hh₁ : (pointsMulEquiv (R := R) (A := A) 2 h : Matrix (Fin 2) (Fin 2) A) 1 0 = 0)
+    {d : ℕ} {f : MvPolynomial (Fin 2) R} (hf : f ∈ binaryForms R d) :
+    letI := polynomialComodule R 2
+    letI := Comodule.leftRegular R (coordinateHopfAlgebra R 2)
+    (x * h).ofConv (columnOrbitHom R 2 0 f) = t ^ d * x.ofConv (columnOrbitHom R 2 0 f) := by
+  let _ := polynomialComodule R 2
+  let _ := Comodule.leftRegular R (coordinateHopfAlgebra R 2)
+  rw [columnOrbitHom_two_zero_apply, MvPolynomial.comp_aeval_apply, MvPolynomial.comp_aeval_apply]
+  -- The first column of `x * h` is `t` times the first column of `x`.
+  have hcol (i : Fin 2) : (x * h).ofConv ((GeneralLinear.genericMatrix R 2).map
+      (coordinateMap R 2).hom i 0) =
+        t * x.ofConv ((GeneralLinear.genericMatrix R 2).map (coordinateMap R 2).hom i 0) := by
+    have hmul : (pointsMulEquiv (R := R) (A := A) 2 (x * h) : Matrix (Fin 2) (Fin 2) A) i 0 =
+        (pointsMulEquiv (R := R) (A := A) 2 x : Matrix (Fin 2) (Fin 2) A) i 0 * t := by
+      rw [map_mul, Matrix.SpecialLinearGroup.coe_mul, Matrix.mul_apply, Fin.sum_univ_two, hh₀, hh₁,
+        mul_zero, add_zero]
+    rw [coe_pointsMulEquiv_apply, coe_pointsMulEquiv_apply] at hmul
+    rw [hmul, mul_comm]
+  have hvec : (fun i ↦ (x * h).ofConv (![(GeneralLinear.genericMatrix R 2).map
+      (coordinateMap R 2).hom 0 0, (GeneralLinear.genericMatrix R 2).map
+        (coordinateMap R 2).hom 1 0] i)) =
+      t • fun i ↦ x.ofConv (![(GeneralLinear.genericMatrix R 2).map
+        (coordinateMap R 2).hom 0 0, (GeneralLinear.genericMatrix R 2).map
+          (coordinateMap R 2).hom 1 0] i) := by
+    funext i
+    fin_cases i <;> exact hcol _
+  rw [hvec, ((mem_binaryForms).mp hf).aeval_smul, smul_eq_mul]
+
 /-- **Right translation by the diagonal torus on binary forms.** Right translation by
-`diag(t, t⁻¹)` scales the first column by `t`, so it multiplies the image of a binary form of
-degree `d` by `tᵈ`. The statement holds for points `x` and `h` over every commutative
-`R`-algebra `A`; since `x * h` is the point `y ↦ x(y) h(y)` of `SL₂`, it is right translation by
-the torus on the functor of points. -/
+`diag(t, t⁻¹)` acts on the image of the binary forms of degree `d` by the character `t ↦ tᵈ`,
+including `d = 0`. -/
 theorem ofConv_mul_columnOrbitHom_two_of_diagonal {A : Type v} [CommRing A] [Algebra R A]
     (x h : WithConv (coordinateHopfAlgebra R 2 →ₐ[R] A)) (t : Aˣ)
     (hh : (pointsMulEquiv (R := R) (A := A) 2 h : Matrix (Fin 2) (Fin 2) A) =
@@ -163,29 +203,8 @@ theorem ofConv_mul_columnOrbitHom_two_of_diagonal {A : Type v} [CommRing A] [Alg
     {d : ℕ} {f : MvPolynomial (Fin 2) R} (hf : f ∈ binaryForms R d) :
     letI := polynomialComodule R 2
     letI := Comodule.leftRegular R (coordinateHopfAlgebra R 2)
-    (x * h).ofConv (columnOrbitHom R 2 0 f) = (t : A) ^ d * x.ofConv (columnOrbitHom R 2 0 f) := by
-  let _ := polynomialComodule R 2
-  let _ := Comodule.leftRegular R (coordinateHopfAlgebra R 2)
-  rw [columnOrbitHom_two_zero_apply, MvPolynomial.comp_aeval_apply, MvPolynomial.comp_aeval_apply]
-  -- The first column of `x * h` is `t` times the first column of `x`.
-  have hcol (i : Fin 2) : (x * h).ofConv ((GeneralLinear.genericMatrix R 2).map
-      (coordinateMap R 2).hom i 0) =
-        (t : A) * x.ofConv ((GeneralLinear.genericMatrix R 2).map (coordinateMap R 2).hom i 0) := by
-    have hmul : (pointsMulEquiv (R := R) (A := A) 2 (x * h) : Matrix (Fin 2) (Fin 2) A) i 0 =
-        (pointsMulEquiv (R := R) (A := A) 2 x : Matrix (Fin 2) (Fin 2) A) i 0 * t := by
-      rw [map_mul, Matrix.SpecialLinearGroup.coe_mul, Matrix.mul_apply, Fin.sum_univ_two, hh]
-      simp
-    rw [coe_pointsMulEquiv_apply, coe_pointsMulEquiv_apply] at hmul
-    rw [hmul, mul_comm]
-  have hvec : (fun i ↦ (x * h).ofConv (![(GeneralLinear.genericMatrix R 2).map
-      (coordinateMap R 2).hom 0 0, (GeneralLinear.genericMatrix R 2).map
-        (coordinateMap R 2).hom 1 0] i)) =
-      (t : A) • fun i ↦ x.ofConv (![(GeneralLinear.genericMatrix R 2).map
-        (coordinateMap R 2).hom 0 0, (GeneralLinear.genericMatrix R 2).map
-          (coordinateMap R 2).hom 1 0] i) := by
-    funext i
-    fin_cases i <;> exact hcol _
-  rw [hvec, ((mem_binaryForms).mp hf).aeval_smul, smul_eq_mul]
+    (x * h).ofConv (columnOrbitHom R 2 0 f) = (t : A) ^ d * x.ofConv (columnOrbitHom R 2 0 f) :=
+  ofConv_mul_columnOrbitHom_two_of_upperTriangular x h t (by simp [hh]) (by simp [hh]) hf
 
 variable (R) in
 /-- The degree-`d` polynomials in the first-column entries `a` and `c`, as a subcomodule of the
@@ -209,6 +228,30 @@ theorem mem_binaryFormFunctions {d : ℕ} {φ : coordinateHopfAlgebra R 2} :
   let _ := Comodule.leftRegular R (coordinateHopfAlgebra R 2)
   rw [binaryFormFunctions, Subcomodule.mem_map]
   exact exists_congr fun f ↦ and_congr_left fun _ ↦ mem_binaryForms
+
+variable (R) in
+/-- **Binary forms are the degree-`d` functions of the first column.** Evaluation at the first
+column `(a, c)` is a linear equivalence from the binary forms of degree `d` onto
+`binaryFormFunctions R d`. Its underlying map is the comodule morphism `columnOrbitHom R 2 0`, so
+it intertwines the coaction on binary forms with left translation on `O(SL₂)`. -/
+def binaryFormFunctionsEquiv (d : ℕ) :
+    letI := polynomialComodule R 2
+    letI := Comodule.leftRegular R (coordinateHopfAlgebra R 2)
+    binaryForms R d ≃ₗ[R] binaryFormFunctions R d :=
+  letI := polynomialComodule R 2
+  letI := Comodule.leftRegular R (coordinateHopfAlgebra R 2)
+  Submodule.equivMapOfInjective (columnOrbitHom R 2 0).toLinearMap columnOrbitHom_two_injective
+    (binaryForms R d).toSubmodule
+
+/-- The identification of binary forms with first-column functions is evaluation at `(a, c)`. -/
+@[simp]
+theorem coe_binaryFormFunctionsEquiv_apply {d : ℕ} (f : binaryForms R d) :
+    letI := polynomialComodule R 2
+    letI := Comodule.leftRegular R (coordinateHopfAlgebra R 2)
+    (binaryFormFunctionsEquiv R d f : coordinateHopfAlgebra R 2) = columnOrbitHom R 2 0 f :=
+  letI := polynomialComodule R 2
+  letI := Comodule.leftRegular R (coordinateHopfAlgebra R 2)
+  Submodule.coe_equivMapOfInjective_apply _ _ _ f
 
 end SL2
 

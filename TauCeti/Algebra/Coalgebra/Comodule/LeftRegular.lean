@@ -183,6 +183,12 @@ theorem toLinearMap_leftRegularCoactAlgHom :
   | tmul x y => simp
   | add x y hx hy => simp only [map_add, hx, hy]
 
+/-- The algebra homomorphism `leftRegularCoactAlgHom` applies as the left regular coaction. -/
+@[simp]
+theorem leftRegularCoactAlgHom_apply (f : H) :
+    leftRegularCoactAlgHom R H f = leftRegularCoact R H f := by
+  rw [← AlgHom.toLinearMap_apply, toLinearMap_leftRegularCoactAlgHom]
+
 end Commutative
 
 section Points

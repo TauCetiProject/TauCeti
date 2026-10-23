@@ -66,9 +66,6 @@ theorem leftRegularCoactAlgHom_comp_polynomialOrbitCoordinates (b : Basis ι R V
       (Algebra.TensorProduct.map (polynomialOrbitCoordinates H b m) (AlgHom.id R H)).comp
         (polynomialCoact H b) := by
   refine MvPolynomial.algHom_ext fun i ↦ ?_
-  rw [AlgHom.comp_apply, AlgHom.comp_apply, polynomialOrbitCoordinates_X,
-    ← AlgHom.toLinearMap_apply, toLinearMap_leftRegularCoactAlgHom, leftRegularCoact_apply,
-    comul_matrixCoefficient_eq_sum (C := H) b, polynomialCoact_X]
-  simp
+  simp [leftRegularCoact_apply, comul_matrixCoefficient_eq_sum (C := H) b, polynomialCoact_X]
 
 end TauCeti.Comodule
