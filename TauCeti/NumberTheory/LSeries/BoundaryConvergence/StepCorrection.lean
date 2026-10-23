@@ -18,12 +18,13 @@ value `n ^ (-z - 1)` at the left endpoint, this differs from the shifted Dirichl
 `∑ n ≥ 1, a n n ^ (-z - 1)` by the *step correction*
 `H z = ∑ n ≥ 1, a n (∫ x in n..n+1, x ^ (-z - 1) - n ^ (-z - 1))`.
 
-Although the Dirichlet series itself only converges absolutely for `re z > 0`, the step
-correction is holomorphic on the larger half-plane `-1 < re z` when `a` is bounded: by the mean
-value theorem its `n`-th term is at most `‖a n‖ ‖z + 1‖ n ^ (-re z - 2)`. This is what lets the
-bounded-Laplace (Newman) Tauberian theorem for the step function transfer to ordered partial sums
-`∑ n ≤ N, a n / n` of the Dirichlet series at `s = 1`, where the step correction takes the
-absolutely convergent value `∑ n ≥ 1, a n (log (1 + 1 / n) - 1 / n)`.
+When `a` is bounded, the Dirichlet series is only guaranteed to converge absolutely for
+`re z > 0`, whereas the step correction is guaranteed to be holomorphic on the larger half-plane
+`-1 < re z`: by the mean value theorem its `n`-th term is at most
+`‖a n‖ ‖z + 1‖ n ^ (-re z - 2)`. This is what lets the bounded-Laplace (Newman) Tauberian theorem
+for the step function transfer to ordered partial sums `∑ n ≤ N, a n / n` of the Dirichlet series
+at `s = 1`, where the step correction takes the absolutely convergent value
+`∑ n ≥ 1, a n (log (1 + 1 / n) - 1 / n)`.
 
 ## Main declarations
 
@@ -64,6 +65,11 @@ coefficients `a`. For bounded `a` the series converges absolutely and is holomor
 `-1 < re z` (`hasSum_stepCorrection`, `differentiableOn_stepCorrection`). -/
 noncomputable def stepCorrection (a : ℕ → ℂ) (z : ℂ) : ℂ :=
   ∑' n, stepCorrectionTerm a n z
+
+/-- The step correction is the sum of its terms (unconditionally, as a `tsum`). -/
+theorem stepCorrection_def (a : ℕ → ℂ) (z : ℂ) :
+    stepCorrection a z = ∑' n, stepCorrectionTerm a n z :=
+  (rfl)
 
 /-- The `0`-th term of the step correction vanishes identically. -/
 @[simp]
@@ -116,8 +122,9 @@ theorem norm_stepCorrectionTerm_le (a : ℕ → ℂ) (n : ℕ) (hz : -2 ≤ z.re
     intro x hx
     have hx' : 0 < x := hn'.trans_le hx.1
     have hre : (-z - 1 - 1).re = -z.re - 2 := by simp; ring
-    rw [norm_mul, Complex.norm_cpow_eq_rpow_re_of_pos hx', hre, show -z - 1 = -(z + 1) by ring,
-      norm_neg, hC]
+    -- rewrite the factor as a negation so that `norm_neg` turns its norm into `‖z + 1‖`
+    have hneg : -z - 1 = -(z + 1) := by ring
+    rw [norm_mul, Complex.norm_cpow_eq_rpow_re_of_pos hx', hre, hneg, norm_neg, hC]
     exact mul_le_mul_of_nonneg_left (Real.rpow_le_rpow_of_nonpos hn' hx.1 (by linarith))
       (norm_nonneg _)
   have hint : IntervalIntegrable (fun x : ℝ ↦ (x : ℂ) ^ (-z - 1)) volume n (n + 1) :=
@@ -199,8 +206,9 @@ theorem differentiableOn_stepCorrection (hbound : ∀ n, 1 ≤ n → ‖a n‖ �
     have hre : |z.re - z₀.re| < ε :=
       (Complex.abs_re_le_norm (z - z₀)).trans_lt (by simpa using hz)
     have hnorm : ‖z + 1‖ ≤ ‖z₀ + 1‖ + ε := by
+      have hsplit : z₀ + 1 + (z - z₀) = z + 1 := by ring
       have := norm_add_le (z₀ + 1) (z - z₀)
-      rw [show z₀ + 1 + (z - z₀) = z + 1 by ring] at this
+      rw [hsplit] at this
       linarith
     have hzre : ε - 1 < z.re := by
       rw [abs_lt] at hre
@@ -220,8 +228,10 @@ theorem stepCorrectionTerm_apply_zero (a : ℕ → ℂ) (n : ℕ) :
   rcases eq_or_ne n 0 with rfl | hn
   · simp
   have hn' : (0 : ℝ) < n := Nat.cast_pos.mpr (Nat.pos_of_ne_zero hn)
+  -- the exponent `-z - 1` at `z = 0`, normalised so that `Complex.cpow_neg_one` applies
+  have hexp : (-0 - 1 : ℂ) = -1 := by ring
   rw [stepCorrectionTerm_of_ne_zero a hn, intervalIntegral_ofReal_cpow_neg_sub_one hn'
-    (by positivity), show (-0 - 1 : ℂ) = -1 by ring, Complex.cpow_neg_one]
+    (by positivity), hexp, Complex.cpow_neg_one]
   simp only [neg_zero, zero_mul, Complex.exp_zero, intervalIntegral.integral_const,
     Complex.real_smul, mul_one]
   rw [← Real.log_div (by positivity) hn'.ne', add_div, div_self hn'.ne']
