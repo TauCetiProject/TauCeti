@@ -173,18 +173,8 @@ theorem isSubmodular_edgeCutCapacity [Fintype G.edgeSet] [DecidableEq G.vertexSe
   apply sum_le_sum
   intro e _
   simp_rw [← G.edgeEnds_crosses_iff_mem_edgeCut e]
-  have he := hc e
-  generalize G.edgeEnds e = p at he ⊢
-  induction p using Sym2.inductionOn with
-  | _ x y =>
-    by_cases hxy : x = y
-    · subst y
-      simp only [Sym2.not_crosses_diag, ↓reduceIte, add_zero, le_refl]
-    have he := he (by simpa using hxy)
-    have hee := add_nonneg he he
-    by_cases hxS : x ∈ S <;> by_cases hxT : x ∈ T <;>
-      by_cases hyS : y ∈ S <;> by_cases hyT : y ∈ T <;>
-      simp_all
+  simp only [Finset.coe_union, Finset.coe_inter]
+  exact (G.edgeEnds e).ite_crosses_union_add_ite_crosses_inter_le (c e) (hc e) S T
 
 /-- The cut function of edge weights nonnegative on nonloop edges is symmetric submodular.
 Loop weights are unrestricted. -/
