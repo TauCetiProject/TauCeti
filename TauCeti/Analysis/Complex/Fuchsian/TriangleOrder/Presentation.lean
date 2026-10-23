@@ -17,8 +17,8 @@ import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex.IdealVertex.Reflec
 The side-and-cycle relator quotient of a doubled triangle is the oriented triangle group.
 The equivalence eliminates the inverse side generators and identifies the three vertex-cycle
 relations with the three triangle-group power relations. Typed cusp parameters contribute no
-power relation. The inverse maps on generators are explicit, so this identification preserves
-the geometric products of reflections used to evaluate the presentation in `PSL(2, ℝ)`.
+power relation. The inverse sends the triangle generators `x`, `y`, `z` to
+`(of 0)⁻¹`, `(of 2)⁻¹`, `of 0 * of 2`, respectively, in the relator quotient.
 
 The side chosen for doubling must have acute endpoint angles, as required by
 `ConvexPolygon.doubleTriangle`. This is a presentation calculation, not an assertion of
@@ -87,13 +87,15 @@ theorem orderOf_doubleTriangleSidePairing_cycleMap
   funext j
   fin_cases j <;> assumption
 
-private theorem double_cycle_words :
-    (P.doubleTriangleSidePairing h₀ h₁).cycleWord =
-      ![FreeGroup.of 0, FreeGroup.of 3 * FreeGroup.of 1,
-        FreeGroup.of 2, FreeGroup.of 1 * FreeGroup.of 3] := by
-  funext j
-  fin_cases j <;> simp [SidePairing.cycleWord_def, SidePairing.partialCycleWord_succ,
-    SidePairing.next_apply, Fin.rev]
+private theorem double_relatorQuotient_of_three :
+    (PresentedGroup.of 3 : (P.doubleTriangleSidePairing h₀ h₁).RelatorQuotient) =
+      (PresentedGroup.of 0)⁻¹ := by
+  simpa [Fin.rev] using (P.doubleTriangleSidePairing h₀ h₁).relatorQuotient_of_pair 0
+
+private theorem double_relatorQuotient_of_one :
+    (PresentedGroup.of 1 : (P.doubleTriangleSidePairing h₀ h₁).RelatorQuotient) =
+      (PresentedGroup.of 2)⁻¹ := by
+  simpa [Fin.rev] using (P.doubleTriangleSidePairing h₀ h₁).relatorQuotient_of_pair 2
 
 private theorem double_cycle_power {j : Fin 4} {i : Fin 3} (t : TriangleOrder)
     (hv : (P.doubleTriangle h₀ h₁).vertex j = P.vertex i)
@@ -117,25 +119,22 @@ variable (hp : P.interiorAngle 0 = p.angle) (hq : P.interiorAngle 1 = q.angle)
 /-- Interpret the triangle generators as words in the doubled polygon's sides. -/
 private def triangleToDouble : TriangleGroup p.exponent q.exponent r.exponent →*
     (P.doubleTriangleSidePairing h₀ h₁).RelatorQuotient := by
-  let σ := P.doubleTriangleSidePairing h₀ h₁
   have ho := congrFun
     (orderOf_doubleTriangleSidePairing_cycleMap (h₀ := h₀) (h₁ := h₁) hp hq hr)
   have hpow0 := double_cycle_power p (j := 0) (i := 0) (by simp) hp (ho 0)
   have hpow2 := double_cycle_power q (j := 2) (i := 1) (by simp) hq (ho 2)
   have hpow3 := double_cycle_power r (j := 3) (i := 2) (by simp) hr (ho 3)
-  rw [double_cycle_words] at hpow0 hpow2 hpow3
+  rw [doubleTriangleSidePairing_cycleWord] at hpow0 hpow2 hpow3
   simp only [Matrix.cons_val_zero, Matrix.cons_val_two,
     Matrix.cons_val_three, Matrix.head_cons, Matrix.tail_cons, map_mul] at hpow0 hpow2 hpow3
-  have h3 : (PresentedGroup.of 3 : σ.RelatorQuotient) = (PresentedGroup.of 0)⁻¹ :=
-    by simpa [σ, Fin.rev] using σ.relatorQuotient_of_pair 0
-  have h1 : (PresentedGroup.of 1 : σ.RelatorQuotient) = (PresentedGroup.of 2)⁻¹ :=
-    by simpa [σ, Fin.rev] using σ.relatorQuotient_of_pair 2
   refine TriangleGroup.lift (PresentedGroup.of 0)⁻¹ (PresentedGroup.of 2)⁻¹
     (PresentedGroup.of 0 * PresentedGroup.of 2)
     (by simpa only [inv_pow, inv_eq_one, PresentedGroup.of] using hpow0)
     (by simpa only [inv_pow, inv_eq_one, PresentedGroup.of] using hpow2) ?_ (by group)
-  simp only [PresentedGroup.of] at h1 h3 ⊢
-  rw [h1, h3, ← mul_inv_rev, inv_pow, inv_eq_one] at hpow3
+  change (PresentedGroup.of 1 * PresentedGroup.of 3 :
+    (P.doubleTriangleSidePairing h₀ h₁).RelatorQuotient) ^ r.exponent = 1 at hpow3
+  rw [double_relatorQuotient_of_one, double_relatorQuotient_of_three,
+    ← mul_inv_rev, inv_pow, inv_eq_one] at hpow3
   exact hpow3
 
 /-- Eliminate inverse side generators in favour of the triangle generators. -/
@@ -152,22 +151,8 @@ private def doubleToTriangle : (P.doubleTriangleSidePairing h₀ h₁).RelatorQu
     rw [SidePairing.mem_relators_iff] at hw
     rcases hw with ⟨i, rfl⟩ | ⟨j, z, hj, rfl⟩
     · fin_cases i <;> simp [SidePairing.sideRelator_def, Fin.rev]
-    · rw [double_cycle_words, ho j]
-      fin_cases j
-      · simp [inv_pow]
-      · simp only [Nat.succ_eq_add_one, Nat.reduceAdd, Fin.isValue, Fin.mk_one,
-          Matrix.cons_val_one, Matrix.cons_val_zero, map_pow, map_mul,
-          FreeGroup.lift_apply_of, Matrix.cons_val]
-        have he : TriangleGroup.x p.exponent q.exponent r.exponent *
-            TriangleGroup.y p.exponent q.exponent r.exponent =
-            TriangleGroup.x p.exponent q.exponent r.exponent *
-              (TriangleGroup.y p.exponent q.exponent r.exponent *
-                TriangleGroup.x p.exponent q.exponent r.exponent) *
-              (TriangleGroup.x p.exponent q.exponent r.exponent)⁻¹ := by group
-        rw [he, conj_pow, TriangleGroup.y_mul_x_pow]
-        simp
-      · simp [inv_pow]
-      · simp
+    · rw [doubleTriangleSidePairing_cycleWord, ho j]
+      fin_cases j <;> simp [inv_pow, TriangleGroup.x_mul_y_pow]
 
 variable (h₀ h₁)
 
@@ -180,12 +165,8 @@ def doubleTriangleRelatorEquiv : (P.doubleTriangleSidePairing h₀ h₁).Relator
     (by
       apply PresentedGroup.ext
       intro i
-      have h3 := (P.doubleTriangleSidePairing h₀ h₁).relatorQuotient_of_pair 0
-      have h1 := (P.doubleTriangleSidePairing h₀ h₁).relatorQuotient_of_pair 2
-      simp only [doubleTriangleSidePairing_pair] at h3 h1
-      fin_cases i <;> simp [doubleToTriangle, triangleToDouble, PresentedGroup.toGroup.of]
-      · simpa [Fin.rev] using h1.symm
-      · simpa [Fin.rev] using h3.symm)
+      fin_cases i <;> simp [doubleToTriangle, triangleToDouble, PresentedGroup.toGroup.of,
+        double_relatorQuotient_of_one, double_relatorQuotient_of_three])
     (by
       apply TriangleGroup.hom_ext <;>
         simp [doubleToTriangle, triangleToDouble, PresentedGroup.toGroup.of])
