@@ -141,8 +141,8 @@ theorem isSolidTorusNeighborhood_unknotSolidTorus :
       ((sphereProdSndLeHomeomorph ℂ ℂ).symm.isEmbedding.comp solidTorusSwap.isEmbedding)
   apply_zero z := by
     ext1
-    ext i
-    fin_cases i <;> simp
+    rw [coe_unknot_apply, ← complexToEuclideanFour_apply, ← complexProdToEuclideanFour_toLp_zero]
+    simp
   isOpen_image := by
     rw [image_unknotSolidTorus]
     exact isOpen_lt (by fun_prop) (by fun_prop)
