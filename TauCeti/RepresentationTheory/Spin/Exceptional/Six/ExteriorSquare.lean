@@ -117,7 +117,7 @@ theorem spinSixWedgeForm_comp_exteriorPower (f : (Fin 4 → K) →ₗ[K] (Fin 4 
       LinearMap.det f • spinSixWedgeForm K := by
   rw [spinSixWedgeForm_eq_compr₂]
   simpa only [LinearMap.BilinForm.comp] using
-    exteriorPower.wedge_compr₂_compl₁₂_exteriorPower (Pi.basisFun K (Fin 4)) rfl
+    exteriorPower.wedge_compr₂_compl₁₂_exteriorPower (k := 2) (l := 2) (by simp) rfl
       (Pi.basisFun K (Fin 4)).exteriorPowerTopEquiv.toLinearMap f
 
 /-- Pointwise form of `spinSixWedgeForm_comp_exteriorPower` for rewriting evaluations. -/

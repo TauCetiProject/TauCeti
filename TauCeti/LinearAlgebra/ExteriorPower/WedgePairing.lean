@@ -77,8 +77,9 @@ theorem wedgePairing_eq_compr₂_of_finrank_eq (n : ℕ) (hfin : Module.finrank 
 
 /-- Applying an endomorphism to both arguments of a complementary-degree wedge pairing scales it
 by the determinant of the endomorphism. -/
-theorem wedge_compr₂_compl₁₂_exteriorPower (b : Module.Basis (Fin n) R M) (hkl : k + l = n)
-    (vol : ⋀[R]^n M →ₗ[R] R) (f : M →ₗ[R] M) :
+theorem wedge_compr₂_compl₁₂_exteriorPower [Module.Free R M]
+    (hn : Module.finrank R M = n) (hkl : k + l = n) (vol : ⋀[R]^n M →ₗ[R] R)
+    (f : M →ₗ[R] M) :
     LinearMap.compl₁₂ ((wedge R M k l).compr₂ (hkl ▸ vol))
       (exteriorPower.map k f) (exteriorPower.map l f) =
       LinearMap.det f • ((wedge R M k l).compr₂ (hkl ▸ vol)) := by
@@ -91,7 +92,9 @@ theorem wedge_compr₂_compl₁₂_exteriorPower (b : Module.Basis (Fin n) R M) 
   simp only [LinearMap.compl₁₂_apply, LinearMap.compr₂_apply] at hmap
   rw [hmap]
   subst n
-  rw [b.map_exteriorPower_top_eq_det_smul f]
+  have htop := LinearMap.map_exteriorPower_finrank_eq_det_smul f
+  rw [← hkl] at htop
+  rw [htop]
   simp only [LinearMap.smul_apply, map_smul, LinearMap.id_apply, smul_eq_mul]
 
 /-- **The wedge pairing on exterior-power basis vectors**: `e_s` and `e_t` pair to the shuffle sign
