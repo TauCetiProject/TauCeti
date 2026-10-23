@@ -64,6 +64,11 @@ form a π-system generating the product σ-algebra and contain the whole space. 
 `MeasureTheory.Measure.ext_prod`; Mathlib's `MeasureTheory.Measure.pi_eq` covers only the case
 where one side is a product measure.
 
+**Integrating over fibres.** Splitting the coordinates along a predicate `p` with Mathlib's
+`MeasurableEquiv.piEquivPiSubtypeProd`, the product measure of a measurable set is the integral,
+over the coordinates outside `p`, of the product measures of its fibres. This is the
+finite-product form of `MeasureTheory.Measure.prod_apply_symm`.
+
 ## Main statements
 
 * `TauCeti.measurePreserving_pi_comp_embedding` — restricting a product assignment along an
@@ -86,7 +91,10 @@ where one side is a product measure.
 * `MeasureTheory.Measure.ext_pi` — two finite measures on a finite product that agree on
   measurable boxes are equal;
 * `MeasureTheory.Measure.ext_prod_pi` — two finite measures on `γ × (∀ i, α i)` that agree
-  on products of a measurable set and a measurable box are equal.
+  on products of a measurable set and a measurable box are equal;
+* `MeasureTheory.Measure.pi_apply_eq_lintegral_piEquivPiSubtypeProd_symm` — the product measure
+  of a set is the integral of the measures of its fibres over the coordinates satisfying a
+  predicate.
 
 ## Implementation
 
@@ -412,5 +420,19 @@ theorem ext_prod_pi {γ : Type*} [MeasurableSpace γ] {μ ν : Measure (γ × �
   · rintro _ ⟨S, hS, _, ⟨s, hs, rfl⟩, rfl⟩
     exact h S hS s fun i ↦ hs i (mem_univ i)
   · simpa using h univ .univ (fun _ ↦ univ) fun _ ↦ .univ
+
+/-- **Fibres over a set of coordinates.** The measure of a set under a finite product measure is
+the integral, over the coordinates outside `p`, of the product measures of its fibres over the
+coordinates in `p`. This is `MeasureTheory.Measure.prod_apply_symm` transported along Mathlib's
+splitting `MeasurableEquiv.piEquivPiSubtypeProd` of the coordinates. -/
+theorem pi_apply_eq_lintegral_piEquivPiSubtypeProd_symm {ι : Type*} [Fintype ι] {α : ι → Type*}
+    [∀ i, MeasurableSpace (α i)] (μ : ∀ i, Measure (α i)) [∀ i, SigmaFinite (μ i)]
+    (p : ι → Prop) [DecidablePred p] {s : Set (∀ i, α i)} (hs : MeasurableSet s) :
+    Measure.pi μ s = ∫⁻ z, Measure.pi (fun i : {i // p i} ↦ μ i)
+      {y | (MeasurableEquiv.piEquivPiSubtypeProd α p).symm (y, z) ∈ s}
+        ∂Measure.pi fun i : {i // ¬p i} ↦ μ i := by
+  rw [← (measurePreserving_piEquivPiSubtypeProd μ p).symm.measure_preimage hs.nullMeasurableSet,
+    Measure.prod_apply_symm ((MeasurableEquiv.piEquivPiSubtypeProd α p).symm.measurable hs)]
+  rfl
 
 end MeasureTheory.Measure
