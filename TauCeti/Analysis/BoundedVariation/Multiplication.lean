@@ -72,10 +72,7 @@ theorem totalVariationOn_mul_le {χ : E → ℝ} (hχ : ContDiff ℝ ∞ χ) {c 
   -- The product rule `div (χ φ) = χ div φ + Dχ φ`.
   have hdiv (x : E) : divergenceCLM χφ x = χ x * divergenceCLM φ x + a x := by
     rw [divergenceCLM_apply, divergenceCLM_apply, hχφ_apply, ha,
-      fderiv_fun_smul (hχ.differentiable (by simp) x) (hφd.differentiable (by simp) x),
-      ContinuousLinearMap.toLinearMap_add, ContinuousLinearMap.toLinearMap_smul, map_add, map_smul,
-      ContinuousLinearMap.coe_smulRight, LinearMap.trace_smulRight, ContinuousLinearMap.coe_coe,
-      smul_eq_mul]
+      trace_fderiv_smul (hχ.differentiable (by simp) x) (hφd.differentiable (by simp) x)]
   have hχφ (x : E) : ‖χφ x‖ ≤ c := by
     rw [hχφ_apply, norm_smul, Real.norm_eq_abs]
     exact (mul_le_of_le_one_right (abs_nonneg _) (hφ x)).trans (hχc x)

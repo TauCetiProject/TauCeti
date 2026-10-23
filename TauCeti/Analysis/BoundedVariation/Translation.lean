@@ -203,9 +203,7 @@ private theorem exists_divergenceCLM_eq_sub
     exact mul_le_of_le_one_left (norm_nonneg _) hΦ1
   · -- `div (Φ • (-h)) = DΦ (-h)`, and `s ↦ Φ (y - s h)` differentiates by the fundamental theorem
     -- of calculus, as `Φ (y - s h) = ∫ₛ^{s+1} g (y - t h) dt`.
-    rw [divergenceCLM_apply, hψ, fderiv_smul_const (hΦs.differentiable (by simp) y)]
-    -- The trace of the rank-one map `v ↦ DΦ v • (-h)` is `DΦ (-h)`.
-    rw [ContinuousLinearMap.coe_smulRight, LinearMap.trace_smulRight, ContinuousLinearMap.coe_coe]
+    rw [divergenceCLM_apply, hψ, trace_fderiv_smul_const (hΦs.differentiable (by simp) y)]
     set f : ℝ → ℝ := fun t => g (y - t • h)
     have hf : Continuous f := g.continuous.comp (by fun_prop)
     have hline : (fun s : ℝ => Φ (y + s • -h)) =

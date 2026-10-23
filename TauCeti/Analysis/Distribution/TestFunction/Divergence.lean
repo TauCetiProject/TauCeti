@@ -33,6 +33,9 @@ total variation of a function and the perimeter of a set are suprema of the pair
   derivatives of the components `⟪b i, φ⟫` in the directions `b i`.
 * `TauCeti.divergenceCLM_translateTestFunction`: the divergence of a translated test vector field
   is the translate of its divergence.
+* `TauCeti.trace_fderiv_smul` and `TauCeti.trace_fderiv_smul_const`: the Leibniz rule
+  `div (χ φ) = χ div φ + Dχ φ` for the divergence `tr (D ·)` of a vector field multiplied by a
+  scalar function.
 -/
 
 public section
@@ -101,5 +104,18 @@ theorem divergenceCLM_translateTestFunction (hVO : MapsTo (· + h) V Ω) (φ : �
       translateTestFunction hVO (divergenceCLM φ) := by
   ext y
   simp only [divergenceCLM_apply, fderiv_translateTestFunction, translateTestFunction_apply]
+
+/-- **Leibniz rule for the divergence**: `div (χ φ) = χ div φ + Dχ φ`, where the divergence of a
+vector field is the trace of its Fréchet derivative. -/
+theorem trace_fderiv_smul {χ : E → ℝ} {φ : E → E} {x : E} (hχ : DifferentiableAt ℝ χ x)
+    (hφ : DifferentiableAt ℝ φ x) :
+    LinearMap.trace ℝ E (fderiv ℝ (fun y => χ y • φ y) x : E →ₗ[ℝ] E) =
+      χ x * LinearMap.trace ℝ E (fderiv ℝ φ x : E →ₗ[ℝ] E) + fderiv ℝ χ x (φ x) := by
+  simp [fderiv_fun_smul hχ hφ, LinearMap.trace_smulRight]
+
+/-- **Divergence of a scalar function times a constant vector**: `div (χ v) = Dχ v`. -/
+theorem trace_fderiv_smul_const {χ : E → ℝ} {x : E} (hχ : DifferentiableAt ℝ χ x) (v : E) :
+    LinearMap.trace ℝ E (fderiv ℝ (fun y => χ y • v) x : E →ₗ[ℝ] E) = fderiv ℝ χ x v := by
+  simpa using trace_fderiv_smul hχ (differentiableAt_const v)
 
 end TauCeti
