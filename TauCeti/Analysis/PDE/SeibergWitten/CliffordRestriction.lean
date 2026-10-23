@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.Trace.Free
-public import TauCeti.LinearAlgebra.CliffordAlgebra.BivectorAction
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector.Action
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Chirality
 
 /-!
@@ -187,17 +187,17 @@ private theorem trace_restrictBivector (hkl : 2 + 2 = finrank ℝ V) (x : ⋀[�
   have ha : a = (2⁻¹ : ℝ) • (1 + chirality Q o) * bivectorExterior Q x := by
     simp only [a]
     rw [bivectorExterior_hodgeStar o hQ hkl, smul_mul_assoc, add_mul, one_mul]
+  -- `Γ (1 + Γ) = 1 + Γ`, so `Γ a = a`.
+  have hΓ : chirality Q o * a = a := by
+    simp [ha, ← mul_assoc, mul_add, chirality_mul_self o hQ, add_comm]
   have hmem (w : W) : ρ a w ∈ positiveHalfSpinors o ρ := by
-    rw [mem_positiveHalfSpinors, ← Module.End.mul_apply, ← map_mul, ha, ← mul_assoc, mul_smul_comm,
-      mul_add, mul_one, chirality_mul_self o hQ, add_comm]
+    rw [mem_positiveHalfSpinors, ← Module.End.mul_apply, ← map_mul, hΓ]
   have hcomp : restrictBivector o ρ hQ x =
       (ρ a).codRestrict (positiveHalfSpinors o ρ) hmem ∘ₗ (positiveHalfSpinors o ρ).subtype := by
     ext ψ
     have hψ := mem_positiveHalfSpinors.1 ψ.2
-    rw [coe_restrictBivector_apply, LinearMap.comp_apply, LinearMap.codRestrict_apply,
-      Submodule.subtype_apply, ha, smul_mul_assoc, add_mul, one_mul,
-      (commute_chirality_bivectorExterior o hQ x).eq]
-    simp [hψ]
+    simp [coe_restrictBivector_apply, ha, add_mul, (commute_chirality_bivectorExterior o hQ x).eq,
+      hψ]
     module
   rw [hcomp, LinearMap.trace_comp_comm', LinearMap.subtype_comp_codRestrict]
   simp [a, trace_map_bivectorExterior]
@@ -247,8 +247,7 @@ theorem cliffordRestriction_eq_zero_of_hodgeStar_eq_neg (hkl : 2 + 2 = finrank �
   have hψ := mem_positiveHalfSpinors.1 ψ.2
   have h : ρ (bivectorExterior Q x) ψ = -ρ (bivectorExterior Q x) ψ := by
     conv_lhs => rw [← hψ, ← Module.End.mul_apply, ← map_mul,
-      bivectorExterior_mul_chirality_of_hodgeStar_eq_neg o hQ hkl hx, map_neg]
-    rfl
+      bivectorExterior_mul_chirality_of_hodgeStar_eq_neg o hQ hkl hx, map_neg, LinearMap.neg_apply]
   rw [eq_neg_iff_add_eq_zero, ← two_smul ℂ, smul_eq_zero] at h
   simp [h.resolve_left two_ne_zero]
 

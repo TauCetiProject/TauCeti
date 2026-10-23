@@ -12,6 +12,7 @@ public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import Mathlib.LinearAlgebra.ExteriorPower.HodgeStar
 public import Mathlib.LinearAlgebra.Trace
 public import TauCeti.Analysis.InnerProductSpace.Nondegenerate
+public import TauCeti.LinearAlgebra.Trace.Idempotent
 -- Private: `stdOrthonormalBasis`, `InnerProductSpace.ext_inner_right_basis`,
 -- `Module.Basis.topVector_eq_ιMulti`, `exteriorPower.wedgePairing_exteriorPower_apply` and the
 -- exterior-algebra contraction lemmas in `TauCeti.ExteriorAlgebra` are used only inside proofs.
@@ -259,9 +260,33 @@ theorem trace_hodgeStar {k : ℕ} (hk : 0 < k) (hkk : k + k = finrank ℝ V) :
     have hs := disjoint_self.1 ((powersetCard.disjoint_iff_eq_compl hcard).2 h.symm)
     have := powersetCard.mem_iff.1 s.2
     simp_all
-  rw [Matrix.diag_apply, LinearMap.toMatrix_apply, LinearEquiv.coe_coe, hodgeStar_orthonormalBasis,
-    map_smul, map_zsmul_unit, Basis.repr_self]
+  -- The diagonal entry is the `e_I` coordinate of `⋆ e_I = ±e_{Iᶜ}`, which vanishes.
+  rw [Matrix.diag_apply, LinearMap.toMatrix_apply, LinearEquiv.coe_coe, hodgeStar_orthonormalBasis]
+  simp only [map_smul, map_zsmul_unit, Basis.repr_self]
   simp [hne]
+
+/-- In an even positive middle degree, twice the dimension of the `ε` eigenspace of `⋆` is
+`n.choose k` for each `ε` with `ε * ε = 1`. -/
+private theorem two_mul_finrank_eigenspace_hodgeStar {k : ℕ} (hk : Even k) (hk₀ : 0 < k)
+    (hkk : k + k = finrank ℝ V) {ε : ℝ} (hε : ε * ε = 1) :
+    2 * finrank ℝ (Module.End.eigenspace (o.hodgeStar hkk : Module.End ℝ (⋀[ℝ]^k V)) ε) =
+      n.choose k := by
+  set S : Module.End ℝ (⋀[ℝ]^k V) := ↑(o.hodgeStar hkk)
+  -- `σ = -ε ⋆` is a trace-free involution whose `-1` eigenspace is the `ε` eigenspace of `⋆`.
+  have hσ : (-(ε • S)) ^ 2 = 1 := by
+    ext x
+    simp [S, sq, smul_smul, hε, hodgeStar_hodgeStar_of_even o hk]
+  have hker : LinearMap.ker (1 + -(ε • S)) = Module.End.eigenspace S ε := by
+    ext x
+    simp only [LinearMap.mem_ker, Module.End.mem_eigenspace_iff, LinearMap.add_apply,
+      Module.End.one_apply, LinearMap.neg_apply, LinearMap.smul_apply, add_neg_eq_zero]
+    refine ⟨fun h ↦ ?_, fun h ↦ by rw [h, smul_smul, hε, one_smul]⟩
+    conv_rhs => rw [h]
+    rw [smul_smul, hε, one_smul]
+  have h := TauCeti.LinearMap.two_mul_finrank_ker_one_add_of_sq_eq_one hσ
+  rw [hker, map_neg, map_smul, trace_hodgeStar o hk₀ hkk, smul_zero, neg_zero, sub_zero,
+    exteriorPower.finrank_eq, _i.out] at h
+  exact_mod_cast h
 
 /-- In an even positive middle degree, the self-dual forms make up half of `⋀ᵏ V`: twice the
 dimension of the `+1` eigenspace of `⋆` is `n.choose k`. For two-forms in dimension four, the
@@ -269,22 +294,8 @@ self-dual two-forms `Λ⁺` have dimension three. -/
 theorem two_mul_finrank_eigenspace_hodgeStar_one {k : ℕ} (hk : Even k) (hk₀ : 0 < k)
     (hkk : k + k = finrank ℝ V) :
     2 * finrank ℝ (Module.End.eigenspace (o.hodgeStar hkk : Module.End ℝ (⋀[ℝ]^k V)) 1) =
-      n.choose k := by
-  set S : Module.End ℝ (⋀[ℝ]^k V) := ↑(o.hodgeStar hkk)
-  -- `(1 + ⋆) / 2` projects onto the `+1` eigenspace, and its trace is `n.choose k / 2`.
-  have hP : LinearMap.IsProj (Module.End.eigenspace S 1) ((2⁻¹ : ℝ) • (1 + S)) :=
-    { map_mem x := by simp [S, hodgeStar_hodgeStar_of_even o hk, add_comm]
-      map_id x hx := by
-        rw [Module.End.mem_eigenspace_iff, one_smul] at hx
-        simp only [LinearMap.smul_apply, LinearMap.add_apply, Module.End.one_apply, hx]
-        module }
-  have h := hP.trace
-  rw [map_smul, map_add, LinearMap.trace_one, trace_hodgeStar o hk₀ hkk, exteriorPower.finrank_eq,
-    _i.out, add_zero, smul_eq_mul] at h
-  have h' : ((2 * finrank ℝ (Module.End.eigenspace S 1) : ℕ) : ℝ) = (n.choose k : ℕ) := by
-    push_cast
-    linarith
-  exact_mod_cast h'
+      n.choose k :=
+  o.two_mul_finrank_eigenspace_hodgeStar hk hk₀ hkk (one_mul 1)
 
 /-- In an even positive middle degree, the anti-self-dual forms make up half of `⋀ᵏ V`: twice the
 dimension of the `-1` eigenspace of `⋆` is `n.choose k`. For two-forms in dimension four, the
@@ -292,26 +303,8 @@ anti-self-dual two-forms `Λ⁻` have dimension three. -/
 theorem two_mul_finrank_eigenspace_hodgeStar_neg_one {k : ℕ} (hk : Even k) (hk₀ : 0 < k)
     (hkk : k + k = finrank ℝ V) :
     2 * finrank ℝ (Module.End.eigenspace (o.hodgeStar hkk : Module.End ℝ (⋀[ℝ]^k V)) (-1)) =
-      n.choose k := by
-  set S : Module.End ℝ (⋀[ℝ]^k V) := ↑(o.hodgeStar hkk)
-  -- `(1 - ⋆) / 2` projects onto the `-1` eigenspace, and its trace is `n.choose k / 2`.
-  have hP : LinearMap.IsProj (Module.End.eigenspace S (-1)) ((2⁻¹ : ℝ) • (1 - S)) :=
-    { map_mem x := by
-        simp only [S, Module.End.mem_eigenspace_iff, LinearMap.smul_apply, LinearMap.sub_apply,
-          Module.End.one_apply, LinearEquiv.coe_coe, map_smul, map_sub,
-          hodgeStar_hodgeStar_of_even o hk]
-        module
-      map_id x hx := by
-        rw [Module.End.mem_eigenspace_iff, neg_one_smul] at hx
-        simp only [LinearMap.smul_apply, LinearMap.sub_apply, Module.End.one_apply, hx]
-        module }
-  have h := hP.trace
-  rw [map_smul, map_sub, LinearMap.trace_one, trace_hodgeStar o hk₀ hkk, exteriorPower.finrank_eq,
-    _i.out, sub_zero, smul_eq_mul] at h
-  have h' : ((2 * finrank ℝ (Module.End.eigenspace S (-1)) : ℕ) : ℝ) = (n.choose k : ℕ) := by
-    push_cast
-    linarith
-  exact_mod_cast h'
+      n.choose k :=
+  o.two_mul_finrank_eigenspace_hodgeStar hk hk₀ hkk (by norm_num)
 
 /-! ### Two-forms split along a unit vector -/
 
