@@ -93,6 +93,19 @@ open PreAbstractSimplicialComplex
 
 variable {ι : Type*} [DecidableEq ι] {K : AbstractSimplicialComplex ι}
 
+/-- Every vertex link of the bottom abstract complex is void: a face `σ ∪ {v}` of the bottom
+complex is a singleton, so a nonempty `σ` disjoint from `{v}` cannot occur. -/
+@[simp]
+theorem link_bot_singleton (v : ι) :
+    link (⊥ : AbstractSimplicialComplex ι).toPreAbstractSimplicialComplex {v} = ⊥ := by
+  refine bot_unique fun σ hσ => ?_
+  -- Membership in the bottom abstract complex unfolds to `∃ w, σ ∪ {v} = {w}`, and the goal,
+  -- membership in the void bottom precomplex, unfolds to `False`.
+  obtain ⟨⟨u, hu⟩, hdis, w, hw⟩ := mem_link_nonempty.mp hσ
+  simp only [Finset.disjoint_singleton_right, Finset.ext_iff, Finset.mem_union,
+    Finset.mem_singleton] at hdis hw
+  grind
+
 /-- A combinatorial zero-manifold has precisely the singleton faces. The bottom abstract
 complex contains every vertex, unlike the void bottom precomplex. -/
 @[simp]
@@ -104,15 +117,7 @@ theorem isCombinatorialManifold_zero_iff_eq_bot :
     intro σ hσ
     exact PreAbstractSimplicialComplex.dimension_le_zero_iff.mp h.dimension_le σ hσ
   · rintro rfl
-    refine PreAbstractSimplicialComplex.isCombinatorialManifold_zero_iff.mpr fun v _ => ?_
-    apply bot_unique
-    intro σ hσ
-    obtain ⟨hne, hdis, w, hw⟩ := mem_link_nonempty.mp hσ
-    have hvw : v = w := Finset.mem_singleton.mp
-      (hw ▸ Finset.mem_union_right σ (Finset.mem_singleton_self v))
-    obtain ⟨u, hu⟩ := hne
-    have huw : u = w := Finset.mem_singleton.mp (hw ▸ Finset.mem_union_left {v} hu)
-    have huv : u = v := huw.trans hvw.symm
-    exact (Finset.disjoint_singleton_right.mp hdis) (huv ▸ hu)
+    exact PreAbstractSimplicialComplex.isCombinatorialManifold_zero_iff.mpr fun v _ =>
+      link_bot_singleton v
 
 end AbstractSimplicialComplex

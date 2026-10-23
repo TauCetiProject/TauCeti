@@ -8,19 +8,19 @@ module
 public import TauCeti.AlgebraicTopology.SimplicialComplex.CombinatorialManifold.ZeroDimensional
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Basic
 public import TauCeti.Geometry.Manifold.PLGroupoid.Basic
-public import Mathlib.Analysis.InnerProductSpace.PiL2
 
 /-!
 # PL realizations of combinatorial zero-manifolds
 
 The weak realization of a combinatorial zero-manifold is discrete: the void vertex links
-force every face to be a singleton. Mathlib's discrete chart construction therefore gives
-an atlas over the zero-dimensional real vector space. All its coordinate changes are PL.
+force every face to be a singleton. Mathlib's discrete chart construction
+`ChartedSpace.ofDiscreteTopology` therefore gives an atlas over any one-point real vector
+space, such as the zero-dimensional Euclidean space. All its coordinate changes are PL.
 
 This supplies the dimension-zero case of the passage from the combinatorial link condition
-to PL manifolds, without requiring a nonempty, finite or countable vertex type. The atlas
-is the existing `ChartedSpace.ofDiscreteTopology`, so its preferred chart at each point has
-that singleton as source.
+to PL manifolds, without requiring a nonempty, finite or countable vertex type. The PL
+statement is about that concrete atlas, so its preferred chart at a point `x` is the constant
+chart with source `{x}` (`chartedSpace_of_discreteTopology_chartAt`).
 
 ## References
 
@@ -44,15 +44,16 @@ theorem IsCombinatorialManifold.discreteTopology_realization
   obtain rfl := isCombinatorialManifold_zero_iff_eq_bot.mp h
   infer_instance
 
-/-- A combinatorial zero-manifold admits a PL atlas on its weak realization, modelled on
-the zero-dimensional real vector space. -/
-theorem IsCombinatorialManifold.exists_chartedSpace_hasGroupoid_zero
+/-- On the weak realization of a combinatorial zero-manifold, the discrete atlas
+`ChartedSpace.ofDiscreteTopology` over a one-point model is PL compatible. -/
+theorem IsCombinatorialManifold.hasGroupoid_PLGroupoid_zero
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Unique E]
     (h : IsCombinatorialManifold K.toPreAbstractSimplicialComplex 0) :
-    ∃ c : ChartedSpace (EuclideanSpace ℝ (Fin 0)) (Realization K),
-      @HasGroupoid _ _ _ _ c (TauCeti.PLGroupoid 𝓘(ℝ, EuclideanSpace ℝ (Fin 0))) := by
+    letI := h.discreteTopology_realization
+    letI := ChartedSpace.ofDiscreteTopology (M := Realization K) (H := E)
+    HasGroupoid (Realization K) (TauCeti.PLGroupoid 𝓘(ℝ, E)) := by
   let := h.discreteTopology_realization
-  let := ChartedSpace.ofDiscreteTopology (M := Realization K)
-    (H := EuclideanSpace ℝ (Fin 0))
-  exact ⟨inferInstance, inferInstance⟩
+  let := ChartedSpace.ofDiscreteTopology (M := Realization K) (H := E)
+  infer_instance
 
 end PreAbstractSimplicialComplex
