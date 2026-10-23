@@ -89,19 +89,8 @@ private lemma isCompact_image_tsupport (f : C_c(Ω, ℝ)) :
 
 variable [NormedSpace ℝ E]
 
-/-- The restriction of a test function on `Ω` to a compactly supported continuous function on the
-subspace `Ω`. -/
-private def restrict (φ : 𝓓(Ω, ℝ)) : C_c(Ω, ℝ) where
-  toFun x := φ x
-  continuous_toFun := by fun_prop
-  hasCompactSupport' := by
-    refine HasCompactSupport.intro' (K := ((↑) : Ω → E) ⁻¹' tsupport φ) ?_
-      ((isClosed_tsupport _).preimage continuous_subtype_val)
-      fun x hx => image_eq_zero_of_notMem_tsupport hx
-    exact Ω.isOpen.isOpenEmbedding_subtypeVal.isInducing.isCompact_preimage'
-      φ.hasCompactSupport.isCompact (by simpa using φ.tsupport_subset)
-
-private lemma zeroExt_restrict (φ : 𝓓(Ω, ℝ)) (x : E) : zeroExt (restrict φ) x = φ x := by
+private lemma zeroExt_toCompactlySupportedContinuousMap (φ : 𝓓(Ω, ℝ)) (x : E) :
+    zeroExt φ.toCompactlySupportedContinuousMap x = φ x := by
   rw [zeroExt_apply]
   split_ifs with h
   · rfl
@@ -127,9 +116,10 @@ private def IsApprox (f : C_c(Ω, ℝ)) (φ : ℕ → 𝓓(Ω, ℝ)) (ε : ℕ �
   (∃ K, IsCompact K ∧ K ⊆ Ω ∧ ∀ n, tsupport (φ n) ⊆ K) ∧
     ∀ n x, |φ n x - zeroExt f x| ≤ ε n
 
-private lemma isApprox_restrict (φ : 𝓓(Ω, ℝ)) : IsApprox (restrict φ) (fun _ => φ) 0 :=
+private lemma isApprox_toCompactlySupportedContinuousMap (φ : 𝓓(Ω, ℝ)) :
+    IsApprox φ.toCompactlySupportedContinuousMap (fun _ => φ) 0 :=
   ⟨⟨tsupport φ, φ.hasCompactSupport.isCompact, φ.tsupport_subset, fun _ => subset_rfl⟩,
-    fun _ x => by simp [zeroExt_restrict]⟩
+    fun _ x => by simp [zeroExt_toCompactlySupportedContinuousMap]⟩
 
 private lemma IsApprox.add {f g : C_c(Ω, ℝ)} {φ ψ : ℕ → 𝓓(Ω, ℝ)} {ε ε' : ℕ → ℝ}
     (hφ : IsApprox f φ ε) (hψ : IsApprox g ψ ε') :
@@ -248,8 +238,10 @@ private def extendₗ : C_c(Ω, ℝ) →ₗ[ℝ] ℝ where
     exact tendsto_nhds_unique hcf (((hf.tendsto_extend hT h₀).const_mul c).congr fun n => by
       rw [Pi.smul_apply, map_smul, smul_eq_mul])
 
-private lemma extendₗ_restrict (φ : 𝓓(Ω, ℝ)) : extendₗ hT (restrict φ) = T φ :=
-  tendsto_nhds_unique ((isApprox_restrict φ).tendsto_extend hT tendsto_const_nhds)
+private lemma extendₗ_toCompactlySupportedContinuousMap (φ : 𝓓(Ω, ℝ)) :
+    extendₗ hT φ.toCompactlySupportedContinuousMap = T φ :=
+  tendsto_nhds_unique
+    ((isApprox_toCompactlySupportedContinuousMap φ).tendsto_extend hT tendsto_const_nhds)
     tendsto_const_nhds
 
 /-- The extension of `T` is bounded above on every order interval `[0, f]`. -/
@@ -307,7 +299,8 @@ theorem forall_exists_abs_le_iff_exists_regular [MeasurableSpace E] [BorelSpace 
     obtain ⟨ν₁, ν₂, h₁, h₂, h⟩ :=
       (TauCeti.RealRMK.forall_bddAbove_image_Icc_iff_exists_regular (extendₗ hT)).1
         (bddAbove_extendₗ_image_Icc hT)
-    exact ⟨ν₁, ν₂, h₁, h₂, fun φ => (extendₗ_restrict hT φ).symm.trans (h (restrict φ))⟩
+    exact ⟨ν₁, ν₂, h₁, h₂, fun φ => (extendₗ_toCompactlySupportedContinuousMap hT φ).symm.trans
+      (h φ.toCompactlySupportedContinuousMap)⟩
   · rintro ⟨ν₁, ν₂, h₁, h₂, h⟩ K hK hKΩ
     refine ⟨ν₁.real (((↑) : Ω → E) ⁻¹' K) + ν₂.real (((↑) : Ω → E) ⁻¹' K), fun φ hφ => ?_⟩
     rw [h, add_mul, ← Real.norm_eq_abs]

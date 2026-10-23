@@ -8,18 +8,25 @@ module
 public import Mathlib.Analysis.Distribution.TestFunction
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Measure.Typeclasses.Finite
+public import Mathlib.Topology.ContinuousMap.CompactlySupported
 import Mathlib.MeasureTheory.Integral.Bochner.Set
 
 /-!
 # Integrals of test functions against measures finite on compact sets
 
-Let `Ω` be an open set of a real normed space `E`. A test function `φ ∈ 𝓓(Ω, F)` supported in a
-compact `K ⊆ Ω` is integrable against every measure `ν` on the subspace `Ω` that is finite on
-compact sets, and its integral is bounded by the sup norm:
+Let `Ω` be an open set of a real normed space `E`. A test function `φ ∈ 𝓓^{n}(Ω, F)` restricts to
+a compactly supported continuous function on the subspace `Ω`. For a test function `φ ∈ 𝓓(Ω, F)`
+supported in a compact `K ⊆ Ω` and a measure `ν` on the subspace `Ω` that is finite on compact
+sets, the integral of `φ` against `ν` is bounded by the sup norm:
 `‖∫ φ dν‖ ≤ ν(K) ‖φ‖_∞`.
 
 This is the estimate showing that integration against such a measure is a distribution of order
 zero.
+
+## Main definitions
+
+* `TestFunction.toCompactlySupportedContinuousMap`: the restriction of a test function on `Ω` to a
+  compactly supported continuous function on the subspace `Ω`.
 
 ## Main results
 
@@ -30,12 +37,32 @@ zero.
 public section
 
 open MeasureTheory TopologicalSpace
-open scoped Distributions BoundedContinuousFunction
+open scoped Distributions BoundedContinuousFunction CompactlySupported
 
 namespace TestFunction
 
-variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E]
-  [NormedAddCommGroup F] [NormedSpace ℝ F] {Ω : Opens E}
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] {Ω : Opens E} {n : ℕ∞}
+
+/-- The restriction of a test function on `Ω` to a compactly supported continuous function on the
+subspace `Ω`. -/
+@[expose]
+def toCompactlySupportedContinuousMap (φ : 𝓓^{n}(Ω, F)) : C_c(Ω, F) where
+  toFun x := φ x
+  continuous_toFun := by fun_prop
+  hasCompactSupport' := by
+    refine HasCompactSupport.intro' (K := ((↑) : Ω → E) ⁻¹' tsupport φ) ?_
+      ((isClosed_tsupport _).preimage continuous_subtype_val)
+      fun x hx => image_eq_zero_of_notMem_tsupport hx
+    exact Ω.isOpen.isOpenEmbedding_subtypeVal.isInducing.isCompact_preimage'
+      φ.hasCompactSupport.isCompact (by simpa using φ.tsupport_subset)
+
+@[simp]
+theorem toCompactlySupportedContinuousMap_apply (φ : 𝓓^{n}(Ω, F)) (x : Ω) :
+    φ.toCompactlySupportedContinuousMap x = φ x :=
+  rfl
+
+variable [MeasurableSpace E]
 
 /-- The integral of a test function supported in a compact `K ⊆ Ω` against a measure on `Ω` that
 is finite on compact sets is at most the measure of `K` times the sup norm. -/
