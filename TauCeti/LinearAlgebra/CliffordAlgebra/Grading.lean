@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Conjugation
 public import Mathlib.LinearAlgebra.ExteriorAlgebra.Basis
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # Reading the `ℤ/2`-grading: base cases, exterior bases, and ordered products
@@ -124,18 +125,18 @@ variable [Invertible (2 : R)]
 theorem involute_eq_self_iff {x : CliffordAlgebra Q} : involute x = x ↔ x ∈ evenOdd Q 0 := by
   refine ⟨fun hx => ?_, involute_eq_of_mem_even⟩
   obtain ⟨e, he, o, ho, rfl⟩ := exists_add_eq x
-  rw [map_add, involute_eq_of_mem_even he, involute_eq_of_mem_odd ho, add_right_inj,
-    neg_eq_iff_add_eq_zero, ← two_smul R, (isUnit_of_invertible (2 : R)).smul_eq_zero] at hx
-  rwa [hx, add_zero]
+  rw [map_add, involute_eq_of_mem_even he, involute_eq_of_mem_odd ho] at hx
+  have h2 : (2 : R) • o = 0 := by linear_combination (norm := module) -hx
+  simpa [(isUnit_of_invertible (2 : R)).smul_eq_zero.mp h2] using he
 
 /-- **The odd part is the `-1`-eigenspace of the grade involution** once `2` is invertible.
 Mathlib's `CliffordAlgebra.involute_eq_of_mem_odd` is the reverse implication. -/
 theorem involute_eq_neg_iff {x : CliffordAlgebra Q} : involute x = -x ↔ x ∈ evenOdd Q 1 := by
   refine ⟨fun hx => ?_, involute_eq_of_mem_odd⟩
   obtain ⟨e, he, o, ho, rfl⟩ := exists_add_eq x
-  rw [map_add, involute_eq_of_mem_even he, involute_eq_of_mem_odd ho, neg_add, add_left_inj,
-    eq_neg_iff_add_eq_zero, ← two_smul R, (isUnit_of_invertible (2 : R)).smul_eq_zero] at hx
-  rwa [hx, zero_add]
+  rw [map_add, involute_eq_of_mem_even he, involute_eq_of_mem_odd ho] at hx
+  have h2 : (2 : R) • e = 0 := by linear_combination (norm := module) hx
+  simpa [(isUnit_of_invertible (2 : R)).smul_eq_zero.mp h2] using ho
 
 end Involute
 
