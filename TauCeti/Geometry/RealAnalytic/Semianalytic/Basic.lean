@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Analytic.Polynomial
 public import TauCeti.Data.Set.Lattice
 public import TauCeti.Data.SignType.Basic
 public import TauCeti.Geometry.RealAlgebraic.Semialgebraic.Basic
+public import TauCeti.MeasureTheory.SetAlgebra
 
 /-!
 # Semianalytic sets
@@ -229,20 +230,8 @@ described by a condition on the signs of finitely many functions analytic on `U`
 theorem IsAnalyticBooleanCombination.exists_eq_setOf_sign {U t : Set E}
     (ht : IsAnalyticBooleanCombination U t) :
     ∃ (m : ℕ) (f : Fin m → E → ℝ), (∀ i, AnalyticOnNhd ℝ (f i) U) ∧
-      ∃ Φ : (Fin m → SignType) → Prop, t = {x | Φ fun i => SignType.sign (f i x)} := by
-  refine setOf_isAnalyticBooleanCombination_subset (ℬ := {t | ∃ (m : ℕ) (f : Fin m → E → ℝ),
-      (∀ i, AnalyticOnNhd ℝ (f i) U) ∧
-        ∃ Φ : (Fin m → SignType) → Prop, t = {x | Φ fun i => SignType.sign (f i x)}})
-    ⟨⟨0, Fin.elim0, fun i => i.elim0, fun _ => False, by simp⟩, ?_, ?_⟩
-    (fun f hf => ⟨1, fun _ => f, fun _ => hf, fun ε => ε 0 = 0, by simp⟩)
-    (fun f hf => ⟨1, fun _ => f, fun _ => hf, fun ε => ε 0 = 1, by simp [sign_eq_one_iff]⟩) ht
-  · rintro s ⟨m, f, hf, Φ, rfl⟩
-    exact ⟨m, f, hf, fun ε => ¬Φ ε, compl_ofPred _⟩
-  · rintro s s' ⟨m, f, hf, Φ, rfl⟩ ⟨m', f', hf', Φ', rfl⟩
-    refine ⟨m + m', Fin.append f f', Fin.addCases (by simpa using hf) (by simpa using hf'),
-      fun ε => Φ (fun i => ε (Fin.castAdd m' i)) ∨ Φ' (fun i => ε (Fin.natAdd m i)), ?_⟩
-    ext x
-    simp
+      ∃ Φ : (Fin m → SignType) → Prop, t = {x | Φ fun i => SignType.sign (f i x)} :=
+  exists_eq_setOf_sign_of_mem_generateSetAlgebra ht
 
 /-! ### Semianalyticity at a point -/
 
