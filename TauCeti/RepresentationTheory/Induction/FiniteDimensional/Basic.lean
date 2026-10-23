@@ -542,19 +542,23 @@ instance indFDRepFunctor_linear {k : Type u} {G : Type v} [Field k] [Group G] {S
   map_smul f r := indFDRepMap_smul r f
 
 /-- Induction from a finite-index subgroup is faithful on finite-dimensional intertwiners. -/
-theorem indFDRepMap_injective {k G : Type u} [Field k] [Group G] {S : Subgroup G}
+theorem indFDRepMap_injective {k : Type u} {G : Type v} [Field k] [Group G] {S : Subgroup G}
     [S.FiniteIndex] {A B : FDRep k S} :
     Function.Injective (indFDRepMap : (A ⟶ B) → _) := by
   intro f g h
   apply (forget₂ (FDRep k S) (Rep k S)).map_injective
-  apply _root_.Rep.indMap_injective (S := S)
-  have hh := congrArg ((forget₂ (FDRep k G) (Rep k G)).map) h
-  simpa only [forget₂_map_indFDRepMap, cancel_mono, cancel_epi,
-    _root_.Rep.indFunctor_map] using hh
+  -- The forgotten carrier lies in `u`, so `w := 0` specializes `max w u` to `u`.
+  apply _root_.Rep.indMap_injective.{u, v, 0} (S := S)
+  apply Rep.hom_ext
+  refine Representation.IntertwiningMap.ext (LinearMap.ext fun x ↦ ?_)
+  have hx := congrArg (fun m : indFDRep A ⟶ indFDRep B ↦ indFDRepForgetEquiv B
+    (((forget₂ (FDRep k G) (Rep k G)).map m).hom ((indFDRepForgetEquiv A).symm x))) h
+  simpa only [forget₂_map_indFDRepMap_apply, Representation.Equiv.apply_symm_apply,
+    Representation.IntertwiningMap.toLinearMap_apply] using hx
 
 /-- Induction from a finite-index subgroup is a faithful functor on finite-dimensional
 representations, the functorial form of `indFDRepMap_injective`. -/
-instance indFDRepFunctor_faithful {k G : Type u} [Field k] [Group G] {S : Subgroup G}
+instance indFDRepFunctor_faithful {k : Type u} {G : Type v} [Field k] [Group G] {S : Subgroup G}
     [S.FiniteIndex] : (indFDRepFunctor (k := k) (S := S)).Faithful where
   map_injective h := indFDRepMap_injective h
 
@@ -562,11 +566,11 @@ end TauCeti
 
 namespace FDRep
 
-universe u
+universe u v
 
 open CategoryTheory TauCeti
 
-variable {k G : Type u} [Field k] [Group G] {H : Subgroup G}
+variable {k : Type u} {G : Type v} [Field k] [Group G] {H : Subgroup G}
 
 /-- The algebra homomorphism on endomorphisms given by induction from a finite-index subgroup.
 Multiplication on both native endomorphism algebras is reverse categorical composition. -/
