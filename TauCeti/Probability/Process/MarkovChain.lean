@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Probability.Kernel.IonescuTulcea.Traj
+public import TauCeti.Probability.Kernel.IonescuTulcea.Traj
 public import TauCeti.Probability.Kernel.Composition.MeasureCompProd
 public import TauCeti.Probability.Process.PathLaw.FiniteMarginals
 
@@ -148,10 +148,10 @@ instance [IsProbabilityMeasure ν] : IsProbabilityMeasure (markovChainLaw ν κ)
   inferInstanceAs (IsProbabilityMeasure (Kernel.trajMeasure _ _))
 
 instance [IsFiniteMeasure ν] : IsFiniteMeasure (markovChainLaw ν κ) :=
-  inferInstanceAs (IsFiniteMeasure (Kernel.traj _ 0 ∘ₘ _))
+  inferInstanceAs (IsFiniteMeasure (Kernel.trajMeasure _ _))
 
 instance [SFinite ν] : SFinite (markovChainLaw ν κ) :=
-  inferInstanceAs (SFinite (Kernel.traj _ 0 ∘ₘ _))
+  inferInstanceAs (SFinite (Kernel.trajMeasure _ _))
 
 /-- **The path-law kernel of a homogeneous Markov chain**: the kernel sending a state `x` to the law
 `markovChainLaw (Measure.dirac x) κ` of the chain started at `x` (`markovChainKernel_apply`). Being
@@ -218,23 +218,6 @@ theorem markovChainLaw_map_eval_zero :
             (g := fun u : ((_ : ↥(Iic (0 : ℕ))) → α) => u ⟨0, mem_Iic.2 le_rfl⟩)
             (by fun_prop) (MeasurableEquiv.measurable _), hid, Measure.map_id]
 
-/-- The one-step extension property of an Ionescu–Tulcea measure, for an arbitrary s-finite
-initial measure: the law of the trajectory up to time `a`, extended by the kernel `κ a`, is the
-joint law of that trajectory and the next state. Mathlib's
-`Kernel.map_frestrictLe_trajMeasure_compProd_eq_map_trajMeasure` is the case of a probability
-measure `μ₀`. -/
-private theorem map_frestrictLe_trajMeasure_compProd {X : ℕ → Type*}
-    [∀ n, MeasurableSpace (X n)] {κ : (n : ℕ) → Kernel (Π i : Iic n, X i) (X (n + 1))}
-    [∀ n, IsMarkovKernel (κ n)] (μ₀ : Measure (X 0)) [SFinite μ₀] (a : ℕ) :
-    (Kernel.trajMeasure μ₀ κ).map (frestrictLe a) ⊗ₘ κ a =
-      (Kernel.trajMeasure μ₀ κ).map (fun x => (frestrictLe a x, x (a + 1))) := by
-  have : SFinite (Kernel.trajMeasure μ₀ κ) := inferInstanceAs (SFinite (Kernel.traj κ 0 ∘ₘ _))
-  rw [Measure.compProd_eq_comp_prod, Kernel.trajMeasure, Measure.map_comp _ _ (by fun_prop),
-    Kernel.traj_map_frestrictLe, Measure.comp_assoc, Measure.map_comp _ _ (by fun_prop)]
-  congr with x₀ : 1
-  rw [Kernel.comp_apply, ← Measure.compProd_eq_comp_prod, Kernel.map_apply _ (by fun_prop),
-    Kernel.partialTraj_compProd_eq_map_traj zero_le]
-
 /-- **The Markov property of the chain.** The joint law of the length-`n + 1` prefix
 `(X 0, …, X n)` and of the next state `X (n + 1)` is the prefix law extended by one `κ`-step out of
 the last coordinate of the prefix. Together with `markovChainLaw_map_eval_zero` this determines all
@@ -263,7 +246,7 @@ theorem markovChainLaw_map_prefix_succ_eq_compProd [SFinite ν] (n : ℕ) :
         · rfl
     _ = (((markovChainLaw ν κ).map (frestrictLe n)) ⊗ₘ markovStep κ n).map
           (Prod.map (iicEquivFin α n) id) := by
-        rw [markovChainLaw, map_frestrictLe_trajMeasure_compProd]
+        rw [markovChainLaw, Kernel.map_frestrictLe_trajMeasure_compProd_of_sFinite]
     _ = ((markovChainLaw ν κ).map (frestrictLe n)).map (iicEquivFin α n) ⊗ₘ
           κ.comap (fun w : Fin (n + 1) → α => w (Fin.last n))
             (measurable_pi_apply (Fin.last n)) := by
