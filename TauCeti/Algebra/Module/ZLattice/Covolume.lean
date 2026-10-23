@@ -33,7 +33,10 @@ Independently of any inner product, pulling a full lattice back along a continuo
 automorphism `A` of a finite-dimensional real normed space divides its covolume by `|det A|`, for
 every Haar measure (`ZLattice.covolume_comap_continuousLinearEquiv`). Since Mathlib writes the
 image `A L` as the pullback `ZLattice.comap ℝ L A⁻¹`, this says `covolume (A L) = |det A| *
-covolume L`.
+covolume L`. Likewise, the image of a set `s` under the coordinates of any `ℤ`-basis of `L` has
+Lebesgue measure `μ s / covolume L μ` for every Haar measure `μ`
+(`ZLattice.volume_image_eq_measure_div_covolume`): the coordinates carry `μ` to `covolume L μ` times
+Lebesgue measure. This reduces volume estimates for `L` to estimates for `ℤⁿ ⊆ ℝⁿ`.
 
 Mathlib's asymptotic lattice-point count `ZLattice.covolume.tendsto_card_le_div''`, applied to the
 dilates of the unit ball, shows that a full lattice in a real normed space of dimension `n` has
@@ -46,6 +49,8 @@ dilates of the unit ball, shows that a full lattice in a real normed space of di
 * `ZLattice.covolume_dual`: `covolume L^∨ = (covolume L)⁻¹`.
 * `ZLattice.covolume_comap_continuousLinearEquiv`: the covolume of the pullback of `L` along a
   continuous linear automorphism `A` is `|det A|⁻¹ * covolume L`.
+* `ZLattice.volume_image_eq_measure_div_covolume`: the image of `s` under the coordinates of a
+  `ℤ`-basis of `L` has Lebesgue measure `μ s / covolume L μ`.
 * `ZLattice.ncard_closedBall_inter_isBigO`: a full lattice has `O(R^n)` points in the ball of
   radius `R`.
 -/
@@ -80,6 +85,39 @@ theorem _root_.ZLattice.covolume_comap_continuousLinearEquiv (L : Submodule ℤ 
   simp only [ContinuousLinearEquiv.coe_toLinearEquiv, Measure.addHaar_image_continuousLinearEquiv,
     ENNReal.toReal_mul, ENNReal.toReal_ofReal (abs_nonneg _)]
   rw [ContinuousLinearEquiv.toLinearEquiv_symm, LinearEquiv.det_coe_symm, abs_inv]
+
+/-- The coordinates of a `ℤ`-basis `b` of a full lattice `L` carry any Haar measure `μ` to
+`covolume L μ` times Lebesgue measure on `ι → ℝ`: the image of any set `s` has volume
+`μ s / covolume L μ`. This is Mathlib's `ZLattice.volume_image_eq_volume_div_covolume'` for an
+arbitrary Haar measure on a normed space and an arbitrary set. -/
+theorem _root_.ZLattice.volume_image_eq_measure_div_covolume (L : Submodule ℤ E)
+    [DiscreteTopology L] [IsZLattice ℝ L] {ι : Type*} [Fintype ι] (b : Basis ι ℤ L)
+    (μ : Measure E := by volume_tac) [μ.IsAddHaarMeasure] (s : Set E) :
+    volume ((b.ofZLatticeBasis ℝ).equivFun '' s) =
+      μ s / ENNReal.ofReal (ZLattice.covolume L μ) := by
+  set φ := (b.ofZLatticeBasis ℝ).equivFun
+  have hφ : MeasurableEmbedding φ :=
+    φ.toContinuousLinearEquiv.toHomeomorph.toMeasurableEquiv.measurableEmbedding
+  have : (μ.map φ).IsAddHaarMeasure := φ.toContinuousLinearEquiv.isAddHaarMeasure_map μ
+  -- The image of `μ` is a multiple `c • volume`, and `c` is the measure of the fundamental domain.
+  obtain ⟨c, hc⟩ : ∃ c : ENNReal, μ.map φ = c • volume :=
+    ⟨_, by rw [← addHaarMeasure_eq_volume_pi ι]; exact Measure.addHaarMeasure_unique _ _⟩
+  have hμ : ∀ t, μ t = c * volume (φ '' t) := fun t ↦ by
+    rw [← smul_eq_mul, ← Measure.smul_apply, ← hc, hφ.map_apply,
+      Set.preimage_image_eq t φ.injective]
+  have hF : φ '' ZSpan.fundamentalDomain (b.ofZLatticeBasis ℝ) =
+      Set.pi Set.univ fun _ ↦ Set.Ico (0 : ℝ) 1 := by
+    ext x
+    have hx : ∀ i, (b.ofZLatticeBasis ℝ).repr (φ.symm x) i = x i := fun i ↦
+      congrFun (φ.apply_symm_apply x) i
+    simp [LinearEquiv.image_eq_preimage_symm, ZSpan.mem_fundamentalDomain, hx]
+  have hcov : ENNReal.ofReal (ZLattice.covolume L μ) = c := by
+    have hfin := (ZSpan.fundamentalDomain_isBounded (b.ofZLatticeBasis ℝ)).measure_lt_top (μ := μ)
+    rw [ZLattice.covolume_eq_measure_fundamentalDomain L μ (ZLattice.isAddFundamentalDomain b μ),
+      measureReal_def, ENNReal.ofReal_toReal hfin.ne]
+    simp [hμ, hF, Real.volume_pi_Ico]
+  rw [hμ s, ← hcov, mul_comm, ENNReal.mul_div_cancel_right
+    (ENNReal.ofReal_pos.2 (ZLattice.covolume_pos L μ)).ne' ENNReal.ofReal_ne_top]
 
 end NormedSpace
 

@@ -29,6 +29,12 @@ ring, such as a series of operators, can be evaluated at every scalar: the sum
 A consequence used for Fredholm determinants: if `f(0) = 1` and `f(a) = 0`, then `a` is a unit
 with inverse `-∑ₙ aₙ₊₁ • aⁿ`, since `f(a) = 1 + a ∑ₙ aₙ₊₁ • aⁿ`.
 
+The same identity `f(x) = a₀ + x ∑ₙ aₙ₊₁ • xⁿ`, together with continuity of `f` at `0`, gives an
+identity principle over coefficient rings: an entire series over a complete normed commutative
+ring vanishing at non-zero-divisors accumulating at `0` is zero. Over Tate scalars, where the
+powers of a pseudo-uniformiser are such points, an entire series is therefore determined by its
+values.
+
 ## Main definitions
 
 * `PowerSeries.IsEntire.evalAtHom`: evaluation at `b` as a ring homomorphism on entire series.
@@ -48,6 +54,10 @@ with inverse `-∑ₙ aₙ₊₁ • aⁿ`, since `f(a) = 1 + a ∑ₙ aₙ₊�
 * `PowerSeries.IsEntire.isUnit_of_evalAt_eq_zero` and
   `PowerSeries.IsEntire.inverse_eq_of_evalAt_eq_zero`: a zero of an entire series with constant
   coefficient `1` is a unit, with explicit inverse.
+* `PowerSeries.IsEntire.tendsto_evalAt_nhds_zero_nhds_constantCoeff`: continuity of evaluation at
+  `0`.
+* `PowerSeries.IsEntire.eq_zero_of_frequently_evalAt_eq_zero`,
+  `PowerSeries.IsEntire.eq_of_forall_evalAt_eq`: the identity principle.
 
 ## References
 
@@ -227,6 +237,60 @@ theorem IsEntire.inverse_eq_of_evalAt_eq_zero (hf : f.IsEntire) (h0 : constantCo
     Ring.inverse a = -(mk fun n ↦ coeff (n + 1) f).evalAt a :=
   let h := hf.mul_eq_one_of_evalAt_eq_zero h0 ha
   Ring.inverse_unit ⟨a, _, h.1, h.2⟩
+
+/-- **Continuity at `0`.** For an entire series `f = ∑ aₙ Xⁿ`, the value `f(b)` tends to
+`f(0) = a₀` as `b` tends to `0`. -/
+theorem IsEntire.tendsto_evalAt_nhds_zero_nhds_constantCoeff [NormOneClass A]
+    (hf : f.IsEntire) :
+    Tendsto (fun b : A ↦ f.evalAt b) (𝓝 0) (𝓝 (algebraMap R A (constantCoeff f))) := by
+  set g : R⟦X⟧ := mk fun n ↦ coeff (n + 1) f
+  have hg : g.IsEntire := hf.mk_coeff_succ
+  set C := ∑' n, ‖coeff n g‖
+  -- For `‖b‖ ≤ 1`, `‖f(b) - a₀‖ = ‖b g(b)‖ ≤ ‖b‖ ∑ ‖gₙ‖`.
+  have hC (b : A) (hb : ‖b‖ ≤ 1) : ‖g.evalAt b‖ ≤ C :=
+    (hg.norm_evalAt_le b).trans <| by
+      simpa using (hg.summable_norm_coeff_mul_pow ‖b‖).tsum_le_tsum
+        (fun n ↦ mul_le_mul_of_nonneg_left (pow_le_one₀ (norm_nonneg b) hb) (norm_nonneg _))
+        (by simpa using hg.summable_norm_coeff_mul_pow 1)
+  refine tendsto_iff_norm_sub_tendsto_zero.2 (squeeze_zero' (g := fun b : A ↦ ‖b‖ * C)
+    (.of_forall fun _ ↦ norm_nonneg _) ?_ (by simpa using tendsto_norm_zero.mul_const C))
+  filter_upwards [Metric.closedBall_mem_nhds (0 : A) one_pos] with b hb
+  rw [mem_closedBall_zero_iff] at hb
+  rw [hf.evalAt_eq_algebraMap_add_mul b, add_sub_cancel_left]
+  exact (norm_mul_le _ _).trans (mul_le_mul_of_nonneg_left (hC b hb) (norm_nonneg b))
+
+/-- **Identity principle for entire series over a ring.** An entire series over a complete normed
+commutative ring that vanishes at non-zero-divisors accumulating at `0` is zero. Over a normed
+field the non-zero-divisors are the nonzero elements; over Tate scalars the powers of a
+pseudo-uniformiser are non-zero-divisors tending to `0`. -/
+theorem IsEntire.eq_zero_of_frequently_evalAt_eq_zero [NormOneClass R] [CompleteSpace R]
+    (hf : f.IsEntire) (h : ∃ᶠ x in 𝓝 (0 : R), x ∈ nonZeroDivisors R ∧ f.evalAt x = 0) :
+    f = 0 := by
+  -- A series vanishing at such points has constant coefficient `0`, by continuity at `0`, and the
+  -- series `∑ aₙ₊₁ Xⁿ` vanishes at the same points, since `f(x) = a₀ + x ∑ aₙ₊₁ xⁿ`.
+  have key (g : R⟦X⟧) (hg : g.IsEntire)
+      (h : ∃ᶠ x in 𝓝 (0 : R), x ∈ nonZeroDivisors R ∧ g.evalAt x = 0) :
+      constantCoeff g = 0 ∧ ∃ᶠ x in 𝓝 (0 : R),
+        x ∈ nonZeroDivisors R ∧ (mk fun n ↦ coeff (n + 1) g).evalAt x = 0 := by
+    have h0 : constantCoeff g = 0 := by
+      simpa using mem_closure_of_frequently_of_tendsto (s := {0}) (h.mono fun x hx ↦ hx.2)
+        hg.tendsto_evalAt_nhds_zero_nhds_constantCoeff
+    refine ⟨h0, h.mono fun x ⟨hx, hgx⟩ ↦ ⟨hx, ?_⟩⟩
+    rwa [hg.evalAt_eq_algebraMap_add_mul, h0, map_zero, zero_add,
+      mul_left_mem_nonZeroDivisors_eq_zero_iff hx] at hgx
+  ext n
+  induction n generalizing f with
+  | zero => simpa using (key f hf h).1
+  | succ n ih => simpa using ih hf.mk_coeff_succ (key f hf h).2
+
+/-- **Entire series are determined by their values** over a complete normed commutative ring in
+which non-zero-divisors accumulate at `0`, such as a nontrivially normed field or a ring with Tate
+scalars. -/
+theorem IsEntire.eq_of_forall_evalAt_eq [NormOneClass R] [CompleteSpace R] (hf : f.IsEntire)
+    (hg : g.IsEntire) (hR : ∃ᶠ x in 𝓝 (0 : R), x ∈ nonZeroDivisors R)
+    (h : ∀ x : R, f.evalAt x = g.evalAt x) : f = g :=
+  sub_eq_zero.1 <| (hf.sub hg).eq_zero_of_frequently_evalAt_eq_zero <|
+    hR.mono fun x hx ↦ ⟨hx, by rw [hf.evalAt_sub hg, h, sub_self]⟩
 
 end Normed
 

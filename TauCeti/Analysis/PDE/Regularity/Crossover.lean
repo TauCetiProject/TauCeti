@@ -20,7 +20,7 @@ let `u ∈ H¹(Ω)` be a weak supersolution of the divergence-form equation
 meaning `a(u, v) ≥ 0` for every nonnegative `v ∈ H¹₀(Ω)`, with `u ≥ ε` almost everywhere for some
 `ε > 0`. This file proves Moser's **crossover estimate**: there are constants `c > 0` and `K`,
 depending only on the dimension, such that for every exponent `|p| ≤ c λ/Λ` and every ball with
-`B(x₀, 6√n r) ⊆ Ω`,
+`B(x₀, 4√n r) ⊆ Ω`,
 
 `⨍_{B(x₀, r)} u^p · ⨍_{B(x₀, r)} u^{-p} ≤ K`.
 
@@ -65,7 +65,7 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 dimension `n ≥ 1`, with the following property. Let `a` be measurable and uniformly elliptic on
 `Ω` with constants `0 < λ ≤ Λ`, and let `u ∈ H¹(Ω)` be a weak supersolution of
 `-∂ⱼ(aⁱʲ ∂ᵢu) ≥ 0` with `u ≥ ε` almost everywhere for some `ε > 0`. Then for every ball with
-`B(x₀, 6√n r) ⊆ Ω` and every exponent `|p| ≤ c λ/Λ`,
+`B(x₀, 4√n r) ⊆ Ω` and every exponent `|p| ≤ c λ/Λ`,
 
 `⨍_{B(x₀, r)} u^p · ⨍_{B(x₀, r)} u^{-p} ≤ K`.
 
@@ -80,7 +80,7 @@ theorem exists_setAverage_rpow_mul_setAverage_rpow_neg_le [Nonempty ι] :
         (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
           0 ≤ energyFormH1 a 0 0 u (v : W1p mu Omega 2)) →
       0 < ε → (∀ᵐ x ∂mu.restrict Omega, ε ≤ W1p.value u x) →
-      ball x₀ (6 * √(Fintype.card ι) * r) ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
+      ball x₀ (4 * √(Fintype.card ι) * r) ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
       |p| ≤ c * (lam / Lam) →
       (⨍ x in ball x₀ r, W1p.value u x ^ p ∂mu) * (⨍ x in ball x₀ r, W1p.value u x ^ (-p) ∂mu) ≤
         K := by
@@ -95,8 +95,8 @@ theorem exists_setAverage_rpow_mul_setAverage_rpow_neg_le [Nonempty ι] :
   · simp only [ball_eq_empty.2 hr, Measure.restrict_empty, average_zero_measure, mul_zero]
     positivity
   have hlam := h.pos
-  set R := 3 * s * r
-  have hRr : R / (3 * s) = r := mul_div_cancel_left₀ r (by positivity)
+  set R := 2 * s * r
+  have hRr : R / (2 * s) = r := mul_div_cancel_left₀ r (by positivity)
   have hs1 : 1 ≤ s := Real.one_le_sqrt.2 (by exact_mod_cast Fintype.card_pos)
   have hrR : r ≤ R := by nlinarith
   set f : EuclideanSpace ℝ ι → ℝ := fun x => Real.log (W1p.value u x)

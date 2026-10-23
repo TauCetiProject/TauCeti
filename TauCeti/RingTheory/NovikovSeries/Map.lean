@@ -125,6 +125,35 @@ theorem exists_period_rescale_comp {φ : H →+ H'} {φ' : H' →+ H''}
   obtain ⟨c', hc', hφ'⟩ := hφ'
   exact ⟨c' * c, mul_pos hc' hc, fun h => by rw [AddMonoidHom.comp_apply, hφ', hφ, mul_assoc]⟩
 
+/-- If an additive equivalence rescales periods by a positive factor `c`, its inverse rescales
+them by `c⁻¹`. -/
+theorem period_rescale_symm {e : H ≃+ H'} {c : ℝ} (hc : 0 < c)
+    (hcN : ∀ h, N' (e h) = c * N h) (h' : H') :
+    N (e.symm h') = c⁻¹ * N' h' := by
+  have h := hcN (e.symm h')
+  rw [e.apply_symm_apply] at h
+  rw [h, inv_mul_cancel_left₀ hc.ne']
+
+/-- The inverse of an additive equivalence that rescales periods positively also rescales
+periods positively. -/
+theorem exists_period_rescale_symm {e : H ≃+ H'}
+    (he : ∃ c > 0, ∀ h, N' (e h) = c * N h) :
+    ∃ c > 0, ∀ h', N (e.symm h') = c * N' h' := by
+  obtain ⟨c, hc, hcN⟩ := he
+  exact ⟨c⁻¹, inv_pos.mpr hc, period_rescale_symm hc hcN⟩
+
+/-- Successive additive equivalences rescaling periods positively have a composite that also
+rescales periods positively. -/
+theorem exists_period_rescale_trans {e : H ≃+ H'} {e' : H' ≃+ H''}
+    (he : ∃ c > 0, ∀ h, N' (e h) = c * N h)
+    (he' : ∃ c > 0, ∀ h, N'' (e' h) = c * N' h) :
+    ∃ c > 0, ∀ h, N'' ((e.trans e') h) = c * N h := by
+  simpa only [AddEquiv.trans_apply, AddMonoidHom.comp_apply,
+    AddEquiv.coe_toAddMonoidHom] using
+    exists_period_rescale_comp (φ := e.toAddMonoidHom) (φ' := e'.toAddMonoidHom)
+      (by simpa only [AddEquiv.coe_toAddMonoidHom] using he)
+      (by simpa only [AddEquiv.coe_toAddMonoidHom] using he')
+
 variable [AddMonoid R] [AddCommMonoid S] [AddCommMonoid T]
 
 /-- The pushforward of a Novikov series along a coefficient map `ρ` and an exponent homomorphism

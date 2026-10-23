@@ -27,8 +27,9 @@ coefficients form a `ℚ`-algebra.
 The same estimate makes products computable from finite truncations: below the cutoff `C`, the
 product of two series with periods bounded below by `A` and `B` only involves their coefficients of
 period `< C - B` and `< C - A`
-(`TauCeti.NovikovSeries.mul_sub_mul_trunc_mem_periodFiltration`). Multiplying by a monomial unit
-`u e^g` shifts the filtration by the period `N g`
+(`TauCeti.NovikovSeries.mul_sub_mul_trunc_mem_periodFiltration`). Multiplying by a monomial
+`u e^g` with unit coefficient shifts the filtration by the period `N g` when exponents satisfy
+left cancellation
 (`TauCeti.NovikovSeries.single_mul_mem_periodFiltration_iff`).
 
 The series supported in nonnegative periods form a subring, whose underlying set is the basic
@@ -54,8 +55,8 @@ Morse complexes.
 * `TauCeti.NovikovSeries.mul_sub_mul_mem_periodFiltration` and
   `TauCeti.NovikovSeries.mul_sub_mul_trunc_mem_periodFiltration`: cutoff compatibility of the
   convolution.
-* `TauCeti.NovikovSeries.single_mul_mem_periodFiltration_iff`: multiplication by a monomial unit
-  shifts the period filtration.
+* `TauCeti.NovikovSeries.single_mul_mem_periodFiltration_iff`: multiplication by a monomial with
+  unit coefficient shifts the period filtration for left-cancellative exponents.
 * The instances `IsTopologicalRing` and `NonarchimedeanRing`: the period topology is a
   nonarchimedean ring topology.
 * `TauCeti.NovikovSeries.pow_mem_periodFiltration` and
@@ -156,6 +157,18 @@ end NonUnitalNonAssocRing
 section Ring
 
 variable [AddMonoid H] {N : H →+ ℝ} [Ring R] {C : ℝ} {a : NovikovSeries R H N}
+
+/-- The coefficientwise inclusion of the group ring has dense image in its Novikov completion. -/
+theorem denseRange_ofAddMonoidAlgebra :
+    DenseRange (ofAddMonoidAlgebra : AddMonoidAlgebra R H → NovikovSeries R H N) := by
+  apply DenseRange.of_comp (g := AddMonoidAlgebra.ofCoeff)
+  have h : (ofAddMonoidAlgebra : AddMonoidAlgebra R H → NovikovSeries R H N) ∘
+      AddMonoidAlgebra.ofCoeff = ofFinsupp := by
+    funext f
+    ext h
+    simp only [Function.comp_apply, coeff_ofAddMonoidAlgebra, coeff_ofFinsupp]
+  rw [h]
+  exact denseRange_ofFinsupp
 
 /-- The period topology is a nonarchimedean ring topology. -/
 instance : NonarchimedeanRing (NovikovSeries R H N) where
@@ -299,22 +312,22 @@ theorem isUnit_one_sub_of_mem_posIdeal {a : nonnegSubring R N} (ha : a ∈ posId
 
 end Ring
 
-section Group
+section IsLeftCancelAdd
 
-variable [AddGroup H] {N : H →+ ℝ} [Ring R]
+variable [AddZeroClass H] [IsLeftCancelAdd H] {N : H →+ ℝ} [Ring R]
 
-/-- Multiplication by a monomial unit `u e^g` shifts the period filtration by `N g`: the
-coefficients of `single g u * a` vanish below `N g + C` exactly when those of `a` vanish
-below `C`. -/
+/-- Multiplication by a monomial `u e^g` with unit coefficient shifts the period filtration by
+`N g`: when exponents satisfy left cancellation, the coefficients of `single g u * a` vanish
+below `N g + C` exactly when those of `a` vanish below `C`. -/
 theorem single_mul_mem_periodFiltration_iff (g : H) (u : Rˣ) {C : ℝ}
     {a : NovikovSeries R H N} :
     single g (u : R) * a ∈ periodFiltration R N (N g + C) ↔ a ∈ periodFiltration R N C := by
   refine ⟨fun ha => ?_, mul_mem_periodFiltration (single_mem_periodFiltration g _)⟩
-  have h := mul_mem_periodFiltration (single_mem_periodFiltration (-g) (↑u⁻¹ : R)) ha
-  rw [← mul_assoc] at h
-  simpa [single_mul_single] using h
+  refine mem_periodFiltration.2 fun h hh => ?_
+  have hzero := mem_periodFiltration.1 ha (g + h) (by simpa using add_lt_add_left hh (N g))
+  simpa only [coeff_single_mul_add, Units.mul_right_eq_zero] using hzero
 
-end Group
+end IsLeftCancelAdd
 
 end NovikovSeries
 
