@@ -14,8 +14,8 @@ The presentations at `q⁻¹` and `q` are isomorphic: fixing `E` and `F` while e
 and `K⁻¹` preserves all the defining relations.  This file constructs that algebra isomorphism
 and records its action, in both directions, on the four generators.
 
-This comparison is algebraic.  No compatibility with the standard coproduct is asserted here;
-transporting that coproduct gives a separate comparison.
+The coproduct transported through this algebra isomorphism is developed in
+`TauCeti.QuantumGroups.UqSl2.InverseParameter.Coproduct`.
 
 ## References
 
