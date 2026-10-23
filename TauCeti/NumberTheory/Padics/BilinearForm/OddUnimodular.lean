@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.NumberTheory.Padics.PadicIntegers
 public import TauCeti.LinearAlgebra.BilinearForm.Characteristic
 import Mathlib.NumberTheory.Padics.RingHoms
+import TauCeti.Data.ZMod.Eight
 import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
 import TauCeti.LinearAlgebra.BilinearForm.Isometry
 import TauCeti.LinearAlgebra.BilinearForm.Odd.LocalRing
@@ -53,7 +54,8 @@ through its residue among `1, 3, 5, 7`. If `b` is an orthogonal basis with self-
 `-2 dₖ b i + dᵢ b k`. These vectors never change how many diagonal entries are `3` modulo `4`. When
 `d₀`, `d₁`, `d₂` are all `1` or all `3` modulo `4`, the vectors `b₀ + b₁ + b₂` and
 `b₀ + b₁ + b₂ + 2 b₃` represent units of the other kind; the invariants guarantee that a fourth
-basis vector exists whenever this move is needed. Given a target diagonal `v` with the same
+basis vector exists whenever this move is needed
+(`ZMod.four_le_of_forall_eq_or_eq`). Given a target diagonal `v` with the same
 determinant class and oddity, one of these vectors represents some `vⱼ` up to a unit square and is
 orthogonal to a vector with unit self-pairing, so it splits off an odd unimodular complement, and
 induction on the rank applies.
@@ -76,66 +78,6 @@ open PadicInt (eight_dvd_sub_iff_toZModPow_three_eq exists_eq_sq_mul_of_toZModPo
 namespace LinearMap.BilinForm
 
 universe u
-
-/-! ### Residues modulo `8` -/
-
-section Residues
-
-/-- **The determinant class and oddity of a diagonal determine at least four entries.** Let the
-residues `dᵢ` all lie in `{y, 5y}` and the residues `vᵢ` all lie in `{-y, -5y}` modulo `8`. If the
-two families have the same product and the same sum, then there are at least four of them. -/
-private theorem four_le_of_forall_eq_or_eq {N : ℕ} (hN : N ≠ 0) {y : ZMod (2 ^ 3)}
-    (hy : y * y = 1) {d v : Fin N → ZMod (2 ^ 3)} (hd : ∀ i, d i = y ∨ d i = 5 * y)
-    (hv : ∀ i, v i = -y ∨ v i = -(5 * y)) (hP : ∏ i, d i = ∏ i, v i)
-    (hS : ∑ i, d i = ∑ i, v i) : 4 ≤ N := by
-  -- A product of factors `1 + e` with `2 e = 0` is `1` plus the sum of the `e`.
-  have hprod (e : Fin N → ZMod (2 ^ 3)) (he : ∀ i, 2 * e i = 0) (s : Finset (Fin N)) :
-      ∏ i ∈ s, (1 + e i) = 1 + ∑ i ∈ s, e i ∧ 2 * ∑ i ∈ s, e i = 0 := by
-    induction s using Finset.induction_on with
-    | empty => simp
-    | insert a s ha ih =>
-      rw [Finset.prod_insert ha, Finset.sum_insert ha, ih.1]
-      have key : ∀ x z : ZMod (2 ^ 3), 2 * x = 0 → 2 * z = 0 →
-          (1 + x) * (1 + z) = 1 + (x + z) ∧ 2 * (x + z) = 0 := by decide
-      exact key _ _ (he a) ih.2
-  -- Write `y dᵢ = 1 + eᵢ` and `-y vᵢ = 1 + fᵢ`, where `eᵢ` and `fᵢ` are `0` or `4`.
-  let e : Fin N → ZMod (2 ^ 3) := fun i ↦ y * d i - 1
-  let f : Fin N → ZMod (2 ^ 3) := fun i ↦ -y * v i - 1
-  have he (i : Fin N) : 2 * e i = 0 := by
-    have key : ∀ y a : ZMod (2 ^ 3), y * y = 1 → (a = y ∨ a = 5 * y) → 2 * (y * a - 1) = 0 := by
-      decide
-    exact key y (d i) hy (hd i)
-  have hf (i : Fin N) : 2 * f i = 0 := by
-    have key : ∀ y a : ZMod (2 ^ 3), y * y = 1 → (a = -y ∨ a = -(5 * y)) →
-        2 * (-y * a - 1) = 0 := by decide
-    exact key y (v i) hy (hv i)
-  obtain ⟨hpe, hE⟩ := hprod e he Finset.univ
-  obtain ⟨hpf, hF⟩ := hprod f hf Finset.univ
-  have h1e (i : Fin N) : 1 + e i = y * d i := by simp [e]
-  have h1f (i : Fin N) : 1 + f i = -y * v i := by simp [f]
-  simp only [h1e, h1f, Finset.prod_mul_distrib, Finset.prod_const, Finset.card_univ,
-    Fintype.card_fin] at hpe hpf
-  have hse : y * ∑ i, d i = N + ∑ i, e i := by
-    simp [Finset.mul_sum, ← h1e, Finset.sum_add_distrib]
-  have hsf : -y * ∑ i, v i = N + ∑ i, f i := by
-    simp [Finset.mul_sum, ← h1f, Finset.sum_add_distrib]
-  rcases Nat.even_or_odd N with hN2 | hN2
-  · -- For even `N`, the products force `∑ e = ∑ f`, and then the sums force `8 ∣ 2N`.
-    rw [hN2.neg_pow, ← hP, hpe] at hpf
-    have hef : ∑ i, e i = ∑ i, f i := add_left_cancel hpf
-    have h2N : ((2 * N : ℕ) : ZMod (2 ^ 3)) = 0 := by
-      have := congrArg₂ (· + ·) hse hsf
-      simp only [← hS, ← hef] at this
-      push_cast
-      linear_combination -this - hE
-    have := (ZMod.natCast_eq_zero_iff _ _).mp h2N
-    omega
-  · -- For odd `N`, the products force `-(1 + ∑ e) = 1 + ∑ f`, which is impossible.
-    rw [hN2.neg_pow, ← hP, neg_mul, hpe] at hpf
-    have key : ∀ x z : ZMod (2 ^ 3), 2 * x = 0 → 2 * z = 0 → -(1 + x) ≠ 1 + z := by decide
-    exact (key _ _ hE hF hpf).elim
-
-end Residues
 
 /-! ### Realizing a prescribed diagonal -/
 
@@ -234,7 +176,7 @@ private theorem exists_toZModPow_three_apply_self_eq {B : BilinForm ℤ_[2] M} {
         c = -a ∨ c = -(5 * a) := by decide
     exact key _ _ (hr 0) (hq j) (hA 0 j).symm (hB5 0 j)
   -- The invariants then force the rank to be at least four.
-  have h4 : 4 ≤ m + 2 := four_le_of_forall_eq_or_eq (by omega) (hr 0) hdy hvy
+  have h4 : 4 ≤ m + 2 := ZMod.four_le_of_forall_eq_or_eq (by omega) (hr 0) hdy hvy
     (by simpa only [map_prod] using hP) (by simpa only [map_sum] using hS)
   obtain ⟨l, rfl⟩ : ∃ l, m = l + 2 := ⟨m - 2, by omega⟩
   -- With `z = b₀ + b₁ + b₂`, the residue of `B z z` lies in `{-y, -5y}`, so either `z` or

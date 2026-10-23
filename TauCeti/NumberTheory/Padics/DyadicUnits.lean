@@ -62,9 +62,7 @@ or `4`, with `1` exactly for `A = 1` and `4` exactly for `A = V^(f)`.
   `U^(3) = 1 + 8ℤ_2`.
 * `PadicInt.isSquare_mul_iff_toZModPow_three_eq`: two units of `ℤ_2` lie in the same square
   class exactly when they agree modulo `8`, with `PadicInt.exists_eq_sq_mul_of_toZModPow_three_eq`
-  producing the unit square; `PadicInt.toZModPow_three_mul_self_of_isUnit` and
-  `PadicInt.isUnit_of_toZModPow_three_mul_self` recognize units by their residues modulo `8`,
-  and `PadicInt.eight_dvd_sub_iff_toZModPow_three_eq` restates congruence modulo `8`.
+  producing the unit square.
 * `TauCeti.relIndex_map_powMonoidHom_two_eq_one_or_two_or_four`: `(A : A²) ∈ {1, 2, 4}` for
   closed `A`;
   `TauCeti.relIndex_map_powMonoidHom_two_eq_four_iff` and
@@ -483,22 +481,7 @@ end TauCeti
 
 namespace PadicInt
 
-/-! ### Residues modulo `8` and square classes of dyadic units -/
-
-/-- The residue modulo `8` of a unit of `ℤ_[2]` squares to `1`. -/
-theorem toZModPow_three_mul_self_of_isUnit {z : ℤ_[2]} (hz : IsUnit z) :
-    toZModPow 3 z * toZModPow 3 z = 1 := by
-  obtain ⟨u, rfl⟩ := hz
-  have key : ∀ a b : ZMod (2 ^ 3), a * b = 1 → a * a = 1 := by decide
-  exact key _ (toZModPow 3 (↑u⁻¹ : ℤ_[2])) (by rw [← map_mul, Units.mul_inv, map_one])
-
-/-- An element of `ℤ_[2]` whose residue modulo `8` squares to `1` is a unit. -/
-theorem isUnit_of_toZModPow_three_mul_self {z : ℤ_[2]}
-    (hz : toZModPow 3 z * toZModPow 3 z = 1) : IsUnit z := by
-  by_contra h
-  obtain ⟨w, rfl⟩ := not_isUnit_iff_dvd.mp h
-  have key : ∀ a : ZMod (2 ^ 3), 2 * a * (2 * a) ≠ 1 := by decide
-  exact key (toZModPow 3 w) (by simpa [map_ofNat] using hz)
+/-! ### Square classes of dyadic units -/
 
 /-- Two units of `ℤ_[2]` with the same residue modulo `8` differ by the square of a unit. -/
 theorem exists_eq_sq_mul_of_toZModPow_three_eq {a c : ℤ_[2]} (ha : IsUnit a) (hc : IsUnit c)
@@ -524,11 +507,5 @@ theorem isSquare_mul_iff_toZModPow_three_eq {a c : ℤ_[2]} (ha : IsUnit a) (hc 
       (by rw [← map_mul, ← map_mul, hr])
   · obtain ⟨s, -, hs⟩ := exists_eq_sq_mul_of_toZModPow_three_eq ha hc h
     exact ⟨s * a, by rw [hs]; ring⟩
-
-/-- Divisibility by `8` in `ℤ_[2]` is equality of residues modulo `8`. -/
-theorem eight_dvd_sub_iff_toZModPow_three_eq {a c : ℤ_[2]} :
-    (8 : ℤ_[2]) ∣ c - a ↔ toZModPow 3 a = toZModPow 3 c := by
-  rw [toZModPow_eq_iff_dvd_sub]
-  norm_num
 
 end PadicInt
