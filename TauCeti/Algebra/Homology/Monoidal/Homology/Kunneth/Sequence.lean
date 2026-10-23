@@ -714,6 +714,8 @@ private lemma epi_homologyToTor (m : ℕ) : Epi (homologyToTor K L m) := by
   -- an epimorphism since `toTensorQuotient` and `tensorδ` are exact (`toTensorQuotient_exact`)
   have := (toTensorQuotient_exact K L m).epi_kernelLift
   rw [homologyToTor, ← IsLimit.lift_comp_conePointUniqueUpToIso_hom (kernelIsKernel _)]
+  -- `kernel.lift` abbreviates this `(kernelIsKernel _).lift` of a `KernelFork`, so the
+  -- epimorphism instance from `epi_kernelLift` applies by definitional equality.
   infer_instance
 
 /-- **The Künneth short exact sequence.**  Let `K` and `L` be chain complexes of modules over a
