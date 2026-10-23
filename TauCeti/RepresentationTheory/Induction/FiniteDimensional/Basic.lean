@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.RepresentationTheory.FiniteIndex
+public import TauCeti.CategoryTheory.Linear.Endomorphism
 public import TauCeti.RepresentationTheory.FDRep.Basic
 public import TauCeti.RepresentationTheory.Induction.Basic
 
@@ -26,7 +27,8 @@ That functor is additive (`indFDRepMap_add`); the general fact it rests on, addi
 intertwiners along an arbitrary group homomorphism, is `Rep.indMap_add` of
 `TauCeti.RepresentationTheory.Induction.Basic`. Read through the functor, induction sends an
 isomorphism of representations to an isomorphism of the induced ones
-(`nonempty_iso_indFDRep`).
+(`nonempty_iso_indFDRep`). The induced map on native endomorphism algebras is
+`FDRep.indEndAlgHom`; it is injective for every finite-index subgroup.
 
 Over any commutative ring, the coset model also shows that induction from a finite-index subgroup
 preserves finiteness of the underlying module (`Rep.finite_ind`) and gives the cardinality formula
@@ -555,6 +557,42 @@ representations, the functorial form of `indFDRepMap_injective`. -/
 instance indFDRepFunctor_faithful {k G : Type u} [Field k] [Group G] {S : Subgroup G}
     [S.FiniteIndex] : (indFDRepFunctor (k := k) (S := S)).Faithful where
   map_injective h := indFDRepMap_injective h
+
+end TauCeti
+
+namespace FDRep
+
+universe u
+
+open CategoryTheory TauCeti
+
+variable {k G : Type u} [Field k] [Group G] {H : Subgroup G}
+
+/-- The algebra homomorphism on endomorphisms given by induction from a finite-index subgroup.
+Multiplication on both native endomorphism algebras is reverse categorical composition. -/
+noncomputable def indEndAlgHom [H.FiniteIndex] (A : FDRep k H) :
+    CategoryTheory.End A →ₐ[k] CategoryTheory.End (indFDRep A) :=
+  indFDRepFunctor.mapEndAlgHom k A
+
+/-- The endomorphism algebra map acts by the native induction map on intertwiners. -/
+@[simp]
+theorem indEndAlgHom_asHom [H.FiniteIndex] (A : FDRep k H) (f : CategoryTheory.End A) :
+    (A.indEndAlgHom f).asHom = indFDRepMap f.asHom := by
+  -- The defining object and map fields of induction identify the functorial map with this model.
+  exact indFDRepFunctor.mapEndAlgHom_asHom k A f
+
+/-- Induction from a finite-index subgroup embeds the endomorphism algebra. -/
+theorem indEndAlgHom_injective [H.FiniteIndex] (A : FDRep k H) :
+    Function.Injective A.indEndAlgHom :=
+  indFDRepFunctor.mapEndAlgHom_injective k A
+
+end FDRep
+
+namespace TauCeti
+
+open CategoryTheory
+
+universe u v
 
 /-- Under the forgetful functor to `Rep k G`, `indFDRepFunctor` is naturally isomorphic to
 Mathlib's induction functor, componentwise by `indFDRepForgetIso`. -/

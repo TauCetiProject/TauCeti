@@ -40,31 +40,6 @@ universe u
 
 variable {k G : Type u} [Field k] [Group G] {H : Subgroup G}
 
-/-- The algebra homomorphism on endomorphisms given by induction from a finite-index subgroup.
-Multiplication on both native endomorphism algebras is reverse categorical composition. -/
-noncomputable def indEndAlgHom [H.FiniteIndex] (A : FDRep k H) :
-    CategoryTheory.End A →ₐ[k] CategoryTheory.End (indFDRep A) :=
-  AlgHom.ofLinearMap
-    { toFun := fun f ↦ End.of (indFDRepMap f.asHom)
-      map_add' := fun f g ↦ by ext; simp [End.add_asHom, indFDRepMap_add]
-      map_smul' := fun r f ↦ by ext; simp [End.smul_asHom, indFDRepMap_smul] }
-    (by ext; simp [End.one_asHom])
-    (fun f g ↦ by ext; simp [End.mul_asHom])
-
-/-- The endomorphism algebra map acts by the native induction map on intertwiners. -/
-@[simp]
-theorem indEndAlgHom_asHom [H.FiniteIndex] (A : FDRep k H) (f : CategoryTheory.End A) :
-    (A.indEndAlgHom f).asHom = indFDRepMap f.asHom :=
-  (rfl)
-
-/-- Induction from a finite-index subgroup embeds the endomorphism algebra. -/
-theorem indEndAlgHom_injective [H.FiniteIndex] (A : FDRep k H) :
-    Function.Injective A.indEndAlgHom := by
-  intro f g h
-  apply End.ext
-  apply indFDRepMap_injective
-  simpa only [indEndAlgHom_asHom] using congrArg End.asHom h
-
 /-- If all nonidentity double cosets are Mackey disjoint, every endomorphism of the induced
 representation is induced from a unique endomorphism of the original representation. -/
 theorem indEndAlgHom_bijective [Finite G] (A : FDRep k H)
