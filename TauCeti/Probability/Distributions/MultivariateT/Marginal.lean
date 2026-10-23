@@ -49,6 +49,7 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 /-- **Linear projections of multivariate t laws.** The projection `x ↦ ⟪θ, x⟫` of a
 multivariate t law has the location-scale Student t law with location `⟪θ, m⟫`, scale
 `√⟪θ, S θ⟫` and the same degrees of freedom. -/
+@[simp]
 theorem map_inner_multivariateTMeasure (m θ : EuclideanSpace ℝ ι) {S : Matrix ι ι ℝ}
     (hS : S.PosSemidef) (ν : ℝ) :
     (multivariateTMeasure m S ν).map (fun x => ⟪θ, x⟫) =
@@ -108,9 +109,13 @@ theorem multivariateTMeasure_eq_map_single [Unique ι] (m : EuclideanSpace ℝ �
     multivariateTMeasure m S ν =
       ((studentTMeasure ν).map fun t => m default + √(S default default) * t).map
         (EuclideanSpace.single default) := by
-  have hsingle : Measurable (EuclideanSpace.single (default : ι) : ℝ → EuclideanSpace ℝ ι) :=
-    ((EuclideanSpace.equiv ι ℝ).symm.continuous.comp
-      (ContinuousLinearMap.single ℝ (fun _ : ι => ℝ) default).continuous).measurable
+  -- `EuclideanSpace.single` is `toLp` applied to `Pi.single`.
+  have hsingle : Measurable (EuclideanSpace.single (default : ι) : ℝ → EuclideanSpace ℝ ι) := by
+    have h (a : ℝ) : EuclideanSpace.single (default : ι) a =
+        WithLp.toLp 2 (Pi.single (M := fun _ : ι => ℝ) default a) :=
+      (PiLp.toLp_single 2 (β := fun _ : ι => ℝ) default a).symm
+    rw [funext h]
+    exact (WithLp.measurable_toLp 2 _).comp (continuous_single default).measurable
   have hcomp : (EuclideanSpace.single (default : ι)) ∘
       (fun x : EuclideanSpace ℝ ι => x default) = id := by
     funext x

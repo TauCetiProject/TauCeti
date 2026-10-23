@@ -75,11 +75,13 @@ theorem multivariateTMeasure_of_posSemidef (m : EuclideanSpace ℝ ι) {S : Matr
   ite_eq_left ⟨hν, hS⟩
 
 /-- Nonpositive degrees of freedom give the zero measure. -/
+@[simp]
 theorem multivariateTMeasure_of_nonpos (m : EuclideanSpace ℝ ι) (S : Matrix ι ι ℝ) {ν : ℝ}
     (hν : ν ≤ 0) : multivariateTMeasure m S ν = 0 :=
   ite_eq_right fun h => (not_lt.mpr hν) h.1
 
 /-- A scale matrix that is not positive semidefinite gives the zero measure. -/
+@[simp]
 theorem multivariateTMeasure_of_not_posSemidef (m : EuclideanSpace ℝ ι) {S : Matrix ι ι ℝ}
     (ν : ℝ) (hS : ¬ S.PosSemidef) : multivariateTMeasure m S ν = 0 :=
   ite_eq_right fun h => hS h.2
@@ -134,6 +136,7 @@ end HasLaw
 /-- **Affine images of multivariate t laws.** The image under `x ↦ L x + c` is the multivariate
 t law with location `L m + c`, scale `L * S * Lᵀ` and the same degrees of freedom. The matrix
 `L` may be rectangular or rank deficient. -/
+@[simp]
 theorem map_affine_multivariateTMeasure (m : EuclideanSpace ℝ ι) {S : Matrix ι ι ℝ}
     (hS : S.PosSemidef) (ν : ℝ) (L : Matrix κ ι ℝ) (c : EuclideanSpace ℝ κ) :
     (multivariateTMeasure m S ν).map (fun x => L.toEuclideanLin x + c) =
