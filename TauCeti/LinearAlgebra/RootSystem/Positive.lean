@@ -70,8 +70,8 @@ positive root is a nonnegative integer combination of the simple coroots.
   `TauCeti.eq_zero_of_mem_posRootCone_of_heightLinearMap_eq_zero`, that zero is the only member of
   `Q⁺` of height zero.
 * `TauCeti.exists_intCast_eq_coroot'_of_mem_posRootCone` says a coroot functional takes integer
-  values on `Q⁺`, and `TauCeti.exists_intCast_eq_coroot'_of_forall_mem_support` says every coroot
-  functional takes an integer value on a weight on which the simple ones do.
+  values on `Q⁺`, and `RootPairing.exists_intCast_eq_coroot'_of_forall_mem_support` says every
+  coroot functional takes an integer value on a weight on which the simple ones do.
 * `TauCeti.exists_coroot_eq_sum_nat_of_mem_posRoots` says the coroot of a positive root is a
   nonnegative integer combination of the simple coroots, and
   `TauCeti.exists_coroot'_eq_sum_nat_of_mem_posRoots` restates that on the coroot functionals.
@@ -374,7 +374,7 @@ theorem exists_intCast_eq_coroot'_of_mem_posRootCone [P.IsCrystallographic] {u :
 omit [CharZero R] in
 /-- **A weight on which the simple coroots take integer values pairs integrally with every
 coroot**, since every coroot is an integer combination of the simple coroots. -/
-theorem exists_intCast_eq_coroot'_of_forall_mem_support {x : M}
+theorem _root_.RootPairing.exists_intCast_eq_coroot'_of_forall_mem_support {x : M}
     (hx : ∀ i ∈ b.support, ∃ m : ℤ, P.coroot' i x = (m : R)) (j : ι) :
     ∃ m : ℤ, P.coroot' j x = (m : R) := by
   suffices ∀ n ∈ Submodule.span ℤ (P.coroot '' b.support), ∃ m : ℤ, P.toLinearMap.flip n x = m

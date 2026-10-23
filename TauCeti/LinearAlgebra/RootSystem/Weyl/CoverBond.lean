@@ -28,21 +28,21 @@ holds because two reflections moving a weight to the same point have proportiona
 root system is reduced (`TauCeti.eq_of_isPos_of_reflection_eq`). Positivity is the reflection test
 on minimal coset representatives (`TauCeti.bruhatLE_and_ne_iff_coroot'_neg_of_isMinimalCosetRep`).
 
-The bond depends only on the two orbit weights, so `TauCeti.reflectionBond` is defined for any two
-weights `x` and `y = s_β x` related by a reflection in a positive root. The bonds along a saturated
-chain of `W / W_λ` are the integers that the description of Lakshmibai–Seshadri paths by `a`-chains
-tests for divisibility by the denominator of `a`.
+The bond depends only on the two orbit weights, so `RootPairing.reflectionBond` is defined for any
+two weights `x` and `y = s_β x` related by a reflection in a positive root. The bonds along a
+saturated chain of `W / W_λ` are the integers that the description of Lakshmibai–Seshadri paths by
+`a`-chains tests for divisibility by the denominator of `a`.
 
 ## Main definitions
 
-* `TauCeti.reflectionBond`: the bond `⟨y, β^∨⟩ = -⟨x, β^∨⟩` of two weights with `y = s_β x` for a
-  positive root `β`.
+* `RootPairing.reflectionBond`: the bond `⟨y, β^∨⟩ = -⟨x, β^∨⟩` of two weights with `y = s_β x`
+  for a positive root `β`.
 
 ## Main results
 
-* `TauCeti.reflectionBond_eq_coroot'` and `TauCeti.reflectionBond_eq_neg_coroot'`: the bond in terms
-  of any positive root label, and `TauCeti.reflectionBond_self`: the bond of a weight with itself
-  is `0`.
+* `RootPairing.reflectionBond_eq_coroot'` and `RootPairing.reflectionBond_eq_neg_coroot'`: the
+  bond in terms of any positive root label, and `RootPairing.reflectionBond_self`: the bond of a
+  weight with itself is `0`.
 * `TauCeti.existsUnique_isPos_reflection_smul_eq_of_minimalCosetRepCovBy`: **a cover of `W / W_λ`
   has a unique positive root label**.
 * `TauCeti.reflectionBond_pos` and `TauCeti.reflectionBond_pos_of_minimalCosetRepCovBy`: **the bond
@@ -62,15 +62,13 @@ tests for divisibility by the denominator of `a`.
 
 public section
 
-namespace TauCeti
-
-open RootPairing
-
 universe u v w x
+
+namespace RootPairing
 
 variable {ι : Type u} {R : Type v} {M : Type w} {N : Type x}
   [CommRing R] [CharZero R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
-  (P : _root_.RootPairing ι R M N) (b : P.Base)
+  (P : RootPairing ι R M N) (b : P.Base)
 
 /-! ### The positive root label and the bond -/
 
@@ -78,7 +76,7 @@ open Classical in
 /-- The **bond** of two weights related by a reflection in a positive root: if `y = s_β x` for a
 positive root `β`, it is `⟨y, β^∨⟩ = -⟨x, β^∨⟩`. For `y ≠ x` and a reduced root pairing the
 positive root `β` is unique (`TauCeti.eq_of_isPos_of_reflection_eq`), so the bond is well defined
-(`TauCeti.reflectionBond_eq_coroot'`). If no reflection in a positive root sends `x` to `y`, the
+(`RootPairing.reflectionBond_eq_coroot'`). If no reflection in a positive root sends `x` to `y`, the
 bond is `0`. For a cover `y ⋖ x` of the parabolic quotient `W / W_λ`, the bond of `x λ` and `y λ`
 is the positive cover bond `b_λ(x, y)`. -/
 noncomputable def reflectionBond (x y : M) : R :=
@@ -88,32 +86,42 @@ variable {P b}
 
 /-- The bond of two weights related by a reflection in a positive root `β` is `⟨y, β^∨⟩`. -/
 theorem reflectionBond_eq_coroot' [P.IsReduced] {β : ι} (hβ : b.IsPos β) {x y : M}
-    (h : P.reflection β x = y) (hne : y ≠ x) : reflectionBond P b x y = P.coroot' β y := by
+    (h : P.reflection β x = y) (hne : y ≠ x) : P.reflectionBond b x y = P.coroot' β y := by
   have hex : ∃ β, b.IsPos β ∧ P.reflection β x = y := ⟨β, hβ, h⟩
   obtain ⟨hpos, hspec⟩ := hex.choose_spec
   rw [reflectionBond, dite_eq_left hex,
-    eq_of_isPos_of_reflection_eq hpos hβ (hspec.trans h.symm) (by rwa [hspec])]
+    TauCeti.eq_of_isPos_of_reflection_eq hpos hβ (hspec.trans h.symm) (by rwa [hspec])]
 
 /-- The bond of two weights related by a reflection in a positive root `β` is `-⟨x, β^∨⟩`. -/
 theorem reflectionBond_eq_neg_coroot' [P.IsReduced] {β : ι} (hβ : b.IsPos β) {x y : M}
-    (h : P.reflection β x = y) (hne : y ≠ x) : reflectionBond P b x y = -P.coroot' β x := by
+    (h : P.reflection β x = y) (hne : y ≠ x) : P.reflectionBond b x y = -P.coroot' β x := by
   rw [reflectionBond_eq_coroot' hβ h hne, ← h, coroot'_reflection_self]
 
 /-- The bond of two weights not related by any reflection in a positive root is `0`. -/
 theorem reflectionBond_eq_zero_of_not_exists {x y : M}
-    (h : ¬∃ β, b.IsPos β ∧ P.reflection β x = y) : reflectionBond P b x y = 0 :=
+    (h : ¬∃ β, b.IsPos β ∧ P.reflection β x = y) : P.reflectionBond b x y = 0 :=
   dite_eq_right h
 
 /-- The bond of a weight with itself is `0`: a reflection fixing `x` has a coroot vanishing on
 `x`. -/
 @[simp]
-theorem reflectionBond_self [NoZeroDivisors R] (x : M) : reflectionBond P b x x = 0 := by
+theorem reflectionBond_self [NoZeroDivisors R] (x : M) : P.reflectionBond b x x = 0 := by
   by_cases h : ∃ β, b.IsPos β ∧ P.reflection β x = x
   · rw [reflectionBond, dite_eq_left h]
     have hc := coroot'_reflection_self P h.choose x
     rw [h.choose_spec.2] at hc
     exact CharZero.eq_neg_self_iff.mp hc
   · exact reflectionBond_eq_zero_of_not_exists h
+
+end RootPairing
+
+namespace TauCeti
+
+open RootPairing
+
+variable {ι : Type u} {R : Type v} {M : Type w} {N : Type x}
+  [CommRing R] [CharZero R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+  {P : _root_.RootPairing ι R M N} {b : P.Base}
 
 /-! ### Bonds of covers -/
 
@@ -153,7 +161,7 @@ theorem reflectionBond_pos (hlam : lam ∈ dominantChamber P b) {x y : P.weylGro
     (hy : (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) y)
     (hyx : (weylCoxeterSystem P b).BruhatLE y x) (hne : y ≠ x) {β : ι} (hβ : b.IsPos β)
     (h : P.reflection β (x • lam) = y • lam) :
-    0 < reflectionBond P b (x • lam) (y • lam) := by
+    0 < P.reflectionBond b (x • lam) (y • lam) := by
   have hne' : y • lam ≠ x • lam := fun heq ↦ hne (eq_of_isMinimalCosetRep_of_smul_eq hlam hy hx heq)
   rw [reflectionBond_eq_neg_coroot' hβ h hne', neg_pos]
   refine (bruhatLE_and_ne_iff_coroot'_neg_of_isMinimalCosetRep hlam hx hy ?_ hβ).mp ⟨hyx, hne⟩
@@ -163,7 +171,7 @@ theorem reflectionBond_pos (hlam : lam ∈ dominantChamber P b) {x y : P.weylGro
 theorem reflectionBond_pos_of_minimalCosetRepCovBy (hlam : lam ∈ dominantChamber P b)
     {x y : P.weylGroup}
     (h : (weylCoxeterSystem P b).MinimalCosetRepCovBy (P.wallIndices b lam) y x) :
-    0 < reflectionBond P b (x • lam) (y • lam) := by
+    0 < P.reflectionBond b (x • lam) (y • lam) := by
   obtain ⟨β, ⟨hβ, hβx⟩, -⟩ := existsUnique_isPos_reflection_smul_eq_of_minimalCosetRepCovBy hlam h
   exact reflectionBond_pos hlam h.isMinimalCosetRep_right h.isMinimalCosetRep_left h.bruhatLE h.ne
     hβ hβx
@@ -173,13 +181,13 @@ integral, that is when every simple coroot takes an integer value on `λ`. -/
 theorem exists_nat_reflectionBond_eq_of_minimalCosetRepCovBy (hlam : lam ∈ dominantChamber P b)
     (hint : ∀ i ∈ b.support, ∃ z : ℤ, P.coroot' i lam = z) {x y : P.weylGroup}
     (h : (weylCoxeterSystem P b).MinimalCosetRepCovBy (P.wallIndices b lam) y x) :
-    ∃ n : ℕ, 0 < n ∧ reflectionBond P b (x • lam) (y • lam) = n := by
+    ∃ n : ℕ, 0 < n ∧ P.reflectionBond b (x • lam) (y • lam) = n := by
   obtain ⟨β, ⟨hβ, hβx⟩, -⟩ := existsUnique_isPos_reflection_smul_eq_of_minimalCosetRepCovBy hlam h
   have hne : y • lam ≠ x • lam := fun heq ↦ h.ne <|
     eq_of_isMinimalCosetRep_of_smul_eq hlam h.isMinimalCosetRep_left h.isMinimalCosetRep_right heq
   have hpos := reflectionBond_pos_of_minimalCosetRepCovBy hlam h
   -- `⟨y λ, β^∨⟩ = ⟨λ, (y⁻¹ β)^∨⟩` is an integer.
-  obtain ⟨z, hz⟩ := exists_intCast_eq_coroot'_of_forall_mem_support P b hint
+  obtain ⟨z, hz⟩ := P.exists_intCast_eq_coroot'_of_forall_mem_support b hint
     (P.weylGroupToPerm y⁻¹ β)
   have hc := coroot'_weylGroupToPerm_smul P y⁻¹ β (y • lam)
   rw [inv_smul_smul] at hc
