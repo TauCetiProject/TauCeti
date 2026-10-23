@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.TsumDivisorsAntidiagonal
-import TauCeti.Analysis.Normed.Field.Basic
 import TauCeti.Analysis.Normed.Ring.Basic
 import Mathlib.Analysis.RCLike.Basic
 import Mathlib.Topology.Algebra.InfiniteSum.NatInt
@@ -24,8 +23,6 @@ Mathlib's `tsum_prod_pow_eq_tsum_sigma` proves one instance of this regrouping, 
 same equivalence `sigmaAntidiagonalEquivProd`. For weights of polynomial growth and `‖q‖ < 1`,
 the Lambert double series converges absolutely and regroups into a divisor-sum power series.
 An extra parameter `u` with `‖q * u‖ < 1` gives coefficients `∑_{d ∣ n} a d u^d`.
-When both `‖q * u‖ < 1` and `‖q * u⁻¹‖ < 1`, reciprocal summands give a bilateral-series
-expansion after removing its constant term.
 
 ## Main results
 
@@ -35,8 +32,8 @@ expansion after removing its constant term.
   `∑_{c, m ≥ 1} g(m) r^{c m}` is the power series `∑_n (∑_{m ∣ n} g(m)) rⁿ`.
 * `TauCeti.hasSum_sum_divisors_mul_pow_mul_of_norm_le_mul_pow`: a second parameter
   with `‖q * u‖ < 1` produces weighted divisor-sum coefficients.
-* `TauCeti.hasSum_sum_divisors_mul_pow_sub`: a reciprocal pair of
-  expansions regroups the nonconstant part of a bilateral series on its annulus of convergence.
+* `TauCeti.hasSum_sum_divisors_mul_pow_mul_of_tsum_eq`: evaluates the inner geometric expansion
+  to identify the Lambert series with a one-sided series of closed-form summands.
 -/
 
 public section
@@ -160,66 +157,16 @@ theorem hasSum_sum_divisors_mul_pow_mul_of_norm_le_mul_pow (a : ℕ → K) {C : 
   rw [mul_pow, ← pow_mul]
   ring
 
-/-- A geometric expansion with polynomially bounded weights gives a summable sequence
-when evaluated at `qⁿ * u` for positive `n` on the annulus of convergence. -/
-theorem summable_apply_pow_pnat_mul_of_tsum_eq (a : ℕ → K) {C : ℝ} {k : ℕ}
+/-- Evaluating the inner geometric expansion of a Lambert series gives a divisor-sum
+expansion for the one-sided series of its closed-form summands. -/
+theorem hasSum_sum_divisors_mul_pow_mul_of_tsum_eq (a : ℕ → K) {C : ℝ} {k : ℕ}
     (ha : ∀ d, ‖a d‖ ≤ C * (d : ℝ) ^ k) {q u : K}
     (hq : ‖q‖ < 1) (hqu : ‖q * u‖ < 1) (f : K → K)
     (hf : ∀ r, ‖r‖ < 1 → (∑' d : ℕ, a (d + 1) * r ^ (d + 1)) = f r) :
-    Summable (fun n : ℕ+ ↦ f (q ^ (n : ℕ) * u)) := by
-  have h := (summable_norm_mul_pow_mul_pow_prod_of_norm_le_mul_pow a ha hq hqu).of_norm.prod
-  convert h using 1
-  funext n
-  rw [← hf _ (norm_pow_pnat_mul_lt_one hq hqu n),
-    tsum_pnat_eq_tsum_succ (f := fun d : ℕ ↦ a d * u ^ d * q ^ ((n : ℕ) * d))]
-  apply tsum_congr
-  intro d
-  rw [mul_pow, ← pow_mul]
-  ring
-
-section NormedField
-
-variable {K : Type*} [NormedField K] [CompleteSpace K]
-
-/-- If a summand and its reciprocal have geometric expansions with polynomially bounded
-weights, their bilateral series, minus the index-zero term, has a
-convergent divisor-sum expansion. -/
-theorem hasSum_sum_divisors_mul_pow_sub (a b : ℕ → K) {C D : ℝ} {k l : ℕ}
-    (ha : ∀ d, ‖a d‖ ≤ C * (d : ℝ) ^ k) (hb : ∀ d, ‖b d‖ ≤ D * (d : ℝ) ^ l)
-    (f g : K → K)
-    (hf : ∀ r, ‖r‖ < 1 → (∑' d : ℕ, a (d + 1) * r ^ (d + 1)) = f r)
-    (hg : ∀ r, ‖r‖ < 1 → (∑' d : ℕ, b (d + 1) * r ^ (d + 1)) = g r)
-    (hinv : ∀ r, f r⁻¹ = g r) {q : K} (u : Kˣ)
-    (hqu : ‖q * (u : K)‖ < 1) (hqui : ‖q * (u : K)⁻¹‖ < 1) :
-    HasSum (fun n : ℕ ↦ (∑ d ∈ n.divisors,
-        (a d * (u : K) ^ d + b d * (u : K)⁻¹ ^ d)) * q ^ n)
-      ((∑' n : ℤ, f (q ^ n * (u : K))) - f (u : K)) := by
-  have hq := norm_lt_one_of_norm_mul_lt_one_of_norm_mul_inv_lt_one u hqu hqui
-  have hneg (n : ℕ+) : f ((q ^ (n : ℕ))⁻¹ * (u : K)) =
-      g (q ^ (n : ℕ) * (u : K)⁻¹) := by
-    simpa only [mul_inv, inv_inv] using hinv (q ^ (n : ℕ) * (u : K)⁻¹)
-  have hs : Summable (fun n : ℤ ↦ f (q ^ n * (u : K))) := by
-    apply Summable.of_nat_of_neg
-    · simpa only [zpow_natCast] using
-        (summable_pnat_iff_summable_nat (f := fun n : ℕ ↦ f (q ^ n * (u : K)))).mp
-          (summable_apply_pow_pnat_mul_of_tsum_eq a ha hq hqu f hf)
-    · apply (summable_pnat_iff_summable_nat
-        (f := fun n : ℕ ↦ f (q ^ (-(n : ℤ)) * (u : K)))).mp
-      simpa only [zpow_neg, zpow_natCast, hneg] using
-        summable_apply_pow_pnat_mul_of_tsum_eq b hb hq hqui g hg
-  have hp := hasSum_sum_divisors_mul_pow_mul_of_norm_le_mul_pow a ha hq hqu
-  have hm := hasSum_sum_divisors_mul_pow_mul_of_norm_le_mul_pow b hb hq hqui
-  convert hp.add hm using 1
-  · funext n
-    simp only [Finset.sum_add_distrib, add_mul]
-  · have hsplit := tsum_int_eq_zero_add_tsum_pnat hs
-    simp only [zpow_natCast, zpow_neg, zpow_zero, one_mul] at hsplit
-    simp_rw [hneg] at hsplit
-    simp_rw [hf _ (norm_pow_pnat_mul_lt_one hq hqu _),
-      hg _ (norm_pow_pnat_mul_lt_one hq hqui _)]
-    rw [hsplit]
-    ring
-
-end NormedField
+    HasSum (fun n : ℕ ↦ (∑ d ∈ n.divisors, a d * u ^ d) * q ^ n)
+      (∑' n : ℕ, f (q ^ (n + 1) * u)) := by
+  have h := hasSum_sum_divisors_mul_pow_mul_of_norm_le_mul_pow a ha hq hqu
+  simp_rw [hf _ (norm_pow_pnat_mul_lt_one hq hqu _)] at h
+  rwa [tsum_pnat_eq_tsum_succ (f := fun n : ℕ ↦ f (q ^ n * u))] at h
 
 end TauCeti
