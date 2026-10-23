@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
-public import Mathlib.LinearAlgebra.ExteriorPower.Basic
 public import TauCeti.Algebra.Homology.Homotopy
 public import TauCeti.Algebra.Homology.Linear
 public import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
+public import TauCeti.LinearAlgebra.ExteriorPower.Basic
 
 /-!
 # The Koszul complex of a linear functional

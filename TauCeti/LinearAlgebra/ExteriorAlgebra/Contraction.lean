@@ -42,9 +42,8 @@ a contraction carries the `(n + 1)`-th exterior power into the `n`-th, and a vec
 with every multivector: `ι m * x = involute x * ι m`.  Together with the graded Leibniz rule
 `CliffordAlgebra.contractLeft_mul`, these say that a contraction is an odd derivation of degree
 `-1` of the graded-commutative exterior algebra. On a wedge product of vectors it is the alternating
-sum of deletions (`TauCeti.ExteriorAlgebra.contractLeft_ιMulti`). Dually, exterior
-multiplication by a vector raises the degree by one (`TauCeti.ExteriorAlgebra.wedgeLeft`). These
-are the differential and the homotopy of the Koszul complex.
+sum of deletions (`TauCeti.ExteriorAlgebra.contractLeft_ιMulti`); this is the differential of the
+Koszul complex.
 
 In degree at least the rank, contraction loses no information: if `d m = 1` and
 `finrank R M ≤ n`, every `x ∈ ⋀ⁿ M` is `m ∧ (d ⌋ x)`. Hence two forms killed by `d` multiply to
@@ -417,13 +416,6 @@ theorem contractLeft_eq_zero_of_mem_exteriorPower_zero (d : Module.Dual R M)
   obtain ⟨r, rfl⟩ := Submodule.mem_one.mp hx
   exact contractLeft_algebraMap (Q := (0 : QuadraticForm R M)) d r
 
-/-- Left multiplication by a vector raises the exterior degree by one: it carries the `n`-th
-exterior power into the `(n + 1)`-th. -/
-theorem ι_mul_mem_exteriorPower (m : M) {n : ℕ} {x : ExteriorAlgebra R M} (hx : x ∈ ⋀[R]^n M) :
-    ExteriorAlgebra.ι R m * x ∈ ⋀[R]^(n + 1) M := by
-  rw [_root_.ExteriorAlgebra.exteriorPower, pow_succ']
-  exact Submodule.mul_mem_mul (LinearMap.mem_range_self _ m) hx
-
 /-- **Contraction lowers the exterior degree by one**: it carries the `(n + 1)`-th exterior power
 into the `n`-th. -/
 theorem contractLeft_mem_exteriorPower (d : Module.Dual R M) {n : ℕ}
@@ -444,25 +436,6 @@ theorem contractLeft_mem_exteriorPower (d : Module.Dual R M) {n : ℕ}
       exact zero_mem _
     · rw [Nat.add_sub_cancel] at ih
       exact ι_mul_mem_exteriorPower v ih
-
-/-- Exterior multiplication `v ↦ m ∧ v` by a vector `m`, from the `n`-th exterior power to the
-`(n + 1)`-th. Mathlib's `exteriorPower.wedge R M 1 n` is the same product with values in degree
-`1 + n`, which is not definitionally `n + 1`; this form composes with maps out of `⋀ⁿ⁺¹ M`. -/
-def wedgeLeft (m : M) (n : ℕ) : ⋀[R]^n M →ₗ[R] ⋀[R]^(n + 1) M :=
-  (LinearMap.mulLeft R (ExteriorAlgebra.ι R m)).restrict fun _ hx ↦ ι_mul_mem_exteriorPower m hx
-
-/-- `wedgeLeft m n` is left multiplication by `ι R m` in the exterior algebra. -/
-@[simp]
-theorem coe_wedgeLeft_apply (m : M) (n : ℕ) (x : ⋀[R]^n M) :
-    (wedgeLeft m n x : ExteriorAlgebra R M) = ExteriorAlgebra.ι R m * x :=
-  (rfl)
-
-/-- `wedgeLeft m n` prepends `m` to a wedge product of vectors: `m ∧ (v₀ ∧ ⋯ ∧ vₙ₋₁)`. -/
-@[simp]
-theorem wedgeLeft_ιMulti (m : M) (n : ℕ) (v : Fin n → M) :
-    wedgeLeft m n (exteriorPower.ιMulti R n v) = exteriorPower.ιMulti R (n + 1) (Fin.cons m v) := by
-  ext
-  simp [ExteriorAlgebra.ιMulti_succ_apply, Matrix.vecTail]
 
 /-- **Contraction of a wedge product of vectors** is the alternating sum of the contractions of
 its factors: `d ⌋ (v₀ ∧ ⋯ ∧ vₙ) = ∑ᵢ (-1) ^ i d(vᵢ) v₀ ∧ ⋯ ∧ v̂ᵢ ∧ ⋯ ∧ vₙ`. -/
