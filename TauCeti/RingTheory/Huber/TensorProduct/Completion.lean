@@ -107,7 +107,7 @@ noncomputable def inr : C →+* CompletedTensor A B C :=
     (map_mul (toCompletion A B C) (b ⊗ₜ[A] (1 : C)) ((1 : B) ⊗ₜ[A] c))
 
 /-- The two coprojections agree on the base ring. -/
-@[simp] theorem inl_comp : (inl A B C).comp (algebraMap A B) =
+@[simp] theorem inl_comp_algebraMap : (inl A B C).comp (algebraMap A B) =
     (inr A B C).comp (algebraMap A C) := by
   ext a
   simp [inl, inr, ← Algebra.TensorProduct.algebraMap_apply]
