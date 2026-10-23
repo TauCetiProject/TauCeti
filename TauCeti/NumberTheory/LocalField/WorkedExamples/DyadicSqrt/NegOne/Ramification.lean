@@ -160,11 +160,7 @@ theorem discriminantExponent_eq_two : discriminantExponent ℚ_[2] DyadicSqrtNeg
 /-- The dyadic quadratic extension `ℚ₂(i)/ℚ₂` is wildly ramified. -/
 theorem isWildlyRamified : IsWildlyRamified ℚ_[2] DyadicSqrtNegOne := by
   rw [isWildlyRamified_iff, ramificationIndex_eq_two]
-  let _ := Fintype.ofFinite 𝓀[ℚ_[2]]
-  have hchar : ringChar 𝓀[ℚ_[2]] = 2 := FiniteField.even_card_iff_char_two.mpr (by
-    simp only [← Nat.card_eq_fintype_card, _root_.Padic.natCard_residueField,
-      Nat.mod_self])
-  simp [hchar]
+  simp [Padic.ringChar_residueField 2]
 
 /-- The wild upper bound is strict for `ℚ₂(i)/ℚ₂`: `d = 2 < 3 = e - 1 + v_L(e)`. -/
 theorem differentExponent_lt_ramificationIndex_sub_one_add_natCastValuation :

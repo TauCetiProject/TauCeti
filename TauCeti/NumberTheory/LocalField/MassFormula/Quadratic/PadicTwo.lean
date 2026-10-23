@@ -11,7 +11,6 @@ import TauCeti.FieldTheory.IntermediateField.Quadratic
 import TauCeti.FieldTheory.SquareClassGroup.Basic
 import TauCeti.NumberTheory.LocalField.MassFormula.Eisenstein.Basic
 import TauCeti.NumberTheory.LocalField.QuadraticForm.PadicTwo
-import TauCeti.NumberTheory.Padics.PrincipalUnits
 import TauCeti.NumberTheory.Padics.SerreSigns
 
 /-!
@@ -71,6 +70,12 @@ namespace TauCeti
 private theorem coe_two_padicTwo : ((2 : 𝒪[ℚ_[2]]) : ℚ_[2]) = 2 :=
   map_ofNat (Subring.subtype 𝒪[ℚ_[2]]) 2
 
+/-- The image of the uniformizer `2 m` of `ℤ₂` in the separable closure of `ℚ₂`. -/
+private theorem algebraMap_natCast_two_mul_intCast_padicTwo (m : ℤ) :
+    algebraMap ℚ_[2] (SeparableClosure ℚ_[2]) ((((2 : ℕ) : 𝒪[ℚ_[2]]) * m : 𝒪[ℚ_[2]]) : ℚ_[2]) =
+      2 * m := by
+  simp [coe_two_padicTwo, map_ofNat]
+
 /-! ### The discriminant and wild exponents -/
 
 /-- **`ℚ₂(√ϖ)` has discriminant exponent `3`** for every uniformizer `ϖ` of `ℚ₂`. -/
@@ -110,6 +115,39 @@ theorem wildExponent_adjoin_of_sq_eq_one_sub_padicTwo {ϖ : 𝒪[ℚ_[2]]} (hϖ 
     (mem_totallyRamifiedOfDegree_iff.1 (adjoin_mem_totallyRamifiedOfDegree_two_of_sq_eq_one_sub
       (Padic.ringChar_residueField 2).dvd hϖ hx)).1]
 
+/-! ### Square roots of `2 m` and `1 - 2 m` for odd `m` -/
+
+/-- A square root of `2 m`, with `m` odd, generates a member of `σ_{ℚ₂}(2)`. -/
+private theorem adjoin_mem_totallyRamifiedOfDegree_of_sq_eq_two_mul_padicTwo {m : ℤ}
+    (hm : ¬ (2 : ℤ) ∣ m) {x : SeparableClosure ℚ_[2]} (hx : x ^ 2 = 2 * m) :
+    ℚ_[2]⟮x⟯ ∈ totallyRamifiedOfDegree ℚ_[2] 2 :=
+  adjoin_mem_totallyRamifiedOfDegree_of_pow_eq
+    (Padic.irreducible_natCast_self_mul_intCast (p := 2) hm) two_pos
+    (hx.trans (algebraMap_natCast_two_mul_intCast_padicTwo m).symm)
+
+/-- A square root of `1 - 2 m`, with `m` odd, generates a member of `σ_{ℚ₂}(2)`. -/
+private theorem adjoin_mem_totallyRamifiedOfDegree_of_sq_eq_one_sub_two_mul_padicTwo {m : ℤ}
+    (hm : ¬ (2 : ℤ) ∣ m) {x : SeparableClosure ℚ_[2]} (hx : x ^ 2 = 1 - 2 * m) :
+    ℚ_[2]⟮x⟯ ∈ totallyRamifiedOfDegree ℚ_[2] 2 :=
+  adjoin_mem_totallyRamifiedOfDegree_two_of_sq_eq_one_sub (Padic.ringChar_residueField 2).dvd
+    (Padic.irreducible_natCast_self_mul_intCast (p := 2) hm)
+    (by rw [hx, map_sub, map_one, algebraMap_natCast_two_mul_intCast_padicTwo])
+
+/-- A square root of `2 m`, with `m` odd, generates an extension of `ℚ₂` of wild exponent `2`. -/
+private theorem wildExponent_adjoin_of_sq_eq_two_mul_padicTwo {m : ℤ} (hm : ¬ (2 : ℤ) ∣ m)
+    {x : SeparableClosure ℚ_[2]} (hx : x ^ 2 = 2 * m) : (ℚ_[2]⟮x⟯).wildExponent = 2 :=
+  wildExponent_adjoin_of_sq_eq_padicTwo (Padic.irreducible_natCast_self_mul_intCast (p := 2) hm)
+    (hx.trans (algebraMap_natCast_two_mul_intCast_padicTwo m).symm)
+
+/-- A square root of `1 - 2 m`, with `m` odd, generates an extension of `ℚ₂` of wild
+exponent `1`. -/
+private theorem wildExponent_adjoin_of_sq_eq_one_sub_two_mul_padicTwo {m : ℤ}
+    (hm : ¬ (2 : ℤ) ∣ m) {x : SeparableClosure ℚ_[2]} (hx : x ^ 2 = 1 - 2 * m) :
+    (ℚ_[2]⟮x⟯).wildExponent = 1 :=
+  wildExponent_adjoin_of_sq_eq_one_sub_padicTwo
+    (Padic.irreducible_natCast_self_mul_intCast (p := 2) hm)
+    (by rw [hx, map_sub, map_one, algebraMap_natCast_two_mul_intCast_padicTwo])
+
 /-! ### The classification -/
 
 /-- A square root of `5` generates an unramified extension of `ℚ₂`: since `-15` is a square,
@@ -136,7 +174,8 @@ private theorem adjoin_le_maximalUnramifiedExtension_of_sq_eq_five {w : Separabl
   have hwv : w ∈ ℚ_[2]⟮v⟯ :=
     IntermediateField.mem_adjoin_simple_of_isSquare_mul (a := -3) (c := 5)
       (by simp [hv, map_ofNat]) (by simp [hw, map_ofNat]) (by norm_num)
-      (by norm_num [Padic.isSquare_neg_fifteen])
+      (by norm_num; exact_mod_cast
+        Padic.isSquare_intCast_of_emod_eight_eq_one (a := -15) (by decide))
   exact IntermediateField.adjoin_simple_le_iff.2
     (IntermediateField.adjoin_simple_le_iff.2 hvM hwv)
 
@@ -204,24 +243,19 @@ theorem totallyRamifiedOfDegree_two_eq_padicTwo {x₁ x₂ x₃ x₄ x₅ x₆ :
     · rw [hL_eq hc (w := x₂) (by norm_num [h₂, map_ofNat])]; simp
     · rw [hL_eq hc (w := x₄) (by norm_num [h₄, map_ofNat])]; simp
     · rw [hL_eq hc (w := x₆) (by norm_num [h₆, map_ofNat])]; simp
-  · have hu {x : SeparableClosure ℚ_[2]} {m : ℤ} (hm : ¬ (2 : ℤ) ∣ m) (hx : x ^ 2 = 1 - 2 * m) :
-        ℚ_[2]⟮x⟯ ∈ totallyRamifiedOfDegree ℚ_[2] 2 :=
-      adjoin_mem_totallyRamifiedOfDegree_two_of_sq_eq_one_sub
-        (Padic.ringChar_residueField 2).dvd
-        (Padic.irreducible_natCast_self_mul_intCast (p := 2) hm)
-        (by simp [hx, coe_two_padicTwo, map_ofNat])
-    have hr {x : SeparableClosure ℚ_[2]} {m : ℤ} (hm : ¬ (2 : ℤ) ∣ m) (hx : x ^ 2 = 2 * m) :
-        ℚ_[2]⟮x⟯ ∈ totallyRamifiedOfDegree ℚ_[2] 2 :=
-      adjoin_mem_totallyRamifiedOfDegree_of_pow_eq
-        (Padic.irreducible_natCast_self_mul_intCast (p := 2) hm) two_pos
-        (by simp [hx, coe_two_padicTwo, map_ofNat])
-    simp only [Set.insert_subset_iff, Set.singleton_subset_iff]
-    exact ⟨hu (m := 1) (by decide) (by rw [h₁]; norm_num),
-      hu (m := 3) (by decide) (by rw [h₂]; norm_num),
-      hr (m := 1) (by decide) (by rw [h₃]; norm_num),
-      hr (m := -1) (by decide) (by rw [h₄]; norm_num),
-      hr (m := 5) (by decide) (by rw [h₅]; norm_num),
-      hr (m := -5) (by decide) (by rw [h₆]; norm_num)⟩
+  · simp only [Set.insert_subset_iff, Set.singleton_subset_iff]
+    exact ⟨adjoin_mem_totallyRamifiedOfDegree_of_sq_eq_one_sub_two_mul_padicTwo (m := 1)
+        (by decide) (by rw [h₁]; norm_num),
+      adjoin_mem_totallyRamifiedOfDegree_of_sq_eq_one_sub_two_mul_padicTwo (m := 3)
+        (by decide) (by rw [h₂]; norm_num),
+      adjoin_mem_totallyRamifiedOfDegree_of_sq_eq_two_mul_padicTwo (m := 1)
+        (by decide) (by rw [h₃]; norm_num),
+      adjoin_mem_totallyRamifiedOfDegree_of_sq_eq_two_mul_padicTwo (m := -1)
+        (by decide) (by rw [h₄]; norm_num),
+      adjoin_mem_totallyRamifiedOfDegree_of_sq_eq_two_mul_padicTwo (m := 5)
+        (by decide) (by rw [h₅]; norm_num),
+      adjoin_mem_totallyRamifiedOfDegree_of_sq_eq_two_mul_padicTwo (m := -5)
+        (by decide) (by rw [h₆]; norm_num)⟩
 
 /-! ### The count and the mass formula -/
 
@@ -312,15 +346,6 @@ theorem tsum_one_div_two_pow_wildExponent_two_padicTwo :
     ∑' L : totallyRamifiedOfDegree ℚ_[2] 2, 1 / (2 : ℝ≥0∞) ^ L.1.wildExponent = 2 := by
   obtain ⟨x₁, x₂, x₃, x₄, x₅, x₆, h₁, h₂, h₃, h₄, h₅, h₆⟩ := exists_sq_eq_padicTwo
   obtain ⟨hA, hB, hd⟩ := encard_pair_and_encard_four_and_disjoint_padicTwo h₁ h₂ h₃ h₄ h₅ h₆
-  have hu {x : SeparableClosure ℚ_[2]} {m : ℤ} (hm : ¬ (2 : ℤ) ∣ m) (hx : x ^ 2 = 1 - 2 * m) :
-      (ℚ_[2]⟮x⟯).wildExponent = 1 :=
-    wildExponent_adjoin_of_sq_eq_one_sub_padicTwo
-      (Padic.irreducible_natCast_self_mul_intCast (p := 2) hm)
-      (by simp [hx, coe_two_padicTwo, map_ofNat])
-  have hr {x : SeparableClosure ℚ_[2]} {m : ℤ} (hm : ¬ (2 : ℤ) ∣ m) (hx : x ^ 2 = 2 * m) :
-      (ℚ_[2]⟮x⟯).wildExponent = 2 :=
-    wildExponent_adjoin_of_sq_eq_padicTwo (Padic.irreducible_natCast_self_mul_intCast (p := 2) hm)
-      (by simp [hx, coe_two_padicTwo, map_ofNat])
   rw [totallyRamifiedOfDegree_two_eq_union_padicTwo h₁ h₂ h₃ h₄ h₅ h₆,
     Summable.tsum_union_disjoint (f := fun L ↦ 1 / (2 : ℝ≥0∞) ^ L.wildExponent) hd
       ENNReal.summable ENNReal.summable]
@@ -338,14 +363,20 @@ theorem tsum_one_div_two_pow_wildExponent_two_padicTwo :
   · rintro ⟨L, hL⟩
     simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hL
     rcases hL with rfl | rfl | rfl | rfl
-    · rw [hr (m := 1) (by decide) (by rw [h₃]; norm_num)]
-    · rw [hr (m := -1) (by decide) (by rw [h₄]; norm_num)]
-    · rw [hr (m := 5) (by decide) (by rw [h₅]; norm_num)]
-    · rw [hr (m := -5) (by decide) (by rw [h₆]; norm_num)]
+    · rw [wildExponent_adjoin_of_sq_eq_two_mul_padicTwo (m := 1) (by decide)
+        (by rw [h₃]; norm_num)]
+    · rw [wildExponent_adjoin_of_sq_eq_two_mul_padicTwo (m := -1) (by decide)
+        (by rw [h₄]; norm_num)]
+    · rw [wildExponent_adjoin_of_sq_eq_two_mul_padicTwo (m := 5) (by decide)
+        (by rw [h₅]; norm_num)]
+    · rw [wildExponent_adjoin_of_sq_eq_two_mul_padicTwo (m := -5) (by decide)
+        (by rw [h₆]; norm_num)]
   · rintro ⟨L, hL⟩
     simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hL
     rcases hL with rfl | rfl
-    · rw [hu (m := 1) (by decide) (by rw [h₁]; norm_num)]
-    · rw [hu (m := 3) (by decide) (by rw [h₂]; norm_num)]
+    · rw [wildExponent_adjoin_of_sq_eq_one_sub_two_mul_padicTwo (m := 1) (by decide)
+        (by rw [h₁]; norm_num)]
+    · rw [wildExponent_adjoin_of_sq_eq_one_sub_two_mul_padicTwo (m := 3) (by decide)
+        (by rw [h₂]; norm_num)]
 
 end TauCeti

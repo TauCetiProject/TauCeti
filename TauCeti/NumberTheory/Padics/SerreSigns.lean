@@ -53,7 +53,8 @@ for some unit `w`. Read in `ℚ_2`, a unit of `ℤ_2` is a square of `ℚ_2` exa
 * `TauCeti.isSquare_coe_iff_mem_unitsPrincipal_three`: a unit of `ℤ_2` is a square in `ℚ_2`
   exactly when it lies in `U^(3) = 1 + 8ℤ_2`, and
   `TauCeti.isSquare_iff_serreEps_eq_zero_and_serreOmega_eq_zero` exactly when `ε(u) = ω(u) = 0`.
-* `Padic.isSquare_neg_fifteen`: `-15` is a square in `ℚ_2`.
+* `Padic.isSquare_intCast_of_emod_eight_eq_one`: an integer that is `1 mod 8` is a square in
+  `ℚ_2`.
 
 ## References
 
@@ -276,14 +277,16 @@ theorem isSquare_iff_serreEps_eq_zero_and_serreOmega_eq_zero {a : ℚ_[2]ˣ} {u 
   rw [← isSquare_units_val_iff, ha, isSquare_coe_iff_mem_unitsPrincipal_three,
     serreEps_eq_zero_and_serreOmega_eq_zero_iff]
 
-/-- `-15` is a square in `ℚ_2`, since it is `1 mod 8`. -/
-theorem _root_.Padic.isSquare_neg_fifteen : IsSquare (-15 : ℚ_[2]) := by
-  have hu : IsUnit ((-15 : ℤ) : ℤ_[2]) := PadicInt.isUnit_iff.2 <|
+/-- An integer that is `1 mod 8` is a square in `ℚ_2`. -/
+theorem _root_.Padic.isSquare_intCast_of_emod_eight_eq_one {a : ℤ} (ha : a % 8 = 1) :
+    IsSquare (a : ℚ_[2]) := by
+  have hu : IsUnit (a : ℤ_[2]) := PadicInt.isUnit_iff.2 <|
     le_antisymm (PadicInt.norm_le_one _)
-      (not_lt.1 ((PadicInt.norm_int_lt_one_iff_dvd _).not.2 (by decide)))
+      (not_lt.1 ((PadicInt.norm_int_lt_one_iff_dvd _).not.2 (by omega)))
   have h := (isSquare_coe_iff_mem_unitsPrincipal_three hu.unit).2 (by
-    rw [mem_unitsPrincipal_iff_toZModPow, hu.unit_spec, map_intCast]
-    decide)
+    rw [mem_unitsPrincipal_iff_toZModPow, hu.unit_spec, map_intCast, ← Int.cast_one,
+      ZMod.intCast_eq_intCast_iff']
+    norm_num [ha])
   rw [hu.unit_spec] at h
   exact_mod_cast h
 
