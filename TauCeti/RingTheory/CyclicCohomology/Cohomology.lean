@@ -32,8 +32,9 @@ giving a cochain map `cyclicCochainComplex R B M ⟶ cyclicCochainComplex R A M`
 cohomology, contravariantly functorial in `f`. The homomorphism is not required to preserve units,
 since the algebra maps from `A` to the differential graded algebras of cycles need not.
 
-The concrete cocycles and coboundaries are defined over semirings when the `R`-action on `M`
-commutes with itself. The categorical complex and cohomology use a commutative ring.
+The concrete cocycles and coboundaries are defined for nonassociative, nonunital semirings
+when the `R`-action on `M` commutes with itself. Associativity is required to show that every
+coboundary is a cocycle. The categorical complex and cohomology use a commutative ring.
 
 The cochain complex is defined for nonunital algebras. Its cohomology is only named cyclic
 cohomology for unital `A`: the cyclic cohomology of a nonunital algebra is instead defined through
@@ -79,8 +80,8 @@ universe u
 
 section Cocycles
 
-variable (R : Type*) (A : Type u) (M : Type*) [Semiring R] [NonUnitalSemiring A] [Module R A]
-  [IsScalarTower R A A] [SMulCommClass R A A] [AddCommGroup M] [Module R M]
+variable (R : Type*) (A : Type u) (M : Type*) [Semiring R] [NonUnitalNonAssocSemiring A]
+  [Module R A] [IsScalarTower R A A] [SMulCommClass R A A] [AddCommGroup M] [Module R M]
   [SMulCommClass R R M]
 
 /-- The cyclic `n`-cocycles: the cyclic cochains annihilated by the Hochschild coboundary. -/
@@ -118,15 +119,6 @@ theorem mem_cyclicCoboundaries_succ_iff {n : ℕ} {φ : cyclicCochains R A M (n 
       ∃ ψ : cyclicCochains R A M n, cyclicHochschildCoboundary R A M n ψ = φ := by
   rw [cyclicCoboundaries_succ, LinearMap.mem_range]
 
-/-- Every cyclic coboundary is a cyclic cocycle. -/
-theorem cyclicCoboundaries_le_cyclicCocycles (n : ℕ) :
-    cyclicCoboundaries R A M n ≤ cyclicCocycles R A M n := by
-  cases n with
-  | zero => simp
-  | succ n =>
-    exact LinearMap.range_le_ker_iff.2
-      (cyclicHochschildCoboundary_comp_cyclicHochschildCoboundary R A M)
-
 /-- A cyclic `0`-cochain is a cocycle exactly when it is a trace. -/
 theorem mem_cyclicCocycles_zero_iff {φ : cyclicCochains R A M 0} :
     φ ∈ cyclicCocycles R A M 0 ↔
@@ -134,7 +126,7 @@ theorem mem_cyclicCocycles_zero_iff {φ : cyclicCochains R A M 0} :
         (φ : MultilinearMap R (fun _ : Fin 1 ↦ A) M) (fun _ ↦ y * x) := by
   rw [mem_cyclicCocycles_iff, hochschildCoboundary_zero_eq_zero_iff]
 
-variable {R A M} {B : Type u} [NonUnitalSemiring B] [Module R B] [IsScalarTower R B B]
+variable {R A M} {B : Type u} [NonUnitalNonAssocSemiring B] [Module R B] [IsScalarTower R B B]
   [SMulCommClass R B B]
 
 /-- The pullback of a cyclic cocycle is a cyclic cocycle. -/
@@ -145,6 +137,23 @@ theorem cyclicCochainsMap_mem_cyclicCocycles (f : A →ₙₐ[R] B) {n : ℕ}
     LinearMap.mem_ker.1 hφ, map_zero]
 
 end Cocycles
+
+section AssociativeCocycles
+
+variable (R : Type*) (A : Type u) (M : Type*) [Semiring R] [NonUnitalSemiring A] [Module R A]
+  [IsScalarTower R A A] [SMulCommClass R A A] [AddCommGroup M] [Module R M]
+  [SMulCommClass R R M]
+
+/-- Every cyclic coboundary is a cyclic cocycle. -/
+theorem cyclicCoboundaries_le_cyclicCocycles (n : ℕ) :
+    cyclicCoboundaries R A M n ≤ cyclicCocycles R A M n := by
+  cases n with
+  | zero => simp
+  | succ n =>
+    exact LinearMap.range_le_ker_iff.2
+      (cyclicHochschildCoboundary_comp_cyclicHochschildCoboundary R A M)
+
+end AssociativeCocycles
 
 section Complex
 
