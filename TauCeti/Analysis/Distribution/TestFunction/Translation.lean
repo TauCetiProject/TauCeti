@@ -17,6 +17,7 @@ invariance of weak derivatives and distributional variation.
 
 ## Main declarations
 
+* `TauCeti.tsupport_comp_sub_right`: the topological support of a translate.
 * `TauCeti.translateTestFunction`: translate a test function while changing its domain.
 * `TauCeti.translateTestFunction_apply`: evaluation of a translated test function.
 * `TauCeti.fderiv_translateTestFunction`: Fréchet derivatives commute with translation.
@@ -36,6 +37,12 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
   {Omega V : Opens E} {h : E}
 
+/-- The topological support of a translate is the translated topological support. -/
+theorem tsupport_comp_sub_right {X G : Type*} [TopologicalSpace X] [AddGroup X] [ContinuousAdd X]
+    [Zero G] (f : X → G) (x : X) : (tsupport fun y => f (y - x)) = (· - x) ⁻¹' tsupport f := by
+  simpa [sub_eq_add_neg, Function.comp_def] using
+    tsupport_comp_eq_preimage f (Homeomorph.addRight (-x))
+
 /-- Translate a test function in the opposite direction, regarding it as a test function on an
 open set containing the translated support. -/
 def translateTestFunction (hVO : MapsTo (· + h) V Omega) (phi : 𝓓(V, F)) :
@@ -47,20 +54,8 @@ def translateTestFunction (hVO : MapsTo (· + h) V Omega) (phi : 𝓓(V, F)) :
         phi.hasCompactSupport.comp_homeomorph (Homeomorph.addRight (-h)),
     by
       intro y hy
-      have hy' : y + -h ∈ tsupport (phi : E → F) := by
-        have hfun : (fun z => phi (z - h)) =
-            (phi : E → F) ∘ (Homeomorph.addRight (-h) : E → E) := by
-          funext z
-          simp only [Function.comp_apply, sub_eq_add_neg]
-          apply congrArg phi
-          rfl
-        have hycomp : y ∈ tsupport
-            ((phi : E → F) ∘ (Homeomorph.addRight (-h) : E → E)) := by
-          rw [← hfun]
-          exact hy
-        rw [tsupport_comp_eq_preimage] at hycomp
-        exact hycomp
-      simpa only [sub_eq_add_neg, neg_add_cancel_right] using hVO (phi.tsupport_subset hy')⟩
+      rw [tsupport_comp_sub_right] at hy
+      simpa using hVO (phi.tsupport_subset hy)⟩
 
 /-- Translating a test function evaluates it at the oppositely translated point. -/
 @[simp]

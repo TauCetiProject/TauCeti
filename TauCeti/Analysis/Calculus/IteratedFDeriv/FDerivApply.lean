@@ -31,6 +31,7 @@ compactly supported smooth function at once.
 ## Main declarations
 
 * `ContDiff.iteratedFDeriv_fderiv_apply`: `Dⁱ (y ↦ Df(y) v) = D(Dⁱ f)(·) v`.
+* `tsupport_sub_sub_add_fderiv_subset`: the support of the first-order Taylor remainder.
 * `HasCompactSupport.exists_norm_iteratedFDeriv_sub_sub_add_fderiv_le`: the uniform estimate on
   the derivatives of the first-order Taylor remainder.
 -/
@@ -78,6 +79,18 @@ theorem ContDiff.iteratedFDeriv_fderiv_apply {n : WithTop ℕ∞} {f : E → F} 
     ext w : 1
     rw [TauCeti.fderiv_clm_apply_const_apply hD]
     exact (hg.contDiffAt (x := x)).isSymmSndFDerivAt le_rfl w v
+
+/-- The first-order Taylor remainder `z ↦ f (z - h) - f z + Df(z) h` is supported in every closed
+`δ`-thickening of the support of `f` with `‖h‖ ≤ δ`. -/
+theorem tsupport_sub_sub_add_fderiv_subset (f : E → F) {h : E} {δ : ℝ} (hh : ‖h‖ ≤ δ) :
+    (tsupport fun z ↦ f (z - h) - f z + fderiv 𝕜 f z h) ⊆ Metric.cthickening δ (tsupport f) := by
+  refine closure_minimal (Function.support_subset_iff'.2 fun z hz ↦ ?_) Metric.isClosed_cthickening
+  have hz₀ : z ∉ tsupport f := fun h' ↦ hz (Metric.self_subset_cthickening _ h')
+  have hzh : z - h ∉ tsupport f := fun h' ↦ hz (Metric.mem_cthickening_of_dist_le z (z - h) δ _ h'
+    (by rwa [dist_eq_norm, sub_sub_cancel]))
+  rw [image_eq_zero_of_notMem_tsupport hz₀, image_eq_zero_of_notMem_tsupport hzh,
+    Function.notMem_support.1 fun h' ↦ hz₀ (support_fderiv_subset 𝕜 h')]
+  simp
 
 /-- **Uniform first-order Taylor estimate for all derivatives.** If `f` is `C^{i+1}` with compact
 support, then the `i`-th derivative of the first-order Taylor remainder

@@ -63,12 +63,6 @@ namespace Distribution
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {Ω V : Opens E}
 
-omit [NormedSpace ℝ E] in
-/-- The topological support of a translate is the translated topological support. -/
-private theorem tsupport_comp_sub_right {G : Type*} [NormedAddCommGroup G] (f : E → G) (x : E) :
-    (tsupport fun y => f (y - x)) = (· - x) ⁻¹' tsupport f :=
-  tsupport_comp_eq_preimage f (Homeomorph.subRight x)
-
 /-- The translate `ρ (· - x)` of a test function, as a test function on `Ω` when it is supported
 there. -/
 private def translateOfMapsTo (ρ : 𝓓(V, ℝ)) {x : E} (h : MapsTo (· + x) (tsupport ρ) Ω) :
@@ -97,7 +91,7 @@ theorem translatePairing_eq (T : 𝓓'(Ω, F)) {ρ : 𝓓(V, ℝ)} {x : E} {φ :
   have h : MapsTo (· + x) (tsupport ρ) Ω := by
     intro z hz
     apply φ.tsupport_subset
-    rw [show (φ : E → ℝ) = fun y => ρ (y - x) from funext hφ, tsupport_comp_sub_right]
+    rw [show (φ : E → ℝ) = fun y => ρ (y - x) from funext hφ, TauCeti.tsupport_comp_sub_right]
     simpa using hz
   simp only [translatePairing, h, ↓reduceDIte]
   congr 1
@@ -136,7 +130,7 @@ private theorem tsupport_translateOfMapsTo (ρ : 𝓓(V, ℝ)) {x : E}
     (h : MapsTo (· + x) (tsupport ρ) Ω) :
     tsupport (translateOfMapsTo ρ h) = (· - x) ⁻¹' tsupport ρ := by
   rw [show (translateOfMapsTo ρ h : E → ℝ) = fun y => ρ (y - x) from
-    funext (translateOfMapsTo_apply ρ h), tsupport_comp_sub_right]
+    funext (translateOfMapsTo_apply ρ h), TauCeti.tsupport_comp_sub_right]
 
 /-- Around an admissible translation `x`, a closed thickening of the support of `ρ (· - x)`
 still lies in `Ω`, so all nearby translations are admissible. -/
@@ -151,19 +145,6 @@ private theorem exists_cthickening_tsupport_translateOfMapsTo_subset (ρ : 𝓓(
   · rw [tsupport_translateOfMapsTo]
     simpa using hz
   · simpa [dist_eq_norm, ← add_assoc] using hh
-
-/-- The first-order Taylor remainder `f (· - h) - f + Df(·) h` is supported in every closed
-`δ`-thickening of the support of `f` with `‖h‖ ≤ δ`. -/
-private theorem tsupport_sub_sub_add_fderiv_subset {G : Type*} [NormedAddCommGroup G]
-    [NormedSpace ℝ G] (f : E → G) {h : E} {δ : ℝ} (hh : ‖h‖ ≤ δ) :
-    (tsupport fun y => f (y - h) - f y + fderiv ℝ f y h) ⊆ cthickening δ (tsupport f) := by
-  refine closure_minimal (Function.support_subset_iff'.2 fun y hy => ?_) isClosed_cthickening
-  have hy₀ : y ∉ tsupport f := fun h' => hy (self_subset_cthickening _ h')
-  have hyh : y - h ∉ tsupport f := fun h' => hy (mem_cthickening_of_dist_le y (y - h) δ _ h'
-    (by rwa [dist_eq_norm, sub_sub_cancel]))
-  rw [image_eq_zero_of_notMem_tsupport hy₀, image_eq_zero_of_notMem_tsupport hyh,
-    Function.notMem_support.1 fun h' => hy₀ (support_fderiv_subset ℝ h')]
-  simp
 
 /-- The first-order Taylor remainder of the regularization at `x` in the direction `h` is `T`
 applied to the first-order Taylor remainder of the translates of `ρ`. -/
