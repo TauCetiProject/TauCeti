@@ -218,23 +218,25 @@ the range of the factor of `T` through `A` is the closure of the range of `T`. -
 theorem range_factorThru (h : ∀ x, ‖T x‖ = ‖A x‖) :
     (T.factorThru A).range = T.range.topologicalClosure := by
   let V := (T : E →ₗ[𝕜] F).extendOfIsometry (denseRange_toClosureRange A) h
-  have hrange : (T.factorThru A).range = V.toLinearMap.range := by
+  have hfactor : (T.factorThru A).toLinearMap = V.toLinearMap.comp
+      A.range.topologicalClosure.orthogonalProjectionOnto.toLinearMap := by
     ext y
-    simp only [LinearMap.mem_range, coe_coe, factorThru_apply_eq,
-      ← LinearMap.extendOfIsometry_apply (T : E →ₗ[𝕜] F) (denseRange_toClosureRange A) h]
-    constructor
-    · rintro ⟨x, rfl⟩
-      exact ⟨_, rfl⟩
-    · rintro ⟨x, rfl⟩
-      exact ⟨x, congrArg V (Submodule.orthogonalProjectionOnto_mem_subspace_eq_self x)⟩
+    exact (factorThru_apply_eq y).trans
+      (LinearMap.extendOfIsometry_apply (T : E →ₗ[𝕜] F)
+        (denseRange_toClosureRange A) h _).symm
+  have hrange : (T.factorThru A).range = V.toLinearMap.range := by
+    rw [hfactor]
+    exact LinearMap.range_comp_of_range_eq_top _
+      (LinearMap.range_eq_top_of_surjective _ fun x ↦
+        ⟨x, Submodule.orthogonalProjectionOnto_mem_subspace_eq_self x⟩)
   rw [hrange]
   refine le_antisymm ?_ ?_
   · -- The extension maps the dense range of `toClosureRange A` into the range of `T`.
-    rintro _ ⟨y, rfl⟩
+    intro y hy
     rw [← SetLike.mem_coe, Submodule.topologicalClosure_coe]
-    refine map_mem_closure V.continuous
-      ((denseRange_toClosureRange A).closure_range ▸ Set.mem_univ y) ?_
-    rintro _ ⟨x, rfl⟩
+    refine (closure_mono ?_)
+      (V.continuous.range_subset_closure_image_dense (denseRange_toClosureRange A) hy)
+    rintro _ ⟨_, ⟨x, rfl⟩, rfl⟩
     exact ⟨x, (LinearMap.extendOfIsometry_eq (T : E →ₗ[𝕜] F)
       (denseRange_toClosureRange A) h x).symm⟩
   · -- Its range is closed because the range closure of `A` is complete.
