@@ -148,40 +148,7 @@ theorem measurable_vonMisesPDF (m : AddCircle (2 * π)) (κ : ℝ) :
     Measurable (vonMisesPDF m κ) :=
   ENNReal.measurable_ofReal.comp (measurable_vonMisesPDFReal m κ)
 
-/-! ### The circle integrals -/
-
-/-- **The Fourier coefficients of the von Mises weight.** Against the Haar probability measure,
-`∫ e^{κ cos (θ - m)} e^{i n θ} dθ / (2π) = e^{i n m} I_{|n|}(κ)` for every integer `n`, location
-`m` and real `κ`. -/
-theorem integral_exp_mul_cos_sub_mul_fourier (m : AddCircle (2 * π)) (κ : ℝ) (n : ℤ) :
-    ∫ θ, (exp (κ * cos_periodic.lift (θ - m)) : ℂ) * fourier n θ ∂haarAddCircle =
-      fourier n m * besselI n.natAbs κ := by
-  -- Rotate the angle by `m`, then unfold one period `[-π, π]` of the circle.
-  rw [← integral_add_right_eq_self _ m]
-  simp only [add_sub_cancel_right, fourier_apply, smul_add, toCircle_add, Circle.coe_mul,
-    ← mul_assoc]
-  rw [integral_mul_const, integral_haarAddCircle, ← AddCircle.intervalIntegral_preimage _ (-π),
-    show -π + 2 * π = π by ring]
-  have h : ∫ x in -π..π, (exp (κ * cos_periodic.lift (x : AddCircle (2 * π))) : ℂ) *
-      (toCircle (n • (x : AddCircle (2 * π))) : ℂ) = 2 * π * besselI n.natAbs κ := by
-    rw [← Real.integral_exp_mul_cos_mul_cexp κ n]
-    refine intervalIntegral.integral_congr fun x _ => ?_
-    rw [Function.Periodic.lift_coe, fourier_coe_apply']
-    congr 2
-    push_cast
-    field_simp
-  rw [h, Complex.real_smul]
-  push_cast
-  field_simp
-
-/-- **The von Mises normalizer.** Against the Haar probability measure,
-`∫ e^{κ cos (θ - m)} dθ / (2π) = I₀(κ)` for every location `m` and real `κ`. -/
-theorem integral_exp_mul_cos_sub (m : AddCircle (2 * π)) (κ : ℝ) :
-    ∫ θ, exp (κ * cos_periodic.lift (θ - m)) ∂haarAddCircle = besselI 0 κ := by
-  have h := integral_exp_mul_cos_sub_mul_fourier m κ 0
-  simp only [fourier_zero, mul_one, one_mul, Int.natAbs_zero,
-    Nat.cast_zero, integral_complex_ofReal] at h
-  exact_mod_cast h
+/-! ### Normalization -/
 
 /-- The von Mises density integrates to one against the Haar probability measure. -/
 theorem integral_vonMisesPDFReal (m : AddCircle (2 * π)) (κ : ℝ) :
