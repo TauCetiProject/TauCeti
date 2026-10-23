@@ -5,7 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Ring.Action.ConjAct
 public import TauCeti.QuantumGroups.UqSl2.Basic
+
+import Mathlib.Tactic.NormNum
 
 /-!
 # Rescaling automorphisms of U_q(sl₂)
@@ -17,6 +20,9 @@ rank-one presentation. They give a multiplicative family of algebra automorphism
 These automorphisms record the freedom to normalize raising and lowering operators
 without changing the weight operator. On an ordered monomial `F^a K^b E^c`, the
 rescaling factor is `t⁻ᵃ tᶜ`; the integer power of `K` is unchanged.
+
+For nonzero `q`, conjugation by `K` is the rescaling automorphism with parameter `q²`, so
+conjugation by `K ^ b` multiplies `E` by `q ^ (2b)`.
 -/
 
 public section
@@ -123,5 +129,33 @@ theorem rescale_orderedMonomial (t : ℂˣ) (a c : ℕ) (b : ℤ) :
       (((t⁻¹ : ℂˣ) : ℂ) ^ a * (t : ℂ) ^ c) •
         (f q ^ a * ((kUnit q ^ b : (UqSl2 q)ˣ) : UqSl2 q) * e q ^ c) := by
   simp [smul_pow, smul_smul, mul_comm]
+
+variable [Fact (q ≠ 0)]
+
+/-- Conjugation by `K` is the rescaling automorphism with parameter `q²`. -/
+theorem toAlgEquiv_conjAct_kUnit :
+    MulSemiringAction.toAlgEquiv ℂ (UqSl2 q) (ConjAct.toConjAct (kUnit q)) =
+      rescale q (Units.mk0 q Fact.out ^ 2) := by
+  apply AlgEquiv.coe_toAlgHom_injective
+  apply hom_ext
+  · simp [ConjAct.units_smul_def, k_mul_e, mul_assoc, smul_smul, sq]
+  · simp [ConjAct.units_smul_def, k_mul_f, mul_assoc, smul_smul, sq]
+  · simp [ConjAct.units_smul_def, mul_assoc]
+  · simp [ConjAct.units_smul_def]
+
+/-- Conjugation by an integer power of `K` rescales `E`. -/
+theorem kUnit_zpow_mul_e_mul_inv (b : ℤ) :
+    ((kUnit q ^ b : (UqSl2 q)ˣ) : UqSl2 q) * e q * ((kUnit q ^ b)⁻¹ : (UqSl2 q)ˣ) =
+      q ^ (2 * b) • e q := by
+  have h : MulSemiringAction.toAlgAut (ConjAct (UqSl2 q)ˣ) ℂ (UqSl2 q)
+      (ConjAct.toConjAct (kUnit q ^ b)) = rescale q ((Units.mk0 q Fact.out ^ 2) ^ b) := by
+    rw [map_zpow, map_zpow, MulSemiringAction.toAlgAut_apply, toAlgEquiv_conjAct_kUnit,
+      map_zpow]
+  have he := congrArg (fun φ : UqSl2 q ≃ₐ[ℂ] UqSl2 q => φ (e q)) h
+  simp only [MulSemiringAction.toAlgAut_apply, MulSemiringAction.toAlgEquiv_apply,
+    ConjAct.units_smul_def, ConjAct.ofConjAct_toConjAct, rescale_e] at he
+  rw [he, Units.val_zpow_eq_zpow_val, Units.val_pow_eq_pow_val, Units.val_mk0, ← zpow_natCast,
+    ← zpow_mul]
+  norm_num
 
 end TauCeti.UqSl2
