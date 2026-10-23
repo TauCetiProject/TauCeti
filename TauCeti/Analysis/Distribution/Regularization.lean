@@ -13,6 +13,7 @@ import TauCeti.Analysis.Calculus.IteratedFDeriv.FDerivApply
 import TauCeti.Analysis.Distribution.Order
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Topology.Algebra.Monoid
+import TauCeti.Topology.Algebra.Support
 
 /-!
 # Regularization of distributions

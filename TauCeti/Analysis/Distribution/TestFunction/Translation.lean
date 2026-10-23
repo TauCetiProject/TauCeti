@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Distribution.TestFunction
+public import TauCeti.Topology.Algebra.Support
 
 /-!
 # Translation of test functions
@@ -17,7 +18,6 @@ invariance of weak derivatives and distributional variation.
 
 ## Main declarations
 
-* `TauCeti.tsupport_comp_sub_right`: the topological support of a translate.
 * `TauCeti.translateTestFunction`: translate a test function while changing its domain.
 * `TauCeti.translateTestFunction_apply`: evaluation of a translated test function.
 * `TauCeti.fderiv_translateTestFunction`: Fréchet derivatives commute with translation.
@@ -36,12 +36,6 @@ open scoped Distributions
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
   {Omega V : Opens E} {h : E}
-
-/-- The topological support of a translate is the translated topological support. -/
-theorem tsupport_comp_sub_right {X G : Type*} [TopologicalSpace X] [AddGroup X] [ContinuousAdd X]
-    [Zero G] (f : X → G) (x : X) : (tsupport fun y => f (y - x)) = (· - x) ⁻¹' tsupport f := by
-  simpa [sub_eq_add_neg, Function.comp_def] using
-    tsupport_comp_eq_preimage f (Homeomorph.addRight (-x))
 
 /-- Translate a test function in the opposite direction, regarding it as a test function on an
 open set containing the translated support. -/
