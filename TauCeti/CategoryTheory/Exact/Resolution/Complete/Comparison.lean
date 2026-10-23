@@ -7,15 +7,13 @@ module
 
 public import TauCeti.Algebra.Homology.Homotopy
 public import TauCeti.CategoryTheory.Exact.Resolution.Complete.Basic
-public import TauCeti.CategoryTheory.Exact.Stable.Basic
 
 /-!
 # The comparison theorem for complete resolutions
 
-A complete resolution in an exact category is a bi-infinite sequence of conflations
-`Zⁿ ↪ Xⁿ ↠ Zⁿ⁺¹`, indexed by `n : ℤ`, whose middle terms are projective-injective. Splicing the
-conflations gives a cochain complex with differential `Xⁿ ↠ Zⁿ⁺¹ ↪ Xⁿ⁺¹`; it is acyclic in the
-sense of the exact structure, and its object of cycles in degree zero is `Z⁰`.
+Complete resolutions, `TauCeti.ExactStructure.CompleteResolution`, are bi-infinite sequences of
+conflations `Zⁿ ↪ Xⁿ ↠ Zⁿ⁺¹` with projective-injective middle terms, spliced into a cochain
+complex. This file proves that they are unique up to homotopy.
 
 Let `r` and `r'` be complete resolutions and `f : r.Z 0 ⟶ r'.Z 0`. Then `f` lifts to a map of
 complexes `lift f`. In negative degrees the lift is built downwards, lifting along the deflations
@@ -33,11 +31,6 @@ injectivity of the terms of the two resolutions are all it uses.
 
 ## Main definitions
 
-* `TauCeti.ExactStructure.CompleteResolution`: a complete resolution, as the data of its
-  conflations.
-* `TauCeti.ExactStructure.CompleteResolution.complex`: the spliced cochain complex.
-* `TauCeti.ExactStructure.IsFrobenius.completeResolution`: a complete resolution of an object of
-  a Frobenius exact category, with `TauCeti.ExactStructure.IsFrobenius.completeResolutionIso`.
 * `TauCeti.ExactStructure.CompleteResolution.lift`: the map of complexes lifting a morphism of the
   objects of cycles in degree zero.
 * `TauCeti.ExactStructure.CompleteResolution.liftHomotopyZero`: a map of complexes lifting a
@@ -74,124 +67,9 @@ variable {C : Type u} [Category.{v} C] [Preadditive C] [HasZeroObject C] [HasBin
 
 namespace ExactStructure
 
-variable (E : ExactStructure C)
-
-/-- A **complete resolution** in an exact category: a bi-infinite sequence of conflations
-`Zⁿ ↪ Xⁿ ↠ Zⁿ⁺¹` whose middle terms are both relatively projective and relatively injective.
-The spliced complex is `TauCeti.ExactStructure.CompleteResolution.complex`; it is a complete
-resolution of the object of cycles `Z 0`. -/
-structure CompleteResolution where
-  /-- The object of cycles `Zⁿ` in degree `n`. -/
-  Z : ℤ → C
-  /-- The term `Xⁿ` of the complex in degree `n`. -/
-  X : ℤ → C
-  /-- The inflation `Zⁿ ↪ Xⁿ`. -/
-  ι (n : ℤ) : Z n ⟶ X n
-  /-- The deflation `Xⁿ ↠ Zⁿ⁺¹`. -/
-  π (n : ℤ) : X n ⟶ Z (n + 1)
-  ι_π (n : ℤ) : ι n ≫ π n = 0
-  /-- The sequences `Zⁿ ↪ Xⁿ ↠ Zⁿ⁺¹` are conflations. -/
-  conflation (n : ℤ) : E.Conflation (ShortComplex.mk (ι n) (π n) (ι_π n))
-  /-- The terms are projective-injective. -/
-  projectiveInjective (n : ℤ) : E.projectiveInjective (X n)
-
 namespace CompleteResolution
 
-attribute [reassoc (attr := simp)] ι_π
-
-variable {E} (r : E.CompleteResolution)
-
-theorem isProjective_X (n : ℤ) : E.isProjective (r.X n) :=
-  ((E.projectiveInjective_iff _).mp (r.projectiveInjective n)).1
-
-theorem isInjective_X (n : ℤ) : E.isInjective (r.X n) :=
-  ((E.projectiveInjective_iff _).mp (r.projectiveInjective n)).2
-
-theorem isInflation_ι (n : ℤ) : E.IsInflation (r.ι n) := E.isInflation_f (r.conflation n)
-
-theorem isDeflation_π (n : ℤ) : E.IsDeflation (r.π n) := E.isDeflation_g (r.conflation n)
-
-instance (n : ℤ) : Mono (r.ι n) := (E.isKernelCokernelPair _ (r.conflation n)).mono_f
-
-instance (n : ℤ) : Epi (r.π n) := (E.isKernelCokernelPair _ (r.conflation n)).epi_g
-
-/-- The differential `Xⁿ ↠ Zⁿ⁺¹ ↪ Xⁿ⁺¹` of the spliced complex. -/
-noncomputable def d (n : ℤ) : r.X n ⟶ r.X (n + 1) := r.π n ≫ r.ι (n + 1)
-
-@[reassoc (attr := simp)]
-theorem ι_d (n : ℤ) : r.ι n ≫ r.d n = 0 := by simp [d]
-
-@[reassoc (attr := simp)]
-theorem d_π (n : ℤ) : r.d n ≫ r.π (n + 1) = 0 := by simp [d]
-
-@[reassoc (attr := simp)]
-theorem d_d (n : ℤ) : r.d n ≫ r.d (n + 1) = 0 := by simp [d]
-
-/-- The cochain complex spliced from the conflations of a complete resolution. -/
-noncomputable abbrev complex : CochainComplex C ℤ := CochainComplex.of r.X r.d r.d_d
-
-/-- The differential of the complex in consecutive degrees, in the form `rw` can use. -/
-theorem complex_d (n : ℤ) : r.complex.d n (n + 1) = r.d n := CochainComplex.of_d _ _ n
-
-/-- The differential of the complex out of degree `-1`, whose target index is not syntactically
-of the form `n + 1`. -/
-theorem complex_d_negSucc_zero : r.complex.d (Int.negSucc 0) 0 = r.d (Int.negSucc 0) :=
-  r.complex_d _
-
-/-- The morphism into the cycles `Zⁿ` induced by a morphism into `Xⁿ` killed by `Xⁿ ↠ Zⁿ⁺¹`. -/
-noncomputable def liftZ {A : C} (n : ℤ) (k : A ⟶ r.X n) (hk : k ≫ r.π n = 0) : A ⟶ r.Z n :=
-  (E.isKernelCokernelPair _ (r.conflation n)).lift k hk
-
-@[reassoc (attr := simp)]
-theorem liftZ_ι {A : C} (n : ℤ) (k : A ⟶ r.X n) (hk : k ≫ r.π n = 0) :
-    r.liftZ n k hk ≫ r.ι n = k :=
-  (E.isKernelCokernelPair _ (r.conflation n)).lift_f k hk
-
-/-- The morphism out of the cycles `Zⁿ⁺¹` induced by a morphism out of `Xⁿ` killing `Zⁿ ↪ Xⁿ`. -/
-noncomputable def descZ {A : C} (n : ℤ) (k : r.X n ⟶ A) (hk : r.ι n ≫ k = 0) : r.Z (n + 1) ⟶ A :=
-  (E.isKernelCokernelPair _ (r.conflation n)).desc k hk
-
-@[reassoc (attr := simp)]
-theorem π_descZ {A : C} (n : ℤ) (k : r.X n ⟶ A) (hk : r.ι n ≫ k = 0) :
-    r.π n ≫ r.descZ n k hk = k :=
-  (E.isKernelCokernelPair _ (r.conflation n)).g_desc k hk
-
-end CompleteResolution
-
-namespace IsFrobenius
-
-variable {E} (hE : E.IsFrobenius)
-
-/-- A complete resolution of an object of a Frobenius exact category, spliced from injective
-presentations in nonnegative degrees and projective presentations in negative degrees. Its object
-of cycles in degree zero is identified with the given object by
-`TauCeti.ExactStructure.IsFrobenius.completeResolutionIso`. -/
-noncomputable def completeResolution (X : C) : E.CompleteResolution :=
-  let h := hE.exists_projective_conflation_sequence X
-  let S := h.choose
-  let e : ∀ n, (S n).X₃ ≅ (S (n + 1)).X₁ := fun n => (h.choose_spec.2.2.1 n).some
-  { Z := fun n => (S n).X₁
-    X := fun n => (S n).X₂
-    ι := fun n => (S n).f
-    π := fun n => (S n).g ≫ (e n).hom
-    ι_π := fun n => by simp
-    conflation := fun n => E.conflation_of_iso
-      (ShortComplex.isoMk (S₁ := S n) (S₂ := ShortComplex.mk _ _ _) (Iso.refl _) (Iso.refl _)
-        (e n) (by simp) (by simp))
-      (h.choose_spec.1 n)
-    projectiveInjective := fun n => (E.projectiveInjective_iff _).mpr
-      ⟨h.choose_spec.2.1 n, (hE.injective_iff_projective _).mpr (h.choose_spec.2.1 n)⟩ }
-
-/-- The object of cycles in degree zero of `TauCeti.ExactStructure.IsFrobenius.completeResolution`
-is the given object. -/
-noncomputable def completeResolutionIso (X : C) : (hE.completeResolution X).Z 0 ≅ X :=
-  (hE.exists_projective_conflation_sequence X).choose_spec.2.2.2.some
-
-end IsFrobenius
-
-namespace CompleteResolution
-
-variable {E} (r r' : E.CompleteResolution)
+variable {E : ExactStructure C} (r r' : E.CompleteResolution)
 
 section Lift
 
@@ -253,6 +131,10 @@ private noncomputable def liftX (f : r.Z 0 ⟶ r'.Z 0) : ∀ n : ℤ, r.X n ⟶ 
 
 private theorem liftX_comm (f : r.Z 0 ⟶ r'.Z 0) (n : ℤ) :
     liftX r r' f n ≫ r'.d n = r.d n ≫ liftX r r' f (n + 1) := by
+  simp only [d_def]
+  -- In each case `change` unfolds `liftX` at a constructor. It also writes the indices
+  -- `Int.ofNat k + 1` and `Int.negSucc (k + 1) + 1` as `↑(k + 1)` and `Int.negSucc k`: these
+  -- agree definitionally, but only the latter forms match the lemmas.
   match n with
   | Int.ofNat k =>
       change liftPosX r r' f k ≫ r'.π k ≫ r'.ι ((k + 1 : ℕ) : ℤ) =
@@ -305,8 +187,9 @@ private noncomputable def homPos (φ : r.complex ⟶ r'.complex) {f : r.Z 0 ⟶ 
     { χ : r.X k ⟶ r'.X k // r.ι k ≫ χ = 0 ∧ χ ≫ r'.d k = φ.f k ≫ r'.d k }
   | 0 => ⟨φ.f 0 - c ≫ r'.complex.d (Int.negSucc 0) 0, by
       constructor
+      -- `change` writes the index `↑(0 : ℕ)` of the subtype as `0`, the index of `hφ` and `hc`.
       · change r.ι 0 ≫ (φ.f 0 - c ≫ r'.complex.d (Int.negSucc 0) 0) = 0
-        rw [complex_d_negSucc_zero, Preadditive.comp_sub, hφ, hc, d]
+        rw [complex_d_negSucc_zero, Preadditive.comp_sub, hφ, hc, d_def]
         simp only [Category.assoc]
         exact sub_self _
       · change (φ.f 0 - c ≫ r'.complex.d (Int.negSucc 0) 0) ≫ r'.d 0 = φ.f 0 ≫ r'.d 0
@@ -316,13 +199,16 @@ private noncomputable def homPos (φ : r.complex ⟶ r'.complex) {f : r.Z 0 ⟶ 
       let χ := homPos φ hφ c hc k
       let h := (r'.isInjective_X k).factorThru (r.isInflation_ι ((k : ℤ) + 1))
         (r.descZ k χ.1 χ.2.1)
-      have hd : r.d k ≫ h = χ.1 := by simp [h, d]
+      have hd : r.d k ≫ h = χ.1 := by simp [h, d_def]
+      -- `show` gives `h ≫ r'.d k`, of type `r.X (↑k + 1) ⟶ r'.X (↑k + 1)`, the type
+      -- `r.X ↑(k + 1) ⟶ r'.X ↑(k + 1)` of `φ.f ↑(k + 1)`; the indices agree definitionally.
       ⟨φ.f ((k + 1 : ℕ) : ℤ) -
           show r.X ((k + 1 : ℕ) : ℤ) ⟶ r'.X ((k + 1 : ℕ) : ℤ) from h ≫ r'.d k, by
         constructor
         · rw [← cancel_epi (r.π k), comp_zero, ← Category.assoc]
-          change r.d k ≫ (φ.f ((k : ℤ) + 1) - h ≫ r'.d k) = 0
-          rw [Preadditive.comp_sub, ← comm_d, reassoc_of% hd, χ.2.2, sub_self]
+          -- `change` writes `↑(k + 1)` as `↑k + 1`, the index of `d_def` and `comm_d`.
+          change (r.π k ≫ r.ι ((k : ℤ) + 1)) ≫ (φ.f ((k : ℤ) + 1) - h ≫ r'.d k) = 0
+          rw [← d_def, Preadditive.comp_sub, ← comm_d, reassoc_of% hd, χ.2.2, sub_self]
         · change (φ.f ((k : ℤ) + 1) - h ≫ r'.d k) ≫ r'.d ((k : ℤ) + 1) =
             φ.f ((k : ℤ) + 1) ≫ r'.d ((k : ℤ) + 1)
           rw [Preadditive.sub_comp, Category.assoc, d_d, comp_zero, sub_zero]⟩
@@ -340,7 +226,7 @@ private theorem d_hPos (φ : r.complex ⟶ r'.complex) {f : r.Z 0 ⟶ r'.Z 0}
     (hφ : r.ι 0 ≫ φ.f 0 = f ≫ r'.ι 0) (c : r.X 0 ⟶ r'.X (Int.negSucc 0))
     (hc : f = r.ι 0 ≫ c ≫ r'.π (Int.negSucc 0)) (k : ℕ) :
     r.d k ≫ hPos φ hφ c hc k = (homPos φ hφ c hc k).1 := by
-  simp [hPos, d]
+  simp [hPos, d_def]
 
 private theorem homPos_succ (φ : r.complex ⟶ r'.complex) {f : r.Z 0 ⟶ r'.Z 0}
     (hφ : r.ι 0 ≫ φ.f 0 = f ≫ r'.ι 0) (c : r.X 0 ⟶ r'.X (Int.negSucc 0))
@@ -366,8 +252,12 @@ private noncomputable def homNeg (φ : r.complex ⟶ r'.complex) {f : r.Z 0 ⟶ 
   | 0 => ⟨φ.f (Int.negSucc 0) - r.d (Int.negSucc 0) ≫ c, by
       constructor
       · rw [← cancel_mono (r'.ι 0), zero_comp, Category.assoc]
-        change (φ.f (Int.negSucc 0) - r.d (Int.negSucc 0) ≫ c) ≫ r'.d (Int.negSucc 0) = 0
-        rw [Preadditive.sub_comp, comm_d]
+        -- `change` writes the index `0` of `ι` as `Int.negSucc 0 + 1`, the index of `d_def`.
+        change (φ.f (Int.negSucc 0) - r.d (Int.negSucc 0) ≫ c) ≫
+          r'.π (Int.negSucc 0) ≫ r'.ι (Int.negSucc 0 + 1) = 0
+        rw [← d_def, Preadditive.sub_comp, comm_d]
+        simp only [d_def]
+        -- `change` writes `Int.negSucc 0 + 1` as `0`, the index of `hφ`.
         change (r.π (Int.negSucc 0) ≫ r.ι 0) ≫ φ.f 0 -
           ((r.π (Int.negSucc 0) ≫ r.ι 0) ≫ c) ≫ r'.π (Int.negSucc 0) ≫ r'.ι 0 = 0
         simp only [Category.assoc, hφ]
@@ -382,15 +272,18 @@ private noncomputable def homNeg (φ : r.complex ⟶ r'.complex) {f : r.Z 0 ⟶ 
       let h := (r.isProjective_X (Int.negSucc k)).factorThru
         (r'.isDeflation_π (Int.negSucc (k + 1))) (r'.liftZ (Int.negSucc k) ω.1 ω.2.1)
       have hd : h ≫ r'.d (Int.negSucc (k + 1)) = ω.1 := by
+        rw [d_def]
+        -- `change` writes `Int.negSucc (k + 1) + 1` as `Int.negSucc k`, the index of `liftZ_ι`.
         change h ≫ r'.π (Int.negSucc (k + 1)) ≫ r'.ι (Int.negSucc k) = ω.1
         rw [isProjective.factorThru_comp_assoc]
         exact r'.liftZ_ι _ _ _
       ⟨φ.f (Int.negSucc (k + 1)) - r.d (Int.negSucc (k + 1)) ≫ h, by
         constructor
         · rw [← cancel_mono (r'.ι (Int.negSucc k)), zero_comp, Category.assoc]
+          -- `change` writes `Int.negSucc k` as `Int.negSucc (k + 1) + 1`, the index of `d_def`.
           change (φ.f (Int.negSucc (k + 1)) - r.d (Int.negSucc (k + 1)) ≫ h) ≫
-            r'.d (Int.negSucc (k + 1)) = 0
-          rw [Preadditive.sub_comp, comm_d, Category.assoc, hd, ω.2.2]
+            r'.π (Int.negSucc (k + 1)) ≫ r'.ι (Int.negSucc (k + 1) + 1) = 0
+          rw [← d_def, Preadditive.sub_comp, comm_d, Category.assoc, hd, ω.2.2]
           exact sub_self _
         · rw [Preadditive.comp_sub, ← Category.assoc,
             show r.d (Int.negSucc (k + 1 + 1)) ≫ r.d (Int.negSucc (k + 1)) = 0 from r.d_d _,
@@ -410,6 +303,8 @@ private theorem hNeg_d (φ : r.complex ⟶ r'.complex) {f : r.Z 0 ⟶ r'.Z 0}
     (hφ : r.ι 0 ≫ φ.f 0 = f ≫ r'.ι 0) (c : r.X 0 ⟶ r'.X (Int.negSucc 0))
     (hc : f = r.ι 0 ≫ c ≫ r'.π (Int.negSucc 0)) (k : ℕ) :
     hNeg φ hφ c hc k ≫ r'.d (Int.negSucc (k + 1)) = (homNeg φ hφ c hc k).1 := by
+  rw [d_def]
+  -- `change` writes `Int.negSucc (k + 1) + 1` as `Int.negSucc k`, the index of `liftZ_ι`.
   change hNeg φ hφ c hc k ≫ r'.π (Int.negSucc (k + 1)) ≫ r'.ι (Int.negSucc k) = _
   rw [hNeg, isProjective.factorThru_comp_assoc]
   exact r'.liftZ_ι _ _ _
@@ -488,12 +383,12 @@ the projective-injective term `X⁰`. -/
 theorem factorsThrough_of_homotopy (hφ : r.ι 0 ≫ φ.f 0 = f ≫ r'.ι 0) (h : Homotopy φ 0) :
     E.projectiveInjective.FactorsThrough f := by
   have hcomm := h.comm 0
-  rw [dNext_eq _ (show (ComplexShape.up ℤ).Rel 0 (0 + 1) from rfl),
-    prevD_eq _ (show (ComplexShape.up ℤ).Rel (Int.negSucc 0) 0 from rfl),
+  rw [dNext_eq _ (ComplexShape.up_mk 0 (0 + 1) rfl),
+    prevD_eq _ (ComplexShape.up_mk (Int.negSucc 0) 0 rfl),
     complex_d, complex_d_negSucc_zero] at hcomm
   have : f = r.ι 0 ≫ h.hom 0 (Int.negSucc 0) ≫ r'.π (Int.negSucc 0) := by
     rw [← cancel_mono (r'.ι 0), ← hφ, hcomm]
-    simp [d]
+    simp [d_def]
   rw [this]
   exact ObjectProperty.factorsThrough_comp _ (r.projectiveInjective 0) (r.ι 0) _
 

@@ -226,8 +226,8 @@ def mkCochainComplexInt (e : P ⟶ Q) (h : ∀ n, P.X (n + 1) ⟶ Q.X n)
   zero i j hij := dite_eq_right (by simpa [ComplexShape.up_Rel] using hij)
   comm i := by
     obtain ⟨n, rfl⟩ : ∃ n, i = n + 1 := ⟨i - 1, by omega⟩
-    rw [dNext_eq _ (show (ComplexShape.up ℤ).Rel (n + 1) (n + 1 + 1) from rfl),
-      prevD_eq _ (show (ComplexShape.up ℤ).Rel n (n + 1) from rfl)]
+    rw [dNext_eq _ (ComplexShape.up_mk (n + 1) (n + 1 + 1) rfl),
+      prevD_eq _ (ComplexShape.up_mk n (n + 1) rfl)]
     simpa using comm n
 
 @[simp]
