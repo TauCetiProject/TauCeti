@@ -76,21 +76,24 @@ noncomputable def map₂ : I₁.Quotient ⥤ I₂.Quotient ⥤ J.Quotient :=
       map_id X₁ := by
         apply CategoryTheory.Quotient.natTrans_ext
         ext X₂
-        simp only [F.map_id]
+        simp only [Functor.whiskerLeft_app, CategoryTheory.Quotient.natTransLift_app,
+          Functor.whiskerRight_app, F.map_id, NatTrans.id_app,
+          CategoryTheory.Quotient.lift_obj_functor_obj, Functor.comp_obj]
+        -- The goal is now `J.quotientFunctor.map (𝟙 _) = 𝟙 _`.
         exact J.quotientFunctor.map_id _
       map_comp f g := by
         apply CategoryTheory.Quotient.natTrans_ext
         ext X₂
-        simp only [F.map_comp]
-        exact J.quotientFunctor.map_comp _ _ }
+        simp only [Functor.whiskerLeft_app, CategoryTheory.Quotient.natTransLift_app,
+          Functor.whiskerRight_app, F.map_comp, NatTrans.comp_app, Functor.map_comp] }
     (fun X₁ Y₁ f g hfg ↦ by
       apply CategoryTheory.Quotient.natTrans_ext
       ext X₂
       -- Both components are classes of components of `F`; their difference lies in `J`.
-      rw [Functor.whiskerLeft_app, Functor.whiskerLeft_app,
-        CategoryTheory.Quotient.natTransLift_app, CategoryTheory.Quotient.natTransLift_app,
-        Functor.whiskerRight_app, Functor.whiskerRight_app, quotientFunctor_map_eq_iff,
-        ← Functor.flip_obj_map, ← Functor.flip_obj_map, ← Functor.map_sub]
+      simp only [Functor.whiskerLeft_app, CategoryTheory.Quotient.natTransLift_app,
+        Functor.whiskerRight_app]
+      rw [quotientFunctor_map_eq_iff, ← Functor.flip_obj_map, ← Functor.flip_obj_map,
+        ← Functor.map_sub]
       exact (mem_comap_hom J _).1 (le_def.1 (h₁ X₂) _ ((I₁.rel_iff).1 hfg)))
 
 /-- The partial functor of the descended bifunctor at the class of `X₁` is the functor induced
