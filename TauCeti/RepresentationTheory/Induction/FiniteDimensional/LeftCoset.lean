@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Induction.FiniteDimensional.Basic
+public import TauCeti.RepresentationTheory.FiniteIndex
 
 /-!
 # Induction in free left-coset coordinates
@@ -93,10 +94,13 @@ theorem indLeftCosetCoinvariantEquiv_indMap {A B : Rep.{max w u} k S} (f : A ⟶
   rw [indLeftCosetCoinvariantEquiv_apply, indLeftCosetCoinvariantEquiv_apply,
     Rep.indSubtypeEquivPi_indMap]
 
+-- Normalize the induced carrier and generator so simp can match them in importing modules.
 /-- An arbitrary coinvariant generator becomes a single vector at `g⁻¹S`; its value is corrected
 by the inverse of the right-coset factor of `g`. -/
+@[simp]
 theorem indLeftCosetCoinvariantEquiv_mk (A : Rep.{max w u} k S) (g : G) (a : A) :
-    indLeftCosetCoinvariantEquiv A (Representation.IndV.mk S.subtype A.ρ g a) =
+    (dsimp% only [Representation.IndV.mk, LinearMap.comp_apply, TensorProduct.mk_apply]
+      (indLeftCosetCoinvariantEquiv A (Representation.IndV.mk S.subtype A.ρ g a))) =
       Finsupp.single (QuotientGroup.quotientRightRelEquivQuotientLeftRel S
         (Quotient.mk'' g)) (A.ρ (rightCosetFactor (S := S) g)⁻¹ a) := by
   classical
@@ -111,8 +115,8 @@ theorem indLeftCosetCoinvariantEquiv_mk (A : Rep.{max w u} k S) (g : G) (a : A) 
     change (((indCoindIso.{w, u, v} A).hom.hom.toLinearMap
       (Representation.IndV.mk S.subtype A.ρ g a))).1 p.out = _
     rw [indCoindIso_hom_hom_toLinearMap]
-    simp [indToCoind, Representation.IndV.mk]
-    rfl
+    exact congrFun (TauCeti.indToCoind_mk g a) p.out
+  dsimp only [Representation.IndV.mk, LinearMap.comp_apply, TensorProduct.mk_apply] at hmodel
   rw [hmodel]
   by_cases hp : p = Quotient.mk'' g
   · subst p
@@ -139,7 +143,7 @@ theorem indLeftCosetCoinvariantEquiv_symm_single (A : Rep.{max w u} k S)
       Representation.IndV.mk S.subtype A.ρ
         ((QuotientGroup.quotientRightRelEquivQuotientLeftRel S).symm q).out a := by
   apply (indLeftCosetCoinvariantEquiv A).injective
-  rw [LinearEquiv.apply_symm_apply, indLeftCosetCoinvariantEquiv_mk]
-  simp
+  rw [LinearEquiv.apply_symm_apply]
+  simp [Representation.IndV.mk]
 
 end Rep
