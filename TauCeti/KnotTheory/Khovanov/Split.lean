@@ -95,8 +95,10 @@ theorem circleDuality_fiberwiseSplit (f : σ → τ) (x : CircleTensor R τ)
       circleDuality R τ x (fiberwiseMul (R := R) (A := fun _ ↦ R[ε]) f y) := by
   simp [fiberwiseSplit, LinearMap.dualMap_apply]
 
-/-- A coordinate of the split map is a complementary coordinate of the merge map's adjoint. -/
-theorem repr_fiberwiseSplit (f : σ → τ) (x : CircleTensor R τ) (l : σ → Bool) :
+/-- The `l`-coordinate of the split of `x` is the pairing of `x` with the merge of the basis
+tensor labelled by the pointwise complement of `l`. -/
+theorem circleBasis_repr_fiberwiseSplit_eq_circleDuality
+    (f : σ → τ) (x : CircleTensor R τ) (l : σ → Bool) :
     (circleBasis R σ).repr (fiberwiseSplit f x) l =
       circleDuality R τ x
         (fiberwiseMul (R := R) (A := fun _ ↦ R[ε]) f
@@ -107,14 +109,14 @@ theorem repr_fiberwiseSplit (f : σ → τ) (x : CircleTensor R τ) (l : σ → 
 /-- The coefficient formula for arbitrary splittings and deaths. At most one output in each
 fibre may carry `1`; a fibre carrying only `X` requires an input `X`, and a fibre carrying one
 `1` requires an input `1`. An empty fibre also requires an input `X`. -/
-theorem repr_fiberwiseSplit_eq (f : σ → τ) (x : CircleTensor R τ) (l : σ → Bool) :
+theorem circleBasis_repr_fiberwiseSplit (f : σ → τ) (x : CircleTensor R τ) (l : σ → Bool) :
     (circleBasis R σ).repr (fiberwiseSplit f x) l =
       if ∀ j, #{i | f i = j ∧ (!l i) = true} ≤ 1 then
         (circleBasis R τ).repr x
           (fun j ↦ !decide (∃ i, f i = j ∧ (!l i) = true))
       else 0 := by
   classical
-  rw [repr_fiberwiseSplit, fiberwiseMul_circleBasis]
+  rw [circleBasis_repr_fiberwiseSplit_eq_circleDuality, fiberwiseMul_circleBasis]
   split_ifs
   · exact circleDuality_apply_circleBasis _ _
   · exact map_zero _
@@ -147,7 +149,8 @@ theorem fiberwiseSplit_equiv (e : σ ≃ τ) :
     fiberwiseSplit (R := R) e = (reindex R (fun _ ↦ R[ε]) e.symm).toLinearMap := by
   classical
   refine (circleBasis R τ).ext fun l ↦ (circleBasis R σ).ext_elem fun k ↦ ?_
-  rw [repr_fiberwiseSplit, ← AlgHom.toLinearMap_apply, toLinearMap_fiberwiseMul_equiv]
+  rw [circleBasis_repr_fiberwiseSplit_eq_circleDuality, ← AlgHom.toLinearMap_apply,
+    toLinearMap_fiberwiseMul_equiv]
   simp only [LinearEquiv.coe_coe, reindex_circleBasis, circleDuality_apply_circleBasis,
     Function.comp_apply, Bool.not_not]
   simp only [Module.Basis.repr_self, Finsupp.single_apply]
@@ -164,7 +167,7 @@ theorem fiberwiseSplit_pair (b : Bool) :
   classical
   apply (circleBasis R Bool).ext_elem
   intro l
-  rw [repr_fiberwiseSplit_eq]
+  rw [circleBasis_repr_fiberwiseSplit]
   have hl : l = fun i ↦ bif i then l true else l false := by
     funext i
     cases i <;> rfl
@@ -191,7 +194,7 @@ theorem isHomogeneous_fiberwiseSplit (f : σ → τ) :
   intro p x hx
   rw [mem_circleQuantumGrading_piece_iff] at hx ⊢
   intro l hl
-  rw [repr_fiberwiseSplit_eq] at hl
+  rw [circleBasis_repr_fiberwiseSplit] at hl
   split_ifs at hl with h
   · have hd := labelingQuantumDegree_merge h
     have hp := hx _ hl
