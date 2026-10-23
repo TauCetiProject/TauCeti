@@ -173,6 +173,7 @@ theorem dgComp_fromShift {M N : DGAdditiveClosure (DGShiftClosure C)} (n : ℤ) 
 
 /-- The comparison morphism `⊕ᵢ Xᵢ[rᵢ] ⟶ ⊕ᵢ Xᵢ[rᵢ + n]` is closed, as a diagonal matrix of
 closed morphisms. -/
+@[simp↓]
 theorem dgDifferential_toShift (M : DGAdditiveClosure (DGShiftClosure C)) (n : ℤ) :
     dgDifferential R (-n) (toShift R M n) = 0 :=
   dgHom_ext R fun i j ↦ by
@@ -182,6 +183,7 @@ theorem dgDifferential_toShift (M : DGAdditiveClosure (DGShiftClosure C)) (n : �
     · rw [dgHomEquiv_toShift_of_ne M n h, map_zero]
 
 /-- The comparison morphisms `⊕ᵢ Xᵢ[rᵢ] ⟶ ⊕ᵢ Xᵢ[rᵢ + n] ⟶ ⊕ᵢ Xᵢ[rᵢ]` compose to the identity. -/
+@[simp↓]
 theorem dgComp_toShift_fromShift (M : DGAdditiveClosure (DGShiftClosure C)) (n : ℤ) :
     dgComp R (toShift R M n) (fromShift R M n) (neg_add_cancel n) = dgId R M :=
   dgHom_ext R fun i k ↦ by
@@ -193,6 +195,7 @@ theorem dgComp_toShift_fromShift (M : DGAdditiveClosure (DGShiftClosure C)) (n :
 
 /-- The comparison morphisms `⊕ᵢ Xᵢ[rᵢ + n] ⟶ ⊕ᵢ Xᵢ[rᵢ] ⟶ ⊕ᵢ Xᵢ[rᵢ + n]` compose to the
 identity. -/
+@[simp↓]
 theorem dgComp_fromShift_toShift (M : DGAdditiveClosure (DGShiftClosure C)) (n : ℤ) :
     dgComp R (fromShift R M n) (toShift R M n) (add_neg_cancel n) =
       dgId R ((DGShiftClosure.shiftFunctor R n).mapDGAdditiveClosure.obj M) :=
@@ -205,6 +208,7 @@ theorem dgComp_fromShift_toShift (M : DGAdditiveClosure (DGShiftClosure C)) (n :
 
 /-- The comparison morphism `⊕ᵢ Xᵢ[rᵢ + n] ⟶ ⊕ᵢ Xᵢ[rᵢ]` is closed, as the inverse of a closed
 morphism. -/
+@[simp↓]
 theorem dgDifferential_fromShift (M : DGAdditiveClosure (DGShiftClosure C)) (n : ℤ) :
     dgDifferential R n (fromShift R M n) = 0 :=
   dgDifferential_eq_zero_of_dgComp_eq_dgId R (dgDifferential_toShift M n) (neg_add_cancel n)

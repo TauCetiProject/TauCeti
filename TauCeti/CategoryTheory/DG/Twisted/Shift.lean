@@ -172,6 +172,7 @@ theorem dgComp_fromShift {P Q : DGTwistedObject R (DGAdditiveClosure (DGShiftClo
 
 /-- **The comparison morphism `P ⟶ P⟦n⟧` is closed** for the twisted differential: by
 naturality, `δ ≫ σ = (-1)^n • σ ≫ δ⟦n⟧`, which cancels the twisting terms of `D σ`. -/
+@[simp↓]
 theorem dgDifferential_toShift : dgDifferential R (-n) (toShift P n) = 0 :=
   (dgHomEquiv R _ _ (-n + 1)).injective <| by
     rw [dgHomEquiv_dgDifferential, map_zero, dgHomEquiv_toShift,
@@ -180,6 +181,7 @@ theorem dgDifferential_toShift : dgDifferential R (-n) (toShift P n) = 0 :=
     exact sub_self _
 
 /-- The comparison morphisms `P ⟶ P⟦n⟧ ⟶ P` compose to the identity of `P`. -/
+@[simp↓]
 theorem dgComp_toShift_fromShift :
     dgComp R (toShift P n) (fromShift P n) (neg_add_cancel n) = dgId R P :=
   (dgHomEquiv R _ _ 0).injective <| by
@@ -187,6 +189,7 @@ theorem dgComp_toShift_fromShift :
       dgHomEquiv_fromShift, DGAdditiveClosure.dgComp_toShift_fromShift]
 
 /-- The comparison morphisms `P⟦n⟧ ⟶ P ⟶ P⟦n⟧` compose to the identity of `P⟦n⟧`. -/
+@[simp↓]
 theorem dgComp_fromShift_toShift :
     dgComp R (fromShift P n) (toShift P n) (add_neg_cancel n) =
       dgId R ((shiftFunctor R n).obj P) :=
@@ -195,6 +198,7 @@ theorem dgComp_fromShift_toShift :
       dgHomEquiv_fromShift, DGAdditiveClosure.dgComp_fromShift_toShift]
 
 /-- The comparison morphism `P⟦n⟧ ⟶ P` is closed, as the inverse of a closed morphism. -/
+@[simp↓]
 theorem dgDifferential_fromShift : dgDifferential R n (fromShift P n) = 0 :=
   dgDifferential_eq_zero_of_dgComp_eq_dgId R (dgDifferential_toShift P n) (neg_add_cancel n)
     (dgComp_toShift_fromShift P n) (dgComp_fromShift_toShift P n)
