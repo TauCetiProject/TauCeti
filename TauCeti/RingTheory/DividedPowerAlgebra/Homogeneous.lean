@@ -146,6 +146,13 @@ instance instGradedMonoid : SetLike.GradedMonoid (homogeneousSubmodule (R := R) 
   one_mem := one_mem_homogeneousSubmodule (R := R) (M := M)
   mul_mem _ _ := mul_mem_homogeneousSubmodule
 
+/-- A finite product of divided-power generators belongs to the homogeneous piece of its
+total degree. -/
+theorem prod_dp_mem_homogeneousSubmodule_of_sum_eq {ι : Type*} [Fintype ι] {d : ℕ}
+    (m : ι → M) (k : ι → ℕ) (hk : ∑ j, k j = d) :
+    ∏ j, dp R (k j) (m j) ∈ homogeneousSubmodule (R := R) (M := M) d :=
+  hk ▸ SetLike.prod_mem_graded _ _ _ fun j _ ↦ dp_mem_homogeneousSubmodule (k j) (m j)
+
 /-- The functorial map on divided power algebras preserves every homogeneous piece. -/
 theorem map_mem_homogeneousSubmodule (f : M →ₗ[R] N) {d : ℕ} {x : DividedPowerAlgebra R M}
     (hx : x ∈ homogeneousSubmodule (R := R) (M := M) d) :

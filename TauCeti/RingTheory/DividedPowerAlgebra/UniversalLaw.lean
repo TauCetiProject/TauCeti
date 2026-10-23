@@ -291,8 +291,7 @@ theorem coe_lid_rTensor_lcoeff_gamma_toFun_sum_X_tmul (d : ℕ) {ι : Type*} [Fi
     rw [monomial_eq, C_1, one_mul, Finsupp.prod_fintype _ _ fun _ ↦ pow_zero _]
   have hdec (h : ∑ j, k j = d) : (DirectSum.decompose (homogeneousSubmodule (R := R) (M := M))
       (∏ j, dp R (k j) (m j)) d : DividedPowerAlgebra R M) = ∏ j, dp R (k j) (m j) :=
-    DirectSum.decompose_of_mem_same _ <| h ▸
-      SetLike.prod_mem_graded _ _ _ fun j _ ↦ dp_mem_homogeneousSubmodule (k j) (m j)
+    DirectSum.decompose_of_mem_same _ <| prod_dp_mem_homogeneousSubmodule_of_sum_eq m k h
   rw [gamma_toFun_sum_tmul]
   simp +contextual [hX, MvPolynomial.coeff_monomial, ite_smul,
     apply_ite (Subtype.val : homogeneousSubmodule (R := R) (M := M) d → _), Finset.sum_ite_eq',
@@ -316,9 +315,9 @@ theorem gamma_comp_toPolynomialLaw {N : Type*} [AddCommMonoid N] [Module R N]
   apply Subtype.ext
   have hdeg : ∑ j, k j = d := (Finset.mem_finsuppAntidiag.mp hk).1
   have hM : ∏ j, dp R (k j) (m j) ∈ homogeneousSubmodule (R := R) (M := M) d :=
-    hdeg ▸ SetLike.prod_mem_graded _ _ _ fun j _ ↦ dp_mem_homogeneousSubmodule (k j) (m j)
+    prod_dp_mem_homogeneousSubmodule_of_sum_eq m k hdeg
   have hN : ∏ j, dp R (k j) (f (m j)) ∈ homogeneousSubmodule (R := R) (M := N) d :=
-    hdeg ▸ SetLike.prod_mem_graded _ _ _ fun j _ ↦ dp_mem_homogeneousSubmodule (k j) (f (m j))
+    prod_dp_mem_homogeneousSubmodule_of_sum_eq (fun j ↦ f (m j)) k hdeg
   simp only [coe_mapHomogeneousSubmodule_apply, DirectSum.decompose_of_mem_same _ hM,
     DirectSum.decompose_of_mem_same _ hN, map_prod, map_apply_dp]
 

@@ -90,9 +90,7 @@ theorem ground_toPolynomialLaw_comp_gamma_apply (d : ℕ)
     (f : homogeneousSubmodule (R := R) (M := M) d →ₗ[R] N) (m : M) :
     (f.toPolynomialLaw.comp (gamma R M d)).ground m =
       f ⟨dp R d m, dp_mem_homogeneousSubmodule d m⟩ := by
-  rw [PolynomialLaw.ground_apply, PolynomialLaw.comp_toFun', Function.comp_apply,
-    LinearMap.toPolynomialLaw_toFun', PolynomialLaw.toFun'_eq_toFun, gamma_toFun_tmul]
-  simp
+  simp [PolynomialLaw.ground_apply, PolynomialLaw.toFun'_eq_toFun, gamma_toFun_tmul]
 
 open MvPolynomial in
 /-- Mixed coefficients of the associated law recover `f` on products of divided powers.
@@ -103,12 +101,10 @@ theorem lid_rTensor_lcoeff_homogeneousLawMap (d : ℕ)
     TensorProduct.lid R N ((lcoeff R k).rTensor N
       ((homogeneousLawMap R M N d f : M →ₚₗ[R] N).toFun (MvPolynomial ι R)
         (∑ j, X j ⊗ₜ[R] m j))) =
-      f ⟨∏ j, dp R (k j) (m j), hk ▸
-        SetLike.prod_mem_graded _ _ _ fun j _ ↦ dp_mem_homogeneousSubmodule (k j) (m j)⟩ := by
+      f ⟨∏ j, dp R (k j) (m j), prod_dp_mem_homogeneousSubmodule_of_sum_eq m k hk⟩ := by
   have hgamma : TensorProduct.lid R _ ((lcoeff R k).rTensor _
       ((gamma R M d).toFun (MvPolynomial ι R) (∑ j, X j ⊗ₜ[R] m j))) =
-      ⟨∏ j, dp R (k j) (m j), hk ▸
-        SetLike.prod_mem_graded _ _ _ fun j _ ↦ dp_mem_homogeneousSubmodule (k j) (m j)⟩ := by
+      ⟨∏ j, dp R (k j) (m j), prod_dp_mem_homogeneousSubmodule_of_sum_eq m k hk⟩ := by
     apply Subtype.ext
     simpa only [hk, ite_true] using
       coe_lid_rTensor_lcoeff_gamma_toFun_sum_X_tmul (R := R) d m k
@@ -126,10 +122,8 @@ theorem homogeneousLawMap_injective (d : ℕ) :
   intro f g hfg
   have hprod {ι : Type} [Fintype ι] (m : ι → M) (k : ι →₀ ℕ)
       (hk : ∑ j, k j = d) :
-      f ⟨∏ j, dp R (k j) (m j), hk ▸
-        SetLike.prod_mem_graded _ _ _ fun j _ ↦ dp_mem_homogeneousSubmodule (k j) (m j)⟩ =
-      g ⟨∏ j, dp R (k j) (m j), hk ▸
-        SetLike.prod_mem_graded _ _ _ fun j _ ↦ dp_mem_homogeneousSubmodule (k j) (m j)⟩ := by
+      f ⟨∏ j, dp R (k j) (m j), prod_dp_mem_homogeneousSubmodule_of_sum_eq m k hk⟩ =
+      g ⟨∏ j, dp R (k j) (m j), prod_dp_mem_homogeneousSubmodule_of_sum_eq m k hk⟩ := by
     rw [← lid_rTensor_lcoeff_homogeneousLawMap d f m k hk,
       ← lid_rTensor_lcoeff_homogeneousLawMap d g m k hk, hfg]
   apply homogeneousSubmodule_ext
