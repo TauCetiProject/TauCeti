@@ -21,7 +21,8 @@ Hence `ad s = 0`, so `s` is central, hence a scalar.
 
 This is the general linear instance of the fact that, in a reductive Lie algebra, ad-nilpotence
 alone allows an arbitrary central component. The trace-zero version, where the central component
-is forced to vanish, is in `TauCeti.Algebra.Lie.GeneralLinear.AdNilpotent`.
+is forced to vanish when the matrix size is nonzero in the field, is in
+`TauCeti.Algebra.Lie.GeneralLinear.AdNilpotent`.
 
 The perfectness hypothesis cannot be dropped: if `K` has characteristic `p` and `a ∈ K` is not a
 `p`-th power, the companion matrix `f` of `X ^ p - a` satisfies `ad f ^ p = ad (f ^ p) = 0`, but

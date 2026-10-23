@@ -27,8 +27,9 @@ Over a nontrivial commutative ring, the strong rank condition gives
 * `TauCeti.finrank_sl`: `sl n R` has rank `(card n) ^ 2 - 1`.
 * `TauCeti.finrank_sl_add_one`: the untruncated form, for a nonempty index type.
 * `TauCeti.finrank_inf_sl_add_one`: over a field in which the size of the matrices is nonzero, a
-  subspace of matrices containing the identity meets `sl n K` in codimension one. Applied to a
-  centralizer, this compares centralizer dimensions in `sl n K` and `gl n K`.
+  subspace of matrices containing the identity meets `sl n K` in codimension one.
+* `TauCeti.finrank_ker_ad_sl_add_one`: applied to a centralizer, the centralizer of `x` in
+  `sl n K` has codimension one in its centralizer in `gl n K`.
 
 The same coordinate system also gives the `Module.Free` and `Module.Finite` instances for `sl n R`
 that any rank computation involving it needs; over a commutative ring these do not come for free
@@ -157,6 +158,30 @@ theorem finrank_inf_sl_add_one (hn : (Fintype.card n : K) ≠ 0) {A : Submodule 
     simp [SpecialLinear.mem_sl_iff]
   rw [inf_comm, hsl]
   exact Module.Dual.finrank_ker_inf_add_one fun h ↦ hn (by simpa using h hA)
+
+/-- **Centralizers in `sl n` and `gl n`.** When the size of the matrices is nonzero in `K`, the
+centralizer of `x ∈ sl n K` in `sl n K` has codimension one in its centralizer in `gl n K`. -/
+theorem finrank_ker_ad_sl_add_one (hn : (Fintype.card n : K) ≠ 0) (x : SpecialLinear.sl n K) :
+    finrank K (LinearMap.ker (ad K (SpecialLinear.sl n K) x)) + 1 =
+      finrank K (LinearMap.ker (ad K (Matrix n n K) (x : Matrix n n K))) := by
+  have hmap : (LinearMap.ker (ad K (SpecialLinear.sl n K) x)).map
+      ((SpecialLinear.sl n K).incl : SpecialLinear.sl n K →ₗ[K] Matrix n n K) =
+        LinearMap.ker (ad K (Matrix n n K) (x : Matrix n n K)) ⊓
+          (SpecialLinear.sl n K).toSubmodule := by
+    ext Y
+    simp only [Submodule.mem_map, LinearMap.mem_ker, ad_apply, LieHom.coe_toLinearMap,
+      LieSubalgebra.coe_incl, Submodule.mem_inf, LieSubalgebra.mem_toSubmodule]
+    constructor
+    · rintro ⟨y, hy, rfl⟩
+      exact ⟨by simpa using congrArg Subtype.val hy, y.2⟩
+    · rintro ⟨hY, hYsl⟩
+      exact ⟨⟨Y, hYsl⟩, Subtype.ext (by simpa using hY), rfl⟩
+  have h1 : (1 : Matrix n n K) ∈ LinearMap.ker (ad K (Matrix n n K) (x : Matrix n n K)) := by
+    simp [LieRing.of_associative_ring_bracket]
+  rw [← finrank_inf_sl_add_one hn h1, ← hmap,
+    (Submodule.equivMapOfInjective
+      ((SpecialLinear.sl n K).incl : SpecialLinear.sl n K →ₗ[K] Matrix n n K)
+      (fun _ _ h ↦ Subtype.ext h) _).finrank_eq]
 
 end Field
 

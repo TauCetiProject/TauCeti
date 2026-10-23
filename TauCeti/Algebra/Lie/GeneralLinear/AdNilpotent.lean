@@ -7,15 +7,14 @@ module
 
 public import Mathlib.FieldTheory.Perfect
 public import Mathlib.LinearAlgebra.Matrix.ToLin
-public import TauCeti.Algebra.Lie.GeneralLinear.Finrank
+public import TauCeti.Algebra.Lie.GeneralLinear.Basic
 import TauCeti.Algebra.Lie.AdjointAction.JordanChevalley
-import TauCeti.Algebra.Lie.GeneralLinear.Basic
 
 /-!
-# Ad-nilpotent matrices and centralizers in `gl n` and `sl n`
+# Ad-nilpotent matrices in `gl n` and `sl n`
 
 This file compares the type-`A` nilpotent cone, defined through the adjoint action, with nilpotent
-matrices, and compares centralizers in `gl n K` and in its trace-zero subalgebra `sl n K`.
+matrices, both in `gl n K` and in its trace-zero subalgebra `sl n K`.
 
 In the reductive Lie algebra `gl n K` the adjoint action ignores the centre, so ad-nilpotence alone
 allows an arbitrary scalar component: over a perfect field, `ad X` is nilpotent exactly when
@@ -24,9 +23,8 @@ matrices is nonzero in `K`, the trace forces `c = 0`. So the elements of `sl n K
 adjoint action are exactly the nilpotent matrices, and since nilpotent matrices have trace zero,
 these are all the nilpotent `n × n` matrices.
 
-For centralizers, the identity matrix commutes with everything and has trace `Fintype.card n`. So
-when this is nonzero in `K`, `TauCeti.finrank_inf_sl_add_one` makes the centralizer in `sl n K` a
-hyperplane in the centralizer in `gl n K`.
+The corresponding comparison of centralizers, `TauCeti.finrank_ker_ad_sl_add_one`, needs no
+nilpotence and lives with the other dimension counts in `TauCeti.Algebra.Lie.GeneralLinear.Finrank`.
 
 ## Main statements
 
@@ -36,8 +34,6 @@ hyperplane in the centralizer in `gl n K`.
   matrix.
 * `TauCeti.image_setOf_isNilpotent_ad_sl`: the ad-nilpotent elements of `sl n K`, viewed as
   matrices, are exactly the nilpotent matrices.
-* `TauCeti.finrank_ker_ad_sl_add_one`: the centralizer of `x` in `sl n K` has codimension one in
-  its centralizer in `gl n K`.
 
 ## References
 
@@ -114,29 +110,5 @@ theorem image_setOf_isNilpotent_ad_sl [PerfectField K]
   simp only [Set.mem_image, Set.mem_ofPred_eq, isNilpotent_ad_sl_iff hn]
   refine ⟨fun ⟨x, hx, hxX⟩ ↦ hxX ▸ hx, fun hX ↦ ⟨⟨X, ?_⟩, hX, rfl⟩⟩
   exact (SpecialLinear.mem_sl_iff).mpr (Matrix.isNilpotent_trace_of_isNilpotent hX).eq_zero
-
-/-- **Centralizers in `sl n` and `gl n`.** When the size of the matrices is nonzero in `K`, the
-centralizer of `x ∈ sl n K` in `sl n K` has codimension one in its centralizer in `gl n K`. -/
-theorem finrank_ker_ad_sl_add_one (hn : (Fintype.card n : K) ≠ 0) (x : SpecialLinear.sl n K) :
-    finrank K (LinearMap.ker (ad K (SpecialLinear.sl n K) x)) + 1 =
-      finrank K (LinearMap.ker (ad K (Matrix n n K) (x : Matrix n n K))) := by
-  have hmap : (LinearMap.ker (ad K (SpecialLinear.sl n K) x)).map
-      ((SpecialLinear.sl n K).incl : SpecialLinear.sl n K →ₗ[K] Matrix n n K) =
-        LinearMap.ker (ad K (Matrix n n K) (x : Matrix n n K)) ⊓
-          (SpecialLinear.sl n K).toSubmodule := by
-    ext Y
-    simp only [Submodule.mem_map, LinearMap.mem_ker, ad_apply, LieHom.coe_toLinearMap,
-      LieSubalgebra.coe_incl, Submodule.mem_inf, LieSubalgebra.mem_toSubmodule]
-    constructor
-    · rintro ⟨y, hy, rfl⟩
-      exact ⟨by simpa using congrArg Subtype.val hy, y.2⟩
-    · rintro ⟨hY, hYsl⟩
-      exact ⟨⟨Y, hYsl⟩, Subtype.ext (by simpa using hY), rfl⟩
-  have h1 : (1 : Matrix n n K) ∈ LinearMap.ker (ad K (Matrix n n K) (x : Matrix n n K)) := by
-    simp [LieRing.of_associative_ring_bracket]
-  rw [← finrank_inf_sl_add_one hn h1, ← hmap,
-    (Submodule.equivMapOfInjective
-      ((SpecialLinear.sl n K).incl : SpecialLinear.sl n K →ₗ[K] Matrix n n K)
-      (fun _ _ h ↦ Subtype.ext h) _).finrank_eq]
 
 end TauCeti

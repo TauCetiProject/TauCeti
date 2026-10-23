@@ -55,9 +55,7 @@ variable {ι R : Type*} [Fintype ι] [DecidableEq ι] [CommRing R]
 @[simp]
 theorem toConjAct_toGL_smul (s : Matrix.SpecialLinearGroup ι R) (X : Matrix ι ι R) :
     toConjAct (Matrix.SpecialLinearGroup.toGL s) • X = toConjAct s • X := by
-  rw [units_smul_def, specialLinearGroup_smul_def, ofConjAct_toConjAct, ofConjAct_toConjAct,
-    ← map_inv, Matrix.SpecialLinearGroup.coe_GL_coe_matrix,
-    Matrix.SpecialLinearGroup.coe_GL_coe_matrix]
+  simp [units_smul_def, specialLinearGroup_smul_def, ← map_inv]
 
 end ConjAct
 
@@ -93,17 +91,15 @@ theorem toConjAct_smul_mem_orbit_specialLinearGroup_iff [CommRing K] {g : GL ι 
   · rintro ⟨s, hs⟩
     obtain ⟨s, rfl⟩ := ConjAct.toConjAct.surjective s
     refine ⟨(SpecialLinearGroup.toGL s)⁻¹ * g, (hfix _).mp ?_, by simp⟩
-    rw [ConjAct.toConjAct_mul, mul_smul, ← hs, ← ConjAct.toConjAct_toGL_smul, ← mul_smul,
-      ← ConjAct.toConjAct_mul, inv_mul_cancel, ConjAct.toConjAct_one, one_smul]
+    rw [ConjAct.toConjAct_mul, mul_smul, ← hs, ← ConjAct.toConjAct_toGL_smul,
+      ConjAct.toConjAct_inv, inv_smul_smul]
   · rintro ⟨c, hc, hdet⟩
     obtain ⟨s, hs⟩ : g * c⁻¹ ∈ (SpecialLinearGroup.toGL (n := ι) (R := K)).range := by
       rw [SpecialLinearGroup.range_toGL_eq_ker_det, MonoidHom.mem_ker, map_mul, map_inv, hdet,
         mul_inv_cancel]
     refine ⟨ConjAct.toConjAct s, ?_⟩
-    rw [← ConjAct.toConjAct_toGL_smul, hs, ConjAct.toConjAct_mul, mul_smul,
-      ConjAct.toConjAct_inv]
-    congr 1
-    rw [inv_smul_eq_iff, (hfix c).mpr hc]
+    rw [← ConjAct.toConjAct_toGL_smul, hs, ConjAct.toConjAct_mul, mul_smul, ConjAct.toConjAct_inv,
+      inv_smul_eq_iff.mpr ((hfix c).mpr hc).symm]
 
 /-- An `SL(n, K)`-conjugate of a matrix is a `GL(n, K)`-conjugate. -/
 theorem orbit_conjAct_specialLinearGroup_subset [CommRing K] (X : Matrix ι ι K) :
