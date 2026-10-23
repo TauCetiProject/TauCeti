@@ -28,10 +28,16 @@ by `‖φ‖`.
 The derivative of a superposition operator `f ↦ G ∘ f` at `f` is `applyCLM` of the family
 `t ↦ G' (f t)` of derivatives of `G`; see
 `TauCeti.Analysis.Calculus.FDeriv.BoundedContinuousFunction`.
+
+`BoundedContinuousFunction.continuousAt_of_forall_apply_eq` says that an operator that is given
+near `f₀` by `Θ f t = G (f t)`, with `G` uniformly continuous on a set containing a tube around the
+range of `f₀`, is continuous at `f₀` (`BoundedContinuousFunction.apply_mem_of_mem_ball` and
+`BoundedContinuousFunction.ball_half_subset_of_mem_ball` are the facts about the tube).
 -/
 
 public section
 
+open Metric
 open scoped NNReal BoundedContinuousFunction
 
 namespace TauCeti
@@ -83,5 +89,40 @@ theorem applyCLM_apply (φ : α →ᵇ (X →L[𝕜] Y)) (h : α →ᵇ X) (t : 
 theorem norm_applyCLM_apply_le (φ : α →ᵇ (X →L[𝕜] Y)) : ‖applyCLM φ‖ ≤ ‖φ‖ :=
   (applyCLM φ).opNorm_le_bound (norm_nonneg φ) fun h ↦ (norm_le (by positivity)).2 fun t ↦
     (φ t).le_of_opNorm_le_of_le (φ.norm_coe_le_norm t) (h.norm_coe_le_norm t)
+
+
+section PseudoMetricSpace
+
+variable {α X Y : Type*} [TopologicalSpace α] [PseudoMetricSpace X] [PseudoMetricSpace Y]
+  {s : Set X} {f₀ : α →ᵇ X} {δ : ℝ} {G : X → Y} {Θ : (α →ᵇ X) → α →ᵇ Y}
+
+/-- If the values of `f₀` stay `δ > 0` inside `s`, then every function in the `δ`-ball about `f₀`
+has its values in `s`. -/
+theorem apply_mem_of_mem_ball {f : α →ᵇ X} (hf₀ : ∀ t, ball (f₀ t) δ ⊆ s)
+    (hf : f ∈ ball f₀ δ) (t : α) : f t ∈ s :=
+  hf₀ t (mem_ball.2 ((dist_coe_le_dist t).trans_lt (mem_ball.1 hf)))
+
+/-- If the values of `f₀` stay `δ > 0` inside `s`, then so do the values of every function
+uniformly within `δ / 2` of `f₀`, with the margin `δ / 2`. -/
+theorem ball_half_subset_of_mem_ball {f : α →ᵇ X} (hf₀ : ∀ t, ball (f₀ t) δ ⊆ s)
+    (hf : f ∈ ball f₀ (δ / 2)) (t : α) : ball (f t) (δ / 2) ⊆ s :=
+  (ball_subset_ball' (by linarith [dist_coe_le_dist (f := f) (g := f₀) t, mem_ball.1 hf])).trans
+    (hf₀ t)
+
+/-- If `G` is uniformly continuous on `s`, the values of `f₀` stay a distance `δ > 0` inside `s`,
+and `Θ f t = G (f t)` on the ball of radius `δ` about `f₀`, then `Θ` is continuous at `f₀`. -/
+theorem continuousAt_of_forall_apply_eq (hG : UniformContinuousOn G s) (hδ : 0 < δ)
+    (hf₀ : ∀ t, ball (f₀ t) δ ⊆ s) (hΘ : ∀ f ∈ ball f₀ δ, ∀ t, Θ f t = G (f t)) :
+    ContinuousAt Θ f₀ := by
+  refine Metric.continuousAt_iff.2 fun ε hε ↦ ?_
+  obtain ⟨η, hη, hGη⟩ := Metric.uniformContinuousOn_iff_le.1 hG (ε / 2) (half_pos hε)
+  refine ⟨min δ η, lt_min hδ hη, fun f hf ↦ ?_⟩
+  have hfδ : f ∈ ball f₀ δ := mem_ball.2 (hf.trans_le (min_le_left _ _))
+  refine lt_of_le_of_lt ((dist_le (half_pos hε).le).2 fun t ↦ ?_) (half_lt_self hε)
+  rw [hΘ f hfδ, hΘ f₀ (mem_ball_self hδ)]
+  exact hGη _ (apply_mem_of_mem_ball hf₀ hfδ t) _
+    (hf₀ t (mem_ball_self hδ)) ((dist_coe_le_dist t).trans (hf.le.trans (min_le_right _ _)))
+
+end PseudoMetricSpace
 
 end BoundedContinuousFunction
