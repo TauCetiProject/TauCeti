@@ -41,9 +41,7 @@ theorem sum_sum_min_eq_sum_sq_card_filter {ι : Type*} (s : Finset ι) (len : ι
     symm
     calc
       _ = ((range n).filter fun k => k < len i ∧ k < len j).card := by
-        simp only [mul_ite, mul_one, mul_zero, sum_ite, sum_const_zero, add_zero,
-          filter_filter, and_comm]
-        simp
+        simp_rw [ite_mul, one_mul, zero_mul, ← ite_and, sum_boole, Nat.cast_id]
       _ = _ := by rw [hf, card_range]
   simp_rw [sum_congr rfl (fun i hi => sum_congr rfl (fun j hj => hmin i hi j hj))]
   simp_rw [sum_comm (s := s) (t := range n)]

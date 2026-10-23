@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.FGModuleCat.Cyclic
 public import TauCeti.Combinatorics.Enumerative.Partition.ColumnSquares
-public import TauCeti.LinearAlgebra.End.ScalarCentralizer
+public import TauCeti.LinearAlgebra.End.Centralizer
 public import TauCeti.LinearAlgebra.Pi
 
 /-!
@@ -37,9 +37,10 @@ open Polynomial MulOpposite CategoryTheory
 
 variable {K : Type*} [Field K] {n : ℕ}
 
-/-- The endomorphism space of a sum of nilpotent cyclic blocks has dimension the
-sum of the pairwise minima of their lengths. -/
-theorem finrank_end_cyclic_root_pow {ι : Type*} [Fintype ι] (len : ι → ℕ)
+/-- The space of `Aᵐᵒᵖ`-linear endomorphisms of a sum of nilpotent cyclic blocks,
+where `A = K[X]/(X^n)`, has dimension the sum of the pairwise minima of their lengths.
+These are precisely the endomorphisms commuting with the action of `x`. -/
+theorem finrank_end_pi_cyclic_root_pow {ι : Type*} [Fintype ι] (len : ι → ℕ)
     (hlen : ∀ i, len i ≤ n) :
     Module.finrank K (Module.End (AdjoinRoot (X ^ n : K[X]))ᵐᵒᵖ
       ((i : ι) → ((AdjoinRoot (X ^ n : K[X]))ᵐᵒᵖ ⧸
@@ -48,21 +49,8 @@ theorem finrank_end_cyclic_root_pow {ι : Type*} [Fintype ι] (len : ι → ℕ)
   have := (monic_X_pow n).finite_adjoinRoot (R := K)
   let M (i : ι) := (AdjoinRoot (X ^ n : K[X]))ᵐᵒᵖ ⧸
     Ideal.span {op (AdjoinRoot.root (X ^ n : K[X]) ^ len i)}
-  -- The category uses scalar restriction along the algebra map; the quotients carry
-  -- their original K-actions. Relate these actions explicitly with algebraMap_smul.
-  let e (i j : ι) :
-      (FGModuleCat.cyclicModule (AdjoinRoot.root (X ^ n : K[X]) ^ len i) ⟶
-        FGModuleCat.cyclicModule (AdjoinRoot.root (X ^ n : K[X]) ^ len j)) ≃ₗ[K]
-      (M i →ₗ[(AdjoinRoot (X ^ n : K[X]))ᵐᵒᵖ] M j) :=
-    { toFun f := f.hom.hom
-      invFun f := FGModuleCat.ofHom f
-      left_inv _ := rfl
-      right_inv _ := rfl
-      map_add' _ _ := rfl
-      map_smul' c f := by
-        apply LinearMap.ext
-        intro x
-        exact algebraMap_smul (AdjoinRoot (X ^ n : K[X]))ᵐᵒᵖ c (f.hom.hom x) }
+  let e (i j : ι) := FGModuleCat.cyclicModuleHomLinearEquiv K
+    (M := M j) (AdjoinRoot.root (X ^ n : K[X]) ^ len i)
   let _ (i j : ι) : Module.Finite K (M i →ₗ[(AdjoinRoot (X ^ n : K[X]))ᵐᵒᵖ] M j) :=
     LinearEquiv.finiteDimensional ((e i j).symm.trans
       (FGModuleCat.cyclicModuleHomEquiv K (AdjoinRoot.root (X ^ n : K[X]) ^ len i))).symm
@@ -74,7 +62,7 @@ theorem finrank_end_cyclic_root_pow {ι : Type*} [Fintype ι] (len : ι → ℕ)
 
 /-- The centralizer of the nilpotent action on a sum of cyclic blocks has dimension
 the sum of the pairwise minima of their lengths. -/
-theorem finrank_centralizer_cyclic_root_pow {ι : Type*} [Fintype ι] (len : ι → ℕ)
+theorem finrank_centralizer_pi_cyclic_root_pow {ι : Type*} [Fintype ι] (len : ι → ℕ)
     (hlen : ∀ i, len i ≤ n) :
     Module.finrank K (Subalgebra.centralizer K
       {Algebra.lsmul K K
@@ -87,13 +75,17 @@ theorem finrank_centralizer_cyclic_root_pow {ι : Type*} [Fintype ι] (len : ι 
       (AdjoinRoot (X ^ n : K[X]))).toAlgHom) (AdjoinRoot.adjoinRoot_eq_top (f := X ^ n))
     simp only [AlgHom.map_adjoin_singleton, Algebra.map_top] at h
     exact h.trans ((AlgHom.range_eq_top _).mpr (AlgEquiv.toOpposite K _).surjective)
-  rw [(Module.End.centralizerScalarEquiv _ hgen).finrank_eq]
-  exact finrank_end_cyclic_root_pow len hlen
+  let M := (i : ι) → ((AdjoinRoot (X ^ n : K[X]))ᵐᵒᵖ ⧸
+    Ideal.span {op (AdjoinRoot.root (X ^ n : K[X]) ^ len i)})
+  have e := Module.End.centralizerScalarEquiv (M := M) _ hgen
+  rw [Set.image_singleton] at e
+  rw [e.toLinearEquiv.finrank_eq]
+  exact finrank_end_pi_cyclic_root_pow len hlen
 
 /-- The dimension of the centralizer of a sum of nilpotent cyclic blocks is the sum
 of the squared column lengths of its block partition. Here column `k` consists of the
 blocks whose length exceeds `k`; no ordering of the blocks is required. -/
-theorem finrank_centralizer_cyclic_root_pow_eq_sum_sq {ι : Type*} [Fintype ι]
+theorem finrank_centralizer_pi_cyclic_root_pow_eq_sum_sq {ι : Type*} [Fintype ι]
     (len : ι → ℕ) (hlen : ∀ i, len i ≤ n) :
     Module.finrank K (Subalgebra.centralizer K
       {Algebra.lsmul K K
@@ -102,7 +94,7 @@ theorem finrank_centralizer_cyclic_root_pow_eq_sum_sq {ι : Type*} [Fintype ι]
         (op (AdjoinRoot.root (X ^ n : K[X])))}) =
       ∑ k ∈ Finset.range n, (Finset.univ.filter fun i => k < len i).card ^ 2 := by
   classical
-  rw [finrank_centralizer_cyclic_root_pow len hlen]
+  rw [finrank_centralizer_pi_cyclic_root_pow len hlen]
   exact Finset.sum_sum_min_eq_sum_sq_card_filter Finset.univ len n fun i _ => hlen i
 
 end TauCeti

@@ -35,6 +35,8 @@ For the truncated polynomial algebra `A = K[X]/(X ^ n)` over a field `K`, with `
   quotient identifies with the cyclic right module restricted to a left module.
 * `TauCeti.FGModuleCat.cyclicModuleLift`: the map `A ⧸ aA ⟶ M` sending the generator to an
   element `m` with `op a • m = 0`.
+* `TauCeti.FGModuleCat.cyclicModuleHomLinearEquiv`: category morphisms as linear maps on
+  the quotient, with its original scalar action.
 * `TauCeti.FGModuleCat.cyclicModuleHomEquiv`: the `k`-linear equivalence between maps
   `A ⧸ aA ⟶ M` and elements of `M` killed by `op a`.
 
@@ -140,6 +142,33 @@ theorem smul_cyclicModule_hom_mk_one_eq_zero {a : A} {N : FGModuleCat.{u} Aᵐ�
     (Submodule.Quotient.mk_eq_zero _).2 (Ideal.mem_span_singleton_self _), map_zero]
 
 variable (k : Type w) [Field k] [Algebra k A] [Module k M] [IsScalarTower k Aᵐᵒᵖ M]
+
+/-- Category morphisms out of a cyclic module identify with linear maps on the quotient,
+respecting its original `k`-action rather than the category's restricted scalar action. -/
+noncomputable def cyclicModuleHomLinearEquiv (a : A) :
+    (cyclicModule a ⟶ FGModuleCat.of Aᵐᵒᵖ M) ≃ₗ[k]
+      ((Aᵐᵒᵖ ⧸ Ideal.span {op a}) →ₗ[Aᵐᵒᵖ] M) where
+  toFun f := f.hom.hom
+  invFun f := FGModuleCat.ofHom f
+  left_inv _ := rfl
+  right_inv _ := rfl
+  map_add' _ _ := rfl
+  map_smul' c f := by
+    apply LinearMap.ext
+    intro x
+    exact algebraMap_smul Aᵐᵒᵖ c (f.hom.hom x)
+
+/-- The comparison preserves the underlying linear map. -/
+@[simp]
+theorem cyclicModuleHomLinearEquiv_apply (a : A)
+    (f : cyclicModule a ⟶ FGModuleCat.of Aᵐᵒᵖ M) :
+    cyclicModuleHomLinearEquiv k a f = f.hom.hom := (rfl)
+
+/-- The inverse comparison bundles a linear map as a category morphism. -/
+@[simp]
+theorem cyclicModuleHomLinearEquiv_symm_apply (a : A)
+    (f : (Aᵐᵒᵖ ⧸ Ideal.span {op a}) →ₗ[Aᵐᵒᵖ] M) :
+    (cyclicModuleHomLinearEquiv k a).symm f = FGModuleCat.ofHom f := (rfl)
 
 /-- **Maps out of a cyclic module.** Evaluation at the generator is a `k`-linear equivalence
 between maps of right `A`-modules `A ⧸ aA ⟶ M` and elements of `M` killed by `op a`. -/
