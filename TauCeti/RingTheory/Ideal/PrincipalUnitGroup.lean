@@ -12,8 +12,10 @@ public import Mathlib.RingTheory.Ideal.Defs
 # The units congruent to one modulo an ideal
 
 For an ideal `I` of a ring `R`, the units `u` with `u - 1 ∈ I` form a subgroup of `Rˣ`, the
-principal unit group of `I`. For the maximal ideal of a valuation ring this is Mathlib's
-`ValuationSubring.principalUnitGroup`; here `I` is arbitrary. When `I` consists of topologically
+principal unit group of `I`. The name is borrowed from Mathlib's
+`ValuationSubring.principalUnitGroup`, which for a valuation subring `A` of a field `K` is a
+subgroup of `Kˣ`; under `ValuationSubring.unitGroupMulEquiv` it corresponds to this subgroup of
+`Aˣ` for the maximal ideal of `A`. Here `I` is arbitrary. When `I` consists of topologically
 nilpotent elements of a complete linearly topologized `ℚ`-algebra, the exponential is an
 isomorphism from the additive group of `I` onto this group (`Ideal.expMulEquiv`).
 

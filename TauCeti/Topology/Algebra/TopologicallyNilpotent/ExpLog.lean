@@ -12,6 +12,7 @@ public import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 public import TauCeti.RingTheory.Ideal.PrincipalUnitGroup
 public import TauCeti.RingTheory.MvPowerSeries.Substitution
 public import TauCeti.RingTheory.PowerSeries.Evaluation
+public import TauCeti.Topology.Algebra.Nonarchimedean.LinearTopology
 
 /-!
 # Exponential and logarithm of topologically nilpotent elements
@@ -74,17 +75,6 @@ variable {a b u v : S}
 
 section Evaluation
 
-/-- Evaluating a power series without constant term at `a` gives a multiple of `a`. -/
-private theorem exists_aeval_eq_mul (ha : IsTopologicallyNilpotent a) {f : S⟦X⟧}
-    (hf : constantCoeff f = 0) : ∃ c : S, PowerSeries.aeval (R := S) ha f = a * c := by
-  obtain ⟨g, rfl⟩ := X_dvd_iff.2 hf
-  exact ⟨_, by rw [map_mul, PowerSeries.aeval_X]⟩
-
-private theorem isTopologicallyNilpotent_aeval (ha : IsTopologicallyNilpotent a) {f : S⟦X⟧}
-    (hf : constantCoeff f = 0) : IsTopologicallyNilpotent (PowerSeries.aeval (R := S) ha f) := by
-  obtain ⟨c, hc⟩ := exists_aeval_eq_mul ha hf
-  exact hc ▸ ha.mul_right c
-
 variable [Algebra ℚ S]
 
 private theorem hasSum_exp_aeval (ha : IsTopologicallyNilpotent a) :
@@ -112,12 +102,12 @@ private theorem log_eq_aeval (hu : IsTopologicallyNilpotent (u - 1)) :
 private theorem exists_exp_sub_one_eq_mul (ha : IsTopologicallyNilpotent a) :
     ∃ c : S, NormedSpace.exp a - 1 = a * c := by
   rw [exp_eq_aeval ha, ← map_one (PowerSeries.aeval (R := S) ha), ← map_sub]
-  exact exists_aeval_eq_mul ha (by simp)
+  exact exists_aeval_eq_mul_of_constantCoeff_eq_zero ha (by simp)
 
 private theorem exists_log_eq_mul (hu : IsTopologicallyNilpotent (u - 1)) :
     ∃ c : S, NormedSpace.log u = (u - 1) * c := by
   rw [log_eq_aeval hu]
-  exact exists_aeval_eq_mul hu constantCoeff_log
+  exact exists_aeval_eq_mul_of_constantCoeff_eq_zero hu constantCoeff_log
 
 end Evaluation
 
@@ -166,7 +156,8 @@ theorem log_mem (hu : IsTopologicallyNilpotent (u - 1)) {I : Ideal S} (huI : u -
 nilpotent. -/
 theorem exp_log (hu : IsTopologicallyNilpotent (u - 1)) :
     NormedSpace.exp (NormedSpace.log u) = u := by
-  rw [log_eq_aeval hu, exp_eq_aeval (isTopologicallyNilpotent_aeval hu constantCoeff_log),
+  rw [log_eq_aeval hu, exp_eq_aeval
+      (isTopologicallyNilpotent_aeval_of_constantCoeff_eq_zero hu constantCoeff_log),
     ← PowerSeries.aeval_subst (HasSubst.of_constantCoeff_zero' constantCoeff_log)
       (continuous_aeval hu),
     subst_exp_log, map_add, map_one, PowerSeries.aeval_X hu, add_sub_cancel]
@@ -185,11 +176,7 @@ theorem log_exp (ha : IsTopologicallyNilpotent a) : NormedSpace.log (NormedSpace
 /-- The exponential turns sums of topologically nilpotent elements into products. -/
 theorem exp_add (ha : IsTopologicallyNilpotent a) (hb : IsTopologicallyNilpotent b) :
     NormedSpace.exp (a + b) = NormedSpace.exp a * NormedSpace.exp b := by
-  -- A linear topology is nonarchimedean: its open ideals are open additive subgroups.
-  have : NonarchimedeanRing S :=
-    { is_nonarchimedean := fun U hU => by
-        obtain ⟨I, hI, hIU⟩ := IsLinearTopology.hasBasis_open_ideal.mem_iff.1 hU
-        exact ⟨⟨I.toAddSubgroup, hI⟩, hIU⟩ }
+  have := IsLinearTopology.nonarchimedeanRing S
   have ha' := ha.hasSum_exp
   have hb' := hb.hasSum_exp
   rw [← ha'.tsum_eq, ← hb'.tsum_eq, ← (ha.add hb).hasSum_exp.tsum_eq,
