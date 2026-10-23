@@ -93,14 +93,17 @@ theorem coe_evenUnitaryGroupEquivRootsOfUnityOfSubsingleton_apply [Subsingleton 
     (x : evenUnitaryGroup Q) :
     ((evenUnitaryGroupEquivRootsOfUnityOfSubsingleton Q x : rootsOfUnity 2 K) : Kˣ) =
       Units.map (equivOfSubsingleton Q).toMonoidHom (x : (CliffordAlgebra Q)ˣ) := by
+  have hx :
+      ((evenUnitaryGroupEquivRootsOfUnityOfSubsingleton Q x : rootsOfUnity 2 K) : Kˣ) =
+        unitsEquivOfSubsingleton Q (x : (CliffordAlgebra Q)ˣ) := by
+    apply Units.ext
+    simp only [evenUnitaryGroupEquivRootsOfUnityOfSubsingleton, MulEquiv.trans_apply]
+    exact congrArg Units.val
+      (MulEquiv.subgroupCongr_apply _
+        (((unitsEquivOfSubsingleton Q).subgroupMap (evenUnitaryGroup Q)) x))
+  rw [hx]
   apply Units.ext
-  -- The nested roots-of-unity and subgroup coercions need to be exposed before applying the
-  -- scalar-value lemma.
-  change ((unitsEquivOfSubsingleton Q (x : (CliffordAlgebra Q)ˣ) : Kˣ) : K) =
-    (Units.map (equivOfSubsingleton Q).toMonoidHom (x : (CliffordAlgebra Q)ˣ) : K)
-  simp only [coe_unitsEquivOfSubsingleton_apply, Units.coe_map]
-  exact congrFun (AlgEquiv.coe_toAlgHom (equivOfSubsingleton Q))
-    ((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) |>.symm
+  simp
 
 /-- In dimension zero and characteristic not two, the even unitary group has two elements. -/
 theorem card_evenUnitaryGroup_of_subsingleton [Subsingleton V] [IsDomain K]
