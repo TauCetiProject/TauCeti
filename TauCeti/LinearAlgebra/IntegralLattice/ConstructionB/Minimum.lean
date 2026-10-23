@@ -124,9 +124,9 @@ theorem card_add_eight_le_sum_sq (hC : BinaryCode.IsDoublyEven C) (hι : 8 ∣ F
         (mem_univ i)
       rcases mul_eq_zero.mp hi with h | h
       · rw [h]
-        rfl
+        decide
       · rw [show z i = -1 by omega]
-        rfl
+        decide
     have hsumz : ∑ i, z i = -(hammingNorm (fun i ↦ (z i : ZMod 2)) : ℤ) := by
       rw [← sum_val_eq_hammingNorm, Nat.cast_sum, ← sum_neg_distrib]
       exact sum_congr rfl fun i _ ↦ hz01 i
