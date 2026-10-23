@@ -188,6 +188,20 @@ theorem arakelovMulHeight_eq {ι : Type*} [Finite ι] {y : ι → K} (hy : y ≠
     simpa [one_div] using Real.rpow_inv_natCast_pow
       (Real.iSup_nonneg_of_nonnegHomClass v _) hD
 
+/-- For a nonzero integral tuple, multiplying its relative Euclidean height by the norm of
+its coordinate ideal leaves precisely the archimedean Euclidean factors. -/
+theorem arakelovMulHeight_mul_absNorm_span_range {ι : Type*} [Finite ι]
+    {y : ι → 𝓞 K} (hy : y ≠ 0) :
+    arakelovMulHeight (fun i ↦ (y i : K)) * (Ideal.span (Set.range y)).absNorm =
+      letI := Fintype.ofFinite ι
+      ∏ w : InfinitePlace K, (∑ i, ‖w.embedding (y i)‖ ^ 2) ^ ((w.mult : ℝ) / 2) := by
+  have hy' : (fun i ↦ (y i : K)) ≠ 0 := by
+    contrapose hy
+    ext i
+    exact congrFun hy i
+  rw [arakelovMulHeight_eq hy', mul_assoc, mul_comm (∏ᶠ _, _),
+    NumberField.absNorm_mul_finprod_finitePlace_eq_one hy, mul_one]
+
 /-- Multiplication by a nonzero number-field scalar preserves the relative Euclidean projective
 height. -/
 @[simp]

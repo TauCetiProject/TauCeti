@@ -42,19 +42,6 @@ namespace TauCeti
 variable {K L : Type*} [Field K] [Field L] [NumberField K] [NumberField L] [Algebra K L]
   {ι : Type*} [Finite ι]
 
-/-- For a nonzero integral tuple, multiplying its relative Euclidean height by the norm of
-its coordinate ideal leaves precisely the archimedean Euclidean factors. -/
-theorem arakelovMulHeight_mul_absNorm_span_range {y : ι → 𝓞 K} (hy : y ≠ 0) :
-    arakelovMulHeight (fun i ↦ (y i : K)) * (span (Set.range y)).absNorm =
-      letI := Fintype.ofFinite ι
-      ∏ w : InfinitePlace K, (∑ i, ‖w.embedding (y i)‖ ^ 2) ^ ((w.mult : ℝ) / 2) := by
-  have hy' : (fun i ↦ (y i : K)) ≠ 0 := by
-    contrapose hy
-    ext i
-    exact congrFun hy i
-  rw [arakelovMulHeight_eq hy', mul_assoc, mul_comm (∏ᶠ _, _),
-    NumberField.absNorm_mul_finprod_finitePlace_eq_one hy, mul_one]
-
 private theorem arakelovMulHeight_algebraMap_coe (y : ι → 𝓞 K) :
     arakelovMulHeight (fun i ↦ algebraMap K L (y i)) =
       arakelovMulHeight (fun i ↦ (y i : K)) ^ finrank K L := by
