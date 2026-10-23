@@ -16,10 +16,9 @@ import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 Let `H = TauCeti.normalHalfSpace a = {x | a < x.fst}` in the Euclidean product `ℝ × E`. This file
 identifies the functions of zero trace on `H` with the closure of the test functions:
 
-`ker (Tr : H¹(H) → L²(E)) = H¹₀(H)` and
-`ker (Tr : W^{1,1}(H) → L¹(E)) = W^{1,1}_0(H)`.
+`ker (Tr : W^{1,p}(H) → Lᵖ(E)) = W^{1,p}_0(H)` for every `1 ≤ p < ∞`.
 
-The inclusion `H¹₀(H) ⊆ ker Tr` is `TauCeti.W1p.halfSpaceTrace_eq_zero_of_w1p0`, and
+The inclusion `W^{1,p}_0(H) ⊆ ker Tr` is `TauCeti.W1p.halfSpaceTrace_eq_zero_of_w1p0`, and
 `TauCeti.W1p.extendByZeroₗᵢ_mem_w1pSubmodule_iff_halfSpaceTrace_eq_zero` says that `Tr u = 0`
 exactly when the extension of `u` by zero is a Sobolev function on `ℝ × E`. The remaining step,
 proved here for every `1 ≤ p < ∞`, is that a function on `H` whose extension by zero lies in
@@ -43,10 +42,7 @@ lies in the closed subspace `W^{1,p}_0(H)`.
 * `TauCeti.W1p.mem_w1p0Submodule_normalHalfSpace_iff`: `u ∈ W^{1,p}_0(H)` if and only if its
   extension by zero lies in `W^{1,p}(ℝ × E)`.
 * `TauCeti.W1p.mem_w1p0Submodule_iff_halfSpaceTrace_eq_zero` and
-  `TauCeti.W1p.ker_halfSpaceTrace`: the kernel of the half-space trace is `H¹₀(H)`.
-
-* `TauCeti.W1p.mem_w1p0Submodule_iff_halfSpaceTrace_eq_zero_one` and
-  `TauCeti.W1p.ker_halfSpaceTrace_one`: the corresponding kernel identification for `W^{1,1}`.
+  `TauCeti.W1p.ker_halfSpaceTrace`: the kernel of the half-space trace is `W^{1,p}_0(H)`.
 
 ## References
 
@@ -179,43 +175,24 @@ theorem W1p.mem_w1p0Submodule_normalHalfSpace_iff (hp : p ≠ (∞ : ℝ≥0∞)
   exact W1p.restrictL_mem_w1p0Submodule_normalHalfSpace hp a w
     (hw.mono fun x hx hxH => by rw [hx, indicator_of_notMem hxH])
 
-/-- **The functions of zero trace on a half-space are those of `H¹₀`.** A function
-`u ∈ H¹(H)` on `H = {x | a < x.fst}` lies in `H¹₀(H)` if and only if its trace on the boundary
-hyperplane `{a} × E` vanishes. -/
+/-- **The functions of zero trace on a half-space are those of `W^{1,p}_0`.** For
+`1 ≤ p < ∞`, a function `u ∈ W^{1,p}(H)` on `H = {x | a < x.fst}` lies in `W^{1,p}_0(H)` if and
+only if its trace on the boundary hyperplane `{a} × E` vanishes. -/
 @[simp]
-theorem W1p.mem_w1p0Submodule_iff_halfSpaceTrace_eq_zero (a : ℝ)
-    (u : W1p (volume : Measure (WithLp 2 (ℝ × E))) (normalHalfSpace a) 2) :
-    u ∈ w1p0Submodule volume (normalHalfSpace (E := E) a) 2 ↔
-      W1p.halfSpaceTrace ENNReal.ofNat_ne_top a u = 0 := by
-  rw [W1p.mem_w1p0Submodule_normalHalfSpace_iff ENNReal.ofNat_ne_top a u,
+theorem W1p.mem_w1p0Submodule_iff_halfSpaceTrace_eq_zero (hp : p ≠ (∞ : ℝ≥0∞)) (a : ℝ)
+    (u : W1p (volume : Measure (WithLp 2 (ℝ × E))) (normalHalfSpace a) p) :
+    u ∈ w1p0Submodule volume (normalHalfSpace (E := E) a) p ↔ W1p.halfSpaceTrace hp a u = 0 := by
+  rw [W1p.mem_w1p0Submodule_normalHalfSpace_iff hp a u,
     W1p.extendByZeroₗᵢ_mem_w1pSubmodule_iff_halfSpaceTrace_eq_zero]
 
-/-- **The kernel of the half-space trace is `H¹₀`.** On `H = {x | a < x.fst}`, the trace
-`H¹(H) → L²(E)` on the boundary hyperplane `{a} × E` has kernel exactly `H¹₀(H)`, the closure of
-the test functions on `H`. -/
-theorem W1p.ker_halfSpaceTrace (a : ℝ) :
-    LinearMap.ker (W1p.halfSpaceTrace (E := E) (p := 2) ENNReal.ofNat_ne_top a).toLinearMap =
-      (w1p0Submodule volume (normalHalfSpace (E := E) a) 2).toSubmodule := by
+/-- **The kernel of the half-space trace is `W^{1,p}_0`.** On `H = {x | a < x.fst}` and for
+`1 ≤ p < ∞`, the trace `W^{1,p}(H) → Lᵖ(E)` on the boundary hyperplane `{a} × E` has kernel
+exactly `W^{1,p}_0(H)`, the closure of the test functions on `H`. -/
+theorem W1p.ker_halfSpaceTrace (hp : p ≠ (∞ : ℝ≥0∞)) (a : ℝ) :
+    LinearMap.ker (W1p.halfSpaceTrace (E := E) hp a).toLinearMap =
+      (w1p0Submodule volume (normalHalfSpace (E := E) a) p).toSubmodule := by
   ext u
   rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, ClosedSubmodule.mem_toSubmodule_iff,
     W1p.mem_w1p0Submodule_iff_halfSpaceTrace_eq_zero]
-
-/-- **Zero `L¹` trace characterizes `W^{1,1}_0` on a half-space.** No square-integrability
-assumption is needed at this endpoint. -/
-@[simp]
-theorem W1p.mem_w1p0Submodule_iff_halfSpaceTrace_eq_zero_one (a : ℝ)
-    (u : W1p (volume : Measure (WithLp 2 (ℝ × E))) (normalHalfSpace (E := E) a) 1) :
-    u ∈ w1p0Submodule volume (normalHalfSpace (E := E) a) 1 ↔
-      W1p.halfSpaceTrace ENNReal.one_ne_top a u = 0 := by
-  rw [W1p.mem_w1p0Submodule_normalHalfSpace_iff ENNReal.one_ne_top a u,
-    W1p.extendByZeroₗᵢ_mem_w1pSubmodule_iff_halfSpaceTrace_eq_zero_one]
-
-/-- The kernel of the `W^{1,1}` half-space trace is the closure of the test functions. -/
-theorem W1p.ker_halfSpaceTrace_one (a : ℝ) :
-    LinearMap.ker (W1p.halfSpaceTrace (E := E) ENNReal.one_ne_top a).toLinearMap =
-      (w1p0Submodule volume (normalHalfSpace (E := E) a) 1).toSubmodule := by
-  ext u
-  rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, ClosedSubmodule.mem_toSubmodule_iff,
-    W1p.mem_w1p0Submodule_iff_halfSpaceTrace_eq_zero_one]
 
 end TauCeti
