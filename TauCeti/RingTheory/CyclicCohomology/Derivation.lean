@@ -31,7 +31,7 @@ The Hochschild cocycle identities use only the Leibniz rule and the trace proper
 an integration by parts and also uses `τ ∘ δ = 0` and, in degree two, `δ₁ δ₂ = δ₂ δ₁`.
 
 Only the outer part of the derivation matters in degree one: for an inner derivation `⁅z, -⁆`,
-the cocycle `ψ` is the Hochschild coboundary of the trace `a ↦ -τ(a z)`, so its cyclic class
+the cocycle `ψ` is the Hochschild coboundary of the `0`-cochain `a ↦ -τ(a z)`, so its cyclic class
 vanishes.
 
 ## Main definitions
@@ -207,11 +207,16 @@ theorem traceDerivationPairCochain_mem_cyclicCochains (hτ : ∀ x y, τ (x * y)
   have h₂ := hδ₂ (z * x * (δ₁ : Module.End k A) y)
   have hc : (δ₁ : Module.End k A) ((δ₂ : Module.End k A) y) =
       (δ₂ : Module.End k A) ((δ₁ : Module.End k A) y) := LinearMap.congr_fun hcomm.eq y
-  simp only [derivationLieAlgebra.leibniz, add_mul, map_add, hc] at h₁ h₂
+  simp only [derivationLieAlgebra.leibniz, mul_add, map_add, hc, mul_assoc] at h₁ h₂
+  -- Rotate the trace to move `δ_j(z)` from the end of the right-hand side to the front.
+  have r₁ : τ (x * ((δ₁ : Module.End k A) y * (δ₂ : Module.End k A) z)) =
+      τ ((δ₂ : Module.End k A) z * (x * (δ₁ : Module.End k A) y)) := by
+    rw [← mul_assoc, hτ]
+  have r₂ : τ (x * ((δ₂ : Module.End k A) y * (δ₁ : Module.End k A) z)) =
+      τ ((δ₁ : Module.End k A) z * (x * (δ₂ : Module.End k A) y)) := by
+    rw [← mul_assoc, hτ]
   simp only [traceDerivationPairCochain_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
-    Matrix.cons_val_two, Matrix.tail_cons, Matrix.head_cons, mul_sub, map_sub]
-  rw [← mul_assoc x, hτ (x * _), ← mul_assoc x, hτ (x * _), ← mul_assoc, ← mul_assoc,
-    ← mul_assoc, ← mul_assoc]
+    Matrix.cons_val_two, Matrix.tail_cons, Matrix.head_cons, mul_sub, map_sub, r₁, r₂]
   linear_combination (norm := abel) h₁ - h₂
 
 /-- The cyclic `2`-cocycle `(a₀, a₁, a₂) ↦ τ(a₀ (δ₁(a₁) δ₂(a₂) - δ₂(a₁) δ₁(a₂)))` of a trace `τ`
