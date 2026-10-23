@@ -30,8 +30,8 @@ is a field, hence regular, but `L ⊗[k] L` is not reduced, so `L` is not geomet
 * `TauCeti.Excellence.GeometricallyRegular k B`: `B` is a geometrically regular `k`-algebra.
 * `TauCeti.Excellence.GeometricallyRegular.isRegularRing`: a geometrically regular algebra is a
   regular ring.
-* `TauCeti.Excellence.GeometricallyRegular.of_equiv`: geometric regularity is invariant under
-  isomorphisms of `k`-algebras.
+* `AlgEquiv.geometricallyRegular`: geometric regularity is invariant under isomorphisms of
+  `k`-algebras.
 * `TauCeti.Excellence.GeometricallyRegular.of_smooth`: a smooth `k`-algebra is geometrically
   regular; this covers `k` itself, the zero algebra and polynomial rings in finitely many
   variables.
@@ -85,7 +85,8 @@ theorem isRegularRing [GeometricallyRegular k B] : IsRegularRing B :=
   .of_ringEquiv (Algebra.TensorProduct.lid k B).toRingEquiv
 
 /-- Geometric regularity is invariant under isomorphisms of `k`-algebras. -/
-theorem of_equiv (e : B ≃ₐ[k] B') [GeometricallyRegular k B] : GeometricallyRegular k B' where
+theorem _root_.AlgEquiv.geometricallyRegular (e : B ≃ₐ[k] B') [GeometricallyRegular k B] :
+    GeometricallyRegular k B' where
   isNoetherianRing :=
     have := ‹GeometricallyRegular k B›.isNoetherianRing
     isNoetherianRing_of_ringEquiv B e.toRingEquiv
