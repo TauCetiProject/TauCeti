@@ -34,8 +34,9 @@ multiple of `(e₁ - e₀) (ρ² - |z - m|²)` for the midpoint `m` and the half
 
 Finally, the endpoints determine the oriented geodesic up to reparametrisation: two elements with
 the same backward and forward endpoints differ by a dilation on the right
-(`exists_eq_mul_dilation_of_smul_zero_eq_of_smul_infty_eq`), and an element is determined by the
-point at parameter `0` and the forward endpoint
+(`exists_eq_mul_dilation_of_smul_zero_eq_of_smul_infty_eq`); in particular a geodesic line ending
+at `∞` is that of a translation (`exists_eq_upperRightHom_mul_dilation`). An element is determined
+by the point at parameter `0` and the forward endpoint
 (`eq_of_geodesicLine_zero_eq_of_smul_infty_eq`). Dually, an element fixing both endpoints of a
 geodesic line is a conjugate of a dilation, translating along that line
 (`exists_eq_conj_dilation_of_smul_eq_self`). Every hyperbolic element, the class of a matrix whose
@@ -398,6 +399,17 @@ theorem exists_eq_mul_dilation_of_smul_zero_eq_of_smul_infty_eq {g g' : PSL(2, �
   obtain ⟨s, hs⟩ := exists_eq_dilation_of_smul_zero_of_smul_infty (k := g⁻¹ * g')
     (by rw [mul_smul, ← h₀, inv_smul_smul]) (by rw [mul_smul, ← h₁, inv_smul_smul])
   exact ⟨s, by rw [← hs, mul_inv_cancel_left]⟩
+
+/-- A geodesic line with forward endpoint `∞` is a vertical line: up to reparametrisation, its
+element of `PSL(2, ℝ)` is a translation. -/
+theorem exists_eq_upperRightHom_mul_dilation {g : PSL(2, ℝ)} (hg : g • (∞ : OnePoint ℝ) = ∞) :
+    ∃ a s : ℝ, g = upperRightHom a * ((dilation s : SL(2, ℝ)) : PSL(2, ℝ)) := by
+  obtain ⟨a, ha⟩ := OnePoint.ne_infty_iff_exists.1 fun h : g • ((0 : ℝ) : OnePoint ℝ) = ∞ ↦
+    OnePoint.coe_ne_infty 0 (MulAction.injective g (h.trans hg.symm))
+  obtain ⟨s, hs⟩ := exists_eq_mul_dilation_of_smul_zero_eq_of_smul_infty_eq (g := upperRightHom a)
+    (g' := g) (by rw [upperRightHom_smul_coe, zero_add, ha])
+    (by rw [upperRightHom_smul_infty, hg])
+  exact ⟨a, s, hs⟩
 
 /-- An element of `PSL(2, ℝ)` fixing both endpoints `g • 0` and `g • ∞` of the geodesic line of
 `g` is the conjugate by `g` of a dilation: it translates along that line. -/

@@ -31,7 +31,9 @@ so `ε(a, b)` is the parity of the bonds pairing a later coordinate of `a` with 
 the commutator of two elements of `Q̂` lying over `a` and `b` is `τ ^ (a ⬝ᵥ B *ᵥ b)`, a power of the
 central sign `τ = (0, -1)` (`Matrix.commutatorElement_signCover`). This is the sign input of the
 Frenkel--Kac construction of a simply laced Lie algebra over `ℤ`, whose root vectors are indexed by
-lifts of roots to `Q̂`; that bracket is not constructed here. The section
+lifts of roots to `Q̂`. The bracket `Matrix.ShellLieAlgebra`, in
+`TauCeti.Algebra.Lie.NormTwoShell.Basic`, uses this cocycle on root vectors indexed by the section
+`a ↦ (a, 1)` instead, so it is not the lifted-generator presentation. The section
 `a ↦ (a, 1)` is a homomorphism exactly when every strictly lower entry of `B` is even
 (`Matrix.forall_canonicalSection_signFactorSet_mul_iff`); for a simply laced diagram this means
 exactly that the diagram has no bonds, which is proved in
@@ -55,6 +57,8 @@ file supplies the sign cocycle and the two facts specific to it.
 
 * `Matrix.orderedSignForm_add_orderedSignForm_swap`: for symmetric `B`, the symmetrization
   of the ordered form is the Gram pairing with its diagonal terms removed.
+* `Matrix.even_orderedSignForm_add_orderedSignForm_swap_sub`: for symmetric `B` with even
+  diagonal, `orderedSignForm B a b + orderedSignForm B b a` and `a ⬝ᵥ B *ᵥ b` have the same parity.
 * `Matrix.orderedSign_div_orderedSign_swap`: for symmetric `B` with even diagonal,
   `ε(a, b) / ε(b, a) = (-1) ^ (a ⬝ᵥ B *ᵥ b)`.
 * `Matrix.commutatorElement_signCover`: the commutator formula in `Q̂`.
@@ -131,15 +135,23 @@ theorem orderedSign_apply (a b : Multiplicative (I → ℤ)) :
     orderedSign B a b = (orderedSignForm B a.toAdd b.toAdd).negOnePow :=
   (rfl)
 
+/-- **The commutator parity.** For a symmetric matrix `B` with even diagonal, the ordered form and
+its transpose add up to the Gram pairing modulo `2`. -/
+theorem even_orderedSignForm_add_orderedSignForm_swap_sub (hB : B.IsSymm)
+    (hdiag : ∀ i, Even (B i i)) (a b : I → ℤ) :
+    Even (orderedSignForm B a b + orderedSignForm B b a - a ⬝ᵥ B *ᵥ b) := by
+  rw [← orderedSignForm_add_orderedSignForm_swap B hB, sub_add_cancel_left]
+  -- The two sides differ by the diagonal sum `∑ i, a i * B i i * b i`, which is even.
+  exact (Finset.even_sum _ fun i _ => ((hdiag i).mul_left _).mul_right _).neg
+
 /-- **The commutator sign.** For a symmetric matrix `B` with even diagonal, the ratio of the two
 ordered signs of `a` and `b` is the sign of their Gram pairing. -/
 theorem orderedSign_div_orderedSign_swap (hB : B.IsSymm) (hdiag : ∀ i, Even (B i i))
     (a b : Multiplicative (I → ℤ)) :
     orderedSign B a b / orderedSign B b a = (a.toAdd ⬝ᵥ B *ᵥ b.toAdd).negOnePow := by
   rw [div_eq_mul_inv, Int.units_inv_eq_self, orderedSign_apply, orderedSign_apply,
-    ← Int.negOnePow_add, Int.negOnePow_eq_iff, ← orderedSignForm_add_orderedSignForm_swap B hB]
-  -- The two exponents differ by the diagonal sum `∑ i, a i * B i i * b i`, which is even.
-  simpa using Finset.even_sum _ fun i _ => ((hdiag i).mul_left _).mul_right _
+    ← Int.negOnePow_add, Int.negOnePow_eq_iff]
+  exact even_orderedSignForm_add_orderedSignForm_swap_sub B hB hdiag _ _
 
 section Cover
 

@@ -42,6 +42,8 @@ an open invariant subset. The free locus inherits the charts of the ambient mani
   `C^n` maps on a `C^n` manifold is a `C^n` manifold.
 * `TauCeti.isLocalDiffeomorph_quotientMk`: the orbit projection is a `C^n` local
   diffeomorphism.
+* `TauCeti.exists_trans_eq_of_mem_atlas_quotient`: every chart of the orbit space is a local
+  section of the orbit projection followed by a chart of `M`.
 * `TauCeti.freeLocus.instChartedSpace`, `TauCeti.freeLocus.instIsManifold` and
   `TauCeti.freeLocus.instContMDiffConstSMul`: the free locus of a properly discontinuous action
   is an open submanifold on which the group acts by `C^n` maps.
@@ -79,6 +81,13 @@ private theorem contMDiffAt_localInverseAt_comp
       hfφ)
 
 variable {g : M' → M} (hg : Function.RightInverse g f)
+
+/-- The charts that `f` pushes forward from `M` are the local inverses of `f` at the points chosen
+by the right inverse `g`, followed by the charts of `M` at those points. -/
+theorem atlas_chartedSpaceOfRightInverse :
+    letI := hf.chartedSpaceOfRightInverse (H := H) hg
+    atlas H M' = range fun q ↦ (hf.localInverseAt (g q)).trans (chartAt H (g q)) :=
+  rfl
 
 /-- The charts that a local homeomorphism `f` with `C^n` local deck transformations pushes forward
 from a `C^n` manifold form a `C^n` manifold. -/
@@ -202,6 +211,19 @@ private theorem quotientMk_deck (z w : M)
 
 variable [ProperlyDiscontinuousSMul G M] [ContinuousConstSMul G M] [IsCancelSMul G M] [T2Space M]
   [LocallyCompactSpace M]
+
+/-- A chart of the orbit space of a free, properly discontinuous action is a local section of the
+orbit projection followed by a chart of `M`. -/
+theorem exists_trans_eq_of_mem_atlas_quotient
+    {e : OpenPartialHomeomorph (MulAction.orbitRel.Quotient G M) H}
+    (he : e ∈ atlas H (MulAction.orbitRel.Quotient G M)) :
+    ∃ (s : OpenPartialHomeomorph (MulAction.orbitRel.Quotient G M) M) (z : M),
+      s.trans (chartAt H z) = e ∧ ∀ x ∈ s.source, Quotient.mk _ (s x) = x := by
+  have hf := (isQuotientCoveringMap_quotientMk_of_properlyDiscontinuousSMul (G := G)
+    (E := M)).isCoveringMap.isLocalHomeomorph
+  rw [hf.atlas_chartedSpaceOfRightInverse Quotient.mk_surjective.hasRightInverse.choose_spec] at he
+  obtain ⟨q, rfl⟩ := he
+  exact ⟨_, _, rfl, fun x hx ↦ hf.apply_localInverseAt_of_mem hx⟩
 
 /-- The orbit space of a free, properly discontinuous action by `C^n` maps on a `C^n` manifold is a
 `C^n` manifold, for the charts pushed forward along the orbit projection. -/

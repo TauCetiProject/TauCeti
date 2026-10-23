@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.BilinearForm.Prod
+public import TauCeti.LinearAlgebra.QuadraticForm.PosDef
 public import TauCeti.RingTheory.TensorProduct.IsBaseChange
 public import Mathlib.LinearAlgebra.TensorProduct.Prod
 public import Mathlib.LinearAlgebra.BilinearForm.IsometryEquiv
@@ -13,7 +14,6 @@ public import Mathlib.LinearAlgebra.BilinearForm.TensorProduct
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.RingTheory.TensorProduct.IsBaseChangePi
 public import Mathlib.Algebra.Order.Algebra
-public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 import Mathlib.Algebra.Ring.Hom.InjSurj
 import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
 
@@ -39,9 +39,10 @@ In particular, this applies to arbitrary extensions of fields, even in infinite 
 Injective localizations also preserve separation and nondegeneracy without any condition on the
 module carrying the form.
 
-Over ordered fields, base change along an order-preserving structure map also preserves and
-reflects positive definiteness of a symmetric form on a finite-dimensional space; this is how a
-rational form is compared with its real extension.
+Over an ordered field, base change into a linearly ordered commutative ring along an
+order-preserving structure map also preserves and reflects positive definiteness of the quadratic
+map associated to a bilinear form on a finite-dimensional space; this is how a rational form is
+compared with its real extension.
 
 ## Main declarations
 
@@ -58,6 +59,8 @@ rational form is compared with its real extension.
 * `IsBaseChange.bilinForm_baseChange`: if a bilinear form restricts along a map to a
   second form, evaluating it through the associated base-change equivalence agrees with the
   canonical base change of the second form.
+* `IsBaseChange.bilinFormIsometryEquiv`: in that situation the base-change equivalence is an
+  isometric equivalence from the canonical base change of the second form.
 * `LinearMap.BilinForm.toMatrix_baseChange`: the Gram matrix of a base-changed form, in the
   base-changed basis, is the entrywise image of the original Gram matrix.
 * `LinearMap.BilinForm.det_toMatrix_baseChange`: the determinant of that Gram matrix is the image of
@@ -71,9 +74,9 @@ rational form is compared with its real extension.
   base-changes to an isometric equivalence of their base changes.
 * `TauCeti.bilinFormBaseChangeProdIsometry`: base change commutes with products of
   bilinear forms, via the canonical tensor-product equivalence.
-* `LinearMap.BilinForm.posDef_toQuadraticMap_baseChange_iff`: along an order-preserving extension
-  of ordered fields, base change preserves and reflects positive definiteness of a symmetric form
-  on a finite-dimensional space.
+* `LinearMap.BilinForm.posDef_toQuadraticMap_baseChange_iff`: along an order-preserving
+  structure map from an ordered field to a linearly ordered commutative ring, base change preserves
+  and reflects positive definiteness of the quadratic map of any finite-dimensional bilinear form.
 -/
 
 public section
@@ -330,6 +333,24 @@ theorem _root_.IsBaseChange.bilinForm_baseChange (h : IsBaseChange A f)
     simp [IsBaseChange.equiv_tmul]
   simpa only [hf, LinearEquiv.coe_coe] using B'.liftBaseChange B hB x y
 
+/-- If `B` restricts along a base-change map `f` to `B'`, the base-change equivalence
+`A ⊗[R] M ≃ N` is an isometric equivalence from the canonical base change of `B'` to `B`. -/
+noncomputable def _root_.IsBaseChange.bilinFormIsometryEquiv (h : IsBaseChange A f)
+    (B' : LinearMap.BilinForm R M) (B : LinearMap.BilinForm A N)
+    (hB : ∀ x y : M, B (f x) (f y) = algebraMap R A (B' x y)) :
+    (B'.baseChange A).IsometryEquiv B where
+  toLinearEquiv := h.equiv
+  map_app' := h.bilinForm_baseChange B' B hB
+
+/-- The isometric equivalence `IsBaseChange.bilinFormIsometryEquiv` is the base-change
+equivalence. -/
+@[simp]
+theorem _root_.IsBaseChange.bilinFormIsometryEquiv_apply (h : IsBaseChange A f)
+    (B' : LinearMap.BilinForm R M) (B : LinearMap.BilinForm A N)
+    (hB : ∀ x y : M, B (f x) (f y) = algebraMap R A (B' x y)) (x : A ⊗[R] M) :
+    h.bilinFormIsometryEquiv B' B hB x = h.equiv x :=
+  (rfl)
+
 end
 
 end TauCeti
@@ -479,16 +500,26 @@ namespace LinearMap.BilinForm
 section PosDef
 
 variable {F K V : Type*} [Field F] [LinearOrder F] [IsStrictOrderedRing F]
-  [Field K] [LinearOrder K] [IsStrictOrderedRing K] [Algebra F K] [SMulPosStrictMono F K]
+  [CommRing K] [LinearOrder K] [IsStrictOrderedRing K] [Algebra F K] [SMulPosStrictMono F K]
   [AddCommGroup V] [Module F V] [FiniteDimensional F V]
 
-/-- **Positive definiteness is preserved and reflected by an ordered field extension.** For a
-symmetric bilinear form on a finite-dimensional space over an ordered field `F`, and an ordered
-field `K` whose structure map from `F` is strictly monotone, the base change of `B` to `K` is
-positive definite exactly when `B` is. In particular a rational symmetric form is positive
-definite exactly when its real extension is. -/
-theorem posDef_toQuadraticMap_baseChange_iff {B : LinearMap.BilinForm F V} (hB : B.IsSymm) :
+/-- **Positive definiteness is preserved and reflected by an ordered scalar extension.** For a
+bilinear form on a finite-dimensional space over an ordered field `F`, and a linearly ordered
+commutative ring `K` whose structure map from `F` is strictly monotone, the quadratic map of the
+base change of `B` to `K` is positive definite exactly when that of `B` is. No symmetry assumption
+is needed. In particular a rational form is positive definite exactly when its real extension is. -/
+theorem posDef_toQuadraticMap_baseChange_iff (B : LinearMap.BilinForm F V) :
     (B.baseChange K).toQuadraticMap.PosDef ↔ B.toQuadraticMap.PosDef := by
+  wlog hB : B.IsSymm generalizing B
+  · -- Symmetrization doubles every diagonal value, before and after base change.
+    have hsym : (B + B.flip).IsSymm := by
+      constructor
+      intro x y
+      simp [add_comm]
+    have hbase : (B + B.flip).baseChange K = B.baseChange K + (B.baseChange K).flip := by
+      ext
+      simp [add_smul]
+    simpa only [hbase, posDef_toQuadraticMap_add_flip_iff] using this (B + B.flip) hsym
   have hmap {a : F} : 0 < algebraMap F K a ↔ 0 < a := by
     simpa using (algebraMap_strictMono (α := F) K).lt_iff_lt (a := 0) (b := a)
   constructor

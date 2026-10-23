@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Wentao Li
 -/
 module
-public import TauCeti.Algebra.QuadraticAlgebra.Discriminant
+public import Mathlib.RingTheory.QuadraticAlgebra
 public import Mathlib.RingTheory.IntegralClosure.IsIntegral.Basic
 
 /-!
@@ -154,7 +154,7 @@ theorem discr_basis (D : ℤ) (hD : D % 4 = 0 ∨ D % 4 = 1) :
       simpa only [basis, Module.Basis.coe_map, AlgEquiv.coe_toLinearEquiv] using
         (Algebra.discr_eq_discr_of_algEquiv
           (QuadraticAlgebra.basis ((D - D ^ 2) / 4) D) (equivToSubalgebra D hD)).symm
-    _ = D := by rw [QuadraticAlgebra.algebraDiscr_basis, parameter_discr D hD]
+    _ = D := by rw [Algebra.discr_quadraticAlgebra, parameter_discr D hD]
 
 /-- The embedded order spans the rational quadratic algebra. -/
 theorem span_toSubalgebra_eq_top (D : ℤ) (hD : D % 4 = 0 ∨ D % 4 = 1) :

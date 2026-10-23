@@ -39,12 +39,13 @@ whose first map enlarges the support and whose second map is restriction to `W �
 
 For opens `W' ≤ W`, the inclusion of pairs `(W', W' ∖ S) ⟶ (W, W ∖ S)` induces restriction maps
 `H_Sⁿ(W, F) ⟶ H_Sⁿ(W', F)`, which make `W ↦ H_Sⁿ(W, F)` a presheaf; sheafifying it gives the local
-cohomology sheaves of `F` with supports in `S`. *Excision* says that cohomology with supports in
-`S` only depends on a neighbourhood of `S`: if `S ∩ W ⊆ W'`, restriction is an isomorphism
-`H_Sⁿ(W, F) ≃+ H_Sⁿ(W', F)`. The proof shows that the map of relative free sheaves
-`ℤ_{W', W' ∖ S} ⟶ ℤ_{W, W ∖ S}` is already an isomorphism, by the Yoneda criterion
-`TauCeti.CategoryTheory.isIso_relativeFreeYonedaSheafMap_iff`: a section over `W'` supported in `S`
-glues with zero on `W ∖ S` to a unique section over `W` supported in `S`.
+cohomology sheaves of `F` with supports in `S` (`TauCeti.Topology.Sheaves.LocalCohomology`). On an
+open `W` disjoint from `S` the inclusion `W ∖ S ⟶ W` is an isomorphism, so `H_Sⁿ(W, F) = 0`.
+*Excision* says that cohomology with supports in `S` only depends on a neighbourhood of `S`: if
+`S ∩ W ⊆ W'`, restriction is an isomorphism `H_Sⁿ(W, F) ≃+ H_Sⁿ(W', F)`. The proof shows that the
+map of relative free sheaves `ℤ_{W', W' ∖ S} ⟶ ℤ_{W, W ∖ S}` is already an isomorphism, by the
+Yoneda criterion `TauCeti.CategoryTheory.isIso_relativeFreeYonedaSheafMap_iff`: a section over `W'`
+supported in `S` glues with zero on `W ∖ S` to a unique section over `W` supported in `S`.
 
 ## Main declarations
 
@@ -52,11 +53,15 @@ glues with zero on `W ∖ S` to a unique section over `W` supported in `S`.
   supported in `S`;
 * `CategoryTheory.Sheaf.supportedH F S W n`: the cohomology `H_Sⁿ(W, F)` of `F` on `W` with
   supports in `S`;
-* `CategoryTheory.Sheaf.supportedHZeroEquiv`: `H_S⁰(W, F) ≃+ Γ_S(W, F)`, natural in `F`
-  (`CategoryTheory.Sheaf.supportedHZeroEquiv_naturality_right`);
+* `CategoryTheory.Sheaf.supportedHZeroEquiv`: `H_S⁰(W, F) ≃+ Γ_S(W, F)`;
+* `CategoryTheory.Sheaf.subsingleton_supportedH_of_le_compl`: `H_Sⁿ(W, F) = 0` when `W` is disjoint
+  from `S`;
 * `CategoryTheory.Sheaf.relativeH'.subsingleton_succ_of_isFlasque`: a flasque sheaf has no relative
   cohomology in positive degrees for an inclusion of opens; in particular it has no cohomology with
   supports in positive degrees.
+* `CategoryTheory.Sheaf.relativeH'.extClass_postcomp_bijective_of_isFlasque`: dimension
+  shifting, the connecting maps `Hⁿ⁺¹(V, U; F₃) ⟶ Hⁿ⁺²(V, U; F₁)` of a short exact sequence
+  `0 ⟶ F₁ ⟶ F₂ ⟶ F₃ ⟶ 0` with `F₂` flasque are bijective;
 * `CategoryTheory.Sheaf.supportedHRestrict`: the restriction map `H_Sⁿ(W, F) ⟶ H_Sⁿ(W', F)` for
   `W' ≤ W`, and `CategoryTheory.Sheaf.supportedHPresheaf F S n`, the presheaf `W ↦ H_Sⁿ(W, F)`;
 * `CategoryTheory.Sheaf.existsUnique_mem_supportedSections_map_eq`: excision for sections
@@ -142,15 +147,6 @@ lemma coe_supportedHZeroEquiv_apply (S : Closeds X) (W : Opens X) (x : F.support
       relativeH'.zeroEquiv F (S.complInclusion W) x :=
   (rfl)
 
-/-- The equivalence `supportedHZeroEquiv` is natural in the sheaf. -/
-lemma supportedHZeroEquiv_naturality_right
-    {F G : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u}} (f : F ⟶ G) (S : Closeds X)
-    (W : Opens X) (x : F.supportedH S W 0) :
-    G.supportedHZeroEquiv S W (x.comp (Ext.mk₀ f) (add_zero 0)) =
-      ⟨f.hom.app (op W) (F.supportedHZeroEquiv S W x),
-        map_mem_supportedSections f (F.supportedHZeroEquiv S W x).2⟩ :=
-  Subtype.ext (relativeH'.coe_zeroEquiv_naturality_right (S.complInclusion W) f x)
-
 /-- The restriction map `H_Sⁿ(W, F) ⟶ H_Sⁿ(W', F)` of cohomology with supports in `S` to a smaller
 open `W' ≤ W`, induced by the inclusion of pairs `(W', W' ∖ S) ⟶ (W, W ∖ S)`. -/
 def supportedHRestrict (S : Closeds X) {W' W : Opens X} (h : W' ≤ W) (n : ℕ) :
@@ -170,6 +166,16 @@ lemma supportedHRestrict_supportedHRestrict (S : Closeds X) {W'' W' W : Opens X}
     F.supportedHRestrict S h' n (F.supportedHRestrict S h n x) =
       F.supportedHRestrict S (h'.trans h) n x :=
   relativeH'.map_map F _ _ _ _ _ _ _ _ _ x
+
+/-- Restriction of cohomology with supports commutes with the Yoneda product by an `Ext` class
+between coefficient sheaves, such as the map induced by a morphism of sheaves or the connecting
+class of a short exact sequence of sheaves. -/
+lemma supportedHRestrict_comp {G : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u}}
+    (S : Closeds X) {W' W : Opens X} (h : W' ≤ W) {m n k : ℕ} (x : F.supportedH S W m)
+    (α : Ext F G n) (hk : m + n = k) :
+    G.supportedHRestrict S h k (x.comp α hk) = (F.supportedHRestrict S h m x).comp α hk := by
+  simp only [supportedHRestrict, relativeH'.map_apply]
+  exact (Ext.comp_assoc _ _ _ (zero_add m) hk (by omega)).symm
 
 /-- Under `supportedHZeroEquiv`, restriction of degree-zero cohomology with supports is the
 restriction of sections. -/
@@ -196,6 +202,14 @@ def supportedHPresheaf (S : Closeds X) (n : ℕ) : TopCat.Presheaf AddCommGrpCat
 lemma supportedHPresheaf_obj (S : Closeds X) (n : ℕ) (W : (Opens X)ᵒᵖ) :
     (F.supportedHPresheaf S n).obj W = AddCommGrpCat.of (F.supportedH S W.unop n) :=
   (rfl)
+
+/-- Cohomology with supports in `S` vanishes on an open `W` disjoint from `S`, where the inclusion
+`W ∖ S ⟶ W` is an isomorphism. -/
+theorem subsingleton_supportedH_of_le_compl (S : Closeds X) {W : Opens X} (hW : W ≤ S.compl)
+    (n : ℕ) : Subsingleton (F.supportedH S W n) :=
+  haveI : IsIso (S.complInclusion W) :=
+    ⟨homOfLE (le_inf le_rfl hW), Subsingleton.elim _ _, Subsingleton.elim _ _⟩
+  relativeH'.subsingleton_of_isIso F _ n
 
 /-- Excision for sections with supports: if `W' ≤ W` and `S ∩ W ⊆ W'` (that is,
 `W ≤ W' ⊔ (X ∖ S)`), then every section over `W'` supported in `S` is the restriction of a unique
@@ -420,6 +434,21 @@ instance subsingleton_succ_of_isFlasque [TopCat.Presheaf.IsFlasque F.obj]
     rw [← AddCommGrpCat.epi_iff_surjective]
     infer_instance
   | succ n => exact subsingleton_add_two F i inferInstance inferInstance
+
+/-- **Dimension shifting** for relative cohomology: if `0 ⟶ F₁ ⟶ F₂ ⟶ F₃ ⟶ 0` is a short exact
+sequence of sheaves with `F₂` flasque, the connecting map `Hⁿ⁺¹(V, U; F₃) ⟶ Hⁿ⁺²(V, U; F₁)` is
+bijective. In particular this applies to cohomology with supports
+`H_Sⁿ⁺¹(W, F₃) ⟶ H_Sⁿ⁺²(W, F₁)`. -/
+theorem extClass_postcomp_bijective_of_isFlasque
+    {T : ShortComplex (Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u})}
+    (hT : T.ShortExact) [TopCat.Presheaf.IsFlasque T.X₂.obj] {U V : Opens X} (i : U ⟶ V)
+    (n : ℕ) :
+    Function.Bijective (hT.extClass.postcomp _ (rfl : n + 1 + 1 = n + 2) :
+      T.X₃.relativeH' i (n + 1) →+ T.X₁.relativeH' i (n + 2)) := by
+  refine ⟨(injective_iff_map_eq_zero _).2 fun x hx ↦ ?_, fun x ↦ ?_⟩
+  · obtain ⟨z, rfl⟩ := Abelian.Ext.covariant_sequence_exact₃ _ hT x rfl hx
+    rw [Subsingleton.elim z 0, Abelian.Ext.zero_comp]
+  · exact Abelian.Ext.covariant_sequence_exact₁ _ hT x (Subsingleton.elim _ _) rfl
 
 end relativeH'
 

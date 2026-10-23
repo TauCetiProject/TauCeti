@@ -20,10 +20,11 @@ with forgetting its index, so this prescription defines a chain map.
 `TauCeti.universalGSpaceToStandardComplex` has as source the existing ordered simplicial chain
 complex of the countable join and as target the underlying module complex of Mathlib's standard
 complex. Its degreewise maps are equivariant for translation and preserve the augmentations.
-This is an explicit comparison of chain complexes, not yet a comparison of projective
-resolutions or a chain homotopy equivalence. For a nonzero coefficient ring it is not an
-isomorphism: even for the trivial group, the join has countably many vertices and the standard
-complex has just one.
+This is an explicit comparison of complexes of modules; its equivariant form, a homotopy
+equivalence of projective resolutions, is in
+`TauCeti.AlgebraicTopology.ClassifyingSpace.StandardResolution`. For a nonzero coefficient ring
+it is not an isomorphism: even for the trivial group, the join has countably many vertices and the
+standard complex has just one.
 
 The source orientation agrees with the CW structure on `universalGSpace`: its characteristic
 maps enumerate the vertices by increasing index. The target is Mathlib's standard complex from

@@ -58,6 +58,8 @@ coordinates over `K` and the opposite of `K⟦X⟧ ≃ₐ[K] K⟦X⟧`, with inv
 * `TauCeti.FormalCoordinate.subst_subst_inv`, `TauCeti.FormalCoordinate.subst_inv_subst`:
   `φ (φ⁻¹ (x)) = x = φ⁻¹ (φ (x))` for every substitutable multivariate series `x`.
 * `TauCeti.FormalCoordinate.substAlgEquiv_mul`: `σ_(φ ∘ ψ) = σ_ψ ∘ σ_φ`.
+* `TauCeti.FormalCoordinate.map_substAlgEquiv`: substitution commutes with base change of the
+  coefficients.
 * `TauCeti.FormalCoordinate.constantCoeff_substAlgEquiv`: substitution automorphisms preserve
   constant coefficients.
 * `TauCeti.FormalCoordinate.substAlgEquiv_ofAlgEquiv`: over a field, every automorphism of
@@ -93,6 +95,16 @@ theorem hasSubst (φ : FormalCoordinate R) : HasSubst φ.toPowerSeries :=
 theorem X_subst_toPowerSeries (φ : FormalCoordinate R) :
     (X : R⟦X⟧).subst φ.toPowerSeries = φ.toPowerSeries :=
   subst_X φ.hasSubst
+
+/-- Over a nontrivial ring a formal coordinate has order one. -/
+@[simp]
+theorem order_toPowerSeries [Nontrivial R] (φ : FormalCoordinate R) : φ.toPowerSeries.order = 1 :=
+  order_eq_nat.mpr ⟨φ.isUnit_coeff_one.ne_zero, fun i hi ↦ by
+    simp [Nat.lt_one_iff.mp hi]⟩
+
+/-- Over a nontrivial ring a formal coordinate is a nonzero power series. -/
+theorem toPowerSeries_ne_zero [Nontrivial R] (φ : FormalCoordinate R) : φ.toPowerSeries ≠ 0 :=
+  fun h ↦ by simpa [h] using φ.isUnit_coeff_one
 
 /-- The product `φ * ψ` of formal coordinates is the composite `φ ∘ ψ`, the series `φ (ψ)`. -/
 noncomputable instance : Mul (FormalCoordinate R) where
@@ -143,6 +155,14 @@ noncomputable instance : Group (FormalCoordinate R) where
   inv_mul_cancel φ := by
     ext1
     simp [subst_substInvOfIsUnit_left _ φ.constantCoeff_toPowerSeries]
+
+/-- A formal coordinate composed with its inverse is `X`. -/
+theorem toPowerSeries_mul_inv (φ : FormalCoordinate R) : (φ * φ⁻¹).toPowerSeries = X := by
+  rw [mul_inv_cancel, toPowerSeries_one]
+
+/-- The inverse of a formal coordinate composed with it is `X`. -/
+theorem toPowerSeries_inv_mul (φ : FormalCoordinate R) : (φ⁻¹ * φ).toPowerSeries = X := by
+  rw [inv_mul_cancel, toPowerSeries_one]
 
 section Points
 
@@ -280,6 +300,15 @@ theorem map_id : map (RingHom.id R) = MonoidHom.id (FormalCoordinate R) :=
 theorem map_comp {T : Type*} [CommRing T] (f : R →+* S) (g : S →+* T) (φ : FormalCoordinate R) :
     map (g.comp f) φ = map g (map f φ) :=
   FormalCoordinate.ext rfl
+
+/-- Substitution is natural in the coefficients: base change along `f` carries `p (φ)` to the
+substitution of the base-changed coordinate into the base-changed series. -/
+theorem map_substAlgEquiv (f : R →+* S) (φ : FormalCoordinate R) (p : R⟦X⟧) :
+    PowerSeries.map f (φ.substAlgEquiv p) = (map f φ).substAlgEquiv (PowerSeries.map f p) := by
+  rw [substAlgEquiv_apply, substAlgEquiv_apply, toPowerSeries_map]
+  -- `PowerSeries.map` is by definition `MvPowerSeries.map` over `Unit`, the form in which
+  -- Mathlib states `PowerSeries.map_subst`
+  exact map_subst φ.hasSubst p
 
 end map
 

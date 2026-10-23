@@ -143,7 +143,8 @@ ramification partitions over `0`, `1` and `∞` are `[1, 1]`, `[2]` and `[2]`
 * `TauCeti.AnalyticBelyiPair.toTopBranchedCoverIsoClass_injective`: analytic Belyi pairs with
   isomorphic underlying topological branched covers are isomorphic.
 * `TauCeti.AnalyticBelyiPair.pow`: the power map `z ↦ z ^ n` of the sphere, of degree `n`
-  (`TauCeti.RiemannSurface.degree_onePointMap_pow`).
+  (`TauCeti.AnalyticBelyiPair.degree_β_pow`), unramified over `1`
+  (`TauCeti.AnalyticBelyiPair.one_notMem_branchValues_β_pow`).
 * `TauCeti.AnalyticBelyiPair.Hom`: morphisms of analytic Belyi pairs, with
   `TauCeti.AnalyticBelyiPair.Hom.ofContinuous`, `TauCeti.AnalyticBelyiPair.Hom.surjective`,
   `TauCeti.AnalyticBelyiPair.Hom.degree_β_eq_mul_degree` (degrees multiply),
@@ -405,6 +406,13 @@ theorem ncard_restrict_preimage_singleton (z : ThricePuncturedSphere) :
     exact mem_range_self z
   simpa only [mem_compl_iff, mem_marked, mem_insert_iff, mem_singleton_iff] using hz
 
+/-- A numbering of a fibre of the cover of `ℂ ∖ {0, 1}` attached to an analytic Belyi pair by
+`Fin n` determines the degree of the pair: it is `n`. -/
+theorem degree_β_eq_of_restrict_preimage_singleton_equiv {z : ThricePuncturedSphere} {n : ℕ}
+    (ν : P.restrict ⁻¹' {z} ≃ Fin n) : degree P.β = n := by
+  rw [← P.ncard_restrict_preimage_singleton z, ← Nat.card_coe_set_eq, Nat.card_congr ν,
+    Nat.card_fin]
+
 /-- Every fibre of the cover of `ℂ ∖ {0, 1}` attached to an analytic Belyi pair can be numbered by
 `Fin (degree P.β)`. -/
 theorem nonempty_restrict_preimage_singleton_equiv (z : ThricePuncturedSphere) :
@@ -502,6 +510,12 @@ theorem coe_β_pow {n : ℕ} (hn : n ≠ 0) : ⇑(pow hn).β = OnePoint.map fun 
 /-- The power map `z ↦ z ^ n` of the sphere is a Belyi map of degree `n`. -/
 theorem degree_β_pow {n : ℕ} (hn : n ≠ 0) : degree (pow hn).β = n :=
   (congrArg degree (coe_β_pow hn)).trans (degree_onePointMap_pow hn)
+
+/-- The power map `z ↦ z ^ n` is unramified over `1`. -/
+theorem one_notMem_branchValues_β_pow {n : ℕ} (hn : n ≠ 0) :
+    ((1 : ℂ) : OnePoint ℂ) ∉ (pow hn).β.branchValues := fun h ↦ by
+  -- `(pow hn).β` is `spherePow hn` by definition.
+  simpa using FiniteHolomorphicMap.branchValues_spherePow_subset hn h
 
 end AnalyticBelyiPair
 

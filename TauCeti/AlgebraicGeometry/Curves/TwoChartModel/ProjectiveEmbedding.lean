@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.Curves.TwoChartModel.Classification
 public import TauCeti.AlgebraicGeometry.Curves.TwoChartModel.SectionRing
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ClosedImmersion
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.SymmetricAlgebra
+import TauCeti.FieldTheory.FunctionField.RiemannRoch.Pencil
 
 /-!
 # The two-chart model as a closed subscheme of a projective space
@@ -27,10 +29,19 @@ Generation in degree one is a genuine condition on `z`. It holds for every `z` w
 zero and `k` is the exact constant field of `F`
 (`TauCeti.riemannRochSpace_nsmul_poles_le_pow_of_genus_eq_zero`), for instance for the rational
 function field `k(X)`; for `z = X` the space `L(D)` is spanned by `1` and `X`, so the target is the
-projective line. For arbitrary genus and exact constants, it holds after replacing `z` by a
-suitable power `z ^ e` whenever the section ring is finitely generated
-(`TauCeti.Divisor.exists_riemannRochSpace_mul_eq_pow`), since the pole divisor of `z ^ e` is
-`e D`.
+projective line. For arbitrary genus and exact constants, it holds after replacing a
+transcendental `z` by a power `z ^ e` with `e ≥ 1` and `e ≥ 2g`
+(`TauCeti.riemannRochSpace_nsmul_poles_pow_le_pow`), since the pole divisor of `z ^ e` is `e D`.
+
+Since the two-chart model does not depend on the transcendental function it is built from
+(`TauCeti.AlgebraicGeometry.twoChartModel.isoOfAlgEquiv`), **every two-chart model over an exact
+constant field is projective**: it is a closed subscheme over `k` of a projective space
+`Proj (Sym_k V)` with `V` finite-dimensional. Every regular proper curve over `k` is the
+two-chart model of its function field (`AlgebraicGeometry.Scheme.isoTwoChartModel`), so a regular
+proper curve whose function field has exact constants `k` is projective as well. Mathlib has no
+class of projective morphisms, so projectivity is stated as the existence of such a closed
+immersion over `k`; properness of `Proj (Sym_k V)` over `k` is
+`TauCeti.SymmetricAlgebra.instIsProperProjToSpec`.
 
 ## Main definitions
 
@@ -45,6 +56,10 @@ suitable power `z ^ e` whenever the section ring is finitely generated
   closed immersion.
 * `TauCeti.AlgebraicGeometry.twoChartModel.toProjSymmetricAlgebra_projToSpec`: it lies over
   `Spec k`.
+* `TauCeti.AlgebraicGeometry.twoChartModel.exists_isClosedImmersion_proj`: **the two-chart
+  model of a function field with exact constants is projective**.
+* `AlgebraicGeometry.Scheme.exists_isClosedImmersion_proj`: **a regular proper curve whose
+  function field has exact constants is projective**.
 
 ## References
 
@@ -125,6 +140,54 @@ theorem toProjSymmetricAlgebra_projToSpec :
 instance : (toProjSymmetricAlgebra hF z hgen).IsOver (Spec (.of k)) :=
   ⟨toProjSymmetricAlgebra_projToSpec hF z hgen⟩
 
+/-- **The two-chart model is projective.** Over an exact constant field, the two-chart model built
+from any transcendental `x` is a closed subscheme, over `k`, of the projective space
+`Proj (Sym_k V)` of a finite-dimensional `k`-vector space `V`. -/
+theorem exists_isClosedImmersion_proj (hex : IsIntegrallyClosedIn k F) {x : F}
+    (hx : Transcendental k x) :
+    ∃ (V : Submodule k F) (_ : FiniteDimensional k V)
+      (f : twoChartModel hF hx.ne_zero ⟶ Proj (TauCeti.SymmetricAlgebra.homogeneousSubmodule k V)),
+      IsClosedImmersion f ∧ f.IsOver (Spec (.of k)) := by
+  -- Embed the model built from `z = x ^ e`, with `e ≥ 1` and `e ≥ 2g`, by the sections of
+  -- `(z)_∞`, and identify it with the model built from `x`.
+  let e := 2 * genus k F + 1
+  let z := Units.mk0 x hx.ne_zero ^ e
+  have hzt : Transcendental k (z : F) := by
+    simpa [z] using hx.pow (Nat.succ_pos _)
+  have hgen := riemannRochSpace_nsmul_poles_pow_le_pow hF hex
+    (z := Units.mk0 x hx.ne_zero) (by simpa using hx) (Nat.succ_pos _) (Nat.le_succ _)
+  have := finiteDimensional_riemannRochSpace hF (poles hF z)
+  let i := isoOfAlgEquiv hF hF z.ne_zero hx.ne_zero AlgEquiv.refl (hxt := hzt) (hx't := hx)
+  have : i.hom.IsOver (Spec (.of k)) := by
+    rw [isoOfAlgEquiv_hom]
+    infer_instance
+  exact ⟨_, inferInstance, i.hom ≫ toProjSymmetricAlgebra hF z hgen, inferInstance,
+    inferInstance⟩
+
 end AlgebraicGeometry.twoChartModel
 
 end TauCeti
+
+namespace AlgebraicGeometry.Scheme
+
+open TauCeti TauCeti.AlgebraicGeometry
+
+universe u
+
+variable {k : Type u} [Field k] (X : Scheme.{u}) [X.Over (Spec (.of k))] [X.IsCurveOver k]
+  [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))]
+
+/-- **A regular proper curve with exact constants is projective**: if `X` is a curve over `k`
+whose codimension-one local rings are discrete valuation rings, and `k` is algebraically closed
+in the function field `k(X)`, then `X` is a closed subscheme, over `k`, of the projective space
+`Proj (Sym_k V)` of a finite-dimensional `k`-vector space `V`. -/
+theorem exists_isClosedImmersion_proj (hex : IsIntegrallyClosedIn k X.functionField) :
+    ∃ (V : Submodule k X.functionField) (_ : FiniteDimensional k V)
+      (f : X ⟶ Proj (TauCeti.SymmetricAlgebra.homogeneousSubmodule k V)),
+      IsClosedImmersion f ∧ f.IsOver (Spec (.of k)) := by
+  have hF := IsCurveOver.isFunctionField (k := k) (X := X)
+  obtain ⟨x, hx⟩ := hF.exists_transcendental
+  obtain ⟨V, hV, f, hf, hfk⟩ := twoChartModel.exists_isClosedImmersion_proj hF hex hx
+  exact ⟨V, hV, (X.isoTwoChartModel hx.ne_zero hx).hom ≫ f, inferInstance, inferInstance⟩
+
+end AlgebraicGeometry.Scheme

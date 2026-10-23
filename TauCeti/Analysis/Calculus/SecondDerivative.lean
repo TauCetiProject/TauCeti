@@ -65,6 +65,7 @@ such, so all of them belong here rather than with the Morse theory that uses the
   `C³` map is its third derivative.
 * `TauCeti.fderiv_fderiv_fderiv_apply_comm`: the third derivative of a sufficiently smooth map is
   symmetric in its last two directions.
+* `TauCeti.fderiv_fderiv_const_smul`: the second derivative of a constant multiple.
 * `TauCeti.fderiv_fderiv_mul_apply`: the second-order product rule.
 * `TauCeti.fderiv_fderiv_apply_eq_smul_iteratedDeriv`: in one variable the second derivative is
   the second iterated derivative.
@@ -229,6 +230,12 @@ theorem fderiv_fderiv_fderiv_apply_comm {n : WithTop ℕ∞} {g : E → F} {x : 
     hD2.clm_apply (differentiableAt_const c)
   rwa [fderiv_clm_apply_const_apply hb, fderiv_clm_apply_const_apply hc,
     fderiv_clm_apply_const_apply hD2, fderiv_clm_apply_const_apply hD2] at h
+
+/-- The second derivative of a constant multiple `c • g` is `c` times the second derivative of
+`g`. No regularity is needed. -/
+theorem fderiv_fderiv_const_smul (c : 𝕜) (g : E → F) (x : E) :
+    fderiv 𝕜 (fderiv 𝕜 (c • g)) x = c • fderiv 𝕜 (fderiv 𝕜 g) x := by
+  rw [fderiv_const_smul_field, fderiv_const_smul_field (𝕜 := 𝕜) (f := fderiv 𝕜 g), Pi.smul_apply]
 
 /-- **The second-order product rule.** For scalar-valued maps `f` and `g` which are `C²` at `x`,
 `D²(f g)(v, w) = f D²g(v, w) + g D²f(v, w) + Df(v) Dg(w) + Dg(v) Df(w)`. -/
