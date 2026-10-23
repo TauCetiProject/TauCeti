@@ -39,6 +39,9 @@ the exponentials above preserve an integral lattice. The application to the Kost
 * `IsNilpotent.exp_mulLeft_apply`, `IsNilpotent.exp_mulRight_apply`: exponentiating multiplication
   by a nilpotent element gives multiplication by its exponential.
 * `TauCeti.nilpotencyClass_le_of_pow_eq_zero`: a vanishing power bounds the nilpotency class.
+* `TauCeti.pow_sum_smul_pow_succ_eq_zero`: a power killing `x` kills every linear combination of
+  positive powers of `x`.
+* `IsNilpotent.pow_exp_sub_one_eq_zero`: if `x ^ n = 0`, then `(exp x - 1) ^ n = 0`.
 * `TauCeti.exp_smul_eq_sum_smul_dividedPower`: the rescaled expansion `exp (r • x) = ∑ rⁱ • x⁽ⁱ⁾`.
 * `TauCeti.exp_zsmul_eq_sum_zsmul_dividedPower`: the same expansion with integer coefficients.
 * `TauCeti.exp_zsmul_mem`: `exp (t • x)` lies in an additive subgroup holding the divided powers
@@ -110,6 +113,36 @@ theorem nilpotencyClass_le_of_pow_eq_zero {x : R} {n : ℕ} (h : x ^ n = 0) :
     nilpotencyClass x ≤ n := by
   rw [nilpotencyClass]
   exact Nat.sInf_le h
+
+/-- Every power that kills `x` also kills a linear combination of positive powers of `x`: such a
+combination is `x` times an element commuting with `x`. -/
+theorem pow_sum_smul_pow_succ_eq_zero {S A : Type*} [Semiring S] [Semiring A] [Module S A]
+    [IsScalarTower S A A] [SMulCommClass S A A] {x : A} {n : ℕ} (hx : x ^ n = 0)
+    (s : Finset ℕ) (c : ℕ → S) : (∑ i ∈ s, c i • x ^ (i + 1)) ^ n = 0 := by
+  have hmul : ∑ i ∈ s, c i • x ^ (i + 1) = x * ∑ i ∈ s, c i • x ^ i := by
+    simp only [mul_sum, mul_smul_comm, ← pow_succ']
+  have hcomm : Commute x (∑ i ∈ s, c i • x ^ i) :=
+    Commute.sum_right _ _ _ fun i _ => ((Commute.refl x).pow_right i).smul_right (c i)
+  rw [hmul, hcomm.mul_pow, hx, zero_mul]
+
+end TauCeti
+
+namespace IsNilpotent
+
+open Finset
+
+variable {A : Type*} [Ring A] [Module ℚ A] [IsScalarTower ℚ A A] [SMulCommClass ℚ A A]
+
+/-- The exponential preserves nilpotency bounds: if `a ^ n = 0`, then `(exp a - 1) ^ n = 0`. -/
+theorem pow_exp_sub_one_eq_zero {a : A} {n : ℕ} (ha : a ^ n = 0) : (exp a - 1) ^ n = 0 := by
+  rw [exp_eq_sum (pow_eq_zero_of_le n.le_succ ha), sum_range_succ']
+  simpa using TauCeti.pow_sum_smul_pow_succ_eq_zero ha (range n) fun i => ((i + 1).factorial : ℚ)⁻¹
+
+end IsNilpotent
+
+namespace TauCeti
+
+open Finset IsNilpotent
 
 variable {A : Type*} [Ring A] [Algebra ℚ A]
 
