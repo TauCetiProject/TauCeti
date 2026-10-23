@@ -25,7 +25,8 @@ An `n`-th root of unity `x` is determined by its powers `x ^ (n / ℓ ^ v_ℓ(n)
 `ℓ ∣ n`, the projections of `x` to its `ℓ`-primary parts.
 
 By Euler's theorem, raising an `n`-th root of unity to the power `q ^ φ(n)`, for `q` prime to `n`,
-does nothing.
+does nothing. In a group of order `N`, every `d`-th power is killed by the
+`(N / gcd(N, d))`-th power map, since `d * (N / gcd(N, d))` is a multiple of `N`.
 
 An element squaring to `1` only sees the parity of its exponent, so identities between products
 of powers of such elements reduce to congruences modulo `2` between the exponents.
@@ -49,6 +50,8 @@ positive exponent equal to one; the source only needs a multiplication and ident
   cardinality `q`, the cast of `q - 1` is `-1`, a companion of Mathlib's `Nat.cast_card_eq_zero`.
 * `TauCeti.pow_pow_totient_eq_self`: `x ^ q ^ φ(n) = x` whenever `x ^ n = 1` and `q` is prime to
   `n`.
+* `TauCeti.pow_pow_div_gcd_eq_one`: `(x ^ d) ^ (n / gcd(n, d)) = 1` whenever `x ^ n = 1`, and its
+  additive counterpart.
 * `TauCeti.eq_one_of_pow_ordCompl_eq_one`, `TauCeti.eq_of_pow_ordCompl_eq`: an element `x` with
   `x ^ n = 1` is determined by its powers `x ^ ordCompl[ℓ] n` at the primes `ℓ ∣ n`.
 * `TauCeti.mul_pow_eq_of_sq_eq_one`: in a commutative monoid, exponents of elements squaring to
@@ -112,6 +115,18 @@ theorem natCast_natCard_sub_one_eq_neg_one (R : Type*) [AddGroupWithOne R] [Fini
 theorem pow_pow_totient_eq_self {M : Type*} [Monoid M] {q n : ℕ} (hq : q.Coprime n) {x : M}
     (hx : x ^ n = 1) : x ^ q ^ n.totient = x := by
   rw [pow_eq_pow_mod _ hx, Nat.ModEq.pow_totient hq, ← pow_eq_pow_mod _ hx, pow_one]
+
+/-- If `x ^ n = 1` in a monoid, then every power `x ^ d` is killed by the `(n / gcd(n, d))`-th
+power map: `(x ^ d) ^ (n / gcd(n, d)) = 1`. In a group of order `N` this applies with `n = N`
+(Mathlib's `pow_card_eq_one'`). -/
+@[to_additive nsmul_nsmul_div_gcd_eq_zero
+/-- If `n • x = 0` in an additive monoid, then every multiple `d • x` is killed by multiplication
+by `n / gcd(n, d)`: `(n / gcd(n, d)) • d • x = 0`. -/]
+theorem pow_pow_div_gcd_eq_one {M : Type*} [Monoid M] {x : M} {n : ℕ} (hx : x ^ n = 1) (d : ℕ) :
+    (x ^ d) ^ (n / n.gcd d) = 1 := by
+  -- `d * (n / g) = n * (d / g)` with `g = gcd(n, d)` dividing both `n` and `d`.
+  rw [← pow_mul, ← Nat.mul_div_assoc _ (Nat.gcd_dvd_left _ _), mul_comm d,
+    Nat.mul_div_assoc _ (Nat.gcd_dvd_right _ _), pow_mul, hx, one_pow]
 
 /-- If `x ^ n = 1` with `n ≠ 0`, and `x ^ ordCompl[ℓ] n = 1` for every prime `ℓ ∣ n`, then
 `x = 1`. -/

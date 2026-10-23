@@ -29,6 +29,10 @@ invariants as the representation itself.
 For a one-dimensional representation the dual is the inverse character: `Dual V ⊗ V` is the trivial
 line.
 
+If `g` fixes pointwise the hyperplane `ker ℓ` cut out by a linear form `ℓ`, then `ρ.dual g` moves
+every linear form by a multiple of `ℓ`. This is the divisibility behind the divided-difference
+operator of a pseudoreflection.
+
 Applied to `Dual X ⊗ Y`, whose invariants are the intertwiners `X → Y` and whose dual is
 `Dual Y ⊗ X`, this counts intertwiners in both directions alike.
 
@@ -39,6 +43,8 @@ Applied to `Dual X ⊗ Y`, whose invariants are the intertwiners `X → Y` and w
   `TauCeti.Representation.apply_of_mem_invariants_dual` the elimination direction.
 * `TauCeti.Representation.finrank_invariants_dual`: **the dual of a representation has as many
   invariants as the representation** whenever `|G|` is invertible in `k`.
+* `Representation.sub_dual_apply_mem_span_singleton`: if `g` fixes the hyperplane `ker ℓ`
+  pointwise, then `ρ.dual g` moves every linear form by a multiple of `ℓ`.
 * `Representation.dualTprodEquivDualDualTprod`: `Dual W ⊗ V` is the dual of `Dual V ⊗ W` as
   representations.
 * `Representation.dualTprodEquivTrivialOfFinrankEqOne`: for a line `V`, the contraction
@@ -72,6 +78,25 @@ theorem generalLinearEquiv_dual_asGroupHom_symm
   simp only [LinearMap.GeneralLinearGroup.coeFn_generalLinearEquiv,
     asGroupHom_apply, dual_apply, inv_inv, Module.Dual.transpose_apply,
     LinearEquiv.dualMap_apply, LinearMap.comp_apply]
+
+section Field
+
+variable {K G V : Type*} [Field K] [Group G] [AddCommGroup V] [Module K V]
+variable (ρ : Representation K G V) {g : G} {ℓ : Module.Dual K V}
+
+/-- If `g` fixes pointwise the hyperplane `ker ℓ`, then under the contragredient action `g` moves
+every linear form `φ` by a multiple of `ℓ`: the form `φ - g • φ` vanishes on `ker ℓ`. -/
+theorem sub_dual_apply_mem_span_singleton (hℓ : LinearMap.ker ℓ ≤ LinearMap.ker (ρ g - 1))
+    (φ : Module.Dual K V) : φ - ρ.dual g φ ∈ K ∙ ℓ := by
+  rw [← LinearMap.range_dualMap_dual_eq_span_singleton,
+    LinearMap.range_dualMap_eq_dualAnnihilator_ker, Submodule.mem_dualAnnihilator]
+  intro v hv
+  have hgv : ρ g v = v := by
+    simpa [sub_eq_zero] using hℓ hv
+  have hginv : ρ g⁻¹ v = v := (congrArg (ρ g⁻¹) hgv).symm.trans (ρ.inv_self_apply g v)
+  simp [Module.Dual.transpose_apply, hginv]
+
+end Field
 
 end Representation
 
