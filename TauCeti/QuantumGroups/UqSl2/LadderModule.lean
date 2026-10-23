@@ -7,10 +7,9 @@ module
 
 public import Mathlib.LinearAlgebra.Trace
 public import Mathlib.RepresentationTheory.AlgebraRepresentation.Basic
-public import TauCeti.QuantumGroups.QuantumInteger
-public import TauCeti.QuantumGroups.UqSl2.Basic
+public import TauCeti.QuantumGroups.UqSl2.Commutator
+public import TauCeti.QuantumGroups.UqSl2.Weights
 
-import Mathlib.Analysis.Complex.Polynomial.Basic
 import Mathlib.Tactic
 
 /-!
@@ -31,12 +30,18 @@ These are the signed simple modules of `U_q(sl₂)`. For a generic parameter (no
 root of unity), `L_m^ε` is a simple module whose endomorphisms are the complex scalars (Schur's
 lemma), and `L_m^ε` and `L_n^δ` are isomorphic only when `m = n` and `ε = δ`.
 
+A vector `v` of weight `ε q^m` in any `UqSl2 q`-module, killed by `E` and by `F^(m+1)`,
+determines a unique module map from `L_m^ε` that sends `v₀` to `v`, and more generally sends
+`v_j` to the normalized lowering string `F^j v / ([1]_q ⋯ [j]_q)`.
+
 ## Main definitions
 
 * `TauCeti.UqSl2.LadderModule q m ε`: the module `L_m^ε`.
 * `TauCeti.UqSl2.LadderModule.basis`: its basis `v₀, …, v_m`.
 * `TauCeti.UqSl2.LadderModule.vec`: the integer-indexed vectors `v_j`.
 * `TauCeti.UqSl2.LadderModule.rep`: the action as an algebra map to complex endomorphisms.
+* `TauCeti.UqSl2.LadderModule.lift`: the module map determined by a highest vector of weight
+  `ε q^m` whose lowering string has length at most `m + 1`.
 
 ## Main results
 
@@ -44,6 +49,10 @@ lemma), and `L_m^ε` and `L_n^δ` are isomorphic only when `m = n` and `ε = δ`
   the action of the generators.
 * `TauCeti.UqSl2.LadderModule.e_pow_smul_vec`, `f_pow_smul_vec`: the action of their powers.
 * `TauCeti.UqSl2.LadderModule.isSimpleModule`: `L_m^ε` is simple at a generic parameter.
+* `TauCeti.UqSl2.LadderModule.hom_ext`: at a generic parameter, module maps out of `L_m^ε` are
+  determined by their value at `v₀`.
+* `TauCeti.UqSl2.LadderModule.lift_vec_zero`: `lift` sends `v₀` to the given vector.
+* `TauCeti.UqSl2.LadderModule.lift_injective`: the map induced by a nonzero vector is injective.
 * `TauCeti.UqSl2.LadderModule.algebraMap_end_bijective`: Schur's lemma for `L_m^ε`.
 * `TauCeti.UqSl2.LadderModule.nonempty_linearEquiv_iff`: `L_m^ε ≅ L_n^δ` iff `m = n` and
   `ε = δ`, at a generic parameter.
@@ -358,6 +367,150 @@ theorem isSimpleModule (hq : IsGenericQuantumParameter q) :
     rw [span_singleton_eq_top hq hx]
     exact Submodule.mem_top
   exact Submodule.mem_span_singleton.mp hz
+
+/-- At a generic parameter, a `UqSl2 q`-module map out of `L_m^ε` is determined by its value at
+the highest vector `v₀`. -/
+theorem hom_ext (hq : IsGenericQuantumParameter q) {V : Type*} [AddCommMonoid V]
+    [Module (UqSl2 q) V] {φ ψ : LadderModule q m ε →ₗ[UqSl2 q] V}
+    (h : φ (vec q m ε 0) = ψ (vec q m ε 0)) : φ = ψ := by
+  refine LinearMap.ext_on (span_singleton_eq_top hq (x := vec q m ε 0) (by simp)) ?_
+  simpa only [Set.eqOn_singleton] using h
+
+/-! ### Universal property -/
+
+variable {V : Type*} [AddCommGroup V] [Module ℂ V]
+  [Module (UqSl2 q) V] [IsScalarTower ℂ (UqSl2 q) V]
+
+variable (q) in
+/-- The normalized lowering string `F^j v / ([1]_q ⋯ [j]_q)` through a vector `v`. -/
+private def string (v : V) (j : ℕ) : V :=
+  (∏ i ∈ Finset.range j, quantumInteger q (i + 1))⁻¹ • f q ^ j • v
+
+section String
+
+variable {v : V} (hq : IsGenericQuantumParameter q)
+  (hv : v ∈ weightSpace q V (ε * q ^ m)) (he : e q • v = 0) (hf : f q ^ (m + 1) • v = 0)
+
+omit [Fact (q ≠ 0)] [IsScalarTower ℂ (UqSl2 q) V] in
+private theorem string_zero : string q v 0 = v := by
+  simp [string]
+
+omit [Fact (q ≠ 0)] in
+include hq in
+private theorem f_smul_string (j : ℕ) :
+    f q • string q v j = quantumInteger q (j + 1) • string q v (j + 1) := by
+  have hj : quantumInteger q ((j : ℤ) + 1) ≠ 0 := quantumInteger_ne_zero hq (by omega)
+  rw [string, string, smul_smul, Finset.prod_range_succ, mul_inv, mul_left_comm,
+    mul_inv_cancel₀ hj, mul_one, smul_comm, pow_succ', mul_smul]
+
+omit [Fact (q ≠ 0)] in
+include hq hv in
+private theorem k_smul_string (j : ℕ) :
+    k q • string q v j = (ε * q ^ ((m : ℤ) - 2 * j)) • string q v j := by
+  have hw := mem_weightSpace_iff.mp (f_pow_smul_mem_weightSpace hv j)
+  rw [string, smul_comm, hw, smul_comm]
+  congr 1
+  rw [zpow_sub₀ hq.ne_zero, zpow_natCast, zpow_mul, zpow_ofNat, zpow_natCast, inv_pow,
+    div_eq_mul_inv, ← inv_pow, ← inv_pow]
+  ring
+
+omit [Fact (q ≠ 0)] [IsScalarTower ℂ (UqSl2 q) V] in
+include hf in
+private theorem string_eq_zero {j : ℕ} (hj : m < j) : string q v j = 0 := by
+  rw [string, ← Nat.sub_add_cancel hj, pow_add, mul_smul, hf, smul_zero, smul_zero]
+
+omit [Fact (q ≠ 0)] in
+include hq hv he in
+private theorem e_smul_string (j : ℕ) :
+    e q • string q v (j + 1) = (ε * quantumInteger q (m - j)) • string q v j := by
+  have hq0 := hq.ne_zero
+  have hk : k q • v = (ε * q ^ m : ℂ) • v := mem_weightSpace_iff.mp hv
+  have hkInv := kInv_smul_of_mem_weightSpace hv
+  -- Apply the commutator formula to `v`; only its `K`, `K⁻¹` term survives.
+  have h := congrArg (· • v) (e_mul_f_pow hq.sub_inv_ne_zero (j + 1))
+  simp only [add_smul, mul_smul, he, smul_zero, zero_add, smul_assoc, sub_smul, hk, hkInv,
+    Nat.add_sub_cancel, smul_sub, smul_comm (f q ^ j) (_ : ℂ)] at h
+  have hj : quantumInteger q ((j : ℤ) + 1) ≠ 0 := quantumInteger_ne_zero hq (by omega)
+  rw [string, string, smul_comm, h]
+  generalize f q ^ j • v = w
+  match_scalars
+  have hP : ∏ i ∈ Finset.range j, quantumInteger q (i + 1) ≠ 0 :=
+    Finset.prod_ne_zero_iff.mpr fun i _ => quantumInteger_ne_zero hq (by omega)
+  rw [Finset.prod_range_succ, quantumInteger_def q ((m : ℤ) - j), zpow_sub₀ hq0, zpow_neg,
+    zpow_sub₀ hq0, zpow_natCast, zpow_natCast]
+  generalize ∏ i ∈ Finset.range j, quantumInteger q (i + 1) = P at hP ⊢
+  generalize quantumInteger q (j + 1) = Q at hj ⊢
+  have hq1 := hq.sub_inv_ne_zero
+  rw [inv_pow]
+  rcases Int.units_eq_one_or ε with rfl | rfl
+  · push_cast
+    field_simp
+  · push_cast
+    field_simp
+    ring
+
+omit [Fact (q ≠ 0)] [IsScalarTower ℂ (UqSl2 q) V] in
+include hf in
+/-- The images of the ladder vectors under the map induced by `v`. -/
+private theorem constr_vec (j : ℕ) :
+    (basis q m ε).constr ℂ (fun i => string q v i) (vec q m ε j) = string q v j := by
+  by_cases hj : j ≤ m
+  · obtain ⟨i, rfl⟩ : ∃ i : Fin (m + 1), (i : ℕ) = j := ⟨⟨j, by omega⟩, rfl⟩
+    rw [vec_coe, Basis.constr_basis]
+  · rw [vec_eq_zero_of_lt (by omega), map_zero, string_eq_zero hf (by omega)]
+
+end String
+
+/-- Commutation of a complex-linear map out of `L_m^ε` with an element of `UqSl2 q` can be
+checked on the ladder vectors. -/
+private theorem map_smul_of_vec (φ : LadderModule q m ε →ₗ[ℂ] V) (a : UqSl2 q)
+    (h : ∀ j : ℕ, j ≤ m → φ (a • vec q m ε j) = a • φ (vec q m ε j))
+    (x : LadderModule q m ε) : φ (a • x) = a • φ x := by
+  have hext : φ ∘ₗ Algebra.lsmul ℂ ℂ _ a = Algebra.lsmul ℂ ℂ V a ∘ₗ φ :=
+    (basis q m ε).ext fun i => by simpa [← vec_coe] using h i (by omega)
+  simpa using LinearMap.congr_fun hext x
+
+/-- The `UqSl2 q`-module map `L_m^ε → V` determined by a vector `v` of weight `ε q^m` killed by
+`E` and by `F^(m+1)`. It sends `v_j` to `F^j v / ([1]_q ⋯ [j]_q)`. -/
+def lift (hq : IsGenericQuantumParameter q) {v : V} (hv : v ∈ weightSpace q V (ε * q ^ m))
+    (he : e q • v = 0) (hf : f q ^ (m + 1) • v = 0) : LadderModule q m ε →ₗ[UqSl2 q] V :=
+  let φ := (basis q m ε).constr ℂ fun i => string q v i
+  { φ.toAddHom with
+    map_smul' := by
+      have hφ := constr_vec (ε := ε) hf
+      have hφ0 : φ (vec q m ε 0) = v := by simpa only [Nat.cast_zero, string_zero] using hφ 0
+      refine φ.map_smul_of_commute_uqSl2 (fun x => ?_) (fun x => ?_) (fun x => ?_)
+      · refine map_smul_of_vec φ _ (fun j _ => ?_) x
+        rcases j with _ | j
+        · rw [e_smul_vec, map_smul, vec_eq_zero_of_neg (by omega), map_zero, smul_zero,
+            Nat.cast_zero, hφ0, he]
+        · rw [e_smul_vec, map_smul, hφ (j + 1), Nat.cast_succ, add_sub_cancel_right,
+            sub_add_eq_sub_sub, sub_add_cancel, hφ, e_smul_string hq hv he]
+      · refine map_smul_of_vec φ _ (fun j _ => ?_) x
+        rw [f_smul_vec, map_smul, ← Nat.cast_succ, hφ, hφ, f_smul_string hq, Nat.cast_succ]
+      · refine map_smul_of_vec φ _ (fun j _ => ?_) x
+        rw [k_smul_vec, map_smul, hφ, k_smul_string hq hv] }
+
+variable (hq : IsGenericQuantumParameter q) {v : V} (hv : v ∈ weightSpace q V (ε * q ^ m))
+  (he : e q • v = 0) (hf : f q ^ (m + 1) • v = 0)
+
+/-- The map induced by `v` sends `v_j` to `F^j v / ([1]_q ⋯ [j]_q)`. -/
+theorem lift_vec (j : ℕ) :
+    lift hq hv he hf (vec q m ε j) =
+      (∏ i ∈ Finset.range j, quantumInteger q (i + 1))⁻¹ • f q ^ j • v :=
+  constr_vec hf j
+
+/-- The map induced by `v` sends the highest vector `v₀` to `v`. -/
+@[simp]
+theorem lift_vec_zero : lift hq hv he hf (vec q m ε 0) = v := by
+  simpa using lift_vec hq hv he hf 0
+
+include hq in
+/-- The map induced by a nonzero vector is injective. -/
+theorem lift_injective (hv0 : v ≠ 0) : Function.Injective (lift hq hv he hf) :=
+  have := isSimpleModule (m := m) (ε := ε) hq
+  LinearMap.injective_of_ne_zero fun h0 => hv0 <| by
+    rw [← lift_vec_zero hq hv he hf, h0, LinearMap.zero_apply]
 
 /-! ### Schur's lemma and pairwise non-isomorphism -/
 

@@ -19,7 +19,7 @@ public section
 namespace Valuation
 
 variable {K K' : Type*} [Ring K] [Ring K'] {Γ₀ : Type*}
-  [LinearOrderedCommGroupWithZero Γ₀] {v : Valuation K Γ₀} {w : Valuation K' Γ₀}
+  [LinearOrderedCommMonoidWithZero Γ₀] {v : Valuation K Γ₀} {w : Valuation K' Γ₀}
 
 /-- The inverse of an isomorphism carrying `v` to `w` carries `w` to `v`. -/
 theorem apply_symm_eq_of_apply_eq {σ : K ≃+* K'} (hσ : ∀ x, w (σ x) = v x) (y : K') :

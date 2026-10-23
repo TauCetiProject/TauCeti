@@ -12,6 +12,8 @@ public import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
 public import TauCeti.MeasureTheory.Measure.AbsolutelyContinuous
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
+
 /-!
 # Change of variables in `W^{1,p}`
 
@@ -147,7 +149,7 @@ private theorem eLpNorm_adjointJet_comp_le (J : Sobolev1JetLp mu V p) :
           fun x hx => norm_adjointJet_le (hL x hx) _) p
     _ ≤ ENNReal.ofReal (max 1 L) * (C ^ (1 / p).toReal * eLpNorm J p (mu.restrict V)) := by
         gcongr
-        exact eLpNorm_comp_le_of_map_le_smul hm hmap (Lp.aestronglyMeasurable J) p
+        exact eLpNorm_comp_le_of_map_le_smul hm hmap p
 
 omit [Fact (1 ≤ p)] in
 include hm hmap hC hL in
@@ -235,8 +237,7 @@ private theorem pullbackJetL_mem_of_contDiffOn (hΦ : DifferentiableOn ℝ Φ U)
       rw [Sobolev1JetLp.candidateWeakFDeriv_apply, innerSL_apply_apply, real_inner_comm]
     rw [hcand]
     exact (innerSL ℝ : E →L[ℝ] E →L[ℝ] ℝ).locallyIntegrableOn_comp
-      (locallyIntegrableOn_of_locallyIntegrable_restrict
-        ((Lp.memLp (Sobolev1JetLp.gradient T)).locallyIntegrable Fact.out))
+      (Lp.locallyIntegrableOn (Sobolev1JetLp.gradient T) Fact.out)
   rw [mem_w1pSubmodule_iff_hasWeakFDerivOn]
   refine ((hasWeakFDerivOn_of_differentiableOn ?_ ((locallyIntegrableOn_congr hder).1 hTloc)
     fun x hx => (hfy _ (hmaps hx)).comp x (hΦx x hx)).congr_ae hval.symm).congr_ae_deriv

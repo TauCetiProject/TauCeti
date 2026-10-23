@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Positive
 public import Mathlib.Analysis.InnerProductSpace.Spectrum
 public import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Basic
+public import TauCeti.Data.Fin.Tuple.Sort
+public import TauCeti.LinearAlgebra.Eigenspace.Anticommute
 import Mathlib.LinearAlgebra.Eigenspace.ContinuousLinearMap
 
 /-!
@@ -33,7 +35,10 @@ spanned by the eigenvectors with negative and with positive eigenvalue, are disj
 under the operator, and together span the whole space when the operator is injective. Writing
 the determinant as the product of the eigenvalues shows that a positive operator has nonnegative
 determinant, and its smallest eigenvalue, the infimum of the Rayleigh quotient, bounds an injective
-positive operator below.
+positive operator below. If an invertible operator anticommutes with the symmetric operator, as a
+complex structure anticommutes with the shape operator of a complex submanifold, then the ordered
+eigenvalues are antisymmetric, so the positive and negative spectral subspaces have equal
+dimension.
 
 No separability is assumed anywhere: the basis is indexed by a set of vectors of `E`, exactly as
 in Mathlib's `exists_hilbertBasis`, and the eigenvalue `0` may well carry an infinite-dimensional
@@ -58,6 +63,11 @@ nonzero eigenvalue, which is the form the eigenvalue problem of an elliptic oper
 * `LinearMap.IsSymmetric.negativeSpectralSubspace` and
   `LinearMap.IsSymmetric.positiveSpectralSubspace`: the negative and positive halves of the
   finite-dimensional spectral splitting.
+* `LinearMap.IsSymmetric.eigenvalues_rev_of_anticommute`: if an invertible operator anticommutes
+  with `T`, the `i`-th largest eigenvalue of `T` is minus its `i`-th smallest.
+* `finrank_positiveSpectralSubspace_eq_finrank_negativeSpectralSubspace_of_anticommute`, in the
+  same namespace: in that case the positive and negative spectral subspaces have the same
+  dimension.
 * `LinearMap.IsPositive.det_nonneg`: a positive operator on a finite-dimensional space has
   nonnegative determinant, the product of its eigenvalues.
 * `LinearMap.IsPositive.det_pos`: an injective positive operator on a finite-dimensional space has
@@ -221,6 +231,13 @@ subsets cut out by inequalities on the corresponding eigenvalues. -/
 noncomputable def eigenvectorSpan (hT : T.IsSymmetric) (hn : Module.finrank 𝕜 E = n)
     (s : Set (Fin n)) : Submodule 𝕜 E :=
   Submodule.span 𝕜 (hT.eigenvectorBasis hn '' s)
+
+/-- The span of the eigenvectors at embedded indices equals their canonical eigenvector span. -/
+theorem span_range_eigenvectorBasis_apply_eq_eigenvectorSpan (hT : T.IsSymmetric)
+    (hn : Module.finrank 𝕜 E = n) {ι : Type*} (e : ι ↪ Fin n) :
+    Submodule.span 𝕜 (Set.range fun i => hT.eigenvectorBasis hn (e i)) =
+      hT.eigenvectorSpan hn (Set.range e) := by
+  rw [eigenvectorSpan, ← Set.range_comp, Function.comp_def]
 
 /-- A vector belongs to an eigenvector span exactly when its eigenbasis representation is
 supported on the selected indices. -/
@@ -395,6 +412,50 @@ theorem isCompl_negativeSpectralSubspace_positiveSpectralSubspace_of_ker_eq_bot
     simp only [Set.mem_union, Set.mem_ofPred, Set.mem_univ, iff_true]
     exact lt_or_gt_of_ne (hT.eigenvalues_ne_zero_of_ker_eq_bot hn hker i)
   rw [hindices, hT.eigenvectorSpan_univ hn]
+
+/-! ### Operators anticommuting with an invertible operator -/
+
+open Finset in
+/-- **Paired eigenvalues.** If an invertible operator `e` anticommutes with a symmetric operator
+`T`, the decreasingly ordered eigenvalues of `T` are antisymmetric: the `i`-th largest eigenvalue
+is minus the `i`-th smallest one. Equivalently, the eigenvalues of `T`, counted with
+multiplicity, are symmetric about `0`. -/
+theorem eigenvalues_rev_of_anticommute (hT : T.IsSymmetric) (hn : Module.finrank 𝕜 E = n)
+    (e : E ≃ₗ[𝕜] E) (h : T * e + e * T = 0) (i : Fin n) :
+    hT.eigenvalues hn i.rev = -hT.eigenvalues hn i := by
+  classical
+  -- The real number `-μ` occurs as often as `μ` in the ordered eigenvalue family.
+  have hcount (μ : ℝ) :
+      #{j | hT.eigenvalues hn j = -μ} = #{j | hT.eigenvalues hn j = μ} := by
+    have hcard (ν : ℝ) :
+        #{j | hT.eigenvalues hn j = ν} = Module.finrank 𝕜 (eigenspace T (ν : 𝕜)) := by
+      rw [← hT.card_filter_eigenvalues_eq hn]
+      simp only [RCLike.ofReal_inj]
+    rw [hcard, hcard, RCLike.ofReal_neg, finrank_genEigenspace_neg_of_anticommute e h]
+  -- The family `j ↦ -λ_{rev j}` is again decreasing, and every value occurs in it as often as
+  -- in the ordered eigenvalue family, so it is that family itself.
+  have hgev : (fun j ↦ -hT.eigenvalues hn j.rev) = hT.eigenvalues hn := by
+    refine Antitone.eq_of_card_filter_eq
+      (fun j k hjk ↦ neg_le_neg (hT.eigenvalues_antitone hn (Fin.rev_le_rev.2 hjk)))
+      (hT.eigenvalues_antitone hn) fun μ ↦ ?_
+    rw [← hcount μ]
+    refine Finset.card_equiv Fin.revPerm fun j ↦ ?_
+    simp only [Finset.mem_filter, Finset.mem_univ, true_and, Fin.revPerm_apply]
+    constructor <;> intro hj <;> linarith
+  simpa using (congrFun hgev i.rev).symm
+
+/-- If an invertible operator anticommutes with a symmetric operator `T`, then `T` has as many
+positive as negative eigenvalues, counted with multiplicity: its positive and negative spectral
+subspaces have the same dimension. -/
+theorem finrank_positiveSpectralSubspace_eq_finrank_negativeSpectralSubspace_of_anticommute
+    (hT : T.IsSymmetric) (hn : Module.finrank 𝕜 E = n) (e : E ≃ₗ[𝕜] E) (h : T * e + e * T = 0) :
+    Module.finrank 𝕜 (hT.positiveSpectralSubspace hn) =
+      Module.finrank 𝕜 (hT.negativeSpectralSubspace hn) := by
+  rw [finrank_positiveSpectralSubspace, finrank_negativeSpectralSubspace]
+  refine Set.ncard_congr (fun i _ ↦ i.rev) (fun i hi ↦ ?_) (fun _ _ _ _ ↦ Fin.rev_inj.1)
+    fun j hj ↦ ⟨j.rev, ?_, Fin.rev_rev j⟩
+  · simpa [hT.eigenvalues_rev_of_anticommute hn e h] using hi
+  · simpa [hT.eigenvalues_rev_of_anticommute hn e h] using hj
 
 end LinearMap.IsSymmetric
 

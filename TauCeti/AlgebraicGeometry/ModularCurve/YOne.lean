@@ -418,68 +418,18 @@ variable (B : Scheme.{u})
 /-- **The universal Tate normal form over `B`**: the projective model of the universal Tate normal
 form `Y² + AXY + BY = X³ + BX²`, pulled back to `B × Spec ℤ[A, B][Δ⁻¹]` along the second
 projection, as an object of `Ell/B` through the first projection. -/
--- An `abbrev`, so that its base, structure morphism and curve are reducibly the product, the first
--- projection and the base change, and morphisms into the product compose with them.
-noncomputable abbrev universalTate : EllObj B where
-  base := B ⨯ Spec (.of (ULift.{u} UniversalTate.Ring))
-  structureMap := prod.fst
-  curve := curveULift.toEllipticCurveGeom.baseChange prod.snd
-
-/-- The projection from the universal Tate normal form over `B` to the projective model of the
-universal Tate normal form over `Spec ℤ[A, B][Δ⁻¹]`. -/
-noncomputable def universalTateProj : (universalTate B).curve.carrier ⟶ curveULift.projModel :=
-  (curveULift.toEllipticCurveGeom.baseChangeIso prod.snd).hom ≫ pullback.fst _ _ ≫
-    (toEllipticCurveGeomIso curveULift).hom
-
-/-- The universal Tate normal form over `B` is the base change of the universal Tate normal form
-over `Spec ℤ[A, B][Δ⁻¹]` along the second projection. -/
-theorem isPullback_universalTateProj :
-    IsPullback (universalTateProj B) (universalTate B).curve.structureMap
-      curveULift.projModelOver prod.snd := by
-  have h := (curveULift.toEllipticCurveGeom.isPullback_baseChange
-    (prod.snd : B ⨯ Spec (.of (ULift.{u} UniversalTate.Ring)) ⟶ _)).paste_horiz
-    (IsPullback.of_horiz_isIso (fst := (toEllipticCurveGeomIso curveULift).hom)
-      (snd := curveULift.toEllipticCurveGeom.structureMap) (f := curveULift.projModelOver)
-      (g := 𝟙 _) ⟨by simp⟩)
-  simpa [universalTateProj] using h
-
-/-- The projection `universalTateProj B` carries the zero section to the zero section. -/
-@[reassoc]
-theorem zero_universalTateProj :
-    (universalTate B).curve.zero ≫ universalTateProj B = prod.snd ≫ curveULift.projModelZero := by
-  simp [universalTateProj, pullbackSection_fst_assoc]
+noncomputable abbrev universalTate : EllObj B :=
+  prodCurve B UniversalTate.curveGeom.{u}
 
 /-- **The point `(0, 0)` of the universal Tate normal form over `B`**: the base change of the point
 `(0, 0)` of the universal Tate normal form over `Spec ℤ[A, B][Δ⁻¹]`. -/
 noncomputable def universalTatePoint :
     𝟙_ (Over (universalTate B).base) ⟶ Over.mk (universalTate B).curve.structureMap :=
-  Over.homMk ((isPullback_universalTateProj B).lift (prod.snd ≫ point) (𝟙 _) (by
-    simp)) (by simp)
-
-/-- The projection `universalTateProj B` carries the point `(0, 0)` to the point `(0, 0)`. -/
-@[reassoc (attr := simp)]
-theorem universalTatePoint_left_universalTateProj :
-    (universalTatePoint B).left ≫ universalTateProj B = prod.snd ≫ point :=
-  (isPullback_universalTateProj B).lift_fst _ _ _
+  prodCurvePoint B UniversalTate.pointHom
 
 section Classifying
 
 variable {B} {X : EllObj B}
-
--- For an arrow `k : X ⟶ universalTate B`, the composites of `k` with the projections to the
--- universal Tate normal form over `Spec ℤ[A, B][Δ⁻¹]` classify `X` with the base change of `(0, 0)`
--- along `k`, in the sense of `EllipticCurveGeom.existsUnique_tateNormalForm`.
-private theorem isTate_hom (k : X ⟶ universalTate B) :
-    IsPullback (k.total ≫ universalTateProj B) X.curve.structureMap curveULift.projModelOver
-        (k.base ≫ prod.snd) ∧
-      X.curve.zero ≫ k.total ≫ universalTateProj B =
-        (k.base ≫ prod.snd) ≫ curveULift.projModelZero ∧
-      (EllipticCurveGeom.pointsPullback k.isPullback k.zero_total (universalTatePoint B)).left ≫
-          k.total ≫ universalTateProj B = (k.base ≫ prod.snd) ≫ point := by
-  refine ⟨k.isPullback.paste_horiz (isPullback_universalTateProj B), ?_, ?_⟩
-  · rw [k.zero_total_assoc, zero_universalTateProj, Category.assoc]
-  · rw [EllipticCurveGeom.pointsPullback_left_comp_assoc, universalTatePoint_left_universalTateProj,
-      Category.assoc]
 
 /-- **The universal property of the universal Tate normal form in `Ell/B`.** Let `X = (E/S)` be an
 object of `Ell/B` and `P` an `S`-point of `E` such that none of `P`, `2P` and `3P` meets the zero
@@ -491,46 +441,16 @@ theorem existsUnique_hom_universalTate (P : 𝟙_ (Over X.base) ⟶ Over.mk X.cu
     (h₃ : ∀ s, (P.left ≫ (X.curve.mulBy 3).left) s ≠ X.curve.zero s) :
     ∃! k : X ⟶ universalTate B,
       EllipticCurveGeom.pointsPullback k.isPullback k.zero_total (universalTatePoint B) = P := by
-  have hP := EllipticCurveGeom.left_comp_structureMap P
-  obtain ⟨⟨f, g⟩, ⟨hg, h0, hgP⟩, huniq⟩ := X.curve.existsUnique_tateNormalForm hP h₁ h₂ h₃
-  have hT := isPullback_universalTateProj B
-  -- the arrow over `(X.structureMap, f) : S ⟶ B × Spec ℤ[A, B][Δ⁻¹]` induced by `g`
-  let total := hT.lift g (X.curve.structureMap ≫ prod.lift X.structureMap f) (by simp [hg.w])
-  have htot₁ : total ≫ universalTateProj B = g := hT.lift_fst _ _ _
-  have htot₂ : total ≫ (universalTate B).curve.structureMap =
-      X.curve.structureMap ≫ prod.lift X.structureMap f :=
-    hT.lift_snd _ _ _
-  let k : X ⟶ universalTate B :=
-    { base := prod.lift X.structureMap f
-      base_structureMap := prod.lift_fst _ _
-      total := total
-      isPullback := .of_right (by simpa [htot₁] using hg) htot₂ hT
-      zero_total := hT.hom_ext
-        (by rw [Category.assoc, htot₁, Category.assoc, zero_universalTateProj, prod.lift_snd_assoc]
-            exact h0)
-        (by rw [Category.assoc, htot₂, EllipticCurveGeom.zero_comp_structureMap_assoc,
-              Category.assoc, EllipticCurveGeom.zero_comp_structureMap, Category.comp_id]) }
-  have hkP :
-      EllipticCurveGeom.pointsPullback k.isPullback k.zero_total (universalTatePoint B) = P :=
-    ((EllipticCurveGeom.eq_pointsPullback_iff _ _).mpr (hT.hom_ext
-      (by rw [Category.assoc, htot₁, Category.assoc, universalTatePoint_left_universalTateProj,
-            prod.lift_snd_assoc]
-          exact hgP)
-      (by rw [Category.assoc, htot₂, reassoc_of% hP, Category.assoc,
-            EllipticCurveGeom.left_comp_structureMap, Category.comp_id]
-          exact Category.id_comp _))).symm
-  refine ⟨k, hkP, fun k' hk' ↦ ?_⟩
-  -- both arrows give classifying pairs of `(X, P)`, which agree by uniqueness
-  have hk := isTate_hom k
-  have hk'' := isTate_hom k'
-  rw [hkP] at hk
-  rw [hk'] at hk''
-  have hfg := (huniq (k'.base ≫ prod.snd, k'.total ≫ universalTateProj B) hk'').trans
-    (huniq (k.base ≫ prod.snd, k.total ≫ universalTateProj B) hk).symm
-  simp only [Prod.mk.injEq] at hfg
-  have hb : k'.base = k.base :=
-    prod.hom_ext (k'.base_structureMap.trans k.base_structureMap.symm) hfg.1
-  exact EllObj.hom_ext (hT.hom_ext hfg.2 (by rw [k'.total_structureMap, k.total_structureMap, hb]))
+  -- arrows into `universalTate B` are the classifying pairs of the Tate normal form
+  refine (homProdCurveEquiv X).existsUnique_congr_left.mpr ?_
+  obtain ⟨⟨f, g⟩, ⟨hg, h₀, hgP⟩, huniq⟩ :=
+    X.curve.existsUnique_tateNormalForm_curveGeom (EllipticCurveGeom.left_comp_structureMap P) h₁
+      h₂ h₃
+  refine ⟨⟨(f, g), hg, h₀⟩, (pointsPullback_prodCurvePoint_eq_iff _ _ _).mpr ?_,
+    fun fg hfg ↦ Subtype.ext (huniq _ ⟨fg.2.1, fg.2.2, ?_⟩)⟩
+  · rw [Equiv.apply_symm_apply]
+    exact hgP
+  · simpa using (pointsPullback_prodCurvePoint_eq_iff _ _ _).mp hfg
 
 end Classifying
 

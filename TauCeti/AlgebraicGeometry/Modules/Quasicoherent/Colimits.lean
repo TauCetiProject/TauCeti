@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.Modules.Localization
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Restriction
+public import TauCeti.AlgebraicGeometry.Modules.TensorProduct
 
 /-!
 # Colimits of quasicoherent sheaves
@@ -20,6 +22,13 @@ arbitrary schemes, without Noetherian or separation assumptions.
 In particular direct sums of quasicoherent sheaves are quasicoherent, such as the direct sum of
 the homogeneous components of a graded quasicoherent algebra.
 
+Taking sections over an affine open preserves these colimits: on `Spec R`, global sections
+restrict to an equivalence between quasicoherent sheaves and `R`-modules (`tildeEquiv`), and an
+affine open is the image of the affine chart `Spec Γ(X, U) ⟶ X`. So the sections over an affine
+open of a direct sum of quasicoherent sheaves are the direct sum of their sections. This fails
+over non-quasicompact opens, where a section of a direct sum may have infinitely many nonzero
+components.
+
 ## Main declarations
 
 * `TauCeti.AlgebraicGeometry.isQuasicoherent_of_isColimit`: a small colimit of quasicoherent
@@ -27,12 +36,19 @@ the homogeneous components of a graded quasicoherent algebra.
 * `AlgebraicGeometry.Scheme.Modules.isQuasicoherent_isClosedUnderColimitsOfShape`: quasicoherence
   is closed under small colimits;
 * `AlgebraicGeometry.Scheme.Modules.isQuasicoherent_sigma`: a small coproduct of quasicoherent
-  sheaves is quasicoherent.
+  sheaves is quasicoherent;
+* `AlgebraicGeometry.IsAffineOpen.restrictFromSpecCompModuleSpecΓFunctorIso`: over an affine
+  open, sections are naturally global sections on the affine chart;
+* `TauCeti.AlgebraicGeometry.isColimitMapCoconeSectionsFunctor`: sections over an affine open
+  preserve small colimits of quasicoherent sheaves;
+* `TauCeti.AlgebraicGeometry.toModule_sectionsFunctor_map_bijective`: the sections over an affine
+  open of a coproduct of quasicoherent sheaves are the direct sum of their sections.
 
 ## References
 
 * R. Hartshorne, *Algebraic Geometry*, Proposition II.5.2 (`M ↦ M~` commutes with direct sums)
-  and Proposition II.5.7.
+  and Proposition II.5.7; Corollary II.5.5 (global sections on `Spec R` give an equivalence of
+  quasicoherent sheaves with `R`-modules).
 -/
 
 public section
@@ -103,6 +119,91 @@ instance _root_.AlgebraicGeometry.Scheme.Modules.isQuasicoherent_sigma {X : Sche
     [∀ i, (M i).IsQuasicoherent] : (∐ M).IsQuasicoherent :=
   isQuasicoherent_of_isColimit (fun i ↦ inferInstanceAs (M i.as).IsQuasicoherent)
     (colimit.isColimit _)
+
+/-- On a spectrum, global sections send a colimit of a small diagram of quasicoherent sheaves to a
+colimit of modules: the colimit is quasicoherent, so the colimit cocone lies in the full
+subcategory of quasicoherent sheaves, where global sections are an equivalence. -/
+private def isColimitMapCoconeModuleSpecΓFunctor {R : CommRingCat.{u}}
+    {K : J ⥤ (Spec R).Modules} (hK : ∀ j, (K.obj j).IsQuasicoherent)
+    {c : Cocone K} (hc : IsColimit c) :
+    IsColimit ((moduleSpecΓFunctor (R := R)).mapCocone c) := by
+  let P := SheafOfModules.isQuasicoherent (Spec R).ringCatSheaf
+  let c' : Cocone (P.lift K hK) :=
+    { pt := ⟨c.pt, isQuasicoherent_of_isColimit hK hc⟩
+      ι := { app j := ObjectProperty.homMk (c.ι.app j)
+             naturality i j f := by ext1; exact (c.w f).trans (Category.comp_id _).symm } }
+  have hc' : IsColimit c' :=
+    isColimitOfReflects P.ι (IsColimit.ofIsoColimit hc (Cocone.ext (Iso.refl _)))
+  -- The inverse of `tildeEquiv` is the inclusion followed by global sections, so its image of
+  -- `c'` is the image of `c` under global sections.
+  exact isColimitOfPreserves (tildeEquiv (R := R)).inverse hc'
+
+variable {X : Scheme.{u}} {U : X.Opens}
+
+/-- Over an affine open `U`, the sections functor is global sections on the affine chart
+`Spec Γ(X, U) ⟶ X`, naturally in the module: the components are `fromSpecSectionsEquiv`. -/
+def _root_.AlgebraicGeometry.IsAffineOpen.restrictFromSpecCompModuleSpecΓFunctorIso
+    (hU : IsAffineOpen U) :
+    restrictFunctor hU.fromSpec ⋙ moduleSpecΓFunctor ≅ sectionsFunctor U :=
+  NatIso.ofComponents (fun M ↦ (M.fromSpecSectionsEquiv hU).toModuleIso.symm) fun {M N} f ↦ by
+    ext x
+    -- Display the components on sections: the two functors present the same modules with their
+    -- scalar rings written differently, so `simp` lemmas for module morphisms do not apply.
+    change (N.fromSpecSectionsEquiv hU).symm (((restrictFunctor hU.fromSpec).map f).app ⊤ x) =
+      f.app U ((M.fromSpecSectionsEquiv hU).symm x)
+    rw [LinearEquiv.symm_apply_eq, ← Scheme.Modules.Hom.fromSpecSectionsEquiv_naturality]
+    exact congrArg _ ((M.fromSpecSectionsEquiv hU).apply_symm_apply x).symm
+
+/-- The components of `restrictFromSpecCompModuleSpecΓFunctorIso` are the inverses of
+`fromSpecSectionsEquiv`. -/
+@[simp]
+theorem _root_.AlgebraicGeometry.IsAffineOpen.restrictFromSpecCompModuleSpecΓFunctorIso_hom_app
+    (hU : IsAffineOpen U) (M : X.Modules) :
+    hU.restrictFromSpecCompModuleSpecΓFunctorIso.hom.app M =
+      ModuleCat.ofHom (M.fromSpecSectionsEquiv hU).symm.toLinearMap :=
+  NatIso.ofComponents_hom_app _ _ M
+
+/-- The components of the inverse of `restrictFromSpecCompModuleSpecΓFunctorIso` are
+`fromSpecSectionsEquiv`. -/
+@[simp]
+theorem _root_.AlgebraicGeometry.IsAffineOpen.restrictFromSpecCompModuleSpecΓFunctorIso_inv_app
+    (hU : IsAffineOpen U) (M : X.Modules) :
+    hU.restrictFromSpecCompModuleSpecΓFunctorIso.inv.app M =
+      ModuleCat.ofHom (M.fromSpecSectionsEquiv hU).toLinearMap :=
+  NatIso.ofComponents_inv_app _ _ M
+
+/-- Sections over an affine open send a colimit, in the category of all sheaves of modules, of a
+small diagram of quasicoherent sheaves to a colimit of `Γ(X, U)`-modules. -/
+def isColimitMapCoconeSectionsFunctor {K : J ⥤ X.Modules} (hK : ∀ j, (K.obj j).IsQuasicoherent)
+    {c : Cocone K} (hc : IsColimit c) (hU : IsAffineOpen U) :
+    IsColimit ((sectionsFunctor U).mapCocone c) :=
+  have := hU.isOpenImmersion_fromSpec
+  IsColimit.mapCoconeEquiv hU.restrictFromSpecCompModuleSpecΓFunctorIso
+    (isColimitMapCoconeModuleSpecΓFunctor (K := K ⋙ restrictFunctor hU.fromSpec)
+      (fun j ↦ have := hK j; isQuasicoherent_restrictFunctor _ _)
+      (isColimitOfPreserves (restrictFunctor hU.fromSpec) hc))
+
+/-- If `P` is the coproduct of a family of quasicoherent sheaves `Mᵢ`, with coprojections `gᵢ`,
+then over an affine open `U` the induced map `⨁ᵢ Γ(Mᵢ, U) → Γ(P, U)` is bijective. The scheme
+lives in a universe at least that of the index type, so that the direct sum is a module in the
+universe of the sections. -/
+theorem toModule_sectionsFunctor_map_bijective {ι : Type w} [DecidableEq ι]
+    {X : Scheme.{max w u}} {U : X.Opens} {M : ι → X.Modules} [∀ i, (M i).IsQuasicoherent]
+    {P : X.Modules} {g : ∀ i, M i ⟶ P} (hc : IsColimit (Cofan.mk P g)) (hU : IsAffineOpen U) :
+    Function.Bijective (DirectSum.toModule Γ(X, U) ι ((sectionsFunctor U).obj P)
+      fun i ↦ ((sectionsFunctor U).map (g i)).hom) := by
+  let F := sectionsFunctor U
+  let φ := DirectSum.toModule Γ(X, U) ι (F.obj P) fun i ↦ (F.map (g i)).hom
+  have hF := isColimitMapCoconeCofanMkEquiv F M g
+    (isColimitMapCoconeSectionsFunctor (fun i ↦ inferInstanceAs (M i.as).IsQuasicoherent) hc hU)
+  -- `φ` is the comparison map from the concrete direct sum to the colimit `F.obj P`.
+  let e := (ModuleCat.coproductCoconeIsColimit fun i ↦ F.obj (M i)).coconePointUniqueUpToIso hF
+  have he : e.hom = ModuleCat.ofHom φ :=
+    Cofan.IsColimit.hom_ext (ModuleCat.coproductCoconeIsColimit fun i ↦ F.obj (M i)) _ _ fun i ↦
+      ((ModuleCat.coproductCoconeIsColimit _).comp_coconePointUniqueUpToIso_hom hF ⟨i⟩).trans
+        (ModuleCat.hom_ext (LinearMap.ext fun x ↦ by simp [φ, ModuleCat.coproductCocone])).symm
+  have : IsIso (ModuleCat.ofHom φ) := he ▸ e.isIso_hom
+  exact ConcreteCategory.bijective_of_isIso (ModuleCat.ofHom φ)
 
 end
 

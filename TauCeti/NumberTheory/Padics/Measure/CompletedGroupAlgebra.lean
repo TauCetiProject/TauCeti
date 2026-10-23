@@ -8,7 +8,12 @@ module
 public import TauCeti.NumberTheory.Padics.Measure.FiniteAlgebra
 public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.CompletedGroupAlgebra.Basic
+import Mathlib.Analysis.Normed.Operator.ContinuousLinearMap
+import Mathlib.Analysis.Normed.Group.Ultra
+import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Extend
+import Mathlib.Topology.ContinuousMap.Compact
 import TauCeti.Topology.Algebra.Group.LocallyConstant
+import TauCeti.Topology.ContinuousMap.LocallyConstant
 
 /-!
 # Measures on a compact group in its completed group algebra
@@ -40,6 +45,10 @@ the weak topology on measures to the inverse-limit topology on the completed gro
   factoring through `Γ ⧸ U` is the finite sum of its values against the coefficients at level `U`.
 * `AbstractMeasure.toCompletedGroupAlgebra_injective`: for profinite `Γ` and Hausdorff `R`, a
   measure is determined by its image in the completed group algebra.
+* `AbstractMeasure.toCompletedGroupAlgebra_surjective`: every element of `ℤ_p[[Γ]]` is the image
+  of a unique integral measure.
+* `AbstractMeasure.completedGroupAlgebraEquiv`: the resulting `ℤ_p`-algebra equivalence between
+  integral measures and the completed group algebra.
 * `AbstractMeasure.continuous_toCompletedGroupAlgebra`: for normed `R`, the comparison map is
   continuous for the weak topology on measures.
 
@@ -153,6 +162,262 @@ theorem continuous_toCompletedGroupAlgebra :
   exact (continuous_apply a).comp (continuous_finiteProjection _)
 
 end Normed
+
+section PadicInt
+
+variable {p : ℕ} [Fact p.Prime] [TotallyDisconnectedSpace Γ]
+
+private def completedCylinderSum (x : completedGroupAlgebra ℤ_[p] Γ)
+    (U : OpenNormalSubgroup Γ) (g : Γ ⧸ U.toSubgroup → ℤ_[p]) : ℤ_[p] :=
+  (completedGroupAlgebra.proj ℤ_[p] Γ U x).coeff.sum fun a c ↦ g a * c
+
+omit [IsTopologicalGroup Γ] [CompactSpace Γ] [TotallyDisconnectedSpace Γ] in
+private theorem completedCylinderSum_mapOfLE (x : completedGroupAlgebra ℤ_[p] Γ)
+    {U V : OpenNormalSubgroup Γ} (hUV : U ≤ V) (g : Γ ⧸ V.toSubgroup → ℤ_[p]) :
+    completedCylinderSum x V g =
+      completedCylinderSum x U (g ∘ QuotientGroup.mapOfLE hUV) := by
+  classical
+  rw [completedCylinderSum, completedCylinderSum,
+    ← completedGroupAlgebra.mapDomain_mapOfLE_proj hUV x]
+  exact Finsupp.sum_mapDomain_index (fun _ ↦ by simp) (fun _ _ _ ↦ by rw [mul_add])
+
+omit [IsTopologicalGroup Γ] [CompactSpace Γ] [TotallyDisconnectedSpace Γ] in
+private theorem completedCylinderSum_eq_of_comp_eq (x : completedGroupAlgebra ℤ_[p] Γ)
+    (U V : OpenNormalSubgroup Γ) (g : Γ ⧸ U.toSubgroup → ℤ_[p])
+    (h : Γ ⧸ V.toSubgroup → ℤ_[p])
+    (hgh : ∀ y : Γ, g y = h y) :
+    completedCylinderSum x U g = completedCylinderSum x V h := by
+  rw [completedCylinderSum_mapOfLE x inf_le_left g,
+    completedCylinderSum_mapOfLE x inf_le_right h]
+  congr 1
+  funext a
+  obtain ⟨y, rfl⟩ := QuotientGroup.mk_surjective a
+  simpa using hgh y
+
+private noncomputable def completedLocallyConstantValue
+    (x : completedGroupAlgebra ℤ_[p] Γ) (φ : LocallyConstant Γ ℤ_[p]) : ℤ_[p] :=
+  let hφ := φ.isLocallyConstant.exists_comp_quotientMk_eq
+  completedCylinderSum x hφ.choose hφ.choose_spec.choose
+
+omit [TotallyDisconnectedSpace Γ] in
+private theorem completedLocallyConstantValue_eq
+    (x : completedGroupAlgebra ℤ_[p] Γ) (φ : LocallyConstant Γ ℤ_[p])
+    (U : OpenNormalSubgroup Γ) (g : Γ ⧸ U.toSubgroup → ℤ_[p])
+    (hφ : ∀ y : Γ, g y = φ y) :
+    completedLocallyConstantValue x φ = completedCylinderSum x U g := by
+  apply completedCylinderSum_eq_of_comp_eq
+  intro y
+  exact (congrFun
+    (φ.isLocallyConstant.exists_comp_quotientMk_eq.choose_spec.choose_spec) y).trans (hφ y).symm
+
+private noncomputable def completedLocallyConstantIntegral
+    (x : completedGroupAlgebra ℤ_[p] Γ) : LocallyConstant Γ ℤ_[p] →ₗ[ℤ_[p]] ℤ_[p] where
+  toFun := completedLocallyConstantValue x
+  map_add' φ ψ := by
+    let hφ := φ.isLocallyConstant.exists_comp_quotientMk_eq
+    let hψ := ψ.isLocallyConstant.exists_comp_quotientMk_eq
+    let U := hφ.choose ⊓ hψ.choose
+    let gφ := hφ.choose_spec.choose ∘ QuotientGroup.mapOfLE (inf_le_left : U ≤ hφ.choose)
+    let gψ := hψ.choose_spec.choose ∘ QuotientGroup.mapOfLE (inf_le_right : U ≤ hψ.choose)
+    have hφU : ∀ y : Γ, gφ y = φ y := fun y ↦ by
+      simpa [gφ, U] using congrFun hφ.choose_spec.choose_spec y
+    have hψU : ∀ y : Γ, gψ y = ψ y := fun y ↦ by
+      simpa [gψ, U] using congrFun hψ.choose_spec.choose_spec y
+    have h_add_value : completedLocallyConstantValue x (φ + ψ) =
+        completedCylinderSum x U (gφ + gψ) :=
+      completedLocallyConstantValue_eq x _ U _ fun y ↦ by
+        rw [Pi.add_apply, hφU, hψU]
+        exact congrArg (fun f : C(Γ, ℤ_[p]) ↦ f y)
+          (map_add (LocallyConstant.toContinuousMapLinearMap ℤ_[p]) φ ψ) |>.symm
+    rw [h_add_value,
+      completedLocallyConstantValue_eq x φ U gφ hφU,
+      completedLocallyConstantValue_eq x ψ U gψ hψU]
+    simp [completedCylinderSum, add_mul]
+  map_smul' c φ := by
+    let hφ := φ.isLocallyConstant.exists_comp_quotientMk_eq
+    let U := hφ.choose
+    let g := hφ.choose_spec.choose
+    have hφU : ∀ y : Γ, g y = φ y := fun y ↦ congrFun hφ.choose_spec.choose_spec y
+    have h_smul_value : completedLocallyConstantValue x (c • φ) =
+        completedCylinderSum x U (c • g) :=
+      completedLocallyConstantValue_eq x _ U _ fun y ↦ by
+        rw [Pi.smul_apply, hφU]
+        exact congrArg (fun f : C(Γ, ℤ_[p]) ↦ f y)
+          (map_smul (LocallyConstant.toContinuousMapLinearMap ℤ_[p]) c φ) |>.symm
+    rw [h_smul_value,
+      completedLocallyConstantValue_eq x φ U g hφU]
+    simp only [completedCylinderSum, Pi.smul_apply, smul_eq_mul]
+    rw [Finsupp.mul_sum]
+    congr 1
+    funext a c'
+    simp only [RingHom.id_apply, mul_assoc]
+
+omit [TotallyDisconnectedSpace Γ] in
+private theorem completedLocallyConstantIntegral_eq
+    (x : completedGroupAlgebra ℤ_[p] Γ) (φ : LocallyConstant Γ ℤ_[p])
+    (U : OpenNormalSubgroup Γ) (g : Γ ⧸ U.toSubgroup → ℤ_[p])
+    (hφ : ∀ y : Γ, g y = φ y) :
+    completedLocallyConstantIntegral x φ = completedCylinderSum x U g :=
+  completedLocallyConstantValue_eq x φ U g hφ
+
+omit [TotallyDisconnectedSpace Γ] in
+private theorem norm_completedLocallyConstantIntegral_le
+    (x : completedGroupAlgebra ℤ_[p] Γ) (φ : LocallyConstant Γ ℤ_[p]) :
+    ‖completedLocallyConstantIntegral x φ‖ ≤
+      1 * ‖LocallyConstant.toContinuousMapLinearMap ℤ_[p] φ‖ := by
+  let hφ := φ.isLocallyConstant.exists_comp_quotientMk_eq
+  let U := hφ.choose
+  let g := hφ.choose_spec.choose
+  have hφU : ∀ y : Γ, g y = φ y := fun y ↦ congrFun hφ.choose_spec.choose_spec y
+  rw [one_mul, completedLocallyConstantIntegral_eq x φ U g hφU]
+  refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg (norm_nonneg _) fun a ha ↦ ?_
+  obtain ⟨y, rfl⟩ := QuotientGroup.mk_surjective a
+  calc
+    ‖g y * (completedGroupAlgebra.proj ℤ_[p] Γ U x).coeff y‖
+        ≤ ‖g y‖ * 1 := by
+          rw [norm_mul]
+          exact mul_le_mul_of_nonneg_left (PadicInt.norm_le_one _) (norm_nonneg _)
+    _ ≤ ‖LocallyConstant.toContinuousMapLinearMap ℤ_[p] φ‖ := by
+      rw [mul_one, hφU]
+      exact (LocallyConstant.toContinuousMapLinearMap ℤ_[p] φ).norm_coe_le_norm y
+
+private abbrev completedLocallyConstantTests : Submodule ℤ_[p] C(Γ, ℤ_[p]) :=
+  (LocallyConstant.toContinuousMapLinearMap ℤ_[p]).range
+
+private theorem dense_completedLocallyConstantTests :
+    DenseRange (completedLocallyConstantTests (Γ := Γ) (p := p)).subtype := by
+  apply denseRange_subtype_val.mpr
+  apply (dense_setOf_comp_quotientMk ℤ_[p]).mono
+  rintro f ⟨U, g, hg⟩
+  have hloc : IsLocallyConstant (f : Γ → ℤ_[p]) := by
+    rw [← hg]
+    exact (IsLocallyConstant.of_discrete g).comp_continuous QuotientGroup.continuous_mk
+  exact ⟨⟨f, hloc⟩, rfl⟩
+
+private def completedIntegralOnLocallyConstantTests
+    (x : completedGroupAlgebra ℤ_[p] Γ) :
+    completedLocallyConstantTests (Γ := Γ) (p := p) →L[ℤ_[p]] ℤ_[p] :=
+  let e := LinearEquiv.ofInjective (LocallyConstant.toContinuousMapLinearMap ℤ_[p])
+    LocallyConstant.toContinuousMap_injective
+  ((completedLocallyConstantIntegral x).comp e.symm.toLinearMap).mkContinuous 1 (by
+    intro f
+    have he : (e.symm f).toContinuousMap = f.val := by
+      simpa only [LocallyConstant.toContinuousMapLinearMap_apply] using
+        LinearEquiv.ofInjective_symm_apply (LocallyConstant.toContinuousMapLinearMap ℤ_[p]) f
+    simp only [LinearMap.comp_apply, LinearEquiv.coe_toLinearMap]
+    calc
+      ‖completedLocallyConstantIntegral x (e.symm f)‖ ≤
+          1 * ‖LocallyConstant.toContinuousMapLinearMap ℤ_[p] (e.symm f)‖ :=
+        norm_completedLocallyConstantIntegral_le x (e.symm f)
+      _ = 1 * ‖f‖ := by
+        rw [LocallyConstant.toContinuousMapLinearMap_apply, he, Submodule.norm_coe])
+
+omit [TotallyDisconnectedSpace Γ] in
+private theorem completedIntegralOnLocallyConstantTests_apply
+    (x : completedGroupAlgebra ℤ_[p] Γ) (φ : LocallyConstant Γ ℤ_[p]) :
+    completedIntegralOnLocallyConstantTests x
+        ⟨φ.toContinuousMap, ⟨φ, rfl⟩⟩ = completedLocallyConstantIntegral x φ := by
+  let e : LocallyConstant Γ ℤ_[p] ≃ₗ[ℤ_[p]]
+      completedLocallyConstantTests (Γ := Γ) (p := p) :=
+    LinearEquiv.ofInjective (LocallyConstant.toContinuousMapLinearMap ℤ_[p])
+      LocallyConstant.toContinuousMap_injective
+  have he : (⟨φ.toContinuousMap, ⟨φ, rfl⟩⟩ :
+      completedLocallyConstantTests (Γ := Γ) (p := p)) = e φ := by
+    apply Subtype.ext
+    exact (LinearEquiv.ofInjective_apply
+      (LocallyConstant.toContinuousMapLinearMap ℤ_[p]) φ).symm
+  simp only [completedIntegralOnLocallyConstantTests, LinearMap.mkContinuous_apply,
+    LinearMap.comp_apply, LinearEquiv.coe_toLinearMap]
+  exact congrArg (completedLocallyConstantIntegral x) (he ▸ e.symm_apply_apply φ)
+
+private noncomputable def ofCompletedGroupAlgebra
+    (x : completedGroupAlgebra ℤ_[p] Γ) : D(Γ, ℤ_[p]) :=
+  toCLMEquiv.symm <| (completedIntegralOnLocallyConstantTests x).extend
+    (completedLocallyConstantTests (Γ := Γ) (p := p)).subtypeL
+
+private theorem ofCompletedGroupAlgebra_apply_locallyConstant
+    (x : completedGroupAlgebra ℤ_[p] Γ) (φ : LocallyConstant Γ ℤ_[p]) :
+    ofCompletedGroupAlgebra x φ.toContinuousMap = completedLocallyConstantIntegral x φ := by
+  have he := (completedIntegralOnLocallyConstantTests x).extend_eq
+    (e := (completedLocallyConstantTests (Γ := Γ) (p := p)).subtypeL)
+    dense_completedLocallyConstantTests isUniformEmbedding_subtype_val.isUniformInducing
+    ⟨φ.toContinuousMap, ⟨φ, rfl⟩⟩
+  rw [ofCompletedGroupAlgebra, coe_symm_toCLMEquiv]
+  exact he.trans (completedIntegralOnLocallyConstantTests_apply x φ)
+
+private theorem ofCompletedGroupAlgebra_apply_comp
+    (x : completedGroupAlgebra ℤ_[p] Γ) (U : OpenNormalSubgroup Γ)
+    (g : Γ ⧸ U.toSubgroup → ℤ_[p]) :
+    ofCompletedGroupAlgebra x
+        ((ContinuousMap.equivFnOfDiscrete.symm g).comp
+          U.toSubgroup.quotientMkContinuousMonoidHom) = completedCylinderSum x U g := by
+  let φ : LocallyConstant Γ ℤ_[p] :=
+    ⟨g ∘ (↑), (IsLocallyConstant.of_discrete g).comp_continuous
+      QuotientGroup.continuous_mk⟩
+  have hφ : (ContinuousMap.equivFnOfDiscrete.symm g).comp
+      U.toSubgroup.quotientMkContinuousMonoidHom =
+      LocallyConstant.toContinuousMapLinearMap ℤ_[p] φ := by
+    ext
+    simp [φ]
+  rw [hφ, LocallyConstant.toContinuousMapLinearMap_apply,
+    ofCompletedGroupAlgebra_apply_locallyConstant]
+  exact completedLocallyConstantIntegral_eq x φ U g fun _ ↦ rfl
+
+private theorem proj_toCompletedGroupAlgebra_ofCompletedGroupAlgebra
+    (x : completedGroupAlgebra ℤ_[p] Γ) (U : OpenNormalSubgroup Γ) :
+    completedGroupAlgebra.proj ℤ_[p] Γ U
+        (toCompletedGroupAlgebra (ofCompletedGroupAlgebra x)) =
+      completedGroupAlgebra.proj ℤ_[p] Γ U x := by
+  classical
+  apply MonoidAlgebra.coeff_injective
+  apply Finsupp.ext
+  intro a
+  rw [proj_toCompletedGroupAlgebra, ContinuousMonoidHom.finiteProjectionAlgHom_coeff,
+    finiteProjection_apply]
+  have hfib : (↑U.toSubgroup.quotientMkContinuousMonoidHom :
+      C(Γ, Γ ⧸ U.toSubgroup)).fiberIndicator (R := ℤ_[p]) a =
+      (ContinuousMap.equivFnOfDiscrete.symm fun b ↦ if b = a then 1 else 0).comp
+        U.toSubgroup.quotientMkContinuousMonoidHom := by
+    ext
+    simp [fiberIndicator_apply]
+  rw [hfib, ofCompletedGroupAlgebra_apply_comp]
+  rw [completedCylinderSum]
+  calc
+    (completedGroupAlgebra.proj ℤ_[p] Γ U x).coeff.sum
+        (fun b c ↦ (if b = a then 1 else 0) * c) =
+        (if a = a then 1 else 0) *
+          (completedGroupAlgebra.proj ℤ_[p] Γ U x).coeff a := by
+      apply Finsupp.sum_eq_single a
+      · intro b _ hba
+        simp [hba]
+      · simp
+    _ = (completedGroupAlgebra.proj ℤ_[p] Γ U x).coeff a := by simp
+
+/-- **Surjectivity of the measure comparison.** Every element of the completed group algebra
+`ℤ_p[[Γ]]` of a profinite group is represented by an integral measure. -/
+theorem toCompletedGroupAlgebra_surjective :
+    Function.Surjective
+      (toCompletedGroupAlgebra : D(Γ, ℤ_[p]) →ₐ[ℤ_[p]] completedGroupAlgebra ℤ_[p] Γ) := by
+  intro x
+  refine ⟨ofCompletedGroupAlgebra x, ?_⟩
+  apply completedGroupAlgebra.ext
+  intro U
+  exact proj_toCompletedGroupAlgebra_ofCompletedGroupAlgebra x U
+
+/-- **Integral measures are the completed group algebra.** The canonical algebra equivalence
+between integral measures on a profinite group and its completed group algebra. -/
+noncomputable def completedGroupAlgebraEquiv :
+    D(Γ, ℤ_[p]) ≃ₐ[ℤ_[p]] completedGroupAlgebra ℤ_[p] Γ :=
+  AlgEquiv.ofBijective toCompletedGroupAlgebra
+    ⟨toCompletedGroupAlgebra_injective, toCompletedGroupAlgebra_surjective⟩
+
+/-- The integral-measure equivalence has `toCompletedGroupAlgebra` as its forward map. -/
+@[simp]
+theorem completedGroupAlgebraEquiv_apply (μ : D(Γ, ℤ_[p])) :
+    completedGroupAlgebraEquiv μ = toCompletedGroupAlgebra μ :=
+  AlgEquiv.ofBijective_apply _ _ _
+
+end PadicInt
 
 /-! The comparison on products of Dirac measures, and on distinct points of a profinite group. -/
 

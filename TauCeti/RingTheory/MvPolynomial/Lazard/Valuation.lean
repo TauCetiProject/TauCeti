@@ -109,8 +109,8 @@ theorem weight_lt_weight (hc : IsLazardEvaluator V c) {v u : σ →₀ ℕ} (hv 
     split_ifs with hj
     · exact heq j hj
     · rfl
-  rw [← weight_filter_gt_add_smul_add_weight_filter_lt c v i,
-    ← weight_filter_gt_add_smul_add_weight_filter_lt c u i, hbefore, smul_eq_mul, smul_eq_mul,
+  rw [← weight_filter_lt_add_smul_add_weight_filter_gt c v i,
+    ← weight_filter_lt_add_smul_add_weight_filter_gt c u i, hbefore, smul_eq_mul, smul_eq_mul,
     add_assoc, add_assoc]
   refine Nat.add_lt_add_left ?_ _
   calc v i * c i + weight c (v.filter (i < ·)) < v i * c i + c i :=

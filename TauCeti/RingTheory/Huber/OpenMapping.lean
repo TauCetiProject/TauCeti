@@ -199,13 +199,9 @@ on its own is only a linear equivalence, carrying no topology. -/
 theorem IsTateRing.isStrictMap_of_isClosed_range (f : M →ₗ[A] N)
     (hfc : ContinuousAt (f : M → N) 0)
     (hr : IsClosed ((LinearMap.range f : Submodule A N) : Set N)) :
-    Topology.IsStrictMap (f : M → N) := by
-  have _ : CompleteSpace (LinearMap.range f) := hr.completeSpace_coe
-  have hcont : Continuous (f.rangeRestrict : M → LinearMap.range f) :=
-    (continuous_of_continuousAt_zero f hfc).subtype_mk _
-  exact LinearMap.isStrictMap_iff_isOpenQuotientMap_rangeRestrict.mpr
-    ⟨f.surjective_rangeRestrict, hcont,
-      IsTateRing.isOpenMap f.rangeRestrict f.surjective_rangeRestrict hcont.continuousAt⟩
+    Topology.IsStrictMap (f : M → N) :=
+  HasZeroSequenceOfUnits.isStrictMap_of_isClosed_range f hfc
+    (fun _ ↦ (continuous_id.smul continuous_const).continuousAt) hr
 
 /-- **The quotient form over a Tate ring.** Under exactly the hypotheses of
 `TauCeti.Huber.IsTateRing.isOpenMap`, the map does not merely carry open sets to open sets: the

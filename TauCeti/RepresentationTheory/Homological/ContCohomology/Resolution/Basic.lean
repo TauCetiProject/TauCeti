@@ -51,7 +51,8 @@ it, and two such cocycles have the same class exactly when they differ by a homo
   objects is the `cast` of reading the untransported cocycle.
 * `TopRep.eqToHom_π_eq_cochainClass`: the transport of a class along an equality of coefficient
   objects is the class of the transported cocycle.
-* `TopRep.cochainClass_add`: the class map is additive.
+* `TopRep.cochainClass_add`, `TopRep.cochainClass_zero` and `TopRep.cochainClass_smul`: the class
+  map is linear.
 * `TopRep.cochainClass_eq_cochainClass_iff`: two homogeneous cocycles of positive degree have the
   same class exactly when their difference is a coboundary, and `TopRep.cochainClass_eq_of_sub_eq_d`
   is the direction that compares two explicit representatives.
@@ -189,6 +190,25 @@ theorem cochainClass_add (a b : (homogeneousCochains X).X n)
   apply (homogeneousCochains X).iCycles_injective n
   rw [map_add, HomologicalComplex.iCycles_cyclesMkOfEq, HomologicalComplex.iCycles_cyclesMkOfEq,
     HomologicalComplex.iCycles_cyclesMkOfEq]
+
+/-- The class of the zero cochain is zero. -/
+@[simp]
+theorem cochainClass_zero : X.cochainClass n 0 (map_zero _) = 0 := by
+  rw [cochainClass_def, ← map_zero (ContinuousCohomology.π X n).hom]
+  congr 1
+  apply (homogeneousCochains X).iCycles_injective n
+  rw [map_zero, HomologicalComplex.iCycles_cyclesMkOfEq]
+
+/-- **The class map is linear**: the class of a scalar multiple of a homogeneous cocycle is the
+scalar multiple of its class. -/
+@[simp]
+theorem cochainClass_smul (r : k) (a : (homogeneousCochains X).X n)
+    (ha : ((homogeneousCochains X).d n (n + 1)).hom a = 0) :
+    X.cochainClass n (r • a) (by rw [map_smul, ha, smul_zero]) = r • X.cochainClass n a ha := by
+  rw [cochainClass_def, cochainClass_def, ← map_smul]
+  congr 1
+  apply (homogeneousCochains X).iCycles_injective n
+  rw [map_smul, HomologicalComplex.iCycles_cyclesMkOfEq, HomologicalComplex.iCycles_cyclesMkOfEq]
 
 /-- Any reading `ev` of homogeneous cochains, applied to a cocycle transported along an equality
 `X = Y` of coefficient objects, is the `cast` of its reading of the untransported cocycle. Once the

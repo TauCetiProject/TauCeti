@@ -68,13 +68,6 @@ open AlgebraicGeometry WeierstrassCurve.Affine
 variable {F : Type*} [Field F] [DecidableEq F] [IsSepClosed F]
   {W₁ W₂ : WeierstrassCurve.Affine F} [W₁.IsElliptic] [W₂.IsElliptic]
 
-local instance : IsIntegrallyClosed W₁.CoordinateRing := W₁.isIntegrallyClosed_coordinateRing
-local instance : IsIntegrallyClosed W₂.CoordinateRing := W₂.isIntegrallyClosed_coordinateRing
-local instance : IsDedekindDomain W₁.CoordinateRing :=
-  W₁.isDedekindDomain_coordinateRing_of_isIntegrallyClosed
-local instance : IsDedekindDomain W₂.CoordinateRing :=
-  W₂.isDedekindDomain_coordinateRing_of_isIntegrallyClosed
-
 section Separable
 
 variable (φ : Isogeny W₁ W₂) [Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.FunctionField]

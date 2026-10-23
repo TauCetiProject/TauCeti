@@ -19,8 +19,10 @@ This file equips Mathlib's canonical category `CategoryTheory.GradedObject β C`
 pointwise preadditive, linear, and abelian structures inherited from `C`, with morphisms added
 and scaled componentwise (`CategoryTheory.GradedObject.add_apply`,
 `CategoryTheory.GradedObject.smul_apply`).
-It also records that the canonical reindexing and shift functors are additive and linear, and that
-totalizing a graded object, `X ↦ ∐ᵢ Xᵢ`, is left adjoint to the constant graded object
+It also records that the canonical reindexing and shift functors are additive and linear, that
+evaluation in a single degree preserves finite limits and colimits, so that a short exact sequence
+of graded objects is short exact in every degree, and that totalizing a graded object,
+`X ↦ ∐ᵢ Xᵢ`, is left adjoint to the constant graded object
 (`TauCeti.gradedObjectTotalAdjunction`).
 
 Mathlib provides the category of graded objects and its grading shift, but not these
@@ -94,6 +96,11 @@ theorem smul_apply {β : Type w} {R : Type t} [Semiring R] [Preadditive C] [Line
     (r • f) i = r • f i :=
   rfl
 
+/-- A morphism of graded objects which is a monomorphism in every degree is a monomorphism. -/
+theorem mono_of_mono_apply {β : Type w} {X Y : GradedObject β C} (f : X ⟶ Y)
+    (hf : ∀ i, Mono (f i)) : Mono f :=
+  ⟨fun _ _ h => funext fun i => (cancel_mono (f i)).1 (congr_fun h i)⟩
+
 end CategoryTheory.GradedObject
 
 namespace TauCeti
@@ -139,6 +146,24 @@ instance gradedObjectShiftEquivFunctorLinear {β : Type*} [AddCommGroup β] [Pre
 instance gradedObjectHasFiniteLimits (β : Type w) [HasFiniteLimits C] :
     HasFiniteLimits (GradedObject β C) :=
   ⟨fun _ => Adjunction.hasLimitsOfShape_of_equivalence (piEquivalenceFunctorDiscrete β C).functor⟩
+
+/-- The projection `GradedObject.eval b` is evaluation at `⟨b⟩` under the equivalence of graded
+objects with functors out of the discrete category. -/
+private def gradedObjectEvalIso (β : Type w) (b : β) :
+    (piEquivalenceFunctorDiscrete β C).functor ⋙ (evaluation _ C).obj ⟨b⟩ ≅
+      GradedObject.eval b :=
+  -- Both functors send `X` to `X b` and `f` to `f b`, by their definitions.
+  Iso.refl _
+
+/-- Finite limits of graded objects are computed pointwise. -/
+instance gradedObjectEvalPreservesFiniteLimits [HasFiniteLimits C] (β : Type w) (b : β) :
+    PreservesFiniteLimits (GradedObject.eval (C := C) b) :=
+  preservesFiniteLimits_of_natIso (gradedObjectEvalIso β b)
+
+/-- Finite colimits of graded objects are computed pointwise. -/
+instance gradedObjectEvalPreservesFiniteColimits [HasFiniteColimits C] (β : Type w) (b : β) :
+    PreservesFiniteColimits (GradedObject.eval (C := C) b) :=
+  preservesFiniteColimits_of_natIso (gradedObjectEvalIso β b)
 
 /-- The pointwise abelian structure on Mathlib's category of graded objects. -/
 noncomputable instance gradedObjectAbelian (β : Type w) [Abelian C] :

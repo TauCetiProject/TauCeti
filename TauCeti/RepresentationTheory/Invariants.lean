@@ -65,6 +65,7 @@ finite-dimensional representations.
 
 * `Representation.averageMap_eq_invOf_card_smul_norm`: the averaging projection is the group sum
   `Representation.norm` scaled by the inverse of the group order.
+* `Representation.averageMap_apply`: the same identity evaluated at a vector.
 * `Representation.averageMap_comp_ρ`: the averaging projection does not see the action.
 * `Representation.range_norm_eq_invariants`: the group sum `Representation.norm ρ` has the
   invariants as its range.
@@ -79,6 +80,8 @@ finite-dimensional representations.
   invariants.
 * `Representation.invariants_comp_of_surjective`: restriction along a surjective homomorphism
   does not change the invariants.
+* `Representation.tmul_mem_invariants_tprod`: the tensor product of invariant vectors is
+  invariant.
 * `Representation.finrank_invariants_tprod_of_comp`: invariant dimensions of tensor products may
   be compared along a surjective homomorphism of groups.
 * `Rep.invariantsFunctor_map_surjective_of_surjective_of_projective`: taking invariants preserves
@@ -116,6 +119,11 @@ theorem averageMap_eq_invOf_card_smul_norm :
     ρ.averageMap = ⅟(Fintype.card G : k) • ρ.norm := by
   simp only [averageMap, GroupAlgebra.average, map_smul, map_sum, MonoidAlgebra.of_apply,
     asAlgebraHom_single_one, norm]
+
+/-- The averaging projection of `v` is the normalized group sum `⅟#G • ∑ g, ρ g v`. -/
+theorem averageMap_apply (v : V) :
+    ρ.averageMap v = ⅟(Fintype.card G : k) • ∑ g : G, ρ g v := by
+  rw [averageMap_eq_invOf_card_smul_norm, LinearMap.smul_apply, norm, LinearMap.sum_apply]
 
 /-- **Averaging does not see the action**: `avg ∘ ρ g = avg`, as `average k G * g = average k G`
 in the group algebra (`GroupAlgebra.mul_average_right`). -/
@@ -316,6 +324,13 @@ namespace Representation
 variable {k G H V V' W W' : Type*} [CommRing k] [Group G] [Group H]
   [AddCommGroup V] [Module k V] [AddCommGroup V'] [Module k V']
   [AddCommGroup W] [Module k W] [AddCommGroup W'] [Module k W']
+
+/-- The tensor product of invariant vectors is an invariant vector of the tensor product
+representation. -/
+theorem tmul_mem_invariants_tprod {X : Representation k G V} {Y : Representation k G W}
+    {v : V} {w : W} (hv : v ∈ X.invariants) (hw : w ∈ Y.invariants) :
+    v ⊗ₜ[k] w ∈ (X.tprod Y).invariants :=
+  fun g ↦ by rw [tprod_apply, TensorProduct.map_tmul, hv g, hw g]
 
 /-- **Invariant dimensions of tensor products along a surjective homomorphism of groups.** If the
 restrictions of `X` and `Y` along a surjective `f : G →* H` are equivalent to `X'` and `Y'`, then

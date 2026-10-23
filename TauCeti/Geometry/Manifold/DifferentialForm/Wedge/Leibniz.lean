@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Basic
+public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth.Basic
 public import TauCeti.Analysis.Calculus.DifferentialForm.Wedge
 
 /-!
@@ -37,7 +38,7 @@ public section
 noncomputable section
 
 open Set Bundle ContinuousAlternatingMap
-open scoped Manifold
+open scoped ContDiff Manifold
 
 namespace TauCeti
 
@@ -139,5 +140,31 @@ theorem mextDeriv_wedge {φ : RoughForm I M ℝ k} {ψ : RoughForm I M ℝ l}
           (v ∘ Fin.cast (show k + (l + 1) = k + l + 1 by omega)) := by
   simpa only [RoughForm.wedge_def] using
     mextDeriv_wedgeWith (ContinuousLinearMap.mul ℝ ℝ) hφ hψ v
+
+namespace SmoothForm
+
+/-- The exterior derivative of a paired wedge of smooth forms, evaluated on tangent vectors. -/
+theorem mextDeriv_wedgeWith_apply (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+    (φ : SmoothForm I M F₁ k) (ψ : SmoothForm I M F₂ l) (x : M)
+    (v : Fin (k + l + 1) → TangentSpace I x) :
+    mextDeriv (RoughForm.wedgeWith μ φ.1 ψ.1) x v =
+      RoughForm.wedgeWith μ (mextDeriv φ.1) ψ.1 x
+          (v ∘ Fin.cast (show k + 1 + l = k + l + 1 by omega)) +
+        (-1 : ℝ) ^ k • RoughForm.wedgeWith μ φ.1 (mextDeriv ψ.1) x
+          (v ∘ Fin.cast (show k + (l + 1) = k + l + 1 by omega)) := by
+  exact mextDeriv_wedgeWith μ (φ.mdifferentiableAt x) (ψ.mdifferentiableAt x) v
+
+/-- The exterior derivative of the real wedge of smooth forms, evaluated on tangent vectors. -/
+theorem mextDeriv_wedge_apply (φ : SmoothForm I M ℝ k) (ψ : SmoothForm I M ℝ l) (x : M)
+    (v : Fin (k + l + 1) → TangentSpace I x) :
+    mextDeriv (RoughForm.wedge φ.1 ψ.1) x v =
+      RoughForm.wedge (mextDeriv φ.1) ψ.1 x
+          (v ∘ Fin.cast (show k + 1 + l = k + l + 1 by omega)) +
+        (-1 : ℝ) ^ k • φ.1.wedge (mextDeriv ψ.1) x
+          (v ∘ Fin.cast (show k + (l + 1) = k + l + 1 by omega)) := by
+  simpa only [RoughForm.wedge_def] using
+    mextDeriv_wedgeWith_apply (ContinuousLinearMap.mul ℝ ℝ) φ ψ x v
+
+end SmoothForm
 
 end TauCeti

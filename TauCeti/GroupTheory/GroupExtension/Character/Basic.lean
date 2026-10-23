@@ -133,7 +133,7 @@ theorem characterTransgression_injective_of_range_inl_le_commutator
   apply Additive.toMul.injective
   apply Subtype.ext
   ext a
-  have hmem := Abelianization.commutator_subset_ker ψ (hstem ⟨a, rfl⟩)
+  have hmem := Abelianization.commutator_le_ker ψ (hstem ⟨a, rfl⟩)
   have hval := DFunLike.congr_fun hψ a
   have hdiv : χ.toMul.val a / χ'.toMul.val a = 1 := hval.symm.trans hmem
   exact div_eq_one.mp hdiv

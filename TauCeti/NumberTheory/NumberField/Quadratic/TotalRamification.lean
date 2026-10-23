@@ -205,9 +205,9 @@ theorem map_eq_self_of_mem_ramifiedPrimes (σ : 𝓞 K ≃+* 𝓞 K) :
     ⟨inferInstance, hlo⟩
   rwa [primesOver_eq_singleton_of_mem_ramifiedPrimes hK hmem 𝔭, Set.mem_singleton_iff] at hmemset
 
-omit hmem
 include hp
 
+omit hmem in
 /-- **Ramification index `2` characterises the ramified primes of a quadratic field.** For a
 rational prime `p` and a prime `𝔭` of `𝓞 K` above it, `p` ramifies in the quadratic field `K` iff
 `e(𝔭 ∣ p) = 2`. -/

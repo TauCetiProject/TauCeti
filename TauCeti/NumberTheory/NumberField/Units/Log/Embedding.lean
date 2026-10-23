@@ -51,8 +51,12 @@ which the unit group enters the computation of Herbrand quotients of units in cl
 
 * `TauCeti.NumberField.Units.logSpaceExtend_logSpaceRep`: the extension intertwines
   `logSpaceRep` with the permutation of the infinite places.
+* `TauCeti.NumberField.Units.mem_unitLattice_iff`: the unit lattice is the set of logarithmic
+  embeddings of units.
 * `TauCeti.NumberField.Units.logEmbedding_smul`: the logarithmic embedding is
   `Aut(L/K)`-equivariant.
+* `TauCeti.NumberField.Units.two_mul_logHeight₁_eq_sum_mult_mul_abs_log`: twice the height of a
+  unit is the sum of its weighted absolute logarithms over all infinite places.
 * `TauCeti.NumberField.Units.two_mul_logHeight₁_eq_sum_abs_logEmbedding`: the exact relation
   between logarithmic height and the omitted-coordinate embedding.
 * `TauCeti.NumberField.Units.norm_logEmbedding_le_logHeight₁` and
@@ -144,6 +148,24 @@ theorem logSpaceExtend_logEmbedding (x : (𝓞 L)ˣ) :
 
 end Extend
 
+/-! ### The unit lattice -/
+
+section UnitLattice
+
+variable {L : Type*} [Field L] [NumberField L]
+
+/-- A vector lies in the unit lattice exactly when it is the logarithmic embedding of a unit. -/
+theorem mem_unitLattice_iff {y : logSpace L} :
+    y ∈ unitLattice L ↔ ∃ u : (𝓞 L)ˣ, logEmbedding L (Additive.ofMul u) = y :=
+  ⟨fun ⟨z, _, hz⟩ ↦ ⟨z.toMul, hz⟩, fun ⟨u, hu⟩ ↦ ⟨Additive.ofMul u, Submodule.mem_top, hu⟩⟩
+
+/-- The logarithmic embedding of a unit lies in the unit lattice. -/
+@[simp]
+theorem logEmbedding_mem_unitLattice (x : Additive (𝓞 L)ˣ) : logEmbedding L x ∈ unitLattice L :=
+  ⟨x, Submodule.mem_top, rfl⟩
+
+end UnitLattice
+
 /-! ### The `ℓ¹` norm -/
 
 section Norm
@@ -169,13 +191,10 @@ section Height
 
 variable {L : Type*} [Field L] [NumberField L]
 
-open Classical in
-/-- Twice the relative logarithmic height of a unit is the `ℓ¹` norm of its logarithmic
-embedding, together with the absolute value of the omitted coordinate. -/
-theorem two_mul_logHeight₁_eq_sum_abs_logEmbedding (u : (𝓞 L)ˣ) :
-    2 * Height.logHeight₁ (u : L) =
-      ∑ w, |logEmbedding L (Additive.ofMul u) w| +
-        |∑ w, logEmbedding L (Additive.ofMul u) w| := by
+/-- Twice the relative logarithmic height of a unit is the sum over all infinite places of its
+weighted absolute logarithms: the finite places contribute nothing. -/
+theorem two_mul_logHeight₁_eq_sum_mult_mul_abs_log (u : (𝓞 L)ˣ) :
+    2 * Height.logHeight₁ (u : L) = ∑ w : InfinitePlace L, w.mult * |Real.log (w u)| := by
   have hfinite : ∀ v ∉ (∅ : Finset (IsDedekindDomain.HeightOneSpectrum (𝓞 L))),
       NumberField.HeightOneSpectrum.adicAbv L v (u : L) = 1 := by
     intro v _
@@ -185,6 +204,15 @@ theorem two_mul_logHeight₁_eq_sum_abs_logEmbedding (u : (𝓞 L)ˣ) :
   rw [TauCeti.GlobalNumberFields.two_mul_logHeight₁_eq_sum_abs_log_adicAbv_add_sum_mult_mul_abs_log
     (∅ : Finset (IsDedekindDomain.HeightOneSpectrum (𝓞 L))) hfinite]
   simp only [Finset.sum_empty, zero_add]
+
+open Classical in
+/-- Twice the relative logarithmic height of a unit is the `ℓ¹` norm of its logarithmic
+embedding, together with the absolute value of the omitted coordinate. -/
+theorem two_mul_logHeight₁_eq_sum_abs_logEmbedding (u : (𝓞 L)ˣ) :
+    2 * Height.logHeight₁ (u : L) =
+      ∑ w, |logEmbedding L (Additive.ofMul u) w| +
+        |∑ w, logEmbedding L (Additive.ofMul u) w| := by
+  rw [two_mul_logHeight₁_eq_sum_mult_mul_abs_log]
   calc
     ∑ w : InfinitePlace L, w.mult * |Real.log (w u)| =
         ∑ w : InfinitePlace L, |logSpaceExtend L (logEmbedding L (Additive.ofMul u)) w| := by

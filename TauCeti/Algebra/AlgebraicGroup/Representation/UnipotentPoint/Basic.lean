@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction
+public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction.Basic
 public import TauCeti.LinearAlgebra.GeneralLinearGroup.Unipotent
 import TauCeti.LinearAlgebra.GeneralLinearGroup.Intertwining
 

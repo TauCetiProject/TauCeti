@@ -82,15 +82,10 @@ theorem subsingleton_relHomotopyGroup_mappingCylinder (hf : f.IsWeakHomotopyEqui
   -- The inclusion `ι` of the bottom face, composed with `ψ : X ≃ₜ range (incl f)` and with the
   -- projection `M_f → Y`, is `f`; the outer two maps are homotopy equivalences.
   let ι := ContinuousMap.subtypeVal (range (incl f))
-  have hcomp : (proj f).comp (ι.comp (ψ : C(X, range (incl f)))) = f := by
-    ext x'
-    rw [ContinuousMap.comp_apply, ContinuousMap.comp_apply, ContinuousMap.subtypeVal_apply,
-      ContinuousMap.coe_ofClass, inclHomeomorph_apply_coe, ← ContinuousMap.comp_apply (proj f),
-      proj_comp_incl]
-  have hproj : (homotopyEquiv f).toFun = proj f := ContinuousMap.ext homotopyEquiv_apply
   -- By two out of three `ι ∘ ψ` is a weak homotopy equivalence, hence so is `ι = ι ∘ ψ ∘ ψ⁻¹`.
   have hιψ : (ι.comp (ψ : C(X, range (incl f)))).IsWeakHomotopyEquivalence :=
-    (hproj ▸ (homotopyEquiv f).isWeakHomotopyEquivalence).of_postcomp (by rwa [hcomp])
+    (homotopyEquiv_toFun (f := f) ▸ (homotopyEquiv f).isWeakHomotopyEquivalence).of_postcomp
+      (by rwa [proj_comp_subtypeVal_comp_inclHomeomorph])
   have hι : ι.IsWeakHomotopyEquivalence := by
     have h : (ι.comp (ψ : C(X, range (incl f)))).comp (ψ.symm : C(range (incl f), X)) = ι := by
       ext m
@@ -109,19 +104,11 @@ equivalence and `C` is a CW complex, then every map `g : C → Y` is homotopic t
 private theorem exists_comp_homotopic_cwComplex (hf : f.IsWeakHomotopyEquivalence) (g : C(C, Y)) :
     ∃ g' : C(C, X), (f.comp g').Homotopic g := by
   open TauCeti TauCeti.MappingCylinder in
-  -- Every point `m` of the mapping cylinder is joined by a path to the bottom face: the
-  -- deformation onto the base joins `m` to `mkBase (proj m)`, and `incl x` to `mkBase (f x)`.
-  have hdef (m : MappingCylinder f) : Joined m (mkBase f (proj f m)) :=
-    ⟨(deformation f).toHomotopy.evalAt m⟩
-  have h₀ (m : MappingCylinder f) : ∃ b ∈ range (incl f), Joined m b := by
-    obtain ⟨x, hx⟩ := hf.exists_joined (proj f m)
-    have hx' := hdef (incl f x)
-    rw [← ContinuousMap.comp_apply (proj f), proj_comp_incl] at hx'
-    exact ⟨incl f x, mem_range_self x,
-      (hdef m).trans ((hx.symm.map (mkBase f).continuous).trans hx'.symm)⟩
-  -- Compress `mkBase f ∘ g : C → M_f` into the bottom face `range (incl f)`.
+  -- Compress `mkBase f ∘ g : C → M_f` into the bottom face `range (incl f)`, to which every point
+  -- of the mapping cylinder is joined by a path.
   obtain ⟨g₁, hg₁, hrange⟩ := exists_homotopicRel_range_subset_of_relHomotopyGroup
-    (C := C) (D := ∅) (Y := TopCat.of (MappingCylinder f)) (B := range (incl f)) (fun _ ↦ h₀)
+    (C := C) (D := ∅) (Y := TopCat.of (MappingCylinder f)) (B := range (incl f))
+    (fun _ ↦ exists_mem_range_incl_joined hf.exists_joined)
     (fun _ _ b ↦ hf.subsingleton_relHomotopyGroup_mappingCylinder _ b) ((mkBase f).comp g)
     (fun _ hx ↦ absurd hx (notMem_empty _))
   -- Read the compressed map in `X` through the homeomorphism `X ≃ₜ range (incl f)`.

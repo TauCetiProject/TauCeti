@@ -36,6 +36,8 @@ linear-independence theorem for the constant terms at all cusps.
 
 * `TauCeti.EisensteinSeries.CharIndex.form_mem_modFormCharSpace`: every indexed series belongs
   to the character space prescribed by its induced nebentypus.
+* `TauCeti.EisensteinSeries.CharIndex.qExpansion_form_coeff`: the positive Fourier coefficients
+  of an indexed series.
 * `TauCeti.mem_eisensteinSubspace`: every prescribed-nebentypus generator belongs to the
   Eisenstein subspace.
 * `TauCeti.mem_eisensteinSubspace_iff`: membership is equivalent to being a finite linear
@@ -89,21 +91,27 @@ namespace CharIndex
 
 variable {N k : ℕ} (a : CharIndex N k)
 
+/-- The modulus of the first character divides the level. -/
+theorem u_dvd : a.u ∣ N :=
+  (dvd_mul_right a.u a.v).trans ((dvd_mul_left (a.u * a.v) a.t).trans a.level_dvd)
+
+/-- The modulus of the second character divides the level. -/
+theorem v_dvd : a.v ∣ N :=
+  (dvd_mul_left a.v a.u).trans ((dvd_mul_left (a.u * a.v) a.t).trans a.level_dvd)
+
+/-- The raising parameter divides the level. -/
+theorem t_dvd : a.t ∣ N :=
+  (dvd_mul_right a.t (a.u * a.v)).trans a.level_dvd
+
 /-- The product nebentypus of an Eisenstein index, with both primitive characters raised to the
 target level `N`. -/
 def nebentypus : (ZMod N)ˣ →* ℂˣ :=
-  (a.psi.changeLevel ((dvd_mul_right a.u a.v).trans
-      ((dvd_mul_left (a.u * a.v) a.t).trans a.level_dvd)) *
-    a.phi.changeLevel ((dvd_mul_left a.v a.u).trans
-      ((dvd_mul_left (a.u * a.v) a.t).trans a.level_dvd))).toUnitHom
+  (a.psi.changeLevel a.u_dvd * a.phi.changeLevel a.v_dvd).toUnitHom
 
 /-- The defining expression for the nebentypus of an Eisenstein index. -/
 theorem nebentypus_def :
     a.nebentypus =
-      (a.psi.changeLevel ((dvd_mul_right a.u a.v).trans
-          ((dvd_mul_left (a.u * a.v) a.t).trans a.level_dvd)) *
-        a.phi.changeLevel ((dvd_mul_left a.v a.u).trans
-          ((dvd_mul_left (a.u * a.v) a.t).trans a.level_dvd))).toUnitHom :=
+      (a.psi.changeLevel a.u_dvd * a.phi.changeLevel a.v_dvd).toUnitHom :=
   by
     unfold nebentypus
     congr
@@ -133,6 +141,17 @@ theorem qExpansion_form_coeff_t [NeZero N] (hk : 3 ≤ (k : ℤ)) :
     (qExpansion 1 (a.form hk)).coeff a.t = 1 :=
   qExpansion_normalizedCharEisensteinSeriesMFRaise_coeff_self
     a.psi a.phi hk a.level_dvd a.parity a.phi_primitive
+
+/-- The positive Fourier coefficients of an indexed Eisenstein series `E_k^(psi, phi, t)` are
+the twisted divisor sums `sigma_(k-1)^(psi,phi)(n / t)` at multiples `n` of `t`, and zero at the
+other positive indices. -/
+theorem qExpansion_form_coeff [NeZero N] (hk : 3 ≤ (k : ℤ)) {n : ℕ} (hn : n ≠ 0) :
+    (qExpansion 1 (a.form hk)).coeff n =
+      if a.t ∣ n then DirichletCharacter.twistedDivisorSum (k - 1) a.psi a.phi (n / a.t)
+      else 0 := by
+  rw [form_def]
+  exact qExpansion_normalizedCharEisensteinSeriesMFRaise_coeff
+    a.psi a.phi hk a.level_dvd a.parity a.phi_primitive hn
 
 /-- Every indexed Eisenstein series is nonzero. -/
 theorem form_ne_zero [NeZero N] (hk : 3 ≤ (k : ℤ)) : a.form hk ≠ 0 :=

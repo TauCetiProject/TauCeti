@@ -27,6 +27,8 @@ linear-map composition.
   intertwines them everywhere.
 * `Module.Basis.coord_map_apply`: the coordinates with respect to a basis transported along a
   linear equivalence are the coordinates of the vector transported back.
+* `Module.Basis.linearIndependent_coe_basis`: the vectors of a basis of a submodule `U`, viewed in
+  the ambient module, are linearly independent.
 -/
 
 public section
@@ -74,5 +76,17 @@ theorem coord_map_apply {R M M' ι : Type*} [Semiring R] [AddCommMonoid M] [Modu
     [AddCommMonoid M'] [Module R M'] (b : Module.Basis ι R M) (f : M ≃ₗ[R] M') (i : ι) (x : M') :
     (b.map f).coord i x = b.coord i (f.symm x) := by
   simp only [coord_apply, map_repr, LinearEquiv.trans_apply]
+
+section Submodule
+
+variable {R M n : Type*} [Semiring R] [AddCommMonoid M] [Module R M] {U : Submodule R M}
+
+/-- The vectors of a basis of a submodule `U`, viewed in the ambient module, are linearly
+independent. -/
+theorem linearIndependent_coe_basis (b : Module.Basis n R U) :
+    LinearIndependent R fun i ↦ (b i : M) :=
+  b.linearIndependent.map_injOn U.subtype U.injective_subtype.injOn
+
+end Submodule
 
 end Module.Basis

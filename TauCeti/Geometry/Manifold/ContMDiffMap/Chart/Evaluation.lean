@@ -8,6 +8,8 @@ module
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Topology
 public import Mathlib.Topology.Compactness.LocallyCompact
 public import Mathlib.Topology.Hom.ContinuousEval
+public import Mathlib.Topology.UniformSpace.UniformConvergence
+import Mathlib.Topology.UniformSpace.LocallyUniformConvergence
 
 /-!
 # Joint evaluation in the manifold weak Whitney topology
@@ -18,7 +20,9 @@ each point, so a coordinate derivative of a map is continuous jointly in the map
 point: `ContMDiffMap.tendsto_iteratedFDerivWithin_extChartAt`. In order zero this is the
 continuity of evaluation jointly in the map and the source point, which is what the natural
 action of the diffeomorphism group on its manifold needs. In higher order it is the input for
-continuity of composition.
+continuity of composition. On a compact subset of a chart target the convergence is uniform
+(`ContMDiffMap.tendstoUniformlyOn_iteratedFDerivWithin_extChartAt`): every chartwise `C^m`
+neighbourhood of a map on a compact coordinate set, for `m ≤ n`, is a weak Whitney neighbourhood.
 
 The compact-neighbourhood argument is the standard one for compact-open evaluation; see
 M. Hirsch, *Differential Topology*, Chapter 2, §1.
@@ -126,6 +130,29 @@ theorem eventually_mem_extChartAt_source {f₀ : C^n⟮I, M; J, N⟯} {x : M} {y
       p.1 ((extChartAt I x).symm p.2) ∈ (extChartAt J y).source :=
   (eventually_mem_source_and_iteratedFDerivWithin_mem hw₀ hf₀ (m := 0) (by simp)
     univ_mem).mono fun _ h ↦ h.1
+
+/-- On a compact subset of a source chart target which `f₀` maps into a target chart, the
+coordinate derivatives of maps near `f₀` converge uniformly to those of `f₀`, provided the source
+model is locally compact. Derivatives are taken within the chart target, so boundary and corner
+points are included. -/
+theorem tendstoUniformlyOn_iteratedFDerivWithin_extChartAt {f₀ : C^n⟮I, M; J, N⟯} {x : M}
+    {y : N} {C : Set E} (hC : IsCompact C) (hCx : C ⊆ (extChartAt I x).target)
+    (hCy : ∀ w ∈ C, f₀ ((extChartAt I x).symm w) ∈ (extChartAt J y).source) {m : ℕ}
+    (hm : m ≤ n) :
+    TendstoUniformlyOn (fun (f : C^n⟮I, M; J, N⟯) w ↦ iteratedFDerivWithin 𝕜 m
+        (extChartAt J y ∘ f ∘ (extChartAt I x).symm) (extChartAt I x).target w)
+      (fun w ↦ iteratedFDerivWithin 𝕜 m (extChartAt J y ∘ f₀ ∘ (extChartAt I x).symm)
+        (extChartAt I x).target w) (𝓝 f₀) C := by
+  rw [← tendstoLocallyUniformlyOn_iff_tendstoUniformlyOn_of_compact hC,
+    tendstoLocallyUniformlyOn_iff_forall_tendsto]
+  intro w₀ hw₀
+  -- Both the derivatives of nearby maps and those of `f₀` itself tend to the value at `w₀`.
+  have h := tendsto_iteratedFDerivWithin_extChartAt (hCx hw₀) (hCy w₀ hw₀) hm
+  have h₀ : Tendsto (fun p : C^n⟮I, M; J, N⟯ × E ↦ (f₀, p.2))
+      (𝓝 f₀ ×ˢ 𝓝[(extChartAt I x).target] w₀) (𝓝 f₀ ×ˢ 𝓝[(extChartAt I x).target] w₀) :=
+    tendsto_const_nhds.prodMk tendsto_snd
+  exact ((((h.comp h₀).prodMk_nhds h).mono_left
+    (prod_mono le_rfl (nhdsWithin_mono _ hCx))).mono_right (nhds_le_uniformity _))
 
 /-- Evaluation of a `C^n` map is continuous jointly in the map and the source point for the
 manifold weak Whitney topology, provided the source model is locally compact. -/

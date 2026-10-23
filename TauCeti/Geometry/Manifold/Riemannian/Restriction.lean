@@ -22,6 +22,8 @@ bundle structures.
 * `Bundle.RiemannianMetric.restrictOpenTangentSpace`: restriction of a fibrewise Riemannian metric.
 * `Bundle.ContMDiffRiemannianMetric.restrictOpenTangentSpace`: restriction of a `C^n` Riemannian
   metric.
+* `Bundle.ContMDiffRiemannianMetric.restrictOpenTangentSpace_eq_of_inner_eq`: metrics that agree
+  on an open set have equal restrictions to it.
 * `TauCeti.Manifold.contMDiffRiemannianMetricOpen`: the ambient instance metric restricted to an
   open submanifold.
 * `TauCeti.Manifold.instRiemannianBundleOpen`,
@@ -206,6 +208,14 @@ theorem restrictOpenTangentSpace_toRiemannianMetric
     (g.restrictOpenTangentSpace U).toRiemannianMetric =
       g.toRiemannianMetric.restrictOpenTangentSpace U := by
   rfl
+
+/-- Two `C^n` Riemannian metrics that agree on an open set `U` have equal restrictions to `U`. -/
+theorem restrictOpenTangentSpace_eq_of_inner_eq
+    {g₁ g₂ : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)} (U : Opens M)
+    (h : ∀ x ∈ U, g₁.inner x = g₂.inner x) :
+    g₁.restrictOpenTangentSpace U = g₂.restrictOpenTangentSpace U := by
+  ext x v w
+  simp only [restrictOpenTangentSpace_inner, h x x.2]
 
 end Bundle.ContMDiffRiemannianMetric
 

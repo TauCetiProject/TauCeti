@@ -334,19 +334,15 @@ private theorem mem_relativeCyclicCoboundaries_iff_complex (n : ℕ)
       refine ⟨(relativeCyclicCochainComplexXIso R A M n).hom ψ, ?_⟩
       rw [← relativeCyclicCochainComplex_d_apply, hψ, Iso.inv_hom_id_apply]
 
-private abbrev relativeToCycles (n : ℕ) :=
-  (relativeCyclicCochainComplex R A M).moduleCatCocyclesToCyclesOfIso
-    (fun n ↦ relativeCyclicCochains R A M n) (relativeCyclicCocycles R A M)
-    (relativeCyclicCochainComplexXIso R A M)
-    (mem_relativeCyclicCocycles_iff_complex R A M) n
+private abbrev relativeToCycles (n : ℕ) (φ : relativeCyclicCocycles R A M n) :=
+  (relativeCyclicCochainComplex R A M).moduleCatCyclesMk
+    ((relativeCyclicCochainComplexXIso R A M n).inv φ.1) (n + 1) (CochainComplex.next ℕ n)
+    ((mem_relativeCyclicCocycles_iff_complex R A M n φ.1).1 φ.2)
 
 private theorem relative_iCycles_toCycles (n : ℕ) (φ : relativeCyclicCocycles R A M n) :
     (relativeCyclicCochainComplex R A M).iCycles n (relativeToCycles R A M n φ) =
       (relativeCyclicCochainComplexXIso R A M n).inv φ.1 :=
-  (relativeCyclicCochainComplex R A M).iCycles_moduleCatCocyclesToCyclesOfIso
-    (fun n ↦ relativeCyclicCochains R A M n) (relativeCyclicCocycles R A M)
-    (relativeCyclicCochainComplexXIso R A M)
-    (mem_relativeCyclicCocycles_iff_complex R A M) n φ
+  (relativeCyclicCochainComplex R A M).iCycles_moduleCatCyclesMk _ _ _ _ _
 
 namespace relativeCyclicCohomology
 

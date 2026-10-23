@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Riesz
+import TauCeti.Geometry.Manifold.MFDeriv.Chart
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 
 /-!
@@ -33,14 +35,22 @@ of `df` on a chart-local frame are `C^n`, and so is the Riesz dual of such a fie
   `⟪grad f x, v⟫ = df_x v`, and `TauCeti.Manifold.eq_mgradient_iff`, which identifies the
   gradient from it.
 * `TauCeti.Manifold.mgradient_eq_zero_iff`: the gradient vanishes exactly where the
-  differential does.
+  differential does, and `TauCeti.Manifold.norm_mgradient_eq_norm_mvfderiv`: it has the same
+  length as the differential.
 * `TauCeti.Manifold.contMDiff_mgradient`: the gradient of a `C^{n+1}` function for a `C^n`
   metric is a `C^n` vector field.
+* `TauCeti.Manifold.mdifferentiable_mgradient`: a `C²` function has a differentiable Riemannian
+  gradient section.
+* `TauCeti.Manifold.contMDiff_neg_mgradient`: so is the negative gradient, and
+  `TauCeti.Manifold.contMDiff_neg_mgradient_one` states its `C¹` case for a `C²` function.
+* `TauCeti.Manifold.eventually_norm_fderiv_comp_extChartAt_symm_le_mul_norm_mgradient`: for a
+  continuous metric, the differential of `f` read in a chart is locally bounded by a multiple of
+  the length of the gradient. This is how coordinate estimates for `df` become metric estimates.
 -/
 
 public section
 
-open Bundle Set Topology
+open Bundle Filter Set Topology
 open scoped ContDiff Manifold
 
 namespace TauCeti.Manifold
@@ -96,6 +106,12 @@ theorem mvfderiv_apply_mgradient :
 theorem mgradient_eq_zero_iff : mgradient I f x = 0 ↔ mvfderiv I f x = 0 := by
   rw [mgradient, LinearIsometryEquiv.map_eq_zero_iff]
 
+/-- The gradient has the same length as the differential it represents: the Riesz equivalence is
+an isometry. -/
+theorem norm_mgradient_eq_norm_mvfderiv (f : M → ℝ) (x : M) :
+    ‖mgradient I f x‖ = ‖mvfderiv I f x‖ :=
+  (rieszDual x).norm_map _
+
 /-- The gradient of a constant function is zero. -/
 @[simp]
 theorem mgradient_const (c : ℝ) : mgradient I (fun _ : M ↦ c) = 0 := by
@@ -108,6 +124,17 @@ theorem mgradient_add {g : M → ℝ} (hf : MDifferentiable I 𝓘(ℝ) f)
     mgradient I (f + g) = mgradient I f + mgradient I g := by
   funext x
   simp [mgradient, mvfderiv_add (hf x) (hg x)]
+
+/-- The gradient satisfies the scalar product rule for differentiable functions. -/
+theorem mgradient_mul {g : M → ℝ} (hf : MDifferentiable I 𝓘(ℝ) f)
+    (hg : MDifferentiable I 𝓘(ℝ) g) :
+    mgradient I (f * g) = fun x ↦ f x • mgradient I g x + g x • mgradient I f x := by
+  funext x
+  apply ext_inner_right ℝ
+  intro v
+  rw [inner_mgradient, mvfderiv_mul (hf x) (hg x)]
+  simp only [inner_add_left, real_inner_smul_left, inner_mgradient]
+  simp only [add_apply, smul_apply, smul_eq_mul]
 
 /-- The gradient commutes with multiplication by a real constant. -/
 theorem mgradient_smul (c : ℝ) (hf : MDifferentiable I 𝓘(ℝ) f) :
@@ -193,5 +220,78 @@ theorem contMDiff_mgradient {n : ℕ∞ω} [IsManifold I (n + 1) M]
   rw [TangentBundle.trivializationAt_baseSet] at hframe
   exact (hf.contMDiffOn.contMDiffOn_mvfderiv_apply hopen hframe le_rfl).contMDiffAt
     (hopen.mem_nhds (mem_chart_source H x))
+
+/-- A `C²` function has a differentiable Riemannian gradient section. -/
+theorem mdifferentiable_mgradient {f : M → ℝ} [IsManifold I 2 M]
+    [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+    (hf : ContMDiff I 𝓘(ℝ) 2 f) :
+    MDifferentiable I I.tangent
+      (fun x ↦ (⟨x, mgradient I f x⟩ : TangentBundle I M)) := by
+  let _ : IsManifold I ((1 : ℕ∞ω) + 1) M := by
+    simpa only [one_add_one_eq_two] using (inferInstance : IsManifold I 2 M)
+  exact (contMDiff_mgradient (I := I) (n := 1)
+    (by simpa only [one_add_one_eq_two] using hf)).mdifferentiable (by simp)
+
+/-- **The negative gradient is smooth.** For a `C^n` Riemannian metric, the negative gradient of a
+`C^{n+1}` function is a `C^n` vector field. -/
+theorem contMDiff_neg_mgradient {n : ℕ∞ω} [IsManifold I (n + 1) M]
+    [IsContMDiffRiemannianBundle I n E (fun x : M ↦ TangentSpace I x)]
+    (hf : ContMDiff I 𝓘(ℝ) (n + 1) f) :
+    ContMDiff I I.tangent n (fun x ↦ (⟨x, -mgradient I f x⟩ : TangentBundle I M)) := by
+  simpa only [mgradient_neg] using contMDiff_mgradient (f := -f) hf.neg
+
+/-- `TauCeti.Manifold.contMDiff_neg_mgradient` at `n = 1`, with the smoothness order `1 + 1`
+written as `2`, in the form taken by the integral-curve API. -/
+theorem contMDiff_neg_mgradient_one [IsManifold I 2 M]
+    [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+    (hf : ContMDiff I 𝓘(ℝ) 2 f) :
+    ContMDiff I I.tangent 1 (fun y ↦ (⟨y, (-mgradient I f) y⟩ : TangentBundle I M)) :=
+  have : IsManifold I (1 + 1) M := by rwa [one_add_one_eq_two]
+  contMDiff_neg_mgradient (n := 1) (by rwa [one_add_one_eq_two])
+
+/-! ### Comparison with the differential in a chart -/
+
+/-- **The differential in a chart is controlled by the gradient.** Near `p`, the Fréchet
+derivative of the coordinate expression of `f` in the extended chart at `p` is bounded by a fixed
+multiple of the Riemannian length of the gradient of `f`. The constant bounds the operator norm of
+the inverse of the tangent chart, measured with the metric on its target, which is locally bounded
+for a continuous metric. -/
+theorem eventually_norm_fderiv_comp_extChartAt_symm_le_mul_norm_mgradient
+    [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] (f : M → ℝ) (p : M) :
+    ∃ C > 0, ∀ᶠ y in 𝓝 p,
+      ‖fderiv ℝ (f ∘ (extChartAt I p).symm) (extChartAt I p y)‖ ≤ C * ‖mgradient I f y‖ := by
+  obtain ⟨C, hC, hsymm⟩ :=
+    eventually_norm_symmL_trivializationAt_lt E (fun x : M ↦ TangentSpace I x) p
+  refine ⟨C, hC, ?_⟩
+  filter_upwards [hsymm, chart_source_mem_nhds H p] with y hy hys
+  by_cases hd : DifferentiableAt ℝ (f ∘ (extChartAt I p).symm) (extChartAt I p y)
+  swap
+  · rw [fderiv_zero_of_not_differentiableAt hd, norm_zero]
+    positivity
+  set e := trivializationAt E (TangentSpace I) p
+  -- The tangent chart at `y` is `e` read at `y`, and `e.symmL ℝ y` is its inverse.
+  have hmf := TauCeti.mfderiv_eq_fderiv_comp_mfderiv_extChartAt
+    (by rwa [extChartAt_source]) hd
+  rw [← TangentBundle.continuousLinearMapAt_trivializationAt hys] at hmf
+  have hw : ∀ w : E, fderiv ℝ (f ∘ (extChartAt I p).symm) (extChartAt I p y) w =
+      mvfderiv I f y (e.symmL ℝ y w) := by
+    intro w
+    have h2 : e.continuousLinearMapAt ℝ y (e.symmL ℝ y w) = w :=
+      e.continuousLinearMapAt_symmL (by simpa [e] using hys) w
+    calc fderiv ℝ (f ∘ (extChartAt I p).symm) (extChartAt I p y) w
+        = fderiv ℝ (f ∘ (extChartAt I p).symm) (extChartAt I p y)
+            (e.continuousLinearMapAt ℝ y (e.symmL ℝ y w)) := by rw [h2]
+      _ = mvfderiv I f y (e.symmL ℝ y w) := by
+        rw [mvfderiv_apply_eq_mfderiv_apply]
+        exact (DFunLike.congr_fun hmf (e.symmL ℝ y w)).symm
+  rw [norm_mgradient_eq_norm_mvfderiv]
+  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun w ↦ ?_
+  rw [hw]
+  calc ‖mvfderiv I f y (e.symmL ℝ y w)‖ ≤ ‖mvfderiv I f y‖ * ‖e.symmL ℝ y w‖ :=
+        ContinuousLinearMap.le_opNorm _ _
+    _ ≤ ‖mvfderiv I f y‖ * (C * ‖w‖) := by
+        gcongr
+        exact (ContinuousLinearMap.le_opNorm _ _).trans (by gcongr)
+    _ = C * ‖mvfderiv I f y‖ * ‖w‖ := by ring
 
 end TauCeti.Manifold

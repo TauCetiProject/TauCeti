@@ -147,7 +147,7 @@ theorem isClosed_exponentSumKer (i : X) :
 
 theorem commutator_le_exponentSumKer (i : X) :
     commutator (freeProP p X) ≤ exponentSumKer p X i :=
-  Abelianization.commutator_subset_ker _
+  Abelianization.commutator_le_ker _
 
 /-- The generator `x_j` lies in the kernel of the `i`-th exponent sum exactly when `j ≠ i`. Not a
 `simp` lemma: `simp` rewrites the left-hand side with `TauCeti.freeProP.mem_exponentSumKer_iff`

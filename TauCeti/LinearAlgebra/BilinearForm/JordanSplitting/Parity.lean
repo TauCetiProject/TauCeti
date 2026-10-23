@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.BilinearForm.JordanSplitting.Basic
+import TauCeti.LinearAlgebra.BilinearForm.Even.Basic
 
 /-!
 # Parity of Jordan constituents
@@ -24,7 +25,9 @@ the scale ideal.
 The condition on the `j`-th constituent is equivalent to an intrinsic condition on the form:
 every vector pairing into `π ^ j R` has self-pairing in `π ^ (j + 1) R`. It follows that this
 condition is independent of the Jordan splitting and is invariant under isometry. The
-divisibility statements hold over any commutative ring with a non-zero-divisor `π`.
+divisibility statements hold over any commutative ring with a non-zero-divisor `π`. Over a local
+ring, a constituent that is even at its own scale has even rank, since its unimodular rescaling
+is then a perfect pairing with non-unit diagonal.
 
 ## References
 
@@ -57,6 +60,39 @@ theorem IsJordanSplitting.forall_pow_succ_dvd_self_iff (h : B.IsJordanSplitting 
   · intro hself x
     exact hself x (h.pow_dvd_apply x.2)
 
+/-- A free Jordan constituent is even at its own scale `π ^ j` exactly when every one of its
+vectors has self-pairing divisible by `π ^ (j + 1)`. -/
+theorem IsJordanSplitting.isScaleEven_restrict_iff (h : B.IsJordanSplitting π N) (j : ℕ)
+    [Module.Free R (N j)] :
+    (B.restrict (N j)).IsScaleEven π ↔ ∀ x ∈ N j, π ^ (j + 1) ∣ B x x := by
+  rw [LinearMap.BilinForm.isScaleEven_iff, (h.isModular j).normIdeal_le_mul_scaleIdeal_iff,
+    normIdeal_le_iff, ← pow_succ']
+  simp [Ideal.mem_span_singleton]
+
+/-- **A constituent that is even at its own scale has even rank.** Over a local ring, if the
+constituent `N j` of a Jordan splitting of a symmetric form on a finite free module is even at
+its own scale, with `π` a non-unit non-zero-divisor, then its unimodular rescaling is a perfect
+pairing whose self-pairings are non-units, so `N j` has even rank. At `π = 2` over `ℤ_2` this
+says that a dyadic constituent of type II has even rank. -/
+theorem IsJordanSplitting.even_finrank_of_isScaleEven [IsLocalRing R] [Module.Free R M]
+    [Module.Finite R M] (h : B.IsJordanSplitting π N) (hB : B.IsSymm)
+    (hπ : π ∈ nonZeroDivisors R) (hπ' : ¬IsUnit π) {j : ℕ}
+    (he : (B.restrict (N j)).IsScaleEven π) : Even (Module.finrank R (N j)) := by
+  have : Module.Free R (N j) := h.free j
+  have : Module.Finite R (N j) := h.finite j
+  have hpow : π ^ j ∈ nonZeroDivisors R := pow_mem hπ j
+  obtain ⟨C, hC, hCp⟩ := isModular_def.mp (h.isModular j)
+  have hBC : ∀ x y : N j, B x y = π ^ j * C x y := fun x y ↦ by
+    simpa using (LinearMap.congr_fun₂ hC x y).symm
+  have hCsymm : C.IsSymm := isSymm_def.mpr fun x y ↦
+    (mul_cancel_left_mem_nonZeroDivisors hpow).mp (by rw [← hBC, ← hBC, hB.eq])
+  have hdiag : ∀ x, ¬IsUnit (C x x) := fun x hx ↦ by
+    obtain ⟨c, hc⟩ := (h.isScaleEven_restrict_iff j).mp he x x.2
+    rw [hBC, pow_succ, mul_assoc] at hc
+    exact hπ' (isUnit_of_dvd_unit ⟨c, (mul_cancel_left_mem_nonZeroDivisors hpow).mp hc⟩ hx)
+  have : C.IsPerfPair := hCp
+  exact hCsymm.even_finrank_of_isPerfPair C hdiag
+
 /-- Scale-relative parity is independent of the Jordan splitting. At `π = 2` this is invariance
 of dyadic parity type. Zero constituents are scale-even. Freeness is only needed for the two
 constituents being compared. -/
@@ -65,13 +101,9 @@ theorem IsJordanSplitting.isScaleEven_iff
     (h' : B.IsJordanSplitting π N') (hπ : π ∈ nonZeroDivisors R) (j : ℕ)
     [Module.Free R (N j)] [Module.Free R (N' j)] :
     (B.restrict (N j)).IsScaleEven π ↔ (B.restrict (N' j)).IsScaleEven π := by
-  rw [LinearMap.BilinForm.isScaleEven_iff, LinearMap.BilinForm.isScaleEven_iff]
-  rw [(h.isModular j).normIdeal_le_mul_scaleIdeal_iff,
-    (h'.isModular j).normIdeal_le_mul_scaleIdeal_iff]
-  simpa only [mul_comm π, ← pow_succ, normIdeal_le_iff, Ideal.mem_span_singleton,
-    restrict_apply, domRestrict_apply] using
-    (h.forall_pow_succ_dvd_self_iff hπ j).trans
-      (h'.forall_pow_succ_dvd_self_iff hπ j).symm
+  rw [h.isScaleEven_restrict_iff j, h'.isScaleEven_restrict_iff j]
+  simpa only [Subtype.forall] using
+    (h.forall_pow_succ_dvd_self_iff hπ j).trans (h'.forall_pow_succ_dvd_self_iff hπ j).symm
 
 /-- Parity relative to the constituent's own scale is an isometry invariant. In particular,
 Jordan splittings of isometric dyadic forms have the same type at every scale. -/
@@ -81,12 +113,10 @@ theorem IsJordanSplitting.isScaleEven_iff_of_equivalent
     (hB : B.Equivalent B') (hπ : π ∈ nonZeroDivisors R) (j : ℕ)
     [Module.Free R (N j)] [Module.Free R (N' j)] :
     (B.restrict (N j)).IsScaleEven π ↔ (B'.restrict (N' j)).IsScaleEven π := by
-  rw [LinearMap.BilinForm.isScaleEven_iff, LinearMap.BilinForm.isScaleEven_iff]
-  rw [(h.isModular j).normIdeal_le_mul_scaleIdeal_iff,
-    (h'.isModular j).normIdeal_le_mul_scaleIdeal_iff]
-  simp only [mul_comm π, ← pow_succ, normIdeal_le_iff, Ideal.mem_span_singleton,
-    restrict_apply, domRestrict_apply]
-  rw [h.forall_pow_succ_dvd_self_iff hπ j, h'.forall_pow_succ_dvd_self_iff hπ j]
+  have hN := h.forall_pow_succ_dvd_self_iff hπ j
+  have hN' := h'.forall_pow_succ_dvd_self_iff hπ j
+  simp only [Subtype.forall] at hN hN'
+  rw [h.isScaleEven_restrict_iff j, h'.isScaleEven_restrict_iff j, hN, hN']
   obtain ⟨e⟩ := hB
   constructor
   · intro H x hx

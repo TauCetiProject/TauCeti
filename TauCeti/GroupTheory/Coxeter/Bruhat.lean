@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.GroupTheory.Coxeter.Parabolic
 public import TauCeti.GroupTheory.Coxeter.StrongExchange
 import Mathlib.Data.List.GetD
 import Mathlib.Tactic.Group
@@ -57,6 +58,9 @@ comparisons change when both endpoints are multiplied by the same simple reflect
   below the product of the whole word.
 * `CoxeterSystem.bruhatLE_iff_exists_sublist_wordProd_eq`: the full subword characterization of
   Bruhat order.
+* `CoxeterSystem.IsMinimalCosetRep.bruhatLE_mul` and
+  `CoxeterSystem.isMinimalCosetRep_iff_forall_bruhatLE_mul`: a minimal representative of a left
+  coset of a standard parabolic subgroup is the Bruhat-least element of that coset.
 
 ## References
 
@@ -453,5 +457,27 @@ theorem bruhatLE_iff_exists_sublist_wordProd_eq {u : W} {ω : List B} (hω : cs.
   · exact fun h => h.exists_sublist_wordProd_eq ω rfl
   · rintro ⟨σ, hσ, rfl⟩
     exact cs.bruhatLE_wordProd_of_sublist hω hσ
+
+/-! ### Minimal coset representatives -/
+
+/-- **A minimal coset representative lies below every element of its coset.** If `u` has minimal
+length in `u · cs.parabolic J` and `v ∈ cs.parabolic J`, then `u ≤ u * v`: lengths add, so a
+reduced word for `u` followed by one for `v` is a reduced word for `u * v` containing the first as
+a subword. -/
+theorem IsMinimalCosetRep.bruhatLE_mul {J : Set B} {u : W} (hu : cs.IsMinimalCosetRep J u)
+    {v : W} (hv : v ∈ cs.parabolic J) : cs.BruhatLE u (u * v) := by
+  have hlen := cs.length_mul_of_isMinimalCosetRep hu hv
+  obtain ⟨α, hα, rfl⟩ := cs.exists_isReduced u
+  obtain ⟨ω, hω, rfl⟩ := cs.exists_isReduced v
+  rw [← cs.wordProd_append] at hlen ⊢
+  have hαω : cs.IsReduced (α ++ ω) := by
+    rw [CoxeterSystem.IsReduced, hlen, hα.eq, hω.eq, List.length_append]
+  exact cs.bruhatLE_wordProd_of_sublist hαω (List.sublist_append_left α ω)
+
+/-- **Minimal coset representatives are the Bruhat-least elements of their cosets.** -/
+theorem isMinimalCosetRep_iff_forall_bruhatLE_mul {J : Set B} {u : W} :
+    cs.IsMinimalCosetRep J u ↔ ∀ v ∈ cs.parabolic J, cs.BruhatLE u (u * v) :=
+  ⟨fun hu _ hv ↦ hu.bruhatLE_mul cs hv, fun h ↦ cs.isMinimalCosetRep_iff.mpr fun i hi hdesc ↦
+    (h _ (cs.simple_mem_parabolic hi)).length_le.not_gt (by rwa [IsRightDescent] at hdesc)⟩
 
 end CoxeterSystem

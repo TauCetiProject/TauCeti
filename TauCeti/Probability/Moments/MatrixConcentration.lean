@@ -14,11 +14,12 @@ public import TauCeti.Probability.Moments.SampleMean
 /-!
 # Elementary concentration of random matrices from entrywise second moments
 
-Let `S : Ω → Matrix m n E` be a random matrix and `A` a fixed matrix, and suppose every entrywise
-deviation has second moment `∫ ‖S k l - A k l‖² ≤ v`. Chebyshev's inequality for each of the
-`card m * card n` entries, followed by a union bound, gives
+Let `μ` be any measure, `S : Ω → Matrix m n E` a matrix-valued function and `A` a fixed matrix.
+Suppose every squared entrywise deviation is integrable with
+`∫ ω, ‖S ω k l - A k l‖² ∂μ ≤ v`. For `η > 0`, Chebyshev's inequality for each of the
+`card m * card n` entries, followed by a union bound, bounds the measure of the deviation event:
 
-`μ {ω | ∃ k l, η < ‖S ω k l - A k l‖} ≤ card m * card n * v / η²`.
+`μ {ω | ∃ k l, η < ‖S ω k l - A k l‖} ≤ ENNReal.ofReal (card m * card n * v / η²)`.
 
 On a probability space, every deterministic consequence of entrywise `η`-closeness therefore holds
 with probability at least `1 - card m * card n * v / η²`. For square matrices over `ℝ` or `ℂ` the
@@ -28,9 +29,10 @@ simultaneous high-probability control of every sorted eigenvalue, up to the dime
 `TauCeti.Analysis.Matrix.EntrywiseOpNorm` bounds the operator norm of the Euclidean action of
 `S - A` by `√(card m) * η * √(card n)`, which is `card n * η` for square matrices.
 
-None of these bounds needs the entries to be measurable: Chebyshev's inequality only uses the
-integrability of the squared deviation, and `1 - μ sᶜ ≤ μ s` holds for every set. Measurability of
-the deviation event is recorded separately.
+The entrywise measure bound needs no measurability assumption on the entries: Chebyshev's
+inequality uses the integrability of the squared deviations. For the probability conclusions,
+`1 - μ sᶜ ≤ μ s` holds for every set on a probability space. Measurability of the deviation event
+is recorded separately.
 
 Finally, for real samples `V i`, every entry of the empirical second-moment matrix
 `TauCeti.sampleSecondMoment` is the sample mean of the products `V i k * V i l`. When those products
@@ -75,12 +77,13 @@ variable {Ω m n : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω} [Fintype 
 
 section Entrywise
 
-variable {E : Type*} [NormedAddCommGroup E] {S : Ω → Matrix m n E} {A : Matrix m n E} {v η : ℝ}
+variable {E : Type*} {S : Ω → Matrix m n E} {A : Matrix m n E} {v η : ℝ}
 
-/-- **Entrywise Chebyshev union bound.** If every entrywise deviation of a random matrix `S` from
-a fixed matrix `A` has second moment at most `v`, then the probability that some entry deviates by
-more than `η > 0` is at most `card m * card n * v / η²`. -/
-theorem measure_exists_lt_norm_sub_le
+/-- **Entrywise Chebyshev union bound.** For any measure `μ`, if every squared entrywise deviation
+of a matrix-valued function `S` from a fixed matrix `A` is integrable with integral at most `v`,
+then the measure of the event where some entry deviates by more than `η > 0` is at most
+`ENNReal.ofReal (card m * card n * v / η²)`. -/
+theorem measure_exists_lt_norm_sub_le [Norm E] [Sub E]
     (hint : ∀ k l, Integrable (fun ω ↦ ‖S ω k l - A k l‖ ^ 2) μ)
     (hmoment : ∀ k l, ∫ ω, ‖S ω k l - A k l‖ ^ 2 ∂μ ≤ v) (hη : 0 < η) :
     μ {ω | ∃ k l, η < ‖S ω k l - A k l‖} ≤
@@ -101,18 +104,20 @@ theorem measure_exists_lt_norm_sub_le
 omit [Fintype m] [Fintype n] in
 /-- The event that some entry of a random matrix deviates from a fixed matrix by more than `η` is
 measurable when every entry is measurable. -/
-theorem measurableSet_exists_lt_norm_sub [Finite m] [Finite n] [MeasurableSpace E]
-    [OpensMeasurableSpace E] [MeasurableSub E] (hS : ∀ k l, Measurable fun ω ↦ S ω k l) (η : ℝ) :
+theorem measurableSet_exists_lt_norm_sub [SeminormedAddGroup E] [Finite m] [Finite n]
+    [MeasurableSpace E] [OpensMeasurableSpace E] [MeasurableSub E]
+    (hS : ∀ k l, Measurable fun ω ↦ S ω k l) (η : ℝ) :
     MeasurableSet {ω | ∃ k l, η < ‖S ω k l - A k l‖} := by
   simp only [Set.ofPred_exists]
   exact .iUnion fun k ↦ .iUnion fun l ↦
-    measurableSet_lt measurable_const ((hS k l).sub_const (A k l)).norm
+    measurableSet_lt measurable_const
+      (continuous_norm.measurable.comp ((hS k l).sub_const (A k l)))
 
 /-- **High-probability entrywise closeness.** On a probability space, if every entrywise deviation
 of a random matrix `S` from a fixed matrix `A` has second moment at most `v`, then any set `s`
 containing every outcome at which all entries of `S` are within `η > 0` of those of `A` has
 probability at least `1 - card m * card n * v / η²`. -/
-theorem one_sub_le_measure_of_entry_le [IsProbabilityMeasure μ] {s : Set Ω}
+theorem one_sub_le_measure_of_entry_le [Norm E] [Sub E] [IsProbabilityMeasure μ] {s : Set Ω}
     (hint : ∀ k l, Integrable (fun ω ↦ ‖S ω k l - A k l‖ ^ 2) μ)
     (hmoment : ∀ k l, ∫ ω, ‖S ω k l - A k l‖ ^ 2 ∂μ ≤ v) (hη : 0 < η)
     (hs : ∀ ω, (∀ k l, ‖S ω k l - A k l‖ ≤ η) → ω ∈ s) :

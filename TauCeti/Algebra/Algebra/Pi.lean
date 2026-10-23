@@ -37,6 +37,11 @@ from Mathlib's `linearIndependent_monoidHom` (Dedekind independence) and
 `span_flip_eq_top_iff_linearIndependent` (finite duality). This supplies polynomial interpolation
 on finite Weyl orbits for the Harish-Chandra central-character theorem.
 
+Over any nontrivial commutative semiring, an algebra map `φ : (ι → T) →ₐ[T] (κ → T)` whose matrix
+entries `φ (Pi.single i 1) j` are all `0` or `1` is induced by a map of index sets `κ → ι`
+(`AlgHom.exists_apply_eq_comp_of_entries`). This computes equalizers of algebra maps between split
+algebras.
+
 For a finite-dimensional algebra over a field, `TauCeti.AlgHom.pi_bijective_of_injective`
 identifies evaluation at a finite family of distinct characters with the function algebra,
 provided those characters separate elements. The same evaluation, at all characters, is bijective
@@ -54,6 +59,8 @@ coordinates of `C ⊗[R] D ≅ (ι → R) ⊗[R] (κ → R) ≅ (κ → ι → R
 
 * `AlgHom.surjective_pi_of_injective`: distinct finitely many augmentations admit arbitrary
   simultaneous values.
+* `AlgHom.exists_apply_eq_comp_of_entries`: an algebra map `(ι → T) →ₐ[T] (κ → T)` whose matrix
+  entries are all `0` or `1` is induced by a map `κ → ι`.
 * `Pi.evalAlgHom_injective`: distinct coordinates give distinct evaluation homomorphisms.
 * `Pi.evalAlgHomEquiv`: the coordinates of `ι → R` are exactly the `R`-algebra homomorphisms
   `(ι → R) →ₐ[R] R`.
@@ -114,6 +121,41 @@ theorem surjective_pi_of_injective {K A ι : Type*} [Field K] [Semiring A] [Alge
   have hr : LinearMap.range (AlgHom.pi f).toLinearMap = ⊤ := by
     simpa only [← LinearMap.coe_range, Submodule.span_eq] using hspan
   exact LinearMap.range_eq_top.mp hr
+
+/-- An algebra map between function algebras whose matrix entries `φ (Pi.single i 1) j` are all `0`
+or `1` is induced by a map of the index sets. -/
+theorem exists_apply_eq_comp_of_entries {T ι κ : Type*} [CommSemiring T] [Nontrivial T]
+    [_root_.Finite ι] [DecidableEq ι] (φ : (ι → T) →ₐ[T] (κ → T))
+    (hφ : ∀ i j, φ (Pi.single i 1) j = 0 ∨ φ (Pi.single i 1) j = 1) :
+    ∃ u : κ → ι, ∀ s j, φ s j = s (u j) := by
+  have := Fintype.ofFinite ι
+  have hsum (j : κ) : ∑ i, φ (Pi.single i 1) j = 1 := by
+    have h1 : ∑ i, (Pi.single i 1 : ι → T) = 1 := by
+      simpa using Finset.univ_sum_single (1 : ι → T)
+    rw [← Finset.sum_apply, ← map_sum, h1, map_one, Pi.one_apply]
+  have hone (j : κ) : ∃ i, φ (Pi.single i 1) j = 1 := by
+    by_contra! h
+    have h0 (i : ι) : φ (Pi.single i 1) j = 0 := (hφ i j).resolve_right (h i)
+    exact one_ne_zero ((hsum j).symm.trans (by simp [h0]))
+  choose u hu using hone
+  refine ⟨u, fun s j ↦ ?_⟩
+  have hs : s = ∑ i, s i • (Pi.single i 1 : ι → T) := by
+    conv_lhs => rw [← Finset.univ_sum_single s]
+    simp [← Pi.single_smul']
+  have hφs : φ s j = ∑ i, s i * φ (Pi.single i 1) j := by
+    conv_lhs => rw [hs]
+    rw [map_sum, Finset.sum_apply]
+    exact Finset.sum_congr rfl fun i _ ↦ by rw [map_smul, Pi.smul_apply, smul_eq_mul]
+  rw [hφs, Finset.sum_eq_single (u j) (fun i _ hi ↦ ?_) (by simp), hu j, mul_one]
+  have hprod : (Pi.single i 1 : ι → T) * Pi.single (u j) 1 = 0 := by
+    ext k
+    by_cases hk : k = i
+    · subst hk
+      simp [hi]
+    · simp [Pi.single_apply, hk]
+  have h0 := congrFun (congrArg φ hprod) j
+  simp [hu j] at h0
+  simp [h0]
 
 end AlgHom
 

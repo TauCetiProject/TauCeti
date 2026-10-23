@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.Analysis.RCLike.Basic
+import Mathlib.Analysis.Normed.Operator.NNNorm
 
 /-!
 # Real parts of continuous linear functionals on balls
@@ -14,21 +15,26 @@ public import Mathlib.Analysis.RCLike.Basic
 For a continuous linear functional `f` on a seminormed space over `RCLike` scalars and a radius
 `0 ≤ r`, every upper bound of `re ∘ f` on `closedBall x r` is at least `re (f x) + r * ‖f‖`.
 Hahn–Banach separation arguments use this to turn a separating real-part bound on a ball into a
-bound on the norm of the separating functional.
+bound on the norm of the separating functional. Conversely, for `0 ≤ r < ‖f‖` the real part of
+`f` exceeds `r * ‖x‖` at some point `x`.
 
 ## Main results
 
 * `StrongDual.re_apply_add_mul_norm_le`: a bound for the real part of a functional on a closed
   ball of nonnegative radius bounds its value at the centre plus the radius times its norm.
+* `StrongDual.exists_mul_norm_lt_re_apply`: for `0 ≤ r < ‖f‖`, the real part of `f` exceeds
+  `r * ‖x‖` at some point `x`.
 -/
 
 public section
 
 open Metric RCLike
 
-variable {𝕜 E : Type*} [RCLike 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+variable {𝕜 E : Type*}
 
 namespace StrongDual
+
+variable [RCLike 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
 
 /-- If the real part of a continuous linear functional `f` is at most `u` on the closed ball of
 radius `r ≥ 0` about `x`, then `re (f x) + r * ‖f‖ ≤ u`. -/
@@ -50,5 +56,15 @@ theorem re_apply_add_mul_norm_le {f : StrongDual 𝕜 E} {x : E} {r u : ℝ} (hr
   rw [div_mul_eq_mul_div, le_div_iff₀ hr]
   field_simp at hy
   nlinarith
+
+/-- If `0 ≤ r < ‖f‖`, then the real part of `f` exceeds `r * ‖x‖` at some point `x`. -/
+theorem exists_mul_norm_lt_re_apply (f : StrongDual 𝕜 E) {r : ℝ} (hr₀ : 0 ≤ r) (hr : r < ‖f‖) :
+    ∃ x, r * ‖x‖ < re (f x) := by
+  obtain ⟨x, hx⟩ := f.exists_mul_lt_of_lt_opNorm hr₀ hr
+  -- Rotate `x` so that `f` takes the nonnegative real value `‖f x‖` on it.
+  obtain ⟨a, ha, hax⟩ := exists_norm_eq_mul_self (f x)
+  refine ⟨a • x, ?_⟩
+  rw [map_smul, smul_eq_mul, ← hax, ofReal_re, norm_smul, ha, one_mul]
+  exact hx
 
 end StrongDual

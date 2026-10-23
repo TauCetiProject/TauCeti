@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.AdicCompletion.Topology
 public import Mathlib.RingTheory.Finiteness.Ideal
 public import Mathlib.Topology.Algebra.Nonarchimedean.AdicTopology
 public import Mathlib.Topology.Algebra.Ring.Ideal
 public import TauCeti.RingTheory.Huber.PowerBounded
+import Mathlib.Topology.Algebra.IsUniformGroup.Basic
 import TauCeti.RingTheory.Ideal.PowerStabilization
 import TauCeti.RingTheory.Subring.SpanSingleton
 public import TauCeti.Topology.Algebra.Group.FirstCountable
@@ -77,6 +79,8 @@ Huber ring is nonarchimedean, which is exactly the hypothesis under which
 * `TauCeti.Huber.PairOfDefinition.isBounded_ringOfDefinition`: a ring of definition is bounded,
   hence `A₀ ≤ A°` (`TauCeti.Huber.PairOfDefinition.le_powerBoundedSubring`). This is the
   boundedness half of Wedhorn Corollary 6.4.
+* `TauCeti.Huber.PairOfDefinition.isAdicComplete_idealOfDefinition`: the ring of definition of a
+  complete Hausdorff Huber ring is complete for its ideal of definition.
 * `TauCeti.Huber.isOpen_powerBoundedSubring`: `A°` is open in a Huber ring.
 * `TauCeti.Huber.IsPseudoUniformizer.hasBasis_nhds_zero`: for a pseudouniformiser `ϖ` and a ring
   of definition `A₀` of a Tate ring, the sets `ϖⁿ A₀` are a neighbourhood basis of zero; the
@@ -608,6 +612,24 @@ theorem quotient_idealImage [IsTopologicalRing A] (P : PairOfDefinition A) (J : 
 
 
 end PairOfDefinition
+
+section Complete
+
+variable {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [CompleteSpace A]
+  [T0Space A]
+
+/-- **The ring of definition of a complete Hausdorff Huber ring is adically complete.** If `A` is
+complete and Hausdorff, then for every pair of definition `(A₀, I)` the ring `A₀` is `I`-adically
+complete: being an open subgroup it is closed, hence complete, and its topology is `I`-adic. -/
+instance PairOfDefinition.isAdicComplete_idealOfDefinition (P : PairOfDefinition A) :
+    IsAdicComplete P.idealOfDefinition P.ringOfDefinition := by
+  have : IsUniformAddGroup P.ringOfDefinition := P.ringOfDefinition.toAddSubgroup.isUniformAddGroup
+  have hclosed : IsClosed (P.ringOfDefinition : Set A) :=
+    P.ringOfDefinition.toAddSubgroup.isClosed_of_isOpen P.isOpen_ringOfDefinition
+  have : CompleteSpace P.ringOfDefinition := hclosed.completeSpace_coe
+  exact P.isAdic_idealOfDefinition.isAdicComplete_iff.mpr ⟨inferInstance, inferInstance⟩
+
+end Complete
 
 /-- **A topologically nilpotent element rescales any element to a topologically nilpotent one.**
 In a Huber ring, for topologically nilpotent `ϖ` and any `s`, some `ϖ ^ i * s` is topologically

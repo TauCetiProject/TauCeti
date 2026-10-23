@@ -24,18 +24,28 @@ on:
 
 # Coalesce the burst of edited/synchronize events on a single PR.
 concurrency:
-  group: roadmap-label-${{ github.event.pull_request.number }}
+  # Ignored title edits must not cancel a body/push run before the job's if is evaluated.
+  group: ${{ (github.event.action == 'edited' && github.event.changes.body == null && github.event.changes.base == null) && format('roadmap-label-ignored-{0}', github.run_id) || format('roadmap-label-{0}', github.event.pull_request.number) }}
   cancel-in-progress: true
 
 permissions:
   contents: read
+  pull-requests: read
 
 jobs:
   label:
+    # Title-only edits do not affect attribution or the structure nudge.
+    if: github.event.action != 'edited' || github.event.changes.body != null || github.event.changes.base != null
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      # A GitHub App token, as elsewhere in this repo: it can write labels and comments on
-      # a fork PR (the default GITHUB_TOKEN is read-only for fork pull_request_target).
+      # Let rapid pushes/body edits collapse before minting a token or fetching API data.
+      - name: Coalesce events
+        run: sleep 20
+
+      # pull_request_target can grant write permissions even for fork PRs. The App
+      # is retained for mutations because its label/comment events trigger pr-status
+      # and other downstream workflows; GITHUB_TOKEN mutations suppress those events.
       - uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1; v1 ignores permission-* inputs
         id: app-token
         with:
@@ -43,7 +53,6 @@ jobs:
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
           owner: TauCetiProject
           repositories: TauCeti
-          permission-contents: read
           permission-issues: write
           permission-pull-requests: write  # also posts the unknown-roadmap nudge
 
@@ -55,32 +64,30 @@ jobs:
 
       # The roadmap repo supplies the canonical area set (the source of truth for which
       # roadmap/<Area> labels are legitimate).
+      - name: Prepare pinned shared tools
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+        with:
+          tools-repository: TauCetiProject/TauCetiTools
+          tools-ref: ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+          project-directory: .
       - uses: actions/checkout@v4
         with:
           repository: TauCetiProject/TauCetiRoadmap
+          ref: main
           path: roadmap
           persist-credentials: false
 
-      - name: Classify and label
+      # The classifier passes its validated PR snapshot directly to the advisory
+      # structure nudge. Advisory errors remain warnings; label failures stay visible
+      # and are repaired by roadmap-label-reconcile.yml.
+      - name: Classify, label, and nudge
         env:
+          GH_READ_TOKEN: ${{ github.token }}
+          GH_COMMENT_AUTHOR: ${{ steps.app-token.outputs.app-slug }}[bot]
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           REPO: ${{ github.repository }}
           PR: ${{ github.event.pull_request.number }}
         run: |
           set -euo pipefail
           python3 scripts/roadmap_label.py \
-            --repo "$REPO" --roadmap-dir roadmap --pr "$PR" --apply
-
-      # Advisory-only structure nudge (scripts/structure_nudge.py): one updatable
-      # marker comment when a PR adds .lean files that sit beside an existing topic
-      # subdirectory or extend a flat filename family. Never blocks: findings exit 0,
-      # failures degrade to ::warning::, and the step is continue-on-error so it can
-      # never redden this job or touch the `build` commit status.
-      - name: Structure nudge (advisory)
-        continue-on-error: true
-        env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
-          REPO: ${{ github.repository }}
-          PR: ${{ github.event.pull_request.number }}
-        run: |
-          python3 scripts/structure_nudge.py --repo "$REPO" --pr "$PR" --apply
+            --repo "$REPO" --roadmap-dir roadmap --pr "$PR" --apply --structure-nudge

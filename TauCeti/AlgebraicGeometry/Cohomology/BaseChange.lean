@@ -38,7 +38,7 @@ Over a field `k` and a field extension `K / k`, these say that `dim_k H⁰(X, �
 locally of finite type over `k` and covered by two affine opens, `dim_k H¹(X, 𝒪_X)` do not change
 under base change to `K`; when moreover `H¹(X, 𝒪_X)` is finite-dimensional, so is `H¹` after base
 change, and the genus does not change either. Smooth proper curves are covered by two affine
-opens, so this applies to them (`TauCeti.AlgebraicGeometry.Curves.GenusBaseChange`).
+opens, so this applies to them (`TauCeti.AlgebraicGeometry.Curves.Genus.BaseChange`).
 
 The structure sheaf is written as the trivial line bundle `(InvertibleSheaf.trivial X).obj`, as for
 the genus `Scheme.genus`. The degree-one isomorphisms are stated as `Nonempty` linear

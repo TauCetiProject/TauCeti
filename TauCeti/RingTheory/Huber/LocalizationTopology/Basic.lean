@@ -24,7 +24,8 @@ universal property in `LocalizationTopology.UniversalProperty`, the completion `
 
 ## Main definitions
 
-* `locSubring P T s S` : the candidate ring of definition `D = A₀[t₁/s, …, tₙ/s]`.
+* `locSubring P T s S` : the candidate ring of definition `D = A₀[T/s]`, generated over `A₀` by
+  the fractions `t/s` for `t` in an arbitrary set `T ⊆ A`.
 * `HasDenominatorPower P T s S` : the standing hypothesis the construction runs under — some power
   of `I` has all of its fractions `b/s` already in `D`.
 * `locIdeal P T s S` : the candidate ideal of definition `J = I · D` in `D`.
@@ -35,7 +36,7 @@ universal property in `LocalizationTopology.UniversalProperty`, the completion `
 
 ## Main results
 
-* `locSubring_eq_of_coe_eq_image_mul_left`: rescaling numerators and denominator by one common
+* `locSubring_eq_of_eq_image_mul_left`: rescaling numerators and denominator by one common
   factor leaves `D` unchanged — the first step of a change of presentation.
 * `locIdealImage_congr` and `locTopology_congr`: presentations sharing a ring of definition share
   the whole neighbourhood filtration, and so the topology — the step that lets a rescaled
@@ -46,11 +47,11 @@ universal property in `LocalizationTopology.UniversalProperty`, the completion `
 * `HasDenominatorPower.mono`: the standing hypothesis is monotone in the numerators.
 * `hasDenominatorPower_denom_one`: at the denominator `1` the standing hypothesis is automatic,
   for every numerator set and every localisation.
-* `HasDenominatorPower.of_coe_eq_image_mul_left`: it also survives rescaling the
+* `HasDenominatorPower.of_eq_image_mul_left`: it also survives rescaling the
   whole presentation by a unit — the second step of a change of presentation.
 * `hasDenominatorPower_of_idealOfDefinition_le_span`: numerators containing a subset of `A₀`
   whose span contains `I` supply the standing denominator-power hypothesis for every denominator.
-* `hasDenominatorPower_of_isOpen_span`: a finite numerator set spanning an open ideal supplies the
+* `hasDenominatorPower_of_isOpen_span`: a numerator set spanning an open ideal supplies the
   standing denominator-power hypothesis for every denominator.
 * `isHuberRing_locTopology`: `Aₛ` under `locTopology` is a Huber ring.
 * `locIdeal_eq_span_singleton`: when the ideal of definition is principal on `π`, so is `J`, on
@@ -65,6 +66,9 @@ universal property in `LocalizationTopology.UniversalProperty`, the completion `
 * `awayLift_mem_locSubring` and `awayLift_mem_locIdealImage`: passing to a multiple `w = u * r`
   of the denominator carries `D` and its neighbourhood filtration forward, the latter at the same
   index — which is what makes the comparison map of two nested presentations continuous.
+* `isBounded_submonoidClosure_of_subset_locSubring` and `isBounded_submonoidClosure_divBy`: every
+  subset of `D` is power-bounded, so the fractions `t/s` form a power-bounded set, even for an
+  infinite `T`.
 * `isBounded_image_algebraMap_of_isBounded` and `isPowerBounded_algebraMap_of_isPowerBounded`:
   bounded sets have bounded image, so power-orbits transfer and each power-bounded *element*
   stays power-bounded. The `locSubring` route reaches only a ring of definition, whose
@@ -92,8 +96,15 @@ structure-map case of Wedhorn's Proposition 8.30,
 `isOpen_map_algebraMap_locTopology` are later additions with no AINTLIB analogue either: commit
 `37bbdaeb9` proves no openness statement about an ideal of `Aₛ`. They record that admissibility of
 a numerator ideal survives the structure map `A → Aₛ`, as required by the forward direction of
-Wedhorn Proposition 8.2(2). The main changes
-are: adapted `PairOfDefinition` field names to TauCeti conventions (`A₀`→`ringOfDefinition`,
+Wedhorn Proposition 8.2(2). `isBounded_submonoidClosure_of_subset_locSubring` and
+`isBounded_submonoidClosure_divBy` are later additions with no AINTLIB analogue either: the port
+took its numerators to be a `Finset`, and so never needed a power-bounded *set* of fractions in
+place of finitely many power-bounded fractions. They are new work for the arbitrary
+numerator sets of Wedhorn's Proposition and Definition 5.51. The main changes
+are: generalised the numerator set from a `Finset A` to an arbitrary `Set A`, which needs no
+finiteness anywhere except in `hasDenominatorPower_of_isOpen_span`, where it is supplied by a
+finite subset spanning an open ideal (`exists_finset_subset_isOpen_span_of_isOpen_span`);
+adapted `PairOfDefinition` field names to TauCeti conventions (`A₀`→`ringOfDefinition`,
 `I`→`ideal`, etc.); uses characteristic lemmas instead of destructuring definitions; removed
 unused hypotheses to satisfy `#lint` checks; stated over an arbitrary localisation `S` away from
 `s`, rather than the concrete model `Localization.Away s` the source uses.
@@ -123,13 +134,13 @@ that namespace and reads `P.locSubring T s S`, matching `TauCeti/RingTheory/Hube
 
 namespace PairOfDefinition
 
-/-- The candidate ring of definition `D = A₀[t₁/s, …, tₙ/s]` of `S`. -/
-noncomputable def locSubring (P : PairOfDefinition A) (T : Finset A)
+/-- The candidate ring of definition `D = A₀[T/s]` of `S`. -/
+noncomputable def locSubring (P : PairOfDefinition A) (T : Set A)
     (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S] : Subring S :=
   (Algebra.adjoin ↥P.ringOfDefinition (Set.range fun t : T ↦ divBy (t : A) s)).toSubring
 
 /-- The subring coercion carries the `D`-action on itself to multiplication in `Aₛ`. -/
-private theorem coe_smul_locSubring (P : PairOfDefinition A) (T : Finset A) (s : A)
+private theorem coe_smul_locSubring (P : PairOfDefinition A) (T : Set A) (s : A)
     (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     (r d : locSubring P T s S) :
     ((r • d : locSubring P T s S) : S) =
@@ -145,7 +156,7 @@ polynomial over `A₀` at the fractions.
 
 `locSubring_def` is the companion in the `Subring.closure` shape, which is what arguments about
 ring generation want; this one is what arguments about *polynomials* want. -/
-theorem locSubring_eq_adjoin (P : PairOfDefinition A) (T : Finset A) (s : A)
+theorem locSubring_eq_adjoin (P : PairOfDefinition A) (T : Set A) (s : A)
     (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S] :
     locSubring P T s S
       = (Algebra.adjoin ↥P.ringOfDefinition
@@ -154,7 +165,7 @@ theorem locSubring_eq_adjoin (P : PairOfDefinition A) (T : Finset A) (s : A)
 
 /-- `D` is the subring generated by the image of `A₀` together with the fractions `tᵢ/s`. The body
 is not exported, so this is how a consumer reaches the generators. -/
-theorem locSubring_def (P : PairOfDefinition A) (T : Finset A) (s : A)
+theorem locSubring_def (P : PairOfDefinition A) (T : Set A) (s : A)
     (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S] :
     locSubring P T s S = Subring.closure
       ((algebraMap A S) '' (P.ringOfDefinition : Set A) ∪
@@ -172,7 +183,7 @@ theorem locSubring_def (P : PairOfDefinition A) (T : Finset A) (s : A)
 
 /-- The image of `A₀` under `algebraMap` is contained in `D`. -/
 theorem algebraMap_ringOfDefinition_subset_locSubring (P : PairOfDefinition A)
-    (T : Finset A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S] :
+    (T : Set A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S] :
     (algebraMap A S) '' (P.ringOfDefinition : Set A) ⊆
       (locSubring P T s S : Set S) := by
   rw [locSubring_def]
@@ -180,14 +191,14 @@ theorem algebraMap_ringOfDefinition_subset_locSubring (P : PairOfDefinition A)
 
 /-- Each element `t/s` (for `t ∈ T`) belongs to `D`. -/
 theorem divBy_mem_locSubring (P : PairOfDefinition A)
-    (T : Finset A) (s : A)
+    (T : Set A) (s : A)
     (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S] {t : A} (ht : t ∈ T) :
     divBy t s ∈ locSubring P T s S :=
   Algebra.subset_adjoin ⟨⟨t, ht⟩, rfl⟩
 
 /-- An element of `A₀` maps into `D` under `algebraMap`. -/
 theorem algebraMap_mem_locSubring (P : PairOfDefinition A)
-    (T : Finset A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S] {a : A}
+    (T : Set A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S] {a : A}
     (ha : a ∈ P.ringOfDefinition) :
     algebraMap A S a ∈ locSubring P T s S :=
   algebraMap_ringOfDefinition_subset_locSubring P T s S ⟨a, ha, rfl⟩
@@ -195,7 +206,7 @@ theorem algebraMap_mem_locSubring (P : PairOfDefinition A)
 /-- **The universal property of `D`**: a subring contains `D` exactly when it contains the image
 of `A₀` and every distinguished fraction. The body of `locSubring` is not exported, so this is the
 elimination principle a consumer has. -/
-theorem locSubring_le_iff (P : PairOfDefinition A) (T : Finset A) (s : A)
+theorem locSubring_le_iff (P : PairOfDefinition A) (T : Set A) (s : A)
     (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     {R : Subring S} :
     locSubring P T s S ≤ R ↔
@@ -209,27 +220,26 @@ theorem locSubring_le_iff (P : PairOfDefinition A) (T : Finset A) (s : A)
   · exact h₂ t ht
 
 /-- **Rescaling a presentation leaves `D` alone**: if the numerators `T'` are exactly the
-`u`-multiples of `T`, in the sense that `(T' : Set A) = (u * ·) '' T`, and the denominator is
-rescaled by the same `u`, then `(T', u * s)` and `(T, s)` generate the same `D` inside `S`. Both
-away-localisation structures are assumed: `S` is a localisation away from `s` and away from `u * s`
-at once, which for a unit `u` comes free from `IsLocalization.Away.iff_of_associated`.
+`u`-multiples of `T`, that is `T' = (u * ·) '' T`, and the denominator is rescaled by the same `u`,
+then `(T', u * s)` and `(T, s)` generate the same `D` inside `S`. Both away-localisation structures
+are assumed: `S` is a localisation away from `s` and away from `u * s` at once, which for a unit `u`
+comes free from `IsLocalization.Away.iff_of_associated`.
 
-No unit hypothesis on `u` is needed, and the rescaled numerators are taken as a `Finset` with a
-set-level equation rather than as `T.image (u * ·)`, which would need `DecidableEq A`. -/
-theorem locSubring_eq_of_coe_eq_image_mul_left (P : PairOfDefinition A) (T T' : Finset A) (u s : A)
+No unit hypothesis on `u` is needed. -/
+theorem locSubring_eq_of_eq_image_mul_left (P : PairOfDefinition A) (T T' : Set A) (u s : A)
     (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
-    [IsLocalization.Away (u * s) S] (hT' : (T' : Set A) = (u * ·) '' (T : Set A)) :
+    [IsLocalization.Away (u * s) S] (hT' : T' = (u * ·) '' T) :
     locSubring P T' (u * s) S = locSubring P T s S := by
-  refine le_antisymm ((locSubring_le_iff P T' (u * s) S).mpr
-    ⟨fun a ha ↦ algebraMap_mem_locSubring P T s S ha, fun t' ht' ↦ ?_⟩)
+  subst hT'
+  refine le_antisymm ((locSubring_le_iff P _ (u * s) S).mpr
+    ⟨fun a ha ↦ algebraMap_mem_locSubring P T s S ha, ?_⟩)
     ((locSubring_le_iff P T s S).mpr
-      ⟨fun a ha ↦ algebraMap_mem_locSubring P T' (u * s) S ha, fun t ht ↦ ?_⟩)
-  · obtain ⟨t, ht, rfl⟩ := hT' ▸ Finset.mem_coe.mpr ht'
+      ⟨fun a ha ↦ algebraMap_mem_locSubring P _ (u * s) S ha, fun t ht ↦ ?_⟩)
+  · rintro _ ⟨t, ht, rfl⟩
     rw [divBy_mul_mul_left]
     exact divBy_mem_locSubring P T s S ht
   · rw [← divBy_mul_mul_left (u := u) t s]
-    exact divBy_mem_locSubring P T' (u * s) S
-      (Finset.mem_coe.mp (hT' ▸ Set.mem_image_of_mem _ (Finset.mem_coe.mpr ht)))
+    exact divBy_mem_locSubring P _ (u * s) S (Set.mem_image_of_mem _ ht)
 
 /-- With no fractions adjoined, `D` is just the image of `A₀`. -/
 @[simp]
@@ -242,15 +252,15 @@ theorem locSubring_empty (P : PairOfDefinition A) (s : A)
   exact Subring.closure_eq _
 
 /-- `D` grows with the set of numerators. -/
-theorem locSubring_mono (P : PairOfDefinition A) {T U : Finset A} (s : A)
+theorem locSubring_mono (P : PairOfDefinition A) {T U : Set A} (s : A)
     (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S] (h : T ⊆ U) :
     locSubring P T s S ≤ locSubring P U s S :=
   (locSubring_le_iff P T s S).mpr ⟨fun _ ha ↦ algebraMap_mem_locSubring P U s S ha,
     fun _ ht ↦ divBy_mem_locSubring P U s S (h ht)⟩
 
 /-- **The insertion formula for `D`**: adjoining one more fraction gives the previous `D` with
-that fraction adjoined *as an algebra over it*. The recursive step for `locSubring` on a `Finset`,
-with `locSubring_empty` as its base.
+that fraction adjoined *as an algebra over it*. For a finite set of numerators this is the
+recursive step for `locSubring`, with `locSubring_empty` as its base.
 
 The `Algebra.adjoin` form matches the shape of `locSubring` itself, and says concretely that an
 element of `locSubring P (insert t U) s S` is a polynomial in `t/s` with coefficients in the
@@ -259,8 +269,8 @@ smaller subring.
 Not a `simp` lemma: `locSubring P U s S` occurs on the right as a type index, so simp rewrites the
 outermost `insert` and then stalls rather than reaching a normal form. The `Subring.closure` form
 this replaced did iterate, which is why the attribute was there. -/
-theorem locSubring_insert [DecidableEq A] (P : PairOfDefinition A) (t : A)
-    (U : Finset A) (s : A)
+theorem locSubring_insert (P : PairOfDefinition A) (t : A)
+    (U : Set A) (s : A)
     (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S] :
     locSubring P (insert t U) s S =
       (Algebra.adjoin ↥(locSubring P U s S) ({divBy t s} : Set S)).toSubring := by
@@ -268,7 +278,7 @@ theorem locSubring_insert [DecidableEq A] (P : PairOfDefinition A) (t : A)
   have hrange : Set.range (fun u : ↥(insert t U) ↦ (divBy (u : A) s : S))
       = insert (divBy t s : S) (Set.range fun u : ↥U ↦ (divBy (u : A) s : S)) := by
     ext x
-    simp only [Set.mem_range, Set.mem_insert_iff, Subtype.exists, Finset.mem_insert, exists_prop]
+    simp only [Set.mem_range, Set.mem_insert_iff, Subtype.exists, exists_prop]
     constructor
     · rintro ⟨a, (rfl | ha), rfl⟩
       · exact Or.inl rfl
@@ -284,27 +294,27 @@ theorem locSubring_insert [DecidableEq A] (P : PairOfDefinition A) (t : A)
 `locSubring P T s S`, then `insert t T` gives the same `D` as `T`, so a presentation can take on an
 extra numerator — `s` itself, as `s/s = 1`, or `1` once `1/s ∈ D` — without changing `D`. This is
 the degenerate case of `locSubring_insert`, where the adjoined fraction adds nothing. -/
-theorem locSubring_insert_eq_of_divBy_mem [DecidableEq A] (P : PairOfDefinition A) {t : A}
-    {T : Finset A} (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+theorem locSubring_insert_eq_of_divBy_mem (P : PairOfDefinition A) {t : A}
+    {T : Set A} (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     (h : divBy t s ∈ locSubring P T s S) : locSubring P (insert t T) s S = locSubring P T s S :=
   le_antisymm ((locSubring_le_iff P (insert t T) s S).mpr
     ⟨fun _ ↦ algebraMap_mem_locSubring P T s S,
-      (Finset.forall_mem_insert t T _).mpr ⟨h, fun _ ↦ divBy_mem_locSubring P T s S⟩⟩)
-    (locSubring_mono P s S (Finset.subset_insert t T))
+      Set.forall_mem_insert.mpr ⟨h, fun _ ↦ divBy_mem_locSubring P T s S⟩⟩)
+    (locSubring_mono P s S (Set.subset_insert t T))
 
 /-! ### The standing hypothesis -/
 
 /-- **The standing hypothesis** of Wedhorn's construction: some power of the ideal of definition
-`I` has all of its fractions `b/s` already inside `D = A₀[t₁/s, …, tₙ/s]`. It ensures that
+`I` has all of its fractions `b/s` already inside `D = A₀[T/s]`. It ensures that
 the `locIdealImage` form a basis of neighbourhoods of zero for a ring topology, so every
 declaration about `locTopology` below carries it. -/
-def HasDenominatorPower (P : PairOfDefinition A) (T : Finset A) (s : A)
+def HasDenominatorPower (P : PairOfDefinition A) (T : Set A) (s : A)
     (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S] : Prop :=
   ∃ N : ℕ, ∀ b ∈ P.idealOfDefinition ^ N, divBy ((b : A)) s ∈ locSubring P T s S
 
 /-- `HasDenominatorPower` unfolds to the existential it names. The body is not exported, so this
 is how a consumer builds one by hand or takes one apart. -/
-theorem hasDenominatorPower_iff (P : PairOfDefinition A) (T : Finset A) (s : A)
+theorem hasDenominatorPower_iff (P : PairOfDefinition A) (T : Set A) (s : A)
     (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S] :
     HasDenominatorPower P T s S ↔
       ∃ N : ℕ, ∀ b ∈ P.idealOfDefinition ^ N, divBy ((b : A)) s ∈ locSubring P T s S :=
@@ -313,7 +323,7 @@ theorem hasDenominatorPower_iff (P : PairOfDefinition A) (T : Finset A) (s : A)
 /-- **The standing hypothesis grows with the numerators.** Adjoining numerators enlarges `D`, so a
 denominator power that works for `T` works for any larger `U`: the fractions `b/s` it puts in
 `locSubring P T s S` are still in `locSubring P U s S`. -/
-theorem HasDenominatorPower.mono {P : PairOfDefinition A} {T U : Finset A} {s : A}
+theorem HasDenominatorPower.mono {P : PairOfDefinition A} {T U : Set A} {s : A}
     {S : Type*} [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     (h : HasDenominatorPower P T s S) (hTU : T ⊆ U) : HasDenominatorPower P U s S := by
   rw [hasDenominatorPower_iff] at h ⊢
@@ -322,7 +332,7 @@ theorem HasDenominatorPower.mono {P : PairOfDefinition A} {T U : Finset A} {s : 
 /-- **At the denominator `1` the standing hypothesis is automatic.** Every `b/1` is the image of
 `b`, and the elements of `I` already lie in `A₀ ⊆ D`, so `N = 1` works — for every numerator set
 and every localisation away from `1`. -/
-theorem hasDenominatorPower_denom_one (P : PairOfDefinition A) (T : Finset A)
+theorem hasDenominatorPower_denom_one (P : PairOfDefinition A) (T : Set A)
     (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away (1 : A) S] :
     HasDenominatorPower P T 1 S := by
   refine (hasDenominatorPower_iff P T 1 S).mpr ⟨1, fun b _ ↦ ?_⟩
@@ -335,11 +345,11 @@ numerators and the denominator by a unit `u` carries `HasDenominatorPower` from 
 
 Of the data a presentation carries, this is the part whose invariance under rescaling is not
 immediate, so it is what a rescaled presentation needs in order to stand in for the original. -/
-theorem HasDenominatorPower.of_coe_eq_image_mul_left [IsTopologicalRing A]
-    {P : PairOfDefinition A} {T T' : Finset A} {u s : A} (hu : IsUnit u)
+theorem HasDenominatorPower.of_eq_image_mul_left [IsTopologicalRing A]
+    {P : PairOfDefinition A} {T T' : Set A} {u s : A} (hu : IsUnit u)
     {S : Type*} [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     [IsLocalization.Away (u * s) S] (h : HasDenominatorPower P T s S)
-    (hT' : (T' : Set A) = (u * ·) '' (T : Set A)) :
+    (hT' : T' = (u * ·) '' T) :
     HasDenominatorPower P T' (u * s) S := by
   rw [hasDenominatorPower_iff] at h ⊢
   obtain ⟨N, hN⟩ := h
@@ -347,20 +357,20 @@ theorem HasDenominatorPower.of_coe_eq_image_mul_left [IsTopologicalRing A]
   refine ⟨N', fun b hb ↦ ?_⟩
   obtain ⟨c, hc, hbc⟩ := hN' ((P.mem_idealImage N').mpr ⟨b, hb, rfl⟩)
   obtain ⟨c₀, hc₀, rfl⟩ := (P.mem_idealImage N).mp hc
-  rw [locSubring_eq_of_coe_eq_image_mul_left P T T' u s S hT', ← hbc, divBy_mul_mul_left]
+  rw [locSubring_eq_of_eq_image_mul_left P T T' u s S hT', ← hbc, divBy_mul_mul_left]
   exact hN c₀ hc₀
 
 /-- **The standing hypothesis puts a unit fraction in `D`**: over a Tate ring, some unit `u` has
-`u/s` in `D = A₀[t₁/s, …, tₙ/s]`.
+`u/s` in `D = A₀[T/s]`.
 
 Typically used to make `1` a numerator: after rescaling `(T, s)` by `u⁻¹`
-(`locSubring_eq_of_coe_eq_image_mul_left`), `u/s` is the fraction `1/(u⁻¹ s)`, so `1` can be
+(`locSubring_eq_of_eq_image_mul_left`), `u/s` is the fraction `1/(u⁻¹ s)`, so `1` can be
 adjoined to the numerators without changing `D`.
 
 The Tate hypothesis is needed: over `ℤ_[p]`, with `T = ∅` and `s = p`, the standing hypothesis
 holds, but `D` is the image of `ℤ_[p]` in `ℚ_[p]`, which contains no `u/p` with `u` a unit. -/
 theorem HasDenominatorPower.exists_unit_divBy_mem_locSubring [IsTopologicalRing A] [IsTateRing A]
-    {P : PairOfDefinition A} {T : Finset A} {s : A} {S : Type*} [CommRing S] [Algebra A S]
+    {P : PairOfDefinition A} {T : Set A} {s : A} {S : Type*} [CommRing S] [Algebra A S]
     [IsLocalization.Away s S] (h : HasDenominatorPower P T s S) :
     ∃ u : Aˣ, divBy (u : A) s ∈ locSubring P T s S := by
   obtain ⟨N, hN⟩ := (hasDenominatorPower_iff P T s S).mp h
@@ -375,7 +385,7 @@ theorem HasDenominatorPower.exists_unit_divBy_mem_locSubring [IsTopologicalRing 
 standing hypothesis holds. Indeed `b = c · s` makes `b/s = c`, which lies in `A₀ ⊆ D`. This is
 the criterion in the standard case, where `s` itself is a topologically nilpotent element of
 `A₀` generating a power of `I`. -/
-theorem hasDenominatorPower_of_pow_le_span (P : PairOfDefinition A) (T : Finset A) {s : A}
+theorem hasDenominatorPower_of_pow_le_span (P : PairOfDefinition A) (T : Set A) {s : A}
     (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     (hs : s ∈ P.ringOfDefinition) {N : ℕ}
     (hN : P.idealOfDefinition ^ N ≤ Ideal.span {(⟨s, hs⟩ : P.ringOfDefinition)}) :
@@ -392,7 +402,7 @@ Every element of `I` is an `A₀`-linear combination of the elements of `G`, and
 fixed denominator is linear in the numerator, so `b/s` is an `A₀`-combination of the fractions
 `g/s`, all of which lie in `D`. -/
 theorem hasDenominatorPower_of_idealOfDefinition_le_span (P : PairOfDefinition A)
-    (T : Finset A) {G : Set P.ringOfDefinition} (hGT : ∀ g ∈ G, (g : A) ∈ T)
+    (T : Set A) {G : Set P.ringOfDefinition} (hGT : ∀ g ∈ G, (g : A) ∈ T)
     (hG : P.idealOfDefinition ≤ Ideal.span G)
     (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S] :
     HasDenominatorPower P T s S := by
@@ -413,38 +423,36 @@ theorem hasDenominatorPower_of_idealOfDefinition_le_span (P : PairOfDefinition A
     exact hmul
 
 /-- **An open numerator ideal supplies the standing denominator-power hypothesis.** If the ideal
-spanned by `T` is open, a sufficiently small basic neighbourhood `Iⁿ` consists of `T`-linear
-combinations whose coefficients lie in the ring of definition. Dividing such a combination by
-`s` therefore puts it in `A₀[T/s]`.
+spanned by `T` is open, so is the ideal spanned by some finite `F ⊆ T`
+(`exists_finset_subset_isOpen_span_of_isOpen_span`). A sufficiently small basic neighbourhood
+`Iⁿ` then consists of `F`-linear combinations whose coefficients lie in the ring of definition.
+Dividing such a combination by `s` therefore puts it in `A₀[F/s] ⊆ A₀[T/s]`.
 
 This is the bridge from the admissibility condition on a rational subset, stated as openness of
 `T · A`, to the standing hypothesis needed to construct its topological coordinate ring. -/
 theorem hasDenominatorPower_of_isOpen_span [IsTopologicalRing A]
-    (P : PairOfDefinition A) (T : Finset A) (s : A)
+    (P : PairOfDefinition A) (T : Set A) (s : A)
     (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
-    (hT : IsOpen (Ideal.span (T : Set A) : Set A)) :
+    (hT : IsOpen (Ideal.span T : Set A)) :
     HasDenominatorPower P T s S := by
   classical
+  obtain ⟨F, hFT, hF⟩ := P.exists_finset_subset_isOpen_span_of_isOpen_span hT
+  refine HasDenominatorPower.mono ?_ hFT
   obtain ⟨n, hn⟩ :=
-    P.exists_forall_mem_idealImage_exists_sum_eq T (hT.mem_nhds (Ideal.span _).zero_mem) 1
+    P.exists_forall_mem_idealImage_exists_sum_eq F (hF.mem_nhds (Ideal.span _).zero_mem) 1
   rw [hasDenominatorPower_iff]
   refine ⟨n, fun b hb ↦ ?_⟩
   obtain ⟨w, hw, hsum⟩ := hn (b : A) ((P.mem_idealImage n).mpr ⟨b, hb, rfl⟩)
   rw [← hsum]
-  have hterm : ∀ t ∈ T, divBy (t * w t) s ∈ locSubring P T s S := by
+  have hterm : ∀ t ∈ F, divBy (t * w t) s ∈ locSubring P F s S := by
     intro t ht
     rw [mul_comm, divBy_mul]
-    exact (locSubring P T s S).mul_mem
-      (algebraMap_mem_locSubring P T s S (P.idealImage_le_ringOfDefinition 1 (hw t ht)))
-      (divBy_mem_locSubring P T s S ht)
-  let d : A →+ S :=
-    { toFun := fun a ↦ divBy a s
-      map_zero' := divBy_zero s
-      map_add' := fun a b ↦ divBy_add (t := a) (s := s) b }
-  have hsum_mem : d (∑ t ∈ T, t * w t) ∈ locSubring P T s S := by
-    rw [map_sum]
-    exact Subring.sum_mem _ fun t ht ↦ hterm t ht
-  exact hsum_mem
+    exact (locSubring P F s S).mul_mem
+      (algebraMap_mem_locSubring P F s S (P.idealImage_le_ringOfDefinition 1 (hw t ht)))
+      (divBy_mem_locSubring P F s S ht)
+  exact Finset.sum_induction _ (fun a ↦ divBy a s ∈ locSubring P F s S)
+    (fun a b ha hb ↦ by simpa only [divBy_add] using add_mem ha hb)
+    (by simpa only [divBy_zero] using zero_mem _) hterm
 
 /-! ### Passing to a denominator that is a multiple
 
@@ -463,9 +471,9 @@ two rational subsets a legitimate presentation, which is how nested presentation
 `locSubring P U u V` into `locSubring P Tw w W`, provided each `t * r` for `t ∈ U` is a numerator of
 the target. Both generating families land where they must: `A₀` by `algebraMap_mem_locSubring`, and
 `t/u`, which `awayLift_divBy` identifies with the distinguished fraction `(t * r)/w`. -/
-theorem awayLift_mem_locSubring (P : PairOfDefinition A) (U : Finset A) (u : A)
+theorem awayLift_mem_locSubring (P : PairOfDefinition A) (U : Set A) (u : A)
     (V : Type*) [CommRing V] [Algebra A V] [IsLocalization.Away u V]
-    (Tw : Finset A) (w : A) (W : Type*) [CommRing W] [Algebra A W] [IsLocalization.Away w W]
+    (Tw : Set A) (w : A) (W : Type*) [CommRing W] [Algebra A W] [IsLocalization.Away w W]
     (r : A) (hw : w = u * r) (hgen : ∀ t ∈ U, t * r ∈ Tw)
     {x : V} (hx : x ∈ locSubring P U u V) :
     IsLocalization.Away.lift u (IsLocalization.Away.isUnit_of_dvd w ⟨r, hw⟩) x
@@ -484,9 +492,9 @@ theorem awayLift_mem_locSubring (P : PairOfDefinition A) (U : Finset A) (u : A)
 `locSubring P U u V` then `(a * r) / w` lies in `locSubring P Tw w W`. This is the fraction-level
 form of `awayLift_mem_locSubring`, and it is the one consumers want: it spares them rewriting the
 comparison map away at every use. -/
-theorem divBy_mul_mem_locSubring (P : PairOfDefinition A) (U : Finset A) (u : A)
+theorem divBy_mul_mem_locSubring (P : PairOfDefinition A) (U : Set A) (u : A)
     (V : Type*) [CommRing V] [Algebra A V] [IsLocalization.Away u V]
-    (Tw : Finset A) (w : A) (W : Type*) [CommRing W] [Algebra A W] [IsLocalization.Away w W]
+    (Tw : Set A) (w : A) (W : Type*) [CommRing W] [Algebra A W] [IsLocalization.Away w W]
     (r : A) (hw : w = u * r) (hgen : ∀ t ∈ U, t * r ∈ Tw)
     {a : A} (ha : (divBy a u : V) ∈ locSubring P U u V) :
     (divBy (a * r) w : W) ∈ locSubring P Tw w W := by
@@ -505,7 +513,7 @@ which is a subring and therefore closed under the products and sums involved.
 
 `insert s T * insert s' T'` — the numerator set `rationalSubset_inter` produces for an intersection
 of rational subsets — satisfies both membership conditions, which is the intended instance. -/
-theorem hasDenominatorPower_mul (P : PairOfDefinition A) (T T' T'' : Finset A) (s s' : A)
+theorem hasDenominatorPower_mul (P : PairOfDefinition A) (T T' T'' : Set A) (s s' : A)
     (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     (S' : Type*) [CommRing S'] [Algebra A S'] [IsLocalization.Away s' S']
     (S'' : Type*) [CommRing S''] [Algebra A S''] [IsLocalization.Away (s * s') S'']
@@ -528,7 +536,7 @@ theorem hasDenominatorPower_mul (P : PairOfDefinition A) (T T' T'' : Finset A) (
 /-! ### The candidate ideal of definition `J` -/
 
 /-- The ring homomorphism `A₀ →+* D` induced by `algebraMap`. -/
-noncomputable def toLocSubring (P : PairOfDefinition A) (T : Finset A)
+noncomputable def toLocSubring (P : PairOfDefinition A) (T : Set A)
     (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S] :
     P.ringOfDefinition →+* (locSubring P T s S) :=
   ((algebraMap A S).comp P.ringOfDefinition.subtype).codRestrict
@@ -538,20 +546,20 @@ noncomputable def toLocSubring (P : PairOfDefinition A) (T : Finset A)
 /-- `toLocSubring` is `algebraMap` with its codomain cut down to `D`, so its values coerce back to
 `algebraMap`. -/
 @[simp]
-theorem toLocSubring_apply (P : PairOfDefinition A) (T : Finset A) (s : A)
+theorem toLocSubring_apply (P : PairOfDefinition A) (T : Set A) (s : A)
     (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     (a : P.ringOfDefinition) :
     (toLocSubring P T s S a : S) = algebraMap A S (a : A) :=
   (rfl)
 
 /-- The candidate ideal of definition `J = I · D` in `D`. -/
-noncomputable def locIdeal (P : PairOfDefinition A) (T : Finset A)
+noncomputable def locIdeal (P : PairOfDefinition A) (T : Set A)
     (s : A)
     (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S] : Ideal (locSubring P T s S) :=
   Ideal.map (toLocSubring P T s S) P.idealOfDefinition
 
 /-- `J` is the ideal of `D` generated by the image of `I`. -/
-theorem locIdeal_def (P : PairOfDefinition A) (T : Finset A) (s : A)
+theorem locIdeal_def (P : PairOfDefinition A) (T : Set A) (s : A)
     (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S] :
     locIdeal P T s S = Ideal.map (toLocSubring P T s S) P.idealOfDefinition := (rfl)
 
@@ -560,7 +568,7 @@ the image of `π`, because `J` is by construction the ideal of `D` generated by 
 
 This is what makes the neighbourhood filtration `π`-adic: every statement about `Jⁿ` below reduces
 to a divisibility in a principal ideal, with no induction over generators. -/
-theorem locIdeal_eq_span_singleton (P : PairOfDefinition A) (T : Finset A) (s : A)
+theorem locIdeal_eq_span_singleton (P : PairOfDefinition A) (T : Set A) (s : A)
     (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     {π : P.ringOfDefinition} (hπ : P.idealOfDefinition = Ideal.span {π}) :
     locIdeal P T s S = Ideal.span {toLocSubring P T s S π} := by
@@ -568,13 +576,13 @@ theorem locIdeal_eq_span_singleton (P : PairOfDefinition A) (T : Finset A) (s : 
 
 /-- `Jⁿ` is the image of `Iⁿ`. The body of `locIdeal` is not exported, so this is how a consumer
 reaches the powers that index the neighbourhood basis. -/
-theorem locIdeal_pow (P : PairOfDefinition A) (T : Finset A) (s : A)
+theorem locIdeal_pow (P : PairOfDefinition A) (T : Set A) (s : A)
     (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S] (n : ℕ) :
     locIdeal P T s S ^ n = Ideal.map (toLocSubring P T s S) (P.idealOfDefinition ^ n) := by
   rw [locIdeal_def, Ideal.map_pow]
 
 /-- `Jⁿ` is *spanned* by the image of `Iⁿ`: the form the span inductions below run on. -/
-theorem locIdeal_pow_eq_span (P : PairOfDefinition A) (T : Finset A) (s : A)
+theorem locIdeal_pow_eq_span (P : PairOfDefinition A) (T : Set A) (s : A)
     (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S] (n : ℕ) :
     locIdeal P T s S ^ n = Ideal.span (toLocSubring P T s S ''
       ((P.idealOfDefinition ^ n : Ideal P.ringOfDefinition) : Set P.ringOfDefinition)) := by
@@ -582,7 +590,7 @@ theorem locIdeal_pow_eq_span (P : PairOfDefinition A) (T : Finset A) (s : A)
   rw [Ideal.map_span]
 
 /-- The image of `Iⁿ` under `A₀ →+* D` lands in `Jⁿ`. -/
-theorem toLocSubring_mem_locIdeal_pow (P : PairOfDefinition A) (T : Finset A) (s : A)
+theorem toLocSubring_mem_locIdeal_pow (P : PairOfDefinition A) (T : Set A) (s : A)
     (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S] {n : ℕ}
     {b : P.ringOfDefinition} (hb : b ∈ P.idealOfDefinition ^ n) :
     toLocSubring P T s S b ∈ locIdeal P T s S ^ n := by
@@ -591,7 +599,7 @@ theorem toLocSubring_mem_locIdeal_pow (P : PairOfDefinition A) (T : Finset A) (s
 /-- **`J` is finitely generated**, because `I` is and `Ideal.map` preserves that. This is one of
 the two conditions `(D, J)` needs to be a `TauCeti.Huber.PairOfDefinition`; the other, that the
 subspace topology on `D` is `J`-adic, is `isAdic_locIdeal` below. -/
-theorem fg_locIdeal (P : PairOfDefinition A) (T : Finset A) (s : A)
+theorem fg_locIdeal (P : PairOfDefinition A) (T : Set A) (s : A)
     (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S] :
     (locIdeal P T s S).FG := by
   rw [locIdeal_def]
@@ -600,7 +608,7 @@ theorem fg_locIdeal (P : PairOfDefinition A) (T : Finset A) (s : A)
 /-! ### The neighborhood basis -/
 
 /-- The `n`-th neighborhood of `0` in `S`. -/
-noncomputable def locIdealImage (P : PairOfDefinition A) (T : Finset A) (s : A)
+noncomputable def locIdealImage (P : PairOfDefinition A) (T : Set A) (s : A)
     (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     (n : ℕ) : AddSubgroup S :=
   ((locIdeal P T s S) ^ n).toAddSubgroup.map
@@ -609,7 +617,7 @@ noncomputable def locIdealImage (P : PairOfDefinition A) (T : Finset A) (s : A)
 /-- An element of `Aₛ` lies in the `n`-th neighbourhood exactly when it is the image of an element
 of `Jⁿ`. -/
 @[simp]
-theorem mem_locIdealImage_iff (P : PairOfDefinition A) (T : Finset A) (s : A)
+theorem mem_locIdealImage_iff (P : PairOfDefinition A) (T : Set A) (s : A)
     (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S] (n : ℕ)
     {x : S} :
     x ∈ locIdealImage P T s S n ↔
@@ -618,7 +626,7 @@ theorem mem_locIdealImage_iff (P : PairOfDefinition A) (T : Finset A) (s : A)
 
 /-- The image of `Iⁿ` in `Aₛ` lands in the `n`-th basic neighbourhood: this is the introduction
 rule for `locIdealImage`, and what continuity of the structure map is read off. -/
-theorem algebraMap_mem_locIdealImage (P : PairOfDefinition A) (T : Finset A) (s : A)
+theorem algebraMap_mem_locIdealImage (P : PairOfDefinition A) (T : Set A) (s : A)
     (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S] {n : ℕ}
     {b : P.ringOfDefinition} (hb : b ∈ P.idealOfDefinition ^ n) :
     algebraMap A S (b : A) ∈ locIdealImage P T s S n :=
@@ -627,7 +635,7 @@ theorem algebraMap_mem_locIdealImage (P : PairOfDefinition A) (T : Finset A) (s 
 
 /-- The zeroth neighbourhood is `D` itself, because `J⁰ = ⊤`. -/
 @[simp]
-theorem locIdealImage_zero (P : PairOfDefinition A) (T : Finset A) (s : A)
+theorem locIdealImage_zero (P : PairOfDefinition A) (T : Set A) (s : A)
     (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S] :
     locIdealImage P T s S 0 = (locSubring P T s S).toAddSubgroup := by
   ext x
@@ -636,14 +644,14 @@ theorem locIdealImage_zero (P : PairOfDefinition A) (T : Finset A) (s : A)
   exact ⟨fun ⟨d, hd⟩ ↦ hd ▸ d.property, fun hx ↦ ⟨⟨x, hx⟩, rfl⟩⟩
 
 /-- The neighborhoods are antitone. -/
-theorem locIdealImage_antitone (P : PairOfDefinition A) (T : Finset A) (s : A)
+theorem locIdealImage_antitone (P : PairOfDefinition A) (T : Set A) (s : A)
     (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S] :
     Antitone (locIdealImage P T s S) :=
   fun _ _ h ↦ AddSubgroup.map_mono (Submodule.toAddSubgroup_mono (Ideal.pow_le_pow_right h))
 
 /-- The preimage of `locIdealImage n` under the subtype embedding equals `locIdeal^n`. -/
 @[simp]
-theorem locIdealImage_preimage_eq_locIdeal_pow (P : PairOfDefinition A) (T : Finset A)
+theorem locIdealImage_preimage_eq_locIdeal_pow (P : PairOfDefinition A) (T : Set A)
     (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S] (n : ℕ) :
     (Subtype.val : locSubring P T s S → S) ⁻¹'
         (locIdealImage P T s S n : Set S) =
@@ -659,7 +667,7 @@ theorem locIdealImage_preimage_eq_locIdeal_pow (P : PairOfDefinition A) (T : Fin
 
 /-- **The basis is graded**: the `i`-th and `j`-th neighbourhoods multiply into the `(i + j)`-th,
 because `Jⁱ · Jʲ ⊆ Jⁱ⁺ʲ` in `D`. The two special cases the subgroup basis needs follow. -/
-theorem locIdealImage_mul_subset_add (P : PairOfDefinition A) (T : Finset A) (s : A)
+theorem locIdealImage_mul_subset_add (P : PairOfDefinition A) (T : Set A) (s : A)
     (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S] (i j : ℕ) :
     (locIdealImage P T s S i : Set S) *
         (locIdealImage P T s S j : Set S) ⊆
@@ -672,7 +680,7 @@ theorem locIdealImage_mul_subset_add (P : PairOfDefinition A) (T : Finset A) (s 
 
 /-- Products of the `n`-th neighbourhood land in the `n`-th neighbourhood: this is the
 multiplicative half of the subgroup basis, the diagonal case of `locIdealImage_mul_subset_add`. -/
-theorem locIdealImage_mul_subset (P : PairOfDefinition A) (T : Finset A) (s : A)
+theorem locIdealImage_mul_subset (P : PairOfDefinition A) (T : Set A) (s : A)
     (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S] (i : ℕ) :
     (locIdealImage P T s S i : Set S) *
         (locIdealImage P T s S i : Set S) ⊆
@@ -682,7 +690,7 @@ theorem locIdealImage_mul_subset (P : PairOfDefinition A) (T : Finset A) (s : A)
 
 /-- `Jⁿ`'s image absorbs multiplication by `D`, because `D` is the zeroth neighbourhood and the
 basis is graded. -/
-theorem locIdealImage_mul_locSubring_subset (P : PairOfDefinition A) (T : Finset A) (s : A)
+theorem locIdealImage_mul_locSubring_subset (P : PairOfDefinition A) (T : Set A) (s : A)
     (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     (n : ℕ) :
     (locIdealImage P T s S n : Set S) *
@@ -704,7 +712,7 @@ therefore *uniform in the element*, which an inclusion alone does not give.
 
 Both directions are needed in practice: the forward one to divide, the reverse to certify that
 the quotient's depth is recovered when it is multiplied back. -/
-theorem mem_locIdealImage_add_iff (P : PairOfDefinition A) (T : Finset A) (s : A)
+theorem mem_locIdealImage_add_iff (P : PairOfDefinition A) (T : Set A) (s : A)
     (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     {π : P.ringOfDefinition} (hπ : P.idealOfDefinition = Ideal.span {π}) (n k : ℕ) {x : S} :
     x ∈ locIdealImage P T s S (n + k) ↔
@@ -731,9 +739,9 @@ together are what a comparison of nested presentations needs. Since both topolog
 filtrations as a neighbourhood basis of zero, the same-index inclusion **implies** continuity of
 the comparison map; it is strictly stronger than continuity, which would allow the index to
 grow. -/
-theorem awayLift_mem_locIdealImage (P : PairOfDefinition A) (U : Finset A) (u : A)
+theorem awayLift_mem_locIdealImage (P : PairOfDefinition A) (U : Set A) (u : A)
     (V : Type*) [CommRing V] [Algebra A V] [IsLocalization.Away u V]
-    (Tw : Finset A) (w : A) (W : Type*) [CommRing W] [Algebra A W] [IsLocalization.Away w W]
+    (Tw : Set A) (w : A) (W : Type*) [CommRing W] [Algebra A W] [IsLocalization.Away w W]
     (r : A) (hw : w = u * r) (hgen : ∀ t ∈ U, t * r ∈ Tw) (n : ℕ)
     {x : V} (hx : x ∈ locIdealImage P U u V n) :
     IsLocalization.Away.lift u (IsLocalization.Away.isUnit_of_dvd w ⟨r, hw⟩) x
@@ -757,7 +765,7 @@ theorem awayLift_mem_locIdealImage (P : PairOfDefinition A) (U : Finset A) (u : 
 
 /-- Multiplying `1/s` by an element of `Jᴺ` lands back in `D`, once `N` is large enough that
 `b/s ∈ D` for every `b ∈ Iᴺ`. -/
-private theorem locIdealImage_invSelf_mem (P : PairOfDefinition A) (T : Finset A) (s : A)
+private theorem locIdealImage_invSelf_mem (P : PairOfDefinition A) (T : Set A) (s : A)
     (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S] (N : ℕ)
     (hN : ∀ b ∈ P.idealOfDefinition ^ N, divBy ((b : A)) s ∈ locSubring P T s S)
     {d : locSubring P T s S} (hd : d ∈ locIdeal P T s S ^ N) :
@@ -780,7 +788,7 @@ private theorem locIdealImage_invSelf_mem (P : PairOfDefinition A) (T : Finset A
 
 /-- Multiplying `1/s` by an element of `locIdealImage (n + N)` lands in `locIdealImage n`, once
 `N` is large enough that `b/s ∈ D` for every `b ∈ Iᴺ`. -/
-private theorem locIdealImage_invSelf_step (P : PairOfDefinition A) (T : Finset A) (s : A)
+private theorem locIdealImage_invSelf_step (P : PairOfDefinition A) (T : Set A) (s : A)
     (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S] (N : ℕ)
     (hN : ∀ b ∈ P.idealOfDefinition ^ N, divBy ((b : A)) s ∈ locSubring P T s S)
     (n : ℕ) (y : S) (hy : y ∈ locIdealImage P T s S (n + N)) :
@@ -803,7 +811,7 @@ private theorem locIdealImage_invSelf_step (P : PairOfDefinition A) (T : Finset 
 `x` carries `Iᵐ` into `Iⁿ`, then it carries the `m`-th basic neighbourhood of `Aₛ` into the
 `n`-th. -/
 private theorem locIdealImage_mul_algebraMap_subset (P : PairOfDefinition A)
-    (T : Finset A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    (T : Set A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     {m n : ℕ} {x : A} (hx : ∀ w ∈ P.idealImage m, w * x ∈ P.idealImage n)
     {d : locSubring P T s S} (hd : d ∈ (locIdeal P T s S ^ m : Ideal (locSubring P T s S))) :
     (d : S) * algebraMap A S x ∈ locIdealImage P T s S n := by
@@ -830,7 +838,7 @@ private theorem locIdealImage_mul_algebraMap_subset (P : PairOfDefinition A)
 `locIdealImage i`. The single-element case of `locIdealImage_mul_algebraMap_subset`, with the
 index supplied by continuity of `· * a` rather than assumed. -/
 private theorem locIdealImage_algMap_step [SeparatelyContinuousMul A] (P : PairOfDefinition A)
-    (T : Finset A) (s : A)
+    (T : Set A) (s : A)
     (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S] (i : ℕ) (a : A) :
     ∃ j, ∀ y ∈ locIdealImage P T s S j,
       algebraMap A S a * y ∈ locIdealImage P T s S i := by
@@ -846,7 +854,7 @@ private theorem locIdealImage_algMap_step [SeparatelyContinuousMul A] (P : PairO
 /-- **Left multiplication is continuous** for the localization topology: multiplication by a
 fixed `x` pulls some neighbourhood `locIdealImage j` back inside `locIdealImage i`. -/
 theorem locIdealImage_leftMul [SeparatelyContinuousMul A]
-    (P : PairOfDefinition A) (T : Finset A) (s : A)
+    (P : PairOfDefinition A) (T : Set A) (s : A)
     (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     (hden : HasDenominatorPower P T s S)
     (x : S) (i : ℕ) :
@@ -890,7 +898,7 @@ theorem locIdealImage_leftMul [SeparatelyContinuousMul A]
 
 /-- The `RingSubgroupsBasis` underlying the localization topology on `Aₛ`: the images of the
 powers `Jⁿ` are a basis of neighbourhoods of zero compatible with the ring structure. -/
-private theorem locBasis [SeparatelyContinuousMul A] (P : PairOfDefinition A) (T : Finset A) (s : A)
+private theorem locBasis [SeparatelyContinuousMul A] (P : PairOfDefinition A) (T : Set A) (s : A)
     (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     (hden : HasDenominatorPower P T s S) :
     RingSubgroupsBasis (locIdealImage P T s S) :=
@@ -903,11 +911,11 @@ private theorem locBasis [SeparatelyContinuousMul A] (P : PairOfDefinition A) (T
 
 /-- Wedhorn's topological localisation: the topology on `Aₛ` whose neighbourhoods of zero are the
 images of the powers of `J = I · D`, the candidate ideal of definition of
-`D = A₀[t₁/s, …, tₙ/s]`. Only separate continuity of multiplication on `A` is needed;
+`D = A₀[T/s]`. Only separate continuity of multiplication on `A` is needed;
 addition on `A` need not be continuous. -/
 @[instance_reducible] noncomputable def locTopology [SeparatelyContinuousMul A]
     (P : PairOfDefinition A)
-    (T : Finset A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    (T : Set A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     (hden : HasDenominatorPower P T s S) :
     TopologicalSpace S :=
   (locBasis P T s S hden).topology
@@ -915,7 +923,7 @@ addition on `A` need not be continuous. -/
 /-- The contract of `locTopology`: the `locIdealImage n` are a basis of neighbourhoods of zero.
 Consumers should use this rather than unfolding the definition. -/
 theorem hasBasis_nhds_zero_locTopology [SeparatelyContinuousMul A] (P : PairOfDefinition A)
-    (T : Finset A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    (T : Set A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     (hden : HasDenominatorPower P T s S) :
     (@nhds _ (locTopology P T s S hden) 0).HasBasis (fun _ : ℕ ↦ True)
       fun n ↦ (locIdealImage P T s S n : Set S) :=
@@ -923,7 +931,7 @@ theorem hasBasis_nhds_zero_locTopology [SeparatelyContinuousMul A] (P : PairOfDe
 
 /-- `locTopology` is a ring topology. -/
 theorem isTopologicalRing_locTopology [SeparatelyContinuousMul A] (P : PairOfDefinition A)
-    (T : Finset A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    (T : Set A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     (hden : HasDenominatorPower P T s S) :
     @IsTopologicalRing _ (locTopology P T s S hden) _ :=
   (locBasis P T s S hden).toRingFilterBasis.isTopologicalRing
@@ -933,7 +941,7 @@ theorem isTopologicalRing_locTopology [SeparatelyContinuousMul A] (P : PairOfDef
 /-- **Presentations with the same ring of definition have the same neighbourhood filtration.**
 `locIdealImage` depends on `(T, s)` only through `locSubring P T s S`, so two presentations
 sharing that subring give the same subgroup of `Aₛ` at every level. -/
-theorem locIdealImage_congr (P : PairOfDefinition A) (T T' : Finset A) (s s' : A)
+theorem locIdealImage_congr (P : PairOfDefinition A) (T T' : Set A) (s s' : A)
     (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S] [IsLocalization.Away s' S]
     (h : locSubring P T' s' S = locSubring P T s S) (n : ℕ) :
     locIdealImage P T' s' S n = locIdealImage P T s S n := by
@@ -969,7 +977,7 @@ theorem locIdealImage_congr (P : PairOfDefinition A) (T T' : Finset A) (s s' : A
 
 This is what lets a presentation be replaced by another one — for instance a rescaled one — while
 the topology on `Aₛ`, and hence its completion, stays the same object. -/
-theorem locTopology_congr [SeparatelyContinuousMul A] (P : PairOfDefinition A) (T T' : Finset A)
+theorem locTopology_congr [SeparatelyContinuousMul A] (P : PairOfDefinition A) (T T' : Set A)
     (s s' : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     [IsLocalization.Away s' S] (hden : HasDenominatorPower P T s S)
     (hden' : HasDenominatorPower P T' s' S) (h : locSubring P T' s' S = locSubring P T s S) :
@@ -985,14 +993,14 @@ theorem locTopology_congr [SeparatelyContinuousMul A] (P : PairOfDefinition A) (
 
 /-- `locTopology` is nonarchimedean: `Aₛ` inherits a basis of open additive subgroups at zero. -/
 theorem nonarchimedeanRing_locTopology [SeparatelyContinuousMul A] (P : PairOfDefinition A)
-    (T : Finset A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    (T : Set A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     (hden : HasDenominatorPower P T s S) :
     @NonarchimedeanRing _ _ (locTopology P T s S hden) :=
   (locBasis P T s S hden).nonarchimedean
 
 /-- **Every basic neighbourhood is open**: it is a subgroup that is a neighbourhood of zero. -/
 theorem isOpen_locIdealImage [SeparatelyContinuousMul A]
-    (P : PairOfDefinition A) (T : Finset A) (s : A)
+    (P : PairOfDefinition A) (T : Set A) (s : A)
     (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     (hden : HasDenominatorPower P T s S) (n : ℕ) :
     letI := locTopology P T s S hden
@@ -1006,7 +1014,7 @@ theorem isOpen_locIdealImage [SeparatelyContinuousMul A]
 and `isAdic_locIdeal`, this supplies the conditions that
 `TauCeti.Huber.PairOfDefinition` asks of `(D, J)`. -/
 theorem isOpen_locSubring [SeparatelyContinuousMul A]
-    (P : PairOfDefinition A) (T : Finset A) (s : A)
+    (P : PairOfDefinition A) (T : Set A) (s : A)
     (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     (hden : HasDenominatorPower P T s S) :
     letI := locTopology P T s S hden
@@ -1017,7 +1025,7 @@ theorem isOpen_locSubring [SeparatelyContinuousMul A]
 
 /-- **`D` is bounded**: each `Jⁿ` already absorbs it. -/
 theorem isBounded_locSubring [SeparatelyContinuousMul A]
-    (P : PairOfDefinition A) (T : Finset A) (s : A)
+    (P : PairOfDefinition A) (T : Set A) (s : A)
     (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     (hden : HasDenominatorPower P T s S) :
     letI := locTopology P T s S hden
@@ -1032,7 +1040,7 @@ theorem isBounded_locSubring [SeparatelyContinuousMul A]
 /-- **Every element of `D` is power-bounded**: `D` is bounded, and `IsBounded.isPowerBounded_of_mem`
 turns that into power-boundedness of each of its elements. -/
 theorem isPowerBounded_of_mem_locSubring [SeparatelyContinuousMul A] (P : PairOfDefinition A)
-    (T : Finset A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    (T : Set A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     (hden : HasDenominatorPower P T s S)
     {x : S} (hx : x ∈ locSubring P T s S) :
     letI := locTopology P T s S hden
@@ -1042,7 +1050,7 @@ theorem isPowerBounded_of_mem_locSubring [SeparatelyContinuousMul A] (P : PairOf
 
 /-- **The image of a bounded subset of `A` is bounded in `Aₛ`.** -/
 theorem isBounded_image_algebraMap_of_isBounded [SeparatelyContinuousMul A] (P : PairOfDefinition A)
-    (T : Finset A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    (T : Set A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     (hden : HasDenominatorPower P T s S) {X : Set A} (hX : IsBounded X) :
     letI := locTopology P T s S hden
     IsBounded (algebraMap A S '' X) := by
@@ -1063,7 +1071,7 @@ theorem isBounded_image_algebraMap_of_isBounded [SeparatelyContinuousMul A] (P :
 /-- **A power-bounded element of `A` stays power-bounded in `Aₛ`.** -/
 theorem isPowerBounded_algebraMap_of_isPowerBounded [SeparatelyContinuousMul A]
     (P : PairOfDefinition A)
-    (T : Finset A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    (T : Set A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     (hden : HasDenominatorPower P T s S) {a : A} (ha : IsPowerBounded a) :
     letI := locTopology P T s S hden
     IsPowerBounded (algebraMap A S a) := by
@@ -1077,7 +1085,7 @@ theorem isPowerBounded_algebraMap_of_isPowerBounded [SeparatelyContinuousMul A]
 
 /-- The distinguished fractions `t/s` are power-bounded: they lie in `D`, and every element of
 `D` is. -/
-theorem isPowerBounded_divBy [SeparatelyContinuousMul A] (P : PairOfDefinition A) (T : Finset A)
+theorem isPowerBounded_divBy [SeparatelyContinuousMul A] (P : PairOfDefinition A) (T : Set A)
     (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     (hden : HasDenominatorPower P T s S)
     {t : A} (ht : t ∈ T) :
@@ -1085,10 +1093,35 @@ theorem isPowerBounded_divBy [SeparatelyContinuousMul A] (P : PairOfDefinition A
     IsPowerBounded (divBy t s : S) :=
   isPowerBounded_of_mem_locSubring P T s S hden (divBy_mem_locSubring P T s S ht)
 
+/-- **A subset of `D` is power-bounded**: the submonoid generated by any set of elements of `D`
+lies in `D`, which is bounded. -/
+theorem isBounded_submonoidClosure_of_subset_locSubring [SeparatelyContinuousMul A]
+    (P : PairOfDefinition A) (T : Set A) (s : A) (S : Type*) [CommRing S] [Algebra A S]
+    [IsLocalization.Away s S] (hden : HasDenominatorPower P T s S) {C : Set S}
+    (hC : C ⊆ locSubring P T s S) :
+    letI := locTopology P T s S hden
+    IsBounded (Submonoid.closure C : Set S) := by
+  let _ := locTopology P T s S hden
+  exact (isBounded_locSubring P T s S hden).subset
+    ((Submonoid.closure_le (S := (locSubring P T s S).toSubmonoid)).mpr hC)
+
+/-- **The distinguished fractions form a power-bounded set**: the submonoid generated by the
+fractions `t/s`, `t ∈ T`, is bounded, since it lies in the bounded subring `D`. For an infinite
+`T` this is stronger than power-boundedness of each fraction (`isPowerBounded_divBy`), and it is
+the form in which the universal property of `Aₛ` asks for it. -/
+theorem isBounded_submonoidClosure_divBy [SeparatelyContinuousMul A] (P : PairOfDefinition A)
+    (T : Set A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    (hden : HasDenominatorPower P T s S) :
+    letI := locTopology P T s S hden
+    IsBounded (Submonoid.closure ((fun t ↦ (divBy t s : S)) '' T) : Set S) :=
+  isBounded_submonoidClosure_of_subset_locSubring P T s S hden <| by
+    rintro _ ⟨t, ht, rfl⟩
+    exact divBy_mem_locSubring P T s S ht
+
 /-- The structure map `A → Aₛ` is continuous for the localisation topology: the image of `Iⁿ`
 already lands in the `n`-th basic neighbourhood. -/
 theorem continuous_algebraMap_locTopology [IsTopologicalRing A] (P : PairOfDefinition A)
-    (T : Finset A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    (T : Set A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     (hden : HasDenominatorPower P T s S) :
     Continuous[_, locTopology P T s S hden] (algebraMap A S) := by
   let _ := locTopology P T s S hden
@@ -1101,10 +1134,31 @@ theorem continuous_algebraMap_locTopology [IsTopologicalRing A] (P : PairOfDefin
   obtain ⟨b, hb, rfl⟩ := (P.mem_idealImage n).mp ha
   exact algebraMap_mem_locIdealImage P T s S hb
 
+/-- Passing to a multiple of the denominator gives a continuous map of uncompleted rational
+localisations when the target numerators contain the rescaled source numerators. -/
+theorem continuous_awayLift_locTopology [SeparatelyContinuousMul A] (P : PairOfDefinition A)
+    (U : Set A) (u : A) (V : Type*) [CommRing V] [Algebra A V] [IsLocalization.Away u V]
+    (hU : P.HasDenominatorPower U u V) (T : Set A) (w : A) (W : Type*) [CommRing W]
+    [Algebra A W] [IsLocalization.Away w W] (hT : P.HasDenominatorPower T w W)
+    (r : A) (hw : w = u * r) (hgen : ∀ t ∈ U, t * r ∈ T) :
+    letI := P.locTopology U u V hU
+    letI := P.locTopology T w W hT
+    Continuous (IsLocalization.Away.lift u (IsLocalization.Away.isUnit_of_dvd w ⟨r, hw⟩) :
+      V →+* W) := by
+  let _ := P.locTopology U u V hU
+  let _ := P.locTopology T w W hT
+  have := P.isTopologicalRing_locTopology U u V hU
+  have := P.isTopologicalRing_locTopology T w W hT
+  apply continuous_of_continuousAt_zero
+  rw [ContinuousAt, map_zero]
+  exact (P.hasBasis_nhds_zero_locTopology U u V hU).tendsto_iff
+    (P.hasBasis_nhds_zero_locTopology T w W hT) |>.mpr fun n _ ↦
+      ⟨n, trivial, fun x hx ↦ P.awayLift_mem_locIdealImage U u V T w W r hw hgen n hx⟩
+
 /-- **An ideal of `Aₛ` swallowing the image of `Iⁿ` swallows the whole `n`-th neighbourhood.**
 This supplies the neighbourhood containment used to prove that mapping an open ideal along the
 rational-localisation structure map produces an open ideal. -/
-theorem locIdealImage_le_of_image_subset (P : PairOfDefinition A) (T : Finset A) (s : A)
+theorem locIdealImage_le_of_image_subset (P : PairOfDefinition A) (T : Set A) (s : A)
     (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S] {K : Ideal S} {n : ℕ}
     (hK : algebraMap A S '' (P.idealImage n : Set A) ⊆ K) :
     locIdealImage P T s S n ≤ K.toAddSubgroup := by
@@ -1123,7 +1177,7 @@ subspace topology, so it suffices that pulling those images back along the inclu
 `Jⁿ` themselves — which is
 `TauCeti.Huber.PairOfDefinition.locIdealImage_preimage_eq_locIdeal_pow`. -/
 theorem hasBasis_nhds_zero_locSubring [SeparatelyContinuousMul A] (P : PairOfDefinition A)
-    (T : Finset A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    (T : Set A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     (hden : HasDenominatorPower P T s S) :
     letI := locTopology P T s S hden
     (𝓝 (0 : locSubring P T s S)).HasBasis (fun _ : ℕ ↦ True)
@@ -1141,7 +1195,7 @@ other.
 
 `IsAdic` is an equality of topologies, and `isAdic_iff` turns it into the two conditions the
 basis already gives: each `Jⁿ` is open, and every neighbourhood of zero contains one. -/
-theorem isAdic_locIdeal [SeparatelyContinuousMul A] (P : PairOfDefinition A) (T : Finset A) (s : A)
+theorem isAdic_locIdeal [SeparatelyContinuousMul A] (P : PairOfDefinition A) (T : Set A) (s : A)
     (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     (hden : HasDenominatorPower P T s S) :
     letI := locTopology P T s S hden
@@ -1168,7 +1222,7 @@ value that packages them for `isHuberRing_locTopology`.
 
 The topology is not an instance on `S`, so it is introduced in the statement; a consumer supplies
 it the same way, or works under `isHuberRing_locTopology` instead. -/
-noncomputable def localization [SeparatelyContinuousMul A] (P : PairOfDefinition A) (T : Finset A)
+noncomputable def localization [SeparatelyContinuousMul A] (P : PairOfDefinition A) (T : Set A)
     (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     (hden : HasDenominatorPower P T s S) :
     letI := locTopology P T s S hden
@@ -1186,7 +1240,7 @@ continuity of the structure map
 (`TauCeti.Huber.PairOfDefinition.continuous_algebraMap_locTopology`): continuity pulls an open
 set back to `A`, while this pushes an open *ideal* forward. -/
 theorem isOpen_map_algebraMap_locTopology [SeparatelyContinuousMul A] (P : PairOfDefinition A)
-    (T : Finset A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    (T : Set A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     (hden : HasDenominatorPower P T s S) {a : Ideal A} (ha : IsOpen (a : Set A)) :
     letI := locTopology P T s S hden
     IsOpen ((Ideal.map (algebraMap A S) a : Ideal S) : Set S) := by
@@ -1204,7 +1258,7 @@ the completion. Unlike that one, the statement has to introduce the topology, be
 `locTopology` is not an instance and `localization`'s own type depends on it. -/
 @[simp]
 theorem localization_ringOfDefinition [SeparatelyContinuousMul A]
-    (P : PairOfDefinition A) (T : Finset A)
+    (P : PairOfDefinition A) (T : Set A)
     (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     (hden : HasDenominatorPower P T s S) :
     letI := locTopology P T s S hden
@@ -1215,7 +1269,7 @@ membership rather than an equation because `idealOfDefinition`'s type depends on
 `ringOfDefinition`, exactly as `mem_completion_idealOfDefinition` is. -/
 @[simp]
 theorem mem_localization_idealOfDefinition [SeparatelyContinuousMul A] (P : PairOfDefinition A)
-    (T : Finset A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    (T : Set A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     (hden : HasDenominatorPower P T s S)
     {x : letI := locTopology P T s S hden; (P.localization T s S hden).ringOfDefinition} :
     letI := locTopology P T s S hden
@@ -1233,7 +1287,7 @@ finitely generated, and the subspace topology on `D` is the `J`-adic one.
 Both the topology and its ring structure are introduced in the statement, because `locTopology` is
 deliberately not registered as an instance — `Aₛ` is an arbitrary localisation and carries no
 topology of its own. -/
-theorem isHuberRing_locTopology [SeparatelyContinuousMul A] (P : PairOfDefinition A) (T : Finset A)
+theorem isHuberRing_locTopology [SeparatelyContinuousMul A] (P : PairOfDefinition A) (T : Set A)
     (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     (hden : HasDenominatorPower P T s S) :
     letI := locTopology P T s S hden

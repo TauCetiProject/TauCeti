@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Ring.MulUnit
+public import TauCeti.Analysis.Normed.Monoid.MulUnit
 public import TauCeti.RingTheory.PowerSeries.GaussNorm
 
 /-!

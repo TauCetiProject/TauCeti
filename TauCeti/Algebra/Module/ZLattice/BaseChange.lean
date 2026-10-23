@@ -15,7 +15,7 @@ Let `L` be a `ℤ`-lattice in a finite-dimensional vector space `E` over a norme
 that is, a discrete subgroup spanning `E`. Every `ℤ`-basis of `L` is a `K`-basis of `E`
 (`Module.Basis.ofZLatticeBasis`), so `E` is the base change `K ⊗[ℤ] L` through the inclusion of
 `L`. This is the analogue, for a normed field such as `ℝ` in place of the field of fractions `ℚ`,
-of `TauCeti.Submodule.IsLattice.isBaseChange_subtype`.
+of `Submodule.isBaseChange_subtype`.
 
 In this form a lattice can be fed to statements about integral forms of a representation, such
 as the comparison of the Herbrand quotients of two Galois-stable lattices in one real

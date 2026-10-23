@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.FamilyLinearAction
-public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction
+public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction.Basic
 
 /-!
 # Universal projective translation of a Hopf comodule

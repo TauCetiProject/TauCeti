@@ -28,9 +28,10 @@ It then identifies the tangent spaces of an open submanifold with those of its a
 and shows that, near each point, the inverse tangent-bundle trivializations agree under that
 identification.
 
-Finally it identifies the tangent space of a product manifold with the product of the tangent
+It then identifies the tangent space of a product manifold with the product of the tangent
 spaces of the factors, and shows that under this identification tangent coordinate changes and
-inverse tangent-bundle trivializations act componentwise.
+inverse tangent-bundle trivializations act componentwise. Finally, the charts of a disjoint union
+are those of its summands, so its tangent coordinate changes are those of the summands.
 
 ## Main results
 
@@ -73,10 +74,19 @@ inverse tangent-bundle trivializations act componentwise.
   the tangent space of a product and the product of the tangent spaces.
 * `TauCeti.Manifold.mfderiv_prodMap_apply`: differentials of product maps act componentwise
   under this equivalence.
+* `TauCeti.Manifold.tangentSpaceProdEquiv_mfderiv_prodMap_id` and
+  `TauCeti.Manifold.isInvertible_mfderiv_prodMap_id`: the differential of `(x, t) ↦ (x, φ t)` on
+  `M × 𝕜` multiplies the `𝕜`-component by `φ' t`, so it is invertible where `φ' t ≠ 0`.
 * `TauCeti.Manifold.tangentCoordChange_prod`: the tangent coordinate change of a product is the
   product of the tangent coordinate changes of the factors.
 * `TauCeti.Manifold.tangentSpaceProdEquiv_symmL_trivializationAt`: the inverse tangent-bundle
   trivialization of a product is the product of those of the factors.
+* `TauCeti.Manifold.tangentCoordChange_sumInl` and `TauCeti.Manifold.tangentCoordChange_sumInr`:
+  the tangent coordinate changes of a disjoint union between charts at points of one summand are
+  those of that summand.
+* `TauCeti.Manifold.symmL_trivializationAt_sumInl` and
+  `TauCeti.Manifold.symmL_trivializationAt_sumInr`: so are its inverse tangent-bundle
+  trivializations.
 -/
 
 public section
@@ -639,6 +649,16 @@ theorem tangentSpaceOpenEquiv_mfderiv_apply
     mfderiv_subtype_val, mfderiv_subtype_val] at h
   exact h.symm
 
+/-- The differential of the inclusion of nested open submanifolds is the identity of the common
+model vector space. -/
+@[simp]
+theorem mfderiv_inclusion_apply {U V : Opens M} (h : U ≤ V) (x : U)
+    (v : TangentSpace I x) : mfderiv I I (Opens.inclusion h) x v = v := by
+  have h' := tangentSpaceOpenEquiv_mfderiv_apply (A := id)
+    ((contMDiff_inclusion h).mdifferentiableAt one_ne_zero) mdifferentiableAt_id rfl v
+  rw [tangentSpaceOpenEquiv_apply, tangentSpaceOpenEquiv_apply, mfderiv_id] at h'
+  exact h'
+
 /-- The tangent bundle of a model space is Hausdorff. -/
 theorem instT2SpaceTangentBundleModelSpace :
     T2Space (TangentBundle I H) := by
@@ -728,6 +748,40 @@ theorem mfderiv_prodMap_apply
   rw [mfderiv_prodMap hf hg]
   rfl
 
+/-- The differential of `(x, t) ↦ (x, φ t)` on `M × 𝕜` fixes the `M`-component and multiplies the
+`𝕜`-component by `φ' t`. -/
+theorem tangentSpaceProdEquiv_mfderiv_prodMap_id {φ : 𝕜 → 𝕜} {p : M × 𝕜}
+    (hφ : DifferentiableAt 𝕜 φ p.2) (v : TangentSpace (I.prod 𝓘(𝕜)) p) :
+    tangentSpaceProdEquiv (p.1, φ p.2)
+        (mfderiv (I.prod 𝓘(𝕜)) (I.prod 𝓘(𝕜)) (Prod.map id φ) p v) =
+      ((tangentSpaceProdEquiv p v).1, (NormedSpace.fromTangentSpace (φ p.2)).symm
+        (deriv φ p.2 * NormedSpace.fromTangentSpace p.2 (tangentSpaceProdEquiv p v).2)) := by
+  rw [mfderiv_prodMap mdifferentiableAt_id hφ.mdifferentiableAt, mfderiv_id, mfderiv_eq_fderiv,
+    tangentSpaceProdEquiv_apply p v]
+  -- Both sides now live in the product of the model spaces; the remaining identifications
+  -- `tangentSpaceProdEquiv` and `NormedSpace.fromTangentSpace` are the identity on elements.
+  exact (tangentSpaceProdEquiv_apply _ _).trans (Prod.ext rfl
+    (congrArg (NormedSpace.fromTangentSpace (φ p.2)).symm
+      ((fderiv_eq_smul_deriv _).trans (mul_comm _ _))))
+
+/-- If `φ' t ≠ 0`, the differential of `(x, t) ↦ (x, φ t)` on `M × 𝕜` at `(x, t)` is
+invertible. -/
+theorem isInvertible_mfderiv_prodMap_id {φ : 𝕜 → 𝕜} {p : M × 𝕜}
+    (hφ : DifferentiableAt 𝕜 φ p.2) (hφ' : deriv φ p.2 ≠ 0) :
+    (mfderiv (I.prod 𝓘(𝕜)) (I.prod 𝓘(𝕜)) (Prod.map id φ) p).IsInvertible := by
+  refine ⟨(tangentSpaceProdEquiv p).trans
+    (((ContinuousLinearEquiv.refl 𝕜 (TangentSpace I p.1)).prodCongr
+      ((NormedSpace.fromTangentSpace p.2).trans
+        ((ContinuousLinearEquiv.unitsEquivAut 𝕜 (Units.mk0 _ hφ')).trans
+          (NormedSpace.fromTangentSpace (φ p.2)).symm))).trans
+      (tangentSpaceProdEquiv (p.1, φ p.2)).symm),
+    ContinuousLinearMap.ext fun v ↦ (tangentSpaceProdEquiv (p.1, φ p.2)).injective ?_⟩
+  rw [tangentSpaceProdEquiv_mfderiv_prodMap_id hφ]
+  simp only [ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.trans_apply,
+    ContinuousLinearEquiv.apply_symm_apply, ContinuousLinearEquiv.prodCongr_apply,
+    ContinuousLinearEquiv.refl_apply, ContinuousLinearEquiv.unitsEquivAut_apply, Units.val_mk0,
+    Prod.map, mul_comm]
+
 /-- On the common domain of two product charts, the tangent coordinate change of a product
 manifold is the product of the tangent coordinate changes of the factors. -/
 theorem tangentCoordChange_prod [IsManifold I 1 M] [IsManifold J 1 N] {p q z : M × N}
@@ -766,5 +820,56 @@ theorem tangentSpaceProdEquiv_symmL_trivializationAt [IsManifold I 1 M] [IsManif
   exact congrArg (fun L : E × F →L[𝕜] E × F ↦ L v) h
 
 end Prod
+
+section Sum
+
+variable {M' : Type*} [TopologicalSpace M'] [ChartedSpace H M'] [IsManifold I 1 M]
+  [IsManifold I 1 M']
+
+/-- The tangent coordinate changes of a disjoint union `M ⊕ M'` between charts at points of `M`
+are those of `M`. -/
+theorem tangentCoordChange_sumInl (x y z : M) :
+    tangentCoordChange I (Sum.inl x : M ⊕ M') (Sum.inl y) (Sum.inl z) =
+      tangentCoordChange I x y z := by
+  simp only [tangentCoordChange_def, extChartAt_inl_apply]
+  congr 1
+  have : Nonempty H := nonempty_of_chartedSpace x
+  ext w
+  simp [ChartedSpace.sum_chartAt_inl, Sum.inl_injective.extend_apply]
+
+/-- The tangent coordinate changes of a disjoint union `M ⊕ M'` between charts at points of `M'`
+are those of `M'`. -/
+theorem tangentCoordChange_sumInr (x y z : M') :
+    tangentCoordChange I (Sum.inr x : M ⊕ M') (Sum.inr y) (Sum.inr z) =
+      tangentCoordChange I x y z := by
+  simp only [tangentCoordChange_def, extChartAt_inr_apply]
+  congr 1
+  have : Nonempty H := nonempty_of_chartedSpace x
+  ext w
+  simp [ChartedSpace.sum_chartAt_inr, Sum.inr_injective.extend_apply]
+
+/-- Over the domain of the chart at `x`, the inverse of the canonical tangent-bundle trivialization
+of `M ⊕ M'` at a point `x` of `M` is the inverse trivialization of `M` at `x`. -/
+theorem symmL_trivializationAt_sumInl {x z : M} (hz : z ∈ (chartAt H x).source) :
+    (trivializationAt E (TangentSpace I : M ⊕ M' → Type _) (Sum.inl x)).symmL 𝕜 (Sum.inl z) =
+      (trivializationAt E (TangentSpace I : M → Type _) x).symmL 𝕜 z := by
+  have : Nonempty H := nonempty_of_chartedSpace x
+  rw [TangentBundle.symmL_trivializationAt_eq_core
+      (by simpa [ChartedSpace.sum_chartAt_inl] using hz),
+    TangentBundle.symmL_trivializationAt_eq_core hz]
+  exact tangentCoordChange_sumInl x z z
+
+/-- Over the domain of the chart at `y`, the inverse of the canonical tangent-bundle trivialization
+of `M ⊕ M'` at a point `y` of `M'` is the inverse trivialization of `M'` at `y`. -/
+theorem symmL_trivializationAt_sumInr {y z : M'} (hz : z ∈ (chartAt H y).source) :
+    (trivializationAt E (TangentSpace I : M ⊕ M' → Type _) (Sum.inr y)).symmL 𝕜 (Sum.inr z) =
+      (trivializationAt E (TangentSpace I : M' → Type _) y).symmL 𝕜 z := by
+  have : Nonempty H := nonempty_of_chartedSpace y
+  rw [TangentBundle.symmL_trivializationAt_eq_core
+      (by simpa [ChartedSpace.sum_chartAt_inr] using hz),
+    TangentBundle.symmL_trivializationAt_eq_core hz]
+  exact tangentCoordChange_sumInr y z z
+
+end Sum
 
 end TauCeti.Manifold

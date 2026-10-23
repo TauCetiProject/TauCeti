@@ -28,7 +28,9 @@ transport this holds for every boundaryless model, not only for self-modelled ma
 the coordinate form in which handles are attached to sublevel sets.
 
 As a first application, a nondegenerate critical point of index `0` is a strict local minimum,
-and one of index `dim M` is a strict local maximum.
+and one of index `dim M` is a strict local maximum. For every other index, explicit coordinate
+curves approach the critical point through values below and above the critical value; in
+dimension two this is the index-one saddle model `f = f x - u² + v²`.
 
 ## Main declarations
 
@@ -38,6 +40,10 @@ and one of index `dim M` is a strict local maximum.
   space, with `TauCeti.MorseChart.eq_quadratic_normalizedChart` its sum-of-squares equation.
 * `TauCeti.IsManifoldNondegenerateCriticalPoint.exists_normalized_morseChart`: the normalized
   Morse lemma on a manifold with an arbitrary boundaryless model.
+* `TauCeti.IsManifoldNondegenerateCriticalPoint.exists_twoDimensional_saddleChart`: the
+  index-one normal form in dimension two.
+* `TauCeti.IsManifoldNondegenerateCriticalPoint.exists_saddleCurves`: curves approaching a
+  critical point of index strictly between `0` and `dim M` through lower and higher values.
 * `TauCeti.IsManifoldNondegenerateCriticalPoint.eventually_lt_of_manifoldMorseIndex_eq_zero` and
   `TauCeti.IsManifoldNondegenerateCriticalPoint.eventually_lt_of_manifoldMorseIndex_eq_finrank`:
   strict local extrema at critical points of extreme index.
@@ -221,6 +227,117 @@ theorem IsManifoldNondegenerateCriticalPoint.exists_normalized_morseChart
     have hq := φ.eq_quadratic_normalizedChart (y := BoundarylessModel.homeomorph I M y) hy
     rw [BoundarylessModel.manifoldMorseIndex_eq, hx', ← hcoe] at hq
     simpa only [comp_apply, Homeomorph.symm_apply_apply, hx'] using hq
+
+/-- **The two-dimensional saddle normal form.** At a nondegenerate critical point of index one
+on a two-dimensional manifold, there are smooth Euclidean coordinates `(u, v)` centred at the
+point in which `f = f x - u² + v²` on the whole chart source. -/
+theorem IsManifoldNondegenerateCriticalPoint.exists_twoDimensional_saddleChart
+    (hf : ∀ᶠ y in 𝓝 x, ContMDiffAt I 𝓘(ℝ) ∞ f y)
+    (h : IsManifoldNondegenerateCriticalPoint I f x) (hdim : Module.finrank ℝ E = 2)
+    (hindex : manifoldMorseIndex I f x = 1) :
+    ∃ ψ : PartialDiffeomorph I
+        𝓘(ℝ, EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) M
+        (EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) ∞,
+      x ∈ ψ.source ∧ ψ x = 0 ∧ ∀ y ∈ ψ.source,
+        f y = f x - (ψ y (finCongr hdim.symm 0)) ^ 2 +
+          (ψ y (finCongr hdim.symm 1)) ^ 2 := by
+  obtain ⟨ψ, hxψ, hψx, hψ⟩ := h.exists_normalized_morseChart hf
+  refine ⟨ψ, hxψ, hψx, fun y hy ↦ ?_⟩
+  rw [hψ y hy, hindex, ← Equiv.sum_comp (finCongr hdim.symm)
+    (fun i ↦ (if i.val < 1 then -1 else 1) * ψ y i ^ 2), Fin.sum_univ_two]
+  norm_num [Fin.val_cast]
+  ring
+
+/-- At a nondegenerate critical point whose Morse index is neither `0` nor `dim M`, two
+coordinate-axis curves of a normalized Morse chart converge to the critical point through values
+strictly below and strictly above its value. The curves are defined on all of `ℝ`; the
+inequalities hold for every sufficiently small nonzero parameter. -/
+theorem IsManifoldNondegenerateCriticalPoint.exists_saddleCurves
+    (hf : ∀ᶠ y in 𝓝 x, ContMDiffAt I 𝓘(ℝ) ∞ f y)
+    (h : IsManifoldNondegenerateCriticalPoint I f x) (hpos : 0 < manifoldMorseIndex I f x)
+    (hlt : manifoldMorseIndex I f x < Module.finrank ℝ E) :
+    ∃ γneg γpos : ℝ → M,
+      Tendsto γneg (𝓝 0) (𝓝 x) ∧ γneg 0 = x ∧
+      Tendsto γpos (𝓝 0) (𝓝 x) ∧ γpos 0 = x ∧
+      ∀ᶠ t in 𝓝[≠] 0, f (γneg t) < f x ∧ f x < f (γpos t) := by
+  obtain ⟨ψ, hxψ, hψx, hψ⟩ := h.exists_normalized_morseChart hf
+  -- Pull back the first (negative) and last (positive) coordinate axes through the inverse chart.
+  let i0 : Fin (Module.finrank ℝ E) := ⟨0, hpos.trans hlt⟩
+  let i1 : Fin (Module.finrank ℝ E) := ⟨Module.finrank ℝ E - 1, by omega⟩
+  let uneg : ℝ → EuclideanSpace ℝ (Fin (Module.finrank ℝ E)) :=
+    fun t ↦ EuclideanSpace.single i0 t
+  let upos : ℝ → EuclideanSpace ℝ (Fin (Module.finrank ℝ E)) :=
+    fun t ↦ EuclideanSpace.single i1 t
+  let γneg : ℝ → M := fun t ↦ ψ.toOpenPartialHomeomorph.symm (uneg t)
+  let γpos : ℝ → M := fun t ↦ ψ.toOpenPartialHomeomorph.symm (upos t)
+  have huneg : Continuous uneg := by
+    unfold uneg EuclideanSpace.single PiLp.single
+    apply (PiLp.continuous_toLp 2 (fun _ : Fin (Module.finrank ℝ E) ↦ ℝ)).comp
+    apply continuous_pi
+    intro i
+    simp only [Pi.single_apply]
+    split_ifs <;> fun_prop
+  have hupos : Continuous upos := by
+    unfold upos EuclideanSpace.single PiLp.single
+    apply (PiLp.continuous_toLp 2 (fun _ : Fin (Module.finrank ℝ E) ↦ ℝ)).comp
+    apply continuous_pi
+    intro i
+    simp only [Pi.single_apply]
+    split_ifs <;> fun_prop
+  have hzero : (0 : EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) ∈ ψ.target := by
+    simpa only [hψx] using ψ.map_source hxψ
+  have hinvzero : ψ.toOpenPartialHomeomorph.symm 0 = x := by
+    rw [← hψx]
+    exact ψ.left_inv hxψ
+  have huneg0 : uneg 0 = 0 := by simp [uneg]
+  have hupos0 : upos 0 = 0 := by simp [upos]
+  -- Openness of the chart target makes both inverse-chart curves valid near zero.
+  have hunegTarget : ∀ᶠ t in 𝓝 0, uneg t ∈ ψ.target := by
+    apply huneg.continuousAt
+    simpa only [huneg0] using ψ.open_target.mem_nhds hzero
+  have huposTarget : ∀ᶠ t in 𝓝 0, upos t ∈ ψ.target := by
+    apply hupos.continuousAt
+    simpa only [hupos0] using ψ.open_target.mem_nhds hzero
+  have hγneg : Tendsto γneg (𝓝 0) (𝓝 x) := by
+    have hcont : ContinuousAt ψ.toOpenPartialHomeomorph.symm (uneg 0) := by
+      rw [huneg0]
+      exact ψ.toOpenPartialHomeomorph.continuousAt_symm hzero
+    have hbase : ψ.toOpenPartialHomeomorph.symm (uneg 0) = x := by
+      rw [huneg0, hinvzero]
+    rw [← hbase]
+    -- `ContinuousAt.comp` bundles the displayed lambda as a function composition.
+    change Tendsto (ψ.toOpenPartialHomeomorph.symm ∘ uneg) (𝓝 0)
+      (𝓝 (ψ.toOpenPartialHomeomorph.symm (uneg 0)))
+    exact hcont.comp (huneg.continuousAt : ContinuousAt uneg 0)
+  have hγpos : Tendsto γpos (𝓝 0) (𝓝 x) := by
+    have hcont : ContinuousAt ψ.toOpenPartialHomeomorph.symm (upos 0) := by
+      rw [hupos0]
+      exact ψ.toOpenPartialHomeomorph.continuousAt_symm hzero
+    have hbase : ψ.toOpenPartialHomeomorph.symm (upos 0) = x := by
+      rw [hupos0, hinvzero]
+    rw [← hbase]
+    -- `ContinuousAt.comp` bundles the displayed lambda as a function composition.
+    change Tendsto (ψ.toOpenPartialHomeomorph.symm ∘ upos) (𝓝 0)
+      (𝓝 (ψ.toOpenPartialHomeomorph.symm (upos 0)))
+    exact hcont.comp (hupos.continuousAt : ContinuousAt upos 0)
+  refine ⟨γneg, γpos, hγneg, by simp [γneg, huneg0, hinvzero], hγpos,
+    by simp [γpos, hupos0, hinvzero], ?_⟩
+  filter_upwards [hunegTarget.filter_mono nhdsWithin_le_nhds,
+    huposTarget.filter_mono nhdsWithin_le_nhds, self_mem_nhdsWithin] with t htn htp ht
+  have hsourceNeg : γneg t ∈ ψ.source := ψ.map_target htn
+  have hsourcePos : γpos t ∈ ψ.source := ψ.map_target htp
+  have hrightNeg : ψ (γneg t) = uneg t := ψ.right_inv htn
+  have hrightPos : ψ (γpos t) = upos t := ψ.right_inv htp
+  have ht0 : t ≠ 0 := by simpa only [mem_compl_iff, mem_singleton_iff] using ht
+  -- On the two axes the normalized Morse equation reduces respectively to `-t²` and `t²`.
+  constructor
+  · rw [hψ (γneg t) hsourceNeg, hrightNeg]
+    simp [uneg, i0, EuclideanSpace.single, PiLp.single_apply, hpos]
+    nlinarith [sq_pos_of_ne_zero ht0]
+  · rw [hψ (γpos t) hsourcePos, hrightPos]
+    have hle : ¬Module.finrank ℝ E - 1 < manifoldMorseIndex I f x := by omega
+    simp [upos, i1, EuclideanSpace.single, PiLp.single_apply, hle]
+    nlinarith [sq_pos_of_ne_zero ht0]
 
 /-- At a nondegenerate critical point of Morse index `0` of a function smooth near it, on a
 manifold with a boundaryless model, the function has a strict local minimum. -/

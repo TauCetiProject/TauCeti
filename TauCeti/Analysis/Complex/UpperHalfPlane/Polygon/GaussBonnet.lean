@@ -131,8 +131,7 @@ section eraseLast
 
 variable (P : CompactConvexPolygon (n + 2)) (hn : 2 ≤ n)
 
-omit [NeZero n]
-
+omit [NeZero n] in
 /-- Every vertex other than `vertex 0` and the last two lies to the left of the diagonal from the
 penultimate vertex to `vertex 0`. -/
 theorem mem_leftHalfPlane_diagonal {j : Fin (n + 2)} (hj₀ : j ≠ 0) (hj : j.val < n) :
@@ -155,6 +154,7 @@ theorem mem_leftHalfPlane_diagonal {j : Fin (n + 2)} (hj₀ : j ≠ 0) (hj : j.v
     (P.vertex_injective.ne (Fin.ne_of_val_ne hj.ne))
     (mem_leftHalfPlane_geodesicBetween_of_mem_leftHalfPlane (P.vertex_injective.ne hj₀.symm) key)
 
+omit [NeZero n] in
 include hn in
 /-- The last vertex lies to the right of the diagonal from the penultimate vertex to
 `vertex 0`. -/
@@ -169,6 +169,7 @@ theorem last_mem_rightHalfPlane_diagonal :
     (P.vertex_mem_leftHalfPlane_zero (Fin.last_pos' ..).ne' (Fin.last_ne_one hn₀))).1
     (P.toReal_orientedAngle_lt (Fin.castSucc_last_ne_zero hn₀) (Fin.castSucc_lt_last _))
 
+omit [NeZero n] in
 /-- The convex polygon on the first `n + 1` vertices of a convex polygon with `n + 2 ≥ 4`
 vertices. -/
 def eraseLast : CompactConvexPolygon (n + 1) where
@@ -186,12 +187,14 @@ def eraseLast : CompactConvexPolygon (n + 1) where
       exact P.vertex_mem_leftHalfPlane _ _ ((Fin.castSucc_injective _).ne hji)
         (by rw [← Fin.castSucc_add_one_of_ne_last hi]; exact (Fin.castSucc_injective _).ne hji')
 
+omit [NeZero n] in
 /-- The vertices of `eraseLast`. -/
 @[simp]
 theorem vertex_eraseLast (i : Fin (n + 1)) :
     (P.eraseLast hn).vertex i = P.vertex (Fin.castSucc i) := by
   rfl
 
+omit [NeZero n] in
 include hn in
 /-- `vertex 0` lies to the left of the edge from the penultimate vertex to the last one. -/
 private theorem zero_mem_leftHalfPlane_penultimate_last :
@@ -202,6 +205,7 @@ private theorem zero_mem_leftHalfPlane_penultimate_last :
   exact P.vertex_mem_leftHalfPlane _ _ (Fin.castSucc_last_ne_zero hn₀).symm
     (by rw [(Fin.coeSucc_eq_succ.trans (Fin.succ_last _))]; exact (Fin.last_pos' ..).ne)
 
+omit [NeZero n] in
 include hn in
 /-- The penultimate vertex lies to the left of the edge from the last vertex to `vertex 0`. -/
 private theorem penultimate_mem_leftHalfPlane_last_zero :
@@ -212,6 +216,7 @@ private theorem penultimate_mem_leftHalfPlane_last_zero :
   exact P.vertex_mem_leftHalfPlane _ _ (Fin.castSucc_lt_last _).ne
     (by rw [Fin.last_add_one]; exact Fin.castSucc_last_ne_zero hn₀)
 
+omit [NeZero n] in
 include hn in
 /-- The last vertex lies to the left of the diagonal from `vertex 0` to the penultimate
 vertex. -/
@@ -222,6 +227,7 @@ private theorem last_mem_leftHalfPlane_zero_penultimate :
   rw [leftHalfPlane_geodesicBetween_swap (P.vertex_injective.ne (Fin.castSucc_last_ne_zero hn₀))]
   exact P.last_mem_rightHalfPlane_diagonal hn
 
+omit [NeZero n] in
 include hn in
 /-- The triangle on the penultimate vertex, the last vertex and `vertex 0` is the intersection of
 the closed left half-planes of the last two edges with the closed right half-plane of the diagonal.
@@ -241,6 +247,7 @@ private theorem triangle_eq_inter :
     ← closedSide_eq_closure_leftHalfPlane_of_mem (P.penultimate_mem_leftHalfPlane_last_zero hn),
     ← closedSide_eq_closure_leftHalfPlane_of_mem (P.last_mem_leftHalfPlane_zero_penultimate hn)]
 
+omit [NeZero n] in
 /-- A point lies in the carrier of `eraseLast` if and only if it lies in the closed left
 half-planes of the first `n` edges and of the diagonal. -/
 theorem mem_carrier_eraseLast_iff (z : ℍ) :
@@ -266,6 +273,7 @@ theorem mem_carrier_eraseLast_iff (z : ℍ) :
     · rw [Fin.castSucc_add_one_of_ne_last hi]
       exact h _ (Fin.val_lt_last hi)
 
+omit [NeZero n] in
 /-- The carrier of a convex polygon is the union of the carrier of `eraseLast` and the triangle on
 the penultimate vertex, the last vertex and `vertex 0`, provided both lie in the relevant closed
 half-planes. These hypotheses are discharged in `carrier_eq_union_triangle` once the hull property
@@ -301,6 +309,7 @@ private theorem carrier_eq_union_triangle_of_subset
         · exact hz.1.1
         · exact hz.1.2
 
+omit [NeZero n] in
 /-- The two pieces of the cut meet only on the geodesic line through the diagonal. -/
 theorem carrier_eraseLast_inter_triangle_subset :
     (P.eraseLast hn).carrier ∩
@@ -315,6 +324,7 @@ theorem carrier_eraseLast_inter_triangle_subset :
     ((mem_closure_leftHalfPlane_iff _ _).1 ((P.mem_carrier_eraseLast_iff hn z).1 hzK).2)
     ((mem_closure_rightHalfPlane_iff _ _).1 hzT.2)
 
+omit [NeZero n] in
 /-- The interior angle at `vertex 0` splits along the diagonal. -/
 theorem interiorAngle_zero_eq :
     P.interiorAngle 0 = (P.eraseLast hn).interiorAngle 0 +
@@ -334,6 +344,7 @@ theorem interiorAngle_zero_eq :
     (P.vertex_mem_leftHalfPlane_zero (Fin.last_pos' ..).ne' (Fin.last_ne_one hn₀))
     (P.last_mem_leftHalfPlane_zero_penultimate hn)
 
+omit [NeZero n] in
 /-- The interior angle at the penultimate vertex splits along the diagonal. -/
 theorem interiorAngle_penultimate_eq :
     P.interiorAngle (Fin.castSucc (Fin.last n)) =
@@ -365,6 +376,7 @@ theorem interiorAngle_penultimate_eq :
   exact (interiorAngle_add (P.zero_mem_leftHalfPlane_penultimate_last hn) hD hCD).trans
     (add_comm _ _)
 
+omit [NeZero n] in
 /-- The interior angle at the last vertex is that of the triangle on the penultimate vertex, the
 last vertex and `vertex 0`. -/
 theorem interiorAngle_last_eq :
@@ -375,12 +387,14 @@ theorem interiorAngle_last_eq :
     (eq_sub_of_add_eq (Fin.coeSucc_eq_succ.trans (Fin.succ_last _))).symm,
     Fin.last_add_one]
 
+omit [NeZero n] in
 /-- The interior angles away from the diagonal are unchanged. -/
 theorem interiorAngle_castSucc_eq {i : Fin (n + 1)} (hi₀ : i ≠ 0) (hi : i ≠ Fin.last n) :
     P.interiorAngle (Fin.castSucc i) = (P.eraseLast hn).interiorAngle i := by
   simp only [CompactConvexPolygon.interiorAngle_def, vertex_eraseLast,
     Fin.castSucc_sub_one_of_ne_zero hi₀, Fin.castSucc_add_one_of_ne_last hi]
 
+omit [NeZero n] in
 /-- The sum of the interior angles splits along the diagonal. -/
 theorem sum_interiorAngle_eq :
     ∑ i, P.interiorAngle i = ∑ i, (P.eraseLast hn).interiorAngle i +
@@ -403,11 +417,13 @@ theorem sum_interiorAngle_eq :
       (P.vertex (Fin.castSucc (Fin.last n)))]
   ring
 
+omit [NeZero n] in
 /-- The last two vertices are distinct. -/
 private theorem vertex_penultimate_ne_last :
     P.vertex (Fin.castSucc (Fin.last n)) ≠ P.vertex (Fin.last (n + 1)) :=
   (Fin.coeSucc_eq_succ.trans (Fin.succ_last _)) ▸ P.vertex_ne_vertex_add_one _
 
+omit [NeZero n] in
 include hn in
 /-- `vertex 0` is not on the geodesic through the edge from the penultimate vertex to the last
 one. -/
@@ -419,6 +435,7 @@ private theorem zero_notMem_range_geodesicLine_penultimate_last :
   exact P.vertex_notMem_range_geodesicLine (Fin.castSucc_last_ne_zero hn₀).symm
     (by rw [(Fin.coeSucc_eq_succ.trans (Fin.succ_last _))]; exact (Fin.last_pos' ..).ne)
 
+omit [NeZero n] in
 include hn in
 /-- The triangle on the penultimate vertex, the last vertex and `vertex 0` lies in the closed left
 half-plane of every edge. -/

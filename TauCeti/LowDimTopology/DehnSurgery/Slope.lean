@@ -26,17 +26,16 @@ longitude, `H₁(T; ℤ)` is identified with `ℤ × ℤ` (first coordinate the 
 `λ`-coefficient) and every slope acquires a value `p / q ∈ ℚ ∪ {∞}`, the ratio of its coordinates;
 the filling then sends the solid torus's meridian to `p · μ + q · λ`.
 
-This file builds the slope arithmetic for the framed model, the first piece of the
-geometric-topology roadmap's Dehn-surgery layer (`TauCetiRoadmap/GeometricTopology/README.md`,
-layer 5, "Dehn surgery": "Slopes, with the primitive pinned … give a `FramedBoundaryTorus` an
-ordered basis `(μ, λ)` … and the resulting bijection `Slope T ≃ ℚ ∪ {∞}`"). The layer asks for two
-objects kept **distinct**: the sign-quotient `Slope` (basis-free) and the `ℚ ∪ {∞}` parametrisation
-(basis-dependent). Accordingly `TauCeti.Slope M` is the basis-free set of primitive classes modulo
-sign in an abstract `ℤ`-module `M`, and every framing-dependent notion — `meridian`, `longitude`,
-`value`, and the bijection `slopeEquiv` — is a field/operation of `TauCeti.FramedBoundaryTorus`,
-carrying its own ordered basis. Identifying `H₁(T; ℤ)` with the boundary torus of a genuine link
-complement is now expressed through `BoundaryTorus.firstHomology`; constructing that boundary torus
-from the complement is later layer-5 work that consumes this arithmetic.
+This file builds the slope arithmetic for the framed model. It keeps two objects distinct: the
+sign-quotient `Slope`, which is basis-free, and the `ℚ ∪ {∞}` parametrisation, which depends on a
+basis. So `TauCeti.Slope M` is the set of primitive classes modulo sign in an abstract `ℤ`-module
+`M`, and every framing-dependent notion — `meridian`, `longitude`, `value`, and the bijection
+`slopeEquiv` — belongs to `TauCeti.FramedBoundaryTorus`, which carries its own ordered basis.
+For a topological boundary torus, `H₁(T; ℤ)` is `BoundaryTorus.firstHomology`, its degree-one
+singular homology; the framed boundary torus of a knot exterior is built in
+`TauCeti.LowDimTopology.DehnSurgery.Framing`, as
+`TauCeti.IsSolidTorusNeighborhood.framedBoundaryTorus` via
+`TauCeti.FramedBoundaryTorus.ofHomeomorph`.
 
 Primitivity of `v : M` is expressed basis-freely: `v` is primitive when some `ℤ`-linear functional
 `M →ₗ[ℤ] ℤ` sends it to `1`, so `v` splits off a copy of `ℤ`. Over the standard lattice

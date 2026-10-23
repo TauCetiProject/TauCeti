@@ -99,9 +99,9 @@ variable {k G V : Type*} [CommRing k] [Monoid G] [AddCommGroup V] [Module k V]
   (ρ : Representation k G V)
 
 /-- An intertwining linear map carries the augmentation submodule into the augmentation
-submodule, allowing an extension of the coefficient ring. Only the compatibility of the actions
-is used, so `e` need not be a homomorphism. -/
-theorem coinvariantsKer_map_le {K G' V' : Type*} [CommRing K] [Algebra k K]
+submodule over a compatible scalar tower. The scalar action on `K` need not come from an algebra
+structure, and the function `e` between acting monoids need not be a homomorphism. -/
+theorem coinvariantsKer_map_le {K G' V' : Type*} [CommRing K] [SMul k K]
     [Monoid G'] [AddCommGroup V'] [Module k V'] [Module K V'] [IsScalarTower k K V']
     {ρ' : Representation K G' V'} (e : G → G') (φ : V →ₗ[k] V')
     (hφ : ∀ g x, φ (ρ g x) = ρ' (e g) (φ x)) :

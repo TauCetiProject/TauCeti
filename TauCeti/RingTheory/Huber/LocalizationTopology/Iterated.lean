@@ -234,10 +234,14 @@ private theorem existsUnique_continuous_ringHom_toIteratedLocalization :
   have _ := isTopologicalRing_locUniformSpace P T s S hden
   have hB := hasDenominatorPower_completionLocalization_of_coe_eq_image P T s S hden T'' s'' S''
     hden'' SB TB hTB
-  have _ := isUniformAddGroup_locUniformSpace _ TB _ SB hB
-  have _ := isTopologicalRing_locUniformSpace _ TB _ SB hB
-  have _ := isHuberRing_completion_locTopology _ TB _ SB hB
-  have hu := isUnit_toCompletionLoc_of_dvd _ TB _ SB hB dvd_rfl
+  have _ := isUniformAddGroup_locUniformSpace (completionLocalization P T s S hden) TB
+    (toCompletionLoc P T s S hden s'') SB hB
+  have _ := isTopologicalRing_locUniformSpace (completionLocalization P T s S hden) TB
+    (toCompletionLoc P T s S hden s'') SB hB
+  have _ := isHuberRing_completion_locTopology (completionLocalization P T s S hden) TB
+    (toCompletionLoc P T s S hden s'') SB hB
+  have hu := isUnit_toCompletionLoc_of_dvd (completionLocalization P T s S hden) TB
+    (toCompletionLoc P T s S hden s'') SB hB dvd_rfl
   exact existsUnique_continuous_ringHom_completion_locTopology P T'' s'' S'' hden''
     ((continuous_toCompletionLoc _ _ _ SB hB).comp
       (continuous_toCompletionLoc P T s S hden)).continuousAt hu
@@ -276,7 +280,8 @@ private theorem existsUnique_continuous_ringHom_ofIteratedLocalization :
       (toCompletionLoc P T s S hden a) = toCompletionLoc P T'' s'' S'' hden'' a := by
     rw [← RingHom.comp_apply, restrictionRingHom_comp_toCompletionLoc]
   have hu := isUnit_toCompletionLoc_of_dvd P T'' s'' S'' hden'' dvd_rfl
-  refine existsUnique_continuous_ringHom_completion_locTopology _ TB _ SB hB
+  refine existsUnique_continuous_ringHom_completion_locTopology
+    (completionLocalization P T s S hden) TB (toCompletionLoc P T s S hden s'') SB hB
     (continuous_restrictionRingHom P T s S hden T'' s'' S'' hden'' r hs'' hT).continuousAt
     (hρ s'' ▸ hu) fun u hu' ↦ ?_
   -- a numerator `ρ(t)` goes to `t`, so its fraction is the distinguished fraction `t/s''`
@@ -328,7 +333,8 @@ private theorem exists_ringEquiv_iteratedLocalization :
   obtain ⟨g, ⟨hg, hgc⟩, -⟩ := existsUnique_continuous_ringHom_ofIteratedLocalization P T s S hden
     T'' s'' S'' hden'' SB TB hTB r hs'' hT
   refine ⟨RingEquiv.ofRingHom f g ?_ ?_, hf, hg, hfc, hgc⟩
-  · refine eq_id_of_comp_toCompletionLoc_eq_self _ TB _ SB hB _ (hf.comp hg) ?_
+  · refine eq_id_of_comp_toCompletionLoc_eq_self (completionLocalization P T s S hden) TB
+      (toCompletionLoc P T s S hden s'') SB hB _ (hf.comp hg) ?_
     rw [RingHom.comp_assoc, hgc]
     refine completion_locTopology_ringHom_ext_of_continuous P T s S hden _ _
       (hf.comp (continuous_restrictionRingHom P T s S hden T'' s'' S'' hden'' r hs'' hT))

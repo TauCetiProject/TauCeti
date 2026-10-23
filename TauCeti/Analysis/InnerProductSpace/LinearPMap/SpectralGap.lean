@@ -103,13 +103,7 @@ theorem _root_.IsSelfAdjoint.mul_norm_le_norm_smul_sub_of_spectrum_gap (hA : IsS
     s * ‖(x : E)‖ ≤ ‖(c : ℂ) • (x : E) - A x‖ := by
   have hc : (c : ℂ) ∈ A.resolventSet := by
     simpa using hgap c (by simpa using hs)
-  rw [← le_inv_mul_iff₀ hs]
-  calc
-    ‖(x : E)‖ = ‖A.resolvent (c : ℂ) ((c : ℂ) • (x : E) - A x)‖ := by
-      rw [resolvent_smul_sub_apply hc]
-    _ ≤ ‖A.resolvent (c : ℂ)‖ * ‖(c : ℂ) • (x : E) - A x‖ := (A.resolvent _).le_opNorm _
-    _ ≤ s⁻¹ * ‖(c : ℂ) • (x : E) - A x‖ := by
-      gcongr
-      exact hA.norm_resolvent_le_of_spectrum_gap hs hgap
+  exact ((isResolventAt_resolvent hc).norm_le_inv_iff hs).mp
+    (hA.norm_resolvent_le_of_spectrum_gap hs hgap) x
 
 end TauCeti

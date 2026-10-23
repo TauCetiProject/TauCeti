@@ -178,7 +178,7 @@ theorem injective_lieMapToHom (d : ImmersedLieSubgroupData I K) :
   let _ : IsManifold d.I' ∞ d.X := d.isManifold
   let _ : LieGroup d.I' ∞ d.X := d.lieGroup
   dsimp only
-  apply lieMap_injective_of_mfderiv_injective
+  apply ContMDiffMonoidMorphism.lieMap_injective_of_mfderiv_injective
   exact d.injective_mfderiv_toHom 1
 
 /-- The differential of an immersed presentation takes every source derivation into the ambient

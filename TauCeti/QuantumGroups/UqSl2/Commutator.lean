@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.QuantumGroups.QuantumInteger
+public import TauCeti.QuantumGroups.QuantumInteger.Basic
 public import TauCeti.QuantumGroups.UqSl2.Basic
 
 import Mathlib.Tactic
@@ -54,7 +54,7 @@ theorem e_mul_f_pow (hq : q - q⁻¹ ≠ 0) (r : ℕ) :
       eq_add_of_sub_eq' e_mul_f_sub_f_mul_e
     rcases r with _ | r
     · simpa [quantumInteger_one hq] using hef
-    have hq0 : q ≠ 0 := by rintro rfl; simp at hq
+    have hq0 := ne_zero_of_sub_inv_ne_zero hq
     have hf (n : ℕ) (x : UqSl2 q) : f q ^ n * (f q * x) = f q ^ (n + 1) * x := by
       rw [← mul_assoc, ← pow_succ]
     -- The `K` and `K⁻¹` coefficients are two forms of the quantum-integer recurrence.

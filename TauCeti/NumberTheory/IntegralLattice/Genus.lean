@@ -8,6 +8,8 @@ module
 public import TauCeti.NumberTheory.IntegralLattice.Localization.Unimodular
 public import TauCeti.LinearAlgebra.IntegralLattice.Signature
 public import Mathlib.Data.Nat.PrimeFin
+import Mathlib.Data.Int.Associated
+import TauCeti.NumberTheory.Padics.PadicIntegers
 
 /-!
 # The genus of an integral lattice
@@ -17,10 +19,33 @@ localizations are isometric at every prime. This relation also makes sense for d
 The local condition concerns the actual forms on `ℤ_p ⊗[ℤ] L`, rather than just their extensions
 to `ℚ_p`.
 
+The genus determines the signed determinant. Integral local isometry at `p` changes the
+determinant by the square of a unit of `ℤ_p`, so the absolute determinants have the same
+`p`-adic valuation at every prime and are therefore equal. The real signature fixes the sign,
+since the signed determinant is `(-1) ^ n₋` times the absolute determinant.
+
 For lattices with equal nonzero signed determinants, the local tests reduce to the finite set
 of prime factors of twice the absolute determinant. Outside that set, the local determinants
 are units at an odd prime, so the rank and determinant classification gives an isometry. The
 signature equality already supplies the rank equality.
+
+The genus also fixes the rational quadratic space at every place. An integral local isometry
+extends to the completions, so lattices in one genus have isometric completed rational spaces
+`ℚ_p ⊗[ℚ] V` at every prime, while at the real place their signatures agree by definition.
+Combining these local isometries into an isometry of the rational forms over `ℚ` is the
+Hasse–Minkowski theorem and is not done here. Conversely, for lattices whose rational forms are
+isometric, the signature condition holds automatically, and the genus is decided by the integral
+localizations alone.
+
+## Main results
+
+* `TauCeti.IntegralLattice.SameGenus.determinant_eq`: the genus determines the signed determinant.
+* `TauCeti.IntegralLattice.SameGenus.completedRationalForm_equivalent`: lattices in one genus have
+  isometric completed rational spaces at every prime.
+* `TauCeti.IntegralLattice.sameGenus_iff_localIntegralForm_equivalent_primeFactors`: for equal
+  nonzero determinants, only the primes dividing twice the determinant need checking.
+* `TauCeti.IntegralLattice.sameGenus_iff_localIntegralForm_equivalent`: on isometric rational
+  spaces, the genus is decided by integral local isometry.
 
 ## References
 
@@ -80,6 +105,28 @@ theorem trans (h : L.SameGenus M) (h' : M.SameGenus N) : L.SameGenus N :=
     ⟨h.signature_eq.trans h'.signature_eq,
       fun p ↦ (h.localIntegralForm_equivalent p).trans (h'.localIntegralForm_equivalent p)⟩
 
+/-- **Lattices in the same genus have equal signed determinants.** No nondegeneracy assumption is
+needed: degenerate lattices in one genus both have determinant zero. -/
+theorem determinant_eq (h : L.SameGenus M) : L.determinant = M.determinant := by
+  have habs : L.determinant.natAbs = M.determinant.natAbs := by
+    refine Int.natAbs_eq_iff_associated.mpr
+      (Int.associated_iff_forall_associated_padicInt.mpr fun p _ ↦ ?_)
+    obtain ⟨u, hu⟩ := L.exists_determinant_eq_unit_sq_mul_of_localIntegralForm_equivalent M p
+      (h.localIntegralForm_equivalent p)
+    exact Associated.symm ⟨u ^ 2, by rw [hu, Units.val_pow_eq_pow_val, mul_comm]⟩
+  have hneg : L.sigNeg = M.sigNeg := congrArg (fun s ↦ s.2.2) h.signature_eq
+  rw [L.determinant_eq_neg_one_pow_sigNeg_mul_discriminant,
+    M.determinant_eq_neg_one_pow_sigNeg_mul_discriminant, hneg, discriminant_def,
+    discriminant_def, habs]
+
+/-- **Lattices in the same genus have isometric completed rational spaces**: at every prime `p`
+the quadratic spaces `ℚ_p ⊗[ℚ] V` and `ℚ_p ⊗[ℚ] W` are isometric, since the integral local
+isometry extends to the completions. -/
+theorem completedRationalForm_equivalent (h : L.SameGenus M) (p : ℕ) [Fact p.Prime] :
+    (L.completedRationalForm p).Equivalent (M.completedRationalForm p) :=
+  completedRationalForm_equivalent_of_localIntegralForm_equivalent p
+    (h.localIntegralForm_equivalent p)
+
 end SameGenus
 
 /-- An integral-lattice isometry preserves the genus. -/
@@ -108,5 +155,16 @@ theorem sameGenus_iff_localIntegralForm_equivalent_primeFactors
     · exact hlocal p ((Fact.out : p.Prime).mem_primeFactors hp hn)
     · exact L.localIntegralForm_equivalent_of_not_dvd M (L.finrank_eq_of_signature_eq hsig)
         hdet hp
+
+/-- **On isometric rational spaces the genus is decided by the integral localizations.** If the
+rational forms of `L` and `M` are isometric, then `L` and `M` lie in one genus exactly when their
+integral localizations are isometric at every prime: the rational isometry already supplies the
+equality of signatures. -/
+theorem sameGenus_iff_localIntegralForm_equivalent {L : IntegralLattice V} {M : IntegralLattice W}
+    (hform : L.form.Equivalent M.form) :
+    L.SameGenus M ↔
+      ∀ (p : ℕ) [Fact p.Prime], (L.localIntegralForm p).Equivalent (M.localIntegralForm p) :=
+  ⟨fun h p _ ↦ h.localIntegralForm_equivalent p,
+    fun h ↦ (sameGenus_iff L M).mpr ⟨signature_eq_of_equivalent hform, h⟩⟩
 
 end TauCeti.IntegralLattice

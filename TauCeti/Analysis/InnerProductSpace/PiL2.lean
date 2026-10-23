@@ -5,12 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Order.Chebyshev
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.Normed.Lp.MeasurableSpace
 public import Mathlib.Topology.Algebra.Module.Equiv.Pi
 public import Mathlib.Topology.Algebra.Module.Equiv.Prod
 public import Mathlib.Topology.Algebra.Monoid.FunOnFinite
+
+import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 
 /-!
 # Fibrewise sums of Euclidean coordinates
@@ -27,35 +28,17 @@ Borel measurable structure on the scalar field.
 * `TauCeti.euclideanFiberSum` sums the coordinates of a Euclidean vector over each fibre of a map
   of index types.
 
-The Euclidean norm bounds the sum of coordinate norms by the square root of the number of
-coordinates. This finite-dimensional Cauchy--Schwarz estimate also controls matrix actions
-from entrywise bounds. In the same way the Euclidean distance is at most `√n` times the sup
-distance of the coordinate vectors, which places cubes inside Euclidean balls.
+## Additional results
 
-## Additional result
-
-* `EuclideanSpace.sum_norm_le_sqrt_card_mul_norm`: the sum of coordinate norms is at most the
-  square root of the coordinate count times the Euclidean norm.
-* `EuclideanSpace.dist_le_sqrt_card_mul_dist_ofLp`: the Euclidean distance is at most `√n` times
-  the sup distance of the coordinate vectors.
-* `EuclideanSpace.preimage_ofLp_closedBall_subset_closedBall`,
-  `EuclideanSpace.preimage_ofLp_ball_subset_ball`: a cube of half-side `r` lies in the
-  concentric Euclidean ball of radius `√n * r`.
-* `PiLp.dist_ofLp_le`: the sup distance of the coordinate vectors is at most the `L^p` distance,
-  `1 ≤ p`.
-* `PiLp.closedBall_subset_preimage_ofLp_closedBall`, `PiLp.ball_subset_preimage_ofLp_ball`: a
-  ball of radius `r` in `PiLp p β`, `1 ≤ p`, lies in the concentric sup-norm ball of radius `r`;
-  for Euclidean space, in the concentric cube of half-side `r`.
+* `EuclideanSpace.measurableSet_setOf_forall_pos`: the real positive orthant is measurable.
 * `EuclideanSpace.sqrt_card_pos`: the square root of the dimension is positive.
+* `EuclideanSpace.sum_mul_dist_basisFun_le_sqrt`: a point of the standard simplex is, on average
+  over the vertices weighted by its coordinates, at distance at most `√(1 - ‖x‖ ^ 2)` from them.
+* `EuclideanSpace.abs_sub_sum_mul_basisFun_le_sqrt`: consequently a `K`-Lipschitz function at a
+  point of the standard simplex is within `K * √(1 - ‖x‖ ^ 2)` of the coordinate-weighted average
+  of its values at the vertices.
 * `EuclideanSpace.consEquivL`: splitting off the first coordinate identifies `𝕜ⁿ⁺¹` with
   `𝕜 × 𝕜ⁿ`.
-
-## Source
-
-The coordinate-norm estimate is adapted from
-`ForTauCeti/Analysis/Matrix/EntrywiseOpNorm.lean` in the
-[AIQ-Kitware DKPS formalization](https://github.com/AIQ-Kitware/aiq-dkps-formalization).
-Original copyright (c) 2026 Kitware, Inc.; Apache-2.0.
 -/
 
 public section
@@ -66,58 +49,78 @@ open scoped BigOperators
 
 namespace EuclideanSpace
 
-variable {𝕜 : Type*} [RCLike 𝕜] {ι : Type*} [Fintype ι]
+/-- The positive orthant in finite real Euclidean space is measurable. -/
+theorem measurableSet_setOf_forall_pos {ι : Type*} [Finite ι] :
+    MeasurableSet {x : EuclideanSpace ℝ ι | ∀ i, 0 < x i} := by
+  let : Fintype ι := Fintype.ofFinite ι
+  rw [Set.ofPred_forall]
+  exact MeasurableSet.iInter fun i ↦
+    measurableSet_lt (measurable_const (a := (0 : ℝ))) (by fun_prop)
+
+variable {𝕜 : Type*} {ι : Type*} [Fintype ι]
 
 /-- The square root of the dimension of a nonzero Euclidean space is positive. -/
 theorem sqrt_card_pos [Nonempty ι] : 0 < Real.sqrt (Fintype.card ι) :=
   Real.sqrt_pos.2 (Nat.cast_pos.2 Fintype.card_pos)
 
-/--
-**`ℓ¹ ≤ √card · ℓ²` on Euclidean space.** For `x : EuclideanSpace 𝕜 ι`,
-`∑ i, ‖x i‖ ≤ √(card ι) · ‖x‖`.
--/
-theorem sum_norm_le_sqrt_card_mul_norm
-    (x : EuclideanSpace 𝕜 ι) :
-    ∑ i, ‖x i‖ ≤ Real.sqrt (Fintype.card ι) * ‖x‖ := by
-  have hcs : (∑ i, ‖x i‖) ^ 2 ≤ (Fintype.card ι : ℝ) * ∑ i, ‖x i‖ ^ 2 := by
-    simpa [Finset.card_univ] using
-      sq_sum_le_card_mul_sum_sq (s := (Finset.univ : Finset ι)) (f := fun i => ‖x i‖)
-  have hnorm : ‖x‖ ^ 2 = ∑ i, ‖x i‖ ^ 2 := EuclideanSpace.norm_sq_eq x
-  have hrhs_nonneg : 0 ≤ Real.sqrt (Fintype.card ι) * ‖x‖ :=
-    mul_nonneg (Real.sqrt_nonneg _) (norm_nonneg _)
-  have hsq : (∑ i, ‖x i‖) ^ 2 ≤ (Real.sqrt (Fintype.card ι) * ‖x‖) ^ 2 := by
-    have hrw : (Real.sqrt (Fintype.card ι) * ‖x‖) ^ 2 = (Fintype.card ι : ℝ) * ‖x‖ ^ 2 := by
-      rw [mul_pow, Real.sq_sqrt (by positivity : (0 : ℝ) ≤ (Fintype.card ι : ℝ))]
-    rw [hrw, hnorm]; exact hcs
-  exact (abs_le_of_sq_le_sq' hsq hrhs_nonneg).2
+/-- For a vector `x` whose coordinates sum to one, the `x`-weighted mean squared distance from
+`x` to the standard basis vectors is `1 - ‖x‖ ^ 2`. -/
+theorem sum_mul_dist_basisFun_sq {x : EuclideanSpace ℝ ι} (hx1 : ∑ i, x i = 1) :
+    ∑ i, x i * dist x (EuclideanSpace.basisFun ι ℝ i) ^ 2 = 1 - ‖x‖ ^ 2 := by
+  classical
+  have hdist (i : ι) :
+      dist x (EuclideanSpace.basisFun ι ℝ i) ^ 2 = ‖x‖ ^ 2 - 2 * x i + 1 := by
+    rw [EuclideanSpace.basisFun_apply, dist_eq_norm, norm_sub_sq_real,
+      EuclideanSpace.inner_single_right]
+    simp
+  calc
+    ∑ i, x i * dist x (EuclideanSpace.basisFun ι ℝ i) ^ 2 =
+        ∑ i, (‖x‖ ^ 2 * x i - 2 * x i ^ 2 + x i) :=
+      Finset.sum_congr rfl fun i _ ↦ by rw [hdist]; ring
+    _ = ‖x‖ ^ 2 * ∑ i, x i - 2 * ∑ i, x i ^ 2 + ∑ i, x i := by
+      rw [Finset.sum_add_distrib, Finset.sum_sub_distrib, Finset.mul_sum, Finset.mul_sum]
+    _ = 1 - ‖x‖ ^ 2 := by
+      rw [hx1, ← EuclideanSpace.real_norm_sq_eq]
+      ring
 
-/-- The Euclidean distance between two points is at most the square root of the coordinate count
-times the sup distance between their coordinate vectors. -/
-theorem dist_le_sqrt_card_mul_dist_ofLp (x y : EuclideanSpace 𝕜 ι) :
-    dist x y ≤ Real.sqrt (Fintype.card ι) * dist (WithLp.ofLp x) (WithLp.ofLp y) := by
-  have h := (PiLp.lipschitzWith_toLp 2 (fun _ : ι => 𝕜)).dist_le_mul (WithLp.ofLp x)
-    (WithLp.ofLp y)
-  have hc : (((Fintype.card ι : NNReal) ^ (1 / (2 : ENNReal)).toReal : NNReal) : ℝ) =
-      Real.sqrt (Fintype.card ι) := by
-    rw [NNReal.coe_rpow, NNReal.coe_natCast, Real.sqrt_eq_rpow]
-    norm_num
-  rwa [hc, WithLp.toLp_ofLp, WithLp.toLp_ofLp] at h
+/-- A point `x` of the standard simplex is, on average over the vertices weighted by its own
+coordinates, at distance at most `√(1 - ‖x‖ ^ 2)` from them. -/
+theorem sum_mul_dist_basisFun_le_sqrt {x : EuclideanSpace ℝ ι} (hx0 : ∀ i, 0 ≤ x i)
+    (hx1 : ∑ i, x i = 1) :
+    ∑ i, x i * dist x (EuclideanSpace.basisFun ι ℝ i) ≤ √(1 - ‖x‖ ^ 2) := by
+  apply Real.le_sqrt_of_sq_le
+  calc
+    (∑ i, x i * dist x (EuclideanSpace.basisFun ι ℝ i)) ^ 2 ≤
+        (∑ i, x i) * ∑ i, x i * dist x (EuclideanSpace.basisFun ι ℝ i) ^ 2 := by
+      apply Finset.sum_sq_le_sum_mul_sum_of_sq_le_mul Finset.univ
+      · exact fun i _ ↦ hx0 i
+      · exact fun i _ ↦ mul_nonneg (hx0 i) (sq_nonneg _)
+      · exact fun i _ ↦ le_of_eq (by ring)
+    _ = 1 - ‖x‖ ^ 2 := by rw [hx1, one_mul, sum_mul_dist_basisFun_sq hx1]
 
-/-- The cube of half-side `r` about `ofLp x` lies in the Euclidean ball of radius `√n * r`
-about `x`. -/
-theorem preimage_ofLp_closedBall_subset_closedBall (x : EuclideanSpace 𝕜 ι) (r : ℝ) :
-    WithLp.ofLp ⁻¹' Metric.closedBall (WithLp.ofLp x) r ⊆
-      Metric.closedBall x (Real.sqrt (Fintype.card ι) * r) := fun y hy =>
-  (dist_le_sqrt_card_mul_dist_ofLp y x).trans
-    (mul_le_mul_of_nonneg_left hy (Real.sqrt_nonneg _))
+/-- A `K`-Lipschitz function on the standard simplex differs at `x` from the `x`-weighted average
+of its values at the vertices by at most `K * √(1 - ‖x‖ ^ 2)`. -/
+theorem abs_sub_sum_mul_basisFun_le_sqrt {x : EuclideanSpace ℝ ι} (hx0 : ∀ i, 0 ≤ x i)
+    (hx1 : ∑ i, x i = 1) {f : EuclideanSpace ℝ ι → ℝ} {K : NNReal} (hK : LipschitzWith K f) :
+    |f x - ∑ i, x i * f (EuclideanSpace.basisFun ι ℝ i)| ≤ K * √(1 - ‖x‖ ^ 2) :=
+  calc
+    |f x - ∑ i, x i * f (EuclideanSpace.basisFun ι ℝ i)| =
+        |∑ i, x i * (f x - f (EuclideanSpace.basisFun ι ℝ i))| := by
+      simp_rw [mul_sub]
+      rw [Finset.sum_sub_distrib, ← Finset.sum_mul, hx1, one_mul]
+    _ ≤ ∑ i, x i * |f x - f (EuclideanSpace.basisFun ι ℝ i)| := by
+      refine (Finset.abs_sum_le_sum_abs _ _).trans_eq (Finset.sum_congr rfl fun i _ ↦ ?_)
+      rw [abs_mul, abs_of_nonneg (hx0 i)]
+    _ ≤ ∑ i, x i * (K * dist x (EuclideanSpace.basisFun ι ℝ i)) := by
+      refine Finset.sum_le_sum fun i _ ↦ mul_le_mul_of_nonneg_left ?_ (hx0 i)
+      simpa [Real.dist_eq] using hK.dist_le_mul x (EuclideanSpace.basisFun ι ℝ i)
+    _ = K * ∑ i, x i * dist x (EuclideanSpace.basisFun ι ℝ i) := by
+      rw [Finset.mul_sum]
+      exact Finset.sum_congr rfl fun i _ ↦ by ring
+    _ ≤ K * √(1 - ‖x‖ ^ 2) :=
+      mul_le_mul_of_nonneg_left (sum_mul_dist_basisFun_le_sqrt hx0 hx1) K.coe_nonneg
 
-/-- The open cube of half-side `r` about `ofLp x` lies in the open Euclidean ball of radius
-`√n * r` about `x`. -/
-theorem preimage_ofLp_ball_subset_ball [Nonempty ι] (x : EuclideanSpace 𝕜 ι) (r : ℝ) :
-    WithLp.ofLp ⁻¹' Metric.ball (WithLp.ofLp x) r ⊆
-      Metric.ball x (Real.sqrt (Fintype.card ι) * r) := fun y hy =>
-  (dist_le_sqrt_card_mul_dist_ofLp y x).trans_lt
-    (mul_lt_mul_of_pos_left hy sqrt_card_pos)
+variable [RCLike 𝕜]
 
 variable (𝕜) in
 /-- Splitting off the first coordinate identifies `𝕜ⁿ⁺¹` with `𝕜 × 𝕜ⁿ`: the continuous linear
@@ -159,29 +162,6 @@ theorem consEquivL_symm_apply_snd {n : ℕ} (x : EuclideanSpace 𝕜 (Fin (n + 1
   simp [consEquivL_symm_apply, Fin.tail]
 
 end EuclideanSpace
-
-namespace PiLp
-
-variable {p : ENNReal} [Fact (1 ≤ p)] {ι : Type*} [Fintype ι] {β : ι → Type*}
-  [∀ i, PseudoMetricSpace (β i)]
-
-/-- The sup distance of the coordinate vectors is at most the `L^p` distance, `1 ≤ p`. -/
-theorem dist_ofLp_le (x y : PiLp p β) : dist (WithLp.ofLp x) (WithLp.ofLp y) ≤ dist x y := by
-  simpa only [NNReal.coe_one, one_mul] using (lipschitzWith_ofLp p β).dist_le_mul x y
-
-/-- The closed ball of radius `r` about `x` lies in the closed sup-norm ball of radius `r` about
-`ofLp x`. -/
-theorem closedBall_subset_preimage_ofLp_closedBall (x : PiLp p β) (r : ℝ) :
-    Metric.closedBall x r ⊆ WithLp.ofLp ⁻¹' Metric.closedBall (WithLp.ofLp x) r := fun y hy =>
-  (dist_ofLp_le y x).trans hy
-
-/-- The open ball of radius `r` about `x` lies in the open sup-norm ball of radius `r` about
-`ofLp x`. -/
-theorem ball_subset_preimage_ofLp_ball (x : PiLp p β) (r : ℝ) :
-    Metric.ball x r ⊆ WithLp.ofLp ⁻¹' Metric.ball (WithLp.ofLp x) r := fun y hy =>
-  (dist_ofLp_le y x).trans_lt hy
-
-end PiLp
 
 namespace TauCeti
 

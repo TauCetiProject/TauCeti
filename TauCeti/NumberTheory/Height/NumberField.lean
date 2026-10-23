@@ -36,6 +36,7 @@ absolute height; in particular the absolute height is invariant under field embe
 * `NumberField.absMulHeight₁_ratCast`: the absolute height of a rational number is its height
   over `ℚ`.
 * `NumberField.absMulHeight₁_pow`: `H(x ^ n) = H(x) ^ n`.
+* `NumberField.absMulHeight₁_inv`: `H(x⁻¹) = H(x)`.
 
 ## References
 
@@ -289,7 +290,7 @@ theorem absLogHeight₁_natCast (n : ℕ) [NeZero n] : absLogHeight₁ (n : F) =
 
 end Cast
 
-section Pow
+section PowInv
 
 variable {F : Type*} [Field F] [CharZero F]
 
@@ -312,7 +313,24 @@ theorem absMulHeight₁_pow (x : F) (n : ℕ) : absMulHeight₁ (x ^ n) = absMul
 theorem absLogHeight₁_pow (x : F) (n : ℕ) : absLogHeight₁ (x ^ n) = n * absLogHeight₁ x := by
   rw [absLogHeight₁, absMulHeight₁_pow, Real.log_pow, absLogHeight₁]
 
-end Pow
+/-- The absolute height of `x⁻¹` is the absolute height of `x`. This includes `x = 0`, where
+`0⁻¹ = 0`, and transcendental elements, whose inverses are transcendental. -/
+@[simp]
+theorem absMulHeight₁_inv (x : F) : absMulHeight₁ x⁻¹ = absMulHeight₁ x := by
+  by_cases hx : IsIntegral ℚ x
+  · have : FiniteDimensional ℚ ℚ⟮x⟯ := adjoin.finiteDimensional hx
+    have : NumberField ℚ⟮x⟯ := {}
+    rw [← AdjoinSimple.algebraMap_gen ℚ x, ← map_inv₀, absMulHeight₁_map, absMulHeight₁_map,
+      absMulHeight₁_eq_rpow, absMulHeight₁_eq_rpow, mulHeight₁_inv]
+  · have hx' : ¬IsIntegral ℚ x⁻¹ := fun h ↦ hx (by simpa using h.inv)
+    rw [absMulHeight₁, dite_eq_right hx', absMulHeight₁, dite_eq_right hx]
+
+/-- The absolute logarithmic height of `x⁻¹` is the absolute logarithmic height of `x`. -/
+@[simp]
+theorem absLogHeight₁_inv (x : F) : absLogHeight₁ x⁻¹ = absLogHeight₁ x := by
+  rw [absLogHeight₁, absMulHeight₁_inv, absLogHeight₁]
+
+end PowInv
 
 /-- The rational number `2` has relative height `2 ^ [K : ℚ]` over a number field `K`; for
 `K = ℚ(i)` this is `4`. Relative heights are not invariant under extension. -/

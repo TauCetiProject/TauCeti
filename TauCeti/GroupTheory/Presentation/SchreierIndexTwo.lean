@@ -604,7 +604,7 @@ theorem commutator_eq_ker_parityHom
     rw [AddMonoidHom.toMultiplicativeLeft_apply_apply, toAdd_ofAdd, ← Int.cast_one,
       ZMod.lift_coe _ _ 1]
     simp [u]
-  refine le_antisymm (Abelianization.commutator_subset_ker _) ?_
+  refine le_antisymm (Abelianization.commutator_le_ker _) ?_
   rw [← Abelianization.ker_of, hf]
   exact h.parityHom.ker_le_comap f.ker
 

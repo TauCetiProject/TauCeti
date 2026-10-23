@@ -141,6 +141,7 @@ theorem isUnit_iff_isDistinguished_zero_and_isUnit_coeff_zero [CompleteSpace R] 
   obtain ⟨q, r, hq, hr, hqr⟩ :=
     (isMulDistinguished_iff_isUnit.mpr ⟨hx, hu⟩).exists_mul_add_eq hc x.2
       (PowerSeries.isRestricted_one c)
+  rw [mul_comm] at hqr
   have hr0 : r = 0 := PowerSeries.ext fun m ↦ by rw [hr m (Nat.zero_le m), map_zero]
   rw [hr0, add_zero] at hqr
   refine IsUnit.of_mul_eq_one ⟨q, hq⟩ (Subtype.ext ?_)
@@ -174,6 +175,7 @@ theorem IsDistinguished.exists_isUnit_isMonicOfDegree_mul_eq [CompleteSpace R]
       rw [PowerSeries.coeff_X_pow, ite_eq_right (by omega : ¬(m = s))]
   obtain ⟨q, r, hq, hr, hqr⟩ :=
     (isMulDistinguished_iff_isUnit.mpr ⟨hf, hu⟩).exists_mul_add_eq hc hfr hXr
+  rw [mul_comm] at hqr
   have hrr : r.IsRestricted c := isRestricted_of_forall_coeff_eq_zero hr
   -- The Gauss norm of `X ^ s` is `c ^ s`, so the remainder is bounded by `c ^ s`.
   have hXle : ∀ m, ‖(PowerSeries.X ^ s : PowerSeries R).coeff m‖ * c ^ m
@@ -238,6 +240,7 @@ theorem IsDistinguished.exists_isUnit_isMonicOfDegree_mul_eq [CompleteSpace R]
   have hωmul : IsMulDistinguished c s (ω : PowerSeries R) :=
     ⟨hωd, by rw [hωs]; exact isNormMulUnit_one⟩
   obtain ⟨e, r', he, hr', her'⟩ := hωmul.exists_mul_add_eq hc hωr hfr
+  rw [mul_comm] at her'
   have hself : e * q * f + r' = 1 * f + 0 := by
     rw [mul_assoc, ← hωq, her', one_mul, add_zero]
   obtain ⟨heq, hr0⟩ := hf.eq_and_eq_of_mul_add_eq_mul_add hc (fun _ ↦ norm_mul _ _)

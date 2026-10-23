@@ -215,7 +215,8 @@ Mathlib's `LieModule.weightSpace_le_genWeightSpace` is the inclusion that holds 
 reverse one, and it is exactly the diagonalizability of the Cartan action. -/
 @[simp]
 theorem genWeightSpace_eq_weightSpace (χ : H → K) : genWeightSpace M χ = weightSpace M χ :=
-  genWeightSpace_eq_weightSpace_of_isSemisimple isSemisimple_toEnd_cartan χ
+  genWeightSpace_eq_weightSpace_of_isFinitelySemisimple
+    (fun x ↦ (isSemisimple_toEnd_cartan x).isFinitelySemisimple) χ
 
 /-- **Membership of a weight space is the eigenvector equation.** An element of a
 finite-dimensional module lies in the `χ`-weight space exactly when every `x : H` acts on it by the

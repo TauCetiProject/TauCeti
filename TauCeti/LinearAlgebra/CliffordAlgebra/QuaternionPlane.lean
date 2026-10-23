@@ -10,7 +10,6 @@ public import Mathlib.LinearAlgebra.QuadraticForm.Prod
 public import Mathlib.RingTheory.TensorProduct.Basic
 import Mathlib.LinearAlgebra.CliffordAlgebra.Prod
 import Mathlib.RingTheory.TensorProduct.Maps
-import Mathlib.Tactic.NoncommRing
 
 /-!
 # Splitting a binary plane off a Clifford algebra
@@ -98,8 +97,7 @@ private theorem k_mul_k :
 
 private noncomputable def planeGenerator : (R × R) × M →ₗ[R] PlaneTensor Q a b :=
   LinearMap.coprod
-    (((TensorProduct.mk R ℍ[R,(a : R),(b : R)]
-        (CliffordAlgebra (planeScale a b • Q))).flip 1).comp
+    (Algebra.TensorProduct.includeLeft.toLinearMap.comp
       (CliffordAlgebraQuaternion.toQuaternion.toLinearMap.comp
         (ι (CliffordAlgebraQuaternion.Q (a : R) b))))
     ((TensorProduct.mk R ℍ[R,(a : R),(b : R)] (CliffordAlgebra (planeScale a b • Q))
@@ -129,7 +127,9 @@ private theorem planeGenerator_sq (x : (R × R) × M) :
     rw [hA, hB, Algebra.TensorProduct.tmul_mul_tmul, Algebra.TensorProduct.tmul_mul_tmul,
       one_mul, mul_one, ← TensorProduct.add_tmul, add_comm, k_mul_pureQuaternion_add,
       TensorProduct.zero_tmul]
-  have hexpand : (A + B) * (A + B) = A * A + (A * B + B * A) + B * B := by noncomm_ring
+  have hexpand : (A + B) * (A + B) = A * A + (A * B + B * A) + B * B := by
+    simp only [add_mul, mul_add]
+    abel
   rw [hexpand, hAA, hBB, hAB, add_zero, ← map_add, QuadraticMap.prod_apply]
 
 private noncomputable def planeToTensor :
@@ -243,7 +243,7 @@ private theorem commute_quaternionInclusion_baseInclusion (x : ℍ[R,(a : R),(b 
     have hvm : ι (PlaneForm Q a b) (v, 0) * ι _ (0, m) = -(ι _ (0, m) * ι _ (v, 0)) :=
       ι_mul_ι_comm_of_isOrtho (IsOrtho.inl_inr v m)
     rw [hv, Commute, SemiconjBy, ← mul_assoc, hvm, mul_assoc, planeVolume_anticomm]
-    noncomm_ring
+    simp only [neg_mul, mul_neg, mul_assoc]
   | mul z₁ z₂ h₁ h₂ => simpa only [map_mul] using h₁.mul_left h₂
   | add z₁ z₂ h₁ h₂ => simpa only [map_add] using h₁.add_left h₂
 
@@ -297,12 +297,12 @@ private theorem planeToTensor_comp_baseInclusion :
 
 private theorem planeToTensor_comp_tensorToPlane :
     (planeToTensor Q a b).comp (tensorToPlane Q a b) = AlgHom.id R _ := by
-  apply Algebra.TensorProduct.ext'
-  intro x y
-  rw [AlgHom.comp_apply, tensorToPlane, Algebra.TensorProduct.lift_tmul, map_mul,
-    ← AlgHom.comp_apply, ← AlgHom.comp_apply, planeToTensor_comp_quaternionInclusion,
-    planeToTensor_comp_baseInclusion]
-  simp
+  apply Algebra.TensorProduct.ext
+  · simpa [AlgHom.comp_assoc, tensorToPlane] using planeToTensor_comp_quaternionInclusion Q a b
+  · apply AlgHom.ext
+    intro m
+    simpa [tensorToPlane] using
+      DFunLike.congr_fun (planeToTensor_comp_baseInclusion Q a b) m
 
 /-! ### The equivalence -/
 

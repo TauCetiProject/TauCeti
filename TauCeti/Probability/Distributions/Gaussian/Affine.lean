@@ -17,11 +17,15 @@ This file proves that a multivariate Gaussian measure is carried by a rectangula
 the multivariate Gaussian with the transformed mean and covariance.  Rectangular matrices are
 allowed, so the result applies both to embeddings and to possibly singular projections.
 
-## Main result
+## Main results
 
 * `TauCeti.Probability.map_affine_multivariateGaussian`: the affine pushforward formula for a
   multivariate
   Gaussian measure.
+* `TauCeti.Probability.map_comp_multivariateGaussian`: reindexing the coordinates along a map of
+  index types.
+* `TauCeti.Probability.multivariateGaussian_one_eq_map_pi`: the identity-covariance law as a
+  product of its Gaussian coordinate laws.
 
 ## References
 
@@ -100,5 +104,42 @@ theorem map_affine_multivariateGaussian (m : EuclideanSpace ℝ ι) {S : Matrix 
     · fun_prop
     · fun_prop
   · exact covarianceBilin_map_affine_multivariateGaussian m hS L c
+
+/-- Reading the coordinates of a multivariate Gaussian vector along a map of index types gives the
+multivariate Gaussian with the reindexed mean and covariance. The map need not be injective, so
+coordinates may be repeated or omitted. -/
+theorem map_comp_multivariateGaussian (m : EuclideanSpace ℝ ι) {S : Matrix ι ι ℝ}
+    (hS : S.PosSemidef) (f : κ → ι) :
+    (multivariateGaussian m S).map (fun x => WithLp.toLp 2 fun k => x (f k)) =
+      multivariateGaussian (WithLp.toLp 2 fun k => m (f k)) (S.submatrix f f) := by
+  let L : Matrix κ ι ℝ := (1 : Matrix ι ι ℝ).submatrix f id
+  have hL (x : EuclideanSpace ℝ ι) : L.toEuclideanLin x = WithLp.toLp 2 fun k => x (f k) := by
+    ext k
+    simp [L, Matrix.mulVec, dotProduct, Matrix.one_apply]
+  have hcov : L * S * L.transpose = S.submatrix f f := by
+    ext
+    simp [L, Matrix.mul_apply, Matrix.one_apply]
+  simpa [hL, hcov] using map_affine_multivariateGaussian m hS L 0
+
+/-- An identity-covariance Gaussian is the product of its unit-variance Gaussian coordinate
+laws, transported to Euclidean space. -/
+theorem multivariateGaussian_one_eq_map_pi (m : EuclideanSpace ℝ ι) :
+    multivariateGaussian m (1 : Matrix ι ι ℝ) =
+      (Measure.pi fun i ↦ gaussianReal (m i) 1).map (WithLp.toLp 2) := by
+  have hshift : (Measure.pi fun _ : ι ↦ gaussianReal 0 1).map
+      (fun x i ↦ m i + x i) = Measure.pi fun i ↦ gaussianReal (m i) 1 := by
+    rw [Measure.pi_map_pi (fun _ ↦ by fun_prop)]
+    simp only [gaussianReal_map_const_add, zero_add]
+  have hmean : multivariateGaussian m (1 : Matrix ι ι ℝ) =
+      (stdGaussian (EuclideanSpace ℝ ι)).map (fun x ↦ m + x) := by
+    simpa [add_comm] using
+      (map_affine_multivariateGaussian (0 : EuclideanSpace ℝ ι) Matrix.PosSemidef.one 1 m).symm
+  rw [hmean, ← map_pi_eq_stdGaussian, ← hshift,
+    Measure.map_map (by fun_prop) (by fun_prop),
+    Measure.map_map (by fun_prop) (by fun_prop)]
+  apply congrArg (fun f ↦ (Measure.pi fun _ : ι ↦ gaussianReal 0 1).map f)
+  funext x
+  simpa only [Function.comp_apply, WithLp.toLp_ofLp, Pi.add_def] using
+    (WithLp.toLp_add 2 m.ofLp x).symm
 
 end TauCeti.Probability

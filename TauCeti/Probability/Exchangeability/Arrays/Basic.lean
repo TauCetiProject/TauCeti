@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Process.Array
+public import TauCeti.Probability.Process.PathLaw.Array
 public import TauCeti.Probability.Exchangeability.Family
 public import TauCeti.Probability.Exchangeability.FullyExchangeable
 public import TauCeti.Probability.Exchangeability.IID
@@ -37,7 +37,9 @@ this subtree meets the representation theory; the value space of the sequence is
 
 ## Main definitions
 
-The general array maps and measurability API live in `TauCeti.Probability.Process.Array`.
+The general array maps and measurability API live in `TauCeti.Probability.Process.Array`; the
+transport between array laws and row or column path laws lives in
+`TauCeti.Probability.Process.PathLaw.Array`.
 
 * `TauCeti.Probability.SeparatelyExchangeable`, `TauCeti.Probability.JointlyExchangeable` — the two
   array symmetries.
@@ -50,8 +52,6 @@ The general array maps and measurability API live in `TauCeti.Probability.Proces
   separate exchangeability is invariance of the law on `ℕ × ℕ → α` under every pair reindexing,
   with `TauCeti.Probability.SeparatelyExchangeable.measurePreserving_pairReindex` its
   measure-preserving form.
-* `TauCeti.Probability.map_uncurry_pathLaw_arrayRow` — the array law is the uncurried path law of
-  the row process.
 * `TauCeti.Probability.separatelyExchangeable_iff_axes` — separate exchangeability splits into
   invariance under row permutations and invariance under column permutations.
 * `TauCeti.Probability.SeparatelyExchangeable.fullyExchangeable_arrayRow` and
@@ -211,17 +211,6 @@ theorem jointlyExchangeable_map_iff {μ : Measure Ω} {X : ℕ × ℕ → Ω →
     beta_reduce
     rw [← pairReindex_def, map_map_array hX (measurable_pairReindex σ σ), hread,
       Measure.map_id']
-
-/-- **An array law is the uncurried path law of its row process.** A statement about the law of the
-row process therefore transports to one about the law of the array. -/
-theorem map_uncurry_pathLaw_arrayRow {μ : Measure Ω} {X : ℕ × ℕ → Ω → α}
-    (hX : ∀ p, AEMeasurable (X p) μ) :
-    (pathLaw μ (arrayRow X)).map Function.uncurry = μ.map fun ω p ↦ X p ω := by
-  rw [pathLaw_def, AEMeasurable.map_map_of_aemeasurable measurable_uncurry.aemeasurable
-    (AEMeasurable.of_eval fun i ↦ aemeasurable_arrayRow hX i)]
-  refine congrArg (Measure.map · _) ?_
-  funext ω ⟨i, j⟩
-  simp
 
 /-! ## Splitting separate exchangeability into its two axes -/
 

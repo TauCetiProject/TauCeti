@@ -17,6 +17,8 @@ realizes this formula exactly when it has the same atomic type. The tuple occupi
 slots, with no free variables. Nullary relations are retained even when the tuple is empty.
 
 This is the initial approximation in the construction of characteristic formulas for tuples.
+For a finite relation language, `firstOrderAtomicDiagram a` is the same conjunction as a
+first-order formula.
 The construction follows the atomic-diagram construction in Cameron Freer's
 `cameronfreer/infinitary-logic`, `InfinitaryLogic/Scott/AtomicDiagram.lean` at checkpoint
 `9f82bd572af2d79a043c6bc3f1b745f14e0bcaa4`; here tuples occupy bound positions rather than
@@ -54,6 +56,42 @@ theorem AtomicIdx.toFormula_rel {k : ℕ} (r : L.Relations k) (f : Fin k → Fin
 theorem AtomicIdx.realize_toFormula (i : AtomicIdx L n) (a : Fin n → M) :
     i.toFormula.Realize Empty.elim a ↔ i.Holds a := by
   cases i <;> simp [BoundedFormula.Realize, Function.comp_def]
+
+section FirstOrder
+
+variable [Finite (Σ k, L.Relations k)]
+
+/-- For a finite relation language, the finite conjunction of the atomic tests true of a tuple
+and the negations of the tests false of it. Unlike `atomicDiagram`, this is a first-order
+formula. -/
+noncomputable def firstOrderAtomicDiagram (a : Fin n → M) : L.BoundedFormula Empty n := by
+  classical
+  exact BoundedFormula.iInf fun i : AtomicIdx L n =>
+    if i.Holds a then i.toFormula else i.toFormula.not
+
+open Classical in
+/-- The first-order atomic diagram is the finite conjunction of signed atomic formulas. -/
+theorem firstOrderAtomicDiagram_def (a : Fin n → M) :
+    firstOrderAtomicDiagram (L := L) a =
+      BoundedFormula.iInf fun i : AtomicIdx L n =>
+        if i.Holds a then i.toFormula else i.toFormula.not := by
+  classical
+  rfl
+
+/-- Over a finite relational language, the first-order atomic diagram characterizes
+atomic-type agreement in every structure. -/
+@[simp]
+theorem realize_firstOrderAtomicDiagram_iff_sameAtomicType [L.IsRelational]
+    (a : Fin n → M) (v : Empty → N) (b : Fin n → N) :
+    (firstOrderAtomicDiagram (L := L) a).Realize v b ↔ SameAtomicType (L := L) a b := by
+  classical
+  rw [Subsingleton.elim v Empty.elim]
+  simp only [firstOrderAtomicDiagram_def, BoundedFormula.realize_iInf, sameAtomicType_def]
+  apply forall_congr'
+  intro i
+  by_cases h : i.Holds a <;> simp [h]
+
+end FirstOrder
 
 variable [Countable (Σ k, L.Relations k)]
 

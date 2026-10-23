@@ -15,7 +15,8 @@ This file records a zero-value rule for differentiating the pointwise applicatio
 continuous linear map. At a zero of the vector-valued argument, the variation of the operator
 contributes nothing to the derivative, so the operator-valued map need only be continuous. It also
 records the derivative of the application of a varying continuous linear map to a fixed vector,
-and the product rule for a varying bilinear map applied to two varying vectors.
+the product rule for a varying bilinear map applied to two varying vectors, and the fact that
+the derivative of a field of symmetric bilinear maps takes symmetric values.
 
 ## Main declarations
 
@@ -24,6 +25,8 @@ and the product rule for a varying bilinear map applied to two varying vectors.
 * `TauCeti.fderiv_clm_apply_const_apply`: the derivative of `y ↦ c y v` in the direction `w` is
   `Dc(w) v`.
 * `TauCeti.fderiv_bilin_apply`: the product rule for `y ↦ c y (A y) (B y)`.
+* `TauCeti.fderiv_apply_apply_comm`: the derivative of a field of bilinear maps that is symmetric
+  near a point takes symmetric values there.
 -/
 
 public section
@@ -77,6 +80,20 @@ theorem fderiv_bilin_apply {c : E → F →L[𝕜] G →L[𝕜] F'} {A : E → F
   simp only [add_apply, ContinuousLinearMap.coe_comp, Function.comp_apply,
     ContinuousLinearMap.flip_apply]
   abel
+
+/-- If a field `c` of bilinear maps takes symmetric values near `x`, then so does each directional
+derivative of `c` at `x`. -/
+theorem fderiv_apply_apply_comm {c : E → F →L[𝕜] F →L[𝕜] G} {x : E}
+    (hc : ∀ᶠ y in 𝓝 x, ∀ v w, c y v w = c y w v) (u : E) (v w : F) :
+    fderiv 𝕜 c x u v w = fderiv 𝕜 c x u w v := by
+  by_cases hd : DifferentiableAt 𝕜 c x
+  · -- Both sides are derivatives of functions of `y` which agree near `x`.
+    have happ (a b : F) : fderiv 𝕜 (fun y ↦ c y a b) x u = fderiv 𝕜 c x u a b := by
+      rw [fderiv_clm_apply_const_apply (hd.clm_apply (differentiableAt_const a)),
+        fderiv_clm_apply_const_apply hd]
+    have heq : (fun y ↦ c y v w) =ᶠ[𝓝 x] fun y ↦ c y w v := hc.mono fun y hy ↦ hy v w
+    rw [← happ, ← happ, heq.fderiv_eq]
+  · simp [fderiv_zero_of_not_differentiableAt hd]
 
 end TauCeti
 

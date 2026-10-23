@@ -51,6 +51,9 @@ functoriality API.
   multiplication by a vector of quadratic value `-1`.
 * `CliffordAlgebra.evenUnitaryGroupEvenPart_spinGroupToEvenUnitary_apply` identifies the
   even-unitary carrier map with the basic inclusion of Spin in the even Clifford subalgebra.
+* `CliffordAlgebra.reverseEven_spinGroupToEven_mul_self` and
+  `CliffordAlgebra.spinGroupToEven_mul_reverseEven`: the even part of a Spin element has reverse
+  norm one on both sides.
 -/
 
 public section
@@ -675,6 +678,18 @@ theorem evenUnitaryGroupEvenPart_spinGroupToEvenUnitary_apply (x : spinGroup Q) 
     evenUnitaryGroupEvenPart Q (spinGroupToEvenUnitary Q x) = spinGroupToEven Q x := by
   apply Subtype.ext
   simp
+
+/-- The left reverse norm of the even part of a Spin element is one. -/
+theorem reverseEven_spinGroupToEven_mul_self (x : spinGroup Q) :
+    reverseEven Q (spinGroupToEven Q x) * spinGroupToEven Q x = 1 := by
+  rw [← evenUnitaryGroupEvenPart_spinGroupToEvenUnitary_apply]
+  exact reverseEven_evenUnitaryGroupEvenPart_mul_self Q _
+
+/-- The right reverse norm of the even part of a Spin element is one. -/
+theorem spinGroupToEven_mul_reverseEven (x : spinGroup Q) :
+    spinGroupToEven Q x * reverseEven Q (spinGroupToEven Q x) = 1 := by
+  rw [← evenUnitaryGroupEvenPart_spinGroupToEvenUnitary_apply]
+  exact evenUnitaryGroupEvenPart_mul_reverseEven Q _
 
 /-- The canonical map from Spin to the even unitary carrier is injective. -/
 theorem spinGroupToEvenUnitary_injective :

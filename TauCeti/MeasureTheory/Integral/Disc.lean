@@ -119,7 +119,7 @@ theorem hasDerivAt_integral_ball {f : ℂ → F} {z₀ : ℂ} {R r : ℝ}
       ext z
       simp only [mem_ofPred_eq, Set.mem_sdiff, mem_closedBall, mem_ball, dist_eq_norm, not_lt]
       exact and_comm
-    have hpolar := TauCeti.integral_annulus_eq_integral_circleMap ha ht.1.le
+    have hpolar := TauCeti.integral_annulus_eq_integral_circleMap ha.le ht.1.le
       ((hf.mono hsub).mono (fun z hz ↦ ⟨hz.1, hz.2.trans ht.2.le⟩))
     rw [hA, setIntegral_congr_set (ae_eq_set_sdiff hclosed Filter.EventuallyEq.rfl),
       setIntegral_sdiff measurableSet_ball (hint.mono_set (ball_subset_ball

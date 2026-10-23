@@ -39,7 +39,7 @@ theorem exists_comp_eq_iff_comap_commutator_le_ker (f : B →* E) (χ : B →* R
     (∃ ψ : E →* Rˣ, ψ.comp f = χ) ↔ (commutator E).comap f ≤ χ.ker := by
   constructor
   · rintro ⟨ψ, rfl⟩ x hx
-    exact Abelianization.commutator_subset_ker ψ hx
+    exact Abelianization.commutator_le_ker ψ hx
   · intro hχ
     let q := (Abelianization.of.comp f).rangeRestrict
     have hq : q.ker ≤ χ.ker := by

@@ -126,17 +126,13 @@ theorem brace_zero_left (g : ReducedTensorWords R M →ₗ[R] M) (q : ℤ) :
 @[simp]
 theorem brace_add_right (F g₁ g₂ : ReducedTensorWords R M →ₗ[R] M) (q : ℤ) :
     brace G F (g₁ + g₂) q = brace G F g₁ q + brace G F g₂ q := by
-  have h := congrArg Subtype.val (map_add (gradedCoderivEquivTaylor G q).symm g₁ g₂)
-  simp only [gradedCoderivEquivTaylor_symm_apply, Submodule.coe_add] at h
-  rw [brace_def, h, LinearMap.comp_add, brace_def, brace_def]
+  rw [brace_def, gradedCoderiv_add, LinearMap.comp_add, brace_def, brace_def]
 
 /-- The brace is `R`-linear in its second argument, since the graded Taylor expansion is. -/
 @[simp]
 theorem brace_smul_right (c : R) (F g : ReducedTensorWords R M →ₗ[R] M) (q : ℤ) :
     brace G F (c • g) q = c • brace G F g q := by
-  have h := congrArg Subtype.val (map_smul (gradedCoderivEquivTaylor G q).symm c g)
-  simp only [gradedCoderivEquivTaylor_symm_apply, Submodule.coe_smul] at h
-  rw [brace_def, h, LinearMap.comp_smul, brace_def]
+  rw [brace_def, gradedCoderiv_smul, LinearMap.comp_smul, brace_def]
 
 /-- The brace of a Taylor map with the zero map vanishes. -/
 @[simp]

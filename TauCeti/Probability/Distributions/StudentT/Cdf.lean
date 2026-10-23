@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.SpecialFunctions.IncompleteBeta
 public import TauCeti.Probability.Distributions.StudentT.Basic
-public import Mathlib.Probability.CDF
+public import TauCeti.Probability.Cdf
 import TauCeti.Analysis.Calculus.RealCharts
 import TauCeti.Probability.Distributions.StudentT.WeightedIntegral
 import Mathlib.MeasureTheory.Measure.Lebesgue.Integral
@@ -25,6 +25,8 @@ This file computes the cumulative distribution function of the Student t distrib
 * `cdf_studentTMeasure_eq` — writing `z = ν / (ν + x ^ 2)`, the cdf is
   `regularizedIncompleteBeta (ν / 2) (1 / 2) z / 2` for `x < 0` and
   `1 - regularizedIncompleteBeta (ν / 2) (1 / 2) z / 2` for `0 ≤ x`.
+* `strictMono_cdf_studentTMeasure` and `continuous_cdf_studentTMeasure` — the cdf is strictly
+  increasing and continuous, so each interior cumulative level has a unique crossing.
 
 ## References
 
@@ -238,6 +240,30 @@ theorem cdf_studentTMeasure_eq (hν : 0 < ν) (x : ℝ) :
         regularizedIncompleteBeta (ν / 2) (1 / 2) z / 2 := by
       rw [hreal, htailval]; ring
     rw [cdf_eq_real, hcdf, ite_eq_left hxneg]
+
+/-- A positive-degree Student t law has a strictly increasing cdf on the whole real line. -/
+theorem strictMono_cdf_studentTMeasure (hν : 0 < ν) :
+    StrictMono (cdf (studentTMeasure ν)) := by
+  let _ := isProbabilityMeasure_studentTMeasure hν
+  intro x y hxy
+  have hpos : 0 < ∫ z in Ioc x y, studentTPDFReal ν z := by
+    rw [setIntegral_pos_iff_support_of_nonneg_ae
+      (ae_of_all _ (studentTPDFReal_nonneg ν))
+      (integrable_studentTPDFReal ν).integrableOn]
+    have hs : Function.support (studentTPDFReal ν) = univ :=
+      eq_univ_iff_forall.2 fun z ↦ (studentTPDFReal_pos hν z).ne'
+    rw [hs, univ_inter, Real.volume_Ioc, ENNReal.ofReal_pos]
+    exact sub_pos.2 hxy
+  rwa [← measureReal_studentTMeasure measurableSet_Ioc,
+    Measure.measureReal_Ioc_eq_cdf_sub _ hxy.le, sub_pos] at hpos
+
+/-- A positive-degree Student t law has a continuous cdf. -/
+theorem continuous_cdf_studentTMeasure (hν : 0 < ν) :
+    Continuous (cdf (studentTMeasure ν)) := by
+  let _ := isProbabilityMeasure_studentTMeasure hν
+  have : NullSingletonClass (studentTMeasure ν) :=
+    ⟨fun x ↦ studentTMeasure_absolutelyContinuous ν (measure_singleton x)⟩
+  exact Measure.continuous_cdf_of_noAtoms _
 
 end Probability
 

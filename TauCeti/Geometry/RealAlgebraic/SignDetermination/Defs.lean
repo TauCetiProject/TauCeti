@@ -8,6 +8,7 @@ module
 public import TauCeti.Data.Fintype.Fiber
 public import Mathlib.Algebra.Polynomial.Roots
 public import Mathlib.Basic.Sign.Defs
+public import Mathlib.RingTheory.Polynomial.IntegralNormalization
 
 /-! # Polynomial sign counts and Tarski queries
 
@@ -18,6 +19,8 @@ For nonzero `p` its cardinality characterization counts the actual zeros of `p`;
 for `p = 0` the value is zero and does not describe the infinite zero set.
 
 The definitions and their basic API are independent of matrix inversion.
+Over a field, `Polynomial.tarskiQuery_integralNormalization` clears the leading coefficient of
+the root polynomial, so Tarski queries can always be computed at a monic root polynomial.
 
 ## References
 
@@ -148,6 +151,16 @@ theorem tarskiQuery_eq_card_sub_card (p q : R[X]) :
       (p.roots.toFinset.filter (fun x => q.eval x < 0)).card := by
   rw [tarskiQuery_eq_signSum, signSum_eq_card_sub_card]
 
+/-- A Tarski query lies between minus the degree of its root polynomial and its degree. -/
+theorem tarskiQuery_mem_Icc_natDegree (p q : R[X]) :
+    tarskiQuery p q ∈ Set.Icc (-(p.natDegree : ℤ)) (p.natDegree : ℤ) := by
+  rw [tarskiQuery_eq_card_sub_card]
+  have hroots : p.roots.toFinset.card ≤ p.natDegree :=
+    (Multiset.toFinset_card_le p.roots).trans (card_roots' p)
+  have hpos := Finset.card_filter_le p.roots.toFinset (fun x => 0 < q.eval x)
+  have hneg := Finset.card_filter_le p.roots.toFinset (fun x => q.eval x < 0)
+  constructor <;> omega
+
 @[simp, grind =]
 theorem tarskiQuery_zero_left (q : R[X]) : tarskiQuery 0 q = 0 := by
   simp [tarskiQuery_eq_signSum]
@@ -189,5 +202,28 @@ theorem signCount_roots_pos {J : Type*}
   simp only [signCount_pos, Multiset.mem_toFinset, mem_roots hp, IsRoot.def]
 
 end Basic
+
+section Field
+
+variable {R : Type*} [Field R] [LinearOrder R]
+
+/-- **Clearing the leading coefficient of the root polynomial.** The distinct roots of the monic
+polynomial `p.integralNormalization` are those of `p` multiplied by the leading coefficient `a`
+of `p`. Hence a Tarski query of `p` equals one of `p.integralNormalization` against any `r`
+whose sign at `a * x` agrees with the sign of `q` at each root `x` of `p`. -/
+theorem tarskiQuery_integralNormalization {p q r : R[X]} (hp : p ≠ 0)
+    (h : ∀ x, p.eval x = 0 → sign (r.eval (p.leadingCoeff * x)) = sign (q.eval x)) :
+    tarskiQuery p.integralNormalization r = tarskiQuery p q := by
+  classical
+  have ha : p.leadingCoeff ≠ 0 := leadingCoeff_ne_zero.mpr hp
+  have hroots : p.integralNormalization.roots = p.roots.map (p.leadingCoeff * ·) := by
+    rw [← roots_C_mul _ ha, mul_comm, integralNormalization_mul_C_leadingCoeff,
+      roots_scaleRoots _ (isUnit_iff_ne_zero.mpr ha)]
+  rw [tarskiQuery_eq_sum, tarskiQuery_eq_sum, hroots, Multiset.toFinset_map,
+    Finset.sum_image fun x _ y _ hxy => mul_left_cancel₀ ha hxy]
+  refine Finset.sum_congr rfl fun x hx => ?_
+  rw [h x (isRoot_of_mem_roots (Multiset.mem_toFinset.mp hx)).eq_zero]
+
+end Field
 
 end Polynomial

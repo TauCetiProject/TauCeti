@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.ConstantSpeed
 public import TauCeti.Analysis.Fourier.AbsolutelyContinuous
 public import TauCeti.Analysis.Green.Examples.CurveArea.SignedArea
 import TauCeti.Analysis.Fourier.FourierCoeffOn
+import TauCeti.MeasureTheory.Function.MetricDerivative.ConstantSpeed
 import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
 
 /-!
@@ -25,11 +27,16 @@ with square-integrable derivative,
 
 with its complete equality analysis: equality holds exactly when `γ` is constant or traces a
 circle once at constant angular speed, in one of the two orientations
-(`TauCeti.mul_integral_norm_sq_eq_four_pi_mul_abs_signedArea_iff`). For a curve parametrized
-proportionally to arclength on `[0, 1]` the right side is the square of its length `L`, so the
-signed area is at most `L² / (4π)` in absolute value. The Wirtinger inequality for the
-mean-zero part of `γ` admits every ellipse as an equality case; the area–energy inequality does
-not.
+(`TauCeti.mul_integral_norm_sq_eq_four_pi_mul_abs_signedArea_iff`). The Wirtinger inequality
+for the mean-zero part of `γ` admits every ellipse as an equality case; the area–energy
+inequality does not.
+
+For a closed curve of constant speed on `[a, b]`, in particular an arclength parametrization,
+`(b - a) ∫ₐᵇ ‖γ'‖²` is the square of its length `L`, so the inequality becomes the isoperimetric
+inequality `4π |signedArea γ a b| ≤ L²`
+(`HasConstantSpeedOnWith.four_pi_mul_abs_signedArea_le_eVariationOn_toReal_sq`), with equality
+exactly for constant curves and circles traversed once
+(`HasConstantSpeedOnWith.eVariationOn_toReal_sq_eq_four_pi_mul_abs_signedArea_iff`).
 
 The proof is Fourier-analytic and works directly at absolutely continuous regularity. Writing
 `c n` for the Fourier coefficients of `γ` on `[a, b]`, Parseval's identity applied to `γ`, to
@@ -46,6 +53,10 @@ and `± 1`, both the inequality and its equality cases follow, since a continuou
 * `TauCeti.mul_integral_norm_sq_eq_four_pi_mul_signedArea_iff`,
   `TauCeti.mul_integral_norm_sq_eq_neg_four_pi_mul_signedArea_iff`,
   `TauCeti.mul_integral_norm_sq_eq_four_pi_mul_abs_signedArea_iff`: its equality cases.
+* `HasConstantSpeedOnWith.four_pi_mul_abs_signedArea_le_eVariationOn_toReal_sq`,
+  `HasConstantSpeedOnWith.eVariationOn_toReal_sq_eq_four_pi_mul_abs_signedArea_iff`: the
+  isoperimetric inequality in terms of length for constant-speed closed curves, and its equality
+  case.
 
 ## References
 
@@ -284,5 +295,55 @@ theorem mul_integral_norm_sq_eq_four_pi_mul_abs_signedArea_iff (hab : a < b)
       exact mul_le_mul_of_nonneg_left (neg_le_abs _) h4π
 
 end AreaEnergy
+
+section ConstantSpeed
+
+open scoped NNReal
+
+variable {γ : ℝ → ℂ} {l : ℝ≥0}
+
+/-- A plane curve of constant speed on `[a, b]` satisfies the hypotheses of the area–energy
+inequality for its canonical derivative, and its energy times `b - a` is the square of its
+length. -/
+private theorem areaEnergy_hypotheses_of_hasConstantSpeedOnWith
+    (hγ : HasConstantSpeedOnWith γ (Icc a b) l) (hab : a ≤ b) :
+    AbsolutelyContinuousOnInterval γ a b ∧
+      (∀ᵐ t, t ∈ uIoc a b → HasDerivAt γ (deriv γ t) t) ∧
+      MemLp (deriv γ) 2 (volume.restrict (Ioc a b)) ∧
+      (b - a) * ∫ t in a..b, ‖deriv γ t‖ ^ 2 = (eVariationOn γ (Icc a b)).toReal ^ 2 := by
+  rw [← uIcc_of_le hab] at hγ ⊢
+  refine ⟨hγ.lipschitzOnWith.absolutelyContinuousOnInterval, ?_, ?_,
+    hγ.mul_integral_norm_deriv_sq⟩
+  · filter_upwards [(ae_restrict_iff' measurableSet_uIcc).1 hγ.ae_norm_deriv_eq] with t ht hmem
+    exact (ht (uIoc_subset_uIcc hmem)).1.hasDerivAt
+  · simpa only [uIoc_of_le hab] using hγ.memLp_deriv 2
+
+/-- **The isoperimetric inequality for constant-speed closed curves.** A closed plane curve
+traversed at constant speed on `[a, b]` has signed area at most `L² / (4π)` in absolute value,
+where `L` is its length. This applies in particular to arclength parametrizations. -/
+theorem _root_.HasConstantSpeedOnWith.four_pi_mul_abs_signedArea_le_eVariationOn_toReal_sq
+    (hγ : HasConstantSpeedOnWith γ (Icc a b) l) (hab : a ≤ b) (hγab : γ a = γ b) :
+    4 * π * |signedArea γ a b| ≤ (eVariationOn γ (Icc a b)).toReal ^ 2 := by
+  rcases hab.eq_or_lt with rfl | hab
+  · simp
+  obtain ⟨hAC, hderiv, hL2, henergy⟩ :=
+    areaEnergy_hypotheses_of_hasConstantSpeedOnWith hγ hab.le
+  exact henergy ▸ four_pi_mul_abs_signedArea_le hab hAC hderiv hγab hL2
+
+/-- **Equality in the isoperimetric inequality for constant-speed closed curves.** For a closed
+plane curve traversed at constant speed on `[a, b]`, the square of its length equals
+`4π |signedArea γ a b|` exactly when the curve is constant or traverses a circle once, in either
+orientation. -/
+theorem _root_.HasConstantSpeedOnWith.eVariationOn_toReal_sq_eq_four_pi_mul_abs_signedArea_iff
+    (hγ : HasConstantSpeedOnWith γ (Icc a b) l) (hab : a < b) (hγab : γ a = γ b) :
+    (eVariationOn γ (Icc a b)).toReal ^ 2 = 4 * π * |signedArea γ a b| ↔
+      ∃ c w : ℂ, (∀ t ∈ Icc a b, γ t = c + w * exp (2 * π * I * t / (b - a))) ∨
+        ∀ t ∈ Icc a b, γ t = c + w * exp (-(2 * π * I * t / (b - a))) := by
+  obtain ⟨hAC, hderiv, hL2, henergy⟩ :=
+    areaEnergy_hypotheses_of_hasConstantSpeedOnWith hγ hab.le
+  rw [← henergy]
+  exact mul_integral_norm_sq_eq_four_pi_mul_abs_signedArea_iff hab hAC hderiv hγab hL2
+
+end ConstantSpeed
 
 end TauCeti

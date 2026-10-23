@@ -9,7 +9,10 @@ public import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 public import Mathlib.Analysis.Calculus.Gradient.Basic
 import Mathlib.Topology.Compactness.SigmaCompact
 import Mathlib.Topology.Sets.Opens
+import Mathlib.Analysis.Calculus.Deriv.Support
+import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Geometry.Manifold.PartitionOfUnity
+import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 
 /-!
 # Smooth cutoffs for compact subsets
@@ -25,8 +28,9 @@ gluing device for global approximation on a domain. Locally finite sums of smoot
 smooth (`contDiffAt_tsum_of_eventually_eq_zero`).
 
 It also provides radial cutoffs between two concentric closed balls of radii `r < R` whose
-gradient is at most `c / (R - r)` for a universal constant `c`, the quantitative form needed by
-iteration arguments over families of balls with shrinking gaps.
+gradient is at most `c / (R - r)` and whose second derivative is at most `c / (R - r)²` for a
+universal constant `c`, the quantitative form needed by iteration arguments over families of balls
+with shrinking gaps.
 
 ## References
 
@@ -243,62 +247,143 @@ theorem contDiffAt_tsum_of_eventually_eq_zero {𝕜 ι F : Type*} [NontriviallyN
     ContDiffAt 𝕜 n (fun y => ∑' j, g j y) x :=
   (ContDiffAt.sum hg).congr_of_eventuallyEq (hs.mono fun _ hy => tsum_eq_sum hy)
 
-/-- **Radial cutoffs with a quantitative gradient bound.** There is a universal constant `c` such
-that for every centre `x₀` and radii `0 < r < R`, some smooth `ψ` with values in `[0, 1]` equals
-one on `closedBall x₀ r`, has topological support in `closedBall x₀ R`, and satisfies
+/-- **Radial cutoffs with quantitative derivative bounds.** There is a universal constant `c`
+such that for every centre `x₀` and radii `0 ≤ r < R`, some smooth `ψ` with values in `[0, 1]`
+equals one on `closedBall x₀ r`, has topological support in `closedBall x₀ R`, and satisfies
 
-`‖∇ψ x‖ ≤ c / (R - r)` for every `x`.
+`‖∇ψ x‖ ≤ c / (R - r)` and `‖D(∇ψ) x‖ ≤ c / (R - r)²` for every `x`.
 
 The inverse dependence on the gap `R - r` is what iteration arguments over families of balls with
-geometrically shrinking gaps need. The cutoff is `Real.smoothTransition ((R - ‖x - x₀‖) / (R - r))`,
-and `c` is a Lipschitz constant of `Real.smoothTransition`. -/
+geometrically shrinking gaps need; the second-derivative bound is what localizing a second-order
+equation needs. The cutoff is `Real.smoothTransition ((R² - ‖x - x₀‖²) / (R² - r²))`, and `c` is
+determined by bounds for the first two derivatives of `Real.smoothTransition`. -/
 theorem exists_forall_contDiff_cutoff_closedBall [InnerProductSpace ℝ E] [CompleteSpace E] :
-    ∃ c : ℝ, 0 ≤ c ∧ ∀ (x₀ : E) {r R : ℝ}, 0 < r → r < R →
+    ∃ c : ℝ, 0 ≤ c ∧ ∀ (x₀ : E) {r R : ℝ}, 0 ≤ r → r < R →
       ∃ ψ : E → ℝ, ContDiff ℝ ∞ ψ ∧ range ψ ⊆ Icc 0 1 ∧ EqOn ψ 1 (Metric.closedBall x₀ r) ∧
-        tsupport ψ ⊆ Metric.closedBall x₀ R ∧ ∀ x, ‖∇ ψ x‖ ≤ c / (R - r) := by
-  -- `Real.smoothTransition` factors through the projection onto `[0, 1]`, where it is Lipschitz.
-  obtain ⟨L, hL⟩ : ∃ L, LipschitzWith L Real.smoothTransition := by
-    obtain ⟨L, hL⟩ := (Real.smoothTransition.contDiff (n := 1)).contDiffOn.exists_lipschitzOnWith
-      one_ne_zero (convex_Icc (0 : ℝ) 1) isCompact_Icc
-    refine ⟨L, ?_⟩
-    have := hL.to_restrict.comp (LipschitzWith.projIcc (zero_le_one' ℝ))
-    simpa [Function.comp_def] using this
-  refine ⟨L, L.2, fun x₀ r R hr hrR => ?_⟩
+        tsupport ψ ⊆ Metric.closedBall x₀ R ∧ (∀ x, ‖∇ ψ x‖ ≤ c / (R - r)) ∧
+        ∀ x, ‖fderiv ℝ (∇ ψ) x‖ ≤ c / (R - r) ^ 2 := by
+  -- The first two derivatives of `Real.smoothTransition` are continuous with compact support.
+  set S := Real.smoothTransition
+  have hS : ContDiff ℝ ∞ S := Real.smoothTransition.contDiff
+  have hS1 : ContDiff ℝ ∞ (deriv S) := hS.iterate_deriv 1
+  have hS2 : ContDiff ℝ ∞ (deriv (deriv S)) := hS.iterate_deriv 2
+  obtain ⟨L₁, hL₁⟩ := hS1.continuous.bounded_above_of_compact_support
+    Real.smoothTransition.hasCompactSupport_deriv
+  obtain ⟨L₂, hL₂⟩ := hS2.continuous.bounded_above_of_compact_support
+    Real.smoothTransition.hasCompactSupport_deriv.deriv
+  have hL₁0 : 0 ≤ L₁ := (norm_nonneg _).trans (hL₁ 0)
+  have hL₂0 : 0 ≤ L₂ := (norm_nonneg _).trans (hL₂ 0)
+  have hS1neg : ∀ τ < 0, deriv S τ = 0 := fun τ hτ => Real.smoothTransition.deriv_of_neg hτ
+  have hS2neg : ∀ τ < 0, deriv (deriv S) τ = 0 := fun τ hτ => by
+    have h : deriv S =ᶠ[𝓝 τ] fun _ => 0 :=
+      Filter.eventually_of_mem (Iio_mem_nhds hτ) fun _ ht => hS1neg _ ht
+    rw [h.deriv_eq, deriv_const]
+  refine ⟨2 * L₁ + 4 * L₂, by positivity, fun x₀ r R hr hrR => ?_⟩
   have hRr : 0 < R - r := sub_pos.2 hrR
-  set ψ : E → ℝ := fun x => Real.smoothTransition ((R - ‖x - x₀‖) / (R - r))
-  have hone : ∀ x, ‖x - x₀‖ ≤ r → ψ x = 1 := fun x hx =>
-    Real.smoothTransition.one_of_one_le (by rw [le_div_iff₀ hRr]; linarith)
-  refine ⟨ψ, ?_, ?_, fun x hx => hone x (by rwa [Metric.mem_closedBall, dist_eq_norm] at hx),
-    ?_, fun x => ?_⟩
-  · rw [contDiff_iff_contDiffAt]
+  have hR : 0 < R := hr.trans_lt hrR
+  set D := R ^ 2 - r ^ 2 with hD_def
+  have hD : (R - r) * R ≤ D := by nlinarith
+  have hD' : (R - r) ^ 2 ≤ D := by nlinarith
+  have hD0 : 0 < D := lt_of_lt_of_le (by positivity) hD'
+  -- The cutoff is `S ((R² - ‖x - x₀‖²) / D)`.
+  set g : E → ℝ := fun x => (R ^ 2 - ‖x - x₀‖ ^ 2) / D with hg
+  set ψ : E → ℝ := fun x => S (g x) with hψ
+  set c : ℝ → ℝ := fun τ => -(2 / D) * deriv S ((R ^ 2 - τ) / D) with hc
+  have hgrad : ∀ x, ∇ ψ x = c (‖x - x₀‖ ^ 2) • (x - x₀) := by
     intro x
-    by_cases hx : x = x₀
-    · -- Near the centre, `ψ` is identically one.
-      subst hx
-      have hev : ψ =ᶠ[𝓝 x] fun _ => 1 := by
-        filter_upwards [Metric.ball_mem_nhds x hr] with y hy
-        exact hone y (by rw [Metric.mem_ball, dist_eq_norm] at hy; exact hy.le)
-      exact contDiffAt_const.congr_of_eventuallyEq hev
-    · have hn : ContDiffAt ℝ ∞ (fun y : E => ‖y - x₀‖) x :=
-        (contDiffAt_id.sub contDiffAt_const).norm ℝ (sub_ne_zero.2 hx)
-      exact Real.smoothTransition.contDiffAt.comp x ((contDiffAt_const.sub hn).div_const _)
+    have h1 : HasFDerivAt (fun y => ‖y - x₀‖ ^ 2) (2 • (innerSL ℝ (x - x₀)).comp
+        (ContinuousLinearMap.id ℝ E)) x := ((hasFDerivAt_id x).sub_const x₀).norm_sq
+    have h2 : HasFDerivAt g ((-(1 / D)) • 2 • innerSL ℝ (x - x₀)) x := by
+      have := HasFDerivAt.mul_const (HasFDerivAt.const_sub h1 (R ^ 2)) D⁻¹
+      convert this using 1
+      · funext y
+        simp [g, div_eq_mul_inv]
+      · ext v
+        simp
+    have h3 := ((hS.differentiable (by simp)) (g x)).hasDerivAt.comp_hasFDerivAt x h2
+    refine (hasFDerivAt_iff_hasGradientAt.1 h3).gradient.trans ?_
+    rw [LinearIsometryEquiv.symm_apply_eq]
+    ext v
+    simp [c, g]
+    ring
+  -- The derivative of the radial profile `c`.
+  set c' : ℝ → ℝ := fun τ => 2 / D ^ 2 * deriv (deriv S) ((R ^ 2 - τ) / D) with hc'
+  have hcd : ∀ τ, HasDerivAt c (c' τ) τ := by
+    intro τ
+    have h1 : HasDerivAt (fun τ : ℝ => (R ^ 2 - τ) / D) (-1 / D) τ := by
+      simpa using ((hasDerivAt_id τ).const_sub (R ^ 2)).div_const D
+    have h2 := (((hS1.differentiable (by simp)) _).hasDerivAt.comp τ h1).const_mul (-(2 / D))
+    exact h2.congr_deriv (by simp only [c']; field_simp)
+  have hhess : ∀ x, HasFDerivAt (∇ ψ) (c (‖x - x₀‖ ^ 2) • ContinuousLinearMap.id ℝ E +
+      (c' (‖x - x₀‖ ^ 2) • 2 • innerSL ℝ (x - x₀)).smulRight (x - x₀)) x := by
+    intro x
+    rw [show ∇ ψ = fun y => c (‖y - x₀‖ ^ 2) • (y - x₀) from funext hgrad]
+    have h1 : HasFDerivAt (fun y => ‖y - x₀‖ ^ 2) (2 • innerSL ℝ (x - x₀)) x := by
+      simpa using ((hasFDerivAt_id x).sub_const x₀).norm_sq
+    exact ((hcd _).comp_hasFDerivAt x h1).smul ((hasFDerivAt_id x).sub_const x₀)
+  -- Outside `closedBall x₀ R` both `c` and `c'` vanish.
+  have hout : ∀ x, R < ‖x - x₀‖ → c (‖x - x₀‖ ^ 2) = 0 ∧ c' (‖x - x₀‖ ^ 2) = 0 := by
+    intro x hx
+    have hneg : (R ^ 2 - ‖x - x₀‖ ^ 2) / D < 0 :=
+      div_neg_of_neg_of_pos (by nlinarith) hD0
+    exact ⟨by simp [c, hS1neg _ hneg], by simp [c', hS2neg _ hneg]⟩
+  have hcb : ∀ τ, |c τ| ≤ 2 / D * L₁ := fun τ => by
+    rw [hc, abs_mul, abs_neg, abs_of_pos (by positivity)]
+    gcongr
+    exact (Real.norm_eq_abs _).symm.le.trans (hL₁ _)
+  have hc'b : ∀ τ, |c' τ| ≤ 2 / D ^ 2 * L₂ := fun τ => by
+    rw [hc', abs_mul, abs_of_pos (by positivity)]
+    gcongr
+    exact (Real.norm_eq_abs _).symm.le.trans (hL₂ _)
+  have hRD : R / D ≤ 1 / (R - r) := by
+    rw [div_le_div_iff₀ hD0 hRr]
+    linarith
+  have hRD2 : R ^ 2 / D ^ 2 ≤ 1 / (R - r) ^ 2 := by
+    rw [← div_pow, one_div, ← inv_pow, ← one_div]
+    exact pow_le_pow_left₀ (by positivity) hRD 2
+  refine ⟨ψ, hS.comp ((contDiff_const.sub ((contDiff_id.sub contDiff_const).norm_sq ℝ)).div_const
+    D), ?_, fun x hx => ?_, ?_, fun x => ?_, fun x => ?_⟩
   · rintro _ ⟨x, rfl⟩
     exact ⟨Real.smoothTransition.nonneg _, Real.smoothTransition.le_one _⟩
+  · rw [Metric.mem_closedBall, dist_eq_norm] at hx
+    refine Real.smoothTransition.one_of_one_le ?_
+    rw [le_div_iff₀ hD0]
+    nlinarith [norm_nonneg (x - x₀)]
   · refine closure_minimal (fun x hx => ?_) Metric.isClosed_closedBall
     rw [Metric.mem_closedBall, dist_eq_norm]
     by_contra h
     exact hx (Real.smoothTransition.zero_of_nonpos
-      (div_nonpos_of_nonpos_of_nonneg (by linarith) hRr.le))
-  · have hlip : LipschitzWith (L * Real.toNNReal (R - r)⁻¹) ψ := by
-      refine hL.comp (LipschitzWith.of_dist_le_mul fun y z => ?_)
-      rw [Real.dist_eq, Real.coe_toNNReal _ (inv_nonneg.2 hRr.le), ← sub_div, abs_div,
-        abs_of_pos hRr, div_eq_inv_mul]
-      gcongr
-      have hsub : R - ‖y - x₀‖ - (R - ‖z - x₀‖) = ‖z - x₀‖ - ‖y - x₀‖ := by ring
-      rw [dist_eq_norm, hsub, abs_sub_comm]
-      simpa using abs_norm_sub_norm_le (y - x₀) (z - x₀)
-    rw [_root_.gradient, LinearIsometryEquiv.norm_map]
-    refine (norm_fderiv_le_of_lipschitz ℝ hlip).trans_eq ?_
-    rw [NNReal.coe_mul, Real.coe_toNNReal _ (inv_nonneg.2 hRr.le), div_eq_mul_inv]
+      (div_nonpos_of_nonpos_of_nonneg (by nlinarith [norm_nonneg (x - x₀)]) hD0.le))
+  · rw [hgrad, norm_smul, Real.norm_eq_abs]
+    rcases le_or_gt ‖x - x₀‖ R with hx | hx
+    · calc |c (‖x - x₀‖ ^ 2)| * ‖x - x₀‖ ≤ 2 / D * L₁ * R :=
+            mul_le_mul (hcb _) hx (norm_nonneg _) (by positivity)
+        _ = 2 * L₁ * (R / D) := by ring
+        _ ≤ 2 * L₁ * (1 / (R - r)) := by gcongr
+        _ ≤ (2 * L₁ + 4 * L₂) / (R - r) := by
+            rw [mul_one_div]
+            gcongr
+            linarith
+    · rw [(hout x hx).1, abs_zero, zero_mul]
+      positivity
+  · rw [(hhess x).fderiv, ← Nat.cast_smul_eq_nsmul ℝ]
+    refine (norm_add_le _ _).trans ?_
+    rw [norm_smul, ContinuousLinearMap.norm_smulRight_apply, norm_smul, norm_smul,
+      innerSL_apply_norm, Real.norm_eq_abs, Real.norm_eq_abs]
+    have hid : ‖ContinuousLinearMap.id ℝ E‖ ≤ 1 := ContinuousLinearMap.norm_id_le
+    rcases le_or_gt ‖x - x₀‖ R with hx | hx
+    · calc |c (‖x - x₀‖ ^ 2)| * ‖ContinuousLinearMap.id ℝ E‖ +
+            |c' (‖x - x₀‖ ^ 2)| * (‖((2 : ℕ) : ℝ)‖ * ‖x - x₀‖) * ‖x - x₀‖
+          ≤ 2 / D * L₁ * 1 + 2 / D ^ 2 * L₂ * (2 * R) * R := by
+            gcongr
+            · exact hcb _
+            · exact hc'b _
+            · norm_num
+        _ = 2 * L₁ * (1 / D) + 4 * L₂ * (R ^ 2 / D ^ 2) := by ring
+        _ ≤ 2 * L₁ * (1 / (R - r) ^ 2) + 4 * L₂ * (1 / (R - r) ^ 2) := by
+            gcongr
+        _ = (2 * L₁ + 4 * L₂) / (R - r) ^ 2 := by ring
+    · rw [(hout x hx).1, (hout x hx).2, abs_zero, zero_mul, zero_mul, zero_mul, zero_add]
+      positivity
 
 end TauCeti

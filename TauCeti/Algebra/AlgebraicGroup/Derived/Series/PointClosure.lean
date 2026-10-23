@@ -34,13 +34,13 @@ derived subgroup is the reduced closure of the corresponding abstract derived su
 theorem derivedSeriesDefiningIdeal_eq_vanishingIdeal_derivedSeries_of_dense_points
     (h : HopfIdeal.vanishingIdeal (⊤ : Subgroup (WithConv (H →ₐ[k] k))) = ⊥) (n : ℕ) :
     derivedSeriesDefiningIdeal H n =
-      HopfIdeal.vanishingIdeal (derivedSeries (WithConv (H →ₐ[k] k)) n) := by
+      HopfIdeal.vanishingIdeal (Subgroup.derivedSeries (WithConv (H →ₐ[k] k)) n) := by
   induction n with
-  | zero => simpa only [derivedSeriesDefiningIdeal_zero, derivedSeries_zero] using h.symm
+  | zero => simpa only [derivedSeriesDefiningIdeal_zero, Subgroup.derivedSeries_zero] using h.symm
   | succ n ih =>
       rw [derivedSeriesDefiningIdeal_succ, ih,
         comapOfSurjective_derivedDefiningIdeal_quotient_vanishingIdeal_eq_vanishingIdeal_commutator,
-        derivedSeries_succ]
+        Subgroup.derivedSeries_succ]
 
 variable [IsAlgClosed k] [Algebra.FiniteType k H] [IsReduced H]
 
@@ -49,7 +49,7 @@ algebraically closed field is the reduced closure of the corresponding abstract 
 of rational points. -/
 theorem derivedSeriesDefiningIdeal_eq_vanishingIdeal_derivedSeries (n : ℕ) :
     derivedSeriesDefiningIdeal H n =
-      HopfIdeal.vanishingIdeal (derivedSeries (WithConv (H →ₐ[k] k)) n) :=
+      HopfIdeal.vanishingIdeal (Subgroup.derivedSeries (WithConv (H →ₐ[k] k)) n) :=
   H.derivedSeriesDefiningIdeal_eq_vanishingIdeal_derivedSeries_of_dense_points
     HopfIdeal.vanishingIdeal_top n
 

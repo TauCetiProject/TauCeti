@@ -6,9 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Etale
-public import Mathlib.AlgebraicGeometry.Morphisms.FiniteType
-public import Mathlib.AlgebraicGeometry.Morphisms.FormallyUnramified
-public import Mathlib.AlgebraicGeometry.Morphisms.Immersion
 
 /-!
 # Unramified morphisms
@@ -95,10 +92,9 @@ instance {X Y S : Scheme.{u}} (f : X ⟶ S) (g : Y ⟶ S) [Unramified f] :
     Unramified (pullback.snd f g) :=
   isStableUnderBaseChange.of_isPullback (IsPullback.of_hasPullback f g) inferInstance
 
-instance (priority := 900) {X Y : Scheme} (f : X ⟶ Y)
-    [AlgebraicGeometry.IsImmersion f] :
-    Unramified f := by
-  exact ⟨⟩
+/-- A monomorphism locally of finite type is unramified. -/
+instance (priority := 900) of_mono (f : X ⟶ Y) [Mono f] [LocallyOfFiniteType f] :
+    Unramified f := ⟨⟩
 
 instance (priority := 900) {X Y : Scheme} (f : X ⟶ Y) [Etale f] : Unramified f := by
   exact ⟨⟩

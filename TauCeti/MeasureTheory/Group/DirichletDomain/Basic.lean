@@ -31,6 +31,8 @@ sets are geodesics, which is how the Dirichlet polygon of a Fuchsian group arise
 * `TauCeti.dirichletDomain G p`: the Dirichlet domain of the centre `p`.
 * `TauCeti.isClosed_dirichletDomain`: it is closed.
 * `TauCeti.smul_dirichletDomain`: translating the Dirichlet domain translates its centre.
+* `TauCeti.dist_le_dist_smul_of_mem_dirichletDomain`: a point of the Dirichlet domain is a point
+  of its orbit closest to the centre.
 * `TauCeti.finite_dirichletCompetitors`: on a bounded set, only finitely many acting elements can
   move the centre to a point at least as close as the centre.
 * `TauCeti.exists_finset_dirichletDomain_inter_eq`: on a bounded set, the Dirichlet domain is
@@ -224,6 +226,12 @@ theorem smul_dirichletDomain (g : G) (p : X) :
   refine ⟨fun H h ↦ ?_, fun H h ↦ ?_⟩
   · simpa [mul_smul] using H (g⁻¹ * h * g)
   · simpa [mul_smul] using H (g * h * g⁻¹)
+
+/-- A point of a Dirichlet domain is a point of its orbit closest to the centre. -/
+theorem dist_le_dist_smul_of_mem_dirichletDomain {p x : X} (hx : x ∈ dirichletDomain G p)
+    (g : G) : dist x p ≤ dist (g • x) p :=
+  calc dist x p ≤ dist x (g⁻¹ • p) := hx g⁻¹
+    _ = dist (g • x) p := by rw [← dist_smul g, smul_inv_smul]
 
 variable [ProperSpace X] [ProperlyDiscontinuousSMul G X]
 

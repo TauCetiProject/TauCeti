@@ -13,7 +13,7 @@ public import TauCeti.RepresentationTheory.Quiver.Preprojective.Admissible
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.InducedSubgraph
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Isomorphism
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.ADE.Preprojective
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.Preprojective
+public import TauCeti.RepresentationTheory.Quiver.Preprojective.GraphOrientation
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Signless
 
 /-!
@@ -101,7 +101,7 @@ open _root_.Quiver PathAlgebra DoubledQuiver
 
 /-- The neighbours of a vertex in a finite graph form a finite type; this is the finiteness
 structure of the orientation comparisons of
-`TauCeti.RepresentationTheory.Quiver.Zigzag.Preprojective`. -/
+`TauCeti.RepresentationTheory.Quiver.Preprojective.GraphOrientation`. -/
 noncomputable local instance eNeighborSetFintype {V : Type*} [Finite V] (G : SimpleGraph V)
     (i : V) : Fintype (G.neighborSet i) :=
   Fintype.ofFinite _

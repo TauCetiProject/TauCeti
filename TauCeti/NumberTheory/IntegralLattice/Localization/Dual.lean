@@ -76,7 +76,7 @@ theorem isBaseChange_localizationDualToCompletion :
     IsBaseChange ℚ_[p] (L.localizationDualToCompletion p) := by
   have hL : IsLocalizedModule (nonZeroDivisors ℤ) L.carrier.subtype :=
     (isLocalizedModule_iff_isBaseChange (nonZeroDivisors ℤ) ℚ _).mpr
-      (Submodule.IsLattice.isBaseChange_subtype L.carrier)
+      (Submodule.isBaseChange_subtype L.carrier)
   let : IsLocalizedModule (nonZeroDivisors ℤ) L.dualCarrier.subtype :=
     { map_units := hL.map_units
       surj := fun v ↦ by

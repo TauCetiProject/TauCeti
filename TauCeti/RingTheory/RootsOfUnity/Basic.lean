@@ -17,16 +17,19 @@ public import Mathlib.RingTheory.RootsOfUnity.Minpoly
 This file records a criterion for a root of unity congruent to `1` modulo an ideal to equal `1`,
 and counts the square roots of unity in a domain in which `2 ≠ 0`; in any domain the number of
 `n`-th roots of unity divides `n`. It transfers `HasEnoughRootsOfUnity` along an injective
-homomorphism into a domain. For a prime `p` it relates the triviality of the `p`th roots of
-unity to the absence of a primitive one. It also records that
-roots of unity, and hence the values of a character of a finite group, are integral over `ℤ`.
-Finally, it identifies the `n`-torsion of a unit group, written additively, with the `n`-th roots
-of unity.
+homomorphism into a domain, and with it the nonemptiness of `primitiveRoots n R`. For a prime
+`p` it relates the triviality of the `p`th roots of unity to the absence of a primitive one. It
+also records that roots of unity, and hence the values of a character of a finite group, are
+integral over `ℤ`. It identifies the `n`-torsion of a unit group, written additively, with the
+`n`-th roots of unity.
+Finally, for `n ∣ m` it records the power map from the `m`-th to the `n`-th roots of unity.
 
 ## Main definitions
 
 * `TauCeti.torsionByUnitsEquivRootsOfUnity`: the `n`-torsion of `Mˣ`, written additively, is
   `μₙ(M)`, written additively.
+* `TauCeti.rootsOfUnityPowOfDvd`: for `n ∣ m`, the power map `η ↦ η ^ (m / n)` from `μₘ(M)` to
+  `μₙ(M)`.
 
 ## Main results
 
@@ -45,6 +48,9 @@ of unity.
   order `n` is a primitive `2n`-th root of unity.
 * `HasEnoughRootsOfUnity.of_injective`: a domain receiving an injective homomorphism from a
   commutative monoid with enough `n`-th roots of unity has enough `n`-th roots of unity.
+* `HasEnoughRootsOfUnity.primitiveRoots_nonempty` and
+  `HasEnoughRootsOfUnity.primitiveRoots_nonempty_of_injective`: with enough `n`-th roots of unity,
+  `primitiveRoots n R` is nonempty, also after an injective homomorphism into a domain.
 * `TauCeti.rootsOfUnity_eq_bot_iff`: for a prime `p`, the `p`th roots of unity are trivial
   exactly when there is no primitive `p`th root of unity.
 * `TauCeti.finite_torsionBy_additive_units`: the `n`-torsion of `Mˣ`, written additively, is
@@ -56,6 +62,12 @@ public section
 noncomputable section
 
 namespace TauCeti
+
+/-- An injective monoid homomorphism is injective on roots of unity. -/
+theorem restrictRootsOfUnity_injective {R S F : Type*} [CommMonoid R] [CommMonoid S]
+    [FunLike F R S] [MonoidHomClass F R S] (f : F) (n : ℕ) (hf : Function.Injective f) :
+    Function.Injective (restrictRootsOfUnity f n) :=
+  fun _ _ h ↦ Subtype.ext (Units.map_injective hf (congrArg Subtype.val h))
 
 variable {R : Type*} [CommRing R]
 
@@ -120,6 +132,23 @@ theorem _root_.HasEnoughRootsOfUnity.of_injective {M : Type*} [CommMonoid M] [Is
     ⟨f ζ, hζ.map_of_injective hf⟩
   cyc := rootsOfUnity.isCyclic R n
 
+variable (R) in
+/-- A domain with enough `n`-th roots of unity, for `n ≠ 0`, has a primitive `n`-th root of
+unity in `primitiveRoots n R`. -/
+theorem _root_.HasEnoughRootsOfUnity.primitiveRoots_nonempty [IsDomain R] (n : ℕ) [NeZero n]
+    [HasEnoughRootsOfUnity R n] : (primitiveRoots n R).Nonempty :=
+  have ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot R n
+  ⟨ζ, (mem_primitiveRoots (NeZero.pos n)).mpr hζ⟩
+
+/-- A domain receiving an injective monoid homomorphism from a commutative monoid with enough
+`n`-th roots of unity, for `n ≠ 0`, has a primitive `n`-th root of unity in
+`primitiveRoots n R`. -/
+theorem _root_.HasEnoughRootsOfUnity.primitiveRoots_nonempty_of_injective {M : Type*}
+    [CommMonoid M] [IsDomain R] (n : ℕ) [NeZero n] [HasEnoughRootsOfUnity M n] {f : M →* R}
+    (hf : Function.Injective f) : (primitiveRoots n R).Nonempty :=
+  have := HasEnoughRootsOfUnity.of_injective (n := n) hf
+  HasEnoughRootsOfUnity.primitiveRoots_nonempty R n
+
 /-- For a prime `p`, the `p`th roots of unity of a commutative monoid are trivial exactly when it
 has no primitive `p`th root of unity: a `p`th root of unity other than `1` has order `p`. -/
 theorem rootsOfUnity_eq_bot_iff {M : Type*} [CommMonoid M] {p : ℕ} [Fact p.Prime] :
@@ -166,5 +195,20 @@ theorem coe_torsionByUnitsEquivRootsOfUnity_symm_apply {M : Type*} [CommMonoid M
 instance finite_torsionBy_additive_units {M : Type*} [CommMonoid M] (n : ℕ)
     [Finite (rootsOfUnity n M)] : Finite (Submodule.torsionBy ℤ (Additive Mˣ) (n : ℤ)) :=
   .of_equiv _ ((torsionByUnitsEquivRootsOfUnity n).toEquiv.trans Additive.toMul).symm
+
+/-- For `n ∣ m`, raising to the power `m / n` maps the `m`-th roots of unity to the `n`-th roots of
+unity. -/
+def rootsOfUnityPowOfDvd {M : Type*} [CommMonoid M] {n m : ℕ} (h : n ∣ m) :
+    rootsOfUnity m M →* rootsOfUnity n M :=
+  ((powMonoidHom (m / n)).comp (rootsOfUnity m M).subtype).codRestrict _ fun η ↦ by
+    rw [mem_rootsOfUnity, MonoidHom.comp_apply, powMonoidHom_apply, ← pow_mul,
+      Nat.div_mul_cancel h]
+    exact (mem_rootsOfUnity _ _).mp η.prop
+
+/-- The power map `rootsOfUnityPowOfDvd h` raises a root of unity to the power `m / n`. -/
+@[simp]
+theorem coe_rootsOfUnityPowOfDvd_apply {M : Type*} [CommMonoid M] {n m : ℕ} (h : n ∣ m)
+    (η : rootsOfUnity m M) : (rootsOfUnityPowOfDvd h η : Mˣ) = (η : Mˣ) ^ (m / n) :=
+  (rfl)
 
 end TauCeti
