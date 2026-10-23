@@ -314,6 +314,13 @@ lemma coe_supportedSectionsFunctor_map_hom_app_apply (f : F ⟶ G) (W : (Opens X
       (((supportedSectionsFunctor S).map f).hom.app W s) = f.hom.app W s :=
   (rfl)
 
+/-- The equivalence `supportedHZeroEquiv` is natural in the sheaf, stated with
+`supportedSectionsFunctor`. -/
+lemma supportedHZeroEquiv_comp_mk₀ (f : F ⟶ G) (W : Opens X) (x : F.supportedH S W 0) :
+    G.supportedHZeroEquiv S W (x.comp (Abelian.Ext.mk₀ f) (add_zero 0)) =
+      ((supportedSectionsFunctor S).map f).hom.app (op W) (F.supportedHZeroEquiv S W x) :=
+  supportedHZeroEquiv_naturality_right f S W x
+
 instance mono_supportedSectionsFunctor_map (f : F ⟶ G) [Mono f] :
     Mono ((supportedSectionsFunctor S).map f) := by
   have : Mono ((supportedSectionsFunctor S).map f ≫ G.supportedSectionsι S) := by
@@ -386,12 +393,9 @@ theorem epi_supportedSectionsFunctor_map_g (hT : T.ShortExact)
   rw [supportedHRestrict_comp] at hV
   -- so near `x` the class `y` comes from a section of `F₂` supported in `S`
   obtain ⟨z, hz⟩ := Ext.covariant_sequence_exact₃ _ hT _ (zero_add 1) hV
-  -- sections of `Γ_S(F₂)` are by definition the subtype of supported sections of `F₂`, so
-  -- `Subtype.ext` reduces the equation to one between sections of `F₃`
-  refine ⟨V, hVW, ⟨T.X₂.supportedHZeroEquiv S V z, Subtype.ext ?_⟩, hxV⟩
-  have h₁ := congrArg Subtype.val (supportedHZeroEquiv_naturality_right T.g S V z)
-  rw [hz, coe_supportedHZeroEquiv_supportedHRestrict] at h₁
-  exact h₁.symm
+  refine ⟨V, hVW, ⟨T.X₂.supportedHZeroEquiv S V z, ?_⟩, hxV⟩
+  rw [← supportedHZeroEquiv_comp_mk₀, hz]
+  exact Subtype.ext (coe_supportedHZeroEquiv_supportedHRestrict ..)
 
 /-- If `0 ⟶ F₁ ⟶ F₂ ⟶ F₃ ⟶ 0` is short exact and the local cohomology sheaf `𝓗_S¹(F₁)` vanishes,
 then `0 ⟶ Γ_S(F₁) ⟶ Γ_S(F₂) ⟶ Γ_S(F₃) ⟶ 0` is short exact. -/
@@ -431,10 +435,8 @@ theorem subsingleton_supportedH_one_of_shortExact (hT : T.ShortExact)
   obtain ⟨t, ht⟩ := (AddCommGrpCat.epi_iff_surjective _).1
     (TopCat.Sheaf.IsFlasque.epi_of_shortExact hΓ (U := W)) (T.X₃.supportedHZeroEquiv S W y)
   obtain ⟨z, rfl⟩ := (T.X₂.supportedHZeroEquiv S W).surjective t
-  -- `ht` is an equation in `Γ_S(F₃)(W)`, which is by definition the subtype of supported
-  -- sections of `F₃`; `Subtype.ext` only restates it at that subtype
-  have hy : z.comp (Ext.mk₀ T.g) (add_zero 0) = y := (T.X₃.supportedHZeroEquiv S W).injective <|
-    (supportedHZeroEquiv_naturality_right T.g S W z).trans (Subtype.ext (congrArg Subtype.val ht))
+  have hy : z.comp (Ext.mk₀ T.g) (add_zero 0) = y :=
+    (T.X₃.supportedHZeroEquiv S W).injective ((supportedHZeroEquiv_comp_mk₀ S T.g W z).trans ht)
   rw [← hy, Ext.comp_assoc_of_second_deg_zero, hT.comp_extClass, Ext.comp_zero]
 
 /-- The dimension-shifting form of support truncation: if `Γ_S(F)` is flasque and the local
