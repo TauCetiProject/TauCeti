@@ -213,6 +213,7 @@ theorem map_id : map (φ := φ) LinearMap.id (LinearMap.comp_id φ) = 𝟙 (kosz
   exact ModuleCat.ofHom_id
 
 /-- The chain map induced by a composite is the composite of the induced chain maps. -/
+@[reassoc]
 theorem map_comp (g : M →ₗ[R] N) (h : ψ ∘ₗ g = φ) (g' : N →ₗ[R] P) (h' : χ ∘ₗ g' = ψ) :
     map (g' ∘ₗ g) (by rw [← LinearMap.comp_assoc, h', h]) = map g h ≫ map g' h' := by
   ext n : 1
