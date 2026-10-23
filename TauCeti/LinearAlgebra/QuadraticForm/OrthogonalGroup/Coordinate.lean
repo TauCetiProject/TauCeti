@@ -41,8 +41,9 @@ theorem mem_orthogonalGroup_iff_toMatrix (Q : QuadraticForm R V) (b : Basis n R 
   have hinj : Function.Injective (fun Q' : QuadraticForm R V => Q'.toMatrix b) :=
     (LinearMap.toMatrix₂ b b).injective.comp (QuadraticMap.associated_rightInverse R).injective
   rw [mem_orthogonalGroup_iff]
-  change (∀ m, (Q.comp g.toLinearMap) m = Q m) ↔ _
-  rw [← QuadraticMap.ext_iff, hinj.eq_iff.symm, QuadraticForm.toMatrix_comp b b Q g.toLinearMap]
+  rw [show (∀ m, Q (g m) = Q m) ↔ Q.comp g.toLinearMap = Q by
+    simp only [QuadraticMap.ext_iff, QuadraticMap.comp_apply, LinearEquiv.coe_coe]]
+  rw [hinj.eq_iff.symm, QuadraticForm.toMatrix_comp b b Q g.toLinearMap]
 
 /-- In a basis, a linear automorphism belongs to the special orthogonal group
 exactly when its Gram-matrix congruence and determinant equations both hold. -/
