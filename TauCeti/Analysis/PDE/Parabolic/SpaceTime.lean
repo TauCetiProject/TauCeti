@@ -9,8 +9,6 @@ public import Mathlib.Analysis.Normed.Lp.ProdLp
 public import Mathlib.Topology.MetricSpace.Snowflaking
 public import TauCeti.Topology.MetricSpace.Holder
 
-import Mathlib.Analysis.SpecialFunctions.Sqrt
-
 /-!
 # Parabolic space-time and parabolic Hölder seminorms
 
@@ -33,7 +31,7 @@ equivalent to the sum of the spatial `α`-Hölder seminorm of the time slices an
 
 The second inequality uses the intermediate point with the spatial coordinate of one point and the
 time of the other, which lies in the slab. The general formula for a Hölder seminorm as a supremum
-of difference quotients (`MemHolder.nnHolderNorm_eq_iSup_dist_div`) together with
+of difference quotients (`MemHolder.coe_nnHolderNorm_eq_iSup_dist_div`) together with
 `ParabolicSpaceTime.dist_eq` expresses `[v]_{α,par}` as the supremum of
 `dist (v z) (v w) / d_par(z, w) ^ α` over distinct points.
 
@@ -126,6 +124,31 @@ theorem edist_eq [PseudoEMetricSpace X] (z w : ParabolicSpaceTime X) :
 theorem dist_eq [PseudoMetricSpace X] (z w : ParabolicSpaceTime X) :
     dist z w = dist z.space w.space + √|z.time - w.time| := by
   rw [← dist_mk_mk, mk_space_time, mk_space_time]
+
+/-- The spatial extended distance is at most the parabolic extended distance. -/
+theorem edist_space_le [PseudoEMetricSpace X] (z w : ParabolicSpaceTime X) :
+    edist z.space w.space ≤ edist z w := by
+  rw [edist_eq]
+  exact le_self_add
+
+/-- The square root of the temporal extended distance is at most the parabolic extended
+distance. -/
+theorem edist_time_rpow_le [PseudoEMetricSpace X] (z w : ParabolicSpaceTime X) :
+    edist z.time w.time ^ (1 / 2 : ℝ) ≤ edist z w := by
+  rw [edist_eq]
+  exact le_add_self
+
+/-- The spatial distance is at most the parabolic distance. -/
+theorem dist_space_le [PseudoMetricSpace X] (z w : ParabolicSpaceTime X) :
+    dist z.space w.space ≤ dist z w := by
+  rw [dist_eq]
+  exact le_add_of_nonneg_right (Real.sqrt_nonneg _)
+
+/-- The square root of the temporal distance is at most the parabolic distance. -/
+theorem sqrt_abs_sub_time_le_dist [PseudoMetricSpace X] (z w : ParabolicSpaceTime X) :
+    √|z.time - w.time| ≤ dist z w := by
+  rw [dist_eq]
+  exact le_add_of_nonneg_left dist_nonneg
 
 /-- The coordinate homeomorphism of parabolic space-time with `X × ℝ`. Derivatives of functions on
 parabolic space-time are taken after transport along this map. -/
@@ -234,14 +257,10 @@ theorem eHolderNorm_le_eSpaceHolderNorm_add_eTimeHolderNorm [MetricSpace X]
   -- Pass through the point with the spatial coordinate of `w` and the time of `z`.
   set t : T := ⟨z.time, hz⟩
   set s : T := ⟨w.time, hw⟩
-  have hdx : edist z.space w.space ≤ edist z w := by
-    rw [edist_eq]
-    exact le_self_add
   have hdt : edist (t : ℝ) s ^ ((α / 2 : ℝ≥0) : ℝ) ≤ edist z w ^ (α : ℝ) := by
-    rw [NNReal.coe_div, NNReal.coe_two, div_eq_mul_one_div, mul_comm, ENNReal.rpow_mul,
-      edist_eq]
+    rw [show ((α / 2 : ℝ≥0) : ℝ) = 1 / 2 * α by push_cast; ring, ENNReal.rpow_mul]
     gcongr
-    exact le_add_self
+    exact edist_time_rpow_le z w
   calc edist (v ⟨z, hz⟩) (v ⟨w, hw⟩)
       = edist (v ⟨mk z.space t, mk_mem_slab.2 t.2⟩) (v ⟨mk w.space s, mk_mem_slab.2 s.2⟩) := by
         simp only [t, s, mk_space_time]
@@ -257,6 +276,7 @@ theorem eHolderNorm_le_eSpaceHolderNorm_add_eTimeHolderNorm [MetricSpace X]
           eTimeHolderNorm (α / 2) v * edist z w ^ (α : ℝ) := by
         rw [Subtype.edist_eq]
         gcongr
+        exact edist_space_le z w
     _ = (eSpaceHolderNorm α v + eTimeHolderNorm (α / 2) v) * edist z w ^ (α : ℝ) :=
         (add_mul _ _ _).symm
 

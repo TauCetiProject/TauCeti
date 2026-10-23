@@ -44,7 +44,7 @@ when a seminorm on a product is compared with seminorms of the slices.
 * `HolderOnWith.extend_of_dense`: a Hölder function on a dense set extends to a Hölder
   function on the whole space.
 * `HolderWith.sum`: a finite sum of Hölder functions is Hölder.
-* `eHolderNorm_eq_iSup_edist_div` and `MemHolder.nnHolderNorm_eq_iSup_dist_div`: the Hölder
+* `eHolderNorm_eq_iSup_edist_div` and `MemHolder.coe_nnHolderNorm_eq_iSup_dist_div`: the Hölder
   seminorm is the supremum of the difference quotients over distinct points.
 * `edist_le_eHolderNorm_mul_rpow`: the Hölder seminorm bounds every increment.
 * `HolderWith.eHolderNorm_comp_le`: precomposition with a Hölder map of constant `C ≠ 0` scales
@@ -186,24 +186,20 @@ theorem edist_le_eHolderNorm_mul_rpow [MetricSpace X] [PseudoEMetricSpace Y] (r 
 
 /-- The Hölder seminorm of a Hölder function is the supremum of the difference quotients
 `dist (f x) (f y) / dist x y ^ r` over distinct points `x ≠ y`. -/
-theorem MemHolder.nnHolderNorm_eq_iSup_dist_div [PseudoMetricSpace X] [PseudoMetricSpace Y]
+theorem MemHolder.coe_nnHolderNorm_eq_iSup_dist_div [PseudoMetricSpace X] [PseudoMetricSpace Y]
     {r : ℝ≥0} {f : X → Y} (hf : MemHolder r f) :
     (nnHolderNorm r f : ℝ) =
       ⨆ (x) (y) (_ : x ≠ y), dist (f x) (f y) / dist x y ^ (r : ℝ) := by
-  -- Every partial supremum of difference quotients is finite, so `toReal` commutes with it.
-  have hfin (x y : X) (p : Prop) :
-      (⨆ (_ : p), edist (f x) (f y) / edist x y ^ (r : ℝ)) ≠ ∞ :=
-    ne_top_of_le_ne_top hf.eHolderNorm_lt_top.ne
-      (iSup_le fun _ => edist_div_rpow_le_eHolderNorm r f x y)
-  have hfin' (x : X) : (⨆ (y) (_ : x ≠ y), edist (f x) (f y) / edist x y ^ (r : ℝ)) ≠ ∞ :=
-    ne_top_of_le_ne_top hf.eHolderNorm_lt_top.ne
-      (iSup₂_le fun y _ => edist_div_rpow_le_eHolderNorm r f x y)
+  -- Every difference quotient is finite, so `toReal` commutes with each partial supremum.
+  have hq (x y : X) : edist (f x) (f y) / edist x y ^ (r : ℝ) ≠ ∞ :=
+    ne_top_of_le_ne_top hf.eHolderNorm_lt_top.ne (edist_div_rpow_le_eHolderNorm r f x y)
   rw [nnHolderNorm, ENNReal.coe_toNNReal_eq_toReal, eHolderNorm_eq_iSup_edist_div,
-    ENNReal.toReal_iSup hfin']
+    ENNReal.toReal_iSup fun x => ne_top_of_le_ne_top hf.eHolderNorm_lt_top.ne
+      (iSup₂_le fun y _ => edist_div_rpow_le_eHolderNorm r f x y)]
   refine iSup_congr fun x => ?_
-  rw [ENNReal.toReal_iSup fun y => hfin x y _]
+  rw [ENNReal.toReal_iSup fun y => ne_top_of_le_ne_top (hq x y) (iSup_le fun _ => le_rfl)]
   refine iSup_congr fun y => ?_
-  rw [ENNReal.toReal_iSup fun _ => by simpa using hfin x y True]
+  rw [ENNReal.toReal_iSup fun _ => hq x y]
   refine iSup_congr fun _ => ?_
   rw [ENNReal.toReal_div, ← ENNReal.toReal_rpow, edist_dist, edist_dist,
     ENNReal.toReal_ofReal dist_nonneg, ENNReal.toReal_ofReal dist_nonneg]
@@ -220,8 +216,7 @@ theorem HolderWith.eHolderNorm_comp_le [PseudoEMetricSpace X] [PseudoEMetricSpac
     eHolderNorm (r * s) (f ∘ g) ≤ eHolderNorm r f * (C : ℝ≥0∞) ^ (r : ℝ) := by
   have h0 : (C : ℝ≥0∞) ^ (r : ℝ) ≠ 0 := by simp [hC]
   have htop : (C : ℝ≥0∞) ^ (r : ℝ) ≠ ∞ := by simp
-  rw [show eHolderNorm r f = ⨅ (C') (_ : HolderWith C' r f), (C' : ℝ≥0∞) from rfl,
-    ENNReal.iInf_mul_of_ne h0 htop]
+  rw [eHolderNorm.eq_1 r f, ENNReal.iInf_mul_of_ne h0 htop]
   refine le_iInf fun C' => ?_
   rw [ENNReal.iInf_mul_of_ne h0 htop]
   exact le_iInf fun hfC => by
