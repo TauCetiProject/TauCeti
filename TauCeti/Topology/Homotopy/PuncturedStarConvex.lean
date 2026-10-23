@@ -52,8 +52,9 @@ not homotopy equivalent to a circle.
 * `Complex.directionFrom`: the direction map `z ↦ (z - p) / ‖z - p‖` from `V \ {p}` to the unit
   circle, for `V ⊆ ℂ`.
 * `StarConvex.pathConnectedSpace_diff_singleton`: in real dimension greater than one, a
-  punctured star-convex set containing a sphere about the puncture is path connected; in
-  particular so is a punctured ball (`TauCeti.pathConnectedSpace_ball_diff_singleton`).
+  punctured star-convex set containing a sphere about the puncture is path connected.
+  Punctured balls are handled by `TauCeti.isPathConnected_ball_sdiff_singleton` in
+  `Analysis.Normed.Module.Connected`.
 * `Complex.loopAround`: the loop `t ↦ p + (z - p) e^{2πit}` going once around the puncture of
   `ball p R \ {p}`.
 
@@ -260,12 +261,6 @@ theorem _root_.StarConvex.pathConnectedSpace_diff_singleton (hV : StarConvex ℝ
   let := isPathConnected_iff_pathConnectedSpace.1 (isPathConnected_sphere hE p hr.le)
   exact (hV.sphereHomotopyEquiv hr hS).pathConnectedSpace
 
-/-- In a real normed space of dimension greater than one, a punctured open ball of positive
-radius is path connected. -/
-theorem pathConnectedSpace_ball_diff_singleton {R : ℝ} (p : E) (hE : 1 < Module.rank ℝ E)
-    (hR : 0 < R) : PathConnectedSpace ↥(ball p R \ {p}) :=
-  ((convex_ball p R).starConvex (mem_ball_self hR)).pathConnectedSpace_diff_singleton hE
-    (half_pos hR) (sphere_subset_ball (half_lt_self hR))
 
 end NormedSpace
 
