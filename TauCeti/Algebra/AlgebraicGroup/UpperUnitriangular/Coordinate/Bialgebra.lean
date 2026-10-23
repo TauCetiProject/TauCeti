@@ -17,8 +17,10 @@ For a commutative semiring `R`, the coordinate ring of the upper-unitriangular m
 ones on the diagonal and zeros below it. Matrix multiplication and the identity matrix give its
 comultiplication and counit.
 
-This is the semiring-level dependency layer for the upper-unitriangular coordinate Hopf algebra;
-the antipode and finite-type Hopf package are constructed separately over commutative rings.
+The coordinate-bialgebra constructions form the semiring-level dependency layer for the
+upper-unitriangular coordinate Hopf algebra. This file also gives the commutative-ring evaluation
+lemma `map_aeval_genericMatrix_sub_one` for the generic matrix minus the identity.
+The antipode and finite-type Hopf package are constructed separately over commutative rings.
 
 ## Main declarations
 
