@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Modules.GradedAlgebra.Sections
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.GradedAlgebra.SymmetricAlgebra.Basic
+public import TauCeti.LinearAlgebra.SymmetricAlgebra.GradedMap
 
 /-!
 # The universal property of the graded symmetric algebra
@@ -37,7 +38,8 @@ adjunction. Uniqueness holds because `Sym F` is generated in degree one
 
 * `TauCeti.AlgebraicGeometry.gradedSymmetricAlgebraLift`: the morphism `Sym F ⟶ A` of graded
   quasicoherent algebras extending `φ : F ⟶ A₁`, characterized by
-  `gradedSymmetricAlgebraDegreeOneIso_inv_app_comp_degreeOne_map_lift`;
+  `gradedSymmetricAlgebraDegreeOneIso_inv_app_comp_degreeOne_map_lift`, and natural on both
+  sides (`gradedSymmetricAlgebraLift_comp`, `gradedSymmetricAlgebra_map_comp_lift`);
 * `TauCeti.AlgebraicGeometry.gradedSymmetricAlgebraAdjunction`: the adjunction
   `gradedSymmetricAlgebra X ⊣ degreeOne`, whose unit is the identification `F ≅ Sym¹ F`
   (`gradedSymmetricAlgebraAdjunction_unit`) and whose counit `Sym A₁ ⟶ A` extends the identity
@@ -79,31 +81,6 @@ private lemma sectionsLift_ι (φ : F ⟶ A.X 1) (U : X.Opens)
     sectionsLift φ U (SymmetricAlgebra.ι _ _ m) =
       DirectSum.of (fun n ↦ Γ(A.X n, U)) 1 (φ.app U m) :=
   SymmetricAlgebra.lift_ι_apply _ m
-
-private lemma eq_of_eq_of {U : X.Opens} {z : ⨁ n, Γ(A.X n, U)} {k : ℕ} {w : Γ(A.X k, U)}
-    (h : z = DirectSum.of _ k w) : z = DirectSum.of _ k (z k) := by
-  subst h
-  rw [DirectSum.of_eq_same]
-
-/-- The extension on sections sends homogeneous elements of degree `n` into degree `n`. -/
-private lemma sectionsLift_homogeneous (φ : F ⟶ A.X 1) (U : X.Opens) {n : ℕ}
-    {x : SymmetricAlgebra Γ(X, U)
-      (PresheafOfModulesOfCommRing.obj (R := X.presheaf) F.val (op U))}
-    (hx : x ∈ SymmetricAlgebra.homogeneousSubmodule _ _ n) :
-    sectionsLift φ U x = DirectSum.of _ n (sectionsLift φ U x n) := by
-  induction hx using Submodule.pow_induction_on_left' with
-  | algebraMap r =>
-    refine eq_of_eq_of (w := GAlgebra.toFun (A := fun n ↦ Γ(A.X n, U)) r) ?_
-    rw [AlgHom.commutes, DirectSum.algebraMap_apply]
-  | add x y _ _ _ hx hy =>
-    rw [map_add, hx, hy, DirectSum.add_apply, DirectSum.of_eq_same, DirectSum.of_eq_same,
-      map_add]
-  | mem_mul m hm i x _ ih =>
-    obtain ⟨y, rfl⟩ := hm
-    rw [Nat.succ_eq_one_add i]
-    refine eq_of_eq_of (w := GradedMonoid.GMul.mul (A := fun n ↦ Γ(A.X n, U)) (φ.app U y)
-      (sectionsLift φ U x i)) ?_
-    rw [map_mul, ih, sectionsLift_ι, DirectSum.of_mul_of, DirectSum.of_eq_same]
 
 /-- The degree-`n` part `Symⁿ Γ(F, U) → Γ(Aₙ, U)` of the extension on sections. -/
 private def presheafLiftApp (φ : F ⟶ A.X 1) (n : ℕ) (U : X.Opens) :
@@ -190,8 +167,10 @@ private lemma presheafLift_mul (φ : F ⟶ A.X 1) (i j : ℕ) :
       PresheafOfModulesOfCommRing.symmetricPowerMul F.val i j ≫ presheafLift φ (i + j) := by
   ext1 U
   refine ModuleCat.MonoidalCategory.tensor_ext fun x y ↦ ?_
-  have hx := sectionsLift_homogeneous φ U.unop x.2
-  have hy := sectionsLift_homogeneous φ U.unop y.2
+  have hx : sectionsLift φ U.unop x.1 = DirectSum.of _ i (sectionsLift φ U.unop x.1 i) :=
+    SymmetricAlgebra.lift_lof_comp_apply_of_mem_homogeneousSubmodule _ _ _ x.2
+  have hy : sectionsLift φ U.unop y.1 = DirectSum.of _ j (sectionsLift φ U.unop y.1 j) :=
+    SymmetricAlgebra.lift_lof_comp_apply_of_mem_homogeneousSubmodule _ _ _ y.2
   refine (presheafLift_tensorHom_comp_mul_app_tmul φ i j U x y).trans ?_
   refine Eq.trans ?_ (presheafLift_app_apply φ (i + j) U
     ((PresheafOfModulesOfCommRing.symmetricPowerMul F.val i j).app U (x ⊗ₜ y))).symm
@@ -380,6 +359,27 @@ theorem gradedSymmetricAlgebraAdjunction_homEquiv_symm_apply {F : QuasicoherentS
     ((gradedSymmetricAlgebraAdjunction X).homEquiv F A).symm φ = gradedSymmetricAlgebraLift φ := by
   simp only [gradedSymmetricAlgebraAdjunction, Adjunction.mkOfHomEquiv_homEquiv,
     Equiv.coe_fn_symm_mk]
+
+/-- Postcomposing `gradedSymmetricAlgebraLift φ` with a morphism `f` of graded quasicoherent
+algebras extends `φ` followed by the degree-one component of `f`. -/
+@[reassoc (attr := simp)]
+theorem gradedSymmetricAlgebraLift_comp {F : QuasicoherentSheaf X}
+    {A B : GradedQuasicoherentAlgebra X} (φ : F ⟶ degreeOne.obj A) (f : A ⟶ B) :
+    gradedSymmetricAlgebraLift φ ≫ f = gradedSymmetricAlgebraLift (φ ≫ degreeOne.map f) := by
+  rw [← gradedSymmetricAlgebraAdjunction_homEquiv_symm_apply,
+    ← gradedSymmetricAlgebraAdjunction_homEquiv_symm_apply,
+    Adjunction.homEquiv_naturality_right_symm]
+
+/-- Precomposing `gradedSymmetricAlgebraLift φ` with the map `Sym F' ⟶ Sym F` induced by a
+morphism `g : F' ⟶ F` extends `g ≫ φ`. -/
+@[reassoc (attr := simp)]
+theorem gradedSymmetricAlgebra_map_comp_lift {F' F : QuasicoherentSheaf X}
+    {A : GradedQuasicoherentAlgebra X} (g : F' ⟶ F) (φ : F ⟶ degreeOne.obj A) :
+    (gradedSymmetricAlgebra X).map g ≫ gradedSymmetricAlgebraLift φ =
+      gradedSymmetricAlgebraLift (g ≫ φ) := by
+  rw [← gradedSymmetricAlgebraAdjunction_homEquiv_symm_apply,
+    ← gradedSymmetricAlgebraAdjunction_homEquiv_symm_apply,
+    Adjunction.homEquiv_naturality_left_symm]
 
 variable (X) in
 /-- The unit of `gradedSymmetricAlgebraAdjunction` is the identification `F ≅ Sym¹ F`. -/
