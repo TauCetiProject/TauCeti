@@ -11,8 +11,8 @@ public import TauCeti.RingTheory.Huber.TensorProduct.Topology
 # Continuous maps out of the tensor topology
 
 The tensor topology along adic structure maps represents compatible continuous ring maps
-into nonarchimedean topological rings. A ring map out of the algebraic tensor product is
-continuous if and only if its restrictions to the two factors are continuous. Neither
+with commuting images into nonarchimedean topological rings. A ring map out of the algebraic tensor
+product is continuous if and only if its restrictions to the two factors are continuous. Neither
 restriction has to be adic, and the target need not be a Huber ring.
 
 The continuity argument splits a power of the base ideal between the two factors. An open

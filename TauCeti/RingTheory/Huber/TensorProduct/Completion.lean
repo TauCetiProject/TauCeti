@@ -19,7 +19,7 @@ import Mathlib.RingTheory.TensorProduct.Maps
 `TauCeti.Huber.CompletedTensor A B C` is the separated completion of `B ⊗[A] C` for
 the tensor topology along adic structure maps. It is a complete Hausdorff Huber ring.
 Its two coprojections represent compatible continuous ring maps into complete Hausdorff
-nonarchimedean rings, with no adicness condition on these outgoing maps.
+nonarchimedean commutative rings, with no adicness condition on these outgoing maps.
 
 This module constructs the ring and its continuous universal property. Rings of integral
 elements are additional data and are not part of this ring-level construction.
@@ -88,23 +88,23 @@ instance : IsHuberRing (CompletedTensor A B C) :=
   inferInstanceAs (IsHuberRing (Completion (B ⊗[A] C)))
 
 /-- The canonical map from the algebraic tensor product to its separated completion. -/
-noncomputable def tmul : B ⊗[A] C →+* CompletedTensor A B C := Completion.coeRingHom
+noncomputable def toCompletion : B ⊗[A] C →+* CompletedTensor A B C := Completion.coeRingHom
 
 /-- The left coprojection of the completed tensor ring. -/
 noncomputable def inl : B →+* CompletedTensor A B C :=
-  (tmul A B C).comp includeLeftRingHom
+  (toCompletion A B C).comp includeLeftRingHom
 
 /-- The right coprojection of the completed tensor ring. -/
 noncomputable def inr : C →+* CompletedTensor A B C :=
-  (tmul A B C).comp (includeRight : C →ₐ[A] B ⊗[A] C).toRingHom
+  (toCompletion A B C).comp (includeRight : C →ₐ[A] B ⊗[A] C).toRingHom
 
 /-- The canonical map sends pure tensors to products of the two coprojections. -/
-@[simp] theorem tmul_tmul (b : B) (c : C) :
-    tmul A B C (b ⊗ₜ[A] c) = inl A B C b * inr A B C c := by
+@[simp] theorem toCompletion_tmul (b : B) (c : C) :
+    toCompletion A B C (b ⊗ₜ[A] c) = inl A B C b * inr A B C c := by
   simpa only [inl, inr, RingHom.comp_apply, includeLeftRingHom_apply,
     AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom, includeRight_apply,
     tmul_mul_tmul, mul_one, one_mul] using
-    (map_mul (tmul A B C) (b ⊗ₜ[A] (1 : C)) ((1 : B) ⊗ₜ[A] c))
+    (map_mul (toCompletion A B C) (b ⊗ₜ[A] (1 : C)) ((1 : B) ⊗ₜ[A] c))
 
 /-- The two coprojections agree on the base ring. -/
 @[simp] theorem inl_comp : (inl A B C).comp (algebraMap A B) =
@@ -113,27 +113,27 @@ noncomputable def inr : C →+* CompletedTensor A B C :=
   simp [inl, inr, ← Algebra.TensorProduct.algebraMap_apply]
 
 /-- The canonical tensor map is continuous. -/
-@[fun_prop] theorem continuous_tmul : Continuous (tmul A B C) :=
+@[fun_prop] theorem continuous_toCompletion : Continuous (toCompletion A B C) :=
   Completion.continuous_coe _
 
 /-- The left coprojection is continuous. -/
 @[fun_prop] theorem continuous_inl : Continuous (inl A B C) :=
-  (continuous_tmul A B C).comp (isAdicHom_includeLeft_tensorTopology A B C).continuous
+  (continuous_toCompletion A B C).comp (isAdicHom_includeLeft_tensorTopology A B C).continuous
 
 /-- The right coprojection is continuous. -/
 @[fun_prop] theorem continuous_inr : Continuous (inr A B C) :=
-  (continuous_tmul A B C).comp (isAdicHom_includeRight_tensorTopology A B C).continuous
+  (continuous_toCompletion A B C).comp (isAdicHom_includeRight_tensorTopology A B C).continuous
 
 /-- The canonical tensor map is adic. -/
-theorem isAdicHom_tmul : IsAdicHom (tmul A B C) := IsAdicHom.coeRingHom
+theorem isAdicHom_toCompletion : IsAdicHom (toCompletion A B C) := IsAdicHom.coeRingHom
 
 /-- The left coprojection is adic. -/
 theorem isAdicHom_inl : IsAdicHom (inl A B C) :=
-  (isAdicHom_tmul A B C).comp (isAdicHom_includeLeft_tensorTopology A B C)
+  (isAdicHom_toCompletion A B C).comp (isAdicHom_includeLeft_tensorTopology A B C)
 
 /-- The right coprojection is adic. -/
 theorem isAdicHom_inr : IsAdicHom (inr A B C) :=
-  (isAdicHom_tmul A B C).comp (isAdicHom_includeRight_tensorTopology A B C)
+  (isAdicHom_toCompletion A B C).comp (isAdicHom_includeRight_tensorTopology A B C)
 
 /-- A Tate left factor makes the completed tensor ring Tate. -/
 instance [IsTateRing B] : IsTateRing (CompletedTensor A B C) :=
@@ -144,11 +144,11 @@ instance [IsTateRing C] : IsTateRing (CompletedTensor A B C) :=
   IsTateRing.of_continuous (φ := inr A B C) (continuous_inr A B C)
 
 /-- Exactly the closure of zero dies in the separated completion. -/
-theorem ker_tmul : RingHom.ker (tmul A B C) = (⊥ : Ideal (B ⊗[A] C)).closure :=
+theorem ker_toCompletion : RingHom.ker (toCompletion A B C) = (⊥ : Ideal (B ⊗[A] C)).closure :=
   Completion.ker_coeRingHom
 
 /-- Algebraic tensors are dense in the separated completed tensor ring. -/
-theorem denseRange_tmul : DenseRange (tmul A B C) := Completion.denseRange_coe
+theorem denseRange_toCompletion : DenseRange (toCompletion A B C) := Completion.denseRange_coe
 
 variable {A B C}
 
@@ -179,11 +179,11 @@ noncomputable def lift (φ : B →+* R) (ψ : C →+* R)
   · exact hφ.congr fun b ↦ by simp [f, φ', ψ']
   · exact hψ.congr fun c ↦ by simp [f, φ', ψ']
 
-private theorem lift_tmul (φ : B →+* R) (ψ : C →+* R)
+private theorem lift_toCompletion_tmul (φ : B →+* R) (ψ : C →+* R)
     (h : φ.comp (algebraMap A B) = ψ.comp (algebraMap A C))
     (hφ : Continuous φ) (hψ : Continuous ψ) (b : B) (c : C) :
-    lift φ ψ h hφ hψ (tmul A B C (b ⊗ₜ[A] c)) = φ b * ψ c := by
-  rw [lift, tmul]
+    lift φ ψ h hφ hψ (toCompletion A B C (b ⊗ₜ[A] c)) = φ b * ψ c := by
+  rw [lift, toCompletion]
   exact (Completion.extensionHom_coe _ _ (b ⊗ₜ[A] c)).trans (by simp)
 
 /-- The extension computes on the left coprojection. -/
@@ -191,14 +191,14 @@ private theorem lift_tmul (φ : B →+* R) (ψ : C →+* R)
     (h : φ.comp (algebraMap A B) = ψ.comp (algebraMap A C))
     (hφ : Continuous φ) (hψ : Continuous ψ) (b : B) :
     lift φ ψ h hφ hψ (inl A B C b) = φ b := by
-  simpa only [tmul_tmul, map_one, mul_one] using (lift_tmul φ ψ h hφ hψ b 1)
+  simpa only [toCompletion_tmul, map_one, mul_one] using (lift_toCompletion_tmul φ ψ h hφ hψ b 1)
 
 /-- The extension computes on the right coprojection. -/
 @[simp] theorem lift_inr (φ : B →+* R) (ψ : C →+* R)
     (h : φ.comp (algebraMap A B) = ψ.comp (algebraMap A C))
     (hφ : Continuous φ) (hψ : Continuous ψ) (c : C) :
     lift φ ψ h hφ hψ (inr A B C c) = ψ c := by
-  simpa only [tmul_tmul, map_one, one_mul] using (lift_tmul φ ψ h hφ hψ 1 c)
+  simpa only [toCompletion_tmul, map_one, one_mul] using (lift_toCompletion_tmul φ ψ h hφ hψ 1 c)
 
 /-- The extension is continuous. -/
 @[fun_prop] theorem continuous_lift (φ : B →+* R) (ψ : C →+* R)
