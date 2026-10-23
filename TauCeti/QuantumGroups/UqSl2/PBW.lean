@@ -10,6 +10,7 @@ public import TauCeti.QuantumGroups.UqSl2.OreTower
 
 import Mathlib.LinearAlgebra.Basis.SMul
 import Mathlib.RingTheory.AlgebraTower
+import TauCeti.LinearAlgebra.Basis.Basic
 import TauCeti.QuantumGroups.UqSl2.Commutator
 
 /-!
@@ -28,7 +29,10 @@ Multiplying a PBW monomial on the left by a generator, or on the right by `E` or
 explicit combination of PBW monomials. Only left multiplication by `E` is not a multiple of a
 single monomial: commuting `E` past `F ^ a` contributes two monomials of `F`-exponent `a - 1`.
 These rules let PBW coordinates be tracked through products, for instance when determining the
-center.
+center: right multiplication by `E` shifts coordinates (`pbwBasis_repr_mul_e`), and at a generic
+parameter an element commuting with `K` has PBW coordinates only at monomials
+`F ^ a * K ^ b * E ^ a` (`pbwBasis_repr_eq_zero_of_commute_k`), since conjugation by `K`
+multiplies `F ^ a * K ^ b * E ^ c` by `q ^ (2 (c - a))`.
 
 The basis and its normalization follow C. Kassel, *Quantum Groups*, Graduate Texts in
 Mathematics 155, Section VI.1.
@@ -248,8 +252,8 @@ theorem pbwBasis_mul_k (a : ℕ) (b : ℤ) (c : ℕ) :
   rw [pbwBasis_apply, pbwBasis_apply, mul_assoc, h, mul_smul_comm, zpow_add_one, Units.val_mul,
     kUnit_val, ← mul_assoc, ← mul_assoc]
   congr 1
-  rw [show -2 * 1 * (c : ℤ) = -((2 * c : ℕ) : ℤ) by push_cast; ring, zpow_neg, zpow_natCast,
-    pow_mul, inv_pow, inv_pow]
+  have hc : -2 * 1 * (c : ℤ) = -((2 * c : ℕ) : ℤ) := by push_cast; ring
+  rw [hc, zpow_neg, zpow_natCast, pow_mul, inv_pow, inv_pow]
 
 /-- Left multiplication by `E` on a PBW monomial: commuting `E` past `F ^ a` produces, besides
 `q ^ (-2b) F ^ a * K ^ b * E ^ (c + 1)`, two monomials of `F`-exponent `a - 1`. -/
@@ -280,5 +284,40 @@ theorem e_mul_pbwBasis (a : ℕ) (b : ℤ) (c : ℕ) :
       sub_eq_zero.mp (by rw [e_mul_f_sub_f_mul_e, hq, inv_zero, zero_smul])
     simp only [pbwBasis_apply, hq, inv_zero, mul_zero, zero_smul, add_zero, mul_assoc]
     rw [← mul_assoc (e q), (hc.pow_right a).eq, mul_assoc, he, mul_smul_comm, pow_succ']
+
+/-! ### PBW coordinates of products -/
+
+/-- Right multiplication by `E` shifts the PBW coordinates in the exponent of `E`. -/
+theorem pbwBasis_repr_mul_e (x : UqSl2 q) (a : ℕ) (b : ℤ) (c : ℕ) :
+    (pbwBasis q).repr (x * e q) (a, b, c + 1) = (pbwBasis q).repr x (a, b, c) := by
+  have hg : Function.Injective fun i : ℕ × ℤ × ℕ => (i.1, i.2.1, i.2.2 + 1) := by
+    rintro ⟨a, b, c⟩ ⟨a', b', c'⟩ h
+    simp only [Prod.mk.injEq, add_left_inj] at h
+    simp [h]
+  simpa using (pbwBasis q).repr_map_apply_of_map_eq_smul (pbwBasis q)
+    (LinearMap.mulRight ℂ (e q)) hg (fun _ => 1)
+    (fun ⟨a, b, c⟩ => by rw [LinearMap.mulRight_apply, pbwBasis_mul_e, one_smul]) x (a, b, c)
+
+variable {q}
+
+/-- **Weight-zero coordinates.** At a generic parameter, an element commuting with `K` has no PBW
+coordinate at `F ^ a * K ^ b * E ^ c` with `a ≠ c`. -/
+theorem pbwBasis_repr_eq_zero_of_commute_k (hq : IsGenericQuantumParameter q) {x : UqSl2 q}
+    (hx : Commute (k q) x) {a : ℕ} (b : ℤ) {c : ℕ} (hac : a ≠ c) :
+    (pbwBasis q).repr x (a, b, c) = 0 := by
+  have hg : Function.Injective fun i : ℕ × ℤ × ℕ => (i.1, i.2.1 + 1, i.2.2) := by
+    rintro ⟨a, b, c⟩ ⟨a', b', c'⟩ h
+    simp only [Prod.mk.injEq, add_left_inj] at h
+    simp [h]
+  have hl := (pbwBasis q).repr_map_apply_of_map_eq_smul (pbwBasis q) (LinearMap.mulLeft ℂ (k q))
+    hg (fun i => (q⁻¹ ^ 2) ^ i.1) (fun ⟨a, b, c⟩ => k_mul_pbwBasis q a b c) x (a, b, c)
+  have hr := (pbwBasis q).repr_map_apply_of_map_eq_smul (pbwBasis q) (LinearMap.mulRight ℂ (k q))
+    hg (fun i => (q⁻¹ ^ 2) ^ i.2.2) (fun ⟨a, b, c⟩ => pbwBasis_mul_k q a b c) x (a, b, c)
+  simp only [LinearMap.mulLeft_apply, LinearMap.mulRight_apply, hx.eq] at hl hr
+  rw [hl] at hr
+  have hs : (q⁻¹ ^ 2) ^ a ≠ (q⁻¹ ^ 2) ^ c := fun h => hac <| by
+    have := hq.inv.pow_injective (by simpa only [← pow_mul] using h)
+    omega
+  exact (mul_eq_mul_right_iff.mp hr).resolve_left hs
 
 end TauCeti.UqSl2

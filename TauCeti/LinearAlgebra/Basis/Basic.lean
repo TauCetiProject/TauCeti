@@ -23,6 +23,9 @@ linear-map composition.
 
 * `Module.Basis.eq_smul_of_repr_support_subset_singleton`: a vector supported on one coordinate is
   that coordinate times the corresponding basis vector.
+* `Module.Basis.repr_map_apply_of_map_eq_smul`: a linear map sending each basis vector to a
+  multiple of a basis vector, along an injective map of indices, scales the corresponding
+  coordinates.
 * `Module.Basis.intertwines_of_apply`: a linear map that intertwines two endomorphisms on a basis
   intertwines them everywhere.
 * `Module.Basis.coord_map_apply`: the coordinates with respect to a basis transported along a
@@ -58,6 +61,22 @@ theorem repr_map_eq_of_map_basis
     exact (congrArg c.repr (hf i)).trans
       ((c.repr_self i).trans (b.repr_self i).symm)
   exact DFunLike.congr_fun h x
+
+/-- A linear map sending each basis vector `b i` to a multiple `s i • c (g i)` of a basis vector,
+along an injective map of indices `g`, multiplies the corresponding coordinates by `s i`. -/
+theorem repr_map_apply_of_map_eq_smul
+    {R M N ι ι' : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+    [AddCommMonoid N] [Module R N]
+    (b : Module.Basis ι R M) (c : Module.Basis ι' R N) (f : M →ₗ[R] N) {g : ι → ι'}
+    (hg : Function.Injective g) (s : ι → R) (hf : ∀ i, f (b i) = s i • c (g i)) (x : M)
+    (i : ι) : c.repr (f x) (g i) = s i * b.repr x i := by
+  classical
+  have h : c.coord (g i) ∘ₗ f = s i • b.coord i :=
+    b.ext fun j => by
+      simp only [LinearMap.comp_apply, hf, map_smul, coord_apply, repr_self, LinearMap.smul_apply,
+        smul_eq_mul, Finsupp.single_apply, hg.eq_iff]
+      split_ifs with hji <;> simp [hji]
+  simpa using LinearMap.congr_fun h x
 
 /-- A linear map intertwines two endomorphisms if it does so on every vector of a basis. -/
 theorem intertwines_of_apply {W : Type*} [AddCommMonoid W] [Module K W]
