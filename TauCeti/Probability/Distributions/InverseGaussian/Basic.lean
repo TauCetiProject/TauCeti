@@ -239,10 +239,12 @@ private theorem hasDerivAt_cdfFormula (hμ : 0 < μ) (hlam : 0 < lam) (hx : 0 < 
     rw [neg_sq, mul_pow, mul_pow, hr2]
     field_simp
     ring
+  -- Write the radicand as a quotient by a perfect square, so that the square root splits.
+  have hrad : lam / (2 * π * x ^ 3) = (lam / x) / (√(2 * π) * x) ^ 2 := by
+    rw [mul_pow, sq_sqrt (by positivity)]
+    field_simp
   have hS : √(lam / (2 * π * x ^ 3)) = r / (√(2 * π) * x) := by
-    rw [show lam / (2 * π * x ^ 3) = (lam / x) / (√(2 * π) * x) ^ 2 by
-        rw [mul_pow, sq_sqrt (by positivity)]; field_simp,
-      sqrt_div' _ (sq_nonneg _), sqrt_sq (by positivity)]
+    rw [hrad, sqrt_div' _ (sq_nonneg _), sqrt_sq (by positivity)]
   have hE : -(lam * (x - μ) ^ 2) / (2 * μ ^ 2 * x) = -(r * (x / μ + -1)) ^ 2 / 2 := by
     rw [mul_pow, hr2]
     field_simp
