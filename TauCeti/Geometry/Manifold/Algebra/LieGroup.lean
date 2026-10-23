@@ -23,8 +23,8 @@ This file also proves that the integer power maps of a `C^n` Lie group are `C^n`
 
 * `IsLocalDiffeomorph.lieGroup`, `IsLocalDiffeomorph.lieAddGroup`: the image of a Lie group under
   a surjective homomorphism which is a local diffeomorphism is a Lie group.
-* `contMDiff_zpow`, `contMDiff_zsmul`: integer powers, and integer multiples, in a Lie group are
-  `C^n`.
+* `TauCeti.contMDiff_zpow`, `TauCeti.contMDiff_zsmul`: integer powers, and integer multiples, in
+  a Lie group are `C^n`.
 -/
 
 public section
@@ -68,8 +68,12 @@ theorem IsLocalDiffeomorph.lieGroup (π : G →* G') (hπ : IsLocalDiffeomorph I
     rw [← hπ.contMDiff_comp_iff hsurj le_rfl, h]
     exact hπ.contMDiff.comp (contMDiff_inv I n)
 
+namespace TauCeti
+
 /-- In a `C^n` Lie group, every integer power map is `C^n`. -/
 @[to_additive /-- In a `C^n` additive Lie group, multiplication by every integer is `C^n`. -/]
 theorem contMDiff_zpow : ∀ k : ℤ, ContMDiff I I n fun a : G ↦ a ^ k
   | (k : ℕ) => by simpa using contMDiff_pow k
   | .negSucc k => by simpa using (contMDiff_pow (k + 1)).inv
+
+end TauCeti

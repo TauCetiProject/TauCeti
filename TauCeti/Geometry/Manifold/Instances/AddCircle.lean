@@ -56,7 +56,7 @@ analytic diffeomorphism with derivative `p⁻¹ * q`.
   diffeomorphism.
 * `AddCircle.coe_apply_of_mem_atlas`: the charts of `AddCircle p` are local lifts to `ℝ`.
 * `AddCircle.instLieAddGroup`: `AddCircle p` is an analytic additive Lie group. In particular,
-  multiplication by an integer is analytic (`contMDiff_zsmul`).
+  multiplication by an integer is analytic (`TauCeti.contMDiff_zsmul`).
 * `AddCircle.contMDiff_of_comp_coe_eq`, `AddCircle.hasMFDerivAt_of_comp_coe_eq`: a map
   `AddCircle p → AddCircle q` lifting a map `f : ℝ → ℝ` is as smooth as `f`, and has the
   derivative of `f`.
@@ -500,7 +500,7 @@ theorem coe_diffeomorphAddCircle (n : ℕ∞ω) :
 
 /-- The rescaling sends the class of `t` to the class of `t * (p⁻¹ * q)`. -/
 @[simp]
-theorem diffeomorphAddCircle_apply_coe (n : ℕ∞ω) (t : ℝ) :
+theorem diffeomorphAddCircle_apply_mk (n : ℕ∞ω) (t : ℝ) :
     diffeomorphAddCircle p q n t = (t * (p⁻¹ * q) : ℝ) := (rfl)
 
 /-- The underlying homeomorphism of `diffeomorphAddCircle p q n` is
@@ -544,7 +544,7 @@ theorem diffeomorphAddCircle_trans (n : ℕ∞ω) :
       diffeomorphAddCircle p r n := by
   ext x
   obtain ⟨t, rfl⟩ := QuotientAddGroup.mk_surjective x
-  simp only [Diffeomorph.coe_trans, Function.comp_apply, diffeomorphAddCircle_apply_coe]
+  simp only [Diffeomorph.coe_trans, Function.comp_apply, diffeomorphAddCircle_apply_mk]
   congr 1
   field_simp [(Fact.out : 0 < q).ne']
 
@@ -555,7 +555,7 @@ theorem mfderiv_diffeomorphAddCircle (n : ℕ∞ω) (x : AddCircle p) :
     mfderiv 𝓘(ℝ) 𝓘(ℝ) (diffeomorphAddCircle p q n) x =
       (p⁻¹ * q) • ContinuousLinearMap.id ℝ ℝ := by
   obtain ⟨t, rfl⟩ := QuotientAddGroup.mk_surjective x
-  exact (hasMFDerivAt_of_comp_coe_eq (funext (diffeomorphAddCircle_apply_coe p q n))
+  exact (hasMFDerivAt_of_comp_coe_eq (funext (diffeomorphAddCircle_apply_mk p q n))
     ((hasFDerivAt_id t).mul_const (p⁻¹ * q))).mfderiv
 
 end AddCircle
