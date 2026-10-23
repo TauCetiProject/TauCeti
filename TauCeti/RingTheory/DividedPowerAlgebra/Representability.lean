@@ -7,9 +7,7 @@ module
 
 public import TauCeti.RingTheory.DividedPowerAlgebra.UniversalLaw
 public import TauCeti.RingTheory.PolynomialLaw.Coeff
-import Mathlib.Data.Finsupp.Multiset
 import Mathlib.Data.Multiset.Fintype
-import TauCeti.Algebra.MvPolynomial.Monomial
 
 /-!
 # Roby representability
@@ -180,120 +178,50 @@ of `∏ᵢ Xᵢ ^ nᵢ` in `f (∑ᵢ Xᵢ ⊗ mᵢ)`. -/
 private def famCoeff {ι : Type*} [Fintype ι] (p : ι → ℕ × M) : N :=
   coeff R N (fun i ↦ (p i).2) f (Finsupp.equivFunOnFinite.symm fun i ↦ (p i).1)
 
+/-- The vectors of a family with a distinguished first pair. -/
+private theorem snd_option_elim' {ι α β : Type*} (q : α × β) (p : ι → α × β) :
+    (fun o ↦ (Option.elim' q p o).2) = Option.elim' q.2 fun i ↦ (p i).2 := by
+  funext o
+  cases o <;> rfl
+
+/-- The exponents of a family with a distinguished first pair. -/
+private theorem equivFunOnFinite_symm_fst_option_elim' {ι β : Type*} [Finite ι] (q : ℕ × β)
+    (p : ι → ℕ × β) :
+    (Finsupp.equivFunOnFinite.symm fun o ↦ (Option.elim' q p o).1) =
+      (Finsupp.equivFunOnFinite.symm fun i ↦ (p i).1).optionElim q.1 := by
+  ext o
+  cases o <;> simp
+
 /-- Coefficients are invariant under reindexing the family. -/
 private theorem famCoeff_comp_equiv {ι κ : Type*} [Fintype ι] [Fintype κ] (e : κ ≃ ι)
     (p : ι → ℕ × M) : famCoeff f (p ∘ e) = famCoeff f p := by
-  classical
-  symm
-  rw [famCoeff, coeff_eq_sum_of_sum_tmul_eq f (fun k ↦ (p (e k)).2) (fun k ↦ X (e k))
-    (fun i ↦ (p i).2) (e.sum_comp fun i ↦ X i ⊗ₜ[R] (p i).2)]
-  have h (l : κ →₀ ℕ) : (∏ k, (X (e k) : MvPolynomial ι R) ^ l k).coeff
-      (Finsupp.equivFunOnFinite.symm fun i ↦ (p i).1) =
-      if l = Finsupp.equivFunOnFinite.symm fun k ↦ (p (e k)).1 then 1 else 0 := by
-    rw [Fintype.prod_equiv e _ (fun i ↦ (X i : MvPolynomial ι R) ^ l (e.symm i)) (by simp),
-      coeff_prod_univ_X_pow]
-    congr 1
-    simp only [Finsupp.coe_equivFunOnFinite_symm, Finsupp.ext_iff, eq_iff_iff]
-    exact ⟨fun h k ↦ by simpa using h (e k), fun h i ↦ by simpa using h (e.symm i)⟩
-  simp only [h, ite_smul, _root_.one_smul, _root_.zero_smul, Finsupp.sum_ite_self_eq']
-  simp only [famCoeff, Function.comp_apply]
+  have h : (Finsupp.equivFunOnFinite.symm fun k ↦ ((p ∘ e) k).1) =
+      (Finsupp.equivFunOnFinite.symm fun i ↦ (p i).1).equivMapDomain e.symm := by
+    ext
+    simp
+  rw [famCoeff, famCoeff, h]
+  exact coeff_comp_equiv e (fun i ↦ (p i).2) f _
 
 /-- A pair with exponent zero does not contribute to a coefficient. -/
 private theorem famCoeff_option_zero {ι : Type*} [Fintype ι] (a : M) (p : ι → ℕ × M) :
     famCoeff f (Option.elim' (0, a) p) = famCoeff f p := by
-  classical
-  symm
-  rw [famCoeff, coeff_eq_sum_of_sum_tmul_eq f (fun o ↦ (Option.elim' (0, a) p o).2)
-    (Option.elim' 0 X) (fun i ↦ (p i).2) (by simp [Fintype.sum_option])]
-  have h (l : Option ι →₀ ℕ) :
-      (∏ o, (Option.elim' 0 X o : MvPolynomial ι R) ^ l o).coeff
-        (Finsupp.equivFunOnFinite.symm fun i ↦ (p i).1) =
-      if l = Finsupp.equivFunOnFinite.symm fun o ↦ (Option.elim' (0, a) p o).1 then 1 else 0 := by
-    rw [Fintype.prod_option]
-    simp only [Option.elim'_none, Option.elim'_some]
-    rcases Nat.eq_zero_or_pos (l none) with h0 | h0
-    · rw [h0, pow_zero, one_mul, coeff_prod_univ_X_pow]
-      congr 1
-      simp [Finsupp.ext_iff, Option.forall, h0]
-    · have hl : l ≠ Finsupp.equivFunOnFinite.symm fun o ↦ (Option.elim' (0, a) p o).1 := by
-        rintro rfl
-        simp at h0
-      simp [zero_pow h0.ne', hl]
-  simp only [h, ite_smul, _root_.one_smul, _root_.zero_smul, Finsupp.sum_ite_self_eq']
-  rw [famCoeff]
+  simp only [famCoeff, snd_option_elim', equivFunOnFinite_symm_fst_option_elim',
+    coeff_optionElim_zero]
 
 /-- Scaling the vector of a pair by `r` scales the coefficient by `r ^ n`. -/
 private theorem famCoeff_option_smul {ι : Type*} [Fintype ι] (n : ℕ) (r : R) (a : M)
     (p : ι → ℕ × M) :
     famCoeff f (Option.elim' (n, r • a) p) = r ^ n • famCoeff f (Option.elim' (n, a) p) := by
-  classical
-  let K : Option ι →₀ ℕ := Finsupp.equivFunOnFinite.symm fun o ↦ (Option.elim' (n, a) p o).1
-  let s : Option ι → MvPolynomial (Option ι) R := Option.elim' (C r * X none) fun i ↦ X (some i)
-  rw [famCoeff, coeff_eq_sum_of_sum_tmul_eq f (fun o ↦ (Option.elim' (n, a) p o).2) s
-    (fun o ↦ (Option.elim' (n, r • a) p o).2)
-    (by simp [s, Fintype.sum_option, ← smul_eq_C_mul, TensorProduct.smul_tmul])]
-  have h (l : Option ι →₀ ℕ) : (∏ o, s o ^ l o).coeff K = if l = K then r ^ n else 0 := by
-    rw [show ∏ o, s o ^ l o = C (r ^ l none) * ∏ o, (X o : MvPolynomial (Option ι) R) ^ l o by
-      simp only [s, Fintype.prod_option, Option.elim'_none, Option.elim'_some, mul_pow, map_pow,
-        mul_assoc], coeff_C_mul, coeff_prod_univ_X_pow]
-    by_cases hl : l = K
-    · subst hl
-      simp [K]
-    · rw [ite_eq_right_iff.mpr fun h ↦ absurd h hl, ite_eq_right_iff.mpr, mul_zero]
-      exact fun h ↦ absurd (Finsupp.ext h) hl
-  have hK : (Finsupp.equivFunOnFinite.symm fun o ↦ (Option.elim' (n, r • a) p o).1) = K := by
-    ext o
-    cases o <;> rfl
-  simp only [hK, h, ite_smul, _root_.zero_smul]
-  rw [Finsupp.sum_ite_eq', famCoeff]
-  split_ifs with hmem
-  · rfl
-  · rw [Finsupp.notMem_support_iff.mp hmem, smul_zero]
+  simp only [famCoeff, snd_option_elim', equivFunOnFinite_symm_fst_option_elim',
+    coeff_optionElim_smul]
 
 /-- Two pairs with the same vector merge into one, with a binomial coefficient. -/
 private theorem famCoeff_option_option_mul {ι : Type*} [Fintype ι] (x y : ℕ) (a : M)
     (p : ι → ℕ × M) :
     famCoeff f (Option.elim' (x, a) (Option.elim' (y, a) p)) =
       (x + y).choose x • famCoeff f (Option.elim' (x + y, a) p) := by
-  classical
-  let L : Option ι →₀ ℕ := Finsupp.equivFunOnFinite.symm fun o ↦ (Option.elim' (x + y, a) p o).1
-  let s : Option ι → MvPolynomial (Option (Option ι)) R :=
-    Option.elim' (X none + X (some none)) fun i ↦ X (some (some i))
-  rw [famCoeff, coeff_eq_sum_of_sum_tmul_eq f (fun o ↦ (Option.elim' (x + y, a) p o).2) s
-    (fun o ↦ (Option.elim' (x, a) (Option.elim' (y, a) p) o).2)
-    (by simp [s, Fintype.sum_option, TensorProduct.add_tmul, add_assoc])]
-  set K : Option (Option ι) →₀ ℕ := Finsupp.equivFunOnFinite.symm fun o ↦
-    (Option.elim' (x, a) (Option.elim' (y, a) p) o).1
-  have h (l : Option ι →₀ ℕ) :
-      (∏ o, s o ^ l o).coeff K = if l = L then ((x + y).choose x : R) else 0 := by
-    have hprod : ∏ o, s o ^ l o = ∑ q ∈ Finset.antidiagonal (l none), (l none).choose q.1 •
-        ∏ o, (X o : MvPolynomial (Option (Option ι)) R) ^
-          (Option.elim' q.1 (Option.elim' q.2 fun i ↦ l (some i)) o) := by
-      rw [Fintype.prod_option]
-      simp only [s, Option.elim'_none, Option.elim'_some]
-      rw [(Commute.all _ _).add_pow', Finset.sum_mul]
-      refine Finset.sum_congr rfl fun q _ ↦ ?_
-      simp [Fintype.prod_option, mul_assoc]
-    have hcond (q : ℕ × ℕ) : (∀ o, Option.elim' q.1 (Option.elim' q.2 fun i ↦ l (some i)) o =
-        K o) ↔ q = (x, y) ∧ ∀ i, l (some i) = (p i).1 := by
-      simp [K, Option.forall, Prod.ext_iff, and_assoc]
-    have hns (c : ℕ) (P : MvPolynomial (Option (Option ι)) R) :
-        (c • P).coeff K = c • P.coeff K := by
-      simpa using map_nsmul (coeffAddMonoidHom K) c P
-    rw [hprod, coeff_sum]
-    simp only [hns, coeff_prod_univ_X_pow, hcond, ite_and, smul_ite, smul_zero]
-    rw [Finset.sum_ite_eq']
-    simp only [Finset.mem_antidiagonal, L, Finsupp.ext_iff, Option.forall,
-      Finsupp.coe_equivFunOnFinite_symm, Option.elim'_none, Option.elim'_some, nsmul_eq_mul,
-      mul_one]
-    by_cases hxy : x + y = l none
-    · simp [hxy, eq_comm]
-    · simp [hxy, Ne.symm hxy]
-  simp only [h, ite_smul, _root_.zero_smul]
-  rw [Finsupp.sum_ite_eq', famCoeff]
-  split_ifs with hmem
-  · rw [Nat.cast_smul_eq_nsmul]
-  · rw [Finsupp.notMem_support_iff.mp hmem, smul_zero]
+  simp only [famCoeff, snd_option_elim', equivFunOnFinite_symm_fst_option_elim',
+    coeff_optionElim_optionElim_self]
 
 /-- A pair whose vector is a sum splits into a sum over pairs, as in the divided-power
 binomial formula. -/
@@ -302,36 +230,8 @@ private theorem famCoeff_option_add {ι : Type*} [Fintype ι] (n : ℕ) (a b : M
     famCoeff f (Option.elim' (n, a + b) p) =
       ∑ q ∈ Finset.antidiagonal n,
         famCoeff f (Option.elim' (q.1, a) (Option.elim' (q.2, b) p)) := by
-  classical
-  let L (q : ℕ × ℕ) : Option (Option ι) →₀ ℕ := Finsupp.equivFunOnFinite.symm fun o ↦
-    (Option.elim' (q.1, a) (Option.elim' (q.2, b) p) o).1
-  let s : Option (Option ι) → MvPolynomial (Option ι) R :=
-    Option.elim' (X none) (Option.elim' (X none) fun i ↦ X (some i))
-  rw [famCoeff, coeff_eq_sum_of_sum_tmul_eq f
-    (fun o ↦ (Option.elim' (0, a) (Option.elim' (0, b) p) o).2) s
-    (fun o ↦ (Option.elim' (n, a + b) p o).2)
-    (by simp [s, Fintype.sum_option, TensorProduct.tmul_add, add_assoc])]
-  set K : Option ι →₀ ℕ := Finsupp.equivFunOnFinite.symm fun o ↦ (Option.elim' (n, a + b) p o).1
-  have h (l : Option (Option ι) →₀ ℕ) (c : N) :
-      (∏ o, s o ^ l o).coeff K • c = ∑ q ∈ Finset.antidiagonal n, if l = L q then c else 0 := by
-    rw [show ∏ o, s o ^ l o = ∏ o, (X o : MvPolynomial (Option ι) R) ^
-        (Option.elim' (l none + l (some none)) (fun i ↦ l (some (some i))) o) by
-      simp [s, Fintype.prod_option, pow_add, mul_assoc], coeff_prod_univ_X_pow]
-    have hL (q : ℕ × ℕ) : l = L q ↔
-        q = (l none, l (some none)) ∧ ∀ i, l (some (some i)) = (p i).1 := by
-      simp [L, Finsupp.ext_iff, Option.forall, Prod.ext_iff, eq_comm, and_assoc]
-    simp only [hL, ite_and, Finset.sum_ite_eq', Finset.mem_antidiagonal]
-    simp only [K, Option.forall, Finsupp.coe_equivFunOnFinite_symm, Option.elim'_none,
-      Option.elim'_some]
-    split_ifs <;> simp_all
-  simp only [Finsupp.sum, h]
-  rw [Finset.sum_comm]
-  refine Finset.sum_congr rfl fun q _ ↦ ?_
-  have hv : (fun o ↦ (Option.elim' (0, a) (Option.elim' (0, b) p) o).2) =
-      fun o ↦ (Option.elim' (q.1, a) (Option.elim' (q.2, b) p) o).2 := by
-    funext o
-    rcases o with _ | _ | _ <;> rfl
-  rw [Finset.sum_ite_eq', Finsupp.if_mem_support, famCoeff, hv]
+  simp only [famCoeff, snd_option_elim', equivFunOnFinite_symm_fst_option_elim',
+    coeff_optionElim_add]
 
 section Multiset
 
@@ -435,8 +335,9 @@ private theorem ringCon_le_polyCon : ringCon R M ≤ polyCon f := by
   intro a b h t
   induction t using MvPolynomial.induction_on' with
   | monomial e c =>
-    rw [show monomial e c = c • monomial e 1 by rw [smul_monomial, smul_eq_mul, mul_one],
-      smul_mul_assoc, smul_mul_assoc, map_smul, map_smul, polyMap_monomial_mul_of_rel f h]
+    have hc : monomial e c = c • monomial e (1 : R) := by
+      rw [smul_monomial, smul_eq_mul, mul_one]
+    rw [hc, smul_mul_assoc, smul_mul_assoc, map_smul, map_smul, polyMap_monomial_mul_of_rel f h]
   | add t t' ht ht' => rw [add_mul, add_mul, map_add, map_add, ht, ht']
 
 /-- The linear map `Γ_R(M) → N` induced by the coefficients of `f`: it sends
@@ -457,12 +358,12 @@ private theorem coeffLift_mk (P : MvPolynomial (ℕ × M) R) :
 
 private theorem coeffLift_prod_dp {ι : Type*} [Fintype ι] (p : ι → ℕ × M) :
     coeffLift f (∏ i, dp R (p i).1 (p i).2) = famCoeff f p := by
-  rw [show ∏ i, dp R (p i).1 (p i).2 =
+  -- `dp R n m` is the image of the variable `X (n, m)` under the quotient map (`dp_def`).
+  have hdp : ∏ i, dp R (p i).1 (p i).2 =
       ((monomial (∑ i, Finsupp.single (p i) 1) 1 : MvPolynomial (ℕ × M) R) :
-        DividedPowerAlgebra R M) by
-    rw [monomial_sum_one]
-    exact (map_prod (RingCon.mkₐ R (ringCon R M)) _ _).symm, coeffLift_mk, polyMap_monomial,
-    map_sum]
+        DividedPowerAlgebra R M) := by
+    simp only [dp_def, Prod.mk.eta, monomial_sum_one, ← X.eq_1, ← RingCon.mkₐ_apply R, map_prod]
+  rw [hdp, coeffLift_mk, polyMap_monomial, map_sum]
   simp only [Finsupp.toMultiset_single, one_nsmul]
   rw [← famMultiset_map_univ, ← Multiset.sum_map_singleton (Finset.univ.val.map p),
     Multiset.map_map]
