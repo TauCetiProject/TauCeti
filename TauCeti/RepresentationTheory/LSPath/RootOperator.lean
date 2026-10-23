@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Reflection
 public import TauCeti.RepresentationTheory.LSPath.PLPath
+import Mathlib.Algebra.Order.Group.MinMax
 
 /-!
 # Running heights and root operators on piecewise-linear paths
@@ -164,10 +165,23 @@ theorem listMinHeight_reverse_map_neg (l : List V) :
       simpa using sub_le_sub_right (listMinHeight_nonpos (f := f) l) (f l.sum)
     simp only [List.map_cons, List.reverse_cons, listMinHeight_append, ih, listMinHeight_cons,
       listMinHeight_nil, map_neg, add_zero, ← List.sum_neg_reverse, List.sum_cons, map_add]
-    rw [← min_add_add_left, ← min_assoc, add_zero, min_eq_left hl]
-    simp only [sub_eq_add_neg]
-    rw [← min_add_add_right, min_comm (listMinHeight f l + -f l.sum)]
-    congr 1 <;> abel
+    -- Translate the minimum for the final reversed segment by the tail's final height.
+    have hshift : -f l.sum + min 0 (-f v) = min (-f l.sum) (-(f v + f l.sum)) := by
+      rw [← min_add_add_left, add_zero]
+      congr 1
+      abel
+    calc
+      min (listMinHeight f l - f l.sum) (-f l.sum + min 0 (-f v)) =
+          min (min (listMinHeight f l - f l.sum) (-f l.sum)) (-(f v + f l.sum)) := by
+        rw [hshift, min_assoc]
+      -- The tail minimum is nonpositive, so its shifted value lies below this endpoint.
+      _ = min (listMinHeight f l - f l.sum) (-(f v + f l.sum)) := by
+        rw [min_eq_left hl]
+      _ = min (-(f v + f l.sum)) (listMinHeight f l - f l.sum) := min_comm _ _
+      -- Translate both candidates back by the total height of the original list.
+      _ = min 0 (f v + listMinHeight f l) - (f v + f l.sum) := by
+        rw [← min_sub_sub_right]
+        congr 1 <;> abel
 
 end ListMinHeightReverse
 
