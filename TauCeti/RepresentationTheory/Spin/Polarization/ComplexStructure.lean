@@ -92,16 +92,27 @@ theorem spinPolarizationData_W' :
 theorem spinPolarizationData_line : (J.spinPolarizationData hQJ hQ).line = ⊥ :=
   SpinPolarizationData.ofIsCompl_line ..
 
+/-- The `(1,0)`-part of a real vector lies in the first isotropic summand of the polarization. -/
+theorem holomorphicPart_mem_spinPolarizationData_W (v : V) :
+    J.holomorphicPart v ∈ (J.spinPolarizationData hQJ hQ).W := by
+  rw [spinPolarizationData_W]
+  exact J.holomorphicPart_mem_eigenspace_baseChange_I v
+
+/-- The `(0,1)`-part of a real vector lies in the second isotropic summand of the
+polarization. -/
+theorem antiholomorphicPart_mem_spinPolarizationData_W' (v : V) :
+    J.antiholomorphicPart v ∈ (J.spinPolarizationData hQJ hQ).W' := by
+  rw [spinPolarizationData_W']
+  exact J.antiholomorphicPart_mem_eigenspace_baseChange_neg_I v
+
 /-- The decomposition of a real vector `1 ⊗ v` along the polarization is
 `(v^(1,0), v^(0,1))`, with no component in the orthogonal remainder. -/
 @[simp]
 theorem spinPolarizationData_decompositionEquiv_symm_tmul (v : V) :
     (J.spinPolarizationData hQJ hQ).decompositionEquiv.symm ((1 : ℂ) ⊗ₜ v) =
-      ((⟨J.holomorphicPart v, by
-          rw [spinPolarizationData_W]; exact J.holomorphicPart_mem_eigenspace_baseChange_I v⟩,
-        ⟨J.antiholomorphicPart v, by
-          rw [spinPolarizationData_W']
-          exact J.antiholomorphicPart_mem_eigenspace_baseChange_neg_I v⟩), 0) := by
+      ((⟨J.holomorphicPart v, J.holomorphicPart_mem_spinPolarizationData_W hQJ hQ v⟩,
+        ⟨J.antiholomorphicPart v, J.antiholomorphicPart_mem_spinPolarizationData_W' hQJ hQ v⟩),
+        0) := by
   rw [← J.holomorphicPart_add_antiholomorphicPart v]
   simpa using (J.spinPolarizationData hQJ hQ).decompositionEquiv_symm_apply
     ⟨J.holomorphicPart v, _⟩ ⟨J.antiholomorphicPart v, _⟩ 0

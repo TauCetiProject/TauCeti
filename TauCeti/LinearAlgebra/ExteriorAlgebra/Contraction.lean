@@ -33,6 +33,10 @@ Every basis vector is the product of the exterior-algebra generators of its inde
 increasing order; for index sets with one or two elements this is also recorded in the explicit
 forms `TauCeti.ExteriorAlgebra.basis_singleton` and `TauCeti.ExteriorAlgebra.basis_pair`.
 
+Independently of a basis, `ExteriorAlgebra.contractLeft_map` states naturality under a linear
+map: pull back the contracting functional and then map the contracted element. This follows
+from the general quadratic-isometry statement `CliffordAlgebra.contractLeft_map`.
+
 Independently of a basis, the grade involution is the sign `(-1) ^ n` on the `n`-th exterior power,
 a contraction carries the `(n + 1)`-th exterior power into the `n`-th, and a vector graded-commutes
 with every multivector: `ι m * x = involute x * ι m`.  Together with the graded Leibniz rule
@@ -437,6 +441,16 @@ end TauCeti.ExteriorAlgebra
 namespace ExteriorAlgebra
 
 variable {R : Type*} {M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+
+/-- Contraction against a functional commutes with an exterior-algebra map after pulling
+back the functional. -/
+theorem contractLeft_map {N : Type*} [AddCommGroup N] [Module R N] (f : M →ₗ[R] N)
+    (d : Module.Dual R N) (x : ExteriorAlgebra R M) :
+    contractLeft (Q := (0 : QuadraticForm R N)) d (_root_.ExteriorAlgebra.map f x) =
+      _root_.ExteriorAlgebra.map f
+        (contractLeft (Q := (0 : QuadraticForm R M)) (d ∘ₗ f) x) := by
+  -- The exterior-algebra map is the zero-quadratic-form case of the Clifford-algebra map.
+  exact CliffordAlgebra.contractLeft_map { f with map_app' := fun _ => rfl } d x
 
 /-- **A vector graded-commutes with every multivector**: moving `ι R m` past `x` applies the grade
 involution to `x`. -/
