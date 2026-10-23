@@ -135,8 +135,7 @@ theorem IsAnalyticPoint.comap {B : Type*} [CommRing B] [TopologicalSpace B] [IsT
     IsAnalyticPoint (comap φ w) := by
   intro h
   rw [supp_comap] at h
-  exact hw (AddSubgroup.isOpen_mono (H₁ := ((w.supp.comap φ).map φ).toAddSubgroup)
-    (H₂ := w.supp.toAddSubgroup) Ideal.map_comap_le (hφ.isOpen_map h))
+  exact hw (Submodule.isOpen_mono Ideal.map_comap_le (hφ.isOpen_map h))
 
 section TopologicalRing
 
@@ -370,45 +369,6 @@ theorem isTateRing_completion_locTopology_of_mem_generators (P : PairOfDefinitio
     (P.isTopologicallyNilpotent_of_mem_idealOfDefinition
       (hG ▸ Ideal.subset_span (Finset.mem_coe.mpr hg)))
 
-/-- **A rational subset with Tate coordinate ring consists of analytic points.** Let `R(T/s)` be a
-rational subset of `Spa(A, A⁺)`, where `A⁺` contains the ring of definition of `P`. If
-`A⟨T/s⟩` is a Tate ring, then every point of `R(T/s)` is analytic. This is a partial converse of
-`isTateRing_completion_locTopology_of_mem_generators`. -/
-theorem rationalSubset_subset_spaAnalytic_of_isTateRing (P : PairOfDefinition A)
-    {Aplus : Subring A} (hP : P.ringOfDefinition ≤ Aplus) (T : Finset A) (s : A) (S : Type*)
-    [CommRing S] [Algebra A S] [IsLocalization.Away s S] (hden : HasDenominatorPower P T s S)
-    (hT : IsOpen (Ideal.span (T : Set A) : Set A)) :
-    letI := locUniformSpace P T s S hden
-    letI := isUniformAddGroup_locUniformSpace P T s S hden
-    letI := isTopologicalRing_locUniformSpace P T s S hden
-    IsTateRing (UniformSpace.Completion S) → rationalSubset Aplus T s ⊆ spaAnalytic Aplus := by
-  let _ := locUniformSpace P T s S hden
-  have _ := isUniformAddGroup_locUniformSpace P T s S hden
-  have _ := isTopologicalRing_locUniformSpace P T s S hden
-  have : IsHuberRing A := ⟨⟨P⟩⟩
-  intro hTate v hv
-  -- `v` is the pullback of a point `w` of `Spa(A⟨T/s⟩, A_U⁺)` along the adic map `A → A⟨T/s⟩`,
-  -- and `w` is analytic because a pseudouniformiser lies outside every support
-  obtain ⟨b, hb⟩ := hTate.exists_isPseudoUniformizer
-  have hvspa : v ∈ spa Aplus := ((mem_rationalSubset_iff Aplus T s v).mp hv).1
-  set w := (spaCompletedLocalizationHomeomorph P Aplus hP T s S hden).symm ⟨⟨v, hvspa⟩, hv⟩
-  have hvw : v = comap (toCompletionLoc P T s S hden) w.1 := by
-    have h := congrFun (val_comp_spaCompletedLocalizationHomeomorph P Aplus hP T s S hden) w
-    simp only [Function.comp_apply, w, Homeomorph.apply_symm_apply] at h
-    rw [← spaComapLoc_val, ← h]
-  have hw : IsAnalyticPoint w.1 :=
-    (isAnalyticPoint_iff_exists_isTopologicallyNilpotent_notMem_supp w.1).mpr
-      ⟨b, hb.isTopologicallyNilpotent, fun hs ↦
-        (inferInstance : w.1.supp.IsPrime).ne_top (Ideal.eq_top_of_isUnit_mem _ hs hb.isUnit)⟩
-  -- adding the denominator to the numerators keeps the ideal open
-  have hT' : IsOpen (Ideal.span (insert s (T : Set A)) : Set A) :=
-    AddSubgroup.isOpen_mono (H₁ := (Ideal.span (T : Set A)).toAddSubgroup)
-      (H₂ := (Ideal.span (insert s (T : Set A))).toAddSubgroup)
-      (Ideal.span_mono (Set.subset_insert _ _)) hT
-  refine ⟨hvspa, ?_⟩
-  rw [hvw]
-  exact hw.comap (isTopologicallyFiniteType_toCompletionLoc P T s S hden hT').isAdicHom
-
 /-- **Wedhorn Remark 7.40(2).** The analytic locus is quasi-compact. A finite generating set of
 the extended ideal of definition gives a finite rational cover of it, and each rational subset in
 that cover is quasi-compact, so their union is. Together with `isOpen_val_preimage_spaAnalytic`
@@ -450,5 +410,44 @@ theorem spaAnalytic_eq_spa_of_isTateRing (Aplus : Subring A) :
   exact and_iff_left (isAnalyticPoint_of_isTateRing v)
 
 end TateRing
+
+section TopologicalRing
+
+variable [IsTopologicalRing A]
+
+/-- **A rational subset with Tate coordinate ring consists of analytic points.** Let `R(T/s)` be a
+rational subset of `Spa(A, A⁺)`, where `A⁺` contains the ring of definition of `P`. If
+`A⟨T/s⟩` is a Tate ring, then every point of `R(T/s)` is analytic. This is a partial converse of
+`isTateRing_completion_locTopology_of_mem_generators`. -/
+theorem rationalSubset_subset_spaAnalytic_of_isTateRing (P : PairOfDefinition A)
+    {Aplus : Subring A} (hP : P.ringOfDefinition ≤ Aplus) (T : Finset A) (s : A) (S : Type*)
+    [CommRing S] [Algebra A S] [IsLocalization.Away s S] (hden : HasDenominatorPower P T s S)
+    (hT : IsOpen (Ideal.span (T : Set A) : Set A)) :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    IsTateRing (UniformSpace.Completion S) → rationalSubset Aplus T s ⊆ spaAnalytic Aplus := by
+  let _ := locUniformSpace P T s S hden
+  have _ := isUniformAddGroup_locUniformSpace P T s S hden
+  have _ := isTopologicalRing_locUniformSpace P T s S hden
+  have : IsHuberRing A := ⟨⟨P⟩⟩
+  intro hTate v hv
+  -- `v` is the pullback of a point `w` of `Spa(A⟨T/s⟩, A_U⁺)` along the adic map `A → A⟨T/s⟩`,
+  -- and `w` is analytic because `A⟨T/s⟩` is Tate
+  have hvspa : v ∈ spa Aplus := ((mem_rationalSubset_iff Aplus T s v).mp hv).1
+  set w := (spaCompletedLocalizationHomeomorph P Aplus hP T s S hden).symm ⟨⟨v, hvspa⟩, hv⟩
+  have hvw : v = comap (toCompletionLoc P T s S hden) w.1 := by
+    have h := congrFun (val_comp_spaCompletedLocalizationHomeomorph P Aplus hP T s S hden) w
+    simp only [Function.comp_apply, w, Homeomorph.apply_symm_apply] at h
+    rw [← spaComapLoc_val, ← h]
+  have hw : IsAnalyticPoint w.1 := isAnalyticPoint_of_isTateRing w.1
+  -- adding the denominator to the numerators keeps the ideal open
+  have hT' : IsOpen (Ideal.span (insert s (T : Set A)) : Set A) :=
+    Submodule.isOpen_mono (Ideal.span_mono (Set.subset_insert _ _)) hT
+  refine ⟨hvspa, ?_⟩
+  rw [hvw]
+  exact hw.comap (isTopologicallyFiniteType_toCompletionLoc P T s S hden hT').isAdicHom
+
+end TopologicalRing
 
 end TauCeti.ValuationSpectrum

@@ -89,6 +89,7 @@ theorem isOpen_analyticPoints : IsOpen X.analyticPoints :=
 /-- **Analytic points of an open subspace** (Wedhorn, Remark 8.37(2)): the analytic points of the
 restriction of `X` along an open embedding `f` are the points that `f` sends to analytic points of
 `X`. -/
+@[simp]
 theorem analyticPoints_restrict {U : TopCat.{u}} {f : U ⟶ X.toTopCat} (h : IsOpenEmbedding f) :
     (X.restrict h).analyticPoints = f ⁻¹' X.analyticPoints := by
   ext x
@@ -113,6 +114,7 @@ variable {A : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
 /-- **The analytic points of `Spa(A, A⁺)` are its analytic locus** (Wedhorn, Proposition and
 Definition 8.36): a point of the adic spectrum has a neighbourhood whose sections contain a
 pseudouniformiser exactly when its support is not open. The ring `A` need not be complete. -/
+@[simp]
 theorem analyticPoints_presentationLimitPreAdicSpace :
     (presentationLimitPreAdicSpace P Aplus hAplus hP).analyticPoints =
       (Subtype.val ⁻¹' spaAnalytic Aplus : Set (spa Aplus)) := by
