@@ -10,6 +10,7 @@ public import Mathlib.CategoryTheory.Bicategory.Functor.LocallyDiscrete
 public import Mathlib.CategoryTheory.Bicategory.NaturalTransformation.Pseudo
 public import Mathlib.CategoryTheory.Center.Basic
 public import Mathlib.CategoryTheory.SingleObj
+public import TauCeti.CategoryTheory.Category.Cat
 
 /-!
 # Central compositors of pseudofunctors and `2`-cocycles
@@ -72,38 +73,6 @@ open CategoryTheory Bicategory
 
 open scoped IsMulCommutative
 
-namespace CategoryTheory.Cat
-
-/-- The associator of three identity functors in `Cat` is the identity. -/
-@[simp]
-lemma associator_id_hom (C : Type w) [Category.{v} C] :
-    (α_ (𝟙 (Cat.of C)) (𝟙 (Cat.of C)) (𝟙 (Cat.of C))).hom = 𝟙 _ := by
-  ext X
-  simp
-
-/-- The inverse associator of three identity functors in `Cat` is the identity. -/
-@[simp]
-lemma associator_id_inv (C : Type w) [Category.{v} C] :
-    (α_ (𝟙 (Cat.of C)) (𝟙 (Cat.of C)) (𝟙 (Cat.of C))).inv = 𝟙 _ := by
-  ext X
-  simp
-
-/-- The right unitor of the identity functor in `Cat` is the identity. -/
-@[simp]
-lemma rightUnitor_id_hom (C : Type w) [Category.{v} C] :
-    (ρ_ (𝟙 (Cat.of C))).hom = 𝟙 _ := by
-  ext X
-  simp
-
-/-- The inverse right unitor of the identity functor in `Cat` is the identity. -/
-@[simp]
-lemma rightUnitor_id_inv (C : Type w) [Category.{v} C] :
-    (ρ_ (𝟙 (Cat.of C))).inv = 𝟙 _ := by
-  ext X
-  simp
-
-end CategoryTheory.Cat
-
 namespace TauCeti
 
 section CentralUnitIso
@@ -160,6 +129,7 @@ lemma centralUnitIso_hom_inj {z z' : (CatCenter C)ˣ} :
   refine ⟨fun h ↦ Units.ext (CatCenter.ext _ _ fun X ↦ ?_), fun h ↦ h ▸ rfl⟩
   simpa using congrArg (·.toNatTrans.app X) h
 
+@[simp]
 lemma centralUnitIso_hom_eq_id_iff {z : (CatCenter C)ˣ} :
     (centralUnitIso C z).hom = 𝟙 _ ↔ z = 1 := by
   rw [← centralUnitIso_hom_inj (z' := 1), centralUnitIso_one, Iso.refl_hom]
@@ -212,6 +182,8 @@ lemma centralUnitIso_right_unitor_iff (c : G × G → (CatCenter C)ˣ) (u : (Cat
 object to `C` and every `g` to the identity functor; its composition comparison at
 `g ≫ h = h * g` is `centralUnitIso C (c (h, g))`, and its unit comparison is
 `centralUnitIso C (c (1, 1))⁻¹`. -/
+-- Expose the object assignment so the public map and comparison projections
+-- have their stated types.
 @[expose] def centralCocyclePseudofunctor (c : G × G → (CatCenter C)ˣ)
     (hc : ∀ g h j : G, c (g * h, j) * c (g, h) = c (h, j) * c (g, h * j)) :
     LocallyDiscrete (SingleObj G) ⥤ᵖ Cat.{v, w} :=
@@ -310,6 +282,7 @@ is `centralUnitIso C (b g)`, when `c'` is `c` multiplied by the coboundary of
 `b : G → (CatCenter C)ˣ`. By `centralUnitIso_naturality_comp_iff`, this coboundary relation is
 also necessary for the identity components and the `2`-cells `centralUnitIso C (b g)` to form a
 strong transformation. -/
+-- Expose the component assignment so the public naturality projection has its stated type.
 @[expose] def centralCocycleStrongTrans {c c' : G × G → (CatCenter C)ˣ}
     {hc : ∀ g h j : G, c (g * h, j) * c (g, h) = c (h, j) * c (g, h * j)}
     {hc' : ∀ g h j : G, c' (g * h, j) * c' (g, h) = c' (h, j) * c' (g, h * j)}
