@@ -127,8 +127,7 @@ private theorem natCast_add_one_le_add_one_iff {j : ℕ} :
   exact ENat.add_le_add_iff_right ENat.one_ne_top
 
 /-- **Pseudocoherence one degree at a time.** `M` is `(m + 1)`-pseudocoherent exactly when there is
-a surjection onto `M` from a finite free module whose kernel is `m`-pseudocoherent: the resolution
-of the kernel is the tail of a resolution of `M`. -/
+a surjection onto `M` from a finite free module whose kernel is `m`-pseudocoherent. -/
 theorem succ_iff :
     IsPseudoCoherentOver R M (m + 1) ↔ ∃ (k : ℕ) (f : (Fin k → R) →ₗ[R] M),
       Function.Surjective f ∧ IsPseudoCoherentOver R (ker f) m := by
@@ -176,12 +175,12 @@ private theorem succ_of_ker {F : Type*} [AddCommGroup F] [Module R F] [Module.Fr
   exact succ_iff.mpr ⟨_, f ∘ₗ e.symm.toLinearMap, hf.comp e.symm.surjective,
     (ker_comp_equiv_iff f e.symm).mpr h⟩
 
-/-- **Finitely generated projective modules are pseudocoherent**: for a splitting `π ∘ s = id` of
-a surjection `π : Rⁿ → P`, the idempotent `e = s ∘ π` gives the periodic resolution
-`⋯ → Rⁿ → Rⁿ → Rⁿ → P → 0` with differentials alternating between `1 - e` and `e`
-(Kedlaya–Liu II, Definition 1.1.1). -/
+/-- **Finitely generated projective modules are `⊤`-pseudocoherent.** -/
 theorem of_projective [Module.Finite R M] [Module.Projective R M] :
     IsPseudoCoherentOver R M ⊤ := by
+  -- For a splitting `π ∘ s = id` of a surjection `π : Rᵏ → M`, the idempotent `e = s ∘ π` gives
+  -- the periodic resolution `⋯ → Rᵏ → Rᵏ → M → 0` with differentials alternating between
+  -- `1 - e` and `e`.
   obtain ⟨k, π, s, hπ, hs, hπs⟩ := Module.Finite.exists_comp_eq_id_of_projective R M
   have he : IsIdempotentElem (s ∘ₗ π) := by
     rw [IsIdempotentElem, Module.End.mul_eq_comp, comp_assoc, ← comp_assoc π, hπs, id_comp]
@@ -311,12 +310,12 @@ private theorem ker_nat {n : ℕ} {P : Type w} [AddCommGroup P] [Module R P]
 
 /-! ### Pseudocoherence in every finite degree -/
 
-/-- **Pseudocoherence is pseudocoherence in every finite degree.** Given `m`-pseudocoherence for
-every natural number `m`, a resolution is built one step at a time: the kernel of each chosen
-surjection from a finite free module is again pseudocoherent in every finite degree
-(Stacks, Tag 064U). -/
+/-- **Pseudocoherence is pseudocoherence in every finite degree.** `M` is `⊤`-pseudocoherent
+exactly when it is `m`-pseudocoherent for every natural number `m` (Stacks, Tag 064U). -/
 theorem top_iff : IsPseudoCoherentOver R M ⊤ ↔ ∀ m : ℕ, IsPseudoCoherentOver R M m := by
   refine ⟨fun h m ↦ h.mono le_top, fun h ↦ ?_⟩
+  -- A resolution is built one step at a time: the kernel of each chosen surjection from a finite
+  -- free module is again pseudocoherent in every finite degree.
   have := (h 0).finite
   obtain ⟨a, f₀, hf₀⟩ := Module.Finite.exists_fin' R M
   -- The stages: submodules of finite free modules, pseudocoherent in every finite degree.
@@ -348,7 +347,7 @@ theorem prod (h₁ : IsPseudoCoherentOver R M m) (h₂ : IsPseudoCoherentOver R 
 
 /-- **Kernels of surjections from projective modules.** If `M` is `(m + 1)`-pseudocoherent, the
 kernel of every surjection onto `M` from a finitely generated projective module is
-`m`-pseudocoherent; this rests on Schanuel's lemma. -/
+`m`-pseudocoherent. -/
 theorem ker_of_projective {P : Type*} [AddCommGroup P] [Module R P] [Module.Finite R P]
     [Module.Projective R P] (h : IsPseudoCoherentOver R M (m + 1)) {f : P →ₗ[R] M}
     (hf : Function.Surjective f) : IsPseudoCoherentOver R (ker f) m := by
