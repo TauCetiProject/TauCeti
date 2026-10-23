@@ -119,17 +119,15 @@ theorem exists_pos_forall_integral_norm_neg_deriv_add_sq_add_mul_integral_norm_s
     (hdbot : Tendsto (deriv A) atBot (nhds 0)) (hdtop : Tendsto (deriv A) atTop (nhds 0)) :
     ∃ R > 0, ∀ (w : ℝ → E), ContDiff ℝ 1 w → HasCompactSupport w →
       Function.support w ⊆ {s | R ≤ |s|} →
-      (∫ s, ‖deriv w s‖ ^ 2) + (α ^ 2 / 8) * (∫ s, ‖w s‖ ^ 2) ≤
+      (∫ s, ‖deriv w s‖ ^ 2) + (α ^ 2 / 2) * (∫ s, ‖w s‖ ^ 2) ≤
         ∫ s, ‖-deriv w s + A s (w s)‖ ^ 2 := by
   obtain ⟨hB, hBsym, hBminus, hBplus, hdBbot, hdBtop⟩ :=
     neg_trajectory_hypotheses hA hsym hminus hplus hdbot hdtop
   obtain ⟨R, hR, hest⟩ :=
     exists_pos_forall_integral_norm_deriv_sq_add_mul_integral_norm_sq_le
       hB hBsym hα hBminus hBplus hbot.neg htop.neg hdBbot hdBtop
-  refine ⟨R, hR, fun w hw hcw hsupport ↦ ?_⟩
-  have hbound := hest w hw hcw hsupport
-  simp only [norm_deriv_add_neg_apply] at hbound
-  nlinarith [mul_nonneg (sq_nonneg α) (integral_nonneg (μ := volume) fun s ↦ sq_nonneg ‖w s‖)]
+  exact ⟨R, hR, fun w hw hcw hsupport ↦ by
+    simpa only [norm_deriv_add_neg_apply] using hest w hw hcw hsupport⟩
 
 end TauCeti
 
