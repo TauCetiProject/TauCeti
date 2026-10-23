@@ -212,12 +212,13 @@ private theorem geometricCharacterGroupSchemeMap_eq (T : MultiplicativeTypeCommH
   -- Expand the reconstruction isomorphism and the diagonalizable character map into `hopfSpec` of
   -- coordinate maps. Naming the character groups keeps the transports from `groupSchemeMap_def`
   -- syntactically equal to the statement's, so they cancel cheaply.
-  rw [geometricFiberGroupSchemeIso, Functor.mapIso_hom, Iso.op_hom, Functor.mapIso_hom,
-    FiniteTypeCommHopfAlgCat.forget₂_commHopfAlgCat_map,
-    DiagonalizableGroup.characterGroupSchemeMap_def,
+  rw [geometricFiberGroupSchemeIso, DiagonalizableGroup.characterGroupSchemeMap_def,
     DiagonalizableGroup.groupSchemeMap_def (AlgebraicClosure k)
-      (G := DiagonalizableGroup.multiplicativeCharacterGroup) (H := geometricCharacterFG T),
-    eqToHom_trans_assoc, eqToHom_refl, Category.id_comp, ← Functor.map_comp_assoc]
+      (G := DiagonalizableGroup.multiplicativeCharacterGroup) (H := geometricCharacterFG T)]
+  simp only [Functor.mapIso_hom, Iso.op_hom,
+    FiniteTypeCommHopfAlgCat.forget₂_commHopfAlgCat_map,
+    eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
+  rw [← Functor.map_comp_assoc]
   -- Unfolded, the left side ends with the same transport; cancel it and compare coordinate maps.
   conv_lhs => rw [geometricCharacterGroupSchemeMap]
   rw [cancel_mono]
@@ -291,10 +292,12 @@ private theorem cocharacter_comp_geometricFiberGroupSchemeIso
       DiagonalizableGroup.groupSchemeMap (AlgebraicClosure k) (cocharacterFGMap T f) := by
   -- Full faithfulness identifies the reconstructed character-group map: by definition,
   -- `cocharacterFGMap T f` is the preimage of `f ≫ (geometricFiberDiagonalizableIso T).hom`.
-  rw [← diagonalizableGroupSchemeHomEquiv_apply, cocharacterFGMap, cocharacterLatticeEquivFG,
-    Equiv.trans_apply, Equiv.apply_symm_apply, Iso.homCongr_apply, Iso.refl_inv, Category.id_comp]
+  rw [← diagonalizableGroupSchemeHomEquiv_apply, cocharacterFGMap, cocharacterLatticeEquivFG]
+  simp only [Equiv.trans_apply, Equiv.apply_symm_apply, Iso.homCongr_apply,
+    Iso.refl_inv, Category.id_comp]
   -- Unfold the composite target isomorphism: the coordinate reconstruction, then `eqToHom`.
-  rw [geometricFiberDiagonalizableIso, Iso.trans_hom, eqToIso.hom, Category.assoc]
+  rw [geometricFiberDiagonalizableIso]
+  simp only [Iso.trans_hom, eqToIso.hom, Category.assoc]
 
 /-- The ordinary-integer-valued homomorphism underlying the lifted character-group map of a
 geometric cocharacter. -/
