@@ -7,11 +7,15 @@ module
 
 public import Mathlib.Algebra.Polynomial.Homogenize
 public import Mathlib.Algebra.Polynomial.Roots
+public import Mathlib.Algebra.Squarefree.Basic
 public import TauCeti.Algebra.Polynomial.Degree.Operations
 public import TauCeti.RingTheory.MvPolynomial.Homogeneous
 
+import Mathlib.FieldTheory.Perfect
 import Mathlib.RingTheory.MvPolynomial.Tower
+import Mathlib.RingTheory.Radical.Basic
 import Mathlib.Tactic.LinearCombination
+import TauCeti.RingTheory.Polynomial.GaussLemma
 
 /-!
 # Binary homogenization of a product of linear factors
@@ -27,7 +31,10 @@ More generally, the homogenization of degree `n ≥ natDegree p` of such a `p` i
 homogenization of its dehomogenization `F(X, 1)`, of degree at most `n`, this factors binary forms
 over an algebraically closed field into linear forms. If `F` has no squared linear factor, then
 `X₁` occurs at most once and the roots of `F(X, 1)` are simple, so the linear factors are pairwise
-non-proportional.
+non-proportional. Conversely, the homogenization of a squarefree `p` of degree `natDegree p` has
+no squared linear factor. Applied to the radical of `F(X, 1)` in `ℤ[X]`, which stays squarefree
+over `ℚ` by Gauss's lemma, this gives every integer binary form a divisor without squared linear
+factors over any field of characteristic zero, keeping all the zeros of `F(X, 1)`.
 
 This factorisation is the starting point of Liouville- and Roth-type lower bounds for binary forms
 at integer points.
@@ -44,11 +51,16 @@ at integer points.
   `Polynomial.nodup_roots_of_not_sq_dvd_homogenize`: if neither `X₁ ^ 2` nor any
   `(X₀ - a X₁) ^ 2` divides the homogenization of degree `n ≥ natDegree p`, then
   `n ≤ natDegree p + 1` and the roots of `p` are simple.
+* `Polynomial.not_sq_dvd_homogenize_of_squarefree`: conversely, over a domain, no square of a
+  linear form divides the homogenization of degree `natDegree p` of a squarefree `p`.
 * `MvPolynomial.aeval_X_one_map`: the dehomogenization `F(X, 1)` commutes with mapping the
   coefficients along a ring homomorphism.
 * `MvPolynomial.IsHomogeneous.exists_linear_factors`: a nonzero binary form of degree `d` with no
   squared linear factor, whose dehomogenization splits, is `a ∏_{ℓ ∈ T} (ℓ.1 X₀ + ℓ.2 X₁)` for `d`
   pairwise non-proportional linear forms.
+* `MvPolynomial.IsHomogeneous.exists_isHomogeneous_dvd_not_sq_dvd`: an integer binary form `F`
+  has a binary form divisor without squared linear factors over a field `K` of characteristic
+  zero, of degree at least the number of distinct zeros of `F(X, 1)` in `K`.
 * `MvPolynomial.IsHomogeneous.mem_span_X_one_pow_of_aeval_eq_smul`: over a domain, a binary form
   of degree `d` that is semi-invariant under the universal substitution `x ↦ x - t y` is a
   multiple of `X₁ ^ d`.
@@ -138,6 +150,29 @@ theorem nodup_roots_of_not_sq_dvd_homogenize [IsDomain R] {p : R[X]} {n : ℕ}
     homogenize_multiset_prod_X_sub_C]
   simp [s, sq]
 
+/-- Conversely, over a domain, if `p` is squarefree, then no square of a linear form
+`a X₀ + b X₁` divides the homogenization of `p` of degree `natDegree p`. -/
+theorem not_sq_dvd_homogenize_of_squarefree [IsDomain R] {p : R[X]} (hp : Squarefree p)
+    (a b : R) :
+    ¬(MvPolynomial.C a * MvPolynomial.X 0 + MvPolynomial.C b * MvPolynomial.X 1) ^ 2 ∣
+      p.homogenize p.natDegree := by
+  intro h
+  rcases eq_or_ne a 0 with rfl | ha
+  · -- The coefficient of `X₀ ^ natDegree p` in a multiple of `X₁` vanishes, but in the
+    -- homogenization it is the leading coefficient of `p`.
+    obtain ⟨q, hq⟩ : MvPolynomial.X 1 ∣ p.homogenize p.natDegree :=
+      (Dvd.intro (MvPolynomial.C (b ^ 2) * MvPolynomial.X 1)
+        (by simp only [map_zero, zero_mul, zero_add, map_pow]; ring)).trans h
+    have h0 := congrArg
+      (fun q : MvPolynomial (Fin 2) R ↦ q.coeff (Finsupp.single 0 p.natDegree)) hq
+    exact hp.ne_zero (by simpa [coeff_homogenize, MvPolynomial.coeff_X_mul'] using h0)
+  · -- Dehomogenizing, `(a X + b) ^ 2` would divide `p`.
+    have h' := _root_.map_dvd (MvPolynomial.aeval ![(X : R[X]), 1]) h
+    rw [aeval_homogenize_X_one p le_rfl] at h'
+    have := natDegree_eq_zero_of_isUnit (hp (C a * X + C b) (by simpa [sq] using h'))
+    rw [natDegree_linear ha] at this
+    exact one_ne_zero this
+
 end Polynomial
 
 namespace MvPolynomial
@@ -225,6 +260,55 @@ theorem IsHomogeneous.exists_linear_factors {R : Type*} [CommRing R] [IsDomain R
       ← sub_eq_add_neg]
     ring
 
+
+open Polynomial UniqueFactorizationMonoid in
+/-- An integer binary form `F` has a binary form divisor `G ∈ ℤ[X₀, X₁]` without squared linear
+factors over a field `K` of characteristic zero, whose degree is at least the number of distinct
+zeros of `F(X, 1)` in `K`. -/
+theorem IsHomogeneous.exists_isHomogeneous_dvd_not_sq_dvd {K : Type*} [Field K] [CharZero K]
+    [DecidableEq K] {F : MvPolynomial (Fin 2) ℤ} {d : ℕ} (hF : F.IsHomogeneous d) :
+    ∃ G : MvPolynomial (Fin 2) ℤ, ∃ e : ℕ,
+      ((MvPolynomial.aeval ![Polynomial.X, 1] F : ℤ[X]).map
+        (Int.castRingHom K)).roots.toFinset.card ≤ e ∧
+      G.IsHomogeneous e ∧ G ∣ F ∧
+      ∀ a b : K, ¬(C a * X 0 + C b * X 1) ^ 2 ∣ G.map (Int.castRingHom K) := by
+  set f : ℤ[X] := MvPolynomial.aeval ![Polynomial.X, 1] F
+  set r : ℤ[X] := radical f
+  have hinj : Function.Injective (Int.castRingHom K) := RingHom.injective_int _
+  refine ⟨r.homogenize r.natDegree, r.natDegree, ?_, isHomogeneous_homogenize _, ?_, fun a b ↦ ?_⟩
+  · -- Every zero of `f` is a zero of its radical `r`, since `f ∣ r ^ n`.
+    rcases eq_or_ne f 0 with hf | hf
+    · simp [hf]
+    obtain ⟨n, hn⟩ := exists_dvd_radical_self_pow hf
+    have hfK : f.map (Int.castRingHom K) ≠ 0 := (Polynomial.map_ne_zero_iff hinj).2 hf
+    have hrK : r.map (Int.castRingHom K) ≠ 0 :=
+      (Polynomial.map_ne_zero_iff hinj).2 radical_ne_zero
+    calc _ ≤ (r.map (Int.castRingHom K)).roots.toFinset.card := by
+          refine Finset.card_le_card fun α hα ↦ ?_
+          rw [Multiset.mem_toFinset, mem_roots hfK] at hα
+          rw [Multiset.mem_toFinset, mem_roots hrK]
+          have hα' := hα.dvd (Polynomial.map_dvd (Int.castRingHom K) hn)
+          rw [Polynomial.map_pow, IsRoot, Polynomial.eval_pow] at hα'
+          exact (pow_eq_zero_iff'.1 hα').1
+      _ ≤ Multiset.card (r.map (Int.castRingHom K)).roots := Multiset.toFinset_card_le _
+      _ ≤ (r.map (Int.castRingHom K)).natDegree := card_roots' _
+      _ = r.natDegree := natDegree_map_eq_of_injective hinj _
+  · -- `F` is the homogenization of `f` of degree `d`, a multiple of that of `r`.
+    have hfF : f.homogenize d = F := homogenize_eq_of_isHomogeneous hF rfl
+    rw [← hfF]
+    rcases eq_or_ne f 0 with hf | hf
+    · simp [hf]
+    have hfd : f.natDegree ≤ d := hF.natDegree_aeval_le fun i ↦ by fin_cases i <;> simp
+    rw [homogenize_eq_X_pow_mul_homogenize_natDegree hfd]
+    exact dvd_mul_of_dvd_right (homogenize_dvd radical_dvd_self) _
+  · -- `r` is squarefree over `ℤ`, hence over `ℚ`, hence separable over `ℚ` and over `K`.
+    have hsq : Squarefree (r.map (Int.castRingHom K)) := by
+      have h1 : Squarefree (r.map (algebraMap ℤ ℚ)) := squarefree_radical.map_fraction_map
+      have h2 := ((PerfectField.separable_iff_squarefree.2 h1).map (f := algebraMap ℚ K)).squarefree
+      rwa [Polynomial.map_map, RingHom.ext_int ((algebraMap ℚ K).comp (algebraMap ℤ ℚ))
+        (Int.castRingHom K)] at h2
+    rw [← homogenize_map, ← natDegree_map_eq_of_injective hinj r]
+    exact not_sq_dvd_homogenize_of_squarefree hsq a b
 
 open scoped Polynomial in
 /-- **Binary forms semi-invariant under `x ↦ x - t y` are multiples of `yᵈ`.** Over a domain, if a

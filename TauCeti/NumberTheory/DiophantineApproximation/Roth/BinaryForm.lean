@@ -32,8 +32,14 @@ point `(x, y)` with `M = max(|x|, |y|)`:
 
 Multiplying gives `|F(x, y)| ≥ c M ^ (d - 1) M ^ (1 - κ)`
 (`TauCeti.exists_pos_mul_max_abs_rpow_le_prod_norm`). Like Roth's theorem, the inequality is
-ineffective. For `d ≥ 3` it is the analytic input to Thue's theorem on the equations
-`F(x, y) = m` with `m ≠ 0`: choosing `2 < κ < d` bounds `max(|x|, |y|)` on their solutions.
+ineffective.
+
+For `d ≥ 3` it gives **Thue's theorem**: if `F(X, 1)` has at least three distinct complex zeros
+and `m ≠ 0`, the *Thue equation* `F(x, y) = m` has only finitely many integer solutions. Here `F`
+is first replaced by a divisor `G` of degree `e ≥ 3` without squared linear factors
+(`MvPolynomial.IsHomogeneous.exists_isHomogeneous_dvd_not_sq_dvd`). At a solution, `G(x, y)` is a
+nonzero divisor of `m`, and the inequality for `G` with `κ = e - 1/2` gives
+`c max(|x|, |y|) ^ (1/2) ≤ |G(x, y)| ≤ |m|`. Again this gives no explicit bound on the solutions.
 
 ## Main results
 
@@ -43,10 +49,13 @@ ineffective. For `d ≥ 3` it is the analytic input to Thue's theorem on the equ
   linear forms satisfying such bounds is at least `c max(|x|, |y|) ^ (#T - κ)`.
 * `MvPolynomial.IsHomogeneous.exists_pos_mul_max_abs_rpow_le_abs_eval`: the Thue–Roth inequality
   for binary forms without squared linear factors.
+* `MvPolynomial.IsHomogeneous.finite_setOfPred_eval_eq`: Thue's theorem on the equations
+  `F(x, y) = m`.
 
 ## References
 
-* J.-H. Evertse, *Diophantine Approximation*, lecture notes (2019), ch. 6, Theorem 6.3.
+* J.-H. Evertse, *Diophantine Approximation*, lecture notes (2019), ch. 6, Theorem 6.3 and
+  Corollary 6.4.
 -/
 
 public section
@@ -223,5 +232,41 @@ theorem _root_.MvPolynomial.IsHomogeneous.exists_pos_mul_max_abs_rpow_le_abs_eva
     rw [← Complex.norm_intCast, hcast, norm_mul, norm_prod]
   rw [habs, mul_assoc, ← hTd]
   exact mul_le_mul_of_nonneg_left (h x y hne) (norm_nonneg a)
+
+/-- **Thue's theorem** (Evertse, Corollary 6.4). Let `F ∈ ℤ[X₀, X₁]` be a binary form such that
+`F(X, 1)` has at least three distinct complex zeros, and let `m ≠ 0`. Then the Thue equation
+`F(x, y) = m` has only finitely many integer solutions. The proof is ineffective: it gives no
+bound on the solutions. -/
+theorem _root_.MvPolynomial.IsHomogeneous.finite_setOfPred_eval_eq
+    {F : MvPolynomial (Fin 2) ℤ} {d : ℕ} (hF : F.IsHomogeneous d)
+    (hroots : 3 ≤ ((MvPolynomial.aeval ![Polynomial.X, 1] F : ℤ[X]).map
+      (Int.castRingHom ℂ)).roots.toFinset.card)
+    {m : ℤ} (hm : m ≠ 0) :
+    {p : ℤ × ℤ | MvPolynomial.eval ![p.1, p.2] F = m}.Finite := by
+  -- A divisor `G` of `F` of degree `e ≥ 3` without squared linear factors.
+  obtain ⟨G, e, he, hG, hGF, hsq⟩ := hF.exists_isHomogeneous_dvd_not_sq_dvd (K := ℂ)
+  have he3 : (3 : ℝ) ≤ e := by exact_mod_cast hroots.trans he
+  -- The Thue–Roth inequality for `G` with `κ = e - 1/2`.
+  obtain ⟨c, hc, hcG⟩ := hG.exists_pos_mul_max_abs_rpow_le_abs_eval (fun a b _ ↦ hsq a b)
+    (κ := e - 1 / 2) (by linarith)
+  -- Every solution satisfies `max(|x|, |y|) ≤ N`.
+  set N : ℕ := ⌈((|m| : ℝ) / c) ^ 2⌉₊
+  refine (Set.finite_Icc ((-N : ℤ), (-N : ℤ)) ((N : ℤ), (N : ℤ))).subset ?_
+  rintro ⟨x, y⟩ (hxy : MvPolynomial.eval ![x, y] F = m)
+  -- `G(x, y)` is a nonzero divisor of `F(x, y) = m`.
+  have hGm : MvPolynomial.eval ![x, y] G ∣ m :=
+    hxy ▸ _root_.map_dvd (MvPolynomial.eval ![x, y]) hGF
+  have hG0 : MvPolynomial.eval ![x, y] G ≠ 0 := fun h ↦ hm (zero_dvd_iff.1 (h ▸ hGm))
+  have hle : |(MvPolynomial.eval ![x, y] G : ℝ)| ≤ |(m : ℝ)| := by
+    exact_mod_cast Int.le_of_dvd (abs_pos.2 hm) ((abs_dvd_abs _ _).2 hGm)
+  have key := (hcG x y hG0).trans hle
+  rw [show (e : ℝ) - (e - 1 / 2) = 1 / 2 by ring, ← Real.sqrt_eq_rpow] at key
+  have hM : max |(x : ℝ)| |(y : ℝ)| ≤ N := by
+    refine (Real.sqrt_le_left (by positivity)).1 ?_ |>.trans (Nat.le_ceil _)
+    rw [le_div_iff₀ hc]
+    linarith
+  have hx : |x| ≤ N := by exact_mod_cast (le_max_left _ _).trans hM
+  have hy : |y| ≤ N := by exact_mod_cast (le_max_right _ _).trans hM
+  exact ⟨⟨neg_le_of_abs_le hx, neg_le_of_abs_le hy⟩, ⟨le_of_abs_le hx, le_of_abs_le hy⟩⟩
 
 end TauCeti
