@@ -93,7 +93,7 @@ theorem universalGSpaceCellMap_vertexEmbedding (φ : G →* H) {n : ℕ}
 
 /-- The tuple of labels of an image simplex is the image of its tuple of labels. -/
 @[simp]
-theorem universalGSpaceCellLabels_map (φ : G →* H) {n : ℕ}
+theorem universalGSpaceCellLabels_universalGSpaceCellMap (φ : G →* H) {n : ℕ}
     (c : (indexedJoin fun _ : ℕ => G).RealizationCell n) :
     universalGSpaceCellLabels (φ.universalGSpaceCellMap c) = φ ∘ universalGSpaceCellLabels c := by
   funext j

@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.CellMap
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.StandardResolution
-public import TauCeti.RepresentationTheory.Homological.StandardComplex
 
 /-!
 # Naturality of the join-to-standard comparison
@@ -49,25 +48,12 @@ section Ring
 variable [Ring k]
 
 /-- Linear extension of relabelling simplices, equivariant along the group homomorphism. -/
-def universalGSpaceChainHom (φ : G →* H) (n : ℕ) :
+abbrev universalGSpaceChainHom (φ : G →* H) (n : ℕ) :
     Rep.ofMulAction k G ((indexedJoin fun _ : ℕ => G).RealizationCell n) ⟶
       Rep.res φ (Rep.ofMulAction k H ((indexedJoin fun _ : ℕ => H).RealizationCell n)) :=
-  Rep.ofHom
-    { toLinearMap := MonoidAlgebra.mapDomainLinearMap k k φ.universalGSpaceCellMap
-      isIntertwining' g := by
-        apply MonoidAlgebra.lhom_ext'
-        intro c
-        apply LinearMap.ext_ring
-        simp [Representation.ofMulAction_single] }
-
-/-- An individual simplex maps to its relabelled simplex with the same coefficient. -/
-@[simp]
-theorem universalGSpaceChainHom_single (φ : G →* H) {n : ℕ}
-    (c : (indexedJoin fun _ : ℕ => G).RealizationCell n) (r : k) :
-    (dsimp% only ((φ.universalGSpaceChainHom (k := k) n).hom
-      (MonoidAlgebra.single c r))) =
-        MonoidAlgebra.single (φ.universalGSpaceCellMap c) r := by
-  simp [universalGSpaceChainHom]
+  MulActionHom.toRepRes
+    { toFun := φ.universalGSpaceCellMap
+      map_smul' := universalGSpaceCellMap_smul φ }
 
 /-- The chain map on Milnor join chains induced by a group homomorphism. -/
 def universalGSpaceChainMap (φ : G →* H) :
@@ -78,17 +64,19 @@ def universalGSpaceChainMap (φ : G →* H) :
     subst i
     rw [Functor.mapHomologicalComplex_obj_d, universalGSpaceChainComplex_d,
       universalGSpaceChainComplex_d]
-    apply Rep.hom_ext
-    apply Representation.IntertwiningMap.ext
-    apply MonoidAlgebra.lhom_ext'
+    apply Rep.ofMulAction_hom_ext
     intro c
-    apply LinearMap.ext_ring
-    -- Composition and restriction act by composition of the underlying linear maps.
+    -- The restricted boundary carries the chain complex's implicit object arguments.
+    -- Evaluate on permutation coordinates so the representation lemmas can match.
     change (universalGSpaceBoundary k H j).hom
         ((φ.universalGSpaceChainHom (j + 1)).hom (MonoidAlgebra.single c 1)) =
       (φ.universalGSpaceChainHom j).hom
         ((universalGSpaceBoundary k G j).hom (MonoidAlgebra.single c 1))
-    simp
+    simp only [Rep.res_obj_ρ, MulActionHom.toRepRes_hom_single,
+      universalGSpaceBoundary_hom_single, MonoidAlgebra.smul_single, smul_eq_mul, mul_one, map_sum]
+    exact Finset.sum_congr rfl fun i _ => congrArg
+      (fun c => MonoidAlgebra.single c ((-1 : k) ^ (i : ℕ)))
+      (universalGSpaceCellMap_face φ c i).symm
 
 /-- The components of the induced join chain map are the linear extensions of the cell maps. -/
 @[simp]
@@ -102,15 +90,13 @@ theorem universalGSpaceChainMap_id :
     (MonoidHom.id G).universalGSpaceChainMap (k := k) = 𝟙 (universalGSpaceChainComplex k G) := by
   apply HomologicalComplex.hom_ext
   intro n
-  apply Rep.hom_ext
-  apply Representation.IntertwiningMap.ext
-  apply MonoidAlgebra.lhom_ext'
-  intro c
-  apply LinearMap.ext_ring
-  -- Restriction along the identity does not change the underlying permutation module.
-  change ((MonoidHom.id G).universalGSpaceChainHom n).hom (MonoidAlgebra.single c 1) =
-    MonoidAlgebra.single c 1
-  simp
+  let X := (indexedJoin fun _ : ℕ => G).RealizationCell n
+  have h : (⟨(MonoidHom.id G).universalGSpaceCellMap,
+      universalGSpaceCellMap_smul (MonoidHom.id G)⟩ : X →ₑ[MonoidHom.id G] X) =
+      MulActionHom.id G :=
+    MulActionHom.ext universalGSpaceCellMap_id
+  exact (congrArg (fun f : X →ₑ[MonoidHom.id G] X => f.toRepRes (k := k)
+    (φ := MonoidHom.id G)) h).trans MulActionHom.toRepRes_id
 
 /-- Join chain maps respect composition, restricting the second map along the first
 homomorphism. -/
@@ -121,35 +107,25 @@ theorem universalGSpaceChainMap_comp {K : Type u} [Group K] (ψ : H →* K) (φ 
         ((Rep.resFunctor φ).mapHomologicalComplex _).map ψ.universalGSpaceChainMap := by
   apply HomologicalComplex.hom_ext
   intro n
-  apply Rep.hom_ext
-  apply Representation.IntertwiningMap.ext
-  apply MonoidAlgebra.lhom_ext'
-  intro c
-  apply LinearMap.ext_ring
-  -- Iterated restriction is restriction along the composite on underlying modules.
-  change ((ψ.comp φ).universalGSpaceChainHom n).hom (MonoidAlgebra.single c 1) =
-    (ψ.universalGSpaceChainHom n).hom
-      ((φ.universalGSpaceChainHom n).hom (MonoidAlgebra.single c 1))
-  simp
+  let X := (indexedJoin fun _ : ℕ => G).RealizationCell n
+  let Y := (indexedJoin fun _ : ℕ => H).RealizationCell n
+  let Z := (indexedJoin fun _ : ℕ => K).RealizationCell n
+  let f : X →ₑ[φ] Y := ⟨φ.universalGSpaceCellMap, universalGSpaceCellMap_smul φ⟩
+  let g : Y →ₑ[ψ] Z := ⟨ψ.universalGSpaceCellMap, universalGSpaceCellMap_smul ψ⟩
+  have h : (⟨(ψ.comp φ).universalGSpaceCellMap,
+      universalGSpaceCellMap_smul (ψ.comp φ)⟩ : X →ₑ[ψ.comp φ] Z) =
+      g.comp f (κ := ⟨rfl⟩) :=
+    MulActionHom.ext (universalGSpaceCellMap_comp ψ φ)
+  exact (congrArg (fun f : X →ₑ[ψ.comp φ] Z => f.toRepRes (k := k) (φ := ψ.comp φ)) h).trans
+    (MulActionHom.toRepRes_comp g f)
 
 /-- Relabelling simplices preserves the degree-zero augmentation. -/
 @[reassoc (attr := simp)]
-theorem universalGSpaceChainHom_comp_augmentation (φ : G →* H) :
+theorem universalGSpaceChainHom_comp_permutationAugmentation (φ : G →* H) :
     φ.universalGSpaceChainHom (k := k) 0 ≫
         (Rep.resFunctor φ).map (permutationAugmentation k H _) =
       permutationAugmentation k G _ := by
-  apply Rep.hom_ext
-  apply Representation.IntertwiningMap.ext
-  apply MonoidAlgebra.lhom_ext'
-  intro c
-  apply LinearMap.ext_ring
-  -- Restriction does not alter the coefficient-sum augmentation.
-  change (permutationAugmentation k H _).hom
-      ((φ.universalGSpaceChainHom 0).hom (MonoidAlgebra.single c 1)) =
-    (permutationAugmentation k G _).hom (MonoidAlgebra.single c 1)
-  rw [universalGSpaceChainHom_single, permutationAugmentation_apply,
-    permutationAugmentation_apply]
-  simp
+  exact MulActionHom.toRepRes_comp_permutationAugmentation _
 
 end Ring
 
@@ -166,21 +142,22 @@ theorem universalGSpaceChainComplexToStandardComplex_naturality (φ : G →* H) 
       universalGSpaceChainComplexToStandardComplex k G ≫ φ.standardComplexMap := by
   apply HomologicalComplex.hom_ext
   intro n
-  apply Rep.hom_ext
-  apply Representation.IntertwiningMap.ext
-  apply MonoidAlgebra.lhom_ext'
+  apply Rep.ofMulAction_hom_ext
   intro c
-  apply LinearMap.ext_ring
-  -- xIso is the identity in permutation coordinates; the source complex is already
-  -- presented on simplices. Remove these transports to evaluate both composites.
+  -- Remove the chain complexes' implicit object arguments before evaluating the maps;
+  -- hom_comp and resMap_hom_apply cannot rewrite the transported morphisms directly.
   change ((universalGSpaceChainComplexToStandardComplex k H).f n).hom
       ((φ.universalGSpaceChainHom n).hom (MonoidAlgebra.single c 1)) =
     ((φ.standardComplexMap).f n).hom
       (((universalGSpaceChainComplexToStandardComplex k G).f n).hom
         (MonoidAlgebra.single c 1))
-  simp only [universalGSpaceChainComplex_X, Rep.res_obj_ρ, universalGSpaceChainHom_single,
-    universalGSpaceChainComplexToStandardComplex_f_hom_single, universalGSpaceCellLabels_map,
+  simp only [universalGSpaceChainComplex_X, Rep.res_obj_ρ, MulActionHom.toRepRes_hom_single,
+    universalGSpaceChainComplexToStandardComplex_f_hom_single,
     Functor.mapHomologicalComplex_obj_X, standardComplexMap_f]
-  exact (standardComplexHom_single (k := k) φ (universalGSpaceCellLabels c) (1 : k)).symm
+  let f : (Fin (n + 1) → G) →ₑ[φ] (Fin (n + 1) → H) :=
+    ⟨fun x => φ ∘ x, fun g x => by ext i; exact map_mul φ g (x i)⟩
+  exact (congrArg (fun x => MonoidAlgebra.single x (1 : k))
+    (universalGSpaceCellLabels_universalGSpaceCellMap φ c)).trans
+    (MulActionHom.toRepRes_hom_single (k := k) f (universalGSpaceCellLabels c) 1).symm
 
 end MonoidHom

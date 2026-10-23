@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.PID
 public import TauCeti.Algebra.MonoidAlgebra.Basis
 public import TauCeti.RepresentationTheory.FDRep.Basic
+public import TauCeti.RepresentationTheory.Rep.OfMulAction
 public import TauCeti.RepresentationTheory.Subrepresentation
 public import TauCeti.RepresentationTheory.Rep.TensorShortExact
 
@@ -649,3 +650,27 @@ theorem character_augmentationSubrepresentation [Finite X] [Nonempty X] (g : G) 
 end Field
 
 end TauCeti
+
+namespace MulActionHom
+
+universe u
+
+open CategoryTheory
+
+/-- Linear extension of an equivariant map preserves the coefficient-sum augmentation. -/
+@[reassoc (attr := simp)]
+theorem toRepRes_comp_permutationAugmentation {k : Type u} [Ring k]
+    {G H : Type*} [Monoid G] [Monoid H] {X Y : Type u}
+    [MulAction G X] [MulAction H Y] {φ : G →* H} (f : X →ₑ[φ] Y) :
+    f.toRepRes (k := k) ≫ (Rep.resFunctor φ).map (TauCeti.permutationAugmentation k H Y) =
+      TauCeti.permutationAugmentation k G X := by
+  apply Rep.ofMulAction_hom_ext
+  intro x
+  -- Evaluate the coefficient sums here: restriction and the trivial representation give
+  -- definitionally equal target actions with different implicit arguments to Rep.Hom.hom.
+  simp only [Rep.hom_comp, Representation.IntertwiningMap.comp_apply]
+  rw [Rep.resMap_hom_apply, toRepRes_hom_single, TauCeti.permutationAugmentation_apply]
+  exact (by simp : (MonoidAlgebra.basis Y k).sumCoords (MonoidAlgebra.single (f x) 1) = 1).trans
+    ((TauCeti.permutationAugmentation_apply k G X (MonoidAlgebra.single x 1)).trans (by simp)).symm
+
+end MulActionHom
