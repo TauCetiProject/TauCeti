@@ -19,6 +19,12 @@ about `ℤ[i]` that the primary normalisation of quartic reciprocity is computed
 coordinates of `ℤ[i]` in the basis `1, i` are described for every quadratic cyclotomic field in
 `TauCeti.NumberTheory.NumberField.Cyclotomic.Quadratic`.
 
+* `TauCeti.one_add_pow_four_of_sq_eq_neg_one`: for a square root `x` of `-1` in a commutative
+  ring, `(1 + x)⁴ = -4`;
+* `TauCeti.associated_one_add_of_sq_eq_neg_one`: in a domain, `1 + x` does not depend on the
+  choice of the square root `x` of `-1` up to a unit;
+* `TauCeti.one_add_pow_three_dvd_iff_four_dvd_mul`: in a domain with `2 ≠ 0`, divisibility by
+  `(1 + x)³` is divisibility of the product with `1 + x` by `4`;
 * `IsPrimitiveRoot.minpoly_toInteger_eq_X_sq_add_one`: the minimal polynomial of `i` is
   `X² + 1`, the hypothesis through which the quadratic-field API applies to `K`;
 * `IsPrimitiveRoot.norm_intCast_add_intCast_mul_toInteger_of_four`: the norm of `a + b i` is
@@ -33,6 +39,38 @@ coordinates of `ℤ[i]` in the basis `1, i` are described for every quadratic cy
 public section
 
 open NumberField Polynomial TauCeti.NumberField
+
+namespace TauCeti
+
+variable {R : Type*} [CommRing R]
+
+/-- A square root `x` of `-1` satisfies `(1 + x)⁴ = -4`. -/
+theorem one_add_pow_four_of_sq_eq_neg_one {x : R} (hx : x ^ 2 = -1) : (1 + x) ^ 4 = -4 := by
+  linear_combination (x ^ 2 + 4 * x + 5) * hx
+
+/-- In a domain, `1 + x` and `1 + y` are associated for any two square roots `x` and `y` of `-1`:
+either `y = x`, or `y = -x` and `1 - x = (1 + x) (-x)` with `-x` a unit. -/
+theorem associated_one_add_of_sq_eq_neg_one [IsDomain R] {x y : R} (hx : x ^ 2 = -1)
+    (hy : y ^ 2 = -1) : Associated (1 + x) (1 + y) := by
+  rcases sq_eq_sq_iff_eq_or_eq_neg.mp (hy.trans hx.symm) with rfl | rfl
+  · rfl
+  · have hu : IsUnit (-x) := IsUnit.of_mul_eq_one x (by linear_combination -hx)
+    exact ⟨hu.unit, by rw [IsUnit.unit_spec]; linear_combination -hx⟩
+
+/-- For a square root `x` of `-1` in a domain in which `2 ≠ 0`, `(1 + x)³ ∣ y` if and only if
+`4 ∣ y (1 + x)`, since `(1 + x)⁴ = -4`. This trades divisibility by `(1 + x)³` for divisibility
+by an integer. -/
+theorem one_add_pow_three_dvd_iff_four_dvd_mul [IsDomain R] (h2 : (2 : R) ≠ 0) {x y : R}
+    (hx : x ^ 2 = -1) : (1 + x) ^ 3 ∣ y ↔ (4 : R) ∣ y * (1 + x) := by
+  have hne : 1 + x ≠ 0 := fun h ↦ h2 (by linear_combination (1 - x) * h + hx)
+  constructor
+  · rintro ⟨c, rfl⟩
+    exact ⟨-c, by linear_combination c * one_add_pow_four_of_sq_eq_neg_one hx⟩
+  · rintro ⟨c, hc⟩
+    refine ⟨-c, mul_right_cancel₀ hne ?_⟩
+    linear_combination hc + c * one_add_pow_four_of_sq_eq_neg_one hx
+
+end TauCeti
 
 namespace IsPrimitiveRoot
 

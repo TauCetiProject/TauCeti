@@ -47,10 +47,6 @@ Finally, for `n ∣ m` it records the power map from the `m`-th to the `n`-th ro
 * `IsPrimitiveRoot.neg_of_odd`: when `2 ≠ 0`, the negative of a primitive root of unity of odd
   order `n` is a primitive `2n`-th root of unity.
 * `IsPrimitiveRoot.sq_eq_neg_one`: a primitive fourth root of unity squares to `-1`.
-* `TauCeti.one_add_pow_four_of_sq_eq_neg_one`, `TauCeti.associated_one_add_of_sq_eq_neg_one` and
-  `TauCeti.one_add_pow_three_dvd_iff_four_dvd_mul`: for a square root `x` of `-1`,
-  `(1 + x)⁴ = -4`, the element `1 + x` does not depend on the choice of `x` up to a unit, and
-  divisibility by `(1 + x)³` is divisibility of the product with `1 + x` by `4`.
 * `HasEnoughRootsOfUnity.of_injective`: a domain receiving an injective homomorphism from a
   commutative monoid with enough `n`-th roots of unity has enough `n`-th roots of unity.
 * `HasEnoughRootsOfUnity.primitiveRoots_nonempty` and
@@ -131,32 +127,6 @@ of `-1`: its square is a primitive square root of unity. -/
 theorem _root_.IsPrimitiveRoot.sq_eq_neg_one [NoZeroDivisors R] {ζ : R}
     (hζ : IsPrimitiveRoot ζ 4) : ζ ^ 2 = -1 :=
   (hζ.pow (by norm_num) (by norm_num : 4 = 2 * 2)).eq_neg_one_of_two_right
-
-/-- A square root `x` of `-1` satisfies `(1 + x)⁴ = -4`. -/
-theorem one_add_pow_four_of_sq_eq_neg_one {x : R} (hx : x ^ 2 = -1) : (1 + x) ^ 4 = -4 := by
-  linear_combination (x ^ 2 + 4 * x + 5) * hx
-
-/-- In a domain, `1 + x` and `1 + y` are associated for any two square roots `x` and `y` of `-1`:
-either `y = x`, or `y = -x` and `1 - x = (1 + x) (-x)` with `-x` a unit. -/
-theorem associated_one_add_of_sq_eq_neg_one [IsDomain R] {x y : R} (hx : x ^ 2 = -1)
-    (hy : y ^ 2 = -1) : Associated (1 + x) (1 + y) := by
-  rcases sq_eq_sq_iff_eq_or_eq_neg.mp (hy.trans hx.symm) with rfl | rfl
-  · rfl
-  · have hu : IsUnit (-x) := IsUnit.of_mul_eq_one x (by linear_combination -hx)
-    exact ⟨hu.unit, by rw [IsUnit.unit_spec]; linear_combination -hx⟩
-
-/-- For a square root `x` of `-1` in a domain in which `2 ≠ 0`, `(1 + x)³ ∣ y` if and only if
-`4 ∣ y (1 + x)`, since `(1 + x)⁴ = -4`. This trades divisibility by `(1 + x)³` for divisibility
-by an integer. -/
-theorem one_add_pow_three_dvd_iff_four_dvd_mul [IsDomain R] (h2 : (2 : R) ≠ 0) {x y : R}
-    (hx : x ^ 2 = -1) : (1 + x) ^ 3 ∣ y ↔ (4 : R) ∣ y * (1 + x) := by
-  have hne : 1 + x ≠ 0 := fun h ↦ h2 (by linear_combination (1 - x) * h + hx)
-  constructor
-  · rintro ⟨c, rfl⟩
-    exact ⟨-c, by linear_combination c * one_add_pow_four_of_sq_eq_neg_one hx⟩
-  · rintro ⟨c, hc⟩
-    refine ⟨-c, mul_right_cancel₀ hne ?_⟩
-    linear_combination hc + c * one_add_pow_four_of_sq_eq_neg_one hx
 
 /-- A domain receiving an injective monoid homomorphism from a commutative monoid with enough
 `n`-th roots of unity has enough `n`-th roots of unity: the image of a primitive root is primitive,
