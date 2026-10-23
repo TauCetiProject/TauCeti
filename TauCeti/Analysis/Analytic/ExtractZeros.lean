@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Analytic.Order
+public import TauCeti.Analysis.Analytic.Order
 
 /-!
 # Dividing an analytic function by prescribed zeros
@@ -13,7 +13,8 @@ public import Mathlib.Analysis.Analytic.Order
 If an analytic function `f` vanishes to order at least `k x` at each point `x` of a finite set
 `s`, then `f` factors globally as `f z = (∏ x ∈ s, (z - x) ^ k x) • g z`, where `g` is analytic
 wherever `f` is. The quotient `g` is obtained by repeatedly taking divided differences
-`dslope · x`, each of which lowers the order of vanishing at `x` by one.
+`dslope · x`, each of which lowers the order of vanishing at `x` by one
+(`AnalyticAt.analyticOrderAt_dslope_add_one`).
 
 Over `ℂ` this is the factorization of an entire function with zeros of prescribed multiplicities
 used in transcendence proofs, where `g` is then estimated by the maximum modulus principle. The
@@ -22,8 +23,6 @@ order hypotheses may be given as vanishing of derivatives through Mathlib's
 
 ## Main results
 
-* `AnalyticAt.analyticOrderAt_dslope_add_one`: at a zero `a` of `f`, the divided difference
-  `dslope f a` has order one less than `f` at `a`.
 * `TauCeti.iterate_dslope_apply_eq_zero_of_lt`: if `f` vanishes to order at least `n` at `a`,
   then the first `n` iterated divided differences of `f` at `a` vanish at `a`.
 * `AnalyticOnNhd.exists_eq_prod_pow_smul`: an analytic function with zeros of orders at least
@@ -40,17 +39,6 @@ open Function
 
 variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {f : 𝕜 → E} {a : 𝕜}
-
-/-- At a zero `a` of an analytic function `f`, the divided difference `dslope f a` vanishes to
-order one less than `f` at `a`. -/
-theorem AnalyticAt.analyticOrderAt_dslope_add_one (hf : AnalyticAt 𝕜 f a) (ha : f a = 0) :
-    analyticOrderAt (dslope f a) a + 1 = analyticOrderAt f a := by
-  have hfa : ((· - a) • dslope f a) = f := funext fun z ↦ sub_smul_dslope_of_zero ha z
-  calc analyticOrderAt (dslope f a) a + 1
-      = analyticOrderAt ((· - a) • dslope f a) a := by
-        rw [analyticOrderAt_smul (by fun_prop) (hf.dslope a), analyticOrderAt_id_sub_const_self,
-          add_comm]
-    _ = analyticOrderAt f a := by rw [hfa]
 
 /-- Iterated divided differences at `a` preserve analyticity at every point where `f` is
 analytic. -/
@@ -73,8 +61,11 @@ theorem iterate_dslope_apply_eq_zero_of_lt {n k : ℕ} (hn : (n : ℕ∞) ≤ an
       (lt_of_lt_of_le (mod_cast Nat.zero_lt_of_lt hk) hn).ne'
     rw [iterate_succ_apply]
     refine ih (n := n - 1) ?_ (by lia)
-    have h := hfa.analyticOrderAt_dslope_add_one ha
-    rw [← h, show (n : ℕ∞) = ((n - 1 : ℕ) : ℕ∞) + 1 by norm_cast; lia] at hn
+    -- `n` is positive, so its cast is `↑(n - 1) + 1`; cancelling the `+ 1` against the order
+    -- `analyticOrderAt (dslope f a) a + 1` of `f` gives the hypothesis for the next divided
+    -- difference.
+    have hn₁ : (n : ℕ∞) = ((n - 1 : ℕ) : ℕ∞) + 1 := by norm_cast; lia
+    rw [← hfa.analyticOrderAt_dslope_add_one ha, hn₁] at hn
     exact (ENat.add_le_add_iff_right ENat.one_ne_top).mp hn
 
 end TauCeti

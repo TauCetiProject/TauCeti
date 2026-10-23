@@ -92,15 +92,30 @@ theorem norm_le_mul_prod_div_pow (hf : AnalyticOnNhd ℂ f (closedBall c T))
 /-- **Schwarz's lemma with prescribed zeros**, in the form `M * (3 * R / T) ^ ∑ x ∈ s, k x`. If
 `f` is analytic on a neighbourhood of `closedBall c T`, bounded by `M` on `sphere c T`, and
 vanishes to order at least `k x` at each point `x` of a finite set `s ⊆ closedBall c R`, where
-`0 < T` and `3 * R ≤ T`, then `‖f z‖ ≤ M * (3 * R / T) ^ ∑ x ∈ s, k x` on `closedBall c R`. -/
+`3 * R ≤ T`, then `‖f z‖ ≤ M * (3 * R / T) ^ ∑ x ∈ s, k x` on `closedBall c R`. -/
 theorem norm_le_mul_three_mul_div_pow {R : ℝ} (hf : AnalyticOnNhd ℂ f (closedBall c T))
     (hk : ∀ x ∈ s, (k x : ℕ∞) ≤ analyticOrderAt f x) (hs : (s : Set ℂ) ⊆ closedBall c R)
-    (hT : 0 < T) (hRT : 3 * R ≤ T) (hM : ∀ w ∈ sphere c T, ‖f w‖ ≤ M) {z : ℂ}
+    (hRT : 3 * R ≤ T) (hM : ∀ w ∈ sphere c T, ‖f w‖ ≤ M) {z : ℂ}
     (hz : z ∈ closedBall c R) : ‖f z‖ ≤ M * (3 * R / T) ^ ∑ x ∈ s, k x := by
   have hR : 0 ≤ R := dist_nonneg.trans (mem_closedBall.mp hz)
   have hzc : ‖z - c‖ ≤ R := by simpa [dist_eq_norm] using hz
   have hsR (x : ℂ) (hx : x ∈ s) : ‖x - c‖ ≤ R := by
     simpa [dist_eq_norm] using hs hx
+  rcases (show 0 ≤ T by linarith).eq_or_lt with hT | hT
+  · -- A degenerate disc: `R = 0`, so `z = c` and every zero is `c`, while `3 * R / T = 0`.
+    subst hT
+    have hzc₀ : z = c := by simpa [show R = 0 by linarith] using hz
+    subst hzc₀
+    rw [div_zero]
+    rcases Nat.eq_zero_or_pos (∑ x ∈ s, k x) with h0 | hpos
+    · simpa [h0] using hM z (by simp)
+    -- Some zero has positive multiplicity; it lies at `z`, so `f z = 0`.
+    obtain ⟨x, hx, hkx⟩ := Finset.exists_ne_zero_of_sum_ne_zero hpos.ne'
+    have hxz : x = z := by simpa [show R = 0 by linarith] using hs hx
+    subst hxz
+    have hfx : f x = 0 := apply_eq_zero_of_analyticOrderAt_ne_zero
+      (lt_of_lt_of_le (mod_cast Nat.pos_of_ne_zero hkx) (hk x hx)).ne'
+    simp [hfx, zero_pow hpos.ne']
   have hM₀ : 0 ≤ M :=
     (norm_nonneg _).trans (hM (c + T) (by simp [abs_of_pos hT]))
   have hRT' : R < T := by linarith
