@@ -12,7 +12,6 @@ public import Mathlib.Order.Interval.Set.Nat
 public import Mathlib.RingTheory.PowerSeries.Order
 public import Mathlib.RingTheory.Valuation.Basic
 public import TauCeti.Analysis.Convex.Sequence.Envelope
-public import TauCeti.Analysis.Convex.Sequence.Reflect
 public import TauCeti.Analysis.Convex.Sequence.Supporting
 
 /-!
