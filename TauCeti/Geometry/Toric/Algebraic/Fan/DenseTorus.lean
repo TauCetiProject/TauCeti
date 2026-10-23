@@ -28,8 +28,6 @@ obtained on every affine chart by the face localization from the zero cone.
   the zero cone.
 * `TauCeti.Toric.Fan.isIso_denseTorusι_ofCone_bot`: the toric scheme of the fan of the zero cone
   is its dense torus.
-* `TauCeti.Toric.Fan.mem_dualSemigroup_ofCone_bot`: every integral character is nonnegative on the
-  cones of the fan of the zero cone.
 * `TauCeti.Toric.FanHom.denseTorusι_comp_algebraicMap`: a toric map restricts on dense tori to
   the torus morphism induced by its lattice map.
 
@@ -103,14 +101,6 @@ instance isIso_denseTorusι_ofCone_bot (hi : IsIntegralLattice i)
     IsIso ((ofCone hi (isToricCone_bot i)).denseTorusι h) := by
   rw [denseTorusι_eq_affineToricChartι _ h ((mem_ofCone_cones hi _).2 (.refl ⊥))]
   infer_instance
-
-/-- Every integral character is nonnegative on every cone of the fan of the zero cone, since that
-fan has the zero cone as its only cone. -/
-theorem mem_dualSemigroup_ofCone_bot (hi : IsIntegralLattice i) (m : N →+ ℤ)
-    (σ : (ofCone hi (isToricCone_bot i)).cones) :
-    m ∈ dualSemigroup (ofCone hi (isToricCone_bot i)).lattice σ.1 := by
-  rw [le_bot_iff.mp ((mem_ofCone_cones hi (isToricCone_bot i)).mp σ.2).le]
-  simp
 
 end TauCeti.Toric.Fan
 
