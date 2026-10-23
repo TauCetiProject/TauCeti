@@ -121,11 +121,11 @@ section Pow
 
 variable {M : Type*} [MonoidWithZero M] [TopologicalSpace M] [SeparatelyContinuousMul M]
 
-/-- **An element with a topologically nilpotent positive power is topologically nilpotent.**
-Writing `a ^ k = a ^ (k % m) * (a ^ m) ^ (k / m)`, the finitely many factors `a ^ r` with `r < m`
-are absorbed by continuity of multiplication by a constant. -/
+/-- **An element with a topologically nilpotent positive power is topologically nilpotent.** -/
 theorem IsTopologicallyNilpotent.of_pow {a : M} {m : ℕ} (hm : m ≠ 0)
     (h : IsTopologicallyNilpotent (a ^ m)) : IsTopologicallyNilpotent a := by
+  -- write `a ^ k = a ^ (k % m) * (a ^ m) ^ (k / m)`; the finitely many factors `a ^ r` with
+  -- `r < m` are absorbed by continuity of multiplication by a constant
   intro U hU
   -- eventually in `q`, every `a ^ r * (a ^ m) ^ q` with `r < m` lies in `U`
   have hr : ∀ᶠ q : ℕ in atTop, ∀ r ∈ Set.Iio m, a ^ r * (a ^ m) ^ q ∈ U :=

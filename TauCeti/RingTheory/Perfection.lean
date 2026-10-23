@@ -30,11 +30,12 @@ namespace Perfection
 variable {M : Type*} [CommMonoid M] {p : ℕ}
 
 /-- **If every element of `M` has a `p`-th root, every coordinate of `Perfection M p` is
-surjective**: iterating a choice of `p`-th roots starting at `x` gives a compatible system with
-zeroth term `x`, and raising it to the `p ^ n`-th power moves `x` to the `n`-th term. -/
+surjective.** -/
 theorem coeffMonoidHom_surjective (h : Function.Surjective fun x : M ↦ x ^ p) (n : ℕ) :
     Function.Surjective (coeffMonoidHom M p n) := by
   intro x
+  -- iterating a choice of `p`-th roots starting at `x` gives a compatible system `f` with zeroth
+  -- term `x`, and raising `f` to the `p ^ n`-th power moves `x` to the `n`-th term
   choose r hr using h
   let f : Perfection M p := ⟨fun k ↦ r^[k] x, fun k ↦ by
     simp only [Function.iterate_succ_apply', hr]⟩
