@@ -186,6 +186,10 @@ section Nonneg
 
 variable [PartialOrder K] [IsOrderedAddMonoid K] {f : Assignment Q K}
 
+/-- A nonnegative assignment has nonnegative total value on the arrows from `S` to `T`. -/
+theorem arrowSum_nonneg (hf : 0 ≤ f) (S T : Finset V) : 0 ≤ arrowSum f S T :=
+  sum_nonneg fun _ _ ↦ sum_nonneg fun _ _ ↦ sum_nonneg fun e _ ↦ hf _ _ e
+
 /-- For a nonnegative assignment, the arrow sum is monotone in the set of source vertices. -/
 theorem arrowSum_mono_left (hf : 0 ≤ f) {S S' : Finset V} (h : S ⊆ S') (T : Finset V) :
     arrowSum f S T ≤ arrowSum f S' T :=

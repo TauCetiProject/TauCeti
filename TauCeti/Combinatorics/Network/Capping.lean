@@ -37,7 +37,7 @@ Nonnegativity of the capacities is needed: with arrows `s → a`, `a → t` and 
 * `TauCeti.isMinimum_arrowSum_inf_iff` and `TauCeti.minimumValue_arrowSum_inf`: capping
   preserves the minimum cuts and the minimum cut value.
 * `TauCeti.PathCycleDecomposition.cappedFlow`: the path components of a decomposition of an
-  ordinary flow, as a flow of the capped network.
+  ordinary flow of value at most `b`, as a flow of the capped network.
 * `TauCeti.Flow.exists_flow_inf`: every flow of the original network gives a flow of the capped
   network of the same value with an arrowwise no larger assignment.
 -/
@@ -75,10 +75,9 @@ theorem min_arrowSum_le_arrowSum_inf (hf : 0 ≤ f) (hb : 0 ≤ b) (S T : Finset
 
 /-- Capping a nonnegative assignment at a bound `b` does not change an arrow sum below `b`. -/
 theorem arrowSum_inf_eq_of_lt (hf : 0 ≤ f) {S T : Finset V} (hb : arrowSum f S T < b) :
-    arrowSum (f ⊓ fun _ _ _ ↦ b) S T = arrowSum f S T := by
-  have hb₀ : 0 ≤ b := (by simpa using arrowSum_mono hf S T : 0 ≤ arrowSum f S T).trans hb.le
-  refine le_antisymm (arrowSum_mono inf_le_left S T) ?_
-  simpa [min_eq_left hb.le] using min_arrowSum_le_arrowSum_inf hf hb₀ S T
+    arrowSum (f ⊓ fun _ _ _ ↦ b) S T = arrowSum f S T :=
+  eq_of_le_of_min_le_of_lt (arrowSum_mono inf_le_left S T)
+    (min_arrowSum_le_arrowSum_inf hf ((arrowSum_nonneg hf S T).trans hb.le) S T) hb
 
 end ArrowSum
 
@@ -96,8 +95,7 @@ theorem isMinimum_arrowSum_inf_iff (hcap : 0 ≤ cap) (hS₀ : IsAdmissible A B 
     (hb : arrowSum cap S₀ S₀ᶜ < b) {S : Finset V} :
     IsMinimum (fun S ↦ arrowSum (cap ⊓ fun _ _ _ ↦ b) S Sᶜ) A B S ↔
       IsMinimum (fun S ↦ arrowSum cap S Sᶜ) A B S := by
-  have hb₀ : 0 ≤ b :=
-    (by simpa using arrowSum_mono hcap S₀ S₀ᶜ : 0 ≤ arrowSum cap S₀ S₀ᶜ).trans hb.le
+  have hb₀ : 0 ≤ b := (arrowSum_nonneg hcap S₀ S₀ᶜ).trans hb.le
   exact isMinimum_iff_of_le_of_min_le (fun S ↦ arrowSum_mono inf_le_left S Sᶜ)
     (fun S ↦ min_arrowSum_le_arrowSum_inf hcap hb₀ S Sᶜ) hS₀ hb
 
@@ -108,8 +106,7 @@ theorem minimumValue_arrowSum_inf (hcap : 0 ≤ cap) (hAB : Disjoint A B)
     (hS₀ : IsAdmissible A B S₀) (hb : arrowSum cap S₀ S₀ᶜ < b) :
     minimumValue (fun S ↦ arrowSum (cap ⊓ fun _ _ _ ↦ b) S Sᶜ) hAB =
       minimumValue (fun S ↦ arrowSum cap S Sᶜ) hAB := by
-  have hb₀ : 0 ≤ b :=
-    (by simpa using arrowSum_mono hcap S₀ S₀ᶜ : 0 ≤ arrowSum cap S₀ S₀ᶜ).trans hb.le
+  have hb₀ : 0 ≤ b := (arrowSum_nonneg hcap S₀ S₀ᶜ).trans hb.le
   exact minimumValue_eq_of_le_of_min_le hAB (fun S ↦ arrowSum_mono inf_le_left S Sᶜ)
     (fun S ↦ min_arrowSum_le_arrowSum_inf hcap hb₀ S Sᶜ) hS₀ hb
 
@@ -117,37 +114,34 @@ end MinimumCut
 
 /-! ### Flows -/
 
-variable [Fintype V] [DecidableEq V] [AddCommGroup K] {cap : Assignment Q K} {s t : V} {b : K}
-  {S : Finset V}
+variable [Fintype V] [AddCommGroup K] {cap : Assignment Q K} {s t : V} {b : K} {S : Finset V}
 
 section Lattice
 
 variable [Lattice K] [IsOrderedAddMonoid K]
 
 /-- The path components of a decomposition of an ordinary `s`–`t` flow form an ordinary `s`–`t`
-flow for the capacities capped at `b`, whenever `b` exceeds the capacity of a cut `S` separating
-`s` from `t`: every arrow carries at most the value of the flow, which is below `b`. -/
+flow for the capacities capped at `b`, whenever the value of the flow is at most `b`: every arrow
+carries at most the value of the flow. -/
 noncomputable def PathCycleDecomposition.cappedFlow {f : Flow cap s t}
-    (D : PathCycleDecomposition f.toFun) (hs : s ∈ S) (ht : t ∉ S)
-    (hb : arrowSum cap S Sᶜ < b) : Flow (cap ⊓ fun _ _ _ ↦ b) s t where
+    (D : PathCycleDecomposition f.toFun) (hb : f.val ≤ b) : Flow (cap ⊓ fun _ _ _ ↦ b) s t where
   toFun := D.pathAssignment
   mem_Icc := ⟨D.pathAssignment_nonneg, le_inf (D.pathAssignment_le.trans f.mem_Icc.2)
-    fun _ _ e ↦ ((D.pathAssignment_apply_le_val e).trans (f.val_le_arrowSum hs ht)).trans hb.le⟩
+    fun _ _ e ↦ (D.pathAssignment_apply_le_val e).trans hb⟩
   conserve v hvs hvt := by rw [D.excessAt_pathAssignment]; exact f.conserve v hvs hvt
   excessAt_sink_nonneg := by rw [D.excessAt_pathAssignment]; exact f.excessAt_sink_nonneg
 
 @[simp]
 theorem PathCycleDecomposition.cappedFlow_toFun {f : Flow cap s t}
-    (D : PathCycleDecomposition f.toFun) (hs : s ∈ S) (ht : t ∉ S)
-    (hb : arrowSum cap S Sᶜ < b) : (D.cappedFlow hs ht hb).toFun = D.pathAssignment :=
+    (D : PathCycleDecomposition f.toFun) (hb : f.val ≤ b) :
+    (D.cappedFlow hb).toFun = D.pathAssignment :=
   (rfl)
 
 /-- The path components of a decomposition of an ordinary flow, as a flow for the capped
 capacities, have the value of the original flow. -/
 @[simp]
 theorem PathCycleDecomposition.val_cappedFlow {f : Flow cap s t}
-    (D : PathCycleDecomposition f.toFun) (hs : s ∈ S) (ht : t ∉ S)
-    (hb : arrowSum cap S Sᶜ < b) : (D.cappedFlow hs ht hb).val = f.val := by
+    (D : PathCycleDecomposition f.toFun) (hb : f.val ≤ b) : (D.cappedFlow hb).val = f.val := by
   rw [BoundedFlow.val_def, BoundedFlow.val_def, cappedFlow_toFun, excessAt_pathAssignment]
 
 end Lattice
@@ -155,11 +149,12 @@ end Lattice
 /-- Every ordinary `s`–`t` flow gives an ordinary `s`–`t` flow of the same value with an arrowwise
 no larger assignment for the capacities capped at `b`, whenever `b` exceeds the capacity of a cut
 separating `s` from `t`. -/
-theorem Flow.exists_flow_inf [LinearOrder K] [IsOrderedAddMonoid K] (f : Flow cap s t)
-    (hs : s ∈ S) (ht : t ∉ S) (hb : arrowSum cap S Sᶜ < b) :
+theorem Flow.exists_flow_inf [DecidableEq V] [LinearOrder K] [IsOrderedAddMonoid K]
+    (f : Flow cap s t) (hs : s ∈ S) (ht : t ∉ S) (hb : arrowSum cap S Sᶜ < b) :
     ∃ g : Flow (cap ⊓ fun _ _ _ ↦ b) s t, g.toFun ≤ f.toFun ∧ g.val = f.val := by
   obtain ⟨D⟩ := nonempty_pathCycleDecomposition (f := f.toFun) fun _ _ e ↦ f.nonneg e
-  exact ⟨D.cappedFlow hs ht hb, D.pathAssignment_le, D.val_cappedFlow hs ht hb⟩
+  have hb' : f.val ≤ b := (f.val_le_arrowSum hs ht).trans hb.le
+  exact ⟨D.cappedFlow hb', D.pathAssignment_le, D.val_cappedFlow hb'⟩
 
 -- On `s = 0`, `a = 1` and `t = 2`, the arrows `s → t`, `a → t` and `t → a` have capacities `1`,
 -- `5` and `5`, so the cut `{s}` has capacity `1`. The flow carrying `1` on `s → t` and `3` around
