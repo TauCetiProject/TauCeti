@@ -14,7 +14,10 @@ public import TauCeti.Topology.Algebra.Module.Alternating.Wedge.Basic
 The paired wedge combines two rough forms with values in topological vector-bundle fibres by
 a continuous bilinear pairing on each fibre. Its formula is the signed permutation sum divided
 by the two factorials. This construction uses no norm or trivialization on the tangent fibres.
-Pullback carries both the forms and their pairing to the source manifold.
+Pullback carries both the forms and their pairing to the source manifold. The output fibres
+need only continuity of multiplication by each fixed scalar. A pairing that turns multiplication
+by one scalar into multiplication by another, such as a complex-bilinear pairing or a Hermitian
+metric, makes the wedge semilinear in the same way.
 
 The normalization follows Lee, *Introduction to Smooth Manifolds*, second edition, Chapter 14.
 The algebraic alternatization follows the paired-wedge construction of Yury Kudryashov's
@@ -39,7 +42,7 @@ variable {E H M E' H' M' : Type*}
   [∀ x, AddCommGroup (V₁ x)] [∀ x, Module ℝ (V₁ x)] [∀ x, TopologicalSpace (V₁ x)]
   [∀ x, AddCommGroup (V₂ x)] [∀ x, Module ℝ (V₂ x)] [∀ x, TopologicalSpace (V₂ x)]
   [∀ x, AddCommGroup (V₃ x)] [∀ x, Module ℝ (V₃ x)] [∀ x, TopologicalSpace (V₃ x)]
-  [∀ x, IsTopologicalAddGroup (V₃ x)] [∀ x, ContinuousSMul ℝ (V₃ x)]
+  [∀ x, IsTopologicalAddGroup (V₃ x)] [∀ x, ContinuousConstSMul ℝ (V₃ x)]
   {k l : ℕ}
 
 /-- The paired wedge of rough bundle-valued forms, normalized so that one-forms multiply
@@ -85,7 +88,7 @@ theorem bundleWedgeWith_apply_one_one
 /-- Swapping the factors of a fibrewise paired wedge flips the pairing and contributes the graded
 sign. This applies to arbitrary value bundles, with no norm on the tangent fibres or values. -/
 theorem bundleWedgeWith_flip
-    [∀ x, IsTopologicalAddGroup (V₂ x)] [∀ x, ContinuousSMul ℝ (V₂ x)]
+    [∀ x, IsTopologicalAddGroup (V₂ x)] [∀ x, ContinuousConstSMul ℝ (V₂ x)]
     (μ : (x : M) → V₁ x →L[ℝ] V₂ x →L[ℝ] V₃ x)
     (hμ : ∀ x, Continuous (Function.uncurry fun a b ↦ μ x a b))
     (φ : RoughBundleForm I M V₁ k) (ψ : RoughBundleForm I M V₂ l)
@@ -140,6 +143,38 @@ theorem bundleWedgeWith_smul_right [∀ x, ContinuousConstSMul ℝ (V₂ x)]
     bundleWedgeWith μ hμ φ (c • ψ) = c • bundleWedgeWith μ hμ φ ψ := by
   funext x
   exact ContinuousAlternatingMap.pairedWedge_smul_right (μ x) (hμ x) c (φ x) (ψ x)
+
+/-- If each fibrewise pairing turns multiplication by `c` in its first argument into
+multiplication by `d`, then so does the fibrewise paired wedge in its first form. This covers
+complex-bilinear pairings, and pairings that are conjugate-linear in the first argument, such as
+Hermitian metrics. -/
+theorem bundleWedgeWith_smul_left_of_map_smul {S S' : Type*} [Monoid S]
+    [∀ x, DistribMulAction S (V₁ x)] [∀ x, ContinuousConstSMul S (V₁ x)]
+    [∀ x, SMulCommClass ℝ S (V₁ x)] [Monoid S'] [∀ x, DistribMulAction S' (V₃ x)]
+    [∀ x, ContinuousConstSMul S' (V₃ x)] [∀ x, SMulCommClass ℝ S' (V₃ x)]
+    (μ : (x : M) → V₁ x →L[ℝ] V₂ x →L[ℝ] V₃ x)
+    (hμ : ∀ x, Continuous (Function.uncurry fun a b ↦ μ x a b)) {c : S} {d : S'}
+    (hcd : ∀ x a b, μ x (c • a) b = d • μ x a b)
+    (φ : RoughBundleForm I M V₁ k) (ψ : RoughBundleForm I M V₂ l) :
+    bundleWedgeWith μ hμ (c • φ) ψ = d • bundleWedgeWith μ hμ φ ψ := by
+  funext x
+  exact ContinuousAlternatingMap.pairedWedge_smul_left_of_map_smul (μ x) (hμ x) (hcd x)
+    (φ x) (ψ x)
+
+/-- If each fibrewise pairing turns multiplication by `c` in its second argument into
+multiplication by `d`, then so does the fibrewise paired wedge in its second form. -/
+theorem bundleWedgeWith_smul_right_of_map_smul {S S' : Type*} [Monoid S]
+    [∀ x, DistribMulAction S (V₂ x)] [∀ x, ContinuousConstSMul S (V₂ x)]
+    [∀ x, SMulCommClass ℝ S (V₂ x)] [Monoid S'] [∀ x, DistribMulAction S' (V₃ x)]
+    [∀ x, ContinuousConstSMul S' (V₃ x)] [∀ x, SMulCommClass ℝ S' (V₃ x)]
+    (μ : (x : M) → V₁ x →L[ℝ] V₂ x →L[ℝ] V₃ x)
+    (hμ : ∀ x, Continuous (Function.uncurry fun a b ↦ μ x a b)) {c : S} {d : S'}
+    (hcd : ∀ x a b, μ x a (c • b) = d • μ x a b)
+    (φ : RoughBundleForm I M V₁ k) (ψ : RoughBundleForm I M V₂ l) :
+    bundleWedgeWith μ hμ φ (c • ψ) = d • bundleWedgeWith μ hμ φ ψ := by
+  funext x
+  exact ContinuousAlternatingMap.pairedWedge_smul_right_of_map_smul (μ x) (hμ x) (hcd x)
+    (φ x) (ψ x)
 
 /-- The fibrewise paired wedge vanishes when its first form is zero. -/
 @[simp]
@@ -260,6 +295,30 @@ theorem wedgeWith_smul_right (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (c : ℝ)
     φ.wedgeWith μ (c • ψ) = c • φ.wedgeWith μ ψ := by
   simpa only [wedgeWith] using
     (bundleWedgeWith_smul_right (fun _ ↦ μ) (fun _ ↦ μ.continuous₂) c φ ψ)
+
+/-- If the pairing turns multiplication by `c` in its first argument into multiplication by `d`,
+then so does the paired rough-form wedge in its first form. For a complex-bilinear pairing of
+complex coefficient spaces this is complex-linearity in the first form. -/
+theorem wedgeWith_smul_left_of_map_smul {S S' : Type*} [Monoid S] [DistribMulAction S F₁]
+    [ContinuousConstSMul S F₁] [SMulCommClass ℝ S F₁] [Monoid S'] [DistribMulAction S' F₃]
+    [ContinuousConstSMul S' F₃] [SMulCommClass ℝ S' F₃] (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+    {c : S} {d : S'} (hcd : ∀ a b, μ (c • a) b = d • μ a b)
+    (φ : RoughForm I M F₁ k) (ψ : RoughForm I M F₂ l) :
+    (c • φ).wedgeWith μ ψ = d • φ.wedgeWith μ ψ := by
+  simpa only [wedgeWith] using
+    (bundleWedgeWith_smul_left_of_map_smul (fun _ ↦ μ) (fun _ ↦ μ.continuous₂) (fun _ ↦ hcd) φ ψ)
+
+/-- If the pairing turns multiplication by `c` in its second argument into multiplication by
+`d`, then so does the paired rough-form wedge in its second form. For a complex-bilinear pairing
+of complex coefficient spaces this is complex-linearity in the second form. -/
+theorem wedgeWith_smul_right_of_map_smul {S S' : Type*} [Monoid S] [DistribMulAction S F₂]
+    [ContinuousConstSMul S F₂] [SMulCommClass ℝ S F₂] [Monoid S'] [DistribMulAction S' F₃]
+    [ContinuousConstSMul S' F₃] [SMulCommClass ℝ S' F₃] (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+    {c : S} {d : S'} (hcd : ∀ a b, μ a (c • b) = d • μ a b)
+    (φ : RoughForm I M F₁ k) (ψ : RoughForm I M F₂ l) :
+    φ.wedgeWith μ (c • ψ) = d • φ.wedgeWith μ ψ := by
+  simpa only [wedgeWith] using
+    (bundleWedgeWith_smul_right_of_map_smul (fun _ ↦ μ) (fun _ ↦ μ.continuous₂) (fun _ ↦ hcd) φ ψ)
 
 /-- The paired rough-form wedge vanishes when its first form is zero. -/
 @[simp]

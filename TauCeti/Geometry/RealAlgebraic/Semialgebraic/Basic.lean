@@ -11,6 +11,8 @@ public import Mathlib.Basic.Sign.Defs
 public import Mathlib.Logic.Equiv.Fin.Basic
 public import Mathlib.MeasureTheory.SetAlgebra
 public import TauCeti.Data.List.PermanencesMinusVariations
+public import TauCeti.Data.Set.Lattice
+public import TauCeti.MeasureTheory.SetAlgebra
 
 /-!
 # Semialgebraic sets
@@ -247,12 +249,7 @@ depend in any way on the signs of their values. -/
 theorem isSemialgebraic_setOf_sign_eval {ι : Type*} [Finite ι] (p : ι → MvPolynomial σ R)
     (Φ : (ι → SignType) → Prop) :
     IsSemialgebraic {x : σ → R | Φ fun i => SignType.sign (eval x (p i))} := by
-  have : {x : σ → R | Φ fun i => SignType.sign (eval x (p i))} =
-      ⋃ ε ∈ {ε | Φ ε}, ⋂ i, {x | SignType.sign (eval x (p i)) = ε i} := by
-    ext x
-    simp only [mem_ofPred_eq, mem_iUnion, mem_iInter, exists_prop]
-    exact ⟨fun h => ⟨_, h, fun _ => rfl⟩, fun ⟨ε, hε, h⟩ => (funext h).symm ▸ hε⟩
-  rw [this]
+  rw [setOf_apply_eq_biUnion_iInter (fun i x => SignType.sign (eval x (p i)))]
   exact .biUnion (toFinite _) fun ε _ => .iInter fun i => isSemialgebraic_sign_eval_eq _ _
 
 omit [IsOrderedAddMonoid R] in
@@ -401,14 +398,12 @@ signs of finitely many polynomials. -/
 theorem IsSemialgebraic.exists_eq_setOf_sign_eval {s : Set (σ → R)} (hs : IsSemialgebraic s) :
     ∃ (m : ℕ) (p : Fin m → MvPolynomial σ R) (Φ : (Fin m → SignType) → Prop),
       s = {x | Φ fun i => SignType.sign (eval x (p i))} := by
-  refine IsSemialgebraic.induction (fun p => ⟨1, fun _ => p, fun ε => ε 0 = 0, by simp⟩)
-    (fun p => ⟨1, fun _ => p, fun ε => ε 0 = 1, by simp [sign_eq_one_iff]⟩)
-    ⟨0, Fin.elim0, fun _ => False, by simp⟩
-    (fun s _ ⟨m, p, Φ, hs⟩ => ⟨m, p, fun ε => ¬Φ ε, hs ▸ compl_ofPred _⟩)
-    (fun s t _ _ ⟨m, p, Φ, hs⟩ ⟨m', p', Φ', ht⟩ => ⟨m + m', Fin.append p p',
-      fun ε => Φ (fun i => ε (Fin.castAdd m' i)) ∨ Φ' (fun i => ε (Fin.natAdd m i)), ?_⟩) hs
-  ext x
-  simp [hs, ht]
+  obtain ⟨m, f, hf, Φ, rfl⟩ := exists_eq_setOf_sign_of_mem_generateSetAlgebra
+    (P := fun f : (σ → R) → R => ∃ p, f = fun x => eval x p) <| generateSetAlgebra_mono
+      (union_subset_union (by rintro _ ⟨p, rfl⟩; exact ⟨_, ⟨p, rfl⟩, rfl⟩)
+        (by rintro _ ⟨p, rfl⟩; exact ⟨_, ⟨p, rfl⟩, rfl⟩)) hs
+  choose p hp using hf
+  exact ⟨m, p, Φ, by simp only [hp]⟩
 
 omit [IsOrderedAddMonoid R] in
 /-- **Finitely many coordinates.** Membership in a semialgebraic set depends on only finitely

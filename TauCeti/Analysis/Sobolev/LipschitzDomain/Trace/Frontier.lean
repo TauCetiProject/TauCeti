@@ -83,7 +83,7 @@ def W1p.lipschitzChartFrontierTrace
         (e.measurable_snd_apply.measurePreserving _)).toContinuousLinearMap.comp
       (Lp.LpToLpOfMeasureLeSMul (by simp)
         h.map_snd_euclideanHausdorffMeasure_frontier_inter_le)).comp
-    (W1p.lipschitzChartTrace h ψ hψ hM hψM hgM hs)
+    (W1p.lipschitzChartTrace ENNReal.ofNat_ne_top h ψ hψ hM hψM hgM hs)
 
 /-- The frontier version of a local chart trace is the local trace evaluated at the tangential
 coordinate on the frontier patch of the chart, and zero elsewhere on the frontier. -/
@@ -96,10 +96,11 @@ theorem W1p.lipschitzChartFrontierTrace_ae_eq
       (μHE[finrank ℝ E] : Measure (WithLp 2 (ℝ × E))).restrict
         (frontier (Ω : Set (WithLp 2 (ℝ × E))))]
       (frontier (Ω : Set (WithLp 2 (ℝ × E))) ∩ e ⁻¹' normalCylinder a b).indicator
-        fun x => W1p.lipschitzChartTrace h ψ hψ hM hψM hgM hs u (e x).snd := by
+        fun x =>
+          W1p.lipschitzChartTrace ENNReal.ofNat_ne_top h ψ hψ hM hψM hgM hs u (e x).snd := by
   have hpatch := measurableSet_frontier_inter_preimage_normalCylinder (Ω : Set _) e a b
   have hm := e.measurable_snd_apply
-  set g := W1p.lipschitzChartTrace h ψ hψ hM hψM hgM hs u
+  set g := W1p.lipschitzChartTrace ENNReal.ofNat_ne_top h ψ hψ hM hψM hgM hs u
   set g' := Lp.LpToLpOfMeasureLeSMul (by simp)
     h.map_snd_euclideanHausdorffMeasure_frontier_inter_le g
   -- On the patch, the transported class is represented by `g ∘ (snd ∘ e)`.
@@ -131,7 +132,8 @@ theorem W1p.lipschitzChartFrontierTrace_ae_eq_of_continuousOn
   have hpatch := measurableSet_frontier_inter_preimage_normalCylinder (Ω : Set _) e a b
   filter_upwards [W1p.lipschitzChartFrontierTrace_ae_eq h hψ hM hψM hgM hs u,
     ae_restrict_of_ae ((ae_restrict_iff' hpatch).1
-      (W1p.lipschitzChartTrace_comp_snd_ae_of_continuousOn h hψ hM hψM hgM hs hf hu)),
+      (W1p.lipschitzChartTrace_comp_snd_ae_of_continuousOn ENNReal.ofNat_ne_top h hψ hM hψM hgM
+        hs hf hu)),
     ae_restrict_mem isClosed_frontier.measurableSet] with x hx hpx hxF
   rw [hx]
   by_cases hxp : x ∈ frontier (Ω : Set (WithLp 2 (ℝ × E))) ∩ e ⁻¹' normalCylinder a b

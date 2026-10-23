@@ -23,7 +23,10 @@ import TauCeti.MeasureTheory.Function.Lp.Norm
 The `Lᵖ` norm of the gradient of a function is controlled by the `Lᵖ` norms of the function and
 of its Hessian: for every `ε > 0`,
 
-`‖∇u‖_p ≤ ε ‖D²u‖_p + (n² / ε) ‖u‖_p`, `1 ≤ p < ∞`, `n = dim E`.
+`‖∇u‖_p ≤ ε ‖D²u‖_p + (n² / ε) ‖u‖_p`, `1 ≤ p ≤ ∞`, `n = dim E`.
+
+The smooth and zero-boundary estimates include `p = ∞`. The statements for arbitrary
+whole-space Sobolev functions and between balls retain `p < ∞` for the density and cutoff steps.
 
 This is how a first-order term is absorbed into the left-hand side of a second-order estimate. In
 the `W^{2,p}` theory of non-divergence-form operators with continuous coefficients, the
@@ -82,9 +85,9 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpa
 /-- **Halving the step of a difference quotient.** For a `C²` function `u`, a direction `h` and a
 step `s`, the difference quotients `δ_s u = s⁻¹ (u(· + s h) - u)` satisfy
 
-`‖δ_{s/2} u‖_p ≤ ‖δ_s u‖_p + (|s| / 4) ‖h‖² ‖D²u‖_p`, `1 ≤ p < ∞`. -/
+`‖δ_{s/2} u‖_p ≤ ‖δ_s u‖_p + (|s| / 4) ‖h‖² ‖D²u‖_p`, `1 ≤ p ≤ ∞`. -/
 theorem ContDiff.eLpNorm_inv_smul_comp_add_smul_sub_half_le (hu : ContDiff ℝ 2 u) (hp : 1 ≤ p)
-    (hp' : p ≠ ∞) (h : E) (s : ℝ) :
+    (h : E) (s : ℝ) :
     eLpNorm (fun x => (s / 2)⁻¹ • (u (x + (s / 2) • h) - u x)) p mu ≤
       eLpNorm (fun x => s⁻¹ • (u (x + s • h) - u x)) p mu +
         ENNReal.ofReal (|s| / 4) * ‖h‖ₑ ^ 2 * eLpNorm (fderiv ℝ (fderiv ℝ u)) p mu := by
@@ -116,17 +119,17 @@ theorem ContDiff.eLpNorm_inv_smul_comp_add_smul_sub_half_le (hu : ContDiff ℝ 2
           ‖s⁻¹‖ₑ * (‖r‖ₑ * ‖r‖ₑ * eLpNorm (fderiv ℝ (fderiv ℝ u)) p mu) := by
         rw [eLpNorm_const_smul]
         gcongr
-        exact hu.eLpNorm_comp_add_add_sub_sub_le_mul_eLpNorm_fderiv_fderiv hp hp' r r
+        exact hu.eLpNorm_comp_add_add_sub_sub_le_mul_eLpNorm_fderiv_fderiv hp r r
     _ = _ := by rw [← mul_assoc, hcoef]
 
 /-- **A directional derivative is controlled by a single difference quotient.** For a `C²`
 function `u`, a direction `h` and a step `s ≠ 0`,
 
-`‖Du · h‖_p ≤ ‖δ_s u‖_p + (|s| / 2) ‖h‖² ‖D²u‖_p`, `1 ≤ p < ∞`,
+`‖Du · h‖_p ≤ ‖δ_s u‖_p + (|s| / 2) ‖h‖² ‖D²u‖_p`, `1 ≤ p ≤ ∞`,
 
 where `δ_s u = s⁻¹ (u(· + s h) - u)`. -/
 theorem ContDiff.eLpNorm_fderiv_apply_le_eLpNorm_inv_smul_comp_add_smul_sub_add
-    (hu : ContDiff ℝ 2 u) (hp : 1 ≤ p) (hp' : p ≠ ∞) (h : E) {s : ℝ} (hs : s ≠ 0) :
+    (hu : ContDiff ℝ 2 u) (hp : 1 ≤ p) (h : E) {s : ℝ} (hs : s ≠ 0) :
     eLpNorm (fun x => fderiv ℝ u x h) p mu ≤
       eLpNorm (fun x => s⁻¹ • (u (x + s • h) - u x)) p mu +
         ENNReal.ofReal (|s| / 2) * ‖h‖ₑ ^ 2 * eLpNorm (fderiv ℝ (fderiv ℝ u)) p mu := by
@@ -150,7 +153,7 @@ theorem ContDiff.eLpNorm_fderiv_apply_le_eLpNorm_inv_smul_comp_add_smul_sub_add
               rw [hdiv]
               gcongr
               simpa only [hQ_def, ht, mul_assoc] using
-                hu.eLpNorm_inv_smul_comp_add_smul_sub_half_le hp hp' h (t k)
+                hu.eLpNorm_inv_smul_comp_add_smul_sub_half_le hp h (t k)
           _ = eLpNorm (Q k) p mu + ENNReal.ofReal (|t k| / 2) * C := by
               rw [add_assoc, ← add_mul, ← ENNReal.ofReal_add (by positivity) (by positivity)]
               ring_nf
@@ -178,10 +181,10 @@ theorem ContDiff.eLpNorm_fderiv_apply_le_eLpNorm_inv_smul_comp_add_smul_sub_add
 /-- **The interpolation inequality for a directional derivative.** For a `C²` function `u`, a
 direction `h` and `ε > 0`,
 
-`‖Du · h‖_p ≤ ε ‖h‖² ‖D²u‖_p + ε⁻¹ ‖u‖_p`, `1 ≤ p < ∞`.
+`‖Du · h‖_p ≤ ε ‖h‖² ‖D²u‖_p + ε⁻¹ ‖u‖_p`, `1 ≤ p ≤ ∞`.
 
 No support, integrability or boundedness hypothesis is needed. -/
-theorem ContDiff.eLpNorm_fderiv_apply_le (hu : ContDiff ℝ 2 u) (hp : 1 ≤ p) (hp' : p ≠ ∞)
+theorem ContDiff.eLpNorm_fderiv_apply_le (hu : ContDiff ℝ 2 u) (hp : 1 ≤ p)
     (h : E) {ε : ℝ} (hε : 0 < ε) :
     eLpNorm (fun x => fderiv ℝ u x h) p mu ≤
       ENNReal.ofReal ε * ‖h‖ₑ ^ 2 * eLpNorm (fderiv ℝ (fderiv ℝ u)) p mu +
@@ -196,7 +199,7 @@ theorem ContDiff.eLpNorm_fderiv_apply_le (hu : ContDiff ℝ 2 u) (hp : 1 ≤ p) 
   calc eLpNorm (fun x => fderiv ℝ u x h) p mu
       ≤ eLpNorm (fun x => (2 * ε)⁻¹ • (u (x + (2 * ε) • h) - u x)) p mu +
           ENNReal.ofReal (|2 * ε| / 2) * ‖h‖ₑ ^ 2 * eLpNorm (fderiv ℝ (fderiv ℝ u)) p mu :=
-        hu.eLpNorm_fderiv_apply_le_eLpNorm_inv_smul_comp_add_smul_sub_add hp hp' h (by positivity)
+        hu.eLpNorm_fderiv_apply_le_eLpNorm_inv_smul_comp_add_smul_sub_add hp h (by positivity)
     _ ≤ ENNReal.ofReal ε⁻¹ * eLpNorm u p mu +
           ENNReal.ofReal ε * ‖h‖ₑ ^ 2 * eLpNorm (fderiv ℝ (fderiv ℝ u)) p mu := by
         rw [abs_of_pos (by positivity), mul_div_cancel_left₀ _ two_ne_zero, ← hQ]
@@ -216,10 +219,10 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteD
 /-- **The interpolation inequality for the derivative.** For a `C²` function `u` on a real inner
 product space `E` of dimension `n` and `ε > 0`,
 
-`‖Du‖_p ≤ ε ‖D²u‖_p + (n² / ε) ‖u‖_p`, `1 ≤ p < ∞`.
+`‖Du‖_p ≤ ε ‖D²u‖_p + (n² / ε) ‖u‖_p`, `1 ≤ p ≤ ∞`.
 
 No support, integrability or boundedness hypothesis is needed. -/
-theorem ContDiff.eLpNorm_fderiv_le (hu : ContDiff ℝ 2 u) (hp : 1 ≤ p) (hp' : p ≠ ∞) {ε : ℝ}
+theorem ContDiff.eLpNorm_fderiv_le (hu : ContDiff ℝ 2 u) (hp : 1 ≤ p) {ε : ℝ}
     (hε : 0 < ε) :
     eLpNorm (fderiv ℝ u) p mu ≤
       ENNReal.ofReal ε * eLpNorm (fderiv ℝ (fderiv ℝ u)) p mu +
@@ -234,7 +237,7 @@ theorem ContDiff.eLpNorm_fderiv_le (hu : ContDiff ℝ 2 u) (hp : 1 ≤ p) (hp' :
   have hpartial (i : Fin n) : eLpNorm (fun x => fderiv ℝ u x (b i)) p mu ≤
       ENNReal.ofReal (ε / n) * A + ENNReal.ofReal (n / ε) * U := by
     have hn : (0 : ℝ) < n := Nat.cast_pos.2 (Fin.pos i)
-    have h := hu.eLpNorm_fderiv_apply_le (mu := mu) hp hp' (b i) (div_pos hε hn)
+    have h := hu.eLpNorm_fderiv_apply_le (mu := mu) hp (b i) (div_pos hε hn)
     rwa [← ofReal_norm, b.orthonormal.1 i, ENNReal.ofReal_one, one_pow, mul_one,
       inv_div] at h
   calc eLpNorm (fderiv ℝ u) p mu
@@ -267,7 +270,7 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
   {Omega : Opens E} {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
-/-- **The interpolation inequality in `W^{2,p}_0(Ω)`.** Let `Ω ⊆ E` be open, `1 ≤ p < ∞` and
+/-- **The interpolation inequality in `W^{2,p}_0(Ω)`.** Let `Ω ⊆ E` be open, `1 ≤ p ≤ ∞` and
 `ε > 0`. Every `u ∈ W^{2,p}_0(Ω)` satisfies
 
 `‖∇u‖_p ≤ ε ‖D²u‖_p + (n² / ε) ‖u‖_p`, `n = dim E`,
@@ -275,7 +278,7 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
 where `∇u` is the weak gradient `TauCeti.Wkp.iteratedGradient 0 (TauCeti.Wkp.lowerOrder 1 u)` and
 `D²u` is the weak Hessian `TauCeti.Wkp.iteratedGradient 1 u`. No boundedness or boundary
 regularity of `Ω` is needed. -/
-theorem Wkp.norm_iteratedGradient_lowerOrder_le_of_mem_wkp0Submodule (hp : p ≠ ∞)
+theorem Wkp.norm_iteratedGradient_lowerOrder_le_of_mem_wkp0Submodule
     {u : Wkp mu Omega p 2} (hu : u ∈ wkp0Submodule mu Omega p 2) {ε : ℝ} (hε : 0 < ε) :
     ‖Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u)‖ ≤
       ε * ‖Wkp.iteratedGradient 1 u‖ + (finrank ℝ E) ^ 2 / ε * ‖Wkp.value 2 u‖ := by
@@ -316,7 +319,7 @@ theorem Wkp.norm_iteratedGradient_lowerOrder_le_of_mem_wkp0Submodule (hp : p ≠
   calc (eLpNorm (fderiv ℝ (φ : E → ℝ)) p mu).toReal
       ≤ (ENNReal.ofReal ε * eLpNorm (fderiv ℝ (fderiv ℝ (φ : E → ℝ))) p mu +
           ENNReal.ofReal ((finrank ℝ E) ^ 2 / ε) * eLpNorm (φ : E → ℝ) p mu).toReal :=
-        ENNReal.toReal_mono (by finiteness) (hφ.eLpNorm_fderiv_le Fact.out hp hε)
+        ENNReal.toReal_mono (by finiteness) (hφ.eLpNorm_fderiv_le Fact.out hε)
     _ = ε * (eLpNorm (fderiv ℝ (fderiv ℝ (φ : E → ℝ))) p mu).toReal +
           (finrank ℝ E) ^ 2 / ε * (eLpNorm (φ : E → ℝ) p mu).toReal := by
         rw [ENNReal.toReal_add (by finiteness) (by finiteness), ENNReal.toReal_mul,
@@ -333,7 +336,7 @@ theorem Wkp.norm_iteratedGradient_lowerOrder_le (hp : p ≠ ∞) (u : Wkp mu ⊤
     (hε : 0 < ε) :
     ‖Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u)‖ ≤
       ε * ‖Wkp.iteratedGradient 1 u‖ + (finrank ℝ E) ^ 2 / ε * ‖Wkp.value 2 u‖ :=
-  Wkp.norm_iteratedGradient_lowerOrder_le_of_mem_wkp0Submodule hp
+  Wkp.norm_iteratedGradient_lowerOrder_le_of_mem_wkp0Submodule
     (by rw [wkp0Submodule_top_eq_top hp]; trivial) hε
 
 open Metric in
@@ -367,7 +370,7 @@ theorem Wkp.exists_lpNorm_gradient_ball_le (hp_top : p ≠ ⊤) :
     (isCompact_closedBall x₀ m).of_isClosed_subset (isClosed_tsupport η) hηts
   have hηU : tsupport η ⊆ U := hηts.trans (closedBall_subset_ball (by linarith))
   obtain ⟨w, hw0, hwv⟩ := Wkp.exists_mem_wkp0Submodule_value_ae_eq_mul hp_top hη hcpt hηU 2 v
-  have hint := Wkp.norm_iteratedGradient_lowerOrder_le_of_mem_wkp0Submodule hp_top hw0 hε
+  have hint := Wkp.norm_iteratedGradient_lowerOrder_le_of_mem_wkp0Submodule hw0 hε
   have hηabs : ∀ x, |η x| ≤ 1 := fun x =>
     abs_le.2 ⟨by linarith [(hηr ⟨x, rfl⟩).1], (hηr ⟨x, rfl⟩).2⟩
   -- The restriction `v` of `u` to `B_t` has the same value and weak derivatives there.

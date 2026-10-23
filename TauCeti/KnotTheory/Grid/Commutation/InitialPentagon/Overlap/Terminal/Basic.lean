@@ -231,7 +231,7 @@ end GridRectangleInitialPentagonDecomposition
 
 namespace GridDiagram
 
-variable {n : ℕ} (G : GridDiagram n) (C : ColumnCommutationData G)
+variable {n : ℕ} (G : GridDiagram n) (C : ColumnTurn n)
 
 local notation "b" => finRotate n C.column
 
@@ -300,9 +300,8 @@ private theorem initialPentagonTerminalOverlapSource_data
         D.first.IsEmpty ∧ D.second.IsEmpty := by
   obtain ⟨hcounted, hcommon, hone⟩ := (G.mem_initialPentagonTerminalOverlapSources C D).1 hD
   rw [G.mem_rectangleInitialPentagonDecompositions, G.mem_unblockedRectangles,
-    G.mem_initialPentagons,
-    GridRectangleInitialPentagonDecomposition.pentagon_toGridRectangleBetween] at hcounted
-  exact ⟨hcommon, hone, hcounted.1.1, hcounted.2.1⟩
+    G.mem_initialPentagons] at hcounted
+  exact ⟨hcommon, hone, hcounted.1.1, D.underlying_second_isEmpty hcounted.2.1⟩
 
 private noncomputable def initialPentagonTerminalOverlapPartner
     (D : {D // D ∈ G.initialPentagonTerminalOverlapSources C x z}) :
