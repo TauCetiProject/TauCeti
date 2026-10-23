@@ -52,9 +52,10 @@ theorem exists_isCAD_signInvariant_of_mcCallumProjection (h𝒟 : IsCAD n 𝒟)
   apply h𝒟.exists_succ_of_forall_exists_stack
   intro C hC
   obtain ⟨d, hd⟩ := hanalytic C hC
-  obtain ⟨k, θ, hθ, hsign⟩ := hB.exists_isSemialgebraicStack_signInvariant_of_mcCallumProjection
-    hd (h𝒟.isConnected hC).isPreconnected (h𝒟.isSemialgebraic hC)
-    (fun q hq ↦ hproj q hq C hC)
+  obtain ⟨k, θ, hθ, hsign⟩ :=
+    hB.isSquarefreeBasis.exists_isSemialgebraicStack_signInvariant_of_mcCallumProjection
+      hd (h𝒟.isConnected hC).isPreconnected (h𝒟.isSemialgebraic hC)
+      (fun q hq ↦ hproj q hq C hC)
   refine ⟨k, θ, hθ, fun E hE ↦ ?_⟩
   obtain ⟨⟨e, -, he⟩, hE⟩ := hsign E hE
   exact ⟨⟨e, he⟩, hE⟩

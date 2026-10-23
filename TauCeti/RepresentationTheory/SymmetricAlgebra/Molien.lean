@@ -5,14 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Charpoly.Basic
 public import Mathlib.LinearAlgebra.Trace
 import Mathlib.LinearAlgebra.Basis.VectorSpace
-public import Mathlib.RingTheory.PowerSeries.Basic
+public import Mathlib.RingTheory.PowerSeries.Inverse
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.BasisComparison
+import TauCeti.LinearAlgebra.SymmetricAlgebra.Trace
 public import TauCeti.RepresentationTheory.SymmetricAlgebra.Reynolds
 
 /-!
-# Molien's formula: the trace form
+# Molien's formula
 
 Let a finite group `G` act linearly on a finite-dimensional vector space `M` over a field `K` in
 which `#G` is invertible. The invariant subalgebra `Sym(M)^G` is homogeneous, and its Hilbert
@@ -35,11 +37,17 @@ dimensions, and hence the Hilbert series; in characteristic `p` they determine t
 modulo `p`, and the left-hand side is the image of the Hilbert series in `K⟦t⟧`.
 
 This is Molien's formula in trace form. Each inner series is the graded trace of `g` on the
-symmetric algebra; the graded trace formula `(∑ₙ tr(g | Symⁿ M) tⁿ) · det(1 - t g | M) = 1`, which
-is not proved in this file, identifies it with `det(1 - t g | M)⁻¹`, and substituting it gives
-Molien's formula `Hilb(Sym(M)^G, t) = #G⁻¹ ∑_g det(1 - t g | M)⁻¹`. Applied to the contragredient
-representation `ρ.dual` on `M = V*`, the formula of this file computes the Hilbert series of the
-ring of polynomial invariants on `V`.
+symmetric algebra. Since `g ^ #G = 1` and `#G` is invertible in `K`, the graded trace formula for
+endomorphisms of finite order
+(`Module.End.mk_trace_homogeneousSubmoduleMapₛₗ_mul_reverse_charpoly_of_pow_eq_one`) identifies it
+with `det(1 - t g | M)⁻¹`, the inverse of the reverse of the characteristic polynomial of `g`.
+Substituting gives **Molien's formula**
+
+`Hilb(Sym(M)^G, t) = #G⁻¹ ∑_{g ∈ G} det(1 - t g | M)⁻¹`
+
+in `K⟦t⟧`, over any field in which `#G` is invertible: the eigenvalues of the elements of `G` need
+not lie in `K`. Applied to the contragredient representation `ρ.dual` on `M = V*`, it computes the
+Hilbert series of the ring of polynomial invariants on `V`.
 
 The action of `g` on `Symⁿ M` is written `homogeneousSubmoduleMapₛₗ (ρ g) n`, the map induced by
 `ρ g` on degree `n` (`Representation.symmetricAlgebraHomogeneous_apply`).
@@ -52,6 +60,9 @@ The action of `g` on `Symⁿ M` is written `homogeneousSubmoduleMapₛₗ (ρ g)
   the degree-`n` invariants, cast into `K`, is the average over `G` of the traces on `Symⁿ M`.
 * `Representation.mk_finrank_symmetricAlgebraInvariants_inf_homogeneousSubmodule`: Molien's
   formula in trace form, as an identity of formal power series over `K`.
+* `mk_finrank_symmetricAlgebraInvariants_inf_homogeneousSubmodule_eq_sum_inv_reverse_charpoly`:
+  (in the namespace `Representation`) Molien's formula, with the graded traces replaced by
+  `det(1 - t g | M)⁻¹`.
 
 ## References
 
@@ -117,5 +128,24 @@ theorem mk_finrank_symmetricAlgebraInvariants_inf_homogeneousSubmodule :
   rw [PowerSeries.coeff_mk, finrank_symmetricAlgebraInvariants_inf_homogeneousSubmodule,
     PowerSeries.coeff_smul, map_sum, smul_eq_mul]
   simp only [PowerSeries.coeff_mk]
+
+/-- **Molien's formula**: the image in `K⟦X⟧` of the Hilbert series of the invariant subalgebra
+is the average over the group of the inverses of `det(1 - t g | M)`, the reverse of the
+characteristic polynomial of `ρ g`:
+`Hilb(Sym(M)^G, t) = #G⁻¹ ∑_{g ∈ G} det(1 - t g | M)⁻¹`.
+
+The field `K` is arbitrary, subject only to `#G` being invertible in it; in characteristic zero
+this determines the Hilbert series. -/
+theorem mk_finrank_symmetricAlgebraInvariants_inf_homogeneousSubmodule_eq_sum_inv_reverse_charpoly :
+    PowerSeries.mk (fun n ↦ (Module.finrank K
+        ↥(Subalgebra.toSubmodule ρ.symmetricAlgebraInvariants ⊓ homogeneousSubmodule K M n) : K)) =
+      ⅟(Fintype.card G : K) • ∑ g : G, ((ρ g).charpoly.reverse : PowerSeries K)⁻¹ := by
+  rw [mk_finrank_symmetricAlgebraInvariants_inf_homogeneousSubmodule]
+  refine congrArg _ (Finset.sum_congr rfl fun g _ ↦ ?_)
+  rw [PowerSeries.eq_inv_iff_mul_eq_one]
+  · refine Module.End.mk_trace_homogeneousSubmoduleMapₛₗ_mul_reverse_charpoly_of_pow_eq_one
+      (Invertible.ne_zero (Fintype.card G : K)) ?_
+    rw [← map_pow, pow_card_eq_one, map_one]
+  · simp [Polynomial.coeff_zero_reverse, (LinearMap.charpoly_monic (ρ g)).leadingCoeff]
 
 end Representation

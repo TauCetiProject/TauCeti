@@ -48,6 +48,9 @@ vanishing below `C`. Restricting a pushforward along an injective `φ` gives bac
 
 * `TauCeti.NovikovSeries.finite_support_inter_preimage_singleton`: a fibre of a period-rescaling
   homomorphism meets the support of a Novikov series in a finite set.
+* `TauCeti.NovikovSeries.finite_setOf_map_add_eq`: only finitely many pairs of support exponents
+  of two Novikov series have images under a period-rescaling homomorphism adding up to a given
+  exponent.
 * `TauCeti.NovikovSeries.exists_period_rescale_id` and
   `TauCeti.NovikovSeries.exists_period_rescale_comp`: the identity rescales periods by `1`, and
   composites rescale them by the product of the factors.
@@ -57,6 +60,8 @@ vanishing below `C`. Restricting a pushforward along an injective `φ` gives bac
   laws of the pushforward.
 * `TauCeti.NovikovSeries.map_ofFinsupp`: the pushforward of a finitely supported series is the
   group-ring pushforward.
+* `TauCeti.NovikovSeries.map_single`: the pushforward of the monomial `r e^g` is the monomial
+  `ρ r e^(φ g)`.
 * `TauCeti.NovikovSeries.coeff_map_eq_zero_of_lt` and
   `TauCeti.NovikovSeries.coeff_comap_eq_zero_of_lt`: the pushforward moves the period cutoff `C`
   to `c * C`, and the restriction moves `c * C` back to `C`.
@@ -97,6 +102,16 @@ theorem finite_support_inter_preimage_singleton [Zero R] (a : NovikovSeries R H 
   refine (a.finite_le (N' h' / c)).subset ?_
   rintro h ⟨hh, rfl⟩
   exact ⟨mem_support.1 hh, (le_div_iff₀' hc).2 (hφ h).ge⟩
+
+/-- If `φ` rescales periods by a positive constant, then for two Novikov series only finitely many
+pairs of support exponents have images under `φ` adding up to a given exponent. -/
+theorem finite_setOf_map_add_eq [Zero R] [Zero S] (a : NovikovSeries R H N)
+    (b : NovikovSeries S H N) {φ : H →+ H'} (hφ : ∃ c > 0, ∀ h, N' (φ h) = c * N h) (h' : H') :
+    {p : H × H | φ p.1 + φ p.2 = h' ∧ a.coeff p.1 ≠ 0 ∧ b.coeff p.2 ≠ 0}.Finite := by
+  obtain ⟨c, hc, hcφ⟩ := hφ
+  refine (finite_setOf_period_add_lt a b (N' h' / c + 1)).subset fun p hp => ⟨?_, hp.2⟩
+  rw [← hp.1, ← map_add, hcφ, mul_div_cancel_left₀ _ hc.ne']
+  exact lt_add_one _
 
 /-- The identity rescales periods by `1`. -/
 theorem exists_period_rescale_id : ∃ c > 0, ∀ h, N (AddMonoidHom.id H h) = c * N h :=
@@ -265,6 +280,12 @@ theorem map_ofFinsupp (f : H →₀ R) :
         Finset.sum_empty]
       rintro g ⟨hg, hφg⟩
       exact absurd (by rw [← mem_singleton_iff.1 (hs hg)]; exact hφg) hh
+
+/-- The pushforward of the monomial `r e^g` is the monomial `ρ r e^(φ g)`. -/
+@[simp]
+theorem map_single (g : H) (r : R) : map ρ φ hφ (single g r) = single (φ g) (ρ r) := by
+  rw [← ofFinsupp_single, map_ofFinsupp, Finsupp.mapRange_single, Finsupp.mapDomain_single,
+    ofFinsupp_single]
 
 end Map
 

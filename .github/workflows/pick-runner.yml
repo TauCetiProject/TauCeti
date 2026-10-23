@@ -1,79 +1,69 @@
 name: pick-runner
 
-# Selects dedicated fleet capacity for initial bors staging attempts, or chooses between
-# GitHub-hosted runners and Namespace for ordinary builds. Called by pr-build.yml and
-# nightly-verify.yml; callers interpret the explicit fleet/github outputs in their runs-on.
-#
-# Both selectors run on GitHub, avoiding Namespace build queues before fleet selection.
-# They can still wait for a GitHub slot when all hosted capacity is occupied.
-# FLEET_CI_ENABLED, a complete configured-group inventory, and an online idle matching
-# runner are required for fleet=true. Disabled routing, missing credentials, unavailable
-# capacity and subsequent staging attempts retain Namespace. Selection reserves no slot.
-#
-# Ordinary placement first tries the existing state service's complete organization
-# capacity snapshot when its scoped token is configured. It must match this organization,
-# be at most 60 seconds old and remain within its validity period. A missing token or
-# unusable snapshot falls back to direct counting. A valid snapshot needs no direct
-# GitHub inventory requests or quota preflight, and uses the same hosted budget below.
-#
-# The free plan permits 20 concurrent GitHub-hosted jobs across the organization.
-# Standard hosted runners are free for public repositories; Namespace bills its runners.
-# Count running hosted jobs, excluding Namespace and self-hosted runners. Both selectors
-# occupy a hosted slot; a cached observation can predate their start. Builds choose GitHub
-# at or below vars.HOSTED_RUNNER_BUDGET (default 18; production uses 12).
-# Concurrent selectors can choose the same remaining capacity, and cached observations
-# widen that race. Headroom also preserves capacity for short control jobs. No capacity
-# is reserved or transferred when a selector finishes; GitHub makes actual assignments.
-#
-# Direct discovery preserves vars.PICKER_API_RESERVE (default 1500) for App automation
-# and vars.PICKER_REPOSITORY_API_RESERVE (default 250) for the repository token, which
-# also publishes required CI statuses. Failure to complete direct discovery selects
-# Namespace. Missing picker outputs also retain Namespace; continue-on-error prevents
-# a picker failure from stopping the caller's build.
-
+# Staging tries eligible dedicated machines before cloud-capacity discovery. Machines
+# advertise class, permanent machine, and ephemeral instance labels. All limits
+# are approximate: concurrent pickers can observe the same free capacity.
+# Full or unknown cloud capacity queues on GitHub instead of bypassing the
+# Namespace cap. Picker/control jobs do not count towards the build-job cap.
+# Preserve the repository API reserve for status and merge automation.
 on:
   workflow_call:
     inputs:
       fleet-staging:
+        description: Use staging preferences and eligible dedicated machines; takes precedence over fleet-pr
         type: boolean
-        required: false
         default: false
+      fleet-pr:
+        description: Use PR preferences and eligible dedicated machines when pr-head is supplied
+        type: boolean
+        default: false
+      pr-head:
+        description: Immutable 40-character PR head; empty disables dedicated PR placement and recovery
+        type: string
+        default: ""
     secrets:
-      # Optional. The App's installation token has a far larger hourly API budget than
-      # `github.token`, which pr-build.yml's volume would exhaust. Without it, the picker
-      # uses `github.token`.
       FLEET_READ_TOKEN: { required: false }
-      # Optional scoped state-service bearer token; absent means direct discovery.
       TAUCETI_GITHUB_STATE_TOKEN: { required: false }
-      APP_ID: { required: false }
-      APP_PRIVATE_KEY: { required: false }
     outputs:
-      fleet:
-        description: "true only for an initial bors attempt with ready dedicated capacity"
-        value: ${{ jobs.pick.outputs.fleet }}
-      github:
-        description: "`true` when the caller should run on a GitHub-hosted runner"
-        value: ${{ jobs.pick.outputs.github }}
+      runner:
+        description: JSON runs-on target; callers must match attempt to their current github.run_attempt before using runner or pool
+        value: ${{ jobs.pick.outputs.runner }}
+      pool:
+        description: "Destination key: github, namespace, or a machine name from services.fleet; valid only for the matching attempt"
+        value: ${{ jobs.pick.outputs.pool }}
+      attempt:
+        description: Picker's github.run_attempt; callers must compare it with their current attempt before using runner or pool
+        value: ${{ jobs.pick.outputs.attempt }}
       busy:
-        description: "GitHub-hosted jobs counted busy, when the count completed (for CI telemetry)"
+        description: Observed running GitHub-hosted jobs, including control jobs; empty when unknown
         value: ${{ jobs.pick.outputs.busy }}
       budget:
-        description: "the HOSTED_RUNNER_BUDGET the decision used (for CI telemetry)"
+        description: GitHub-hosted running-job budget used for this selection
         value: ${{ jobs.pick.outputs.budget }}
+      namespace_busy:
+        description: Observed queued or running Namespace build jobs, excluding control jobs; empty when unknown
+        value: ${{ jobs.pick.outputs.namespace_busy }}
+      namespace_cap:
+        description: Approximate shared Namespace build-job cap used for this selection
+        value: ${{ jobs.pick.outputs.namespace_cap }}
 
 jobs:
   pick:
-    runs-on: ubuntu-latest
+    # Bors selection must not wait behind the GitHub builds it is trying to
+    # dispatch. Reuse the existing small, high-priority Namespace control profile.
+    runs-on: ${{ inputs.fleet-staging && fromJSON(format('["nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0","namespace-features:github.run-id={0}"]', github.run_id)) || 'ubuntu-24.04' }}
     timeout-minutes: 5
     continue-on-error: true
     outputs:
-      fleet: ${{ steps.fleet.outputs.fleet }}
-      github: ${{ steps.pick.outputs.github }}
+      runner: ${{ steps.pick.outputs.runner }}
+      pool: ${{ steps.pick.outputs.pool }}
+      attempt: ${{ steps.pick.outputs.attempt }}
       busy: ${{ steps.pick.outputs.busy }}
       budget: ${{ steps.pick.outputs.budget }}
+      namespace_busy: ${{ steps.pick.outputs.namespace_busy }}
+      namespace_cap: ${{ steps.pick.outputs.namespace_cap }}
     steps:
-      - name: Checkout workflow-pinned fleet selector
-        if: inputs.fleet-staging
+      - name: Checkout workflow-pinned runner selector
         uses: actions/checkout@v4
         with:
           ref: ${{ github.workflow_sha }}
@@ -83,192 +73,22 @@ jobs:
           sparse-checkout-cone-mode: false
           persist-credentials: false
       - name: Prepare pinned shared tools
-        if: inputs.fleet-staging
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@0f4096297f058bff8ccd873067aab7120202aecf
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+          tools-ref: 0f4096297f058bff8ccd873067aab7120202aecf
           project-directory: .
-      - name: Prefer ready dedicated capacity for bors
-        id: fleet
-        if: inputs.fleet-staging
+      - name: Select destination in configured preference order
+        id: pick
         env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_STATE_TOKEN: ${{ secrets.TAUCETI_GITHUB_STATE_TOKEN }}
+          BUDGET: ${{ vars.HOSTED_RUNNER_BUDGET || '18' }}
+          NAMESPACE_BUILD_CAP: ${{ vars.NAMESPACE_BUILD_CAP }}
+          API_RESERVE: ${{ vars.PICKER_REPOSITORY_API_RESERVE || '250' }}
+          FLEET_JOB_KIND: ${{ inputs.fleet-staging && 'staging' || inputs.fleet-pr && 'pr' || 'other' }}
+          PR_HEAD: ${{ inputs.pr-head }}
           FLEET_CI_ENABLED: ${{ vars.FLEET_CI_ENABLED }}
           FLEET_RUNNER_GROUP_ID: ${{ vars.FLEET_RUNNER_GROUP_ID }}
           FLEET_READ_TOKEN: ${{ secrets.FLEET_READ_TOKEN }}
-        run: python3 scripts/fleet_runner.py
-      - name: Check for the App
-        if: ${{ !inputs.fleet-staging }}
-        id: app
-        env:
-          APP_ID: ${{ secrets.APP_ID }}
-        run: echo "present=$([ -n "$APP_ID" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
-
-      # Every repository in the organisation is public, so reading its Actions runs needs no
-      # permission beyond metadata.
-      - uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1; v1 ignores permission-* inputs
-        id: app-token
-        if: ${{ !inputs.fleet-staging && steps.app.outputs.present == 'true' }}
-        continue-on-error: true
-        with:
-          app-id: ${{ secrets.APP_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
-          owner: ${{ github.repository_owner }}
-          permission-metadata: read
-
-      - name: Count busy GitHub-hosted jobs
-        if: ${{ !inputs.fleet-staging }}
-        id: pick
-        env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token || github.token }}
-          FALLBACK_TOKEN: ${{ github.token }}
-          GITHUB_STATE_TOKEN: ${{ secrets.TAUCETI_GITHUB_STATE_TOKEN }}
-          CAPACITY_REPOSITORY: ${{ github.repository }}
-          ORG: ${{ github.repository_owner }}
-          BUDGET: ${{ vars.HOSTED_RUNNER_BUDGET || '18' }}
-          API_RESERVE: ${{ steps.app-token.outputs.token && (vars.PICKER_API_RESERVE || '1500') || (vars.PICKER_REPOSITORY_API_RESERVE || '250') }}
-          REPOSITORY_API_RESERVE: ${{ vars.PICKER_REPOSITORY_API_RESERVE || '250' }}
-        run: |
-          set -uo pipefail
-          telemetry=$(mktemp -d)
-          trap 'rm -rf "$telemetry"' EXIT
-          api_pool=installation
-          [ "$GH_TOKEN" != "$FALLBACK_TOKEN" ] || api_pool=repository
-          reason=unknown
-          api() {
-            local capture rc
-            capture=$(mktemp "$telemetry/response.XXXXXX")
-            # Keep only public quota headers; never dump authorization or token-bearing debug logs.
-            timeout 30 gh api --include "$@" > "$capture" 2> "$capture.error"
-            rc=$?
-            python3 - "$capture" "$api_pool" "$rc" "$@" <<'PY'
-          import json, pathlib, re, sys, time
-          path=pathlib.Path(sys.argv[1]); headers=None; records=[]
-          endpoint=next((a for a in sys.argv[4:] if a=='rate_limit' or a.startswith(('orgs/','repos/'))),'unknown')
-          context={'pool':sys.argv[2],'exit_code':int(sys.argv[3]),'endpoint':endpoint,'at':time.time_ns()}
-          allowed={'x-ratelimit-limit','x-ratelimit-remaining','x-ratelimit-reset','x-ratelimit-resource','retry-after','x-github-request-id'}
-          for line in path.read_text().splitlines(keepends=True):
-              if re.match(r'^HTTP/\S+ \d{3}',line):
-                  headers={**context,'status':int(line.split()[1])};records.append(headers)
-              elif headers is not None:
-                  if not line.strip(): headers=None
-                  elif ':' in line:
-                      k,v=line.split(':',1)
-                      if k.lower() in allowed:headers[k.lower()]=v.strip()[:200]
-              else:sys.stdout.write(line)
-          # Fixtures may omit headers; count the attempted call anyway.
-          if not records:records=[{**context,'status':'unavailable'}]
-          pathlib.Path(str(path)+'.headers').write_text('\n'.join(json.dumps(r) for r in records)+'\n')
-          PY
-            [ "$?" -eq 0 ] || return 1
-            return "$rc"
-          }
-          decide() {
-            local count
-            count=$(find "$telemetry" -name '*.headers' -exec cat {} + | wc -l)
-            {
-              echo "$2"
-              echo "reason=$reason; credential_pool=$api_pool; busy=${busy:-unknown}; budget=$BUDGET; observed_requests=$count"
-              # Only quota/rejection samples are useful here; bound routine summary size.
-              echo '```json'
-            python3 - "$telemetry" <<'PY'
-          import json,pathlib,sys
-          records=sorted((json.loads(s) for p in pathlib.Path(sys.argv[1]).glob('*.headers') for s in p.read_text().splitlines()),key=lambda r:r['at'])
-          selected=[r for r in records if isinstance(r.get('status'),int) and r['status']>=400]
-          selected+=[r for r in records[-2:] if r not in selected]
-          for r in selected[:12]:print(json.dumps(r,sort_keys=True))
-          PY
-              echo '```'
-            } | tee -a "$GITHUB_STEP_SUMMARY"
-            echo "github=$1" >> "$GITHUB_OUTPUT"
-            echo "budget=$BUDGET" >> "$GITHUB_OUTPUT"
-            echo "busy=${busy:-}" >> "$GITHUB_OUTPUT"
-            exit 0
-          }
-          case "$BUDGET" in ''|*[!0-9]*|?????????*) reason=invalid_budget; decide false "HOSTED_RUNNER_BUDGET='$BUDGET' is not a number: using Namespace." ;; esac
-          case "$API_RESERVE" in ''|*[!0-9]*|?????????*) reason=invalid_reserve; decide false "Invalid picker API reserve: using Namespace." ;; esac
-          case "$REPOSITORY_API_RESERVE" in ''|*[!0-9]*|?????????*) reason=invalid_reserve; decide false "Invalid repository API reserve: using Namespace." ;; esac
-          quota_available() {
-            remaining=$(api rate_limit --jq .resources.core.remaining) || { reason=quota_read_failed; return 1; }
-            case "$remaining" in ''|*[!0-9]*|?????????*) reason=quota_read_failed; return 1 ;; esac
-            [ "$remaining" -gt "$((10#$API_RESERVE + $1))" ] || { reason=quota_reserve; return 1; }
-          }
-          scan() {
-            quota_available 0 || return 1
-            repos=$(api --paginate "orgs/$ORG/repos?per_page=100" --jq '.[] | select(.archived | not) | .name') \
-              || { reason=repository_inventory_failed; return 1; }
-            # Queued workflows may already be waiting for Namespace: only running jobs count.
-            # Paginate completely; partial inventories must never imply spare capacity.
-            export ORG
-            # Export the wrapper and its state so all parallel reads use the selected credential.
-            export telemetry api_pool
-            export -f api
-            runs=$(printf '%s\n' "$repos" | xargs -r -P 8 -n 1 bash -c '
-                     api --paginate "repos/$ORG/$0/actions/runs?status=in_progress&per_page=100" \
-                       --jq ".workflow_runs[].id | \"$0 \(.)\""' | sort -u) \
-              || { reason=run_inventory_failed; return 1; }
-            run_count=$(printf '%s\n' "$runs" | awk 'NF { n++ } END { print n + 0 }')
-            quota_available "$run_count" || return 1
-            counts=$(printf '%s\n' "$runs" | xargs -r -P 8 -n 2 bash -c '
-                       api --paginate "repos/$ORG/$0/actions/runs/$1/jobs?per_page=100" --jq \
-                         "[.jobs[] | select(.status == \"in_progress\")
-                                     | select(any(.labels[]; startswith(\"nscloud-\") or startswith(\"namespace-profile-\")) | not)
-                                     | select(any(.labels[]; . == \"self-hosted\") | not)] | length"') \
-              || { reason=job_inventory_failed; return 1; }
-            busy=$(printf '%s\n' "$counts" | awk '{ s += $1 } END { print s + 0 }')
-          }
-          # The existing state service coalesces organization discovery. This is
-          # advisory capacity; GitHub still makes the final slot assignment.
-          if [ -n "${GITHUB_STATE_TOKEN:-}" ]; then
-            if snapshot=$(python3 - <<'PY_SHARED'
-          import json,os,time,urllib.request,urllib.parse
-          class NoRedirect(urllib.request.HTTPRedirectHandler):
-              def redirect_request(self,*args,**kwargs):return None
-          repo=os.environ['CAPACITY_REPOSITORY']
-          try:
-              request=urllib.request.Request('https://github-state.taucetiproject.org/v1/runner-capacity?'+urllib.parse.urlencode({'repository':repo}),headers={
-                  'Authorization':'Bearer '+os.environ['GITHUB_STATE_TOKEN'],
-                  'User-Agent':'TauCetiWorker/1.0 (+https://github.com/TauCetiProject/TauCetiWorker)'})
-              with urllib.request.build_opener(NoRedirect()).open(request,timeout=10) as response:
-                  raw=response.read(16385)
-              if len(raw)>16384:raise ValueError('oversized capacity response')
-              value=json.loads(raw);now=time.time()*1000
-              if value.get('complete') is not True or value.get('organization')!=repo.split('/')[0]:raise ValueError('invalid coverage')
-              if type(value.get('busy')) is not int or not 0<=value['busy']<=10000:raise ValueError('invalid count')
-              if not isinstance(value.get('observed_at'),(int,float)) or not -5000<=now-value['observed_at']<=60000:raise ValueError('stale observation')
-              if not isinstance(value.get('retry_at'),(int,float)) or value['retry_at']<=now:raise ValueError('expired observation')
-              print(json.dumps({k:value[k] for k in ('busy','observed_at','cached','requests')}))
-          except Exception:
-              raise SystemExit(1)
-          PY_SHARED
-            ); then
-              busy=$(printf '%s' "$snapshot" | python3 -c 'import json,sys;print(json.load(sys.stdin)["busy"])')
-              echo "Shared capacity observation: $snapshot" >> "$GITHUB_STEP_SUMMARY"
-              api_pool=shared_state
-              reason=shared_capacity_available
-              if [ "$busy" -le "$BUDGET" ]; then decide true "$busy hosted jobs observed by shared discovery (budget $BUDGET): using GitHub."; fi
-              reason=shared_capacity_busy
-              decide false "$busy hosted jobs observed by shared discovery (budget $BUDGET): using Namespace."
-            fi
-            echo "Shared capacity unavailable; using bounded direct discovery." >> "$GITHUB_STEP_SUMMARY"
-          fi
-          if ! scan; then
-            # A low quota preflight, a rejected request, and an unreadable quota endpoint
-            # all get the same single alternative. Restart the complete scan; discard partial counts.
-            if [ -n "$FALLBACK_TOKEN" ] && [ "$GH_TOKEN" != "$FALLBACK_TOKEN" ]; then
-              echo "Shared App quota reserve protected or inventory unavailable ($reason); checking capacity with the repository API budget." | tee -a "$GITHUB_STEP_SUMMARY"
-              export GH_TOKEN="$FALLBACK_TOKEN"
-              API_RESERVE="$REPOSITORY_API_RESERVE"
-              api_pool=repository
-              if ! scan; then decide false "Could not complete capacity inspection ($reason); API quota reserve remains protected: using Namespace."; fi
-            else
-              decide false "Could not complete capacity inspection ($reason); API quota reserve remains protected: using Namespace."
-            fi
-          fi
-          echo "$api_pool API requests left this hour (reserve $API_RESERVE; pre-job-scan snapshot): $remaining" >> "$GITHUB_STEP_SUMMARY"
-          reason=capacity_available
-          if [ "$busy" -le "$BUDGET" ]; then
-            decide true "$busy GitHub-hosted jobs busy in $ORG, counting this one (budget $BUDGET): using GitHub."
-          fi
-          reason=capacity_busy
-          decide false "$busy GitHub-hosted jobs busy in $ORG, counting this one (budget $BUDGET): using Namespace."
+        run: python3 scripts/fleet_runner.py --route

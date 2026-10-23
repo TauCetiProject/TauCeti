@@ -26,7 +26,7 @@ connected cells (`IsPreconnected.signInvariant_eval_of_orderAt_eq`).
 The lifting step takes a CAD of `ℝ ^ n` with analytic submanifold cells, on which the McCallum
 projection of the family is order-invariant. Over a cell with more than one point, no basis
 polynomial may be nullified; the cell then carries a common delineation of the basis
-(`Finset.IsIrreducibleBasis.exists_delineation_orderAt_eq_of_mcCallumProjection`). Over a
+(`Finset.IsSquarefreeBasis.exists_delineation_orderAt_eq_of_mcCallumProjection`). Over a
 single point, basis polynomials may be nullified, and the line over the point is refined by the
 roots of the delineating polynomials of the inputs
 (`Finset.exists_isSemialgebraicStack_orderAt_eq`). In both cases every input is order-invariant
@@ -107,7 +107,8 @@ theorem exists_isSemialgebraicStack_orderAt_eq_of_mcCallumProjection
     exact ⟨k, _, hstack, fun E hE ↦
       ⟨(hcells E hE).1.imp fun _ h ↦ h.2, fun f hf ↦ ((hcells E hE).2 f hf).1⟩⟩
   · obtain ⟨D, hD⟩ :=
-      hB.exists_delineation_orderAt_eq_of_mcCallumProjection hCa hconn (hfiber hnt) hproj
+      hB.isSquarefreeBasis.exists_delineation_orderAt_eq_of_mcCallumProjection hCa hconn
+        (hfiber hnt) hproj
     refine ⟨D.count, D.root, D.isSemialgebraicStack (φ := RingHom.id ℝ) hC, fun E hE ↦
       ⟨(hD E hE).1.imp fun _ h ↦ h.2, fun f hf ↦ ?_⟩⟩
     simpa using ((hD E hE).2 (finSuccEquiv ℝ n f) (by simpa using hf)).1

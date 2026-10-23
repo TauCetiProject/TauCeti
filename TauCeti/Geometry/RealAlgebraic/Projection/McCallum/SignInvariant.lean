@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.RealAlgebraic.IrreducibleBasis
+public import TauCeti.Geometry.RealAlgebraic.SquarefreeBasis
 public import TauCeti.Geometry.RealAlgebraic.Projection.McCallum.Lifting
 public import TauCeti.Geometry.RealAlgebraic.Stack.Semialgebraic
 
@@ -34,7 +34,7 @@ public section
 
 open MvPolynomial Polynomial Set
 
-namespace Finset.IsIrreducibleBasis
+namespace Finset.IsSquarefreeBasis
 
 variable {n d : ℕ} [NormalizedGCDMonoid (MvPolynomial (Fin n) ℝ)]
   {F B : Finset (Polynomial (MvPolynomial (Fin n) ℝ))} {S : Set (Fin n → ℝ)}
@@ -44,7 +44,7 @@ preconnected semialgebraic analytic submanifold gives a semialgebraic stack with
 cells on which every input is sign-invariant. Basis members may be nullified, even on a
 positive-dimensional base; no ambient-order conclusion is asserted for the lifted inputs. -/
 theorem exists_isSemialgebraicStack_signInvariant_of_mcCallumProjection
-    (hB : F.IsIrreducibleBasis B) (hS : TauCeti.IsAnalyticSubmanifold d S)
+    (hB : F.IsSquarefreeBasis B) (hS : TauCeti.IsAnalyticSubmanifold d S)
     (hconn : IsPreconnected S) (hsemi : TauCeti.IsSemialgebraic S)
     (hproj : ∀ q ∈ F.mcCallumProjection B, ∀ x ∈ S, ∀ y ∈ S,
       q.orderAt x = q.orderAt y) :
@@ -94,4 +94,4 @@ theorem exists_isSemialgebraicStack_signInvariant_of_mcCallumProjection
       rw [eval_eq_eval_mv_eval', AlgEquiv.apply_symm_apply, hvanish _ (htail y hy),
         Polynomial.eval_zero]
 
-end Finset.IsIrreducibleBasis
+end Finset.IsSquarefreeBasis

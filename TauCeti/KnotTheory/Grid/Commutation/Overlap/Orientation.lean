@@ -44,7 +44,7 @@ public section
 
 namespace TauCeti.GridDiagram
 
-variable {n : ℕ} (G : GridDiagram n) (C : ColumnCommutationData G)
+variable {n : ℕ} (G : GridDiagram n) (C : ColumnTurn n)
 
 open scoped Classical in
 /-- The off-diagonal rectangle--pentagon overlap sum is the sum of its same-side and mixed-side
@@ -141,10 +141,10 @@ theorem commutationMap_comp_unblockedDifferential_eq_iff_oriented_overlap :
   rw [G.commutationMap_comp_unblockedDifferential_eq_iff_overlap C R]
   constructor
   · intro h x z hzx
-    simpa only [G.sum_rectanglePentagon_overlap_eq_sameSide_add_mixedSide C _ _ hzx,
-      G.sum_rectangleInitialPentagon_overlap_eq_sameSide_add_mixedSide C _ _ hzx,
-      G.sum_pentagonRectangle_overlap_eq_sameSide_add_mixedSide C _ _ hzx,
-      G.sum_initialPentagonRectangle_overlap_eq_sameSide_add_mixedSide C _ _ hzx]
+    simpa only [sum_rectanglePentagon_overlap_eq_sameSide_add_mixedSide C _ _ hzx,
+      sum_rectangleInitialPentagon_overlap_eq_sameSide_add_mixedSide C _ _ hzx,
+      sum_pentagonRectangle_overlap_eq_sameSide_add_mixedSide C _ _ hzx,
+      sum_initialPentagonRectangle_overlap_eq_sameSide_add_mixedSide C _ _ hzx]
       using h x z
   · intro h x z
     by_cases hzx : z = x
@@ -175,10 +175,10 @@ theorem commutationMap_comp_unblockedDifferential_eq_iff_oriented_overlap :
           GridInitialPentagonRectangleDecomposition.toGridRectangleDecomposition
       simpa only [hrp, hpr, hrip, hipr] using
         G.sum_rectanglePentagonWeight_add_sum_rectangleInitialPentagonWeight_self C R x
-    · simpa only [G.sum_rectanglePentagon_overlap_eq_sameSide_add_mixedSide C _ _ hzx,
-        G.sum_rectangleInitialPentagon_overlap_eq_sameSide_add_mixedSide C _ _ hzx,
-        G.sum_pentagonRectangle_overlap_eq_sameSide_add_mixedSide C _ _ hzx,
-        G.sum_initialPentagonRectangle_overlap_eq_sameSide_add_mixedSide C _ _ hzx]
+    · simpa only [sum_rectanglePentagon_overlap_eq_sameSide_add_mixedSide C _ _ hzx,
+        sum_rectangleInitialPentagon_overlap_eq_sameSide_add_mixedSide C _ _ hzx,
+        sum_pentagonRectangle_overlap_eq_sameSide_add_mixedSide C _ _ hzx,
+        sum_initialPentagonRectangle_overlap_eq_sameSide_add_mixedSide C _ _ hzx]
         using h x z hzx
 
 end TauCeti.GridDiagram

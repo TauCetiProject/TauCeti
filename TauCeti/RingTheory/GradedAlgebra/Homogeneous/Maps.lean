@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.GradedAlgebra.Homogeneous.Maps
 public import Mathlib.RingTheory.GradedAlgebra.TensorProduct
+public import Mathlib.RingTheory.IsTensorProduct
 
 /-!
 # Graded coefficient inclusion and images of the irrelevant ideal
@@ -24,14 +25,42 @@ Coefficient inclusion also satisfies this containment, although it need not be s
 `GradedAlgHom.includeRight`, with the target grading over the extended coefficient ring.
 This is the form needed for homogeneous localizations and projective coefficient projections.
 
+More generally, a graded ring homomorphism `f : 𝒜 →+*ᵍ ℬ` over a coefficient extension `R → S`
+induces the graded comparison `TauCeti.GradedAlgebra.baseChangeLift f : S ⊗[R] A → B`. When `f`
+exhibits `B` as the base change of `A` (`IsBaseChange S f`), the comparison is bijective and its
+inverse `TauCeti.GradedAlgebra.baseChangeLiftInv` is graded as well.
+
 ## Main results
 
 * `HomogeneousIdeal.irrelevant_le_map_of_surjective`: `ℬ₊ ≤ 𝒜₊.map f` for a surjective `f`.
 * `HomogeneousIdeal.irrelevant_le_map_baseChangeMap`: the same containment for extension
   of the coefficient ring.
+* `HomogeneousIdeal.irrelevant_le_map_of_isBaseChange`: the same containment for a graded ring
+  homomorphism exhibiting its target as a base change.
+* `TauCeti.GradedAlgebra.bijective_baseChangeLift`: the graded comparison `S ⊗[R] A → B` of a
+  graded ring homomorphism exhibiting `B` as the base change of `A` is bijective.
+* `GradedRingHom.mem_of_map_mem`: an injective graded ring homomorphism reflects homogeneity, so
+  the inverse of a bijective one is again graded.
 -/
 
 public section
+
+namespace GradedRingHom
+
+variable {ι A B σ τ : Type*} [Semiring A] [Semiring B] [SetLike σ A] [SetLike τ B]
+  [AddSubmonoidClass σ A] [AddSubmonoidClass τ B] [DecidableEq ι] [AddMonoid ι]
+  {𝒜 : ι → σ} {ℬ : ι → τ} [GradedRing 𝒜] [GradedRing ℬ]
+
+/-- An injective graded ring homomorphism reflects homogeneity: if `f a` lies in `ℬ i`, then `a`
+lies in `𝒜 i`. In particular, the inverse of a bijective graded ring homomorphism is graded. -/
+theorem mem_of_map_mem (f : 𝒜 →+*ᵍ ℬ) (hf : Function.Injective f) {a : A} {i : ι}
+    (ha : f a ∈ ℬ i) : a ∈ 𝒜 i := by
+  -- `f` carries the degree-`i` component of `a` to that of `f a`, which is `f a` itself
+  have h : f (DirectSum.decompose 𝒜 a i) = f a := by
+    rw [f.map_directSumDecompose, DirectSum.decompose_of_mem_same ℬ ha]
+  exact hf h ▸ SetLike.coe_mem _
+
+end GradedRingHom
 
 namespace HomogeneousIdeal
 
@@ -101,6 +130,67 @@ theorem baseChangeMap_toRingHom :
 @[simp]
 theorem baseChangeMap_apply (a : A) : baseChangeMap S 𝒜 a = 1 ⊗ₜ[R] a := (rfl)
 
+section IsBaseChange
+
+variable {S} {B : Type*} [CommSemiring B] [Algebra R B] [Algebra S B] [IsScalarTower R S B]
+  [DecidableEq ι] [AddMonoid ι] [GradedAlgebra 𝒜] {ℬ : ι → Submodule S B} [GradedAlgebra ℬ]
+  (f : 𝒜 →+*ᵍ ℬ) (hfR : ∀ r : R, f (algebraMap R A r) = algebraMap R B r)
+
+/-- The graded comparison map `S ⊗[R] A → B`, `s ⊗ a ↦ s • f a`, of a graded ring homomorphism
+`f` over the coefficient extension `R → S`. It is the graded ring homomorphism underlying
+`GradedAlgHom.liftEquiv`, applied to `f` as a graded `R`-algebra homomorphism. -/
+noncomputable def baseChangeLift : (fun n ↦ (𝒜 n).baseChange S) →+*ᵍ ℬ :=
+  (GradedAlgHom.liftEquiv 𝒜 ℬ ⟨⟨f.toRingHom, hfR⟩, f.map_mem⟩).toGradedRingHom
+
+/-- The graded comparison map sends a pure tensor `s ⊗ a` to `s • f a`
+(`GradedAlgHom.liftEquiv_tmul`). -/
+@[simp]
+theorem baseChangeLift_tmul (s : S) (a : A) :
+    baseChangeLift 𝒜 f hfR (s ⊗ₜ[R] a) = s • f a :=
+  GradedAlgHom.liftEquiv_tmul _ s a
+
+/-- The graded comparison map restricts to `f` along the coefficient inclusion. -/
+@[simp]
+theorem baseChangeLift_comp_baseChangeMap :
+    (baseChangeLift 𝒜 f hfR).comp (baseChangeMap S 𝒜) = f :=
+  GradedRingHom.ext fun a ↦ by simp
+
+variable {𝒜 f hfR} in
+/-- If `f` exhibits `B` as the base change of `A`, the graded comparison map `S ⊗[R] A → B` is
+bijective. -/
+theorem bijective_baseChangeLift
+    (hf : IsBaseChange S (AlgHom.mk f.toRingHom hfR).toLinearMap) :
+    Function.Bijective (baseChangeLift 𝒜 f hfR) := by
+  have h : ⇑(baseChangeLift 𝒜 f hfR) = hf.equiv := by
+    funext x
+    induction x using TensorProduct.inductionOn with
+    | tmul s a => simp [IsBaseChange.equiv_tmul]
+    | add x y hx hy => simp [hx, hy]
+  rw [h]
+  exact hf.equiv.bijective
+
+variable (hf : IsBaseChange S (AlgHom.mk f.toRingHom hfR).toLinearMap)
+
+/-- The inverse of the graded comparison map `S ⊗[R] A → B` of a graded ring homomorphism
+exhibiting `B` as the base change of `A`, which is graded as well. -/
+noncomputable def baseChangeLiftInv : ℬ →+*ᵍ (fun n ↦ (𝒜 n).baseChange S) where
+  __ := (RingEquiv.ofBijective _ (bijective_baseChangeLift hf)).symm.toRingHom
+  map_mem {n b} hb := (baseChangeLift 𝒜 f hfR).mem_of_map_mem
+    (bijective_baseChangeLift hf).injective (by
+      simpa [← RingEquiv.ofBijective_apply _ (bijective_baseChangeLift hf)] using hb)
+
+/-- `baseChangeLiftInv` is a right inverse of the graded comparison map. -/
+theorem baseChangeLift_baseChangeLiftInv :
+    Function.RightInverse (baseChangeLiftInv 𝒜 f hfR hf) (baseChangeLift 𝒜 f hfR) :=
+  (RingEquiv.ofBijective _ (bijective_baseChangeLift hf)).apply_symm_apply
+
+/-- `baseChangeLiftInv` is a left inverse of the graded comparison map. -/
+theorem baseChangeLiftInv_baseChangeLift :
+    Function.LeftInverse (baseChangeLiftInv 𝒜 f hfR hf) (baseChangeLift 𝒜 f hfR) :=
+  (RingEquiv.ofBijective _ (bijective_baseChangeLift hf)).symm_apply_apply
+
+end IsBaseChange
+
 end TauCeti.GradedAlgebra
 
 namespace HomogeneousIdeal
@@ -135,5 +225,18 @@ theorem irrelevant_le_map_baseChangeMap :
   -- uses membership in the ideal, with the same underlying carrier.
   change x ∈ ((irrelevant 𝒜).map (baseChangeMap S 𝒜)).toIdeal
   simpa only [hy] using hmem y
+
+variable {S} {B : Type*} [CommSemiring B] [Algebra R B] [Algebra S B] [IsScalarTower R S B]
+  {ℬ : ℕ → Submodule S B} [GradedAlgebra ℬ] (f : 𝒜 →+*ᵍ ℬ)
+  (hfR : ∀ r : R, f (algebraMap R A r) = algebraMap R B r)
+
+/-- If a graded ring homomorphism `f : 𝒜 →+*ᵍ ℬ` over `R → S` exhibits `B` as the base change
+`S ⊗[R] A`, then `ℬ₊ ≤ 𝒜₊.map f`, so that `f` induces a morphism `Proj ℬ ⟶ Proj 𝒜`. -/
+theorem irrelevant_le_map_of_isBaseChange
+    (hf : IsBaseChange S (AlgHom.mk f.toRingHom hfR).toLinearMap) :
+    irrelevant ℬ ≤ (irrelevant 𝒜).map f := by
+  rw [← baseChangeLift_comp_baseChangeMap 𝒜 f hfR]
+  exact irrelevant_le_map_comp (irrelevant_le_map_baseChangeMap S 𝒜)
+    (irrelevant_le_map_of_surjective _ (bijective_baseChangeLift hf).surjective)
 
 end HomogeneousIdeal

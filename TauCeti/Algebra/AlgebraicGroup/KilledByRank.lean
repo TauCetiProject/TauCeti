@@ -67,14 +67,14 @@ section Free
 algebra of linear maps `H → H`, through the left tensor factor. -/
 private noncomputable abbrev convTensorAlgebra :
     Algebra (WithConv (H →ₗ[R] H)) (WithConv (H →ₗ[R] H ⊗[R] H)) :=
-  ((IsScalarTower.toAlgHom R H (H ⊗[R] H)).convCompLeft H).toRingHom.toAlgebra
+  ((IsScalarTower.toAlgHom R H (H ⊗[R] H)).convPostcomp (C := H)).toRingHom.toAlgebra
 
 attribute [local instance] convTensorAlgebra
 
 /-- The structure map of `convTensorAlgebra` is post-composition with the left inclusion. -/
 private theorem algebraMap_convTensor (f : WithConv (H →ₗ[R] H)) :
     algebraMap (WithConv (H →ₗ[R] H)) (WithConv (H →ₗ[R] H ⊗[R] H)) f =
-      (IsScalarTower.toAlgHom R H (H ⊗[R] H)).convCompLeft H f :=
+      (IsScalarTower.toAlgHom R H (H ⊗[R] H)).convPostcomp (C := H) f :=
   rfl
 
 /-- A basis of `H` over `R` gives a basis of the convolution algebra of `H → H ⊗[R] H` over the
@@ -85,15 +85,16 @@ private noncomputable def convTensorBasis {ι : Type*} [Finite ι] (b : Module.B
     { (Algebra.TensorProduct.basis H b).convCoordEquiv R H with
       map_smul' := fun f φ => funext fun i => by
         simpa [Algebra.smul_def, algebraMap_convTensor] using
-          (Algebra.TensorProduct.basis H b).convCoordEquiv_convCompLeft_mul f φ i }
+          (Algebra.TensorProduct.basis H b).convCoordEquiv_convPostcomp_mul f φ i }
 
 /-- Post-composition with the shear automorphism `a ⊗ b ↦ (a ⊗ 1) Δ b` of `H ⊗[R] H`, as an
 automorphism of the convolution algebra of `H → H ⊗[R] H` over that of `H → H`. -/
 private noncomputable def convTensorShear :
     WithConv (H →ₗ[R] H ⊗[R] H) ≃ₐ[WithConv (H →ₗ[R] H)] WithConv (H →ₗ[R] H ⊗[R] H) where
   toFun := (HopfAlgebra.tensorShearMulRight (R := R) (H := H) :
-    H ⊗[R] H →ₐ[R] H ⊗[R] H).convCompLeft H
-  invFun := (HopfAlgebra.tensorShearMulRight (R := R) (H := H)).symm.toAlgHom.convCompLeft H
+    H ⊗[R] H →ₐ[R] H ⊗[R] H).convPostcomp (C := H)
+  invFun :=
+    (HopfAlgebra.tensorShearMulRight (R := R) (H := H)).symm.toAlgHom.convPostcomp (C := H)
   left_inv φ := by ext; simp
   right_inv φ := by ext; simp
   map_mul' := map_mul _
@@ -119,9 +120,11 @@ private theorem convTensorShear_includeRight :
       (Algebra.TensorProduct.includeLeft : H →ₐ[R] H ⊗[R] H).toLinearMap := by
     ext a
     simp [Algebra.TensorProduct.algebraMap_apply]
-  simp only [convTensorShear, algebraMap_convTensor, AlgEquiv.coe_mk, Equiv.coe_fn_mk,
-    _root_.AlgHom.convCompLeft_apply, hτ, hι]
-  exact Coalgebra.comul_eq_convMul_includeLeft_includeRight
+  apply ofConv_injective
+  simpa only [convTensorShear, algebraMap_convTensor, AlgEquiv.coe_mk, Equiv.coe_fn_mk,
+    _root_.LinearMap.convMul_def, ofConv_toConv,
+    _root_.AlgHom.convPostcomp_apply_ofConv, hτ, hι] using
+    congrArg ofConv (Coalgebra.comul_eq_convMul_includeLeft_includeRight (R := R) (C := H))
 
 omit [Coalgebra.IsCocomm R H] in
 /-- The right tensor inclusion is a convolution unit, being an algebra-homomorphism point. -/

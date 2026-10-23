@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Dynamic.Points
 
 import Mathlib.Algebra.Group.End
+import TauCeti.Algebra.Polynomial.Laurent.Polynomial
 
 /-!
 # The dynamic parabolic, unipotent and Levi subgroups of a cocharacter
@@ -161,6 +162,21 @@ theorem mem_parabolic_iff {g : WithConv (H →ₐ[R] A)} :
 theorem mem_parabolic_of_eq {g : WithConv (H →ₐ[R] A)} {F : WithConv (H →ₐ[R] Polynomial A)}
     (hF : ofPolyPoint A F = conjugate A l g) : g ∈ parabolic A l :=
   ⟨F, hF⟩
+
+/-- Membership in the dynamic parabolic is the vanishing of every negative coefficient of the
+conjugation family. -/
+theorem mem_parabolic_iff_forall_coeff_conjugate_eq_zero {g : WithConv (H →ₐ[R] A)} :
+    g ∈ parabolic A l ↔
+      ∀ h : H, ∀ n : ℤ, n < 0 → ((conjugate A l g).ofConv h).coeff n = 0 := by
+  rw [mem_parabolic_iff, ← exists_algHom_toLaurent_comp_eq_iff]
+  constructor
+  · rintro ⟨F, hF⟩
+    rw [ofPolyPoint_apply] at hF
+    exact ⟨F.ofConv, congrArg ofConv hF⟩
+  · rintro ⟨F, hF⟩
+    refine ⟨toConv F, ?_⟩
+    rw [ofPolyPoint_apply]
+    exact congrArg toConv hF
 
 variable (A l) in
 /-- The unique `A[X]`-point extending the conjugate of a point of the dynamic parabolic. -/

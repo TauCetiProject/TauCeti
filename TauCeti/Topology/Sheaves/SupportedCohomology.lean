@@ -39,12 +39,13 @@ whose first map enlarges the support and whose second map is restriction to `W �
 
 For opens `W' ≤ W`, the inclusion of pairs `(W', W' ∖ S) ⟶ (W, W ∖ S)` induces restriction maps
 `H_Sⁿ(W, F) ⟶ H_Sⁿ(W', F)`, which make `W ↦ H_Sⁿ(W, F)` a presheaf; sheafifying it gives the local
-cohomology sheaves of `F` with supports in `S`. *Excision* says that cohomology with supports in
-`S` only depends on a neighbourhood of `S`: if `S ∩ W ⊆ W'`, restriction is an isomorphism
-`H_Sⁿ(W, F) ≃+ H_Sⁿ(W', F)`. The proof shows that the map of relative free sheaves
-`ℤ_{W', W' ∖ S} ⟶ ℤ_{W, W ∖ S}` is already an isomorphism, by the Yoneda criterion
-`TauCeti.CategoryTheory.isIso_relativeFreeYonedaSheafMap_iff`: a section over `W'` supported in `S`
-glues with zero on `W ∖ S` to a unique section over `W` supported in `S`.
+cohomology sheaves of `F` with supports in `S` (`TauCeti.Topology.Sheaves.LocalCohomology`). On an
+open `W` disjoint from `S` the inclusion `W ∖ S ⟶ W` is an isomorphism, so `H_Sⁿ(W, F) = 0`.
+*Excision* says that cohomology with supports in `S` only depends on a neighbourhood of `S`: if
+`S ∩ W ⊆ W'`, restriction is an isomorphism `H_Sⁿ(W, F) ≃+ H_Sⁿ(W', F)`. The proof shows that the
+map of relative free sheaves `ℤ_{W', W' ∖ S} ⟶ ℤ_{W, W ∖ S}` is already an isomorphism, by the
+Yoneda criterion `TauCeti.CategoryTheory.isIso_relativeFreeYonedaSheafMap_iff`: a section over `W'`
+supported in `S` glues with zero on `W ∖ S` to a unique section over `W` supported in `S`.
 
 ## Main declarations
 
@@ -54,6 +55,8 @@ glues with zero on `W ∖ S` to a unique section over `W` supported in `S`.
   supports in `S`;
 * `CategoryTheory.Sheaf.supportedHZeroEquiv`: `H_S⁰(W, F) ≃+ Γ_S(W, F)`, natural in `F`
   (`CategoryTheory.Sheaf.supportedHZeroEquiv_naturality_right`);
+* `CategoryTheory.Sheaf.subsingleton_supportedH_of_le_compl`: `H_Sⁿ(W, F) = 0` when `W` is disjoint
+  from `S`;
 * `CategoryTheory.Sheaf.relativeH'.subsingleton_succ_of_isFlasque`: a flasque sheaf has no relative
   cohomology in positive degrees for an inclusion of opens; in particular it has no cohomology with
   supports in positive degrees.
@@ -196,6 +199,14 @@ def supportedHPresheaf (S : Closeds X) (n : ℕ) : TopCat.Presheaf AddCommGrpCat
 lemma supportedHPresheaf_obj (S : Closeds X) (n : ℕ) (W : (Opens X)ᵒᵖ) :
     (F.supportedHPresheaf S n).obj W = AddCommGrpCat.of (F.supportedH S W.unop n) :=
   (rfl)
+
+/-- Cohomology with supports in `S` vanishes on an open `W` disjoint from `S`, where the inclusion
+`W ∖ S ⟶ W` is an isomorphism. -/
+theorem subsingleton_supportedH_of_le_compl (S : Closeds X) {W : Opens X} (hW : W ≤ S.compl)
+    (n : ℕ) : Subsingleton (F.supportedH S W n) :=
+  haveI : IsIso (S.complInclusion W) :=
+    ⟨homOfLE (le_inf le_rfl hW), Subsingleton.elim _ _, Subsingleton.elim _ _⟩
+  relativeH'.subsingleton_of_isIso F _ n
 
 /-- Excision for sections with supports: if `W' ≤ W` and `S ∩ W ⊆ W'` (that is,
 `W ≤ W' ⊔ (X ∖ S)`), then every section over `W'` supported in `S` is the restriction of a unique

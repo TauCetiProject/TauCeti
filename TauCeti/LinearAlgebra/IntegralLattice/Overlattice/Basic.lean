@@ -43,6 +43,8 @@ restrictions of the correspondence they cut out live in
   intermediate carrier in `A_L`.
 * `TauCeti.IntegralLattice.intermediateCarrierOfDiscriminantSubgroup`: the inverse-image carrier
   `L_H` attached to a subgroup `H` of `A_L`.
+* `TauCeti.IntegralLattice.toIntermediateCarrier`: an integral lattice for the same form
+  containing `L`, viewed as an intermediate carrier of `L`.
 
 ## References
 
@@ -237,6 +239,27 @@ ambient rational space. No nondegeneracy is required. -/
 instance instIsLatticeBotIntermediateCarrier : (⊥ : L.IntermediateCarrier).1.IsLattice ℚ := by
   rw [Set.Icc.coe_bot]
   infer_instance
+
+section ToIntermediateCarrier
+
+/-- An integral lattice `N` for the form of `L` containing `L` is an intermediate carrier of `L`:
+integrality of `N` places it inside the dual carrier of `L`. -/
+def toIntermediateCarrier (N : IntegralLattice V) {L : IntegralLattice V}
+    (hform : N.form = L.form) (hle : L.carrier ≤ N.carrier) : L.IntermediateCarrier :=
+  ⟨N.carrier, hle, fun x hx ↦ by
+    rw [dualCarrier, LinearMap.BilinForm.mem_dualSubmodule]
+    intro y hy
+    rw [← hform]
+    exact N.form_mem_one ⟨x, hx⟩ ⟨y, hle hy⟩⟩
+
+/-- The intermediate carrier attached to an integral overlattice is its carrier. -/
+@[simp]
+theorem coe_toIntermediateCarrier (N : IntegralLattice V) {L : IntegralLattice V}
+    (hform : N.form = L.form) (hle : L.carrier ≤ N.carrier) :
+    (N.toIntermediateCarrier hform hle).1 = N.carrier :=
+  (rfl)
+
+end ToIntermediateCarrier
 
 variable [L.IsNondegenerate]
 

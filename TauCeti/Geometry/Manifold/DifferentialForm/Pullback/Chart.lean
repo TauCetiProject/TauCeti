@@ -22,7 +22,7 @@ public section
 
 noncomputable section
 
-open Set
+open Set Filter
 open scoped Manifold Topology
 
 namespace TauCeti.RoughForm
@@ -51,6 +51,40 @@ theorem inChartAt_mpullback (ω : RoughForm I' M' F k) (f : M → M') (α : M) {
   have he := congrArg (fun L : E →L[ℝ] TangentSpace I' (f ((extChartAt I α).symm z)) ↦
     ω (f ((extChartAt I α).symm z)) (fun i ↦ L (v i))) hd
   exact he.symm
+
+/-- The within-set pullback of a form along a map `f` from a normed space, at a point `w` sent into
+the preferred chart at `c`, is the flat pullback of the coordinate expression of the form in that
+chart along the coordinate expression of `f`. -/
+theorem mpullbackWithin_eq_compContinuousLinearMap (φ : RoughForm I M F k) {f : E' → M}
+    {s : Set E'} {w : E'} (c : M) (hfc : f w ∈ (extChartAt I c).source)
+    (hf : MDifferentiableWithinAt 𝓘(ℝ, E') I f s w) (hs : UniqueDiffWithinAt ℝ s w) :
+    mpullbackWithin 𝓘(ℝ, E') I f s φ w =
+      (φ.inChartAt c (extChartAt I c (f w))).compContinuousLinearMap
+        (fderivWithin ℝ (extChartAt I c ∘ f) s w) := by
+  set e := extChartAt I c
+  have hpre : f ⁻¹' e.source ∈ 𝓝[s] w :=
+    hf.continuousWithinAt.preimage_mem_nhdsWithin (extChartAt_source_mem_nhds' hfc)
+  have hfe : f =ᶠ[𝓝[s] w] e.symm ∘ (e ∘ f) := by
+    filter_upwards [hpre] with a ha
+    exact (e.left_inv ha).symm
+  have hg : MDifferentiableWithinAt 𝓘(ℝ, E') 𝓘(ℝ, E) (e ∘ f) s w :=
+    (mdifferentiableAt_extChartAt (by simpa only [e, extChartAt_source] using hfc))
+      |>.comp_mdifferentiableWithinAt w hf
+  have hrange : (e ∘ f) ⁻¹' range I ∈ 𝓝[s] w := by
+    filter_upwards [hpre] with a ha
+    exact extChartAt_target_subset_range c (e.map_source ha)
+  have hd : mfderivWithin 𝓘(ℝ, E') I f s w =
+      (mfderivWithin 𝓘(ℝ, E) I e.symm (range I) (e (f w))).comp
+        (mfderivWithin 𝓘(ℝ, E') 𝓘(ℝ, E) (e ∘ f) s w) := by
+    rw [hfe.mfderivWithin_eq (e.left_inv hfc).symm]
+    exact mfderivWithin_comp_of_preimage_mem_nhdsWithin w
+      (mdifferentiableWithinAt_extChartAt_symm (e.map_source hfc)) hg hrange
+      hs.uniqueMDiffWithinAt
+  ext v
+  have h := inChartAt_apply φ c (e (f w)) (fun i ↦ fderivWithin ℝ (e ∘ f) s w (v i))
+  rw [e.left_inv hfc] at h
+  rw [mpullbackWithin_apply, hd, mfderivWithin_eq_fderivWithin]
+  exact h.symm
 
 end TauCeti.RoughForm
 

@@ -41,6 +41,8 @@ of `UCB G`; no continuity statement is made for right translations.
 * `TauCeti.UCB.continuous_leftTranslation_apply`: the orbit map `g ↦ L_g f` is continuous for the
   supremum norm.
 * `TauCeti.UCB.commute_leftTranslation_rightTranslation`: left and right translations commute.
+* `TauCeti.UCB.sum_leftTranslation`: on a finite group, the sum of the left translates of `f` is
+  the constant function `∑ x, f x`.
 
 ## References
 
@@ -221,6 +223,16 @@ theorem commute_leftTranslation_rightTranslation (g h : G) :
 theorem leftTranslation_rightTranslation (g h : G) (f : UCB G) :
     leftTranslation g (rightTranslation h f) = rightTranslation h (leftTranslation g f) :=
   congr($(commute_leftTranslation_rightTranslation g h) f)
+
+/-- On a finite group, the sum of the left translates `L_g f` of a function `f` in `UCB G` is the
+constant function `∑ x, f x`. -/
+theorem sum_leftTranslation [Fintype G] (f : UCB G) :
+    ∑ g, leftTranslation g f = algebraMap ℝ (UCB G) (∑ x, (f : G →ᵇ ℝ) x) := by
+  refine ext fun x => ?_
+  simp only [AddSubmonoidClass.coe_finsetSum, FunLike.coe_sum, Finset.sum_apply,
+    leftTranslation_apply, SubalgebraClass.coe_algebraMap,
+    BoundedContinuousFunction.algebraMap_apply, smul_eq_mul, mul_one]
+  exact Fintype.sum_equiv ((Equiv.inv G).trans (Equiv.mulRight x)) _ _ fun _ => rfl
 
 end UCB
 
