@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Proper
-public import Mathlib.AlgebraicGeometry.Morphisms.SchemeTheoreticallyDominant
+public import TauCeti.AlgebraicGeometry.Morphisms.SchemeTheoreticallyDominant
 public import Mathlib.CategoryTheory.Category.Factorisation
 public import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Terminal
 public import Mathlib.CategoryTheory.ObjectProperty.FullSubcategory
@@ -102,6 +102,12 @@ theorem mono_of_mono_h {C D : Compactification f} (h : Hom C D) [Mono h.hom.h] :
 instance {C D : Compactification f} (h : Hom C D) [IsClosedImmersion h.hom.h] : Mono h :=
   mono_of_mono_h h
 
+/-- The map of ambient schemes underlying an isomorphism of compactifications is an
+isomorphism. -/
+instance isIso_hom_h {C D : Compactification f} (h : Hom C D) [IsIso h] : IsIso h.hom.h :=
+  ⟨(inv h).hom.h, congrArg (fun k ↦ k.hom.h) (IsIso.hom_inv_id h),
+    congrArg (fun k ↦ k.hom.h) (IsIso.inv_hom_id h)⟩
+
 end Hom
 
 /-- A compactifiable morphism is separated. -/
@@ -174,10 +180,8 @@ closed subscheme `D.Xbar` of `C.Xbar`. -/
 noncomputable def liftOfIsClosedImmersion {C D : Compactification f} (φ : D ⟶ C)
     [IsClosedImmersion φ.hom.h] (E : DenseCompactification f) (h : E.obj ⟶ C) : E.obj ⟶ D :=
   have H : φ.hom.h.ker ≤ h.hom.h.ker := by
-    have hker : h.hom.h.ker = (D.j ≫ φ.hom.h).ker := by
-      rw [φ.hom.ι_h, ← h.hom.ι_h, Scheme.Hom.ker_comp, E.obj.j.ker_eq_bot,
-        Scheme.IdealSheafData.map_bot]
-    exact hker ▸ Scheme.Hom.le_ker_comp D.j φ.hom.h
+    rw [← E.obj.j.ker_comp_of_isSchemeTheoreticallyDominant h.hom.h, h.hom.ι_h, ← φ.hom.ι_h]
+    exact Scheme.Hom.le_ker_comp D.j φ.hom.h
   ObjectProperty.homMk
     { h := IsClosedImmersion.lift φ.hom.h h.hom.h H
       ι_h := by

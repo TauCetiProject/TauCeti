@@ -189,10 +189,7 @@ when its interior is scheme-theoretically dense. -/
 theorem isIso_denseReplacementMap_iff (C : Compactification f) :
     IsIso (denseReplacementMap C) ↔ IsSchemeTheoreticallyDominant C.j := by
   refine ⟨fun _ ↦ ?_, fun hC ↦ ?_⟩
-  · have : IsIso (denseReplacementMap C).hom.h :=
-      inferInstanceAs (IsIso (((compactificationProperty f).ι ⋙ Factorisation.forget).map
-        (denseReplacementMap C)))
-    rw [← C.j.toImage_imageι, ← denseReplacementMap_hom_h]
+  · rw [← C.j.toImage_imageι, ← denseReplacementMap_hom_h]
     infer_instance
   · let E : DenseCompactification f := ⟨C, (denseCompactificationProperty_iff f C).mpr hC⟩
     refine ⟨(liftDenseReplacement (E := E) (𝟙 C)).hom, ?_, by simp⟩
