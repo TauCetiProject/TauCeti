@@ -182,9 +182,7 @@ private theorem norm_simpleIntegral_le (P : ProjValMeasure X H) (s : SimpleFunc 
       ‖(star s * s) x‖ ≤ ‖BoundedBorelFunction.ofSimpleFunc s‖ ^ 2 := by
     have hx := BoundedBorelFunction.norm_coe_le_norm (BoundedBorelFunction.ofSimpleFunc s) x
     rw [BoundedBorelFunction.ofSimpleFunc_apply] at hx
-    rw [SimpleFunc.coe_mul, SimpleFunc.coe_star, Pi.mul_apply, Pi.star_apply, norm_mul,
-      norm_star, sq]
-    exact mul_le_mul hx hx (norm_nonneg _) (norm_nonneg _)
+    simpa [sq] using mul_le_mul hx hx (norm_nonneg _) (norm_nonneg _)
   have hsq :
       ‖P.simpleIntegral s ξ‖ ^ 2 ≤ (‖BoundedBorelFunction.ofSimpleFunc s‖ * ‖ξ‖) ^ 2 := by
     have hinner : (‖P.simpleIntegral s ξ‖ ^ 2 : ℂ) = ∫ x, (star s * s) x ∂(P.diag ξ) := by
