@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Exponential
 public import TauCeti.RingTheory.Derivation.Flow
 import Mathlib.Algebra.Polynomial.Bivariate
-import Mathlib.Algebra.Polynomial.Roots
+import Mathlib.Tactic.FieldSimp
 
 /-!
 # One-parameter subgroups from locally nilpotent invariant vector fields
@@ -18,7 +18,7 @@ polynomial family of points. Its coordinate map is the counit applied coefficien
 to the Taylor expansion of the invariant derivation. The coefficient of degree one is
 the original tangent vector.
 
-Over a rational integral domain this family satisfies the additive parameter law in
+Over a rational base ring this family satisfies the additive parameter law in
 every commutative value algebra, including nonreduced algebras. Thus it defines an
 algebraic one-parameter subgroup, rather than just a homomorphism on field-valued points.
 
@@ -140,16 +140,6 @@ theorem taylorExpAt_leftInvariantDerivation_apply (t : R) (h : H) :
   rw [he, Derivation.taylorExpAt_eq_taylorExp_smul]
   simpa only [hsmul] using taylorExp_leftInvariantDerivation_apply (t • d) ht h
 
-private theorem expPointAt_add_self (r s : R) :
-    expPointAt d hd (r + s) = expPointAt d hd r * expPointAt d hd s := by
-  apply WithConv.ext
-  ext h
-  rw [expPointAt_apply_self, Derivation.taylorExpAt_add, AlgHom.comp_apply,
-    ← expPointAt_apply_self, taylorExpAt_leftInvariantDerivation_apply, AlgHom.convMul_apply]
-  induction Coalgebra.comul (R := R) h using TensorProduct.inductionOn with
-  | tmul a b => simp [Algebra.TensorProduct.lift_tmul, mul_comm]
-  | add x y hx hy => simp only [map_add, hx, hy]
-
 /-- Substitute the sum of two independent parameters in the exponential curve. -/
 private noncomputable def expPointAddPolynomial : H →ₐ[R] R[X][X] :=
   (aeval (C X + X : R[X][X])).comp (expPointPolynomial d hd)
@@ -190,27 +180,59 @@ private theorem eval_expPointMulPolynomial {B : Type*} [CommRing B] [Algebra R B
       (AlgHom.congr_fun he (expPointPolynomial d hd y))
   | add x y hx hy => simp only [map_add, hx, hy]
 
-section ParameterLaw
-
-variable [IsDomain R]
+omit [Algebra ℚ R] in
+private theorem coeff_expPointAddPolynomial (h : H) (i j : ℕ) :
+    ((expPointAddPolynomial d hd h).coeff j).coeff i =
+      ((i + j).choose j : R) * Coalgebra.counit (R := R)
+        (((i + j).factorial : ℚ)⁻¹ • (leftInvariantDerivation d)^[i + j] h) := by
+  have he (p : R[X]) : aeval (C X + X : R[X][X]) p =
+      (p.map C).comp (X + C X) := by
+    simp only [aeval_def, Polynomial.comp, eval₂_map, add_comm X (C X)]
+    rfl
+  change ((aeval (C X + X : R[X][X]) (expPointPolynomial d hd h)).coeff j).coeff i = _
+  rw [he, ← taylor_apply, taylor_coeff, hasseDeriv_map, eval_map]
+  simp only [eval₂_C_X, hasseDeriv_coeff, coeff_expPointPolynomial]
 
 /-- The exponential curve respects addition in every commutative value algebra. -/
 theorem expPointAt_add {B : Type*} [CommRing B] [Algebra R B] (r s : B) :
     expPointAt d hd (r + s) = expPointAt d hd r * expPointAt d hd s := by
-  let : Infinite R := Infinite.of_injective (algebraMap ℚ R) (algebraMap ℚ R).injective
-  -- Detect the bivariate polynomial identity on base-ring points, then evaluate it
-  -- in the arbitrary value algebra. In particular, nilpotent parameters are retained.
+  -- Compare the coefficients of the two independent parameters. Invariance contracts
+  -- the iterated derivation against the right tensor factor of the comultiplication.
   have hpq (h : H) : expPointAddPolynomial d hd h = expPointMulPolynomial d hd h := by
-    apply Polynomial.eq_of_infinite_eval_eq
-    apply (Set.infinite_range_of_injective (Polynomial.C_injective (R := R))).mono
-    rintro _ ⟨b, rfl⟩
-    apply Polynomial.funext
-    intro a
-    have he := congrArg (fun f : WithConv (H →ₐ[R] R) => f h)
-      (expPointAt_add_self d hd a b)
-    have hev := (eval_expPointAddPolynomial d hd a b h).trans
-      (he.trans (eval_expPointMulPolynomial d hd a b h).symm)
-    simpa only [Polynomial.coe_aevalAeval_eq_evalEval] using hev
+    classical
+    let D := leftInvariantDerivation d
+    let 𝓡 := Coalgebra.Repr.arbitrary R h
+    have hiter (i j : ℕ) :
+        Coalgebra.counit (R := R) (D^[i + j] h) =
+          ∑ k ∈ 𝓡.index, Coalgebra.counit (R := R) (D^[i] (𝓡.left k)) *
+            Coalgebra.counit (R := R) (D^[j] (𝓡.right k)) := by
+      rw [Function.iterate_add_apply, iterate_leftInvariantDerivation_apply d j h,
+        ← 𝓡.eq, map_sum]
+      simp only [tensorComponent_tmul, LinearMap.comp_apply, Module.End.coe_pow,
+        Derivation.coeFn_coe]
+      rw [D.iterate_sum_smul, map_sum]
+      simp only [map_smul, smul_eq_mul, mul_comm, D]
+    ext j i
+    rw [coeff_expPointAddPolynomial, map_rat_smul, ← nsmul_eq_mul,
+      ← Nat.cast_smul_eq_nsmul ℚ, smul_smul]
+    have hfac : ((i + j).choose j : ℚ) * ((i + j).factorial : ℚ)⁻¹ =
+        (i.factorial : ℚ)⁻¹ * (j.factorial : ℚ)⁻¹ := by
+      rw [Nat.cast_choose ℚ (Nat.le_add_left j i), Nat.add_sub_cancel]
+      field_simp
+    rw [hfac, hiter, Finset.smul_sum]
+    simp only [expPointMulPolynomial, AlgHom.comp_apply, _root_.Bialgebra.comulAlgHom_apply,
+      ← 𝓡.eq, map_sum, Polynomial.finsetSum_coeff]
+    apply Finset.sum_congr rfl
+    intro k _
+    simp only [Algebra.TensorProduct.lift_tmul, AlgHom.comp_apply,
+      Polynomial.CAlgHom_apply, Polynomial.coe_mapAlgHom,
+      Polynomial.coeff_C_mul, Polynomial.coeff_map,
+      coeff_expPointPolynomial, map_rat_smul]
+    change _ = (expPointPolynomial d hd (𝓡.left k) *
+      ((j.factorial : ℚ)⁻¹ • C (Coalgebra.counit (R := R) (D^[j] (𝓡.right k))))).coeff i
+    rw [mul_smul_comm, coeff_smul, coeff_mul_C, coeff_expPointPolynomial,
+      map_rat_smul, smul_mul_assoc, smul_smul]
+    simp only [D, mul_comm]
   apply WithConv.ext
   ext h
   rw [← eval_expPointAddPolynomial, hpq, eval_expPointMulPolynomial]
@@ -226,7 +248,5 @@ noncomputable def expPointHom (B : Type*) [CommRing B] [Algebra R B] :
 @[simp]
 theorem expPointHom_apply {B : Type*} [CommRing B] [Algebra R B] (t : Multiplicative B) :
     expPointHom d hd B t = expPointAt d hd t.toAdd := (rfl)
-
-end ParameterLaw
 
 end TauCeti.Bialgebra

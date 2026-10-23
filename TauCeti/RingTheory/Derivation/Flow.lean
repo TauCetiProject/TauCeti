@@ -49,17 +49,7 @@ theorem taylorExpAt_apply (r : R) (a : A) :
 /-- Any iterate killing an element gives a finite formula for its polynomial flow. -/
 theorem taylorExpAt_apply_eq_sum (r : R) {a : A} {n : ℕ} (hn : D^[n] a = 0) :
     D.taylorExpAt hD r a = ∑ i ∈ range n, (i.factorial : ℚ)⁻¹ • (r ^ i • D^[i] a) := by
-  have hsupp : (D.taylorExpPolynomial hD a).support ⊆ range n := by
-    intro i hi
-    rw [mem_support_iff, coeff_taylorExpPolynomial] at hi
-    rw [mem_range]
-    by_contra! h
-    have hn' : (D.toLinearMap ^ n) a = 0 := by simpa [Module.End.pow_apply] using hn
-    rw [← coeFn_coe, ← Module.End.pow_apply,
-      Module.End.pow_map_zero_of_le h hn', smul_zero] at hi
-    exact hi rfl
-  rw [taylorExpAt_apply, aeval_def, eval₂_eq_sum,
-    Polynomial.sum_eq_of_subset _ (fun i => by rw [map_zero, zero_mul]) hsupp]
+  rw [taylorExpAt_apply, aeval_taylorExpPolynomial_eq_sum D hD _ hn]
   simp [Algebra.smul_def, mul_comm, mul_assoc]
 
 /-- At zero the polynomial flow is the identity. -/
@@ -96,6 +86,8 @@ private theorem taylorExpAt_eq_exp_restrict (r : R) {n : ℕ}
 /-- Flowing for `s` and then for `r` is flowing for `r + s`. -/
 theorem taylorExpAt_add (r s : R) :
     D.taylorExpAt hD (r + s) = (D.taylorExpAt hD r).comp (D.taylorExpAt hD s) := by
+  -- Restrict to the kernel of an iterate killing the input. On this stable submodule
+  -- the derivation is nilpotent, so Mathlib's exponential addition law applies.
   ext a
   obtain ⟨n, hn⟩ := hD a
   let K := LinearMap.ker (D.toLinearMap ^ n)
@@ -126,12 +118,9 @@ theorem taylorExpAt_eq_taylorExp_smul (r : R) :
     D.taylorExpAt hD r = (r • D).taylorExp (D.exists_iterate_smul_eq_zero hD r) := by
   ext a
   obtain ⟨n, hn⟩ := hD a
-  have hi (i : ℕ) : (r • D)^[i] a = r ^ i • D^[i] a := by
-    simpa [Module.End.pow_apply, coeFn_coe] using
-      LinearMap.congr_fun (smul_pow r D.toLinearMap i) a
   rw [taylorExpAt_apply_eq_sum D hD r hn,
-    taylorExp_apply_eq_sum _ _ (n := n) (by rw [hi, hn, smul_zero])]
-  simp only [hi]
+    taylorExp_apply_eq_sum _ _ (n := n) (by rw [iterate_smul_apply, hn, smul_zero])]
+  simp only [iterate_smul_apply]
 
 /-- The flow at any parameter is an algebra automorphism; the inverse is the flow at
 its negative. -/
