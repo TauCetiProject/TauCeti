@@ -23,6 +23,8 @@ the finite cyclic group it generates, since every element of that group acts by 
 ## Main declarations
 
 * `ContMDiffMul.contMDiffConstSMul`: smooth multiplication gives smooth left translations.
+* `SetLike.contMDiffConstSMul`: a subobject, such as a submonoid, a subgroup or a submodule, of
+  a type acting by `C^n` maps also acts by `C^n` maps.
 * `Diffeomorph.constSmul`: the diffeomorphism given by a fixed element of a pointwise-smooth
   group action.
 * `TauCeti.contMDiff_smul_of_mem_zpowers`: if an element of finite order acts by a `C^n` map, so
@@ -41,6 +43,17 @@ instance ContMDiffMul.contMDiffConstSMul {𝕜 : Type*} [NontriviallyNormedField
     {G : Type*} [Mul G] [TopologicalSpace G] [ChartedSpace H G]
     {n : ℕ∞ω} [ContMDiffMul I n G] : ContMDiffConstSMul I n G G where
   contMDiff_const_smul _ := contMDiff_mul_left
+
+/-- A subobject `s` of a type `G` acting on `M` by `C^n` maps, such as a submonoid, a subgroup or a
+submodule of `G`, also acts on `M` by `C^n` maps. -/
+@[to_additive /-- A subobject `s` of a type `G` acting additively on `M` by `C^n` maps, such as an
+additive submonoid, an additive subgroup or a submodule of `G`, also acts on `M` by `C^n` maps. -/]
+instance SetLike.contMDiffConstSMul {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} {n : ℕ∞ω}
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H M] {G S : Type*} [SetLike S G] [SMul G M]
+    [ContMDiffConstSMul I n G M] (s : S) : ContMDiffConstSMul I n s M where
+  contMDiff_const_smul g := contMDiff_const_smul (g : G)
 
 namespace Diffeomorph
 
