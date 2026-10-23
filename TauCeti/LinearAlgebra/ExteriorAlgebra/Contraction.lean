@@ -50,6 +50,11 @@ In degree at least the rank, contraction loses no information: if `d m = 1` and
 zero once their degrees add up to the rank, and in rank at most four a two-form `x` satisfies
 `x ∧ x = 2 x ∧ m ∧ (d ⌋ x)`. This is the algebra behind the splitting of a two-form on a product
 `ℝ × Y` along the unit normal of the factor `Y`.
+
+On `M × R`, with `e = (0, 1)`, every element `z` of the exterior algebra splits as `a + e ∧ b`,
+where `a` and `b` are the images in `⋀ M` of `z` and of its contraction by the second coordinate
+(`TauCeti.ExteriorAlgebra.map_inl_map_fst_add_ι_inr_mul_contractLeft_snd`). This is the
+decomposition `⋀ᵏ⁺¹ (M × R) ≅ ⋀ᵏ⁺¹ M ⊕ e ∧ ⋀ᵏ M` used to adjoin one element to a Koszul complex.
 -/
 
 public section
@@ -562,5 +567,45 @@ theorem mul_self_eq_two_smul_mul_ι_mul_contractLeft {d : Module.Dual R M} {m : 
   have hx' : x = b + g := (sub_add_cancel x g).symm
   rw [hx', add_mul, mul_add, mul_add, hbb, hgg, hcomm, add_mul, hgg, two_smul]
   abel
+
+end TauCeti.ExteriorAlgebra
+
+namespace TauCeti.ExteriorAlgebra
+
+open _root_.ExteriorAlgebra
+
+variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+
+/-! ### Splitting off a free coordinate -/
+
+/-- **Splitting off a free coordinate.** In the exterior algebra of `M × R`, with `e = (0, 1)`,
+every element `z` is `a + e ∧ b`, where `a` is the image of `z` under `⋀ M × R → ⋀ M → ⋀ (M × R)`
+and `b` is the image of the contraction of `z` by the second coordinate. -/
+theorem map_inl_map_fst_add_ι_inr_mul_contractLeft_snd (z : _root_.ExteriorAlgebra R (M × R)) :
+    map (LinearMap.inl R M R) (map (LinearMap.fst R M R) z) +
+        ι R (LinearMap.inr R M R 1) * map (LinearMap.inl R M R) (map (LinearMap.fst R M R)
+          (contractLeft (Q := (0 : QuadraticForm R (M × R))) (LinearMap.snd R M R) z)) =
+      z := by
+  induction z using CliffordAlgebra.left_induction with
+  | algebraMap r => simp [contractLeft_algebraMap]
+  | add z₁ z₂ h₁ h₂ =>
+    simp only [map_add, mul_add]
+    conv_rhs => rw [← h₁, ← h₂]
+    abel
+  | ι_mul z m ih =>
+    -- Write `m = (m₁, 0) + m₂ e`; then `e ∧ e = 0` and `(m₁, 0) ∧ e = -(e ∧ (m₁, 0))`.
+    have hm : ι R m = ι R (LinearMap.inl R M R m.1) + m.2 • ι R (LinearMap.inr R M R 1) := by
+      rw [← map_smul, ← map_add]; congr 1; ext <;> simp
+    have he := ι_sq_zero (R := R) (LinearMap.inr R M R (1 : R))
+    have hc := eq_neg_of_add_eq_zero_right <|
+      ι_add_mul_swap (R := R) (LinearMap.inr R M R (1 : R)) (LinearMap.inl R M R m.1)
+    -- `left_induction` states the step with `CliffordAlgebra.ι 0`, which is `ι R` by definition.
+    change _ = ι R m * z
+    rw [contractLeft_ι_mul]
+    simp only [map_mul, map_sub, map_smul, _root_.ExteriorAlgebra.map_apply_ι]
+    conv_rhs => rw [← ih, hm]
+    simp only [add_mul, mul_add, mul_sub, smul_mul_assoc, mul_smul_comm, ← mul_assoc, he, hc,
+      smul_zero, add_zero, neg_mul, LinearMap.fst_apply, LinearMap.snd_apply]
+    abel
 
 end TauCeti.ExteriorAlgebra
