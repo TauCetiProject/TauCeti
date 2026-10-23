@@ -119,7 +119,9 @@ fibres of `f`. -/
 theorem exists_comap_eq_iff {hf : MonotoneOn f s} {π : NoncrossingPartition s} :
     (∃ ρ, comap hf ρ = π) ↔ comap hf ⊥ ≤ π := by
   refine ⟨fun ⟨ρ, hρ⟩ => hρ ▸ (comap hf).monotone bot_le, fun h => ?_⟩
-  obtain ⟨P, hP⟩ := Finpartition.exists_comap_eq_iff.2 (show _ ≤ π.1 from h)
+  have h' : (comap hf ⊥ : Finpartition s) ≤ π := Subtype.coe_le_coe.2 h
+  rw [coe_comap, coe_bot] at h'
+  obtain ⟨P, hP⟩ := Finpartition.exists_comap_eq_iff.2 h'
   exact ⟨⟨P, (Finpartition.isNoncrossing_comap_iff hf).1 (hP ▸ π.2)⟩, Subtype.ext hP⟩
 
 end TauCeti.NoncrossingPartition

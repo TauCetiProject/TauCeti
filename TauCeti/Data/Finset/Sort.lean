@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Group.List.Basic
 public import Mathlib.Data.Finset.Sort
 
 /-!
@@ -14,7 +15,8 @@ Sorting the finset `{a, b}` of two distinct elements with `r a b` gives the list
 
 For a map `f` that is monotone on a finset `s` of a linear order, the points of `s` sorted in
 increasing order are the concatenation, over the values `y` of `f` on `s` in increasing order, of
-the sorted fibres `{x ∈ s | f x = y}`.
+the sorted fibres `{x ∈ s | f x = y}`. Consequently the ordered product of a word along `s` is the
+ordered product, over the values of `f` on `s`, of the ordered products along the fibres.
 -/
 
 public section
@@ -53,6 +55,16 @@ theorem flatten_map_sort_filter_eq_sort (hf : MonotoneOn f s) :
     · intro hx
       exact ⟨_, ⟨f x, (mem_sort _).2 (mem_image_of_mem f hx), rfl⟩,
         (mem_sort _).2 (mem_filter.2 ⟨hx, rfl⟩)⟩
+
+/-- For a map `f` that is monotone on `s`, the product of a word `a` along `s` in increasing order
+is the product, over the values `y` of `f` on `s` in increasing order, of the products of `a` along
+the fibres `{x ∈ s | f x = y}` in increasing order. -/
+theorem prod_map_sort_eq_prod_map_sort_image {M : Type*} [Monoid M] (hf : MonotoneOn f s)
+    (a : α → M) :
+    (s.sort.map a).prod =
+      ((s.image f).sort.map fun y => ({x ∈ s | f x = y}.sort.map a).prod).prod := by
+  rw [← flatten_map_sort_filter_eq_sort hf, List.map_flatten, List.prod_flatten, List.map_map,
+    List.map_map, Function.comp_def, Function.comp_def]
 
 end LinearOrder
 

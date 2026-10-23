@@ -79,13 +79,12 @@ positions. -/
 private theorem prod_map_sort_filter_eq (hf : MonotoneOn f s) (a : α → A) (C : Finset β) :
     ({x ∈ s | f x ∈ C}.sort.map a).prod =
       (({x ∈ s | f x ∈ C}.image f).sort.map (fiberProd a s f)).prod := by
-  rw [← flatten_map_sort_filter_eq_sort (hf.mono (coe_subset.2 (filter_subset _ s))),
-    List.map_flatten, List.prod_flatten, List.map_map, List.map_map]
+  rw [prod_map_sort_eq_prod_map_sort_image (hf.mono (coe_subset.2 (filter_subset _ s)))]
   refine congrArg List.prod (List.map_congr_left fun y hy => ?_)
   obtain ⟨x, hx, rfl⟩ := mem_image.1 ((mem_sort _).1 hy)
-  rw [Function.comp_apply, fiberProd_def, filter_filter,
+  rw [fiberProd_def, filter_filter,
     filter_congr (s := s) (q := fun z => f z = f x) fun z _ =>
-      ⟨And.right, fun h => ⟨h ▸ (mem_filter.1 hx).2, h⟩⟩, Function.comp_apply]
+      ⟨And.right, fun h => ⟨h ▸ (mem_filter.1 hx).2, h⟩⟩]
 
 variable [CommMonoid R]
 
