@@ -158,20 +158,14 @@ theorem isRegularPoint_norm_snd {z : CotangentBundle I M} (hz : z.2 ≠ 0) :
     rw [hγ1]
     have : IsManifold I (1 + 1) M := by norm_num; infer_instance
     exact (contMDiffAt_norm_snd (n := 1) hz).mdifferentiableAt one_ne_zero
-  -- Scaling by `t > 0` scales the operator norm by `t`; both inequalities are
-  -- `ContinuousLinearMap.opNorm_smul_le`, applied to `t` and to `t⁻¹`.
-  have hscale {t : ℝ} (ht : 0 < t) : ‖t • z.2‖ = t * ‖z.2‖ := by
-    have hle (s : ℝ) (q : TangentSpace I z.proj →L[ℝ] ℝ) (hs : 0 < s) : ‖s • q‖ ≤ s * ‖q‖ :=
-      (ContinuousLinearMap.opNorm_smul_le s q).trans_eq (by rw [Real.norm_of_nonneg hs.le])
-    refine le_antisymm (hle t z.2 ht) ?_
-    calc t * ‖z.2‖ = t * ‖t⁻¹ • t • z.2‖ := by rw [smul_smul, inv_mul_cancel₀ ht.ne', one_smul]
-      _ ≤ t * (t⁻¹ * ‖t • z.2‖) := by gcongr; exact hle t⁻¹ _ (inv_pos.2 ht)
-      _ = ‖t • z.2‖ := by rw [← mul_assoc, mul_inv_cancel₀ ht.ne', one_mul]
   -- Near `t = 1`, the norm along the ray is `t ↦ t * ‖z.2‖`.
   have hray : HasDerivAt (f ∘ γ) ‖z.2‖ 1 := by
     refine (hasDerivAt_mul_const ‖z.2‖).congr_of_eventuallyEq ?_
     filter_upwards [lt_mem_nhds one_pos] with t ht
-    exact hscale ht
+    -- This is `norm_smul`; instance search does not find `NormSMulClass` for covectors of the
+    -- Riemannian fibre norm, so it is supplied from the `NormedSpace` instance.
+    exact ((NormedSpace.toNormSMulClass (𝕜 := ℝ) (E := TangentSpace I z.proj →L[ℝ] ℝ)).norm_smul
+      t z.2).trans (by rw [Real.norm_of_nonneg ht.le])
   -- The unit tangent vector of `ℝ` at `t = 1`, and its image, the velocity of the ray.
   set v := mfderiv 𝓘(ℝ) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) γ 1
     ((NormedSpace.fromTangentSpace (𝕜 := ℝ) (1 : ℝ)).symm 1)
