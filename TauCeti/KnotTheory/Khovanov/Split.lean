@@ -159,7 +159,7 @@ theorem fiberwiseSplit_equiv (e : σ ≃ τ) :
 
 /-- Splitting `1` into two circles gives `1 ⊗ X + X ⊗ 1`; splitting `X` gives `X ⊗ X`.
 The two output circles are indexed by `Bool`, and the input by `Unit`. -/
-theorem fiberwiseSplit_pair (b : Bool) :
+theorem fiberwiseSplit_const_circleBasis (b : Bool) :
     fiberwiseSplit (R := R) (fun _ : Bool ↦ ())
       (circleBasis R Unit fun _ ↦ b) =
         if b then circleBasis R Bool (fun _ ↦ true)
