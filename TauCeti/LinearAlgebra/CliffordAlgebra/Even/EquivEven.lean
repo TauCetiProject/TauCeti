@@ -64,8 +64,8 @@ theorem e0_mul_e0_mul (y : CliffordAlgebra (Q' Q)) : e0 Q * (e0 Q * y) = -y := b
   rw [← mul_assoc, e0_mul_e0, neg_one_mul]
 
 /-- The inclusion `M → M × R` sends the generator `ι Q m` to `v(m)`. -/
-theorem map_inl_ι (m : M) : map (Isometry.inl Q (-QuadraticMap.sq)) (ι Q m) = v Q m :=
-  map_apply_ι _ m
+theorem map_inl_ι (m : M) : map (Isometry.inl Q (-QuadraticMap.sq)) (ι Q m) = v Q m := by
+  rw [map_apply_ι, Isometry.inl_apply, v, LinearMap.comp_apply, LinearMap.inl_apply]
 
 /-- **`e₀` conjugates the image of `Cℓ(M, Q)` by the grade involution**: for every `x`,
 `e₀ x = x̂ e₀` in `Cℓ(M × R, Q')`, where `x̂ = involute x`. -/
