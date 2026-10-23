@@ -48,6 +48,10 @@ unimodular lattice has a theta series of level one.
   integers.
 * `ZLattice.IsEven.isIntegral`: an even lattice is integral.
 * `ZLattice.isEven_span_singleton_iff`: the lattice `ℤ v` is even if and only if `‖v‖² ∈ 2ℤ`.
+* `ZLattice.IsEven.exists_norm_add_sq_sub_norm_sq_eq`,
+  `ZLattice.IsIntegral.exists_norm_add_sq_sub_norm_sq_eq`: for `γ ∈ L^∨` and `v ∈ L`,
+  `‖γ + v‖² - ‖γ‖²` lies in `2ℤ` when `L` is even and in `ℤ` when `L` is integral, so `‖γ‖² / 2`
+  is well defined modulo `ℤ` on `L^∨ / L` in the first case.
 -/
 
 public section
@@ -129,6 +133,17 @@ theorem isIntegral_iff {L : Submodule ℤ E} :
 theorem IsIntegral.mono {L M : Submodule ℤ E} (hM : IsIntegral M) (h : L ≤ M) : IsIntegral L :=
   h.trans (hM.trans (dual_anti h))
 
+/-- For an integral lattice `L`, the squared norm `‖γ‖²` of a dual vector `γ ∈ L^∨` is well
+defined modulo `ℤ` on the coset `γ + L`: `‖γ + v‖² - ‖γ‖² ∈ ℤ` for `v ∈ L`. -/
+theorem IsIntegral.exists_norm_add_sq_sub_norm_sq_eq {L : Submodule ℤ E} (hL : IsIntegral L)
+    {γ v : E} (hγ : γ ∈ dual L) (hv : v ∈ L) : ∃ m : ℤ, ‖γ + v‖ ^ 2 - ‖γ‖ ^ 2 = m := by
+  obtain ⟨a, ha⟩ := mem_dual.mp hγ v hv
+  obtain ⟨b, hb⟩ := isIntegral_iff.mp hL v hv v hv
+  refine ⟨2 * a + b, ?_⟩
+  rw [real_inner_self_eq_norm_sq] at hb
+  push_cast
+  linarith [norm_add_sq_real γ v]
+
 /-- An even lattice is integral, by polarization. -/
 theorem IsEven.isIntegral {L : Submodule ℤ E} (h : IsEven L) : IsIntegral L := by
   refine isIntegral_iff.mpr fun x hx y hy ↦ ?_
@@ -139,6 +154,16 @@ theorem IsEven.isIntegral {L : Submodule ℤ E} (h : IsEven L) : IsIntegral L :=
   have := norm_add_sq_real x y
   push_cast
   linarith
+
+/-- For an even lattice `L`, the half-norm `‖γ‖² / 2` of a dual vector `γ ∈ L^∨` is well defined
+modulo `ℤ` on the coset `γ + L`: `‖γ + v‖² - ‖γ‖² ∈ 2ℤ` for `v ∈ L`. -/
+theorem IsEven.exists_norm_add_sq_sub_norm_sq_eq {L : Submodule ℤ E} (hL : IsEven L)
+    {γ v : E} (hγ : γ ∈ dual L) (hv : v ∈ L) : ∃ m : ℤ, ‖γ + v‖ ^ 2 - ‖γ‖ ^ 2 = 2 * m := by
+  obtain ⟨a, ha⟩ := mem_dual.mp hγ v hv
+  obtain ⟨b, hb⟩ := hL v hv
+  refine ⟨a + b, ?_⟩
+  push_cast
+  linarith [norm_add_sq_real γ v]
 
 /-! ### Unimodular lattices -/
 

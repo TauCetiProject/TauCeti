@@ -52,6 +52,8 @@ merely to be written down, are carried for the same reason.
 
 ## Main results
 
+* `TauCeti.Manifold.contMDiffOn_koszulBilinear`: the Koszul expression of a `C^(n+1)` bilinear
+  pairing and three `C^(n+1)` vector fields is `C^n`, without symmetry or nondegeneracy.
 * `TauCeti.Manifold.contMDiffOn_koszul`: the Koszul expression of three `C^(n+1)` sections is
   `C^n`.
 * `CovariantDerivative.contMDiffOn_leviCivitaConnection`: on an open set, the Levi-Civita connection
@@ -81,6 +83,66 @@ noncomputable section
 namespace TauCeti.Manifold
 
 variable
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  {n m : ℕ∞ω} [IsManifold I 1 M] [IsManifold I m M]
+
+section Bilinear
+
+variable [CompleteSpace E]
+
+/-- The Koszul expression of a `C^(n+1)` field of bilinear forms and three `C^(n+1)`
+vector fields is `C^n` on an open set. Neither symmetry nor nondegeneracy is needed. -/
+theorem contMDiffOn_koszulBilinear {s : Set M} (hs : IsOpen s) (hm : n + 2 ≤ m)
+    {b : (x : M) → TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ}
+    (hb : ContMDiffOn I (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) (n + 1)
+      (fun y ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ) y (b y)) s)
+    {X Y Z : Π x : M, TangentSpace I x}
+    (hX : ContMDiffOn I (I.prod 𝓘(ℝ, E)) (n + 1) (fun y ↦ TotalSpace.mk' E y (X y)) s)
+    (hY : ContMDiffOn I (I.prod 𝓘(ℝ, E)) (n + 1) (fun y ↦ TotalSpace.mk' E y (Y y)) s)
+    (hZ : ContMDiffOn I (I.prod 𝓘(ℝ, E)) (n + 1) (fun y ↦ TotalSpace.mk' E y (Z y)) s) :
+    ContMDiffOn I 𝓘(ℝ) n (koszulBilinear I b X Y Z) s := by
+  -- The two smoothness levels that Mathlib's Lie-bracket regularity asks of the manifold; over
+  -- `ℝ` the `minSmoothness` guard is the identity.
+  have hmin : IsManifold I (minSmoothness ℝ 2) M :=
+    IsManifold.of_le (n := m) (by simpa using le_add_self.trans hm)
+  have hsucc : IsManifold I (n + 1 + 1) M :=
+    IsManifold.of_le (n := m) (by rwa [add_assoc, one_add_one_eq_two])
+  have hbracket {U V : Π x : M, TangentSpace I x}
+      (hU : ContMDiffOn I (I.prod 𝓘(ℝ, E)) (n + 1) (fun y ↦ TotalSpace.mk' E y (U y)) s)
+      (hV : ContMDiffOn I (I.prod 𝓘(ℝ, E)) (n + 1) (fun y ↦ TotalSpace.mk' E y (V y)) s) :
+      ContMDiffOn I (I.prod 𝓘(ℝ, E)) n
+        (fun y ↦ TotalSpace.mk' E y (mlieBracket I U V y)) s := by
+    have hbr : ContMDiffOn I (I.prod 𝓘(ℝ, E)) n
+        (fun y ↦ TotalSpace.mk' E y (mlieBracketWithin I U V s y)) s := fun y hy ↦
+      (hU y hy).mlieBracketWithin_vectorField (hV y hy) hs.uniqueMDiffOn hy (by simp)
+    refine hbr.congr fun y hy ↦ ?_
+    rw [mlieBracketWithin_of_isOpen hs hy]
+  have hpair {j : ℕ∞ω} (hj : j ≤ n + 1)
+      {U V : Π x : M, TangentSpace I x}
+      (hU : ContMDiffOn I (I.prod 𝓘(ℝ, E)) j (fun y ↦ TotalSpace.mk' E y (U y)) s)
+      (hV : ContMDiffOn I (I.prod 𝓘(ℝ, E)) j (fun y ↦ TotalSpace.mk' E y (V y)) s) :
+      ContMDiffOn I 𝓘(ℝ) j (fun y ↦ b y (U y) (V y)) s := by
+    intro y hy
+    simpa [contMDiffWithinAt_section, Trivial.eq_trivialization] using
+      ((hb.of_le hj) y hy).clm_bundle_apply₂ (hU y hy) (hV y hy)
+  have hderiv {U V W : Π x : M, TangentSpace I x}
+      (hU : ContMDiffOn I (I.prod 𝓘(ℝ, E)) (n + 1) (fun y ↦ TotalSpace.mk' E y (U y)) s)
+      (hV : ContMDiffOn I (I.prod 𝓘(ℝ, E)) (n + 1) (fun y ↦ TotalSpace.mk' E y (V y)) s)
+      (hW : ContMDiffOn I (I.prod 𝓘(ℝ, E)) (n + 1) (fun y ↦ TotalSpace.mk' E y (W y)) s) :
+      ContMDiffOn I 𝓘(ℝ) n
+        (fun y ↦ mvfderiv I (fun z ↦ b z (U z) (V z)) y (W y)) s :=
+    ContMDiffOn.contMDiffOn_mvfderiv_apply (hpair le_rfl hU hV) hs (hW.of_le le_self_add) le_rfl
+  refine ContMDiffOn.congr ?_ fun y _ ↦ koszulBilinear_apply b X Y Z y
+  exact (((hderiv hY hZ hX).add (hderiv hZ hX hY)).sub (hderiv hX hY hZ)).add
+    (hpair le_self_add (hbracket hX hY) (hZ.of_le le_self_add))
+      |>.sub (hpair le_self_add (hbracket hX hZ) (hY.of_le le_self_add))
+      |>.sub (hpair le_self_add (hbracket hY hZ) (hX.of_le le_self_add))
+
+end Bilinear
+
+variable
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
@@ -97,47 +159,11 @@ theorem contMDiffOn_koszul {s : Set M} (hs : IsOpen s) (hm : n + 2 ≤ m) (hk : 
     (hY : ContMDiffOn I (I.prod 𝓘(ℝ, E)) (n + 1) (fun y ↦ TotalSpace.mk' E y (Y y)) s)
     (hZ : ContMDiffOn I (I.prod 𝓘(ℝ, E)) (n + 1) (fun y ↦ TotalSpace.mk' E y (Z y)) s) :
     ContMDiffOn I 𝓘(ℝ) n (koszul I X Y Z) s := by
-  -- The two smoothness levels that Mathlib's Lie-bracket regularity asks of the manifold; over
-  -- `ℝ` the `minSmoothness` guard is the identity.
-  have hmin : IsManifold I (minSmoothness ℝ 2) M :=
-    IsManifold.of_le (n := m) (by simpa using le_add_self.trans hm)
-  have hsucc : IsManifold I (n + 1 + 1) M :=
-    IsManifold.of_le (n := m) (by rwa [add_assoc, one_add_one_eq_two])
-  -- The metric at the level of the sections, and at the level of the conclusion for the inner
-  -- products against a Lie bracket.
   have hmetric : IsContMDiffRiemannianBundle I (n + 1) E (fun x : M ↦ TangentSpace I x) :=
     IsContMDiffRiemannianBundle.of_le (n := k) hk
-  have hmetric' : IsContMDiffRiemannianBundle I n E (fun x : M ↦ TangentSpace I x) :=
-    IsContMDiffRiemannianBundle.of_le (n := k) (le_self_add.trans hk)
-  have hbracket {U V : Π x : M, TangentSpace I x}
-      (hU : ContMDiffOn I (I.prod 𝓘(ℝ, E)) (n + 1) (fun y ↦ TotalSpace.mk' E y (U y)) s)
-      (hV : ContMDiffOn I (I.prod 𝓘(ℝ, E)) (n + 1) (fun y ↦ TotalSpace.mk' E y (V y)) s) :
-      ContMDiffOn I (I.prod 𝓘(ℝ, E)) n
-        (fun y ↦ TotalSpace.mk' E y (mlieBracket I U V y)) s := by
-    have hbr : ContMDiffOn I (I.prod 𝓘(ℝ, E)) n
-        (fun y ↦ TotalSpace.mk' E y (mlieBracketWithin I U V s y)) s := fun y hy ↦
-      (hU y hy).mlieBracketWithin_vectorField (hV y hy) hs.uniqueMDiffOn hy (by simp)
-    refine hbr.congr fun y hy ↦ ?_
-    rw [mlieBracketWithin_of_isOpen hs hy]
-  have hinner {j : ℕ∞ω} [IsContMDiffRiemannianBundle I j E (fun x : M ↦ TangentSpace I x)]
-      {U V : Π x : M, TangentSpace I x}
-      (hU : ContMDiffOn I (I.prod 𝓘(ℝ, E)) j (fun y ↦ TotalSpace.mk' E y (U y)) s)
-      (hV : ContMDiffOn I (I.prod 𝓘(ℝ, E)) j (fun y ↦ TotalSpace.mk' E y (V y)) s) :
-      ContMDiffOn I 𝓘(ℝ) j (fun y ↦ (inner ℝ (U y) (V y) : ℝ)) s :=
-    ContMDiffOn.inner_bundle (IB := I) (F := E) (E := fun x : M ↦ TangentSpace I x)
-      (b := id) hU hV
-  have hderiv {U V W : Π x : M, TangentSpace I x}
-      (hU : ContMDiffOn I (I.prod 𝓘(ℝ, E)) (n + 1) (fun y ↦ TotalSpace.mk' E y (U y)) s)
-      (hV : ContMDiffOn I (I.prod 𝓘(ℝ, E)) (n + 1) (fun y ↦ TotalSpace.mk' E y (V y)) s)
-      (hW : ContMDiffOn I (I.prod 𝓘(ℝ, E)) (n + 1) (fun y ↦ TotalSpace.mk' E y (W y)) s) :
-      ContMDiffOn I 𝓘(ℝ) n
-        (fun y ↦ mvfderiv I (fun z ↦ (inner ℝ (U z) (V z) : ℝ)) y (W y)) s :=
-    ContMDiffOn.contMDiffOn_mvfderiv_apply (hinner hU hV) hs (hW.of_le le_self_add) le_rfl
-  refine ContMDiffOn.congr ?_ fun y _ ↦ koszul_apply X Y Z y
-  exact (((hderiv hY hZ hX).add (hderiv hZ hX hY)).sub (hderiv hX hY hZ)).add
-    (hinner (hbracket hX hY) (hZ.of_le le_self_add))
-      |>.sub (hinner (hbracket hX hZ) (hY.of_le le_self_add))
-      |>.sub (hinner (hbracket hY hZ) (hX.of_le le_self_add))
+  obtain ⟨b, hb, hinner⟩ := hmetric.exists_contMDiff
+  refine (contMDiffOn_koszulBilinear hs hm hb.contMDiffOn hX hY hZ).congr fun y _ ↦ ?_
+  simp only [koszul_apply, koszulBilinear_apply, ← hinner]
 
 end TauCeti.Manifold
 

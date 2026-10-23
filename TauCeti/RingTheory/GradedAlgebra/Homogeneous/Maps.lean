@@ -14,7 +14,9 @@ public import Mathlib.RingTheory.IsTensorProduct
 
 For a surjective graded ring homomorphism `f : 𝒜 →+*ᵍ ℬ`, the irrelevant ideal `ℬ₊` is contained
 in the image `𝒜₊.map f` of the irrelevant ideal `𝒜₊`. This containment is the hypothesis under
-which `f` induces `AlgebraicGeometry.Proj.map f : Proj ℬ ⟶ Proj 𝒜`.
+which `f` induces `AlgebraicGeometry.Proj.map f : Proj ℬ ⟶ Proj 𝒜`. An injective graded ring
+homomorphism reflects homogeneity, so the inverse of a bijective one is again graded and the two
+induce mutually inverse morphisms of `Proj`.
 
 Degreewise rescaling by powers of a unit preserves the condition that a coordinate map
 sends the irrelevant ideal to the unit ideal, allowing the rescaled coordinates to define
@@ -33,6 +35,7 @@ inverse `TauCeti.GradedAlgebra.baseChangeLiftInv` is graded as well.
 ## Main results
 
 * `HomogeneousIdeal.irrelevant_le_map_of_surjective`: `ℬ₊ ≤ 𝒜₊.map f` for a surjective `f`.
+* `Graded.map_mem_iff_of_injective`: an injective graded ring homomorphism reflects homogeneity.
 * `HomogeneousIdeal.irrelevant_le_map_baseChangeMap`: the same containment for extension
   of the coefficient ring.
 * `HomogeneousIdeal.irrelevant_le_map_of_isBaseChange`: the same containment for a graded ring
@@ -79,6 +82,25 @@ theorem irrelevant_le_map_of_surjective (f : 𝒜 →+*ᵍ ℬ) (hf : Function.S
   exact Ideal.mem_map_of_mem _ (mem_irrelevant_of_mem _ hi (SetLike.coe_mem _))
 
 end HomogeneousIdeal
+
+section Injective
+
+variable {ι A B σ τ F : Type*} [Semiring A] [Semiring B] [SetLike σ A] [SetLike τ B]
+  [AddSubmonoidClass σ A] [AddSubmonoidClass τ B] [DecidableEq ι] [AddMonoid ι]
+  {𝒜 : ι → σ} {ℬ : ι → τ} [GradedRing 𝒜] [GradedRing ℬ]
+  [FunLike F A B] [GradedFunLike F 𝒜 ℬ] [RingHomClass F A B]
+
+/-- An injective graded ring homomorphism reflects homogeneity: `f x` is homogeneous of degree
+`i` exactly when `x` is. In particular the inverse of a bijective graded ring homomorphism is
+again graded. -/
+theorem Graded.map_mem_iff_of_injective (f : F) (hf : Function.Injective f) {i : ι} {x : A} :
+    f x ∈ ℬ i ↔ x ∈ 𝒜 i := by
+  refine ⟨fun h ↦ ?_, Graded.map_mem f⟩
+  -- `f` sends the degree-`i` component of `x` to that of `f x`, which is `f x` itself
+  rw [← hf ((map_directSumDecompose 𝒜 ℬ f).trans (DirectSum.decompose_of_mem_same ℬ h))]
+  exact SetLike.coe_mem _
+
+end Injective
 
 namespace TauCeti.HomogeneousIdeal
 
