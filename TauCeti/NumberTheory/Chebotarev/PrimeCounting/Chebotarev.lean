@@ -137,7 +137,8 @@ private theorem eventually_lt_frobeniusPsi_div_one_div_card_of_mul_comm
     (hab : ∀ σ τ : L ≃ₐ[K] L, σ * τ = τ * σ) (σ : L ≃ₐ[K] L) {δ : ℝ}
     (hδ : δ < 1 / (Nat.card (L ≃ₐ[K] L) : ℝ)) :
     ∀ᶠ x in atTop, δ < frobeniusPsi K L (ConjClasses.mk σ) x / x := by
-  obtain ⟨q, _, hcop, hδq⟩ := exists_prime_coprime_lt_crossingConstant K L (orderOf_pos σ).ne' hδ
+  obtain ⟨q, _, hcop, hδq⟩ := exists_prime_coprime_lt_crossingConstant K L (orderOf_pos σ).ne'
+    (Int.natAbs_ne_zero.mpr (discr_ne_zero L)) hδ
   exact eventually_lt_frobeniusPsi_div_of_lt_crossingConstant hab σ hcop hδq
 
 open scoped Classical in

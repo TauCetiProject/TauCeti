@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Chebotarev.Crossing.TaggedCount
-public import Mathlib.NumberTheory.NumberField.Discriminant.Defs
 import Mathlib.Analysis.SpecificLimits.Basic
-import TauCeti.NumberTheory.Chebotarev.AuxiliaryPrime
+import Mathlib.NumberTheory.PrimesCongruentOne
 
 /-!
 # The crossing constant of an auxiliary cyclic group
@@ -39,9 +38,9 @@ choosing one auxiliary group per target value needs.
 * `TauCeti.NumberField.Chebotarev.exists_forall_lt_crossingConstant`: as the level `r` grows, that
   bound tends to `1 / #Aut_K(L)`, so every `δ < 1 / #Aut_K(L)` lies below the crossing constant of
   every cyclic group whose order is divisible by `f ^ r`, for a single `r`.
-* `TauCeti.NumberField.Chebotarev.exists_prime_coprime_lt_crossingConstant`: for number fields,
-  that level is realised by `(ZMod q)ˣ` for a prime `q` coprime to the discriminant of `L`, the
-  auxiliary prime of the cyclotomic crossing.
+* `TauCeti.NumberField.Chebotarev.exists_prime_coprime_lt_crossingConstant`: that level is
+  realised by `(ZMod q)ˣ` for a prime `q` coprime to any given nonzero `N`; the cyclotomic
+  crossing takes `N` to be the discriminant of `L`.
 
 ## References
 
@@ -119,30 +118,22 @@ theorem exists_forall_lt_crossingConstant (f : ℕ) {δ : ℝ}
   obtain ⟨r, hr, hδr⟩ := ((eventually_gt_atTop 0).and (hlim.eventually (lt_mem_nhds hδ))).exists
   exact ⟨r, fun H _ _ _ hf ↦ hδr.trans_le (le_crossingConstant K L f r hr hf)⟩
 
-section NumberField
-
-variable (K L : Type*) [Field K] [NumberField K] [Field L] [NumberField L] [Algebra K L]
-
-/-- **An auxiliary prime with a large crossing constant.**  For every `δ < 1 / #Aut_K(L)` and every
-`f ≠ 0` there is a prime `q`, coprime to the discriminant of `L`, such that the crossing constant of
+/-- **An auxiliary prime with a large crossing constant.**  For every `δ < 1 / #Aut_K(L)`, every
+`f ≠ 0` and every `N ≠ 0` there is a prime `q`, coprime to `N`, such that the crossing constant of
 `(ZMod q)ˣ` at `f` exceeds `δ`.
 
-Coprimality to the discriminant is what the joint restriction
-`IsCyclotomicExtension.galEquivProd` needs to split the Galois group of `L(μ_q) / K` as
-`Aut_K(L) × (ZMod q)ˣ`. -/
-theorem exists_prime_coprime_lt_crossingConstant {f : ℕ} (hf : f ≠ 0) {δ : ℝ}
+The cyclotomic crossing takes `N` to be the absolute discriminant of `L`: coprimality to it is
+what the joint restriction `IsCyclotomicExtension.galEquivProd` needs to split the Galois group of
+`L(μ_q) / K` as `Aut_K(L) × (ZMod q)ˣ`. -/
+theorem exists_prime_coprime_lt_crossingConstant {f N : ℕ} (hf : f ≠ 0) (hN : N ≠ 0) {δ : ℝ}
     (hδ : δ < 1 / (Nat.card (L ≃ₐ[K] L) : ℝ)) :
-    ∃ q : ℕ, ∃ _ : Fact q.Prime, (NumberField.discr L).natAbs.Coprime q ∧
-      δ < crossingConstant K L (H := (ZMod q)ˣ) f := by
-  -- Choose the level first, then an auxiliary prime of that level larger than `|disc L|`.
+    ∃ q : ℕ, ∃ _ : Fact q.Prime, N.Coprime q ∧ δ < crossingConstant K L (H := (ZMod q)ˣ) f := by
+  -- Choose the level first, then a prime `q ≡ 1 [MOD f ^ r]` larger than `N`.
   obtain ⟨r, hr⟩ := exists_forall_lt_crossingConstant K L f hδ
-  obtain ⟨q, hq, hqN, -, hfq, -, -, -⟩ :=
-    NumberField.exists_auxiliaryPrime K L (f ^ r) (NumberField.discr L).natAbs (pow_ne_zero r hf)
+  obtain ⟨q, hq, hqN, hqmod⟩ := Nat.exists_prime_gt_modEq_one N (pow_ne_zero r hf)
   have : Fact q.Prime := ⟨hq⟩
-  refine ⟨q, this, (Nat.coprime_of_lt_prime (Int.natAbs_ne_zero.mpr
-    (NumberField.discr_ne_zero L)) hqN hq).symm, hr _ ?_⟩
-  rwa [Nat.card_eq_fintype_card, ZMod.card_units_eq_totient, Nat.totient_prime hq]
-
-end NumberField
+  refine ⟨q, this, (Nat.coprime_of_lt_prime hN hqN hq).symm, hr _ ?_⟩
+  rw [Nat.card_eq_fintype_card, ZMod.card_units_eq_totient, Nat.totient_prime hq]
+  exact (Nat.modEq_iff_dvd' hq.one_lt.le).mp hqmod.symm
 
 end TauCeti.NumberField.Chebotarev

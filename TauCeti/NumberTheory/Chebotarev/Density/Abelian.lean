@@ -94,7 +94,8 @@ private theorem isLowerDirichletDensityBound_one_div_card_abelianFrobenius
     (hab : ∀ σ τ : L ≃ₐ[K] L, σ * τ = τ * σ) (σ : L ≃ₐ[K] L) : IsLowerDirichletDensityBound
       (frobeniusPrimeSet K L (ConjClasses.mk σ)) (1 / (Nat.card (L ≃ₐ[K] L) : ℝ)) := by
   refine isLowerDirichletDensityBound_of_forall_lt fun δ hδ ↦ ?_
-  obtain ⟨q, _, hcop, hδq⟩ := exists_prime_coprime_lt_crossingConstant K L (orderOf_pos σ).ne' hδ
+  obtain ⟨q, _, hcop, hδq⟩ := exists_prime_coprime_lt_crossingConstant K L (orderOf_pos σ).ne'
+    (Int.natAbs_ne_zero.mpr (discr_ne_zero L)) hδ
   exact (isLowerDirichletDensityBound_crossingConstant_abelianFrobenius hab σ hcop).mono hδq.le
 
 public section
