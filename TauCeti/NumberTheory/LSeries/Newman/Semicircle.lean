@@ -60,6 +60,36 @@ private theorem mul_kernel_eq_zero_of_re_eq_zero {w z : ℂ}
     rw [Complex.norm_one_add_sq_div_sq_of_norm_eq hz hR, hre, abs_zero, mul_zero, zero_div]
   simp [hp]
 
+private theorem norm_integral_semicircle_mul_kernel_le {w : ℂ → ℂ} {a b : ℝ}
+    (hM : 0 ≤ M) (hR : 0 < R) (hlength : b - a = π)
+    (hw : ∀ θ ∈ Ioc a b, (circleMap 0 R θ).re ≠ 0 →
+      ‖w (circleMap 0 R θ) * cexp (T * circleMap 0 R θ) *
+        (1 + circleMap 0 R θ ^ 2 / (R : ℂ) ^ 2) / circleMap 0 R θ‖ ≤ 2 * M / R ^ 2) :
+    ‖(∫ θ in a..b, circleMap 0 R θ * Complex.I *
+      (w (circleMap 0 R θ) * cexp (T * circleMap 0 R θ) *
+        (1 + circleMap 0 R θ ^ 2 / (R : ℂ) ^ 2) / circleMap 0 R θ)) /
+          (2 * π * Complex.I)‖ ≤ M / R := by
+  have hi : ‖∫ θ in a..b, circleMap 0 R θ * Complex.I *
+      (w (circleMap 0 R θ) * cexp (T * circleMap 0 R θ) *
+        (1 + circleMap 0 R θ ^ 2 / (R : ℂ) ^ 2) / circleMap 0 R θ)‖ ≤
+        (R * (2 * M / R ^ 2)) * π := by
+    refine (intervalIntegral.norm_integral_le_of_norm_le_const
+      (C := R * (2 * M / R ^ 2)) ?_).trans_eq ?_
+    · intro θ hθ
+      rw [uIoc_of_le (by linarith [Real.pi_pos] : a ≤ b)] at hθ
+      have hz : ‖circleMap 0 R θ‖ = R := by simp [abs_of_pos hR]
+      by_cases hzero : (circleMap 0 R θ).re = 0
+      · rw [mul_kernel_eq_zero_of_re_eq_zero hR hz hzero, mul_zero, norm_zero]
+        positivity
+      · rw [norm_mul, norm_mul, hz, Complex.norm_I, mul_one]
+        exact mul_le_mul_of_nonneg_left (hw θ hθ hzero) hR.le
+    · rw [hlength, abs_of_pos Real.pi_pos]
+  rw [norm_div, norm_mul, norm_mul]
+  simp only [Complex.norm_I, mul_one, Complex.norm_ofNat, Complex.norm_real, Real.norm_eq_abs,
+    abs_of_pos Real.pi_pos]
+  calc _ ≤ R * (2 * M / R ^ 2) * π / (2 * π) := by gcongr
+       _ = M / R := by field_simp
+
 /-- The right-arc tail integrand is integrable, including both imaginary endpoints, whenever
 the continuation is continuous on that closed arc. -/
 theorem intervalIntegrable_right_semicircle_mul_kernel
@@ -75,14 +105,14 @@ theorem intervalIntegrable_right_semicircle_mul_kernel
   rw [uIcc_of_le (by linarith [Real.pi_pos] : -π / 2 ≤ π / 2)]
   exact hG.sub (differentiable_intervalIntegral_mul_cexp_neg_mul hf).continuous.continuousOn
 
-/-- The left-arc truncated-transform integrand is integrable, including both imaginary
-endpoints. -/
-theorem intervalIntegrable_left_semicircle_mul_kernel
+/-- The truncated-transform kernel integrand along a circle is integrable on every finite
+angle interval, including the imaginary endpoints of either semicircle. -/
+theorem intervalIntegrable_circleMap_intervalIntegral_mul_kernel {a b : ℝ}
     (hf : IntervalIntegrable f volume 0 T) (hR : 0 < R) :
     IntervalIntegrable (fun θ : ℝ ↦ circleMap 0 R θ * Complex.I *
       ((∫ t in (0 : ℝ)..T, f t * cexp (-circleMap 0 R θ * t)) *
         cexp (T * circleMap 0 R θ) * (1 + circleMap 0 R θ ^ 2 / (R : ℂ) ^ 2) /
-          circleMap 0 R θ)) volume (π / 2) (3 * π / 2) := by
+          circleMap 0 R θ)) volume a b := by
   exact ContinuousOn.intervalIntegrable <| continuousOn_semicircle_integrand hR
     (differentiable_intervalIntegral_mul_cexp_neg_mul hf).continuous.continuousOn
 
@@ -100,33 +130,16 @@ theorem norm_integral_right_semicircle_mul_kernel_le
         cexp (T * circleMap 0 R θ) * (1 + circleMap 0 R θ ^ 2 / (R : ℂ) ^ 2) /
           circleMap 0 R θ)) / (2 * π * Complex.I)‖ ≤ M / R := by
   have hM : 0 ≤ M := (norm_nonneg (f 0)).trans (hbound 0 (by simp))
-  have hi : ‖∫ θ in (-π / 2)..(π / 2), circleMap 0 R θ * Complex.I *
-      ((G (circleMap 0 R θ) - ∫ t in (0 : ℝ)..T, f t * cexp (-circleMap 0 R θ * t)) *
-        cexp (T * circleMap 0 R θ) * (1 + circleMap 0 R θ ^ 2 / (R : ℂ) ^ 2) /
-          circleMap 0 R θ)‖ ≤ (R * (2 * M / R ^ 2)) * π := by
-    refine (intervalIntegral.norm_integral_le_of_norm_le_const
-      (C := R * (2 * M / R ^ 2)) ?_).trans_eq ?_
-    · intro θ hθ
-      rw [uIoc_of_le (by linarith [Real.pi_pos] : -π / 2 ≤ π / 2)] at hθ
-      have hz : ‖circleMap 0 R θ‖ = R := by simp [abs_of_pos hR]
-      have hre : 0 ≤ (circleMap 0 R θ).re := by
-        rw [circleMap_zero_re]
-        exact mul_nonneg hR.le (Real.cos_nonneg_of_mem_Icc ⟨by linarith [hθ.1], hθ.2⟩)
-      by_cases hzero : (circleMap 0 R θ).re = 0
-      · rw [mul_kernel_eq_zero_of_re_eq_zero hR hz hzero, mul_zero, norm_zero]
-        positivity
-      · rw [norm_mul, norm_mul, hz, Complex.norm_I, mul_one]
-        gcongr
-        rw [hG _ (lt_of_le_of_ne hre (Ne.symm hzero))]
-        exact norm_integral_sub_intervalIntegral_mul_kernel_le hf hbound hz hR
-          (lt_of_le_of_ne hre (Ne.symm hzero)) hT
-    · have hlength : (π / 2) - (-π / 2) = π := by ring
-      rw [hlength, abs_of_pos Real.pi_pos]
-  rw [norm_div, norm_mul, norm_mul]
-  simp only [Complex.norm_I, mul_one, Complex.norm_ofNat, Complex.norm_real, Real.norm_eq_abs,
-    abs_of_pos Real.pi_pos]
-  calc _ ≤ R * (2 * M / R ^ 2) * π / (2 * π) := by gcongr
-       _ = M / R := by field_simp
+  apply norm_integral_semicircle_mul_kernel_le
+    (w := fun z ↦ G z - ∫ t in (0 : ℝ)..T, f t * cexp (-z * t)) hM hR (by ring)
+  intro θ hθ hzero
+  have hz : ‖circleMap 0 R θ‖ = R := by simp [abs_of_pos hR]
+  have hre : 0 ≤ (circleMap 0 R θ).re := by
+    rw [circleMap_zero_re]
+    exact mul_nonneg hR.le (Real.cos_nonneg_of_mem_Icc ⟨by linarith [hθ.1], hθ.2⟩)
+  rw [hG _ (lt_of_le_of_ne hre (Ne.symm hzero))]
+  exact norm_integral_sub_intervalIntegral_mul_kernel_le hf hbound hz hR
+    (lt_of_le_of_ne hre (Ne.symm hzero)) hT
 
 /-- The normalized left semicircle integral of the truncated transform has norm at most
 `M / R`. The contour runs from `R * I` to `-R * I` through the left half-plane. -/
@@ -137,33 +150,16 @@ theorem norm_integral_left_semicircle_mul_kernel_le
         cexp (T * circleMap 0 R θ) * (1 + circleMap 0 R θ ^ 2 / (R : ℂ) ^ 2) /
           circleMap 0 R θ)) / (2 * π * Complex.I)‖ ≤ M / R := by
   have hM : 0 ≤ M := (norm_nonneg (f 0)).trans (hbound 0 ⟨le_rfl, hT⟩)
-  have hi : ‖∫ θ in (π / 2)..(3 * π / 2), circleMap 0 R θ * Complex.I *
-      ((∫ t in (0 : ℝ)..T, f t * cexp (-circleMap 0 R θ * t)) *
-        cexp (T * circleMap 0 R θ) * (1 + circleMap 0 R θ ^ 2 / (R : ℂ) ^ 2) /
-          circleMap 0 R θ)‖ ≤ (R * (2 * M / R ^ 2)) * π := by
-    refine (intervalIntegral.norm_integral_le_of_norm_le_const
-      (C := R * (2 * M / R ^ 2)) ?_).trans_eq ?_
-    · intro θ hθ
-      rw [uIoc_of_le (by linarith [Real.pi_pos] : π / 2 ≤ 3 * π / 2)] at hθ
-      have hz : ‖circleMap 0 R θ‖ = R := by simp [abs_of_pos hR]
-      have hre : (circleMap 0 R θ).re ≤ 0 := by
-        rw [circleMap_zero_re]
-        exact mul_nonpos_of_nonneg_of_nonpos hR.le
-          (Real.cos_nonpos_of_pi_div_two_le_of_le (by linarith [hθ.1]) (by linarith [hθ.2]))
-      by_cases hzero : (circleMap 0 R θ).re = 0
-      · rw [mul_kernel_eq_zero_of_re_eq_zero hR hz hzero, mul_zero, norm_zero]
-        positivity
-      · rw [norm_mul, norm_mul, hz, Complex.norm_I, mul_one]
-        gcongr
-        exact norm_intervalIntegral_mul_kernel_le_of_re_neg hbound hz hR
-          (lt_of_le_of_ne hre hzero) hT
-    · have hlength : (3 * π / 2) - (π / 2) = π := by ring
-      rw [hlength, abs_of_pos Real.pi_pos]
-  rw [norm_div, norm_mul, norm_mul]
-  simp only [Complex.norm_I, mul_one, Complex.norm_ofNat, Complex.norm_real, Real.norm_eq_abs,
-    abs_of_pos Real.pi_pos]
-  calc _ ≤ R * (2 * M / R ^ 2) * π / (2 * π) := by gcongr
-       _ = M / R := by field_simp
+  apply norm_integral_semicircle_mul_kernel_le
+    (w := fun z ↦ ∫ t in (0 : ℝ)..T, f t * cexp (-z * t)) hM hR (by ring)
+  intro θ hθ hzero
+  have hz : ‖circleMap 0 R θ‖ = R := by simp [abs_of_pos hR]
+  have hre : (circleMap 0 R θ).re ≤ 0 := by
+    rw [circleMap_zero_re]
+    exact mul_nonpos_of_nonneg_of_nonpos hR.le
+      (Real.cos_nonpos_of_pi_div_two_le_of_le (by linarith [hθ.1]) (by linarith [hθ.2]))
+  exact norm_intervalIntegral_mul_kernel_le_of_re_neg hbound hz hR
+    (lt_of_le_of_ne hre hzero) hT
 
 /-- Cauchy's formula for the truncated transform, split into the counterclockwise right
 and left semicircles and normalized by `2πi`. Both arcs are traversed in increasing angle. -/
@@ -181,9 +177,8 @@ theorem integral_semicircles_intervalIntegral_mul_kernel
     ((∫ t in (0 : ℝ)..T, f t * cexp (-circleMap 0 R θ * t)) *
       cexp (T * circleMap 0 R θ) * (1 + circleMap 0 R θ ^ 2 / (R : ℂ) ^ 2) /
         circleMap 0 R θ)
-  have hI (a b : ℝ) : IntervalIntegrable H volume a b := by
-    exact ContinuousOn.intervalIntegrable <| continuousOn_semicircle_integrand hR
-      (differentiable_intervalIntegral_mul_cexp_neg_mul hf).continuous.continuousOn
+  have hI (a b : ℝ) : IntervalIntegrable H volume a b :=
+    intervalIntegrable_circleMap_intervalIntegral_mul_kernel hf hR
   have hp : Function.Periodic H (2 * π) := by
     intro θ
     simp only [H, (periodic_circleMap 0 R) θ]
