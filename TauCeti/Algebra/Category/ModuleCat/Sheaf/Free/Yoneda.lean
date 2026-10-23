@@ -18,10 +18,10 @@ For a sheaf of rings `R`, the sheafification of the free `R`-module presheaf on 
 representable represents sections of module sheaves. A monomorphism of representables
 induces a monomorphism between these free module sheaves. In particular, on the site
 of open subsets, these monomorphisms allow injective module sheaves to extend sections.
-Since morphisms out of these free module sheaves are local sections, and a morphism of
-sheaves of modules is determined by its action on local sections, they form a separating
-(`SheafOfModules.isSeparating_freeYonedaFunctor`) and detecting family of the category of
-sheaves of modules. Their flatness over a sheaf of commutative rings is in
+Since sheafification is left adjoint to the faithful inclusion of sheaves of modules into
+presheaves of modules, it carries Mathlib's separating family of free presheaves of modules on
+representables to a separating (`SheafOfModules.isSeparating_freeYonedaFunctor`) and detecting
+family of the category of sheaves of modules. Their flatness over a sheaf of commutative rings is in
 `TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Flat`.
 
 The construction combines Mathlib's `PresheafOfModules.freeYonedaEquiv` with
@@ -117,10 +117,12 @@ lemma freeYonedaEquiv_naturality {U V : C} (i : U ⟶ V) (M : SheafOfModules.{v}
 object are equal, since such morphisms are exactly the local sections of `M`. -/
 lemma isSeparating_freeYonedaFunctor :
     ObjectProperty.IsSeparating (.ofObj (freeYonedaFunctor R).obj) := by
-  intro M N f g h
-  ext X m
-  obtain ⟨s, rfl⟩ := (freeYonedaEquiv R X.unop M).surjective m
-  rw [← freeYonedaEquiv_comp, ← freeYonedaEquiv_comp, h _ ⟨X.unop⟩ s]
+  -- Sheafification is left adjoint to a faithful functor, so it carries Mathlib's separating
+  -- family of free presheaves of modules to a separating family.
+  refine ((PresheafOfModules.freeYoneda.isSeparating R.obj).strictMap_leftAdjoint
+    (PresheafOfModules.sheafificationAdjunction (𝟙 R.obj))).of_le ?_
+  rintro _ ⟨_, ⟨U⟩⟩
+  exact ⟨U⟩
 
 end
 

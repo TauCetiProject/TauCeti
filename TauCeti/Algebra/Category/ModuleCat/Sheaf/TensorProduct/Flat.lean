@@ -22,7 +22,9 @@ and sheafification is exact. Hence if tensoring with a presheaf of modules `P` p
 monomorphisms, so does tensoring with its sheafification
 (`PresheafOfModules.preservesMonomorphisms_tensorLeft_sheafification_obj`). Tensoring with a sheaf
 of modules is right exact, since it has a right adjoint, so preserving monomorphisms already makes
-it exact.
+it exact (`SheafOfModules.preservesFiniteLimits_tensorLeft_of_preservesMonomorphisms`).
+Hence the sheafification of a sectionwise flat presheaf of modules is flat
+(`PresheafOfModulesOfCommRing.preservesFiniteLimits_tensorLeft_sheafification_obj_of_flat`).
 
 Applied to the free presheaf of modules on a representable presheaf, which is sectionwise free,
 this shows that the free module sheaf `SheafOfModules.freeYonedaFunctor R U` on an object `U` of
@@ -44,14 +46,15 @@ open CategoryTheory Limits MonoidalCategory
 
 universe u
 
-namespace PresheafOfModules
-
 variable {C : Type u} [SmallCategory C] {J : GrothendieckTopology C}
 variable [J.HasSheafCompose (forget₂ CommRingCat RingCat.{u})]
 variable [HasSheafify J AddCommGrpCat.{u}] [J.WEqualsLocallyBijective AddCommGrpCat.{u}]
 variable {R : Sheaf J CommRingCat.{u}}
 
-open TauCeti.SheafOfModules in
+open TauCeti.SheafOfModules
+
+namespace PresheafOfModules
+
 /-- If tensoring with a presheaf of modules `P` preserves monomorphisms, then so does tensoring
 with its sheafification. -/
 lemma preservesMonomorphisms_tensorLeft_sheafification_obj
@@ -81,28 +84,44 @@ end PresheafOfModules
 
 namespace SheafOfModules
 
-variable {C : Type u} [SmallCategory C] {J : GrothendieckTopology C}
-variable [J.HasSheafCompose (forget₂ CommRingCat RingCat.{u})]
-variable [HasSheafify J AddCommGrpCat.{u}] [J.WEqualsLocallyBijective AddCommGrpCat.{u}]
-variable {R : Sheaf J CommRingCat.{u}}
+/-- A sheaf of modules `M` is flat as soon as tensoring with it preserves monomorphisms: tensoring
+is right exact, having a right adjoint, so preserving monomorphisms makes it exact. -/
+lemma preservesFiniteLimits_tensorLeft_of_preservesMonomorphisms
+    (M : SheafOfModules.{u} (ringCatSheaf R)) [(tensorLeft M).PreservesMonomorphisms] :
+    PreservesFiniteLimits (tensorLeft M) := by
+  have := Functor.preservesHomology_of_preservesMonos_and_cokernels (tensorLeft M)
+  exact Functor.preservesFiniteLimits_of_preservesHomology _
 
-open TauCeti.SheafOfModules
+end SheafOfModules
+
+namespace PresheafOfModulesOfCommRing
+
+/-- The sheafification of a presheaf of modules whose modules of sections are all flat is a flat
+sheaf of modules: tensoring with it is exact. -/
+instance preservesFiniteLimits_tensorLeft_sheafification_obj_of_flat
+    (P : PresheafOfModulesOfCommRing.{u} R.obj) [∀ X, Module.Flat (R.obj.obj X) (P.obj X)] :
+    PreservesFiniteLimits (tensorLeft
+      ((PresheafOfModules.sheafification.{u} (𝟙 (ringCatSheaf R).obj)).obj P)) := by
+  -- The underlying presheaf of rings of `ringCatSheaf R` is `R.obj ⋙ forget₂ _ _` by definition,
+  -- so presheaves of modules over it are `PresheafOfModulesOfCommRing R.obj`, with the same
+  -- sectionwise tensor product.
+  have : (tensorLeft (C := PresheafOfModules.{u} (ringCatSheaf R).obj) P).PreservesMonomorphisms :=
+    inferInstanceAs (tensorLeft P).PreservesMonomorphisms
+  have := PresheafOfModules.preservesMonomorphisms_tensorLeft_sheafification_obj (R := R) P
+  exact SheafOfModules.preservesFiniteLimits_tensorLeft_of_preservesMonomorphisms _
+
+end PresheafOfModulesOfCommRing
+
+namespace SheafOfModules
 
 /-- The free module sheaf on an object `U` of the site is flat: tensoring with it is exact. -/
 instance preservesFiniteLimits_tensorLeft_freeYonedaFunctor_obj (U : C) :
     PreservesFiniteLimits (tensorLeft ((freeYonedaFunctor (ringCatSheaf R)).obj U)) := by
-  let P : PresheafOfModules.{u} (ringCatSheaf R).obj :=
-    (PresheafOfModules.free (ringCatSheaf R).obj).obj (yoneda.obj U)
-  -- The free presheaf `P` is sectionwise free over the commutative rings of sections of `R`.
-  have : (tensorLeft P).PreservesMonomorphisms :=
-    inferInstanceAs ((tensorLeft (C := PresheafOfModulesOfCommRing.{u} R.obj)
-      (PresheafOfModules.freeObj (yoneda.obj U))).PreservesMonomorphisms)
-  have : (tensorLeft ((freeYonedaFunctor (ringCatSheaf R)).obj U)).PreservesMonomorphisms := by
-    rw [freeYonedaFunctor_obj]
-    exact PresheafOfModules.preservesMonomorphisms_tensorLeft_sheafification_obj P
-  -- Tensoring is right exact, having a right adjoint, so preserving monomorphisms makes it exact.
-  have := Functor.preservesHomology_of_preservesMonos_and_cokernels
-    (tensorLeft ((freeYonedaFunctor (ringCatSheaf R)).obj U))
-  exact Functor.preservesFiniteLimits_of_preservesHomology _
+  -- `freeYonedaFunctor` sheafifies the free presheaf of modules `freeObj (yoneda.obj U)`, which
+  -- is sectionwise free over the rings of sections of `R`; it is read over `R.obj ⋙ forget₂ _ _`,
+  -- the underlying presheaf of rings of `ringCatSheaf R` by definition.
+  rw [freeYonedaFunctor_obj, PresheafOfModules.free_obj]
+  exact PresheafOfModulesOfCommRing.preservesFiniteLimits_tensorLeft_sheafification_obj_of_flat
+    (PresheafOfModules.freeObj (yoneda.obj U))
 
 end SheafOfModules

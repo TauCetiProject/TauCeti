@@ -43,14 +43,21 @@ instance preservesMonomorphisms_tensorLeft_of_flat (P : PresheafOfModulesOfCommR
     [∀ X, Module.Flat (R.obj X) (P.obj X)] : (tensorLeft P).PreservesMonomorphisms where
   preserves {_ _} f _ := by
     refine PresheafOfModules.mono_of_injective fun X ↦ ?_
-    -- The component of `P ◁ f` at `X` is the tensor product with `P.obj X` of that of `f`.
+    -- `f.app' X` is the abbreviation `f.app X`, read as a morphism of `R.obj X`-modules.
     have : Mono (f.app' X) := inferInstanceAs (Mono (f.app X))
-    exact (ModuleCat.mono_iff_injective _).1 ((tensorLeft (P.obj X)).map_mono (f.app' X))
+    rw [← ModuleCat.mono_iff_injective]
+    change Mono ((P ◁ f).app' X)
+    -- The component of `P ◁ f` at `X` is the tensor product with `P.obj X` of that of `f`.
+    rw [PresheafOfModulesOfCommRing.whiskerLeft_app]
+    exact (tensorLeft (P.obj X)).map_mono (f.app' X)
 
 /-- The modules of sections of a free presheaf of modules are free, hence flat. -/
 instance flat_freeObj_obj (F : Cᵒᵖ ⥤ Type u) (X : Cᵒᵖ) :
     Module.Flat (R.obj X)
-      (PresheafOfModulesOfCommRing.obj (PresheafOfModules.freeObj (R := R ⋙ forget₂ _ _) F) X) :=
-  inferInstanceAs (Module.Flat (R.obj X) (F.obj X →₀ R.obj X))
+      (PresheafOfModulesOfCommRing.obj (PresheafOfModules.freeObj (R := R ⋙ forget₂ _ _) F) X) := by
+  dsimp only [PresheafOfModulesOfCommRing.obj, PresheafOfModules.freeObj_obj]
+  -- Mathlib implements the free module `(ModuleCat.free (R.obj X)).obj (F.obj X)` as
+  -- `F.obj X →₀ R.obj X`, which is free, hence flat.
+  exact inferInstanceAs (Module.Flat (R.obj X) (F.obj X →₀ R.obj X))
 
 end PresheafOfModulesOfCommRing
