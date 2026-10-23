@@ -333,6 +333,31 @@ theorem isJapanese_of_isLocalization [IsDomain R] [IsJapanese R] (M : Submonoid 
     have := IsJapanese.finite_integralClosure (R := R) (FractionRing S) L
     exact finite_integralClosure_of_isLocalization M S L
 
+variable (K : Type*) [Field K] [Algebra R K] [IsFractionRing R K] in
+/-- For a nonzero `f` in a domain `R`, the localization `R_f` embeds in a fraction field `K` of
+`R`: the lift of `algebraMap R K`, which inverts the powers of `f` because they are nonzero. -/
+private noncomputable abbrev awayAlgebra [IsDomain R] {f : R} (hf : f ≠ 0) :
+    Algebra (Localization.Away f) K :=
+  IsLocalization.localizationAlgebraOfSubmonoidLe _ _ _ _
+    (powers_le_nonZeroDivisors_of_noZeroDivisors hf)
+
+variable (K : Type*) [Field K] [Algebra R K] [IsFractionRing R K] in
+/-- The embedding `awayAlgebra` of `R_f` in `K` extends `algebraMap R K`. -/
+private theorem away_isScalarTower [IsDomain R] {f : R} (hf : f ≠ 0) :
+    letI := awayAlgebra K hf
+    IsScalarTower R (Localization.Away f) K :=
+  IsLocalization.localization_isScalarTower_of_submonoid_le _ _ _ _ _
+
+variable (K : Type*) [Field K] [Algebra R K] [IsFractionRing R K] in
+/-- Along `awayAlgebra`, a fraction field `K` of `R` is a fraction field of `R_f`. -/
+private theorem away_isFractionRing [IsDomain R] {f : R} (hf : f ≠ 0) :
+    letI := awayAlgebra K hf
+    IsFractionRing (Localization.Away f) K :=
+  letI := awayAlgebra K hf
+  haveI := away_isScalarTower K hf
+  IsFractionRing.isFractionRing_of_isLocalization (.powers f) _ _
+    (powers_le_nonZeroDivisors_of_noZeroDivisors hf)
+
 /-- **Being N-1 is local on `Spec R`.** If the elements of `t` generate the unit ideal of a
 domain `R` and the localization `R_f` is N-1 for every nonzero `f ∈ t`, then `R` is N-1. Stacks,
 Lemma 10.161.6 (032J). -/
@@ -340,14 +365,9 @@ theorem IsN1.of_span_eq_top [IsDomain R] {t : Set R} (ht : Ideal.span t = ⊤)
     (H : ∀ f ∈ t, f ≠ 0 → IsN1 (Localization.Away f)) : IsN1 R := by
   -- Only the nonzero `f ∈ t` matter, and for those `R_f` is a subring of `FractionRing R`.
   let K := FractionRing R
-  let (f : ↥(t \ {0})) : Algebra (Localization.Away f.1) K :=
-    IsLocalization.localizationAlgebraOfSubmonoidLe _ _ _ _
-      (powers_le_nonZeroDivisors_of_noZeroDivisors f.2.2)
-  have (f : ↥(t \ {0})) : IsScalarTower R (Localization.Away f.1) K :=
-    IsLocalization.localization_isScalarTower_of_submonoid_le _ _ _ _ _
-  have (f : ↥(t \ {0})) : IsFractionRing (Localization.Away f.1) K :=
-    IsFractionRing.isFractionRing_of_isLocalization (.powers f.1) _ _
-      (powers_le_nonZeroDivisors_of_noZeroDivisors f.2.2)
+  let (f : ↥(t \ {0})) := awayAlgebra K f.2.2
+  have (f : ↥(t \ {0})) := away_isScalarTower K f.2.2
+  have (f : ↥(t \ {0})) := away_isFractionRing K f.2.2
   have (f : ↥(t \ {0})) := H f.1 f.2.1 f.2.2
   exact ⟨finite_integralClosure_of_span_eq_top K (Ideal.span_sdiff_singleton_zero.trans ht)
     fun f ↦ IsN1.finite_integralClosure (R := Localization.Away f.1) K⟩
@@ -363,14 +383,9 @@ theorem IsJapanese.of_span_eq_top [IsDomain R] {t : Set R} (ht : Ideal.span t = 
   -- Only the nonzero `f ∈ t` matter, and for those `R_f` is a subring of `FractionRing R`, whose
   -- finite extension `L` is a finite extension of the fraction field of `R_f`.
   let K := FractionRing R
-  let (f : ↥(t \ {0})) : Algebra (Localization.Away f.1) K :=
-    IsLocalization.localizationAlgebraOfSubmonoidLe _ _ _ _
-      (powers_le_nonZeroDivisors_of_noZeroDivisors f.2.2)
-  have (f : ↥(t \ {0})) : IsScalarTower R (Localization.Away f.1) K :=
-    IsLocalization.localization_isScalarTower_of_submonoid_le _ _ _ _ _
-  have (f : ↥(t \ {0})) : IsFractionRing (Localization.Away f.1) K :=
-    IsFractionRing.isFractionRing_of_isLocalization (.powers f.1) _ _
-      (powers_le_nonZeroDivisors_of_noZeroDivisors f.2.2)
+  let (f : ↥(t \ {0})) := awayAlgebra K f.2.2
+  have (f : ↥(t \ {0})) := away_isScalarTower K f.2.2
+  have (f : ↥(t \ {0})) := away_isFractionRing K f.2.2
   let (f : ↥(t \ {0})) : Algebra (Localization.Away f.1) L :=
     ((algebraMap K L).comp (algebraMap (Localization.Away f.1) K)).toAlgebra
   have (f : ↥(t \ {0})) : IsScalarTower (Localization.Away f.1) K L := .of_algebraMap_eq' rfl
