@@ -31,7 +31,7 @@ The argument has three steps.
 * **Polynomial homotopy invariance.** For an idempotent `e(X)` with coefficients in `A`, the
   derivative of `t ↦ φ(e(t), …, e(t))` is a sum of such infinitesimal terms, because
   `e′ = e e′ + e′ e`. By the zero-derivative principle of
-  `MultilinearMap.apply_eval_algebraMap_eq_of_sum_update_derivative_eq_zero`, it is constant.
+  `MultilinearMap.apply_eval_algebraMap_eq_of_linearDeriv_eq_zero`, it is constant.
 * **Conjugation invariance.** For `N² = 0` the path `t ↦ (1 + tN) e (1 - tN)` joins `e` to
   `(1 + N) e (1 - N)`. In `2 × 2` matrices, conjugating the corner `e ⊕ 0` by
   `!![0, u; -u⁻¹, 0]`, a product of three such unipotents, gives the corner `0 ⊕ u⁻¹ e u`; matrix
@@ -75,11 +75,12 @@ theorem apply_const_eval_algebraMap_eq {n : ℕ} (hn : Even n)
     {φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M} (hφ : φ ∈ cyclicCochains R A M n)
     (hbφ : hochschildCoboundary R A M n φ = 0) {e : A[X]} (he : IsIdempotentElem e) (s t : R) :
     φ (fun _ ↦ e.eval (algebraMap R A s)) = φ (fun _ ↦ e.eval (algebraMap R A t)) := by
-  refine φ.apply_eval_algebraMap_eq_of_sum_update_derivative_eq_zero (fun _ ↦ e) (fun r ↦ ?_) s t
+  refine φ.apply_eval_algebraMap_eq_of_linearDeriv_eq_zero (fun _ ↦ e) (fun r ↦ ?_) s t
   -- Differentiating `e = e * e` shows that `e′` is tangent to the idempotents at `e`.
   have hd : derivative e = derivative e * e + e * derivative e := by
     conv_lhs => rw [← he.eq]
     exact derivative_mul
+  rw [MultilinearMap.linearDeriv_apply]
   refine Finset.sum_eq_zero fun k _ ↦ ?_
   -- Evaluation at the central element `algebraMap R A r` is a ring homomorphism.
   simp only [← evalAlgebraMapRingHom_apply A r]

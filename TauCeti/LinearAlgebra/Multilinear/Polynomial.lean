@@ -11,6 +11,7 @@ import Mathlib.Algebra.CharZero.Infinite
 import Mathlib.Algebra.Polynomial.Roots
 import Mathlib.LinearAlgebra.Dual.Lemmas
 import TauCeti.Algebra.Polynomial.Derivative
+import TauCeti.Algebra.Polynomial.Eval.AlgebraMap
 
 /-!
 # Multilinear maps along polynomial paths
@@ -20,17 +21,18 @@ Let `A` be an algebra over a field `R` of characteristic zero, possibly noncommu
 polynomial path `t ↦ (p l)(t)` in each argument, where `t ∈ R` is evaluated through the central
 embedding `algebraMap R A`. Along such paths `t ↦ φ((p l)(t))` is a polynomial function of `t`,
 and its derivative is given by the Leibniz rule
-`∑ₖ φ((p 0)(t), …, (p k)′(t), …)`.
+`∑ₖ φ((p 0)(t), …, (p k)′(t), …)`, that is, by `MultilinearMap.linearDeriv` at `(p l)(t)` in the
+direction `(p l)′(t)`.
 
-This file proves the resulting **zero-derivative principle**: if the Leibniz sum vanishes for every
+This file proves the resulting **zero-derivative principle**: if this derivative vanishes for every
 `t`, then `φ((p l)(t))` does not depend on `t`. It is the algebraic form of homotopy invariance
 used for multilinear invariants evaluated along polynomial families, such as the pairing of cyclic
 cocycles with polynomial paths of idempotents.
 
 ## Main results
 
-* `MultilinearMap.apply_eval_algebraMap_eq_of_sum_update_derivative_eq_zero`: a multilinear map
-  is constant along polynomial paths whose Leibniz derivative vanishes identically.
+* `MultilinearMap.apply_eval_algebraMap_eq_of_linearDeriv_eq_zero`: a multilinear map is constant
+  along polynomial paths whose Leibniz derivative vanishes identically.
 -/
 
 public section
@@ -43,12 +45,13 @@ variable {R A M ι : Type*} [Fintype ι] [DecidableEq ι] [Field R] [CharZero R]
   [Semiring A] [Algebra R A] [AddCommGroup M] [Module R M]
 
 /-- **Zero-derivative principle for multilinear maps along polynomial paths.** If the Leibniz
-derivative `∑ₖ φ((p 0)(t), …, (p k)′(t), …)` of `t ↦ φ((p l)(t))` vanishes at every scalar `t`,
-then `φ((p l)(t))` takes the same value at all scalars. -/
-theorem apply_eval_algebraMap_eq_of_sum_update_derivative_eq_zero
+derivative `φ.linearDeriv ((p l)(t)) ((p l)′(t)) = ∑ₖ φ((p 0)(t), …, (p k)′(t), …)` of
+`t ↦ φ((p l)(t))` vanishes at every scalar `t`, then `φ((p l)(t))` takes the same value at all
+scalars. -/
+theorem apply_eval_algebraMap_eq_of_linearDeriv_eq_zero
     (φ : MultilinearMap R (fun _ : ι ↦ A) M) (p : ι → A[X])
-    (h : ∀ t : R, ∑ k, φ (Function.update (fun l ↦ (p l).eval (algebraMap R A t)) k
-      ((p k).derivative.eval (algebraMap R A t))) = 0) (s t : R) :
+    (h : ∀ t : R, φ.linearDeriv (fun l ↦ (p l).eval (algebraMap R A t))
+      (fun l ↦ (p l).derivative.eval (algebraMap R A t)) = 0) (s t : R) :
     φ (fun l ↦ (p l).eval (algebraMap R A s)) = φ (fun l ↦ (p l).eval (algebraMap R A t)) := by
   let S := Fintype.piFinset fun l ↦ Finset.range ((p l).natDegree + 1)
   rw [← sub_eq_zero, ← Module.forall_dual_apply_eq_zero_iff R]
@@ -62,8 +65,9 @@ theorem apply_eval_algebraMap_eq_of_sum_update_derivative_eq_zero
       eval_C, eval_prod, eval_pow, eval_X]
     exact Finset.sum_congr rfl fun σ _ ↦ mul_comm _ _
   -- Its derivative is the Leibniz sum, so it vanishes at every scalar.
-  have hP' (r : R) : P.derivative.eval r = ℓ (∑ k, φ (Function.update
-      (fun l ↦ (p l).eval (algebraMap R A r)) k ((p k).derivative.eval (algebraMap R A r)))) := by
+  have hP' (r : R) : P.derivative.eval r = ℓ (φ.linearDeriv (fun l ↦ (p l).eval (algebraMap R A r))
+      (fun l ↦ (p l).derivative.eval (algebraMap R A r))) := by
+    rw [linearDeriv_apply]
     have hupd (k : ι) : Function.update (fun l ↦ (p l).eval (algebraMap R A r)) k
         ((p k).derivative.eval (algebraMap R A r)) = fun l ↦
           ∑ i ∈ Finset.range ((p l).natDegree + 1),

@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Polynomial.Derivation
 public import Mathlib.Algebra.Polynomial.Reverse
 import Mathlib.Algebra.Polynomial.Eval.Degree
+import TauCeti.Algebra.Polynomial.Eval.AlgebraMap
 
 /-!
 # Polynomial derivatives
@@ -20,7 +21,7 @@ The derivation `Polynomial.derivative'` has `Polynomial.derivative` as its under
 and every scalar multiple of it is locally nilpotent.
 
 For a polynomial `p` with coefficients in an `R`-algebra `S`, possibly noncommutative, evaluating
-`p` or `p′` at the central element `algebraMap R S t` expands as a sum of the coefficients of `p`
+`p′` at the central element `algebraMap R S t` expands as a sum of the coefficients of `p`
 weighted by scalars depending on `t`.
 
 A coefficient map can lower the degree of a polynomial, and in positive characteristic it can
@@ -96,14 +97,6 @@ theorem _root_.Polynomial.derivative_eval_one_of_reflect_eq [CommRing R] {p : R[
 section AlgebraMap
 
 variable [CommSemiring R] [Semiring S] [Algebra R S]
-
-/-- Evaluating a polynomial at the image of a scalar `t` combines its coefficients with the powers
-of `t`. -/
-theorem _root_.Polynomial.eval_algebraMap_eq_sum_range (p : S[X]) (t : R) :
-    p.eval (algebraMap R S t) = ∑ i ∈ Finset.range (p.natDegree + 1), t ^ i • p.coeff i := by
-  rw [eval_eq_sum_range]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [← map_pow, Algebra.smul_def, Algebra.commutes]
 
 /-- Evaluating the derivative of a polynomial at the image of a scalar `t`, with the same range of
 coefficients as `Polynomial.eval_algebraMap_eq_sum_range`. -/
