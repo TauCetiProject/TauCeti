@@ -33,6 +33,9 @@ rational function field.
   `TauCeti.Place.ord_adicOfIrreducible_X` and its two `simp` specializations spell this out
   for `X`, and `TauCeti.Place.ord_adicOfIrreducible_X_sub_C_self` and
   `TauCeti.Place.ord_adicOfIrreducible_X_sub_C_of_not_associated` for `X - a`.
+* `TauCeti.Place.ord_X_eq_zero_of_ne` and `TauCeti.Place.ord_X_sub_C_eq_zero_of_ne`: `X` is a
+  unit at every place other than `X = 0` and `∞`, and `X - a` at every place other than `X = a`
+  and `∞`.
 * `TauCeti.Place.valuation_ofIrreducible_le_one_iff` and
   `TauCeti.Place.residue_adicOfIrreducible_eq_zero_iff`: regularity and vanishing in the residue
   field are detected by the denominator and numerator respectively.
@@ -145,6 +148,24 @@ theorem ord_adicOfIrreducible_X_sub_C_of_not_associated {q : k[X]} (hq : Irreduc
   classical
   rw [← RatFunc.algebraMap_X, ← RatFunc.algebraMap_C, ← map_sub,
     ord_adicOfIrreducible_algebraMap_irreducible hq (irreducible_X_sub_C a), ite_eq_right h]
+
+/-- `X` has order zero at every place of `k(X)` other than `X = 0` and `∞`. -/
+theorem ord_X_eq_zero_of_ne {P : Place k (RatFunc k)}
+    (hP0 : P ≠ adicOfIrreducible (irreducible_X (R := k))) (hPinf : P ≠ infty k) :
+    P.ord (RatFunc.X : RatFunc k) = 0 := by
+  rcases eq_infty_or_exists_eq_adicOfIrreducible P with rfl | ⟨q, hq, rfl⟩
+  · exact absurd rfl hPinf
+  · exact ord_adicOfIrreducible_X_of_not_associated hq fun h ↦
+      hP0 ((adicOfIrreducible_eq_adicOfIrreducible_iff hq irreducible_X).mpr h)
+
+/-- `X - a` has order zero at every place of `k(X)` other than `X = a` and `∞`. -/
+theorem ord_X_sub_C_eq_zero_of_ne (a : k) {P : Place k (RatFunc k)}
+    (hPa : P ≠ adicOfIrreducible (irreducible_X_sub_C a)) (hPinf : P ≠ infty k) :
+    P.ord (RatFunc.X - RatFunc.C a) = 0 := by
+  rcases eq_infty_or_exists_eq_adicOfIrreducible P with rfl | ⟨q, hq, rfl⟩
+  · exact absurd rfl hPinf
+  · exact ord_adicOfIrreducible_X_sub_C_of_not_associated hq fun h ↦
+      hPa ((adicOfIrreducible_eq_adicOfIrreducible_iff hq (irreducible_X_sub_C a)).mpr h)
 
 /-- The order of a nonzero rational function at the finite place associated to `q` is the
 multiplicity of `q` in its numerator minus its multiplicity in its denominator. -/
