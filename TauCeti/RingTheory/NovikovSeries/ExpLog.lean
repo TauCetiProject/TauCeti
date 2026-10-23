@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.NovikovSeries.TopologicalRing
+public import TauCeti.RingTheory.PowerSeries.Evaluation
 public import Mathlib.Analysis.Normed.Algebra.Exponential
 public import Mathlib.Analysis.Normed.Algebra.Logarithm
 public import Mathlib.RingTheory.PowerSeries.Evaluation
@@ -110,10 +111,6 @@ private theorem aeval_eq_aeval_subst (ha : a ∈ posIdeal K N) (hb : b ∈ posId
   exact (MvPowerSeries.eval₂_subst (HasSubst.of_constantCoeff_zero' hg).const
     (hasEval (hasEval_of_mem_posIdeal ha)) f).symm
 
-private theorem aeval_X_of_mem_posIdeal (ha : a ∈ posIdeal K N) :
-    PowerSeries.aeval (R := K) (hasEval_of_mem_posIdeal ha) X = a := by
-  rw [← Polynomial.coe_X, aeval_coe, Polynomial.aeval_X]
-
 end Evaluation
 
 variable [Algebra ℚ K]
@@ -191,7 +188,8 @@ theorem exp_log (hu : u - 1 ∈ posIdeal K N) : NormedSpace.exp (NormedSpace.log
   let : UniformSpace K := ⊥
   rw [exp_eq_aeval (log_mem_posIdeal hu),
     aeval_eq_aeval_subst hu (log_mem_posIdeal hu) constantCoeff_log (log_eq_aeval hu).symm,
-    subst_exp_log, map_add, map_one, aeval_X_of_mem_posIdeal hu, add_sub_cancel]
+    subst_exp_log, map_add, map_one, PowerSeries.aeval_X (hasEval_of_mem_posIdeal hu),
+    add_sub_cancel]
 
 /-- The logarithm of the exponential: `log (exp a) = a` when `a` lies in the positive ideal. -/
 theorem log_exp (ha : a ∈ posIdeal K N) : NormedSpace.log (NormedSpace.exp a) = a := by
@@ -199,7 +197,7 @@ theorem log_exp (ha : a ∈ posIdeal K N) : NormedSpace.log (NormedSpace.exp a) 
   rw [log_eq_aeval (exp_sub_one_mem_posIdeal ha),
     aeval_eq_aeval_subst ha (exp_sub_one_mem_posIdeal ha) (g := PowerSeries.exp K - 1)
       (by simp) (by rw [map_sub, map_one, exp_eq_aeval ha]),
-    subst_log_exp_sub_one, aeval_X_of_mem_posIdeal ha]
+    subst_log_exp_sub_one, PowerSeries.aeval_X (hasEval_of_mem_posIdeal ha)]
 
 /-- The exponential turns sums of series of the positive ideal into products. -/
 theorem exp_add (ha : a ∈ posIdeal K N) (hb : b ∈ posIdeal K N) :
