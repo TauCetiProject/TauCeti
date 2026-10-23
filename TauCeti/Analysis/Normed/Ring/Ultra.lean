@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Polynomial.AlgebraMap
 public import Mathlib.Analysis.Normed.Field.UnitBall
 public import Mathlib.Analysis.Normed.Ring.Ultra
 public import TauCeti.Algebra.Order.BigOperators.ProdSubProd
@@ -19,7 +18,6 @@ ball is an open subring. In an ultrametric normed ring, a finite product of elem
 `ε ≤ 1` of `1` is again within `ε` of `1`.
 
 Integer casts have norm at most `‖1‖`, without requiring the seminorm to be normalized.
-An integral polynomial maps the closed unit ball into itself when `‖1‖ = 1`.
 
 ## Main results
 
@@ -31,25 +29,9 @@ An integral polynomial maps the closed unit ball into itself when `‖1‖ = 1`.
   leaves the norm equal to one.
 * `TauCeti.norm_mul_sub_one_lt` and `TauCeti.norm_prod_sub_one_lt`
 * `TauCeti.norm_prod_sub_prod_le`: a uniform perturbation bound for finite products.
-* `Polynomial.norm_aeval_le_one`: an integral polynomial has norm at most one on the closed
-  unit ball.
 -/
 
 public section
-
-namespace Polynomial
-
-/-- An integral polynomial evaluated at a point of the closed unit ball of a non-archimedean
-seminormed ring with `‖1‖ = 1` has norm at most one. -/
-theorem norm_aeval_le_one {K : Type*} [SeminormedRing K] [NormOneClass K] [IsUltrametricDist K]
-    (p : ℤ[X]) {x : K} (hx : ‖x‖ ≤ 1) : ‖aeval x p‖ ≤ 1 := by
-  rw [aeval_eq_sum_range]
-  refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg zero_le_one fun i _ ↦ ?_
-  exact (IsUltrametricDist.norm_zsmul_le (x ^ i) (p.coeff i)).trans
-    ((norm_pow_le x i).trans (pow_le_one₀ (norm_nonneg _) hx))
-
-end Polynomial
-
 
 /-- Integer casts in an ultrametric seminormed ring have norm at most the norm of one. -/
 theorem IsUltrametricDist.norm_intCast_le_norm_one {R : Type*} [SeminormedRing R]

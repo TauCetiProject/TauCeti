@@ -9,7 +9,8 @@ public import TauCeti.Analysis.Normed.Ring.Basic
 public import Mathlib.Topology.MetricSpace.Ultra.Basic
 public import Mathlib.Topology.Algebra.InfiniteSum.Defs
 public import Mathlib.RingTheory.PowerSeries.Basic
-public import TauCeti.Analysis.Normed.Ring.Ultra
+public import TauCeti.Analysis.Polynomial.Ultra
+import TauCeti.Analysis.Normed.Ring.Ultra
 import TauCeti.Analysis.SpecificLimits.Normed
 import TauCeti.RingTheory.PowerSeries.EvalAt
 import Mathlib.Analysis.Normed.Ring.Lemmas
