@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.IntegralLattice.Localization.Operations
 public import TauCeti.NumberTheory.IntegralLattice.Localization.Unimodular
 public import TauCeti.LinearAlgebra.IntegralLattice.Signature
 public import Mathlib.Data.Nat.PrimeFin
 import Mathlib.Data.Int.Associated
+import TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic
 import TauCeti.NumberTheory.Padics.PadicIntegers
 
 /-!
@@ -87,6 +89,45 @@ theorem localIntegralForm_equivalent (h : L.SameGenus M) (p : ℕ) [Fact p.Prime
     (L.localIntegralForm p).Equivalent (M.localIntegralForm p) :=
   (sameGenus_iff L M).mp h |>.2 p
 
+/-- Lattices in the same genus have equal ranks. -/
+theorem finrank_eq (h : L.SameGenus M) : Module.finrank ℤ L = Module.finrank ℤ M :=
+  L.finrank_eq_of_signature_eq h.signature_eq
+
+/-- Lattices in the same genus have the same positive index. -/
+theorem sigPos_eq (h : L.SameGenus M) : L.sigPos = M.sigPos := by
+  have hsig := h.signature_eq
+  simp only [signature, Prod.mk.injEq] at hsig
+  exact hsig.1
+
+/-- Lattices in the same genus have the same null index. -/
+theorem sigNull_eq (h : L.SameGenus M) : L.sigNull = M.sigNull := by
+  have hsig := h.signature_eq
+  simp only [signature, Prod.mk.injEq] at hsig
+  exact hsig.2.1
+
+/-- Lattices in the same genus have the same negative index. -/
+theorem sigNeg_eq (h : L.SameGenus M) : L.sigNeg = M.sigNeg := by
+  have hsig := h.signature_eq
+  simp only [signature, Prod.mk.injEq] at hsig
+  exact hsig.2.2
+
+/-- Lattices in the same genus have isomorphic ambient spaces. -/
+theorem nonempty_linearEquiv (h : L.SameGenus M) : Nonempty (V ≃ₗ[ℚ] W) := by
+  have := L.finiteDimensional
+  have := M.finiteDimensional
+  refine FiniteDimensional.nonempty_linearEquiv_of_finrank_eq ?_
+  rw [← L.finrank_carrier, ← M.finrank_carrier, h.finrank_eq]
+
+/-- Positive definiteness is a property of the genus. -/
+theorem isPosDef_iff (h : L.SameGenus M) : L.IsPosDef ↔ M.IsPosDef := by
+  rw [M.isPosDef_iff_sigNull_eq_zero_and_sigNeg_eq_zero,
+    L.isPosDef_iff_sigNull_eq_zero_and_sigNeg_eq_zero, h.sigNull_eq, h.sigNeg_eq]
+
+/-- Negative definiteness is a property of the genus. -/
+theorem isNegDef_iff (h : L.SameGenus M) : L.IsNegDef ↔ M.IsNegDef := by
+  rw [M.isNegDef_iff_sigPos_eq_zero_and_sigNull_eq_zero,
+    L.isNegDef_iff_sigPos_eq_zero_and_sigNull_eq_zero, h.sigPos_eq, h.sigNull_eq]
+
 /-- Every integral lattice belongs to its own genus. -/
 @[refl, simp]
 theorem refl (L : IntegralLattice V) : L.SameGenus L :=
@@ -118,6 +159,19 @@ theorem determinant_eq (h : L.SameGenus M) : L.determinant = M.determinant := by
   rw [L.determinant_eq_neg_one_pow_sigNeg_mul_discriminant,
     M.determinant_eq_neg_one_pow_sigNeg_mul_discriminant, hneg, discriminant_def,
     discriminant_def, habs]
+
+/-- Scaling by a common nonzero integer preserves the genus relation. -/
+theorem smul {n : ℤ} (hn : n ≠ 0) (h : L.SameGenus M) : (n • L).SameGenus (n • M) := by
+  refine (sameGenus_iff _ _).mpr ⟨?_, fun p _ ↦ ?_⟩
+  · rcases hn.lt_or_gt with hneg | hpos
+    · rw [signature_smul_of_neg hneg, signature_smul_of_neg hneg, h.sigPos_eq, h.sigNull_eq,
+        h.sigNeg_eq]
+    · rw [signature_smul_of_pos hpos, signature_smul_of_pos hpos]
+      exact h.signature_eq
+  · rw [localIntegralForm_smul, localIntegralForm_smul]
+    exact (LinearMap.BilinForm.equivalent_smul_iff
+      (mem_nonZeroDivisors_of_ne_zero (by exact_mod_cast hn))).mpr
+      (h.localIntegralForm_equivalent p)
 
 /-- **Lattices in the same genus have isometric completed rational spaces**: at every prime `p`
 the quadratic spaces `ℚ_p ⊗[ℚ] V` and `ℚ_p ⊗[ℚ] W` are isometric, since the integral local

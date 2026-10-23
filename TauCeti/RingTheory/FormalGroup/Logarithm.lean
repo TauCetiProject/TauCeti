@@ -293,13 +293,10 @@ substituted: `log_F(F(f₀, f₁)) = log_F(f₀) + log_F(f₁)`. -/
 theorem subst_subst_toPowerSeries_log {σ : Type*} {f₀ f₁ : MvPowerSeries σ R}
     (h₀ : PowerSeries.HasSubst f₀) (h₁ : PowerSeries.HasSubst f₁) :
     PowerSeries.subst (subst ![f₀, f₁] F.toPowerSeries) F.log =
-      PowerSeries.subst f₀ F.log + PowerSeries.subst f₁ F.log := by
-  have hf : HasSubst ![f₀, f₁] := hasSubst_finTwo h₀ h₁
-  have := congrArg (subst ![f₀, f₁]) F.subst_toPowerSeries_log
-  rwa [subst_add hf, subst_powerSeriesSubst hf (PowerSeries.HasSubst.X _),
-    subst_powerSeriesSubst hf (PowerSeries.HasSubst.X _),
-    subst_powerSeriesSubst hf (PowerSeries.HasSubst.of_constantCoeff_zero F.zero_constantCoeff),
-    subst_X hf, subst_X hf] at this
+      PowerSeries.subst f₀ F.log + PowerSeries.subst f₁ F.log :=
+  powerSeriesSubst_subst_finTwo_eq_add
+    (PowerSeries.HasSubst.of_constantCoeff_zero F.zero_constantCoeff) F.subst_toPowerSeries_log
+    h₀ h₁
 
 /-- **The additive power series along `F` are the multiples of the logarithm**: a power series
 `g` satisfies `g(F(X, Y)) = g(X) + g(Y)` exactly when `g = c • log_F` for some `c : R`. -/
