@@ -25,11 +25,14 @@ with the homogeneous projections, while `DirectSum.isInternal_comap` and
 map whose range contains the homogeneous projections of its elements, with
 `DirectSum.map_decompose_restrict` computing the projections of the restricted decomposition.
 
-A third group is about maps compatible with a decomposition: if a linear map carries each
-summand of a spanning family into the corresponding member of an independent family, then its
-kernel is spanned by its homogeneous parts, `LinearMap.ker_eq_iSup_inf_of_map_le`. Conversely,
-`iSupIndep.map_of_ker_inf_iSup_le` shows that a linear map preserves independence when the
-part of its kernel in the span is spanned by its intersections with the summands.
+A third group is about maps compatible with a decomposition. Two linear maps agreeing on every
+member of a spanning family of submodules are equal, `LinearMap.ext_of_iSup_eq_top`; for an
+internal direct sum the spanning hypothesis is `DirectSum.IsInternal.submodule_iSup_eq_top`. If a
+linear map carries each summand of a spanning family into the corresponding member of an
+independent family, then its kernel is spanned by its homogeneous parts,
+`LinearMap.ker_eq_iSup_inf_of_map_le`. Conversely, `iSupIndep.map_of_ker_inf_iSup_le` shows that a
+linear map preserves independence when the part of its kernel in the span is spanned by its
+intersections with the summands.
 
 `DirectSum.IsInternal.iSup_fiber` collects an internal decomposition along the fibers of any map.
 
@@ -284,6 +287,17 @@ theorem DirectSum.isInternal_of_lof {R ι M : Type*} [Semiring R] [DecidableEq �
     exact (hF i x).symm
   rw [DirectSum.isInternal_iff_bijective_coeLinearMap, hcoe]
   exact F.bijective
+
+/-- Two semilinear maps that agree on every member of a family of submodules spanning the source
+are equal. -/
+theorem _root_.LinearMap.ext_of_iSup_eq_top {R R₂ ι M M₂ : Type*} [Semiring R] [Semiring R₂]
+    [AddCommMonoid M] [Module R M] [AddCommMonoid M₂] [Module R₂ M₂] {σ : R →+* R₂}
+    {A : ι → Submodule R M} (hA : ⨆ i, A i = ⊤) {f g : M →ₛₗ[σ] M₂}
+    (h : ∀ i, ∀ x ∈ A i, f x = g x) : f = g :=
+  LinearMap.ext_on (s := ⋃ i, (A i : Set M)) (by rw [← Submodule.iSup_eq_span, hA])
+    fun x hx ↦ by
+      obtain ⟨i, hi⟩ := Set.mem_iUnion.1 hx
+      exact h i x hi
 
 /-- **The kernel of a map compatible with a decomposition is spanned by its homogeneous parts.**
 If the submodules `A i` span the source, the submodules `A' i` are independent, and `g` carries
