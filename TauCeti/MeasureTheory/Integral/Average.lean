@@ -41,12 +41,13 @@ equivalence `e` pushes `μ` forward to `a • ν` with `0 < a < ∞`, then the a
 
 Hölder's inequality also bounds the average by the `Lᵖ` seminorm on the set, with the
 normalizing factor `μ s ^ (-1/p)`, and bounds its `q`-th power by `(μ s)⁻¹ ∫⁻_s ‖f‖ₑ ^ q`.
-These estimates require only finite positive measure of the set and `1 ≤ p < ∞` or `1 ≤ q`.
+These estimates hold for arbitrary sets, including zero or infinite measure, with only the
+exponent restrictions `1 ≤ p < ∞` or `1 ≤ q`.
 
 ## Main results
 
 * `TauCeti.enorm_setAverage_rpow_le`, `TauCeti.enorm_setAverage_le`: Hölder's bounds on an
-  average over a set of finite positive measure, in `∫⁻` and `Lᵖ` form.
+  average over an arbitrary set, in `∫⁻` and `Lᵖ` form.
 * `TauCeti.enorm_setAverage_le_setLAverage`: the extended norm of an average over a set is at most
   the average of the extended norm over the set.
 * `TauCeti.measure_mul_enorm_setAverage_le`: the measure of a set times the extended norm of the
