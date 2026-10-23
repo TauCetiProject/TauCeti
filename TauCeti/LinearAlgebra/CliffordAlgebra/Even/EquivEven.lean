@@ -59,6 +59,11 @@ variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] {Q : Quadratic
 
 namespace EquivEven
 
+/-- Left multiplication by `e₀` twice is negation, since `e₀² = -1`. -/
+@[simp]
+theorem e0_mul_e0_mul (y : CliffordAlgebra (Q' Q)) : e0 Q * (e0 Q * y) = -y := by
+  rw [← mul_assoc, e0_mul_e0, neg_one_mul]
+
 /-- The inclusion `M → M × R` sends the generator `ι Q m` to `v(m)`. -/
 theorem map_inl_ι (m : M) : map (Isometry.inl Q (-QuadraticMap.sq)) (ι Q m) = v Q m :=
   map_apply_ι _ m
@@ -110,18 +115,10 @@ theorem coe_toEven_involute (x : CliffordAlgebra Q) :
     (toEven Q (involute x) : CliffordAlgebra (Q' Q)) =
       -(e0 Q * toEven Q x * e0 Q) := by
   induction x using CliffordAlgebra.induction with
-  | algebraMap r =>
-    rw [AlgHom.commutes, AlgHom.commutes, Subalgebra.coe_algebraMap, ← Algebra.commutes,
-      mul_assoc, e0_mul_e0, mul_neg_one, neg_neg]
-  | ι m =>
-    rw [involute_ι, map_neg, Subalgebra.coe_neg, toEven_ι, neg_e0_mul_v, ← mul_assoc, e0_mul_e0,
-      neg_one_mul, neg_mul, neg_neg]
+  | algebraMap r => simp [Algebra.commutes r (e0 Q), mul_assoc]
+  | ι m => simp [toEven_ι, ← neg_e0_mul_v]
   | add x y hx hy => simp only [map_add, Subalgebra.coe_add, hx, hy, mul_add, add_mul, neg_add]
-  | mul x y hx hy =>
-    simp only [map_mul, Subalgebra.coe_mul, hx, hy]
-    rw [neg_mul_neg]
-    simp only [mul_assoc]
-    rw [← mul_assoc (e0 Q) (e0 Q), e0_mul_e0, neg_one_mul, mul_neg, mul_neg]
+  | mul x y hx hy => simp [hx, hy, mul_assoc]
 
 /-- **An even ordered product of vectors is sent to the same product in `Cℓ(M × R, Q')`.** -/
 theorem coe_toEven_prod_map_ι_of_even_length {l : List M} (hl : Even l.length) :
