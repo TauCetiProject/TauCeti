@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Localization.Away
+public import TauCeti.RingTheory.Localization.Away.Basic
 
 /-!
 # Affine blowup algebras
