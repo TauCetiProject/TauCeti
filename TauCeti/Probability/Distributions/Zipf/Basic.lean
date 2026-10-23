@@ -109,8 +109,14 @@ theorem zipfWeightReal_nonneg (hs : 1 < s) (k : ℕ) : 0 ≤ zipfWeightReal s k 
   positivity
 
 /-- For `s > 1`, the real-valued mass agrees with the `toReal` of the nonnegative mass. -/
+@[simp]
 theorem zipfWeight_toReal (hs : 1 < s) (k : ℕ) : (zipfWeight s k).toReal = zipfWeightReal s k := by
   rw [zipfWeight, ENNReal.toReal_ofReal (zipfWeightReal_nonneg hs k)]
+
+/-- For `s > 1`, the `ℝ≥0∞`-valued mass vanishes exactly at zero. -/
+@[simp]
+theorem zipfWeight_eq_zero_iff (hs : 1 < s) (k : ℕ) : zipfWeight s k = 0 ↔ k = 0 := by
+  rw [zipfWeight, ENNReal.ofReal_eq_zero, ← not_lt, zipfWeightReal_pos_iff hs, not_not]
 
 /-- For `s > 1`, the real Zipf masses sum to one: `∑ k ^ (-s) = ζ(s)`. -/
 theorem hasSum_zipfWeightReal (hs : 1 < s) : HasSum (zipfWeightReal s) 1 := by
@@ -130,6 +136,7 @@ theorem zipfMeasure_singleton (hs : 1 < s) (k : ℕ) : zipfMeasure s {k} = zipfW
   exact Measure.sum_smul_dirac_singleton
 
 /-- The real singleton mass of the Zipf law for `s > 1`. -/
+@[simp]
 theorem zipfMeasure_real_singleton (hs : 1 < s) (k : ℕ) :
     (zipfMeasure s).real {k} = zipfWeightReal s k := by
   rw [measureReal_def, zipfMeasure_singleton hs, zipfWeight_toReal hs]
