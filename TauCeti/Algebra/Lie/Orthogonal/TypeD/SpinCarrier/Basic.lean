@@ -559,10 +559,14 @@ theorem weightTorus_conj_rootSubgroup (k : Fin n ⊕ Fin n) (A : Type) [CommRing
               (SplitTorus.schemePointsMulEquiv (R := ℤ) (A := A) s)
               (TypeDStd.rootGeneratorWeight n k) : A) * u)) ≫
         (rootSubgroup n hn k).hom.hom := by
-  rw [weightTorus, rootSubgroup]
-  exact kostantWeightTorusToToral_conj_kostantRootSubgroupToToralParam
-    _ _ _ _ _ _ _ (isCartanWeightVector_latticeBasis n hn)
-    (isNilpotent_rep_rootGenerator n hn) A (TypeDStd.lie_serreH_serreRootGenerator n k) s u
+  have h := kostantWeightTorusToToral_conj_kostantRootSubgroupToToralParam _ _ _ _ _ _ _
+      (isCartanWeightVector_latticeBasis n hn) (isNilpotent_rep_rootGenerator n hn) A
+      (TypeDStd.lie_serreH_serreRootGenerator n k) s u =≫
+    (eqToHom (groupScheme_eq_kostantToralGroupScheme n hn).symm).hom.hom
+  -- Once simplified, `h` and the goal differ only by reducible unfolding inside instance
+  -- arguments; closing at reducible transparency avoids unfolding `*` on scheme points.
+  with_reducible simpa only [weightTorus_def, rootSubgroup_def, Grp.comp_hom_hom, Category.assoc,
+    MonObj.mul_comp, GrpObj.inv_comp] using h
 
 /-! ## The numbered root subgroups sit at the named simple roots
 
