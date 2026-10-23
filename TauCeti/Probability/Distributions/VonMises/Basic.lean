@@ -9,7 +9,6 @@ public import Mathlib.Analysis.Fourier.AddCircle
 public import Mathlib.Probability.HasLaw
 public import TauCeti.Analysis.SpecialFunctions.BesselI
 public import TauCeti.MeasureTheory.Measure.WithDensity
-public import TauCeti.Topology.Instances.AddCircle.Defs
 
 /-!
 # The von Mises distribution
@@ -121,7 +120,7 @@ theorem continuous_uncurry_vonMisesPDFReal :
   refine Continuous.div ?_ (hI.comp (continuous_snd.comp continuous_fst)) fun p =>
     (besselI_zero_left_pos _).ne'
   exact continuous_exp.comp ((continuous_snd.comp continuous_fst).mul
-    ((cos_periodic.continuous_lift continuous_cos).comp
+    (Real.Angle.continuous_cos.comp
       (continuous_snd.sub (continuous_fst.comp continuous_fst))))
 
 /-- The von Mises density is continuous in the angle. -/
