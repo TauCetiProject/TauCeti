@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.RootSystem.Base
+public import Mathlib.Logic.Equiv.Option
 
 /-!
 # Normal crystals over a root datum
@@ -32,6 +33,10 @@ The structure records `ε` and `φ` as data, but `TauCeti.NormalCrystal.ext` sho
 crystal is determined by its weight map and its raising operators: the lowering operators and the
 string lengths carry no further freedom.
 
+A bijection of the underlying types transports a normal crystal structure
+(`TauCeti.NormalCrystal.congr`): the weight and the string lengths are pulled back and the root
+operators are conjugated, and the bijection itself is a strict isomorphism.
+
 ## Main definitions
 
 * `TauCeti.NormalCrystal`: a normal crystal over a root datum with a base.
@@ -40,6 +45,10 @@ string lengths carry no further freedom.
 * `TauCeti.NormalCrystal.eIter`, `TauCeti.NormalCrystal.fIter`: iterated root operators.
 * `TauCeti.NormalCrystal.StrictHom`: strict morphisms of normal crystals, with identities,
   composition and duals.
+* `TauCeti.NormalCrystal.congr`: transport of a normal crystal along a bijection of its
+  underlying type.
+* `TauCeti.NormalCrystal.StrictHom.congr`, `TauCeti.NormalCrystal.StrictHom.congrInv`: the strict
+  isomorphism implementing the transport and its inverse.
 
 ## Main results
 
@@ -51,6 +60,14 @@ string lengths carry no further freedom.
 * `TauCeti.NormalCrystal.StrictHom.ε_apply`, `TauCeti.NormalCrystal.StrictHom.φ_apply`,
   `TauCeti.NormalCrystal.StrictHom.f_apply`: a map preserving weights and commuting with the
   raising operators preserves the string lengths and commutes with the lowering operators.
+* `TauCeti.NormalCrystal.congr_refl`, `TauCeti.NormalCrystal.congr_trans`: functoriality of the
+  transport.
+* `TauCeti.NormalCrystal.congr_dual`: transport commutes with the dual crystal.
+* `TauCeti.NormalCrystal.StrictHom.congrInv_comp_congr`,
+  `TauCeti.NormalCrystal.StrictHom.congr_comp_congrInv`: the two composites of the transport
+  isomorphism are identities.
+* `TauCeti.NormalCrystal.StrictHom.eq_congr_of_bijective`: a bijective strict morphism exhibits
+  its target as the transport of its source.
 
 ## References
 
@@ -351,6 +368,85 @@ theorem fIter_eq_some_iff : c.fIter i n x = some y ↔ c.eIter i n y = some x :=
 
 end Strings
 
+/-! ### Transport along a bijection -/
+
+section Congr
+
+variable (c : NormalCrystal P b B) (e : B ≃ B')
+
+/-- **Transport of a normal crystal along a bijection**: the weight and the string lengths are
+pulled back along `e` and the root operators are conjugated by `e`. -/
+def congr : NormalCrystal P b B' where
+  wt x := c.wt (e.symm x)
+  e i x := (c.e i (e.symm x)).map e
+  f i x := (c.f i (e.symm x)).map e
+  ε i x := c.ε i (e.symm x)
+  φ i x := c.φ i (e.symm x)
+  f_eq_some_iff := by
+    intro i x y
+    have h₁ := (Equiv.eq_symm_apply (Equiv.optionCongr e) (x := some y)
+      (y := c.f i (e.symm x))).symm
+    have h₂ := (Equiv.eq_symm_apply (Equiv.optionCongr e) (x := some x)
+      (y := c.e i (e.symm y))).symm
+    exact h₁.trans (c.f_eq_some_iff.trans h₂.symm)
+  wt_of_e_eq_some := by
+    intro i x y h
+    have h' : c.e i (e.symm x) = some (e.symm y) :=
+      (Equiv.eq_symm_apply (Equiv.optionCongr e) (x := some y)
+        (y := c.e i (e.symm x))).2 h
+    exact c.wt_of_e_eq_some h'
+  ε_eq_zero_iff := by
+    intro i x
+    rw [Option.map_eq_none_iff]
+    exact c.ε_eq_zero_iff
+  ε_of_e_eq_some := by
+    intro i x y h
+    have h' : c.e i (e.symm x) = some (e.symm y) :=
+      (Equiv.eq_symm_apply (Equiv.optionCongr e) (x := some y)
+        (y := c.e i (e.symm x))).2 h
+    exact c.ε_of_e_eq_some h'
+  φ_eq_zero_iff := by
+    intro i x
+    rw [Option.map_eq_none_iff]
+    exact c.φ_eq_zero_iff
+  φ_sub_ε := fun i x => c.φ_sub_ε i (e.symm x)
+
+@[simp]
+theorem congr_wt (x : B') : (c.congr e).wt x = c.wt (e.symm x) := (rfl)
+
+@[simp]
+theorem congr_e (i : b.support) (x : B') :
+    (c.congr e).e i x = (c.e i (e.symm x)).map e := (rfl)
+
+@[simp]
+theorem congr_f (i : b.support) (x : B') :
+    (c.congr e).f i x = (c.f i (e.symm x)).map e := (rfl)
+
+@[simp]
+theorem congr_ε (i : b.support) (x : B') :
+    (c.congr e).ε i x = c.ε i (e.symm x) := (rfl)
+
+@[simp]
+theorem congr_φ (i : b.support) (x : B') :
+    (c.congr e).φ i x = c.φ i (e.symm x) := (rfl)
+
+/-- Transport along the identity bijection is the identity. -/
+@[simp]
+theorem congr_refl : c.congr (Equiv.refl B) = c :=
+  NormalCrystal.ext (funext fun x => by simp) (funext₂ fun i x => by simp)
+
+/-- Transport along a composite bijection is the composite of the transports. -/
+@[simp]
+theorem congr_trans (e' : B' ≃ B'') :
+    (c.congr e).congr e' = c.congr (e.trans e') :=
+  NormalCrystal.ext (funext fun x => by simp) (funext₂ fun i x => by simp)
+
+/-- Transport commutes with the dual crystal. -/
+@[simp]
+theorem congr_dual : (c.congr e).dual = c.dual.congr e := (rfl)
+
+end Congr
+
 /-! ### Strict morphisms -/
 
 /-- A **strict morphism** of normal crystals: a map of the underlying types preserving weights and
@@ -455,6 +551,51 @@ def dual : StrictHom c.dual d.dual where
 
 @[simp]
 theorem dual_apply : ψ.dual x = ψ x := (rfl)
+
+/-- The bijection underlying the transport is a strict morphism. -/
+def congr (c : NormalCrystal P b B) (e : B ≃ B') : StrictHom c (c.congr e) where
+  toFun := ⇑e
+  wt_toFun x := by simp
+  e_toFun i x := by simp
+
+/-- The inverse of the strict morphism underlying the transport. -/
+def congrInv (c : NormalCrystal P b B) (e : B ≃ B') : StrictHom (c.congr e) c where
+  toFun := ⇑e.symm
+  wt_toFun x := by simp
+  e_toFun i x := by simp [congr_e, Option.map_map]
+
+@[simp]
+theorem congr_apply (c : NormalCrystal P b B) (e : B ≃ B') (x : B) :
+    StrictHom.congr c e x = e x := (rfl)
+
+@[simp]
+theorem congrInv_apply (c : NormalCrystal P b B) (e : B ≃ B') (x : B') :
+    StrictHom.congrInv c e x = e.symm x := (rfl)
+
+@[simp]
+theorem congrInv_comp_congr (c : NormalCrystal P b B) (e : B ≃ B') :
+    (StrictHom.congrInv c e).comp (StrictHom.congr c e) = StrictHom.id c := by
+  ext x
+  simp
+
+@[simp]
+theorem congr_comp_congrInv (c : NormalCrystal P b B) (e : B ≃ B') :
+    (StrictHom.congr c e).comp (StrictHom.congrInv c e) = StrictHom.id (c.congr e) := by
+  ext x
+  simp
+
+/-- A bijective strict morphism exhibits its target as the transport of its source along the
+underlying equivalence. -/
+theorem eq_congr_of_bijective {c : NormalCrystal P b B} {d : NormalCrystal P b B'}
+    {ψ : StrictHom c d} (h : Function.Bijective ψ) :
+    d = c.congr (Equiv.ofBijective ψ h) := by
+  refine NormalCrystal.ext (funext fun x => ?_) (funext₂ fun i x => ?_)
+  · rw [congr_wt]
+    conv_lhs => rw [← Equiv.apply_symm_apply (Equiv.ofBijective ψ h) x]
+    exact ψ.wt_apply _
+  · rw [congr_e]
+    conv_lhs => rw [← Equiv.apply_symm_apply (Equiv.ofBijective ψ h) x]
+    exact ψ.e_apply _ _
 
 end StrictHom
 
