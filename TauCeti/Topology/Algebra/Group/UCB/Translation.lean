@@ -83,7 +83,6 @@ theorem compContinuous_mulRight_mem_ucb {f : G →ᵇ ℝ} (hf : f ∈ ucb G) (g
 
 /-- Precomposition with a continuous map `a` of `α` that has a continuous inverse `b`, as a linear
 isometry equivalence of a subalgebra `S` of `α →ᵇ 𝕜` preserved by both `a` and `b`. -/
-@[expose]
 def _root_.Subalgebra.compContinuousₗᵢ {α 𝕜 : Type*} [TopologicalSpace α] [NormedField 𝕜]
     (S : Subalgebra 𝕜 (α →ᵇ 𝕜)) (a b : C(α, α)) (hab : ∀ x, a (b x) = x)
     (hba : ∀ x, b (a x) = x) (ha : ∀ f ∈ S, f.compContinuous a ∈ S)
@@ -105,6 +104,24 @@ def _root_.Subalgebra.compContinuousₗᵢ {α 𝕜 : Type*} [TopologicalSpace �
           exact congrArg (f : α →ᵇ 𝕜) (hab x).symm
       _ ≤ ‖(f : α →ᵇ 𝕜).compContinuous a‖ := BoundedContinuousFunction.norm_compContinuous_le _ _
 
+/-- `S.compContinuousₗᵢ a b … f` is the precomposition of `f` with `a`. -/
+@[simp]
+theorem _root_.Subalgebra.compContinuousₗᵢ_apply {α 𝕜 : Type*} [TopologicalSpace α]
+    [NormedField 𝕜] (S : Subalgebra 𝕜 (α →ᵇ 𝕜)) (a b : C(α, α)) (hab : ∀ x, a (b x) = x)
+    (hba : ∀ x, b (a x) = x) (ha : ∀ f ∈ S, f.compContinuous a ∈ S)
+    (hb : ∀ f ∈ S, f.compContinuous b ∈ S) (f : S) :
+    (S.compContinuousₗᵢ a b hab hba ha hb f : α →ᵇ 𝕜) = (f : α →ᵇ 𝕜).compContinuous a :=
+  (rfl)
+
+/-- The inverse of `S.compContinuousₗᵢ a b …` is precomposition with `b`. -/
+@[simp]
+theorem _root_.Subalgebra.compContinuousₗᵢ_symm_apply {α 𝕜 : Type*} [TopologicalSpace α]
+    [NormedField 𝕜] (S : Subalgebra 𝕜 (α →ᵇ 𝕜)) (a b : C(α, α)) (hab : ∀ x, a (b x) = x)
+    (hba : ∀ x, b (a x) = x) (ha : ∀ f ∈ S, f.compContinuous a ∈ S)
+    (hb : ∀ f ∈ S, f.compContinuous b ∈ S) (f : S) :
+    ((S.compContinuousₗᵢ a b hab hba ha hb).symm f : α →ᵇ 𝕜) = (f : α →ᵇ 𝕜).compContinuous b :=
+  (rfl)
+
 namespace UCB
 
 /-- Left translation `g ↦ L_g`, where `(L_g f)(x) = f (g⁻¹ * x)`, as a group homomorphism from `G`
@@ -115,10 +132,10 @@ def leftTranslation : G →* (UCB G ≃ₗᵢ[ℝ] UCB G) where
     (fun _ hf => compContinuous_mulLeft_mem_ucb hf _)
   map_one' := by
     ext
-    simp [Subalgebra.compContinuousₗᵢ]
+    simp
   map_mul' g h := by
     ext
-    simp [Subalgebra.compContinuousₗᵢ, mul_assoc]
+    simp [mul_assoc]
 
 /-- Right translation `g ↦ R_g`, where `(R_g f)(x) = f (x * g)`, as a group homomorphism from `G`
 to the linear isometry equivalences of `UCB G`. -/
@@ -128,10 +145,10 @@ def rightTranslation : G →* (UCB G ≃ₗᵢ[ℝ] UCB G) where
     (fun _ hf => compContinuous_mulRight_mem_ucb hf _)
   map_one' := by
     ext
-    simp [Subalgebra.compContinuousₗᵢ]
+    simp
   map_mul' g h := by
     ext
-    simp [Subalgebra.compContinuousₗᵢ, mul_assoc]
+    simp [mul_assoc]
 
 /-- The left translate `L_g f` is the precomposition of `f` with `x ↦ g⁻¹ * x`. -/
 theorem coe_leftTranslation (g : G) (f : UCB G) :

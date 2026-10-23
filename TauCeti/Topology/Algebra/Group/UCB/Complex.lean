@@ -239,15 +239,15 @@ def leftTranslation : G →* (ComplexUCB G ≃ₗᵢ[ℂ] ComplexUCB G) where
     (fun _ hf => compContinuous_mulLeft_mem_complexUCB hf _)
   map_one' := by
     ext
-    simp [Subalgebra.compContinuousₗᵢ]
+    simp
   map_mul' g h := by
     ext
-    simp [Subalgebra.compContinuousₗᵢ, mul_assoc]
+    simp [mul_assoc]
 
 @[simp]
 theorem leftTranslation_apply (g : G) (f : ComplexUCB G) (x : G) :
-    (leftTranslation g f : G →ᵇ ℂ) x = (f : G →ᵇ ℂ) (g⁻¹ * x) :=
-  (rfl)
+    (leftTranslation g f : G →ᵇ ℂ) x = (f : G →ᵇ ℂ) (g⁻¹ * x) := by
+  simp [leftTranslation]
 
 /-- The real part of `L_g f` is the left translate `L_g` of the real part of `f`. -/
 @[simp]
