@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Distribution.Distribution
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
+import TauCeti.Analysis.Distribution.TestFunction.Basic
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 
 /-!
@@ -35,8 +36,6 @@ integrable field of covectors `G : E → F →L[ℝ] ℝ` to the distribution of
 
 ## Main declarations
 
-* `TestFunction.sum_postcompCLM_toSpanSingleton_coord`: an `F`-valued test function is the sum
-  of its components in a basis, times the basis vectors.
 * `TestFunction.dualEquivDistribution`: the continuous linear equivalence between
   `𝓓^{n}(Ω, F) →L_c[ℝ] ℝ` and `𝓓'^{n}(Ω, F →L[ℝ] ℝ)`.
 * `TestFunction.dualEquivDistribution_apply_apply` and
@@ -65,28 +64,6 @@ open scoped Distributions CompactConvergenceCLM
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {Ω : Opens E}
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F] {n : ℕ∞}
-
-/-- An `F`-valued test function `φ` is the sum of its components `bᵢ* ∘ φ` in a basis `b` of `F`,
-each multiplied by the corresponding basis vector `bᵢ`. -/
-theorem sum_postcompCLM_toSpanSingleton_coord {ι : Type*} [Fintype ι] (b : Module.Basis ι ℝ F)
-    (φ : 𝓓^{n}(Ω, F)) :
-    ∑ i, postcompCLM (toSpanSingleton ℝ (b i))
-      (postcompCLM (b.coord i).toContinuousLinearMap φ) = φ := by
-  ext x
-  simp only [sum_apply, postcompCLM_apply, Function.comp_apply, toSpanSingleton_apply,
-    LinearMap.coe_toContinuousLinearMap', Module.Basis.coord_apply]
-  exact b.sum_repr (φ x)
-
-/-- The `i`-th component, in a basis `b` of `F`, of the test function `ψ • v` is `b.repr v i • ψ`.
--/
-@[simp]
-theorem postcompCLM_coord_postcompCLM_toSpanSingleton {ι : Type*} (b : Module.Basis ι ℝ F)
-    (i : ι) (ψ : 𝓓^{n}(Ω, ℝ)) (v : F) :
-    postcompCLM (b.coord i).toContinuousLinearMap (postcompCLM (toSpanSingleton ℝ v) ψ) =
-      b.repr v i • ψ := by
-  ext x
-  rw [postcompCLM_apply, postcompCLM_apply]
-  simp [mul_comm]
 
 /-- The continuous linear map underlying `dualEquivDistribution`, written in the basis
 `Module.finBasis ℝ F` so that each summand is visibly continuous. -/
