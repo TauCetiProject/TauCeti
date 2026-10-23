@@ -37,6 +37,9 @@ be injective. This is the local reason why an affine blowup changes nothing away
 
 * `AlgebraicGeometry.Scheme.isoSpec_inv_appTop`: the global sections of `X.isoSpec.inv` are
   `(Scheme.ΓSpecIso Γ(X, ⊤)).inv`.
+* `AlgebraicGeometry.IsAffineOpen.fromSpec_comp_eq_SpecMap`: on an affine open `U` of `X`, a
+  morphism `X ⟶ Spec R` restricted along `Spec Γ(X, U) ⟶ X` is the spectrum of the ring map
+  `R → Γ(X, U)` it induces.
 * `AlgebraicGeometry.Scheme.Hom.span_range_appTop_sub_eq_top_iff`: for an endomorphism `f` of an
   affine scheme, the elements `f^*(a) - a` generate the unit ideal if and only if every point of
   `X` fixed by `f` has values in an empty scheme.
@@ -60,6 +63,14 @@ theorem Scheme.isoSpec_inv_appTop (X : Scheme.{u}) [IsAffine X] :
     rw [← Scheme.Hom.comp_appTop, Iso.hom_inv_id, Scheme.Hom.id_appTop]
   rw [← Iso.comp_hom_eq_id]
   simpa [Scheme.isoSpec] using h
+
+/-- On an affine open `U` of `X`, the morphism `f : X ⟶ Spec R` restricted along
+`Spec Γ(X, U) ⟶ X` is the spectrum of the ring map `R → Γ(X, U)` induced by `f`. -/
+theorem IsAffineOpen.fromSpec_comp_eq_SpecMap {X : Scheme.{u}} {R : CommRingCat.{u}}
+    (f : X ⟶ Spec R) {U : X.Opens} (hU : IsAffineOpen U) :
+    hU.fromSpec ≫ f = Spec.map ((Scheme.ΓSpecIso R).inv ≫ f.appLE ⊤ U le_top) := by
+  rw [← IsAffineOpen.SpecMap_appLE_fromSpec f (isAffineOpen_top _) hU le_top,
+    IsAffineOpen.fromSpec_top, Scheme.isoSpec_Spec_inv, ← Spec.map_comp]
 
 /-- **Fixed points of an endomorphism of an affine scheme.** For an endomorphism `f` of an affine
 scheme `X`, the elements `f^*(a) - a` of `Γ(X, ⊤)` generate the unit ideal if and only if `f` fixes
