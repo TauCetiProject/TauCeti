@@ -387,29 +387,33 @@ theorem dgDifferential_toShift (X : DGShiftClosure C) (n : ℤ) :
     rw [dgHomEquiv_dgDifferential, dgHomEquiv_toShift, map_zsmul_unit, d_castDeg_dgId,
       smul_zero, smul_zero, map_zero]
 
+/-- Two morphisms `X[r] ⟶ X[s] ⟶ X[r]` whose underlying morphisms are the same sign `u` times
+the identity of `X` compose to the identity of `X[r]`: the composition sign is trivial because the
+first underlying morphism has degree `0`, and `u * u = 1`. -/
+private theorem dgComp_eq_dgId_of_units_smul (X : DGShiftClosure C) (s : ℤ) (u : ℤˣ) {p q : ℤ}
+    {f : DGHom R p X (⟨X.obj, s⟩ : DGShiftClosure C)} {g : DGHom R q ⟨X.obj, s⟩ X}
+    {hp : 0 = p + (s - X.shift)} {hq : 0 = q + (X.shift - s)}
+    (hf : dgHomEquiv R _ _ p f = u • castDeg R hp (dgId R X.obj))
+    (hg : dgHomEquiv R _ _ q g = u • castDeg R hq (dgId R X.obj)) (h : p + q = 0) :
+    dgComp R f g h = dgId R X :=
+  (dgHomEquiv R _ _ 0).injective <| by
+    rw [dgHomEquiv_dgComp, hf, hg, dgHomEquiv_dgId]
+    simp only [← hp, mul_zero, Int.negOnePow_zero, one_smul, units_smul_dgComp, dgComp_units_smul,
+      castDeg_dgId_dgComp, castDeg_castDeg, smul_smul, Int.units_mul_self]
+    exact LinearMap.congr_fun (castDeg_def (C := C) R _) _
+
 /-- The comparison morphisms `X[r] ⟶ X[r + n] ⟶ X[r]` compose to the identity of `X[r]`. -/
 theorem dgComp_toShift_fromShift (X : DGShiftClosure C) (n : ℤ) :
     dgComp R (toShift R X n) (fromShift R X n) (neg_add_cancel n) = dgId R X :=
-  (dgHomEquiv R _ _ 0).injective <| by
-    rw [dgHomEquiv_dgComp, dgHomEquiv_toShift, dgHomEquiv_fromShift, dgHomEquiv_dgId,
-      units_smul_dgComp, dgComp_units_smul, castDeg_dgId_dgComp, castDeg_castDeg, smul_smul,
-      smul_smul, mul_assoc, Int.units_mul_self, mul_one]
-    simp only [sub_add_cancel_left, add_sub_cancel_left, neg_add_cancel, mul_zero,
-      Int.negOnePow_zero, one_smul]
-    exact LinearMap.congr_fun (castDeg_def (C := C) R _) _
+  dgComp_eq_dgId_of_units_smul R X _ _ (dgHomEquiv_toShift R X n) (dgHomEquiv_fromShift R X n) _
 
 /-- The comparison morphisms `X[r + n] ⟶ X[r] ⟶ X[r + n]` compose to the identity of
 `X[r + n]`. -/
 theorem dgComp_fromShift_toShift (X : DGShiftClosure C) (n : ℤ) :
     dgComp R (fromShift R X n) (toShift R X n) (add_neg_cancel n) =
       dgId R ((shiftFunctor R n).obj X) :=
-  (dgHomEquiv R _ _ 0).injective <| by
-    rw [dgHomEquiv_dgComp, dgHomEquiv_toShift, dgHomEquiv_fromShift, dgHomEquiv_dgId,
-      units_smul_dgComp, dgComp_units_smul, castDeg_dgId_dgComp, castDeg_castDeg, smul_smul,
-      smul_smul, mul_assoc, Int.units_mul_self, mul_one]
-    simp only [sub_add_cancel_left, add_sub_cancel_left, add_neg_cancel, mul_zero,
-      Int.negOnePow_zero, one_smul]
-    exact LinearMap.congr_fun (castDeg_def (C := C) R (X := X.obj) (Y := X.obj) _) _
+  dgComp_eq_dgId_of_units_smul R _ X.shift _ (dgHomEquiv_fromShift R X n)
+    (dgHomEquiv_toShift R X n) _
 
 /-- The comparison morphism `X[r + n] ⟶ X[r]` is closed. -/
 theorem dgDifferential_fromShift (X : DGShiftClosure C) (n : ℤ) :
