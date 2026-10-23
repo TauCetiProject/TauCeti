@@ -90,6 +90,17 @@ def IsPseudoCoherentOver (m : ℕ∞) : Prop :=
     Function.Surjective ε ∧ (1 ≤ m → Function.Exact (d 0) ε) ∧
       ∀ i : ℕ, ((i + 2 : ℕ) : ℕ∞) ≤ m → Function.Exact (d (i + 1)) (d i)
 
+/-- `M` is `m`-pseudocoherent over `R` if and only if it has a resolution
+`⋯ → Fin (n 1) → R → Fin (n 0) → R → M → 0`, with augmentation `ε` and differentials `d i`, that is
+exact at `M, F₀, …, F_{m-1}`. -/
+theorem isPseudoCoherentOver_iff (m : ℕ∞) :
+    IsPseudoCoherentOver R M m ↔
+      ∃ (n : ℕ → ℕ) (d : ∀ i, (Fin (n (i + 1)) → R) →ₗ[R] (Fin (n i) → R))
+        (ε : (Fin (n 0) → R) →ₗ[R] M),
+        Function.Surjective ε ∧ (1 ≤ m → Function.Exact (d 0) ε) ∧
+          ∀ i : ℕ, ((i + 2 : ℕ) : ℕ∞) ≤ m → Function.Exact (d (i + 1)) (d i) :=
+  Iff.rfl
+
 end Definition
 
 namespace IsPseudoCoherentOver
@@ -143,13 +154,7 @@ theorem succ_iff :
         (hd 0 (natCast_add_one_le_add_one_iff.mpr (by simpa using h₁)) x)
     · exact hd (i + 1) (natCast_add_one_le_add_one_iff.mpr hi)
   · rintro ⟨k, f, hf, n, d, ε, hε, h₀, hd⟩
-    have hf₀ : Function.Exact ((ker f).subtype ∘ₗ ε) f := by
-      intro x
-      refine ⟨fun hx ↦ ?_, ?_⟩
-      · obtain ⟨y, hy⟩ := hε ⟨x, hx⟩
-        exact ⟨y, by simp [hy]⟩
-      · rintro ⟨y, rfl⟩
-        exact (ε y).2
+    have hf₀ := hε.comp_exact_iff_exact.mpr (exact_subtype_ker_map f)
     refine ⟨fun | 0 => k | i + 1 => n i, fun | 0 => (ker f).subtype ∘ₗ ε | i + 1 => d i, f, hf,
       fun _ ↦ hf₀, fun i hi ↦ ?_⟩
     rcases i with _ | i
