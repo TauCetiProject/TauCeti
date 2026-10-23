@@ -103,7 +103,7 @@ theorem vonMisesPDFReal_coe_coe (μ κ x : ℝ) :
 /-- The von Mises density is positive everywhere, for every real concentration. -/
 theorem vonMisesPDFReal_pos (m : AddCircle (2 * π)) (κ : ℝ) (θ : AddCircle (2 * π)) :
     0 < vonMisesPDFReal m κ θ :=
-  div_pos (exp_pos _) (zero_lt_one.trans_le (one_le_besselI_zero_left κ))
+  div_pos (exp_pos _) (besselI_zero_left_pos κ)
 
 /-- The real part of the extended von Mises density is the real von Mises density. -/
 @[simp]
@@ -119,10 +119,15 @@ theorem continuous_uncurry_vonMisesPDFReal :
   have hI : Continuous fun κ : ℝ => besselI 0 κ := by
     simpa using continuous_besselI_natCast 0
   refine Continuous.div ?_ (hI.comp (continuous_snd.comp continuous_fst)) fun p =>
-    (zero_lt_one.trans_le (one_le_besselI_zero_left _)).ne'
+    (besselI_zero_left_pos _).ne'
   exact continuous_exp.comp ((continuous_snd.comp continuous_fst).mul
     ((cos_periodic.continuous_lift continuous_cos).comp
       (continuous_snd.sub (continuous_fst.comp continuous_fst))))
+
+/-- The von Mises density is continuous in the angle. -/
+theorem continuous_vonMisesPDFReal (m : AddCircle (2 * π)) (κ : ℝ) :
+    Continuous (vonMisesPDFReal m κ) :=
+  continuous_uncurry_vonMisesPDFReal.comp (Continuous.prodMk_right (m, κ))
 
 /-- The von Mises density is jointly measurable in the location, the concentration and the
 angle. -/
@@ -135,7 +140,7 @@ theorem measurable_uncurry_vonMisesPDF :
 @[fun_prop]
 theorem measurable_vonMisesPDFReal (m : AddCircle (2 * π)) (κ : ℝ) :
     Measurable (vonMisesPDFReal m κ) :=
-  (continuous_uncurry_vonMisesPDFReal.comp (Continuous.prodMk_right (m, κ))).measurable
+  (continuous_vonMisesPDFReal m κ).measurable
 
 /-- The extended von Mises density is measurable in the angle. -/
 @[fun_prop]
@@ -183,14 +188,14 @@ theorem integral_vonMisesPDFReal (m : AddCircle (2 * π)) (κ : ℝ) :
     ∫ θ, vonMisesPDFReal m κ θ ∂haarAddCircle = 1 := by
   simp only [vonMisesPDFReal]
   rw [integral_div, integral_exp_mul_cos_sub,
-    div_self (zero_lt_one.trans_le (one_le_besselI_zero_left κ)).ne']
+    div_self (besselI_zero_left_pos κ).ne']
 
 /-- The von Mises density has total Haar mass one. -/
 theorem lintegral_vonMisesPDF (m : AddCircle (2 * π)) (κ : ℝ) :
     ∫⁻ θ, vonMisesPDF m κ θ ∂haarAddCircle = 1 := by
   have hint : Integrable (vonMisesPDFReal m κ) haarAddCircle :=
-    (continuous_uncurry_vonMisesPDFReal.comp (Continuous.prodMk_right (m, κ))
-      ).integrable_of_hasCompactSupport (HasCompactSupport.of_compactSpace _)
+    (continuous_vonMisesPDFReal m κ).integrable_of_hasCompactSupport
+      (HasCompactSupport.of_compactSpace _)
   simp only [vonMisesPDF]
   rw [← ofReal_integral_eq_lintegral_ofReal hint
       (ae_of_all _ fun θ => (vonMisesPDFReal_pos m κ θ).le), integral_vonMisesPDFReal,
@@ -264,6 +269,7 @@ theorem vonMisesMeasure_zero_concentration (m : AddCircle (2 * π)) :
   rw [vonMisesMeasure_of_nonneg le_rfl, hpdf, withDensity_one]
 
 /-- **Rotational equivariance.** Rotating a von Mises law by `a` rotates its location by `a`. -/
+@[simp]
 theorem map_add_right_vonMisesMeasure (m : AddCircle (2 * π)) (κ : ℝ) (a : AddCircle (2 * π)) :
     (vonMisesMeasure m κ).map (· + a) = vonMisesMeasure (m + a) κ := by
   rcases le_or_gt 0 κ with hκ | hκ
@@ -299,7 +305,7 @@ theorem norm_integral_fourier_one_vonMisesMeasure (m : AddCircle (2 * π)) (hκ 
     · exact (besselI_pos (by norm_num) hκ).le
   rw [integral_fourier_vonMisesMeasure m hκ, norm_mul, fourier_apply, Circle.norm_coe, one_mul,
     Complex.norm_real, Real.norm_of_nonneg
-      (div_nonneg (by simpa using hI) (zero_le_one.trans (one_le_besselI_zero_left κ)))]
+      (div_nonneg (by simpa using hI) (besselI_zero_left_pos κ).le)]
   simp
 
 end TauCeti.Probability
