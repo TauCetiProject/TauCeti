@@ -79,43 +79,85 @@ variable (K Ω : Type u) [Field K] [Field Ω] [Algebra K Ω] [IsSepClosed Ω] [I
 finite étale `K`-schemes are equivalent to finite sets with a continuous action of `Gal(Ω/K)`.
 A finite étale scheme `Spec A` goes to the set of `Ω`-valued points of `A`
 (`specCompGaloisEquivalenceFunctorIso`). -/
-@[expose] noncomputable def galoisEquivalence :
+noncomputable def galoisEquivalence :
     FiniteEtaleScheme (Spec (.of K)) ≌ ContAction FintypeCat.{u} Gal(Ω/K) :=
   (finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme (.of K)).symm.trans
     (galoisFiber K Ω).asEquivalence
 
 /-- The functor of `galoisEquivalence K Ω` takes coordinate algebras and then `Ω`-valued points. -/
+@[simp]
 theorem galoisEquivalence_functor :
     (galoisEquivalence K Ω).functor =
       (finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme (.of K)).inverse ⋙ galoisFiber K Ω :=
   (rfl)
+
+/-- The inverse of `galoisEquivalence K Ω` inverts the Galois fibre functor and then takes the
+spectrum. -/
+@[simp]
+theorem galoisEquivalence_inverse :
+    (galoisEquivalence K Ω).inverse = (galoisFiber K Ω).asEquivalence.inverse ⋙ spec (.of K) := by
+  simp only [galoisEquivalence, Equivalence.trans_inverse, Equivalence.symm_inverse,
+    finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme_functor]
 
 /-- **The Galois set of a spectrum.** For a finite étale `K`-algebra `A`, `galoisEquivalence K Ω`
 sends `Spec A` to the finite set `A →ₐ[K] Ω` of `Ω`-valued points of `A`, with `Gal(Ω/K)` acting by
 postcomposition. -/
 noncomputable def specCompGaloisEquivalenceFunctorIso :
     spec (.of K) ⋙ (galoisEquivalence K Ω).functor ≅ galoisFiber K Ω :=
-  (Functor.associator _ _ _).symm ≪≫
+  Functor.isoWhiskerLeft _ (eqToIso (galoisEquivalence_functor K Ω)) ≪≫
+    Functor.isoWhiskerRight
+      (eqToIso (finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme_functor (.of K)).symm) _ ≪≫
+    (Functor.associator _ _ _).symm ≪≫
     Functor.isoWhiskerRight (finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme (.of K)).unitIso.symm
       (galoisFiber K Ω) ≪≫ Functor.leftUnitor _
 
 /-- The component of `specCompGaloisEquivalenceFunctorIso` at `A` is the Galois fibre functor
-applied to the inverse unit of the finite étale anti-equivalence at `A`. -/
+applied to the inverse unit of the finite étale anti-equivalence at `A`, after identifying
+`spec` with the forward functor of that anti-equivalence. -/
 @[simp]
 theorem specCompGaloisEquivalenceFunctorIso_hom_app (A : (CommAlgCat.FiniteEtale.{u} K)ᵒᵖ) :
     (specCompGaloisEquivalenceFunctorIso K Ω).hom.app A =
-      (galoisFiber K Ω).map
-        ((finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme (.of K)).unitIso.inv.app A) :=
-  (rfl)
+      eqToHom (by simp) ≫ (galoisFiber K Ω).map
+        ((finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme (.of K)).unitIso.inv.app A) := by
+  simp only [specCompGaloisEquivalenceFunctorIso, Iso.trans_hom, Functor.isoWhiskerLeft_hom,
+    eqToIso.hom, Functor.isoWhiskerRight_hom, Iso.symm_hom, NatTrans.comp_app,
+    Functor.whiskerLeft_app, eqToHom_app, Functor.whiskerRight_app, Functor.comp_map,
+    Functor.associator_inv_app, Functor.leftUnitor_hom_app, Category.id_comp]
+  rw [eqToHom_map, eqToHom_map, eqToHom_trans_assoc]
+  exact congrArg _ (Category.comp_id _)
 
 /-- The inverse component of `specCompGaloisEquivalenceFunctorIso` at `A` is the Galois fibre
-functor applied to the unit of the finite étale anti-equivalence at `A`. -/
+functor applied to the unit of the finite étale anti-equivalence at `A`, after identifying the
+forward functor of that anti-equivalence with `spec`. -/
 @[simp]
 theorem specCompGaloisEquivalenceFunctorIso_inv_app (A : (CommAlgCat.FiniteEtale.{u} K)ᵒᵖ) :
     (specCompGaloisEquivalenceFunctorIso K Ω).inv.app A =
       (galoisFiber K Ω).map
-        ((finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme (.of K)).unitIso.hom.app A) :=
-  (rfl)
+        ((finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme (.of K)).unitIso.hom.app A) ≫
+        eqToHom (by simp) := by
+  simp only [specCompGaloisEquivalenceFunctorIso, Iso.trans_inv, Functor.isoWhiskerRight_inv,
+    Iso.symm_inv, Category.assoc, eqToIso.inv, Functor.isoWhiskerLeft_inv, NatTrans.comp_app,
+    Functor.leftUnitor_inv_app, Functor.whiskerRight_app, Functor.associator_hom_app, eqToHom_app,
+    Functor.comp_map, Functor.whiskerLeft_app, Category.id_comp]
+  rw [eqToHom_map, eqToHom_map, eqToHom_trans]
+
+/-- The functor of `galoisEquivalence K Ω` is monoidal for the cartesian monoidal structures, as
+it preserves finite products. -/
+noncomputable instance : (galoisEquivalence K Ω).functor.Monoidal :=
+  .ofChosenFiniteProducts _
+
+/-- The inverse of `galoisEquivalence K Ω` is monoidal for the cartesian monoidal structures, as it
+preserves finite products. -/
+noncomputable instance : (galoisEquivalence K Ω).inverse.Monoidal :=
+  .ofChosenFiniteProducts _
+
+/-- The functor of `galoisEquivalence K Ω` is braided. -/
+noncomputable instance : (galoisEquivalence K Ω).functor.Braided :=
+  .ofChosenFiniteProducts _
+
+/-- The inverse of `galoisEquivalence K Ω` is braided. -/
+noncomputable instance : (galoisEquivalence K Ω).inverse.Braided :=
+  .ofChosenFiniteProducts _
 
 /-- **Finite étale group schemes over a field are finite Galois groups.** Group objects in finite
 étale `K`-schemes are equivalent to group objects in finite continuous `Gal(Ω/K)`-sets, that is,
@@ -123,8 +165,6 @@ to finite groups on which `Gal(Ω/K)` acts continuously by group automorphisms. 
 sides are homomorphisms of group objects. -/
 noncomputable def galoisEquivalenceGrp :
     Grp (FiniteEtaleScheme (Spec (.of K))) ≌ Grp (ContAction FintypeCat.{u} Gal(Ω/K)) :=
-  letI := Functor.Monoidal.ofChosenFiniteProducts (galoisEquivalence K Ω).functor
-  letI := Functor.Monoidal.ofChosenFiniteProducts (galoisEquivalence K Ω).inverse
   (galoisEquivalence K Ω).mapGrp
 
 /-- On underlying objects, `galoisEquivalenceGrp K Ω` is `galoisEquivalence K Ω`. -/
@@ -146,8 +186,6 @@ in finite continuous `Gal(Ω/K)`-sets, that is, to finite abelian groups with a 
 of `Gal(Ω/K)` by group automorphisms. -/
 noncomputable def galoisEquivalenceCommGrp :
     CommGrp (FiniteEtaleScheme (Spec (.of K))) ≌ CommGrp (ContAction FintypeCat.{u} Gal(Ω/K)) :=
-  letI := Functor.Braided.ofChosenFiniteProducts (galoisEquivalence K Ω).functor
-  letI := Functor.Braided.ofChosenFiniteProducts (galoisEquivalence K Ω).inverse
   (galoisEquivalence K Ω).mapCommGrp
 
 /-- On underlying objects, `galoisEquivalenceCommGrp K Ω` is `galoisEquivalence K Ω`. -/
