@@ -125,7 +125,7 @@ theorem zero_mem_interior_cubeSlice : (0 : W) ∈ interior (W.cubeSlice : Set W)
 /-- The gauge of the cube slice is the sup norm `max_i |x i|` of the coordinates. -/
 theorem gauge_cubeSlice (x : W) :
     gauge (W.cubeSlice : Set W) x = ‖WithLp.ofLp (x : EuclideanSpace ℝ ι)‖ := by
-  rw [coe_cubeSlice, setOf_forall_abs_le_one_eq_preimage, gauge_preimage_linearMap,
+  rw [coe_cubeSlice, setOf_forall_abs_le_one_eq_preimage, LinearMap.gauge_preimage,
     gauge_closedBall zero_le_one, div_one, coords_apply]
 
 /-- For `0 < t`, the dilate `t • cubeSlice W` consists of the points of `W` all of whose
