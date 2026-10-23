@@ -28,8 +28,9 @@ forms. Here the field of algebraic numbers is `integralClosure ℚ ℂ`.
   `∏ (exp uᵢ) ^ mᵢ = exp (∑ mᵢ uᵢ)` have distinct exponents, so that the first form applies.
 
 Both are deduced from the injectivity of exponential evaluation over a number field that is
-Galois over `ℚ` (`LindemannWeierstrass.expEval_injective`): the finitely many exponents and
-coefficients of a given linear relation lie in such a field
+Galois over `ℚ` (`LindemannWeierstrass.expEval_injective`), in the form of linear independence of
+exponentials (`LindemannWeierstrass.linearIndependent_exp_algebraMap`): the finitely many exponents
+and coefficients of a given linear relation lie in such a field
 (`exists_isGalois_superset_of_isAlgClosed`).
 
 ## References
@@ -45,15 +46,6 @@ public section
 open Complex
 
 namespace TauCeti
-
-/-- Over a number field `K`, Galois over `ℚ` and embedded in `ℂ`, the exponentials of the
-elements of `K` are linearly independent. -/
-private theorem linearIndependent_exp_algebraMap {K : Type*} [Field K] [NumberField K]
-    [IsGalois ℚ K] [Algebra K ℂ] : LinearIndependent K fun γ : K ↦ exp (algebraMap K ℂ γ) := by
-  convert (AddMonoidAlgebra.basis K K).linearIndependent.map'
-    (LindemannWeierstrass.expEval K).toLinearMap
-    (LinearMap.ker_eq_bot.2 LindemannWeierstrass.expEval_injective) with γ
-  simp
 
 /-- **The Lindemann–Weierstrass theorem**, in Baker's form. The exponentials of pairwise distinct
 algebraic numbers are linearly independent over the field `integralClosure ℚ ℂ` of algebraic
@@ -78,8 +70,9 @@ theorem linearIndependent_exp {ι : Type*} (u : ι → integralClosure ℚ ℂ) 
     hTK (Finset.mem_coe.2 (Finset.mem_union_right _ (Finset.mem_image_of_mem _ j.2)))
   -- Over `K`, the exponentials `exp (u j)`, `j ∈ s`, are linearly independent.
   have hind : LinearIndependent K fun j : s ↦ exp (u j) := by
-    have := linearIndependent_exp_algebraMap.comp (fun j : s ↦ (⟨u j, hu j⟩ : K)) fun j k hjk ↦
-      Subtype.ext (u_inj (Subtype.ext congr(($hjk : ℂ))))
+    have := LindemannWeierstrass.linearIndependent_exp_algebraMap.comp
+      (fun j : s ↦ (⟨u j, hu j⟩ : K)) fun j k hjk ↦
+        Subtype.ext (u_inj (Subtype.ext congr(($hjk : ℂ))))
     simpa only [Function.comp_def, IntermediateField.algebraMap_apply] using this
   have h := Fintype.linearIndependent_iff.1 hind (fun j ↦ ⟨g j, hg' j⟩) (by
     simpa only [← s.sum_coe_sort, IntermediateField.smul_def, Subalgebra.smul_def] using hg)
