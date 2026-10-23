@@ -69,6 +69,8 @@ circle is a continuous linear functional on `C(sphere w r, ℂ)`.
 * `TauCeti.Sym.analyticAt_coeffEquiv_map_coeffEquiv_symm_of_analyticAt`: **a holomorphic
   coordinate change acts analytically on elementary symmetric coordinates**, colliding points
   included.
+* `TauCeti.analyticAt_sum_map_nthRoots`: the sum of a holomorphic function over the `m`-th roots
+  of `s` is analytic in `s` at `0`, where all the roots collide.
 -/
 
 public section
@@ -395,5 +397,31 @@ theorem analyticAt_coeffEquiv_map_coeffEquiv_symm_of_analyticAt {φ : ℂ → �
     hpow j hj)
 
 end Sym
+
+/-! ### Sums over the roots of `X ^ m - s` -/
+
+/-- **Sums over the `m`-th roots depend analytically on the radicand.** If `G` is holomorphic at
+the origin, then `s ↦ ∑ G(w)`, the sum running over the `m`-th roots `w` of `s` counted with
+multiplicity, is analytic at `s = 0`. At `s = 0` all `m` roots collide at the origin, and no single
+root is a holomorphic function of `s` near `0`; only their symmetric combinations are. -/
+theorem analyticAt_sum_map_nthRoots {G : ℂ → ℂ} (hG : AnalyticAt ℂ G 0) (m : ℕ) :
+    AnalyticAt ℂ (fun s ↦ ((nthRoots m s).map G).sum) 0 := by
+  rcases Nat.eq_zero_or_pos m with rfl | hm
+  · simpa only [nthRoots_zero, Multiset.map_zero, Multiset.sum_zero] using analyticAt_const
+  -- `nthRoots m s` is the root multiset of the monic polynomial `X ^ m - C s`, whose lower
+  -- coefficients depend affinely on `s`.
+  set c : ℂ → Fin m → ℂ := fun s i ↦ (X ^ m - C s).coeff i
+  have hroots (s : ℂ) : nthRoots m s = ((Sym.coeffEquiv ℂ m).symm (c s) : Multiset ℂ) := by
+    rw [Sym.coeffEquiv_symm_apply,
+      Polynomial.monicOfCoeff_coeff (monic_X_pow_sub_C s hm.ne') (natDegree_X_pow_sub_C s)]
+    rfl
+  have hc : AnalyticAt ℂ c 0 := AnalyticAt.pi fun i ↦ by
+    simp only [coeff_sub, coeff_X_pow, coeff_C]
+    split_ifs <;> fun_prop
+  simp_rw [hroots]
+  refine AnalyticAt.comp (g := fun c ↦ (((Sym.coeffEquiv ℂ m).symm c : Multiset ℂ).map G).sum)
+    (Sym.analyticAt_sum_map_coeffEquiv_symm fun z hz ↦ ?_) hc
+  rw [← _root_.Sym.mem_coe, ← hroots, nthRoots_zero_right] at hz
+  rwa [Multiset.eq_of_mem_replicate hz]
 
 end TauCeti
