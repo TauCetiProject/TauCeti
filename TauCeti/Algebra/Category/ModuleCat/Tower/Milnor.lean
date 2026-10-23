@@ -448,7 +448,9 @@ homology class of the product complex. -/
 theorem limOneToHomology_mk {i j : ι} (hij : c.Rel i j) (x : (C.homology i).Product) :
     C.limOneToHomology hC hij (Submodule.Quotient.mk x) =
       (C.shortComplex_shortExact hC).δ i j hij ((C.productHomologyEquiv i).symm x) := by
-  rw [limOneToHomology, Submodule.liftQ_apply]
+  rw [limOneToHomology, Submodule.liftQ_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
+    connecting]
+  -- `ModuleCat.Hom.hom` is an abbreviation for the `ConcreteCategory.hom` coercion on the right.
   rfl
 
 /-- **Exactness of the Milnor sequence at `lim¹`.** The map `lim¹ Hᵢ(Cₙ) → Hⱼ(lim C)` is
