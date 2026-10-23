@@ -49,6 +49,8 @@ abelian group `M`, and we classify their solutions there.
 
 ## Main results
 
+* `MvPolynomial.IsSymmetric.coeff_single_add_single`: the coefficients of a symmetric
+  two-variable polynomial are symmetric.
 * `TauCeti.isSymmetricCocycleCoeff_coeff`: the coefficients of a symmetric additive 2-cocycle
   satisfy the coefficient equations.
 * `TauCeti.IsSymmetricCocycleCoeff.exists_eq_nsmul`: every solution of the coefficient equations
@@ -233,17 +235,23 @@ private theorem coeff_single_add_single_lazardCocycle {n i : ℕ} (hi : 0 < i) (
   rw [ite_eq_left ⟨by simp; omega, by simp; omega, by simp; omega⟩]
   simp
 
+/-- The coefficients of a symmetric two-variable polynomial are symmetric: the coefficient of
+`XⁱYʲ` equals that of `XʲYⁱ`. -/
+theorem _root_.MvPolynomial.IsSymmetric.coeff_single_add_single {f : MvPolynomial (Fin 2) R}
+    (hs : f.IsSymmetric) (i j : ℕ) :
+    f.coeff (Finsupp.single 0 i + Finsupp.single 1 j) =
+      f.coeff (Finsupp.single 0 j + Finsupp.single 1 i) := by
+  have h := coeff_rename_mapDomain (Equiv.swap (0 : Fin 2) 1) (Equiv.injective _) f
+    (Finsupp.single 0 j + Finsupp.single 1 i)
+  rwa [hs (Equiv.swap 0 1), Finsupp.mapDomain_add, Finsupp.mapDomain_single,
+    Finsupp.mapDomain_single, Equiv.swap_apply_left, Equiv.swap_apply_right, add_comm] at h
+
 /-- The coefficients `bᵢ` of `XⁱYⁿ⁻ⁱ` in a symmetric additive 2-cocycle satisfy the coefficient
 equations in degree `n`. -/
 theorem isSymmetricCocycleCoeff_coeff {f : MvPolynomial (Fin 2) R} (hs : f.IsSymmetric)
     (hf : f.IsAddCocycle₂) (n : ℕ) :
     IsSymmetricCocycleCoeff n fun i => f.coeff (Finsupp.single 0 i + Finsupp.single 1 (n - i)) where
-  symm i hi := by
-    have h := coeff_rename_mapDomain (Equiv.swap (0 : Fin 2) 1) (Equiv.injective _) f
-      (Finsupp.single 0 i + Finsupp.single 1 (n - i))
-    rw [hs (Equiv.swap 0 1), Finsupp.mapDomain_add, Finsupp.mapDomain_single,
-      Finsupp.mapDomain_single, Equiv.swap_apply_left, Equiv.swap_apply_right, add_comm] at h
-    rw [Nat.sub_sub_self hi, h]
+  symm i hi := by rw [Nat.sub_sub_self hi, hs.coeff_single_add_single]
   rel i j k hi hj hk hn := by
     have h := hf.coeff_eq i j k
     rw [ite_eq_right hk.ne', ite_eq_right hi.ne', zero_add, add_zero] at h

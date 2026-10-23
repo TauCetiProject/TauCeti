@@ -99,6 +99,7 @@ def augmentationIdeal : Ideal LazardRing :=
   RingHom.ker augmentation
 
 /-- An element lies in the augmentation ideal exactly when its augmentation vanishes. -/
+@[simp]
 theorem mem_augmentationIdeal {x : LazardRing} :
     x ∈ augmentationIdeal ↔ augmentation x = 0 :=
   RingHom.mem_ker
@@ -347,7 +348,7 @@ private theorem span_toCotangent_generator :
     have hyI : y ∈ augmentationIdeal := augmentationIdeal_eq_span ▸ hy'
     -- `c • y ≡ η(c) • y` modulo `I²`, since `c - η(c) ∈ I` for the augmentation `η`.
     have hc : c - (augmentation c : LazardRing) ∈ augmentationIdeal := by
-      simp [mem_augmentationIdeal]
+      simp
     have h' : augmentationIdeal.toCotangent ⟨c • y, h⟩ =
         augmentationIdeal.toCotangent (augmentation c • ⟨y, hyI⟩) := by
       rw [augmentationIdeal.toCotangent_eq, pow_two]

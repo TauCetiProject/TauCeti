@@ -70,6 +70,8 @@ uniformities are shadowed, so the evaluation the statement is about is never re-
   `g`, the four terms of the additive 2-cocycle identity.
 * `MvPowerSeries.subst_coe_eq_coe_aeval` : substituting polynomials into a polynomial is
   evaluating it.
+* `MvPowerSeries.subst_coe_pair_eq_coe_aeval` : the same for a two-variable polynomial and a
+  pair of polynomials.
 * `MvPowerSeries.coeff_subst_mem_span` : the coefficients of `f(a)` lie in the ideal generated
   by the coefficients of `f`.
 * `MvPowerSeries.subst_eq_subst_of_coeff_mem` : if the coefficients of `f` annihilate an ideal `J`,
@@ -375,90 +377,79 @@ private theorem coeff_subst_coe_pair (g : MvPowerSeries (Fin 2) O) (u v : MvPoly
   simp [Finsupp.prod_fintype, ← MvPolynomial.coe_pow, ← MvPolynomial.coe_mul,
     MvPolynomial.coeff_coe]
 
+/-- The coefficients of `g(Xₐ + X_b, X_c)`, for distinct variables `a`, `b`, `c`. -/
+private theorem coeff_subst_X_add_X_X_of_ne {a b c : Fin 3} (hab : a ≠ b) (hac : a ≠ c)
+    (hbc : b ≠ c) (g : MvPowerSeries (Fin 2) O) (d : Fin 3 →₀ ℕ) :
+    coeff d (g.subst ![X a + X b, X c]) =
+      (d a + d b).choose (d a) * coeff (single 0 (d a + d b) + single 1 (d c)) g := by
+  simp only [← MvPolynomial.coe_X, ← MvPolynomial.coe_add]
+  rw [coeff_subst_coe_pair _ _ _ (hasSubst_of_constantCoeff_zero fun s ↦ by
+    fin_cases s <;> simp), finsum_eq_single _ (single 0 (d a + d b) + single 1 (d c))]
+  · rw [MvPolynomial.coeff_add_pow_mul_X_pow_fin_three hab hac hbc]
+    simp [mul_comm]
+  · intro e he
+    rw [MvPolynomial.coeff_add_pow_mul_X_pow_fin_three hab hac hbc, ite_eq_right, mul_zero]
+    rintro ⟨h₁, h₂⟩
+    exact he (by ext i; fin_cases i <;> simp [h₁, h₂])
+
+/-- The coefficients of `g(Xₐ, X_c)`, for distinct variables `a`, `b`, `c`. -/
+private theorem coeff_subst_X_X_of_ne {a b c : Fin 3} (hab : a ≠ b) (hac : a ≠ c) (hbc : b ≠ c)
+    (g : MvPowerSeries (Fin 2) O) (d : Fin 3 →₀ ℕ) :
+    coeff d (g.subst ![(X a : MvPowerSeries (Fin 3) O), X c]) =
+      if d b = 0 then coeff (single 0 (d a) + single 1 (d c)) g else 0 := by
+  simp only [← MvPolynomial.coe_X]
+  rw [coeff_subst_coe_pair _ _ _ (hasSubst_of_constantCoeff_zero fun s ↦ by
+    fin_cases s <;> simp)]
+  split_ifs with hd
+  · rw [finsum_eq_single _ (single 0 (d a) + single 1 (d c))]
+    · rw [MvPolynomial.coeff_X_pow_mul_X_pow_fin_three hab hac hbc]
+      simp [hd]
+    · intro e he
+      rw [MvPolynomial.coeff_X_pow_mul_X_pow_fin_three hab hac hbc, ite_eq_right, mul_zero]
+      rintro ⟨h₁, -, h₂⟩
+      exact he (by ext i; fin_cases i <;> simp [h₁, h₂])
+  · refine finsum_eq_zero_of_forall_eq_zero fun e ↦ ?_
+    rw [MvPolynomial.coeff_X_pow_mul_X_pow_fin_three hab hac hbc, ite_eq_right (by tauto),
+      mul_zero]
+
 /-- The coefficient of `XⁱYʲZᵏ` in `g(X + Y, Z)` is `(i + j).choose i` times that of `Xⁱ⁺ʲYᵏ`
 in `g`. -/
 theorem coeff_subst_X_add_X_X (g : MvPowerSeries (Fin 2) O) (d : Fin 3 →₀ ℕ) :
     coeff d (g.subst ![X 0 + X 1, X 2]) =
-      (d 0 + d 1).choose (d 0) * coeff (single 0 (d 0 + d 1) + single 1 (d 2)) g := by
-  have h : ![X 0 + X 1, X 2] = ![((MvPolynomial.X 0 + MvPolynomial.X 1 :
-      MvPolynomial (Fin 3) O) : MvPowerSeries (Fin 3) O), ↑(MvPolynomial.X 2 :
-      MvPolynomial (Fin 3) O)] := by simp
-  rw [h, coeff_subst_coe_pair _ _ _ (h ▸ hasSubst_of_constantCoeff_zero fun s ↦ by
-    fin_cases s <;> simp), finsum_eq_single _ (single 0 (d 0 + d 1) + single 1 (d 2))]
-  · rw [MvPolynomial.coeff_add_pow_mul_X_pow_fin_three (by decide) (by decide) (by decide)]
-    simp [mul_comm]
-  · intro e he
-    rw [MvPolynomial.coeff_add_pow_mul_X_pow_fin_three (by decide) (by decide) (by decide),
-      ite_eq_right, mul_zero]
-    rintro ⟨h₁, h₂⟩
-    exact he (by ext i; fin_cases i <;> simp [h₁, h₂])
+      (d 0 + d 1).choose (d 0) * coeff (single 0 (d 0 + d 1) + single 1 (d 2)) g :=
+  coeff_subst_X_add_X_X_of_ne (by decide) (by decide) (by decide) g d
 
 /-- The coefficient of `XⁱYʲZᵏ` in `g(X, Y + Z)` is `(j + k).choose j` times that of `XⁱYʲ⁺ᵏ`
 in `g`. -/
 theorem coeff_subst_X_X_add_X (g : MvPowerSeries (Fin 2) O) (d : Fin 3 →₀ ℕ) :
     coeff d (g.subst ![X 0, X 1 + X 2]) =
       (d 1 + d 2).choose (d 1) * coeff (single 0 (d 0) + single 1 (d 1 + d 2)) g := by
-  have h : ![X 0, X 1 + X 2] = ![((MvPolynomial.X 0 : MvPolynomial (Fin 3) O) :
-      MvPowerSeries (Fin 3) O), ↑(MvPolynomial.X 1 + MvPolynomial.X 2 :
-      MvPolynomial (Fin 3) O)] := by simp
-  rw [h, coeff_subst_coe_pair _ _ _ (h ▸ hasSubst_of_constantCoeff_zero fun s ↦ by
-    fin_cases s <;> simp), finsum_eq_single _ (single 0 (d 0) + single 1 (d 1 + d 2))]
-  · rw [mul_comm (_ ^ _), MvPolynomial.coeff_add_pow_mul_X_pow_fin_three (by decide) (by decide)
-      (by decide)]
-    simp [mul_comm]
-  · intro e he
-    rw [mul_comm (_ ^ _), MvPolynomial.coeff_add_pow_mul_X_pow_fin_three (by decide) (by decide)
-      (by decide), ite_eq_right, mul_zero]
-    rintro ⟨h₁, h₂⟩
-    exact he (by ext i; fin_cases i <;> simp [h₁, h₂])
+  -- `g(X, Y + Z)` is `g(Y, X)` evaluated at `(Y + Z, X)`.
+  have hb : HasSubst ![(X 1 + X 2 : MvPowerSeries (Fin 3) O), X 0] :=
+    hasSubst_of_constantCoeff_zero fun s ↦ by fin_cases s <;> simp
+  have h : g.subst ![(X 0 : MvPowerSeries (Fin 3) O), X 1 + X 2] =
+      (g.subst ![(X 1 : MvPowerSeries (Fin 2) O), X 0]).subst ![X 1 + X 2, X 0] := by
+    rw [subst_comp_subst_apply HasSubst.X_X hb]
+    congr 1
+    funext s
+    fin_cases s <;> simp [subst_X hb]
+  rw [h, coeff_subst_X_add_X_X_of_ne (by decide) (by decide) (by decide),
+    coeff_subst_X_one_X_zero]
+  simp
 
 /-- The coefficient of `XⁱYʲZᵏ` in `g(X, Y)` is that of `XⁱYʲ` in `g` if `k = 0`, and `0`
 otherwise. -/
 theorem coeff_subst_X_zero_X_one (g : MvPowerSeries (Fin 2) O) (d : Fin 3 →₀ ℕ) :
     coeff d (g.subst ![(X 0 : MvPowerSeries (Fin 3) O), X 1]) =
-      if d 2 = 0 then coeff (single 0 (d 0) + single 1 (d 1)) g else 0 := by
-  have h : ![(X 0 : MvPowerSeries (Fin 3) O), X 1] = ![((MvPolynomial.X 0 :
-      MvPolynomial (Fin 3) O) : MvPowerSeries (Fin 3) O), ↑(MvPolynomial.X 1 :
-      MvPolynomial (Fin 3) O)] := by simp
-  rw [h, coeff_subst_coe_pair _ _ _ (h ▸ hasSubst_of_constantCoeff_zero fun s ↦ by
-    fin_cases s <;> simp)]
-  split_ifs with hd
-  · rw [finsum_eq_single _ (single 0 (d 0) + single 1 (d 1))]
-    · rw [MvPolynomial.coeff_X_pow_mul_X_pow_fin_three (b := 2) (by decide) (by decide)
-        (by decide)]
-      simp [hd]
-    · intro e he
-      rw [MvPolynomial.coeff_X_pow_mul_X_pow_fin_three (b := 2) (by decide) (by decide)
-        (by decide), ite_eq_right, mul_zero]
-      rintro ⟨h₁, -, h₂⟩
-      exact he (by ext i; fin_cases i <;> simp [h₁, h₂])
-  · refine finsum_eq_zero_of_forall_eq_zero fun e ↦ ?_
-    rw [MvPolynomial.coeff_X_pow_mul_X_pow_fin_three (b := 2) (by decide) (by decide)
-      (by decide), ite_eq_right (by tauto), mul_zero]
+      if d 2 = 0 then coeff (single 0 (d 0) + single 1 (d 1)) g else 0 :=
+  coeff_subst_X_X_of_ne (b := 2) (by decide) (by decide) (by decide) g d
 
 /-- The coefficient of `XⁱYʲZᵏ` in `g(Y, Z)` is that of `XʲYᵏ` in `g` if `i = 0`, and `0`
 otherwise. -/
 theorem coeff_subst_X_one_X_two (g : MvPowerSeries (Fin 2) O) (d : Fin 3 →₀ ℕ) :
     coeff d (g.subst ![(X 1 : MvPowerSeries (Fin 3) O), X 2]) =
-      if d 0 = 0 then coeff (single 0 (d 1) + single 1 (d 2)) g else 0 := by
-  have h : ![(X 1 : MvPowerSeries (Fin 3) O), X 2] = ![((MvPolynomial.X 1 :
-      MvPolynomial (Fin 3) O) : MvPowerSeries (Fin 3) O), ↑(MvPolynomial.X 2 :
-      MvPolynomial (Fin 3) O)] := by simp
-  rw [h, coeff_subst_coe_pair _ _ _ (h ▸ hasSubst_of_constantCoeff_zero fun s ↦ by
-    fin_cases s <;> simp)]
-  split_ifs with hd
-  · rw [finsum_eq_single _ (single 0 (d 1) + single 1 (d 2))]
-    · rw [MvPolynomial.coeff_X_pow_mul_X_pow_fin_three (b := 0) (by decide) (by decide)
-        (by decide)]
-      simp [hd]
-    · intro e he
-      rw [MvPolynomial.coeff_X_pow_mul_X_pow_fin_three (b := 0) (by decide) (by decide)
-        (by decide), ite_eq_right, mul_zero]
-      rintro ⟨h₁, -, h₂⟩
-      exact he (by ext i; fin_cases i <;> simp [h₁, h₂])
-  · refine finsum_eq_zero_of_forall_eq_zero fun e ↦ ?_
-    rw [MvPolynomial.coeff_X_pow_mul_X_pow_fin_three (b := 0) (by decide) (by decide)
-      (by decide), ite_eq_right (by tauto), mul_zero]
+      if d 0 = 0 then coeff (single 0 (d 1) + single 1 (d 2)) g else 0 :=
+  coeff_subst_X_X_of_ne (b := 0) (by decide) (by decide) (by decide) g d
 
 end FinThree
 
@@ -474,6 +465,16 @@ theorem subst_coe_eq_coe_aeval (p : MvPolynomial σ O) (q : σ → MvPolynomial 
   rw [subst_coe]
   simpa using (DFunLike.congr_fun
     (MvPolynomial.comp_aeval (R := O) q (MvPolynomial.coeToMvPowerSeries.algHom O)) p).symm
+
+/-- Substituting two polynomials into a two-variable polynomial, all viewed as power series, is
+evaluating the polynomial. -/
+theorem subst_coe_pair_eq_coe_aeval (p : MvPolynomial (Fin 2) O) (u v : MvPolynomial τ O) :
+    (p : MvPowerSeries (Fin 2) O).subst ![(u : MvPowerSeries τ O), v] =
+      ((MvPolynomial.aeval ![u, v] p : MvPolynomial τ O) : MvPowerSeries τ O) := by
+  rw [← subst_coe_eq_coe_aeval]
+  congr 1
+  funext s
+  fin_cases s <;> simp
 
 /-- The coefficients of a substitution into `f` lie in the ideal generated by the coefficients
 of `f`. -/

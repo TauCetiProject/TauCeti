@@ -21,12 +21,16 @@ zero — then substituting into `G` only sees the linear part `X + Y` of `F`, an
 
   `G(X, Y) + G(X + Y, Z) = G(X, Y + Z) + G(Y, Z)`.
 
-So formal group laws with square-zero coefficients are the first-order deformations of the
-additive formal group law `X + Y`, and they are classified by symmetric additive 2-cocycles. This
-is how the symmetric 2-cocycle lemma computes the indecomposables of the Lazard ring: modulo the
-square of its augmentation ideal, the universal formal group law has square-zero coefficients, so
-they satisfy the symmetric cocycle equations (`FormalGroup.isSymmetricCocycleCoeff_coeff`) and
-`TauCeti.IsSymmetricCocycleCoeff.exists_eq_nsmul` applies to them.
+When `F` is commutative, `G` is moreover symmetric. Conversely, a polynomial additive 2-cocycle
+`f` with no constant term and square-zero coefficients gives the formal group law `X + Y + f`, a
+first-order deformation of the additive formal group law, which is commutative when `f` is
+symmetric.
+
+This is how the symmetric 2-cocycle lemma computes the indecomposables of the Lazard ring: modulo
+the square of its augmentation ideal, the universal formal group law has square-zero
+coefficients, so they satisfy the symmetric cocycle equations
+(`FormalGroup.isSymmetricCocycleCoeff_coeff`) and `TauCeti.IsSymmetricCocycleCoeff.exists_eq_nsmul`
+applies to them.
 
 ## Main definitions
 
@@ -228,29 +232,9 @@ def formalGroup (hf : f.IsAddCocycle₂) (h0 : constantCoeff f = 0)
     have hG0 : MvPowerSeries.constantCoeff (f : MvPowerSeries (Fin 2) A) = 0 := by
       simpa using (coeff_X_add_X_add_coe hf h0).1
     rw [TauCeti.subst_subst_left hG hG0, TauCeti.subst_subst_right hG hG0]
-    have h := congrArg (fun p : MvPolynomial (Fin 3) A ↦ (p : MvPowerSeries (Fin 3) A))
-      (isAddCocycle₂_iff.1 hf)
-    simp only [coe_add] at h
-    -- Each of the four substituted families is a pair of polynomials.
-    have hpair (u v : MvPolynomial (Fin 3) A) :
-        ![(u : MvPowerSeries (Fin 3) A), v] = fun s ↦ ((![u, v] s : MvPolynomial (Fin 3) A) :
-          MvPowerSeries (Fin 3) A) := by
-      funext s
-      fin_cases s <;> rfl
-    rw [show ![MvPowerSeries.X 0 + MvPowerSeries.X 1, MvPowerSeries.X 2] =
-        ![((X 0 + X 1 : MvPolynomial (Fin 3) A) : MvPowerSeries (Fin 3) A),
-          ↑(X 2 : MvPolynomial (Fin 3) A)] by simp,
-      show ![MvPowerSeries.X 0, MvPowerSeries.X 1 + MvPowerSeries.X 2] =
-        ![((X 0 : MvPolynomial (Fin 3) A) : MvPowerSeries (Fin 3) A),
-          ↑(X 1 + X 2 : MvPolynomial (Fin 3) A)] by simp,
-      show ![(MvPowerSeries.X 0 : MvPowerSeries (Fin 3) A), MvPowerSeries.X 1] =
-        ![((X 0 : MvPolynomial (Fin 3) A) : MvPowerSeries (Fin 3) A),
-          ↑(X 1 : MvPolynomial (Fin 3) A)] by simp,
-      show ![(MvPowerSeries.X 1 : MvPowerSeries (Fin 3) A), MvPowerSeries.X 2] =
-        ![((X 1 : MvPolynomial (Fin 3) A) : MvPowerSeries (Fin 3) A),
-          ↑(X 2 : MvPolynomial (Fin 3) A)] by simp]
-    simp only [hpair, subst_coe_eq_coe_aeval, h]
-    ring
+    -- Both sides are polynomials, and the cocycle identity of `f` identifies them.
+    simp only [← coe_X, ← coe_add, subst_coe_pair_eq_coe_aeval]
+    rw [isAddCocycle₂_iff.1 hf, add_comm (aeval ![X 0, X 1 + X 2] f)]
 
 /-- The underlying power series of `hf.formalGroup h0 hff` is `X + Y + f(X, Y)`. -/
 @[simp]
@@ -266,14 +250,10 @@ theorem isComm_formalGroup (hf : f.IsAddCocycle₂) (h0 : constantCoeff f = 0)
     (hf.formalGroup h0 hff).IsComm where
   comm := by
     ext d
-    have h := coeff_rename_mapDomain (Equiv.swap (0 : Fin 2) 1) (Equiv.injective _) f
-      (single 0 (d 1) + single 1 (d 0))
-    rw [hs (Equiv.swap 0 1), mapDomain_add, mapDomain_single, mapDomain_single,
-      Equiv.swap_apply_left, Equiv.swap_apply_right, add_comm] at h
     have hd : d = single 0 (d 0) + single 1 (d 1) := by ext i; fin_cases i <;> simp
     rw [coeff_subst_X_one_X_zero, toPowerSeries_formalGroup]
     simp only [map_add, MvPolynomial.coeff_coe]
-    rw [← h, ← hd]
+    rw [hs.coeff_single_add_single, ← hd]
     simp only [MvPowerSeries.coeff_X, Finsupp.ext_iff, Fin.forall_fin_two]
     simp [add_comm, and_comm]
 
