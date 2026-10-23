@@ -67,6 +67,12 @@ theorem e0_mul_e0_mul (y : CliffordAlgebra (Q' Q)) : e0 Q * (e0 Q * y) = -y := b
 theorem map_inl_ι (m : M) : map (Isometry.inl Q (-QuadraticMap.sq)) (ι Q m) = v Q m := by
   rw [map_apply_ι, Isometry.inl_apply, v, LinearMap.comp_apply, LinearMap.inl_apply]
 
+/-- The inclusion `M → M × R` sends the ordered product `ι m₁ ⋯ ι mₙ` to `v(m₁) ⋯ v(mₙ)`. -/
+theorem map_inl_prod_map_ι (l : List M) :
+    map (Isometry.inl Q (-QuadraticMap.sq)) (l.map (ι Q)).prod = (l.map (v Q)).prod := by
+  rw [map_list_prod, List.map_map]
+  simp only [Function.comp_def, map_inl_ι]
+
 /-- **`e₀` conjugates the image of `Cℓ(M, Q)` by the grade involution**: for every `x`,
 `e₀ x = x̂ e₀` in `Cℓ(M × R, Q')`, where `x̂ = involute x`. -/
 theorem e0_mul_map_inl (x : CliffordAlgebra Q) :
@@ -122,9 +128,7 @@ theorem coe_toEven_involute (x : CliffordAlgebra Q) :
 /-- **An even ordered product of vectors is sent to the same product in `Cℓ(M × R, Q')`.** -/
 theorem coe_toEven_prod_map_ι_of_even_length {l : List M} (hl : Even l.length) :
     (toEven Q (l.map (ι Q)).prod : CliffordAlgebra (Q' Q)) = (l.map (v Q)).prod := by
-  rw [coe_toEven_of_mem_even (prod_map_ι_mem_evenOdd_zero_of_even_length hl), map_list_prod,
-    List.map_map]
-  simp only [Function.comp_def, map_inl_ι]
+  rw [coe_toEven_of_mem_even (prod_map_ι_mem_evenOdd_zero_of_even_length hl), map_inl_prod_map_ι]
 
 /-- **An odd ordered product of vectors is sent to minus the product with `e₀` appended**: for
 `l = [m₁, …, mₙ]` with `n` odd, the image of `ι m₁ ⋯ ι mₙ` is
@@ -134,7 +138,6 @@ theorem coe_toEven_prod_map_ι_of_odd_length {l : List M} (hl : Odd l.length) :
     (toEven Q (l.map (ι Q)).prod : CliffordAlgebra (Q' Q)) = -((l.map (v Q)).prod * e0 Q) := by
   have hodd := prod_map_ι_mem_evenOdd_one_of_odd_length (Q := Q) hl
   rw [coe_toEven_of_mem_odd hodd, e0_mul_map_inl, involute_eq_of_mem_odd hodd, map_neg,
-    neg_mul, map_list_prod, List.map_map]
-  simp only [Function.comp_def, map_inl_ι]
+    neg_mul, map_inl_prod_map_ι]
 
 end CliffordAlgebra
