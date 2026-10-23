@@ -70,6 +70,7 @@ lemma coe_cellAttachingMap_apply (j : cell C n) (z : TopCat.diskBoundary.{w} n) 
   (rfl)
 
 /-- The attaching map of a cell maps the boundary sphere onto the frontier of the cell. -/
+@[simp]
 lemma range_cellAttachingMap (j : cell C n) :
     Set.range (fun z ↦ (cellAttachingMap j z : X)) = cellFrontier n j := by
   ext x
