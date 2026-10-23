@@ -24,7 +24,8 @@ the polynomial `f_p(X + Y, Z)`.
 
 For two-variable series with linear coefficients one, the degree-one component is `X + Y`.
 Over a ring, vanishing of the constant coefficient then puts the remainder after subtracting
-`X + Y` in order at least two.
+`X + Y` in order at least two, and over a commutative ring the linear part of `f(x, y)` is the
+sum of the linear parts of `x` and `y` (`MvPowerSeries.homogeneousComponent_one_subst_pair`).
 -/
 
 public section
@@ -43,6 +44,12 @@ theorem homogeneousComponent_one_X (i : σ) :
   ext d
   rw [coeff_homogeneousComponent, coeff_X]
   split_ifs with h₁ h₂ h₂ <;> simp_all
+
+/-- A homogeneous component of positive degree has no constant coefficient. -/
+@[simp]
+theorem constantCoeff_homogeneousComponent {p : ℕ} (hp : p ≠ 0) (f : MvPowerSeries σ R) :
+    constantCoeff (homogeneousComponent p f) = 0 := by
+  simp [← coeff_zero_eq_constantCoeff_apply, coeff_homogeneousComponent, hp.symm]
 
 /-- A series of order at least `n` without degree-`n` component has order at least `n + 1`. -/
 theorem succ_le_order_of_homogeneousComponent_eq_zero {n : ℕ} (hn : n ≤ f.order)
@@ -67,6 +74,13 @@ theorem homogeneousComponent_pow_of_le_order {p : ℕ} (hf : p ≤ f.order) (n :
       simpa only [nsmul_eq_mul, Nat.cast_mul] using
         (nsmul_le_nsmul_right hf n).trans (le_order_pow n)
     rw [pow_succ, Nat.succ_mul, homogeneousComponent_mul_of_le_order hn hf, ih, pow_succ]
+
+/-- For a series without constant coefficient, the degree-`n` component of its `n`-th power is the
+`n`-th power of its linear part. -/
+theorem homogeneousComponent_pow_of_constantCoeff_eq_zero (hf : constantCoeff f = 0) (n : ℕ) :
+    homogeneousComponent n (f ^ n) = homogeneousComponent 1 f ^ n := by
+  simpa using homogeneousComponent_pow_of_le_order (p := 1)
+    (by simpa using one_le_order_iff_constCoeff_eq_zero.mpr hf) n
 
 end Powers
 
@@ -111,12 +125,10 @@ theorem homogeneousComponent_degree_prod_pow {ι : Type*} {a : ι → MvPowerSer
     (ha₀ : ∀ i, constantCoeff (a i) = 0) (d : ι →₀ ℕ) :
     homogeneousComponent d.degree (d.prod fun i k ↦ a i ^ k) =
       d.prod fun i k ↦ homogeneousComponent 1 (a i) ^ k := by
-  have h1 (i : ι) : (1 : ℕ) ≤ (a i).order := by
-    simpa using (one_le_order_iff_constCoeff_eq_zero (f := a i)).mpr (ha₀ i)
   rw [Finsupp.prod, Finsupp.prod, Finsupp.degree_apply,
     homogeneousComponent_prod_of_le_order _ fun i _ ↦ ?_]
-  · refine Finset.prod_congr rfl fun i _ ↦ ?_
-    simpa using homogeneousComponent_pow_of_le_order (h1 i) (d i)
+  · exact Finset.prod_congr rfl fun i _ ↦
+      homogeneousComponent_pow_of_constantCoeff_eq_zero (ha₀ i) _
   · simpa using le_order_pow_of_constantCoeff_eq_zero (d i) (ha₀ i)
 
 end Products
@@ -124,6 +136,15 @@ end Products
 section Subst
 
 variable {σ τ R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
+
+/-- The linear parts of a substitutable family can be substituted. -/
+theorem HasSubst.homogeneousComponent_one {a : σ → MvPowerSeries τ S} (ha : HasSubst a) :
+    HasSubst fun i ↦ homogeneousComponent 1 (a i) where
+  const_coeff s := by simp
+  coeff_zero d := (ha.coeff_zero d).subset fun s hs ↦ by
+    simp only [Set.mem_ofPred_eq, coeff_homogeneousComponent] at hs ⊢
+    split_ifs at hs
+    exacts [hs, (hs rfl).elim]
 
 /-- **The lowest-degree component of a substitution.** If `f` has order at least `p` and the series
 `a i` have zero constant coefficient, the degree-`p` component of `f(a)` is the degree-`p` component
@@ -133,15 +154,8 @@ theorem homogeneousComponent_subst_of_le_order {f : MvPowerSeries σ R} {p : ℕ
     (ha₀ : ∀ i, constantCoeff (a i) = 0) :
     homogeneousComponent p (f.subst a) =
       (homogeneousComponent p f).subst fun i ↦ homogeneousComponent 1 (a i) := by
-  have hl : HasSubst fun i ↦ homogeneousComponent 1 (a i) :=
-    { const_coeff s := by
-        simp [← coeff_zero_eq_constantCoeff_apply, coeff_homogeneousComponent]
-      coeff_zero d := (ha.coeff_zero d).subset fun s hs ↦ by
-        simp only [Set.mem_ofPred_eq, coeff_homogeneousComponent] at hs ⊢
-        split_ifs at hs
-        exacts [hs, (hs rfl).elim] }
   ext e
-  rw [coeff_homogeneousComponent, coeff_subst ha, coeff_subst hl]
+  rw [coeff_homogeneousComponent, coeff_subst ha, coeff_subst ha.homogeneousComponent_one]
   split_ifs with he
   · refine finsum_congr fun d ↦ ?_
     rw [coeff_homogeneousComponent]
@@ -197,5 +211,27 @@ theorem two_le_order_sub_X_add_X (h₀ : f.constantCoeff = 0)
     simp [hc]
 
 end Ring
+
+section CommRing
+
+variable {τ S : Type*} [CommRing R] [CommRing S] [Algebra R S]
+
+/-- If `f` has zero constant coefficient and linear part `X + Y`, the linear part of `f(x, y)` is
+the sum of the linear parts of `x` and `y`, for `x` and `y` without constant coefficient. -/
+theorem homogeneousComponent_one_subst_pair (h₀ : f.constantCoeff = 0)
+    (hX : coeff (single 0 1) f = 1) (hY : coeff (single 1 1) f = 1) {x y : MvPowerSeries τ S}
+    (hx : constantCoeff x = 0) (hy : constantCoeff y = 0) :
+    homogeneousComponent 1 (f.subst ![x, y]) =
+      homogeneousComponent 1 x + homogeneousComponent 1 y := by
+  have hxy : HasSubst ![x, y] := hasSubst_of_constantCoeff_zero fun i ↦ by
+    fin_cases i <;> simp [hx, hy]
+  have hl := hxy.homogeneousComponent_one
+  rw [homogeneousComponent_subst_of_le_order
+      (by simpa using one_le_order_iff_constCoeff_eq_zero.mpr h₀) hxy
+      (fun i ↦ by fin_cases i <;> simp [hx, hy]),
+    homogeneousComponent_one_eq_X_add_X hX hY, subst_add hl, subst_X hl, subst_X hl]
+  simp
+
+end CommRing
 
 end MvPowerSeries

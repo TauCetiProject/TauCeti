@@ -40,11 +40,19 @@ two normalised additive series agree.
 The lowest-degree part of a substitution is computed by
 `MvPowerSeries.homogeneousComponent_subst_of_le_order`.
 
+## Main definitions
+
+* `FormalGroup.exponentTwoLog`: the normalised logarithm `g` of a commutative formal group law `F`
+  with `[2]_F = 0`.
+
 ## Main results
 
-* `FormalGroup.existsUnique_logarithm_of_nsmulSeries_two_eq_zero`: for a commutative formal group
-  law `F` with `[2]_F = 0` there is a unique power series `g = X + ⋯` without terms of degree `2ᵏ`,
-  `k ≥ 1`, such that `g(F(X, Y)) = g(X) + g(Y)`.
+* `FormalGroup.subst_toPowerSeries_exponentTwoLog`: `g(F(X, Y)) = g(X) + g(Y)`.
+* `FormalGroup.logarithm_unique_of_nsmulSeries_two_eq_zero`: for a formal group law `F` with
+  `[2]_F = 0`, not necessarily commutative, two power series `g = X + ⋯` without terms of degree
+  `2ᵏ`, `k ≥ 1`, such that `g(F(X, Y)) = g(X) + g(Y)` agree.
+* `FormalGroup.eq_exponentTwoLog`, `FormalGroup.existsUnique_logarithm_of_nsmulSeries_two_eq_zero`:
+  for commutative `F` with `[2]_F = 0`, the normalised logarithm is the unique such series.
 
 ## References
 
@@ -60,6 +68,9 @@ open MvPowerSeries
 namespace FormalGroup
 
 variable {R : Type*} [CommRing R] (F : FormalGroup R)
+
+private theorem two_eq_zero (hF : F.nsmulSeries 2 = 0) : (2 : R) = 0 := by
+  exact_mod_cast F.natCast_eq_zero_of_nsmulSeries_eq_zero hF
 
 section AddError
 
@@ -97,15 +108,12 @@ private theorem homogeneousComponent_addError_smul_X_pow (c : R) (n : ℕ) :
         MvPolynomial.X 1 ^ n) : MvPolynomial (Fin 2) R) : MvPowerSeries (Fin 2) R) := by
   have hF := PowerSeries.HasSubst.of_constantCoeff_zero F.zero_constantCoeff
   have hX (i : Fin 2) := PowerSeries.HasSubst.X (S := R) i
-  -- the degree-`n` part of `xⁿ` is the `n`-th power of the linear part of `x`
-  have hpow {x : MvPowerSeries (Fin 2) R} (hx : constantCoeff x = 0) :
-      homogeneousComponent n (x ^ n) = homogeneousComponent 1 x ^ n := by
-    simpa using homogeneousComponent_pow_of_le_order (p := 1)
-      (by simpa using one_le_order_iff_constCoeff_eq_zero.mpr hx) n
   simp only [addError, PowerSeries.subst_smul hF, PowerSeries.subst_smul (hX _),
     PowerSeries.subst_pow hF, PowerSeries.subst_pow (hX _), PowerSeries.subst_X hF,
-    PowerSeries.subst_X (hX _), map_sub, map_smul, hpow F.zero_constantCoeff,
-    hpow (constantCoeff_X _), homogeneousComponent_one_X,
+    PowerSeries.subst_X (hX _), map_sub, map_smul,
+    homogeneousComponent_pow_of_constantCoeff_eq_zero F.zero_constantCoeff,
+    homogeneousComponent_pow_of_constantCoeff_eq_zero (constantCoeff_X _),
+    homogeneousComponent_one_X,
     homogeneousComponent_one_eq_X_add_X F.lin_coeff_X F.lin_coeff_Y]
   rw [MvPolynomial.smul_eq_C_mul, ← MvPolynomial.coeToMvPowerSeries.ringHom_apply]
   simp only [map_mul, map_sub, map_pow, map_add, MvPolynomial.coeToMvPowerSeries.ringHom_apply,
@@ -152,9 +160,8 @@ private theorem subst_addError_X_X (hF : F.nsmulSeries 2 = 0) {g : PowerSeries R
   have hX := PowerSeries.HasSubst.X' (R := R)
   have hFX : F.toPowerSeries.subst ![(PowerSeries.X : PowerSeries R), PowerSeries.X] = 0 := by
     rw [← hF, nsmulSeries_succ, nsmulSeries_one]
-  have h2 : (2 : R) = 0 := by exact_mod_cast F.natCast_eq_zero_of_nsmulSeries_eq_zero hF
   have hgg : g + g = 0 := by
-    rw [← two_smul R g, h2, zero_smul]
+    rw [← two_smul R g, two_eq_zero F hF, zero_smul]
   rw [subst_addError F hX hX, hFX, PowerSeries.subst_zero_of_constantCoeff_zero hg,
     PowerSeries.X_subst]
   linear_combination -hgg
@@ -190,27 +197,6 @@ private theorem homogeneousComponent_subst_addError {τ : Type*} {n : ℕ} {g : 
   simpa using (MvPolynomial.comp_aeval_apply (MvPolynomial.coeToMvPowerSeries.algHom R)
     (leadingError F n g) (f := l)).symm
 
-/-- The linear part of `F(x, y)` is the sum of the linear parts of `x` and `y`. -/
-private theorem homogeneousComponent_one_subst_pair {τ : Type*} {x y : MvPowerSeries τ R}
-    (hx : constantCoeff x = 0) (hy : constantCoeff y = 0) :
-    homogeneousComponent 1 (F.toPowerSeries.subst ![x, y]) =
-      homogeneousComponent 1 x + homogeneousComponent 1 y := by
-  have hc (z : MvPowerSeries τ R) : constantCoeff (homogeneousComponent 1 z) = 0 := by
-    simp [← coeff_zero_eq_constantCoeff_apply, coeff_homogeneousComponent]
-  have hl : HasSubst ![homogeneousComponent 1 x, homogeneousComponent 1 y] :=
-    hasSubst_of_constantCoeff_zero fun i ↦ by fin_cases i <;> simp [hc]
-  have hfun : (fun i ↦ homogeneousComponent 1 (![x, y] i)) =
-      ![homogeneousComponent 1 x, homogeneousComponent 1 y] := by
-    funext i
-    fin_cases i <;> rfl
-  rw [homogeneousComponent_subst_of_le_order
-      (by simpa using one_le_order_iff_constCoeff_eq_zero.mpr F.zero_constantCoeff)
-      (hasSubst_of_constantCoeff_zero fun i ↦ by fin_cases i <;> simp [hx, hy])
-      (fun i ↦ by fin_cases i <;> simp [hx, hy]), hfun,
-    homogeneousComponent_one_eq_X_add_X F.lin_coeff_X F.lin_coeff_Y, subst_add hl, subst_X hl,
-    subst_X hl]
-  simp
-
 variable {F}
 
 /-- The degree-`n` part of the additivity defect is an additive 2-cocycle. -/
@@ -233,14 +219,16 @@ private theorem isAddCocycle₂_leadingError {n : ℕ} {g : PowerSeries R}
       (fun i ↦ by fin_cases i <;> simp [hF₀])
       (fun i ↦ by
         fin_cases i <;>
-          simp [homogeneousComponent_one_subst_pair F (hX₀ 0) (hX₀ 1), homogeneousComponent_one_X]),
+          simp [homogeneousComponent_one_subst_pair F.zero_constantCoeff F.lin_coeff_X
+            F.lin_coeff_Y (hX₀ 0) (hX₀ 1), homogeneousComponent_one_X]),
     homogeneousComponent_subst_addError F hn
       (hasSubst_finTwo (hX 0) (F.hasSubst_subst_pair (hX 1) (hX 2)))
       (l := ![MvPolynomial.X 0, MvPolynomial.X 1 + MvPolynomial.X 2])
       (fun i ↦ by fin_cases i <;> simp [hF₀])
       (fun i ↦ by
         fin_cases i <;>
-          simp [homogeneousComponent_one_subst_pair F (hX₀ 1) (hX₀ 2), homogeneousComponent_one_X]),
+          simp [homogeneousComponent_one_subst_pair F.zero_constantCoeff F.lin_coeff_X
+            F.lin_coeff_Y (hX₀ 1) (hX₀ 2), homogeneousComponent_one_X]),
     homogeneousComponent_subst_addError F hn (hasSubst_finTwo (hX 1) (hX 2))
       (l := ![MvPolynomial.X 1, MvPolynomial.X 2]) (fun i ↦ by fin_cases i <;> simp)
       (fun i ↦ by fin_cases i <;> simp [homogeneousComponent_one_X])] at h
@@ -297,7 +285,7 @@ private theorem exists_le_order_addError_sub_smul_X_pow [F.IsComm] (hF : F.nsmul
     (hn : n ≤ (addError F g).order) :
     ∃ c : R, ((n + 1 : ℕ) : ℕ∞) ≤ (addError F (g - c • PowerSeries.X ^ n)).order ∧
       ∀ k, n = 2 ^ k → c = 0 := by
-  have h2 : (2 : R) = 0 := by exact_mod_cast F.natCast_eq_zero_of_nsmulSeries_eq_zero hF
+  have h2 := two_eq_zero F hF
   have hh := MvPolynomial.homogeneousComponent_isHomogeneous n (truncTotal (n + 1) (addError F g))
   by_cases hpow : ∃ k, n = 2 ^ k
   · obtain ⟨k, rfl⟩ := hpow
@@ -404,17 +392,27 @@ private theorem exists_logarithm [F.IsComm] (hF : F.nsmulSeries 2 = 0) :
           (addError F (approxLimit c) - addError F (approx c m))).order := min_order_le_add
       _ = (addError F (approxLimit c)).order := by rw [add_sub_cancel]
 
-/-- **Uniqueness of the normalised logarithm.** The lowest-degree term `c Xⁿ` of the difference of
-two normalised additive series contributes `c ((X + Y)ⁿ - Xⁿ - Yⁿ) = 0` to the additivity defect,
-which forces `c = 0` unless `n` is a power of two, where the normalisation does. -/
-private theorem eq_of_logarithm (hF : F.nsmulSeries 2 = 0) {g g' : PowerSeries R}
-    (hg : PowerSeries.constantCoeff g = 0 ∧ PowerSeries.coeff 1 g = 1 ∧
-      (∀ k, 0 < k → PowerSeries.coeff (2 ^ k) g = 0) ∧ addError F g = 0)
-    (hg' : PowerSeries.constantCoeff g' = 0 ∧ PowerSeries.coeff 1 g' = 1 ∧
-      (∀ k, 0 < k → PowerSeries.coeff (2 ^ k) g' = 0) ∧ addError F g' = 0) :
+end Construction
+
+/-- **Uniqueness of the normalised logarithm** of a formal group law `F` with `[2]_F = 0`, which
+need not be commutative: two power series `g, g' = X + ⋯` without terms of degree `2ᵏ`, `k ≥ 1`,
+that are additive along `F` agree.
+
+The lowest-degree term `c Xⁿ` of `g - g'` contributes `c ((X + Y)ⁿ - Xⁿ - Yⁿ) = 0` to the
+additivity defect, which forces `c = 0` unless `n` is a power of two, where the normalisation
+does. -/
+theorem logarithm_unique_of_nsmulSeries_two_eq_zero (hF : F.nsmulSeries 2 = 0)
+    {g g' : PowerSeries R} (h₀ : PowerSeries.constantCoeff g = 0) (h₁ : PowerSeries.coeff 1 g = 1)
+    (hp : ∀ k, 0 < k → PowerSeries.coeff (2 ^ k) g = 0)
+    (hg : PowerSeries.subst F.toPowerSeries g =
+      PowerSeries.subst (X 0) g + PowerSeries.subst (X 1) g)
+    (h₀' : PowerSeries.constantCoeff g' = 0) (h₁' : PowerSeries.coeff 1 g' = 1)
+    (hp' : ∀ k, 0 < k → PowerSeries.coeff (2 ^ k) g' = 0)
+    (hg' : PowerSeries.subst F.toPowerSeries g' =
+      PowerSeries.subst (X 0) g' + PowerSeries.subst (X 1) g') :
     g = g' := by
-  obtain ⟨h₀, h₁, hp, ha⟩ := hg
-  obtain ⟨h₀', h₁', hp', ha'⟩ := hg'
+  have ha := (addError_eq_zero_iff F).mpr hg
+  have ha' := (addError_eq_zero_iff F).mpr hg'
   suffices h : ∀ n, PowerSeries.coeff n (g - g') = 0 by
     rw [← sub_eq_zero]
     ext n
@@ -446,24 +444,69 @@ private theorem eq_of_logarithm (hF : F.nsmulSeries 2 = 0) {g g' : PowerSeries R
     · simp [c, hp k hk, hp' k hk]
   · simp only [not_exists] at hpow
     obtain ⟨r, -, hr⟩ := TauCeti.existsUnique_eq_smul_add_pow_sub_pow_sub_pow_of_two_eq_zero
-      (by exact_mod_cast F.natCast_eq_zero_of_nsmulSeries_eq_zero hF) hn.ne' hpow
+      (two_eq_zero F hF) hn.ne' hpow
       (MvPolynomial.isHomogeneous_zero _ _ _) MvPolynomial.IsSymmetric.zero
       MvPolynomial.IsAddCocycle₂.zero
     exact (hr c hc.symm).trans (hr 0 (by simp)).symm
 
-end Construction
+section ExponentTwoLog
 
+variable [F.IsComm] (hF : F.nsmulSeries 2 = 0)
+
+/-- **The normalised logarithm of a formal group law of exponent two** (Quillen). For a commutative
+formal group law `F` with `[2]_F = 0`, this is the unique power series
+`g(X) = X + ∑_{i ≥ 2} aᵢ Xⁱ` with `a_{2ᵏ} = 0` for every `k ≥ 1` such that
+`g(F(X, Y)) = g(X) + g(Y)`; see `FormalGroup.eq_exponentTwoLog`. -/
+noncomputable def exponentTwoLog : PowerSeries R :=
+  Classical.choose (exists_logarithm F hF)
+
+/-- The normalised logarithm has no constant term. -/
+@[simp]
+theorem constantCoeff_exponentTwoLog : PowerSeries.constantCoeff (F.exponentTwoLog hF) = 0 :=
+  (Classical.choose_spec (exists_logarithm F hF)).1
+
+/-- The normalised logarithm has linear coefficient `1`. -/
+@[simp]
+theorem coeff_one_exponentTwoLog : PowerSeries.coeff 1 (F.exponentTwoLog hF) = 1 :=
+  (Classical.choose_spec (exists_logarithm F hF)).2.1
+
+/-- The normalised logarithm has no term of degree `2ᵏ` for `k ≥ 1`. -/
+theorem coeff_two_pow_exponentTwoLog {k : ℕ} (hk : 0 < k) :
+    PowerSeries.coeff (2 ^ k) (F.exponentTwoLog hF) = 0 :=
+  (Classical.choose_spec (exists_logarithm F hF)).2.2.1 k hk
+
+/-- **The normalised logarithm is additive along `F`**: `g(F(X, Y)) = g(X) + g(Y)`. -/
+theorem subst_toPowerSeries_exponentTwoLog :
+    PowerSeries.subst F.toPowerSeries (F.exponentTwoLog hF) =
+      PowerSeries.subst (X 0) (F.exponentTwoLog hF) +
+        PowerSeries.subst (X 1) (F.exponentTwoLog hF) :=
+  (addError_eq_zero_iff F).mp (Classical.choose_spec (exists_logarithm F hF)).2.2.2
+
+/-- A power series `g = X + ⋯` without terms of degree `2ᵏ`, `k ≥ 1`, that is additive along `F`
+is the normalised logarithm. -/
+theorem eq_exponentTwoLog {g : PowerSeries R} (h₀ : PowerSeries.constantCoeff g = 0)
+    (h₁ : PowerSeries.coeff 1 g = 1) (hp : ∀ k, 0 < k → PowerSeries.coeff (2 ^ k) g = 0)
+    (hg : PowerSeries.subst F.toPowerSeries g =
+      PowerSeries.subst (X 0) g + PowerSeries.subst (X 1) g) :
+    g = F.exponentTwoLog hF :=
+  F.logarithm_unique_of_nsmulSeries_two_eq_zero hF h₀ h₁ hp hg (F.constantCoeff_exponentTwoLog hF)
+    (F.coeff_one_exponentTwoLog hF) (fun _ ↦ F.coeff_two_pow_exponentTwoLog hF)
+    (F.subst_toPowerSeries_exponentTwoLog hF)
+
+include hF in
 /-- **The normalised logarithm of a formal group law of exponent two** (Quillen). Let `F` be a
 commutative formal group law over a commutative ring `R` with `[2]_F = 0`. There is a unique power
 series `g(X) = X + ∑_{i ≥ 2} aᵢ Xⁱ` with `a_{2ᵏ} = 0` for every `k ≥ 1` such that
-`g(F(X, Y)) = g(X) + g(Y)`. -/
-theorem existsUnique_logarithm_of_nsmulSeries_two_eq_zero [F.IsComm] (hF : F.nsmulSeries 2 = 0) :
+`g(F(X, Y)) = g(X) + g(Y)`, namely `FormalGroup.exponentTwoLog`. -/
+theorem existsUnique_logarithm_of_nsmulSeries_two_eq_zero :
     ∃! g : PowerSeries R, PowerSeries.constantCoeff g = 0 ∧ PowerSeries.coeff 1 g = 1 ∧
       (∀ k, 0 < k → PowerSeries.coeff (2 ^ k) g = 0) ∧
       PowerSeries.subst F.toPowerSeries g =
-        PowerSeries.subst (X 0) g + PowerSeries.subst (X 1) g := by
-  simp only [← addError_eq_zero_iff]
-  obtain ⟨g, hg⟩ := exists_logarithm F hF
-  exact ⟨g, hg, fun g' hg' ↦ eq_of_logarithm F hF hg' hg⟩
+        PowerSeries.subst (X 0) g + PowerSeries.subst (X 1) g :=
+  ⟨F.exponentTwoLog hF, ⟨F.constantCoeff_exponentTwoLog hF, F.coeff_one_exponentTwoLog hF,
+      fun _ ↦ F.coeff_two_pow_exponentTwoLog hF, F.subst_toPowerSeries_exponentTwoLog hF⟩,
+    fun _ ⟨h₀, h₁, hp, hg⟩ ↦ F.eq_exponentTwoLog hF h₀ h₁ hp hg⟩
+
+end ExponentTwoLog
 
 end FormalGroup
