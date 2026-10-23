@@ -37,6 +37,9 @@ carriers of an even lattice correspond to quadratic-isotropic subgroups.
   intermediate carrier, as an integral lattice for the same ambient form. It inherits
   nondegeneracy and positive definiteness from the lattice it lies over; evenness is not
   inherited, and is instead supplied by `IsEven` of the carrier itself.
+* `TauCeti.IntegralLattice.toIntegralLattice_toIntermediateCarrier`: conversely, an integral lattice
+  for the same form containing `L` is recovered from its intermediate carrier
+  `TauCeti.IntegralLattice.toIntermediateCarrier`, which is even when the lattice is.
 * `TauCeti.IntegralLattice.IntermediateCarrier.isIntegral_iff_forall_discriminantPairing_eq_zero`:
   integral carriers are cut out by vanishing of the discriminant pairing.
 * `TauCeti.IntegralLattice.IntermediateCarrier.isEven_iff_forall_discriminantQuadraticMap_eq_zero`:
@@ -269,6 +272,37 @@ theorem isEven_iff_isIsotropic_discriminantSubgroup (hL : L.IsEven) (M : L.Inter
 end IntermediateCarrier
 
 open IntermediateCarrier
+
+section ToIntermediateCarrier
+
+variable (N : IntegralLattice V) {L : IntegralLattice V} (hform : N.form = L.form)
+  (hle : L.carrier ≤ N.carrier)
+
+/-- The intermediate carrier attached to an integral overlattice is integral. -/
+theorem isIntegral_toIntermediateCarrier :
+    IntermediateCarrier.IsIntegral (N.toIntermediateCarrier hform hle) :=
+  isIntegral_def.mpr fun x hx y hy ↦ by
+    rw [coe_toIntermediateCarrier] at hx hy
+    exact hform ▸ N.form_mem_one ⟨x, hx⟩ ⟨y, hy⟩
+
+/-- The intermediate carrier attached to an even overlattice is even. -/
+theorem isEven_toIntermediateCarrier (hN : N.IsEven) :
+    IntermediateCarrier.IsEven (N.toIntermediateCarrier hform hle) :=
+  isEven_def.mpr fun x hx ↦ by
+    rw [coe_toIntermediateCarrier] at hx
+    simpa [norm_apply, hform] using (N.isEven_iff_forall_norm.mp hN) ⟨x, hx⟩
+
+/-- The integral lattice of the intermediate carrier attached to an integral overlattice is that
+overlattice. -/
+@[simp]
+theorem toIntegralLattice_toIntermediateCarrier
+    [(N.toIntermediateCarrier hform hle).1.IsLattice ℚ]
+    (h : IntermediateCarrier.IsIntegral (N.toIntermediateCarrier hform hle)) :
+    h.toIntegralLattice = N :=
+  IntegralLattice.ext (h.toIntegralLattice_carrier.trans (N.coe_toIntermediateCarrier hform hle))
+    (h.toIntegralLattice_form.trans hform.symm)
+
+end ToIntermediateCarrier
 
 variable (L : IntegralLattice V)
 

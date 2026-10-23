@@ -63,9 +63,9 @@ commutative ring.
 The denominator side reads `invarDenom (normEDS b c d) 1 m = W (m + 1) * W m * W (m - 1)`, and
 which of the three factors gives up `b = W 2` and `c = W 3` depends on `m` modulo `6` — hence the
 six-way split. Each branch reindexes one or two complements by `normEDS_mul_complEDS_div`
-(`Complement.lean`), `W k * complEDS b c d k (n / k) = W n`, which this development adds beside the
-identity it is derived from — `normEDS_mul_complEDS`, stated at `W (n * k)` — and which absorbs the
-`Int.ediv_mul_cancel` step on the divisibility that `m % 6 = r` supplies. The residues `0`, `1` and
+(`Complement.lean`), `W k * complEDS b c d k (n / k) = W n`, which reindexes Mathlib's
+`normEDS_mul_complEDS`, stated at `W (n * k)`, and which absorbs the `Int.ediv_mul_cancel` step on
+the divisibility that `m % 6 = r` supplies. The residues `0`, `1` and
 `5` go through the `6`-complement once each and rewrite `W 6` as `(W 5 - d ^ 2) * b * c`
 (`WeierstrassCurve.normEDS_six`, `Six.lean`); the residues `2`, `3` and `4` each split the work
 between a `2`-complement and a `3`-complement.
@@ -124,9 +124,9 @@ proof below reaches each branch through the divisor-form identity `normEDS_mul_c
 The source's `invarDenom_eq_redInvarDenom_mul`, which identifies the denominator formula as the
 cancelled quotient, is ported here as
 `IsEllipticNet.invarDenom_normEDS_one_eq_reducedInvarDenom_mul`. Both links the source's proof
-uses are available in this repository: `normEDS_mul_complEDS_div` is ported by this development
-into `Complement.lean`, derived there from the unconditional `normEDS_mul_complEDS` together with
-`Int.ediv_mul_cancel` rather than proved afresh, and `normEDS_six_eq_mul` is
+uses are available: `normEDS_mul_complEDS_div` is ported into `Complement.lean`, derived there
+from Mathlib's unconditional `normEDS_mul_complEDS` together with `Int.ediv_mul_cancel` rather
+than proved afresh, and `normEDS_six_eq_mul` is
 `WeierstrassCurve.normEDS_six` (`Six.lean`).
 
 That file's header reads `Authors: David Kurniadi Angdinata`; following this

@@ -19,10 +19,16 @@ Over an ordered semiring, multiplication by an entrywise nonnegative matrix is m
 preserves nonnegativity, and an entrywise strictly positive matrix sends a nonzero nonnegative
 vector to a strictly positive one.
 
+When row `i` of a matrix vanishes off the diagonal, coordinate `i` of a product with a vector only
+sees coordinate `i` of that vector. In particular such a matrix maps the coordinate hyperplane
+`{v | v i = 0}` into itself.
+
 ## Main results
 
 * `TauCeti.mulVec_mulVec_eq_zero_of_pow_two_eq_zero`: a square-zero matrix annihilates every
   vector in two multiplications.
+* `Matrix.mulVec_apply_eq_mul_of_forall_ne_eq_zero`: if row `i` of `A` vanishes off the diagonal,
+  then `(A *ᵥ v) i = A i i * v i`.
 * `Matrix.mulVec_mono` and `Matrix.mulVec_nonneg`: multiplication by an entrywise nonnegative
   matrix is monotone and preserves nonnegativity.
 * `Matrix.mulVec_pos`: a strictly positive matrix sends a nonzero nonnegative vector to a strictly
@@ -47,6 +53,19 @@ end TauCeti
 namespace Matrix
 
 variable {m n : Type*} [Fintype n]
+
+section NonUnitalNonAssocSemiring
+
+variable {R : Type*} [NonUnitalNonAssocSemiring R]
+
+/-- If row `i` of `A` vanishes off the diagonal, then coordinate `i` of `A *ᵥ v` is
+`A i i * v i`. -/
+theorem mulVec_apply_eq_mul_of_forall_ne_eq_zero {A : Matrix n n R} {i : n}
+    (h : ∀ j ≠ i, A i j = 0) (v : n → R) : (A *ᵥ v) i = A i i * v i := by
+  simp only [mulVec, dotProduct]
+  exact Finset.sum_eq_single i (fun j _ hj ↦ by rw [h j hj, zero_mul]) (by simp)
+
+end NonUnitalNonAssocSemiring
 
 section OrderedSemiring
 

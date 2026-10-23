@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 Ralf Stephan. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Ralf Stephan
+Authors: Ralf Stephan, Zayn Blore
 -/
 module
 
@@ -15,6 +15,13 @@ The resulting representative has that coordinate equal to `1`, and its other coo
 are the corresponding ratios. This gives affine coordinates without a finiteness assumption
 on the index type.
 
+The file also describes the fibres of `Projectivization.mk'` as orbits of the units of the
+scalar ring: two nonzero vectors give the same point exactly when one is a unit multiple of the
+other (`Projectivization.mk'_eq_mk'_iff`), so the saturation of a set of nonzero vectors is the
+union of its unit translates (`Projectivization.preimage_image_mk'`). These two lemmas are
+from Zayn Blore's Mathlib pull request
+[mathlib4#44117](https://github.com/leanprover-community/mathlib4/pull/44117).
+
 Adapted from Ralf Stephan's `ArithmeticHeights/Northcott.lean` in
 [`rwst/Subspace-Theorems`](https://github.com/rwst/Subspace-Theorems/blob/e443c2479e19f7665b31d8e94e2317c8ced1ca06/ArithmeticHeights/Northcott.lean),
 commit `e443c2479e19f7665b31d8e94e2317c8ced1ca06` (Apache 2.0).
@@ -23,6 +30,30 @@ commit `e443c2479e19f7665b31d8e94e2317c8ced1ca06` (Apache 2.0).
 public section
 
 namespace Projectivization
+
+section DivisionRing
+
+variable (K : Type*) {V : Type*} [DivisionRing K] [AddCommGroup V] [Module K V]
+
+/-- Two nonzero vectors have the same image under `mk'` iff one is a unit multiple of the other,
+for the action of `Kˣ` on `{ v : V // v ≠ 0 }`. -/
+theorem mk'_eq_mk'_iff (v w : { v : V // v ≠ 0 }) :
+    mk' K v = mk' K w ↔ ∃ a : Kˣ, a • w = v := by
+  simp only [mk'_eq_mk, mk_eq_mk_iff, Subtype.ext_iff, Units.smul_coe]
+
+/-- The saturation of a set of nonzero vectors under `mk'` is the union of its translates by the
+units of `K`. -/
+theorem preimage_image_mk' (U : Set { v : V // v ≠ 0 }) :
+    mk' K ⁻¹' (mk' K '' U) = ⋃ a : Kˣ, (a • ·) '' U := by
+  ext v
+  simp only [Set.mem_preimage, Set.mem_image, Set.mem_iUnion, mk'_eq_mk'_iff]
+  constructor
+  · rintro ⟨_, hw, a, rfl⟩
+    exact ⟨a⁻¹, _, hw, inv_smul_smul a v⟩
+  · rintro ⟨a, w, hw, rfl⟩
+    exact ⟨w, hw, a⁻¹, inv_smul_smul a w⟩
+
+end DivisionRing
 
 variable {K : Type*} [Field K] {ι : Type*}
 

@@ -40,6 +40,8 @@ trace is `2 cos θ`, is in `TauCeti.Analysis.SpecialFunctions.Trigonometric.Matr
   property.
 * `Matrix.isHyperbolic_iff_two_lt_abs_trace`: a determinant-one matrix is hyperbolic exactly when
   its trace has absolute value greater than `2`.
+* `Matrix.isElliptic_iff_abs_trace_lt_two`: a determinant-one matrix is elliptic exactly when its
+  trace has absolute value less than `2`.
 * `Matrix.SpecialLinearGroup.trace_commutatorElement_fin_two`: the Fricke trace identity.
 
 ## References
@@ -117,6 +119,13 @@ exactly when its trace has absolute value greater than `2`: its discriminant is
 theorem isHyperbolic_iff_two_lt_abs_trace {A : Matrix (Fin 2) (Fin 2) R} (hdet : A.det = 1) :
     A.IsHyperbolic ↔ 2 < |A.trace| := by
   rw [IsHyperbolic, discr_fin_two, hdet, mul_one, sub_pos, show (4 : R) = 2 ^ 2 by norm_num,
+    sq_lt_sq, abs_two]
+
+/-- A `2 × 2` matrix of determinant one is elliptic, in the sense of `Matrix.IsElliptic`, exactly
+when its trace has absolute value less than `2`: its discriminant is `trace A ^ 2 - 4`. -/
+theorem isElliptic_iff_abs_trace_lt_two {A : Matrix (Fin 2) (Fin 2) R} (hdet : A.det = 1) :
+    A.IsElliptic ↔ |A.trace| < 2 := by
+  rw [IsElliptic, discr_fin_two, hdet, mul_one, sub_neg, show (4 : R) = 2 ^ 2 by norm_num,
     sq_lt_sq, abs_two]
 
 end Ordered

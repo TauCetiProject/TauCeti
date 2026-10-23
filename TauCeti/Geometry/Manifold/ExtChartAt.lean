@@ -24,7 +24,8 @@ even without Hausdorffness.
 Coordinate changes transport images of subsets of chart overlaps and are injective there,
 without differentiability assumptions. On an open subset, extended charts are restrictions of the
 ambient ones, so near a chart point the inverse charts of nested open subsets differ only by the
-inclusion.
+inclusion. Over `ℝ`, every chart point has a convex neighbourhood within the model range,
+inside the chart target, on which flat calculus applies even when the manifold has boundary.
 
 ## Main results
 
@@ -38,11 +39,14 @@ inclusion.
   continuous only on their measurable domain.
 * `TauCeti.exists_finite_precompact_chart_cover`: finite open chart covers with compact
   coordinate bounds for compact subsets of manifolds modelled on a locally compact space.
+* `TauCeti.exists_convex_uniqueDiffOn_mem_nhdsWithin_extChartAt`: a convex neighbourhood of the
+  chart point within the model range, inside the chart target, with unique derivatives and
+  interior accumulating at the chart point.
 -/
 
 public section
 
-open scoped Manifold
+open scoped Manifold Topology
 
 namespace TauCeti
 
@@ -314,5 +318,31 @@ theorem extChartAt_source_zeroDim {E M : Type*} [NormedAddCommGroup E]
       (Subsingleton.elim _ _)
   · rintro rfl
     exact mem_extChartAt_source y
+
+
+/-- A neighbourhood of the chart point within the model range on which flat arguments in a
+chart apply: it lies in the chart target, is convex with unique derivatives, and its interior
+accumulates at the chart point. It is the intersection of a small ball with `range I`, so it
+need not be open when `M` has boundary or corners. -/
+theorem exists_convex_uniqueDiffOn_mem_nhdsWithin_extChartAt {E H M : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+    [TopologicalSpace M] [ChartedSpace H M] (x₀ : M) :
+    ∃ s : Set E, s ⊆ (extChartAt I x₀).target ∧ UniqueDiffOn ℝ s ∧ Convex ℝ s ∧
+      s ∈ 𝓝[Set.range I] extChartAt I x₀ x₀ ∧ extChartAt I x₀ x₀ ∈ s ∧
+      extChartAt I x₀ x₀ ∈ closure (interior s) := by
+  obtain ⟨ε, hε, hsub⟩ : ∃ ε > 0, Metric.ball (extChartAt I x₀ x₀) ε ∩ Set.range I ⊆
+      (extChartAt I x₀).target :=
+    Metric.mem_nhdsWithin_iff.mp (extChartAt_target_mem_nhdsWithin x₀)
+  have hx : extChartAt I x₀ x₀ ∈ Set.range I :=
+    extChartAt_target_subset_range x₀ (mem_extChartAt_target x₀)
+  refine ⟨Metric.ball (extChartAt I x₀ x₀) ε ∩ Set.range I, hsub, ?_,
+    (convex_ball _ _).inter I.convex_range, ?_, ⟨Metric.mem_ball_self hε, hx⟩, ?_⟩
+  · rw [Set.inter_comm]
+    exact I.uniqueDiffOn.inter Metric.isOpen_ball
+  · rw [Set.inter_comm]
+    exact inter_mem_nhdsWithin _ (Metric.isOpen_ball.mem_nhds (Metric.mem_ball_self hε))
+  · rw [interior_inter, Metric.isOpen_ball.interior_eq]
+    exact Metric.isOpen_ball.inter_closure
+      ⟨Metric.mem_ball_self hε, I.range_subset_closure_interior hx⟩
 
 end TauCeti

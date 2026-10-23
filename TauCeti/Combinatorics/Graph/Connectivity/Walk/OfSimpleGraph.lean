@@ -20,6 +20,9 @@ The two conversions preserve length, vertex support, edge lists, concatenation, 
 trails, paths, and cycles.  Their equivalence also identifies the two reachability predicates,
 providing the basic bridge through which simple-graph connectivity results can be used for
 multigraph walks.
+
+In the other direction, reachability by edge-labelled walks in a multigraph `G` agrees with
+reachability in its underlying simple graph `G.toSimpleGraph`.
 -/
 
 public section
@@ -248,3 +251,36 @@ theorem isCycle_toSimpleGraph_iff (p : (Graph.ofSimpleGraph H).Walk x x) :
   rw [← SimpleGraph.Walk.isCycle_toGraph_iff, toGraph_toSimpleGraph]
 
 end Graph.Walk
+
+namespace Graph
+
+variable {α β : Type*} {G : Graph α β}
+
+/-- Reachability by an edge-labelled walk gives reachability in the underlying simple graph. -/
+theorem Reachable.toSimpleGraph_reachable {x y : α} (h : G.Reachable x y) :
+    G.toSimpleGraph.Reachable ⟨x, h.left_mem⟩ ⟨y, h.right_mem⟩ := by
+  obtain ⟨-, ⟨p⟩⟩ := reachable_def.mp h
+  suffices ∀ hx hy, G.toSimpleGraph.Reachable ⟨x, hx⟩ ⟨y, hy⟩ from this _ _
+  clear h
+  induction p with
+  | nil => exact fun _ _ ↦ .rfl
+  | @cons x y z e hxy p ih =>
+      intro _ hz
+      refine SimpleGraph.Reachable.trans ?_ (ih hxy.right_mem hz)
+      by_cases hne : x = y
+      · subst hne
+        exact SimpleGraph.Reachable.rfl
+      · exact SimpleGraph.Adj.reachable ⟨fun h ↦ hne (congrArg Subtype.val h), e, hxy⟩
+
+/-- Reachability in the underlying simple graph is reachability by an edge-labelled walk. -/
+theorem toSimpleGraph_reachable_iff {u v : V(G)} :
+    G.toSimpleGraph.Reachable u v ↔ G.Reachable u v := by
+  refine ⟨?_, fun h ↦ h.toSimpleGraph_reachable⟩
+  rintro ⟨p⟩
+  induction p with
+  | nil => exact Reachable.refl (Subtype.property _)
+  | cons huv _ ih =>
+      obtain ⟨-, e, he⟩ := huv
+      exact he.reachable.trans ih
+
+end Graph
