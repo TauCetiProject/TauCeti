@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Probability.Distributions.GeneralizedNormal.Cdf
 public import TauCeti.Probability.Distributions.Gamma.Quantile
-import Mathlib.Topology.Instances.EReal.Lemmas
 
 /-!
 # Generalized normal quantiles
@@ -97,26 +96,15 @@ theorem continuousOn_quantile_generalizedNormalMeasure (hs : 0 < s) (hp : 0 < p)
 /-- Generalized normal quantiles tend to minus infinity as the level decreases to zero. -/
 theorem tendsto_quantile_generalizedNormalMeasure_nhdsGT_zero (hs : 0 < s) (hp : 0 < p) :
     Tendsto (fun u ↦ ((generalizedNormalMeasure m s p).quantile u : EReal))
-      (𝓝[>] 0) (𝓝 ⊥) := by
-  apply EReal.tendsto_coe_nhds_bot_iff.mpr
-  refine tendsto_atBot.mpr fun b ↦ ?_
-  have hb : 0 < cdf (generalizedNormalMeasure m s p) b :=
-    (cdf_nonneg _ (b - 1)).trans_lt (strictMono_cdf_generalizedNormalMeasure hs hp (by linarith))
-  filter_upwards [Ioo_mem_nhdsGT hb] with u hu
-  exact (Measure.quantile_le_iff _ hu.1
-    (hu.2.trans_le (cdf_le_one (generalizedNormalMeasure m s p) b))).mpr hu.2.le
+      (𝓝[>] 0) (𝓝 ⊥) :=
+  Measure.tendsto_quantile_nhdsGT_zero_of_strictMono_cdf _
+    (strictMono_cdf_generalizedNormalMeasure hs hp)
 
 /-- Generalized normal quantiles tend to plus infinity as the level increases to one. -/
 theorem tendsto_quantile_generalizedNormalMeasure_nhdsLT_one (hs : 0 < s) (hp : 0 < p) :
     Tendsto (fun u ↦ ((generalizedNormalMeasure m s p).quantile u : EReal))
-      (𝓝[<] 1) (𝓝 ⊤) := by
-  apply EReal.tendsto_coe_nhds_top_iff.mpr
-  refine tendsto_atTop.mpr fun b ↦ ?_
-  have hb : cdf (generalizedNormalMeasure m s p) b < 1 :=
-    (strictMono_cdf_generalizedNormalMeasure hs hp (by linarith : b < b + 1)).trans_le
-      (cdf_le_one _ (b + 1))
-  filter_upwards [Ioo_mem_nhdsLT hb] with u hu
-  exact ((Measure.lt_quantile_iff _
-    ((cdf_nonneg (generalizedNormalMeasure m s p) b).trans_lt hu.1) hu.2).mpr hu.1).le
+      (𝓝[<] 1) (𝓝 ⊤) :=
+  Measure.tendsto_quantile_nhdsLT_one_of_strictMono_cdf _
+    (strictMono_cdf_generalizedNormalMeasure hs hp)
 
 end TauCeti.Probability
