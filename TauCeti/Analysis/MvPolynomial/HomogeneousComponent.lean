@@ -16,19 +16,20 @@ import Mathlib.RingTheory.MvPolynomial.EulerIdentity
 /-!
 # The coefficient space of homogeneous polynomials
 
-Over a topological commutative semiring `R`, the homogeneous polynomials
-`homogeneousSubmodule σ R n` of degree `n` form a finite free `R`-module, and we give them the
-module topology: the finest topology making addition and scalar multiplication continuous. For
-finitely many variables this is the topology transported from the monomial coordinates: the
-coefficient map `TauCeti.homogeneousCoeffEquiv n` is a continuous linear equivalence with
-`R ^ S`, where `S` is the finite set of exponent vectors of degree `n`. Being the module topology,
-it involves no choice of basis; over a complete field such as `ℂ` it is the unique Hausdorff
-topological vector space topology on this finite-dimensional space.
+Over a topological commutative semiring `R`, we give the homogeneous polynomials
+`homogeneousSubmodule σ R n` of degree `n` the module topology: the finest topology making
+addition and scalar multiplication continuous. For finitely many variables (`[Finite σ]`) they
+form a finite free `R`-module, and this is the topology transported from the monomial
+coordinates: the coefficient map `TauCeti.homogeneousCoeffEquiv n` is a continuous linear
+equivalence with `R ^ S`, where `S` is the finite set of exponent vectors of degree `n`. Being
+the module topology, it involves no choice of basis; over a complete field such as `ℂ` it is the
+unique Hausdorff topological vector space topology on this finite-dimensional space.
 
 A family of degrees `d : ι → ℕ` then gives the coefficient space
 `∀ i, homogeneousSubmodule σ R (d i)` of families of homogeneous equations, with the product
-topology, which is again the module topology. It parametrizes families of homogeneous
-equations of fixed degrees, the zero equations included, and so families of projective zero loci.
+topology; for a finite family (`[Finite ι]`) this is again the module topology. It
+parametrizes families of homogeneous equations of fixed degrees, the zero equations included,
+and so families of projective zero loci.
 Arguments about such families, such as closedness of the incidence variety of pairs (equations,
 common zero) or of the locus where the Jacobian drops rank, need evaluation and differentiation
 to depend continuously, and holomorphically over `ℂ`, on the coefficients and the point jointly.
@@ -141,9 +142,7 @@ theorem eval_coe_homogeneousSubmodule_eq_sum [Finite σ] {n : ℕ}
       ∑ s, homogeneousCoeffEquiv n p s * eval v (monomial s.1 1) := by
   conv_lhs => rw [← (homogeneousCoeffEquiv n).symm_apply_apply p]
   simp only [coe_homogeneousCoeffEquiv_symm_apply, map_sum]
-  refine Finset.sum_congr rfl fun s _ ↦ ?_
-  rw [← mul_one (homogeneousCoeffEquiv n p s), ← smul_eq_mul, ← smul_monomial, smul_eval,
-    smul_eq_mul, mul_one]
+  simp only [eval_monomial, one_mul]
 
 /-- **Evaluation is jointly continuous** on the homogeneous polynomials of degree `n` in finitely
 many variables: `(p, v) ↦ p(v)` is continuous in the coefficients and the point together. -/
