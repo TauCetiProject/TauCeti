@@ -8,8 +8,8 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Nondegenerate.Basic
 import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
-import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
-import TauCeti.Geometry.Manifold.MFDeriv.Parametric
+import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.Family
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.KoszulVariation
 import TauCeti.Geometry.Manifold.VectorBundle.NondegenerateMetric.Musical
 
 /-!
@@ -31,8 +31,8 @@ by applying these results to the restricted family.
 
 The proof differentiates the Koszul formula `2 g_s(∇ˢ_X Y, Z) = K_{g_s}(X, Y, Z)` in `s`. The
 parameter derivative of the Koszul expression is the Koszul expression of `h`
-(`TauCeti.Manifold.hasDerivAt_koszulBilinear`); this rests on commuting the parameter derivative
-with the differentials of the pairings, `TauCeti.Manifold.hasDerivAt_mvfderiv_apply`.
+(`TauCeti.Manifold.hasDerivAt_koszulBilinear`, in
+`TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.KoszulVariation`).
 Differentiability of `s ↦ ∇ˢ_v Y` comes from writing it as `g_s⁻¹` applied to half the Koszul
 covector, and the identity
 `TauCeti.Manifold.koszulBilinear_sub_two_mul_apply_eq_derivBilinearTensor` turns
@@ -42,12 +42,6 @@ smooth extension of `Y x`, so only differentiability of `Y` at `x` is needed.
 
 ## Main results
 
-* `TauCeti.Manifold.contMDiffAt_uncurry_apply_apply`: pairing two `C^n` vector fields with a jointly
-  `C^n` family of fields of bilinear forms gives a jointly `C^n` family of functions.
-* `TauCeti.Manifold.hasDerivAt_koszulBilinear`: the parameter derivative of the Koszul expression
-  of a jointly `C²` family of fields of bilinear forms is the Koszul expression of its derivative.
-* `TauCeti.Manifold.contMDiffAt_of_hasDerivAt_family`: the parameter derivative of a jointly `C^n`
-  family of fields of bilinear forms is a `C^m` field for `m + 1 ≤ n`.
 * `TauCeti.Manifold.differentiableAt_covariantDerivative_apply_of_isLeviCivitaConnection`: a
   family of Levi-Civita connections of a jointly `C²` family of nondegenerate metrics varies
   differentiably.
@@ -77,148 +71,11 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {b : ℝ → (x : M) → TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ}
   {h : (x : M) → TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ} {t : ℝ} {x : M}
 
-/-! ### Families of fields of bilinear forms -/
-
 variable [IsManifold I ∞ M]
-
-/-- Pairing two `C^n` vector fields with a jointly `C^n` family of fields of bilinear forms gives
-a jointly `C^n` family of functions. -/
-theorem contMDiffAt_uncurry_apply_apply {n : WithTop ℕ∞}
-    (hb : ContMDiffAt (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) n
-      (fun q : ℝ × M ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
-        (E := fun y : M ↦ TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] ℝ) q.2 (b q.1 q.2)) (t, x))
-    {V W : Π x : M, TangentSpace I x} (hV : CMDiffAt n (T% V) x) (hW : CMDiffAt n (T% W) x) :
-    ContMDiffAt (𝓘(ℝ).prod I) 𝓘(ℝ) n (Function.uncurry fun s y ↦ b s y (V y) (W y)) (t, x) := by
-  have hV' : ContMDiffAt (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E)) n
-      (fun q : ℝ × M ↦ TotalSpace.mk' E q.2 (V q.2)) (t, x) := hV.comp (t, x) contMDiffAt_snd
-  have hW' : ContMDiffAt (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E)) n
-      (fun q : ℝ × M ↦ TotalSpace.mk' E q.2 (W q.2)) (t, x) := hW.comp (t, x) contMDiffAt_snd
-  have h := ContMDiffAt.clm_bundle_apply₂ (F₃ := ℝ) (E₃ := fun _ : M ↦ ℝ) hb hV' hW'
-  simpa [Function.uncurry_def] using (contMDiffAt_totalSpace.mp h).2
-
-/-- The parameter curve `s ↦ b s x u w` of a family of fields of bilinear forms, jointly `C¹` at
-`(t, x)`, is differentiable at `t`. -/
-theorem differentiableAt_apply_apply_of_contMDiffAt {n : WithTop ℕ∞} (hn : 1 ≤ n)
-    (hb : ContMDiffAt (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) n
-      (fun q : ℝ × M ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
-        (E := fun y : M ↦ TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] ℝ) q.2 (b q.1 q.2))
-      (t, x))
-    (u w : TangentSpace I x) : DifferentiableAt ℝ (fun s ↦ b s x u w) t := by
-  have hpair := contMDiffAt_uncurry_apply_apply hb (contMDiffAt_extend I E u)
-    (contMDiffAt_extend I E w)
-  have hcurve := ((hpair.of_le hn).comp t (contMDiffAt_id.prodMk contMDiffAt_const)
-    |>.mdifferentiableAt one_ne_zero).differentiableAt
-  simpa [Function.uncurry_def, Function.comp_def] using hcurve
-
-/-- For a family of fields of bilinear forms, jointly `C²` at `(t, x)`, and vector fields `V`, `W`
-that are `C²` at `x`, the parameter derivative of the differential at `x` of the pairing
-`y ↦ b_s(V, W)` is the differential of the parameter derivative of the pairing. -/
-private theorem hasDerivAt_mvfderiv_apply_apply
-    (hb : ContMDiffAt (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) 2
-      (fun q : ℝ × M ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
-        (E := fun y : M ↦ TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] ℝ) q.2 (b q.1 q.2))
-      (t, x))
-    {V W : Π x : M, TangentSpace I x} (hV : CMDiffAt 2 (T% V) x) (hW : CMDiffAt 2 (T% W) x)
-    (u : TangentSpace I x) :
-    HasDerivAt (fun s ↦ mvfderiv I (fun y ↦ b s y (V y) (W y)) x u)
-      (mvfderiv I (fun y ↦ deriv (fun s ↦ b s y (V y) (W y)) t) x u) t := by
-  refine hasDerivAt_mvfderiv_apply ?_ u
-  rw [minSmoothness_of_isRCLikeNormedField]
-  exact contMDiffAt_uncurry_apply_apply hb hV hW
-
-/-- The Koszul expression `K_{b_s}(X, Y, Z)` at `x` of a family of fields of bilinear forms,
-jointly `C²` at `(t, x)`, is differentiable in the parameter at `t`, for vector fields `X`, `Y`, `Z`
-that are `C²` at `x`. -/
-theorem differentiableAt_koszulBilinear
-    (hb : ContMDiffAt (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) 2
-      (fun q : ℝ × M ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
-        (E := fun y : M ↦ TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] ℝ) q.2 (b q.1 q.2))
-      (t, x))
-    {X Y Z : Π x : M, TangentSpace I x} (hX : CMDiffAt 2 (T% X) x) (hY : CMDiffAt 2 (T% Y) x)
-    (hZ : CMDiffAt 2 (T% Z) x) :
-    DifferentiableAt ℝ (fun s ↦ koszulBilinear I (b s) X Y Z x) t := by
-  have hd {V W : Π x : M, TangentSpace I x} (U : Π x : M, TangentSpace I x)
-      (hV : CMDiffAt 2 (T% V) x) (hW : CMDiffAt 2 (T% W) x) :
-      DifferentiableAt ℝ (fun s ↦ mvfderiv I (fun y ↦ b s y (V y) (W y)) x (U x)) t :=
-    (hasDerivAt_mvfderiv_apply_apply hb hV hW (U x)).differentiableAt
-  have hp (u w : TangentSpace I x) :=
-    differentiableAt_apply_apply_of_contMDiffAt (by norm_num) hb u w
-  simp only [koszulBilinear_apply]
-  exact ((((hd X hY hZ).add (hd Y hZ hX)).sub (hd Z hX hY)).add (hp _ _)).sub (hp _ _) |>.sub
-    (hp _ _)
-
-/-- **Variation of the Koszul expression.** Let `b_s` be a family of fields of bilinear forms on
-`TM`, jointly `C²` in `(s, y)` at `(t, x)`, with parameter derivative `h = ∂ₛ b` at `s = t` near
-`x`. Then for vector fields `X`, `Y`, `Z` that are `C²` at `x`, the parameter derivative of the
-Koszul expression `K_{b_s}(X, Y, Z)` at `x` is the Koszul expression `K_h(X, Y, Z)` of `h`. -/
-theorem hasDerivAt_koszulBilinear
-    (hb : ContMDiffAt (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) 2
-      (fun q : ℝ × M ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
-        (E := fun y : M ↦ TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] ℝ) q.2 (b q.1 q.2)) (t, x))
-    (hh : ∀ᶠ y in 𝓝 x, ∀ v w, HasDerivAt (fun s ↦ b s y v w) (h y v w) t)
-    {X Y Z : Π x : M, TangentSpace I x} (hX : CMDiffAt 2 (T% X) x) (hY : CMDiffAt 2 (T% Y) x)
-    (hZ : CMDiffAt 2 (T% Z) x) :
-    HasDerivAt (fun s ↦ koszulBilinear I (b s) X Y Z x) (koszulBilinear I h X Y Z x) t := by
-  -- The derivative terms: commute the parameter derivative with the differential.
-  have hd {V W : Π x : M, TangentSpace I x} (U : Π x : M, TangentSpace I x)
-      (hV : CMDiffAt 2 (T% V) x) (hW : CMDiffAt 2 (T% W) x) :
-      HasDerivAt (fun s ↦ mvfderiv I (fun y ↦ b s y (V y) (W y)) x (U x))
-        (mvfderiv I (fun y ↦ h y (V y) (W y)) x (U x)) t := by
-    have hderiv := hasDerivAt_mvfderiv_apply_apply hb hV hW (U x)
-    have heq : (fun y ↦ deriv (fun s ↦ b s y (V y) (W y)) t) =ᶠ[𝓝 x]
-        fun y ↦ h y (V y) (W y) :=
-      hh.mono fun y hy ↦ (hy (V y) (W y)).deriv
-    rwa [heq.mvfderiv_eq] at hderiv
-  -- The bracket terms: the parameter derivative of the pairing at `x`.
-  have hp (u w : TangentSpace I x) : HasDerivAt (fun s ↦ b s x u w) (h x u w) t :=
-    hh.self_of_nhds u w
-  simp only [koszulBilinear_apply]
-  exact ((((hd X hY hZ).add (hd Y hZ hX)).sub (hd Z hX hY)).add (hp _ _)).sub (hp _ _) |>.sub
-    (hp _ _)
 
 section FiniteDimensional
 
 variable [FiniteDimensional ℝ E]
-
-/-- **Regularity of the parameter derivative of a family of bilinear forms.** Let `b_s` be a family
-of fields of bilinear forms on `TM`, jointly `C^n` in `(s, y)` at `(t, x)`, and let `h` be its
-parameter derivative at `s = t` near `x`. Then `h` is a `C^m` field of bilinear forms at `x`
-whenever `m + 1 ≤ n`. -/
-theorem contMDiffAt_of_hasDerivAt_family {m n : WithTop ℕ∞}
-    (hb : ContMDiffAt (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) n
-      (fun q : ℝ × M ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
-        (E := fun y : M ↦ TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] ℝ) q.2 (b q.1 q.2))
-      (t, x))
-    (hmn : m + 1 ≤ n) (hh : ∀ᶠ y in 𝓝 x, ∀ v w, HasDerivAt (fun s ↦ b s y v w) (h y v w) t) :
-    ContMDiffAt I (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) m
-      (fun y ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
-        (E := fun y : M ↦ TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] ℝ) y (h y)) x := by
-  rw [contMDiffAt_hom_bundle] at hb ⊢
-  refine ⟨contMDiffAt_id, ?_⟩
-  -- `B s y` is `b s y` read in the tangent trivialization at `x`.
-  set B : ℝ → M → E →L[ℝ] E →L[ℝ] ℝ := fun s y ↦ ContinuousLinearMap.inCoordinates E
-    (TangentSpace I) (E →L[ℝ] ℝ) (fun z : M ↦ TangentSpace I z →L[ℝ] ℝ) x y x y (b s y)
-  have hreg := contMDiffAt_deriv_of_contMDiffAt_uncurry (F := B) (t := t) (x := x) hb.2 hmn
-  refine hreg.congr_of_eventuallyEq ?_
-  filter_upwards [hh, (chartAt H x).open_source.mem_nhds (mem_chart_source H x)] with y hy hyx
-  have key (φ : TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] ℝ) (a c : E) :
-      ContinuousLinearMap.inCoordinates E (TangentSpace I) (E →L[ℝ] ℝ)
-        (fun z : M ↦ TangentSpace I z →L[ℝ] ℝ) x y x y φ a c =
-        φ ((trivializationAt E (TangentSpace I) x).symm y a)
-          ((trivializationAt E (TangentSpace I) x).symm y c) := by
-    rw [inCoordinates_apply_eq₂ (F₃ := ℝ) (E₃ := fun _ : M ↦ ℝ)
-      (by simpa using hyx) (by simpa using hyx) (by simp)]
-    simp
-  -- Each evaluation of `B · y` is a parameter curve of `b` at `y`, with derivative given by `h`.
-  have hcurve (a c : E) : HasDerivAt (fun s ↦ B s y a c)
-      (h y ((trivializationAt E (TangentSpace I) x).symm y a)
-        ((trivializationAt E (TangentSpace I) x).symm y c)) t := by
-    simpa only [B, key] using hy _ _
-  have hD := (differentiableAt_clm_apply.mpr fun a ↦
-    differentiableAt_clm_apply.mpr fun c ↦ (hcurve a c).differentiableAt).hasDerivAt
-  ext a c
-  rw [key]
-  exact (hcurve a c).unique (hasDerivAt_clm_apply₂.mp hD a c)
 
 /-- The parameter derivative `h` of a family of fields of bilinear forms, jointly `C²` at `(t, x)`,
 pairs vector fields differentiable at `x` to a function differentiable at `x`. -/
