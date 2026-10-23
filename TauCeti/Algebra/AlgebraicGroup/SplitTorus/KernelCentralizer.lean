@@ -225,32 +225,12 @@ private noncomputable def kerCharacterZeroLift (r : ℕ) :
       Multiplicative (ULift.{u} (Fin r) →₀ ℤ) :=
   QuotientGroup.lift _ (MonoidHom.id _) (by simp)
 
-omit [Algebra.FiniteType R H] in
-private theorem centralizerHopfIdeal_mapDomain_comp_eq_of_comp_eq_id
-    {Γ Δ : Type u} [CommGroup Γ] [CommGroup Δ]
-    (φ : H →ₐc[R] MonoidAlgebra R Γ) (f : Γ →* Δ) (g : Δ →* Γ)
-    (hgf : g.comp f = MonoidHom.id Γ) :
-    BialgHom.centralizerHopfIdeal ((MonoidAlgebra.mapDomainBialgHom R f).comp φ) =
-      BialgHom.centralizerHopfIdeal φ := by
-  refine le_antisymm (BialgHom.centralizerHopfIdeal_comp_le _ _) ?_
-  have hπ : (MonoidAlgebra.mapDomainBialgHom R g).comp
-      ((MonoidAlgebra.mapDomainBialgHom R f).comp φ) = φ := by
-    rw [← BialgHom.comp_assoc, ← MonoidAlgebra.mapDomainBialgHom_comp, hgf,
-      MonoidAlgebra.mapDomainBialgHom_id]
-    exact BialgHom.id_comp _
-  calc
-    BialgHom.centralizerHopfIdeal φ = BialgHom.centralizerHopfIdeal
-        ((MonoidAlgebra.mapDomainBialgHom R g).comp
-          ((MonoidAlgebra.mapDomainBialgHom R f).comp φ)) :=
-      congrArg BialgHom.centralizerHopfIdeal hπ.symm
-    _ ≤ _ := BialgHom.centralizerHopfIdeal_comp_le _ _
-
 /-- The kernel of the zero character is the whole torus, so `Z_G(ker 0) = Z_G(T)`. -/
 @[simp]
 theorem centralizerKerHopfIdeal_zero (T : SplitMaximalTorus R H r) :
     T.centralizerKerHopfIdeal 0 = BialgHom.centralizerHopfIdeal T.coordinateMap.hom := by
   rw [centralizerKerHopfIdeal_def, kerCoordinateMap]
-  exact centralizerHopfIdeal_mapDomain_comp_eq_of_comp_eq_id T.coordinateMap.hom
+  exact BialgHom.centralizerHopfIdeal_mapDomainBialgHom_comp_eq_of_leftInverse T.coordinateMap.hom
     (QuotientGroup.mk' _) (kerCharacterZeroLift r) (QuotientGroup.lift_comp_mk' _ _ _)
 
 /-- The torus of the kernel of the zero character is the whole torus, so `Z_G(T_0) = Z_G(T)`. -/
@@ -274,7 +254,7 @@ theorem centralizerKerTorusHopfIdeal_zero (T : SplitMaximalTorus R H r) :
   have hgf : g.comp (kerTorusCharacterMap 0) = MonoidHom.id _ := by
     rw [kerTorusCharacterMap, ← MonoidHom.comp_assoc, hg, hf]
   rw [centralizerKerTorusHopfIdeal_def, kerTorusCoordinateMap]
-  exact centralizerHopfIdeal_mapDomain_comp_eq_of_comp_eq_id T.coordinateMap.hom
+  exact BialgHom.centralizerHopfIdeal_mapDomainBialgHom_comp_eq_of_leftInverse T.coordinateMap.hom
     (kerTorusCharacterMap 0) g hgf
 
 /-- The kernel of `-α` is the kernel of `α`, so `Z_G(ker (-α)) = Z_G(ker α)`. -/
@@ -307,6 +287,8 @@ theorem centralizerKerTorusHopfIdeal_neg (T : SplitMaximalTorus R H r)
       QuotientGroup.map _ _ f (CommGroup.le_comap_torsion f)
     have hg : g.comp (kerTorusCharacterMap β) = kerTorusCharacterMap (-β) := by
       ext
+      -- Both sides are the iterated quotient projection; the induced maps send each
+      -- representative to its own class, so this is the defining quotient computation.
       rfl
     rw [centralizerKerTorusHopfIdeal_def, centralizerKerTorusHopfIdeal_def,
       kerTorusCoordinateMap_def, kerTorusCoordinateMap_def, ← hg,
