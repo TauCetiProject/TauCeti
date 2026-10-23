@@ -13,10 +13,9 @@ public import TauCeti.LinearAlgebra.RootSystem.FiniteType.TripleEdge
 -- feeds the selected type to. Nothing from it appears in a statement here, so the import stays
 -- private.
 import TauCeti.LinearAlgebra.RootSystem.Isomorphism
--- `TauCeti.LinearAlgebra.RootSystem.Weyl.Bases` supplies the simple transitivity of the Weyl group
--- on the bases, `RootPairing.Base.existsUnique_map_eq`, behind the independence of the type from
--- the base. It too appears in no statement here.
-import TauCeti.LinearAlgebra.RootSystem.Weyl.Bases
+-- `TauCeti.LinearAlgebra.RootSystem.Weyl.CartanType` supplies the independence of the Cartan type
+-- from the base, `TauCeti.HasCartanType.of_base`. It too appears in no statement here.
+import TauCeti.LinearAlgebra.RootSystem.Weyl.CartanType
 
 /-!
 # The Cartan-Killing classification of finite-type Cartan matrices
@@ -53,13 +52,14 @@ Uniqueness among valid types is supplied by `TauCeti.DynkinType.eq_of_valid_of_f
   `TauCeti.valid_classifiedDynkinType`, `TauCeti.hasCartanType_classifiedDynkinType` and
   `TauCeti.hasCartanType_iff_eq_classifiedDynkinType` characterizing it. This is what a consumer
   names instead of rechoosing a witness out of the existence statement.
-* `TauCeti.HasCartanType.of_base` and `TauCeti.classifiedDynkinType_eq_classifiedDynkinType`: the
-  Cartan type, and so the Dynkin type, does not depend on the base, because the Weyl group acts
-  transitively on the bases (`RootPairing.Base.existsUnique_map_eq`).
+* `RootPairing.Base.classifiedDynkinType_eq_classifiedDynkinType`: the Dynkin type does not depend
+  on the base, because the Cartan type does not (`TauCeti.HasCartanType.of_base`), the Weyl group
+  acting transitively on the bases.
 * `TauCeti.nonempty_equiv_of_classifiedDynkinType_eq`: two root systems whose bases have the same
   Dynkin type are isomorphic, the classification combined with the rigidity theorem
   `TauCeti.nonempty_equiv_of_hasCartanType`.
-* `TauCeti.classifiedDynkinType_map` and `TauCeti.nonempty_equiv_iff_classifiedDynkinType_eq`:
+* `RootPairing.Equiv.classifiedDynkinType_map` and
+  `RootPairing.Base.nonempty_equiv_iff_classifiedDynkinType_eq`:
   conversely the Dynkin type is invariant under isomorphism, so two irreducible reduced
   crystallographic finite root systems are isomorphic exactly when their Dynkin types agree.
 
@@ -125,22 +125,6 @@ theorem existsUnique_dynkinType (h : IsFiniteType A) (hconn : (diagramGraph A).C
 
 end IsFiniteType
 
-section Base
-
-variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
-  {P : RootPairing ι R M N} [Finite ι] [CharZero R] [IsDomain R] [P.IsCrystallographic]
-  [P.IsReduced]
-
-/-- **The Cartan type does not depend on the base.** Any two bases are related by an element of the
-Weyl group (`RootPairing.Base.existsUnique_map_eq`), and the Cartan type of a base is transported
-along it (`TauCeti.HasCartanType.map`). -/
-theorem HasCartanType.of_base {b : P.Base} {t : DynkinType} (h : HasCartanType P b t)
-    (b' : P.Base) : HasCartanType P b' t := by
-  obtain ⟨w, rfl, -⟩ := b.existsUnique_map_eq b'
-  exact h.map _
-
-end Base
-
 section RootPairing
 
 variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
@@ -165,7 +149,7 @@ It is noncomputable: the classification says which types occur and that the type
 unique, not how to read it off a root system.
 
 The type is attached to a base, but it does not depend on the base:
-`TauCeti.classifiedDynkinType_eq_classifiedDynkinType`. -/
+`RootPairing.Base.classifiedDynkinType_eq_classifiedDynkinType`. -/
 noncomputable def classifiedDynkinType (b : P.Base) : DynkinType :=
   (existsUnique_dynkinType b).choose
 
@@ -199,7 +183,7 @@ lemma rank_classifiedDynkinType (b : P.Base) :
 
 /-- **The Dynkin type of a root system does not depend on the base**, the Weyl group acting
 transitively on the bases. -/
-theorem classifiedDynkinType_eq_classifiedDynkinType (b b' : P.Base) :
+theorem _root_.RootPairing.Base.classifiedDynkinType_eq_classifiedDynkinType (b b' : P.Base) :
     classifiedDynkinType b = classifiedDynkinType b' :=
   (((hasCartanType_classifiedDynkinType b).of_base b').classifiedDynkinType_eq
     (valid_classifiedDynkinType b)).symm
@@ -211,7 +195,7 @@ variable {ι₂ M₂ N₂ : Type*} [AddCommGroup M₂] [Module R M₂] [AddCommG
 /-- **Two root systems whose bases have the same Dynkin type are isomorphic.** This is the
 classification and the rigidity theorem `TauCeti.nonempty_equiv_of_hasCartanType` in one statement:
 the Dynkin type of a base determines the root system it comes from, up to isomorphism. The converse
-is `TauCeti.nonempty_equiv_iff_classifiedDynkinType_eq`. -/
+is `RootPairing.Base.nonempty_equiv_iff_classifiedDynkinType_eq`. -/
 theorem nonempty_equiv_of_classifiedDynkinType_eq (b : P.Base) (b₂ : P₂.Base)
     (h : classifiedDynkinType b = classifiedDynkinType b₂) : Nonempty (P.Equiv P₂) :=
   nonempty_equiv_of_hasCartanType b b₂ (classifiedDynkinType b)
@@ -220,17 +204,19 @@ theorem nonempty_equiv_of_classifiedDynkinType_eq (b : P.Base) (b₂ : P₂.Base
 
 /-- **The Dynkin type is invariant under isomorphism**: pushing a base forward along an equivalence
 of root systems does not change its Dynkin type. -/
-theorem classifiedDynkinType_map (e : P.Equiv P₂) (b : P.Base) :
+@[simp]
+theorem _root_.RootPairing.Equiv.classifiedDynkinType_map (e : P.Equiv P₂) (b : P.Base) :
     classifiedDynkinType (b.map e) = classifiedDynkinType b :=
   ((hasCartanType_classifiedDynkinType b).map e).classifiedDynkinType_eq
     (valid_classifiedDynkinType b)
 
 /-- **Two root systems are isomorphic exactly when they have the same Dynkin type.** Either base of
 either root system may be used to read off the type, since it does not depend on the base. -/
-theorem nonempty_equiv_iff_classifiedDynkinType_eq (b : P.Base) (b₂ : P₂.Base) :
+theorem _root_.RootPairing.Base.nonempty_equiv_iff_classifiedDynkinType_eq (b : P.Base)
+    (b₂ : P₂.Base) :
     Nonempty (P.Equiv P₂) ↔ classifiedDynkinType b = classifiedDynkinType b₂ :=
   ⟨fun ⟨e⟩ ↦ by
-    rw [← classifiedDynkinType_map e b, classifiedDynkinType_eq_classifiedDynkinType],
+    rw [← e.classifiedDynkinType_map b, (b.map e).classifiedDynkinType_eq_classifiedDynkinType],
     nonempty_equiv_of_classifiedDynkinType_eq b b₂⟩
 
 end RootPairing

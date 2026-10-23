@@ -7,16 +7,18 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Classification
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Rational
--- The existence of a base and the rigidity theorem are used in proofs only.
+-- The existence of a base, the rigidity theorem and the independence of the Cartan type from the
+-- base are used in proofs only.
 import Mathlib.LinearAlgebra.RootSystem.BaseExists
 import TauCeti.LinearAlgebra.RootSystem.Isomorphism
+import TauCeti.LinearAlgebra.RootSystem.Weyl.CartanType
 
 /-!
 # The Cartan-Killing classification of rational root systems
 
 Every irreducible reduced crystallographic finite root system over `ℚ` is isomorphic to the model
 root system `TauCeti.DynkinType.rationalRootSystem t` of exactly one valid Dynkin type `t`
-(`TauCeti.existsUnique_nonempty_equiv_rationalRootSystem`). So `t ↦ t.rationalRootSystem` is a
+(`RootPairing.existsUnique_nonempty_equiv_rationalRootSystem`). So `t ↦ t.rationalRootSystem` is a
 bijection from the valid Dynkin types onto the isomorphism classes of such root systems.
 
 The three ingredients are all available. The combinatorial classification attaches a valid Dynkin
@@ -28,9 +30,9 @@ of characteristic zero (`RootPairing.nonempty_base`).
 
 ## Main results
 
-* `TauCeti.nonempty_equiv_rationalRootSystem_iff`: a rational root system is isomorphic to the
-  model of a valid type `t` exactly when `t` is the Dynkin type of one, hence of every, base.
-* `TauCeti.existsUnique_nonempty_equiv_rationalRootSystem`: **the Cartan-Killing
+* `RootPairing.Base.nonempty_equiv_rationalRootSystem_iff`: a rational root system is isomorphic to
+  the model of a valid type `t` exactly when `t` is the Dynkin type of one, hence of every, base.
+* `RootPairing.existsUnique_nonempty_equiv_rationalRootSystem`: **the Cartan-Killing
   classification**, every irreducible reduced crystallographic finite root system over `ℚ` is
   isomorphic to the model root system of a unique valid Dynkin type.
 
@@ -51,7 +53,8 @@ variable {ι M N : Type*} [AddCommGroup M] [Module ℚ M] [AddCommGroup N] [Modu
 
 /-- **A rational root system is isomorphic to the model of its Dynkin type, and to no other.** The
 Dynkin type may be read off any base. -/
-theorem nonempty_equiv_rationalRootSystem_iff (b : P.Base) {t : DynkinType} (ht : t.Valid) :
+theorem _root_.RootPairing.Base.nonempty_equiv_rationalRootSystem_iff (b : P.Base)
+    {t : DynkinType} (ht : t.Valid) :
     Nonempty (P.Equiv (t.rationalRootSystem ht)) ↔ t = classifiedDynkinType b := by
   refine ⟨fun ⟨e⟩ ↦ ?_, ?_⟩
   · exact (hasCartanType_iff_eq_classifiedDynkinType b ht).mp
@@ -64,11 +67,11 @@ variable (P) in
 /-- **The Cartan-Killing classification.** Every irreducible reduced crystallographic finite root
 system over `ℚ` is isomorphic to the model root system `TauCeti.DynkinType.rationalRootSystem t` of
 a unique valid Dynkin type `t`. -/
-theorem existsUnique_nonempty_equiv_rationalRootSystem :
+theorem _root_.RootPairing.existsUnique_nonempty_equiv_rationalRootSystem :
     ∃! t : DynkinType, ∃ ht : t.Valid, Nonempty (P.Equiv (t.rationalRootSystem ht)) := by
   obtain ⟨b⟩ := RootPairing.nonempty_base P
   exact ⟨classifiedDynkinType b, ⟨valid_classifiedDynkinType b,
-    (nonempty_equiv_rationalRootSystem_iff b _).mpr rfl⟩,
-    fun t ⟨ht, he⟩ ↦ (nonempty_equiv_rationalRootSystem_iff b ht).mp he⟩
+    (b.nonempty_equiv_rationalRootSystem_iff _).mpr rfl⟩,
+    fun t ⟨ht, he⟩ ↦ (b.nonempty_equiv_rationalRootSystem_iff ht).mp he⟩
 
 end TauCeti
