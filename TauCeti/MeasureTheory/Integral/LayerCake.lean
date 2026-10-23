@@ -22,7 +22,10 @@ layer-cake formula and is useful for comparing pairings through level-set geomet
 This file expresses the `L¹` distance between two almost everywhere measurable real functions as
 the integral, over all levels, of the measure of the symmetric difference of their sublevel sets.
 Consequently, along a subsequence of an `L¹`-convergent sequence the superlevel sets converge in
-measure at almost every level.
+measure at almost every level. Averaging the same identity over the levels shows that, if finitely
+many functions are close in `L¹` to a nonnegative function `p`, then some superlevel set of `p` has
+small total boundary relative to its measure; for counting measure this produces Følner sets from
+almost invariant finitely supported functions.
 It also expresses the integral of the positive part `(g - f)⁺` as the integral, over all levels
 `s`, of the measure of the set where `f ≤ s < g`: the one-sided form, which sees which of the two
 functions lies above the level. Its extended version expresses the integral of the truncated
@@ -46,6 +49,10 @@ the integral over all levels `t` of the indicators of its superlevel sets `{u > 
   nonnegative functions, as a double integral of intersections of superlevel sets;
 * `TauCeti.lintegral_enorm_sub_eq_lintegral_measure_symmDiff` — the `L¹` distance of two real
   functions, level by level;
+* `TauCeti.lintegral_enorm_sub_eq_lintegral_measure_symmDiff_setOf_lt` — the same identity with
+  strict superlevel sets;
+* `TauCeti.exists_pos_sum_measure_symmDiff_lt_mul_measure` — a superlevel set of `p` whose total
+  boundary relative to finitely many `L¹`-close functions is small compared with its measure;
 * `MeasureTheory.Measure.exists_strictMono_ae_tendsto_measure_symmDiff_setOf_lt` — along a
   subsequence of an `L¹`-convergent sequence, the superlevel sets converge in measure at almost
   every level;
@@ -213,6 +220,55 @@ theorem lintegral_enorm_sub_eq_lintegral_measure_symmDiff (m : Measure α) [SFin
       simp only [Set.mem_symmDiff, Set.mem_ofPred_eq]
       rw [hfa, hga]
 
+/-- **The area between two graphs, through superlevel sets.** The `L¹` distance of two almost
+everywhere measurable real functions is the integral, over the levels `s`, of the measure of the
+set where exactly one of the two functions exceeds `s`. -/
+theorem lintegral_enorm_sub_eq_lintegral_measure_symmDiff_setOf_lt (m : Measure α) [SFinite m]
+    {f g : α → ℝ} (hf : AEMeasurable f m) (hg : AEMeasurable g m) :
+    ∫⁻ a, ‖f a - g a‖ₑ ∂m = ∫⁻ s, m ({a | s < f a} ∆ {a | s < g a}) := by
+  rw [lintegral_enorm_sub_eq_lintegral_measure_symmDiff m hf hg]
+  refine lintegral_congr fun s ↦ ?_
+  simp only [← compl_symmDiff_compl (a := {a | s < f a}), compl_ofPred, not_lt]
+
+/-- The measure of the set where exactly one of two almost everywhere measurable real functions
+exceeds the level `s` is a measurable function of `s`. -/
+theorem measurable_measure_symmDiff_setOf_lt (m : Measure α) [SFinite m] {f g : α → ℝ}
+    (hf : AEMeasurable f m) (hg : AEMeasurable g m) :
+    Measurable fun s ↦ m ({a | s < f a} ∆ {a | s < g a}) := by
+  have hcongr : (fun s ↦ m ({a | s < f a} ∆ {a | s < g a})) =
+      fun s ↦ m ({a | s < hf.mk f a} ∆ {a | s < hg.mk g a}) := by
+    refine funext fun s ↦ measure_congr ?_
+    filter_upwards [hf.ae_eq_mk, hg.ae_eq_mk] with a hfa hga
+    simp only [Set.mem_symmDiff, Set.mem_ofPred_eq]
+    rw [hfa, hga]
+  rw [hcongr]
+  exact measurable_measure_prodMk_right ((measurableSet_lt measurable_snd
+    (hf.measurable_mk.comp measurable_fst)).symmDiff
+    (measurableSet_lt measurable_snd (hg.measurable_mk.comp measurable_fst)))
+
+/-- **A superlevel set with small boundary.** Let `p` be an almost everywhere nonnegative function
+and let `q i`, for `i ∈ K`, be finitely many functions whose total `L¹` distance to `p` is less
+than `ε` times the integral of `p`. Then at some level `t > 0` the superlevel set `{p > t}` has
+total boundary `∑ i ∈ K, m ({q i > t} ∆ {p > t})` less than `ε` times its measure. -/
+theorem exists_pos_sum_measure_symmDiff_lt_mul_measure (m : Measure α) [SFinite m] {ι : Type*}
+    (K : Finset ι) {p : α → ℝ} {q : ι → α → ℝ} (hp : AEMeasurable p m)
+    (hq : ∀ i ∈ K, AEMeasurable (q i) m) (hp₀ : 0 ≤ᵐ[m] p) {ε : ℝ≥0∞}
+    (h : ∑ i ∈ K, ∫⁻ x, ‖q i x - p x‖ₑ ∂m < ε * ∫⁻ x, ENNReal.ofReal (p x) ∂m) :
+    ∃ t > 0, ∑ i ∈ K, m ({x | t < q i x} ∆ {x | t < p x}) < ε * m {x | t < p x} := by
+  by_contra! hle
+  refine h.not_ge ?_
+  calc ε * ∫⁻ x, ENNReal.ofReal (p x) ∂m = ε * ∫⁻ t in Ioi 0, m {x | t < p x} := by
+        rw [lintegral_eq_lintegral_meas_lt m hp₀ hp]
+    _ ≤ ∫⁻ t in Ioi 0, ε * m {x | t < p x} := lintegral_const_mul_le _ _
+    _ ≤ ∫⁻ t in Ioi 0, ∑ i ∈ K, m ({x | t < q i x} ∆ {x | t < p x}) :=
+        setLIntegral_mono' measurableSet_Ioi hle
+    _ ≤ ∫⁻ t, ∑ i ∈ K, m ({x | t < q i x} ∆ {x | t < p x}) := setLIntegral_le_lintegral _ _
+    _ = ∑ i ∈ K, ∫⁻ x, ‖q i x - p x‖ₑ ∂m := by
+        rw [lintegral_finsetSum' K fun i hi ↦
+          (measurable_measure_symmDiff_setOf_lt m (hq i hi) hp).aemeasurable]
+        exact Finset.sum_congr rfl fun i hi ↦
+          (lintegral_enorm_sub_eq_lintegral_measure_symmDiff_setOf_lt m (hq i hi) hp).symm
+
 end TauCeti
 
 namespace MeasureTheory.Measure
@@ -230,20 +286,9 @@ theorem exists_strictMono_ae_tendsto_measure_symmDiff_setOf_lt (m : Measure α) 
       ∀ᵐ s, Tendsto (fun j ↦ m ({a | s < f (ns j) a} ∆ {a | s < g a})) atTop (𝓝 0) := by
   -- The defect `F n s` at level `s` is measurable in `s` and integrates to `∫ |f n - g|`.
   set F : ℕ → ℝ → ℝ≥0∞ := fun n s ↦ m ({a | s < f n a} ∆ {a | s < g a})
-  have hF (n : ℕ) : ∫⁻ s, F n s = ∫⁻ a, ‖f n a - g a‖ₑ ∂m := by
-    rw [TauCeti.lintegral_enorm_sub_eq_lintegral_measure_symmDiff m (hf n) hg]
-    refine lintegral_congr fun s ↦ ?_
-    simp only [F, ← compl_symmDiff_compl (a := {a | s < f n a}), compl_ofPred, not_lt]
-  have hFm (n : ℕ) : Measurable (F n) := by
-    have hcongr : F n = fun s ↦ m ({a | s < (hf n).mk _ a} ∆ {a | s < hg.mk g a}) := by
-      refine funext fun s ↦ measure_congr ?_
-      filter_upwards [(hf n).ae_eq_mk, hg.ae_eq_mk] with a hfa hga
-      simp only [Set.mem_symmDiff, Set.mem_ofPred_eq]
-      rw [hfa, hga]
-    rw [hcongr]
-    exact measurable_measure_prodMk_right ((measurableSet_lt measurable_snd
-      ((hf n).measurable_mk.comp measurable_fst)).symmDiff
-      (measurableSet_lt measurable_snd (hg.measurable_mk.comp measurable_fst)))
+  have hF (n : ℕ) : ∫⁻ s, F n s = ∫⁻ a, ‖f n a - g a‖ₑ ∂m :=
+    (TauCeti.lintegral_enorm_sub_eq_lintegral_measure_symmDiff_setOf_lt m (hf n) hg).symm
+  have hFm (n : ℕ) : Measurable (F n) := TauCeti.measurable_measure_symmDiff_setOf_lt m (hf n) hg
   -- Along a subsequence with `∫ F (ns j) < 2⁻ʲ`, the sum `∑ⱼ F (ns j) s` is finite for almost
   -- every `s`, so its terms tend to zero.
   obtain ⟨ns, hns, hlt⟩ := extraction_forall_of_eventually fun j ↦
