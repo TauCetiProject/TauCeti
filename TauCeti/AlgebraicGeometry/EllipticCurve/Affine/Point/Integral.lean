@@ -65,7 +65,8 @@ exactly when the integral model does. -/
 theorem equation_baseChange_iff {x y : ℤ} :
     (W.baseChange ℚ).toAffine.Equation (x : ℚ) (y : ℚ) ↔ W.toAffine.Equation x y := by
   rw [W.integral_toAffine_baseChange]
-  exact Affine.map_equation W.toAffine (f := Int.castRingHom ℚ) Int.cast_injective x y
+  simpa only [Int.coe_castRingHom] using
+    Affine.map_equation W.toAffine (f := Int.castRingHom ℚ) Int.cast_injective x y
 
 /-- An integral solution of the affine Weierstrass equation determines a rational point. -/
 def pointOfIntegralSolution (x y : ℤ) (h : W.toAffine.Equation x y) :
@@ -350,7 +351,7 @@ theorem hasIntegralCoordinates_iff_mem_integralPoints
   constructor
   · rintro ⟨x, y, hP, rfl⟩
     have hEq : (W.baseChange ℚ).toAffine.Equation (x : ℚ) (y : ℚ) :=
-      ((Affine.nonsingular_iff' (W := (W.baseChange ℚ).toAffine) (x : ℚ) (y : ℚ)).mp hP).1
+      Affine.equation_iff_nonsingular.mpr hP
     refine ⟨x, y, W.equation_baseChange_iff.mp hEq, ?_⟩
     rw [W.pointOfIntegralSolution_eq_some, Affine.Point.some.injEq]
     exact ⟨rfl, rfl⟩
@@ -460,7 +461,8 @@ theorem exists_not_surjOn_equivVariableChange_hasIntegralCoordinates :
         ∀ Q : (C • W).toAffine.Point,
           Q.HasIntegralCoordinates →
             WeierstrassCurve.Affine.Point.equivVariableChange W C Q ≠ P := by
-  refine ⟨curveAddThree, twoChange, .some 1 2 curveAddThree_nonsingular, rfl, rfl, rfl, rfl,
+  refine ⟨curveAddThree, twoChange, .some 1 2 curveAddThree_nonsingular, by simp [twoChange],
+    rfl, rfl, rfl,
     (WeierstrassCurve.Affine.Point.hasIntegralCoordinates_some _).mpr
       ⟨1, 2, by norm_num, by norm_num⟩, ?_⟩
   rintro Q ⟨x, y, _, rfl⟩ hP
