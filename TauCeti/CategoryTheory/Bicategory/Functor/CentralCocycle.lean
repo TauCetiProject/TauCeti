@@ -189,9 +189,12 @@ lemma centralUnitIso_associativity_iff (c : G × G → (CatCenter C)ˣ) (g h j :
       c (j * h, g) * c (j, h) = c (h, g) * c (j, h * g) := by
   simp only [centralUnitIso_inv, centralUnitIso_hom_whiskerRight_id,
     centralUnitIso_id_whiskerLeft_hom, Cat.associator_id_hom]
-  rw [Category.id_comp]
-  simp only [← Category.assoc, centralUnitIso_hom_comp_hom]
-  rw [centralUnitIso_hom_eq_id_iff, mul_inv_eq_one, mul_inv_eq_iff_eq_mul,
+  -- Composites of identity functors in the strict bicategory `Cat` reduce to the identity.
+  change (centralUnitIso C (c (j, h * g))).hom ≫ (centralUnitIso C (c (h, g))).hom ≫
+    𝟙 (𝟙 (Cat.of C)) ≫ (centralUnitIso C (c (j, h))⁻¹).hom ≫
+    (centralUnitIso C (c (j * h, g))⁻¹).hom = 𝟙 _ ↔ _
+  simp only [Category.id_comp, centralUnitIso_hom_comp_hom]
+  rw [centralUnitIso_hom_eq_id_iff, ← mul_assoc, ← mul_inv_rev, mul_inv_eq_one,
     eq_comm, mul_comm (c (j, h * g)) (c (h, g))]
 
 /-- The left unit condition of a pseudofunctor out of `LocallyDiscrete (SingleObj G)` with
@@ -294,10 +297,15 @@ lemma centralUnitIso_naturality_comp_iff (b : G → (CatCenter C)ˣ) (c c' : G �
       c' (h, g) = b h * b g / b (h * g) * c (h, g) := by
   simp only [centralUnitIso_hom_whiskerRight_id, centralUnitIso_id_whiskerLeft_hom,
     Cat.associator_id_hom, Cat.associator_id_inv]
-  simp only [Category.id_comp, Category.comp_id]
-  simp only [← Category.assoc, centralUnitIso_hom_comp_hom]
+  -- Normalize the objects of the identity `2`-cells using strict identity-functor composition.
+  change (centralUnitIso C (b (h * g))).hom ≫ (centralUnitIso C (c' (h, g))).hom =
+    (centralUnitIso C (c (h, g))).hom ≫ 𝟙 (𝟙 (Cat.of C)) ≫
+    (centralUnitIso C (b h)).hom ≫ 𝟙 (𝟙 (Cat.of C)) ≫
+    (centralUnitIso C (b g)).hom ≫ 𝟙 (𝟙 (Cat.of C)) ↔ _
+  simp only [Category.id_comp, Category.comp_id,
+    centralUnitIso_hom_comp_hom]
   rw [centralUnitIso_hom_inj]
-  have scalar_eq : (b (h * g))⁻¹ * (c (h, g) * b h * b g) =
+  have scalar_eq : (b (h * g))⁻¹ * (c (h, g) * (b h * b g)) =
       b h * b g / b (h * g) * c (h, g) := by
     rw [div_eq_mul_inv]
     ac_rfl
