@@ -59,6 +59,8 @@ compared with its real extension.
 * `IsBaseChange.bilinForm_baseChange`: if a bilinear form restricts along a map to a
   second form, evaluating it through the associated base-change equivalence agrees with the
   canonical base change of the second form.
+* `IsBaseChange.bilinFormIsometryEquiv`: in that situation the base-change equivalence is an
+  isometric equivalence from the canonical base change of the second form.
 * `LinearMap.BilinForm.toMatrix_baseChange`: the Gram matrix of a base-changed form, in the
   base-changed basis, is the entrywise image of the original Gram matrix.
 * `LinearMap.BilinForm.det_toMatrix_baseChange`: the determinant of that Gram matrix is the image of
@@ -330,6 +332,24 @@ theorem _root_.IsBaseChange.bilinForm_baseChange (h : IsBaseChange A f)
     ext
     simp [IsBaseChange.equiv_tmul]
   simpa only [hf, LinearEquiv.coe_coe] using B'.liftBaseChange B hB x y
+
+/-- If `B` restricts along a base-change map `f` to `B'`, the base-change equivalence
+`A ⊗[R] M ≃ N` is an isometric equivalence from the canonical base change of `B'` to `B`. -/
+noncomputable def _root_.IsBaseChange.bilinFormIsometryEquiv (h : IsBaseChange A f)
+    (B' : LinearMap.BilinForm R M) (B : LinearMap.BilinForm A N)
+    (hB : ∀ x y : M, B (f x) (f y) = algebraMap R A (B' x y)) :
+    (B'.baseChange A).IsometryEquiv B where
+  toLinearEquiv := h.equiv
+  map_app' := h.bilinForm_baseChange B' B hB
+
+/-- The isometric equivalence `IsBaseChange.bilinFormIsometryEquiv` is the base-change
+equivalence. -/
+@[simp]
+theorem _root_.IsBaseChange.bilinFormIsometryEquiv_apply (h : IsBaseChange A f)
+    (B' : LinearMap.BilinForm R M) (B : LinearMap.BilinForm A N)
+    (hB : ∀ x y : M, B (f x) (f y) = algebraMap R A (B' x y)) (x : A ⊗[R] M) :
+    h.bilinFormIsometryEquiv B' B hB x = h.equiv x :=
+  (rfl)
 
 end
 
