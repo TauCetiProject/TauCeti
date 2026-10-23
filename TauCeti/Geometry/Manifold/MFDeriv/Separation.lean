@@ -12,9 +12,10 @@ public import TauCeti.Geometry.Manifold.MFDeriv.Prod
 # Separating manifold maps by their differentials
 
 A differentiable map on a product whose differential kills the second tangent factor
-is independent of the second variable when that factor is preconnected and boundaryless.
-The corresponding statement holds for the first factor. For maps between products,
-vanishing of both mixed differential blocks characterizes separation into a product map.
+is independent of the second variable when that factor is preconnected; both factors
+may have boundary or corners. The corresponding statement holds for the first factor.
+For maps between products, vanishing of both mixed differential blocks characterizes
+separation into a product map.
 
 This is the passage from preservation of tangent factors to global separation needed
 in the classification of isometries of product Riemannian manifolds. The result concerns
@@ -38,7 +39,7 @@ variable {E F V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [IsManifold K 1 P]
 
 /-- Killing all second-factor tangent vectors forces independence of the second variable
-on a preconnected factor. -/
+on a preconnected factor, which may have boundary or corners. -/
 theorem apply_eq_of_mfderiv_inr_eq_zero [IsManifold J 1 N]
     [PreconnectedSpace N] {f : M × N → P} (hf : MDifferentiable (I.prod J) K f)
     (hzero : ∀ p : M × N, ∀ v : TangentSpace J p.2,
@@ -57,7 +58,7 @@ theorem apply_eq_of_mfderiv_inr_eq_zero [IsManifold J 1 N]
     (DFunLike.congr_fun hcomp v).trans (hzero (x, z) v)
 
 /-- Killing all first-factor tangent vectors forces independence of the first variable
-on a preconnected factor. -/
+on a preconnected factor, which may have boundary or corners. -/
 theorem apply_eq_of_mfderiv_inl_eq_zero [IsManifold I 1 M]
     [PreconnectedSpace M] {f : M × N → P} (hf : MDifferentiable (I.prod J) K f)
     (hzero : ∀ p : M × N, ∀ v : TangentSpace I p.1,

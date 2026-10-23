@@ -8,6 +8,7 @@ module
 public import TauCeti.Data.Finsupp.Weight
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Basic
 public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Discrete
+import Mathlib.Topology.WithTopology
 
 /-!
 # The coefficient model of the unit-radius Tate algebra
@@ -67,12 +68,9 @@ private noncomputable def toRestrictedCoeff
     C₀(WithDiscreteTopology (σ →₀ ℕ), R) :=
   ZeroAtInftyContinuousMap.mkOfDiscrete
     (fun t ↦ coeff t.ofTopology (f : _root_.MvPowerSeries σ R)) <|
-      tendsto_zero_iff_norm_tendsto_zero.mpr (by
-        have hf := isRestricted_one_iff.mp f.2
-        have hinj : Function.Injective
-            (WithTopology.ofTopology : WithDiscreteTopology (σ →₀ ℕ) → (σ →₀ ℕ)) :=
-          fun _ _ h ↦ WithTopology.ext h
-        exact hf.comp hinj.tendsto_cofinite)
+      tendsto_zero_iff_norm_tendsto_zero.mpr <|
+        (isRestricted_one_iff.mp f.2).comp
+          (WithTopology.ofTopology_injective ⊥).tendsto_cofinite
 
 private theorem toRestrictedCoeff_apply
     (f : IsRestricted.subring (R := R) (fun _ : σ ↦ 1)) (t : σ →₀ ℕ) :
@@ -84,12 +82,8 @@ private noncomputable def ofRestrictedCoeff
     (a : C₀(WithDiscreteTopology (σ →₀ ℕ), R)) :
     IsRestricted.subring (R := R) (fun _ : σ ↦ 1) :=
   ⟨(fun t ↦ a (.toTopology ⊥ t) : _root_.MvPowerSeries σ R), by
-    have hinj : Function.Injective
-        (WithTopology.toTopology ⊥ : (σ →₀ ℕ) → WithDiscreteTopology (σ →₀ ℕ)) :=
-      fun _ _ h ↦ congrArg WithTopology.ofTopology h
-    have ha := tendsto_zero_iff_norm_tendsto_zero.mp <|
-      a.tendsto_cofinite.comp hinj.tendsto_cofinite
-    exact isRestricted_one_iff.mpr ha⟩
+    exact isRestricted_one_iff.mpr <| tendsto_zero_iff_norm_tendsto_zero.mp <|
+      a.tendsto_cofinite.comp (WithTopology.toTopology_injective ⊥).tendsto_cofinite⟩
 
 private theorem ofRestrictedCoeff_apply
     (a : C₀(WithDiscreteTopology (σ →₀ ℕ), R)) (t : σ →₀ ℕ) :
@@ -120,9 +114,7 @@ private noncomputable def restrictedCoeffLinearEquiv :
   map_smul' r f := by
     apply ZeroAtInftyContinuousMap.ext
     rintro ⟨t⟩
-    simp only [toRestrictedCoeff_apply, ZeroAtInftyContinuousMap.smul_apply, RingHom.id_apply]
-    rw [Algebra.smul_def, Subring.coe_mul, coe_algebraMap_isRestrictedSubring, coeff_C_mul,
-      smul_eq_mul]
+    simp [toRestrictedCoeff_apply, coe_smul_isRestrictedSubring, smul_eq_mul]
 
 private theorem restrictedCoeffLinearEquiv_apply
     (f : IsRestricted.subring (R := R) (fun _ : σ ↦ 1)) (t : σ →₀ ℕ) :
@@ -194,13 +186,7 @@ theorem restrictedCoeffLinearIsometryEquiv_monomial (t : σ →₀ ℕ) (a : R) 
       ZeroAtInftyContinuousMap.single (.toTopology ⊥ t) a := by
   ext s
   rcases s with ⟨s⟩
-  rw [restrictedCoeffLinearIsometryEquiv_apply]
-  by_cases h : s = t
-  · subst t
-    simp
-  · have hw : WithTopology.toTopology ⊥ s ≠ WithTopology.toTopology ⊥ t :=
-      fun hst ↦ h (congrArg WithTopology.ofTopology hst)
-    rw [coeff_monomial]
-    simp [ZeroAtInftyContinuousMap.single_apply, h, hw]
+  simp [restrictedCoeffLinearIsometryEquiv_apply, coeff_monomial,
+    ZeroAtInftyContinuousMap.single_apply]
 
 end TauCeti.MvPowerSeries

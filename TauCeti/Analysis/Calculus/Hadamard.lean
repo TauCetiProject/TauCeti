@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.TaylorIntegral
 public import TauCeti.Analysis.Calculus.ParametricIntegral
+import TauCeti.MeasureTheory.Constructions.UnitInterval
 
 /-!
 # Smooth Hadamard factorization
@@ -14,11 +15,6 @@ public import TauCeti.Analysis.Calculus.ParametricIntegral
 This file develops the first-order factorization of a smooth map through displacement from a
 basepoint. It is the analytic input for identifying point derivations on a finite-dimensional
 smooth manifold with tangent vectors.
-
-## References
-
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 0, "The Lie algebra and the tangent space at `1`".
 -/
 
 public section
@@ -26,7 +22,7 @@ public section
 noncomputable section
 
 open MeasureTheory
-open scoped ContDiff
+open scoped ContDiff unitInterval
 
 universe u v
 
@@ -44,14 +40,21 @@ theorem segmentAverage_eq_integral_Icc (w : ℝ → ℝ) (g : E → F) (x : E) :
   rw [segmentAverage, intervalIntegral.integral_of_le zero_le_one,
     ← integral_Icc_eq_integral_Ioc]
 
-/-- A weighted segment average depends smoothly on its displacement when its weight and integrand
-are smooth. -/
+/-- A weighted segment average is `C^n` in its displacement when the integrand is `C^n` and the
+weight is interval integrable. -/
 theorem ContDiff.contDiff_segmentAverage {n : ℕ∞} {w : ℝ → ℝ} {g : E → F}
-    (hw : ContDiff ℝ n w) (hg : ContDiff ℝ n g) (x : E) :
+    (hg : ContDiff ℝ n g) (hw : IntervalIntegrable w volume 0 1) (x : E) :
     ContDiff ℝ n (segmentAverage w g x) := by
-  rw [segmentAverage_eq_integral_Icc]
-  apply contDiff_integral_Icc_of_contDiff n
-  exact (hw.comp (by fun_prop)).smul (hg.comp (by fun_prop))
+  have hwi : IntegrableOn w (Set.Icc (0 : ℝ) 1) :=
+    (intervalIntegrable_iff_integrableOn_Icc_of_le zero_le_one).mp hw
+  rw [← contDiffOn_univ]
+  refine (TauCeti.contDiffOn_integral_smul_of_contDiffOn (μ := (volume : Measure I))
+    ((integrableOn_iff_comap_subtypeVal measurableSet_Icc).mp hwi)
+    continuous_subtype_val isOpen_univ
+    ((hg.comp (by fun_prop : ContDiff ℝ n (fun p : E × ℝ ↦ x + p.2 • p.1))).contDiffOn)
+    isOpen_univ (fun _ _ _ ↦ Set.mem_univ _)).congr fun v _ ↦ ?_
+  rw [segmentAverage, TauCeti.intervalIntegral_eq_integral_unitInterval]
+  rfl
 
 /-- A continuous linear map commutes with a weighted segment average. -/
 theorem ContinuousLinearMap.segmentAverage_apply
@@ -80,25 +83,21 @@ theorem hadamardFactor_eq_integral_Icc (f : E → F) (x : E) :
     hadamardFactor f x = fun y ↦ ∫ t in Set.Icc (0 : ℝ) 1,
       fderiv ℝ f (x + t • (y - x)) := by
   funext y
-  rw [hadamardFactor, segmentAverage, intervalIntegral.integral_of_le zero_le_one,
-    ← integral_Icc_eq_integral_Ioc]
-  simp
+  simp only [hadamardFactor, segmentAverage_eq_integral_Icc, one_smul]
 
 /-- At the basepoint, the averaged derivative is the ordinary derivative. -/
 @[simp]
 theorem hadamardFactor_self [CompleteSpace F] (f : E → F) (x : E) :
     hadamardFactor f x x = fderiv ℝ f x := by
-  simp [hadamardFactor, segmentAverage]
+  simp [hadamardFactor]
 
 /-- If `f` is `n + 1` times continuously differentiable, its Hadamard factor is `n` times
 continuously differentiable in the endpoint. -/
 theorem ContDiff.contDiff_hadamardFactor_of_succ
-    {F : Type v} [NormedAddCommGroup F] [NormedSpace ℝ F]
     (n : ℕ∞) (f : E → F) (hf : ContDiff ℝ (n + 1) f) (x : E) :
     ContDiff ℝ n (hadamardFactor f x) := by
   have hd : ContDiff ℝ n (fderiv ℝ f) := hf.fderiv_right (m := n) (by norm_num)
-  exact ((by fun_prop : ContDiff ℝ n fun _ : ℝ ↦ (1 : ℝ)).contDiff_segmentAverage hd x).comp
-    (by fun_prop)
+  exact (hd.contDiff_segmentAverage intervalIntegrable_const x).comp (by fun_prop)
 
 /-- First-order Taylor expansion along a segment, with its coefficient bundled as a continuous
 linear map. -/
