@@ -71,13 +71,6 @@ namespace TauCeti
 private theorem coe_two_padicTwo : ((2 : 𝒪[ℚ_[2]]) : ℚ_[2]) = 2 :=
   map_ofNat (Subring.subtype 𝒪[ℚ_[2]]) 2
 
-/-- Twice an odd integer is a uniformizer of `ℚ₂`. -/
-private theorem irreducible_two_mul_intCast {m : ℤ} (hm : Odd m) :
-    Irreducible (2 * (m : 𝒪[ℚ_[2]])) := by
-  have hu : IsUnit (m : 𝒪[ℚ_[2]]) := Padic.isUnit_intCast_integerRing fun h ↦
-    Int.not_even_iff_odd.2 hm (even_iff_two_dvd.2 (by exact_mod_cast h))
-  exact Associated.irreducible ⟨hu.unit, rfl⟩ (by exact_mod_cast Padic.irreducible_natCast_self 2)
-
 private theorem ringChar_residueField_padicTwo_dvd_two : ringChar 𝓀[ℚ_[2]] ∣ 2 :=
   IsLocalRing.natCast_mem_maximalIdeal_iff_dvd.1
     ((IsLocalRing.mem_maximalIdeal _).2 (Padic.irreducible_natCast_self 2).not_isUnit)
@@ -229,14 +222,16 @@ theorem totallyRamifiedOfDegree_two_eq_padicTwo {x₁ x₂ x₃ x₄ x₅ x₆ :
     · rw [hL_eq hc (w := x₂) (by norm_num [h₂, map_ofNat])]; simp
     · rw [hL_eq hc (w := x₄) (by norm_num [h₄, map_ofNat])]; simp
     · rw [hL_eq hc (w := x₆) (by norm_num [h₆, map_ofNat])]; simp
-  · have hu {x : SeparableClosure ℚ_[2]} {m : ℤ} (hm : Odd m) (hx : x ^ 2 = 1 - 2 * m) :
+  · have hu {x : SeparableClosure ℚ_[2]} {m : ℤ} (hm : ¬ (2 : ℤ) ∣ m) (hx : x ^ 2 = 1 - 2 * m) :
         ℚ_[2]⟮x⟯ ∈ totallyRamifiedOfDegree ℚ_[2] 2 :=
       adjoin_mem_totallyRamifiedOfDegree_two_of_sq_eq_one_sub
-        ringChar_residueField_padicTwo_dvd_two (irreducible_two_mul_intCast hm)
+        ringChar_residueField_padicTwo_dvd_two
+        (Padic.irreducible_natCast_self_mul_intCast (p := 2) hm)
         (by simp [hx, coe_two_padicTwo, map_ofNat])
-    have hr {x : SeparableClosure ℚ_[2]} {m : ℤ} (hm : Odd m) (hx : x ^ 2 = 2 * m) :
+    have hr {x : SeparableClosure ℚ_[2]} {m : ℤ} (hm : ¬ (2 : ℤ) ∣ m) (hx : x ^ 2 = 2 * m) :
         ℚ_[2]⟮x⟯ ∈ totallyRamifiedOfDegree ℚ_[2] 2 :=
-      adjoin_mem_totallyRamifiedOfDegree_of_pow_eq (irreducible_two_mul_intCast hm) two_pos
+      adjoin_mem_totallyRamifiedOfDegree_of_pow_eq
+        (Padic.irreducible_natCast_self_mul_intCast (p := 2) hm) two_pos
         (by simp [hx, coe_two_padicTwo, map_ofNat])
     simp only [Set.insert_subset_iff, Set.singleton_subset_iff]
     exact ⟨hu (m := 1) (by decide) (by rw [h₁]; norm_num),
@@ -335,13 +330,14 @@ theorem tsum_one_div_two_pow_wildExponent_two_padicTwo :
     ∑' L : totallyRamifiedOfDegree ℚ_[2] 2, 1 / (2 : ℝ≥0∞) ^ L.1.wildExponent = 2 := by
   obtain ⟨x₁, x₂, x₃, x₄, x₅, x₆, h₁, h₂, h₃, h₄, h₅, h₆⟩ := exists_sq_eq_padicTwo
   obtain ⟨hA, hB, hd⟩ := encard_pair_and_encard_four_and_disjoint_padicTwo h₁ h₂ h₃ h₄ h₅ h₆
-  have hu {x : SeparableClosure ℚ_[2]} {m : ℤ} (hm : Odd m) (hx : x ^ 2 = 1 - 2 * m) :
+  have hu {x : SeparableClosure ℚ_[2]} {m : ℤ} (hm : ¬ (2 : ℤ) ∣ m) (hx : x ^ 2 = 1 - 2 * m) :
       (ℚ_[2]⟮x⟯).wildExponent = 1 :=
-    wildExponent_adjoin_of_sq_eq_one_sub_padicTwo (irreducible_two_mul_intCast hm)
+    wildExponent_adjoin_of_sq_eq_one_sub_padicTwo
+      (Padic.irreducible_natCast_self_mul_intCast (p := 2) hm)
       (by simp [hx, coe_two_padicTwo, map_ofNat])
-  have hr {x : SeparableClosure ℚ_[2]} {m : ℤ} (hm : Odd m) (hx : x ^ 2 = 2 * m) :
+  have hr {x : SeparableClosure ℚ_[2]} {m : ℤ} (hm : ¬ (2 : ℤ) ∣ m) (hx : x ^ 2 = 2 * m) :
       (ℚ_[2]⟮x⟯).wildExponent = 2 :=
-    wildExponent_adjoin_of_sq_eq_padicTwo (irreducible_two_mul_intCast hm)
+    wildExponent_adjoin_of_sq_eq_padicTwo (Padic.irreducible_natCast_self_mul_intCast (p := 2) hm)
       (by simp [hx, coe_two_padicTwo, map_ofNat])
   rw [totallyRamifiedOfDegree_two_eq_union_padicTwo h₁ h₂ h₃ h₄ h₅ h₆,
     Summable.tsum_union_disjoint (f := fun L ↦ 1 / (2 : ℝ≥0∞) ^ L.wildExponent) hd
