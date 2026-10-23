@@ -118,6 +118,36 @@ noncomputable def descOfCompatible (I : Ideal R) {S : Type*} [CommRing S] [Algeb
     algebra I →ₐ[R] S :=
   SmallFilteredAlgebraColimit.descOfCompatible (IsNeighbourhood I).ι stageMap hcompat
 
+/-- `descOfCompatible` unfolds to `SmallFilteredAlgebraColimit.descOfCompatible` for the
+neighbourhood functor. -/
+private theorem descOfCompatible_def (I : Ideal R) {S : Type*} [CommRing S] [Algebra R S]
+    (stageMap : ∀ B : Neighbourhood.{u, u} I, B.obj →ₐ[R] S)
+    (hcompat : ∀ {B C : Neighbourhood.{u, u} I} (f : B ⟶ C),
+      (stageMap C).comp f.hom.hom = stageMap B) :
+    descOfCompatible I stageMap hcompat =
+      SmallFilteredAlgebraColimit.descOfCompatible (IsNeighbourhood I).ι stageMap hcompat :=
+  (rfl)
+
+/-- The descent of a compatible family restricts to the family on every étale neighbourhood. -/
+@[simp]
+theorem descOfCompatible_comp_stage (I : Ideal R) {S : Type*} [CommRing S] [Algebra R S]
+    (stageMap : ∀ B : Neighbourhood.{u, u} I, B.obj →ₐ[R] S)
+    (hcompat : ∀ {B C : Neighbourhood.{u, u} I} (f : B ⟶ C),
+      (stageMap C).comp f.hom.hom = stageMap B) (B : Neighbourhood.{u, u} I) :
+    (descOfCompatible I stageMap hcompat).comp (stage I B) = stageMap B := by
+  rw [descOfCompatible_def, stage_def]
+  exact SmallFilteredAlgebraColimit.descOfCompatible_comp_stage (IsNeighbourhood I).ι stageMap
+    hcompat B
+
+/-- Elementwise form of `descOfCompatible_comp_stage`. -/
+@[simp]
+theorem descOfCompatible_stage_apply (I : Ideal R) {S : Type*} [CommRing S] [Algebra R S]
+    (stageMap : ∀ B : Neighbourhood.{u, u} I, B.obj →ₐ[R] S)
+    (hcompat : ∀ {B C : Neighbourhood.{u, u} I} (f : B ⟶ C),
+      (stageMap C).comp f.hom.hom = stageMap B) (B : Neighbourhood.{u, u} I) (b : B.obj) :
+    descOfCompatible I stageMap hcompat (stage I B b) = stageMap B b :=
+  DFunLike.congr_fun (descOfCompatible_comp_stage I stageMap hcompat B) b
+
 /-- Every element of the henselization algebra comes from an étale neighbourhood. -/
 theorem exists_stage_eq (I : Ideal R) (x : algebra I) :
     ∃ (B : Neighbourhood.{u, u} I) (b : B.obj), stage I B b = x := by
