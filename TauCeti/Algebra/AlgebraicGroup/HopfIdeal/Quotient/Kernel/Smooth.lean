@@ -70,4 +70,16 @@ theorem smooth_iff_algebraSmooth_quotient_kernelHopfIdeal (f : H ⟶ K)
     Algebra.Smooth.of_equiv (kernelPairTensorEquiv f).symm
   exact Algebra.Smooth.of_smooth_tensorProduct_of_faithfullyFlat K
 
+/-- Smoothness is closed under faithfully flat extensions of affine groups: if the target of a
+faithfully flat homomorphism and its scheme-theoretic kernel are smooth over the base, then so
+is its source. For the coordinate morphism `f : H ⟶ K`, the source group is `Spec K`. -/
+theorem algebraSmooth_of_algebraSmooth_quotient_kernelHopfIdeal (f : H ⟶ K)
+    (hf : f.hom.toAlgHom.toRingHom.FaithfullyFlat) [Algebra.Smooth R H]
+    (hker : Algebra.Smooth R (K ⧸ (kernelHopfIdeal f).toIdeal)) :
+    Algebra.Smooth R K := by
+  let := f.hom.toAlgHom.toAlgebra
+  have : IsScalarTower R H K := .of_algebraMap_eq fun r ↦ (f.hom.toAlgHom.commutes r).symm
+  have : Algebra.Smooth H K := (smooth_iff_algebraSmooth_quotient_kernelHopfIdeal f hf).mpr hker
+  exact Algebra.Smooth.comp R H K
+
 end CommHopfAlgCat
