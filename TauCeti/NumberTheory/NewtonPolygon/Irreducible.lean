@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.Polynomial.FieldDivision
 public import Mathlib.RingTheory.PrincipalIdealDomain
-public import TauCeti.Data.Rat.NumDenDvd
 public import TauCeti.NumberTheory.NewtonPolygon.Mul
 
 /-!
@@ -17,22 +16,20 @@ Let `v` be a real additive valuation taking integer values on nonzero elements, 
 discrete valuation normalised at a uniformiser. A polynomial is *pure* of slope `q` when every
 finite slope of its Newton polygon equals `q`. Its endpoints have integer heights, so `q` times
 its horizontal length is an integer; for rational `q` the denominator of `q` divides that
-length.
+length, by `Polynomial.den_dvd_card_newtonSlopes`.
 
 The slopes of a factor of a nonzero polynomial are among the slopes of the polynomial, by
 `Polynomial.newtonSlopes_le_of_dvd`. Hence every factor of a pure polynomial is pure of
 the same slope, and if the polynomial has a nonzero constant coefficient the denominator of the
 slope divides the degree of every factor. Over a field this gives the Newton polygon
 irreducibility criterion: a polynomial with nonzero constant coefficient whose finite slopes all
-equal `a / d`, where `d` is its degree and `a` is coprime to `d`, is irreducible. More generally a
-pure polynomial of degree `d` whose slope has denominator `e` has at most `d / e` irreducible
-factors, counted with multiplicity. Purity alone does not imply irreducibility, nor does a
-polygon with a single segment.
+equal `a / d`, where `d > 0` is its degree and `a` is coprime to `d`, is irreducible. More
+generally a pure polynomial of degree `d` with nonzero constant coefficient whose slope has
+denominator `e` has at most `d / e` irreducible factors, counted with multiplicity. Purity alone
+does not imply irreducibility, nor does a polygon with a single segment.
 
 ## Main results
 
-* `Polynomial.den_dvd_card_newtonSlopes`: for an integral valuation, the denominator of the slope
-  of a pure polynomial divides its number of finite slopes.
 * `Polynomial.den_dvd_natDegree_of_dvd`: the denominator of the slope of a pure polynomial with
   nonzero constant coefficient divides the degree of each of its factors.
 * `Polynomial.irreducible_of_forall_mem_newtonSlopes_eq`: a pure polynomial with nonzero constant
@@ -58,39 +55,13 @@ section Ring
 
 variable {R : Type*} [Ring R] {v : AddValuation R (WithTop ℝ)}
 
-/-- A valuation taking integer values on nonzero elements is infinite only at zero. -/
-private theorem eq_zero_of_eq_top_of_forall_ne_zero
-    (hint : ∀ x, x ≠ 0 → ∃ n : ℤ, v x = ((n : ℝ) : WithTop ℝ)) (x : R) (hx : v x = ⊤) :
-    x = 0 := by
-  by_contra h
-  obtain ⟨n, hn⟩ := hint x h
-  exact WithTop.coe_ne_top (hn.symm.trans hx)
-
-/-- If the valuation takes integer values on nonzero elements and every finite slope of `g`
-equals the rational number `q`, then the denominator of `q` divides the number of finite slopes
-of `g`, that is, the horizontal length of its Newton polygon. -/
-theorem den_dvd_card_newtonSlopes (hint : ∀ x, x ≠ 0 → ∃ n : ℤ, v x = ((n : ℝ) : WithTop ℝ))
-    {g : R[X]} {q : ℚ} (hg : ∀ m ∈ g.newtonSlopes v, m = q) :
-    q.den ∣ (g.newtonSlopes v).card := by
-  rcases eq_or_ne g 0 with rfl | hg₀
-  · simp
-  obtain ⟨a, ha⟩ := hint _ (leadingCoeff_ne_zero.mpr hg₀)
-  obtain ⟨b, hb⟩ := hint _ (trailingCoeff_nonzero_iff_nonzero.mpr hg₀)
-  have hsum := sum_newtonSlopes g v (eq_zero_of_eq_top_of_forall_ne_zero hint)
-  rw [Multiset.eq_replicate_card.mpr hg, Multiset.sum_replicate, nsmul_eq_mul,
-    ha, hb, WithTop.untop₀_coe, WithTop.untop₀_coe] at hsum
-  have hq : ((a - b : ℤ) : ℚ) = q * ((g.newtonSlopes v).card : ℤ) := by
-    rw [mul_comm]
-    exact_mod_cast hsum.symm
-  exact Int.natCast_dvd_natCast.mp (Rat.den_dvd_of_intCast_eq_mul_intCast q hq)
-
 /-- If the valuation takes integer values on nonzero elements and `f` has nonzero constant
 coefficient and every finite slope equal to the rational number `q`, then the denominator of
 `q` divides the degree of every factor of `f`. -/
 theorem den_dvd_natDegree_of_dvd (hint : ∀ x, x ≠ 0 → ∃ n : ℤ, v x = ((n : ℝ) : WithTop ℝ))
     {f g : R[X]} (hf : f.coeff 0 ≠ 0) {q : ℚ} (hq : ∀ m ∈ f.newtonSlopes v, m = q)
     (hgf : g ∣ f) : q.den ∣ g.natDegree := by
-  have hv := eq_zero_of_eq_top_of_forall_ne_zero hint
+  have hv := AddValuation.eq_zero_of_eq_top_of_forall_ne_zero hint
   have hf₀ : f ≠ 0 := by
     rintro rfl
     exact hf (coeff_zero 0)
@@ -140,8 +111,8 @@ theorem irreducible_of_forall_mem_newtonSlopes_eq
       ((degree_eq_iff_natDegree_eq (n := 0) hh₀).mpr (by omega)))
 
 /-- **Newton polygon irreducibility criterion**, coprime form. If the valuation takes integer
-values on nonzero elements, a polynomial `f` of degree `d` with nonzero constant coefficient whose
-finite slopes all equal `a / d`, for an integer `a` coprime to `d`, is irreducible. -/
+values on nonzero elements, a polynomial `f` of degree `d > 0` with nonzero constant coefficient
+whose finite slopes all equal `a / d`, for an integer `a` coprime to `d`, is irreducible. -/
 theorem irreducible_of_forall_mem_newtonSlopes_eq_div
     (hint : ∀ x, x ≠ 0 → ∃ n : ℤ, v x = ((n : ℝ) : WithTop ℝ)) {f : K[X]} (hf : f.coeff 0 ≠ 0)
     (hdeg : 0 < f.natDegree) {a : ℤ} (hcop : a.natAbs.Coprime f.natDegree)
