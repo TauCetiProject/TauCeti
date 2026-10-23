@@ -68,6 +68,8 @@ additive 2-cocycle of degree `n` is a multiple of `C_n`
   `d_n` is `p` for `n = pᵏ`, and `1` for `n ≥ 2` not a prime power.
 * `TauCeti.prime_dvd_lazardGcd_iff`: for `n ≠ 0` and a prime `p`, `p ∣ d_n` exactly when `n` is a
   power of `p`. In particular `d_n` is odd unless `n` is a power of two.
+* `Nat.Prime.exists_not_dvd_choose`: if `n ≠ 0` is not a power of the prime `p`, then `p` does not
+  divide some `n.choose i` with `0 < i < n`.
 * `TauCeti.gcd_choose_div_lazardGcd_eq_one`: for `n ≥ 2`, the coefficients `n.choose i / d_n`
   have greatest common divisor `1`.
 * `TauCeti.coeff_lazardCocycle`: the coefficient of `XⁱYʲ` in `C_n` is
@@ -224,6 +226,14 @@ theorem dvd_lazardGcd_iff {n d : ℕ} :
   refine ⟨fun h i hi hin => h i (mem_Icc.2 ⟨hi, by omega⟩), fun h i hi => ?_⟩
   rw [mem_Icc] at hi
   exact h i (by omega) (by omega)
+
+/-- If `n ≠ 0` is not a power of the prime `p`, some binomial coefficient `n.choose i` with
+`0 < i < n` is not divisible by `p`. This is the converse of `Nat.Prime.dvd_choose_pow`. -/
+theorem _root_.Nat.Prime.exists_not_dvd_choose {p n : ℕ} (hp : p.Prime) (hn0 : n ≠ 0)
+    (hn : ∀ k, n ≠ p ^ k) : ∃ i, 0 < i ∧ i < n ∧ ¬p ∣ n.choose i := by
+  by_contra! H
+  obtain ⟨k, hk⟩ := (prime_dvd_lazardGcd_iff hp hn0).1 (dvd_lazardGcd_iff.2 H)
+  exact hn k hk
 
 /-- `d_n` divides `n.choose i` for `0 < i < n`. -/
 theorem lazardGcd_dvd_choose {n i : ℕ} (hi : 0 < i) (hin : i < n) : lazardGcd n ∣ n.choose i :=

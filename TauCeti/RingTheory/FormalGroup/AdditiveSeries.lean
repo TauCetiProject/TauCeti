@@ -8,8 +8,8 @@ module
 public import Mathlib.RingTheory.PowerSeries.PiTopology
 public import Mathlib.RingTheory.PowerSeries.Substitution
 
-import Mathlib.Algebra.MvPolynomial.Coeff
 import TauCeti.RingTheory.FormalGroup.SymmetricCocycle.Basic
+import TauCeti.RingTheory.MvPowerSeries.Basic
 import TauCeti.RingTheory.MvPowerSeries.Substitution
 
 /-!
@@ -25,10 +25,11 @@ for a prime `p`, the binomial coefficients `n.choose i`, `0 < i < n`, of `n ≥ 
 divisible by `p` exactly when `n` is a power of `p`, and an integer prime to `p` is a unit in `R`.
 So in that case `h` is additive exactly when its coefficients vanish away from the powers of `p`:
 
-  `h = ∑_{k ≥ 0} b_k X^(p ^ k)`, `b_k = c_{p ^ k}`,
+  `h = ∑_{k ≥ 0} b_k X^(p ^ k)`, `b_k = c_{p ^ k}`.
 
-as a convergent sum for the coefficientwise topology. No other hypothesis on `R` is needed: it may
-be the zero ring or have nilpotents.
+This coefficient description needs no other hypothesis on `R`: it may be the zero ring or have
+nilpotents. If `R` is moreover Hausdorff, the displayed sum is a convergent sum for the
+coefficientwise topology, and the additive series are exactly the sums of this form.
 
 For `p = 2` this describes the freedom in the strict logarithm `g(X) = X + ⋯` of a commutative
 formal group law `F` with `[2]_F = 0`, which satisfies `g(F(X, Y)) = g(X) + g(Y)`: composing `g`
@@ -45,8 +46,8 @@ by `PowerSeries.subst_add_of_subst_X_add_X_eq_add`.
   `h(a + b) = h(a) + h(b)` for all power series `a, b` that can be substituted.
 * `PowerSeries.subst_X_add_X_eq_add_iff_of_natCast_eq_zero`: if `p = 0` in `R` for a prime `p`,
   `h` is additive exactly when `cₙ = 0` unless `n` is a power of `p`.
-* `PowerSeries.WithPiTopology.subst_X_add_X_eq_add_iff_exists_hasSum`: if `p = 0` in `R`, `h` is
-  additive exactly when `h = ∑_k b_k X^(p ^ k)` for some `b : ℕ → R`.
+* `PowerSeries.WithPiTopology.subst_X_add_X_eq_add_iff_exists_hasSum`: if `p = 0` in `R` and `R` is
+  Hausdorff, `h` is additive exactly when `h = ∑_k b_k X^(p ^ k)` for some `b : ℕ → R`.
 
 ## References
 
@@ -62,33 +63,6 @@ namespace PowerSeries
 
 variable {R : Type*} [CommRing R]
 
-/-- The coefficient of `XⁱYʲ` in `h(X)` is the coefficient of `Xⁱ` in `h` if `j = 0`, and `0`
-otherwise. -/
-private theorem coeff_subst_X_zero (h : R⟦X⟧) (i j : ℕ) :
-    MvPowerSeries.coeff (single 0 i + single 1 j)
-        (h.subst (MvPowerSeries.X 0 : MvPowerSeries (Fin 2) R)) =
-      if j = 0 then coeff i h else 0 := by
-  rw [coeff_subst_single]
-  simp
-
-/-- The coefficient of `XⁱYʲ` in `h(Y)` is the coefficient of `Yʲ` in `h` if `i = 0`, and `0`
-otherwise. -/
-private theorem coeff_subst_X_one (h : R⟦X⟧) (i j : ℕ) :
-    MvPowerSeries.coeff (single 0 i + single 1 j)
-        (h.subst (MvPowerSeries.X 1 : MvPowerSeries (Fin 2) R)) =
-      if i = 0 then coeff j h else 0 := by
-  rw [coeff_subst_single]
-  simp
-
-/-- The coefficient of `XⁱYʲ` in `(X + Y)ⁿ` is `n.choose i` if `i + j = n`, and `0` otherwise. -/
-private theorem coeff_X_add_X_pow (i j n : ℕ) :
-    MvPowerSeries.coeff (single 0 i + single 1 j)
-        ((MvPowerSeries.X 0 + MvPowerSeries.X 1 : MvPowerSeries (Fin 2) R) ^ n) =
-      if i + j = n then (n.choose i : R) else 0 := by
-  rw [← MvPolynomial.coe_X, ← MvPolynomial.coe_X, ← MvPolynomial.coe_add,
-    ← MvPolynomial.coe_pow, MvPolynomial.coeff_coe, MvPolynomial.coeff_add_pow]
-  simp
-
 /-- The coefficient of `XⁱYʲ` in `h(X + Y)` is `(i + j).choose i` times the coefficient of
 `X^(i + j)` in `h`. -/
 theorem coeff_subst_X_add_X (h : R⟦X⟧) (i j : ℕ) :
@@ -96,9 +70,9 @@ theorem coeff_subst_X_add_X (h : R⟦X⟧) (i j : ℕ) :
         (h.subst (MvPowerSeries.X 0 + MvPowerSeries.X 1 : MvPowerSeries (Fin 2) R)) =
       (i + j).choose i * coeff (i + j) h := by
   rw [coeff_subst (HasSubst.of_constantCoeff_zero (by simp)), finsum_eq_single _ (i + j)]
-  · simp [coeff_X_add_X_pow, mul_comm]
+  · simp [MvPowerSeries.coeff_X_add_X_pow, mul_comm]
   · intro n hn
-    simp [coeff_X_add_X_pow, Ne.symm hn]
+    simp [MvPowerSeries.coeff_X_add_X_pow, Ne.symm hn]
 
 /-- **The additive power series.** A power series `h` satisfies `h(X + Y) = h(X) + h(Y)` exactly
 when its constant coefficient vanishes and `n.choose i` kills its coefficient of `Xⁿ` for every
@@ -114,7 +88,8 @@ theorem subst_X_add_X_eq_add_iff (h : R⟦X⟧) :
           (h.subst (MvPowerSeries.X 0 : MvPowerSeries (Fin 2) R) + h.subst (MvPowerSeries.X 1)) ↔
       (i + j).choose i * coeff (i + j) h =
         (if j = 0 then coeff i h else 0) + if i = 0 then coeff j h else 0 := by
-    rw [map_add, coeff_subst_X_add_X, coeff_subst_X_zero, coeff_subst_X_one]
+    rw [map_add, coeff_subst_X_add_X, coeff_subst_single, coeff_subst_single]
+    simp
   refine ⟨fun hh => ⟨?_, fun n i hi hin => ?_⟩, fun ⟨h₀, hn⟩ => ?_⟩
   · -- At `i = j = 0`: `c₀ = c₀ + c₀`.
     have := (key 0 0).1 (congrArg _ hh)
@@ -142,30 +117,9 @@ theorem subst_add_of_subst_X_add_X_eq_add {h : R⟦X⟧}
     {σ : Type*} {a b : MvPowerSeries σ R} (ha : HasSubst a) (hb : HasSubst b) :
     h.subst (a + b) = h.subst a + h.subst b := by
   have hab : MvPowerSeries.HasSubst ![a, b] := MvPowerSeries.hasSubst_finTwo ha hb
-  have := congrArg (MvPowerSeries.subst ![a, b]) hh
-  rwa [MvPowerSeries.subst_add hab,
-    MvPowerSeries.subst_powerSeriesSubst hab (HasSubst.of_constantCoeff_zero (by simp)),
-    MvPowerSeries.subst_powerSeriesSubst hab (HasSubst.X _),
-    MvPowerSeries.subst_powerSeriesSubst hab (HasSubst.X _), MvPowerSeries.subst_add hab,
-    MvPowerSeries.subst_X hab, MvPowerSeries.subst_X hab] at this
-
-/-- If `p = 0` in `R` for a prime `p` and `n` is not a power of `p`, some binomial coefficient
-`n.choose i`, `0 < i < n`, is a unit in `R`. -/
-private theorem exists_isUnit_choose {p : ℕ} (hp : p.Prime) (hpR : (p : R) = 0) {n : ℕ}
-    (hn0 : n ≠ 0) (hn : ∀ k, n ≠ p ^ k) : ∃ i, 0 < i ∧ i < n ∧ IsUnit (n.choose i : R) := by
-  have hnd : ¬p ∣ TauCeti.lazardGcd n := fun hd => by
-    obtain ⟨k, hk⟩ := (TauCeti.prime_dvd_lazardGcd_iff hp hn0).1 hd
-    exact hn k hk
-  obtain ⟨i, hi, hin, hpi⟩ : ∃ i, 0 < i ∧ i < n ∧ ¬p ∣ n.choose i := by
-    by_contra! H
-    exact hnd (TauCeti.dvd_lazardGcd_iff.2 H)
-  refine ⟨i, hi, hin, ?_⟩
-  -- Bézout: `n.choose i * a + p * b = 1` in `ℤ`, and `p = 0` in `R`.
-  have hcop : Nat.Coprime (n.choose i) p := ((Nat.Prime.coprime_iff_not_dvd hp).2 hpi).symm
-  refine IsUnit.of_mul_eq_one ((n.choose i).gcdA p : R) ?_
-  have := congrArg (Int.cast : ℤ → R) (Nat.gcd_eq_gcd_ab (n.choose i) p)
-  rw [hcop.gcd_eq_one] at this
-  simpa [hpR] using this.symm
+  have := MvPowerSeries.powerSeriesSubst_subst_finTwo_eq_add
+    (HasSubst.of_constantCoeff_zero (by simp)) hh ha hb
+  rwa [MvPowerSeries.subst_add hab, MvPowerSeries.subst_X hab, MvPowerSeries.subst_X hab] at this
 
 /-- **The additive power series when `p = 0`.** If `p = 0` in `R` for a prime `p`, a power series
 `h` satisfies `h(X + Y) = h(X) + h(Y)` exactly when its coefficient of `Xⁿ` vanishes for every `n`
@@ -179,7 +133,14 @@ theorem subst_X_add_X_eq_add_iff_of_natCast_eq_zero {p : ℕ} (hp : p.Prime) (hp
   refine ⟨fun ⟨h₀, hh⟩ n hn => ?_, fun hh => ⟨?_, fun n i hi hin => ?_⟩⟩
   · rcases eq_or_ne n 0 with rfl | hn0
     · simpa using h₀
-    obtain ⟨i, hi, hin, hu⟩ := exists_isUnit_choose hp hpR hn0 hn
+    obtain ⟨i, hi, hin, hpi⟩ := hp.exists_not_dvd_choose hn0 hn
+    -- Bézout: `n.choose i * a + p * b = 1` in `ℤ`, and `p = 0` in `R`, so `n.choose i` is a unit.
+    have hcop : Nat.Coprime (n.choose i) p := (hp.coprime_iff_not_dvd.2 hpi).symm
+    have hu : IsUnit (n.choose i : R) := by
+      refine IsUnit.of_mul_eq_one ((n.choose i).gcdA p : R) ?_
+      have := congrArg (Int.cast : ℤ → R) (Nat.gcd_eq_gcd_ab (n.choose i) p)
+      rw [hcop.gcd_eq_one] at this
+      simpa [hpR] using this.symm
     exact hu.mul_right_eq_zero.1 (hh n i hi hin)
   · simpa using hh 0 fun k => (pow_ne_zero k hp.ne_zero).symm
   · -- If `n = p ^ k` then `p ∣ n.choose i` for `0 < i < n`; otherwise the coefficient vanishes.
