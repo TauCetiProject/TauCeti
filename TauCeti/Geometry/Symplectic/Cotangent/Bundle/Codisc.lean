@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.RegularValue.Scalar.Level
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Cotangent
+import TauCeti.Geometry.Manifold.Riemannian.Basic
 
 /-!
 # The unit codisc and cosphere bundles of a Riemannian manifold
@@ -25,8 +26,8 @@ point-set and smooth structure.
 
 Both sets are closed, and compact when `M` is compact
 (`TauCeti.CotangentBundle.isCompact_codiscBundle`): over a chart domain the bundle coordinates of a
-covector of norm at most one are bounded, since the chart-local frame has bounded length over a
-compact set.
+covector of norm at most one are bounded, since the inverse tangent trivialization is locally
+bounded.
 
 Since every nonzero value is a regular value of the norm of covectors
 (`TauCeti.CotangentBundle.isRegularValue_norm_snd`), `S*M` is a regular level. For a smooth metric
@@ -119,10 +120,12 @@ theorem isClosed_cosphereBundle : IsClosed (cosphereBundle I M) :=
 
 /-- Over a neighbourhood of every point, the covectors of norm at most one lie in a compact set:
 in the chart at the point, their base points stay in a compact set and their bundle coordinates
-are bounded, because the chart-local frame has bounded length over it. -/
+are bounded, because the inverse tangent trivialization is locally bounded. -/
 private theorem exists_isCompact_norm_le (x : M) :
     ∃ U ∈ 𝓝 x, ∃ L : Set (CotangentBundle I M), IsCompact L ∧
       ∀ z : CotangentBundle I M, z.proj ∈ U → ‖z.2‖ ≤ 1 → z ∈ L := by
+  have := IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := 0) (F := E)
+    (V := fun x : M ↦ TangentSpace I x)
   set φ := extChartAt I x
   set z₀ : CotangentBundle I M := ⟨x, 0⟩
   set Ψ := extChartAt (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) z₀
@@ -132,20 +135,14 @@ private theorem exists_isCompact_norm_le (x : M) :
   have hK'φ : K' ⊆ φ.target := fun q hq ↦
     hε ⟨closedBall_subset_ball (half_lt_self ε0) hq.1, hq.2⟩
   have hK' : IsCompact K' := (isCompact_closedBall _ _).inter_right I.isClosed_range
-  -- Its preimage `K` is a compact subset of the chart source.
-  set K := φ.symm '' K'
-  have hK : IsCompact K := hK'.image_of_continuousOn ((continuousOn_extChartAt_symm x).mono hK'φ)
-  have hKs : K ⊆ (chartAt H x).source := by
-    rintro _ ⟨q, hq, rfl⟩
-    rw [← extChartAt_source (I := I)]
-    exact φ.map_target (hK'φ hq)
-  -- The chart-local frame has length at most `C` over `K`.
-  obtain ⟨C, hframe⟩ := exists_norm_chartLocalFrame_le (I := I) x hK hKs
-  obtain ⟨C₀, -, hC₀⟩ := (Module.finBasis ℝ E).exists_opNorm_le (F := ℝ)
-  refine ⟨φ.source ∩ φ ⁻¹' ball (φ x) (ε / 2), ?_, Ψ.symm '' (K' ×ˢ closedBall 0 (C₀ * max C 0)),
-    ?_, ?_⟩
-  · exact inter_mem (extChartAt_source_mem_nhds x)
-      ((continuousAt_extChartAt x).preimage_mem_nhds (ball_mem_nhds _ (half_pos ε0)))
+  -- Near `x`, the inverse tangent trivialization at `x` has norm less than `C`.
+  obtain ⟨C, -, hC⟩ :=
+    eventually_norm_symmL_trivializationAt_lt E (fun x : M ↦ TangentSpace I x) x
+  refine ⟨φ.source ∩ φ ⁻¹' ball (φ x) (ε / 2) ∩
+    {y | ‖(trivializationAt E (TangentSpace I) x).symmL ℝ y‖ < C}, ?_,
+    Ψ.symm '' (K' ×ˢ closedBall 0 C), ?_, ?_⟩
+  · exact inter_mem (inter_mem (extChartAt_source_mem_nhds x)
+      ((continuousAt_extChartAt x).preimage_mem_nhds (ball_mem_nhds _ (half_pos ε0)))) hC
   · refine (hK'.prod (isCompact_closedBall _ _)).image_of_continuousOn
       ((continuousOn_extChartAt_symm z₀).mono ?_)
     rintro ⟨q, p⟩ ⟨hq, -⟩
@@ -154,10 +151,9 @@ private theorem exists_isCompact_norm_le (x : M) :
     refine ⟨⟨hK'φ hq, ?_, by simp⟩, mem_univ _⟩
     rw [← extChartAt_source (I := I)]
     exact φ.map_target (hK'φ hq)
-  · rintro z ⟨hzs, hzb⟩ hz
+  · rintro z ⟨⟨hzs, hzb⟩, hzC⟩ hz
     have hzK' : φ z.proj ∈ K' :=
       ⟨ball_subset_closedBall hzb, extChartAt_target_subset_range x (φ.map_source hzs)⟩
-    have hzK : z.proj ∈ K := ⟨φ z.proj, hzK', φ.left_inv hzs⟩
     have hzs' : z.proj ∈ (chartAt H z₀.proj).source := by rwa [← extChartAt_source (I := I)]
     have hzΨ : z ∈ Ψ.source := by
       simp only [Ψ, FiberBundle.chartedSpace_chartAt, mfld_simps]
@@ -165,14 +161,12 @@ private theorem exists_isCompact_norm_le (x : M) :
       exact ⟨⟨hzs', by simp⟩, hzs'⟩
     refine ⟨Ψ z, ?_, Ψ.left_inv hzΨ⟩
     rw [extChartAt_apply]
-    refine ⟨hzK', mem_closedBall_zero_iff.2 (hC₀ (le_max_right C 0) fun i ↦ ?_)⟩
-    -- The coordinates of `z` on the basis are the values of `z.2` on the chart-local frame.
-    rw [ContinuousLinearMap.comp_apply, ← chartLocalFrame_eq_symmL]
-    calc ‖z.2 (chartLocalFrame (I := I) x i z.proj)‖
-        ≤ ‖z.2‖ * ‖chartLocalFrame (I := I) x i z.proj‖ := z.2.le_opNorm _
-      _ ≤ 1 * max C 0 :=
-        mul_le_mul hz ((hframe _ hzK i).trans (le_max_left C 0)) (norm_nonneg _) zero_le_one
-      _ = max C 0 := one_mul _
+    refine ⟨hzK', mem_closedBall_zero_iff.2 ?_⟩
+    -- The bundle coordinate of `z` is `z.2` composed with the inverse trivialization.
+    calc _ ≤ ‖z.2‖ * ‖(trivializationAt E (TangentSpace I) x).symmL ℝ z.proj‖ :=
+          ContinuousLinearMap.opNorm_comp_le _ _
+      _ ≤ 1 * C := mul_le_mul hz hzC.le (ContinuousLinearMap.opNorm_nonneg _) zero_le_one
+      _ = C := one_mul _
 
 /-- **The unit codisc bundle of a compact Riemannian manifold is compact.** -/
 theorem isCompact_codiscBundle [CompactSpace M] : IsCompact (codiscBundle I M) := by

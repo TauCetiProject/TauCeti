@@ -43,8 +43,6 @@ API replace them.
 * `Riemannian.Tensor.posDef_chartGramMatrix`: positive-definiteness on the base set.
 * `Riemannian.Tensor.chartGramMatrix_det_pos`: strict positivity of its determinant there.
 * `Riemannian.Tensor.contMDiffOn_chartGramMatrix_entry`: smoothness of Gram-matrix entries.
-* `Riemannian.Tensor.exists_norm_chartLocalFrame_le`: for a continuous metric, the frame has
-  bounded length over compact subsets of the chart source.
 * `Riemannian.Tensor.chartInvGramMatrix`: the inverse Gram matrix.
 * `Riemannian.Tensor.contMDiffOn_chartInvGramMatrix_entry`: smoothness of inverse entries.
 
@@ -240,30 +238,6 @@ private lemma contMDiffOn_adjugate_chartGramMatrix_entry
     exact contMDiffOn_chartGramMatrix_entry (I := I) (n := n) α k l
 
 end Smooth
-
-/-- **The chart-local frame is bounded on compact sets.** For a continuous Riemannian metric, the
-vectors of the chart-local frame at `α` have uniformly bounded length over every compact subset of
-the chart source at `α`. -/
-theorem exists_norm_chartLocalFrame_le
-    [IsContMDiffRiemannianBundle I 0 E (fun x : M ↦ TangentSpace I x)]
-    (α : M) {K : Set M} (hK : IsCompact K) (hKs : K ⊆ (chartAt H α).source) :
-    ∃ C, ∀ y ∈ K, ∀ i, ‖chartLocalFrame (I := I) α i y‖ ≤ C := by
-  have : IsManifold I (0 + 1) M := by rwa [zero_add]
-  -- The squared lengths are the diagonal Gram entries, whose sum is continuous on `K`.
-  have hsq (y : M) (k : Fin (Module.finrank ℝ E)) :
-      chartGramMatrix (I := I) α y k k = ‖chartLocalFrame (I := I) α k y‖ ^ 2 := by
-    rw [chartGramMatrix_apply, real_inner_self_eq_norm_sq]
-  have hG : ContinuousOn (fun y ↦ ∑ k, chartGramMatrix (I := I) α y k k) K := by
-    refine continuousOn_finsetSum _ fun k _ ↦ ?_
-    have h := (contMDiffOn_chartGramMatrix_entry (I := I) (n := 0) α k k).continuousOn
-    rw [TangentBundle.trivializationAt_baseSet] at h
-    exact h.mono hKs
-  obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn hG
-  refine ⟨√C, fun y hy i ↦ Real.le_sqrt_of_sq_le ?_⟩
-  calc ‖chartLocalFrame (I := I) α i y‖ ^ 2 = chartGramMatrix (I := I) α y i i := (hsq y i).symm
-    _ ≤ ∑ k, chartGramMatrix (I := I) α y k k :=
-      Finset.single_le_sum (fun k _ ↦ (hsq y k).symm ▸ sq_nonneg _) (Finset.mem_univ i)
-    _ ≤ C := (le_abs_self _).trans (by simpa only [Real.norm_eq_abs] using hC y hy)
 
 /-- The inverse coordinate-metric matrix from do Carmo, *Riemannian Geometry*, Chapter 2. On the
 tangent-trivialization base set this is the inverse of a positive-definite matrix. -/
