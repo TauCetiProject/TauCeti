@@ -17,13 +17,13 @@ A finite-type algebra is formally unramified if all its base changes to fields a
 unramified. This criterion passes from fibre computations to relative unramifiedness without
 requiring flatness or finite presentation.
 
-`Algebra.IsUnramifiedIn.formallyUnramified_fiber` gives the converse comparison at one prime:
-unramifiedness at every prime over `p` implies formal unramifiedness of the fibre over `p`,
-without a finiteness assumption.
-
 The proof uses finite generation of Kähler differentials, their base-change equivalence
 `KaehlerDifferential.tensorKaehlerEquivBase`, and the residue-field description of module support
 `Module.mem_support_iff_nontrivial_residueField_tensorProduct`.
+
+`Algebra.IsUnramifiedIn.formallyUnramified_fiber` gives the converse comparison at one prime:
+unramifiedness at every prime over `p` implies formal unramifiedness of the fibre over `p`,
+without a finiteness assumption.
 
 ## References
 
@@ -44,6 +44,8 @@ variable {R : Type u} {S : Type v} [CommRing R] [CommRing S] [Algebra R S]
 unramified. No finiteness hypothesis is needed. -/
 theorem IsUnramifiedIn.formallyUnramified_fiber {p : Ideal R} [p.IsPrime]
     (h : IsUnramifiedIn S p) : FormallyUnramified p.ResidueField (p.Fiber S) := by
+  -- Use the right-factor algebra structure so that contraction to `S` and its lies-over
+  -- instances apply; its algebra map is `includeRight`, as identified explicitly below.
   let : Algebra S (p.Fiber S) := TensorProduct.rightAlgebra
   apply formallyUnramified_iff_forall.mpr
   intro q
@@ -51,7 +53,9 @@ theorem IsUnramifiedIn.formallyUnramified_fiber {p : Ideal R} [p.IsPrime]
   have : Q.IsPrime := inferInstance
   have : Q.LiesOver p := inferInstance
   have : IsUnramifiedAt R Q := h Q inferInstance inferInstance
-  exact IsUnramifiedAt.residueField p Q q.asIdeal rfl
+  apply IsUnramifiedAt.residueField p Q q.asIdeal
+  dsimp only [Q]
+  rw [Ideal.under_def, TensorProduct.algebraMap_eq_includeRight, AlgHom.toRingHom_eq_coe]
 
 /-- A finite-type algebra is formally unramified if every base change to a field is formally
 unramified. No flatness assumption is required. -/
