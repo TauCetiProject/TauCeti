@@ -66,36 +66,6 @@ namespace Compactification
 
 noncomputable section
 
-/-- A map out of a dense compactification into `C` lifts along a closed immersion `φ : D ⟶ C`
-of compactifications: the interior of `E` is scheme-theoretically dense and lands in the
-closed subscheme `D.Xbar` of `C.Xbar`. -/
-def liftOfIsClosedImmersion {C D : Compactification f} (φ : D ⟶ C) [IsClosedImmersion φ.hom.h]
-    (E : DenseCompactification f) (h : E.obj ⟶ C) : E.obj ⟶ D :=
-  have H : φ.hom.h.ker ≤ h.hom.h.ker := by
-    have hker : h.hom.h.ker = (D.j ≫ φ.hom.h).ker := by
-      rw [φ.hom.ι_h, ← h.hom.ι_h, Scheme.Hom.ker_comp, E.obj.j.ker_eq_bot,
-        Scheme.IdealSheafData.map_bot]
-    exact hker ▸ Scheme.Hom.le_ker_comp D.j φ.hom.h
-  ObjectProperty.homMk
-    { h := IsClosedImmersion.lift φ.hom.h h.hom.h H
-      ι_h := by
-        rw [← cancel_mono φ.hom.h, Category.assoc, IsClosedImmersion.lift_fac, h.hom.ι_h,
-          φ.hom.ι_h]
-      h_π := by
-        rw [← φ.hom.h_π, IsClosedImmersion.lift_fac_assoc, h.hom.h_π] }
-
-@[reassoc (attr := simp)]
-theorem liftOfIsClosedImmersion_comp {C D : Compactification f} (φ : D ⟶ C)
-    [IsClosedImmersion φ.hom.h] (E : DenseCompactification f) (h : E.obj ⟶ C) :
-    liftOfIsClosedImmersion φ E h ≫ φ = h :=
-  ObjectProperty.hom_ext _ <| Factorisation.Hom.ext <| IsClosedImmersion.lift_fac _ _ _
-
-@[reassoc (attr := simp)]
-theorem liftOfIsClosedImmersion_hom_h_comp {C D : Compactification f} (φ : D ⟶ C)
-    [IsClosedImmersion φ.hom.h] (E : DenseCompactification f) (h : E.obj ⟶ C) :
-    (liftOfIsClosedImmersion φ E h).hom.h ≫ φ.hom.h = h.hom.h :=
-  IsClosedImmersion.lift_fac _ _ _
-
 /-- The dense replacement of a compactification: the ambient scheme is the scheme-theoretic
 image of the interior, with the induced open immersion and the restricted proper map. -/
 -- Exposure and implicit reducibility keep the projection formulas of the ambient scheme and its

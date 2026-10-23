@@ -24,6 +24,8 @@ These definitions impose no quasi-compactness or quasi-separatedness condition o
 The dense compactifications form the further full subcategory where the open immersion is
 scheme-theoretically dominant. This condition retains the scheme structure, including
 nilpotents. No existence theorem or reducedness assumption is part of these definitions.
+Every map from a dense compactification lifts along a closed immersion of compactifications
+(`Compactification.liftOfIsClosedImmersion`).
 
 ## References
 
@@ -161,5 +163,41 @@ abbrev identity [IsProper f] : DenseCompactification f :=
     (inferInstanceAs (IsSchemeTheoreticallyDominant (𝟙 X)))⟩
 
 end DenseCompactification
+
+namespace Compactification
+
+variable {f}
+
+/-- A map out of a dense compactification into `C` lifts along a closed immersion `φ : D ⟶ C`
+of compactifications: the interior of `E` is scheme-theoretically dense and lands in the
+closed subscheme `D.Xbar` of `C.Xbar`. -/
+noncomputable def liftOfIsClosedImmersion {C D : Compactification f} (φ : D ⟶ C)
+    [IsClosedImmersion φ.hom.h] (E : DenseCompactification f) (h : E.obj ⟶ C) : E.obj ⟶ D :=
+  have H : φ.hom.h.ker ≤ h.hom.h.ker := by
+    have hker : h.hom.h.ker = (D.j ≫ φ.hom.h).ker := by
+      rw [φ.hom.ι_h, ← h.hom.ι_h, Scheme.Hom.ker_comp, E.obj.j.ker_eq_bot,
+        Scheme.IdealSheafData.map_bot]
+    exact hker ▸ Scheme.Hom.le_ker_comp D.j φ.hom.h
+  ObjectProperty.homMk
+    { h := IsClosedImmersion.lift φ.hom.h h.hom.h H
+      ι_h := by
+        rw [← cancel_mono φ.hom.h, Category.assoc, IsClosedImmersion.lift_fac, h.hom.ι_h,
+          φ.hom.ι_h]
+      h_π := by
+        rw [← φ.hom.h_π, IsClosedImmersion.lift_fac_assoc, h.hom.h_π] }
+
+@[reassoc (attr := simp)]
+theorem liftOfIsClosedImmersion_comp {C D : Compactification f} (φ : D ⟶ C)
+    [IsClosedImmersion φ.hom.h] (E : DenseCompactification f) (h : E.obj ⟶ C) :
+    liftOfIsClosedImmersion φ E h ≫ φ = h :=
+  ObjectProperty.hom_ext _ <| Factorisation.Hom.ext <| IsClosedImmersion.lift_fac _ _ _
+
+@[reassoc (attr := simp)]
+theorem liftOfIsClosedImmersion_hom_h_comp {C D : Compactification f} (φ : D ⟶ C)
+    [IsClosedImmersion φ.hom.h] (E : DenseCompactification f) (h : E.obj ⟶ C) :
+    (liftOfIsClosedImmersion φ E h).hom.h ≫ φ.hom.h = h.hom.h :=
+  IsClosedImmersion.lift_fac _ _ _
+
+end Compactification
 
 end TauCeti
