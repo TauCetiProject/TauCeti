@@ -548,6 +548,7 @@ theorem diffeomorphAddCircle_trans (n : ℕ∞ω) :
 
 /-- The rescaling from `AddCircle p` to `AddCircle q` has derivative multiplication by `p⁻¹ * q`
 at every point. -/
+@[simp]
 theorem mfderiv_diffeomorphAddCircle (n : ℕ∞ω) (x : AddCircle p) :
     mfderiv 𝓘(ℝ) 𝓘(ℝ) (diffeomorphAddCircle p q n) x =
       (p⁻¹ * q) • ContinuousLinearMap.id ℝ ℝ := by
