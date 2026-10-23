@@ -54,10 +54,10 @@ jobs:
           fetch-depth: 100
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@b0ba29c5888c6f3c1470f54a7c0b304399f77006
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@0f4096297f058bff8ccd873067aab7120202aecf
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: b0ba29c5888c6f3c1470f54a7c0b304399f77006
+          tools-ref: 0f4096297f058bff8ccd873067aab7120202aecf
           project-directory: .
       - name: Infrastructure policy unit tests
         run: |

@@ -74,7 +74,8 @@ restrictions; they converge to `u` in `H¹` and to `f` pointwise. -/
 private theorem hyperplaneTrace_apply_ae_of_hasCompactSupport (a : ℝ)
     {u : W1p (volume : Measure (WithLp 2 (ℝ × E))) ⊤ 2} {f : WithLp 2 (ℝ × E) → ℝ}
     (hf : Continuous f) (hfc : HasCompactSupport f) (hu : W1p.value u =ᵐ[volume] f) :
-    ∀ᵐ y ∂(volume : Measure E), W1p.hyperplaneTrace a u y = f (WithLp.toLp 2 (a, y)) := by
+    ∀ᵐ y ∂(volume : Measure E),
+      W1p.hyperplaneTrace ENNReal.ofNat_ne_top a u y = f (WithLp.toLp 2 (a, y)) := by
   let phi : ℕ → ContDiffBump (0 : WithLp 2 (ℝ × E)) := fun k =>
     ⟨1 / ((k : ℝ) + 1) / 2, 1 / ((k : ℝ) + 1), by positivity, half_lt_self (by positivity)⟩
   have hphi : Tendsto (fun k => (phi k).rOut) atTop (𝓝 0) :=
@@ -116,17 +117,20 @@ private theorem hyperplaneTrace_apply_ae_of_hasCompactSupport (a : ℝ)
         (phi k).continuous_normed hf.locallyIntegrable
     · filter_upwards [h1, h3] with x h1 h3
       rw [← h3, h1]
-  have htend : Tendsto (fun k => W1p.hyperplaneTrace a (W1p.normedBumpL (by norm_num) (phi k) u))
-      atTop (𝓝 (W1p.hyperplaneTrace a u)) :=
-    ((W1p.hyperplaneTrace a).continuous.tendsto u).comp (W1p.tendsto_normedBumpL _ hphi u)
+  have htend : Tendsto
+      (fun k => W1p.hyperplaneTrace ENNReal.ofNat_ne_top a
+        (W1p.normedBumpL (by norm_num) (phi k) u))
+      atTop (𝓝 (W1p.hyperplaneTrace ENNReal.ofNat_ne_top a u)) :=
+    ((W1p.hyperplaneTrace (p := 2) ENNReal.ofNat_ne_top a).continuous.tendsto u).comp
+      (W1p.tendsto_normedBumpL _ hphi u)
   obtain ⟨ns, hns, hae⟩ := (tendstoInMeasure_of_tendsto_Lp htend).exists_seq_tendsto_ae
   have htest : ∀ᵐ y ∂(volume : Measure E), ∀ k,
-      W1p.hyperplaneTrace a (W1p.normedBumpL (by norm_num) (phi k) u) y =
+      W1p.hyperplaneTrace ENNReal.ofNat_ne_top a (W1p.normedBumpL (by norm_num) (phi k) u) y =
         conv k (WithLp.toLp 2 (a, y)) := by
     rw [ae_all_iff]
     intro k
     rw [← hΦ k, ← hΦconv k]
-    exact W1p.hyperplaneTrace_ofTestFunction_apply_ae a (Φ k)
+    exact W1p.hyperplaneTrace_ofTestFunction_apply_ae (p := 2) (by norm_num) a (Φ k)
   filter_upwards [hae, htest] with y hy hk
   refine tendsto_nhds_unique hy ?_
   simp only [hk]
@@ -139,9 +143,10 @@ on the hyperplane `{a} × E` is `y ↦ f (a, y)` almost everywhere. -/
 theorem W1p.hyperplaneTrace_apply_ae_of_continuous (a : ℝ)
     {u : W1p (volume : Measure (WithLp 2 (ℝ × E))) ⊤ 2} {f : WithLp 2 (ℝ × E) → ℝ}
     (hf : Continuous f) (hu : W1p.value u =ᵐ[volume] f) :
-    ∀ᵐ y ∂(volume : Measure E), W1p.hyperplaneTrace a u y = f (WithLp.toLp 2 (a, y)) := by
+    ∀ᵐ y ∂(volume : Measure E),
+      W1p.hyperplaneTrace ENNReal.ofNat_ne_top a u y = f (WithLp.toLp 2 (a, y)) := by
   have key (n : ℕ) : ∀ᵐ y ∂(volume : Measure E), ‖WithLp.toLp 2 (a, y)‖ < n →
-      W1p.hyperplaneTrace a u y = f (WithLp.toLp 2 (a, y)) := by
+      W1p.hyperplaneTrace ENNReal.ofNat_ne_top a u y = f (WithLp.toLp 2 (a, y)) := by
     obtain ⟨ψ, M, hψ, -, hone, hψc, -, hM, hψM, hgM⟩ :=
       (isCompact_closedBall (0 : WithLp 2 (ℝ × E)) n).exists_contDiff_cutoff_with_bounds
         isOpen_univ (subset_univ _)
@@ -169,7 +174,8 @@ theorem W1p.halfSpaceTrace_apply_ae_of_continuousOn (a : ℝ)
     {u : W1p (volume : Measure (WithLp 2 (ℝ × E))) (normalHalfSpace a) 2}
     {f : WithLp 2 (ℝ × E) → ℝ} (hf : ContinuousOn f {x | a ≤ x.fst})
     (hu : W1p.value u =ᵐ[volume.restrict (normalHalfSpace (E := E) a)] f) :
-    ∀ᵐ y ∂(volume : Measure E), W1p.halfSpaceTrace a u y = f (WithLp.toLp 2 (a, y)) := by
+    ∀ᵐ y ∂(volume : Measure E),
+      W1p.halfSpaceTrace ENNReal.ofNat_ne_top a u y = f (WithLp.toLp 2 (a, y)) := by
   -- The reflection extension is represented by `f` composed with the fold onto `{a ≤ t}`.
   let fold : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E) := fun x =>
     WithLp.toLp 2 (a + |x.fst - a|, x.snd)

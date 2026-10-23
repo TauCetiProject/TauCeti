@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.ModuleCat.AB
 public import Mathlib.Algebra.Homology.HomologicalComplexLimits
 public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 public import Mathlib.Algebra.Homology.ShortComplex.Limits
@@ -16,13 +15,10 @@ public import TauCeti.Algebra.Homology.ShortComplex.PreservesHomology
 # Homology and exact colimits
 
 This file proves that homology of short complexes in an abelian category, and hence homology of
-homological complexes, commutes with colimits of every shape whose colimits are exact. It also
-supplies the small-universe AB5 instance for module categories in which the ring and its modules
-live in unrelated universes.
+homological complexes, commutes with colimits of every shape whose colimits are exact.
 
 ## Main results
 
-* `TauCeti.moduleCat_ab5OfSize`: small filtered colimits of modules are exact.
 * `TauCeti.shortComplexHomologyFunctor_preservesColimitsOfShape`: homology of short complexes
   preserves colimits of any exact shape.
 * `TauCeti.homologicalComplexShortComplexFunctor_preservesColimitsOfShape`: the short complex
@@ -42,10 +38,6 @@ cannot be manipulated by `rfl` alone.
 
 Exactness of `J`-shaped colimits makes `colim` preserve homology, which turns the homology of that
 cocone into the chosen colimit of the pointwise homology diagram.
-
-Mathlib's AB5 instance for `ModuleCat.{u} R` asks for `R : Type u`. The instance here removes the
-corresponding restriction on the module universe for small filtered shapes by transporting
-exactness along the forgetful functor to abelian groups.
 -/
 
 public section
@@ -54,18 +46,7 @@ namespace TauCeti
 
 open CategoryTheory CategoryTheory.Limits
 
-universe u v w w' u' v'
-
-variable {R : Type u} [Ring R]
-
-/-- Small filtered colimits of `R`-modules are exact, with no relation imposed between the
-universe of the ring and the universe of the modules. -/
-instance moduleCat_ab5OfSize : AB5OfSize.{0, 0} (ModuleCat.{v} R) where
-  ofShape J _ _ := by
-    have : AB5OfSize.{0, 0} AddCommGrpCat.{v} :=
-      AB5OfSize_of_univLE.{0, 0, v, v, v, v + 1} _
-    exact HasExactColimitsOfShape.domain_of_functor J
-      (forget₂ (ModuleCat.{v} R) AddCommGrpCat.{v})
+universe w w' u' v'
 
 variable {C : Type u'} [Category.{v'} C] [Abelian C]
 variable {J : Type w} [Category.{w'} J] [HasColimitsOfShape J C]
