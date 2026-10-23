@@ -68,7 +68,6 @@ namespace TauCeti.Manifold
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-  {b : ℝ → (x : M) → TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ}
   {h : (x : M) → TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ} {t : ℝ} {x : M}
 
 variable [IsManifold I ∞ M]
@@ -76,20 +75,6 @@ variable [IsManifold I ∞ M]
 section FiniteDimensional
 
 variable [FiniteDimensional ℝ E]
-
-/-- The parameter derivative `h` of a family of fields of bilinear forms, jointly `C²` at `(t, x)`,
-pairs vector fields differentiable at `x` to a function differentiable at `x`. -/
-private theorem mdifferentiableAt_apply_of_hasDerivAt_family
-    (hb : ContMDiffAt (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) 2
-      (fun q : ℝ × M ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
-        (E := fun y : M ↦ TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] ℝ) q.2 (b q.1 q.2))
-      (t, x))
-    (hh : ∀ᶠ y in 𝓝 x, ∀ v w, HasDerivAt (fun s ↦ b s y v w) (h y v w) t) :
-    ∀ ⦃V W : Π x : M, TangentSpace I x⦄, MDiffAt (T% V) x → MDiffAt (T% W) x →
-      MDiffAt (fun y ↦ h y (V y) (W y)) x := fun V W hV hW ↦ by
-  have hreg := (contMDiffAt_of_hasDerivAt_family (m := 1) hb (by norm_num) hh).mdifferentiableAt
-    one_ne_zero
-  simpa [mdifferentiableAt_section] using hreg.clm_bundle_apply₂ hV hW
 
 /-! ### Families of Levi-Civita connections -/
 
@@ -189,7 +174,8 @@ private theorem two_mul_apply_deriv_eq_of_contMDiffAt
     (hh y a c).unique ((hh y c a).congr_of_eventuallyEq
       (Eventually.of_forall fun s ↦ (g s).apply_comm y a c))
   have hid := koszulBilinear_sub_two_mul_apply_eq_derivBilinearTensor (hcov t).torsion hsymm
-    (mdifferentiableAt_apply_of_hasDerivAt_family (b := fun s ↦ g s) hg (Eventually.of_forall hh))
+    (fun _ _ ↦ mdifferentiableAt_apply_apply_of_hasDerivAt_family (b := fun s ↦ g s) hg
+      (Eventually.of_forall hh))
     (mdifferentiableAt_extend I E v) (hY.mdifferentiableAt two_ne_zero)
     (mdifferentiableAt_extend I E w)
   simp only [extend_apply_self] at hid

@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
-import TauCeti.Geometry.Manifold.MFDeriv.Parametric
 import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.Family
 
 /-!
@@ -18,7 +17,7 @@ as a map into the bundle of bilinear forms on `TM`, with parameter derivative `h
 proves that the Koszul expression `TauCeti.Manifold.koszulBilinear` of `b_s` on vector fields that
 are `C²` at `x` is differentiable in `s`, with derivative the Koszul expression of `h`. Symmetry,
 nondegeneracy and finite dimensionality are not needed. The proof commutes the parameter derivative
-with the differentials of the pairings, `TauCeti.Manifold.hasDerivAt_mvfderiv_apply`.
+with the differentials of the pairings, `TauCeti.Manifold.hasDerivAt_mvfderiv_apply_apply`.
 
 ## Main results
 
@@ -48,22 +47,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {h : (x : M) → TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ} {t : ℝ} {x : M}
 
 variable [IsManifold I ∞ M]
-
-/-- For a family of fields of bilinear forms, jointly `C²` at `(t, x)`, and vector fields `V`, `W`
-that are `C²` at `x`, the parameter derivative of the differential at `x` of the pairing
-`y ↦ b_s(V, W)` is the differential of the parameter derivative of the pairing. -/
-private theorem hasDerivAt_mvfderiv_apply_apply
-    (hb : ContMDiffAt (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) 2
-      (fun q : ℝ × M ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
-        (E := fun y : M ↦ TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] ℝ) q.2 (b q.1 q.2))
-      (t, x))
-    {V W : Π x : M, TangentSpace I x} (hV : CMDiffAt 2 (T% V) x) (hW : CMDiffAt 2 (T% W) x)
-    (u : TangentSpace I x) :
-    HasDerivAt (fun s ↦ mvfderiv I (fun y ↦ b s y (V y) (W y)) x u)
-      (mvfderiv I (fun y ↦ deriv (fun s ↦ b s y (V y) (W y)) t) x u) t := by
-  refine hasDerivAt_mvfderiv_apply ?_ u
-  rw [minSmoothness_of_isRCLikeNormedField]
-  exact contMDiffAt_uncurry_apply_apply hb hV hW
 
 /-- The Koszul expression `K_{b_s}(X, Y, Z)` at `x` of a family of fields of bilinear forms,
 jointly `C²` at `(t, x)`, is differentiable in the parameter at `t`, for vector fields `X`, `Y`, `Z`

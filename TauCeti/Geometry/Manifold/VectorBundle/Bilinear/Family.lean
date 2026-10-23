@@ -25,8 +25,12 @@ symmetry or nondegeneracy is assumed.
   `C^n` family of fields of bilinear forms gives a jointly `C^n` family of functions.
 * `TauCeti.Manifold.differentiableAt_apply_apply_of_contMDiffAt`: the parameter curves at `x` of a
   jointly `C¹` family are differentiable.
+* `TauCeti.Manifold.hasDerivAt_mvfderiv_apply_apply`: for a jointly `C²` family, the parameter
+  derivative commutes with the differential of the pairing with two vector fields.
 * `TauCeti.Manifold.contMDiffAt_of_hasDerivAt_family`: the parameter derivative of a jointly `C^n`
   family of fields of bilinear forms is a `C^m` field for `m + 1 ≤ n`.
+* `TauCeti.Manifold.mdifferentiableAt_apply_apply_of_hasDerivAt_family`: the parameter derivative
+  of a jointly `C²` family pairs differentiable vector fields to a differentiable function.
 -/
 
 public section
@@ -75,6 +79,21 @@ theorem differentiableAt_apply_apply_of_contMDiffAt {n : WithTop ℕ∞} (hn : 1
     |>.mdifferentiableAt one_ne_zero).differentiableAt
   simpa [Function.uncurry_def, Function.comp_def] using hcurve
 
+/-- For a family of fields of bilinear forms, jointly `C²` at `(t, x)`, and vector fields `V`, `W`
+that are `C²` at `x`, the parameter derivative of the differential at `x` of the pairing
+`y ↦ b_s(V, W)` is the differential of the parameter derivative of the pairing. -/
+theorem hasDerivAt_mvfderiv_apply_apply
+    (hb : ContMDiffAt (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) 2
+      (fun q : ℝ × M ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
+        (E := fun y : M ↦ TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] ℝ) q.2 (b q.1 q.2))
+      (t, x))
+    {V W : Π x : M, TangentSpace I x} (hV : CMDiffAt 2 (T% V) x) (hW : CMDiffAt 2 (T% W) x)
+    (u : TangentSpace I x) :
+    HasDerivAt (fun s ↦ mvfderiv I (fun y ↦ b s y (V y) (W y)) x u)
+      (mvfderiv I (fun y ↦ deriv (fun s ↦ b s y (V y) (W y)) t) x u) t := by
+  refine hasDerivAt_mvfderiv_apply ?_ u
+  rw [minSmoothness_of_isRCLikeNormedField]
+  exact contMDiffAt_uncurry_apply_apply hb hV hW
 
 section FiniteDimensional
 
@@ -119,6 +138,20 @@ theorem contMDiffAt_of_hasDerivAt_family {m n : WithTop ℕ∞}
   ext a c
   rw [key]
   exact (hcurve a c).unique (hasDerivAt_clm_apply₂.mp hD a c)
+
+/-- The parameter derivative `h` of a family of fields of bilinear forms, jointly `C²` at `(t, x)`,
+pairs vector fields differentiable at `x` to a function differentiable at `x`. -/
+theorem mdifferentiableAt_apply_apply_of_hasDerivAt_family
+    (hb : ContMDiffAt (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) 2
+      (fun q : ℝ × M ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
+        (E := fun y : M ↦ TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] ℝ) q.2 (b q.1 q.2))
+      (t, x))
+    (hh : ∀ᶠ y in 𝓝 x, ∀ v w, HasDerivAt (fun s ↦ b s y v w) (h y v w) t)
+    {V W : Π x : M, TangentSpace I x} (hV : MDiffAt (T% V) x) (hW : MDiffAt (T% W) x) :
+    MDiffAt (fun y ↦ h y (V y) (W y)) x := by
+  have hreg := (contMDiffAt_of_hasDerivAt_family (m := 1) hb (by norm_num) hh).mdifferentiableAt
+    one_ne_zero
+  simpa [mdifferentiableAt_section] using hreg.clm_bundle_apply₂ hV hW
 
 end FiniteDimensional
 
