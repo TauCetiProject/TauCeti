@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.FreeAbelianGroup.Finsupp
-public import TauCeti.Analysis.Contour.PiecewiseC1On
+public import TauCeti.Analysis.Contour.Curve.Integrability
 public import TauCeti.Analysis.Contour.Winding.Number.Basic
 
 /-!
@@ -33,6 +33,10 @@ contribution to every additive invariant.
 * `TauCeti.Contour.Cycle` — the free abelian group on such curves.
 * `TauCeti.Contour.Cycle.trace` — the geometric trace of a cycle.
 * `TauCeti.Contour.Cycle.integral` — the additive extension of the contour integral.
+* `TauCeti.Contour.Cycle.integral_comp_comm`: continuous linear maps commute with the integral
+  of a vector-valued function over a cycle, when its contour integrand is integrable.
+* `TauCeti.Contour.Cycle.norm_integral_le_of_norm_le_const`: a bound for the integrand on the
+  trace, times the length of the cycle, bounds the integral.
 * `TauCeti.Contour.Cycle.windingNumber` — the additive extension of the winding number.
 * `TauCeti.Contour.Cycle.IsIn` and `TauCeti.Contour.Cycle.IsNullHomologous` — the cycle-level
   domain and null-homology predicates.
@@ -49,6 +53,8 @@ public section
 noncomputable section
 
 open MeasureTheory Set intervalIntegral
+
+open scoped Interval
 
 namespace TauCeti.Contour
 
@@ -330,6 +336,59 @@ theorem integral_eq_sum_support {E : Type*} [NormedAddCommGroup E] [NormedSpace 
       FreeAbelianGroup.coeff γ C • (∫ t in γ.a..γ.b, deriv γ t • f (γ t)) := by
   conv_lhs => rw [FreeAbelianGroup.eq_sum_support_coeff_smul_of C]
   simp only [map_sum, map_zsmul, integral_of]
+
+/-- Along every curve in the support of a cycle, the contour integrand of a function continuous on
+the trace of the cycle is interval-integrable. -/
+theorem intervalIntegrable_of_mem_support {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    {f : ℂ → E} {C : Cycle} (hf : ContinuousOn f (trace C)) {γ : PiecewiseC1ClosedCurve}
+    (hγ : γ ∈ FreeAbelianGroup.support C) :
+    IntervalIntegrable (fun t ↦ deriv γ t • f (γ t)) volume γ.a γ.b :=
+  γ.isPiecewiseC1On.intervalIntegrable_deriv_smul_comp_of_mapsTo hf
+    fun t ht ↦ mem_trace_iff.mpr ⟨γ, hγ, t, ht, rfl⟩
+
+/-- A continuous linear map between complex Banach spaces commutes with the integral over a cycle
+of a function whose contour integrand is interval-integrable along every curve in the support of
+the cycle. For `f` continuous on the trace, this integrability is
+`TauCeti.Contour.Cycle.intervalIntegrable_of_mem_support`. -/
+theorem integral_comp_comm {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    [CompleteSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F] {f : ℂ → E}
+    {C : Cycle}
+    (hf : ∀ γ ∈ FreeAbelianGroup.support C,
+      IntervalIntegrable (fun t ↦ deriv γ t • f (γ t)) volume γ.a γ.b)
+    (L : E →L[ℂ] F) :
+    integral (fun z ↦ L (f z)) C = L (integral f C) := by
+  rw [integral_eq_sum_support, integral_eq_sum_support, map_sum]
+  refine Finset.sum_congr rfl fun γ hγ ↦ ?_
+  rw [map_zsmul, ← L.intervalIntegral_comp_comm (hf γ hγ)]
+  simp only [map_smul]
+
+/-- **Norm bound for a cycle integral.** If `‖f‖ ≤ M` on the trace of `C`, then the integral of
+`f` over `C` is at most `M` times the length of `C`: the sum of the lengths
+`∫ t in Ι γ.a γ.b, ‖γ' t‖` of the curves in its support, each weighted by the absolute value of
+its coefficient. -/
+theorem norm_integral_le_of_norm_le_const {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    {f : ℂ → E} {C : Cycle} {M : ℝ} (hM : ∀ z ∈ trace C, ‖f z‖ ≤ M) :
+    ‖integral f C‖ ≤ (∑ γ ∈ FreeAbelianGroup.support C,
+      |(FreeAbelianGroup.coeff γ C : ℝ)| * ∫ t in Ι γ.a γ.b, ‖deriv γ t‖) * M := by
+  -- Each generator contributes at most its length times `M`.
+  have hgen : ∀ γ ∈ FreeAbelianGroup.support C,
+      ‖∫ t in γ.a..γ.b, deriv γ t • f (γ t)‖ ≤ (∫ t in Ι γ.a γ.b, ‖deriv γ t‖) * M := by
+    intro γ hγ
+    have hbound : ∀ᵐ t ∂volume.restrict (Ι γ.a γ.b), ‖deriv γ t • f (γ t)‖ ≤ ‖deriv γ t‖ * M :=
+      ae_restrict_of_forall_mem measurableSet_uIoc fun t ht ↦ by
+        rw [norm_smul]
+        exact mul_le_mul_of_nonneg_left
+          (hM _ (mem_trace_iff.mpr ⟨γ, hγ, t, uIoc_subset_uIcc ht, rfl⟩)) (norm_nonneg _)
+    calc ‖∫ t in γ.a..γ.b, deriv γ t • f (γ t)‖
+        ≤ ∫ t in Ι γ.a γ.b, ‖deriv γ t • f (γ t)‖ := norm_integral_le_integral_norm_uIoc
+      _ ≤ ∫ t in Ι γ.a γ.b, ‖deriv γ t‖ * M :=
+          integral_mono_of_nonneg (ae_of_all _ fun _ ↦ norm_nonneg _)
+            (γ.intervalIntegrable_deriv.norm.mul_const M).def' hbound
+      _ = (∫ t in Ι γ.a γ.b, ‖deriv γ t‖) * M := integral_mul_const M _
+  rw [integral_eq_sum_support, Finset.sum_mul]
+  refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun γ hγ ↦ ?_)
+  rw [norm_zsmul ℝ, Real.norm_eq_abs, mul_assoc]
+  exact mul_le_mul_of_nonneg_left (hgen γ hγ) (abs_nonneg _)
 
 /-- The winding number of a cycle, obtained by additively extending the generalized winding number
 of its generators. -/
