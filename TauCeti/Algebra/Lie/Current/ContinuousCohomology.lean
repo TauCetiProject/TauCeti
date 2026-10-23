@@ -219,12 +219,10 @@ theorem twoCochainOfBilinearSMulRight_mem_continuousTwoCocycle (Φ : LinearMap.B
     twoCochainOfBilinearSMulRight R L Φ hΦs z ∈
       continuousTwoCocycle R (currentAlgebra R L) (TrivialLieModule R (currentAlgebra R L) Z) := by
   -- Push the scalar residue cocycle forward along `t ↦ t • z`.
-  have hid : Continuous (LieHom.id : currentAlgebra R L →ₗ⁅R⁆ currentAlgebra R L) := by
-    simpa using continuous_id
-  have h := twoCochainMap_mem_continuousTwoCocycle
+  have h := twoCochainMap_id_mem_continuousTwoCocycle
     ((TrivialLieModule.equiv R (currentAlgebra R L) Z).symm.toLinearMap ∘ₗ
       LinearMap.toSpanSingleton R Z z ∘ₗ
-      (TrivialLieModule.equiv R (currentAlgebra R L) R).toLinearMap) hid
+      (TrivialLieModule.equiv R (currentAlgebra R L) R).toLinearMap)
     (twoCochainOfBilinear_mem_continuousTwoCocycle R L Φ hΦ hΦs)
   rwa [← twoCochainOfBilinearSMulRight_one, twoCochainMap_twoCochainOfBilinearSMulRight,
     LinearMap.toSpanSingleton_apply, one_smul] at h
@@ -273,13 +271,11 @@ theorem residueClassMap_injective [IsDomain R] [CharZero R] [Module.Projective R
       (TrivialLieModule.equiv R _ Z).toLinearMap
   refine (smul_residueClass_eq_zero_iff hΦ hΦs hΦ0 (φ z)).mp ?_
   rw [← residueClassMap_self, residueClassMap_apply, continuousSecondCohomologyMk_eq_zero_iff]
-  refine ⟨e ∘ₗ f, mem_continuousOneCochain_iff_orderSubmodule.mpr ?_, ?_⟩
-  · obtain ⟨N, hN⟩ := mem_continuousOneCochain_iff_orderSubmodule.mp hf
-    exact ⟨N, fun u hu ↦ by simp [hN u hu]⟩
-  · have h := congrArg (twoCochainMap e LieHom.id) hdf
-    rw [twoCochainMap_twoCochainOfBilinearSMulRight] at h
-    refine Eq.trans (Subtype.ext (LinearMap.ext₂ fun u v ↦ ?_)) (h.trans (by simp))
-    simp [trivial_lie_zero]
+  refine ⟨e ∘ₗ f, comp_mem_continuousOneCochain e hf, ?_⟩
+  have h := congrArg (twoCochainMap e LieHom.id) hdf
+  rw [twoCochainMap_twoCochainOfBilinearSMulRight] at h
+  refine Eq.trans (Subtype.ext (LinearMap.ext₂ fun u v ↦ ?_)) (h.trans (by simp))
+  simp [trivial_lie_zero]
 
 end Coefficients
 
@@ -386,11 +382,9 @@ theorem exists_eq_twoCochainOfBilinearSMulRight_add_d₁₂ {Ψ : LinearMap.Bili
   set eK := TrivialLieModule.equiv K (currentAlgebra K L) K
   -- Each functional `φ` on the coefficients turns `c` into a scalar continuous cocycle, which by
   -- the scalar classification is `t φ • c_Ψ + d₁₂ (f φ)` with `f φ` continuous.
-  have hid : Continuous (LieHom.id : currentAlgebra K L →ₗ⁅K⁆ currentAlgebra K L) := by
-    simpa using continuous_id
   choose t f _ hcf using fun φ : Module.Dual K (TrivialLieModule K (currentAlgebra K L) Z) ↦
     exists_eq_smul_twoCochainOfBilinear_add_d₁₂ hΨ hΨs hspan hne
-      (twoCochainMap_mem_continuousTwoCocycle (eK.symm.toLinearMap ∘ₗ φ) hid hc)
+      (twoCochainMap_id_mem_continuousTwoCocycle (eK.symm.toLinearMap ∘ₗ φ) hc)
   have hcf_apply (φ) (a b : currentAlgebra K L) :
       φ (c a b) = t φ * residuePairing K L Ψ a b - eK (f φ ⁅a, b⁆) := by
     simpa [eK, sub_eq_add_neg, trivial_lie_zero] using congrArg (fun c' ↦ eK (c' a b)) (hcf φ)
@@ -431,11 +425,8 @@ theorem exists_eq_twoCochainOfBilinearSMulRight_add_d₁₂ {Ψ : LinearMap.Bili
     have h₁ := orderSubmodule_antitone K L (le_max_left N₁ 0)
     have h₀ := orderSubmodule_antitone K L (le_max_right N₁ 0)
     have h := congrArg (fun c'' ↦ c'' a b) hF
-    simp only [d₁₂_apply_apply_ofTrivial, c', sub_apply_apply, hN₁ a (h₁ ha) b (h₁ hb),
-      twoCochainOfBilinearSMulRight_apply_apply,
-      residuePairing_eq_zero_of_mem_orderSubmodule_zero K L Ψ (h₀ ha) (h₀ hb), zero_smul,
-      map_zero, sub_zero, neg_eq_zero] at h
-    exact h
+    simpa [c', trivial_lie_zero, hN₁ a (h₁ ha) b (h₁ hb),
+      residuePairing_eq_zero_of_mem_orderSubmodule_zero K L Ψ (h₀ ha) (h₀ hb)] using h
   refine ⟨TrivialLieModule.equiv K _ Z z, F, mem_continuousOneCochain_iff_orderSubmodule.mpr
     ⟨N + N, orderSubmodule_add_le_ker_of_map_lie_eq_zero K L hperf F hN⟩, ?_⟩
   rw [hF]

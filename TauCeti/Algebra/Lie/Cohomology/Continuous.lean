@@ -50,7 +50,9 @@ topological Lie algebra, such as the formal loop algebra, by a discrete trivial 
 
 Continuous two-cochains pull back along continuous Lie algebra morphisms and push forward along
 linear maps of coefficients (`twoCochainMap_mem_continuousTwoCochain`), and with trivial
-coefficients so do continuous two-cocycles (`twoCochainMap_mem_continuousTwoCocycle`).
+coefficients so do continuous two-cocycles (`twoCochainMap_mem_continuousTwoCocycle`, and
+`twoCochainMap_id_mem_continuousTwoCocycle` for coefficient maps alone). Continuous one-cochains
+push forward along linear maps of coefficients (`comp_mem_continuousOneCochain`).
 
 ## Main results
 
@@ -194,6 +196,12 @@ theorem twoCochainMap_mem_continuousTwoCochain (e : M →ₗ[R] M') {φ : L' →
   exact ⟨fun x ↦ (h₁.eventually (hc.1 (φ x))).mono fun y hy ↦ by simp [hy],
     (h₂.eventually hc.2).mono fun p (hp : c (φ p.1) (φ p.2) = 0) ↦ by simp [hp]⟩
 
+/-- Pushing a continuous one-cochain forward along a linear map `e` of coefficients gives a
+continuous one-cochain. -/
+theorem comp_mem_continuousOneCochain (e : M →ₗ[R] M') {f : oneCochain R L M}
+    (hf : f ∈ continuousOneCochain R L M) : e ∘ₗ f ∈ continuousOneCochain R L M' :=
+  hf.mono fun x hx ↦ by simp [hx]
+
 end Cochains
 
 section Cohomology
@@ -259,6 +267,14 @@ theorem twoCochainMap_mem_continuousTwoCocycle {L' M' : Type*} [LieRing L'] [Lie
     (hφ : Continuous φ) {c : twoCochain R L M} (hc : c ∈ continuousTwoCocycle R L M) :
     twoCochainMap e φ c ∈ continuousTwoCocycle R L' M' :=
   ⟨twoCochainMap_mem_continuousTwoCochain e hφ hc.1, twoCochainMap_mem_twoCocycle e φ hc.2⟩
+
+/-- With trivial coefficients, pushing a continuous two-cocycle forward along a linear map `e` of
+coefficients gives a continuous two-cocycle. -/
+theorem twoCochainMap_id_mem_continuousTwoCocycle {M' : Type*} [AddCommGroup M'] [Module R M']
+    [LieRingModule L M'] [LieModule R L M'] [LieModule.IsTrivial L M] [LieModule.IsTrivial L M']
+    (e : M →ₗ[R] M') {c : twoCochain R L M} (hc : c ∈ continuousTwoCocycle R L M) :
+    twoCochainMap e LieHom.id c ∈ continuousTwoCocycle R L M' :=
+  twoCochainMap_mem_continuousTwoCocycle e (by simpa using continuous_id) hc
 
 variable {N : Type*} [AddCommGroup N] [Module R N]
 
