@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.CWComplex.Classical.Basic
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Cell
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.CWComplex.CharacteristicMap
+public import TauCeti.Topology.CWComplex.Classical.Skeleton.CellMap
 
 /-!
 # The CW structure on a simplicial realization
@@ -25,7 +26,7 @@ identifies the cells of `realizationCWComplex K` with `RealizationCell K`, throu
 cells, closed cells, and cell frontiers are described by barycentric supports.  In positive
 dimensions, each frontier is the union of its codimension-one closed cells.  The CW
 filtration stage `skeletonLT n` consists of points with at most `n` nonzero barycentric
-coordinates.
+coordinates.  The attaching maps are injective, so this CW structure is regular.
 
 ## References
 
@@ -303,3 +304,27 @@ theorem skeletonLT_realizationCWComplex (K : AbstractSimplicialComplex ι) (n : 
         rfl
 
 end AbstractSimplicialComplex
+
+namespace TauCeti
+
+variable {ι : Type*} [LinearOrder ι]
+variable {K : _root_.AbstractSimplicialComplex ι} {n : ℕ}
+
+/-- **Simplicial realizations are regular CW complexes**: the attaching map of every simplicial
+cell is injective, since its characteristic map is injective on the closed ball. -/
+theorem cellAttachingMap_realization_injective
+    (c : _root_.AbstractSimplicialComplex.RealizationCell K n) :
+    letI := _root_.AbstractSimplicialComplex.realizationCWComplex K
+    Function.Injective
+      (cellAttachingMap (_root_.AbstractSimplicialComplex.realizationCellEquiv K n |>.symm c)) := by
+  let := _root_.AbstractSimplicialComplex.realizationCWComplex K
+  intro z z' h
+  have h' := congrArg Subtype.val h
+  rw [coe_cellAttachingMap_apply, coe_cellAttachingMap_apply,
+    _root_.AbstractSimplicialComplex.map_realizationCellEquiv_symm] at h'
+  exact (TopCat.isClosedEmbedding_diskBoundaryInclusion n).injective
+    ((diskHomeomorphClosedBall n).injective (Subtype.ext
+      (c.injOn_characteristicMap_closedBall (diskHomeomorphClosedBall n _).2
+        (diskHomeomorphClosedBall n _).2 h')))
+
+end TauCeti

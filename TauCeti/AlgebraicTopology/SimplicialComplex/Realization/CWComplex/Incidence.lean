@@ -137,23 +137,6 @@ theorem support_cellularBoundaryColumn_realization_subset_faces
       simpa only [Equiv.symm_apply_apply] using
         cellularIncidence_realization_eq_zero_of_not_subset (R := R) c _ hsubset
 
-/-- **Simplicial realizations are regular CW complexes**: the attaching map of every simplicial
-cell is injective, since its characteristic map is injective on the closed ball. -/
-theorem cellAttachingMap_realization_injective
-    (c : _root_.AbstractSimplicialComplex.RealizationCell K n) :
-    letI := _root_.AbstractSimplicialComplex.realizationCWComplex K
-    Function.Injective
-      (cellAttachingMap (_root_.AbstractSimplicialComplex.realizationCellEquiv K n |>.symm c)) := by
-  let := _root_.AbstractSimplicialComplex.realizationCWComplex K
-  intro z z' h
-  have h' := congrArg Subtype.val h
-  rw [coe_cellAttachingMap_apply, coe_cellAttachingMap_apply,
-    _root_.AbstractSimplicialComplex.map_realizationCellEquiv_symm] at h'
-  exact (TopCat.isClosedEmbedding_diskBoundaryInclusion n).injective
-    ((diskHomeomorphClosedBall n).injective (Subtype.ext
-      (c.injOn_characteristicMap_closedBall (diskHomeomorphClosedBall n _).2
-        (diskHomeomorphClosedBall n _).2 h')))
-
 /-- **Codimension-one faces have unit incidence numbers.** The incidence coefficient of a
 positive-dimensional face `d` of a simplicial cell `c`, with one vertex fewer, in the cellular
 boundary of `c` is a unit of the coefficient ring. -/

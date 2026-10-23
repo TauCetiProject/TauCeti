@@ -186,8 +186,6 @@ private lemma isEmbedding_cellAttachingMap_restrict (hi : i + 1 ≤ N)
       have hy' : 0 < (y' : EuclideanSpace ℝ (Fin (N + 1))) ⟨i, by omega⟩ := y'.2
       rw [h, coe_neg_sphere, PiLp.neg_apply] at hy
       linarith
-  have : CompactSpace (TopCat.diskBoundary.{0} (i + 1)) :=
-    inferInstanceAs (CompactSpace (ULift (sphere (0 : EuclideanSpace ℝ (Fin (i + 1))) 1)))
   have hincl : IsEmbedding (sphereIncl hi) :=
     ((continuous_sphereIncl hi).isClosedEmbedding fun v w h ↦ ULift.ext (Subtype.ext
       (hemispherePoint_injective (by omega) (congrArg Subtype.val h)))).isEmbedding
@@ -274,8 +272,6 @@ private lemma exists_cellularIncidence_cwComplex_eq_mul (hi : i + 1 ≤ N)
   -- of `c` (`singularHomologyπ_cellAttachingMap_eq_cellularIncidence_smul`), and to
   -- `1 + (-1) ^ (i + 1)` times the image `μ` of `t` (by the involution lemma). For `i > 0` both
   -- `t` and the map it is pushed along are isomorphisms, so `μ` is a unit.
-  have : T1Space (TopCat.diskBoundary.{0} (i + 1)) :=
-    inferInstanceAs (T1Space (ULift (sphere (0 : EuclideanSpace ℝ (Fin (i + 1))) 1)))
   have hx := cellAttachingMap_pole_mem_openCell hi c c'
   have ha : Function.Involutive (diskBoundaryNeg.{0} (i + 1)) :=
     diskBoundaryNeg_diskBoundaryNeg_apply
@@ -330,11 +326,9 @@ private lemma exists_cellularIncidence_cwComplex_eq_mul (hi : i + 1 ≤ N)
         diskBoundaryFundamentalClass_comp_singularHomologyMap_ofSubsetMap_id _
           (B' := {pole (k + 1)}ᶜ) inter_subset_left]
       infer_instance
-    -- An automorphism of `R` as a module over itself is right multiplication by a unit.
-    have hbij := ConcreteCategory.bijective_of_isIso (t ≫ TopPair.singularHomologyMap
+    exact ModuleCat.isUnit_apply_one_of_isIso (t ≫ TopPair.singularHomologyMap
       (TopPair.ofSubsetMap _ hfU) (ModuleCat.of R R) _ ≫ inv (cellLocalClass univ
         (ModuleCat.of R R) (cellAttachingMap c' (pole _)) hx))
-    exact (((Module.End.isUnit_iff _).2 hbij).map (RingEquiv.moduleEndSelf R).symm).unop
 
 /-- **The cellular incidence numbers of real projective space.** The incidence coefficient of the
 `i`-cell in the cellular boundary of the `(i + 1)`-cell of `RPᴺ`, with coefficients in a ring `R`,

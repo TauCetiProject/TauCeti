@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Category.ModuleCat.End
 public import TauCeti.AlgebraicTopology.Cellular.LocalDegree
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Sphere
 
@@ -133,8 +134,6 @@ theorem isUnit_cellularIncidence_of_isEmbedding {n : ℕ} {i : cell C (n + 1)}
   have hfU : MapsTo (TopCat.ofHom (⟨Subtype.val, continuous_subtype_val⟩ :
       C(U, TopCat.diskBoundary.{w} (n + 2))) ≫ cellAttachingMap j)
       (Subtype.val ⁻¹' {y}ᶜ : Set U) {cellAttachingMap j y}ᶜ := fun _ hu ↦ hfP hu
-  have : T1Space (TopCat.diskBoundary.{w} (n + 2)) :=
-    inferInstanceAs (T1Space (ULift (sphere (0 : EuclideanSpace ℝ (Fin (n + 2))) 1)))
   have := TopPair.isIso_singularHomologyMap_excisionMap_of_isClosed_subset
     (ModuleCat.of R R) hU isClosed_singleton (singleton_subset_iff.2 hyU) (n + 1)
   have hloc := isIso_singularHomologyMap_cellAttachingMap_domRestrict C (ModuleCat.of R R) hx hemb
@@ -158,15 +157,10 @@ theorem isUnit_cellularIncidence_of_isEmbedding {n : ℕ} {i : cell C (n + 1)}
         cellLocalClass C (ModuleCat.of R R) (cellAttachingMap j y) hx 1 := by
     rw [diskBoundaryFundamentalClass_comp_singularHomologyMap_ofSubsetMap]
     exact singularHomologyπ_cellAttachingMap_eq_cellularIncidence_smul C R _ hx j
-  -- An automorphism of `R` as a module over itself is right multiplication by a unit.
-  obtain ⟨g, hg⟩ : ∃ g, g = diskBoundaryFundamentalClass (ModuleCat.of R R) {y}ᶜ ≫
-      TopPair.singularHomologyMap (TopPair.ofSubsetMap _ hfP) (ModuleCat.of R R) (n + 1) ≫
-        inv (cellLocalClass C (ModuleCat.of R R) (cellAttachingMap j y) hx) := ⟨_, rfl⟩
-  have : IsIso g := hg ▸ inferInstance
-  have h : IsUnit (g 1) := (((Module.End.isUnit_iff _).2
-    (ConcreteCategory.bijective_of_isIso g)).map (RingEquiv.moduleEndSelf R).symm).unop
-  rwa [hg, ← Category.assoc, ModuleCat.comp_apply, hs, map_smul, ← ModuleCat.comp_apply,
-    IsIso.hom_inv_id, ModuleCat.id_apply, smul_eq_mul, mul_one] at h
+  exact ModuleCat.isUnit_of_apply_one_eq_smul
+    (cellLocalClass C (ModuleCat.of R R) (cellAttachingMap j y) hx)
+    (diskBoundaryFundamentalClass (ModuleCat.of R R) {y}ᶜ ≫
+      TopPair.singularHomologyMap (TopPair.ofSubsetMap _ hfP) (ModuleCat.of R R) (n + 1)) hs
 
 /-- **Injective attaching maps have unit incidence numbers.** If the attaching map of an
 `(n + 2)`-cell `j` is injective, as in a regular CW complex, then every `(n + 1)`-cell whose open
@@ -175,8 +169,6 @@ theorem isUnit_cellularIncidence_of_injective {n : ℕ} {i : cell C (n + 1)} {j 
     (hinj : Function.Injective (cellAttachingMap j))
     (hi : openCell (n + 1) i ⊆ cellFrontier (n + 2) j) :
     IsUnit (cellularIncidence C R (n + 1) i j) := by
-  have : CompactSpace (TopCat.diskBoundary.{w} (n + 2)) :=
-    inferInstanceAs (CompactSpace (ULift (sphere (0 : EuclideanSpace ℝ (Fin (n + 2))) 1)))
   have hemb : IsEmbedding (cellAttachingMap j) :=
     ((cellAttachingMap j).hom.continuous.isClosedEmbedding hinj).isEmbedding
   have hsurj (z : skeletonObj C (n + 2)) (hz : (z : X) ∈ openCell (n + 1) i) :
