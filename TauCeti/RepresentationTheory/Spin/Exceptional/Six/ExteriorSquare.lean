@@ -14,7 +14,7 @@ public import TauCeti.RepresentationTheory.ClassicalGroups.Volume
 
 The wedge product identifies two bivectors in a four-dimensional vector space with a top-degree
 exterior vector. The standard volume map therefore gives a symmetric perfect bilinear form on
-`⋀²(K⁴)`. Applying an endomorphism to both bivectors scales this form by its determinant, and the
+`⋀²(K⁴)`. Applying an endomorphism to both bivectors scales this form by its determinant,
 exterior-square standard action of `SL₄(K)` preserves it as the determinant-one specialization.
 
 This file bundles that action as a homomorphism from `SL₄(K)` to the isometry group of the wedge
@@ -30,8 +30,8 @@ comparison between the four-dimensional special linear group and the six-dimensi
 ## Main results
 
 * `TauCeti.spinSixWedgeForm_ιMulti`: the wedge form evaluates to a determinant on pure wedges.
-* `TauCeti.spinSixWedgeForm_comp_exteriorPower`: applying the exterior-square of an endomorphism
-  to both arguments scales the form by its determinant.
+* `TauCeti.spinSixWedgeForm_comp_exteriorPower_map_eq_det_smul`: applying the exterior-square
+  of an endomorphism to both arguments scales the form by its determinant.
 
 ## References
 
@@ -112,28 +112,32 @@ theorem spinSixWedgeForm_isSymm : (spinSixWedgeForm K).IsSymm := by
 /-- The exterior-square action scales the wedge form by the determinant. The theorem
 `spinSixWedgeForm_invariant` below is its determinant-one specialization; this form is the version
 needed when a coordinate change is not itself special linear. -/
-theorem spinSixWedgeForm_comp_exteriorPower (f : (Fin 4 → K) →ₗ[K] (Fin 4 → K)) :
+theorem
+    spinSixWedgeForm_comp_exteriorPower_map_eq_det_smul
+    (f : (Fin 4 → K) →ₗ[K] (Fin 4 → K)) :
     (spinSixWedgeForm K).comp (exteriorPower.map 2 f) (exteriorPower.map 2 f) =
       LinearMap.det f • spinSixWedgeForm K := by
   rw [spinSixWedgeForm_eq_compr₂]
   simpa only [LinearMap.BilinForm.comp] using
-    exteriorPower.wedge_compr₂_compl₁₂_exteriorPower (k := 2) (l := 2) (by simp) rfl
+    exteriorPower.wedge_compr₂_compl₁₂_exteriorPower_map_eq_det_smul
+      (k := 2) (l := 2) (by simp) rfl
       (Pi.basisFun K (Fin 4)).exteriorPowerTopEquiv.toLinearMap f
 
-/-- Pointwise form of `spinSixWedgeForm_comp_exteriorPower` for rewriting evaluations. -/
+/-- Pointwise form of `spinSixWedgeForm_comp_exteriorPower_map_eq_det_smul` for rewriting
+ evaluations. -/
 @[simp]
 theorem spinSixWedgeForm_exteriorPower_map_apply
     (f : (Fin 4 → K) →ₗ[K] (Fin 4 → K)) (x y : ⋀[K]^2 (Fin 4 → K)) :
     spinSixWedgeForm K (exteriorPower.map 2 f x) (exteriorPower.map 2 f y) =
       LinearMap.det f * spinSixWedgeForm K x y := by
-  exact LinearMap.congr_fun₂ (spinSixWedgeForm_comp_exteriorPower K f) x y
+  exact LinearMap.congr_fun₂ (spinSixWedgeForm_comp_exteriorPower_map_eq_det_smul K f) x y
 
 /-- The exterior-square standard representation of `SL₄(K)` preserves the wedge form. -/
 theorem spinSixWedgeForm_invariant (g : Matrix.SpecialLinearGroup (Fin 4) K) :
     BilinForm.IsIsometry (spinSixWedgeForm K) ((stdSLRep K 4).exteriorPower 2 g) := by
   rw [BilinForm.isIsometry_iff_comp]
   rw [Representation.exteriorPower_apply]
-  rw [spinSixWedgeForm_comp_exteriorPower]
+  rw [spinSixWedgeForm_comp_exteriorPower_map_eq_det_smul]
   rw [stdSLRep_apply, ← Matrix.toLin'_apply',
     LinearMap.det_toLin', g.property, one_smul]
 

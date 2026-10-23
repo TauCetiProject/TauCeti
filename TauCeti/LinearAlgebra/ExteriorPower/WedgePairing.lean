@@ -84,7 +84,8 @@ theorem wedgePairing_eq_compr₂_of_finrank_eq (n : ℕ) (hfin : Module.finrank 
 
 /-- Applying an endomorphism to both arguments of a complementary-degree wedge pairing scales it
 by the determinant of the endomorphism. -/
-theorem wedge_compr₂_compl₁₂_exteriorPower [Module.Free R M]
+theorem
+    wedge_compr₂_compl₁₂_exteriorPower_map_eq_det_smul [Module.Free R M]
     (hn : Module.finrank R M = n) (hkl : k + l = n) (vol : ⋀[R]^n M →ₗ[R] R)
     (f : M →ₗ[R] M) :
     LinearMap.compl₁₂ ((wedge R M k l).compr₂ (hkl ▸ vol))
