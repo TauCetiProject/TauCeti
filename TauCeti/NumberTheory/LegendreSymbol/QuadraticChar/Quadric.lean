@@ -7,7 +7,6 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.Symmetric
 public import Mathlib.NumberTheory.LegendreSymbol.QuadraticChar.Basic
-import Mathlib.NumberTheory.JacobiSum.Basic
 import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
 import TauCeti.NumberTheory.LegendreSymbol.QuadraticChar.Basic
 
@@ -28,7 +27,8 @@ For `n = 1` this is the count `1 + χ(c / a)` of the square roots of `c / a`, wh
 `quadraticChar_card_sqrts`. In general the formulas are proved for diagonal forms
 `∑ wᵢ xᵢ²` with all `wᵢ ≠ 0`, with `Δ = ∏ wᵢ`, by adding one variable at a time: adding the term
 `a t²` turns the count `N` into `c ↦ qⁿ + ∑ᵤ χ(a u) N(c - u)`, and the two parities alternate,
-the odd-to-even step evaluating the Jacobi sum `∑ᵤ χ(u (c - u))`. Since every symmetric matrix is
+the odd-to-even step evaluating the Jacobi sum `∑ᵤ χ(u (c - u))` with
+`TauCeti.sum_quadraticChar_mul_sub`. Since every symmetric matrix is
 congruent to a diagonal one when `2` is invertible, the same formulas count the solutions of
 `xᵀ A x = c` for a symmetric matrix `A` with `det A ≠ 0`, with `Δ = det A`.
 
@@ -38,7 +38,6 @@ computed.
 
 ## Main results
 
-* `TauCeti.sum_quadraticChar_mul_sub`: the quadratic Jacobi sum `∑ᵤ χ(u (c - u))`.
 * `TauCeti.card_sum_mul_sq_eq_of_card_eq_two_mul_add_one`,
   `TauCeti.card_sum_mul_sq_eq_of_card_eq_two_mul_add_two`: the number of solutions of
   `∑ wᵢ xᵢ² = c` in odd and in even rank.
@@ -91,31 +90,6 @@ private theorem card_sum_mul_sq_fin_succ {n : ℕ} (w : Fin (n + 1) → F) (c : 
   refine sum_congr rfl fun t _ ↦ sum_congr rfl fun y _ ↦ ?_
   simp only [Fin.consEquiv_apply, Fin.sum_univ_succ, Fin.cons_zero, Fin.cons_succ, Fin.tail,
     eq_sub_iff_add_eq, add_comm (w 0 * t ^ 2)]
-
-/-- **The quadratic Jacobi sum**: in a finite field of odd characteristic, `∑ᵤ χ(u (c - u))` is
-`χ(-1) (q - 1)` for `c = 0` and `-χ(-1)` otherwise. -/
-theorem sum_quadraticChar_mul_sub (hF : ringChar F ≠ 2) (c : F) :
-    ∑ u : F, quadraticChar F (u * (c - u)) =
-      quadraticChar F (-1) * if c = 0 then (Fintype.card F : ℤ) - 1 else -1 := by
-  split_ifs with hc
-  · subst hc
-    have hsq (u : F) : quadraticChar F (u * (0 - u)) =
-        quadraticChar F (-1) * (1 - if u = 0 then 1 else 0) := by
-      by_cases hu : u = 0
-      · simp [hu]
-      · rw [show u * (0 - u) = -1 * u ^ 2 by ring, map_mul, quadraticChar_sq_one' hu]
-        simp [hu]
-    simp only [hsq, ← mul_sum, sum_sub_distrib, Fintype.sum_ite_eq', sum_const,
-      card_univ, nsmul_eq_mul, mul_one]
-  · -- Substituting `u = c x` turns the sum into the Jacobi sum `J(χ, χ) = J(χ, χ⁻¹)`.
-    have hx (x : F) : quadraticChar F x * quadraticChar F (1 - x) =
-        quadraticChar F (c * x * (c - c * x)) := by
-      rw [show c * x * (c - c * x) = c ^ 2 * (x * (1 - x)) by ring, map_mul,
-        quadraticChar_sq_one' hc, one_mul, map_mul]
-    rw [← Fintype.sum_bijective (c * ·) (mulLeft_bijective₀ c hc) _ _ hx]
-    have hJ := jacobiSum_nontrivial_inv (quadraticChar_ne_one hF)
-    rw [(quadraticChar_isQuadratic F).inv, jacobiSum] at hJ
-    rw [hJ, mul_neg_one]
 
 /-- Adding the variable `t` with coefficient `a = w 0 ≠ 0` changes the count `N` into
 `c ↦ qⁿ + ∑ᵤ χ(a u) N(c - u)`. -/
