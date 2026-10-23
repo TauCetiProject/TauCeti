@@ -34,8 +34,8 @@ the sum factors as a product over the arcs, and the factor of an arc with endpoi
 
 * `TauCeti.BrauerDiagram.sum_isConstantOnArcs_prod_apply`: the invariance of the arc tensor of a
   Brauer diagram under a matrix with `A * Aᵀ = 1`.
-* `TauCeti.BrauerDiagram.commute_orthogonalActionMatrix`: the matrix of a Brauer diagram commutes
-  with the Kronecker power of a matrix with `Aᵀ * A = 1`.
+* `TauCeti.BrauerDiagram.commute_orthogonalActionMatrix_kroneckerPower`: the matrix of a Brauer
+  diagram commutes with the Kronecker power of a matrix with `Aᵀ * A = 1`.
 * `TauCeti.commute_brauerActionOrth_piTensorProductMap`: every element of the Brauer algebra acts by
   an operator commuting with `A^{⊗k}` when `Aᵀ * A = 1`.
 * `TauCeti.commute_brauerActionOrth_tensorPower` and
@@ -106,8 +106,8 @@ theorem sum_isConstantOnArcs_prod_apply (D : BrauerDiagram k) {A : Matrix ι ι 
 /-- **The matrix of a Brauer diagram commutes with orthogonal matrices.** For a matrix `A` with
 `Aᵀ * A = 1`, the matrix `TauCeti.BrauerDiagram.orthogonalActionMatrix` of `D` commutes with the
 Kronecker power of `A`, the matrix of `A` acting diagonally on the `k`-th tensor power. -/
-theorem commute_orthogonalActionMatrix (D : BrauerDiagram k) {A : Matrix ι ι R}
-    (hA : Aᵀ * A = 1) :
+theorem commute_orthogonalActionMatrix_kroneckerPower (D : BrauerDiagram k)
+    {A : Matrix ι ι R} (hA : Aᵀ * A = 1) :
     Commute (D.orthogonalActionMatrix R ι) (A.kroneckerPower (Fin k)) := by
   set K := A.kroneckerPower (Fin k)
   set M := D.orthogonalActionMatrix R ι
@@ -157,7 +157,7 @@ theorem commute_brauerActionOrth_piTensorProductMap (x : BrauerAlgebra R (n : R)
       simp only [LinearMap.comp_apply, BrauerAlgebra.basis_apply, AlgHom.toLinearMap_apply,
         LinearMap.mulRight_apply, LinearMap.mulLeft_apply, brauerActionOrth_of, hT]
       rw [Module.End.mul_eq_comp, Module.End.mul_eq_comp, ← Matrix.toLin_mul, ← Matrix.toLin_mul,
-        (D.commute_orthogonalActionMatrix hA).eq]
+        (D.commute_orthogonalActionMatrix_kroneckerPower hA).eq]
   exact LinearMap.congr_fun hlin x
 
 end CommSemiring
