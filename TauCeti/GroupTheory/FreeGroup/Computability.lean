@@ -57,9 +57,14 @@ theorem primrec_reduce [DecidableEq α] : Primrec (reduce : List (α × Bool) �
     · exact Primrec.list_cons.comp (Primrec.fst.comp Primrec.fst)
         (Primrec.list_cons.comp (Primrec.fst.comp Primrec.snd)
           (Primrec.snd.comp Primrec.snd))
-  exact Primrec.list_rec Primrec.id (Primrec.const [])
+  refine (Primrec.list_rec Primrec.id (Primrec.const [])
     (Primrec.to₂ <| step.comp <| Primrec.pair (Primrec.fst.comp Primrec.snd)
-      (Primrec.snd.comp (Primrec.snd.comp Primrec.snd)))
+      (Primrec.snd.comp (Primrec.snd.comp Primrec.snd)))).of_eq fun w => ?_
+  induction w with
+  | nil => exact reduce_nil.symm
+  | cons a w ih =>
+    dsimp only [id_eq, List.recOn] at *
+    rw [reduce.cons, ← ih]
 
 /-- Reduced-word validity is primitive recursive, rather than merely decidable. -/
 theorem primrecPred_isReduced : PrimrecPred (IsReduced : List (α × Bool) → Prop) := by
@@ -105,8 +110,7 @@ theorem primrec_toWord_inv_mk [DecidableEq α] :
 primitive-recursive predicate on natural numbers. Invalid codes are rejected. -/
 theorem primrecPred_exists_encode_toWord [DecidableEq α] :
     PrimrecPred fun n : ℕ => ∃ x : FreeGroup α, Encodable.encode x.toWord = n := by
-  let : DecidablePred (IsReduced : List (α × Bool) → Prop) :=
-    primrecPred_isReduced.choose
+  classical
   have test : Primrec fun n : ℕ =>
       ((Encodable.decode₂ (List (α × Bool)) n).map
         (fun w => decide (IsReduced w))).getD false :=
