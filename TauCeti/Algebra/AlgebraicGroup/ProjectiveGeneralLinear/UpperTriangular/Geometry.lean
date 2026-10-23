@@ -104,6 +104,7 @@ theorem mem_definingPointsSubgroup_iff (L : Type w) [Field L] [Algebra k L] [IsA
   have hmap := CommHopfAlgCat.mapPointsFunctor_eq_quotientPointsHom_of_mkQuotient_comp
     (definingHopfIdeal k n) (conjugationMap k n) (restriction k n)
     (coordinateMap_comp_conjugationMap k n) (CommAlgCat.of k L)
+  rw [CommHopfAlgCat.quotientPointsSubgroup, MonoidHom.mem_range]
   constructor
   · intro hq
     obtain ⟨p, hp⟩ := hq

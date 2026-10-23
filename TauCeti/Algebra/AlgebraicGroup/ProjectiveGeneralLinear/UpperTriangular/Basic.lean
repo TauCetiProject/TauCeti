@@ -148,7 +148,8 @@ theorem definingHopfIdeal_le_ker_rootSubgroupCoordinateMap (hij : i < j) :
     (by rw [← GeneralLinear.UpperTriangular.coordinateMap_def,
       GeneralLinear.UpperTriangular.coordinateMap_comp_rootSubgroupCoordinateMap])
   simp only [RingHom.mem_ker,
-    ProjectiveGeneralLinear.rootSubgroupCoordinateMap_def, _root_.CommHopfAlgCat.hom_comp]
+    ProjectiveGeneralLinear.rootSubgroupCoordinateMap_def, _root_.CommHopfAlgCat.hom_comp,
+    BialgHom.coe_toAlgHom, BialgHom.comp_apply]
   exact RingHom.mem_ker.mp (hkill ((mem_definingHopfIdeal k n x).mp hx))
 
 /-- The positive elementary root map, factored through the projective upper-triangular group. -/
