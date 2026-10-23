@@ -20,7 +20,7 @@ stabilizer, on arbitrary test objects, including nonreduced schemes.
 The result holds in any cartesian monoidal category with the stabilizer pullback.
 It does not require the orbit morphism to be an epimorphism or a quotient to exist.
 For scheme actions this provides the relation used in identifying a represented
-orbit with the homogeneous space of right stabilizer cosets.
+orbit with the homogeneous space of left stabilizer cosets `G ⧸ H`.
 
 The proof uses the same pullback-cone construction as
 `TauCeti.isPullback_mul_of_isPullback_one`, for group homomorphisms; here the
@@ -42,13 +42,6 @@ universe u v
 variable {C : Type u} [Category.{v} C] [CartesianMonoidalCategory C]
   (G : C) {X : C} [GrpObj G] [ModObj G X] (x : 𝟙_ C ⟶ X)
 
-/-- Two test-object points have the same orbit image precisely when their quotient
-on the left stabilizes the base point. The stabilizer therefore gives right cosets. -/
-theorem inv_mul_mem_stabilizerPoints_iff {T : C} (g h : T ⟶ G) :
-    g⁻¹ * h ∈ stabilizerPoints G x T ↔ g ≫ orbitMap G x = h ≫ orbitMap G x := by
-  rw [MulAction.mem_stabilizer_iff, SemigroupAction.mul_smul, inv_smul_eq_iff,
-    comp_orbitMap, comp_orbitMap, eq_comm]
-
 namespace stabilizer
 
 variable [HasPullback (orbitMap G x) x]
@@ -57,18 +50,22 @@ variable [HasPullback (orbitMap G x) x]
 def rightMul : G ⊗ stabilizer G x ⟶ G :=
   fst _ _ * (snd _ _ ≫ incl G x)
 
-/-- On test-object points, the right multiplication morphism uses the inclusion of
-the stabilizer into the acting group. -/
+/-- Right multiplication is the product of the group coordinate and the included
+stabilizer coordinate. -/
+theorem rightMul_def : rightMul G x = fst _ _ * (snd _ _ ≫ incl G x) :=
+  (rfl)
+
+/-- Composing with right multiplication multiplies the two coordinates in the group. -/
 @[reassoc (attr := simp)]
-theorem lift_rightMul {T : C} (g : T ⟶ G) (h : T ⟶ stabilizer G x) :
-    CartesianMonoidalCategory.lift g h ≫ rightMul G x = g * (h ≫ incl G x) := by
-  simp [rightMul, MonObj.comp_mul]
+theorem comp_rightMul {T : C} (f : T ⟶ G ⊗ stabilizer G x) :
+    f ≫ rightMul G x = (f ≫ fst _ _) * (f ≫ snd _ _ ≫ incl G x) := by
+  simp only [rightMul_def, MonObj.comp_mul]
 
 /-- Right multiplication by a stabilizing point leaves the orbit morphism unchanged. -/
 @[reassoc]
 theorem rightMul_orbitMap :
     rightMul G x ≫ orbitMap G x = fst G (stabilizer G x) ≫ orbitMap G x := by
-  rw [comp_orbitMap, rightMul, SemigroupAction.mul_smul]
+  rw [comp_orbitMap, rightMul_def, SemigroupAction.mul_smul]
   have h := comp_mem_stabilizerPoints G x (snd G (stabilizer G x)) (incl_mem G x)
   rw [MulAction.mem_stabilizer_iff] at h
   rw [h, ← comp_orbitMap]
@@ -91,7 +88,7 @@ theorem isPullback_rightMul :
   · simpa using hm₁
   · apply (cancel_mono (incl G x)).mp
     have hm : s.fst * (m ≫ snd _ _ ≫ incl G x) = s.snd := by
-      simpa only [rightMul, MonObj.comp_mul, Category.assoc, hm₁] using hm₂
+      simpa only [comp_rightMul, hm₁] using hm₂
     simp only [lift_snd, hk]
     rw [Category.assoc]
     exact (eq_inv_mul_iff_mul_eq).mpr hm
@@ -125,7 +122,7 @@ theorem kernelPairIso_inv_snd_incl :
     (kernelPairIso G x).inv ≫ snd G (stabilizer G x) ≫ incl G x =
       (pullback.fst (orbitMap G x) (orbitMap G x))⁻¹ * pullback.snd _ _ := by
   have h := (isPullback_rightMul G x).isoPullback_inv_snd
-  rw [← kernelPairIso, rightMul, MonObj.comp_mul, kernelPairIso_inv_fst] at h
+  rw [← kernelPairIso, comp_rightMul, kernelPairIso_inv_fst] at h
   exact (eq_inv_mul_iff_mul_eq).mpr h
 
 end stabilizer

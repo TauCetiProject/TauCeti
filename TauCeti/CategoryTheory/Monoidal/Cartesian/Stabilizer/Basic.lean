@@ -99,6 +99,14 @@ theorem inv_mul_mem_stabilizerPoints (h : 𝟙_ C ⟶ G) {T : C} {g : T ⟶ G}
   rw [comp_orbitMap, comp_smul] at hg
   simp only [MulAction.mem_stabilizer_iff, SemigroupAction.mul_smul, hg, inv_smul_smul]
 
+/-- Two test-object points have the same orbit image precisely when their quotient
+on the left stabilizes the base point. The stabilizer therefore gives left cosets `gH`,
+with the relation `QuotientGroup.leftRel`. -/
+theorem inv_mul_mem_stabilizerPoints_iff {T : C} (g h : T ⟶ G) :
+    g⁻¹ * h ∈ stabilizerPoints G x T ↔ g ≫ orbitMap G x = h ≫ orbitMap G x := by
+  rw [MulAction.mem_stabilizer_iff, SemigroupAction.mul_smul, inv_smul_eq_iff,
+    comp_orbitMap, comp_orbitMap, eq_comm]
+
 /-- A stabilizing `T`-point, translated on the left by `h`, sends `x` to `h • x`. -/
 theorem mul_comp_orbitMap_of_mem (h : 𝟙_ C ⟶ G) {T : C} {g : T ⟶ G}
     (hg : g ∈ stabilizerPoints G x T) :
