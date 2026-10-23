@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.KrullDimension.Zero
 public import Mathlib.RingTheory.LocalProperties.Reduced
 public import TauCeti.RingTheory.CohenMacaulay.Basic
 public import TauCeti.RingTheory.RegularLocalRing.Locus
+import TauCeti.RingTheory.KrullDimension.Module
 
 /-!
 # Serre's conditions `(S_n)` and `(R_n)`
@@ -43,8 +44,10 @@ the support of `M` imposes no condition.
 * `isReduced_iff_satisfiesSerreR_zero_and_satisfiesSerreS_one`: a Noetherian ring is reduced if and
   only if it satisfies `(R_0)` and `(S_1)` (Stacks, Lemma 10.157.3 (031R)); the forward half of
   `(R_0)` is `IsReduced.satisfiesSerreR_zero`, which needs no Noetherian hypothesis.
-* `Module.supportDim_localizedModule_nonpos_iff`: the dimension input, that `M_p` has
-  zero-dimensional support exactly when `p` is a minimal prime of the support of `M`.
+
+The dimension input to `Module.satisfiesSerreS_one_iff` is
+`Module.supportDim_localizedModule_nonpos_iff`, in `TauCeti.RingTheory.KrullDimension.Module`:
+`M_p` has zero-dimensional support exactly when `p` is a minimal prime of the support of `M`.
 
 ## References
 
@@ -82,10 +85,12 @@ theorem satisfiesSerreS_iff : SatisfiesSerreS n R M ↔ ∀ (p : Ideal R) [p.IsP
   Iff.rfl
 
 /-- Every module satisfies `(S_0)`. -/
+@[simp]
 theorem satisfiesSerreS_zero : SatisfiesSerreS 0 R M := fun _ _ ↦
   (min_le_left _ _).trans (by exact_mod_cast zero_le)
 
 /-- The zero module satisfies `(S_n)` for every `n`. -/
+@[simp]
 theorem satisfiesSerreS_of_subsingleton [Subsingleton M] : SatisfiesSerreS n R M := fun _ _ ↦ by
   rw [depth_eq_top_of_subsingleton]
   exact le_top
@@ -118,57 +123,6 @@ theorem forall_satisfiesSerreS_iff_forall_isCohenMacaulay [IsNoetherianRing R]
   · rw [depth_eq_top_of_subsingleton]
     exact le_top
   · exact (min_le_right _ _).trans (h p).depth_eq.ge
-
-/-- Let `M` be a finite module over a Noetherian ring and `p` a prime containing the annihilator
-of `M`. The support of `M_p` has dimension zero exactly when `p` is a minimal prime of the support
-of `M`. -/
-theorem supportDim_localizedModule_nonpos_iff [IsNoetherianRing R] [Module.Finite R M]
-    {p : Ideal R} [p.IsPrime] (hp : annihilator R M ≤ p) :
-    supportDim (Localization.AtPrime p) (LocalizedModule p.primeCompl M) ≤ 0 ↔
-      p ∈ (annihilator R M).minimalPrimes := by
-  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · -- A minimal prime `q ⊊ p` of the support is associated to `M`, so `q R_p` is an associated
-    -- prime of `M_p` strictly below the maximal ideal, and `1 ≤ dim (R_p ⧸ q R_p) ≤ dim Supp M_p`.
-    obtain ⟨q, hq, hqp⟩ := Ideal.exists_minimalPrimes_le hp
-    refine by_contra fun hpmin ↦ ?_
-    have hqp : q < p := lt_of_le_of_ne hqp fun h ↦ hpmin (h ▸ hq)
-    have := hq.isPrime
-    have hdisj : Disjoint (p.primeCompl : Set R) q :=
-      Set.disjoint_left.2 fun _ hx hxq ↦ hx (hqp.le hxq)
-    set Q := q.map (algebraMap R (Localization.AtPrime p))
-    have hQ : Q.under R = q := IsLocalization.under_map_of_isPrime_disjoint _ _ ‹_› hdisj
-    have hQass : IsAssociatedPrime Q (LocalizedModule p.primeCompl M) :=
-      associatedPrimes.mem_associatedPrimes_of_comap_mem_associatedPrimes_of_isLocalizedModule
-        p.primeCompl (LocalizedModule.mkLinearMap p.primeCompl M) Q
-        (by rw [← Ideal.under_def, hQ]
-            exact associatedPrimes.minimalPrimes_annihilator_subset_associatedPrimes R M hq)
-    have := hQass.isPrime
-    have hQlt : Q < maximalIdeal (Localization.AtPrime p) :=
-      lt_of_le_of_ne (le_maximalIdeal this.ne_top) fun h ↦
-        hqp.ne (hQ.symm.trans (Localization.AtPrime.eq_maximalIdeal_iff_under_eq.2 h))
-    have hdim := (TauCeti.ringKrullDim_quotient_add_one_le_of_lt hQlt).trans
-      hQass.ringKrullDim_quotient_le_supportDim
-    rw [ringKrullDim_eq_zero_of_isField
-      ((Ideal.Quotient.maximal_ideal_iff_isField_quotient _).1 inferInstance), zero_add] at hdim
-    exact absurd (hdim.trans h) (by decide)
-  · -- Every prime `Q` of the support of `M_p` contracts to a prime between the annihilator of `M`
-    -- and `p`, hence to `p`, so `Q` is the maximal ideal and the support is a single point.
-    refine Order.krullDim_nonpos_iff_forall_isMax.2 fun Q Q' _ ↦ ?_
-    suffices key : ∀ Q ∈ support (Localization.AtPrime p) (LocalizedModule p.primeCompl M),
-        Q.asIdeal = maximalIdeal (Localization.AtPrime p) by
-      exact (Subtype.ext (PrimeSpectrum.ext ((key _ Q'.2).trans (key _ Q.2).symm))).le
-    intro Q hQ
-    have hQp : Q.asIdeal.under R ≤ p :=
-      (Ideal.comap_mono (le_maximalIdeal Q.isPrime.ne_top)).trans_eq
-        Localization.AtPrime.under_maximalIdeal
-    -- `R` acts on `M_p` through `M`, so the annihilator of `M` kills `M_p`.
-    have hann : annihilator R M ≤ Q.asIdeal.under R := fun r hr ↦
-      annihilator_le_of_mem_support
-        (support_subset_preimage_comap (R := R) (A := Localization.AtPrime p) hQ) <|
-        mem_annihilator.2 fun x ↦ LocalizedModule.induction_on (fun m s ↦ by
-          rw [LocalizedModule.smul'_mk, mem_annihilator.1 hr, LocalizedModule.zero_mk]) x
-    exact Localization.AtPrime.eq_maximalIdeal_iff_under_eq.1
-      (le_antisymm hQp (h.2 ⟨Ideal.IsPrime.under R Q.asIdeal, hann⟩ hQp))
 
 /-- A finite module over a Noetherian ring satisfies `(S_1)` if and only if it has no embedded
 primes: its associated primes are exactly the minimal primes of its support. Stacks,
