@@ -13,7 +13,8 @@ import Mathlib.LinearAlgebra.ExteriorAlgebra.Basis
 /-!
 # Evaluation formulas for wedge products and pairings
 
-The wedge product of pure exterior products concatenates their vector families. A trivialisation
+Inside the exterior algebra, the wedge product of exterior powers is the algebra product, and the
+wedge product of pure exterior products concatenates their vector families. A trivialisation
 in a specified top degree gives the wedge pairing by composing the wedge product with that
 trivialisation; the degree transports disappear after identifying the degree with the finrank.
 On the exterior-power bases induced by a basis `b`, the wedge pairing of `e_s` and `e_t` is the
@@ -29,13 +30,18 @@ namespace exteriorPower
 
 variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] {k l : ℕ}
 
+/-- Inside the exterior algebra, the wedge product of exterior powers is the algebra product. -/
+@[simp]
+theorem coe_wedge (x : ⋀[R]^k M) (y : ⋀[R]^l M) :
+    (wedge R M k l x y : ExteriorAlgebra R M) = x * y :=
+  rfl
+
 /-- The wedge product of pure exterior products concatenates their vector families. -/
 @[simp 1100]
 theorem wedge_ιMulti (u : Fin k → M) (v : Fin l → M) :
     wedge R M k l (ιMulti R k u) (ιMulti R l v) = ιMulti R (k + l) (Fin.append u v) := by
   apply Subtype.ext
-  simp only [SetLike.coe_gMul, wedge, DirectSum.gMulLHom_apply_apply,
-    ιMulti_apply_coe, ExteriorAlgebra.ιMulti_mul_ιMulti]
+  simp only [coe_wedge, ιMulti_apply_coe, ExteriorAlgebra.ιMulti_mul_ιMulti]
 
 /-- A wedge pairing transported from a specified top degree is the wedge product followed by
 the trivialisation in that degree. -/

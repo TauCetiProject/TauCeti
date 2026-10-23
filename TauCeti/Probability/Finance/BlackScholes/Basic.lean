@@ -52,6 +52,10 @@ exponential tilting `N(0, 1) ↦ N(σ √τ, 1)`
 * `TauCeti.BlackScholes.callPrice_sub_putPrice` — put–call parity.
 * `TauCeti.BlackScholes.riskNeutralPrice_call` — the risk-neutral price of a call is `callPrice`.
 * `TauCeti.BlackScholes.riskNeutralPrice_put` — the risk-neutral price of a put is `putPrice`.
+* `TauCeti.BlackScholes.callPrice_nonneg`, `TauCeti.BlackScholes.callPrice_le`,
+  `TauCeti.BlackScholes.putPrice_nonneg`, `TauCeti.BlackScholes.putPrice_le_mul_cdf`,
+  `TauCeti.BlackScholes.putPrice_le` — the no-arbitrage bounds `0 ≤ C ≤ s` and
+  `0 ≤ P ≤ K e^{-rτ} Φ(-d₋) ≤ K e^{-rτ}`.
 
 ## References
 
@@ -140,6 +144,12 @@ theorem riskNeutralPrice_def (h : ℝ → ℝ) (s r σ τ : ℝ) :
 @[simp]
 theorem riskNeutralPrice_zero (h : ℝ → ℝ) (s r σ : ℝ) : riskNeutralPrice h s r σ 0 = h s := by
   simp [riskNeutralPrice_def]
+
+/-- A nonnegative payoff has a nonnegative risk-neutral price. -/
+theorem riskNeutralPrice_nonneg {h : ℝ → ℝ} (hh : ∀ x, 0 ≤ h x) (s r σ τ : ℝ) :
+    0 ≤ riskNeutralPrice h s r σ τ := by
+  rw [riskNeutralPrice_def]
+  exact mul_nonneg (exp_pos _).le (integral_nonneg fun z => hh _)
 
 /-- The stock itself, as a payoff, is priced at the current spot: the discounted risk-neutral
 expectation `exp (-r τ) * E[S_τ]` of the terminal spot equals `s`. -/
@@ -317,5 +327,39 @@ theorem riskNeutralPrice_put (hs : 0 < s) (hσ : 0 < σ) (hK : 0 < K) (hτ : 0 <
   rw [hpay, integral_sub hpos hsub, integral_sub hint (integrable_const K), integral_const,
     probReal_univ, one_smul]
   linear_combination hcall - hid + callPrice_sub_putPrice s r σ K τ
+
+
+/-! ### No-arbitrage bounds -/
+
+/-- The Black–Scholes call price is nonnegative. -/
+theorem callPrice_nonneg (hs : 0 < s) (hσ : 0 < σ) (hK : 0 < K) (hτ : 0 < τ) :
+    0 ≤ callPrice s r σ K τ := by
+  rw [← riskNeutralPrice_call hs hσ hK hτ]
+  exact riskNeutralPrice_nonneg (fun x => posPart_nonneg _) s r σ τ
+
+/-- The Black–Scholes put price is nonnegative. -/
+theorem putPrice_nonneg (hs : 0 < s) (hσ : 0 < σ) (hK : 0 < K) (hτ : 0 < τ) :
+    0 ≤ putPrice s r σ K τ := by
+  rw [← riskNeutralPrice_put hs hσ hK hτ]
+  exact riskNeutralPrice_nonneg (fun x => posPart_nonneg _) s r σ τ
+
+/-- The Black–Scholes call price is at most the spot. -/
+theorem callPrice_le (hs : 0 ≤ s) (hK : 0 ≤ K) : callPrice s r σ K τ ≤ s := by
+  rw [callPrice_def]
+  have h₁ := mul_le_mul_of_nonneg_left (cdf_le_one (gaussianReal 0 1) (dPlus s r σ K τ)) hs
+  have h₂ := mul_nonneg (mul_nonneg hK (exp_pos (-r * τ)).le)
+    (cdf_nonneg (gaussianReal 0 1) (dMinus s r σ K τ))
+  linarith
+
+/-- The Black–Scholes put price is at most its strike leg `K e^{-rτ} Φ(-d₋)`. -/
+theorem putPrice_le_mul_cdf (hs : 0 ≤ s) :
+    putPrice s r σ K τ ≤ K * exp (-r * τ) * cdf (gaussianReal 0 1) (-dMinus s r σ K τ) := by
+  rw [putPrice_def]
+  linarith [mul_nonneg hs (cdf_nonneg (gaussianReal 0 1) (-dPlus s r σ K τ))]
+
+/-- The Black–Scholes put price is at most the discounted strike `K e^{-rτ}`. -/
+theorem putPrice_le (hs : 0 ≤ s) (hK : 0 ≤ K) : putPrice s r σ K τ ≤ K * exp (-r * τ) :=
+  (putPrice_le_mul_cdf hs).trans (mul_le_of_le_one_right (mul_nonneg hK (exp_pos _).le)
+    (cdf_le_one _ _))
 
 end TauCeti.BlackScholes
