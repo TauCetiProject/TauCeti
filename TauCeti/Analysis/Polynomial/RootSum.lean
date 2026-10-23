@@ -402,8 +402,9 @@ end Sym
 
 /-- **Sums over the `m`-th roots depend analytically on the radicand.** If `G` is holomorphic at
 the origin, then `s ↦ ∑ G(w)`, the sum running over the `m`-th roots `w` of `s` counted with
-multiplicity, is analytic at `s = 0`. At `s = 0` all `m` roots collide at the origin, and no single
-root is a holomorphic function of `s` near `0`; only their symmetric combinations are. -/
+multiplicity, is analytic at `s = 0`. At `s = 0` all `m` roots collide at the origin, and for
+`m ≥ 2` no single root is a holomorphic function of `s` near `0`; only their symmetric combinations
+are. -/
 theorem analyticAt_sum_map_nthRoots {G : ℂ → ℂ} (hG : AnalyticAt ℂ G 0) (m : ℕ) :
     AnalyticAt ℂ (fun s ↦ ((nthRoots m s).map G).sum) 0 := by
   rcases Nat.eq_zero_or_pos m with rfl | hm

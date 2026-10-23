@@ -35,8 +35,9 @@ points of the fibre of `y` near `x` are the images of the `m`-th roots of `z(y)`
 these are `m` distinct points of local multiplicity `1`, while at `y₀` they collide at `x`, which
 has multiplicity `m`: in both cases the fibre multiset near `x` is the image of the multiset of
 `m`-th roots of `z(y)`. Since `f` is a closed map, for `y` near `y₀` the whole fibre lies in these
-charts. The sum of `g` over the `m`-th roots of `s` is analytic in `s` at `0` even though no single
-root is (`TauCeti.analyticAt_sum_map_nthRoots`), which gives the result.
+charts. The sum of `g` over the `m`-th roots of `s` is analytic in `s` at `0`
+(`TauCeti.analyticAt_sum_map_nthRoots`), even though for `m ≥ 2` no single root is, which gives
+the result.
 
 This is the analytic input of the classical proof that a meromorphic function on a compact Riemann
 surface `X` satisfies a polynomial equation of degree `deg β` over the rational functions, for any
@@ -102,6 +103,7 @@ theorem fiberMultiset_eq_sum (hy : (f ⁻¹' {y}).Finite) :
 
 /-- In a finite fibre multiset, each point of the fibre occurs as often as its local multiplicity,
 and no other point occurs. -/
+@[simp]
 theorem count_fiberMultiset [DecidableEq X] [DecidableEq Y] (hy : (f ⁻¹' {y}).Finite) (x : X) :
     (fiberMultiset f y).count x = if f x = y then localMultiplicity f x else 0 := by
   rw [fiberMultiset_eq_sum hy, Multiset.count_sum']
@@ -110,6 +112,7 @@ theorem count_fiberMultiset [DecidableEq X] [DecidableEq Y] (hy : (f ⁻¹' {y})
 
 /-- The points of a finite fibre multiset are the points of the fibre of positive local
 multiplicity. -/
+@[simp]
 theorem mem_fiberMultiset (hy : (f ⁻¹' {y}).Finite) {x : X} :
     x ∈ fiberMultiset f y ↔ f x = y ∧ 0 < localMultiplicity f x := by
   classical
@@ -117,6 +120,7 @@ theorem mem_fiberMultiset (hy : (f ⁻¹' {y}).Finite) {x : X} :
   split_ifs with h <;> simp [h]
 
 /-- A finite fibre multiset has the fibre sum of local multiplicities as its cardinality. -/
+@[simp]
 theorem card_fiberMultiset (hy : (f ⁻¹' {y}).Finite) :
     Multiset.card (fiberMultiset f y) = fiberMultiplicitySum f y := by
   rw [fiberMultiset_eq_sum hy, fiberMultiplicitySum_eq_sum hy, Multiset.card_sum]
@@ -125,6 +129,7 @@ theorem card_fiberMultiset (hy : (f ⁻¹' {y}).Finite) :
 variable [IsManifold 𝓘(ℂ) 1 X] [IsManifold 𝓘(ℂ) 1 Y]
 
 /-- **The fibre multisets of a finite holomorphic map have the degree as cardinality.** -/
+@[simp]
 theorem FiniteHolomorphicMap.card_fiberMultiset [CompactSpace X] [T2Space X] [T2Space Y]
     [PreconnectedSpace X] [PreconnectedSpace Y] (f : FiniteHolomorphicMap X Y) (y : Y) :
     Multiset.card (fiberMultiset f y) = degree f := by
