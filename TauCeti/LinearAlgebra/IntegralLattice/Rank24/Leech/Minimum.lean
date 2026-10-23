@@ -81,8 +81,7 @@ private theorem odd_sub_leechShift_mem_constructionBLattice_carrier_iff (b : Fin
       fun i ↦ (b i : ZMod 2) := by
     funext i
     split_ifs
-    · push_cast
-      rw [show (2 : ZMod 2) = 0 from rfl, add_zero]
+    · simp [CharTwo.two_eq_zero]
     · simp
   rw [hx, constructionBLattice_carrier, ConstructionB.intCast_mem_lattice, hred]
   refine and_congr Iff.rfl ?_
@@ -152,8 +151,8 @@ theorem four_le_norm_leechLattice {x : Fin 24 → ℚ} (hx : x ∈ leechLattice.
   have ha : (fun i ↦ 2 * b i + m) ≠ 0 := by
     intro h
     refine hne (funext fun i ↦ ?_)
-    rw [show 2 * b i + m = 0 from congrFun h i]
-    simp
+    have hi : 2 * b i + m = 0 := congrFun h i
+    simp [hi]
   have h32 : ((32 : ℤ) : ℚ) ≤ ((∑ i, (2 * b i + m) ^ 2 : ℤ) : ℚ) := by
     exact_mod_cast thirtyTwo_le_sum_sq hm hb hsum ha
   rw [leechLattice_norm_intCast_div_two (fun i ↦ 2 * b i + m)]
