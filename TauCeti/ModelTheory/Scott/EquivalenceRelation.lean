@@ -7,8 +7,6 @@ module
 
 public import Mathlib.Data.Set.Card
 public import Mathlib.Data.Set.Finite.Range
-public import TauCeti.ModelTheory.BackAndForth.Countable
-public import TauCeti.ModelTheory.BackAndForth.ExtensionPair
 public import TauCeti.ModelTheory.BackAndForth.Graph
 public import TauCeti.ModelTheory.BackAndForth.Karp
 public import TauCeti.ModelTheory.Scott.ExtensionPair
@@ -21,8 +19,8 @@ An equivalence relation `r` on `V` is presented in the language of graphs by the
 `SimpleGraph.fromRel r`, in which two vertices are adjacent when they are distinct and
 `r`-related. This graph is the disjoint union of complete graphs on the classes of `r`, and two
 tuples have the same atomic type in it exactly when they have the same equalities and the same
-`r`-relations between their entries. So back-and-forth equivalence for these graphs is
-back-and-forth equivalence for equivalence relations.
+`r`-relations between their entries (`Setoid.sameAtomicType_fromRel_iff`). So back-and-forth
+equivalence for these graphs is back-and-forth equivalence for equivalence relations.
 
 When every class is infinite, back-and-forth works as for pure sets: a new element related to an
 old one is answered by a fresh element of the matching class, and a new element in a new class by
@@ -48,7 +46,6 @@ classes and `ι := ℕ` gives countably many.
 
 ## Main results
 
-* `Setoid.sameAtomicType_fromRel_iff`: atomic types of tuples are equalities and relations.
 * `Setoid.isExtensionPair_fromRel`: a relation with no more classes than a relation with
   infinite classes forms an extension pair with it.
 * `Setoid.potentialIso_fromRel` and `Setoid.nonempty_relIso_of_infinite`.
@@ -74,20 +71,6 @@ variable {V : Type u} {W : Type u'}
 namespace Setoid
 
 variable {r : Setoid V} {s : Setoid W}
-
-variable (r s) in
-/-- Two tuples have the same atomic type in the graphs of equivalence relations exactly when they
-have the same equalities and the same relations between their entries. -/
-theorem sameAtomicType_fromRel_iff {n : ℕ} (a : Fin n → V) (b : Fin n → W) :
-    letI := (fromRel r).structure
-    letI := (fromRel s).structure
-    SameAtomicType (L := Language.graph) a b ↔
-      (∀ i j, a i = a j ↔ b i = b j) ∧ ∀ i j, r (a i) (a j) ↔ s (b i) (b j) := by
-  rw [SimpleGraph.sameAtomicType_iff]
-  refine and_congr_right fun heq => forall₂_congr fun i j => ?_
-  by_cases h : a i = a j
-  · simp [h, (heq i j).mp h]
-  · simp [h, mt (heq i j).mpr h, r.comm' (x := a j), s.comm' (x := b j)]
 
 /-- A one-point extension keeps the atomic type when the two new points have the same equalities
 and the same relations to the old entries. -/
