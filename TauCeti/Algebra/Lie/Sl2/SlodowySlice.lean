@@ -121,10 +121,8 @@ the Slodowy slice `e + ker (ad f)`, on which it extends to `c = 0`
 (`IsSl2Triple.exists_contractingAction_eq`). -/
 noncomputable def contractingAction (t : IsSl2Triple h e f) : Kˣ →* Module.End K L where
   toFun c := ((c : K) ^ 2) •
-    ((gradingAut
-      -- `ad K L` is by definition the action `toEnd K L L` of `L` on itself.
-      (show DirectSum.IsInternal fun j : ℤ ↦ (ad K L h).eigenspace (j : K) from
-        isInternal_eigenspace_toEnd_intCast (M := L) t) c⁻¹ : L ≃ₗ[K] L) : L →ₗ[K] L)
+    ((gradingAut (ad_eq_toEnd K L ▸ isInternal_eigenspace_toEnd_intCast (M := L) t) c⁻¹ :
+      L ≃ₗ[K] L) : L →ₗ[K] L)
   map_one' := by
     ext x
     simp
@@ -177,8 +175,9 @@ theorem exists_contractingAction_eq (t : IsSl2Triple h e f) {x : L}
   have hker : x - e ∈ LinearMap.ker (ad K L f) := by
     rw [LinearMap.mem_ker, ad_apply]
     exact mem_slodowySlice.1 hx
-  -- `ad K L` is by definition the action `toEnd K L L` of `L` on itself.
-  rw [show LinearMap.ker (ad K L f) = _ from t.ker_toEnd_f_eq_iSup_inf_eigenspace (M := L)] at hker
+  have hdecomp := t.ker_toEnd_f_eq_iSup_inf_eigenspace (K := K) (M := L)
+  rw [← ad_eq_toEnd] at hdecomp
+  rw [hdecomp] at hker
   obtain ⟨v, hv, hsum⟩ := (Submodule.mem_iSup_iff_exists_finsupp _ _).1 hker
   have hx' : x = e + v.sum (fun _ w ↦ w) := by rw [hsum, add_sub_cancel]
   refine ⟨v, hv, hx', fun c ↦ ?_⟩

@@ -33,6 +33,7 @@ contracting action on a Slodowy slice (`TauCeti.Algebra.Lie.Sl2.SlodowySlice`).
 
 ## Main results
 
+* `LieAlgebra.ad_eq_toEnd`: the adjoint action is the action `toEnd R L L` of `L` on itself.
 * `TauCeti.lie_mem_eigenspace_toEnd_add`: for an `L`-module `M`, an `ad h`-eigenvector of
   eigenvalue `a` maps an `h`-eigenvector of eigenvalue `b` to one of eigenvalue `a + b`.
 * `TauCeti.gradingAut_apply_of_mem`: the characterizing property of `TauCeti.gradingAut`.
@@ -41,6 +42,12 @@ contracting action on a Slodowy slice (`TauCeti.Algebra.Lie.Sl2.SlodowySlice`).
 -/
 
 public section
+
+/-- The adjoint action `ad R L` is by definition the action `LieModule.toEnd R L L` of `L` on
+itself. Rewriting with this lemma moves results about Lie modules to the adjoint action. -/
+theorem LieAlgebra.ad_eq_toEnd (R L : Type*) [CommRing R] [LieRing L] [LieAlgebra R L] :
+    LieAlgebra.ad R L = LieModule.toEnd R L L :=
+  rfl
 
 namespace TauCeti
 
@@ -107,6 +114,7 @@ private theorem gradingMap_lie_of_mem (s : Rˣ) {i : ℤ} {x : L}
     (f := gradingMap hh s ∘ₗ ad R L x) (g := ad R L (gradingMap hh s x) ∘ₗ gradingMap hh s)
     fun j y hy ↦ ?_) y
   have hxy : ⁅x, y⁆ ∈ (ad R L h).eigenspace ((i + j : ℤ) : R) := by
+    rw [ad_eq_toEnd] at hy ⊢
     rw [Int.cast_add]
     exact lie_mem_eigenspace_toEnd_add hx hy
   simp only [LinearMap.comp_apply, ad_apply]
