@@ -39,12 +39,15 @@ namespace AdicCompletion
 variable (R S : Type*) [CommRing R] [CommRing S] [Algebra R S]
   [IsNoetherianRing S] [IsLocalRing S]
 
+/-- The maximal-ideal completion of a Noetherian local ring is faithfully flat over it. -/
+instance faithfullyFlat_of_isLocalRing :
+    Module.FaithfullyFlat S (AdicCompletion (IsLocalRing.maximalIdeal S) S) :=
+  Module.FaithfullyFlat.of_flat_of_isLocalHom
+
 /-- Completing a Noetherian local target detects flatness over any base ring.
 The base is unchanged, and need not be local or Noetherian. -/
 theorem flat_iff :
-    Module.Flat R (AdicCompletion (IsLocalRing.maximalIdeal S) S) ↔ Module.Flat R S := by
-  let : Module.FaithfullyFlat S (AdicCompletion (IsLocalRing.maximalIdeal S) S) :=
-    Module.FaithfullyFlat.of_flat_of_isLocalHom
-  exact (Module.Flat.iff_of_faithfullyFlat R S _).symm
+    Module.Flat R (AdicCompletion (IsLocalRing.maximalIdeal S) S) ↔ Module.Flat R S :=
+  (Module.Flat.iff_of_faithfullyFlat R S _).symm
 
 end AdicCompletion

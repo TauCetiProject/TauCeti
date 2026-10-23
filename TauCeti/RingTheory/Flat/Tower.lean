@@ -37,7 +37,7 @@ variable (R S M : Type*) [CommRing R] [CommRing S] [Algebra R S]
 
 /-- If a faithfully flat `S`-module is flat over `R`, then `S` is flat over `R`.
 For an algebra `M`, this descends flatness from the composite `R → S → M`. -/
-theorem of_faithfullyFlat [FaithfullyFlat S M] [Flat R M] : Flat R S := by
+theorem of_faithfullyFlat_of_flat [FaithfullyFlat S M] [Flat R M] : Flat R S := by
   rw [iff_lTensor_injectiveₛ]
   intro P _ _ N
   rw [← AlgebraTensorModule.coe_lTensor (A := S),
@@ -45,17 +45,15 @@ theorem of_faithfullyFlat [FaithfullyFlat S M] [Flat R M] : Flat R S := by
   have h₀ : Function.Injective (AlgebraTensorModule.lTensor S M N.subtype) := by
     rw [AlgebraTensorModule.coe_lTensor]
     exact lTensor_preserves_injective_linearMap N.subtype Subtype.val_injective
-  have h : Function.Injective (AlgebraTensorModule.lTensor S M N.subtype ∘ₗ
-      (AlgebraTensorModule.cancelBaseChange R S S M N).toLinearMap) := by
-    intro x y hxy
-    exact (AlgebraTensorModule.cancelBaseChange R S S M N).injective (h₀ hxy)
-  rw [AlgebraTensorModule.lTensor_comp_cancelBaseChange] at h
-  intro x y hxy
-  apply h
-  exact congrArg (AlgebraTensorModule.cancelBaseChange R S S M P) hxy
+  have h := h₀.comp (AlgebraTensorModule.cancelBaseChange R S S M N).injective
+  rw [← LinearEquiv.coe_coe, ← LinearMap.coe_comp,
+    AlgebraTensorModule.lTensor_comp_cancelBaseChange,
+    LinearMap.coe_comp, LinearEquiv.coe_coe, EquivLike.comp_injective,
+    AlgebraTensorModule.coe_lTensor] at h
+  exact h
 
 /-- Flatness over `R` can be tested on any faithfully flat `S`-module. -/
 theorem iff_of_faithfullyFlat [FaithfullyFlat S M] : Flat R S ↔ Flat R M :=
-  ⟨fun _ ↦ .trans R S M, fun _ ↦ .of_faithfullyFlat R S M⟩
+  ⟨fun _ ↦ .trans R S M, fun _ ↦ .of_faithfullyFlat_of_flat R S M⟩
 
 end Module.Flat
