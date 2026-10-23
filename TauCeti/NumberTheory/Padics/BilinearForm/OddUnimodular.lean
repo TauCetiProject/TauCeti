@@ -72,8 +72,7 @@ public section
 open Module
 open LinearMap (BilinForm)
 open PadicInt (eight_dvd_sub_iff_toZModPow_three_eq exists_eq_sq_mul_of_toZModPow_three_eq
-  isSquare_mul_iff_toZModPow_three_eq isUnit_of_toZModPow_three_mul_self
-  toZModPow_three_mul_self_of_isUnit)
+  isSquare_mul_iff_toZModPow_three_eq isUnit_iff_toZModPow_three_mul_self)
 
 namespace LinearMap.BilinForm
 
@@ -112,14 +111,16 @@ private theorem exists_toZModPow_three_apply_self_eq_five_mul {B : BilinForm ℤ
   have h5 : ∀ a c : ZMod (2 ^ 3), a * a = 1 → c * c = 1 → a + 4 * c = 5 * a := by decide
   have hsum : PadicInt.toZModPow 3 (B e e + 4 * B f f) = 5 * PadicInt.toZModPow 3 (B e e) := by
     rw [map_add, map_mul, map_ofNat]
-    exact h5 _ _ (toZModPow_three_mul_self_of_isUnit he) (toZModPow_three_mul_self_of_isUnit hf)
+    exact h5 _ _ (isUnit_iff_toZModPow_three_mul_self.mp he)
+      (isUnit_iff_toZModPow_three_mul_self.mp hf)
   refine ⟨z + (2 : ℤ_[2]) • f, (-2 * B f f) • e + B e e • f, ?_, ?_, ?_⟩
   · have hxx : B (z + (2 : ℤ_[2]) • f) (z + (2 : ℤ_[2]) • f) = B z z + 4 * B f f := by
       simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul, hzf,
         hfz]
       ring
     rw [hxx, map_add, map_mul, map_ofNat]
-    exact h5 _ _ (toZModPow_three_mul_self_of_isUnit hz) (toZModPow_three_mul_self_of_isUnit hf)
+    exact h5 _ _ (isUnit_iff_toZModPow_three_mul_self.mp hz)
+      (isUnit_iff_toZModPow_three_mul_self.mp hf)
   · have hyy : B ((-2 * B f f) • e + B e e • f) ((-2 * B f f) • e + B e e • f) =
         B e e * B f f * (B e e + 4 * B f f) := by
       simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul, hef,
@@ -127,9 +128,9 @@ private theorem exists_toZModPow_three_apply_self_eq_five_mul {B : BilinForm ℤ
       ring
     have h5u : ∀ a : ZMod (2 ^ 3), a * a = 1 → 5 * a * (5 * a) = 1 := by decide
     rw [hyy]
-    refine (he.mul hf).mul (isUnit_of_toZModPow_three_mul_self ?_)
+    refine (he.mul hf).mul (isUnit_iff_toZModPow_three_mul_self.mpr ?_)
     rw [hsum]
-    exact h5u _ (toZModPow_three_mul_self_of_isUnit he)
+    exact h5u _ (isUnit_iff_toZModPow_three_mul_self.mp he)
   · simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul, hze, hzf,
       hfe]
     ring
@@ -169,7 +170,7 @@ private theorem exists_toZModPow_three_apply_self_eq_of_four_le {B : BilinForm �
       key₃ y _ _ hy (key₂ y _ _ hy (hdy (e 0)) (hdy (e 1))) (hdy (e 2))
   have hzu : IsUnit (B z z) := by
     have key : ∀ y a : ZMod (2 ^ 3), y * y = 1 → (a = -y ∨ a = -(5 * y)) → a * a = 1 := by decide
-    exact isUnit_of_toZModPow_three_mul_self (key y _ hy hzy)
+    exact isUnit_iff_toZModPow_three_mul_self.mpr (key y _ hy hzy)
   have haz : a = PadicInt.toZModPow 3 (B z z) ∨ a = 5 * PadicInt.toZModPow 3 (B z z) := by
     have key : ∀ y p q : ZMod (2 ^ 3), y * y = 1 → (p = -y ∨ p = -(5 * y)) →
         (q = -y ∨ q = -(5 * y)) → p = q ∨ p = 5 * q := by decide
@@ -192,8 +193,8 @@ private theorem exists_toZModPow_three_apply_self_eq {B : BilinForm ℤ_[2] M} {
     ∃ j x y, PadicInt.toZModPow 3 (B x x) = PadicInt.toZModPow 3 (v j) ∧ IsUnit (B y y) ∧
       B x y = 0 := by
   have ho : ∀ i j, i ≠ j → B (b i) (b j) = 0 := iIsOrtho_def.mp hb
-  have hr (i : Fin (m + 2)) := toZModPow_three_mul_self_of_isUnit (hbu i)
-  have hq (j : Fin (m + 2)) := toZModPow_three_mul_self_of_isUnit (hv j)
+  have hr (i : Fin (m + 2)) := isUnit_iff_toZModPow_three_mul_self.mp (hbu i)
+  have hq (j : Fin (m + 2)) := isUnit_iff_toZModPow_three_mul_self.mp (hv j)
   by_cases hA : ∃ i j, PadicInt.toZModPow 3 (B (b i) (b i)) = PadicInt.toZModPow 3 (v j)
   · -- Some `dᵢ` already has the residue of some `vⱼ`.
     obtain ⟨i, j, h⟩ := hA
@@ -283,7 +284,7 @@ private theorem exists_basis_iIsOrtho_apply_self_eq_aux (n : ℕ) :
   -- Choose a vector representing some `vⱼ` with an odd complement, rescaled to represent `vⱼ`.
   obtain ⟨j, x, y, hxv, hyu, hxy⟩ := exists_toZModPow_three_apply_self_eq hb hbu hv hP hS
   have hxu : IsUnit (B x x) :=
-    isUnit_of_toZModPow_three_mul_self (hxv ▸ toZModPow_three_mul_self_of_isUnit (hv j))
+    isUnit_iff_toZModPow_three_mul_self.mpr (hxv ▸ isUnit_iff_toZModPow_three_mul_self.mp (hv j))
   obtain ⟨s, -, hsv⟩ := exists_eq_sq_mul_of_toZModPow_three_eq hxu (hv j) hxv
   set x' := s • x with hx'
   have hx'x' : B x' x' = v j := by
@@ -305,7 +306,7 @@ private theorem exists_basis_iIsOrtho_apply_self_eq_aux (n : ℕ) :
   have hcancel : ∀ a x z : ZMod (2 ^ 3), a * a = 1 → a * x = a * z → x = z := by decide
   have htP' : PadicInt.toZModPow 3 (∏ i, B (t i) (t i)) =
       PadicInt.toZModPow 3 (∏ i, v' i) := by
-    refine hcancel _ _ _ (toZModPow_three_mul_self_of_isUnit (hv j)) ?_
+    refine hcancel _ _ _ (isUnit_iff_toZModPow_three_mul_self.mp (hv j)) ?_
     rw [← map_mul, ← map_mul, ← hvP, ← htP, hP]
   have htS' : PadicInt.toZModPow 3 (∑ i, B (t i) (t i)) =
       PadicInt.toZModPow 3 (∑ i, v' i) := by

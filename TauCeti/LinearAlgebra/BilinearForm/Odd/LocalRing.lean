@@ -45,26 +45,6 @@ open Module TauCeti
 variable {R M : Type*} [CommRing R] [IsLocalRing R] [AddCommGroup M] [Module R M]
   {B : LinearMap.BilinForm R M}
 
-/-- The orthogonal complement of a vector `x` with unit self-pairing, for a symmetric form whose
-Gram determinant in a basis of size `n + 1` is a unit, has a basis of size `n` in which the Gram
-determinant of the restricted form is a unit. -/
-private theorem IsSymm.exists_basis_orthogonal_span_singleton_isUnit_det (hB : B.IsSymm) {n : ℕ}
-    (b : Basis (Fin (n + 1)) R M) (hdet : IsUnit (B.toMatrix b).det) {x : M}
-    (hx : IsUnit (B x x)) :
-    ∃ t : Basis (Fin n) R (B.orthogonal (R ∙ x)),
-      IsUnit ((B.restrict (B.orthogonal (R ∙ x))).toMatrix t).det := by
-  let v : Fin 1 → M := fun _ ↦ x
-  let G : Matrix (Fin 1) (Fin 1) R := fun _ _ ↦ B x x
-  have hGdet : IsUnit G.det := by
-    rw [Matrix.det_fin_one]
-    exact hx
-  obtain ⟨_, t, _w, _hw, hdetT⟩ :=
-    hB.exists_basis_orthogonal (m := n) b (v := v) (fun _ _ ↦ rfl) hGdet
-  rw [hdetT] at hdet
-  have hTdet := isUnit_of_mul_isUnit_right (isUnit_of_mul_isUnit_right hdet)
-  have hvspan : Submodule.span R (Set.range v) = R ∙ x := by simp [v]
-  exact hvspan ▸ ⟨t, hTdet⟩
-
 /-- **Two orthogonal unit values in an odd unimodular form.** A symmetric form of rank at least
 two whose Gram determinant is a unit and which represents a unit has two orthogonal vectors with
 unit self-pairings. The result needs no inverse of two. -/
@@ -150,7 +130,9 @@ theorem IsSymm.exists_orthogonal_basis_isUnit_of_exists_isUnit_apply_self (hB : 
     · obtain ⟨x, y, hx, hy, hxy⟩ := hB.exists_orthogonal_isUnit_pair b hdet hodd
       obtain ⟨t, hTdet⟩ := hB.exists_basis_orthogonal_span_singleton_isUnit_det b hdet hx
       have hyMem : y ∈ B.orthogonal (R ∙ x) :=
-        (Submodule.orthogonalBilin_span_singleton (B := B) x).ge hxy
+        mem_orthogonal_iff.mpr fun z hz ↦ by
+          obtain ⟨a, rfl⟩ := Submodule.mem_span_singleton.mp hz
+          simp [hxy]
       obtain ⟨d, hd, hdu⟩ := ih (m + 1) (by omega) (hB.restrict _) t hTdet ⟨⟨y, hyMem⟩, hy⟩
       obtain ⟨c, hc, hcu, -⟩ :=
         hB.isRefl.exists_orthogonal_basis_isUnit_apply_self_eq_cons hx hd hdu
@@ -171,7 +153,9 @@ theorem IsSymm.exists_orthogonal_basis_isUnit_orthogonal_span_singleton (hB : B.
       (B.restrict (B.orthogonal (R ∙ x))).iIsOrtho t ∧ ∀ i, IsUnit (B (t i) (t i)) := by
   obtain ⟨t, hTdet⟩ := hB.exists_basis_orthogonal_span_singleton_isUnit_det b hdet hx
   have hyMem : y ∈ B.orthogonal (R ∙ x) :=
-    (Submodule.orthogonalBilin_span_singleton (B := B) x).ge hxy
+    mem_orthogonal_iff.mpr fun z hz ↦ by
+      obtain ⟨a, rfl⟩ := Submodule.mem_span_singleton.mp hz
+      simp [hxy]
   exact (hB.restrict _).exists_orthogonal_basis_isUnit_of_exists_isUnit_apply_self t hTdet
     ⟨⟨y, hyMem⟩, hy⟩
 

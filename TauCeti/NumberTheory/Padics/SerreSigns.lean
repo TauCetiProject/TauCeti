@@ -63,7 +63,7 @@ for some unit `w`. Read in `ℚ_2`, a unit of `ℤ_2` is a square of `ℚ_2` exa
 
 public section
 
-open PadicInt (toZModPow_three_mul_self_of_isUnit)
+open PadicInt (isUnit_iff_toZModPow_three_mul_self)
 
 namespace TauCeti
 
@@ -84,8 +84,8 @@ theorem serreEps_mul (u v : ℤ_[2]ˣ) : serreEps (u * v) = serreEps u + serreEp
         (if x = 3 ∨ x = 7 then 1 else 0) + (if x' = 3 ∨ x' = 7 then 1 else 0) := by
     decide
   simpa only [serreEps, Units.val_mul, map_mul] using
-    key _ _ (toZModPow_three_mul_self_of_isUnit u.isUnit)
-      (toZModPow_three_mul_self_of_isUnit v.isUnit)
+    key _ _ (isUnit_iff_toZModPow_three_mul_self.mp u.isUnit)
+      (isUnit_iff_toZModPow_three_mul_self.mp v.isUnit)
 
 /-- `ω` is a homomorphism from `ℤ_2ˣ` to the additive group `ZMod 2`. -/
 theorem serreOmega_mul (u v : ℤ_[2]ˣ) : serreOmega (u * v) = serreOmega u + serreOmega v := by
@@ -94,8 +94,8 @@ theorem serreOmega_mul (u v : ℤ_[2]ˣ) : serreOmega (u * v) = serreOmega u + s
         (if x = 3 ∨ x = 5 then 1 else 0) + (if x' = 3 ∨ x' = 5 then 1 else 0) := by
     decide
   simpa only [serreOmega, Units.val_mul, map_mul] using
-    key _ _ (toZModPow_three_mul_self_of_isUnit u.isUnit)
-      (toZModPow_three_mul_self_of_isUnit v.isUnit)
+    key _ _ (isUnit_iff_toZModPow_three_mul_self.mp u.isUnit)
+      (isUnit_iff_toZModPow_three_mul_self.mp v.isUnit)
 
 /-- `ε(u) = 1` exactly when `u` is `3` or `7` modulo `8`. -/
 theorem serreEps_eq_one_iff (u : ℤ_[2]ˣ) :
@@ -111,7 +111,7 @@ theorem serreEps_eq_zero_iff (u : ℤ_[2]ˣ) :
   have key : ∀ x : ZMod (2 ^ 3), x * x = 1 →
       ((if x = 3 ∨ x = 7 then (1 : ZMod 2) else 0) = 0 ↔ x = 1 ∨ x = 5) := by
     decide
-  exact key _ (toZModPow_three_mul_self_of_isUnit u.isUnit)
+  exact key _ (isUnit_iff_toZModPow_three_mul_self.mp u.isUnit)
 
 /-- `ω(u) = 1` exactly when `u` is `3` or `5` modulo `8`. -/
 theorem serreOmega_eq_one_iff (u : ℤ_[2]ˣ) :
@@ -127,7 +127,7 @@ theorem serreOmega_eq_zero_iff (u : ℤ_[2]ˣ) :
   have key : ∀ x : ZMod (2 ^ 3), x * x = 1 →
       ((if x = 3 ∨ x = 5 then (1 : ZMod 2) else 0) = 0 ↔ x = 1 ∨ x = 7) := by
     decide
-  exact key _ (toZModPow_three_mul_self_of_isUnit u.isUnit)
+  exact key _ (isUnit_iff_toZModPow_three_mul_self.mp u.isUnit)
 
 /-- `5` is a unit of `ℤ_2`. -/
 theorem isUnit_five_padicInt : IsUnit (5 : ℤ_[2]) := by
@@ -150,7 +150,7 @@ theorem serreEps_eq_natCast_div_two_of_coe_eq_natCast {u : ℤ_[2]ˣ} {m : ℕ}
   have h2 : ((m / 2 : ℕ) : ZMod 2) = ((m % 8 / 2 : ℕ) : ZMod 2) := by
     rw [show m / 2 = 2 * (2 * (m / 8)) + m % 8 / 2 by omega, Nat.cast_add, Nat.cast_mul,
       ZMod.natCast_self, zero_mul, zero_add]
-  have hunit := toZModPow_three_mul_self_of_isUnit u.isUnit
+  have hunit := isUnit_iff_toZModPow_three_mul_self.mp u.isUnit
   rw [serreEps, h8, h2]
   rw [h8] at hunit
   have hr : m % 8 < 8 := Nat.mod_lt _ (by norm_num)
@@ -206,7 +206,7 @@ theorem coe_neg_one_uzpow_serreEps (u : ℤ_[2]ˣ) :
         ZMod.χ₄ (ZMod.castHom (pow_dvd_pow 2 (by norm_num : 2 ≤ 3)) (ZMod (2 ^ 2)) x) := by
     decide
   rw [← PadicInt.cast_toZModPow 2 3 (by norm_num)]
-  exact key _ (toZModPow_three_mul_self_of_isUnit u.isUnit)
+  exact key _ (isUnit_iff_toZModPow_three_mul_self.mp u.isUnit)
 
 /-- The sign `(-1) ^ ω(u)` is Mathlib's character `χ₈` of `u mod 8`. -/
 theorem coe_neg_one_uzpow_serreOmega (u : ℤ_[2]ˣ) :
@@ -214,7 +214,7 @@ theorem coe_neg_one_uzpow_serreOmega (u : ℤ_[2]ˣ) :
   have key : ∀ x : ZMod (2 ^ 3), x * x = 1 →
       (((-1 : ℤˣ) ^ (if x = 3 ∨ x = 5 then (1 : ZMod 2) else 0) : ℤˣ) : ℤ) = ZMod.χ₈ x := by
     decide
-  exact key _ (toZModPow_three_mul_self_of_isUnit u.isUnit)
+  exact key _ (isUnit_iff_toZModPow_three_mul_self.mp u.isUnit)
 
 /-- `ε` and `ω` both vanish exactly on the units `U^(3)` that are `1 mod 8`, which are the squares
 of `ℤ_2ˣ` by `TauCeti.unitsPrincipal_three_eq_range_powMonoidHom_two`. -/
@@ -225,7 +225,7 @@ theorem serreEps_eq_zero_and_serreOmega_eq_zero_iff (u : ℤ_[2]ˣ) :
         (if x = 3 ∨ x = 5 then (1 : ZMod 2) else 0) = 0 ↔ x = 1) := by
     decide
   rw [mem_unitsPrincipal_iff_toZModPow]
-  exact key _ (toZModPow_three_mul_self_of_isUnit u.isUnit)
+  exact key _ (isUnit_iff_toZModPow_three_mul_self.mp u.isUnit)
 
 /-- **The square classes of `ℤ_2ˣ`.** Every unit `u` of `ℤ_2` is `(-1) ^ ε(u) · 5 ^ ω(u)` times
 the square of a unit. -/
@@ -240,7 +240,7 @@ theorem exists_eq_neg_one_pow_mul_five_pow_mul_sq (u : ℤ_[2]ˣ) :
   -- `u` and `r` have the same residue modulo `8`, so `u r⁻¹ ∈ U^(3)` is a square.
   have hres : PadicInt.toZModPow 3 (u : ℤ_[2]) = PadicInt.toZModPow 3 r := by
     simpa [r, serreEps, serreOmega, map_ofNat] using
-      key _ (toZModPow_three_mul_self_of_isUnit u.isUnit)
+      key _ (isUnit_iff_toZModPow_three_mul_self.mp u.isUnit)
   obtain ⟨w, hw, hw'⟩ := PadicInt.exists_eq_sq_mul_of_toZModPow_three_eq hr u.isUnit hres.symm
   exact ⟨hw.unit, by simp [hw', mul_comm]⟩
 
@@ -258,7 +258,7 @@ theorem isSquare_coe_iff_mem_unitsPrincipal_three (u : ℤ_[2]ˣ) :
       PadicInt.ext (by push_cast [PadicInt.mkUnits_eq]; exact hb)
     have key : ∀ x z : ZMod (2 ^ 3), x * x = 1 → z * z = x → x = 1 := by decide
     rw [mem_unitsPrincipal_iff_toZModPow]
-    exact key _ _ (toZModPow_three_mul_self_of_isUnit u.isUnit) (by rw [hc, map_mul])
+    exact key _ _ (isUnit_iff_toZModPow_three_mul_self.mp u.isUnit) (by rw [hc, map_mul])
   · intro hu
     rw [unitsPrincipal_three_eq_range_powMonoidHom_two] at hu
     obtain ⟨w, rfl⟩ := hu

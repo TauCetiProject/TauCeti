@@ -503,7 +503,8 @@ theorem isSquare_mul_iff_toZModPow_three_eq {a c : ℤ_[2]} (ha : IsUnit a) (hc 
   · have hru : IsUnit r := isUnit_of_mul_isUnit_left (hr ▸ ha.mul hc)
     have key : ∀ x y z : ZMod (2 ^ 3), x * x = 1 → z * z = 1 → x * y = z * z → x = y := by
       decide
-    exact key _ _ _ (toZModPow_three_mul_self_of_isUnit ha) (toZModPow_three_mul_self_of_isUnit hru)
+    exact key _ _ _ (isUnit_iff_toZModPow_three_mul_self.mp ha)
+      (isUnit_iff_toZModPow_three_mul_self.mp hru)
       (by rw [← map_mul, ← map_mul, hr])
   · obtain ⟨s, -, hs⟩ := exists_eq_sq_mul_of_toZModPow_three_eq ha hc h
     exact ⟨s * a, by rw [hs]; ring⟩

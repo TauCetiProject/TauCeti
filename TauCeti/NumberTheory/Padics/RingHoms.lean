@@ -41,8 +41,8 @@ to a `p`-adic exponent: `g ^ x.appr n` does not change when `n` grows past the o
   reduction and truncation, as divisibility statements; `PadicInt.toZModPow_eq_iff_dvd_sub`:
   two `p`-adic integers truncate to the same residue exactly when `p ^ n` divides their
   difference; `PadicInt.eight_dvd_sub_iff_toZModPow_three_eq` is its case `p ^ n = 8`.
-* `PadicInt.toZModPow_three_mul_self_of_isUnit`, `PadicInt.isUnit_of_toZModPow_three_mul_self`:
-  the units of `ℤ_[2]` are exactly the elements whose residue modulo `8` squares to `1`.
+* `PadicInt.isUnit_iff_toZModPow_three_mul_self`: the units of `ℤ_[2]` are exactly the elements
+  whose residue modulo `8` squares to `1`.
 * `PadicInt.two_dvd_sq_sub_self`: every `2`-adic integer satisfies `x ^ 2 ≡ x` modulo `2`.
 * `PadicInt.toZModPow_eq_one_of_norm_sub_one_le`: a norm bound forcing a `p`-adic integer to
   reduce to `1` modulo `p ^ n`.
@@ -169,20 +169,17 @@ theorem eight_dvd_sub_iff_toZModPow_three_eq {a c : ℤ_[2]} :
   rw [toZModPow_eq_iff_dvd_sub]
   norm_num
 
-/-- The residue modulo `8` of a unit of `ℤ_[2]` squares to `1`. -/
-theorem toZModPow_three_mul_self_of_isUnit {z : ℤ_[2]} (hz : IsUnit z) :
-    toZModPow 3 z * toZModPow 3 z = 1 := by
-  obtain ⟨u, rfl⟩ := hz
-  have key : ∀ a b : ZMod (2 ^ 3), a * b = 1 → a * a = 1 := by decide
-  exact key _ (toZModPow 3 (↑u⁻¹ : ℤ_[2])) (by rw [← map_mul, Units.mul_inv, map_one])
-
-/-- An element of `ℤ_[2]` whose residue modulo `8` squares to `1` is a unit. -/
-theorem isUnit_of_toZModPow_three_mul_self {z : ℤ_[2]}
-    (hz : toZModPow 3 z * toZModPow 3 z = 1) : IsUnit z := by
-  by_contra h
-  obtain ⟨w, rfl⟩ := not_isUnit_iff_dvd.mp h
-  have key : ∀ a : ZMod (2 ^ 3), 2 * a * (2 * a) ≠ 1 := by decide
-  exact key (toZModPow 3 w) (by simpa [map_ofNat] using hz)
+/-- An element of `ℤ_[2]` is a unit exactly when its residue modulo `8` squares to `1`. -/
+theorem isUnit_iff_toZModPow_three_mul_self {z : ℤ_[2]} :
+    IsUnit z ↔ toZModPow 3 z * toZModPow 3 z = 1 := by
+  refine ⟨fun ⟨u, hu⟩ ↦ ?_, fun hz ↦ ?_⟩
+  · subst hu
+    have key : ∀ a b : ZMod (2 ^ 3), a * b = 1 → a * a = 1 := by decide
+    exact key _ (toZModPow 3 (↑u⁻¹ : ℤ_[2])) (by rw [← map_mul, Units.mul_inv, map_one])
+  · by_contra h
+    obtain ⟨w, rfl⟩ := not_isUnit_iff_dvd.mp h
+    have key : ∀ a : ZMod (2 ^ 3), 2 * a * (2 * a) ≠ 1 := by decide
+    exact key (toZModPow 3 w) (by simpa [map_ofNat] using hz)
 
 /-- A `p`-adic integer within `p ^ (-n)` of `1` reduces to `1` modulo `p ^ n`. -/
 theorem toZModPow_eq_one_of_norm_sub_one_le {n : ℕ} {x : ℤ_[p]}
