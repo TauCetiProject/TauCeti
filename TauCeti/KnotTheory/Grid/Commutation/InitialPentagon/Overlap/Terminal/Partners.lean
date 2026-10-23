@@ -195,8 +195,7 @@ private theorem initialPentagonTerminalOverlapPartner_sides
   obtain ⟨hcounted, hcommon, hone⟩ := (G.mem_initialPentagonTerminalOverlapSources C D).1 hD
   obtain ⟨hR, hP⟩ := (G.mem_rectangleInitialPentagonDecompositions C D).1 hcounted
   have hf := G.isEmpty_of_mem_unblockedRectangles hR
-  have hs : D.second.IsEmpty := by
-    simpa only [D.pentagon_toGridRectangleBetween] using ((G.mem_initialPentagons _).1 hP).1
+  have hs : D.second.IsEmpty := D.underlying_second_isEmpty ((G.mem_initialPentagons _).1 hP).1
   have hcanonical :
       E.toGridRectangleDecomposition = D.toGridRectangleDecomposition.recut hone hf hs :=
     (D.toGridRectangleDecomposition.existsUnique_isRecut hone hf hs).unique hrecut

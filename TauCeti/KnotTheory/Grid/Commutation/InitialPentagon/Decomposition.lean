@@ -115,6 +115,17 @@ theorem ext {D E : GridRectangleInitialPentagonDecomposition a s x z}
     (h : D.toGridRectangleDecomposition = E.toGridRectangleDecomposition) : D = E :=
   toGridRectangleDecomposition_injective h
 
+/-- An empty first rectangle is an empty first rectangle of the underlying two-step domain. -/
+theorem underlying_first_isEmpty (D : GridRectangleInitialPentagonDecomposition a s x z)
+    (h : D.first.IsEmpty) : D.toGridRectangleDecomposition.first.IsEmpty :=
+  -- `toGridRectangleDecomposition` is an `abbrev`, so its first rectangle is `D.first` itself.
+  h
+
+/-- An empty pentagon is an empty second rectangle of the underlying two-step domain. -/
+theorem underlying_second_isEmpty (D : GridRectangleInitialPentagonDecomposition a s x z)
+    (h : D.pentagon.IsEmpty) : D.toGridRectangleDecomposition.second.IsEmpty := by
+  simpa only [pentagon_toGridRectangleBetween] using h
+
 /-- There are finitely many rectangle--initial-side pentagon decompositions. -/
 noncomputable instance : Fintype (GridRectangleInitialPentagonDecomposition a s x z) :=
   Fintype.ofInjective _ ((GridRectangleDecomposition.sides_injective x z).comp
@@ -267,20 +278,17 @@ theorem mem_rectangleInitialPentagonDecompositions {x z : GridState n}
 theorem toGridRectangleDecomposition_first_isEmpty_of_mem_rectangleInitialPentagonDecompositions
     {x z : GridState n} {D : GridRectangleInitialPentagonDecomposition C.column C.turnRow x z}
     (hD : D ∈ G.rectangleInitialPentagonDecompositions C x z) :
-    D.toGridRectangleDecomposition.first.IsEmpty := by
-  have hempty := ((G.mem_unblockedRectangles _).1
+    D.toGridRectangleDecomposition.first.IsEmpty :=
+  D.underlying_first_isEmpty ((G.mem_unblockedRectangles _).1
     ((G.mem_rectangleInitialPentagonDecompositions C D).1 hD).1).1
-  exact hempty
 
 /-- The second rectangle underlying a counted rectangle--initial-side pentagon domain is empty. -/
 theorem toGridRectangleDecomposition_second_isEmpty_of_mem_rectangleInitialPentagonDecompositions
     {x z : GridState n} {D : GridRectangleInitialPentagonDecomposition C.column C.turnRow x z}
     (hD : D ∈ G.rectangleInitialPentagonDecompositions C x z) :
-    D.toGridRectangleDecomposition.second.IsEmpty := by
-  have hempty := ((G.mem_initialPentagons _).1
+    D.toGridRectangleDecomposition.second.IsEmpty :=
+  D.underlying_second_isEmpty ((G.mem_initialPentagons _).1
     ((G.mem_rectangleInitialPentagonDecompositions C D).1 hD).2).1
-  simpa only [GridRectangleInitialPentagonDecomposition.pentagon_toGridRectangleBetween]
-    using hempty
 
 /-- The counted initial-side pentagon--rectangle domains: an initial-side pentagon counted by
 the commutation map and a rectangle of the commuted diagram. -/
