@@ -231,14 +231,13 @@ theorem abs_hopfLax_norm_rpow_le (hp : p ≠ 0) {C : ℝ} (hφC : ∀ y, |φ y| 
 /-- **Lower semicontinuity of the Hopf–Lax value for the `p`-th power cost.** In a proper real
 seminormed space, for `1 ≤ p` and a lower semicontinuous initial datum `φ` bounded below, the
 Hopf–Lax value `u (t, x) = inf_y (φ y + ‖x - y‖ ^ p / t ^ (p - 1))` is jointly lower
-semicontinuous on the open half-space `t > 0`.
-
-Near a point `(t₀, x₀)` with `t₀ > 0`, the penalty `‖x - y‖ ^ p / t ^ (p - 1)` makes every `y`
-outside a fixed closed ball around `x₀` irrelevant to the infimum, and an infimum over a compact set
-of a jointly lower semicontinuous function is lower semicontinuous. -/
+semicontinuous on the open half-space `t > 0`. -/
 theorem lowerSemicontinuousOn_hopfLax_norm_rpow [ProperSpace E] (hp : 1 ≤ p)
     (hφ : LowerSemicontinuous φ) (hφb : BddBelow (range φ)) :
     LowerSemicontinuousOn (fun q : ℝ × E ↦ hopfLax (‖·‖ ^ p) φ q.1 q.2) {q | 0 < q.1} := by
+  -- Near a point `(t₀, x₀)` with `t₀ > 0`, the penalty `‖x - y‖ ^ p / t ^ (p - 1)` makes every `y`
+  -- outside a fixed closed ball around `x₀` irrelevant to the infimum, and an infimum over a
+  -- compact set of a jointly lower semicontinuous function is lower semicontinuous.
   obtain ⟨m, hm⟩ := hφb
   have hm' (y : E) : m ≤ φ y := hm (mem_range_self y)
   rintro ⟨t₀, x₀⟩ (ht₀ : 0 < t₀) c hc

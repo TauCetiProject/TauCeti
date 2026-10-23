@@ -17,13 +17,14 @@ import TauCeti.MeasureTheory.OptimalTransport.Existence.Basic
 
 Let `E` be a finite-dimensional real normed space and `1 ≤ p < ∞`. The *Benamou–Brenier formula*
 identifies the `p`-th power of the Wasserstein distance between two probability measures `μ₀`
-and `μ₁` on `E` with the least kinetic action needed to move `μ₀` to `μ₁`:
+and `μ₁` on `E` with the infimal kinetic action needed to move `μ₀` to `μ₁`:
 
-`W_p (μ₀, μ₁) ^ p = min ∫₀¹ ∫ ‖vₜ‖ ^ p dνₜ dt`,
+`W_p (μ₀, μ₁) ^ p = inf ∫₀¹ ∫ ‖vₜ‖ ^ p dνₜ dt`,
 
-the minimum being over the curves `t ↦ νₜ` of finite measures, narrowly continuous on `[0, 1]`
+the infimum being over the curves `t ↦ νₜ` of finite measures, narrowly continuous on `[0, 1]`
 with `ν₀ = μ₀` and `ν₁ = μ₁`, that solve the continuity equation `∂ₜ νₜ + div (vₜ νₜ) = 0` on
-`(0, 1)` with velocity `v`. It is the Eulerian description of optimal transport: the static
+`(0, 1)` with velocity `v`. Both sides may be `∞`; when `W_p (μ₀, μ₁)` is finite, the infimum is
+attained, so it is a minimum. It is the Eulerian description of optimal transport: the static
 problem over couplings becomes a dynamic problem over flows of mass.
 
 The upper bound and the minimiser come from the displacement interpolation of an optimal
