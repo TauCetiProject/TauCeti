@@ -50,20 +50,6 @@ namespace TauCeti.LSeries
 
 variable {f : ℝ → ℂ} {G : ℂ → ℂ} {M T R δ : ℝ}
 
-/-- The detour integrand of a function continuous along the detour against Newman's kernel
-`exp (T z) (1 + z² / R²) / z` is integrable. -/
-private theorem intervalIntegrable_newmanDetour_mul_kernel {w : ℂ → ℂ} (hR : 0 < R) (hδ : 0 < δ)
-    (hw : ContinuousOn (fun s ↦ w (newmanDetour R δ s)) [[(-1 : ℝ), 1]]) :
-    IntervalIntegrable (fun s ↦ deriv (newmanDetour R δ) s *
-      (w (newmanDetour R δ s) * cexp (T * newmanDetour R δ s) *
-        (1 + newmanDetour R δ s ^ 2 / (R : ℂ) ^ 2) / newmanDetour R δ s)) volume (-1) 1 := by
-  have hγ' : Continuous (deriv (newmanDetour R δ)) := by
-    rw [funext (deriv_newmanDetour R δ)]
-    fun_prop
-  exact (hγ'.continuousOn.mul (((hw.mul (by fun_prop)).mul (by fun_prop)).div
-    (continuous_newmanDetour R δ).continuousOn
-    fun s _ ↦ newmanDetour_ne_zero hR.ne' hδ.ne' s)).intervalIntegrable
-
 /-- **Newman's contour identity.** Let `G` be holomorphic on an open convex set `U` containing
 the right semicircle of radius `R > 0` and the detour `newmanDetour R δ` with `δ > 0`, and let
 `G_T z = ∫ t in 0..T, f t * exp (-z t)`. Against Newman's kernel
