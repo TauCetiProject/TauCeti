@@ -25,6 +25,8 @@ a weak derivative be tested against `g φ` when `g` is only smooth inside `Ω`.
 ## Main declarations
 
 * `TestFunction.lineDerivOp_apply`: `∂_{v} φ` is the classical directional derivative of `φ`.
+* `TestFunction.lineDerivCLM_postcompCLM`: directional derivatives commute with postcomposition
+  by a continuous linear map.
 * `TestFunction.lineDerivOp_comm` and `TestFunction.lineDeriv_lineDerivOp_comm`: directional
   derivatives of test functions commute.
 * `TestFunction.lineDerivOp_laplacianCLM`: the Laplacian of test functions commutes with
@@ -58,6 +60,21 @@ directional derivative. -/
 theorem coe_lineDerivCLM (φ : 𝓓(Ω, F)) (v : E) :
     ⇑(lineDerivCLM ℝ v φ : 𝓓(Ω, F)) = fun x ↦ lineDeriv ℝ (φ : E → F) x v :=
   funext fun _ ↦ lineDerivCLM_apply_of_le le_top
+
+/-- Directional derivatives of test functions commute with postcomposition by a continuous linear
+map, at every pair of orders. -/
+theorem lineDerivCLM_postcompCLM {n k : ℕ∞} {F' : Type*} [NormedAddCommGroup F']
+    [NormedSpace ℝ F'] (L : F →L[ℝ] F') (v : E) (φ : 𝓓^{n}(Ω, F)) :
+    (lineDerivCLM ℝ v (postcompCLM L φ) : 𝓓^{k}(Ω, F')) = postcompCLM L (lineDerivCLM ℝ v φ) := by
+  ext x
+  simp only [lineDerivCLM_eq_fderivCLM, fderivCLM_apply, postcompCLM_apply, Function.comp_apply]
+  split_ifs with hk
+  · have hn : (n : WithTop ℕ∞) ≠ 0 := by
+      have : (0 : ℕ∞) < n := (add_pos_of_right zero_lt_one k).trans_le hk
+      exact_mod_cast this.ne'
+    have hφ : DifferentiableAt ℝ φ x := (φ.contDiff.differentiable hn).differentiableAt
+    rw [(L.hasFDerivAt.comp x hφ.hasFDerivAt).fderiv, ContinuousLinearMap.comp_apply]
+  · simp
 
 /-- Iterated directional derivatives of a test function agree with its iterated Fréchet
 derivatives evaluated in those directions. -/
