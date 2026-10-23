@@ -56,20 +56,6 @@ universe w w' v u
 
 namespace SplitK0
 
-section Nonneg
-
-variable {C : Type u} [Category.{v} C] [Abelian C] [IsFiniteSemisimpleCategory C]
-  [EssentiallySmall.{w} C] [MonoidalCategory C] [MonoidalPreadditive C]
-
-/-- The structure constants of the Grothendieck ring in the basis of simple classes are
-nonnegative. -/
-theorem simpleBasis_repr_simpleBasis_mul_simpleBasis_nonneg (S T U : SimpleClasses C) :
-    0 ≤ (simpleBasis C).repr (simpleBasis C S * simpleBasis C T) U := by
-  rw [simpleBasis_repr_simpleBasis_mul_simpleBasis]
-  positivity
-
-end Nonneg
-
 section Fusion
 
 variable (k : Type w') [Field k] [IsAlgClosed k] {C : Type u} [Category.{v} C] [Abelian C]
@@ -131,14 +117,10 @@ theorem spectralRadius_fusionMatrix [Fintype (SimpleClasses C)] (S : SimpleClass
     spectralRadius ℂ ((fusionMatrix k S).map (Nat.cast : ℕ → ℂ)) =
       ENNReal.ofReal (frobeniusPerronChar k C (simpleBasis C S)) := by
   classical
-  have h : (fusionMatrix k S).map (Nat.cast : ℕ → ℂ) =
-      ((Algebra.leftMulMatrix (simpleBasis C) (simpleBasis C S)).map (Int.cast : ℤ → ℂ))ᵀ := by
-    ext T U
-    rw [Matrix.map_apply, Matrix.transpose_apply, Matrix.map_apply,
-      Algebra.leftMulMatrix_eq_repr_mul,
-      simpleBasis_repr_simpleBasis_mul_simpleBasis_eq_fusionCoeff k, fusionMatrix_apply,
-      Int.cast_natCast]
-  rw [h, Matrix.spectralRadius_transpose]
+  rw [show (fusionMatrix k S).map (Nat.cast : ℕ → ℂ) =
+      ((fusionMatrix k S).map (Nat.cast : ℕ → ℤ)).map Int.cast by ext; simp,
+    fusionMatrix_eq_transpose_leftMulMatrix k, Matrix.transpose_map,
+    Matrix.spectralRadius_transpose]
   exact (simpleBasis C).spectralRadius_leftMulMatrix
     simpleBasis_repr_simpleBasis_mul_simpleBasis_nonneg
     (sum_simpleBasis_repr_simpleBasis_mul_simpleBasis_pos k)
