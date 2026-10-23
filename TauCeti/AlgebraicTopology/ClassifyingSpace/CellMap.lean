@@ -140,6 +140,33 @@ theorem universalGSpaceCellMap_smul {G : Type u} {H : Type v} [Group G] [Group H
   funext ⟨i, g'⟩
   simp
 
+section Group
+
+variable {G : Type u} {H : Type v} {K : Type w} [Group G] [Group H] [Group K]
+
+/-- Relabelling simplices as a map equivariant along the group homomorphism. -/
+abbrev universalGSpaceCellMulActionHom (φ : G →* H) (n : ℕ) :
+    (indexedJoin fun _ : ℕ => G).RealizationCell n →ₑ[φ]
+      (indexedJoin fun _ : ℕ => H).RealizationCell n where
+  toFun := φ.universalGSpaceCellMap
+  map_smul' := universalGSpaceCellMap_smul φ
+
+/-- The identity homomorphism gives the identity equivariant map on simplices. -/
+@[simp]
+theorem universalGSpaceCellMulActionHom_id (n : ℕ) :
+    (MonoidHom.id G).universalGSpaceCellMulActionHom n = MulActionHom.id G :=
+  MulActionHom.ext universalGSpaceCellMap_id
+
+/-- Equivariant relabelling of simplices respects composition. -/
+@[simp]
+theorem universalGSpaceCellMulActionHom_comp (ψ : H →* K) (φ : G →* H) (n : ℕ) :
+    (ψ.comp φ).universalGSpaceCellMulActionHom n =
+      (ψ.universalGSpaceCellMulActionHom n).comp (φ.universalGSpaceCellMulActionHom n)
+        (κ := ⟨rfl⟩) :=
+  MulActionHom.ext (universalGSpaceCellMap_comp ψ φ)
+
+end Group
+
 /-- The continuous total-space map carries each characteristic map to the characteristic map
 of the relabelled simplex, with the same disk coordinates. -/
 theorem universalGSpaceMap_characteristicMap (φ : G →* H) {n : ℕ}

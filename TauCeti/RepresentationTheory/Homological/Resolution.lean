@@ -200,6 +200,14 @@ universe u
 
 variable {k G H : Type u} [Monoid G] [Monoid H]
 
+/-- Relabelling standard generators, equivariantly for pointwise left multiplication. -/
+abbrev standardComplexMulActionHom (φ : G →* H) (n : ℕ) :
+    (Fin (n + 1) → G) →ₑ[φ] (Fin (n + 1) → H) where
+  toFun x := φ ∘ x
+  map_smul' g x := by
+    ext i
+    exact map_mul φ g (x i)
+
 section Ring
 
 variable [Ring k]
@@ -209,11 +217,7 @@ restricted permutation representation. -/
 abbrev standardComplexHom (φ : G →* H) (n : ℕ) :
     Rep.ofMulAction k G (Fin (n + 1) → G) ⟶
       Rep.res φ (Rep.ofMulAction k H (Fin (n + 1) → H)) :=
-  MulActionHom.toRepRes
-    { toFun x := φ ∘ x
-      map_smul' g x := by
-        ext i
-        exact map_mul φ g (x i) }
+  (φ.standardComplexMulActionHom n).toRepRes
 
 end Ring
 
@@ -271,9 +275,7 @@ theorem standardComplexMap_comp {K : Type u} [Monoid K] (ψ : H →* K) (φ : G 
   apply HomologicalComplex.hom_ext
   intro n
   exact MulActionHom.toRepRes_comp
-    (φ := φ) (ψ := ψ)
-    { toFun x := ψ ∘ x, map_smul' g x := by ext i; exact map_mul ψ g (x i) }
-    { toFun x := φ ∘ x, map_smul' g x := by ext i; exact map_mul φ g (x i) }
+    (ψ.standardComplexMulActionHom n) (φ.standardComplexMulActionHom n)
 
 /-- The standard-complex map preserves the degree-zero augmentation. -/
 @[reassoc (attr := simp)]

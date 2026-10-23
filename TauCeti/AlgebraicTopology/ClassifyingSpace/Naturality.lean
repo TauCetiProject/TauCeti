@@ -54,9 +54,7 @@ variable [Ring k]
 abbrev universalGSpaceChainHom (φ : G →* H) (n : ℕ) :
     Rep.ofMulAction k G ((indexedJoin fun _ : ℕ => G).RealizationCell n) ⟶
       Rep.res φ (Rep.ofMulAction k H ((indexedJoin fun _ : ℕ => H).RealizationCell n)) :=
-  MulActionHom.toRepRes
-    { toFun := φ.universalGSpaceCellMap
-      map_smul' := universalGSpaceCellMap_smul φ }
+  (φ.universalGSpaceCellMulActionHom n).toRepRes
 
 /-- The chain map on Milnor join chains induced by a group homomorphism. -/
 def universalGSpaceChainMap (φ : G →* H) :
@@ -93,13 +91,8 @@ theorem universalGSpaceChainMap_id :
     (MonoidHom.id G).universalGSpaceChainMap (k := k) = 𝟙 (universalGSpaceChainComplex k G) := by
   apply HomologicalComplex.hom_ext
   intro n
-  let X := (indexedJoin fun _ : ℕ => G).RealizationCell n
-  have h : (⟨(MonoidHom.id G).universalGSpaceCellMap,
-      universalGSpaceCellMap_smul (MonoidHom.id G)⟩ : X →ₑ[MonoidHom.id G] X) =
-      MulActionHom.id G :=
-    MulActionHom.ext universalGSpaceCellMap_id
-  exact (congrArg (fun f : X →ₑ[MonoidHom.id G] X => f.toRepRes (k := k)
-    (φ := MonoidHom.id G)) h).trans MulActionHom.toRepRes_id
+  exact (congrArg (MulActionHom.toRepRes (k := k) (φ := MonoidHom.id G))
+    (universalGSpaceCellMulActionHom_id (G := G) n)).trans MulActionHom.toRepRes_id
 
 /-- Join chain maps respect composition, restricting the second map along the first
 homomorphism. -/
@@ -110,17 +103,10 @@ theorem universalGSpaceChainMap_comp {K : Type u} [Group K] (ψ : H →* K) (φ 
         ((Rep.resFunctor φ).mapHomologicalComplex _).map ψ.universalGSpaceChainMap := by
   apply HomologicalComplex.hom_ext
   intro n
-  let X := (indexedJoin fun _ : ℕ => G).RealizationCell n
-  let Y := (indexedJoin fun _ : ℕ => H).RealizationCell n
-  let Z := (indexedJoin fun _ : ℕ => K).RealizationCell n
-  let f : X →ₑ[φ] Y := ⟨φ.universalGSpaceCellMap, universalGSpaceCellMap_smul φ⟩
-  let g : Y →ₑ[ψ] Z := ⟨ψ.universalGSpaceCellMap, universalGSpaceCellMap_smul ψ⟩
-  have h : (⟨(ψ.comp φ).universalGSpaceCellMap,
-      universalGSpaceCellMap_smul (ψ.comp φ)⟩ : X →ₑ[ψ.comp φ] Z) =
-      g.comp f (κ := ⟨rfl⟩) :=
-    MulActionHom.ext (universalGSpaceCellMap_comp ψ φ)
-  exact (congrArg (fun f : X →ₑ[ψ.comp φ] Z => f.toRepRes (k := k) (φ := ψ.comp φ)) h).trans
-    (MulActionHom.toRepRes_comp g f)
+  exact (congrArg (MulActionHom.toRepRes (k := k) (φ := ψ.comp φ))
+    (universalGSpaceCellMulActionHom_comp ψ φ n)).trans
+    (MulActionHom.toRepRes_comp (ψ.universalGSpaceCellMulActionHom n)
+      (φ.universalGSpaceCellMulActionHom n))
 
 end Ring
 
@@ -149,10 +135,9 @@ theorem universalGSpaceChainComplexToStandardComplex_naturality (φ : G →* H) 
   simp only [universalGSpaceChainComplex_X, Rep.res_obj_ρ, MulActionHom.toRepRes_hom_single,
     universalGSpaceChainComplexToStandardComplex_f_hom_single,
     Functor.mapHomologicalComplex_obj_X, standardComplexMap_f]
-  let f : (Fin (n + 1) → G) →ₑ[φ] (Fin (n + 1) → H) :=
-    ⟨fun x => φ ∘ x, fun g x => by ext i; exact map_mul φ g (x i)⟩
   exact (congrArg (fun x => MonoidAlgebra.single x (1 : k))
     (universalGSpaceCellLabels_universalGSpaceCellMap φ c)).trans
-    (MulActionHom.toRepRes_hom_single (k := k) f (universalGSpaceCellLabels c) 1).symm
+    (MulActionHom.toRepRes_hom_single (k := k) (φ.standardComplexMulActionHom n)
+      (universalGSpaceCellLabels c) 1).symm
 
 end MonoidHom
