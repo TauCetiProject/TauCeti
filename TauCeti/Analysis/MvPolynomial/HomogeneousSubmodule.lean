@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.Algebra.MvPolynomial.HomogeneousSubmodule
 public import Mathlib.Analysis.Analytic.Polynomial
+import TauCeti.RingTheory.MvPolynomial.Homogeneous
 
 /-!
 # Analyticity on the coefficient space of homogeneous polynomials
@@ -44,15 +45,19 @@ the inverse of the coefficient equivalence `homogeneousCoeffEquiv n`, the map
 theorem analyticAt_eval_homogeneousSubmodule_comp {n : ℕ}
     (Φ : F →L[𝕜] homogeneousSubmodule σ 𝕜 n) (z : F × (σ → 𝕜)) :
     AnalyticAt 𝕜 (fun q : F × (σ → 𝕜) ↦ eval q.2 (Φ q.1 : MvPolynomial σ 𝕜)) z := by
-  have := Fintype.ofFinite {s : σ →₀ ℕ // s.degree = n}
-  simp only [eval_coe_homogeneousSubmodule_eq_sum, ← homogeneousCoeffEquiv_apply]
-  refine Finset.analyticAt_fun_sum _ fun s _ ↦ ?_
+  classical
+  have h (q : F × (σ → 𝕜)) :
+      eval q.2 (Φ q.1 : MvPolynomial σ 𝕜) = ∑ l ∈ Finset.univ.finsuppAntidiag n,
+        (Φ q.1 : MvPolynomial σ 𝕜).coeff l * ∏ i, q.2 i ^ l i := by
+    simpa using ((mem_homogeneousSubmodule n _).mp (Φ q.1).2).aeval_eq_sum_finsuppAntidiag q.2
+  simp only [h]
+  refine Finset.analyticAt_fun_sum _ fun l _ ↦ ?_
   exact (ContinuousLinearMap.analyticAt
-    (ContinuousLinearMap.proj (R := 𝕜) (φ := fun _ : {s : σ →₀ ℕ // s.degree = n} ↦ 𝕜) s ∘L
-      (homogeneousCoeffEquiv (σ := σ) (R := 𝕜) n).toContinuousLinearMap ∘L Φ ∘L
+    ({ toLinearMap := (lcoeff 𝕜 l).comp (homogeneousSubmodule σ 𝕜 n).subtype
+       cont := IsModuleTopology.continuous_of_linearMap _ } ∘L Φ ∘L
         ContinuousLinearMap.fst 𝕜 F (σ → 𝕜)) z).mul
-    (AnalyticOnNhd.eval_continuousLinearMap (ContinuousLinearMap.snd 𝕜 F (σ → 𝕜))
-      (monomial s.1 1) z (Set.mem_univ _))
+    (Finset.analyticAt_fun_prod _ fun i _ ↦ (ContinuousLinearMap.analyticAt
+      (ContinuousLinearMap.proj i ∘L ContinuousLinearMap.snd 𝕜 F (σ → 𝕜)) z).pow _)
 
 /-- The partial derivatives of a homogeneous polynomial, evaluated at a point, are analytic in the
 coefficients and the point, along any continuous linear parametrization `Φ` of the

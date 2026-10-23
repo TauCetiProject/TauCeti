@@ -14,9 +14,7 @@ import Mathlib.LinearAlgebra.Dimension.Constructions
 /-!
 # Dimension of homogeneous polynomials
 
-The monomial basis of a homogeneous component is indexed by exponent vectors of its degree;
-expanding in it, `TauCeti.eval_coe_homogeneousSubmodule_eq_sum` writes evaluation as a sum of
-coefficients times evaluated monomials.
+The monomial basis of a homogeneous component is indexed by exponent vectors of its degree.
 For two variables this gives dimension `w + 1`, used for the scalar-matrix trace on binary forms.
 Changing the coefficients along a ring homomorphism, `TauCeti.mapHomogeneousSubmodule`, is
 semilinear and sends this basis to the monomial basis over the new ring.
@@ -78,16 +76,6 @@ theorem homogeneousMonomialBasis_repr_apply {σ R : Type*} [CommSemiring R] (n :
     (p : homogeneousSubmodule σ R n) (s : {s : σ →₀ ℕ // s.degree = n}) :
     (homogeneousMonomialBasis n).repr p s = p.1.coeff s.1 := by
   rfl
-
-/-- A homogeneous polynomial evaluates as the sum over the exponent vectors of its degree of its
-coefficients times the corresponding monomials. -/
-theorem eval_coe_homogeneousSubmodule_eq_sum {σ R : Type*} [CommSemiring R] {n : ℕ}
-    [Fintype {s : σ →₀ ℕ // s.degree = n}] (p : homogeneousSubmodule σ R n) (v : σ → R) :
-    eval v (p : MvPolynomial σ R) =
-      ∑ s : {s : σ →₀ ℕ // s.degree = n},
-        (p : MvPolynomial σ R).coeff s * eval v (monomial s.1 1) := by
-  conv_lhs => rw [← (homogeneousMonomialBasis n).sum_repr p]
-  simp [map_sum, smul_eq_C_mul]
 
 /-- Mapping the coefficients of the homogeneous polynomials of degree `n` along a ring
 homomorphism `f : R →+* S`, as an `f`-semilinear map. -/

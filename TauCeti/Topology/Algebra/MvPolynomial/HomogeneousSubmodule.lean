@@ -12,6 +12,7 @@ public import Mathlib.Topology.Algebra.Module.ModuleTopology
 public import Mathlib.Topology.Algebra.MvPolynomial
 public import Mathlib.Topology.Instances.Matrix
 import Mathlib.RingTheory.MvPolynomial.EulerIdentity
+import TauCeti.RingTheory.MvPolynomial.Homogeneous
 
 /-!
 # The coefficient space of homogeneous polynomials
@@ -136,11 +137,16 @@ many variables: `(p, v) ↦ p(v)` is continuous in the coefficients and the poin
 theorem continuous_eval_homogeneousSubmodule [Finite σ] (n : ℕ) :
     Continuous fun q : homogeneousSubmodule σ R n × (σ → R) ↦
       eval q.2 (q.1 : MvPolynomial σ R) := by
-  have := Fintype.ofFinite {s : σ →₀ ℕ // s.degree = n}
-  simp only [eval_coe_homogeneousSubmodule_eq_sum, ← homogeneousCoeffEquiv_apply]
-  refine continuous_finsetSum _ fun s _ ↦ ?_
-  exact ((continuous_apply s).comp ((homogeneousCoeffEquiv n).continuous.comp continuous_fst)).mul
-    ((continuous_eval _).comp continuous_snd)
+  classical
+  cases nonempty_fintype σ
+  have h (q : homogeneousSubmodule σ R n × (σ → R)) :
+      eval q.2 (q.1 : MvPolynomial σ R) = ∑ l ∈ Finset.univ.finsuppAntidiag n,
+        (q.1 : MvPolynomial σ R).coeff l * ∏ i, q.2 i ^ l i := by
+    simpa using ((mem_homogeneousSubmodule n _).mp q.1.2).aeval_eq_sum_finsuppAntidiag q.2
+  simp only [h]
+  exact continuous_finsetSum _ fun l _ ↦ ((IsModuleTopology.continuous_of_linearMap
+    ((lcoeff R l).comp (homogeneousSubmodule σ R n).subtype)).comp continuous_fst).mul
+      (by fun_prop)
 
 /-- The partial derivative `∂p/∂X_j (v)` of a homogeneous polynomial is jointly continuous in the
 coefficients of `p` and the point `v`. -/
