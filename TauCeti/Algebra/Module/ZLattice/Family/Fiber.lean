@@ -20,9 +20,7 @@ required for this topological identification. In particular it applies to contin
 holomorphic families of full lattices. Both quotients carry their quotient topologies, and the
 fibre carries its subspace topology in the total period quotient.
 
-The proof uses Mathlib's subquotient embedding theorem for an open quotient map, applied to the
-invariant slice `{y} × E` of the period action. This ensures that the quotient topology on the
-slice agrees with the subspace topology of the fibre.
+The quotient topology on the slice `{y} × E` agrees with the subspace topology of the fibre.
 
 ## References
 
@@ -92,6 +90,8 @@ theorem range_torusFamilyFiberMap :
 variable [TopologicalSpace Y] [TopologicalSpace E] [ContinuousAdd E]
   (hcont : ∀ l, Continuous fun y ↦ P y l)
 
+/- The proof uses Mathlib's subquotient embedding theorem for an open quotient map, applied to
+the invariant slice `{y} × E` of the period action. -/
 include hcont in
 /-- The quotient topology on a period fibre agrees with its subspace topology in the total
 period quotient. -/
