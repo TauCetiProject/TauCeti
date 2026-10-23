@@ -155,31 +155,25 @@ isomorphic, by `TauCeti.DiscreteCoind.transEquiv` on underlying modules. Applyin
 cohomology to it identifies `Hⁿ(G, Coind_U^G (Coind_V^U A))` with `Hⁿ(G, Coind_W^G A)`. -/
 noncomputable def transIso :
     ofDiscreteModule ℤ G (DiscreteCoind G U (DiscreteCoind U V A)) ≅
-      ofDiscreteModule ℤ G (DiscreteCoind G W A) where
-  hom := ofDiscreteModuleMap (transEquiv hW hsmul hU).toAddMonoidHom.toIntLinearMap fun g f =>
-    transEquiv_smul hW hsmul hU g f
-  inv := ofDiscreteModuleMap (transEquiv hW hsmul hU).symm.toAddMonoidHom.toIntLinearMap fun g φ =>
-    transEquiv_symm_smul hW hsmul hU g φ
-  -- After extensionality both laws are those of `transEquiv` on the underlying modules.
-  hom_inv_id := by
-    ext f
-    exact (transEquiv hW hsmul hU).symm_apply_apply f
-  inv_hom_id := by
-    ext φ
-    exact (transEquiv hW hsmul hU).apply_symm_apply φ
+      ofDiscreteModule ℤ G (DiscreteCoind G W A) :=
+  ofDiscreteModuleIso (transEquiv hW hsmul hU).toIntLinearEquiv fun g f ↦ by
+    -- A proof by `transEquiv_smul` alone has this type only up to unfolding the coercion of
+    -- `AddEquiv.toIntLinearEquiv`, which would break the `ofDiscreteModuleIso` rewrites below.
+    rw [AddEquiv.coe_toIntLinearEquiv, transEquiv_smul]
 
 /-- The transitivity isomorphism acts on underlying modules as `transEquiv`. -/
 @[simp]
 theorem transIso_hom_apply (f : DiscreteCoind G U (DiscreteCoind U V A)) :
-    (transIso hW hsmul hU).hom f = transEquiv hW hsmul hU f :=
-  ofDiscreteModuleMap_hom_apply _ (fun g f => transEquiv_smul hW hsmul hU g f) f
+    (transIso hW hsmul hU).hom f = transEquiv hW hsmul hU f := by
+  rw [transIso, ofDiscreteModuleIso_hom, ofDiscreteModuleMap_hom_apply, LinearEquiv.coe_coe,
+    AddEquiv.coe_toIntLinearEquiv]
 
 /-- The inverse of the transitivity isomorphism acts on underlying modules as
 `transEquiv.symm`. -/
 @[simp]
 theorem transIso_inv_apply (φ : DiscreteCoind G W A) :
-    (transIso hW hsmul hU).inv φ = (transEquiv hW hsmul hU).symm φ :=
-  ofDiscreteModuleMap_hom_apply _ (fun g φ => transEquiv_symm_smul hW hsmul hU g φ) φ
+    (transIso hW hsmul hU).inv φ = (transEquiv hW hsmul hU).symm φ := by
+  rw [transIso, ofDiscreteModuleIso_inv_hom_apply, AddEquiv.coe_symm_toIntLinearEquiv]
 
 /-! ### The trivial subgroup -/
 
