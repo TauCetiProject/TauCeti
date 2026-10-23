@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.LinearAlgebra.InvariantBasisNumber
+public import TauCeti.Data.Finsupp.Weight
 import Mathlib.Algebra.Order.Antidiag.FinsuppEquiv
 import Mathlib.LinearAlgebra.Dimension.Constructions
 
@@ -78,11 +79,6 @@ theorem homogeneousMonomialBasis_repr_apply {σ R : Type*} [CommSemiring R] (n :
     (p : homogeneousSubmodule σ R n) (s : {s : σ →₀ ℕ // s.degree = n}) :
     (homogeneousMonomialBasis n).repr p s = p.1.coeff s.1 := by
   rfl
-
-/-- In finitely many variables there are finitely many exponent vectors of each degree. -/
-instance finite_degree_eq {σ : Type*} [Finite σ] (n : ℕ) :
-    Finite {s : σ →₀ ℕ // s.degree = n} :=
-  (Finsupp.finite_of_degree_eq n).to_subtype
 
 /-- A homogeneous polynomial evaluates as the sum over the exponent vectors of its degree of its
 coefficients times the corresponding monomials. -/

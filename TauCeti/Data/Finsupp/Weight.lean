@@ -53,6 +53,8 @@ at `h` of the pushforward `Finsupp.mapDomain b`.
   corresponding value of `Finsupp.mapDomain b`.
 * `Finsupp.weight_ite_sumElim_eq_add_mapDomain_apply`: for the block map `Sum.elim id b` on
   `τ ⊕ σ`, the indicator weight of block `h` of `a.sumElim e` is `a h + e.mapDomain b h`.
+* `Finsupp.finite_degree_eq`: in finitely many variables there are finitely many exponent
+  vectors of each degree.
 -/
 
 public section
@@ -198,5 +200,14 @@ theorem weight_ite_sumElim_eq_add_mapDomain_apply {σ τ R : Type*} [DecidableEq
   rw [weight_ite_eq_mapDomain_apply, sumElim_eq_add, mapDomain_add, ← mapDomain_comp,
     ← mapDomain_comp]
   simp
+
+end Finsupp
+
+namespace Finsupp
+
+/-- In finitely many variables there are finitely many exponent vectors of each degree. -/
+instance finite_degree_eq {σ : Type*} [Finite σ] (n : ℕ) :
+    Finite {s : σ →₀ ℕ // s.degree = n} :=
+  (finite_of_degree_eq n).to_subtype
 
 end Finsupp
