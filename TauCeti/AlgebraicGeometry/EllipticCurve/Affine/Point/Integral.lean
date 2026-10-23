@@ -22,7 +22,8 @@ The same coordinate property is also defined on its own, as
 `WeierstrassCurve ℚ` has integral coordinates when it is affine and both of its coordinates are
 integers. On an integral model this agrees with membership in `integralPoints`
 (`hasIntegralCoordinates_iff_mem_integralPoints`). It is the predicate the two counterexamples
-below are stated for, since neither of them lives on a model that is integral over `ℤ`.
+below are stated for, since `integralPoints` is only defined on models integral over `ℤ`: the
+first model is not integral over `ℤ`, and the second's source curve `C • W` is not either.
 
 The set depends on the integral equation, rather than only on its rational isomorphism class. A
 change of variables `C` over `ℤ`, so with `u = ±1` and `r, s, t ∈ ℤ`, identifies the rational points
@@ -38,9 +39,10 @@ Both restrictions are load-bearing. On `y² + ½y = x³` the point `(0, 0)` has 
 while its negative `(0, -½)` does not (`exists_not_hasIntegralCoordinates_neg`), so stability under
 negation is not guaranteed on an arbitrary rational model. On `y² = x³ + 3` the change of variables
 `(x, y) ↦ (4x, 8y)`, that is `u = 2` with `r = s = t = 0`, sends the point `(1/4, 1/4)` of the
-transformed curve `C • W : y² = x³ + 3/64` to the integral point `(1, 2)`, so it does not map the
-integral points of `C • W` onto those of `W`
-(`exists_not_surjOn_equivVariableChange_hasIntegralCoordinates`).
+transformed curve `C • W : y² = x³ + 3/64` to the integral point `(1, 2)`. The identification is a
+bijection on rational points, so `(1/4, 1/4)` is the only preimage of `(1, 2)`, and it is not
+integral; hence the change of variables does not map the integral points of `C • W` onto those of
+`W` (`exists_not_surjOn_equivVariableChange_hasIntegralCoordinates`).
 
 ## References
 
@@ -61,8 +63,10 @@ private theorem integral_toAffine_baseChange :
 
 omit [(W.baseChange ℚ).IsElliptic] in
 /-- The rational base change satisfies the Weierstrass equation at integer-cast coordinates
-exactly when the integral model does. -/
-theorem equation_baseChange_iff {x y : ℤ} :
+exactly when the integral model does. Not to be confused with
+`WeierstrassCurve.Affine.equation_baseChange_iff`, which expands the coefficients of a base
+change. -/
+theorem equation_baseChange_iff_intCast {x y : ℤ} :
     (W.baseChange ℚ).toAffine.Equation (x : ℚ) (y : ℚ) ↔ W.toAffine.Equation x y := by
   rw [W.integral_toAffine_baseChange]
   simpa only [Int.coe_castRingHom] using
@@ -71,15 +75,15 @@ theorem equation_baseChange_iff {x y : ℤ} :
 /-- An integral solution of the affine Weierstrass equation determines a rational point. -/
 def pointOfIntegralSolution (x y : ℤ) (h : W.toAffine.Equation x y) :
     (W.baseChange ℚ).toAffine.Point :=
-  .mk (W.equation_baseChange_iff.mpr h)
+  .mk (W.equation_baseChange_iff_intCast.mpr h)
 
-/-- The point built from an integral solution is the affine point with those coordinates. Not a
-`simp` lemma: it would rewrite the left-hand sides of `pointOfIntegralSolution_mem` and the
-`pointEquiv` lemmas, which are themselves in `simp` normal form. -/
+-- Not a `simp` lemma: it would rewrite the left-hand sides of `pointOfIntegralSolution_mem` and
+-- the `pointEquiv` lemmas, which are themselves in `simp` normal form.
+/-- The point built from an integral solution is the affine point with those coordinates. -/
 theorem pointOfIntegralSolution_eq_some (x y : ℤ) (h : W.toAffine.Equation x y) :
     W.pointOfIntegralSolution x y h =
       .some (x : ℚ) (y : ℚ)
-        (Affine.equation_iff_nonsingular.mp (W.equation_baseChange_iff.mpr h)) := by
+        (Affine.equation_iff_nonsingular.mp (W.equation_baseChange_iff_intCast.mpr h)) := by
   simp only [pointOfIntegralSolution, Affine.Point.mk]
 
 /-- The affine coordinates of the rational point constructed from an integral solution. -/
@@ -87,7 +91,7 @@ theorem pointOfIntegralSolution_eq_some (x y : ℤ) (h : W.toAffine.Equation x y
 theorem pointEquiv_pointOfIntegralSolution (x y : ℤ) (h : W.toAffine.Equation x y) :
     (W.baseChange ℚ).toAffine.pointEquiv (W.pointOfIntegralSolution x y h) =
       .some ⟨⟨(x : ℚ), (y : ℚ)⟩, by
-        exact W.equation_baseChange_iff.mpr h⟩ := by
+        exact W.equation_baseChange_iff_intCast.mpr h⟩ := by
   simp only [pointOfIntegralSolution, Affine.pointEquiv_some]
   congr 1
 
@@ -293,7 +297,6 @@ end VariableChange
 
 end WeierstrassCurve
 
-
 namespace WeierstrassCurve.Affine
 
 /-- A point of a Weierstrass curve over `ℚ` **has integral coordinates** when it is affine and
@@ -352,11 +355,11 @@ theorem hasIntegralCoordinates_iff_mem_integralPoints
   · rintro ⟨x, y, hP, rfl⟩
     have hEq : (W.baseChange ℚ).toAffine.Equation (x : ℚ) (y : ℚ) :=
       Affine.equation_iff_nonsingular.mpr hP
-    refine ⟨x, y, W.equation_baseChange_iff.mp hEq, ?_⟩
+    refine ⟨x, y, W.equation_baseChange_iff_intCast.mp hEq, ?_⟩
     rw [W.pointOfIntegralSolution_eq_some, Affine.Point.some.injEq]
     exact ⟨rfl, rfl⟩
   · rintro ⟨x, y, h, rfl⟩
-    refine ⟨x, y, Affine.equation_iff_nonsingular.mp (W.equation_baseChange_iff.mpr h), ?_⟩
+    refine ⟨x, y, Affine.equation_iff_nonsingular.mp (W.equation_baseChange_iff_intCast.mpr h), ?_⟩
     rw [W.pointOfIntegralSolution_eq_some, Affine.Point.some.injEq]
     exact ⟨rfl, rfl⟩
 
@@ -432,7 +435,7 @@ theorem exists_not_hasIntegralCoordinates_neg :
   ⟨halfYCurve, halfYCurvePointZero, hasIntegralCoordinates_halfYCurvePointZero,
     not_hasIntegralCoordinates_neg_halfYCurvePointZero⟩
 
-/-! ### A change of variables needs `u = ±1` -/
+/-! ### A change of variables with `u = 2` is not onto integral points -/
 
 /-- The curve `y² = x³ + 3` over `ℚ`. -/
 private def curveAddThree : WeierstrassCurve ℚ := ⟨0, 0, 0, 0, 3⟩
@@ -448,12 +451,13 @@ private theorem curveAddThree_nonsingular : curveAddThree.toAffine.Nonsingular 1
 `(x, y) ↦ (4x, 8y)`. -/
 private def twoChange : WeierstrassCurve.VariableChange ℚ := ⟨Units.mk0 2 (by norm_num), 0, 0, 0⟩
 
-/-- **A change of variables needs `u = ±1`.** Over `ℚ` the change with `u = 2` and
-`r = s = t = 0`, integral apart from the unit, identifies the rational points of `C • W` with
-those of `W`, but it does not map the integral points of `C • W` onto those of `W`: on
-`y² = x³ + 3` the integral point `(1, 2)` is the image of the point `(1/4, 1/4)` of
-`C • W : y² = x³ + 3/64`, whose coordinates are not integers. Over `ℤ` the unit group is `{±1}`,
-and there the identification is a bijection on integral points
+/-- **A change of variables with `u = 2` is not onto integral points.** The hypothesis `u = ±1`
+cannot be dropped: over `ℚ` the change with `u = 2` and `r = s = t = 0` is integral apart from the
+unit, and it identifies the rational points of `C • W` with those of `W`, but it does not map the
+integral points of `C • W` onto those of `W`. On `y² = x³ + 3` the integral point `(1, 2)` is the
+image of `(1/4, 1/4)` of `C • W : y² = x³ + 3/64`, whose coordinates are not integers, and by
+bijectivity on rational points that is its only preimage. Over `ℤ` the unit group is `{±1}`, and
+there the identification is a bijection on integral points
 (`bijOn_pointEquivVariableChange_integralPoints`). -/
 theorem exists_not_surjOn_equivVariableChange_hasIntegralCoordinates :
     ∃ (W : WeierstrassCurve ℚ) (C : WeierstrassCurve.VariableChange ℚ) (P : W.toAffine.Point),
@@ -465,12 +469,12 @@ theorem exists_not_surjOn_equivVariableChange_hasIntegralCoordinates :
     rfl, rfl, rfl,
     (WeierstrassCurve.Affine.Point.hasIntegralCoordinates_some _).mpr
       ⟨1, 2, by norm_num, by norm_num⟩, ?_⟩
-  rintro Q ⟨x, y, _, rfl⟩ hP
+  rintro Q ⟨x, y, _, rfl⟩ hEq
   -- The identification sends `(x, y)` to `(4x, 8y)`, so the abscissa `1` of the image forces
   -- `4x = 1` in `ℤ`.
   rw [WeierstrassCurve.Affine.Point.equivVariableChange_some,
-    WeierstrassCurve.Affine.Point.some.injEq] at hP
-  obtain ⟨hx, -⟩ := hP
+    WeierstrassCurve.Affine.Point.some.injEq] at hEq
+  obtain ⟨hx, -⟩ := hEq
   have h4 : (4 : ℤ) * x = 1 := by
     norm_num [twoChange] at hx
     exact_mod_cast hx
