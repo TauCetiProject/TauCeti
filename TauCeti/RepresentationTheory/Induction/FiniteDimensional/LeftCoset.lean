@@ -7,7 +7,6 @@ module
 
 public import TauCeti.GroupTheory.Coset.Basic
 public import TauCeti.RepresentationTheory.Induction.FiniteDimensional.Basic
-public import TauCeti.RepresentationTheory.FiniteIndex
 
 /-!
 # Induction in free left-coset coordinates
@@ -76,13 +75,11 @@ theorem indLeftCosetCoinvariantEquiv_ρ_apply (A : Rep.{max w u} k S) (g : G)
   have hq : q = (((e.symm q).out⁻¹ : G) : G ⧸ S) := by
     rw [← QuotientGroup.quotientRightRelEquivQuotientLeftRel_mk, Quotient.out_eq',
       e.apply_symm_apply]
-  have hcos : e (Quotient.mk'' ((e.symm q).out * g)) = g⁻¹ • q := by
-    conv_rhs => rw [hq]
-    rw [QuotientGroup.quotientRightRelEquivQuotientLeftRel_mk, MulAction.Quotient.smul_coe,
-      smul_eq_mul, mul_inv_rev]
   congr 2
   apply congrArg (indSubtypeEquivPi A x)
-  simpa using congrArg e.symm hcos
+  conv_rhs => rw [hq]
+  rw [MulAction.Quotient.smul_coe, smul_eq_mul,
+    QuotientGroup.quotientRightRelEquivQuotientLeftRel_symm_mk, mul_inv_rev, inv_inv, inv_inv]
 
 /-- Induced intertwiners act on the values of the free left-coset model. -/
 theorem indLeftCosetCoinvariantEquiv_indMap {A B : Rep.{max w u} k S} (f : A ⟶ B)
@@ -99,21 +96,13 @@ by the inverse of the right-coset factor of `g`. -/
 theorem indLeftCosetCoinvariantEquiv_mk (A : Rep.{max w u} k S) (g : G) (a : A) :
     (dsimp% only [Representation.IndV.mk, LinearMap.comp_apply, TensorProduct.mk_apply]
       (indLeftCosetCoinvariantEquiv A (Representation.IndV.mk S.subtype A.ρ g a))) =
-      Finsupp.single (QuotientGroup.quotientRightRelEquivQuotientLeftRel S
-        (Quotient.mk'' g)) (A.ρ (rightCosetFactor (S := S) g)⁻¹ a) := by
+      Finsupp.single ((g⁻¹ : G) : G ⧸ S) (A.ρ (rightCosetFactor (S := S) g)⁻¹ a) := by
   classical
   ext p
   obtain ⟨p, rfl⟩ := (QuotientGroup.quotientRightRelEquivQuotientLeftRel S).surjective p
   rw [indLeftCosetCoinvariantEquiv_apply, Equiv.symm_apply_apply]
   let : DecidableRel (QuotientGroup.rightRel S) := Classical.decRel _
-  have hmodel : indSubtypeEquivPi A (Representation.IndV.mk S.subtype A.ρ g a) p =
-      indToCoindAux A g a p.out := by
-    rw [indSubtypeEquivPi_apply]
-    -- Pass to the underlying linear map to use Mathlib's comparison-map equation.
-    change (((indCoindIso.{w, u, v} A).hom.hom.toLinearMap
-      (Representation.IndV.mk S.subtype A.ρ g a))).1 p.out = _
-    rw [indCoindIso_hom_hom_toLinearMap]
-    exact congrFun (TauCeti.indToCoind_mk g a) p.out
+  have hmodel := indSubtypeEquivPi_mk A g a p
   dsimp only [Representation.IndV.mk, LinearMap.comp_apply, TensorProduct.mk_apply] at hmodel
   rw [hmodel]
   by_cases hp : p = Quotient.mk'' g
@@ -124,8 +113,8 @@ theorem indLeftCosetCoinvariantEquiv_mk (A : Rep.{max w u} k S) (g : G) (a : A) 
   · have hrel : ¬(QuotientGroup.rightRel S).r p.out g := by
       intro h
       exact hp (by simpa using Quotient.sound h)
-    rw [indToCoindAux_of_not_rel _ _ _ hrel]
-    simp [hp]
+    rw [indToCoindAux_of_not_rel _ _ _ hrel, Finsupp.single_eq_of_ne]
+    exact (QuotientGroup.quotientRightRelEquivQuotientLeftRel S).injective.ne hp
 
 -- Normalize the induced carrier in the statement so simp can match it after reducing `Rep.ind`.
 /-- The inverse left-coset model sends a single vector to its chosen coinvariant generator. -/
@@ -137,6 +126,9 @@ theorem indLeftCosetCoinvariantEquiv_symm_single (A : Rep.{max w u} k S)
         ((QuotientGroup.quotientRightRelEquivQuotientLeftRel S).symm q).out a := by
   apply (indLeftCosetCoinvariantEquiv A).injective
   rw [LinearEquiv.apply_symm_apply]
-  simp [Representation.IndV.mk]
+  simp only [Representation.IndV.mk, LinearMap.comp_apply, TensorProduct.mk_apply,
+    indLeftCosetCoinvariantEquiv_mk, rightCosetFactor_out, inv_one, map_one, Module.End.one_apply]
+  rw [← QuotientGroup.quotientRightRelEquivQuotientLeftRel_mk, Quotient.out_eq',
+    Equiv.apply_symm_apply]
 
 end Rep

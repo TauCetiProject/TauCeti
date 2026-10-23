@@ -35,8 +35,9 @@ isomorphism of groups, and under translation:
   the chosen representatives of `G ⧸ H` to a transversal of `H'` in `G'`;
 * `QuotientGroup.mk_out_smul` and `QuotientGroup.mk_mul_out_smul`: the representative of a
   translated coset `g • q` lies in the coset of `g * q.out`.
-* `QuotientGroup.quotientRightRelEquivQuotientLeftRel_mk`: the right-to-left-coset equivalence
-  sends the right coset of `x` to the left coset of `x⁻¹`.
+* `QuotientGroup.quotientRightRelEquivQuotientLeftRel_mk` and
+  `QuotientGroup.quotientRightRelEquivQuotientLeftRel_symm_mk`: the right-to-left-coset
+  equivalence sends the right coset of `x` to the left coset of `x⁻¹`, and back.
 
 All of these have additive versions. The tower-coordinate reconstruction rules retain the inverse
 laws after the coordinate maps themselves have been evaluated on quotients. Finally,
@@ -196,10 +197,18 @@ variable {G : Type*} [Group G] {H : Subgroup G}
 
 /-- The right-to-left-coset equivalence sends the right coset of `x` to the left coset of
 `x⁻¹`. -/
-@[to_additive /-- The right-to-left-coset equivalence sends the right coset of `x` to the left
-coset of `-x`. -/]
+@[to_additive (attr := simp) /-- The right-to-left-coset equivalence sends the right coset of `x`
+to the left coset of `-x`. -/]
 theorem quotientRightRelEquivQuotientLeftRel_mk (x : G) :
     quotientRightRelEquivQuotientLeftRel H (Quotient.mk'' x) = (x⁻¹ : G) :=
+  rfl
+
+/-- The inverse of the right-to-left-coset equivalence sends the left coset of `x` to the right
+coset of `x⁻¹`. -/
+@[to_additive (attr := simp) /-- The inverse of the right-to-left-coset equivalence sends the left
+coset of `x` to the right coset of `-x`. -/]
+theorem quotientRightRelEquivQuotientLeftRel_symm_mk (x : G) :
+    (quotientRightRelEquivQuotientLeftRel H).symm (x : G ⧸ H) = Quotient.mk'' x⁻¹ :=
   rfl
 
 /-- The chosen representative of the translate `g • q` of a left coset `q` lies in the same coset
