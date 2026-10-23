@@ -11,8 +11,10 @@ import TauCeti.Data.ZMod.MonoidHomEquiv
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.FieldPoints
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.Points
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.PointsDivisor
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.ZModProdAut
 import TauCeti.AlgebraicGeometry.IdealSheaf.Section
+import TauCeti.AlgebraicGeometry.IdealSheaf.Product
 
 /-!
 # Naive level structures on an elliptic curve
@@ -335,6 +337,30 @@ theorem IsFiberwiseInjective.disjoint_range (h : E.IsFiberwiseInjective φ) {a b
     simpa [← Scheme.Hom.comp_apply] using congrArg E.structureMap ht
   subst t
   exact hab (h.left_apply_injective s ht.symm)
+
+/-- The divisor of a fibrewise injective finite family is the scheme-theoretic union of its
+disjoint sections. -/
+theorem IsFiberwiseInjective.pointsDivisor_eq_iInf_ker [Fintype A]
+    (hφ : E.IsFiberwiseInjective φ) : E.pointsDivisor φ = ⨅ a, (φ a).left.ker := by
+  rw [pointsDivisor_def]
+  apply Scheme.IdealSheafData.prod_eq_iInf_of_pairwise_disjoint_support
+  intro a b hab
+  apply disjoint_iff.mpr
+  apply SetLike.coe_injective
+  simpa only [Set.inf_eq_inter, Set.bot_eq_empty, TopologicalSpace.Closeds.coe_inf,
+    TopologicalSpace.Closeds.coe_bot, coe_support_ker_left] using
+    (hφ.disjoint_range hab).eq_bot
+
+/-- The divisor of a fibrewise injective finite family killed by `N` is contained in `E[N]`,
+expressed as the reverse inclusion of ideal sheaves. -/
+theorem IsFiberwiseInjective.ker_torsionι_left_le_pointsDivisor [Fintype A]
+    (hφ : E.IsFiberwiseInjective φ) {N : ℕ} (hkill : ∀ a, φ a ^ N = 1) :
+    (E.torsionι N).left.ker ≤ E.pointsDivisor φ := by
+  rw [hφ.pointsDivisor_eq_iInf_ker]
+  refine le_iInf fun a ↦ ?_
+  have hx : φ a ≫ E.mulBy N = 1 := by rw [comp_mulBy, zpow_natCast, hkill]
+  simpa [← Over.comp_left, E.torsionLift_torsionι (φ a) hx] using
+    Scheme.Hom.le_ker_comp (E.torsionLift (φ a) hx).left (E.torsionι N).left
 
 /-- **Points agree on the fibre over a point exactly when they agree there.** Two `S`-points `P`
 and `Q` of `E` have the same base change to the fibre `E_{κ(s)}` of `E` over the residue field
