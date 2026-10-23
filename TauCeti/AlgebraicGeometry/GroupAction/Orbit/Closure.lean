@@ -12,22 +12,19 @@ public import Mathlib.AlgebraicGeometry.Morphisms.Proper
 /-!
 # Scheme-theoretic orbit closures and closed orbit schemes
 
-The scheme-theoretic image of an orbit morphism gives a closed subscheme of the
-acted-on scheme. For a finite-type group acting on a finite-type scheme over an
-algebraically closed field, its underlying space is the full geometric orbit closure.
-The orbit morphism factors through it, and this factorization is surjective exactly
-when the orbit is closed. If the group is reduced, the orbit closure scheme is reduced.
-No reducedness assumption on the acted-on scheme is needed.
+For a monoid action over any base with quasi-compact orbit morphism, its
+scheme-theoretic image is a closed subscheme whose underlying space is the full
+geometric orbit closure. The orbit morphism factors through it, and this
+factorization is surjective exactly when the orbit is closed. A reduced monoid
+scheme gives reduced orbit closure schemes; no reducedness assumption on the
+acted-on scheme is needed. A proper ambient scheme gives proper orbit closure
+schemes over the base.
 
-Every orbit closure contains a closed orbit with this scheme structure. In a proper
-ambient scheme the resulting closed orbit scheme is proper. These schemes and maps
-supply algebraic carriers for subsequent comparisons with homogeneous spaces and,
-over the complex numbers, compact analytic orbits. Changing the rational base point
-by a group element gives a canonical isomorphism over the acted-on scheme.
-
-The construction uses Mathlib's `Scheme.Hom.image`, rather than a second subscheme
-construction. It also retains the scheme-theoretic image for a nonreduced group;
-reducedness is asserted only with a reduced group as source.
+For a finite-type group acting on a finite-type scheme over an algebraically
+closed field, every orbit closure contains a closed orbit with this scheme
+structure. For group actions over any base, changing the rational base point by a
+group element gives a canonical isomorphism over the acted-on scheme, including
+for nonreduced groups.
 
 ## References
 
@@ -50,7 +47,8 @@ section Monoid
 
 variable [MonObj G] [ModObj G X]
 
-/-- The scheme-theoretic closure of the orbit of a section. -/
+/-- The scheme-theoretic closure of the orbit of a section. This abbreviates the image
+scheme so its morphisms have the same source and target as Mathlib's image morphisms. -/
 abbrev orbitClosureScheme (x : 𝟙_ (Over S) ⟶ X) : Scheme.{u} :=
   (orbitMap G x).left.image
 
@@ -118,18 +116,7 @@ theorem range_orbitClosureι : Set.range (orbitClosureι G x) = orbitClosure G x
 /-- The orbit morphism covers its scheme-theoretic closure exactly when the orbit is closed. -/
 theorem surjective_toOrbitClosure_iff :
     Surjective (toOrbitClosure G x) ↔ IsClosed (orbit G x) := by
-  constructor
-  · intro h
-    have hr := congrArg (fun f : G.left ⟶ X.left ↦ Set.range f) (toOrbitClosure_ι G x)
-    have heq : orbit G x = orbitClosure G x := by
-      simpa only [Scheme.Hom.comp_base, TopCat.coe_comp, Set.range_comp,
-        Set.range_eq_univ.mpr (toOrbitClosure G x).surjective, Set.image_univ,
-        range_orbitClosureι, orbit_def] using hr.symm
-    rw [heq]
-    exact isClosed_orbitClosure G x
-  · intro h
-    exact ⟨(orbitMap G x).left.toImage_surjective_of_isClosed_range
-      (by simpa only [orbit_def] using h)⟩
+  rw [surjective_iff, toOrbitClosure_def, Scheme.Hom.surjective_toImage_iff, orbit_def]
 
 /-- The orbit closure is locally of finite type over the base whenever the ambient
 scheme is. -/
@@ -181,7 +168,8 @@ theorem orbitClosureIsoSmul_inv_ι (g : 𝟙_ (Over S) ⟶ G) (x : 𝟙_ (Over S
 /-- On the orbit factorization, changing base point corresponds to right translation
 on the group. -/
 @[reassoc]
-theorem toOrbitClosure_isoSmul_hom (g : 𝟙_ (Over S) ⟶ G) (x : 𝟙_ (Over S) ⟶ X) :
+theorem toOrbitClosure_orbitClosureIsoSmul_hom (g : 𝟙_ (Over S) ⟶ G)
+    (x : 𝟙_ (Over S) ⟶ X) :
     toOrbitClosure G (g • x) ≫ (orbitClosureIsoSmul G g x).hom =
       (rightTranslation g).hom.left ≫ toOrbitClosure G x := by
   apply (cancel_mono (orbitClosureι G x)).mp
@@ -196,8 +184,7 @@ variable {k : Type u} [Field k] [IsAlgClosed k]
   [CompactSpace X.left]
 
 /-- The closure of every orbit contains the scheme-theoretic image of a closed orbit,
-and the corresponding map from the group is surjective. For a reduced group this
-is a reduced closed orbit scheme. -/
+and the corresponding map from the group is surjective. -/
 theorem exists_surjective_toOrbitClosure_subset (x : 𝟙_ (Over (Spec (.of k))) ⟶ X) :
     ∃ y : 𝟙_ (Over (Spec (.of k))) ⟶ X,
       Surjective (toOrbitClosure G y) ∧
@@ -209,7 +196,7 @@ theorem exists_surjective_toOrbitClosure_subset (x : 𝟙_ (Over (Spec (.of k)))
   exact hsub
 
 /-- A nonempty finite-type scheme with a finite-type group action has a closed orbit
-scheme covered by the group. If the ambient scheme is proper, this scheme is proper. -/
+scheme covered by the group. -/
 theorem exists_surjective_toOrbitClosure [Nonempty X.left] :
     ∃ y : 𝟙_ (Over (Spec (.of k))) ⟶ X, Surjective (toOrbitClosure G y) := by
   have : IsLocallyNoetherian X.left := LocallyOfFiniteType.isLocallyNoetherian X.hom
