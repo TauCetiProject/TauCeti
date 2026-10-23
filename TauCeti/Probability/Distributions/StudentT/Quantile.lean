@@ -122,11 +122,13 @@ theorem quantile_studentTMeasure (hν : 0 < ν) (hu : u ∈ Ioo 0 1) :
 /-- Student t quantiles tend to minus infinity as the probability level tends to zero from above. -/
 theorem tendsto_quantile_studentTMeasure_nhdsGT_zero (hν : 0 < ν) :
     Tendsto (fun u ↦ ((studentTMeasure ν).quantile u : EReal)) (𝓝[>] 0) (𝓝 ⊥) :=
-  Measure.tendsto_quantile_nhdsGT_zero_of_strictMono_cdf _ (strictMono_cdf_studentTMeasure hν)
+  Measure.tendsto_quantile_nhdsGT_zero_of_cdf_pos _ fun x ↦
+    (cdf_nonneg _ (x - 1)).trans_lt (strictMono_cdf_studentTMeasure hν (by linarith))
 
 /-- Student t quantiles tend to plus infinity as the probability level tends to one from below. -/
 theorem tendsto_quantile_studentTMeasure_nhdsLT_one (hν : 0 < ν) :
     Tendsto (fun u ↦ ((studentTMeasure ν).quantile u : EReal)) (𝓝[<] 1) (𝓝 ⊤) :=
-  Measure.tendsto_quantile_nhdsLT_one_of_strictMono_cdf _ (strictMono_cdf_studentTMeasure hν)
+  Measure.tendsto_quantile_nhdsLT_one_of_cdf_lt_one _ fun x ↦
+    (strictMono_cdf_studentTMeasure hν (by linarith : x < x + 1)).trans_le (cdf_le_one _ (x + 1))
 
 end TauCeti.Probability

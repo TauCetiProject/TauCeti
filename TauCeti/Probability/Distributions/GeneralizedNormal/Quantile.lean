@@ -13,9 +13,8 @@ public import TauCeti.Probability.Distributions.Gamma.Quantile
 
 For positive scale and shape, the generalized normal quantile is a signed power
 of the inverse regularized Gamma function, centered at the location `m`. The
-median is handled separately because the inverse Gamma formula uses an interior
-probability level. Quantiles are continuous on `(0, 1)`, with limits minus infinity
-and plus infinity at its endpoints.
+median is also available as its own simp lemma. Quantiles are continuous on
+`(0, 1)`, with limits minus infinity and plus infinity at its endpoints.
 
 ## References
 
@@ -55,10 +54,13 @@ theorem quantile_generalizedNormalMeasure_half (hs : 0 < s) (hp : 0 < p) :
   simp
 
 private theorem cdf_generalizedNormalMeasure_signed_inverse (hs : 0 < s) (hp : 0 < p)
-    (hu : u ∈ Ioo 0 1) (hne : u ≠ 1 / 2) :
+    (hu : u ∈ Ioo 0 1) :
     cdf (generalizedNormalMeasure m s p)
         (m + s * sign (2 * u - 1) * inverseRegularizedGamma p⁻¹ |2 * u - 1| ^ p⁻¹) = u := by
-  have ht : 2 * u - 1 ≠ 0 := by intro h; apply hne; linarith
+  by_cases hhalf : u = 1 / 2
+  · subst u
+    norm_num [cdf_generalizedNormalMeasure_eq hs hp]
+  have ht : 2 * u - 1 ≠ 0 := by intro h; apply hhalf; linarith
   have hv : |2 * u - 1| ∈ Ioo (0 : ℝ) 1 :=
     ⟨abs_pos.mpr ht, abs_lt.mpr ⟨by linarith [hu.1], by linarith [hu.2]⟩⟩
   set b := inverseRegularizedGamma p⁻¹ |2 * u - 1| with hb
@@ -74,19 +76,16 @@ private theorem cdf_generalizedNormalMeasure_signed_inverse (hs : 0 < s) (hp : 0
   · simp [sign_of_pos ht, sign_of_pos (mul_pos hs hpow), abs_of_pos hpow, hs.ne',
       rpow_inv_rpow hbpos.le hp.ne', hG, abs_of_pos ht]
 
-/-- The generalized normal quantile at an interior probability level. Away from
-the median it is the signed `p⁻¹` power of an inverse regularized Gamma value. -/
+/-- The generalized normal quantile at an interior probability level is the location plus
+the scaled, signed `p⁻¹` power of an inverse regularized Gamma value. -/
 @[simp]
 theorem quantile_generalizedNormalMeasure (hs : 0 < s) (hp : 0 < p) (hu : u ∈ Ioo 0 1) :
     (generalizedNormalMeasure m s p).quantile u =
-      if u = 1 / 2 then m else
-        m + s * sign (2 * u - 1) * inverseRegularizedGamma p⁻¹ |2 * u - 1| ^ p⁻¹ := by
-  split_ifs with hhalf
-  · rw [hhalf, one_div, quantile_generalizedNormalMeasure_half hs hp]
-  · have h := cdf_generalizedNormalMeasure_signed_inverse (m := m) hs hp hu hhalf
-    exact (congrArg (generalizedNormalMeasure m s p).quantile h).symm.trans
-      (Measure.quantile_cdf _ ((strictMono_cdf_generalizedNormalMeasure hs hp).strictMonoOn _)
-        (by rw [h]; exact hu))
+      m + s * sign (2 * u - 1) * inverseRegularizedGamma p⁻¹ |2 * u - 1| ^ p⁻¹ := by
+  have h := cdf_generalizedNormalMeasure_signed_inverse (m := m) hs hp hu
+  exact (congrArg (generalizedNormalMeasure m s p).quantile h).symm.trans
+    (Measure.quantile_cdf _ ((strictMono_cdf_generalizedNormalMeasure hs hp).strictMonoOn _)
+      (by rw [h]; exact hu))
 
 /-- Generalized normal quantiles vary continuously with interior probability levels. -/
 theorem continuousOn_quantile_generalizedNormalMeasure (hs : 0 < s) (hp : 0 < p) :
@@ -98,14 +97,15 @@ theorem continuousOn_quantile_generalizedNormalMeasure (hs : 0 < s) (hp : 0 < p)
 theorem tendsto_quantile_generalizedNormalMeasure_nhdsGT_zero (hs : 0 < s) (hp : 0 < p) :
     Tendsto (fun u ↦ ((generalizedNormalMeasure m s p).quantile u : EReal))
       (𝓝[>] 0) (𝓝 ⊥) :=
-  Measure.tendsto_quantile_nhdsGT_zero_of_strictMono_cdf _
-    (strictMono_cdf_generalizedNormalMeasure hs hp)
+  Measure.tendsto_quantile_nhdsGT_zero_of_cdf_pos _ fun x ↦
+    (cdf_nonneg _ (x - 1)).trans_lt (strictMono_cdf_generalizedNormalMeasure hs hp (by linarith))
 
 /-- Generalized normal quantiles tend to plus infinity as the level increases to one. -/
 theorem tendsto_quantile_generalizedNormalMeasure_nhdsLT_one (hs : 0 < s) (hp : 0 < p) :
     Tendsto (fun u ↦ ((generalizedNormalMeasure m s p).quantile u : EReal))
       (𝓝[<] 1) (𝓝 ⊤) :=
-  Measure.tendsto_quantile_nhdsLT_one_of_strictMono_cdf _
-    (strictMono_cdf_generalizedNormalMeasure hs hp)
+  Measure.tendsto_quantile_nhdsLT_one_of_cdf_lt_one _ fun x ↦
+    (strictMono_cdf_generalizedNormalMeasure hs hp (by linarith : x < x + 1)).trans_le
+      (cdf_le_one _ (x + 1))
 
 end TauCeti.Probability
