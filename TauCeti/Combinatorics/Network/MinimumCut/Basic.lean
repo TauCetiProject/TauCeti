@@ -155,12 +155,18 @@ section Truncation
 
 variable [LinearOrder K] {f g : Finset V → K} {A B S₀ : Finset V} {b : K}
 
+/-- Suppose that `g ≤ f` and that `g` is at least `min f b` everywhere. Then `f` and `g` agree on
+every set whose `f`-value is below `b`. -/
+theorem eq_of_le_of_min_le_of_lt (hgf : ∀ S, g S ≤ f S) (hfg : ∀ S, min (f S) b ≤ g S)
+    {T : Finset V} (hT : f T < b) : g T = f T :=
+  le_antisymm (hgf T) ((min_eq_left hT.le).symm.trans_le (hfg T))
+
 /-- Suppose that `g ≤ f`, that `g` is at least `min f b` everywhere, and that some admissible side
 has `f`-value below `b`. Then `f` and `g` agree on every minimum side of `f`. -/
 theorem IsMinimum.eq_of_le_of_min_le (hgf : ∀ S, g S ≤ f S) (hfg : ∀ S, min (f S) b ≤ g S)
     (hS₀ : IsAdmissible A B S₀) (hb : f S₀ < b) {S : Finset V} (hS : IsMinimum f A B S) :
     g S = f S :=
-  le_antisymm (hgf S) ((min_eq_left ((hS.le hS₀).trans_lt hb).le).symm.trans_le (hfg S))
+  eq_of_le_of_min_le_of_lt hgf hfg ((hS.le hS₀).trans_lt hb)
 
 /-- Suppose that `g ≤ f`, that `g` is at least `min f b` everywhere, and that some admissible side
 has `f`-value below `b`. Then `f` and `g` have the same minimum sides. This is the effect on
@@ -168,19 +174,17 @@ minimum cuts of truncating all values above `b`. -/
 theorem isMinimum_iff_of_le_of_min_le (hgf : ∀ S, g S ≤ f S) (hfg : ∀ S, min (f S) b ≤ g S)
     (hS₀ : IsAdmissible A B S₀) (hb : f S₀ < b) {S : Finset V} :
     IsMinimum g A B S ↔ IsMinimum f A B S := by
-  have key {T : Finset V} (hT : f T < b) : g T = f T :=
-    le_antisymm (hgf T) ((min_eq_left hT.le).symm.trans_le (hfg T))
   constructor
   · intro hS
-    have hgS : g S < b := (hS.le hS₀).trans_lt ((key hb).trans_lt hb)
+    have hgS : g S < b := (hS.le hS₀).trans_lt ((eq_of_le_of_min_le_of_lt hgf hfg hb).trans_lt hb)
     have hfS : f S < b := (min_lt_iff.mp ((hfg S).trans_lt hgS)).resolve_right (lt_irrefl b)
     refine isMinimum_iff.mpr ⟨hS.admissible, fun T hT ↦ ?_⟩
-    rw [← key hfS]
+    rw [← eq_of_le_of_min_le_of_lt hgf hfg hfS]
     exact (hS.le hT).trans (hgf T)
   · intro hS
     have hfS : f S < b := (hS.le hS₀).trans_lt hb
     refine isMinimum_iff.mpr ⟨hS.admissible, fun T hT ↦ ?_⟩
-    rw [key hfS]
+    rw [eq_of_le_of_min_le_of_lt hgf hfg hfS]
     exact (le_min (hS.le hT) hfS.le).trans (hfg T)
 
 /-- Under the hypotheses of `TauCeti.TerminalCut.isMinimum_iff_of_le_of_min_le`, the set
