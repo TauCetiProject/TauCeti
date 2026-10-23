@@ -5,12 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import TauCeti.Algebra.Module.ZLattice.RationalSubspace
 public import TauCeti.Algebra.Module.ZLattice.SuccessiveMinima
--- Proof-only: gauges of convex bodies as dilates, and Vaaler's cube-slicing theorem.
+-- Proof-only: gauges of convex bodies as dilates.
 import TauCeti.Analysis.Convex.Gauge
-import TauCeti.MeasureTheory.Measure.Lebesgue.CubeSlice
 
 /-!
 # The central slice of the cube, and lattice bases in the sup norm
@@ -18,7 +16,8 @@ import TauCeti.MeasureTheory.Measure.Lebesgue.CubeSlice
 For a subspace `W` of the Euclidean space `ℝ^ι`, the central slice `W ∩ [-1, 1]^ι` of the cube is
 a symmetric convex body in `W` with `0` in its interior, `Submodule.cubeSlice W`. Its gauge is the
 sup norm `max_i |x i|`, not the Euclidean norm that `W` inherits, and by Vaaler's cube-slicing
-theorem its volume is at least `2 ^ k`, where `k = finrank ℝ W`.
+theorem `Submodule.two_pow_finrank_le_volume_setOf_forall_abs_le_one` (after unfolding
+`Submodule.coe_cubeSlice`) its volume is at least `2 ^ k`, where `k = finrank ℝ W`.
 
 The successive minima of a lattice `L` in `W` with respect to the cube slice therefore measure `L`
 in the sup norm, and Cassels' basis from the minima gives a `ℤ`-basis of `L` the product of whose
@@ -36,7 +35,6 @@ these bases are the integral kernel bases of bounded sup norm of Bombieri and Va
 ## Main results
 
 * `Submodule.gauge_cubeSlice`: the gauge of the cube slice is the sup norm.
-* `Submodule.two_pow_finrank_le_volume_cubeSlice`: Vaaler's lower bound `2 ^ k` for its volume.
 * `ZLattice.exists_basis_prod_norm_le_prod_successiveMin_cubeSlice`: a `ℤ`-basis of a full lattice
   in `W` whose product of sup norms is at most `k! / 2 ^ (k - 1)` times the product of the minima.
 * `Submodule.exists_basis_intPoints_prod_norm_le_prod_successiveMin`: the same for the integral
@@ -138,14 +136,6 @@ theorem mem_smul_cubeSlice_iff {t : ℝ} (ht : 0 < t) {x : W} :
   rw [← ConvexBody.gauge_le_iff_mem_smul (zero_mem_interior_cubeSlice W) ht, gauge_cubeSlice,
     pi_norm_le_iff_of_nonneg ht.le]
   simp [Real.norm_eq_abs]
-
-variable (W) in
-/-- **Vaaler's cube-slicing theorem** for the cube slice: its volume in `W` is at least
-`2 ^ finrank ℝ W`. -/
-theorem two_pow_finrank_le_volume_cubeSlice :
-    2 ^ finrank ℝ W ≤ volume (W.cubeSlice : Set W) := by
-  rw [coe_cubeSlice]
-  exact W.two_pow_finrank_le_volume_setOf_forall_abs_le_one
 
 end Submodule
 
