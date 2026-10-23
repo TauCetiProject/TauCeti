@@ -52,6 +52,8 @@ from an absolute value, this is the multiplicativity of Gauss norms at the corre
   add under multiplication of polynomials, at every slope.
 * `Polynomial.newtonSlopes_mul`: if both factors have nonempty Newton polygons, the finite
   slope multiset of the product is the sum of the finite slope multisets of the factors.
+* `Polynomial.newtonSlopes_le_of_dvd`: if only zero has infinite valuation, the finite slopes of
+  a factor of a nonzero polynomial are among those of the polynomial, with multiplicity.
 
 ## References
 
@@ -264,5 +266,21 @@ theorem newtonSlopes_mul (hf : f.newtonPolygon v ≠ ⊤) (hg : g.newtonPolygon 
     ← FiniteSlopeData.slopeMultiset_minkowskiSum]
   exact newtonSlopes_eq_slopeMultiset
     (by rw [FiniteSlopeData.heights_minkowskiSum, hd₁, hd₂, newtonPolygon_mul])
+
+variable {f g v} in
+/-- If only zero has infinite valuation, the finite slopes of a factor `g` of a nonzero
+polynomial `f` are among the finite slopes of `f`, counted with multiplicity. -/
+theorem newtonSlopes_le_of_dvd (hv : ∀ x, v x = ⊤ → x = 0) (hf : f ≠ 0) (hgf : g ∣ f) :
+    g.newtonSlopes v ≤ f.newtonSlopes v := by
+  obtain ⟨h, rfl⟩ := hgf
+  have hg : g ≠ 0 := by
+    rintro rfl
+    exact hf (zero_mul h)
+  have hh : h ≠ 0 := by
+    rintro rfl
+    exact hf (mul_zero g)
+  rw [newtonSlopes_mul _ _ v (newtonPolygon_ne_top_of_ne_zero hv hg)
+    (newtonPolygon_ne_top_of_ne_zero hv hh)]
+  exact Multiset.le_add_right _ _
 
 end Polynomial
