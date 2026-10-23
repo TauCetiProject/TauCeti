@@ -33,7 +33,7 @@ noncomputable section
 
 namespace TauCeti
 
-variable (𝕜 : Type*) [NontriviallyNormedField 𝕜]
+variable (𝕜 : Type*) [NormedField 𝕜]
   (E : Type*) [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
   (G : Type*) [AddCommGroup G] [Module 𝕜 G] [TopologicalSpace G]
   [IsTopologicalAddGroup G] [ContinuousConstSMul 𝕜 G]
@@ -66,7 +66,7 @@ namespace ContinuousLinearEquiv
 
 open TauCeti
 
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+variable {𝕜 : Type*} [NormedField 𝕜]
   {E F : Type*} [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
   [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F]
   {G : Type*} [AddCommGroup G] [Module 𝕜 G] [TopologicalSpace G]
