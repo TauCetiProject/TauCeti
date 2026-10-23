@@ -219,16 +219,15 @@ theorem image_exp_setOf_pow_eq_zero (n : ℕ) :
 
 end IsNilpotent
 
-namespace TauCeti
+namespace Units
 
-/-- The logarithmic one-parameter group of a unipotent unit passes through that unit
-at parameter one. -/
+/-- The exponential unit of the logarithm of a unipotent unit is the original unit. -/
 @[simp]
-theorem expSMulHom_isNilpotent_log_ofAdd_one (R : Type*) [CommRing R]
-    {A : Type*} [Ring A] [Algebra ℚ A] [Algebra R A]
+theorem nilpotentExpUnit_isNilpotent_log
+    {A : Type*} [Ring A] [Algebra ℚ A]
     (g : Aˣ) (hg : IsNilpotent ((g : A) - 1)) :
-    expSMulHom R (IsNilpotent.isNilpotent_log hg) (Multiplicative.ofAdd 1) = g := by
+    TauCeti.nilpotentExpUnit (IsNilpotent.isNilpotent_log hg) = g := by
   apply Units.ext
   simp [IsNilpotent.exp_log hg]
 
-end TauCeti
+end Units

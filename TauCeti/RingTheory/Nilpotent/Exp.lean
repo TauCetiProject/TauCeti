@@ -238,8 +238,23 @@ noncomputable def expSMulHom (R : Type*) [CommRing R] [Algebra R A]
         (((Commute.refl x).smul_left (Multiplicative.toAdd t)).smul_right
           (Multiplicative.toAdd u)) (hx.smul _) (hx.smul _)
 
-/-- The underlying value of the one-parameter group is the finite exponential. -/
+/-- Applying the one-parameter group gives the unit exponential of the scalar multiple. -/
+-- See note [hom simp lemma priority].
+@[simp low]
+theorem expSMulHom_apply (R : Type*) [CommRing R] [Algebra R A]
+    {x : A} (hx : IsNilpotent x) (t : Multiplicative R) :
+    expSMulHom R hx t = nilpotentExpUnit (hx.smul (Multiplicative.toAdd t)) :=
+  (rfl)
+
+/-- The one-parameter group at parameter one is the original nilpotent exponential unit. -/
 @[simp]
+theorem expSMulHom_ofAdd_one (R : Type*) [CommRing R] [Algebra R A]
+    {x : A} (hx : IsNilpotent x) :
+    expSMulHom R hx (Multiplicative.ofAdd 1) = nilpotentExpUnit hx := by
+  apply Units.ext
+  simp [expSMulHom_apply]
+
+/-- The underlying value of the one-parameter group is the finite exponential. -/
 theorem coe_expSMulHom (R : Type*) [CommRing R] [Algebra R A]
     {x : A} (hx : IsNilpotent x) (t : Multiplicative R) :
     (expSMulHom R hx t : A) = exp (Multiplicative.toAdd t • x) :=
@@ -263,14 +278,6 @@ theorem expSMulHom_natCast (R : Type*) [CommRing R] [Algebra R A]
       expSMulHom R hx (Multiplicative.ofAdd 1) ^ m := by
   simpa only [← ofAdd_nsmul, nsmul_eq_mul, mul_one] using
     (expSMulHom R hx).map_pow (Multiplicative.ofAdd 1) m
-
-/-- Integer parameters give integer powers of the value at one. -/
-theorem expSMulHom_intCast (R : Type*) [CommRing R] [Algebra R A]
-    {x : A} (hx : IsNilpotent x) (m : ℤ) :
-    expSMulHom R hx (Multiplicative.ofAdd (m : R)) =
-      expSMulHom R hx (Multiplicative.ofAdd 1) ^ m := by
-  simpa only [← ofAdd_zsmul, zsmul_eq_mul, mul_one] using
-    (expSMulHom R hx).map_zpow (Multiplicative.ofAdd 1) m
 
 /-! ## The action on an invariant additive subgroup -/
 
