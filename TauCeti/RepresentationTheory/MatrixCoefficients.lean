@@ -12,8 +12,8 @@ public import Mathlib.RepresentationTheory.Intertwining
 -- `TensorProduct.toMatrix_map` is what computes the entries of a tensor product.
 public import Mathlib.LinearAlgebra.TensorProduct.Matrix
 -- `Basis.piTensorProduct`, the basis of pure tensors the tensor-power entries are read
--- against.
-public import Mathlib.LinearAlgebra.PiTensorProduct.Basis
+-- against, and `PiTensorProduct.toMatrix_map`, which computes those entries.
+public import TauCeti.LinearAlgebra.PiTensorProduct.Matrix
 -- `Representation.tensorPower` occurs in the statements below.
 public import TauCeti.RepresentationTheory.Tensor.Power
 
@@ -123,10 +123,7 @@ theorem toMatrix_tensorPower {ι : Type w} [Fintype ι] [DecidableEq ι] (b : Mo
     LinearMap.toMatrix (Basis.piTensorProduct fun _ : Fin d => b)
         (Basis.piTensorProduct fun _ : Fin d => b) (ρ.tensorPower d g) i j
       = ∏ l : Fin d, LinearMap.toMatrix b b (ρ g) (i l) (j l) := by
-  rw [LinearMap.toMatrix_apply, Basis.piTensorProduct_apply,
-    _root_.Representation.tensorPower_apply, PiTensorProduct.map_tprod,
-    Basis.piTensorProduct_repr_tprod_apply]
-  simp [LinearMap.toMatrix_apply]
+  rw [_root_.Representation.tensorPower_apply, PiTensorProduct.toMatrix_map, Matrix.of_apply]
 
 /-- **The matrix coefficients of a tensor power stay inside any subalgebra of functions**
 containing those of the representation. -/
