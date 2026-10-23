@@ -29,6 +29,8 @@ a tangent bundle is unpacked into an equation on its base curve and one on its v
   curve in the base chart and of the derivative of its fibre coordinate in the trivialization,
   both taken at the current point of the curve.
 * `TauCeti.Manifold.hasMFDerivAt_totalSpace_curve_iff`: its unrestricted case.
+* `TauCeti.Manifold.extChartAt_totalSpace_apply_snd`: the fibre coordinate of a point in a chart
+  of the total space is its fibre coordinate in the trivialization at the centre of the chart.
 
 -/
 
@@ -49,6 +51,15 @@ variable
   {HB : Type*} [TopologicalSpace HB] {IB : ModelWithCorners 𝕜 EB HB}
   [TopologicalSpace B] [ChartedSpace HB B] [FiberBundle F V]
   {z : 𝕜 → TotalSpace F V} {s : Set 𝕜} {t : 𝕜} {a : EB} {b : F}
+
+/-- The fibre coordinate of a point `y` in the chart of the total space at `x` is its fibre
+coordinate in the trivialization at `x.proj`: by `FiberBundle.extChartAt` that chart is the
+trivialization followed by a chart of the base, which leaves the fibre coordinate unchanged. -/
+theorem extChartAt_totalSpace_apply_snd (x y : TotalSpace F V) :
+    (extChartAt (IB.prod 𝓘(𝕜, F)) x y).2 = (trivializationAt F V x.proj y).2 := by
+  rw [FiberBundle.extChartAt]
+  -- The second factor of `(extChartAt IB x.proj).prod (PartialEquiv.refl F)` is the identity.
+  rfl
 
 /-- A curve into the total space which is continuous within `s` at `t` has a manifold derivative
 there exactly when its base curve, read in the base chart at the current base point, and its fibre

@@ -46,6 +46,9 @@ to a complete separated uniform space extends uniquely to the Novikov series. Th
 
 ## Main results
 
+* `TauCeti.NovikovSeries.exists_mem_periodFiltration`: every series lies in some `U_C`.
+* `TauCeti.NovikovSeries.exists_pos_mem_periodFiltration_iff`: a series vanishes at every exponent
+  of period `≤ 0` exactly when it lies in `U_C` for some `C > 0`.
 * `TauCeti.NovikovSeries.hasBasis_nhds_zero` and `TauCeti.NovikovSeries.hasBasis_uniformity`:
   the subgroups `U_C` form a basis of the period topology and its uniformity.
 * `TauCeti.NovikovSeries.tendsto_nhds_iff`: convergence in the period topology means eventual
@@ -97,6 +100,17 @@ theorem mem_periodFiltration : a ∈ periodFiltration R N C ↔ ∀ h, N h < C �
 
 theorem antitone_periodFiltration : Antitone (periodFiltration R N) :=
   fun _ _ hCD _ ha h hh => ha h (hh.trans_le hCD)
+
+/-- A Novikov series vanishes at every exponent of period `≤ 0` exactly when it lies in `U_C` for
+some positive cutoff `C`: a nonzero such series lies in `U_C` for its least support period `C`. -/
+theorem exists_pos_mem_periodFiltration_iff :
+    (∃ C, 0 < C ∧ a ∈ periodFiltration R N C) ↔ ∀ h, N h ≤ 0 → a.coeff h = 0 := by
+  refine ⟨fun ⟨C, hC, ha⟩ h hh => ha h (hh.trans_lt hC), fun ha => ?_⟩
+  rcases eq_or_ne a 0 with rfl | ha₀
+  · exact ⟨1, one_pos, zero_mem _⟩
+  obtain ⟨g, hg, hmin⟩ := exists_isLeast_image_support (support_nonempty_iff.2 ha₀)
+  exact ⟨N g, lt_of_not_ge fun hg₀ => mem_support.1 hg (ha g hg₀), fun h hh =>
+    by_contra fun hh' => (hmin.2 ⟨h, mem_support.2 hh', rfl⟩).not_gt hh⟩
 
 /-- An element of every `U_C` is zero. -/
 theorem eq_zero_of_forall_mem_periodFiltration (ha : ∀ C, a ∈ periodFiltration R N C) : a = 0 :=
@@ -181,6 +195,10 @@ theorem periodFiltration_mem_nhds_zero (C : ℝ) :
 theorem isOpen_periodFiltration (C : ℝ) :
     IsOpen (periodFiltration R N C : Set (NovikovSeries R H N)) :=
   AddSubgroup.isOpen_of_mem_nhds _ (periodFiltration_mem_nhds_zero C)
+
+theorem isClosed_periodFiltration (C : ℝ) :
+    IsClosed (periodFiltration R N C : Set (NovikovSeries R H N)) :=
+  AddSubgroup.isClosed_of_isOpen _ (isOpen_periodFiltration C)
 
 /-- The sets `{b | b - a ∈ U_C}` form a basis of neighbourhoods of `a` in the period topology. -/
 theorem hasBasis_nhds (a : NovikovSeries R H N) :

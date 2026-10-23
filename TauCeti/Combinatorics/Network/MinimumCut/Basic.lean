@@ -23,6 +23,9 @@ a distributive sublattice under inclusion; on a finite vertex type with linearly
 values, it is finite, with a smallest and a largest side. These extremal sides describe which
 vertices occur in every minimum cut and which occur in at least one.
 
+For two vertices, `pairMinimumValue f s t` is the minimum cut value `λ(s, t)`, with `λ(s, s) = 0`.
+It satisfies the ultrametric inequality `min (λ(s, v)) (λ(v, t)) ≤ λ(s, t)` for distinct `s, t`.
+
 The theory is independent of a graph representation and does not require symmetry of the
 set function. Either terminal set may be empty.
 -/
@@ -85,6 +88,12 @@ theorem IsAdmissible.inter [DecidableEq V] {A B S T : Finset V}
     (hS : IsAdmissible A B S) (hT : IsAdmissible A B T) :
     IsAdmissible A B (S ∩ T) :=
   ⟨subset_inter hS.1 hT.1, hS.2.mono_left inter_subset_left⟩
+
+/-- For disjoint terminal sets, adding `A` to any vertex set and removing `B` gives an admissible
+side. -/
+theorem isAdmissible_union_sdiff [DecidableEq V] {A B : Finset V} (hAB : Disjoint A B)
+    (S : Finset V) : IsAdmissible A B ((S ∪ A) \ B) :=
+  ⟨fun _ ha ↦ mem_sdiff.mpr ⟨mem_union_right S ha, disjoint_left.mp hAB ha⟩, sdiff_disjoint⟩
 
 /-- A minimum terminal cut is an admissible side minimizing `f` over all admissible sides. -/
 def IsMinimum [Preorder K] (f : Finset V → K) (A B S : Finset V) : Prop :=
@@ -392,6 +401,63 @@ theorem isMinimum_singleton_iff [Preorder K] {f : Finset V → K} {s t : V}
       s ∈ S ∧ t ∉ S ∧ ∀ T, s ∈ T → t ∉ T → f S ≤ f T := by
   simp only [isMinimum_iff, isAdmissible_singleton]
   aesop
+
+section PairValue
+
+variable [Finite V] [Zero K] [LinearOrder K] (f : Finset V → K)
+
+open scoped Classical in
+/-- The minimum cut value `λ(s, t)` between two vertices: the minimum value of a cut containing
+`s` and not `t` when `s ≠ t`, and zero on the diagonal. -/
+noncomputable def pairMinimumValue (s t : V) : K :=
+  if h : s = t then 0 else minimumValue f (disjoint_singleton.mpr h)
+
+/-- The minimum cut value between a vertex and itself is zero by convention. -/
+@[simp] theorem pairMinimumValue_self (s : V) : pairMinimumValue f s s = 0 := by
+  simp [pairMinimumValue]
+
+/-- Between distinct vertices, the minimum cut value is that of the singleton terminal sets. -/
+theorem pairMinimumValue_of_ne {s t : V} (hst : s ≠ t) :
+    pairMinimumValue f s t = minimumValue f (disjoint_singleton.mpr hst) := by
+  simp [pairMinimumValue, hst]
+
+/-- The minimum cut value between two vertices is no larger than the value of any cut
+separating them. -/
+theorem pairMinimumValue_le {s t : V} {S : Finset V} (hs : s ∈ S) (ht : t ∉ S) :
+    pairMinimumValue f s t ≤ f S := by
+  have hst : s ≠ t := fun h ↦ ht (h ▸ hs)
+  rw [pairMinimumValue_of_ne f hst]
+  exact minimumValue_le f _ (isAdmissible_singleton.mpr ⟨hs, ht⟩)
+
+/-- A minimum cut between two vertices attains their minimum cut value. -/
+theorem IsMinimum.pairMinimumValue_eq {f : Finset V → K} {s t : V} {S : Finset V}
+    (hS : IsMinimum f {s} {t} S) : pairMinimumValue f s t = f S := by
+  obtain ⟨hs, ht⟩ := isAdmissible_singleton.mp hS.admissible
+  have hst : s ≠ t := fun h ↦ ht (h ▸ hs)
+  rw [pairMinimumValue_of_ne f hst]
+  exact (((isMinimum_iff_value_eq f _).mp hS).2).symm
+
+/-- A cut separating two vertices is minimum exactly when it attains their minimum cut value. -/
+theorem isMinimum_singleton_iff_pairMinimumValue_eq {s t : V} {S : Finset V} :
+    IsMinimum f {s} {t} S ↔ s ∈ S ∧ t ∉ S ∧ f S = pairMinimumValue f s t := by
+  refine ⟨fun hS ↦ ?_, fun ⟨hs, ht, heq⟩ ↦ ?_⟩
+  · exact ⟨(isAdmissible_singleton.mp hS.admissible).1,
+      (isAdmissible_singleton.mp hS.admissible).2, hS.pairMinimumValue_eq.symm⟩
+  · exact isMinimum_singleton_iff.mpr ⟨hs, ht, fun T hsT htT ↦
+      heq.le.trans (pairMinimumValue_le f hsT htT)⟩
+
+/-- **Ultrametric inequality** for minimum cut values: every cut separating `s` from `t`
+separates `s` from `v` or `v` from `t`. The intermediate vertex `v` is arbitrary. -/
+theorem min_pairMinimumValue_le {s t : V} (hst : s ≠ t) (v : V) :
+    min (pairMinimumValue f s v) (pairMinimumValue f v t) ≤ pairMinimumValue f s t := by
+  obtain ⟨S, hS⟩ := exists_minimum f (disjoint_singleton.mpr hst)
+  obtain ⟨hs, ht⟩ := isAdmissible_singleton.mp hS.admissible
+  rw [hS.pairMinimumValue_eq]
+  by_cases hv : v ∈ S
+  · exact min_le_of_right_le (pairMinimumValue_le f hv ht)
+  · exact min_le_of_left_le (pairMinimumValue_le f hs hv)
+
+end PairValue
 
 /-!
 ## Examples

@@ -9,6 +9,7 @@ public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.Adjoint
 public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.Equivalence
 public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.KyFan
 public import TauCeti.Analysis.OperatorIdeal.Family
+public import TauCeti.Analysis.OperatorIdeal.OperatorNorm
 public import TauCeti.Analysis.OperatorIdeal.SymmetricGauge.Basic
 
 /-!
@@ -32,6 +33,9 @@ subadditivity of the induced gauge on Hilbert spaces.
 These four laws make the induced gauges an operator-ideal family over every pair of Hilbert
 spaces, and adjoint invariance makes its diagonal-universe restriction a symmetric family.
 
+Since the approximation numbers decrease from `a₀(T) = ‖T‖`, the supremum gauge induces the
+operator-norm family: it is the `p = ∞` endpoint of the Schatten scale.
+
 ## Main definitions
 
 * `TauCeti.SymmetricGauge.opGauge`: the gauge `Φ(T) = Φ∞(n ↦ aₙ(T))` of a bounded map.
@@ -43,8 +47,12 @@ spaces, and adjoint invariance makes its diagonal-universe restriction a symmetr
 ## Main results
 
 * `TauCeti.SymmetricGauge.enorm_le_opGauge`: `‖T‖ ≤ Φ(T)`.
+* `TauCeti.SymmetricGauge.opGauge_supGauge`: the supremum gauge induces the operator norm.
+* `TauCeti.SymmetricGauge.operatorIdealFamily_supGauge`: the family induced by the supremum
+  gauge is the operator-norm family.
 * `TauCeti.SymmetricGauge.opGauge_smul`: `Φ(c T) = ‖c‖ Φ(T)`.
 * `TauCeti.SymmetricGauge.opGauge_comp_comp_le`: `Φ(A T B) ≤ ‖A‖ Φ(T) ‖B‖`.
+* `TauCeti.SymmetricGauge.opGauge_comp_comp_le_self`: `Φ(A T B) ≤ Φ(T)` for contractions `A`, `B`.
 * `TauCeti.SymmetricGauge.opGauge_le_of_forall_kyFanGauge_le`: Ky Fan domination implies
   domination of the induced gauges.
 * `TauCeti.SymmetricGauge.opGauge_add_le`: `Φ(S + T) ≤ Φ(S) + Φ(T)` for maps out of a Hilbert
@@ -97,6 +105,12 @@ theorem enorm_le_opGauge (T : E →L[𝕜] F) : ‖T‖ₑ ≤ Φ.opGauge T :=
     _ ≤ ⨆ n, (T.singularValue n : ℝ≥0∞) := le_iSup (fun n ↦ (T.singularValue n : ℝ≥0∞)) 0
     _ ≤ Φ.opGauge T := Φ.iSup_le_extend _
 
+/-- The supremum gauge induces the operator norm: `supₙ aₙ(T) = ‖T‖`. -/
+@[simp]
+theorem opGauge_supGauge (T : E →L[𝕜] F) : supGauge.opGauge T = ‖T‖ₑ := by
+  rw [opGauge_def, extend_supGauge, ← ENNReal.coe_iSup T.bddAbove_range_singularValue,
+    iSup_singularValue, enorm_eq_nnnorm]
+
 /-- Absolute homogeneity of the induced gauge, including its infinite values. -/
 @[simp]
 theorem opGauge_smul (c : 𝕜) (T : E →L[𝕜] F) : Φ.opGauge (c • T) = ‖c‖ₑ * Φ.opGauge T := by
@@ -124,6 +138,14 @@ theorem opGauge_comp_comp_le (A : G →L[𝕜] H) (T : F →L[𝕜] G) (B : E �
           simpa [enorm_eq_nnnorm, mul_right_comm] using
             ENNReal.coe_le_coe.2 (singularValue_comp_comp_le A T B n)
     _ = ‖A‖ₑ * Φ.opGauge T * ‖B‖ₑ := by rw [extend_smul, opGauge_def, mul_right_comm]
+
+/-- Composition on both sides by contractions does not increase the induced gauge. -/
+theorem opGauge_comp_comp_le_self {A : G →L[𝕜] H} (hA : ‖A‖ ≤ 1) (T : F →L[𝕜] G)
+    {B : E →L[𝕜] F} (hB : ‖B‖ ≤ 1) : Φ.opGauge (A ∘L T ∘L B) ≤ Φ.opGauge T := by
+  refine (Φ.opGauge_comp_comp_le A T B).trans ?_
+  rw [enorm_eq_nnnorm, enorm_eq_nnnorm]
+  exact (mul_le_of_le_one_right' (by exact_mod_cast hB)).trans
+    (mul_le_of_le_one_left' (by exact_mod_cast hA))
 
 /-- **Ky Fan dominance.** If every Ky Fan prefix of `S` is at most the corresponding prefix of `T`,
 then the induced gauge of `S` is at most that of `T`. The two maps may act between different
@@ -196,6 +218,19 @@ noncomputable def symmetricOperatorIdealFamily (𝕜 : Type u) [RCLike 𝕜] (Φ
 theorem symmetricOperatorIdealFamily_toOperatorIdealFamily (𝕜 : Type u) [RCLike 𝕜] :
     (Φ.symmetricOperatorIdealFamily.{u, v} 𝕜).toOperatorIdealFamily =
       Φ.operatorIdealFamily.{u, v, v} 𝕜 := (rfl)
+
+/-- **The operator-norm endpoint of the Schatten scale.** The family induced by the supremum
+gauge, with gauge `supₙ aₙ(T)`, is the operator-norm family. -/
+theorem operatorIdealFamily_supGauge (𝕜 : Type u) [RCLike 𝕜] :
+    supGauge.operatorIdealFamily.{u, v, w} 𝕜 = OperatorIdealFamily.opNorm 𝕜 := by
+  ext
+  simp
+
+/-- The symmetric family induced by the supremum gauge is the symmetric operator-norm family. -/
+theorem symmetricOperatorIdealFamily_supGauge (𝕜 : Type u) [RCLike 𝕜] :
+    supGauge.symmetricOperatorIdealFamily.{u, v} 𝕜 = SymmetricOperatorIdealFamily.opNorm 𝕜 := by
+  ext
+  simp
 
 end SymmetricGauge
 

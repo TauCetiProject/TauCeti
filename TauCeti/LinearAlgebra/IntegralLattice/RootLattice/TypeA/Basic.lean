@@ -54,6 +54,8 @@ The identification of this simple-root model with the classical coordinate model
 * `TauCeti.IntegralLattice.typeARootLattice`: the lattice, with Gram matrix `CartanMatrix.A n`.
 * `TauCeti.IntegralLattice.form_typeASimpleRoot_typeASimpleRoot`: its simple-root Gram matrix is
   `CartanMatrix.A n`.
+* `TauCeti.IntegralLattice.sum_smul_typeASimpleRoot`: every vector is the combination of the
+  simple roots with its own coordinates.
 * `TauCeti.IntegralLattice.typeASimpleRootBasis`: the simple roots as a `ℤ`-basis of the lattice.
 * `TauCeti.IntegralLattice.isEven_typeARootLattice`: it is even.
 * `TauCeti.IntegralLattice.isPosDef_typeARootLattice`: it is positive definite.
@@ -61,6 +63,8 @@ The identification of this simple-root model with the classical coordinate model
 * `TauCeti.IntegralLattice.minimum_typeARootLattice`: for `n ≥ 1` its minimum is `2`.
 * `TauCeti.IntegralLattice.typeAFundamentalWeight`: the first fundamental weight `ω₁`.
 * `TauCeti.IntegralLattice.typeAFundamentalWeightClass`: its class in the discriminant group.
+* `TauCeti.IntegralLattice.mk_eq_zsmul_typeAFundamentalWeightClass_iff`: a dual vector lies in
+  the class `k ω₁` exactly when it differs from `k ω₁` by a lattice vector.
 * `TauCeti.IntegralLattice.form_typeAFundamentalWeight_self`: `⟨ω₁, ω₁⟩ = n / (n + 1)`.
 * `TauCeti.IntegralLattice.addOrderOf_typeAFundamentalWeightClass`: the class of `ω₁` has order
   `n + 1`.
@@ -68,6 +72,8 @@ The identification of this simple-root model with the classical coordinate model
   discriminant group.
 * `TauCeti.IntegralLattice.typeADiscriminantGroupEquiv`: the resulting isomorphism
   `ZMod (n + 1) ≃+ A_{Aₙ}`.
+* `TauCeti.IntegralLattice.typeADiscriminantGroupEquiv_apply`: it carries the label `a` to the
+  class `a.val • ω₁`.
 * `TauCeti.IntegralLattice.discriminantQuadraticMap_typeAFundamentalWeightClass`:
   `q(ω₁) = n / (2 (n + 1))`.
 * `TauCeti.IntegralLattice.discriminantPairing_typeAFundamentalWeightClass`:
@@ -125,6 +131,13 @@ theorem typeASimpleRoot_apply (i j : Fin n) :
 
 private theorem typeASimpleRoot_eq_basisFun (i : Fin n) :
     typeASimpleRoot n i = Pi.basisFun ℚ (Fin n) i := rfl
+
+variable {n} in
+/-- Every vector of the ambient space is the combination of the simple roots with its own
+coordinates as coefficients. -/
+theorem sum_smul_typeASimpleRoot (x : Fin n → ℚ) : ∑ j, x j • typeASimpleRoot n j = x := by
+  ext k
+  simp [Finset.sum_apply]
 
 /-- The form of the type `Aₙ` root lattice, expanded in the standard coordinates. -/
 theorem typeARootLattice_form_apply (x y : Fin n → ℚ) :
@@ -293,11 +306,7 @@ theorem form_typeAFundamentalWeight_self :
     (typeARootLattice n).form (typeAFundamentalWeight n) (typeAFundamentalWeight n) =
       (n : ℚ) / ((n : ℚ) + 1) := by
   classical
-  have hexpand : typeAFundamentalWeight n =
-      ∑ j : Fin n, (typeAFundamentalWeight n j) • typeASimpleRoot n j := by
-    ext k
-    simp [typeASimpleRoot, Pi.basisFun_apply, Pi.single_apply]
-  nth_rewrite 2 [hexpand]
+  nth_rewrite 2 [← sum_smul_typeASimpleRoot (typeAFundamentalWeight n)]
   rw [map_sum]
   simp only [map_smul, smul_eq_mul, form_typeAFundamentalWeight_simpleRoot]
   rcases Nat.eq_zero_or_pos n with rfl | hn
@@ -345,6 +354,17 @@ theorem coe_typeAFundamentalWeightDual :
 noncomputable def typeAFundamentalWeightClass :
     (typeARootLattice n).DiscriminantGroup :=
   Submodule.Quotient.mk (typeAFundamentalWeightDual n)
+
+variable {n} in
+/-- A dual vector lies in the class `k ω₁` exactly when it differs from `k ω₁` by a vector of the
+root lattice. -/
+theorem mk_eq_zsmul_typeAFundamentalWeightClass_iff (x : (typeARootLattice n).dualCarrier)
+    (k : ℤ) :
+    (Submodule.Quotient.mk x : (typeARootLattice n).DiscriminantGroup) =
+        k • typeAFundamentalWeightClass n ↔
+      (x : Fin n → ℚ) - k • typeAFundamentalWeight n ∈ (typeARootLattice n).carrier := by
+  rw [typeAFundamentalWeightClass, ← Submodule.Quotient.mk_smul, discriminantGroup_mk_eq_iff,
+    Submodule.coe_sub, Submodule.coe_smul, coe_typeAFundamentalWeightDual]
 
 /-- **An integer multiple of the first fundamental weight lies in the root lattice exactly when
 `n + 1` divides it**.  For `n > 0`, this is forced by the last simple-root coordinate
@@ -413,6 +433,11 @@ noncomputable def typeADiscriminantGroupEquiv :
 theorem typeADiscriminantGroupEquiv_apply_one :
     typeADiscriminantGroupEquiv n 1 = typeAFundamentalWeightClass n :=
   zmodAddEquivOfGenerator_apply_one _ _
+
+/-- The label `a : ZMod (n + 1)` names the class `a.val • ω₁`. -/
+theorem typeADiscriminantGroupEquiv_apply (a : ZMod (n + 1)) :
+    typeADiscriminantGroupEquiv n a = a.val • typeAFundamentalWeightClass n := by
+  rw [← typeADiscriminantGroupEquiv_apply_one, ← map_nsmul, nsmul_one, ZMod.natCast_zmod_val]
 
 /-! ## The discriminant form on every class
 

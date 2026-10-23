@@ -11,7 +11,7 @@ public import Mathlib.Analysis.SpecificLimits.Normed
 /-!
 # Elementary asymptotic criteria
 
-Three general criteria that supplement Mathlib's asymptotics API.
+Three general criteria that supplement Mathlib's asymptotics API, and an elementary estimate.
 
 For functions into a normed division ring, `f` satisfies `f = a g + o(g)` exactly when `f / g`
 tends to `a`, provided `g` is eventually nonzero. This criterion converts little-o error estimates
@@ -26,6 +26,10 @@ remainder of one order be read as a remainder of a smaller order.
 A fixed power of a shifted natural number times a geometric sequence of ratio in `[0, 1)` tends
 to zero. This is the form needed to absorb polynomial growth after shifting an index.
 
+If the weighted terms `aₙ qⁿ` of a real sequence are bounded by `A` at a radius `q > 0`, then at
+a radius `c` they are bounded by `A * (|c| / q)ⁿ`. For `|c| < q` this geometric bound is the
+estimate behind every loss of radius for power series.
+
 ## Main results
 
 * `Asymptotics.isLittleO_sub_mul_iff_tendsto_div`: `f - a g = o(g)` if and only if
@@ -34,6 +38,8 @@ to zero. This is the form needed to absorb polynomial growth after shifting an i
   whenever `n ≤ m`.
 * `TauCeti.tendsto_add_pow_mul_pow_of_lt_one`: `(n + k) ^ k * ρ ^ n` tends to zero when
   `0 ≤ ρ < 1`.
+* `TauCeti.mul_abs_pow_le_of_forall_mul_pow_le`: weighted terms bounded by `A` at a radius `q > 0`
+  are bounded by `A * (|c| / q)ⁿ` at the radius `c`.
 
 ## Related results
 
@@ -84,5 +90,14 @@ theorem tendsto_add_pow_mul_pow_of_lt_one (k : ℕ) {ρ : ℝ} (hρ0 : 0 ≤ ρ)
     simp only [Function.comp_apply, Nat.cast_add, pow_add, inv_pow]
     field_simp [hρ.ne']
   · simp
+
+/-- If the weighted terms `aₙ qⁿ` of a real sequence at a radius `q > 0` are bounded by `A`, then
+at the radius `c` its weighted terms are bounded by `A * (|c| / q)ⁿ`. Applied to the coefficient
+norms of a power series, this is the estimate behind every loss of radius. -/
+theorem mul_abs_pow_le_of_forall_mul_pow_le {a : ℕ → ℝ} {q A c : ℝ} (hq : 0 < q)
+    (hA : ∀ n, a n * q ^ n ≤ A) (n : ℕ) : a n * |c| ^ n ≤ A * (|c| / q) ^ n :=
+  calc a n * |c| ^ n = a n * q ^ n * (|c| / q) ^ n := by
+        rw [div_pow]; field_simp
+    _ ≤ A * (|c| / q) ^ n := by gcongr; exact hA n
 
 end TauCeti

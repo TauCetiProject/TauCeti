@@ -7,7 +7,7 @@ module
 
 public import Mathlib.FieldTheory.IsRealClosed.Basic
 public import Mathlib.Analysis.Real.Sqrt
-public import TauCeti.FieldTheory.IsRealClosed.Real
+public import Mathlib.FieldTheory.IsRealClosed.Real
 import TauCeti.Algebra.Order.Ring.Square
 
 /-! # Nonnegative square roots in real closed fields

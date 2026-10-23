@@ -38,10 +38,10 @@ jobs:
         with:
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@0f4096297f058bff8ccd873067aab7120202aecf
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+          tools-ref: 0f4096297f058bff8ccd873067aab7120202aecf
           project-directory: .
       - name: Checkout the pinned merge policy (read-only)
         uses: ./.github/actions/checkout-merge-policy
@@ -57,10 +57,10 @@ jobs:
         with:
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@0f4096297f058bff8ccd873067aab7120202aecf
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+          tools-ref: 0f4096297f058bff8ccd873067aab7120202aecf
           project-directory: .
       - name: Install elan (pinned + checksum) and the toolchain
         env:
@@ -127,10 +127,10 @@ jobs:
           fetch-depth: 0
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@0f4096297f058bff8ccd873067aab7120202aecf
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+          tools-ref: 0f4096297f058bff8ccd873067aab7120202aecf
           project-directory: .
       - name: Infrastructure policy unit tests
         run: |
@@ -148,7 +148,7 @@ jobs:
           python3 scripts/test_roadmap_api.py
           python3 scripts/test_github_api_report.py
           PYTHONPATH=scripts python3 scripts/test_housekeeping.py
-          python3 scripts/test_stack_policy.py
+          python3 scripts/test_stack_checkpoint_restore.py
           python3 scripts/pr_status/test_pr_labels.py
           python3 scripts/pr_status/test_batch.py
           python3 scripts/pr_status/test_zulip.py
@@ -178,6 +178,7 @@ jobs:
           python3 scripts/test_profile_workflow.py
           python3 scripts/test_lake_cache_probe.py
           python3 scripts/test_lake_cache_get.py
+          python3 scripts/test_bulk_unpack_cache.py
           python3 scripts/test_lake_cache_reuse.py
           python3 scripts/test_lake_cache_publish.py
           python3 scripts/test_docs_facts.py
@@ -326,18 +327,25 @@ jobs:
 
       - name: Lake archive reuse integration tests
         run: |
+          python3 scripts/test_bulk_unpack_cache.py --integration
           python3 scripts/test_lake_cache_reuse.py --integration
           python3 scripts/test_lake_cache_publish.py --integration
 
       - name: Audit import headers against the complete source inventory
         run: python3 scripts/check-imports.py
 
+      # Temporary workaround; remove after adopting lean4#15868.
+      - name: Restore cached module archives
+        env:
+          LAKE_NO_CACHE: "true"
+        run: python3 scripts/bulk-unpack-cache.py
+
       # No aggregator check: the root TauCeti.lean is intentionally empty and imports nothing.
       # The build globs every TauCeti/ module directly, so nothing depends on a root that
       # re-exports the library.
       - name: Build
         env:
-          # Restore only from the locally-populated $LAKE_CACHE_DIR the step above filled;
+          # Restore only from the locally-populated $LAKE_CACHE_DIR the earlier fetch step filled;
           # never let the build itself reach a remote cache service. Same rule as the
           # sandboxed build in pr-build.yml and as the publish step below.
           LAKE_NO_CACHE: "true"
