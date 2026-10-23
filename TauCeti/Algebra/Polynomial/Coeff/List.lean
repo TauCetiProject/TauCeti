@@ -58,11 +58,22 @@ section Semiring
 
 variable [Semiring R]
 
+/-- Concatenating constant-first coefficient lists shifts the second polynomial by the length
+of the first list. This also simplifies reversed descending lists after `List.reverse_cons`. -/
+@[simp]
+theorem ofCoeffList_append (p q : List R) :
+    ofCoeffList (p ++ q) = ofCoeffList p + X ^ p.length * ofCoeffList q := by
+  induction p with
+  | nil => simp
+  | cons a p ih =>
+    simp [ofCoeffList_cons, ih, mul_add, pow_succ', mul_assoc, add_assoc]
+
 /-- Horner recursion for descending lists: appending the coefficient `a`
 at the bottom multiplies the polynomial so far by `X` and adds the constant `C a`. -/
 theorem ofCoeffList_reverse_concat (l : List R) (a : R) :
     ofCoeffList (l ++ [a]).reverse = ofCoeffList l.reverse * X + C a := by
-  simp [List.reverse_append, ofCoeffList_cons, X_mul, add_comm]
+  rw [List.reverse_append, ofCoeffList_append]
+  simp [ofCoeffList_cons, X_mul, add_comm]
 
 /-- Evaluating `ofCoeffList l.reverse` is Horner's rule run directly on the list. -/
 theorem eval₂_ofCoeffList_reverse {S : Type*} [Semiring S] (f : R →+* S) (r : S) (l : List R) :
@@ -83,19 +94,7 @@ theorem degree_ofCoeffList_reverse_lt (l : List R) : (ofCoeffList l.reverse).deg
 /-- Splitting off the leading coefficient of a list of coefficients. -/
 theorem ofCoeffList_reverse_cons (a : R) (l : List R) :
     ofCoeffList (a :: l).reverse = C a * X ^ l.length + ofCoeffList l.reverse := by
-  ext i
-  rw [coeff_add, coeff_ofCoeffList, coeff_ofCoeffList, coeff_C_mul, coeff_X_pow,
-    List.reverse_cons]
-  rcases lt_or_ge i l.length with h | h
-  · rw [List.getD_append _ _ _ _ (by simpa using h), ite_eq_right h.ne, mul_zero, zero_add]
-  · rw [List.getD_eq_getElem?_getD (l := l.reverse),
-      List.getElem?_eq_none (by simpa using h), Option.getD_none,
-      List.getD_append_right _ _ _ _ (by simpa using h)]
-    rcases eq_or_lt_of_le h with h' | h'
-    · rw [← h', ite_eq_left rfl, mul_one, add_zero]
-      simp
-    · rw [ite_eq_right (by omega), mul_zero, zero_add, List.getD_eq_getElem?_getD,
-        List.getElem?_eq_none (by simp; omega), Option.getD_none]
+  simp [ofCoeffList_cons, X_pow_mul_C, add_comm]
 
 /-- A leading zero coefficient in a descending list may be dropped. -/
 theorem ofCoeffList_reverse_zero_cons (l : List R) :
