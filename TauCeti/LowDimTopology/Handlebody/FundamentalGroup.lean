@@ -598,8 +598,6 @@ private theorem continuous_boundaryLevel : Continuous (boundaryLevel g) := by
 private theorem boundaryLevel_le_one {p : ℂ × ℝ} (hp : p ∈ handlebody g) : boundaryLevel g p ≤ 1 :=
   max_le (boundaryWeight_le_one (mem_handlebody.1 hp).1) (abs_le.2 (mem_handlebody.1 hp).2)
 
-private theorem isClosed_handlebody : IsClosed (handlebody g) := (isCompact_handlebody g).isClosed
-
 /-- A point of the handlebody lies on its boundary surface exactly when its boundary level is
 `1`. -/
 private theorem mem_frontier_handlebody_iff {p : ℂ × ℝ} (hp : p ∈ handlebody g) :
@@ -608,7 +606,7 @@ private theorem mem_frontier_handlebody_iff {p : ℂ × ℝ} (hp : p ∈ handleb
   have ht : |p.2| ≤ 1 := abs_le.2 (mem_handlebody.1 hp).2
   have hH : handlebody g = planarSurface g ×ˢ Icc (-1) 1 :=
     Set.ext fun _ ↦ mem_handlebody.trans mem_prod.symm
-  rw [isClosed_handlebody.frontier_eq, mem_sdiff, and_iff_right hp, hH, interior_prod_eq,
+  rw [(isClosed_handlebody g).frontier_eq, mem_sdiff, and_iff_right hp, hH, interior_prod_eq,
     interior_Icc, mem_prod, mem_Ioo, ← abs_lt, boundaryLevel]
   constructor
   · intro h
@@ -654,8 +652,7 @@ private theorem boundaryDeform_spec {p : ℂ × ℝ} (hp : p ∈ handlebody g) (
     rw [abs_mul, abs_of_nonneg (by linarith : (0 : ℝ) ≤ 1 + s)]
   refine ⟨mem_handlebody.2 ⟨hP, abs_le.1 (habs ▸ ht)⟩, ?_⟩
   rw [boundaryLevel, boundaryDeform, hW, habs,
-    ← mul_max_of_nonneg _ _ (by linarith : (0 : ℝ) ≤ 1 + s)]
-  rfl
+    ← mul_max_of_nonneg _ _ (by linarith : (0 : ℝ) ≤ 1 + s), hm_def, boundaryLevel]
 
 private theorem boundaryDeform_zero (p : ℂ × ℝ) : boundaryDeform g 0 p = p := by
   simp [boundaryDeform]
@@ -754,7 +751,7 @@ theorem isPathConnected_frontier_handlebody (g : ℕ) :
   have hw₀ := boundaryWeight_outer_point (g := g)
   refine ⟨(((g + 1 : ℝ) : ℂ), 1), mem_frontier_of_abs_eq_one h₀ abs_one, fun {p} hp ↦ ?_⟩
   obtain ⟨z, t⟩ := p
-  have hpH : (z, t) ∈ handlebody g := isClosed_handlebody.frontier_subset hp
+  have hpH : (z, t) ∈ handlebody g := (isClosed_handlebody g).frontier_subset hp
   obtain ⟨hz, ht⟩ := mem_handlebody.1 hpH
   have hlevel := (mem_frontier_handlebody_iff hpH).1 hp
   have hone : (1 : ℝ) ∈ Icc (-1 : ℝ) 1 := ⟨by norm_num, le_rfl⟩
@@ -796,7 +793,7 @@ theorem exists_deformation_frontier_handlebody (g : ℕ) :
     rw [boundaryDeformMap_apply_coe]
     exact boundaryDeform_of_boundaryLevel_eq_one ((mem_frontier_handlebody_iff x.1.2).1 hx) _
   have hconn : IsPathConnected {x : handlebody g | (x : ℂ × ℝ) ∈ frontier (handlebody g)} :=
-    (isPathConnected_frontier_handlebody g).preimage_coe isClosed_handlebody.frontier_subset
+    (isPathConnected_frontier_handlebody g).preimage_coe (isClosed_handlebody g).frontier_subset
   refine ⟨boundaryNhd g, isOpen_boundaryNhd, ?_, hsub, boundaryDeformMap,
     fun x ↦ Subtype.ext <| Subtype.ext <| boundaryDeform_zero _, mem_frontier_boundaryDeformMap_one,
     hfix⟩
@@ -822,7 +819,7 @@ theorem fundamentalGroup_map_frontier_handlebody_surjective
       (ContinuousMap.subtypeVal {y : handlebody g | (y : ℂ × ℝ) ∈ frontier (handlebody g)}) x) := by
   have : PathConnectedSpace {y : handlebody g | (y : ℂ × ℝ) ∈ frontier (handlebody g)} :=
     isPathConnected_iff_pathConnectedSpace.1 <|
-      (isPathConnected_frontier_handlebody g).preimage_coe isClosed_handlebody.frontier_subset
+      (isPathConnected_frontier_handlebody g).preimage_coe (isClosed_handlebody g).frontier_subset
   -- The top face is a weak deformation retract of the handlebody.
   have hTH : planarSurface g ×ˢ {(1 : ℝ)} ⊆ handlebody g := fun q hq ↦
     mem_handlebody.2 ⟨hq.1, by rw [mem_singleton_iff.1 hq.2]; norm_num⟩

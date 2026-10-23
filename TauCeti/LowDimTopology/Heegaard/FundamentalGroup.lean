@@ -137,6 +137,11 @@ private theorem range_map_right_le_range_map_left (hE : finrank ℝ E = 3)
     (ContinuousMap.subtypeVal s.right) e.symm.toHomotopyEquiv.toFun (y : handlebody s.genus))
     (FundamentalGroup.map (ContinuousMap.subtypeVal _) y ε)
   simp only [MonoidHom.comp_apply] at h₁ h₂ h₃
+  -- The composites `(subtypeVal s.left).comp j` in `h₁` and
+  -- `((subtypeVal s.right).comp e.symm).comp (subtypeVal _)` in `h₂` are both `p ↦ e⁻¹ p` by
+  -- definition, and `j y` is by definition the base point `⟨_, hy⟩`. Rewriting one composite into
+  -- the other is not possible, as the base point of the target group depends on the map, so the
+  -- chain closes by unfolding.
   exact h₁.symm.trans (h₂.trans h₃)
 
 /-- **The thickened first handlebody deformation retracts onto it.** Let `F` deform an open
@@ -235,7 +240,7 @@ private theorem exists_fundamentalGroup_map_left_surjective (hE : finrank ℝ E 
   -- The base point: the point of the Heegaard surface over a point of the boundary surface.
   obtain ⟨y₀, hy₀, -⟩ := isPathConnected_frontier_handlebody s.genus
   let y : {y : handlebody s.genus | (y : ℂ × ℝ) ∈ frontier (handlebody s.genus)} :=
-    ⟨⟨y₀, (isCompact_handlebody s.genus).isClosed.frontier_subset hy₀⟩, hy₀⟩
+    ⟨⟨y₀, (isClosed_handlebody s.genus).frontier_subset hy₀⟩, hy₀⟩
   have hyL : ((e.symm y : s.right) : M) ∈ s.left := by
     rw [s.coe_mem_left_iff hE e, Homeomorph.apply_symm_apply]
     exact y.2
@@ -256,6 +261,9 @@ private theorem exists_fundamentalGroup_map_left_surjective (hE : finrank ℝ E 
     (ContinuousMap.subtypeVal (s.left ∪ W)) (ContinuousMap.inclusion subset_union_left)
     ⟨_, hyL⟩) δ
   rw [MonoidHom.comp_apply] at h
+  -- The composite `(subtypeVal (s.left ∪ W)).comp (inclusion subset_union_left)` in `h` is
+  -- `subtypeVal s.left` by definition; as the base point of the target group depends on the map,
+  -- `h` is used up to this unfolding rather than rewritten.
   exact ⟨δ, h⟩
 
 /-- **The fundamental group of the first handlebody of a Heegaard splitting surjects onto that of
