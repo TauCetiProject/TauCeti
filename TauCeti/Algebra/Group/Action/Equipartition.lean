@@ -19,19 +19,19 @@ partitions the source `A` into finitely many pieces `Aᵢ` and moves each piece 
 definitions agree.
 
 An *equipartition* `E : Equidecomp.Equipartition X G` is a finite set of pairs `(Aᵢ, gᵢ)` of a
-source piece and a group element, whose source pieces `Aᵢ` are pairwise disjoint and whose target
-pieces `gᵢ • Aᵢ` are pairwise disjoint. Its source and target are the unions of these pieces.
+nonempty source piece and a group element, whose source pieces `Aᵢ` are pairwise disjoint and whose
+target pieces `gᵢ • Aᵢ` are pairwise disjoint. Its source and target are the unions of these pieces.
 
 ## Main definitions
 
-* `Equidecomp.Equipartition X G`: finitely many source pieces with group elements, with pairwise
-  disjoint sources and pairwise disjoint targets.
+* `Equidecomp.Equipartition X G`: finitely many nonempty source pieces with group elements, with
+  pairwise disjoint sources and pairwise disjoint targets.
 * `Equidecomp.Equipartition.toEquidecomp`: the equidecomposition of an equipartition, moving each
   source piece `Aᵢ` by its element `gᵢ`.
 * `Equidecomp.toEquipartition`: an equipartition of an equidecomposition, with the same source and
-  target, whose pieces move points as the equidecomposition does.
+  target, whose pieces move points as the equidecomposition does; empty pieces are removed.
 * `Equidecomp.Equipartition.sourceFinpartition`, `Equidecomp.Equipartition.targetFinpartition`:
-  the finite partitions of the source and of the target into the nonempty pieces.
+  the finite partitions of the source and of the target into the pieces.
 * `Equidecomp.Equipartition.ofFinpartition`: the equipartition moving each part `s` of a finite
   partition by a group element `γ s`, when the translates `γ s • s` are pairwise disjoint.
 
@@ -55,9 +55,10 @@ on sources and targets, and the two conversions to and from `Equidecomp` are tho
 mathlib4 PR 30330; no code from that PR is used here. This notion is unrelated to
 `Finpartition.IsEquipartition`, a partition into parts of almost equal size.
 
-Distinct pieces may share an empty source piece, so the pieces of an equipartition are not
-determined by its partition of the source; `sourceFinpartition` and `targetFinpartition` discard
-the empty pieces.
+Source pieces are required to be nonempty: an empty piece `(∅, g)` would satisfy both disjointness
+conditions for every `g` without contributing to the source, the target or the equidecomposition.
+Removing such pieces does not change the relation, and it makes the pieces of an equipartition
+determined by its source partition together with the group element of each part.
 
 ## References
 
@@ -78,15 +79,17 @@ section SMul
 variable [SMul G X]
 
 variable (X G) in
-/-- An *equipartition* of `X` for an action of `G`: a finite set of pairs `(Aᵢ, gᵢ)` of a source
-piece `Aᵢ : Set X` and a group element `gᵢ : G`, such that the source pieces `Aᵢ` are pairwise
-disjoint and the target pieces `gᵢ • Aᵢ` are pairwise disjoint. When `G` is a group acting on `X`,
-moving each `Aᵢ` by `gᵢ` is then an equidecomposition of the union of the `Aᵢ` with the union of
-the `gᵢ • Aᵢ` (see `Equidecomp.Equipartition.toEquidecomp`). -/
+/-- An *equipartition* of `X` for an action of `G`: a finite set of pairs `(Aᵢ, gᵢ)` of a nonempty
+source piece `Aᵢ : Set X` and a group element `gᵢ : G`, such that the source pieces `Aᵢ` are
+pairwise disjoint and the target pieces `gᵢ • Aᵢ` are pairwise disjoint. When `G` is a group
+acting on `X`, moving each `Aᵢ` by `gᵢ` is then an equidecomposition of the union of the `Aᵢ` with
+the union of the `gᵢ • Aᵢ` (see `Equidecomp.Equipartition.toEquidecomp`). -/
 @[ext]
 structure Equipartition where
   /-- The pieces, each a source piece together with the group element moving it. -/
   pieces : Finset (Set X × G)
+  /-- Every source piece is nonempty. -/
+  nonempty_fst : ∀ p ∈ pieces, p.1.Nonempty
   /-- Distinct pieces have disjoint source pieces. -/
   pairwiseDisjoint_fst : (pieces : Set (Set X × G)).PairwiseDisjoint Prod.fst
   /-- Distinct pieces have disjoint target pieces. -/
@@ -131,34 +134,40 @@ theorem eq_of_mem_smul (hp : p ∈ E.pieces) (hq : q ∈ E.pieces) (hyp : y ∈ 
   E.pairwiseDisjoint_smul.elim hp hq <| not_disjoint_iff.2 ⟨y, hyp, hyq⟩
 
 open scoped Classical in
-/-- The finite partition of the source of an equipartition into its nonempty source pieces. -/
-noncomputable def sourceFinpartition (E : Equipartition X G) : Finpartition E.source :=
-  Finpartition.ofErase (E.pieces.image Prod.fst)
-    (Finset.supIndep_iff_pairwiseDisjoint.2 <| by
-      rw [Finset.coe_image]; exact E.pairwiseDisjoint_fst.image)
-    (by rw [Finset.sup_image, Finset.sup_set_eq_biUnion]; rfl)
+/-- The finite partition of the source of an equipartition into its source pieces. -/
+noncomputable def sourceFinpartition (E : Equipartition X G) : Finpartition E.source where
+  parts := E.pieces.image Prod.fst
+  supIndep := Finset.supIndep_iff_pairwiseDisjoint.2 <| by
+    rw [Finset.coe_image]; exact E.pairwiseDisjoint_fst.image
+  sup_parts := by rw [Finset.sup_image, Finset.sup_set_eq_biUnion]; rfl
+  bot_notMem h := by
+    obtain ⟨p, hp, hp0⟩ := Finset.mem_image.1 h
+    exact (E.nonempty_fst p hp).ne_empty hp0
 
 open scoped Classical in
-/-- The finite partition of the target of an equipartition into its nonempty target pieces. -/
-noncomputable def targetFinpartition (E : Equipartition X G) : Finpartition E.target :=
-  Finpartition.ofErase (E.pieces.image fun p ↦ p.2 • p.1)
-    (Finset.supIndep_iff_pairwiseDisjoint.2 <| by
-      rw [Finset.coe_image]; exact E.pairwiseDisjoint_smul.image)
-    (by rw [Finset.sup_image, Finset.sup_set_eq_biUnion]; rfl)
+/-- The finite partition of the target of an equipartition into its target pieces. -/
+noncomputable def targetFinpartition (E : Equipartition X G) : Finpartition E.target where
+  parts := E.pieces.image fun p ↦ p.2 • p.1
+  supIndep := Finset.supIndep_iff_pairwiseDisjoint.2 <| by
+    rw [Finset.coe_image]; exact E.pairwiseDisjoint_smul.image
+  sup_parts := by rw [Finset.sup_image, Finset.sup_set_eq_biUnion]; rfl
+  bot_notMem h := by
+    obtain ⟨p, hp, hp0⟩ := Finset.mem_image.1 h
+    exact (E.nonempty_fst p hp).smul_set.ne_empty hp0
 
 @[simp]
 theorem mem_sourceFinpartition_parts {s : Set X} :
-    s ∈ E.sourceFinpartition.parts ↔ s.Nonempty ∧ ∃ p ∈ E.pieces, p.1 = s := by
+    s ∈ E.sourceFinpartition.parts ↔ ∃ p ∈ E.pieces, p.1 = s := by
   classical
-  simp [sourceFinpartition, nonempty_iff_ne_empty]
+  simp [sourceFinpartition]
 
 @[simp]
 theorem mem_targetFinpartition_parts {s : Set X} :
-    s ∈ E.targetFinpartition.parts ↔ s.Nonempty ∧ ∃ p ∈ E.pieces, p.2 • p.1 = s := by
+    s ∈ E.targetFinpartition.parts ↔ ∃ p ∈ E.pieces, p.2 • p.1 = s := by
   classical
-  simp [targetFinpartition, nonempty_iff_ne_empty]
+  simp [targetFinpartition]
 
-/-- Each nonempty part of `E.sourceFinpartition` can be assigned the group element of its piece,
+/-- Each part of `E.sourceFinpartition` can be assigned the group element of its piece,
 so that the translated parts are pairwise disjoint with union the target of `E`. -/
 theorem exists_pairwiseDisjoint_smul_sourceFinpartition [Nonempty G] (E : Equipartition X G) :
     ∃ γ : Set X → G,
@@ -167,29 +176,27 @@ theorem exists_pairwiseDisjoint_smul_sourceFinpartition [Nonempty G] (E : Equipa
   classical
   set γ : Set X → G := fun s ↦
     if h : ∃ p ∈ E.pieces, p.1 = s then h.choose.2 else Classical.arbitrary G
-  -- A nonempty source piece determines its piece, hence its group element.
-  have hγ : ∀ p ∈ E.pieces, p.1.Nonempty → γ p.1 = p.2 := by
-    rintro p hp ⟨x, hx⟩
+  -- A source piece determines its piece, hence its group element.
+  have hγ : ∀ p ∈ E.pieces, γ p.1 = p.2 := by
+    intro p hp
+    obtain ⟨x, hx⟩ := E.nonempty_fst p hp
     have h : ∃ q ∈ E.pieces, q.1 = p.1 := ⟨p, hp, rfl⟩
     simp only [γ]
     rw [dite_eq_left h]
     exact congrArg Prod.snd <| E.eq_of_mem_fst h.choose_spec.1 hp (by rwa [h.choose_spec.2]) hx
   refine ⟨γ, ?_, ?_⟩
   · rintro _ hs _ ht hst
-    obtain ⟨hsne, p, hp, rfl⟩ := mem_sourceFinpartition_parts.1 hs
-    obtain ⟨htne, q, hq, rfl⟩ := mem_sourceFinpartition_parts.1 ht
-    simp only [Function.onFun, hγ p hp hsne, hγ q hq htne]
+    obtain ⟨p, hp, rfl⟩ := mem_sourceFinpartition_parts.1 hs
+    obtain ⟨q, hq, rfl⟩ := mem_sourceFinpartition_parts.1 ht
+    simp only [Function.onFun, hγ p hp, hγ q hq]
     exact E.pairwiseDisjoint_smul hp hq fun hpq ↦ hst (congrArg Prod.fst hpq)
   · ext y
     simp only [mem_iUnion, mem_sourceFinpartition_parts, mem_target]
     constructor
-    · rintro ⟨_, ⟨hsne, p, hp, rfl⟩, hy⟩
-      exact ⟨p, hp, hγ p hp hsne ▸ hy⟩
+    · rintro ⟨_, ⟨p, hp, rfl⟩, hy⟩
+      exact ⟨p, hp, hγ p hp ▸ hy⟩
     · rintro ⟨p, hp, hy⟩
-      have hne : p.1.Nonempty := by
-        obtain ⟨x, hx, -⟩ := hy
-        exact ⟨x, hx⟩
-      exact ⟨p.1, ⟨hne, p, hp, rfl⟩, (hγ p hp hne).symm ▸ hy⟩
+      exact ⟨p.1, ⟨p, hp, rfl⟩, (hγ p hp).symm ▸ hy⟩
 
 section ofFinpartition
 
@@ -201,6 +208,9 @@ open scoped Classical in
 by `γ s`, provided these translates are pairwise disjoint. -/
 noncomputable def ofFinpartition : Equipartition X G where
   pieces := P.parts.image fun s ↦ (s, γ s)
+  nonempty_fst p hp := by
+    obtain ⟨s, hs, rfl⟩ := Finset.mem_image.1 hp
+    exact nonempty_iff_ne_empty.2 (P.ne_bot hs)
   pairwiseDisjoint_fst := by
     rw [Finset.coe_image]; exact Set.Pairwise.image (f := fun s ↦ (s, γ s)) P.disjoint
   pairwiseDisjoint_smul := by
@@ -248,9 +258,13 @@ private theorem apply_eq_smul_of_mem_piece {f : Equidecomp X G} {g : G} {a : X}
 
 open scoped Classical in
 /-- An equipartition of an equidecomposition `f`: for each element `g` of its witness set, the
-points of the source that `f` moves by the chosen element `g` form a piece moved by `g`. -/
+points of the source that `f` moves by the chosen element `g` form a piece moved by `g`, and the
+empty pieces are removed. -/
 noncomputable def toEquipartition (f : Equidecomp X G) : Equipartition X G where
-  pieces := f.witness.image fun g ↦ (piece f g, g)
+  pieces := (f.witness.filter fun g ↦ (piece f g).Nonempty).image fun g ↦ (piece f g, g)
+  nonempty_fst p hp := by
+    obtain ⟨g, hg, rfl⟩ := Finset.mem_image.1 hp
+    exact (Finset.mem_filter.1 hg).2
   pairwiseDisjoint_fst := by
     rw [Finset.coe_image]
     refine Set.Pairwise.image fun g _ g' _ hgg' ↦ Set.disjoint_left.2 fun a ha ha' ↦ ?_
@@ -264,21 +278,21 @@ noncomputable def toEquipartition (f : Equidecomp X G) : Equipartition X G where
     exact hgg' (eq_of_mem_piece ha hb)
 
 private theorem mem_toEquipartition_pieces {f : Equidecomp X G} {p : Set X × G} :
-    p ∈ f.toEquipartition.pieces ↔ ∃ g ∈ f.witness, (piece f g, g) = p := by
+    p ∈ f.toEquipartition.pieces ↔ ∃ g ∈ f.witness, (piece f g).Nonempty ∧ (piece f g, g) = p := by
   classical
-  simp [toEquipartition]
+  simp [toEquipartition, and_assoc]
 
 /-- Each piece of `f.toEquipartition` is moved by an element of the witness set of `f`. -/
 theorem snd_mem_witness_of_mem_toEquipartition {f : Equidecomp X G} {p : Set X × G}
     (hp : p ∈ f.toEquipartition.pieces) : p.2 ∈ f.witness := by
-  obtain ⟨g, hg, rfl⟩ := mem_toEquipartition_pieces.1 hp
+  obtain ⟨g, hg, -, rfl⟩ := mem_toEquipartition_pieces.1 hp
   exact hg
 
 /-- On each piece of `f.toEquipartition`, the equidecomposition `f` acts by the piece's group
 element. -/
 theorem apply_eq_smul_of_mem_toEquipartition {f : Equidecomp X G} {p : Set X × G} {x : X}
     (hp : p ∈ f.toEquipartition.pieces) (hx : x ∈ p.1) : f x = p.2 • x := by
-  obtain ⟨g, -, rfl⟩ := mem_toEquipartition_pieces.1 hp
+  obtain ⟨g, -, -, rfl⟩ := mem_toEquipartition_pieces.1 hp
   exact apply_eq_smul_of_mem_piece hx
 
 /-- A point of the source of `f` lies in the piece of the element chosen for it. -/
@@ -289,7 +303,7 @@ private theorem mem_piece_choose {f : Equidecomp X G} {a : X} (ha : a ∈ f.sour
 private theorem mk_piece_choose_mem {f : Equidecomp X G} {a : X} (ha : a ∈ f.source) :
     (piece f (f.isDecompOn a ha).choose, (f.isDecompOn a ha).choose) ∈
       f.toEquipartition.pieces :=
-  mem_toEquipartition_pieces.2 ⟨_, (f.isDecompOn a ha).choose_spec.1, rfl⟩
+  mem_toEquipartition_pieces.2 ⟨_, (f.isDecompOn a ha).choose_spec.1, ⟨a, mem_piece_choose ha⟩, rfl⟩
 
 @[simp]
 theorem toEquipartition_source (f : Equidecomp X G) : f.toEquipartition.source = f.source := by
@@ -297,7 +311,7 @@ theorem toEquipartition_source (f : Equidecomp X G) : f.toEquipartition.source =
   refine ⟨fun ha ↦ ?_, fun ha ↦ Equipartition.mem_source.2 ⟨_, mk_piece_choose_mem ha,
     mem_piece_choose ha⟩⟩
   obtain ⟨p, hp, hap⟩ := Equipartition.mem_source.1 ha
-  obtain ⟨g, -, rfl⟩ := mem_toEquipartition_pieces.1 hp
+  obtain ⟨g, -, -, rfl⟩ := mem_toEquipartition_pieces.1 hp
   exact hap.1
 
 @[simp]
@@ -305,7 +319,7 @@ theorem toEquipartition_target (f : Equidecomp X G) : f.toEquipartition.target =
   ext y
   refine ⟨fun hy ↦ ?_, fun hy ↦ ?_⟩
   · obtain ⟨p, hp, a, ha, rfl⟩ := Equipartition.mem_target.1 hy
-    obtain ⟨g, -, rfl⟩ := mem_toEquipartition_pieces.1 hp
+    obtain ⟨g, -, -, rfl⟩ := mem_toEquipartition_pieces.1 hp
     simpa only [apply_eq_smul_of_mem_piece ha] using apply_mem_target ha.1
   · have ha := f.toPartialEquiv.map_target hy
     refine Equipartition.mem_target.2 ⟨_, mk_piece_choose_mem ha, _, mem_piece_choose ha, ?_⟩
