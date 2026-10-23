@@ -71,6 +71,19 @@ theorem mem_normalExpDomain
   Iff.rfl
 
 omit [J.Boundaryless] [T2Space N] in
+/-- On an orthogonal normal fibre, the normal-exponential domain is the preimage of the
+ambient exponential domain under the inclusion into the tangent space. -/
+theorem normalExpDomain_fiber_eq_preimage
+    (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) (x : M) :
+    {v : (f.tangentRange x hn)ᗮ |
+      (⟨x, f.normalClass x hn v⟩ : TotalSpace P (fun y ↦ f.NormalSpace y hn)) ∈
+        f.normalExpDomain hn} =
+      Subtype.val ⁻¹' Manifold.expDomain J N (f x) := by
+  ext v
+  simp only [mem_ofPred_eq, mem_normalExpDomain, normalRepresentative_normalClass,
+    Submodule.starProjection_mem_subspace_eq_self, mem_preimage]
+
+omit [J.Boundaryless] [T2Space N] in
 /-- The zero normal class at every point lies in the natural domain of the normal exponential. -/
 theorem zeroSection_mem_normalExpDomain
     (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) (x : M) :
@@ -143,6 +156,17 @@ theorem normalExp_normalClass
       Manifold.riemannianExp J N (f x)
         ((Submodule.orthogonal (f.tangentRange x hn)).starProjection v) := by
   simp [normalExp]
+
+omit [J.Boundaryless] [T2Space N] in
+/-- On an orthogonal normal vector, the normal exponential agrees with the ambient
+Riemannian exponential without an additional projection. -/
+-- The general normal-class and orthogonal-projection simp lemmas already normalize this.
+theorem normalExp_normalClass_orthogonal
+    (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) (x : M)
+    (v : (f.tangentRange x hn)ᗮ) :
+    f.normalExp (P := P) hn ⟨x, f.normalClass x hn v⟩ =
+      Manifold.riemannianExp J N (f x) v := by
+  simp only [normalExp_normalClass, Submodule.starProjection_mem_subspace_eq_self]
 
 end Exponential
 
