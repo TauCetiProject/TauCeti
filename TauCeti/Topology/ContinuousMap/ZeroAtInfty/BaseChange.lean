@@ -40,66 +40,75 @@ variable {I J K R S : Type*}
   [NormedCommRing S] [IsUltrametricDist S] [CompleteSpace S]
 
 /-- Extend the matrix coefficients of an operator along a bounded ring homomorphism.
-The nonnegative constant `C` bounds the homomorphism on norms. -/
+Boundedness is a proposition, so the construction is independent of its witness. -/
 noncomputable def mapCoeffs (u : C₀(J, R) →L[R] C₀(I, R)) (f : R →+* S)
-    (C : ℝ≥0) (hf : ∀ r, ‖f r‖ ≤ C * ‖r‖) : C₀(J, S) →L[S] C₀(I, S) :=
+    (hf : ∃ C : ℝ≥0, ∀ r, ‖f r‖ ≤ C * ‖r‖) : C₀(J, S) →L[S] C₀(I, S) :=
   (u.matrixCoeff.map f).toZeroAtInftyCLM
     (fun j ↦ by
+      obtain ⟨C, hC⟩ := hf
       simpa only [Function.comp_def, map_zero, Matrix.map_apply] using
-        ((AddMonoidHomClass.continuous_of_bound f C hf).tendsto 0).comp
+        ((AddMonoidHomClass.continuous_of_bound f C hC).tendsto 0).comp
         (u.tendsto_matrixCoeff_cofinite j))
-    ⟨C * ‖u‖, fun i j ↦ (hf _).trans
-      (mul_le_mul_of_nonneg_left (u.norm_matrixCoeff_le i j) C.coe_nonneg)⟩
+    (by
+      obtain ⟨C, hC⟩ := hf
+      exact ⟨C * ‖u‖, fun i j ↦ (hC _).trans
+        (mul_le_mul_of_nonneg_left (u.norm_matrixCoeff_le i j) C.coe_nonneg)⟩)
 
 /-- The extended operator has the coefficientwise extended matrix. -/
 @[simp]
 theorem matrixCoeff_mapCoeffs (u : C₀(J, R) →L[R] C₀(I, R)) (f : R →+* S)
-    (C : ℝ≥0) (hf : ∀ r, ‖f r‖ ≤ C * ‖r‖) :
-    (u.mapCoeffs f C hf).matrixCoeff = u.matrixCoeff.map f := by
+    (hf : ∃ C : ℝ≥0, ∀ r, ‖f r‖ ≤ C * ‖r‖) :
+    (u.mapCoeffs f hf).matrixCoeff = u.matrixCoeff.map f := by
   simp [mapCoeffs]
 
-/-- Matrix coefficients uniquely determine coefficient extension; in particular the result
-does not depend on the chosen bound for the homomorphism. -/
+/-- Matrix coefficients uniquely determine coefficient extension. -/
 theorem eq_mapCoeffs_iff (u : C₀(J, R) →L[R] C₀(I, R)) (f : R →+* S)
-    (C : ℝ≥0) (hf : ∀ r, ‖f r‖ ≤ C * ‖r‖) (v : C₀(J, S) →L[S] C₀(I, S)) :
-    v = u.mapCoeffs f C hf ↔ v.matrixCoeff = u.matrixCoeff.map f := by
+    (hf : ∃ C : ℝ≥0, ∀ r, ‖f r‖ ≤ C * ‖r‖) (v : C₀(J, S) →L[S] C₀(I, S)) :
+    v = u.mapCoeffs f hf ↔ v.matrixCoeff = u.matrixCoeff.map f := by
   rw [← matrixCoeff_inj, matrixCoeff_mapCoeffs]
+
+/-- The norm of an extended matrix entry is bounded by the homomorphism bound times
+its original norm. -/
+theorem norm_matrixCoeff_mapCoeffs_le (u : C₀(J, R) →L[R] C₀(I, R)) (f : R →+* S)
+    (C : ℝ≥0) (hf : ∀ r, ‖f r‖ ≤ C * ‖r‖) (i : I) (j : J) :
+    ‖(u.mapCoeffs f ⟨C, hf⟩).matrixCoeff i j‖ ≤ C * ‖u.matrixCoeff i j‖ := by
+  simpa using hf (u.matrixCoeff i j)
 
 /-- A norm bound for coefficient extension. -/
 theorem ringOpNorm_mapCoeffs_le (u : C₀(J, R) →L[R] C₀(I, R)) (f : R →+* S)
-    (C : ℝ≥0) (hf : ∀ r, ‖f r‖ ≤ C * ‖r‖) : ‖u.mapCoeffs f C hf‖ ≤ C * ‖u‖ := by
+    (C : ℝ≥0) (hf : ∀ r, ‖f r‖ ≤ C * ‖r‖) : ‖u.mapCoeffs f ⟨C, hf⟩‖ ≤ C * ‖u‖ := by
   apply ringOpNorm_le_of_forall_norm_matrixCoeff_le _ (by positivity)
   intro i j
-  simp only [matrixCoeff_mapCoeffs, Matrix.map_apply]
-  exact (hf _).trans (mul_le_mul_of_nonneg_left (u.norm_matrixCoeff_le i j) C.coe_nonneg)
+  exact (u.norm_matrixCoeff_mapCoeffs_le f C hf i j).trans
+    (mul_le_mul_of_nonneg_left (u.norm_matrixCoeff_le i j) C.coe_nonneg)
 
 @[simp]
-theorem mapCoeffs_zero (f : R →+* S) (C : ℝ≥0) (hf : ∀ r, ‖f r‖ ≤ C * ‖r‖) :
-    (0 : C₀(J, R) →L[R] C₀(I, R)).mapCoeffs f C hf = 0 := by
+theorem mapCoeffs_zero (f : R →+* S) (hf : ∃ C : ℝ≥0, ∀ r, ‖f r‖ ≤ C * ‖r‖) :
+    (0 : C₀(J, R) →L[R] C₀(I, R)).mapCoeffs f hf = 0 := by
   apply matrixCoeff_injective
   ext i j
   simp
 
 @[simp]
 theorem mapCoeffs_add (u v : C₀(J, R) →L[R] C₀(I, R)) (f : R →+* S)
-    (C : ℝ≥0) (hf : ∀ r, ‖f r‖ ≤ C * ‖r‖) :
-    (u + v).mapCoeffs f C hf = u.mapCoeffs f C hf + v.mapCoeffs f C hf := by
+    (hf : ∃ C : ℝ≥0, ∀ r, ‖f r‖ ≤ C * ‖r‖) :
+    (u + v).mapCoeffs f hf = u.mapCoeffs f hf + v.mapCoeffs f hf := by
   apply matrixCoeff_injective
   ext i j
   simp
 
 @[simp]
 theorem mapCoeffs_smul (u : C₀(J, R) →L[R] C₀(I, R)) (f : R →+* S)
-    (C : ℝ≥0) (hf : ∀ r, ‖f r‖ ≤ C * ‖r‖) (r : R) :
-    (r • u).mapCoeffs f C hf = f r • u.mapCoeffs f C hf := by
+    (hf : ∃ C : ℝ≥0, ∀ r, ‖f r‖ ≤ C * ‖r‖) (r : R) :
+    (r • u).mapCoeffs f hf = f r • u.mapCoeffs f hf := by
   apply matrixCoeff_injective
   ext i j
   simp
 
 @[simp]
-theorem mapCoeffs_one [DecidableEq I] (f : R →+* S) (C : ℝ≥0)
-    (hf : ∀ r, ‖f r‖ ≤ C * ‖r‖) :
-    (1 : C₀(I, R) →L[R] C₀(I, R)).mapCoeffs f C hf = 1 := by
+theorem mapCoeffs_one [DecidableEq I] (f : R →+* S)
+    (hf : ∃ C : ℝ≥0, ∀ r, ‖f r‖ ≤ C * ‖r‖) :
+    (1 : C₀(I, R) →L[R] C₀(I, R)).mapCoeffs f hf = 1 := by
   apply matrixCoeff_injective
   ext i j
   simp [Matrix.one_apply]
@@ -108,13 +117,14 @@ theorem mapCoeffs_one [DecidableEq I] (f : R →+* S) (C : ℝ≥0)
 @[simp]
 theorem mapCoeffs_comp (u : C₀(J, R) →L[R] C₀(I, R))
     (v : C₀(K, R) →L[R] C₀(J, R)) (f : R →+* S)
-    (C : ℝ≥0) (hf : ∀ r, ‖f r‖ ≤ C * ‖r‖) :
-    (u.comp v).mapCoeffs f C hf = (u.mapCoeffs f C hf).comp (v.mapCoeffs f C hf) := by
+    (hf : ∃ C : ℝ≥0, ∀ r, ‖f r‖ ≤ C * ‖r‖) :
+    (u.comp v).mapCoeffs f hf = (u.mapCoeffs f hf).comp (v.mapCoeffs f hf) := by
   apply matrixCoeff_injective
   ext i k
+  obtain ⟨C, hC⟩ := hf
   have hsum := (u.hasSum_matrixCoeff_comp v i k).map f
-    (AddMonoidHomClass.continuous_of_bound f C hf)
-  have hsum' := (u.mapCoeffs f C hf).hasSum_matrixCoeff_comp (v.mapCoeffs f C hf) i k
+    (AddMonoidHomClass.continuous_of_bound f C hC)
+  have hsum' := (u.mapCoeffs f ⟨C, hC⟩).hasSum_matrixCoeff_comp (v.mapCoeffs f ⟨C, hC⟩) i k
   simp only [matrixCoeff_mapCoeffs, Matrix.map_apply] at hsum'
   rw [matrixCoeff_mapCoeffs, Matrix.map_apply]
   exact hsum.unique (by simpa only [Function.comp_def, map_mul] using hsum')
@@ -123,25 +133,25 @@ section Identity
 
 variable [IsUltrametricDist R] [CompleteSpace R]
 
-/-- Extension along the identity homomorphism is the original operator, for any valid bound. -/
+/-- Extension along the identity homomorphism is the original operator. -/
 @[simp]
 theorem mapCoeffs_id (u : C₀(J, R) →L[R] C₀(I, R))
-    (C : ℝ≥0) (hf : ∀ r : R, ‖(RingHom.id R) r‖ ≤ C * ‖r‖) :
-    u.mapCoeffs (RingHom.id R) C hf = u := by
+    (hf : ∃ C : ℝ≥0, ∀ r : R, ‖(RingHom.id R) r‖ ≤ C * ‖r‖) :
+    u.mapCoeffs (RingHom.id R) hf = u := by
   apply matrixCoeff_injective
   ext i j
   simp
 
 end Identity
 
-/-- Successive coefficient extensions agree with extension along the composite homomorphism.
-The bounds in the two constructions can be chosen independently. -/
+/-- Successive coefficient extensions agree with extension along the composite homomorphism. -/
 theorem mapCoeffs_mapCoeffs [TauCeti.NormedRing.IsTate S]
     {T : Type*} [NormedCommRing T] [IsUltrametricDist T] [CompleteSpace T]
     (u : C₀(J, R) →L[R] C₀(I, R)) (f : R →+* S) (g : S →+* T)
-    (C D E : ℝ≥0) (hf : ∀ r, ‖f r‖ ≤ C * ‖r‖) (hg : ∀ s, ‖g s‖ ≤ D * ‖s‖)
-    (hgf : ∀ r, ‖(g.comp f) r‖ ≤ E * ‖r‖) :
-    (u.mapCoeffs f C hf).mapCoeffs g D hg = u.mapCoeffs (g.comp f) E hgf := by
+    (hf : ∃ C : ℝ≥0, ∀ r, ‖f r‖ ≤ C * ‖r‖)
+    (hg : ∃ D : ℝ≥0, ∀ s, ‖g s‖ ≤ D * ‖s‖)
+    (hgf : ∃ E : ℝ≥0, ∀ r, ‖(g.comp f) r‖ ≤ E * ‖r‖) :
+    (u.mapCoeffs f hf).mapCoeffs g hg = u.mapCoeffs (g.comp f) hgf := by
   apply matrixCoeff_injective
   ext i j
   simp
