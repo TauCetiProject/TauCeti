@@ -270,6 +270,12 @@ theorem _root_.Rep.indMap_injective [S.FiniteIndex] {V W : Rep.{max w u} k S} :
   simpa only [_root_.Rep.indSubtypeEquivPi_indMap f, _root_.Rep.indSubtypeEquivPi_indMap g,
     LinearEquiv.apply_symm_apply, Representation.IntertwiningMap.toLinearMap_apply] using hx
 
+/-- Induction from a finite-index subgroup is a faithful functor, the functorial form of
+`Rep.indMap_injective`. -/
+instance _root_.Rep.indFunctor_faithful [S.FiniteIndex] :
+    (Rep.indFunctor k S.subtype : Rep.{max w u} k S ⥤ Rep k G).Faithful where
+  map_injective h := _root_.Rep.indMap_injective h
+
 /-- **Induction from a finite-index subgroup preserves finiteness** of the underlying module. -/
 instance finite_ind [S.FiniteIndex] (A : Rep.{max w u} k S) [Finite A] :
     Finite (Rep.ind S.subtype A) :=
@@ -446,6 +452,7 @@ theorem indFDRepMap_add {k : Type u} {G : Type v} [Field k] [Group G] {S : Subgr
     Pi.add_apply, map_add]
 
 /-- Induction of finite-dimensional intertwiners commutes with scalar multiplication. -/
+@[simp]
 theorem indFDRepMap_smul {k : Type u} {G : Type v} [Field k] [Group G] {S : Subgroup G}
     [S.FiniteIndex] {A B : FDRep k S} (r : k) (f : A ⟶ B) :
     indFDRepMap (r • f) = r • indFDRepMap f := by
@@ -542,6 +549,12 @@ theorem indFDRepMap_injective {k G : Type u} [Field k] [Group G] {S : Subgroup G
   have hh := congrArg ((forget₂ (FDRep k G) (Rep k G)).map) h
   simpa only [forget₂_map_indFDRepMap, cancel_mono, cancel_epi,
     _root_.Rep.indFunctor_map] using hh
+
+/-- Induction from a finite-index subgroup is a faithful functor on finite-dimensional
+representations, the functorial form of `indFDRepMap_injective`. -/
+instance indFDRepFunctor_faithful {k G : Type u} [Field k] [Group G] {S : Subgroup G}
+    [S.FiniteIndex] : (indFDRepFunctor (k := k) (S := S)).Faithful where
+  map_injective h := indFDRepMap_injective h
 
 /-- Under the forgetful functor to `Rep k G`, `indFDRepFunctor` is naturally isomorphic to
 Mathlib's induction functor, componentwise by `indFDRepForgetIso`. -/

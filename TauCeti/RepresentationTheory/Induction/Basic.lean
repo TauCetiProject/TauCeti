@@ -47,6 +47,7 @@ instance indFunctor_additive {k : Type u} {G : Type v} {H : Type w} [CommRing k]
   map_add {_ _} f g := indMap_add φ f g
 
 /-- Inducing an intertwiner commutes with scalar multiplication. -/
+@[simp]
 theorem indMap_smul {k : Type u} {G : Type v} {H : Type w} [CommRing k] [Group G]
     [Group H] (φ : G →* H) {A B : Rep.{w'} k G} (r : k) (f : A ⟶ B) :
     Rep.indMap φ (r • f) = r • Rep.indMap φ f := by
