@@ -142,9 +142,9 @@ private def simpleIntegral (P : ProjValMeasure X H) : (SimpleFunc X ℂ) →⋆�
   commutes' c := by
     have hc : algebraMap ℂ (SimpleFunc X ℂ) c = SimpleFunc.const X c := by
       ext; simp [Algebra.algebraMap_eq_smul_one]
-    rw [hc, SimpleFunc.setToSimpleFunc_const _ P.smulProj_empty, smulProj_apply,
-      projOrZero_of_measurableSet P MeasurableSet.univ, proj_univ,
-      Algebra.algebraMap_eq_smul_one, ContinuousLinearMap.one_def]
+    simp [hc, SimpleFunc.setToSimpleFunc_const _ P.smulProj_empty, smulProj_apply,
+      projOrZero_of_measurableSet P MeasurableSet.univ, Algebra.algebraMap_eq_smul_one,
+      ContinuousLinearMap.one_def]
   map_star' s := by
     induction s using SimpleFunc.induction with
     | const c hA =>
@@ -170,10 +170,8 @@ diagonal measures. -/
 private theorem integral_diag_eq_inner_simpleIntegral (P : ProjValMeasure X H)
     (s : SimpleFunc X ℂ) (ξ : H) : ∫ x, s x ∂(P.diag ξ) = ⟪ξ, P.simpleIntegral s ξ⟫_ℂ := by
   rw [← s.integral_eq_integral (SimpleFunc.integrable_of_isFiniteMeasure s),
-    SimpleFunc.integral_eq, simpleIntegral_apply, FunLike.coe_sum, Finset.sum_apply, inner_sum]
-  refine Finset.sum_congr rfl fun c _ => ?_
-  rw [FunLike.coe_smul, Pi.smul_apply, inner_smul_right,
-    P.inner_proj, measureReal_def, Complex.real_smul, mul_comm]
+    SimpleFunc.integral_eq, simpleIntegral_apply]
+  simp [inner_sum, inner_smul_right, P.inner_proj, measureReal_def, mul_comm]
 
 /-- The integral of a simple symbol is bounded in operator norm by its supremum norm. -/
 private theorem norm_simpleIntegral_le (P : ProjValMeasure X H) (s : SimpleFunc X ℂ) :
@@ -190,10 +188,9 @@ private theorem norm_simpleIntegral_le (P : ProjValMeasure X H) (s : SimpleFunc 
   have hsq :
       ‖P.simpleIntegral s ξ‖ ^ 2 ≤ (‖BoundedBorelFunction.ofSimpleFunc s‖ * ‖ξ‖) ^ 2 := by
     have hinner : (‖P.simpleIntegral s ξ‖ ^ 2 : ℂ) = ∫ x, (star s * s) x ∂(P.diag ξ) := by
-      rw [integral_diag_eq_inner_simpleIntegral, map_mul, map_star,
-        mul_apply_eq_comp, ContinuousLinearMap.star_eq_adjoint,
+      rw [integral_diag_eq_inner_simpleIntegral]
+      simp [map_star, ContinuousLinearMap.star_eq_adjoint,
         ContinuousLinearMap.adjoint_inner_right, inner_self_eq_norm_sq_to_K]
-      norm_cast
     have := norm_integral_le_of_norm_le_const (μ := P.diag ξ) (Eventually.of_forall hbound)
     rw [← hinner, P.diag_real_univ] at this
     simpa [mul_pow] using this
