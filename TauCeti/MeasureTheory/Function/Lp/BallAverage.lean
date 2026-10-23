@@ -205,7 +205,7 @@ private theorem lintegral_enorm_setAverage_rpow_le {q : ℝ} (hq : 1 ≤ q) {G :
     ENNReal.continuous_rpow_const.measurable.comp hG.enorm
   calc ∫⁻ x, ‖⨍ e in ball (0 : E) r, G x e ∂mu‖ₑ ^ q ∂mu
       ≤ ∫⁻ x, (mu (ball (0 : E) r))⁻¹ * ∫⁻ e in ball (0 : E) r, ‖G x e‖ₑ ^ q ∂mu ∂mu :=
-        lintegral_mono fun x => enorm_setAverage_rpow_le hq hV0 measure_ball_lt_top.ne
+        lintegral_mono fun x => enorm_setAverage_rpow_le hq
     _ = (mu (ball (0 : E) r))⁻¹ *
           ∫⁻ x, ∫⁻ e in ball (0 : E) r, ‖G x e‖ₑ ^ q ∂mu ∂mu :=
         lintegral_const_mul' _ _ (by finiteness)
@@ -229,15 +229,15 @@ theorem stronglyMeasurable_ballAverage (hf : StronglyMeasurable f) :
   rw [heq]
   exact (StronglyMeasurable.integral_prod_right' hj).const_smul _
 
+omit [ProperSpace E] in
 /-- The `L^∞` bound on the ball average: it is controlled by the `Lᵖ` seminorm of `f`, at the
 cost of the scale-dependent volume factor `μ (ball 0 r) ^ (-1/p)`. No measurability hypothesis
 on `f` is needed. -/
-theorem enorm_ballAverage_le (hp : 1 ≤ p) (hp' : p ≠ ∞) (hr : 0 < r) (x : E) :
+theorem enorm_ballAverage_le (hp : 1 ≤ p) (hp' : p ≠ ∞) (x : E) :
     ‖ballAverage mu r f x‖ₑ ≤ mu (ball (0 : E) r) ^ (-(p.toReal)⁻¹) * eLpNorm f p mu := by
   have hball : mu (ball x r) = mu (ball (0 : E) r) := Measure.addHaar_ball_center mu x r
   rw [ballAverage_apply, ← hball]
-  refine (enorm_setAverage_le hp hp' (by rw [hball]; exact (measure_ball_pos mu 0 hr).ne')
-    (by rw [hball]; exact measure_ball_lt_top.ne)).trans ?_
+  refine (enorm_setAverage_le hp hp').trans ?_
   exact mul_le_mul' le_rfl (eLpNorm_mono_measure _ Measure.restrict_le_self)
 
 /-- The increment of the ball average is the ball average of the increment. -/
@@ -257,11 +257,11 @@ continuity of `f` itself, up to the scale-dependent volume factor
 `μ (ball 0 r) ^ (-1/p)`. Thus, at each fixed positive `r`, a family whose translates move
 uniformly little in `Lᵖ` has uniformly equicontinuous ball averages. -/
 theorem enorm_ballAverage_add_sub_ballAverage_le (hp : 1 ≤ p) (hp' : p ≠ ∞) (hf : MemLp f p mu)
-    (hr : 0 < r) (e x : E) :
+    (e x : E) :
     ‖ballAverage mu r f (x + e) - ballAverage mu r f x‖ₑ ≤
       mu (ball (0 : E) r) ^ (-(p.toReal)⁻¹) * eLpNorm (fun y => f (y + e) - f y) p mu := by
   rw [ballAverage_sub_ballAverage hp hf]
-  exact enorm_ballAverage_le hp hp' hr x
+  exact enorm_ballAverage_le hp hp' x
 
 /-- At a fixed positive scale, the ball averages of a family of `Lᵖ` functions whose translation
 increments are uniformly small in `Lᵖ` form a uniformly equicontinuous family. -/
@@ -283,7 +283,7 @@ theorem uniformEquicontinuous_ballAverage {ι : Type*} {u : ι → E → F}
     (ENNReal.mul_pos (ENNReal.ofReal_pos.2 (by linarith)).ne' hVinv)
   refine ⟨δ, hδ, fun x y hxy i => ?_⟩
   have hyx : ‖y - x‖ < δ := by rwa [← dist_eq_norm, dist_comm]
-  have hbound := enorm_ballAverage_add_sub_ballAverage_le (mu := mu) (r := r) hp hp' (hu i) hr
+  have hbound := enorm_ballAverage_add_sub_ballAverage_le (mu := mu) (r := r) hp hp' (hu i)
     (y - x) x
   rw [add_sub_cancel] at hbound
   have hb2 := hbound.trans (mul_le_mul' (le_refl (V ^ (-(p.toReal)⁻¹))) (hδS i _ hyx))
@@ -312,7 +312,7 @@ theorem continuous_ballAverage (hp : 1 ≤ p) (hp' : p ≠ ∞) (hf : MemLp f p 
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hupper_zero
     (fun _ => bot_le) fun y => ?_
   rw [edist_eq_enorm_sub]
-  have hbound := enorm_ballAverage_add_sub_ballAverage_le hp hp' hf hr (y - x) x
+  have hbound := enorm_ballAverage_add_sub_ballAverage_le (r := r) hp hp' hf (y - x) x
   rwa [add_sub_cancel] at hbound
 
 /-- **The ball average is an `Lᵖ` contraction**, for `1 ≤ p < ∞`. This is Minkowski's integral

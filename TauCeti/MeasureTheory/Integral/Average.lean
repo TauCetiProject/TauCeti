@@ -115,15 +115,18 @@ variable {α F : Type*} [MeasurableSpace α] {mu : Measure α} [NormedAddCommGro
   [NormedSpace ℝ F] {f : α → F} {p : ℝ≥0∞} {s : Set α}
 
 /-- **Hölder's bound on an average**, in `∫⁻` form: the `q`-th power of the average of `f` over a
-set `s` of finite positive measure is at most `(μ s)⁻¹` times the integral of `‖f‖ ^ q` over `s`.
+set `s` is at most `(μ s)⁻¹` times the integral of `‖f‖ ^ q` over `s`.
 The single factor `(μ s)⁻¹` is what survives after the `q`-th power of the normalization
 `(μ s)⁻¹` cancels against the `(μ s) ^ (q - 1)` of Hölder's inequality.
 No measurability or integrability hypothesis is needed, since a function not integrable on `s`
 has average zero. -/
-theorem enorm_setAverage_rpow_le {q : ℝ} (hq : 1 ≤ q)
-    (hs0 : mu s ≠ 0) (hs : mu s ≠ ∞) :
+theorem enorm_setAverage_rpow_le {q : ℝ} (hq : 1 ≤ q) :
     ‖⨍ y in s, f y ∂mu‖ₑ ^ q ≤ (mu s)⁻¹ * ∫⁻ y in s, ‖f y‖ₑ ^ q ∂mu := by
   have hq0 : (0 : ℝ) < q := one_pos.trans_le hq
+  by_cases hs0 : mu s = 0
+  · simp [setAverage_eq, measureReal_def, hs0, ENNReal.zero_rpow_of_pos hq0]
+  by_cases hs : mu s = ∞
+  · simp [setAverage_eq, measureReal_def, hs, ENNReal.zero_rpow_of_pos hq0]
   by_cases hf : IntegrableOn f s mu
   swap
   · simp [setAverage_eq, integral_undef hf, ENNReal.zero_rpow_of_pos hq0]
@@ -143,13 +146,12 @@ theorem enorm_setAverage_rpow_le {q : ℝ} (hq : 1 ≤ q)
         rw [← mul_assoc, ENNReal.inv_rpow, ← ENNReal.rpow_neg, ← ENNReal.rpow_add _ _ hs0 hs,
           hexp, ENNReal.rpow_neg_one]
 
-/-- **Hölder's bound on an average**: the average of `f` over a set `s` of finite positive
-measure is at most `μ s ^ (-1/p)` times the `Lᵖ` seminorm of `f` on `s`. At `p = 1` this is the
+/-- **Hölder's bound on an average**: the average of `f` over a set `s` is at most
+`μ s ^ (-1/p)` times the `Lᵖ` seminorm of `f` on `s`. At `p = 1` this is the
 bound by the average of `‖f‖`, and the volume factor sharpens as `p` grows because a larger
 exponent controls the mass of `s` more efficiently. No measurability or integrability hypothesis
 is needed, since a function not integrable on `s` has average zero. -/
-theorem enorm_setAverage_le (hp : 1 ≤ p) (hp' : p ≠ ∞)
-    (hs0 : mu s ≠ 0) (hs : mu s ≠ ∞) :
+theorem enorm_setAverage_le (hp : 1 ≤ p) (hp' : p ≠ ∞) :
     ‖⨍ y in s, f y ∂mu‖ₑ ≤ mu s ^ (-(p.toReal)⁻¹) * eLpNorm f p (mu.restrict s) := by
   by_cases hf : IntegrableOn f s mu
   swap
@@ -157,8 +159,8 @@ theorem enorm_setAverage_le (hp : 1 ≤ p) (hp' : p ≠ ∞)
   have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp).ne'
   have hq : 1 ≤ p.toReal := by simpa using ENNReal.toReal_mono hp' hp
   have hq0 : (0 : ℝ) < p.toReal := one_pos.trans_le hq
-  have hroot := ENNReal.rpow_le_rpow (enorm_setAverage_rpow_le (f := f) (q := p.toReal) hq hs0 hs)
-    (inv_pos.mpr hq0).le
+  have hroot := ENNReal.rpow_le_rpow
+    (enorm_setAverage_rpow_le (f := f) (mu := mu) (s := s) (q := p.toReal) hq) (inv_pos.mpr hq0).le
   rw [← ENNReal.rpow_mul, mul_inv_cancel₀ hq0.ne', ENNReal.rpow_one] at hroot
   refine hroot.trans_eq ?_
   rw [ENNReal.mul_rpow_of_nonneg _ _ (by positivity), ENNReal.inv_rpow, ← ENNReal.rpow_neg,

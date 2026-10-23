@@ -371,8 +371,7 @@ private theorem norm_setAverage_closedBall_gradient_le
   -- Hölder's bound `‖⨍_B f‖ ≤ |B|^{-1/2} ‖f‖_{L²(B)}` on an average, with
   -- `‖f‖_{L²(B)} ≤ ‖f‖_{L²(Ω)}`.
   have h := (enorm_setAverage_le (f := W1p.gradient u) (mu := volume) (p := 2)
-    one_le_two ENNReal.ofNat_ne_top
-    (measure_ball_pos volume z hR).ne' measure_ball_lt_top.ne).trans
+    one_le_two ENNReal.ofNat_ne_top).trans
     (mul_le_mul' le_rfl (eLpNorm_mono_measure _ (Measure.restrict_mono hball le_rfl)))
   replace h := ENNReal.toReal_mono (ENNReal.mul_ne_top (ENNReal.rpow_ne_top_of_ne_zero
     (measure_ball_pos volume z hR).ne' measure_ball_lt_top.ne) (Lp.eLpNorm_ne_top _)) h
