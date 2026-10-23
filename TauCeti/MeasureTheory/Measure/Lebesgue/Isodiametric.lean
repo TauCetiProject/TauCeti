@@ -36,7 +36,7 @@ Brunn–Minkowski for `H` and `-H` with weight `1 / 2` is an equality. For conve
 volume this makes `-H` a translate `v +ᵥ H`, so `H` is symmetric about `-(1 / 2) • v`; a symmetric
 set of diameter `d` lies in the closed ball of radius `d / 2` about its center of symmetry. Hence
 `s` lies in a closed ball of radius `d / 2`
-(`TauCeti.exists_subset_closedBall_diam_div_two_of_volume_le`), a containment that fails for
+(`TauCeti.exists_subset_closedBall_diam_div_two_of_volume_ge`), a containment that fails for
 general sets of diameter `d`, such as equilateral triangles.
 
 For a Lebesgue-measurable bounded set, equality holds exactly when the set agrees a.e. with a
@@ -160,7 +160,7 @@ theorem volume_real_le_diam_div_two_pow_mul_volume_real_ball {s : Set E}
 /-- **Isodiametric equality forces a ball, containment form.** If a bounded set `s` has outer volume
 at least that of a closed ball of radius `diam s / 2`, then `s` is contained in some closed ball of
 radius `diam s / 2`. No measurability is assumed. -/
-theorem exists_subset_closedBall_diam_div_two_of_volume_le {s : Set E}
+theorem exists_subset_closedBall_diam_div_two_of_volume_ge {s : Set E}
     (hs : Bornology.IsBounded s) {x : E} (hvol : volume (closedBall x (diam s / 2)) ≤ volume s) :
     ∃ c, s ⊆ closedBall c (diam s / 2) := by
   rcases eq_or_ne (volume s) 0 with h0 | h0
@@ -219,7 +219,7 @@ theorem volume_eq_volume_closedBall_diam_div_two_iff_exists_ae_eq {s : Set E}
     volume s = volume (closedBall x (diam s / 2)) ↔
       ∃ c, s =ᵐ[volume] closedBall c (diam s / 2) := by
   refine ⟨fun h ↦ ?_, fun ⟨c, hc⟩ ↦ ?_⟩
-  · obtain ⟨c, hc⟩ := exists_subset_closedBall_diam_div_two_of_volume_le hs h.ge
+  · obtain ⟨c, hc⟩ := exists_subset_closedBall_diam_div_two_of_volume_ge hs h.ge
     exact ⟨c, volume.ae_eq_closedBall_of_subset_of_measure_eq hsm hc h⟩
   · rw [measure_congr hc, Measure.addHaar_closedBall_center volume c,
       Measure.addHaar_closedBall_center volume x]
@@ -231,7 +231,7 @@ theorem volume_eq_volume_closedBall_diam_div_two_iff_exists_eq {s : Set E} (hsc 
     (hs : Bornology.IsBounded s) (hne : s.Nonempty) (x : E) :
     volume s = volume (closedBall x (diam s / 2)) ↔ ∃ c, s = closedBall c (diam s / 2) := by
   refine ⟨fun h ↦ ?_, fun ⟨c, hc⟩ ↦ ?_⟩
-  · obtain ⟨c, hc⟩ := exists_subset_closedBall_diam_div_two_of_volume_le hs h.ge
+  · obtain ⟨c, hc⟩ := exists_subset_closedBall_diam_div_two_of_volume_ge hs h.ge
     refine ⟨c, hc.antisymm ?_⟩
     rcases (diam_nonneg (s := s)).eq_or_lt with hd | hd
     · -- In radius zero the ball is the center, which lies in `s` since `s` is nonempty.
