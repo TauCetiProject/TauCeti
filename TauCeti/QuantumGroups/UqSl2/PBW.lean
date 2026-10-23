@@ -217,9 +217,8 @@ theorem pbwBasis_repr_eq_zero_of_commute_k (hq : IsGenericQuantumParameter q) {z
   -- `rescale q t` is conjugation by `K`, so it fixes `z`; it multiplies the PBW monomial
   -- `F ^ a * K ^ b * E ^ c` by `t⁻ᵃ tᶜ`.
   have hfix : rescale q t z = z := by
-    rw [← toAlgEquiv_conjAct_kUnit, MulSemiringAction.toAlgEquiv_apply,
-      ConjAct.units_smul_def, ConjAct.ofConjAct_toConjAct, kUnit_val, hz.eq, mul_assoc,
-      kUnit_inv, k_mul_kInv, mul_one]
+    rw [← toAlgEquiv_conjAct_kUnit]
+    simp [ConjAct.units_smul_def, hz.eq, mul_assoc]
   have hcoord : ((pbwBasis q).coord (a, b, c)).comp (rescale q t).toLinearMap =
       (((t⁻¹ : ℂˣ) : ℂ) ^ a * (t : ℂ) ^ c) • (pbwBasis q).coord (a, b, c) := by
     refine (pbwBasis q).ext fun ⟨a', b', c'⟩ => ?_
@@ -271,6 +270,31 @@ theorem e_mul_pbwBasis_sub_mem (a : ℕ) (b : ℤ) (c : ℕ) :
 theorem f_mul_pbwBasis (a : ℕ) (b : ℤ) (c : ℕ) :
     f q * pbwBasis q (a, b, c) = pbwBasis q (a + 1, b, c) := by
   simp only [pbwBasis_apply, pow_succ', mul_assoc]
+
+/-- Left multiplication by `K` raises the `K`-exponent of a PBW monomial by one, with coefficient
+`q ^ (-2a)`. -/
+theorem k_mul_pbwBasis (a : ℕ) (b : ℤ) (c : ℕ) :
+    k q * pbwBasis q (a, b, c) = (q⁻¹ ^ 2) ^ a • pbwBasis q (a, b + 1, c) := by
+  simp only [pbwBasis_apply, ← mul_assoc, k_mul_f_pow, smul_mul_assoc]
+  simp only [mul_assoc, k_mul_kUnit_zpow]
+
+/-- Left multiplication by `K⁻¹` lowers the `K`-exponent of a PBW monomial by one, with
+coefficient `q ^ (2a)`. -/
+theorem kInv_mul_pbwBasis (a : ℕ) (b : ℤ) (c : ℕ) :
+    kInv q * pbwBasis q (a, b, c) = (q ^ 2) ^ a • pbwBasis q (a, b - 1, c) := by
+  simp only [pbwBasis_apply, ← mul_assoc, kInv_mul_f_pow, smul_mul_assoc]
+  simp only [mul_assoc, kInv_mul_kUnit_zpow]
+
+/-- Left multiplication by `F` preserves the span of the PBW monomials with a given
+`E`-exponent `c`. -/
+theorem f_mul_mem_span_pbwBasis {c : ℕ} {x : UqSl2 q}
+    (hx : x ∈ Submodule.span ℂ (pbwBasis q '' {i | i.2.2 = c})) :
+    f q * x ∈ Submodule.span ℂ (pbwBasis q '' {i | i.2.2 = c}) :=
+  (Submodule.span_le (p := (Submodule.span ℂ (pbwBasis q '' {i | i.2.2 = c})).comap
+    (LinearMap.mulLeft ℂ (f q)))).mpr (by
+      rintro _ ⟨⟨a, b, c'⟩, hi, rfl⟩
+      rw [SetLike.mem_coe, Submodule.mem_comap, LinearMap.mulLeft_apply, f_mul_pbwBasis]
+      exact Submodule.subset_span (Set.mem_image_of_mem _ hi)) hx
 
 /-- Let `ψ` be a linear endomorphism sending each PBW monomial `F ^ a * K ^ b * E ^ c` to
 `s b • F ^ (a + d) * K ^ b * E ^ (c + 1)` modulo monomials with `E`-exponent `c`. If the

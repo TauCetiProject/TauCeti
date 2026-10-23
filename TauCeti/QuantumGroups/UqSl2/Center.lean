@@ -10,7 +10,6 @@ public import TauCeti.QuantumGroups.UqSl2.Casimir
 public import TauCeti.QuantumGroups.UqSl2.PBW
 
 import Mathlib.Tactic
-import TauCeti.QuantumGroups.UqSl2.Commutator
 
 /-!
 # The center of `U_q(sl₂)`
@@ -68,19 +67,6 @@ private theorem casimir_mul_pbwBasis_sub_mem (a : ℕ) (b : ℤ) (c : ℕ) :
   have hmem (i : ℕ × ℤ × ℕ) (hi : i.2.2 = c) :
       pbwBasis q i ∈ Submodule.span ℂ (pbwBasis q '' {i | i.2.2 = c}) :=
     Submodule.subset_span (Set.mem_image_of_mem _ hi)
-  have hf {x : UqSl2 q} (hx : x ∈ Submodule.span ℂ (pbwBasis q '' {i | i.2.2 = c})) :
-      f q * x ∈ Submodule.span ℂ (pbwBasis q '' {i | i.2.2 = c}) :=
-    (Submodule.span_le (p := (Submodule.span ℂ (pbwBasis q '' {i | i.2.2 = c})).comap
-      (LinearMap.mulLeft ℂ (f q)))).mpr (by
-        rintro _ ⟨⟨a', b', c'⟩, hi, rfl⟩
-        rw [SetLike.mem_coe, Submodule.mem_comap, LinearMap.mulLeft_apply, f_mul_pbwBasis]
-        exact hmem _ hi) hx
-  have hk : k q * pbwBasis q (a, b, c) = (q⁻¹ ^ 2) ^ a • pbwBasis q (a, b + 1, c) := by
-    simp only [pbwBasis_apply, ← mul_assoc, k_mul_f_pow, smul_mul_assoc]
-    simp only [mul_assoc, k_mul_kUnit_zpow]
-  have hkInv : kInv q * pbwBasis q (a, b, c) = (q ^ 2) ^ a • pbwBasis q (a, b - 1, c) := by
-    simp only [pbwBasis_apply, ← mul_assoc, kInv_mul_f_pow, smul_mul_assoc]
-    simp only [mul_assoc, kInv_mul_kUnit_zpow]
   have key : casimir q * pbwBasis q (a, b, c) - q ^ (-2 * b) • pbwBasis q (a + 1, b, c + 1) =
       f q * (e q * pbwBasis q (a, b, c) - q ^ (-2 * b) • pbwBasis q (a, b, c + 1)) +
         ((q - q⁻¹) ^ 2)⁻¹ • (q • (k q * pbwBasis q (a, b, c)) +
@@ -88,10 +74,11 @@ private theorem casimir_mul_pbwBasis_sub_mem (a : ℕ) (b : ℤ) (c : ℕ) :
     rw [casimir_def, mul_sub, mul_smul_comm, f_mul_pbwBasis]
     simp only [add_mul, smul_mul_assoc, mul_assoc]
     abel
-  rw [key, hk, hkInv]
-  exact add_mem (hf (e_mul_pbwBasis_sub_mem a b c)) (Submodule.smul_mem _ _ (add_mem
-    (Submodule.smul_mem _ _ (Submodule.smul_mem _ _ (hmem _ rfl)))
-    (Submodule.smul_mem _ _ (Submodule.smul_mem _ _ (hmem _ rfl)))))
+  rw [key, k_mul_pbwBasis, kInv_mul_pbwBasis]
+  exact add_mem (f_mul_mem_span_pbwBasis (e_mul_pbwBasis_sub_mem a b c))
+    (Submodule.smul_mem _ _ (add_mem
+      (Submodule.smul_mem _ _ (Submodule.smul_mem _ _ (hmem _ rfl)))
+      (Submodule.smul_mem _ _ (Submodule.smul_mem _ _ (hmem _ rfl)))))
 
 /-! ### Powers of the Casimir element -/
 
