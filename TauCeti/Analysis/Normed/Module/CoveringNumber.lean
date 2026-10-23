@@ -27,6 +27,8 @@ theorem on almost Euclidean sections of finite-dimensional normed spaces.
 
 ## Main results
 
+* `TauCeti.packingNumber_le_of_forall_finset_card_le`: a finite bound on the sizes of the finite
+  `ε`-separated subsets of a set bounds its packing number.
 * `TauCeti.card_le_of_isSeparated_of_subset_closedBall`: an `ε`-separated finite subset of a closed
   ball of radius `r` has at most `(1 + 2 r / ε) ^ n` elements.
 * `TauCeti.packingNumber_le_of_subset_closedBall`,
@@ -50,6 +52,29 @@ open Metric MeasureTheory Module Set
 open scoped ENNReal NNReal
 
 namespace TauCeti
+
+section PseudoEMetricSpace
+
+variable {X : Type*} [PseudoEMetricSpace X]
+
+/-- If every finite `ε`-separated subset of `A` has at most `B ≠ ∞` elements, then the packing
+number of `A` at scale `ε` is at most `B`. -/
+theorem packingNumber_le_of_forall_finset_card_le {ε : ℝ≥0} {A : Set X} {B : ℝ≥0∞} (hB : B ≠ ∞)
+    (h : ∀ s : Finset X, (s : Set X) ⊆ A → IsSeparated ε (s : Set X) → (s.card : ℝ≥0∞) ≤ B) :
+    (packingNumber ε A : ℝ≥0∞) ≤ B := by
+  rw [packingNumber]
+  simp only [ENat.toENNReal_iSup]
+  refine iSup₂_le fun C hCA ↦ iSup_le fun hC ↦ ?_
+  rcases C.finite_or_infinite with hCf | hCi
+  · rw [hCf.encard_eq_coe_toFinset_card, ENat.toENNReal_coe]
+    exact h hCf.toFinset (by simpa using hCA) (by simpa using hC)
+  · -- An infinite separated subset would contain finite separated subsets of every size.
+    exfalso
+    obtain ⟨n, hn⟩ := ENNReal.exists_nat_gt hB
+    obtain ⟨s, hsC, rfl⟩ := hCi.exists_subset_card_eq n
+    exact (h s (hsC.trans hCA) (hC.subset hsC)).not_gt hn
+
+end PseudoEMetricSpace
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {A : Set E} {x : E} {r ε : ℝ≥0}
@@ -107,23 +132,11 @@ theorem packingNumber_le_of_subset_closedBall (hε : ε ≠ 0) (hA : A ⊆ close
     have h : (1 + 2 * r / ε : ℝ) = ((1 + 2 * r / ε : ℝ≥0) : ℝ) := by simp
     rw [ENNReal.ofReal_pow (by positivity), h, ENNReal.ofReal_coe_nnreal]
     simp [ENNReal.coe_div hε]
-  have hfin : ∀ s : Finset E, (s : Set E) ⊆ A → IsSeparated ε (s : Set E) →
-      (s.card : ℝ≥0∞) ≤ (1 + 2 * (r : ℝ≥0∞) / ε) ^ finrank ℝ E := fun s hsA hs ↦ by
-    rw [← hB, ← ENNReal.ofReal_natCast]
-    exact ENNReal.ofReal_le_ofReal
-      (card_le_of_isSeparated_of_subset_closedBall hε hs (hsA.trans hA))
-  rw [packingNumber]
-  simp only [ENat.toENNReal_iSup]
-  refine iSup₂_le fun C hCA ↦ iSup_le fun hC ↦ ?_
-  rcases C.finite_or_infinite with hCf | hCi
-  · rw [hCf.encard_eq_coe_toFinset_card, ENat.toENNReal_coe]
-    exact hfin hCf.toFinset (by simpa using hCA) (by simpa using hC)
-  · -- An infinite separated subset would contain finite separated subsets of every size.
-    exfalso
-    have hB_ne : (1 + 2 * (r : ℝ≥0∞) / ε) ^ finrank ℝ E ≠ ∞ := hB ▸ ENNReal.ofReal_ne_top
-    obtain ⟨n, hn⟩ := ENNReal.exists_nat_gt hB_ne
-    obtain ⟨s, hsC, rfl⟩ := hCi.exists_subset_card_eq n
-    exact (hfin s (hsC.trans hCA) (hC.subset hsC)).not_gt hn
+  refine packingNumber_le_of_forall_finset_card_le (hB ▸ ENNReal.ofReal_ne_top)
+    fun s hsA hs ↦ ?_
+  rw [← hB, ← ENNReal.ofReal_natCast]
+  exact ENNReal.ofReal_le_ofReal
+    (card_le_of_isSeparated_of_subset_closedBall hε hs (hsA.trans hA))
 
 /-- The covering number at scale `ε > 0` of a subset of a closed ball of radius `r` in a
 finite-dimensional real normed space is at most `(1 + 2 r / ε) ^ dim E`. -/
