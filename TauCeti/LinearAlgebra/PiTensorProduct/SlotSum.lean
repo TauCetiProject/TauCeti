@@ -235,15 +235,15 @@ theorem isHomogeneous_map {𝒩 : A → Submodule R N} {g : ι → N →ₗ[R] M
 /-- A factorwise map of degree zero in every factor but one, where it has degree `a`, shifts the
 total degree by `a`. -/
 theorem isHomogeneous_map_update [DecidableEq ι] {𝒩 : A → Submodule R N} {g : ι → N →ₗ[R] M}
-    {f : N →ₗ[R] M} {a : A} (hg : ∀ j, LinearMap.IsHomogeneous (g j) 𝒩 ℳ 0)
-    (hf : LinearMap.IsHomogeneous f 𝒩 ℳ a) (i : ι) :
+    {f : N →ₗ[R] M} {a : A} (i : ι) (hg : ∀ j ≠ i, LinearMap.IsHomogeneous (g j) 𝒩 ℳ 0)
+    (hf : LinearMap.IsHomogeneous f 𝒩 ℳ a) :
     LinearMap.IsHomogeneous (PiTensorProduct.map (update g i f)) (totalDegreePiece ι 𝒩)
       (totalDegreePiece ι ℳ) a := by
   rw [← Fintype.sum_pi_single' i a]
   refine isHomogeneous_map fun j ↦ ?_
   rcases eq_or_ne j i with rfl | hj
   · simpa using hf
-  · simpa [hj] using hg j
+  · simpa [hj] using hg j hj
 
 /-- Factorwise maps into degree zero land in total degree zero. -/
 theorem map_mem_totalDegreePiece_zero {g : ι → N →ₗ[R] M} (hg : ∀ i x, g i x ∈ ℳ 0)
@@ -263,7 +263,7 @@ theorem isHomogeneous_slotSum [DecidableEq ι] {f : Module.End R M} {a : A}
     LinearMap.IsHomogeneous (slotSum ι f) (totalDegreePiece ι ℳ) (totalDegreePiece ι ℳ) a :=
   Finset.sum_induction _ (LinearMap.IsHomogeneous · _ _ a) (fun _ _ ↦ .add)
     (LinearMap.isHomogeneous_zero _ _ _) fun i _ ↦
-      isHomogeneous_map_update (fun _ ↦ LinearMap.isHomogeneous_id ℳ) hf i
+      isHomogeneous_map_update i (fun _ _ ↦ LinearMap.isHomogeneous_id ℳ) hf
 
 /-- Factorwise maps vanishing in positive degrees kill the positive total degrees: a pure tensor
 of homogeneous factors of positive total degree has a factor of positive degree. -/
@@ -317,9 +317,9 @@ theorem isHomogeneous_slotHomotopy {e h : Module.End R M} {a : A}
       (totalDegreePiece ι ℳ) a :=
   Finset.sum_induction _ (LinearMap.IsHomogeneous · _ _ a) (fun _ _ ↦ .add)
     (LinearMap.isHomogeneous_zero _ _ _) fun i _ ↦
-      isHomogeneous_map_update (fun j ↦ by
+      isHomogeneous_map_update i (fun j _ ↦ by
         split_ifs
-        exacts [he, LinearMap.isHomogeneous_id ℳ]) hh i
+        exacts [he, LinearMap.isHomogeneous_id ℳ]) hh
 
 /-- For a grading without negative pieces, the slot homotopy of a homotopy vanishing in degree
 zero vanishes in total degree zero: a pure tensor of homogeneous factors of total degree zero has
