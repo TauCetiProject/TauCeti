@@ -208,6 +208,38 @@ end Homotopy
 
 end MkChainComplex
 
+section MkCochainComplexInt
+
+variable {C : Type u} [Category.{v} C] [Preadditive C] {P Q : CochainComplex C ℤ}
+
+namespace Homotopy
+
+/-- A null-homotopy of a map `e : P ⟶ Q` between `ℤ`-indexed cochain complexes, from its
+components `h n : P.X (n + 1) ⟶ Q.X n` and the homotopy identities
+`e.f (n + 1) = d ≫ h (n + 1) + h n ≫ d`. Every degree is written as `n + 1`, so that no index is
+ever a difference. The components are given all at once, as in `Homotopy.mkChainComplex`. -/
+@[no_expose]
+def mkCochainComplexInt (e : P ⟶ Q) (h : ∀ n, P.X (n + 1) ⟶ Q.X n)
+    (comm : ∀ n, e.f (n + 1) = P.d (n + 1) (n + 1 + 1) ≫ h (n + 1) + h n ≫ Q.d n (n + 1)) :
+    Homotopy e 0 where
+  hom i j := if hij : j + 1 = i then eqToHom (congrArg P.X hij.symm) ≫ h j else 0
+  zero i j hij := dite_eq_right (by simpa [ComplexShape.up_Rel] using hij)
+  comm i := by
+    obtain ⟨n, rfl⟩ : ∃ n, i = n + 1 := ⟨i - 1, by omega⟩
+    rw [dNext_eq _ (show (ComplexShape.up ℤ).Rel (n + 1) (n + 1 + 1) from rfl),
+      prevD_eq _ (show (ComplexShape.up ℤ).Rel n (n + 1) from rfl)]
+    simpa using comm n
+
+@[simp]
+lemma mkCochainComplexInt_hom (e : P ⟶ Q) (h : ∀ n, P.X (n + 1) ⟶ Q.X n)
+    (comm : ∀ n, e.f (n + 1) = P.d (n + 1) (n + 1 + 1) ≫ h (n + 1) + h n ≫ Q.d n (n + 1))
+    (n : ℤ) : (mkCochainComplexInt e h comm).hom (n + 1) n = h n := by
+  simp [mkCochainComplexInt]
+
+end Homotopy
+
+end MkCochainComplexInt
+
 section ModuleCat
 
 variable {R : Type*} [Ring R] {P Q : ChainComplex (ModuleCat R) ℕ} {e e' : P ⟶ Q}
