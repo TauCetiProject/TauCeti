@@ -33,7 +33,8 @@ total degree `d`.
 * `PolynomialLaw.coeff_apply`: the coefficient of `Xᵏ`, extracted by `MvPolynomial.lcoeff`.
 * `PolynomialLaw.toFun_sum_tmul_eq_coeff_sum`: the value of a law on any finite sum of pure
   tensors, in terms of its coefficients.
-* `PolynomialLaw.coeff_eq_sum_of_sum_tmul_eq`: change of variables for coefficients.
+* `PolynomialLaw.coeff_eq_sum_of_sum_tmul_eq`: change of variables for coefficients, and
+  `PolynomialLaw.coeff_eq_smul_of_sum_tmul_eq`, its form when a single monomial survives.
 * `PolynomialLaw.coeff_comp_equiv`, `PolynomialLaw.coeff_optionElim_zero`,
   `PolynomialLaw.coeff_optionElim_smul`, `PolynomialLaw.coeff_optionElim_optionElim_self` and
   `PolynomialLaw.coeff_optionElim_add`: coefficients are invariant under reindexing, ignore
@@ -84,8 +85,13 @@ theorem coeff_apply (m : ι → M) (f : M →ₚₗ[R] N) (k : ι →₀ ℕ) :
     coeff R N m f k = TensorProduct.lid R N ((lcoeff R k).rTensor N
       (f.toFun (MvPolynomial ι R) (∑ j, X j ⊗ₜ[R] m j))) := by
   classical
-  rw [coeff, LinearMap.coe_mk, AddHom.coe_mk, TensorProduct.equivFinsuppOfBasisLeft_apply]
-  rfl
+  -- The `basisMonomials` coordinate of `Xᵏ` agrees with `lcoeff R k` on every monomial.
+  have hcoord : (basisMonomials ι R).coord k = lcoeff R k :=
+    (basisMonomials ι R).ext fun s ↦ by
+      rw [Module.Basis.coord_apply, Module.Basis.repr_self, coe_basisMonomials, lcoeff_apply,
+        coeff_monomial, Finsupp.single_apply]
+  rw [coeff, LinearMap.coe_mk, AddHom.coe_mk, TensorProduct.equivFinsuppOfBasisLeft_apply,
+    hcoord]
 
 /-- The value of `f` at the generic combination `∑ⱼ Xⱼ ⊗ mⱼ` is `∑ₖ Xᵏ ⊗ coeff m f k`. -/
 theorem toFun_sum_X_tmul (m : ι → M) (f : M →ₚₗ[R] N) :
@@ -123,13 +129,23 @@ theorem coeff_eq_sum_of_sum_tmul_eq {κ : Type*} [Fintype κ] (f : M →ₚₗ[R
   rw [coeff_apply, ← h, toFun_sum_tmul_eq_coeff_sum, map_finsuppSum, map_finsuppSum]
   simp
 
+/-- Change of variables with a single surviving monomial: if the coefficient of `Xᵏ` in
+`∏ⱼ sⱼ ^ lⱼ` is `c` for `l = l₀` and zero for every other `l`, then
+`coeff m' f k = c • coeff m f l₀`. -/
+theorem coeff_eq_smul_of_sum_tmul_eq {κ : Type*} [Fintype κ] (f : M →ₚₗ[R] N) (m : ι → M)
+    (s : ι → MvPolynomial κ R) (m' : κ → M)
+    (h : ∑ j, s j ⊗ₜ[R] m j = ∑ i, X i ⊗ₜ[R] m' i) (k : κ →₀ ℕ) (l₀ : ι →₀ ℕ) (c : R)
+    (h₀ : (∏ j, s j ^ l₀ j).coeff k = c) (hne : ∀ l ≠ l₀, (∏ j, s j ^ l j).coeff k = 0) :
+    coeff R N m' f k = c • coeff R N m f l₀ := by
+  rw [coeff_eq_sum_of_sum_tmul_eq f m s m' h k, Finsupp.sum, Finset.sum_eq_single l₀
+    (fun l _ hl ↦ by rw [hne l hl, _root_.zero_smul])
+    (fun hl ↦ by rw [Finsupp.notMem_support_iff.mp hl, smul_zero]), h₀]
+
 /-- Coefficients are invariant under reindexing the family along an equivalence. -/
 theorem coeff_comp_equiv {κ : Type*} [Fintype κ] (e : κ ≃ ι) (m : ι → M) (f : M →ₚₗ[R] N)
     (k : ι →₀ ℕ) : coeff R N (m ∘ e) f (k.equivMapDomain e.symm) = coeff R N m f k := by
   classical
   symm
-  rw [coeff_eq_sum_of_sum_tmul_eq f (m ∘ e) (fun j ↦ X (e j)) m
-    (e.sum_comp fun i ↦ X i ⊗ₜ[R] m i)]
   have h (l : κ →₀ ℕ) : (∏ j, (X (e j) : MvPolynomial ι R) ^ l j).coeff k =
       if l = k.equivMapDomain e.symm then 1 else 0 := by
     rw [Fintype.prod_equiv e _ (fun i ↦ (X i : MvPolynomial ι R) ^ l (e.symm i)) (by simp),
@@ -137,15 +153,15 @@ theorem coeff_comp_equiv {κ : Type*} [Fintype κ] (e : κ ≃ ι) (m : ι → M
     congr 1
     simp only [Finsupp.ext_iff, Finsupp.equivMapDomain_apply, Equiv.symm_symm, eq_iff_iff]
     exact ⟨fun h j ↦ by simpa using h (e j), fun h i ↦ by simpa using h (e.symm i)⟩
-  simp only [h, ite_smul, _root_.one_smul, _root_.zero_smul, Finsupp.sum_ite_self_eq']
+  rw [coeff_eq_smul_of_sum_tmul_eq f (m ∘ e) (fun j ↦ X (e j)) m
+    (e.sum_comp fun i ↦ X i ⊗ₜ[R] m i) k _ 1 ((h _).trans (ite_eq_left rfl))
+    fun l hl ↦ (h l).trans (ite_eq_right hl), _root_.one_smul]
 
 /-- A vector with exponent zero does not contribute to a coefficient. -/
 theorem coeff_optionElim_zero (a : M) (m : ι → M) (f : M →ₚₗ[R] N) (k : ι →₀ ℕ) :
     coeff R N (Option.elim' a m) f (k.optionElim 0) = coeff R N m f k := by
   classical
   symm
-  rw [coeff_eq_sum_of_sum_tmul_eq f (Option.elim' a m) (Option.elim' 0 X) m
-    (by simp [Fintype.sum_option])]
   have h (l : Option ι →₀ ℕ) :
       (∏ o, (Option.elim' 0 X o : MvPolynomial ι R) ^ l o).coeff k =
         if l = k.optionElim 0 then 1 else 0 := by
@@ -159,7 +175,9 @@ theorem coeff_optionElim_zero (a : M) (m : ι → M) (f : M →ₚₗ[R] N) (k :
         rintro rfl
         simp at h0
       simp [zero_pow h0.ne', hl]
-  simp only [h, ite_smul, _root_.one_smul, _root_.zero_smul, Finsupp.sum_ite_self_eq']
+  rw [coeff_eq_smul_of_sum_tmul_eq f (Option.elim' a m) (Option.elim' 0 X) m
+    (by simp [Fintype.sum_option]) k _ 1 ((h _).trans (ite_eq_left rfl))
+    fun l hl ↦ (h l).trans (ite_eq_right hl), _root_.one_smul]
 
 /-- Scaling a vector with exponent `n` by `r` scales the coefficient by `r ^ n`. -/
 theorem coeff_optionElim_smul (n : ℕ) (r : R) (a : M) (m : ι → M) (f : M →ₚₗ[R] N)
@@ -169,8 +187,6 @@ theorem coeff_optionElim_smul (n : ℕ) (r : R) (a : M) (m : ι → M) (f : M �
   classical
   set K : Option ι →₀ ℕ := k.optionElim n
   let s : Option ι → MvPolynomial (Option ι) R := Option.elim' (C r * X none) fun i ↦ X (some i)
-  rw [coeff_eq_sum_of_sum_tmul_eq f (Option.elim' a m) s (Option.elim' (r • a) m)
-    (by simp [s, Fintype.sum_option, ← smul_eq_C_mul, TensorProduct.smul_tmul])]
   have hs (l : Option ι →₀ ℕ) :
       ∏ o, s o ^ l o = C (r ^ l none) * ∏ o, (X o : MvPolynomial (Option ι) R) ^ l o := by
     simp only [s, Fintype.prod_option, Option.elim'_none, Option.elim'_some, mul_pow, map_pow,
@@ -182,11 +198,9 @@ theorem coeff_optionElim_smul (n : ℕ) (r : R) (a : M) (m : ι → M) (f : M �
       simp [K]
     · rw [ite_eq_right_iff.mpr fun h ↦ absurd h hl, ite_eq_right_iff.mpr, mul_zero]
       exact fun h ↦ absurd (Finsupp.ext h) hl
-  simp only [h, ite_smul, _root_.zero_smul]
-  rw [Finsupp.sum_ite_eq']
-  split_ifs with hmem
-  · rfl
-  · rw [Finsupp.notMem_support_iff.mp hmem, smul_zero]
+  exact coeff_eq_smul_of_sum_tmul_eq f (Option.elim' a m) s (Option.elim' (r • a) m)
+    (by simp [s, Fintype.sum_option, ← smul_eq_C_mul, TensorProduct.smul_tmul]) K K (r ^ n)
+    ((h K).trans (ite_eq_left rfl)) fun l hl ↦ (h l).trans (ite_eq_right hl)
 
 /-- Two copies of the same vector, with exponents `x` and `y`, merge into one with exponent
 `x + y`, at the cost of the binomial coefficient `(x + y).choose x`. -/
@@ -198,8 +212,6 @@ theorem coeff_optionElim_optionElim_self (x y : ℕ) (a : M) (m : ι → M) (f :
   let L : Option ι →₀ ℕ := k.optionElim (x + y)
   let s : Option ι → MvPolynomial (Option (Option ι)) R :=
     Option.elim' (X none + X (some none)) fun i ↦ X (some (some i))
-  rw [coeff_eq_sum_of_sum_tmul_eq f (Option.elim' a m) s (Option.elim' a (Option.elim' a m))
-    (by simp [s, Fintype.sum_option, TensorProduct.add_tmul, add_assoc])]
   set K : Option (Option ι) →₀ ℕ := (k.optionElim y).optionElim x
   have h (l : Option ι →₀ ℕ) :
       (∏ o, s o ^ l o).coeff K = if l = L then ((x + y).choose x : R) else 0 := by
@@ -226,11 +238,10 @@ theorem coeff_optionElim_optionElim_self (x y : ℕ) (a : M) (m : ι → M) (f :
     by_cases hxy : x + y = l none
     · simp [hxy, eq_comm]
     · simp [hxy, Ne.symm hxy]
-  simp only [h, ite_smul, _root_.zero_smul]
-  rw [Finsupp.sum_ite_eq']
-  split_ifs with hmem
-  · rw [Nat.cast_smul_eq_nsmul]
-  · rw [Finsupp.notMem_support_iff.mp hmem, smul_zero]
+  rw [coeff_eq_smul_of_sum_tmul_eq f (Option.elim' a m) s (Option.elim' a (Option.elim' a m))
+    (by simp [s, Fintype.sum_option, TensorProduct.add_tmul, add_assoc]) K L _
+    ((h L).trans (ite_eq_left rfl)) fun l hl ↦ (h l).trans (ite_eq_right hl),
+    Nat.cast_smul_eq_nsmul]
 
 /-- A vector `a + b` with exponent `n` splits into the vectors `a` and `b`, summed over the
 exponent pairs in the antidiagonal of `n`, as in the divided-power binomial formula. -/

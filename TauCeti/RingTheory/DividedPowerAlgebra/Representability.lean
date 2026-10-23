@@ -178,19 +178,31 @@ of `∏ᵢ Xᵢ ^ nᵢ` in `f (∑ᵢ Xᵢ ⊗ mᵢ)`. -/
 private def famCoeff {ι : Type*} [Fintype ι] (p : ι → ℕ × M) : N :=
   coeff R N (fun i ↦ (p i).2) f (Finsupp.equivFunOnFinite.symm fun i ↦ (p i).1)
 
-/-- The vectors of a family with a distinguished first pair. -/
-private theorem snd_option_elim' {ι α β : Type*} (q : α × β) (p : ι → α × β) :
-    (fun o ↦ (Option.elim' q p o).2) = Option.elim' q.2 fun i ↦ (p i).2 := by
-  funext o
-  cases o <;> rfl
+/-- The coefficient attached to a family with a distinguished first pair `q`, as a coefficient
+of `f` at the family of vectors with `q.2` prepended and exponent `q.1` on it. -/
+private theorem famCoeff_option_elim' {ι : Type*} [Fintype ι] (q : ℕ × M) (p : ι → ℕ × M) :
+    famCoeff f (Option.elim' q p) =
+      coeff R N (Option.elim' q.2 fun i ↦ (p i).2) f
+        ((Finsupp.equivFunOnFinite.symm fun i ↦ (p i).1).optionElim q.1) := by
+  rw [famCoeff]
+  congr
+  · funext o
+    cases o <;> simp
+  · ext o
+    cases o <;> simp
 
-/-- The exponents of a family with a distinguished first pair. -/
-private theorem equivFunOnFinite_symm_fst_option_elim' {ι β : Type*} [Finite ι] (q : ℕ × β)
-    (p : ι → ℕ × β) :
-    (Finsupp.equivFunOnFinite.symm fun o ↦ (Option.elim' q p o).1) =
-      (Finsupp.equivFunOnFinite.symm fun i ↦ (p i).1).optionElim q.1 := by
-  ext o
-  cases o <;> simp
+/-- The coefficient attached to a family with two distinguished first pairs `q` and `q'`. -/
+private theorem famCoeff_option_elim'_option_elim' {ι : Type*} [Fintype ι] (q q' : ℕ × M)
+    (p : ι → ℕ × M) :
+    famCoeff f (Option.elim' q (Option.elim' q' p)) =
+      coeff R N (Option.elim' q.2 (Option.elim' q'.2 fun i ↦ (p i).2)) f
+        (((Finsupp.equivFunOnFinite.symm fun i ↦ (p i).1).optionElim q'.1).optionElim q.1) := by
+  rw [famCoeff]
+  congr
+  · funext o
+    rcases o with _ | _ | _ <;> simp
+  · ext o
+    rcases o with _ | _ | _ <;> simp
 
 /-- Coefficients are invariant under reindexing the family. -/
 private theorem famCoeff_comp_equiv {ι κ : Type*} [Fintype ι] [Fintype κ] (e : κ ≃ ι)
@@ -205,23 +217,21 @@ private theorem famCoeff_comp_equiv {ι κ : Type*} [Fintype ι] [Fintype κ] (e
 /-- A pair with exponent zero does not contribute to a coefficient. -/
 private theorem famCoeff_option_zero {ι : Type*} [Fintype ι] (a : M) (p : ι → ℕ × M) :
     famCoeff f (Option.elim' (0, a) p) = famCoeff f p := by
-  simp only [famCoeff, snd_option_elim', equivFunOnFinite_symm_fst_option_elim',
-    coeff_optionElim_zero]
+  rw [famCoeff_option_elim', coeff_optionElim_zero, famCoeff]
 
 /-- Scaling the vector of a pair by `r` scales the coefficient by `r ^ n`. -/
 private theorem famCoeff_option_smul {ι : Type*} [Fintype ι] (n : ℕ) (r : R) (a : M)
     (p : ι → ℕ × M) :
     famCoeff f (Option.elim' (n, r • a) p) = r ^ n • famCoeff f (Option.elim' (n, a) p) := by
-  simp only [famCoeff, snd_option_elim', equivFunOnFinite_symm_fst_option_elim',
-    coeff_optionElim_smul]
+  simp only [famCoeff_option_elim', coeff_optionElim_smul]
 
 /-- Two pairs with the same vector merge into one, with a binomial coefficient. -/
 private theorem famCoeff_option_option_mul {ι : Type*} [Fintype ι] (x y : ℕ) (a : M)
     (p : ι → ℕ × M) :
     famCoeff f (Option.elim' (x, a) (Option.elim' (y, a) p)) =
       (x + y).choose x • famCoeff f (Option.elim' (x + y, a) p) := by
-  simp only [famCoeff, snd_option_elim', equivFunOnFinite_symm_fst_option_elim',
-    coeff_optionElim_optionElim_self]
+  simp only [famCoeff_option_elim'_option_elim']
+  simp only [famCoeff_option_elim', coeff_optionElim_optionElim_self]
 
 /-- A pair whose vector is a sum splits into a sum over pairs, as in the divided-power
 binomial formula. -/
@@ -230,8 +240,8 @@ private theorem famCoeff_option_add {ι : Type*} [Fintype ι] (n : ℕ) (a b : M
     famCoeff f (Option.elim' (n, a + b) p) =
       ∑ q ∈ Finset.antidiagonal n,
         famCoeff f (Option.elim' (q.1, a) (Option.elim' (q.2, b) p)) := by
-  simp only [famCoeff, snd_option_elim', equivFunOnFinite_symm_fst_option_elim',
-    coeff_optionElim_add]
+  simp only [famCoeff_option_elim'_option_elim']
+  simp only [famCoeff_option_elim', coeff_optionElim_add]
 
 section Multiset
 
@@ -362,12 +372,12 @@ private theorem coeffLift_prod_dp {ι : Type*} [Fintype ι] (p : ι → ℕ × M
   have hdp : ∏ i, dp R (p i).1 (p i).2 =
       ((monomial (∑ i, Finsupp.single (p i) 1) 1 : MvPolynomial (ℕ × M) R) :
         DividedPowerAlgebra R M) := by
-    simp only [dp_def, Prod.mk.eta, monomial_sum_one, ← X.eq_1, ← RingCon.mkₐ_apply R, map_prod]
+    simp only [dp_def, Prod.mk.eta, monomial_sum_one, ← X_pow_eq_monomial, pow_one,
+      ← RingCon.mkₐ_apply R, map_prod]
   rw [hdp, coeffLift_mk, polyMap_monomial, map_sum]
   simp only [Finsupp.toMultiset_single, one_nsmul]
   rw [← famMultiset_map_univ, ← Multiset.sum_map_singleton (Finset.univ.val.map p),
-    Multiset.map_map]
-  rfl
+    Multiset.map_map, Function.comp_def, Finset.sum_map_val]
 
 end Multiset
 
