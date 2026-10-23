@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.Fuchsian.Cusp.Horodisc
 public import TauCeti.MeasureTheory.Group.DirichletDomain.Basic
 import TauCeti.Analysis.Complex.UpperHalfPlane.Bisector.Basic
 import TauCeti.Analysis.Complex.Fuchsian.ProperAction
+import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
 import TauCeti.Analysis.Complex.UpperHalfPlane.Translation
 import TauCeti.Topology.MetricSpace.IsometricSMul
 
@@ -87,13 +88,9 @@ theorem abs_re_scaling_smul_sub_le {p z : ℍ} (hz : z ∈ dirichletDomain Γ p)
 /-- The points whose scaled coordinates lie in a closed rectangle of positive height form a
 compact set. -/
 private theorem isCompact_setOf_scaling_smul_mem_rectangle {a b c d : ℝ} (hc : 0 < c) :
-    IsCompact {z : ℍ | (D.scaling • z).re ∈ Icc a b ∧ (D.scaling • z).im ∈ Icc c d} := by
-  have hR : IsCompact (((↑) : ℍ → ℂ) ⁻¹' (Icc a b ×ℂ Icc c d)) :=
-    (isOpenEmbedding_coe.isInducing.isCompact_preimage_iff fun w hw ↦ by
-      rw [range_coe]
-      exact hc.trans_le (Complex.mem_reProdIm.mp hw).2.1).mpr
-      (isCompact_Icc.reProdIm isCompact_Icc)
-  exact (Homeomorph.smul D.scaling).isCompact_preimage.mpr hR
+    IsCompact {z : ℍ | (D.scaling • z).re ∈ Icc a b ∧ (D.scaling • z).im ∈ Icc c d} :=
+  (Homeomorph.smul D.scaling).isCompact_preimage.mpr
+    (UpperHalfPlane.isCompact_setOf_re_mem_Icc_im_mem_Icc hc)
 
 /-- The part of a Dirichlet domain between two cusp heights is bounded, provided the lower
 height is positive. The upper height is arbitrary, and the band may be empty. -/
