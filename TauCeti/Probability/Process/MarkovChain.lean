@@ -218,6 +218,23 @@ theorem markovChainLaw_map_eval_zero :
             (g := fun u : ((_ : ↥(Iic (0 : ℕ))) → α) => u ⟨0, mem_Iic.2 le_rfl⟩)
             (by fun_prop) (MeasurableEquiv.measurable _), hid, Measure.map_id]
 
+/-- The one-step extension property of an Ionescu–Tulcea measure, for an arbitrary s-finite
+initial measure: the law of the trajectory up to time `a`, extended by the kernel `κ a`, is the
+joint law of that trajectory and the next state. Mathlib's
+`Kernel.map_frestrictLe_trajMeasure_compProd_eq_map_trajMeasure` is the case of a probability
+measure `μ₀`. -/
+private theorem map_frestrictLe_trajMeasure_compProd {X : ℕ → Type*}
+    [∀ n, MeasurableSpace (X n)] {κ : (n : ℕ) → Kernel (Π i : Iic n, X i) (X (n + 1))}
+    [∀ n, IsMarkovKernel (κ n)] (μ₀ : Measure (X 0)) [SFinite μ₀] (a : ℕ) :
+    (Kernel.trajMeasure μ₀ κ).map (frestrictLe a) ⊗ₘ κ a =
+      (Kernel.trajMeasure μ₀ κ).map (fun x => (frestrictLe a x, x (a + 1))) := by
+  have : SFinite (Kernel.trajMeasure μ₀ κ) := inferInstanceAs (SFinite (Kernel.traj κ 0 ∘ₘ _))
+  rw [Measure.compProd_eq_comp_prod, Kernel.trajMeasure, Measure.map_comp _ _ (by fun_prop),
+    Kernel.traj_map_frestrictLe, Measure.comp_assoc, Measure.map_comp _ _ (by fun_prop)]
+  congr with x₀ : 1
+  rw [Kernel.comp_apply, ← Measure.compProd_eq_comp_prod, Kernel.map_apply _ (by fun_prop),
+    Kernel.partialTraj_compProd_eq_map_traj zero_le]
+
 /-- **The Markov property of the chain.** The joint law of the length-`n + 1` prefix
 `(X 0, …, X n)` and of the next state `X (n + 1)` is the prefix law extended by one `κ`-step out of
 the last coordinate of the prefix. Together with `markovChainLaw_map_eval_zero` this determines all
@@ -229,24 +246,15 @@ theorem markovChainLaw_map_prefix_succ_eq_compProd [SFinite ν] (n : ℕ) :
           (measurable_pi_apply (Fin.last n)) := by
   have he : Measurable (iicEquivFin α n) := (iicEquivFin α n).measurable
   have hmap : Measurable (Prod.map (iicEquivFin α n) (id : α → α)) := he.prodMap measurable_id
-  have hpair : Measurable fun x : ℕ → α => (frestrictLe n x, x (n + 1)) := by fun_prop
   have hstep : markovStep κ n
       = (κ.comap (fun w : Fin (n + 1) → α => w (Fin.last n))
           (measurable_pi_apply (Fin.last n))).comap (iicEquivFin α n) he := by
     ext u s _
     simp [markovStep, Kernel.comap_apply, iicEquivFin_apply]
-  have key : ((markovChainLaw ν κ).map (frestrictLe n)) ⊗ₘ markovStep κ n
-      = (markovChainLaw ν κ).map (fun x => (frestrictLe n x, x (n + 1))) := by
-    rw [Measure.compProd_eq_comp_prod, markovChainLaw, Kernel.trajMeasure,
-      Measure.map_comp _ _ (measurable_frestrictLe n), Kernel.traj_map_frestrictLe,
-      Measure.comp_assoc, Measure.map_comp _ _ hpair]
-    congr with x₀ : 1
-    rw [Kernel.comp_apply, ← Measure.compProd_eq_comp_prod, Kernel.map_apply _ hpair,
-      Kernel.partialTraj_compProd_eq_map_traj zero_le]
   calc (markovChainLaw ν κ).map (fun x => ((fun i : Fin (n + 1) => x i.1), x (n + 1)))
       = ((markovChainLaw ν κ).map (fun x => (frestrictLe n x, x (n + 1)))).map
           (Prod.map (iicEquivFin α n) id) := by
-        rw [Measure.map_map hmap hpair]
+        rw [Measure.map_map hmap (by fun_prop)]
         congr 1
         funext x
         apply Prod.ext
@@ -254,7 +262,8 @@ theorem markovChainLaw_map_prefix_succ_eq_compProd [SFinite ν] (n : ℕ) :
           simp [frestrictLe, iicEquivFin_apply]
         · rfl
     _ = (((markovChainLaw ν κ).map (frestrictLe n)) ⊗ₘ markovStep κ n).map
-          (Prod.map (iicEquivFin α n) id) := by rw [key]
+          (Prod.map (iicEquivFin α n) id) := by
+        rw [markovChainLaw, map_frestrictLe_trajMeasure_compProd]
     _ = ((markovChainLaw ν κ).map (frestrictLe n)).map (iicEquivFin α n) ⊗ₘ
           κ.comap (fun w : Fin (n + 1) → α => w (Fin.last n))
             (measurable_pi_apply (Fin.last n)) := by
@@ -400,6 +409,12 @@ theorem _root_.MeasureTheory.Measure.markovChainLaw_prefixLaw_singleton
   rw [prefixLaw_def, blockLaw_def]
   exact markovChainLaw_map_prefix_apply_singleton ν κ n w
 
+/-- Measures with equal pushforwards along `h` also have equal pushforwards along `g ∘ h`. -/
+private theorem map_comp_eq_of_map_eq {β γ δ : Type*} [MeasurableSpace β] [MeasurableSpace γ]
+    [MeasurableSpace δ] {μ μ' : Measure β} {g : γ → δ} {h : β → γ} (hg : Measurable g)
+    (hh : Measurable h) (heq : μ.map h = μ'.map h) : μ.map (g ∘ h) = μ'.map (g ∘ h) := by
+  rw [← Measure.map_map hg hh, ← Measure.map_map hg hh, heq]
+
 /-- **Uniqueness of the path law.** A measure on path space whose time-zero marginal is `ν` and
 whose prefix laws satisfy the Markov recursion of `markovChainLaw_map_prefix_succ_eq_compProd` is
 the path law `markovChainLaw ν κ`. -/
@@ -421,8 +436,9 @@ theorem _root_.MeasureTheory.Measure.eq_markovChainLaw [IsFiniteMeasure ν]
           = (fun (a : α) (_ : Fin 1) => a) ∘ (fun x : ℕ → α => x 0) := by
         funext x i
         simp [Fin.fin_one_eq_zero i]
-      rw [hc, ← Measure.map_map (by fun_prop) (by fun_prop),
-        ← Measure.map_map (by fun_prop) (by fun_prop), h₀, markovChainLaw_map_eval_zero]
+      rw [hc]
+      exact map_comp_eq_of_map_eq (by fun_prop) (by fun_prop)
+        (h₀.trans (markovChainLaw_map_eval_zero ν κ).symm)
     | succ n ih =>
       have hc : (fun (x : ℕ → α) (i : Fin (n + 2)) => x i.1)
           = (fun p : (Fin (n + 1) → α) × α => Fin.snoc p.1 p.2) ∘
@@ -433,16 +449,17 @@ theorem _root_.MeasureTheory.Measure.eq_markovChainLaw [IsFiniteMeasure ν]
           fun p : (Fin (n + 1) → α) × α => (Fin.snoc p.1 p.2 : Fin (n + 2) → α) :=
         measurable_pi_iff.2 fun i => Fin.lastCases (by simp only [Fin.snoc_last]; fun_prop)
           (fun j => by simp only [Fin.snoc_castSucc]; fun_prop) i
-      rw [hc, ← Measure.map_map hsnoc (by fun_prop), ← Measure.map_map hsnoc (by fun_prop), hstep,
-        ih, markovChainLaw_map_prefix_succ_eq_compProd]
+      rw [hc]
+      refine map_comp_eq_of_map_eq hsnoc (by fun_prop) ?_
+      rw [hstep, ih, markovChainLaw_map_prefix_succ_eq_compProd]
   -- Every prefix law is a pushforward of one of these, so finite-marginal uniqueness applies.
   refine (measure_eq_of_prefixProj_map_eq fun n => ?_).symm
   have hc : prefixProj α n = (fun (w : Fin (n + 1) → α) (i : Fin n) => w i.castSucc) ∘
       (fun x (i : Fin (n + 1)) => x i.1) := by
     funext x i
     simp
-  rw [hc, ← Measure.map_map (by fun_prop) (by fun_prop),
-    ← Measure.map_map (by fun_prop) (by fun_prop), hpre]
+  rw [hc]
+  exact map_comp_eq_of_map_eq (by fun_prop) (by fun_prop) (hpre n).symm
 
 end Probability
 
