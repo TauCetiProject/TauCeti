@@ -12,7 +12,7 @@ public import TauCeti.AlgebraicTopology.Homotopy.Whitehead
 /-!
 # Milnor's countable join is contractible
 
-The countable join `universalGSpace G` of a nonempty group `G` is weakly contractible
+The countable join `universalGSpace G` of a nonempty type `G` is weakly contractible
 (`TauCeti.subsingleton_homotopyGroup_universalGSpace`) and carries a CW structure, so it is
 contractible by Whitehead's theorem (`TauCeti.instContractibleSpaceUniversalGSpace`).
 

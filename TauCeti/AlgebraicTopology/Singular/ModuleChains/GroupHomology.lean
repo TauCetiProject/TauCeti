@@ -28,8 +28,8 @@ with trivial coefficients is the homology of the coinvariants of any projective 
 
 `Hₙ(B; k) ≅ Hₙ(G, k)`.
 
-This applies to the orbit space of a contractible free `G`-space, such as a classifying space of
-`G` with its universal cover.
+This applies to the orbit map of a free, covering-space action of `G` on a contractible space,
+such as the universal cover of a classifying space of `G`.
 
 ## Main definitions
 

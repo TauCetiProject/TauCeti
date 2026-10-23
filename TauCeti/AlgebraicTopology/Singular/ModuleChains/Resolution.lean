@@ -5,11 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Limits.Shapes.SingleObj
 public import Mathlib.CategoryTheory.Preadditive.Projective.Resolution
 public import TauCeti.AlgebraicTopology.Singular.ModuleChains.Contractible
 public import TauCeti.RepresentationTheory.Rep.OfMulAction
-public import TauCeti.Topology.Category.TopCat.Action
 
 /-!
 # The singular chains of a contractible free `G`-space as a projective resolution
