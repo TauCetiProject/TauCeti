@@ -134,6 +134,21 @@ theorem leadingTerm_single (h : H) (r : R) :
 
 end LeadingTerm
 
+section MulOrder
+
+variable [AddZeroClass H] {N : H →+ ℝ} [NonUnitalNonAssocSemiring R] {a b : NovikovSeries R H N}
+  {h : H}
+
+/-- A product of Novikov series has no nonzero coefficient below the sum of the orders. -/
+theorem coeff_mul_eq_zero_of_lt_order_add (hh : N h < a.order + b.order) :
+    (a * b).coeff h = 0 := by
+  by_contra hab
+  obtain ⟨u, v, rfl, hu, hv⟩ := exists_add_eq_of_coeff_mul_ne_zero hab
+  rw [map_add] at hh
+  linarith [order_le_of_coeff_ne_zero hu, order_le_of_coeff_ne_zero hv]
+
+end MulOrder
+
 section Mul
 
 variable [AddMonoid H] {N : H →+ ℝ} [Semiring R] {a b : NovikovSeries R H N} {h : H}
@@ -146,14 +161,6 @@ private theorem period_eq_order_of_add {u v : H} (hu : a.coeff u ≠ 0) (hv : b.
   have hv' := order_le_of_coeff_ne_zero hv
   rw [map_add] at huv
   constructor <;> linarith
-
-/-- A product of Novikov series has no nonzero coefficient below the sum of the orders. -/
-theorem coeff_mul_eq_zero_of_lt_order_add (hh : N h < a.order + b.order) :
-    (a * b).coeff h = 0 := by
-  by_contra hab
-  obtain ⟨u, v, rfl, hu, hv⟩ := exists_add_eq_of_coeff_mul_ne_zero hab
-  rw [map_add] at hh
-  linarith [order_le_of_coeff_ne_zero hu, order_le_of_coeff_ne_zero hv]
 
 /-- At an exponent of period `a.order + b.order`, the coefficient of `a * b` is that of the
 group-ring product of the leading terms. -/
