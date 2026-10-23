@@ -20,12 +20,8 @@ carries a monoidal structure whose tensor product is additive in each factor
 (`CategoryTheory.MonoidalPreadditive`), the tensor product descends to a multiplication on
 `SplitK0 C` and makes it a ring, commutative as soon as `C` is braided.
 
-The construction is entirely a matter of feeding the tensor product to the universal property
-twice. For a fixed object `X`, tensoring on the left is an additive endofunctor of `C`, so
-`TauCeti.SplitK0.map` turns it into an endomorphism of the group. Sending `X` to that
-endomorphism is itself an isomorphism-invariant, biproduct-additive function of `X` -- additivity
-in `X` is `TauCeti.SplitK0.map` applied to tensoring on the *right* -- so it
-descends to `TauCeti.SplitK0.mulHom`, a biadditive multiplication with
+The tensor product bifunctor is additive in each variable, so the biadditivity of split `K₀`,
+`TauCeti.SplitK0.map₂`, descends it to `TauCeti.SplitK0.mulHom`, a biadditive multiplication with
 `[X] * [Y] = [X ⊗ Y]`. Distributivity is then automatic, and the remaining ring axioms are the
 associator, the unitors, and the braiding: each of them is an equality of bundled additive maps, so
 it is checked on the classes of objects by `TauCeti.SplitK0.hom_ext`.
@@ -69,11 +65,6 @@ classes of objects: associativity, commutativity, and multiplicativity of an ind
 an equality of bundled maps, so `TauCeti.SplitK0.hom_ext` reduces them to the classes of objects
 with no additive bookkeeping left to do.
 
-Tensoring on the left by a fixed object, and the two lemmas saying that it is an
-isomorphism-invariant, biproduct-additive function of that object, are the input to the second use
-of the universal property and have no role afterwards, so they are private: the public computation
-rule is `TauCeti.SplitK0.of_mul_of`.
-
 The `Mul` and `One` instances are installed before the `Ring` instance so that the axioms can be
 stated in the usual notation; the `Ring` instance reuses them rather than introducing new
 operations. Distributivity alone stages a private `NonUnitalNonAssocRing` structure, which is what
@@ -110,50 +101,15 @@ section Ring
 variable {C : Type u} [Category.{v} C] [Preadditive C] [MonoidalCategory C]
   [MonoidalPreadditive C] [HasBinaryBiproducts C] [EssentiallySmall.{w} C]
 
-/-- Tensoring on the left by `X`, as an endomorphism of split `K₀`. -/
-private noncomputable def mulLeft (X : C) : SplitK0 C →+ SplitK0 C :=
-  map (tensorLeft X)
-
-/-- Tensoring on the left by `X` sends the class of `Y` to the class of `X ⊗ Y`. -/
-@[simp]
-private lemma mulLeft_of (X Y : C) : mulLeft X (of Y) = (of (X ⊗ Y) : SplitK0 C) :=
-  map_of (tensorLeft X) Y
-
-/-- Isomorphic objects tensor on the left to the same endomorphism of split `K₀`. -/
-private lemma mulLeft_congr {X Y : C} (e : X ≅ Y) :
-    (mulLeft X : SplitK0 C →+ SplitK0 C) = mulLeft Y :=
-  map_congr fun Z => ⟨whiskerRightIso e Z⟩
-
-/-- Tensoring on the left by a biproduct is the sum of tensoring on the left by each summand;
-this is tensoring on the *right* applied to the defining relation of split `K₀`. -/
-private lemma mulLeft_biprod (X Y : C) :
-    (mulLeft (X ⊞ Y) : SplitK0 C →+ SplitK0 C) = mulLeft X + mulLeft Y := by
-  refine hom_ext fun Z => ?_
-  have h := congrArg (map (tensorRight Z)) (of_biprod X Y)
-  simp only [map_add, map_of] at h
-  simpa using h
-
 variable (C) in
-/-- Tensoring on the left is a biproduct-additive invariant of the left factor: this is the datum
-that descends the tensor product to a multiplication on split `K₀`. -/
-private noncomputable def mulInvariant : AdditiveInvariant C (SplitK0 C →+ SplitK0 C) where
-  obj := mulLeft
-  map_iso _ _ e := mulLeft_congr e
-  map_biprod := mulLeft_biprod
-
-/-- The invariant `TauCeti.SplitK0.mulInvariant` takes an object to tensoring on the left by it. -/
-@[simp]
-private lemma mulInvariant_obj (X : C) : (mulInvariant C).obj X = mulLeft X := (rfl)
-
-variable (C) in
-/-- Multiplication on split `K₀`, as a biadditive map. -/
+/-- Multiplication on split `K₀`, as a biadditive map: the map induced by the tensor product,
+which is additive in each variable. -/
 noncomputable def mulHom : SplitK0 C →+ SplitK0 C →+ SplitK0 C :=
-  lift (mulInvariant C)
+  map₂ (curriedTensor C)
 
-/-- Multiplication by the class of an object is tensoring on the left by that object. -/
-@[simp]
-private lemma mulHom_of (X : C) : mulHom C (of X) = mulLeft X := by
-  rw [mulHom, lift_of, mulInvariant_obj]
+/-- Multiplication evaluates on classes of objects as the class of their tensor product. -/
+private lemma mulHom_of_of (X Y : C) : mulHom C (of X) (of Y) = of (X ⊗ Y) :=
+  map₂_of_of (curriedTensor C) X Y
 
 /-- The multiplication on split `K₀` induced by the tensor product. -/
 noncomputable instance instMul : Mul (SplitK0 C) where
@@ -173,8 +129,8 @@ lemma one_def : (1 : SplitK0 C) = of (𝟙_ C) := (rfl)
 /-- The computation rule for the product: the class of a tensor product is the product of the
 classes. -/
 @[simp]
-theorem of_mul_of (X Y : C) : (of X : SplitK0 C) * of Y = of (X ⊗ Y) := by
-  rw [mul_def, mulHom_of, mulLeft_of]
+theorem of_mul_of (X Y : C) : (of X : SplitK0 C) * of Y = of (X ⊗ Y) :=
+  mulHom_of_of X Y
 
 /-! ### The ring structure
 
@@ -228,13 +184,13 @@ noncomputable instance instRing : Ring (SplitK0 C) where
     suffices h : mulHom C 1 = AddMonoidHom.id (SplitK0 C) by
       rw [mul_def, h, AddMonoidHom.id_apply]
     refine hom_ext fun X => ?_
-    rw [one_def, mulHom_of, mulLeft_of, AddMonoidHom.id_apply]
+    rw [one_def, mulHom_of_of, AddMonoidHom.id_apply]
     exact of_congr (λ_ X)
   mul_one a := by
     suffices h : (mulHom C).flip 1 = AddMonoidHom.id (SplitK0 C) by
       rw [mul_def, ← AddMonoidHom.flip_apply, h, AddMonoidHom.id_apply]
     refine hom_ext fun X => ?_
-    rw [AddMonoidHom.flip_apply, one_def, mulHom_of, mulLeft_of, AddMonoidHom.id_apply]
+    rw [AddMonoidHom.flip_apply, one_def, mulHom_of_of, AddMonoidHom.id_apply]
     exact of_congr (ρ_ X)
 
 /-- Two ring homomorphisms out of split `K₀` agreeing on the classes of objects are equal. -/
