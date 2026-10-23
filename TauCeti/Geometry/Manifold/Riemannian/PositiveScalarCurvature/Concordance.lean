@@ -600,6 +600,58 @@ private theorem scalarCurvature_eq_of_inner_eq_restrictIcc_cylinder {U : Set (M 
     {p : M × unitInterval} (hp : p ∈ U) : Gc.scalarCurvature p = g.scalarCurvature p.1 := by
   rw [eqOn_scalarCurvature hU h hp, scalarCurvature_restrictIcc, scalarCurvature_cylinder]
 
+omit [T2Space M] in
+/-- Where `collarTime δ` is the identity and `Gc` is the product metric `g + dt²`, the pullback of
+`Gc` along `(x, t) ↦ (x, collarTime δ t)` is `g + dt²`. -/
+private theorem pullback_prodMap_id_collarTimeIcc_inner (hδ : 0 < δ) (hδ₁ : δ < 1) {p : M × ℝ}
+    (hp : p.2 ∈ Ioo δ (1 - δ))
+    (hg : Gc.inner (Prod.map id (collarTimeIcc hδ hδ₁) p) =
+      (g.cylinder.restrictIcc 0 1).inner (Prod.map id (collarTimeIcc hδ hδ₁) p)) :
+    (Gc.pullback (Prod.map id (collarTimeIcc hδ hδ₁))
+      (contMDiff_prodMap_id_collarTimeIcc hδ hδ₁ (by simp))
+      fun p ↦ (isInvertible_mfderiv_prodMap_id_collarTimeIcc hδ hδ₁ p).injective).inner p =
+      g.cylinder.inner p := by
+  have hθ : collarTime δ =ᶠ[𝓝 p.2] id := by
+    filter_upwards [Ioo_mem_nhds hp.1 hp.2] with t ht
+    exact collarTime_of_mem hδ (Ioo_subset_Icc_self ht)
+  rw [← cylinder_reparamTime_inner g contDiff_collarTime (deriv_collarTime_ne_zero hδ)
+    (by simp [hθ.deriv_eq])]
+  ext v w
+  rw [pullback_inner, hg, restrictIcc_inner, reparamTime_inner,
+    mfderiv_prodMap_id_collarTime_apply hδ hδ₁, mfderiv_prodMap_id_collarTime_apply hδ hδ₁]
+  -- Unfold the map, so that both sides are evaluated at `(p.1, collarTime δ p.2)`.
+  simp only [Prod.map_fst, Prod.map_snd, id_eq, coe_collarTimeIcc]
+  -- The sides now differ only in how the tangent fibres containing the vectors are written:
+  -- the fibres over `Prod.map id (collarTimeIcc hδ hδ₁) p` and over `(p.1, collarTime δ p.2)` are
+  -- both `E × ℝ`.
+  rfl
+
+/-- A metric on `M × ℝ` has positive scalar curvature if it is `g₀ + dt²` where `t < a`,
+`g₁ + dt²` where `t > b`, and agrees with a metric of positive scalar curvature where `c < t < d`,
+for some `c < a` and `b < d`. -/
+private theorem hasPositiveScalarCurvature_of_inner_eq_cylinder
+    {G B : ContMDiffRiemannianMetric (I.prod 𝓘(ℝ)) ∞ (E × ℝ)
+      (fun p : M × ℝ ↦ TangentSpace (I.prod 𝓘(ℝ)) p)}
+    (hg₀ : g₀.HasPositiveScalarCurvature) (hg₁ : g₁.HasPositiveScalarCurvature)
+    (hB : B.HasPositiveScalarCurvature) {a b c d : ℝ} (hca : c < a) (hbd : b < d)
+    (h₀ : ∀ p : M × ℝ, p.2 < a → G.inner p = g₀.cylinder.inner p)
+    (h₁ : ∀ p : M × ℝ, b < p.2 → G.inner p = g₁.cylinder.inner p)
+    (hGB : ∀ p : M × ℝ, c < p.2 → p.2 < d → G.inner p = B.inner p) :
+    G.HasPositiveScalarCurvature := by
+  refine (hasPositiveScalarCurvature_iff _).2 fun p ↦ ?_
+  rcases lt_or_ge p.2 a with hp | hp
+  · rw [eqOn_scalarCurvature (isOpen_lt continuous_snd continuous_const) h₀ hp,
+      scalarCurvature_cylinder]
+    exact (hasPositiveScalarCurvature_iff _).1 hg₀ p.1
+  rcases lt_or_ge b p.2 with hp' | hp'
+  · rw [eqOn_scalarCurvature (isOpen_lt continuous_const continuous_snd) h₁ hp',
+      scalarCurvature_cylinder]
+    exact (hasPositiveScalarCurvature_iff _).1 hg₁ p.1
+  · have hW : IsOpen {q : M × ℝ | c < q.2 ∧ q.2 < d} :=
+      (isOpen_lt continuous_const continuous_snd).inter (isOpen_lt continuous_snd continuous_const)
+    rw [eqOn_scalarCurvature hW (fun q hq ↦ hGB q hq.1 hq.2) ⟨by linarith, by linarith⟩]
+    exact (hasPositiveScalarCurvature_iff _).1 hB p
+
 /-- The metric at the start of a collared concordance has positive scalar curvature. -/
 theorem IsCollaredConcordance.hasPositiveScalarCurvature_left
     (h : IsCollaredConcordance Gc g₀ g₁) : g₀.HasPositiveScalarCurvature :=
@@ -675,30 +727,12 @@ theorem IsCollaredConcordance.concordant (h : IsCollaredConcordance Gc g₀ g₁
     rw [scalarCurvature_pullback_of_isInvertible Gc _
       (isInvertible_mfderiv_prodMap_id_collarTimeIcc hδ hδ₁)]
     exact (hasPositiveScalarCurvature_iff _).1 h.hasPositiveScalarCurvature _
-  -- Where `collarTime (ε / 2)` is the identity and `Gc` is a product metric, so is `B`.
-  have hBcyl (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) (p : M × ℝ)
-      (hp : p.2 ∈ Ioo (ε / 2) (1 - ε / 2))
-      (hg : Gc.inner (Θ p) = (g.cylinder.restrictIcc 0 1).inner (Θ p)) :
-      B.inner p = g.cylinder.inner p := by
-    have hθ : collarTime (ε / 2) =ᶠ[𝓝 p.2] id := by
-      filter_upwards [Ioo_mem_nhds hp.1 hp.2] with t ht
-      exact collarTime_of_mem hδ (Ioo_subset_Icc_self ht)
-    rw [← cylinder_reparamTime_inner g contDiff_collarTime (deriv_collarTime_ne_zero hδ)
-      (by simp [hθ.deriv_eq])]
-    ext v w
-    rw [pullback_inner, hg, restrictIcc_inner, reparamTime_inner,
-      mfderiv_prodMap_id_collarTime_apply hδ hδ₁, mfderiv_prodMap_id_collarTime_apply hδ hδ₁]
-    -- Unfold `Θ`, so that both sides are evaluated at `(p.1, collarTime (ε / 2) p.2)`.
-    simp only [Θ, Prod.map_fst, Prod.map_snd, id_eq, coe_collarTimeIcc]
-    -- The sides now differ only in how the tangent fibres containing the vectors are written:
-    -- the fibres over `Θ p` and over `(p.1, collarTime (ε / 2) p.2)` are both `E × ℝ`.
-    rfl
   have hB₀ (p : M × ℝ) (hp : p.2 ∈ Ioo (ε / 2) ε) : B.inner p = g₀.cylinder.inner p :=
-    hBcyl g₀ p ⟨hp.1, by linarith [hp.2]⟩ (h₀ _ (by
+    pullback_prodMap_id_collarTimeIcc_inner hδ hδ₁ ⟨hp.1, by linarith [hp.2]⟩ (h₀ _ (by
       rw [hΘ, collarTime_of_mem hδ ⟨hp.1.le, by linarith [hp.2]⟩]
       linarith [hp.2]))
   have hB₁ (p : M × ℝ) (hp : p.2 ∈ Ioo (1 - ε) (1 - ε / 2)) : B.inner p = g₁.cylinder.inner p :=
-    hBcyl g₁ p ⟨by linarith [hp.1], hp.2⟩ (h₁ _ (by
+    pullback_prodMap_id_collarTimeIcc_inner hδ hδ₁ ⟨by linarith [hp.1], hp.2⟩ (h₁ _ (by
       rw [hΘ, collarTime_of_mem hδ ⟨by linarith [hp.1], hp.2.le⟩]
       linarith [hp.1]))
   -- Glue `g₀ + dt²` on `t < ε`, `B` on `ε / 2 < t < 1 - ε / 2` and `g₁ + dt²` on `t > 1 - ε`.
@@ -720,20 +754,12 @@ theorem IsCollaredConcordance.concordant (h : IsCollaredConcordance Gc g₀ g₁
     piecewise_inner_of_mem_left (U := {p : M × ℝ | p.2 < 1 - ε / 2}) hp
   have hG₁ (p : M × ℝ) (hp : 1 - ε < p.2) : G₁.inner p = g₁.cylinder.inner p :=
     piecewise_inner_of_mem_right (V := {p : M × ℝ | 1 - ε < p.2}) hp
-  refine ⟨G₁, (hasPositiveScalarCurvature_iff _).2 fun p ↦ ?_,
+  refine ⟨G₁, hasPositiveScalarCurvature_of_inner_eq_cylinder h.hasPositiveScalarCurvature_left
+    h.hasPositiveScalarCurvature_right hB (by linarith : ε / 2 < ε)
+    (by linarith : 1 - ε < 1 - ε / 2) (fun p hp ↦ (hG₁₀ p (by linarith)).trans (hG₀ p hp)) hG₁
+    (fun p hp hp' ↦ (hG₁₀ p hp').trans (hG₀B p hp)),
     fun p hp ↦ (hG₁₀ p (by linarith)).trans (hG₀ p (by linarith)),
     fun p hp ↦ hG₁ p (by linarith)⟩
-  rcases lt_or_ge p.2 ε with hp | hp
-  · rw [eqOn_scalarCurvature hU₀ (fun q hq ↦ (hG₁₀ q (by simp at hq; linarith)).trans
-      (hG₀ q hq)) hp, scalarCurvature_cylinder]
-    exact (hasPositiveScalarCurvature_iff _).1 h.hasPositiveScalarCurvature_left p.1
-  rcases lt_or_ge (1 - ε) p.2 with hp' | hp'
-  · rw [eqOn_scalarCurvature hV₁ (fun q hq ↦ hG₁ q hq) hp', scalarCurvature_cylinder]
-    exact (hasPositiveScalarCurvature_iff _).1 h.hasPositiveScalarCurvature_right p.1
-  · have hW : IsOpen {q : M × ℝ | ε / 2 < q.2 ∧ q.2 < 1 - ε / 2} := hV₀.inter hU₁
-    rw [eqOn_scalarCurvature hW (fun q hq ↦ (hG₁₀ q hq.2).trans (hG₀B q hq.1))
-      ⟨by linarith, by linarith⟩]
-    exact (hasPositiveScalarCurvature_iff _).1 hB p
 
 /-- Two metrics are concordant exactly when there is a collared concordance from one to the
 other. -/
