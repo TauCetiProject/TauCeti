@@ -24,9 +24,6 @@ ring in which `n` is invertible.
 
 * Mathlib's `Mathlib.RingTheory.Etale.StandardEtale`, for `StandardEtalePair` and its
   universal mapping API.
-* Tau Ceti's `TauCeti.Algebra.QuadraticAlgebra.Etale`, whose `QuadraticAlgebra.quadraticEtalePair`
-  and the comparison of presentations in `QuadraticAlgebra.etale_of_isUnit_discr` are the pattern
-  generalised here from a quadratic to an arbitrary separable monic polynomial.
 -/
 
 public section

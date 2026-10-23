@@ -44,7 +44,7 @@ open MeasureTheory ProbabilityTheory Real Set
 
 namespace TauCeti.Probability
 
-variable {a c s k m Ω : ℝ}
+variable {a c s k m Ω ξ : ℝ}
 
 /-- Shape-one generalized gamma laws with positive power parameter are Weibull laws
 with that shape and the same scale, including the zero laws at nonpositive scale. -/
@@ -123,6 +123,22 @@ theorem nakagamiMeasure_eq_generalizedGammaMeasure (m Ω : ℝ) :
   · rw [← sqrt_mul (by norm_num)]
     congr 1
     field_simp
+
+/-- At nonzero shape, a generalized extreme-value law is the affine image of a
+shape-one generalized gamma law with power parameter `(-ξ)⁻¹` and unit scale. -/
+theorem generalizedExtremeValueMeasure_eq_map_generalizedGammaMeasure
+    (hs : 0 < s) (hξ : ξ ≠ 0) (m : ℝ) :
+    generalizedExtremeValueMeasure m s ξ =
+      (generalizedGammaMeasure 1 (-ξ)⁻¹ 1).map
+        (fun x ↦ (m - s / ξ) + (s / ξ) * x) := by
+  rw [generalizedGammaMeasure_of_valid zero_lt_one
+      (inv_ne_zero (neg_ne_zero.mpr hξ)) zero_lt_one,
+    Measure.map_map (by fun_prop) (by fun_prop),
+    generalizedExtremeValueMeasure_of_shape_ne_zero hs hξ, expMeasure]
+  congr 1
+  funext x
+  simp only [Function.comp_apply, inv_inv, one_mul]
+  ring
 
 /-- The Fréchet law of shape `c` and scale `s` is both generalized gamma with
 parameters `(1, -c, s)` and GEV with location `s`, scale `s / c`, and shape `c⁻¹`.

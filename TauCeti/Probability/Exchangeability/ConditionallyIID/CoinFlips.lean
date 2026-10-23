@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Exchangeability.ConditionallyIID.Construct
 public import Mathlib.Probability.Distributions.Bernoulli
+import TauCeti.Probability.Distributions.Bernoulli.Measurability
 
 /-!
 # Exchangeable coin flips: the worked example of a random bias
@@ -81,15 +82,8 @@ theorem coinKernel_apply_true (p : I) :
   exact bernoulliMeasure_apply_of_mem_of_notMem p (measurableSet_singleton _) rfl (by simp)
 
 /-- The two-point kernel is measurable in the bias, so it can direct a mixture. -/
-theorem measurable_coinKernel : Measurable coinKernel := by
-  have hp : Measurable fun p : I => (toNNReal p : ℝ≥0∞) :=
-    measurable_coe_nnreal_ennreal.comp toNNReal_continuous.measurable
-  have hσ : Measurable fun p : I => (toNNReal (σ p) : ℝ≥0∞) :=
-    measurable_coe_nnreal_ennreal.comp (toNNReal_continuous.comp continuous_symm).measurable
-  refine (Measure.measurable_of_measurable_coe _ fun s _ => ?_).subtype_mk
-  simp only [bernoulliMeasure_def, Measure.coe_add, Measure.coe_smul, Pi.add_apply,
-    Pi.smul_apply]
-  exact (hp.mul_const _).add (hσ.mul_const _)
+theorem measurable_coinKernel : Measurable coinKernel :=
+  (measurable_bernoulliMeasure true false).subtype_mk
 
 variable (π : Measure I)
 

@@ -458,11 +458,11 @@ theorem IsDistinguished.exists_mul_add_eq [CompleteSpace R] (hf : IsDistinguishe
   set rr : PowerSeries R := PowerSeries.mk fun i ↦ ∑' k, ((F (G k)).2).coeff i with hrdef
   have hsumQ : ∀ i, HasSum (fun k ↦ ((F (G k)).1).coeff i) (q.coeff i) := fun i ↦ by
     rw [hqdef, PowerSeries.coeff_mk]
-    exact (summable_coeff_of_summable_gaussNorm hc
+    exact (summable_coeff_of_summable_gaussNorm (R := R) hc
       (fun k ↦ hasGaussNorm_of_isRestricted (hF (G k) (hGr k)).1) hsQ i).hasSum
   have hsumr : ∀ i, HasSum (fun k ↦ ((F (G k)).2).coeff i) (rr.coeff i) := fun i ↦ by
     rw [hrdef, PowerSeries.coeff_mk]
-    exact (summable_coeff_of_summable_gaussNorm hc
+    exact (summable_coeff_of_summable_gaussNorm (R := R) hc
       (fun k ↦ hasGaussNorm_of_isRestricted
         (isRestricted_of_forall_coeff_eq_zero (hF (G k) (hGr k)).2.1)) hsr i).hasSum
   refine ⟨q, rr, isRestricted_mk_tsum_coeff hc (fun k ↦ (hF (G k) (hGr k)).1) hsQ,

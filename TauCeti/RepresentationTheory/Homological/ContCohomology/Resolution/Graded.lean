@@ -521,6 +521,14 @@ theorem gradedResolutionTopRep_ρ_lof [DecidableEq ℕ] (n : ℕ) (g : G)
           ((resolutionX X (n + 1)).ρ g x) := by
   rw [gradedResolutionTopRep_ρ_apply, gradedResolutionRepresentation_lof]
 
+/-- The bundled discrete action preserves the homogeneous pieces. -/
+theorem gradedResolutionTopRep_ρ_mem (n : ℤ) (g : G) (x : X.gradedResolutionModule)
+    (hx : x ∈ X.gradedResolutionPiece n) :
+    X.gradedResolutionTopRep.ρ g x ∈ X.gradedResolutionPiece n := by
+  have h := (X.isHomogeneous_gradedResolutionRepresentation g).map_mem hx
+  rw [add_zero] at h
+  exact h
+
 /-- The total resolution carries the discrete topology. -/
 instance : DiscreteTopology X.gradedResolutionTopRep.V := by
   unfold gradedResolutionTopRep
@@ -538,6 +546,12 @@ noncomputable def gradedResolutionTopRepDifferential :
 theorem gradedResolutionTopRepDifferential_apply (x : X.gradedResolutionModule) :
     X.gradedResolutionTopRepDifferential.hom x = X.gradedResolutionDifferential x :=
   (rfl)
+
+/-- The bundled total differential has degree one. -/
+theorem isHomogeneous_gradedResolutionTopRepDifferential :
+    TauCeti.LinearMap.IsHomogeneous X.gradedResolutionTopRepDifferential.hom.toLinearMap
+      X.gradedResolutionPiece X.gradedResolutionPiece 1 :=
+  X.isHomogeneous_gradedResolutionDifferential
 
 /-- The differential of the bundled discrete resolution squares to zero. -/
 @[simp]

@@ -42,6 +42,8 @@ is an involution and preserves non-interleaving of the swapped pair.
   `TauCeti.GridDiagram.isColumnCommutation_transpose`: diagonal reflection exchanges the two
   kinds of commutation.
 * `TauCeti.GridDiagram.isCommutation_comm`: the combined commutation relation is symmetric.
+* `TauCeti.GridDiagram.IsCommutation.apply_eq_of_transpose`: invariance under the diagonal
+  reflection and under column commutations gives invariance under all commutations.
 
 ## References
 
@@ -358,6 +360,18 @@ theorem isCommutation_transpose (G G' : GridDiagram n) :
     IsCommutation G.transpose G'.transpose ↔ IsCommutation G G' := by
   unfold IsCommutation
   rw [isRowCommutation_transpose, isColumnCommutation_transpose, or_comm]
+
+/-- **Row commutations from column commutations.** A function on grid diagrams that is
+invariant under the diagonal reflection and under column commutations is invariant under every
+commutation: the reflection turns a row commutation into a column commutation. -/
+theorem IsCommutation.apply_eq_of_transpose {α : Sort*} (f : GridDiagram n → α)
+    (htranspose : ∀ H : GridDiagram n, f H.transpose = f H)
+    (hcolumn : ∀ {H H' : GridDiagram n}, IsColumnCommutation H H' → f H = f H')
+    {G G' : GridDiagram n} (h : IsCommutation G G') : f G = f G' := by
+  rcases h with h | h
+  · rw [← htranspose G, ← htranspose G']
+    exact hcolumn ((isColumnCommutation_transpose G G').mpr h)
+  · exact hcolumn h
 
 end GridDiagram
 

@@ -161,6 +161,26 @@ of local smoothings along the crossing relabelling. -/
   rw [he, smoothingTurn_crossing, crossing_relabel]
   simp
 
+/-- Two families of local smoothings agreeing away from the crossing `c` smooth every half-edge
+away from `c` in the same way. -/
+theorem smoothingTurn_apply_eq_smoothingTurn_apply (D : PDCode n) {c : Fin n} {b b' : Fin n → Bool}
+    (hb : ∀ j, j ≠ c → b j = b' j) {x : Fin (4 * n)} (hx : ∀ k, D.crossing c k ≠ x) :
+    D.smoothingTurn b x = D.smoothingTurn b' x := by
+  obtain ⟨y, rfl⟩ := D.halfEdge.surjective x
+  obtain ⟨⟨i, k⟩, rfl⟩ := (crossingSlotEquiv n).surjective y
+  have hi : i ≠ c := by
+    rintro rfl
+    exact hx k (D.crossing_apply i k)
+  simp [hb i hi]
+
+/-- Smoothing keeps a half-edge away from the crossing `c` away from `c`. -/
+theorem crossing_ne_smoothingTurn (D : PDCode n) {c : Fin n} (b : Fin n → Bool) {x : Fin (4 * n)}
+    (hx : ∀ k, D.crossing c k ≠ x) (k : Fin 4) : D.crossing c k ≠ D.smoothingTurn b x := by
+  intro h
+  refine hx (slotSmoothing (b c) k) ?_
+  rw [← D.smoothingTurn_apply_apply b x, ← h]
+  simp
+
 /-- The over-pair indicator of the local smoothing that a state selects at a crossing: the code's
 own indicator where the state chooses the `A`-smoothing, and the complementary one where it
 chooses the `B`-smoothing. -/
@@ -198,6 +218,16 @@ over-pair indicator. -/
     (D.relabel half cross).smoothingChoice s = D.smoothingChoice (s ∘ cross) ∘ cross.symm := by
   funext i
   simp [smoothingChoice]
+
+/-- Two states agreeing at the crossing `j` select the same local smoothing there. -/
+theorem smoothingChoice_eq_smoothingChoice (D : PDCode n) {s t : Fin n → Bool} {j : Fin n}
+    (h : s j = t j) : D.smoothingChoice s j = D.smoothingChoice t j := by
+  simp [smoothingChoice, h]
+
+/-- Two states differing at the crossing `c` select the two different local smoothings there. -/
+theorem smoothingChoice_eq_not_smoothingChoice (D : PDCode n) {c : Fin n} {s t : Fin n → Bool}
+    (hc : s c ≠ t c) : D.smoothingChoice t c = !D.smoothingChoice s c := by
+  cases hs : s c <;> cases ht : t c <;> simp_all
 
 /-- The traversal of the diagram smoothed according to the state `s`: cross an arc, then follow
 the chosen smoothing at the crossing reached. Its orbits are the two directed traversals of each
