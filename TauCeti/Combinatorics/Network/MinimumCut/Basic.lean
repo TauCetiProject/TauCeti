@@ -155,18 +155,12 @@ section Truncation
 
 variable [LinearOrder K] {f g : Finset V → K} {A B S₀ : Finset V} {b : K}
 
-/-- The pointwise step of truncation at `b`: if `y ≤ x`, `min x b ≤ y` and `x < b`, then
-`y = x`. -/
-theorem eq_of_le_of_min_le_of_lt {x y : K} (hyx : y ≤ x) (hxy : min x b ≤ y) (hx : x < b) :
-    y = x :=
-  le_antisymm hyx (by simpa [min_eq_left hx.le] using hxy)
-
 /-- Suppose that `g ≤ f`, that `g` is at least `min f b` everywhere, and that some admissible side
 has `f`-value below `b`. Then `f` and `g` agree on every minimum side of `f`. -/
 theorem IsMinimum.eq_of_le_of_min_le (hgf : ∀ S, g S ≤ f S) (hfg : ∀ S, min (f S) b ≤ g S)
     (hS₀ : IsAdmissible A B S₀) (hb : f S₀ < b) {S : Finset V} (hS : IsMinimum f A B S) :
     g S = f S :=
-  eq_of_le_of_min_le_of_lt (hgf S) (hfg S) ((hS.le hS₀).trans_lt hb)
+  le_antisymm (hgf S) ((min_eq_left ((hS.le hS₀).trans_lt hb).le).symm.trans_le (hfg S))
 
 /-- Suppose that `g ≤ f`, that `g` is at least `min f b` everywhere, and that some admissible side
 has `f`-value below `b`. Then `f` and `g` have the same minimum sides. This is the effect on
@@ -175,7 +169,7 @@ theorem isMinimum_iff_of_le_of_min_le (hgf : ∀ S, g S ≤ f S) (hfg : ∀ S, m
     (hS₀ : IsAdmissible A B S₀) (hb : f S₀ < b) {S : Finset V} :
     IsMinimum g A B S ↔ IsMinimum f A B S := by
   have key {T : Finset V} (hT : f T < b) : g T = f T :=
-    eq_of_le_of_min_le_of_lt (hgf T) (hfg T) hT
+    le_antisymm (hgf T) ((min_eq_left hT.le).symm.trans_le (hfg T))
   constructor
   · intro hS
     have hgS : g S < b := (hS.le hS₀).trans_lt ((key hb).trans_lt hb)

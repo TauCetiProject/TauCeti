@@ -76,8 +76,8 @@ theorem min_arrowSum_le_arrowSum_inf (hf : 0 ≤ f) (hb : 0 ≤ b) (S T : Finset
 /-- Capping a nonnegative assignment at a bound `b` does not change an arrow sum below `b`. -/
 theorem arrowSum_inf_eq_of_lt (hf : 0 ≤ f) {S T : Finset V} (hb : arrowSum f S T < b) :
     arrowSum (f ⊓ fun _ _ _ ↦ b) S T = arrowSum f S T :=
-  eq_of_le_of_min_le_of_lt (arrowSum_mono inf_le_left S T)
-    (min_arrowSum_le_arrowSum_inf hf ((arrowSum_nonneg hf S T).trans hb.le) S T) hb
+  le_antisymm (arrowSum_mono inf_le_left S T) ((min_eq_left hb.le).symm.trans_le
+    (min_arrowSum_le_arrowSum_inf hf ((arrowSum_nonneg hf S T).trans hb.le) S T))
 
 end ArrowSum
 
