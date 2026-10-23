@@ -20,8 +20,8 @@ odd one. Reading it that way is bookkeeping that every such induction repeats, s
 here once and shared.
 
 In the other direction, the ordered product `(l.map (ι Q)).prod` of a list of vectors — the
-spelling `TauCeti/LinearAlgebra/CliffordAlgebra/VolumeElement.lean` uses for the volume element —
-is homogeneous of degree `l.length`, which is Mathlib's
+spelling `TauCeti/LinearAlgebra/CliffordAlgebra/VolumeElement/Basic.lean` uses for the volume
+element — is homogeneous of degree `l.length`, which is Mathlib's
 `SetLike.list_prod_map_mem_graded` for the graded monoid `CliffordAlgebra.evenOdd Q` with the
 degree of each factor read off `CliffordAlgebra.ι_mem_evenOdd_one`. Reading it off by the parity of
 the length is what matters downstream.

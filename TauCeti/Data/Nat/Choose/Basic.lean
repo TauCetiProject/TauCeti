@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
+public import Mathlib.Algebra.Ring.Parity
 public import Mathlib.Data.Nat.Choose.Basic
 public import Mathlib.Order.Interval.Finset.Nat
 import Mathlib.Algebra.BigOperators.Intervals
@@ -19,11 +20,11 @@ import Mathlib.Tactic.Ring
 
 This file records arithmetic identities involving natural-number binomial coefficients.
 
-Besides three identities for the second binomial coefficient and the sum `2ⁿ - 2` of the
-inner binomial coefficients `C(n, i)`, `0 < i < n`, it develops Vandermonde's convolution
-`∑ i, C(A, i) * C(B, r - i) = C(A + B, r)` in the shape taken by factorial moments of a law
-supported on such a convolution: each summand is weighted by the falling factorial `(i)ₘ` of the
-summation index. The weighted sum is again a single binomial coefficient,
+Besides three identities and a parity formula for the second binomial coefficient and the sum
+`2ⁿ - 2` of the inner binomial coefficients `C(n, i)`, `0 < i < n`, it develops Vandermonde's
+convolution `∑ i, C(A, i) * C(B, r - i) = C(A + B, r)` in the shape taken by factorial moments of a
+law supported on such a convolution: each summand is weighted by the falling factorial `(i)ₘ` of
+the summation index. The weighted sum is again a single binomial coefficient,
 `(A)ₘ * C(A + B - m, r - m)`, because `(i)ₘ` lowers both indices of `C(A, i)` at once.
 
 ## Main results
@@ -32,6 +33,8 @@ summation index. The weighted sum is again a single binomial coefficient,
   the triangular number is the corresponding square.
 * `Nat.add_choose_two`: the second binomial coefficient of a sum, with its cross term.
 * `Nat.pow_three_sub_self_eq_mul_choose_two`: `g³ - g = (2g + 2) · C(g, 2)`.
+* `Nat.even_choose_two_iff`, `Nat.neg_one_pow_choose_two`: `C(m, 2)` and `⌊m / 2⌋` have the same
+  parity, so `(-1) ^ C(m, 2) = (-1) ^ ⌊m / 2⌋`.
 * `Nat.sum_Icc_choose_eq_two_pow_sub_two`: the binomial coefficients `C(n, i)`, `0 < i < n`,
   sum to `2ⁿ - 2`.
 * `Nat.descFactorial_mul_choose`: a falling factorial of the lower index lowers both indices,
@@ -90,6 +93,25 @@ theorem pow_three_sub_self_eq_mul_choose_two (g : ℕ) :
       ring
     rw [h]
     exact Nat.sub_eq_of_eq_add (by ring)
+
+/-- `C(m, 2)` and `⌊m / 2⌋` have the same parity: going from `m` to `m + 2` adds `2m + 1` to the
+first and `1` to the second. -/
+theorem even_choose_two_iff (m : ℕ) : Even (m.choose 2) ↔ Even (m / 2) := by
+  induction m using Nat.twoStepInduction with
+  | zero => decide
+  | one => decide
+  | more m ih _ =>
+    have h : (m + 2).choose 2 = m.choose 2 + 2 * m + 1 := by
+      rw [add_choose_two, Nat.choose_self]
+      ring
+    rw [h, show (m + 2) / 2 = m / 2 + 1 by omega]
+    simp [Nat.even_add_one, parity_simps, ih]
+
+/-- The sign `(-1) ^ C(m, 2)` of the order-reversing permutation of `m` letters is
+`(-1) ^ ⌊m / 2⌋`. -/
+theorem neg_one_pow_choose_two {R : Type*} [Monoid R] [HasDistribNeg R] (m : ℕ) :
+    (-1 : R) ^ m.choose 2 = (-1) ^ (m / 2) :=
+  neg_one_pow_congr (even_choose_two_iff m)
 
 /-- The binomial coefficients `C(n, i)` with `0 < i < n` sum to `2ⁿ - 2`. -/
 theorem sum_Icc_choose_eq_two_pow_sub_two (n : ℕ) :
