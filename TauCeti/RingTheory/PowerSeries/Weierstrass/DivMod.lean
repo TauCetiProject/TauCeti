@@ -83,6 +83,14 @@ namespace TauCeti.PowerSeries.IsMulDistinguished
 variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] {c : ℝ} {s : ℕ}
   {g : PowerSeries.IsRestricted.subring (R := R) c}
 
+omit [IsUltrametricDist R] in
+/-- A polynomial of degree less than `s`, viewed as a power series, has zero coefficients from
+`s` on. -/
+private theorem coeff_coe_eq_zero_of_degree_lt {p : Polynomial R} {m : ℕ} (hp : p.degree < s)
+    (hm : s ≤ m) : (p : PowerSeries R).coeff m = 0 := by
+  rw [Polynomial.coeff_coe]
+  exact Polynomial.coeff_eq_zero_of_degree_lt (hp.trans_le (by exact_mod_cast hm))
+
 /-- Uniqueness of Weierstrass division, read in the restricted subring with a polynomial
 remainder. -/
 private theorem eq_and_eq_of_mul_add_polynomialToRestricted_eq
@@ -93,11 +101,8 @@ private theorem eq_and_eq_of_mul_add_polynomialToRestricted_eq
     q = q' ∧ r = r' := by
   have h' : (g : PowerSeries R) * q + r = (g : PowerSeries R) * q' + r' := by
     simpa using congrArg Subtype.val h
-  have hz : ∀ {p : Polynomial R}, p.degree < s → ∀ m, s ≤ m → (p : PowerSeries R).coeff m = 0 :=
-    fun hp m hm ↦ by
-      rw [Polynomial.coeff_coe]
-      exact Polynomial.coeff_eq_zero_of_degree_lt (hp.trans_le (by exact_mod_cast hm))
-  obtain ⟨hq, hr⟩ := hg.eq_and_eq_of_mul_add_eq_mul_add hc q.2 q'.2 (hz hr) (hz hr') h'
+  obtain ⟨hq, hr⟩ := hg.eq_and_eq_of_mul_add_eq_mul_add hc q.2 q'.2
+    (fun _ ↦ coeff_coe_eq_zero_of_degree_lt hr) (fun _ ↦ coeff_coe_eq_zero_of_degree_lt hr') h'
   exact ⟨Subtype.ext hq, Polynomial.coe_inj.mp hr⟩
 
 variable [CompleteSpace R]
@@ -265,10 +270,8 @@ theorem gaussNorm_eq_max (f : PowerSeries.IsRestricted.subring (R := R) c) :
           (hg.weierstrassDiv hc f : PowerSeries R).gaussNorm norm c)
         ((hg.weierstrassMod hc f : PowerSeries R).gaussNorm norm c) := by
   conv_lhs => rw [← hg.mul_weierstrassDiv_add_weierstrassMod hc f]
-  simpa using hg.gaussNorm_mul_add_eq_max hc (hg.weierstrassDiv hc f).2 fun m hm ↦ by
-    rw [Polynomial.coeff_coe]
-    exact Polynomial.coeff_eq_zero_of_degree_lt
-      ((hg.degree_weierstrassMod_lt hc f).trans_le (by exact_mod_cast hm))
+  simpa using hg.gaussNorm_mul_add_eq_max hc (hg.weierstrassDiv hc f).2 fun _ ↦
+    coeff_coe_eq_zero_of_degree_lt (hg.degree_weierstrassMod_lt hc f)
 
 /-- **The Weierstrass quotient bound** `‖q‖ ≤ ‖f‖ / ‖g‖`, for the Gauss norm at `c`. -/
 theorem gaussNorm_weierstrassDiv_le (f : PowerSeries.IsRestricted.subring (R := R) c) :
