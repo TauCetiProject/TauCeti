@@ -135,7 +135,7 @@ theorem dense_withLpProdMap_domain_iff :
       Dense (f.domain : Set E) ∧ Dense (g.domain : Set F) := by
   have hdom : ((f.withLpProdMap p g).domain : Set (WithLp p (E × F))) =
       homeomorphProd p E F ⁻¹' ((f.domain : Set E) ×ˢ (g.domain : Set F)) :=
-    rfl
+    Set.ext fun _ => mem_withLpProdMap_domain
   rw [hdom, (homeomorphProd p E F).isOpenQuotientMap.dense_preimage_iff, dense_iff_closure_eq,
     closure_prod_eq, prod_eq_univ, ← dense_iff_closure_eq, ← dense_iff_closure_eq]
 
@@ -156,29 +156,21 @@ variable {p} [CommRing R] [AddCommGroup E] [Module R E] [AddCommGroup E'] [Modul
 
 /-- The direct sum is closed if and only if both summands are closed. -/
 theorem isClosed_withLpProdMap_iff : (f.withLpProdMap p g).IsClosed ↔ f.IsClosed ∧ g.IsClosed := by
-  -- The graph of `f ⊕ g` is the preimage of `graph f ×ˢ graph g` under a coordinate shuffle.
-  let Φ : WithLp p (E × F) × WithLp p (E' × F') → (E × E') × (F × F') :=
-    fun z => ((z.1.fst, z.2.fst), (z.1.snd, z.2.snd))
+  -- The graph of `f ⊕ g` is the preimage of `graph f ×ˢ graph g` under a coordinate shuffle,
+  -- which is a homeomorphism.
+  let Φ : WithLp p (E × F) × WithLp p (E' × F') ≃ₜ (E × E') × (F × F') :=
+    ((homeomorphProd p E F).prodCongr (homeomorphProd p E' F')).trans
+      (Homeomorph.prodProdProdComm E F E' F')
   have hgraph : ((f.withLpProdMap p g).graph : Set (WithLp p (E × F) × WithLp p (E' × F'))) =
       Φ ⁻¹' ((f.graph : Set (E × E')) ×ˢ (g.graph : Set (F × F'))) :=
     Set.ext fun _ => mem_graph_withLpProdMap_iff
-  rw [LinearPMap.IsClosed, hgraph]
-  refine ⟨fun h => ⟨?_, ?_⟩, fun ⟨hf, hg⟩ => (hf.prod hg).preimage (by fun_prop)⟩
-  · -- `graph f` is the slice of the graph of `f ⊕ g` through the zero vector of `graph g`.
-    have hf : (f.graph : Set (E × E')) =
-        (fun w : E × E' => (toLp p (w.1, (0 : F)), toLp p (w.2, (0 : F')))) ⁻¹'
-          (Φ ⁻¹' ((f.graph : Set (E × E')) ×ˢ (g.graph : Set (F × F')))) := by
-      ext w
-      simp [Φ]
-    rw [LinearPMap.IsClosed, hf]
-    exact h.preimage (by fun_prop)
-  · have hg : (g.graph : Set (F × F')) =
-        (fun w : F × F' => (toLp p ((0 : E), w.1), toLp p ((0 : E'), w.2))) ⁻¹'
-          (Φ ⁻¹' ((f.graph : Set (E × E')) ×ˢ (g.graph : Set (F × F')))) := by
-      ext w
-      simp [Φ]
-    rw [LinearPMap.IsClosed, hg]
-    exact h.preimage (by fun_prop)
+  -- Both graphs contain `0`, so the closure of their product determines each closure.
+  have hne : ((f.graph : Set (E × E')) ×ˢ (g.graph : Set (F × F'))).Nonempty :=
+    ⟨(0, 0), f.graph.zero_mem, g.graph.zero_mem⟩
+  rw [LinearPMap.IsClosed, hgraph, Φ.isClosed_preimage, ← closure_eq_iff_isClosed,
+    closure_prod_eq, prod_eq_prod_iff_of_nonempty (hne.mono (prod_mono subset_closure
+      subset_closure)), closure_eq_iff_isClosed, closure_eq_iff_isClosed, LinearPMap.IsClosed,
+    LinearPMap.IsClosed]
 
 /-- The direct sum of closed partial linear maps is closed. -/
 theorem IsClosed.withLpProdMap (hf : f.IsClosed) (hg : g.IsClosed) :
