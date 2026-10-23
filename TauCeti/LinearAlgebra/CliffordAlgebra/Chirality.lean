@@ -7,12 +7,13 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector
+public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Oriented
 -- Private: the orthogonal-basis and volume-element computations are used only inside proofs.
 import TauCeti.Algebra.CharP.Invertible
 import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
 import TauCeti.LinearAlgebra.CliffordAlgebra.OrthogonalBasis
 import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
-import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement
+import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Basic
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 
 /-!
@@ -61,6 +62,8 @@ two-forms to trace-free endomorphisms of `W⁺`; that trace statement is not mad
 
 ## Main results
 
+* `CliffordAlgebra.chirality_eq_neg_volumeElement`: `Γ` is minus the volume element
+  `CliffordAlgebra.volumeElement Q o` of the oriented four-space.
 * `CliffordAlgebra.chirality_eq`: `Γ = -c(e₁) c(e₂) c(e₃) c(e₄)` for every positively
   oriented orthonormal basis `e`.
 * `CliffordAlgebra.chirality_mul_self`: `Γ² = 1`.
@@ -125,6 +128,11 @@ theorem chirality_def :
     chirality Q o = -(equivExterior Q).symm (o.volumeEquiv.symm 1 : ExteriorAlgebra ℝ V) :=
   (rfl)
 
+/-- The chirality element is minus the volume element `CliffordAlgebra.volumeElement Q o` of the
+oriented four-space. -/
+theorem chirality_eq_neg_volumeElement : chirality Q o = -volumeElement Q o := by
+  rw [chirality_def, volumeElement_def]
+
 variable {Q}
 
 /-- In terms of the Clifford basis of a positively oriented orthonormal basis `e`, the chirality
@@ -187,28 +195,13 @@ omit hQ in
 the Clifford conjugation `involute ∘ reverse`. -/
 @[simp]
 theorem reverse_chirality : reverse (chirality Q o) = chirality Q o := by
-  -- In the exterior algebra every pair of vectors is orthogonal for the zero form, so reversal
-  -- multiplies the wedge of four vectors by `(-1) ^ (4.choose 2) = 1`.
-  have h : reverse (basis Q (frame o).toBasis Finset.univ) =
-      basis Q (frame o).toBasis Finset.univ := by
-    apply (equivExterior Q).injective
-    rw [equivExterior_reverse, CliffordAlgebra.basis_apply, LinearEquiv.apply_symm_apply,
-      Module.Basis.exteriorAlgebra_eq_prod_map_sort, reverse_prod_map_ι_of_pairwise_isOrtho
-        (List.pairwise_of_forall fun _ _ ↦ by simp [QuadraticMap.isOrtho_def])]
-    norm_num [Nat.choose_two_right]
-  rw [chirality_eq_neg_basis_univ o (frame o) (frame_orientation o), map_neg, h]
+  simp [chirality_eq_neg_volumeElement]
 
 omit hQ in
 /-- The chirality element is even: it is fixed by the grade involution. -/
 @[simp]
 theorem involute_chirality : involute (chirality Q o) = chirality Q o := by
-  have h : involute (basis Q (frame o).toBasis Finset.univ) =
-      basis Q (frame o).toBasis Finset.univ := by
-    apply (equivExterior Q).injective
-    rw [equivExterior_involute, CliffordAlgebra.basis_apply, LinearEquiv.apply_symm_apply,
-      Module.Basis.exteriorAlgebra_eq_prod_map_sort, involute_prod_map_ι]
-    norm_num
-  rw [chirality_eq_neg_basis_univ o (frame o) (frame_orientation o), map_neg, h]
+  norm_num [chirality_eq_neg_volumeElement]
 
 /-- **Two-forms commute with the chirality element**, since `Γ` anticommutes with each of the two
 generators in a bivector. -/

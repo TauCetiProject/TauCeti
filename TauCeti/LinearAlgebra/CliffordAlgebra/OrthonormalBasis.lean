@@ -9,7 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
 -- Private: the ordered-product and square formulas are used only inside proofs.
 import TauCeti.LinearAlgebra.CliffordAlgebra.OrthogonalBasis
-import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement
+import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Basic
 
 /-!
 # Orthonormal bases in the Clifford algebra of minus the squared norm

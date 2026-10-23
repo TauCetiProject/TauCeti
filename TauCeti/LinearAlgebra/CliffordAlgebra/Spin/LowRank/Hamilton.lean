@@ -10,7 +10,7 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinorNorm.Range
 import Mathlib.Tactic.NormNum.IsSquare
 import TauCeti.Algebra.Group.Units.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Kernel
-import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement
+import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Basic
 import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Basic
 
 /-!

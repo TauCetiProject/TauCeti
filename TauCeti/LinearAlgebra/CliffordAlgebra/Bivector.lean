@@ -7,7 +7,7 @@ module
 
 import Mathlib.Tactic.NoncommRing
 import Mathlib.Data.Fin.Tuple.Reflection
-import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement
+import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Basic
 public import Mathlib.LinearAlgebra.ExteriorPower.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Filtration

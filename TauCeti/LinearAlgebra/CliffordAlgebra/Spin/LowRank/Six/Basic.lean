@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.EvenUnitary
-import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement
+import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Basic
 import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalBasis
 import TauCeti.Algebra.Field.Conic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Grading
@@ -65,7 +65,7 @@ H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I, §2.
 
 The conic point is `TauCeti.exists_sq_add_sq_mul_eq_one` (`TauCeti/Algebra/Field/Conic.lean`),
 and the fact that `ω v` is not a vector is `CliffordAlgebra.prod_map_ι_mul_ι_notMem_range_ι`
-(`TauCeti/LinearAlgebra/CliffordAlgebra/VolumeElement.lean`).
+(`TauCeti/LinearAlgebra/CliffordAlgebra/VolumeElement/Basic.lean`).
 -/
 
 public section
