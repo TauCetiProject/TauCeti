@@ -351,7 +351,7 @@ end GridInitialPentagonRectangleDecomposition
 
 namespace GridDiagram
 
-variable (G : GridDiagram n) (C : ColumnCommutationData G)
+variable (G : GridDiagram n) (C : ColumnTurn n)
 
 local notation "b" => finRotate n C.column
 

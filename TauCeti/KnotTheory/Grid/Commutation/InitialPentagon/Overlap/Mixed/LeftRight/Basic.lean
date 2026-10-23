@@ -348,7 +348,7 @@ end TauCeti.GridRectangleInitialPentagonDecomposition
 
 namespace TauCeti.GridDiagram
 
-variable {n : ℕ} (G : GridDiagram n) (C : ColumnCommutationData G)
+variable {n : ℕ} (G : GridDiagram n) (C : ColumnTurn n)
 
 section Weights
 
@@ -462,7 +462,7 @@ private structure InitialPentagonLeftRightOverlapData
 
 private theorem initialPentagonLeftRightOverlapData
     (D : {D // D ∈ G.initialPentagonLeftRightOverlapSources C x z}) :
-    InitialPentagonLeftRightOverlapData G C D.val := by
+    InitialPentagonLeftRightOverlapData C D.val := by
   obtain ⟨hcommon, hother, hfirst, hsecond, hturn⟩ :=
     G.initialPentagonLeftRightOverlapSource_data C D.val D.property
   exact ⟨hcommon, hother, hfirst, hsecond, hturn⟩

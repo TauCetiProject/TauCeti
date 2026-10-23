@@ -33,6 +33,9 @@ A real number whose natural powers grow at most polynomially, `r ^ n ≤ C * (1 
 `n`, is at most `1`. This is how a spectral radius bound is read off from polynomially growing
 norms, as for the monomials of a weighted Sobolev algebra.
 
+A positive real raised to a finitely supported sum of exponents is the product of the powers:
+`a ^ (∑ᶠ i, f i) = ∏ᶠ i, a ^ f i`, the `finsum` form of `Real.rpow_sum_of_pos`.
+
 ## Main results
 
 * `Real.inv_sqrt_eq_rpow`: `(√x)⁻¹ = x ^ (-2⁻¹)` for every real `x`.
@@ -42,6 +45,10 @@ norms, as for the monomials of a weighted Sobolev algebra.
 * `Real.pow_le_rpow_pow_of_le_mul`: `b ^ n ≤ (b ^ δ) ^ r` when `1 ≤ b` and `n ≤ δ r`.
 * `Real.image_rpow_Ioo_zero_one`: a positive power maps the open unit interval onto itself.
 * `Real.le_one_of_forall_pow_le_mul_rpow`: `r ≤ 1` when `r ^ n ≤ C * (1 + n) ^ s` for all `n`.
+* `Function.HasFiniteSupport.hasFiniteMulSupport_fun_rpow`: real powers with finitely supported
+  exponents have finite multiplicative support.
+* `Real.rpow_finsum_of_pos`: `a ^ (∑ᶠ i, f i) = ∏ᶠ i, a ^ f i` for `0 < a` and finitely supported
+  `f`.
 -/
 
 public section
@@ -102,3 +109,15 @@ theorem le_one_of_forall_pow_le_mul_rpow {r C s : ℝ}
     _ = C * r * (1 + n) ^ s := by ring
 
 end Real
+
+/-- Real powers `g i ^ f i` with finitely supported exponents `f` have finite multiplicative
+support. -/
+theorem Function.HasFiniteSupport.hasFiniteMulSupport_fun_rpow {α : Type*} (g : α → ℝ)
+    {f : α → ℝ} (hf : f.HasFiniteSupport) : (fun i ↦ g i ^ f i).HasFiniteMulSupport :=
+  hf.subset fun i hi h ↦ hi (by simp [h])
+
+/-- A positive real raised to a finitely supported sum is the product of the powers. -/
+theorem Real.rpow_finsum_of_pos {α : Type*} {a : ℝ} (ha : 0 < a) {f : α → ℝ}
+    (hf : f.HasFiniteSupport) : a ^ (∑ᶠ i, f i) = ∏ᶠ i, a ^ f i := by
+  rw [finsum_eq_sum f hf, finprod_eq_prod_of_mulSupport_subset _ (s := hf.toFinset)
+    fun i hi ↦ hf.mem_toFinset.mpr fun h ↦ hi (by simp [h]), Real.rpow_sum_of_pos ha]
