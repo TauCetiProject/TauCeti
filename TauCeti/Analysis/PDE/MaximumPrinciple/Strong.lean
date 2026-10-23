@@ -32,7 +32,7 @@ Supersolutions satisfy the corresponding strong minimum principle.
 
 The input is Moser's weak Harnack inequality at a small exponent `p₀`
 (`TauCeti.PDE.exists_pos_ae_setAverage_rpow_rpow_inv_le_mul_value`), applied to the nonnegative
-weak supersolution `M - u` on a ball `B(y, 12√n r) ⊆ Ω`:
+weak supersolution `M - u` on a ball `B(y, 8√n r) ⊆ Ω`:
 
 `(⨍_{B(y, 2r)} (M - u)^{p₀})^{1/p₀} ≤ C (M - u)(x)` for almost every `x ∈ B(y, r)`.
 
@@ -78,7 +78,7 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpac
   {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam Lam : ℝ} {u : W1p mu Omega 2} {M : ℝ}
 
 /-- The local step of the strong maximum principle. If `u ≤ M` is a weak subsolution on `Ω`,
-`B(y, 12√n r) ⊆ Ω`, and `u` exceeds `M - ε` on a subset of `B(y, r)` of positive measure for every
+`B(y, 8√n r) ⊆ Ω`, and `u` exceeds `M - ε` on a subset of `B(y, r)` of positive measure for every
 `ε > 0`, then `u = M` almost everywhere on `B(y, r)`. -/
 private theorem UniformlyEllipticOn.ae_ball_value_eq_of_frequently_sub_lt [Nonempty ι]
     (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
@@ -87,7 +87,7 @@ private theorem UniformlyEllipticOn.ae_ball_value_eq_of_frequently_sub_lt [Nonem
       (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
         energyFormH1 a 0 0 u (v : W1p mu Omega 2) ≤ 0)
     (hM : ∀ᵐ x ∂mu.restrict Omega, W1p.value u x ≤ M) {y : EuclideanSpace ℝ ι} {r : ℝ}
-    (hball : ball y (12 * √(Fintype.card ι) * r) ⊆ (Omega : Set (EuclideanSpace ℝ ι)))
+    (hball : ball y (8 * √(Fintype.card ι) * r) ⊆ (Omega : Set (EuclideanSpace ℝ ι)))
     (hfreq : ∀ ε > 0, ∃ᵐ x ∂mu.restrict (ball y r), M - ε < W1p.value u x) :
     ∀ᵐ x ∂mu.restrict (ball y r), W1p.value u x = M := by
   obtain ⟨p₀, hp₀, hp₀2, C, hC, hH⟩ :=
@@ -96,8 +96,8 @@ private theorem UniformlyEllipticOn.ae_ball_value_eq_of_frequently_sub_lt [Nonem
   rcases le_or_gt r 0 with hr | hr
   · simp [ball_eq_empty.2 hr]
   have hsqrt : 1 ≤ √(Fintype.card ι : ℝ) := Real.one_le_sqrt.2 (Nat.one_le_cast.2 Fintype.card_pos)
-  -- Work on the bounded open ball `U = B(y, 12√n r)`, where constants lie in `H¹(U)`.
-  set U : Opens (EuclideanSpace ℝ ι) := ⟨ball y (12 * √(Fintype.card ι) * r), isOpen_ball⟩
+  -- Work on the bounded open ball `U = B(y, 8√n r)`, where constants lie in `H¹(U)`.
+  set U : Opens (EuclideanSpace ℝ ι) := ⟨ball y (8 * √(Fintype.card ι) * r), isOpen_ball⟩
   have hU : U ≤ Omega := hball
   have h2U : ball y (2 * r) ⊆ (U : Set (EuclideanSpace ℝ ι)) := ball_subset_ball (by nlinarith)
   have hr2 : ball y r ⊆ ball y (2 * r) := ball_subset_ball (by linarith)
@@ -173,14 +173,14 @@ theorem UniformlyEllipticOn.ae_value_eq_of_frequently_sub_lt [Nonempty ι]
     (hfreq : ∀ ρ > 0, ball y ρ ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
       ∀ ε > 0, ∃ᵐ x ∂mu.restrict (ball y ρ), M - ε < W1p.value u x) :
     ∀ᵐ x ∂mu.restrict Omega, W1p.value u x = M := by
-  -- Every point of `Ω` is the centre of a ball `B(z, r)` with `B(z, 12√n r) ⊆ Ω`.
+  -- Every point of `Ω` is the centre of a ball `B(z, r)` with `B(z, 8√n r) ⊆ Ω`.
   have hrad : ∀ z ∈ Omega, ∃ r > 0,
-      ball z (12 * √(Fintype.card ι) * r) ⊆ (Omega : Set (EuclideanSpace ℝ ι)) := by
+      ball z (8 * √(Fintype.card ι) * r) ⊆ (Omega : Set (EuclideanSpace ℝ ι)) := by
     intro z hz
     obtain ⟨R, hR, hRΩ⟩ := Metric.isOpen_iff.1 Omega.isOpen z hz
-    have hc : 0 < 12 * √(Fintype.card ι : ℝ) :=
+    have hc : 0 < 8 * √(Fintype.card ι : ℝ) :=
       mul_pos (by norm_num) (Real.sqrt_pos.2 (Nat.cast_pos.2 Fintype.card_pos))
-    exact ⟨R / (12 * √(Fintype.card ι)), div_pos hR hc, by rwa [mul_div_cancel₀ R hc.ne']⟩
+    exact ⟨R / (8 * √(Fintype.card ι)), div_pos hR hc, by rwa [mul_div_cancel₀ R hc.ne']⟩
   -- `S` is the set of points near which `u = M` almost everywhere.
   set S := {z | ∃ ρ > 0, ∀ᵐ x ∂mu.restrict (ball z ρ), W1p.value u x = M}
   have hSo : IsOpen S := by
