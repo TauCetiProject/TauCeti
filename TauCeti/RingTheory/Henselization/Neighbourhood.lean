@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.Etale.Basic
 public import Mathlib.RingTheory.Localization.Ideal
 public import Mathlib.RingTheory.TensorProduct.Quotient
 import Mathlib.Data.ZMod.QuotientRing
+import TauCeti.RingTheory.Unramified.Diagonal
 
 /-!
 # Étale neighbourhoods of a pair
@@ -19,7 +20,8 @@ An étale neighbourhood of a ring and ideal `(R, I)` is an étale `R`-algebra wh
 `I` is canonically isomorphic to `R ⧸ I`. These algebras form the stages in the construction of
 the henselization of the pair. This file defines their full subcategory and proves closure under
 localization at an element invertible modulo the ideal, under tensor products, and under base
-change along maps of pairs.
+change along maps of pairs. It also shows that two `R`-algebra maps out of an étale
+neighbourhood agree once `I` generates an ideal of the target inside its Jacobson radical.
 
 ## References
 
@@ -120,6 +122,18 @@ theorem quotient_mk_eq_of_reducedMap_surjective {B : Type v} {C : Type*} [CommRi
     rw [Ideal.Quotient.eq, ← h.commutes, ← map_sub, ← h.comp_algebraMap, ← Ideal.map_map]
     exact Ideal.mem_map_of_mem _ hr
   rw [key f, key g]
+
+variable {I} in
+/-- Two `R`-algebra maps out of an étale neighbourhood of `(R, I)` agree as soon as `I`
+generates an ideal of the target inside its Jacobson radical. -/
+theorem IsNeighbourhood.algHom_ext {B : CommAlgCat.{v} R} (hB : IsNeighbourhood I B)
+    {S : Type*} [CommRing S] [Algebra R S] (hI : I.map (algebraMap R S) ≤ Ideal.jacobson ⊥)
+    {f g : B →ₐ[R] S} : f = g := by
+  obtain ⟨hEtale, hBij⟩ := (isNeighbourhood_iff I B).mp hB
+  -- Both maps agree modulo `IS` because `B ⧸ IB ≅ R ⧸ I`, hence agree outright.
+  refine Algebra.FormallyUnramified.ext_of_quotient_eq R B _ hI (AlgHom.ext fun b ↦ ?_)
+  simpa only [AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk] using
+    quotient_mk_eq_of_reducedMap_surjective I hBij.2 f g b
 
 /-- Localization at elements which are units modulo `I` preserves the quotient by `I`. -/
 theorem reducedMap_bijective_of_isLocalization (M : Submonoid R)

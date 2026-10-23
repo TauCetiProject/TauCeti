@@ -78,6 +78,8 @@ Two statements are worth singling out.
   membership of a matrix in `Matrix.isometryMatrices` of the Gram matrix.
 * `TauCeti.BilinForm.IsIsometry.det_sq_eq_one`: `(det f) ^ 2 = 1` for an isometry of a form whose
   Gram determinant is a non-zero-divisor.
+* `LinearMap.BilinForm.Isometry.injective`: an isometric embedding of a left-separating form is
+  injective.
 * `TauCeti.BilinForm.IsIsometry.bijective`: over an integral domain, an isometry of a
   left-separating form on a finite free module is bijective.
 * `TauCeti.BilinForm.IsIsometry.map_orthogonal`: a surjective isometry carries `B`-orthogonal
@@ -100,6 +102,23 @@ isometry group of `Q.polarBilin`,
 -/
 
 public section
+
+/-! ### Isometric embeddings -/
+
+namespace LinearMap.BilinForm.Isometry
+
+variable {R M M' : Type*} [CommSemiring R] [AddCommGroup M] [Module R M] [AddCommGroup M']
+  [Module R M'] {B : LinearMap.BilinForm R M} {B' : LinearMap.BilinForm R M'}
+
+/-- An isometric embedding of a left-separating form is injective: a vector in its kernel pairs
+trivially with everything. -/
+theorem injective (ι : B →bᵢ B') (hB : B.SeparatingLeft) : Function.Injective ι := by
+  intro x y hxy
+  rw [← sub_eq_zero]
+  refine hB (x - y) fun z => ?_
+  rw [← ι.map_app, map_sub, hxy, sub_self, LinearMap.map_zero₂]
+
+end LinearMap.BilinForm.Isometry
 
 namespace TauCeti
 
@@ -328,11 +347,8 @@ variable {R M : Type*} [CommSemiring R] [AddCommGroup M] [Module R M]
 /-- An isometry of a left-separating form is injective: it cannot collapse a vector that pairs
 nontrivially with something. -/
 theorem IsIsometry.injective (hB : B.SeparatingLeft) (hf : IsIsometry B f) :
-    Function.Injective f := by
-  intro x y hxy
-  rw [← sub_eq_zero]
-  refine hB (x - y) fun z => ?_
-  rw [← hf.apply (x - y) z, map_sub, hxy, sub_self, LinearMap.map_zero₂]
+    Function.Injective f :=
+  LinearMap.BilinForm.Isometry.injective ⟨f, hf.apply⟩ hB
 
 end AddCommGroup
 

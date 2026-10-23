@@ -56,7 +56,7 @@ noncomputable def normOneUnits : Subgroup (toSubalgebra D hD)ˣ :=
 @[simp] theorem norm_equivToSubalgebra
     (z : QuadraticAlgebra ℤ ((D - D ^ 2) / 4) D) :
     _root_.Algebra.norm ℤ (equivToSubalgebra D hD z) = z.norm := by
-  rw [_root_.Algebra.norm_eq_of_algEquiv, QuadraticAlgebra.algebraNorm_eq_norm]
+  rw [_root_.Algebra.norm_eq_of_algEquiv, _root_.Algebra.norm_quadraticAlgebra_apply]
 
 private noncomputable def unitaryToNormOneUnits :
     unitary (QuadraticAlgebra ℤ ((D - D ^ 2) / 4) D) →* normOneUnits D hD :=

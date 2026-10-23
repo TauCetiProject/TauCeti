@@ -23,10 +23,10 @@ the **Casimir element** is
 
 a distinguished element of the universal enveloping algebra.  In the classical setting of a split
 semisimple Lie algebra in characteristic zero it is the source of Weyl's complete reducibility
-theorem: it is central, so it acts on any module by a module endomorphism, and on a highest weight
-module by a scalar that separates the trivial module from the others.  Those extra hypotheses are
-needed only for that application; centrality, the statement proved here, needs nothing beyond a
-nondegenerate Killing form.
+theorem: it is central, so it acts on any module by a module endomorphism. On a finite-dimensional
+irreducible highest weight module its scalar separates the trivial module from the others.
+Those extra hypotheses are needed only for that application; centrality, the statement proved here,
+needs nothing beyond a nondegenerate Killing form.
 
 Two facts make `Ω` an invariant of `L` rather than of the chosen basis. They are developed in
 `TauCeti.Algebra.Lie.Killing.DualBasis` and applied here.
@@ -54,10 +54,6 @@ parameterised by such a form; as written they are stated for the Killing form.
 
 ## Main results
 
-* `TauCeti.sum_killingForm_killingDualBasis_eq_trace`: the sum `∑ᵢ κ (p xᵢ) yᵢ` is the trace of the
-  endomorphism `p`.
-* `TauCeti.sum_apply_killingDualBasis_of_isAdjointPair`: a pair of endomorphisms adjoint for the
-  Killing form may be moved from the first slot of `f` to the second.
 * `TauCeti.casimirElement_eq_sum`: the Casimir element is `∑ᵢ xᵢ yᵢ` for **any** basis `x` of `L`
   and its Killing-dual basis `y`, so the basis chosen in the definition does not matter.
 * `TauCeti.representation_casimirElement_apply_eq_zero_of_isTrivial`: the Casimir element acts by
@@ -92,6 +88,9 @@ public section
 
 open Finset LieAlgebra LieModule UniversalEnvelopingAlgebra
 
+-- Canonical generators map into the commutator Lie algebra of the enveloping algebra.
+attribute [local instance 100] LieRing.ofAssociativeRing
+
 namespace TauCeti
 
 universe u v
@@ -109,12 +108,12 @@ bilinear map that turns the invariance of `∑ᵢ xᵢ ⊗ yᵢ` into the centra
 element. -/
 private noncomputable def genMul :
     L →ₗ[K] L →ₗ[K] UniversalEnvelopingAlgebra K L :=
-  LinearMap.mk₂ K (fun x y ↦ ι K x * ι K y)
-    (fun _ _ _ ↦ by rw [map_add, add_mul]) (fun _ _ _ ↦ by rw [map_smul, smul_mul_assoc])
-    (fun _ _ _ ↦ by rw [map_add, mul_add]) (fun _ _ _ ↦ by rw [map_smul, mul_smul_comm])
+  (LinearMap.mul K (UniversalEnvelopingAlgebra K L)).compl₁₂
+    (ι K).toLinearMap (ι K).toLinearMap
 
 omit [FiniteDimensional K L] [LieAlgebra.IsKilling K L] in
-private theorem genMul_apply (x y : L) : genMul K L x y = ι K x * ι K y := (rfl)
+private theorem genMul_apply (x y : L) : genMul K L x y = ι K x * ι K y := by
+  simp only [genMul, LinearMap.compl₁₂_apply, LieHom.coe_toLinearMap, LinearMap.mul_apply']
 
 variable (K L) in
 /-- **The Casimir element** `Ω = ∑ᵢ xᵢ yᵢ ∈ U(L)` of a Lie algebra with nondegenerate Killing
@@ -174,12 +173,8 @@ variable (K L) in
 which generate `U(L)` as an algebra. -/
 theorem casimirElement_mem_center :
     casimirElement K L ∈ Subalgebra.center K (UniversalEnvelopingAlgebra K L) := by
-  refine Subalgebra.mem_center_iff.mpr fun u ↦ ?_
-  induction u using TauCeti.UniversalEnvelopingAlgebra.induction_ι with
-  | ι z => exact ι_mul_casimirElement (K := K) z
-  | algebraMap r => exact Algebra.commutes r _
-  | add x y hx hy => rw [add_mul, mul_add, hx, hy]
-  | mul x y hx hy => rw [mul_assoc, hy, ← mul_assoc, hx, mul_assoc]
+  refine (UniversalEnvelopingAlgebra.mem_center_iff_forall_lie_ι K L).mpr fun z ↦ ?_
+  rw [LieRing.of_associative_ring_bracket, ← ι_mul_casimirElement, sub_self]
 
 /-- **The Casimir element commutes with the Lie action.**  This is the centrality of the Casimir
 element, read on a module: the Casimir operator of a module is a homomorphism of Lie modules. -/

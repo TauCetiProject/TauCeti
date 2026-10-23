@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Pinning.Basic
 public import TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.Root.Space
-public import TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.Positive.BorelCandidate
+public import TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.Positive.Borel.Candidate
 
 /-!
 # The numbered positive simple roots of the short-root G₂ carrier

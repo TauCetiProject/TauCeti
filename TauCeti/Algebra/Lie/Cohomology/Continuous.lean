@@ -54,6 +54,8 @@ topological Lie algebra, such as the formal loop algebra, by a discrete trivial 
   is joint continuity for a discrete topology on the coefficients.
 * `TauCeti.LieModule.Cohomology.mem_continuousTwoCochain_iff_of_hasBasis`: the criterion in terms
   of a basis of neighbourhoods of zero.
+* `TauCeti.LieModule.Cohomology.continuousTwoCochain_ext_on`: continuous two-cochains agreeing
+  on a dense subset are equal.
 * `TauCeti.LieModule.Cohomology.d₁₂_mem_continuousTwoCocycle`: coboundaries of continuous
   one-cochains are continuous two-cocycles.
 
@@ -159,6 +161,19 @@ theorem mem_continuousTwoCochain_iff_continuous {c : twoCochain R L M} :
   · simpa [nhds_discrete M] using hc.tendsto 0
 
 end Topology
+
+/-- **Continuous two-cochains are determined on a dense set.** Two continuous two-cochains on a
+topological Lie algebra which agree on all pairs of elements of a dense subset are equal. -/
+theorem continuousTwoCochain_ext_on [IsTopologicalAddGroup L] {c d : twoCochain R L M}
+    (hc : c ∈ continuousTwoCochain R L M) (hd : d ∈ continuousTwoCochain R L M) {s : Set L}
+    (hs : Dense s) (h : ∀ x ∈ s, ∀ y ∈ s, c x y = d x y) : c = d := by
+  -- Give the coefficients the discrete topology, so that both cochains are continuous maps into a
+  -- Hausdorff space.
+  let : TopologicalSpace M := ⊥
+  have : DiscreteTopology M := ⟨rfl⟩
+  have hcd := (mem_continuousTwoCochain_iff_continuous.mp hc).ext_on (hs.prod hs)
+    (mem_continuousTwoCochain_iff_continuous.mp hd) fun p hp ↦ h _ hp.1 _ hp.2
+  exact Subtype.ext (LinearMap.ext₂ fun x y ↦ congrFun hcd (x, y))
 
 end Cochains
 
