@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Height.Arakelov.Basic
-import TauCeti.NumberTheory.Height.NumberField
+import TauCeti.NumberTheory.NumberField.InfinitePlace.Mult
 import Mathlib.RingTheory.Ideal.Norm.RelNorm
 
 /-!
