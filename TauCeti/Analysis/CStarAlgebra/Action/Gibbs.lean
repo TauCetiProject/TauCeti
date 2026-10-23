@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.CStarAlgebra.Matrix
 public import Mathlib.Analysis.Matrix.Order
 public import TauCeti.Analysis.CStarAlgebra.Action.Inner
-public import TauCeti.Analysis.CStarAlgebra.Action.KMS
+public import TauCeti.Analysis.CStarAlgebra.Action.KMS.Dense
 public import TauCeti.LinearAlgebra.Matrix.Trace.Duality
 import TauCeti.Analysis.Normed.Algebra.MatrixExponential
 import Mathlib.Analysis.CStarAlgebra.PositiveLinearFunctional
@@ -55,8 +55,8 @@ def gibbsState (K : Matrix m m ℂ) (hK : K.IsHermitian) (β : ℝ) : Matrix m m
   .mk₀ (LinearMap.toContinuousLinearMap ((exp (-(β • K))).trace⁻¹ •
       (Matrix.traceLinearMap m ℂ ℂ ∘ₗ LinearMap.mulLeft ℂ (exp (-(β • K))))))
     fun x hx => by
-      simpa using mul_nonneg (inv_nonneg.mpr (hK.trace_exp_smul_pos (-β)).le)
-        (hK.trace_exp_smul_mul_nonneg (-β) hx)
+      have hKβ : (-(β • K)).IsHermitian := (hK.smul (IsSelfAdjoint.all β)).neg
+      simpa using mul_nonneg (inv_nonneg.mpr hKβ.trace_exp_pos.le) (hKβ.trace_exp_mul_nonneg hx)
 
 end Matrix
 
@@ -79,9 +79,10 @@ at every real inverse temperature. -/
 theorem Matrix.IsHermitian.isKMSState_gibbsState (hK : K.IsHermitian) (β : ℝ) :
     (selfAdjoint.cstarAction ⟨K, hK⟩).IsKMSState β (Matrix.gibbsState K hK β) := by
   have htr : (NormedSpace.exp (-(β • K))).trace ≠ 0 := by
-    simpa only [neg_smul] using (hK.trace_exp_smul_pos (-β)).ne'
-  refine (isKMSState_iff_of_forall_isEntireAnalytic
-    (selfAdjoint.isEntireAnalytic_cstarAction _)).mpr ⟨?_, fun a b => ?_⟩
+    have hKβ : (-(β • K)).IsHermitian := (hK.smul (IsSelfAdjoint.all β)).neg
+    exact hKβ.trace_exp_pos.ne'
+  refine (isKMSState_iff_forall_isEntireAnalytic
+    (α := selfAdjoint.cstarAction ⟨K, hK⟩)).mpr ⟨?_, fun a _ b _ => ?_⟩
   · -- the state is normalised: `‖ω‖ = ω 1` for a positive functional
     have h1 := PositiveContinuousLinearMap.ofReal_opNorm_eq_map_one (Matrix.gibbsState K hK β)
     rw [hK.gibbsState_apply, Matrix.mul_one, div_self htr] at h1
@@ -110,8 +111,11 @@ theorem Matrix.IsHermitian.isKMSState_iff_eq_gibbsState (hK : K.IsHermitian) (β
     {ω : Matrix m m ℂ →P[ℂ] ℂ} :
     (selfAdjoint.cstarAction ⟨K, hK⟩).IsKMSState β ω ↔ ω = Matrix.gibbsState K hK β := by
   refine ⟨fun hω => ?_, fun h => h ▸ hK.isKMSState_gibbsState β⟩
-  obtain ⟨hnorm, hkms⟩ := (isKMSState_iff_of_forall_isEntireAnalytic
-    (selfAdjoint.isEntireAnalytic_cstarAction _)).mp hω
+  obtain ⟨hnorm, hkms⟩ := (isKMSState_iff_forall_isEntireAnalytic
+    (α := selfAdjoint.cstarAction ⟨K, hK⟩)).mp hω
+  -- every matrix is entire analytic for the inner dynamics of `K`
+  have hentire (a : Matrix m m ℂ) : (selfAdjoint.cstarAction ⟨K, hK⟩).IsEntireAnalytic a :=
+    selfAdjoint.isEntireAnalytic_cstarAction ⟨K, hK⟩ a
   -- write `ω = Tr (ρ ·)` and turn the KMS identity into a cyclicity statement for `exp (βK) ρ`
   obtain ⟨ρ, hρ, -⟩ := ω.toLinearMap.existsUnique_trace_mul_eq
   replace hρ (x : Matrix m m ℂ) : ω x = (ρ * x).trace := by simpa using hρ x
@@ -119,7 +123,7 @@ theorem Matrix.IsHermitian.isKMSState_iff_eq_gibbsState (hK : K.IsHermitian) (β
       (NormedSpace.exp ((β : ℂ) • K) * ρ * a * b).trace =
         (NormedSpace.exp ((β : ℂ) • K) * ρ * b * a).trace := by
     -- the KMS identity with the first factor multiplied by `exp (β • K)`
-    have h := hkms (a * NormedSpace.exp (β • K)) b
+    have h := hkms (a * NormedSpace.exp (β • K)) (hentire _) b (hentire _)
     rw [selfAdjoint.entireExtension_cstarAction_mul_I, hρ, hρ] at h
     -- read the real scalars as complex ones, then cancel the weights in the middle
     simp only [neg_smul] at h
