@@ -9,7 +9,9 @@ public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.StandardComodule
 public import TauCeti.Algebra.Polynomial.Homogenize
 public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.UpperTriangular.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.SymmetricAlgebra.Polynomial
+import TauCeti.Algebra.Coalgebra.Subcomodule.PointSeparation
 import TauCeti.Algebra.MvPolynomial.Fin.Two
+import TauCeti.RingTheory.TensorProduct.MvPolynomial
 
 /-!
 # Binary forms as rational representations of `SL₂`
@@ -254,24 +256,6 @@ open Polynomial
 
 attribute [local instance] polynomialComodule
 
-/-- Contracting the point action against a linear functional on the value algebra preserves every
-subcomodule. -/
-private theorem lid_rTensor_endOfPoint_mem
-    (W : Subcomodule R (coordinateHopfAlgebra R 2) (MvPolynomial (Fin 2) R))
-    (g : coordinateHopfAlgebra R 2 →ₐ[R] A) (ψ : A →ₗ[R] R) {f : MvPolynomial (Fin 2) R}
-    (hf : f ∈ W) :
-    TensorProduct.lid R _ (LinearMap.rTensor _ ψ
-      (Comodule.endOfPoint (MvPolynomial (Fin 2) R) g (1 ⊗ₜ f))) ∈ W := by
-  have key (x : MvPolynomial (Fin 2) R ⊗[R] coordinateHopfAlgebra R 2) :
-      TensorProduct.lid R _ (LinearMap.rTensor _ ψ
-        (TensorProduct.comm R _ A (LinearMap.lTensor _ g.toLinearMap x))) =
-      TensorProduct.rid R _ (LinearMap.lTensor _ (ψ ∘ₗ g.toLinearMap) x) := by
-    induction x using TensorProduct.inductionOn with
-    | tmul p h => simp
-    | add x y hx hy => simp only [map_add, hx, hy]
-  rw [Comodule.endOfPoint_tmul, one_smul, key]
-  exact W.rid_lTensor_coact_mem _ hf
-
 /-- The universal upper unitriangular point `[[1, t], [0, 1]]` over `R[t]`. -/
 private noncomputable def upperPoint : WithConv (coordinateHopfAlgebra R 2 →ₐ[R] R[X]) :=
   (pointsMulEquiv (R := R) (A := R[X]) 2).symm (Matrix.SpecialLinearGroup.transvection
@@ -304,20 +288,6 @@ private theorem algebraTensorAlgEquiv_endOfPoint_lowerPoint (f : MvPolynomial (F
       ext i j; fin_cases i <;> fin_cases j <;> simp)]
   simp
 
-/-- The binomial expansion of `(u - t v) ^ i * w` over `R[t]`, on the tensor side. -/
-private theorem algebraTensorAlgEquiv_sum (u v w : MvPolynomial (Fin 2) R) (i : ℕ) :
-    MvPolynomial.algebraTensorAlgEquiv R R[X]
-        (∑ l ∈ Finset.range (i + 1),
-          (C ((-1) ^ l * (i.choose l : R)) * X ^ l) ⊗ₜ[R] (u ^ (i - l) * v ^ l * w)) =
-      (MvPolynomial.map (algebraMap R R[X]) u -
-          MvPolynomial.C X * MvPolynomial.map (algebraMap R R[X]) v) ^ i *
-        MvPolynomial.map (algebraMap R R[X]) w := by
-  rw [sub_eq_neg_add, add_pow, Finset.sum_mul, map_sum]
-  refine Finset.sum_congr rfl fun l _ ↦ ?_
-  rw [MvPolynomial.algebraTensorAlgEquiv_tmul, MvPolynomial.smul_eq_C_mul]
-  simp only [map_mul, map_pow, map_neg, map_one, map_natCast]
-  ring
-
 /-- Contracting the action of a point over `R[t]` against the coefficient of `tⁿ`, as a linear
 map on polynomial functions. -/
 private noncomputable def coeffAction (g : WithConv (coordinateHopfAlgebra R 2 →ₐ[R] R[X]))
@@ -329,7 +299,7 @@ private noncomputable def coeffAction (g : WithConv (coordinateHopfAlgebra R 2 �
 private theorem coeffAction_mem (W : Subcomodule R (coordinateHopfAlgebra R 2)
     (MvPolynomial (Fin 2) R)) (g : WithConv (coordinateHopfAlgebra R 2 →ₐ[R] R[X])) (n : ℕ)
     {f : MvPolynomial (Fin 2) R} (hf : f ∈ W) : coeffAction g n f ∈ W :=
-  lid_rTensor_endOfPoint_mem W g.ofConv (lcoeff R n) hf
+  W.lid_rTensor_endOfPoint_mem g.ofConv (lcoeff R n) hf
 
 /-- If a point over `R[t]` acts on `f` by `(u - t v) ^ i * w`, then the coefficient of `tⁿ` is
 `(-1)ⁿ (i choose n) uⁱ⁻ⁿ vⁿ w`. -/
@@ -341,12 +311,17 @@ private theorem coeffAction_eq (g : WithConv (coordinateHopfAlgebra R 2 →ₐ[R
           MvPolynomial.C X * MvPolynomial.map (algebraMap R R[X]) v) ^ i *
         MvPolynomial.map (algebraMap R R[X]) w) (n : ℕ) :
     coeffAction g n f = ((-1) ^ n * (i.choose n : R)) • (u ^ (i - n) * v ^ n * w) := by
-  have h := (MvPolynomial.algebraTensorAlgEquiv R R[X]).injective
-    (hf.trans (algebraTensorAlgEquiv_sum u v w i).symm)
+  have h : Comodule.endOfPoint (MvPolynomial (Fin 2) R) g.ofConv (1 ⊗ₜ f) =
+      ∑ l ∈ Finset.range (i + 1),
+        (((-1) ^ l * (i.choose l : R)) • X ^ l) ⊗ₜ[R] (u ^ (i - l) * v ^ l * w) := by
+    apply (MvPolynomial.algebraTensorAlgEquiv R R[X]).injective
+    rw [hf, ← MvPolynomial.algebraTensorAlgEquiv_sum_tmul_pow_mul_pow, map_sum, map_sum,
+      Finset.sum_mul]
+    simp only [MvPolynomial.algebraTensorAlgEquiv_tmul, map_mul, smul_mul_assoc]
   simp only [coeffAction, LinearMap.coe_comp, Function.comp_apply, TensorProduct.mk_apply,
     LinearMap.restrictScalars_apply, h, map_sum, LinearMap.rTensor_tmul, lcoeff_apply,
-    coeff_C_mul_X_pow, LinearEquiv.coe_coe, TensorProduct.lid_tmul, ite_smul, zero_smul,
-    Finset.sum_ite_eq, Finset.mem_range]
+    coeff_smul, coeff_X_pow, smul_eq_mul, mul_ite, mul_one, mul_zero, LinearEquiv.coe_coe,
+    TensorProduct.lid_tmul, ite_smul, zero_smul, Finset.sum_ite_eq, Finset.mem_range]
   split_ifs with hn
   · rfl
   · rw [Nat.choose_eq_zero_of_lt (by omega), Nat.cast_zero, mul_zero, zero_smul]
@@ -379,8 +354,10 @@ theorem choose_smul_X_pow_sub_mul_X_pow_add_mem
     (i.choose n : R) • (MvPolynomial.X 0 ^ (i - n) * MvPolynomial.X 1 ^ (j + n) :
       MvPolynomial (Fin 2) R) ∈ W := by
   have hmem := SMulMemClass.smul_mem ((-1) ^ n : R) (coeffAction_mem W upperPoint n h)
-  rwa [coeffAction_upperPoint_X_pow_mul_X_pow, smul_smul, ← mul_assoc, ← mul_pow, neg_one_mul,
-    neg_neg, one_pow, one_mul, mul_assoc, ← pow_add, add_comm n j] at hmem
+  rw [coeffAction_upperPoint_X_pow_mul_X_pow, smul_smul] at hmem
+  convert hmem using 2
+  · simp [← mul_assoc, ← mul_pow]
+  · ring
 
 /-- **Raising the `x`-degree.** A subrepresentation of the polynomial functions containing
 `xⁱ yʲ` contains `(j choose n) xⁱ⁺ⁿ yʲ⁻ⁿ`, over every commutative ring. Up to sign this is the
@@ -392,11 +369,10 @@ theorem choose_smul_X_pow_add_mul_X_pow_sub_mem
     (j.choose n : R) • (MvPolynomial.X 0 ^ (i + n) * MvPolynomial.X 1 ^ (j - n) :
       MvPolynomial (Fin 2) R) ∈ W := by
   have hmem := SMulMemClass.smul_mem ((-1) ^ n : R) (coeffAction_mem W lowerPoint n h)
-  rwa [coeffAction_lowerPoint_X_pow_mul_X_pow, smul_smul, ← mul_assoc, ← mul_pow, neg_one_mul,
-    neg_neg, one_pow, one_mul,
-    show (MvPolynomial.X 1 ^ (j - n) * MvPolynomial.X 0 ^ n * MvPolynomial.X 0 ^ i :
-      MvPolynomial (Fin 2) R) = MvPolynomial.X 0 ^ (i + n) * MvPolynomial.X 1 ^ (j - n) by ring]
-    at hmem
+  rw [coeffAction_lowerPoint_X_pow_mul_X_pow, smul_smul] at hmem
+  convert hmem using 2
+  · simp [← mul_assoc, ← mul_pow]
+  · ring
 
 section Field
 
