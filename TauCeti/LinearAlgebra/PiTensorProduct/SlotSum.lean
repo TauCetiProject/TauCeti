@@ -286,8 +286,9 @@ variable [Fintype ι] [LinearOrder ι]
 variable (ι) in
 /-- The **slot homotopy** of a homotopy `h` relative to an endomorphism `e`, for a linear order on
 the index type: the sum over the slots `i` of the tensor map applying `e` in the factors before
-`i`, `h` in the factor `i` and the identity after it. When `d h + h d = 1 - e` it contracts the
-tensor power in characteristic two (`TauCeti.PiTensorProduct.slotSum_comp_slotHomotopy_add`). -/
+`i`, `h` in the factor `i` and the identity after it. When `d h + h d = 1 - e` and `e` commutes
+with `d`, it contracts the tensor power in characteristic two
+(`TauCeti.PiTensorProduct.slotSum_comp_slotHomotopy_add`). -/
 noncomputable def slotHomotopy (e h : Module.End R M) : Module.End R (⨂[R] _ : ι, M) :=
   ∑ i, PiTensorProduct.map (update (fun j ↦ if j < i then e else LinearMap.id) i h)
 
@@ -348,32 +349,6 @@ section Ring
 
 variable [CommRing R] [AddCommGroup M] [Module R M] [Fintype ι] [LinearOrder ι]
 
-/-- The tensor map applying `e` in the factors indexed by `s` and the identity elsewhere. -/
-private noncomputable abbrev partialPower (e : Module.End R M) (s : Finset ι) :
-    Module.End R (⨂[R] _ : ι, M) :=
-  PiTensorProduct.map fun j ↦ if j ∈ s then e else LinearMap.id
-
-omit [Fintype ι] in
-/-- The telescope of the diagonal terms: summing the differences between applying `e` strictly
-before a slot and up to it, over the slots of `s`, goes from the identity to applying `e` on all
-of `s`. -/
-private theorem sum_partialPower_sub (e : Module.End R M) (s : Finset ι) :
-    ∑ i ∈ s, (partialPower e {j ∈ s | j < i} - partialPower e {j ∈ s | j ≤ i}) =
-      partialPower e ∅ - partialPower e s := by
-  induction s using Finset.induction_on_max with
-  | empty => simp
-  | insert a s ha ih =>
-    have has : a ∉ s := fun h ↦ lt_irrefl a (ha a h)
-    have hs : ∀ i ∈ s, {j ∈ insert a s | j < i} = {j ∈ s | j < i} ∧
-        {j ∈ insert a s | j ≤ i} = {j ∈ s | j ≤ i} := fun i hi ↦ by
-      simp [Finset.filter_insert, (ha i hi).not_gt, (ha i hi).not_ge]
-    rw [Finset.sum_insert has, Finset.sum_congr rfl fun i hi ↦ by rw [(hs i hi).1, (hs i hi).2],
-      ih]
-    simp only [Finset.filter_insert, lt_irrefl, le_refl, ↓reduceIte]
-    rw [Finset.filter_true_of_mem fun x hx ↦ ha x hx,
-      Finset.filter_true_of_mem fun x hx ↦ (ha x hx).le]
-    abel
-
 omit [Fintype ι] in
 /-- Off the diagonal, applying `d` in the slot `k` commutes with the summand of the slot homotopy
 at another slot `i`, since `d` commutes with `e`; so in characteristic two the two composites
@@ -394,6 +369,7 @@ private theorem slotSum_slotHomotopy_cross [CharP R 2] {d e h : Module.End R M}
     · simp [Module.End.mul_eq_comp]
   · rcases eq_or_ne j i with rfl | hji <;> simp [*, Module.End.mul_eq_comp]
 
+omit [Fintype ι] in
 /-- On the diagonal, applying `d` and the summand of the slot homotopy at the same slot `i` in
 both orders replaces `h` in the slot `i` by `d h + h d = 1 - e`: one step of the telescope. -/
 private theorem slotSum_slotHomotopy_diag {d e h : Module.End R M}
@@ -402,7 +378,8 @@ private theorem slotSum_slotHomotopy_diag {d e h : Module.End R M}
         PiTensorProduct.map (update (fun j ↦ if j < i then e else LinearMap.id) i h) +
       PiTensorProduct.map (update (fun j ↦ if j < i then e else LinearMap.id) i h) *
         PiTensorProduct.map (update (fun _ ↦ LinearMap.id) i d) =
-      partialPower e {j ∈ Finset.univ | j < i} - partialPower e {j ∈ Finset.univ | j ≤ i} := by
+      PiTensorProduct.map (update (fun j ↦ if j < i then e else LinearMap.id) i
+        (LinearMap.id - e)) := by
   set E : ι → Module.End R M := fun j ↦ if j < i then e else LinearMap.id
   -- Each of the tensor maps is `E` with the entry at the slot `i` changed.
   calc _ = PiTensorProduct.map (update E i (d ∘ₗ h)) +
@@ -413,15 +390,7 @@ private theorem slotSum_slotHomotopy_diag {d e h : Module.End R M}
         · simp [E, hj, Module.End.mul_eq_comp]
         · simp [Module.End.mul_eq_comp]
         · simp [E, hj, Module.End.mul_eq_comp]
-    _ = PiTensorProduct.map (update E i LinearMap.id) - PiTensorProduct.map (update E i e) := by
-        rw [← PiTensorProduct.map_update_add, hdh, eq_sub_iff_add_eq,
-          ← PiTensorProduct.map_update_add, sub_add_cancel]
-    _ = _ := by
-        congr 2 <;> funext j <;> rcases eq_or_ne j i with rfl | hj
-        · simp [E]
-        · simp [E, hj]
-        · simp
-        · simp [E, hj, hj.le_iff_lt]
+    _ = _ := by rw [← PiTensorProduct.map_update_add, hdh]
 
 /-- In characteristic two, **the slot homotopy contracts the tensor power**: if `h` is a homotopy
 from the identity to an endomorphism `e` commuting with `d`, in the sense `d h + h d = 1 - e`,
@@ -436,11 +405,22 @@ theorem slotSum_comp_slotHomotopy_add [CharP R 2] {d e h : Module.End R M}
     ← Finset.sum_add_distrib]
   rw [Finset.sum_congr rfl fun i _ ↦ (Finset.sum_add_distrib.symm.trans
     (Finset.sum_eq_single i (fun k _ hki ↦ slotSum_slotHomotopy_cross hde hki) (by simp))).trans
-      (slotSum_slotHomotopy_diag hdh i), sum_partialPower_sub]
-  congr 1
-  · simp only [partialPower, Finset.notMem_empty, ↓reduceIte]
-    exact PiTensorProduct.map_id
-  · simp only [partialPower, Finset.mem_univ, ↓reduceIte]
+      (slotSum_slotHomotopy_diag hdh i)]
+  -- The telescope of the diagonal terms, with `e` before the slot and the identity after it.
+  have htel := (PiTensorProduct.mapMultilinear R (fun _ : ι ↦ M) (fun _ ↦ M)).map_sub_map_piecewise
+    (fun _ ↦ e) (fun _ ↦ LinearMap.id) Finset.univ
+  simp only [Finset.piecewise_univ, PiTensorProduct.mapMultilinear_apply, PiTensorProduct.map_id,
+    Finset.mem_univ, forall_const] at htel
+  rw [← neg_sub (PiTensorProduct.map fun _ ↦ e), htel, ← Finset.sum_neg_distrib]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [← neg_sub e, ← PiTensorProduct.mapMultilinear_apply, MultilinearMap.map_update_neg,
+    PiTensorProduct.mapMultilinear_apply]
+  congr 2
+  funext j
+  rcases lt_trichotomy j i with hj | rfl | hj
+  · simp [hj, hj.ne]
+  · simp
+  · simp [hj.ne, hj.ne', hj.not_gt]
 
 end Ring
 
