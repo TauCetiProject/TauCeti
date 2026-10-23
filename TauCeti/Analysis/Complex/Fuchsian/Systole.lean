@@ -75,6 +75,19 @@ namespace Subgroup
 
 variable {Γ : Subgroup PSL(2, ℝ)}
 
+/-- If a conjugate `g = σ (z ↦ exp t * z) σ⁻¹` with `t ≠ 0` lies in `Γ`, then so does the
+conjugate `σ (z ↦ exp |t| * z) σ⁻¹`, which is `g` or `g⁻¹`. -/
+private theorem conj_dilation_abs_mem {g σ : PSL(2, ℝ)} {t : ℝ} (hg : g ∈ Γ)
+    (h : g = σ * ((dilation t : SL(2, ℝ)) : PSL(2, ℝ)) * σ⁻¹) (ht : t ≠ 0) :
+    σ * ((dilation |t| : SL(2, ℝ)) : PSL(2, ℝ)) * σ⁻¹ ∈ Γ := by
+  rcases lt_or_gt_of_ne ht with hneg | hpos
+  · have : σ * ((dilation |t| : SL(2, ℝ)) : PSL(2, ℝ)) * σ⁻¹ = g⁻¹ := by
+      rw [h, abs_of_neg hneg, ← dilation_inv, QuotientGroup.mk_inv]
+      group
+    rw [this]
+    exact Γ.inv_mem hg
+  · rwa [abs_of_pos hpos, ← h]
+
 /-- **A minimal dilation along an axis.** If `Γ` is discrete and contains the conjugate
 `σ (z ↦ exp s * z) σ⁻¹` for some `s > 0`, then among the `t > 0` with
 `σ (z ↦ exp t * z) σ⁻¹ ∈ Γ` there is a least one. -/
@@ -178,15 +191,13 @@ private theorem exists_mem_thickPart_dist_eq [DiscreteTopology Γ] (σ : PSL(2, 
         dilation s₀ ∨
       (σ⁻¹ * γ * σ) * ((dilation s₀ : SL(2, ℝ)) : PSL(2, ℝ)) * (σ⁻¹ * γ * σ)⁻¹ =
         ((dilation s₀ : SL(2, ℝ)) : PSL(2, ℝ))⁻¹ := by
-    rcases conj_eq_or_conj_eq_inv_of_dist_le hmem γ.2 hfix hdist.le hlt.le with h | h
-    · refine Or.inl ?_
-      calc _ = σ⁻¹ * ((γ : PSL(2, ℝ)) * (σ * ((dilation s₀ : SL(2, ℝ)) : PSL(2, ℝ)) * σ⁻¹) *
-              (γ : PSL(2, ℝ))⁻¹) * σ := by group
-        _ = _ := by rw [h]; group
-    · refine Or.inr ?_
-      calc _ = σ⁻¹ * ((γ : PSL(2, ℝ)) * (σ * ((dilation s₀ : SL(2, ℝ)) : PSL(2, ℝ)) * σ⁻¹) *
-              (γ : PSL(2, ℝ))⁻¹) * σ := by group
-        _ = _ := by rw [h]; group
+    have hc : (σ⁻¹ * γ * σ) * ((dilation s₀ : SL(2, ℝ)) : PSL(2, ℝ)) * (σ⁻¹ * γ * σ)⁻¹ =
+        σ⁻¹ * ((γ : PSL(2, ℝ)) * (σ * ((dilation s₀ : SL(2, ℝ)) : PSL(2, ℝ)) * σ⁻¹) *
+          (γ : PSL(2, ℝ))⁻¹) * σ := by
+      group
+    rw [hc]
+    rcases conj_eq_or_conj_eq_inv_of_dist_le hmem γ.2 hfix hdist.le hlt.le with h | h <;>
+      [left; right] <;> rw [h] <;> group
   have hγ : (γ : PSL(2, ℝ)) = σ * (σ⁻¹ * γ * σ) * σ⁻¹ := by group
   rw [hγ, dist_conj_smul, inv_smul_smul] at hlt
   rcases TauCeti.UpperHalfPlane.exists_eq_dilation_or_antidiag_of_conj_dilation hs₀.ne' hconj with
@@ -198,16 +209,7 @@ private theorem exists_mem_thickPart_dist_eq [DiscreteTopology Γ] (σ : PSL(2, 
       apply hγ₁
       rw [← Subtype.coe_inj, hγ]
       simp
-    have hmemt : σ * ((dilation |t| : SL(2, ℝ)) : PSL(2, ℝ)) * σ⁻¹ ∈ Γ := by
-      rcases lt_or_gt_of_ne ht0 with hneg | hpos
-      · have : σ * ((dilation |t| : SL(2, ℝ)) : PSL(2, ℝ)) * σ⁻¹ = (γ : PSL(2, ℝ))⁻¹ := by
-          rw [hγ, abs_of_neg hneg, ← dilation_inv, QuotientGroup.mk_inv]
-          group
-        rw [this]
-        exact Γ.inv_mem γ.2
-      · rw [abs_of_pos hpos, ← hγ]
-        exact γ.2
-    exact (hyt t (hmin _ (abs_pos.2 ht0) hmemt)).not_gt hlt
+    exact (hyt t (hmin _ (abs_pos.2 ht0) (conj_dilation_abs_mem γ.2 hγ ht0))).not_gt hlt
   · -- `γ` exchanges the ends of the axis, and so moves `σ • y` at least `1 / 4`
     rw [← hX, pslMk_smul] at hlt
     exact (hyX X h₀₀ h₁₁).not_gt hlt
@@ -286,16 +288,8 @@ theorem IsCofinite.exists_pos_le_dist_smul_of_two_lt_abs_trace (hΓ : Γ.IsCofin
   refine ⟨δ, hδ, fun A hA htr z ↦ ?_⟩
   -- `A` is conjugate to a dilation, and some dilation along the same axis is minimal
   obtain ⟨σ, s, hs, hAeq⟩ := TauCeti.UpperHalfPlane.exists_eq_conj_dilation_of_two_lt_abs_trace htr
-  have hmem : σ * ((dilation |s| : SL(2, ℝ)) : PSL(2, ℝ)) * σ⁻¹ ∈ Γ := by
-    rcases lt_or_gt_of_ne hs with hneg | hpos
-    · have : σ * ((dilation |s| : SL(2, ℝ)) : PSL(2, ℝ)) * σ⁻¹ = (A : PSL(2, ℝ))⁻¹ := by
-        rw [hAeq, abs_of_neg hneg, ← dilation_inv, QuotientGroup.mk_inv]
-        group
-      rw [this]
-      exact Γ.inv_mem hA
-    · rw [abs_of_pos hpos, ← hAeq]
-      exact hA
-  obtain ⟨s₀, hs₀, hs₀s, hmem₀, hmin⟩ := exists_min_dilation σ (abs_pos.2 hs) hmem
+  obtain ⟨s₀, hs₀, hs₀s, hmem₀, hmin⟩ :=
+    exists_min_dilation σ (abs_pos.2 hs) (conj_dilation_abs_mem hA hAeq hs)
   have hAz : |s| ≤ dist (A • z) z := by
     rw [← pslMk_smul, hAeq, dist_conj_smul, pslMk_smul]
     exact abs_le_dist_dilation_smul s _

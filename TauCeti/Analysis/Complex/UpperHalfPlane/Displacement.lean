@@ -7,10 +7,12 @@ module
 
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Metric
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Dilation
+import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic
 import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Affine
 import TauCeti.Analysis.Complex.UpperHalfPlane.Rotation
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ConjAct
 import TauCeti.LinearAlgebra.Matrix.Trace.FinTwo
+import TauCeti.Topology.MetricSpace.IsometricSMul
 
 /-!
 # Displacements and commutator traces in `SL(2, ℝ)`
@@ -55,7 +57,6 @@ by both kinds of element, except by dilations with `s` close to `0`.
 ## Main results
 
 * `Matrix.SpecialLinearGroup.cosh_dist_smul_I`: the distance moved by `I`.
-* `Matrix.SpecialLinearGroup.dist_smul_smul_eq`: changing the base point conjugates the action.
 * `Matrix.SpecialLinearGroup.cosh_dist_smul_of_smul_eq_self`: the displacement of a point by an
   element fixing `z`.
 * `Matrix.SpecialLinearGroup.cosh_dist_dilation_smul`: the displacement of a point by a dilation,
@@ -160,11 +161,6 @@ theorem cosh_dist_smul_of_smul_eq_self {g : SL(2, ℝ)} {z : ℍ} (hz : g • z 
     (((Q⁻¹ * P) 0 0 ^ 2 + (Q⁻¹ * P) 0 1 ^ 2 + (Q⁻¹ * P) 1 0 ^ 2 + (Q⁻¹ * P) 1 1 ^ 2) ^ 2 / 2 - 2) *
       hab
 
-/-- Changing the base point from `z` to `P • z` conjugates the acting matrix. -/
-theorem dist_smul_smul_eq (P k : SL(2, ℝ)) (z : ℍ) :
-    dist (k • P • z) (P • z) = dist ((P⁻¹ * k * P) • z) z := by
-  rw [← dist_smul P⁻¹, inv_smul_smul, mul_smul, mul_smul]
-
 /-- **The trace of a commutator with an element fixing a point.** If `g ∈ SL(2, ℝ)` fixes
 `z ∈ ℍ`, then for every `h ∈ SL(2, ℝ)`,
 `tr ⁅g, h⁆ = 2 + (4 - tr² g) / 2 · (cosh (dist (h • z) z) - 1)`. -/
@@ -185,7 +181,7 @@ theorem trace_commutatorElement_of_smul_eq_self {g : SL(2, ℝ)} {z : ℍ} (hz :
     simp only [hk, hX, commutatorElement_def]
     group
   have hdist : dist (h • P • I) (P • I) = dist (X • I) I := by
-    exact dist_smul_smul_eq P h I
+    simpa [hX] using (TauCeti.dist_conj_smul P⁻¹ h I).symm
   have hg : P * k * P⁻¹ = g := by
     rw [hk]
     group
@@ -263,7 +259,8 @@ theorem trace_sq_sub_four_le (g : SL(2, ℝ)) (z : ℍ) :
   have htr : (g : Matrix (Fin 2) (Fin 2) ℝ).trace = ((P⁻¹ * g * P : SL(2, ℝ)) :
       Matrix (Fin 2) (Fin 2) ℝ).trace := by
     simpa using (trace_mul_mul_inv P⁻¹ g).symm
-  rw [dist_smul_smul_eq P g I, htr]
+  -- moving the base point `P • I` to `I` conjugates `g` by `P`
+  rw [← inv_inv P, ← TauCeti.dist_conj_smul, inv_inv, htr]
   exact trace_sq_sub_four_le_of_I _
 
 /-- **The commutator trace and the displacement of a point.** For `g, h ∈ SL(2, ℝ)` and `z ∈ ℍ`,
@@ -277,7 +274,9 @@ theorem abs_trace_commutatorElement_sub_two_le (g h : SL(2, ℝ)) (z : ℍ) :
   have hcomm : ⁅g, h⁆ = P * ⁅P⁻¹ * g * P, P⁻¹ * h * P⁆ * P⁻¹ := by
     simp only [commutatorElement_def]
     group
-  rw [dist_smul_smul_eq P g I, dist_smul_smul_eq P h I, hcomm, trace_mul_mul_inv]
+  -- moving the base point `P • I` to `I` conjugates `g` and `h` by `P`
+  rw [← inv_inv P, ← TauCeti.dist_conj_smul, ← TauCeti.dist_conj_smul, inv_inv, hcomm,
+    trace_mul_mul_inv]
   exact abs_trace_commutatorElement_sub_two_le_of_I _ _
 
 /-- **Displacement by a dilation.** The dilation `z ↦ exp s * z` moves `z ∈ ℍ` a hyperbolic
@@ -307,11 +306,8 @@ theorem abs_le_dist_dilation_smul (s : ℝ) (z : ℍ) : |s| ≤ dist (dilation s
 /-- The dilation `z ↦ exp s * z` moves `I` exactly the distance `|s|`. -/
 @[simp]
 theorem dist_dilation_smul_I (s : ℝ) : dist (dilation s • I) I = |s| := by
-  have h : Real.cosh (dist (dilation s • I) I) = Real.cosh |s| := by
-    rw [cosh_dist_dilation_smul, Real.cosh_abs]
-    simp
-  refine le_antisymm ?_ (abs_le_dist_dilation_smul s I)
-  simpa [abs_of_nonneg dist_nonneg] using Real.cosh_le_cosh.1 h.le
+  rw [← TauCeti.UpperHalfPlane.geodesicLine_one_eq_dilation_smul_I, ← one_smul PSL(2, ℝ) I,
+    ← TauCeti.UpperHalfPlane.geodesicLine_zero, TauCeti.UpperHalfPlane.dist_geodesicLine, sub_zero]
 
 /-- **Displacement by an antidiagonal matrix.** A matrix `g = !![0, b; c, 0] ∈ SL(2, ℝ)`, acting as
 `z ↦ -b² / z` and so exchanging the endpoints `0` and `∞` of the imaginary axis, moves `z ∈ ℍ` a
@@ -338,14 +334,12 @@ theorem one_add_two_mul_sq_le_cosh_dist_smul {g : SL(2, ℝ)} (h₀₀ : g 0 0 =
     push_cast
     linear_combination (z : ℂ) * (g 0 1 : ℂ) * this
   have hre : (g • z).re = -(g 0 1 ^ 2) * z.re / (z.re ^ 2 + z.im ^ 2) := by
-    rw [← UpperHalfPlane.coe_re, hcoe, Complex.div_re, Complex.neg_re, Complex.neg_im,
-      Complex.ofReal_re, Complex.ofReal_im, Complex.normSq_apply, UpperHalfPlane.coe_re,
-      UpperHalfPlane.coe_im]
+    rw [← UpperHalfPlane.coe_re, hcoe]
+    simp [Complex.div_re, Complex.normSq_apply, -Complex.ofReal_pow]
     ring
   have him : (g • z).im = g 0 1 ^ 2 * z.im / (z.re ^ 2 + z.im ^ 2) := by
-    rw [← UpperHalfPlane.coe_im, hcoe, Complex.div_im, Complex.neg_re, Complex.neg_im,
-      Complex.ofReal_re, Complex.ofReal_im, Complex.normSq_apply, UpperHalfPlane.coe_re,
-      UpperHalfPlane.coe_im]
+    rw [← UpperHalfPlane.coe_im, hcoe]
+    simp [Complex.div_im, Complex.normSq_apply, -Complex.ofReal_pow]
     ring
   have hy := z.im_pos
   have hb2 : 0 < g 0 1 ^ 2 := by positivity
