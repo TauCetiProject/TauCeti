@@ -21,8 +21,6 @@ ideal into the extended ideal, and is compatible with the identification of the 
 
 ## Main results
 
-* `TauCeti.Henselization.ringHom_ext_of_map_le_jacobson`: ring maps out of the henselization of
-  `(R, I)` agreeing on `R` are equal once the image of `I` lies in the Jacobson radical.
 * `TauCeti.Henselization.map`: the ring map of henselizations induced by a map of pairs.
 * `TauCeti.Henselization.map_unique`: `map f hf` is the unique ring map compatible with `f`.
 * `TauCeti.Henselization.map_id`, `TauCeti.Henselization.map_comp`,
@@ -43,16 +41,6 @@ universe u v w
 namespace TauCeti.Henselization
 
 variable {R : Type u} [CommRing R] {I : Ideal R}
-
-/-- Two ring maps out of the henselization of `(R, I)` which agree on `R` are equal as soon as
-`I` generates an ideal of the target inside its Jacobson radical. -/
-theorem ringHom_ext_of_map_le_jacobson {T : Type*} [CommRing T] {g₁ g₂ : algebra I →+* T}
-    (h : g₁.comp (algebraMap R (algebra I)) = g₂.comp (algebraMap R (algebra I)))
-    (hI : I.map (g₁.comp (algebraMap R (algebra I))) ≤ Ideal.jacobson ⊥) : g₁ = g₂ := by
-  let : Algebra R T := (g₁.comp (algebraMap R (algebra I))).toAlgebra
-  have hfg := algHom_ext_of_map_le_jacobson (I := I) hI (f := ⟨g₁, fun _ ↦ rfl⟩)
-    (g := ⟨g₂, fun r ↦ (DFunLike.congr_fun h r).symm⟩)
-  exact RingHom.ext fun x ↦ DFunLike.congr_fun hfg x
 
 variable {S : Type v} [CommRing S] {J : Ideal S}
 
@@ -136,8 +124,7 @@ example : map (RingHom.id (ZMod 5)) (I := ⊥) (J := ⊥) (by simp) 1 = 1 := by
 -- Reduction `ℤ → 𝔽₅` sends `7` in the henselization of `(ℤ, 0)` to `2`.
 example : map (Int.castRingHom (ZMod 5)) (I := ⊥) (J := ⊥) (by simp)
     (algebraMap ℤ (algebra (⊥ : Ideal ℤ)) 7) = algebraMap (ZMod 5) (algebra ⊥) 2 := by
-  rw [map_algebraMap]
-  rfl
+  rw [map_algebraMap, show Int.castRingHom (ZMod 5) 7 = 2 by decide]
 
 -- The identity of `(ℤ/9, (3))` induces a map of henselizations fixing `1`.
 example : map (RingHom.id (ZMod 9)) (I := Ideal.span {3}) (J := Ideal.span {3}) (by simp) 1 = 1 :=
@@ -149,7 +136,7 @@ example : ¬ Function.Injective
     (map (Int.castRingHom (ZMod 5)) (I := ⊥) (J := ⊥) (by simp)) := by
   intro h
   have h5 : algebraMap ℤ (algebra (⊥ : Ideal ℤ)) 5 = 0 := (injective_iff_map_eq_zero _).mp h _ <| by
-    rw [map_algebraMap, show Int.castRingHom (ZMod 5) 5 = 0 from rfl, map_zero]
+    rw [map_algebraMap, show Int.castRingHom (ZMod 5) 5 = 0 by decide, map_zero]
   rw [map_eq_zero_iff _ (bijective_algebraMap_of_henselianRing ⊥).1] at h5
   norm_num at h5
 
