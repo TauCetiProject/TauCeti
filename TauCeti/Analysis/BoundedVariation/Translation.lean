@@ -205,8 +205,7 @@ private theorem exists_divergenceCLM_eq_sub
     -- of calculus, as `Φ (y - s h) = ∫ₛ^{s+1} g (y - t h) dt`.
     rw [divergenceCLM_apply, hψ, fderiv_smul_const (hΦs.differentiable (by simp) y)]
     -- The trace of the rank-one map `v ↦ DΦ v • (-h)` is `DΦ (-h)`.
-    rw [show ((fderiv ℝ Φ y).smulRight (-h) : E →ₗ[ℝ] E) =
-      (fderiv ℝ Φ y : E →ₗ[ℝ] ℝ).smulRight (-h) from rfl, LinearMap.trace_smulRight]
+    rw [ContinuousLinearMap.coe_smulRight, LinearMap.trace_smulRight, ContinuousLinearMap.coe_coe]
     set f : ℝ → ℝ := fun t => g (y - t • h)
     have hf : Continuous f := g.continuous.comp (by fun_prop)
     have hline : (fun s : ℝ => Φ (y + s • -h)) =
@@ -221,13 +220,13 @@ private theorem exists_divergenceCLM_eq_sub
       simp only [f, smul_neg, add_smul]
       congr 1
       abel
-    have hderiv : HasDerivAt (fun s : ℝ => Φ (y + s • -h)) (f 1 - f 0) 0 := by
+    -- `HasLineDerivAt` is by definition the derivative at `0` of `s ↦ Φ (y + s • -h)`.
+    have hlin : HasLineDerivAt ℝ Φ (f 1 - f 0) y (-h) := by
+      unfold HasLineDerivAt
       rw [hline]
       have h1 := (hf.integral_hasStrictDerivAt 0 (0 + 1)).hasDerivAt.comp_add_const 0 1
       exact h1.sub (hf.integral_hasStrictDerivAt 0 0).hasDerivAt |>.congr_deriv (by simp)
-    have hlin : HasLineDerivAt ℝ Φ (f 1 - f 0) y (-h) := hderiv
-    rw [ContinuousLinearMap.coe_coe, ← (hΦs.differentiable (by simp) y).lineDeriv_eq_fderiv,
-      hlin.lineDeriv]
+    rw [← (hΦs.differentiable (by simp) y).lineDeriv_eq_fderiv, hlin.lineDeriv]
     simp [f]
 
 /-- **The translation estimate for functions of bounded variation.** If the segments
