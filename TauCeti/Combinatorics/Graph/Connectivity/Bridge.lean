@@ -170,15 +170,8 @@ theorem isForest_noEdge (X : Set α) : (noEdge X β).IsForest :=
 /-! ### Graphs on two vertices -/
 
 /-- The single edge joining two distinct vertices is a bridge. -/
-theorem isBridge_banana_singleton (huw : u ≠ w) (e : β) : (banana u w {e}).IsBridge e := by
-  refine isEdgeCut_iff.mpr ⟨{u}, ?_⟩
-  ext f
-  simp only [mem_edgeCut_iff, banana_isLink, mem_singleton_iff]
-  constructor
-  · rintro ⟨-, -, ⟨hf, -⟩, -, -⟩
-    exact hf
-  · rintro rfl
-    exact ⟨u, w, ⟨rfl, .inl ⟨rfl, rfl⟩⟩, rfl, huw.symm⟩
+theorem isBridge_banana_singleton (huw : u ≠ w) (e : β) : (banana u w {e}).IsBridge e :=
+  isEdgeCut_iff.mpr ⟨{u}, edgeCut_banana_singleton huw {e}⟩
 
 /-- Two distinct vertices joined by a single edge form a forest. -/
 theorem isForest_banana_singleton (huw : u ≠ w) (e : β) : (banana u w {e}).IsForest :=

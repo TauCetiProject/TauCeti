@@ -35,6 +35,8 @@ the integral norm on the carrier.
 * `TauCeti.IntegralLattice.norm_apply`: evaluating the rational norm yields self-pairing.
 * `TauCeti.IntegralLattice.nondegenerate_norm`: the rational norm of a nondegenerate lattice is
   nondegenerate.
+* `TauCeti.IntegralLattice.isNondegenerate_of_anisotropic`: a lattice with anisotropic rational
+  norm form is nondegenerate.
 * `TauCeti.IntegralLattice.integralNorm_apply`: evaluating the integral norm yields
   integral self-pairing.
 * `TauCeti.IntegralLattice.integralNorm_cast`: the integral norm recovers the rational norm in `ℚ`.
@@ -84,6 +86,12 @@ theorem nondegenerate_norm (L : IntegralLattice V) [L.IsNondegenerate] :
     L.norm.Nondegenerate := by
   rw [norm_def]
   exact L.form_nondegenerate.toQuadraticMap L.form_flip
+
+/-- A lattice with anisotropic rational norm form is nondegenerate. -/
+theorem isNondegenerate_of_anisotropic {L : IntegralLattice V} (h : L.norm.Anisotropic) :
+    L.IsNondegenerate :=
+  ⟨(LinearMap.IsRefl.nondegenerate_iff_separatingLeft L.isSymm.isRefl).mpr
+    (LinearMap.BilinForm.separatingLeft_of_anisotropic (by rwa [← norm_def]))⟩
 
 -- The evaluation and negation identities below remain explicit rewrite lemmas. Registering them
 -- with `simp` makes the specialized cast, zero, and scaling rules fail the `simpNF` linter.

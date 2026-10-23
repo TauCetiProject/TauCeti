@@ -88,7 +88,7 @@ end GridPentagonRectangleDecomposition
 
 namespace GridDiagram
 
-variable {n : ℕ} (G : GridDiagram n) (C : ColumnCommutationData G)
+variable {n : ℕ} (G : GridDiagram n) (C : ColumnTurn n)
 
 /-- The diagonal rectangle--pentagon terms whose rectangle and pentagon have the same ordered
 side columns. -/

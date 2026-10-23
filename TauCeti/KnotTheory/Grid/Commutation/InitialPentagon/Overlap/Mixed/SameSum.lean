@@ -81,7 +81,7 @@ end TauCeti.GridRectangleInitialPentagonDecomposition
 
 namespace TauCeti.GridDiagram
 
-variable {n : ℕ} (G : GridDiagram n) (C : ColumnCommutationData G) {x z : GridState n}
+variable {n : ℕ} (G : GridDiagram n) (C : ColumnTurn n) {x z : GridState n}
 
 /-- A counted mixed `left = right` overlap with one common side whose recut misses the turn row in
 its first rectangle is a same-sum pair: its recut is a counted rectangle--initial-side-pentagon

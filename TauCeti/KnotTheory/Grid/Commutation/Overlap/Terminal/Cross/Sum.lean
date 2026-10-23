@@ -34,7 +34,7 @@ public section
 
 namespace TauCeti.GridDiagram
 
-variable {n : ℕ} (G : GridDiagram n) (C : ColumnCommutationData G)
+variable {n : ℕ} (G : GridDiagram n) (C : ColumnTurn n)
   {x z : GridState n}
 
 /-- The counted common-terminal-side rectangle--pentagon decompositions whose recuts
