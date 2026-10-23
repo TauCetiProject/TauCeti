@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.CWComplex.Classical.CellAction
-public import TauCeti.Topology.CWComplex.Classical.FreeAction
+public import TauCeti.Topology.CWComplex.Classical.OpenCells
 public import TauCeti.Topology.Covering.Quotient
 
 /-!
