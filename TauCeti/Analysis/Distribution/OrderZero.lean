@@ -8,9 +8,8 @@ module
 public import Mathlib.Analysis.Distribution.Distribution
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Measure.Regular
-import Mathlib.Analysis.Calculus.BumpFunction.Convolution
-import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
-import Mathlib.Analysis.Calculus.ContDiff.Convolution
+import TauCeti.Analysis.Distribution.TestFunction.Approximation
+import TauCeti.Analysis.Distribution.TestFunction.Integral
 import TauCeti.MeasureTheory.Integral.RieszMarkovKakutani.Signed
 
 /-!
@@ -36,11 +35,11 @@ functional on `C_c(Ω, ℝ)` that is bounded on order intervals, so the Riesz–
 for order-bounded functionals (`TauCeti.RealRMK.forall_bddAbove_image_Icc_iff_exists_regular`)
 represents it by two regular measures.
 
+The converse uses the sup-norm bound for integrals of test functions
+(`TestFunction.norm_integral_le_measureReal_mul_norm`).
+
 ## Main results
 
-* `Continuous.exists_testFunction_dist_le`: a continuous function supported in a compact set `K`
-  is uniformly approximated by test functions supported in any closed thickening of `K` that lies
-  in `Ω`.
 * `Distribution.forall_exists_abs_le_iff_exists_regular`: a distribution has order zero if and
   only if it is the difference of the integrals against two regular measures on `Ω`.
 
@@ -58,45 +57,9 @@ public section
 noncomputable section
 
 open MeasureTheory TopologicalSpace Filter Metric Set CompactlySupportedContinuousMap
-open scoped Distributions Topology Convolution BoundedContinuousFunction CompactlySupported
+open scoped Distributions Topology BoundedContinuousFunction CompactlySupported
 
 variable {E : Type*} [NormedAddCommGroup E] {Ω : Opens E}
-
-section Approximation
-
-variable [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-
-variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
-
-/-- A continuous function supported in a compact set `K` is uniformly approximated by test
-functions on `Ω`, as long as a closed thickening `cthickening δ K` lies in `Ω`: for every `ε > 0`
-there is a test function on `Ω`, supported in `cthickening δ K`, within `ε` of `f` everywhere. -/
-theorem Continuous.exists_testFunction_dist_le {f : E → F} (hf : Continuous f) {K : Set E}
-    (hK : IsCompact K) (hfK : tsupport f ⊆ K) {δ : ℝ} (hδ : 0 < δ)
-    (hKΩ : cthickening δ K ⊆ Ω) {ε : ℝ} (hε : 0 < ε) :
-    ∃ φ : 𝓓(Ω, F), tsupport φ ⊆ cthickening δ K ∧ ∀ x, dist (φ x) (f x) ≤ ε := by
-  borelize E
-  have hfc : HasCompactSupport f := hK.of_isClosed_subset (isClosed_tsupport f) hfK
-  obtain ⟨η, hη, hfη⟩ :=
-    Metric.uniformContinuous_iff.mp (hfc.uniformContinuous_of_continuous hf) ε hε
-  -- Mollify `f` by a normalized bump of outer radius `min η δ`.
-  have hr : 0 < min η δ := lt_min hη hδ
-  let ρ : ContDiffBump (0 : E) := ⟨min η δ / 2, min η δ, half_pos hr, half_lt_self hr⟩
-  set g := ρ.normed Measure.addHaar ⋆[ContinuousLinearMap.lsmul ℝ ℝ, Measure.addHaar] f
-  have hgs : tsupport g ⊆ cthickening δ K := by
-    have hsupp : Function.support g ⊆ thickening (min η δ) K := by
-      refine (support_convolution_subset _).trans ?_
-      rw [ρ.support_normed_eq, ← ball_add_zero]
-      exact add_subset_add_left ((subset_tsupport f).trans hfK)
-    exact (closure_mono hsupp).trans <| (closure_thickening_subset_cthickening _ _).trans <|
-      cthickening_mono (min_le_right _ _) K
-  refine ⟨⟨g, ρ.hasCompactSupport_normed.contDiff_convolution_left _ ρ.contDiff_normed
-      hf.locallyIntegrable, hK.cthickening.of_isClosed_subset (isClosed_tsupport _) hgs,
-      hgs.trans hKΩ⟩, hgs, fun x => ?_⟩
-  exact ρ.dist_normed_convolution_le hf.aestronglyMeasurable fun y hy =>
-    (hfη ((mem_ball.mp hy).trans_le (min_le_left _ _))).le
-
-end Approximation
 
 namespace Distribution
 
@@ -327,21 +290,6 @@ private lemma bddAbove_extendₗ_image_Icc (f : C_c(Ω, ℝ)) :
 
 /-! ### The Radon representation -/
 
-omit hT [FiniteDimensional ℝ E] in
-/-- The integral of a test function supported in a compact `K ⊆ Ω` against a measure on `Ω` that
-is finite on compact sets is at most the measure of `K` times the sup norm. -/
-private lemma abs_integral_le [MeasurableSpace E] (ν : Measure Ω)
-    [IsFiniteMeasureOnCompacts ν] {K : Set E} (hK : IsCompact K) (hKΩ : K ⊆ Ω) {φ : 𝓓(Ω, ℝ)}
-    (hφ : tsupport φ ⊆ K) :
-    |∫ x, φ x ∂ν| ≤ ν.real (((↑) : Ω → E) ⁻¹' K) * ‖(φ : E →ᵇ ℝ)‖ := by
-  have hK' : IsCompact (((↑) : Ω → E) ⁻¹' K) :=
-    Ω.isOpen.isOpenEmbedding_subtypeVal.isInducing.isCompact_preimage' hK (by simpa using hKΩ)
-  rw [← setIntegral_eq_integral_of_forall_compl_eq_zero (s := ((↑) : Ω → E) ⁻¹' K)
-    (f := fun x : Ω => φ x) fun x hx => image_eq_zero_of_notMem_tsupport fun h => hx (hφ h),
-    mul_comm, ← Real.norm_eq_abs]
-  exact norm_setIntegral_le_of_norm_le_const hK'.measure_lt_top fun x _ => by
-    simpa using (φ : E →ᵇ ℝ).norm_coe_le_norm x
-
 omit hT in
 /-- **A distribution of order zero is a signed Radon measure.** A distribution `T` on `Ω` is
 bounded on each compact `K ⊆ Ω` in the sup norm, `|T φ| ≤ C_K ‖φ‖_∞` for the test functions `φ`
@@ -362,8 +310,9 @@ theorem forall_exists_abs_le_iff_exists_regular [MeasurableSpace E] [BorelSpace 
     exact ⟨ν₁, ν₂, h₁, h₂, fun φ => (extendₗ_restrict hT φ).symm.trans (h (restrict φ))⟩
   · rintro ⟨ν₁, ν₂, h₁, h₂, h⟩ K hK hKΩ
     refine ⟨ν₁.real (((↑) : Ω → E) ⁻¹' K) + ν₂.real (((↑) : Ω → E) ⁻¹' K), fun φ hφ => ?_⟩
-    rw [h, add_mul]
-    exact (abs_sub _ _).trans
-      (add_le_add (abs_integral_le ν₁ hK hKΩ hφ) (abs_integral_le ν₂ hK hKΩ hφ))
+    rw [h, add_mul, ← Real.norm_eq_abs]
+    exact (norm_sub_le _ _).trans
+      (add_le_add (φ.norm_integral_le_measureReal_mul_norm hK hKΩ hφ ν₁)
+        (φ.norm_integral_le_measureReal_mul_norm hK hKΩ hφ ν₂))
 
 end Distribution

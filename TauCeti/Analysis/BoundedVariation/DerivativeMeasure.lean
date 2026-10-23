@@ -13,11 +13,15 @@ import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 # The directional derivatives of a function of locally bounded variation are measures
 
 Let `Ω` be an open set of a finite-dimensional real inner product space `E` and let `u : E → ℝ`.
-The pairing of the directional derivative `∂_v u` with a test function `φ` is
-`-∫ ∂_v φ * u`, and `∂_v φ` is the divergence of the test vector field `φ v`. Hence the
-variational total variation `|Du|(Ω)` bounds it:
+For locally integrable `u`, the pairing of the directional derivative `∂_v u` with a test
+function `φ` is `-∫ ∂_v φ * u`, and `∂_v φ` is the divergence of the test vector field `φ v`.
+Hence the variational total variation `|Du|(Ω)` bounds it:
 `|∫ ∂_v φ * u| ≤ ‖v‖ ‖φ‖_∞ |Du|(Ω)`
-(`TauCeti.ofReal_abs_integral_lineDeriv_mul_le_totalVariationOn`).
+(`TestFunction.ofReal_abs_integral_lineDeriv_mul_le_totalVariationOn`).
+
+The distributional derivative is taken of `Distribution.ofFun Ω u μ ⊤`. When `u` is locally
+integrable on `Ω` this is integration against `u`, so `∂_v u (φ) = -∫ ∂_v φ * u`; otherwise
+`Distribution.ofFun` is zero by convention, and so is its derivative.
 
 If `u` has **locally finite variation** on `Ω`, meaning that every compact `K ⊆ Ω` has an open
 neighbourhood `U` with `|Du|(U) < ∞`, this makes each distributional derivative
@@ -29,7 +33,7 @@ needed, so this covers functions of locally bounded variation on unbounded open 
 
 ## Main results
 
-* `TauCeti.ofReal_abs_integral_lineDeriv_mul_le_totalVariationOn`: the directional derivative
+* `TestFunction.ofReal_abs_integral_lineDeriv_mul_le_totalVariationOn`: the directional derivative
   pairing is bounded by `‖v‖ ‖φ‖_∞ |Du|(Ω)`.
 * `TauCeti.exists_regular_lineDeriv_ofFun_apply_eq`: the directional derivatives of a function of
   locally finite variation on `Ω` are differences of regular measures on `Ω`.
@@ -46,13 +50,13 @@ public section
 
 noncomputable section
 
-namespace TauCeti
-
-open MeasureTheory TopologicalSpace TestFunction LineDeriv
+open MeasureTheory TopologicalSpace TestFunction LineDeriv TauCeti
 open scoped ENNReal Distributions BoundedContinuousFunction
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] {μ : Measure E} {Ω : Opens E} {u : E → ℝ}
+
+namespace TestFunction
 
 /-- **The directional derivative is bounded by the total variation.** For a test function `φ` on
 `Ω` and a direction `v`, `|∫ ∂_v φ * u| ≤ ‖v‖ ‖φ‖_∞ |Du|(Ω)`. -/
@@ -93,12 +97,18 @@ theorem ofReal_abs_integral_lineDeriv_mul_le_totalVariationOn (φ : 𝓓(Ω, ℝ
     _ = ‖v‖ₑ * ‖(φ : E →ᵇ ℝ)‖ₑ * totalVariationOn μ Ω u := by
         rw [ENNReal.ofReal_mul (norm_nonneg v), ofReal_norm, ofReal_norm]
 
+end TestFunction
+
+namespace TauCeti
+
 /-- **The directional derivatives of a function of locally finite variation are signed Radon
 measures.** If every compact `K ⊆ Ω` has an open neighbourhood `U` on which `u` has finite total
 variation, then for every direction `v` there are regular measures `ν₁` and `ν₂` on `Ω` with
-`∂_v u (φ) = ∫ φ dν₁ - ∫ φ dν₂` for every test function `φ`, where `∂_v u` is the distributional
-derivative of `u` on `Ω`. The measures are finite on compact subsets of `Ω` but need not be
-finite. -/
+`∂_v u (φ) = ∫ φ dν₁ - ∫ φ dν₂` for every test function `φ`, where `∂_v u` is the derivative of
+the distribution `Distribution.ofFun Ω u μ ⊤`. If `u` is locally integrable on `Ω`, this is the
+distributional derivative of `u`, `∂_v u (φ) = -∫ ∂_v φ * u`; otherwise `Distribution.ofFun` is
+zero by convention and the statement is trivial. The measures are finite on compact subsets of
+`Ω` but need not be finite. -/
 theorem exists_regular_lineDeriv_ofFun_apply_eq [BorelSpace E]
     (hu : ∀ K, IsCompact K → K ⊆ Ω → ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U u ≠ ∞)
     (v : E) :
