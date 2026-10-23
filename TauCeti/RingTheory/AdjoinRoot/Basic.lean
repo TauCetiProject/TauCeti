@@ -130,7 +130,7 @@ less than `deg g`.** Division with remainder by a monic polynomial supplies the 
 lemma exists_degree_lt_mk_eq [Nontrivial R] {g : R[X]} (hg : g.Monic) (a : AdjoinRoot g) :
     ∃ p, p.degree < g.degree ∧ a = mk g p := by
   obtain ⟨q, rfl⟩ := mk_surjective a
-  exact ⟨q %ₘ g, degree_modByMonic_lt q hg, by simpa using (mk_leftInverse hg (mk g q)).symm⟩
+  exact ⟨q %ₘ g, degree_modByMonic_lt q hg, by simp⟩
 
 /-- **Two polynomials of degree less than that of a monic relator have the same class in
 `AdjoinRoot` only if they are equal.** Together with `AdjoinRoot.exists_degree_lt_mk_eq` this says
