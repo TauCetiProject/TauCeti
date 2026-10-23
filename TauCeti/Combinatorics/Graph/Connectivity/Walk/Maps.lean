@@ -17,6 +17,12 @@ not change, both operations preserve the support and edge list. In particular, t
 paths, trails, cycles, and reachability. In particular, reachability after deleting a set of edges
 is witnessed exactly by walks avoiding those edges.
 
+The single-edge deletion results describe the original component as the union of the endpoint
+components after deletion (`Graph.IsLink.reachable_iff_reachable_deleteEdges_or`) and show that
+reachability outside that component is unchanged
+(`Graph.IsLink.reachable_deleteEdges_iff_of_not_reachable`). They supply the walk-level input for
+the bridge/component-count characterization.
+
 The interface follows Mathlib's `SimpleGraph.Walk.mapLe`, `SimpleGraph.Walk.transfer`, and
 `SimpleGraph.reachable_deleteEdges_iff_exists_walk`, adapted to retain multigraph edge identities.
 -/
