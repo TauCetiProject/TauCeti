@@ -66,6 +66,9 @@ the number of distinct roots.
 * `Polynomial.natDegree_sub_natDegree_gcd_derivative_eq_card_roots_toFinset`: over an
   algebraically closed field of characteristic zero, degree minus the degree of the derivative
   gcd counts distinct roots.
+* `Polynomial.natDegree_sub_natDegree_gcd_derivative_eq_card_aroots_toFinset`: the same count for
+  the distinct roots in such a field of a polynomial over a field `k`, with the gcd taken over
+  `k`.
 -/
 
 public section
@@ -302,6 +305,17 @@ theorem _root_.Polynomial.natDegree_sub_natDegree_gcd_derivative_eq_card_roots_t
     p.natDegree - (EuclideanDomain.gcd p p.derivative).natDegree = p.roots.toFinset.card :=
   natDegree_sub_natDegree_gcd_derivative_eq_card_roots_toFinset_of_splits hp
     (IsAlgClosed.splits p)
+
+/-- The number of distinct roots of a nonzero polynomial over a field `k` in an algebraically
+closed field `K` of characteristic zero is its degree minus the degree of its gcd with its
+derivative, both taken over `k`. -/
+theorem _root_.Polynomial.natDegree_sub_natDegree_gcd_derivative_eq_card_aroots_toFinset
+    {k : Type*} [Field k] [DecidableEq k] [Algebra k K] {p : k[X]} (hp : p ≠ 0) :
+    p.natDegree - (EuclideanDomain.gcd p p.derivative).natDegree =
+      (p.aroots K).toFinset.card := by
+  rw [aroots_def, ← natDegree_sub_natDegree_gcd_derivative_eq_card_roots_toFinset
+    ((Polynomial.map_ne_zero_iff (algebraMap k K).injective).2 hp), derivative_map, gcd_map,
+    natDegree_map, natDegree_map]
 
 end IsAlgClosed
 
