@@ -140,10 +140,10 @@ private theorem exists_mul_comap_pow_ne_infty {u : MeromorphicFunction (OnePoint
   obtain ⟨N, hN⟩ := ((β.finite_fiber y₀).eventually_all.2 hev).exists
   exact ⟨N, hN⟩
 
-/-- **The elementary symmetric functions of the values along the fibres are rational.** Each
-elementary symmetric function of the values of a meromorphic function `f` along the fibres of `β`,
-counted with multiplicity, is meromorphic at every point of the sphere, poles of `f` and branch
-values of `β` included. -/
+/-- **The elementary symmetric functions of the values along the fibres are meromorphic on the
+sphere.** Each elementary symmetric function of the values of a meromorphic function `f` along the
+fibres of `β`, counted with multiplicity, is meromorphic at every point of the sphere, poles of `f`
+and branch values of `β` included. -/
 theorem meromorphicAt_esymm_map_finitePart_fiberMultiset (k : ℕ) (y₀ : OnePoint ℂ) :
     MeromorphicAt (fun y ↦ ((fiberMultiset β y).map f.finitePart).esymm k) y₀ := by
   obtain ⟨u, hu, hu₀⟩ := exists_ne_zero_apply_eq_zero y₀
@@ -175,8 +175,8 @@ theorem meromorphicAt_esymm_map_finitePart_fiberMultiset (k : ℕ) (y₀ : OnePo
 /-- **The polynomial equation of a meromorphic function over `ℂ(t)`.** A meromorphic function
 `f` on a compact connected Riemann surface `X` is a root of a monic polynomial of degree `deg β`
 whose coefficients are meromorphic functions on the sphere, pulled back along a finite holomorphic
-map `β : X → OnePoint ℂ`. The coefficients are, up to sign, the elementary symmetric functions of
-the values of `f` along the fibres of `β`. -/
+map `β : X → OnePoint ℂ`. One such polynomial, built in the proof, has as coefficients, up to
+sign, the elementary symmetric functions of the values of `f` along the fibres of `β`. -/
 theorem exists_monic_natDegree_eq_degree_eval₂_eq_zero :
     ∃ p : (MeromorphicFunction (OnePoint ℂ))[X], p.Monic ∧ p.natDegree = degree β ∧
       p.eval₂ (comapₐ β β.holomorphic β.nonconstant).toRingHom f = 0 := by
