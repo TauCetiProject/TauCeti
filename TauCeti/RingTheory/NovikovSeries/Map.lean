@@ -199,11 +199,33 @@ theorem coeff_map_of_support_inter_subset_singleton (a : NovikovSeries R H N) {h
   rw [coeff_map_eq_sum ρ φ hφ a {h} (fun g hg => Finset.mem_singleton.2 (hs hg))
     fun g hg => by rw [Finset.mem_singleton.1 hg], Finset.sum_singleton]
 
+include hφ in
+private theorem exists_lift_of_rightInverse (σ : H' → H) (hσ : RightInverse σ φ)
+    (b : NovikovSeries S H' N') (f : H' → R)
+    (hf₀ : ∀ h', b.coeff h' = 0 → f h' = 0) :
+    ∃ a : NovikovSeries R H N, (∀ h', a.coeff (σ h') = f h') ∧ a.support ⊆ range σ := by
+  classical
+  obtain ⟨c, hc, hcφ⟩ := hφ
+  have hσ_supp (h : H) (hh : extend σ f 0 h ≠ 0) : ∃ h', σ h' = h := by
+    by_contra hσh
+    exact hh (extend_apply' f (fun _ => 0) h hσh)
+  let a : NovikovSeries R H N :=
+    { coeff := extend σ f 0
+      finite_lt C := by
+        refine ((b.finite_lt (c * C)).image σ).subset ?_
+        rintro h ⟨hh, hC⟩
+        obtain ⟨h', rfl⟩ := hσ_supp h hh
+        rw [hσ.injective.extend_apply] at hh
+        refine ⟨h', ⟨fun hb => hh (hf₀ h' hb), ?_⟩, rfl⟩
+        have hp := hcφ (σ h')
+        rw [hσ h'] at hp
+        exact hp.trans_lt (mul_lt_mul_of_pos_left hC hc) }
+  exact ⟨a, hσ.injective.extend_apply f 0, fun h hh => hσ_supp h (mem_support.1 hh)⟩
+
 /-- Pushforward along surjective coefficient and exponent maps is surjective. The exponent
 map may have infinite kernel and the period maps need not be injective or discrete. -/
 theorem map_surjective (hρ : Surjective ρ) (hφs : Surjective φ) : Surjective (map ρ φ hφ) := by
   classical
-  obtain ⟨c, hc, hcφ⟩ := hφ
   obtain ⟨σ, hσ⟩ := hφs.hasRightInverse
   obtain ⟨τ, hτ⟩ := hρ.hasRightInverse
   intro b
@@ -213,33 +235,17 @@ theorem map_surjective (hρ : Surjective ρ) (hφs : Surjective φ) : Surjective
     split_ifs with h
     · simp [h]
     · exact hτ _
-  have hf₀ (h : H') (hh : b.coeff h = 0) : f h = 0 := by simp [f, hh]
-  let a : NovikovSeries R H N :=
-    { coeff := extend σ f 0
-      finite_lt C := by
-        refine ((b.finite_lt (c * C)).image σ).subset ?_
-        rintro h ⟨hh, hC⟩
-        by_cases hσh : ∃ h', σ h' = h
-        · obtain ⟨h', rfl⟩ := hσh
-          rw [hσ.injective.extend_apply] at hh
-          refine ⟨h', ⟨fun hb => hh (hf₀ h' hb), ?_⟩, rfl⟩
-          have hp := hcφ (σ h')
-          rw [hσ h'] at hp
-          exact hp.trans_lt (mul_lt_mul_of_pos_left hC hc)
-        · exact (hh (extend_apply' f (fun _ => 0) h hσh)).elim }
-  have ha (h : H) : a.coeff h = extend σ f 0 h := rfl
+  obtain ⟨a, ha, hs⟩ := exists_lift_of_rightInverse φ hφ σ hσ b f
+    (fun h hh => by simp [f, hh])
   refine ⟨a, ?_⟩
   ext h'
   rw [← hσ h', coeff_map_of_support_inter_subset_singleton ρ φ _ a ?_]
-  · rw [ha, hσ.injective.extend_apply, hf, hσ h']
+  · rw [ha, hf, hσ h']
   · rintro h ⟨hh, heq⟩
-    by_cases hσh : ∃ k, σ k = h
-    · obtain ⟨k, rfl⟩ := hσh
-      simp only [mem_preimage, mem_singleton_iff] at heq
-      rw [hσ k, hσ h'] at heq
-      exact congrArg σ heq
-    · exact (mem_support.1 hh ((ha h).trans
-        (extend_apply' f (fun _ => 0) h hσh))).elim
+    obtain ⟨k, rfl⟩ := hs hh
+    simp only [mem_preimage, mem_singleton_iff] at heq
+    rw [hσ k, hσ h'] at heq
+    exact congrArg σ heq
 
 /-- Along an injective exponent homomorphism, the pushforward moves each coefficient to the image
 exponent. -/
