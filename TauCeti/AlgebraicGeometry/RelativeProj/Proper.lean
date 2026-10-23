@@ -21,8 +21,10 @@ corresponding properties of the projective spectrum of a graded ring, in
 `TauCeti.AlgebraicGeometry.ProjectiveSpectrum.Proper`, this gives:
 
 * the relative `Proj` is always separated over `X`;
-* it is quasi-compact and locally of finite type over `X` when `A` is of finite type, that is, when
-  `⨁ n, Γ(Aₙ, U)` is a finitely generated `Γ(X, U)`-algebra for every affine open `U`;
+* it is quasi-compact over `X` when `⨁ n, Γ(Aₙ, U)` is a finitely generated `Γ(A₀, U)`-algebra for
+  every affine open `U`;
+* it is locally of finite type over `X` when `A` is of finite type, that is, when `⨁ n, Γ(Aₙ, U)`
+  is a finitely generated `Γ(X, U)`-algebra for every affine open `U`;
 * it is proper over `X` when moreover `A₀` is finite, that is, when `Γ(A₀, U)` is a finite
   `Γ(X, U)`-module for every affine open `U`. This covers the case `A₀ = 𝒪_X` of blowups and of
   `Proj` of section algebras of invertible sheaves.
@@ -33,9 +35,10 @@ corresponding properties of the projective spectrum of a graded ring, in
   is local on the target holds for `Proj_X(A) ⟶ X` exactly when it holds for every chart
   `Proj (⨁ n, Γ(Aₙ, U)) ⟶ Spec Γ(X, U)`.
 * `CategoryTheory.CommMon.isSeparated_relativeProjToBase`: the relative `Proj` is separated.
-* `CategoryTheory.CommMon.quasiCompact_relativeProjToBase` and
-  `CategoryTheory.CommMon.locallyOfFiniteType_relativeProjToBase`: the relative `Proj` of an
-  algebra of finite type is quasi-compact and locally of finite type.
+* `CategoryTheory.CommMon.quasiCompact_relativeProjToBase`: the relative `Proj` of an algebra of
+  finite type over its degree-zero part is quasi-compact.
+* `CategoryTheory.CommMon.locallyOfFiniteType_relativeProjToBase`: the relative `Proj` of an
+  algebra of finite type is locally of finite type.
 * `CategoryTheory.CommMon.isProper_relativeProjToBase`: the relative `Proj` of an algebra of finite
   type with finite degree-zero part is proper.
 
@@ -80,28 +83,29 @@ instance isSeparated_relativeProjToBase : IsSeparated A.relativeProjToBase :=
 
 variable {A}
 
-/-- The relative `Proj` of a graded algebra of finite type is quasi-compact over the base. -/
-theorem quasiCompact_relativeProjToBase
-    (h : ∀ U : X.Opens, IsAffineOpen U → Algebra.FiniteType Γ(X, U) (⨁ n, Γ(A.X n, U))) :
-    QuasiCompact A.relativeProjToBase := by
-  -- the preimage of an affine open `U` is the image of the chart `Proj (⨁ n, Γ(Aₙ, U))`, which is
-  -- quasi-compact over the affine scheme `Spec Γ(X, U)`
-  refine quasiCompact_iff_forall_isAffineOpen.mpr fun U hU ↦ ?_
-  have := h U hU
-  let V : X.AffineZariskiSite := ⟨U, hU⟩
-  have : CompactSpace (A.relativeProjCover.X V) := by
-    rw [relativeProjCover_X]
-    exact QuasiCompact.compactSpace_of_compactSpace (Proj.toSpecCoeff _)
-  have hV : A.relativeProjToBase ⁻¹ᵁ U = (A.relativeProjCover.f V).opensRange :=
-    A.relativeProjToBase_preimage V
-  rw [hV, Scheme.Hom.coe_opensRange]
-  exact isCompact_range (A.relativeProjCover.f V).continuous
+/-- The relative `Proj` of a graded algebra of finite type over its degree-zero part is
+quasi-compact over the base. -/
+theorem quasiCompact_relativeProjToBase (h : ∀ U : X.Opens, IsAffineOpen U →
+      Algebra.FiniteType (A.gradedSectionsGrading U 0) (⨁ n, Γ(A.X n, U))) :
+    QuasiCompact A.relativeProjToBase :=
+  -- Instance search fails to unify `IsZariskiLocalAtTarget @QuasiCompact` with Mathlib's generic
+  -- instance `HasAffineProperty.instIsZariskiLocalAtTarget`, so it is applied explicitly to the
+  -- affine property of quasi-compact morphisms.
+  have : IsZariskiLocalAtTarget @QuasiCompact.{u} :=
+    @HasAffineProperty.instIsZariskiLocalAtTarget _ _
+      instHasAffinePropertyQuasiCompactCompactSpaceCarrierCarrierCommRingCat
+  (A.relativeProjToBase_iff_forall_isAffineOpen @QuasiCompact).mpr fun U hU ↦
+    have := h U hU
+    inferInstance
 
 /-- The relative `Proj` of a graded algebra of finite type is locally of finite type over the
 base. -/
 theorem locallyOfFiniteType_relativeProjToBase
     (h : ∀ U : X.Opens, IsAffineOpen U → Algebra.FiniteType Γ(X, U) (⨁ n, Γ(A.X n, U))) :
     LocallyOfFiniteType A.relativeProjToBase :=
+  -- Instance search fails to unify `IsZariskiLocalAtTarget @LocallyOfFiniteType` with Mathlib's
+  -- generic instance `HasRingHomProperty.instIsZariskiLocalAtTarget`, so it is applied explicitly
+  -- to the ring homomorphism property `RingHom.FiniteType`.
   have : IsZariskiLocalAtTarget @LocallyOfFiniteType.{u} :=
     HasRingHomProperty.instIsZariskiLocalAtTarget _ (Q := @RingHom.FiniteType)
   (A.relativeProjToBase_iff_forall_isAffineOpen @LocallyOfFiniteType).mpr fun U hU ↦

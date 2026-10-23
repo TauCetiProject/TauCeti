@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.FiniteType
 public import Mathlib.RingTheory.GradedAlgebra.Basic
 public import Mathlib.RingTheory.Noetherian.Defs
+public import TauCeti.RingTheory.GradedAlgebra.Basic
 
 /-!
 # Finite generation of graded subalgebras with ideal contraction
@@ -113,6 +114,8 @@ end Subalgebra
 
 namespace TauCeti.GradedAlgebra
 
+section Nat
+
 variable {R A : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
   (𝒜 : ℕ → Submodule R A) [GradedAlgebra 𝒜]
 
@@ -139,21 +142,28 @@ theorem exists_finset_adjoin_eq_top_and_mem_grade_ne_zero [Algebra.FiniteType (�
     rintro _ ⟨f, -, n, ⟨-, hn0⟩, rfl⟩
     exact ⟨n, hn0, (decompose 𝒜 f n).2⟩
 
-/-- The scalars of a graded algebra act on it through its degree-zero part. -/
-instance isScalarTower_gradeZero : IsScalarTower R (𝒜 0) A :=
-  ⟨fun r a b ↦ smul_mul_assoc r (a : A) b⟩
+end Nat
+
+section GradeZero
+
+variable {R A ι : Type*} [DecidableEq ι] [CommSemiring R] [CommSemiring A] [Algebra R A]
+  (𝒜 : ι → Submodule R A)
 
 /-- A graded algebra of finite type over `R` is of finite type over its degree-zero part. -/
-instance finiteType_gradeZero_left [Algebra.FiniteType R A] : Algebra.FiniteType (𝒜 0) A :=
+instance finiteType_gradeZero_left [AddMonoid ι] [GradedAlgebra 𝒜] [Algebra.FiniteType R A] :
+    Algebra.FiniteType (𝒜 0) A :=
   .of_restrictScalars_finiteType R (𝒜 0) A
 
 /-- The degree-zero part of a graded algebra of finite type over `R` is of finite type over `R`:
 it is the image of the algebra under the projection `a ↦ a₀`, which is an `R`-algebra
 homomorphism because the scalars have degree zero. -/
-instance finiteType_gradeZero [Algebra.FiniteType R A] : Algebra.FiniteType R (𝒜 0) :=
+instance finiteType_gradeZero [AddCommMonoid ι] [PartialOrder ι] [CanonicallyOrderedAdd ι]
+    [GradedAlgebra 𝒜] [Algebra.FiniteType R A] : Algebra.FiniteType R (𝒜 0) :=
   .of_surjective
     { GradedRing.projZeroRingHom' 𝒜 with
       commutes' r := Subtype.ext <| decompose_of_mem_same 𝒜 (SetLike.algebraMap_mem_graded 𝒜 r) }
     (GradedRing.projZeroRingHom'_surjective 𝒜)
+
+end GradeZero
 
 end TauCeti.GradedAlgebra
