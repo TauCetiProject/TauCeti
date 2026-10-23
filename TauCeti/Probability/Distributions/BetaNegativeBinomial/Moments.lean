@@ -11,6 +11,7 @@ public import Mathlib.Probability.Moments.IntegrableExpMul
 import Mathlib.Analysis.PSeries
 import Mathlib.Analysis.SpecialFunctions.Choose
 import Mathlib.MeasureTheory.Integral.Bochner.SumMeasure
+import TauCeti.Analysis.SpecialFunctions.Beta
 import TauCeti.Analysis.SpecialFunctions.Gamma
 import TauCeti.Data.Nat.Factorial.Basic
 import TauCeti.Probability.Distributions.Dirac
@@ -91,8 +92,7 @@ theorem integrable_pow_map_cast_betaNegativeBinomialMeasure_iff
     exact integrable_dirac (by simp)
   rw [MeasurableEmbedding.natCast.integrable_map_iff,
     betaNegativeBinomialMeasure_eq_sum_dirac hr.le ha hb,
-    integrable_sum_dirac_iff (fun k => by
-      rw [betaNegativeBinomialWeight_def]; exact ENNReal.ofReal_ne_top)]
+    integrable_sum_dirac_iff (betaNegativeBinomialWeight_ne_top r a b)]
   simp only [betaNegativeBinomialWeight_toReal hr.le ha hb, Function.comp_apply, norm_pow,
     Real.norm_natCast, ne_of_gt hr, false_or]
   have hC : Gamma (a + r) / (Gamma r * beta a b) ≠ 0 :=
@@ -122,10 +122,8 @@ theorem integrable_descFactorial_betaNegativeBinomialMeasure_iff
   rw [← integrable_pow_map_cast_betaNegativeBinomialMeasure_iff hr ha hb n,
     MeasurableEmbedding.natCast.integrable_map_iff,
     betaNegativeBinomialMeasure_eq_sum_dirac hr ha hb,
-    integrable_sum_dirac_iff (fun k => by
-      rw [betaNegativeBinomialWeight_def]; exact ENNReal.ofReal_ne_top),
-    integrable_sum_dirac_iff (fun k => by
-      rw [betaNegativeBinomialWeight_def]; exact ENNReal.ofReal_ne_top)]
+    integrable_sum_dirac_iff (betaNegativeBinomialWeight_ne_top r a b),
+    integrable_sum_dirac_iff (betaNegativeBinomialWeight_ne_top r a b)]
   simp only [Function.comp_apply, norm_pow, Real.norm_natCast]
   exact ((IsEquivalent.refl (u := fun k => (betaNegativeBinomialWeight r a b k).toReal)).mul
     (isEquivalent_descFactorial n)).summable_iff_nat
@@ -165,15 +163,7 @@ theorem integral_descFactorial_betaNegativeBinomialMeasure
   have hn := hn.resolve_left hr.ne'
   have hrn : 0 < r + n := by positivity
   have hbn : 0 < b + n := by positivity
-  have := isProbabilityMeasure_betaNegativeBinomialMeasure hrn.le (sub_pos.mpr hn) hbn
-  have hsum : HasSum (fun k => betaNegativeBinomialWeightReal (r + n) (a - n) (b + n) k) 1 := by
-    have hi := integrable_const (μ := betaNegativeBinomialMeasure (r + n) (a - n) (b + n))
-      (1 : ℝ)
-    rw [betaNegativeBinomialMeasure_eq_sum_dirac hrn.le (sub_pos.mpr hn) hbn] at hi
-    simpa [integral_smul_measure,
-      betaNegativeBinomialWeight_toReal hrn.le (sub_pos.mpr hn) hbn,
-      ← betaNegativeBinomialMeasure_eq_sum_dirac hrn.le (sub_pos.mpr hn) hbn] using
-        hasSum_integral_measure hi
+  have hsum := hasSum_betaNegativeBinomialWeightReal hrn.le (sub_pos.mpr hn) hbn
   have hmoment : HasSum (fun k => betaNegativeBinomialWeightReal r a b k *
       (k.descFactorial n : ℝ))
         (Gamma (r + n) / Gamma r * beta (a - n) (b + n) / beta a b) := by
@@ -188,8 +178,7 @@ theorem integral_descFactorial_betaNegativeBinomialMeasure
     simpa only [betaNegativeBinomialWeightReal_mul_descFactorial hr hb hn, mul_one] using
       hsum.mul_left (Gamma (r + n) / Gamma r * beta (a - n) (b + n) / beta a b)
   rw [betaNegativeBinomialMeasure_eq_sum_dirac hr.le ha hb,
-    integral_sum_dirac (fun k => by
-      rw [betaNegativeBinomialWeight_def]; exact ENNReal.ofReal_ne_top)]
+    integral_sum_dirac (betaNegativeBinomialWeight_ne_top r a b)]
   simp only [smul_eq_mul, betaNegativeBinomialWeight_toReal hr.le ha hb]
   rw [hmoment.tsum_eq,
     (div_eq_iff (Gamma_pos_of_pos hr).ne').mpr (prod_range_add_mul_Gamma hr n).symm]
@@ -210,14 +199,9 @@ theorem integral_id_map_cast_betaNegativeBinomialMeasure
   simp only [Nat.descFactorial_one, Finset.prod_range_one, Nat.cast_zero, add_zero,
     Nat.cast_one] at h
   rw [MeasurableEmbedding.natCast.integral_map, h]
-  have hGa : Gamma a = (a - 1) * Gamma (a - 1) := by
-    simpa only [sub_add_cancel] using Gamma_add_one (show a - 1 ≠ 0 by linarith)
-  have hΓa := (Gamma_pos_of_pos (show 0 < a - 1 by linarith)).ne'
-  have hΓb := (Gamma_pos_of_pos hb).ne'
-  have hΓab := (Gamma_pos_of_pos (show 0 < a + b by linarith)).ne'
-  simp only [beta, show a - 1 + (b + 1) = a + b by ring]
-  rw [hGa, Gamma_add_one hb.ne']
-  field_simp
+  rw [mul_div_assoc, beta_comm (a - 1) (b + 1), beta_comm a b,
+    beta_add_one_sub_one_div hb ha1]
+  ring
 
 /-- A beta-negative-binomial law has a finite first moment exactly when `a > 1`,
 or when its negative-binomial shape is zero. -/
@@ -240,6 +224,31 @@ theorem memLp_two_id_map_cast_betaNegativeBinomialMeasure_iff
   simp only [id_eq]
   exact integrable_pow_map_cast_betaNegativeBinomialMeasure_iff hr ha hb 2
 
+private theorem integral_sq_betaNegativeBinomialMeasure
+    (hr : 0 < r) (ha : 2 < a) (hb : 0 < b) :
+    ∫ k : ℕ, (k : ℝ) ^ 2 ∂betaNegativeBinomialMeasure r a b =
+      r * (r + 1) * (b * (b + 1) / ((a - 1) * (a - 2))) + r * b / (a - 1) := by
+  have ha0 : 0 < a := by linarith
+  have ha1 : 1 < a := by linarith
+  have hfirst := (integrable_id_map_cast_betaNegativeBinomialMeasure_iff hr.le ha0 hb).mpr
+    (Or.inr ha1)
+  rw [MeasurableEmbedding.natCast.integrable_map_iff] at hfirst
+  simp only [Function.comp_def, id_eq] at hfirst
+  have hdesc := (integrable_descFactorial_betaNegativeBinomialMeasure_iff hr.le ha0 hb 2).mpr
+    (Or.inr ha)
+  have h := integral_descFactorial_betaNegativeBinomialMeasure hr.le ha0 hb
+    (n := 2) (Or.inr (by simpa using ha))
+  simp only [Finset.prod_range_succ, Finset.prod_range_zero, Nat.cast_zero, Nat.cast_one,
+    Nat.cast_ofNat, add_zero, one_mul] at h
+  have hbeta : beta (a - 2) (b + 2) / beta a b =
+      b * (b + 1) / ((a - 1) * (a - 2)) := by
+    rw [beta_comm (a - 2) (b + 2), beta_comm a b, beta_add_two_sub_two_div hb ha]
+  have hmean := integral_id_map_cast_betaNegativeBinomialMeasure hr.le ha0 hb (Or.inr ha1)
+  rw [MeasurableEmbedding.natCast.integral_map] at hmean
+  simp_rw [← Nat.cast_pow, Nat.sq_eq_descFactorial_two_add, Nat.cast_add]
+  rw [integral_add hdesc hfirst, hmean, h]
+  rw [mul_div_assoc, mul_div_assoc, hbeta]
+
 /-- The variance of the real cast beta-negative-binomial law, including shape zero. -/
 @[simp]
 theorem variance_id_map_cast_betaNegativeBinomialMeasure
@@ -255,41 +264,9 @@ theorem variance_id_map_cast_betaNegativeBinomialMeasure
   have := isProbabilityMeasure_betaNegativeBinomialMeasure hr.le ha hb
   have hmem := (memLp_two_id_map_cast_betaNegativeBinomialMeasure_iff hr.le ha hb).mpr
     (Or.inr ha2)
-  have hfirst := (integrable_id_map_cast_betaNegativeBinomialMeasure_iff hr.le ha hb).mpr
-    (Or.inr ha1)
-  have hdesc := (integrable_descFactorial_betaNegativeBinomialMeasure_iff hr.le ha hb 2).mpr
-    (Or.inr ha2)
-  have h := integral_descFactorial_betaNegativeBinomialMeasure hr.le ha hb
-    (n := 2) (Or.inr (by simpa using ha2))
-  simp only [Finset.prod_range_succ, Finset.prod_range_zero, Nat.cast_zero, Nat.cast_one,
-    Nat.cast_ofNat, add_zero, one_mul] at h
-  have hbeta : beta (a - 2) (b + 2) / beta a b =
-      b * (b + 1) / ((a - 1) * (a - 2)) := by
-    have hGa1 : Gamma (a - 1) = (a - 2) * Gamma (a - 2) := by
-      rw [← Gamma_add_one (show a - 2 ≠ 0 by linarith)]
-      congr 1
-      ring
-    have hGa0 : Gamma a = (a - 1) * Gamma (a - 1) := by
-      simpa only [sub_add_cancel] using Gamma_add_one (show a - 1 ≠ 0 by linarith)
-    have hΓa := (Gamma_pos_of_pos (show 0 < a - 2 by linarith)).ne'
-    have hΓb := (Gamma_pos_of_pos hb).ne'
-    have hΓab := (Gamma_pos_of_pos (show 0 < a + b by linarith)).ne'
-    simp only [beta, show a - 2 + (b + 2) = a + b by ring]
-    rw [hGa0, hGa1, show b + 2 = (b + 1) + 1 by ring,
-      Gamma_add_one (by positivity : b + 1 ≠ 0), Gamma_add_one hb.ne']
-    field_simp
-  have hmean := integral_id_map_cast_betaNegativeBinomialMeasure hr.le ha hb (Or.inr ha1)
-  rw [MeasurableEmbedding.natCast.integral_map] at hmean
-  rw [MeasurableEmbedding.natCast.integrable_map_iff] at hfirst
-  simp only [Function.comp_def, id_eq] at hfirst
-  have hsecond : ∫ k : ℕ, (k : ℝ) ^ 2 ∂betaNegativeBinomialMeasure r a b =
-      r * (r + 1) * (b * (b + 1) / ((a - 1) * (a - 2))) + r * b / (a - 1) := by
-    simp_rw [← Nat.cast_pow, Nat.sq_eq_descFactorial_two_add, Nat.cast_add]
-    rw [integral_add hdesc hfirst, hmean, h]
-    rw [mul_div_assoc, mul_div_assoc, hbeta]
   rw [variance_eq_sub hmem]
   simp only [Pi.pow_apply, id_eq]
-  rw [MeasurableEmbedding.natCast.integral_map, hsecond,
+  rw [MeasurableEmbedding.natCast.integral_map, integral_sq_betaNegativeBinomialMeasure hr ha2 hb,
     integral_id_map_cast_betaNegativeBinomialMeasure hr.le ha hb (Or.inr ha1)]
   have h1 : a - 1 ≠ 0 := by linarith
   have h2 : a - 2 ≠ 0 := by linarith
