@@ -10,7 +10,7 @@ public import TauCeti.CategoryTheory.Sites.SheafCohomology.LongExactSequence
 import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 
 /-!
-# Sections of acyclic resolutions compute cohomology
+# Vanishing cohomology and sections of acyclic resolutions
 
 Let `0 ⟶ F ⟶ K⁰ ⟶ K¹ ⟶ ⋯` be a resolution of a sheaf of abelian groups `F` on a site, and let
 `V` be an object of the site over which every term `Kʲ` has no cohomology in positive degrees,
@@ -75,11 +75,11 @@ private lemma subsingleton_H'_cycles (j k : ℕ) (hF : Subsingleton (F.H' (j + k
       (ih (k + 1) (by rwa [show j + (k + 1) + 2 = j + 1 + k + 2 by omega]))
 
 include hι' hK hKV in
-/-- **Acyclic resolutions compute cohomology**, in the form used to show that derived functors
-vanish. Let `0 ⟶ F ⟶ K⁰ ⟶ K¹ ⟶ ⋯` be a resolution of a sheaf of abelian groups `F` whose terms
-have no cohomology in positive degrees over an object `V` of the site. If `Hⁿ⁺¹(V, F) = 0`, then
-every section of `Kⁿ⁺¹` over `V` killed by the differential is the image of a section of `Kⁿ`
-over `V`: the complex of sections `K(V)` is exact in degree `n + 1`. -/
+/-- **Exactness of sections of an acyclic resolution**, in the form used to show that derived
+functors vanish. Let `0 ⟶ F ⟶ K⁰ ⟶ K¹ ⟶ ⋯` be a resolution of a sheaf of abelian groups `F`
+whose terms have no cohomology in positive degrees over an object `V` of the site. If
+`Hⁿ⁺¹(V, F) = 0`, then every section of `Kⁿ⁺¹` over `V` killed by the differential is the image
+of a section of `Kⁿ` over `V`: the complex of sections `K(V)` is exact in degree `n + 1`. -/
 theorem exists_d_hom_app_eq_of_resolution (n : ℕ) (hF : Subsingleton (F.H' (n + 1) V))
     (s : (K.X (n + 1)).obj.obj (op V)) (hs : (K.d (n + 1) (n + 2)).hom.app (op V) s = 0) :
     ∃ t : (K.X n).obj.obj (op V), (K.d n (n + 1)).hom.app (op V) t = s := by
