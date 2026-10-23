@@ -605,11 +605,9 @@ theorem conj_mem_unipotent {p u : WithConv (H →ₐ[R] A)} (hp : p ∈ paraboli
 with Laurent-polynomial values. -/
 theorem conjugate_mem_unipotent {g : WithConv (H →ₐ[R] A)} (hg : g ∈ unipotent A l) :
     conjugate A l g ∈ unipotent (LaurentPolynomial A) l := by
-  rw [conjugate_apply, genericPoint_eq_pointsHom]
-  apply conj_mem_unipotent
-    (levi_le_parabolic (pointsHom_mem_levi (LaurentPolynomial.genericUnit A)))
-  simpa only [Subgroup.mem_comap, constPoint_apply, AlgHom.mapValue_apply] using
-    unipotent_le_comap (IsScalarTower.toAlgHom R A (LaurentPolynomial A)) hg
+  rw [conjugate_apply]
+  exact conj_mem_unipotent (levi_le_parabolic (genericPoint_mem_levi l))
+    (constPoint_mem_unipotent hg)
 
 /-- The Levi decomposition of a point of the dynamic parabolic is unique. -/
 theorem eq_of_unipotent_mul_levi_eq {u₁ u₂ z₁ z₂ : WithConv (H →ₐ[R] A)}
