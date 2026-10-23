@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.ConstantSpeed
 public import TauCeti.Analysis.Fourier.AbsolutelyContinuous
 public import TauCeti.Analysis.Green.Examples.CurveArea.SignedArea
-import TauCeti.Analysis.ODE.Complex
+import TauCeti.Analysis.ODE.ScalarLinear
 import TauCeti.Analysis.Fourier.FourierCoeffOn
 import TauCeti.MeasureTheory.Function.MetricDerivative.ConstantSpeed
 import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
@@ -35,7 +35,7 @@ inequality does not.
 Equality also holds exactly when, for some center `c` and sign `s = ±1`, the a.e. velocity is
 `(2πis / (b - a)) * (γ - c)`
 (`TauCeti.mul_integral_norm_sq_eq_four_pi_mul_abs_signedArea_iff_ae_hasDerivAt`).
-The AC integrating-factor theorem in `TauCeti.Analysis.ODE.Complex` recovers the pointwise
+The AC integrating-factor theorem in `TauCeti.Analysis.ODE.ScalarLinear` recovers the pointwise
 exponential parametrization from this a.e. equation.
 
 For a closed curve of constant speed on `[a, b]`, in particular an arclength parametrization,
@@ -325,11 +325,12 @@ theorem mul_integral_norm_sq_eq_intCast_mul_four_pi_mul_signedArea_iff_ae_hasDer
         div_mul_eq_mul_div] using
         mul_integral_norm_sq_eq_neg_four_pi_mul_signedArea_iff hab hγ hγ' hγab hL2
   rw [hmodel]
-  simp_rw [← uIcc_of_le hab.le, ← hγ.ae_hasDerivAt_mul_sub_iff]
+  simp_rw [← uIcc_of_le hab.le, ← smul_eq_mul, hγ.ae_hasDerivAt_smul_sub_iff, smul_eq_mul,
+    mul_comm (exp _) _]
 
 /-- Equality in the area–energy inequality is equivalent to the a.e. equation for one
 counterclockwise or clockwise traversal at constant angular speed about some center.
-Constant curves are included. See `AbsolutelyContinuousOnInterval.ae_hasDerivAt_mul_sub_iff`
+Constant curves are included. See `AbsolutelyContinuousOnInterval.ae_hasDerivAt_smul_sub_iff`
 for the corresponding pointwise exponential parametrization. -/
 theorem mul_integral_norm_sq_eq_four_pi_mul_abs_signedArea_iff_ae_hasDerivAt (hab : a < b)
     (hγ : AbsolutelyContinuousOnInterval γ a b)
@@ -341,7 +342,8 @@ theorem mul_integral_norm_sq_eq_four_pi_mul_abs_signedArea_iff_ae_hasDerivAt (ha
           HasDerivAt γ ((2 * π * I * s / (b - a)) * (γ t - c)) t := by
   rw [mul_integral_norm_sq_eq_four_pi_mul_abs_signedArea_iff hab hγ hγ' hγab hL2]
   simp only [or_and_right, exists_or, exists_eq_left]
-  simp_rw [hγ.ae_hasDerivAt_mul_sub_iff]
+  simp_rw [← smul_eq_mul, hγ.ae_hasDerivAt_smul_sub_iff, smul_eq_mul,
+    mul_comm (exp _) _]
   simp only [uIcc_of_le hab.le, Int.cast_one, Int.cast_neg, mul_one, mul_neg_one, neg_div,
     neg_mul, div_mul_eq_mul_div]
 
