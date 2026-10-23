@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.RealAlgebraic.Stack.Lazard.Basic
 public import TauCeti.Geometry.RealAlgebraic.CAD.Basic
 import TauCeti.Geometry.RealAlgebraic.Semialgebraic.SharedRoots
-import TauCeti.FieldTheory.IsRealClosed.Real
+import Mathlib.FieldTheory.IsRealClosed.Real
 
 /-!
 # Semialgebraicity of Lazard stacks

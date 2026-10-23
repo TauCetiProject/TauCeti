@@ -43,6 +43,8 @@ definiteness predicate.
 * `TauCeti.IntegralLattice.finrank_eq_of_signature_eq`: equal signatures force equal ranks, and
   `TauCeti.IntegralLattice.IsPosDef.signature_eq`: a positive definite lattice of rank `n` has
   signature `(n, 0, 0)`.
+* `TauCeti.IntegralLattice.IsIndefinite.exists_carrier_pos_and_neg`: an indefinite lattice has
+  lattice vectors of positive and of negative norm.
 * `TauCeti.IntegralLattice.Isometry.map_radical` and the `Isometry.sigPos_eq`, `sigNull_eq`, and
   `sigNeg_eq` theorems: isometry invariance of the signature.
 -/
@@ -325,6 +327,22 @@ theorem isIndefinite_iff_exists_pos_and_exists_neg :
     L.isNegSemidef_iff]
   simp only [not_forall, not_le]
   exact and_comm
+
+variable {L} in
+/-- An indefinite lattice has lattice vectors of positive and of negative norm. -/
+theorem IsIndefinite.exists_carrier_pos_and_neg (hL : L.IsIndefinite) :
+    ∃ x y : L, 0 < L.form x x ∧ L.form y y < 0 := by
+  obtain ⟨⟨p, hp⟩, ⟨q, hq⟩⟩ := L.isIndefinite_iff_exists_pos_and_exists_neg.mp hL
+  obtain ⟨s, hs, hsp⟩ := Submodule.IsLattice.exists_ne_zero_smul_mem ℚ L.carrier p
+  obtain ⟨t, ht, htq⟩ := Submodule.IsLattice.exists_ne_zero_smul_mem ℚ L.carrier q
+  have hscale (r : ℤ) (z : V) : L.form (r • z) (r • z) = (r : ℚ) ^ 2 * L.form z z := by
+    simp only [← Int.cast_smul_eq_zsmul ℚ, map_smul, LinearMap.smul_apply, smul_eq_mul]
+    ring
+  refine ⟨⟨s • p, hsp⟩, ⟨t • q, htq⟩, ?_, ?_⟩
+  · rw [hscale]
+    exact mul_pos (by positivity) hp
+  · rw [hscale]
+    exact mul_neg_of_pos_of_neg (by positivity) hq
 
 namespace Isometry
 

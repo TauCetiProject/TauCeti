@@ -30,7 +30,7 @@ E₇ group or its Borel.
 * J. E. Humphreys, *Linear Algebraic Groups*, §§21 and 26–28.
 * J. S. Milne, *Algebraic Groups* (2017), Chapter 17.
 * Related formalizations: `TauCeti.E6Minuscule.Generated.Positive` and
-  `TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.Positive.BorelCandidate`.
+  `TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.Positive.Borel.Candidate`.
 * Minuscule weight order: `TauCeti.E7Minuscule.positiveRootWeight_strict`.
 -/
 
