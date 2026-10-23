@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Matrix.MvPolynomial
 public import Mathlib.Topology.Instances.Matrix
+public import TauCeti.LinearAlgebra.Matrix.MvPolynomial
 public import TauCeti.LinearAlgebra.Matrix.Rank
 public import TauCeti.Topology.Algebra.MvPolynomial.ZeroLocus
 
@@ -30,8 +30,6 @@ through Mathlib's `MvPolynomial.zeroLocus` and `MvPolynomial.vanishingIdeal`.
 
 ## Main results
 
-* `Matrix.aeval_det_submatrix_mvPolynomialX` and `Matrix.aeval_det_submatrix_pow_mvPolynomialX`:
-  the minors of a matrix `Z`, and of `Z ^ j`, are polynomials in the entries of `Z`.
 * `Matrix.rank_le_of_mem_zeroLocus_vanishingIdeal` and
   `Matrix.rank_pow_le_of_mem_zeroLocus_vanishingIdeal`: a bound on the rank of a matrix, or of its
   `j`-th power, holding on a set of matrices holds on its Zariski closure.
@@ -56,31 +54,6 @@ open MvPolynomial
 namespace Matrix
 
 variable {n : Type*} [Fintype n] [DecidableEq n]
-
-omit [Fintype n] [DecidableEq n] in
-/-- The minors of a matrix `Z` are the values at the entries of `Z` of the corresponding minors
-of the generic matrix `Matrix.mvPolynomialX`. -/
-theorem aeval_det_submatrix_mvPolynomialX {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
-    {m l : Type*} [Fintype l] [DecidableEq l] (Z : Matrix m n S) (r : l → m) (c : l → n) :
-    aeval (Function.uncurry Z) ((mvPolynomialX m n R).submatrix r c).det =
-      (Z.submatrix r c).det := by
-  rw [AlgHom.map_det, AlgHom.mapMatrix_apply, ← submatrix_map]
-  congr 2
-  ext i j
-  rw [map_apply, mvPolynomialX_apply, aeval_X]
-  exact Function.uncurry_apply_pair (f := Z) i j
-
-/-- The minors of the `j`-th power of a matrix `Z` are the values at the entries of `Z` of the
-corresponding minors of the `j`-th power of the generic matrix `Matrix.mvPolynomialX`. -/
-theorem aeval_det_submatrix_pow_mvPolynomialX {R S : Type*} [CommRing R] [CommRing S]
-    [Algebra R S] {l : Type*} [Fintype l] [DecidableEq l] (Z : Matrix n n S) (j : ℕ)
-    (r c : l → n) :
-    aeval (Function.uncurry Z) ((mvPolynomialX n n R ^ j).submatrix r c).det =
-      ((Z ^ j).submatrix r c).det := by
-  rw [AlgHom.map_det, AlgHom.mapMatrix_apply, ← submatrix_map, ← AlgHom.mapMatrix_apply,
-    map_pow]
-  exact congrArg (fun A : Matrix n n S ↦ ((A ^ j).submatrix r c).det)
-    (mvPolynomialX_mapMatrix_aeval R Z)
 
 section Zariski
 
