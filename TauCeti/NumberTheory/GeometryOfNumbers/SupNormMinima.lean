@@ -39,7 +39,7 @@ body only lowers the minima; the cube slice itself is the case of interest.
 
 ## Main results
 
-* `ZLattice.prod_successiveMin_le_covolume_of_setOf_abs_le_one_subset`: the bound for a full
+* `ZLattice.prod_successiveMin_le_covolume_of_setOf_forall_abs_le_one_subset`: the bound for a full
   lattice in a subspace of `ℝ^ι`.
 * `Submodule.prod_successiveMin_intLattice_le_subspaceHeight`: for the integral points of a
   subspace `V` of `ℚ^ι`, the product of the minima is at most the height of `V`.
@@ -67,7 +67,7 @@ variable {ι : Type*} [Fintype ι] {W : Submodule ℝ (EuclideanSpace ℝ ι)}
 Euclidean space `ℝ^ι`, and let `K` be a symmetric convex body in `W` containing the central slice
 `W ∩ [-1, 1]^ι` of the cube, for instance that slice itself. Then the successive minima of `L` with
 respect to `K` satisfy `λ₀ ⋯ λₖ₋₁ ≤ covolume L`. -/
-theorem prod_successiveMin_le_covolume_of_setOf_abs_le_one_subset (L : Submodule ℤ W)
+theorem prod_successiveMin_le_covolume_of_setOf_forall_abs_le_one_subset (L : Submodule ℤ W)
     [DiscreteTopology L] [IsZLattice ℝ L] {K : ConvexBody W}
     (hK : {x : W | ∀ i, |(x : EuclideanSpace ℝ ι) i| ≤ 1} ⊆ K) (hKs : ∀ x ∈ K, -x ∈ K) :
     ∏ i, successiveMin L K i ≤ covolume L := by
@@ -99,7 +99,7 @@ theorem prod_successiveMin_intLattice_le_subspaceHeight (V : Submodule ℚ (ι �
     (hKs : ∀ x ∈ K, -x ∈ K) :
     ∏ i, ZLattice.successiveMin V.intLattice K i ≤ V.subspaceHeight :=
   V.covolume_intLattice ▸
-    ZLattice.prod_successiveMin_le_covolume_of_setOf_abs_le_one_subset V.intLattice hK hKs
+    ZLattice.prod_successiveMin_le_covolume_of_setOf_forall_abs_le_one_subset V.intLattice hK hKs
 
 end Submodule
 
