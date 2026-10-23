@@ -98,9 +98,8 @@ coefficients, vanishes exactly when `f` does. -/
 theorem lazardEval_optionEquivRight_rename_finSuccEquivLast_eq_zero_iff (α : Fin n → R) :
     (optionEquivRight R (Fin n) (rename finSuccEquivLast f)).lazardEval (Polynomial.C ∘ α) = 0 ↔
       f = 0 := by
-  refine ⟨fun h ↦ by_contra fun hf ↦ lazardEval_ne_zero ?_ _ h, fun h ↦ by simp [h]⟩
-  exact (map_ne_zero_iff _ (optionEquivRight R (Fin n)).injective).2
-    ((map_ne_zero_iff _ (rename_injective _ finSuccEquivLast.injective)).2 hf)
+  rw [lazardEval_eq_zero_iff, EmbeddingLike.map_eq_zero_iff,
+    rename_eq_zero_iff_of_injective _ finSuccEquivLast.injective]
 
 /-- **Lazard evaluation at a point over a base point.** The exponents removed by Lazard
 evaluation of `f` at `Fin.snoc α β` are those removed over the base point `α`, after moving the
