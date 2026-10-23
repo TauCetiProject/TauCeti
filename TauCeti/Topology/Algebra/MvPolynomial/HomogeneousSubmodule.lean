@@ -44,9 +44,13 @@ This file provides those continuity statements; their analytic counterparts are 
   equivalence.
 * `TauCeti.homogeneousPDeriv j n`: the partial derivative `∂/∂X_j`, from degree `n` to degree
   `n - 1`, as a continuous linear map.
+* `TauCeti.homogeneousCoeffCLM n l`: the coefficient of the monomial with exponent vector `l`,
+  as a continuous linear functional on the degree-`n` homogeneous polynomials.
 
 ## Main results
 
+* `TauCeti.eval_coe_homogeneousSubmodule_eq_sum`: a homogeneous polynomial evaluates as a sum
+  over the exponent vectors of its degree; the continuity and analyticity proofs share it.
 * `TauCeti.continuous_eval_homogeneousSubmodule`: evaluation `(p, v) ↦ p(v)` is jointly
   continuous.
 * `TauCeti.continuous_jacobiMatrixAt_homogeneousSubmodule`: the Jacobian matrix of a family of
@@ -60,7 +64,17 @@ namespace TauCeti
 
 open MvPolynomial
 
-variable {σ R : Type*} [CommSemiring R] [TopologicalSpace R]
+variable {σ R : Type*} [CommSemiring R]
+
+/-- A homogeneous polynomial of degree `n` in finitely many variables evaluates as the sum, over
+the exponent vectors `l` of degree `n`, of its coefficient at `l` times `∏ i, v i ^ l i`. -/
+theorem eval_coe_homogeneousSubmodule_eq_sum [Fintype σ] [DecidableEq σ] {n : ℕ}
+    (p : homogeneousSubmodule σ R n) (v : σ → R) :
+    eval v (p : MvPolynomial σ R) = ∑ l ∈ Finset.univ.finsuppAntidiag n,
+      (p : MvPolynomial σ R).coeff l * ∏ i, v i ^ l i := by
+  simpa using ((mem_homogeneousSubmodule n _).mp p.2).aeval_eq_sum_finsuppAntidiag v
+
+variable [TopologicalSpace R]
 
 /-- The homogeneous polynomials of degree `n` over a topological semiring carry the module
 topology. -/
@@ -94,6 +108,18 @@ theorem coe_homogeneousPDeriv_apply (j : σ) {n : ℕ} (p : homogeneousSubmodule
   (rfl)
 
 variable [IsTopologicalSemiring R]
+
+/-- The coefficient of the monomial with exponent vector `l`, as a continuous linear functional on
+the homogeneous polynomials of degree `n`. -/
+noncomputable def homogeneousCoeffCLM (n : ℕ) (l : σ →₀ ℕ) :
+    homogeneousSubmodule σ R n →L[R] R where
+  toLinearMap := (lcoeff R l).comp (homogeneousSubmodule σ R n).subtype
+  cont := IsModuleTopology.continuous_of_linearMap _
+
+@[simp]
+theorem homogeneousCoeffCLM_apply {n : ℕ} (l : σ →₀ ℕ) (p : homogeneousSubmodule σ R n) :
+    homogeneousCoeffCLM n l p = (p : MvPolynomial σ R).coeff l :=
+  (rfl)
 
 /-- The **monomial-coefficient equivalence**: a homogeneous polynomial of degree `n` in finitely
 many variables is determined by its coefficients on the exponent vectors of degree `n`, and this
@@ -139,14 +165,9 @@ theorem continuous_eval_homogeneousSubmodule [Finite σ] (n : ℕ) :
       eval q.2 (q.1 : MvPolynomial σ R) := by
   classical
   cases nonempty_fintype σ
-  have h (q : homogeneousSubmodule σ R n × (σ → R)) :
-      eval q.2 (q.1 : MvPolynomial σ R) = ∑ l ∈ Finset.univ.finsuppAntidiag n,
-        (q.1 : MvPolynomial σ R).coeff l * ∏ i, q.2 i ^ l i := by
-    simpa using ((mem_homogeneousSubmodule n _).mp q.1.2).aeval_eq_sum_finsuppAntidiag q.2
-  simp only [h]
-  exact continuous_finsetSum _ fun l _ ↦ ((IsModuleTopology.continuous_of_linearMap
-    ((lcoeff R l).comp (homogeneousSubmodule σ R n).subtype)).comp continuous_fst).mul
-      (by fun_prop)
+  simp only [eval_coe_homogeneousSubmodule_eq_sum, ← homogeneousCoeffCLM_apply]
+  exact continuous_finsetSum _ fun l _ ↦
+    ((homogeneousCoeffCLM n l).continuous.comp continuous_fst).mul (by fun_prop)
 
 /-- The partial derivative `∂p/∂X_j (v)` of a homogeneous polynomial is jointly continuous in the
 coefficients of `p` and the point `v`. -/

@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Topology.Algebra.MvPolynomial.HomogeneousSubmodule
 public import Mathlib.Analysis.Analytic.Polynomial
-import TauCeti.RingTheory.MvPolynomial.Homogeneous
 
 /-!
 # Analyticity on the coefficient space of homogeneous polynomials
@@ -46,16 +45,10 @@ theorem analyticAt_eval_homogeneousSubmodule_comp {n : ℕ}
     (Φ : F →L[𝕜] homogeneousSubmodule σ 𝕜 n) (z : F × (σ → 𝕜)) :
     AnalyticAt 𝕜 (fun q : F × (σ → 𝕜) ↦ eval q.2 (Φ q.1 : MvPolynomial σ 𝕜)) z := by
   classical
-  have h (q : F × (σ → 𝕜)) :
-      eval q.2 (Φ q.1 : MvPolynomial σ 𝕜) = ∑ l ∈ Finset.univ.finsuppAntidiag n,
-        (Φ q.1 : MvPolynomial σ 𝕜).coeff l * ∏ i, q.2 i ^ l i := by
-    simpa using ((mem_homogeneousSubmodule n _).mp (Φ q.1).2).aeval_eq_sum_finsuppAntidiag q.2
-  simp only [h]
+  simp only [eval_coe_homogeneousSubmodule_eq_sum, ← homogeneousCoeffCLM_apply]
   refine Finset.analyticAt_fun_sum _ fun l _ ↦ ?_
   exact (ContinuousLinearMap.analyticAt
-    ({ toLinearMap := (lcoeff 𝕜 l).comp (homogeneousSubmodule σ 𝕜 n).subtype
-       cont := IsModuleTopology.continuous_of_linearMap _ } ∘L Φ ∘L
-        ContinuousLinearMap.fst 𝕜 F (σ → 𝕜)) z).mul
+    (homogeneousCoeffCLM n l ∘L Φ ∘L ContinuousLinearMap.fst 𝕜 F (σ → 𝕜)) z).mul
     (Finset.analyticAt_fun_prod _ fun i _ ↦ (ContinuousLinearMap.analyticAt
       (ContinuousLinearMap.proj i ∘L ContinuousLinearMap.snd 𝕜 F (σ → 𝕜)) z).pow _)
 
