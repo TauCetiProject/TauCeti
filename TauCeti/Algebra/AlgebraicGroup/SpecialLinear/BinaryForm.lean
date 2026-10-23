@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.StandardComodule
+public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Coaction
 public import TauCeti.Algebra.Polynomial.Homogenize
 public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.UpperTriangular.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.SymmetricAlgebra.Polynomial
@@ -34,6 +35,8 @@ points of `B⁺` alone would not suffice.
   of `SLₙ`.
 * `TauCeti.SpecialLinear.algebraTensorAlgEquiv_endOfPoint_polynomialComodule`: points act by the
   inverse matrix on the coordinates.
+* `TauCeti.SpecialLinear.columnOrbitHom`: evaluation at the `j`-th column, as a comodule morphism
+  into the left regular comodule of `O(SLₙ)`.
 * `TauCeti.SpecialLinear.binaryForms`: the binary forms of degree `d`, as a subcomodule.
 * `TauCeti.SpecialLinear.algebraTensorAlgEquiv_endOfPoint_binaryForm`: the explicit action of
   `SL₂` on binary forms.
@@ -76,6 +79,44 @@ theorem polynomialComodule_coact :
     Comodule.coact (R := R) (C := coordinateHopfAlgebra R n) (M := MvPolynomial (Fin n) R) =
       (Comodule.polynomialCoact (coordinateHopfAlgebra R n) (Pi.basisFun R (Fin n))).toLinearMap :=
   Comodule.polynomial_coact _
+
+section Column
+
+/-- **Evaluation at a column is equivariant.** Evaluating a polynomial function on the standard
+representation at the `j`-th column, `f ↦ f(x₀ⱼ, …, xₙ₋₁ⱼ)`, is a comodule morphism from the
+polynomial functions to the left regular comodule of `O(SLₙ)`. It is the pullback along the orbit
+map `g ↦ g eⱼ`, given by the orbit coordinates `Comodule.polynomialOrbitCoordinates`. -/
+noncomputable def columnOrbitHom (j : Fin n) :
+    letI := polynomialComodule R n
+    letI := Comodule.leftRegular R (coordinateHopfAlgebra R n)
+    Comodule.Hom R (coordinateHopfAlgebra R n) (MvPolynomial (Fin n) R)
+      (coordinateHopfAlgebra R n) :=
+  letI := polynomialComodule R n
+  letI := Comodule.leftRegular R (coordinateHopfAlgebra R n)
+  { toLinearMap := (Comodule.polynomialOrbitCoordinates (coordinateHopfAlgebra R n)
+      (Pi.basisFun R (Fin n)) (Pi.single j 1)).toLinearMap
+    map_coact := by
+      rw [polynomialComodule_coact, Comodule.leftRegular_coact]
+      exact Comodule.map_polynomialOrbitCoordinates_comp_polynomialCoact _ _ }
+
+variable {R n}
+
+/-- Evaluation at the `j`-th column substitutes the generic entry `xᵢⱼ` for `X i`. -/
+@[simp]
+theorem columnOrbitHom_apply (j : Fin n) (f : MvPolynomial (Fin n) R) :
+    letI := polynomialComodule R n
+    letI := Comodule.leftRegular R (coordinateHopfAlgebra R n)
+    columnOrbitHom R n j f =
+      MvPolynomial.aeval (fun i ↦ (GeneralLinear.genericMatrix R n).map (coordinateMap R n).hom i j)
+        f := by
+  let _ := polynomialComodule R n
+  let _ := Comodule.leftRegular R (coordinateHopfAlgebra R n)
+  rw [columnOrbitHom, Comodule.Hom.coe_mk, AlgHom.coe_toLinearMap]
+  refine DFunLike.congr_fun (MvPolynomial.algHom_ext fun i ↦ ?_) f
+  rw [Comodule.polynomialOrbitCoordinates_X, MvPolynomial.aeval_X, ← Pi.basisFun_apply R (Fin n) j,
+    ← Comodule.coefficientMatrix_apply, coefficientMatrix_basisFun]
+
+end Column
 
 variable {R n} {A : Type v} [CommRing A] [Algebra R A]
 

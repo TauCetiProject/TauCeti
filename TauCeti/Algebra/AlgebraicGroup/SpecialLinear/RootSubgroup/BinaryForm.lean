@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.BinaryForm
 public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.RootSubgroup.Invariants
-public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Coaction
 import TauCeti.RingTheory.MvPolynomial.Homogeneous
 
 /-!
@@ -33,14 +32,13 @@ field this is stronger than a statement about rational points.
 
 ## Main declarations
 
-* `TauCeti.SpecialLinear.columnOrbitHom`: evaluation at the `j`-th column, as a comodule morphism
-  into the left regular comodule of `O(SLₙ)`.
-* `TauCeti.SpecialLinear.columnOrbitHom_two_injective`: for `SL₂` and the first column it is
-  injective.
-* `TauCeti.SpecialLinear.range_columnOrbitHom_two_eq_coinvariants`: its range is `O(SL₂)^{N⁺}`.
-* `TauCeti.SpecialLinear.ofConv_mul_columnOrbitHom_two_of_upperTriangular`: right translation by
-  an upper-triangular point with first column `(t, 0)` acts on the degree-`d` forms by `tᵈ`.
-* `TauCeti.SpecialLinear.ofConv_mul_columnOrbitHom_two_of_diagonal`: in particular, right
+* `TauCeti.SpecialLinear.columnOrbitHom_two_zero_injective`: for `SL₂`, evaluation at the first
+  column, `TauCeti.SpecialLinear.columnOrbitHom R 2 0`, is injective.
+* `TauCeti.SpecialLinear.range_columnOrbitHom_two_zero_eq_coinvariants`: its range is
+  `O(SL₂)^{N⁺}`.
+* `TauCeti.SpecialLinear.ofConv_mul_columnOrbitHom_two_zero_of_upperTriangular`: right translation
+  by an upper-triangular point with first column `(t, 0)` acts on the degree-`d` forms by `tᵈ`.
+* `TauCeti.SpecialLinear.ofConv_mul_columnOrbitHom_two_zero_of_diagonal`: in particular, right
   translation by `diag(t, t⁻¹)` acts on the degree-`d` forms by `tᵈ`.
 * `TauCeti.SpecialLinear.binaryFormFunctions`: the degree-`d` polynomials in `a` and `c`, as a
   subcomodule of the left regular comodule; it is the injective image of the binary forms
@@ -67,45 +65,6 @@ attribute [local instance] GeneralLinear.standardComodule standardComodule
 
 noncomputable section
 
-section Column
-
-variable (n : ℕ)
-
-/-- **Evaluation at a column is equivariant.** Evaluating a polynomial function on the standard
-representation at the `j`-th column, `f ↦ f(x₀ⱼ, …, xₙ₋₁ⱼ)`, is a comodule morphism from the
-polynomial functions to the left regular comodule of `O(SLₙ)`. It is the pullback along the orbit
-map `g ↦ g eⱼ`, given by the orbit coordinates `Comodule.polynomialOrbitCoordinates`. -/
-def columnOrbitHom (j : Fin n) :
-    letI := polynomialComodule R n
-    letI := Comodule.leftRegular R (coordinateHopfAlgebra R n)
-    Comodule.Hom R (coordinateHopfAlgebra R n) (MvPolynomial (Fin n) R)
-      (coordinateHopfAlgebra R n) :=
-  letI := polynomialComodule R n
-  letI := Comodule.leftRegular R (coordinateHopfAlgebra R n)
-  { toLinearMap := (Comodule.polynomialOrbitCoordinates (coordinateHopfAlgebra R n)
-      (Pi.basisFun R (Fin n)) (Pi.single j 1)).toLinearMap
-    map_coact := by
-      rw [polynomialComodule_coact, Comodule.leftRegular_coact]
-      exact Comodule.map_polynomialOrbitCoordinates_comp_polynomialCoact _ _ }
-
-variable {R n}
-
-/-- Evaluation at the `j`-th column substitutes the generic entry `xᵢⱼ` for `X i`. -/
-theorem columnOrbitHom_apply (j : Fin n) (f : MvPolynomial (Fin n) R) :
-    letI := polynomialComodule R n
-    letI := Comodule.leftRegular R (coordinateHopfAlgebra R n)
-    columnOrbitHom R n j f =
-      MvPolynomial.aeval (fun i ↦ (GeneralLinear.genericMatrix R n).map (coordinateMap R n).hom i j)
-        f := by
-  let _ := polynomialComodule R n
-  let _ := Comodule.leftRegular R (coordinateHopfAlgebra R n)
-  rw [columnOrbitHom, Comodule.Hom.coe_mk, AlgHom.coe_toLinearMap]
-  refine DFunLike.congr_fun (MvPolynomial.algHom_ext fun i ↦ ?_) f
-  rw [Comodule.polynomialOrbitCoordinates_X, MvPolynomial.aeval_X, ← Pi.basisFun_apply R (Fin n) j,
-    ← Comodule.coefficientMatrix_apply, coefficientMatrix_basisFun]
-
-end Column
-
 section SL2
 
 variable {R}
@@ -124,7 +83,7 @@ private theorem columnOrbitHom_two_zero_apply (f : MvPolynomial (Fin 2) R) :
 
 /-- **Evaluation at the first column of `SL₂` is injective**: the entries `a` and `c` are
 algebraically independent over every commutative ring. -/
-theorem columnOrbitHom_two_injective :
+theorem columnOrbitHom_two_zero_injective :
     letI := polynomialComodule R 2
     letI := Comodule.leftRegular R (coordinateHopfAlgebra R 2)
     Function.Injective (columnOrbitHom R 2 0) := by
@@ -138,7 +97,7 @@ theorem columnOrbitHom_two_injective :
 /-- **The right invariants of the upper unipotent subgroup are the polynomials in the first
 column.** The range of evaluation at the first column of `SL₂` is the algebra of functions
 invariant under right translation by `N⁺`. -/
-theorem range_columnOrbitHom_two_eq_coinvariants :
+theorem range_columnOrbitHom_two_zero_eq_coinvariants :
     letI := polynomialComodule R 2
     letI := Comodule.leftRegular R (coordinateHopfAlgebra R 2)
     LinearMap.range (columnOrbitHom R 2 0).toLinearMap =
@@ -159,7 +118,8 @@ multiplies the image of a binary form of degree `d` by `tᵈ`. The statement hol
 and `h` over every commutative `R`-algebra `A`. The product `x * h` is the convolution product,
 which `pointsMulEquiv` sends to the matrix product of `x` and `h`, so this is right translation by
 `B⁺ = T N⁺` on the functor of points. -/
-theorem ofConv_mul_columnOrbitHom_two_of_upperTriangular {A : Type v} [CommRing A] [Algebra R A]
+theorem ofConv_mul_columnOrbitHom_two_zero_of_upperTriangular {A : Type v} [CommRing A]
+    [Algebra R A]
     (x h : WithConv (coordinateHopfAlgebra R 2 →ₐ[R] A)) (t : A)
     (hh₀ : (pointsMulEquiv (R := R) (A := A) 2 h : Matrix (Fin 2) (Fin 2) A) 0 0 = t)
     (hh₁ : (pointsMulEquiv (R := R) (A := A) 2 h : Matrix (Fin 2) (Fin 2) A) 1 0 = 0)
@@ -193,7 +153,7 @@ theorem ofConv_mul_columnOrbitHom_two_of_upperTriangular {A : Type v} [CommRing 
 /-- **Right translation by the diagonal torus on binary forms.** Right translation by
 `diag(t, t⁻¹)` acts on the image of the binary forms of degree `d` by the character `t ↦ tᵈ`,
 including `d = 0`. -/
-theorem ofConv_mul_columnOrbitHom_two_of_diagonal {A : Type v} [CommRing A] [Algebra R A]
+theorem ofConv_mul_columnOrbitHom_two_zero_of_diagonal {A : Type v} [CommRing A] [Algebra R A]
     (x h : WithConv (coordinateHopfAlgebra R 2 →ₐ[R] A)) (t : Aˣ)
     (hh : (pointsMulEquiv (R := R) (A := A) 2 h : Matrix (Fin 2) (Fin 2) A) =
       !![(t : A), 0; 0, ((t⁻¹ : Aˣ) : A)])
@@ -201,7 +161,7 @@ theorem ofConv_mul_columnOrbitHom_two_of_diagonal {A : Type v} [CommRing A] [Alg
     letI := polynomialComodule R 2
     letI := Comodule.leftRegular R (coordinateHopfAlgebra R 2)
     (x * h).ofConv (columnOrbitHom R 2 0 f) = (t : A) ^ d * x.ofConv (columnOrbitHom R 2 0 f) :=
-  ofConv_mul_columnOrbitHom_two_of_upperTriangular x h t (by simp [hh]) (by simp [hh]) hf
+  ofConv_mul_columnOrbitHom_two_zero_of_upperTriangular x h t (by simp [hh]) (by simp [hh]) hf
 
 variable (R) in
 /-- The degree-`d` polynomials in the first-column entries `a` and `c`, as a subcomodule of the
@@ -216,6 +176,7 @@ def binaryFormFunctions (d : ℕ) :
 
 /-- A function on `SL₂` is a degree-`d` function of the first column exactly when it is a binary
 form of degree `d` evaluated at `(a, c)`. -/
+@[simp]
 theorem mem_binaryFormFunctions {d : ℕ} {φ : coordinateHopfAlgebra R 2} :
     letI := polynomialComodule R 2
     letI := Comodule.leftRegular R (coordinateHopfAlgebra R 2)
@@ -237,8 +198,8 @@ def binaryFormFunctionsEquiv (d : ℕ) :
     binaryForms R d ≃ₗ[R] binaryFormFunctions R d :=
   letI := polynomialComodule R 2
   letI := Comodule.leftRegular R (coordinateHopfAlgebra R 2)
-  Submodule.equivMapOfInjective (columnOrbitHom R 2 0).toLinearMap columnOrbitHom_two_injective
-    (binaryForms R d).toSubmodule
+  Submodule.equivMapOfInjective (columnOrbitHom R 2 0).toLinearMap
+    columnOrbitHom_two_zero_injective (binaryForms R d).toSubmodule
 
 /-- The identification of binary forms with first-column functions is evaluation at `(a, c)`. -/
 @[simp]
