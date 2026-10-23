@@ -13,7 +13,8 @@ import TauCeti.RingTheory.DiscreteValuationRing.Basic
 # Eisenstein polynomials over discrete valuation rings
 
 The Eisenstein condition over a discrete valuation ring makes the constant coefficient a
-uniformizer. Conversely, `X ^ n` minus a uniformizer is Eisenstein for positive `n`.
+uniformizer. Conversely, `X ^ n` minus a uniformizer is Eisenstein for positive `n`, and so is
+`X ^ n + a X` plus a uniformizer for `a` in the maximal ideal and `2 ≤ n`.
 
 ## Main results
 
@@ -21,6 +22,8 @@ uniformizer. Conversely, `X ^ n` minus a uniformizer is Eisenstein for positive 
   irreducible element.
 * `TauCeti.isEisensteinAt_X_pow_sub_C_of_irreducible` gives Eisenstein polynomials from
   uniformizers.
+* `TauCeti.isEisensteinAt_X_pow_add_C_mul_X_add_C_of_irreducible` gives Eisenstein trinomials
+  from uniformizers.
 -/
 
 public section
@@ -79,6 +82,17 @@ theorem isEisensteinAt_X_pow_sub_C_of_irreducible
     {ϖ : R} (hϖ : Irreducible ϖ) {n : ℕ} (hn : 0 < n) :
     (X ^ n - C ϖ).IsEisensteinAt (maximalIdeal R) := by
   apply isEisensteinAt_X_pow_sub_C (by simp [hϖ.maximalIdeal_eq]) _ hn
+  rw [IsDiscreteValuationRing.mem_maximalIdeal_pow_iff_le_addVal,
+    IsDiscreteValuationRing.addVal_uniformizer hϖ]
+  simp
+
+/-- Over a discrete valuation ring, `X ^ n + a X` plus a uniformizer is Eisenstein when `a` lies
+in the maximal ideal and `2 ≤ n`. -/
+theorem isEisensteinAt_X_pow_add_C_mul_X_add_C_of_irreducible
+    {R : Type*} [CommRing R] [IsDomain R] [IsDiscreteValuationRing R]
+    {a ϖ : R} (ha : a ∈ maximalIdeal R) (hϖ : Irreducible ϖ) {n : ℕ} (hn : 2 ≤ n) :
+    (X ^ n + C a * X + C ϖ).IsEisensteinAt (maximalIdeal R) := by
+  refine isEisensteinAt_X_pow_add_C_mul_X_add_C ha hϖ.not_isUnit ?_ hn
   rw [IsDiscreteValuationRing.mem_maximalIdeal_pow_iff_le_addVal,
     IsDiscreteValuationRing.addVal_uniformizer hϖ]
   simp

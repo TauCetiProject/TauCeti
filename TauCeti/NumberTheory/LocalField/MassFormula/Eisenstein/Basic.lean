@@ -194,13 +194,6 @@ theorem adjoin_mem_totallyRamifiedOfDegree_of_pow_eq {ϖ : 𝒪[K]} (hϖ : Irred
     (isEisensteinAt_X_pow_sub_C_of_irreducible hϖ hn) (natDegree_X_pow_sub_C _)
     (by simp [hx, Algebra.algebraMap_ofSubsemiring_apply])
 
-/-- `X ^ 2 + b X + c` is Eisenstein when `b ∈ 𝓂[K]` and `c` is a uniformizer. -/
-private theorem isEisensteinAt_X_sq_add_C_mul_X_add_C {b c : 𝒪[K]} (hb : b ∈ 𝓂[K])
-    (hc : Irreducible c) : (X ^ 2 + C b * X + C c).IsEisensteinAt 𝓂[K] := by
-  refine isEisensteinAt_X_pow_add_C_mul_X_add_C hb hc.not_isUnit ?_ le_rfl
-  rw [IsDiscreteValuationRing.mem_maximalIdeal_pow_iff_le_addVal, addVal_uniformizer hc]
-  simp
-
 /-- **Roots of Eisenstein quadratics generate counted extensions.** If `b ∈ 𝓂[K]` and `c` is a
 uniformizer of `K`, a root in the separable closure of `X ^ 2 + b X + c` generates a member of
 `σ_K(2)`. -/
@@ -209,7 +202,8 @@ theorem adjoin_mem_totallyRamifiedOfDegree_two_of_sq_add_mul_add_eq_zero {b c : 
     (hx : x ^ 2 + algebraMap K (SeparableClosure K) b * x +
       algebraMap K (SeparableClosure K) c = 0) :
     K⟮x⟯ ∈ totallyRamifiedOfDegree K 2 :=
-  adjoin_mem_totallyRamifiedOfDegree_of_eisenstein (isEisensteinAt_X_sq_add_C_mul_X_add_C hb hc)
+  adjoin_mem_totallyRamifiedOfDegree_of_eisenstein
+    (isEisensteinAt_X_pow_add_C_mul_X_add_C_of_irreducible hb hc le_rfl)
     (natDegree_X_pow_add_C_mul_X_add_C _ _ le_rfl)
     (by simpa [Algebra.algebraMap_ofSubsemiring_apply] using hx)
 
@@ -222,7 +216,7 @@ theorem natCast_discriminantExponent_adjoin_eq_min_of_sq_add_mul_add_eq_zero {b 
       algebraMap K (SeparableClosure K) c = 0) :
     ((K⟮x⟯).discriminantExponent : ℕ∞) = min (2 * addVal 𝒪[K] b) (2 * addVal 𝒪[K] 2 + 1) := by
   have hd := natCast_discriminantExponent_adjoin_eq_iInf_of_eisenstein
-    (isEisensteinAt_X_sq_add_C_mul_X_add_C hb hc)
+    (isEisensteinAt_X_pow_add_C_mul_X_add_C_of_irreducible hb hc le_rfl)
     (by simpa [Algebra.algebraMap_ofSubsemiring_apply] using hx)
   rw [natDegree_X_pow_add_C_mul_X_add_C _ _ le_rfl] at hd
   -- The two terms of the infimum are `2 v_K(b)` and `2 v_K(2) + 1`.
