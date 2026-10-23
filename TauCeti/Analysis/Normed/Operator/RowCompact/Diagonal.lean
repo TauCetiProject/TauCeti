@@ -21,12 +21,13 @@ completely continuous, and over a complete ultrametric field Serre's criterion m
 continuity equivalent to the decay of the entries
 (`ZeroAtInftyContinuousMap.isCompletelyContinuous_diagonalCLM_iff`).
 
-On the other hand a diagonal operator whose entries are units at infinitely many indices does not
-have finite rank (`ZeroAtInftyContinuousMap.not_isFiniteRank_diagonalCLM`): its range contains
-infinitely many of the linearly independent unit vectors. For a multiplicative
+On the other hand, over a ring with the strong rank condition, a diagonal operator whose entries
+are units at infinitely many indices does not have finite rank
+(`ZeroAtInftyContinuousMap.not_isFiniteRank_diagonalCLM`, in
+`TauCeti.Topology.ContinuousMap.ZeroAtInfty.Diagonal`). For a multiplicative
 pseudo-uniformiser `ϖ` the diagonal operator of the family `ϖ ^ n` on `C₀(ℕ, R)` is therefore
-completely continuous without having finite rank, so over an ultrametric Tate ring complete
-continuity is strictly weaker than finite rank
+completely continuous without having finite rank, so over an ultrametric Tate ring with the
+strong rank condition complete continuity is strictly weaker than finite rank
 (`ZeroAtInftyContinuousMap.exists_isCompletelyContinuous_not_isFiniteRank`).
 
 ## Main results
@@ -36,10 +37,9 @@ continuity is strictly weaker than finite rank
   exactly when its entries tend to zero.
 * `ZeroAtInftyContinuousMap.isCompletelyContinuous_diagonalCLM_iff`: over a complete ultrametric
   field, the same holds for complete continuity.
-* `ZeroAtInftyContinuousMap.not_isFiniteRank_diagonalCLM`: unit entries at infinitely many
-  indices rule out finite rank.
 * `ZeroAtInftyContinuousMap.exists_isCompletelyContinuous_not_isFiniteRank`: over an ultrametric
-  Tate ring, `C₀(ℕ, R)` carries a completely continuous endomorphism of infinite rank.
+  Tate ring with the strong rank condition, `C₀(ℕ, R)` carries a completely continuous
+  endomorphism of infinite rank.
 
 ## References
 
@@ -84,17 +84,6 @@ theorem isRowCompact_diagonalCLM_iff [DecidableEq I] {d : I →ᵇ R} :
 theorem isRowCompact_diagonalCLM [DecidableEq I] {d : I →ᵇ R} (hd : Tendsto d cofinite (𝓝 0)) :
     (diagonalCLM d).IsRowCompact :=
   isRowCompact_diagonalCLM_iff.2 hd
-
-/-- **Diagonal operators of infinite rank**: over a ring with the strong rank condition, a
-diagonal operator whose entries are units at infinitely many indices does not have finite rank. -/
-theorem not_isFiniteRank_diagonalCLM [StrongRankCondition R] {d : I →ᵇ R}
-    (hd : {i | IsUnit (d i)}.Infinite) :
-    ¬((diagonalCLM d : C₀(I, R) →L[R] C₀(I, R)) : C₀(I, R) →ₗ[R] C₀(I, R)).IsFiniteRank := by
-  classical
-  intro h
-  obtain ⟨Q, hQ, hrange⟩ := LinearMap.isFiniteRank_iff.1 h
-  refine hd ((finite_setOf_single_one_mem hQ).subset fun i hi ↦ hrange ⟨single i ↑hi.unit⁻¹, ?_⟩)
-  simp
 
 end SeminormedRing
 

@@ -34,6 +34,8 @@ compactness is treated in `TauCeti.Analysis.Normed.Operator.RowCompact.Diagonal`
 * `ZeroAtInftyContinuousMap.matrixCoeff_diagonalCLM`: the matrix is `Matrix.diagonal d`.
 * `ZeroAtInftyContinuousMap.diagonalCLM_one`, `ZeroAtInftyContinuousMap.diagonalCLM_mul`:
   the constant family `1` gives the identity, and products of families give composites.
+* `ZeroAtInftyContinuousMap.not_isFiniteRank_diagonalCLM`: over a ring with the strong rank
+  condition, unit entries at infinitely many indices rule out finite rank.
 
 ## References
 
@@ -121,5 +123,16 @@ theorem diagonalCLM_sub (d e : I →ᵇ R) : diagonalCLM (d - e) = diagonalCLM d
 dictated by multiplication on the right. -/
 theorem diagonalCLM_mul (d e : I →ᵇ R) : diagonalCLM (d * e) = diagonalCLM e * diagonalCLM d := by
   ext; simp [mul_assoc]
+
+/-- **Diagonal operators of infinite rank**: over a ring with the strong rank condition, a
+diagonal operator whose entries are units at infinitely many indices does not have finite rank. -/
+theorem not_isFiniteRank_diagonalCLM [StrongRankCondition R] {d : I →ᵇ R}
+    (hd : {i | IsUnit (d i)}.Infinite) :
+    ¬((diagonalCLM d : C₀(I, R) →L[R] C₀(I, R)) : C₀(I, R) →ₗ[R] C₀(I, R)).IsFiniteRank := by
+  classical
+  intro h
+  obtain ⟨Q, hQ, hrange⟩ := LinearMap.isFiniteRank_iff.1 h
+  refine hd ((finite_setOf_single_one_mem hQ).subset fun i hi ↦ hrange ⟨single i ↑hi.unit⁻¹, ?_⟩)
+  simp
 
 end ZeroAtInftyContinuousMap
