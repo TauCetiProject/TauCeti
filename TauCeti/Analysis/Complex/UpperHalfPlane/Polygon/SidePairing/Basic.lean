@@ -270,6 +270,11 @@ theorem cycleLength_pair_add_one (j : Fin n) : σ.cycleLength (σ.pair j + 1) = 
 theorem next_iterate_cycleLength (j : Fin n) : σ.next^[σ.cycleLength j] j = j :=
   Function.iterate_minimalPeriod
 
+/-- Going `k` times around the cycle returns to the starting vertex. -/
+theorem next_iterate_mul_cycleLength (j : Fin n) (k : ℕ) :
+    σ.next^[k * σ.cycleLength j] j = j :=
+  ((Function.isPeriodicPt_minimalPeriod σ.next j).const_mul k).eq
+
 /-- **The cycle transformation** at the vertex `j`: the product of the side-pairing maps along the
 vertex cycle through `j`, starting with the side leaving `j`. -/
 def cycleMap (j : Fin n) : PSL(2, ℝ) :=
@@ -287,10 +292,14 @@ theorem partialCycleMap_mul_cycleLength (j : Fin n) (k : ℕ) :
   induction k with
   | zero => simp
   | succ k ih =>
-    have hper : σ.next^[k * σ.cycleLength j] j = j := by
-      rw [cycleLength_def]
-      exact ((Function.isPeriodicPt_minimalPeriod σ.next j).const_mul k).eq
-    rw [Nat.succ_mul, partialCycleMap_add, hper, ih, ← cycleMap_def, pow_succ']
+    rw [Nat.succ_mul, partialCycleMap_add, next_iterate_mul_cycleLength, ih, ← cycleMap_def,
+      pow_succ']
+
+/-- Going `k` times around the cycle through `j` and then `m` further steps is the `k`-th power
+of the cycle transformation followed by the first `m` side-pairing maps. -/
+theorem partialCycleMap_mul_cycleLength_add (j : Fin n) (k m : ℕ) :
+    σ.partialCycleMap j (k * σ.cycleLength j + m) = σ.partialCycleMap j m * σ.cycleMap j ^ k := by
+  rw [partialCycleMap_add, next_iterate_mul_cycleLength, partialCycleMap_mul_cycleLength]
 
 /-- The cycle transformation lies in every subgroup containing the side-pairing maps. -/
 theorem cycleMap_mem {Γ : Subgroup PSL(2, ℝ)} (hmap : ∀ i, σ.map i ∈ Γ) (j : Fin n) :
@@ -509,14 +518,11 @@ theorem sum_range_mul_cycleLength_interiorAngle (j : Fin n) (t : ℕ) :
   induction t with
   | zero => simp
   | succ t ih =>
-    have hper : σ.next^[t * σ.cycleLength j] j = j := by
-      rw [cycleLength_def]
-      exact ((Function.isPeriodicPt_minimalPeriod σ.next j).const_mul t).eq
     rw [Nat.succ_mul, Finset.sum_range_add, ih, Nat.cast_succ, add_mul, one_mul,
       σ.cycleAngleSum_eq_sum_range]
     congr 1
     refine Finset.sum_congr rfl fun l _ ↦ ?_
-    rw [add_comm, Function.iterate_add_apply, hper]
+    rw [add_comm, Function.iterate_add_apply, next_iterate_mul_cycleLength]
 
 /-- **The angle sum of a polygon is the sum of its cycle angle sums.** Each cycle is counted once:
 the term at a vertex `j` is the cycle angle sum divided by the number `cycleLength j` of

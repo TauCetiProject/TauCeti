@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Normed.Lp.lpHolder
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.LinearAlgebra.Dimension.LinearMap
-public import Mathlib.LinearAlgebra.StdBasis
+public import TauCeti.Analysis.Normed.Lp.Basic
 public import TauCeti.Analysis.Normed.Operator.Compact.FiniteRank
 
 /-!
@@ -100,33 +100,6 @@ theorem diagonalCLM_mul (d e : ℓ^∞(ι, 𝕜)) :
 
 variable [DecidableEq ι]
 
-omit [Fact (1 ≤ p)] in
-/-- The scalar coordinate vectors in `lp` are linearly independent. -/
-theorem linearIndependent_single_one :
-    LinearIndependent 𝕜 (fun i : ι ↦ lp.single p i (1 : 𝕜)) := by
-  apply LinearIndependent.of_comp (lpSubmodule 𝕜 (fun _ : ι ↦ 𝕜) p).subtype
-  have hcoe : (lpSubmodule 𝕜 (fun _ : ι ↦ 𝕜) p).subtype ∘
-      (fun i : ι ↦ lp.single p i (1 : 𝕜)) = fun i ↦ Pi.single i (1 : 𝕜) := by
-    funext i
-    exact lp.coeFn_single p i 1
-  rw [hcoe]
-  exact Pi.linearIndependent_single_one ι 𝕜
-
-omit [Fact (1 ≤ p)] in
-/-- A vector in the span of a family of coordinate vectors vanishes outside their indices. -/
-theorem apply_eq_zero_of_mem_span_single {κ : Type*} (f : κ → ι) {x : ℓ^p(ι, 𝕜)}
-    (hx : x ∈ Submodule.span 𝕜 (Set.range fun j ↦ lp.single p (f j) (1 : 𝕜)))
-    {i : ι} (hi : i ∉ Set.range f) : x i = 0 := by
-  have hle : Submodule.span 𝕜 (Set.range fun j ↦ lp.single p (f j) (1 : 𝕜)) ≤
-      LinearMap.ker (evalₗ (𝕜 := 𝕜) (fun _ : ι ↦ 𝕜) p i) := by
-    refine Submodule.span_le.mpr ?_
-    rintro _ ⟨j, rfl⟩
-    apply LinearMap.mem_ker.mpr
-    rw [evalₗ_apply]
-    exact lp.single_apply_ne (E := fun _ : ι ↦ 𝕜) p (f j) 1
-      (fun hij ↦ hi ⟨j, hij.symm⟩)
-  simpa only [evalₗ_apply] using LinearMap.mem_ker.mp (hle hx)
-
 /-- Retain the coefficients of a diagonal operator on a finite set of coordinates. -/
 noncomputable def diagonalTruncation (d : ℓ^∞(ι, 𝕜)) (s : Finset ι) :
     ℓ^p(ι, 𝕜) →L[𝕜] ℓ^p(ι, 𝕜) :=
@@ -138,7 +111,7 @@ theorem diagonalTruncation_apply_eq_sum_single (d : ℓ^∞(ι, 𝕜)) (s : Fins
     (x : ℓ^p(ι, 𝕜)) :
     diagonalTruncation d s x = ∑ i ∈ s, (d i * x i) • lp.single p i 1 := by
   rw [diagonalTruncation, sum_apply]
-  simp [singleContinuousLinearMap_apply, evalCLM, ← lp.single_smul]
+  simp [singleContinuousLinearMap_apply, ← lp.single_smul]
 
 /-- A finite diagonal truncation is the original multiplier on the retained coordinates
 and zero elsewhere. -/
@@ -146,10 +119,8 @@ and zero elsewhere. -/
 theorem diagonalTruncation_apply (d : ℓ^∞(ι, 𝕜)) (s : Finset ι)
     (x : ℓ^p(ι, 𝕜)) (i : ι) :
     diagonalTruncation d s x i = if i ∈ s then d i * x i else 0 := by
-  -- Reify evaluation before rewriting sums: simplifying the `PreLp` coercion first
-  -- produces an expression which the rewrite matcher cannot type-check.
-  change (evalₗ (𝕜 := 𝕜) (fun _ : ι ↦ 𝕜) p i) (diagonalTruncation d s x) = _
-  rw [diagonalTruncation_apply_eq_sum_single, map_sum]
+  rw [← evalCLM_apply (𝕜 := 𝕜) i (diagonalTruncation d s x),
+    diagonalTruncation_apply_eq_sum_single, map_sum]
   simp [lp.single_apply, Pi.single_apply]
 
 /-- Retaining no coordinates gives the zero operator. -/

@@ -117,6 +117,16 @@ def IsTISubgroup (H : Subgroup G) : Prop :=
 
 namespace IsTISubgroup
 
+/-- The whole group is malnormal. -/
+theorem top : IsTISubgroup (⊤ : Subgroup G) := by
+  intro g _ hg _ _
+  exact absurd (Subgroup.mem_top g) hg
+
+/-- The trivial subgroup is malnormal. -/
+theorem bot : IsTISubgroup (⊥ : Subgroup G) := by
+  intro _ _ _ hx _
+  exact Subgroup.mem_bot.mp hx
+
 /-- The defining property of a trivial-intersection subgroup, as a named lemma. -/
 theorem eq_one (hH : IsTISubgroup H) {g x : G} (hg : g ∉ H) (hx : x ∈ H)
     (hgx : g * x * g⁻¹ ∈ H) : x = 1 :=
@@ -159,6 +169,17 @@ theorem centralizer_singleton_le (hH : IsTISubgroup H) {x : G} (hx : x ∈ H) (h
   refine hH.mem_of_conj_eq_self hx hx1 ?_
   rw [hg]
   group
+
+/-- The preimage of a malnormal subgroup under an injective homomorphism is malnormal. -/
+theorem comap {K : Type*} [Group K] (hH : IsTISubgroup H) (f : K →* G)
+    (hf : Function.Injective f) : IsTISubgroup (H.comap f) := by
+  intro g x hg hx hgx
+  apply hf
+  have hfg : f g ∉ H := by simpa only [Subgroup.mem_comap] using hg
+  have hfx : f x ∈ H := Subgroup.mem_comap.mp hx
+  have hfgx : f g * f x * (f g)⁻¹ ∈ H := by
+    simpa only [Subgroup.mem_comap, map_mul, map_inv] using hgx
+  simpa only [map_one] using hH hfg hfx hfgx
 
 end IsTISubgroup
 

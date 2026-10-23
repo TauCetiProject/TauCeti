@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.FDRep
+public import TauCeti.RepresentationTheory.FDRep.Basic
 public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Rational
 public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Weight.Basic
 

@@ -16,6 +16,8 @@ orbit morphism `G ⟶ X`. Its geometric orbit is the image of the underlying sch
 map, including nonclosed points. Define its closure and boundary in the same
 underlying topological space. Translation by any section of `G` preserves all
 three sets, and moving the base section by the action gives the same orbit.
+The translation homeomorphisms assemble into an action of the sections of `G`
+on the underlying space of `X`, under which the orbit is invariant.
 Equivariant morphisms carry orbit images onto orbit images.
 
 No finite-type, smoothness, reducedness or connectedness assumption is needed.
@@ -60,6 +62,10 @@ def orbitBoundary (x : 𝟙_ (Over S) ⟶ X) : Set X.left := orbitClosure G x \ 
 theorem orbitClosure_def (x : 𝟙_ (Over S) ⟶ X) :
     orbitClosure G x = closure (orbit G x) := (rfl)
 
+/-- The orbit boundary is the orbit closure with the orbit removed. -/
+theorem orbitBoundary_def (x : 𝟙_ (Over S) ⟶ X) :
+    orbitBoundary G x = orbitClosure G x \ orbit G x := (rfl)
+
 /-- Boundary membership consists of closure membership and failure of orbit membership. -/
 @[simp]
 theorem mem_orbitBoundary (x : 𝟙_ (Over S) ⟶ X) (p : X.left) :
@@ -69,9 +75,18 @@ theorem mem_orbitBoundary (x : 𝟙_ (Over S) ⟶ X) (p : X.left) :
 theorem orbit_subset_orbitClosure (x : 𝟙_ (Over S) ⟶ X) :
     orbit G x ⊆ orbitClosure G x := subset_closure
 
+/-- The orbit boundary is contained in the orbit closure. -/
+theorem orbitBoundary_subset_orbitClosure (x : 𝟙_ (Over S) ⟶ X) :
+    orbitBoundary G x ⊆ orbitClosure G x := Set.sdiff_subset
+
 /-- The orbit closure is closed. -/
 theorem isClosed_orbitClosure (x : 𝟙_ (Over S) ⟶ X) :
     IsClosed (orbitClosure G x) := isClosed_closure
+
+/-- The geometric orbit is closed exactly when its boundary is empty. -/
+theorem isClosed_orbit_iff_orbitBoundary_eq_empty (x : 𝟙_ (Over S) ⟶ X) :
+    IsClosed (orbit G x) ↔ orbitBoundary G x = ∅ := by
+  rw [orbitBoundary_def, orbitClosure_def, Set.sdiff_eq_empty, closure_subset_iff_isClosed]
 
 /-- Equivariant morphisms carry geometric orbit images onto the corresponding orbit images. -/
 theorem image_orbit (x : 𝟙_ (Over S) ⟶ X) (f : X ⟶ Y) [IsModHom G f] :
@@ -127,5 +142,52 @@ theorem orbit_smul (g : 𝟙_ (Over S) ⟶ G) (x : 𝟙_ (Over S) ⟶ X) :
     Set.range_comp, hs.range_eq, Set.image_univ] using
       congrArg (fun f : G.left ⟶ X.left ↦ Set.range f) h
 
+section Translation
+
+variable (X)
+
+/-- The global points of a group scheme act on the underlying space of a scheme it acts on, each
+acting through its translation automorphism. Install it locally to select this action. -/
+@[instance_reducible]
+def translationMulAction : MulAction (𝟙_ (Over S) ⟶ G) X.left where
+  smul g p := (translation X g).hom.left p
+  one_smul p := by simp [HSMul.hSMul]
+  mul_smul g h p := by
+    simp only [HSMul.hSMul, SMul.smul, translation_mul, Iso.trans_hom, Over.comp_left,
+      Scheme.Hom.comp_apply]
+
+variable {G X}
+
+/-- A global point acts through its translation automorphism. -/
+theorem translationMulAction_smul (g : 𝟙_ (Over S) ⟶ G) (p : X.left) :
+    letI := translationMulAction G X
+    g • p = (translation X g).hom.left p :=
+  (rfl)
+
+/-- On the point underlying a section, the translation action is the action on sections. -/
+theorem translationMulAction_smul_apply (g : 𝟙_ (Over S) ⟶ G) (y : 𝟙_ (Over S) ⟶ X)
+    (a : (𝟙_ (Over S)).left) :
+    letI := translationMulAction G X
+    g • y.left a = (g • y).left a := by
+  rw [translationMulAction_smul, ← Scheme.Hom.comp_apply, ← Over.comp_left, comp_translation_hom,
+    toUnit_unit, Category.id_comp]
+
+/-- Every global point acts by a homeomorphism. -/
+theorem continuousConstSMul_translationMulAction :
+    letI := translationMulAction G X
+    ContinuousConstSMul (𝟙_ (Over S) ⟶ G) X.left :=
+  letI := translationMulAction G X
+  ⟨fun g ↦ (translation X g).hom.left.continuous⟩
+
+/-- Translation by a global point preserves the orbit, so the orbit is invariant under the
+translation action. -/
+theorem preimage_smul_orbit (g : 𝟙_ (Over S) ⟶ G) (x : 𝟙_ (Over S) ⟶ X) :
+    letI := translationMulAction G X
+    (fun p : X.left ↦ g • p) ⁻¹' orbit G x = orbit G x := by
+  let := translationMulAction G X
+  rw [Set.preimage_smul, ← Set.image_smul]
+  exact image_translation_orbit G g⁻¹ x
+
+end Translation
 
 end TauCeti.SchemeAction

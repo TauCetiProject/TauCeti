@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Toric.Algebraic.Fan.AffineSpace
+public import TauCeti.Geometry.Toric.Algebraic.Fan.AffineSpace.Basic
 public import TauCeti.Geometry.Toric.Analytic.Fan.Affine.Basic
 public import TauCeti.Geometry.Toric.Analytic.Fan.Character
 public import TauCeti.Geometry.Toric.Analytic.Fan.ProjectiveSpace.Charts
@@ -55,16 +55,12 @@ include hi in
 private theorem isRegularCone_orthant : IsRegularCone i (projectiveSpaceCone b i {none}ᶜ) :=
   isRegularCone_projectiveSpaceCone b hi (by simp)
 
-/-- The orthant, as the maximal cone of the fan of affine space. -/
-private noncomputable abbrev orthant : (affineSpace b hi).cones :=
-  ⟨projectiveSpaceCone b i {none}ᶜ, (mem_ofCone_cones hi _).2 (.refl _)⟩
-
 /-- The coordinates of the chart of the orthant, as homogeneous ratios `X_j / X_none`. -/
 private noncomputable abbrev orthantCoordinates :
-    (affineSpace b hi).analyticAffineChartDiagram.obj (orthant b hi) ≃ₜ
+    (affineSpace b hi).analyticAffineChartDiagram.obj (affineSpaceMaximalCone b hi) ≃ₜ
       ({k : Option ι // k ≠ none} → ℂ) :=
   projectiveSpacePointHomeomorph b hi none ((affineSpace b hi).analyticChartGenerators
-    (orthant b hi)).2
+    (affineSpaceMaximalCone b hi)).2
 
 open Classical in
 variable (ι) in
@@ -84,10 +80,10 @@ noncomputable def affineSpaceHomeomorph :
     (Homeomorph.piCongrLeft (Y := fun _ ↦ ℂ) (orthantIndexEquiv ι)).symm
 
 private theorem affineSpaceHomeomorph_analyticAffineChartι
-    (x : (affineSpace b hi).analyticAffineChartDiagram.obj (orthant b hi)) (j : ι) :
+    (x : (affineSpace b hi).analyticAffineChartDiagram.obj (affineSpaceMaximalCone b hi)) (j : ι) :
     affineSpaceHomeomorph b hi
-        ((affineSpace b hi).analyticAffineChartι (isRegular_affineSpace b hi) (orthant b hi) x)
-        j =
+        ((affineSpace b hi).analyticAffineChartι (isRegular_affineSpace b hi)
+          (affineSpaceMaximalCone b hi) x) j =
       DFunLike.coe (F := AffineSemigroupComplexPoint
           (dualSemigroup hi (projectiveSpaceCone b i {none}ᶜ))) x
         (MonoidAlgebra.single (ofAdd (projectiveSpaceChartCharacter b hi none
@@ -102,7 +98,8 @@ open Classical in
 /-- The inverse of `affineSpaceHomeomorph`, through the maximal affine chart of the orthant. -/
 private theorem affineSpaceHomeomorph_symm_apply (z : ι → ℂ) :
     (affineSpaceHomeomorph b hi).symm z =
-      (affineSpace b hi).analyticAffineChartι (isRegular_affineSpace b hi) (orthant b hi)
+      (affineSpace b hi).analyticAffineChartι (isRegular_affineSpace b hi)
+        (affineSpaceMaximalCone b hi)
         ((orthantCoordinates b hi).symm fun k ↦ z ((orthantIndexEquiv ι).symm k)) := by
   rw [affineSpaceHomeomorph, Homeomorph.symm_trans_apply, Homeomorph.symm_trans_apply,
     Homeomorph.symm_symm, analyticOfConeHomeomorph_apply]
@@ -170,7 +167,7 @@ theorem contMDiff_affineSpaceHomeomorph_symm (n : ℕ∞ω) :
   have : Finite (ToricRay (projectiveSpaceCone b i {none}ᶜ)) :=
     ToricRay.finite_of_fg (isRegularCone_orthant b hi).fg
   let κ := Finite.equivFin (ToricRay (projectiveSpaceCone b i {none}ᶜ))
-  let g := ((affineSpace b hi).analyticChartGenerators (orthant b hi)).2
+  let g := ((affineSpace b hi).analyticChartGenerators (affineSpaceMaximalCone b hi)).2
   let _ := affinePointTopology g
   let _ := coneChartedSpace hi (isRegularCone_orthant b hi).toIsToricCone hB κ g
   have hre : ContMDiff 𝓘(ℂ, ι → ℂ) 𝓘(ℂ, {k : Option ι // k ≠ none} → ℂ) n
@@ -183,9 +180,10 @@ theorem contMDiff_affineSpaceHomeomorph_symm (n : ℕ∞ω) :
   rw [Function.comp_apply, Function.comp_apply, analyticOfConeDiffeomorph_apply,
     affineSpaceHomeomorph_symm_apply, ← Diffeomorph.coe_toHomeomorph_symm,
     projectiveSpacePointDiffeomorph_toHomeomorph]
-  -- Closes definitionally: `affineSpace` and `orthant` are abbrevs for `ofCone` and its maximal
-  -- cone, and `orthantCoordinates` is `projectiveSpacePointHomeomorph b hi none g`, whose inverse
-  -- has the same underlying function under `affinePointTopology g` as under the chart topology.
+  -- Closes definitionally: `affineSpace` and `affineSpaceMaximalCone` are abbrevs for `ofCone`
+  -- and its maximal cone, and `orthantCoordinates` is `projectiveSpacePointHomeomorph b hi none g`,
+  -- whose inverse has the same underlying function under `affinePointTopology g` as under the
+  -- chart topology.
   rfl
 
 /-- The analytic realization of the fan of affine space is biholomorphic to `ι → ℂ`, for the

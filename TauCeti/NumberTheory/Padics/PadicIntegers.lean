@@ -57,8 +57,13 @@ calculation for first continuous cohomology with trivial integer coefficients.
   exactly when they are associated in every `ℤ_[p]`.
 * `Padic.exists_eq_zpow_valuation_mul`: every nonzero `x : ℚ_[p]` is `p ^ v(x)` times a unit of
   `ℤ_[p]`.
+* `Padic.valuation_p_zpow_mul`: multiplying a nonzero `x : ℚ_[p]` by `p ^ α` adds `α` to its
+  valuation.
+* `Padic.valuation_p_pow_mul_intCast`: the valuation of `p ^ n m`, for an integer `m` prime to
+  `p`, is `n`.
 * `Padic.inv_natCast_le_norm_natCast`: the `p`-adic norm of a positive integer `m` is at least
   `1 / m`.
+* `Padic.norm_natCast_eq_zpow`: the `p`-adic norm of a positive integer `m` is `p ^ (-v_p(m))`.
 * `PadicInt.compactSpace_units`, `PadicInt.totallyDisconnectedSpace_units`: `ℤ_[p]ˣ` is a
   profinite group.
 -/
@@ -198,6 +203,21 @@ theorem exists_eq_zpow_valuation_mul {x : ℚ_[p]} (hx : x ≠ 0) :
   refine ⟨PadicInt.mkUnits hy, ?_⟩
   rw [PadicInt.mkUnits_eq, mul_left_comm, ← zpow_add₀ hp, add_neg_cancel, zpow_zero, mul_one]
 
+/-- Multiplying a nonzero `x : ℚ_[p]` by `p ^ α` adds `α` to its valuation. -/
+theorem valuation_p_zpow_mul (α : ℤ) {x : ℚ_[p]} (hx : x ≠ 0) :
+    ((p : ℚ_[p]) ^ α * x).valuation = α + x.valuation := by
+  rw [Padic.valuation_mul (zpow_ne_zero _ (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero)) hx,
+    Padic.valuation_zpow, Padic.valuation_p, mul_one]
+
+/-- The valuation of `p ^ n m` in `ℚ_[p]`, for an integer `m` prime to `p`, is `n`: the case
+`v(m) = 0` of `Padic.valuation_p_zpow_mul`. -/
+theorem valuation_p_pow_mul_intCast (n : ℕ) {m : ℤ} (hm : ¬(p : ℤ) ∣ m) :
+    ((p : ℚ_[p]) ^ n * m).valuation = n := by
+  have h := valuation_p_zpow_mul (p := p) n
+    (Int.cast_ne_zero.mpr (by rintro rfl; exact hm (dvd_zero _)) : (m : ℚ_[p]) ≠ 0)
+  rwa [Padic.valuation_intCast, padicValInt.eq_zero_of_not_dvd hm, Nat.cast_zero, add_zero,
+    zpow_natCast] at h
+
 /-- The `p`-adic norm of a positive integer `m` is at least `1 / m`. -/
 theorem inv_natCast_le_norm_natCast (m : ℕ) [NeZero m] : (m : ℝ)⁻¹ ≤ ‖(m : ℚ_[p])‖ := by
   rw [Padic.norm_eq_zpow_neg_valuation (Nat.cast_ne_zero.mpr (NeZero.ne m)),
@@ -205,6 +225,11 @@ theorem inv_natCast_le_norm_natCast (m : ℕ) [NeZero m] : (m : ℝ)⁻¹ ≤ �
   gcongr
   · exact pow_pos (by exact_mod_cast (Fact.out : p.Prime).pos) _
   · exact_mod_cast Nat.le_of_dvd (Nat.pos_of_ne_zero (NeZero.ne m)) pow_padicValNat_dvd
+
+/-- The `p`-adic norm of a nonzero natural number `m` is `p ^ (-v_p(m))`. -/
+theorem norm_natCast_eq_zpow {m : ℕ} (hm : m ≠ 0) :
+    ‖(m : ℚ_[p])‖ = (p : ℝ) ^ (-(padicValNat p m : ℤ)) := by
+  rw [Padic.norm_eq_zpow_neg_valuation (by exact_mod_cast hm), Padic.valuation_natCast]
 
 end Padic
 

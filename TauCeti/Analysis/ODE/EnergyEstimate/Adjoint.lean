@@ -70,7 +70,7 @@ theorem integral_inner_deriv_add_apply_eq_integral_inner_neg_deriv_add_apply
 
 /-- The hypotheses of the forward trajectory estimates on the coefficient family `A` transfer to
 the negated family `-A`. -/
-private theorem neg_trajectory_hypotheses
+theorem neg_trajectory_hypotheses
     (hA : ContDiff ℝ 1 A) (hsym : ∀ s, (A s).toLinearMap.IsSymmetric)
     {Aminus Aplus : E →L[ℝ] E} {α : ℝ}
     (hminus : ∀ w, α * ‖w‖ ≤ ‖Aminus w‖) (hplus : ∀ w, α * ‖w‖ ≤ ‖Aplus w‖)

@@ -7,7 +7,10 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.Analytic
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Positive
+import Mathlib.Analysis.CStarAlgebra.ApproximateUnit
+import Mathlib.Analysis.Complex.Liouville
 import Mathlib.Analysis.Complex.PhragmenLindelof
+import TauCeti.Analysis.CStarAlgebra.Action.GaussianSmearing
 import TauCeti.Analysis.Complex.Conformal.Reflection.Principle
 
 /-!
@@ -37,10 +40,18 @@ entire analytic, the analytic form characterizes β-KMS states,
 `isKMSState_iff_of_forall_isEntireAnalytic`. For the trivial action this shows that the β-KMS
 states are the tracial states for every `β`.
 
+For `β ≠ 0` every β-KMS state is invariant under the dynamics, `IsKMSState.apply_action`.
+Replacing `a` by an approximate unit in the analytic KMS identity gives `ω (α_{iβ}(b)) = ω b`
+for entire analytic `b`, so `z ↦ ω (α_z(b))` is an entire function with period `iβ`. It is
+bounded on a strip, hence on `ℂ`, and therefore constant by Liouville's theorem,
+`IsKMSState.apply_entireExtension`. Invariance on all of `A` follows by density of the entire
+analytic elements. No identity element is needed.
+
 ## References
 
 Bratteli--Robinson, *Operator Algebras and Quantum Statistical Mechanics 2*, second edition,
-Definition 5.3.1 and Proposition 5.3.7, for the strip and analytic forms of the KMS condition.
+Definition 5.3.1 and Proposition 5.3.7, for the strip and analytic forms of the KMS condition,
+and Proposition 5.3.3 for the invariance of KMS states.
 -/
 
 public section
@@ -215,5 +226,56 @@ theorem isKMSState_trivial_iff :
     (trivial : CStarAction _ A).IsKMSState β ω ↔
       ‖(ω : A →L[ℂ] ℂ)‖ = 1 ∧ ∀ a b, ω (a * b) = ω (b * a) := by
   simp [isKMSState_iff_of_forall_isEntireAnalytic isEntireAnalytic_trivial]
+
+/-! ### Invariance of KMS states -/
+
+/-- For a β-KMS state `ω` and an entire analytic `b`, `ω (α_{iβ}(b)) = ω b`: the analytic KMS
+identity with the first factor running through an approximate unit. -/
+private theorem IsKMSState.apply_entireExtension_mul_I (hω : α.IsKMSState β ω)
+    (hb : α.IsEntireAnalytic b) : ω (α.entireExtension b (β * I)) = ω b := by
+  have hl := (CStarAlgebra.increasingApproximateUnit A).toIsApproximateUnit
+  have hω' := map_continuous ω
+  refine tendsto_nhds_unique (hω'.continuousAt.tendsto.comp (hl.tendsto_mul_right _))
+    ((hω'.continuousAt.tendsto.comp (hl.tendsto_mul_left b)).congr fun e => ?_)
+  exact (hω.apply_mul_entireExtension_mul_I e hb).symm
+
+/-- **KMS states are invariant on entire analytic elements.** For `β ≠ 0`, a β-KMS state `ω`
+satisfies `ω (α_z(b)) = ω b` for every entire analytic `b` and every complex time `z`. -/
+theorem IsKMSState.apply_entireExtension (hω : α.IsKMSState β ω) (hβ : β ≠ 0)
+    (hb : α.IsEntireAnalytic b) (z : ℂ) : ω (α.entireExtension b z) = ω b := by
+  set g : ℂ → ℂ := fun z => ω (α.entireExtension b z) with hg_def
+  have hg : Differentiable ℂ g := (ω : A →L[ℂ] ℂ).differentiable.comp
+    hb.differentiable_entireExtension
+  -- `g` has period `iβ`, so along each vertical line it has the real period `|β|`
+  have hper : Function.Periodic g (β * I) := fun z => by
+    simp only [hg_def, ← hb.entireExtension_entireExtension]
+    exact hω.apply_entireExtension_mul_I (hb.isEntireAnalytic_entireExtension z)
+  have hvert (x : ℝ) : Function.Periodic (fun y : ℝ => g (x + y * I)) |β| := by
+    have hβper : Function.Periodic (fun y : ℝ => g (x + y * I)) β := fun y => by
+      simpa [add_mul, add_assoc] using hper (x + y * I)
+    rcases abs_choice β with h | h <;> rw [h]
+    exacts [hβper, hβper.neg]
+  -- hence the range of `g` is its image of the strip `0 ≤ im z ≤ |β|`, which is bounded
+  have hrange : Bornology.IsBounded (Set.range g) := by
+    refine ((ω : A →L[ℂ] ℂ).lipschitzWith.isBounded_image (hb.isBounded_image_im_preimage
+      (Metric.isBounded_Icc 0 |β|))).subset ?_
+    rintro _ ⟨z, rfl⟩
+    obtain ⟨y, hy, hzy⟩ := (hvert z.re).exists_mem_Ico₀ (abs_pos.mpr hβ) z.im
+    refine ⟨α.entireExtension b (z.re + y * I), ⟨_, by simpa using Ico_subset_Icc_self hy, rfl⟩,
+      ?_⟩
+    simpa [hg_def, re_add_im] using hzy.symm
+  simpa [hg_def, hb.entireExtension_apply_zero] using hg.apply_eq_apply_of_bounded hrange z 0
+
+/-- **KMS states are invariant.** For `β ≠ 0`, every β-KMS state `ω` is invariant under the
+dynamics: `ω (α_t(a)) = ω a`. At `β = 0` the KMS states are the tracial states, which need not
+be invariant. -/
+theorem IsKMSState.apply_action (hω : α.IsKMSState β ω) (hβ : β ≠ 0) (t : Multiplicative ℝ)
+    (a : A) : ω (α t a) = ω a := by
+  refine congrFun (Continuous.ext_on α.dense_entireAnalytic (f := fun a => ω (α t a))
+    ((map_continuous ω).comp (α.continuous_apply continuous_const continuous_id))
+    (map_continuous ω) fun b hb => ?_) a
+  have hb := mem_entireAnalytic.mp hb
+  have := hω.apply_entireExtension hβ hb (Multiplicative.toAdd t : ℝ)
+  rwa [hb.entireExtension_ofReal, ofAdd_toAdd] at this
 
 end TauCeti.CStarAction
