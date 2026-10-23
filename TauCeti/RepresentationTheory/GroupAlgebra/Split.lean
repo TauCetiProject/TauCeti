@@ -49,7 +49,8 @@ variable (k : Type u) (G : Type v) [Field k] [Group G] [Finite G]
 /-- Scalar Schur for finite-dimensional representations is equivalent to the
 one-dimensionality of the endomorphism algebras of simple left ideals of the group
 algebra, when the group order is invertible in the coefficient field. -/
-theorem forall_finrank_end_eq_one_iff_ideal (hG : IsUnit (Nat.card G : k)) :
+theorem forall_finrank_end_eq_one_iff_forall_ideal_finrank_end_eq_one
+    (hG : IsUnit (Nat.card G : k)) :
     (∀ V : FDRep k G, Simple V → Module.finrank k (V ⟶ V) = 1) ↔
       ∀ S : Ideal k[G], IsSimpleModule k[G] S →
         Module.finrank k (Module.End k[G] S) = 1 := by
@@ -94,6 +95,6 @@ theorem nonempty_splitWedderburnAlgebraPresentation_of_scalarSchur
     Nonempty (SplitWedderburnAlgebraPresentation k k[G]) := by
   have : NeZero (Nat.card G : k) := ⟨hG.ne_zero⟩
   exact IsSemisimpleRing.nonempty_splitWedderburnAlgebraPresentation_of_finrank_end_eq_one k k[G]
-    ((forall_finrank_end_eq_one_iff_ideal k G hG).mp hSplitG)
+    ((forall_finrank_end_eq_one_iff_forall_ideal_finrank_end_eq_one k G hG).mp hSplitG)
 
 end TauCeti
