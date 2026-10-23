@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.Ideal.AssociatedPrime.Localization
 public import Mathlib.RingTheory.KrullDimension.Regular
 public import Mathlib.RingTheory.Regular.Category
 public import TauCeti.RingTheory.Ideal.AssociatedPrime.Basic
+public import TauCeti.RingTheory.Ideal.AssociatedPrime.Localization
 public import TauCeti.RingTheory.KrullDimension.Quotient
 public import TauCeti.RingTheory.Regular.LinearMap
 
@@ -41,9 +42,10 @@ The regular-sequence transfer lemmas for linear maps live in
   `IsLocalRing.depth_eq_zero_iff_maximalIdeal_mem_associatedPrimes`: the depth vanishes exactly
   when the residue field maps nontrivially to the module, that is, when the maximal ideal is an
   associated prime.
-* `TauCeti.maximalIdeal_mem_associatedPrimes_localizedModule_iff` and
-  `TauCeti.depth_localizedModule_eq_zero_iff`: the maximal ideal of `R_p` is associated to `M_p`,
-  equivalently `M_p` has depth zero, exactly when `p` is an associated prime of `M`.
+* `TauCeti.depth_localizedModule_eq_zero_iff`: `M_p` has depth zero exactly when `p` is an
+  associated prime of `M`; this combines the depth-zero criterion with
+  `TauCeti.maximalIdeal_mem_associatedPrimes_localizedModule_iff` from
+  `TauCeti.RingTheory.Ideal.AssociatedPrime.Localization`.
 
 The two quotient-depth results, together with Mathlib's
 `Module.supportDim_add_length_eq_supportDim_of_isRegular`, make Cohen–Macaulayness stable under
@@ -247,18 +249,6 @@ namespace TauCeti
 variable {R : Type u} [CommRing R] [IsNoetherianRing R] {M : Type v} [AddCommGroup M] [Module R M]
 
 open Module
-
-/-- For a module `M` over a Noetherian ring `R` and a prime `p`, the maximal ideal of `R_p` is an
-associated prime of `M_p` exactly when `p` is an associated prime of `M`. This upgrades Mathlib's
-`Module.associatedPrimes.mem_associatedPrimes_atPrime_of_mem_associatedPrimes` to an iff. -/
-theorem maximalIdeal_mem_associatedPrimes_localizedModule_iff {p : Ideal R} [p.IsPrime] :
-    maximalIdeal (Localization.AtPrime p) ∈
-        associatedPrimes (Localization.AtPrime p) (LocalizedModule p.primeCompl M) ↔
-      p ∈ associatedPrimes R M := by
-  refine ⟨fun h ↦ ?_, associatedPrimes.mem_associatedPrimes_atPrime_of_mem_associatedPrimes⟩
-  simpa [← Ideal.under_def, Localization.AtPrime.under_maximalIdeal] using
-    associatedPrimes.comap_mem_associatedPrimes_of_mem_associatedPrimes_of_isLocalizedModule_of_fg
-      p.primeCompl (LocalizedModule.mkLinearMap p.primeCompl M) _ h (IsNoetherian.noetherian _)
 
 /-- For a module `M` over a Noetherian ring `R` and a prime `p`, the localization `M_p` has depth
 zero over `R_p` exactly when `p` is an associated prime of `M`. -/
