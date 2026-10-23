@@ -8,8 +8,9 @@ module
 public import Mathlib.RingTheory.KrullDimension.Basic
 public import TauCeti.RingTheory.Japanese
 
-import Mathlib.AlgebraicGeometry.Noetherian
 import Mathlib.RingTheory.Finiteness.Quotient
+import Mathlib.RingTheory.Localization.Finiteness
+import Mathlib.RingTheory.Localization.Submodule
 
 /-!
 # Nagata rings
@@ -141,11 +142,8 @@ and the localization `R_f` is Nagata for every `f ∈ t`, then `R` is Nagata. St
 Lemma 10.162.7 (032V). -/
 theorem of_span_eq_top {t : Set R} (ht : Ideal.span t = ⊤)
     (H : ∀ f ∈ t, IsNagata (Localization.Away f)) : IsNagata R where
-  toIsNoetherian := by
-    obtain ⟨t', ht't, ht'⟩ := (Ideal.span_eq_top_iff_finite t).mp ht
-    exact AlgebraicGeometry.isNoetherianRing_of_away t' ht' fun f ↦
-      have := H f (ht't f.2)
-      inferInstance
+  toIsNoetherian :=
+    ⟨fun I ↦ Ideal.fg_of_localizationSpan t ht fun g ↦ (H g g.2).toIsNoetherian.noetherian _⟩
   -- The images of `t` generate the unit ideal of `R ⧸ p`, and for `f ∉ p` the localization of
   -- `R ⧸ p` away from `f` is a quotient of the Nagata ring `R_f`.
   isJapanese_quotient p _ := by
