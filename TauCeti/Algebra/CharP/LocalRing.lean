@@ -13,12 +13,15 @@ public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 
 A natural number is invertible in a commutative local ring exactly when the characteristic of the
 residue field does not divide it, since an element of a local ring is a unit exactly when its
-residue is nonzero.
+residue is nonzero. Equivalently, it lies in the maximal ideal exactly when the residue
+characteristic divides it.
 
 ## Main results
 
 * `IsLocalRing.isUnit_natCast_iff_not_dvd`: `n` is a unit of a local ring `R` exactly when
   the residue characteristic of `R` does not divide `n`.
+* `IsLocalRing.natCast_mem_maximalIdeal_iff_dvd`: `n` lies in the maximal ideal of a local ring
+  `R` exactly when the residue characteristic of `R` divides `n`.
 -/
 
 public section
@@ -32,5 +35,13 @@ theorem _root_.IsLocalRing.isUnit_natCast_iff_not_dvd {R : Type*} [CommRing R] [
     {n : ℕ} :
     IsUnit (n : R) ↔ ¬ ringChar (IsLocalRing.ResidueField R) ∣ n := by
   rw [← IsLocalRing.residue_ne_zero_iff_isUnit, map_natCast, ne_eq, ← ringChar.spec]
+
+/-- A natural number lies in the maximal ideal of a commutative local ring exactly when the
+residue characteristic divides it. -/
+theorem _root_.IsLocalRing.natCast_mem_maximalIdeal_iff_dvd {R : Type*} [CommRing R]
+    [IsLocalRing R] {n : ℕ} :
+    (n : R) ∈ IsLocalRing.maximalIdeal R ↔ ringChar (IsLocalRing.ResidueField R) ∣ n := by
+  rw [IsLocalRing.mem_maximalIdeal, mem_nonunits_iff, IsLocalRing.isUnit_natCast_iff_not_dvd,
+    not_not]
 
 end TauCeti
