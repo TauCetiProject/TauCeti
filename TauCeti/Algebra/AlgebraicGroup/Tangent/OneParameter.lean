@@ -85,7 +85,7 @@ theorem mapValue_expPointAt {B C : Type*} [CommRing B] [CommRing C]
   exact (AlgHom.congr_fun (Polynomial.aeval_algHom f t) (expPointPolynomial d hd h)).symm
 
 /-- Over the base ring the exponential curve is the counit of the polynomial flow. -/
-theorem expPointAt_apply_self (t : R) (h : H) :
+theorem expPointAt_apply_eq_counit_taylorExpAt (t : R) (h : H) :
     expPointAt d hd t h =
       Coalgebra.counit (R := R) ((leftInvariantDerivation d).taylorExpAt hd t h) := by
   simpa [expPointPolynomial, Derivation.taylorExpAt_apply] using
@@ -107,7 +107,7 @@ theorem expPointAt_zero {B : Type*} [CommRing B] [Algebra R B] :
 theorem expPointAt_one : expPointAt d hd (1 : R) = WithConv.toConv (expPoint d hd) := by
   apply WithConv.ext
   ext h
-  rw [expPointAt_apply_self, expPoint_apply, Derivation.taylorExpAt_one]
+  rw [expPointAt_apply_eq_counit_taylorExpAt, expPoint_apply, Derivation.taylorExpAt_one]
 
 /-- The polynomial flow of an invariant vector field is translation by its
 exponential curve. -/
@@ -122,7 +122,7 @@ theorem taylorExpAt_leftInvariantDerivation_apply (t : R) (h : H) :
   have he : expPointAt d hd t = WithConv.toConv (expPoint (t • d) ht) := by
     apply WithConv.ext
     ext x
-    rw [expPointAt_apply_self, expPoint_apply]
+    rw [expPointAt_apply_eq_counit_taylorExpAt, expPoint_apply]
     simp only [hsmul]
     rw [Derivation.taylorExpAt_eq_taylorExp_smul]
   rw [he, Derivation.taylorExpAt_eq_taylorExp_smul]
