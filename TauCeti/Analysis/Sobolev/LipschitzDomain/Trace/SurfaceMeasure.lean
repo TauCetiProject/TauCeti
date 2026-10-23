@@ -11,10 +11,11 @@ public import TauCeti.Analysis.Sobolev.LipschitzDomain.Trace.Basic
 /-!
 # Local Sobolev traces and surface measure
 
-The localized Sobolev trace in a Lipschitz boundary chart is constructed as an `L²` function on
-the tangential parameter space. Surface measure on the chart graph and tangential Lebesgue measure
-have the same null sets. Consequently, the chart trace can also be read almost everywhere on the
-frontier by evaluating it at the tangential coordinate of each boundary point.
+For `1 ≤ p < ∞`, the localized Sobolev trace in a Lipschitz boundary chart is constructed as an
+`Lᵖ` function on the tangential parameter space. Surface measure on the chart graph and
+tangential Lebesgue measure have the same null sets. Consequently, the chart trace can also be
+read almost everywhere on the frontier by evaluating it at the tangential coordinate of each
+boundary point.
 
 For a Sobolev function represented by a function continuous up to the boundary, this
 surface-measure interpretation agrees almost everywhere with the classical boundary value of the
@@ -46,30 +47,31 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
   {Omega : Opens (WithLp 2 (ℝ × E))} {L : ℝ≥0}
   {e : WithLp 2 (ℝ × E) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)} {phi : E → ℝ} {a b : ℝ}
-  {psi : WithLp 2 (ℝ × E) → ℝ} {M : ℝ}
+  {psi : WithLp 2 (ℝ × E) → ℝ} {M : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
-/-- **The local trace agrees with classical boundary values in surface measure.** If
-`u ∈ H¹(Ω)` agrees almost everywhere with a function `f` continuous on `closure Ω`, then the
-localized trace through a Lipschitz boundary chart, read at the tangential coordinate of a
-boundary point, equals `ψ * f` almost everywhere on the part of the frontier in that chart. -/
-theorem W1p.lipschitzChartTrace_comp_snd_ae_of_continuousOn
+/-- **The local trace agrees with classical boundary values in surface measure.** Let
+`1 ≤ p < ∞`. If `u ∈ W^{1,p}(Ω)` agrees almost everywhere with a function `f` continuous on
+`closure Ω`, then the localized trace through a Lipschitz boundary chart, read at the tangential
+coordinate of a boundary point, equals `ψ * f` almost everywhere on the part of the frontier in
+that chart. -/
+theorem W1p.lipschitzChartTrace_comp_snd_ae_of_continuousOn (hp : p ≠ (∞ : ℝ≥0∞))
     (h : (Omega : Set (WithLp 2 (ℝ × E))).IsLipschitzChartWith L e phi a b)
     (hpsi : ContDiff ℝ ∞ psi) (hM : 0 ≤ M)
     (hpsiM : ∀ x ∈ Omega, |psi x| ≤ M) (hgM : ∀ x ∈ Omega, ‖∇ psi x‖ ≤ M)
-    (hs : tsupport psi ⊆ e ⁻¹' normalCylinder a b) {u : W1p volume Omega 2}
+    (hs : tsupport psi ⊆ e ⁻¹' normalCylinder a b) {u : W1p volume Omega p}
     {f : WithLp 2 (ℝ × E) → ℝ}
     (hf : ContinuousOn f (closure (Omega : Set (WithLp 2 (ℝ × E)))))
     (hu : W1p.value u =ᵐ[volume.restrict (Omega : Set (WithLp 2 (ℝ × E)))] f) :
     ∀ᵐ x ∂(μHE[finrank ℝ E] : Measure (WithLp 2 (ℝ × E))).restrict
         (frontier (Omega : Set (WithLp 2 (ℝ × E))) ∩ e ⁻¹' normalCylinder a b),
-      W1p.lipschitzChartTrace h psi hpsi hM hpsiM hgM hs u (e x).snd = psi x * f x := by
+      W1p.lipschitzChartTrace hp h psi hpsi hM hpsiM hgM hs u (e x).snd = psi x * f x := by
   let bad : Set E := {y |
-    W1p.lipschitzChartTrace h psi hpsi hM hpsiM hgM hs u y ≠
+    W1p.lipschitzChartTrace hp h psi hpsi hM hpsiM hgM hs u y ≠
       psi (e.symm (normalGraphEmbedding phi y)) * f (e.symm (normalGraphEmbedding phi y))}
   have hparameter : volume bad = 0 := by
     rw [← ae_iff]
     simpa only [bad, mem_ofPred_eq, not_not] using
-      W1p.lipschitzChartTrace_apply_ae_of_continuousOn h hpsi hM hpsiM hgM hs hf hu
+      W1p.lipschitzChartTrace_apply_ae_of_continuousOn hp h hpsi hM hpsiM hgM hs hf hu
   have hsurface :
       μHE[finrank ℝ E]
           ((fun y ↦ e.symm (normalGraphEmbedding phi y)) '' bad) = 0 :=
