@@ -39,7 +39,7 @@ distributions whose derivatives all vanish.
   from `Ω'` to a larger open set `Ω`.
 * `TestFunction.extDerivCLM_postcompCLM_toSpanSingleton_curryLeft`: the top-degree formula
   `d (g • ι_y α) = ∂_y g • α`.
-* `TestFunction.lineDerivOp_comp_postcompCLM_toSpanSingleton_eq_zero`: a functional on top-degree
+* `TestFunction.map_postcompCLM_toSpanSingleton_lineDerivOp_eq_zero`: a functional on top-degree
   test forms annihilating exact forms induces scalar distributions with vanishing derivatives.
 
 ## References
@@ -147,9 +147,11 @@ theorem extDerivCLM_postcompCLM_toSpanSingleton_curryLeft [FiniteDimensional ℝ
   have hd : fderiv ℝ (fun z ↦ g z • α.curryLeft y) x =
       (fderiv ℝ (g : E → ℝ) x).smulRight (α.curryLeft y) :=
     (hg.hasFDerivAt.smul_const (α.curryLeft y)).fderiv
+  have hfun : (ContinuousLinearMap.toSpanSingleton ℝ (α.curryLeft y)) ∘ (g : E → ℝ) =
+      fun z ↦ g z • α.curryLeft y :=
+    funext fun z ↦ ContinuousLinearMap.toSpanSingleton_apply ℝ (α.curryLeft y) (g z)
   simp only [extDerivCLM_apply, postcompCLM_apply, extDeriv]
-  rw [show ((ContinuousLinearMap.toSpanSingleton ℝ (α.curryLeft y)) ∘ (g : E → ℝ)) =
-      fun z ↦ g z • α.curryLeft y from rfl, hd, hcartan]
+  rw [hfun, hd, hcartan]
   simp [L, lineDerivOp_eq_lineDerivCLM ℝ, hg.lineDeriv_eq_fderiv]
 
 /-- A continuous linear functional `T` on test `(k + 1)`-forms, `dim E ≤ k + 1`, that annihilates
