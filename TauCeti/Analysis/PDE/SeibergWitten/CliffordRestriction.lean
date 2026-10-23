@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Trace.Free
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector.Action
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Chirality
+-- Private: the trace of a restriction is used only inside a proof.
+import Mathlib.LinearAlgebra.PID
 
 /-!
 # The Clifford map from self-dual two-forms to trace-free endomorphisms of `W⁺`
@@ -17,7 +19,7 @@ finite-dimensional complex inner product space carrying a real algebra map
 `ρ : CliffordAlgebra Q → End_ℂ W` whose generators act skew-adjointly, `c(v)* = -c(v)`: a
 Hermitian Clifford module, such as the spinors of a `Spinᶜ` structure. The chirality element `Γ`
 (`CliffordAlgebra.chirality`) splits off the positive half-spinors `W⁺ = {ψ | Γ ψ = ψ}`
-(`TauCeti.SeibergWitten.positiveHalfSpinors`), and two-forms preserve `W⁺` because they commute
+(`CliffordAlgebra.positiveHalfSpinors`), and two-forms preserve `W⁺` because they commute
 with `Γ`.
 
 The **Clifford map** sends an imaginary two-form `iα`, `α ∈ ⋀² V`, to the endomorphism
@@ -35,8 +37,6 @@ spinor.
 
 ## Main definitions
 
-* `TauCeti.SeibergWitten.positiveHalfSpinors o ρ`: the positive half-spinors `W⁺`, the `+1`
-  eigenspace of `Γ`.
 * `TauCeti.SeibergWitten.cliffordRestriction o ρ hQ`: the real-linear map `α ↦ C(iα) = i c₂(α)`
   from two-forms to endomorphisms of `W⁺`.
 * `TauCeti.SeibergWitten.cliffordRestrictionEquiv`: in complex dimension two, the restriction of
@@ -74,7 +74,7 @@ namespace TauCeti.SeibergWitten
 open CliffordAlgebra Module
 open scoped RealInnerProductSpace InnerProductSpace
 
-/-! ### The positive half-spinors and the Clifford map -/
+/-! ### The Clifford map -/
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Fact (finrank ℝ V = 4)]
   {Q : QuadraticForm ℝ V} (o : Orientation ℝ V (Fin 4))
@@ -83,22 +83,6 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Fact (fin
 
 /-- The dimension `Fact` makes the oriented four-space finite-dimensional. -/
 local instance : FiniteDimensional ℝ V := .of_fact_finrank_eq_succ 3
-
-/-- The positive half-spinors `W⁺ = {ψ | Γ ψ = ψ}` of a Clifford module `W`. -/
-def positiveHalfSpinors : Submodule ℂ W :=
-  Module.End.eigenspace (ρ (chirality Q o)) 1
-
-variable {o ρ} in
-/-- A vector is a positive half-spinor exactly when `Γ ψ = ψ`. -/
-@[simp]
-theorem mem_positiveHalfSpinors {ψ : W} :
-    ψ ∈ positiveHalfSpinors o ρ ↔ ρ (chirality Q o) ψ = ψ := by
-  simp [positiveHalfSpinors]
-
-/-- Clifford elements commuting with `Γ`, such as two-forms, preserve `W⁺`. -/
-theorem mapsTo_positiveHalfSpinors {a : CliffordAlgebra Q} (ha : Commute (chirality Q o) a) :
-    ∀ ψ ∈ positiveHalfSpinors o ρ, ρ a ψ ∈ positiveHalfSpinors o ρ := fun _ hψ ↦
-  Module.End.mapsTo_genEigenspace_of_comm (ha.map ρ) 1 1 hψ
 
 variable (hQ : ∀ v, Q v = -‖v‖ ^ 2)
 
@@ -192,14 +176,13 @@ private theorem trace_restrictBivector (hkl : 2 + 2 = finrank ℝ V) (x : ⋀[�
     simp [ha, ← mul_assoc, mul_add, chirality_mul_self o hQ, add_comm]
   have hmem (w : W) : ρ a w ∈ positiveHalfSpinors o ρ := by
     rw [mem_positiveHalfSpinors, ← Module.End.mul_apply, ← map_mul, hΓ]
-  have hcomp : restrictBivector o ρ hQ x =
-      (ρ a).codRestrict (positiveHalfSpinors o ρ) hmem ∘ₗ (positiveHalfSpinors o ρ).subtype := by
+  have hres : restrictBivector o ρ hQ x = (ρ a).restrict (fun w _ ↦ hmem w) := by
     ext ψ
     have hψ := mem_positiveHalfSpinors.1 ψ.2
     simp [coe_restrictBivector_apply, ha, add_mul, (commute_chirality_bivectorExterior o hQ x).eq,
       hψ]
     module
-  rw [hcomp, LinearMap.trace_comp_comm', LinearMap.subtype_comp_codRestrict]
+  rw [hres, LinearMap.trace_restrict_eq_of_forall_mem _ (ρ a) hmem]
   simp [a, trace_map_bivectorExterior]
 
 /-- **`C(iα)` is trace free** on `W⁺`. -/

@@ -12,9 +12,11 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector.Basic
 /-!
 # Two-forms acting on a Clifford module
 
-Let `Q` be a real quadratic form on `M` and `W` a complex vector space carrying a real algebra map
-`ρ : CliffordAlgebra Q → End_ℂ W`. Two-forms `α ∈ ⋀² M` act on `W` through the bivector map
-`c₂ = CliffordAlgebra.bivectorExterior Q`. This file records two basic facts about this action.
+Let `Q` be a quadratic form on `M` over a commutative ring `R` in which `2` is invertible, and `W` a
+module over a commutative `R`-algebra `S` carrying an `R`-algebra map
+`ρ : CliffordAlgebra Q → End_S W`. Two-forms `α ∈ ⋀² M` act on `W` through the bivector map
+`c₂ = CliffordAlgebra.bivectorExterior Q`. This file records two basic facts about this action,
+the second for real `Q` acting on a complex inner product space.
 
 ## Main results
 
@@ -32,23 +34,24 @@ public section
 
 namespace CliffordAlgebra
 
-variable {M : Type*} [AddCommGroup M] [Module ℝ M] {Q : QuadraticForm ℝ M}
-
 section Trace
 
-variable {W : Type*} [AddCommGroup W] [Module ℂ W] (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W)
+variable {R M : Type*} [CommRing R] [Invertible (2 : R)] [AddCommGroup M] [Module R M]
+  {Q : QuadraticForm R M} {S W : Type*} [CommRing S] [Algebra R S] [AddCommGroup W] [Module S W]
+  [Module R W] [IsScalarTower R S W] (ρ : CliffordAlgebra Q →ₐ[R] Module.End S W)
 
 /-- Two-forms act trace-freely on every Clifford module: `tr c₂(α) = 0`. -/
-theorem trace_map_bivectorExterior (x : ⋀[ℝ]^2 M) :
-    LinearMap.trace ℂ W (ρ (bivectorExterior Q x)) = 0 := by
+theorem trace_map_bivectorExterior (x : ⋀[R]^2 M) :
+    LinearMap.trace S W (ρ (bivectorExterior Q x)) = 0 := by
   refine bivectorExterior_range_le_of_bivector_mem Q
-    (LinearMap.ker ((LinearMap.trace ℂ W).restrictScalars ℝ ∘ₗ ρ.toLinearMap)) (fun a b ↦ ?_)
+    (LinearMap.ker ((LinearMap.trace S W).restrictScalars R ∘ₗ ρ.toLinearMap)) (fun a b ↦ ?_)
     ⟨x, rfl⟩
-  simp [bivector_def, LinearMap.trace_mul_comm ℂ (ρ (ι Q a))]
+  simp [bivector_def, LinearMap.trace_mul_comm S (ρ (ι Q a))]
 
 end Trace
 
-variable {W : Type*} [NormedAddCommGroup W] [InnerProductSpace ℂ W] [FiniteDimensional ℂ W]
+variable {M : Type*} [AddCommGroup M] [Module ℝ M] {Q : QuadraticForm ℝ M}
+  {W : Type*} [NormedAddCommGroup W] [InnerProductSpace ℂ W] [FiniteDimensional ℂ W]
   {ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W}
 
 /-- If the generators act skew-adjointly, `c(v)* = -c(v)`, then so do two-forms:
