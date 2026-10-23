@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.Polynomial.Derivation
 public import Mathlib.Algebra.Polynomial.Reverse
 import Mathlib.Algebra.Polynomial.Eval.Degree
-import TauCeti.Algebra.Polynomial.Eval.AlgebraMap
 
 /-!
 # Polynomial derivatives
