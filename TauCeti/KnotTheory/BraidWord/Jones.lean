@@ -24,8 +24,10 @@ the Temperley–Lieb algebra by the Jones representation and takes the writhe-no
 trace of the braid `w` represents is `δ` times the normalized bracket of the closure of `w`, where
 `δ = -(A² + A⁻²)` is the loop value (`TauCeti.BraidWord.jonesTrace_toBraid`). The factor `δ` is
 the difference of normalizations: the bracket gives the unknot the value `1`, the Markov trace the
-value `δ`. Equivalently, the Jones polynomial of the closure at `t ^ (1/2) = A⁻²` is the trace
-divided by `δ` (`TauCeti.BraidWord.jonesTrace_toBraid_eq_eval₂_jonesPolynomial`).
+value `δ`. In terms of the Jones polynomial, the trace is `δ` times the Jones polynomial of the
+closure evaluated at `t ^ (1/2) = A⁻²`
+(`TauCeti.BraidWord.jonesTrace_toBraid_eq_eval₂_jonesPolynomial`); only when `δ` is invertible
+does this say that the evaluated Jones polynomial is the trace divided by `δ`.
 
 The proof is the uniqueness of skein invariants, `TauCeti.MarkovBraid.eq_of_skein`. Both sides are
 Markov invariants. The trace is one by `TauCeti.MarkovEquiv.jonesTrace_eq`; the bracket of the

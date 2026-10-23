@@ -9,6 +9,7 @@ public import TauCeti.KnotTheory.BraidWord.PDCode
 public import TauCeti.KnotTheory.PDCode.Circle
 public import TauCeti.KnotTheory.PDCode.Oriented.Reidemeister.Equivalence
 import TauCeti.Data.List.Rotate
+import TauCeti.KnotTheory.BraidWord.Components
 
 /-!
 # The closure of a braid word with an added uncrossed strand
@@ -158,15 +159,6 @@ theorem closure_strandIncl :
       OrientedPDCode.crossinglessComponents_adjoinCircle]
     rw [← crossinglessComponentCount_closure, ← crossinglessComponentCount_closure, hcount,
       Multiset.replicate_succ]
-
-/-- The closure of a braid word on at least one strand has a component: a crossing-free circle if
-the word is empty, and a component through a crossing otherwise. -/
-theorem componentCount_closure_pos : 0 < w.closure.toPDCode.componentCount := by
-  rcases Nat.eq_zero_or_pos w.length with h | h
-  · obtain rfl := List.length_eq_zero_iff.mp h
-    rw [PDCode.componentCount_eq, crossinglessComponentCount_closure]
-    exact Nat.lt_add_left _ (Finset.card_pos.mpr ⟨0, by simpa using crossingsAt_nil (n := n + 1) 0⟩)
-  · exact PDCode.componentCount_pos _ h.ne'
 
 /-- Adding an uncrossed strand multiplies the normalized Kauffman bracket of the closure by the
 loop value `δ = -(A² + A⁻²)`. -/

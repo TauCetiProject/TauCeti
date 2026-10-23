@@ -311,9 +311,8 @@ theorem jonesTrace_skein (a : Rˣ) (b c : BraidGroup (n + 1)) (i : Fin n) :
       τ ((jones (n + 1) a b * u * jones (n + 1) a c : (TemperleyLieb R (jonesDelta a) (n + 1))ˣ) :
           TemperleyLieb R (jonesDelta a) (n + 1)) =
         x * τ (B * C) + y * τ (B * e (n := n + 1) (jonesDelta a) i * C) := by
-    rw [Units.val_mul, Units.val_mul, hu, crossing_def, mul_add, add_mul, mul_smul_comm,
-      mul_smul_comm, smul_mul_assoc, smul_mul_assoc, mul_one, map_add, map_smul, map_smul,
-      smul_eq_mul, smul_eq_mul]
+    simp only [B, C, Units.val_mul, hu, crossing_def, mul_add, add_mul, mul_smul_comm,
+      smul_mul_assoc, mul_one, map_add, map_smul, smul_eq_mul]
   simp only [jonesTrace_def, map_mul, map_inv, jones_sigma]
   rw [hexp _ _ _ (jonesUnit_val (n := n + 1) a i), hexp _ _ _ (jonesUnit_inv_val (n := n + 1) a i)]
   simp only [BraidGroup.exponentSum_sigma (n := n + 1), toAdd_mul, toAdd_inv, toAdd_ofAdd,

@@ -398,12 +398,6 @@ theorem reconnect_val_val_right : (D.reconnect a b).val (D.val b) = D.val a := b
   rw [reconnect_val, Equiv.permCongr_apply, Equiv.symm_swap,
     Equiv.swap_apply_of_ne_of_ne h (D.apply_ne b), D.apply_apply, Equiv.swap_apply_right]
 
-/-- Joining `a` back to its old partner undoes the reconnection of `a` with `b`. -/
-@[simp]
-theorem reconnect_reconnect_val : (D.reconnect a b).reconnect a (D.val a) = D := by
-  rw [reconnect, reconnect_val_self hba, reconnect, congr_trans, Equiv.swap_comm b,
-    Equiv.swap_swap, congr_refl]
-
 omit hba in
 /-- Reconnecting keeps every arc that does not end at `a` or `b`. -/
 @[simp]
@@ -426,6 +420,15 @@ theorem reconnect_self (D : PerfectMatching α) (a : α) : D.reconnect a a = D :
   · subst x
     simp [reconnect_val]
   exact reconnect_val_of_ne hxa hxa hxa' hxa'
+
+omit hba in
+/-- Joining `a` back to its old partner undoes the reconnection of `a` with `b`. -/
+@[simp]
+theorem reconnect_reconnect_val : (D.reconnect a b).reconnect a (D.val a) = D := by
+  obtain rfl | hba := eq_or_ne b a
+  · rw [reconnect_self, reconnect_partner]
+  rw [reconnect, reconnect_val_self hba, reconnect, congr_trans, Equiv.swap_comm b,
+    Equiv.swap_swap, congr_refl]
 
 end Reconnect
 
