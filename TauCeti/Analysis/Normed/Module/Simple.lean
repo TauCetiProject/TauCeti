@@ -20,7 +20,7 @@ module norm is unique up to equivalence.
 Over the complex numbers every module endomorphism is a scalar. This is the
 scalar-commutant form of Rickart's theorem, used to turn algebraic Jacobson
 density into density over the complex scalars. The finite interpolation theorem
-`LinearIndependent.exists_smul_eq_of_linearIndependent_complex` makes this specialization
+`LinearIndependent.exists_smul_eq_of_completeSpace` makes this specialization
 using the algebraic `LinearIndependent.exists_smul_eq`. Simplicity here is algebraic:
 having no proper closed invariant subspace alone is not the hypothesis.
 
@@ -134,7 +134,8 @@ variable {A E : Type*} [NormedRing A] [NormedAlgebra ℂ A] [CompleteSpace A]
 
 /-- **Rickart's scalar-commutant theorem**: the scalar map from the complex numbers
 to the algebraic endomorphism ring of a simple Banach module is bijective. -/
-theorem algebraMap_end_bijective : Function.Bijective (algebraMap ℂ (Module.End A E)) := by
+theorem algebraMap_end_bijective_of_completeSpace :
+    Function.Bijective (algebraMap ℂ (Module.End A E)) := by
   have := IsSimpleModule.nontrivial A E
   refine ⟨(algebraMap ℂ (Module.End A E)).injective, fun f ↦ ?_⟩
   obtain ⟨c, hc, -⟩ := f.existsUnique_eq_smul_of_isSimpleModule
@@ -151,13 +152,16 @@ variable {A E : Type*} [NormedRing A] [NormedAlgebra ℂ A] [CompleteSpace A]
 
 /-- **Complex Jacobson density**: one algebra element prescribes arbitrary values
 on any finite complex-linearly independent family in a simple Banach module. -/
-theorem exists_smul_eq_of_linearIndependent_complex {ι : Type*} [Finite ι] {v : ι → E}
+theorem exists_smul_eq_of_completeSpace {ι : Type*} [Finite ι] {v : ι → E}
     (hv : LinearIndependent ℂ v) (w : ι → E) :
     ∃ a : A, ∀ i, a • v i = w i := by
-  have hv' : LinearIndependent (Module.End A E) v :=
-    hv.map_of_surjective_injective (algebraMap ℂ (Module.End A E))
-      (AddMonoidHom.id E) IsSimpleModule.algebraMap_end_bijective.surjective
-      (fun _ h ↦ h) (fun _ _ ↦ rfl)
+  have hv' : LinearIndependent (Module.End A E) v := by
+    simpa only [Function.comp_def, AddMonoidHom.id_apply] using
+      hv.map_of_surjective_injective (algebraMap ℂ (Module.End A E))
+        (AddMonoidHom.id E) IsSimpleModule.algebraMap_end_bijective_of_completeSpace.surjective
+        (fun _ h ↦ by simpa only [AddMonoidHom.id_apply] using h)
+        (fun _ _ ↦ by
+          simp only [AddMonoidHom.id_apply, Module.End.smul_def, Module.algebraMap_end_apply])
   exact hv'.exists_smul_eq w
 
 end LinearIndependent
