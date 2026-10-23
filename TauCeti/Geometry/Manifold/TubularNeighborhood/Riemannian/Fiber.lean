@@ -122,24 +122,21 @@ theorem exists_isEmbedding_normalExp_fiber
   have hF : Continuous F :=
     ((Manifold.continuousOn_riemannianExp (I := J) (f x)).comp_continuous
       (continuous_subtype_val.comp continuous_subtype_val) (fun v ↦ v.property.2.1)).subtype_mk _
-  have hcomp : (fun v ↦ hd.localInverse (F v)) =
-      (fun v : U ↦ (v.val : TangentSpace J (f x))) :=
-    funext fun v ↦ hd.localInverse_left_inv v.property.1
+  have hcomp : hd.localInverse.source.domRestrict hd.localInverse ∘ F =
+      (fun v : U ↦ (v.val : TangentSpace J (f x))) := by
+    funext v
+    simp only [Function.comp_apply, Set.domRestrict_apply]
+    exact hd.localInverse_left_inv v.property.1
   have hemb : IsEmbedding F := .of_comp hF
     hd.contMDiffOn_localInverse.continuousOn.domRestrict
     (by
-      change IsEmbedding (fun v ↦ hd.localInverse (F v))
       rw [hcomp]
       exact IsEmbedding.subtypeVal.comp IsEmbedding.subtypeVal)
   refine ⟨U, ⟨hd.localInverse_mem_target, Manifold.zero_mem_expDomain (f x), ?_⟩, ?_, ?_⟩
   · simpa only [mem_preimage, Submodule.coe_zero, Manifold.riemannianExp_zero] using
       hd.localInverse_mem_source
   · intro v hv
-    change v ∈ {v : (f.tangentRange x hn)ᗮ |
-      (⟨x, f.normalClass x hn v⟩ : TotalSpace P (fun y ↦ f.NormalSpace y hn)) ∈
-        f.normalExpDomain hn}
-    rw [normalExpDomain_fiber_eq_preimage]
-    exact hv.2.1
+    exact (Set.ext_iff.mp (normalExpDomain_fiber_eq_preimage (P := P) f hn x) v).mpr hv.2.1
   · simp_rw [normalExp_normalClass_orthogonal]
     exact IsEmbedding.subtypeVal.comp hemb
 
