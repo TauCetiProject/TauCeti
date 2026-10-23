@@ -661,8 +661,7 @@ theorem map_map_homOf {X Y : D} (i : ℤ) (f : ShiftedHom X Y (n * i)) :
       (homOf i (f.map F) : (⟨F.obj X⟩ : OrbitCategory D' n) ⟶ ⟨F.obj Y⟩) := by
   refine (lift_map_homOf _ _ i f).trans ?_
   rw [mapPeriodicity_periodicityZPow_hom_app, homOf_eq_projection_map_comp_shiftIso_hom,
-    ShiftedHom.map, Functor.map_comp, Category.assoc]
-  rfl
+    ShiftedHom.map, Functor.map_comp, Category.assoc, Functor.comp_map]
 
 /-- The induced functor sends a degree-zero piece `f : X ⟶ Y` to the degree-zero piece
 `F.map f`. This is `map_map_projection_map` in the form `simp` sees, since `simp` unfolds the

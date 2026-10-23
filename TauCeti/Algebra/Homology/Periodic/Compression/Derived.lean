@@ -213,6 +213,8 @@ lemma orbitDerivedCompressionFunctorFactors_hom_app (K : HomotopyCategory.Bounde
       (derivedCompressionFunctorFactors n).hom.app K := by
   simp only [orbitDerivedCompressionFunctorFactors, Iso.trans_hom, Iso.symm_hom, NatTrans.comp_app,
     OrbitCategory.mapCompLiftIso_hom_app, OrbitCategory.liftCompIso_inv_app]
+  -- The identity component is typed at the objects of the descents along `map (Qh C)`, which are
+  -- those of `Qh C` only after unfolding `map` and `lift`, so `simp` cannot cancel it.
   exact Category.comp_id _
 
 /-- The inverse component of `orbitDerivedCompressionFunctorFactors` at a bounded homotopy class
@@ -223,6 +225,8 @@ lemma orbitDerivedCompressionFunctorFactors_inv_app (K : HomotopyCategory.Bounde
       (derivedCompressionFunctorFactors n).inv.app K := by
   simp only [orbitDerivedCompressionFunctorFactors, Iso.trans_inv, Iso.symm_inv, NatTrans.comp_app,
     OrbitCategory.mapCompLiftIso_inv_app, OrbitCategory.liftCompIso_hom_app]
+  -- The identity component is typed at the objects of the descents along `map (Qh C)`, which are
+  -- those of `Qh C` only after unfolding `map` and `lift`, so `simp` cannot cancel it.
   exact Category.id_comp _
 
 end Periodicity
