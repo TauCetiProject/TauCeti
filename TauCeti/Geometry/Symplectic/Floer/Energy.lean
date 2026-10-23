@@ -250,39 +250,56 @@ section Integral
 
 variable {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V}
 
-/-- For `C¹` perturbation data, the curvature evaluated along a map continuous on a set is
-continuous on that set. -/
-private theorem continuousOn_hamiltonianCurvature_comp (ω : SymplecticForm V) {s : Set (ℝ × ℝ)}
-    (hu : ContinuousOn u s) (hKs : ContDiff ℝ 1 (uncurry Ks)) (hKt : ContDiff ℝ 1 (uncurry Kt)) :
-    ContinuousOn (fun z ↦ ω.hamiltonianCurvature Ks Kt z (u z)) s := by
-  have hD (K : ℝ × ℝ → V → ℝ) (hK : ContDiff ℝ 1 (uncurry K)) :
-      ContinuousOn (fun z ↦ fderiv ℝ (uncurry K) (z, u z)) s :=
-    (hK.continuous_fderiv one_ne_zero).comp_continuousOn (continuousOn_id.prodMk hu)
+/-- For perturbation data that is `C¹` over an open set `U` of the domain, the curvature evaluated
+along a map continuous on `U` is continuous on `U`. -/
+theorem continuousOn_hamiltonianCurvature_comp (ω : SymplecticForm V) {U : Set (ℝ × ℝ)}
+    (hU : IsOpen U) (hu : ContinuousOn u U) (hKs : ContDiffOn ℝ 1 (uncurry Ks) (U ×ˢ univ))
+    (hKt : ContDiffOn ℝ 1 (uncurry Kt) (U ×ˢ univ)) :
+    ContinuousOn (fun z ↦ ω.hamiltonianCurvature Ks Kt z (u z)) U := by
+  have hmem {z : ℝ × ℝ} (hz : z ∈ U) : (z, u z) ∈ U ×ˢ (univ : Set V) := ⟨hz, mem_univ _⟩
+  have hD (K : ℝ × ℝ → V → ℝ) (hK : ContDiffOn ℝ 1 (uncurry K) (U ×ˢ univ)) :
+      ContinuousOn (fun z ↦ fderiv ℝ (uncurry K) (z, u z)) U :=
+    (hK.continuousOn_fderiv_of_isOpen (hU.prod isOpen_univ) le_rfl).comp
+      (continuousOn_id.prodMk hu) fun _ hz ↦ hmem hz
+  have hdiff (K : ℝ × ℝ → V → ℝ) (hK : ContDiffOn ℝ 1 (uncurry K) (U ×ˢ univ)) {z : ℝ × ℝ}
+      (hz : z ∈ U) : DifferentiableAt ℝ (uncurry K) (z, u z) :=
+    (hK.differentiableOn one_ne_zero _ (hmem hz)).differentiableAt
+      ((hU.prod isOpen_univ).mem_nhds (hmem hz))
   -- The domain and target derivatives of `K` along `u` are restrictions of its joint derivative.
-  have hslice (K : ℝ × ℝ → V → ℝ) (hK : ContDiff ℝ 1 (uncurry K)) (z v : ℝ × ℝ) :
+  have hslice (K : ℝ × ℝ → V → ℝ) (hK : ContDiffOn ℝ 1 (uncurry K) (U ×ˢ univ)) {z : ℝ × ℝ}
+      (hz : z ∈ U) (v : ℝ × ℝ) :
       fderiv ℝ (fun w ↦ K w (u z)) z v = fderiv ℝ (uncurry K) (z, u z) (v, 0) :=
-    congrArg (· v) (fderiv_slice_left (f := uncurry K) ((hK.differentiable one_ne_zero) _))
-  have hX (K : ℝ × ℝ → V → ℝ) (hK : ContDiff ℝ 1 (uncurry K)) :
-      ContinuousOn (fun z ↦ ω.hamiltonianVectorField (K z) (u z)) s := by
-    have h (z : ℝ × ℝ) : fderiv ℝ (K z) (u z) =
-        (fderiv ℝ (uncurry K) (z, u z)).comp (ContinuousLinearMap.inr ℝ (ℝ × ℝ) V) :=
-      fderiv_slice_right (f := uncurry K) ((hK.differentiable one_ne_zero) _)
-    refine ω.continuousOn_hamiltonianVectorField_comp ?_
-    simp only [h]
-    exact (hD K hK).clm_comp continuousOn_const
-  simp only [hamiltonianCurvature_def, poissonBracket_def, hslice Ks hKs, hslice Kt hKt]
-  exact (((hD Kt hKt).clm_apply continuousOn_const).sub
-    ((hD Ks hKs).clm_apply continuousOn_const)).sub <|
-      ω.continuousOn_apply_comp (hX Ks hKs) (hX Kt hKt)
+    congrArg (· v) (fderiv_slice_left (f := uncurry K) (hdiff K hK hz))
+  have hX (K : ℝ × ℝ → V → ℝ) (hK : ContDiffOn ℝ 1 (uncurry K) (U ×ˢ univ)) :
+      ContinuousOn (fun z ↦ ω.hamiltonianVectorField (K z) (u z)) U :=
+    ω.continuousOn_hamiltonianVectorField_comp <|
+      ((hD K hK).clm_comp (continuousOn_const (c := ContinuousLinearMap.inr ℝ (ℝ × ℝ) V))).congr
+        fun _ hz ↦ fderiv_slice_right (f := uncurry K) (hdiff K hK hz)
+  have h : ContinuousOn (fun z ↦ fderiv ℝ (uncurry Kt) (z, u z) (stdComplexLineReal, 0) -
+      fderiv ℝ (uncurry Ks) (z, u z) (stdComplexLineImag, 0) -
+        ω (ω.hamiltonianVectorField (Ks z) (u z)) (ω.hamiltonianVectorField (Kt z) (u z))) U :=
+    (((hD Kt hKt).clm_apply continuousOn_const).sub
+      ((hD Ks hKs).clm_apply continuousOn_const)).sub
+        (ω.continuousOn_apply_comp (hX Ks hKs) (hX Kt hKt))
+  refine h.congr fun z hz ↦ ?_
+  simp only [hamiltonianCurvature_def, poissonBracket_def, hslice Ks hKs hz, hslice Kt hKt hz]
 
-/-- **The energy identity on a rectangle.** For `C¹` perturbation data and a map `u` that is `C¹`
-on an open neighbourhood of a rectangle `[a₁, b₁] × [a₂, b₂]`, the integral of the Floer energy
+/-- For `C¹` perturbation data, the curvature evaluated along a continuous map is continuous. -/
+theorem continuous_hamiltonianCurvature_comp (ω : SymplecticForm V) (hu : Continuous u)
+    (hKs : ContDiff ℝ 1 (uncurry Ks)) (hKt : ContDiff ℝ 1 (uncurry Kt)) :
+    Continuous fun z ↦ ω.hamiltonianCurvature Ks Kt z (u z) :=
+  continuousOn_univ.mp <| ω.continuousOn_hamiltonianCurvature_comp isOpen_univ hu.continuousOn
+    (by simpa using hKs.contDiffOn) (by simpa using hKt.contDiffOn)
+
+/-- **The energy identity on a rectangle.** For a map `u` and perturbation data that are `C¹` over
+an open neighbourhood of a rectangle `[a₁, b₁] × [a₂, b₂]`, the integral of the Floer energy
 density over the rectangle is the symplectic area, plus the integral of the pulled-back one-form
 `K(u) = K_s(u) ds + K_t(u) dt` over the positively oriented boundary, minus the integral of the
 curvature `R_K(u)`. -/
 theorem integral_floerEnergyDensity (ω : SymplecticForm V) {U : Set (ℝ × ℝ)} (hU : IsOpen U)
-    (hu : ContDiffOn ℝ 1 u U) (hKs : ContDiff ℝ 1 (uncurry Ks))
-    (hKt : ContDiff ℝ 1 (uncurry Kt)) {a b : ℝ × ℝ} (hab : a ≤ b) (habU : Icc a b ⊆ U) :
+    (hu : ContDiffOn ℝ 1 u U) (hKs : ContDiffOn ℝ 1 (uncurry Ks) (U ×ˢ univ))
+    (hKt : ContDiffOn ℝ 1 (uncurry Kt) (U ×ˢ univ)) {a b : ℝ × ℝ} (hab : a ≤ b)
+    (habU : Icc a b ⊆ U) :
     ∫ z in Icc a b, ω.floerEnergyDensity Ks Kt u z =
       (∫ z in Icc a b, ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag)) +
         ((∫ s in a.1..b.1, Ks (s, a.2) (u (s, a.2))) + (∫ t in a.2..b.2, Kt (b.1, t) (u (b.1, t))) -
@@ -292,8 +309,13 @@ theorem integral_floerEnergyDensity (ω : SymplecticForm V) {U : Set (ℝ × ℝ
   -- The pulled-back components `K_t(u)` and `-K_s(u)`, to which the divergence theorem applies.
   set f : ℝ × ℝ → ℝ := fun w ↦ Kt w (u w)
   set g : ℝ × ℝ → ℝ := fun w ↦ -Ks w (u w)
-  have hf : ContDiffOn ℝ 1 f U := hKt.comp_contDiffOn (contDiffOn_id.prodMk hu)
-  have hg : ContDiffOn ℝ 1 g U := (hKs.comp_contDiffOn (contDiffOn_id.prodMk hu)).neg
+  have hmem {z : ℝ × ℝ} (hz : z ∈ U) : (z, u z) ∈ U ×ˢ (univ : Set V) := ⟨hz, mem_univ _⟩
+  have hf : ContDiffOn ℝ 1 f U := hKt.comp (contDiffOn_id.prodMk hu) fun _ hz ↦ hmem hz
+  have hg : ContDiffOn ℝ 1 g U := (hKs.comp (contDiffOn_id.prodMk hu) fun _ hz ↦ hmem hz).neg
+  have hKdiff {K : ℝ × ℝ → V → ℝ} (hK : ContDiffOn ℝ 1 (uncurry K) (U ×ˢ univ)) {z : ℝ × ℝ}
+      (hz : z ∈ U) : DifferentiableAt ℝ (uncurry K) (z, u z) :=
+    (hK.differentiableOn one_ne_zero _ (hmem hz)).differentiableAt
+      ((hU.prod isOpen_univ).mem_nhds (hmem hz))
   have hdiff {h : ℝ × ℝ → ℝ} (hh : ContDiffOn ℝ 1 h U) {z : ℝ × ℝ} (hz : z ∈ U) :
       HasFDerivAt h (fderiv ℝ h z) z :=
     ((hh.differentiableOn one_ne_zero z hz).differentiableAt (hU.mem_nhds hz)).hasFDerivAt
@@ -320,8 +342,8 @@ theorem integral_floerEnergyDensity (ω : SymplecticForm V) {U : Set (ℝ × ℝ
     (ω.continuousOn_apply_comp (hdu'.clm_apply continuousOn_const)
       (hdu'.clm_apply continuousOn_const)).integrableOn_compact isCompact_Icc
   have hcurv : IntegrableOn (fun z ↦ ω.hamiltonianCurvature Ks Kt z (u z)) (Icc a b) :=
-    (ω.continuousOn_hamiltonianCurvature_comp (hu.continuousOn.mono habU) hKs
-      hKt).integrableOn_compact isCompact_Icc
+    ((ω.continuousOn_hamiltonianCurvature_comp hU hu.continuousOn hKs hKt).mono
+      habU).integrableOn_compact isCompact_Icc
   calc
     ∫ z in Icc a b, ω.floerEnergyDensity Ks Kt u z =
         ∫ z in Icc a b, (ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag) +
@@ -330,8 +352,7 @@ theorem integral_floerEnergyDensity (ω : SymplecticForm V) {U : Set (ℝ × ℝ
       refine setIntegral_congr_fun measurableSet_Icc fun z hz ↦ ?_
       have hzU := habU hz
       rw [ω.floerEnergyDensity_eq ((hu.differentiableOn one_ne_zero z hzU).differentiableAt
-          (hU.mem_nhds hzU)) ((hKs.differentiable one_ne_zero) (z, u z))
-          ((hKt.differentiable one_ne_zero) (z, u z)), hg', ← sub_eq_add_neg]
+          (hU.mem_nhds hzU)) (hKdiff hKs hzU) (hKdiff hKt hzU), hg', ← sub_eq_add_neg]
     _ = _ := by
       have hsum : IntegrableOn (fun z ↦
           ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag) +
