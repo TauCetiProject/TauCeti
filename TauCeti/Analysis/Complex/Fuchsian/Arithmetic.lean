@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Fuchsian.Compactification.LevelOne
+public import TauCeti.Analysis.Complex.Fuchsian.Cusp.Finite
 public import TauCeti.Analysis.Complex.Fuchsian.Cusp.FiniteIndex
 
 /-!
@@ -118,22 +119,9 @@ theorem cuspOrbitOfSL2Z_eq_iff (γ γ' : SL(2, ℤ)) :
 theorem cuspOrbitOfSL2Z_neg (γ : SL(2, ℤ)) : H.cuspOrbitOfSL2Z (-γ) = H.cuspOrbitOfSL2Z γ :=
   (H.cuspOrbitOfSL2Z_eq_iff _ _).mpr ⟨1, H.one_mem, by simp⟩
 
-/-- Multiplying the representative on the left by an element of `H` does not change the cusp
-orbit. -/
-@[simp]
-theorem cuspOrbitOfSL2Z_mul_left {h : SL(2, ℤ)} (hh : h ∈ H) (γ : SL(2, ℤ)) :
-    H.cuspOrbitOfSL2Z (h * γ) = H.cuspOrbitOfSL2Z γ :=
-  (H.cuspOrbitOfSL2Z_eq_iff _ _).mpr ⟨h, hh, by simp⟩
-
-/-- A finite-index subgroup of `SL(2, ℤ)` has finitely many cusp orbits: the cusp orbit of
-`γ • ∞` depends only on the coset `H γ`, and there are finitely many such cosets. -/
-instance finite_cuspOrbit_map_sl2zToPSL2R : Finite (H.map sl2zToPSL2R).CuspOrbit := by
-  let f : SL(2, ℤ) ⧸ H → (H.map sl2zToPSL2R).CuspOrbit :=
-    Quotient.lift (fun γ ↦ H.cuspOrbitOfSL2Z γ⁻¹) fun γ γ' hγ ↦ by
-      rw [show γ⁻¹ = γ⁻¹ * γ' * γ'⁻¹ by group,
-        H.cuspOrbitOfSL2Z_mul_left (QuotientGroup.leftRel_apply.mp hγ)]
-  refine Finite.of_surjective f fun C ↦ ?_
-  obtain ⟨γ, rfl⟩ := H.cuspOrbitOfSL2Z_surjective C
-  exact ⟨QuotientGroup.mk γ⁻¹, by simp [f]⟩
+/-- A finite-index subgroup of `SL(2, ℤ)` has finitely many cusp orbits, since its image in
+`PSL(2, ℝ)` is cofinite. -/
+instance finite_cuspOrbit_map_sl2zToPSL2R : Finite (H.map sl2zToPSL2R).CuspOrbit :=
+  H.isCofinite_map_sl2zToPSL2R.finite_cuspOrbit
 
 end Subgroup

@@ -46,7 +46,8 @@ theorem _root_.Matrix.SpecialLinearGroup.coe_conj_T_zpow (γ : SL(2, ℤ)) (j : 
 
 /-- An element of `SL₂(ℤ)` with vanishing lower-left entry fixes the cusp `∞`, so it is a
 translation up to sign: `Tᵇ` when its diagonal entries are `1`, and `-T⁻ᵇ` when they are `-1`,
-where `b` is its upper-right entry. -/
+where `b` is its upper-right entry. Adapted from the proof of
+`ModularGroup.exists_eq_T_zpow_of_c_eq_zero` in Mathlib. -/
 theorem ModularGroup.eq_T_zpow_or_eq_neg_T_zpow_of_c_eq_zero {g : SL(2, ℤ)}
     (hc : g 1 0 = 0) :
     g = ModularGroup.T ^ g 0 1 ∨ g = -ModularGroup.T ^ (-g 0 1) := by
