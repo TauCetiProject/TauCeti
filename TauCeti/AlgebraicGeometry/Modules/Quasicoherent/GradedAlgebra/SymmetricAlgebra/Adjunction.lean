@@ -362,7 +362,7 @@ theorem gradedSymmetricAlgebraAdjunction_homEquiv_symm_apply {F : QuasicoherentS
 
 /-- Postcomposing `gradedSymmetricAlgebraLift φ` with a morphism `f` of graded quasicoherent
 algebras extends `φ` followed by the degree-one component of `f`. -/
-@[reassoc (attr := simp)]
+@[simp, reassoc]
 theorem gradedSymmetricAlgebraLift_comp {F : QuasicoherentSheaf X}
     {A B : GradedQuasicoherentAlgebra X} (φ : F ⟶ degreeOne.obj A) (f : A ⟶ B) :
     gradedSymmetricAlgebraLift φ ≫ f = gradedSymmetricAlgebraLift (φ ≫ degreeOne.map f) := by
@@ -372,7 +372,7 @@ theorem gradedSymmetricAlgebraLift_comp {F : QuasicoherentSheaf X}
 
 /-- Precomposing `gradedSymmetricAlgebraLift φ` with the map `Sym F' ⟶ Sym F` induced by a
 morphism `g : F' ⟶ F` extends `g ≫ φ`. -/
-@[reassoc (attr := simp)]
+@[simp, reassoc]
 theorem gradedSymmetricAlgebra_map_comp_lift {F' F : QuasicoherentSheaf X}
     {A : GradedQuasicoherentAlgebra X} (g : F' ⟶ F) (φ : F ⟶ degreeOne.obj A) :
     (gradedSymmetricAlgebra X).map g ≫ gradedSymmetricAlgebraLift φ =
