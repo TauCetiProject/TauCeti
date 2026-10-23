@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Presheaf.Generator
 public import Mathlib.Algebra.Category.ModuleCat.Presheaf.Sheafification
 import Mathlib.Algebra.Category.ModuleCat.Presheaf.EpiMono
+import Mathlib.Algebra.Category.ModuleCat.Sheaf.Abelian
 import TauCeti.Algebra.Category.ModuleCat.Presheaf.FreeYoneda
 
 /-!
@@ -17,9 +18,19 @@ For a sheaf of rings `R`, the sheafification of the free `R`-module presheaf on 
 representable represents sections of module sheaves. A monomorphism of representables
 induces a monomorphism between these free module sheaves. In particular, on the site
 of open subsets, these monomorphisms allow injective module sheaves to extend sections.
+Since morphisms out of these free module sheaves are local sections, and a morphism of
+sheaves of modules is determined by its action on local sections, they form a separating
+(`SheafOfModules.isSeparating_freeYonedaFunctor`) and detecting family of the category of
+sheaves of modules. Their flatness over a sheaf of commutative rings is in
+`TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Flat`.
 
 The construction combines Mathlib's `PresheafOfModules.freeYonedaEquiv` with
-`PresheafOfModules.sheafificationAdjunction`.
+`PresheafOfModules.sheafificationAdjunction`; the separating family is the sheaf analogue of
+Mathlib's `PresheafOfModules.freeYoneda.isSeparating`.
+
+## References
+
+* The Stacks Project, Modules on Sites, Section 18.19 (Tag 03DH).
 -/
 
 public section
@@ -43,6 +54,13 @@ variable [HasWeakSheafify J AddCommGrpCat.{v}]
 /-- The free sheaf of `R`-modules on each representable presheaf. -/
 def freeYonedaFunctor : C ⥤ SheafOfModules.{v} R :=
   yoneda ⋙ PresheafOfModules.free R.obj ⋙ PresheafOfModules.sheafification (𝟙 R.obj)
+
+/-- The free sheaf of `R`-modules on `U` is the sheafification of the free presheaf of modules
+on the presheaf represented by `U`. -/
+lemma freeYonedaFunctor_obj (U : C) :
+    (freeYonedaFunctor R).obj U = (PresheafOfModules.sheafification (𝟙 R.obj)).obj
+      ((PresheafOfModules.free R.obj).obj (yoneda.obj U)) :=
+  (rfl)
 
 /-- A morphism from the free sheaf on `U` to `M` is a section of `M` over `U`. -/
 def freeYonedaEquiv (U : C) (M : SheafOfModules.{v} R) :
@@ -94,6 +112,16 @@ lemma freeYonedaEquiv_naturality {U V : C} (i : U ⟶ V) (M : SheafOfModules.{v}
         (op V)) (ModuleCat.freeMk (𝟙 V))) at hn
   simpa using hn
 
+/-- The free module sheaves on representables form a separating family: two morphisms
+`M ⟶ N` agreeing after precomposition with every morphism out of every `freeYonedaFunctor R`
+object are equal, since such morphisms are exactly the local sections of `M`. -/
+lemma isSeparating_freeYonedaFunctor :
+    ObjectProperty.IsSeparating (.ofObj (freeYonedaFunctor R).obj) := by
+  intro M N f g h
+  ext X m
+  obtain ⟨s, rfl⟩ := (freeYonedaEquiv R X.unop M).surjective m
+  rw [← freeYonedaEquiv_comp, ← freeYonedaEquiv_comp, h _ ⟨X.unop⟩ s]
+
 end
 
 variable [HasSheafify J AddCommGrpCat.{v}]
@@ -107,5 +135,10 @@ instance mono_freeYonedaFunctor_map {U V : C} (i : U ⟶ V) [Mono i] :
     -- The component is the free-module map on postcomposition by `i`.
     exact Finsupp.mapDomain_injective (fun f g h ↦ (cancel_mono i).mp h)
   exact Functor.map_mono (PresheafOfModules.sheafification (𝟙 R.obj)) _
+
+/-- The free module sheaves on representables form a detecting family. -/
+lemma isDetecting_freeYonedaFunctor :
+    ObjectProperty.IsDetecting (.ofObj (freeYonedaFunctor R).obj) :=
+  (isSeparating_freeYonedaFunctor R).isDetecting
 
 end SheafOfModules
