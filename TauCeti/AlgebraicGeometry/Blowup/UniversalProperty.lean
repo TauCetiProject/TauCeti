@@ -47,7 +47,7 @@ quasi-coherent ideal on a general scheme is glued from these affine blowups.
 
 ## Main results
 
-* `TauCeti.AlgebraicGeometry.projReesAlgebraLift_comp`: the lift is a morphism over `Spec R`.
+* `TauCeti.AlgebraicGeometry.projReesAlgebraLift_toSpecZero`: the lift is a morphism over `Spec R`.
 * `TauCeti.AlgebraicGeometry.projReesAlgebra_hom_ext`: two morphisms `T ⟶ Proj R[It]` over `Spec R`
   agree when the centre pulls back to an effective Cartier divisor on `T`.
 * `TauCeti.AlgebraicGeometry.existsUnique_comp_toSpecZero_reesAlgebra_eq_of_isEffectiveCartier`:
@@ -225,7 +225,7 @@ private theorem exists_comp_projReesAlgebra_eq {f : T ⟶ Spec (.of R)}
 variable (I) in
 /-- **The universal property of the blowup: the lift.** If the centre `V(I)` pulls back to an
 effective Cartier divisor on `T` along `f : T ⟶ Spec R`, this is the morphism `T ⟶ Proj R[It]`
-over `Spec R` lifting `f` (`projReesAlgebraLift_comp`). It is the only such morphism
+over `Spec R` lifting `f` (`projReesAlgebraLift_toSpecZero`). It is the only such morphism
 (`eq_projReesAlgebraLift`). This is the scheme-level counterpart of the chart lift
 `Ideal.affineBlowupLift`. -/
 def projReesAlgebraLift (f : T ⟶ Spec (.of R))
@@ -235,7 +235,7 @@ def projReesAlgebraLift (f : T ⟶ Spec (.of R))
 
 /-- The lift `projReesAlgebraLift I f hf` is a morphism over `Spec R`. -/
 @[reassoc]
-theorem projReesAlgebraLift_comp (f : T ⟶ Spec (.of R))
+theorem projReesAlgebraLift_toSpecZero (f : T ⟶ Spec (.of R))
     (hf : ((ofIdealTop (I.map (Scheme.ΓSpecIso (.of R)).inv.hom)).comap f).IsEffectiveCartier) :
     projReesAlgebraLift I f hf ≫ Proj.toSpecZero (grade I) ≫
       Spec.map (gradeZeroEquiv I).toCommRingCatIso.hom = f :=
@@ -247,7 +247,7 @@ theorem eq_projReesAlgebraLift {f : T ⟶ Spec (.of R)}
     {g : T ⟶ Proj (grade I)}
     (hg : g ≫ Proj.toSpecZero (grade I) ≫ Spec.map (gradeZeroEquiv I).toCommRingCatIso.hom = f) :
     g = projReesAlgebraLift I f hf :=
-  projReesAlgebra_hom_ext (hg.trans (projReesAlgebraLift_comp f hf).symm) (hg ▸ hf)
+  projReesAlgebra_hom_ext (hg.trans (projReesAlgebraLift_toSpecZero f hf).symm) (hg ▸ hf)
 
 /-- **The universal property of the blowup of an affine scheme.** A morphism `f : T ⟶ Spec R`
 along which the centre `V(I)` pulls back to an effective Cartier divisor factors uniquely through
@@ -256,7 +256,7 @@ theorem existsUnique_comp_toSpecZero_reesAlgebra_eq_of_isEffectiveCartier {f : T
     (hf : ((ofIdealTop (I.map (Scheme.ΓSpecIso (.of R)).inv.hom)).comap f).IsEffectiveCartier) :
     ∃! g : T ⟶ Proj (grade I),
       g ≫ Proj.toSpecZero (grade I) ≫ Spec.map (gradeZeroEquiv I).toCommRingCatIso.hom = f :=
-  ⟨projReesAlgebraLift I f hf, projReesAlgebraLift_comp f hf,
+  ⟨projReesAlgebraLift I f hf, projReesAlgebraLift_toSpecZero f hf,
     fun _ hg ↦ eq_projReesAlgebraLift hf hg⟩
 
 end TauCeti.AlgebraicGeometry
