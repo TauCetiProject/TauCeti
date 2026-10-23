@@ -1134,6 +1134,27 @@ theorem continuous_algebraMap_locTopology [IsTopologicalRing A] (P : PairOfDefin
   obtain ⟨b, hb, rfl⟩ := (P.mem_idealImage n).mp ha
   exact algebraMap_mem_locIdealImage P T s S hb
 
+/-- Passing to a multiple of the denominator gives a continuous map of uncompleted rational
+localisations when the target numerators contain the rescaled source numerators. -/
+theorem continuous_awayLift_locTopology [SeparatelyContinuousMul A] (P : PairOfDefinition A)
+    (U : Set A) (u : A) (V : Type*) [CommRing V] [Algebra A V] [IsLocalization.Away u V]
+    (hU : P.HasDenominatorPower U u V) (T : Set A) (w : A) (W : Type*) [CommRing W]
+    [Algebra A W] [IsLocalization.Away w W] (hT : P.HasDenominatorPower T w W)
+    (r : A) (hw : w = u * r) (hgen : ∀ t ∈ U, t * r ∈ T) :
+    letI := P.locTopology U u V hU
+    letI := P.locTopology T w W hT
+    Continuous (IsLocalization.Away.lift u (IsLocalization.Away.isUnit_of_dvd w ⟨r, hw⟩) :
+      V →+* W) := by
+  let _ := P.locTopology U u V hU
+  let _ := P.locTopology T w W hT
+  have := P.isTopologicalRing_locTopology U u V hU
+  have := P.isTopologicalRing_locTopology T w W hT
+  apply continuous_of_continuousAt_zero
+  rw [ContinuousAt, map_zero]
+  exact (P.hasBasis_nhds_zero_locTopology U u V hU).tendsto_iff
+    (P.hasBasis_nhds_zero_locTopology T w W hT) |>.mpr fun n _ ↦
+      ⟨n, trivial, fun x hx ↦ P.awayLift_mem_locIdealImage U u V T w W r hw hgen n hx⟩
+
 /-- **An ideal of `Aₛ` swallowing the image of `Iⁿ` swallows the whole `n`-th neighbourhood.**
 This supplies the neighbourhood containment used to prove that mapping an open ideal along the
 rational-localisation structure map produces an open ideal. -/

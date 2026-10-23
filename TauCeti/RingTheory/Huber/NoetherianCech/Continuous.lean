@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Huber.NoetherianCech.Topology
-import TauCeti.RingTheory.Huber.LocalizationTopology.UniversalProperty
 
 /-!
 # Continuity of the rational-localization Čech complex
