@@ -139,9 +139,9 @@ theorem edist_div_rpow_le_eHolderNorm [PseudoEMetricSpace X] [PseudoEMetricSpace
     edist (f x) (f y) / edist x y ^ (r : ℝ) ≤ eHolderNorm r f :=
   le_iInf₂ fun _ hfC => ENNReal.div_le_of_le_mul (hfC x y)
 
-/-- On an emetric space, the Hölder seminorm is the supremum of the difference quotients
+/-- The Hölder seminorm is the supremum of the difference quotients
 `edist (f x) (f y) / edist x y ^ r` over distinct points `x ≠ y`. -/
-theorem eHolderNorm_eq_iSup_edist_div [EMetricSpace X] [PseudoEMetricSpace Y] (r : ℝ≥0)
+theorem eHolderNorm_eq_iSup_edist_div [PseudoEMetricSpace X] [PseudoEMetricSpace Y] (r : ℝ≥0)
     (f : X → Y) :
     eHolderNorm r f = ⨆ (x) (y) (_ : x ≠ y), edist (f x) (f y) / edist x y ^ (r : ℝ) := by
   refine le_antisymm (le_of_forall_gt_imp_ge_of_dense fun C hC => ?_)
@@ -154,15 +154,21 @@ theorem eHolderNorm_eq_iSup_edist_div [EMetricSpace X] [PseudoEMetricSpace Y] (r
   refine HolderWith.eHolderNorm_le fun x y => ?_
   rcases eq_or_ne x y with rfl | hxy
   · simp
-  have hd0 : edist x y ^ (r : ℝ) ≠ 0 := by
-    simp [ENNReal.rpow_eq_zero_iff, (edist_pos.2 hxy).ne']
+  have hq : edist (f x) (f y) / edist x y ^ (r : ℝ) < C :=
+    lt_of_le_of_lt (le_iSup_of_le x <| le_iSup_of_le y <|
+      le_iSup (fun _ : x ≠ y => edist (f x) (f y) / edist x y ^ (r : ℝ)) hxy) hC
+  by_cases hd0 : edist x y ^ (r : ℝ) = 0
+  · -- At zero distance, a finite quotient forces a zero increment.
+    have hfxy : edist (f x) (f y) = 0 := by
+      by_contra h
+      rw [hd0, ENNReal.div_zero h] at hq
+      exact not_top_lt hq
+    simp [hfxy]
   by_cases hdtop : edist x y ^ (r : ℝ) = ∞
   · rw [hdtop, ENNReal.mul_top hC0]
     exact le_top
   · rw [← ENNReal.div_le_iff hd0 hdtop]
-    refine le_trans ?_ hC.le
-    exact le_iSup_of_le x <| le_iSup_of_le y <|
-      le_iSup (fun _ : x ≠ y => edist (f x) (f y) / edist x y ^ (r : ℝ)) hxy
+    exact hq.le
 
 /-- On a metric space, the Hölder seminorm bounds every increment:
 `edist (f x) (f y) ≤ eHolderNorm r f * edist x y ^ r`. -/
@@ -178,9 +184,9 @@ theorem edist_le_eHolderNorm_mul_rpow [MetricSpace X] [PseudoEMetricSpace Y] (r 
   rw [← ENNReal.div_le_iff hd0 hdtop]
   exact edist_div_rpow_le_eHolderNorm r f x y
 
-/-- On a metric space, the Hölder seminorm of a Hölder function is the supremum of the difference
-quotients `dist (f x) (f y) / dist x y ^ r` over distinct points `x ≠ y`. -/
-theorem MemHolder.nnHolderNorm_eq_iSup_dist_div [MetricSpace X] [PseudoMetricSpace Y]
+/-- The Hölder seminorm of a Hölder function is the supremum of the difference quotients
+`dist (f x) (f y) / dist x y ^ r` over distinct points `x ≠ y`. -/
+theorem MemHolder.nnHolderNorm_eq_iSup_dist_div [PseudoMetricSpace X] [PseudoMetricSpace Y]
     {r : ℝ≥0} {f : X → Y} (hf : MemHolder r f) :
     (nnHolderNorm r f : ℝ) =
       ⨆ (x) (y) (_ : x ≠ y), dist (f x) (f y) / dist x y ^ (r : ℝ) := by
