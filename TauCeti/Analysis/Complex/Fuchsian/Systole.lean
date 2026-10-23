@@ -14,6 +14,7 @@ import TauCeti.Analysis.Complex.Fuchsian.ProperAction
 import TauCeti.Analysis.Complex.UpperHalfPlane.Displacement
 import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.Endpoint
 import TauCeti.LinearAlgebra.Matrix.Trace.FinTwo
+import TauCeti.Topology.MetricSpace.IsometricSMul
 
 /-!
 # Hyperbolic elements of a cofinite Fuchsian group move every point far
@@ -26,10 +27,12 @@ of the closed geodesics of `Γ \ ℍ`, are bounded below by a positive constant:
 of `ℍ` or is parabolic: for small `ε`, the `ε`-thin part of `Γ \ ℍ` comes only from elliptic and
 parabolic elements.
 
-The proof shows that a short closed geodesic has a thick point at a controlled position.
-Conjugate a hyperbolic element to the dilation `z ↦ exp s * z`, and among the dilations of `Γ`
-along the same axis take the one with the least `s₀ > 0`. If `s₀` is small, choose `y` with
-`Im y = 1` so far from the imaginary axis that this dilation moves it exactly `1 / 4`. Every
+The proof shows that a sufficiently short hyperbolic element moves some point exactly `1 / 4` and
+that this point, which lies far from the axis, is `1 / 4`-thick. (The points on the axis itself
+are moved less than `1 / 4`, so they are thin.) Conjugate a hyperbolic element to the dilation
+`z ↦ exp s * z`, and among the dilations of `Γ` along the same axis take the one with the least
+`s₀ > 0`. If `s₀` is small, choose `y` with `Im y = 1` so far from the imaginary axis that this
+dilation moves it exactly `1 / 4`. Every
 other dilation in `Γ` along the axis moves `y` at least as far, by minimality, and so does every
 element exchanging the ends of the axis, because `y` is far from it. By the Margulis lemma
 `Subgroup.conj_eq_or_conj_eq_inv_of_dist_le`, an element of `Γ` moving `y` less than `1 / 4`
@@ -71,16 +74,6 @@ open Matrix.ProjectiveSpecialLinearGroup (IsParabolic)
 namespace Subgroup
 
 variable {Γ : Subgroup PSL(2, ℝ)}
-
-/-- A distance whose hyperbolic cosine is at least `cosh a`, with `a ≥ 0`, is at least `a`. -/
-private theorem le_dist_of_cosh_le {a : ℝ} {z w : ℍ} (ha : 0 ≤ a)
-    (h : Real.cosh a ≤ Real.cosh (dist z w)) : a ≤ dist z w := by
-  simpa [abs_of_nonneg ha, abs_of_nonneg dist_nonneg] using Real.cosh_le_cosh.1 h
-
-/-- A conjugate `σ g σ⁻¹` moves `z` as far as `g` moves `σ⁻¹ • z`. -/
-private theorem dist_conj_smul (σ g : PSL(2, ℝ)) (z : ℍ) :
-    dist ((σ * g * σ⁻¹) • z) z = dist (g • σ⁻¹ • z) (σ⁻¹ • z) := by
-  rw [← dist_smul σ⁻¹, mul_smul, mul_smul, inv_smul_smul]
 
 /-- **A minimal dilation along an axis.** If `Γ` is discrete and contains the conjugate
 `σ (z ↦ exp s * z) σ⁻¹` for some `s > 0`, then among the `t > 0` with
@@ -139,14 +132,15 @@ private theorem exists_dist_dilation_smul_eq {s₀ : ℝ} (hs₀ : 0 < s₀)
       1 + (Real.cosh t - 1) * (c₀ / (Real.cosh s₀ - 1)) := by
     rw [pslMk_smul, Matrix.SpecialLinearGroup.cosh_dist_dilation_smul, hy]
     ring
-  refine ⟨y, ?_, fun t ht ↦ le_dist_of_cosh_le (by norm_num) ?_, fun X h₀₀ h₁₁ ↦
-    le_dist_of_cosh_le (by norm_num) ?_⟩
+  -- `cosh` is strictly increasing on `[0, ∞)`, where `1 / 4` and every distance lie
+  have hle {d : ℝ} (hd : 0 ≤ d) : Real.cosh (1 / 4) ≤ Real.cosh d ↔ 1 / 4 ≤ d :=
+    Real.cosh_strictMonoOn.le_iff_le (by norm_num) hd
+  refine ⟨y, ?_, fun t ht ↦ (hle dist_nonneg).1 ?_, fun X h₀₀ h₁₁ ↦ (hle dist_nonneg).1 ?_⟩
   · have h : Real.cosh (dist (((dilation s₀ : SL(2, ℝ)) : PSL(2, ℝ)) • y) y) =
         Real.cosh (1 / 4) := by
       rw [hcosh, hkc]
       ring
-    refine le_antisymm ?_ (le_dist_of_cosh_le (by norm_num) h.ge)
-    simpa [abs_of_nonneg dist_nonneg] using Real.cosh_le_cosh.1 h.le
+    exact Real.cosh_strictMonoOn.injOn dist_nonneg (by norm_num) h
   · -- a dilation with `|t| ≥ s₀` moves `y` at least as far as the one with `t = s₀`
     have hst : Real.cosh s₀ ≤ Real.cosh t := Real.cosh_le_cosh.2 (by rwa [abs_of_pos hs₀])
     have hq : 0 ≤ c₀ / (Real.cosh s₀ - 1) := by positivity

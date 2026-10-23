@@ -425,13 +425,6 @@ theorem exists_eq_conj_dilation_of_smul_eq_self {k g : PSL(2, ℝ)}
     (by rw [mul_smul, mul_smul, h₀, inv_smul_smul]) (by rw [mul_smul, mul_smul, h₁, inv_smul_smul])
   exact ⟨s, by rw [← hs]; group⟩
 
-/-- A matrix whose class in `PSL(2, ℝ)` is a dilation is diagonal. -/
-private theorem off_diag_eq_zero_of_mk_eq_dilation {Y : SL(2, ℝ)} {t : ℝ}
-    (h : (Y : PSL(2, ℝ)) = ((dilation t : SL(2, ℝ)) : PSL(2, ℝ))) : Y 0 1 = 0 ∧ Y 1 0 = 0 := by
-  rcases Matrix.ProjectiveSpecialLinearGroup.mk_eq_mk_iff.1 h with h | h
-  · simp [← h]
-  · simp [neg_eq_iff_eq_neg.1 h.symm]
-
 /-- **Elements preserving the axis of a dilation.** An element of `PSL(2, ℝ)` conjugating a
 nontrivial dilation to itself or to its inverse preserves the imaginary axis: it is a dilation,
 translating along the axis, or the class of an antidiagonal matrix `!![0, b; c, 0]`, exchanging
@@ -444,9 +437,9 @@ theorem exists_eq_dilation_or_antidiag_of_conj_dilation {s : ℝ} (hs : s ≠ 0)
   induction h using QuotientGroup.induction_on with | H X => ?_
   have hoff : (X * dilation s * X⁻¹) 0 1 = 0 ∧ (X * dilation s * X⁻¹) 1 0 = 0 := by
     rcases hconj with h | h
-    · refine off_diag_eq_zero_of_mk_eq_dilation (t := s) ?_
+    · refine Matrix.SpecialLinearGroup.off_diag_eq_zero_of_mk_eq_dilation (t := s) ?_
       rwa [QuotientGroup.mk_mul, QuotientGroup.mk_mul, QuotientGroup.mk_inv]
-    · refine off_diag_eq_zero_of_mk_eq_dilation (t := -s) ?_
+    · refine Matrix.SpecialLinearGroup.off_diag_eq_zero_of_mk_eq_dilation (t := -s) ?_
       rwa [QuotientGroup.mk_mul, QuotientGroup.mk_mul, QuotientGroup.mk_inv,
         ← Matrix.SpecialLinearGroup.dilation_inv, QuotientGroup.mk_inv]
   rcases Matrix.SpecialLinearGroup.diag_or_antidiag_of_conj_dilation hs hoff.1 hoff.2 with
