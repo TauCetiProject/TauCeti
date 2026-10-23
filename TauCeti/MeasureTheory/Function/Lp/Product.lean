@@ -13,7 +13,8 @@ public import Mathlib.MeasureTheory.Integral.Prod
 
 The product `(x, y) ↦ f x * g y` of two square-integrable functions with values in a nonunital
 normed ring is square-integrable for the product measure. Neither measure needs to be s-finite.
-`MeasureTheory.MemLp.mul_prod` gives membership, while `MeasureTheory.Lp.prodMul` packages the
+`MeasureTheory.eLpNorm_mul_prod_le` bounds the seminorm for a.e.-strongly-measurable functions,
+and `MeasureTheory.MemLp.mul_prod` gives membership. `MeasureTheory.Lp.prodMul` packages the
 product as an `Lp` vector with its almost-everywhere representative and additive and scalar laws.
 The norm is at most the product of the factor norms. Over a nontrivially normed field,
 `MeasureTheory.Lp.prodMulL` bundles this construction as a bounded bilinear map of norm at most one.
@@ -33,25 +34,41 @@ namespace MeasureTheory
 
 variable [NonUnitalNormedRing 𝕜]
 
+/-- The `L²` seminorm of a product on a product measure is at most the product of the factor
+seminorms, without finiteness assumptions on either measure. -/
+theorem eLpNorm_mul_prod_le {f : α → 𝕜} {g : β → 𝕜}
+    (hf : AEStronglyMeasurable f μ) (hg : AEStronglyMeasurable g ν) :
+    eLpNorm (fun p : α × β => f p.1 * g p.2) 2 (μ.prod ν) ≤
+      eLpNorm f 2 μ * eLpNorm g 2 ν := by
+  have hmeas : AEStronglyMeasurable (fun p : α × β => f p.1 * g p.2) (μ.prod ν) :=
+    hf.comp_fst.mul hg.comp_snd
+  have hprod := eLpNorm_nnreal_pow_eq_lintegral (p := 2) two_ne_zero hmeas
+  have hf2 := eLpNorm_nnreal_pow_eq_lintegral (p := 2) two_ne_zero hf
+  have hg2 := eLpNorm_nnreal_pow_eq_lintegral (p := 2) two_ne_zero hg
+  simp only [NNReal.coe_ofNat, ENNReal.coe_ofNat] at hprod hf2 hg2
+  rw [← ENNReal.rpow_le_rpow_iff (by positivity : 0 < (2 : ℝ)),
+    ENNReal.mul_rpow_of_nonneg _ _ (by positivity), hprod, hf2, hg2]
+  simp only [ENNReal.rpow_two]
+  calc
+    ∫⁻ p : α × β, ‖f p.1 * g p.2‖ₑ ^ 2 ∂(μ.prod ν)
+        ≤ ∫⁻ p : α × β, ‖f p.1‖ₑ ^ 2 * ‖g p.2‖ₑ ^ 2 ∂(μ.prod ν) := by
+      refine lintegral_mono fun p => ?_
+      have hmul : ‖f p.1 * g p.2‖ₑ ≤ ‖f p.1‖ₑ * ‖g p.2‖ₑ := by
+        simpa only [enorm_eq_nnnorm, ← ENNReal.coe_mul, ENNReal.coe_le_coe]
+          using nnnorm_mul_le (f p.1) (g p.2)
+      simpa only [mul_pow] using pow_le_pow_left' hmul 2
+    _ ≤ ∫⁻ x, ∫⁻ y, ‖f x‖ₑ ^ 2 * ‖g y‖ₑ ^ 2 ∂ν ∂μ := lintegral_prod_le _
+    _ = (∫⁻ x, ‖f x‖ₑ ^ 2 ∂μ) * ∫⁻ y, ‖g y‖ₑ ^ 2 ∂ν :=
+      lintegral_lintegral_mul (hf.enorm.pow_const 2) (hg.enorm.pow_const 2)
+
 /-- The pointwise product `(x, y) ↦ f x * g y` of an `L²(μ)` and an `L²(ν)` function is `L²` for the
 product measure `μ ⊗ ν`. -/
 theorem MemLp.mul_prod {f : α → 𝕜} {g : β → 𝕜}
     (hf : MemLp f 2 μ) (hg : MemLp g 2 ν) :
     MemLp (fun p : α × β => f p.1 * g p.2) 2 (μ.prod ν) := by
-  have hfst : AEStronglyMeasurable (fun p : α × β => f p.1) (μ.prod ν) :=
-    hf.aestronglyMeasurable.comp_quasiMeasurePreserving Measure.quasiMeasurePreserving_fst
-  have hsnd : AEStronglyMeasurable (fun p : α × β => g p.2) (μ.prod ν) :=
-    hg.aestronglyMeasurable.comp_quasiMeasurePreserving Measure.quasiMeasurePreserving_snd
-  have hmeas : AEStronglyMeasurable (fun p : α × β => f p.1 * g p.2) (μ.prod ν) := hfst.mul hsnd
-  rw [memLp_two_iff_integrable_sq_norm hmeas]
-  have hf2 : Integrable (fun x => ‖f x‖ ^ 2) μ :=
-    (memLp_two_iff_integrable_sq_norm hf.aestronglyMeasurable).1 hf
-  have hg2 : Integrable (fun y => ‖g y‖ ^ 2) ν :=
-    (memLp_two_iff_integrable_sq_norm hg.aestronglyMeasurable).1 hg
-  refine (hf2.mul_prod hg2).mono' (hmeas.norm.pow 2) (.of_forall fun p => ?_)
-  rw [Real.norm_of_nonneg (by positivity), ← mul_pow]
-  gcongr
-  exact norm_mul_le _ _
+  rw [memLp_iff]
+  exact (eLpNorm_mul_prod_le hf.aestronglyMeasurable hg.aestronglyMeasurable).trans_lt
+    (ENNReal.mul_lt_top hf.eLpNorm_lt_top hg.eLpNorm_lt_top)
 
 end MeasureTheory
 
@@ -75,29 +92,10 @@ theorem coeFn_prodMul (F : Lp 𝕜 2 μ) (G : Lp 𝕜 2 ν) :
 /-- The tensor norm is at most the product of the factor norms, without finiteness assumptions
 on either measure. -/
 theorem norm_prodMul_le (F : Lp 𝕜 2 μ) (G : Lp 𝕜 2 ν) : ‖prodMul F G‖ ≤ ‖F‖ * ‖G‖ := by
-  have hpow : ‖prodMul F G‖ₑ ^ 2 ≤ (‖F‖ₑ * ‖G‖ₑ) ^ 2 := by
-    rw [mul_pow]
-    simp only [Lp.enorm_def,
-      eLpNorm_eq_eLpNorm' two_ne_zero ENNReal.ofNat_ne_top (Lp.aestronglyMeasurable _),
-      eLpNorm', ← ENNReal.rpow_natCast, ← ENNReal.rpow_mul]
-    norm_num
-    calc
-      ∫⁻ p, ‖prodMul F G p‖ₑ ^ 2 ∂(μ.prod ν)
-          = ∫⁻ p : α × β, ‖F p.1 * G p.2‖ₑ ^ 2 ∂(μ.prod ν) :=
-        lintegral_congr_ae ((coeFn_prodMul F G).fun_comp fun x => ‖x‖ₑ ^ 2)
-      _ ≤ ∫⁻ p : α × β, ‖F p.1‖ₑ ^ 2 * ‖G p.2‖ₑ ^ 2 ∂(μ.prod ν) := by
-        refine lintegral_mono fun p => ?_
-        have hmul : ‖F p.1 * G p.2‖ₑ ≤ ‖F p.1‖ₑ * ‖G p.2‖ₑ := by
-          simpa only [enorm_eq_nnnorm, ← ENNReal.coe_mul, ENNReal.coe_le_coe]
-            using nnnorm_mul_le (F p.1) (G p.2)
-        simpa only [mul_pow] using pow_le_pow_left' hmul 2
-      _ ≤ ∫⁻ x, ∫⁻ y, ‖F x‖ₑ ^ 2 * ‖G y‖ₑ ^ 2 ∂ν ∂μ := lintegral_prod_le _
-      _ = (∫⁻ x, ‖F x‖ₑ ^ 2 ∂μ) * ∫⁻ y, ‖G y‖ₑ ^ 2 ∂ν :=
-        lintegral_lintegral_mul ((Lp.aestronglyMeasurable F).enorm.pow_const 2)
-          ((Lp.aestronglyMeasurable G).enorm.pow_const 2)
-  have h := ENNReal.toReal_mono (by finiteness) hpow
-  simp only [ENNReal.toReal_pow, ENNReal.toReal_mul, toReal_enorm] at h
-  exact (sq_le_sq₀ (norm_nonneg _) (by positivity)).1 h
+  rw [Lp.norm_def, eLpNorm_congr_ae (coeFn_prodMul F G)]
+  have h := ENNReal.toReal_mono (by finiteness)
+    (eLpNorm_mul_prod_le (Lp.aestronglyMeasurable F) (Lp.aestronglyMeasurable G))
+  simpa only [ENNReal.toReal_mul, ← Lp.norm_def] using h
 
 /-- The tensor is additive in its first argument. -/
 @[simp]
