@@ -38,6 +38,8 @@ bar constructions.
 ## Main definitions
 
 * `TauCeti.Comodule.leftCofreeCoact`: the coaction of the cofree left comodule `C ⊗ P`.
+* `TauCeti.Comodule.leftCofreeCounit`: the counit projection `C ⊗ P → P` of the cofree left
+  comodule.
 * `TauCeti.Comodule.leftCoactRTensor`: a left coaction on `Y`, acting on the left factor of
   `Y ⊗ N`.
 * `TauCeti.Comodule.IsLeftGradedCoderivationOver`: the signed co-Leibniz law along a left
@@ -47,7 +49,7 @@ bar constructions.
 
 * `TauCeti.Comodule.eq_add_of_leftCofreeCoact_comp_eq`: a map into a cofree left comodule is
   determined by the coalgebra part of its coaction and its counit component.
-* `TauCeti.Comodule.IsLeftGradedCoderivationOver.square_commutes_of_negOnePow_eq_neg_one`: the
+* `TauCeti.Comodule.IsLeftGradedCoderivationOver.square_commutes_coact_of_negOnePow_eq_neg_one`: the
   square of an odd coderivation over a square-zero operator commutes with the coaction.
 * `TauCeti.Comodule.IsLeftGradedCoderivationOver.comp_eq_comp_of_counit_comp_eq`: coderivations
   over the same operator are determined by their counit components after a compatible map into a
@@ -122,20 +124,35 @@ theorem leftCofreeCoact_tmul (c : C) (p : P) :
     leftCofreeCoact R C P (c ⊗ₜ p) = TensorProduct.assoc R C C P (Coalgebra.comul c ⊗ₜ p) :=
   (rfl)
 
+variable (R C P) in
+/-- The counit projection of the cofree left `C`-comodule `C ⊗ P` onto its cogenerators:
+`c ⊗ p ↦ ε(c) • p`. -/
+noncomputable def leftCofreeCounit : C ⊗[R] P →ₗ[R] P :=
+  (TensorProduct.lid R P).toLinearMap ∘ₗ (Coalgebra.counit (R := R) (A := C)).rTensor P
+
+/-- The cofree counit projection applies the counit to the coalgebra factor and then the left
+unitor. -/
+theorem leftCofreeCounit_def :
+    leftCofreeCounit R C P =
+      (TensorProduct.lid R P).toLinearMap ∘ₗ (Coalgebra.counit (R := R) (A := C)).rTensor P :=
+  (rfl)
+
+/-- The cofree counit projection on a pure tensor. -/
+@[simp]
+theorem leftCofreeCounit_tmul (c : C) (p : P) :
+    leftCofreeCounit R C P (c ⊗ₜ p) = Coalgebra.counit (R := R) c • p :=
+  (rfl)
+
 /-- Applying the counit to the inner coalgebra factor of the cofree left coaction recovers the
 original element. -/
 @[simp]
-theorem lTensor_counit_comp_leftCofreeCoact :
-    ((TensorProduct.lid R P).toLinearMap ∘ₗ
-        (Coalgebra.counit (R := R) (A := C)).rTensor P).lTensor C ∘ₗ leftCofreeCoact R C P =
-      LinearMap.id := by
+theorem lTensor_leftCofreeCounit_comp_leftCofreeCoact :
+    (leftCofreeCounit R C P).lTensor C ∘ₗ leftCofreeCoact R C P = LinearMap.id := by
   have hx (x : C ⊗[R] C) (p : P) :
-      ((TensorProduct.lid R P).toLinearMap ∘ₗ
-          (Coalgebra.counit (R := R) (A := C)).rTensor P).lTensor C
-        (TensorProduct.assoc R C C P (x ⊗ₜ p)) =
+      (leftCofreeCounit R C P).lTensor C (TensorProduct.assoc R C C P (x ⊗ₜ p)) =
         TensorProduct.rid R C ((Coalgebra.counit (R := R) (A := C)).lTensor C x) ⊗ₜ p := by
     induction x using TensorProduct.inductionOn with
-    | tmul c d => simp [TensorProduct.smul_tmul]
+    | tmul c d => simp [leftCofreeCounit_def, TensorProduct.smul_tmul]
     | add x y hx hy => simp only [TensorProduct.add_tmul, map_add, hx, hy]
   refine TensorProduct.ext' fun c p ↦ ?_
   rw [LinearMap.comp_apply, leftCofreeCoact_tmul, hx, ← LinearMap.comp_apply
@@ -149,15 +166,13 @@ which the coalgebra operator acts. -/
 theorem eq_add_of_leftCofreeCoact_comp_eq (δ : Y →ₗ[R] C ⊗[R] Y) (τ : C →ₗ[R] C)
     {g : Y →ₗ[R] C ⊗[R] P} {K : Y →ₗ[R] C ⊗[R] (C ⊗[R] P)}
     (h : leftCofreeCoact R C P ∘ₗ g = K + TensorProduct.map τ g ∘ₗ δ) :
-    g = ((TensorProduct.lid R P).toLinearMap ∘ₗ
-          (Coalgebra.counit (R := R) (A := C)).rTensor P).lTensor C ∘ₗ K +
-        TensorProduct.map τ ((TensorProduct.lid R P).toLinearMap ∘ₗ
-          (Coalgebra.counit (R := R) (A := C)).rTensor P ∘ₗ g) ∘ₗ δ := by
-  set ε := (TensorProduct.lid R P).toLinearMap ∘ₗ (Coalgebra.counit (R := R) (A := C)).rTensor P
+    g = (leftCofreeCounit R C P).lTensor C ∘ₗ K +
+        TensorProduct.map τ (leftCofreeCounit R C P ∘ₗ g) ∘ₗ δ := by
   calc
-    g = (ε.lTensor C ∘ₗ leftCofreeCoact R C P) ∘ₗ g := by
-      rw [lTensor_counit_comp_leftCofreeCoact, LinearMap.id_comp]
-    _ = ε.lTensor C ∘ₗ K + TensorProduct.map τ (ε ∘ₗ g) ∘ₗ δ := by
+    g = ((leftCofreeCounit R C P).lTensor C ∘ₗ leftCofreeCoact R C P) ∘ₗ g := by
+      rw [lTensor_leftCofreeCounit_comp_leftCofreeCoact, LinearMap.id_comp]
+    _ = (leftCofreeCounit R C P).lTensor C ∘ₗ K +
+        TensorProduct.map τ (leftCofreeCounit R C P ∘ₗ g) ∘ₗ δ := by
       rw [LinearMap.comp_assoc, h, LinearMap.comp_add, ← LinearMap.comp_assoc,
         LinearMap.lTensor_comp_map]
 
@@ -197,7 +212,7 @@ theorem isLeftGradedCoderivationOver_iff_coact_apply :
 /-- If the coalgebra operator `b` is square-zero and homogeneous of degree `q`, and
 `(-1) ^ (r * q) = -1`, then the square of a degree-`r` coderivation along `δ` over `b` commutes
 with `δ`: the two cross terms cancel by the Koszul sign, and the twist squares to the identity. -/
-theorem IsLeftGradedCoderivationOver.square_commutes_of_negOnePow_eq_neg_one {q : ℤ}
+theorem IsLeftGradedCoderivationOver.square_commutes_coact_of_negOnePow_eq_neg_one {q : ℤ}
     (h : IsLeftGradedCoderivationOver δ G r b D)
     (hb : LinearMap.IsHomogeneous b G.piece G.piece q)
     (hrq : (((r * q).negOnePow : ℤ) : R) = -1) (hb2 : b ∘ₗ b = 0) :
@@ -211,7 +226,7 @@ theorem IsLeftGradedCoderivationOver.square_commutes_of_negOnePow_eq_neg_one {q 
     simp only [LinearMap.comp_add, LinearMap.add_comp, ← LinearMap.rTensor_comp, hb2,
       LinearMap.rTensor_zero, LinearMap.rTensor_comp_map, LinearMap.map_comp_rTensor,
       ← TensorProduct.map_comp, hτb, G.koszulTwist_comp_self, zero_add]
-    rw [TensorProduct.map_smul_left, LinearMap.lTensor]
+    rw [TensorProduct.map_smul_left, LinearMap.lTensor_def]
     module
   rw [← LinearMap.comp_assoc D D δ, h', LinearMap.comp_assoc D δ, h', ← LinearMap.comp_assoc δ,
     hstep]
@@ -229,10 +244,7 @@ by its counit component. -/
 theorem IsLeftGradedCoderivationOver.comp_eq_comp_of_counit_comp_eq
     (hπ : leftCofreeCoact R C P ∘ₗ π = π.lTensor C ∘ₗ δ)
     (hD : IsLeftGradedCoderivationOver δ G r b D) (hE : IsLeftGradedCoderivationOver δ G r b E)
-    (hcounit : (TensorProduct.lid R P).toLinearMap ∘ₗ
-        (Coalgebra.counit (R := R) (A := C)).rTensor P ∘ₗ π ∘ₗ D =
-      (TensorProduct.lid R P).toLinearMap ∘ₗ
-        (Coalgebra.counit (R := R) (A := C)).rTensor P ∘ₗ π ∘ₗ E) :
+    (hcounit : leftCofreeCounit R C P ∘ₗ π ∘ₗ D = leftCofreeCounit R C P ∘ₗ π ∘ₗ E) :
     π ∘ₗ D = π ∘ₗ E := by
   have hcoact {F : X →ₗ[R] X} (hF : IsLeftGradedCoderivationOver δ G r b F) :
       leftCofreeCoact R C P ∘ₗ (π ∘ₗ F) =
@@ -252,15 +264,13 @@ theorem IsLeftGradedCoderivationOver.comp_square_eq_zero_iff_counit_of_negOnePow
     (h : IsLeftGradedCoderivationOver δ G r b D)
     (hb : LinearMap.IsHomogeneous b G.piece G.piece q)
     (hrq : (((r * q).negOnePow : ℤ) : R) = -1) (hb2 : b ∘ₗ b = 0) :
-    π ∘ₗ (D ∘ₗ D) = 0 ↔
-      (TensorProduct.lid R P).toLinearMap ∘ₗ
-        (Coalgebra.counit (R := R) (A := C)).rTensor P ∘ₗ π ∘ₗ (D ∘ₗ D) = 0 := by
-  refine ⟨fun h0 ↦ by rw [h0, LinearMap.comp_zero, LinearMap.comp_zero], fun h0 ↦ ?_⟩
+    π ∘ₗ (D ∘ₗ D) = 0 ↔ leftCofreeCounit R C P ∘ₗ π ∘ₗ (D ∘ₗ D) = 0 := by
+  refine ⟨fun h0 ↦ by rw [h0, LinearMap.comp_zero], fun h0 ↦ ?_⟩
   have hcoact : leftCofreeCoact R C P ∘ₗ (π ∘ₗ (D ∘ₗ D)) =
       0 + TensorProduct.map LinearMap.id (π ∘ₗ (D ∘ₗ D)) ∘ₗ δ := by
     rw [← LinearMap.comp_assoc, hπ, LinearMap.comp_assoc,
-      h.square_commutes_of_negOnePow_eq_neg_one hb hrq hb2, ← LinearMap.comp_assoc,
-      ← LinearMap.lTensor_comp, zero_add, LinearMap.lTensor]
+      h.square_commutes_coact_of_negOnePow_eq_neg_one hb hrq hb2, ← LinearMap.comp_assoc,
+      ← LinearMap.lTensor_comp, zero_add, LinearMap.lTensor_def]
   rw [eq_add_of_leftCofreeCoact_comp_eq δ _ hcoact, LinearMap.comp_zero, zero_add, h0]
   simp
 

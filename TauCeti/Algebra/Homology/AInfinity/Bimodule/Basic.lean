@@ -41,6 +41,7 @@ whole carrier the right cofree uniqueness does.
 
 * `TauCeti.AInfinityBimodule`: an `(A, B)` `A∞` bimodule in suspended bar form.
 * `TauCeti.AInfinityBimodule.barGrading`: the total grading on `Tᶜ(sA) ⊗ sM ⊗ Tᶜ(sB)`.
+* `TauCeti.AInfinityBimodule.taylorProj`: the two-sided counit projection onto `sM`.
 * `TauCeti.AInfinityBimodule.taylor`: the counit component of the bimodule bar differential.
 * `TauCeti.AInfinityBimodule.ofBarDifferential`: construct a bimodule by checking the square-zero
   law on its Taylor component.
@@ -87,6 +88,34 @@ theorem barGrading_def (AA : AInfinityAlgebra R A) (BB : AInfinityAlgebra R B)
     barGrading AA BB G =
       ((TensorWords.grading (AA.grading.shift 1)).tensorProduct (G.shift 1)).tensorProduct
         (TensorWords.grading (BB.grading.shift 1)) :=
+  (rfl)
+
+/-- The degree-`p` part of the bicomodule grading is the total-degree part of the suspended left
+words, the suspended module grading, and the suspended right words. -/
+@[simp]
+theorem barGrading_piece (AA : AInfinityAlgebra R A) (BB : AInfinityAlgebra R B)
+    (G : InternalGrading R M) (p : ℤ) :
+    (barGrading AA BB G).piece p =
+      (((TensorWords.grading (AA.grading.shift 1)).tensorProduct (G.shift 1)).tensorProduct
+        (TensorWords.grading (BB.grading.shift 1))).piece p :=
+  (rfl)
+
+variable (R A B M) in
+/-- The two-sided counit projection of the cofree bar bicomodule `Tᶜ(sA) ⊗ sM ⊗ Tᶜ(sB)` onto
+`sM`: the counit of `Tᶜ(sB)` forgets the right word, and then the cofree counit projection of
+`Tᶜ(sA)` forgets the left word. -/
+noncomputable def taylorProj : (TensorWords R A ⊗[R] M) ⊗[R] TensorWords R B →ₗ[R] M :=
+  Comodule.leftCofreeCounit R (TensorWords R A) M ∘ₗ
+    (TensorProduct.rid R (TensorWords R A ⊗[R] M)).toLinearMap ∘ₗ
+      (Coalgebra.counit (R := R) (A := TensorWords R B)).lTensor (TensorWords R A ⊗[R] M)
+
+/-- The two-sided counit projection applies the counit of the right words, the right unitor, and
+the cofree counit projection of the left words. -/
+theorem taylorProj_def :
+    taylorProj R A B M =
+      Comodule.leftCofreeCounit R (TensorWords R A) M ∘ₗ
+        (TensorProduct.rid R (TensorWords R A ⊗[R] M)).toLinearMap ∘ₗ
+          (Coalgebra.counit (R := R) (A := TensorWords R B)).lTensor (TensorWords R A ⊗[R] M) :=
   (rfl)
 
 end AInfinityBimodule
@@ -138,20 +167,19 @@ coalgebras to the output of its bar differential.  On the summand `(sA)^{⊗ i} 
 this is the suspended operation `b_{i,j}`. -/
 noncomputable def taylor (MM : AInfinityBimodule AA BB M) :
     (TensorWords R A ⊗[R] M) ⊗[R] TensorWords R B →ₗ[R] M :=
-  (TensorProduct.lid R M).toLinearMap ∘ₗ
-    (Coalgebra.counit (R := R) (A := TensorWords R A)).rTensor M ∘ₗ
-      (TensorProduct.rid R (TensorWords R A ⊗[R] M)).toLinearMap ∘ₗ
-        (Coalgebra.counit (R := R) (A := TensorWords R B)).lTensor (TensorWords R A ⊗[R] M) ∘ₗ
-          MM.barDifferential
+  taylorProj R A B M ∘ₗ MM.barDifferential
 
 /-- The Taylor map is the two-sided counit component of the bimodule bar differential. -/
 theorem taylor_def (MM : AInfinityBimodule AA BB M) :
-    MM.taylor =
-      (TensorProduct.lid R M).toLinearMap ∘ₗ
-        (Coalgebra.counit (R := R) (A := TensorWords R A)).rTensor M ∘ₗ
-          (TensorProduct.rid R (TensorWords R A ⊗[R] M)).toLinearMap ∘ₗ
-            (Coalgebra.counit (R := R) (A := TensorWords R B)).lTensor (TensorWords R A ⊗[R] M) ∘ₗ
-              MM.barDifferential :=
+    MM.taylor = taylorProj R A B M ∘ₗ MM.barDifferential :=
+  (rfl)
+
+/-- Evaluating the Taylor map means applying the bar differential and then the two-sided counit
+projection. -/
+@[simp]
+theorem taylor_apply (MM : AInfinityBimodule AA BB M)
+    (x : (TensorWords R A ⊗[R] M) ⊗[R] TensorWords R B) :
+    MM.taylor x = taylorProj R A B M (MM.barDifferential x) :=
   (rfl)
 
 /-- The Taylor map has degree one from the total suspended bicomodule grading to the suspended
@@ -161,7 +189,7 @@ theorem isHomogeneous_taylor (MM : AInfinityBimodule AA BB M) :
       (MM.grading.shift 1).piece 1 := by
   have hD := MM.isHomogeneous_barDifferential
   rw [barGrading_def] at hD ⊢
-  rw [taylor_def]
+  rw [taylor_def, taylorProj_def, Comodule.leftCofreeCounit_def]
   exact ((TensorWords.isHomogeneous_lid_comp_rTensor_counit (AA.grading.shift 1)
     (MM.grading.shift 1)).comp (TensorWords.isHomogeneous_rid_comp_lTensor_counit
       ((TensorWords.grading (AA.grading.shift 1)).tensorProduct (MM.grading.shift 1))
@@ -193,11 +221,7 @@ theorem barDifferential_sq_iff_taylor_comp_eq_zero (G : InternalGrading R M)
     (hright : Comodule.IsGradedCoderivationOver (barGrading AA BB G) 1
       BB.coaugmentedBarDifferential D) :
     D ∘ₗ D = 0 ↔
-      ((TensorProduct.lid R M).toLinearMap ∘ₗ
-        (Coalgebra.counit (R := R) (A := TensorWords R A)).rTensor M ∘ₗ
-          (TensorProduct.rid R (TensorWords R A ⊗[R] M)).toLinearMap ∘ₗ
-            (Coalgebra.counit (R := R) (A := TensorWords R B)).lTensor
-              (TensorWords R A ⊗[R] M) ∘ₗ D) ∘ₗ D = 0 := by
+      taylorProj R A B M ∘ₗ D ∘ₗ D = 0 := by
   have hb : LinearMap.IsHomogeneous AA.coaugmentedBarDifferential
       (TensorWords.grading (AA.grading.shift 1)).piece
       (TensorWords.grading (AA.grading.shift 1)).piece 1 := by
@@ -206,9 +230,8 @@ theorem barDifferential_sq_iff_taylor_comp_eq_zero (G : InternalGrading R M)
   have hleft' := hleft.comp_square_eq_zero_iff_counit_of_negOnePow_eq_neg_one
     (Comodule.comp_rid_comp_lTensor _ (Coalgebra.counit (R := R) (A := TensorWords R B)))
     hb (by norm_num) AA.coaugmentedBarDifferential_sq
-  simp only [LinearMap.comp_assoc] at hleft' ⊢
-  rw [hright.square_eq_zero_iff_counit (barGrading AA BB G) _ D hD
-    BB.coaugmentedBarDifferential_sq, hleft']
+  exact (hright.square_eq_zero_iff_counit (barGrading AA BB G) _ D hD
+    BB.coaugmentedBarDifferential_sq).trans hleft'
 
 /-- Construct an `A∞` bimodule from a homogeneous bicomodule coderivation over the bar
 differentials of `AA` and `BB`.  By cofreeness, it suffices to check the square-zero law on the
@@ -223,11 +246,7 @@ noncomputable def ofBarDifferential (G : InternalGrading R M)
       (TensorWords.grading (AA.grading.shift 1)) 1 AA.coaugmentedBarDifferential D)
     (hright : Comodule.IsGradedCoderivationOver (barGrading AA BB G) 1
       BB.coaugmentedBarDifferential D)
-    (hsq : ((TensorProduct.lid R M).toLinearMap ∘ₗ
-        (Coalgebra.counit (R := R) (A := TensorWords R A)).rTensor M ∘ₗ
-          (TensorProduct.rid R (TensorWords R A ⊗[R] M)).toLinearMap ∘ₗ
-            (Coalgebra.counit (R := R) (A := TensorWords R B)).lTensor
-              (TensorWords R A ⊗[R] M) ∘ₗ D) ∘ₗ D = 0) :
+    (hsq : taylorProj R A B M ∘ₗ D ∘ₗ D = 0) :
     AInfinityBimodule AA BB M where
   grading := G
   barDifferential := D
@@ -255,11 +274,7 @@ theorem ofBarDifferential_taylor (G : InternalGrading R M)
     (D : (TensorWords R A ⊗[R] M) ⊗[R] TensorWords R B →ₗ[R]
       (TensorWords R A ⊗[R] M) ⊗[R] TensorWords R B) (hD hleft hright hsq) :
     (ofBarDifferential (AA := AA) (BB := BB) G D hD hleft hright hsq).taylor =
-      (TensorProduct.lid R M).toLinearMap ∘ₗ
-        (Coalgebra.counit (R := R) (A := TensorWords R A)).rTensor M ∘ₗ
-          (TensorProduct.rid R (TensorWords R A ⊗[R] M)).toLinearMap ∘ₗ
-            (Coalgebra.counit (R := R) (A := TensorWords R B)).lTensor
-              (TensorWords R A ⊗[R] M) ∘ₗ D :=
+      taylorProj R A B M ∘ₗ D :=
   (rfl)
 
 /-- `A∞` bimodules on a fixed carrier are determined by their grading and Taylor map.  In
@@ -271,12 +286,10 @@ theorem ext {MM NN : AInfinityBimodule AA BB M} (hG : MM.grading = NN.grading)
   | mk G D hD hDl hDr hsq =>
     cases NN with
     | mk H E hE hEl hEr hesq =>
-      simp only [taylor_def] at hG htaylor
-      subst H
+      subst hG
       have hleft := hDl.comp_eq_comp_of_counit_comp_eq
         (Comodule.comp_rid_comp_lTensor _ (Coalgebra.counit (R := R) (A := TensorWords R B)))
-        hEl (by simpa only [LinearMap.comp_assoc] using htaylor)
-      simp only [LinearMap.comp_assoc] at hleft
+        hEl htaylor
       have hDE : D = E := hDr.eq_of_counit_comp_eq (barGrading AA BB G)
         BB.coaugmentedBarDifferential D E hEr hleft
       subst E
