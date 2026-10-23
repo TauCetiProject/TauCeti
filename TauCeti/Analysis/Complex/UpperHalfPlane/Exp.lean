@@ -15,8 +15,6 @@ complementing `Mathlib.Analysis.Complex.UpperHalfPlane.Exp`.
 
 ## Main results
 
-* `TauCeti.UpperHalfPlane.exists_norm_exp_two_pi_I_le_of_isCompact`: on a compact subset of the
-  upper half-plane, `‖e^{2π i τ}‖` is bounded by a constant `< 1`.
 * `TauCeti.UpperHalfPlane.one_sub_exp_two_pi_I_ne_zero`: `1 - e^{2π i (x τ + y)}` has no zero in
   the upper half-plane unless `x = 0` and `y ∈ ℤ`.
 * `TauCeti.UpperHalfPlane.exp_two_pi_I_zpow_mul_exp`:
@@ -30,16 +28,6 @@ open UpperHalfPlane hiding I
 open scoped Real
 
 namespace TauCeti.UpperHalfPlane
-
-/-- On a compact subset of the upper half-plane, `‖e^{2π i τ}‖` is bounded by a constant `< 1`. -/
-theorem exists_norm_exp_two_pi_I_le_of_isCompact {S : Set ℂ} (hS : IsCompact S)
-    (hSH : S ⊆ upperHalfPlaneSet) :
-    ∃ ρ : ℝ, 0 ≤ ρ ∧ ρ < 1 ∧ ∀ τ ∈ S, ‖cexp (2 * π * I * τ)‖ ≤ ρ := by
-  rcases S.eq_empty_or_nonempty with rfl | hne
-  · exact ⟨0, le_rfl, one_pos, by simp⟩
-  obtain ⟨τ₀, hτ₀, hmax⟩ := hS.exists_isMaxOn hne
-    (show ContinuousOn (fun τ : ℂ ↦ ‖cexp (2 * π * I * τ)‖) S by fun_prop)
-  exact ⟨_, norm_nonneg _, norm_exp_two_pi_I_lt_one ⟨τ₀, hSH hτ₀⟩, hmax⟩
 
 /-- `1 - e^{2π i (x τ + y)}` vanishes at a point `τ` of the upper half-plane only when `x = 0` and
 `y` is an integer. -/

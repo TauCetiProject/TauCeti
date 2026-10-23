@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Complex.LocallyUniformLimit
 public import Mathlib.Analysis.Normed.Module.MultipliableUniformlyOn
-public import TauCeti.Analysis.Complex.UpperHalfPlane.Exp
 
 /-!
 # The infinite q-Pochhammer products `∏_{n ≥ 1} (1 - qⁿ w)`
@@ -16,9 +15,10 @@ For `‖q‖ < 1` in a complete normed field, the product `∏_{n ≥ 1} (1 - q�
 symbol `(q w; q)_∞`) converges absolutely. This file records its convergence, the shift identity
 obtained by splitting off the first factor, and its nonvanishing. It also introduces the theta
 product `θ_q(w) = (w; q)_∞ (q w⁻¹; q)_∞ = (1 - w) ∏_{n ≥ 1} (1 - qⁿ w) (1 - qⁿ w⁻¹)` and proves its
-convergence, its nonvanishing and its quasi-periodicity `θ_q(q w) = -w⁻¹ θ_q(w)`. With
-`q = e^{2π i τ}` and `w` depending continuously on `τ`, the product converges locally uniformly on
-the upper half-plane, and is holomorphic there when `w` is. The locally uniform convergence and
+convergence, its nonvanishing and its quasi-periodicity `θ_q(q w) = -w⁻¹ θ_q(w)`. When `q` and
+`w` depend continuously on `τ` in an open set `U ⊆ ℂ` with `‖q‖ < 1` on `U`, the product converges
+locally uniformly on `U`, and is holomorphic there when `q` and `w` are; for example
+`q = e^{2π i τ}` on the upper half-plane. The locally uniform convergence and
 holomorphy argument is adapted from `Mathlib.NumberTheory.ModularForms.DedekindEta`
 (C. Birkbeck, D. Loeffler).
 
@@ -32,17 +32,13 @@ holomorphy argument is adapted from `Mathlib.NumberTheory.ModularForms.DedekindE
 * `TauCeti.multipliable_qTheta`, `TauCeti.qTheta_ne_zero`: for `‖q‖ < 1` the product in
   `θ_q(w)` converges, and `θ_q(w) ≠ 0` when `w` is not an integral power of `q`.
 * `TauCeti.qTheta_mul_left`: its quasi-periodicity `θ_q(q w) = -w⁻¹ θ_q(w)` for `‖q‖ < 1`.
-* `TauCeti.hasProdLocallyUniformlyOn_one_sub_pow_mul`: for `w` continuous on the upper half-plane,
-  the product `∏_{n ≥ 1} (1 - e^{2π i n τ} w(τ))` converges locally uniformly there.
-* `TauCeti.differentiableOn_tprod_one_sub_pow_mul`: for `w` holomorphic on the upper half-plane,
+* `TauCeti.hasProdLocallyUniformlyOn_one_sub_pow_mul`: for `q` and `w` continuous on an open set
+  `U` with `‖q‖ < 1` there, `∏_{n ≥ 1} (1 - q(τ)ⁿ w(τ))` converges locally uniformly on `U`.
+* `TauCeti.differentiableOn_tprod_one_sub_pow_mul`: for `q` and `w` holomorphic on such a `U`,
   so is this product.
 -/
 
 public section
-
-open Complex
-open UpperHalfPlane hiding I
-open scoped Real
 
 namespace TauCeti
 
@@ -132,39 +128,45 @@ theorem qTheta_mul_left {q : 𝕜} (hq : ‖q‖ < 1) (hq₀ : q ≠ 0) {w : �
 
 end NormedField
 
-section UpperHalfPlane
+section LocallyUniform
 
-/-- For `w` continuous on the upper half-plane, the product `∏_{n ≥ 1} (1 - qⁿ w(τ))` with
-`q = e^{2π i τ}` converges locally uniformly on the upper half-plane. -/
-theorem hasProdLocallyUniformlyOn_one_sub_pow_mul {w : ℂ → ℂ}
-    (hw : ContinuousOn w upperHalfPlaneSet) :
-    HasProdLocallyUniformlyOn (fun (n : ℕ) τ ↦ 1 - cexp (2 * π * I * τ) ^ (n + 1) * w τ)
-      (fun τ ↦ ∏' n : ℕ, (1 - cexp (2 * π * I * τ) ^ (n + 1) * w τ)) upperHalfPlaneSet := by
+variable {q w : ℂ → ℂ} {U : Set ℂ}
+
+/-- For `q` and `w` continuous on an open set `U` with `‖q‖ < 1` on `U`, the product
+`∏_{n ≥ 1} (1 - q(τ)ⁿ w(τ))` converges locally uniformly on `U`. -/
+theorem hasProdLocallyUniformlyOn_one_sub_pow_mul (hU : IsOpen U) (hq : ContinuousOn q U)
+    (hq₁ : ∀ τ ∈ U, ‖q τ‖ < 1) (hw : ContinuousOn w U) :
+    HasProdLocallyUniformlyOn (fun (n : ℕ) τ ↦ 1 - q τ ^ (n + 1) * w τ)
+      (fun τ ↦ ∏' n : ℕ, (1 - q τ ^ (n + 1) * w τ)) U := by
   simp_rw [sub_eq_add_neg]
-  refine hasProdLocallyUniformlyOn_of_forall_compact isOpen_upperHalfPlaneSet
-    fun S hSH hS ↦ ?_
-  obtain ⟨ρ, hρ₀, hρ₁, hρ⟩ := UpperHalfPlane.exists_norm_exp_two_pi_I_le_of_isCompact hS hSH
-  obtain ⟨M, hM⟩ := hS.exists_bound_of_continuousOn (hw.mono hSH)
+  refine hasProdLocallyUniformlyOn_of_forall_compact hU fun S hSU hS ↦ ?_
+  obtain ⟨ρ, hρ₀, hρ₁, hρ⟩ : ∃ ρ : ℝ, 0 ≤ ρ ∧ ρ < 1 ∧ ∀ τ ∈ S, ‖q τ‖ ≤ ρ := by
+    rcases S.eq_empty_or_nonempty with rfl | hne
+    · exact ⟨0, le_rfl, one_pos, by simp⟩
+    obtain ⟨τ₀, hτ₀, hmax⟩ := hS.exists_isMaxOn hne (hq.mono hSU).norm
+    exact ⟨_, norm_nonneg _, hq₁ τ₀ (hSU hτ₀), hmax⟩
+  obtain ⟨M, hM⟩ := hS.exists_bound_of_continuousOn (hw.mono hSU)
   refine ((summable_geometric_of_lt_one hρ₀ hρ₁).mul_left (ρ * M)).hasProdUniformlyOn_nat_one_add
-    hS (.of_forall fun n τ hτ ↦ ?_) fun n ↦ by have := hw.mono hSH; fun_prop
-  calc ‖-(cexp (2 * π * I * τ) ^ (n + 1) * w τ)‖
-      = ‖cexp (2 * π * I * τ)‖ ^ (n + 1) * ‖w τ‖ := by simp [norm_pow]
+    hS (.of_forall fun n τ hτ ↦ ?_) fun n ↦ by
+      have := hq.mono hSU
+      have := hw.mono hSU
+      fun_prop
+  calc ‖-(q τ ^ (n + 1) * w τ)‖
+      = ‖q τ‖ ^ (n + 1) * ‖w τ‖ := by simp [norm_pow]
     _ ≤ ρ ^ (n + 1) * M :=
       mul_le_mul (pow_le_pow_left₀ (norm_nonneg _) (hρ τ hτ) _) (hM τ hτ) (norm_nonneg _)
         (pow_nonneg hρ₀ _)
     _ = ρ * M * ρ ^ n := by ring
 
-/-- For `w` holomorphic on the upper half-plane, the product `∏_{n ≥ 1} (1 - qⁿ w(τ))` with
-`q = e^{2π i τ}` is holomorphic on the upper half-plane. -/
-theorem differentiableOn_tprod_one_sub_pow_mul {w : ℂ → ℂ}
-    (hw : DifferentiableOn ℂ w upperHalfPlaneSet) :
-    DifferentiableOn ℂ (fun τ ↦ ∏' n : ℕ, (1 - cexp (2 * π * I * τ) ^ (n + 1) * w τ))
-      upperHalfPlaneSet :=
-  (hasProdLocallyUniformlyOn_one_sub_pow_mul hw.continuousOn).differentiableOn
-    (.of_forall fun s ↦ by
-      simpa [Finset.prod_fn] using DifferentiableOn.finsetProd fun _ _ ↦ by fun_prop)
-    isOpen_upperHalfPlaneSet
+/-- For `q` and `w` holomorphic on an open set `U` with `‖q‖ < 1` on `U`, the product
+`∏_{n ≥ 1} (1 - q(τ)ⁿ w(τ))` is holomorphic on `U`. -/
+theorem differentiableOn_tprod_one_sub_pow_mul (hU : IsOpen U) (hq : DifferentiableOn ℂ q U)
+    (hq₁ : ∀ τ ∈ U, ‖q τ‖ < 1) (hw : DifferentiableOn ℂ w U) :
+    DifferentiableOn ℂ (fun τ ↦ ∏' n : ℕ, (1 - q τ ^ (n + 1) * w τ)) U :=
+  (hasProdLocallyUniformlyOn_one_sub_pow_mul hU hq.continuousOn hq₁
+    hw.continuousOn).differentiableOn (.of_forall fun s ↦ by
+      simpa [Finset.prod_fn] using DifferentiableOn.finsetProd fun _ _ ↦ by fun_prop) hU
 
-end UpperHalfPlane
+end LocallyUniform
 
 end TauCeti

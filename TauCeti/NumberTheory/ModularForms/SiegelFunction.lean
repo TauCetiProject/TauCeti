@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.ZetaValues
+public import TauCeti.Analysis.Complex.UpperHalfPlane.Exp
 public import TauCeti.Analysis.SpecialFunctions.QPochhammer
 public import TauCeti.Analysis.SpecialFunctions.Trigonometric.Basic
 
@@ -123,10 +124,16 @@ theorem hasProdLocallyUniformlyOn_siegelFunction (r : Fin 2 → ℝ) :
   have hw' : DifferentiableOn ℂ (fun τ ↦ cexp (-(2 * π * I * (r 0 * τ + r 1))))
       upperHalfPlaneSet := by
     fun_prop
-  have h := (hasProdLocallyUniformlyOn_one_sub_pow_mul hw.continuousOn).mul₀
-    (hasProdLocallyUniformlyOn_one_sub_pow_mul hw'.continuousOn)
-    (differentiableOn_tprod_one_sub_pow_mul hw).continuousOn
-    (differentiableOn_tprod_one_sub_pow_mul hw').continuousOn
+  have hq : DifferentiableOn ℂ (fun τ : ℂ ↦ cexp (2 * π * I * τ)) upperHalfPlaneSet := by
+    fun_prop
+  have hq₁ : ∀ τ ∈ upperHalfPlaneSet, ‖cexp (2 * π * I * τ)‖ < 1 := fun τ hτ ↦
+    norm_exp_two_pi_I_lt_one ⟨τ, hτ⟩
+  have h := (hasProdLocallyUniformlyOn_one_sub_pow_mul isOpen_upperHalfPlaneSet hq.continuousOn
+    hq₁ hw.continuousOn).mul₀
+    (hasProdLocallyUniformlyOn_one_sub_pow_mul isOpen_upperHalfPlaneSet hq.continuousOn hq₁
+      hw'.continuousOn)
+    (differentiableOn_tprod_one_sub_pow_mul isOpen_upperHalfPlaneSet hq hq₁ hw).continuousOn
+    (differentiableOn_tprod_one_sub_pow_mul isOpen_upperHalfPlaneSet hq hq₁ hw').continuousOn
   refine (h.congr fun s τ _ ↦ ?_).congr_right fun τ hτ ↦ ?_
   · simp [Finset.prod_mul_distrib]
   · have hq : ‖cexp (2 * π * I * τ)‖ < 1 := norm_exp_two_pi_I_lt_one ⟨τ, hτ⟩
@@ -136,9 +143,13 @@ theorem hasProdLocallyUniformlyOn_siegelFunction (r : Fin 2 → ℝ) :
 theorem differentiableOn_siegelFunction (r : Fin 2 → ℝ) :
     DifferentiableOn ℂ (siegelFunction r) upperHalfPlaneSet := by
   refine DifferentiableOn.congr ?_ fun τ hτ ↦ siegelFunction_eq_mul_tprod_mul_tprod r hτ
+  have hq₁ : ∀ τ ∈ upperHalfPlaneSet, ‖cexp (2 * π * I * τ)‖ < 1 := fun τ hτ ↦
+    norm_exp_two_pi_I_lt_one ⟨τ, hτ⟩
   refine (DifferentiableOn.mul (by fun_prop) ?_)
-  exact (differentiableOn_tprod_one_sub_pow_mul (by fun_prop)).mul
-    (differentiableOn_tprod_one_sub_pow_mul (by fun_prop))
+  exact (differentiableOn_tprod_one_sub_pow_mul isOpen_upperHalfPlaneSet (by fun_prop) hq₁
+    (by fun_prop)).mul
+    (differentiableOn_tprod_one_sub_pow_mul isOpen_upperHalfPlaneSet (by fun_prop) hq₁
+      (by fun_prop))
 
 /-- **The Siegel function has no zeros** on the upper half-plane when `r ∉ ℤ²`. -/
 theorem siegelFunction_ne_zero {r : Fin 2 → ℝ} (hr : ∀ s : Fin 2 → ℤ, r ≠ fun i ↦ (s i : ℝ))
