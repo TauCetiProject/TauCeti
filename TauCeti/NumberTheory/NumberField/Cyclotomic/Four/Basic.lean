@@ -19,9 +19,9 @@ about `ℤ[i]` that the primary normalisation of quartic reciprocity is computed
 
 * `IsPrimitiveRoot.minpoly_toInteger_eq_X_sq_add_one`: the minimal polynomial of `i` is
   `X² + 1`, which connects this presentation of `ℚ(i)` with the quadratic-field API;
-* `IsPrimitiveRoot.exists_intCast_add_intCast_mul_toInteger_eq`: every element of `ℤ[i]` is
+* `IsPrimitiveRoot.exists_intCast_add_intCast_mul_toInteger_eq_of_four`: every element of `ℤ[i]` is
   `a + b i` for integers `a` and `b`;
-* `IsPrimitiveRoot.intCast_dvd_intCast_add_intCast_mul_toInteger_iff`: an integer divides
+* `IsPrimitiveRoot.intCast_dvd_intCast_add_intCast_mul_toInteger_iff_of_four`: an integer divides
   `a + b i` exactly when it divides both `a` and `b`;
 * `IsPrimitiveRoot.norm_intCast_add_intCast_mul_toInteger`: the norm of `a + b i` is `a² + b²`;
 * `IsPrimitiveRoot.isUnit_intCast_add_intCast_mul_toInteger_iff`: `a + b i` is a unit exactly
@@ -66,7 +66,7 @@ private theorem intCast_add_intCast_mul_eq (a b : ℤ) :
   simp [basisFour_apply]
 
 /-- Every element of `𝓞 K = ℤ[i]` is `a + b i` for integers `a` and `b`. -/
-theorem exists_intCast_add_intCast_mul_toInteger_eq (x : 𝓞 K) :
+theorem exists_intCast_add_intCast_mul_toInteger_eq_of_four (x : 𝓞 K) :
     ∃ a b : ℤ, (a : 𝓞 K) + b * hζ.toInteger = x := by
   refine ⟨(basisFour hζ).repr x 0, (basisFour hζ).repr x 1, ?_⟩
   rw [intCast_add_intCast_mul_eq]
@@ -75,7 +75,7 @@ theorem exists_intCast_add_intCast_mul_toInteger_eq (x : 𝓞 K) :
 
 /-- An integer `m` divides `a + b i` in `𝓞 K = ℤ[i]` exactly when it divides both coordinates. -/
 @[simp]
-theorem intCast_dvd_intCast_add_intCast_mul_toInteger_iff {m a b : ℤ} :
+theorem intCast_dvd_intCast_add_intCast_mul_toInteger_iff_of_four {m a b : ℤ} :
     (m : 𝓞 K) ∣ a + b * hζ.toInteger ↔ m ∣ a ∧ m ∣ b := by
   refine ⟨fun ⟨y, hy⟩ ↦ ?_, fun ⟨ha, hb⟩ ↦ ?_⟩
   · have hy' : a • basisFour hζ 0 + b • basisFour hζ 1 = m • y := by

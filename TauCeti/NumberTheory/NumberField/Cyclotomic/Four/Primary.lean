@@ -115,7 +115,7 @@ theorem _root_.IsPrimitiveRoot.isPrimaryGaussian_add_mul_iff {ζ : K} (hζ : IsP
     push_cast
     linear_combination (b : 𝓞 K) * hsq
   rw [hζ.isPrimaryGaussian_iff, one_add_pow_three_dvd_iff_four_dvd hsq, h, ← Int.cast_ofNat,
-    hζ.intCast_dvd_intCast_add_intCast_mul_toInteger_iff]
+    hζ.intCast_dvd_intCast_add_intCast_mul_toInteger_iff_of_four]
   simp only [Int.ModEq]
   omega
 
@@ -157,7 +157,7 @@ theorem IsPrimaryGaussian.map (hx : IsPrimaryGaussian x) (σ : 𝓞 K →+* 𝓞
 primary. -/
 theorem IsPrimaryGaussian.odd_norm (hx : IsPrimaryGaussian x) : Odd (Algebra.norm ℤ x) := by
   have hζ := IsCyclotomicExtension.zeta_spec 4 ℚ K
-  obtain ⟨a, b, rfl⟩ := hζ.exists_intCast_add_intCast_mul_toInteger_eq x
+  obtain ⟨a, b, rfl⟩ := hζ.exists_intCast_add_intCast_mul_toInteger_eq_of_four x
   rw [hζ.isPrimaryGaussian_add_mul_iff] at hx
   rw [hζ.norm_intCast_add_intCast_mul_toInteger, Int.odd_add, Int.odd_pow' two_ne_zero,
     Int.even_pow' two_ne_zero, Int.odd_iff, Int.even_iff]
@@ -220,7 +220,7 @@ to `1` modulo `(1 + i)³`. -/
 theorem IsPrimaryGaussian.eq_one_of_isUnit (hx : IsPrimaryGaussian x) (hu : IsUnit x) :
     x = 1 := by
   have hζ := IsCyclotomicExtension.zeta_spec 4 ℚ K
-  obtain ⟨a, b, rfl⟩ := hζ.exists_intCast_add_intCast_mul_toInteger_eq x
+  obtain ⟨a, b, rfl⟩ := hζ.exists_intCast_add_intCast_mul_toInteger_eq_of_four x
   rw [hζ.isPrimaryGaussian_add_mul_iff] at hx
   rw [hζ.isUnit_intCast_add_intCast_mul_toInteger_iff] at hu
   have ha : -1 ≤ a ∧ a ≤ 1 := by constructor <;> nlinarith [sq_nonneg b]
@@ -235,7 +235,7 @@ theorem existsUnique_unit_mul_isPrimaryGaussian (hx : Odd (Algebra.norm ℤ x)) 
     ∃! u : (𝓞 K)ˣ, IsPrimaryGaussian ((u : 𝓞 K) * x) := by
   have hζ := IsCyclotomicExtension.zeta_spec 4 ℚ K
   obtain ⟨u, hu⟩ : ∃ u : (𝓞 K)ˣ, IsPrimaryGaussian ((u : 𝓞 K) * x) := by
-    obtain ⟨a, b, rfl⟩ := hζ.exists_intCast_add_intCast_mul_toInteger_eq x
+    obtain ⟨a, b, rfl⟩ := hζ.exists_intCast_add_intCast_mul_toInteger_eq_of_four x
     rw [hζ.norm_intCast_add_intCast_mul_toInteger, Int.odd_add, Int.odd_pow' two_ne_zero,
       Int.even_pow' two_ne_zero, Int.odd_iff, Int.even_iff] at hx
     set i := hζ.toInteger
