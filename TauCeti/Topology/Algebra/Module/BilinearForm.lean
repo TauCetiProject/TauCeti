@@ -187,13 +187,17 @@ end Convex
 /-- Strict positivity on nonzero diagonal vectors is open in the space of continuous real
 bilinear forms on a finite-dimensional space. Symmetry is not imposed. -/
 theorem isOpen_setOf_forall_bilinear_apply_self_pos
-    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] :
+    {E : Type*} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E]
+    [ContinuousSMul ℝ E] [Module.Finite ℝ E] :
     IsOpen {b : E →L[ℝ] E →L[ℝ] ℝ | ∀ v, v ≠ 0 → 0 < b v v} := by
   let e := Module.finBasis ℝ E
   let A := fun b : E →L[ℝ] E →L[ℝ] ℝ ↦ b.toBilinForm.toMatrix e
   have hA : Continuous A := by
     apply continuous_pi fun i ↦ continuous_pi fun j ↦ ?_
-    exact (continuous_id.clm_apply continuous_const).clm_apply continuous_const
+    simpa only [A, LinearMap.BilinForm.toMatrix_apply, ContinuousLinearMap.toBilinForm_apply,
+      id_eq] using
+      ((continuous_id : Continuous (id : (E →L[ℝ] E →L[ℝ] ℝ) → _)).eval_const
+        (e i)).eval_const (e j)
   have heq : {b : E →L[ℝ] E →L[ℝ] ℝ | ∀ v, v ≠ 0 → 0 < b v v} =
       A ⁻¹' {a | ∀ v, v ≠ 0 → 0 < v ⬝ᵥ a *ᵥ v} := by
     ext b

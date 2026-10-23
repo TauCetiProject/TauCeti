@@ -68,7 +68,7 @@ variable [FiniteDimensional ℝ F]
 
 /-- In a finite-rank real bilinear bundle, strict positivity on nonzero diagonal vectors
 defines an open subset of the total space. The forms are not required to be symmetric. -/
-theorem isOpen_setOf_bilinear_bundle_apply_self_pos :
+theorem isOpen_setOf_forall_bilinear_bundle_apply_self_pos :
     IsOpen {z : TotalSpace (F →L[ℝ] F →L[ℝ] ℝ)
       (fun x ↦ V x →L[ℝ] V x →L[ℝ] ℝ) | ∀ v, v ≠ 0 → 0 < z.2 v v} := by
   rw [isOpen_iff_mem_nhds]
@@ -91,7 +91,7 @@ theorem isOpen_setOf_bilinear_bundle_apply_self_pos :
 
 /-- Positivity of a continuous family of bilinear fields on a compact subset of the base is
 an open condition on the parameter. This applies in particular to symmetric metric fields. -/
-theorem isOpen_setOf_forall_bilinear_bundle_apply_self_pos
+theorem _root_.IsCompact.isOpen_setOf_forall_mem_forall_bilinear_apply_self_pos
     {P : Type*} [TopologicalSpace P] {K : Set B} (hK : IsCompact K)
     (b : P → ∀ x : B, V x →L[ℝ] V x →L[ℝ] ℝ)
     (hb : Continuous (fun z : P × B ↦
@@ -101,6 +101,6 @@ theorem isOpen_setOf_forall_bilinear_bundle_apply_self_pos
   rw [isOpen_iff_mem_nhds]
   intro p hp
   exact hK.eventually_forall_of_forall_eventually fun x hx ↦
-    (isOpen_setOf_bilinear_bundle_apply_self_pos.preimage hb).mem_nhds (hp x hx)
+    (isOpen_setOf_forall_bilinear_bundle_apply_self_pos.preimage hb).mem_nhds (hp x hx)
 
 end TauCeti
