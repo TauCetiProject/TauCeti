@@ -40,6 +40,7 @@ grading sends all of them to the same vector space `k`.
 * `TauCeti.GradedVectorSpace.finite`: the finite graded vector spaces.
 * `TauCeti.GradedVectorSpace.finiteExactStructure`: their graded exact structure, induced from the
   canonical exact structure of the abelian category of graded vector spaces.
+* `TauCeti.GradedVectorSpace.finiteShiftFunctorCompιIso`: its grading shift is the ambient one.
 * `TauCeti.GradedVectorSpace.unitFinite`: the one-dimensional space `M = k` in degree `0`.
 * `TauCeti.GradedVectorSpace.laurentK0Equiv`: the graded dimension
   `K₀^gr ≃ ℤ[q,q⁻¹]` of finite graded vector spaces.
@@ -155,14 +156,19 @@ theorem finiteExactStructure_conflation_iff (S : ShortComplex (finite k).FullSub
   rw [finiteExactStructure, GradedExactStructure.fullSubcategory_conflation_iff,
     GradedExactStructure.abelian_toExactStructure, ExactStructure.abelian_conflation]
 
+/-- The grading shift of finite graded vector spaces is the ambient grading shift: the inclusion
+intertwines the two. -/
+noncomputable def finiteShiftFunctorCompιIso :
+    (finiteExactStructure k).shift.functor ⋙ (finite k).ι ≅ (finite k).ι ⋙ (shift k).functor := by
+  rw [finiteExactStructure, GradedExactStructure.fullSubcategory_shift]
+  refine GradedExactStructure.fullSubcategoryShiftFunctorCompιIso _ (finite k) _ ≪≫ ?_
+  -- After rewriting the ambient shift, the remaining goal is closed by `Iso.refl`.
+  rw [GradedExactStructure.abelian_shift]
+
 /-- The grading shift of finite graded vector spaces is the ambient grading shift. -/
 private noncomputable def shiftObjIso (V : (finite k).FullSubcategory) :
-    ((finiteExactStructure k).shift.functor.obj V).obj ≅ (shift k).functor.obj V.obj := by
-  rw [finiteExactStructure, GradedExactStructure.fullSubcategory_shift]
-  refine (GradedExactStructure.fullSubcategoryShiftFunctorCompιIso _ (finite k) ?_).app V ≪≫
-    eqToIso ?_
-  · simpa using finite_shift k
-  · simp
+    ((finiteExactStructure k).shift.functor.obj V).obj ≅ (shift k).functor.obj V.obj :=
+  (finiteShiftFunctorCompιIso k).app V
 
 /-- The piece of `V{1}` in degree `j` is the piece of `V` in degree `j - 1`. -/
 private noncomputable def shiftObjApplyIso (V : (finite k).FullSubcategory) (j : ℤ) :
