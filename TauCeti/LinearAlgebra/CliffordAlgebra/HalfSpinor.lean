@@ -28,10 +28,11 @@ because `c(v) ψ = 0` forces `‖v‖² ψ = 0`, and both sides have real dimens
 
 When `W` is moreover a Hermitian Clifford module, that is, a complex inner product space on which
 the generators act skew-adjointly, `c(v)* = -c(v)`, the chirality `Γ` acts self-adjointly. On a
-complex inner product space, a spinor `χ` of the opposite eigenspace with `Re ⟪c(v) ψ, χ⟫ = 0`
-for every `v` vanishes. This is the pointwise step of the unique-continuation argument for the
-cokernel of the linearized Seiberg–Witten map: the variations `a ↦ c(a) ψ` of the Dirac term force
-such a cokernel element to vanish at every point where `ψ ≠ 0`.
+complex inner product space, for a nonzero `ψ` in a two-dimensional eigenspace, a spinor `χ` of
+the opposite eigenspace with `Re ⟪c(v) ψ, χ⟫ = 0` for every `v` vanishes. This is the pointwise
+step of the unique-continuation argument for the cokernel of the linearized Seiberg–Witten map:
+the variations `a ↦ c(a) ψ` of the Dirac term force such a cokernel element to vanish at every
+point where `ψ ≠ 0`.
 
 The eigenspaces are stated for an arbitrary eigenvalue `ε`: `c(v)` maps the `ε`-eigenspace to
 the `-ε`-eigenspace, and the case `ε = 1` is `W⁺ → W⁻`.
@@ -44,12 +45,13 @@ the `-ε`-eigenspace, and the case `ε = 1` is `W⁺ → W⁻`.
 ## Main results
 
 * `CliffordAlgebra.isSelfAdjoint_map_chirality`: `Γ* = Γ`.
-* `CliffordAlgebra.map_ι_mem_eigenspace_chirality_neg`: `c(v)` maps the `ε`-eigenspace of
+* `CliffordAlgebra.map_ι_apply_mem_eigenspace_chirality_neg`: `c(v)` maps the `ε`-eigenspace of
   `Γ` into the `-ε`-eigenspace.
 * `CliffordAlgebra.finrank_eigenspace_chirality_neg`: the two eigenspaces have the same
   dimension.
 * `CliffordAlgebra.eq_zero_of_forall_re_inner_map_ι_apply_eq_zero`: if
-  `Re ⟪c(v) ψ, χ⟫ = 0` for all `v`, with `ψ ≠ 0` and `χ` in the opposite eigenspace, then `χ = 0`.
+  `Re ⟪c(v) ψ, χ⟫ = 0` for all `v`, with `ψ ≠ 0` in a two-dimensional `ε`-eigenspace and `χ` in
+  the opposite eigenspace, then `χ = 0`.
 
 ## References
 
@@ -90,7 +92,7 @@ variable {W : Type*} [AddCommGroup W] [Module ℂ W] {ρ : CliffordAlgebra Q →
 
 /-- Clifford multiplication exchanges the eigenspaces of `Γ`: `c(v)` maps the `ε`-eigenspace into
 the `-ε`-eigenspace. In particular it maps `W⁺` to `W⁻` and `W⁻` to `W⁺`. -/
-theorem map_ι_mem_eigenspace_chirality_neg {ε : ℂ} {ψ : W}
+theorem map_ι_apply_mem_eigenspace_chirality_neg {ε : ℂ} {ψ : W}
     (hψ : ψ ∈ eigenspace (ρ (chirality Q o)) ε) (v : V) :
     ρ (ι Q v) ψ ∈ eigenspace (ρ (chirality Q o)) (-ε) := by
   rw [mem_eigenspace_iff] at hψ ⊢
@@ -109,7 +111,7 @@ private theorem finrank_eigenspace_chirality_le_neg (ρ : CliffordAlgebra Q →�
   obtain ⟨v, hv⟩ := exists_ne (0 : V)
   have hinj := map_ι_injective ρ (v := v) (by simpa [hQ] using hv)
   exact LinearMap.finrank_le_finrank_of_injective
-    (f := (ρ (ι Q v)).restrict fun _ hξ ↦ map_ι_mem_eigenspace_chirality_neg o hQ hξ v)
+    (f := (ρ (ι Q v)).restrict fun _ hξ ↦ map_ι_apply_mem_eigenspace_chirality_neg o hQ hξ v)
     fun ψ φ h ↦ Subtype.ext (hinj (congrArg Subtype.val h))
 
 variable (ρ) in
@@ -129,7 +131,7 @@ def cliffordMulEquiv {ε : ℂ} {ψ : W} (hψ : ψ ∈ eigenspace (ρ (chirality
     (h₂ : finrank ℂ (eigenspace (ρ (chirality Q o)) ε) = 2) :
     V ≃ₗ[ℝ] eigenspace (ρ (chirality Q o)) (-ε) :=
   LinearMap.linearEquivOfInjective
-    { toFun v := ⟨ρ (ι Q v) ψ, map_ι_mem_eigenspace_chirality_neg o hQ hψ v⟩
+    { toFun v := ⟨ρ (ι Q v) ψ, map_ι_apply_mem_eigenspace_chirality_neg o hQ hψ v⟩
       map_add' v w := by ext; simp
       map_smul' r v := by ext; simp }
     (fun v w h ↦ map_ι_apply_left_injective ρ (fun v hv ↦ by simpa [hQ] using hv) hψ₀

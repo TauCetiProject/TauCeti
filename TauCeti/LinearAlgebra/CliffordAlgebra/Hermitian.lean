@@ -26,7 +26,8 @@ by `‖v‖`.
 
 ## Main results
 
-* `CliffordAlgebra.map_ι_mul_map_ι`: `c(v) c(v) = Q v`.
+* `CliffordAlgebra.map_ι_mul_map_ι`, `CliffordAlgebra.map_ι_apply_map_ι_apply`:
+  `c(v) c(v) = Q v`, as operators and pointwise.
 * `CliffordAlgebra.map_ι_injective`: `c(v)` is injective when `Q v ≠ 0`.
 * `CliffordAlgebra.map_ι_apply_left_injective`: `v ↦ c(v) ψ` is injective for `ψ ≠ 0` and an
   anisotropic `Q`.
@@ -58,12 +59,17 @@ theorem map_ι_mul_map_ι (v : M) : ρ (ι Q v) * ρ (ι Q v) = ((Q v : ℝ) : �
   rw [← map_mul, ι_sq_scalar, AlgHom.commutes, Algebra.algebraMap_eq_smul_one,
     Complex.coe_smul]
 
+/-- The Clifford relation applied to a vector of the module: `c(v) (c(v) ψ) = Q v ψ`. -/
+@[simp]
+theorem map_ι_apply_map_ι_apply (v : M) (ψ : W) :
+    ρ (ι Q v) (ρ (ι Q v) ψ) = ((Q v : ℝ) : ℂ) • ψ := by
+  rw [← Module.End.mul_apply, map_ι_mul_map_ι, LinearMap.smul_apply, Module.End.one_apply]
+
 /-- Clifford multiplication by a vector `v` with `Q v ≠ 0` is injective. -/
 theorem map_ι_injective {v : M} (hv : Q v ≠ 0) : Function.Injective (ρ (ι Q v)) := by
   refine (injective_iff_map_eq_zero _).2 fun ψ hψ ↦ ?_
-  have h := congrArg (· ψ) (map_ι_mul_map_ι ρ v)
-  simp only [Module.End.mul_apply, hψ, map_zero, LinearMap.smul_apply, Module.End.one_apply]
-    at h
+  have h := map_ι_apply_map_ι_apply ρ v ψ
+  rw [hψ, map_zero] at h
   exact (smul_eq_zero.1 h.symm).resolve_left (by exact_mod_cast hv)
 
 /-- For an anisotropic form and a nonzero `ψ`, Clifford multiplication `v ↦ c(v) ψ` is
@@ -106,11 +112,9 @@ theorem adjoint_map_eq_map_star (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = 
 theorem norm_map_ι_apply_sq (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v)) (v : M)
     (ψ : W) : ‖ρ (ι Q v) ψ‖ ^ 2 = -Q v * ‖ψ‖ ^ 2 := by
   -- `‖c(v) ψ‖² = Re ⟪ψ, c(v)* c(v) ψ⟫ = Re ⟪ψ, -c(v)² ψ⟫ = -Q v ‖ψ‖²`.
-  have hsq := congrArg (· ψ) (map_ι_mul_map_ι ρ v)
-  simp only [Module.End.mul_apply, LinearMap.smul_apply, Module.End.one_apply] at hsq
   rw [← RCLike.ofReal_inj (K := ℂ), RCLike.ofReal_pow, ← inner_self_eq_norm_sq_to_K,
-    ← LinearMap.adjoint_inner_left, hρ, LinearMap.neg_apply, hsq, inner_neg_left,
-    inner_smul_left, inner_self_eq_norm_sq_to_K]
+    ← LinearMap.adjoint_inner_left, hρ, LinearMap.neg_apply, map_ι_apply_map_ι_apply,
+    inner_neg_left, inner_smul_left, inner_self_eq_norm_sq_to_K]
   simp only [RCLike.ofReal_eq_complex_ofReal, Complex.conj_ofReal]
   push_cast
   ring
