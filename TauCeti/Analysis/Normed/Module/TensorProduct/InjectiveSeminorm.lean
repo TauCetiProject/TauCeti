@@ -19,9 +19,9 @@ is the operator norm of this map. Over `ℝ` and `ℂ` it is the supremum of
 `‖∑ i, f (x i) * g (y i)‖` over continuous linear functionals `f` on `E` and `g` on `F` of norm
 at most one, which is the classical definition of the injective norm.
 
-This file proves that the injective seminorm is bounded by the projective seminorm, that over
-`ℝ` and `ℂ` both agree with `‖x‖ * ‖y‖` on a pure tensor `x ⊗ₜ y`, and that both are norms when
-`E` and `F` are normed spaces. Definiteness follows from the injectivity of the map from
+This file proves that the injective seminorm is bounded by the projective seminorm. Over `ℝ`
+and `ℂ`, both agree with `‖x‖ * ‖y‖` on a pure tensor `x ⊗ₜ y` and are norms when `E` and `F`
+are normed spaces. Definiteness follows, via Hahn–Banach, from the injectivity of the map from
 tensors to operators on the dual.
 
 The type `TauCeti.InjectiveTensor 𝕜 E F` is a copy of `E ⊗[𝕜] F` carrying the injective
@@ -115,6 +115,9 @@ theorem norm_contractStrongDual_apply_le (u : E ⊗[𝕜] F) (f : StrongDual �
 times the norm of `y`. -/
 private theorem injectiveSeminorm_tmul_eq (x : E) (y : F) :
     injectiveSeminorm 𝕜 E F (x ⊗ₜ y) = ‖NormedSpace.inclusionInDoubleDual 𝕜 E x‖ * ‖y‖ :=
+  -- Unfolding `injectiveSeminorm`, `Seminorm.comp`, and `normSeminorm` gives the operator norm;
+  -- on `x ⊗ₜ y`, `TensorProduct.lift` and the composition with `smulRightLₗ` reduce to
+  -- `ContinuousLinearMap.smulRight (NormedSpace.inclusionInDoubleDual 𝕜 E x) y`.
   ContinuousLinearMap.norm_smulRight_apply _ y
 
 /-- The injective seminorm of a pure tensor is at most the product of the norms. -/
