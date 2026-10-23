@@ -9,6 +9,7 @@ public import Mathlib.Algebra.DirectSum.Module
 public import Mathlib.Algebra.Lie.OfAssociative
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import TauCeti.Algebra.DirectSum.Internal
+public import TauCeti.Algebra.Lie.Weights.Eigenvector
 
 /-!
 # The grading automorphisms attached to an integral semisimple element
@@ -16,8 +17,9 @@ public import TauCeti.Algebra.DirectSum.Internal
 Let `L` be a Lie algebra over a commutative ring `R` and let `h ∈ L` be an element whose adjoint
 action is diagonalizable with integer eigenvalues: `L` is the internal direct sum of the
 eigenspaces `L(j)` of `ad h` at the integers `j`. The bracket adds eigenvalues
-(`TauCeti.lie_mem_eigenspace_toEnd_add`), so `L = ⨁ⱼ L(j)` is a `ℤ`-graded Lie algebra, and every
-unit `s` of `R` defines a Lie automorphism `TauCeti.gradingAut` of `L` acting on `L(j)` by `s ^ j`.
+(`TauCeti.lie_mem_eigenspace_toEnd_add`, in `TauCeti.Algebra.Lie.Weights.Eigenvector`), so
+`L = ⨁ⱼ L(j)` is a `ℤ`-graded Lie algebra, and every unit `s` of `R` defines a Lie automorphism
+`TauCeti.gradingAut` of `L` acting on `L(j)` by `s ^ j`.
 
 When `L` is the Lie algebra of an algebraic group `G` over a field of characteristic zero and `h`
 is the differential of a cocharacter `λ : 𝔾ₘ → G`, the eigenspace `L(j)` is the weight space of
@@ -34,8 +36,6 @@ contracting action on a Slodowy slice (`TauCeti.Algebra.Lie.Sl2.SlodowySlice`).
 ## Main results
 
 * `LieAlgebra.ad_eq_toEnd`: the adjoint action is the action `toEnd R L L` of `L` on itself.
-* `TauCeti.lie_mem_eigenspace_toEnd_add`: for an `L`-module `M`, an `ad h`-eigenvector of
-  eigenvalue `a` maps an `h`-eigenvector of eigenvalue `b` to one of eigenvalue `a + b`.
 * `TauCeti.gradingAut_apply_of_mem`: the characterizing property of `TauCeti.gradingAut`.
 * `TauCeti.gradingAut_mul_apply`, `TauCeti.gradingAut_one_apply` and `TauCeti.gradingAut_symm`:
   `s ↦ gradingAut hh s` is a group homomorphism from `Rˣ` to the automorphisms of `L`.
@@ -52,24 +52,6 @@ theorem LieAlgebra.ad_eq_toEnd (R L : Type*) [CommRing R] [LieRing L] [LieAlgebr
 namespace TauCeti
 
 open LieAlgebra LieModule Module
-
-section Bracket
-
-variable {R L M : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
-  [AddCommGroup M] [Module R M] [LieRingModule L M] [LieModule R L M]
-  {h x : L} {v : M} {a b : R}
-
-/-- **The bracket adds eigenvalues.** If `x` is an eigenvector of `ad h` of eigenvalue `a` and `v`
-is an eigenvector of `h` acting on a Lie module of eigenvalue `b`, then `⁅x, v⁆` is an eigenvector
-of `h` of eigenvalue `a + b`. -/
-theorem lie_mem_eigenspace_toEnd_add (hx : x ∈ (ad R L h).eigenspace a)
-    (hv : v ∈ (toEnd R L M h).eigenspace b) :
-    ⁅x, v⁆ ∈ (toEnd R L M h).eigenspace (a + b) := by
-  rw [Module.End.mem_eigenspace_iff, ad_apply] at hx
-  rw [Module.End.mem_eigenspace_iff, toEnd_apply_apply] at hv ⊢
-  rw [leibniz_lie h x v, hx, hv, smul_lie, lie_smul, add_smul]
-
-end Bracket
 
 section Grading
 
