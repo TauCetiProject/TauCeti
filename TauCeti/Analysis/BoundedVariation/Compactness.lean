@@ -11,6 +11,7 @@ import TauCeti.Analysis.BoundedVariation.Multiplication
 import TauCeti.Analysis.BoundedVariation.Translation
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.MeasureTheory.Function.Lp.FrechetKolmogorov
+import TauCeti.MeasureTheory.Integral.Lebesgue.Cutoff
 
 /-!
 # Compactness of families of bounded variation
@@ -71,41 +72,6 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure] {Ω V : Opens E}
   {u : E → ℝ} {h : E}
 
-/-! ### Cut-off functions -/
-
-section Cutoff
-
-variable {χ : E → ℝ}
-
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [μ.IsAddHaarMeasure] in
-/-- Multiplying by a cutoff `χ` with `|χ| ≤ 1` and `tsupport χ ⊆ Ω` does not increase the `L¹`
-norm on `Ω`: `∫ |χ u| ≤ ∫_Ω |u|`. -/
-private theorem lintegral_enorm_mul_le_setLIntegral_of_tsupport_subset
-    (hχ1 : ∀ x, |χ x| ≤ 1) (hχΩ : tsupport χ ⊆ Ω) (u : E → ℝ) :
-    ∫⁻ x, ‖(χ * u) x‖ₑ ∂μ ≤ ∫⁻ x in Ω, ‖u x‖ₑ ∂μ := by
-  rw [← lintegral_indicator Ω.isOpen.measurableSet]
-  refine lintegral_mono fun x => ?_
-  by_cases hx : x ∈ (Ω : Set E)
-  · rw [indicator_of_mem hx, Pi.mul_apply, enorm_mul]
-    exact mul_le_of_le_one_left' (by simpa [← ofReal_norm] using hχ1 x)
-  · simp [image_eq_zero_of_notMem_tsupport fun hmem => hx (hχΩ hmem)]
-
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [μ.IsAddHaarMeasure] in
-/-- For a continuous cutoff `χ` with `|χ| ≤ 1` and `tsupport χ ⊆ Ω`, the cut-off function `χ u` of
-a function `u` integrable on `Ω` is integrable on the whole space. -/
-private theorem integrable_mul_of_tsupport_subset (hχ : Continuous χ) (hχ1 : ∀ x, |χ x| ≤ 1)
-    (hχΩ : tsupport χ ⊆ Ω) (hu : IntegrableOn u Ω μ) : Integrable (χ * u) μ := by
-  refine ⟨?_, (lintegral_enorm_mul_le_setLIntegral_of_tsupport_subset hχ1 hχΩ u).trans_lt hu.2⟩
-  have hind : χ * u = (Ω : Set E).indicator (χ * u) := by
-    ext x
-    by_cases hx : x ∈ (Ω : Set E)
-    · simp [hx]
-    · simp [hx, image_eq_zero_of_notMem_tsupport fun hmem => hx (hχΩ hmem)]
-  rw [hind, aestronglyMeasurable_indicator_iff Ω.isOpen.measurableSet]
-  exact hχ.aestronglyMeasurable.mul hu.1
-
-end Cutoff
-
 /-! ### Compactness -/
 
 variable {K : Set E} {S : Set (E → ℝ)} {M : ℝ≥0∞}
@@ -132,11 +98,13 @@ theorem totallyBounded_of_setLIntegral_le_of_totalVariationOn_le (hK : IsCompact
   -- The cut-off functions `χ u` are integrable, and bounded in `L¹` and in variation on the
   -- whole space.
   have hnorm (u : E → ℝ) : ∫⁻ x, ‖(χ * u) x‖ₑ ∂μ ≤ ∫⁻ x in Ω, ‖u x‖ₑ ∂μ :=
-    lintegral_enorm_mul_le_setLIntegral_of_tsupport_subset hχ1 hχΩ u
+    lintegral_enorm_mul_le_setLIntegral_of_support_subset hχ1 ((subset_tsupport χ).trans hχΩ) u
   have huΩ (u : E → ℝ) (hu : u ∈ S) : IntegrableOn u Ω μ :=
     ⟨hmeas u hu, (hbdd u hu).trans_lt hM.lt_top⟩
   have hint (u : E → ℝ) (hu : u ∈ S) : Integrable (χ * u) μ :=
-    integrable_mul_of_tsupport_subset hχ.continuous hχ1 hχΩ (huΩ u hu)
+    IntegrableOn.integrable_of_forall_notMem_eq_zero ((huΩ u hu).bdd_mul
+      hχ.continuous.aestronglyMeasurable (ae_of_all _ fun x => by simpa using hχ1 x))
+      fun x hx => by simp [image_eq_zero_of_notMem_tsupport fun hmem => hx (hχΩ hmem)]
   have hB : M + ENNReal.ofReal C * M ≠ ⊤ := by finiteness
   have hvarχ (u : E → ℝ) (hu : u ∈ S) :
       totalVariationOn μ ⊤ (χ * u) ≤ M + ENNReal.ofReal C * M :=
