@@ -221,6 +221,17 @@ theorem chartAt_eq (x : BoundarylessModel I M) :
     chartAt E x = chart I (chartAt H ((homeomorph I M).symm x)) :=
   (rfl)
 
+/-- The preferred chart of the copy has the coordinates of the preferred extended chart. -/
+theorem chartAt_apply (z y : BoundarylessModel I M) :
+    chartAt E z y = extChartAt I ((homeomorph I M).symm z) ((homeomorph I M).symm y) := by
+  rw [chartAt_eq, chart_apply, extChartAt_coe, comp_apply]
+
+/-- The inverse preferred chart of the copy is the inverse preferred extended chart. -/
+theorem chartAt_symm_apply (z : BoundarylessModel I M) (v : E) :
+    (homeomorph I M).symm ((chartAt E z).symm v) =
+      (extChartAt I ((homeomorph I M).symm z)).symm v := by
+  rw [chartAt_eq, chart_symm_apply, Homeomorph.symm_apply_apply, extChartAt_coe_symm, comp_apply]
+
 /-- The extended preferred chart is unchanged by the model transport. -/
 theorem extChartAt_eq (x : BoundarylessModel I M) :
     extChartAt 𝓘(𝕜, E) x = extChartAt I ((homeomorph I M).symm x) := by

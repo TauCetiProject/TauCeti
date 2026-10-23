@@ -72,25 +72,6 @@ private theorem mem_ker_augmentation_smul_top {B : Rep ℤ Q} [Module (MonoidAlg
     convert zsmul_mem h n using 1
     exact int_smul_eq_zsmul _ n x
 
-/-- An element of `ℤ[Q]` invariant under multiplication by every `[q]`, with augmentation `|Q|`,
-is the norm element `∑_q [q]`. -/
-private theorem eq_sum_single_of_mul_single_eq_self [Fintype Q] {γ : MonoidAlgebra ℤ Q}
-    (hinv : ∀ q, γ * single q 1 = γ)
-    (hε : TauCeti.MonoidAlgebra.augmentation ℤ Q γ = Fintype.card Q) :
-    γ = ∑ q, single q (1 : ℤ) := by
-  classical
-  have hcoeff (q : Q) : γ.coeff q = γ.coeff 1 := by
-    simpa using congrArg (fun z : MonoidAlgebra ℤ Q ↦ z.coeff 1) (hinv q⁻¹)
-  have hγ1 : γ.coeff 1 = 1 := by
-    have h : TauCeti.MonoidAlgebra.augmentation ℤ Q γ = Fintype.card Q * γ.coeff 1 := by
-      conv_lhs => rw [← sum_coeff_single γ]
-      rw [Finsupp.sum_fintype _ _ (by simp), map_sum]
-      simp [hcoeff]
-    rw [hε] at h
-    exact (mul_eq_left₀ (by exact_mod_cast Fintype.card_ne_zero)).1 h.symm
-  ext q
-  simp [coeff_sum, coeff_single, Finsupp.single_apply, hcoeff, hγ1]
-
 /-- Lifts `x i` of the generators `[σ i] - 1` of `I_Q`, together with generators of the kernel of
 `π : B → I_Q`, span `B` as a `ℤ[Q]`-module. -/
 private theorem span_range_sumElim_eq_top {B : Rep ℤ Q} [Module (MonoidAlgebra ℤ Q) B]
@@ -203,7 +184,8 @@ theorem norm_eq_zero_of_ker_le_coinvariantsKer [Fintype Q] (B : Rep ℤ Q)
     rw [← Nat.cast_prod, hord, Nat.card_eq_fintype_card]
   ext v
   have h := hγ v
-  rw [hsmul, eq_sum_single_of_mul_single_eq_self hinv hεγ, map_sum, LinearMap.sum_apply] at h
+  rw [hsmul, MonoidAlgebra.eq_sum_single_of_mul_single_eq_self hinv hεγ, map_sum,
+    LinearMap.sum_apply] at h
   simp only [Representation.asAlgebraHom_single_one] at h
   rw [Representation.norm, LinearMap.sum_apply, LinearMap.zero_apply]
   exact h

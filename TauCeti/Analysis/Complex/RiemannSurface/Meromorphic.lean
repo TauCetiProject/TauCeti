@@ -45,6 +45,8 @@ and products add the two divisor bounds.
 * `TauCeti.RiemannSurface.meromorphicOrderAt`: its order at `x`.
 * `TauCeti.RiemannSurface.meromorphicAt_iff_of_mem_maximalAtlas` and
   `TauCeti.RiemannSurface.meromorphicOrderAt_eq_of_mem_maximalAtlas`: chart independence.
+* `TauCeti.RiemannSurface.tendsto_zero_iff_meromorphicOrderAt_pos`: the order is positive exactly
+  where the function tends to zero.
 * `TauCeti.RiemannSurface.meromorphicAt_of_eventually_mdifferentiableAt`: a holomorphic function
   is meromorphic.
 * `TauCeti.RiemannSurface.MeromorphicAt.comp` and `TauCeti.RiemannSurface.meromorphicOrderAt_comp`:
@@ -52,7 +54,7 @@ and products add the two divisor bounds.
 * `TauCeti.RiemannSurface.meromorphicAt_const`, `TauCeti.RiemannSurface.MeromorphicAt.add`,
   `.neg`, `.sub`, `.smul`, `.const_smul`, `.mul`, `.inv`, and `.pow`: arithmetic of local
   meromorphic sections.
-* `TauCeti.RiemannSurface.meromorphicOrderAt_add`, `_neg`, `_smul`, and `_mul`:
+* `TauCeti.RiemannSurface.meromorphicOrderAt_const`, `_add`, `_neg`, `_smul`, and `_mul`:
   arithmetic of their orders.
 
 ## References
@@ -122,6 +124,15 @@ theorem meromorphicAt_congr (h : f =ᶠ[𝓝[≠] x] g) : MeromorphicAt f x ↔ 
 theorem meromorphicOrderAt_congr (h : f =ᶠ[𝓝[≠] x] g) :
     meromorphicOrderAt f x = meromorphicOrderAt g x :=
   _root_.meromorphicOrderAt_congr (h.comp_tendsto (tendsto_chartAt_symm_nhdsNE x))
+
+/-! ### Limits and the sign of the order -/
+
+/-- A function meromorphic at `x` tends to zero along the punctured neighbourhoods of `x` exactly
+when its order at `x` is positive. -/
+theorem tendsto_zero_iff_meromorphicOrderAt_pos (hf : MeromorphicAt f x) :
+    Tendsto f (𝓝[≠] x) (𝓝 0) ↔ 0 < meromorphicOrderAt f x := by
+  rw [← tendsto_comp_chartAt_symm_nhdsNE_iff (H := ℂ)]
+  exact _root_.tendsto_zero_iff_meromorphicOrderAt_pos hf
 
 variable [IsManifold 𝓘(ℂ) 1 X] [IsManifold 𝓘(ℂ) 1 Y]
 
@@ -227,6 +238,12 @@ omit [IsManifold 𝓘(ℂ) 1 X] in
 @[simp]
 theorem meromorphicAt_const (c : E) (x : X) : MeromorphicAt (fun _ ↦ c) x :=
   _root_.MeromorphicAt.const c _
+
+omit [IsManifold 𝓘(ℂ) 1 X] in
+/-- The order of a constant function is `⊤` if the constant is zero and `0` otherwise. -/
+theorem meromorphicOrderAt_const (c : E) (x : X) [Decidable (c = 0)] :
+    meromorphicOrderAt (fun _ ↦ c) x = if c = 0 then ⊤ else 0 :=
+  _root_.meromorphicOrderAt_const _ c
 
 omit [IsManifold 𝓘(ℂ) 1 X] in
 /-- The sum of functions meromorphic at a point of a Riemann surface is meromorphic there. -/

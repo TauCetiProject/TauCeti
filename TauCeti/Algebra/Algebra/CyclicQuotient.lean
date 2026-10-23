@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Matrix.Trace
 public import Mathlib.LinearAlgebra.Quotient.Basic
 
 /-!
@@ -32,6 +33,11 @@ algebra are descended to it in `TauCeti.RepresentationTheory.Quiver.PathAlgebra.
 
 * `TauCeti.commutatorSubmodule_le_ker_iff`: a linear map kills the commutator submodule exactly
   when it takes equal values on `x * y` and `y * x`.
+* `TauCeti.map_mem_commutatorSubmodule`: a multiplicative linear map, such as an algebra
+  homomorphism, carries commutators to commutators.
+* `TauCeti.trace_map_eq_zero_of_mem_commutatorSubmodule`: the trace of a matrix representation
+  vanishes on the commutator submodule.  A representation in which an element has nonzero trace
+  therefore shows that its cyclic class is nonzero.
 
 ## References
 
@@ -73,7 +79,35 @@ theorem commutatorSubmodule_le_ker_iff {M : Type*} [AddCommGroup M] [Module k M]
     apply LinearMap.mem_ker.2
     rw [map_sub, h, sub_self]
 
+variable {k A} in
+/-- A multiplicative linear map, such as an algebra homomorphism, carries the commutator submodule
+into the commutator submodule. -/
+theorem map_mem_commutatorSubmodule {B F : Type*} [NonUnitalNonAssocRing B] [Module k B]
+    [FunLike F A B] [MulHomClass F A B] [LinearMapClass F k A B] (f : F) {x : A}
+    (hx : x ∈ commutatorSubmodule k A) : f x ∈ commutatorSubmodule k B := by
+  have hle : commutatorSubmodule k A ≤ (commutatorSubmodule k B).comap (f : A →ₗ[k] B) := by
+    rw [commutatorSubmodule, Submodule.span_le, Set.range_subset_iff]
+    rintro ⟨x, y⟩
+    simpa using mul_sub_mul_mem_commutatorSubmodule k B (f x) (f y)
+  exact hle hx
+
 end Semiring
+
+section Matrix
+
+variable {k A} [CommRing k] [Module k A]
+
+/-- **The trace of a matrix representation kills commutators**: if `f` is a multiplicative linear
+map to square matrices, then the trace of `f x` vanishes for every `x` in the commutator submodule.
+-/
+theorem trace_map_eq_zero_of_mem_commutatorSubmodule {n F : Type*} [Fintype n]
+    [FunLike F A (Matrix n n k)] [MulHomClass F A (Matrix n n k)]
+    [LinearMapClass F k A (Matrix n n k)] (f : F) {x : A} (hx : x ∈ commutatorSubmodule k A) :
+    (f x).trace = 0 :=
+  (commutatorSubmodule_le_ker_iff (Matrix.traceLinearMap n k k)).2
+    (fun X Y => Matrix.trace_mul_comm X Y) (map_mem_commutatorSubmodule f hx)
+
+end Matrix
 
 /-- The **cyclic quotient** `A / [A, A]`.  Its elements are cyclic classes; for a path algebra,
 cyclic derivatives, and hence the three-dimensional Ginzburg differential, depend only on such a

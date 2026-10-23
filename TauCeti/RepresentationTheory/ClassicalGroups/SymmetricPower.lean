@@ -9,7 +9,7 @@ public import Mathlib.RingTheory.MvPolynomial.Symmetric.Defs
 public import TauCeti.LinearAlgebra.SymmetricPower.Basis
 public import TauCeti.RepresentationTheory.ClassicalGroups.Diagonal
 public import TauCeti.RepresentationTheory.SymmetricPower
-import TauCeti.RingTheory.MvPolynomial.Symmetric.Complete
+import TauCeti.RingTheory.MvPolynomial.Symmetric.Complete.Basic
 
 /-!
 # Symmetric powers of the standard representation

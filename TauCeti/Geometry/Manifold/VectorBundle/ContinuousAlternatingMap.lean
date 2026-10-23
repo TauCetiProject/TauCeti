@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.VectorBundle.ContinuousAlternatingMap
-public import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
+public import Mathlib.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap
 public import TauCeti.Analysis.Calculus.ContDiff.ContinuousAlternatingMap
 
 /-!
@@ -14,15 +13,12 @@ public import TauCeti.Analysis.Calculus.ContDiff.ContinuousAlternatingMap
 
 Continuous alternating maps between two smooth vector bundles form a smooth vector
 bundle. This equips the bundles underlying differential forms with smooth coordinate
-changes, without changing Mathlib's topology, trivializations, or atlas. Regularity of
-maps into the total space is characterized by the base map and the alternating-map
-coefficients in preferred fibre coordinates.
+changes, without changing Mathlib's topology, trivializations, or atlas.
 
-The fibre-coordinate criteria expose `ContinuousAlternatingMap.inCoordinates`, matching
-the regularity criteria in Mathlib's Hom-bundle module and the continuity criteria in
-its alternating-map bundle module. Their proofs specialize `Bundle.contMDiffWithinAt_totalSpace`,
-`Bundle.contMDiffAt_totalSpace`, `Bundle.mdifferentiableWithinAt_totalSpace`, and
-`Bundle.mdifferentiableAt_totalSpace` to these coordinates.
+Mathlib's `Mathlib.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap` provides the
+same construction over characteristic-zero fields, together with the fibre-coordinate
+regularity criteria such as `contMDiffAt_continuousAlternatingMap_bundle`. The results here
+remove the characteristic-zero assumption.
 
 The coordinate-change proof follows Floris van Doorn's smooth Hom-bundle construction
 in `Mathlib.Geometry.Manifold.VectorBundle.Hom`, using the topological alternating-map
@@ -153,54 +149,5 @@ instance instIsContMDiffContinuousAlternatingMapVectorPrebundle :
     exact (not_le_of_gt (WithTop.coe_lt_top (⊤ : ℕ∞))) hle |>.elim)
 
 end FiniteOrder
-
-section Coordinates
-
-variable [∀ x, IsTopologicalAddGroup (E₂ x)] [∀ x, ContinuousSMul 𝕜 (E₂ x)]
-  {M EM HM : Type*} [NormedAddCommGroup EM] [NormedSpace 𝕜 EM] [TopologicalSpace HM]
-  {IM : ModelWithCorners 𝕜 EM HM} [TopologicalSpace M] [ChartedSpace HM M]
-  {s : Set M} {x : M}
-
-local notation "A" => TotalSpace (F₁ [⋀^ι]→L[𝕜] F₂) (fun b ↦ E₁ b [⋀^ι]→L[𝕜] E₂ b)
-
-/-- Relative regularity of a map into the alternating bundle is regularity of the
-base map and its preferred fibre coordinates. -/
-theorem contMDiffWithinAt_continuousAlternatingMap_bundle (f : M → A) :
-    ContMDiffWithinAt IM (IB.prod 𝓘(𝕜, F₁ [⋀^ι]→L[𝕜] F₂)) n f s x ↔
-      ContMDiffWithinAt IM IB n (fun y ↦ (f y).1) s x ∧
-        ContMDiffWithinAt IM 𝓘(𝕜, F₁ [⋀^ι]→L[𝕜] F₂) n
-          (fun y ↦ ContinuousAlternatingMap.inCoordinates F₁ F₂
-            (f x).1 (f y).1 (f x).1 (f y).1 (f y).2) s x :=
-  contMDiffWithinAt_totalSpace
-
-/-- Pointwise regularity in the alternating bundle can be checked in fibre coordinates. -/
-theorem contMDiffAt_continuousAlternatingMap_bundle (f : M → A) :
-    ContMDiffAt IM (IB.prod 𝓘(𝕜, F₁ [⋀^ι]→L[𝕜] F₂)) n f x ↔
-      ContMDiffAt IM IB n (fun y ↦ (f y).1) x ∧
-        ContMDiffAt IM 𝓘(𝕜, F₁ [⋀^ι]→L[𝕜] F₂) n
-          (fun y ↦ ContinuousAlternatingMap.inCoordinates F₁ F₂
-            (f x).1 (f y).1 (f x).1 (f y).1 (f y).2) x :=
-  contMDiffAt_totalSpace
-
-/-- Relative differentiability of a map into the alternating bundle is differentiability of
-its base map and preferred fibre coordinates. -/
-theorem mdifferentiableWithinAt_continuousAlternatingMap_bundle (f : M → A) :
-    MDifferentiableWithinAt IM (IB.prod 𝓘(𝕜, F₁ [⋀^ι]→L[𝕜] F₂)) f s x ↔
-      MDifferentiableWithinAt IM IB (fun y ↦ (f y).1) s x ∧
-        MDifferentiableWithinAt IM 𝓘(𝕜, F₁ [⋀^ι]→L[𝕜] F₂)
-          (fun y ↦ ContinuousAlternatingMap.inCoordinates F₁ F₂
-            (f x).1 (f y).1 (f x).1 (f y).1 (f y).2) s x :=
-  mdifferentiableWithinAt_totalSpace IB ..
-
-/-- Pointwise differentiability in the alternating bundle can be checked in fibre coordinates. -/
-theorem mdifferentiableAt_continuousAlternatingMap_bundle (f : M → A) :
-    MDifferentiableAt IM (IB.prod 𝓘(𝕜, F₁ [⋀^ι]→L[𝕜] F₂)) f x ↔
-      MDifferentiableAt IM IB (fun y ↦ (f y).1) x ∧
-        MDifferentiableAt IM 𝓘(𝕜, F₁ [⋀^ι]→L[𝕜] F₂)
-          (fun y ↦ ContinuousAlternatingMap.inCoordinates F₁ F₂
-            (f x).1 (f y).1 (f x).1 (f y).1 (f y).2) x :=
-  mdifferentiableAt_totalSpace ..
-
-end Coordinates
 
 end TauCeti

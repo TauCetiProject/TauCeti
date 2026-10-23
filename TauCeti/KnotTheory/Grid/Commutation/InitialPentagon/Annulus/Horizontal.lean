@@ -222,7 +222,7 @@ end GridInitialPentagonRectangleDecomposition
 
 namespace GridDiagram
 
-variable {n : ℕ} (G : GridDiagram n) (C : ColumnCommutationData G)
+variable {n : ℕ} (G : GridDiagram n) (C : ColumnTurn n)
 
 /-- A counted horizontal rectangle--initial-side pentagon term forces the second commuted
 column's `X`-marking to lie in the turn row. -/
