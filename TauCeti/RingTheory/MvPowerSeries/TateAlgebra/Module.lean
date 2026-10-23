@@ -347,6 +347,8 @@ noncomputable def subringLinearEquiv :
       IsRestrictedFamily.addSubgroup R c where
   toFun f := ⟨fun t ↦ MvPowerSeries.coeff t (f : MvPowerSeries σ R),
     (isRestrictedFamily_coeff_iff _).mpr f.2⟩
+  -- `MvPowerSeries σ R` is by definition `(σ →₀ ℕ) → R`, so a family is a series as is;
+  -- `MvPowerSeries.coeff_apply` identifies its coefficients with the family's values.
   invFun a :=
     let g : MvPowerSeries σ R := (a : (σ →₀ ℕ) → R)
     ⟨g, (isRestrictedFamily_coeff_iff g).mp <| by
@@ -391,10 +393,7 @@ multiplication by its constant. -/
 instance :
     IsScalarTower R (IsRestricted.subring (R := R) c) (IsRestrictedFamily.addSubgroup E c) where
   smul_assoc r f a := Subtype.ext <| by
-    rw [Algebra.smul_def, mul_smul, IsRestrictedFamily.coe_isRestrictedSubring_smul,
-      coe_algebraMap_isRestrictedSubring, IsRestrictedFamily.coe_smul,
-      IsRestrictedFamily.coe_isRestrictedSubring_smul]
-    exact C_convSMul r _
+    simp [Algebra.smul_def, mul_smul, coe_algebraMap_isRestrictedSubring]
 
 end CommRing
 
