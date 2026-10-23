@@ -226,6 +226,21 @@ theorem lof_mem_directSumPiece (G : ∀ i, InternalGrading R (M i)) (p : ℤ) (i
     DirectSum.lof R ι M i x ∈ directSumPiece G p := by
   exact TauCeti.DirectSum.lof_mem_piSubmodule (fun i ↦ (G i).piece p) i x
 
+/-- If each component map sends the degree-`p` piece into `ℬ q`, then so does the direct-sum
+universal map on the degree-`p` piece of the direct-sum grading. -/
+theorem toModule_mem_of_mem_directSumPiece {S : Type*} [Semiring S] [∀ i, Module S (M i)]
+    {N : Type*} [AddCommMonoid N] [Module S N] {σN : Type*} [SetLike σN N]
+    [AddSubmonoidClass σN N] [DecidableEq ι] (G : ∀ i, InternalGrading R (M i))
+    (ℬ : ℤ → σN) (φ : ∀ i, M i →ₗ[S] N) {p q : ℤ}
+    (hφ : ∀ i x, x ∈ (G i).piece p → φ i x ∈ ℬ q) {x : ⨁ i, M i}
+    (hx : x ∈ directSumPiece G p) : DirectSum.toModule S ι N φ x ∈ ℬ q := by
+  classical
+  rw [mem_directSumPiece_iff] at hx
+  rw [← DFinsupp.sum_single (f := x), DFinsupp.sum, map_sum]
+  refine sum_mem fun i _ ↦ ?_
+  rw [DirectSum.single_eq_lof S, DirectSum.toModule_lof]
+  exact hφ i _ (hx i)
+
 end InternalGrading
 
 end TauCeti
