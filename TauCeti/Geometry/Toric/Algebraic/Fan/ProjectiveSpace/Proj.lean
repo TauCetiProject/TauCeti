@@ -11,7 +11,7 @@ public import TauCeti.Geometry.Toric.Algebraic.Fan.Over
 public import TauCeti.Geometry.Toric.Algebraic.Fan.ProjectiveSpace.Coordinates
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Grading
 public import TauCeti.RingTheory.GradedAlgebra.HomogeneousLocalization.Basic
-import TauCeti.RingTheory.Localization.Away
+import TauCeti.RingTheory.Localization.Away.Basic
 
 /-!
 # The toric scheme of the fan of projective space is `Proj`
