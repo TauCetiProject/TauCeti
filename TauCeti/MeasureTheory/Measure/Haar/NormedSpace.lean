@@ -11,23 +11,26 @@ import Mathlib.MeasureTheory.Measure.Real
 /-!
 # Additive Haar measures on real normed spaces
 
-In a finite-dimensional real normed space, the real measure of a positive-radius ball is its
-radius raised to the dimension times the real measure of the unit ball, independently of its
-centre. It agrees with the measure of the closed ball, which therefore differs from the open ball
-by a null set. In a nontrivial space, concentric balls are ordered by measure as by radius, so the
-points `x` whose centered ball of radius `‖x‖` has measure below `m` form a set of measure `m`.
-The ratio of the measures of two closed balls is controlled by the ratio of their radii raised to
-the dimension, the shell between concentric balls has measure the difference of the powers of the
-radii, and the part of a ball outside a translate of itself is controlled by the distance
-between the centres. The measure of an affine image
-`y + r • S` relative to a ball of radius `r` is that of `S` relative to the unit ball, and a
-homothety of ratio `r ≠ 0` pushes the measure forward to its multiple by `|r|⁻ⁿ`. Comparing
-the measure of the image of the closed unit ball under a linear endomorphism `f` with that of the
-closed ball of radius `‖f‖` bounds `|det f|` by `‖f‖` raised to the dimension.
+In a finite-dimensional real normed space, the real measure of a positive-radius ball is its radius
+raised to the dimension times the real measure of the unit ball, independently of its centre;
+equivalently, `n / r` times the measure of the ball of radius `r` is `n rⁿ⁻¹` times the measure of
+the unit ball, where `n` is the dimension. It agrees with the measure of the closed ball, which
+therefore differs from the open ball by a null set. In a nontrivial space, concentric balls are
+ordered by measure as by radius, so the points `x` whose centered ball of radius `‖x‖` has measure
+below `m` form a set of measure `m`. The ratio of the measures of two closed balls is controlled by
+the ratio of their radii raised to the dimension, the shell between concentric balls has measure the
+difference of the powers of the radii, and the part of a ball outside a translate of itself is
+controlled by the distance between the centres. The measure of an affine image `y + r • S` relative
+to a ball of radius `r` is that of `S` relative to the unit ball, and a homothety of ratio `r ≠ 0`
+pushes the measure forward to its multiple by `|r|⁻ⁿ`. Comparing the measure of the image of the
+closed unit ball under a linear endomorphism `f` with that of the closed ball of radius `‖f‖` bounds
+`|det f|` by `‖f‖` raised to the dimension.
 
 ## Main results
 
 * `MeasureTheory.Measure.addHaar_real_ball_of_pos`: the real measure of a positive-radius ball.
+* `MeasureTheory.Measure.finrank_div_mul_addHaar_real_ball`:
+  `(n / r) μ (ball x r) = n rⁿ⁻¹ μ (ball 0 1)` in dimension `n`.
 * `MeasureTheory.Measure.addHaar_closedBall_ae_eq_ball`: closed and open balls agree up to a null
   set in a nontrivial space.
 * `MeasureTheory.Measure.addHaar_closedBall_ae_eq_ball_of_ne_zero`: the same agreement at nonzero
@@ -67,6 +70,22 @@ theorem _root_.MeasureTheory.Measure.addHaar_real_ball_of_pos
     mu.real (ball x r) = r ^ finrank ℝ E * mu.real (ball 0 1) := by
   rw [measureReal_def, mu.addHaar_ball_of_pos x hr, ENNReal.toReal_mul,
     ENNReal.toReal_ofReal (by positivity), ← measureReal_def]
+
+/-- For a ball of radius `r > 0` in dimension `n`, `n / r` times its real measure is
+`n rⁿ⁻¹` times the real measure of the unit ball, the derivative in `r` of its measure. -/
+theorem _root_.MeasureTheory.Measure.finrank_div_mul_addHaar_real_ball
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (mu : Measure E) [mu.IsAddHaarMeasure]
+    (x : E) {r : ℝ} (hr : 0 < r) :
+    finrank ℝ E / r * mu.real (ball x r) =
+      finrank ℝ E * r ^ (finrank ℝ E - 1) * mu.real (ball 0 1) := by
+  rw [mu.addHaar_real_ball_of_pos x hr]
+  cases finrank ℝ E with
+  | zero => simp
+  | succ k =>
+    simp only [Nat.cast_add, Nat.cast_one, add_tsub_cancel_right]
+    field_simp
+    ring
 
 /-- Closed and open balls agree up to a null set in a nontrivial finite-dimensional space. -/
 theorem _root_.MeasureTheory.Measure.addHaar_closedBall_ae_eq_ball

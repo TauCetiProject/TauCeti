@@ -226,24 +226,12 @@ private theorem perimeter_ball_le (hr : 0 < r) :
         exact totalVariationOn_radialCutoff_le hε
     _ = ENNReal.ofReal (n * r ^ (n - 1) * ω) := hslope.liminf_eq
 
-/-- The two normal forms of the perimeter of a ball agree: `n r^(n-1) ω = (n / r) μ (ball c r)`. -/
-private theorem finrank_mul_pow_mul_eq (hr : 0 < r) :
-    finrank ℝ E * r ^ (finrank ℝ E - 1) * μ.real (ball 0 1) =
-      finrank ℝ E / r * μ.real (ball c r) := by
-  rw [μ.addHaar_real_ball_of_pos c hr]
-  cases finrank ℝ E with
-  | zero => simp
-  | succ k =>
-    simp only [Nat.cast_add, Nat.cast_one, add_tsub_cancel_right]
-    field_simp
-    ring
-
 private theorem perimeter_ball_eq_ofReal (hr : 0 < r) :
     perimeter μ ⊤ (ball c r) =
       ENNReal.ofReal (finrank ℝ E * r ^ (finrank ℝ E - 1) * μ.real (ball 0 1)) := by
   refine le_antisymm (perimeter_ball_le hr) (le_of_tendsto (x := 𝓝[>] (0 : ℝ))
     (f := fun δ => ENNReal.ofReal (finrank ℝ E / (r + δ) * μ.real (ball c r))) ?_ ?_)
-  · rw [finrank_mul_pow_mul_eq (c := c) hr]
+  · rw [← μ.finrank_div_mul_addHaar_real_ball c hr]
     refine ENNReal.tendsto_ofReal (tendsto_nhdsWithin_of_tendsto_nhds ?_)
     have : ContinuousAt (fun δ : ℝ => (finrank ℝ E : ℝ) / (r + δ) * μ.real (ball c r)) 0 := by
       fun_prop (disch := simpa using hr.ne')
@@ -265,8 +253,8 @@ theorem perimeter_ball (hr : 0 < r) :
 `(n / r) μ (ball c r)`, where `n` is the dimension. -/
 theorem perimeter_ball_eq_ofReal_div_mul (hr : 0 < r) :
     perimeter μ ⊤ (ball c r) = ENNReal.ofReal (finrank ℝ E / r) * μ (ball c r) := by
-  rw [perimeter_ball_eq_ofReal hr, finrank_mul_pow_mul_eq hr, ENNReal.ofReal_mul (by positivity),
-    ofReal_measureReal measure_ball_lt_top.ne]
+  rw [perimeter_ball_eq_ofReal hr, ← μ.finrank_div_mul_addHaar_real_ball c hr,
+    ENNReal.ofReal_mul (by positivity), ofReal_measureReal measure_ball_lt_top.ne]
 
 /-- **The perimeter of a closed ball.** A closed ball of radius `r > 0` has the same perimeter
 `n r^(n-1) μ (ball 0 1)` as the open ball, since they differ by a null set. -/
