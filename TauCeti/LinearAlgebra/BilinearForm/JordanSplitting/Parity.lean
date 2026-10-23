@@ -101,13 +101,9 @@ theorem IsJordanSplitting.isScaleEven_iff
     (h' : B.IsJordanSplitting π N') (hπ : π ∈ nonZeroDivisors R) (j : ℕ)
     [Module.Free R (N j)] [Module.Free R (N' j)] :
     (B.restrict (N j)).IsScaleEven π ↔ (B.restrict (N' j)).IsScaleEven π := by
-  rw [LinearMap.BilinForm.isScaleEven_iff, LinearMap.BilinForm.isScaleEven_iff]
-  rw [(h.isModular j).normIdeal_le_mul_scaleIdeal_iff,
-    (h'.isModular j).normIdeal_le_mul_scaleIdeal_iff]
-  simpa only [mul_comm π, ← pow_succ, normIdeal_le_iff, Ideal.mem_span_singleton,
-    restrict_apply, domRestrict_apply] using
-    (h.forall_pow_succ_dvd_self_iff hπ j).trans
-      (h'.forall_pow_succ_dvd_self_iff hπ j).symm
+  rw [h.isScaleEven_restrict_iff j, h'.isScaleEven_restrict_iff j]
+  simpa only [Subtype.forall] using
+    (h.forall_pow_succ_dvd_self_iff hπ j).trans (h'.forall_pow_succ_dvd_self_iff hπ j).symm
 
 /-- Parity relative to the constituent's own scale is an isometry invariant. In particular,
 Jordan splittings of isometric dyadic forms have the same type at every scale. -/
@@ -117,12 +113,10 @@ theorem IsJordanSplitting.isScaleEven_iff_of_equivalent
     (hB : B.Equivalent B') (hπ : π ∈ nonZeroDivisors R) (j : ℕ)
     [Module.Free R (N j)] [Module.Free R (N' j)] :
     (B.restrict (N j)).IsScaleEven π ↔ (B'.restrict (N' j)).IsScaleEven π := by
-  rw [LinearMap.BilinForm.isScaleEven_iff, LinearMap.BilinForm.isScaleEven_iff]
-  rw [(h.isModular j).normIdeal_le_mul_scaleIdeal_iff,
-    (h'.isModular j).normIdeal_le_mul_scaleIdeal_iff]
-  simp only [mul_comm π, ← pow_succ, normIdeal_le_iff, Ideal.mem_span_singleton,
-    restrict_apply, domRestrict_apply]
-  rw [h.forall_pow_succ_dvd_self_iff hπ j, h'.forall_pow_succ_dvd_self_iff hπ j]
+  have hN := h.forall_pow_succ_dvd_self_iff hπ j
+  have hN' := h'.forall_pow_succ_dvd_self_iff hπ j
+  simp only [Subtype.forall] at hN hN'
+  rw [h.isScaleEven_restrict_iff j, h'.isScaleEven_restrict_iff j, hN, hN']
   obtain ⟨e⟩ := hB
   constructor
   · intro H x hx

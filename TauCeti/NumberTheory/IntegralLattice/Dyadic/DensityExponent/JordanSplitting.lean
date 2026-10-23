@@ -55,6 +55,9 @@ The file computes the worked values. An even lattice of odd determinant and rank
 
 * `LinearMap.BilinForm.IsJordanSplitting.dyadicJordanProfile_eq_of_equivalent`: Jordan
   splittings of isometric forms have the same profile.
+* `LinearMap.BilinForm.IsModular.dyadicJordanProfile_ranks`,
+  `LinearMap.BilinForm.IsModular.mem_dyadicJordanProfile_typeI_iff`: the profile of a
+  `π ^ i`-modular form is a single constituent of scale `π ^ i`.
 * `TauCeti.IntegralLattice.dyadicJordanProfile_eq_of_equivalent`,
   `TauCeti.IntegralLattice.SameGenus.dyadicJordanProfile_eq`: the dyadic profile is an invariant
   of the dyadic localization, and of the genus.
@@ -81,14 +84,6 @@ open LinearMap (BilinForm)
 
 variable {R M : Type*} [CommRing R] [IsDomain R] [IsLocalRing R] [AddCommGroup M] [Module R M]
   [Module.Free R M] [Module.Finite R M] {B : BilinForm R M} {π : R} {N : ℕ → Submodule R M}
-
-omit [IsDomain R] [Module.Free R M] in
-/-- The ranks of the constituents of a Jordan splitting have finite support. -/
-private theorem IsJordanSplitting.finite_support_finrank (h : B.IsJordanSplitting π N) :
-    (Function.support fun i ↦ finrank R (N i)).Finite :=
-  h.hasFiniteSupport.subset fun i hi hbot ↦ by
-    rw [Function.mem_support, hbot, finrank_bot] at hi
-    exact hi rfl
 
 open Classical in
 /-- **The density profile of a Jordan splitting.** The rank of the constituent of scale
@@ -156,6 +151,29 @@ theorem IsJordanSplitting.dyadicJordanProfile_eq_of_equivalent {M' : Type*} [Add
     rw [h.mem_dyadicJordanProfile_typeI_iff, h'.mem_dyadicJordanProfile_typeI_iff,
       h.isScaleEven_iff_of_equivalent h' hBB' (mem_nonZeroDivisors_of_ne_zero hπ) i]
 
+/-- The profile of a `π ^ i`-modular form, split as a single constituent
+(`LinearMap.BilinForm.IsModular.isJordanSplitting`), has all its rank at scale `π ^ i`. -/
+theorem IsModular.dyadicJordanProfile_ranks {i : ℕ} (hmod : B.IsModular (π ^ i)) :
+    (hmod.isJordanSplitting.dyadicJordanProfile hB hπ hπ').ranks =
+      Finsupp.single i (finrank R M) := by
+  ext j
+  rw [IsJordanSplitting.dyadicJordanProfile_ranks_apply]
+  by_cases hj : j = i
+  · rw [ite_eq_left hj, finrank_top, hj, Finsupp.single_eq_same]
+  · rw [ite_eq_right hj, finrank_bot, Finsupp.single_apply, ite_eq_right (Ne.symm hj)]
+
+/-- The profile of a `π ^ i`-modular form, split as a single constituent
+(`LinearMap.BilinForm.IsModular.isJordanSplitting`), is of type I exactly at `i`, and only when
+some vector has self-pairing not divisible by `π ^ (i + 1)`. -/
+theorem IsModular.mem_dyadicJordanProfile_typeI_iff {i j : ℕ} (hmod : B.IsModular (π ^ i)) :
+    j ∈ (hmod.isJordanSplitting.dyadicJordanProfile hB hπ hπ').typeI ↔
+      j = i ∧ ∃ x, ¬π ^ (i + 1) ∣ B x x := by
+  rw [IsJordanSplitting.mem_dyadicJordanProfile_typeI_iff_exists]
+  by_cases hj : j = i
+  · subst hj
+    simp
+  · simp [hj]
+
 end LinearMap.BilinForm
 
 namespace TauCeti.IntegralLattice
@@ -208,19 +226,6 @@ theorem SameGenus.dyadicJordanProfile_eq {L : IntegralLattice V} {M : IntegralLa
 
 /-! ### Worked values -/
 
-/-- The profile of a localization that is a single constituent of scale `2 ^ i`: its ranks are
-concentrated at `i`. -/
-private theorem dyadicJordanProfile_ranks_of_isModular {L : IntegralLattice V} {i : ℕ}
-    (hL : (L.localIntegralForm 2).IsModular (2 ^ i)) :
-    L.dyadicJordanProfile.ranks = Finsupp.single i (finrank ℤ L) := by
-  ext j
-  rw [dyadicJordanProfile_eq hL.isJordanSplitting,
-    LinearMap.BilinForm.IsJordanSplitting.dyadicJordanProfile_ranks_apply]
-  by_cases hj : j = i
-  · subst hj
-    rw [ite_eq_left rfl, finrank_top, Module.finrank_baseChange, Finsupp.single_eq_same]
-  · simp [hj]
-
 /-- **An even lattice of odd determinant is one free type II constituent.** Its dyadic
 localization is unimodular and even, so its profile is that of a single type II constituent of
 scale `1` whose rank is the rank of the lattice. -/
@@ -230,18 +235,13 @@ theorem IsEven.dyadicJordanProfile_eq_unimodularTypeII {L : IntegralLattice V} (
       (heven.even_finrank_of_isUnit_determinant hdet) := by
   have hmod : (L.localIntegralForm 2).IsModular (2 ^ 0) := by
     rw [pow_zero, LinearMap.BilinForm.isModular_one_iff]
-    exact L.isPerfPair_localIntegralForm_of_isUnit 2 hdet
+    exact L.isPerfPair_localIntegralForm_of_isUnit_determinant 2 hdet
+  rw [dyadicJordanProfile_eq hmod.isJordanSplitting]
   ext i
-  · rw [dyadicJordanProfile_ranks_of_isModular hmod, DyadicJordanProfile.unimodularTypeII_ranks]
-  · rw [DyadicJordanProfile.unimodularTypeII_typeI, dyadicJordanProfile_eq hmod.isJordanSplitting,
-      LinearMap.BilinForm.IsJordanSplitting.mem_dyadicJordanProfile_typeI_iff_exists]
-    simp only [Finset.notMem_empty, iff_false, not_exists, not_and, not_not]
-    intro x hx
-    by_cases hi : i = 0
-    · subst hi
-      exact heven.two_dvd_localIntegralForm_apply_self x
-    · rw [ite_eq_right hi, Submodule.mem_bot] at hx
-      simp [hx]
+  · rw [hmod.dyadicJordanProfile_ranks, Module.finrank_baseChange,
+      DyadicJordanProfile.unimodularTypeII_ranks]
+  · rw [hmod.mem_dyadicJordanProfile_typeI_iff, DyadicJordanProfile.unimodularTypeII_typeI]
+    simpa using fun _ ↦ heven.two_dvd_localIntegralForm_apply_self
 
 /-- **The density exponent of an even lattice of odd determinant is its rank**, and not `0`. -/
 theorem IsEven.densityExponent_dyadicJordanProfile {L : IntegralLattice V} (heven : L.IsEven)
@@ -275,33 +275,25 @@ theorem dyadicJordanProfile_rankOne_two_pow_mul (i : ℕ) {u : ℤ} (hu : Odd u)
   let L := rankOne (2 ^ i * u)
   let b := (Module.finBasisOfFinrankEq ℤ L (finrank_rankOne _)).baseChange ℤ_[2]
   have hdet : ((L.localIntegralForm 2).toMatrix b).det = 2 ^ i * u := by
-    rw [L.det_toMatrix_localIntegralForm, rankOne_determinant]
-    push_cast
-    rfl
+    rw [L.det_toMatrix_localIntegralForm, rankOne_determinant, Int.cast_mul, Int.cast_pow,
+      Int.cast_ofNat]
   have hb : L.localIntegralForm 2 (b 0) (b 0) = 2 ^ i * u := by
     rwa [Matrix.det_unique, LinearMap.BilinForm.toMatrix_apply] at hdet
   have hb' (j k : Fin 1) :
       L.localIntegralForm 2 (b j) (b k) = 2 ^ i * Matrix.of (fun _ _ ↦ (u : ℤ_[2])) j k := by
     rw [Subsingleton.elim j 0, Subsingleton.elim k 0, hb, Matrix.of_apply]
   have hmod : (L.localIntegralForm 2).IsModular (2 ^ i) :=
-    LinearMap.BilinForm.isModular_of_basis b
-      (pow_mem (mem_nonZeroDivisors_of_ne_zero two_ne_zero) i) hb'
+    b.isModular_of_isUnit_det (pow_mem (mem_nonZeroDivisors_of_ne_zero two_ne_zero) i) hb'
       (by simpa using hu')
+  rw [dyadicJordanProfile_eq hmod.isJordanSplitting]
   ext j
-  · rw [dyadicJordanProfile_ranks_of_isModular hmod, finrank_rankOne,
+  · rw [hmod.dyadicJordanProfile_ranks, Module.finrank_baseChange, finrank_rankOne,
       DyadicJordanProfile.unaryTypeI_ranks]
-  · rw [DyadicJordanProfile.unaryTypeI_typeI, Finset.mem_singleton,
-      dyadicJordanProfile_eq hmod.isJordanSplitting,
-      LinearMap.BilinForm.IsJordanSplitting.mem_dyadicJordanProfile_typeI_iff_exists]
-    constructor
-    · rintro ⟨x, hx, hxx⟩
-      by_contra hj
-      simp_all
-    · rintro rfl
-      refine ⟨b 0, by simp, ?_⟩
-      rw [hb, pow_succ, mul_dvd_mul_iff_left (pow_ne_zero _ two_ne_zero)]
-      intro h2
-      exact PadicInt.not_isUnit_two (isUnit_of_dvd_unit h2 (hu'))
+  · rw [hmod.mem_dyadicJordanProfile_typeI_iff, DyadicJordanProfile.unaryTypeI_typeI,
+      Finset.mem_singleton, and_iff_left_iff_imp]
+    refine fun _ ↦ ⟨b 0, ?_⟩
+    rw [hb, pow_succ, mul_dvd_mul_iff_left (pow_ne_zero _ two_ne_zero)]
+    exact fun h2 ↦ PadicInt.not_isUnit_two (isUnit_of_dvd_unit h2 hu')
 
 /-- **`⟨2 ^ i u⟩` with `u` odd has dyadic density exponent `i + 1`.** -/
 theorem densityExponent_dyadicJordanProfile_rankOne_two_pow_mul (i : ℕ) {u : ℤ} (hu : Odd u) :

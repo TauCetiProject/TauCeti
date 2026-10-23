@@ -63,7 +63,7 @@ theorem IsEven.two_dvd_localIntegralForm_apply_self {L : IntegralLattice V} (hev
 pairing whose self-pairings are all divisible by `2`, and such a form has even rank. -/
 theorem IsEven.even_finrank_of_isUnit_determinant {L : IntegralLattice V} (heven : L.IsEven)
     (hdet : IsUnit (L.determinant : ℤ_[2])) : Even (finrank ℤ L) := by
-  have := L.isPerfPair_localIntegralForm_of_isUnit 2 hdet
+  have := L.isPerfPair_localIntegralForm_of_isUnit_determinant 2 hdet
   have h := (L.isSymm_localIntegralForm 2).even_finrank_of_isPerfPair (L.localIntegralForm 2)
     fun x hx ↦ PadicInt.not_isUnit_two
       (isUnit_of_dvd_unit (heven.two_dvd_localIntegralForm_apply_self x) hx)

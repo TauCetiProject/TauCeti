@@ -61,8 +61,9 @@ isometric.
 
 ## Main results
 
-* `LinearMap.BilinForm.IsJordanSplitting.hasFiniteSupport`: a finitely generated module has only
-  finitely many nonzero Jordan constituents.
+* `LinearMap.BilinForm.IsJordanSplitting.hasFiniteSupport`,
+  `LinearMap.BilinForm.IsJordanSplitting.finite_support_finrank`: a finitely generated module has
+  only finitely many nonzero Jordan constituents, hence only finitely many of nonzero rank.
 * `LinearMap.BilinForm.IsSymm.exists_isJordanSplitting`: Jordan splittings exist.
 * `LinearMap.BilinForm.IsJordanSplitting.finrank_eq`: any two Jordan splittings have constituents
   of equal rank.
@@ -203,6 +204,15 @@ theorem IsJordanSplitting.hasFiniteSupport [Module.Finite R M] {π : R}
   exact h.isInternal.submodule_iSupIndep.finite_ne_bot_of_fg
     (by rw [h.isInternal.submodule_iSup_eq_top]; exact Module.Finite.fg_top)
 
+/-- A Jordan splitting of a finitely generated module has finitely many constituents of nonzero
+rank. -/
+theorem IsJordanSplitting.finite_support_finrank [Nontrivial R] [Module.Finite R M] {π : R}
+    {N : ℕ → Submodule R M} (h : B.IsJordanSplitting π N) :
+    (Function.support fun i ↦ finrank R (N i)).Finite :=
+  h.hasFiniteSupport.subset fun i hi hbot ↦ by
+    rw [Function.mem_support, hbot, finrank_bot] at hi
+    exact hi rfl
+
 end Basic
 
 section Modular
@@ -237,7 +247,9 @@ theorem IsModular.isJordanSplitting {π : R} {i : ℕ} (h : B.IsModular (π ^ i)
       rw [ite_eq_left rfl]
       have he : B.restrict ⊤ =
           LinearMap.BilinForm.congr (LinearEquiv.ofTop (⊤ : Submodule R M) (by simp)).symm B :=
-        LinearMap.ext₂ fun x y ↦ rfl
+        LinearMap.ext₂ fun x y ↦ by
+          rw [congr_apply, LinearEquiv.symm_symm, LinearEquiv.ofTop_apply,
+            LinearEquiv.ofTop_apply, restrict_apply, domRestrict_apply]
       rw [he, isModular_congr_iff]
       exact h
     · have : Subsingleton (if j = i then ⊤ else ⊥ : Submodule R M) := by

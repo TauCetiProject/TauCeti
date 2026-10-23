@@ -42,18 +42,13 @@ theorem not_exists_orthogonal_basis_hyperbolic_padicInt_two :
       (Matrix.toBilin' ((!![0, 1; 1, 0] : Matrix (Fin 2) (Fin 2) ℤ).map
         (Int.cast : ℤ → ℤ_[2]))).iIsOrtho b := by
   rintro ⟨b, hb⟩
-  have hnon : ¬ IsUnit (2 : ℤ_[2]) := by
-    intro h
-    have hnorm := PadicInt.isUnit_iff.mp h
-    have hc : Nat.Coprime 2 2 :=
-      (PadicInt.norm_natCast_eq_one_iff (p := 2) (n := 2)).mp (by simpa using hnorm)
-    exact (by decide : ¬ Nat.Coprime 2 2) hc
   have hmat : ((!![0, 1; 1, 0] : Matrix (Fin 2) (Fin 2) ℤ).map
       (Int.cast : ℤ → ℤ_[2])) = (!![0, 1; 1, 0] : Matrix (Fin 2) (Fin 2) ℤ_[2]) := by
     ext i j
     fin_cases i <;> fin_cases j <;> rfl
-  exact hnon (LinearMap.BilinForm.isUnit_two_of_iIsOrtho_toBilin'_hyperbolic (b := b)
-    (by simpa [hmat] using hb))
+  exact PadicInt.not_isUnit_two
+    (LinearMap.BilinForm.isUnit_two_of_iIsOrtho_toBilin'_hyperbolic (b := b)
+      (by simpa [hmat] using hb))
 
 /-- **The determinant does not classify odd unimodular forms over `ℤ_[2]`.** The diagonal forms
 `⟨1, 1⟩` and `⟨3, 3⟩` have the same rank and the square determinants `1` and `9`, but they are not

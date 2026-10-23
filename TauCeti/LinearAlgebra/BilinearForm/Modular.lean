@@ -43,7 +43,7 @@ This file proves the facts about modular forms that hold over every commutative 
   (`LinearMap.BilinForm.IsModular.isCompl_orthogonal`).
 
 A form whose Gram matrix in a basis is `a` times a matrix of unit determinant is `a`-modular
-(`LinearMap.BilinForm.isModular_of_basis`), so a family with such a Gram matrix spans an
+(`Module.Basis.isModular_of_isUnit_det`), so a family with such a Gram matrix spans an
 `a`-modular submodule (`LinearMap.BilinForm.isModular_restrict_span_range`). Over a local ring,
 a pairing `B u w` which is a non-zero-divisor dividing every value of a symmetric form therefore
 gives a `B u w`-modular orthogonal summand inside the span of `u` and `w`
@@ -307,7 +307,8 @@ theorem IsModular.isCompl_orthogonal (hB : B.IsSymm) (ha : a ∈ nonZeroDivisors
 /-- **A Gram matrix `a` times a matrix of unit determinant gives a modular form.** If the Gram
 matrix of `B` in a finite basis is `a` times a matrix of unit determinant, with `a` a
 non-zero-divisor, then `B` is `a`-modular. -/
-theorem isModular_of_basis {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Basis ι R M)
+theorem _root_.Module.Basis.isModular_of_isUnit_det {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (b : Basis ι R M)
     {G : Matrix ι ι R} (ha : a ∈ nonZeroDivisors R) (hG : ∀ i j, B (b i) (b j) = a * G i j)
     (hdet : IsUnit G.det) : B.IsModular a := by
   obtain ⟨C, hC⟩ := exists_smul_eq_of_forall_dvd ha
@@ -324,7 +325,7 @@ restriction of `B` to the span of `v` is `a`-modular. -/
 theorem isModular_restrict_span_range {ι : Type*} [Fintype ι] [DecidableEq ι] {v : ι → M}
     {G : Matrix ι ι R} (ha : a ∈ nonZeroDivisors R) (hG : ∀ i j, B (v i) (v j) = a * G i j)
     (hdet : IsUnit G.det) : (B.restrict (Submodule.span R (Set.range v))).IsModular a :=
-  isModular_of_basis (Basis.span (linearIndependent_of_isUnit_det ha hG hdet)) ha
+  (Basis.span (linearIndependent_of_isUnit_det ha hG hdet)).isModular_of_isUnit_det ha
     (fun i j ↦ by simp [Basis.span_apply, hG]) hdet
 
 /-- A symmetric binary Gram block scaled by a non-zero-divisor is linearly independent and

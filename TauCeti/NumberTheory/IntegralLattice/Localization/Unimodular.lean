@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.IntegralLattice.Localization.Basic
 public import TauCeti.LinearAlgebra.BilinearForm.Henselian
+import TauCeti.LinearAlgebra.PerfectPairing.Basis
 import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.NumberTheory.Padics.RingHoms
 import TauCeti.RingTheory.Henselian.Basic
@@ -23,8 +24,8 @@ The forward implication holds at every prime and without any determinant-unit hy
 
 ## Main results
 
-* `TauCeti.IntegralLattice.isPerfPair_localIntegralForm_of_isUnit`: the localized integral form
-  is a perfect pairing when the determinant is a unit at `p`.
+* `TauCeti.IntegralLattice.isPerfPair_localIntegralForm_of_isUnit_determinant`: the localized
+  integral form is a perfect pairing when the determinant is a unit at `p`.
 * `TauCeti.IntegralLattice.localIntegralForm_equivalent_imp`: integral local isometry preserves
   the rank and determinant square class at every prime.
 * `TauCeti.IntegralLattice.exists_determinant_eq_unit_sq_mul_of_localIntegralForm_equivalent`:
@@ -50,14 +51,12 @@ variable {V W : Type*} [AddCommGroup V] [Module ℚ V] [AddCommGroup W] [Module 
 
 /-- **A lattice whose determinant is a unit at `p` has a unimodular localization.** The localized
 integral form is then a perfect pairing on `ℤ_p ⊗[ℤ] L`. -/
-theorem isPerfPair_localIntegralForm_of_isUnit (L : IntegralLattice V) (p : ℕ) [Fact p.Prime]
-    (hdet : IsUnit (L.determinant : ℤ_[p])) : (L.localIntegralForm p).IsPerfPair := by
-  classical
-  let b := (Module.finBasis ℤ L).baseChange ℤ_[p]
-  refine LinearMap.BilinForm.isModular_one_iff.mp (LinearMap.BilinForm.isModular_of_basis b
-    (G := (L.localIntegralForm p).toMatrix b) (one_mem _) (fun i j ↦ ?_) ?_)
-  · rw [one_mul, LinearMap.BilinForm.toMatrix_apply]
-  · rwa [L.det_toMatrix_localIntegralForm]
+theorem isPerfPair_localIntegralForm_of_isUnit_determinant (L : IntegralLattice V) (p : ℕ)
+    [Fact p.Prime] (hdet : IsUnit (L.determinant : ℤ_[p])) :
+    (L.localIntegralForm p).IsPerfPair := by
+  rw [← L.det_toMatrix_localIntegralForm p (Module.finBasis ℤ L)] at hdet
+  -- `LinearMap.BilinForm.toMatrix b` is defined as `LinearMap.toMatrix₂ b b`.
+  exact (Module.finBasis ℤ L).baseChange ℤ_[p] |>.isPerfPair_of_isUnit_det _ hdet
 
 /-- Integrally isometric localizations have equal ranks and determinant products that are
 squares, at every prime and without any determinant-unit hypothesis. -/
