@@ -76,6 +76,9 @@ localisations `S` and `S'` are arbitrary, as for
 * `existsUnique_continuous_ringHom_comp_toCompletionLoc_eq_extensionHom`:
   the descent `Â⟨T'/s'⟩ → A⟨T/s⟩`, which needs only `s'` and each numerator in `T'` to come
   from `A`.
+* `TauCeti.Huber.PairOfDefinition.completionLocMap_coeRingHom_comp_extensionHom`: the extension
+  `Â → A⟨T/s⟩` of the structure map of `A`, followed by the base change, is the structure map of
+  `Â`.
 * `TauCeti.Huber.PairOfDefinition.coe_completionLocCompletionEquiv`,
   `TauCeti.Huber.PairOfDefinition.completionLocCompletionEquiv_apply`,
   `TauCeti.Huber.PairOfDefinition.continuous_completionLocCompletionEquiv`,
@@ -84,6 +87,9 @@ localisations `S` and `S'` are arbitrary, as for
   `TauCeti.Huber.PairOfDefinition.completionLocCompletionEquiv_symm_coe_comp_toCompletionLoc`: the
   isomorphism is the base change along `A → Â`, it is a homeomorphism, and both directions are
   compatible with the structure maps.
+* `TauCeti.Huber.PairOfDefinition.completionLocCompletionEquiv_symm_toCompletionLoc` and
+  `TauCeti.Huber.PairOfDefinition.completionLocCompletionEquiv_symm_coe_algebraMap`: the inverse
+  on the image of `Â`.
 
 ## References
 
@@ -596,6 +602,35 @@ theorem existsUnique_continuous_ringHom_comp_toCompletionLoc_eq_extensionHom :
   exact isPowerBounded_toCompletionLoc_mul_unit_inv P T s S hden (mul_one s).symm hu
     ((mul_one t₀).symm ▸ ht₀)
 
+include hs hT in
+/-- **The base change along `A → Â` undoes the extension of the structure map of `A`.** The
+extension `Â → A⟨T/s⟩` of the structure map of `A`, followed by the base change
+`A⟨T/s⟩ → Â⟨T'/s'⟩`, is the structure map of `Â`: both are continuous on `Â` and agree on `A`. -/
+theorem completionLocMap_coeRingHom_comp_extensionHom :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    letI := locUniformSpace P' T' s' S' hden'
+    letI := isUniformAddGroup_locUniformSpace P' T' s' S' hden'
+    letI := isTopologicalRing_locUniformSpace P' T' s' S' hden'
+    (completionLocMap P T s S hden P' Completion.coeRingHom
+      Completion.continuous_coeRingHom.continuousAt T' s' S' hden' hs hT).comp
+        (Completion.extensionHom _ (continuous_toCompletionLoc P T s S hden)) =
+      toCompletionLoc P' T' s' S' hden' := by
+  let _ := locUniformSpace P T s S hden
+  have _ := isUniformAddGroup_locUniformSpace P T s S hden
+  have _ := isTopologicalRing_locUniformSpace P T s S hden
+  let _ := locUniformSpace P' T' s' S' hden'
+  have _ := isUniformAddGroup_locUniformSpace P' T' s' S' hden'
+  have _ := isTopologicalRing_locUniformSpace P' T' s' S' hden'
+  refine DFunLike.coe_injective <| Completion.ext ((continuous_completionLocMap P T s S hden P'
+    Completion.coeRingHom Completion.continuous_coeRingHom.continuousAt T' s' S' hden' hs
+      hT).comp Completion.continuous_extension)
+    (continuous_toCompletionLoc P' T' s' S' hden') fun a ↦ ?_
+  simpa [Completion.extensionHom_coe] using
+    RingHom.congr_fun (completionLocMap_comp_toCompletionLoc P T s S hden P' Completion.coeRingHom
+      Completion.continuous_coeRingHom.continuousAt T' s' S' hden' hs hT) a
+
 include hs hT hT' in
 /-- **`A⟨T/s⟩` is unchanged by first completing `A`.** If the presentation `(T', s')` of `Â` is the
 image of the presentation `(T, s)` of `A`, the base change `A⟨T/s⟩ → Â⟨T'/s'⟩` along `A → Â`
@@ -618,25 +653,16 @@ noncomputable def completionLocCompletionEquiv :
   have _ := isUniformAddGroup_locUniformSpace P' T' s' S' hden'
   have _ := isTopologicalRing_locUniformSpace P' T' s' S' hden'
   have hc := continuous_toCompletionLoc P T s S hden
-  have hc' := continuous_toCompletionLoc P' T' s' S' hden'
   have hg := existsUnique_continuous_ringHom_comp_toCompletionLoc_eq_extensionHom P T s S hden P'
     T' s' S' hden' hs hT'
   have hf := continuous_completionLocMap P T s S hden P' Completion.coeRingHom
     Completion.continuous_coeRingHom.continuousAt T' s' S' hden' hs hT
   have hfc := completionLocMap_comp_toCompletionLoc P T s S hden P' Completion.coeRingHom
     Completion.continuous_coeRingHom.continuousAt T' s' S' hden' hs hT
-  -- the base change, followed by the extension of the structure map of `A`, is the structure map
-  -- of `Â`: both are continuous on `Â` and agree on `A`
-  have hext : (completionLocMap P T s S hden P' Completion.coeRingHom
-      Completion.continuous_coeRingHom.continuousAt T' s' S' hden' hs hT).comp
-        (Completion.extensionHom _ hc) = toCompletionLoc P' T' s' S' hden' :=
-    DFunLike.coe_injective <| Completion.ext (hf.comp Completion.continuous_extension) hc'
-      fun a ↦ by
-        rw [RingHom.coe_comp, Function.comp_apply, Completion.extensionHom_coe,
-          ← RingHom.comp_apply, hfc, RingHom.comp_apply, Completion.coe_coeRingHom]
   exact RingEquiv.ofRingHom _ hg.choose
     (eq_id_of_comp_toCompletionLoc_eq_self P' T' s' S' hden' _ (hf.comp hg.choose_spec.1.1) <| by
-      rw [RingHom.comp_assoc, hg.choose_spec.1.2, hext])
+      rw [RingHom.comp_assoc, hg.choose_spec.1.2,
+        completionLocMap_coeRingHom_comp_extensionHom P T s S hden P' T' s' S' hden' hs hT])
     (eq_id_of_comp_toCompletionLoc_eq_self P T s S hden _ (hg.choose_spec.1.1.comp hf) <| by
       rw [RingHom.comp_assoc, hfc, ← RingHom.comp_assoc, hg.choose_spec.1.2]
       exact RingHom.ext (Completion.extensionHom_coe _ hc))
@@ -770,6 +796,41 @@ theorem completionLocCompletionEquiv_symm_coe_comp_toCompletionLoc :
   rw [coe_completionLocCompletionEquiv_symm]
   exact (existsUnique_continuous_ringHom_comp_toCompletionLoc_eq_extensionHom P T s S hden P' T'
     s' S' hden' hs hT').choose_spec.1.2
+
+/-- **The inverse on the image of `Â`**: it sends the image of `a'` under the structure map
+`Â → Â⟨T'/s'⟩` to the extension of the structure map of `A` evaluated at `a'`. Simp rewrites the
+left-hand side by `toCompletionLoc_apply`, so the simp form is
+`completionLocCompletionEquiv_symm_coe_algebraMap`. -/
+theorem completionLocCompletionEquiv_symm_toCompletionLoc (a' : Completion A) :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    letI := locUniformSpace P' T' s' S' hden'
+    letI := isUniformAddGroup_locUniformSpace P' T' s' S' hden'
+    letI := isTopologicalRing_locUniformSpace P' T' s' S' hden'
+    (completionLocCompletionEquiv P T s S hden P' T' s' S' hden' hs hT hT').symm
+        (toCompletionLoc P' T' s' S' hden' a') =
+      Completion.extensionHom _ (continuous_toCompletionLoc P T s S hden) a' :=
+  RingHom.congr_fun
+    (completionLocCompletionEquiv_symm_coe_comp_toCompletionLoc P T s S hden P' T' s' S' hden' hs
+      hT hT') a'
+
+/-- **The inverse on the image of `Â`**, in simp normal form: the image of `a'` in `Â[1/s']`, viewed
+in `Â⟨T'/s'⟩`, goes to the extension of the structure map of `A` evaluated at `a'`. -/
+@[simp]
+theorem completionLocCompletionEquiv_symm_coe_algebraMap (a' : Completion A) :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    letI := locUniformSpace P' T' s' S' hden'
+    letI := isUniformAddGroup_locUniformSpace P' T' s' S' hden'
+    letI := isTopologicalRing_locUniformSpace P' T' s' S' hden'
+    (completionLocCompletionEquiv P T s S hden P' T' s' S' hden' hs hT hT').symm
+        ((algebraMap (Completion A) S' a' : S') : Completion S') =
+      Completion.extensionHom _ (continuous_toCompletionLoc P T s S hden) a' := by
+  rw [← toCompletionLoc_apply P' T' s' S' hden']
+  exact completionLocCompletionEquiv_symm_toCompletionLoc P T s S hden P' T' s' S' hden' hs hT
+    hT' a'
 
 end Completion
 
