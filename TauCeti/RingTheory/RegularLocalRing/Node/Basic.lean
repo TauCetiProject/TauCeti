@@ -152,17 +152,21 @@ theorem isPrime_map_quotient_X_mul_X_sub_C_pow_iff (hπ : π ∈ maximalIdeal R)
       SetLike.mem_coe, mem_comap]
     simpa [hn] using hπ
 
-/-- **The local ring of `R[x, y] ⧸ (xy - πⁿ)` at the origin of its special fibre is regular exactly
-when `n = 1`.** Here `π ∈ 𝔪_R \ 𝔪_R²` for a regular local ring `R`, and the origin is the image of
-`𝔪 = (𝔪_R, x, y)`, which is a prime ideal exactly when `n ≠ 0`
-(`TauCeti.isPrime_map_quotient_X_mul_X_sub_C_pow_iff`). -/
-theorem isRegularLocalRing_localization_quotient_X_mul_X_sub_C_pow_iff (hπ : π ∈ maximalIdeal R)
-    (hπ2 : π ∉ maximalIdeal R ^ 2) (n : ℕ)
+omit [IsRegularRing R] in
+/-- The local ring of a node at its closed origin is the quotient of the ambient polynomial
+local ring by the node equation. -/
+noncomputable def NodeAlgebra.localizationOriginEquiv (hπ : π ∈ maximalIdeal R) (n : ℕ)
     [(((maximalIdeal R).comap (constantCoeff : MvPolynomial (Fin 2) R →+* R)).map
       (NodeAlgebra.mk (π ^ n)).toRingHom).IsPrime] :
-    IsRegularLocalRing (Localization.AtPrime
+    Localization.AtPrime
       (((maximalIdeal R).comap (constantCoeff : MvPolynomial (Fin 2) R →+* R)).map
-        (NodeAlgebra.mk (π ^ n)).toRingHom)) ↔ n = 1 := by
+        (NodeAlgebra.mk (π ^ n)).toRingHom) ≃+*
+      (Localization.AtPrime ((maximalIdeal R).comap
+        (constantCoeff : MvPolynomial (Fin 2) R →+* R)) ⧸
+          span {(algebraMap (MvPolynomial (Fin 2) R)
+            (Localization.AtPrime ((maximalIdeal R).comap
+              (constantCoeff : MvPolynomial (Fin 2) R →+* R)))
+            (X 0 * X 1 - C (π ^ n)))}) := by
   set 𝔪 := (maximalIdeal R).comap (constantCoeff : MvPolynomial (Fin 2) R →+* R)
   set f : MvPolynomial (Fin 2) R := X 0 * X 1 - C (π ^ n)
   set q := (NodeAlgebra.mk (π ^ n)).toRingHom
@@ -205,9 +209,26 @@ theorem isRegularLocalRing_localization_quotient_X_mul_X_sub_C_pow_iff (hπ : π
       exact ⟨p, ha, rfl⟩
   rw [hsub] at hloc
   let e := IsLocalization.algEquiv (𝔪.map q).primeCompl (Localization.AtPrime (𝔪.map q)) (B ⧸ J)
+  exact e.toRingEquiv
+
+/-- **The local ring of `R[x, y] ⧸ (xy - πⁿ)` at the origin of its special fibre is regular exactly
+when `n = 1`.** Here `π ∈ 𝔪_R \ 𝔪_R²` for a regular local ring `R`, and the origin is the image of
+`𝔪 = (𝔪_R, x, y)`, which is a prime ideal exactly when `n ≠ 0`
+(`TauCeti.isPrime_map_quotient_X_mul_X_sub_C_pow_iff`). -/
+theorem isRegularLocalRing_localization_quotient_X_mul_X_sub_C_pow_iff (hπ : π ∈ maximalIdeal R)
+    (hπ2 : π ∉ maximalIdeal R ^ 2) (n : ℕ)
+    [(((maximalIdeal R).comap (constantCoeff : MvPolynomial (Fin 2) R →+* R)).map
+      (NodeAlgebra.mk (π ^ n)).toRingHom).IsPrime] :
+    IsRegularLocalRing (Localization.AtPrime
+      (((maximalIdeal R).comap (constantCoeff : MvPolynomial (Fin 2) R →+* R)).map
+        (NodeAlgebra.mk (π ^ n)).toRingHom)) ↔ n = 1 := by
   rw [← isRegularLocalRing_quotient_X_mul_X_sub_C_pow_iff hπ hπ2 n, ← C_pow]
-  exact ⟨fun _ ↦ .of_ringEquiv (R := Localization.AtPrime (𝔪.map q)) e.toRingEquiv,
-    fun _ ↦ .of_ringEquiv (R := B ⧸ J) e.symm.toRingEquiv⟩
+  constructor
+  · intro h
+    exact .of_ringEquiv (NodeAlgebra.localizationOriginEquiv hπ n)
+  · intro h
+    exact @_root_.IsRegularLocalRing.of_ringEquiv _ _ h _ _
+      (NodeAlgebra.localizationOriginEquiv hπ n).symm
 
 end IsRegularRing
 
