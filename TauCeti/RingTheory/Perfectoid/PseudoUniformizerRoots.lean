@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.Perfection
 public import TauCeti.RingTheory.Huber.Basic
-public import TauCeti.Topology.Algebra.TopologicallyNilpotent
+public import TauCeti.Topology.Algebra.TopologicallyNilpotent.Basic
 import Mathlib.Algebra.CharP.Reduced
 import TauCeti.RingTheory.Perfect.Basic
 
