@@ -450,7 +450,7 @@ end Iso
 variable (I n d) in
 /-- **The automorphism group** of a nodal curve presented by flag-pair data: its isomorphisms
 with itself, with composition as multiplication. -/
-abbrev Aut := Iso I n d d
+abbrev Aut : Type _ := Iso I n d d
 
 namespace Aut
 
