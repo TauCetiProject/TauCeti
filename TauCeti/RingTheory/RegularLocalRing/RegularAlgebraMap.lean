@@ -108,7 +108,7 @@ example (R : Type u) [CommRing R] : RegularAlgebraMap R (R ⧸ (⊤ : Ideal R)) 
 /-- The rationals are a regular `ℤ`-algebra, although they are not of finite type over `ℤ`. -/
 example : RegularAlgebraMap ℤ ℚ := .of_isLocalization (nonZeroDivisors ℤ)
 
-/-- Polynomial rings in finitely many variables are regular. -/
+/-- Polynomial rings in finitely many variables over `R` are regular `R`-algebras. -/
 example (R : Type u) [CommRing R] (n : ℕ) : RegularAlgebraMap R (MvPolynomial (Fin n) R) :=
   inferInstance
 
