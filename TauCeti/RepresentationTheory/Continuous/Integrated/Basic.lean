@@ -103,6 +103,14 @@ open scoped InnerProductSpace Topology
 
 namespace TauCeti
 
+private theorem integral_comp_addMonoidHom {X E F : Type*} [MeasurableSpace X]
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+    [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
+    {μ : Measure X} (T : E →+ F) (hT : Continuous T) {f : X → E} (hf : Integrable f μ) :
+    ∫ x, T (f x) ∂μ = T (∫ x, f x ∂μ) := by
+  simpa only [AddMonoidHom.coe_toRealLinearMap] using
+    (T.toRealLinearMap hT).integral_comp_comm hf
+
 section Normed
 
 variable {𝕜 G E : Type*} [NontriviallyNormedField 𝕜] [AddMonoid G] [TopologicalSpace G]
@@ -215,13 +223,10 @@ theorem _root_.ContRepresentation.comp_integratedOperatorL1 [CompleteSpace E] [M
   ext v
   rw [ContinuousLinearMap.comp_apply, ContRepresentation.integratedOperatorL1_apply,
     ContRepresentation.integratedOperatorL1_apply]
-  -- A continuous additive operator is real-linear without a real algebra structure on `𝕜`.
   have hint : ∫ g, π (.ofAdd h) (f g • π (.ofAdd g) v) ∂μ =
-      π (.ofAdd h) (∫ g, f g • π (.ofAdd g) v ∂μ) := by
-    simpa [AddMonoidHom.toRealLinearMap] using
-      ((π (.ofAdd h)).toAddMonoidHom.toRealLinearMap
-        (π (.ofAdd h)).continuous).integral_comp_comm
-          (integrable_smul_apply hcont hbdd.choose_spec (L1.integrable_coeFn f) v)
+      π (.ofAdd h) (∫ g, f g • π (.ofAdd g) v ∂μ) :=
+    integral_comp_addMonoidHom (π (.ofAdd h)).toAddMonoidHom (π (.ofAdd h)).continuous
+      (integrable_smul_apply hcont hbdd.choose_spec (L1.integrable_coeFn f) v)
   rw [← hint]
   have hcomp : ∫ g, (Lp.compMeasurePreserving (fun g ↦ -h + g)
         (measurePreserving_add_left μ (-h)) f) g • π (.ofAdd g) v ∂μ =
@@ -266,10 +271,9 @@ theorem _root_.ContRepresentation.commute_integratedOperatorL1
   intro v
   simp only [mul_apply_eq_comp, ContRepresentation.integratedOperatorL1_apply]
   have hint : ∫ t, π g (f t • π (.ofAdd t) v) ∂μ =
-      π g (∫ t, f t • π (.ofAdd t) v ∂μ) := by
-    simpa [AddMonoidHom.toRealLinearMap] using
-      ((π g).toAddMonoidHom.toRealLinearMap (π g).continuous).integral_comp_comm
-        (integrable_smul_apply hcont hbdd.choose_spec (L1.integrable_coeFn f) v)
+      π g (∫ t, f t • π (.ofAdd t) v ∂μ) :=
+    integral_comp_addMonoidHom (π g).toAddMonoidHom (π g).continuous
+      (integrable_smul_apply hcont hbdd.choose_spec (L1.integrable_coeFn f) v)
   rw [← hint]
   apply integral_congr_ae
   filter_upwards [] with t
@@ -287,11 +291,10 @@ theorem _root_.ContRepresentation.integratedOperatorL1_commute (f₁ f₂ : G �
   simp only [mul_apply_eq_comp]
   rw [π.integratedOperatorL1_apply f₂ v]
   have hint : ∫ t, π.integratedOperatorL1 hcont hbdd μ f₁ (f₂ t • π (.ofAdd t) v) ∂μ =
-      π.integratedOperatorL1 hcont hbdd μ f₁ (∫ t, f₂ t • π (.ofAdd t) v ∂μ) := by
-    simpa [AddMonoidHom.toRealLinearMap] using
-      ((π.integratedOperatorL1 hcont hbdd μ f₁).toAddMonoidHom.toRealLinearMap
-          (π.integratedOperatorL1 hcont hbdd μ f₁).continuous).integral_comp_comm
-        (integrable_smul_apply hcont hbdd.choose_spec (L1.integrable_coeFn f₂) v)
+      π.integratedOperatorL1 hcont hbdd μ f₁ (∫ t, f₂ t • π (.ofAdd t) v ∂μ) :=
+    integral_comp_addMonoidHom (π.integratedOperatorL1 hcont hbdd μ f₁).toAddMonoidHom
+      (π.integratedOperatorL1 hcont hbdd μ f₁).continuous
+      (integrable_smul_apply hcont hbdd.choose_spec (L1.integrable_coeFn f₂) v)
   rw [← hint]
   rw [π.integratedOperatorL1_apply f₂]
   refine integral_congr_ae (.of_forall fun t ↦ ?_)
