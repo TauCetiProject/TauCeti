@@ -375,6 +375,18 @@ theorem coe_rationalPointsMulEquivFixedSubgroupGeometricFrobenius_apply
   ext h
   simp [rationalPointsMulEquivFixedSubgroupGeometricFrobenius]
 
+/-- The inverse isomorphism `G^F ≃ G₀(K)` sends a fixed point `g` to the rational point whose
+value at `h` maps to `g (1 ⊗ h)` under the structure map `K → k`. -/
+@[simp]
+theorem algebraMap_rationalPointsMulEquivFixedSubgroupGeometricFrobenius_symm_apply_apply
+    (g : fixedSubgroup (BialgHom.mapDomain (A := k) (geometricFrobeniusBialgHom K k H))) (h : H) :
+    algebraMap K k (((rationalPointsMulEquivFixedSubgroupGeometricFrobenius K k H).symm g).ofConv
+        h) = (g : WithConv (k ⊗[K] H →ₐ[k] k)).ofConv (1 ⊗ₜ h) := by
+  conv_rhs =>
+    rw [← (rationalPointsMulEquivFixedSubgroupGeometricFrobenius K k H).apply_symm_apply g]
+  rw [coe_rationalPointsMulEquivFixedSubgroupGeometricFrobenius_apply,
+    AlgHom.pointsBaseChange_apply_tmul, one_mul]
+
 variable {H} {H₁ : Type*} [CommSemiring H₁] [_root_.HopfAlgebra K H₁] in
 /-- The isomorphism `G₀(K) ≃ G^F` is natural in the coordinate Hopf algebra: for a morphism
 `ψ : H → H₁`, the induced map on rational points corresponds to the map on Frobenius-fixed points
