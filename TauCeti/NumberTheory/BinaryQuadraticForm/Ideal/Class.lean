@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.BinaryQuadraticForm.Ideal.Change
 public import TauCeti.NumberTheory.NumberField.Global.Orders.Picard
+import TauCeti.Algebra.QuadraticAlgebra.Discriminant
 
 /-!
 # Picard classes of primitive binary quadratic forms
