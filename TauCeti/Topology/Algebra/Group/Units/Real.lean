@@ -29,16 +29,8 @@ namespace Units
 /-- The positive real units form a preconnected set. -/
 theorem isPreconnected_posSubgroup_real :
     IsPreconnected (Units.posSubgroup ℝ : Set ℝˣ) := by
-  rw [← Units.isEmbedding_val₀.isInducing.isPreconnected_image]
-  have himage : Units.val '' (Units.posSubgroup ℝ : Set ℝˣ) = Set.Ioi (0 : ℝ) := by
-    ext x
-    constructor
-    · rintro ⟨u, hu, rfl⟩
-      exact (Units.mem_posSubgroup _).1 hu
-    · intro hx
-      exact ⟨Units.mk0 x hx.ne', (Units.mem_posSubgroup _).2 hx, rfl⟩
-  rw [himage]
-  exact isPreconnected_Ioi
+  simpa only [Units.posSubgroup, Set.preimage_setOf_eq] using
+    isPreconnected_Ioi.preimage_units_val (by simp : (0 : ℝ) ∉ Set.Ioi 0)
 
 /-- The positive real units are the identity component of the real unit group. -/
 theorem connectedComponentOfOne_real :

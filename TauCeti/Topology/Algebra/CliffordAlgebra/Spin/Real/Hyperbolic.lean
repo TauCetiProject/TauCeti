@@ -12,10 +12,10 @@ public import TauCeti.Topology.Algebra.QuadraticForm.OrthogonalGroup.Hyperbolic
 /-!
 # The real Spin image of the hyperbolic plane
 
-The real Spin image of the hyperbolic plane is the identity component of its proper orthogonal
-group. The proof uses the identity-component result for the real hyperbolic orthogonal group,
-identifies the Spin image with square-unit parameters through the general spinor-norm calculation,
-and uses that a real unit is a square exactly when it is positive.
+The image of the real Spin group of the hyperbolic plane is the identity component of its
+proper orthogonal group. Thus the Spin action distinguishes the component containing the identity
+from the remaining proper orthogonal transformations. This identifies the indefinite-signature
+Spin image with its natural connected target in the split real two-dimensional case.
 -/
 
 public section
