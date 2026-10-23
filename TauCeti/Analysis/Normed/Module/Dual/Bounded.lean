@@ -46,10 +46,12 @@ theorem exists_bound_of_forall_exists_ne_zero {K : Type*} [NormedField K]
         exact ⟨‖a‖ * C, fun y ↦ by
           simpa [norm_mul, mul_assoc] using
             mul_le_mul_of_nonneg_left (hC y) (norm_nonneg a)⟩ }
+  -- By the carrier definition, membership in W is exactly the boundedness condition in h.
   have htop : W = ⊤ := by
     simpa only [Submodule.span_eq] using
       (Submodule.span_eq_top_of_ne_zero (s := (W : Set (Module.Dual K V))) h)
   have hψ : ψ ∈ W := by rw [htop]; exact Submodule.mem_top
+  -- Unfolding membership in W recovers the required bound for ψ.
   exact hψ
 
 end Module.Dual

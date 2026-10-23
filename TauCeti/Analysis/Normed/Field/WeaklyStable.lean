@@ -56,7 +56,8 @@ theorem isWeaklyStable_of_completeSpace (K : Type u) [NontriviallyNormedField K]
   intro L _ _ _ φ
   let := spectralNorm.normedField K L
   let := spectralNorm.normedAlgebra K L
-  exact ⟨‖LinearMap.toContinuousLinearMap φ‖, fun y ↦
-    (LinearMap.toContinuousLinearMap φ).le_opNorm y⟩
+  refine ⟨‖LinearMap.toContinuousLinearMap φ‖, fun y ↦ ?_⟩
+  rw [← NormedAlgebra.norm_eq_spectralNorm K y]
+  exact (LinearMap.toContinuousLinearMap φ).le_opNorm y
 
 end TauCeti
