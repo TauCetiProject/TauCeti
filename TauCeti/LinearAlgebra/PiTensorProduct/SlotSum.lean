@@ -73,8 +73,9 @@ representing cocycle in the tensor-induced resolution.
   homotopy contracts the tensor power, `D H + H D = 1 - e ⊗ ⋯ ⊗ e`.
 * `TauCeti.PiTensorProduct.slotSum_comp_map` and `TauCeti.PiTensorProduct.slotSum_comp_reindex`:
   the slot sum commutes with factorwise maps and with reindexing.
-* `TauCeti.PiTensorProduct.isHomogeneous_slotSum`, `TauCeti.PiTensorProduct.isHomogeneous_map`
-  and `TauCeti.PiTensorProduct.isHomogeneous_slotHomotopy`: the degrees of these maps for the
+* `TauCeti.PiTensorProduct.isHomogeneous_slotSum`, `TauCeti.PiTensorProduct.isHomogeneous_map`,
+  `TauCeti.PiTensorProduct.isHomogeneous_map_update` and
+  `TauCeti.PiTensorProduct.isHomogeneous_slotHomotopy`: the degrees of these maps for the
   total-degree grading.
 * `TauCeti.PiTensorProduct.map_mem_totalDegreePiece_zero`,
   `TauCeti.PiTensorProduct.map_eq_zero_of_mem_totalDegreePiece_of_pos` and
@@ -230,6 +231,19 @@ theorem isHomogeneous_map {𝒩 : A → Submodule R N} {g : ι → N →ₗ[R] M
   rw [Submodule.mem_comap, PiTensorProduct.map_tprod, ← Finset.sum_add_distrib]
   exact tprod_mem_totalDegreePiece fun i ↦ (hg i).map_mem (hm i)
 
+/-- A factorwise map of degree zero in every factor but one, where it has degree `a`, shifts the
+total degree by `a`. -/
+theorem isHomogeneous_map_update [DecidableEq ι] {𝒩 : A → Submodule R N} {g : ι → N →ₗ[R] M}
+    {f : N →ₗ[R] M} {a : A} (hg : ∀ j, LinearMap.IsHomogeneous (g j) 𝒩 ℳ 0)
+    (hf : LinearMap.IsHomogeneous f 𝒩 ℳ a) (i : ι) :
+    LinearMap.IsHomogeneous (PiTensorProduct.map (update g i f)) (totalDegreePiece ι 𝒩)
+      (totalDegreePiece ι ℳ) a := by
+  rw [← Fintype.sum_pi_single' i a]
+  refine isHomogeneous_map fun j ↦ ?_
+  rcases eq_or_ne j i with rfl | hj
+  · simpa using hf
+  · simpa [hj] using hg j
+
 /-- Factorwise maps into degree zero land in total degree zero. -/
 theorem map_mem_totalDegreePiece_zero {g : ι → N →ₗ[R] M} (hg : ∀ i x, g i x ∈ ℳ 0)
     (x : ⨂[R] _ : ι, N) : PiTensorProduct.map g x ∈ totalDegreePiece ι ℳ 0 := by
@@ -245,14 +259,10 @@ theorem map_mem_totalDegreePiece_zero {g : ι → N →ₗ[R] M} (hg : ∀ i x, 
 /-- The slot sum of a homogeneous endomorphism of degree `a` raises the total degree by `a`. -/
 theorem isHomogeneous_slotSum [DecidableEq ι] {f : Module.End R M} {a : A}
     (hf : LinearMap.IsHomogeneous f ℳ ℳ a) :
-    LinearMap.IsHomogeneous (slotSum ι f) (totalDegreePiece ι ℳ) (totalDegreePiece ι ℳ) a := by
-  refine Finset.sum_induction _ (LinearMap.IsHomogeneous · _ _ a) (fun _ _ ↦ .add)
-    (LinearMap.isHomogeneous_zero _ _ _) fun i _ ↦ ?_
-  rw [← Fintype.sum_pi_single' i a]
-  refine isHomogeneous_map fun j ↦ ?_
-  rcases eq_or_ne j i with rfl | hj
-  · simpa using hf
-  · simp [hj]
+    LinearMap.IsHomogeneous (slotSum ι f) (totalDegreePiece ι ℳ) (totalDegreePiece ι ℳ) a :=
+  Finset.sum_induction _ (LinearMap.IsHomogeneous · _ _ a) (fun _ _ ↦ .add)
+    (LinearMap.isHomogeneous_zero _ _ _) fun i _ ↦
+      isHomogeneous_map_update (fun _ ↦ LinearMap.isHomogeneous_id ℳ) hf i
 
 /-- Factorwise maps vanishing in positive degrees kill the positive total degrees: a pure tensor
 of homogeneous factors of positive total degree has a factor of positive degree. -/
@@ -302,17 +312,12 @@ shifts the total degree by `a`. -/
 theorem isHomogeneous_slotHomotopy {e h : Module.End R M} {a : A}
     (he : LinearMap.IsHomogeneous e ℳ ℳ 0) (hh : LinearMap.IsHomogeneous h ℳ ℳ a) :
     LinearMap.IsHomogeneous (slotHomotopy ι e h) (totalDegreePiece ι ℳ)
-      (totalDegreePiece ι ℳ) a := by
-  refine Finset.sum_induction _ (LinearMap.IsHomogeneous · _ _ a) (fun _ _ ↦ .add)
-    (LinearMap.isHomogeneous_zero _ _ _) fun i _ ↦ ?_
-  rw [← Fintype.sum_pi_single' i a]
-  refine isHomogeneous_map fun j ↦ ?_
-  rcases eq_or_ne j i with rfl | hj
-  · simpa using hh
-  · simp only [update_of_ne hj, Pi.single_eq_of_ne hj]
-    split_ifs
-    · exact he
-    · exact LinearMap.isHomogeneous_id ℳ
+      (totalDegreePiece ι ℳ) a :=
+  Finset.sum_induction _ (LinearMap.IsHomogeneous · _ _ a) (fun _ _ ↦ .add)
+    (LinearMap.isHomogeneous_zero _ _ _) fun i _ ↦
+      isHomogeneous_map_update (fun j ↦ by
+        split_ifs
+        exacts [he, LinearMap.isHomogeneous_id ℳ]) hh i
 
 /-- For a grading without negative pieces, the slot homotopy of a homotopy vanishing in degree
 zero vanishes in total degree zero: a pure tensor of homogeneous factors of total degree zero has
@@ -399,21 +404,24 @@ private theorem slotSum_slotHomotopy_diag {d e h : Module.End R M}
         PiTensorProduct.map (update (fun _ ↦ LinearMap.id) i d) =
       partialPower e {j ∈ Finset.univ | j < i} - partialPower e {j ∈ Finset.univ | j ≤ i} := by
   set E : ι → Module.End R M := fun j ↦ if j < i then e else LinearMap.id
-  -- Each of the four tensor maps is `E` with one entry at the slot `i` changed.
-  have hupd : ∀ {f : ι → Module.End R M} {u : Module.End R M}, f i = u → (∀ j ≠ i, f j = E j) →
-      PiTensorProduct.map f = PiTensorProduct.map (update E i u) :=
-    fun h₁ h₂ ↦ congrArg _ (eq_update_iff.2 ⟨h₁, h₂⟩)
-  rw [← PiTensorProduct.map_mul, ← PiTensorProduct.map_mul,
-    hupd (f := fun j ↦ update (fun _ ↦ LinearMap.id) i d j * update E i h j) (u := d ∘ₗ h)
-      (by simp [Module.End.mul_eq_comp]) fun j hj ↦ by simp [hj, Module.End.mul_eq_comp],
-    hupd (f := fun j ↦ update E i h j * update (fun _ ↦ LinearMap.id) i d j) (u := h ∘ₗ d)
-      (by simp [Module.End.mul_eq_comp]) fun j hj ↦ by simp [hj, Module.End.mul_eq_comp],
-    ← PiTensorProduct.map_update_add, hdh, partialPower, partialPower,
-    hupd (f := fun j ↦ if j ∈ {j ∈ (Finset.univ : Finset ι) | j < i} then e else LinearMap.id)
-      (u := LinearMap.id) (by simp) fun j hj ↦ by simp [E],
-    hupd (f := fun j ↦ if j ∈ {j ∈ (Finset.univ : Finset ι) | j ≤ i} then e else LinearMap.id)
-      (u := e) (by simp) fun j hj ↦ by simp [E, hj, le_iff_lt_or_eq], eq_sub_iff_add_eq,
-    ← PiTensorProduct.map_update_add, sub_add_cancel]
+  -- Each of the tensor maps is `E` with the entry at the slot `i` changed.
+  calc _ = PiTensorProduct.map (update E i (d ∘ₗ h)) +
+        PiTensorProduct.map (update E i (h ∘ₗ d)) := by
+        rw [← PiTensorProduct.map_mul, ← PiTensorProduct.map_mul]
+        congr 2 <;> funext j <;> rcases eq_or_ne j i with rfl | hj
+        · simp [Module.End.mul_eq_comp]
+        · simp [E, hj, Module.End.mul_eq_comp]
+        · simp [Module.End.mul_eq_comp]
+        · simp [E, hj, Module.End.mul_eq_comp]
+    _ = PiTensorProduct.map (update E i LinearMap.id) - PiTensorProduct.map (update E i e) := by
+        rw [← PiTensorProduct.map_update_add, hdh, eq_sub_iff_add_eq,
+          ← PiTensorProduct.map_update_add, sub_add_cancel]
+    _ = _ := by
+        congr 2 <;> funext j <;> rcases eq_or_ne j i with rfl | hj
+        · simp [E]
+        · simp [E, hj]
+        · simp
+        · simp [E, hj, hj.le_iff_lt]
 
 /-- In characteristic two, **the slot homotopy contracts the tensor power**: if `h` is a homotopy
 from the identity to an endomorphism `e` commuting with `d`, in the sense `d h + h d = 1 - e`,
