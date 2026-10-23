@@ -53,7 +53,7 @@ zero once their degrees add up to the rank, and in rank at most four a two-form 
 
 On `M × R`, with `e = (0, 1)`, every element `z` of the exterior algebra splits as `a + e ∧ b`,
 where `a` and `b` are the images in `⋀ M` of `z` and of its contraction by the second coordinate
-(`TauCeti.ExteriorAlgebra.map_inl_map_fst_add_ι_inr_mul_contractLeft_snd`). This is the
+(`ExteriorAlgebra.map_inl_map_fst_add_ι_inr_mul_contractLeft_snd`). This is the
 decomposition `⋀ᵏ⁺¹ (M × R) ≅ ⋀ᵏ⁺¹ M ⊕ e ∧ ⋀ᵏ M` used to adjoin one element to a Koszul complex.
 -/
 
@@ -570,9 +570,7 @@ theorem mul_self_eq_two_smul_mul_ι_mul_contractLeft {d : Module.Dual R M} {m : 
 
 end TauCeti.ExteriorAlgebra
 
-namespace TauCeti.ExteriorAlgebra
-
-open _root_.ExteriorAlgebra
+namespace ExteriorAlgebra
 
 variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
 
@@ -581,7 +579,7 @@ variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
 /-- **Splitting off a free coordinate.** In the exterior algebra of `M × R`, with `e = (0, 1)`,
 every element `z` is `a + e ∧ b`, where `a` is the image of `z` under `⋀ M × R → ⋀ M → ⋀ (M × R)`
 and `b` is the image of the contraction of `z` by the second coordinate. -/
-theorem map_inl_map_fst_add_ι_inr_mul_contractLeft_snd (z : _root_.ExteriorAlgebra R (M × R)) :
+theorem map_inl_map_fst_add_ι_inr_mul_contractLeft_snd (z : ExteriorAlgebra R (M × R)) :
     map (LinearMap.inl R M R) (map (LinearMap.fst R M R) z) +
         ι R (LinearMap.inr R M R 1) * map (LinearMap.inl R M R) (map (LinearMap.fst R M R)
           (contractLeft (Q := (0 : QuadraticForm R (M × R))) (LinearMap.snd R M R) z)) =
@@ -602,10 +600,10 @@ theorem map_inl_map_fst_add_ι_inr_mul_contractLeft_snd (z : _root_.ExteriorAlge
     -- `left_induction` states the step with `CliffordAlgebra.ι 0`, which is `ι R` by definition.
     change _ = ι R m * z
     rw [contractLeft_ι_mul]
-    simp only [map_mul, map_sub, map_smul, _root_.ExteriorAlgebra.map_apply_ι]
+    simp only [map_mul, map_sub, map_smul, map_apply_ι]
     conv_rhs => rw [← ih, hm]
     simp only [add_mul, mul_add, mul_sub, smul_mul_assoc, mul_smul_comm, ← mul_assoc, he, hc,
       smul_zero, add_zero, neg_mul, LinearMap.fst_apply, LinearMap.snd_apply]
     abel
 
-end TauCeti.ExteriorAlgebra
+end ExteriorAlgebra
