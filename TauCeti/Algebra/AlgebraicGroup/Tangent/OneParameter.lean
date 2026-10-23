@@ -51,6 +51,7 @@ noncomputable def expPointPolynomial : H →ₐ[R] R[X] :=
 
 /-- The coefficients of the exponential curve are the counits of the divided iterates
 of its invariant derivation. -/
+@[simp]
 theorem coeff_expPointPolynomial (h : H) (n : ℕ) :
     (expPointPolynomial d hd h).coeff n =
       Coalgebra.counit (R := R)
@@ -58,7 +59,6 @@ theorem coeff_expPointPolynomial (h : H) (n : ℕ) :
   simp [expPointPolynomial, Polynomial.coeff_map]
 
 /-- The velocity of the exponential curve at zero is its specified tangent vector. -/
-@[simp]
 theorem coeff_one_expPointPolynomial (h : H) :
     (expPointPolynomial d hd h).coeff 1 = CounitAlgebra.algEquivSelf R H R (d h) := by
   simpa only [coeff_expPointPolynomial, Nat.factorial_one, Nat.cast_one, inv_one,
