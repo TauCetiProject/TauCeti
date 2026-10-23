@@ -176,24 +176,21 @@ The sum is finite when `M` has finite index in `L`. -/
 theorem hasSum_thetaCoset_out {M : Submodule ℤ E} (hML : M ≤ L) (τ : ℍ) :
     HasSum (fun y : L ⧸ M.submoduleOf L => thetaCoset M ((Quotient.out y : L) : E) τ)
       (thetaSeries L τ) := by
-  -- The vectors of `L` in the class `y` are the translates `out y + v`, `v ∈ M`. Below,
-  -- membership of `x : L` in `M.submoduleOf L` is by definition membership of `(x : E)` in `M`.
+  -- The vectors of `L` in the class `y` are the translates `out y + v`, `v ∈ M`: the fibre of
+  -- the quotient map over `y` is identified with its kernel `M.submoduleOf L`, and then with `M`.
   have hfiber (y : L ⧸ M.submoduleOf L) :
       ∑' b : (Submodule.Quotient.mk ⁻¹' {y} : Set L), cexp (π * I * (‖((b : L) : E)‖ ^ 2 : ℝ) * τ) =
         thetaCoset M (Quotient.out y : L) τ := by
+    let f := (M.submoduleOf L).mkQ.toAddMonoidHom
     let e : M ≃ (Submodule.Quotient.mk ⁻¹' {y} : Set L) :=
-      { toFun v := ⟨Quotient.out y + ⟨v, hML v.2⟩, by
-          have hv : (⟨v, hML v.2⟩ : L) ∈ M.submoduleOf L := v.2
-          rw [Set.mem_preimage, Set.mem_singleton_iff, Submodule.Quotient.mk_add,
-            (Submodule.Quotient.mk_eq_zero _).mpr hv, add_zero, Submodule.Quotient.mk_out]⟩
-        invFun b := ⟨((b : L) - Quotient.out y : L), by
-          have hb : Submodule.Quotient.mk (b : L) = Submodule.Quotient.mk (Quotient.out y) :=
-            b.2.trans (Submodule.Quotient.mk_out y).symm
-          exact (Submodule.Quotient.eq (M.submoduleOf L)).mp hb⟩
-        left_inv v := by ext; simp
-        right_inv b := by ext; simp }
+      ((Set.equivOfEq (show Submodule.Quotient.mk ⁻¹' {y} = f ⁻¹' {f (Quotient.out y)} by
+          ext; simp [f])).trans
+        ((f.fiberEquivKer (Quotient.out y)).trans
+          ((Equiv.subtypeEquivRight fun _ => Submodule.Quotient.mk_eq_zero _).trans
+            (Submodule.submoduleOfEquivOfLe hML).toEquiv))).symm
+    -- `e v = out y + v` holds by definition, as in `AddMonoidHom.fiberEquivKer_symm_apply`.
     rw [thetaCoset_apply, ← e.tsum_eq]
-    simp [e]
+    exact tsum_congr fun _ => rfl
   rw [← funext hfiber, thetaSeries_apply]
   exact (summable_thetaSeries L τ).hasSum.tsum_fiberwise _
 
