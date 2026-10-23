@@ -13,8 +13,9 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth.Basic
 
 The paired wedge `φ.wedgeWith μ ψ` of two forms is natural in its coefficient spaces: coefficient
 maps applied to the factors, or to the product, are absorbed into the pairing `μ`. Consequently,
-when scalars acting on the coefficients commute with the pairing in one argument, the paired
-wedge is linear for those scalars in that argument.
+when the pairing sends a coefficient scalar `c` in one argument to a scalar `d` on the output
+(for instance `d = c` for a bilinear pairing, or `d = conj c` for a conjugate-linear slot), the
+paired wedge sends `c` on that factor to `d`.
 
 The main application is to complex-valued forms. If `μ` is bilinear over a normed `ℝ`-algebra
 `𝕜`, for instance a complex-bilinear pairing of complex coefficient spaces, then the paired wedge
@@ -31,8 +32,8 @@ decompositions and the Dolbeault operators are built.
 * `TauCeti.RoughForm.mapCoeff_wedgeWith`, `TauCeti.SmoothForm.mapCoeff_wedgeWith`: a coefficient
   map of the product is absorbed into the pairing by postcomposition.
 * `TauCeti.SmoothForm.wedgeWith_smul_left_of_map_smul`,
-  `TauCeti.SmoothForm.wedgeWith_smul_right_of_map_smul`: the paired wedge is linear for
-  coefficient scalars commuting with the pairing.
+  `TauCeti.SmoothForm.wedgeWith_smul_right_of_map_smul`: the paired wedge moves coefficient
+  scalars out of a factor in the same way as the pairing does.
 * `TauCeti.SmoothForm.wedgeWith_bilinearRestrictScalars_smul_left`,
   `TauCeti.SmoothForm.wedgeWith_bilinearRestrictScalars_smul_right`: the paired wedge for a
   `𝕜`-bilinear pairing is `𝕜`-linear in each factor; for `𝕜 = ℂ` this is the complex-linearity
@@ -66,6 +67,7 @@ namespace RoughForm
 
 /-- Coefficient maps applied to the two factors of a paired wedge are absorbed into the
 pairing. -/
+@[simp]
 theorem mapCoeff_wedgeWith_mapCoeff (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (L₁ : G₁ →L[ℝ] F₁)
     (L₂ : G₂ →L[ℝ] F₂) (φ : RoughForm I M G₁ k) (ψ : RoughForm I M G₂ l) :
     (mapCoeff L₁ φ).wedgeWith μ (mapCoeff L₂ ψ) = φ.wedgeWith (μ.bilinearComp L₁ L₂) ψ := by
@@ -73,6 +75,7 @@ theorem mapCoeff_wedgeWith_mapCoeff (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (L
   simp only [wedgeWith_apply, mapCoeff_apply, ContinuousLinearMap.bilinearComp_apply]
 
 /-- A coefficient map applied to a paired wedge is absorbed into the pairing. -/
+@[simp]
 theorem mapCoeff_wedgeWith (L : F₃ →L[ℝ] G) (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (φ : RoughForm I M F₁ k) (ψ : RoughForm I M F₂ l) :
     mapCoeff L (φ.wedgeWith μ ψ) = φ.wedgeWith ((ContinuousLinearMap.postcomp F₂ L).comp μ) ψ := by
@@ -81,33 +84,33 @@ theorem mapCoeff_wedgeWith (L : F₃ →L[ℝ] G) (μ : F₁ →L[ℝ] F₂ →L
     ContinuousAlternatingMap.pairedWedge_postcomp L μ μ.continuous₂ (φ x) (ψ x),
     ContinuousLinearMap.compContinuousAlternatingMap_coe, Function.comp_apply]
 
-variable {S : Type*} [Monoid S]
-  [DistribMulAction S F₃] [ContinuousConstSMul S F₃] [SMulCommClass ℝ S F₃]
+variable {S S' : Type*} [Monoid S] [Monoid S']
+  [DistribMulAction S' F₃] [ContinuousConstSMul S' F₃] [SMulCommClass ℝ S' F₃]
 
-/-- A coefficient scalar commuting with the pairing in its first argument can be moved out of
-the first factor of a paired wedge. -/
+/-- A coefficient scalar `c` on the first factor of a paired wedge can be moved out as `d`
+when the pairing sends `c` in its first argument to `d`. -/
 theorem wedgeWith_smul_left_of_map_smul [DistribMulAction S F₁] [ContinuousConstSMul S F₁]
-    [SMulCommClass ℝ S F₁] (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) {c : S}
-    (hμ : ∀ a b, μ (c • a) b = c • μ a b) (φ : RoughForm I M F₁ k) (ψ : RoughForm I M F₂ l) :
-    (c • φ).wedgeWith μ ψ = c • φ.wedgeWith μ ψ := by
+    [SMulCommClass ℝ S F₁] (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) {c : S} {d : S'}
+    (hμ : ∀ a b, μ (c • a) b = d • μ a b) (φ : RoughForm I M F₁ k) (ψ : RoughForm I M F₂ l) :
+    (c • φ).wedgeWith μ ψ = d • φ.wedgeWith μ ψ := by
   have h := mapCoeff_wedgeWith_mapCoeff μ (c • ContinuousLinearMap.id ℝ F₁)
     (ContinuousLinearMap.id ℝ F₂) φ ψ
   rw [mapCoeff_id] at h
-  rw [smul_eq_mapCoeff c φ, h, smul_eq_mapCoeff c (φ.wedgeWith μ ψ), mapCoeff_wedgeWith]
+  rw [smul_eq_mapCoeff c φ, h, smul_eq_mapCoeff d (φ.wedgeWith μ ψ), mapCoeff_wedgeWith]
   congr 1
   ext a b
   simp [hμ]
 
-/-- A coefficient scalar commuting with the pairing in its second argument can be moved out of
-the second factor of a paired wedge. -/
+/-- A coefficient scalar `c` on the second factor of a paired wedge can be moved out as `d`
+when the pairing sends `c` in its second argument to `d`. -/
 theorem wedgeWith_smul_right_of_map_smul [DistribMulAction S F₂] [ContinuousConstSMul S F₂]
-    [SMulCommClass ℝ S F₂] (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) {c : S}
-    (hμ : ∀ a b, μ a (c • b) = c • μ a b) (φ : RoughForm I M F₁ k) (ψ : RoughForm I M F₂ l) :
-    φ.wedgeWith μ (c • ψ) = c • φ.wedgeWith μ ψ := by
+    [SMulCommClass ℝ S F₂] (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) {c : S} {d : S'}
+    (hμ : ∀ a b, μ a (c • b) = d • μ a b) (φ : RoughForm I M F₁ k) (ψ : RoughForm I M F₂ l) :
+    φ.wedgeWith μ (c • ψ) = d • φ.wedgeWith μ ψ := by
   have h := mapCoeff_wedgeWith_mapCoeff μ (ContinuousLinearMap.id ℝ F₁)
     (c • ContinuousLinearMap.id ℝ F₂) φ ψ
   rw [mapCoeff_id] at h
-  rw [smul_eq_mapCoeff c ψ, h, smul_eq_mapCoeff c (φ.wedgeWith μ ψ), mapCoeff_wedgeWith]
+  rw [smul_eq_mapCoeff c ψ, h, smul_eq_mapCoeff d (φ.wedgeWith μ ψ), mapCoeff_wedgeWith]
   congr 1
   ext a b
   simp [hμ]
@@ -122,6 +125,7 @@ variable [IsManifold I 1 M]
 
 /-- Coefficient maps applied to the two factors of a smooth paired wedge are absorbed into the
 pairing. -/
+@[simp]
 theorem mapCoeff_wedgeWith_mapCoeff (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (L₁ : G₁ →L[ℝ] F₁)
     (L₂ : G₂ →L[ℝ] F₂) (φ : SmoothForm I M G₁ k) (ψ : SmoothForm I M G₂ l) :
     wedgeWith μ (mapCoeff L₁ φ) (mapCoeff L₂ ψ) = wedgeWith (μ.bilinearComp L₁ L₂) φ ψ :=
@@ -129,6 +133,7 @@ theorem mapCoeff_wedgeWith_mapCoeff (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (L
     simp only [coe_wedgeWith, coe_mapCoeff, RoughForm.mapCoeff_wedgeWith_mapCoeff]
 
 /-- A coefficient map applied to a smooth paired wedge is absorbed into the pairing. -/
+@[simp]
 theorem mapCoeff_wedgeWith (L : F₃ →L[ℝ] G) (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (φ : SmoothForm I M F₁ k) (ψ : SmoothForm I M F₂ l) :
     mapCoeff L (wedgeWith μ φ ψ) = wedgeWith ((ContinuousLinearMap.postcomp F₂ L).comp μ) φ ψ :=
@@ -137,27 +142,27 @@ theorem mapCoeff_wedgeWith (L : F₃ →L[ℝ] G) (μ : F₁ →L[ℝ] F₂ →L
 
 section Scalars
 
-variable {S : Type*} [Monoid S]
-  [DistribMulAction S F₃] [ContinuousConstSMul S F₃] [SMulCommClass ℝ S F₃]
+variable {S S' : Type*} [Monoid S] [Monoid S']
+  [DistribMulAction S' F₃] [ContinuousConstSMul S' F₃] [SMulCommClass ℝ S' F₃]
 
-/-- A coefficient scalar commuting with the pairing in its first argument can be moved out of
-the first factor of a smooth paired wedge. -/
+/-- A coefficient scalar `c` on the first factor of a smooth paired wedge can be moved out as
+`d` when the pairing sends `c` in its first argument to `d`. -/
 theorem wedgeWith_smul_left_of_map_smul [DistribMulAction S F₁] [ContinuousConstSMul S F₁]
-    [SMulCommClass ℝ S F₁] (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) {c : S}
-    (hμ : ∀ a b, μ (c • a) b = c • μ a b) (φ : SmoothForm I M F₁ k)
+    [SMulCommClass ℝ S F₁] (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) {c : S} {d : S'}
+    (hμ : ∀ a b, μ (c • a) b = d • μ a b) (φ : SmoothForm I M F₁ k)
     (ψ : SmoothForm I M F₂ l) :
-    wedgeWith μ (c • φ) ψ = c • wedgeWith μ φ ψ :=
+    wedgeWith μ (c • φ) ψ = d • wedgeWith μ φ ψ :=
   Subtype.ext <| by
     simpa only [coe_wedgeWith, smul_toRoughForm] using
       RoughForm.wedgeWith_smul_left_of_map_smul μ hμ φ.1 ψ.1
 
-/-- A coefficient scalar commuting with the pairing in its second argument can be moved out of
-the second factor of a smooth paired wedge. -/
+/-- A coefficient scalar `c` on the second factor of a smooth paired wedge can be moved out as
+`d` when the pairing sends `c` in its second argument to `d`. -/
 theorem wedgeWith_smul_right_of_map_smul [DistribMulAction S F₂] [ContinuousConstSMul S F₂]
-    [SMulCommClass ℝ S F₂] (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) {c : S}
-    (hμ : ∀ a b, μ a (c • b) = c • μ a b) (φ : SmoothForm I M F₁ k)
+    [SMulCommClass ℝ S F₂] (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) {c : S} {d : S'}
+    (hμ : ∀ a b, μ a (c • b) = d • μ a b) (φ : SmoothForm I M F₁ k)
     (ψ : SmoothForm I M F₂ l) :
-    wedgeWith μ φ (c • ψ) = c • wedgeWith μ φ ψ :=
+    wedgeWith μ φ (c • ψ) = d • wedgeWith μ φ ψ :=
   Subtype.ext <| by
     simpa only [coe_wedgeWith, smul_toRoughForm] using
       RoughForm.wedgeWith_smul_right_of_map_smul μ hμ φ.1 ψ.1
