@@ -7,8 +7,8 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Exponential
 public import TauCeti.RingTheory.Derivation.Flow
+import TauCeti.Data.Nat.Choose.Cast
 import Mathlib.Algebra.Polynomial.Bivariate
-import Mathlib.Tactic.FieldSimp
 
 /-!
 # One-parameter subgroups from locally nilpotent invariant vector fields
@@ -88,15 +88,11 @@ theorem mapValue_expPointAt {B C : Type*} [CommRing B] [CommRing C]
 theorem expPointAt_apply_self (t : R) (h : H) :
     expPointAt d hd t h =
       Coalgebra.counit (R := R) ((leftInvariantDerivation d).taylorExpAt hd t h) := by
-  simp only [expPointAt_apply, expPointPolynomial, AlgHom.comp_apply,
-    Polynomial.coe_mapAlgHom, Polynomial.aeval_def, Polynomial.eval₂_map,
-    Derivation.taylorExpAt_apply, Algebra.algebraMap_self, RingHom.id_comp,
-    Polynomial.eval₂_id]
-  have he : (_root_.Bialgebra.counitAlgHom R H) (algebraMap R H t) = t := by simp
-  have hv := Polynomial.eval₂_at_apply (_root_.Bialgebra.counitAlgHom R H).toRingHom
-    (p := (leftInvariantDerivation d).taylorExpPolynomial hd h) (algebraMap R H t)
-  simpa only [AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom, he,
-    _root_.Bialgebra.counitAlgHom_apply] using hv
+  simpa [expPointPolynomial, Derivation.taylorExpAt_apply] using
+    (Polynomial.map_aeval_eq_aeval_map
+      (φ := (_root_.Bialgebra.counitAlgHom R H).toRingHom)
+      (ψ := (_root_.Bialgebra.counitAlgHom R H).toRingHom) (by simp)
+      ((leftInvariantDerivation d).taylorExpPolynomial hd h) (algebraMap R H t)).symm
 
 /-- The exponential curve starts at the identity in every value algebra. -/
 @[simp]
@@ -193,24 +189,16 @@ private theorem expPointAddPolynomial_eq_expPointMulPolynomial (h : H) :
   ext j i
   rw [coeff_expPointAddPolynomial, map_rat_smul, ← nsmul_eq_mul,
     ← Nat.cast_smul_eq_nsmul ℚ, smul_smul]
-  have hfac : ((i + j).choose j : ℚ) * ((i + j).factorial : ℚ)⁻¹ =
-      (i.factorial : ℚ)⁻¹ * (j.factorial : ℚ)⁻¹ := by
-    rw [Nat.cast_choose ℚ (Nat.le_add_left j i), Nat.add_sub_cancel]
-    field_simp
-  rw [hfac, counit_iterate_add_leftInvariantDerivation d h 𝓡, Finset.smul_sum]
+  rw [← Nat.choose_symm_add, ← Nat.inv_factorial_mul_inv_factorial,
+    counit_iterate_add_leftInvariantDerivation d h 𝓡, Finset.smul_sum]
   simp only [expPointMulPolynomial, AlgHom.comp_apply, _root_.Bialgebra.comulAlgHom_apply,
     ← 𝓡.eq, map_sum, Polynomial.finsetSum_coeff]
   apply Finset.sum_congr rfl
   intro k _
-  simp only [Algebra.TensorProduct.lift_tmul, AlgHom.comp_apply,
+  simp [Algebra.TensorProduct.lift_tmul,
     Polynomial.CAlgHom_apply, Polynomial.coe_mapAlgHom,
-    Polynomial.coeff_C_mul, Polynomial.coeff_map,
-    coeff_expPointPolynomial, map_rat_smul]
-  simp only [AlgHom.coe_toRingHom, Algebra.ofId_apply, Polynomial.algebraMap_apply,
-    Algebra.algebraMap_self, RingHom.id_apply]
-  rw [mul_smul_comm, coeff_smul, coeff_mul_C, coeff_expPointPolynomial,
-    map_rat_smul, smul_mul_assoc, smul_smul]
-  simp only [mul_comm]
+    Polynomial.coeff_map,
+    coeff_expPointPolynomial, map_rat_smul (Coalgebra.counit (R := R)), smul_smul, mul_comm]
 
 /-- The exponential curve respects addition in every commutative value algebra. -/
 theorem expPointAt_add {B : Type*} [CommRing B] [Algebra R B] (r s : B) :
