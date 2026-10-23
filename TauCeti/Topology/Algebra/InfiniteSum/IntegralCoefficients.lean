@@ -9,8 +9,7 @@ public import TauCeti.Analysis.Normed.Ring.Basic
 public import Mathlib.Topology.MetricSpace.Ultra.Basic
 public import Mathlib.Topology.Algebra.InfiniteSum.Defs
 public import Mathlib.RingTheory.PowerSeries.Basic
-public import Mathlib.Algebra.Polynomial.AlgebraMap
-import TauCeti.Analysis.Normed.Ring.Ultra
+public import TauCeti.Analysis.Normed.Ring.Ultra
 import TauCeti.Analysis.SpecificLimits.Normed
 import TauCeti.RingTheory.PowerSeries.EvalAt
 import Mathlib.Analysis.Normed.Ring.Lemmas
@@ -46,19 +45,6 @@ for `RingHom.evalBoundedSeries`.
 public section
 
 open PowerSeries
-
-namespace Polynomial
-
-/-- An integral polynomial evaluated at a point of the closed unit ball of a non-archimedean
-seminormed ring with `‖1‖ = 1` has norm at most one. -/
-theorem norm_aeval_le_one {K : Type*} [SeminormedRing K] [NormOneClass K] [IsUltrametricDist K]
-    (p : ℤ[X]) {x : K} (hx : ‖x‖ ≤ 1) : ‖aeval x p‖ ≤ 1 := by
-  rw [aeval_eq_sum_range]
-  refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg zero_le_one fun i _ ↦ ?_
-  exact (IsUltrametricDist.norm_zsmul_le (x ^ i) (p.coeff i)).trans
-    ((norm_pow_le x i).trans (pow_le_one₀ (norm_nonneg _) hx))
-
-end Polynomial
 
 namespace RingHom
 
