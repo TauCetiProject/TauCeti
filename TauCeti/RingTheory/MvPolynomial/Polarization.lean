@@ -73,8 +73,7 @@ theorem span_sum_smul_X_pow_eq_homogeneousSubmodule (S : Set (σ → K))
     conv_lhs => rw [← aeval_X_left_apply p,
       ((mem_homogeneousSubmodule n p).mp hp).aeval_eq_sum_finsuppAntidiag, map_sum]
     refine Finset.sum_congr rfl fun d _ ↦ ?_
-    rw [← Algebra.smul_def, map_smul, smul_eq_mul, monomial_eq, C_1, one_mul,
-      Finsupp.prod_fintype _ _ fun _ ↦ pow_zero _]
+    simp [monomial_eq, Finsupp.prod_fintype, C_mul']
   -- the polynomial in the coordinates whose value at `x` is `φ ((∑ i, x i • X i) ^ n)`
   set Q : MvPolynomial σ K := ∑ d ∈ D, monomial d ((d.multinomial : K) * φ (monomial d 1))
   have hQ (x : σ → K) : eval x Q = φ ((∑ i, x i • X i : MvPolynomial σ K) ^ n) := by
