@@ -37,13 +37,13 @@ namespace TauCeti.Probability
 
 variable {ι κ : Type*} [Fintype ι] [Fintype κ] [DecidableEq ι] [DecidableEq κ]
 
-/-- Each real linear statistic of a matrix normal law is Gaussian. Its variance may vanish;
-no invertibility assumption is needed. -/
-@[simp]
-theorem map_trace_transpose_mul_matrixNormalMeasure (M T : Matrix ι κ ℝ)
+-- The scalar law and the sign of its variance share the same vectorization calculation.
+private lemma hasLaw_trace_transpose_mul_matrixNormalMeasure_and_nonneg (M T : Matrix ι κ ℝ)
     {U : Matrix ι ι ℝ} {V : Matrix κ κ ℝ} (hU : U.PosSemidef) (hV : V.PosSemidef) :
-    (matrixNormalMeasure M U V).map (fun X ↦ (Tᵀ * X).trace) =
-      gaussianReal (Tᵀ * M).trace (Tᵀ * U * T * V).trace.toNNReal := by
+    HasLaw (fun X : Matrix ι κ ℝ ↦ (Tᵀ * X).trace)
+      (gaussianReal (Tᵀ * M).trace (Tᵀ * U * T * V).trace.toNNReal)
+      (matrixNormalMeasure M U V) ∧
+      0 ≤ (Tᵀ * U * T * V).trace := by
   have hpair (X : Matrix ι κ ℝ) :
       ⟪WithLp.toLp 2 T.vec, WithLp.toLp 2 X.vec⟫ = (Tᵀ * X).trace := by
     rw [EuclideanSpace.inner_eq_star_dotProduct]
@@ -56,11 +56,26 @@ theorem map_trace_transpose_mul_matrixNormalMeasure (M T : Matrix ι κ ℝ)
     simp only [Matrix.toLpLin_apply, Matrix.kronecker_mulVec_vec]
     rw [hpair, hsymm]
     simp only [Matrix.mul_assoc]
-  have h := map_inner_multivariateGaussian (WithLp.toLp 2 M.vec) (WithLp.toLp 2 T.vec)
-    (hV.kronecker hU)
-  rw [← map_vec_matrixNormalMeasure M hU hV,
-    Measure.map_map (by fun_prop) (by fun_prop)] at h
-  simpa only [Function.comp_def, hpair, hquad] using h
+  constructor
+  · refine ⟨(continuous_const.matrix_mul continuous_id).matrix_trace.measurable.aemeasurable, ?_⟩
+    have h := map_inner_multivariateGaussian (WithLp.toLp 2 M.vec) (WithLp.toLp 2 T.vec)
+      (hV.kronecker hU)
+    rw [← map_vec_matrixNormalMeasure M hU hV,
+      Measure.map_map (by fun_prop) (by fun_prop)] at h
+    simpa only [Function.comp_def, hpair, hquad] using h
+  · rw [← hquad]
+    simpa only [EuclideanSpace.inner_eq_star_dotProduct, Matrix.toLpLin_apply,
+      WithLp.ofLp_toLp, star_trivial, dotProduct_comm] using
+      (hV.kronecker hU).dotProduct_mulVec_nonneg T.vec
+
+/-- Each real linear statistic of a matrix normal law is Gaussian. Its variance may vanish;
+no invertibility assumption is needed. -/
+@[simp]
+theorem map_trace_transpose_mul_matrixNormalMeasure (M T : Matrix ι κ ℝ)
+    {U : Matrix ι ι ℝ} {V : Matrix κ κ ℝ} (hU : U.PosSemidef) (hV : V.PosSemidef) :
+    (matrixNormalMeasure M U V).map (fun X ↦ (Tᵀ * X).trace) =
+      gaussianReal (Tᵀ * M).trace (Tᵀ * U * T * V).trace.toNNReal :=
+  (hasLaw_trace_transpose_mul_matrixNormalMeasure_and_nonneg M T hU hV).1.map_eq
 
 /-- A linear statistic of a random matrix with a matrix normal law has the corresponding
 scalar Gaussian law. -/
@@ -71,12 +86,7 @@ theorem _root_.ProbabilityTheory.HasLaw.matrixNormal_trace_transpose_mul
     (hU : U.PosSemidef) (hV : V.PosSemidef) :
     HasLaw (fun ω ↦ (Tᵀ * X ω).trace)
       (gaussianReal (Tᵀ * M).trace (Tᵀ * U * T * V).trace.toNNReal) P := by
-  have hstat : HasLaw (fun Y : Matrix ι κ ℝ ↦ (Tᵀ * Y).trace)
-      (gaussianReal (Tᵀ * M).trace (Tᵀ * U * T * V).trace.toNNReal)
-      (matrixNormalMeasure M U V) :=
-    ⟨(continuous_const.matrix_mul continuous_id).matrix_trace.measurable.aemeasurable,
-      map_trace_transpose_mul_matrixNormalMeasure M T hU hV⟩
-  exact hstat.fun_comp hX
+  exact (hasLaw_trace_transpose_mul_matrixNormalMeasure_and_nonneg M T hU hV).1.fun_comp hX
 
 /-- Every matrix normal linear statistic has every finite moment, including on the invalid
 covariance branch. -/
@@ -96,12 +106,10 @@ theorem variance_trace_transpose_mul_matrixNormalMeasure (M T : Matrix ι κ ℝ
     {U : Matrix ι ι ℝ} {V : Matrix κ κ ℝ} (hU : U.PosSemidef) (hV : V.PosSemidef) :
     Var[fun X ↦ (Tᵀ * X).trace; matrixNormalMeasure M U V] =
       (Tᵀ * U * T * V).trace := by
-  have hnonneg := (hV.kronecker hU).dotProduct_mulVec_nonneg T.vec
-  simp only [star_trivial, Matrix.kronecker_mulVec_vec, Matrix.vec_dotProduct_vec] at hnonneg
-  have hsymm : Vᵀ = V := by simpa using hV.isHermitian.eq
-  simp only [hsymm, ← Matrix.mul_assoc] at hnonneg
+  obtain ⟨hstat, hnonneg⟩ :=
+    hasLaw_trace_transpose_mul_matrixNormalMeasure_and_nonneg M T hU hV
   rw [← variance_id_map (X := fun X : Matrix ι κ ℝ ↦ (Tᵀ * X).trace)
-      (continuous_const.matrix_mul continuous_id).matrix_trace.measurable.aemeasurable,
+      hstat.aemeasurable,
     map_trace_transpose_mul_matrixNormalMeasure M T hU hV, variance_id_gaussianReal,
     Real.coe_toNNReal _ hnonneg]
 
@@ -128,10 +136,10 @@ theorem mgf_trace_transpose_mul_matrixNormalMeasure (M T : Matrix ι κ ℝ)
     {U : Matrix ι ι ℝ} {V : Matrix κ κ ℝ} (hU : U.PosSemidef) (hV : V.PosSemidef) (t : ℝ) :
     mgf (fun X ↦ (Tᵀ * X).trace) (matrixNormalMeasure M U V) t =
       Real.exp ((Tᵀ * M).trace * t + (Tᵀ * U * T * V).trace * t ^ 2 / 2) := by
-  have hnonneg := variance_nonneg (fun X ↦ (Tᵀ * X).trace) (matrixNormalMeasure M U V)
-  rw [variance_trace_transpose_mul_matrixNormalMeasure M T hU hV] at hnonneg
+  obtain ⟨hstat, hnonneg⟩ :=
+    hasLaw_trace_transpose_mul_matrixNormalMeasure_and_nonneg M T hU hV
   rw [← mgf_id_map (X := fun X : Matrix ι κ ℝ ↦ (Tᵀ * X).trace)
-      (continuous_const.matrix_mul continuous_id).matrix_trace.measurable.aemeasurable,
+      hstat.aemeasurable,
     map_trace_transpose_mul_matrixNormalMeasure M T hU hV,
     mgf_id_gaussianReal, Real.coe_toNNReal _ hnonneg]
 
@@ -151,8 +159,7 @@ theorem charFun_map_trace_transpose_mul_matrixNormalMeasure (M T : Matrix ι κ 
     charFun ((matrixNormalMeasure M U V).map (fun X ↦ (Tᵀ * X).trace)) t =
       Complex.exp (t * (Tᵀ * M).trace * Complex.I -
         (Tᵀ * U * T * V).trace * t ^ 2 / 2) := by
-  have hnonneg := variance_nonneg (fun X ↦ (Tᵀ * X).trace) (matrixNormalMeasure M U V)
-  rw [variance_trace_transpose_mul_matrixNormalMeasure M T hU hV] at hnonneg
+  have hnonneg := (hasLaw_trace_transpose_mul_matrixNormalMeasure_and_nonneg M T hU hV).2
   rw [map_trace_transpose_mul_matrixNormalMeasure M T hU hV, charFun_gaussianReal,
     Real.coe_toNNReal _ hnonneg]
 
