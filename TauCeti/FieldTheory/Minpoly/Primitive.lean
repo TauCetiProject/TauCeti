@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Polynomial.Reverse
 public import Mathlib.FieldTheory.Minpoly.Field
 public import Mathlib.RingTheory.Algebraic.Denominator
 public import Mathlib.RingTheory.Polynomial.GaussLemma
+public import TauCeti.Algebra.Polynomial.Reverse
 
 import Mathlib.Algebra.Algebra.Hom.Rat
 import Mathlib.Algebra.Ring.Divisibility.Lemmas
@@ -18,9 +18,10 @@ import TauCeti.Algebra.Polynomial.Normalize
 /-!
 # The primitive minimal polynomial over `ℤ`
 
-For an element `x` of a field `F` of characteristic zero, the *primitive minimal polynomial*
-`F_x = primitiveMinpoly x ∈ ℤ[X]` is obtained from `minpoly ℚ x` by clearing denominators and
-dividing by the content, with the sign chosen so that the leading coefficient `a₀` is positive.
+For an element `x` of a division ring `F` of characteristic zero (typically a field), the
+*primitive minimal polynomial* `F_x = primitiveMinpoly x ∈ ℤ[X]` is obtained from `minpoly ℚ x`
+by clearing denominators and dividing by the content, with the sign chosen so that the leading
+coefficient `a₀` is positive.
 For algebraic `x` it is the unique primitive irreducible integer polynomial with positive leading
 coefficient vanishing at `x`, and its image in `ℚ[X]` is `a₀ • minpoly ℚ x`. When `x` is
 transcendental over `ℚ` the junk value is `1`.
@@ -29,7 +30,7 @@ This is the polynomial from which the classical size invariants of an algebraic 
 off: its naive height is the largest absolute value of a coefficient of `F_x`, and its Mahler
 measure is the Mahler measure of `F_x`. Unlike `minpoly ℤ x`, which vanishes at non-integral
 algebraic numbers, `F_x` is meaningful for every algebraic `x`, and its leading coefficient
-clears the denominator of `x`.
+clears the denominator of `x` when `F` is a field.
 
 ## Main definitions
 
@@ -42,16 +43,17 @@ clears the denominator of `x`.
   `TauCeti.irreducible_primitiveMinpoly`, `TauCeti.aeval_primitiveMinpoly`: `F_x` is primitive,
   has positive leading coefficient, and for algebraic `x` is irreducible and vanishes at `x`.
 * `TauCeti.rootSet_primitiveMinpoly`: for algebraic `x`, `F_x` and `minpoly ℚ x` have the same
-  roots in every field of characteristic zero.
+  roots in every commutative domain that is a `ℚ`-algebra.
 * `TauCeti.primitiveMinpoly_dvd_iff`: for algebraic `x`, `F_x ∣ P` in `ℤ[X]` iff `P(x) = 0`.
 * `TauCeti.primitiveMinpoly_eq_of_irreducible`: the uniqueness characterisation of `F_x`.
 * `TauCeti.primitiveMinpoly_eq_minpoly_int`: `F_x = minpoly ℤ x` for `x` integral over `ℤ`.
 * `TauCeti.primitiveMinpoly_ratCast`: `F_q = (den q) X - num q` for `q ∈ ℚ`.
 * `TauCeti.primitiveMinpoly_map`, `TauCeti.primitiveMinpoly_eq_of_minpoly_eq`: `F_x` depends only
-  on `minpoly ℚ x`, so it is preserved by field embeddings and shared by conjugates.
+  on `minpoly ℚ x`, so it is preserved by ring homomorphisms between division rings of
+  characteristic zero (such as field embeddings) and shared by conjugates.
 * `TauCeti.isIntegral_leadingCoeff_primitiveMinpoly_smul`,
   `TauCeti.natDenominator_dvd_leadingCoeff_primitiveMinpoly`: `a₀ x` is an algebraic integer, so
-  the denominator of `x` divides `a₀`.
+  in fields the denominator of `x` divides `a₀`.
 
 ## References
 
@@ -65,7 +67,7 @@ open Polynomial
 
 namespace TauCeti
 
-variable {F : Type*} [Field F] [CharZero F] {F' : Type*} [Field F'] [CharZero F']
+variable {F : Type*} [DivisionRing F] [CharZero F] {F' : Type*} [DivisionRing F'] [CharZero F']
 
 /-- The *primitive minimal polynomial* `F_x ∈ ℤ[X]` of `x` over `ℚ`: the primitive integer
 multiple of `minpoly ℚ x` with positive leading coefficient. It is obtained by clearing the
@@ -77,13 +79,14 @@ noncomputable def primitiveMinpoly (x : F) : ℤ[X] :=
   normalize (IsLocalization.integerNormalization (nonZeroDivisors ℤ) (minpoly ℚ x)).primPart
 
 /-- `F_x` depends only on `minpoly ℚ x`: elements with the same minimal polynomial over `ℚ`, for
-instance conjugates, possibly lying in different fields, share their primitive minimal
+instance conjugates, possibly lying in different division rings, share their primitive minimal
 polynomial. -/
 theorem primitiveMinpoly_eq_of_minpoly_eq {x : F} {y : F'} (h : minpoly ℚ x = minpoly ℚ y) :
     primitiveMinpoly x = primitiveMinpoly y := by
   rw [primitiveMinpoly, primitiveMinpoly, h]
 
-/-- Field embeddings preserve the primitive minimal polynomial. -/
+/-- Ring homomorphisms between division rings (for instance field embeddings) preserve the
+primitive minimal polynomial. -/
 @[simp]
 theorem primitiveMinpoly_map (f : F →+* F') (x : F) :
     primitiveMinpoly (f x) = primitiveMinpoly x :=
@@ -151,9 +154,11 @@ theorem aeval_primitiveMinpoly {x : F} (hx : IsAlgebraic ℚ x) :
     minpoly.aeval, mul_zero]
 
 /-- For algebraic `x`, the primitive minimal polynomial has the same roots as `minpoly ℚ x` in
-every field of characteristic zero: its image in `ℚ[X]` is a nonzero multiple of `minpoly ℚ x`. -/
-theorem rootSet_primitiveMinpoly {x : F} (hx : IsAlgebraic ℚ x) (K : Type*) [Field K]
-    [CharZero K] : (primitiveMinpoly x).rootSet K = (minpoly ℚ x).rootSet K := by
+every commutative domain that is a `ℚ`-algebra: its image in `ℚ[X]` is a nonzero multiple of
+`minpoly ℚ x`. -/
+theorem rootSet_primitiveMinpoly {x : F} (hx : IsAlgebraic ℚ x) (K : Type*) [CommRing K]
+    [IsDomain K] [Algebra ℚ K] : (primitiveMinpoly x).rootSet K = (minpoly ℚ x).rootSet K := by
+  have : CharZero K := charZero_of_injective_algebraMap (algebraMap ℚ K).injective
   ext z
   rw [mem_rootSet, mem_rootSet, ← aeval_map_algebraMap ℚ, algebraMap_int_eq,
     map_primitiveMinpoly hx, aeval_mul, aeval_C]
@@ -195,7 +200,7 @@ theorem primitiveMinpoly_dvd_iff {x : F} (hx : IsAlgebraic ℚ x) {P : ℤ[X]} :
   exact minpoly.dvd ℚ x (by rw [← algebraMap_int_eq, aeval_map_algebraMap, h])
 
 /-- If the primitive minimal polynomial of an algebraic `x` vanishes at `y`, possibly in another
-field, then `x` and `y` are conjugate: they have the same minimal polynomial over `ℚ`. -/
+division ring, then `x` and `y` are conjugate: they have the same minimal polynomial over `ℚ`. -/
 theorem minpoly_eq_of_aeval_primitiveMinpoly_eq_zero {x : F} {y : F'} (hx : IsAlgebraic ℚ x)
     (h : aeval y (primitiveMinpoly x) = 0) : minpoly ℚ x = minpoly ℚ y := by
   rw [← aeval_map_algebraMap ℚ, algebraMap_int_eq, map_primitiveMinpoly hx, aeval_mul,
@@ -207,10 +212,9 @@ theorem minpoly_eq_of_aeval_primitiveMinpoly_eq_zero {x : F} {y : F'} (hx : IsAl
 minimal polynomial of the inverse root. -/
 theorem primitiveMinpoly_inv_dvd_reverse {x : F} (hx : IsAlgebraic ℚ x)
     (hx0 : x ≠ 0) : primitiveMinpoly x⁻¹ ∣ (primitiveMinpoly x).reverse := by
-  let := invertibleOfNonzero hx0
-  apply (primitiveMinpoly_dvd_iff hx.inv).mpr
-  simpa only [aeval_def, invOf_eq_inv] using
-    (eval₂_reverse_eq_zero_iff (algebraMap ℤ F) x (primitiveMinpoly x)).mpr
+  apply (primitiveMinpoly_dvd_iff hx.isIntegral.inv.isAlgebraic).mpr
+  simpa only [aeval_def] using
+    ((primitiveMinpoly x).eval₂_inv_reverse_eq_zero_iff (algebraMap ℤ F) hx0).mpr
       (aeval_primitiveMinpoly hx)
 
 /-- The uniqueness characterisation: an irreducible `P ∈ ℤ[X]` with positive leading coefficient
@@ -252,21 +256,29 @@ theorem primitiveMinpoly_ratCast (q : ℚ) :
 /-- For algebraic `x`, the element `a₀ x` is integral over `ℤ`, where `a₀` is the leading
 coefficient of `F_x` (Evertse, Lemma 3.7). -/
 theorem isIntegral_leadingCoeff_primitiveMinpoly_smul {x : F} (hx : IsAlgebraic ℚ x) :
-    IsIntegral ℤ ((primitiveMinpoly x).leadingCoeff • x) :=
-  isIntegral_leadingCoeff_smul _ _ (aeval_primitiveMinpoly hx)
+    IsIntegral ℤ ((primitiveMinpoly x).leadingCoeff • x) := by
+  refine ⟨_, monic_integralNormalization (primitiveMinpoly_ne_zero x), ?_⟩
+  simpa only [Algebra.smul_def, aeval_def] using
+    integralNormalization_aeval_eq_zero (aeval_primitiveMinpoly hx) (by simp)
+
+section Field
+
+variable {K : Type*} [Field K] [CharZero K]
 
 /-- For algebraic `x`, the denominator of `x` divides the leading coefficient of `F_x`. -/
-theorem natDenominator_dvd_leadingCoeff_primitiveMinpoly {x : F} (hx : IsAlgebraic ℚ x) :
+theorem natDenominator_dvd_leadingCoeff_primitiveMinpoly {x : K} (hx : IsAlgebraic ℚ x) :
     (Algebra.natDenominator x : ℤ) ∣ (primitiveMinpoly x).leadingCoeff := by
   rw [Algebra.natDenominator_def, Int.natCast_natAbs, abs_dvd, Algebra.denominator_dvd_iff]
   exact isIntegral_leadingCoeff_primitiveMinpoly_smul hx
 
+end Field
+
 /-! ### Examples -/
 
-/- `F_{2/3} = 3X - 2`, in every field of characteristic zero. -/
+/- `F_{2/3} = 3X - 2`, in every division ring of characteristic zero. -/
 example : primitiveMinpoly (((2 : ℚ) / 3 : ℚ) : F) = C 3 * X - C 2 := by
-  rw [primitiveMinpoly_ratCast, show ((2 : ℚ) / 3).den = 3 by norm_num,
-    show ((2 : ℚ) / 3).num = 2 by norm_num, Nat.cast_ofNat]
+  rw [primitiveMinpoly_ratCast]
+  norm_num
 
 /- `F_x` differs from `minpoly ℤ x` at the non-integral `x = 1/2`: there `minpoly ℤ x` is the junk
 value `0`, while `F_{1/2} = 2X - 1` has leading coefficient `2`, not `1`. -/
@@ -275,9 +287,9 @@ example : primitiveMinpoly (((1 : ℚ) / 2 : ℚ) : F) ≠ minpoly ℤ (((1 : �
   have hint : IsIntegral ℤ (((1 : ℚ) / 2 : ℚ) : F) :=
     by_contra fun hn ↦ primitiveMinpoly_ne_zero _ (h.trans (minpoly.eq_zero hn))
   have := congrArg leadingCoeff h
-  rw [(minpoly.monic hint).leadingCoeff, primitiveMinpoly_ratCast,
-    show ((1 : ℚ) / 2).den = 2 by norm_num, sub_eq_add_neg, ← C_neg,
-    leadingCoeff_linear (by norm_num)] at this
+  have hden : ((1 : ℚ) / 2).den = 2 := by norm_num
+  rw [(minpoly.monic hint).leadingCoeff, primitiveMinpoly_ratCast, hden, sub_eq_add_neg,
+    ← C_neg, leadingCoeff_linear (by norm_num)] at this
   norm_num at this
 
 end TauCeti
