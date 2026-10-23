@@ -5,13 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.MetricSpace.Holder
+public import Mathlib.Topology.MetricSpace.HolderNorm
 
 import Mathlib.Topology.Instances.ENNReal.Lemmas
 import Mathlib.Topology.UniformSpace.UniformEmbedding
 
 /-!
-# Hölder functions: a `dist` criterion, extension from a dense set, and finite sums
+# Hölder functions: a `dist` criterion, dense extension, finite sums, and the Hölder seminorm
 
 A Hölder bound stated with `dist` is equivalent to `HolderOnWith`, which Mathlib phrases with
 `edist`.
@@ -26,7 +26,13 @@ Hölder inequality passes from `s × s` to its closure because both of its sides
 This is how an almost-everywhere Hölder estimate becomes a Hölder continuous representative: a set
 of full measure for a measure that is positive on open sets is dense.
 
-Finally, finite sums of Hölder functions are Hölder, with the sum of the constants.
+Finite sums of Hölder functions are Hölder, with the sum of the constants.
+
+Mathlib defines the Hölder seminorm `eHolderNorm r f` as the infimum of the admissible Hölder
+constants. On an emetric space it is also the supremum of the difference quotients
+`edist (f x) (f y) / edist x y ^ r` over distinct points, and on a metric space it bounds every
+increment of `f`. These are the forms in which Hölder seminorms are estimated by hand, for instance
+when a seminorm on a product is compared with seminorms of the slices.
 
 ## Main declarations
 
@@ -38,6 +44,11 @@ Finally, finite sums of Hölder functions are Hölder, with the sum of the const
 * `HolderOnWith.extend_of_dense`: a Hölder function on a dense set extends to a Hölder
   function on the whole space.
 * `HolderWith.sum`: a finite sum of Hölder functions is Hölder.
+* `eHolderNorm_eq_iSup_edist_div` and `MemHolder.coe_nnHolderNorm_eq_iSup_dist_div`: the Hölder
+  seminorm is the supremum of the difference quotients over distinct points.
+* `edist_le_eHolderNorm_mul_rpow`: the Hölder seminorm bounds every increment.
+* `HolderWith.eHolderNorm_comp_le`: precomposition with a Hölder map of constant `C ≠ 0` scales
+  the Hölder seminorm by at most `C ^ r`.
 -/
 
 public section
@@ -116,3 +127,99 @@ theorem HolderWith.sum {ι X Y : Type*} [PseudoMetricSpace X] [SeminormedAddComm
     simp_rw [Finset.sum_insert ha]
     exact (hf a (Finset.mem_insert_self a s)).add
       (ih fun i hi => hf i (Finset.mem_insert_of_mem hi)) (g := fun x => ∑ i ∈ s, f i x)
+
+section HolderNorm
+
+variable {X Y Z : Type*}
+
+/-- Every difference quotient `edist (f x) (f y) / edist x y ^ r` is bounded by the Hölder
+seminorm. -/
+theorem edist_div_rpow_le_eHolderNorm [PseudoEMetricSpace X] [PseudoEMetricSpace Y] (r : ℝ≥0)
+    (f : X → Y) (x y : X) :
+    edist (f x) (f y) / edist x y ^ (r : ℝ) ≤ eHolderNorm r f :=
+  le_iInf₂ fun _ hfC => ENNReal.div_le_of_le_mul (hfC x y)
+
+/-- The Hölder seminorm is the supremum of the difference quotients
+`edist (f x) (f y) / edist x y ^ r` over distinct points `x ≠ y`. -/
+theorem eHolderNorm_eq_iSup_edist_div [PseudoEMetricSpace X] [PseudoEMetricSpace Y] (r : ℝ≥0)
+    (f : X → Y) :
+    eHolderNorm r f = ⨆ (x) (y) (_ : x ≠ y), edist (f x) (f y) / edist x y ^ (r : ℝ) := by
+  refine le_antisymm (le_of_forall_gt_imp_ge_of_dense fun C hC => ?_)
+    (iSup₂_le fun x y => iSup_le fun _ => edist_div_rpow_le_eHolderNorm r f x y)
+  -- Every finite constant `C` above the supremum is an admissible Hölder constant.
+  have hC0 : C ≠ 0 := (pos_of_gt hC).ne'
+  rcases eq_or_ne C ∞ with rfl | hCtop
+  · exact le_top
+  lift C to ℝ≥0 using hCtop
+  refine HolderWith.eHolderNorm_le fun x y => ?_
+  rcases eq_or_ne x y with rfl | hxy
+  · simp
+  have hq : edist (f x) (f y) / edist x y ^ (r : ℝ) < C :=
+    lt_of_le_of_lt (le_iSup_of_le x <| le_iSup_of_le y <|
+      le_iSup (fun _ : x ≠ y => edist (f x) (f y) / edist x y ^ (r : ℝ)) hxy) hC
+  by_cases hd0 : edist x y ^ (r : ℝ) = 0
+  · -- At zero distance, a finite quotient forces a zero increment.
+    have hfxy : edist (f x) (f y) = 0 := by
+      by_contra h
+      rw [hd0, ENNReal.div_zero h] at hq
+      exact not_top_lt hq
+    simp [hfxy]
+  by_cases hdtop : edist x y ^ (r : ℝ) = ∞
+  · rw [hdtop, ENNReal.mul_top hC0]
+    exact le_top
+  · rw [← ENNReal.div_le_iff hd0 hdtop]
+    exact hq.le
+
+/-- On a metric space, the Hölder seminorm bounds every increment:
+`edist (f x) (f y) ≤ eHolderNorm r f * edist x y ^ r`. -/
+theorem edist_le_eHolderNorm_mul_rpow [MetricSpace X] [PseudoEMetricSpace Y] (r : ℝ≥0)
+    (f : X → Y) (x y : X) :
+    edist (f x) (f y) ≤ eHolderNorm r f * edist x y ^ (r : ℝ) := by
+  rcases eq_or_ne x y with rfl | hxy
+  · simp
+  have hd0 : edist x y ^ (r : ℝ) ≠ 0 := by
+    simp [ENNReal.rpow_eq_zero_iff, (edist_pos.2 hxy).ne']
+  have hdtop : edist x y ^ (r : ℝ) ≠ ∞ := by
+    simp [edist_ne_top]
+  rw [← ENNReal.div_le_iff hd0 hdtop]
+  exact edist_div_rpow_le_eHolderNorm r f x y
+
+/-- The Hölder seminorm of a Hölder function is the supremum of the difference quotients
+`dist (f x) (f y) / dist x y ^ r` over distinct points `x ≠ y`. -/
+theorem MemHolder.coe_nnHolderNorm_eq_iSup_dist_div [PseudoMetricSpace X] [PseudoMetricSpace Y]
+    {r : ℝ≥0} {f : X → Y} (hf : MemHolder r f) :
+    (nnHolderNorm r f : ℝ) =
+      ⨆ (x) (y) (_ : x ≠ y), dist (f x) (f y) / dist x y ^ (r : ℝ) := by
+  -- Every difference quotient is finite, so `toReal` commutes with each partial supremum.
+  have hq (x y : X) : edist (f x) (f y) / edist x y ^ (r : ℝ) ≠ ∞ :=
+    ne_top_of_le_ne_top hf.eHolderNorm_lt_top.ne (edist_div_rpow_le_eHolderNorm r f x y)
+  rw [nnHolderNorm, ENNReal.coe_toNNReal_eq_toReal, eHolderNorm_eq_iSup_edist_div,
+    ENNReal.toReal_iSup fun x => ne_top_of_le_ne_top hf.eHolderNorm_lt_top.ne
+      (iSup₂_le fun y _ => edist_div_rpow_le_eHolderNorm r f x y)]
+  refine iSup_congr fun x => ?_
+  rw [ENNReal.toReal_iSup fun y => ne_top_of_le_ne_top (hq x y) (iSup_le fun _ => le_rfl)]
+  refine iSup_congr fun y => ?_
+  rw [ENNReal.toReal_iSup fun _ => hq x y]
+  refine iSup_congr fun _ => ?_
+  rw [ENNReal.toReal_div, ← ENNReal.toReal_rpow, edist_dist, edist_dist,
+    ENNReal.toReal_ofReal dist_nonneg, ENNReal.toReal_ofReal dist_nonneg]
+
+/-- Precomposition with a map that is Hölder continuous with constant `C ≠ 0` and exponent `s`
+turns an `r`-Hölder function into an `r * s`-Hölder function, scaling the seminorm by at most
+`C ^ r`. For instance, restriction to a subspace (`C = 1`, `s = 1`) does not increase the Hölder
+seminorm. The hypothesis `C ≠ 0` cannot be dropped on pseudometric spaces: the identity of a
+two-point space at distance zero is `0`-Hölder, while a function separating the two points has
+infinite seminorm. -/
+theorem HolderWith.eHolderNorm_comp_le [PseudoEMetricSpace X] [PseudoEMetricSpace Y]
+    [PseudoEMetricSpace Z] {C s : ℝ≥0} {g : X → Y} (hg : HolderWith C s g) (hC : C ≠ 0)
+    (r : ℝ≥0) (f : Y → Z) :
+    eHolderNorm (r * s) (f ∘ g) ≤ eHolderNorm r f * (C : ℝ≥0∞) ^ (r : ℝ) := by
+  have h0 : (C : ℝ≥0∞) ^ (r : ℝ) ≠ 0 := by simp [hC]
+  have htop : (C : ℝ≥0∞) ^ (r : ℝ) ≠ ∞ := by simp
+  rw [eHolderNorm.eq_1 r f, ENNReal.iInf_mul_of_ne h0 htop]
+  refine le_iInf fun C' => ?_
+  rw [ENNReal.iInf_mul_of_ne h0 htop]
+  exact le_iInf fun hfC => by
+    simpa [ENNReal.coe_rpow_of_ne_zero hC] using (hfC.comp hg).eHolderNorm_le
+
+end HolderNorm
