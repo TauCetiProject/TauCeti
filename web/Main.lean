@@ -7,6 +7,7 @@ open Verso Genre Blog Site Syntax
 def taucetiSite : Site := site Site.Front /
   static "static" ← "static_files"
   "about" Site.About
+  "team" Site.Team
   "statistics" Site.Stats
   "progress" Site.Progress
   "ci" Site.CI
