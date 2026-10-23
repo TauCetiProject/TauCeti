@@ -13,8 +13,8 @@ public import TauCeti.RingTheory.NovikovSeries.Functoriality
 # Changing the period map of a Novikov ring
 
 An additive equivalence of exponent monoids which rescales periods by a positive constant
-induces an algebra equivalence of Novikov rings. Its coefficient formula and exact transport
-of the period filtration show that it is a homeomorphism for the period topologies.
+induces an algebra equivalence of Novikov rings. This equivalence is a homeomorphism for the
+period topologies and sends the period neighbourhood `U_C` exactly onto `U_(c * C)`.
 
 In particular, positive rescaling of the period map preserves every coefficient, whereas
 reversing the period map transports the coefficient at `h` to `-h`. The latter comparison
@@ -22,10 +22,7 @@ reverses the direction of completion; it does not identify the two coefficient f
 Thus positive rescaling changes the potential scale without changing coefficients, while
 period reversal changes deck-group conventions by reindexing coefficients along negation.
 
-The construction uses the pushforward and its composition law from
-`TauCeti.RingTheory.NovikovSeries.Map`, together with the algebra-homomorphism and continuity APIs
-from
-`TauCeti.RingTheory.NovikovSeries.Functoriality`.
+These equivalences are the invertible special case of `NovikovSeries.map`.
 
 ## References
 
@@ -53,11 +50,16 @@ private theorem period_rescale_symm (e : H ≃+ H') {c : ℝ} (hc : 0 < c)
   rw [e.apply_symm_apply] at h
   rw [h, inv_mul_cancel_left₀ hc.ne']
 
-private theorem exists_period_rescale_symm (e : H ≃+ H')
-    (he : ∃ c > 0, ∀ h, N' (e h) = c * N h) :
-    ∃ c > 0, ∀ h', N (e.symm h') = c * N' h' := by
-  obtain ⟨c, hc, hcN⟩ := he
-  exact ⟨c⁻¹, inv_pos.mpr hc, period_rescale_symm e hc hcN⟩
+private theorem exists_period_rescale_trans [AddMonoid H''] {N'' : H'' →+ ℝ}
+    (e : H ≃+ H') (e' : H' ≃+ H'')
+    (he : ∃ c > 0, ∀ h, N' (e h) = c * N h)
+    (he' : ∃ c > 0, ∀ h, N'' (e' h) = c * N' h) :
+    ∃ c > 0, ∀ h, N'' ((e.trans e') h) = c * N h := by
+  simpa only [AddEquiv.trans_apply, AddMonoidHom.comp_apply,
+    AddEquiv.coe_toAddMonoidHom] using
+    exists_period_rescale_comp (φ := e.toAddMonoidHom) (φ' := e'.toAddMonoidHom)
+      (by simpa only [AddEquiv.coe_toAddMonoidHom] using he)
+      (by simpa only [AddEquiv.coe_toAddMonoidHom] using he')
 
 section Algebra
 
@@ -70,25 +72,29 @@ def domCongr : NovikovSeries R H N ≃ₐ[A] NovikovSeries R H' N' where
   __ := mapAlgHom (AlgHom.id A R) (e : H →+ H') he
   toFun := mapAlgHom (AlgHom.id A R) (e : H →+ H') he
   invFun := mapAlgHom (AlgHom.id A R) (e.symm : H' →+ H)
-    (exists_period_rescale_symm e he)
+    (exists_period_rescale_symm (e := e) he)
   left_inv a := by
-    simp only [mapAlgHom_apply, AlgHom.id_toRingHom, RingHom.toAddMonoidHom_id,
-      map_map, AddMonoidHom.id_comp, AddEquiv.toAddMonoidHom_symm_comp_toAddMonoidHom,
-      map_id, AddMonoidHom.id_apply]
+    simp [mapAlgHom_apply, map_map, map_id]
   right_inv b := by
-    simp only [mapAlgHom_apply, AlgHom.id_toRingHom, RingHom.toAddMonoidHom_id,
-      map_map, AddMonoidHom.id_comp, AddEquiv.toAddMonoidHom_comp_toAddMonoidHom_symm,
-      map_id, AddMonoidHom.id_apply]
+    simp [mapAlgHom_apply, map_map, map_id]
 
 theorem domCongr_apply (a : NovikovSeries R H N) :
     domCongr A e he a = map ((AlgHom.id A R : R →+* R) : R →+ R) (e : H →+ H') he a :=
   mapAlgHom_apply (AlgHom.id A R) (e : H →+ H') he a
 
+/-- Inverse reindexing is reindexing by the inverse exponent equivalence. -/
+@[simp]
+theorem domCongr_symm :
+    (domCongr A (R := R) e he).symm =
+      domCongr A e.symm (exists_period_rescale_symm he) := by
+  ext b h
+  simp [domCongr]
+
 private theorem domCongr_symm_apply (b : NovikovSeries R H' N') :
     (domCongr A e he).symm b =
       map ((AlgHom.id A R : R →+* R) : R →+ R) (e.symm : H' →+ H)
-        (exists_period_rescale_symm e he) b :=
-  mapAlgHom_apply (AlgHom.id A R) (e.symm : H' →+ H) _ b
+        (exists_period_rescale_symm (e := e) he) b := by
+  rw [domCongr_symm, domCongr_apply]
 
 /-- Reindexing moves the coefficient at `h` to `e h`. -/
 @[simp]
@@ -103,10 +109,7 @@ theorem coeff_domCongr (a : NovikovSeries R H N) (h' : H') :
 @[simp]
 theorem coeff_domCongr_symm (b : NovikovSeries R H' N') (h : H) :
     ((domCongr A e he).symm b).coeff h = b.coeff (e h) := by
-  obtain ⟨h', rfl⟩ := e.symm.surjective h
-  simpa [domCongr_symm_apply] using
-    coeff_map_of_injective ((AlgHom.id A R : R →+* R) : R →+ R)
-      (e.symm : H' →+ H) (exists_period_rescale_symm e he) e.symm.injective b h'
+  simp
 
 /-- Reindexing carries monomials to monomials with the corresponding exponent. -/
 @[simp]
@@ -127,19 +130,13 @@ theorem domCongr_refl :
     domCongr A (R := R) (N := N) (AddEquiv.refl H) ⟨1, one_pos, by simp⟩ =
       AlgEquiv.refl := by
   ext a h
-  rw [coeff_domCongr]
-  rfl
+  simp
 
 /-- Successive reindexings compose along the composite exponent equivalence. -/
 theorem domCongr_trans [AddMonoid H''] {N'' : H'' →+ ℝ} (e' : H' ≃+ H'')
     (he' : ∃ c > 0, ∀ h, N'' (e' h) = c * N' h) :
     (domCongr A (R := R) e he).trans (domCongr A e' he') =
-      domCongr A (e.trans e') (by
-        simpa only [AddEquiv.trans_apply, AddMonoidHom.comp_apply,
-          AddEquiv.coe_toAddMonoidHom] using
-          exists_period_rescale_comp (φ := e.toAddMonoidHom) (φ' := e'.toAddMonoidHom)
-            (by simpa only [AddEquiv.coe_toAddMonoidHom] using he)
-            (by simpa only [AddEquiv.coe_toAddMonoidHom] using he')) := by
+      domCongr A (e.trans e') (by exact exists_period_rescale_trans e e' he he') := by
   ext a h
   simp
 
@@ -158,7 +155,7 @@ theorem domCongr_mem_periodFiltration_iff {c C : ℝ} (hc : 0 < c)
   constructor
   · intro ha
     have hb := map_mem_periodFiltration ((AlgHom.id A R : R →+* R) : R →+ R)
-      (e.symm : H' →+ H) (exists_period_rescale_symm e ⟨c, hc, hcN⟩)
+      (e.symm : H' →+ H) (exists_period_rescale_symm (e := e) ⟨c, hc, hcN⟩)
       (inv_pos.mpr hc).le (period_rescale_symm e hc hcN) ha
     rw [← domCongr_symm_apply A e ⟨c, hc, hcN⟩] at hb
     simpa [hc.ne'] using hb
@@ -176,7 +173,7 @@ def continuousDomCongr : NovikovSeries R H N ≃A[A] NovikovSeries R H' N' where
       fun a => (domCongr_apply A e he a).symm
   continuous_invFun :=
     (continuous_map ((AlgHom.id A R : R →+* R) : R →+ R) (e.symm : H' →+ H)
-      (exists_period_rescale_symm e he)).congr
+      (exists_period_rescale_symm (e := e) he)).congr
       fun b => (domCongr_symm_apply A e he b).symm
 
 @[simp]
@@ -189,25 +186,27 @@ theorem continuousDomCongr_symm_apply (b : NovikovSeries R H' N') :
     (continuousDomCongr A e he).symm b = (domCongr A e he).symm b :=
   (rfl)
 
+/-- The inverse continuous comparison reindexes by the inverse exponent equivalence. -/
+@[simp]
+theorem continuousDomCongr_symm :
+    (continuousDomCongr A (R := R) e he).symm =
+      continuousDomCongr A e.symm (exists_period_rescale_symm he) := by
+  ext b h
+  simp
+
 /-- Reindexing by the identity is the identity topological algebra equivalence. -/
 @[simp]
 theorem continuousDomCongr_refl :
     continuousDomCongr A (R := R) (N := N) (AddEquiv.refl H) ⟨1, one_pos, by simp⟩ =
       ContinuousAlgEquiv.refl A _ := by
   ext a h
-  rw [continuousDomCongr_apply, coeff_domCongr]
-  rfl
+  simp
 
 /-- Successive continuous reindexings compose along the exponent equivalences. -/
 theorem continuousDomCongr_trans [AddMonoid H''] {N'' : H'' →+ ℝ} (e' : H' ≃+ H'')
     (he' : ∃ c > 0, ∀ h, N'' (e' h) = c * N' h) :
     (continuousDomCongr A (R := R) e he).trans (continuousDomCongr A e' he') =
-      continuousDomCongr A (e.trans e') (by
-        simpa only [AddEquiv.trans_apply, AddMonoidHom.comp_apply,
-          AddEquiv.coe_toAddMonoidHom] using
-          exists_period_rescale_comp (φ := e.toAddMonoidHom) (φ' := e'.toAddMonoidHom)
-            (by simpa only [AddEquiv.coe_toAddMonoidHom] using he)
-            (by simpa only [AddEquiv.coe_toAddMonoidHom] using he')) := by
+      continuousDomCongr A (e.trans e') (by exact exists_period_rescale_trans e e' he he') := by
   ext a h
   simp
 
