@@ -333,7 +333,7 @@ theorem hasIntegralCoordinates_some {x y : ℚ} (h : W.toAffine.Nonsingular x y)
 
 /-- The point at infinity is not an affine point, so it has no coordinates to be integral. -/
 @[simp]
-theorem zero_not_hasIntegralCoordinates : ¬ (0 : W.toAffine.Point).HasIntegralCoordinates := by
+theorem not_hasIntegralCoordinates_zero : ¬ (0 : W.toAffine.Point).HasIntegralCoordinates := by
   rintro ⟨x, y, h, hP⟩
   exact Point.some_ne_zero h hP.symm
 
