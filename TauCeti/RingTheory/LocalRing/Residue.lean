@@ -16,9 +16,7 @@ The Jacobson radical of a local ring `R` — not assumed commutative — is its 
 (`TauCeti.IsLocalRing.mem_jacobson_iff_not_isUnit`), so the quotient `R ⧸ Ring.jacobson R` is a
 **division ring**. This file proves that and installs the division-ring structure on the quotient,
 the noncommutative counterpart of Mathlib's `IsLocalRing.ResidueField`, which is a `Field` but is
-available only over a commutative base. It also records that an element of a local ring with a
-one-sided inverse is a unit (`TauCeti.IsLocalRing.isUnit_of_mul_eq_one_left` and
-`TauCeti.IsLocalRing.isUnit_of_mul_eq_one_right`).
+available only over a commutative base.
 
 The residue division ring is what counts the arrows of an Auslander-Reiten quiver: the space of
 irreducible morphisms `rad(X, Y) / rad²(X, Y)` between two objects with local endomorphism rings is
@@ -29,9 +27,6 @@ that is the arrow multiplicity. The bimodule is built in
 
 ## Main results
 
-* `TauCeti.IsLocalRing.isUnit_of_mul_eq_one_left` and
-  `TauCeti.IsLocalRing.isUnit_of_mul_eq_one_right`: a one-sided inverse in a local ring is a
-  two-sided one.
 * `TauCeti.IsLocalRing.mem_jacobson_iff_not_isUnit`: **the Jacobson radical of a local ring is its
   set of non-units.**
 * `TauCeti.IsLocalRing.instDivisionRingQuotientJacobson`: **the quotient of a local ring by its
@@ -40,6 +35,11 @@ that is the arrow multiplicity. The bimodule is built in
   residue class vanishes exactly on the non-units and is a unit exactly on the units.
 
 ## Implementation notes
+
+A local ring is Dedekind-finite (`TauCeti.IsLocalRing.isDedekindFiniteMonoid`), so an element
+with a one-sided inverse is already a unit by Mathlib's `IsUnit.of_mul_eq_one_right`; that is the
+step the proof below needs, and it is why the only thing membership in the radical has to supply
+is a one-sided inverse.
 
 `TauCeti.IsLocalRing.isUnit_mk_jacobson_iff` carries no `simp` attribute: the quotient is a
 division ring, so `simp` already rewrites its left-hand side through `isUnit_iff_ne_zero` and
@@ -61,29 +61,6 @@ namespace IsLocalRing
 
 variable {R : Type*} [Ring R] [IsLocalRing R]
 
-/-- **An element of a local ring with a left inverse is a unit.** -/
-theorem isUnit_of_mul_eq_one_left {a x : R} (h : a * x = 1) : IsUnit x := by
-  have hidem : IsIdempotentElem (x * a) :=
-    isIdempotentElem_iff.mpr <| by rw [mul_assoc, ← mul_assoc a x a, h, one_mul]
-  rcases eq_zero_or_eq_one_of_isIdempotentElem hidem with h0 | h1
-  · refine absurd h ?_
-    have hx : x = 0 :=
-      calc x = x * (a * x) := by rw [h, mul_one]
-        _ = x * a * x := by rw [mul_assoc]
-        _ = 0 := by rw [h0, zero_mul]
-    rw [hx, mul_zero]
-    exact zero_ne_one
-  · exact ⟨⟨x, a, h1, h⟩, rfl⟩
-
-/-- **An element of a local ring with a right inverse is a unit.** -/
-theorem isUnit_of_mul_eq_one_right {x a : R} (h : x * a = 1) : IsUnit x := by
-  obtain ⟨u, rfl⟩ := isUnit_of_mul_eq_one_left h
-  have hx : x = (↑u⁻¹ : R) :=
-    calc x = x * ((u : R) * (↑u⁻¹ : R)) := by rw [u.mul_inv, mul_one]
-      _ = x * (u : R) * (↑u⁻¹ : R) := by rw [mul_assoc]
-      _ = (↑u⁻¹ : R) := by rw [h, one_mul]
-  exact hx ▸ u⁻¹.isUnit
-
 /-- **The Jacobson radical of a local ring is its set of non-units.** -/
 theorem mem_jacobson_iff_not_isUnit {x : R} : x ∈ Ring.jacobson R ↔ ¬ IsUnit x := by
   constructor
@@ -97,7 +74,7 @@ theorem mem_jacobson_iff_not_isUnit {x : R} : x ∈ Ring.jacobson R ↔ ¬ IsUni
     rcases _root_.IsLocalRing.isUnit_or_isUnit_of_isUnit_add hsum with hu | hu
     · exact hu
     · obtain ⟨u, hu⟩ := hu
-      refine absurd (isUnit_of_mul_eq_one_left (a := -((↑u⁻¹ : R) * y)) ?_) hx
+      refine absurd (IsUnit.of_mul_eq_one_right (-((↑u⁻¹ : R) * y)) ?_) hx
       have hstep : -((↑u⁻¹ : R) * y) * x = (↑u⁻¹ : R) * -(y * x) := by noncomm_ring
       rw [hstep, ← hu, u.inv_mul]
 

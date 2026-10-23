@@ -98,14 +98,14 @@ variable (k : Type*) [Ring k] [Linear k C] (X Y : C)
 /-- **Postcomposition by an endomorphism of the target**, on the radical morphisms `X ⟶ Y`. -/
 def jacobsonRadicalPostcomp (g : End Y) :
     jacobsonRadicalSubmodule k X Y →ₗ[k] jacobsonRadicalSubmodule k X Y where
-  toFun f := ⟨(f : X ⟶ Y) ≫ g, mem_jacobsonRadicalSubmodule.mpr
-    (comp_mem_jacobsonRadical_right (mem_jacobsonRadicalSubmodule.mp f.2) g)⟩
+  toFun f := ⟨(f : X ⟶ Y) ≫ g.asHom, mem_jacobsonRadicalSubmodule.mpr
+    (comp_mem_jacobsonRadical_right (mem_jacobsonRadicalSubmodule.mp f.2) g.asHom)⟩
   map_add' _ _ := by ext; simp [Preadditive.add_comp]
   map_smul' _ _ := by ext; simp [Linear.smul_comp]
 
 @[simp]
 theorem coe_jacobsonRadicalPostcomp (g : End Y) (f : jacobsonRadicalSubmodule k X Y) :
-    (jacobsonRadicalPostcomp k X Y g f : X ⟶ Y) = (f : X ⟶ Y) ≫ g :=
+    (jacobsonRadicalPostcomp k X Y g f : X ⟶ Y) = (f : X ⟶ Y) ≫ g.asHom :=
   (rfl)
 
 /-- **Postcomposition by an endomorphism of the target**, on the space of irreducible morphisms.
@@ -114,7 +114,7 @@ def irreducibleMorphismPostcomp (g : End Y) :
     irreducibleMorphismSpace k X Y →ₗ[k] irreducibleMorphismSpace k X Y :=
   irreducibleMorphismLift ((irreducibleMorphismMk k X Y).comp (jacobsonRadicalPostcomp k X Y g))
     fun _ hf => by
-      simpa using comp_mem_jacobsonRadicalSq_right hf g
+      simpa using comp_mem_jacobsonRadicalSq_right hf g.asHom
 
 @[simp]
 theorem irreducibleMorphismPostcomp_irreducibleMorphismMk (g : End Y)
@@ -134,13 +134,13 @@ def irreducibleMorphismPostcompHom :
     simp only [irreducibleMorphismPostcomp_irreducibleMorphismMk, Module.End.one_apply]
     congr 1
     ext
-    simp [End.one_def]
+    simp [End.one_asHom]
   map_mul' g₁ g₂ := by
     ext f
     simp only [irreducibleMorphismPostcomp_irreducibleMorphismMk, Module.End.mul_apply]
     congr 1
     ext
-    simp [End.mul_def]
+    simp [End.mul_asHom]
   map_zero' := by
     ext f
     simp only [irreducibleMorphismPostcomp_irreducibleMorphismMk, LinearMap.zero_apply,
@@ -175,14 +175,14 @@ theorem irreducibleMorphismPostcomp_eq_zero_of_mem_jacobson {g : End Y}
 /-- **Precomposition by an endomorphism of the source**, on the radical morphisms `X ⟶ Y`. -/
 def jacobsonRadicalPrecomp (a : End X) :
     jacobsonRadicalSubmodule k X Y →ₗ[k] jacobsonRadicalSubmodule k X Y where
-  toFun f := ⟨a ≫ (f : X ⟶ Y), mem_jacobsonRadicalSubmodule.mpr
-    (comp_mem_jacobsonRadical_left a (mem_jacobsonRadicalSubmodule.mp f.2))⟩
+  toFun f := ⟨a.asHom ≫ (f : X ⟶ Y), mem_jacobsonRadicalSubmodule.mpr
+    (comp_mem_jacobsonRadical_left a.asHom (mem_jacobsonRadicalSubmodule.mp f.2))⟩
   map_add' _ _ := by ext; simp [Preadditive.comp_add]
   map_smul' _ _ := by ext; simp [Linear.comp_smul]
 
 @[simp]
 theorem coe_jacobsonRadicalPrecomp (a : End X) (f : jacobsonRadicalSubmodule k X Y) :
-    (jacobsonRadicalPrecomp k X Y a f : X ⟶ Y) = a ≫ (f : X ⟶ Y) :=
+    (jacobsonRadicalPrecomp k X Y a f : X ⟶ Y) = a.asHom ≫ (f : X ⟶ Y) :=
   (rfl)
 
 /-- **Precomposition by an endomorphism of the source**, on the space of irreducible morphisms. -/
@@ -190,7 +190,7 @@ def irreducibleMorphismPrecomp (a : End X) :
     irreducibleMorphismSpace k X Y →ₗ[k] irreducibleMorphismSpace k X Y :=
   irreducibleMorphismLift ((irreducibleMorphismMk k X Y).comp (jacobsonRadicalPrecomp k X Y a))
     fun _ hf => by
-      simpa using comp_mem_jacobsonRadicalSq_left a hf
+      simpa using comp_mem_jacobsonRadicalSq_left a.asHom hf
 
 @[simp]
 theorem irreducibleMorphismPrecomp_irreducibleMorphismMk (a : End X)
@@ -210,13 +210,13 @@ def irreducibleMorphismPrecompHom :
     simp only [irreducibleMorphismPrecomp_irreducibleMorphismMk, Module.End.one_apply]
     congr 1
     ext
-    simp [End.one_def]
+    simp [End.one_asHom]
   map_mul' a₁ a₂ := by
     ext f
     simp only [irreducibleMorphismPrecomp_irreducibleMorphismMk, Module.End.mul_apply]
     congr 1
     ext
-    simp [End.mul_def]
+    simp [End.mul_asHom]
   map_zero' := by
     ext f
     simp only [irreducibleMorphismPrecomp_irreducibleMorphismMk, LinearMap.zero_apply,
