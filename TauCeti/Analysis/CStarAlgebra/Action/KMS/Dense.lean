@@ -140,4 +140,10 @@ theorem isKMSState_iff_forall_isEntireAnalytic :
         (mem_entireAnalytic.mp hb).apply (Multiplicative.toAdd t)))
     (fun b hb => mem_entireAnalytic.mp hb)
 
+/-- For the trivial action the β-KMS states are the tracial states, for every `β`. -/
+theorem isKMSState_trivial_iff :
+    (trivial : CStarAction _ A).IsKMSState β ω ↔
+      ‖(ω : A →L[ℂ] ℂ)‖ = 1 ∧ ∀ a b, ω (a * b) = ω (b * a) := by
+  simp [isKMSState_iff_forall_isEntireAnalytic, isEntireAnalytic_trivial]
+
 end TauCeti.CStarAction
