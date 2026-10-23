@@ -28,6 +28,9 @@ bundle are identified with the symmetric `C^n` bilinear sections,
 `TauCeti.Manifold.symmetricBilinearSectionEquiv`. Riemannian metrics are among the latter, as the
 positive-definite symmetric sections.
 
+The `C^n` structure follows Mathlib's `C^n` bundle of continuous alternating maps,
+`Mathlib.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap`, by Sébastien Gouëzel.
+
 ## Main results
 
 * `ContMDiffVectorBundle.symmetricBilinearMaps`: the bundle of symmetric bilinear maps on a `C^n`
@@ -101,13 +104,17 @@ theorem Bundle.Pretrivialization.contMDiffOn_symmetricBilinearMapsCoordChange
     (e e' : Trivialization F (π F V)) [MemTrivializationAtlas e] [MemTrivializationAtlas e'] :
     ContMDiffOn IB
       𝓘(𝕜, TauCeti.symmetricBilinearMaps 𝕜 F G →L[𝕜] TauCeti.symmetricBilinearMaps 𝕜 F G) n
-      (symmetricBilinearMapsCoordChange 𝕜 G e e') (e.baseSet ∩ e'.baseSet) :=
-  ((contMDiffOn_coordChangeL e' e).mono (inter_comm _ _).subset).symmetricBilinearMapsComp
+      (symmetricBilinearMapsCoordChange 𝕜 G e e') (e.baseSet ∩ e'.baseSet) := by
+  rw [symmetricBilinearMapsCoordChange_def]
+  exact ((contMDiffOn_coordChangeL e' e).mono (inter_comm _ _).subset).symmetricBilinearMapsComp
 
 instance TauCeti.isContMDiff_symmetricBilinearMapsVectorPrebundle :
     (symmetricBilinearMapsVectorPrebundle 𝕜 F V G).IsContMDiff IB n where
   exists_contMDiffCoordChange := by
-    rintro _ ⟨e, he, rfl⟩ _ ⟨e', he', rfl⟩
+    intro _ h _ h'
+    obtain ⟨e, he, rfl⟩ := mem_pretrivializationAtlas_symmetricBilinearMapsVectorPrebundle.1 h
+    obtain ⟨e', he', rfl⟩ := mem_pretrivializationAtlas_symmetricBilinearMapsVectorPrebundle.1 h'
+    simp only [Pretrivialization.baseSet_symmetricBilinearMaps]
     exact ⟨Pretrivialization.symmetricBilinearMapsCoordChange 𝕜 G e e',
       Pretrivialization.contMDiffOn_symmetricBilinearMapsCoordChange e e',
       fun _ hb ↦ Pretrivialization.symmetricBilinearMapsCoordChange_apply G hb⟩

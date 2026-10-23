@@ -38,7 +38,7 @@ The instances `FiberBundle` and `VectorBundle` for `fun x ↦ symmetricBilinearM
 are registered.
 -/
 
-@[expose] public section
+public section
 
 noncomputable section
 
@@ -66,9 +66,17 @@ def symmetricBilinearMapsCoordChange (e e' : Trivialization F (π F V)) [e.IsLin
     TauCeti.symmetricBilinearMaps 𝕜 F G →L[𝕜] TauCeti.symmetricBilinearMaps 𝕜 F G :=
   (e'.coordChangeL 𝕜 e b : F →L[𝕜] F).symmetricBilinearMapsComp
 
+omit [∀ x, TopologicalSpace (V x)] [FiberBundle F V] in
+theorem symmetricBilinearMapsCoordChange_def (e e' : Trivialization F (π F V)) [e.IsLinear 𝕜]
+    [e'.IsLinear 𝕜] :
+    symmetricBilinearMapsCoordChange 𝕜 G e e' =
+      fun b ↦ (e'.coordChangeL 𝕜 e b : F →L[𝕜] F).symmetricBilinearMapsComp :=
+  (rfl)
+
 theorem continuousOn_symmetricBilinearMapsCoordChange [VectorBundle 𝕜 F V]
     (e e' : Trivialization F (π F V)) [MemTrivializationAtlas e] [MemTrivializationAtlas e'] :
     ContinuousOn (symmetricBilinearMapsCoordChange 𝕜 G e e') (e.baseSet ∩ e'.baseSet) := by
+  rw [symmetricBilinearMapsCoordChange_def]
   refine ContinuousOn.symmetricBilinearMapsComp ?_
   exact (continuousOn_coordChange 𝕜 e' e).mono (inter_comm _ _).subset
 
@@ -115,7 +123,11 @@ theorem symmetricBilinearMaps_apply
     (p : TotalSpace (TauCeti.symmetricBilinearMaps 𝕜 F G)
       fun x ↦ TauCeti.symmetricBilinearMaps 𝕜 (V x) G) :
     symmetricBilinearMaps 𝕜 G e p = (p.1, (e.symmL 𝕜 p.1).symmetricBilinearMapsComp p.2) :=
-  rfl
+  (rfl)
+
+@[simp]
+theorem baseSet_symmetricBilinearMaps : (symmetricBilinearMaps 𝕜 G e).baseSet = e.baseSet :=
+  (rfl)
 
 theorem symmetricBilinearMaps_symm_apply {b : B} (hb : b ∈ e.baseSet)
     (β : TauCeti.symmetricBilinearMaps 𝕜 F G) :
@@ -176,6 +188,17 @@ def symmetricBilinearMapsVectorPrebundle :
     ext β v
     simp [L, Trivialization.symmL_apply _ (mem_baseSet_trivializationAt F V b)]
 
+variable {𝕜 F V G} in
+/-- The pretrivializations in the atlas of the bundle of symmetric bilinear maps are those induced
+by the trivializations in the atlas of `V`. -/
+theorem mem_pretrivializationAtlas_symmetricBilinearMapsVectorPrebundle
+    {e' : Pretrivialization (symmetricBilinearMaps 𝕜 F G)
+      (π (symmetricBilinearMaps 𝕜 F G) fun x ↦ symmetricBilinearMaps 𝕜 (V x) G)} :
+    e' ∈ (symmetricBilinearMapsVectorPrebundle 𝕜 F V G).pretrivializationAtlas ↔
+      ∃ (e : Trivialization F (π F V)) (_ : MemTrivializationAtlas e),
+        e' = Pretrivialization.symmetricBilinearMaps 𝕜 G e :=
+  Iff.rfl
+
 /-- The topology on the total space of the bundle of symmetric bilinear maps. -/
 instance instTopologicalSpaceTotalSpaceSymmetricBilinearMaps :
     TopologicalSpace (TotalSpace (symmetricBilinearMaps 𝕜 F G)
@@ -221,13 +244,13 @@ instance memTrivializationAtlas_symmetricBilinearMaps :
 
 @[simp]
 theorem baseSet_symmetricBilinearMaps : (e.symmetricBilinearMaps 𝕜 G).baseSet = e.baseSet :=
-  rfl
+  (rfl)
 
 theorem symmetricBilinearMaps_apply
     (p : TotalSpace (TauCeti.symmetricBilinearMaps 𝕜 F G)
       fun x ↦ TauCeti.symmetricBilinearMaps 𝕜 (V x) G) :
     e.symmetricBilinearMaps 𝕜 G p = (p.1, (e.symmL 𝕜 p.1).symmetricBilinearMapsComp p.2) :=
-  rfl
+  (rfl)
 
 end Bundle.Trivialization
 
@@ -246,20 +269,20 @@ theorem trivializationAt_symmetricBilinearMaps (x₀ : B) :
     trivializationAt (symmetricBilinearMaps 𝕜 F G)
         (fun x ↦ symmetricBilinearMaps 𝕜 (V x) G) x₀ =
       (trivializationAt F V x₀).symmetricBilinearMaps 𝕜 G :=
-  rfl
+  (rfl)
 
 theorem trivializationAt_symmetricBilinearMaps_apply (x₀ : B)
     (p : TotalSpace (symmetricBilinearMaps 𝕜 F G) fun x ↦ symmetricBilinearMaps 𝕜 (V x) G) :
     trivializationAt (symmetricBilinearMaps 𝕜 F G)
         (fun x ↦ symmetricBilinearMaps 𝕜 (V x) G) x₀ p =
       (p.1, ((trivializationAt F V x₀).symmL 𝕜 p.1).symmetricBilinearMapsComp p.2) :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem baseSet_trivializationAt_symmetricBilinearMaps (x₀ : B) :
     (trivializationAt (symmetricBilinearMaps 𝕜 F G)
         (fun x ↦ symmetricBilinearMaps 𝕜 (V x) G) x₀).baseSet =
       (trivializationAt F V x₀).baseSet :=
-  rfl
+  (rfl)
 
 end TauCeti
