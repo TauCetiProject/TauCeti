@@ -23,8 +23,9 @@ image potential. In particular, reduction modulo the potential gives the finite 
 hypersurface comparisons; no vanishing condition is required for the cokernel construction.
 
 This construction requires only commutative rings; it does not assert that its values are maximal
-Cohen–Macaulay, or that it descends to a stable category. Such assertions require additional
-hypotheses and comparisons.
+Cohen–Macaulay, which requires additional hypotheses. After reduction modulo the potential, the
+cokernel descends to a functor from the homotopy category to a stable module category; that
+descent is in `TauCeti.CommutativeAlgebra.MatrixFactorization.Cokernel.Stable`.
 
 ## References
 
