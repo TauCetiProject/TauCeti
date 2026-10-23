@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Idempotents
 public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.Cyclicity
 public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.FredholmDet
+public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.Resolvent
 public import TauCeti.Analysis.Normed.Operator.RowCompact.Idempotent
 
 /-!
@@ -94,11 +95,8 @@ theorem IsRowCompact.charPowerSeries_matrixCoeff_add_of_mul_eq_zero
     (huv : u * v = 0) :
     (u + v).matrixCoeff.charPowerSeries =
       u.matrixCoeff.charPowerSeries * v.matrixCoeff.charPowerSeries := by
-  have hent {w : C₀(I, R) →L[R] C₀(I, R)} (hw : w.IsRowCompact) :
-      w.matrixCoeff.charPowerSeries.IsEntire :=
-    PowerSeries.isEntire_iff.2
-      (Matrix.isRestricted_charPowerSeries hw.norm_matrixCoeff_le_rowNorm hw.tendsto_rowNorm)
-  refine (hent (hu.add hv)).eq_of_forall_evalAt_eq ((hent hu).mul (hent hv))
+  refine (hu.add hv).isEntire_charPowerSeries.eq_of_forall_evalAt_eq
+    (hu.isEntire_charPowerSeries.mul hv.isEntire_charPowerSeries)
     TauCeti.HasZeroSequenceOfUnits.frequently_mem_nonZeroDivisors_nhds_zero fun a ↦ ?_
   -- At `a`, this is the multiplicativity of the Fredholm determinant for `a • u` and `a • v`,
   -- since `a • u + a • v - (a • u) (a • v) = a • (u + v)`.
@@ -112,7 +110,8 @@ theorem IsRowCompact.charPowerSeries_matrixCoeff_add_of_mul_eq_zero
     rw [h0]
     exact (sub_zero _).trans (smul_add a u v).symm
   rw [← (hu.add hv).fredholmDet_smul, ← hsmul, (hu.smul a).fredholmDet_add_sub_mul (hv.smul a),
-    hu.fredholmDet_smul, hv.fredholmDet_smul, (hent hu).evalAt_mul (hent hv)]
+    hu.fredholmDet_smul, hv.fredholmDet_smul,
+    hu.isEntire_charPowerSeries.evalAt_mul hv.isEntire_charPowerSeries]
 
 /-- **Multiplicativity of Fredholm series for a finite annihilating family.** If the
 endomorphisms `u i` of `C₀(I, R)`, for `i ∈ s`, are row compact and `u i * u j = 0` for `i ≠ j`,

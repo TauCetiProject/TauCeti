@@ -54,7 +54,8 @@ values.
 * `PowerSeries.IsEntire.isUnit_of_evalAt_eq_zero` and
   `PowerSeries.IsEntire.inverse_eq_of_evalAt_eq_zero`: a zero of an entire series with constant
   coefficient `1` is a unit, with explicit inverse.
-* `PowerSeries.IsEntire.tendsto_evalAt_nhds_zero`: continuity of evaluation at `0`.
+* `PowerSeries.IsEntire.tendsto_evalAt_nhds_zero_nhds_constantCoeff`: continuity of evaluation at
+  `0`.
 * `PowerSeries.IsEntire.eq_zero_of_frequently_evalAt_eq_zero`,
   `PowerSeries.IsEntire.eq_of_forall_evalAt_eq`: the identity principle.
 
@@ -239,7 +240,8 @@ theorem IsEntire.inverse_eq_of_evalAt_eq_zero (hf : f.IsEntire) (h0 : constantCo
 
 /-- **Continuity at `0`.** For an entire series `f = ∑ aₙ Xⁿ`, the value `f(b)` tends to
 `f(0) = a₀` as `b` tends to `0`. -/
-theorem IsEntire.tendsto_evalAt_nhds_zero [NormOneClass A] (hf : f.IsEntire) :
+theorem IsEntire.tendsto_evalAt_nhds_zero_nhds_constantCoeff [NormOneClass A]
+    (hf : f.IsEntire) :
     Tendsto (fun b : A ↦ f.evalAt b) (𝓝 0) (𝓝 (algebraMap R A (constantCoeff f))) := by
   set g : R⟦X⟧ := mk fun n ↦ coeff (n + 1) f
   have hg : g.IsEntire := hf.mk_coeff_succ
@@ -272,7 +274,7 @@ theorem IsEntire.eq_zero_of_frequently_evalAt_eq_zero [NormOneClass R] [Complete
         x ∈ nonZeroDivisors R ∧ (mk fun n ↦ coeff (n + 1) g).evalAt x = 0 := by
     have h0 : constantCoeff g = 0 := by
       simpa using mem_closure_of_frequently_of_tendsto (s := {0}) (h.mono fun x hx ↦ hx.2)
-        hg.tendsto_evalAt_nhds_zero
+        hg.tendsto_evalAt_nhds_zero_nhds_constantCoeff
     refine ⟨h0, h.mono fun x ⟨hx, hgx⟩ ↦ ⟨hx, ?_⟩⟩
     rwa [hg.evalAt_eq_algebraMap_add_mul, h0, map_zero, zero_add,
       mul_left_mem_nonZeroDivisors_eq_zero_iff hx] at hgx
