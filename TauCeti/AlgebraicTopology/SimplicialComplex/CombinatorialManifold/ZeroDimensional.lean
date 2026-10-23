@@ -93,15 +93,20 @@ open PreAbstractSimplicialComplex
 
 variable {ι : Type*} [DecidableEq ι] {K : AbstractSimplicialComplex ι}
 
+omit [DecidableEq ι] in
+/-- The faces of the bottom abstract complex are exactly the singletons. -/
+@[simp]
+theorem mem_bot {σ : Finset ι} : σ ∈ (⊥ : AbstractSimplicialComplex ι) ↔ ∃ v, σ = {v} :=
+  Iff.rfl
+
 /-- Every vertex link of the bottom abstract complex is void: a face `σ ∪ {v}` of the bottom
 complex is a singleton, so a nonempty `σ` disjoint from `{v}` cannot occur. -/
 @[simp]
 theorem link_bot_singleton (v : ι) :
     link (⊥ : AbstractSimplicialComplex ι).toPreAbstractSimplicialComplex {v} = ⊥ := by
   refine bot_unique fun σ hσ => ?_
-  -- Membership in the bottom abstract complex unfolds to `∃ w, σ ∪ {v} = {w}`, and the goal,
-  -- membership in the void bottom precomplex, unfolds to `False`.
-  obtain ⟨⟨u, hu⟩, hdis, w, hw⟩ := mem_link_nonempty.mp hσ
+  obtain ⟨⟨u, hu⟩, hdis, hσv⟩ := mem_link_nonempty.mp hσ
+  obtain ⟨w, hw⟩ := mem_bot.mp hσv
   simp only [Finset.disjoint_singleton_right, Finset.ext_iff, Finset.mem_union,
     Finset.mem_singleton] at hdis hw
   grind
@@ -115,9 +120,7 @@ theorem isCombinatorialManifold_zero_iff_eq_bot :
   · intro h
     apply bot_unique
     intro σ hσ
-    -- Membership in the bottom abstract complex unfolds to `∃ v, σ = {v}`; Mathlib has no
-    -- `mem_bot` lemma for abstract simplicial complexes.
-    exact PreAbstractSimplicialComplex.dimension_le_zero_iff.mp h.dimension_le σ hσ
+    exact mem_bot.mpr (PreAbstractSimplicialComplex.dimension_le_zero_iff.mp h.dimension_le σ hσ)
   · rintro rfl
     exact PreAbstractSimplicialComplex.isCombinatorialManifold_zero_iff.mpr fun v _ =>
       link_bot_singleton v
