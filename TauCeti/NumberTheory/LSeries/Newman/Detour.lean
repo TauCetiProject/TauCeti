@@ -10,7 +10,6 @@ public import Mathlib.MeasureTheory.Integral.DominatedConvergence
 public import TauCeti.Analysis.Contour.DslopeFTC
 public import TauCeti.Analysis.Contour.LogDerivFTC
 public import TauCeti.Analysis.Contour.Primitive
-public import TauCeti.Analysis.Contour.Winding.StarConvex
 
 /-!
 # The left detour in Newman's contour argument
@@ -41,7 +40,8 @@ file proves:
 
 The deformation identities split `g z / z` into the removable-singularity quotient
 `dslope g 0`, which has a primitive on the convex set, and the polar part `g 0 / z`, whose
-integral over each of the three arcs is `π i` (the general splitting is
+integral over each of the three arcs is `g 0 * π i`, since `dz / z` integrates to `π i` there
+(the general splitting is
 `TauCeti.Contour.integral_mul_div_eq_of_hasDerivAt_dslope`).
 
 ## References
@@ -245,9 +245,8 @@ private theorem exists_primitive_dslope {U : Set ℂ} {g : ℂ → ℂ} (hU : Is
     have h := hconv (hdet (-1) ⟨le_rfl, by norm_num⟩) (hdet 1 ⟨by norm_num, le_rfl⟩)
       (by norm_num : (0 : ℝ) ≤ 1 / 2) (by norm_num : (0 : ℝ) ≤ 1 / 2) (by norm_num)
     rwa [newmanDetour_neg_one, newmanDetour_one, smul_neg, add_neg_cancel] at h
-  exact ⟨hU.mem_nhds h0, Contour.isExactOn_of_forall_isNullHomologous hU
-    ((differentiableOn_dslope (hU.mem_nhds h0)).mpr hg) fun _ _ _ hγ hγU hclosed ↦
-      Contour.isNullHomologous_of_starConvex (hconv.starConvex h0) hγ hclosed fun _ ht ↦ hγU ht⟩
+  exact ⟨hU.mem_nhds h0, Contour.isExactOn_of_starConvex hU (hconv.starConvex h0)
+    ((differentiableOn_dslope (hU.mem_nhds h0)).mpr hg)⟩
 
 /-- **Cauchy's formula for Newman's contour.** Let `g` be holomorphic on an open convex set `U`
 containing the right semicircle of radius `R > 0` and the detour `newmanDetour R δ` with
