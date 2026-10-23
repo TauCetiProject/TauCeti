@@ -32,12 +32,4 @@ theorem quarter_le_cast_add_half_sq {K : Type*} [Field K] [LinearOrder K]
   · have hq : (0 : K) ≤ z := by exact_mod_cast hz
     nlinarith
 
-/-- An element of `ℤ + 1/2` in a linearly ordered field has square at least one quarter: the
-form of `Int.quarter_le_cast_add_half_sq` for an element known to be a half-integer. -/
-theorem quarter_le_mul_self_of_eq_cast_add_half {K : Type*} [Field K] [LinearOrder K]
-    [IsStrictOrderedRing K] {y : K} (hy : ∃ z : ℤ, y = z + 1 / 2) : (1 / 4 : K) ≤ y * y := by
-  obtain ⟨z, rfl⟩ := hy
-  rw [← sq]
-  exact quarter_le_cast_add_half_sq z
-
 end Int

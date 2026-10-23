@@ -157,8 +157,9 @@ theorem isLeast_form_self_checkerboardVectorClass [NeZero n] :
 coordinate has square at least `1 / 4`. -/
 theorem div_four_le_checkerboardLattice_form_self {x : Fin n → ℚ}
     (hx : ∀ i, ∃ z : ℤ, x i = z + 1 / 2) : (n : ℚ) / 4 ≤ (checkerboardLattice n).form x x := by
-  have hsum := Finset.sum_le_sum fun i (_ : i ∈ univ) ↦
-    Int.quarter_le_mul_self_of_eq_cast_add_half (hx i)
+  have hsum := Finset.sum_le_sum fun i (_ : i ∈ univ) ↦ by
+    obtain ⟨z, hz⟩ := hx i
+    simpa only [hz, sq] using Int.quarter_le_cast_add_half_sq (K := ℚ) z
   rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul] at hsum
   rw [checkerboardLattice_form_apply]
   linarith
@@ -189,7 +190,9 @@ private theorem form_self_eq_div_four_iff {x : Fin n → ℚ}
     rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
     ring
   rw [checkerboardLattice_form_apply, hconst, eq_comm,
-    Finset.sum_eq_sum_iff_of_le fun i _ ↦ Int.quarter_le_mul_self_of_eq_cast_add_half (hx i)]
+    Finset.sum_eq_sum_iff_of_le (fun i _ ↦ by
+      obtain ⟨z, hz⟩ := hx i
+      simpa only [hz, sq] using Int.quarter_le_cast_add_half_sq (K := ℚ) z)]
   have hquarter : (1 / 4 : ℚ) = 1 / 2 * (1 / 2) := by norm_num
   refine forall_congr' fun i ↦ ?_
   rw [imp_iff_right (Finset.mem_univ i), eq_comm, hquarter, mul_self_eq_mul_self_iff]
