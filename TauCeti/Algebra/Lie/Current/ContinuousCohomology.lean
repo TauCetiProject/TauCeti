@@ -218,17 +218,22 @@ theorem twoCochainOfBilinearSMulRight_mem_continuousTwoCocycle (Φ : LinearMap.B
     (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm) (z : Z) :
     twoCochainOfBilinearSMulRight R L Φ hΦs z ∈
       continuousTwoCocycle R (currentAlgebra R L) (TrivialLieModule R (currentAlgebra R L) Z) := by
-  refine mem_continuousTwoCocycle_iff.mpr
-    ⟨mem_continuousTwoCochain_iff_orderSubmodule.mpr ⟨fun u ↦ ?_, ⟨0, fun u hu v hv ↦ ?_⟩⟩,
-      twoCochainOfBilinearSMulRight_mem_twoCocycle R L Φ hΦ hΦs z⟩
-  · obtain ⟨N, hN⟩ := exists_orderSubmodule_le_ker_residuePairing R L Φ u
-    exact ⟨N, fun v hv ↦ by simp [LinearMap.mem_ker.mp (hN hv)]⟩
-  · simp [residuePairing_eq_zero_of_mem_orderSubmodule_zero R L Φ hu hv]
+  -- Push the scalar residue cocycle forward along `t ↦ t • z`.
+  have hid : Continuous (LieHom.id : currentAlgebra R L →ₗ⁅R⁆ currentAlgebra R L) := by
+    simpa using continuous_id
+  have h := twoCochainMap_mem_continuousTwoCocycle
+    ((TrivialLieModule.equiv R (currentAlgebra R L) Z).symm.toLinearMap ∘ₗ
+      LinearMap.toSpanSingleton R Z z ∘ₗ
+      (TrivialLieModule.equiv R (currentAlgebra R L) R).toLinearMap) hid
+    (twoCochainOfBilinear_mem_continuousTwoCocycle R L Φ hΦ hΦs)
+  rwa [← twoCochainOfBilinearSMulRight_one, twoCochainMap_twoCochainOfBilinearSMulRight,
+    LinearMap.toSpanSingleton_apply, one_smul] at h
 
 variable (R L) in
 /-- The residue class with coefficients in a module `Z` with trivial action: the linear map sending
 `z : Z` to the class of the residue cocycle `(f ⊗ x, g ⊗ y) ↦ Res(f dg) Φ(x, y) • z` in the
-continuous second cohomology of formal currents. For `Z = R` it sends `1` to `residueClass`. -/
+continuous second cohomology of formal currents. For `Z = R` it sends `t` to `t • residueClass`.
+-/
 def residueClassMap (Φ : LinearMap.BilinForm R L) (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm) :
     Z →ₗ[R] continuousSecondCohomology R (currentAlgebra R L)
       (TrivialLieModule R (currentAlgebra R L) Z) :=
@@ -243,10 +248,12 @@ theorem residueClassMap_apply (Φ : LinearMap.BilinForm R L) (hΦ : Φ.lieInvari
         twoCochainOfBilinearSMulRight_mem_continuousTwoCocycle R L Φ hΦ hΦs z⟩ :=
   (rfl)
 
-/-- For `Z = R`, the residue class with coefficient `1` is `residueClass`. -/
+/-- For `Z = R`, the residue class with coefficient `t` is `t • residueClass`. -/
 @[simp]
-theorem residueClassMap_one (Φ : LinearMap.BilinForm R L) (hΦ : Φ.lieInvariant L)
-    (hΦs : Φ.IsSymm) : residueClassMap R L Φ hΦ hΦs (1 : R) = residueClass R L Φ hΦ hΦs := by
+theorem residueClassMap_self (Φ : LinearMap.BilinForm R L) (hΦ : Φ.lieInvariant L)
+    (hΦs : Φ.IsSymm) (t : R) :
+    residueClassMap R L Φ hΦ hΦs t = t • residueClass R L Φ hΦ hΦs := by
+  conv_lhs => rw [← mul_one t, ← smul_eq_mul, map_smul]
   simp only [residueClassMap_apply, residueClass_eq_mk, twoCochainOfBilinearSMulRight_one]
 
 /-- **Residue classes with coefficients detect their coefficient.** Over a characteristic-zero
@@ -265,8 +272,7 @@ theorem residueClassMap_injective [IsDomain R] [CharZero R] [Module.Projective R
     (TrivialLieModule.equiv R _ R).symm.toLinearMap ∘ₗ φ ∘ₗ
       (TrivialLieModule.equiv R _ Z).toLinearMap
   refine (smul_residueClass_eq_zero_iff hΦ hΦs hΦ0 (φ z)).mp ?_
-  rw [← residueClassMap_one, ← map_smul, residueClassMap_apply,
-    continuousSecondCohomologyMk_eq_zero_iff]
+  rw [← residueClassMap_self, residueClassMap_apply, continuousSecondCohomologyMk_eq_zero_iff]
   refine ⟨e ∘ₗ f, mem_continuousOneCochain_iff_orderSubmodule.mpr ?_, ?_⟩
   · obtain ⟨N, hN⟩ := mem_continuousOneCochain_iff_orderSubmodule.mp hf
     exact ⟨N, fun u hu ↦ by simp [hN u hu]⟩
@@ -464,14 +470,14 @@ theorem exists_eq_smul_residueClass {Ψ : LinearMap.BilinForm K L} (hΨ : Ψ.lie
       (TrivialLieModule K (currentAlgebra K L) K)) :
     ∃ t : K, a = t • residueClass K L Ψ hΨ hΨs := by
   obtain ⟨t, rfl⟩ := residueClassMap_surjective (Z := K) hΨ hΨs hspan hne a
-  exact ⟨t, by rw [← residueClassMap_one, ← map_smul, smul_eq_mul, mul_one]⟩
+  exact ⟨t, residueClassMap_self Ψ hΨ hΨs t⟩
 
 variable (Z) in
 /-- **Continuous second cohomology of formal currents with discrete coefficients.** Under the
 hypotheses of `exists_eq_smul_twoCochainOfBilinear_add_d₁₂`, for every vector space `Z` with
 trivial action, of arbitrary dimension, the residue class map `z ↦ [c_Ψ ⊗ z]` is a linear
 equivalence from `Z` onto the continuous second cohomology of formal currents with coefficients in
-`Z`. For `Z = K` it sends `1` to `residueClass` (`residueClassMap_one`). -/
+`Z`. For `Z = K` it sends `t` to `t • residueClass` (`residueClassMap_self`). -/
 noncomputable def residueClassEquiv {Ψ : LinearMap.BilinForm K L} (hΨ : Ψ.lieInvariant L)
     (hΨs : Ψ.IsSymm)
     (hspan : ∀ Φ : LinearMap.BilinForm K L, Φ.lieInvariant L → ∃ t : K, Φ = t • Ψ)
