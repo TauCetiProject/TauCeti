@@ -6,9 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.Graph.Simple
+public import TauCeti.Combinatorics.Graph.Connectivity.Component
 public import TauCeti.Combinatorics.Graph.Connectivity.EdgeCut
 public import TauCeti.Combinatorics.Graph.Connectivity.Walk.Decomposition
 public import TauCeti.Combinatorics.Graph.Connectivity.Walk.Maps
+
+import Mathlib.SetTheory.Cardinal.NatCard
 
 /-!
 # Bridges and forests of multigraphs
@@ -26,10 +29,21 @@ cut, `Graph.IsBridge`.  This file characterizes bridges through edge-labelled wa
   cycle.
 
 Consequently loops are never bridges, and neither is an edge having a distinct parallel edge.
+
+Deleting an edge joining `x` and `y` affects only the connected component containing them:
+`Graph.IsLink.reachable_iff_reachable_deleteEdges_or` shows that this component splits into the
+components of `x` and of `y` in the deletion, which are distinct exactly when the edge is a
+bridge, and `Graph.IsLink.reachable_deleteEdges_iff_of_not_reachable` that reachability elsewhere
+is unchanged.  Counting components, `Graph.isBridge_iff_componentCount_deleteEdges_eq_add_one`
+shows that, when there are finitely many components, an edge is a bridge exactly when deleting it
+increases the number of connected components by one; deleting any other edge leaves the number
+unchanged (`Graph.componentCount_deleteEdges_of_not_isBridge`).
+
 A multigraph is a forest, `Graph.IsForest`, when it has no cycles; since loops and pairs of
 parallel edges are cycles of multigraphs, a forest has neither.
 `Graph.isForest_iff_forall_isBridge` shows that a multigraph is a forest exactly when every actual
-edge is a bridge.  The statements need no finiteness assumptions.
+edge is a bridge.  Only the component count after deleting a bridge assumes finitely many
+components; the other statements need no finiteness assumptions.
 
 The statements follow the corresponding results for simple graphs in Mathlib,
 `SimpleGraph.isBridge_iff`, `SimpleGraph.isBridge_iff_forall_walk_mem_edges`,
@@ -101,6 +115,145 @@ theorem IsLink.not_isBridge_of_isLink_of_ne (he : G.IsLink e x y) (hf : G.IsLink
   apply IsLink.reachable (e := f)
   rw [deleteEdges_isLink]
   exact ⟨hf, hfe⟩
+
+/-! ### Bridges and connected components -/
+
+/-- After deleting an edge joining `x` and `y`, every vertex reachable from `x` remains
+reachable from `x` or from `y`. -/
+theorem IsLink.reachable_iff_reachable_deleteEdges_or (h : G.IsLink e x y) :
+    G.Reachable x u ↔ (G.deleteEdges {e}).Reachable x u ∨ (G.deleteEdges {e}).Reachable y u := by
+  refine ⟨fun hu ↦ ?_, fun hu ↦ ?_⟩
+  · obtain ⟨-, ⟨p⟩⟩ := reachable_def.mp hu.symm
+    clear hu
+    suffices ∀ {v z} (_ : G.Walk v z), z = x → (G.deleteEdges {e}).Reachable v x ∨
+        (G.deleteEdges {e}).Reachable v y from (this p rfl).imp Reachable.symm Reachable.symm
+    intro v z q hz
+    induction q with
+    | nil => subst hz; exact .inl (Reachable.refl (by simpa using h.left_mem))
+    | @cons v w _ f hf q ih =>
+      by_cases hfe : f = e
+      · subst hfe
+        obtain rfl | rfl := hf.left_eq_or_eq h
+        · exact .inl (Reachable.refl (by simpa using h.left_mem))
+        · exact .inr (Reachable.refl (by simpa using h.right_mem))
+      · have hvw : (G.deleteEdges {e}).Reachable v w :=
+          IsLink.reachable (e := f) (by simpa [deleteEdges_isLink] using ⟨hf, hfe⟩)
+        exact (ih hz).imp hvw.trans hvw.trans
+  · rcases hu with hu | hu
+    · exact hu.mono deleteEdges_le
+    · exact h.reachable.trans (hu.mono deleteEdges_le)
+
+/-- If `v` is reachable from `u`, then it remains reachable after deleting an edge joining `x`
+and `y`, unless `x` is reachable from `u`. -/
+theorem IsLink.reachable_deleteEdges_or_reachable (h : G.IsLink e x y)
+    (huv : G.Reachable u v) : (G.deleteEdges {e}).Reachable u v ∨ G.Reachable u x := by
+  obtain ⟨hu, ⟨p⟩⟩ := reachable_def.mp huv
+  clear huv
+  induction p with
+  | nil => exact .inl (Reachable.refl (by simpa using hu))
+  | @cons u w _ f hf q ih =>
+    by_cases hfe : f = e
+    · subst hfe
+      obtain rfl | rfl := hf.left_eq_or_eq h
+      · exact .inr (Reachable.refl hu)
+      · exact .inr h.reachable.symm
+    · have huw : (G.deleteEdges {e}).Reachable u w :=
+        IsLink.reachable (e := f) (by simpa [deleteEdges_isLink] using ⟨hf, hfe⟩)
+      exact (ih hf.right_mem).imp huw.trans fun hw ↦ (huw.mono deleteEdges_le).trans hw
+
+/-- Deleting an edge joining `x` and `y` does not change reachability from a vertex `u` from
+which `x` is unreachable: the components not containing the ends of the edge are unaffected. -/
+theorem IsLink.reachable_deleteEdges_iff_of_not_reachable (h : G.IsLink e x y)
+    (hux : ¬ G.Reachable u x) : (G.deleteEdges {e}).Reachable u v ↔ G.Reachable u v :=
+  ⟨Reachable.mono deleteEdges_le, fun huv ↦
+    (h.reachable_deleteEdges_or_reachable huv).resolve_right hux⟩
+
+/-- Deleting an edge that is not a bridge does not change reachability. -/
+theorem reachable_deleteEdges_iff_of_not_isBridge (he : ¬ G.IsBridge e) :
+    (G.deleteEdges {e}).Reachable u v ↔ G.Reachable u v := by
+  refine ⟨Reachable.mono deleteEdges_le, fun huv ↦ ?_⟩
+  by_cases heG : e ∈ E(G)
+  · obtain ⟨x, y, h⟩ := exists_isLink_of_mem_edgeSet heG
+    have hxy : (G.deleteEdges {e}).Reachable x y := by
+      simpa [h.isBridge_iff_not_reachable_deleteEdges] using he
+    refine (h.reachable_deleteEdges_or_reachable huv).elim id fun hux ↦ ?_
+    have hvx : G.Reachable v x := huv.symm.trans hux
+    -- Both `u` and `v` lie on the side of `x` or of `y`, which are joined in the deletion.
+    have hside : ∀ {w}, G.Reachable w x → (G.deleteEdges {e}).Reachable x w := fun hw ↦
+      (h.reachable_iff_reachable_deleteEdges_or.mp hw.symm).elim id hxy.trans
+    exact (hside hux).symm.trans (hside hvx)
+  · obtain ⟨hu, ⟨p⟩⟩ := reachable_def.mp huv
+    exact reachable_deleteEdges_iff_exists_walk.mpr
+      ⟨hu, p, fun f hf hfe ↦ heG (hfe ▸ p.edges_subset_edgeSet hf)⟩
+
+/-- Deleting an edge that is not a bridge leaves the number of connected components unchanged. -/
+theorem componentCount_deleteEdges_of_not_isBridge (he : ¬ G.IsBridge e) :
+    (G.deleteEdges {e}).componentCount = G.componentCount := by
+  have hle : G.deleteEdges {e} ≤ G := deleteEdges_le
+  rw [componentCount_eq_natCard_toSimpleGraph, componentCount_eq_natCard_toSimpleGraph]
+  refine Nat.card_congr (Equiv.ofBijective
+    (SimpleGraph.ConnectedComponent.map (toSimpleGraphHomOfLE hle)) ⟨fun C D hCD ↦ ?_, fun C ↦ ?_⟩)
+  · induction C using SimpleGraph.ConnectedComponent.ind with | h z => ?_
+    induction D using SimpleGraph.ConnectedComponent.ind with | h w => ?_
+    have hzw : G.Reachable z w := by
+      simpa using (map_toSimpleGraphHomOfLE_connectedComponentMk_eq_iff hle).mp
+        (hCD.trans (SimpleGraph.ConnectedComponent.map_mk _ _))
+    rw [SimpleGraph.ConnectedComponent.eq, toSimpleGraph_reachable_iff]
+    exact (reachable_deleteEdges_iff_of_not_isBridge he).mpr hzw
+  · induction C using SimpleGraph.ConnectedComponent.ind with | h z => ?_
+    exact ⟨_, (map_toSimpleGraphHomOfLE_connectedComponentMk_eq_iff hle (z := ⟨z, by simp⟩)).mpr
+      (Reachable.refl z.2)⟩
+
+/-- Deleting a bridge increases the number of connected components by exactly one: the
+component containing its ends splits into the components of its two ends, and every other
+component is unchanged. -/
+theorem IsBridge.componentCount_deleteEdges [Finite G.ConnectedComponent] (he : G.IsBridge e) :
+    (G.deleteEdges {e}).componentCount = G.componentCount + 1 := by
+  classical
+  obtain ⟨x, y, h⟩ := exists_isLink_of_mem_edgeSet he.mem_edgeSet
+  have hle : G.deleteEdges {e} ≤ G := deleteEdges_le
+  let mk := (G.deleteEdges {e}).toSimpleGraph.connectedComponentMk
+  let A := mk ⟨y, by simpa using h.right_mem⟩
+  have hmk : ∀ {z w}, mk z = mk w ↔ (G.deleteEdges {e}).Reachable z w := by
+    intro z w
+    rw [SimpleGraph.ConnectedComponent.eq, toSimpleGraph_reachable_iff]
+  -- A vertex reachable from `x` but outside the component of `y` stays reachable from `x`.
+  have hside : ∀ {z}, mk z ≠ A → G.Reachable x z → (G.deleteEdges {e}).Reachable x z :=
+    fun hz hxz ↦ (h.reachable_iff_reachable_deleteEdges_or.mp hxz).resolve_right fun hyz ↦
+      hz (hmk.mpr hyz.symm)
+  -- Away from the component of `y` in the deletion, the induced map of components is bijective.
+  let ψ : {C // C ≠ A} → G.toSimpleGraph.ConnectedComponent :=
+    fun C ↦ SimpleGraph.ConnectedComponent.map (toSimpleGraphHomOfLE hle) C
+  have hψ : Function.Bijective ψ := by
+    refine ⟨fun ⟨C, hC⟩ ⟨D, hD⟩ hCD ↦ ?_, fun C ↦ ?_⟩
+    · induction C using SimpleGraph.ConnectedComponent.ind with | h z => ?_
+      induction D using SimpleGraph.ConnectedComponent.ind with | h w => ?_
+      have hzw : G.Reachable z w := by
+        simpa using (map_toSimpleGraphHomOfLE_connectedComponentMk_eq_iff hle).mp
+          (hCD.trans (SimpleGraph.ConnectedComponent.map_mk _ _))
+      rw [Subtype.mk.injEq]
+      refine hmk.mpr ((h.reachable_deleteEdges_or_reachable hzw).elim id fun hzx ↦ ?_)
+      exact (hside hC hzx.symm).symm.trans (hside hD (hzx.symm.trans hzw))
+    · induction C using SimpleGraph.ConnectedComponent.ind with | h z => ?_
+      by_cases hz : mk ⟨z, by simp⟩ = A
+      · refine ⟨⟨mk ⟨x, by simpa using h.left_mem⟩,
+          fun hxA ↦ he.not_reachable_deleteEdges h (hmk.mp hxA)⟩,
+          (map_toSimpleGraphHomOfLE_connectedComponentMk_eq_iff hle).mpr ?_⟩
+        exact h.reachable.trans ((hmk.mp hz).symm.mono hle)
+      · exact ⟨⟨_, hz⟩, (map_toSimpleGraphHomOfLE_connectedComponentMk_eq_iff hle).mpr
+          (Reachable.refl z.2)⟩
+  have : Finite G.toSimpleGraph.ConnectedComponent := Finite.of_equiv _ G.connectedComponentEquiv
+  have : Finite {C // C ≠ A} := Finite.of_equiv _ (Equiv.ofBijective ψ hψ).symm
+  rw [componentCount_eq_natCard_toSimpleGraph, componentCount_eq_natCard_toSimpleGraph,
+    ← Nat.card_congr (Equiv.optionSubtypeNe A), Finite.card_option,
+    Nat.card_congr (Equiv.ofBijective ψ hψ)]
+
+/-- **Bridges by component counts.**  With finitely many connected components, an edge is a
+bridge exactly when deleting it increases the number of connected components by one. -/
+theorem isBridge_iff_componentCount_deleteEdges_eq_add_one [Finite G.ConnectedComponent] :
+    G.IsBridge e ↔ (G.deleteEdges {e}).componentCount = G.componentCount + 1 :=
+  ⟨IsBridge.componentCount_deleteEdges, fun h ↦ by_contra fun he ↦ by
+    simp [componentCount_deleteEdges_of_not_isBridge he] at h⟩
 
 /-! ### Bridges and cycles -/
 

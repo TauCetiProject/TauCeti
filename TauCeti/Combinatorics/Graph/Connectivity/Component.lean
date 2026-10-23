@@ -33,6 +33,8 @@ elementary order API, follow Peter Nelson and Jun Kwon's Mathlib proposal
   `G.toSimpleGraph`.
 * `Graph.componentCount G` counts the components via `Nat.card`, so it is `0` if there are
   infinitely many; it is exact whenever there are finitely many components.
+* `Graph.toSimpleGraphHomOfLE` is the homomorphism of underlying simple graphs induced by a
+  subgraph inclusion, along which simple components can be mapped.
 
 Component membership is described by the walk-based `Graph.Reachable`, which agrees with
 reachability in the underlying simple graph.
@@ -451,6 +453,27 @@ theorem componentCount_eq_zero_iff [Finite G.ConnectedComponent] :
 theorem componentCount_eq_one_iff : G.componentCount = 1 ↔ G.Connected := by
   rw [componentCount_eq_natCard_toSimpleGraph,
     SimpleGraph.card_connectedComponent_eq_one_iff, ← connected_iff_toSimpleGraph_connected]
+
+/-! ### Subgraph inclusions -/
+
+/-- A subgraph inclusion `H ≤ G` induces a homomorphism of underlying simple graphs, sending each
+actual vertex of `H` to itself. -/
+def toSimpleGraphHomOfLE (hHG : H ≤ G) : H.toSimpleGraph →g G.toSimpleGraph where
+  toFun z := ⟨z, hHG.vertexSet_mono z.2⟩
+  map_rel' hzw :=
+    ⟨fun h ↦ hzw.1 (Subtype.ext (Subtype.mk.inj h)), hzw.2.mono hHG⟩
+
+@[simp]
+theorem coe_toSimpleGraphHomOfLE_apply (hHG : H ≤ G) (z : V(H)) :
+    (toSimpleGraphHomOfLE hHG z : α) = z := (rfl)
+
+/-- Along a subgraph inclusion `H ≤ G`, the simple component of `z` in `H` maps to the simple
+component of `w` in `G` exactly when `w` is reachable from `z` in `G`. -/
+theorem map_toSimpleGraphHomOfLE_connectedComponentMk_eq_iff (hHG : H ≤ G) {z : V(H)}
+    {w : V(G)} : (H.toSimpleGraph.connectedComponentMk z).map (toSimpleGraphHomOfLE hHG) =
+      G.toSimpleGraph.connectedComponentMk w ↔ G.Reachable z w := by
+  rw [SimpleGraph.ConnectedComponent.map_mk, SimpleGraph.ConnectedComponent.eq,
+    toSimpleGraph_reachable_iff, coe_toSimpleGraphHomOfLE_apply]
 
 /-! ### Basic examples -/
 
