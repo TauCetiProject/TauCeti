@@ -45,9 +45,9 @@ theorem isNilpotent_one_tmul_sub_tmul_one (x : L) :
   have : ExpChar (L ⊗[K] L) (ringExpChar K) :=
     expChar_of_injective_ringHom (algebraMap K _).injective _
   refine ⟨ringExpChar K ^ n, ?_⟩
-  rw [sub_pow_expChar_pow, Algebra.TensorProduct.tmul_pow, one_pow,
-    Algebra.TensorProduct.tmul_pow, one_pow, ← hr, Algebra.algebraMap_eq_smul_one,
-    TensorProduct.smul_tmul, sub_self]
+  rw [sub_pow_expChar_pow]
+  simp [Algebra.TensorProduct.tmul_pow, ← hr, Algebra.algebraMap_eq_smul_one,
+    TensorProduct.smul_tmul]
 
 /-- A purely inseparable extension `L / K` whose tensor square `L ⊗[K] L` is reduced is trivial:
 `algebraMap K L` is surjective. -/
