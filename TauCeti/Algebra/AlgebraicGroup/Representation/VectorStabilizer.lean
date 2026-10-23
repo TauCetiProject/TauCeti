@@ -145,8 +145,10 @@ theorem stabilizerHopfIdeal_le_ker_iff (v : M) {A : Type*} [CommRing A] [Algebra
       endOfPoint M g.ofConv (1 ⊗ₜ[k] v) = 1 ⊗ₜ[k] v := by
   let : Comodule k H k := trivial
   rw [stabilizerHopfIdeal_eq, Submodule.stabilizerHopfIdeal_le_ker_iff,
-    Submodule.baseChange_span, Set.image_singleton, Submodule.map_span, Set.image_singleton,
-    TensorProduct.mk_apply, ← endOfPoint_prodTrivial_eq_iff]
+    ← endOfPoint_prodTrivial_eq_iff]
+  -- Both sides of the stabilizer condition are spans of a single vector.
+  simp only [Submodule.baseChange_span, Submodule.map_span, Set.image_singleton,
+    TensorProduct.mk_apply]
   set w : A ⊗[k] (M × k) := 1 ⊗ₜ[k] (v, 1)
   refine ⟨fun h ↦ ?_, fun h ↦ by rw [h]⟩
   obtain ⟨a, ha⟩ := Submodule.mem_span_singleton.mp (h ▸ Submodule.mem_span_singleton_self _)

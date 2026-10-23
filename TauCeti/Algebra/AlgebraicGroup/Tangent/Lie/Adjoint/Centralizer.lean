@@ -71,9 +71,11 @@ noncomputable def centralizerHopfIdeal (x : Module.Dual k (Bialgebra.CotangentSp
     HopfIdeal k H :=
   Comodule.stabilizerHopfIdeal k H x
 
-private theorem centralizerHopfIdeal_eq (x : Module.Dual k (Bialgebra.CotangentSpace k H)) :
+/-- The centralizer of `x` is the stabilizer of `x` under the adjoint comodule. Rewriting with this
+transfers the defining equations and universal property of `Comodule.stabilizerHopfIdeal`. -/
+theorem centralizerHopfIdeal_def (x : Module.Dual k (Bialgebra.CotangentSpace k H)) :
     centralizerHopfIdeal H x = Comodule.stabilizerHopfIdeal k H x :=
-  rfl
+  (rfl)
 
 variable {H}
 
@@ -87,7 +89,7 @@ theorem centralizerHopfIdeal_le_ker_iff (x : Module.Dual k (Bialgebra.CotangentS
             (Derivation.cotangentLinearEquiv (R := k) (A := H) (B := k) x)) =
         Derivation.mapValue (Algebra.ofId k A)
           (Derivation.cotangentLinearEquiv (R := k) (A := H) (B := k) x) := by
-  rw [centralizerHopfIdeal_eq, Comodule.stabilizerHopfIdeal_le_ker_iff,
+  rw [centralizerHopfIdeal_def, Comodule.stabilizerHopfIdeal_le_ker_iff,
     ← (Derivation.tangentScalarExtensionEquiv (R := k) (A := H) (B := A)).injective.eq_iff,
     Derivation.tangentScalarExtensionEquiv_adjointComodule_endOfPoint (CommAlgCat.of k A) g,
     Derivation.tangentScalarExtensionEquiv_tmul, one_smul]
@@ -111,10 +113,11 @@ theorem mem_lieSubalgebra_centralizerHopfIdeal_iff
     (d : Derivation k H (Bialgebra.CounitAlgebra k H k)) :
     d ∈ (centralizerHopfIdeal H x).lieSubalgebra (B := k) ↔
       ⁅Derivation.cotangentDualLieEquiv (R := k) (H := H) x, d⁆ = 0 := by
-  rw [centralizerHopfIdeal_eq, Comodule.mem_lieSubalgebra_stabilizerHopfIdeal_iff,
-    Derivation.differential_adjointComodule, ← lie_skew, neg_eq_zero,
-    ← (Derivation.cotangentDualLieEquiv (R := k) (H := H)).injective.eq_iff, LieHom.map_lie,
-    LieEquiv.coe_toLieHom, LieEquiv.apply_symm_apply, map_zero]
+  rw [centralizerHopfIdeal_def, Comodule.mem_lieSubalgebra_stabilizerHopfIdeal_iff,
+    Derivation.differential_adjointComodule, ← lie_skew, neg_eq_zero]
+  -- Transport `⁅x, e.symm d⁆ = 0` along the Lie algebra isomorphism `e`.
+  rw [← (Derivation.cotangentDualLieEquiv (R := k) (H := H)).injective.eq_iff]
+  simp
 
 /-- **The Lie algebra of a centralizer.** The Lie algebra of the centralizer of `x` is the kernel
 of `ad x`. -/
