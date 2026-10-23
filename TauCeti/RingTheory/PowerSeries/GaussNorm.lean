@@ -15,7 +15,9 @@ public import Mathlib.Algebra.Order.Monoid.Prod
 public import TauCeti.RingTheory.PowerSeries.Restricted
 import Mathlib.Algebra.Order.GroupWithZero.Finset
 import Mathlib.Algebra.Order.Ring.IsNonarchimedean
+import Mathlib.Analysis.Normed.Group.Tannery
 import Mathlib.Topology.Order.LiminfLimsup
+import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 import Mathlib.RingTheory.Polynomial.GaussNorm
 
 /-!
@@ -34,10 +36,13 @@ nonzero restricted series attain a distinguished degree over a normed ring. No c
 hypothesis is needed for these norm identities. The radius is any positive real number, including
 the unit radius of the usual Tate algebra.
 
-Completeness enters only in the summation section, where a family of restricted series with
-summable Gauss norms is summed coefficientwise. This is the convergence statement that
-successive-approximation arguments over a complete nonarchimedean ring run on, and it takes the
-place of completeness of the Tate algebra for the Gauss norm.
+Over a complete seminormed ring, summable Gauss norms ensure summability in every coefficient.
+Over any normed ring, the coefficientwise `tsum`s of such a family of restricted series form a
+restricted series. For complete coefficients this is the convergence statement behind
+successive-approximation arguments, taking the place of completeness of the restricted-series
+space for the Gauss norm. Over a complete ultrametric ring, it suffices for the Gauss norms
+to tend to zero along the cofinite filter, without absolute summability of those real norms.
+The coefficient families are then summable by `summable_coeff_of_tendsto_gaussNorm_zero`.
 
 Multiplicativity and the ultrametric inequality together make the Gauss norm a valuation with
 values in `ℝ≥0` on the ring of restricted series, `gaussValuation`, whose support is trivial.
@@ -69,6 +74,9 @@ closed unit disc next to its Gauss points.
 * `TauCeti.PowerSeries.hasGaussNorm_add` and `TauCeti.PowerSeries.hasGaussNorm_mul`: bounded
   weighted coefficient norms are preserved by addition and multiplication over an ultrametric
   seminormed ring, at any nonnegative radius.
+* `TauCeti.PowerSeries.gaussNorm_mul_le`: the Gauss norm is submultiplicative on such series.
+* `PowerSeries.HasGaussNorm.isRestricted_of_abs_lt`: bounded weighted coefficients at `c'` give
+  restrictedness at every `c` with `|c| < c'`.
 * `TauCeti.PowerSeries.gaussNorm_eq_of_forall_le`: the Gauss norm is attained at a degree whose
   weighted coefficient dominates.
 * `TauCeti.PowerSeries.gaussNorm_le_gaussNorm_of_le` and
@@ -106,10 +114,16 @@ closed unit disc next to its Gauss points.
 * `TauCeti.PowerSeries.gaussValuationAbove_monomial_coeff_le` and
   `TauCeti.PowerSeries.gaussValuationBelow_monomial_coeff_le`: every monomial of a series is at
   most the series for both refined Gauss valuations.
+* `TauCeti.PowerSeries.summable_coeff_of_tendsto_gaussNorm_zero` and
+  `TauCeti.PowerSeries.isRestricted_mk_tsum_coeff_of_tendsto_gaussNorm_zero`: over a complete
+  ultrametric ring, cofinite decay of the Gauss norms gives summable coefficients, and the
+  coefficientwise sum of restricted series is restricted.
+* `TauCeti.PowerSeries.summable_norm_coeff_of_summable_gaussNorm`: summable Gauss norms give
+  summable coefficient norms in every degree over a seminormed ring, without completeness.
 * `TauCeti.PowerSeries.summable_coeff_of_summable_gaussNorm` and
-  `TauCeti.PowerSeries.isRestricted_mk_tsum_coeff`: over a complete ring, a family of restricted
-  series with summable Gauss norms has summable coefficients, and its coefficientwise sum is
-  again restricted.
+  `TauCeti.PowerSeries.isRestricted_mk_tsum_coeff`: summable Gauss norms give summable coefficients
+  over a complete seminormed ring, and the coefficientwise `tsum`s of restricted series are
+  restricted over any normed ring.
 
 ## References
 
@@ -211,6 +225,15 @@ theorem hasGaussNorm_mul (hc : 0 ≤ c) (hf : f.HasGaussNorm norm c)
                 (PowerSeries.gaussNorm_nonneg norm c f norm_nonneg)
   exact ⟨_, Set.forall_mem_range.mpr key⟩
 
+/-- The Gauss norm is submultiplicative on power series with bounded weighted coefficient norms
+over an ultrametric seminormed ring, at a nonnegative radius. -/
+theorem gaussNorm_mul_le (hc : 0 ≤ c) (hf : f.HasGaussNorm norm c)
+    (hg : g.HasGaussNorm norm c) :
+    (f * g).gaussNorm norm c ≤ f.gaussNorm norm c * g.gaussNorm norm c :=
+  MvPowerSeries.gaussNorm_mul_le norm (fun _ : Unit ↦ c) f g (fun _ ↦ hc) norm_nonneg
+    norm_mul_le IsUltrametricDist.isNonarchimedean_norm norm_zero hf.hasMvGaussNorm
+    hg.hasMvGaussNorm
+
 end Ultrametric
 
 /-- If the weighted coefficient in degree `s` dominates every other one, the Gauss norm is the
@@ -240,6 +263,19 @@ variable {R : Type*} [NormedRing R] {c : ℝ} {f : PowerSeries R}
 theorem hasGaussNorm_of_isRestricted (hf : f.IsRestricted c) :
     f.HasGaussNorm norm c :=
   ((PowerSeries.isRestricted_iff c f).mp hf).bddAbove_range_of_cofinite
+
+/-- **Bounded weighted coefficients give restrictedness at smaller radii.** If the weighted
+coefficient norms `‖aₙ‖ c'ⁿ` are bounded, then `‖aₙ‖ cⁿ → 0` for every `c` with `|c| < c'`, being
+dominated by a multiple of `(|c| / c')ⁿ`. -/
+theorem _root_.PowerSeries.HasGaussNorm.isRestricted_of_abs_lt {c' : ℝ}
+    (hf : f.HasGaussNorm norm c') (h : |c| < c') : f.IsRestricted c := by
+  have hc' : 0 < c' := (abs_nonneg c).trans_lt h
+  obtain ⟨B, hB⟩ := hf
+  rw [← PowerSeries.isRestricted_abs_iff, PowerSeries.isRestricted_iff']
+  refine squeeze_zero (fun n ↦ by positivity)
+    (TauCeti.mul_abs_pow_le_of_forall_mul_pow_le hc' fun n ↦ hB ⟨n, rfl⟩) ?_
+  simpa using (tendsto_pow_atTop_nhds_zero_of_lt_one (by positivity)
+    ((div_lt_one hc').mpr h)).const_mul B
 
 /-- **The Gauss norm is right continuous in the radius**: for a series restricted at radius `s`,
 if radii `rₙ ∈ [ρ, s]` tend to `ρ > 0`, the Gauss norms at `rₙ` tend to the Gauss norm at `ρ`.
@@ -642,16 +678,16 @@ section Recognition
 
 variable {R : Type*} [SeminormedRing R] [IsUltrametricDist R] {c : ℝ} {s : ℕ} {f : PowerSeries R}
 
-/-- **Recognising a distinguished series.** At a positive radius, `f` is distinguished of degree
+/-- **Recognising a distinguished series.** At a nonnegative radius, `f` is distinguished of degree
 `s` once its weighted coefficient in degree `s` is closer than the Gauss norm to an element `a`
 of weighted norm equal to the Gauss norm, and every later weighted coefficient norm is smaller
 than the Gauss norm. -/
-theorem isDistinguished_of_norm_coeff_sub_lt (hc : 0 < c) {a : R}
+theorem isDistinguished_of_norm_coeff_sub_lt (hc : 0 ≤ c) {a : R}
     (ha : ‖a‖ * c ^ s = f.gaussNorm norm c)
     (hs : ‖f.coeff s - a‖ * c ^ s < f.gaussNorm norm c)
     (hm : ∀ m, s < m → ‖f.coeff m‖ * c ^ m < f.gaussNorm norm c) :
     IsDistinguished c s f := by
-  have hlt : ‖f.coeff s - a‖ < ‖a‖ := lt_of_mul_lt_mul_right (ha ▸ hs) (pow_pos hc s).le
+  have hlt : ‖f.coeff s - a‖ < ‖a‖ := lt_of_mul_lt_mul_right (ha ▸ hs) (pow_nonneg hc s)
   refine ⟨?_, hm⟩
   rw [← ha, ← sub_add_cancel (f.coeff s) a,
     IsUltrametricDist.norm_add_eq_max_of_norm_ne_norm hlt.ne, max_eq_right hlt.le]
@@ -660,65 +696,113 @@ end Recognition
 
 section Summation
 
-variable {R : Type*} [NormedRing R] [CompleteSpace R] {c : ℝ}
+section SeminormedRing
+
+variable {R : Type*} [SeminormedRing R] {c : ℝ}
   {ι : Type*} {a : ι → PowerSeries R}
 
-/-- Over a complete ring, a family of power series with summable Gauss norms has summable
-coefficients in every degree. -/
-theorem summable_coeff_of_summable_gaussNorm (hc : 0 < c)
+/-- Summable Gauss norms give summable coefficient norms in every degree over a seminormed
+ring, without any completeness assumption. -/
+theorem summable_norm_coeff_of_summable_gaussNorm (hc : 0 < c)
     (ha : ∀ k, (a k).HasGaussNorm norm c)
     (hs : Summable fun k ↦ (a k).gaussNorm norm c) (i : ℕ) :
-    Summable fun k ↦ (a k).coeff i := by
-  refine Summable.of_norm_bounded (hs.mul_right (c ^ i)⁻¹) fun k ↦ ?_
+    Summable fun k ↦ ‖(a k).coeff i‖ := by
+  refine (hs.mul_right (c ^ i)⁻¹).of_nonneg_of_le (fun _ ↦ norm_nonneg _) fun k ↦ ?_
   rw [← div_eq_mul_inv, le_div_iff₀ (pow_pos hc i)]
   exact PowerSeries.le_gaussNorm norm c _ (ha k) i
 
+variable [CompleteSpace R]
+
+/-- Over a complete seminormed ring, a family of power series with summable Gauss norms has
+summable coefficients in every degree. -/
+theorem summable_coeff_of_summable_gaussNorm (hc : 0 < c)
+    (ha : ∀ k, (a k).HasGaussNorm norm c)
+    (hs : Summable fun k ↦ (a k).gaussNorm norm c) (i : ℕ) :
+    Summable fun k ↦ (a k).coeff i :=
+  (summable_norm_coeff_of_summable_gaussNorm hc ha hs i).of_norm
+
 variable [IsUltrametricDist R]
 
-/-- **Coefficientwise summation of restricted power series.** Over a complete nonarchimedean
-ring, the degreewise sums of a family of restricted power series with summable Gauss norms
-assemble into a restricted power series.
+/-- Over a complete ultrametric seminormed ring, a family of power series with finite Gauss
+norms tending to zero along the cofinite filter has summable coefficients in every degree. -/
+theorem summable_coeff_of_tendsto_gaussNorm_zero (hc : 0 < c)
+    (ha : ∀ k, (a k).HasGaussNorm norm c)
+    (hs : Tendsto (fun k ↦ (a k).gaussNorm norm c) cofinite (𝓝 0)) (i : ℕ) :
+    Summable fun k ↦ (a k).coeff i := by
+  apply NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero
+  rw [tendsto_zero_iff_norm_tendsto_zero]
+  refine squeeze_zero (fun _ ↦ norm_nonneg _) (fun k ↦ ?_)
+    (by simpa using hs.mul_const (c ^ i)⁻¹)
+  rw [← div_eq_mul_inv, le_div_iff₀ (pow_pos hc i)]
+  exact PowerSeries.le_gaussNorm norm c _ (ha k) i
 
-This is the convergence statement behind successive-approximation arguments such as Weierstrass
-division: it plays the role of completeness of the Tate algebra for the Gauss norm. -/
+end SeminormedRing
+
+variable {R : Type*} [NormedRing R] {c : ℝ}
+  {ι : Type*} {a : ι → PowerSeries R}
+
+/-- The coefficientwise `tsum`s of restricted power series with summable Gauss norms form a
+restricted power series over any normed ring.
+
+Over a complete ring, `summable_coeff_of_summable_gaussNorm` ensures that these are sums of the
+corresponding coefficient families. The restrictedness estimate itself does not require
+completeness. -/
 theorem isRestricted_mk_tsum_coeff (hc : 0 < c) (ha : ∀ k, (a k).IsRestricted c)
     (hs : Summable fun k ↦ (a k).gaussNorm norm c) :
     (PowerSeries.mk fun i ↦ ∑' k, (a k).coeff i).IsRestricted c := by
-  classical
-  have hsum := summable_coeff_of_summable_gaussNorm hc
-    (fun k ↦ hasGaussNorm_of_isRestricted (ha k)) hs
+  have hsum (i) : Summable fun k ↦ ‖(a k).coeff i‖ :=
+    summable_norm_coeff_of_summable_gaussNorm (R := R) hc
+      (fun k ↦ hasGaussNorm_of_isRestricted (ha k)) hs i
+  have hlimit : Tendsto (fun i ↦ ∑' k, ‖(a k).coeff i‖ * c ^ i) atTop (𝓝 0) := by
+    simpa only [tsum_zero] using tendsto_tsum_of_dominated_convergence hs
+      (fun k ↦ (PowerSeries.isRestricted_iff' c (a k)).mp (ha k))
+      (.of_forall fun i k ↦ by
+        rw [Real.norm_eq_abs, abs_of_nonneg (mul_nonneg (norm_nonneg _) (pow_nonneg hc.le i))]
+        exact PowerSeries.le_gaussNorm norm c _ (hasGaussNorm_of_isRestricted (ha k)) i)
   rw [PowerSeries.isRestricted_iff']
-  refine tendsto_order.mpr ⟨fun b hb ↦ .of_forall fun i ↦
-    hb.trans_le (by positivity), fun ε hε ↦ ?_⟩
-  have hsmall : {k | ¬(a k).gaussNorm norm c < ε / 2}.Finite :=
-    Filter.eventually_cofinite.mp
-      (hs.tendsto_cofinite_zero.eventually (gt_mem_nhds (half_pos hε)))
-  let S := hsmall.toFinset
-  have hpartial : (∑ k ∈ S, a k).IsRestricted c :=
-    sum_mem (S := PowerSeries.IsRestricted.addSubgroup c) fun k _ ↦ ha k
-  filter_upwards [((PowerSeries.isRestricted_iff' c
-    (∑ k ∈ S, a k)).mp hpartial).eventually
-      (gt_mem_nhds (half_pos hε))] with i hi
-  have hsplit : (PowerSeries.mk fun i ↦ ∑' k, (a k).coeff i).coeff i =
-      (∑ k ∈ S, a k).coeff i + ∑' k : {k // k ∉ S}, (a k).coeff i := by
-    rw [PowerSeries.coeff_mk, ← (hsum i).sum_add_tsum_subtype_compl S, map_sum]
-  have htail : ‖∑' k : {k // k ∉ S}, (a k).coeff i‖ * c ^ i ≤ ε / 2 := by
-    rw [← le_div_iff₀ (pow_pos hc i)]
-    refine IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg
-      (by positivity) fun k ↦ ?_
-    rw [le_div_iff₀ (pow_pos hc i)]
-    have hk : (a k).gaussNorm norm c < ε / 2 := by simpa [S] using k.property
-    exact (PowerSeries.le_gaussNorm norm c _
-      (hasGaussNorm_of_isRestricted (ha k)) i).trans hk.le
-  rw [hsplit]
-  calc ‖(∑ k ∈ S, a k).coeff i + ∑' k : {k // k ∉ S}, (a k).coeff i‖ * c ^ i
-      ≤ max ‖(∑ k ∈ S, a k).coeff i‖ ‖∑' k : {k // k ∉ S}, (a k).coeff i‖ * c ^ i :=
-        mul_le_mul_of_nonneg_right (IsUltrametricDist.isNonarchimedean_norm _ _)
-          (pow_nonneg hc.le i)
-    _ = max (‖(∑ k ∈ S, a k).coeff i‖ * c ^ i)
-          (‖∑' k : {k // k ∉ S}, (a k).coeff i‖ * c ^ i) :=
-        max_mul_of_nonneg _ _ (pow_nonneg hc.le i)
-    _ < ε := max_lt (hi.trans (half_lt_self hε)) (htail.trans_lt (half_lt_self hε))
+  refine squeeze_zero (fun _ ↦ by positivity) (fun i ↦ ?_) hlimit
+  rw [PowerSeries.coeff_mk, tsum_mul_right]
+  exact mul_le_mul_of_nonneg_right (norm_tsum_le_tsum_norm (hsum i)) (pow_nonneg hc.le i)
+
+variable [CompleteSpace R] [IsUltrametricDist R]
+
+/-- Over a complete ultrametric ring, the coefficientwise sum of restricted power series is
+restricted whenever their Gauss norms tend to zero along the cofinite filter. Unlike absolute
+summability of the real Gauss norms, this is the convergence criterion intrinsic to an
+ultrametric norm. The coefficient families are summable by
+`summable_coeff_of_tendsto_gaussNorm_zero`. -/
+theorem isRestricted_mk_tsum_coeff_of_tendsto_gaussNorm_zero (hc : 0 < c)
+    (ha : ∀ k, (a k).IsRestricted c)
+    (hs : Tendsto (fun k ↦ (a k).gaussNorm norm c) cofinite (𝓝 0)) :
+    (PowerSeries.mk fun i ↦ ∑' k, (a k).coeff i).IsRestricted c := by
+  let : Fact (0 < c) := ⟨hc⟩
+  -- PowerSeries R is definitionally MvPowerSeries Unit R. Its univariate restricted-subring
+  -- normed and complete instances are defined downstream in PowerSeries/TateAlgebra, which
+  -- imports this file, so we use the existing multivariate instances on the same carrier here.
+  let S := MvPowerSeries.IsRestricted.subring (R := R) (fun _ : Unit ↦ c)
+  let A : ι → S := fun k ↦ ⟨a k, ha k⟩
+  have hnorm (k) : ‖A k‖ = (a k).gaussNorm norm c :=
+    MvPowerSeries.norm_eq_gaussNorm (A k)
+  have hA : Summable A := by
+    apply NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero
+    rw [tendsto_zero_iff_norm_tendsto_zero]
+    simpa only [hnorm] using hs
+  have hcoeff (n : ℕ) : (∑' k, (a k).coeff n) =
+      PowerSeries.coeff n ((∑' k, A k : S) : PowerSeries R) := by
+    let coeffHom : S →+ R :=
+      (PowerSeries.coeff n).toAddMonoidHom.comp S.subtype.toAddMonoidHom
+    have hcont : Continuous coeffHom :=
+      MvPowerSeries.continuous_coeff_isRestrictedSubring (Finsupp.single () n)
+    exact (summable_coeff_of_tendsto_gaussNorm_zero (R := R) hc
+      (fun k ↦ hasGaussNorm_of_isRestricted (ha k)) hs n).hasSum.unique
+      (hA.hasSum.map coeffHom hcont)
+  have heq : (PowerSeries.mk fun i ↦ ∑' k, (a k).coeff i) =
+      ((∑' k, A k : S) : PowerSeries R) := by
+    ext n
+    rw [PowerSeries.coeff_mk]
+    exact hcoeff n
+  rw [heq]
+  exact (∑' k, A k).2
 
 end Summation
 
@@ -801,9 +885,7 @@ private theorem gaussNorm_mul_eq_of_norm_coeff_mul_pow_eq (hc : 0 < c)
     (hk : ‖(f * g).coeff k‖ * c ^ k = f.gaussNorm norm c * g.gaussNorm norm c) :
     (f * g).gaussNorm norm c = f.gaussNorm norm c * g.gaussNorm norm c :=
   le_antisymm
-    (MvPowerSeries.gaussNorm_mul_le norm (fun _ : Unit ↦ c) f g (fun _ ↦ hc.le)
-      norm_nonneg norm_mul_le IsUltrametricDist.isNonarchimedean_norm norm_zero
-      hbf.hasMvGaussNorm hbg.hasMvGaussNorm)
+    (gaussNorm_mul_le hc.le hbf hbg)
     (hk.symm.trans_le (PowerSeries.le_gaussNorm norm c (f * g) (hasGaussNorm_mul hc.le hbf hbg) k))
 
 /-- If degrees `i` and `j` attain the Gauss norms of `f` and `g`, the product of the two

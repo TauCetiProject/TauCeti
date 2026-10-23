@@ -41,6 +41,7 @@ regularity; these are the energy-increment inputs of weak and strong regularity 
 * `SimpleGraph.weightedDensityDeviation_sq`: the refinement defect identity.
 * `SimpleGraph.weightedEnergy_mono_of_refines`: refining a partition does not decrease energy.
 * `SimpleGraph.weightedDensityDeviation_abs_le`: the absolute-deviation bound from an energy gap.
+* `SimpleGraph.sum_sum_abs_edgeDensity_part_sub_le`: the same bound summed over pairs of vertices.
 
 ## References
 
@@ -209,6 +210,42 @@ theorem weightedDensityDeviation_abs_le (h : Q ≤ P) {ε : ℝ}
     (fun p => (G.edgeDensity p.1.1 p.2.1 : ℝ) -
       G.edgeDensity (refinementParent h p.1).1 (refinementParent h p.2).1)
     (fun _ _ => by positivity) hw hgap
+
+/-- Summed over all ordered pairs of vertices, the edge densities between the parts through them
+change by at most `√ε * (card V) ^ 2` from a refinement `Q ≤ P` to `P` whose energy gap is at
+most `ε`. This is `SimpleGraph.weightedDensityDeviation_abs_le` with each pair of fine parts
+counted once for each pair of vertices in it. -/
+theorem sum_sum_abs_edgeDensity_part_sub_le (h : Q ≤ P) {ε : ℝ}
+    (hgap : G.weightedEnergy Q - G.weightedEnergy P ≤ ε) :
+    ∑ x, ∑ y, |(G.edgeDensity (Q.part x) (Q.part y) : ℝ) -
+      G.edgeDensity (P.part x) (P.part y)| ≤ √ε * Fintype.card V ^ 2 := by
+  rcases isEmpty_or_nonempty V with hV | hV
+  · simp
+  have hn : (Fintype.card V : ℝ) ≠ 0 := Nat.cast_ne_zero.2 Fintype.card_ne_zero
+  -- Group both vertices by their fine parts, each paired with its coarse parent.
+  calc ∑ x, ∑ y, |(G.edgeDensity (Q.part x) (Q.part y) : ℝ) -
+        G.edgeDensity (P.part x) (P.part y)|
+      = ∑ x, ∑ D : Q.parts, #D.1 • |(G.edgeDensity (Q.part x) D.1 : ℝ) -
+          G.edgeDensity (P.part x) (refinementParent h D).1| :=
+        sum_congr rfl fun x _ ↦ Finpartition.sum_apply_part_part h fun B A ↦
+          |(G.edgeDensity (Q.part x) B : ℝ) - G.edgeDensity (P.part x) A|
+    _ = ∑ D : Q.parts, ∑ B : Q.parts, #B.1 • (#D.1 • |(G.edgeDensity B.1 D.1 : ℝ) -
+          G.edgeDensity (refinementParent h B).1 (refinementParent h D).1|) := by
+        rw [sum_comm]
+        exact sum_congr rfl fun D _ ↦ Finpartition.sum_apply_part_part h fun B A ↦
+          #D.1 • |(G.edgeDensity B D.1 : ℝ) - G.edgeDensity A (refinementParent h D).1|
+    _ = (Fintype.card V : ℝ) ^ 2 * ∑ B : Q.parts, ∑ D : Q.parts,
+          (#B.1 * #D.1 / (Fintype.card V : ℝ) ^ 2) * |(G.edgeDensity B.1 D.1 : ℝ) -
+            G.edgeDensity (refinementParent h B).1 (refinementParent h D).1| := by
+        rw [sum_comm, mul_sum]
+        refine sum_congr rfl fun B _ ↦ ?_
+        rw [mul_sum]
+        refine sum_congr rfl fun D _ ↦ ?_
+        rw [nsmul_eq_mul, nsmul_eq_mul]
+        field_simp
+    _ ≤ (Fintype.card V : ℝ) ^ 2 * √ε := by grw [G.weightedDensityDeviation_abs_le h hgap]
+    _ = √ε * Fintype.card V ^ 2 := mul_comm _ _
+
 
 end Refinement
 

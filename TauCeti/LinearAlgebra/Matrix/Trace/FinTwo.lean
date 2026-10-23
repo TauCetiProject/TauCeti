@@ -24,7 +24,10 @@ Mathlib's `Matrix.IsHyperbolic A`, whose discriminant is `trace A ^ 2 - 4`.
 
 The **Fricke trace identity** expresses the trace of a commutator in `SL(2, R)` through the traces
 of the two matrices and of their product:
-`tr ⁅A, B⁆ = tr A ^ 2 + tr B ^ 2 + tr (A B) ^ 2 - tr A tr B tr (A B) - 2`.
+`tr ⁅A, B⁆ = tr A ^ 2 + tr B ^ 2 + tr (A B) ^ 2 - tr A tr B tr (A B) - 2`. Alternatively, the
+trace of a commutator differs from `2` by minus the determinant of the additive commutator:
+`tr ⁅A, B⁆ - 2 = -det (A B - B A)`, since `⁅A, B⁆ - 1 = (A B - B A) A⁻¹ B⁻¹` and
+`det (M - 1) = 2 - tr M` for `M ∈ SL(2, R)`.
 
 These are the matrix inputs for reading off the order of an element of `SL(2, R)` or `PSL(2, R)`
 from its trace, and for recognizing a commutator as hyperbolic. The real elliptic case, where the
@@ -40,7 +43,11 @@ trace is `2 cos θ`, is in `TauCeti.Analysis.SpecialFunctions.Trigonometric.Matr
   property.
 * `Matrix.isHyperbolic_iff_two_lt_abs_trace`: a determinant-one matrix is hyperbolic exactly when
   its trace has absolute value greater than `2`.
+* `Matrix.isElliptic_iff_abs_trace_lt_two`: a determinant-one matrix is elliptic exactly when its
+  trace has absolute value less than `2`.
 * `Matrix.SpecialLinearGroup.trace_commutatorElement_fin_two`: the Fricke trace identity.
+* `Matrix.SpecialLinearGroup.trace_commutatorElement_sub_two_fin_two`: the trace of a commutator
+  through the determinant of the additive commutator.
 
 ## References
 
@@ -119,6 +126,13 @@ theorem isHyperbolic_iff_two_lt_abs_trace {A : Matrix (Fin 2) (Fin 2) R} (hdet :
   rw [IsHyperbolic, discr_fin_two, hdet, mul_one, sub_pos, show (4 : R) = 2 ^ 2 by norm_num,
     sq_lt_sq, abs_two]
 
+/-- A `2 × 2` matrix of determinant one is elliptic, in the sense of `Matrix.IsElliptic`, exactly
+when its trace has absolute value less than `2`: its discriminant is `trace A ^ 2 - 4`. -/
+theorem isElliptic_iff_abs_trace_lt_two {A : Matrix (Fin 2) (Fin 2) R} (hdet : A.det = 1) :
+    A.IsElliptic ↔ |A.trace| < 2 := by
+  rw [IsElliptic, discr_fin_two, hdet, mul_one, sub_neg, show (4 : R) = 2 ^ 2 by norm_num,
+    sq_lt_sq, abs_two]
+
 end Ordered
 
 open scoped commutatorElement MatrixGroups in
@@ -139,5 +153,20 @@ theorem SpecialLinearGroup.trace_commutatorElement_fin_two {R : Type*} [CommRing
     cons_val_zero, cons_val_one, empty_val', cons_val_fin_one]
   linear_combination ((B 0 0 + B 1 1) ^ 2 - 2) * hA +
     (A 0 0 ^ 2 + 2 * A 0 1 * A 1 0 + A 1 1 ^ 2) * hB
+
+open scoped commutatorElement MatrixGroups in
+/-- The trace of the commutator `A * B * A⁻¹ * B⁻¹` of two matrices of `SL(2, R)` differs from `2`
+by minus the determinant of their additive commutator: `tr ⁅A, B⁆ - 2 = -det (A B - B A)`. -/
+theorem SpecialLinearGroup.trace_commutatorElement_sub_two_fin_two {R : Type*} [CommRing R]
+    (A B : SL(2, R)) :
+    ((⁅A, B⁆ : SL(2, R)) : Matrix (Fin 2) (Fin 2) R).trace - 2 =
+      -((A : Matrix (Fin 2) (Fin 2) R) * B - B * A).det := by
+  have hA := A.det_coe
+  have hB := B.det_coe
+  rw [det_fin_two] at hA hB
+  simp only [commutatorElement_def, SpecialLinearGroup.coe_mul, SpecialLinearGroup.coe_inv,
+    adjugate_fin_two, trace_fin_two, det_fin_two, sub_apply, mul_apply, Fin.sum_univ_two, of_apply,
+    cons_val', cons_val_zero, cons_val_one, empty_val', cons_val_fin_one]
+  linear_combination 2 * (A 0 0 * A 1 1 - A 0 1 * A 1 0) * hB + 2 * hA
 
 end Matrix

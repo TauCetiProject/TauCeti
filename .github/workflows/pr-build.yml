@@ -1,5 +1,5 @@
 name: pr-build
-run-name: ${{ github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' && format('bors branch={0} batch={1} head={2} base={3}', github.event.client_payload.base_ref || 'unknown', github.event.client_payload.batch_id, github.event.client_payload.head_sha, github.event.client_payload.base_sha) || format('pr-build {0}', github.event.pull_request.number || inputs.pr || github.event.client_payload.pr || github.event.merge_group.head_sha || github.run_id) }}
+run-name: ${{ github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' && format('bors branch={0} batch={1} head={2} base={3}', github.event.client_payload.base_ref || 'unknown', github.event.client_payload.batch_id, github.event.client_payload.head_sha, github.event.client_payload.base_sha) || (github.event_name == 'pull_request_target' || github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-pr-approved') && format('pr-build pr={0} head={1}', github.event.pull_request.number || github.event.client_payload.pr, github.event.pull_request.head.sha || github.event.client_payload.head_sha) || format('pr-build {0}', github.event.pull_request.number || inputs.pr || github.event.client_payload.pr || github.event.merge_group.head_sha || github.run_id) }}
 
 # Builds a deterministic integration of immutable PR head H with main B captured once
 # by the existing dispatch. Scope, review and approval remain bound to raw H and its
@@ -68,48 +68,30 @@ env:
   MATHLIB_CACHE_DEBUG_USE_LEGACY: ${{ vars.MATHLIB_CACHE_DEBUG_USE_LEGACY }}
 
 jobs:
-  # Bors prefers the dedicated pool only when explicitly enabled and idle. Merge groups and
-  # all unavailable/retried bors placements retain Namespace, without waiting for a GitHub slot.
-  # Skipping the picker leaves its answer empty, which `sandboxed-build` reads as Namespace.
-  # Bors staging uses 16CPU/32GB, scheduling priority over PR overflow and a run-specific assignment.
-  # Other Namespace builds retain 8CPU/16GB; rollback is the staging shape expression below.
-  # https://namespace.so/docs/solutions/github-actions/runner-controls/job-ordering
+  # The existing picker applies class-specific preferences and shared build caps.
+  # Merge groups and manual PR requests without an immutable head use cloud pools.
   pick-runner:
-    if: github.event_name != 'merge_group' && (github.event_name != 'repository_dispatch' || github.event.action != 'tauceti-bors-staging' || vars.FLEET_CI_ENABLED == 'true')
     uses: ./.github/workflows/pick-runner.yml
     with:
       fleet-staging: ${{ github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' }}
+      fleet-pr: ${{ github.event_name == 'pull_request_target' || (github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-pr-approved') }}
+      pr-head: ${{ github.event.pull_request.head.sha || github.event.client_payload.head_sha || '' }}
     permissions:
       actions: read
       contents: read  # immutable fleet selector checkout
     secrets:
       FLEET_READ_TOKEN: ${{ secrets.FLEET_READ_TOKEN }}
-      APP_ID: ${{ secrets.APP_ID }}
-      APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
+      TAUCETI_GITHUB_STATE_TOKEN: ${{ secrets.TAUCETI_GITHUB_STATE_TOKEN }}
 
   # Name kept distinct from `build` on purpose — see the header note. The required merge check is the
   # `build` commit STATUS posted in the final step, not this job's auto-created check-run.
   sandboxed-build:
     needs: pick-runner
     if: ${{ !cancelled() }}
-    # `container.privileged` is required and documented by Namespace for this case: without it
-    # the job container's seccomp profile denies `pivot_root`, and bwrap cannot build its sandbox
-    # at all, for root as well as for the job user. The machine name uses `-with-features`;
-    # bors appends its documented `;job.priority=1` option to that machine label. Its run-ID
-    # assignment is a separate option on the feature label.
-    #
-    # Both the provisioning and the feature are per-organisation configuration. A job whose
-    # labels this organisation does not serve is not rejected: it sits queued with an empty
-    # runner name until it expires, taking the required builds with it. Before changing these
-    # labels, confirm them in the organisation that will run the job.
-    #
-    # Only explicit fleet/github answers select those pools. Missing/failed picker output
-    # retains Namespace. The fleet selector permits only the first bors run attempt.
-    runs-on: >-
-      ${{ github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' && needs.pick-runner.outputs.fleet == 'true' && fromJSON('{"group":"TauCetiFleet","labels":["self-hosted","linux","x64","tauceti-fleet"]}') || github.event_name != 'merge_group' && (github.event_name != 'repository_dispatch' || github.event.action != 'tauceti-bors-staging') && needs.pick-runner.outputs.github == 'true' && 'ubuntu-24.04' || fromJSON(format('[
-        "nscloud-ubuntu-24.04-amd64-{0}-with-features{1}",
-        "namespace-features:container.privileged=true{2}"
-      ]', github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' && '16x32' || '8x16', github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' && ';job.priority=1' || '', github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' && format(';github.run-id={0}', github.run_id) || '')) }}
+    # Exact fleet labels bind placement to one machine and guest. A failed picker
+    # or failed-jobs-only rerun queues on GitHub: stale picker output must never
+    # send another attempt to an ephemeral guest that has already retired.
+    runs-on: ${{ fromJSON(needs.pick-runner.outputs.attempt == format('{0}', github.run_attempt) && needs.pick-runner.outputs.runner || '"ubuntu-24.04"') }}
     outputs:
       status-sha: ${{ steps.pr.outputs.status_sha }}
       build-state: ${{ steps.report.outputs.build-state }}
@@ -156,15 +138,30 @@ jobs:
           fetch-depth: 1
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@02db6ea51c27553cb6271e605612a56169ae72f6
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@0f4096297f058bff8ccd873067aab7120202aecf
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 02db6ea51c27553cb6271e605612a56169ae72f6
+          tools-ref: 0f4096297f058bff8ccd873067aab7120202aecf
           project-directory: gate
+      - name: Select CI API credentials
+        id: ci-api
+        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@0f4096297f058bff8ccd873067aab7120202aecf
+        with:
+          owner: ${{ github.repository_owner }}
+          repository: ${{ github.event.repository.name }}
+          workflow-token: ${{ github.token }}
+          read-app-id: ${{ secrets.CI_READ_APP_ID }}
+          read-app-private-key: ${{ secrets.CI_READ_APP_PRIVATE_KEY }}
+          status-app-id: ${{ secrets.CI_STATUS_APP_ID }}
+          status-app-private-key: ${{ secrets.CI_STATUS_APP_PRIVATE_KEY }}
+
       - name: Resolve PR head
         id: pr
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.ci-api.outputs.read-token }}
+          GH_READ_TOKEN: ${{ steps.ci-api.outputs.read-token }}
+          TAUCETI_GITHUB_READ_ROLE: ${{ steps.ci-api.outputs.read-role }}
+          CI_GIT_TOKEN: ${{ steps.ci-api.outputs.read-token }}
           BORS_HEAD_SHA: ${{ github.event.client_payload.head_sha }}
           BORS_BASE_SHA: ${{ github.event.client_payload.base_sha }}
           BORS_BATCH_ID: ${{ github.event.client_payload.batch_id }}
@@ -202,14 +199,6 @@ jobs:
             # Payload fields never choose a ref, URL, executable or authority.
             STAGING_REF=$(python3 gate/scripts/bors_train_identity.py \
               --head "$SHA" --base "$BASE_REF" --batch-id "$BORS_BATCH_ID" --branch "$BORS_BASE_REF")
-            STAGING_SHA=$(gh api "repos/${{ github.repository }}/git/ref/heads/$STAGING_REF" --jq .object.sha)
-            [ "$STAGING_SHA" = "$SHA" ] || {
-              echo "::error::bors candidate ref differs from this dispatch"; exit 1;
-            }
-            relation=$(gh api "repos/${{ github.repository }}/compare/$BASE_REF...$SHA" --jq .status)
-            [ "$relation" = ahead ] || {
-              echo "::error::bors base is not an ancestor of its staging commit"; exit 1;
-            }
           elif [ "${{ github.event_name }}" = "pull_request_target" ]; then
             NUM='${{ github.event.pull_request.number }}'
             SHA='${{ github.event.pull_request.head.sha }}'
@@ -220,52 +209,39 @@ jobs:
           else
             NUM="$REQUESTED_PR"
             [[ "$NUM" =~ ^[1-9][0-9]*$ ]] || { echo "::error::invalid PR number"; exit 1; }
-            SHA=$(gh api "repos/${{ github.repository }}/pulls/$NUM"  --jq .head.sha)
-            REPO=$(gh api "repos/${{ github.repository }}/pulls/$NUM" --jq .head.repo.full_name)
-            BASE_REF=$(gh api "repos/${{ github.repository }}/pulls/$NUM" --jq .base.ref)
+            # One response supplies all fields; jq never sees an error body.
+            metadata=$(python3 gate/scripts/github_api.py "repos/${{ github.repository }}/pulls/$NUM")
+            IFS=$'\t' read -r SHA REPO BASE_REF AUTHOR < <(printf '%s' "$metadata" | jq -r '[.head.sha,.head.repo.full_name,.base.ref,.user.login] | @tsv')
             STATUS_SHA="$SHA"
-            AUTHOR=$(gh api "repos/${{ github.repository }}/pulls/$NUM" --jq .user.login)
           fi
-          # Resolve the target branch to a commit ONCE. Everything below -- policy validation,
-          # the merge-base attestation, and the scope compare -- then refers to the same base,
-          # instead of each step separately racing a branch that moves every few minutes. For
-          # merge_group BASE_REF is already the immutable base_sha the queue synthesized on.
-          if [ "${{ env.IS_BATCH }}" != "true" ]; then
-            BASE_SHA=$(gh api "repos/${{ github.repository }}/commits/$BASE_REF" --jq .sha 2>/dev/null) || BASE_SHA=""
-            if [ -z "$BASE_SHA" ]; then
-              echo "INFRA=1" >> "$GITHUB_ENV"
-              echo "::warning::could not resolve $BASE_REF to a commit — re-run pr-build"
-            fi
-          else
-            BASE_SHA="$BASE_REF"
-          fi
-
-          # Merge-base with the target branch, for the Lake-pin bump validation below:
-          # check-bump.sh uses it to scope the PR's own pin delta. owner:sha for forks;
-          # `|| true` so a failed substitution does not trip set -e before the fallback.
-          #
-          # Against BASE_SHA, not the branch name: check-bump.sh reads mergebase/ to decide
-          # whether the pins were touched at all, so if the branch moved between here and the
-          # checkouts, base/, pr/ and mergebase/ would be describing three different bases and
-          # that decision would be made against a snapshot nothing else in the job shares.
-          OWNER="${REPO%%/*}"
-          MB=$(gh api "repos/${{ github.repository }}/compare/${BASE_SHA}...${OWNER}:${SHA}" \
-                 --jq '.merge_base_commit.sha' 2>/dev/null || true)
-          if [ -n "$MB" ]; then
-            echo "MERGEBASE_EXACT=1" >> "$GITHUB_ENV"
-          else
-            MB="$BASE_SHA"
-            echo "::warning::merge-base unresolved; falling back to the base commit $BASE_SHA"
-          fi
+          # Keep the known head available to the always-run status reporter even
+          # when Git is unavailable. This does not authorize a build or guess a base.
+          [[ "$SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "::error::invalid head SHA"; exit 1; }
           {
             echo "num=$NUM"
-            echo "base_sha=$BASE_SHA"
             echo "sha=$SHA"
             echo "repo=$REPO"
             echo "base_ref=$BASE_REF"
-            echo "mergebase=$MB"
             echo "status_sha=$STATUS_SHA"
             echo "author=$AUTHOR"
+          } >> "$GITHUB_OUTPUT"
+          # Fetch immutable identities through Git, not REST. No candidate
+          # configuration/hooks execute; the authority-selected staging ref is
+          # checked against H and B must be its ancestor before anything builds.
+          identity_args=(--repository '${{ github.repository }}' --head-repository "$REPO"
+            --head "$SHA" --base-ref "$BASE_REF" --store "$RUNNER_TEMP/ci-identity.git")
+          if [ -n "${STAGING_REF:-}" ]; then identity_args+=(--staging-ref "$STAGING_REF"); fi
+          if ! identity=$(python3 gate/scripts/ci_git.py resolve "${identity_args[@]}"); then
+            echo 'INFRA=1' >> "$GITHUB_ENV"
+            echo "::error::Git identity unavailable; reporting failure on the known head without building"
+            exit 1
+          fi
+          BASE_SHA=$(printf '%s' "$identity" | jq -er .base_sha)
+          MB=$(printf '%s' "$identity" | jq -er .mergebase)
+          echo 'MERGEBASE_EXACT=1' >> "$GITHUB_ENV"
+          {
+            echo "base_sha=$BASE_SHA"
+            echo "mergebase=$MB"
           } >> "$GITHUB_OUTPUT"
           echo "Building PR #$NUM @ $SHA from $REPO (author=${AUTHOR:-merge-group}, status -> $STATUS_SHA, bump delta vs merge-base $MB)"
 
@@ -287,7 +263,9 @@ jobs:
 
       - name: Scope guard — allow TauCeti sources and validated pins
         env:
-          GH_TOKEN: "${{ github.token }}"
+          GH_TOKEN: ${{ steps.ci-api.outputs.read-token }}
+          GH_READ_TOKEN: ${{ steps.ci-api.outputs.read-token }}
+          TAUCETI_GITHUB_READ_ROLE: ${{ steps.ci-api.outputs.read-role }}
           # Attacker-chosen strings: read them from the environment, never interpolate them.
           PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
           PR_HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
@@ -337,7 +315,7 @@ jobs:
           repair_pr=0
           if [ -z "$files" ] && { [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ "${{ github.event.action }}" = "tauceti-bors-pr-approved" ]; }; then
             # A dispatched rebuild (e.g. `gh workflow run pr-build.yml -f pr=N`) carries no PR payload.
-            IFS=$'\t' read -r PR_HEAD_REF PR_HEAD_REPO PR_USER < <(gh api \
+            IFS=$'\t' read -r PR_HEAD_REF PR_HEAD_REPO PR_USER < <(python3 gate/scripts/github_api.py \
               "repos/${{ github.repository }}/pulls/${{ steps.pr.outputs.num }}" \
               --jq '[.head.ref, .head.repo.full_name, .user.login] | @tsv') || true
           fi
@@ -372,9 +350,8 @@ jobs:
           # Comparing blob SHAs at two immutable commits has neither problem, and asking the
           # merge base rather than the branch tip keeps the question "did this pull request
           # change the pins" rather than "have the pins moved since this branch was cut".
-          # A merge group's head descends from its base_sha, so the fallback below is exact
-          # there. For an ordinary pull request it is a guess, and the pin question cannot be
-          # answered against a guess.
+          # ci_git.py resolve supplies the exact merge base or fails setup. This
+          # guard preserves an unknown pin state if setup did not produce that identity.
           if [ "${{ env.IS_BATCH }}" != "true" ] && [ "${{ env.MERGEBASE_EXACT }}" != "1" ]; then
             pins_known=0
             echo "::warning::merge base unresolved — pin state unknown"
@@ -390,8 +367,7 @@ jobs:
           # dangling symlink where its toolchain should be. Requiring an ordinary file at the head
           # closes that separately from the comparison.
           tree_entry() {
-            gh api "repos/${{ github.repository }}/git/trees/$1" \
-              --jq ".tree[] | select(.path==\"$2\") | [.mode, .type, .sha] | join(\" \")" 2>/dev/null
+            python3 gate/scripts/ci_git.py tree-entry --checkout pr --commit "$1" --path "$2"
           }
           for f in lake-manifest.json lean-toolchain; do
             mb_entry=$(tree_entry "${{ steps.pr.outputs.mergebase }}" "$f") || mb_entry=""
@@ -441,10 +417,14 @@ jobs:
         # it is not possible without an intermediate bump. Such a PR still has to pass the trusted
         # bump validator before anything builds, and the file cap still applies.
         if: ${{ env.IS_BATCH != 'true' }}
-        env: { GH_TOKEN: "${{ github.token }}" }
+        env:
+          GH_TOKEN: ${{ steps.ci-api.outputs.read-token }}
+          GH_READ_TOKEN: ${{ steps.ci-api.outputs.read-token }}
+          TAUCETI_GITHUB_READ_ROLE: ${{ steps.ci-api.outputs.read-role }}
+          TAUCETI_GITHUB_WRITE_ROLE: ${{ steps.ci-api.outputs.status-role }}
         run: |
           # Per-PR review-size policy remains independent of the complete local scope diff.
-          read -r adds dels files < <(gh api "repos/${{ github.repository }}/pulls/${{ steps.pr.outputs.num }}" \
+          read -r adds dels files < <(python3 gate/scripts/github_api.py "repos/${{ github.repository }}/pulls/${{ steps.pr.outputs.num }}" \
             --jq '"\(.additions) \(.deletions) \(.changed_files)"')
           echo "diff size: +$adds / -$dels across $files files (cap: 2000 each)"
           # Fail closed on non-numeric data: [ -gt ] errors on garbage but an `if` would
@@ -470,9 +450,13 @@ jobs:
         # merge_group batch is the sum of already-guarded PRs. For an *added* file the GitHub
         # diff lists every line as an addition, so `.additions` is its line count.
         if: ${{ env.IS_BATCH != 'true' }}
-        env: { GH_TOKEN: "${{ github.token }}" }
+        env:
+          GH_TOKEN: ${{ steps.ci-api.outputs.read-token }}
+          GH_READ_TOKEN: ${{ steps.ci-api.outputs.read-token }}
+          TAUCETI_GITHUB_READ_ROLE: ${{ steps.ci-api.outputs.read-role }}
+          TAUCETI_GITHUB_WRITE_ROLE: ${{ steps.ci-api.outputs.status-role }}
         run: |
-          long=$(gh api --paginate "repos/${{ github.repository }}/pulls/${{ steps.pr.outputs.num }}/files" \
+          long=$(python3 gate/scripts/github_api.py --paginate "repos/${{ github.repository }}/pulls/${{ steps.pr.outputs.num }}/files" \
             --jq '.[] | select(.status == "added" and (.filename | endswith(".lean")) and .additions > 1000)
                       | "\(.filename) (\(.additions) lines)"')
           if [ -n "$long" ]; then
@@ -550,7 +534,11 @@ jobs:
       # from the prospective integration's inherited B configuration.
       - name: Validate the Lake-pin bump before building
         if: ${{ env.INFRA != '1' && env.BUMP == '1' }}
-        env: { GH_TOKEN: "${{ github.token }}" }
+        env:
+          GH_TOKEN: ${{ steps.ci-api.outputs.read-token }}
+          GH_READ_TOKEN: ${{ steps.ci-api.outputs.read-token }}
+          TAUCETI_GITHUB_READ_ROLE: ${{ steps.ci-api.outputs.read-role }}
+          TAUCETI_GITHUB_WRITE_ROLE: ${{ steps.ci-api.outputs.status-role }}
         run: |
           if bash gate/scripts/check-bump.sh base mergebase pr; then
             echo "BUMP_VALIDATED=1" >> "$GITHUB_ENV"
@@ -938,7 +926,10 @@ jobs:
       - name: Decide the environment-lint scope
         if: ${{ env.INFRA != '1' }}
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.ci-api.outputs.read-token }}
+          GH_READ_TOKEN: ${{ steps.ci-api.outputs.read-token }}
+          TAUCETI_GITHUB_READ_ROLE: ${{ steps.ci-api.outputs.read-role }}
+          TAUCETI_GITHUB_WRITE_ROLE: ${{ steps.ci-api.outputs.status-role }}
           REPO: ${{ github.repository }}
           EVENT: ${{ github.event_name }}
           IS_BATCH: ${{ env.IS_BATCH }}
@@ -957,13 +948,12 @@ jobs:
           bash gate/scripts/lint-scope.sh "$out"
           echo "LINT_SCOPE_DIR=$out" >> "$GITHUB_ENV"
 
-      # The axiom audit and the dot-notation lint need see only what an ordinary PR changes: the
-      # library on main already passed both in full (every push to main runs them unscoped, as does
-      # every GitHub merge-queue or bors staging build here), and neither result for an unchanged file can change unless
-      # its dependencies or the Mathlib pin do. So they are scoped to the changed modules exactly
-      # when the environment lint is, and additionally only for a PR build (not a batch,
-      # which re-checks the whole library before anything lands), only when the Lake pins are
-      # unchanged, and only when every changed `.lean` file is a module the list can name.
+      # Ordinary PRs run a fast preflight on declarations in changed modules only.
+      # The axiom audit still follows their proof dependencies, but does not add importers.
+      # Every GitHub merge-queue or bors staging build, and every push to main, audits the
+      # whole library, including unchanged sources rebuilt against changed imports.
+      # Keep full-scope fallbacks for full lint, changed Lake pins, and changed Lean files
+      # that the module list cannot name.
       - name: Decide the audit scope
         if: ${{ env.INFRA != '1' }}
         run: |
@@ -1116,9 +1106,9 @@ jobs:
         run: |
           export PATH="$HOME/.elan/bin:$PATH"
           # The sandboxed build/audit/lint body comes from the separately mounted, workflow-pinned
-          # gate checkout; candidate scripts are never invoked. Keeping the bwrap bash payload
-          # a fixed, comment-free one-liner
-          # is deliberate: a comment's apostrophe once closed this single-quoted string
+          # gate checkout; candidate scripts are never invoked. Bulk extraction is a temporary
+          # workaround until the pinned toolchain includes leanprover/lean4#15868.
+          # Keeping the bwrap bash payload a fixed, comment-free one-liner is deliberate: a comment's apostrophe once closed this single-quoted string
           # early and reddened every PR build (#694). All prose now lives in the script.
           export TAUCETI_PROJECT_ROOT="$PWD/pr"
           export TAUCETI_TRUSTED_SCRIPTS="$PWD/gate/scripts"
@@ -1169,7 +1159,7 @@ jobs:
             --chdir "$PWD/pr" \
             --unshare-user --unshare-ipc --unshare-pid --unshare-net --unshare-uts \
             --unshare-cgroup --disable-userns --die-with-parent --new-session \
-            -- bash -euxo pipefail -c 'exec bash ../gate/scripts/sandbox-build.sh'
+            -- bash -euxo pipefail -c 'python3 ../gate/scripts/bulk-unpack-cache.py; exec bash ../gate/scripts/sandbox-build.sh'
 
       - name: Prepare merge-group cache artifact metadata
         id: cache_stage
@@ -1226,7 +1216,12 @@ jobs:
         id: report
         if: always()
         env:
-          GH_TOKEN: ${{ github.token }}
+          CI_STATUS_APP_ID: ${{ secrets.CI_STATUS_APP_ID }}
+          CI_STATUS_APP_PRIVATE_KEY: ${{ secrets.CI_STATUS_APP_PRIVATE_KEY }}
+          GH_TOKEN: ${{ steps.ci-api.outputs.status-token }}
+          GH_READ_TOKEN: ${{ steps.ci-api.outputs.read-token }}
+          TAUCETI_GITHUB_READ_ROLE: ${{ steps.ci-api.outputs.read-role }}
+          TAUCETI_GITHUB_WRITE_ROLE: ${{ steps.ci-api.outputs.status-role }}
           RAW_HEAD: ${{ steps.pr.outputs.sha }}
           CAPTURED_BASE: ${{ steps.pr.outputs.base_sha }}
           CANDIDATE_MODE: ${{ env.IS_BATCH == 'true' && 'frozen-candidate' || 'pr-integration' }}
@@ -1247,23 +1242,10 @@ jobs:
           # pr-build without a push, so no event ever corrects it. That wedged PR #1358 for seven
           # days, invisible to both the author path and the review path.
           #
-          # So: retry each POST, always attempt all three whatever the others did, and surface a
-          # persistent failure loudly at the end rather than silently dropping a status.
-          # The scope, size and new-file guards above read the pull request's CURRENT state
-          # from the API rather than from the immutable head, so it can move underneath a run.
-          # Fail closed: an unreadable answer is not a passing one. A status is keyed only by
-          # commit, so a green posted while the pull request has moved on can outlive the state
-          # it was about -- the same SHA can become the head again, two pull requests can share
-          # a head, and retargeting does not change the head at all.
-          head_moved=0
-          if [ "${{ env.IS_BATCH }}" != "true" ]; then
-            now=$(gh api "repos/${{ github.repository }}/pulls/${{ steps.pr.outputs.num }}" \
-                    --jq '[.head.sha, .base.ref] | join(" ")' 2>/dev/null) || now=""
-            if [ "$now" != "${{ steps.pr.outputs.sha }} ${{ steps.pr.outputs.base_ref }}" ]; then
-              head_moved=1
-              echo "::warning::PR is now '${now:-unreadable}', not '${{ steps.pr.outputs.sha }} ${{ steps.pr.outputs.base_ref }}'"
-            fi
-          fi
+          # Record all three intents before ci_status.py resume publishes them.
+          # Publication rechecks the run attempt, PR head/base, and any scope
+          # approval; it discards obsolete results and refreshes checks after waits.
+          # retry-ci-status.yml replays retained intents without rebuilding.
 
           identity_ok=0
           if python3 gate/scripts/prepare_pr_integration.py verify \
@@ -1275,34 +1257,23 @@ jobs:
 
           post_fail=0
           post_status() {
-            local ctx="$1" st="$2" dsc="$3" attempt
-            for attempt in 1 2 3; do
-              if [ "${{ env.IS_BATCH }}" = "true" ]; then
-                current_attempt=$(gh api "repos/${{ github.repository }}/actions/runs/${{ github.run_id }}" --jq .run_attempt) || current_attempt=""
-                if [ -z "$current_attempt" ]; then
-                  echo "::warning::batch attempt lookup unavailable (attempt $attempt/3)"
-                  if [ "$attempt" != 3 ]; then sleep $(( attempt * 5 )); fi
-                  continue
-                fi
-                if [ "$current_attempt" != "${{ github.run_attempt }}" ]; then
-                  echo "::notice::obsolete batch attempt will not publish statuses"
-                  return 0
-                fi
+            local ctx="$1" st="$2" dsc="$3"
+            # Save every result before the first write. The status-only retry
+            # workflow replays these records without rerunning the build.
+            args=(post --record-only --sha '${{ steps.pr.outputs.status_sha }}'
+              --context "$ctx" --state "$st" --description "$dsc")
+            if [ "$IS_BATCH" != true ]; then
+              args+=(--pr '${{ steps.pr.outputs.num }}' --base-ref '${{ steps.pr.outputs.base_ref }}')
+            fi
+            if [ "$ctx" = scope ] && [ "$st" = success ] && [ "${OUT_OF_SCOPE:-}" = 1 ]; then
+              args+=(--scope-approval-base "$TESTED_SCOPE_BASE")
+              if [ "$IS_BATCH" != true ]; then
+                args+=(--scope-approval-pr "$SCOPE_PR")
+              else
+                args+=(--scope-approval-batch "$SCOPE_BATCH" --scope-paths-file "$RUNNER_TEMP/scope-files")
               fi
-              if gh api -X POST "repos/${{ github.repository }}/statuses/${{ steps.pr.outputs.status_sha }}" \
-                   -f state="$st" -f context="$ctx" -f description="$dsc" \
-                   -f target_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"; then
-                echo "posted $ctx=$st ($dsc) to ${{ steps.pr.outputs.status_sha }}"
-                return 0
-              fi
-              echo "::warning::posting the $ctx status failed (attempt $attempt/3)"
-              if [ "$attempt" != 3 ]; then sleep $(( attempt * 5 )); fi
-            done
-            # Never propagate the failure as a return code: that would abort this step under
-            # `set -e` and skip the statuses not yet posted, which is the bug being fixed.
-            echo "::error::could not post the $ctx status to ${{ steps.pr.outputs.status_sha }} after 3 attempts"
-            post_fail=1
-            return 0
+            fi
+            python3 gate/scripts/ci_status.py "${args[@]}" || post_fail=1
           }
 
           # bump-guard: this job already ran the workflow-pinned scripts/check-bump.sh inline
@@ -1339,9 +1310,7 @@ jobs:
           # a useful build because all harness code is workflow-pinned. A lakefile edit or invalid
           # pin is never executed and therefore reports a required failure rather than pretending
           # that a different configuration built.
-          if [ "$head_moved" = 1 ]; then
-            state=failure; desc="the pull request changed during this build — the run for its current state statuses it"
-          elif [ "${{ env.INTEGRATION_CONFLICT }}" = "1" ]; then
+          if [ "${{ env.INTEGRATION_CONFLICT }}" = "1" ]; then
             state=failure; desc="integration with captured main conflicts — human resolution required; see H/B in run"
           elif [ "${{ env.INTEGRATION_BAD }}" = "1" ]; then
             state=failure; desc="build not run — integration preparation failed; see H/B diagnostics in run"
@@ -1414,26 +1383,21 @@ jobs:
             # guard above must pass first. Approval comes from bors's HTTPS state,
             # never the dispatch payload or candidate files. Check at report time
             # so an r- or changed revision during the build is observed.
-            approval_args=(--head "$TESTED_SCOPE_HEAD" --base "$TESTED_SCOPE_BASE")
-            if [ "$IS_BATCH" != "true" ]; then
-              approval_args+=(--pr "$SCOPE_PR")
-            elif [ "$SCOPE_EVENT" = "tauceti-bors-staging" ]; then
-              approval_args+=(--batch-id "$SCOPE_BATCH" --paths-file "$RUNNER_TEMP/scope-files")
-            fi
-            if python3 gate/scripts/bors_scope_approval.py "${approval_args[@]}"; then
-              sc_state=success; sc_desc="restricted paths approved by a repository admin through bors; other scope guards passed"
-            else
-              sc_state=failure; sc_desc="changes outside TauCeti/ — a repository admin can approve with bors r+ or bors merge"
-            fi
+            # This is an intent, not a published verdict. ci_status.py verifies
+            # the current approval immediately before posting and after waits;
+            # a revoked approval publishes scope=failure instead of stale green.
+            sc_state=success; sc_desc="restricted paths approved by a repository admin through bors; other scope guards passed"
           else
             sc_state=success; sc_desc="changes are in scope (TauCeti/, the allowed root files, and the bibliography only)"
           fi
           post_status scope "$sc_state" "$sc_desc"
 
+          CI_STATUS_MAX_WAIT=600 python3 gate/scripts/ci_status.py resume "$RUNNER_TEMP/tauceti-status-intents" || post_fail=1
+
           # A status we could not post leaves the commit in the wedged state described above, so
           # fail the job loudly. This runs only after all three have been attempted.
           if [ "$post_fail" = 1 ]; then
-            echo "::error::one or more commit statuses are missing; re-run pr-build for this commit"
+            echo "::error::status publication incomplete; retained intents will retry without rebuilding"
             exit 1
           fi
           [ "$state" = "success" ]
@@ -1476,7 +1440,7 @@ jobs:
           TESTED_TREE: ${{ steps.integration.outputs.tested_tree }}
           BORS_BATCH: ${{ github.event.client_payload.batch_id }}
           BORS_MEMBERS: ${{ toJSON(github.event.client_payload.members) }}
-          PICKED: ${{ needs.pick-runner.outputs.fleet == 'true' && 'fleet' || needs.pick-runner.outputs.github == 'true' && 'github' || 'namespace' }}
+          PICKED: ${{ needs.pick-runner.outputs.attempt == format('{0}', github.run_attempt) && needs.pick-runner.outputs.pool || 'github' }}
           PICKER_BUSY: ${{ needs.pick-runner.outputs.busy }}
           PICKER_BUDGET: ${{ needs.pick-runner.outputs.budget }}
         run: |
@@ -1499,12 +1463,26 @@ jobs:
           if-no-files-found: ignore
           retention-days: 30
 
+      - name: Retain unpublished CI statuses
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-status-intents-sandbox-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/tauceti-status-intents/*.json
+          if-no-files-found: ignore
+          retention-days: 7
+      - name: GitHub API quota unavailable
+        if: ${{ always() && failure() && env.TAUCETI_CI_QUOTA_UNAVAILABLE == '1' }}
+        run: exit 1
+
   # Only an already-audited merge-group commit may publish. The reusable workflow runs on a
   # fresh runner, sparsely checks out that commit's toolchain pin and key-free confirmation
   # helper, and is the sole holder of the key. The helper runs only after the key-bearing step.
+
   publish-merge-group-cache:
     needs: sandboxed-build
-    if: ${{ always() && needs.sandboxed-build.result == 'success' && needs.sandboxed-build.outputs.publication-required == 'true' }}
+    # Successful audits can still publish when subsequent status delivery fails.
+    if: ${{ !cancelled() && needs.sandboxed-build.outputs.build-state == 'success' && needs.sandboxed-build.outputs.publication-required == 'true' }}
     permissions:
       contents: read
     uses: ./.github/workflows/publish-lake-cache.yml
@@ -1536,7 +1514,6 @@ jobs:
       actions: read   # current-attempt publisher acquisition and exact-map evidence
       statuses: write
     env:
-      GH_TOKEN: ${{ github.token }}
       STATUS_SHA: ${{ needs.sandboxed-build.outputs.status-sha || github.event.client_payload.head_sha || github.event.merge_group.head_sha }}
       BUILD_JOB_RESULT: ${{ needs.sandboxed-build.result }}
       BUILD_STATE: ${{ needs.sandboxed-build.outputs.build-state }}
@@ -1560,10 +1537,37 @@ jobs:
           persist-credentials: false
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@02db6ea51c27553cb6271e605612a56169ae72f6
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@0f4096297f058bff8ccd873067aab7120202aecf
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 02db6ea51c27553cb6271e605612a56169ae72f6
+          tools-ref: 0f4096297f058bff8ccd873067aab7120202aecf
           project-directory: .
+      - name: Select CI API credentials
+        id: ci-api
+        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@0f4096297f058bff8ccd873067aab7120202aecf
+        with:
+          owner: ${{ github.repository_owner }}
+          repository: ${{ github.event.repository.name }}
+          workflow-token: ${{ github.token }}
+          read-app-id: ${{ secrets.CI_READ_APP_ID }}
+          read-app-private-key: ${{ secrets.CI_READ_APP_PRIVATE_KEY }}
+          status-app-id: ${{ secrets.CI_STATUS_APP_ID }}
+          status-app-private-key: ${{ secrets.CI_STATUS_APP_PRIVATE_KEY }}
+
       - name: Post the terminal merge-group build status
+        env:
+          CI_STATUS_APP_ID: ${{ secrets.CI_STATUS_APP_ID }}
+          CI_STATUS_APP_PRIVATE_KEY: ${{ secrets.CI_STATUS_APP_PRIVATE_KEY }}
+          GH_TOKEN: ${{ steps.ci-api.outputs.status-token }}
+          GH_READ_TOKEN: ${{ steps.ci-api.outputs.read-token }}
+          TAUCETI_GITHUB_READ_ROLE: ${{ steps.ci-api.outputs.read-role }}
+          TAUCETI_GITHUB_WRITE_ROLE: ${{ steps.ci-api.outputs.status-role }}
         run: python3 scripts/finalize_batch.py
+      - name: Retain unpublished batch status
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-status-intents-finalizer-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/tauceti-status-intent.json
+          if-no-files-found: ignore
+          retention-days: 7

@@ -306,7 +306,7 @@ theorem surjective_restrictedSeries_toIntervalRing (hρ : ρ₁ ≤ ρ₂) {n : 
 
 section Presentation
 
-open MvPowerSeries
+open _root_.MvPowerSeries
 
 variable {k : ℕ} (c : Fin k → ℝ) [∀ i, Fact (0 < c i)]
 

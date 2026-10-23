@@ -53,6 +53,10 @@ in the seminorm form `eLpNorm (f i - g) 1 μ → 0` (for instance by
 The conversion is `MeasureTheory.ofReal_integral_norm_eq_lintegral_enorm`, whose home is
 `Mathlib.MeasureTheory.Integral.Bochner.Basic`, plus continuity of `ENNReal.ofReal` at `0`.
 
+* `tendsto_integral_smul_of_tendsto_lintegral_enorm_sub` turns `L¹(s)` convergence into
+  convergence of integrals against an almost everywhere bounded scalar multiplier vanishing
+  almost everywhere outside `s`.
+
 ## Tail lower bounds
 
 A function on the real line whose norm stays above a positive constant on a set of infinite
@@ -254,6 +258,42 @@ theorem tendsto_eLpNorm_one_of_tendsto_integral_norm_sub {Ω E ι : Type*} [Meas
   rw [eLpNorm_one_eq_lintegral_enorm hi.aestronglyMeasurable,
     ← ofReal_integral_norm_eq_lintegral_enorm hi]
   simp only [Function.comp_apply, Pi.sub_apply]
+
+/-- If `a i → b` in `L¹(s)`, then the integrals `∫ x, c x • a i x ∂μ` converge to
+`∫ x, c x • b x ∂μ` for an almost everywhere bounded scalar multiplier `c` vanishing
+almost everywhere outside `s`.
+The approximating pairings need only be eventually integrable, and the limiting pairing
+needs only to be almost everywhere strongly measurable. -/
+theorem tendsto_integral_smul_of_tendsto_lintegral_enorm_sub {α 𝕜 F ι : Type*}
+    [MeasurableSpace α] [NormedField 𝕜] [NormedAddCommGroup F]
+    [NormedSpace ℝ F] [NormedSpace 𝕜 F] {μ : Measure α} {s : Set α} {l : Filter ι}
+    {c : α → 𝕜} {K : ℝ}
+    (hK : ∀ᵐ x ∂μ, ‖c x‖ ≤ K) (hcsupp : ∀ᵐ x ∂μ, x ∉ s → c x = 0)
+    {a : ι → α → F} {b : α → F} (ha : ∀ᶠ i in l, Integrable (fun x => c x • a i x) μ)
+    (hb : AEStronglyMeasurable (fun x => c x • b x) μ)
+    (hab : Tendsto (fun i => ∫⁻ x in s, ‖a i x - b x‖ₑ ∂μ) l (𝓝 0)) :
+    Tendsto (fun i => ∫ x, c x • a i x ∂μ) l (𝓝 (∫ x, c x • b x ∂μ)) := by
+  refine tendsto_integral_of_L1 (fun x => c x • b x) hb ha ?_
+  have hlim : Tendsto (fun i => ENNReal.ofReal K * ∫⁻ x in s, ‖a i x - b x‖ₑ ∂μ) l
+      (𝓝 0) := by
+    simpa using ENNReal.Tendsto.const_mul (a := ENNReal.ofReal K) hab
+      (Or.inr ENNReal.ofReal_ne_top)
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hlim
+    (fun _ => zero_le) fun i => ?_
+  calc ∫⁻ x, ‖c x • a i x - c x • b x‖ₑ ∂μ
+      ≤ ∫⁻ x, s.indicator (fun x => ENNReal.ofReal K * ‖a i x - b x‖ₑ) x ∂μ := by
+        refine lintegral_mono_ae ?_
+        filter_upwards [hK, hcsupp] with x hxK hxsupp
+        rw [← smul_sub]
+        by_cases hxs : x ∈ s
+        · rw [Set.indicator_of_mem hxs, enorm_smul]
+          gcongr
+          simpa only [← ofReal_norm] using ENNReal.ofReal_le_ofReal hxK
+        · simp [Set.indicator_of_notMem hxs, hxsupp hxs]
+    _ ≤ ∫⁻ x in s, ENNReal.ofReal K * ‖a i x - b x‖ₑ ∂μ :=
+        lintegral_indicator_le _ _
+    _ = ENNReal.ofReal K * ∫⁻ x in s, ‖a i x - b x‖ₑ ∂μ :=
+        lintegral_const_mul' _ _ ENNReal.ofReal_ne_top
 
 /-- **Averaging against a kernel supported in `[-ε, 0]` samples only `[t, t + ε]`.** If `ψ` is a
 nonnegative probability density with respect to `μ` vanishing outside `[-ε, 0]`, and `F` is antitone

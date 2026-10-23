@@ -14,7 +14,9 @@ public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.MinMax
 For bounded diagonal coefficients whose magnitudes decrease, the zero-based approximation
 number at index `n` equals the magnitude of the `n`-th coefficient. Retaining the first `n`
 coordinates attains the best rank-at-most-`n` approximation. The formula applies to all
-sequence spaces `lp` with `1 ≤ p ≤ ∞`, in particular to real and complex `ℓ²`.
+sequence spaces `lp` with `1 ≤ p ≤ ∞`, in particular to real and complex `ℓ²`. Conversely, every
+decreasing sequence of nonnegative reals is the approximation-number sequence of such a diagonal
+operator (`lp.exists_singularValue_diagonalCLM_eq`).
 
 The general compactness theorem `lp.isCompactOperator_diagonalCLM` in the multiplier module
 shows that, over a locally compact scalar field, coefficients tending to zero give a
@@ -84,5 +86,17 @@ theorem nnnorm_diagonalCLM_sub_diagonalTruncation_range (d : ℓ^∞(ℕ, 𝕜))
   · rw [← singularValue_diagonalCLM (p := p) d hd n]
     exact (diagonalCLM d).singularValue_le_nnnorm_sub
       (rank_diagonalTruncation_range_le d n)
+
+/-- Every decreasing sequence `c` of nonnegative reals is the approximation-number sequence of a
+diagonal operator: the one with coefficients `c n`, which are bounded by `c 0`. -/
+theorem exists_singularValue_diagonalCLM_eq {𝕜 : Type*} [RCLike 𝕜] {c : ℕ → ℝ≥0}
+    (hc : Antitone c) : ∃ d : ℓ^∞(ℕ, 𝕜), (diagonalCLM (p := p) d).singularValue = c := by
+  let d : ℓ^∞(ℕ, 𝕜) := ⟨fun n ↦ ((c n : ℝ) : 𝕜), memℓp_infty ⟨c 0, by
+    rintro _ ⟨n, rfl⟩
+    simpa using hc (Nat.zero_le n)⟩⟩
+  refine ⟨d, funext fun n ↦ ?_⟩
+  rw [singularValue_diagonalCLM d fun m k hmk ↦ by simpa [d] using hc hmk]
+  ext
+  simp [d]
 
 end lp
