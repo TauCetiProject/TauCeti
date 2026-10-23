@@ -182,15 +182,18 @@ theorem hasSum_thetaCoset_out {M : Submodule ℤ E} (hML : M ≤ L) (τ : ℍ) :
       ∑' b : (Submodule.Quotient.mk ⁻¹' {y} : Set L), cexp (π * I * (‖((b : L) : E)‖ ^ 2 : ℝ) * τ) =
         thetaCoset M (Quotient.out y : L) τ := by
     let f := (M.submoduleOf L).mkQ.toAddMonoidHom
+    have hker (x : L) : x ∈ M.submoduleOf L ↔ x ∈ f.ker := by simp [f]
+    have hset : f ⁻¹' {f (Quotient.out y)} = Submodule.Quotient.mk ⁻¹' {y} := by ext; simp [f]
     let e : M ≃ (Submodule.Quotient.mk ⁻¹' {y} : Set L) :=
-      ((Set.equivOfEq (show Submodule.Quotient.mk ⁻¹' {y} = f ⁻¹' {f (Quotient.out y)} by
-          ext; simp [f])).trans
-        ((f.fiberEquivKer (Quotient.out y)).trans
-          ((Equiv.subtypeEquivRight fun _ => Submodule.Quotient.mk_eq_zero _).trans
-            (Submodule.submoduleOfEquivOfLe hML).toEquiv))).symm
-    -- `e v = out y + v` holds by definition, as in `AddMonoidHom.fiberEquivKer_symm_apply`.
+      ((Submodule.submoduleOfEquivOfLe hML).toEquiv.symm.trans (Equiv.subtypeEquivRight hker)).trans
+        ((f.fiberEquivKer (Quotient.out y)).symm.trans (Set.equivOfEq hset))
+    -- `e v = out y + v`, by `AddMonoidHom.fiberEquivKer_symm_apply` and the definition of the
+    -- inverse of `Submodule.submoduleOfEquivOfLe`.
+    have he (v : M) : ((e v : L) : E) = ((Quotient.out y : L) : E) + v := by
+      have hv : (((Submodule.submoduleOfEquivOfLe hML).symm v : L) : E) = v := rfl
+      simp [e, AddMonoidHom.fiberEquivKer_symm_apply, hv]
     rw [thetaCoset_apply, ← e.tsum_eq]
-    exact tsum_congr fun _ => rfl
+    exact tsum_congr fun v => by rw [he]
   rw [← funext hfiber, thetaSeries_apply]
   exact (summable_thetaSeries L τ).hasSum.tsum_fiberwise _
 
