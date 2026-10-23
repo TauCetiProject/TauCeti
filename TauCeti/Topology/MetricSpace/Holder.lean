@@ -47,8 +47,8 @@ when a seminorm on a product is compared with seminorms of the slices.
 * `eHolderNorm_eq_iSup_edist_div` and `MemHolder.nnHolderNorm_eq_iSup_dist_div`: the Hölder
   seminorm is the supremum of the difference quotients over distinct points.
 * `edist_le_eHolderNorm_mul_rpow`: the Hölder seminorm bounds every increment.
-* `HolderWith.eHolderNorm_comp_le`: precomposition with a Hölder map of constant one does not
-  increase the Hölder seminorm.
+* `HolderWith.eHolderNorm_comp_le`: precomposition with a Hölder map of constant `C ≠ 0` scales
+  the Hölder seminorm by at most `C ^ r`.
 -/
 
 public section
@@ -208,13 +208,23 @@ theorem MemHolder.nnHolderNorm_eq_iSup_dist_div [PseudoMetricSpace X] [PseudoMet
   rw [ENNReal.toReal_div, ← ENNReal.toReal_rpow, edist_dist, edist_dist,
     ENNReal.toReal_ofReal dist_nonneg, ENNReal.toReal_ofReal dist_nonneg]
 
-/-- Precomposition with a map that is Hölder continuous with constant one and exponent `s` turns
-an `r`-Hölder function into an `r * s`-Hölder function without increasing the seminorm. For
-instance, restriction to a subspace (`s = 1`) does not increase the Hölder seminorm. -/
+/-- Precomposition with a map that is Hölder continuous with constant `C ≠ 0` and exponent `s`
+turns an `r`-Hölder function into an `r * s`-Hölder function, scaling the seminorm by at most
+`C ^ r`. For instance, restriction to a subspace (`C = 1`, `s = 1`) does not increase the Hölder
+seminorm. The hypothesis `C ≠ 0` cannot be dropped on pseudometric spaces: the identity of a
+two-point space at distance zero is `0`-Hölder, while a function separating the two points has
+infinite seminorm. -/
 theorem HolderWith.eHolderNorm_comp_le [PseudoEMetricSpace X] [PseudoEMetricSpace Y]
-    [PseudoEMetricSpace Z] {s : ℝ≥0} {g : X → Y} (hg : HolderWith 1 s g) (r : ℝ≥0) (f : Y → Z) :
-    eHolderNorm (r * s) (f ∘ g) ≤ eHolderNorm r f :=
-  le_iInf₂ fun C hfC => by
-    simpa using (hfC.comp hg).eHolderNorm_le
+    [PseudoEMetricSpace Z] {C s : ℝ≥0} {g : X → Y} (hg : HolderWith C s g) (hC : C ≠ 0)
+    (r : ℝ≥0) (f : Y → Z) :
+    eHolderNorm (r * s) (f ∘ g) ≤ eHolderNorm r f * (C : ℝ≥0∞) ^ (r : ℝ) := by
+  have h0 : (C : ℝ≥0∞) ^ (r : ℝ) ≠ 0 := by simp [hC]
+  have htop : (C : ℝ≥0∞) ^ (r : ℝ) ≠ ∞ := by simp
+  rw [show eHolderNorm r f = ⨅ (C') (_ : HolderWith C' r f), (C' : ℝ≥0∞) from rfl,
+    ENNReal.iInf_mul_of_ne h0 htop]
+  refine le_iInf fun C' => ?_
+  rw [ENNReal.iInf_mul_of_ne h0 htop]
+  exact le_iInf fun hfC => by
+    simpa [ENNReal.coe_rpow_of_ne_zero hC] using (hfC.comp hg).eHolderNorm_le
 
 end HolderNorm

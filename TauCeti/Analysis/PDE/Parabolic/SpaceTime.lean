@@ -208,7 +208,8 @@ theorem eSpaceHolderNorm_le_eHolderNorm [PseudoEMetricSpace X] [PseudoEMetricSpa
   refine eSpaceHolderNorm_le_iff.2 fun t => ?_
   have hg : HolderWith 1 1 fun x : X => (⟨mk x t, mk_mem_slab.2 t.2⟩ : slab (X := X) T) :=
     fun x y => by simp [Subtype.edist_eq]
-  simpa only [mul_one, Function.comp_def] using hg.eHolderNorm_comp_le α v
+  simpa only [mul_one, Function.comp_def, ENNReal.coe_one, ENNReal.one_rpow] using
+    hg.eHolderNorm_comp_le one_ne_zero α v
 
 /-- The temporal `α / 2`-Hölder seminorm is at most the parabolic `α`-Hölder seminorm: at a fixed
 point, the parabolic distance is the square root of the time distance. -/
@@ -217,7 +218,8 @@ theorem eTimeHolderNorm_div_two_le_eHolderNorm [PseudoEMetricSpace X] [PseudoEMe
   refine eTimeHolderNorm_le_iff.2 fun x => ?_
   have hg : HolderWith 1 (1 / 2) fun t : T => (⟨mk x t, mk_mem_slab.2 t.2⟩ : slab (X := X) T) :=
     fun t s => by simp [Subtype.edist_eq]
-  simpa only [mul_one_div, Function.comp_def] using hg.eHolderNorm_comp_le α v
+  simpa only [mul_one_div, mul_one, Function.comp_def, ENNReal.coe_one, ENNReal.one_rpow] using
+    hg.eHolderNorm_comp_le one_ne_zero α v
 
 /-- **The parabolic Hölder seminorm is controlled by the separate seminorms.** On a slab, the
 parabolic `α`-Hölder seminorm is at most the sum of the spatial `α`-Hölder seminorm and the
