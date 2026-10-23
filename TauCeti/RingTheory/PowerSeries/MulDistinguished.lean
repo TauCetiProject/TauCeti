@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Normed.Monoid.MulUnit
 public import TauCeti.RingTheory.PowerSeries.GaussNorm
+import TauCeti.Analysis.Normed.Ring.MulUnit
 
 /-!
 # Multiplicatively distinguished power series
@@ -120,8 +121,8 @@ variable {R : Type*} [NormedRing R] {c : ℝ} {s : ℕ} {g q : PowerSeries R}
 /-- The norm of the coefficient ring of a multiplicatively distinguished series takes the value
 `1` at `1`, since the distinguished coefficient is a nonzero multiplicative unit. -/
 theorem IsMulDistinguished.normOneClass (hg : IsMulDistinguished c s g) : NormOneClass R :=
-  ⟨NormedRing.norm_one_of_norm_mul (norm_ne_zero_iff.mpr hg.coeff_ne_zero)
-    hg.isNormMulUnit_coeff.norm_mul⟩
+  have := hg.nontrivial
+  ⟨hg.isNormMulUnit_coeff.norm_one⟩
 
 /-- A monomial whose coefficient is a multiplicative unit is multiplicatively distinguished of
 its degree at a positive radius, over a nontrivial ring. -/

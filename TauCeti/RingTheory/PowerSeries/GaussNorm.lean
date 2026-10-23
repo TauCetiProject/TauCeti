@@ -141,6 +141,11 @@ namespace TauCeti.PowerSeries
 open Filter
 open scoped Topology
 
+/-- A monic polynomial of degree `s` has coefficient `1` in degree `s` as a power series. -/
+theorem _root_.Polynomial.IsMonicOfDegree.coeff_coe_self {R : Type*} [Semiring R] {s : ℕ}
+    {p : Polynomial R} (hp : p.IsMonicOfDegree s) : (p : PowerSeries R).coeff s = 1 := by
+  rw [Polynomial.coeff_coe, ← hp.natDegree_eq, hp.monic.coeff_natDegree]
+
 section SeminormedRing
 
 variable {R : Type*} [SeminormedRing R] {c : ℝ} {i j s t : ℕ} {f g : PowerSeries R}
@@ -531,11 +536,6 @@ end LowestDominant
 section SeminormedRing
 
 variable {R : Type*} [SeminormedRing R] {c : ℝ} {s : ℕ} {f : PowerSeries R}
-
-/-- A monic polynomial of degree `s` has coefficient `1` in degree `s` as a power series. -/
-theorem _root_.Polynomial.IsMonicOfDegree.coeff_coe_self {p : Polynomial R}
-    (hp : p.IsMonicOfDegree s) : (p : PowerSeries R).coeff s = 1 := by
-  rw [Polynomial.coeff_coe, ← hp.natDegree_eq, hp.monic.coeff_natDegree]
 
 /-- A monic polynomial of degree `s` whose lower weighted coefficients are at most `c ^ s` is
 distinguished of degree `s` at the radius `c > 0`: its Gauss norm `c ^ s` is attained by the
