@@ -84,6 +84,8 @@ inseparable extension can only be indexed by the intermediate fields of the sepa
   `IntermediateField.fixedField_iInf_stabilizer_eq_adjoin_range` and
   `IntermediateField.adjoin_eq_top_of_fixedField_stabilizer`: the stabilizer of `x` fixes
   exactly `K⟮x⟯`, in which `x` is a primitive element
+* `IntermediateField.apply_eq_apply_of_smul_eq_smul`: automorphisms with the same effect on a
+  point of a Galois set agree on the field fixed by its stabilizer
 * `IntermediateField.apply_eq_self_of_forall_mem_inf`: inside a Galois extension `Ω / L`, an
   automorphism fixing `E ∩ F` fixes `F`, for `E` finite normal over a smaller base and `F ≤ L(E)`
 * `FixedPoints.isCyclic_algEquiv`
@@ -384,6 +386,17 @@ theorem fixingSubgroup_adjoin_simple (x : M) :
 theorem mem_fixedField_stabilizer (x : M) :
     x ∈ fixedField (MulAction.stabilizer (M ≃ₐ[K] M) x) :=
   (mem_fixedField_iff _ x).mpr fun _ hσ => hσ
+
+/-- **Automorphisms with the same effect on a point agree on the field fixed by its stabilizer.**
+For any action of `M ≃ₐ[K] M` on a type `X`, if `σ • x = τ • x` then `σ` and `τ` agree on
+`fixedField (stabilizer x)`, because `τ⁻¹ * σ` lies in the stabilizer of `x`. -/
+theorem apply_eq_apply_of_smul_eq_smul {X : Type*} [MulAction (M ≃ₐ[K] M) X] {x : X}
+    {σ τ : M ≃ₐ[K] M} (h : σ • x = τ • x)
+    (l : fixedField (MulAction.stabilizer (M ≃ₐ[K] M) x)) : σ l = τ l := by
+  have hl : (τ⁻¹ * σ) (l : M) = l :=
+    l.2 ⟨_, by rw [MulAction.mem_stabilizer_iff, mul_smul, h, inv_smul_smul]⟩
+  conv_rhs => rw [← hl]
+  rw [AlgEquiv.mul_apply, AlgEquiv.aut_inv, AlgEquiv.apply_symm_apply]
 
 /-- For a Galois extension, the fixed field of the stabilizer of `x` is `K⟮x⟯`. -/
 @[simp]
