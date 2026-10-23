@@ -18,8 +18,8 @@ Interval integrals of elementary functions in closed form or as series, continui
 
 * `TauCeti.integral_one_div_sqrt_one_sub_sq`: `∫ x in a..b, 1 / √(1 - x²) = arcsin b - arcsin a`
   for `a, b ∈ (-1, 1)`.
-* `TauCeti.integral_exp_int_mul_mul_I`: `∫ θ in -π..π, exp (k θ i)` is `2π` for the integer
-  `k = 0` and `0` otherwise, the orthogonality of the Fourier characters on `[-π, π]`.
+* `TauCeti.integral_cexp_intCast_mul_mul_I`: `∫ θ in -π..π, exp (k θ i)` is `2π` for
+  integer `k = 0` and `0` otherwise, the orthogonality of the Fourier characters on `[-π, π]`.
 * `TauCeti.integral_cos_pow_mul_cexp`: `∫ θ in -π..π, cosᵏ θ exp (n θ i)` in closed form, via the
   binomial expansion `TauCeti.cos_pow_mul_cexp` of `cosᵏ θ exp (n θ i)` into characters.
 * `Real.hasSum_integral_exp_mul_cos_mul_cexp`: `∫ θ in -π..π, e^{κ cos θ} exp (n θ i)` as the
@@ -47,7 +47,7 @@ theorem integral_one_div_sqrt_one_sub_sq {a b : ℝ} (ha : a ∈ Set.Ioo (-1) 1)
 
 /-- The integral of the Fourier character `θ ↦ exp (k θ i)` over `[-π, π]`, for an integer `k`: it
 is `2π` when `k = 0`, and vanishes otherwise because `exp (k θ i)` has period `2π`. -/
-theorem integral_exp_int_mul_mul_I (k : ℤ) :
+theorem integral_cexp_intCast_mul_mul_I (k : ℤ) :
     ∫ θ in -Real.pi..Real.pi, Complex.exp (k * θ * Complex.I) =
       if k = 0 then 2 * (Real.pi : ℂ) else 0 := by
   rcases eq_or_ne k 0 with rfl | hk
@@ -100,7 +100,7 @@ theorem integral_cos_pow_mul_cexp (k : ℕ) (n : ℤ) :
     (by fun_prop : Continuous fun θ : ℝ => (1 / 2 : ℂ) ^ k * k.choose m *
       Complex.exp (((2 * m - k + n : ℤ) : ℂ) * θ * Complex.I)).intervalIntegrable _ _]
   refine Finset.sum_congr rfl fun m _ => ?_
-  rw [intervalIntegral.integral_const_mul, integral_exp_int_mul_mul_I]
+  rw [intervalIntegral.integral_const_mul, integral_cexp_intCast_mul_mul_I]
 
 end TauCeti
 
