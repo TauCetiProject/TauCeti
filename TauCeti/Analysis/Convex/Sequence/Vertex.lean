@@ -59,14 +59,8 @@ theorem eq_min_of_finite_neighbors (hh : IsLowerConvexEnvelope a h) {n : ℕ}
   have hcv := hh.isConvexSeq.update_of_le (y := y) hn hn₂
     (by rwa [← WithTop.coe_untop₀_of_ne_top hn₁, WithTop.coe_le_coe] at hlow)
     (by rw [WithTop.coe_le_coe] at hhigh; linarith)
-  have hle : Function.update h (n + 1) (y : WithTop ℝ) ≤ a := by
-    intro k
-    by_cases hk : k = n + 1
-    · subst k
-      simp only [Function.update_self]
-      rw [hy]
-      exact min_le_left _ _
-    · simpa [Function.update_of_ne hk] using hh.le k
+  have hle : Function.update h (n + 1) (y : WithTop ℝ) ≤ a :=
+    update_le_iff.mpr ⟨by rw [hy]; exact min_le_left _ _, fun k _ => hh.le k⟩
   have hmax := hh.greatest hcv hle (n + 1)
   simp only [Function.update_self] at hmax
   simpa only [hy] using le_antisymm hlow hmax
