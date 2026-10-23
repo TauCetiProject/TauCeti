@@ -33,26 +33,8 @@ variable {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- The model space of a real model with corners is locally path-connected. -/
 theorem locallyPathConnectedSpace (I : ModelWithCorners ℝ E H) : LocallyPathConnectedSpace H := by
-  have hconvex : Convex ℝ I.target := by
-    rw [I.target_eq]
-    exact I.convex_range
-  let hI : ∀ x : H, I x ∈ I.target := fun x ↦ by
-    rw [I.target_eq]
-    exact ⟨x, rfl⟩
-  let e : H ≃ₜ I.target :=
-    { toFun := fun x ↦ ⟨I x, hI x⟩
-      invFun := fun y ↦ I.symm y
-      left_inv := fun x ↦ I.left_inv x
-      right_inv := fun y ↦ by
-        apply Subtype.ext
-        have hy : (y : E) ∈ Set.range (I : H → E) := by
-          rw [← I.target_eq]
-          exact y.property
-        exact I.right_inv hy
-      continuous_toFun := I.continuous_toFun.codRestrict hI
-      continuous_invFun := I.continuous_invFun.comp continuous_subtype_val }
-  let _ : LocallyPathConnectedSpace I.target := hconvex.locallyPathConnectedSpace
-  exact e.symm.locallyPathConnectedSpace
+  let _ : LocallyPathConnectedSpace (Set.range I) := I.convex_range.locallyPathConnectedSpace
+  exact I.isClosedEmbedding.isEmbedding.toHomeomorph.symm.locallyPathConnectedSpace
 
 /-- A charted space modelled on `H`, where `I : ModelWithCorners ℝ E H`, is semilocally
 simply connected. -/
