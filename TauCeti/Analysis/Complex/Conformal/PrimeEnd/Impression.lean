@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Complex.Conformal.PrimeEnd.Basic
 import TauCeti.Topology.Continuum
 import TauCeti.Topology.Connected.LocallyPathConnected
-import Mathlib.Topology.MetricSpace.Thickening
 
 /-!
 # Impressions of prime ends
@@ -49,9 +48,26 @@ theorem nullChainImpression_def :
     nullChainImpression U C = ⋂ n, closure (nullChainDomain U C n) := (rfl)
 
 /-- Membership in the impression means membership in every closed cut-off domain. -/
+@[simp]
 theorem mem_nullChainImpression_iff {z : ℂ} :
     z ∈ nullChainImpression U C ↔ ∀ n, z ∈ closure (nullChainDomain U C n) := by
   simp [nullChainImpression]
+
+/-- Every chain impression is closed. -/
+theorem isClosed_nullChainImpression : IsClosed (nullChainImpression U C) := by
+  rw [nullChainImpression_def]
+  exact isClosed_iInter fun _ => isClosed_closure
+
+/-- Every chain impression is contained in the closure of the domain. -/
+theorem nullChainImpression_subset_closure : nullChainImpression U C ⊆ closure U :=
+  fun _ hz => closure_mono (nullChainDomain_subset.trans sdiff_subset)
+    (mem_nullChainImpression_iff.mp hz 0)
+
+/-- Chain impressions in a bounded domain are compact. -/
+theorem isCompact_nullChainImpression (hU : IsBounded U) :
+    IsCompact (nullChainImpression U C) :=
+  hU.isCompact_closure.of_isClosed_subset isClosed_nullChainImpression
+    nullChainImpression_subset_closure
 
 /-- Equivalent chains have the same impression. No boundedness is needed for this invariance. -/
 theorem NullChainEquivalent.nullChainImpression_eq (h : NullChainEquivalent U C C') :
@@ -68,50 +84,6 @@ theorem NullChainEquivalent.nullChainImpression_eq (h : NullChainEquivalent U C 
   exact Subset.antisymm (hmono h₂) (hmono h₁)
 
 namespace IsNullChain
-
-/-- Each domain cut off by a null chain is connected. -/
-theorem isConnected_nullChainDomain (hC : IsNullChain U C) (n : ℕ) :
-    IsConnected (nullChainDomain U C n) := by
-  obtain ⟨z, hz⟩ := (hC.isConnected_inter (n + 1)).nonempty
-  rw [hC.nullChainDomain_eq_connectedComponentIn hz]
-  exact isConnected_connectedComponentIn_iff.mpr
-    ⟨hz.2, disjoint_right.mp (hC.disjoint_succ n) hz.1⟩
-
-/-- On a bounded domain, chordally shrinking crosscuts also shrink in Euclidean diameter. -/
-theorem eventually_norm_sub_lt (hC : IsNullChain U C) (hU : IsBounded U) {ε : ℝ}
-    (hε : 0 < ε) : ∀ᶠ n in atTop, ∀ z ∈ C n, ∀ w ∈ C n, ‖z - w‖ < ε := by
-  obtain ⟨R, hR, hbound⟩ := hU.closure.exists_pos_norm_le
-  filter_upwards [hC.eventually_chordal_lt (ε / (1 + R ^ 2)) (by positivity)]
-    with n hn z hz w hw
-  obtain ⟨x, y, γ, hγ, hrange⟩ := hC.exists_isCrosscut n
-  have hsub : C n ⊆ closure U := hrange ▸ hγ.range_subset_closure
-  have hzR := hbound z (hsub hz)
-  have hwR := hbound w (hsub hw)
-  have hz2 : ‖z‖ ^ 2 ≤ R ^ 2 := pow_le_pow_left₀ (norm_nonneg _) hzR 2
-  have hw2 : ‖w‖ ^ 2 ≤ R ^ 2 := pow_le_pow_left₀ (norm_nonneg _) hwR 2
-  have hs : √((1 + ‖z‖ ^ 2) * (1 + ‖w‖ ^ 2)) ≤ 1 + R ^ 2 := by
-    rw [Real.sqrt_le_left (by positivity)]
-    nlinarith [sq_nonneg ‖z‖, sq_nonneg ‖w‖]
-  have hpos : 0 < √((1 + ‖z‖ ^ 2) * (1 + ‖w‖ ^ 2)) :=
-    Real.sqrt_pos.mpr (by positivity)
-  have h := (div_lt_iff₀ hpos).mp (hn z hz w hw)
-  calc
-    ‖z - w‖ < ε / (1 + R ^ 2) * √((1 + ‖z‖ ^ 2) * (1 + ‖w‖ ^ 2)) := h
-    _ ≤ ε / (1 + R ^ 2) * (1 + R ^ 2) := mul_le_mul_of_nonneg_left hs (by positivity)
-    _ = ε := div_mul_cancel₀ _ (by positivity)
-
-/-- Crosscuts of a bounded null chain eventually avoid each compact subset of the open domain. -/
-theorem eventually_disjoint_isCompact (hC : IsNullChain U C) (hU : IsOpen U)
-    (hUb : IsBounded U) {K : Set ℂ} (hK : IsCompact K) (hKU : K ⊆ U) :
-    ∀ᶠ n in atTop, Disjoint (C n) K := by
-  obtain ⟨δ, hδ, hδU⟩ := hK.exists_thickening_subset_open hU hKU
-  filter_upwards [hC.eventually_norm_sub_lt hUb hδ] with n hn
-  refine disjoint_left.mpr fun z hzC hzK => ?_
-  obtain ⟨x, y, γ, hγ, hrange⟩ := hC.exists_isCrosscut n
-  have hxC : x ∈ C n := hrange ▸ ⟨0, γ.source⟩
-  have hxU : x ∈ U := hδU (mem_thickening_iff.mpr ⟨z, hzK, by
-    simpa only [dist_eq_norm] using hn x hxC z hzC⟩)
-  exact (hU.frontier_eq.subset hγ.source_mem_frontier).2 hxU
 
 /-- The impression of a bounded null chain is nonempty and connected. -/
 theorem isConnected_nullChainImpression (hC : IsNullChain U C) (hU : IsBounded U) :
@@ -167,19 +139,21 @@ theorem impression_subset_closure (p : PrimeEnd U) : p.impression ⊆ closure U 
   induction p using PrimeEnd.ind with
   | h C hC =>
     rw [impression_mk]
-    exact fun z hz => closure_mono (nullChainDomain_subset.trans sdiff_subset)
-      (mem_nullChainImpression_iff.mp hz 0)
+    exact nullChainImpression_subset_closure
 
 /-- Every impression is closed. -/
 theorem isClosed_impression (p : PrimeEnd U) : IsClosed p.impression := by
   induction p using PrimeEnd.ind with
   | h C hC =>
-    rw [impression_mk, nullChainImpression_def]
-    exact isClosed_iInter fun _ => isClosed_closure
+    rw [impression_mk]
+    exact isClosed_nullChainImpression
 
 /-- Impressions in a bounded domain are compact. -/
-theorem isCompact_impression (p : PrimeEnd U) (hU : IsBounded U) : IsCompact p.impression :=
-  hU.isCompact_closure.of_isClosed_subset p.isClosed_impression p.impression_subset_closure
+theorem isCompact_impression (p : PrimeEnd U) (hU : IsBounded U) : IsCompact p.impression := by
+  induction p using PrimeEnd.ind with
+  | h C hC =>
+    rw [impression_mk]
+    exact isCompact_nullChainImpression hU
 
 /-- Impressions in a bounded domain are nonempty and connected. -/
 theorem isConnected_impression (p : PrimeEnd U) (hU : IsBounded U) :
