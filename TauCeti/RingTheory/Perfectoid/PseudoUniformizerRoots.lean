@@ -152,6 +152,11 @@ theorem coe_rootPB (n : ℕ) : (ϖ.rootPB n : R) = ϖ.root n :=
 theorem rootPB_succ_pow (n : ℕ) : ϖ.rootPB (n + 1) ^ p = ϖ.rootPB n :=
   Subtype.ext (by simp)
 
+/-- In `R°`, `(ϖ ^ (1 / p ^ (m + n))) ^ (p ^ n) = ϖ ^ (1 / p ^ m)`. -/
+@[simp]
+theorem rootPB_add_pow (m n : ℕ) : ϖ.rootPB (m + n) ^ p ^ n = ϖ.rootPB m :=
+  Subtype.ext (by simp)
+
 /-- In `R°`, `(ϖ ^ (1 / p ^ n)) ^ (p ^ n) = ϖ`. -/
 @[simp]
 theorem rootPB_pow (n : ℕ) : ϖ.rootPB n ^ p ^ n = ϖ.rootPB 0 :=
@@ -161,8 +166,7 @@ theorem rootPB_pow (n : ℕ) : ϖ.rootPB n ^ p ^ n = ϖ.rootPB 0 :=
 `m ≤ n`. -/
 theorem rootPB_dvd_rootPB {m n : ℕ} (h : m ≤ n) : ϖ.rootPB n ∣ ϖ.rootPB m := by
   obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le h
-  have hk : ϖ.rootPB (m + k) ^ p ^ k = ϖ.rootPB m := Subtype.ext (by simp)
-  rw [← hk]
+  rw [← ϖ.rootPB_add_pow m k]
   exact dvd_pow_self _ (pow_ne_zero k (NeZero.ne p))
 
 /-- **The `p`-th power of every root divides `p` in `R°`.** -/
@@ -179,6 +183,7 @@ theorem coe_unitRoot (n : ℕ) : (ϖ.unitRoot n : R) = ϖ.root n :=
   (ϖ.isPseudoUniformizer_root n).isUnit.unit_spec
 
 /-- As units, each root is the `p`-th power of the next one. -/
+@[simp]
 theorem unitRoot_succ_pow (n : ℕ) : ϖ.unitRoot (n + 1) ^ p = ϖ.unitRoot n :=
   Units.ext (by simp)
 

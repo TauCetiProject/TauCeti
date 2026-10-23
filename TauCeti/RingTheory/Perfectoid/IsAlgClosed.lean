@@ -44,13 +44,13 @@ namespace TauCeti.Perfectoid
 
 /-- **An algebraically closed nonarchimedean field with `‖p‖ < 1` has a pseudouniformiser with
 compatible `p`-power roots.** If `K` is an algebraically closed ultrametric nontrivially normed
-field and `p ≠ 0` is a natural number with `‖(p : K)‖ < 1`, take `c ≠ 0` with
-`‖p‖ ≤ ‖c‖ < 1` (`c = p` when `p ≠ 0` in `K`); any compatible system of `p`-power roots of a
-`p`-th root `ϖ` of `c` works, as `ϖ ^ p = c` divides `p` in `K°`. -/
+field and `p ≠ 0` is a natural number with `‖(p : K)‖ < 1`, then `K` has a pseudouniformiser
+with compatible `p`-power roots. -/
 theorem nonempty_pseudoUniformizerRoots_of_isAlgClosed {K : Type*} [NontriviallyNormedField K]
     [IsUltrametricDist K] [IsAlgClosed K] {p : ℕ} [NeZero p] (hpK : ‖(p : K)‖ < 1) :
     Nonempty (PseudoUniformizerRoots p K) := by
-  -- an element `c` with `0 < ‖c‖ < 1` and `‖p‖ ≤ ‖c‖`
+  -- take `c ≠ 0` with `‖p‖ ≤ ‖c‖ < 1` (`c = p` when `p ≠ 0` in `K`); any compatible system of
+  -- `p`-power roots of a `p`-th root `ϖ` of `c` works, as `ϖ ^ p = c` divides `p` in `K°`
   obtain ⟨c, hc0, hc1, hpc⟩ : ∃ c : K, c ≠ 0 ∧ ‖c‖ < 1 ∧ ‖(p : K)‖ ≤ ‖c‖ := by
     by_cases h : (p : K) = 0
     · obtain ⟨c, hc0, hc1⟩ := NormedField.exists_norm_lt_one K
@@ -78,8 +78,7 @@ theorem nonempty_pseudoUniformizerRoots_of_isAlgClosed {K : Type*} [Nontrivially
 is a complete algebraically closed ultrametric nontrivially normed field and `p ≠ 0` is a natural
 number with `‖(p : K)‖ < 1`, then `K` is a perfectoid Tate ring at `p`: a pseudouniformiser `ϖ`
 with compatible roots (`nonempty_pseudoUniformizerRoots_of_isAlgClosed`) has `ϖ ^ p ∣ p` in `K°`,
-and every element of `K°` has a `p`-th root. Choosing compatible `p`-power roots of `ϖ` gives a
-pseudouniformiser with compatible roots; completeness is not needed for this. -/
+and every element of `K°` has a `p`-th root. -/
 theorem isPerfectoidTateRing_of_isAlgClosed {K : Type*} [NontriviallyNormedField K]
     [IsUltrametricDist K] [CompleteSpace K] [IsAlgClosed K] {p : ℕ} [NeZero p]
     (hpK : ‖(p : K)‖ < 1) : IsPerfectoidTateRing p K :=
