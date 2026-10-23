@@ -40,16 +40,16 @@ conjugacy theorem says that two embeddings with the same value at `E` differ by 
 
 * `IsSl2Triple.toLieHom_apply`: the formula `A ↦ A₀₁ • e + A₁₀ • f + A₀₀ • h`.
 * `IsSl2Triple.range_toLieHom`: the range of `t.toLieHom K` is `t.toLieSubalgebra K`.
-* `IsSl2Triple.toLieHom_map` and `TauCeti.eq_toLieHom_map`: naturality, and every homomorphism
+* `IsSl2Triple.toLieHom_map` and `LieHom.eq_toLieHom_map`: naturality, and every homomorphism
   `φ` out of `sl (Fin 2) K` with `φ H ≠ 0` is the homomorphism of the image of the standard triple.
-* `IsSl2Triple.toLieHom_injective` and `TauCeti.injective_lieHom_slFinTwo_iff`: over a domain of
-  characteristic zero, into a torsion-free Lie algebra, a homomorphism out of `sl (Fin 2) K` is
-  injective if and only if it does not kill `H`.
+* `IsSl2Triple.toLieHom_injective` and `LieHom.injective_iff_map_singleSubSingle_ne_zero`: over a
+  domain of characteristic zero, into a torsion-free Lie algebra, a homomorphism out of
+  `sl (Fin 2) K` is injective if and only if it does not kill `H`.
 * `TauCeti.exists_injective_lieHom_slFinTwo_iff`: **Jacobson–Morozov for embeddings.** An element
   `e` is the image of `E` under an embedding `sl₂ ↪ L` if and only if `e ≠ 0` and `ad e` is
   nilpotent.
-* `TauCeti.exists_lieEquiv_comp_eq_of_apply_eq`: **Kostant's conjugacy for embeddings.** Two
-  embeddings `sl₂ ↪ L` agreeing at `E` are conjugate by an automorphism in
+* `TauCeti.exists_lieEquiv_comp_eq_of_apply_eq`: **Kostant's conjugacy for embeddings.** An
+  embedding `sl₂ ↪ L` and a homomorphism agreeing with it at `E` are conjugate by an automorphism in
   `TauCeti.expAdSubgroup`.
 
 ## References
@@ -165,7 +165,9 @@ end Domain
 
 end IsSl2Triple
 
-namespace TauCeti
+namespace LieHom
+
+open TauCeti
 
 section Correspondence
 
@@ -189,15 +191,19 @@ variable {K L : Type*} [CommRing K] [IsDomain K] [CharZero K] [LieRing L] [LieAl
 /-- Over a domain of characteristic zero, a Lie algebra homomorphism out of `sl (Fin 2) K` into a
 torsion-free Lie algebra is injective if and only if it does not kill the Cartan element
 `H = E₀₀ - E₁₁`. -/
-theorem injective_lieHom_slFinTwo_iff (φ : SpecialLinear.sl (Fin 2) K →ₗ⁅K⁆ L) :
+theorem injective_iff_map_singleSubSingle_ne_zero (φ : SpecialLinear.sl (Fin 2) K →ₗ⁅K⁆ L) :
     Function.Injective φ ↔ φ (SpecialLinear.singleSubSingle 0 1 1) ≠ 0 := by
   refine ⟨fun hφ ↦ ?_, fun hφ ↦ ?_⟩
   · rw [Ne, ← map_zero φ, hφ.eq_iff]
     exact singleSubSingle_ne_zero zero_ne_one one_ne_zero
-  · rw [eq_toLieHom_map φ hφ]
+  · rw [φ.eq_toLieHom_map hφ]
     exact IsSl2Triple.toLieHom_injective K _
 
 end Injective
+
+end LieHom
+
+namespace TauCeti
 
 section JacobsonMorozov
 
@@ -215,27 +221,30 @@ theorem exists_injective_lieHom_slFinTwo_iff [IsKilling K L] {e : L} :
   constructor
   · rintro ⟨φ, hφ, rfl⟩
     exact ⟨_, _, (isSl2Triple_single (R := K) zero_ne_one).map φ
-      ((injective_lieHom_slFinTwo_iff φ).1 hφ)⟩
+      (φ.injective_iff_map_singleSubSingle_ne_zero.1 hφ)⟩
   · rintro ⟨h, f, t⟩
     exact ⟨t.toLieHom K, t.toLieHom_injective K, t.toLieHom_single_zero_one K⟩
 
 variable [LieAlgebra ℚ L]
 
-/-- **Kostant's conjugacy theorem for embeddings.** Two injective Lie algebra homomorphisms
-`sl (Fin 2) K →ₗ⁅K⁆ L` into a finite-dimensional Lie algebra over a field of characteristic zero
-that agree at the raising element `E₀₁` are conjugate: some automorphism `ψ` of `L` in the
-subgroup `TauCeti.expAdSubgroup K e` attached to their common value `e` satisfies
-`ψ ∘ φ = φ'`. -/
+/-- **Kostant's conjugacy theorem for embeddings.** Let `φ` be an injective Lie algebra
+homomorphism `sl (Fin 2) K →ₗ⁅K⁆ L` into a finite-dimensional Lie algebra over a field of
+characteristic zero, and `φ'` any Lie algebra homomorphism agreeing with `φ` at the raising element
+`E₀₁` (it is then injective too). Some automorphism `ψ` of `L` in the subgroup
+`TauCeti.expAdSubgroup K e` attached to their common value `e` satisfies `ψ ∘ φ = φ'`. -/
 theorem exists_lieEquiv_comp_eq_of_apply_eq {φ φ' : SpecialLinear.sl (Fin 2) K →ₗ⁅K⁆ L}
-    (hφ : Function.Injective φ) (hφ' : Function.Injective φ')
+    (hφ : Function.Injective φ)
     (he : φ (SpecialLinear.single 0 1 zero_ne_one 1) =
       φ' (SpecialLinear.single 0 1 zero_ne_one 1)) :
     ∃ ψ : L ≃ₗ⁅K⁆ L, ψ.toLinearEquiv ∈ expAdSubgroup K (φ (SpecialLinear.single 0 1 zero_ne_one 1))
       ∧ (ψ : L →ₗ⁅K⁆ L).comp φ = φ' := by
   have t := (isSl2Triple_single (R := K) (zero_ne_one : (0 : Fin 2) ≠ 1)).map φ
-    ((injective_lieHom_slFinTwo_iff φ).1 hφ)
-  have t' := (isSl2Triple_single (R := K) (zero_ne_one : (0 : Fin 2) ≠ 1)).map φ'
-    ((injective_lieHom_slFinTwo_iff φ').1 hφ')
+    (φ.injective_iff_map_singleSubSingle_ne_zero.1 hφ)
+  have hφ' : φ' (SpecialLinear.singleSubSingle 0 1 1) ≠ 0 := fun h0 ↦ by
+    have h2 : (2 : K) • φ' (SpecialLinear.single 0 1 zero_ne_one 1) = 0 := by
+      rw [← map_smul, ← lie_singleSubSingle_single, LieHom.map_lie, h0, zero_lie]
+    exact (he ▸ t.e_ne_zero) ((smul_eq_zero.1 h2).resolve_left two_ne_zero)
+  have t' := (isSl2Triple_single (R := K) (zero_ne_one : (0 : Fin 2) ≠ 1)).map φ' hφ'
   rw [← he] at t'
   obtain ⟨ψ, hψ, -, -, hψf⟩ := t.exists_lieEquiv_apply_eq (K := K) t'
   refine ⟨ψ, hψ, ?_⟩
