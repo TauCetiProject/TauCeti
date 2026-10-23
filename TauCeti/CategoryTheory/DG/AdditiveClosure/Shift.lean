@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.DG.AdditiveClosure
+public import TauCeti.CategoryTheory.DG.AdditiveClosure.Basic
 public import TauCeti.CategoryTheory.DG.ShiftClosure.Basic
 
 /-!
