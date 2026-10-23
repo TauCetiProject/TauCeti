@@ -41,7 +41,7 @@ this file adapts to two factors indexed by `Fin n` decompositions.
   the infimum of the costs of finite decompositions.
 * `TensorProduct.apply_le_mul_projectiveSeminorm`: a seminorm bounded by `C ‖x‖ ‖y‖` on
   pure tensors is bounded by `C` times the projective seminorm.
-* `TensorProduct.norm_lift_le`: over a nontrivially normed field, the linear map induced by a
+* `TensorProduct.norm_lift_le_projectiveSeminorm`: over a nontrivially normed field, the linear map induced by a
   bounded bilinear map `B` is bounded by `‖B‖` times the projective seminorm.
 
 ## References
@@ -173,7 +173,7 @@ variable {𝕜 E F G : Type*} [NontriviallyNormedField 𝕜] [SeminormedAddCommG
 
 /-- **Universal property** of the projective seminorm: the linear map on `E ⊗[𝕜] F` induced by
 a bounded bilinear map `B` is bounded by `‖B‖` times the projective seminorm. -/
-theorem norm_lift_le (B : E →L[𝕜] F →L[𝕜] G) (u : E ⊗[𝕜] F) :
+theorem norm_lift_le_projectiveSeminorm (B : E →L[𝕜] F →L[𝕜] G) (u : E ⊗[𝕜] F) :
     ‖_root_.TensorProduct.lift (B.toLinearMap₁₂) u‖ ≤ ‖B‖ * projectiveSeminorm 𝕜 E F u :=
   apply_le_mul_projectiveSeminorm (p := normSeminorm 𝕜 G) (norm_nonneg B)
     (fun x y ↦ by simpa [mul_assoc] using B.le_opNorm₂ x y) u
