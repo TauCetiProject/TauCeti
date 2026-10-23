@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Convex.Sequence.FiniteSlopeMultiset
+public import TauCeti.Data.Rat.NumDenDvd
 public import TauCeti.NumberTheory.NewtonPolygon.Basic
+public import TauCeti.RingTheory.Valuation.AddValuation
 
 /-!
 # Finite slopes of the Newton polygon of a polynomial
@@ -37,6 +39,9 @@ presentation, so the geometric results about `TauCeti.FiniteSlopeData.slopeMulti
   `d` and order of vanishing `a` at zero has `d - a` finite slopes.
 * `Polynomial.sum_newtonSlopes`: their sum is the difference between the valuations of the
   leading and trailing coefficients.
+* `Polynomial.den_dvd_card_newtonSlopes`: for a valuation taking integer values on nonzero
+  elements, if every finite slope equals the rational `q`, then the denominator of `q` divides
+  the number of finite slopes.
 * `Polynomial.count_newtonSlopes_of_isFiniteFace`: the multiplicity of a slope `σ` is the
   width of the face of slope `σ`.
 * `Polynomial.left_eq_natTrailingDegree_add_card_filter_newtonSlopes_lt` and
@@ -227,6 +232,26 @@ theorem sum_newtonSlopes (hv : ∀ x, v x = ⊤ → x = 0) :
     FiniteSlopeData.ofIsConvexSeq_start, FiniteSlopeData.ofIsConvexSeq_length,
     Nat.add_sub_cancel' (natTrailingDegree_le_natDegree f), newtonPolygon_natDegree,
     newtonPolygon_natTrailingDegree]
+
+variable {f v} in
+/-- If the valuation takes integer values on nonzero elements and every finite slope of `f`
+equals the rational number `q`, then the denominator of `q` divides the number of finite slopes
+of `f`, that is, the horizontal length of its Newton polygon. -/
+theorem den_dvd_card_newtonSlopes (hint : ∀ x, x ≠ 0 → ∃ n : ℤ, v x = ((n : ℝ) : WithTop ℝ))
+    {q : ℚ} (hf : ∀ m ∈ f.newtonSlopes v, m = q) :
+    q.den ∣ (f.newtonSlopes v).card := by
+  have hv := AddValuation.eq_zero_of_eq_top_of_forall_ne_zero hint
+  rcases eq_or_ne f 0 with rfl | hf₀
+  · simp [card_newtonSlopes (0 : R[X]) v hv]
+  obtain ⟨a, ha⟩ := hint _ (leadingCoeff_ne_zero.mpr hf₀)
+  obtain ⟨b, hb⟩ := hint _ (trailingCoeff_nonzero_iff_nonzero.mpr hf₀)
+  have hsum := sum_newtonSlopes f v hv
+  rw [Multiset.eq_replicate_card.mpr hf, Multiset.sum_replicate, nsmul_eq_mul,
+    ha, hb, WithTop.untop₀_coe, WithTop.untop₀_coe] at hsum
+  have hq : ((a - b : ℤ) : ℚ) = q * ((f.newtonSlopes v).card : ℤ) := by
+    rw [mul_comm]
+    exact_mod_cast hsum.symm
+  exact Int.natCast_dvd_natCast.mp (Rat.den_dvd_of_intCast_eq_mul_intCast q hq)
 
 /-! ### Elementary operations -/
 
