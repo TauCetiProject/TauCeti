@@ -29,6 +29,8 @@ rings (Scholze, *Étale cohomology of diamonds*, Proposition 3.5).
 
 * `TauCeti.Perfectoid.IsPerfectoidTateRing.perfectRing`: a perfectoid Tate ring of
   characteristic `p` is perfect.
+* `TauCeti.Perfectoid.IsPerfectoidTateRing.of_perfectRing`: a perfect complete Hausdorff Tate ring
+  of characteristic `p` is perfectoid.
 * `TauCeti.Perfectoid.isPerfectoidTateRing_iff_perfectRing`: in characteristic `p`, a complete
   Hausdorff Tate ring is perfectoid exactly when it is perfect.
 
@@ -106,12 +108,22 @@ theorem IsPerfectoidTateRing.perfectRing [IsPerfectoidTateRing p R] : PerfectRin
         ring
     _ = x := by rw [hϖ.isUnit.val_inv_mul, one_pow, mul_one]
 
+/-- **A perfect complete Hausdorff Tate ring of characteristic `p` is perfectoid** (Scholze,
+*Étale cohomology of diamonds*, Proposition 3.5): it is uniform, every pseudouniformiser works,
+`ϖ ^ p ∣ p = 0` being automatic, and Frobenius is bijective. -/
+theorem IsPerfectoidTateRing.of_perfectRing [PerfectRing R p] : IsPerfectoidTateRing p R := by
+  have := IsUniform.of_perfectRing (R := R) p
+  obtain ⟨ϖ, hϖ⟩ := IsTateRing.exists_isPseudoUniformizer (A := R)
+  have hp : (p : powerBoundedSubring R) = 0 := Subtype.ext (CharP.cast_eq_zero R p)
+  exact .of_forall_exists_pow_eq ⟨ϖ, mem_powerBoundedSubring.mpr
+    (IsPowerBounded.of_isTopologicallyNilpotent hϖ.isTopologicallyNilpotent)⟩ hϖ
+    (hp ▸ dvd_zero _) fun x ↦
+      (surjective_frobenius R p x).imp fun _ h ↦ by rwa [frobenius_def] at h
+
 /-- **In characteristic `p`, perfectoid means perfect** (Scholze, *Étale cohomology of diamonds*,
 Proposition 3.5): a complete Hausdorff Tate ring of characteristic `p` is a perfectoid Tate ring
 exactly when it is a perfect ring. -/
 theorem isPerfectoidTateRing_iff_perfectRing : IsPerfectoidTateRing p R ↔ PerfectRing R p :=
-  ⟨fun _ ↦ IsPerfectoidTateRing.perfectRing, fun _ ↦
-    have := IsUniform.of_perfectRing (R := R) p
-    .of_perfectRing⟩
+  ⟨fun _ ↦ IsPerfectoidTateRing.perfectRing, fun _ ↦ .of_perfectRing⟩
 
 end TauCeti.Perfectoid

@@ -57,6 +57,7 @@ theorem isOpenMap_frobenius (p : ℕ) [Fact p.Prime] [CharP R p] [PerfectRing R 
     IsOpenMap (frobenius R p) := by
   -- the target of Henkel's theorem: a copy of `R`, acted on by `R` through Frobenius
   let N := (⊤ : AddSubgroup R)
+  have hN : IsOpen (N : Set R) := by simp [N]
   let _ : SMul R N := ⟨fun a y ↦ ⟨a ^ p * y, AddSubgroup.mem_top _⟩⟩
   have hsmul (a : R) (y : N) : ((a • y : N) : R) = a ^ p * y := rfl
   let _ : DistribMulAction R N :=
@@ -68,18 +69,23 @@ theorem isOpenMap_frobenius (p : ℕ) [Fact p.Prime] [CharP R p] [PerfectRing R 
   have : ContinuousConstSMul R N :=
     ⟨fun a ↦ (continuous_const.mul continuous_subtype_val).subtype_mk _⟩
   have : (uniformity R).IsCountablyGenerated := IsUniformAddGroup.uniformity_countably_generated
-  have : BaireSpace N := (isOpen_univ (X := R)).baireSpace
+  have : BaireSpace N := hN.baireSpace
   -- Frobenius as an `R`-equivariant additive map `R → N`
   let f : R →+[R] N :=
     { toFun x := ⟨x ^ p, AddSubgroup.mem_top _⟩
-      map_smul' a x := Subtype.ext (by rw [hsmul, smul_eq_mul, mul_pow]; rfl)
+      map_smul' a x := Subtype.ext (by simp [hsmul, mul_pow])
       map_zero' := Subtype.ext (zero_pow (Fact.out : p.Prime).ne_zero)
       map_add' x y := Subtype.ext (add_pow_char x y p) }
   have hf : IsOpenMap f := HasZeroSequenceOfUnits.isOpenMap f
     (fun y ↦ (surjective_frobenius R p y).imp fun x hx ↦ Subtype.ext hx)
     ((continuous_pow p).subtype_mk _).continuousAt
     fun x ↦ (continuous_id.mul continuous_const).continuousAt
-  exact (isOpen_univ (X := R)).isOpenMap_subtype_val.comp hf
+  -- `f` is `x ↦ x ^ p` by construction, so Frobenius is `f` followed by the inclusion `N → R`
+  have hfx (x : R) : (f x : R) = x ^ p := rfl
+  have hφ : ⇑(frobenius R p) = Subtype.val ∘ ⇑f :=
+    funext fun x ↦ by rw [Function.comp_apply, hfx, frobenius_def]
+  rw [hφ]
+  exact hN.isOpenMap_subtype_val.comp hf
 
 /-- **A perfect complete Hausdorff Tate ring of characteristic `p` is uniform** (Scholze, *Étale
 cohomology of diamonds*, proof of Proposition 3.5): its power-bounded subring `R°` is bounded. -/

@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.FieldTheory.Perfect
 public import Mathlib.Topology.Algebra.IsUniformGroup.Constructions
 public import TauCeti.RingTheory.Huber.Prod
 public import TauCeti.RingTheory.Ideal.Quotient.Frobenius
@@ -48,8 +47,6 @@ surjectivity of `Φ` has to be checked (`TauCeti.Perfectoid.IsPerfectoidTateRing
   reduced.
 * `TauCeti.Perfectoid.IsPerfectoidTateRing.of_ringEquiv`: the notion is invariant under
   isomorphisms of topological rings.
-* `TauCeti.Perfectoid.IsPerfectoidTateRing.of_perfectRing`: a uniform perfect Tate ring of
-  characteristic `p` is perfectoid.
 * `TauCeti.Perfectoid.IsPerfectoidTateRing.prod`: a product of perfectoid Tate rings is perfectoid,
   and `TauCeti.Perfectoid.isPerfectoidTateRing_prod_iff`: conversely, so are its factors.
 * `TauCeti.Perfectoid.isPerfectoidTateRing_of_subsingleton`: the zero ring is.
@@ -142,18 +139,6 @@ theorem IsPerfectoidTateRing.of_forall_exists_pow_eq [NeZero p] [IsUniform R]
   refine ⟨z, ?_⟩
   rw [hx, sub_self]
   exact dvd_zero _
-
-/-- **A uniform perfect Tate ring of characteristic `p` is perfectoid** (Scholze, *Étale cohomology
-of diamonds*, Proposition 3.5): every pseudouniformiser works, `ϖ ^ p ∣ p = 0` being automatic,
-and Frobenius is bijective. -/
-theorem IsPerfectoidTateRing.of_perfectRing [Fact p.Prime] [CharP R p] [PerfectRing R p]
-    [IsUniform R] : IsPerfectoidTateRing p R := by
-  obtain ⟨ϖ, hϖ⟩ := IsTateRing.exists_isPseudoUniformizer (A := R)
-  have hp : (p : powerBoundedSubring R) = 0 := Subtype.ext (CharP.cast_eq_zero R p)
-  exact .of_forall_exists_pow_eq ⟨ϖ, mem_powerBoundedSubring.mpr
-    (IsPowerBounded.of_isTopologicallyNilpotent hϖ.isTopologicallyNilpotent)⟩ hϖ
-    (hp ▸ dvd_zero _) fun x ↦
-      (surjective_frobenius R p x).imp fun _ h ↦ by rwa [frobenius_def] at h
 
 /-- **Perfectoid Tate rings transport along isomorphisms of topological rings.** -/
 theorem IsPerfectoidTateRing.of_ringEquiv {S : Type*} [CommRing S] [UniformSpace S]
