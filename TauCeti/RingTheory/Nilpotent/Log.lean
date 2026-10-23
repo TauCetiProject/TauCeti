@@ -223,7 +223,7 @@ namespace Units
 
 /-- The exponential unit of the logarithm of a unipotent unit is the original unit. -/
 @[simp]
-theorem nilpotentExpUnit_isNilpotent_log
+theorem nilpotentExpUnit_log
     {A : Type*} [Ring A] [Algebra ℚ A]
     (g : Aˣ) (hg : IsNilpotent ((g : A) - 1)) :
     TauCeti.nilpotentExpUnit (IsNilpotent.isNilpotent_log hg) = g := by

@@ -98,8 +98,7 @@ variable {Y : Matrix (Fin n) (Fin n) R}
 polynomial-valued point of that subgroup. -/
 theorem expSMulHom_ofAdd_X_mem_hopfIdealPointsSubgroup
     (I : HopfIdeal R (coordinateHopfAlgebra R n)) (hY : IsNilpotent Y)
-    (hI : expSMulHom R hY (Multiplicative.ofAdd 1) ∈
-      hopfIdealPointsSubgroup n I R) :
+    (hI : nilpotentExpUnit hY ∈ hopfIdealPointsSubgroup n I R) :
     expSMulHom R[X] (hY.map Polynomial.C.mapMatrix)
         (Multiplicative.ofAdd Polynomial.X) ∈ hopfIdealPointsSubgroup n I R[X] := by
   rw [mem_hopfIdealPointsSubgroup_iff]
@@ -112,7 +111,7 @@ theorem expSMulHom_ofAdd_X_mem_hopfIdealPointsSubgroup
   rintro _ ⟨m, rfl⟩
   have hm := (mem_hopfIdealPointsSubgroup_iff n I R
     (expSMulHom R hY (Multiplicative.ofAdd (m : R)))).mp
-      (expSMulHom_natCast R hY m ▸
+      (expSMulHom_ofAdd_natCast R hY m ▸
         (hopfIdealPointsSubgroup n I R).pow_mem hI m) a ha
   rw [pointsMulEquiv_symm_apply] at hm
   have heval := AlgHom.congr_fun (aeval_comp_nilpotentOneParameterCoordinateMap n hY (m : R)) a
@@ -121,7 +120,7 @@ theorem expSMulHom_ofAdd_X_mem_hopfIdealPointsSubgroup
 
 /-- Every algebra-valued parameter of `t ↦ exp(t log g)` stays in a closed subgroup containing
 the unipotent point `g`. The value algebra may be nonreduced. -/
-theorem map_aeval_expSMulHom_isNilpotent_log_mem_hopfIdealPointsSubgroup
+theorem map_aeval_expSMulHom_log_mem_hopfIdealPointsSubgroup
     (I : HopfIdeal R (coordinateHopfAlgebra R n))
     (g : Matrix.GeneralLinearGroup (Fin n) R)
     (hg : IsNilpotent ((g : Matrix (Fin n) (Fin n) R) - 1))
@@ -133,7 +132,7 @@ theorem map_aeval_expSMulHom_isNilpotent_log_mem_hopfIdealPointsSubgroup
           (Multiplicative.ofAdd Polynomial.X)) ∈ hopfIdealPointsSubgroup n I A :=
   map_mem_hopfIdealPointsSubgroup n I (Polynomial.aeval t)
     (expSMulHom_ofAdd_X_mem_hopfIdealPointsSubgroup n I (IsNilpotent.isNilpotent_log hg)
-      (by simpa only [expSMulHom_ofAdd_one, Units.nilpotentExpUnit_isNilpotent_log g hg] using hI))
+      (by simpa only [Units.nilpotentExpUnit_log g hg] using hI))
 
 end ClosedSubgroup
 

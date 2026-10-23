@@ -272,11 +272,11 @@ theorem map_expSMulHom (R : Type*) [CommRing R] [Algebra R A]
   exact (map_exp (hx.smul _) f).trans (congrArg exp (hf _ _))
 
 /-- Natural-number parameters give powers of the value at one. -/
-theorem expSMulHom_natCast (R : Type*) [CommRing R] [Algebra R A]
+theorem expSMulHom_ofAdd_natCast (R : Type*) [CommRing R] [Algebra R A]
     {x : A} (hx : IsNilpotent x) (m : ℕ) :
     expSMulHom R hx (Multiplicative.ofAdd (m : R)) =
-      expSMulHom R hx (Multiplicative.ofAdd 1) ^ m := by
-  simpa only [← ofAdd_nsmul, nsmul_eq_mul, mul_one] using
+      nilpotentExpUnit hx ^ m := by
+  simpa only [← ofAdd_nsmul, nsmul_eq_mul, mul_one, expSMulHom_ofAdd_one] using
     (expSMulHom R hx).map_pow (Multiplicative.ofAdd 1) m
 
 /-! ## The action on an invariant additive subgroup -/
