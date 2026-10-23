@@ -24,8 +24,12 @@ is an involution and preserves non-interleaving of the swapped pair.
 ## Main definitions
 
 * `TauCeti.GridDiagram.IsColumnCommutation`: one elementary column commutation.
+* `TauCeti.GridDiagram.ColumnTurn`: a column, distinct from its successor, together with the
+  square row of a turn point at which the curve replacing the grid line between them crosses it;
+  all that the pentagon-counting maps and their chain-map property depend on.
 * `TauCeti.GridDiagram.ColumnCommutationData`: a column commutation together with the two turn
-  rows and the placement of the adjacent-column markings in the resulting bigons.
+  rows and the placement of the adjacent-column markings in the resulting bigons; it extends
+  `ColumnTurn`.
 * `TauCeti.GridDiagram.IsRowCommutation`: one elementary row commutation.
 * `TauCeti.GridDiagram.IsCommutation`: one elementary commutation of either kind.
 
@@ -42,6 +46,8 @@ is an involution and preserves non-interleaving of the swapped pair.
   `TauCeti.GridDiagram.isColumnCommutation_transpose`: diagonal reflection exchanges the two
   kinds of commutation.
 * `TauCeti.GridDiagram.isCommutation_comm`: the combined commutation relation is symmetric.
+* `TauCeti.GridDiagram.IsCommutation.apply_eq_of_transpose`: invariance under the diagonal
+  reflection and under column commutations gives invariance under all commutations.
 
 ## References
 
@@ -82,6 +88,38 @@ theorem isColumnCommutation_swapColumns (G : GridDiagram n) (a : Fin n)
     IsColumnCommutation G (G.swapColumns a (finRotate n a)) :=
   ⟨a, ha, hG, rfl⟩
 
+/-- A turn for exchanging two adjacent columns: the column `column`, distinct from its cyclic
+successor, and a square row `turnRow`.
+
+When the columns `column` and `finRotate n column` are exchanged, the vertical grid line between
+them is replaced by a curve `γ` which leaves the markings of `column` on its right and those of
+the successor on its left, so that reading the markings off with `γ` in place of the grid line
+exchanges the two columns. Such a curve may cross the grid line several times. The turn is an
+intersection in the square row `turnRow` at which `γ` crosses from the left of the grid line to
+its right going upwards; a marking of `column` in that row lies below it and a marking of the
+successor above it. Every row can serve as such a turn, whether or not the two marking segments
+interleave. The pentagons turning there, the pentagon-counting maps they define, and the fact
+that these maps intertwine the unblocked differentials depend on nothing else. Validated
+commutation data (`TauCeti.GridDiagram.ColumnCommutationData`) extends a turn by the second
+intersection and the placement of the markings in the two bigons, which the homotopy inverse of a
+commutation uses. -/
+@[ext]
+structure ColumnTurn (n : ℕ) where
+  /-- The first of the two adjacent columns being exchanged. -/
+  column : Fin n
+  /-- The square row containing the distinguished intersection used by the pentagon maps. -/
+  turnRow : Fin n
+  /-- The adjacent columns are distinct. -/
+  column_ne_next : column ≠ finRotate n column
+
+/-- A grid with a turn for exchanging two adjacent columns has at least two columns. -/
+theorem ColumnTurn.one_lt (C : ColumnTurn n) : 1 < n := by
+  by_contra h
+  exact C.column_ne_next (Fin.ext (by
+    have := C.column.isLt
+    have := (finRotate n C.column).isLt
+    omega))
+
 /-- Validated geometric data for a column commutation.
 
 The column `column` and its cyclic successor are distinct and non-interleaving. The curves in the
@@ -90,15 +128,9 @@ opposite turn to `turnRow` gives the bigon containing both markings of `column`;
 from `turnRow` to the opposite turn gives the bigon containing both markings of the successor.
 At an intersection row, which side of the intersection contains a marking is determined by its
 column, so the terminal row of either discrete interval is admitted. -/
-structure ColumnCommutationData (G : GridDiagram n) where
-  /-- The first of the two adjacent columns being commuted. -/
-  column : Fin n
-  /-- The square row containing the distinguished intersection used by the forward pentagon map. -/
-  turnRow : Fin n
+structure ColumnCommutationData (G : GridDiagram n) extends ColumnTurn n where
   /-- The square row containing the other intersection of the two vertical curves. -/
   oppositeTurnRow : Fin n
-  /-- The adjacent columns are distinct. -/
-  column_ne_next : column ≠ finRotate n column
   /-- The two marking segments satisfy the hypothesis for a column commutation. -/
   noninterleaving : ColumnsNoninterleaving G column (finRotate n column)
   /-- The `O`-marking of the first column lies in the bigon below the distinguished turn. -/
@@ -116,13 +148,18 @@ namespace ColumnCommutationData
 
 variable {G : GridDiagram n}
 
+/-- Validated column-commutation data is in particular a turn, so the pentagon maps of a turn
+apply to it. -/
+instance : CoeOut (ColumnCommutationData G) (ColumnTurn n) :=
+  ⟨toColumnTurn⟩
+
 /-- Two validated column commutations are equal when their geometric data agree. -/
 @[ext]
 theorem ext {C D : ColumnCommutationData G} (hcolumn : C.column = D.column)
     (hturnRow : C.turnRow = D.turnRow)
     (hoppositeTurnRow : C.oppositeTurnRow = D.oppositeTurnRow) : C = D := by
-  cases C
-  cases D
+  obtain ⟨⟨⟩⟩ := C
+  obtain ⟨⟨⟩⟩ := D
   simp_all
 
 private theorem hext {G H : GridDiagram n} {C : ColumnCommutationData G}
@@ -131,14 +168,6 @@ private theorem hext {G H : GridDiagram n} {C : ColumnCommutationData G}
     (hoppositeTurnRow : C.oppositeTurnRow = D.oppositeTurnRow) : HEq C D := by
   subst H
   exact heq_of_eq (ext hcolumn hturnRow hoppositeTurnRow)
-
-/-- A grid diagram admitting a column commutation has at least two columns. -/
-theorem one_lt (C : ColumnCommutationData G) : 1 < n := by
-  by_contra h
-  exact C.column_ne_next (Fin.ext (by
-    have := C.column.isLt
-    have := (finRotate n C.column).isLt
-    omega))
 
 /-- The two intersection rows of validated commutation data are distinct: otherwise both
 markings of the first column would occupy the same square. -/
@@ -358,6 +387,18 @@ theorem isCommutation_transpose (G G' : GridDiagram n) :
     IsCommutation G.transpose G'.transpose ↔ IsCommutation G G' := by
   unfold IsCommutation
   rw [isRowCommutation_transpose, isColumnCommutation_transpose, or_comm]
+
+/-- **Row commutations from column commutations.** A function on grid diagrams that is
+invariant under the diagonal reflection and under column commutations is invariant under every
+commutation: the reflection turns a row commutation into a column commutation. -/
+theorem IsCommutation.apply_eq_of_transpose {α : Sort*} (f : GridDiagram n → α)
+    (htranspose : ∀ H : GridDiagram n, f H.transpose = f H)
+    (hcolumn : ∀ {H H' : GridDiagram n}, IsColumnCommutation H H' → f H = f H')
+    {G G' : GridDiagram n} (h : IsCommutation G G') : f G = f G' := by
+  rcases h with h | h
+  · rw [← htranspose G, ← htranspose G']
+    exact hcolumn ((isColumnCommutation_transpose G G').mpr h)
+  · exact hcolumn h
 
 end GridDiagram
 

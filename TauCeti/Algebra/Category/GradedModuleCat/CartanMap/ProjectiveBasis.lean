@@ -221,7 +221,7 @@ instance (X Y : (gradedFiniteProjectiveModules 𝒜).FullSubcategory) :
 /-- An indecomposable finite graded projective has a local endomorphism ring. -/
 private theorem isLocalRing_end {X : (gradedFiniteProjectiveModules 𝒜).FullSubcategory}
     (hX : Indecomposable X) : IsLocalRing (End X) :=
-  isLocalRing_end_of_indecomposable (k := k) hX
+  isLocalRing_end_of_indecomposable (R := k) hX
 
 /-- A nonzero finite graded projective is not isomorphic to a nontrivial shift of itself
 (`TauCeti.GradedModuleCat.eq_zero_of_iso_shiftObj`). -/

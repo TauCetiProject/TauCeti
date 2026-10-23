@@ -17,7 +17,8 @@ import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 
 The quotient topology on a projective special linear group over a `T0` topological ring is
 Hausdorff because the center of the special linear group is closed. The natural injection
-`PSL(2, ℤ) → PSL(2, ℝ)` is a topological embedding, so its range is discrete. Finally, the
+`PSL(2, ℤ) → PSL(2, ℝ)` is a topological embedding, so its range is discrete. In a discrete
+subgroup, convergent lifts eventually lift their limit. Finally, the
 translations `Matrix.ProjectiveSpecialLinearGroup.upperRightHom x` depend continuously on `x`
 for any topology on the coefficient ring.
 
@@ -27,12 +28,15 @@ for any topology on the coefficient ring.
   group to the real one is a topological embedding.
 * `Subgroup.discreteTopology_map_sl2zToPSL2R`: the image in `PSL(2, ℝ)` of any subgroup of
   `SL(2, ℤ)` is discrete.
+* `Subgroup.eventually_mk_eq_of_tendsto`: in a discrete subgroup, lifts converging in the special
+  linear group to a lift of an element of the subgroup eventually lift that element.
 * `Matrix.ProjectiveSpecialLinearGroup.continuous_upperRightHom`: projective translations depend
   continuously on their parameter.
 -/
 
 public section
 
+open Filter Topology
 open scoped MatrixGroups Pointwise
 
 open Matrix.SpecialLinearGroup
@@ -86,6 +90,21 @@ instance Subgroup.discreteTopology_map_sl2zToPSL2R (H : Subgroup SL(2, ℤ)) :
     DiscreteTopology (H.map sl2zToPSL2R) :=
   .of_subset (inferInstance : DiscreteTopology psl2zToPSL2R.range)
     H.map_sl2zToPSL2R_le_range_psl2zToPSL2R
+
+/-- In a discrete subgroup `Γ` of a projective special linear group, lifts of elements of `Γ`
+converging in the special linear group to a lift of an element of `Γ` eventually lift that
+element: `Γ` has no other points near it. -/
+theorem Subgroup.eventually_mk_eq_of_tendsto {n R α : Type*} [Fintype n] [DecidableEq n]
+    [CommRing R] [TopologicalSpace R] {Γ : Subgroup (Matrix.ProjectiveSpecialLinearGroup n R)}
+    [DiscreteTopology Γ] {l : Filter α} {M : α → Matrix.SpecialLinearGroup n R}
+    {D : Matrix.SpecialLinearGroup n R}
+    (hM : ∀ x, (M x : Matrix.ProjectiveSpecialLinearGroup n R) ∈ Γ)
+    (hD : (D : Matrix.ProjectiveSpecialLinearGroup n R) ∈ Γ) (h : Tendsto M l (𝓝 D)) :
+    ∀ᶠ x in l, (M x : Matrix.ProjectiveSpecialLinearGroup n R) = D := by
+  have hconv : Tendsto (fun x ↦ (⟨_, hM x⟩ : Γ)) l (𝓝 ⟨_, hD⟩) :=
+    tendsto_subtype_rng.mpr <| (continuous_quot_mk.tendsto D).comp h
+  rw [nhds_discrete, tendsto_pure] at hconv
+  exact hconv.mono fun x hx ↦ congrArg Subtype.val hx
 
 namespace Matrix.ProjectiveSpecialLinearGroup
 

@@ -9,6 +9,8 @@ public import Mathlib.MeasureTheory.Integral.Layercake
 public import Mathlib.Data.Set.SymmDiff
 -- Proof-only: the layer-cake formula for a power and the power integral on `(0, a)`.
 import TauCeti.Analysis.SpecialFunctions.Pow.Integral
+-- Proof-only: the integrability of indicators of bounded intervals.
+import TauCeti.MeasureTheory.Integral.Bochner.Set
 
 /-!
 # Layer-cake formulas for products and distances
@@ -19,17 +21,24 @@ layer-cake formula and is useful for comparing pairings through level-set geomet
 
 This file expresses the `L¹` distance between two almost everywhere measurable real functions as
 the integral, over all levels, of the measure of the symmetric difference of their sublevel sets.
+Consequently, along a subsequence of an `L¹`-convergent sequence the superlevel sets converge in
+measure at almost every level.
 It also expresses the integral of the positive part `(g - f)⁺` as the integral, over all levels
 `s`, of the measure of the set where `f ≤ s < g`: the one-sided form, which sees which of the two
 functions lies above the level. Its extended version expresses the integral of the truncated
 difference `f - g` of two `ℝ≥0∞`-valued functions through the differences of their strict
 superlevel sets.
 
-Finally, for `1 < p` it writes the power `|x - y| ^ p` as a mixture of *hinges*: it is the
+For `1 < p` it writes the power `|x - y| ^ p` as a mixture of *hinges*: it is the
 integral over the thresholds `r > 0`, with weight `p (p - 1) r ^ (p - 2)`, of
 `(y - x - r)⁺ + (x - y - r)⁺`. Integrated against a measure, this turns the `p`-th moment of a
 difference into a mixture of one-sided integrals of the form above. The same mixture represents
 `d ^ p` for every `d : ℝ≥0∞`, with truncated subtraction.
+
+Finally, it records the signed layer-cake representation of a real number,
+`a = ∫ (1_{t < a} - 1_{t < 0}) dt`, which applied pointwise to a real function `u` writes it as
+the integral over all levels `t` of the indicators of its superlevel sets `{u > t}`, corrected by
+`1_{t < 0}` so that the integrand is integrable.
 
 ## Main statements
 
@@ -37,6 +46,9 @@ difference into a mixture of one-sided integrals of the form above. The same mix
   nonnegative functions, as a double integral of intersections of superlevel sets;
 * `TauCeti.lintegral_enorm_sub_eq_lintegral_measure_symmDiff` — the `L¹` distance of two real
   functions, level by level;
+* `MeasureTheory.Measure.exists_strictMono_ae_tendsto_measure_symmDiff_setOf_lt` — along a
+  subsequence of an `L¹`-convergent sequence, the superlevel sets converge in measure at almost
+  every level;
 * `TauCeti.lintegral_ofReal_sub_eq_lintegral_measure` — the integral of a positive part
   `(g - f)⁺`, level by level;
 * `TauCeti.lintegral_sub_eq_lintegral_measure_sdiff` — the integral of a truncated difference
@@ -45,7 +57,11 @@ difference into a mixture of one-sided integrals of the form above. The same mix
   `TauCeti.edist_rpow_eq_lintegral` — a real or extended power `d ^ p`, and the power
   `|x - y| ^ p` of a distance, as mixtures of hinges.
 * `TauCeti.lintegral_ofReal_sub_sub_eq` and `TauCeti.lintegral_edist_rpow_eq` — their integrated
-  forms for a measure on pairs of real variables.
+  forms for a measure on pairs of real variables;
+* `TauCeti.integral_indicator_Iio_sub_indicator_Iio_zero` — the signed layer-cake representation
+  `a = ∫ (1_{t < a} - 1_{t < 0}) dt` of a real number, with
+  `TauCeti.integral_abs_indicator_Iio_sub_indicator_Iio_zero` computing the `L¹` norm `|a|` of
+  its integrand.
 -/
 
 public section
@@ -196,6 +212,55 @@ theorem lintegral_enorm_sub_eq_lintegral_measure_symmDiff (m : Measure α) [SFin
       filter_upwards [hf.ae_eq_mk, hg.ae_eq_mk] with a hfa hga
       simp only [Set.mem_symmDiff, Set.mem_ofPred_eq]
       rw [hfa, hga]
+
+end TauCeti
+
+namespace MeasureTheory.Measure
+
+variable {α : Type*} [MeasurableSpace α]
+
+open Filter Topology in
+/-- **Superlevel sets along an `L¹`-convergent sequence.** If `f n → g` in `L¹(m)`, then along a
+subsequence the strict superlevel sets `{f n > s}` converge in measure to `{g > s}` at almost every
+level `s`: `m ({f (ns j) > s} ∆ {g > s}) → 0`. -/
+theorem exists_strictMono_ae_tendsto_measure_symmDiff_setOf_lt (m : Measure α) [SFinite m]
+    {f : ℕ → α → ℝ} {g : α → ℝ} (hf : ∀ n, AEMeasurable (f n) m) (hg : AEMeasurable g m)
+    (h : Tendsto (fun n ↦ ∫⁻ a, ‖f n a - g a‖ₑ ∂m) atTop (𝓝 0)) :
+    ∃ ns : ℕ → ℕ, StrictMono ns ∧
+      ∀ᵐ s, Tendsto (fun j ↦ m ({a | s < f (ns j) a} ∆ {a | s < g a})) atTop (𝓝 0) := by
+  -- The defect `F n s` at level `s` is measurable in `s` and integrates to `∫ |f n - g|`.
+  set F : ℕ → ℝ → ℝ≥0∞ := fun n s ↦ m ({a | s < f n a} ∆ {a | s < g a})
+  have hF (n : ℕ) : ∫⁻ s, F n s = ∫⁻ a, ‖f n a - g a‖ₑ ∂m := by
+    rw [TauCeti.lintegral_enorm_sub_eq_lintegral_measure_symmDiff m (hf n) hg]
+    refine lintegral_congr fun s ↦ ?_
+    simp only [F, ← compl_symmDiff_compl (a := {a | s < f n a}), compl_ofPred, not_lt]
+  have hFm (n : ℕ) : Measurable (F n) := by
+    have hcongr : F n = fun s ↦ m ({a | s < (hf n).mk _ a} ∆ {a | s < hg.mk g a}) := by
+      refine funext fun s ↦ measure_congr ?_
+      filter_upwards [(hf n).ae_eq_mk, hg.ae_eq_mk] with a hfa hga
+      simp only [Set.mem_symmDiff, Set.mem_ofPred_eq]
+      rw [hfa, hga]
+    rw [hcongr]
+    exact measurable_measure_prodMk_right ((measurableSet_lt measurable_snd
+      ((hf n).measurable_mk.comp measurable_fst)).symmDiff
+      (measurableSet_lt measurable_snd (hg.measurable_mk.comp measurable_fst)))
+  -- Along a subsequence with `∫ F (ns j) < 2⁻ʲ`, the sum `∑ⱼ F (ns j) s` is finite for almost
+  -- every `s`, so its terms tend to zero.
+  obtain ⟨ns, hns, hlt⟩ := extraction_forall_of_eventually fun j ↦
+    h.eventually (gt_mem_nhds (ENNReal.pow_pos (a := 2⁻¹) (by simp) j))
+  refine ⟨ns, hns, ?_⟩
+  have hsum : ∫⁻ s, ∑' j, F (ns j) s ≠ ∞ := by
+    rw [lintegral_tsum fun j ↦ (hFm (ns j)).aemeasurable]
+    simp_rw [hF]
+    exact ((ENNReal.tsum_le_tsum fun j ↦ (hlt j).le).trans_lt (by simp)).ne
+  filter_upwards [ae_lt_top (Measurable.tsum fun j ↦ hFm (ns j)) hsum] with s hs
+  exact ENNReal.tendsto_atTop_zero_of_tsum_ne_top hs.ne
+
+end MeasureTheory.Measure
+
+namespace TauCeti
+
+variable {α : Type*} [MeasurableSpace α]
 
 private theorem lintegral_ofReal_sub_eq_lintegral_measure_of_measurable (m : Measure α) [SFinite m]
     {f g : α → ℝ} (hf : Measurable f) (hg : Measurable g) :
@@ -400,5 +465,45 @@ theorem lintegral_edist_rpow_eq {p : ℝ} (hp : 1 < p) (m : Measure (ℝ × ℝ)
   rw [lintegral_lintegral_swap (by fun_prop)]
   refine lintegral_congr fun r ↦ ?_
   rw [lintegral_const_mul _ (by fun_prop), lintegral_add_left (by fun_prop)]
+
+/-! ### The signed layer-cake representation of a real number -/
+
+/-- `1_{t < a} - 1_{t < 0}`, as a function of `t`, is the signed indicator of the interval
+between `0` and `a`. -/
+theorem indicator_Iio_sub_indicator_Iio_zero (a : ℝ) :
+    (fun t => (Iio a).indicator (1 : ℝ → ℝ) t - (Iio 0).indicator 1 t) =
+      (Ico 0 a).indicator 1 - (Ico a 0).indicator 1 := by
+  ext t
+  simp only [Pi.sub_apply, indicator_apply, mem_Iio, mem_Ico, Pi.one_apply]
+  split_ifs <;> grind
+
+/-- The signed indicator `t ↦ 1_{t < a} - 1_{t < 0}` is Lebesgue integrable. -/
+theorem integrable_indicator_Iio_sub_indicator_Iio_zero (a : ℝ) :
+    Integrable (fun t => (Iio a).indicator (1 : ℝ → ℝ) t - (Iio 0).indicator 1 t) := by
+  rw [indicator_Iio_sub_indicator_Iio_zero]
+  exact (integrable_indicator_Ico_one _ _).sub (integrable_indicator_Ico_one _ _)
+
+/-- **The signed layer-cake representation of a real number:**
+`∫ (1_{t < a} - 1_{t < 0}) dt = a`. -/
+@[simp]
+theorem integral_indicator_Iio_sub_indicator_Iio_zero (a : ℝ) :
+    ∫ t, ((Iio a).indicator (1 : ℝ → ℝ) t - (Iio 0).indicator 1 t) = a := by
+  rw [indicator_Iio_sub_indicator_Iio_zero, integral_sub' (integrable_indicator_Ico_one _ _)
+    (integrable_indicator_Ico_one _ _)]
+  simp [integral_indicator_one measurableSet_Ico]
+
+/-- The `L¹` norm of the signed indicator `t ↦ 1_{t < a} - 1_{t < 0}` is `|a|`:
+`∫ |1_{t < a} - 1_{t < 0}| dt = |a|`. This is stated with `|·|`, the simp-normal form of the norm
+on `ℝ`, so that `simp` also evaluates the `‖·‖` form of the integral. -/
+@[simp]
+theorem integral_abs_indicator_Iio_sub_indicator_Iio_zero (a : ℝ) :
+    ∫ t, |(Iio a).indicator (1 : ℝ → ℝ) t - (Iio 0).indicator 1 t| = |a| := by
+  have h : (fun t => |(Iio a).indicator (1 : ℝ → ℝ) t - (Iio 0).indicator 1 t|) =
+      (Ico 0 a).indicator 1 + (Ico a 0).indicator 1 := by
+    ext t
+    simp only [Pi.add_apply, indicator_apply, mem_Iio, mem_Ico, Pi.one_apply]
+    split_ifs <;> grind
+  rw [h, integral_add' (integrable_indicator_Ico_one _ _) (integrable_indicator_Ico_one _ _)]
+  simp [integral_indicator_one measurableSet_Ico]
 
 end TauCeti

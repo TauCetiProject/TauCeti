@@ -15,7 +15,7 @@ import TauCeti.Algebra.CharP.Two
 /-!
 # The grid commutation map is a chain map
 
-Let `C` be a validated column commutation of a grid diagram `G`, write `G'` for the commuted
+Let `C` be a column turn (`GridDiagram.ColumnTurn`) for a grid diagram `G`, write `G'` for the
 diagram `G.swapColumns C.column (finRotate n C.column)`, `∂` and `∂'` for the unblocked
 differentials of `G` and `G'`, and `Φ` for the commutation map `GridDiagram.commutationMap`,
 which counts empty pentagons turning on either side of the replaced grid line. This file proves
@@ -37,7 +37,7 @@ initial-side-pentagon overlaps, which proves the equation.
   the initial-side pentagon--rectangle overlap terms have the total weight of the four
   recut-partner families and the turn cuts.
 * `GridDiagram.commutationMap_comp_unblockedDifferential`: the commutation map is a chain map
-  between the unblocked grid complexes.
+  between the unblocked grid complexes, at every column turn.
 
 ## References
 
@@ -50,7 +50,7 @@ public section
 
 namespace TauCeti.GridDiagram
 
-variable {n : ℕ} (G : GridDiagram n) (C : ColumnCommutationData G) {x z : GridState n}
+variable {n : ℕ} (G : GridDiagram n) (C : ColumnTurn n) {x z : GridState n}
 
 variable (R : Type*) [CommSemiring R] [CharP R 2]
 
@@ -72,7 +72,7 @@ theorem sum_initialPentagonRectangleWeight_overlap_eq_sum_partners (hzx : z ≠ 
               G.initialPentagonRectangleWeight C R E) +
               ∑ E ∈ G.initialPentagonRectangleTurnCuts C x z,
                 G.initialPentagonRectangleWeight C R E := by
-  rw [G.sum_initialPentagonRectangle_overlap_eq_sameSide_add_mixedSide C
+  rw [sum_initialPentagonRectangle_overlap_eq_sameSide_add_mixedSide C
       (G.initialPentagonRectangleDecompositions C x z) (G.initialPentagonRectangleWeight C R) hzx,
     G.sum_initialPentagonRectangle_sameSide_eq_sum_partners_add_sum_selfSources C,
     G.sum_initialPentagonRectangle_mixedSide_eq_sum_partners_add_turnCuts_add_selfPairs C
@@ -103,7 +103,8 @@ theorem sum_initialPentagonRectangleWeight_overlap_eq_sum_partners (hzx : z ≠ 
 
 /-- **The commutation map is a chain map.** Over a commutative semiring of characteristic two,
 counting empty pentagons turning on either side of the replaced grid line intertwines the unblocked
-differentials of a grid diagram and of its column commutation. -/
+differentials of a grid diagram and of the diagram with the two columns of the turn exchanged.
+This holds at every column turn: the two marking segments need not be non-interleaving. -/
 theorem commutationMap_comp_unblockedDifferential :
     (G.commutationMap R C).comp (G.unblockedDifferential R) =
       ((G.swapColumns C.column (finRotate n C.column)).unblockedDifferential R).comp

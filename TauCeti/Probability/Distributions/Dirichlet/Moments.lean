@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.Dirichlet.Marginal
 public import TauCeti.Probability.Moments.Covariance
+public import TauCeti.Geometry.Convex.ConvexSpace.NNReal
 
 /-!
 # Mean and covariance of the Dirichlet distribution
@@ -42,6 +43,8 @@ makes the stated value vanish.
 * `TauCeti.Probability.covMatrix_dirichletMeasure` and
   `TauCeti.Probability.covarianceBilin_dirichletMeasure` — the matrix and bilinear-form packagings
   of the same data.
+* `TauCeti.Probability.integral_norm_sq_dirichletMeasure_smul` — the expected squared norm of a
+  Dirichlet vector whose concentration vector is `c` times a probability vector.
 
 ## References
 
@@ -55,7 +58,7 @@ noncomputable section
 
 open MeasureTheory ProbabilityTheory
 
-open scoped ENNReal RealInnerProductSpace
+open scoped ENNReal NNReal RealInnerProductSpace
 
 namespace TauCeti
 
@@ -143,6 +146,20 @@ theorem integral_id_dirichletMeasure (ha : ∀ i, 0 < a i) :
     (integrable_id_dirichletMeasure (a := a))
   simp only [EuclideanSpace.coe_proj, id_eq] at h
   simpa [← h] using integral_eval_dirichletMeasure ha i
+
+omit [Nonempty ι] in
+/-- The product moment of two Dirichlet coordinates is their covariance plus the product
+of their means. -/
+theorem integral_mul_eval_dirichletMeasure (ha : ∀ i, 0 < a i) (i j : ι) :
+    ∫ x, x i * x j ∂dirichletMeasure a =
+      cov[fun x ↦ x i, fun x ↦ x j; dirichletMeasure a] +
+        (a i / ∑ l, a l) * (a j / ∑ l, a l) := by
+  let : Nonempty ι := ⟨i⟩
+  have _ : IsProbabilityMeasure (dirichletMeasure a) := isProbabilityMeasure_dirichletMeasure ha
+  have hprod := covariance_eq_sub (memLp_eval_dirichletMeasure (a := a) i 2)
+    (memLp_eval_dirichletMeasure (a := a) j 2)
+  simp only [Pi.mul_apply, integral_eval_dirichletMeasure ha] at hprod
+  linarith
 
 /-! ### Variances and covariances -/
 
@@ -259,6 +276,46 @@ theorem integrableExpSet_inner_dirichletMeasure (θ : EuclideanSpace ℝ ι) :
       (by simpa using mul_le_mul_of_nonneg_left hx (norm_nonneg θ)))
   · rw [dirichletMeasure_eq_zero_of_invalid h]
     simp [integrableExpSet]
+
+/-- The expected squared norm of a Dirichlet vector with concentration vector `c p`, where `p` is
+a probability vector. As `c` tends to zero this tends to one, forcing the law towards the
+vertices of the simplex. -/
+theorem integral_norm_sq_dirichletMeasure_smul (p : Convexity.StdSimplex ℝ≥0 ι)
+    (hp : ∀ i, 0 < p.weights i) {c : ℝ} (hc : 0 < c) :
+    ∫ x, ‖x‖ ^ 2 ∂dirichletMeasure (fun i ↦ c * (p.weights i : ℝ)) =
+      (c * ∑ i, (p.weights i : ℝ) ^ 2 + 1) / (c + 1) := by
+  have ha (i : ι) : 0 < c * (p.weights i : ℝ) := mul_pos hc (by exact_mod_cast hp i)
+  let _ := isProbabilityMeasure_dirichletMeasure ha
+  have hcoord (i : ι) :
+      ∫ x, (x i) ^ 2 ∂dirichletMeasure (fun j ↦ c * (p.weights j : ℝ)) =
+        ((p.weights i : ℝ) + c * (p.weights i : ℝ) ^ 2) / (c + 1) := by
+    have hv := variance_eval_dirichletMeasure ha i
+    rw [variance_eq_sub (memLp_eval_dirichletMeasure i 2),
+      integral_eval_dirichletMeasure ha, p.sum_mul_coe_weights] at hv
+    calc
+      _ = c * (p.weights i : ℝ) * (c - c * (p.weights i : ℝ)) /
+            (c ^ 2 * (c + 1)) + (c * (p.weights i : ℝ) / c) ^ 2 :=
+        eq_add_of_sub_eq hv
+      _ = _ := by
+        field_simp
+        ring
+  simp only [EuclideanSpace.real_norm_sq_eq]
+  rw [integral_finsetSum _ fun i _ ↦ (memLp_eval_dirichletMeasure i 2).integrable_sq]
+  simp only [hcoord]
+  rw [← Finset.sum_div, Finset.sum_add_distrib, p.sum_coe_weights, ← Finset.mul_sum, add_comm]
+
+/-- The expectation of `1 - ‖x‖ ^ 2` under a Dirichlet law with concentration vector `c p`, where
+`p` is a probability vector. It tends to zero with `c`. -/
+theorem integral_one_sub_norm_sq_dirichletMeasure_smul (p : Convexity.StdSimplex ℝ≥0 ι)
+    (hp : ∀ i, 0 < p.weights i) {c : ℝ} (hc : 0 < c) :
+    ∫ x, 1 - ‖x‖ ^ 2 ∂dirichletMeasure (fun i ↦ c * (p.weights i : ℝ)) =
+      c * (1 - ∑ i, (p.weights i : ℝ) ^ 2) / (c + 1) := by
+  let _ := isProbabilityMeasure_dirichletMeasure fun i ↦
+    mul_pos hc (by exact_mod_cast hp i : (0 : ℝ) < p.weights i)
+  rw [integral_sub (integrable_const _) (memLp_id_dirichletMeasure 2).norm.integrable_sq,
+    integral_const, probReal_univ, one_smul, integral_norm_sq_dirichletMeasure_smul p hp hc]
+  field_simp
+  ring
 
 end Probability
 

@@ -107,4 +107,26 @@ theorem rootIntMatrix_eq_zero_of_weight_ne (j : Fin (n + 1) ⊕ Fin (n + 1))
       (isCartanWeightVector_latticeBasis n b))
     fun h ↦ hab (sub_eq_iff_eq_add'.mpr h)
 
+/-- **A positive numbered root matrix only raises along simple reflections.** Its column at a
+spin-basis index whose weight pairs to `-1` with the simple coroot is supported at the reflected
+index, and every other column vanishes, since spin weights pair with simple coroots in
+`{-1, 0, 1}`. -/
+theorem rootIntMatrix_inl_eq_zero_of_ne_basisReflection (i : Fin (n + 1))
+    {a b : Fin (dimension n)} (h : basisWeight n b i = -1 → a ≠ basisReflection n i b) :
+    rootIntMatrix n (.inl i) a b = 0 := by
+  have hpair (c : Fin (dimension n)) :
+      basisWeight n c i = -1 ∨ basisWeight n c i = 0 ∨ basisWeight n c i = 1 :=
+    DynkinType.typeBSpinWeight_apply_eq_neg_one_or_eq_zero_or_eq_one (signSet n c) i
+  rcases hpair b with hneg | hb | hb
+  · obtain ⟨c, hc⟩ := exists_rep_rootGenerator_inl_exteriorBasis n i _ _ hneg
+      (signSet_basisReflection n i b).symm
+    rw [← coe_latticeBasis, ← coe_latticeBasis] at hc
+    rw [rootIntMatrix_apply_of_eq n (.inl i) hc a, ite_eq_right (h hneg)]
+  all_goals
+    apply rootIntMatrix_eq_zero_of_weight_ne
+    intro hw
+    have hi := congrFun hw i
+    rw [Pi.sub_apply, rootGeneratorWeight_inl, CartanMatrix.B_diag] at hi
+    rcases hpair a with ha | ha | ha <;> omega
+
 end TauCeti.TypeBSpinCarrier

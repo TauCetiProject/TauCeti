@@ -10,7 +10,7 @@ public import Mathlib.Topology.Covering.Basic
 public import Mathlib.Topology.Maps.Proper.Basic
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.Basic
 public import TauCeti.AlgebraicTopology.UniversalCover.Classification.NumberedFiber
-public import TauCeti.Geometry.Manifold.Instances.OnePoint
+public import TauCeti.Geometry.Manifold.Instances.OnePoint.Basic
 public import TauCeti.Topology.Covering.LocalPower
 
 import Mathlib.Data.Set.Card.Arithmetic
@@ -47,7 +47,9 @@ extends uniquely to the total spaces (`TauCeti.TopBranchedCover.extend`), so eve
 unbranched parts extends to a unique isomorphism of branched covers, and restriction is injective
 on isomorphism classes. This is the uniqueness of the compactification of a finite cover of the
 thrice-punctured sphere. The extension exists because at a point of a marked fibre the values
-of the map cluster in a connected subset of a finite fibre, hence at a single point.
+of the map cluster in a connected subset of a finite fibre, hence at a single point. In
+particular the deck group of `π` is the deck group of the unbranched cover
+(`TauCeti.TopBranchedCover.deckMulEquivDeckRestrict`).
 
 The data carries no atlas. The local models at marked points and the covering map elsewhere
 already provide a chart around every point (`TauCeti.TopBranchedCover.exists_mem_source`), so `Z`
@@ -76,6 +78,8 @@ is a topological surface, and properness of `π` is a consequence of compactness
 * `TauCeti.TopBranchedCover.Iso.ofConnectedCoverIso`: the extension of an isomorphism of the
   unbranched connected covers to an isomorphism of branched covers, inverse to
   `TauCeti.TopBranchedCover.Iso.connectedCoverIso`.
+* `TauCeti.TopBranchedCover.deckMulEquivDeckRestrict`: restriction identifies the deck group of a
+  branched cover with the deck group of its unbranched part.
 * `TauCeti.TopBranchedCover.sphere`: the sphere over itself, of degree `1`.
 
 ## Main results
@@ -810,6 +814,42 @@ theorem IsoClass.restrict_injective : Function.Injective (IsoClass.restrict (n :
   rw [IsoClass.restrict_mk, IsoClass.restrict_mk, ConnectedCoverClass.mk_eq_mk_iff] at h
   obtain ⟨e⟩ := h
   exact IsoClass.mk_eq_mk_iff.2 ⟨Iso.ofConnectedCoverIso e⟩
+
+/-! ### Deck transformations -/
+
+/-- **The deck group of a branched cover is the deck group of its unbranched part.** A deck
+transformation of `π` restricts to one of the unbranched cover `TauCeti.TopBranchedCover.restrict`,
+and every deck transformation of the unbranched cover extends uniquely across the marked fibres
+(`TauCeti.TopBranchedCover.Iso.ofRestrict`). -/
+def deckMulEquivDeckRestrict : deck X.π ≃* deck X.restrict where
+  toFun φ := ⟨(⟨φ.1, congrFun φ.2⟩ : Iso X X).restrict,
+    deck.mem_iff.2 (funext (Iso.restrict_restrict _))⟩
+  invFun ψ := ⟨(Iso.ofRestrict ψ.1 fun z ↦ by
+      simpa using congrArg (fun w : ThricePuncturedSphere ↦ ((w : ℂ) : OnePoint ℂ))
+        (deck.proj_smul ψ z)).toHomeomorph,
+    deck.mem_iff.2 (funext (Iso.π_apply _))⟩
+  left_inv φ := Subtype.ext <| congrArg Iso.toHomeomorph
+    (Iso.restrict_injective (Iso.restrict_ofRestrict _ _) :
+      Iso.ofRestrict _ _ = (⟨φ.1, congrFun φ.2⟩ : Iso X X))
+  right_inv ψ := Subtype.ext (Iso.restrict_ofRestrict _ _)
+  map_mul' _ _ := rfl
+
+/-- On the unbranched part, the restriction of a deck transformation is the deck
+transformation. -/
+@[simp]
+theorem coe_deckMulEquivDeckRestrict_apply (φ : deck X.π) (z : X.π ⁻¹' range toOnePoint) :
+    ((X.deckMulEquivDeckRestrict φ : X.π ⁻¹' range toOnePoint ≃ₜ X.π ⁻¹' range toOnePoint) z :
+      X.Z) = (φ : X.Z ≃ₜ X.Z) z :=
+  (rfl)
+
+/-- On the unbranched part, the extension of a deck transformation of the unbranched cover is that
+deck transformation. -/
+@[simp]
+theorem coe_deckMulEquivDeckRestrict_symm_apply (ψ : deck X.restrict)
+    (z : X.π ⁻¹' range toOnePoint) :
+    (X.deckMulEquivDeckRestrict.symm ψ : X.Z ≃ₜ X.Z) z =
+      ((ψ : X.π ⁻¹' range toOnePoint ≃ₜ X.π ⁻¹' range toOnePoint) z : X.Z) :=
+  Iso.ofRestrict_toHomeomorph_apply_val _ _ z
 
 
 /-! ### The sphere over itself -/

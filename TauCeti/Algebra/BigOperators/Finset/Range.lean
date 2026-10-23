@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.Algebra.BigOperators.Intervals
 public import Mathlib.Algebra.BigOperators.NatAntidiagonal
+public import Mathlib.Algebra.Algebra.Defs
+import Mathlib.Algebra.Algebra.Basic
 import Mathlib.Algebra.BigOperators.Ring.Finset
 import Mathlib.Tactic.Abel
 import Mathlib.Tactic.Ring
@@ -18,7 +20,9 @@ import Mathlib.Tactic.Ring
 Generic identities for sums indexed by `Finset.range` and `Finset.Ioo`. These are used by
 coderivation/Taylor expansions, which reindex a cut-and-collapse double sum over a triangle to a
 square and enlarge a vanishing-off-the-block range, and by divided-power exponential calculations,
-which reindex a sum over antidiagonals to a rectangle.
+which reindex a sum over antidiagonals to a rectangle. Reindexing a sum over a finite subset of a
+linear order by the rank of each element turns the recurrences of Catalan-type enumerations, such
+as those of noncrossing partitions, into sums over `Finset.range`.
 
 ## Main results
 
@@ -38,8 +42,18 @@ which reindex a sum over antidiagonals to a rectangle.
 * `sum_range_min_zero`: the base case `j = 0` of that recurrence, which its `j + 1` cannot state.
 * `two_mul_sum_range_pair`: twice the sum of the products over the pairs `i < j < k` is the
   square of the sum minus the sum of the squares.
+* `sum_range_succ_smul_pow_sub`, `sum_range_succ_smul_pow_sub'`: the Horner recursion
+  `V (m + 1) = c (m + 1) • 1 + a * V m = c (m + 1) • 1 + V m * a` for the convolutions
+  `V m = ∑ k ∈ range (m + 1), c k • a ^ (m - k)` of scalars with the powers of `a`.
 * `Finset.sum_range_succ_eq_sum_range_add`: regroup a sum whose successive terms split into
   adjacent contributions, retaining the final boundary term.
+* `Finset.prod_range_two_mul_add_one`, `Finset.sum_range_two_mul_add_one`: split a product or sum
+  over `range (2 * k + 1)` into its even and odd indices.
+* `Finset.prod_card_filter_lt_card_filter_gt`, `Finset.sum_card_filter_lt_card_filter_gt`: reindex
+  a product or sum over a finite subset `s` of a linear order by the number of elements of `s`
+  before each element.
+* `Finset.prod_range_mul_eq_prod_prod`, `Finset.sum_range_mul_eq_sum_sum`: split a product or
+  sum over `range (n * q)` into `q` consecutive blocks of `n` terms.
 -/
 
 public section
@@ -56,6 +70,60 @@ theorem sum_range_succ_eq_sum_range_add {M : Type*} [AddCommMonoid M]
     sum_congr rfl (fun k hk ↦ hsucc k (mem_range.mp hk)), sum_add_distrib, sum_add_distrib]
   have hshift := (sum_range_succ' g n).symm.trans (sum_range_succ g n)
   simpa only [add_assoc, add_left_comm, add_comm] using congrArg (· + ∑ k ∈ range n, h k) hshift
+
+/-- A product over `range (2 * k + 1)` splits into its factors at even and at odd indices. -/
+@[to_additive sum_range_two_mul_add_one /-- A sum over `range (2 * k + 1)` splits into its terms at
+even and at odd indices. -/]
+theorem prod_range_two_mul_add_one {M : Type*} [CommMonoid M] (g : ℕ → M) (k : ℕ) :
+    ∏ i ∈ range (2 * k + 1), g i =
+      (∏ j ∈ range (k + 1), g (2 * j)) * ∏ j ∈ range k, g (2 * j + 1) := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    rw [show 2 * (k + 1) + 1 = 2 * k + 1 + 1 + 1 by ring, prod_range_succ, prod_range_succ, ih,
+      prod_range_succ (fun j => g (2 * j)) (k + 1), prod_range_succ (fun j => g (2 * j + 1)) k,
+      show 2 * k + 1 + 1 = 2 * (k + 1) by ring]
+    ac_rfl
+
+/-- Reindexing a product over a finite subset `s` of a linear order by the number `i` of elements
+of `s` before each element; there are then `#s - 1 - i` elements of `s` after it. -/
+@[to_additive /-- Reindexing a sum over a finite subset `s` of a linear order by the number `i` of
+elements of `s` before each element; there are then `#s - 1 - i` elements of `s` after it. -/]
+theorem prod_card_filter_lt_card_filter_gt {α M : Type*} [LinearOrder α] [CommMonoid M]
+    (s : Finset α) (f : ℕ → ℕ → M) :
+    ∏ x ∈ s, f #{y ∈ s | y < x} #{y ∈ s | x < y} = ∏ i ∈ range #s, f i (#s - 1 - i) := by
+  -- The elements of `s` other than `x` are those before `x` and those after `x`.
+  have hcard {x : α} (hx : x ∈ s) : #{y ∈ s | x < y} = #s - 1 - #{y ∈ s | y < x} := by
+    have h1 : {y ∈ s | ¬y < x}.erase x = {y ∈ s | x < y} := by
+      ext y
+      simp only [mem_erase, mem_filter, not_lt]
+      grind
+    have h2 := card_erase_add_one (s := {y ∈ s | ¬y < x}) (mem_filter.2 ⟨hx, lt_irrefl x⟩)
+    have h3 := card_filter_add_card_filter_not (s := s) (· < x)
+    rw [h1] at h2
+    omega
+  -- The number of elements before `x` is strictly increasing in `x`, with values below `#s`.
+  have hinj : Set.InjOn (fun x => #{y ∈ s | y < x}) s :=
+    StrictMonoOn.injOn fun x hx x' _ hxx' => card_lt_card <|
+      (ssubset_iff_of_subset fun y hy =>
+        mem_filter.2 ⟨(mem_filter.1 hy).1, (mem_filter.1 hy).2.trans hxx'⟩).2
+        ⟨x, mem_filter.2 ⟨hx, hxx'⟩, fun h => lt_irrefl x (mem_filter.1 h).2⟩
+  have himage : s.image (fun x => #{y ∈ s | y < x}) = range #s :=
+    eq_of_subset_of_card_le (fun i hi => by
+        obtain ⟨x, hx, rfl⟩ := mem_image.1 hi
+        exact mem_range.2 (card_lt_card (filter_ssubset.2 ⟨x, hx, lt_irrefl x⟩)))
+      (by rw [card_range, card_image_of_injOn hinj])
+  rw [← himage, prod_image hinj]
+  exact prod_congr rfl fun x hx => by rw [hcard hx]
+
+/-- A product over `range (n * q)` is the product of `q` consecutive blocks of `n` factors. -/
+@[to_additive sum_range_mul_eq_sum_sum
+  /-- A sum over `range (n * q)` is the sum of `q` consecutive blocks of `n` terms. -/]
+theorem prod_range_mul_eq_prod_prod {M : Type*} [CommMonoid M] (f : ℕ → M) (n q : ℕ) :
+    ∏ l ∈ range (n * q), f l = ∏ j ∈ range q, ∏ l ∈ range n, f (n * j + l) := by
+  induction q with
+  | zero => simp
+  | succ q ih => rw [Nat.mul_succ, prod_range_add, ih, prod_range_succ]
 
 end Finset
 
@@ -282,5 +350,28 @@ theorem two_mul_sum_range_pair {R : Type*} [CommRing R] (k : ℕ) (d : ℕ → R
     rw [sum_range_succ, mul_add, ih, ← sum_mul, sum_range_succ d,
       sum_range_succ (fun i ↦ d i ^ 2)]
     ring
+
+/-- **Horner recursion** for the convolution `V m = ∑ k ∈ range (m + 1), c k • a ^ (m - k)` of a
+sequence of scalars with the powers of an element `a` of an algebra:
+`V (m + 1) = c (m + 1) • 1 + a * V m`. -/
+theorem sum_range_succ_smul_pow_sub {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
+    (c : ℕ → R) (a : A) (m : ℕ) :
+    ∑ k ∈ range (m + 1 + 1), c k • a ^ (m + 1 - k) =
+      c (m + 1) • 1 + a * ∑ k ∈ range (m + 1), c k • a ^ (m - k) := by
+  rw [sum_range_succ, Nat.sub_self, pow_zero, mul_sum, add_comm]
+  congr 1
+  refine sum_congr rfl fun k hk ↦ ?_
+  rw [mul_smul_comm, ← pow_succ', Nat.sub_add_comm (mem_range_succ_iff.mp hk)]
+
+/-- **Horner recursion**, right-multiplication form: the convolution
+`V m = ∑ k ∈ range (m + 1), c k • a ^ (m - k)` satisfies `V (m + 1) = c (m + 1) • 1 + V m * a`. -/
+theorem sum_range_succ_smul_pow_sub' {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
+    (c : ℕ → R) (a : A) (m : ℕ) :
+    ∑ k ∈ range (m + 1 + 1), c k • a ^ (m + 1 - k) =
+      c (m + 1) • 1 + (∑ k ∈ range (m + 1), c k • a ^ (m - k)) * a := by
+  rw [sum_range_succ_smul_pow_sub, mul_sum, sum_mul]
+  congr 1
+  refine sum_congr rfl fun k _ ↦ ?_
+  rw [mul_smul_comm, smul_mul_assoc, ← pow_succ', ← pow_succ]
 
 end TauCeti

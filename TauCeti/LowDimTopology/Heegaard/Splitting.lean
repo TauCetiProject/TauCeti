@@ -21,7 +21,8 @@ two subsets `left` and `right` of `M` covering it, each homeomorphic to the stan
 `TauCeti.handlebody genus`, whose intersection is the frontier of each. The definition makes sense
 for any topological space. When `M` is a `3`-manifold without boundary, invariance of domain
 identifies the frontier of each piece with the image of the manifold boundary of the handlebody,
-so the two pieces meet exactly in their common boundary surface. The standard handlebodies are
+so the two pieces meet exactly in their common boundary surface
+(`TauCeti.HeegaardSplitting.coe_mem_right_iff`). The standard handlebodies are
 orientable, so these are the splittings of orientable manifolds.
 
 The Heegaard genus `TauCeti.heegaardGenus M` is defined only under
