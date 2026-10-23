@@ -332,11 +332,7 @@ trace `δ`. -/
 @[simp]
 theorem jonesTrace_one_strand (a : Rˣ) (b : BraidGroup 1) :
     jonesTrace (R := R) ⟨0, b⟩ a = jonesDelta a := by
-  have hb : b = 1 := by
-    have h : MonoidHom.id (BraidGroup 1) = 1 := BraidGroup.hom_ext fun i ↦ i.elim0
-    exact DFunLike.congr_fun h b
-  subst hb
-  rw [jonesTrace_def]
+  rw [BraidGroup.eq_one_of_le_one le_rfl b, jonesTrace_def]
   simp [markovTrace_one]
 
 /-- **The trefoil.** The closure of `σ₀ ^ 3` on two strands is the right-handed trefoil, and its

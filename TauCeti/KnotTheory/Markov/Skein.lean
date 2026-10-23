@@ -104,10 +104,7 @@ theorem eq_of_skein (x : Rˣ) (z d : R) {F G : MarkovBraid → R}
   induction n with
   | zero =>
     intro b
-    have hb : b = 1 := by
-      have h : MonoidHom.id (BraidGroup 1) = 1 := hom_ext fun i ↦ i.elim0
-      exact DFunLike.congr_fun h b
-    rw [hb, h₁]
+    rw [eq_one_of_le_one le_rfl b, h₁]
   | succ n ih =>
     -- The weighted difference, extended linearly to the group algebra, kills the Hecke skein
     -- relators and the spanning braids, hence everything.

@@ -211,12 +211,10 @@ theorem edgePair_swapClosingArcs_of_ne {x : Fin (4 * v.length)}
     (hx : v.closure.orientation x = true) (hxp : x ≠ v.closingHalfEdge (strand i) hp)
     (hxq : x ≠ v.closingHalfEdge (strandSucc i) hq) :
     (v.swapClosingArcs i hp hq).edgePair.val x = v.closure.edgePair.val x := by
-  have hin (y : Fin (4 * v.length)) (hy : v.closure.orientation y = true) :
-      x ≠ v.closure.edgePair.val y := fun h ↦ by
-    simp [h, hy] at hx
   rw [edgePair_swapClosingArcs]
-  refine PerfectMatching.reconnect_val_of_ne hxq (hin _ (orientation_closingHalfEdge ..)) ?_ ?_
-  · exact hin _ (orientation_closingHalfEdge ..)
+  refine PerfectMatching.reconnect_val_of_ne hxq
+    (v.closure.ne_edgePair_of_orientation_eq (hx.trans (orientation_closingHalfEdge ..).symm)) ?_ ?_
+  · exact v.closure.ne_edgePair_of_orientation_eq (hx.trans (orientation_closingHalfEdge ..).symm)
   · rwa [PerfectMatching.apply_apply]
 
 /-- The two arcs of `swapClosingArcs` ending at the closing half-edge on position `i + 1` and at
@@ -227,6 +225,16 @@ theorem edgePair_closingHalfEdge_ne_edgePair_swapClosingArcs :
   rw [edgePair_swapClosingArcs_closingHalfEdge]
   exact fun h ↦ v.closingHalfEdge_ne hq hp (strand_ne_strandSucc i).symm
     (v.closure.edgePair.val.injective h)
+
+/-- In `swapClosingArcs`, the closing half-edge on position `i + 1` and its old partner have
+opposite orientations, so the crossing inserted between them is smoothed by an oriented
+smoothing. -/
+theorem orientation_xor_swapClosingArcs :
+    ((v.swapClosingArcs i hp hq).orientation (v.closingHalfEdge (strandSucc i) hq) ^^
+      (v.swapClosingArcs i hp hq).orientation
+        (v.closure.edgePair.val (v.closingHalfEdge (strandSucc i) hq))) = true := by
+  simp only [orientation_swapClosingArcs, OrientedPDCode.orientation_edgePair,
+    orientation_closingHalfEdge, Bool.not_true, Bool.xor_false]
 
 /-- The closure of `(i, ε) :: v` before renaming its crossings. -/
 private abbrev insertLetter : OrientedPDCode (v.length + 1) :=
@@ -275,19 +283,48 @@ private theorem edgePair_insertLetter_old {j : Fin v.length} {p : Fin n}
       exact (v.nextCrossing (strand i)).injective (by simpa using hn)
     · refine hxq ((crossing_outgoingSlot_eq_closingHalfEdge_iff v hj hq).mpr ⟨rfl, ?_⟩)
       exact (v.nextCrossing (strandSucc i)).injective (by simpa using hn)
-  have hin (y : Fin (4 * v.length)) (hy : v.closure.orientation y = true) :
-      x ≠ v.closure.edgePair.val y := fun h ↦ by
-    simp [h, hy] at hx
+  have hin {y : Fin (4 * v.length)} (hy : v.closure.orientation y = true) :
+      x ≠ v.closure.edgePair.val y :=
+    v.closure.ne_edgePair_of_orientation_eq (hx.trans hy.symm)
   rw [ite_eq_right hc, OrientedPDCode.toPDCode_insertCrossing,
-    PDCode.insertCrossing_edgePair_inl_of_ne _ hxq (hin _ (orientation_closingHalfEdge ..))
+    PDCode.insertCrossing_edgePair_inl_of_ne _ hxq (hin (orientation_closingHalfEdge ..))
       (by rw [edgePair_swapClosingArcs_closingHalfEdge]
-          exact hin _ (orientation_closingHalfEdge ..))
+          exact hin (orientation_closingHalfEdge ..))
       (by rw [edgePair_swapClosingArcs_edgePair_closingHalfEdge]; exact hxp),
     edgePair_swapClosingArcs_of_ne v i hp hq hx hxp hxq]
   have hCx : v.closure.edgePair.val x =
       crossingSlotEquiv v.length (v.nextCrossing p j, v.incomingSlot (v.nextCrossing p j) p) := by
     simpa [x, crossing_closure] using edgePair_closure_outgoingSlot v hj
   rw [hCx, crossingBlockEquiv_finRotate_halfEdgeSuccEquiv_inl]
+
+/-- An arc leaving the new crossing of the closure of `(i, ε) :: v` is the renamed arc of the
+insertion at the same slot of the inserted crossing. -/
+private theorem edgePair_insertLetter_new {p : Fin n} (hpos : p = strand i ∨ p = strandSucc i) :
+    (closure ((i, ε) :: v)).edgePair.val
+        (crossingSlotEquiv (v.length + 1) (0, outgoingSlot ((i, ε) :: v) 0 p)) =
+      crossingBlockEquiv (finRotate (v.length + 1)) ((insertLetter v i ε hp hq).edgePair.val
+        (halfEdgeSuccEquiv v.length (.inr (outgoingSlot ((i, ε) :: v) 0 p)))) := by
+  have hqe := edgePair_closingHalfEdge_ne_edgePair_swapClosingArcs v i hp hq
+  have hqp : v.closure.edgePair.val (v.closingHalfEdge (strandSucc i) hq) ≠
+      v.closingHalfEdge (strandSucc i) hq := v.closure.edgePair.apply_ne _
+  rcases hpos with rfl | rfl
+  · -- The arc leaving upwards on position `i` enters the old first crossing on position `i`.
+    have h0 := edgePair_closure_cons_outgoingSlot_zero v i ε (Or.inl rfl) hp
+    have hs : outgoingSlot ((i, ε) :: v) 0 (strand i) = 2 := by
+      simpa using outgoingSlot_strand ((i, ε) :: v) 0
+    simp only [crossing_closure, List.length_cons, hs] at h0 ⊢
+    rw [h0, OrientedPDCode.toPDCode_insertCrossing,
+      PDCode.insertCrossing_edgePair_inr_two _ hqp hqe,
+      edgePair_swapClosingArcs_closingHalfEdge, edgePair_closingHalfEdge, crossing_closure,
+      crossingBlockEquiv_finRotate_halfEdgeSuccEquiv_inl]
+  · -- The arc leaving upwards on position `i + 1` enters the old first crossing on `i + 1`.
+    have h0 := edgePair_closure_cons_outgoingSlot_zero v i ε (Or.inr rfl) hq
+    have hs : outgoingSlot ((i, ε) :: v) 0 (strandSucc i) = 1 := by
+      simpa using outgoingSlot_strandSucc ((i, ε) :: v) 0
+    simp only [crossing_closure, List.length_cons, hs] at h0 ⊢
+    rw [h0, OrientedPDCode.toPDCode_insertCrossing,
+      PDCode.insertCrossing_edgePair_inr_one _ hqp hqe, edgePair_closingHalfEdge,
+      crossing_closure, crossingBlockEquiv_finRotate_halfEdgeSuccEquiv_inl]
 
 include hp hq in
 private theorem crossinglessComponentCount_closure_cons :
@@ -314,17 +351,17 @@ theorem closure_cons_eq_relabel_insertCrossing :
           (v.closure.edgePair.apply_ne _)
           (edgePair_closingHalfEdge_ne_edgePair_swapClosingArcs v i hp hq)).relabel
         (crossingBlockEquiv (finRotate (v.length + 1))) (finRotate (v.length + 1)) := by
-  have hqe := edgePair_closingHalfEdge_ne_edgePair_swapClosingArcs v i hp hq
-  have hqp : v.closure.edgePair.val (v.closingHalfEdge (strandSucc i) hq) ≠
-      v.closingHalfEdge (strandSucc i) hq := v.closure.edgePair.apply_ne _
   have hcount := crossinglessComponentCount_closure_cons v i ε hp hq
   have hrotSucc (k : Fin v.length) : (finRotate (v.length + 1)).symm k.succ =
       k.castSucc := (finRotate _).symm_apply_eq.mpr (Fin.finRotate_castSucc k).symm
   have hrotZero : (finRotate (v.length + 1)).symm 0 = Fin.last v.length :=
     (finRotate _).symm_apply_eq.mpr finRotate_last.symm
+  -- Compare the two codes field by field. In each field, crossing `0` of the closure is the
+  -- inserted crossing, and crossing `k + 1` is the old crossing `k`.
   apply OrientedPDCode.ext
   · apply PDCode.ext
-    · rw [halfEdge_closure]
+    · -- Both codes list the half-edges of each crossing in slot order.
+      rw [halfEdge_closure]
       refine Equiv.ext fun h ↦ ?_
       obtain ⟨⟨j, s⟩, rfl⟩ := (crossingSlotEquiv _).surjective h
       simp only [List.length_cons, OrientedPDCode.relabel_toPDCode, PDCode.relabel_halfEdge,
@@ -339,31 +376,17 @@ theorem closure_cons_eq_relabel_insertCrossing :
           PDCode.crossing_apply, toPDCode_swapClosingArcs, PDCode.reconnect_halfEdge,
           halfEdge_closure, Equiv.Perm.coe_one, id_eq,
           crossingBlockEquiv_finRotate_halfEdgeSuccEquiv_inl]
-    · refine edgePair_closure_eq_of_outgoingSlot _ fun j p hj ↦ ?_
+    · -- A matching of a closure is determined by the arcs leaving crossings, which are
+      -- `edgePair_insertLetter_new` and `edgePair_insertLetter_old`.
+      refine edgePair_closure_eq_of_outgoingSlot _ fun j p hj ↦ ?_
       simp only [OrientedPDCode.relabel_toPDCode, PDCode.relabel_edgePair]
       rcases Fin.eq_zero_or_eq_succ j with rfl | ⟨k, rfl⟩
       · have hpos : p = strand i ∨ p = strandSucc i := by
           simpa using (mem_crossingsAt (w := (i, ε) :: v) (j := 0)).mp hj
-        rcases hpos with rfl | rfl
-        · have h0 := edgePair_closure_cons_outgoingSlot_zero v i ε (Or.inl rfl) hp
-          have hs : outgoingSlot ((i, ε) :: v) 0 (strand i) = 2 := by
-            simpa using outgoingSlot_strand ((i, ε) :: v) 0
-          simp only [crossing_closure, List.length_cons, hs] at h0 ⊢
-          rw [h0, ← crossingBlockEquiv_finRotate_halfEdgeSuccEquiv_inr,
-            PerfectMatching.congr_val_apply_apply,
-            OrientedPDCode.toPDCode_insertCrossing,
-            PDCode.insertCrossing_edgePair_inr_two _ hqp hqe,
-            edgePair_swapClosingArcs_closingHalfEdge, edgePair_closingHalfEdge, crossing_closure,
-            crossingBlockEquiv_finRotate_halfEdgeSuccEquiv_inl]
-        · have h0 := edgePair_closure_cons_outgoingSlot_zero v i ε (Or.inr rfl) hq
-          have hs : outgoingSlot ((i, ε) :: v) 0 (strandSucc i) = 1 := by
-            simpa using outgoingSlot_strandSucc ((i, ε) :: v) 0
-          simp only [crossing_closure, List.length_cons, hs] at h0 ⊢
-          rw [h0, ← crossingBlockEquiv_finRotate_halfEdgeSuccEquiv_inr,
-            PerfectMatching.congr_val_apply_apply,
-            OrientedPDCode.toPDCode_insertCrossing,
-            PDCode.insertCrossing_edgePair_inr_one _ hqp hqe, edgePair_closingHalfEdge,
-            crossing_closure, crossingBlockEquiv_finRotate_halfEdgeSuccEquiv_inl]
+        refine (edgePair_insertLetter_new v i ε hp hq hpos).trans ?_
+        simp only [List.length_cons]
+        rw [← crossingBlockEquiv_finRotate_halfEdgeSuccEquiv_inr,
+          PerfectMatching.congr_val_apply_apply]
       · have hk : k ∈ v.crossingsAt p := by
           simpa using (mem_crossingsAt (w := (i, ε) :: v) (j := k.succ)).mp hj
         rw [outgoingSlot_congr (w := v) (w' := (i, ε) :: v) (j := k.succ) (i := k) (by simp) p]
@@ -371,8 +394,10 @@ theorem closure_cons_eq_relabel_insertCrossing :
         refine (edgePair_insertLetter_old v i ε hp hq hk).trans ?_
         rw [← crossingBlockEquiv_finRotate_halfEdgeSuccEquiv_inl,
           PerfectMatching.congr_val_apply_apply]
-    · simpa using hcount
-    · funext j
+    · -- The insertion keeps the crossing-free circles.
+      simpa using hcount
+    · -- The new crossing has the over-strand of the letter; old crossings keep theirs.
+      funext j
       rw [overPair_closure, OrientedPDCode.relabel_toPDCode, PDCode.relabel_overPair,
         OrientedPDCode.toPDCode_insertCrossing]
       rcases Fin.eq_zero_or_eq_succ j with rfl | ⟨k, rfl⟩
@@ -381,7 +406,9 @@ theorem closure_cons_eq_relabel_insertCrossing :
       · rw [hrotSucc, PDCode.insertCrossing_overPair_castSucc, toPDCode_swapClosingArcs,
           PDCode.reconnect_overPair, overPair_closure]
         simp
-  · have ho₁ := v.orientation_closingHalfEdge (strandSucc i) hq
+  · -- The new crossing takes the orientations of the two arcs it is inserted into; old
+    -- half-edges keep theirs.
+    have ho₁ := v.orientation_closingHalfEdge (strandSucc i) hq
     have ho₂ :
         v.closure.orientation (v.closure.edgePair.val (v.closingHalfEdge (strandSucc i) hq)) =
           false := by
@@ -399,7 +426,8 @@ theorem closure_cons_eq_relabel_insertCrossing :
     · rw [hrotSucc, crossingSlotEquiv_succ_castSucc,
         OrientedPDCode.orientation_insertCrossing_inl, orientation_swapClosingArcs,
         orientation_closure]
-  · rw [crossinglessComponents_closure, OrientedPDCode.relabel_crossinglessComponents,
+  · -- The crossing-free circles are those of the closure of `v`.
+    rw [crossinglessComponents_closure, OrientedPDCode.relabel_crossinglessComponents,
       OrientedPDCode.crossinglessComponents_insertCrossing, crossinglessComponents_swapClosingArcs,
       crossinglessComponents_closure]
     congr 1
@@ -411,13 +439,9 @@ its old partner is the closure of `v`. -/
 theorem orientedSmoothing_swapClosingArcs :
     (v.swapClosingArcs i hp hq).orientedSmoothing (v.closingHalfEdge (strandSucc i) hq)
         (v.closure.edgePair.val (v.closingHalfEdge (strandSucc i) hq)) = v.closure := by
-  have ho : ((v.swapClosingArcs i hp hq).orientation (v.closingHalfEdge (strandSucc i) hq) ^^
-      (v.swapClosingArcs i hp hq).orientation
-        (v.closure.edgePair.val (v.closingHalfEdge (strandSucc i) hq))) = true := by
-    simp only [orientation_swapClosingArcs, OrientedPDCode.orientation_edgePair,
-      orientation_closingHalfEdge, Bool.not_true, Bool.xor_false]
   apply OrientedPDCode.ext
-  · rw [OrientedPDCode.toPDCode_orientedSmoothing, ho, Bool.cond_true, toPDCode_swapClosingArcs]
+  · rw [OrientedPDCode.toPDCode_orientedSmoothing, orientation_xor_swapClosingArcs, Bool.cond_true,
+      toPDCode_swapClosingArcs]
     apply PDCode.ext
     · simp
     · simp only [PDCode.reconnect_edgePair]
@@ -442,12 +466,8 @@ theorem normalizedKauffmanBracket_closure_cons_skein {R : Type*} [CommRing R] (a
     (v.swapClosingArcs i hp hq) (v.closingHalfEdge (strandSucc i) hq)
     (v.closure.edgePair.val (v.closingHalfEdge (strandSucc i) hq))
     (v.closure.edgePair.apply_ne _) hqe a
-  have ho : ((v.swapClosingArcs i hp hq).orientation (v.closingHalfEdge (strandSucc i) hq) ^^
-      (v.swapClosingArcs i hp hq).orientation
-        (v.closure.edgePair.val (v.closingHalfEdge (strandSucc i) hq))) = true := by
-    simp only [orientation_swapClosingArcs, OrientedPDCode.orientation_edgePair,
-      orientation_closingHalfEdge, Bool.not_true, Bool.xor_false]
-  simp only [ho, Bool.not_true, orientedSmoothing_swapClosingArcs] at h
+  simp only [orientation_xor_swapClosingArcs, Bool.not_true, orientedSmoothing_swapClosingArcs]
+    at h
   rw [closure_cons_eq_relabel_insertCrossing v i 1 hp hq,
     closure_cons_eq_relabel_insertCrossing v i (-1) hp hq,
     ← (OrientedPDCode.reidemeisterEquiv_relabel _ _ _).normalizedKauffmanBracket_eq,

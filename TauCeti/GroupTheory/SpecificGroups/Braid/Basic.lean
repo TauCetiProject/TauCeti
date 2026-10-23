@@ -211,6 +211,11 @@ theorem hom_ext {G : Type*} [Group G] {f g : BraidGroup n →* G}
     (h : ∀ i, f (sigma i) = g (sigma i)) : f = g :=
   ArtinGroup.hom_ext _ fun i ↦ by simpa only [sigma_eq_gen] using h i
 
+/-- On at most one strand there are no elementary braids, so every braid is trivial. -/
+theorem eq_one_of_le_one (hn : n ≤ 1) (b : BraidGroup n) : b = 1 := by
+  have h : MonoidHom.id (BraidGroup n) = 1 := hom_ext fun i ↦ absurd i.isLt (by omega)
+  exact DFunLike.congr_fun h b
+
 /-- The lower of the two strands crossed by `sigma i`. -/
 def strand (i : Fin (n - 1)) : Fin n := ⟨i, by have := i.isLt; omega⟩
 

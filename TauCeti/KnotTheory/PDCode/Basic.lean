@@ -604,6 +604,13 @@ theorem orientation_crossing_of_add_two_eq (D : OrientedPDCode n) (i : Fin n) {s
   rw [← hst, ← PDCode.oppositeCrossingSlot_apply, PDCode.crossing_apply, PDCode.crossing_apply,
     D.orientation_oppositeCrossingSlot]
 
+/-- An arc joins half-edges of opposite orientations, so no half-edge is paired with one of the
+same orientation. -/
+theorem ne_edgePair_of_orientation_eq (D : OrientedPDCode n) {x y : Fin (4 * n)}
+    (h : D.orientation x = D.orientation y) : x ≠ D.edgePair.val y := by
+  rintro rfl
+  simp at h
+
 /-- The sign of crossing `i`:`1` if the crossing is right-handed and `-1` if it is left-handed,
 as in Lickorish, Chapter 1. The slots are read counterclockwise in the oriented plane and
 `orientation` is `true` at the half-edges where the strands leave the crossing. The crossing is
