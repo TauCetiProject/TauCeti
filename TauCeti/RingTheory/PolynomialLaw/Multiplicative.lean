@@ -269,8 +269,8 @@ def polynomialLawMonoidHom (S : Type*) [CommSemiring S] [Algebra R S] :
   map_mul' := hf.toFun_mul
 
 @[simp]
-theorem polynomialLawMonoidHom_apply (S : Type*) [CommSemiring S] [Algebra R S]
-    (x : S ⊗[R] A) : polynomialLawMonoidHom hf S x = f.toFun S x := (rfl)
+theorem coe_polynomialLawMonoidHom (S : Type*) [CommSemiring S] [Algebra R S] :
+    ⇑(polynomialLawMonoidHom hf S) = f.toFun S := (rfl)
 
 /-- The ground evaluation of a multiplicative polynomial law is multiplicative. -/
 def polynomialLawGroundMonoidHom : A →* B where
@@ -279,7 +279,7 @@ def polynomialLawGroundMonoidHom : A →* B where
   map_mul' := hf.ground_mul
 
 @[simp]
-theorem polynomialLawGroundMonoidHom_apply (a : A) :
-    polynomialLawGroundMonoidHom hf a = f.ground a := (rfl)
+theorem coe_polynomialLawGroundMonoidHom :
+    ⇑(polynomialLawGroundMonoidHom hf) = f.ground := (rfl)
 
 end TauCeti
