@@ -85,7 +85,7 @@ theorem extDerivCLM_extDerivCLM (ω : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F)) :
     extDerivCLM (extDerivCLM ω) = 0 := by
   ext x : 1
   rw [extDerivCLM_apply, coe_extDerivCLM, extDeriv_extDeriv ω.contDiff (by simp)]
-  rfl
+  simp
 
 /-- **`d ∘ d = 0`** on test forms, as an identity of continuous linear maps. -/
 @[simp]
