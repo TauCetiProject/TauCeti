@@ -282,7 +282,7 @@ theorem isLocallyFlasque_of_isFlasque [(CategoryTheory.forget C).PreservesEpimor
     F.IsLocallyFlasque := by
   refine TopCat.Presheaf.isLocallyFlasque_of_forall_surjective F.1 ?_
   intro U V hUV
-  letI := hF.epi (homOfLE hUV).op
+  let := hF.epi (homOfLE hUV).op
   exact (CategoryTheory.epi_iff_surjective
     ((CategoryTheory.forget C).map (F.1.map (homOfLE hUV).op))).mp inferInstance
 
