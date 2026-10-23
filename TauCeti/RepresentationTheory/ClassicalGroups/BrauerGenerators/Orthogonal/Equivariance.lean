@@ -130,7 +130,7 @@ theorem commute_orthogonalActionMatrix_kroneckerPower (D : BrauerDiagram k)
     rw [hsymm, hprod]
     simp
   calc M * K = K * M * Kᵀ * K := by rw [hconj]
-    _ = K * M := by rw [Matrix.mul_assoc, kroneckerPower_transpose_mul_self hA, Matrix.mul_one]
+    _ = K * M := by rw [Matrix.mul_assoc, transpose_kroneckerPower_mul_self hA, Matrix.mul_one]
 
 end BrauerDiagram
 

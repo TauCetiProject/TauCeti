@@ -26,9 +26,9 @@ the Kronecker power satisfies the same identity.
 
 ## Main results
 
-* `Matrix.kroneckerPower_mul`, `Matrix.kroneckerPower_one`, `Matrix.kroneckerPower_transpose`:
+* `Matrix.kroneckerPower_mul`, `Matrix.kroneckerPower_one`, `Matrix.transpose_kroneckerPower`:
   the Kronecker power is multiplicative, sends `1` to `1` and commutes with transposition.
-* `Matrix.kroneckerPower_transpose_mul_self`: the Kronecker power of a matrix with `Aᵀ * A = 1`
+* `Matrix.transpose_kroneckerPower_mul_self`: the Kronecker power of a matrix with `Aᵀ * A = 1`
   satisfies the same identity.
 -/
 
@@ -54,7 +54,7 @@ variable {κ}
 
 /-- The Kronecker power commutes with transposition. -/
 @[simp]
-theorem kroneckerPower_transpose [CommMonoid R] [Fintype κ] (A : Matrix m n R) :
+theorem transpose_kroneckerPower [CommMonoid R] [Fintype κ] (A : Matrix m n R) :
     (A.kroneckerPower κ)ᵀ = Aᵀ.kroneckerPower κ :=
   (rfl)
 
@@ -74,9 +74,9 @@ theorem kroneckerPower_mul [CommSemiring R] [Fintype m] [Fintype κ] [DecidableE
   simp only [kroneckerPower_apply, Matrix.mul_apply, Fintype.prod_sum, ← Finset.prod_mul_distrib]
 
 /-- The Kronecker power of a matrix `A` with `Aᵀ * A = 1` satisfies the same identity. -/
-theorem kroneckerPower_transpose_mul_self [CommSemiring R] [Fintype n] [DecidableEq n]
+theorem transpose_kroneckerPower_mul_self [CommSemiring R] [Fintype n] [DecidableEq n]
     [Fintype κ] [DecidableEq κ] {A : Matrix n n R} (hA : Aᵀ * A = 1) :
     (A.kroneckerPower κ)ᵀ * A.kroneckerPower κ = 1 := by
-  rw [kroneckerPower_transpose, ← kroneckerPower_mul, hA, kroneckerPower_one]
+  rw [transpose_kroneckerPower, ← kroneckerPower_mul, hA, kroneckerPower_one]
 
 end Matrix
