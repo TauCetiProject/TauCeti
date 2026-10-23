@@ -53,8 +53,7 @@ supported in `S` glues with zero on `W ∖ S` to a unique section over `W` suppo
   supported in `S`;
 * `CategoryTheory.Sheaf.supportedH F S W n`: the cohomology `H_Sⁿ(W, F)` of `F` on `W` with
   supports in `S`;
-* `CategoryTheory.Sheaf.supportedHZeroEquiv`: `H_S⁰(W, F) ≃+ Γ_S(W, F)`, natural in `F`
-  (`CategoryTheory.Sheaf.supportedHZeroEquiv_naturality_right`);
+* `CategoryTheory.Sheaf.supportedHZeroEquiv`: `H_S⁰(W, F) ≃+ Γ_S(W, F)`;
 * `CategoryTheory.Sheaf.subsingleton_supportedH_of_le_compl`: `H_Sⁿ(W, F) = 0` when `W` is disjoint
   from `S`;
 * `CategoryTheory.Sheaf.relativeH'.subsingleton_succ_of_isFlasque`: a flasque sheaf has no relative
@@ -147,15 +146,6 @@ lemma coe_supportedHZeroEquiv_apply (S : Closeds X) (W : Opens X) (x : F.support
     (F.supportedHZeroEquiv S W x : F.obj.obj (op W)) =
       relativeH'.zeroEquiv F (S.complInclusion W) x :=
   (rfl)
-
-/-- The equivalence `supportedHZeroEquiv` is natural in the sheaf. -/
-lemma supportedHZeroEquiv_naturality_right
-    {F G : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u}} (f : F ⟶ G) (S : Closeds X)
-    (W : Opens X) (x : F.supportedH S W 0) :
-    G.supportedHZeroEquiv S W (x.comp (Ext.mk₀ f) (add_zero 0)) =
-      ⟨f.hom.app (op W) (F.supportedHZeroEquiv S W x),
-        map_mem_supportedSections f (F.supportedHZeroEquiv S W x).2⟩ :=
-  Subtype.ext (relativeH'.coe_zeroEquiv_naturality_right (S.complInclusion W) f x)
 
 /-- The restriction map `H_Sⁿ(W, F) ⟶ H_Sⁿ(W', F)` of cohomology with supports in `S` to a smaller
 open `W' ≤ W`, induced by the inclusion of pairs `(W', W' ∖ S) ⟶ (W, W ∖ S)`. -/

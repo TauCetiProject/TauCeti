@@ -57,7 +57,9 @@ the vanishing of the global groups `H_S^q(W, F)`.
 * `CategoryTheory.Sheaf.isZero_supportedHSheaf_succ_of_isFlasque`: `𝓗_Sⁿ⁺¹(F) = 0` for a flasque
   sheaf `F`.
 * `CategoryTheory.Sheaf.supportedSectionsFunctor S`: the supported-section functor `Γ_S`, which
-  is left exact (`CategoryTheory.Sheaf.exact_map_supportedSectionsFunctor`);
+  is left exact (`CategoryTheory.Sheaf.exact_map_supportedSectionsFunctor`) and through which
+  `H_S⁰(W, F) ≃+ Γ_S(W, F)` is natural in `F`
+  (`CategoryTheory.Sheaf.supportedHZeroEquiv_naturality_right`);
 * `CategoryTheory.Sheaf.shortExact_map_supportedSectionsFunctor`: `Γ_S` preserves a short exact
   sequence `0 ⟶ F₁ ⟶ F₂ ⟶ F₃ ⟶ 0` with `𝓗_S¹(F₁) = 0`;
 * `CategoryTheory.Sheaf.subsingleton_supportedH_of_isZero_supportedHSheaf`: support truncation.
@@ -314,12 +316,13 @@ lemma coe_supportedSectionsFunctor_map_hom_app_apply (f : F ⟶ G) (W : (Opens X
       (((supportedSectionsFunctor S).map f).hom.app W s) = f.hom.app W s :=
   (rfl)
 
-/-- The equivalence `supportedHZeroEquiv` is natural in the sheaf, stated with
-`supportedSectionsFunctor`. -/
-lemma supportedHZeroEquiv_comp_mk₀ (f : F ⟶ G) (W : Opens X) (x : F.supportedH S W 0) :
+/-- The equivalence `supportedHZeroEquiv : H_S⁰(W, F) ≃+ Γ_S(W, F)` is natural in the sheaf. -/
+lemma supportedHZeroEquiv_naturality_right (f : F ⟶ G) (W : Opens X) (x : F.supportedH S W 0) :
     G.supportedHZeroEquiv S W (x.comp (Abelian.Ext.mk₀ f) (add_zero 0)) =
       ((supportedSectionsFunctor S).map f).hom.app (op W) (F.supportedHZeroEquiv S W x) :=
-  supportedHZeroEquiv_naturality_right f S W x
+  Subtype.ext <| (coe_supportedHZeroEquiv_apply G S W _).trans <|
+    (relativeH'.coe_zeroEquiv_naturality_right (S.complInclusion W) f x).trans
+      congr(f.hom.app (op W) $((coe_supportedHZeroEquiv_apply F S W x).symm))
 
 instance mono_supportedSectionsFunctor_map (f : F ⟶ G) [Mono f] :
     Mono ((supportedSectionsFunctor S).map f) := by
@@ -394,7 +397,7 @@ theorem epi_supportedSectionsFunctor_map_g (hT : T.ShortExact)
   -- so near `x` the class `y` comes from a section of `F₂` supported in `S`
   obtain ⟨z, hz⟩ := Ext.covariant_sequence_exact₃ _ hT _ (zero_add 1) hV
   refine ⟨V, hVW, ⟨T.X₂.supportedHZeroEquiv S V z, ?_⟩, hxV⟩
-  rw [← supportedHZeroEquiv_comp_mk₀, hz]
+  rw [← supportedHZeroEquiv_naturality_right, hz]
   exact Subtype.ext (coe_supportedHZeroEquiv_supportedHRestrict ..)
 
 /-- If `0 ⟶ F₁ ⟶ F₂ ⟶ F₃ ⟶ 0` is short exact and the local cohomology sheaf `𝓗_S¹(F₁)` vanishes,
@@ -436,7 +439,8 @@ theorem subsingleton_supportedH_one_of_shortExact (hT : T.ShortExact)
     (TopCat.Sheaf.IsFlasque.epi_of_shortExact hΓ (U := W)) (T.X₃.supportedHZeroEquiv S W y)
   obtain ⟨z, rfl⟩ := (T.X₂.supportedHZeroEquiv S W).surjective t
   have hy : z.comp (Ext.mk₀ T.g) (add_zero 0) = y :=
-    (T.X₃.supportedHZeroEquiv S W).injective ((supportedHZeroEquiv_comp_mk₀ S T.g W z).trans ht)
+    (T.X₃.supportedHZeroEquiv S W).injective
+      ((supportedHZeroEquiv_naturality_right S T.g W z).trans ht)
   rw [← hy, Ext.comp_assoc_of_second_deg_zero, hT.comp_extClass, Ext.comp_zero]
 
 /-- The dimension-shifting form of support truncation: if `Γ_S(F)` is flasque and the local
