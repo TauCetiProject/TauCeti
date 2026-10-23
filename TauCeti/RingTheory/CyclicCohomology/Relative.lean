@@ -155,11 +155,9 @@ theorem cyclicHochschildCoboundary_mem_relativeCyclicCochains {n : ℕ}
 
 /-- The Hochschild coboundary restricted to relative cyclic cochains. -/
 def relativeCyclicHochschildCoboundary (n : ℕ) :
-    relativeCyclicCochains R A M n →ₗ[R] relativeCyclicCochains R A M (n + 1) where
-  toFun phi := ⟨cyclicHochschildCoboundary R (Unitization R A) M n phi,
-    cyclicHochschildCoboundary_mem_relativeCyclicCochains R A M phi⟩
-  map_add' _ _ := Subtype.ext (map_add _ _ _)
-  map_smul' _ _ := Subtype.ext (map_smul _ _ _)
+    relativeCyclicCochains R A M n →ₗ[R] relativeCyclicCochains R A M (n + 1) :=
+  (cyclicHochschildCoboundary R (Unitization R A) M n).restrict fun phi hphi ↦
+    cyclicHochschildCoboundary_mem_relativeCyclicCochains R A M ⟨phi, hphi⟩
 
 /-- The relative Hochschild coboundary has the ordinary cyclic Hochschild coboundary as its
 underlying cochain. -/
