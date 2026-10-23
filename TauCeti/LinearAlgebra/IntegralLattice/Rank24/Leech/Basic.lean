@@ -26,7 +26,8 @@ which is quadratic-isotropic because `B(s, s) / 2` is an integer, and Lagrangian
 
 The Leech lattice is the even overlattice of `K` glued along this subgroup. Its carrier is
 literally `K ∪ (s + K)`, and it is a positive definite, even, unimodular lattice of rank `24`.
-Its rootlessness is a separate argument through the Golay weights and is not part of this file.
+Its congruence model and rootlessness, which use the Golay weights, are proved in
+`TauCeti.LinearAlgebra.IntegralLattice.Rank24.Leech.Minimum`.
 
 ## Main declarations
 
@@ -65,6 +66,13 @@ theorem leechShift_zero : leechShift 0 = -(3 / 2) := by
 @[simp]
 theorem leechShift_of_ne_zero {i : Fin 24} (hi : i ≠ 0) : leechShift i = 1 / 2 := by
   simp [leechShift, hi]
+
+/-- The Leech shift is nonzero. -/
+theorem leechShift_ne_zero : leechShift ≠ 0 := by
+  intro h
+  have h1 := congrFun h 1
+  rw [leechShift_of_ne_zero one_ne_zero] at h1
+  norm_num at h1
 
 /-- The dot product with the Leech shift is half the coordinate sum minus twice the distinguished
 coordinate. -/
