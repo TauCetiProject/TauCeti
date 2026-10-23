@@ -231,12 +231,12 @@ theorem productComplexShift_comp_productComplexπ (n : ℕ) :
     C.productComplexShift ≫ C.productComplexπ n =
       C.productComplexπ n - C.productComplexπ (n + 1) ≫ C.map (homOfLE (Nat.le_succ n)).op := by
   ext i : 2
-  refine LinearMap.ext fun (x : (C.term i).Product) ↦ ?_
-  refine ((C.term i).shift_apply x n).trans ?_
+  simp only [HomologicalComplex.comp_f, HomologicalComplex.sub_f_apply, ModuleCat.hom_comp,
+    ModuleCat.hom_sub, productComplexShift_f_hom, productComplexπ_f_hom]
+  refine LinearMap.ext fun (x : (C.term i).Product) ↦ ((C.term i).shift_apply x n).trans ?_
   rw [ModuleTower.transition_def]
-  -- Both sides are `xₙ - φₙ(xₙ₊₁)`; the right side is evaluated through the componentwise
-  -- definitions of `productComplexπ`, of differences and of composites of chain maps.
-  rfl
+  exact (LinearMap.sub_apply (LinearMap.proj n)
+    (((C.map (homOfLE (Nat.le_succ n)).op).f i).hom ∘ₗ LinearMap.proj (n + 1)) x).symm
 
 /-- The projections of the limit complex are compatible with the maps of the tower. -/
 @[reassoc (attr := simp)]
