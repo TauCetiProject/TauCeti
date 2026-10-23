@@ -45,6 +45,10 @@ noncomputable def jointDistribution (φ : A →ₗ[R] R) (a : ι → A) :
     FreeAlgebra R ι →ₗ[R] R :=
   φ.comp (FreeAlgebra.lift R a).toLinearMap
 
+/-- A joint distribution is the pullback of the functional along polynomial evaluation. -/
+theorem jointDistribution_def (φ : A →ₗ[R] R) (a : ι → A) :
+    jointDistribution φ a = φ.comp (FreeAlgebra.lift R a).toLinearMap := (rfl)
+
 @[simp]
 theorem jointDistribution_apply (φ : A →ₗ[R] R) (a : ι → A) (p : FreeAlgebra R ι) :
     jointDistribution φ a p = φ (FreeAlgebra.lift R a p) := (rfl)
