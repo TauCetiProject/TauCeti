@@ -57,19 +57,9 @@ variable {X : Matrix (Fin n) (Fin n) R}
 theorem tangentMatrix_curveVelocity_nilpotentOneParameterCoordinateMap (hX : IsNilpotent X) :
     tangentMatrix n (Bialgebra.curveVelocity (nilpotentOneParameterCoordinateMap n hX)
       (aeval_zero_comp_nilpotentOneParameterCoordinateMap n hX)) = X := by
-  obtain ⟨k, hk⟩ := id hX
-  have hk' : ((Polynomial.X : R[X]) • Polynomial.C.mapMatrix X) ^ (k + 2) = 0 := by
-    rw [smul_pow, ← map_pow, pow_add X, hk, zero_mul, map_zero, smul_zero]
   ext i j
   rw [tangentMatrix_apply, Bialgebra.algEquivSelf_curveVelocity_apply,
-    nilpotentOneParameterCoordinateMap_apply_X, IsNilpotent.exp_eq_sum hk', Matrix.sum_apply,
-    Polynomial.finsetSum_coeff, Finset.sum_eq_single_of_mem 1 (by simp)]
-  · simp
-  · intro m _ hm
-    rw [Matrix.smul_apply, Polynomial.coeff_smul, smul_pow, ← map_pow, Matrix.smul_apply,
-      RingHom.mapMatrix_apply, Matrix.map_apply, smul_eq_mul, Polynomial.coeff_X_pow_mul',
-      Polynomial.coeff_C]
-    split_ifs <;> first | omega | simp
+    nilpotentOneParameterCoordinateMap_apply_X, Matrix.coeff_one_exp_X_smul_C_mapMatrix hX]
 
 variable [IsDomain R]
 
