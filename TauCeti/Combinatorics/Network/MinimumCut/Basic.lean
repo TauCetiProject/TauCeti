@@ -151,6 +151,51 @@ theorem isMinimum_iff_value_eq (hAB : Disjoint A B) {S : Finset V} :
 
 end Value
 
+section Truncation
+
+variable [LinearOrder K] {f g : Finset V → K} {A B S₀ : Finset V} {b : K}
+
+/-- Suppose that `g ≤ f`, that `g` is at least `min f b` everywhere, and that some admissible side
+has `f`-value below `b`. Then `f` and `g` agree on every minimum side of `f`. -/
+theorem IsMinimum.eq_of_le_of_min_le (hgf : ∀ S, g S ≤ f S) (hfg : ∀ S, min (f S) b ≤ g S)
+    (hS₀ : IsAdmissible A B S₀) (hb : f S₀ < b) {S : Finset V} (hS : IsMinimum f A B S) :
+    g S = f S := by
+  have hfS : f S < b := (hS.le hS₀).trans_lt hb
+  exact le_antisymm (hgf S) (by simpa [min_eq_left hfS.le] using hfg S)
+
+/-- Suppose that `g ≤ f`, that `g` is at least `min f b` everywhere, and that some admissible side
+has `f`-value below `b`. Then `f` and `g` have the same minimum sides. This is the effect on
+minimum cuts of truncating all values above `b`. -/
+theorem isMinimum_iff_of_le_of_min_le (hgf : ∀ S, g S ≤ f S) (hfg : ∀ S, min (f S) b ≤ g S)
+    (hS₀ : IsAdmissible A B S₀) (hb : f S₀ < b) {S : Finset V} :
+    IsMinimum g A B S ↔ IsMinimum f A B S := by
+  have key {T : Finset V} (hT : f T < b) : g T = f T :=
+    le_antisymm (hgf T) (by simpa [min_eq_left hT.le] using hfg T)
+  constructor
+  · intro hS
+    have hgS : g S < b := (hS.le hS₀).trans_lt ((key hb).trans_lt hb)
+    have hfS : f S < b := (min_lt_iff.mp ((hfg S).trans_lt hgS)).resolve_right (lt_irrefl b)
+    refine isMinimum_iff.mpr ⟨hS.admissible, fun T hT ↦ ?_⟩
+    rw [← key hfS]
+    exact (hS.le hT).trans (hgf T)
+  · intro hS
+    have hfS : f S < b := (hS.le hS₀).trans_lt hb
+    refine isMinimum_iff.mpr ⟨hS.admissible, fun T hT ↦ ?_⟩
+    rw [key hfS]
+    exact (le_min (hS.le hT) hfS.le).trans (hfg T)
+
+/-- Under the hypotheses of `TauCeti.TerminalCut.isMinimum_iff_of_le_of_min_le`, the set
+functions `f` and `g` have the same minimum value. -/
+theorem minimumValue_eq_of_le_of_min_le [Finite V] (hAB : Disjoint A B)
+    (hgf : ∀ S, g S ≤ f S) (hfg : ∀ S, min (f S) b ≤ g S) (hS₀ : IsAdmissible A B S₀)
+    (hb : f S₀ < b) : minimumValue g hAB = minimumValue f hAB := by
+  obtain ⟨S, hS⟩ := exists_minimum f hAB
+  rw [((isMinimum_iff_value_eq f hAB).mp hS).2.symm, ← hS.eq_of_le_of_min_le hgf hfg hS₀ hb]
+  exact (((isMinimum_iff_value_eq g hAB).mp
+    ((isMinimum_iff_of_le_of_min_le hgf hfg hS₀ hb).mpr hS)).2).symm
+
+end Truncation
+
 /-- An injective relabeling preserves the conditions on terminal cuts. -/
 @[simp] theorem isAdmissible_map_iff (e : V ↪ W) {A B S : Finset V} :
     IsAdmissible (A.map e) (B.map e) (S.map e) ↔ IsAdmissible A B S := by

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Pi
 public import Mathlib.Algebra.Group.Submonoid.BigOperators
 public import TauCeti.Combinatorics.Network.Augmentation
 
@@ -52,6 +53,8 @@ of the flow; for a circulation there are no paths at all.
   `TauCeti.PathCycleDecomposition.target_eq_of_mem_paths` and
   `TauCeti.PathCycleDecomposition.sum_weight_paths_eq_val`: the decomposition of an ordinary
   `s`–`t` flow, whose paths run from `s` to `t` with total weight the value of the flow.
+* `TauCeti.PathCycleDecomposition.pathAssignment_apply_le_val`: the path components of a
+  decomposition of an ordinary flow carry at most its value on every arrow.
 
 ## Implementation notes
 
@@ -333,6 +336,17 @@ theorem sum_weight_paths_eq_val [PartialOrder K] [IsOrderedAddMonoid K] {f : Flo
     List.filter_eq_self.2 fun p hp ↦ decide_eq_true (D.target_eq_of_mem_paths hp)
   rw [f.val_def]
   simpa [hs, ht] using (D.excessAt_eq_sum_sub_sum t).symm
+
+/-- The path components of a decomposition of an ordinary `s`–`t` flow carry at most the value of
+the flow on every arrow. -/
+theorem pathAssignment_apply_le_val [PartialOrder K] [IsOrderedAddMonoid K] {f : Flow cap s t}
+    (D : PathCycleDecomposition f.toFun) {x y : V} (e : Q x y) : D.pathAssignment e ≤ f.val := by
+  rw [← D.sum_weight_paths_eq_val, pathAssignment_def]
+  simp only [Pi.list_sum_apply, List.map_map, Function.comp_def, WeightedWalk.assignment_def]
+  refine List.sum_le_sum fun p hp ↦ ?_
+  have hq := (D.weight_pos_of_mem_paths p hp).le
+  exact (walkAssignment_mem_Icc (D.isPath_walk p hp).nodup_arrows hq (cap := fun _ _ _ ↦ p.weight)
+    (fun _ _ _ ↦ hq) fun _ _ ↦ le_rfl).2 _ _ e
 
 end Flow
 

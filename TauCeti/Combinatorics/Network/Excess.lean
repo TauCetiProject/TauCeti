@@ -226,6 +226,17 @@ theorem arrowSum_sdiff_compl_le [Fintype V] [DecidableEq V] (hf : 0 ≤ f) (S Y 
   grw [arrowSum_union_right_le hf, arrowSum_mono_left hf sdiff_subset,
     arrowSum_mono_left hf (subset_univ (S \ Y))]
 
+/-- The value of a nonnegative assignment on a single arrow from `S` to `T` is at most its total
+value on the arrows from `S` to `T`. -/
+theorem apply_le_arrowSum (hf : 0 ≤ f) {S T : Finset V} {v w : V} (hv : v ∈ S) (hw : w ∈ T)
+    (e : Q v w) : f e ≤ arrowSum f S T :=
+  calc f e ≤ ∑ e : Q v w, f e := single_le_sum (fun e _ ↦ hf _ _ e) (mem_univ e)
+    _ ≤ ∑ w ∈ T, ∑ e : Q v w, f e :=
+      single_le_sum (f := fun w ↦ ∑ e : Q v w, f e) (fun _ _ ↦ sum_nonneg fun e _ ↦ hf _ _ e) hw
+    _ ≤ arrowSum f S T :=
+      single_le_sum (f := fun v ↦ ∑ w ∈ T, ∑ e : Q v w, f e)
+        (fun _ _ ↦ sum_nonneg fun _ _ ↦ sum_nonneg fun e _ ↦ hf _ _ e) hv
+
 end Nonneg
 
 /-- The total value entering `v` for a single arrow from `x` to `y` is `q` when `v = y` and
