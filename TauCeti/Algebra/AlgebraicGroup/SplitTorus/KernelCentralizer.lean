@@ -220,11 +220,12 @@ theorem centralizerKerTorusHopfIdeal_le_definingIdeal (T : SplitMaximalTorus R H
   (T.centralizerKerTorusHopfIdeal_le_centralizerKerHopfIdeal α).trans
     (T.centralizerKerHopfIdeal_le_definingIdeal α)
 
-private def kerCharacterZeroLift (r : ℕ) :
+private noncomputable def kerCharacterZeroLift (r : ℕ) :
     KerCharacterGroup (0 : ULift.{u} (Fin r) →₀ ℤ) →*
       Multiplicative (ULift.{u} (Fin r) →₀ ℤ) :=
   QuotientGroup.lift _ (MonoidHom.id _) (by simp)
 
+omit [Algebra.FiniteType R H] in
 private theorem centralizerHopfIdeal_mapDomain_comp_eq_of_comp_eq_id
     {Γ Δ : Type u} [CommGroup Γ] [CommGroup Δ]
     (φ : H →ₐc[R] MonoidAlgebra R Γ) (f : Γ →* Δ) (g : Δ →* Γ)
