@@ -54,8 +54,12 @@ vanishing below `C`. Restricting a pushforward along an injective `φ` gives bac
 * `TauCeti.NovikovSeries.exists_period_rescale_id` and
   `TauCeti.NovikovSeries.exists_period_rescale_comp`: the identity rescales periods by `1`, and
   composites rescale them by the product of the factors.
+* `TauCeti.NovikovSeries.period_rescale_neg`: negating both a period-preserving exponent map
+  and its target period rescales periods by `1`.
 * `TauCeti.NovikovSeries.coeff_map_eq_sum`: a coefficient of a pushforward as a sum over any
   finite set of exponents in the fibre containing the nonzero coefficients there.
+* `TauCeti.NovikovSeries.map_surjective`: pushforward along surjective coefficient and exponent
+  maps is surjective, even when the exponent map has infinite kernel.
 * `TauCeti.NovikovSeries.map_id` and `TauCeti.NovikovSeries.map_map`: the identity and composition
   laws of the pushforward.
 * `TauCeti.NovikovSeries.map_ofFinsupp`: the pushforward of a finitely supported series is the
@@ -87,6 +91,12 @@ namespace TauCeti
 namespace NovikovSeries
 
 variable {R S T H H' H'' : Type*}
+
+/-- Negating both the target period and a period-preserving exponent map rescales periods
+by `1`. -/
+theorem period_rescale_neg [AddZeroClass H] [AddCommGroup H']
+    {N : H →+ ℝ} {N' : H' →+ ℝ} {φ : H →+ H'} (hφ : ∀ h, N' (φ h) = N h) :
+    ∀ h, (-N') ((-φ) h) = 1 * N h := fun h => by simp [hφ h]
 
 section Map
 
@@ -188,6 +198,48 @@ theorem coeff_map_of_support_inter_subset_singleton (a : NovikovSeries R H N) {h
     (hs : a.support ∩ φ ⁻¹' {φ h} ⊆ {h}) : (map ρ φ hφ a).coeff (φ h) = ρ (a.coeff h) := by
   rw [coeff_map_eq_sum ρ φ hφ a {h} (fun g hg => Finset.mem_singleton.2 (hs hg))
     fun g hg => by rw [Finset.mem_singleton.1 hg], Finset.sum_singleton]
+
+/-- Pushforward along surjective coefficient and exponent maps is surjective. The exponent
+map may have infinite kernel and the period maps need not be injective or discrete. -/
+theorem map_surjective (hρ : Surjective ρ) (hφs : Surjective φ) : Surjective (map ρ φ hφ) := by
+  classical
+  obtain ⟨c, hc, hcφ⟩ := hφ
+  obtain ⟨σ, hσ⟩ := hφs.hasRightInverse
+  obtain ⟨τ, hτ⟩ := hρ.hasRightInverse
+  intro b
+  let f : H' → R := fun h => if b.coeff h = 0 then 0 else τ (b.coeff h)
+  have hf (h : H') : ρ (f h) = b.coeff h := by
+    simp only [f]
+    split_ifs with h
+    · simp [h]
+    · exact hτ _
+  have hf₀ (h : H') (hh : b.coeff h = 0) : f h = 0 := by simp [f, hh]
+  let a : NovikovSeries R H N :=
+    { coeff := extend σ f 0
+      finite_lt C := by
+        refine ((b.finite_lt (c * C)).image σ).subset ?_
+        rintro h ⟨hh, hC⟩
+        by_cases hσh : ∃ h', σ h' = h
+        · obtain ⟨h', rfl⟩ := hσh
+          rw [hσ.injective.extend_apply] at hh
+          refine ⟨h', ⟨fun hb => hh (hf₀ h' hb), ?_⟩, rfl⟩
+          have hp := hcφ (σ h')
+          rw [hσ h'] at hp
+          exact hp.trans_lt (mul_lt_mul_of_pos_left hC hc)
+        · exact (hh (extend_apply' f (fun _ => 0) h hσh)).elim }
+  have ha (h : H) : a.coeff h = extend σ f 0 h := rfl
+  refine ⟨a, ?_⟩
+  ext h'
+  rw [← hσ h', coeff_map_of_support_inter_subset_singleton ρ φ _ a ?_]
+  · rw [ha, hσ.injective.extend_apply, hf, hσ h']
+  · rintro h ⟨hh, heq⟩
+    by_cases hσh : ∃ k, σ k = h
+    · obtain ⟨k, rfl⟩ := hσh
+      simp only [mem_preimage, mem_singleton_iff] at heq
+      rw [hσ k, hσ h'] at heq
+      exact congrArg σ heq
+    · exact (mem_support.1 hh ((ha h).trans
+        (extend_apply' f (fun _ => 0) h hσh))).elim
 
 /-- Along an injective exponent homomorphism, the pushforward moves each coefficient to the image
 exponent. -/

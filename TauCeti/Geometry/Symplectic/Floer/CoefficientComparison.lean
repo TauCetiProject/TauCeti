@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.PeriodGroup
 public import TauCeti.RingTheory.NovikovSeries.Functoriality
-public import TauCeti.RingTheory.NovikovSeries.Surjective
 
 /-!
 # Comparing quantum and Floer coefficients
@@ -58,13 +57,13 @@ variable [Semiring R] (q : S →+ Γ) (hω : ∀ A, Ω (q A) = ω A)
 /-- The completed coefficient comparison `q^A ↦ e^(-q A)`, with source period `ω` and
 target period `-Ω`. Area preservation makes it a unital ring homomorphism. -/
 def coefficientComparison : NovikovSeries R S ω →+* NovikovSeries R Γ (-Ω) :=
-  mapRingHom (RingHom.id R) (-q) ⟨1, one_pos, fun A => by simp [hω A]⟩
+  mapRingHom (RingHom.id R) (-q) ⟨1, one_pos, period_rescale_neg hω⟩
 
 /-- The comparison is the existing finite-fibre Novikov pushforward along negative class
 projection. -/
 theorem coefficientComparison_apply (a : NovikovSeries R S ω) :
     coefficientComparison q hω a =
-      map (RingHom.id R : R →+ R) (-q) ⟨1, one_pos, fun A => by simp [hω A]⟩ a := by
+      map (RingHom.id R : R →+ R) (-q) ⟨1, one_pos, period_rescale_neg hω⟩ a := by
   rw [coefficientComparison, mapRingHom_apply]
 
 /-- The comparison sends a quantum monomial to its negatively indexed Floer monomial. -/
@@ -78,7 +77,7 @@ include hω in
 theorem finite_coefficientComparison_fiber (a : NovikovSeries R S ω) (γ : Γ) :
     (a.support ∩ (-q) ⁻¹' {γ}).Finite :=
   finite_support_inter_preimage_singleton (N' := -Ω) a
-    ⟨1, one_pos, fun A => by simp [hω A]⟩ γ
+    ⟨1, one_pos, period_rescale_neg hω⟩ γ
 
 /-- A coefficient of the comparison is the finite sum over its supported fibre. -/
 theorem coeff_coefficientComparison (a : NovikovSeries R S ω) (γ : Γ) :
@@ -103,7 +102,7 @@ theorem coefficientComparison_surjective (hq : Function.Surjective q) :
     Function.Surjective (coefficientComparison (R := R) q hω) := by
   intro b
   obtain ⟨a, ha⟩ := map_surjective (RingHom.id R : R →+ R) (-q)
-    (N := ω) (N' := -Ω) ⟨1, one_pos, fun A => by simp [hω A]⟩
+    (N := ω) (N' := -Ω) ⟨1, one_pos, period_rescale_neg hω⟩
     Function.surjective_id (neg_surjective.comp hq) b
   exact ⟨a, (coefficientComparison_apply q hω a).trans ha⟩
 
@@ -136,7 +135,7 @@ theorem coefficientComparison_mem_periodFiltration {C : ℝ} {a : NovikovSeries 
     coefficientComparison q hω a ∈ periodFiltration R (-Ω) C := by
   rw [coefficientComparison_apply]
   simpa only [one_mul] using map_mem_periodFiltration (RingHom.id R : R →+ R) (-q)
-    (N' := -Ω) _ zero_le_one (fun A => by simp [hω A]) ha
+    (N' := -Ω) _ zero_le_one (period_rescale_neg hω) ha
 
 end Ring
 
