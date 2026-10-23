@@ -58,6 +58,8 @@ the `ℚ ∪ {∞}` bijection through any framing's coordinate isomorphism.
   framing.
 * `TauCeti.FramedBoundaryTorus.value`: the framing-dependent `ℚ ∪ {∞}` value of a slope.
 * `TauCeti.FramedBoundaryTorus.slopeEquiv`: the bijection `Slope T.H ≃ ℚ ∪ {∞}` a framing produces.
+* `TauCeti.FramedBoundaryTorus.shiftLongitude`: the framing with the same meridian and the
+  longitude `λ + n · μ`.
 
 ## Main results
 
@@ -439,6 +441,61 @@ theorem value_longitude : T.value T.longitude = (0 : ℚ) := by
   unfold value longitude
   rw [Slope.congr_mk, Slope.value_mk, T.coord_basis_one, slopeValue_of_snd_ne_zero one_ne_zero]
   norm_num
+
+/-! ### Changing the longitude -/
+
+/-- The change of `(μ, λ)`-coordinates `(p, q) ↦ (p - n q, q)` that accompanies replacing the
+longitude `λ` by `λ + n · μ`. -/
+private def shiftCoord (n : ℤ) : (ℤ × ℤ) ≃ₗ[ℤ] ℤ × ℤ where
+  toFun v := (v.1 - n * v.2, v.2)
+  invFun v := (v.1 + n * v.2, v.2)
+  map_add' v w := by ext <;> simp only [Prod.fst_add, Prod.snd_add]; ring
+  map_smul' c v := by
+    ext <;> simp only [Prod.smul_fst, Prod.smul_snd, smul_eq_mul, RingHom.id_apply]; ring
+  left_inv v := by simp
+  right_inv v := by simp
+
+/-- The basis `(μ, λ + n · μ)` of `H₁(T; ℤ)`. -/
+noncomputable def shiftLongitudeBasis (n : ℤ) : Basis (Fin 2) ℤ T.H :=
+  .ofEquivFun (T.coord ≪≫ₗ shiftCoord n ≪≫ₗ (LinearEquiv.finTwoArrow ℤ ℤ).symm)
+
+/-- The framing of the same torus with the same meridian `μ` and the longitude `λ + n · μ`. For
+the boundary torus of a knot exterior this is the framing changed by `n` twists about the
+meridian.
+
+This is reducible so that the torus of the new framing is that of `T` for consumers, and hence
+that classes of `T.H` are classes of `(T.shiftLongitude n).H`. -/
+noncomputable abbrev shiftLongitude (n : ℤ) : FramedBoundaryTorus where
+  torus := T.torus
+  basis := T.shiftLongitudeBasis n
+
+/-- The coordinates of a class for the shifted framing: `p · μ + q · λ = (p - n q) · μ +
+q · (λ + n · μ)`. -/
+@[simp]
+theorem coord_shiftLongitude (n : ℤ) (x : T.H) :
+    (T.shiftLongitude n).coord x = ((T.coord x).1 - n * (T.coord x).2, (T.coord x).2) := by
+  have h : (T.shiftLongitude n).basis.equivFun =
+      T.coord ≪≫ₗ shiftCoord n ≪≫ₗ (LinearEquiv.finTwoArrow ℤ ℤ).symm :=
+    Basis.equivFun_ofEquivFun _
+  rw [coord, LinearEquiv.trans_apply, h]
+  simp only [LinearEquiv.trans_apply, LinearEquiv.apply_symm_apply]
+  rfl
+
+/-- The shifted framing keeps the meridian. -/
+@[simp]
+theorem shiftLongitude_basis_zero (n : ℤ) : (T.shiftLongitude n).basis 0 = T.basis 0 := by
+  apply (T.shiftLongitude n).coord.injective
+  rw [coord_basis_zero, coord_shiftLongitude, coord_basis_zero]
+  simp
+
+/-- The longitude of the shifted framing is `λ + n · μ`. -/
+@[simp]
+theorem shiftLongitude_basis_one (n : ℤ) :
+    (T.shiftLongitude n).basis 1 = T.basis 1 + n • T.basis 0 := by
+  apply (T.shiftLongitude n).coord.injective
+  rw [coord_basis_one, coord_shiftLongitude, map_add, map_zsmul, coord_basis_one,
+    coord_basis_zero]
+  simp
 
 end FramedBoundaryTorus
 

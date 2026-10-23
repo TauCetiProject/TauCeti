@@ -41,6 +41,8 @@ of `X`.
 * `TopCat.mayerVietoris_exact₁`, `TopCat.mayerVietoris_exact₂`, `TopCat.mayerVietoris_exact₃`:
   exactness at `Hₘ(U ∩ V)`, at `Hₙ(U) ⊞ Hₙ(V)` and at `Hₙ(X)`.
 * `TopCat.epi_mayerVietorisFromBiprod_zero`: surjectivity at the degree-zero endpoint.
+* `TopCat.isIso_mayerVietorisToBiprod_of_isZero`: when `Hₙ₊₁(X)` and `Hₙ(X)` vanish,
+  `Hₙ(U ∩ V) ≅ Hₙ(U) ⊞ Hₙ(V)`.
 * `TopCat.mayerVietorisδ_naturality`: naturality of the connecting morphism.
 
 ## References
@@ -232,6 +234,18 @@ lemma mayerVietoris_exact₃ (n m : ℕ) (h : m + 1 = n := by lia) :
   · dsimp only
     rw [Iso.refl_hom, Category.comp_id, TauCeti.smallSingularHomologyIso_hom,
     homologyMap_ι_comp_mayerVietorisδ R hU hV hUV n m h]
+
+include hU hV hUV in
+/-- If `Hₙ₊₁(X)` and `Hₙ(X)` vanish, the first map `Hₙ(U ∩ V) ⟶ Hₙ(U) ⊞ Hₙ(V)` of the
+Mayer–Vietoris sequence of an open cover is an isomorphism. -/
+lemma isIso_mayerVietorisToBiprod_of_isZero (n : ℕ)
+    (h₁ : IsZero ((toSSet.obj X).homology R (n + 1))) (h₀ : IsZero ((toSSet.obj X).homology R n)) :
+    IsIso (SSet.mayerVietorisToBiprod R
+      (toSSet.map (ofHom (ContinuousMap.inclusion (Set.inter_subset_left (t := V)))))
+      (toSSet.map (ofHom (ContinuousMap.inclusion (Set.inter_subset_right (s := U))))) n) := by
+  have := (mayerVietoris_exact₁ R hU hV hUV (n + 1) n).mono_g (h₁.eq_of_src _ _)
+  have := (mayerVietoris_exact₂ R hU hV hUV n).epi_f (h₀.eq_of_tgt _ _)
+  exact isIso_of_mono_of_epi _
 
 include hU hV hUV in
 /-- The map `H₀(U) ⊞ H₀(V) ⟶ H₀(X)` at the end of the Mayer–Vietoris sequence is an
