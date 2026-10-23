@@ -86,12 +86,12 @@ theorem homogeneousLawMap_toFun (d : ℕ)
 
 /-- The ground value of the associated law is `f` evaluated on the divided-power generator. -/
 @[simp]
-theorem ground_homogeneousLawMap_apply (d : ℕ)
+theorem ground_toPolynomialLaw_comp_gamma_apply (d : ℕ)
     (f : homogeneousSubmodule (R := R) (M := M) d →ₗ[R] N) (m : M) :
-    (homogeneousLawMap R M N d f : M →ₚₗ[R] N).ground m =
+    (f.toPolynomialLaw.comp (gamma R M d)).ground m =
       f ⟨dp R d m, dp_mem_homogeneousSubmodule d m⟩ := by
-  rw [PolynomialLaw.ground_apply, PolynomialLaw.toFun'_eq_toFun, homogeneousLawMap_toFun,
-    gamma_toFun_tmul]
+  rw [PolynomialLaw.ground_apply, PolynomialLaw.comp_toFun', Function.comp_apply,
+    LinearMap.toPolynomialLaw_toFun', PolynomialLaw.toFun'_eq_toFun, gamma_toFun_tmul]
   simp
 
 open MvPolynomial in
