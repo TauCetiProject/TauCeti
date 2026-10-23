@@ -72,6 +72,45 @@ open CategoryTheory Bicategory
 
 open scoped IsMulCommutative
 
+namespace CategoryTheory.Cat
+
+/-- The associator of three identity functors in `Cat` is the identity. -/
+@[simp]
+lemma associator_id_hom (C : Type w) [Category.{v} C] :
+    (α_ (𝟙 (Cat.of C)) (𝟙 (Cat.of C)) (𝟙 (Cat.of C))).hom = 𝟙 _ := by
+  ext X
+  simp
+
+/-- The inverse associator of three identity functors in `Cat` is the identity. -/
+@[simp]
+lemma associator_id_inv (C : Type w) [Category.{v} C] :
+    (α_ (𝟙 (Cat.of C)) (𝟙 (Cat.of C)) (𝟙 (Cat.of C))).inv = 𝟙 _ := by
+  ext X
+  simp
+
+/-- The left unitor of the identity functor in `Cat` is the identity. -/
+@[simp]
+lemma leftUnitor_id_hom (C : Type w) [Category.{v} C] :
+    (λ_ (𝟙 (Cat.of C))).hom = 𝟙 _ := by
+  ext X
+  simp
+
+/-- The right unitor of the identity functor in `Cat` is the identity. -/
+@[simp]
+lemma rightUnitor_id_hom (C : Type w) [Category.{v} C] :
+    (ρ_ (𝟙 (Cat.of C))).hom = 𝟙 _ := by
+  ext X
+  simp
+
+/-- The inverse right unitor of the identity functor in `Cat` is the identity. -/
+@[simp]
+lemma rightUnitor_id_inv (C : Type w) [Category.{v} C] :
+    (ρ_ (𝟙 (Cat.of C))).inv = 𝟙 _ := by
+  ext X
+  simp
+
+end CategoryTheory.Cat
+
 namespace TauCeti
 
 section CentralUnitIso
@@ -99,6 +138,20 @@ lemma centralUnitIso_inv_toNatTrans_app (z : (CatCenter C)ˣ) (X : C) :
 lemma centralUnitIso_inv (z : (CatCenter C)ˣ) :
     (centralUnitIso C z).inv = (centralUnitIso C z⁻¹).hom :=
   (rfl)
+
+/-- Right whiskering a central automorphism by the identity functor leaves it unchanged. -/
+@[simp]
+lemma centralUnitIso_hom_whiskerRight_id (z : (CatCenter C)ˣ) :
+    (centralUnitIso C z).hom ▷ 𝟙 (Cat.of C) = (centralUnitIso C z).hom := by
+  ext X
+  simp
+
+/-- Left whiskering a central automorphism by the identity functor leaves it unchanged. -/
+@[simp]
+lemma centralUnitIso_id_whiskerLeft_hom (z : (CatCenter C)ˣ) :
+    𝟙 (Cat.of C) ◁ (centralUnitIso C z).hom = (centralUnitIso C z).hom := by
+  ext X
+  simp
 
 @[simp]
 lemma centralUnitIso_one : centralUnitIso C 1 = Iso.refl _ :=
@@ -134,16 +187,11 @@ lemma centralUnitIso_associativity_iff (c : G × G → (CatCenter C)ˣ) (g h j :
           𝟙 (Cat.of C) ◁ (centralUnitIso C (c (j, h))).inv ≫
           (centralUnitIso C (c (j * h, g))).inv = 𝟙 _ ↔
       c (j * h, g) * c (j, h) = c (h, g) * c (j, h * g) := by
-  have key : (centralUnitIso C (c (j, h * g))).hom ≫
-      (centralUnitIso C (c (h, g))).hom ▷ 𝟙 (Cat.of C) ≫
-        (α_ (𝟙 (Cat.of C)) (𝟙 (Cat.of C)) (𝟙 (Cat.of C))).hom ≫
-          𝟙 (Cat.of C) ◁ (centralUnitIso C (c (j, h))).inv ≫
-            (centralUnitIso C (c (j * h, g))).inv =
-      (centralUnitIso C (c (j, h * g) * c (h, g) * (c (j, h))⁻¹ * (c (j * h, g))⁻¹)).hom := by
-    ext X
-    simp [CatCenter.mul_app]
-  rw [key, centralUnitIso_hom_eq_id_iff, mul_inv_eq_one, mul_inv_eq_iff_eq_mul]
-  simp only [eq_comm, mul_comm]
+  simp only [centralUnitIso_inv, centralUnitIso_hom_whiskerRight_id,
+    centralUnitIso_id_whiskerLeft_hom, Cat.associator_id_hom, Category.comp_id,
+    ← Category.assoc, centralUnitIso_hom_comp_hom]
+  rw [centralUnitIso_hom_eq_id_iff, mul_inv_eq_one, mul_inv_eq_iff_eq_mul,
+    eq_comm, mul_comm (c (j, h * g)) (c (h, g))]
 
 /-- The left unit condition of a pseudofunctor out of `LocallyDiscrete (SingleObj G)` with
 identity `1`-cells, central compositors `centralUnitIso C (c (h, g))` at `g ≫ h = h * g` and
@@ -151,11 +199,8 @@ unit comparison `centralUnitIso C u`, evaluated at `g`, is `c (g, 1) * u = 1`. -
 lemma centralUnitIso_left_unitor_iff (c : G × G → (CatCenter C)ˣ) (u : (CatCenter C)ˣ) (g : G) :
     (centralUnitIso C (c (g, 1))).hom ≫ (centralUnitIso C u).hom ▷ 𝟙 (Cat.of C) ≫
         (λ_ (𝟙 (Cat.of C))).hom = 𝟙 _ ↔ c (g, 1) * u = 1 := by
-  have key : (centralUnitIso C (c (g, 1))).hom ≫ (centralUnitIso C u).hom ▷ 𝟙 (Cat.of C) ≫
-      (λ_ (𝟙 (Cat.of C))).hom = (centralUnitIso C (c (g, 1) * u)).hom := by
-    ext X
-    simp [CatCenter.mul_app]
-  rw [key, centralUnitIso_hom_eq_id_iff]
+  simp only [centralUnitIso_hom_whiskerRight_id, Cat.leftUnitor_id_hom,
+    Category.comp_id, centralUnitIso_hom_comp_hom, centralUnitIso_hom_eq_id_iff]
 
 /-- The right unit condition of a pseudofunctor out of `LocallyDiscrete (SingleObj G)` with
 identity `1`-cells, central compositors `centralUnitIso C (c (h, g))` at `g ≫ h = h * g` and
@@ -164,11 +209,8 @@ lemma centralUnitIso_right_unitor_iff (c : G × G → (CatCenter C)ˣ) (u : (Cat
     (g : G) :
     (centralUnitIso C (c (1, g))).hom ≫ 𝟙 (Cat.of C) ◁ (centralUnitIso C u).hom ≫
         (ρ_ (𝟙 (Cat.of C))).hom = 𝟙 _ ↔ c (1, g) * u = 1 := by
-  have key : (centralUnitIso C (c (1, g))).hom ≫ 𝟙 (Cat.of C) ◁ (centralUnitIso C u).hom ≫
-      (ρ_ (𝟙 (Cat.of C))).hom = (centralUnitIso C (c (1, g) * u)).hom := by
-    ext X
-    simp [CatCenter.mul_app]
-  rw [key, centralUnitIso_hom_eq_id_iff]
+  simp only [centralUnitIso_id_whiskerLeft_hom, Cat.rightUnitor_id_hom,
+    Category.comp_id, centralUnitIso_hom_comp_hom, centralUnitIso_hom_eq_id_iff]
 
 /-- The pseudofunctor `LocallyDiscrete (SingleObj G) ⥤ᵖ Cat` attached to a `2`-cocycle `c` of
 `G` with coefficients in the central units of `C`, for the trivial action. It sends the unique
@@ -229,15 +271,9 @@ lemma centralUnitIso_naturality_id_iff (b : G → (CatCenter C)ˣ) (u u' : (CatC
         (centralUnitIso C u).hom ▷ 𝟙 (Cat.of C) ≫ (λ_ (𝟙 (Cat.of C))).hom ≫
           (ρ_ (𝟙 (Cat.of C))).inv ↔
       b 1 * u' = u := by
-  have key : (centralUnitIso C u).hom ▷ 𝟙 (Cat.of C) ≫ (λ_ (𝟙 (Cat.of C))).hom ≫
-      (ρ_ (𝟙 (Cat.of C))).inv = (centralUnitIso C u).hom := by
-    ext X
-    simp
-  have key' : (centralUnitIso C (b 1)).hom ≫ 𝟙 (Cat.of C) ◁ (centralUnitIso C u').hom =
-      (centralUnitIso C (b 1 * u')).hom := by
-    ext X
-    simp [CatCenter.mul_app]
-  rw [key, key', centralUnitIso_hom_inj]
+  simp only [centralUnitIso_hom_whiskerRight_id, centralUnitIso_id_whiskerLeft_hom,
+    Cat.leftUnitor_id_hom, Cat.rightUnitor_id_inv, Category.comp_id,
+    centralUnitIso_hom_comp_hom, centralUnitIso_hom_inj]
 
 /-- The composition condition of a strong transformation with identity components and
 naturality `2`-cells `centralUnitIso C (b g)`, between pseudofunctors with identity `1`-cells
@@ -254,22 +290,14 @@ lemma centralUnitIso_naturality_comp_iff (b : G → (CatCenter C)ˣ) (c c' : G �
                 (centralUnitIso C (b g)).hom ▷ 𝟙 (Cat.of C) ≫
                   (α_ (𝟙 (Cat.of C)) (𝟙 (Cat.of C)) (𝟙 (Cat.of C))).hom ↔
       c' (h, g) = b h * b g / b (h * g) * c (h, g) := by
-  have key : (centralUnitIso C (c (h, g))).hom ▷ 𝟙 (Cat.of C) ≫
-      (α_ (𝟙 (Cat.of C)) (𝟙 (Cat.of C)) (𝟙 (Cat.of C))).hom ≫
-        𝟙 (Cat.of C) ◁ (centralUnitIso C (b h)).hom ≫
-          (α_ (𝟙 (Cat.of C)) (𝟙 (Cat.of C)) (𝟙 (Cat.of C))).inv ≫
-            (centralUnitIso C (b g)).hom ▷ 𝟙 (Cat.of C) ≫
-              (α_ (𝟙 (Cat.of C)) (𝟙 (Cat.of C)) (𝟙 (Cat.of C))).hom =
-      (centralUnitIso C (c (h, g) * b h * b g)).hom := by
-    ext X
-    simp [CatCenter.mul_app]
-  have key' : (centralUnitIso C (b (h * g))).hom ≫
-      𝟙 (Cat.of C) ◁ (centralUnitIso C (c' (h, g))).hom =
-      (centralUnitIso C (b (h * g) * c' (h, g))).hom := by
-    ext X
-    simp [CatCenter.mul_app]
-  rw [key, key', centralUnitIso_hom_inj, ← eq_inv_mul_iff_mul_eq]
-  simp only [div_eq_mul_inv, mul_comm, mul_left_comm, mul_assoc]
+  simp only [centralUnitIso_hom_whiskerRight_id, centralUnitIso_id_whiskerLeft_hom,
+    Cat.associator_id_hom, Cat.associator_id_inv, Category.comp_id,
+    ← Category.assoc, centralUnitIso_hom_comp_hom, centralUnitIso_hom_inj]
+  have scalar_eq : (b (h * g))⁻¹ * (c (h, g) * b h * b g) =
+      b h * b g / b (h * g) * c (h, g) := by
+    rw [div_eq_mul_inv]
+    ac_rfl
+  rw [← eq_inv_mul_iff_mul_eq, scalar_eq]
 
 variable {C}
 
@@ -295,7 +323,12 @@ strong transformation. -/
     -- definitional identification of `(centralCocyclePseudofunctor C c hc).map f` with `𝟙 _`.
     exact (Category.id_comp _).trans (Category.comp_id _).symm
   naturality_id _ := (centralUnitIso_naturality_id_iff C b _ _).2 (by
-    simp [hb 1 1, div_eq_mul_inv, mul_comm])
+    have hunit : c' (1, 1) = b 1 * c (1, 1) := by
+      simpa only [one_mul, mul_div_cancel_right] using hb 1 1
+    rw [hunit, mul_inv_rev]
+    calc
+      b 1 * ((c (1, 1))⁻¹ * (b 1)⁻¹) = (c (1, 1))⁻¹ * (b 1 * (b 1)⁻¹) := by ac_rfl
+      _ = (c (1, 1))⁻¹ := by rw [mul_inv_cancel, mul_one])
   naturality_comp g h := (centralUnitIso_naturality_comp_iff C b c c' g.as h.as).2 (hb _ _)
 
 @[simp]
