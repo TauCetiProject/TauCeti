@@ -153,10 +153,10 @@ theorem firstColumn_mapValue {B : CommAlgCat.{u} R} (φ : A ⟶ B)
     firstColumn (AlgHom.mapValue (H := coordinateHopfAlgebra R 2) φ.hom g) =
       (algSpec (.of R)).map φ.op ≫ firstColumn g :=
   PuncturedAffineSpace.hom_ext fun i ↦ by
-    rw [coordinateAlgHom_firstColumn, PuncturedAffineSpace.coordinateAlgHom_comp,
-      AlgHom.comp_apply, coordinateAlgHom_firstColumn, pointsMulEquiv_mapValue,
-      Matrix.SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply, Matrix.map_apply,
-      AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
+    simp only [coordinateAlgHom_firstColumn, PuncturedAffineSpace.coordinateAlgHom_comp,
+      AlgHom.comp_apply]
+    rw [pointsMulEquiv_mapValue]
+    simp
 
 variable (R) in
 /-- The first-column map from `SL₂` to the punctured plane, as a natural map of functors of
