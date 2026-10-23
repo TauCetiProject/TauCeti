@@ -164,6 +164,10 @@ def IsLowerEnd (D : BrauerDiagram k) (x : Fin k ⊕ Fin k) : Prop :=
 instance (D : BrauerDiagram k) : DecidablePred D.IsLowerEnd :=
   fun x => inferInstanceAs (Decidable (finSumFinEquiv x < finSumFinEquiv (D.val x)))
 
+/-- Being a lower end means coming before the partner in the order of `Fin (k + k)`. -/
+theorem isLowerEnd_def (D : BrauerDiagram k) (x : Fin k ⊕ Fin k) :
+    D.IsLowerEnd x ↔ finSumFinEquiv x < finSumFinEquiv (D.val x) := Iff.rfl
+
 /-- A boundary point that is not the lower end of its arc has the lower end as its partner. -/
 theorem isLowerEnd_val_of_not_isLowerEnd (D : BrauerDiagram k) {x : Fin k ⊕ Fin k}
     (hx : ¬D.IsLowerEnd x) : D.IsLowerEnd (D.val x) := by
