@@ -13,10 +13,11 @@ public import TauCeti.Topology.Algebra.Group.Connected
 public import TauCeti.Topology.Algebra.Group.Units
 
 /-!
-# The identity component of the positive real units
+# The identity component of the real unit group
 
-The positive units of `ℝ` are the identity component of the real unit group. The proof identifies
-the positive units with the image of the positive half-line under the continuous unit constructor.
+The positive units of `ℝ` form the identity component of the real unit group. This file provides
+their preconnectedness and identifies `Subgroup.connectedComponentOfOne ℝˣ` with
+`Units.posSubgroup ℝ`.
 -/
 
 public section

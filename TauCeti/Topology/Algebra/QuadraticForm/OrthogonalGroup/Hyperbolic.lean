@@ -31,7 +31,8 @@ So every topological statement about `SO(H)` is a statement about `Rˣ`. For ins
 the special orthogonal group of `x² - y²` is not compact, because `ℝˣ` is not: the torus elements
 `diag(t, t⁻¹)` leave every compact set as `t` grows. In dimension two the Eichler transvections
 cannot witness this, since their parameter space `u^⊥ / ℝ u` is trivial; both facts are recorded
-below as worked examples.
+below as worked examples. Over `ℝ`, the identity component of `SO(H)` is the positive-unit part of
+the hyperbolic torus.
 
 ## Main definitions
 
@@ -43,6 +44,9 @@ below as worked examples.
 * `TauCeti.continuous_hyperbolicTorus`: the diagonal torus is continuous.
 * `TauCeti.continuous_hyperbolicTorusEquiv_symm`: so is its inverse, which reads off the parameter
   of a proper isometry.
+* `TauCeti.connectedComponentOfOne_specialOrthogonalGroup_hyperbolicPlane_real`: over `ℝ`, the
+  identity component of the special orthogonal hyperbolic-plane group is the positive-unit part of
+  the hyperbolic torus.
 -/
 
 public section
@@ -126,7 +130,7 @@ open Set
 
 /-- The identity component of the real special-orthogonal hyperbolic-plane group is the
 positive-unit part of its hyperbolic torus. -/
-theorem connectedComponentOfOne_specialOrthogonalGroup_hyperbolicPlane :
+theorem connectedComponentOfOne_specialOrthogonalGroup_hyperbolicPlane_real :
     Subgroup.connectedComponentOfOne (specialOrthogonalGroup (hyperbolicPlane ℝ)) =
       (Units.posSubgroup ℝ).map (hyperbolicTorus ℝ) := by
   let e := hyperbolicTorusContinuousMulEquiv ℝ

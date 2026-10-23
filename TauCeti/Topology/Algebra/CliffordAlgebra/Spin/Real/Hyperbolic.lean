@@ -10,13 +10,12 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinorNorm.Hyperbolic
 public import TauCeti.Topology.Algebra.QuadraticForm.OrthogonalGroup.Hyperbolic
 
 /-!
-# The identity component of the real hyperbolic-plane orthogonal group
+# The real Spin image of the hyperbolic plane
 
-The proper isometry group of the real hyperbolic plane is the topological unit group
-through the hyperbolic torus. Its identity component is therefore the positive-unit
-subgroup. The real Spin image is exactly this component: the general spinor-norm
-calculation identifies it with the square-unit parameters, and a real unit is a square
-exactly when it is positive.
+The real Spin image of the hyperbolic plane is the identity component of its proper orthogonal
+group. The proof uses the identity-component result for the real hyperbolic orthogonal group,
+identifies the Spin image with square-unit parameters through the general spinor-norm calculation,
+and uses that a real unit is a square exactly when it is positive.
 -/
 
 public section
@@ -32,7 +31,7 @@ theorem range_spinToSpecialOrthogonal_hyperbolicPlane_real :
     (CliffordAlgebra.spinToSpecialOrthogonal (hyperbolicPlane ℝ)).range =
       Subgroup.connectedComponentOfOne (specialOrthogonalGroup (hyperbolicPlane ℝ)) := by
   rw [CliffordAlgebra.range_spinToSpecialOrthogonal_hyperbolicPlane,
-    connectedComponentOfOne_specialOrthogonalGroup_hyperbolicPlane,
+    connectedComponentOfOne_specialOrthogonalGroup_hyperbolicPlane_real,
     Units.square_eq_posSubgroup_real]
 
 end TauCeti
