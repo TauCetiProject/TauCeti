@@ -16,10 +16,10 @@ import Mathlib.LinearAlgebra.LinearIndependent.BaseChange
 This file records general results relating matrix rank to the corresponding linear maps,
 maximal minors and change of scalars. In particular, over an integral domain a finite family of
 rows is linearly independent exactly when one of its maximal minors is nonzero. Over a
-star-ordered field, the equality of the ranks of `A` and of its conjugate transpose `Aᴴ` splits the
-source of `A` into its kernel and the range of `Aᴴ`; read in a basis, this splits a space into the
-common kernel and the sum of the ranges of a family of operators that are self-adjoint for the
-Hermitian form making the basis orthonormal.
+star-ordered field, the source of `A` splits into the kernel of `A` and the range of its conjugate
+transpose `Aᴴ`; read in a basis, this splits a space into the common kernel and the sum of the
+ranges of a family of operators that are self-adjoint for the Hermitian form making the basis
+orthonormal.
 
 ## Main results
 

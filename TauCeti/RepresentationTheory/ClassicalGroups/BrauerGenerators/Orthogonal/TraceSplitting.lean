@@ -51,16 +51,16 @@ orthonormal, the harmonic tensors are the orthogonal complement of the trace ten
 is anisotropic. An invertible loop value is no longer what drives the splitting, and over a field
 of positive characteristic the splitting can fail already on two strands.
 
-The splitting needs `n` invertible in `k` and not merely nonzero as a natural number: where
-`(n : k) = 0` the cap kills the cup, so the Brauer generator `e = cup ∘ cap` squares to zero, and
-for `n ≠ 0` the trace line then lies **inside** the harmonic tensors instead of complementing
-them. Both dimension counts survive there, because the cap is surjective and the cup injective for
-purely combinatorial reasons: the cap sends `e₀ ⊗ e₀` to `1`, and the `e₀ ⊗ e₀` coordinate of
-`cup c` is `c`. Neither needs the trace splitting, so both are proved beside the cap and the cup,
-as `TauCeti.orthogonalCap_surjective` and `TauCeti.orthogonalCup_injective`; so are the two
-identities they give for the Brauer generator `e = cup ∘ cap`, that `e` has the same kernel as the
-cap and the same image as the cup (`TauCeti.ker_orthogonalCupCap` and
-`TauCeti.range_orthogonalCupCap`). Read here, through
+The two-strand trace-line splitting needs `n` invertible in `k` and not merely nonzero as a
+natural number: where `(n : k) = 0` the cap kills the cup, so the Brauer generator
+`e = cup ∘ cap` squares to zero, and for `n ≠ 0` the trace line then lies **inside** the harmonic
+tensors instead of complementing them. Both dimension counts survive there, because the cap is
+surjective and the cup injective for purely combinatorial reasons: the cap sends `e₀ ⊗ e₀` to
+`1`, and the `e₀ ⊗ e₀` coordinate of `cup c` is `c`. Neither needs the trace splitting, so both
+are proved beside the cap and the cup, as `TauCeti.orthogonalCap_surjective` and
+`TauCeti.orthogonalCup_injective`; so are the two identities they give for the Brauer generator
+`e = cup ∘ cap`, that `e` has the same kernel as the cap and the same image as the cup
+(`TauCeti.ker_orthogonalCupCap` and `TauCeti.range_orthogonalCupCap`). Read here, through
 `TauCeti.harmonicTensors_two_eq_ker_orthogonalCap`, they say that the kernel of `e` is the harmonic
 tensors and its image is the trace line.
 
