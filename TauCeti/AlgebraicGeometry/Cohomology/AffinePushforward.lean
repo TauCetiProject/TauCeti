@@ -91,11 +91,10 @@ theorem moduleFinite_cohomology_zero_pushforward_iff (M : X.Modules) :
   -- `baseRingToGlobalSections`; identify these scalar maps at the top open.
   have e : Γ((pushforward f).obj M, ⊤) ≃ₗ[R] Γ(M, ⊤) := by
     convert! pushforwardSectionsBaseLinearEquiv (R := R) f M ⊤ using 1 <;>
-      simp only [globalSectionsBaseModule, f.preimage_top,
-        Scheme.baseRingToStructurePresheaf_app_top, CommRingCat.hom_ofHom]
       -- The remaining structures are `Module.compHom` for the same scalar map;
       -- its module argument on pushforward sections unfolds restriction of scalars.
-      ; rfl
+      simp only [globalSectionsBaseModule, f.preimage_top,
+        Scheme.baseRingToStructurePresheaf_app_top, CommRingCat.hom_ofHom]; rfl
   exact Module.Finite.equiv_iff
     ((cohomologyZeroBaseLinearEquiv R Y ((pushforward f).obj M)).trans
       (e.trans
