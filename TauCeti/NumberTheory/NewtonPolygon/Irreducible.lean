@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Polynomial.FieldDivision
 public import TauCeti.NumberTheory.NewtonPolygon.Mul
+public import TauCeti.RingTheory.Polynomial.Factors
 
 /-!
 # Irreducibility of pure polynomials with integral valuations
@@ -34,7 +34,7 @@ does not imply irreducibility, nor does a polygon with a single segment.
 * `Polynomial.irreducible_of_forall_mem_newtonSlopes_eq`: a pure polynomial with nonzero constant
   coefficient whose degree is the denominator of its slope is irreducible, with the coprime
   numerator form `Polynomial.irreducible_of_forall_mem_newtonSlopes_eq_div`.
-* `Polynomial.card_factors_mul_den_le_natDegree`: a pure polynomial of degree `d` with
+* `Polynomial.card_normalizedFactors_mul_den_le_natDegree`: a pure polynomial of degree `d` with
   nonzero constant coefficient whose slope has denominator `e` has at most `d / e` irreducible
   factors, counted with multiplicity.
 
@@ -129,20 +129,15 @@ open UniqueFactorizationMonoid in
 with nonzero constant coefficient whose finite slopes all equal a rational number with
 denominator `e` has at most `d / e` irreducible factors, counted with multiplicity: each
 irreducible factor has degree a positive multiple of `e`. -/
-theorem card_factors_mul_den_le_natDegree
+theorem card_normalizedFactors_mul_den_le_natDegree [DecidableEq K]
     (hint : ∀ x, x ≠ 0 → ∃ n : ℤ, v x = ((n : ℝ) : WithTop ℝ)) {f : K[X]} (hf : f.coeff 0 ≠ 0)
     {q : ℚ} (hq : ∀ m ∈ f.newtonSlopes v, m = q) :
-    (factors f).card * q.den ≤ f.natDegree := by
-  have hf₀ : f ≠ 0 := by
-    rintro rfl
-    exact hf (coeff_zero 0)
-  have h0 : (0 : K[X]) ∉ factors f := fun h => (irreducible_of_factor 0 h).ne_zero rfl
-  rw [← natDegree_eq_of_degree_eq (degree_eq_degree_of_associated (factors_prod hf₀)),
-    natDegree_multiset_prod _ h0, ← smul_eq_mul, ← Multiset.sum_replicate,
+    (normalizedFactors f).card * q.den ≤ f.natDegree := by
+  rw [← sum_natDegree_normalizedFactors f, ← smul_eq_mul, ← Multiset.sum_replicate,
     ← Multiset.map_const']
   refine Multiset.sum_map_le_sum_map _ _ fun p hp => Nat.le_of_dvd ?_ ?_
-  · exact (irreducible_of_factor p hp).natDegree_pos
-  · exact den_dvd_natDegree_of_dvd hint hf hq (dvd_of_mem_factors hp)
+  · exact (irreducible_of_normalized_factor p hp).natDegree_pos
+  · exact den_dvd_natDegree_of_dvd hint hf hq (dvd_of_mem_normalizedFactors hp)
 
 end Field
 
