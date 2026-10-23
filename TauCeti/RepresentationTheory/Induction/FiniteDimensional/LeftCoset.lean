@@ -120,19 +120,14 @@ theorem indLeftCosetCoinvariantEquiv_mk (A : Rep.{max w u} k S) (g : G) (a : A) 
   rw [hmodel]
   by_cases hp : p = Quotient.mk'' g
   · subst p
-    have hrel : (QuotientGroup.rightRel S).r
-        (Quotient.out (Quotient.mk'' g)) g := Quotient.exact (Quotient.out_eq' _)
-    have hfactor : (⟨(Quotient.out (Quotient.mk'' g)) * g⁻¹,
-        QuotientGroup.rightRel_apply.mp ((QuotientGroup.rightRel S).symm hrel)⟩ : S) =
-          (rightCosetFactor (S := S) g)⁻¹ := by
-      ext
-      apply mul_left_cancel (a := (rightCosetFactor (S := S) g : G))
-      simp [← mul_assoc, rightCosetFactor_mul_out]
-    simp [indToCoindAux, hrel, hfactor]
+    rw [eq_inv_mul_of_mul_eq (rightCosetFactor_mul_out g), ← Subgroup.coe_inv,
+      indToCoindAux_mul_snd, indToCoindAux_self]
+    simp
   · have hrel : ¬(QuotientGroup.rightRel S).r p.out g := by
       intro h
       exact hp (by simpa using Quotient.sound h)
-    simp [indToCoindAux, hrel, hp]
+    rw [indToCoindAux_of_not_rel _ _ _ hrel]
+    simp [hp]
 
 -- Normalize the induced carrier in the statement so simp can match it after reducing `Rep.ind`.
 /-- The inverse left-coset model sends a single vector to its chosen coinvariant generator. -/
