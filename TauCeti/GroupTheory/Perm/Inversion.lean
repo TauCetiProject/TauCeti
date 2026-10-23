@@ -212,8 +212,8 @@ theorem sign_eq_prod_ite (σ : Perm (Fin n)) :
 
 /-- The sign of a shuffle permutation.  Let `e : Fin k ⊕ Fin m ≃ Fin n` be increasing on each
 summand, so that the images of `Sum.inl` form a `k`-element set `I` and the images of `Sum.inr`
-form its complement.  Then the sign of the shuffle, viewed as a permutation of `Fin k ⊕ Fin m`,
-is `(-1)` raised to the sum of the elements of `I` plus the sum of the positions in the first
+form its complement.  Then the sign of the shuffle, viewed as a permutation of `Fin n`, is
+`(-1)` raised to the sum of the elements of `I` plus the sum of the positions in the first
 summand. -/
 theorem sign_shuffle {m : ℕ} (h : k + m = n) (e : Fin k ⊕ Fin m ≃ Fin n)
     (hl : StrictMono (e ∘ Sum.inl)) (hr : StrictMono (e ∘ Sum.inr)) :
