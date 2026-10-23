@@ -47,6 +47,8 @@ theorem isCompact_closure_weakSpace_of_isBounded (s : Set (WeakSpace 𝕜 E))
     IsCompact (closure s) := by
   rw [(isInducing_inclusionInDoubleDualWeak 𝕜 E).closure_eq_preimage_closure_image]
   apply (isInducing_inclusionInDoubleDualWeak 𝕜 E).isCompact_preimage' _ hrange
+  -- The bundled Lipschitz bound on the bidual map exceeds the default elaboration budget
+  -- for these seminormed hypotheses. A direct ball bound avoids that instance comparison.
   apply WeakDual.isCompact_of_bounded_of_closed _ isClosed_closure
   apply WeakDual.isBounded_closure
   obtain ⟨r, hr⟩ := isBounded_iff_forall_norm_le.mp hs
