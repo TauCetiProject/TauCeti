@@ -47,6 +47,8 @@ degree-zero morphism `u : P ⟶ Q` of twisted objects, along the closed degree-o
 
 ## Main results
 
+* `TauCeti.DGTwistedObject.dgHomEquiv_toShift` and `TauCeti.DGTwistedObject.dgHomEquiv_fromShift`:
+  the comparison morphisms are those of the underlying objects of the additive closure.
 * `TauCeti.DGTwistedObject.dgHomEquiv_twist_shiftFunctor_obj` and
   `TauCeti.DGTwistedObject.dgHomEquiv_dgMap_shiftFunctor`: the shift does not change the matrix
   entries of the twist or of a morphism, as morphisms of `C`.
@@ -130,31 +132,39 @@ summand `Xᵢ[rᵢ]` is `(-1)^(n * rᵢ)` times the identity of `Xᵢ`. -/
 noncomputable def fromShift : DGHom R n ((shiftFunctor R n).obj P) P :=
   (dgHomEquiv R _ _ n).symm (DGAdditiveClosure.fromShift R P.obj n)
 
-/-- The diagonal entries of `P ⟶ P⟦n⟧` are the comparison morphisms of the summands. -/
+/-- The matrix of `P ⟶ P⟦n⟧` is the comparison morphism of the underlying objects. -/
 @[simp]
+theorem dgHomEquiv_toShift :
+    dgHomEquiv R _ _ (-n) (toShift P n) = DGAdditiveClosure.toShift R P.obj n :=
+  LinearEquiv.apply_symm_apply _ _
+
+/-- The matrix of `P⟦n⟧ ⟶ P` is the inverse comparison morphism of the underlying objects. -/
+@[simp]
+theorem dgHomEquiv_fromShift :
+    dgHomEquiv R _ _ n (fromShift P n) = DGAdditiveClosure.fromShift R P.obj n :=
+  LinearEquiv.apply_symm_apply _ _
+
+/-- The diagonal entries of `P ⟶ P⟦n⟧` are the comparison morphisms of the summands. -/
 theorem dgHomEquiv_toShift_self (i : P.obj.ι) :
     matrixEquiv R _ _ (-n) (dgHomEquiv R _ _ (-n) (toShift P n)) i i =
       DGShiftClosure.toShift R (P.obj.X i) n := by
-  rw [toShift, LinearEquiv.apply_symm_apply, DGAdditiveClosure.dgHomEquiv_toShift_self]
+  rw [dgHomEquiv_toShift, DGAdditiveClosure.dgHomEquiv_toShift_self]
 
 /-- The off-diagonal entries of `P ⟶ P⟦n⟧` vanish. -/
-@[simp]
 theorem dgHomEquiv_toShift_of_ne {i j : P.obj.ι} (h : i ≠ j) :
     matrixEquiv R _ _ (-n) (dgHomEquiv R _ _ (-n) (toShift P n)) i j = 0 := by
-  rw [toShift, LinearEquiv.apply_symm_apply, DGAdditiveClosure.dgHomEquiv_toShift_of_ne _ _ h]
+  rw [dgHomEquiv_toShift, DGAdditiveClosure.dgHomEquiv_toShift_of_ne _ _ h]
 
 /-- The diagonal entries of `P⟦n⟧ ⟶ P` are the inverse comparison morphisms of the summands. -/
-@[simp]
 theorem dgHomEquiv_fromShift_self (i : P.obj.ι) :
     matrixEquiv R _ _ n (dgHomEquiv R _ _ n (fromShift P n)) i i =
       DGShiftClosure.fromShift R (P.obj.X i) n := by
-  rw [fromShift, LinearEquiv.apply_symm_apply, DGAdditiveClosure.dgHomEquiv_fromShift_self]
+  rw [dgHomEquiv_fromShift, DGAdditiveClosure.dgHomEquiv_fromShift_self]
 
 /-- The off-diagonal entries of `P⟦n⟧ ⟶ P` vanish. -/
-@[simp]
 theorem dgHomEquiv_fromShift_of_ne {i j : P.obj.ι} (h : i ≠ j) :
     matrixEquiv R _ _ n (dgHomEquiv R _ _ n (fromShift P n)) i j = 0 := by
-  rw [fromShift, LinearEquiv.apply_symm_apply, DGAdditiveClosure.dgHomEquiv_fromShift_of_ne _ _ h]
+  rw [dgHomEquiv_fromShift, DGAdditiveClosure.dgHomEquiv_fromShift_of_ne _ _ h]
 
 /-- **The comparison morphisms are natural up to the Koszul sign**: for `f : P ⟶ Q` of degree
 `p`, `f` followed by `Q ⟶ Q⟦n⟧` is `(-1)^(n * p)` times `P ⟶ P⟦n⟧` followed by the shift of
@@ -164,9 +174,9 @@ theorem dgComp_toShift {P Q : DGTwistedObject R (DGAdditiveClosure (DGShiftClosu
     dgComp R f (toShift Q n) h =
       (n * p).negOnePow • dgComp R (toShift P n) ((shiftFunctor R n).dgMap p f) (by omega) :=
   (dgHomEquiv R _ _ _).injective <| by
-    rw [map_zsmul_unit, dgHomEquiv_dgComp, dgHomEquiv_dgComp, toShift, toShift,
-      LinearEquiv.apply_symm_apply, LinearEquiv.apply_symm_apply,
-      EnrichedFunctor.dgMap_mapDGTwistedObject, EnrichedFunctor.dgHomEquiv_mapDGTwistedObjectHom,
+    rw [map_zsmul_unit, dgHomEquiv_dgComp, dgHomEquiv_dgComp, dgHomEquiv_toShift,
+      dgHomEquiv_toShift, EnrichedFunctor.dgMap_mapDGTwistedObject,
+      EnrichedFunctor.dgHomEquiv_mapDGTwistedObjectHom,
       DGAdditiveClosure.dgComp_toShift]
 
 /-- **The inverse comparison morphisms are natural up to the Koszul sign**: for `f : P ⟶ Q` of
@@ -177,16 +187,16 @@ theorem dgComp_fromShift {P Q : DGTwistedObject R (DGAdditiveClosure (DGShiftClo
     dgComp R ((shiftFunctor R n).dgMap p f) (fromShift Q n) h =
       (n * p).negOnePow • dgComp R (fromShift P n) f (by omega) :=
   (dgHomEquiv R _ _ _).injective <| by
-    rw [map_zsmul_unit, dgHomEquiv_dgComp, dgHomEquiv_dgComp, fromShift, fromShift,
-      LinearEquiv.apply_symm_apply, LinearEquiv.apply_symm_apply,
-      EnrichedFunctor.dgMap_mapDGTwistedObject, EnrichedFunctor.dgHomEquiv_mapDGTwistedObjectHom,
+    rw [map_zsmul_unit, dgHomEquiv_dgComp, dgHomEquiv_dgComp, dgHomEquiv_fromShift,
+      dgHomEquiv_fromShift, EnrichedFunctor.dgMap_mapDGTwistedObject,
+      EnrichedFunctor.dgHomEquiv_mapDGTwistedObjectHom,
       DGAdditiveClosure.dgComp_fromShift]
 
 /-- **The comparison morphism `P ⟶ P⟦n⟧` is closed** for the twisted differential: by
 naturality, `δ ≫ σ = (-1)^n • σ ≫ δ⟦n⟧`, which cancels the twisting terms of `D σ`. -/
 theorem dgDifferential_toShift : dgDifferential R (-n) (toShift P n) = 0 :=
   (dgHomEquiv R _ _ (-n + 1)).injective <| by
-    rw [dgHomEquiv_dgDifferential, map_zero, toShift, LinearEquiv.apply_symm_apply,
+    rw [dgHomEquiv_dgDifferential, map_zero, dgHomEquiv_toShift,
       DGAdditiveClosure.dgDifferential_toShift, DGAdditiveClosure.dgComp_toShift, mul_one,
       Int.negOnePow_neg, zero_add]
     exact sub_self _
@@ -195,16 +205,16 @@ theorem dgDifferential_toShift : dgDifferential R (-n) (toShift P n) = 0 :=
 theorem dgComp_toShift_fromShift :
     dgComp R (toShift P n) (fromShift P n) (neg_add_cancel n) = dgId R P :=
   (dgHomEquiv R _ _ 0).injective <| by
-    rw [dgHomEquiv_dgComp, dgHomEquiv_dgId, toShift, fromShift, LinearEquiv.apply_symm_apply,
-      LinearEquiv.apply_symm_apply, DGAdditiveClosure.dgComp_toShift_fromShift]
+    rw [dgHomEquiv_dgComp, dgHomEquiv_dgId, dgHomEquiv_toShift,
+      dgHomEquiv_fromShift, DGAdditiveClosure.dgComp_toShift_fromShift]
 
 /-- The comparison morphisms `P⟦n⟧ ⟶ P ⟶ P⟦n⟧` compose to the identity of `P⟦n⟧`. -/
 theorem dgComp_fromShift_toShift :
     dgComp R (fromShift P n) (toShift P n) (add_neg_cancel n) =
       dgId R ((shiftFunctor R n).obj P) :=
   (dgHomEquiv R _ _ 0).injective <| by
-    rw [dgHomEquiv_dgComp, dgHomEquiv_dgId, toShift, fromShift, LinearEquiv.apply_symm_apply,
-      LinearEquiv.apply_symm_apply, DGAdditiveClosure.dgComp_fromShift_toShift]
+    rw [dgHomEquiv_dgComp, dgHomEquiv_dgId, dgHomEquiv_toShift,
+      dgHomEquiv_fromShift, DGAdditiveClosure.dgComp_fromShift_toShift]
 
 /-- The comparison morphism `P⟦n⟧ ⟶ P` is closed, as the inverse of a closed morphism. -/
 theorem dgDifferential_fromShift : dgDifferential R n (fromShift P n) = 0 :=
