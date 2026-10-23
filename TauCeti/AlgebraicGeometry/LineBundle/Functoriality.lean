@@ -56,6 +56,22 @@ def pullbackId (X : Scheme.{u}) : pullback (𝟙 X) ≅ 𝟭 (InvertibleSheaf X)
     simp [ObjectProperty.isoMk, ObjectProperty.homMk, pullback_map,
       Category.assoc, (Scheme.Modules.pullbackId X).hom.naturality f.hom])
 
+/-- On underlying modules, the identity comparison is Mathlib's pullback identity comparison. -/
+@[simp]
+theorem pullbackId_hom_app_hom (X : Scheme.{u}) (L : InvertibleSheaf X) :
+    ((pullbackId X).hom.app L).hom =
+      eqToHom (pullback_obj_obj (𝟙 X) L) ≫ (Scheme.Modules.pullbackId X).hom.app L.obj := by
+  simp only [pullbackId, NatIso.ofComponents_hom_app, ObjectProperty.isoMk_hom,
+    Iso.trans_hom, eqToIso.hom, ObjectProperty.homMk_hom, Iso.app_hom]
+
+/-- The inverse identity comparison on underlying modules is Mathlib's inverse comparison. -/
+@[simp]
+theorem pullbackId_inv_app_hom (X : Scheme.{u}) (L : InvertibleSheaf X) :
+    ((pullbackId X).inv.app L).hom =
+      (Scheme.Modules.pullbackId X).inv.app L.obj ≫ eqToHom (pullback_obj_obj (𝟙 X) L).symm := by
+  simp only [pullbackId, NatIso.ofComponents_inv_app, ObjectProperty.isoMk_inv,
+    Iso.trans_inv, eqToIso.inv, ObjectProperty.homMk_hom, Iso.app_inv]
+
 /-- The underlying module of successive line-bundle pullbacks is the corresponding successive
 module pullback. -/
 private lemma pullbackComp_obj_obj (f : X ⟶ Y) (g : Y ⟶ Z) (L : InvertibleSheaf Z) :
@@ -88,6 +104,26 @@ def pullbackComp (f : X ⟶ Y) (g : Y ⟶ Z) :
     simp only [Functor.comp_map] at h
     rw [h]
     simp only [Category.assoc])
+
+/-- On underlying modules, the composition comparison is Mathlib's pullback composition
+comparison. -/
+@[simp]
+theorem pullbackComp_hom_app_hom (f : X ⟶ Y) (g : Y ⟶ Z) (L : InvertibleSheaf Z) :
+    ((pullbackComp f g).hom.app L).hom =
+      eqToHom (by simp only [Functor.comp_obj, pullback_obj_obj]) ≫
+        (Scheme.Modules.pullbackComp f g).hom.app L.obj ≫
+        eqToHom (pullback_obj_obj (f ≫ g) L).symm := by
+  simp only [pullbackComp, NatIso.ofComponents_hom_app, ObjectProperty.isoMk_hom,
+    Iso.trans_hom, eqToIso.hom, ObjectProperty.homMk_hom, Iso.app_hom]
+
+/-- The inverse composition comparison on underlying modules is Mathlib's inverse comparison. -/
+@[simp]
+theorem pullbackComp_inv_app_hom (f : X ⟶ Y) (g : Y ⟶ Z) (L : InvertibleSheaf Z) :
+    ((pullbackComp f g).inv.app L).hom =
+      eqToHom (pullback_obj_obj (f ≫ g) L) ≫ (Scheme.Modules.pullbackComp f g).inv.app L.obj ≫
+        eqToHom (by simp only [Functor.comp_obj, pullback_obj_obj]) := by
+  simp only [pullbackComp, NatIso.ofComponents_inv_app, ObjectProperty.isoMk_inv,
+    Iso.trans_inv, eqToIso.inv, ObjectProperty.homMk_hom, Iso.app_inv, Category.assoc]
 
 end InvertibleSheaf
 
