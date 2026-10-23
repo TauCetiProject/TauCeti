@@ -140,7 +140,7 @@ theorem hasFDerivAt_timeSlice {F : 𝕜 × E → F'} {t : 𝕜} {x : E}
 theorem fderiv_timeSlice {F : 𝕜 × E → F'} {t : 𝕜} {x : E}
     (hF : DifferentiableAt 𝕜 F (t, x)) :
     fderiv 𝕜 (fun y => F (t, y)) x = spatialFDeriv F x t :=
-  (hasFDerivAt_timeSlice hF).fderiv
+  TauCeti.fderiv_slice_right hF
 
 namespace TauCeti
 
