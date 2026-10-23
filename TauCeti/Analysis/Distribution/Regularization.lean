@@ -18,8 +18,8 @@ import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 
 For a distribution `T` on an open set `Ω` and a test function `ρ`, the **regularization**
 `T.translatePairing ρ` is the function `x ↦ T (ρ (· - x))`, defined at every `x` for which the
-translate `ρ (· - x)` is supported in `Ω`; it is the convolution `T ⋆ ρ̌` of `T` with the reflection
-`ρ̌ = ρ (- ·)`. This file shows that it is smooth on the open set of such `x`, with derivatives
+translate `ρ (· - x)` is supported in `Ω`; it is the convolution of `T` with the reflection
+`ρ (- ·)` of `ρ`. This file shows that it is smooth on the open set of such `x`, with derivatives
 given by the distributional derivatives of `T`:
 
 `∂_v (x ↦ T (ρ (· - x))) = x ↦ (∂_v T) (ρ (· - x))`.
@@ -100,8 +100,8 @@ private theorem translateOfMapsTo_apply (ρ : 𝓓(V, ℝ)) {x : E}
 
 /-- The regularization of a distribution `T` by a test function `ρ`: the function
 `x ↦ T (ρ (· - x))`. Its value at `x` is `T` applied to the translate of `ρ` by `x` when this
-translate is supported in `Ω`, and `0` otherwise. It is the convolution `T ⋆ ρ̌` of `T` with the
-reflection `ρ̌ = ρ (- ·)` of `ρ`. -/
+translate is supported in `Ω`, and `0` otherwise. It is the convolution of `T` with the
+reflection `ρ (- ·)` of `ρ`. -/
 def translatePairing (T : 𝓓'(Ω, F)) (ρ : 𝓓(V, ℝ)) (x : E) : F :=
   open Classical in
   if h : MapsTo (· + x) (tsupport ρ) Ω then T (translateOfMapsTo ρ h) else 0
