@@ -127,6 +127,43 @@ theorem prod_filter_saddleResolvedCircleMap_eq_crossing {M : Type*} [CommMonoid 
   rw [D.filter_saddleResolvedCircleMap_eq_crossing]
   exact prod_pair (fun h ↦ (D.card_circlesAt_eq_two_iff s c).mp hs (Sum.inl.inj h))
 
+/-- The product over an unchanged fibre is its sole source factor. This includes every
+crossing-free circle. -/
+theorem prod_filter_saddleResolvedCircleMap_eq_of_ne {M : Type*} [CommMonoid M]
+    (C : D.ResolvedCircle s) (hC₀ : C ≠ .inl ⟦D.crossing c 0⟧)
+    (hC₂ : C ≠ .inl ⟦D.crossing c 2⟧) (x : D.ResolvedCircle s → M) :
+    (∏ C' with D.saddleResolvedCircleMap hst ht C' =
+      D.saddleResolvedCircleMap hst ht C, x C') = x C := by
+  have hf : (univ.filter fun C' ↦ D.saddleResolvedCircleMap hst ht C' =
+      D.saddleResolvedCircleMap hst ht C) = {C} := by
+    ext C'
+    simp only [mem_filter, mem_univ, true_and, D.saddleResolvedCircleMap_eq_iff hst ht,
+      hC₀, hC₂, or_self, and_false, or_false, mem_singleton]
+  rw [hf, prod_singleton]
+
+/-- The target label at the changed circle is the Boolean disjunction of the two source labels.
+This describes label transport even when the two source circles coincide. -/
+@[simp↓]
+theorem decide_exists_saddleResolvedCircleMap_eq_crossing (l : D.ResolvedCircle s → Bool) :
+    decide (∃ C', D.saddleResolvedCircleMap hst ht C' = .inl ⟦D.crossing c 0⟧ ∧
+      l C' = true) = (l (.inl ⟦D.crossing c 0⟧) || l (.inl ⟦D.crossing c 2⟧)) := by
+  simp only [D.saddleResolvedCircleMap_eq_crossing_iff hst ht, or_and_right, exists_or,
+    exists_eq_left]
+  simp
+
+/-- A crossing-bearing circle avoiding the changed crossing retains its Boolean label. -/
+@[simp↓]
+theorem decide_exists_saddleResolvedCircleMap_eq_of_notMem (l : D.ResolvedCircle s → Bool)
+    (C : D.CrossingCircle s) (hC : C ∉ D.circlesAt s c) :
+    decide (∃ C', D.saddleResolvedCircleMap hst ht C' =
+      D.saddleResolvedCircleMap hst ht (.inl C) ∧ l C' = true) = l (.inl C) := by
+  have hC₀ : (Sum.inl C : D.ResolvedCircle s) ≠ .inl ⟦D.crossing c 0⟧ :=
+    fun h ↦ hC (Sum.inl.inj h ▸ D.mk_crossing_mem_circlesAt s c 0)
+  have hC₂ : (Sum.inl C : D.ResolvedCircle s) ≠ .inl ⟦D.crossing c 2⟧ :=
+    fun h ↦ hC (Sum.inl.inj h ▸ D.mk_crossing_mem_circlesAt s c 2)
+  simp only [D.saddleResolvedCircleMap_eq_iff hst ht, hC₀, hC₂, or_self, and_false, or_false]
+  simp
+
 /-- Away from the merged target circle every fibre is a singleton. -/
 theorem existsUnique_saddleResolvedCircleMap_eq (C : D.ResolvedCircle t)
     (hC : C ≠ .inl ⟦D.crossing c 0⟧) :
