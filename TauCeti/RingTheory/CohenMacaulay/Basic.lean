@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.DiscreteValuationRing.TFAE
 public import Mathlib.RingTheory.KrullDimension.Field
 public import Mathlib.RingTheory.Ideal.AssociatedPrime.Localization
-public import TauCeti.RingTheory.Depth
+public import TauCeti.RingTheory.Depth.Basic
 
 /-!
 # Cohen–Macaulay modules over a local ring
