@@ -26,6 +26,11 @@ public section
 
 namespace TauCeti.UqSl2
 
+/-- A nonzero quantum parameter has a nonzero inverse, so the native Hopf structure
+at the inverse parameter is available to importers. -/
+instance instFactInvNeZero (q : ℂ) [Fact (q ≠ 0)] : Fact (q⁻¹ ≠ 0) :=
+  ⟨inv_ne_zero Fact.out⟩
+
 /-- The generators of `UqSl2 q`, with `K` and `K⁻¹` exchanged, satisfy the relations at any
 parameter `p = q⁻¹`.  Taking `p` general lets the same tuple serve both directions. -/
 private noncomputable def inverseParameterTuple (p q : ℂ) (hpq : p = q⁻¹) :

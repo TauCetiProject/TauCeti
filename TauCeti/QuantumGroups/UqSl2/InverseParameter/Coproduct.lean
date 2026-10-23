@@ -37,8 +37,6 @@ namespace TauCeti.UqSl2
 
 variable (q : ℂ) [Fact (q ≠ 0)]
 
-local instance : Fact (q⁻¹ ≠ 0) := ⟨inv_ne_zero Fact.out⟩
-
 /-- The coproduct on `UqSl2 q` transported from the parameter `q⁻¹` through
 `inverseParameterEquiv q`. It has the same group-like weight generators but the opposite
 choices of weight generator in the skew-primitive formulas. -/
@@ -107,14 +105,14 @@ theorem inverseParameterComul_coassoc :
       Algebra.TensorProduct.one_def]
 
 /-- Applying the counit on the first leg gives the native left unit identification. -/
-theorem counit_tensor_id_comp_inverseParameterComul :
+theorem rTensor_counit_comp_inverseParameterComul :
     (Algebra.TensorProduct.map (Bialgebra.counitAlgHom ℂ (UqSl2 q))
       (AlgHom.id ℂ (UqSl2 q))).comp (inverseParameterComul q) =
         (Algebra.TensorProduct.lid ℂ (UqSl2 q)).symm.toAlgHom := by
   apply hom_ext <;> simp
 
 /-- Applying the counit on the second leg gives the native right unit identification. -/
-theorem id_tensor_counit_comp_inverseParameterComul :
+theorem lTensor_counit_comp_inverseParameterComul :
     (Algebra.TensorProduct.map (AlgHom.id ℂ (UqSl2 q))
       (Bialgebra.counitAlgHom ℂ (UqSl2 q))).comp (inverseParameterComul q) =
         (Algebra.TensorProduct.rid ℂ ℂ (UqSl2 q)).symm.toAlgHom := by
