@@ -469,6 +469,18 @@ lemma associatedBilinForm_apply
     (ω : SymplecticForm V) (J : AlmostComplexStructure V) (v w : V) :
     ω.associatedBilinForm J v w = ω v (J w) := rfl
 
+/-- The associated bilinear form is nondegenerate for every almost complex structure, since
+precomposition in the second argument by `J` is invertible. -/
+lemma associatedBilinForm_nondegenerate (ω : SymplecticForm V) (J : AlmostComplexStructure V) :
+    (ω.associatedBilinForm J).Nondegenerate := by
+  have h : ω.associatedBilinForm J = (LinearEquiv.refl ℝ V).arrowCongr
+      (J.linearEquiv.symm.arrowCongr (LinearEquiv.refl ℝ ℝ)) ω.toBilinForm := by
+    ext v w
+    simp
+  rw [h]
+  exact LinearMap.Nondegenerate.congr (LinearEquiv.refl ℝ V) J.linearEquiv.symm
+    ω.nondegenerate
+
 /-- `ω` tames `J` if `ω(v, Jv)` is positive on every nonzero vector. -/
 @[expose] def Tames (ω : SymplecticForm V) (J : AlmostComplexStructure V) : Prop :=
   ∀ v, v ≠ 0 → 0 < ω v (J v)

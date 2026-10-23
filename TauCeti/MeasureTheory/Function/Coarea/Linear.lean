@@ -58,14 +58,18 @@ open scoped ENNReal
 
 namespace LinearMap
 
-variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [InnerProductSpace ℝ F]
-  [FiniteDimensional ℝ F] [MeasurableSpace F] [BorelSpace F]
+variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [MeasurableSpace E] [BorelSpace E]
 
-omit [FiniteDimensional ℝ F] [MeasurableSpace F] [BorelSpace F] in
+section Module
+
+variable [AddCommGroup F] [Module ℝ F]
+
 /-- The integral of `g` over the fibre `L ⁻¹' {L w}`, with Hausdorff measure of the dimension of
-`ker L`, equals the Lebesgue integral over `ker L` of `a ↦ g (w + a)`. -/
-theorem setLIntegral_preimage_singleton_eq_lintegral_ker (L : E →ₗ[ℝ] F) (w : E) (g : E → ℝ≥0∞) :
+`ker L`, equals the Lebesgue integral over `ker L` of `a ↦ g (w + a)`. Only the kernel needs to
+be finite-dimensional; the codomain is an arbitrary real module. -/
+theorem setLIntegral_preimage_singleton_eq_lintegral_ker (L : E →ₗ[ℝ] F)
+    [FiniteDimensional ℝ (ker L)] (w : E) (g : E → ℝ≥0∞) :
     ∫⁻ x in L ⁻¹' {L w}, g x ∂μHE[finrank ℝ (ker L)] = ∫⁻ a : ker L, g (w + a) := by
   let φ : ker L → E := fun a ↦ w + a
   have hφ : Isometry φ := (isometry_add_left w).comp isometry_subtype_coe
@@ -77,6 +81,11 @@ theorem setLIntegral_preimage_singleton_eq_lintegral_ker (L : E →ₗ[ℝ] F) (
   rw [← hrange, ← hφ.map_euclideanHausdorffMeasure,
     hφ.isClosedEmbedding.measurableEmbedding.lintegral_map,
     InnerProductSpace.euclideanHausdorffMeasure_eq_volume]
+
+end Module
+
+variable [FiniteDimensional ℝ E] [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+  [FiniteDimensional ℝ F] [MeasurableSpace F] [BorelSpace F]
 
 /-- A surjective linear map restricts to an isomorphism `e` from the orthogonal complement of its
 kernel onto its codomain. The isomorphism scales Lebesgue measure by the Jacobian of the adjoint,

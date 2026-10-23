@@ -20,6 +20,7 @@ with `F`, so one vanishes exactly when the other does.
 * `TauCeti.mvfderiv_comp_apply_of_differentiableAt`: the chain rule when the outer map is
   between normed spaces.
 * `mvfderiv_apply_eq_mfderiv_apply`: evaluating `mvfderiv` agrees with evaluating `mfderiv`.
+* `Filter.EventuallyEq.mvfderiv_eq`: `mvfderiv` depends only on the germ of the function.
 * `TauCeti.mvfderiv_eq_zero_iff`: `mvfderiv I g x = 0 ↔ mfderiv I 𝓘(𝕜, F) g x = 0`.
 * `TauCeti.mdifferentiableAt_of_mvfderiv_apply_ne_zero`: a function whose `mvfderiv` is nonzero on
   some tangent vector is differentiable there.
@@ -28,7 +29,7 @@ with `F`, so one vanishes exactly when the other does.
 
 public section
 
-open scoped Manifold
+open scoped Manifold Topology
 
 namespace TauCeti
 
@@ -57,6 +58,15 @@ theorem _root_.NormedSpace.fromTangentSpace_symm_apply (x : E) (v : E) :
     mvfderiv I f x v = mfderiv I 𝓘(𝕜, F) f x v := by
   rw [mvfderiv, ContinuousLinearMap.comp_apply]
   exact NormedSpace.fromTangentSpace_apply _ _
+
+/-- The derivative at `x` of a vector-valued function, read in the target space, depends only on
+the germ of the function at `x`. -/
+theorem _root_.Filter.EventuallyEq.mvfderiv_eq {f₁ f : M → F} {x : M} (hf : f₁ =ᶠ[𝓝 x] f) :
+    mvfderiv I f₁ x = mvfderiv I f x := by
+  ext v
+  rw [mvfderiv_apply_eq_mfderiv_apply, mvfderiv_apply_eq_mfderiv_apply, hf.mfderiv_eq]
+  -- `tangentSpaceCast` identifies two tangent spaces of `F`, both of which are `F` itself.
+  rfl
 
 /-- The chain rule for a vector-valued function on a manifold followed by a map between normed
 spaces that is differentiable at the relevant point, evaluated on a tangent vector. -/

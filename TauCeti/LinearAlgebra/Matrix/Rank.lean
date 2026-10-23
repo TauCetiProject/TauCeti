@@ -7,6 +7,7 @@ module
 
 public import Mathlib.GroupTheory.GroupAction.ConjAct
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
+public import Mathlib.LinearAlgebra.Matrix.Hermitian
 public import Mathlib.LinearAlgebra.Matrix.Rank
 import Mathlib.Data.Matrix.ColumnRowPartitioned
 import Mathlib.LinearAlgebra.LinearIndependent.BaseChange
@@ -17,7 +18,10 @@ import Mathlib.LinearAlgebra.LinearIndependent.BaseChange
 This file records general results relating matrix rank to the corresponding linear maps,
 minors and change of scalars. In particular, over an integral domain a finite family of
 rows is linearly independent exactly when one of its maximal minors is nonzero, and over a field
-the rank is the largest size of a nonzero minor.
+the rank is the largest size of a nonzero minor. Over a star-ordered field, the source of `A`
+splits into the kernel of `A` and the range of its conjugate transpose `Aᴴ`; read in a basis, this
+splits a space into the common kernel and the sum of the ranges of a family of operators that are
+self-adjoint for the Hermitian form making the basis orthonormal.
 
 ## Main results
 
@@ -42,6 +46,13 @@ the rank is the largest size of a nonzero minor.
 * `Matrix.exists_eq_mul_fin_rank`: a rectangular matrix factors through `Fin A.rank`.
 * `Matrix.exists_eq_mul_of_rank_le` and `Matrix.rank_le_iff_exists_eq_mul`: a matrix has rank at
   most `r` exactly when it factors through `Fin r`.
+* `Matrix.isCompl_ker_mulVecLin_range_mulVecLin_conjTranspose`: over a star-ordered field the
+  kernel of `A` and the range of `Aᴴ` are complementary, and
+  `Matrix.isCompl_iInf_ker_mulVecLin_iSup_range_mulVecLin_conjTranspose` is the same for a finite
+  family of matrices.
+* `LinearMap.isCompl_iInf_ker_iSup_range_of_isHermitian_toMatrix`: a finite family of
+  endomorphisms with Hermitian matrices in a common basis splits the space into their common kernel
+  and the sum of their ranges.
 
 -/
 
@@ -269,4 +280,90 @@ theorem rank_add_rank_le_rank_mul_add_card {o : Type*} [Fintype o] (A : Matrix m
   rw [rank, hB, hrange]
   omega
 
+section StarOrderedField
+
+variable {R : Type*} [Field R] [PartialOrder R] [StarRing R] [StarOrderedRing R]
+  {m n : Type*} [Fintype m] [Fintype n]
+
+/-- **The kernel of a matrix and the range of its conjugate transpose are complementary** over a
+star-ordered field, such as `ℚ`, `ℝ` or `ℂ` (with `ComplexOrder`). Some such hypothesis is
+needed: over `ZMod 2`, the kernel of the `1 × 2` matrix `!![1, 1]` and the range of its transpose
+are both the line spanned by `![1, 1]`. -/
+theorem isCompl_ker_mulVecLin_range_mulVecLin_conjTranspose (A : Matrix m n R) :
+    IsCompl (LinearMap.ker A.mulVecLin) (LinearMap.range Aᴴ.mulVecLin) := by
+  refine (Submodule.isCompl_iff_disjoint _ _ ?_).mpr ?_
+  · have h := A.mulVecLin.finrank_range_add_finrank_ker
+    have hrank : Aᴴ.rank = A.rank := A.rank_conjTranspose
+    rw [rank, rank] at hrank
+    rw [hrank, ← h, add_comm]
+  · refine Submodule.disjoint_def.mpr fun x hx hx' => ?_
+    obtain ⟨y, rfl⟩ := hx'
+    have hy : y ∈ LinearMap.ker (Aᴴᴴ * Aᴴ).mulVecLin := by
+      simpa [conjTranspose_conjTranspose, mulVec_mulVec] using hx
+    rw [ker_mulVecLin_conjTranspose_mul_self] at hy
+    exact hy
+
+/-- **The common kernel of a finite family of matrices and the sum of the ranges of their conjugate
+transposes are complementary** over a star-ordered field. This is
+`Matrix.isCompl_ker_mulVecLin_range_mulVecLin_conjTranspose` for the matrix stacking the family. -/
+theorem isCompl_iInf_ker_mulVecLin_iSup_range_mulVecLin_conjTranspose {ι : Type*} [Finite ι]
+    (A : ι → Matrix m n R) :
+    IsCompl (⨅ i, LinearMap.ker (A i).mulVecLin) (⨆ i, LinearMap.range (A i)ᴴ.mulVecLin) := by
+  classical
+  have := Fintype.ofFinite ι
+  -- Stack the family into one matrix with rows indexed by `ι × m`.
+  let B : Matrix (ι × m) n R := Matrix.of fun p => A p.1 p.2
+  have hker : LinearMap.ker B.mulVecLin = ⨅ i, LinearMap.ker (A i).mulVecLin := by
+    ext x
+    simp [B, Submodule.mem_iInf, funext_iff, mulVec, Prod.forall]
+  -- The conjugate transpose of the stack sums the conjugate transposes of its blocks.
+  have hsum (y : ι × m → R) : Bᴴ *ᵥ y = ∑ i, (A i)ᴴ *ᵥ fun r => y (i, r) := by
+    ext u
+    simp [B, mulVec, dotProduct, Fintype.sum_prod_type]
+  have hrange : LinearMap.range Bᴴ.mulVecLin = ⨆ i, LinearMap.range (A i)ᴴ.mulVecLin := by
+    refine le_antisymm ?_ (iSup_le fun i => ?_)
+    · rintro _ ⟨y, rfl⟩
+      rw [mulVecLin_apply, hsum]
+      exact Submodule.sum_mem _ fun i _ => Submodule.mem_iSup_of_mem i ⟨_, rfl⟩
+    · rintro _ ⟨z, rfl⟩
+      refine ⟨fun p => if p.1 = i then z p.2 else 0, ?_⟩
+      rw [mulVecLin_apply, hsum, Finset.sum_eq_single i
+        (fun j _ hj => by simp only [hj, ite_false]; exact mulVec_zero _) (by simp)]
+      simp
+  rw [← hker, ← hrange]
+  exact B.isCompl_ker_mulVecLin_range_mulVecLin_conjTranspose
+
+end StarOrderedField
+
 end Matrix
+
+open Matrix in
+/-- **Self-adjoint operators split off their common kernel.** Over a star-ordered field, let `f`
+be a finite family of endomorphisms whose matrices in a basis `b` are Hermitian, that is, which are
+self-adjoint for the Hermitian form making `b` orthonormal. Then their common kernel and the sum of
+their ranges are complementary. This is
+`Matrix.isCompl_iInf_ker_mulVecLin_iSup_range_mulVecLin_conjTranspose` read in the basis `b`. -/
+theorem LinearMap.isCompl_iInf_ker_iSup_range_of_isHermitian_toMatrix {R V ι P : Type*} [Field R]
+    [PartialOrder R] [StarRing R] [StarOrderedRing R] [AddCommGroup V] [Module R V] [Fintype ι]
+    [DecidableEq ι] [Finite P] (b : Module.Basis ι R V) (f : P → V →ₗ[R] V)
+    (hf : ∀ p, (LinearMap.toMatrix b b (f p)).IsHermitian) :
+    IsCompl (⨅ p, LinearMap.ker (f p)) (⨆ p, LinearMap.range (f p)) := by
+  let e := Submodule.orderIsoMapComap b.equivFun.symm
+  -- In the coordinates of `b`, each `f p` is multiplication by its matrix.
+  have hcoord (p : P) (x : V) :
+      LinearMap.toMatrix b b (f p) *ᵥ b.equivFun x = b.equivFun (f p x) := by
+    simpa using LinearMap.toMatrix_mulVec_repr b b (f p) x
+  have hker (p : P) :
+      LinearMap.ker (f p) = e (LinearMap.ker (LinearMap.toMatrix b b (f p)).mulVecLin) := by
+    ext x
+    simp [e, Submodule.mem_map_equiv, LinearMap.toMatrix_mulVec_repr]
+  have hrange (p : P) :
+      LinearMap.range (f p) = e (LinearMap.range (LinearMap.toMatrix b b (f p))ᴴ.mulVecLin) := by
+    rw [(hf p).eq]
+    ext x
+    rw [Submodule.orderIsoMapComap_apply, Submodule.mem_map_equiv, LinearEquiv.symm_symm]
+    refine ⟨fun ⟨y, hy⟩ => ⟨b.equivFun y, by rw [mulVecLin_apply, hcoord, hy]⟩,
+      fun ⟨z, hz⟩ => ⟨b.equivFun.symm z, b.equivFun.injective ?_⟩⟩
+    rw [← hcoord, LinearEquiv.apply_symm_apply, ← hz, mulVecLin_apply]
+  simp only [hker, hrange, ← e.map_iInf, ← e.map_iSup]
+  exact e.isCompl (Matrix.isCompl_iInf_ker_mulVecLin_iSup_range_mulVecLin_conjTranspose _)

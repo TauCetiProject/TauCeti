@@ -24,6 +24,8 @@ every represented value by the square of that gcd.
 The invariance of discriminant and primitivity packages primitive forms of a fixed
 discriminant in the subaction `primitiveForms D`, stable under `SL(2, ℤ)`. This gives the
 carrier for proper-equivalence and orbit constructions among forms of that discriminant.
+Intersecting with the positive definite forms gives `PosDefProperClass n`, the proper
+equivalence classes of primitive positive definite forms of discriminant `-n`.
 
 ## References
 
@@ -299,6 +301,17 @@ def primitiveForms (D : ℤ) :
 @[simp] theorem mem_primitiveForms (D : ℤ) (f : BinaryQuadraticForm ℤ) :
     f ∈ primitiveForms D ↔ f.discrim = D ∧ f.IsPrimitive := by
   rfl
+
+/-- A form is primitive positive definite of discriminant `-n` exactly when it has discriminant
+`-n`, positive leading coefficient and coprime coefficients. -/
+@[simp] theorem mem_posDef_inf_primitiveForms (n : ℕ) [NeZero n] {f : BinaryQuadraticForm ℤ} :
+    f ∈ posDef n ⊓ primitiveForms (-n) ↔ f.discrim = -n ∧ 0 < f.a ∧ f.IsPrimitive :=
+  calc f ∈ posDef n ⊓ primitiveForms (-n) ↔ f ∈ posDef n ∧ f ∈ primitiveForms (-n) := Iff.rfl
+    _ ↔ _ := by rw [mem_posDef, mem_primitiveForms]; tauto
+
+/-- The proper equivalence classes of primitive positive definite forms of discriminant `-n`. -/
+abbrev PosDefProperClass (n : ℕ) [NeZero n] :=
+  MulAction.orbitRel.Quotient SL(2, ℤ) ↥(posDef n ⊓ primitiveForms (-n))
 
 /-- Taking primitive parts commutes with proper integral changes of variables. -/
 theorem primPart_smul (f : BinaryQuadraticForm ℤ)

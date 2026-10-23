@@ -89,6 +89,9 @@ representative.  The identification of this coordinate model with the *root* lat
 * `TauCeti.IntegralLattice.isEven_checkerboardLattice`: the checkerboard lattice is even.
 * `TauCeti.IntegralLattice.isPosDef_checkerboardLattice`: it is positive definite.
 * `TauCeti.IntegralLattice.mem_checkerboardLattice_dualCarrier_iff`: the dual lattice.
+* `TauCeti.IntegralLattice.mk_eq_checkerboardVectorClass_iff`,
+  `mk_eq_checkerboardSpinorClass_iff`, `mk_eq_checkerboardCospinorClass_iff`: a dual vector lies
+  in one of the three classes exactly when it differs from the representative by a lattice vector.
 * `checkerboardDiscriminantGroup_eq_zero_or_vectorClass_or_spinorClass_or_cospinorClass`:
   the four classes exhaust the discriminant group.
 * `TauCeti.IntegralLattice.natCard_discriminantGroup_checkerboardLattice` and
@@ -536,6 +539,22 @@ theorem mem_checkerboardCarrier_of {u : Fin n → ℚ} (w : Fin n → ℤ) (hw :
   push_cast
   ring
 
+/-- A rational vector with integral coordinates `w` is a checkerboard lattice vector exactly when
+the integer sum of `w` is even. -/
+theorem mem_checkerboardCarrier_iff_even_sum {u : Fin n → ℚ} (w : Fin n → ℤ)
+    (hw : ∀ i, u i = (w i : ℚ)) : u ∈ checkerboardCarrier n ↔ Even (∑ i, w i) := by
+  refine ⟨fun h ↦ ?_, mem_checkerboardCarrier_of w hw⟩
+  obtain ⟨-, m, hm⟩ := (mem_checkerboardCarrier_iff u).mp h
+  refine ⟨m, ?_⟩
+  have hsum : ∑ i, u i = ((∑ i, w i : ℤ) : ℚ) := by
+    push_cast
+    exact Finset.sum_congr rfl fun i _ ↦ hw i
+  have hcast : ((∑ i, w i : ℤ) : ℚ) = ((m + m : ℤ) : ℚ) := by
+    rw [← hsum, hm]
+    push_cast
+    ring
+  exact_mod_cast hcast
+
 /-- Two dual vectors define the same discriminant class as soon as their difference is an
 integer vector with even coordinate sum. -/
 theorem checkerboard_mk_eq_mk_of {u v : Fin n → ℚ} (hu : u ∈ (checkerboardLattice n).dualCarrier)
@@ -545,6 +564,34 @@ theorem checkerboard_mk_eq_mk_of {u v : Fin n → ℚ} (hu : u ∈ (checkerboard
       Submodule.Quotient.mk ⟨v, hv⟩ := by
   rw [discriminantGroup_mk_eq_iff, checkerboardLattice_carrier]
   exact mem_checkerboardCarrier_of w hw hsum
+
+/-- A dual vector lies in the vector class exactly when it differs from `v` by a lattice
+vector. -/
+theorem mk_eq_checkerboardVectorClass_iff [NeZero n] (x : (checkerboardLattice n).dualCarrier) :
+    (Submodule.Quotient.mk x : (checkerboardLattice n).DiscriminantGroup) =
+        checkerboardVectorClass n ↔
+      (x : Fin n → ℚ) - checkerboardVector n ∈ checkerboardCarrier n := by
+  rw [checkerboardVectorClass, discriminantGroup_mk_eq_iff, checkerboardLattice_carrier,
+    Submodule.coe_sub]
+
+/-- A dual vector lies in the spinor class exactly when it differs from `s` by a lattice
+vector. -/
+theorem mk_eq_checkerboardSpinorClass_iff (x : (checkerboardLattice n).dualCarrier) :
+    (Submodule.Quotient.mk x : (checkerboardLattice n).DiscriminantGroup) =
+        checkerboardSpinorClass n ↔
+      (x : Fin n → ℚ) - checkerboardSpinor n ∈ checkerboardCarrier n := by
+  rw [checkerboardSpinorClass, discriminantGroup_mk_eq_iff, checkerboardLattice_carrier,
+    Submodule.coe_sub]
+
+/-- A dual vector lies in the cospinor class exactly when it differs from `c` by a lattice
+vector. -/
+theorem mk_eq_checkerboardCospinorClass_iff [NeZero n]
+    (x : (checkerboardLattice n).dualCarrier) :
+    (Submodule.Quotient.mk x : (checkerboardLattice n).DiscriminantGroup) =
+        checkerboardCospinorClass n ↔
+      (x : Fin n → ℚ) - checkerboardCospinor n ∈ checkerboardCarrier n := by
+  rw [checkerboardCospinorClass, discriminantGroup_mk_eq_iff, checkerboardLattice_carrier,
+    Submodule.coe_sub]
 
 /-- **The four Conway–Sloane classes exhaust the checkerboard discriminant group.** -/
 theorem checkerboardDiscriminantGroup_eq_zero_or_vectorClass_or_spinorClass_or_cospinorClass
