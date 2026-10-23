@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.RootSystem.AffineDynkinType.Basic
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.Loop
+public import TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.Backtrack
 
 /-!
 # Liu--Wang's quartic `A∞` deformation of the affine `D₄` zigzag algebra
@@ -31,13 +31,21 @@ construction `TauCeti.zigzagLoopAInfinityAlgebra` therefore proves the Stasheff 
 arrows in cohomological degree `1`. It also shows that the resulting algebra is minimal and
 strictly unital, and that `m₄` has bidegree `(-2, 2)` for the cohomological and Adams gradings.
 
-This is a test case of a non-ADE minimal deformation. Its nontriviality modulo `A∞` isomorphism
-is not proved here.
+With equal values on the four rotations, as displayed, this operation is a Hochschild coboundary
+of the strict zigzag algebra in Tau Ceti's sign conventions. The four rotations of the walk are the
+backtrack walks of the pairs `(β₁, α₄)` and `(β₄, α₁)` and their rotations by one step, so `m₄` is
+the coboundary of `c` times the backtrack cochain of these pairs, which sends `(β₁, α₄, β₄)` to
+`β₁` and `(β₄, α₁, β₁)` to `β₄` (`TauCeti.zigzagBacktrackOperation_coboundary`). Hence Liu--Wang's
+algebra is `A∞` isomorphic to the strict zigzag algebra, through an isomorphism whose linear part
+is the identity, and it is formal (`TauCeti.isFormal_liuWangAffineD4AInfinityAlgebra`). In these
+conventions the displayed values therefore define the trivial `A∞` deformation.
 
 ## Main definitions
 
 * `TauCeti.liuWangAffineD4Walk`: the closed walk `β₄ α₁ β₁ α₄`, as four darts in product order.
 * `TauCeti.liuWangAffineD4AInfinityAlgebra`: Liu--Wang's `A∞` algebra with scalar `c`.
+* `TauCeti.liuWangAffineD4BacktrackPairs`: the pairs `(β₁, α₄)` and `(β₄, α₁)`, whose backtrack
+  cochain bounds `m₄`.
 
 ## Main results
 
@@ -49,6 +57,9 @@ is not proved here.
   `TauCeti.strictUnit_one_liuWangAffineD4AInfinityAlgebra` and
   `TauCeti.isHomogeneous_liuWangAffineD4AInfinityAlgebra_m_adams`: the algebra is minimal and
   strictly unital, and `m₄` has bidegree `(-2, 2)`.
+* `TauCeti.exists_isIso_liuWangAffineD4AInfinityAlgebra` and
+  `TauCeti.isFormal_liuWangAffineD4AInfinityAlgebra`: the algebra is `A∞` isomorphic to the strict
+  zigzag algebra, and formal.
 
 ## References
 
@@ -237,5 +248,83 @@ theorem isHomogeneous_liuWangAffineD4AInfinityAlgebra_m_adams (c : k) (n : ℕ) 
       (fun _ q ↦ zigzagIntegerGrade k (AffineDynkinType.D 4).graph (-q))
       (fun q ↦ zigzagIntegerGrade k (AffineDynkinType.D 4).graph (-q)) ((n : ℤ) - 2) :=
   isHomogeneous_zigzagLoopAInfinityAlgebra_m_adams _ _ n
+
+/-! ### Formality -/
+
+/-- The two pairs of darts whose backtrack operations bound Liu--Wang's quartic operation:
+`(β₁, α₄)` and `(β₄, α₁)`. -/
+def liuWangAffineD4BacktrackPairs :
+    Finset ((AffineDynkinType.D 4).graph.Dart × (AffineDynkinType.D 4).graph.Dart) :=
+  {(liuWangAffineD4Walk 2, liuWangAffineD4Walk 3), (liuWangAffineD4Walk 0, liuWangAffineD4Walk 1)}
+
+/-- In each of Liu--Wang's backtrack pairs, the first dart starts where the second ends. -/
+theorem fst_eq_snd_of_mem_liuWangAffineD4BacktrackPairs :
+    ∀ p ∈ liuWangAffineD4BacktrackPairs, p.1.fst = p.2.snd := by
+  simp only [liuWangAffineD4BacktrackPairs, Finset.mem_insert, Finset.mem_singleton,
+    forall_eq_or_imp, forall_eq]
+  decide
+
+/-- No first dart of one of Liu--Wang's backtrack pairs is reverse to the first dart of another. -/
+theorem ne_symm_of_mem_liuWangAffineD4BacktrackPairs :
+    ∀ p ∈ liuWangAffineD4BacktrackPairs, ∀ q ∈ liuWangAffineD4BacktrackPairs, q.1 ≠ p.1.symm := by
+  simp only [liuWangAffineD4BacktrackPairs, Finset.mem_insert, Finset.mem_singleton,
+    forall_eq_or_imp, forall_eq]
+  decide
+
+/-- **Liu--Wang's coefficients are backtrack coefficients**: the four cyclic rotations of the walk
+`β₄ α₁ β₁ α₄` are the backtrack walks of `(β₁, α₄)` and `(β₄, α₁)` and their rotations by one
+step. -/
+theorem liuWangAffineD4Coefficients_eq_zigzagBacktrackCoefficients (c : k) :
+    liuWangAffineD4Coefficients k c =
+      zigzagBacktrackCoefficients liuWangAffineD4BacktrackPairs fun _ ↦ c := by
+  have hrot (j : Fin 4) (w : Fin 4 → (AffineDynkinType.D 4).graph.Dart)
+      (hw : ∀ i, w i = liuWangAffineD4Walk (i - j)) :
+      Finsupp.single w c = Finsupp.single (fun i ↦ liuWangAffineD4Walk (i - j)) c :=
+    congrArg (Finsupp.single · c) (funext hw)
+  rw [liuWangAffineD4Coefficients, zigzagBacktrackCoefficients_def, liuWangAffineD4BacktrackPairs,
+    Finset.sum_pair (by decide), Fin.sum_univ_four,
+    hrot 3 (zigzagBacktrackWalk _ (liuWangAffineD4Walk 2) (liuWangAffineD4Walk 3))
+      (by rw [zigzagBacktrackWalk_def]; decide),
+    hrot 2 (fun i ↦ zigzagBacktrackWalk _ (liuWangAffineD4Walk 2) (liuWangAffineD4Walk 3) (i + 1))
+      (by rw [zigzagBacktrackWalk_def]; decide),
+    hrot 1 (zigzagBacktrackWalk _ (liuWangAffineD4Walk 0) (liuWangAffineD4Walk 1))
+      (by rw [zigzagBacktrackWalk_def]; decide),
+    hrot 0 (fun i ↦ zigzagBacktrackWalk _ (liuWangAffineD4Walk 0) (liuWangAffineD4Walk 1) (i + 1))
+      (by rw [zigzagBacktrackWalk_def]; decide)]
+  abel
+
+/-- **Liu--Wang's `A∞` algebra is `A∞` isomorphic to the strict zigzag algebra**, through an
+isomorphism with linear part the identity: the quartic operation is the Hochschild coboundary of
+the backtrack cochain of `(β₁, α₄)` and `(β₄, α₁)`, scaled by `c`
+(`TauCeti.zigzagBacktrackAInfinityHom`). -/
+theorem exists_isIso_liuWangAffineD4AInfinityAlgebra (c : k) :
+    ∃ f : AInfinityHom (liuWangAffineD4AInfinityAlgebra k c)
+        (zigzagStrictAInfinityAlgebra k
+          (AffineDynkinType.exists_adj_graph (t := .D 4) (by decide))),
+      f.IsIso ∧ f.linearPart = LinearMap.id := by
+  have hcongr : ∀ (c₁ c₂ : (Fin 4 → (AffineDynkinType.D 4).graph.Dart) →₀ k) (h : c₁ = c₂) hc₁ hc₂,
+      zigzagLoopAInfinityAlgebra (AffineDynkinType.exists_adj_graph (t := .D 4) (by decide)) c₁
+        hc₁ =
+      zigzagLoopAInfinityAlgebra (AffineDynkinType.exists_adj_graph (t := .D 4) (by decide)) c₂
+        hc₂ := by
+    rintro _ _ rfl _ _
+    rfl
+  rw [liuWangAffineD4AInfinityAlgebra,
+    hcongr _ _ (liuWangAffineD4Coefficients_eq_zigzagBacktrackCoefficients c) _
+      (fst_eq_snd_of_mem_support_zigzagBacktrackCoefficients _
+        fst_eq_snd_of_mem_liuWangAffineD4BacktrackPairs)]
+  exact ⟨_, isIso_zigzagBacktrackAInfinityHom _ _ fst_eq_snd_of_mem_liuWangAffineD4BacktrackPairs
+    ne_symm_of_mem_liuWangAffineD4BacktrackPairs,
+    linearPart_zigzagBacktrackAInfinityHom _ _ _ _⟩
+
+/-- **Liu--Wang's `A∞` algebra is formal**, for every scalar `c`: the displayed quartic operation
+`m₄` is a Hochschild coboundary of the strict zigzag algebra, so it defines the trivial
+`A∞` deformation. -/
+theorem isFormal_liuWangAffineD4AInfinityAlgebra (c : k) :
+    (liuWangAffineD4AInfinityAlgebra k c).IsFormal := by
+  simp only [liuWangAffineD4AInfinityAlgebra,
+    liuWangAffineD4Coefficients_eq_zigzagBacktrackCoefficients]
+  exact isFormal_zigzagLoopAInfinityAlgebra_zigzagBacktrackCoefficients _ _
+    fst_eq_snd_of_mem_liuWangAffineD4BacktrackPairs ne_symm_of_mem_liuWangAffineD4BacktrackPairs
 
 end TauCeti
