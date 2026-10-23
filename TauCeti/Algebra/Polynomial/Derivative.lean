@@ -120,4 +120,36 @@ theorem _root_.Polynomial.natDegree_map_derivative_eq_of_natDegree_map_eq {f : R
   rw [← derivative_map, natDegree_derivative (p.map f), h]
   exact natDegree_derivative_le p
 
+section ShiftedDerivative
+
+variable [NoZeroDivisors R] {δ : R} {q : R[X]}
+
+/-- For `δ ≠ 0`, the coefficient of `X ^ deg q` in `q' + δ q` is `δ` times the leading coefficient
+of `q`, so this polynomial is nonzero when `q` is. -/
+private theorem coeff_natDegree_derivative_add_C_mul_ne_zero (hδ : δ ≠ 0) (hq : q ≠ 0) :
+    (derivative q + C δ * q).coeff q.natDegree ≠ 0 := by
+  rw [coeff_add, coeff_derivative, coeff_natDegree_succ_eq_zero, zero_mul, zero_add, coeff_C_mul]
+  exact mul_ne_zero hδ (leadingCoeff_ne_zero.2 hq)
+
+/-- For `δ ≠ 0`, the operator `q ↦ q' + δ q` (the derivative of `x ↦ q(x) e^(δ x)`, divided by
+`e^(δ x)`) preserves the degree of a polynomial. -/
+theorem _root_.Polynomial.natDegree_derivative_add_C_mul (hδ : δ ≠ 0) :
+    (derivative q + C δ * q).natDegree = q.natDegree := by
+  rcases eq_or_ne q 0 with rfl | hq
+  · simp
+  refine natDegree_eq_of_le_of_coeff_ne_zero ?_
+    (coeff_natDegree_derivative_add_C_mul_ne_zero hδ hq)
+  exact natDegree_add_le_of_degree_le (natDegree_derivative_le q |>.trans (Nat.sub_le _ _))
+    (natDegree_C_mul_le δ q)
+
+/-- For `δ ≠ 0`, the operator `q ↦ q' + δ q` has trivial kernel. -/
+@[simp]
+theorem _root_.Polynomial.derivative_add_C_mul_eq_zero_iff (hδ : δ ≠ 0) :
+    derivative q + C δ * q = 0 ↔ q = 0 := by
+  refine ⟨fun h ↦ ?_, fun h ↦ by simp [h]⟩
+  by_contra hq
+  exact coeff_natDegree_derivative_add_C_mul_ne_zero hδ hq (by rw [h, coeff_zero])
+
+end ShiftedDerivative
+
 end TauCeti
