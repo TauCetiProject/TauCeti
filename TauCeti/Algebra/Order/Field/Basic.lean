@@ -23,6 +23,9 @@ It also records an a priori bound from a difference of two quadratic penalties
 This is the arithmetic behind the equicoercivity of penalized energies in Moreau–Yosida
 regularization.
 
+It records that for `0 < d`, `0 < a` and `e < a`, the time `d * e / a` lies strictly before `d`;
+this is where a timed piece of duration `d` running across `[0, a]` reaches `e`.
+
 Finally, it records the rescaling identity `q |q x - m| = q² |x - m / q|` for `q > 0`, which
 converts between the two usual forms of an approximation `x ≈ m / q`.
 
@@ -32,6 +35,7 @@ converts between the two usual forms of an approximation `x ≈ m / q`.
   `2 / b`.
 * `TauCeti.le_of_sq_div_sub_sq_div_le`: an upper bound on `a` from `a ≤ R + b` and an upper bound
   on `b² / (2τ) - a² / (2τ₀)`, for `0 < τ < τ₀`.
+* `TauCeti.mul_div_lt_self`: `d * e / a < d` for `0 < d`, `0 < a` and `e < a`.
 * `TauCeti.mul_abs_mul_sub_eq_sq_mul_abs_sub_div`: `q |q x - m| = q² |x - m / q|` for `q > 0`.
 -/
 
@@ -71,6 +75,13 @@ theorem le_of_sq_div_sub_sq_div_le {α : Type*} [Field α] [LinearOrder α] [IsS
     exact le_of_mul_le_mul_right this (by linarith)
   rw [← le_div_iff₀' hs] at key
   linarith
+
+/-- For `0 < d`, `0 < a` and `e < a`, scaling `d` by the fraction `e / a < 1` gives
+`d * e / a < d`. -/
+theorem mul_div_lt_self {α : Type*} [Field α] [LinearOrder α] [IsStrictOrderedRing α]
+    {d e a : α} (hd : 0 < d) (ha : 0 < a) (hea : e < a) : d * e / a < d := by
+  rw [mul_div_assoc]
+  exact mul_lt_of_lt_one_right hd ((div_lt_one ha).2 hea)
 
 /-- The rescaling identity `q |q x - m| = q ^ 2 |x - m / q|` for `q > 0`. -/
 theorem mul_abs_mul_sub_eq_sq_mul_abs_sub_div {α : Type*} [Field α] [LinearOrder α]
