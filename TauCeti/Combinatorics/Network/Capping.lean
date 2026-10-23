@@ -114,7 +114,7 @@ end MinimumCut
 
 /-! ### Flows -/
 
-variable [Fintype V] [AddCommGroup K] {cap : Assignment Q K} {s t : V} {b : K} {S : Finset V}
+variable [Fintype V] [AddCommGroup K] {cap : Assignment Q K} {s t : V} {b : K}
 
 section Lattice
 
@@ -146,15 +146,15 @@ theorem PathCycleDecomposition.val_cappedFlow {f : Flow cap s t}
 
 end Lattice
 
-/-- Every ordinary `s`–`t` flow gives an ordinary `s`–`t` flow of the same value with an arrowwise
-no larger assignment for the capacities capped at `b`, whenever `b` exceeds the capacity of a cut
+/-- Every ordinary `s`–`t` flow of value at most `b` gives an ordinary `s`–`t` flow of the same
+value with an arrowwise no larger assignment for the capacities capped at `b`. By
+`TauCeti.Flow.val_le_arrowSum`, this applies whenever `b` is at least the capacity of a cut
 separating `s` from `t`. -/
-theorem Flow.exists_flow_inf [DecidableEq V] [LinearOrder K] [IsOrderedAddMonoid K]
-    (f : Flow cap s t) (hs : s ∈ S) (ht : t ∉ S) (hb : arrowSum cap S Sᶜ < b) :
+theorem Flow.exists_flow_inf [LinearOrder K] [IsOrderedAddMonoid K] (f : Flow cap s t)
+    (hb : f.val ≤ b) :
     ∃ g : Flow (cap ⊓ fun _ _ _ ↦ b) s t, g.toFun ≤ f.toFun ∧ g.val = f.val := by
   obtain ⟨D⟩ := nonempty_pathCycleDecomposition (f := f.toFun) fun _ _ e ↦ f.nonneg e
-  have hb' : f.val ≤ b := (f.val_le_arrowSum hs ht).trans hb.le
-  exact ⟨D.cappedFlow hb', D.pathAssignment_le, D.val_cappedFlow hb'⟩
+  exact ⟨D.cappedFlow hb, D.pathAssignment_le, D.val_cappedFlow hb⟩
 
 -- On `s = 0`, `a = 1` and `t = 2`, the arrows `s → t`, `a → t` and `t → a` have capacities `1`,
 -- `5` and `5`, so the cut `{s}` has capacity `1`. The flow carrying `1` on `s → t` and `3` around
@@ -180,8 +180,8 @@ example :
   have hcut : arrowSum cap {0} {0}ᶜ = 1 := by
     rw [show ({0}ᶜ : Finset (Fin 3)) = {1, 2} by decide]
     simp [cap, arrowSum_def]
-  obtain ⟨G, hGf, hG⟩ := F.exists_flow_inf (mem_singleton_self 0) (by decide) (b := 2)
-    (by rw [hcut]; norm_num)
+  obtain ⟨G, hGf, hG⟩ := F.exists_flow_inf (b := 2)
+    ((F.val_le_arrowSum (mem_singleton_self 0) (by decide)).trans (by rw [hcut]; norm_num))
   refine ⟨F, rfl, hF, hcut, fun h ↦ ?_, G, hGf, hG.trans hF⟩
   have h₁₂ := h 1 2 ()
   simp [f, cap] at h₁₂

@@ -344,9 +344,8 @@ theorem pathAssignment_apply_le_val [PartialOrder K] [IsOrderedAddMonoid K] {f :
   rw [← D.sum_weight_paths_eq_val, pathAssignment_def]
   simp only [Pi.list_sum_apply, List.map_map, Function.comp_def, WeightedWalk.assignment_def]
   refine List.sum_le_sum fun p hp ↦ ?_
-  have hq := (D.weight_pos_of_mem_paths p hp).le
-  exact (walkAssignment_mem_Icc (D.isPath_walk p hp).nodup_arrows hq (cap := fun _ _ _ ↦ p.weight)
-    (fun _ _ _ ↦ hq) fun _ _ ↦ le_rfl).2 _ _ e
+  exact walkAssignment_apply_le (D.isPath_walk p hp).nodup_arrows
+    (D.weight_pos_of_mem_paths p hp).le e
 
 end Flow
 
