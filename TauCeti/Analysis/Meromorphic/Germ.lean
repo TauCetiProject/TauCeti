@@ -41,8 +41,9 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {a : 𝕜}
 
 /-- A function meromorphic at `a` has a nonzero germ on the punctured neighbourhoods of `a`
 exactly when it vanishes at no point of some punctured neighbourhood of `a`. -/
-theorem MeromorphicAt.germ_ne_zero_iff {f : 𝕜 → 𝕜} (hf : MeromorphicAt f a) :
-    (f : Germ (𝓝[≠] a) 𝕜) ≠ 0 ↔ ∀ᶠ z in 𝓝[≠] a, f z ≠ 0 := by
+theorem MeromorphicAt.germ_ne_zero_iff {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {f : 𝕜 → E} (hf : MeromorphicAt f a) :
+    (f : Germ (𝓝[≠] a) E) ≠ 0 ↔ ∀ᶠ z in 𝓝[≠] a, f z ≠ 0 := by
   rw [Ne, ← Germ.coe_zero, Germ.coe_eq]
   refine ⟨fun h ↦ hf.eventually_eq_zero_or_eventually_ne_zero.resolve_left h, fun h h0 ↦ ?_⟩
   exact (h.and h0).exists.elim fun z hz ↦ hz.1 hz.2
@@ -113,6 +114,19 @@ instance instField : Field (meromorphicGerms 𝕜 a) where
   nnqsmul_def _ _ := rfl
   qsmul := _
   qsmul_def _ _ := rfl
+
+@[simp, norm_cast]
+theorem coe_div (φ ψ : meromorphicGerms 𝕜 a) :
+    ((φ / ψ : meromorphicGerms 𝕜 a) : Germ (𝓝[≠] a) 𝕜) =
+      (φ : Germ (𝓝[≠] a) 𝕜) / (ψ : Germ (𝓝[≠] a) 𝕜) := by
+  rw [div_eq_mul_inv, div_eq_mul_inv, Subring.coe_mul, coe_inv]
+
+@[simp, norm_cast]
+theorem coe_zpow (φ : meromorphicGerms 𝕜 a) (n : ℤ) :
+    ((φ ^ n : meromorphicGerms 𝕜 a) : Germ (𝓝[≠] a) 𝕜) = (φ : Germ (𝓝[≠] a) 𝕜) ^ n := by
+  cases n with
+  | ofNat n => rw [Int.ofNat_eq_natCast, zpow_natCast, zpow_natCast, SubmonoidClass.coe_pow]
+  | negSucc n => rw [zpow_negSucc, zpow_negSucc, coe_inv, SubmonoidClass.coe_pow]
 
 end meromorphicGerms
 

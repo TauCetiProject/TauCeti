@@ -111,6 +111,7 @@ theorem exists_eq_toMeromorphicGerms_div (φ : meromorphicGerms ℂ a) :
 instance : Algebra ((holomorphicStructureSheaf 𝓘(ℂ) ℂ).presheaf.stalk a) (meromorphicGerms ℂ a) :=
   (toMeromorphicGerms a).toAlgebra
 
+@[simp]
 theorem algebraMap_meromorphicGerms :
     algebraMap ((holomorphicStructureSheaf 𝓘(ℂ) ℂ).presheaf.stalk a) (meromorphicGerms ℂ a) =
       toMeromorphicGerms a :=
