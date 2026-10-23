@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.Algebra.MvPolynomial.HomogeneousSubmodule
 public import Mathlib.Analysis.Analytic.Polynomial
+import TauCeti.RingTheory.MvPolynomial.Homogeneous
 
 /-!
 # Analyticity on the coefficient space of homogeneous polynomials

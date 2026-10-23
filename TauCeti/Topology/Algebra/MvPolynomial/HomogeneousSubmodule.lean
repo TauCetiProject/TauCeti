@@ -48,8 +48,6 @@ This file provides those continuity statements; their analytic counterparts are 
 
 ## Main results
 
-* `TauCeti.eval_coe_homogeneousSubmodule_eq_sum`: a homogeneous polynomial evaluates as a sum
-  over the exponent vectors of its degree; the continuity and analyticity proofs share it.
 * `TauCeti.continuous_eval_homogeneousSubmodule`: evaluation `(p, v) ↦ p(v)` is jointly
   continuous.
 * `TauCeti.continuous_jacobiMatrixAt_homogeneousSubmodule`: the Jacobian matrix of a family of
@@ -64,14 +62,6 @@ namespace TauCeti
 open MvPolynomial
 
 variable {σ R : Type*} [CommSemiring R]
-
-/-- A homogeneous polynomial of degree `n` in finitely many variables evaluates as the sum, over
-the exponent vectors `l` of degree `n`, of its coefficient at `l` times `∏ i, v i ^ l i`. -/
-theorem eval_coe_homogeneousSubmodule_eq_sum [Fintype σ] [DecidableEq σ] {n : ℕ}
-    (p : homogeneousSubmodule σ R n) (v : σ → R) :
-    eval v (p : MvPolynomial σ R) = ∑ l ∈ Finset.univ.finsuppAntidiag n,
-      (p : MvPolynomial σ R).coeff l * ∏ i, v i ^ l i := by
-  simpa using ((mem_homogeneousSubmodule n _).mp p.2).aeval_eq_sum_finsuppAntidiag v
 
 variable [TopologicalSpace R]
 
