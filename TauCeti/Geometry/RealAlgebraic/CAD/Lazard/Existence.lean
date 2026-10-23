@@ -54,7 +54,7 @@ open MvPolynomial Set
 
 namespace TauCeti
 
-variable {n : ℕ} [∀ m, NormalizedGCDMonoid (MvPolynomial (Fin m) ℝ)]
+variable {n : ℕ}
 
 /-- **Validity of Lazard's projection.** Every finite family of real polynomials in `n`
 variables has a cylindrical algebraic decomposition of `ℝ ^ n` into analytic submanifolds on
@@ -82,6 +82,8 @@ theorem exists_isCAD_lazardValuationReindex_eq (F : Finset (MvPolynomial (Fin n)
     exact isAnalyticSubmanifold_singleton _
   | succ n ih =>
     classical
+    -- The Lazard projection needs a normalized gcd; any choice works.
+    let _ : NormalizedGCDMonoid (MvPolynomial (Fin n) ℝ) := Classical.arbitrary _
     -- Reverse the coordinates and make the last one, formerly coordinate zero, distinguished.
     let Φ : MvPolynomial (Fin (n + 1)) ℝ ≃ₐ[ℝ] Polynomial (MvPolynomial (Fin n) ℝ) :=
       ((renameEquiv ℝ Fin.revPerm).trans (renameEquiv ℝ finSuccEquivLast)).trans
