@@ -344,9 +344,10 @@ theorem coeff_subst_X_one_X_zero (f : MvPowerSeries (Fin 2) O) (d : Fin 2 →₀
     simp [eq_comm, and_comm]
   rw [coeff_subst HasSubst.X_X,
     finsum_eq_single _ (Finsupp.single 0 (d 1) + Finsupp.single 1 (d 0))]
-  · have := key (Finsupp.single 0 (d 1) + Finsupp.single 1 (d 0))
-    simp only [ite_true] at this
-    simp_all [Finsupp.prod_fintype]
+  · rw [smul_eq_mul, Finsupp.prod_fintype _ _ (by simp), Fin.prod_univ_two]
+    simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one]
+    rw [key]
+    simp
   · intro e he
     simp [Finsupp.prod_fintype, key, he]
 

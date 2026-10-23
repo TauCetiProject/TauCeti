@@ -134,10 +134,12 @@ private def bezout (n : ℕ) : ℕ → ℤ :=
     (exists_sum_natCast_mul_eq_one_of_gcd_eq_one (gcd_choose_div_lazardGcd_eq_one h)).choose
   else 0
 
-private theorem sum_bezout {n : ℕ} (hn : 2 ≤ n) :
-    ∑ i ∈ Icc 1 (n - 1), ((n.choose i / lazardGcd n : ℕ) : ℤ) * bezout n i = 1 := by
+private theorem sum_bezout (n : ℕ+) :
+    ∑ i ∈ Icc 1 (n : ℕ), (((n + 1 : ℕ).choose i / lazardGcd (n + 1) : ℕ) : ℤ) *
+      bezout (n + 1) i = 1 := by
+  have hn : 2 ≤ (n : ℕ) + 1 := by have := n.pos; omega
   simp only [bezout, hn, ↓reduceDIte]
-  exact (exists_sum_natCast_mul_eq_one_of_gcd_eq_one
+  simpa only [Nat.add_sub_cancel] using (exists_sum_natCast_mul_eq_one_of_gcd_eq_one
     (gcd_choose_div_lazardGcd_eq_one hn)).choose_spec
 
 /-- The **generator** `xₙ` of the indecomposables of the Lazard ring in degree `2n`: the integral
@@ -197,10 +199,7 @@ theorem coeff_formalGroup_sub_nsmul_generator_mem_sq (n : ℕ+) {i : ℕ} (hi : 
           refine sum_congr rfl fun j hj ↦ ?_
           rw [mem_Icc] at hj
           rw [map_zsmul, hr j hj.1 (by omega), ← Nat.cast_smul_eq_nsmul ℤ, smul_smul, mul_comm]
-      _ = r := by
-          have h := sum_bezout (n := (n : ℕ) + 1) (by omega)
-          rw [Nat.add_sub_cancel] at h
-          rw [← sum_smul, h, one_smul]
+      _ = r := by rw [← sum_smul, sum_bezout, one_smul]
   rw [← Ideal.Quotient.eq_zero_iff_mem, map_sub, map_nsmul, hx, hr i hi (by omega), sub_self]
 
 /-! ### Detecting the generators -/
@@ -255,11 +254,7 @@ private theorem cocycleHom_eq_zero_of_mem (n : ℕ+) {x : LazardRing}
   refine Submodule.mul_induction_on hx (fun y hy z hz ↦ ?_) fun y z hy hz ↦ by
     rw [map_add, hy, hz, add_zero]
   rw [mem_augmentationIdeal] at hy hz
-  ext
-  · rw [map_mul, TrivSqZeroExt.fst_mul, fst_cocycleHom, fst_cocycleHom, hy, hz, mul_zero,
-      TrivSqZeroExt.fst_zero]
-  · rw [map_mul, DualNumber.snd_mul, fst_cocycleHom, fst_cocycleHom, hy, hz, zero_mul, mul_zero,
-      add_zero, TrivSqZeroExt.snd_zero]
+  ext <;> simp [fst_cocycleHom, hy, hz]
 
 /-- `cocycleHom n` detects the generator `xₙ` and kills the other generators. -/
 private theorem snd_cocycleHom_generator (n m : ℕ+) :
@@ -287,8 +282,7 @@ private theorem snd_cocycleHom_generator (n m : ℕ+) :
   rw [sum_congr rfl h]
   split_ifs with hmn
   · subst hmn
-    have h := sum_bezout (n := (m : ℕ) + 1) (by have := m.pos; omega)
-    rwa [Nat.add_sub_cancel] at h
+    exact sum_bezout m
   · simp
 
 /-! ### The basis of the indecomposables -/
@@ -310,6 +304,15 @@ private theorem linearIndependent_toCotangent_generator :
     TrivSqZeroExt.snd_zero] at this
   simpa [Finset.sum_ite_eq', hn] using this
 
+/-- Modulo `I²`, the Lazard ring acts on the augmentation ideal through the augmentation:
+`c • y ≡ η(c) • y`, since `c - η(c) ∈ I`. -/
+private theorem toCotangent_smul_eq_augmentation_smul (c : LazardRing) (y : augmentationIdeal) :
+    augmentationIdeal.toCotangent (c • y) = augmentation c • augmentationIdeal.toCotangent y := by
+  have hc : c - (augmentation c : LazardRing) ∈ augmentationIdeal := by simp
+  rw [← map_zsmul, augmentationIdeal.toCotangent_eq, pow_two]
+  convert Ideal.mul_mem_mul hc y.2 using 1
+  simp [sub_mul, zsmul_eq_mul]
+
 /-- The classes of the generators `xₙ` span `I ⧸ I²` over `ℤ`. -/
 private theorem span_toCotangent_generator :
     ⊤ ≤ Submodule.span ℤ (Set.range fun n ↦
@@ -318,44 +321,29 @@ private theorem span_toCotangent_generator :
     augmentationIdeal.toCotangent ⟨generator n, generator_mem_augmentationIdeal n⟩)
   rintro z -
   obtain ⟨⟨x, hx⟩, rfl⟩ := augmentationIdeal.toCotangent_surjective z
-  have hx' : x ∈ Ideal.span (Set.range fun ij ↦ mk (MvPolynomial.X ij)) :=
-    augmentationIdeal_eq_span ▸ hx
-  refine Submodule.span_induction
-    (p := fun y _ ↦ ∀ h : y ∈ augmentationIdeal, augmentationIdeal.toCotangent ⟨y, h⟩ ∈ S)
-    ?_ ?_ ?_ ?_ hx' hx
-  · rintro _ ⟨⟨i, j⟩, rfl⟩ h
+  have hI := augmentationIdeal_eq_span.ge
+  have hx' := augmentationIdeal_eq_span.le hx
+  change augmentationIdeal.toCotangent ⟨x, hI hx'⟩ ∈ S
+  clear hx
+  induction hx' using Submodule.span_induction with
+  | mem y hy =>
+    obtain ⟨⟨i, j⟩, rfl⟩ := hy
     -- `aᵢⱼ` is congruent to a multiple of `x_{i+j-1}` modulo `I²`.
     have hi := i.pos
     have hj := j.pos
     set n : ℕ+ := ⟨i + j - 1, by omega⟩
     have hmem := coeff_formalGroup_sub_nsmul_generator_mem_sq n hi (by simp [n]; omega)
     rw [show (n : ℕ) + 1 - i = j by simp [n]; omega, coeff_formalGroup] at hmem
-    have h' := (augmentationIdeal.toCotangent_eq (x := ⟨_, h⟩)
-      (y := ((n + 1 : ℕ).choose i / lazardGcd (n + 1)) •
-        ⟨generator n, generator_mem_augmentationIdeal n⟩)).2 hmem
-    rw [h', map_nsmul]
+    rw [(augmentationIdeal.toCotangent_eq (y := ((n + 1 : ℕ).choose i / lazardGcd (n + 1)) •
+      ⟨generator n, generator_mem_augmentationIdeal n⟩)).2 hmem, map_nsmul]
     exact Submodule.smul_of_tower_mem _ _ (Submodule.subset_span ⟨n, rfl⟩)
-  · intro h
-    rw [(Submodule.mk_eq_zero _ h).2 rfl, map_zero]
+  | zero =>
+    rw [(Submodule.mk_eq_zero _ _).2 rfl, map_zero]
     exact S.zero_mem
-  · intro y z hy' hz' hy hz h
-    have hyI : y ∈ augmentationIdeal := augmentationIdeal_eq_span ▸ hy'
-    have hzI : z ∈ augmentationIdeal := augmentationIdeal_eq_span ▸ hz'
-    rw [show (⟨y + z, h⟩ : augmentationIdeal) = ⟨y, hyI⟩ + ⟨z, hzI⟩ from
-      Subtype.ext (Submodule.coe_add (⟨y, hyI⟩ : augmentationIdeal) ⟨z, hzI⟩).symm, map_add]
-    exact S.add_mem (hy hyI) (hz hzI)
-  · intro c y hy' hy h
-    have hyI : y ∈ augmentationIdeal := augmentationIdeal_eq_span ▸ hy'
-    -- `c • y ≡ η(c) • y` modulo `I²`, since `c - η(c) ∈ I` for the augmentation `η`.
-    have hc : c - (augmentation c : LazardRing) ∈ augmentationIdeal := by
-      simp
-    have h' : augmentationIdeal.toCotangent ⟨c • y, h⟩ =
-        augmentationIdeal.toCotangent (augmentation c • ⟨y, hyI⟩) := by
-      rw [augmentationIdeal.toCotangent_eq, pow_two]
-      convert Ideal.mul_mem_mul hc hyI using 1
-      simp [sub_mul, zsmul_eq_mul]
-    rw [h', map_zsmul]
-    exact S.smul_mem _ (hy hyI)
+  | add y z _ _ hy hz => simpa only [← map_add, AddMemClass.mk_add_mk] using S.add_mem hy hz
+  | smul c y _ hy =>
+    simpa only [← toCotangent_smul_eq_augmentation_smul, SetLike.mk_smul_mk] using
+      S.smul_mem (augmentation c) hy
 
 /-- **Lazard's computation of the indecomposables of the Lazard ring.** The `ℤ`-module
 `I ⧸ I²` of indecomposables of `L`, for `I` the augmentation ideal, is free with basis the classes

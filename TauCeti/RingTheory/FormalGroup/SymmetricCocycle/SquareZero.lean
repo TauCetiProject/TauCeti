@@ -66,20 +66,6 @@ variable {A : Type*} [CommRing A]
 
 namespace TauCeti
 
-/-- If the coefficients of `G` pairwise multiply to zero, each of them annihilates the ideal they
-generate. -/
-private theorem coeff_mul_eq_zero_of_mem_span {G : MvPowerSeries (Fin 2) A}
-    (hG : ∀ d e, coeff d G * coeff e G = 0) (d : Fin 2 →₀ ℕ) :
-    ∀ x ∈ Ideal.span (Set.range fun e ↦ coeff e G), coeff d G * x = 0 := by
-  intro x hx
-  induction hx using Submodule.span_induction with
-  | mem x hx =>
-    obtain ⟨e, rfl⟩ := hx
-    exact hG d e
-  | zero => rw [mul_zero]
-  | add x y _ _ hx hy => rw [mul_add, hx, hy, add_zero]
-  | smul c x _ hx => rw [smul_eq_mul, mul_left_comm, hx, mul_zero]
-
 /-- For `F = X + Y + G` with the coefficients of `G` pairwise multiplying to zero, substituting
 into `F` a pair `(u', v')` that agrees with `(u, v)` modulo the coefficients of `G` gives
 `u' + v' + G(u, v)`. -/
@@ -89,8 +75,9 @@ private theorem subst_X_add_X_add_eq {τ : Type*} {G : MvPowerSeries (Fin 2) A}
     (hu : ∀ e, coeff e (u' - u) ∈ Ideal.span (Set.range fun d ↦ coeff d G))
     (hv : ∀ e, coeff e (v' - v) ∈ Ideal.span (Set.range fun d ↦ coeff d G)) :
     (X 0 + X 1 + G).subst ![u', v'] = u' + v' + G.subst ![u, v] := by
-  rw [subst_add h', subst_add h', subst_X h', subst_X h',
-    subst_eq_subst_of_coeff_mem h' h ?_ (coeff_mul_eq_zero_of_mem_span hG)]
+  rw [subst_add h', subst_add h', subst_X h', subst_X h', subst_eq_subst_of_coeff_mem
+    (J := Ideal.span (Set.range fun d ↦ coeff d G)) h' h ?_ fun d ↦ Submodule.mem_annihilator.1
+      ((Submodule.mem_annihilator_span _ _).2 fun ⟨_, e, rfl⟩ ↦ hG d e)]
   · simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one]
   · intro s e
     fin_cases s
@@ -208,9 +195,9 @@ private theorem coeff_X_add_X_add_coe (hf : f.IsAddCocycle₂) (h0 : constantCoe
   -- The cocycle identity at `X` says that the coefficient of `X` in `f` vanishes.
   have h1 : f.coeff (single 0 1) = 0 := by simpa using hf.coeff_eq 1 0 0
   refine ⟨?_, ?_, ?_⟩
-  · rw [map_add, map_add, MvPowerSeries.constantCoeff_X, MvPowerSeries.constantCoeff_X,
-      ← MvPowerSeries.coeff_zero_eq_constantCoeff_apply, MvPolynomial.coeff_coe,
-      ← MvPolynomial.constantCoeff_eq, h0, add_zero, add_zero]
+  · simp only [map_add, MvPowerSeries.constantCoeff_X, zero_add]
+    rw [← MvPowerSeries.coeff_zero_eq_constantCoeff_apply, MvPolynomial.coeff_coe,
+      ← MvPolynomial.constantCoeff_eq, h0]
   · rw [map_add, map_add, MvPolynomial.coeff_coe, h1]
     simp [MvPowerSeries.coeff_X, Finsupp.single_eq_single_iff]
   · rw [map_add, map_add, MvPolynomial.coeff_coe, hf.coeff_single_one_eq_zero one_ne_zero]
