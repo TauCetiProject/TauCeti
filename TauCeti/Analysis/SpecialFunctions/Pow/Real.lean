@@ -72,6 +72,7 @@ theorem sqrt_pow_eq_rpow {x : ℝ} (hx : 0 ≤ x) (n : ℕ) : √(x ^ n) = x ^ (
   rw [sqrt_eq_rpow, ← rpow_natCast, ← rpow_mul hx, mul_one_div]
 
 /-- For a nonnegative real number `a`, taking the real power `s / 2` of `a ^ 2` gives `a ^ s`. -/
+@[simp]
 theorem sq_rpow_div_two {a : ℝ} (ha : 0 ≤ a) (s : ℝ) : (a ^ 2) ^ (s / 2) = a ^ s := by
   rw [rpow_div_two_eq_sqrt s (sq_nonneg a), sqrt_sq ha]
 
