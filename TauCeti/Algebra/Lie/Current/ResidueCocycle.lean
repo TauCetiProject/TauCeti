@@ -283,6 +283,7 @@ theorem twoCochainOfBilinearSMulRight_apply_apply (Φ : LinearMap.BilinForm R L)
   (rfl)
 
 /-- For `Z = R`, the residue cochain with coefficient `1` is the scalar residue cochain. -/
+@[simp]
 theorem twoCochainOfBilinearSMulRight_one (Φ : LinearMap.BilinForm R L) (hΦ : Φ.IsSymm) :
     twoCochainOfBilinearSMulRight R L Φ hΦ (1 : R) = twoCochainOfBilinear R L Φ hΦ :=
   Subtype.ext (LinearMap.ext₂ fun _ _ ↦ by simp)

@@ -360,25 +360,6 @@ theorem exists_eq_smul_twoCochainOfBilinear_add_d₁₂ {Ψ : LinearMap.BilinFor
   rw [twoCochainOfBilinear_ofLoop]
   ring
 
-/-- **The continuous second cohomology of formal currents is spanned by the residue class.**
-Under the hypotheses of `exists_eq_smul_twoCochainOfBilinear_add_d₁₂`, every class in the
-continuous second cohomology of formal currents with trivial coefficients is a multiple of the
-residue class of `Ψ`. -/
-theorem exists_eq_smul_residueClass {Ψ : LinearMap.BilinForm K L} (hΨ : Ψ.lieInvariant L)
-    (hΨs : Ψ.IsSymm)
-    (hspan : ∀ Φ : LinearMap.BilinForm K L, Φ.lieInvariant L → ∃ t : K, Φ = t • Ψ)
-    (hne : ∃ x y z : L, Ψ ⁅x, y⁆ z ≠ 0)
-    (a : continuousSecondCohomology K (currentAlgebra K L)
-      (TrivialLieModule K (currentAlgebra K L) K)) :
-    ∃ t : K, a = t • residueClass K L Ψ hΨ hΨs := by
-  obtain ⟨c, rfl⟩ := continuousSecondCohomologyMk_surjective a
-  obtain ⟨t, f, hf, hc⟩ := exists_eq_smul_twoCochainOfBilinear_add_d₁₂ hΨ hΨs hspan hne c.2
-  refine ⟨t, ?_⟩
-  rw [residueClass_eq_mk, ← map_smul, continuousSecondCohomologyMk_eq_iff]
-  exact ⟨f, hf, by
-    simp only [SetLike.mk_smul_mk, AddSubgroupClass.coe_sub, hc]
-    abel⟩
-
 variable {Z : Type*} [AddCommGroup Z] [Module K Z]
 
 /-- **Every continuous 2-cocycle with discrete coefficients is a residue cocycle up to a continuous
@@ -413,21 +394,21 @@ theorem exists_eq_twoCochainOfBilinearSMulRight_add_d₁₂ {Ψ : LinearMap.Bili
   obtain ⟨x, y, hxy⟩ : ∃ x y : L, Ψ x y ≠ 0 := by
     obtain ⟨x₁, x₂, y, h⟩ := hne
     exact ⟨_, y, h⟩
-  set a₁ : currentAlgebra K L := HahnSeries.single (-1) 1 ⊗ₜ x with ha₁
-  set b₁ : currentAlgebra K L := HahnSeries.single 1 1 ⊗ₜ y with hb₁
-  set a₀ : currentAlgebra K L := HahnSeries.single 0 1 ⊗ₜ x with ha₀
-  set b₀ : currentAlgebra K L := HahnSeries.single 0 1 ⊗ₜ y with hb₀
+  set a₁ : currentAlgebra K L := HahnSeries.single (-1) 1 ⊗ₜ x
+  set b₁ : currentAlgebra K L := HahnSeries.single 1 1 ⊗ₜ y
+  set a₀ : currentAlgebra K L := HahnSeries.single 0 1 ⊗ₜ x
+  set b₀ : currentAlgebra K L := HahnSeries.single 0 1 ⊗ₜ y
   have hab : ⁅a₁, b₁⁆ = ⁅a₀, b₀⁆ := by
-    rw [ha₁, hb₁, ha₀, hb₀, ExtendScalars.bracket_tmul, ExtendScalars.bracket_tmul,
-      HahnSeries.single_mul_single, HahnSeries.single_mul_single, neg_add_cancel, add_zero]
+    simp [a₁, b₁, a₀, b₀, ExtendScalars.bracket_tmul, HahnSeries.single_mul_single]
   have hres : residuePairing K L Ψ a₁ b₁ - residuePairing K L Ψ a₀ b₀ = Ψ x y := by
     simp [a₁, b₁, a₀, b₀, residuePairing_tmul, LaurentSeries.residuePairing_single]
   set z := (Ψ x y)⁻¹ • (c a₁ b₁ - c a₀ b₀)
   have ht (φ) : t φ = φ z := by
     have h₁ := hcf_apply φ a₁ b₁
     rw [hab] at h₁
-    rw [map_smul, map_sub, h₁, hcf_apply, smul_eq_mul, sub_sub_sub_cancel_right, ← mul_sub, hres]
+    rw [map_smul, map_sub, h₁, hcf_apply, smul_eq_mul]
     field_simp
+    linear_combination -t φ * hres
   -- Hence, for `c' = c - c_Ψ ⊗ z`, every `φ ∘ c'` is a coboundary, and so is `c'` itself because
   -- formal currents are perfect.
   have hperf := derivedSeries_one_eq_top_of_isKilling K L
@@ -449,14 +430,10 @@ theorem exists_eq_twoCochainOfBilinearSMulRight_add_d₁₂ {Ψ : LinearMap.Bili
       residuePairing_eq_zero_of_mem_orderSubmodule_zero K L Ψ (h₀ ha) (h₀ hb), zero_smul,
       map_zero, sub_zero, neg_eq_zero] at h
     exact h
-  refine ⟨TrivialLieModule.equiv K _ Z z, F,
-    mem_continuousOneCochain_iff_orderSubmodule.mpr ⟨N + N, fun u hu ↦ ?_⟩, ?_⟩
-  · refine (Submodule.span_le (p := LinearMap.ker F)).mpr ?_
-      (orderSubmodule_add_le_span_lie K L hperf N N hu)
-    rintro _ ⟨a, ha, b, hb, rfl⟩
-    exact hN a ha b hb
-  · rw [hF]
-    exact (add_sub_cancel _ c).symm
+  refine ⟨TrivialLieModule.equiv K _ Z z, F, mem_continuousOneCochain_iff_orderSubmodule.mpr
+    ⟨N + N, orderSubmodule_add_le_ker_of_map_lie_eq_zero K L hperf F hN⟩, ?_⟩
+  rw [hF]
+  exact (add_sub_cancel _ c).symm
 
 /-- **Continuous second cohomology with discrete coefficients is spanned by residue classes.**
 Under the hypotheses of `exists_eq_smul_twoCochainOfBilinear_add_d₁₂`, the residue class map with
@@ -474,6 +451,20 @@ theorem residueClassMap_surjective {Ψ : LinearMap.BilinForm K L} (hΨ : Ψ.lieI
   exact ⟨-f, neg_mem hf, by
     simp only [map_neg, AddSubgroupClass.coe_sub, hc]
     abel⟩
+
+/-- **The continuous second cohomology of formal currents is spanned by the residue class.**
+Under the hypotheses of `exists_eq_smul_twoCochainOfBilinear_add_d₁₂`, every class in the
+continuous second cohomology of formal currents with trivial coefficients is a multiple of the
+residue class of `Ψ`. -/
+theorem exists_eq_smul_residueClass {Ψ : LinearMap.BilinForm K L} (hΨ : Ψ.lieInvariant L)
+    (hΨs : Ψ.IsSymm)
+    (hspan : ∀ Φ : LinearMap.BilinForm K L, Φ.lieInvariant L → ∃ t : K, Φ = t • Ψ)
+    (hne : ∃ x y z : L, Ψ ⁅x, y⁆ z ≠ 0)
+    (a : continuousSecondCohomology K (currentAlgebra K L)
+      (TrivialLieModule K (currentAlgebra K L) K)) :
+    ∃ t : K, a = t • residueClass K L Ψ hΨ hΨs := by
+  obtain ⟨t, rfl⟩ := residueClassMap_surjective (Z := K) hΨ hΨs hspan hne a
+  exact ⟨t, by rw [← residueClassMap_one, ← map_smul, smul_eq_mul, mul_one]⟩
 
 variable (Z) in
 /-- **Continuous second cohomology of formal currents with discrete coefficients.** Under the

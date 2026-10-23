@@ -103,12 +103,12 @@ theorem exists_d₁₂_eq_of_forall_dual [LieModule.IsTrivial L M] [Module.Proje
   have hB_apply (x y : L) : B (x ⊗ₜ y) = ⁅x, y⁆ := LieModule.toModuleHom_apply R L L x y
   have hB : Function.Surjective B := by
     intro u
-    have hu : u ∈ Submodule.span R {⁅x, y⁆ | (x : L) (y : L)} := by
-      rw [← LieAlgebra.coe_derivedSeries_one_eq, hL]
-      exact Submodule.mem_top
-    refine LinearMap.mem_range.mp ((Submodule.span_le.mpr ?_) hu)
-    rintro _ ⟨x, y, rfl⟩
-    exact ⟨x ⊗ₜ y, hB_apply x y⟩
+    -- The first derived ideal is `⁅⊤, ⊤⁆` by definition.
+    have hu : u ∈ ⁅(⊤ : LieIdeal R L), (⊤ : LieIdeal R L)⁆ :=
+      (hL ▸ LieSubmodule.mem_top u : u ∈ LieAlgebra.derivedSeries R L 1)
+    rw [LieSubmodule.lieIdeal_oper_eq_tensor_map_range] at hu
+    obtain ⟨w, rfl⟩ := hu
+    exact ⟨_, rfl⟩
   -- The kernel of the bracket is killed by every functional applied to `c`, hence by `c`.
   have hker : LinearMap.ker B ≤ LinearMap.ker (TensorProduct.lift c.1) := by
     intro w hw
@@ -118,7 +118,6 @@ theorem exists_d₁₂_eq_of_forall_dual [LieModule.IsTrivial L M] [Module.Proje
       TensorProduct.ext' fun x y ↦ by simp [hB_apply, hg]
     simpa [LinearMap.mem_ker.mp hw] using LinearMap.congr_fun hφ w
   refine ⟨-B.liftOfSurjective hB ⟨_, hker⟩, Subtype.ext (LinearMap.ext₂ fun x y ↦ ?_)⟩
-  rw [twoCochain_val_apply, d₁₂_apply_apply_ofTrivial, ← hB_apply, LinearMap.neg_apply, neg_neg,
-    LinearMap.equivOfSurjective_apply, TensorProduct.lift.tmul, twoCochain_val_apply]
+  simp [← hB_apply, trivial_lie_zero]
 
 end LieModule.Cohomology

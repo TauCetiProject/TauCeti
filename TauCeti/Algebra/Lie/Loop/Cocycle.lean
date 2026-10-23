@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Lie.Loop
 public import TauCeti.Algebra.Lie.Killing.InvariantForm
 -- Non-public: these appear only inside proofs, never in the type of an exported declaration.
+import TauCeti.Algebra.Lie.BaseChange.Perfect
 import TauCeti.Algebra.Lie.Cochain
 import TauCeti.Algebra.Lie.Killing.Basic
 import TauCeti.Algebra.Lie.Whitehead
@@ -140,17 +141,9 @@ theorem single_add_tmul_mem_span_lie (hL : derivedSeries R L 1 = ⊤) (a b : A) 
     (AddMonoidAlgebra.single (a + b) 1 ⊗ₜ x : loopAlgebra R A L) ∈ Submodule.span R
       {u | ∃ y z : L, ⁅(AddMonoidAlgebra.single a 1 ⊗ₜ y : loopAlgebra R A L),
         AddMonoidAlgebra.single b 1 ⊗ₜ z⁆ = u} := by
-  have hx : x ∈ Submodule.span R {u | ∃ y z : L, ⁅y, z⁆ = u} := by
-    rw [← coe_derivedSeries_one_eq, LieIdeal.toLieSubalgebra_toSubmodule, hL]
-    exact Submodule.mem_top
-  induction hx using Submodule.span_induction with
-  | mem u hu =>
-    obtain ⟨y, z, rfl⟩ := hu
-    refine Submodule.subset_span ⟨y, z, ?_⟩
-    rw [ExtendScalars.bracket_tmul, AddMonoidAlgebra.single_mul_single, mul_one]
-  | zero => simp
-  | add u v _ _ hu hv => simpa only [TensorProduct.tmul_add] using Submodule.add_mem _ hu hv
-  | smul r u _ hu => simpa only [TensorProduct.tmul_smul] using Submodule.smul_mem _ r hu
+  simpa only [AddMonoidAlgebra.single_mul_single, mul_one] using
+    ExtendScalars.mul_tmul_mem_span_lie hL (AddMonoidAlgebra.single a (1 : R))
+      (AddMonoidAlgebra.single b 1) x
 
 end Perfect
 

@@ -9,6 +9,8 @@ public import Mathlib.Algebra.Lie.BaseChange
 public import Mathlib.Algebra.Lie.Loop
 public import Mathlib.Algebra.Lie.Solvable
 public import TauCeti.RingTheory.LaurentSeries.LaurentPolynomial
+-- Non-public: used only inside proofs.
+import TauCeti.Algebra.Lie.BaseChange.Perfect
 
 /-!
 # Formal currents and their order filtration
@@ -18,7 +20,8 @@ Formal currents in a Lie algebra `L` over `R` are the scalar extension
 and Mathlib's scalar-extension bracket. The order submodule
 `orderSubmodule R L N` is spanned by tensors whose scalar series vanish below `N`.
 The bracket of currents of orders at least `M` and `N` has order at least `M + N`; conversely,
-when `L` is perfect every current of order at least `M + N` is a sum of such brackets, so formal
+when `L` is perfect every current of order at least `M + N` is a sum of such brackets. Hence a
+linear map killing these brackets kills every current of order at least `M + N`, and formal
 currents of a perfect Lie algebra are perfect.
 Every current has a finite lower bound. The coefficient, order and truncation API
 also applies to any coefficient module, without a Lie structure.
@@ -268,26 +271,30 @@ theorem orderSubmodule_add_le_span_lie (hL : LieAlgebra.derivedSeries R L 1 = �
       {w | ∃ u ∈ orderSubmodule R L M, ∃ v ∈ orderSubmodule R L N, ⁅u, v⁆ = w} := by
   refine Submodule.span_le.mpr ?_
   rintro _ ⟨f, x, hf, rfl⟩
-  rw [SetLike.mem_coe]
-  have hx : x ∈ Submodule.span R {⁅y, z⁆ | (y : L) (z : L)} := by
-    rw [← LieAlgebra.coe_derivedSeries_one_eq, hL]
-    exact Submodule.mem_top
-  induction hx using Submodule.span_induction with
-  | mem w hw =>
-    obtain ⟨y, z, rfl⟩ := hw
-    -- `f ⊗ ⁅y, z⁆ = ⁅t^M ⊗ y, t^(-M) f ⊗ z⁆`, where `t^(-M) f` has order at least `N`.
-    have hN : ((N : ℤ) : WithTop ℤ) ≤ (HahnSeries.single (-M) (1 : R) * f).orderTop := by
-      have h := add_le_add (HahnSeries.orderTop_single_le (a := -M) (r := (1 : R))) hf
-      rw [← WithTop.coe_add, neg_add_cancel_left] at h
-      exact h.trans HahnSeries.orderTop_add_le_mul
-    refine Submodule.subset_span ⟨HahnSeries.single M 1 ⊗ₜ y,
-      tmul_mem_orderSubmodule R L M HahnSeries.orderTop_single_le y,
-      (HahnSeries.single (-M) (1 : R) * f) ⊗ₜ z, tmul_mem_orderSubmodule R L N hN z, ?_⟩
-    rw [LieAlgebra.ExtendScalars.bracket_tmul, ← mul_assoc, HahnSeries.single_mul_single,
-      add_neg_cancel, mul_one, HahnSeries.single_zero_one, one_mul]
-  | zero => simp
-  | add w w' _ _ hw hw' => simpa only [TensorProduct.tmul_add] using Submodule.add_mem _ hw hw'
-  | smul r w _ hw => simpa only [TensorProduct.tmul_smul] using Submodule.smul_mem _ r hw
+  -- `f ⊗ x = (t^M · t^(-M) f) ⊗ x`, where `t^(-M) f` has order at least `N`.
+  have hN : ((N : ℤ) : WithTop ℤ) ≤ (HahnSeries.single (-M) (1 : R) * f).orderTop := by
+    have h := add_le_add (HahnSeries.orderTop_single_le (a := -M) (r := (1 : R))) hf
+    rw [← WithTop.coe_add, neg_add_cancel_left] at h
+    exact h.trans HahnSeries.orderTop_add_le_mul
+  have hx := LieAlgebra.ExtendScalars.mul_tmul_mem_span_lie hL (HahnSeries.single M (1 : R))
+    (HahnSeries.single (-M) 1 * f) x
+  simp only [← mul_assoc, HahnSeries.single_mul_single, add_neg_cancel, mul_one,
+    HahnSeries.single_zero_one, one_mul] at hx
+  refine Submodule.span_mono ?_ hx
+  rintro _ ⟨y, z, rfl⟩
+  exact ⟨_, tmul_mem_orderSubmodule R L M HahnSeries.orderTop_single_le y, _,
+    tmul_mem_orderSubmodule R L N hN z, rfl⟩
+
+/-- **A linear map killing brackets of high order kills currents of high order.** If `L` is
+perfect and a linear map `F` on currents vanishes on every bracket of currents of orders at least
+`M` and `N`, then `F` vanishes on all currents of order at least `M + N`. -/
+theorem orderSubmodule_add_le_ker_of_map_lie_eq_zero {P : Type*} [AddCommGroup P] [Module R P]
+    (hL : LieAlgebra.derivedSeries R L 1 = ⊤) {M N : ℤ} (F : currentAlgebra R L →ₗ[R] P)
+    (hF : ∀ u ∈ orderSubmodule R L M, ∀ v ∈ orderSubmodule R L N, F ⁅u, v⁆ = 0) :
+    orderSubmodule R L (M + N) ≤ LinearMap.ker F :=
+  (orderSubmodule_add_le_span_lie R L hL M N).trans <| Submodule.span_le.mpr <| by
+    rintro _ ⟨u, hu, v, hv, rfl⟩
+    exact hF u hu v hv
 
 /-- **Formal currents of a perfect Lie algebra are perfect** as a Lie algebra over the base ring:
 every current is an `R`-linear combination of brackets of currents. Mathlib's
