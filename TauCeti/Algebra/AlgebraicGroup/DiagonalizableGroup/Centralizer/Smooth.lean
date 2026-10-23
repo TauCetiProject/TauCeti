@@ -219,13 +219,15 @@ noncomputable def conjugationComoduleAlgebra : ComoduleAlgebra R (MonoidAlgebra 
       AlgHom.toLinearMap_apply, AlgEquiv.toAlgHom_toLinearMap] at ha
     rw [Algebra.TensorProduct.map_apply_eq_map, Algebra.TensorProduct.map_apply_eq_map,
       AlgHom.toLinearMap_id, AlgHom.toLinearMap_id] at ha
-    simpa [LinearMap.rTensor, LinearMap.lTensor, Bialgebra.comulAlgHom,
-      TensorProduct.AlgebraTensorModule.assoc_eq] using ha
+    rw [Bialgebra.toLinearMap_comulAlgHom, ← LinearMap.rTensor_def, ← LinearMap.lTensor_def,
+      Algebra.TensorProduct.assoc_toLinearEquiv, TensorProduct.AlgebraTensorModule.assoc_eq] at ha
+    exact ha
   lTensor_counit_comp_coact := by
     refine LinearMap.ext fun a ↦ ?_
     have ha := AlgHom.congr_fun (map_counit_comp_conjugationCoactAlgHom π) a
     rw [AlgHom.comp_apply, Algebra.TensorProduct.map_apply_eq_map, AlgHom.toLinearMap_id] at ha
-    simpa [LinearMap.lTensor, Bialgebra.counitAlgHom] using ha
+    rw [Bialgebra.toLinearMap_counitAlgHom, ← LinearMap.lTensor_def] at ha
+    exact ha
   coact_one := map_one (conjugationCoactAlgHom π)
   coact_mul := map_mul (conjugationCoactAlgHom π)
 

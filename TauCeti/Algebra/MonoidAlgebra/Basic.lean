@@ -22,7 +22,8 @@ none of the further theory built on it.
 * `MonoidAlgebra.coeff_one_mul_comm`: the coefficient at the identity of `xy` equals
   that of `yx` in a group algebra over a commutative semiring.
 * `MonoidAlgebra.coeff_one_mul_of_coeff_mem`: the coefficient at the identity is multiplicative
-  on elements whose other coefficients lie in a square-zero ideal.
+  on elements whose other coefficients lie in a square-zero ideal, with additive version
+  `AddMonoidAlgebra.coeff_zero_mul_of_coeff_mem`.
 * The `IsMulCommutative (MonoidAlgebra R M)` instance: the monoid algebra of a commutative
   magma over a commutative semiring is commutative, as a mixin on the existing ring structure.
 * `TauCeti.MonoidAlgebra.mem_ideal_smul_top_iff`: an element of `R[M]` lies in `I • R[M]` exactly
@@ -130,6 +131,11 @@ theorem coeff_one_mul_comm (x y : MonoidAlgebra R G) :
 ideal, the coefficient at the identity of their product is the product of their coefficients at
 the identity. Thus the identity coefficient is multiplicative on the elements of `R[M]` that are
 constant modulo such an ideal. -/
+@[to_additive (dont_translate := R) coeff_zero_mul_of_coeff_mem
+/-- If all coefficients away from zero of two elements of `R[M]` lie in a square-zero ideal, the
+coefficient at zero of their product is the product of their coefficients at zero. Thus the zero
+coefficient is multiplicative on the elements of `R[M]` that are constant modulo such an ideal;
+for Laurent polynomials this is the constant coefficient. -/]
 theorem coeff_one_mul_of_coeff_mem {R M : Type*} [CommSemiring R] [Monoid M] {I : Ideal R}
     (hI : I ^ 2 = ⊥) {x y : MonoidAlgebra R M} (hx : ∀ m ≠ 1, x.coeff m ∈ I)
     (hy : ∀ m ≠ 1, y.coeff m ∈ I) :
