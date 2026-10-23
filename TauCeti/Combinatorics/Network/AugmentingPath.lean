@@ -85,6 +85,10 @@ theorem isMaximum_iff {f : BoundedFlow lo hi s t} :
     f.IsMaximum ↔ ∀ g : BoundedFlow lo hi s t, g.val ≤ f.val :=
   isMaxOn_univ_iff
 
+/-- When the terminals coincide, every bounded assignment is maximum. -/
+theorem isMaximum_of_eq (hst : s = t) (f : BoundedFlow lo hi s t) : f.IsMaximum :=
+  isMaximum_iff.2 fun g ↦ (val_eq_zero_of_eq hst g).trans_le (val_eq_zero_of_eq hst f).ge
+
 end Preorder
 
 /-- All maximum bounded `s`–`t` assignments have the same value. -/

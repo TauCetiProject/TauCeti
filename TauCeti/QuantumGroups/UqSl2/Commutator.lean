@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.QuantumGroups.QuantumInteger
+public import TauCeti.QuantumGroups.QuantumInteger.Basic
 public import TauCeti.QuantumGroups.UqSl2.Basic
 
 import Mathlib.Tactic

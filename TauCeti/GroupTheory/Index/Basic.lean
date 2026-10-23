@@ -46,6 +46,7 @@ centre gives the `Γ.withCenter` readings.
   the iterated sum along its two constituent transversals.
 * `Subgroup.finiteIndex_inf_comap`: `H ⊓ f⁻¹(K)` has finite index when `H` does and
   `K` has finite index relative to `f(H)`.
+* `Subgroup.infinite_of_finiteIndex`: a finite-index subgroup of an infinite group is infinite.
 * `Subgroup.finiteIndex_of_map_eq`: the image of a finite-index subgroup under a surjective
   homomorphism has finite index.
 * `Subgroup.finiteIndex_map_mk'`: the instance making the image of a finite-index subgroup in a
@@ -251,6 +252,15 @@ theorem finiteIndex_inf_comap {G N : Type*} [Group G] [Group N] (H : Subgroup G)
   rw [← relIndex_mul_index (inf_le_left : H ⊓ K.comap f ≤ H), inf_comm, inf_relIndex_right,
     relIndex_comap]
   exact mul_ne_zero IsFiniteRelIndex.relIndex_ne_zero FiniteIndex.index_ne_zero
+
+/-- A subgroup of finite index in an infinite group is infinite. -/
+@[to_additive /-- An additive subgroup of finite index in an infinite additive group is
+infinite. -/]
+theorem infinite_of_finiteIndex {G : Type*} [Group G] [Infinite G] (H : Subgroup G)
+    [H.FiniteIndex] : Infinite H := by
+  by_contra h
+  have := (finite_iff_finite_and_finiteIndex H).mpr ⟨not_infinite_iff_finite.mp h, ‹_›⟩
+  exact not_finite G
 
 /-- The image of a finite-index subgroup under a surjective homomorphism has finite index. -/
 @[to_additive /-- The image of a finite-index additive subgroup under a surjective homomorphism
