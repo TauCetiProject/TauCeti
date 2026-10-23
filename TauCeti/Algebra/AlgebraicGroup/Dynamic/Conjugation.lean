@@ -320,14 +320,14 @@ theorem unipotentDefiningHopfIdeal_conjCocharacter_of_mem_parabolic
     unipotent_conjCocharacter_of_mem_parabolic l hp]
 
 /-- A rational point of `P(λ)` normalizes `P(λ)`. -/
-theorem conjugate_parabolicDefiningHopfIdeal_of_mem_parabolic
+theorem conjugate_parabolicDefiningHopfIdeal_eq_self_of_mem_parabolic
     (l : H →ₐc[R] LaurentPolynomial R) {p : WithConv (H →ₐ[R] R)} (hp : p ∈ parabolic R l) :
     (parabolicDefiningHopfIdeal l).conjugate p = parabolicDefiningHopfIdeal l := by
   rw [← parabolicDefiningHopfIdeal_conjCocharacter,
     parabolicDefiningHopfIdeal_conjCocharacter_of_mem_parabolic l hp]
 
 /-- A rational point of `P(λ)` normalizes `U(λ)`. -/
-theorem conjugate_unipotentDefiningHopfIdeal_of_mem_parabolic
+theorem conjugate_unipotentDefiningHopfIdeal_eq_self_of_mem_parabolic
     (l : H →ₐc[R] LaurentPolynomial R) {p : WithConv (H →ₐ[R] R)} (hp : p ∈ parabolic R l) :
     l.unipotentDefiningHopfIdeal.conjugate p = l.unipotentDefiningHopfIdeal := by
   rw [← unipotentDefiningHopfIdeal_conjCocharacter,
