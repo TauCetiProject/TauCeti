@@ -49,7 +49,9 @@ analytic on `U`, in the same way as `TauCeti.IsSemialgebraic` is defined from po
   `LocallyFinite.isSemianalytic_iUnion` for locally finite unions.
 * `TauCeti.SemianalyticAt.preimage_of_analyticOnNhd`, `TauCeti.SemianalyticAt.preimage` and
   `TauCeti.IsSemianalytic.preimage`: preimages under analytic maps;
-  `TauCeti.isSemianalytic_image_equiv_iff`: invariance under analytic isomorphisms.
+  `TauCeti.isSemianalytic_image_equiv_iff`: invariance under analytic isomorphisms, and
+  `PartialEquiv.semianalyticAt_preimage_symm_iff`: its pointwise form for local analytic
+  isomorphisms such as charts.
 * `TauCeti.IsSemialgebraic.isSemianalytic`: semialgebraic subsets of `σ → ℝ` are semianalytic.
 
 ## References
@@ -531,6 +533,19 @@ theorem _root_.LocallyFinite.isSemianalytic_iUnion {ι : Type*} {s : ι → Set 
   simp only [eq_iff_iff, mem_iUnion, exists_prop]
   exact ⟨fun ⟨i, hi, hy⟩ => ⟨i, hy⟩, fun ⟨i, hyi⟩ => ⟨i, ⟨y, hyi, hy⟩, hyi⟩⟩
 
+/-- **Analytic isomorphisms, locally.** For a partial equivalence `e` whose source is a
+neighbourhood of `x`, with `e` analytic at `x` and its inverse analytic at `e x`, the set
+`e.symm ⁻¹' s` is semianalytic at `e x` if and only if `s` is semianalytic at `x`. This applies to
+charts and other local analytic isomorphisms. -/
+theorem _root_.PartialEquiv.semianalyticAt_preimage_symm_iff [CompleteSpace E] [CompleteSpace F]
+    {s : Set E} {x : E} (e : PartialEquiv E F) (hx : e.source ∈ 𝓝 x) (he : AnalyticAt ℝ e x)
+    (he' : AnalyticAt ℝ e.symm (e x)) :
+    SemianalyticAt (e.symm ⁻¹' s) (e x) ↔ SemianalyticAt s x := by
+  have hxx : e.symm (e x) = x := e.left_inv (mem_of_mem_nhds hx)
+  refine ⟨fun hs => (hs.preimage he).congr ?_, fun hs => .preimage (by rwa [hxx]) he'⟩
+  filter_upwards [hx] with y hy
+  simp [e.left_inv hy]
+
 /-- **Analytic isomorphisms, locally.** For a bijection `e` analytic at `x` whose inverse is
 analytic at `e x`, the image `e '' s` is semianalytic at `e x` if and only if `s` is semianalytic
 at `x`. -/
@@ -538,8 +553,7 @@ theorem semianalyticAt_image_equiv_iff [CompleteSpace E] [CompleteSpace F] {s : 
     (e : E ≃ F) (he : AnalyticAt ℝ e x)
     (he' : AnalyticAt ℝ e.symm (e x)) : SemianalyticAt (e '' s) (e x) ↔ SemianalyticAt s x := by
   rw [e.image_eq_preimage_symm]
-  refine ⟨fun hs => ?_, fun hs => .preimage (by rwa [e.symm_apply_apply]) he'⟩
-  simpa [preimage_preimage] using hs.preimage he
+  exact e.toPartialEquiv.semianalyticAt_preimage_symm_iff univ_mem he he'
 
 /-- **Analytic isomorphisms.** For a bijection `e` that is analytic with analytic inverse, the
 image `e '' s` is semianalytic if and only if `s` is semianalytic. -/
