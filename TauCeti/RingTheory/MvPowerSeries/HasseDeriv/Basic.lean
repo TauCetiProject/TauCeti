@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.MvPowerSeries.Derivative
 public import Mathlib.RingTheory.MvPowerSeries.Trunc
 public import TauCeti.RingTheory.MvPolynomial.HasseDeriv.Taylor
+public import TauCeti.RingTheory.PowerSeries.HasseDeriv.Basic
 
 /-!
 # Hasse derivatives of multivariate power series
@@ -51,6 +52,8 @@ polyradius (`TauCeti.RingTheory.MvPowerSeries.HasseDeriv.GaussNorm`).
   `MvPolynomial.hasseDeriv` on polynomials and on truncations.
 * `MvPowerSeries.hasseDeriv_mul`: the Leibniz rule `∂^d (f g) = ∑_{a + b = d} ∂^a f · ∂^b g`.
 * `MvPowerSeries.factorial_smul_hasseDeriv_single`: `k! • ∂^(k eᵢ) f = (∂/∂Xᵢ)^[k] f`.
+* `PowerSeries.hasseDeriv_eq_mvPowerSeries_hasseDeriv`: on `R⟦X⟧ = MvPowerSeries Unit R`,
+  `PowerSeries.hasseDeriv k` is `MvPowerSeries.hasseDeriv (single () k)`.
 
 ## References
 
@@ -210,6 +213,7 @@ theorem hasseDeriv_mul [DecidableEq σ] (d : σ →₀ ℕ) (f g : MvPowerSeries
   rw [hasseDeriv_coe, hasseDeriv_coe, ← MvPolynomial.coe_mul, MvPolynomial.coeff_coe]
 
 /-- Differentiating `∂^(k eᵢ) f` in `Xᵢ` gives `(k + 1) ∂^((k + 1) eᵢ) f`. -/
+@[simp]
 theorem pderiv_hasseDeriv_single (i : σ) (k : ℕ) (f : MvPowerSeries σ R) :
     pderiv i (hasseDeriv (single i k) f) = (k + 1) • hasseDeriv (single i (k + 1)) f := by
   ext n
@@ -248,3 +252,17 @@ theorem hasseDeriv_single_one (i : σ) (f : MvPowerSeries σ R) :
 end CommSemiring
 
 end MvPowerSeries
+
+namespace PowerSeries
+
+variable {R : Type*} [Semiring R]
+
+/-- On `R⟦X⟧ = MvPowerSeries Unit R`, the `k`-th Hasse derivative of power series is the
+multivariate Hasse derivative of multi-index `single () k`. -/
+theorem hasseDeriv_eq_mvPowerSeries_hasseDeriv (k : ℕ) (f : R⟦X⟧) :
+    hasseDeriv k f = MvPowerSeries.hasseDeriv (Finsupp.single () k) f := by
+  ext n
+  rw [coeff_hasseDeriv]
+  simp [coeff, MvPowerSeries.coeff_hasseDeriv, Finsupp.prod_single_index, ← Finsupp.single_add]
+
+end PowerSeries
