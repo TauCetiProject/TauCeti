@@ -15,6 +15,7 @@ import Mathlib.MeasureTheory.Group.Integral
 import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.MeasureTheory.Function.StronglyMeasurable.Lp
 import TauCeti.MeasureTheory.Function.StronglyMeasurable.InnerRegular
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
 # The integrated form of a strongly continuous representation
@@ -102,14 +103,6 @@ open Filter MeasureTheory
 open scoped InnerProductSpace Topology
 
 namespace TauCeti
-
-private theorem integral_comp_addMonoidHom {X E F : Type*} [MeasurableSpace X]
-    [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
-    [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
-    {μ : Measure X} (T : E →+ F) (hT : Continuous T) {f : X → E} (hf : Integrable f μ) :
-    ∫ x, T (f x) ∂μ = T (∫ x, f x ∂μ) := by
-  simpa only [AddMonoidHom.coe_toRealLinearMap] using
-    (T.toRealLinearMap hT).integral_comp_comm hf
 
 section Normed
 
@@ -225,7 +218,7 @@ theorem _root_.ContRepresentation.comp_integratedOperatorL1 [CompleteSpace E] [M
     ContRepresentation.integratedOperatorL1_apply]
   have hint : ∫ g, π (.ofAdd h) (f g • π (.ofAdd g) v) ∂μ =
       π (.ofAdd h) (∫ g, f g • π (.ofAdd g) v ∂μ) :=
-    integral_comp_addMonoidHom (π (.ofAdd h)).toAddMonoidHom (π (.ofAdd h)).continuous
+    AddMonoidHom.integral_comp_comm (π (.ofAdd h)).toAddMonoidHom (π (.ofAdd h)).continuous
       (integrable_smul_apply hcont hbdd.choose_spec (L1.integrable_coeFn f) v)
   rw [← hint]
   have hcomp : ∫ g, (Lp.compMeasurePreserving (fun g ↦ -h + g)
@@ -272,7 +265,7 @@ theorem _root_.ContRepresentation.commute_integratedOperatorL1
   simp only [mul_apply_eq_comp, ContRepresentation.integratedOperatorL1_apply]
   have hint : ∫ t, π g (f t • π (.ofAdd t) v) ∂μ =
       π g (∫ t, f t • π (.ofAdd t) v ∂μ) :=
-    integral_comp_addMonoidHom (π g).toAddMonoidHom (π g).continuous
+    AddMonoidHom.integral_comp_comm (π g).toAddMonoidHom (π g).continuous
       (integrable_smul_apply hcont hbdd.choose_spec (L1.integrable_coeFn f) v)
   rw [← hint]
   apply integral_congr_ae
@@ -292,7 +285,7 @@ theorem _root_.ContRepresentation.integratedOperatorL1_commute (f₁ f₂ : G �
   rw [π.integratedOperatorL1_apply f₂ v]
   have hint : ∫ t, π.integratedOperatorL1 hcont hbdd μ f₁ (f₂ t • π (.ofAdd t) v) ∂μ =
       π.integratedOperatorL1 hcont hbdd μ f₁ (∫ t, f₂ t • π (.ofAdd t) v ∂μ) :=
-    integral_comp_addMonoidHom (π.integratedOperatorL1 hcont hbdd μ f₁).toAddMonoidHom
+    AddMonoidHom.integral_comp_comm (π.integratedOperatorL1 hcont hbdd μ f₁).toAddMonoidHom
       (π.integratedOperatorL1 hcont hbdd μ f₁).continuous
       (integrable_smul_apply hcont hbdd.choose_spec (L1.integrable_coeFn f₂) v)
   rw [← hint]
