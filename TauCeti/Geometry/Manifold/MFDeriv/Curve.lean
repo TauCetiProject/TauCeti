@@ -60,6 +60,8 @@ curve need not carry a `HasMFDerivWithinAt` witness for it.
   `TauCeti.Manifold.curveVelocity_eq_mfderiv_fst`: the two partial velocities of a two-parameter
   family `f : 𝕜 → 𝕜 → M` are the differential of the uncurried family in the coordinate
   directions.
+* `TauCeti.Manifold.hasMFDerivAt_fst_comp_curve` and `TauCeti.Manifold.hasMFDerivAt_snd_comp_curve`:
+  the components of a curve in a product move with the components of its velocity.
 * `TauCeti.Manifold.variationField`: the variation field `V(t) = ∂F/∂s (0, t)` of a two-parameter
   family `F : 𝕜 → 𝕜 → M`, the transverse velocity at `s = 0`; it vanishes where the curves near
   `s = 0` share a point (`TauCeti.Manifold.variationField_eq_zero`) and is the differential of the
@@ -280,6 +282,31 @@ theorem curveVelocity_eq_mfderiv_fst
     ((hasDerivAt_id u).prodMk (hasDerivAt_const u t))
 
 end Surface
+
+section Prod
+
+variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+  {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+  {M' : Type*} [TopologicalSpace M'] [ChartedSpace H' M'] {c : 𝕜 → M × M'}
+  {v : TangentSpace (I.prod I') (c t)}
+
+/-- The first component of a curve in a product moves with the first component of its
+velocity. -/
+theorem hasMFDerivAt_fst_comp_curve
+    (hc : HasMFDerivAt 𝓘(𝕜, 𝕜) (I.prod I') c t ((1 : 𝕜 →L[𝕜] 𝕜).smulRight v)) :
+    HasMFDerivAt 𝓘(𝕜, 𝕜) I (Prod.fst ∘ c) t ((1 : 𝕜 →L[𝕜] 𝕜).smulRight v.1) :=
+  -- Both derivatives send `r` to `r • v.1`, read in `E`.
+  ((hasMFDerivAt_fst (c t)).comp t hc).congr_mfderiv (ContinuousLinearMap.ext fun _ ↦ rfl)
+
+/-- The second component of a curve in a product moves with the second component of its
+velocity. -/
+theorem hasMFDerivAt_snd_comp_curve
+    (hc : HasMFDerivAt 𝓘(𝕜, 𝕜) (I.prod I') c t ((1 : 𝕜 →L[𝕜] 𝕜).smulRight v)) :
+    HasMFDerivAt 𝓘(𝕜, 𝕜) I' (Prod.snd ∘ c) t ((1 : 𝕜 →L[𝕜] 𝕜).smulRight v.2) :=
+  -- Both derivatives send `r` to `r • v.2`, read in `E'`.
+  ((hasMFDerivAt_snd (c t)).comp t hc).congr_mfderiv (ContinuousLinearMap.ext fun _ ↦ rfl)
+
+end Prod
 
 /-- The velocity of a reparametrized curve is the velocity of the original curve multiplied by
 the derivative of the reparametrization. -/
