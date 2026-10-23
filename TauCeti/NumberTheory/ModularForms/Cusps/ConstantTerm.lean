@@ -43,6 +43,8 @@ Eisenstein series through their constant terms.
 * `ModularForm.constantTermAt`: the constant-term functional attached to an element of
   `SL₂(ℤ)`.
 * `ModularForm.constantTerms`: all constant terms at once, as a linear map to `SL₂(ℤ) → ℂ`.
+* `TauCeti.constantTermsAtDivisors`: constant terms at the divisor representatives `1/d`
+  of `Γ₀(N)`, available at every nonzero level.
 * `TauCeti.ModularForm.constantTermAtCuspTranslationOrbit`: the constant term indexed by a cusp
   translation orbit.
 
@@ -372,7 +374,31 @@ end ModularForm
 
 namespace TauCeti
 
-variable {N : ℕ} [NeZero N] {k : ℤ} {χ : (ZMod N)ˣ →* ℂˣ}
+variable {N : ℕ}
+
+/-- The integral matrix representing the divisor cusp `1/d` of `Γ₀(N)`. -/
+def divisorCuspRep (d : N.divisors) : SL(2, ℤ) :=
+  ⟨!![1, 0; (d.val : ℤ), 1], by simp⟩
+
+/-- The matrix entries of the representative of the divisor cusp `1/d`. -/
+@[simp]
+theorem coe_divisorCuspRep (d : N.divisors) :
+    (divisorCuspRep d : Matrix (Fin 2) (Fin 2) ℤ) = !![1, 0; (d.val : ℤ), 1] :=
+  (rfl)
+
+variable [NeZero N] {k : ℤ} {χ : (ZMod N)ˣ →* ℂˣ}
+
+/-- The constant terms at the cusps `1/d` indexed by the divisors of `N`. -/
+def constantTermsAtDivisors :
+    ModularForm ((Gamma0 N).map (mapGL ℝ)) k →ₗ[ℂ] (N.divisors → ℂ) :=
+  (LinearMap.funLeft ℂ ℂ divisorCuspRep) ∘ₗ ModularForm.constantTerms
+
+/-- Evaluation of the divisor-indexed constant-term map. -/
+@[simp]
+theorem constantTermsAtDivisors_apply
+    (f : ModularForm ((Gamma0 N).map (mapGL ℝ)) k) (d : N.divisors) :
+    constantTermsAtDivisors f d = _root_.ModularForm.constantTermAt (divisorCuspRep d) f :=
+  (rfl)
 
 /-- Inside `M_k(N, χ)`, the common kernel of the cusp constant terms is precisely the image of
 `S_k(N, χ)`. -/
@@ -440,14 +466,10 @@ theorem mem_cuspFormSubmodule_iff_constantTermAtCuspTranslationOrbit_eq_zero
   rw [mem_cuspFormSubmodule_iff_constantTermAt_eq_zero]
   constructor
   · intro hf c
-    induction c using Quotient.inductionOn with
-    | h q =>
-      induction q using Quotient.inductionOn with
-      | h x =>
-        obtain ⟨γ, hγ⟩ := x.property
-        have hx : x = (mapGL ℝ).rangeRestrict γ := Subtype.ext hγ.symm
-        rw [hx, constantTermAtCuspTranslationOrbit_mk_mapGL]
-        exact hf γ⁻¹
+    induction c using CuspTranslationOrbit.induction_on with
+    | h γ =>
+      rw [constantTermAtCuspTranslationOrbit_mk_mapGL]
+      exact hf γ⁻¹
   · intro hf γ
     simpa only [constantTermAtCuspTranslationOrbit_mk_mapGL, inv_inv] using
       hf (⟦(QuotientGroup.mk ((mapGL ℝ).rangeRestrict γ⁻¹) :
