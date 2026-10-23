@@ -41,16 +41,17 @@ although the radial cutoff need not be differentiable at the boundary sphere, it
 near zero, and the Lyapunov--Perron solutions tend uniformly to zero with their input parameter.
 Together with `ContinuousLinearMap.apply_localStableGraphMap`, this makes the graph tangent to the
 range of `P` at the equilibrium whenever `P` is the commuting projection of an exponential
-dichotomy. If `N` is `C¹` on the open ball, with derivative uniformly continuous there, the graph
-map is `C¹` at every parameter `v` small enough that the same uniform bound keeps the solution
+dichotomy. If `N` is uniformly `C^n` (`TauCeti.UniformContDiffOn`) on the open ball, the graph
+map is `C^n` at every parameter `v` small enough that the same uniform bound keeps the solution
 strictly inside the ball: there the cut-off nonlinearity is `N` near every value of the solution,
-and `ContinuousLinearMap.contDiffAt_lyapunovPerronGraphMap` applies.
+and `ContinuousLinearMap.contDiffAt_lyapunovPerronGraphMap_of_uniformContDiffOn` applies. For
+`n = 1` this is the case of a `C¹` remainder with uniformly continuous derivative.
 
 Time reversal applies the same construction to `-A`, `-N`, and the complementary projection
 `1 - P`, without duplicating the fixed-point argument. When `P` is idempotent this gives the local
 unstable set as a Lipschitz graph over `range (1 - P)`, and when `P` moreover commutes with `A`
 the graph map takes its values in `range P`. Its derivative also vanishes at the equilibrium when
-the derivative of `N` does, and it is `C¹` near the equilibrium when `N` is.
+the derivative of `N` does, and it is `C^n` near the equilibrium when `N` is uniformly `C^n`.
 
 ## Main declarations
 
