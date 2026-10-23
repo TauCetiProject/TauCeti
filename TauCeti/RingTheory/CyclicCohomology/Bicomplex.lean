@@ -222,6 +222,7 @@ def cyclicTotalCochains (m : ℕ) :
 variable {R A M}
 
 /-- A family of cochains lies in total degree `m` exactly when it vanishes above row `m`. -/
+@[simp]
 theorem mem_cyclicTotalCochains_iff {m : ℕ}
     {x : ∀ q : ℕ, MultilinearMap R (fun _ : Fin (q + 1) ↦ A) M} :
     x ∈ cyclicTotalCochains R A M m ↔ ∀ q, m < q → x q = 0 := by
