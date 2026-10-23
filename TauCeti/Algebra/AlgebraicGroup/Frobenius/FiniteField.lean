@@ -70,6 +70,10 @@ to the inclusion of a closed subgroup scheme, whose coordinate algebra is again 
   base change identifies the geometric Frobenius with the `q`-Frobenius on points.
 * `BialgHom.map_fixedSubgroup_frobeniusPoints_of_surjective`: the fixed points of a closed
   subgroup scheme are its points that are fixed in the ambient group.
+* `BialgHom.tensorProductMap_comp_geometricFrobeniusBialgHom`: the geometric Frobenius commutes
+  with the base change of every morphism of monoid schemes over `K`.
+* `BialgHom.map_fixedSubgroup_mapDomain_geometricFrobeniusBialgHom_of_surjective`: the same
+  description of the fixed points of a closed subgroup scheme for the geometric Frobenius.
 * `TauCeti.FiniteField.finite_fixedSubgroup_mapDomain_geometricFrobeniusBialgHom`: `G^F` is
   finite for `H` of finite type.
 * `TauCeti.FiniteField.baseChangePointsMulEquiv_symm_frobeniusPoints`: for a model over `ℤ` and
@@ -348,6 +352,77 @@ theorem baseChangePointsMulEquiv_symm_comp_mapDomain_geometricFrobeniusBialgHom 
     (DFunLike.congr_fun mapDomain_frobeniusBialgHom _)
 
 end Geometric
+
+/-! ### Naturality of the geometric Frobenius -/
+
+section GeometricNaturality
+
+variable {K} (k : Type*) [CommSemiring k] [Algebra K k]
+variable {H H₁ : Type*} [CommSemiring H] [CommSemiring H₁]
+variable {R : Type*} [CommRing R] [Algebra k R]
+
+section Bialgebra
+
+variable [_root_.Bialgebra K H] [_root_.Bialgebra K H₁]
+
+/-- **The geometric Frobenius is natural**: it commutes with the scalar extension
+`id ⊗ ψ : k ⊗[K] H → k ⊗[K] H₁` of every bialgebra morphism `ψ` over `K`, that is, with the base
+change of every morphism of monoid schemes over `K`. -/
+theorem _root_.BialgHom.tensorProductMap_comp_geometricFrobeniusBialgHom (ψ : H →ₐc[K] H₁) :
+    (_root_.Bialgebra.TensorProduct.map (BialgHom.id k k) ψ).comp
+        (geometricFrobeniusBialgHom K k H) =
+      (geometricFrobeniusBialgHom K k H₁).comp
+        (_root_.Bialgebra.TensorProduct.map (BialgHom.id k k) ψ) := by
+  ext x
+  induction x with
+  | tmul s h => simp
+  | add x y hx hy => simp_all [map_add]
+
+/-- The map on points induced by the base change of a bialgebra morphism `ψ` over `K` commutes
+with the maps on points induced by the geometric Frobenius. -/
+theorem _root_.BialgHom.mapDomain_tensorProductMap_comp_mapDomain_geometricFrobeniusBialgHom
+    (ψ : H →ₐc[K] H₁) :
+    (BialgHom.mapDomain (A := R) (_root_.Bialgebra.TensorProduct.map (BialgHom.id k k) ψ)).comp
+        (BialgHom.mapDomain (geometricFrobeniusBialgHom K k H₁)) =
+      (BialgHom.mapDomain (geometricFrobeniusBialgHom K k H)).comp
+        (BialgHom.mapDomain (_root_.Bialgebra.TensorProduct.map (BialgHom.id k k) ψ)) := by
+  rw [← BialgHom.mapDomain_comp, ← BialgHom.mapDomain_comp,
+    ψ.tensorProductMap_comp_geometricFrobeniusBialgHom k]
+
+end Bialgebra
+
+section HopfAlgebra
+
+variable [_root_.HopfAlgebra K H] [_root_.HopfAlgebra K H₁]
+
+/-- **The base change of a morphism of group schemes over `K` carries points fixed by the
+geometric Frobenius to points fixed by the geometric Frobenius.** -/
+theorem _root_.BialgHom.map_fixedSubgroup_mapDomain_geometricFrobeniusBialgHom_le
+    (ψ : H →ₐc[K] H₁) :
+    (fixedSubgroup (BialgHom.mapDomain (A := R) (geometricFrobeniusBialgHom K k H₁))).map
+        (BialgHom.mapDomain (_root_.Bialgebra.TensorProduct.map (BialgHom.id k k) ψ)) ≤
+      fixedSubgroup (BialgHom.mapDomain (geometricFrobeniusBialgHom K k H)) :=
+  map_fixedSubgroup_le _ (ψ.mapDomain_tensorProductMap_comp_mapDomain_geometricFrobeniusBialgHom k)
+
+/-- **Geometric-Frobenius-fixed points of a closed subgroup scheme.** For a surjective bialgebra
+morphism `ψ : H → H₁`, cutting out a closed subgroup scheme of `Spec H` over `K`, the points of its
+base change fixed by its own geometric Frobenius are exactly its points that are fixed by the
+geometric Frobenius of the ambient group. -/
+theorem _root_.BialgHom.map_fixedSubgroup_mapDomain_geometricFrobeniusBialgHom_of_surjective
+    (ψ : H →ₐc[K] H₁) (hψ : Function.Surjective ψ) :
+    (fixedSubgroup (BialgHom.mapDomain (A := R) (geometricFrobeniusBialgHom K k H₁))).map
+        (BialgHom.mapDomain (_root_.Bialgebra.TensorProduct.map (BialgHom.id k k) ψ)) =
+      (BialgHom.mapDomain (A := R) (_root_.Bialgebra.TensorProduct.map (BialgHom.id k k) ψ)).range ⊓
+        fixedSubgroup (BialgHom.mapDomain (geometricFrobeniusBialgHom K k H)) :=
+  (BialgHom.mapDomain (A := R)
+    (_root_.Bialgebra.TensorProduct.map (BialgHom.id k k) ψ)).map_fixedSubgroup_of_injective
+    (ψ.mapDomain_tensorProductMap_comp_mapDomain_geometricFrobeniusBialgHom k)
+    (BialgHom.mapDomain_injective_of_surjective _
+      (LinearMap.lTensor_surjective k (g := (ψ : H →ₗ[K] H₁)) hψ))
+
+end HopfAlgebra
+
+end GeometricNaturality
 
 section GeometricFixed
 
