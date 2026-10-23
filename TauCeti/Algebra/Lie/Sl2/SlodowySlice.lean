@@ -154,14 +154,6 @@ section Contraction
 variable {K L : Type*} [Field K] [CharZero K] [IsAlgClosed K] [LieRing L] [LieAlgebra K L]
   [FiniteDimensional K L] {h e f : L}
 
-/-- Over an algebraically closed field of characteristic zero, `L` is the internal direct sum of
-the integer eigenspaces of `ad h`. This is the hypothesis under which `TauCeti.gradingAut` is
-defined. -/
-theorem isInternal_eigenspace_ad_intCast (t : IsSl2Triple h e f) :
-    DirectSum.IsInternal fun j : ℤ ↦ (ad K L h).eigenspace (j : K) :=
-  -- `ad K L` is by definition the action `toEnd K L L` of `L` on itself.
-  isInternal_eigenspace_toEnd_intCast (M := L) t
-
 /-- **The contracting action** of `Kˣ` on `L` attached to an `sl₂` triple `(h, e, f)`:
 `c` acts by `c ^ 2 • gradingAut c⁻¹`, that is, by `c ^ (2 - j)` on the `j`-eigenspace of `ad h`
 (`IsSl2Triple.contractingAction_apply_of_mem`). For an algebraic group with Lie algebra `L` and a
@@ -170,7 +162,10 @@ the Slodowy slice `e + ker (ad f)`, on which it extends to `c = 0`
 (`IsSl2Triple.exists_contractingAction_eq`). -/
 noncomputable def contractingAction (t : IsSl2Triple h e f) : Kˣ →* Module.End K L where
   toFun c := ((c : K) ^ 2) •
-    ((gradingAut t.isInternal_eigenspace_ad_intCast c⁻¹ : L ≃ₗ[K] L) : L →ₗ[K] L)
+    ((gradingAut
+      -- `ad K L` is by definition the action `toEnd K L L` of `L` on itself.
+      (show DirectSum.IsInternal fun j : ℤ ↦ (ad K L h).eigenspace (j : K) from
+        isInternal_eigenspace_toEnd_intCast (M := L) t) c⁻¹ : L ≃ₗ[K] L) : L →ₗ[K] L)
   map_one' := by
     ext x
     simp
