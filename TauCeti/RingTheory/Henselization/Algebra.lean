@@ -57,21 +57,16 @@ noncomputable def stage (I : Ideal R) (B : Neighbourhood.{u, u} I) : B.obj →�
 theorem stage_naturality (I : Ideal R) {B C : Neighbourhood.{u, u} I} (f : B ⟶ C) :
     (stage I C).comp f.hom.hom = stage I B := by
   let E := equivSmallModel (Neighbourhood.{u, u} I)
-  have hunit : (IsNeighbourhood I).ι.map f ≫
-      (IsNeighbourhood I).ι.map (E.unitIso.hom.app C) =
-      (IsNeighbourhood I).ι.map (E.unitIso.hom.app B) ≫
-        (diagram I).map (E.functor.map f) := by
-    simpa only [Functor.id_map, Functor.comp_map, Functor.map_comp] using
-      congrArg (IsNeighbourhood I).ι.map (E.unitIso.hom.naturality f)
-  apply AlgHom.ext
-  intro b
-  -- Expose our stage maps as categorical composites so the unit and colimit equations apply.
-  change (((IsNeighbourhood I).ι.map f ≫
-      (IsNeighbourhood I).ι.map (E.unitIso.hom.app C)) ≫
-      colimit.ι (diagram I) (E.functor.obj C)) b =
-    ((IsNeighbourhood I).ι.map (E.unitIso.hom.app B) ≫
-      colimit.ι (diagram I) (E.functor.obj B)) b
-  rw [hunit, Category.assoc, colimit.w]
+  let c : Cocone (IsNeighbourhood I).ι :=
+    (Cocone.whiskeringEquivalence E.symm).inverse.obj (colimit.cocone (diagram I))
+  -- The component formula identifies each transported leg with our explicit stage map.
+  have hstage (B : Neighbourhood.{u, u} I) : (c.ι.app B).hom = stage I B := by
+    simp [c, Cocone.whiskeringEquivalence, Equivalence.invFunIdAssoc_inv_app,
+      Equivalence.counitInv, diagram, stage, E]
+    rfl
+  have hw := congrArg CommAlgCat.Hom.hom (c.w f)
+  simp only [CommAlgCat.hom_comp, hstage] at hw
+  exact hw
 
 /-- Naturality of the stage maps, evaluated at an element. -/
 @[simp]
