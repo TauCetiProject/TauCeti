@@ -35,6 +35,12 @@ coordinate rings of a rational open and of its preimage. Over a Huber base it pr
 finite type: `TauCeti.Huber.PairOfDefinition.isTopologicallyFiniteType_completionLocPairMap` in
 `TauCeti.RingTheory.Huber.LocalizationTopology.FiniteType`.
 
+Along the completion map `A → Â` of a uniform `A`, with `(T', s')` the image of `(T, s)`, the base
+change is an isomorphism of topological rings `A⟨T/s⟩ ≃+* Â⟨T'/s'⟩`
+(`completionLocCompletionEquiv`): completing `A` before forming the completed rational localisation
+changes nothing. Its inverse is the descent `Â⟨T'/s'⟩ → A⟨T/s⟩` given by the universal property of
+`Â⟨T'/s'⟩` applied to the extension `Â → A⟨T/s⟩` of the structure map of `A`.
+
 For the concrete localisations `Localization.Away s` of presentations, the universal property
 here also underlies `TauCeti.Huber.PairOfDefinition.Presentation.mapHom`, the same map as a
 morphism of complete separated topological rings, used for the structure presheaf. Here the
@@ -46,6 +52,8 @@ localisations `S` and `S'` are arbitrary, as for
 * `TauCeti.Huber.PairOfDefinition.completionLocMap`: the base change `A⟨T/s⟩ →+* B⟨T'/f(s)⟩`.
 * `TauCeti.Huber.PairOfDefinition.completionLocPairMap`: the base change as a morphism of rational
   localisation pairs `(A⟨T/s⟩, A_U⁺) → (B⟨T'/f(s)⟩, B_V⁺)`.
+* `TauCeti.Huber.PairOfDefinition.completionLocCompletionEquiv`: the isomorphism
+  `A⟨T/s⟩ ≃+* Â⟨T'/s'⟩`, the base change along `A → Â`.
 
 ## Main results
 
@@ -65,6 +73,16 @@ localisations `S` and `S'` are arbitrary, as for
   `TauCeti.Huber.PairOfDefinition.completionLocMap_comp_completionLocMap` and their analogues
   `completionLocPairMap_id`, `completionLocPairMap_comp_completionLocPairMap` for morphisms of
   pairs: the base change is functorial.
+* `existsUnique_continuous_ringHom_comp_toCompletionLoc_eq_extensionHom`:
+  the descent `Â⟨T'/s'⟩ → A⟨T/s⟩`, which needs only `s'` and each numerator in `T'` to come
+  from `A`.
+* `TauCeti.Huber.PairOfDefinition.coe_completionLocCompletionEquiv`,
+  `TauCeti.Huber.PairOfDefinition.continuous_completionLocCompletionEquiv`,
+  `TauCeti.Huber.PairOfDefinition.continuous_completionLocCompletionEquiv_symm`,
+  `TauCeti.Huber.PairOfDefinition.completionLocCompletionEquiv_comp_toCompletionLoc` and
+  `TauCeti.Huber.PairOfDefinition.completionLocCompletionEquiv_symm_comp_toCompletionLoc`: the
+  isomorphism is the base change along `A → Â`, it is a homeomorphism, and both directions are
+  compatible with the structure maps.
 
 ## References
 
@@ -523,5 +541,203 @@ theorem completionLocPairMap_comp_completionLocPairMap :
     completionLocMap_comp_toCompletionLoc, RingHom.comp_assoc, Pair.Hom.toRingHom_comp]
 
 end Pair
+
+end TauCeti.Huber.PairOfDefinition
+
+/-! ### Base change along the completion of `A` -/
+
+namespace TauCeti.Huber.PairOfDefinition
+
+open UniformSpace
+
+section Completion
+
+variable {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A]
+  (P : PairOfDefinition A) (T : Finset A) (s : A) (S : Type*) [CommRing S] [Algebra A S]
+  [IsLocalization.Away s S] (hden : HasDenominatorPower P T s S)
+  (P' : PairOfDefinition (Completion A)) (T' : Finset (Completion A)) (s' : Completion A)
+  (S' : Type*) [CommRing S'] [Algebra (Completion A) S'] [IsLocalization.Away s' S']
+  (hden' : HasDenominatorPower P' T' s' S') (hs : (s : Completion A) = s')
+  (hT : ∀ t ∈ T, (t : Completion A) ∈ T') (hT' : ∀ t ∈ T', ∃ t₀ ∈ T, (t₀ : Completion A) = t)
+
+include hs hT' in
+/-- **Descent of `Â⟨T'/s'⟩` to `A⟨T/s⟩`.** When the denominator `s'` and every numerator in `T'`
+come from `A`, the extension `Â → A⟨T/s⟩` of the structure map of `A` extends uniquely to a
+continuous ring homomorphism `Â⟨T'/s'⟩ → A⟨T/s⟩`. Only `T' ⊆ T` (inside `Â`) is needed: `s` is a
+unit of `A⟨T/s⟩`, and `t/s` is power-bounded there for every `t ∈ T`. -/
+theorem existsUnique_continuous_ringHom_comp_toCompletionLoc_eq_extensionHom :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    letI := locUniformSpace P' T' s' S' hden'
+    letI := isUniformAddGroup_locUniformSpace P' T' s' S' hden'
+    letI := isTopologicalRing_locUniformSpace P' T' s' S' hden'
+    ∃! g : Completion S' →+* Completion S, Continuous g ∧
+      g.comp (toCompletionLoc P' T' s' S' hden') =
+        Completion.extensionHom _ (continuous_toCompletionLoc P T s S hden) := by
+  let _ := locUniformSpace P T s S hden
+  have _ := isUniformAddGroup_locUniformSpace P T s S hden
+  have _ := isTopologicalRing_locUniformSpace P T s S hden
+  let _ := locUniformSpace P' T' s' S' hden'
+  have _ := isUniformAddGroup_locUniformSpace P' T' s' S' hden'
+  have _ := isTopologicalRing_locUniformSpace P' T' s' S' hden'
+  have _ := isHuberRing_completion_locTopology P T s S hden
+  have hc := continuous_toCompletionLoc P T s S hden
+  have hu := isUnit_toCompletionLoc_of_dvd P T s S hden (dvd_refl s)
+  have hs' : IsUnit (Completion.extensionHom _ hc s') := by
+    rwa [← hs, Completion.extensionHom_coe]
+  have hunit : hs'.unit = hu.unit :=
+    Units.ext (by rw [IsUnit.unit_spec, IsUnit.unit_spec, ← hs, Completion.extensionHom_coe])
+  refine existsUnique_continuous_ringHom_completion_locTopology P' T' s' S' hden'
+    Completion.continuous_extension.continuousAt hs' fun t ht ↦ ?_
+  obtain ⟨t₀, ht₀, rfl⟩ := hT' t ht
+  rw [hunit, Completion.extensionHom_coe]
+  exact isPowerBounded_toCompletionLoc_mul_unit_inv P T s S hden (mul_one s).symm hu
+    ((mul_one t₀).symm ▸ ht₀)
+
+include hs hT hT' in
+/-- **`A⟨T/s⟩` is unchanged by first completing `A`.** If the presentation `(T', s')` of `Â` is the
+image of the presentation `(T, s)` of `A`, the base change `A⟨T/s⟩ → Â⟨T'/s'⟩` along `A → Â`
+(`completionLocMap`) is a ring isomorphism, whose inverse is the descent map of
+`existsUnique_continuous_ringHom_comp_toCompletionLoc_eq_extensionHom`. Both directions are
+continuous (`continuous_completionLocCompletionEquiv` and
+`continuous_completionLocCompletionEquiv_symm`), so this is an isomorphism of topological rings. -/
+noncomputable def completionLocCompletionEquiv :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    letI := locUniformSpace P' T' s' S' hden'
+    letI := isUniformAddGroup_locUniformSpace P' T' s' S' hden'
+    letI := isTopologicalRing_locUniformSpace P' T' s' S' hden'
+    Completion S ≃+* Completion S' := by
+  let _ := locUniformSpace P T s S hden
+  have _ := isUniformAddGroup_locUniformSpace P T s S hden
+  have _ := isTopologicalRing_locUniformSpace P T s S hden
+  let _ := locUniformSpace P' T' s' S' hden'
+  have _ := isUniformAddGroup_locUniformSpace P' T' s' S' hden'
+  have _ := isTopologicalRing_locUniformSpace P' T' s' S' hden'
+  have hc := continuous_toCompletionLoc P T s S hden
+  have hc' := continuous_toCompletionLoc P' T' s' S' hden'
+  have hg := existsUnique_continuous_ringHom_comp_toCompletionLoc_eq_extensionHom P T s S hden P'
+    T' s' S' hden' hs hT'
+  have hf := continuous_completionLocMap P T s S hden P' Completion.coeRingHom
+    Completion.continuous_coeRingHom.continuousAt T' s' S' hden' hs hT
+  have hfc := completionLocMap_comp_toCompletionLoc P T s S hden P' Completion.coeRingHom
+    Completion.continuous_coeRingHom.continuousAt T' s' S' hden' hs hT
+  -- the base change, followed by the extension of the structure map of `A`, is the structure map
+  -- of `Â`: both are continuous on `Â` and agree on `A`
+  have hext : (completionLocMap P T s S hden P' Completion.coeRingHom
+      Completion.continuous_coeRingHom.continuousAt T' s' S' hden' hs hT).comp
+        (Completion.extensionHom _ hc) = toCompletionLoc P' T' s' S' hden' :=
+    DFunLike.coe_injective <| Completion.ext (hf.comp Completion.continuous_extension) hc'
+      fun a ↦ by
+        rw [RingHom.coe_comp, Function.comp_apply, Completion.extensionHom_coe,
+          ← RingHom.comp_apply, hfc, RingHom.comp_apply, Completion.coe_coeRingHom]
+  exact RingEquiv.ofRingHom _ hg.choose
+    (eq_id_of_comp_toCompletionLoc_eq_self P' T' s' S' hden' _ (hf.comp hg.choose_spec.1.1) <| by
+      rw [RingHom.comp_assoc, hg.choose_spec.1.2, hext])
+    (eq_id_of_comp_toCompletionLoc_eq_self P T s S hden _ (hg.choose_spec.1.1.comp hf) <| by
+      rw [RingHom.comp_assoc, hfc, ← RingHom.comp_assoc, hg.choose_spec.1.2]
+      exact RingHom.ext (Completion.extensionHom_coe _ hc))
+
+/-- **The isomorphism is the base change along `A → Â`.** -/
+theorem coe_completionLocCompletionEquiv :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    letI := locUniformSpace P' T' s' S' hden'
+    letI := isUniformAddGroup_locUniformSpace P' T' s' S' hden'
+    letI := isTopologicalRing_locUniformSpace P' T' s' S' hden'
+    (completionLocCompletionEquiv P T s S hden P' T' s' S' hden' hs hT hT' :
+      Completion S →+* Completion S') =
+      completionLocMap P T s S hden P' Completion.coeRingHom
+      Completion.continuous_coeRingHom.continuousAt T' s' S' hden' hs hT :=
+  (rfl)
+
+/-- The isomorphism `A⟨T/s⟩ ≃+* Â⟨T'/s'⟩` is continuous. -/
+theorem continuous_completionLocCompletionEquiv :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    letI := locUniformSpace P' T' s' S' hden'
+    letI := isUniformAddGroup_locUniformSpace P' T' s' S' hden'
+    letI := isTopologicalRing_locUniformSpace P' T' s' S' hden'
+    Continuous (completionLocCompletionEquiv P T s S hden P' T' s' S' hden' hs hT hT') := by
+  let _ := locUniformSpace P T s S hden
+  have _ := isUniformAddGroup_locUniformSpace P T s S hden
+  have _ := isTopologicalRing_locUniformSpace P T s S hden
+  let _ := locUniformSpace P' T' s' S' hden'
+  have _ := isUniformAddGroup_locUniformSpace P' T' s' S' hden'
+  have _ := isTopologicalRing_locUniformSpace P' T' s' S' hden'
+  rw [← RingEquiv.coe_toRingHom, coe_completionLocCompletionEquiv]
+  exact continuous_completionLocMap P T s S hden P' Completion.coeRingHom
+    Completion.continuous_coeRingHom.continuousAt T' s' S' hden' hs hT
+
+/-- The inverse `Â⟨T'/s'⟩ ≃+* A⟨T/s⟩` is continuous: it is the descent map. -/
+theorem continuous_completionLocCompletionEquiv_symm :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    letI := locUniformSpace P' T' s' S' hden'
+    letI := isUniformAddGroup_locUniformSpace P' T' s' S' hden'
+    letI := isTopologicalRing_locUniformSpace P' T' s' S' hden'
+    Continuous (completionLocCompletionEquiv P T s S hden P' T' s' S' hden' hs hT hT').symm := by
+  let _ := locUniformSpace P T s S hden
+  have _ := isUniformAddGroup_locUniformSpace P T s S hden
+  have _ := isTopologicalRing_locUniformSpace P T s S hden
+  let _ := locUniformSpace P' T' s' S' hden'
+  have _ := isUniformAddGroup_locUniformSpace P' T' s' S' hden'
+  have _ := isTopologicalRing_locUniformSpace P' T' s' S' hden'
+  exact (existsUnique_continuous_ringHom_comp_toCompletionLoc_eq_extensionHom P T s S hden P' T'
+    s' S' hden' hs hT').choose_spec.1.1
+
+/-- **The isomorphism is compatible with the structure maps**: `A → A⟨T/s⟩` followed by it is
+`A → Â → Â⟨T'/s'⟩`. -/
+@[simp]
+theorem completionLocCompletionEquiv_comp_toCompletionLoc :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    letI := locUniformSpace P' T' s' S' hden'
+    letI := isUniformAddGroup_locUniformSpace P' T' s' S' hden'
+    letI := isTopologicalRing_locUniformSpace P' T' s' S' hden'
+    ((completionLocCompletionEquiv P T s S hden P' T' s' S' hden' hs hT hT' :
+      Completion S →+* Completion S')).comp
+        (toCompletionLoc P T s S hden) =
+      (toCompletionLoc P' T' s' S' hden').comp Completion.coeRingHom := by
+  let _ := locUniformSpace P T s S hden
+  have _ := isUniformAddGroup_locUniformSpace P T s S hden
+  have _ := isTopologicalRing_locUniformSpace P T s S hden
+  let _ := locUniformSpace P' T' s' S' hden'
+  have _ := isUniformAddGroup_locUniformSpace P' T' s' S' hden'
+  have _ := isTopologicalRing_locUniformSpace P' T' s' S' hden'
+  rw [coe_completionLocCompletionEquiv]
+  exact completionLocMap_comp_toCompletionLoc P T s S hden P' Completion.coeRingHom
+    Completion.continuous_coeRingHom.continuousAt T' s' S' hden' hs hT
+
+/-- **The inverse is compatible with the structure maps**: `Â → Â⟨T'/s'⟩` followed by it is the
+extension `Â → A⟨T/s⟩` of the structure map of `A`. -/
+@[simp]
+theorem completionLocCompletionEquiv_symm_comp_toCompletionLoc :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    letI := locUniformSpace P' T' s' S' hden'
+    letI := isUniformAddGroup_locUniformSpace P' T' s' S' hden'
+    letI := isTopologicalRing_locUniformSpace P' T' s' S' hden'
+    ((completionLocCompletionEquiv P T s S hden P' T' s' S' hden' hs hT hT').symm :
+      Completion S' →+* Completion S).comp
+        (toCompletionLoc P' T' s' S' hden') =
+      Completion.extensionHom _ (continuous_toCompletionLoc P T s S hden) := by
+  let _ := locUniformSpace P T s S hden
+  have _ := isUniformAddGroup_locUniformSpace P T s S hden
+  have _ := isTopologicalRing_locUniformSpace P T s S hden
+  let _ := locUniformSpace P' T' s' S' hden'
+  have _ := isUniformAddGroup_locUniformSpace P' T' s' S' hden'
+  have _ := isTopologicalRing_locUniformSpace P' T' s' S' hden'
+  exact (existsUnique_continuous_ringHom_comp_toCompletionLoc_eq_extensionHom P T s S hden P' T'
+    s' S' hden' hs hT').choose_spec.1.2
+
+end Completion
 
 end TauCeti.Huber.PairOfDefinition
