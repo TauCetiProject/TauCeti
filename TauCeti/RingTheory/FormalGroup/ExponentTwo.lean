@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.FormalGroup.NSMul.Basic
+import TauCeti.Data.Fin.Basic
 import TauCeti.RingTheory.FormalGroup.AddInv
 import TauCeti.RingTheory.FormalGroup.SymmetricCocycle.CharTwo
 import TauCeti.RingTheory.MvPowerSeries.Order
@@ -246,12 +247,14 @@ private theorem isSymmetric_leadingError [F.IsComm] {n : ℕ} {g : PowerSeries R
       (fun i ↦ by fin_cases i <;> simp [homogeneousComponent_one_X]),
       subst_addError_X_one_X_zero, coe_leadingError]
   intro e
-  rcases (by decide : ∀ e : Equiv.Perm (Fin 2), e = 1 ∨ e = Equiv.swap 0 1) e with rfl | rfl
+  rcases Equiv.Perm.eq_one_or_swap_fin_two e with rfl | rfl
   · simp
-  · rw [MvPolynomial.rename_eq_aeval]
-    convert h using 3
-    funext i
-    fin_cases i <;> rfl
+  · have hswap : (MvPolynomial.X ∘ Equiv.swap (0 : Fin 2) 1 : Fin 2 → MvPolynomial (Fin 2) R) =
+        ![MvPolynomial.X 1, MvPolynomial.X 0] := by
+      funext i
+      fin_cases i <;> simp
+    rw [MvPolynomial.rename_eq_aeval, hswap]
+    exact h
 
 /-- The degree-`n` part of the additivity defect vanishes on the diagonal when `[2]_F = 0`. -/
 private theorem aeval_X_X_leadingError (hF : F.nsmulSeries 2 = 0) {n : ℕ} {g : PowerSeries R}
