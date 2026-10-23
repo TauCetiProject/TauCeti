@@ -17,7 +17,7 @@ spaces have polynomial coordinate ring `CoordinateRing R m`, with one variable p
 strictly above the diagonal. In the first space the generic matrix is `genericMatrix R m - 1`;
 in the second it is `genericMatrix R m`.
 
-`expComap` and `logComap` are the pullbacks on these coordinate rings, and
+`expPullback` and `logPullback` are the pullbacks on these coordinate rings, and
 `expCoordinateEquiv` packages their two-sided inverse identities. They describe an isomorphism
 of affine schemes, without asserting compatibility with addition and matrix multiplication.
 The evaluation equations hold over every commutative value algebra, including nonreduced
@@ -45,33 +45,33 @@ variable (m : Type v) [Fintype m] [LinearOrder m]
 
 /-- Pullback by the finite exponential from strictly upper-triangular matrices to `U_m`.
 The source and target are polynomial rings on the same strict-upper indices. -/
-noncomputable def expComap : CoordinateRing R m →ₐ[R] CoordinateRing R m :=
+noncomputable def expPullback : CoordinateRing R m →ₐ[R] CoordinateRing R m :=
   MvPolynomial.aeval fun ij : Index m ↦
     IsNilpotent.exp (genericMatrix R m - 1) ij.1.1 ij.1.2
 
 /-- Pullback by the finite logarithm from `U_m` to strictly upper-triangular matrices. -/
-noncomputable def logComap : CoordinateRing R m →ₐ[R] CoordinateRing R m :=
+noncomputable def logPullback : CoordinateRing R m →ₐ[R] CoordinateRing R m :=
   MvPolynomial.aeval fun ij : Index m ↦
     IsNilpotent.log (genericMatrix R m) ij.1.1 ij.1.2
 
 /-- Exponential pullback on a coordinate is the corresponding finite-exponential entry. -/
 @[simp]
-theorem expComap_X (ij : Index m) :
-    expComap R m (MvPolynomial.X ij) =
+theorem expPullback_X (ij : Index m) :
+    expPullback R m (MvPolynomial.X ij) =
       IsNilpotent.exp (genericMatrix R m - 1) ij.1.1 ij.1.2 := by
-  simp [expComap]
+  simp [expPullback]
 
 /-- Logarithm pullback on a coordinate is the corresponding finite-logarithm entry. -/
 @[simp]
-theorem logComap_X (ij : Index m) :
-    logComap R m (MvPolynomial.X ij) =
+theorem logPullback_X (ij : Index m) :
+    logPullback R m (MvPolynomial.X ij) =
       IsNilpotent.log (genericMatrix R m) ij.1.1 ij.1.2 := by
-  simp [logComap]
+  simp [logPullback]
 
 /-- Exponential pullback evaluates the generic unitriangular matrix at the exponential. -/
 @[simp]
-theorem map_expComap_genericMatrix :
-    (genericMatrix R m).map (expComap R m) =
+theorem map_expPullback_genericMatrix :
+    (genericMatrix R m).map (expPullback R m) =
       IsNilpotent.exp (genericMatrix R m - 1) := by
   apply map_aeval_genericMatrix
   apply IsUpperTriangular.isUpperUnitriangular_exp
@@ -81,75 +81,14 @@ theorem map_expComap_genericMatrix :
 
 /-- Logarithm pullback evaluates the generic unitriangular matrix at one plus the logarithm. -/
 @[simp]
-theorem map_logComap_genericMatrix :
-    (genericMatrix R m).map (logComap R m) =
+theorem map_logPullback_genericMatrix :
+    (genericMatrix R m).map (logPullback R m) =
       IsNilpotent.log (genericMatrix R m) + 1 := by
+  rw [← sub_eq_iff_eq_add]
   have hU := isUpperUnitriangular_genericMatrix R m
-  apply (hU.map (logComap R m)).ext
-    ((Matrix.isUpperUnitriangular_def _).mpr
-      ⟨hU.isUpperTriangular_log.add blockTriangular_one, by intro i; simp [hU.log_apply_diag]⟩)
-  intro i j hij
-  simp [Matrix.map_apply, genericMatrix_apply_of_lt R m hij, Matrix.one_apply_ne hij.ne]
-
-/-- Logarithm pullback after exponential pullback is the identity on the coordinate ring. -/
-@[simp]
-theorem logComap_comp_expComap :
-    (logComap R m).comp (expComap R m) = AlgHom.id R (CoordinateRing R m) := by
-  classical
-  apply MvPolynomial.algHom_ext
-  intro ij
-  simp only [AlgHom.comp_apply, expComap_X, AlgHom.id_apply]
-  have h := IsNilpotent.map_exp (isUpperUnitriangular_genericMatrix R m).isNilpotent_sub_one
-    (logComap R m).mapMatrix
-  have hmap : (logComap R m).mapMatrix (genericMatrix R m - 1) =
-      IsNilpotent.log (genericMatrix R m) := by
-    simp only [map_sub, map_one, AlgHom.mapMatrix_apply, map_logComap_genericMatrix,
-      add_sub_cancel_right]
-  rw [hmap, IsNilpotent.exp_log (isUpperUnitriangular_genericMatrix R m).isNilpotent_sub_one] at h
-  exact (congrFun (congrFun h ij.1.1) ij.1.2).trans
-    (genericMatrix_apply_of_lt R m ij.2)
-
-/-- Exponential pullback after logarithm pullback is the identity on the coordinate ring. -/
-@[simp]
-theorem expComap_comp_logComap :
-    (expComap R m).comp (logComap R m) = AlgHom.id R (CoordinateRing R m) := by
-  classical
-  apply MvPolynomial.algHom_ext
-  intro ij
-  simp only [AlgHom.comp_apply, logComap_X, AlgHom.id_apply]
-  have h := IsNilpotent.map_log (isUpperUnitriangular_genericMatrix R m).isNilpotent_sub_one
-    (expComap R m).mapMatrix
-  simp only [AlgHom.mapMatrix_apply, map_expComap_genericMatrix,
-    IsNilpotent.log_exp (isUpperUnitriangular_genericMatrix R m).isNilpotent_sub_one] at h
-  exact (congrFun (congrFun h ij.1.1) ij.1.2).trans (by
-    simp [Matrix.one_apply_ne ij.2.ne, genericMatrix_apply_of_lt R m ij.2])
-
-/-- The polynomial coordinate isomorphism whose forward map is exponential pullback and
-whose inverse is logarithm pullback. Contravariantly it identifies the strictly
-upper-triangular affine space with the upper-unitriangular group scheme. -/
-noncomputable def expCoordinateEquiv : CoordinateRing R m ≃ₐ[R] CoordinateRing R m :=
-  AlgEquiv.ofAlgHom (expComap R m) (logComap R m)
-    (expComap_comp_logComap R m) (logComap_comp_expComap R m)
-
-/-- The forward coordinate isomorphism is exponential pullback. -/
-@[simp]
-theorem expCoordinateEquiv_toAlgHom :
-    (expCoordinateEquiv R m).toAlgHom = expComap R m := (rfl)
-
-/-- The inverse coordinate isomorphism is logarithm pullback. -/
-@[simp]
-theorem expCoordinateEquiv_symm_toAlgHom :
-    (expCoordinateEquiv R m).symm.toAlgHom = logComap R m := (rfl)
-
-/-- Applying the coordinate isomorphism pulls a polynomial back by exponential. -/
-@[simp]
-theorem expCoordinateEquiv_apply (p : CoordinateRing R m) :
-    expCoordinateEquiv R m p = expComap R m p := (rfl)
-
-/-- Applying the inverse coordinate isomorphism pulls a polynomial back by logarithm. -/
-@[simp]
-theorem expCoordinateEquiv_symm_apply (p : CoordinateRing R m) :
-    (expCoordinateEquiv R m).symm p = logComap R m p := (rfl)
+  simpa only [← AlgHom.mapMatrix_apply, map_sub, map_one, logPullback] using
+    map_aeval_genericMatrix_sub_one R m (IsNilpotent.log (genericMatrix R m))
+      hU.isUpperTriangular_log hU.log_apply_diag
 
 section Evaluation
 
@@ -157,26 +96,17 @@ variable {A : Type w} [CommRing A] [Algebra ℚ A] [Algebra R A]
 
 /-- Evaluating exponential pullback at any strictly upper-triangular matrix evaluates the
 original polynomial at its exponential. This holds over arbitrary commutative value algebras. -/
-theorem aeval_comp_expComap (M : Matrix m m A) (hM : M.IsUpperTriangular)
+theorem aeval_comp_expPullback (M : Matrix m m A) (hM : M.IsUpperTriangular)
     (hdiag : ∀ i, M i i = 0) :
-    (MvPolynomial.aeval (R := R) fun ij : Index m ↦ M ij.1.1 ij.1.2).comp (expComap R m) =
+    (MvPolynomial.aeval (R := R) fun ij : Index m ↦ M ij.1.1 ij.1.2).comp (expPullback R m) =
       MvPolynomial.aeval fun ij : Index m ↦ IsNilpotent.exp M ij.1.1 ij.1.2 := by
   classical
   let f := MvPolynomial.aeval (R := R) fun ij : Index m ↦ M ij.1.1 ij.1.2
-  have hmap : f.mapMatrix (genericMatrix R m - 1) = M := by
-    have hU : (M + 1).IsUpperUnitriangular := (Matrix.isUpperUnitriangular_def _).mpr
-      ⟨hM.add blockTriangular_one, by intro i; simp [hdiag]⟩
-    have h := map_aeval_genericMatrix R m (M + 1) hU
-    have hf : (MvPolynomial.aeval (R := R)
-        fun ij : Index m ↦ (M + 1) ij.1.1 ij.1.2) = f := by
-      apply MvPolynomial.algHom_ext
-      intro ij
-      simp [f, Matrix.one_apply_ne ij.2.ne]
-    rw [hf] at h
-    simp only [map_sub, map_one, AlgHom.mapMatrix_apply, h, add_sub_cancel_right]
+  have hmap : f.mapMatrix (genericMatrix R m - 1) = M :=
+    map_aeval_genericMatrix_sub_one R m M hM hdiag
   apply MvPolynomial.algHom_ext
   intro ij
-  simp only [AlgHom.comp_apply, expComap_X, MvPolynomial.aeval_X]
+  simp only [AlgHom.comp_apply, expPullback_X, MvPolynomial.aeval_X]
   have h := IsNilpotent.map_exp (isUpperUnitriangular_genericMatrix R m).isNilpotent_sub_one
     f.mapMatrix
   rw [hmap] at h
@@ -184,18 +114,82 @@ theorem aeval_comp_expComap (M : Matrix m m A) (hM : M.IsUpperTriangular)
 
 /-- Evaluating logarithm pullback at an upper-unitriangular matrix evaluates the original
 polynomial at its logarithm, including over nonreduced value algebras. -/
-theorem aeval_comp_logComap (M : Matrix m m A) (hM : M.IsUpperUnitriangular) :
-    (MvPolynomial.aeval (R := R) fun ij : Index m ↦ M ij.1.1 ij.1.2).comp (logComap R m) =
+theorem aeval_comp_logPullback (M : Matrix m m A) (hM : M.IsUpperUnitriangular) :
+    (MvPolynomial.aeval (R := R) fun ij : Index m ↦ M ij.1.1 ij.1.2).comp (logPullback R m) =
       MvPolynomial.aeval fun ij : Index m ↦ IsNilpotent.log M ij.1.1 ij.1.2 := by
   classical
   apply MvPolynomial.algHom_ext
   intro ij
-  simp only [AlgHom.comp_apply, logComap_X, MvPolynomial.aeval_X]
+  simp only [AlgHom.comp_apply, logPullback_X, MvPolynomial.aeval_X]
   have h := IsNilpotent.map_log (isUpperUnitriangular_genericMatrix R m).isNilpotent_sub_one
     (MvPolynomial.aeval (R := R) fun ij : Index m ↦ M ij.1.1 ij.1.2).mapMatrix
   simp only [AlgHom.mapMatrix_apply, map_aeval_genericMatrix R m M hM] at h
   exact congrFun (congrFun h ij.1.1) ij.1.2
 
 end Evaluation
+
+/-- Logarithm pullback after exponential pullback is the identity on the coordinate ring. -/
+@[simp]
+theorem logPullback_comp_expPullback :
+    (logPullback R m).comp (expPullback R m) = AlgHom.id R (CoordinateRing R m) := by
+  rw [logPullback, aeval_comp_expPullback R m _
+      (isUpperUnitriangular_genericMatrix R m).isUpperTriangular_log
+      (isUpperUnitriangular_genericMatrix R m).log_apply_diag,
+    IsNilpotent.exp_log (isUpperUnitriangular_genericMatrix R m).isNilpotent_sub_one]
+  apply MvPolynomial.algHom_ext
+  intro ij
+  simp [genericMatrix_apply_of_lt R m ij.2]
+
+/-- Exponential pullback after logarithm pullback is the identity on the coordinate ring. -/
+@[simp]
+theorem expPullback_comp_logPullback :
+    (expPullback R m).comp (logPullback R m) = AlgHom.id R (CoordinateRing R m) := by
+  rw [expPullback, aeval_comp_logPullback R m _
+      (IsUpperTriangular.isUpperUnitriangular_exp
+        ((isUpperUnitriangular_genericMatrix R m).isUpperTriangular.sub blockTriangular_one)
+        (by intro i; simp)),
+    IsNilpotent.log_exp (isUpperUnitriangular_genericMatrix R m).isNilpotent_sub_one]
+  apply MvPolynomial.algHom_ext
+  intro ij
+  simp [Matrix.one_apply_ne ij.2.ne, genericMatrix_apply_of_lt R m ij.2]
+
+/-- Logarithm pullback cancels exponential pullback on every polynomial. -/
+@[simp]
+theorem logPullback_expPullback (p : CoordinateRing R m) :
+    logPullback R m (expPullback R m p) = p :=
+  DFunLike.congr_fun (logPullback_comp_expPullback R m) p
+
+/-- Exponential pullback cancels logarithm pullback on every polynomial. -/
+@[simp]
+theorem expPullback_logPullback (p : CoordinateRing R m) :
+    expPullback R m (logPullback R m p) = p :=
+  DFunLike.congr_fun (expPullback_comp_logPullback R m) p
+
+/-- The polynomial coordinate isomorphism whose forward map is exponential pullback and
+whose inverse is logarithm pullback. Contravariantly it identifies the strictly
+upper-triangular affine space with the upper-unitriangular group scheme. -/
+noncomputable def expCoordinateEquiv : CoordinateRing R m ≃ₐ[R] CoordinateRing R m :=
+  AlgEquiv.ofAlgHom (expPullback R m) (logPullback R m)
+    (expPullback_comp_logPullback R m) (logPullback_comp_expPullback R m)
+
+/-- The forward coordinate isomorphism is exponential pullback. -/
+@[simp]
+theorem expCoordinateEquiv_toAlgHom :
+    (expCoordinateEquiv R m).toAlgHom = expPullback R m := (rfl)
+
+/-- The inverse coordinate isomorphism is logarithm pullback. -/
+@[simp]
+theorem expCoordinateEquiv_symm_toAlgHom :
+    (expCoordinateEquiv R m).symm.toAlgHom = logPullback R m := (rfl)
+
+/-- Applying the coordinate isomorphism pulls a polynomial back by exponential. -/
+@[simp]
+theorem expCoordinateEquiv_apply (p : CoordinateRing R m) :
+    expCoordinateEquiv R m p = expPullback R m p := (rfl)
+
+/-- Applying the inverse coordinate isomorphism pulls a polynomial back by logarithm. -/
+@[simp]
+theorem expCoordinateEquiv_symm_apply (p : CoordinateRing R m) :
+    (expCoordinateEquiv R m).symm p = logPullback R m p := (rfl)
 
 end TauCeti.UpperUnitriangular
