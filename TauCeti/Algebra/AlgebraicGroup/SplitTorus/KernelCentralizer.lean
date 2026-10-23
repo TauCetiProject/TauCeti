@@ -220,56 +220,61 @@ theorem centralizerKerTorusHopfIdeal_le_definingIdeal (T : SplitMaximalTorus R H
   (T.centralizerKerTorusHopfIdeal_le_centralizerKerHopfIdeal α).trans
     (T.centralizerKerHopfIdeal_le_definingIdeal α)
 
+private def kerCharacterZeroLift (r : ℕ) :
+    KerCharacterGroup (0 : ULift.{u} (Fin r) →₀ ℤ) →*
+      Multiplicative (ULift.{u} (Fin r) →₀ ℤ) :=
+  QuotientGroup.lift _ (MonoidHom.id _) (by simp)
+
+private theorem centralizerHopfIdeal_mapDomain_comp_eq_of_comp_eq_id
+    {Γ Δ : Type u} [CommGroup Γ] [CommGroup Δ]
+    (φ : H →ₐc[R] MonoidAlgebra R Γ) (f : Γ →* Δ) (g : Δ →* Γ)
+    (hgf : g.comp f = MonoidHom.id Γ) :
+    BialgHom.centralizerHopfIdeal ((MonoidAlgebra.mapDomainBialgHom R f).comp φ) =
+      BialgHom.centralizerHopfIdeal φ := by
+  refine le_antisymm (BialgHom.centralizerHopfIdeal_comp_le _ _) ?_
+  have hπ : (MonoidAlgebra.mapDomainBialgHom R g).comp
+      ((MonoidAlgebra.mapDomainBialgHom R f).comp φ) = φ := by
+    rw [← BialgHom.comp_assoc, ← MonoidAlgebra.mapDomainBialgHom_comp, hgf,
+      MonoidAlgebra.mapDomainBialgHom_id]
+    exact BialgHom.id_comp _
+  calc
+    BialgHom.centralizerHopfIdeal φ = BialgHom.centralizerHopfIdeal
+        ((MonoidAlgebra.mapDomainBialgHom R g).comp
+          ((MonoidAlgebra.mapDomainBialgHom R f).comp φ)) :=
+      congrArg BialgHom.centralizerHopfIdeal hπ.symm
+    _ ≤ _ := BialgHom.centralizerHopfIdeal_comp_le _ _
+
 /-- The kernel of the zero character is the whole torus, so `Z_G(ker 0) = Z_G(T)`. -/
 @[simp]
 theorem centralizerKerHopfIdeal_zero (T : SplitMaximalTorus R H r) :
     T.centralizerKerHopfIdeal 0 = BialgHom.centralizerHopfIdeal T.coordinateMap.hom := by
-  refine le_antisymm (T.centralizerKerHopfIdeal_le_centralizerHopfIdeal 0) ?_
-  -- `ker 0 → T` is an isomorphism: the quotient map by the trivial subgroup has a left inverse.
-  let f : KerCharacterGroup (0 : ULift.{u} (Fin r) →₀ ℤ) →*
-      Multiplicative (ULift.{u} (Fin r) →₀ ℤ) :=
-    QuotientGroup.lift _ (MonoidHom.id _) (by simp)
-  have hπ : (MonoidAlgebra.mapDomainBialgHom R f).comp (T.kerCoordinateMap 0) =
-      T.coordinateMap.hom := by
-    have hf : f.comp (QuotientGroup.mk' _) = MonoidHom.id _ := QuotientGroup.lift_comp_mk' _ _ _
-    rw [kerCoordinateMap, ← BialgHom.comp_assoc, ← MonoidAlgebra.mapDomainBialgHom_comp, hf,
-      MonoidAlgebra.mapDomainBialgHom_id]
-    exact BialgHom.id_comp _
-  rw [← hπ, centralizerKerHopfIdeal_def]
-  exact BialgHom.centralizerHopfIdeal_comp_le _ _
+  rw [centralizerKerHopfIdeal_def, kerCoordinateMap]
+  exact centralizerHopfIdeal_mapDomain_comp_eq_of_comp_eq_id T.coordinateMap.hom
+    (QuotientGroup.mk' _) (kerCharacterZeroLift r) (QuotientGroup.lift_comp_mk' _ _ _)
 
 /-- The torus of the kernel of the zero character is the whole torus, so `Z_G(T_0) = Z_G(T)`. -/
 @[simp]
 theorem centralizerKerTorusHopfIdeal_zero (T : SplitMaximalTorus R H r) :
     T.centralizerKerTorusHopfIdeal 0 = BialgHom.centralizerHopfIdeal T.coordinateMap.hom := by
-  refine le_antisymm ?_ ?_
-  · simpa only [centralizerKerHopfIdeal_zero] using
-      T.centralizerKerTorusHopfIdeal_le_centralizerKerHopfIdeal 0
-  · -- Restriction has a left inverse: the character lattice has no nontrivial torsion.
-    let f : KerCharacterGroup (0 : ULift.{u} (Fin r) →₀ ℤ) →*
-        Multiplicative (ULift.{u} (Fin r) →₀ ℤ) :=
-      QuotientGroup.lift _ (MonoidHom.id _) (by simp)
-    let g : KerTorusCharacterGroup (0 : ULift.{u} (Fin r) →₀ ℤ) →*
-        Multiplicative (ULift.{u} (Fin r) →₀ ℤ) :=
-      QuotientGroup.lift _ f (by
-        intro χ hχ
-        have ht : f χ ∈ CommGroup.torsion (Multiplicative (ULift.{u} (Fin r) →₀ ℤ)) :=
-          CommGroup.le_comap_torsion f hχ
-        have htor : CommGroup.torsion (Multiplicative (ULift.{u} (Fin r) →₀ ℤ)) = ⊥ :=
-          CommGroup.isMulTorsionFree_iff_torsion_eq_bot.mp inferInstance
-        simpa only [htor, Subgroup.mem_bot, MonoidHom.mem_ker] using ht)
-    have hf : f.comp (QuotientGroup.mk' _) = MonoidHom.id _ :=
-      QuotientGroup.lift_comp_mk' _ _ _
-    have hg : g.comp (QuotientGroup.mk' _) = f := QuotientGroup.lift_comp_mk' _ _ _
-    have hgf : g.comp (kerTorusCharacterMap 0) = MonoidHom.id _ := by
-      rw [kerTorusCharacterMap, ← MonoidHom.comp_assoc, hg, hf]
-    have hπ : (MonoidAlgebra.mapDomainBialgHom R g).comp (T.kerTorusCoordinateMap 0) =
-        T.coordinateMap.hom := by
-      rw [kerTorusCoordinateMap, ← BialgHom.comp_assoc,
-        ← MonoidAlgebra.mapDomainBialgHom_comp, hgf, MonoidAlgebra.mapDomainBialgHom_id]
-      exact BialgHom.id_comp _
-    rw [← hπ, centralizerKerTorusHopfIdeal_def]
-    exact BialgHom.centralizerHopfIdeal_comp_le _ _
+  -- Restriction has a left inverse: the character lattice has no nontrivial torsion.
+  let f := kerCharacterZeroLift r
+  let g : KerTorusCharacterGroup (0 : ULift.{u} (Fin r) →₀ ℤ) →*
+      Multiplicative (ULift.{u} (Fin r) →₀ ℤ) :=
+    QuotientGroup.lift _ f (by
+      intro χ hχ
+      have ht : f χ ∈ CommGroup.torsion (Multiplicative (ULift.{u} (Fin r) →₀ ℤ)) :=
+        CommGroup.le_comap_torsion f hχ
+      have htor : CommGroup.torsion (Multiplicative (ULift.{u} (Fin r) →₀ ℤ)) = ⊥ :=
+        CommGroup.isMulTorsionFree_iff_torsion_eq_bot.mp inferInstance
+      simpa only [htor, Subgroup.mem_bot, MonoidHom.mem_ker] using ht)
+  have hf : f.comp (QuotientGroup.mk' _) = MonoidHom.id _ :=
+    QuotientGroup.lift_comp_mk' _ _ _
+  have hg : g.comp (QuotientGroup.mk' _) = f := QuotientGroup.lift_comp_mk' _ _ _
+  have hgf : g.comp (kerTorusCharacterMap 0) = MonoidHom.id _ := by
+    rw [kerTorusCharacterMap, ← MonoidHom.comp_assoc, hg, hf]
+  rw [centralizerKerTorusHopfIdeal_def, kerTorusCoordinateMap]
+  exact centralizerHopfIdeal_mapDomain_comp_eq_of_comp_eq_id T.coordinateMap.hom
+    (kerTorusCharacterMap 0) g hgf
 
 /-- The kernel of `-α` is the kernel of `α`, so `Z_G(ker (-α)) = Z_G(ker α)`. -/
 @[simp]
