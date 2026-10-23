@@ -23,6 +23,8 @@ Thus positive rescaling changes the potential scale without changing coefficient
 period reversal changes deck-group conventions by reindexing coefficients along negation.
 
 These equivalences are the invertible special case of `NovikovSeries.map`.
+Inverse coefficient and monomial formulas follow by simplification with `domCongr_symm`
+and `continuousDomCongr_symm`, followed by the corresponding forward formulas.
 
 ## References
 
@@ -105,24 +107,11 @@ theorem coeff_domCongr (a : NovikovSeries R H N) (h' : H') :
   simpa using coeff_map_of_injective ((AlgHom.id A R : R →+* R) : R →+ R)
     (e : H →+ H') he e.injective a h
 
-/-- The inverse comparison restricts coefficients along `e`. -/
-@[simp]
-theorem coeff_domCongr_symm (b : NovikovSeries R H' N') (h : H) :
-    ((domCongr A e he).symm b).coeff h = b.coeff (e h) := by
-  simp
-
 /-- Reindexing carries monomials to monomials with the corresponding exponent. -/
 @[simp]
 theorem domCongr_single (h : H) (r : R) :
     domCongr A e he (single h r) = single (e h) r := by
   simp [domCongr_apply, map_single]
-
-/-- Inverse reindexing carries monomials along the inverse exponent equivalence. -/
-@[simp]
-theorem domCongr_symm_single (h' : H') (r : R) :
-    (domCongr A e he).symm (single h' r) = single (e.symm h') r := by
-  apply (domCongr A e he).injective
-  simp
 
 /-- Reindexing by the identity is the identity algebra equivalence. -/
 @[simp]
@@ -181,17 +170,14 @@ theorem continuousDomCongr_apply (a : NovikovSeries R H N) :
     continuousDomCongr A e he a = domCongr A e he a :=
   (rfl)
 
-@[simp]
-theorem continuousDomCongr_symm_apply (b : NovikovSeries R H' N') :
-    (continuousDomCongr A e he).symm b = (domCongr A e he).symm b :=
-  (rfl)
-
 /-- The inverse continuous comparison reindexes by the inverse exponent equivalence. -/
 @[simp]
 theorem continuousDomCongr_symm :
     (continuousDomCongr A (R := R) e he).symm =
       continuousDomCongr A e.symm (exists_period_rescale_symm he) := by
   ext b h
+  change ((domCongr A e he).symm b).coeff h =
+    (domCongr A e.symm (exists_period_rescale_symm he) b).coeff h
   simp
 
 /-- Reindexing by the identity is the identity topological algebra equivalence. -/
