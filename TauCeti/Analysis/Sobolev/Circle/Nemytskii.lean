@@ -176,15 +176,12 @@ private theorem exists_toContinuousMap_eq_comp_sum_single (hs : 1 / 2 < s) (S : 
       ‖w‖ ≤ M * √(∑' n, weight (2 * s) n * Real.exp (-(4 * π * δ / T * |(n : ℝ)|))) := by
   set p : CircleSobolev s ℂ := ∑ n ∈ S, single n (c n)
   set P : ℂ → ℂ := fun z ↦ ∑ n ∈ S, c n * cexp (2 * π * I * n * z / T) with hP
-  have hTc : (T : ℂ) ≠ 0 := ofReal_ne_zero.2 hT.out.ne'
   have hPx (x : ℝ) : toContinuousMap T hs p x = P x := toContinuousMap_sum_single_coe T hs S c x
   have hrange (y : AddCircle T) : toContinuousMap T hs p y ∈ K := by
     obtain ⟨x, rfl⟩ := QuotientAddGroup.mk_surjective y
     exact hPx x ▸ hmaps x (by simp [hδ.le])
-  have hper (z : ℂ) : P (z + T) = P z := by
-    refine Finset.sum_congr rfl fun n _ ↦ ?_
-    rw [show 2 * π * I * n * (z + T) / T = 2 * π * I * n * z / T + n * (2 * π * I) by
-      field_simp, exp_add, exp_int_mul_two_pi_mul_I, mul_one]
+  have hper (z : ℂ) : P (z + T) = P z :=
+    Finset.sum_congr rfl fun n _ ↦ congrArg (c n * ·) (periodic_cexp_two_pi_mul_I_mul_div n z)
   have hPd : Differentiable ℂ P := by fun_prop
   obtain ⟨w, hw, hwn⟩ := exists_toContinuousMap_eq_of_differentiableOn_strip T hs
     ⟨fun y ↦ G (toContinuousMap T hs p y), hG.continuousOn.comp_continuous

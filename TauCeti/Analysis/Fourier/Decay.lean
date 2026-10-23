@@ -33,6 +33,8 @@ strip around the real axis has exponentially decaying Fourier coefficients, by C
   `‖v‖ ^ k * ‖𝓕 f v‖ ≤ C` for some `C > 0`.
 * `TauCeti.exists_abs_pow_mul_norm_fourierCoeff_le`: if `f : AddCircle T → ℂ` is `C^k` as a
   periodic function on `ℝ`, then `|n| ^ k * ‖fourierCoeff f n‖ ≤ C` for some `C`.
+* `TauCeti.periodic_cexp_two_pi_mul_I_mul_div`: the Fourier monomial `z ↦ e^{2πinz/T}` on `ℂ` is
+  `T`-periodic.
 * `TauCeti.integral_eq_integral_add_mul_I_of_differentiableOn_strip`: the integral over a period of
   a periodic function holomorphic on a strip `|Im z| ≤ |y|` is unchanged by shifting the line of
   integration to `Im z = y`.
@@ -101,6 +103,14 @@ theorem exists_abs_pow_mul_norm_fourierCoeff_le {f : AddCircle T → ℂ} {k : �
           field_simp
       _ ≤ T ^ k / (2 * π) ^ k * M := by gcongr
 
+/-- The Fourier monomial `z ↦ e^{2πinz/T}`, extended to all of `ℂ`, is `T`-periodic. -/
+theorem periodic_cexp_two_pi_mul_I_mul_div (n : ℤ) :
+    Function.Periodic (fun z : ℂ ↦ cexp (2 * π * I * n * z / T)) T := fun z ↦ by
+  have hTc : (T : ℂ) ≠ 0 := ofReal_ne_zero.2 hT.out.ne'
+  dsimp only
+  rw [show 2 * π * I * n * (z + T) / T = 2 * π * I * n * z / T + n * (2 * π * I) by
+    field_simp, exp_add, exp_int_mul_two_pi_mul_I, mul_one]
+
 omit hT in
 /-- **Shifting a period integral off the real axis.** If `h` is `T`-periodic and holomorphic on the
 closed strip `|Im z| ≤ |y|`, then its integral over a period of the real axis equals its integral
@@ -113,14 +123,16 @@ theorem integral_eq_integral_add_mul_I_of_differentiableOn_strip {h : ℂ → �
     ∫ x in (0 : ℝ)..T, h x = ∫ x in (0 : ℝ)..T, h (x + y * I) := by
   have hmem {t : ℝ} (ht : t ∈ [[0, y]]) : |t| ≤ |y| := by
     simpa using Set.abs_sub_left_of_mem_uIcc ht
-  have key := integral_boundary_rect_eq_zero_of_differentiableOn h 0 (T + y * I)
-    (hh.mono fun z hz ↦ hmem (by simpa using hz.2))
+  have key : (∫ x in (0 : ℝ)..T, h x) - (∫ x in (0 : ℝ)..T, h (x + y * I)) +
+      I • (∫ t in (0 : ℝ)..y, h (T + t * I)) - I • ∫ t in (0 : ℝ)..y, h (t * I) = 0 := by
+    simpa using integral_boundary_rect_eq_zero_of_differentiableOn h 0 (T + y * I)
+      (hh.mono fun z hz ↦ hmem (by simpa using hz.2))
   have hside : ∫ t in (0 : ℝ)..y, h (T + t * I) = ∫ t in (0 : ℝ)..y, h (t * I) :=
     intervalIntegral.integral_congr fun t ht ↦ by
       rw [add_comm]
       exact hper _ (by simpa using hmem ht)
-  simp [hside] at key
-  linear_combination key
+  rw [hside, add_sub_cancel_right, sub_eq_zero] at key
+  exact key
 
 /-- **Exponential decay of the Fourier coefficients of a function holomorphic in a strip.** If
 `f : AddCircle T → ℂ` is the restriction to `ℝ` of a function `g` which is `T`-periodic and
@@ -132,28 +144,23 @@ theorem norm_fourierCoeff_le_of_differentiableOn_strip {f : AddCircle T → ℂ}
     (hg : DifferentiableOn ℂ g {z | |z.im| ≤ δ}) (hM : ∀ z : ℂ, |z.im| ≤ δ → ‖g z‖ ≤ M)
     (n : ℤ) : ‖fourierCoeff f n‖ ≤ M * Real.exp (-(2 * π * |(n : ℝ)| * δ / T)) := by
   have hT0 : 0 < T := hT.out
-  have hTc : (T : ℂ) ≠ 0 := ofReal_ne_zero.2 hT0.ne'
   -- The contour of the coefficient integral is shifted to the horizontal line `Im z = y`, on the
   -- side of the real axis where the Fourier monomial `e^{-2πinz/T}` is small.
   obtain ⟨y, hyδ, hny⟩ : ∃ y : ℝ, |y| = δ ∧ (n : ℝ) * y = -(|(n : ℝ)| * δ) := by
     rcases le_or_gt 0 (n : ℝ) with hn | hn
     · exact ⟨-δ, by simp [abs_of_nonneg hδ], by rw [abs_of_nonneg hn]; ring⟩
     · exact ⟨δ, abs_of_nonneg hδ, by rw [abs_of_neg hn]; ring⟩
-  set h : ℂ → ℂ := fun z ↦ cexp (-(2 * π * I * n * z / T)) * g z with hh
+  set h : ℂ → ℂ := fun z ↦ cexp (2 * π * I * (-n : ℤ) * z / T) * g z with hh
   have hshift : ∫ x in (0 : ℝ)..T, h x = ∫ x in (0 : ℝ)..T, h (x + y * I) := by
     refine integral_eq_integral_add_mul_I_of_differentiableOn_strip (fun z hz ↦ ?_)
       ((differentiable_exp.comp (by fun_prop)).differentiableOn.mul (hyδ ▸ hg))
-    have hexp : cexp (-(2 * π * I * n * (z + T) / T)) = cexp (-(2 * π * I * n * z / T)) := by
-      rw [show -(2 * π * I * n * (z + T) / T) =
-          -(2 * π * I * n * z / T) + ((-n : ℤ) : ℂ) * (2 * π * I) by
-        push_cast; field_simp; ring, exp_add, exp_int_mul_two_pi_mul_I, mul_one]
-    simp only [hh, hexp, hper z (hyδ ▸ hz)]
+    simp only [hh, periodic_cexp_two_pi_mul_I_mul_div (-n) z, hper z (hyδ ▸ hz)]
   -- On the shifted line, `|e^{-2πinz/T}| = e^{2πny/T} = e^{-2π|n|δ/T}`.
   have hbound (x : ℝ) : ‖h (x + y * I)‖ ≤ M * Real.exp (-(2 * π * |(n : ℝ)| * δ / T)) := by
-    have hre : (-(2 * π * I * n * (x + y * I) / T)).re = -(2 * π * |(n : ℝ)| * δ / T) := by
-      rw [show -(2 * π * I * n * (x + y * I) / T) =
+    have hre : (2 * π * I * (-n : ℤ) * (x + y * I) / T).re = -(2 * π * |(n : ℝ)| * δ / T) := by
+      rw [show 2 * π * I * (-n : ℤ) * (x + y * I) / T =
           ((2 * π * (n * y) / T : ℝ) : ℂ) + ((-(2 * π * n * x / T) : ℝ) : ℂ) * I by
-        push_cast; field_simp; ring_nf; rw [I_sq]; ring, hny]
+        push_cast; linear_combination (-(2 * π * n * y / T : ℂ)) * I_sq, hny]
       simp only [add_re, ofReal_re, mul_re, I_re, mul_zero, ofReal_im, I_im, mul_one, sub_self,
         add_zero]
       ring
