@@ -11,7 +11,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Torus.Reductive
 public import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.FinTwo
 
 /-!
-# The two-dimensional special orthogonal torus
+# The special orthogonal group `SO₂` as a torus
 
 Suppose a commutative ring `R` contains a square root `i` of `-1` and an element `half` with
 `2 * half = 1`. The standard special orthogonal group `SO₂` is then the rank-one split torus.
@@ -281,8 +281,8 @@ def finiteTypeSplitTorusCoordinateIso :
   ObjectProperty.isoMk _ <| (splitTorusCoordinateIso R i half hi hhalf) ≪≫
     eqToIso (finiteTypeCoordinateHopfAlgebra_obj R 2).symm
 
-/-- When the base contains a square root of `-1` and a half, `SO₂` is a split torus of rank
-one. -/
+/-- When the base contains a square root of `-1` and a half, `SO₂` is a split torus.
+`finiteTypeSplitTorusCoordinateIso` identifies it with the rank-one split torus. -/
 theorem splitTorusCommHopfAlgProperty_finiteTypeCoordinateHopfAlgebra_two
     (i half : R) (hi : i ^ 2 = -1) (hhalf : 2 * half = 1) :
     splitTorusCommHopfAlgProperty R (finiteTypeCoordinateHopfAlgebra R 2) := by
