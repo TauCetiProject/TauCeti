@@ -9,7 +9,6 @@ public import TauCeti.AlgebraicGeometry.Curves.NodalGluing.Basic
 public import TauCeti.Geometry.Manifold.Instances.Sigma
 public import TauCeti.Topology.Connected.Sigma
 public import Mathlib.Geometry.Manifold.Diffeomorph
-public import Mathlib.Topology.Connected.Clopen
 public import Mathlib.Topology.Homeomorph.Quotient
 
 /-!
