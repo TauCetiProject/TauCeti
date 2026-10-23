@@ -319,12 +319,7 @@ theorem exists_signInvariant_mcCallumProjection_stackCells_not_signInvariant :
     convert isSemialgebraic_eval_eq_zero (MvPolynomial.X 1 : MvPolynomial (Fin 2) ℝ) using 1
     ext x
     simp [mem_signInvariantExampleLine]
-  have hSc : IsConnected signInvariantExampleLine := by
-    convert isConnected_range (firstCoords ℝ 1 2).continuous
-    ext x
-    refine ⟨fun hx ↦ ⟨firstCoords ℝ 2 1 x, firstCoords_firstCoords_of_forall hx⟩, ?_⟩
-    rintro ⟨u, rfl⟩ i hi
-    exact firstCoords_apply_of_le u hi
+  have hSc : IsConnected signInvariantExampleLine := isConnected_coordSubspace
   have hSa : IsAnalyticSubmanifold 1 signInvariantExampleLine :=
     isAnalyticSubmanifold_coordSubspace (by norm_num)
   refine ⟨signInvariantExample, signInvariantExampleLine, isSquarefreeBasis_signInvariantExample,

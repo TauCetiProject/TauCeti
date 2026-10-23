@@ -235,12 +235,7 @@ theorem exists_nullified_mcCallumProjection_orderAt_ne :
       (isSemialgebraic_eval_eq_zero (X 2)) using 1
     ext x
     simp [hmem]
-  have hCc : IsConnected C := by
-    convert isConnected_range (firstCoords ℝ 1 3).continuous
-    ext x
-    refine ⟨fun hx ↦ ⟨firstCoords ℝ 3 1 x, firstCoords_firstCoords_of_forall hx⟩, ?_⟩
-    rintro ⟨u, rfl⟩ i hi
-    exact firstCoords_apply_of_le u hi
+  have hCc : IsConnected C := isConnected_coordSubspace
   set g : (MvPolynomial (Fin 3) ℝ)[X] :=
     Polynomial.C (X 1) * Polynomial.X + Polynomial.C (X 1 + X 2 * X 0) with hg
   have hF : (({X 2 * (X 0 + 1) + X 3 * X 1} : Finset (MvPolynomial (Fin 4) ℝ)).map
