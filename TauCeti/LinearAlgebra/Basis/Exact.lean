@@ -29,6 +29,9 @@ transition matrix between two such bases is block upper triangular
 ## Main declarations
 
 * `Module.Basis.ofExactLift`: the basis of `B` assembled from `a`, `c` and the lifts `s`.
+* `Module.Basis.ofExactLift_det_eq_mul`: the determinant with respect to such a basis of a family
+  made of images of a family `x` of `A` and of lifts of a family `y` of `C` is
+  `a.det x * c.det y`.
 * `Module.Basis.ofExactLift_det_ofExactLift`: the determinant of one such basis with respect to
   another is `a.det a' * c.det c'`.
 * `Module.Basis.det_ofExactLift`: the corresponding transformation law for the determinant with
@@ -149,12 +152,24 @@ variable {R A B C : Type*} [CommRing R] [AddCommGroup A] [AddCommGroup B] [AddCo
   (hs : ∀ j, g (s j) = c j) (hs' : ∀ j, g (s' j) = c' j)
   [Fintype κ] [Fintype σ] [DecidableEq κ] [DecidableEq σ]
 
+/-- The determinant with respect to `ofExactLift a c s` of a family `v` of `B`, made of the
+images of a family `x` of `A` followed by lifts of a family `y` of `C`, is `a.det x * c.det y`:
+the matrix of `v` is block upper triangular. -/
+theorem ofExactLift_det_eq_mul (x : κ → A) (y : σ → C) (v : κ ⊕ σ → B)
+    (hx : ∀ i, v (.inl i) = f (x i)) (hy : ∀ j, g (v (.inr j)) = y j) :
+    (ofExactLift hf hfg a c s hs).det v = a.det x * c.det y := by
+  have h : (ofExactLift hf hfg a c s hs).toMatrix v = Matrix.fromBlocks (a.toMatrix x)
+      (Matrix.of fun i j ↦ (ofExactLift hf hfg a c s hs).repr (v (.inr j)) (.inl i)) 0
+      (c.toMatrix y) := by
+    ext (i | j) (k | l) <;> simp [toMatrix_apply, hx, hy, hfg.apply_apply_eq_zero]
+  rw [det_apply, h, Matrix.det_fromBlocks_zero₂₁, det_apply, det_apply]
+
 /-- The determinant of one basis of the form `ofExactLift` with respect to another is the
 product of the determinants of the bases of `A` and of `C`; in particular it does not depend on
 the lifts. -/
 theorem ofExactLift_det_ofExactLift :
-    (ofExactLift hf hfg a c s hs).det (ofExactLift hf hfg a' c' s' hs') = a.det a' * c.det c' := by
-  rw [det_apply, toMatrix_ofExactLift, Matrix.det_fromBlocks_zero₂₁, det_apply, det_apply]
+    (ofExactLift hf hfg a c s hs).det (ofExactLift hf hfg a' c' s' hs') = a.det a' * c.det c' :=
+  ofExactLift_det_eq_mul hf hfg a c s hs a' c' _ (by simp) (by simp [hs'])
 
 /-- Replacing the bases `a`, `c` and the lifts `s` in `ofExactLift` multiplies its determinant
 with respect to any basis `b` of `B` by `a.det a' * c.det c'`. In particular the determinant
