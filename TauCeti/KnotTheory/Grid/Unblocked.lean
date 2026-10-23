@@ -268,7 +268,7 @@ theorem gaugeEquiv_single (f : GridState n → ℤˣ) (x : GridState n)
 
 /-- The gauge automorphism multiplies the coefficient of each grid state `y` by its sign. -/
 @[simp]
-theorem gaugeEquiv_apply (f : GridState n → ℤˣ) (c : GridChainMinus R n) (y : GridState n) :
+theorem gaugeEquiv_apply_apply (f : GridState n → ℤˣ) (c : GridChainMinus R n) (y : GridState n) :
     gaugeEquiv R f c y = (f y : ℤ) • c y := by
   induction c using Finsupp.induction_linear with
   | zero => simp

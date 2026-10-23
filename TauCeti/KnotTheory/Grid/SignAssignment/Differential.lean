@@ -222,7 +222,7 @@ theorem signedUnblockedDifferential_gauge (f : GridState n → ℤˣ) :
   simp only [LinearMap.comp_apply, Finsupp.lsingle_apply, LinearEquiv.coe_coe,
     GridChain.gaugeEquiv_single]
   rw [signedUnblockedDifferential_single_apply, signedUnblockedCoefficient_gauge,
-    GridChain.gaugeEquiv_apply]
+    GridChain.gaugeEquiv_apply_apply]
   simp only [signedUnblockedDifferential_apply_apply, Finsupp.sum_single_index, zero_mul,
     zsmul_eq_mul, Units.val_mul, Int.cast_mul]
   ring
