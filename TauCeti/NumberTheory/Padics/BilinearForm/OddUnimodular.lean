@@ -134,6 +134,52 @@ private theorem exists_toZModPow_three_apply_self_eq_five_mul {B : BilinForm ℤ
       hfe]
     ring
 
+/-- **Representing a residue of the other kind.** Let `b` be an orthogonal basis of rank at least
+four whose self-pairings are units congruent to `y` or `5 y` modulo `8`. Then for `a` equal to `-y`
+or `-5 y`, either `b₀ + b₁ + b₂` or `b₀ + b₁ + b₂ + 2 b₃` represents `a` modulo `8`, and it is
+orthogonal to a vector with unit self-pairing. -/
+private theorem exists_toZModPow_three_apply_self_eq_of_four_le {B : BilinForm ℤ_[2] M} {m : ℕ}
+    {b : Basis (Fin m) ℤ_[2] M} (hb : B.iIsOrtho b) (hbu : ∀ i, IsUnit (B (b i) (b i)))
+    (h4 : 4 ≤ m) {y a : ZMod (2 ^ 3)} (hy : y * y = 1)
+    (hdy : ∀ i, PadicInt.toZModPow 3 (B (b i) (b i)) = y ∨
+      PadicInt.toZModPow 3 (B (b i) (b i)) = 5 * y)
+    (ha : a = -y ∨ a = -(5 * y)) :
+    ∃ x z, PadicInt.toZModPow 3 (B x x) = a ∧ IsUnit (B z z) ∧ B x z = 0 := by
+  -- With `z = b₀ + b₁ + b₂`, the residue of `B z z` lies in `{-y, -5y}`, so either `z` or
+  -- `z + 2 b₃` represents `a`.
+  let e : Fin 4 → Fin m := Fin.castLE h4
+  have hoe (p q : Fin 4) (hpq : p ≠ q) : B (b (e p)) (b (e q)) = 0 :=
+    iIsOrtho_def.mp hb _ _ ((Fin.castLE_injective _).ne hpq)
+  set z := b (e 0) + b (e 1) + b (e 2) with hz
+  have hzz : B z z = B (b (e 0)) (b (e 0)) + B (b (e 1)) (b (e 1)) + B (b (e 2)) (b (e 2)) := by
+    simp (disch := decide) only [hz, map_add, LinearMap.add_apply, hoe]
+    ring
+  have hz0 : B z (b (e 0)) = B (b (e 0)) (b (e 0)) := by
+    simp (disch := decide) only [hz, map_add, LinearMap.add_apply, hoe]
+    ring
+  have hz3 : B z (b (e 3)) = 0 := by
+    simp (disch := decide) only [hz, map_add, LinearMap.add_apply, hoe]
+    ring
+  have hzy : PadicInt.toZModPow 3 (B z z) = -y ∨ PadicInt.toZModPow 3 (B z z) = -(5 * y) := by
+    have key₂ : ∀ y a b : ZMod (2 ^ 3), y * y = 1 → (a = y ∨ a = 5 * y) → (b = y ∨ b = 5 * y) →
+        (a + b = 2 * y ∨ a + b = 6 * y) := by decide
+    have key₃ : ∀ y s c : ZMod (2 ^ 3), y * y = 1 → (s = 2 * y ∨ s = 6 * y) →
+        (c = y ∨ c = 5 * y) → (s + c = -y ∨ s + c = -(5 * y)) := by decide
+    simpa only [hzz, map_add] using
+      key₃ y _ _ hy (key₂ y _ _ hy (hdy (e 0)) (hdy (e 1))) (hdy (e 2))
+  have hzu : IsUnit (B z z) := by
+    have key : ∀ y a : ZMod (2 ^ 3), y * y = 1 → (a = -y ∨ a = -(5 * y)) → a * a = 1 := by decide
+    exact isUnit_of_toZModPow_three_mul_self (key y _ hy hzy)
+  have haz : a = PadicInt.toZModPow 3 (B z z) ∨ a = 5 * PadicInt.toZModPow 3 (B z z) := by
+    have key : ∀ y p q : ZMod (2 ^ 3), y * y = 1 → (p = -y ∨ p = -(5 * y)) →
+        (q = -y ∨ q = -(5 * y)) → p = q ∨ p = 5 * q := by decide
+    exact key y _ _ hy ha hzy
+  rcases haz with haz | haz
+  · exact ⟨z, b (e 3), haz.symm, hbu (e 3), hz3⟩
+  · obtain ⟨x, w, hx, hw, hxw⟩ := exists_toZModPow_three_apply_self_eq_five_mul hb.isSymm hzu
+      (hbu (e 0)) (hbu (e 3)) hz0 hz3 (hoe 0 3 (by decide))
+    exact ⟨x, w, hx.trans haz.symm, hw, hxw⟩
+
 /-- **A vector representing a target entry, with an odd orthogonal complement.** Let `b` be an
 orthogonal basis of rank at least two with unit self-pairings `dᵢ`, and let `v` be a unit family
 whose product and sum agree with those of `d` modulo `8`. Then some `vⱼ` is represented, modulo `8`,
@@ -176,42 +222,9 @@ private theorem exists_toZModPow_three_apply_self_eq {B : BilinForm ℤ_[2] M} {
   -- The invariants then force the rank to be at least four.
   have h4 : 4 ≤ m + 2 := ZMod.four_le_of_forall_eq_or_eq (by omega) (hr 0) hdy hvy
     (by simpa only [map_prod] using hP) (by simpa only [map_sum] using hS)
-  obtain ⟨l, rfl⟩ : ∃ l, m = l + 2 := ⟨m - 2, by omega⟩
-  -- With `z = b₀ + b₁ + b₂`, the residue of `B z z` lies in `{-y, -5y}`, so either `z` or
-  -- `z + 2 b₃` represents the residue of `v₀`.
-  let e : Fin 4 → Fin (l + 4) := Fin.castLE (by omega)
-  have hoe (p q : Fin 4) (hpq : p ≠ q) : B (b (e p)) (b (e q)) = 0 :=
-    ho _ _ ((Fin.castLE_injective _).ne hpq)
-  set z := b (e 0) + b (e 1) + b (e 2) with hz
-  have hzz : B z z = B (b (e 0)) (b (e 0)) + B (b (e 1)) (b (e 1)) + B (b (e 2)) (b (e 2)) := by
-    simp (disch := decide) only [hz, map_add, LinearMap.add_apply, hoe]
-    ring
-  have hz0 : B z (b (e 0)) = B (b (e 0)) (b (e 0)) := by
-    simp (disch := decide) only [hz, map_add, LinearMap.add_apply, hoe]
-    ring
-  have hz3 : B z (b (e 3)) = 0 := by
-    simp (disch := decide) only [hz, map_add, LinearMap.add_apply, hoe]
-    ring
-  have hzy : PadicInt.toZModPow 3 (B z z) = -y ∨ PadicInt.toZModPow 3 (B z z) = -(5 * y) := by
-    have key₂ : ∀ y a b : ZMod (2 ^ 3), y * y = 1 → (a = y ∨ a = 5 * y) → (b = y ∨ b = 5 * y) →
-        (a + b = 2 * y ∨ a + b = 6 * y) := by decide
-    have key₃ : ∀ y s c : ZMod (2 ^ 3), y * y = 1 → (s = 2 * y ∨ s = 6 * y) →
-        (c = y ∨ c = 5 * y) → (s + c = -y ∨ s + c = -(5 * y)) := by decide
-    simpa only [hzz, map_add] using
-      key₃ y _ _ (hr 0) (key₂ y _ _ (hr 0) (hdy (e 0)) (hdy (e 1))) (hdy (e 2))
-  have hzu : IsUnit (B z z) := by
-    have key : ∀ y a : ZMod (2 ^ 3), y * y = 1 → (a = -y ∨ a = -(5 * y)) → a * a = 1 := by decide
-    exact isUnit_of_toZModPow_three_mul_self (key y _ (hr 0) hzy)
-  have hv0 : PadicInt.toZModPow 3 (v 0) = PadicInt.toZModPow 3 (B z z) ∨
-      PadicInt.toZModPow 3 (v 0) = 5 * PadicInt.toZModPow 3 (B z z) := by
-    have key : ∀ y p q : ZMod (2 ^ 3), y * y = 1 → (p = -y ∨ p = -(5 * y)) →
-        (q = -y ∨ q = -(5 * y)) → p = q ∨ p = 5 * q := by decide
-    exact key y _ _ (hr 0) (hvy 0) hzy
-  rcases hv0 with hv0 | hv0
-  · exact ⟨0, z, b (e 3), hv0.symm, hbu (e 3), hz3⟩
-  · obtain ⟨x, y, hx, hy, hxy⟩ := exists_toZModPow_three_apply_self_eq_five_mul hb.isSymm hzu
-      (hbu (e 0)) (hbu (e 3)) hz0 hz3 (hoe 0 3 (by decide))
-    exact ⟨0, x, y, hx.trans hv0.symm, hy, hxy⟩
+  obtain ⟨x, z, hx, hz, hxz⟩ := exists_toZModPow_three_apply_self_eq_of_four_le hb hbu h4 (hr 0) hdy
+    (hvy 0)
+  exact ⟨0, x, z, hx, hz, hxz⟩
 
 /-- **Splitting off a unit vector.** Let `b` be a unit diagonal orthogonal basis of `B`, and let `x`
 have unit self-pairing and be orthogonal to a vector with unit self-pairing. Then the orthogonal
@@ -230,19 +243,12 @@ private theorem exists_basis_orthogonal_span_singleton {B : BilinForm ℤ_[2] M}
   obtain ⟨t, ht, htu⟩ :=
     hb.isSymm.exists_orthogonal_basis_isUnit_orthogonal_span_singleton b hbdet hx hy hxy
   -- Adjoin `x` to `t`, and compare the resulting basis with `b`.
-  obtain ⟨c, hc, hc0, hcs⟩ := hb.isSymm.isRefl.exists_orthogonal_basis_of_orthogonal_span_singleton
-    hx.mem_nonZeroDivisors (fun _ ↦ hx.dvd) ht
-  have hcu (i : Fin (m + 2)) : IsUnit (B (c i) (c i)) := by
-    refine Fin.cases ?_ (fun i ↦ ?_) i
-    · rwa [hc0]
-    · rw [hcs]
-      exact htu i
+  obtain ⟨c, hc, hcu, hcd⟩ := hb.isSymm.isRefl.exists_orthogonal_basis_isUnit_apply_self_eq_cons hx
+    ht htu
   have hcP : ∏ i, B (c i) (c i) = B x x * ∏ i, B (t i) (t i) := by
-    rw [Fin.prod_univ_succ, hc0]
-    simp only [hcs]
+    simp only [hcd, Fin.prod_cons]
   have hcS : ∑ i, B (c i) (c i) = B x x + ∑ i, B (t i) (t i) := by
-    rw [Fin.sum_univ_succ, hc0]
-    simp only [hcs]
+    simp only [hcd, Fin.sum_cons]
   obtain ⟨hP, hS⟩ := (Equivalent.refl B).isSquare_prod_mul_prod_and_eight_dvd hb hc hbu
   rw [isSquare_mul_iff_toZModPow_three_eq (IsUnit.prod_univ_iff.mpr hbu)
     (IsUnit.prod_univ_iff.mpr hcu), hcP] at hP
@@ -308,13 +314,12 @@ private theorem exists_basis_iIsOrtho_apply_self_eq_aux (n : ℕ) :
   -- The inductive hypothesis realizes the rest of the target on the complement; adjoin `x'`.
   obtain ⟨t', ht', ht'v⟩ := ih (B := B.restrict (B.orthogonal (ℤ_[2] ∙ x'))) t ht htu
     v' (fun i ↦ hv _) htP' htS'
-  obtain ⟨c, hc, hc0, hcs⟩ := hb.isSymm.isRefl.exists_orthogonal_basis_of_orthogonal_span_singleton
-    hx'u.mem_nonZeroDivisors (fun _ ↦ hx'u.dvd) ht'
+  obtain ⟨c, hc, -, hcd⟩ := hb.isSymm.isRefl.exists_orthogonal_basis_isUnit_apply_self_eq_cons hx'u
+    ht' fun i ↦ ht'v i ▸ hv _
   have hcv (i : Fin (m + 2)) : B (c i) (c i) = w i := by
-    refine Fin.cases ?_ (fun i ↦ ?_) i
-    · simp [hc0, hx'x', w]
-    · rw [hcs]
-      exact ht'v i
+    rw [hcd, ← Fin.cons_self_tail w, hx'x',
+      show (fun i ↦ B (t' i) (t' i)) = Fin.tail w from funext ht'v]
+    simp [w]
   refine ⟨c.reindex (Equiv.swap 0 j), iIsOrtho_def.mpr fun i k hik ↦ ?_, fun i ↦ ?_⟩
   · simp only [Basis.reindex_apply, Equiv.symm_swap]
     exact iIsOrtho_def.mp hc _ _ ((Equiv.swap 0 j).injective.ne hik)
