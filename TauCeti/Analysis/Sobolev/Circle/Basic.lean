@@ -40,8 +40,12 @@ product when `E` has them.
 
 ## Main statements
 
+* `TauCeti.CircleSobolev.weight_add_le`: Peetre's inequality
+  `(1 + |m + n|) ^ s ≤ (1 + |m|) ^ |s| (1 + |n|) ^ s`, for every real `s`.
 * `TauCeti.CircleSobolev.hasSum_single`: the Fourier series of an element converges to it in
   `H^s`, so trigonometric polynomials are dense (`CircleSobolev.dense_finite_support_coeff`).
+  Continuous linear maps out of `H^s` are therefore determined by their values on Fourier
+  monomials (`CircleSobolev.continuousLinearMap_ext_single`).
 * `TauCeti.CircleSobolev.isCompactOperator_inclusion`: for `t < s` and finite-dimensional `E`,
   the inclusion `H^s → H^t` is compact (Rellich's theorem).
 * `TauCeti.CircleSobolev.tsum_norm_coeff_le`: for `s > 1/2`, the Fourier coefficients are
@@ -49,6 +53,8 @@ product when `E` has them.
 * `TauCeti.CircleSobolev.fourierCoeff_toContinuousMap`: for `s > 1/2`, the continuous function
   attached to `a` has Fourier coefficients `a.coeff`; in particular `H^s` embeds continuously
   into the continuous functions on the circle.
+* `TauCeti.CircleSobolev.toContinuousMap_equivAddCircle`: the continuous functions attached to `a`
+  on circles of different lengths correspond under rescaling.
 
 ## References
 
@@ -100,8 +106,40 @@ theorem weight_neg (s : ℝ) (n : ℤ) : weight (-s) n = (weight s n)⁻¹ :=
 theorem weight_mul_weight_neg (s : ℝ) (n : ℤ) : weight s n * weight (-s) n = 1 := by
   rw [weight_neg, mul_inv_cancel₀ (weight_pos s n).ne']
 
+theorem one_le_weight {s : ℝ} (hs : 0 ≤ s) (n : ℤ) : 1 ≤ weight s n :=
+  Real.one_le_rpow (one_le_one_add_abs n) hs
+
 theorem weight_le_weight {s t : ℝ} (h : t ≤ s) (n : ℤ) : weight t n ≤ weight s n :=
   Real.rpow_le_rpow_of_exponent_le (one_le_one_add_abs n) h
+
+@[simp]
+theorem weight_neg_right (s : ℝ) (n : ℤ) : weight s (-n) = weight s n := by
+  simp [weight_def]
+
+private theorem weight_add_le_of_nonneg {s : ℝ} (hs : 0 ≤ s) (m n : ℤ) :
+    weight s (m + n) ≤ weight s m * weight s n := by
+  simp only [weight_def]
+  rw [← Real.mul_rpow (by positivity) (by positivity)]
+  refine Real.rpow_le_rpow (by positivity) ?_ hs
+  push_cast
+  nlinarith [abs_add_le (m : ℝ) n, abs_nonneg (m : ℝ), abs_nonneg (n : ℝ)]
+
+/-- **Peetre's inequality**: `(1 + |m + n|) ^ s ≤ (1 + |m|) ^ |s| (1 + |n|) ^ s` for every real
+`s`. Shifting frequencies by `m` therefore changes the weights of every order `s` by at most the
+factor `(1 + |m|) ^ |s|`. -/
+theorem weight_add_le (s : ℝ) (m n : ℤ) : weight s (m + n) ≤ weight |s| m * weight s n := by
+  rcases le_or_gt 0 s with hs | hs
+  · rw [abs_of_nonneg hs]
+    exact weight_add_le_of_nonneg hs m n
+  · rw [abs_of_neg hs]
+    have h := weight_add_le_of_nonneg (neg_nonneg.2 hs.le) (-m) (m + n)
+    rw [neg_add_cancel_left, weight_neg_right, weight_neg, weight_neg s (m + n)] at h
+    have hmn := weight_pos s (m + n)
+    have hn := weight_pos s n
+    rw [inv_le_iff_one_le_mul₀ hn] at h
+    calc weight s (m + n) ≤ weight (-s) m * (weight s (m + n))⁻¹ * weight s n *
+        weight s (m + n) := le_mul_of_one_le_left hmn.le h
+      _ = weight (-s) m * weight s n := by field_simp
 
 /-- For `s ≤ 0`, the weight at a frequency `|n| ≥ N` is at most `(1 + N) ^ s`. -/
 theorem weight_le_of_le_abs {s : ℝ} (hs : s ≤ 0) {N : ℕ} {n : ℤ} (hn : (N : ℝ) ≤ |(n : ℝ)|) :
@@ -115,6 +153,30 @@ theorem summable_weight {r : ℝ} (hr : r < -1) : Summable (weight r) := by
   rw [neg_neg, norm_weight]
   exact Real.rpow_le_rpow_of_nonpos (abs_pos.2 (Int.cast_ne_zero.2 hn))
     (le_add_of_nonneg_left zero_le_one) (by linarith)
+
+/-- Exponential decay beats every polynomial weight: `∑ₙ (1 + |n|) ^ r e^{-a |n|} < ∞` for
+`a > 0` and every real `r`. -/
+theorem summable_weight_mul_exp_neg (r : ℝ) {a : ℝ} (ha : 0 < a) :
+    Summable fun n : ℤ ↦ weight r n * Real.exp (-(a * |(n : ℝ)|)) := by
+  obtain ⟨N, hN⟩ : ∃ N : ℕ, r ≤ N := ⟨⌈r⌉₊, Nat.le_ceil r⟩
+  have hF : Summable fun k : ℕ ↦ ((k + 1 : ℕ) : ℝ) ^ N * Real.exp (-a * ((k + 1 : ℕ) : ℝ)) :=
+    (summable_nat_add_iff 1).2 (Real.summable_pow_mul_exp_neg_nat_mul N ha)
+  have hle (n : ℤ) : weight r n * Real.exp (-(a * |(n : ℝ)|)) ≤
+      Real.exp a * ((1 + |(n : ℝ)|) ^ N * Real.exp (-a * (1 + |(n : ℝ)|))) := by
+    have hw : weight r n ≤ (1 + |(n : ℝ)|) ^ N := by
+      rw [← Real.rpow_natCast, ← weight_def]
+      exact weight_le_weight hN n
+    calc _ ≤ (1 + |(n : ℝ)|) ^ N * Real.exp (-(a * |(n : ℝ)|)) :=
+          mul_le_mul_of_nonneg_right hw (Real.exp_pos _).le
+      _ = _ := by
+        rw [mul_left_comm, ← Real.exp_add]
+        congr 2
+        ring
+  refine Summable.of_nonneg_of_le (fun n ↦ mul_nonneg (weight_nonneg r n) (Real.exp_pos _).le)
+    hle ((Summable.of_nat_of_neg
+      (f := fun n : ℤ ↦ (1 + |(n : ℝ)|) ^ N * Real.exp (-a * (1 + |(n : ℝ)|))) ?_ ?_).mul_left _)
+  · simpa [add_comm] using hF
+  · simpa [add_comm] using hF
 
 end CircleSobolev
 
@@ -422,6 +484,13 @@ theorem hasSum_single (a : CircleSobolev s E) : HasSum (fun n ↦ single n (a.co
       coe_toℓ2ₗᵢ_symm, LinearEquiv.apply_symm_apply, toℓ2_apply, toℓ2_single]
   · simp
 
+/-- Continuous linear maps out of `H^s` are determined by their values on the Fourier monomials. -/
+theorem continuousLinearMap_ext_single {F : Type*} [AddCommMonoid F] [Module ℂ F]
+    [TopologicalSpace F] [T2Space F] {f g : CircleSobolev s E →L[ℂ] F}
+    (h : ∀ n x, f (single n x) = g (single n x)) : f = g :=
+  ContinuousLinearMap.ext fun a ↦
+    ((hasSum_single a).mapL f).unique (by simpa only [h] using (hasSum_single a).mapL g)
+
 /-- Trigonometric polynomials, the elements of `H^s` with finitely many nonzero Fourier
 coefficients, are dense in `H^s`. -/
 theorem dense_finite_support_coeff :
@@ -648,6 +717,32 @@ theorem toContinuousMap_injective (hs : 1 / 2 < s) :
     Function.Injective (toContinuousMap (E := E) T hs) := fun a b hab ↦
   CircleSobolev.ext <| funext fun n ↦ by
     rw [← fourierCoeff_toContinuousMap T hs a, hab, fourierCoeff_toContinuousMap]
+
+/-- For `s > 1/2`, the continuous representatives of `a ∈ H^s` on circles of different lengths
+correspond under the rescaling `AddCircle.equivAddCircle`. -/
+@[simp]
+theorem toContinuousMap_equivAddCircle (T' : ℝ) [hT' : Fact (0 < T')] (hs : 1 / 2 < s)
+    (a : CircleSobolev s E) (x : AddCircle T) :
+    toContinuousMap T' hs a
+        (AddCircle.equivAddCircle T T' (Fact.out : 0 < T).ne' hT'.out.ne' x) =
+      toContinuousMap T hs a x := by
+  obtain ⟨x, rfl⟩ := QuotientAddGroup.mk_surjective x
+  have hT : (T : ℂ) ≠ 0 := Complex.ofReal_ne_zero.2 (Fact.out : 0 < T).ne'
+  have hT'c : (T' : ℂ) ≠ 0 := Complex.ofReal_ne_zero.2 hT'.out.ne'
+  rw [AddCircle.equivAddCircle_apply_mk, toContinuousMap_apply,
+    toContinuousMap_apply]
+  refine tsum_congr fun n ↦ ?_
+  rw [fourier_coe_apply, fourier_coe_apply]
+  congr 2
+  push_cast
+  field_simp
+
+/-- For `s > 1/2` and an open set `U`, the elements of `H^s` whose continuous representatives take
+values in `U` form an open subset of `H^s`. -/
+theorem isOpen_setOf_forall_toContinuousMap_mem (hs : 1 / 2 < s) {U : Set E} (hU : IsOpen U) :
+    IsOpen {a : CircleSobolev s E | ∀ x, toContinuousMap T hs a x ∈ U} := by
+  simpa [Set.MapsTo] using (ContinuousMap.isOpen_setOfPred_mapsTo isCompact_univ hU).preimage
+    (toContinuousMap T hs).continuous
 
 end Continuous
 

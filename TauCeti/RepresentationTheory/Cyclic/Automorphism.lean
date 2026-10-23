@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Group.TypeTags.Finite
 public import Mathlib.Algebra.Module.Equiv.Basic
+public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.RepresentationTheory.Rep.Basic
 public import TauCeti.Data.ZMod.MonoidHomEquiv
 import Mathlib.Tactic.Abel
@@ -41,6 +42,9 @@ Its group cohomology is read off in
 * `AddEquiv.mem_ker_cyclicRep_applyAsHom_sub_iff`,
   `AddEquiv.mem_range_cyclicRep_applyAsHom_sub_iff`: the kernel of `ρ(g) - 𝟙` for the generator
   `g` is the fixed points of `A`, and its image is that of `1 - A`.
+* `AddEquiv.mem_ker_cyclicRep_refl_norm_iff`, `AddEquiv.mem_range_cyclicRep_refl_norm_iff`: for
+  the trivial action, given by the identity automorphism, the kernel of the norm is the
+  `m`-torsion and its image is `m T`.
 * `AddMonoidHom.exists_apply_eq_sum_range_iterate`,
   `AddMonoidHom.sum_range_iterate_add_apply`: for an exact sequence `0 → Λ → E → T` with maps
   intertwining automorphisms of order dividing `m`, the norm of a lift of a norm-zero element of
@@ -136,6 +140,41 @@ theorem mem_range_cyclicRep_applyAsHom_sub_iff (x : T) :
     abel
   · rw [cyclicRep_applyAsHom_sub_apply, ← hb, map_neg]
     abel
+
+/-! ### The trivial action -/
+
+/-- The identity automorphism has order dividing every `n`. Its cyclic representation is the
+trivial action of `C_n` on `T`. -/
+theorem iterate_refl (n : ℕ) : (⇑(AddEquiv.refl T))^[n] = id :=
+  Function.iterate_id n
+
+/-- For the trivial action, the kernel of the norm is the `m`-torsion. -/
+theorem mem_ker_cyclicRep_refl_norm_iff (x : T) :
+    x ∈ LinearMap.ker ((refl T).cyclicRep (iterate_refl m)).norm.asHom.hom.toLinearMap ↔
+      x ∈ Submodule.torsionBy ℤ T m := by
+  rw [mem_ker_cyclicRep_norm_iff, Submodule.mem_torsionBy_iff, natCast_zsmul]
+  simp
+
+/-- For the trivial action, the image of the norm is `m T`. -/
+theorem mem_range_cyclicRep_refl_norm_iff (x : T) :
+    x ∈ LinearMap.range ((refl T).cyclicRep (iterate_refl m)).norm.asHom.hom.toLinearMap ↔
+      ∃ y, m • y = x := by
+  rw [mem_range_cyclicRep_norm_iff]
+  simp
+
+/-- For the trivial action, every element is fixed by the generator. -/
+theorem mem_ker_cyclicRep_refl_applyAsHom_sub (x : T) :
+    x ∈ LinearMap.ker
+      (applyAsHom ((refl T).cyclicRep (iterate_refl m)) (.ofAdd 1) - 𝟙 _).hom.toLinearMap :=
+  (mem_ker_cyclicRep_applyAsHom_sub_iff _ _ x).2 (refl_apply x)
+
+/-- For the trivial action, the image of `ρ(g) - 𝟙`, for the generator `g`, is zero. -/
+theorem mem_range_cyclicRep_refl_applyAsHom_sub_iff (x : T) :
+    x ∈ LinearMap.range
+      (applyAsHom ((refl T).cyclicRep (iterate_refl m)) (.ofAdd 1) - 𝟙 _).hom.toLinearMap ↔
+      x = 0 := by
+  rw [mem_range_cyclicRep_applyAsHom_sub_iff]
+  simp [eq_comm]
 
 end AddEquiv
 

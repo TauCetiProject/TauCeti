@@ -13,8 +13,9 @@ import Mathlib.Data.Fintype.Powerset
 
 For a complex with finitely many faces, the weak topology of its realization agrees with
 its barycentric-coordinate topology. In particular, the realization is compact and its
-coordinate map into `ι → ℝ` is a closed embedding. This permits finite polyhedra, including
-finite local models of triangulated manifolds, to be treated as ordinary coordinate subspaces.
+coordinate map into `ι → ℝ` is a closed embedding, so the realization is homeomorphic to its
+coordinate image. This permits finite polyhedra, including finite local models of triangulated
+manifolds, to be treated as ordinary coordinate subspaces.
 
 ## References
 
@@ -86,5 +87,22 @@ theorem isClosedEmbedding_realization_coe (hfin : K.faces.Finite) :
     Topology.IsClosedEmbedding (fun x : Realization K => (x.1 : ι → ℝ)) := by
   let : CompactSpace (Realization K) := K.compactSpace_realization_of_finite_faces hfin
   exact (continuous_realization_coe K).isClosedEmbedding (injective_realization_coe K)
+
+/-- For a complex with finitely many faces, the weak realization is homeomorphic to its image in
+coordinate space under the barycentric-coordinate map. -/
+def realizationHomeomorphRange (hfin : K.faces.Finite) :
+    Realization K ≃ₜ range fun x : Realization K => (x.1 : ι → ℝ) :=
+  (K.isClosedEmbedding_realization_coe hfin).isEmbedding.toHomeomorph
+
+@[simp]
+theorem coe_realizationHomeomorphRange_apply (hfin : K.faces.Finite) (x : Realization K) :
+    (K.realizationHomeomorphRange hfin x : ι → ℝ) = x.1 :=
+  Topology.IsEmbedding.toHomeomorph_apply_coe _ x
+
+@[simp]
+theorem coe_realizationHomeomorphRange_symm_apply (hfin : K.faces.Finite)
+    (y : range fun x : Realization K => (x.1 : ι → ℝ)) :
+    (((K.realizationHomeomorphRange hfin).symm y).1 : ι → ℝ) = y :=
+  congrArg Subtype.val ((K.realizationHomeomorphRange hfin).apply_symm_apply y)
 
 end AbstractSimplicialComplex

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Algebra.ConstMulAction
+public import TauCeti.Topology.CWComplex.Classical.CellAction
 public import TauCeti.Topology.CWComplex.Classical.OpenCells
 public import TauCeti.Topology.Covering.Quotient
 
@@ -45,6 +45,11 @@ local inverse of `p`.
 The construction does not use that `B` is Hausdorff; Mathlib's classical CW complexes do not
 require it.
 
+The action on cells is constructed more generally for a monoid acting on a relative CW complex
+and carrying each open cell onto an open cell of the same dimension. If its translations are
+continuous and the ambient space is Hausdorff, they carry the corresponding closed cells onto
+each other as well.
+
 ## References
 
 * T. tom Dieck, *Transformation Groups*, de Gruyter, 1987, Section II.1 (free `G`-CW complexes
@@ -64,74 +69,12 @@ universe u
 
 namespace TauCeti
 
-variable {E B : Type u} [TopologicalSpace E] [TopologicalSpace B] [CWComplex (univ : Set E)]
-  {G : Type*} [Group G] [MulAction G E]
-
-section CellAction
-
-variable (hcell : ∀ (g : G) (n : ℕ) (i : cell (univ : Set E) n),
-  ∃ j : cell (univ : Set E) n, g • openCell n i = openCell n j)
-
-/-- The `n`-cell onto whose open cell `g` carries the open cell of `i`. -/
-private def cellSMul {n : ℕ} (g : G) (i : cell (univ : Set E) n) : cell (univ : Set E) n :=
-  (hcell g n i).choose
-
-private theorem openCell_cellSMul {n : ℕ} (g : G) (i : cell (univ : Set E) n) :
-    openCell n (cellSMul hcell g i) = g • openCell n i :=
-  (hcell g n i).choose_spec.symm
-
-/-- If each element of `G` carries every open `n`-cell of `E` onto an open `n`-cell, this
-translation of open cells is an action of `G` on the `n`-cells. It is the unique such action,
-since a cell is determined by its open cell (`TauCeti.smul_openCell`). -/
-@[implicit_reducible]
-def cellMulAction (n : ℕ) : MulAction G (cell (univ : Set E) n) where
-  smul := cellSMul hcell
-  one_smul i := openCell_congr n <| (openCell_cellSMul hcell 1 i).trans (one_smul G _)
-  mul_smul g h i := by
-    have : openCell n (cellSMul hcell (g * h) i) =
-        openCell n (cellSMul hcell g (cellSMul hcell h i)) := by
-      rw [openCell_cellSMul, openCell_cellSMul, openCell_cellSMul, mul_smul]
-    exact openCell_congr n this
-
-/-- **The action on cells translates open cells.** -/
-theorem smul_openCell {n : ℕ} (g : G) (i : cell (univ : Set E) n) :
-    letI := cellMulAction hcell n
-    g • openCell n i = openCell n (g • i) :=
-  (openCell_cellSMul hcell g i).symm
-
-/-- The translate by `g` of a point of the open cell of `i` lies in the open cell of `g • i`. -/
-theorem smul_mem_openCell_smul {n : ℕ} (g : G) {i : cell (univ : Set E) n} {y : E}
-    (hy : y ∈ openCell n i) :
-    letI := cellMulAction hcell n
-    g • y ∈ openCell n (g • i) :=
-  smul_openCell hcell g i ▸ smul_mem_smul_set hy
-
-/-- The action on cells translates closed cells. -/
-theorem smul_closedCell [T2Space E] [ContinuousConstSMul G E] {n : ℕ} (g : G)
-    (i : cell (univ : Set E) n) :
-    letI := cellMulAction hcell n
-    g • closedCell n i = closedCell n (g • i) := by
-  rw [← closure_openCell_eq_closedCell, ← closure_openCell_eq_closedCell, ← closure_smul,
-    smul_openCell]
-
-/-- If `g` carries an open cell onto itself only when `g = 1`, then `G` acts freely on the
-cells. -/
-theorem isCancelSMul_cell
-    (hfree : ∀ (g : G) (n : ℕ) (i : cell (univ : Set E) n), g • openCell n i = openCell n i → g = 1)
-    (n : ℕ) :
-    letI := cellMulAction hcell n
-    IsCancelSMul G (cell (univ : Set E) n) := by
-  let := cellMulAction hcell n
-  refine ⟨fun g g' i h ↦ ?_⟩
-  have : (g⁻¹ * g') • i = i := by rw [mul_smul, ← h, inv_smul_smul]
-  rw [← inv_mul_eq_one]
-  exact hfree _ n i (by rw [smul_openCell hcell, this])
-
-end CellAction
+variable {E : Type u} [TopologicalSpace E] {G : Type*}
 
 section Quotient
 
-variable [T2Space E] {p : E → B} (hp : IsQuotientCoveringMap p G)
+variable {B : Type u} [TopologicalSpace B] [CWComplex (univ : Set E)]
+  [Group G] [MulAction G E] [T2Space E] {p : E → B} (hp : IsQuotientCoveringMap p G)
   (hcell : ∀ (g : G) (n : ℕ) (i : cell (univ : Set E) n),
     ∃ j : cell (univ : Set E) n, g • openCell n i = openCell n j)
   (hfree : ∀ (g : G) (n : ℕ) (i : cell (univ : Set E) n), g • openCell n i = openCell n i → g = 1)

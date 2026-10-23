@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.ConstantSpeed
 public import TauCeti.Analysis.Fourier.AbsolutelyContinuous
 public import TauCeti.Analysis.Green.Examples.CurveArea.SignedArea
+import TauCeti.Analysis.ODE.ScalarLinear
 import TauCeti.Analysis.Fourier.FourierCoeffOn
 import TauCeti.MeasureTheory.Function.MetricDerivative.ConstantSpeed
 import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
@@ -31,6 +32,12 @@ circle once at constant angular speed, in one of the two orientations
 for the mean-zero part of `γ` admits every ellipse as an equality case; the area–energy
 inequality does not.
 
+Equality also holds exactly when, for some center `c` and sign `s = ±1`, the a.e. velocity is
+`(2πis / (b - a)) * (γ - c)`
+(`TauCeti.mul_integral_norm_sq_eq_four_pi_mul_abs_signedArea_iff_ae_hasDerivAt`).
+The AC integrating-factor theorem in `TauCeti.Analysis.ODE.ScalarLinear` recovers the pointwise
+exponential parametrization from this a.e. equation.
+
 For a closed curve of constant speed on `[a, b]`, in particular an arclength parametrization,
 `(b - a) ∫ₐᵇ ‖γ'‖²` is the square of its length `L`, so the inequality becomes the isoperimetric
 inequality `4π |signedArea γ a b| ≤ L²`
@@ -53,6 +60,9 @@ and `± 1`, both the inequality and its equality cases follow, since a continuou
 * `TauCeti.mul_integral_norm_sq_eq_four_pi_mul_signedArea_iff`,
   `TauCeti.mul_integral_norm_sq_eq_neg_four_pi_mul_signedArea_iff`,
   `TauCeti.mul_integral_norm_sq_eq_four_pi_mul_abs_signedArea_iff`: its equality cases.
+* `TauCeti.mul_integral_norm_sq_eq_intCast_mul_four_pi_mul_signedArea_iff_ae_hasDerivAt`,
+  `TauCeti.mul_integral_norm_sq_eq_four_pi_mul_abs_signedArea_iff_ae_hasDerivAt`: equality
+  characterized by the a.e. velocity equation.
 * `HasConstantSpeedOnWith.four_pi_mul_abs_signedArea_le_eVariationOn_toReal_sq`,
   `HasConstantSpeedOnWith.eVariationOn_toReal_sq_eq_four_pi_mul_abs_signedArea_iff`: the
   isoperimetric inequality in terms of length for constant-speed closed curves, and its equality
@@ -293,6 +303,49 @@ theorem mul_integral_norm_sq_eq_four_pi_mul_abs_signedArea_iff (hab : a < b)
     · refine le_antisymm ?_ hle
       rw [h, ← mul_neg]
       exact mul_le_mul_of_nonneg_left (neg_le_abs _) h4π
+
+/-- Equality in the oriented area–energy inequality is equivalent to a uniform angular
+velocity about a center, almost everywhere. The sign `s = ±1` specifies the orientation;
+constant curves are included. -/
+theorem mul_integral_norm_sq_eq_intCast_mul_four_pi_mul_signedArea_iff_ae_hasDerivAt (hab : a < b)
+    (hγ : AbsolutelyContinuousOnInterval γ a b)
+    (hγ' : ∀ᵐ t, t ∈ uIoc a b → HasDerivAt γ (γ' t) t) (hγab : γ a = γ b)
+    (hL2 : MemLp γ' 2 (volume.restrict (Ioc a b))) {s : ℤ} (hs : s = 1 ∨ s = -1) :
+    (b - a) * (∫ t in a..b, ‖γ' t‖ ^ 2) = s * (4 * π * signedArea γ a b) ↔
+      ∃ c : ℂ, ∀ᵐ t, t ∈ uIoc a b →
+        HasDerivAt γ ((2 * π * I * s / (b - a)) * (γ t - c)) t := by
+  have hmodel :
+      (b - a) * (∫ t in a..b, ‖γ' t‖ ^ 2) = s * (4 * π * signedArea γ a b) ↔
+        ∃ c w : ℂ, ∀ t ∈ Icc a b,
+          γ t = c + w * exp ((2 * π * I * s / (b - a)) * t) := by
+    rcases hs with rfl | rfl
+    · simpa only [Int.cast_one, one_mul, mul_one, div_mul_eq_mul_div] using
+        mul_integral_norm_sq_eq_four_pi_mul_signedArea_iff hab hγ hγ' hγab hL2
+    · simpa only [Int.cast_neg, Int.cast_one, neg_mul, one_mul, mul_neg_one, neg_div,
+        div_mul_eq_mul_div] using
+        mul_integral_norm_sq_eq_neg_four_pi_mul_signedArea_iff hab hγ hγ' hγab hL2
+  rw [hmodel]
+  simp_rw [← uIcc_of_le hab.le, ← smul_eq_mul, hγ.ae_hasDerivAt_smul_sub_iff, smul_eq_mul,
+    mul_comm (exp _) _]
+
+/-- Equality in the area–energy inequality is equivalent to the a.e. equation for one
+counterclockwise or clockwise traversal at constant angular speed about some center.
+Constant curves are included. See `AbsolutelyContinuousOnInterval.ae_hasDerivAt_smul_sub_iff`
+for the corresponding pointwise exponential parametrization. -/
+theorem mul_integral_norm_sq_eq_four_pi_mul_abs_signedArea_iff_ae_hasDerivAt (hab : a < b)
+    (hγ : AbsolutelyContinuousOnInterval γ a b)
+    (hγ' : ∀ᵐ t, t ∈ uIoc a b → HasDerivAt γ (γ' t) t) (hγab : γ a = γ b)
+    (hL2 : MemLp γ' 2 (volume.restrict (Ioc a b))) :
+    (b - a) * (∫ t in a..b, ‖γ' t‖ ^ 2) = 4 * π * |signedArea γ a b| ↔
+      ∃ c : ℂ, ∃ s : ℤ, (s = 1 ∨ s = -1) ∧
+        ∀ᵐ t, t ∈ uIoc a b →
+          HasDerivAt γ ((2 * π * I * s / (b - a)) * (γ t - c)) t := by
+  rw [mul_integral_norm_sq_eq_four_pi_mul_abs_signedArea_iff hab hγ hγ' hγab hL2]
+  simp only [or_and_right, exists_or, exists_eq_left]
+  simp_rw [← smul_eq_mul, hγ.ae_hasDerivAt_smul_sub_iff, smul_eq_mul,
+    mul_comm (exp _) _]
+  simp only [uIcc_of_le hab.le, Int.cast_one, Int.cast_neg, mul_one, mul_neg_one, neg_div,
+    neg_mul, div_mul_eq_mul_div]
 
 end AreaEnergy
 

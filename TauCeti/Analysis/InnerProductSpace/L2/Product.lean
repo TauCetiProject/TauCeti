@@ -23,7 +23,8 @@ For σ-finite factors the products of two Hilbert bases form a Hilbert basis
 `HilbertBasis.prod` of `L²(μ ⊗ ν)`. Its index type is the product of the factor index types,
 and its basis vectors are the concrete pointwise products of the factor vectors.
 
-The underlying normed-ring construction and its additive and scalar laws are provided by
+The underlying normed-ring construction, its additive and scalar laws, and the bounded bilinear
+map `MeasureTheory.Lp.prodMulL` are provided by
 `TauCeti.MeasureTheory.Function.Lp.Product`.
 
 The tensor family has dense linear span in `L²(μ ⊗ ν)` for arbitrary factor index types. Thus
@@ -114,24 +115,6 @@ theorem norm_prodMul [SFinite μ] [SFinite ν] (F : Lp 𝕜 2 μ) (G : Lp 𝕜 2
   exact_mod_cast (by simpa only [inner_self_eq_norm_sq_to_K] using inner_prodMul F F G G :
     ((‖prodMul F G‖ : ℝ) : 𝕜) ^ 2 = ((‖F‖ : ℝ) : 𝕜) ^ 2 * ((‖G‖ : ℝ) : 𝕜) ^ 2)
 
-/-- **The tensor as a bounded bilinear map.** `prodMulL F G = prodMul F G`, packaged so that
-either operand can be fixed: `prodMulL F` fixes the left factor, `prodMulL.flip G` the right.
-Its operator norm is at most `1`. -/
-noncomputable def prodMulL [SFinite μ] [SFinite ν] :
-    Lp 𝕜 2 μ →L[𝕜] Lp 𝕜 2 ν →L[𝕜] Lp 𝕜 2 (μ.prod ν) :=
-  LinearMap.mkContinuous₂
-    (LinearMap.mk₂ 𝕜 prodMul
-      (fun F₁ F₂ G => prodMul_add_left F₁ F₂ G)
-      (fun c F G => prodMul_smul_left c F G)
-      (fun F G₁ G₂ => prodMul_add_right F G₁ G₂)
-      (fun c F G => prodMul_smul_right c F G))
-    1 fun F G => by simp [norm_prodMul]
-
-@[simp]
-theorem prodMulL_apply [SFinite μ] [SFinite ν] (F : Lp 𝕜 2 μ) (G : Lp 𝕜 2 ν) :
-    prodMulL F G = prodMul F G :=
-  LinearMap.mkContinuous₂_apply _ _ _ _
-
 end MeasureTheory.Lp
 
 namespace HilbertBasis
@@ -139,7 +122,7 @@ namespace HilbertBasis
 /-- **Basis tensors detect all tensors.** A vector orthogonal to every tensor built from two Hilbert
 bases is orthogonal to every elementary tensor. Thus the basis tensors suffice for testing
 orthogonality to the family of elementary tensors. -/
-theorem inner_prodMul_eq_zero_of_forall_basis [SFinite μ] [SFinite ν] {ι₁ ι₂ : Type*}
+theorem inner_prodMul_eq_zero_of_forall_basis {ι₁ ι₂ : Type*}
     (b₁ : HilbertBasis ι₁ 𝕜 (Lp 𝕜 2 μ)) (b₂ : HilbertBasis ι₂ 𝕜 (Lp 𝕜 2 ν))
     {h : Lp 𝕜 2 (μ.prod ν)} (hz : ∀ i j, inner 𝕜 h (prodMul (b₁ i) (b₂ j)) = 0)
     (F : Lp 𝕜 2 μ) (G : Lp 𝕜 2 ν) : inner 𝕜 h (prodMul F G) = 0 := by

@@ -15,7 +15,8 @@ public import TauCeti.Geometry.Manifold.MFDeriv.Separation
 An isometry of a product of connected Einstein manifolds preserves each factor if their
 Ricci constants differ. The Ricci tensor identifies the two tangent summands; zero mixed
 derivatives then make the coordinate maps independent of the other variable. Hence the full
-isometry group is the product of the two factor isometry groups.
+isometry group is the product of the two factor isometry groups. The factors may have
+boundary or corners.
 
 This criterion applies to the product geometries `S² × ℝ` and `ℍ² × ℝ`, whose surface and
 line factors have distinct Ricci constants.
