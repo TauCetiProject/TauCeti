@@ -118,8 +118,9 @@ theorem eqOn_scalarCurvature
 theorem scalarCurvature_restrictIcc {a b : ℝ} [Fact (a < b)]
     (G : ContMDiffRiemannianMetric (I.prod 𝓘(ℝ)) ∞ (E × ℝ)
       (fun p : M × ℝ ↦ TangentSpace (I.prod 𝓘(ℝ)) p)) (p : M × Set.Icc a b) :
-    (G.restrictIcc a b).scalarCurvature p = G.scalarCurvature (p.1, p.2) :=
-  scalarCurvature_pullback_of_isInvertible G _
+    (G.restrictIcc a b).scalarCurvature p = G.scalarCurvature (p.1, p.2) := by
+  rw [restrictIcc_eq_pullback]
+  exact scalarCurvature_pullback_of_isInvertible G _
     TauCeti.Manifold.isInvertible_mfderiv_prodMap_id_subtypeVal_Icc p
 
 end Bundle.ContMDiffRiemannianMetric

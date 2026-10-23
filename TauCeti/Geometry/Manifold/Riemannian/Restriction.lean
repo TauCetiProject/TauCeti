@@ -38,8 +38,6 @@ pullback along the inclusion, whose differential is invertible also at the bound
   equals the length of its composition with the inclusion into the ambient manifold.
 * `TopologicalSpace.Opens.riemannianEDist_le_riemannianEDist_subtype`: restriction to an open
   submanifold cannot decrease Riemannian distance.
-* `TauCeti.Manifold.isInvertible_mfderiv_prodMap_id_subtypeVal_Icc`: the differential of the
-  inclusion `M × [a, b] → M × ℝ` is invertible.
 * `Bundle.ContMDiffRiemannianMetric.restrictIcc`: the restriction of a metric on `M × ℝ` to
   `M × [a, b]`.
 
@@ -418,26 +416,6 @@ theorem riemannianEDist_le_riemannianEDist_subtype (U : Opens M) (x y : U) :
 
 end TopologicalSpace.Opens
 
-namespace TauCeti.Manifold
-
-open Set
-
-variable
-  {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] {a b : ℝ} [Fact (a < b)]
-
-/-- The differential of the inclusion `M × [a, b] → M × ℝ` is invertible, also at the boundary. -/
-theorem isInvertible_mfderiv_prodMap_id_subtypeVal_Icc (p : M × Icc a b) :
-    (mfderiv (I.prod (𝓡∂ 1)) (I.prod 𝓘(ℝ)) (Prod.map id Subtype.val : M × Icc a b → M × ℝ)
-      p).IsInvertible :=
-  isInvertible_mfderiv_prodMap mdifferentiableAt_id
-    ((contMDiff_subtypeVal_Icc (n := 1)).mdifferentiableAt one_ne_zero)
-    (by rw [mfderiv_id]; exact ⟨ContinuousLinearEquiv.refl ℝ _, rfl⟩)
-    (TauCeti.isInvertible_mfderiv_subtypeVal_Icc p.2)
-
-end TauCeti.Manifold
-
 namespace Bundle.ContMDiffRiemannianMetric
 
 open Set
@@ -452,11 +430,18 @@ variable
 variable (a b) in
 /-- The restriction of a metric `G` on `M × ℝ` to the manifold with boundary `M × [a, b]`: the
 pullback of `G` along the inclusion. -/
-@[expose] noncomputable def restrictIcc :
+noncomputable def restrictIcc :
     ContMDiffRiemannianMetric (I.prod (𝓡∂ 1)) ∞ (E × EuclideanSpace ℝ (Fin 1))
       (fun p : M × Icc a b ↦ TangentSpace (I.prod (𝓡∂ 1)) p) :=
   G.pullback (Prod.map id Subtype.val) (contMDiff_id.prodMap contMDiff_subtypeVal_Icc)
     fun p ↦ (TauCeti.Manifold.isInvertible_mfderiv_prodMap_id_subtypeVal_Icc p).injective
+
+/-- The restriction of `G` to `M × [a, b]` is the pullback of `G` along the inclusion. -/
+theorem restrictIcc_eq_pullback :
+    G.restrictIcc a b =
+      G.pullback (Prod.map id Subtype.val) (contMDiff_id.prodMap contMDiff_subtypeVal_Icc)
+        fun p ↦ (TauCeti.Manifold.isInvertible_mfderiv_prodMap_id_subtypeVal_Icc p).injective :=
+  (rfl)
 
 /-- The restriction of `G` to `M × [a, b]` at `(x, t)` is `G` at `(x, t)`, evaluated on the images
 of the tangent vectors under the differential of the inclusion. -/
