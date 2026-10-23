@@ -125,7 +125,7 @@ theorem _root_.Polynomial.subresultantCoeff_eq_coeff_pow_mul_of_natDegree_right_
   let M := subresultantCoeffMatrix p q (j + 1) n j k
   have htri : M.IsUpperTriangular := by
     intro i c hci
-    have hi : i.val ≠ 0 := by have : c.val < i.val := hci; omega
+    have hi : i.val ≠ 0 := by simp only [id_eq, Fin.lt_def] at hci; omega
     induction c using Fin.addCases with
     | left l =>
       simp only [M, subresultantCoeffMatrix_castAdd, hi, ↓reduceIte]
@@ -133,7 +133,7 @@ theorem _root_.Polynomial.subresultantCoeff_eq_coeff_pow_mul_of_natDegree_right_
       · exact coeff_eq_zero_of_natDegree_lt (by omega)
       · rfl
     | right l =>
-      have : (j + 1 - j) + l.val < i.val := hci
+      have : (j + 1 - j) + l.val < i.val := by simpa [Fin.lt_def] using hci
       simp only [M, subresultantCoeffMatrix_natAdd, hi, ↓reduceIte]
       split_ifs with h
       · exact absurd h (by omega)
@@ -186,7 +186,7 @@ theorem _root_.Polynomial.subresultantCoeff_eq_neg_coeff_pow_mul_of_natDegree_le
     (hp : p.natDegree ≤ j) (hjm : j ≤ m) (hk : k ≤ j) :
     subresultantCoeff p q m (j + 1) j k = (-q.coeff (j + 1)) ^ (m - j) * p.coeff k := by
   rw [subresultantCoeff_comm, subresultantCoeff_eq_coeff_pow_mul_of_natDegree_right_le hp hjm hk,
-    Nat.add_sub_cancel_left, mul_one, neg_pow]
+    Nat.add_sub_cancel_left]
   ring
 
 /-- At index `j` with right bound `j + 1`, if the left input has degree at most `j`, the
@@ -201,8 +201,10 @@ subresultant polynomial is `(-q.coeff (j + 1)) ^ (m - j) • p`. -/
 theorem _root_.Polynomial.subresultant_eq_C_mul_of_natDegree_left_le
     (hp : p.natDegree ≤ j) (hjm : j < m) :
     subresultant p q m (j + 1) j = C ((-q.coeff (j + 1)) ^ (m - j)) * p := by
-  rw [subresultant_comm, subresultant_eq_C_mul_of_natDegree_right_le hp hjm, ← mul_assoc, ← C_mul,
-    Nat.add_sub_cancel_left, mul_one, neg_pow (q.coeff (j + 1))]
+  rw [subresultant_comm, subresultant_eq_C_mul_of_natDegree_right_le hp hjm]
+  ext k
+  simp only [coeff_C_mul, Nat.add_sub_cancel_left]
+  ring
 
 /-! ### Constant inputs -/
 
