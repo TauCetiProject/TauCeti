@@ -17,7 +17,9 @@ For a Riesz projection `E` of `u` at `a` with nilpotence bound `h`, put `C = 1 -
 For every `n ≥ h`, the kernel of `C ^ n` is `range E` and its range is `ker E`.
 These are topological complements, so the decomposition into the nilpotent and invertible
 parts is a decomposition by closed submodules. In particular both kernels and ranges stabilise
-at `h`, without any finite-dimensional or Noetherian assumption.
+at `h`, without any finite-dimensional or Noetherian assumption. The named automorphism
+`ContinuousLinearMap.IsRieszProjection.equivKer` restricts `C` to the complementary summand
+`ker E`; its forward and inverse application lemmas identify both maps.
 
 At a good zero of the Fredholm series of a row-compact operator, the stabilised kernel is
 finitely generated and projective. This applies over coefficient rings with nilpotents and
@@ -45,13 +47,6 @@ variable {I R : Type*} [TopologicalSpace I] [NormedCommRing R]
 namespace IsRieszProjection
 
 variable {u E : C₀(I, R) →L[R] C₀(I, R)} {a : R} {h n : ℕ}
-
-/-- A Riesz projection remains one when its nilpotence bound is increased. -/
-theorem of_le (hE : IsRieszProjection u a h E) (hn : h ≤ n) :
-    IsRieszProjection u a n E := by
-  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le hn
-  refine { hE with pow_mul_eq_zero := ?_ }
-  rw [add_comm h k, pow_add, mul_assoc, hE.pow_mul_eq_zero, mul_zero]
 
 /-- The kernels of the powers of `1 - a • u` stabilise at the nilpotence bound of a
 Riesz projection. -/
@@ -110,50 +105,43 @@ theorem isClosed_range_pow (hE : IsRieszProjection u a h E) (hn : h ≤ n) :
   rw [hE.range_pow_eq_ker hn]
   exact E.isClosed_ker
 
-/-- On the stabilised range, `1 - a • u` is a continuous linear automorphism. -/
-theorem exists_equiv_range_pow (hE : IsRieszProjection u a h E) (hn : h ≤ n) :
-    ∃ e : LinearMap.range (((1 - a • u) ^ n : C₀(I, R) →L[R] C₀(I, R)) :
-        C₀(I, R) →ₗ[R] C₀(I, R)) ≃L[R]
-      LinearMap.range (((1 - a • u) ^ n : C₀(I, R) →L[R] C₀(I, R)) :
-        C₀(I, R) →ₗ[R] C₀(I, R)),
-      ∀ x, (e x : C₀(I, R)) = (1 - a • u) x := by
-  rw [hE.range_pow_eq_ker hn]
-  obtain ⟨w, hw, hw', hEw, -⟩ := hE.exists_inverse
-  have hC : ∀ x ∈ E.ker, (1 - a • u) x ∈ E.ker := by
-    intro x hx
-    have hx' : E x = 0 := hx
-    have hc := congr($(hE.commute_one_sub_smul.eq) x)
-    exact LinearMap.mem_ker.mpr (by
-      simpa only [coe_coe, mul_apply_eq_comp, hx', map_zero] using hc.symm)
+/-- The spectral operator `1 - a • u` as a continuous linear automorphism of the
+complementary summand `ker E`, identified with every stabilised range by `range_pow_eq_ker`.
+Its inverse is the restriction of the witness supplied by `IsRieszProjection.exists_inverse`. -/
+noncomputable def equivKer (hE : IsRieszProjection u a h E) : E.ker ≃L[R] E.ker := by
+  let w := hE.exists_inverse.choose
+  have hw := hE.exists_inverse.choose_spec
   have hwker : ∀ x ∈ E.ker, w x ∈ E.ker := by
     intro x _
-    simpa using congr($hEw x)
-  let f := (1 - a • u).restrict hC
-  let g := w.restrict hwker
-  refine ⟨ContinuousLinearEquiv.equivOfInverse f g ?_ ?_, ?_⟩
+    apply LinearMap.mem_ker.mpr
+    simpa only [w, coe_coe, mul_apply_eq_comp, zero_apply] using congr($(hw.2.2.1) x)
+  let f : E.ker →L[R] E.ker :=
+    (1 - a • u).restrict (fun _ hx ↦ hE.mapsTo_ker_one_sub_smul hx)
+  let g : E.ker →L[R] E.ker := w.restrict hwker
+  refine ContinuousLinearEquiv.equivOfInverse f g ?_ ?_
   · intro x
     apply Subtype.ext
-    simpa [f, g, x.property] using congr($hw' (x : C₀(I, R)))
+    have hx : E (x : C₀(I, R)) = 0 := LinearMap.mem_ker.mp x.property
+    simpa [f, g, w, coe_restrict_apply, hx] using congr($(hw.2.1) (x : C₀(I, R)))
   · intro x
     apply Subtype.ext
-    simpa [f, g, x.property] using congr($hw (x : C₀(I, R)))
-  · intro x
-    simp [f, ContinuousLinearEquiv.equivOfInverse_apply]
+    have hx : E (x : C₀(I, R)) = 0 := LinearMap.mem_ker.mp x.property
+    simpa [f, g, w, coe_restrict_apply, hx] using congr($(hw.1) (x : C₀(I, R)))
+
+/-- The complementary automorphism acts by the spectral operator. -/
+@[simp]
+theorem coe_equivKer_apply (hE : IsRieszProjection u a h E) (x : E.ker) :
+    (hE.equivKer x : C₀(I, R)) = (1 - a • u) x := by
+  simp [equivKer, ContinuousLinearEquiv.equivOfInverse_apply, coe_restrict_apply]
+
+/-- The inverse complementary automorphism acts by the chosen complementary inverse. -/
+@[simp]
+theorem coe_equivKer_symm_apply (hE : IsRieszProjection u a h E) (x : E.ker) :
+    (hE.equivKer.symm x : C₀(I, R)) = hE.exists_inverse.choose x := by
+  simp [equivKer, ContinuousLinearEquiv.symm_equivOfInverse,
+    ContinuousLinearEquiv.equivOfInverse_apply, coe_restrict_apply]
 
 variable [DiscreteTopology I] [DecidableEq I] [IsUltrametricDist R]
-
-/-- A Riesz projection of a row-compact operator is row compact, including when its
-nilpotence bound is zero. -/
-theorem isRowCompact (hE : IsRieszProjection u a h E) (hu : u.IsRowCompact) :
-    E.IsRowCompact := by
-  have hEq : E = (1 - (1 - a • u) ^ h) * E := by
-    rw [sub_mul (α := C₀(I, R) →L[R] C₀(I, R)), one_mul, hE.pow_mul_eq_zero,
-      sub_zero (G := C₀(I, R) →L[R] C₀(I, R))]
-  rw [hEq, ← mul_neg_geom_sum (R := C₀(I, R) →L[R] C₀(I, R))]
-  have hc : (1 - (1 - a • u)).IsRowCompact := by
-    rw [sub_sub_cancel (G := C₀(I, R) →L[R] C₀(I, R))]
-    exact hu.smul a
-  exact (hc.comp_clm _).comp_clm E
 
 variable [CompleteSpace R]
 
