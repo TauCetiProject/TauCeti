@@ -49,14 +49,11 @@ theorem eq_mul_exp_of_ae_hasDerivAt_mul (hf : AbsolutelyContinuousOnInterval f a
     have he' := (((Complex.ofRealCLM.hasDerivAt (x := u)).const_mul (-k)).cexp)
     convert he'.fun_mul (hu hmem) using 1 <;> simp only [q, ofRealCLM_apply, ofReal_one]
     ring
-  have hsub : uIcc a t ⊆ uIcc a b := uIcc_subset_uIcc left_mem_uIcc ht
-  have hzt : ∀ᵐ u, u ∈ uIoc a t → HasDerivAt q 0 u := by
+  have hz' : ∀ᵐ u, u ∈ uIcc a b → HasDerivAt q 0 u := by
     filter_upwards [hz, volume.ae_ne (min a b)] with u hu hne hmem
-    exact hu ⟨lt_of_le_of_ne (hsub (uIoc_subset_uIcc hmem)).1 hne.symm,
-      (hsub (uIoc_subset_uIcc hmem)).2⟩
-  have hqt : q t = q a := by
-    have h := (hq.mono hsub).integral_eq_sub_of_ae_hasDerivAt hzt
-    simpa only [intervalIntegral.integral_zero, eq_comm, sub_eq_zero] using h
+    exact hu ⟨lt_of_le_of_ne hmem.1 hne.symm, hmem.2⟩
+  obtain ⟨C, hC⟩ := hq.const_of_ae_hasDerivAt_zero hz'
+  have hqt : q t = q a := (hC t ht).trans (hC a left_mem_uIcc).symm
   have hcancel (u : ℝ) : exp (k * u) * q u = f u := by
     simp only [q, ← mul_assoc, ← exp_add, neg_mul, add_neg_cancel, exp_zero, one_mul]
   calc

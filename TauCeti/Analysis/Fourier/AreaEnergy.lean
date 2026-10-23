@@ -60,7 +60,7 @@ and `± 1`, both the inequality and its equality cases follow, since a continuou
 * `TauCeti.mul_integral_norm_sq_eq_four_pi_mul_signedArea_iff`,
   `TauCeti.mul_integral_norm_sq_eq_neg_four_pi_mul_signedArea_iff`,
   `TauCeti.mul_integral_norm_sq_eq_four_pi_mul_abs_signedArea_iff`: its equality cases.
-* `TauCeti.mul_integral_norm_sq_eq_mul_signedArea_iff_ae_hasDerivAt`,
+* `TauCeti.mul_integral_norm_sq_eq_intCast_mul_four_pi_mul_signedArea_iff_ae_hasDerivAt`,
   `TauCeti.mul_integral_norm_sq_eq_four_pi_mul_abs_signedArea_iff_ae_hasDerivAt`: equality
   characterized by the a.e. velocity equation.
 * `HasConstantSpeedOnWith.four_pi_mul_abs_signedArea_le_eVariationOn_toReal_sq`,
@@ -307,7 +307,7 @@ theorem mul_integral_norm_sq_eq_four_pi_mul_abs_signedArea_iff (hab : a < b)
 /-- Equality in the oriented area–energy inequality is equivalent to a uniform angular
 velocity about a center, almost everywhere. The sign `s = ±1` specifies the orientation;
 constant curves are included. -/
-theorem mul_integral_norm_sq_eq_mul_signedArea_iff_ae_hasDerivAt (hab : a < b)
+theorem mul_integral_norm_sq_eq_intCast_mul_four_pi_mul_signedArea_iff_ae_hasDerivAt (hab : a < b)
     (hγ : AbsolutelyContinuousOnInterval γ a b)
     (hγ' : ∀ᵐ t, t ∈ uIoc a b → HasDerivAt γ (γ' t) t) (hγab : γ a = γ b)
     (hL2 : MemLp γ' 2 (volume.restrict (Ioc a b))) {s : ℤ} (hs : s = 1 ∨ s = -1) :
@@ -329,7 +329,8 @@ theorem mul_integral_norm_sq_eq_mul_signedArea_iff_ae_hasDerivAt (hab : a < b)
 
 /-- Equality in the area–energy inequality is equivalent to the a.e. equation for one
 counterclockwise or clockwise traversal at constant angular speed about some center.
-Absolute continuity upgrades this a.e. relation to the pointwise exponential parametrization. -/
+Constant curves are included. See `AbsolutelyContinuousOnInterval.ae_hasDerivAt_mul_sub_iff`
+for the corresponding pointwise exponential parametrization. -/
 theorem mul_integral_norm_sq_eq_four_pi_mul_abs_signedArea_iff_ae_hasDerivAt (hab : a < b)
     (hγ : AbsolutelyContinuousOnInterval γ a b)
     (hγ' : ∀ᵐ t, t ∈ uIoc a b → HasDerivAt γ (γ' t) t) (hγab : γ a = γ b)
