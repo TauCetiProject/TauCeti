@@ -118,6 +118,14 @@ theorem taylorProj_def :
           (Coalgebra.counit (R := R) (A := TensorWords R B)).lTensor (TensorWords R A ⊗[R] M) :=
   (rfl)
 
+/-- The two-sided counit projection on a pure tensor `(w ⊗ m) ⊗ v` scales `m` by the counits of
+both words. -/
+@[simp]
+theorem taylorProj_tmul (w : TensorWords R A) (m : M) (v : TensorWords R B) :
+    taylorProj R A B M ((w ⊗ₜ m) ⊗ₜ v) =
+      Coalgebra.counit (R := R) v • Coalgebra.counit (R := R) w • m := by
+  simp [taylorProj_def]
+
 end AInfinityBimodule
 
 attribute [local instance] Comodule.cofree
@@ -190,10 +198,11 @@ theorem isHomogeneous_taylor (MM : AInfinityBimodule AA BB M) :
   have hD := MM.isHomogeneous_barDifferential
   rw [barGrading_def] at hD ⊢
   rw [taylor_def, taylorProj_def, Comodule.leftCofreeCounit_def]
-  exact ((TensorWords.isHomogeneous_lid_comp_rTensor_counit (AA.grading.shift 1)
-    (MM.grading.shift 1)).comp (TensorWords.isHomogeneous_rid_comp_lTensor_counit
-      ((TensorWords.grading (AA.grading.shift 1)).tensorProduct (MM.grading.shift 1))
-      (BB.grading.shift 1))).comp hD
+  simpa only [LinearMap.comp_assoc, add_zero] using
+    ((TensorWords.isHomogeneous_lid_comp_rTensor_counit (AA.grading.shift 1)
+      (MM.grading.shift 1)).comp (TensorWords.isHomogeneous_rid_comp_lTensor_counit
+        ((TensorWords.grading (AA.grading.shift 1)).tensorProduct (MM.grading.shift 1))
+        (BB.grading.shift 1))).comp hD
 
 /-- The stored bimodule bar differential squares to zero. -/
 @[simp]
@@ -228,10 +237,12 @@ theorem barDifferential_sq_iff_taylor_comp_eq_zero (G : InternalGrading R M)
     rw [TensorWords.grading_piece]
     exact AA.isHomogeneous_coaugmentedBarDifferential
   have hleft' := hleft.comp_square_eq_zero_iff_counit_of_negOnePow_eq_neg_one
-    (Comodule.comp_rid_comp_lTensor _ (Coalgebra.counit (R := R) (A := TensorWords R B)))
+    (Comodule.comp_rid_comp_lTensor_eq_lTensor_comp_leftCoactRTensor _
+      (Coalgebra.counit (R := R) (A := TensorWords R B)))
     hb (by norm_num) AA.coaugmentedBarDifferential_sq
-  exact (hright.square_eq_zero_iff_counit (barGrading AA BB G) _ D hD
-    BB.coaugmentedBarDifferential_sq).trans hleft'
+  rw [taylorProj_def, LinearMap.comp_assoc, ← hleft', LinearMap.comp_assoc]
+  exact hright.square_eq_zero_iff_counit (barGrading AA BB G) _ D hD
+    BB.coaugmentedBarDifferential_sq
 
 /-- Construct an `A∞` bimodule from a homogeneous bicomodule coderivation over the bar
 differentials of `AA` and `BB`.  By cofreeness, it suffices to check the square-zero law on the
@@ -288,10 +299,12 @@ theorem ext {MM NN : AInfinityBimodule AA BB M} (hG : MM.grading = NN.grading)
     | mk H E hE hEl hEr hesq =>
       subst hG
       have hleft := hDl.comp_eq_comp_of_counit_comp_eq
-        (Comodule.comp_rid_comp_lTensor _ (Coalgebra.counit (R := R) (A := TensorWords R B)))
-        hEl htaylor
+        (Comodule.comp_rid_comp_lTensor_eq_lTensor_comp_leftCoactRTensor _
+          (Coalgebra.counit (R := R) (A := TensorWords R B)))
+        hEl (by simpa only [taylor_def, taylorProj_def, LinearMap.comp_assoc] using htaylor)
       have hDE : D = E := hDr.eq_of_counit_comp_eq (barGrading AA BB G)
-        BB.coaugmentedBarDifferential D E hEr hleft
+        BB.coaugmentedBarDifferential D E hEr
+          (by simpa only [LinearMap.comp_assoc] using hleft)
       subst E
       rfl
 

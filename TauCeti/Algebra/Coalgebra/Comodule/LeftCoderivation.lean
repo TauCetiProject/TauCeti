@@ -97,7 +97,8 @@ theorem leftCoactRTensor_tmul (δ : Y →ₗ[R] C ⊗[R] Y) (y : Y) (n : N) :
 coaction with the original one.  For `φ` the counit of a coalgebra coacting on the right, this says
 that the projection of a cofree bicomodule onto its left cofree factor is a map of left
 comodules. -/
-theorem comp_rid_comp_lTensor (δ : Y →ₗ[R] C ⊗[R] Y) (φ : N →ₗ[R] R) :
+theorem comp_rid_comp_lTensor_eq_lTensor_comp_leftCoactRTensor (δ : Y →ₗ[R] C ⊗[R] Y)
+    (φ : N →ₗ[R] R) :
     δ ∘ₗ (TensorProduct.rid R Y).toLinearMap ∘ₗ φ.lTensor Y =
       ((TensorProduct.rid R Y).toLinearMap ∘ₗ φ.lTensor Y).lTensor C ∘ₗ
         leftCoactRTensor N δ := by
