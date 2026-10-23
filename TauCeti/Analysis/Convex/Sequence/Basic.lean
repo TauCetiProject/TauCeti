@@ -389,8 +389,7 @@ theorem coe_le_iff_exists_affine_minorant (n : ℕ) (r : ℝ) :
     nlinarith [mul_nonneg hδ (sub_nonneg.mpr hnk')]
 
 /-- Raising an interior height preserves convexity provided the new height stays
-below the average of its finite neighbors. The other second-difference inequalities
-can only become weaker. -/
+below the average of its finite neighbors. -/
 theorem update_of_le {n : ℕ} {y : ℝ}
     (hn : h n ≠ ⊤) (hn₂ : h (n + 2) ≠ ⊤)
     (hy : (h (n + 1)).untop₀ ≤ y)

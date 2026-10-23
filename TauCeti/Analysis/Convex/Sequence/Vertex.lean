@@ -18,9 +18,8 @@ introduce geometric vertices, and a missing coefficient cannot be a vertex.
 
 The stronger local characterization `IsLowerConvexEnvelope.eq_min_of_finite_neighbors`
 says that each interior height is the minimum of its coefficient height and the
-average of its two neighboring heights. The proof uses maximality of the envelope:
-raising a single finite height up to this minimum preserves convexity. All results
-allow unbounded finite domains and infinite coefficient heights.
+average of its two neighboring heights. All results allow unbounded finite domains
+and infinite coefficient heights.
 -/
 
 public section
