@@ -37,11 +37,11 @@ variable {n : ℕ} [NormalizedGCDMonoid (MvPolynomial (Fin n) ℝ)]
   {𝒟 : Set (Set (Fin n → ℝ))}
 
 /-- **Final sign-invariant CAD lifting.** An analytic base CAD that is order-invariant for
-McCallum's projection lifts to a sign-invariant CAD for the original family, with analytic
-cells and exactly the given base projections. Nullified basis members are allowed at this
-final level, including over positive-dimensional cells. -/
+McCallum's projection of a squarefree basis lifts to a sign-invariant CAD for the original
+family, with analytic cells and exactly the given base projections. Nullified basis members
+are allowed at this final level, including over positive-dimensional cells. -/
 theorem exists_isCAD_signInvariant_of_mcCallumProjection (h𝒟 : IsCAD n 𝒟)
-    (hB : F.IsIrreducibleBasis B)
+    (hB : F.IsSquarefreeBasis B)
     (hanalytic : ∀ C ∈ 𝒟, ∃ d, IsAnalyticSubmanifold d C)
     (hproj : ∀ q ∈ F.mcCallumProjection B, ∀ C ∈ 𝒟, ∀ x ∈ C, ∀ y ∈ C,
       q.orderAt x = q.orderAt y) :
@@ -53,7 +53,7 @@ theorem exists_isCAD_signInvariant_of_mcCallumProjection (h𝒟 : IsCAD n 𝒟)
   intro C hC
   obtain ⟨d, hd⟩ := hanalytic C hC
   obtain ⟨k, θ, hθ, hsign⟩ :=
-    hB.isSquarefreeBasis.exists_isSemialgebraicStack_signInvariant_of_mcCallumProjection
+    hB.exists_isSemialgebraicStack_signInvariant_of_mcCallumProjection
       hd (h𝒟.isConnected hC).isPreconnected (h𝒟.isSemialgebraic hC)
       (fun q hq ↦ hproj q hq C hC)
   refine ⟨k, θ, hθ, fun E hE ↦ ?_⟩

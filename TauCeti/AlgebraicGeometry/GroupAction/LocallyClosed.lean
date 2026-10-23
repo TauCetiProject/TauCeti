@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.GroupAction.Orbit
+public import TauCeti.AlgebraicGeometry.GroupAction.Orbit.Basic
 public import TauCeti.AlgebraicGeometry.RationalPoint.Image
 public import TauCeti.AlgebraicGeometry.Scheme.KrullDimension
 public import TauCeti.Topology.Algebra.MulAction.Orbit

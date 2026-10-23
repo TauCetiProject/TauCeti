@@ -8,7 +8,6 @@ module
 public import Mathlib.GroupTheory.Torsion
 public import Mathlib.GroupTheory.QuotientGroup.Basic
 public import Mathlib.Algebra.Group.Equiv.TypeTags
-import TauCeti.Algebra.Group.Coprime
 
 /-!
 # The torsion subgroup under a product decomposition
@@ -70,6 +69,13 @@ Unlike a bound on the exponent, the condition is elementwise: for prime `p`,
 -/
 
 public section
+
+/-- The additive subgroup and additive submonoid primary components agree after forgetting
+additive inverses. -/
+@[simp]
+theorem AddCommGroup.primaryComponent_toAddSubmonoid {G : Type*} [AddCommGroup G] (p : ℕ) :
+    (AddCommGroup.primaryComponent G p).toAddSubmonoid = AddCommMonoid.primaryComponent G p :=
+  (rfl)
 
 namespace TauCeti
 
@@ -282,21 +288,22 @@ theorem exists_pow_smul_eq_zero [Finite M] (h : IsPPrimaryTorsion p M) :
 end IsPPrimaryTorsion
 
 /-- **A `p`-primary image of an element of finite order has a `p`-primary preimage.** For prime
-`p`, an additive homomorphism `f` and an element `m` of finite order with `f m` in the `p`-primary
-component, some element of the `p`-primary component has the same image. -/
-theorem exists_mem_primaryComponent_apply_eq {F : Type*} [FunLike F M N] [AddMonoidHomClass F M N]
+`p`, a homomorphism `f` of additive commutative monoids and an element `m` of finite order with
+`f m` in the `p`-primary component, some element of the `p`-primary component has the same image. -/
+theorem exists_mem_primaryComponent_apply_eq {M N : Type*} [AddCommMonoid M] [AddCommMonoid N]
+    {F : Type*} [FunLike F M N] [AddMonoidHomClass F M N]
     (f : F) (hp : p.Prime) {m : M} (hm : IsOfFinAddOrder m)
-    (hfm : f m ∈ AddCommGroup.primaryComponent N p) :
-    ∃ m' ∈ AddCommGroup.primaryComponent M p, f m' = f m := by
+    (hfm : f m ∈ AddCommMonoid.primaryComponent N p) :
+    ∃ m' ∈ AddCommMonoid.primaryComponent M p, f m' = f m := by
   obtain ⟨k, hk⟩ := hfm
   obtain ⟨b, c, hc, hord⟩ :=
     Nat.exists_eq_pow_mul_and_not_dvd hm.addOrderOf_pos.ne' p hp.ne_one
-  -- Bézout for the coprime `c` and `p ^ k`: `i • c • y + j • p ^ k • y = y` for every `y`
-  obtain ⟨i, j, hij⟩ := exists_zsmul_add_zsmul_eq_of_coprime (G := N)
-    (((hp.coprime_iff_not_dvd.2 hc).symm).pow_right k)
-  refine ⟨i • c • m, ⟨b, ?_⟩, ?_⟩
-  · rw [smul_comm, smul_smul, ← hord, addOrderOf_nsmul_eq_zero, smul_zero]
-  · rw [map_zsmul, map_nsmul]
-    simpa [hk] using hij (f m)
+  have hcop : c.Coprime (addOrderOf (f m)) :=
+    (((hp.coprime_iff_not_dvd.2 hc).symm).pow_right k).of_dvd_right
+      (addOrderOf_dvd_of_nsmul_eq_zero hk)
+  obtain ⟨a, ha⟩ := exists_nsmul_eq_self_of_coprime hcop
+  refine ⟨a • c • m, ⟨b, ?_⟩, ?_⟩
+  · rw [smul_comm (p ^ b) a, smul_smul (p ^ b) c, ← hord, addOrderOf_nsmul_eq_zero, smul_zero]
+  · simpa only [map_nsmul] using ha
 
 end TauCeti

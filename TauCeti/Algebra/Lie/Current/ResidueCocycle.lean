@@ -82,6 +82,11 @@ theorem residuePairing_tmul (f g : R⸨X⸩) (x y : L) :
     residuePairing R L Φ (f ⊗ₜ x) (g ⊗ₜ y) = LaurentSeries.residuePairing R f g * Φ x y := by
   rw [residuePairing, LinearMap.BilinForm.tensorDistrib_tmul, smul_eq_mul, mul_comm]
 
+/-- The residue pairing of the zero form is zero. -/
+@[simp]
+theorem residuePairing_zero : residuePairing R L 0 = 0 := by
+  simp [residuePairing, LinearMap.BilinForm.tmul]
+
 /-- The finite coefficient formula for the residue pairing: if `u` has order at least `M` and `v`
 has order at least `N`, then the pairing is `∑_{N ≤ n ≤ -M} n Φ(u₋ₙ, vₙ)`. -/
 theorem residuePairing_eq_sum {M N : ℤ} {u v : currentAlgebra R L}

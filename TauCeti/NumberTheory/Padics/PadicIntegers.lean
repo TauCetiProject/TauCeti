@@ -49,7 +49,9 @@ calculation for first continuous cohomology with trivial integer coefficients.
   `w i₀ = 1` at some index `i₀`.
 * `PadicInt.units_neg_one_ne_one`: `-1 ≠ 1` in `ℤ_[p]ˣ`.
 * `PadicInt.range_units_val`: the units of `ℤ_[p]` are the elements of norm `1`.
-* `PadicInt.not_isUnit_iff_dvd`: the nonunits of `ℤ_[p]` are the multiples of `p`.
+* `PadicInt.not_isUnit_iff_dvd`: the nonunits of `ℤ_[p]` are the multiples of `p`; in
+  particular an integer is a unit of `ℤ_[p]` exactly when `p` does not divide it
+  (`PadicInt.isUnit_intCast_iff`), and `2` is not a unit of `ℤ_[2]` (`PadicInt.not_isUnit_two`).
 * `PadicInt.inv_eq_inverse`, `PadicInt.continuous_inverse`: Mathlib's `PadicInt.inv` is
   `Ring.inverse`, the inverse on units extended by `0`, and it is continuous because the nonunits
   `pℤ_p` form an open set.
@@ -63,6 +65,7 @@ calculation for first continuous cohomology with trivial integer coefficients.
   `p`, is `n`.
 * `Padic.inv_natCast_le_norm_natCast`: the `p`-adic norm of a positive integer `m` is at least
   `1 / m`.
+* `Padic.norm_natCast_eq_zpow`: the `p`-adic norm of a positive integer `m` is `p ^ (-v_p(m))`.
 * `PadicInt.compactSpace_units`, `PadicInt.totallyDisconnectedSpace_units`: `ℤ_[p]ˣ` is a
   profinite group.
 -/
@@ -125,6 +128,15 @@ theorem inv_eq_inverse (z : ℤ_[p]) : z.inv = Ring.inverse z := by
 /-- An element of `ℤ_p` is a nonunit exactly when it is divisible by `p`. -/
 theorem not_isUnit_iff_dvd {z : ℤ_[p]} : ¬IsUnit z ↔ (p : ℤ_[p]) ∣ z := by
   rw [not_isUnit_iff, norm_lt_one_iff_dvd]
+
+/-- An integer is a unit in `ℤ_p` exactly when `p` does not divide it. -/
+theorem isUnit_intCast_iff {z : ℤ} : IsUnit (z : ℤ_[p]) ↔ ¬(p : ℤ) ∣ z := by
+  rw [← not_iff_not, not_not, not_isUnit_iff_dvd, ← pow_one (p : ℤ_[p]), pow_p_dvd_int_iff,
+    pow_one]
+
+/-- `2` is not a unit in `ℤ_2`. -/
+theorem not_isUnit_two : ¬IsUnit (2 : ℤ_[2]) := by
+  exact_mod_cast not_isUnit_iff_dvd.mpr (dvd_refl ((2 : ℕ) : ℤ_[2]))
 
 /-- The ring inverse of `ℤ_p`, extended by `0` on the nonunits, is continuous. -/
 theorem continuous_inverse : Continuous (Ring.inverse : ℤ_[p] → ℤ_[p]) :=
@@ -224,6 +236,11 @@ theorem inv_natCast_le_norm_natCast (m : ℕ) [NeZero m] : (m : ℝ)⁻¹ ≤ �
   gcongr
   · exact pow_pos (by exact_mod_cast (Fact.out : p.Prime).pos) _
   · exact_mod_cast Nat.le_of_dvd (Nat.pos_of_ne_zero (NeZero.ne m)) pow_padicValNat_dvd
+
+/-- The `p`-adic norm of a nonzero natural number `m` is `p ^ (-v_p(m))`. -/
+theorem norm_natCast_eq_zpow {m : ℕ} (hm : m ≠ 0) :
+    ‖(m : ℚ_[p])‖ = (p : ℝ) ^ (-(padicValNat p m : ℤ)) := by
+  rw [Padic.norm_eq_zpow_neg_valuation (by exact_mod_cast hm), Padic.valuation_natCast]
 
 end Padic
 
