@@ -22,6 +22,12 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Residue.Quadratic
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.StarredReduction
 -- Proof-only: the point-group index at a split node centred at the origin.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.SplitReduction
+-- Proof-only: the point-group index at a nonsplit node of even order.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.NonsplitReduction
+-- Proof-only: a point with singular reduction at a nonsplit node makes `Δ` a square up to a unit.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.SingularReduction
+-- Proof-only: a quadratic over a field splits exactly when it has a root.
+import TauCeti.Algebra.Polynomial.QuadraticDiscriminant
 -- Proof-only: Tate's algorithm detects split multiplicative reduction.
 import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Reduction.Type
 -- Proof-only: a translation does not change the discriminant.
@@ -69,6 +75,17 @@ valuation `v(Δ_min)` of the minimal discriminant (Silverman, *The Arithmetic of
 VII.6.1), since Tate's algorithm stops at `I_{v(Δ_min)}` after a change of variables over the
 valuation ring.
 
+At the multiplicative symbols `Iₙ` with nonsplit tangent quadratic, the local index is
+`gcd(2, n)`. When `n` is odd every point has nonsingular reduction: a point reducing to the node
+would make `Δ` a unit times a square, while `ϖ` divides `Δ` exactly to the odd power `n`. When `n`
+is even and the residue field is finite, the index is `2`, by
+`Affine.index_nonsingularReduction_eq_two_of_isTateTerminal_I_of_tangentQuadratic_no_roots`.
+At `I₀` the discriminant is a unit and every point has nonsingular reduction. Together with the
+cases above this proves the equality at every symbol when the valuation ring is Henselian with
+finite residue field, for instance for the ring of integers of a nonarchimedean local field. The
+index `[W(F) : E₀(F)]` is preserved by changes of variables over the valuation ring, so the local
+index does not depend on the equation on which the algorithm stops.
+
 ## Main results
 
 * `index_nonsingularReduction_eq_tateLocalIndex_of_ne_I_of_ne_IStar_add_one`, in the namespace
@@ -82,6 +99,14 @@ valuation ring.
 * `WeierstrassCurve.Affine.index_nonsingularReduction_eq_localMinimalDiscriminantValuation`: at
   split multiplicative reduction, the index of `E₀` for a minimal equation is the valuation of the
   minimal discriminant.
+* `nonsingularReduction_eq_top_of_isTateTerminal_I_of_not_hasTateTangentRoot`, in the namespace
+  `WeierstrassCurve.Affine`: at `Iₙ` with `n` odd and nonsplit tangent quadratic, every point has
+  nonsingular reduction.
+* `WeierstrassCurve.Affine.index_nonsingularReduction_eq_tateLocalIndex`: over a Henselian
+  valuation ring with finite residue field, at every symbol, the point-group index is the local
+  index reported by Tate's algorithm.
+* `WeierstrassCurve.IsTateTerminal.tateLocalIndex_smul`: in the same situation, the local index
+  does not depend on the equation on which the algorithm stops.
 
 ## References
 
@@ -324,7 +349,121 @@ theorem index_nonsingularReduction_eq_localMinimalDiscriminantValuation
       (hint ▸ hC) (hint ▸ hroot), ← hC.localMinimalDiscriminantValuation_eq (K := F) hϖ]
   simp only [hCE, localMinimalDiscriminantValuation_smul]
 
+/-- **At nonsplit multiplicative reduction of odd type `I₂ₘ₊₁`, every point has nonsingular
+reduction**: `E₀(F) = W(F)`. Here `ϖ` generates the maximal ideal of the valuation ring, Tate's
+algorithm, run on the integral model with uniformiser `ϖ`, stops with the symbol `I₂ₘ₊₁`, and the
+tangent quadratic `T² + a₁ T − a₂` has no root modulo `ϖ`. A point with singular reduction would
+make `Δ` a unit times a square (`WeierstrassCurve.exists_associated_sq_Δ_of_isSingular`), whereas
+`ϖ^(2m+1)` divides `Δ` exactly. -/
+theorem nonsingularReduction_eq_top_of_isTateTerminal_I_of_not_hasTateTangentRoot
+    {ϖ : v.valuationSubring} (hϖ : maximalIdeal v.valuationSubring = Ideal.span {ϖ}) {m : ℕ}
+    (h : (integralModel v.valuationSubring W).IsTateTerminal ϖ (.I (2 * m + 1)))
+    (hroot : ¬ (integralModel v.valuationSubring W).HasTateTangentRoot ϖ) :
+    W.nonsingularReduction v = ⊤ := by
+  set Wo := integralModel v.valuationSubring W
+  obtain ⟨h₃, h₄, h₆, hb₂, hΔ, hΔ'⟩ := isTateTerminal_I_add_one.1 h
+  have hres {z : v.valuationSubring} (hz : ϖ ∣ z) : residue _ z = 0 :=
+    (residue_eq_zero_iff _).2 ((mem_maximalIdeal_iff_dvd hϖ).2 hz)
+  have hb₄ : residue _ Wo.b₄ = 0 := by simp [b₄, hres h₃, hres h₄]
+  have hb₆ : residue _ Wo.b₆ = 0 := by simp [b₆, hres h₃, hres h₆]
+  have hc₄ : residue _ Wo.c₄ ≠ 0 := by
+    have hb₂' : residue _ Wo.b₂ ≠ 0 :=
+      fun h0 ↦ hb₂ ((mem_maximalIdeal_iff_dvd hϖ).1 ((residue_eq_zero_iff _).1 h0))
+    simpa [c₄, hb₄] using pow_ne_zero 2 hb₂'
+  -- the node of the reduction has no tangent direction over the residue field
+  have hn : ¬ (Wo.nodePolynomial.map (residue _)).Splits := by
+    rw [nodePolynomial_map_eq_quadratic, Polynomial.splits_quadratic_iff_exists_root hc₄]
+    rintro ⟨t, ht⟩
+    refine hroot ((hasTateTangentRoot_iff_exists_residue_root hϖ).2 ⟨t, ?_⟩)
+    refine (mul_eq_zero.1 ?_).resolve_left hc₄
+    simp only [map_mul, map_sub, map_add, map_ofNat, hb₄, hb₆] at ht
+    linear_combination ht
+  -- `ϖ` is prime, so it divides the square `z²` to an even power, but `Δ` to the power `2m + 1`
+  have hp : Prime ϖ := (Ideal.span_singleton_prime (h.ne_zero (by simp))).1
+    (hϖ ▸ (maximalIdeal.isMaximal _).isPrime)
+  refine nonsingularReduction_eq_top_of_forall_not_isSingular v fun x y hE hs ↦ ?_
+  obtain ⟨z, hz⟩ := exists_associated_sq_Δ_of_isSingular Wo hE hs hc₄ hn
+  have he := (emultiplicity_eq_coe.2 ⟨hΔ, hΔ'⟩).symm.trans
+    ((emultiplicity_eq_of_associated_right hz).symm.trans (emultiplicity_pow hp))
+  obtain ⟨e, he'⟩ : ∃ e : ℕ, (e : ℕ∞) = emultiplicity ϖ z :=
+    ENat.ne_top_iff_exists.1 fun ht ↦ ENat.natCast_ne_top _ (he.trans (by simp [ht]))
+  rw [← he'] at he
+  norm_cast at he
+  omega
+
+/-- **Tate's local index is the point-group index** (Silverman, *Advanced Topics*, IV.9, Table 4.1).
+Suppose that the valuation ring of `v` is Henselian with finite residue field, for instance the
+ring of integers of a nonarchimedean local field, and that Tate's algorithm, run on the integral
+model of `W` with a generator `ϖ` of the maximal ideal, stops with the symbol `s`. Then the local
+index the algorithm reports is `[W(F) : E₀(F)]`, the index of the subgroup of points with
+nonsingular reduction.
+
+Finiteness of the residue field is used only at nonsplit multiplicative reduction of even type
+`I₂ₘ`, to find a point with singular reduction; over a general perfect residue field the index can
+be `1` there. -/
+theorem index_nonsingularReduction_eq_tateLocalIndex
+    [HenselianLocalRing v.valuationSubring] [Finite (ResidueField v.valuationSubring)]
+    {ϖ : v.valuationSubring} (hϖ : maximalIdeal v.valuationSubring = Ideal.span {ϖ})
+    {s : TauCeti.ReductionSymbol} (h : (integralModel v.valuationSubring W).IsTateTerminal ϖ s) :
+    (W.nonsingularReduction v).index =
+      (integralModel v.valuationSubring W).tateLocalIndex ϖ s := by
+  set Wo := integralModel v.valuationSubring W
+  by_cases hsIStar : ∃ n, s = .IStar (n + 1)
+  · obtain ⟨n, rfl⟩ := hsIStar
+    exact index_nonsingularReduction_eq_tateLocalIndex_of_isTateTerminal_IStar_add_one v hϖ h
+  by_cases hsI : ∃ n, s = .I n
+  swap
+  · push Not at hsI hsIStar
+    exact index_nonsingularReduction_eq_tateLocalIndex_of_ne_I_of_ne_IStar_add_one v hϖ h hsI
+      hsIStar
+  obtain ⟨_ | n, rfl⟩ := hsI
+  · -- `I₀`: the discriminant is a unit
+    rw [nonsingularReduction_eq_top_of_Δ_notMem v fun hΔ ↦ isTateTerminal_I_zero.1 h
+      ((mem_maximalIdeal_iff_dvd hϖ).1 (Ideal.pow_le_self two_ne_zero hΔ)),
+      AddSubgroup.index_top, tateLocalIndex_I_zero]
+  by_cases hroot : Wo.HasTateTangentRoot ϖ
+  · rw [index_nonsingularReduction_eq_of_isTateTerminal_I_of_hasTateTangentRoot v hϖ h hroot,
+      tateLocalIndex_I_add_one_of_hasTateTangentRoot hroot]
+  rw [tateLocalIndex_I_add_one_of_not_hasTateTangentRoot hroot]
+  obtain ⟨m, rfl | rfl⟩ := Nat.even_or_odd' n
+  · -- nonsplit `I₂ₘ₊₁`: every point has nonsingular reduction
+    rw [nonsingularReduction_eq_top_of_isTateTerminal_I_of_not_hasTateTangentRoot v hϖ h hroot,
+      AddSubgroup.index_top]
+    simp
+  · -- nonsplit `I₂ₘ₊₂`: some point has singular reduction
+    rw [show 2 * m + 1 + 1 = 2 * (m + 1) by ring] at h ⊢
+    rw [index_nonsingularReduction_eq_two_of_isTateTerminal_I_of_tangentQuadratic_no_roots v hϖ
+      m.succ_ne_zero h fun t ht ↦ hroot ((hasTateTangentRoot_iff_exists_residue_root hϖ).2
+      ⟨t, ht⟩)]
+    simp
+
 end Affine
+
+/-- **Tate's local index does not depend on the equation on which the algorithm stops.** Let the
+valuation ring `O` of `v` be Henselian with finite residue field, with maximal ideal generated by
+`ϖ`. If Tate's algorithm stops on an equation `W` over `O` with the symbol `s`, and on `C • W`, for
+a change of variables `C` over `O`, with the symbol `s'`, then the two reported local indices agree:
+both are the index of the points with nonsingular reduction over the fraction field, which a change
+of variables over `O` preserves. -/
+theorem IsTateTerminal.tateLocalIndex_smul {F Γ₀ : Type*} [Field F]
+    [LinearOrderedCommGroupWithZero Γ₀] (v : Valuation F Γ₀)
+    [HenselianLocalRing v.valuationSubring] [Finite (ResidueField v.valuationSubring)]
+    {W : WeierstrassCurve v.valuationSubring}
+    {ϖ : v.valuationSubring} (hϖ : maximalIdeal v.valuationSubring = Ideal.span {ϖ})
+    {C : VariableChange v.valuationSubring} {s s' : TauCeti.ReductionSymbol}
+    (h : W.IsTateTerminal ϖ s) (h' : (C • W).IsTateTerminal ϖ s') :
+    (C • W).tateLocalIndex ϖ s' = W.tateLocalIndex ϖ s := by
+  classical
+  -- `W` and `C • W` are the integral models of the base change `W_F` of `W` and of `C • W_F`
+  have e : integralModel v.valuationSubring (C.baseChange F • W.baseChange F) = C • W := by
+    rw [integralModel_baseChange_smul, integralModel_baseChange_self]
+  have h₀ := Affine.index_nonsingularReduction_eq_tateLocalIndex v hϖ (W := W.baseChange F)
+    (by rwa [integralModel_baseChange_self])
+  have h₁ := Affine.index_nonsingularReduction_eq_tateLocalIndex v hϖ
+    (W := C.baseChange F • W.baseChange F) (by rwa [e])
+  rw [integralModel_baseChange_self] at h₀
+  rw [e, Affine.index_nonsingularReduction_baseChange_smul] at h₁
+  exact h₁.symm.trans h₀
 
 end WeierstrassCurve
 
