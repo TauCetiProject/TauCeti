@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Matrix.Symmetric
 public import Mathlib.NumberTheory.LegendreSymbol.QuadraticChar.Basic
 import Mathlib.NumberTheory.JacobiSum.Basic
 import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
+import TauCeti.NumberTheory.LegendreSymbol.QuadraticChar.Basic
 
 /-!
 # Points on nondegenerate quadrics over a finite field
@@ -37,6 +38,7 @@ computed.
 
 ## Main results
 
+* `TauCeti.sum_quadraticChar_mul_sub`: the quadratic Jacobi sum `∑ᵤ χ(u (c - u))`.
 * `TauCeti.card_sum_mul_sq_eq_of_card_eq_two_mul_add_one`,
   `TauCeti.card_sum_mul_sq_eq_of_card_eq_two_mul_add_two`: the number of solutions of
   `∑ wᵢ xᵢ² = c` in odd and in even rank.
@@ -90,29 +92,9 @@ private theorem card_sum_mul_sq_fin_succ {n : ℕ} (w : Fin (n + 1) → F) (c : 
   simp only [Fin.consEquiv_apply, Fin.sum_univ_succ, Fin.cons_zero, Fin.cons_succ, Fin.tail,
     eq_sub_iff_add_eq, add_comm (w 0 * t ^ 2)]
 
-/-- Grouping a sum over `t` by the value of `a t²`, which has `1 + χ(a u)` preimages `t` above
-`u`. -/
-private theorem sum_comp_sub_mul_sq (hF : ringChar F ≠ 2) {a : F} (ha : a ≠ 0) (g : F → ℤ)
-    (c : F) :
-    ∑ t : F, g (c - a * t ^ 2) = ∑ u : F, (1 + quadraticChar F (a * u)) * g (c - u) := by
-  -- Group by `s = t²`, which has `χ s + 1` square roots, then substitute `u = a s`.
-  have hfib : ∑ t : F, g (c - a * t ^ 2) = ∑ s : F, (quadraticChar F s + 1) * g (c - a * s) := by
-    rw [← sum_fiberwise univ (fun t : F ↦ t ^ 2) (fun t ↦ g (c - a * t ^ 2))]
-    refine sum_congr rfl fun s _ ↦ ?_
-    rw [sum_congr rfl fun t ht ↦ by rw [(mem_filter.1 ht).2], sum_const, nsmul_eq_mul,
-      ← quadraticChar_card_sqrts hF s, Set.toFinset_ofPred]
-  rw [hfib]
-  refine Fintype.sum_bijective (a * ·) (mulLeft_bijective₀ a ha) _ _ fun s ↦ ?_
-  rw [← mul_assoc, ← sq, map_mul, quadraticChar_sq_one' ha, one_mul, add_comm (1 : ℤ)]
-
-/-- The quadratic character sums to zero against any nonzero dilation. -/
-private theorem sum_quadraticChar_mul (hF : ringChar F ≠ 2) {a : F} (ha : a ≠ 0) :
-    ∑ u : F, quadraticChar F (a * u) = 0 := by
-  rw [Fintype.sum_bijective (a * ·) (mulLeft_bijective₀ a ha) _ (quadraticChar F) fun _ ↦ rfl,
-    quadraticChar_sum_zero hF]
-
-/-- The Jacobi sum `∑ᵤ χ(u (c - u))` is `χ(-1) (q - 1)` for `c = 0` and `-χ(-1)` otherwise. -/
-private theorem sum_quadraticChar_mul_sub (hF : ringChar F ≠ 2) (c : F) :
+/-- **The quadratic Jacobi sum**: in a finite field of odd characteristic, `∑ᵤ χ(u (c - u))` is
+`χ(-1) (q - 1)` for `c = 0` and `-χ(-1)` otherwise. -/
+theorem sum_quadraticChar_mul_sub (hF : ringChar F ≠ 2) (c : F) :
     ∑ u : F, quadraticChar F (u * (c - u)) =
       quadraticChar F (-1) * if c = 0 then (Fintype.card F : ℤ) - 1 else -1 := by
   split_ifs with hc
@@ -142,9 +124,9 @@ private theorem card_sum_mul_sq_fin_succ_eq (hF : ringChar F ≠ 2) {n : ℕ} (w
     (#{x : Fin (n + 1) → F | ∑ i, w i * x i ^ 2 = c} : ℤ) =
       (Fintype.card F : ℤ) ^ n + ∑ u : F, quadraticChar F (w 0 * u) *
         #{y : Fin n → F | ∑ i, Fin.tail w i * y i ^ 2 = c - u} := by
-  rw [card_sum_mul_sq_fin_succ, sum_comp_sub_mul_sq hF hw
-    (fun v ↦ (#{y : Fin n → F | ∑ i, Fin.tail w i * y i ^ 2 = v} : ℤ))]
-  simp only [add_mul, one_mul, sum_add_distrib]
+  rw [card_sum_mul_sq_fin_succ, sum_comp_mul_sq hF hw
+    (fun u ↦ (#{y : Fin n → F | ∑ i, Fin.tail w i * y i ^ 2 = c - u} : ℤ))]
+  simp only [smul_eq_mul, add_mul, one_mul, sum_add_distrib]
   congr 1
   have hsub := Equiv.sum_comp (Equiv.subLeft c)
     (fun v ↦ (#{y : Fin n → F | ∑ i, Fin.tail w i * y i ^ 2 = v} : ℤ))
