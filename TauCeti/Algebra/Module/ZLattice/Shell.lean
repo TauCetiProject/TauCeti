@@ -27,8 +27,9 @@ by squared norm, `r_L(t)` is the coefficient of `e^{π i t τ}`. That identifica
 here.
 
 The shells are sets with a finiteness theorem rather than `Finset`s, since membership is not
-decidable and the finiteness is the content: for a discrete `L` in a finite-dimensional space,
-every shell lies in a bounded set, which meets `L` in finitely many points.
+decidable and the finiteness is the content: for a discrete `L` in a proper space, such as a
+finite-dimensional real normed space, every shell lies in a closed ball, which meets `L` in
+finitely many points.
 
 This file proves that every shell is finite, that `r_L(0) = 1` and that negative numbers are not
 represented; that the representation numbers of a translate depend only on its coset, are
@@ -48,7 +49,7 @@ lattice `L` in a real normed space of dimension `n` the representation numbers g
 ## Main statements
 
 * `ZLattice.finite_shell`, `ZLattice.finite_cosetShell`: shells of a discrete subgroup of a
-  finite-dimensional space are finite.
+  proper space are finite.
 * `ZLattice.representationNumber_zero`: `r_L(0) = 1`.
 * `ZLattice.cosetRepresentationNumber_add_mem`, `ZLattice.cosetRepresentationNumber_neg`:
   `r_{γ+L}` depends only on the coset `γ + L`, and `r_{-γ+L} = r_{γ+L}`.
@@ -76,12 +77,12 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedAddCommGroup F]
 /-! ### Shells and representation numbers -/
 
 /-- The shell of squared norm `t` of `L`: the vectors `v ∈ L` with `‖v‖² = t`. It is finite when
-`L` is discrete in a finite-dimensional space (`ZLattice.finite_shell`). -/
+`L` is discrete in a proper space (`ZLattice.finite_shell`). -/
 def shell (L : Submodule ℤ E) (t : ℝ) : Set E :=
   {v | v ∈ L ∧ ‖v‖ ^ 2 = t}
 
 /-- The representation number `r_L(t)`: the number of vectors of `L` of squared norm `t`. For a
-discrete `L` in a finite-dimensional space every shell is finite, so this is a genuine count. -/
+discrete `L` in a proper space every shell is finite, so this is a genuine count. -/
 noncomputable def representationNumber (L : Submodule ℤ E) (t : ℝ) : ℕ :=
   (shell L t).ncard
 
@@ -160,6 +161,17 @@ theorem shell_eq_empty_of_neg (ht : t < 0) : shell L t = ∅ := by
 theorem representationNumber_eq_zero_of_neg (ht : t < 0) : representationNumber L t = 0 := by
   simpa using cosetRepresentationNumber_eq_zero_of_neg L 0 ht
 
+/-- The shell of squared norm `t` of `γ + L` lies in the closed ball of radius `√t` about `-γ`. -/
+theorem cosetShell_subset_closedBall (γ : E) (t : ℝ) :
+    cosetShell L γ t ⊆ closedBall (-γ) √t ∩ L := fun v ⟨hv, h⟩ ↦ by
+  rw [Set.mem_inter_iff, mem_closedBall, dist_eq_norm, sub_neg_eq_add, add_comm, ← h,
+    Real.sqrt_sq (norm_nonneg _)]
+  exact ⟨le_rfl, hv⟩
+
+/-- The shell of squared norm `t` of `L` lies in the closed ball of radius `√t` about `0`. -/
+theorem shell_subset_closedBall (t : ℝ) : shell L t ⊆ closedBall 0 √t ∩ L := by
+  simpa using cosetShell_subset_closedBall L 0 t
+
 /-! ### Dependence on the coset -/
 
 /-- Translating `γ` by a lattice vector `w` translates the shells of `γ + L` by `-w`. -/
@@ -237,16 +249,13 @@ end Isometry
 
 section Finite
 
-variable [NormedSpace ℝ E] [FiniteDimensional ℝ E] [DiscreteTopology L]
+variable [ProperSpace E] [DiscreteTopology L]
 
-/-- The shells of a translate of a discrete subgroup of a finite-dimensional space are finite. -/
-theorem finite_cosetShell (γ : E) (t : ℝ) : (cosetShell L γ t).Finite := by
-  have : DiscreteTopology L.toAddSubgroup := ‹DiscreteTopology L›
-  refine (L.toAddSubgroup.finite_inter (isBounded_closedBall (x := -γ) (r := √t))).subset
-    fun v ⟨hv, h⟩ ↦ ⟨?_, hv⟩
-  rw [mem_closedBall, dist_eq_norm, sub_neg_eq_add, add_comm, ← h, Real.sqrt_sq (norm_nonneg _)]
+/-- The shells of a translate of a discrete subgroup of a proper space are finite. -/
+theorem finite_cosetShell (γ : E) (t : ℝ) : (cosetShell L γ t).Finite :=
+  (L.toAddSubgroup.finite_inter isBounded_closedBall).subset (cosetShell_subset_closedBall L γ t)
 
-/-- The shells of a discrete subgroup of a finite-dimensional space are finite. -/
+/-- The shells of a discrete subgroup of a proper space are finite. -/
 theorem finite_shell (t : ℝ) : (shell L t).Finite := by
   simpa using finite_cosetShell L 0 t
 
@@ -318,10 +327,8 @@ theorem representationNumber_isBigO :
   refine IsBigO.trans ?_ (hball.congr' (Eventually.of_forall fun _ ↦ rfl) ?_)
   · refine IsBigO.of_bound 1 (Eventually.of_forall fun t ↦ ?_)
     simp only [Real.norm_natCast, Function.comp_apply, one_mul]
-    have : DiscreteTopology L.toAddSubgroup := ‹DiscreteTopology L›
-    refine Nat.cast_le.mpr (Set.ncard_le_ncard (fun v ⟨hv, hvt⟩ ↦ ⟨?_, hv⟩)
+    exact Nat.cast_le.mpr (Set.ncard_le_ncard (shell_subset_closedBall L t)
       (L.toAddSubgroup.finite_inter isBounded_closedBall))
-    rw [mem_closedBall_zero_iff, ← hvt, Real.sqrt_sq (norm_nonneg v)]
   · filter_upwards [eventually_ge_atTop 0] with t ht
     rw [Function.comp_apply, Real.sqrt_eq_rpow, ← Real.rpow_natCast, ← Real.rpow_mul ht]
     congr 1
