@@ -20,16 +20,16 @@ stays regular exactly when the new vertex is not a double point
 (`Polygon.isRegularProjection_insertVertex_edgePath_iff`).
 
 Over the reals, the boundary parametrizations before and after subdividing at an interior point of
-an edge differ by an increasing change of time fixing time `0`
+an edge differ by an increasing change of time
 (`Polygon.exists_strictMono_boundaryParam_insertVertex_edgePath`): the traversal of the subdivided
-polygon passes through the same points in the same order, starting at the same vertex, and at each
-time it runs along an edge pointing in the same direction as the edge of the original polygon at
-the corresponding time. This is what keeps the diagram read off from a projection of a polygonal
-knot unchanged by subdivision.
+polygon passes through the same points in the same order, and at each time it runs along an edge
+pointing in the same direction as the edge of the original polygon at the corresponding time. This
+is what keeps the diagram read off from a projection of a polygonal knot unchanged by subdivision.
 
 ## Main results
 
-* `Polygon.boundary_insertVertex_edgePath`: subdividing an edge does not change the boundary.
+* `Polygon.doublePoints_insertVertex_edgePath`: subdividing an edge does not change the double
+  points.
 * `Polygon.isRegularProjection_insertVertex_edgePath_iff`: a projection is regular for the
   subdivided polygon exactly when it is regular for the original one and the new vertex is not a
   double point.
@@ -50,7 +50,7 @@ namespace Polygon
 
 variable {R V P Q : Type*} {n : ℕ}
 
-/-! ### Edges, boundary and regular projections -/
+/-! ### Edges, double points and regular projections -/
 
 section Parameter
 
@@ -74,34 +74,6 @@ section Subdivide
 
 variable [Field R] [LinearOrder R] [IsStrictOrderedRing R] [AddCommGroup V] [Module R V]
   [AddTorsor V P] (poly : Polygon P n) (i : Fin n) {s : R}
-
-/-- A point of an edge splits it into the segments from its start to the point and from the point
-to its end. -/
-theorem edgeSet_eq_affineSegment_union (hs : s ∈ Icc (0 : R) 1) :
-    poly.edgeSet R i = affineSegment R (poly i) (poly.edgePath R i s) ∪
-      affineSegment R (poly.edgePath R i s) (poly (finRotate n i)) := by
-  have hseg (t u : R) (htu : t ≤ u) :
-      affineSegment R (poly.edgePath R i t) (poly.edgePath R i u) =
-        poly.edgePath R i '' Icc t u := by
-    rw [← affineSegment_image, affineSegment_eq_segment, segment_eq_Icc htu]
-  have h₀ : poly.edgePath R i 0 = poly i := by rw [edgePath, lineMap_apply_zero]
-  have h₁ : poly.edgePath R i 1 = poly (finRotate n i) := by rw [edgePath, lineMap_apply_one]
-  rw [← h₀, ← h₁, hseg 0 s hs.1, hseg s 1 hs.2, ← image_union, Icc_union_Icc_eq_Icc hs.1 hs.2,
-    edgeSet_eq_image_edgePath]
-
-/-- **Subdividing an edge does not change the boundary** of a polygon. -/
-theorem boundary_insertVertex_edgePath (hs : s ∈ Icc (0 : R) 1) :
-    (poly.insertVertex i (poly.edgePath R i s)).boundary R = poly.boundary R := by
-  rw [boundary_insertVertex, ← edgeSet_eq_affineSegment_union poly i hs, boundary]
-  ext x
-  simp only [mem_union, mem_iUnion]
-  constructor
-  · rintro (⟨k, -, hx⟩ | hx)
-    exacts [⟨k, hx⟩, ⟨i, hx⟩]
-  · rintro ⟨k, hx⟩
-    by_cases hk : k = i
-    · exact .inr (hk ▸ hx)
-    · exact .inl ⟨k, hk, hx⟩
 
 /-- Subdividing an edge does not change the double points of a map. -/
 theorem doublePoints_insertVertex_edgePath (π : P → Q) (hs : s ∈ Icc (0 : R) 1) :

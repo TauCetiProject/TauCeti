@@ -28,7 +28,9 @@ equality is stated for the codes paired with their numbers of crossings.
 The proof compares the two traversals through the increasing change of time
 `Polygon.exists_strictMono_boundaryParam_insertVertex_edgePath`. It carries the crossing times of
 `poly` onto those of the subdivided polygon in increasing order, so the visits correspond, with
-the same partners, the same over/under data and crossings numbered in the same order. The edges
+the same partners (`Polygon.visitTime_cast_eq_of_strictMono`,
+`Polygon.gaussCode_partner_cast_eq_of_strictMono`), the same over/under data and crossings
+numbered in the same order. The edges
 through a crossing keep their directions up to positive factors, so the crossing signs agree.
 
 ## Main results
@@ -79,43 +81,15 @@ theorem gaussCode_insertVertex (hs : poly.IsSimple ℝ)
   have hm : (poly.doublePoints ℝ π).ncard / 2 = (poly'.doublePoints ℝ π).ncard / 2 := by rw [hDP]
   have h2 : 2 * ((poly.doublePoints ℝ π).ncard / 2) = 2 * ((poly'.doublePoints ℝ π).ncard / 2) := by
     rw [hm]
-  -- The change of time carries the crossing times of `poly` onto those of `poly'`.
-  have hct : poly'.crossingTimes p₀ d = φ '' poly.crossingTimes p₀ d := by
-    refine Subset.antisymm (fun t' ht' ↦ ?_) ?_
-    · obtain ⟨ht'₁, ht'₂⟩ := mem_crossingTimes.1 ht'
-      rw [hDP] at ht'₂
-      obtain ⟨t, ht, hbt⟩ := exists_mem_Ico_boundaryParam_eq (doublePoints_subset_boundary ht'₂)
-      refine ⟨t, mem_crossingTimes.2 ⟨ht, hbt ▸ ht'₂⟩, hs'.injOn_boundaryParam (hφt t ht).1 ht'₁ ?_⟩
-      rw [(hφt t ht).2.1, hbt]
-    · rintro _ ⟨t, ht, rfl⟩
-      obtain ⟨ht₁, ht₂⟩ := mem_crossingTimes.1 ht
-      exact mem_crossingTimes.2 ⟨(hφt t ht₁).1, by rw [(hφt t ht₁).2.1, hDP]; exact ht₂⟩
-  -- So the visit times of `poly'` are those of `poly` after the change of time.
-  have hvt (j) : visitTime hs' hπ' (Fin.cast h2 j) = φ (visitTime hs hπ j) := by
-    have hf : StrictMono (visitTime hs' hπ' ∘ Fin.cast h2) :=
-      (strictMono_visitTime hs' hπ').comp (Fin.cast_strictMono h2)
-    have hrange : range (visitTime hs' hπ' ∘ Fin.cast h2) = range (φ ∘ visitTime hs hπ) := by
-      have hcast : Surjective (Fin.cast h2) := fun x ↦ ⟨Fin.cast h2.symm x, by simp⟩
-      rw [range_comp, range_comp, hcast.range_eq, image_univ, range_visitTime, range_visitTime,
-        hct]
-    exact congrFun ((hf.range_inj_of_wellFoundedLT (hφ.comp (strictMono_visitTime hs hπ))).1
-      hrange) j
+  -- The change of time carries the visits of `poly` to those of `poly'`, with their partners.
+  have hφt' (t) (ht : t ∈ Ico (0 : ℝ) n) := And.intro (hφt t ht).1 (hφt t ht).2.1
+  have hvt := visitTime_cast_eq_of_strictMono hs hπ hs' hπ' hb hφ hφt' h2
+  have hpartner := gaussCode_partner_cast_eq_of_strictMono b hs hπ hs' hπ' hb hφ hφt' h2
   have hmem (j) : visitTime hs hπ j ∈ Ico (0 : ℝ) n :=
     (mem_crossingTimes.1 (visitTime_mem_crossingTimes hs hπ j)).1
   have hbp (j) : poly'.boundaryParam (visitTime hs' hπ' (Fin.cast h2 j)) =
       poly.boundaryParam (visitTime hs hπ j) := by
     rw [hvt, (hφt _ (hmem j)).2.1]
-  -- Partner visits correspond.
-  have hpartner (j) : D'.partner.val (Fin.cast h2 j) = Fin.cast h2 (D.partner.val j) := by
-    refine (strictMono_visitTime hs' hπ').injective (hs'.injOn_boundaryParam
-      (mem_crossingTimes.1 (visitTime_mem_crossingTimes hs' hπ' _)).1
-      (mem_crossingTimes.1 (visitTime_mem_crossingTimes hs' hπ' _)).1 ?_)
-    rw [boundaryParam_visitTime_partner, hbp, hbp, boundaryParam_visitTime_partner]
-    have hx := (mem_crossingTimes.1 (visitTime_mem_crossingTimes hs hπ j)).2
-    have hx' : poly.boundaryParam (visitTime hs hπ j) ∈ poly'.doublePoints ℝ π := hDP ▸ hx
-    refine hπ.eq_doublePointPartner (doublePoints_subset_boundary hx)
-      (hb ▸ doublePointPartner_mem_boundary (doublePoints_subset_boundary hx'))
-      (doublePointPartner_ne hx') (apply_doublePointPartner _)
   have hvt' (j) : visitTime hs' hπ' (D'.partner.val (Fin.cast h2 j)) =
       φ (visitTime hs hπ (D.partner.val j)) := by
     rw [hpartner, hvt]
@@ -132,10 +106,11 @@ theorem gaussCode_insertVertex (hs : poly.IsSimple ℝ)
     obtain ⟨-, -, r', hr', hdir'⟩ := hφt _ (hmem (D.partner.val j))
     -- The determinant of the edge directions is rescaled by the positive factor `r * r'`.
     have hdet (u w : V) : b.det ![r • u, r' • w, d] = r * r' * b.det ![u, w, d] := by
-      simp only [Basis.det_apply, Matrix.det_fin_three, Basis.toMatrix_apply, Matrix.cons_val_zero,
-        Matrix.cons_val_one, Matrix.cons_val_two, Matrix.head_cons, Matrix.tail_cons, map_smul,
-        Finsupp.smul_apply, smul_eq_mul]
-      ring
+      have hv : ![r • u, r' • w, d] = fun k ↦ ![r, r', 1] k • ![u, w, d] k := by
+        ext k
+        fin_cases k <;> simp
+      rw [hv, AlternatingMap.map_smul_univ, Fin.prod_univ_three]
+      simp
     refine Units.ext ?_
     rw [gaussCode_sign_visit b hs' hπ' hj', gaussCode_sign_visit b hs hπ hj, hvt, hvt', hdir,
       hdir', hdet, sign_mul, sign_mul, sign_pos hr, sign_pos hr', one_mul, one_mul]

@@ -62,6 +62,9 @@ by Reidemeister moves, are not proved here.
 * `Polygon.boundaryParam_visitTime_partner`: the partner visit is at the partner double point.
 * `Polygon.gaussCode_over_eq_true_iff`: the over/under convention.
 * `Polygon.gaussCode_sign_visit`: the sign of a crossing is the sign of `b.det ![u, w, d]`.
+* `Polygon.visitTime_cast_eq_of_strictMono` and `Polygon.gaussCode_partner_cast_eq_of_strictMono`:
+  an increasing change of time between the traversals of two simple polygons with the same boundary
+  matches their visits and partner visits.
 
 ## References
 
@@ -444,5 +447,72 @@ theorem gaussCode_sign_visit {i} (hi : (gaussCode hs hπ b).over i = true) :
     simp
   · simp only [hover, h, ↓reduceIte, sign_pos h]
     simp
+
+/-! ### Changing the time of the traversal -/
+
+section ChangeOfTime
+
+variable {m : ℕ} [NeZero m] {poly' : Polygon P m} (hs' : poly'.IsSimple ℝ)
+  (hπ' : poly'.IsRegularProjection ℝ (projAlong ℝ p₀ d)) {φ : ℝ → ℝ}
+
+/-- **Visit times under a change of time.** Let `poly'` be a simple polygon with the same boundary
+as `poly`, and `φ` an increasing change of time carrying one period `[0, n)` of the boundary
+parametrization of `poly` into one period `[0, m)` of that of `poly'`, through the same points.
+Then `φ` carries each visit time of `poly` to the visit time of `poly'` with the same index, the
+visits being identified by `Fin.cast h`. -/
+theorem visitTime_cast_eq_of_strictMono (hb : poly'.boundary ℝ = poly.boundary ℝ)
+    (hφ : StrictMono φ) (hφt : ∀ t ∈ Ico (0 : ℝ) n,
+      φ t ∈ Ico (0 : ℝ) m ∧ poly'.boundaryParam (φ t) = poly.boundaryParam t)
+    (h : 2 * ((poly.doublePoints ℝ (projAlong ℝ p₀ d)).ncard / 2) =
+      2 * ((poly'.doublePoints ℝ (projAlong ℝ p₀ d)).ncard / 2)) (j) :
+    visitTime hs' hπ' (Fin.cast h j) = φ (visitTime hs hπ j) := by
+  have hDP : poly'.doublePoints ℝ (projAlong ℝ p₀ d) = poly.doublePoints ℝ (projAlong ℝ p₀ d) := by
+    ext x
+    simp only [mem_doublePoints, hb]
+  -- The change of time carries the crossing times of `poly` onto those of `poly'`.
+  have hct : poly'.crossingTimes p₀ d = φ '' poly.crossingTimes p₀ d := by
+    refine Subset.antisymm (fun t' ht' ↦ ?_) ?_
+    · obtain ⟨ht'₁, ht'₂⟩ := mem_crossingTimes.1 ht'
+      rw [hDP] at ht'₂
+      obtain ⟨t, ht, hbt⟩ := exists_mem_Ico_boundaryParam_eq (doublePoints_subset_boundary ht'₂)
+      refine ⟨t, mem_crossingTimes.2 ⟨ht, hbt ▸ ht'₂⟩, hs'.injOn_boundaryParam (hφt t ht).1 ht'₁ ?_⟩
+      rw [(hφt t ht).2, hbt]
+    · rintro _ ⟨t, ht, rfl⟩
+      obtain ⟨ht₁, ht₂⟩ := mem_crossingTimes.1 ht
+      exact mem_crossingTimes.2 ⟨(hφt t ht₁).1, by rw [(hφt t ht₁).2, hDP]; exact ht₂⟩
+  have hf : StrictMono (visitTime hs' hπ' ∘ Fin.cast h) :=
+    (strictMono_visitTime hs' hπ').comp (Fin.cast_strictMono h)
+  have hrange : range (visitTime hs' hπ' ∘ Fin.cast h) = range (φ ∘ visitTime hs hπ) := by
+    have hcast : Surjective (Fin.cast h) := fun x ↦ ⟨Fin.cast h.symm x, by simp⟩
+    rw [range_comp, range_comp, hcast.range_eq, image_univ, range_visitTime, range_visitTime, hct]
+  exact congrFun ((hf.range_inj_of_wellFoundedLT (hφ.comp (strictMono_visitTime hs hπ))).1
+    hrange) j
+
+/-- **Partners under a change of time.** Under the hypotheses of
+`Polygon.visitTime_cast_eq_of_strictMono`, the visits of the Gauss codes of `poly` and `poly'`
+identified by `Fin.cast h` have partner visits identified by `Fin.cast h`. -/
+theorem gaussCode_partner_cast_eq_of_strictMono (hb : poly'.boundary ℝ = poly.boundary ℝ)
+    (hφ : StrictMono φ) (hφt : ∀ t ∈ Ico (0 : ℝ) n,
+      φ t ∈ Ico (0 : ℝ) m ∧ poly'.boundaryParam (φ t) = poly.boundaryParam t)
+    (h : 2 * ((poly.doublePoints ℝ (projAlong ℝ p₀ d)).ncard / 2) =
+      2 * ((poly'.doublePoints ℝ (projAlong ℝ p₀ d)).ncard / 2)) (j) :
+    (gaussCode hs' hπ' b).partner.val (Fin.cast h j) =
+      Fin.cast h ((gaussCode hs hπ b).partner.val j) := by
+  have hbp (k) : poly'.boundaryParam (visitTime hs' hπ' (Fin.cast h k)) =
+      poly.boundaryParam (visitTime hs hπ k) := by
+    rw [visitTime_cast_eq_of_strictMono hs hπ hs' hπ' hb hφ hφt,
+      (hφt _ (visitTime_mem_crossingTimes hs hπ k).1).2]
+  refine (strictMono_visitTime hs' hπ').injective (hs'.injOn_boundaryParam
+    (visitTime_mem_crossingTimes hs' hπ' _).1 (visitTime_mem_crossingTimes hs' hπ' _).1 ?_)
+  rw [boundaryParam_visitTime_partner, hbp, hbp, boundaryParam_visitTime_partner]
+  have hx := (mem_crossingTimes.1 (visitTime_mem_crossingTimes hs hπ j)).2
+  have hx' : poly.boundaryParam (visitTime hs hπ j) ∈ poly'.doublePoints ℝ (projAlong ℝ p₀ d) := by
+    simp only [mem_doublePoints, hb] at hx ⊢
+    exact hx
+  exact hπ.eq_doublePointPartner (doublePoints_subset_boundary hx)
+    (hb ▸ doublePointPartner_mem_boundary (doublePoints_subset_boundary hx'))
+    (doublePointPartner_ne hx') (apply_doublePointPartner _)
+
+end ChangeOfTime
 
 end Polygon
