@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.Homotopy
-public import TauCeti.CategoryTheory.Exact.Resolution.Complete
+public import TauCeti.CategoryTheory.Exact.Resolution.Complete.Basic
 public import TauCeti.CategoryTheory.Exact.Stable.Basic
 
 /-!

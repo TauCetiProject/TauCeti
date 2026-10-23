@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.FGModuleCat.Frobenius
-public import TauCeti.CategoryTheory.Exact.Resolution.Complete
+public import TauCeti.CategoryTheory.Exact.Resolution.Complete.Basic
 public import TauCeti.Algebra.Homology.ShortComplex.Splice
 public import TauCeti.Algebra.Homology.TotallyAcyclic.SelfInjective
 
