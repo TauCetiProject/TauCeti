@@ -47,6 +47,8 @@ On a compact manifold the scalar curvature of every smooth metric is bounded bel
 * `Bundle.ContMDiffRiemannianMetric.HasPositiveScalarCurvature.restrictOpenTangentSpace`: the
   restriction of a metric of positive scalar curvature to an open submanifold has positive scalar
   curvature.
+* `Bundle.ContMDiffRiemannianMetric.HasPositiveScalarCurvature.restrictIcc`: the restriction of a
+  metric of positive scalar curvature on `M × ℝ` to `M × [a, b]` has positive scalar curvature.
 * `Bundle.ContMDiffRiemannianMetric.hasPositiveScalarCurvature_sumTangentSpace_iff`: the disjoint
   union of two metrics has positive scalar curvature exactly when both metrics do.
 * `Bundle.ContMDiffRiemannianMetric.hasPositiveScalarCurvature_rescale_const_iff`: rescaling a
@@ -145,6 +147,15 @@ theorem HasPositiveScalarCurvature.restrictOpenTangentSpace (h : g.HasPositiveSc
   fun x ↦ by
     rw [scalarCurvature_restrictOpenTangentSpace]
     exact h x
+
+/-- The restriction to `M × [a, b]` of a metric of positive scalar curvature on `M × ℝ` has
+positive scalar curvature. -/
+theorem HasPositiveScalarCurvature.restrictIcc {a b : ℝ} [Fact (a < b)]
+    {G : ContMDiffRiemannianMetric (I.prod 𝓘(ℝ)) ∞ (E × ℝ)
+      (fun p : M × ℝ ↦ TangentSpace (I.prod 𝓘(ℝ)) p)} (h : G.HasPositiveScalarCurvature) :
+    (G.restrictIcc a b).HasPositiveScalarCurvature := fun p ↦ by
+  rw [scalarCurvature_restrictIcc]
+  exact h _
 
 section Sum
 

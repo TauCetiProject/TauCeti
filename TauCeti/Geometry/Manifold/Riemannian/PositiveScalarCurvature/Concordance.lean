@@ -31,13 +31,14 @@ ends. Hence concordance is an equivalence relation on metrics of positive scalar
 
 Concordances can equivalently be taken on the manifold with boundary `M × [0, 1]`: a *collared
 concordance* is a metric of positive scalar curvature on `M × [0, 1]` which is `g₀ + dt²` near
-`t = 0` and `g₁ + dt²` near `t = 1`, where `g + dt²` on `M × [0, 1]` is the restriction of the
-cylinder metric. The restriction of a concordance to `M × [0, 1]` itself need not have product
-collars. Instead, a concordance is pulled back along `(x, t) ↦ (x, ψ t)` for a smooth increasing
-`ψ : [0, 1] → [-1, 2]` which is `t ↦ t - 1` near `0` and `t ↦ t + 1` near `1`. Conversely, a
-collared concordance is extended by the product ends: it is pulled back to `M × ℝ` along
-`(x, t) ↦ (x, θ t)` for a smooth increasing `θ : ℝ → (0, 1)` which is the identity away from the
-two collars, and glued to `g₀ + dt²` and `g₁ + dt²` over the collars.
+`t = 0` and `g₁ + dt²` near `t = 1`, where `g + dt²` on `M × [0, 1]` is the restriction
+`Bundle.ContMDiffRiemannianMetric.restrictIcc` of the cylinder metric. The restriction of a
+concordance to `M × [0, 1]` itself need not have product collars. Instead, a concordance is
+pulled back along `(x, t) ↦ (x, ψ t)` for a smooth increasing `ψ : [0, 1] → [-1, 2]` which is
+`t ↦ t - 1` near `0` and `t ↦ t + 1` near `1`. Conversely, a collared concordance is extended by
+the product ends: it is pulled back to `M × ℝ` along `(x, t) ↦ (x, θ t)` for a smooth increasing
+`θ : ℝ → (0, 1)` which is the identity away from the two collars, and glued to `g₀ + dt²` and
+`g₁ + dt²` over the collars.
 
 ## Main definitions
 
@@ -47,8 +48,6 @@ two collars, and glued to `g₀ + dt²` and `g₁ + dt²` over the collars.
 * `Bundle.ContMDiffRiemannianMetric.IsConcordance`: a concordance from `g₀` to `g₁`.
 * `Bundle.ContMDiffRiemannianMetric.Concordant`: `g₀` and `g₁` are concordant, characterised by
   `Bundle.ContMDiffRiemannianMetric.concordant_iff`.
-* `Bundle.ContMDiffRiemannianMetric.restrictIcc`: the restriction of a metric on `M × ℝ` to
-  `M × [a, b]`.
 * `Bundle.ContMDiffRiemannianMetric.IsCollaredConcordance`: a collared concordance from `g₀` to
   `g₁` on `M × [0, 1]`.
 
@@ -69,8 +68,6 @@ two collars, and glued to `g₀ + dt²` and `g₁ + dt²` over the collars.
 * `Bundle.ContMDiffRiemannianMetric.Concordant.trans`: concatenation of concordances.
 * `Bundle.ContMDiffRiemannianMetric.equivalence_concordant`: concordance is an equivalence relation
   on metrics of positive scalar curvature.
-* `Bundle.ContMDiffRiemannianMetric.scalarCurvature_restrictIcc`: restriction to `M × [a, b]`
-  preserves scalar curvature.
 * `Bundle.ContMDiffRiemannianMetric.IsConcordance.exists_isCollaredConcordance` and
   `Bundle.ContMDiffRiemannianMetric.IsCollaredConcordance.concordant`: concordances give collared
   concordances with the same ends, and conversely, so that
@@ -88,7 +85,7 @@ public section
 
 open Bundle Set Topology Filter
 open TauCeti.Manifold (tangentSpaceProdEquiv tangentSpaceProdEquiv_mfderiv_prodMap_id
-  isInvertible_mfderiv_prodMap isInvertible_mfderiv_prodMap_id)
+  isInvertible_mfderiv_prodMap_id isInvertible_mfderiv_prodMap_id_subtypeVal_Icc)
 open scoped ContDiff Manifold
 
 noncomputable section
@@ -401,68 +398,6 @@ section Collar
 
 variable [FiniteDimensional ℝ E]
 
-section RestrictIcc
-
-variable {a b : ℝ} [Fact (a < b)]
-  (G : ContMDiffRiemannianMetric (I.prod 𝓘(ℝ)) ∞ (E × ℝ)
-    (fun p : M × ℝ ↦ TangentSpace (I.prod 𝓘(ℝ)) p))
-
-omit [IsManifold I ∞ M] [FiniteDimensional ℝ E] in
-/-- The differential of the inclusion `M × [a, b] → M × ℝ` is invertible, also at the boundary. -/
-private theorem isInvertible_mfderiv_prodMap_id_subtypeVal (p : M × Icc a b) :
-    (mfderiv (I.prod (𝓡∂ 1)) (I.prod 𝓘(ℝ)) (Prod.map id Subtype.val : M × Icc a b → M × ℝ)
-      p).IsInvertible :=
-  isInvertible_mfderiv_prodMap mdifferentiableAt_id
-    ((contMDiff_subtypeVal_Icc (n := 1)).mdifferentiableAt one_ne_zero)
-    (by rw [mfderiv_id]; exact ⟨ContinuousLinearEquiv.refl ℝ _, rfl⟩)
-    (TauCeti.isInvertible_mfderiv_subtypeVal_Icc p.2)
-
-variable (a b) in
-/-- The restriction of a metric `G` on `M × ℝ` to the manifold with boundary `M × [a, b]`: the
-pullback of `G` along the inclusion. -/
-def restrictIcc : ContMDiffRiemannianMetric (I.prod (𝓡∂ 1)) ∞ (E × EuclideanSpace ℝ (Fin 1))
-    (fun p : M × Icc a b ↦ TangentSpace (I.prod (𝓡∂ 1)) p) :=
-  G.pullback (Prod.map id Subtype.val) (contMDiff_id.prodMap contMDiff_subtypeVal_Icc)
-    fun p ↦ (isInvertible_mfderiv_prodMap_id_subtypeVal p).injective
-
-/-- The restriction of `G` to `M × [a, b]` at `(x, t)` is `G` at `(x, t)`, evaluated on the images
-of the tangent vectors under the differential of the inclusion. -/
-@[simp]
-theorem restrictIcc_inner (p : M × Icc a b) (v w : TangentSpace (I.prod (𝓡∂ 1)) p) :
-    (G.restrictIcc a b).inner p v w =
-      G.inner (p.1, p.2)
-        (mfderiv (I.prod (𝓡∂ 1)) (I.prod 𝓘(ℝ)) (Prod.map id Subtype.val) p v)
-        (mfderiv (I.prod (𝓡∂ 1)) (I.prod 𝓘(ℝ)) (Prod.map id Subtype.val) p w) :=
-  G.pullback_inner _ _ _ p v w
-
-variable {G} in
-/-- The restriction of `G` to `M × [a, b]` at `(x, t)` only depends on `G` at `(x, t)`. -/
-theorem restrictIcc_inner_congr
-    {G' : ContMDiffRiemannianMetric (I.prod 𝓘(ℝ)) ∞ (E × ℝ)
-      (fun p : M × ℝ ↦ TangentSpace (I.prod 𝓘(ℝ)) p)} {p : M × Icc a b}
-    (h : G.inner (p.1, p.2) = G'.inner (p.1, p.2)) :
-    (G.restrictIcc a b).inner p = (G'.restrictIcc a b).inner p := by
-  ext v w
-  rw [restrictIcc_inner, restrictIcc_inner, h]
-
-/-- The scalar curvature of the restriction of `G` to `M × [a, b]` at `(x, t)` is that of `G` at
-`(x, t)`. -/
-@[simp]
-theorem scalarCurvature_restrictIcc [T2Space M] (p : M × Icc a b) :
-    (G.restrictIcc a b).scalarCurvature p = G.scalarCurvature (p.1, p.2) :=
-  scalarCurvature_pullback_of_isInvertible G _ isInvertible_mfderiv_prodMap_id_subtypeVal p
-
-variable {G} in
-/-- The restriction to `M × [a, b]` of a metric of positive scalar curvature on `M × ℝ` has
-positive scalar curvature. -/
-theorem HasPositiveScalarCurvature.restrictIcc [T2Space M] (h : G.HasPositiveScalarCurvature) :
-    (G.restrictIcc a b).HasPositiveScalarCurvature :=
-  (hasPositiveScalarCurvature_iff _).2 fun p ↦ by
-    rw [scalarCurvature_restrictIcc]
-    exact (hasPositiveScalarCurvature_iff _).1 h _
-
-end RestrictIcc
-
 /-! The time map used to extend a collared concordance by product ends. -/
 
 /-- The map `s ↦ s / (1 + s e^{-1/s})`, read as the identity for `s ≤ 0`. It is smooth with
@@ -625,7 +560,7 @@ private theorem isInvertible_mfderiv_prodMap_id_collarTimeIcc (hδ : 0 < δ) (h�
   have h := isInvertible_mfderiv_prodMap_id (I := I)
     ((contDiff_collarTime (δ := δ)).differentiable (by simp) p.2)
     (deriv_collarTime_ne_zero hδ p.2)
-  obtain ⟨e, he⟩ := isInvertible_mfderiv_prodMap_id_subtypeVal (I := I)
+  obtain ⟨e, he⟩ := isInvertible_mfderiv_prodMap_id_subtypeVal_Icc (I := I)
     (Prod.map id (collarTimeIcc hδ hδ₁) p)
   refine (ContinuousLinearMap.isInvertible_equiv_comp (e := e)).1 ?_
   rw [he, ← mfderiv_prodMap_id_collarTime hδ hδ₁]
@@ -661,7 +596,9 @@ theorem IsCollaredConcordance.hasPositiveScalarCurvature_left
   have hU : IsOpen {p : M × unitInterval | (p.2 : ℝ) < ε} :=
     isOpen_lt (continuous_subtype_val.comp continuous_snd) continuous_const
   have := (hasPositiveScalarCurvature_iff _).1 h.hasPositiveScalarCurvature (x, 0)
-  rwa [eqOn_scalarCurvature hU h₀ (show ((0 : unitInterval) : ℝ) < ε from hε),
+  have hx : (x, (0 : unitInterval)) ∈ {p : M × unitInterval | (p.2 : ℝ) < ε} := by
+    simpa using hε
+  rwa [eqOn_scalarCurvature hU h₀ hx,
     scalarCurvature_restrictIcc, scalarCurvature_cylinder] at this
 
 /-- The metric at the end of a collared concordance has positive scalar curvature. -/
@@ -672,7 +609,9 @@ theorem IsCollaredConcordance.hasPositiveScalarCurvature_right
   have hU : IsOpen {p : M × unitInterval | 1 - ε < (p.2 : ℝ)} :=
     isOpen_lt continuous_const (continuous_subtype_val.comp continuous_snd)
   have := (hasPositiveScalarCurvature_iff _).1 h.hasPositiveScalarCurvature (x, 1)
-  rwa [eqOn_scalarCurvature hU h₁ (show 1 - ε < ((1 : unitInterval) : ℝ) by simpa using hε),
+  have hx : (x, (1 : unitInterval)) ∈ {p : M × unitInterval | 1 - ε < (p.2 : ℝ)} := by
+    simpa using hε
+  rwa [eqOn_scalarCurvature hU h₁ hx,
     scalarCurvature_restrictIcc, scalarCurvature_cylinder] at this
 
 /-- The product metric `g + dt²` on `M × [0, 1]` of a metric of positive scalar curvature is a
@@ -705,7 +644,8 @@ theorem IsConcordance.exists_isCollaredConcordance (h : IsConcordance G g₀ g�
     refine reparamTime_inner_eq_cylinder_inner _ _ ?_ (by simp [hψ.deriv_eq])
     rw [hψ.eq_of_nhds]
     exact hG'₀ _ p.2.2.2
-  · have hψ := stretch_eventuallyEq_of_gt (show 2 / 3 < (p.2 : ℝ) by linarith)
+  · have hp' : 2 / 3 < (p.2 : ℝ) := by linarith
+    have hψ := stretch_eventuallyEq_of_gt hp'
     refine reparamTime_inner_eq_cylinder_inner _ _ ?_ (by simp [hψ.deriv_eq])
     rw [hψ.eq_of_nhds]
     exact hG'₁ _ (by simp [p.2.2.1])
@@ -766,8 +706,7 @@ theorem IsCollaredConcordance.concordant (h : IsCollaredConcordance Gc g₀ g₁
     piecewise_inner_of_mem_left (U := {p : M × ℝ | p.2 < ε}) hp
   let G₁ := G₀.piecewise g₁.cylinder hU₁ hV₁
     (eq_univ_of_forall fun p ↦ (lt_or_ge p.2 (1 - ε / 2)).imp id fun hp ↦ by simp; linarith)
-    fun p hp ↦ (hG₀B p (by linarith [show 1 - ε < p.2 from hp.2])).trans
-      (hB₁ p ⟨hp.2, hp.1⟩)
+    fun p hp ↦ (hG₀B p (by linarith [hp.2.out])).trans (hB₁ p ⟨hp.2, hp.1⟩)
   have hG₁₀ (p : M × ℝ) (hp : p.2 < 1 - ε / 2) : G₁.inner p = G₀.inner p :=
     piecewise_inner_of_mem_left (U := {p : M × ℝ | p.2 < 1 - ε / 2}) hp
   have hG₁ (p : M × ℝ) (hp : 1 - ε < p.2) : G₁.inner p = g₁.cylinder.inner p :=
@@ -784,7 +723,7 @@ theorem IsCollaredConcordance.concordant (h : IsCollaredConcordance Gc g₀ g₁
     exact (hasPositiveScalarCurvature_iff _).1 h.hasPositiveScalarCurvature_right p.1
   · have hW : IsOpen {q : M × ℝ | ε / 2 < q.2 ∧ q.2 < 1 - ε / 2} := hV₀.inter hU₁
     rw [eqOn_scalarCurvature hW (fun q hq ↦ (hG₁₀ q hq.2).trans (hG₀B q hq.1))
-      (show ε / 2 < p.2 ∧ p.2 < 1 - ε / 2 by constructor <;> linarith)]
+      ⟨by linarith, by linarith⟩]
     exact (hasPositiveScalarCurvature_iff _).1 hB p
 
 /-- Two metrics are concordant exactly when there is a collared concordance from one to the
