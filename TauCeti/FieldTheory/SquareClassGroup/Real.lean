@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Real.Sqrt
+public import TauCeti.Algebra.Order.Ring.Units
 public import TauCeti.Algebra.Group.Units.Basic
 public import TauCeti.FieldTheory.SquareClassGroup.Basic
 
@@ -42,6 +43,11 @@ namespace Units
 theorem isSquare_iff_pos (u : ℝˣ) : IsSquare u ↔ 0 < (u : ℝ) := by
   rw [← isSquare_units_val_iff, Real.isSquare_iff]
   exact ⟨fun h ↦ lt_of_le_of_ne h (Units.ne_zero u).symm, le_of_lt⟩
+
+/-- The squares in the real unit group are exactly the positive units. -/
+theorem square_eq_posSubgroup_real : Subgroup.square ℝˣ = Units.posSubgroup ℝ := by
+  ext u
+  rw [Subgroup.mem_square, Units.mem_posSubgroup, isSquare_iff_pos]
 
 /-- A real unit has trivial square class exactly when it is positive.
 

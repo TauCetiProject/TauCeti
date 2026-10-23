@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Topology.Algebra.Group.Quotient
 public import Mathlib.Topology.Algebra.Group.Subgroup
+public import Mathlib.Topology.Algebra.ContinuousMonoidHom
+public import TauCeti.Topology.ConnectedComponents
 
 import Mathlib.Topology.Algebra.OpenSubgroup
 
@@ -32,6 +34,8 @@ connected one.
   neighbourhood of `1`.
 * `Subgroup.map_connectedComponentOfOne_le`: a continuous homomorphism maps the identity
   component into the identity component.
+* `ContinuousMulEquiv.map_connectedComponentOfOne`: a continuous multiplicative equivalence maps
+  the identity component onto the identity component.
 * `QuotientGroup.totallyDisconnectedSpace_connectedComponentOfOne`: the quotient of a
   topological group by its identity component is totally disconnected.
 
@@ -155,6 +159,15 @@ theorem _root_.Subgroup.map_connectedComponentOfOne_le {G' : Type*} [Group G']
   rintro _ ⟨g, hg, rfl⟩
   have h := hf.mapsTo_connectedComponent 1 hg
   rwa [map_one] at h
+
+/-- A continuous multiplicative equivalence maps identity components onto each other. -/
+theorem _root_.ContinuousMulEquiv.map_connectedComponentOfOne {G' : Type*} [Group G']
+    [TopologicalSpace G'] [IsTopologicalGroup G'] (e : G ≃ₜ* G') :
+    (Subgroup.connectedComponentOfOne G).map e.toMulEquiv.toMonoidHom =
+      Subgroup.connectedComponentOfOne G' := by
+  apply SetLike.coe_injective
+  simpa [Subgroup.coe_map, Subgroup.connectedComponentOfOne, map_one] using
+    e.toHomeomorph.image_connectedComponent 1
 
 open scoped Pointwise in
 /-- The quotient of a topological group by its identity component is totally disconnected. -/
