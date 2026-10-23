@@ -28,18 +28,20 @@ No commutativity is needed. The proof evaluates both sides at every scalar `a`, 
 is the multiplicativity of the Fredholm determinant applied to `a • u` and `a • v`, and then uses
 that an entire series over Tate scalars is determined by its values
 (`PowerSeries.IsEntire.eq_of_forall_evalAt_eq`), since the powers of a pseudo-uniformiser are
-non-zero-divisors tending to `0`.
+non-zero-divisors tending to `0`
+(`TauCeti.HasZeroSequenceOfUnits.frequently_mem_nonZeroDivisors_nhds_zero`).
 
-Consequently, if `u` commutes with a bounded idempotent `e`, then
+Consequently, if a row-compact `u` commutes with a bounded idempotent `e`, then
 
 `H_u = H_(u e) H_(u (1 - e))`
 (`ContinuousLinearMap.IsRowCompact.charPowerSeries_matrixCoeff_eq_mul_of_commute`),
 
 and more generally `H_u = ∏ᵢ H_(u eᵢ)` for a complete family of orthogonal idempotents `eᵢ`
-commuting with `u`. Here `u e` and `u (1 - e)` are again endomorphisms of `C₀(I, R)`: they are the
-extensions of the restrictions of `u` to the invariant summands `range e` and `range (1 - e)`
-through the presentations of these summands as retracts of `C₀(I, R)`. This is a statement about
-a specified decomposition; it does not assert multiplicativity of `H` on arbitrary products.
+commuting with a row-compact `u`. Here `u e` and `u (1 - e)` are again endomorphisms of
+`C₀(I, R)`: they are the extensions of the restrictions of `u` to the invariant summands
+`range e` and `range (1 - e)` through the presentations of these summands as retracts of
+`C₀(I, R)`. This is a statement about a specified decomposition; it does not assert
+multiplicativity of `H` on arbitrary products.
 
 When the idempotent `e` is itself row compact, its range is finitely generated projective
 (`ContinuousLinearMap.IsRowCompact.projective_range_of_isIdempotentElem`), and the factor `H_(u e)`
@@ -47,9 +49,10 @@ is a polynomial for every continuous `u`
 (`ContinuousLinearMap.IsRowCompact.exists_charPowerSeries_matrixCoeff_mul_eq_coe`). Indeed
 `e = e π_S e w` for a finite coordinate projection `π_S` and a continuous `w`, so by cyclicity
 `H_(u e)` is the Fredholm series of `π_S (e w u e)`, the polynomial determinant of a finite block.
-Thus, if `u` commutes with a row-compact idempotent `e`, the finite projective invariant summand
-`range e` splits off a polynomial factor `H_(u e)` of `H_u`, and the complementary factor is the
-Fredholm series `H_(u (1 - e))` on the invariant complement `range (1 - e)`.
+Thus, if a row-compact `u` commutes with a row-compact idempotent `e`, the finite projective
+invariant summand `range e` splits off a polynomial factor `H_(u e)` of `H_u`, and the
+complementary factor is the Fredholm series `H_(u (1 - e))` on the invariant complement
+`range (1 - e)`.
 
 ## Main results
 
@@ -95,12 +98,8 @@ theorem IsRowCompact.charPowerSeries_matrixCoeff_add_of_mul_eq_zero
       w.matrixCoeff.charPowerSeries.IsEntire :=
     PowerSeries.isEntire_iff.2
       (Matrix.isRestricted_charPowerSeries hw.norm_matrixCoeff_le_rowNorm hw.tendsto_rowNorm)
-  -- The powers of a pseudo-uniformiser are non-zero-divisors accumulating at `0`.
-  obtain ⟨ϖ⟩ := TauCeti.NormedRing.IsTate.nonempty_pseudoUniformizer (R := R)
-  have hR : ∃ᶠ x in 𝓝 (0 : R), x ∈ nonZeroDivisors R :=
-    (tendsto_pow_atTop_nhds_zero_of_norm_lt_one ϖ.norm_lt_one).frequently
-      (.of_forall fun k ↦ (ϖ.unit.isUnit.pow k).mem_nonZeroDivisors)
-  refine (hent (hu.add hv)).eq_of_forall_evalAt_eq ((hent hu).mul (hent hv)) hR fun a ↦ ?_
+  refine (hent (hu.add hv)).eq_of_forall_evalAt_eq ((hent hu).mul (hent hv))
+    TauCeti.HasZeroSequenceOfUnits.frequently_mem_nonZeroDivisors_nhds_zero fun a ↦ ?_
   -- At `a`, this is the multiplicativity of the Fredholm determinant for `a • u` and `a • v`,
   -- since `a • u + a • v - (a • u) (a • v) = a • (u + v)`.
   have hsmul : a • u + a • v - (a • u) * (a • v) = a • (u + v) := by
