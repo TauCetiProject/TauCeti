@@ -41,6 +41,8 @@ only a meet, not a join, so the join in `NC(s)` is characterised by its universa
   noncrossing.
 * `Finpartition.IsNoncrossing.restrict` — restricting a noncrossing partition of `s` to a subset
   of `s` gives a noncrossing partition.
+* `Finpartition.IsNoncrossing.bind` — juxtaposing noncrossing partitions of the parts of a
+  noncrossing partition gives a noncrossing partition.
 * `TauCeti.NoncrossingPartition.instLattice` — the noncrossing partitions of `s` form a lattice,
   with meets computed in `Finpartition s`; it is bounded, and locally finite so that its
   incidence algebra is available.
@@ -135,6 +137,17 @@ theorem IsNoncrossing.restrict (hP : P.IsNoncrossing) (hts : t ≤ s) :
   obtain ⟨-, C, hC, rfl⟩ := hC
   rw [inf_eq_inter, mem_inter] at ha hb hc hd
   rw [hP B hB C hC a ha.1 b hb.1 c hc.1 d hd.1 hab hbc hcd]
+
+/-- Juxtaposing noncrossing partitions of the parts of a noncrossing partition gives a noncrossing
+partition. -/
+theorem IsNoncrossing.bind {Q : ∀ B ∈ P.parts, Finpartition B} (hP : P.IsNoncrossing)
+    (hQ : ∀ B hB, (Q B hB).IsNoncrossing) : (P.bind Q).IsNoncrossing := by
+  refine isNoncrossing_iff.2 fun X hX Y hY a ha b hb c hc d hd hab hbc hcd => ?_
+  obtain ⟨B, hB, hXB⟩ := mem_bind.1 hX
+  obtain ⟨C, hC, hYC⟩ := mem_bind.1 hY
+  obtain rfl := isNoncrossing_iff.1 hP B hB C hC a ((Q B hB).le hXB ha) b ((Q C hC).le hYC hb) c
+    ((Q B hB).le hXB hc) d ((Q C hC).le hYC hd) hab hbc hcd
+  exact isNoncrossing_iff.1 (hQ B hB) X hXB Y hYC a ha b hb c hc d hd hab hbc hcd
 
 end Finpartition
 
