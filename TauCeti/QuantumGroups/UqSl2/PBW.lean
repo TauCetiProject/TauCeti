@@ -288,6 +288,7 @@ theorem e_mul_pbwBasis (a : ℕ) (b : ℤ) (c : ℕ) :
 /-! ### PBW coordinates of products -/
 
 /-- Right multiplication by `E` shifts the PBW coordinates in the exponent of `E`. -/
+@[simp]
 theorem pbwBasis_repr_mul_e (x : UqSl2 q) (a : ℕ) (b : ℤ) (c : ℕ) :
     (pbwBasis q).repr (x * e q) (a, b, c + 1) = (pbwBasis q).repr x (a, b, c) := by
   have hg : Function.Injective fun i : ℕ × ℤ × ℕ => (i.1, i.2.1, i.2.2 + 1) := by
