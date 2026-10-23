@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.PiTensorProduct.Basic
 public import TauCeti.Algebra.BigOperators.Finset.OffDiagonal
 public import TauCeti.Algebra.CharP.Two
 public import TauCeti.LinearAlgebra.Graded.LinearMap
+public import TauCeti.LinearAlgebra.PiTensorProduct.Map
 
 /-!
 # Slot sums on tensor powers and contractions in characteristic two
@@ -380,17 +381,13 @@ private theorem slotSum_slotHomotopy_diag {d e h : Module.End R M}
         PiTensorProduct.map (update (fun _ ↦ LinearMap.id) i d) =
       PiTensorProduct.map (update (fun j ↦ if j < i then e else LinearMap.id) i
         (LinearMap.id - e)) := by
-  set E : ι → Module.End R M := fun j ↦ if j < i then e else LinearMap.id
-  -- Each of the tensor maps is `E` with the entry at the slot `i` changed.
-  calc _ = PiTensorProduct.map (update E i (d ∘ₗ h)) +
-        PiTensorProduct.map (update E i (h ∘ₗ d)) := by
-        rw [← PiTensorProduct.map_mul, ← PiTensorProduct.map_mul]
-        congr 2 <;> funext j <;> rcases eq_or_ne j i with rfl | hj
-        · simp [Module.End.mul_eq_comp]
-        · simp [E, hj, Module.End.mul_eq_comp]
-        · simp [Module.End.mul_eq_comp]
-        · simp [E, hj, Module.End.mul_eq_comp]
-    _ = _ := by rw [← PiTensorProduct.map_update_add, hdh]
+  rw [← PiTensorProduct.map_mul, ← PiTensorProduct.map_mul,
+    map_add_map_eq_map_update _ _ i fun j hj ↦ by simp [hj, Module.End.mul_eq_comp]]
+  congr 1
+  funext j
+  rcases eq_or_ne j i with rfl | hj
+  · simpa [Module.End.mul_eq_comp] using hdh
+  · simp [hj, Module.End.mul_eq_comp]
 
 /-- In characteristic two, **the slot homotopy contracts the tensor power**: if `h` is a homotopy
 from the identity to an endomorphism `e` commuting with `d`, in the sense `d h + h d = 1 - e`,
