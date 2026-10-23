@@ -17,7 +17,8 @@ of `s`. This file records the dilated form: for `0 < t`, the sublevel set `{x | 
 `t • closure s`. For a convex body, which is closed, this turns bounds on the gauge into
 membership in a dilate of the body (`ConvexBody.gauge_le_iff_mem_smul`), which is how successive
 minima are stated. For such a body, the gauge is also positive away from `0`
-(`ConvexBody.gauge_pos_iff`).
+(`ConvexBody.gauge_pos_iff`). The gauge of the preimage of a set under a linear map is the gauge
+of the set at the image point (`gauge_preimage_linearMap`).
 -/
 
 public section
@@ -37,6 +38,11 @@ theorem gauge_le_iff_mem_smul_closure (hc : Convex ℝ s) (hs₀ : s ∈ 𝓝 0)
     gauge_smul_of_nonneg (inv_nonneg.2 ht.le), smul_eq_mul, inv_mul_le_iff₀ ht, mul_one]
 
 end TopologicalVectorSpace
+
+/-- The gauge of the preimage of `s` under a linear map `f` is the gauge of `s` at `f x`. -/
+theorem gauge_preimage_linearMap {E F : Type*} [AddCommGroup E] [Module ℝ E] [AddCommGroup F]
+    [Module ℝ F] (f : E →ₗ[ℝ] F) (s : Set F) (x : E) : gauge (f ⁻¹' s) x = gauge s (f x) := by
+  simp only [gauge_def', Set.mem_preimage, map_smul]
 
 /-- For a convex body `K` with `0` in its interior and `0 < t`, the gauge of `x` is at most `t`
 exactly when `x` lies in the dilate `t • K`. -/

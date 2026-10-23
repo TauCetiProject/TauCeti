@@ -9,6 +9,8 @@ public import TauCeti.Algebra.Module.ZLattice.RationalSubspace
 public import TauCeti.Algebra.Module.ZLattice.SuccessiveMinima
 -- Proof-only: gauges of convex bodies as dilates.
 import TauCeti.Analysis.Convex.Gauge
+-- Proof-only: the sup norm of an integer vector as that of a real vector.
+import TauCeti.Analysis.Normed.Group.Int
 
 /-!
 # The central slice of the cube, and lattice bases in the sup norm
@@ -123,11 +125,9 @@ theorem zero_mem_interior_cubeSlice : (0 : W) ∈ interior (W.cubeSlice : Set W)
 theorem gauge_cubeSlice (x : W) :
     gauge (W.cubeSlice : Set W) x = ‖WithLp.ofLp (x : EuclideanSpace ℝ ι)‖ := by
   rw [coe_cubeSlice_eq_preimage]
-  have hg : gauge ((fun x : W ↦ WithLp.ofLp (x : EuclideanSpace ℝ ι)) ⁻¹'
-      Metric.closedBall 0 1) x =
-      gauge (Metric.closedBall (0 : ι → ℝ) 1) (WithLp.ofLp (x : EuclideanSpace ℝ ι)) := by
-    simp only [gauge_def', Set.mem_preimage, Submodule.coe_smul, WithLp.ofLp_smul]
-  rw [hg, gauge_closedBall zero_le_one, div_one]
+  exact (gauge_preimage_linearMap
+    ((WithLp.linearEquiv 2 ℝ (ι → ℝ)).toLinearMap ∘ₗ W.subtype) _ x).trans
+    ((gauge_closedBall zero_le_one _).trans (div_one _))
 
 /-- For `0 < t`, the dilate `t • cubeSlice W` consists of the points of `W` all of whose
 coordinates are at most `t` in absolute value. -/
@@ -162,28 +162,21 @@ namespace Submodule
 variable {ι : Type*} [Fintype ι]
 
 /-- **A basis of the integral points from the minima, in the sup norm.** For a subspace `V` of
-`ℚ^ι` of dimension `k`, the integral points `V ∩ ℤ^ι` have a `ℤ`-basis `b` with
+`ℚ^ι` of dimension `k` (stated as `finrank ℝ V.realSpan`, which is `finrank ℚ V` by
+`finrank_realSpan`), the integral points `V ∩ ℤ^ι` have a `ℤ`-basis `b` with
 `∏ j, ‖b j‖ ≤ k! / 2 ^ (k - 1) * ∏ j, λ j`, where `‖b j‖ = max_i |b j i|` is the sup norm and the
 `λ j` are the successive minima of `V ∩ ℤ^ι`, as the lattice `V.intLattice` in the real span of
 `V`, with respect to the slice of the cube `[-1, 1]^ι`. -/
 theorem exists_basis_intPoints_prod_norm_le_prod_successiveMin (V : Submodule ℚ (ι → ℚ)) :
     ∃ b : Basis (Fin (finrank ℝ V.realSpan)) ℤ V.intPoints,
-      ∏ j, ‖(b j : ι → ℤ)‖ ≤ (finrank ℚ V).factorial / 2 ^ (finrank ℚ V - 1) *
-        ∏ j, ZLattice.successiveMin V.intLattice V.realSpan.cubeSlice j := by
+      ∏ j, ‖(b j : ι → ℤ)‖ ≤
+        (finrank ℝ V.realSpan).factorial / 2 ^ (finrank ℝ V.realSpan - 1) *
+          ∏ j, ZLattice.successiveMin V.intLattice V.realSpan.cubeSlice j := by
   obtain ⟨b, hb⟩ := ZLattice.exists_basis_prod_norm_le_prod_successiveMin_cubeSlice V.intLattice
   refine ⟨b.map V.intPointsEquivIntLattice.symm, ?_⟩
-  rw [← finrank_realSpan]
   convert hb using 2 with j
   -- The sup norm of an integral point is that of the real point with the same coordinates.
-  rw [Basis.map_apply, ← V.intPointsEquivIntLattice.apply_symm_apply (b j),
-    coe_intPointsEquivIntLattice_apply, LinearEquiv.symm_apply_apply]
-  generalize ((V.intPointsEquivIntLattice.symm (b j) : V.intPoints) : ι → ℤ) = z
-  rw [WithLp.ofLp_toLp]
-  refine le_antisymm ((pi_norm_le_iff_of_nonneg (norm_nonneg _)).2 fun i ↦ ?_)
-    ((pi_norm_le_iff_of_nonneg (norm_nonneg _)).2 fun i ↦ ?_)
-  · rw [← Int.norm_cast_real]
-    exact norm_le_pi_norm (fun i ↦ (z i : ℝ)) i
-  · rw [Int.norm_cast_real]
-    exact norm_le_pi_norm z i
+  rw [Basis.map_apply, ← TauCeti.pi_norm_intCast_real]
+  simp only [intCast_intPointsEquivIntLattice_symm_apply]
 
 end Submodule
