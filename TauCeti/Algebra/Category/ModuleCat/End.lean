@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Basic
+public import Mathlib.Algebra.Group.Units.Opposite
 public import Mathlib.Algebra.Module.Equiv.Basic
+public import Mathlib.CategoryTheory.ConcreteCategory.EpiMono
 
 /-!
 # Units from automorphisms of the rank-one free module
@@ -36,7 +38,7 @@ theorem isUnit_of_apply_one_eq_smul {M : ModuleCat R}
     (f g : ModuleCat.of R R ⟶ M) [IsIso f] [IsIso g] {a : R}
     (h : g 1 = a • f 1) : IsUnit a := by
   have hu := isUnit_apply_one_of_isIso (g ≫ inv f)
-  simpa only [ModuleCat.comp_apply, h, map_smul, IsIso.hom_inv_id_apply,
+  simpa only [CategoryTheory.comp_apply, h, map_smul, IsIso.hom_inv_id_apply,
     smul_eq_mul, mul_one] using hu
 
 end ModuleCat
