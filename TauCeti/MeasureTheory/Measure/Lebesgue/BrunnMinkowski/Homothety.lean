@@ -35,6 +35,8 @@ The hypothesis of positive volume is equivalent to nonempty interior
 
 ## Main results
 
+* `Convex.subset_of_image_inner_subset`: a set whose heights along every unit vector are heights
+  of points of a nonempty open convex set `W` is contained in `W`.
 * `Convex.exists_interior_eq_vadd_interior_of_volume_le`: for bounded Borel convex sets of positive
   volume, multiplicative equality forces the interiors to be translates.
 * `Convex.volume_smul_add_smul_eq_iff`: for compact convex sets of positive volume, multiplicative
@@ -56,6 +58,30 @@ open MeasureTheory MeasureTheory.Measure ProbabilityTheory Set
 open scoped ENNReal Pointwise RealInnerProductSpace
 
 namespace TauCeti
+
+/-- **Containment in an open convex set from directional images.** If the heights `⟪u, x⟫` of the
+points of `U` along every unit vector `u` are heights of points of a nonempty open convex set `W`,
+then `U ⊆ W`: a point outside `W` is strictly separated from it by a continuous linear functional,
+which is a positive multiple of the height along a unit vector. -/
+theorem _root_.Convex.subset_of_image_inner_subset {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [CompleteSpace E] {U W : Set E} (hW : Convex ℝ W) (hWo : IsOpen W)
+    (hWn : W.Nonempty)
+    (hUW : ∀ u : E, ‖u‖ = 1 → (fun x ↦ ⟪u, x⟫) '' U ⊆ (fun x ↦ ⟪u, x⟫) '' W) : U ⊆ W := by
+  intro x hx
+  by_contra hxW
+  obtain ⟨f, hf⟩ := geometric_hahn_banach_open_point hW hWo hxW
+  set w := (InnerProductSpace.toDual ℝ E).symm f
+  have hfw (y : E) : f y = ⟪w, y⟫ := InnerProductSpace.toDual_symm_apply.symm
+  have hw : w ≠ 0 := by
+    rintro hw
+    obtain ⟨a, ha⟩ := hWn
+    simpa [hfw, hw] using hf a ha
+  obtain ⟨a, ha, hax⟩ : ⟪‖w‖⁻¹ • w, x⟫ ∈ (fun y ↦ ⟪‖w‖⁻¹ • w, y⟫) '' W :=
+    hUW _ (norm_smul_inv_norm (𝕜 := ℝ) hw) (mem_image_of_mem _ hx)
+  simp only [real_inner_smul_left] at hax
+  have := hf a ha
+  rw [hfw, hfw, ← mul_left_cancel₀ (inv_ne_zero (norm_ne_zero_iff.2 hw)) hax] at this
+  exact lt_irrefl _ this
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
@@ -94,27 +120,9 @@ theorem _root_.Convex.exists_interior_eq_vadd_interior_of_volume_le (hK : Convex
       ← image_image (· + c), hK.image_quantile_map_inner_cond_Ioo hu hK0 hKb.measure_lt_top.ne,
       ← image_vadd, image_image, image_image]
     simp only [vadd_eq_add, inner_add_right, hcv, add_comm]
-  -- A nonempty open convex set contains every set with the same heights along unit vectors:
-  -- a point outside it is strictly separated from it by a linear functional.
-  have hsub (U W : Set E) (hW : Convex ℝ W) (hWo : IsOpen W) (hWn : W.Nonempty)
-      (hUW : ∀ u : E, ‖u‖ = 1 → (fun x ↦ ⟪u, x⟫) '' U = (fun x ↦ ⟪u, x⟫) '' W) : U ⊆ W := by
-    intro x hx
-    by_contra hxW
-    obtain ⟨f, hf⟩ := geometric_hahn_banach_open_point hW hWo hxW
-    set w := (InnerProductSpace.toDual ℝ E).symm f
-    have hfw (y : E) : f y = ⟪w, y⟫ := InnerProductSpace.toDual_symm_apply.symm
-    have hw : w ≠ 0 := by
-      rintro hw
-      obtain ⟨a, ha⟩ := hWn
-      simpa [hfw, hw] using hf a ha
-    obtain ⟨a, ha, hax⟩ : ⟪‖w‖⁻¹ • w, x⟫ ∈ (fun y ↦ ⟪‖w‖⁻¹ • w, y⟫) '' W :=
-      hUW _ (norm_smul_inv_norm (𝕜 := ℝ) hw) ▸ mem_image_of_mem _ hx
-    simp only [real_inner_smul_left] at hax
-    have := hf a ha
-    rw [hfw, hfw, ← mul_left_cancel₀ (inv_ne_zero (norm_ne_zero_iff.2 hw)) hax] at this
-    exact lt_irrefl _ this
-  refine ⟨v, Subset.antisymm (hsub _ _ (hK.interior.vadd v) (isOpen_interior.vadd v)
-    hKi.vadd_set himage) (hsub _ _ hL.interior isOpen_interior hLi fun u hu ↦ (himage u hu).symm)⟩
+  exact ⟨v, Subset.antisymm ((hK.interior.vadd v).subset_of_image_inner_subset
+    (isOpen_interior.vadd v) hKi.vadd_set fun u hu ↦ (himage u hu).le)
+    (hL.interior.subset_of_image_inner_subset isOpen_interior hLi fun u hu ↦ (himage u hu).ge)⟩
 
 /-- **Brunn–Minkowski equality for convex bodies, multiplicative form.** Let `K` and `L` be compact
 convex sets of positive volume and `0 < θ < 1`. If the multiplicative Brunn–Minkowski inequality
