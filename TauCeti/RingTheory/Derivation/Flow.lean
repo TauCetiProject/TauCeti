@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.Derivation.TaylorExp
 import Mathlib.RingTheory.Nilpotent.Exp
+import Mathlib.Algebra.Module.LinearMap.Rat
 
 /-!
 # Polynomial flows of locally nilpotent derivations
@@ -64,55 +65,66 @@ theorem taylorExpAt_one : D.taylorExpAt hD 1 = D.taylorExp hD := by
   ext a
   simp [taylorExpAt_apply]
 
-variable [Algebra ℚ R]
-
 private theorem taylorExpAt_eq_exp_restrict (r : R) {n : ℕ}
-    (hstable : ∀ a ∈ LinearMap.ker (D.toLinearMap ^ n),
-      D.toLinearMap a ∈ LinearMap.ker (D.toLinearMap ^ n))
-    (hnil : (D.toLinearMap.restrict hstable) ^ n = 0)
-    (a : LinearMap.ker (D.toLinearMap ^ n)) :
+    (K : Submodule ℚ A)
+    (hstable : ∀ a ∈ K, (r • D).toLinearMap.toAddMonoidHom.toRatLinearMap a ∈ K)
+    (hnil : (((r • D).toLinearMap.toAddMonoidHom.toRatLinearMap).restrict hstable) ^ n = 0)
+    (a : K) (ha : D^[n] a = 0) :
     D.taylorExpAt hD r a =
-      ((IsNilpotent.exp (r • D.toLinearMap.restrict hstable)) a : A) := by
-  rw [taylorExpAt_apply_eq_sum D hD r (n := n) (by
-    simpa only [LinearMap.mem_ker, Module.End.pow_apply, coeFn_coe] using a.property),
-    IsNilpotent.exp_eq_sum (by rw [smul_pow, hnil, smul_zero]),
+      ((IsNilpotent.exp
+        (((r • D).toLinearMap.toAddMonoidHom.toRatLinearMap).restrict hstable)) a : A) := by
+  rw [taylorExpAt_apply_eq_sum D hD r ha, IsNilpotent.exp_eq_sum hnil,
     LinearMap.sum_apply]
-  simp only [smul_pow, LinearMap.smul_apply, Submodule.coe_sum]
+  simp only [LinearMap.smul_apply, Submodule.coe_sum, Submodule.coe_smul]
   apply sum_congr rfl
   intro i _
   rw [Module.End.pow_restrict, LinearMap.restrict_apply]
-  simp [Module.End.pow_apply, coeFn_coe]
+  simp only [Module.End.pow_apply, AddMonoidHom.coe_toRatLinearMap,
+    LinearMap.toAddMonoidHom_coe, coeFn_coe, iterate_smul_apply]
 
 /-- Flowing for `s` and then for `r` is flowing for `r + s`. -/
 theorem taylorExpAt_add (r s : R) :
     D.taylorExpAt hD (r + s) = (D.taylorExpAt hD r).comp (D.taylorExpAt hD s) := by
-  -- Restrict to the kernel of an iterate killing the input. On this stable submodule
-  -- the derivation is nilpotent, so Mathlib's exponential addition law applies.
+  -- Rational linearity follows from additivity. Restrict to the rational kernel of an
+  -- iterate killing the input, so Mathlib's nilpotent exponential applies for any base ring.
   ext a
   obtain ⟨n, hn⟩ := hD a
-  let K := LinearMap.ker (D.toLinearMap ^ n)
-  have hstable : ∀ a ∈ K, D.toLinearMap a ∈ K := by
+  let f := D.toLinearMap.toAddMonoidHom.toRatLinearMap
+  let K := LinearMap.ker (f ^ n)
+  have hmem (x : A) : x ∈ K ↔ D^[n] x = 0 := by
+    simp only [K, LinearMap.mem_ker, Module.End.pow_apply, f,
+      AddMonoidHom.coe_toRatLinearMap, LinearMap.toAddMonoidHom_coe, coeFn_coe]
+  have hstable (t : R) : ∀ x ∈ K, (t • D) x ∈ K := by
     intro x hx
-    rw [LinearMap.mem_ker] at hx ⊢
-    rw [← Module.End.mul_apply, ← pow_succ, pow_succ', Module.End.mul_apply, hx, map_zero]
-  let f : Module.End R K := D.toLinearMap.restrict hstable
-  have hnil : f ^ n = 0 := by
+    rw [hmem] at hx ⊢
+    rw [smul_apply, ← coeFn_coe, ← Module.End.pow_apply, LinearMap.map_smul,
+      Module.End.pow_apply, coeFn_coe, ← Function.iterate_succ_apply,
+      Function.iterate_succ_apply', hx, map_zero, smul_zero]
+  let g (t : R) : Module.End ℚ K :=
+    ((t • D).toLinearMap.toAddMonoidHom.toRatLinearMap).restrict (hstable t)
+  have hg_apply (t : R) :
+      Function.Semiconj (fun y : K => (y : A)) (g t) (t • D) := fun _ => rfl
+  have hpow (t : R) (i : ℕ) (y : K) : ((g t ^ i) y : A) = (t • D)^[i] y := by
+    simpa only [Module.End.pow_apply, coe_smul] using (hg_apply t).iterate_right i y
+  have hnil (t : R) : g t ^ n = 0 := by
     ext x
-    rw [Module.End.pow_restrict, LinearMap.restrict_apply]
-    exact x.property
-  let x : K := ⟨a, by simpa only [K, LinearMap.mem_ker, Module.End.pow_apply, coeFn_coe] using hn⟩
+    simp only [hpow, iterate_smul_apply, (hmem x).mp x.property, smul_zero,
+      LinearMap.zero_apply, ZeroMemClass.coe_zero]
+  let x : K := ⟨a, (hmem a).mpr hn⟩
   have heq (t : R) (y : K) :
-      D.taylorExpAt hD t y = ((IsNilpotent.exp (t • f)) y : A) :=
-    taylorExpAt_eq_exp_restrict D hD t hstable hnil y
-  have hc : Commute (r • f) (s • f) :=
-    ((Commute.refl f).smul_left r).smul_right s
-  have hf : IsNilpotent f := ⟨n, hnil⟩
-  have h := IsNilpotent.exp_add_of_commute (A := Module.End R K) hc (hf.smul r) (hf.smul s)
-  rw [← add_smul] at h
-  have hv := congrArg (fun g : Module.End R K => (g x : A)) h
+      D.taylorExpAt hD t y = ((IsNilpotent.exp (g t)) y : A) :=
+    taylorExpAt_eq_exp_restrict D hD t K (hstable t) (hnil t) y ((hmem y).mp y.property)
+  have hc : Commute (g r) (g s) := by
+    ext y
+    simp [Module.End.mul_apply, g, smul_smul, mul_comm]
+  have hg : g (r + s) = g r + g s := by
+    ext y
+    simp [g, add_smul]
+  have h := IsNilpotent.exp_add_of_commute (A := Module.End ℚ K) hc ⟨n, hnil r⟩ ⟨n, hnil s⟩
+  rw [← hg] at h
+  have hv := congrArg (fun k : Module.End ℚ K => (k x : A)) h
   simpa only [Module.End.mul_apply, ← heq, AlgHom.comp_apply] using hv
 
-omit [Algebra ℚ R] in
 /-- Evaluating the polynomial flow at `r` is the Taylor exponential of `r • D`. -/
 theorem taylorExpAt_eq_taylorExp_smul (r : R) :
     D.taylorExpAt hD r = (r • D).taylorExp (D.exists_iterate_smul_eq_zero hD r) := by

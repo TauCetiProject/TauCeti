@@ -41,12 +41,9 @@ theorem expPointPolynomial_apply_eq_zero (I : HopfIdeal R H)
     {d : Derivation R H (CounitAlgebra R H R)} (hd : d ∈ I.lieSubalgebra (B := R))
     (hD : ∀ h, ∃ n, (leftInvariantDerivation d)^[n] h = 0) {x : H} (hx : x ∈ I) :
     expPointPolynomial d hD x = 0 := by
-  have hi (n : ℕ) : (leftInvariantDerivation d)^[n] x ∈ I.toIdeal := by
-    induction n with
-    | zero => exact hx
-    | succ n ih =>
-      rw [Function.iterate_succ_apply']
-      exact I.leftInvariantDerivation_mem hd ih
+  have hi (n : ℕ) :=
+    Set.MapsTo.iterate (s := (I.toIdeal : Set H))
+      (fun _ hy => I.leftInvariantDerivation_mem hd hy) n hx
   ext n
   rw [coeff_expPointPolynomial, Polynomial.coeff_zero]
   apply I.counit_eq_zero

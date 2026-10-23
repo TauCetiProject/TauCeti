@@ -195,10 +195,7 @@ ideal into itself, so does its Taylor exponential. -/
 theorem taylorExp_apply_mem {I : Ideal A} (hI : ∀ x ∈ I, D x ∈ I) {a : A} (ha : a ∈ I) :
     taylorExp D hD a ∈ I := by
   obtain ⟨n, hn⟩ := hD a
-  have hiter : ∀ i, D^[i] a ∈ I := fun i => by
-    induction i with
-    | zero => exact ha
-    | succ i ih => exact Function.iterate_succ_apply' D i a ▸ hI _ ih
+  have hiter (i : ℕ) := Set.MapsTo.iterate (s := (I : Set A)) hI i ha
   rw [taylorExp_apply_eq_sum D hD hn]
   refine sum_mem fun i _ => ?_
   have hi := hiter i

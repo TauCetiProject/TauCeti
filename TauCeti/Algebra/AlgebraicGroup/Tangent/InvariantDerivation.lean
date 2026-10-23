@@ -12,6 +12,7 @@ public import Mathlib.RingTheory.Derivation.Lie
 public import Mathlib.RingTheory.Nilpotent.Lemmas
 import Mathlib.LinearAlgebra.Dual.Lemmas
 import TauCeti.RingTheory.Derivation.Nilpotent
+import TauCeti.RingTheory.Derivation.Basic
 
 /-!
 # Invariant derivations and nilpotent functions
@@ -173,6 +174,22 @@ theorem iterate_leftInvariantDerivation_apply (d : Derivation R H (CounitAlgebra
   rw [TensorProduct.rid_tmul, one_smul] at hcounit
   rw [← hcounit, comul_iterate_leftInvariantDerivation, ← LinearMap.lTensor_comp_apply,
     tensorComponent_def, LinearMap.comp_apply, LinearEquiv.coe_coe]
+
+/-- The counit of an iterated invariant derivation splits across any representation of
+comultiplication, with independently specified iteration counts on its two factors. -/
+theorem counit_iterate_add_leftInvariantDerivation
+    (d : Derivation R H (CounitAlgebra R H R)) (h : H) {ι : Type*}
+    (𝓡 : Coalgebra.Repr R h ι) (i j : ℕ) :
+    Coalgebra.counit (R := R) ((leftInvariantDerivation d)^[i + j] h) =
+      ∑ k ∈ 𝓡.index,
+        Coalgebra.counit (R := R) ((leftInvariantDerivation d)^[i] (𝓡.left k)) *
+          Coalgebra.counit (R := R) ((leftInvariantDerivation d)^[j] (𝓡.right k)) := by
+  rw [Function.iterate_add_apply, iterate_leftInvariantDerivation_apply d j h,
+    ← 𝓡.eq, map_sum]
+  simp only [tensorComponent_tmul, LinearMap.comp_apply, Module.End.coe_pow,
+    Derivation.coeFn_coe]
+  rw [Derivation.iterate_sum_smul, map_sum]
+  simp only [map_smul, smul_eq_mul, mul_comm]
 
 /-- A left-invariant derivation with value `d` at the identity is the left-invariant
 extension of `d`. -/
