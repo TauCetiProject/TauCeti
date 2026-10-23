@@ -59,7 +59,6 @@ involution, `changeForm` commutes with the grade involution for every bilinear f
 * `CliffordAlgebra.contractRight_contractLeft`: `(d ⌋ x) ⌊ d' = d ⌋ (x ⌊ d')`.
 * `CliffordAlgebra.contractLeft_prod_map_ι_eq_zero`: a contraction kills a product of vectors in
   its kernel.
-* `CliffordAlgebra.contractLeft_map`: contraction is natural along isometries.
 * `CliffordAlgebra.changeForm_mul_ι`: `changeForm` on a right vector factor.
 * `CliffordAlgebra.changeForm_involute` and `CliffordAlgebra.changeForm_reverse`: `changeForm`
   commutes with the grade involution, and with reversion for a symmetric form.
@@ -202,16 +201,6 @@ theorem contractLeft_prod_map_ι_eq_zero (d : Module.Dual R M) {l : List M}
   | cons a l ih =>
     rw [List.map_cons, List.prod_cons, contractLeft_ι_mul, h a List.mem_cons_self, zero_smul,
       ih fun m hm ↦ h m (List.mem_cons_of_mem a hm), mul_zero, sub_zero]
-
-/-- **Contraction is natural along isometries**: if `d' ∘ f = d`, then contracting by `d'` after
-`CliffordAlgebra.map f` is `CliffordAlgebra.map f` after contracting by `d`. -/
-theorem contractLeft_map {N : Type*} [AddCommGroup N] [Module R N] {Q' : QuadraticForm R N}
-    {f : Q →qᵢ Q'} {d : Module.Dual R M} {d' : Module.Dual R N} (h : d' ∘ₗ f.toLinearMap = d)
-    (x : CliffordAlgebra Q) : contractLeft d' (map f x) = map f (contractLeft d x) := by
-  induction x using CliffordAlgebra.left_induction with
-  | algebraMap r => rw [AlgHom.commutes, contractLeft_algebraMap, contractLeft_algebraMap, map_zero]
-  | add x y hx hy => rw [map_add, map_add, hx, hy, map_add, map_add]
-  | ι_mul x m hx => simp [contractLeft_ι_mul, hx, ← h]
 
 section changeForm
 

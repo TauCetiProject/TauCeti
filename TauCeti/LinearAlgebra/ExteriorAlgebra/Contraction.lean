@@ -42,8 +42,7 @@ a contraction carries the `(n + 1)`-th exterior power into the `n`-th, and a vec
 with every multivector: `ι m * x = involute x * ι m`.  Together with the graded Leibniz rule
 `CliffordAlgebra.contractLeft_mul`, these say that a contraction is an odd derivation of degree
 `-1` of the graded-commutative exterior algebra. On a wedge product of vectors it is the alternating
-sum of deletions (`TauCeti.ExteriorAlgebra.contractLeft_ιMulti`), and it is natural along
-`ExteriorAlgebra.map` (`ExteriorAlgebra.contractLeft_map`). Dually, exterior
+sum of deletions (`TauCeti.ExteriorAlgebra.contractLeft_ιMulti`). Dually, exterior
 multiplication by a vector raises the degree by one (`TauCeti.ExteriorAlgebra.wedgeLeft`). These
 are the differential and the homotopy of the Koszul complex.
 
@@ -514,15 +513,6 @@ theorem ι_mul_eq_involute_mul (m : M) (x : ExteriorAlgebra R M) :
     exact ExteriorAlgebra.ι_add_mul_swap m v
   | mul x y hx hy => rw [← mul_assoc, hx, mul_assoc, hy, map_mul, mul_assoc]
   | add x y hx hy => rw [mul_add, hx, hy, map_add, add_mul]
-
-/-- **Contraction is natural in the module**: if `d' ∘ f = d`, then contracting by `d'` after
-`ExteriorAlgebra.map f` is `ExteriorAlgebra.map f` after contracting by `d`. This is the case of
-the zero quadratic forms of `CliffordAlgebra.contractLeft_map`. -/
-theorem contractLeft_map {N : Type*} [AddCommGroup N] [Module R N] {f : M →ₗ[R] N}
-    {d : Module.Dual R M} {d' : Module.Dual R N} (h : d' ∘ₗ f = d) (x : ExteriorAlgebra R M) :
-    contractLeft (Q := (0 : QuadraticForm R N)) d' (ExteriorAlgebra.map f x) =
-      ExteriorAlgebra.map f (contractLeft (Q := (0 : QuadraticForm R M)) d x) :=
-  CliffordAlgebra.contractLeft_map h x
 
 end ExteriorAlgebra
 

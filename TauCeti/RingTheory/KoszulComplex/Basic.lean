@@ -130,7 +130,7 @@ theorem koszulDifferential_comp_map {N : Type*} [AddCommGroup N] [Module R N]
     {ψ : Module.Dual R N} {g : M →ₗ[R] N} (h : ψ ∘ₗ g = φ) (n : ℕ) :
     koszulDifferential ψ n ∘ₗ exteriorPower.map (n + 1) g =
       exteriorPower.map n g ∘ₗ koszulDifferential φ n :=
-  LinearMap.ext fun x ↦ Subtype.ext <| by simp [ExteriorAlgebra.contractLeft_map h]
+  LinearMap.ext fun x ↦ Subtype.ext <| by simp [ExteriorAlgebra.contractLeft_map, h]
 
 /-- The Koszul differential is natural, elementwise: `⋀ g` carries the Koszul differential of
 `ψ ∘ g` to that of `ψ`. -/
