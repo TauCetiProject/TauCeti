@@ -442,8 +442,8 @@ empty otherwise. -/
 theorem support_inverseGaussianMeasure_eq_if (μ lam : ℝ) :
     (inverseGaussianMeasure μ lam).support = if 0 < μ ∧ 0 < lam then Ici 0 else ∅ := by
   by_cases h : 0 < μ ∧ 0 < lam
-  · rw [if_pos h, support_inverseGaussianMeasure h.1 h.2]
-  · rw [if_neg h, inverseGaussianMeasure_of_not_pos h, Measure.support_zero]
+  · rw [ite_eq_left h, support_inverseGaussianMeasure h.1 h.2]
+  · rw [ite_eq_right h, inverseGaussianMeasure_of_not_pos h, Measure.support_zero]
 
 section Transfer
 
