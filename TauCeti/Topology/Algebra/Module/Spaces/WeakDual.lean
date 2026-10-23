@@ -15,6 +15,9 @@ computed pointwise. Registering `IsAddApply` and `IsSMulApply` makes the generic
 `add_apply` and `smul_apply` available on `WeakDual 𝕜 E`, so that pointwise computations, such
 as convex combinations of functionals, need not pass through `WeakDual.toStrongDual` or unfold
 the type synonym.
+
+It also records that, for ordered `E` and `𝕜`, the functionals that are nonnegative on
+nonnegative elements form a weak-* closed set, `WeakDual.isClosed_setOf_map_nonneg`.
 -/
 
 public section
@@ -28,5 +31,11 @@ instance instIsAddApply : IsAddApply (WeakDual 𝕜 E) where
 
 instance instIsSMulApply (M : Type*) [Monoid M] [DistribMulAction M 𝕜] [SMulCommClass 𝕜 M 𝕜]
     [ContinuousConstSMul M 𝕜] : IsSMulApply M (WeakDual 𝕜 E) where
+
+/-- The functionals that are nonnegative on nonnegative elements form a weak-* closed set. -/
+theorem isClosed_setOf_map_nonneg [Preorder 𝕜] [ClosedIciTopology 𝕜] [LE E] :
+    IsClosed {φ : WeakDual 𝕜 E | ∀ a, 0 ≤ a → 0 ≤ φ a} := by
+  simp only [Set.ofPred_forall]
+  exact isClosed_iInter fun a => isClosed_iInter fun _ => isClosed_Ici.preimage (eval_continuous a)
 
 end WeakDual

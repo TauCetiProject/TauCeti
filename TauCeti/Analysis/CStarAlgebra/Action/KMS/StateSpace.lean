@@ -8,8 +8,8 @@ module
 public import TauCeti.Analysis.CStarAlgebra.Action.KMS.Basic
 public import Mathlib.Analysis.Convex.Basic
 public import Mathlib.Analysis.Normed.Module.WeakDual
-import Mathlib.Analysis.CStarAlgebra.PositiveLinearFunctional
 import TauCeti.Analysis.CStarAlgebra.Action.KMS.Dense
+import TauCeti.Analysis.CStarAlgebra.PositiveLinearFunctional
 import TauCeti.Topology.Algebra.Module.Spaces.WeakDual
 
 /-!
@@ -91,14 +91,6 @@ theorem mem_kmsStates_iff_forall_isEntireAnalytic {φ : WeakDual ℂ A} :
     · simpa using hφ
     · simp
 
-omit [StarOrderedRing A] in
-/-- The positive functionals form a weak-* closed set. -/
-private theorem isClosed_setOf_nonneg :
-    IsClosed {φ : WeakDual ℂ A | ∀ a, 0 ≤ a → 0 ≤ φ a} := by
-  simp only [ofPred_forall]
-  exact isClosed_iInter fun a => isClosed_iInter fun _ => isClosed_le continuous_const
-    (eval_continuous a)
-
 omit [PartialOrder A] [StarOrderedRing A] in
 /-- The functionals satisfying the analytic KMS identity form a weak-* closed set. -/
 private theorem isClosed_setOf_apply_mul_entireExtension_eq (α : CStarAction (Multiplicative ℝ) A)
@@ -119,20 +111,9 @@ theorem closure_kmsStates_inter_subset :
     have h := mem_kmsStates_iff_forall_isEntireAnalytic.mp hφ
     ⟨h.1, h.2.2⟩
   rintro φ ⟨hφ, hnorm⟩
-  obtain ⟨hpos, hid⟩ := closure_minimal hsub (isClosed_setOf_nonneg.inter
+  obtain ⟨hpos, hid⟩ := closure_minimal hsub (isClosed_setOf_map_nonneg.inter
     (isClosed_setOf_apply_mul_entireExtension_eq α β)) hφ
   exact mem_kmsStates_iff_forall_isEntireAnalytic.mpr ⟨hpos, hnorm, hid⟩
-
-/-- A functional that is nonnegative on positive elements is monotone. -/
-private theorem monotone_toStrongDual {φ : WeakDual ℂ A} (hpos : ∀ a, 0 ≤ a → 0 ≤ φ a) :
-    Monotone (toStrongDual φ) :=
-  (monotone_iff_map_nonneg _).mpr fun a ha => (hpos a ha).trans_eq (toStrongDual_apply φ a).symm
-
-/-- Along an approximate unit, a positive functional tends to its norm. -/
-private theorem tendsto_apply_approximateUnit {φ : WeakDual ℂ A} (hpos : ∀ a, 0 ≤ a → 0 ≤ φ a) :
-    Tendsto (fun e => φ e) (CStarAlgebra.approximateUnit A) (𝓝 (‖toStrongDual φ‖ : ℂ)) := by
-  simpa using (ContinuousLinearMap.monotone_iff_tendsto_nhds_opNorm
-    (CStarAlgebra.increasingApproximateUnit A)).mp (monotone_toStrongDual hpos)
 
 /-- **Convexity of `K_β`.** Convex combinations of β-KMS states are β-KMS states. -/
 theorem convex_kmsStates : Convex ℝ (α.kmsStates β) := by
@@ -142,10 +123,10 @@ theorem convex_kmsStates : Convex ℝ (α.kmsStates β) := by
     simpa using add_nonneg (smul_nonneg hs (hφ.1 a ha)) (smul_nonneg ht (hψ.1 a ha))
   refine ⟨hpos, ?_, fun a ha b hb => by simp [hφ.2.2 a ha b hb, hψ.2.2 a ha b hb]⟩
   -- the norm of a positive functional is its limit along an approximate unit
-  have h := ((tendsto_apply_approximateUnit hφ.1).const_smul s).add
-    ((tendsto_apply_approximateUnit hψ.1).const_smul t)
+  have h := ((tendsto_approximateUnit_norm_of_map_nonneg hφ.1).const_smul s).add
+    ((tendsto_approximateUnit_norm_of_map_nonneg hψ.1).const_smul t)
   simp only [hφ.2.1, hψ.2.1, ofReal_one, ← add_smul, hst, one_smul] at h
-  exact_mod_cast tendsto_nhds_unique (tendsto_apply_approximateUnit hpos)
+  exact_mod_cast tendsto_nhds_unique (tendsto_approximateUnit_norm_of_map_nonneg hpos)
     (h.congr fun e => by simp)
 
 section Unital
@@ -155,17 +136,13 @@ variable {B : Type*} [CStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
 
 /-- For unital `B`, the set `K_β` of β-KMS states is weak-* closed. -/
 theorem isClosed_kmsStates : IsClosed (α.kmsStates β) := by
-  -- on positive functionals of a unital algebra, the norm is the value at `1`
-  have hnorm {φ : WeakDual ℂ B} (hpos : ∀ a, 0 ≤ a → 0 ≤ φ a) :
-      (‖toStrongDual φ‖ : ℂ) = φ 1 := by
-    simpa using ContinuousLinearMap.monotone_iff_opNorm_eq_map_one.mp (monotone_toStrongDual hpos)
   refine closure_subset_iff_isClosed.mp fun φ hφ => closure_kmsStates_inter_subset ⟨hφ, ?_⟩
   have hsub : α.kmsStates β ⊆ {φ | (∀ a, 0 ≤ a → 0 ≤ φ a) ∧ φ 1 = 1} := fun ψ hψ => by
     obtain ⟨hpos, h1, -⟩ := mem_kmsStates_iff_forall_isEntireAnalytic.mp hψ
-    exact ⟨hpos, by rw [← hnorm hpos, h1, ofReal_one]⟩
-  obtain ⟨hpos, h1⟩ := closure_minimal hsub (isClosed_setOf_nonneg.inter
+    exact ⟨hpos, by rw [← norm_toStrongDual_eq_map_one_of_map_nonneg hpos, h1, ofReal_one]⟩
+  obtain ⟨hpos, h1⟩ := closure_minimal hsub (isClosed_setOf_map_nonneg.inter
     (isClosed_eq (eval_continuous 1) continuous_const)) hφ
-  exact_mod_cast (hnorm hpos).trans h1
+  exact_mod_cast (norm_toStrongDual_eq_map_one_of_map_nonneg hpos).trans h1
 
 /-- **Weak-* compactness of `K_β`.** For unital `B`, the set of β-KMS states is weak-* compact. -/
 theorem isCompact_kmsStates : IsCompact (α.kmsStates β) := by
