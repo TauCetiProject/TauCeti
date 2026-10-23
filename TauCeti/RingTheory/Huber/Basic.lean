@@ -14,7 +14,7 @@ import Mathlib.Topology.Algebra.IsUniformGroup.Basic
 import TauCeti.RingTheory.Ideal.PowerStabilization
 import TauCeti.RingTheory.Subring.SpanSingleton
 public import TauCeti.Topology.Algebra.Group.FirstCountable
-public import TauCeti.Topology.Algebra.TopologicallyNilpotent
+public import TauCeti.Topology.Algebra.TopologicallyNilpotent.Basic
 
 /-!
 # Huber rings and Tate rings
