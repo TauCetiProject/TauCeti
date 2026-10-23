@@ -64,6 +64,14 @@ theorem wedge_map {N : Type*} [AddCommGroup N] [Module R N] (f : M →ₗ[R] N) 
   refine Fin.addCases ?_ ?_ i <;> intro j <;>
     simp only [Fin.append_left, Fin.append_right, Function.comp_apply]
 
+/-- Pointwise form of `wedge_map` for rewriting evaluations of wedge products. -/
+@[simp]
+theorem wedge_map_apply {N : Type*} [AddCommGroup N] [Module R N] (f : M →ₗ[R] N)
+    (x : ⋀[R]^k M) (y : ⋀[R]^l M) :
+    wedge R N k l (exteriorPower.map k f x) (exteriorPower.map l f y) =
+      exteriorPower.map (k + l) f (wedge R M k l x y) :=
+  LinearMap.congr_fun₂ (wedge_map f) x y
+
 /-- A wedge pairing transported from a specified top degree is the wedge product followed by
 the trivialisation in that degree. -/
 theorem wedgePairing_eq_compr₂_of_finrank_eq (n : ℕ) (hfin : Module.finrank R M = n)
@@ -88,9 +96,7 @@ theorem wedge_compr₂_compl₁₂_exteriorPower [Module.Free R M]
   apply LinearMap.ext
   intro y
   simp only [LinearMap.compl₁₂_apply, LinearMap.smul_apply, LinearMap.compr₂_apply]
-  have hmap := LinearMap.congr_fun₂ (wedge_map f) x y
-  simp only [LinearMap.compl₁₂_apply, LinearMap.compr₂_apply] at hmap
-  rw [hmap]
+  rw [wedge_map_apply]
   subst n
   have htop := LinearMap.map_exteriorPower_finrank_eq_det_smul f
   rw [← hkl] at htop
