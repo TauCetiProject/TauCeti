@@ -99,6 +99,20 @@ theorem residual_def (z : X × Y) :
     h.residual z = (c z - (h.fst z.1 + h.snd z.2 : ℝ)).toENNReal :=
   (rfl)
 
+/-- Subtracting the split lower bound transports a real lower bound to the residual. -/
+theorem ofReal_le_residual_of_le {z : X × Y} {r : ℝ} (hle : (r : EReal) ≤ c z) :
+    ENNReal.ofReal (r - (h.fst z.1 + h.snd z.2)) ≤ h.residual z := by
+  have hs := EReal.sub_le_sub hle (le_refl ((h.fst z.1 + h.snd z.2 : ℝ) : EReal))
+  simpa only [h.residual_def, ← EReal.coe_sub, EReal.real_coe_toENNReal] using
+    EReal.toENNReal_le_toENNReal hs
+
+/-- Subtracting the split lower bound transports a real upper bound to the residual. -/
+theorem residual_le_ofReal_of_le {z : X × Y} {r : ℝ} (hle : c z ≤ (r : EReal)) :
+    h.residual z ≤ ENNReal.ofReal (r - (h.fst z.1 + h.snd z.2)) := by
+  have hs := EReal.sub_le_sub hle (le_refl ((h.fst z.1 + h.snd z.2 : ℝ) : EReal))
+  simpa only [h.residual_def, ← EReal.coe_sub, EReal.real_coe_toENNReal] using
+    EReal.toENNReal_le_toENNReal hs
+
 /-- The residual is the exact nonnegative part of the normalized cost: adding the split lower
 bound back in `EReal` recovers the original cost, including when that cost is `∞`. -/
 @[simp]

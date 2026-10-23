@@ -13,10 +13,10 @@ import TauCeti.MeasureTheory.OptimalTransport.Existence.Basic
 # Dual attainment for signed transport costs
 
 An integrable split lower bound defines the signed transport value without truncating negative
-values. An integrable split upper bound makes the normalized problem finite. If its residual
-is lower semicontinuous on a product of Polish spaces, this file proves attainment for probability
-marginals by integrable real potentials, and concentration of an optimal plan on their signed
-contact relation.
+values. An integrable split upper bound makes the normalized problem finite. If the residual
+`c - (h.fst + h.snd)` of the split lower bound is lower semicontinuous on a product of Polish
+spaces, this file proves attainment for probability marginals by integrable real potentials,
+and concentration of every residual-optimal plan on their signed contact relation.
 
 Feasibility holds on a product of full-measure sets. Requiring it at every point would exclude
 valid optimizers when the marginals do not have full support. Weak duality is therefore provided
@@ -55,15 +55,7 @@ theorem kantorovichDualValue_le_transportCostBddBelow_of_null_compl
   have hr : ∀ x ∈ A, ∀ y ∈ B,
       ENNReal.ofReal ((φ x - h.fst x) + (ψ y - h.snd y)) ≤ h.residual (x, y) := by
     intro x hx y hy
-    rw [h.residual_def]
-    have hs : (((φ x - h.fst x) + (ψ y - h.snd y) : ℝ) : EReal) ≤
-        c (x, y) - ((h.fst x + h.snd y : ℝ) : EReal) := by
-      rw [EReal.le_sub_iff_add_le (.inl (EReal.coe_ne_bot _))
-        (.inl (EReal.coe_ne_top _)), ← EReal.coe_add]
-      convert hfeas x hx y hy using 1
-      congr 1
-      ring
-    simpa only [EReal.real_coe_toENNReal] using EReal.toENNReal_le_toENNReal hs
+    simpa only [sub_add_sub_comm] using h.ofReal_le_residual_of_le (hfeas x hx y hy)
   have hv := ofReal_kantorovichDualValue_le_transportCost_of_null_compl hA hB
     (hφ.sub h.integrable_fst) (hψ.sub h.integrable_snd) hr
   have hv' := EReal.coe_le_coe_ennreal_of_ofReal_le hv
@@ -82,37 +74,29 @@ variable [TopologicalSpace X] [PolishSpace X] [BorelSpace X]
   [TopologicalSpace Y] [PolishSpace Y] [BorelSpace Y]
   [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
 
-/-- Signed primal and dual attainment with complementary slackness. If a cost has integrable
-split bounds and a lower semicontinuous nonnegative residual, an optimal coupling and integrable
-potentials exist. The potentials are feasible on a product of full-measure sets and equal the
-cost along the plan. Their value is the signed primal value for every choice of split lower
-bound, without any semicontinuity assumption on the alternative normalization. -/
-theorem exists_isCoupling_kantorovichDualValue_eq_transportCostBddBelow
-    (h : IntegrableSplitLowerBound c μ ν) (hres : LowerSemicontinuous h.residual)
+/-- Every residual-optimal plan admits integrable signed dual optimizers when the residual is
+lower semicontinuous and the cost has an integrable split upper bound. The potentials are
+feasible on a product of full-measure sets and equal the cost along the given plan. Their value
+is the signed primal value for every split lower bound, without any semicontinuity assumption
+on the alternative normalization. -/
+theorem IsOptimalCoupling.exists_kantorovichDualValue_eq_transportCostBddBelow
+    {h : IntegrableSplitLowerBound c μ ν} {π : Measure (X × Y)}
+    (hπ : IsOptimalCoupling h.residual π μ ν) (hres : LowerSemicontinuous h.residual)
     {a : X → ℝ} {b : Y → ℝ} (ha : Integrable a μ) (hb : Integrable b ν)
     (hle : ∀ x y, c (x, y) ≤ ((a x + b y : ℝ) : EReal)) :
-    ∃ (π : Measure (X × Y)) (hπ : IsCoupling π μ ν)
-      (φ : X → ℝ) (ψ : Y → ℝ) (A : Set X) (B : Set Y),
+    ∃ (φ : X → ℝ) (ψ : Y → ℝ) (A : Set X) (B : Set Y),
       MeasurableSet A ∧ MeasurableSet B ∧ μ Aᶜ = 0 ∧ ν Bᶜ = 0 ∧
       Integrable φ μ ∧ Integrable ψ ν ∧
       (∀ x ∈ A, ∀ y ∈ B, ((φ x + ψ y : ℝ) : EReal) ≤ c (x, y)) ∧
       (∀ᵐ z ∂π, ((φ z.1 + ψ z.2 : ℝ) : EReal) = c z) ∧
       ∀ k : IntegrableSplitLowerBound c μ ν,
-        planCostBddBelow π hπ k = (kantorovichDualValue μ ν φ ψ : EReal) ∧
+        planCostBddBelow π hπ.toIsCoupling k = (kantorovichDualValue μ ν φ ψ : EReal) ∧
         (kantorovichDualValue μ ν φ ψ : EReal) = transportCostBddBelow c μ ν k := by
   -- Subtract the lower-bound terms from the upper envelope as well as the cost.
   have hupper x y : h.residual (x, y) ≤
       ENNReal.ofReal ((a x - h.fst x) + (b y - h.snd y)) := by
-    rw [h.residual_def]
-    have hs := EReal.sub_le_sub (hle x y) (le_refl ((h.fst x + h.snd y : ℝ) : EReal))
-    have heq : ((a x + b y : ℝ) : EReal) - ((h.fst x + h.snd y : ℝ) : EReal) =
-        (((a x - h.fst x) + (b y - h.snd y) : ℝ) : EReal) := by
-      rw [← EReal.coe_sub]
-      congr 1
-      ring
-    simpa only [heq, EReal.real_coe_toENNReal] using EReal.toENNReal_le_toENNReal hs
+    simpa only [sub_add_sub_comm] using h.residual_le_ofReal_of_le (hle x y)
   -- Solve the nonnegative residual problem, then restore the split lower bound.
-  obtain ⟨π, hπ⟩ := exists_isOptimalCoupling μ ν hres
   obtain ⟨f, g, A, B, hA, hB, hμA, hνB, hf, hg, hfeas, hcontact⟩ :=
     hπ.exists_ae_mem_dualContactSet_of_le_add hres
       (ha.sub h.integrable_fst) (hb.sub h.integrable_snd) hupper
@@ -137,7 +121,7 @@ theorem exists_isCoupling_kantorovichDualValue_eq_transportCostBddBelow
     rw [planCostBddBelow_def,
       transportCostBddBelow_eq_transportCost_residual_add_integral_add_integral,
       hπ.lintegral_eq, EReal.coe_add, add_assoc]
-  refine ⟨π, hπ.toIsCoupling, fun x ↦ f x + h.fst x, fun y ↦ g y + h.snd y,
+  refine ⟨fun x ↦ f x + h.fst x, fun y ↦ g y + h.snd y,
     A, B, hA, hB, hμA, hνB, hf.add h.integrable_fst, hg.add h.integrable_snd,
     ?_, ?_, fun k ↦ ?_⟩
   · intro x hx y hy
@@ -148,6 +132,50 @@ theorem exists_isCoupling_kantorovichDualValue_eq_transportCostBddBelow
   · rw [← planCostBddBelow_congr_lowerBound h k hπ.toIsCoupling,
       ← transportCostBddBelow_congr_lowerBound h k]
     exact ⟨hvalue, hvalue.symm.trans hopt⟩
+
+/-- Signed primal and dual attainment for a lower semicontinuous residual and integrable split
+bounds. The coupling and potentials satisfy complementary slackness, and their values agree
+for every choice of split lower bound. -/
+theorem
+    exists_isCoupling_kantorovichDualValue_eq_transportCostBddBelow_of_lowerSemicontinuous_residual
+    (h : IntegrableSplitLowerBound c μ ν) (hres : LowerSemicontinuous h.residual)
+    {a : X → ℝ} {b : Y → ℝ} (ha : Integrable a μ) (hb : Integrable b ν)
+    (hle : ∀ x y, c (x, y) ≤ ((a x + b y : ℝ) : EReal)) :
+    ∃ (π : Measure (X × Y)) (hπ : IsCoupling π μ ν)
+      (φ : X → ℝ) (ψ : Y → ℝ) (A : Set X) (B : Set Y),
+      MeasurableSet A ∧ MeasurableSet B ∧ μ Aᶜ = 0 ∧ ν Bᶜ = 0 ∧
+      Integrable φ μ ∧ Integrable ψ ν ∧
+      (∀ x ∈ A, ∀ y ∈ B, ((φ x + ψ y : ℝ) : EReal) ≤ c (x, y)) ∧
+      (∀ᵐ z ∂π, ((φ z.1 + ψ z.2 : ℝ) : EReal) = c z) ∧
+      ∀ k : IntegrableSplitLowerBound c μ ν,
+        planCostBddBelow π hπ k = (kantorovichDualValue μ ν φ ψ : EReal) ∧
+        (kantorovichDualValue μ ν φ ψ : EReal) = transportCostBddBelow c μ ν k := by
+  obtain ⟨π, hπ⟩ := exists_isOptimalCoupling μ ν hres
+  exact ⟨π, hπ.toIsCoupling,
+    hπ.exists_kantorovichDualValue_eq_transportCostBddBelow hres ha hb hle⟩
+
+/-- Signed primal and dual attainment for a lower semicontinuous cost with an upper
+semicontinuous integrable split lower bound and an integrable split upper bound. The coupling
+and potentials satisfy complementary slackness, with value independent of the lower bound. -/
+theorem exists_isCoupling_kantorovichDualValue_eq_transportCostBddBelow
+    (h : IntegrableSplitLowerBound c μ ν) (hc : LowerSemicontinuous c)
+    (hf : UpperSemicontinuous h.fst) (hg : UpperSemicontinuous h.snd)
+    {a : X → ℝ} {b : Y → ℝ} (ha : Integrable a μ) (hb : Integrable b ν)
+    (hle : ∀ x y, c (x, y) ≤ ((a x + b y : ℝ) : EReal)) :
+    ∃ (π : Measure (X × Y)) (hπ : IsCoupling π μ ν)
+      (φ : X → ℝ) (ψ : Y → ℝ) (A : Set X) (B : Set Y),
+      MeasurableSet A ∧ MeasurableSet B ∧ μ Aᶜ = 0 ∧ ν Bᶜ = 0 ∧
+      Integrable φ μ ∧ Integrable ψ ν ∧
+      (∀ x ∈ A, ∀ y ∈ B, ((φ x + ψ y : ℝ) : EReal) ≤ c (x, y)) ∧
+      (∀ᵐ z ∂π, ((φ z.1 + ψ z.2 : ℝ) : EReal) = c z) ∧
+      ∀ k : IntegrableSplitLowerBound c μ ν,
+        planCostBddBelow π hπ k = (kantorovichDualValue μ ν φ ψ : EReal) ∧
+        (kantorovichDualValue μ ν φ ψ : EReal) = transportCostBddBelow c μ ν k := by
+  apply
+    exists_isCoupling_kantorovichDualValue_eq_transportCostBddBelow_of_lowerSemicontinuous_residual
+      h ?_ ha hb hle
+  rw [funext h.residual_def]
+  exact lowerSemicontinuous_residual h.fst h.snd hc hf hg
 
 end Polish
 
