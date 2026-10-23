@@ -128,7 +128,7 @@ theorem norm_eq_zero_of_ker_le_coinvariantsKer [Fintype Q] (B : Rep ℤ Q)
   have hkerI (v : B.ρ.asModule) (hv : π.hom (B.ρ.asModuleEquiv v) = 0) :
       v ∈ RingHom.ker ε • (⊤ : Submodule (MonoidAlgebra ℤ Q) B.ρ.asModule) := by
     simpa only [LinearEquiv.symm_apply_apply] using
-      (B.ρ.mem_coinvariantsKer_iff).mp (hker hv)
+      (B.ρ.mem_coinvariantsKer_iff_mem_ker_augmentation_smul_top).mp (hker hv)
   -- A basis `σ` of `Q`, lifts `x i` of the generators `[σ i] - 1` of `I_Q`, and generators `s` of
   -- the kernel span `B`; their weights are the orders of the `σ i`, and `1`.
   obtain ⟨ι, _, σ, hσ, hord⟩ := CommGroup.exists_closure_range_eq_top_and_prod_orderOf_eq_card Q

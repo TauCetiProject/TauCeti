@@ -150,7 +150,7 @@ theorem coinvariantsKer_eq_map_ker_augmentation_smul_top :
 
 /-- An element belongs to the coinvariant kernel exactly when its associated-module image lies
 in the augmentation ideal times the module. -/
-theorem mem_coinvariantsKer_iff {v : V} :
+theorem mem_coinvariantsKer_iff_mem_ker_augmentation_smul_top {v : V} :
     v ∈ Coinvariants.ker ρ ↔
       ρ.asModuleEquiv.symm v ∈ RingHom.ker (TauCeti.MonoidAlgebra.augmentation k G) •
         (⊤ : Submodule (MonoidAlgebra k G) ρ.asModule) := by
