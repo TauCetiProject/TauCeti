@@ -38,6 +38,7 @@ radius the Krull dimension of the restricted series ring is at least `dim R + 1`
 * `TauCeti.PowerSeries.norm_eq_gaussNorm`: the norm of a restricted series is its Gauss norm.
 * `TauCeti.PowerSeries.norm_le_iff`: the norm is bounded by `r ≥ 0` exactly when every weighted
   coefficient norm `‖aₙ‖ cⁿ` is.
+* `PowerSeries.tendsto_trunc`: polynomial truncations converge in the Gauss norm.
 * `TauCeti.PowerSeries.norm_C`, `TauCeti.PowerSeries.norm_X`: constants keep their norm, and the
   variable has norm `c`.
 * `TauCeti.PowerSeries.nnnorm_eq_gaussValuation`: the norm is the Gauss valuation
@@ -118,6 +119,23 @@ theorem norm_X [NormOneClass R] :
   · rcases eq_or_ne m 1 with rfl | hm
     · rfl
     · simp [PowerSeries.coeff_X, hm, hc.out.le]
+
+/-- Polynomial truncations converge to a restricted series in its positive-radius Gauss norm. -/
+theorem _root_.PowerSeries.tendsto_trunc (f : PowerSeries.IsRestricted.subring (R := R) c) :
+    Tendsto (fun n ↦ (⟨((f : PowerSeries R).trunc n : PowerSeries R),
+      isRestricted_polynomial _⟩ : PowerSeries.IsRestricted.subring (R := R) c)) atTop (𝓝 f) := by
+  refine Metric.tendsto_atTop.mpr fun ε hε ↦ ?_
+  obtain ⟨N, hN⟩ := eventually_atTop.mp
+    (((PowerSeries.isRestricted_iff' c _).mp f.2).eventually
+      (gt_mem_nhds (half_pos hε)))
+  refine ⟨N, fun n hn ↦ ?_⟩
+  rw [dist_eq_norm]
+  refine lt_of_le_of_lt ((norm_le_iff (half_pos hε).le).mpr fun m ↦ ?_) (half_lt_self hε)
+  simp only [AddSubgroupClass.coe_sub, map_sub, Polynomial.coeff_coe, PowerSeries.coeff_trunc]
+  split_ifs with hm
+  · simp only [sub_self, norm_zero, zero_mul]
+    exact (half_pos hε).le
+  · simpa using (hN m (hn.trans (Nat.le_of_not_gt hm))).le
 
 /-- The norm of a restricted series is its Gauss valuation. -/
 theorem nnnorm_eq_gaussValuation [NormMulClass R] [NormOneClass R]
