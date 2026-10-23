@@ -474,6 +474,31 @@ private theorem apply_update_const_eq_apply_update_const_zero (hn : Even n)
 theorem cyclicCochains_zero : cyclicCochains R A M 0 = ⊤ :=
   eq_top_iff.2 fun φ _ a ↦ by simp [finRotate_one]
 
+variable {R A M} in
+/-- A `1`-cochain is cyclic exactly when it is antisymmetric: `φ(a₁, a₀) = -φ(a₀, a₁)`. -/
+theorem mem_cyclicCochains_one_iff {φ : MultilinearMap R (fun _ : Fin 2 ↦ A) M} :
+    φ ∈ cyclicCochains R A M 1 ↔ ∀ x y : A, φ ![y, x] = -φ ![x, y] := by
+  have hrot (a : Fin 2 → A) : a ∘ (finRotate 2).symm = ![a 1, a 0] := by
+    funext i; fin_cases i <;> rfl
+  have heta (a : Fin 2 → A) : a = ![a 0, a 1] := by
+    funext i; fin_cases i <;> rfl
+  refine ⟨fun hφ x y ↦ ?_, fun hφ a ↦ ?_⟩
+  · simpa [hrot] using hφ ![x, y]
+  · rw [hrot, hφ, ← heta, pow_one, neg_one_smul]
+
+variable {R A M} in
+/-- A `2`-cochain is cyclic exactly when it is invariant under cyclic rotation of its arguments:
+`φ(a₂, a₀, a₁) = φ(a₀, a₁, a₂)`. -/
+theorem mem_cyclicCochains_two_iff {φ : MultilinearMap R (fun _ : Fin 3 ↦ A) M} :
+    φ ∈ cyclicCochains R A M 2 ↔ ∀ x y z : A, φ ![z, x, y] = φ ![x, y, z] := by
+  have hrot (a : Fin 3 → A) : a ∘ (finRotate 3).symm = ![a 2, a 0, a 1] := by
+    funext i; fin_cases i <;> rfl
+  have heta (a : Fin 3 → A) : a = ![a 0, a 1, a 2] := by
+    funext i; fin_cases i <;> rfl
+  refine ⟨fun hφ x y z ↦ ?_, fun hφ a ↦ ?_⟩
+  · simpa [hrot] using hφ ![x, y, z]
+  · rw [hrot, hφ, ← heta, neg_one_sq, one_smul]
+
 end Cyclic
 
 section Coboundary
@@ -559,6 +584,40 @@ theorem hochschildCoboundary_zero_apply (φ : MultilinearMap R (fun _ : Fin 1 �
     fin_cases k
     rfl
   rw [hochschildCoboundary_apply_eq_sum_contractNth_add, Fin.sum_univ_one, h₀, h₁]
+  simp [sub_eq_add_neg]
+
+/-- In degree one, `(bφ)(a₀, a₁, a₂) = φ(a₀a₁, a₂) - φ(a₀, a₁a₂) + φ(a₂a₀, a₁)`. -/
+theorem hochschildCoboundary_one_apply (φ : MultilinearMap R (fun _ : Fin 2 ↦ A) M)
+    (a : Fin 3 → A) :
+    hochschildCoboundary R A M 1 φ a =
+      φ ![a 0 * a 1, a 2] - φ ![a 0, a 1 * a 2] + φ ![a 2 * a 0, a 1] := by
+  have h₀ : Fin.contractNth (0 : Fin 2).castSucc (· * ·) a = ![a 0 * a 1, a 2] := by
+    funext i; fin_cases i <;> rfl
+  have h₁ : Fin.contractNth (1 : Fin 2).castSucc (· * ·) a = ![a 0, a 1 * a 2] := by
+    funext i; fin_cases i <;> rfl
+  have h₂ : (Fin.cons (a (Fin.last 2) * a 0) fun i : Fin 1 ↦ a i.castSucc.succ : Fin 2 → A) =
+      ![a 2 * a 0, a 1] := by
+    funext i; fin_cases i <;> rfl
+  rw [hochschildCoboundary_apply_eq_sum_contractNth_add, Fin.sum_univ_two, h₀, h₁, h₂]
+  simp [sub_eq_add_neg]
+
+/-- In degree two, `(bφ)(a₀, a₁, a₂, a₃)` is
+`φ(a₀a₁, a₂, a₃) - φ(a₀, a₁a₂, a₃) + φ(a₀, a₁, a₂a₃) - φ(a₃a₀, a₁, a₂)`. -/
+theorem hochschildCoboundary_two_apply (φ : MultilinearMap R (fun _ : Fin 3 ↦ A) M)
+    (a : Fin 4 → A) :
+    hochschildCoboundary R A M 2 φ a =
+      φ ![a 0 * a 1, a 2, a 3] - φ ![a 0, a 1 * a 2, a 3] + φ ![a 0, a 1, a 2 * a 3] -
+        φ ![a 3 * a 0, a 1, a 2] := by
+  have h₀ : Fin.contractNth (0 : Fin 3).castSucc (· * ·) a = ![a 0 * a 1, a 2, a 3] := by
+    funext i; fin_cases i <;> rfl
+  have h₁ : Fin.contractNth (1 : Fin 3).castSucc (· * ·) a = ![a 0, a 1 * a 2, a 3] := by
+    funext i; fin_cases i <;> rfl
+  have h₂ : Fin.contractNth (2 : Fin 3).castSucc (· * ·) a = ![a 0, a 1, a 2 * a 3] := by
+    funext i; fin_cases i <;> rfl
+  have h₃ : (Fin.cons (a (Fin.last 3) * a 0) fun i : Fin 2 ↦ a i.castSucc.succ : Fin 3 → A) =
+      ![a 3 * a 0, a 1, a 2] := by
+    funext i; fin_cases i <;> rfl
+  rw [hochschildCoboundary_apply_eq_sum_contractNth_add, Fin.sum_univ_three, h₀, h₁, h₂, h₃]
   simp [sub_eq_add_neg]
 
 /-- A degree-zero cochain is a Hochschild cocycle exactly when it is a trace. -/
