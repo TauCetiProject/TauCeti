@@ -158,7 +158,7 @@ theorem pointConjugationBialgEquiv_toAlgHom (g : WithConv (H →ₐ[R] R)) :
   rfl
 
 /-- The bialgebra homomorphism underlying point conjugation is surjective. -/
-theorem surjective_pointConjugationBialgEquiv (g : WithConv (H →ₐ[R] R)) :
+theorem pointConjugationBialgEquiv_surjective (g : WithConv (H →ₐ[R] R)) :
     Function.Surjective (pointConjugationBialgEquiv g).toBialgHom := by
   simpa only [BialgEquiv.toBialgHom_eq_coe, BialgEquiv.coe_toBialgHom] using
     EquivLike.surjective (pointConjugationBialgEquiv g)

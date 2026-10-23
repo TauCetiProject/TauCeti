@@ -178,7 +178,7 @@ theorem conj_mem_parabolic_conjCocharacter_iff (l : H →ₐc[R] LaurentPolynomi
         parabolic A (l.conjCocharacter g) ↔ x ∈ parabolic A l := by
   rw [← HopfAlgebra.mapDomain_pointConjugationBialgEquiv, conjCocharacter]
   exact (mem_parabolic_iff_of_surjective _
-    (HopfAlgebra.surjective_pointConjugationBialgEquiv g) l x).symm
+    (HopfAlgebra.pointConjugationBialgEquiv_surjective g) l x).symm
 
 /-- **The dynamic Levi of a conjugate cocharacter** is the conjugate Levi:
 `Z(gλg⁻¹) = gZ(λ)g⁻¹`. -/
@@ -189,7 +189,7 @@ theorem conj_mem_levi_conjCocharacter_iff (l : H →ₐc[R] LaurentPolynomial R)
         levi A (l.conjCocharacter g) ↔ x ∈ levi A l := by
   rw [← HopfAlgebra.mapDomain_pointConjugationBialgEquiv, conjCocharacter]
   exact (mem_levi_iff_of_surjective _
-    (HopfAlgebra.surjective_pointConjugationBialgEquiv g) l x).symm
+    (HopfAlgebra.pointConjugationBialgEquiv_surjective g) l x).symm
 
 /-- **The dynamic unipotent subgroup of a conjugate cocharacter** is the conjugate subgroup:
 `U(gλg⁻¹) = gU(λ)g⁻¹`. -/
@@ -200,7 +200,7 @@ theorem conj_mem_unipotent_conjCocharacter_iff (l : H →ₐc[R] LaurentPolynomi
         unipotent A (l.conjCocharacter g) ↔ x ∈ unipotent A l := by
   rw [← HopfAlgebra.mapDomain_pointConjugationBialgEquiv, conjCocharacter]
   exact (mem_unipotent_iff_of_surjective _
-    (HopfAlgebra.surjective_pointConjugationBialgEquiv g) l x).symm
+    (HopfAlgebra.pointConjugationBialgEquiv_surjective g) l x).symm
 
 /-- A point lies in `P(gλg⁻¹)` exactly when its conjugate by `g⁻¹` lies in `P(λ)`. -/
 theorem mem_parabolic_conjCocharacter_iff (l : H →ₐc[R] LaurentPolynomial R)

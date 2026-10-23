@@ -69,7 +69,7 @@ maps are contravariant, it is the inverse image of `I` under the coordinate auto
 `x ↦ gxg⁻¹`. -/
 noncomputable def conjugate (I : HopfIdeal R H) (g : WithConv (H →ₐ[R] R)) : HopfIdeal R H :=
   I.comapOfSurjective (HopfAlgebra.pointConjugationBialgEquiv g).toBialgHom
-    (HopfAlgebra.surjective_pointConjugationBialgEquiv g)
+    (HopfAlgebra.pointConjugationBialgEquiv_surjective g)
 
 /-- Conjugation is the inverse image under the bialgebra automorphism of point conjugation.
 
@@ -79,7 +79,7 @@ theorem conjugate_eq_comapOfSurjective (I : HopfIdeal R H)
     (g : WithConv (H →ₐ[R] R)) :
     I.conjugate g =
       I.comapOfSurjective (HopfAlgebra.pointConjugationBialgEquiv g).toBialgHom
-        (HopfAlgebra.surjective_pointConjugationBialgEquiv g) := by
+        (HopfAlgebra.pointConjugationBialgEquiv_surjective g) := by
   rfl
 
 /-- Membership in a conjugated Hopf ideal is tested after applying the coordinate
@@ -294,7 +294,7 @@ theorem mapDomain_pointConjugation_mem_conjugate_iff
       x ∈ quotientPointsSubgroup (_root_.CommHopfAlgCat.of R H) I A := by
   rw [HopfIdeal.conjugate_eq_comapOfSurjective]
   exact BialgHom.mapDomain_mem_quotientPointsSubgroup_comapOfSurjective_iff _
-    (HopfAlgebra.surjective_pointConjugationBialgEquiv g) I A x
+    (HopfAlgebra.pointConjugationBialgEquiv_surjective g) I A x
 
 /-- In explicit pointwise terms, conjugating a point by `g` carries the points of `I` exactly
 onto the points of the conjugated ideal. -/
