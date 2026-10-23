@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Coproduct
+public import TauCeti.Algebra.Category.ModuleCat.AB
 public import TauCeti.Algebra.Homology.ShortComplex.Colimit
 public import Mathlib.AlgebraicTopology.SingularHomology.Basic
 public import Mathlib.Geometry.Convex.ConvexSpace.CompactSpaceStdSimplex

@@ -95,10 +95,7 @@ open Finset MvPolynomial
 vector. -/
 def partitionEquivSchurIndex (n d : ℕ) (h : n ≤ d) :
     n.Partition ≃ {μ : n.Partition // μ.parts.card ≤ Fintype.card (Fin d)} where
-  toFun μ := ⟨μ, by
-    have hcard := μ.parts.card_nsmul_le_sum (a := 1) (fun x hx => μ.parts_pos hx)
-    have hparts : μ.parts.card ≤ n := by simpa [μ.parts_sum] using hcard
-    exact hparts.trans (by simpa using h)⟩
+  toFun μ := ⟨μ, μ.card_parts_le.trans (by simpa using h)⟩
   invFun μ := μ.1
   left_inv _ := rfl
   right_inv _ := Subtype.ext rfl
@@ -321,10 +318,7 @@ theorem coe_schurPolyBasis (μ : {ν : n.Partition // ν.parts.card ≤ Fintype.
 theorem linearIndependent_schurPoly (h : n ≤ Fintype.card σ) :
     LinearIndependent R (schurPoly σ R : n.Partition → MvPolynomial σ R) := by
   let f (μ : n.Partition) : {ν : n.Partition // ν.parts.card ≤ Fintype.card σ} :=
-    ⟨μ, by
-      have hc := μ.parts.card_nsmul_le_sum (a := 1) (fun x hx ↦ μ.parts_pos hx)
-      have : μ.parts.card ≤ n := by simpa [μ.parts_sum] using hc
-      exact this.trans h⟩
+    ⟨μ, μ.card_parts_le.trans h⟩
   have hf : Function.Injective f := fun _ _ he ↦ congrArg Subtype.val he
   simpa only [Function.comp_def, Submodule.subtype_apply, coe_schurPolyBasis, f] using
     ((schurPolyBasis σ R n).linearIndependent.comp f hf).map'

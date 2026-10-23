@@ -49,6 +49,8 @@ the Laplacian.
 * `TauCeti.setIntegral_ball_zero_eq_integral_Ioo`,
   `TauCeti.integral_Ioo_pow_mul_toSphere_real_univ`: integration over a ball about the origin in
   polar coordinates, and the corresponding formula for the measure of the ball.
+* `LinearIsometryEquiv.map_toSphere`: a linear isometric equivalence carries the surface
+  measure of `μ` to the surface measure of the image of `μ`.
 -/
 
 public section
@@ -294,3 +296,42 @@ theorem integral_norm_rpow_neg_finrank_mul_fderiv_apply_self {f : E → ℝ} (hf
   ring
 
 end TauCeti
+
+namespace LinearIsometryEquiv
+
+open MeasureTheory Metric Set
+open scoped Pointwise
+
+section Isometry
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E]
+  [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F] [MeasurableSpace F] [BorelSpace F]
+
+/-- A linear isometric equivalence `f` carries the surface measure `μ.toSphere` to the surface
+measure of the image measure `μ.map f`, through the restriction of `f` to the unit spheres. -/
+theorem map_toSphere (f : E ≃ₗᵢ[ℝ] F) (μ : Measure E) :
+    μ.toSphere.map (Subtype.map f fun x hx ↦ by simpa using hx) = (μ.map f).toSphere := by
+  set g : sphere (0 : E) 1 → sphere (0 : F) 1 := Subtype.map f fun x hx ↦ by simpa using hx
+  have hg : Measurable g := f.continuous.measurable.subtype_map _
+  ext s hs
+  -- The cone over `g ⁻¹' s` is the preimage under `f` of the cone over `s`.
+  have hcone : Ioo (0 : ℝ) 1 • ((↑) '' (g ⁻¹' s) : Set E) =
+      f ⁻¹' (Ioo (0 : ℝ) 1 • ((↑) '' s : Set F)) := by
+    ext x
+    simp only [mem_preimage, Set.mem_smul, mem_image, exists_exists_and_eq_and]
+    constructor
+    · rintro ⟨r, hr, u, hu, rfl⟩
+      exact ⟨r, hr, g u, hu, by simp [g]⟩
+    · rintro ⟨r, hr, v, hv, hx⟩
+      refine ⟨r, hr, ⟨f.symm v, by simp⟩, ?_, ?_⟩
+      · simpa [g, Subtype.map] using hv
+      · simpa using congrArg f.symm hx
+  -- Pushing forward along `f` evaluates any set through its preimage, measurable or not.
+  have hmap : ∀ t : Set F, μ.map f t = μ (f ⁻¹' t) := fun t ↦ by
+    simpa using f.toHomeomorph.toMeasurableEquiv.map_apply (μ := μ) t
+  rw [Measure.map_apply hg hs, Measure.toSphere_apply' _ (hg hs), Measure.toSphere_apply' _ hs,
+    hmap, hcone, f.toLinearEquiv.finrank_eq]
+
+end Isometry
+
+end LinearIsometryEquiv

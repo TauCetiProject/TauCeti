@@ -38,6 +38,8 @@ that controls the subresultant gcd criterion.
   coefficient maps.
 * `Polynomial.subresultant_comm`: swapping the inputs gives the Sylvester block-swap
   sign.
+* `Polynomial.psc_C_mul_left`, `Polynomial.psc_C_mul_right`: scaling one polynomial by a constant
+  scales the principal subresultant coefficient by a power of that constant.
 
 ## References
 
@@ -242,6 +244,20 @@ theorem subresultantCoeff_C_mul_right [CommRing R]
       r ^ (m - j) * subresultantCoeff p q m n j k := by
   rw [subresultantCoeff_comm, subresultantCoeff_C_mul_left, mul_left_comm,
     ← subresultantCoeff_comm]
+
+/-- Scaling the left polynomial by a constant `r` scales the principal subresultant coefficient by
+`r ^ (n - j)`, where `n - j` counts the columns of the principal subresultant matrix that read
+shifts of the left polynomial. At index `0` it recovers `Polynomial.resultant_C_mul_left`. -/
+theorem psc_C_mul_left [CommRing R] (p q : R[X]) (r : R) (m n j : ℕ) :
+    psc (C r * p) q m n j = r ^ (n - j) * psc p q m n j := by
+  simpa using subresultantCoeff_C_mul_left p q r m n j j
+
+/-- Scaling the right polynomial by a constant `r` scales the principal subresultant coefficient by
+`r ^ (m - j)`, where `m - j` counts the columns of the principal subresultant matrix that read
+shifts of the right polynomial. At index `0` it recovers `Polynomial.resultant_C_mul_right`. -/
+theorem psc_C_mul_right [CommRing R] (p q : R[X]) (r : R) (m n j : ℕ) :
+    psc p (C r * q) m n j = r ^ (m - j) * psc p q m n j := by
+  simpa using subresultantCoeff_C_mul_right p q r m n j j
 
 /-- The fixed-bound subresultant polynomial at index `j`.
 
