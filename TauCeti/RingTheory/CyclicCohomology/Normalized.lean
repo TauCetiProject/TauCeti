@@ -35,7 +35,7 @@ namespace TauCeti
 section Normalized
 
 variable (R A M : Type*) [CommSemiring R] [AddCommMonoid A] [One A] [Module R A]
-  [AddCommGroup M] [Module R M]
+  [AddCommMonoid M] [Module R M]
 
 /-- Hochschild cochains which vanish when a noninitial argument is the unit. -/
 def normalizedHochschildCochains (n : ℕ) :
@@ -62,7 +62,7 @@ theorem normalizedHochschildCochains_zero : normalizedHochschildCochains R A M 0
 
 /-- Applying a linear map to the values preserves normalization. -/
 theorem _root_.LinearMap.compMultilinearMap_mem_normalizedHochschildCochains
-    {N : Type*} [AddCommGroup N] [Module R N] (f : M →ₗ[R] N)
+    {N : Type*} [AddCommMonoid N] [Module R N] (f : M →ₗ[R] N)
     {φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M}
     (hφ : φ ∈ normalizedHochschildCochains R A M n) :
     f.compMultilinearMap φ ∈ normalizedHochschildCochains R A N n := by
@@ -122,12 +122,12 @@ private theorem normalized_face_eq_zero
       rw [Fin.contractNth_apply_of_lt i.castSucc _ a _ hji']
       exact ha
 
-/-- The Hochschild coboundary preserves normalized cochains: the two faces adjacent to a unit
-cancel, and every remaining face still has a noninitial unit argument. -/
+/-- The Hochschild coboundary preserves normalized cochains. -/
 theorem hochschildCoboundary_mem_normalizedHochschildCochains
     {φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M}
     (hφ : φ ∈ normalizedHochschildCochains R A M n) :
     hochschildCoboundary R A M n φ ∈ normalizedHochschildCochains R A M (n + 1) := by
+  -- The two faces adjacent to a unit cancel; every remaining face has a noninitial unit argument.
   intro a k hk ha
   obtain ⟨j, rfl⟩ := Fin.exists_succ_eq.mpr hk
   rw [hochschildCoboundary_apply, Finset.sum_eq_add_of_mem j.castSucc j.succ
