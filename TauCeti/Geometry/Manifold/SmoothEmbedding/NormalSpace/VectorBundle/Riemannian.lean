@@ -51,95 +51,106 @@ variable {E V P H G M N : Type*}
   {I : ModelWithCorners ℝ E H} {J : ModelWithCorners ℝ V G}
   [TopologicalSpace M] [ChartedSpace H M]
   [TopologicalSpace N] [ChartedSpace G N]
-  {n : ℕ∞ω} [IsManifold I ∞ M] [IsManifold J ∞ N]
+  {n : ℕ∞ω}
   [RiemannianBundle (fun y : N ↦ TangentSpace J y)]
-  [IsContMDiffRiemannianBundle J ∞ V (fun y : N ↦ TangentSpace J y)]
 
-/-- Orthogonal normal projection is smooth on the pulled-back ambient tangent bundle.
-Both the base point and the ambient tangent vector may vary. -/
+variable {m : ℕ∞ω} [IsManifold I 1 M] [IsManifold J 1 N]
+  [IsContMDiffRiemannianBundle J m V (fun y : N ↦ TangentSpace J y)]
+
+/-- Orthogonal normal projection is `C^m` on the pulled-back ambient tangent bundle for a
+`C^n` embedding with `m + 1 ≤ n` and a `C^m` ambient metric. Both the base point and the
+ambient tangent vector may vary. -/
 theorem contMDiff_normalRepresentative_normalClass
-    (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) (hm : ∞ ≤ n) :
-    ContMDiff (I.prod 𝓘(ℝ, V)) (J.prod 𝓘(ℝ, V)) ∞
+    [IsManifold I (m + 1) M] [IsManifold J (m + 1) N]
+    (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) (hm : m + 1 ≤ n) :
+    ContMDiff (I.prod 𝓘(ℝ, V)) (J.prod 𝓘(ℝ, V)) m
       (fun p : TotalSpace V ((f : M → N) *ᵖ (TangentSpace J)) =>
         (⟨f p.proj, f.normalRepresentative p.proj hn (f.normalClass p.proj hn p.2)⟩ :
           TangentBundle J N)) := by
-  have : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
-  have : IsManifold J (∞ + 1) N := by simpa using (inferInstance : IsManifold J ∞ N)
   let : CompleteSpace E := FiniteDimensional.complete ℝ E
   -- The induced metric identifies tangent vectors with covectors on the source.
   let g := ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle
-    (IB := J) (n := ∞) (F := V) (V := fun y : N => TangentSpace J y)
+    (IB := J) (n := m) (F := V) (V := fun y : N => TangentSpace J y)
   let a := g.pullback f (f.contMDiff.of_le (by simpa using hm)) (f.isImmersion.mfderiv_injective hn)
   have ha (x : M) : (a.inner x).IsInvertible := by
     apply ContinuousLinearMap.isInvertible_of_separatingLeft (E := E)
     intro v hv
     by_contra hv0
     exact (a.pos x v hv0).ne' (hv v)
-  let fc : C^∞⟮I, M; J, N⟯ := ⟨f, f.contMDiff.of_le hm⟩
-  let : ContMDiffVectorBundle ∞ V ((f : M → N) *ᵖ (TangentSpace J)) I :=
+  let fc : C^m⟮I, M; J, N⟯ := ⟨f, f.contMDiff.of_le (le_self_add.trans hm)⟩
+  let := TangentBundle.contMDiffVectorBundle (I := I) (M := M) (n := m)
+  let := TangentBundle.contMDiffVectorBundle (I := J) (M := N) (n := m)
+  let : ContMDiffVectorBundle m V ((f : M → N) *ᵖ (TangentSpace J)) I :=
     ContMDiffVectorBundle.pullback V (TangentSpace J) I fc
-  have : ContMDiffVectorBundle 1 V ((f : M → N) *ᵖ (TangentSpace J)) I :=
-    ContMDiffVectorBundle.of_le (n := ∞) (by simp)
-  let : IsManifold (I.prod 𝓘(ℝ, V)) 1
-      (TotalSpace V ((f : M → N) *ᵖ (TangentSpace J))) :=
-    Bundle.TotalSpace.isManifold V ((f : M → N) *ᵖ (TangentSpace J))
-  have hbase : ContMDiff (I.prod 𝓘(ℝ, V)) I ∞
+  have hbase : ContMDiff (I.prod 𝓘(ℝ, V)) I m
       (π V ((f : M → N) *ᵖ (TangentSpace J))) := contMDiff_proj _
-  have hlift : ContMDiff (I.prod 𝓘(ℝ, V)) (J.prod 𝓘(ℝ, V)) ∞
+  have hlift : ContMDiff (I.prod 𝓘(ℝ, V)) (J.prod 𝓘(ℝ, V)) m
       (Pullback.lift (f : M → N)) :=
     ((Pullback.contMDiff_iff fc fc.contMDiff
       (E := fun y : N => TangentSpace J y)).mp contMDiff_id).2
   -- Pair the ambient vector with the differential, then pull the covector back.
   let φ := fun (x : M) (v : TangentSpace J (f x)) =>
     (g.inner (f x) v).comp (mfderiv I J f x)
-  have hφ : ContMDiff (I.prod 𝓘(ℝ, V)) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ∞
+  have hφ : ContMDiff (I.prod 𝓘(ℝ, V)) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) m
       (fun p : TotalSpace V ((f : M → N) *ᵖ (TangentSpace J)) =>
         (⟨p.proj, φ p.proj p.2⟩ : CotangentBundle I M)) := by
-    exact CotangentBundle.contMDiff_mk_comp_mfderiv (IX := I.prod 𝓘(ℝ, V))
-      (X := TotalSpace V ((f : M → N) *ᵖ (TangentSpace J))) (f := (f : M → N))
-      (g := π V ((f : M → N) *ᵖ (TangentSpace J))) (fun _ => rfl)
-      ((g.contMDiff.comp (fc.contMDiff.comp hbase)).clm_bundle_apply hlift)
-      hbase f.contMDiff (by simpa using hm)
+    intro p
+    have hΨ : ContMDiff (I.prod 𝓘(ℝ, V)) (J.prod 𝓘(ℝ, V →L[ℝ] ℝ)) m
+        (fun q : TotalSpace V ((f : M → N) *ᵖ (TangentSpace J)) =>
+          (⟨f q.proj, g.inner (f q.proj) q.2⟩ : CotangentBundle J N)) :=
+      (g.contMDiff.comp (fc.contMDiff.comp hbase)).clm_bundle_apply hlift
+    have hΨp := hΨ p
+    rw [contMDiffAt_hom_bundle] at hΨp ⊢
+    refine ⟨hbase p, ?_⟩
+    -- As in CotangentBundle.contMDiff_mk_comp_mfderiv, compose in coordinates.
+    -- Using mfderiv_const on the base avoids a C¹ assumption on the total space.
+    have hd := ((f.contMDiff p.proj).mfderiv_const hm).comp p (hbase p)
+    refine (hΨp.2.clm_comp hd).congr_of_eventuallyEq ?_
+    have hb := fc.contMDiff.continuous.continuousAt.comp (hbase p).continuousAt
+    filter_upwards [hb.preimage_mem_nhds
+      ((trivializationAt V (TangentSpace J) (f p.proj)).open_baseSet.mem_nhds
+        (FiberBundle.mem_baseSet_trivializationAt' _))] with q hq
+    ext w
+    simp only [φ, Function.comp_apply, ContinuousLinearMap.inCoordinates, inTangentCoordinates,
+      ContinuousLinearMap.comp_apply, Trivial.fiberBundle_trivializationAt',
+      Trivial.continuousLinearMapAt_trivialization, ContinuousLinearMap.id_apply]
+    rw [Trivialization.symmL_continuousLinearMapAt _ (b := f q.proj) hq]
+    rfl
   -- Invert the induced metric and push the resulting tangential component forward.
   let u := fun (x : M) (v : TangentSpace J (f x)) =>
     (a.inner x).inverse (φ x v)
-  have hu : ContMDiff (I.prod 𝓘(ℝ, V)) (I.prod 𝓘(ℝ, E)) ∞
+  have hu : ContMDiff (I.prod 𝓘(ℝ, V)) (I.prod 𝓘(ℝ, E)) m
       (fun p : TotalSpace V ((f : M → N) *ᵖ (TangentSpace J)) =>
         (⟨p.proj, u p.proj p.2⟩ : TangentBundle I M)) :=
     ((a.contMDiff.clm_bundle_inverse ha).comp hbase).clm_bundle_apply hφ
   have ht := (f.contMDiff.contMDiff_tangentMap (by simpa using hm)).comp hu
   have hneg := (contMDiff_const (c := (-1 : ℝ))).smul_totalSpace ht
   have hsub := hlift.add_sectionAlong hneg
-  -- The remainder is perpendicular to the tangent range and has the prescribed normal class.
   have hformula (x : M) (v : TangentSpace J (f x)) :
       f.normalRepresentative x hn (f.normalClass x hn v) =
         v + (-1 : ℝ) • mfderiv I J f x (u x v) := by
-    apply (f.normalRepresentative_eq_iff x hn _ _).mpr
-    constructor
-    · apply (Submodule.mem_orthogonal' _ _).mpr
-      intro w hw
-      obtain ⟨z, rfl⟩ := (f.mem_tangentRange_iff x hn w).mp hw
-      have hpair := DFunLike.congr_fun ((ha x).self_apply_inverse (φ x v)) z
-      rw [ContMDiffRiemannianMetric.pullback_inner] at hpair
-      simp only [φ, ContinuousLinearMap.comp_apply, g,
-        ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle_inner] at hpair
-      have hpair' : inner ℝ (mfderiv I J f x (u x v)) (mfderiv I J f x z) =
-          inner ℝ v (mfderiv I J f x z) := hpair
-      simpa only [neg_one_smul, ← sub_eq_add_neg, inner_sub_left, sub_eq_zero] using hpair'.symm
-    · simp only [map_add, map_smul, normalClass_mfderiv, smul_zero, add_zero]
+    rw [neg_one_smul, ← sub_eq_add_neg]
+    have hg : g.inner (f x) = RiemannianBundle.g.inner (f x) := by
+      ext w z
+      exact ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle_inner _ _ _
+    have hflat : a.inner x = (ContinuousLinearMap.precomp ℝ (mfderiv I J f x)).comp
+        ((g.inner (f x)).comp (mfderiv I J f x)) := by
+      ext w z
+      exact ContMDiffRiemannianMetric.pullback_inner _ _ _ _ _ _ _
+    simpa only [u, φ, hflat, hg] using
+      f.normalRepresentative_normalClass_eq_sub_mfderiv_inverse x hn v
   exact hsub.congr fun p => congrArg (TotalSpace.mk (f p.proj)) (hformula p.proj p.2)
 
 /-- The map taking an intrinsic normal vector to its orthogonal representative in the ambient
-tangent bundle is smooth for a smooth embedding and a smooth ambient Riemannian metric. -/
+tangent bundle is `C^m` for a `C^n` embedding with `m + 1 ≤ n` and a `C^m` ambient metric. -/
 theorem contMDiff_normalRepresentative
-    (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) (hm : ∞ ≤ n)
+    [IsManifold I (m + 1) M] [IsManifold J (m + 1) N]
+    (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) (hm : m + 1 ≤ n)
     (hdim : Module.finrank ℝ P = Module.finrank ℝ V - Module.finrank ℝ E) :
     letI := f.normalSpaceFiberBundle hn hdim
-    ContMDiff (I.prod 𝓘(ℝ, P)) (J.prod 𝓘(ℝ, V)) ∞
+    ContMDiff (I.prod 𝓘(ℝ, P)) (J.prod 𝓘(ℝ, V)) m
       (fun p : TotalSpace P (fun x => f.NormalSpace x hn) =>
         (⟨f p.proj, f.normalRepresentative p.proj hn p.2⟩ : TangentBundle J N)) := by
-  have : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
-  have : IsManifold J (∞ + 1) N := by simpa using (inferInstance : IsManifold J ∞ N)
   let := f.normalSpaceFiberBundle hn hdim
   rw [f.contMDiff_normalBundle_iff hn hm hdim]
   convert f.contMDiff_normalRepresentative_normalClass hn hm using 1

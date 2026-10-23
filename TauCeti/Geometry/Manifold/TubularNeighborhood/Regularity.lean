@@ -49,9 +49,11 @@ theorem isOpen_normalExpDomain
     (hdim : Module.finrank ℝ P = Module.finrank ℝ V - Module.finrank ℝ E) :
     letI := f.normalSpaceFiberBundle hn hdim
     IsOpen (f.normalExpDomain (P := P) hn) := by
+  have : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
+  have : IsManifold J (∞ + 1) N := by simpa using (inferInstance : IsManifold J ∞ N)
   let := f.normalSpaceFiberBundle hn hdim
   convert (Manifold.isOpen_setOfPred_mem_expDomain (I := J) (M := N)).preimage
-    (f.contMDiff_normalRepresentative hn hm hdim).continuous using 1
+    (f.contMDiff_normalRepresentative (m := ∞) hn (by simpa using hm) hdim).continuous using 1
   ext p
   exact f.mem_normalExpDomain hn p
 
@@ -62,9 +64,11 @@ theorem contMDiffOn_normalExp
     letI := f.normalSpaceFiberBundle hn hdim
     ContMDiffOn (I.prod 𝓘(ℝ, P)) J ∞ (f.normalExp (P := P) hn)
       (f.normalExpDomain (P := P) hn) := by
+  have : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
+  have : IsManifold J (∞ + 1) N := by simpa using (inferInstance : IsManifold J ∞ N)
   let := f.normalSpaceFiberBundle hn hdim
   convert (Manifold.contMDiffOn_riemannianExp_tangentBundle (I := J) (M := N)).comp
-    (f.contMDiff_normalRepresentative hn hm hdim).contMDiffOn
+    (f.contMDiff_normalRepresentative (m := ∞) hn (by simpa using hm) hdim).contMDiffOn
     (fun p hp => (f.mem_normalExpDomain hn p).mp hp) using 1
   funext p
   exact f.normalExp_apply hn p
