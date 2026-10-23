@@ -127,7 +127,8 @@ abbrev conjugationMap : coordinateHopfAlgebra k n ⟶
     GeneralLinear.UpperTriangular.coordinateHopfAlgebra k n :=
   CommHopfAlgCat.imageι (restriction k n)
 
-/-- The upper-triangular conjugation map recovers ambient conjugation after inclusion. -/
+/-- Inclusion followed by the upper-triangular conjugation map is restriction to the
+general-linear upper-triangular group. -/
 @[reassoc]
 theorem coordinateMap_comp_conjugationMap :
     coordinateMap k n ≫ conjugationMap k n = restriction k n :=
@@ -135,21 +136,27 @@ theorem coordinateMap_comp_conjugationMap :
 
 variable {n} {i j : Fin n}
 
+/-- The defining ideal is killed by every positive elementary root map of `PGLₙ`. -/
+theorem definingHopfIdeal_le_ker_rootSubgroupCoordinateMap (hij : i < j) :
+    (definingHopfIdeal k n).toIdeal ≤
+      RingHom.ker (ProjectiveGeneralLinear.rootSubgroupCoordinateMap hij.ne).hom.toAlgHom := by
+  intro x hx
+  have hkill := CommHopfAlgCat.toIdeal_le_ker_of_mkQuotient_comp
+    (I := GeneralLinear.UpperTriangular.definingHopfIdeal k n)
+    (g := GeneralLinear.UpperTriangular.rootSubgroupCoordinateMap k hij)
+    (f := GeneralLinear.rootSubgroupCoordinateMap hij.ne)
+    (by rw [← GeneralLinear.UpperTriangular.coordinateMap_def,
+      GeneralLinear.UpperTriangular.coordinateMap_comp_rootSubgroupCoordinateMap])
+  simp only [RingHom.mem_ker,
+    ProjectiveGeneralLinear.rootSubgroupCoordinateMap_def, _root_.CommHopfAlgCat.hom_comp]
+  exact RingHom.mem_ker.mp (hkill ((mem_definingHopfIdeal k n x).mp hx))
+
 /-- The positive elementary root map, factored through the projective upper-triangular group. -/
 def rootSubgroupCoordinateMap (hij : i < j) :
     coordinateHopfAlgebra k n ⟶ AdditiveGroup.coordinateHopfAlgebra k :=
   CommHopfAlgCat.liftQuotient (definingHopfIdeal k n)
-    (ProjectiveGeneralLinear.rootSubgroupCoordinateMap hij.ne) (by
-      intro x hx
-      have hkill := CommHopfAlgCat.toIdeal_le_ker_of_mkQuotient_comp
-        (I := GeneralLinear.UpperTriangular.definingHopfIdeal k n)
-        (g := GeneralLinear.UpperTriangular.rootSubgroupCoordinateMap k hij)
-        (f := GeneralLinear.rootSubgroupCoordinateMap hij.ne)
-        (by rw [← GeneralLinear.UpperTriangular.coordinateMap_def,
-          GeneralLinear.UpperTriangular.coordinateMap_comp_rootSubgroupCoordinateMap])
-      simp only [RingHom.mem_ker, AlgHom.toRingHom_eq_coe,
-        ProjectiveGeneralLinear.rootSubgroupCoordinateMap_def, _root_.CommHopfAlgCat.hom_comp]
-      exact RingHom.mem_ker.mp (hkill ((mem_definingHopfIdeal k n x).mp hx)))
+    (ProjectiveGeneralLinear.rootSubgroupCoordinateMap hij.ne)
+    (definingHopfIdeal_le_ker_rootSubgroupCoordinateMap k hij)
 
 /-- Inclusion after a factored positive root map gives the ambient elementary root map. -/
 @[reassoc (attr := simp)]
