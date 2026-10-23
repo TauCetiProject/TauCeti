@@ -237,8 +237,9 @@ theorem comul_mem_range_lTensor_of_mem_coinvariants [Module.Flat R H] (hh : h �
   rw [hB]
   exact ⟨y, by rw [← hy, TensorProduct.AlgebraTensorModule.coe_lTensor]⟩
 
-/-- **Coinvariants of a kernel.** If `I` is the kernel of a bialgebra morphism `f : H → K`, then
-over a flat Hopf algebra an element `h` is a coinvariant exactly when `(id ⊗ f) (Δ h) = h ⊗ 1`.
+/-- **Coinvariants of a kernel.** If `I` is the kernel of a bialgebra morphism `f : H → K`, then,
+when `H`, `K` and `H ⧸ ker f` are flat over `R` (automatic over a field), an element `h` is a
+coinvariant exactly when `(id ⊗ f) (Δ h) = h ⊗ 1`.
 Geometrically, invariance under right translation by the scheme-theoretic image of the
 homomorphism represented by `f` may be tested on `f` itself. -/
 theorem mem_coinvariants_ker_iff [Module.Flat R H] {K : Type w} [Ring K] [HopfAlgebra R K]
@@ -249,10 +250,9 @@ theorem mem_coinvariants_ker_iff [Module.Flat R H] {K : Type w} [Ring K] [HopfAl
   -- `f` factors through the quotient by its kernel via an injective map `φ`.
   let φ : H ⧸ (ker f).toIdeal →ₐ[R] K :=
     Ideal.Quotient.liftₐ _ (f : H →ₐ[R] K) fun a ha ↦ (mem_ker f).mp (mem_toIdeal.mp ha)
-  have hφ : Function.Injective φ := by
-    refine (injective_iff_map_eq_zero φ).mpr fun q hq ↦ ?_
-    obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective q
-    exact Ideal.Quotient.eq_zero_iff_mem.mpr (mem_toIdeal.mpr ((mem_ker f).mpr hq))
+  have hφ : Function.Injective φ :=
+    RingHom.lift_injective_of_ker_le_ideal _ _ fun _ ha ↦
+      mem_toIdeal.mpr ((mem_ker f).mpr ha)
   have hinj : Function.Injective (Algebra.TensorProduct.map (AlgHom.id R H) φ) :=
     Module.Flat.lTensor_preserves_injective_linearMap φ.toLinearMap hφ
   have hcomp : (Algebra.TensorProduct.map (AlgHom.id R H) φ).comp
