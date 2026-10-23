@@ -253,6 +253,13 @@ theorem coe_typeE₆MinusculeWeightDual :
 noncomputable def typeE₆MinusculeWeightClass : typeE₆RootLattice.DiscriminantGroup :=
   Submodule.Quotient.mk typeE₆MinusculeWeightDual
 
+/-- The minuscule weight `ϖ₁` represents its discriminant class. -/
+@[simp]
+theorem mk_typeE₆MinusculeWeightDual :
+    (Submodule.Quotient.mk typeE₆MinusculeWeightDual : typeE₆RootLattice.DiscriminantGroup) =
+      typeE₆MinusculeWeightClass :=
+  (rfl)
+
 /-- **An integer multiple of `ϖ₁` lies in the type `E₆` root lattice exactly when `3` divides
 it**: the first simple-root coordinate of `ϖ₁` is `4/3`. -/
 theorem zsmul_typeE₆MinusculeWeightClass_eq_zero_iff (k : ℤ) :
@@ -530,6 +537,13 @@ theorem coe_typeE₇MinusculeWeightDual :
 /-- The discriminant class of the minuscule weight `ϖ₇` of type `E₇`. -/
 noncomputable def typeE₇MinusculeWeightClass : typeE₇RootLattice.DiscriminantGroup :=
   Submodule.Quotient.mk typeE₇MinusculeWeightDual
+
+/-- The minuscule weight `ϖ₇` represents its discriminant class. -/
+@[simp]
+theorem mk_typeE₇MinusculeWeightDual :
+    (Submodule.Quotient.mk typeE₇MinusculeWeightDual : typeE₇RootLattice.DiscriminantGroup) =
+      typeE₇MinusculeWeightClass :=
+  (rfl)
 
 /-- **An integer multiple of `ϖ₇` lies in the type `E₇` root lattice exactly when `2` divides
 it**: the second simple-root coordinate of `ϖ₇` is `3/2`. -/

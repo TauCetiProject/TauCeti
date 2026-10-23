@@ -83,7 +83,7 @@ end TauCeti.GridInitialPentagonRectangleDecomposition
 
 namespace TauCeti.GridDiagram
 
-variable {n : ℕ} (G : GridDiagram n) (C : ColumnCommutationData G) {x z : GridState n}
+variable {n : ℕ} (G : GridDiagram n) (C : ColumnTurn n) {x z : GridState n}
 
 /-- A counted initial-side-pentagon--rectangle domain sharing its terminal side, with the
 pentagon's initial side inside the rectangle's column interval, is the recut of a counted mixed
