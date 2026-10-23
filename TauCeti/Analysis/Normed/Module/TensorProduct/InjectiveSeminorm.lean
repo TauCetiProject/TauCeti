@@ -114,11 +114,13 @@ theorem norm_contractStrongDual_apply_le (u : E ⊗[𝕜] F) (f : StrongDual �
 /-- On a pure tensor `x ⊗ₜ y`, the injective seminorm is the norm of `x` in the double dual
 times the norm of `y`. -/
 private theorem injectiveSeminorm_tmul_eq (x : E) (y : F) :
-    injectiveSeminorm 𝕜 E F (x ⊗ₜ y) = ‖NormedSpace.inclusionInDoubleDual 𝕜 E x‖ * ‖y‖ :=
-  -- Unfolding `injectiveSeminorm`, `Seminorm.comp`, and `normSeminorm` gives the operator norm;
-  -- on `x ⊗ₜ y`, `TensorProduct.lift` and the composition with `smulRightLₗ` reduce to
-  -- `ContinuousLinearMap.smulRight (NormedSpace.inclusionInDoubleDual 𝕜 E x) y`.
-  ContinuousLinearMap.norm_smulRight_apply _ y
+    injectiveSeminorm 𝕜 E F (x ⊗ₜ y) = ‖NormedSpace.inclusionInDoubleDual 𝕜 E x‖ * ‖y‖ := by
+  rw [injectiveSeminorm_apply]
+  have h : contractStrongDual 𝕜 E F (x ⊗ₜ y) =
+      ContinuousLinearMap.smulRight (NormedSpace.inclusionInDoubleDual 𝕜 E x) y := by
+    ext f
+    simp only [contractStrongDual_tmul, ContinuousLinearMap.smulRight_apply, NormedSpace.dual_def]
+  rw [h, ContinuousLinearMap.norm_smulRight_apply]
 
 /-- The injective seminorm of a pure tensor is at most the product of the norms. -/
 theorem injectiveSeminorm_tmul_le (x : E) (y : F) :

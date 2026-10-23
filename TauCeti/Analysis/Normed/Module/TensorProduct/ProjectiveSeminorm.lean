@@ -171,8 +171,8 @@ variable {𝕜 E F G : Type*} [NontriviallyNormedField 𝕜] [SeminormedAddCommG
   [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] [SeminormedAddCommGroup G]
   [NormedSpace 𝕜 G]
 
-/-- **Universal property** of the projective seminorm: the linear map on `E ⊗[𝕜] F` induced by
-a bounded bilinear map `B` is bounded by `‖B‖` times the projective seminorm. -/
+/-- The linear map on `E ⊗[𝕜] F` induced by a bounded bilinear map `B` is bounded by
+`‖B‖` times the projective seminorm. -/
 theorem norm_lift_le_projectiveSeminorm (B : E →L[𝕜] F →L[𝕜] G) (u : E ⊗[𝕜] F) :
     ‖_root_.TensorProduct.lift (B.toLinearMap₁₂) u‖ ≤ ‖B‖ * projectiveSeminorm 𝕜 E F u :=
   apply_le_mul_projectiveSeminorm (p := normSeminorm 𝕜 G) (norm_nonneg B)
