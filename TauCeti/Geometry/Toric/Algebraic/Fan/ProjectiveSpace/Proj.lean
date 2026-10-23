@@ -470,14 +470,6 @@ variable {N ι : Type} {V : Type*} [AddCommGroup N] [AddCommGroup V] [Module ℝ
 local notation "𝒜" => SymmetricAlgebra.homogeneousSubmodule ℂ (Option ι → ℂ)
 local notation "X" j => _root_.SymmetricAlgebra.ι ℂ (Option ι → ℂ) (Pi.single j 1)
 
-omit [DecidableEq ι] in
-/-- Every cone of the fan of projective space lies in the maximal cone omitting some ray. -/
-theorem exists_le_projectiveSpaceCone_compl {σ : PointedCone ℝ V}
-    (hσ : σ ∈ (projectiveSpace b hi).cones) : ∃ k, σ ≤ projectiveSpaceCone b i {k}ᶜ := by
-  obtain ⟨S, hS, rfl⟩ := (mem_projectiveSpace_cones b hi).1 hσ
-  obtain ⟨k, hk⟩ := (Set.ne_univ_iff_exists_notMem S).1 hS
-  exact ⟨k, projectiveSpaceCone_mono b (Set.subset_compl_singleton_iff.2 hk)⟩
-
 /-- The compatible morphisms from the affine charts of the fan of projective space to `Proj`. -/
 private noncomputable def projCocone : Cocone (projectiveSpace b hi).affineToricDiagram where
   pt := Proj 𝒜

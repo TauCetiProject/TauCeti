@@ -329,6 +329,13 @@ noncomputable abbrev projectiveSpaceMaximalCone (hi : IsIntegralLattice i) (k : 
   ⟨projectiveSpaceCone b i {k}ᶜ,
     (mem_projectiveSpace_cones b hi).2 ⟨_, by simp, rfl⟩⟩
 
+/-- Every cone of the fan of projective space lies in the maximal cone omitting some ray. -/
+theorem exists_le_projectiveSpaceCone_compl (hi : IsIntegralLattice i) {σ : PointedCone ℝ V}
+    (hσ : σ ∈ (projectiveSpace b hi).cones) : ∃ k, σ ≤ projectiveSpaceCone b i {k}ᶜ := by
+  obtain ⟨S, hS, rfl⟩ := (mem_projectiveSpace_cones b hi).1 hσ
+  obtain ⟨k, hk⟩ := (ne_univ_iff_exists_notMem S).1 hS
+  exact ⟨k, projectiveSpaceCone_mono b (subset_compl_singleton_iff.2 hk)⟩
+
 /-- The fan of projective space is regular. -/
 theorem isRegular_projectiveSpace (hi : IsIntegralLattice i) :
     (projectiveSpace b hi).IsRegular := by
