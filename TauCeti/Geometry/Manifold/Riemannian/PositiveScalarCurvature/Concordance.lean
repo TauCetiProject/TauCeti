@@ -628,9 +628,8 @@ theorem HasPositiveScalarCurvature.isCollaredConcordance_restrictIcc_cylinder
   ⟨((hasPositiveScalarCurvature_cylinder_iff g).2 h).restrictIcc,
     1, one_pos, fun _ _ ↦ rfl, fun _ _ ↦ rfl⟩
 
-/-- **Concordances give collared concordances.** Restricting a concordance from `g₀` to `g₁` to
-`[-1, 2]` and pulling it back to `M × [0, 1]` along a smooth increasing map `[0, 1] → [-1, 2]` which
-is `t ↦ t - 1` near `0` and `t ↦ t + 1` near `1` gives a collared concordance from `g₀` to `g₁`. -/
+/-- **Concordances give collared concordances.** A concordance from `g₀` to `g₁` gives a collared
+concordance from `g₀` to `g₁` on `M × [0, 1]`. -/
 theorem IsConcordance.exists_isCollaredConcordance (h : IsConcordance G g₀ g₁) :
     ∃ Gc, IsCollaredConcordance Gc g₀ g₁ := by
   have hd (t : ℝ) : |deriv (fun t : ℝ ↦ t - 1) t| = 1 := by simp
@@ -656,9 +655,8 @@ theorem IsConcordance.exists_isCollaredConcordance (h : IsConcordance G g₀ g�
     rw [hψ.eq_of_nhds]
     exact hG'₁ _ (by simp [p.2.2.1])
 
-/-- **Collared concordances give concordances.** A collared concordance from `g₀` to `g₁`, extended
-by the product ends `g₀ + dt²` for `t ≤ 0` and `g₁ + dt²` for `t ≥ 1`, gives a concordance from
-`g₀` to `g₁`. -/
+/-- **Collared concordances give concordances.** If there is a collared concordance from `g₀` to
+`g₁`, then `g₀` and `g₁` are concordant. -/
 theorem IsCollaredConcordance.concordant (h : IsCollaredConcordance Gc g₀ g₁) :
     Concordant g₀ g₁ := by
   obtain ⟨ε₀, hε₀, h₀, h₁⟩ := h.exists_collar
