@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.FieldDivision
-public import Mathlib.RingTheory.PrincipalIdealDomain
 public import TauCeti.NumberTheory.NewtonPolygon.Mul
 
 /-!
