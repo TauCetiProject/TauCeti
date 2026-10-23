@@ -17,7 +17,7 @@ For locally integrable `u`, the pairing of the directional derivative `∂_v u` 
 function `φ` is `-∫ ∂_v φ * u`, and `∂_v φ` is the divergence of the test vector field `φ v`.
 Hence the variational total variation `|Du|(Ω)` bounds it:
 `|∫ ∂_v φ * u| ≤ ‖v‖ ‖φ‖_∞ |Du|(Ω)`
-(`TestFunction.ofReal_abs_integral_lineDeriv_mul_le_totalVariationOn`).
+(`TestFunction.ofReal_abs_integral_lineDeriv_mul_le_enorm_mul_enorm_mul_totalVariationOn`).
 
 The distributional derivative is taken of `Distribution.ofFun Ω u μ ⊤`. When `u` is locally
 integrable on `Ω` this is integration against `u`, so `∂_v u (φ) = -∫ ∂_v φ * u`; otherwise
@@ -33,8 +33,8 @@ needed, so this covers functions of locally bounded variation on unbounded open 
 
 ## Main results
 
-* `TestFunction.ofReal_abs_integral_lineDeriv_mul_le_totalVariationOn`: the directional derivative
-  pairing is bounded by `‖v‖ ‖φ‖_∞ |Du|(Ω)`.
+* `TestFunction.ofReal_abs_integral_lineDeriv_mul_le_enorm_mul_enorm_mul_totalVariationOn`: the
+  directional derivative pairing is bounded by `‖v‖ ‖φ‖_∞ |Du|(Ω)`.
 * `TauCeti.exists_regular_lineDeriv_ofFun_apply_eq`: the directional derivatives of a function of
   locally finite variation on `Ω` are differences of regular measures on `Ω`.
 
@@ -60,7 +60,8 @@ namespace TestFunction
 
 /-- **The directional derivative is bounded by the total variation.** For a test function `φ` on
 `Ω` and a direction `v`, `|∫ ∂_v φ * u| ≤ ‖v‖ ‖φ‖_∞ |Du|(Ω)`. -/
-theorem ofReal_abs_integral_lineDeriv_mul_le_totalVariationOn (φ : 𝓓(Ω, ℝ)) (v : E) :
+theorem ofReal_abs_integral_lineDeriv_mul_le_enorm_mul_enorm_mul_totalVariationOn (φ : 𝓓(Ω, ℝ))
+    (v : E) :
     ENNReal.ofReal |∫ x, ∂_{v} φ x * u x ∂μ| ≤
       ‖v‖ₑ * ‖(φ : E →ᵇ ℝ)‖ₑ * totalVariationOn μ Ω u := by
   -- `∂_v φ` is the divergence of the vector field `φ v`, which is bounded by `‖v‖ ‖φ‖_∞`.
@@ -98,7 +99,8 @@ theorem exists_regular_lineDeriv_ofFun_apply_eq [BorelSpace E]
   · -- The same function, as a test function on `U`.
     let φ' : 𝓓(U, ℝ) := ⟨φ, φ.contDiff, φ.hasCompactSupport, hφ.trans hKU⟩
     have hφ' (x : E) : ∂_{v} φ' x = ∂_{v} φ x := by simp [φ']
-    have h := ofReal_abs_integral_lineDeriv_mul_le_totalVariationOn (μ := μ) (u := u) φ' v
+    have h := ofReal_abs_integral_lineDeriv_mul_le_enorm_mul_enorm_mul_totalVariationOn
+      (μ := μ) (u := u) φ' v
     simp_rw [hφ'] at h
     rw [Distribution.ofFun_apply hli]
     simp only [neg_apply, smul_eq_mul, neg_mul, integral_neg, abs_neg]

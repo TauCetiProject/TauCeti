@@ -16,7 +16,11 @@ import Mathlib.Analysis.Calculus.ContDiff.Convolution
 Let `Ω` be an open set of a finite-dimensional real normed space `E`. Mollifying a continuous
 function supported in a compact set `K` by normalized bumps of small radius gives test functions
 on `Ω` supported in a fixed closed thickening of `K` that converge to it uniformly, as long as that
-thickening lies in `Ω`. The error estimate is Mathlib's `ContDiffBump.dist_normed_convolution_le`.
+thickening lies in `Ω`. The construction follows Mathlib's
+`MeasureTheory.LocallyIntegrable.exists_contDiff_dist_le_of_forall_mem_ball_dist_le` and
+`UniformContinuous.exists_contDiff_dist_le` (in
+`Mathlib.Analysis.Calculus.BumpFunction.SmoothApprox`), with added control of the support; the
+error estimate is Mathlib's `ContDiffBump.dist_normed_convolution_le`.
 
 ## Main results
 
