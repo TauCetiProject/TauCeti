@@ -35,36 +35,6 @@ namespace HahnModule
 variable {Γ R V : Type*} [AddCommMonoid Γ] [PartialOrder Γ]
   [IsOrderedCancelAddMonoid Γ]
 
-/-- Multiplying a constant module-valued series by a scalar series multiplies each coefficient
-by the constant vector. -/
-@[simp]
-theorem coeff_smul_single_zero [Zero R] [AddCommMonoid V] [SMulWithZero R V]
-    (f : HahnSeries Γ R) (v : V) (g : Γ) :
-    ((of R).symm (f • of R (single 0 v))).coeff g = f.coeff g • v := by
-  classical
-  rw [coeff_smul_right (x := f) (y := of R (single (0 : Γ) v))
-    (Set.isPWO_singleton 0) (by exact support_single_subset)]
-  trans f.coeff g • ((of R).symm (of R (single (0 : Γ) v))).coeff 0
-  · apply Finset.sum_eq_single (g, 0)
-    · intro ij hij hne
-      have hj : ij.2 = 0 := ((Finset.mem_vaddAntidiagonal _ _).mp hij).2.1
-      have hi : ij.1 = g := by simpa [hj] using ((Finset.mem_vaddAntidiagonal _ _).mp hij).2.2
-      exact (hne (Prod.ext hi hj)).elim
-    · intro h
-      by_cases hf : f.coeff g = 0
-      · simp [hf]
-      · exact (h ((Finset.mem_vaddAntidiagonal _ _).mpr ⟨hf, rfl, by simp⟩)).elim
-  · simp
-
-/-- A scalar monomial times a constant vector series is a vector-valued monomial. -/
-@[simp]
-theorem single_smul_single_zero [Zero R] [AddCommMonoid V] [SMulWithZero R V]
-    (g : Γ) (r : R) (v : V) :
-    single g r • of R (single 0 v) = of R (single g (r • v)) := by
-  apply HahnModule.ext
-  funext h
-  by_cases hh : h = g <;> simp [hh]
-
 variable [CommSemiring R] [AddCommMonoid V] [Module R V]
 
 variable (R Γ V) in
@@ -110,6 +80,7 @@ theorem sum_map_coord_smul_single {ι : Type*} [Fintype ι] (b : Module.Basis ι
     ∑ i, ((of R).symm x).map (b.coord i) • of R (single 0 (b i)) = x := by
   apply HahnModule.ext
   funext g
+  -- Use the bundled linear equivalence so `map_sum` distributes the inverse of `of`.
   rw [← ofLinearEquiv_symm_apply]
   simp only [map_sum, ofLinearEquiv_symm_apply, coeff_sum, coeff_smul_single_zero, map_coeff,
     Module.Basis.coord_apply]
@@ -120,11 +91,19 @@ theorem tensorProductToHahnModule_bijective_of_basis {ι : Type*} [Finite ι]
     (b : Module.Basis ι R V) : Function.Bijective (tensorProductToHahnModule Γ R V) := by
   classical
   let := Fintype.ofFinite ι
-  let inv : HahnModule Γ R V → HahnSeries Γ R ⊗[R] V :=
-    fun x ↦ ∑ i, ((of R).symm x).map (b.coord i) ⊗ₜ[R] b i
+  let inv : HahnModule Γ R V →+ HahnSeries Γ R ⊗[R] V :=
+    ∑ i, { toFun := fun x ↦ ((of R).symm x).map (b.coord i) ⊗ₜ[R] b i
+           map_zero' := by
+             rw [of_symm_zero, show (0 : HahnSeries Γ V).map (b.coord i) = 0 by ext; simp,
+               zero_tmul]
+           map_add' := fun x y ↦ by
+             rw [of_symm_add, ← add_tmul]
+             congr 1
+             exact HahnSeries.map_add (b.coord i).toAddMonoidHom }
   have right : Function.RightInverse inv (tensorProductToHahnModule Γ R V) := by
     intro x
-    simp only [inv, map_sum, tensorProductToHahnModule_tmul]
+    simp only [inv, AddMonoidHom.finsetSum_apply, AddMonoidHom.coe_mk, ZeroHom.coe_mk,
+      map_sum, tensorProductToHahnModule_tmul]
     exact sum_map_coord_smul_single b x
   have left : Function.LeftInverse inv (tensorProductToHahnModule Γ R V) := by
     intro z
@@ -135,19 +114,9 @@ theorem tensorProductToHahnModule_bijective_of_basis {ι : Type*} [Finite ι]
             b.repr v i • f := by
         ext g
         simp [smul_eq_mul, mul_comm]
-      simp only [inv, hc, smul_tmul, ← tmul_sum, b.sum_repr]
-    | add z w hz hw =>
-      simp only [map_add, inv, of_symm_add] at hz hw ⊢
-      calc
-        _ = (∑ i, ((of R).symm (tensorProductToHahnModule Γ R V z)).map (b.coord i) ⊗ₜ[R] b i) +
-            (∑ i, ((of R).symm (tensorProductToHahnModule Γ R V w)).map (b.coord i) ⊗ₜ[R] b i) := by
-          rw [← Finset.sum_add_distrib]
-          apply Finset.sum_congr rfl
-          intro i _
-          rw [← add_tmul]
-          congr 1
-          exact HahnSeries.map_add (b.coord i).toAddMonoidHom
-        _ = z + w := congrArg₂ (· + ·) hz hw
+      simp only [inv, AddMonoidHom.finsetSum_apply, AddMonoidHom.coe_mk, ZeroHom.coe_mk, hc,
+        smul_tmul, ← tmul_sum, b.sum_repr]
+    | add z w hz hw => simp only [map_add, hz, hw]
   exact ⟨left.injective, right.surjective⟩
 
 variable (R Γ V) in
