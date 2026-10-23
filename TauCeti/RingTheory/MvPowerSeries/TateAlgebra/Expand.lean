@@ -5,33 +5,35 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Nat.ModEq
 public import Mathlib.RingTheory.Finiteness.Basic
-public import Mathlib.RingTheory.MvPowerSeries.Expand
+public import TauCeti.RingTheory.MvPowerSeries.Expand
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Rescale
 
 /-!
 # Restricted series at radii in the divisible hull of the value group
 
 Substituting `X i ↦ X i ^ p` multiplies every exponent by `p`, so a series is restricted at the
-polyradii `r ^ p` exactly when its expansion is restricted at `r`, with the same Gauss norm.
-The expansion is therefore an isometric algebra map
+polyradii `r ^ p` exactly when its expansion is restricted at `r`
+(`MvPowerSeries.isRestricted_expand_iff`), with the same Gauss norm. The expansion is therefore
+an isometric algebra map
 
 ```text
 R{X/r^p} → R{X/r},   f(X) ↦ f(X^p).
 ```
 
-Every restricted series at `r` is uniquely a sum `∑ X^ν f_ν(X^p)` over the finitely many exponents
-`ν` with `ν i < p`, whose components `f_ν` are restricted at `r ^ p` and satisfy
-`‖f_ν‖ r^ν ≤ ‖f‖`, with equality for some `ν`. In finitely many variables the expansion is thus
-a finite injective map, and the algebra at `r` is free over the algebra at `r ^ p` on these
-monomials.
+For any set of variables and any exponent `ν`, the component `f_ν` of a restricted series `f` at
+`r`, with coefficients `coeff μ f_ν = coeff (p • μ + ν) f`, is restricted at `r ^ p` and
+satisfies `‖f_ν‖ r^ν ≤ ‖f‖`, with equality for some `ν` with `ν i < p` for all `i`. In finitely
+many variables, every restricted series at `r` is uniquely a sum `∑ X^ν f_ν(X^p)` over the
+finitely many exponents `ν` with `ν i < p`, so the expansion is a finite injective map and the
+algebra at `r` is free over the algebra at `r ^ p` on these monomials.
 
 Combined with the rescaling `X i ↦ u i * X i` by multiplicative units, this gives the classical
 presentation of Tate algebras at radii in the divisible hull of `|K×|`: if `‖u i‖ * r i ^ p = 1`,
-then `Y i ↦ u i X i ^ p` is an injective finite isometric algebra map from the unit-radius
-Tate algebra `R⟨Y⟩` to `R{X/r}`. Over a nonarchimedean normed field `K` and finitely many
-variables, such `p` and `u` exist as soon as every `r i` has a positive power in `|K×|`.
+then `Y i ↦ u i X i ^ p` is an injective isometric algebra map from the unit-radius Tate algebra
+`R⟨Y⟩` to `R{X/r}`, which is finite in finitely many variables. Over a nonarchimedean normed
+field `K` and finitely many variables, such `p` and `u` exist as soon as every `r i` has a
+positive power in `|K×|`.
 
 ## Main definitions
 
@@ -44,16 +46,15 @@ variables, such `p` and `u` exist as soon as every `r i` has a positive power in
 
 ## Main results
 
-* `TauCeti.MvPowerSeries.isRestricted_expand_iff`: `f(X^p)` is restricted at `r` exactly when
-  `f` is restricted at `r ^ p`.
 * `TauCeti.MvPowerSeries.norm_restrictedExpand`: the expansion preserves Gauss norms.
 * `TauCeti.MvPowerSeries.sum_monomial_mul_restrictedExpand_component` and
   `TauCeti.MvPowerSeries.restrictedExpandComponent_sum_monomial_mul_restrictedExpand`: existence
-  and uniqueness of the decomposition `f = ∑ X^ν f_ν(X^p)`.
+  and uniqueness of the decomposition `f = ∑ X^ν f_ν(X^p)` in finitely many variables.
 * `TauCeti.MvPowerSeries.exists_norm_restrictedExpandComponent_mul_prod_eq`: the Gauss norm of `f`
   is the largest of the weighted norms `‖f_ν‖ r^ν`.
 * `TauCeti.MvPowerSeries.restrictedExpand_finite` and
-  `TauCeti.MvPowerSeries.restrictedRescaleExpand_finite`: both maps are finite.
+  `TauCeti.MvPowerSeries.restrictedRescaleExpand_finite`: in finitely many variables, both maps
+  are finite.
 * `TauCeti.MvPowerSeries.exists_injective_finite_algHom_of_norm_mul_pow_eq_one`: over a normed
   field, if every `r i` has a positive power whose inverse is the norm of a scalar, the algebra
   at `r` is finite over the unit-radius Tate algebra through an injective algebra map.
@@ -70,88 +71,7 @@ namespace TauCeti.MvPowerSeries
 open Filter _root_.MvPowerSeries
 open scoped Topology
 
-variable {σ R : Type*} [NormedCommRing R] {r t : σ → ℝ}
-
-section Formal
-
-variable (p : ℕ) (hp : p ≠ 0)
-
-/-- The weight at the polyradii `r` of the exponent `p • μ` is the weight of `μ` at the polyradii
-`t = r ^ p`. -/
-theorem prod_pow_nsmul (ht : ∀ i, r i ^ p = t i) (μ : σ →₀ ℕ) :
-    (p • μ).prod (r · ^ ·) = μ.prod (t · ^ ·) := by
-  rw [Finsupp.prod_of_support_subset _ Finsupp.support_smul _ fun i _ ↦ pow_zero (r i)]
-  exact Finset.prod_congr rfl fun i _ ↦ by simp [pow_mul, ht]
-
-/-- Every exponent is `p • μ + ν` with `ν i < p` for all `i`. -/
-private theorem nsmul_mapRange_div_add_mapRange_mod (α : σ →₀ ℕ) :
-    p • α.mapRange (· / p) (Nat.zero_div p) + α.mapRange (· % p) (Nat.zero_mod p) = α := by
-  ext i
-  simp [Nat.div_add_mod]
-
-/-- An exponent whose entries are all divisible by `p` is `p • μ`. -/
-private theorem nsmul_mapRange_div {α : σ →₀ ℕ} (h : ∀ i, p ∣ α i) :
-    p • α.mapRange (· / p) (Nat.zero_div p) = α := by
-  ext i
-  simp [Nat.mul_div_cancel' (h i)]
-
-include hp in
-/-- **Restrictedness of an expansion.** The series `f(X^p)` is restricted at the polyradii `r`
-exactly when `f` is restricted at the polyradii `r ^ p`. -/
-theorem isRestricted_expand_iff (ht : ∀ i, r i ^ p = t i) {f : MvPowerSeries σ R} :
-    IsRestricted r (expand p hp f) ↔ IsRestricted t f := by
-  have he : Function.Injective (p • · : (σ →₀ ℕ) → σ →₀ ℕ) := nsmul_right_injective hp
-  have hcomp : (fun μ : σ →₀ ℕ ↦ ‖coeff μ f‖ * μ.prod (t · ^ ·)) =
-      (fun α ↦ ‖coeff α (expand p hp f)‖ * α.prod (r · ^ ·)) ∘ (p • ·) := by
-    funext μ
-    simp [coeff_expand_smul, prod_pow_nsmul p ht]
-  unfold IsRestricted
-  rw [hcomp]
-  refine ⟨fun h ↦ h.comp he.tendsto_cofinite, fun h U hU ↦ ?_⟩
-  -- the weighted coefficients of `f(X^p)` vanish away from the exponents `p • μ`
-  have hfin : {μ | ‖coeff (p • μ) (expand p hp f)‖ * (p • μ).prod (r · ^ ·) ∉ U}.Finite := h hU
-  refine (hfin.image (p • ·)).subset fun α hα ↦ ?_
-  by_cases hdvd : ∀ i, p ∣ α i
-  · have hμ := nsmul_mapRange_div p hdvd
-    exact ⟨_, by rwa [Set.mem_ofPred_eq, hμ], hμ⟩
-  · obtain ⟨i, hi⟩ := not_forall.mp hdvd
-    exact absurd (by simpa [coeff_expand_of_not_dvd p hp f hi] using mem_of_mem_nhds hU) hα
-
-/-- Two residues modulo `p` that differ by a multiple of `p` are equal. -/
-private theorem not_dvd_mul_add_sub {m a b : ℕ} (ha : a < p) (hb : b < p) (hab : a ≠ b)
-    (hle : b ≤ p * m + a) : ¬ p ∣ p * m + a - b := by
-  intro h
-  have h' : b ≡ p * m + a [MOD p] := (Nat.modEq_iff_dvd' hle).mpr h
-  have h'' : b ≡ a [MOD p] := h'.trans (by simp [Nat.ModEq])
-  exact hab (Nat.ModEq.eq_of_lt_of_lt h''.symm ha hb)
-
-/-- The coefficient at `p • μ + ν` of a sum `∑ X^ν' g_ν'(X^p)` over the exponents `ν'` with
-`ν' i < p` is the coefficient at `μ` of `g_ν`. -/
-theorem coeff_sum_monomial_mul_expand [Fintype σ] [DecidableEq σ]
-    (g : (σ → Fin p) → MvPowerSeries σ R) (μ : σ →₀ ℕ) (ν : σ → Fin p) :
-    coeff (p • μ + Finsupp.equivFunOnFinite.symm (Fin.val ∘ ν))
-        (∑ ν', monomial (Finsupp.equivFunOnFinite.symm (Fin.val ∘ ν')) 1 *
-          expand p hp (g ν')) = coeff μ (g ν) := by
-  classical
-  rw [map_sum, Finset.sum_eq_single ν]
-  · simp [coeff_monomial_mul]
-  · intro ν' _ hν'
-    rw [coeff_monomial_mul]
-    split_ifs with hle
-    · obtain ⟨i, hi⟩ := Function.ne_iff.mp hν'
-      rw [one_mul]
-      refine coeff_expand_of_not_dvd p hp (g ν') (i := i) ?_
-      have hle' := hle i
-      simp only [Finsupp.coe_tsub, Finsupp.coe_add, Finsupp.coe_smul,
-        Finsupp.coe_equivFunOnFinite_symm, Pi.sub_apply, Pi.add_apply, Pi.smul_apply,
-        Function.comp_apply, smul_eq_mul] at hle' ⊢
-      exact not_dvd_mul_add_sub p (ν i).isLt (ν' i).isLt (fun h ↦ hi (Fin.ext h.symm)) hle'
-    · rfl
-  · simp
-
-end Formal
-
-variable [IsUltrametricDist R]
+variable {σ R : Type*} [NormedCommRing R] [IsUltrametricDist R] {r t : σ → ℝ}
 
 section Expand
 
@@ -199,7 +119,7 @@ theorem norm_restrictedExpand (f : IsRestricted.subring (R := R) t) :
     ((norm_le_iff (norm_nonneg _)).2 fun μ ↦ ?_)
   · rw [coe_restrictedExpand]
     by_cases hdvd : ∀ i, p ∣ α i
-    · obtain ⟨μ, rfl⟩ : ∃ μ, p • μ = α := ⟨_, nsmul_mapRange_div p hdvd⟩
+    · obtain ⟨μ, rfl⟩ : ∃ μ, p • μ = α := ⟨_, Finsupp.nsmul_mapRange_div p hdvd⟩
       rw [coeff_expand_smul, prod_pow_nsmul p ht]
       exact norm_coeff_mul_prod_le f μ
     · obtain ⟨i, hi⟩ := not_forall.mp hdvd
@@ -271,7 +191,7 @@ theorem exists_norm_restrictedExpandComponent_mul_prod_eq
   set μ := α.mapRange (· / p) (Nat.zero_div p)
   refine ⟨ν, fun i ↦ Nat.mod_lt _ (Nat.pos_of_ne_zero hp),
     le_antisymm (norm_restrictedExpandComponent_mul_prod_le hp ht ν f) ?_⟩
-  have hμν : p • μ + ν = α := nsmul_mapRange_div_add_mapRange_mod p α
+  have hμν : p • μ + ν = α := Finsupp.nsmul_mapRange_div_add_mapRange_mod p α
   calc ‖f‖ = ‖coeff α (f : MvPowerSeries σ R)‖ * α.prod (r · ^ ·) := hα.symm
     _ = ‖coeff μ (restrictedExpandComponent hp ht ν f : MvPowerSeries σ R)‖ *
           μ.prod (t · ^ ·) * ν.prod (r · ^ ·) := by
@@ -299,7 +219,7 @@ theorem sum_monomial_mul_restrictedExpand_component (f : IsRestricted.subring (R
   set ν : σ → Fin p := fun i ↦ ⟨α i % p, Nat.mod_lt _ (Nat.pos_of_ne_zero hp)⟩
   have hα : p • α.mapRange (· / p) (Nat.zero_div p) +
       Finsupp.equivFunOnFinite.symm (Fin.val ∘ ν) = α := by
-    convert nsmul_mapRange_div_add_mapRange_mod p α using 2
+    convert Finsupp.nsmul_mapRange_div_add_mapRange_mod p α using 2
     ext i
     simp [ν]
   push_cast
