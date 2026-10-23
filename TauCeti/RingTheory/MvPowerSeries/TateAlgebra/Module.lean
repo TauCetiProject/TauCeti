@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Basic
+public import TauCeti.RingTheory.MvPowerSeries.Convolution
 public import Mathlib.LinearAlgebra.Finsupp.Pi
 import Mathlib.Algebra.Order.Antidiag.Tendsto
 
@@ -35,100 +36,29 @@ ultrametric, restricted series over `R` act on restricted families by convolutio
 ```
 
 making the restricted families a module over the ring of restricted series. The convolution
-`MvPowerSeries.convSMul` is defined for all formal series and all coefficient families,
-and its module laws hold there without any norm.
+`MvPowerSeries.convSMul` and its module laws, which need no norm, are in
+`TauCeti.RingTheory.MvPowerSeries.Convolution`.
 
 The variables may be arbitrary, the coefficient ring need not be commutative, and no
 completeness is assumed. Without variables, the restricted families are the module `E` itself
 (`TauCeti.MvPowerSeries.IsRestrictedFamily.isEmptyLinearEquiv`); with `E = R`, they are the ring
 of restricted series as a module over itself
 (`TauCeti.MvPowerSeries.IsRestrictedFamily.subringLinearEquiv`).
+
+## Implementation notes
+
+The predicate and its closure properties adapt Mathlib's ring-valued
+`MvPowerSeries.IsRestricted` to group-valued coefficients: the proofs of
+`TauCeti.MvPowerSeries.IsRestrictedFamily.of_norm_le` and
+`TauCeti.MvPowerSeries.IsRestrictedFamily.add` follow those of Mathlib's
+`MvPowerSeries.isRestricted_map` and `MvPowerSeries.IsRestricted.add`. The proof that convolution
+preserves restrictedness, `TauCeti.MvPowerSeries.IsRestrictedFamily.convSMul`, adapts Mathlib's
+`MvPowerSeries.tendsto_antidiagonal`.
 -/
 
 public section
 
 open Finset
-
-namespace MvPowerSeries
-
-variable {σ R E : Type*}
-
-section Convolution
-
-variable [Semiring R] [AddCommMonoid E] [Module R E]
-
-/-- The convolution action of a formal power series `f` on a coefficient family `a`: the
-coefficient of `f • a` at `t` is `∑_{p + q = t} f_p • a_q`. For `E = R` this is the coefficient
-family of the product (`MvPowerSeries.convSMul_coeff`). -/
-noncomputable def convSMul (f : MvPowerSeries σ R) (a : (σ →₀ ℕ) → E) : (σ →₀ ℕ) → E :=
-  letI := Classical.decEq σ
-  fun t ↦ ∑ p ∈ antidiagonal t, coeff p.1 f • a p.2
-
-theorem convSMul_apply [DecidableEq σ] (f : MvPowerSeries σ R) (a : (σ →₀ ℕ) → E)
-    (t : σ →₀ ℕ) : convSMul f a t = ∑ p ∈ antidiagonal t, coeff p.1 f • a p.2 := by
-  rw [convSMul, Subsingleton.elim (Classical.decEq σ) ‹DecidableEq σ›]
-
-@[simp]
-theorem zero_convSMul (a : (σ →₀ ℕ) → E) : convSMul (0 : MvPowerSeries σ R) a = 0 := by
-  classical
-  ext t
-  simp [convSMul_apply]
-
-@[simp]
-theorem convSMul_zero (f : MvPowerSeries σ R) : convSMul f (0 : (σ →₀ ℕ) → E) = 0 := by
-  classical
-  ext t
-  simp [convSMul_apply]
-
-theorem add_convSMul (f g : MvPowerSeries σ R) (a : (σ →₀ ℕ) → E) :
-    convSMul (f + g) a = convSMul f a + convSMul g a := by
-  classical
-  ext t
-  simp [convSMul_apply, add_smul, Finset.sum_add_distrib]
-
-theorem convSMul_add (f : MvPowerSeries σ R) (a b : (σ →₀ ℕ) → E) :
-    convSMul f (a + b) = convSMul f a + convSMul f b := by
-  classical
-  ext t
-  simp [convSMul_apply, smul_add, Finset.sum_add_distrib]
-
-/-- A constant series acts on coefficient families through its constant. -/
-@[simp]
-theorem C_convSMul (r : R) (a : (σ →₀ ℕ) → E) : convSMul (C r : MvPowerSeries σ R) a = r • a := by
-  classical
-  ext t
-  rw [convSMul_apply, Finset.sum_eq_single_of_mem (0, t) (by simp)]
-  · simp
-  · rintro ⟨p, q⟩ hpq hne
-    have hp : p ≠ 0 := by
-      rintro rfl
-      exact hne (by simpa using hpq)
-    simp [coeff_C, hp]
-
-@[simp]
-theorem one_convSMul (a : (σ →₀ ℕ) → E) : convSMul (1 : MvPowerSeries σ R) a = a := by
-  simpa using C_convSMul (σ := σ) (1 : R) a
-
-theorem mul_convSMul (f g : MvPowerSeries σ R) (a : (σ →₀ ℕ) → E) :
-    convSMul (f * g) a = convSMul f (convSMul g a) := by
-  classical
-  ext t
-  simp only [convSMul_apply, coeff_mul, Finset.sum_smul, Finset.smul_sum, mul_smul,
-    Finset.sum_sigma']
-  apply Finset.sum_nbij' (fun ⟨⟨_i, j⟩, ⟨k, l⟩⟩ ↦ ⟨(k, l + j), (l, j)⟩)
-    (fun ⟨⟨i, _j⟩, ⟨k, l⟩⟩ ↦ ⟨(i + k, l), (i, k)⟩) <;> aesop (add simp [add_assoc])
-
-/-- For coefficients in the ring itself, convolution with the coefficients of `g` gives the
-coefficients of the product `f * g`. -/
-theorem convSMul_coeff (f g : MvPowerSeries σ R) :
-    convSMul f (fun t ↦ coeff t g) = fun t ↦ coeff t (f * g) := by
-  classical
-  ext t
-  simp [convSMul_apply, coeff_mul]
-
-end Convolution
-
-end MvPowerSeries
 
 namespace TauCeti.MvPowerSeries
 
@@ -146,6 +76,12 @@ polyradius `c` if `‖a t‖ * ∏ i ∈ t.support, c i ^ t i → 0` along the c
 the coefficient families of restricted power series with coefficients in `E`. -/
 def IsRestrictedFamily (c : σ → ℝ) (a : (σ →₀ ℕ) → E) : Prop :=
   Tendsto (fun t : σ →₀ ℕ ↦ ‖a t‖ * t.prod (c · ^ ·)) cofinite (𝓝 0)
+
+/-- For coefficients in a normed ring, a family is restricted exactly when the power series with
+these coefficients is restricted in Mathlib's sense. -/
+theorem _root_.MvPowerSeries.isRestrictedFamily_coeff_iff [NormedRing R]
+    (f : MvPowerSeries σ R) : IsRestrictedFamily c (fun t ↦ coeff t f) ↔ IsRestricted c f :=
+  Iff.rfl
 
 /-- Restrictedness only depends on the absolute values of the radii. -/
 @[simp]
@@ -240,6 +176,11 @@ families. Its underlying additive subgroup is
 structure. -/
 protected def submodule (c : σ → ℝ) : Submodule R ((σ →₀ ℕ) → E) :=
   { IsRestrictedFamily.addSubgroup E c with smul_mem' := fun r _ ha ↦ ha.smul r }
+
+@[simp]
+theorem mem_submodule {a : (σ →₀ ℕ) → E} :
+    a ∈ IsRestrictedFamily.submodule R E c ↔ IsRestrictedFamily c a :=
+  Iff.rfl
 
 @[simp]
 theorem toAddSubgroup_submodule :
@@ -339,6 +280,11 @@ theorem isEmptyLinearEquiv_apply [IsEmpty σ] (a : IsRestrictedFamily.addSubgrou
     isEmptyLinearEquiv R E c a = (a : (σ →₀ ℕ) → E) 0 :=
   (rfl)
 
+@[simp]
+theorem coe_isEmptyLinearEquiv_symm_apply [IsEmpty σ] (e : E) :
+    ((isEmptyLinearEquiv R E c).symm e : (σ →₀ ℕ) → E) = fun _ ↦ e :=
+  (rfl)
+
 end IsRestrictedFamily
 
 end Submodule
@@ -399,18 +345,37 @@ series, regarded as a module over itself. -/
 noncomputable def subringLinearEquiv :
     IsRestricted.subring (R := R) c ≃ₗ[IsRestricted.subring (R := R) c]
       IsRestrictedFamily.addSubgroup R c where
-  toFun f := ⟨fun t ↦ MvPowerSeries.coeff t (f : MvPowerSeries σ R), f.2⟩
-  invFun a := ⟨(a : (σ →₀ ℕ) → R), a.2⟩
+  toFun f := ⟨fun t ↦ MvPowerSeries.coeff t (f : MvPowerSeries σ R),
+    (isRestrictedFamily_coeff_iff _).mpr f.2⟩
+  invFun a :=
+    let g : MvPowerSeries σ R := (a : (σ →₀ ℕ) → R)
+    ⟨g, (isRestrictedFamily_coeff_iff g).mp <| by
+      simpa only [_root_.MvPowerSeries.coeff_apply] using mem_addSubgroup.mp a.2⟩
   map_add' _ _ := rfl
   map_smul' f g := ext fun t ↦ congrFun (convSMul_coeff (f : MvPowerSeries σ R) g).symm t
-  left_inv _ := rfl
-  right_inv _ := rfl
+  left_inv f := Subtype.ext <| MvPowerSeries.ext fun t ↦ _root_.MvPowerSeries.coeff_apply _ t
+  right_inv a := ext fun t ↦ _root_.MvPowerSeries.coeff_apply _ t
 
 @[simp]
 theorem coe_subringLinearEquiv (f : IsRestricted.subring (R := R) c) :
     (subringLinearEquiv f : (σ →₀ ℕ) → R) =
       fun t ↦ MvPowerSeries.coeff t (f : MvPowerSeries σ R) :=
   (rfl)
+
+@[simp]
+theorem coeff_coe_subringLinearEquiv_symm_apply (a : IsRestrictedFamily.addSubgroup R c)
+    (t : σ →₀ ℕ) :
+    MvPowerSeries.coeff t ((subringLinearEquiv.symm a : IsRestricted.subring (R := R) c) :
+      MvPowerSeries σ R) = (a : (σ →₀ ℕ) → R) t :=
+  _root_.MvPowerSeries.coeff_apply _ t
+
+/-- The maps induced by bounded linear maps commute with the action of restricted series. -/
+theorem mapLinearMap_isRestrictedSubring_smul {F : Type*} [SeminormedAddCommGroup F]
+    [IsUltrametricDist F] [Module R F] [IsBoundedSMul R F] (φ : E →ₗ[R] F) {C : ℝ}
+    (hφ : ∀ e, ‖φ e‖ ≤ C * ‖e‖) (f : IsRestricted.subring (R := R) c)
+    (a : IsRestrictedFamily.addSubgroup E c) :
+    mapLinearMap φ hφ (f • a) = f • mapLinearMap φ hφ a :=
+  Subtype.ext (convSMul_comp φ (f : MvPowerSeries σ R) a).symm
 
 end IsRestrictedFamily
 
@@ -426,21 +391,11 @@ multiplication by its constant. -/
 instance :
     IsScalarTower R (IsRestricted.subring (R := R) c) (IsRestrictedFamily.addSubgroup E c) where
   smul_assoc r f a := Subtype.ext <| by
-    rw [Algebra.smul_def, mul_smul]
+    rw [Algebra.smul_def, mul_smul, IsRestrictedFamily.coe_isRestrictedSubring_smul,
+      coe_algebraMap_isRestrictedSubring, IsRestrictedFamily.coe_smul,
+      IsRestrictedFamily.coe_isRestrictedSubring_smul]
     exact C_convSMul r _
 
 end CommRing
 
 end TauCeti.MvPowerSeries
-
-namespace MvPowerSeries
-
-open TauCeti.MvPowerSeries
-
-/-- For coefficients in a normed ring, a family is restricted exactly when the power series with
-these coefficients is restricted in Mathlib's sense. -/
-theorem isRestrictedFamily_coeff_iff {σ R : Type*} [NormedRing R] {c : σ → ℝ}
-    (f : MvPowerSeries σ R) : IsRestrictedFamily c (fun t ↦ coeff t f) ↔ IsRestricted c f :=
-  Iff.rfl
-
-end MvPowerSeries
