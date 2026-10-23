@@ -19,6 +19,8 @@ The torsion abelian groups and the groups annihilated by some power of a fixed n
 are closed under tensor products and Tor with arbitrary abelian groups. More generally, these
 properties hold for the underlying abelian groups of modules over any commutative ring. For
 bounded power torsion, the tensor product retains the same annihilating power.
+For tensor closure, the scalars may be a commutative semiring and the other factor need only
+be a commutative additive monoid.
 
 Tor is Mathlib's left derived tensor functor in `ModuleCat R`. In particular, for `R = ℤ` it
 is integral Tor, not the derived functor of the cartesian monoidal structure on
@@ -44,10 +46,10 @@ universe u
 
 namespace TauCeti
 
-/-- Tensoring a group annihilated by some power of `d` on the left with an arbitrary module
-gives another group annihilated by some power of `d`. -/
+/-- Tensoring a group annihilated by some power of `d` on the left with a commutative additive
+monoid gives another group annihilated by some power of `d`. -/
 theorem isKilledBySomePower_tensorProduct_left {R M N : Type*} [CommSemiring R]
-    [AddCommGroup M] [AddCommGroup N] [Module R M] [Module R N] (d : ℕ)
+    [AddCommGroup M] [AddCommMonoid N] [Module R M] [Module R N] (d : ℕ)
     (h : AddCommGrpCat.isKilledBySomePower d (AddCommGrpCat.of M)) :
     AddCommGrpCat.isKilledBySomePower d (AddCommGrpCat.of (M ⊗[R] N)) := by
   rw [AddCommGrpCat.prop_isKilledBySomePower_iff] at h ⊢

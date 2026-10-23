@@ -182,6 +182,52 @@ theorem arrowSum_eq_zero_iff_of_nonneg [PartialOrder K] [IsOrderedAddMonoid K] {
     sum_eq_zero_iff_of_nonneg fun w _ ↦ h₃ _ w, sum_eq_zero_iff_of_nonneg fun e _ ↦ hf _ _ e,
     mem_univ, true_implies]
 
+section Nonneg
+
+variable [PartialOrder K] [IsOrderedAddMonoid K] {f : Assignment Q K}
+
+/-- For a nonnegative assignment, the arrow sum is monotone in the set of source vertices. -/
+theorem arrowSum_mono_left (hf : 0 ≤ f) {S S' : Finset V} (h : S ⊆ S') (T : Finset V) :
+    arrowSum f S T ≤ arrowSum f S' T :=
+  sum_le_sum_of_subset_of_nonneg h fun v _ _ ↦ sum_nonneg fun w _ ↦ sum_nonneg fun e _ ↦ hf v w e
+
+/-- For a nonnegative assignment, the arrow sum is monotone in the set of target vertices. -/
+theorem arrowSum_mono_right (hf : 0 ≤ f) (S : Finset V) {T T' : Finset V} (h : T ⊆ T') :
+    arrowSum f S T ≤ arrowSum f S T' :=
+  sum_le_sum fun v _ ↦ sum_le_sum_of_subset_of_nonneg h fun w _ _ ↦ sum_nonneg fun e _ ↦ hf v w e
+
+/-- For a nonnegative assignment, the arrow sum is subadditive in the set of source vertices. -/
+theorem arrowSum_union_left_le [DecidableEq V] (hf : 0 ≤ f) (S S' T : Finset V) :
+    arrowSum f (S ∪ S') T ≤ arrowSum f S T + arrowSum f S' T := by
+  rw [← union_sdiff_self_eq_union, arrowSum_union_left f disjoint_sdiff]
+  grw [arrowSum_mono_left hf sdiff_subset]
+
+/-- For a nonnegative assignment, the arrow sum is subadditive in the set of target vertices. -/
+theorem arrowSum_union_right_le [DecidableEq V] (hf : 0 ≤ f) (S T T' : Finset V) :
+    arrowSum f S (T ∪ T') ≤ arrowSum f S T + arrowSum f S T' := by
+  rw [← union_sdiff_self_eq_union, arrowSum_union_right f S disjoint_sdiff]
+  grw [arrowSum_mono_right hf S sdiff_subset]
+
+/-- Adding the vertices of `X` to a vertex set `S` increases the nonnegative value leaving it by
+at most the total value leaving `X`. -/
+theorem arrowSum_union_compl_le [Fintype V] [DecidableEq V] (hf : 0 ≤ f) (S X : Finset V) :
+    arrowSum f (S ∪ X) (S ∪ X)ᶜ ≤ arrowSum f S Sᶜ + arrowSum f X univ := by
+  grw [arrowSum_union_left_le hf, arrowSum_mono_right hf S (compl_subset_compl.mpr
+    subset_union_left), arrowSum_mono_right hf X (subset_univ _)]
+
+/-- Removing the vertices of `Y` from a vertex set `S` increases the nonnegative value leaving it
+by at most the total value entering `Y`. -/
+theorem arrowSum_sdiff_compl_le [Fintype V] [DecidableEq V] (hf : 0 ≤ f) (S Y : Finset V) :
+    arrowSum f (S \ Y) (S \ Y)ᶜ ≤ arrowSum f S Sᶜ + arrowSum f univ Y := by
+  have h : (S \ Y)ᶜ = Sᶜ ∪ Y := by
+    ext v
+    simp [imp_iff_not_or]
+  rw [h]
+  grw [arrowSum_union_right_le hf, arrowSum_mono_left hf sdiff_subset,
+    arrowSum_mono_left hf (subset_univ (S \ Y))]
+
+end Nonneg
+
 /-- The total value entering `v` for a single arrow from `x` to `y` is `q` when `v = y` and
 zero otherwise. -/
 theorem sum_sum_single_in [Fintype V] [DecidableEq V] {x y : V} (e : Q x y) (q : K) (v : V) :
