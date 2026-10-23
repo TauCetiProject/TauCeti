@@ -165,15 +165,16 @@ noncomputable def transIso :
 @[simp]
 theorem transIso_hom_apply (f : DiscreteCoind G U (DiscreteCoind U V A)) :
     (transIso hW hsmul hU).hom f = transEquiv hW hsmul hU f := by
-  rw [transIso, ofDiscreteModuleIso_hom, ofDiscreteModuleMap_hom_apply, LinearEquiv.coe_coe,
-    AddEquiv.coe_toIntLinearEquiv]
+  simp [transIso]
+  rfl
 
 /-- The inverse of the transitivity isomorphism acts on underlying modules as
 `transEquiv.symm`. -/
 @[simp]
 theorem transIso_inv_apply (φ : DiscreteCoind G W A) :
     (transIso hW hsmul hU).inv φ = (transEquiv hW hsmul hU).symm φ := by
-  rw [transIso, ofDiscreteModuleIso_inv_hom_apply, AddEquiv.coe_symm_toIntLinearEquiv]
+  simp [transIso]
+  rfl
 
 /-! ### The trivial subgroup -/
 
