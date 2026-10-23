@@ -114,8 +114,7 @@ theorem map_mul_shift (hτ : IsMarkovTrace z τ) {a : ℕ} {x : InfiniteTypeAHec
   refine (hf y).symm.trans <| LinearMap.mem_eqLocus.1 <| Submodule.eq_top_iff'.1
     (eq_top_of_algebraMap_mem_of_mul_T_mul_mem (P := LinearMap.eqLocus f (τ x • τ))
       (fun r ↦ LinearMap.mem_eqLocus.2 ?_) (fun n ih d hd e he ↦ LinearMap.mem_eqLocus.2 ?_)) y
-  · rw [hf, AlgHom.commutes, ← Algebra.commutes, ← Algebra.smul_def, map_smul,
-      LinearMap.smul_apply, hτ.map_algebraMap, smul_eq_mul, smul_eq_mul, mul_comm]
+  · simp [hf, Algebra.algebraMap_eq_smul_one, hτ.map_one, mul_comm]
   · have hd' : shift R q a d ∈ stage R q (n + a + 1) :=
       stage_mono (by omega) (shift_mem_stage a hd)
     have he' : shift R q a e ∈ stage R q (n + a + 1) :=
