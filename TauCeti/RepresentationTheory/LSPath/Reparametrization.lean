@@ -10,7 +10,7 @@ import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Module
 import TauCeti.Algebra.Order.Field.Basic
-import TauCeti.Algebra.Order.Field.MinMax
+import TauCeti.Algebra.GroupWithZero.Units.Basic
 import TauCeti.Algebra.Order.Group.MinMax
 
 /-!
@@ -265,7 +265,9 @@ theorem evalTimed_cons_eq_evalTimed_cons_cons {d₁ d₂ D : 𝕜} {v₁ v₂ : 
     (p : List (𝕜 × V)) (t : 𝕜) :
     evalTimed ((D, v) :: p) t = evalTimed ((d₁, v₁) :: (d₂, v₂) :: p) t := by
   subst hD hv₁ hv₂
-  simp only [evalTimed_cons, smul_smul, max_zero_min_div_mul_div, max_zero_min_add h₁ h₂, sub_sub]
+  have hcancel (s d : 𝕜) : max 0 (min s d) / d * (d / (d₁ + d₂)) = max 0 (min s d) / (d₁ + d₂) :=
+    div_mul_div_cancel_of_imp fun hd ↦ by simp [hd]
+  simp only [evalTimed_cons, smul_smul, hcancel, max_zero_min_add h₁ h₂, sub_sub]
   module
 
 /-- Subdividing a segment `w` of duration `e` at the time `d`, for `0 ≤ d ≤ e`, into its pieces
@@ -520,7 +522,7 @@ theorem evalTimed_timedComp {φ : List (𝕜 × 𝕜)} (hq : IsTimed q) (hφ : I
     dsimp only at he hd
     have hea := (not_lt.1 hae).lt_of_ne' hae'
     have hpos : 0 < d * e / a := div_pos (mul_pos hd he) (he.trans hea)
-    have hlt := mul_div_lt_self hd he.le hea
+    have hlt := mul_div_lt_self hd (he.trans hea) hea
     have ha : a ≠ 0 := (he.trans hea).ne'
     have hφ₂ : IsTimed ((d - d * e / a, a - e) :: φ) := isTimed_cons.2 ⟨sub_pos.2 hlt, hφ⟩
     have hφ₂' : ∀ x ∈ (d - d * e / a, a - e) :: φ, 0 ≤ x.2 :=
@@ -552,7 +554,7 @@ theorem isTimed_timedComp {φ : List (𝕜 × 𝕜)} (hq : IsTimed q) (hφ : IsT
     dsimp only at he hd
     have hea := (not_lt.1 hae).lt_of_ne' hae'
     have hpos : 0 < d * e / a := div_pos (mul_pos hd he) (he.trans hea)
-    have hlt := mul_div_lt_self hd he.le hea
+    have hlt := mul_div_lt_self hd (he.trans hea) hea
     simp only [timedComp.eq_3, hae, hae', ↓reduceIte]
     exact isTimed_cons.2 ⟨hpos, ih hq (isTimed_cons.2 ⟨sub_pos.2 hlt, hφ⟩)⟩
 

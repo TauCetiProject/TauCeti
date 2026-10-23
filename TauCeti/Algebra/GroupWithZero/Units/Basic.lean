@@ -40,6 +40,10 @@ invertible in the source as soon as it is invertible in the target. For an algeb
 Finally, the units of an infinite group with zero are infinite: deleting zero leaves infinitely
 many elements, each of which defines a unit. In particular, its unit group is nontrivial.
 
+Mathlib's `div_mul_div_cancel₀` cancels `b` in `a / b * (b / c) = a / c` for `b ≠ 0`. The identity
+also holds when `b = 0` as long as `a = 0` then, as for the elapsed time `max 0 (min t d)` of a time
+interval of length `d`; this is the companion of Mathlib's `div_mul_cancel_of_imp`.
+
 ## Main results
 
 * `TauCeti.pow_mul_inv_pow_eq_zpow₀`: `a ^ i * a⁻¹ ^ (n - i) = a ^ (2 * i - n)` for `i ≤ n`.
@@ -49,6 +53,7 @@ many elements, each of which defines a unit. In particular, its unit group is no
   local ring homomorphism is invertible in its source.
 * `TauCeti.instInfiniteUnitsOfInfiniteGroupWithZero`: the units of an infinite group with zero
   are infinite.
+* `TauCeti.div_mul_div_cancel_of_imp`: `a / b * (b / c) = a / c` when `b = 0` forces `a = 0`.
 -/
 
 public section
@@ -81,5 +86,11 @@ carries `n` to `n`, and a local homomorphism reflects units. -/
 theorem isUnit_natCast_of_isUnit_natCast {R S F : Type*} [Semiring R] [Semiring S] [FunLike F R S]
     [RingHomClass F R S] (f : F) [IsLocalHom f] {n : ℕ} (hn : IsUnit (n : S)) : IsUnit (n : R) :=
   IsUnit.of_map f (n : R) (by rwa [map_natCast])
+
+/-- `a / b * (b / c) = a / c`, also for `b = 0` provided `a = 0` then. This is the degenerate-case
+companion of Mathlib's `div_mul_div_cancel₀`, as `div_mul_cancel_of_imp` is of `div_mul_cancel₀`. -/
+theorem div_mul_div_cancel_of_imp {G₀ : Type*} [GroupWithZero G₀] {a b c : G₀}
+    (h : b = 0 → a = 0) : a / b * (b / c) = a / c := by
+  rw [← mul_div_assoc, div_mul_cancel_of_imp h]
 
 end TauCeti
