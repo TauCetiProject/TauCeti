@@ -79,7 +79,7 @@ private theorem toDistributionCLM_apply_apply (T : 𝓓^{n}(Ω, F) →L_c[ℝ] V
   -- Expand `ψ • v` in the basis inside `T`, and use linearity of `T`.
   conv_rhs => rw [← sum_postcompCLM_toSpanSingleton_coord (Module.finBasis ℝ F)
     (postcompCLM (toSpanSingleton ℝ v) ψ)]
-  simp only [postcompCLM_coord_postcompCLM_toSpanSingleton, map_smul, map_sum, toDistributionCLM,
+  simp only [postcompCLM_postcompCLM_toSpanSingleton, map_smul, map_sum, toDistributionCLM,
     sum_apply, coe_comp, Function.comp_apply]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [Distribution.mapCLM_apply, smulRightL_apply_apply, smulRight_apply,
@@ -120,7 +120,7 @@ private theorem toDistributionCLM_ofDistributionCLM (S : 𝓓'^{n}(Ω, F →L[�
   ext ψ v
   rw [toDistributionCLM_apply_apply, ofDistributionCLM_apply]
   conv_rhs => rw [← (Module.finBasis ℝ F).sum_repr v, map_sum]
-  simp [postcompCLM_coord_postcompCLM_toSpanSingleton]
+  simp [postcompCLM_postcompCLM_toSpanSingleton]
 
 /-- **Maps on vector-valued tests are operator-valued distributions.** For a finite-dimensional
 real normed space `F` and a real normed space `V`, the continuous linear maps from the `F`-valued
