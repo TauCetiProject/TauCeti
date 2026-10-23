@@ -52,7 +52,8 @@ without counting the classes.
 * `TauCeti.BinaryQuadraticForm.finite_orbitRel_quotient_of_forall_discrim_eq`: a set of forms of
   one nonsquare discriminant, stable under `SL(2, ℤ)`, has finitely many classes.
 * `TauCeti.BinaryQuadraticForm.finite_orbitRel_quotient_primitiveForms`: there are finitely many
-  proper classes of primitive forms of nonsquare discriminant `D`.
+  proper classes of primitive forms of nonsquare discriminant `D`, an instance under
+  `[Fact (¬ IsSquare D)]`.
 
 ## References
 
@@ -128,12 +129,19 @@ end IsLagrangeReduced
 The definition searches the box `|a| ≤ √(|D| / 3)`, `|b| ≤ √(|D| / 3)`, `|c| ≤ |D| / 3` (with
 `Nat.sqrt` and natural division), which makes it a finite, decidable set;
 `mem_lagrangeReducedForms` shows that for `D ≠ 0` this box loses nothing. For `D = 0` the box only
-contains the zero form. -/
+contains the zero form (`lagrangeReducedForms_zero`). -/
 def lagrangeReducedForms (D : ℤ) : Finset (BinaryQuadraticForm ℤ) :=
   {f ∈ (Icc (-(D.natAbs / 3).sqrt : ℤ) (D.natAbs / 3).sqrt ×ˢ
       Icc (-(D.natAbs / 3).sqrt : ℤ) (D.natAbs / 3).sqrt ×ˢ
       Icc (-(D.natAbs / 3 : ℕ) : ℤ) (D.natAbs / 3 : ℕ)).map equivProd.symm.toEmbedding |
     f.discrim = D ∧ f.IsLagrangeReduced}
+
+/-- The search box of `lagrangeReducedForms 0` contains only the zero form, which is Lagrange
+reduced of discriminant `0`. -/
+@[simp] theorem lagrangeReducedForms_zero : lagrangeReducedForms 0 = {0} := by
+  ext f
+  simp +contextual [lagrangeReducedForms, IsLagrangeReduced, discrim_def, discrim,
+    BinaryQuadraticForm.ext_iff, and_assoc]
 
 /-- **The Lagrange reduced forms of discriminant `D`**: for `D ≠ 0`, `f ∈ lagrangeReducedForms D`
 exactly when `f.discrim = D` and `f` is Lagrange reduced, so the box that `lagrangeReducedForms`
@@ -232,9 +240,10 @@ theorem finite_orbitRel_quotient_of_forall_discrim_eq {D : ℤ} (hD : ¬ IsSquar
 
 /-- There are finitely many proper equivalence classes of primitive integral binary quadratic
 forms of a nonsquare discriminant `D`, positive or negative. -/
-theorem finite_orbitRel_quotient_primitiveForms {D : ℤ} (hD : ¬ IsSquare D) :
+instance finite_orbitRel_quotient_primitiveForms {D : ℤ} [Fact (¬ IsSquare D)] :
     Finite (orbitRel.Quotient SL(2, ℤ) (primitiveForms D)) :=
-  finite_orbitRel_quotient_of_forall_discrim_eq hD _ fun f hf ↦ ((mem_primitiveForms D f).1 hf).1
+  finite_orbitRel_quotient_of_forall_discrim_eq Fact.out _ fun f hf ↦
+    ((mem_primitiveForms D f).1 hf).1
 
 /-! The two Lagrange reduced forms `x² + x y - y²` and `-x² - x y + y²` of discriminant `5` are
 properly equivalent, by the rotation `S`; so a class can contain several Lagrange reduced forms. -/
