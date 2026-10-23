@@ -64,6 +64,8 @@ two-dimensional rotation representation `V` has `End V ≅ ℂ`, so `finrank ℝ
 * `TauCeti.SplitK0.simpleBasis_repr_simpleBasis_mul_simpleBasis_nonneg`: the structure constants
   are nonnegative, so the Grothendieck ring is a ℤ₊-ring.
 * `TauCeti.fusionMatrix_classOf_unit`: the fusion matrix of a simple tensor unit is the identity.
+* `TauCeti.SplitK0.fusionMatrix_map_mulVec_ringHom`: the values of a ring homomorphism on the
+  simple classes form a common eigenvector of the fusion matrices.
 * `TauCeti.SplitK0.fusionMatrix_eq_transpose_leftMulMatrix`: the fusion matrix of `S` is the
   transpose of the matrix of left multiplication by `[S]`.
 
@@ -305,6 +307,19 @@ theorem simpleBasis_mul_simpleBasis_eq_sum_fusionCoeff [Fintype (SimpleClasses C
     (S T : SimpleClasses C) :
     simpleBasis C S * simpleBasis C T = ∑ U, (fusionCoeff k S T U : ℤ) • simpleBasis C U := by
   simp_rw [simpleBasis_mul_simpleBasis, fusionCoeff_eq_simpleMultiplicities]
+
+open Matrix in
+/-- The values of a ring homomorphism `ψ` on the basis of simple classes form an eigenvector of
+each fusion matrix, with eigenvalue the value of `ψ` on that class:
+`∑ U, N_{ST}^U ψ [U] = ψ [S] ψ [T]` for all simple classes `S` and `T`. -/
+theorem fusionMatrix_map_mulVec_ringHom [Fintype (SimpleClasses C)] {R : Type*} [Ring R]
+    (ψ : SplitK0 C →+* R) (S : SimpleClasses C) :
+    (fusionMatrix k S).map (Nat.cast : ℕ → R) *ᵥ (fun T ↦ ψ (simpleBasis C T)) =
+      ψ (simpleBasis C S) • fun T ↦ ψ (simpleBasis C T) := by
+  ext T
+  rw [Pi.smul_apply, smul_eq_mul, ← map_mul, simpleBasis_mul_simpleBasis_eq_sum_fusionCoeff k,
+    map_sum]
+  simp [Matrix.mulVec, dotProduct]
 
 end SplitK0
 

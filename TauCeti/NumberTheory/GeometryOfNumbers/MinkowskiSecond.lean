@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Module.ZLattice.Covolume
 public import Mathlib.Analysis.Convex.Gauge
 import Mathlib.Analysis.Convex.Measure
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+public import TauCeti.Algebra.Module.ZLattice.SuccessiveMinima
 import TauCeti.Algebra.Module.ZLattice.AdaptedBasis
 import TauCeti.Algebra.Module.ZLattice.Covolume
 import TauCeti.LinearAlgebra.Basis.Triangular
@@ -30,17 +31,21 @@ Since `λ₀ ≤ λᵢ` for every `i`, this strengthens Minkowski's first theore
 against which the products of the gauges of short lattice bases (such as fundamental systems of
 units, or bases of the integer kernel of a matrix) are measured.
 
-The statement here does not use a successive-minima function. It takes `ℝ`-independent lattice
+The main statement does not use a successive-minima function. It takes `ℝ`-independent lattice
 vectors `a i` and nonnegative numbers `g i` such that every lattice vector `v` with
 `gauge K v < g j` lies in the span of `a 0, …, a (j - 1)`. Independent vectors realizing the
 successive minima satisfy this with `g = λ`: if `gauge K v < λ_j` and `i ≤ j` is least with
-`λ_i = λ_j`, then `a 0, …, a (i - 1)` and `v` lie in a dilate of `K` smaller than `λ_i • K`, so `v`
-is in the span of `a 0, …, a (i - 1)`. Conversely, every such `g` satisfies `g j ≤ λ_j`.
+`λ_i > gauge K v`, then `a 0, …, a (i - 1)` and `v` lie in `(gauge K v) • K`, so `v` is in the span
+of `a 0, …, a (i - 1)` (`ZLattice.mem_span_image_Iio_of_gauge_lt_successiveMin`). Conversely,
+every such `g` satisfies `g j ≤ λ_j`.
 
-## Main result
+## Main results
 
 * `ZLattice.prod_mul_measure_le_two_pow_mul_covolume`:
   `(∏ i, g i) * μ K ≤ 2 ^ n * covolume L μ`.
+* `ZLattice.prod_successiveMin_mul_measure_le_two_pow_mul_covolume`: the classical form
+  `λ₀ ⋯ λₙ₋₁ · μ K ≤ 2ⁿ · covolume L μ` for a symmetric convex body `K` with `0` in its interior,
+  and its real-valued form `ZLattice.prod_successiveMin_mul_measureReal_le_two_pow_mul_covolume`.
 
 ## Proof
 
@@ -537,5 +542,31 @@ theorem prod_mul_measure_le_two_pow_mul_covolume (L : Submodule ℤ E) [Discrete
         exacts [fun i _ ↦ hg0 i, hgG i]
     _ ≤ _ := prod_mul_measure_interior_le L μ hK hKs h0 hn haL ha
       (fun i ↦ ((hg0 i).lt_of_ne' (hgz i)).trans_le (hgG i)) hG hGgap
+
+/-- **Minkowski's second theorem**, upper bound, in terms of the successive minima. For a full
+lattice `L` in a real normed space `E` of dimension `n`, a Haar measure `μ` on `E`, and a convex
+body `K` symmetric about `0` with `0` in its interior, the successive minima
+`λ i = successiveMin L K i` satisfy `λ₀ ⋯ λₙ₋₁ · μ K ≤ 2ⁿ · covolume L μ`. -/
+theorem prod_successiveMin_mul_measure_le_two_pow_mul_covolume (L : Submodule ℤ E)
+    [DiscreteTopology L] [IsZLattice ℝ L] (μ : Measure E := by volume_tac) [μ.IsAddHaarMeasure]
+    {K : ConvexBody E} (hK : 0 ∈ interior (K : Set E)) (hKs : ∀ x ∈ K, -x ∈ K) :
+    ENNReal.ofReal (∏ i, successiveMin L K i) * μ K ≤
+      2 ^ finrank ℝ E * ENNReal.ofReal (ZLattice.covolume L μ) := by
+  obtain ⟨a, ha, haL⟩ := exists_linearIndependent_gauge_eq_successiveMin L hK
+  exact prod_mul_measure_le_two_pow_mul_covolume L μ K.convex hKs rfl (fun i ↦ (haL i).1) ha
+    (successiveMin_nonneg L K) fun j v hvL hv ↦ mem_span_image_Iio_of_gauge_lt_successiveMin hK ha
+      (fun i ↦ (haL i).1) (fun i ↦ (haL i).2.le) hvL hv
+
+/-- **Minkowski's second theorem**, upper bound, in terms of the successive minima and with real
+measures: `λ₀ ⋯ λₙ₋₁ · μ.real K ≤ 2ⁿ · covolume L μ`. -/
+theorem prod_successiveMin_mul_measureReal_le_two_pow_mul_covolume (L : Submodule ℤ E)
+    [DiscreteTopology L] [IsZLattice ℝ L] (μ : Measure E := by volume_tac) [μ.IsAddHaarMeasure]
+    {K : ConvexBody E} (hK : 0 ∈ interior (K : Set E)) (hKs : ∀ x ∈ K, -x ∈ K) :
+    (∏ i, successiveMin L K i) * μ.real K ≤ 2 ^ finrank ℝ E * ZLattice.covolume L μ := by
+  have h := ENNReal.toReal_mono (by finiteness)
+    (prod_successiveMin_mul_measure_le_two_pow_mul_covolume L μ hK hKs)
+  rwa [ENNReal.toReal_mul, ENNReal.toReal_mul, ENNReal.toReal_ofReal
+    (Finset.prod_nonneg fun i _ ↦ successiveMin_nonneg L K i), ENNReal.toReal_ofReal
+    (ZLattice.covolume_pos L μ).le, ENNReal.toReal_pow, ENNReal.toReal_ofNat] at h
 
 end ZLattice

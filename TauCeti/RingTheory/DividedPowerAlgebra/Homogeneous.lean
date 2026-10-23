@@ -90,6 +90,19 @@ theorem homogeneousSubmodule_induction {d : ℕ}
   | add x y _ _ hx hy => exact add x y _ _ hx hy
   | smul r x _ hx => exact smul r x _ hx
 
+/-- Linear maps from a homogeneous piece agree if they agree on every product of
+divided-power generators of the prescribed total degree. -/
+theorem homogeneousSubmodule_ext {d : ℕ}
+    {f g : homogeneousSubmodule (R := R) (M := M) d →ₗ[R] N}
+    (h : ∀ (l : List (ℕ × M)) (hl : (l.map Prod.fst).sum = d),
+      f ⟨(l.map fun nm ↦ dp R nm.1 nm.2).prod, hl ▸ prod_dp_mem_homogeneousSubmodule l⟩ =
+        g ⟨(l.map fun nm ↦ dp R nm.1 nm.2).prod, hl ▸ prod_dp_mem_homogeneousSubmodule l⟩) :
+    f = g := by
+  apply (Submodule.linearMap_eq_iff_of_eq_span f g
+    (S := homogeneousGenerators (R := R) (M := M) d) rfl).2
+  rintro ⟨_, l, hl, rfl⟩
+  exact h l hl
+
 /-- The generator `dp R d m` is homogeneous of degree `d`. -/
 theorem dp_mem_homogeneousSubmodule (d : ℕ) (m : M) :
     dp R d m ∈ homogeneousSubmodule (R := R) (M := M) d := by
@@ -132,6 +145,13 @@ theorem mul_mem_homogeneousSubmodule {a b : ℕ} {x y : DividedPowerAlgebra R M}
 instance instGradedMonoid : SetLike.GradedMonoid (homogeneousSubmodule (R := R) (M := M)) where
   one_mem := one_mem_homogeneousSubmodule (R := R) (M := M)
   mul_mem _ _ := mul_mem_homogeneousSubmodule
+
+/-- A finite product of divided-power generators belongs to the homogeneous piece of its
+total degree. -/
+theorem prod_dp_mem_homogeneousSubmodule_of_sum_eq {ι : Type*} [Fintype ι] {d : ℕ}
+    (m : ι → M) (k : ι → ℕ) (hk : ∑ j, k j = d) :
+    ∏ j, dp R (k j) (m j) ∈ homogeneousSubmodule (R := R) (M := M) d :=
+  hk ▸ SetLike.prod_mem_graded _ _ _ fun j _ ↦ dp_mem_homogeneousSubmodule (k j) (m j)
 
 /-- The functorial map on divided power algebras preserves every homogeneous piece. -/
 theorem map_mem_homogeneousSubmodule (f : M →ₗ[R] N) {d : ℕ} {x : DividedPowerAlgebra R M}

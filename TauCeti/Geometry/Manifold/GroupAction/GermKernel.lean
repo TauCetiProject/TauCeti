@@ -50,6 +50,10 @@ two origins is smooth, has order two, and is the identity off the origins, but n
 * `TauCeti.exists_equivariant_chart_of_contMDiffAt`: Bochner linearization at a common fixed point
   of a finite group acting by maps that are `C¹` there, with the germ kernel as the kernel of the
   linear action.
+* `TauCeti.exists_equivariant_chart_target_eq_sumOfConjugatesInnerSublevel_of_contMDiffAt`: on
+  a finite-dimensional real manifold, the Bochner chart can be taken inside any neighbourhood of
+  the fixed point, onto an invariant ball, with preconnected domain on which exactly the elements
+  of the germ kernel act trivially.
 * `TauCeti.isClosed_interior_fixedBy`, `TauCeti.isClopen_interior_fixedBy`: the interior of the
   fixed set of a finite-order element acting by a `C¹` map is clopen.
 * `TauCeti.subset_interior_fixedBy_of_isPreconnected`: the identity principle on a preconnected
@@ -83,12 +87,12 @@ variable {𝕜 E H M G : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpac
 
 /-- **Bochner linearization on a manifold.** Let a finite group act continuously on a manifold
 without boundary, fixing `y`, by maps that are `C¹` at `y`. Then in some chart `e` at `y` with
-invariant domain the group acts linearly, through a continuous representation `σ`, and an element
-lies in the germ kernel at `y` exactly when it acts trivially through `σ`. -/
+invariant domain, sending `y` to `0`, the group acts linearly, through a continuous representation
+`σ`, and an element lies in the germ kernel at `y` exactly when it acts trivially through `σ`. -/
 theorem exists_equivariant_chart_of_contMDiffAt [Finite G] [ContinuousConstSMul G M] {y : M}
     (hsmooth : ∀ g : G, ContMDiffAt I I 1 (fun x : M ↦ g • x) y) (hy : ∀ g : G, g • y = y) :
     ∃ (σ : ContRepresentation 𝕜 G E) (e : OpenPartialHomeomorph M E), y ∈ e.source ∧
-      (∀ g : G, ∀ z ∈ e.source, g • z ∈ e.source ∧ e (g • z) = σ g (e z)) ∧
+      e y = 0 ∧ (∀ g : G, ∀ z ∈ e.source, g • z ∈ e.source ∧ e (g • z) = σ g (e z)) ∧
       ∀ g : G, σ g = 1 ↔ g ∈ germKernel G y := by
   let : Fintype G := Fintype.ofFinite G
   let : Invertible (Fintype.card G : 𝕜) :=
@@ -109,8 +113,8 @@ theorem exists_equivariant_chart_of_contMDiffAt [Finite G] [ContinuousConstSMul 
     rwa [hχ, hχs]
   let σ := isotropyRepresentation hyχ hy fun g ↦ (hL g).differentiableAt
   have hσ := hasStrictFDerivAt_conj_smul_isotropyRepresentation hyχ hy hL
-  obtain ⟨e, hye, -, -, he, -⟩ := χ.exists_equivariant_chart hyχ hy σ hσ
-  exact ⟨σ, e, hye, he, χ.map_eq_one_iff_mem_germKernel hyχ hy σ hσ⟩
+  obtain ⟨e, hye, hey, -, he, -⟩ := χ.exists_equivariant_chart hyχ hy σ hσ
+  exact ⟨σ, e, hye, hey, he, χ.map_eq_one_iff_mem_germKernel hyχ hy σ hσ⟩
 
 /-- A fixed point of a finite-order element acting by a `C¹` map, lying in the closure of the
 interior of the fixed set, lies in that interior. -/
@@ -127,7 +131,7 @@ private theorem mem_interior_fixedBy_of_mem_closure {g : G} (hg : IsOfFinOrder g
   have hfix (k : K) : k • y = y := by
     rw [Subgroup.smul_def]
     exact mem_stabilizer_iff.mp (Subgroup.zpowers_le.mpr (mem_stabilizer_iff.mpr hy) k.2)
-  obtain ⟨σ, e, hye, he, hker⟩ := exists_equivariant_chart_of_contMDiffAt (fun k ↦ hsK k y) hfix
+  obtain ⟨σ, e, hye, -, he, hker⟩ := exists_equivariant_chart_of_contMDiffAt (fun k ↦ hsK k y) hfix
   let gK : K := ⟨g, Subgroup.mem_zpowers g⟩
   -- The linear map `σ gK` is the identity on the nonempty open image of the interior of the
   -- fixed set of `g`, so it is the identity.
@@ -223,5 +227,43 @@ theorem isLocallyConstant_card_germKernel [T2Space M]
     (hsmooth : ∀ g : G, ContMDiff I I 1 fun x : M ↦ g • x) (hG : IsMulTorsion G) :
     IsLocallyConstant fun x : M ↦ Nat.card (germKernel G x) :=
   (isLocallyConstant_germKernel hsmooth hG).comp fun K ↦ Nat.card K
+
+end TauCeti
+
+namespace TauCeti
+
+section InvariantBall
+
+variable {E H M G : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless] [TopologicalSpace M]
+  [ChartedSpace H M] [Group G] [Fintype G] [MulAction G M] [ContinuousConstSMul G M]
+
+/-- **The linear local model at a fixed point.** Let a finite group `G` act continuously on a
+finite-dimensional real manifold without boundary, fixing `y`, by maps that are `C¹` at `y`.
+Inside any neighbourhood `s` of `y` there is a chart `e` sending `y` to `0` whose domain is
+`G`-invariant and preconnected and whose target is a positive strict sublevel set of a
+`σ`-invariant inner product, in which `G` acts linearly through a continuous representation `σ`.
+Every element of `G` is retained, including those acting trivially: `g` acts as the identity near
+`y`, that is, lies in the germ kernel at `y`, exactly when `σ g = 1`, and exactly when `g` fixes
+every point of the domain of `e`. -/
+theorem exists_equivariant_chart_target_eq_sumOfConjugatesInnerSublevel_of_contMDiffAt {y : M}
+    (hsmooth : ∀ g : G, ContMDiffAt I I 1 (fun x : M ↦ g • x) y) (hy : ∀ g : G, g • y = y)
+    {s : Set M} (hs : s ∈ 𝓝 y) :
+    ∃ (σ : ContRepresentation ℝ G E) (e : OpenPartialHomeomorph M E) (c : ℝ), 0 < c ∧
+      y ∈ e.source ∧ e y = 0 ∧ e.source ⊆ s ∧
+      e.target = σ.toRepresentation.sumOfConjugatesInnerSublevel c ∧ IsPreconnected e.source ∧
+      (∀ g : G, ∀ z ∈ e.source, g • z ∈ e.source ∧ e (g • z) = σ g (e z)) ∧
+      ∀ g : G, (σ g = 1 ↔ g ∈ germKernel G y) ∧ (σ g = 1 ↔ ∀ z ∈ e.source, g • z = z) := by
+  obtain ⟨σ, e₀, hye₀, hey₀, he₀, hker⟩ :=
+    exists_equivariant_chart_of_contMDiffAt (I := I) hsmooth hy
+  obtain ⟨e, c, hc, hye, hcoe, hes, het, hconn, he⟩ :=
+    e₀.exists_target_eq_sumOfConjugatesInnerSublevel σ.toRepresentation hye₀ hey₀ he₀ hs
+  have he' : ∀ g : G, ∀ z ∈ e.source, g • z ∈ e.source ∧ e (g • z) = σ g (e z) := he
+  refine ⟨σ, e, c, hc, hye, hcoe ▸ hey₀, fun z hz ↦ (hes hz).2, het, hconn, he',
+    fun g ↦ ⟨hker g, fun h z hz ↦ ?_, fun h ↦ (hker g).2 (mem_germKernel.2 ?_)⟩⟩
+  · exact e.injOn (he' g z hz).1 hz (by rw [(he' g z hz).2, h, one_apply_eq_self])
+  · filter_upwards [e.open_source.mem_nhds hye] with z hz using h z hz
+
+end InvariantBall
 
 end TauCeti

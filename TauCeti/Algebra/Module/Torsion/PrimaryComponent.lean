@@ -114,19 +114,21 @@ theorem map_pPowerTorsion_of_exact {N P : Type*} [AddCommMonoid N] [Module A N]
 
 section Exact
 
-variable {p : ℕ} {A : Type*} [Semiring A] {Z M N P : Type*} [AddCommGroup Z] [Module A Z]
-  [AddCommGroup M] [Module A M] [AddCommGroup N] [Module A N] [AddCommGroup P] [Module A P]
+variable {Z M N P : Type*} [AddCommMonoid Z] [Module A Z] [AddCommGroup M] [Module A M]
+  [AddCommMonoid P] [Module A P]
 
 /-- **The `p`-power torsion is injective along an exact sequence** `Z → M → N` whose first term is
 torsion and has no `p`-power torsion, for `p` prime: the map `M → N` is injective on the `p`-power
 torsion of `M`. -/
-theorem injOn_pPowerTorsion_of_exact [Fact p.Prime] {ψ : Z →ₗ[A] M} {φ : M →ₗ[A] N}
+theorem injOn_pPowerTorsion_of_exact [AddCommMonoid N] [Module A N] [Fact p.Prime]
+    {ψ : Z →ₗ[A] M} {φ : M →ₗ[A] N}
     (hψφ : Function.Exact ψ φ) (hZt : IsAddTorsion Z) (hZ : pPowerTorsion p A Z = ⊥) :
     Set.InjOn φ (pPowerTorsion p A M) := by
   have hp : p.Prime := Fact.out
   intro x hx y hy hxy
   obtain ⟨k, hk⟩ := (AddCommGroup.primaryComponent M p).sub_mem hx hy
-  obtain ⟨z, hz⟩ := (hψφ (x - y)).mp (by rw [map_sub, hxy, sub_self])
+  obtain ⟨z, hz⟩ := (hψφ (x - y)).mp (by
+    simpa only [sub_eq_add_neg, map_add, hxy] using map_add_eq_zero φ (add_neg_cancel y))
   obtain ⟨a, m, hpm, hzam⟩ :=
     Nat.exists_eq_pow_mul_and_not_dvd (hZt z).addOrderOf_pos.ne' p hp.one_lt.ne'
   -- The `p`-power torsion of `Z` vanishes, so `z` is killed by the prime-to-`p` part `m` of its
@@ -144,7 +146,8 @@ theorem injOn_pPowerTorsion_of_exact [Fact p.Prime] {ψ : Z →ₗ[A] M} {φ : M
 /-- **The `p`-power torsion is surjective along an exact sequence** `M → N → P` whose first term is
 torsion and whose last term has no `p`-power torsion, for `p` prime: every `p`-power torsion
 element of `N` is the image of a `p`-power torsion element of `M`. -/
-theorem surjOn_pPowerTorsion_of_exact [Fact p.Prime] {φ : M →ₗ[A] N} {χ : N →ₗ[A] P}
+theorem surjOn_pPowerTorsion_of_exact [AddCommGroup N] [Module A N] [Fact p.Prime]
+    {φ : M →ₗ[A] N} {χ : N →ₗ[A] P}
     (hφχ : Function.Exact φ χ) (hMt : IsAddTorsion M) (hP : pPowerTorsion p A P = ⊥) :
     Set.SurjOn φ (pPowerTorsion p A M) (pPowerTorsion p A N) := by
   rintro y ⟨k, hk⟩

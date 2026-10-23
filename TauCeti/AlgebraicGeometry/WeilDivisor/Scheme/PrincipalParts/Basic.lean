@@ -593,8 +593,6 @@ theorem epi_toPrincipalParts (D : SchemeWeilDivisor X) : Epi (toPrincipalParts D
     refine (TopCat.Presheaf.isLocallySurjective_iff _).mpr fun U t y hy ↦ ?_
     obtain ⟨V, i, hyV, s, hs⟩ := exists_toPrincipalParts_app_eq hclosed D t hy
     exact ⟨V, i.le, ⟨s, hs⟩, hyV⟩
-  have : (Scheme.Modules.toSheaf X).Faithful :=
-    inferInstanceAs (_root_.SheafOfModules.toSheaf X.ringCatSheaf).Faithful
   exact (Scheme.Modules.toSheaf X).epi_of_epi_map hepi
 
 /-- **The short exact sequence of principal parts** `0 ⟶ 𝒪_X(D) ⟶ 𝒦_X ⟶ principalParts D ⟶ 0`, on

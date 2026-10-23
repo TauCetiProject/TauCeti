@@ -10,6 +10,7 @@ public import TauCeti.RingTheory.PolynomialLaw.Homogeneous
 public import Mathlib.RingTheory.PowerSeries.Basic
 public import Mathlib.RingTheory.TensorProduct.Maps
 import Mathlib.Data.Nat.Choose.Sum
+import Mathlib.LinearAlgebra.TensorProduct.Finiteness
 import TauCeti.RingTheory.TensorProduct.Basic
 
 /-!
@@ -36,6 +37,7 @@ maps `Γ^d_R(M) → N`, by composition with `γ_d`.
 * `DividedPowerAlgebra.gamma_toFun_sum_tmul`: the formula for `γ_d` on a finite sum of pure
   tensors, after scalar extension to an algebra in any universe.
 * `DividedPowerAlgebra.ground_gamma_apply`: the ground value of `γ_d` at `m` is `dp R d m`.
+* `DividedPowerAlgebra.gamma_comp_toPolynomialLaw`: naturality in the source module.
 * `DividedPowerAlgebra.coe_lid_rTensor_lcoeff_gamma_toFun_sum_X_tmul`: the coefficient of the
   monomial `∏ⱼ Tⱼ ^ kⱼ` in `γ_d(∑ⱼ Tⱼ ⊗ mⱼ)` is `∏ⱼ dp kⱼ mⱼ` when `∑ⱼ kⱼ = d`, and `0`
   otherwise.
@@ -289,11 +291,34 @@ theorem coe_lid_rTensor_lcoeff_gamma_toFun_sum_X_tmul (d : ℕ) {ι : Type*} [Fi
     rw [monomial_eq, C_1, one_mul, Finsupp.prod_fintype _ _ fun _ ↦ pow_zero _]
   have hdec (h : ∑ j, k j = d) : (DirectSum.decompose (homogeneousSubmodule (R := R) (M := M))
       (∏ j, dp R (k j) (m j)) d : DividedPowerAlgebra R M) = ∏ j, dp R (k j) (m j) :=
-    DirectSum.decompose_of_mem_same _ <| h ▸
-      SetLike.prod_mem_graded _ _ _ fun j _ ↦ dp_mem_homogeneousSubmodule (k j) (m j)
+    DirectSum.decompose_of_mem_same _ <| prod_dp_mem_homogeneousSubmodule_of_sum_eq m k h
   rw [gamma_toFun_sum_tmul]
   simp +contextual [hX, MvPolynomial.coeff_monomial, ite_smul,
     apply_ite (Subtype.val : homogeneousSubmodule (R := R) (M := M) d → _), Finset.sum_ite_eq',
     Finset.mem_finsuppAntidiag, hdec]
+
+/-- The universal homogeneous law is natural in its source module. -/
+theorem gamma_comp_toPolynomialLaw {N : Type*} [AddCommMonoid N] [Module R N]
+    (f : M →ₗ[R] N) (d : ℕ) :
+    (gamma R N d).comp f.toPolynomialLaw =
+      (mapHomogeneousSubmodule f d).toPolynomialLaw.comp (gamma R M d) := by
+  ext S _ _ x
+  simp only [PolynomialLaw.comp_toFun', Function.comp_apply, LinearMap.toPolynomialLaw_toFun']
+  rw [PolynomialLaw.toFun'_eq_toFun, PolynomialLaw.toFun'_eq_toFun]
+  -- The law is not additive, so expand a whole tensor as a finite sum before applying its formula.
+  obtain ⟨n, s, m, rfl⟩ := TensorProduct.exists_sum_tmul_eq x
+  simp only [map_sum, LinearMap.baseChange_tmul]
+  rw [gamma_toFun_sum_tmul, gamma_toFun_sum_tmul, map_sum]
+  refine Finset.sum_congr rfl fun k hk ↦ ?_
+  rw [LinearMap.baseChange_tmul]
+  congr 1
+  apply Subtype.ext
+  have hdeg : ∑ j, k j = d := (Finset.mem_finsuppAntidiag.mp hk).1
+  have hM : ∏ j, dp R (k j) (m j) ∈ homogeneousSubmodule (R := R) (M := M) d :=
+    prod_dp_mem_homogeneousSubmodule_of_sum_eq m k hdeg
+  have hN : ∏ j, dp R (k j) (f (m j)) ∈ homogeneousSubmodule (R := R) (M := N) d :=
+    prod_dp_mem_homogeneousSubmodule_of_sum_eq (fun j ↦ f (m j)) k hdeg
+  simp only [coe_mapHomogeneousSubmodule_apply, DirectSum.decompose_of_mem_same _ hM,
+    DirectSum.decompose_of_mem_same _ hN, map_prod, map_apply_dp]
 
 end DividedPowerAlgebra

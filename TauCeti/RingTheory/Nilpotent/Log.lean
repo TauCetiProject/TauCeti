@@ -9,7 +9,7 @@ public import Mathlib.RingTheory.Nilpotent.Exp
 public import Mathlib.RingTheory.PowerSeries.Log
 public import TauCeti.RingTheory.PowerSeries.Substitution
 import Mathlib.RingTheory.Adjoin.Singleton
-import TauCeti.RingTheory.Nilpotent.Exp
+public import TauCeti.RingTheory.Nilpotent.Exp
 
 /-!
 # Finite logarithms of unipotent elements
@@ -218,3 +218,16 @@ theorem image_exp_setOf_pow_eq_zero (n : ℕ) :
   exact pow_exp_sub_one_eq_zero ha
 
 end IsNilpotent
+
+namespace Units
+
+/-- The exponential unit of the logarithm of a unipotent unit is the original unit. -/
+@[simp]
+theorem nilpotentExpUnit_log
+    {A : Type*} [Ring A] [Algebra ℚ A]
+    (g : Aˣ) (hg : IsNilpotent ((g : A) - 1)) :
+    TauCeti.nilpotentExpUnit (IsNilpotent.isNilpotent_log hg) = g := by
+  apply Units.ext
+  simp [IsNilpotent.exp_log hg]
+
+end Units
