@@ -298,7 +298,7 @@ end GridRectangleInitialPentagonDecomposition
 
 namespace GridDiagram
 
-variable {n : ℕ} (G : GridDiagram n) (C : ColumnCommutationData G) {x z : GridState n}
+variable {n : ℕ} (G : GridDiagram n) (C : ColumnTurn n) {x z : GridState n}
 
 /-- A counted common-initial-side source has a counted same-sum recut. -/
 theorem recutInitialSelf_mem_rectangleInitialPentagonDecompositions

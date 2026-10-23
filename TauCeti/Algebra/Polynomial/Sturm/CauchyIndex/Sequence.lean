@@ -104,9 +104,9 @@ theorem _root_.Polynomial.cauchyIndex_eq_sub_signVariations_Ioo (p q : R[X]) {a 
   have ha'u : a' ∈ Ioo a u := ⟨haa', ha'.trans_le (min_le_left _ _)⟩
   have hb'l : b' ∈ Ioo l b := ⟨(le_max_left _ _).trans_lt hb', hb'b⟩
   have hpu (x : R) (hx : x ∈ Ioo a u) : p.eval x ≠ 0 :=
-    eval_ne_zero_of_sign_eq_signRight hp (hu p (mem_sturmSeq_self hp) x hx)
+    eval_ne_zero_of_sign_eq_derivSignRight hp (hu p (mem_sturmSeq_self hp) x hx)
   have hpl (x : R) (hx : x ∈ Ioo l b) : p.eval x ≠ 0 :=
-    eval_ne_zero_of_sign_eq_signLeft hp (hl p (mem_sturmSeq_self hp) x hx)
+    eval_ne_zero_of_sign_eq_derivSignLeft hp (hl p (mem_sturmSeq_self hp) x hx)
   have hindex : cauchyIndex p q (Ioo a b) = cauchyIndex p q (Ioo a' b') := by
     rw [cauchyIndex_eq_sum, cauchyIndex_eq_sum]
     symm
@@ -123,8 +123,8 @@ theorem _root_.Polynomial.cauchyIndex_eq_sub_signVariations_Ioo (p q : R[X]) {a 
       · exact hpu r ⟨hrab.1, hra'.trans_lt ha'u.2⟩
       · exact hpl r ⟨hb'l.1.trans_le (not_lt.mp fun hrb' => hrout ⟨ha'r, hrb'⟩), hrab.2⟩
   rw [hindex, cauchyIndex_Ioo_aux p q ((le_max_right _ _).trans_lt hb')
-    (fun r hr => eval_ne_zero_of_sign_eq_signRight (hnonzero r hr) (hu r hr a' ha'u))
-    (fun r hr => eval_ne_zero_of_sign_eq_signLeft (hnonzero r hr) (hl r hr b' hb'l)),
+    (fun r hr => eval_ne_zero_of_sign_eq_derivSignRight (hnonzero r hr) (hu r hr a' ha'u))
+    (fun r hr => eval_ne_zero_of_sign_eq_derivSignLeft (hnonzero r hr) (hl r hr b' hb'l)),
     signVariationsAt_eq_right (fun r hr => hu r hr a' ha'u),
     signVariationsAt_eq_left (fun r hr => hl r hr b' hb'l)]
 

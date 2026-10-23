@@ -8,22 +8,21 @@ module
 public import TauCeti.RingTheory.Polynomial.Eisenstein.Basic
 public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 import TauCeti.RingTheory.DiscreteValuationRing.Basic
-import Mathlib.Tactic.ComputeDegree
 
 /-!
 # Eisenstein polynomials over discrete valuation rings
 
 The Eisenstein condition over a discrete valuation ring makes the constant coefficient a
 uniformizer. Conversely, `X ^ n` minus a uniformizer is Eisenstein for positive `n`, and so is
-`X ^ 2 - a X + ϖ` for a uniformizer `ϖ` and `a` in the maximal ideal.
+`X ^ n + a X` plus a uniformizer for `a` in the maximal ideal and `2 ≤ n`.
 
 ## Main results
 
 * `Polynomial.IsEisensteinAt.irreducible_coeff_zero` identifies the constant coefficient as an
   irreducible element.
 * `TauCeti.isEisensteinAt_X_pow_sub_C_of_irreducible` and
-  `TauCeti.isEisensteinAt_X_sq_sub_C_mul_X_add_C_of_irreducible` give Eisenstein polynomials from
-  uniformizers.
+  `TauCeti.isEisensteinAt_X_pow_add_C_mul_X_add_C_of_irreducible` give Eisenstein polynomials
+  from uniformizers.
 -/
 
 public section
@@ -86,21 +85,15 @@ theorem isEisensteinAt_X_pow_sub_C_of_irreducible
     IsDiscreteValuationRing.addVal_uniformizer hϖ]
   simp
 
-/-- Over a discrete valuation ring, `X ^ 2 - a X + ϖ` is Eisenstein for a uniformizer `ϖ` and
-`a` in the maximal ideal. -/
-theorem isEisensteinAt_X_sq_sub_C_mul_X_add_C_of_irreducible
+/-- Over a discrete valuation ring, `X ^ n + C a * X + C ϖ` is Eisenstein when `a` lies in the
+maximal ideal, `ϖ` is a uniformizer and `2 ≤ n`. -/
+theorem isEisensteinAt_X_pow_add_C_mul_X_add_C_of_irreducible
     {R : Type*} [CommRing R] [IsDomain R] [IsDiscreteValuationRing R]
-    {a ϖ : R} (ha : a ∈ maximalIdeal R) (hϖ : Irreducible ϖ) :
-    (X ^ 2 - C a * X + C ϖ).IsEisensteinAt (maximalIdeal R) := by
-  have hdeg : (X ^ 2 - C a * X + C ϖ : R[X]).natDegree = 2 := by compute_degree!
-  refine ⟨?_, fun {n} hn ↦ ?_, ?_⟩
-  · rw [(by monicity! : (X ^ 2 - C a * X + C ϖ : R[X]).Monic).leadingCoeff]
-    exact Ideal.one_notMem _
-  · rw [hdeg] at hn
-    interval_cases n
-    · simp [hϖ.maximalIdeal_eq]
-    · simpa [coeff_X] using ha
-  · rw [IsDiscreteValuationRing.mem_maximalIdeal_pow_iff_le_addVal]
-    simp [IsDiscreteValuationRing.addVal_uniformizer hϖ]
+    {a ϖ : R} (ha : a ∈ maximalIdeal R) (hϖ : Irreducible ϖ) {n : ℕ} (hn : 2 ≤ n) :
+    (X ^ n + C a * X + C ϖ).IsEisensteinAt (maximalIdeal R) := by
+  apply isEisensteinAt_X_pow_add_C_mul_X_add_C ha (by simp [hϖ.maximalIdeal_eq]) _ hn
+  rw [IsDiscreteValuationRing.mem_maximalIdeal_pow_iff_le_addVal,
+    IsDiscreteValuationRing.addVal_uniformizer hϖ]
+  simp
 
 end TauCeti

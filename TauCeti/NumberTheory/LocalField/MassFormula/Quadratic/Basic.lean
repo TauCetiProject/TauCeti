@@ -195,6 +195,12 @@ private theorem aeval_add_one_X_sq_sub_C_two_mul_X_add_C {ϖ : 𝒪[K]} {x : Sep
   simp [Algebra.algebraMap_ofSubsemiring_apply, map_ofNat] at hx ⊢
   linear_combination hx
 
+private theorem isEisensteinAt_X_sq_sub_C_two_mul_X_add_C (h2 : ringChar 𝓀[K] ∣ 2)
+    {ϖ : 𝒪[K]} (hϖ : Irreducible ϖ) :
+    (X ^ 2 - C 2 * X + C ϖ : 𝒪[K][X]).IsEisensteinAt (IsLocalRing.maximalIdeal 𝒪[K]) := by
+  simpa [sub_eq_add_neg] using isEisensteinAt_X_pow_add_C_mul_X_add_C_of_irreducible (a := -2)
+    (neg_mem (by exact_mod_cast IsLocalRing.natCast_mem_maximalIdeal_iff_dvd.2 h2)) hϖ le_rfl
+
 /-- **Square roots of `1 - ϖ` generate counted extensions in residue characteristic two.** If
 the residue characteristic of `K` is `2` and `ϖ` is a uniformizer of `K`, a square root `x` of
 `1 - ϖ` in the separable closure generates a member of `σ_K(2)`: `x + 1` is a root of the
@@ -205,8 +211,7 @@ theorem adjoin_mem_totallyRamifiedOfDegree_two_of_sq_eq_one_sub (h2 : ringChar �
     K⟮x⟯ ∈ totallyRamifiedOfDegree K 2 := by
   rw [← IntermediateField.adjoin_simple_add_algebraMap x 1]
   exact adjoin_mem_totallyRamifiedOfDegree_of_eisenstein
-    (isEisensteinAt_X_sq_sub_C_mul_X_add_C_of_irreducible (a := 2)
-      (by exact_mod_cast IsLocalRing.natCast_mem_maximalIdeal_iff_dvd.2 h2) hϖ)
+    (isEisensteinAt_X_sq_sub_C_two_mul_X_add_C h2 hϖ)
     (by compute_degree!)
     (aeval_add_one_X_sq_sub_C_two_mul_X_add_C hx)
 
@@ -220,8 +225,7 @@ theorem natCast_discriminantExponent_adjoin_of_sq_eq_one_sub (h2 : ringChar 𝓀
     ((K⟮x⟯).discriminantExponent : ℕ∞) = 2 * IsDiscreteValuationRing.addVal 𝒪[K] 2 := by
   rw [← IntermediateField.adjoin_simple_add_algebraMap x 1,
     natCast_discriminantExponent_adjoin_eq_iInf_of_eisenstein
-      (isEisensteinAt_X_sq_sub_C_mul_X_add_C_of_irreducible (a := 2)
-        (by exact_mod_cast IsLocalRing.natCast_mem_maximalIdeal_iff_dvd.2 h2) hϖ)
+      (isEisensteinAt_X_sq_sub_C_two_mul_X_add_C h2 hϖ)
       (aeval_add_one_X_sq_sub_C_two_mul_X_add_C hx),
     (by compute_degree! : (X ^ 2 - C 2 * X + C ϖ : 𝒪[K][X]).natDegree = 2)]
   -- The constant term `-2` of the derivative has the least valuation.

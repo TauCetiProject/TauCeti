@@ -112,13 +112,6 @@ private theorem coe_zeroHomeomorph_symm (x : {x : M // f x = c}) :
 
 variable [I.Boundaryless] [ChartedSpace H M]
 
-/-- The preferred chart of the copy is the preferred extended chart of `M`. -/
-private theorem chartAt_apply (z y : BoundarylessModel I M) :
-    chartAt E z y = extChartAt I ((BoundarylessModel.homeomorph I M).symm z)
-      ((BoundarylessModel.homeomorph I M).symm y) := by
-  simp only [BoundarylessModel.chartAt_eq, BoundarylessModel.chart_apply, extChartAt_coe,
-    Function.comp_apply]
-
 /-- A zero lies in the preferred chart source of the copy at `z` exactly when the corresponding
 point of the level lies in the preferred chart source of `M`. -/
 private theorem mem_chartAt_source_iff (z w : ↥{y : BoundarylessModel I M | sec I f c y = 0}) :
@@ -129,7 +122,7 @@ private theorem mem_chartAt_source_iff (z w : ↥{y : BoundarylessModel I M | se
 
 private theorem chartAt_self (z : ↥{y : BoundarylessModel I M | sec I f c y = 0}) :
     chartAt E z.1 z.1 = extChartAt I (zeroHomeomorph I f c z : M) (zeroHomeomorph I f c z) := by
-  rw [chartAt_apply, coe_zeroHomeomorph]
+  rw [BoundarylessModel.chartAt_apply, coe_zeroHomeomorph]
 
 /-- The trivialization coordinate of `f - c` in the preferred chart is `f - c` read in the
 preferred extended chart of `M`. -/
@@ -267,8 +260,8 @@ theorem scalarRegularLevelChartAt_apply (x w : {x : M // f x = c}) :
           (extChartAt I (x : M) w - extChartAt I (x : M) x)) := by
   obtain ⟨z, rfl⟩ := (zeroHomeomorph I f c).surjective x
   simp only [scalarRegularLevelChartAt_zeroHomeomorph, Homeomorph.transOpenPartialHomeomorph_apply,
-    comp_apply, Homeomorph.symm_apply_apply, sectionZeroChartAt_apply, chartAt_apply,
-    coe_zeroHomeomorph_symm, ← coe_zeroHomeomorph]
+    comp_apply, Homeomorph.symm_apply_apply, sectionZeroChartAt_apply,
+    BoundarylessModel.chartAt_apply, coe_zeroHomeomorph_symm, ← coe_zeroHomeomorph]
 
 /-- A preferred chart is centred at its point. -/
 @[simp]
@@ -316,7 +309,7 @@ theorem scalarRegularLevelChartAt_source (x : {x : M // f x = c}) :
   ext w
   obtain ⟨w, rfl⟩ := (zeroHomeomorph I f c).surjective w
   simp only [mem_preimage, mem_inter_iff, mem_ofPred_eq, Homeomorph.symm_apply_apply,
-    mem_chartAt_source_iff, chartAt_apply, ← coe_zeroHomeomorph,
+    mem_chartAt_source_iff, BoundarylessModel.chartAt_apply, ← coe_zeroHomeomorph,
     Bundle.Trivial.fiberBundle_trivializationAt', Bundle.Trivial.trivialization_baseSet,
     preimage_univ, interior_univ, mem_univ, and_true]
 
@@ -396,7 +389,7 @@ private theorem contDiffAt_coord {m : ℕ∞ω} [IsManifold I m M]
         (chartAt E z.1 w.1) := by
   intro _ z w hw _ _
   have hw' := (mem_chartAt_source_iff z w).1 hw
-  rw [coord_eq, chartAt_apply, ← coe_zeroHomeomorph, ← coe_zeroHomeomorph]
+  rw [coord_eq, BoundarylessModel.chartAt_apply, ← coe_zeroHomeomorph, ← coe_zeroHomeomorph]
   exact ContDiffAt.sub ((contMDiffAt_iff_contDiffAt_comp_extend_symm
     (IsManifold.chart_mem_maximalAtlas (I := I) (n := m) _) hw').1
     (hfm _ (zeroHomeomorph I f c w).2)) contDiffAt_const
