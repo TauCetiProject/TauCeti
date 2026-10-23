@@ -21,7 +21,7 @@ to a triple, and conversely `IsSl2Triple.toLieHom` sends `E`, `F`, `H` to `e`, `
 domain of characteristic zero, with `L` torsion-free, this homomorphism is injective, being the
 identification of `sl (Fin 2) K` with the Lie subalgebra `t.toLieSubalgebra K` spanned by the
 triple. This is the form in which statements about triples become statements about embeddings
-`sl₂ ↪ 𝔤`, and it is the form a representation of `sl₂` restricts along.
+`sl₂ ↪ 𝔤`, and it is the map along which a representation of `L` restricts to `sl₂`.
 
 Read through this dictionary, the Jacobson–Morozov theorem says that in a finite-dimensional Lie
 algebra with nondegenerate Killing form over a field of characteristic zero, the images of `E`
