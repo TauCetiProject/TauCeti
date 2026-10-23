@@ -346,6 +346,11 @@ variable {K : Type u} [Field K] {V : Type v} [AddCommGroup V] [Module K V]
 
 namespace SpinPolarizationData
 
+/-- The remainder line of a polarization of a six-dimensional quadratic space vanishes. -/
+theorem line_eq_bot_of_finrank_eq_six (hV : finrank K V = 6) : P.line = ⊥ :=
+  have : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
+  P.line_eq_bot_of_even_finrank (hV ▸ by decide)
+
 /-- A polarization of a six-dimensional quadratic space has a three-dimensional isotropic
 summand `W`. -/
 theorem finrank_W_eq_three_of_finrank_eq_six (hV : finrank K V = 6) : finrank K P.W = 3 :=
@@ -389,14 +394,16 @@ theorem spinPlusFinBasisOfFinrankEqSix_def [FiniteDimensional K (spinPlus Q P)]
 /-- The first matrix factor of a polarized six-dimensional Spin element is the matrix of its
 even half-spin action in the basis `TauCeti.spinPlusFinBasisOfFinrankEqSix`. -/
 theorem coe_evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix_spinGroupToEvenUnitary_apply
-    [Invertible (2 : K)] [FiniteDimensional K V] (hline : P.line = ⊥) (hV : finrank K V = 6)
+    [Invertible (2 : K)] [FiniteDimensional K V] (hV : finrank K V = 6)
     (s : spinGroup Q) :
     (AlgEquiv.evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix
         (P.evenCliffordEquivProdMatrix (l := 3) (P.W_ne_bot_of_finrank_eq_six hV) hV)
-        (P.nondegenerate_of_line_eq_bot hline) hV (spinGroupToEvenUnitary Q s) :
+        (P.nondegenerate_of_line_eq_bot (P.line_eq_bot_of_finrank_eq_six hV)) hV
+        (spinGroupToEvenUnitary Q s) :
         Matrix (Fin 4) (Fin 4) K) =
       LinearMap.toMatrix (spinPlusFinBasisOfFinrankEqSix P hV) (spinPlusFinBasisOfFinrankEqSix P hV)
-        (spinPlusAction Q P hline (spinGroupToEven Q s)) := by
+        (spinPlusAction Q P (P.line_eq_bot_of_finrank_eq_six hV)
+          (spinGroupToEven Q s)) := by
   -- Plain `simp` first rewrites the matrix size `2 ^ (3 - 1)`, after which
   -- `evenCliffordEquivProdMatrix_apply` no longer applies.
   simp only [AlgEquiv.coe_evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix_apply,

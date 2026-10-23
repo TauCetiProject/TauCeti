@@ -68,9 +68,9 @@ theorem
   have : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
   let _ : Invertible (2 : K) := invertibleOfNonzero (NeZero.ne (2 : K))
   have hline : P.line = ⊥ := P.line_eq_bot_of_even_finrank (hV ▸ by decide)
-  let φ := spinGroupEquivSpecialLinearGroupOfFinrankEqSix P hline hV
+  let φ := spinGroupEquivSpecialLinearGroupOfFinrankEqSix P hV
   have h := nonempty_spinPlusSubrep_equiv_stdSLRep_of_matrix_action hline _ φ.toMonoidHom
-    (coe_spinGroupEquivSpecialLinearGroupOfFinrankEqSix_apply P hline hV)
+    (coe_spinGroupEquivSpecialLinearGroupOfFinrankEqSix_apply P hV)
   exact ⟨hline, φ, h, nonempty_spinMinusSubrep_equiv_dual_of_spinPlusSubrep_equiv P hV hline _ h⟩
 
 /-- A nondegenerate six-dimensional quadratic space over a separably closed field with `2 ≠ 0`

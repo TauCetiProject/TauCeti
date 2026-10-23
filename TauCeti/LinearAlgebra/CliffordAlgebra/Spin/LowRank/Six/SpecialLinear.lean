@@ -912,8 +912,10 @@ theorem exists_spinPlusAction_spinGroupToEven_eq_of_det_eq_one (hW : finrank K P
   have : Module.Finite K P.W := Module.finite_of_finrank_pos (by omega)
   exists_spinPlusAction_spinGroupToEven_eq_of_basis P hline (finBasisOfFinrankEq K P.W hW) f hf
 
-private noncomputable def spinGroupToSpecialLinear (P : SpinPolarizationData Q) (hline : P.line = ⊥)
-    (hV : finrank K V = 6) : spinGroup Q →* Matrix.SpecialLinearGroup (Fin 4) K where
+private noncomputable def spinGroupToSpecialLinear (P : SpinPolarizationData Q)
+    (hV : finrank K V = 6) : spinGroup Q →* Matrix.SpecialLinearGroup (Fin 4) K :=
+  let hline := P.line_eq_bot_of_finrank_eq_six hV
+  {
   toFun s := ⟨LinearMap.toMatrix (spinPlusFinBasisOfFinrankEqSix P hV)
       (spinPlusFinBasisOfFinrankEqSix P hV) (spinPlusAction Q P hline (spinGroupToEven Q s)),
     (LinearMap.det_toMatrix _ _).trans <|
@@ -924,9 +926,11 @@ private noncomputable def spinGroupToSpecialLinear (P : SpinPolarizationData Q) 
     -- definition of multiplication in `SL₄`.
     simp only [map_mul, LinearMap.toMatrix_mul]
     rfl
+  }
 
-private theorem spinGroupToSpecialLinear_bijective (P : SpinPolarizationData Q) (hline : P.line = ⊥)
-    (hV : finrank K V = 6) : Function.Bijective (spinGroupToSpecialLinear P hline hV) := by
+private theorem spinGroupToSpecialLinear_bijective (P : SpinPolarizationData Q)
+    (hV : finrank K V = 6) : Function.Bijective (spinGroupToSpecialLinear P hV) := by
+  let hline := P.line_eq_bot_of_finrank_eq_six hV
   refine ⟨fun s t h ↦ ?_, fun A ↦ ?_⟩
   · -- The half-spin matrix of a Spin element is the first factor of its image in the matrix model
     -- of the even Clifford algebra, and that factor determines its even unitary image.
@@ -956,10 +960,10 @@ algebra, so on Spin the equivalence agrees with
 `AlgEquiv.evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix`. For three hyperbolic planes it is
 `TauCeti.hyperbolicSixSpinEquivSpecialLinear`. -/
 noncomputable def spinGroupEquivSpecialLinearGroupOfFinrankEqSix (P : SpinPolarizationData Q)
-    (hline : P.line = ⊥) (hV : finrank K V = 6) :
+    (hV : finrank K V = 6) :
     spinGroup Q ≃* Matrix.SpecialLinearGroup (Fin 4) K :=
-  MulEquiv.ofBijective (spinGroupToSpecialLinear P hline hV)
-    (spinGroupToSpecialLinear_bijective P hline hV)
+  MulEquiv.ofBijective (spinGroupToSpecialLinear P hV)
+    (spinGroupToSpecialLinear_bijective P hV)
 
 /-- The polarized Spin-to-special-linear equivalence sends a Spin element to the matrix of its
 action on the even half-spin module in the basis `TauCeti.spinPlusFinBasisOfFinrankEqSix`. As a
@@ -967,10 +971,11 @@ simp lemma it has low priority, so that specialized rules such as
 `TauCeti.coe_hyperbolicSixSpinEquivSpecialLinear_apply` apply first. -/
 @[simp low]
 theorem coe_spinGroupEquivSpecialLinearGroupOfFinrankEqSix_apply (P : SpinPolarizationData Q)
-    (hline : P.line = ⊥) (hV : finrank K V = 6) (s : spinGroup Q) :
-    (spinGroupEquivSpecialLinearGroupOfFinrankEqSix P hline hV s : Matrix (Fin 4) (Fin 4) K) =
+    (hV : finrank K V = 6) (s : spinGroup Q) :
+    (spinGroupEquivSpecialLinearGroupOfFinrankEqSix P hV s : Matrix (Fin 4) (Fin 4) K) =
       LinearMap.toMatrix (spinPlusFinBasisOfFinrankEqSix P hV) (spinPlusFinBasisOfFinrankEqSix P hV)
-        (spinPlusAction Q P hline (spinGroupToEven Q s)) :=
+        (spinPlusAction Q P (P.line_eq_bot_of_finrank_eq_six hV)
+          (spinGroupToEven Q s)) :=
   (rfl)
 
 end Polarization
@@ -1040,7 +1045,7 @@ hyperbolic planes give the split rational six-dimensional form, with `U(C₀, σ
 noncomputable abbrev hyperbolicSixSpinEquivSpecialLinear :
     spinGroup (splitEvenForm K 3) ≃* Matrix.SpecialLinearGroup (Fin 4) K :=
   spinGroupEquivSpecialLinearGroupOfFinrankEqSix (splitEvenPolarization K 3)
-    (splitEvenPolarization_line K 3) (finrank_splitEvenSpace K 3)
+    (finrank_splitEvenSpace K 3)
 
 /-- The Spin equivalence is the general linear equivalence of the even unitary group, read on
 Spin elements: the matrix of a Spin element is the first factor of its image in the matrix-product

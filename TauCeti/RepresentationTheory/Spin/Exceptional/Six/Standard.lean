@@ -70,7 +70,7 @@ theorem nonempty_hyperbolicSix_halfSpin_equiv_stdSLRep_and_dual :
   have hV := finrank_splitEvenSpace K 3
   have h := nonempty_spinPlusSubrep_equiv_stdSLRep_of_matrix_action hline _
     (hyperbolicSixSpinEquivSpecialLinear K).toMonoidHom
-    (coe_spinGroupEquivSpecialLinearGroupOfFinrankEqSix_apply P hline hV)
+    (coe_spinGroupEquivSpecialLinearGroupOfFinrankEqSix_apply P hV)
   exact ⟨h, nonempty_spinMinusSubrep_equiv_dual_of_spinPlusSubrep_equiv P hV hline _ h⟩
 
 end TauCeti
