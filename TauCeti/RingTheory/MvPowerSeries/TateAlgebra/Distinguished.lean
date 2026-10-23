@@ -332,7 +332,7 @@ theorem exists_restrictedTriangularEquiv_isDistinguished [Finite σ] (f : ExtraT
   have hcoeffG (m : ℕ) (t : σ →₀ ℕ) :
       coeff t (PowerSeries.coeff (R := Tate) m (G : PowerSeries Tate) : MvPowerSeries σ R) =
         coeff (t.optionElim m) (restrictedTriangularEquiv α hα f : MvPowerSeries (Option σ) R) := by
-    rw [Huber.coeff_restrictedOptionEquiv, coeff_coeff_optionEquivLeft]
+    rw [Huber.coeff_restrictedOptionEquiv (c := fun _ ↦ 1), coeff_coeff_optionEquivLeft]
   have hcore := norm_coeff_restrictedTriangularEquiv_sub_le hα f ν hε0 hν
   -- Past degree `s` every coefficient has norm at most `ε`.
   have hbeyond (m : ℕ) (hm : s < m) : ‖PowerSeries.coeff m (G : PowerSeries Tate)‖ ≤ ε := by

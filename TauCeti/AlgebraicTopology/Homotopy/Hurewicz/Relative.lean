@@ -5,13 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Absolute
 public import TauCeti.AlgebraicTopology.Homotopy.Relative.BasepointChange
 public import TauCeti.AlgebraicTopology.Homotopy.Relative.Hurewicz
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Relative.CubePair
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Compression.Relative
 
 /-!
-# Surjectivity of the relative Hurewicz map
+# Surjectivity of the relative Hurewicz map, and the isomorphism for highly connected spaces
 
 Let `A` be a path-connected subspace of a space `X` and `a₀ ∈ A`. Suppose that every point of `X`
 is joined by a path to a point of `A`, and that the relative homotopy sets `πₖ(X, A, a₀)` are
@@ -23,6 +24,19 @@ This is half of the relative Hurewicz theorem in degree `n`. Unlike injectivity,
 assumption on the fundamental group of `A`: under these hypotheses the relative Hurewicz map
 identifies `Hₙ(X, A; ℤ)` with the quotient of `πₙ(X, A, a₀)` by the action of `π₁(A, a₀)`
 (Hatcher, Theorem 4.37), which is trivial when `A` is simply connected.
+
+The file then proves injectivity, and so the relative Hurewicz isomorphism in degree `n`, when
+`A` and `X` are both `(n - 1)`-connected
+(`TauCeti.RelHomotopyGroup.bijective_hurewicz_of_subsingleton_homotopyGroup`). In degree two
+this is the full relative Hurewicz theorem: if `A` and `X` are simply connected, then
+`π₂(X, A, a₀)`, which is commutative (`TauCeti.RelHomotopyGroup.mul_comm_of_subsingleton`), is
+isomorphic to `H₂(X, A; ℤ)`. The proof of injectivity is a diagram chase. As `πₙ₋₁(A, a₀)` is
+trivial, every relative class comes from `πₙ(X, a₀)`; the relative Hurewicz map extends the
+absolute one (`TauCeti.RelHomotopyGroup.hurewicz_ofHomotopyGroup`), and the absolute Hurewicz
+theorem for `A` and `X` (`HomotopyGroup.bijective_hurewicz`), together with exactness of the
+homology sequence of the pair at `Hₙ(X; ℤ)`, shows that a class in the kernel comes from
+`πₙ(A, a₀)`, hence is trivial in `πₙ(X, A, a₀)`. For `n ≥ 3` the relative Hurewicz theorem only
+needs `A` to be simply connected; that case is not covered here.
 
 ## Proof
 
@@ -64,6 +78,12 @@ generators of `Hₙ(X, A; ℤ)`.
 * `TauCeti.RelHomotopyGroup.surjective_hurewicz`: the relative Hurewicz map
   `πₙ₊₂(X, A, a₀) → Hₙ₊₂(X, A; ℤ)` is surjective when `A` is path connected and the pair is
   `(n + 1)`-connected.
+* `TauCeti.RelHomotopyGroup.injective_hurewicz_of_subsingleton_homotopyGroup`,
+  `TauCeti.RelHomotopyGroup.bijective_hurewicz_of_subsingleton_homotopyGroup`: the relative
+  Hurewicz map `πₙ₊₂(X, A, a₀) → Hₙ₊₂(X, A; ℤ)` is injective, and bijective, when `A` and `X`
+  are `(n + 1)`-connected.
+* `TauCeti.RelHomotopyGroup.hurewiczAddEquivOfSubsingletonHomotopyGroup`: the resulting additive
+  isomorphism `πₙ₊₂(X, A, a₀) ≃ Hₙ₊₂(X, A; ℤ)`.
 
 ## References
 
@@ -206,6 +226,105 @@ theorem surjective_hurewicz (b : B) {n : ℕ} (h₀ : ∀ y : Y, ∃ a ∈ B, Jo
   obtain ⟨a, ha⟩ := AddSubgroup.mem_comap.1 hmem
   rw [LinearMap.toAddMonoidHom_coe, hz, Iso.hom_inv_id_apply] at ha
   exact ⟨a.toMul, (hurewiczIntHom_apply _ n a).symm.trans ha⟩
+
+/-! ### The relative Hurewicz isomorphism for highly connected pairs -/
+
+section Isomorphism
+
+variable {X : BasedTopPair.{0}} {n : ℕ}
+
+/-- **Injectivity of the relative Hurewicz map for highly connected spaces.** If `πₖ(A, a₀)` and
+`πₖ(X, a₀)` are trivial for every `k < n + 2`, then the relative Hurewicz map
+`πₙ₊₂(X, A, a₀) → Hₙ₊₂(X, A; ℤ)`, `[p] ↦ p_*[Iⁿ⁺²]`, is injective. In degree two, that is for
+`n = 0`, the hypotheses say that `A` and `X` are simply connected. -/
+theorem injective_hurewicz_of_subsingleton_homotopyGroup
+    (hA : ∀ k < n + 2, Subsingleton (HomotopyGroup (Fin k) X.pair.snd X.basepoint))
+    (hX : ∀ k < n + 2,
+      Subsingleton (HomotopyGroup (Fin k) X.pair.fst (X.pair.map X.basepoint))) :
+    Function.Injective fun a : RelHomotopyGroup (Fin (n + 1)) X ↦
+      (hurewicz (ModuleCat.of ℤ ℤ) (n + 1) a).hom 1 := by
+  let R := ModuleCat.of ℤ ℤ
+  let e := HomotopyGroup.congrEquiv (X := X.pair.fst) (x := X.pair.map X.basepoint)
+    (finSuccEquiv (n + 1))
+  -- The relative Hurewicz map is additive, so it is enough to show that its kernel is trivial.
+  suffices h : ∀ a : RelHomotopyGroup (Fin (n + 1)) X,
+      (hurewicz R (n + 1) a).hom 1 = 0 → a = 1 by
+    have := ((injective_iff_map_eq_zero (hurewiczIntHom X n)).2 fun a ha ↦
+      congrArg Additive.ofMul (h a.toMul (by simpa using ha))).comp Additive.ofMul.injective
+    simpa [Function.comp_def] using this
+  intro a ha
+  -- As `πₙ₊₁(A, a₀)` is trivial, `a` comes from a class `α` of `πₙ₊₂(X, a₀)`.
+  obtain ⟨α, rfl⟩ := surjective_ofHomotopyGroup_of_subsingleton (hA (n + 1) (by lia)) a
+  rw [hurewicz_ofHomotopyGroup] at ha
+  -- So the absolute Hurewicz class of `α` lies in the kernel of `Hₙ₊₂(X; ℤ) ⟶ Hₙ₊₂(X, A; ℤ)`.
+  -- The composite with this quotient map unfolds to function application.
+  have ha' : (X.pair.singularHomologyπ R (n + 2)).hom
+      ((HomotopyGroup.hurewicz R (n + 1) (e.symm α)).hom 1) = 0 := ha
+  -- By exactness of the homology sequence of the pair, that class comes from `Hₙ₊₂(A; ℤ)`, and
+  -- hence from the Hurewicz class of some `γ ∈ πₙ₊₂(A, a₀)`.
+  obtain ⟨y, hy⟩ := (ShortComplex.moduleCat_exact_iff_ker_sub_range _).1
+    (X.pair.singularHomology_exact_space R (n + 2)) ha'
+  obtain ⟨γ, rfl⟩ := (HomotopyGroup.bijective_hurewicz hA).2 y
+  -- The Hurewicz map of `X` is injective, so `α` is the image of `γ`, which dies in
+  -- `πₙ₊₂(X, A, a₀)`.
+  have hγ : HomotopyGroup.map X.pair.map.hom rfl γ = e.symm α :=
+    (HomotopyGroup.bijective_hurewicz hX).1 <| by
+      beta_reduce
+      rw [HomotopyGroup.hurewicz_map]
+      exact hy
+  rw [← e.apply_symm_apply α, ← hγ, ← HomotopyGroup.map_congrEquiv,
+    ofHomotopyGroup_homotopyGroupMap, one_eq_default]
+
+/-- **The relative Hurewicz isomorphism for highly connected spaces.** Let `B` be a subspace of
+`Y` and `b ∈ B`. If `πₖ(B, b)` and `πₖ(Y, b)` are trivial for every `k < n + 2`, then the
+relative Hurewicz map `πₙ₊₂(Y, B, b) → Hₙ₊₂(Y, B; ℤ)`, `[p] ↦ p_*[Iⁿ⁺²]`, is bijective. In degree
+two, that is for `n = 0`, the hypotheses say that `B` and `Y` are simply connected. -/
+theorem bijective_hurewicz_of_subsingleton_homotopyGroup (b : B)
+    (hB : ∀ k < n + 2, Subsingleton (HomotopyGroup (Fin k) B b))
+    (hY : ∀ k < n + 2, Subsingleton (HomotopyGroup (Fin k) Y b)) :
+    Function.Bijective fun a : RelHomotopyGroup (Fin (n + 1)) ⟨TopPair.ofSubset B, b⟩ ↦
+      (hurewicz (ModuleCat.of ℤ ℤ) (n + 1) a).hom 1 := by
+  refine ⟨injective_hurewicz_of_subsingleton_homotopyGroup hB hY, ?_⟩
+  -- Triviality of `π₀` makes `B` and `Y` path connected.
+  have hpc {Z : Type} [TopologicalSpace Z] [Nonempty Z] {z : Z}
+      (h : Subsingleton (HomotopyGroup (Fin 0) Z z)) : PathConnectedSpace Z :=
+    pathConnectedSpace_iff_zerothHomotopy.2
+      ⟨inferInstance, (HomotopyGroup.pi0EquivZerothHomotopy (x := z)).symm.subsingleton⟩
+  have : Nonempty B := ⟨b⟩
+  have : Nonempty Y := ⟨b⟩
+  have : PathConnectedSpace Y := hpc (hY 0 (by lia))
+  -- The relative homotopy sets below degree `n + 2` vanish, by the exact homotopy sequence.
+  refine surjective_hurewicz b (fun y ↦ ⟨b, b.2, PathConnectedSpace.joined y b⟩)
+    (isPathConnected_iff_pathConnectedSpace.2 (hpc (hB 0 (by lia)))) fun k hk ↦
+      subsingleton_of_subsingleton_homotopyGroup (hB k (by lia)) ?_
+  exact @Equiv.subsingleton _ _ (HomotopyGroup.congrEquiv (finSuccEquiv k)).symm
+    (hY (k + 1) (by lia))
+
+/-- **The relative Hurewicz isomorphism** `πₙ₊₂(Y, B, b) ≃ Hₙ₊₂(Y, B; ℤ)`, `[p] ↦ p_*[Iⁿ⁺²]`,
+when `πₖ(B, b)` and `πₖ(Y, b)` are trivial for every `k < n + 2`. In degree two, where `B` and `Y`
+are simply connected, this identifies `π₂(Y, B, b)`, which is then commutative
+(`TauCeti.RelHomotopyGroup.mul_comm_of_subsingleton`), with `H₂(Y, B; ℤ)`. -/
+def hurewiczAddEquivOfSubsingletonHomotopyGroup (b : B)
+    (hB : ∀ k < n + 2, Subsingleton (HomotopyGroup (Fin k) B b))
+    (hY : ∀ k < n + 2, Subsingleton (HomotopyGroup (Fin k) Y b)) :
+    Additive (RelHomotopyGroup (Fin (n + 1)) ⟨TopPair.ofSubset B, b⟩) ≃+
+      ↑((TopPair.ofSubset B).singularHomology (ModuleCat.of ℤ ℤ) (n + 2) : ModuleCat ℤ) :=
+  AddEquiv.ofBijective (hurewiczIntHom _ n) <| by
+    convert (bijective_hurewicz_of_subsingleton_homotopyGroup b hB hY).comp
+      Additive.toMul.bijective using 1
+    funext a
+    exact hurewiczIntHom_apply _ n a
+
+@[simp]
+theorem hurewiczAddEquivOfSubsingletonHomotopyGroup_apply (b : B)
+    (hB : ∀ k < n + 2, Subsingleton (HomotopyGroup (Fin k) B b))
+    (hY : ∀ k < n + 2, Subsingleton (HomotopyGroup (Fin k) Y b))
+    (a : Additive (RelHomotopyGroup (Fin (n + 1)) ⟨TopPair.ofSubset B, b⟩)) :
+    hurewiczAddEquivOfSubsingletonHomotopyGroup b hB hY a =
+      (hurewicz (ModuleCat.of ℤ ℤ) (n + 1) a.toMul).hom 1 :=
+  (AddEquiv.ofBijective_apply _ _ a).trans (hurewiczIntHom_apply _ n a)
+
+end Isomorphism
 
 end RelHomotopyGroup
 

@@ -8,11 +8,12 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
 
 /-!
-# Square-root displacement estimates
+# Square-root displacement estimates and limits at zero
 
 Two estimates comparing the real square-root and inverse-square-root functions
 with the identity near `1`. These bounds control scalar spectral factors of
-positive operators close to the identity.
+positive operators close to the identity. The file also records that `c √u`
+tends to `0` as `u → 0`, and through positive values as `u → 0⁺` when `c > 0`.
 
 ## Main results
 
@@ -20,6 +21,9 @@ positive operators close to the identity.
   `|√μ - 1| ≤ |μ - 1|`.
 * `Real.abs_one_sub_inv_sqrt_le`: if `|μ - 1| ≤ δ ≤ 1/2`,
   `|1 - (√μ)⁻¹| ≤ δ`.
+* `Real.tendsto_mul_sqrt_nhds_zero`: `c √u → 0` as `u → 0`.
+* `Real.tendsto_mul_sqrt_nhdsGT_zero`, `Real.tendsto_sqrt_nhdsGT_zero`: for `c > 0`,
+  `c √u → 0⁺` as `u → 0⁺`.
 
 ## References
 
@@ -28,6 +32,9 @@ positive operators close to the identity.
 -/
 
 public section
+
+open Filter
+open scoped Topology
 
 namespace Real
 
@@ -84,6 +91,22 @@ theorem abs_one_sub_inv_sqrt_le {μ δ : ℝ} (hδ : δ ≤ 1 / 2) (hμ : |μ - 
   have hle_inv : 1 - δ ≤ s⁻¹ := by
     rw [inv_eq_one_div, le_div_iff₀ hs0]; linarith [hhigh]
   exact ⟨by linarith [hinv_le], by linarith [hle_inv]⟩
+
+/-- For every `c`, `c √u` tends to `0` as `u → 0`. -/
+theorem tendsto_mul_sqrt_nhds_zero (c : ℝ) : Tendsto (fun u => c * √u) (𝓝 0) (𝓝 0) := by
+  have h : Continuous fun u => c * √u := by fun_prop
+  simpa using h.tendsto 0
+
+/-- For `c > 0`, `c √u` tends to `0` through positive values as `u → 0⁺`. -/
+theorem tendsto_mul_sqrt_nhdsGT_zero {c : ℝ} (hc : 0 < c) :
+    Tendsto (fun u => c * √u) (𝓝[>] 0) (𝓝[>] 0) := by
+  refine tendsto_nhdsWithin_iff.2 ⟨(tendsto_mul_sqrt_nhds_zero c).mono_left nhdsWithin_le_nhds, ?_⟩
+  filter_upwards [self_mem_nhdsWithin] with u hu
+  exact mul_pos hc (sqrt_pos.2 hu)
+
+/-- The square root tends to `0` through positive values as `u → 0⁺`. -/
+theorem tendsto_sqrt_nhdsGT_zero : Tendsto (√·) (𝓝[>] 0) (𝓝[>] (0 : ℝ)) := by
+  simpa using tendsto_mul_sqrt_nhdsGT_zero one_pos
 
 end Real
 
