@@ -52,6 +52,8 @@ one; a nonzero constant of norm less than one is a unit of `T` but not of `T°`.
   reduction is a unit is a unit of `T°`.
 * `TauCeti.MvPowerSeries.isUnit_iff_norm_constantCoeff_eq_one_and_norm_coeff_lt_one`: the
   coefficient criterion for the units of `T°`.
+* `TauCeti.MvPowerSeries.isUnit_algebraMap_and_not_isUnit_of_norm_lt_one`: a nonzero constant
+  of norm less than one is a unit of `T` but not of `T°`.
 * `TauCeti.MvPowerSeries.powerBoundedSubring_eq_unitClosedBall`: the power-bounded elements of
   `T` form its Gauss unit ball.
 
@@ -307,12 +309,20 @@ end Reduction
 
 section Units
 
+/-- **A unit of `T` that is not a unit of `T°`.** A nonzero constant of norm less than one is a
+unit of the Tate algebra `T`, but not a unit of its Gauss unit ball `T°`. -/
+theorem isUnit_algebraMap_and_not_isUnit_of_norm_lt_one {a : K} (ha0 : a ≠ 0) (ha : ‖a‖ < 1)
+    (h : algebraMap K T a ∈ T°) :
+    IsUnit (algebraMap K T a) ∧ ¬IsUnit (⟨algebraMap K T a, h⟩ : T°) :=
+  ⟨(isUnit_iff_ne_zero.mpr ha0).map _, fun hu ↦ ha.ne <|
+    (norm_algebraMap_isRestrictedSubring a).symm.trans (isUnit_unitClosedBall_iff.mp hu).2⟩
+
 variable [CompleteSpace K]
 
 /-- **Units lift along reduction.** Over a complete field, reduction `T° → 𝓀[K][X]` is a local
-homomorphism: a series of Gauss norm at most one whose reduction is a unit is a unit of `T°`. The
-kernel `T°°` lies in the Jacobson radical of `T°` by the Neumann series. Together with
-`isUnit_map_iff`, a series of `T°` is a unit exactly when its reduction is one. -/
+homomorphism: a series of Gauss norm at most one whose reduction is a unit is a unit of `T°`.
+Together with `isUnit_map_iff`, a series of `T°` is a unit exactly when its reduction is a
+unit. -/
 instance isLocalHom_restrictedReduction :
     IsLocalHom (restrictedReduction (σ := σ) (K := K)) := by
   have hker :
@@ -331,27 +341,15 @@ one is a unit of `T°` exactly when its constant coefficient has norm one and ev
 coefficient has norm less than one, that is, when its reduction is a nonzero constant. Such a
 series is in particular a unit of `T` of norm one; conversely, by
 `TauCeti.isUnit_unitClosedBall_iff`, a unit of `T` lies in the units of `T°` only if it has
-norm one, so a nonzero constant of norm less than one is a unit of `T` but not of `T°`. -/
+norm one, so a nonzero constant of norm less than one is a unit of `T` but not of `T°`
+(`isUnit_algebraMap_and_not_isUnit_of_norm_lt_one`). -/
 theorem isUnit_iff_norm_constantCoeff_eq_one_and_norm_coeff_lt_one {f : T°} :
     IsUnit f ↔ ‖constantCoeff ((f : T) : MvPowerSeries σ K)‖ = 1 ∧
       ∀ t ≠ 0, ‖coeff t ((f : T) : MvPowerSeries σ K)‖ < 1 := by
-  classical
-  rw [← isUnit_map_iff restrictedReduction, MvPolynomial.isUnit_iff_eq_C_of_isReduced,
-    ← coeff_zero_eq_constantCoeff_apply]
-  simp_rw [isUnit_iff_ne_zero]
-  constructor
-  · rintro ⟨r, hr, h⟩
-    refine ⟨le_antisymm (norm_coeff_le_one f 0) (not_lt.mp fun h0 ↦ hr ?_), fun t ht ↦
-      coeff_restrictedReduction_eq_zero_iff.mp ?_⟩
-    · rw [← coeff_restrictedReduction_eq_zero_iff.mpr h0, h, MvPolynomial.coeff_C, ite_eq_left rfl]
-    · rw [h, MvPolynomial.coeff_C, ite_eq_right ht.symm]
-  · rintro ⟨h0, h⟩
-    refine ⟨(restrictedReduction f).coeff 0, fun h' ↦ ?_, MvPolynomial.ext _ _ fun t ↦ ?_⟩
-    · exact (coeff_restrictedReduction_eq_zero_iff.mp h').ne h0
-    · rw [MvPolynomial.coeff_C]
-      split_ifs with ht
-      · rw [ht]
-      · exact coeff_restrictedReduction_eq_zero_iff.mpr (h t (Ne.symm ht))
+  rw [← isUnit_map_iff restrictedReduction, MvPolynomial.isUnit_iff, isUnit_iff_ne_zero,
+    ← coeff_zero_eq_constantCoeff_apply, ne_eq, coeff_restrictedReduction_eq_zero_iff, not_lt,
+    (norm_coeff_le_one f 0).ge_iff_eq]
+  simp_rw [isNilpotent_iff_eq_zero, coeff_restrictedReduction_eq_zero_iff]
 
 end Units
 
