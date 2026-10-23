@@ -109,6 +109,15 @@ theorem desc_stage_apply (I : Ideal R) (s : Cocone ((IsNeighbourhood I).ι))
     desc I s (stage I B b) = (s.ι.app B).hom b :=
   SmallFilteredAlgebraColimit.desc_stage_apply (IsNeighbourhood I).ι s B b
 
+/-- A compatible family of `R`-algebra maps from the étale neighbourhoods of `(R, I)` to an
+`R`-algebra `S` in any universe descends to the henselization algebra. -/
+noncomputable def descOfCompatible (I : Ideal R) {S : Type*} [CommRing S] [Algebra R S]
+    (stageMap : ∀ B : Neighbourhood.{u, u} I, B.obj →ₐ[R] S)
+    (hcompat : ∀ {B C : Neighbourhood.{u, u} I} (f : B ⟶ C),
+      (stageMap C).comp f.hom.hom = stageMap B) :
+    algebra I →ₐ[R] S :=
+  SmallFilteredAlgebraColimit.descOfCompatible (IsNeighbourhood I).ι stageMap hcompat
+
 /-- Every element of the henselization algebra comes from an étale neighbourhood. -/
 theorem exists_stage_eq (I : Ideal R) (x : algebra I) :
     ∃ (B : Neighbourhood.{u, u} I) (b : B.obj), stage I B b = x := by
