@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.VectorBundle.Affine.Monoidal
+public import TauCeti.AlgebraicGeometry.Modules.Tilde.InternalHom
 
 /-!
 # Dual compatibility of the affine vector-bundle equivalence
@@ -43,34 +44,19 @@ noncomputable section
 
 variable (R : CommRingCat.{u})
 
-private theorem isIso_tildeIhomComparison
-    (M : (finiteProjectiveModules R).FullSubcategory) :
-    IsIso ((tilde.functor R).ihomComparison M.obj) := by
-  obtain ⟨hfinite, hprojective⟩ := finiteProjectiveModules_iff.mp M.property
-  let _ : Module.Finite R M.obj := hfinite
-  let _ : Module.Projective R M.obj := hprojective
-  let _ : ExactPairing ((ihom M.obj).obj (𝟙_ (ModuleCat.{u} R))) M.obj :=
-    exactPairingOfIsIsoDualTensorIhom (Y := M.obj)
-  exact (tilde.functor R).ihomComparison_isIso_of_exactPairing
-    ((ihom M.obj).obj (𝟙_ (ModuleCat.{u} R))) M.obj
-
-private def tildeIhomComparisonIso
-    (M : (finiteProjectiveModules R).FullSubcategory) :
-    ihom M.obj ⋙ tilde.functor R ≅
-      tilde.functor R ⋙ ihom (tilde M.obj) :=
-  @asIso _ _ _ _ ((tilde.functor R).ihomComparison M.obj)
-    (isIso_tildeIhomComparison R M)
-
 /-- The associated sheaf of the linear dual of a finite projective module is canonically
 isomorphic to the internal-Hom dual of its associated finite locally free sheaf. -/
 def finiteProjectiveEquivDualIso (M : (finiteProjectiveModules R).FullSubcategory) :
     (finiteProjectiveEquiv R).functor.obj (FiniteProjectiveModules.dual R M) ≅
-      dual ((finiteProjectiveEquiv R).functor.obj M) :=
-  ObjectProperty.isoMk _ ((tilde.functor R).mapIso
+      dual ((finiteProjectiveEquiv R).functor.obj M) := by
+  let _ : Module.Finite R M.obj := (finiteProjectiveModules_iff.mp M.property).1
+  let _ : Module.Projective R M.obj := (finiteProjectiveModules_iff.mp M.property).2
+  let _ : Module.FinitePresentation R M.obj := Module.finitePresentation_of_projective R M.obj
+  exact ObjectProperty.isoMk _ ((tilde.functor R).mapIso
         (ModuleCat.homLinearEquiv.toModuleIso :
           (ihom M.obj).obj (𝟙_ (ModuleCat.{u} R)) ≅
             ModuleCat.of R (Module.Dual R M.obj)).symm ≪≫
-      (tildeIhomComparisonIso R M).app (𝟙_ (ModuleCat.{u} R)) ≪≫
+      (tildeIhomIso M.obj).app (𝟙_ (ModuleCat.{u} R)) ≪≫
       (ihom (tilde M.obj)).mapIso (Functor.Monoidal.εIso (tilde.functor R)).symm)
 
 /-- The underlying sheaf isomorphism comparing affine linear duals is the internal-Hom
@@ -89,6 +75,10 @@ theorem finiteProjectiveEquivDualIso_hom_hom
         (ihom ((tilde.functor R).obj M.obj)).map (η (tilde.functor R)) :=
   by
     rw [finiteProjectiveEquivDualIso]
+    -- Cross the full-subcategory object wrappers, then use the public affine comparison.
+    erw [ObjectProperty.isoMk_hom, ObjectProperty.homMk_hom,
+      Iso.trans_hom, Iso.trans_hom, Iso.app_hom,
+      tildeIhomIso_hom]
     rfl
 
 /-- The affine dual comparison is contravariantly natural in the finite projective module. -/
