@@ -295,13 +295,13 @@ private theorem exists_basis_iIsOrtho_apply_self_eq_aux (n : ℕ) :
   rw [hx'x'] at htP htS
   -- Remove `vⱼ` from the target; the complement has the remaining invariants.
   let w : Fin (m + 2) → ℤ_[2] := v ∘ Equiv.swap 0 j
-  let v' : Fin (m + 1) → ℤ_[2] := fun i ↦ w i.succ
+  let v' : Fin (m + 1) → ℤ_[2] := Fin.tail w
   have hvP : ∏ i, v i = v j * ∏ i, v' i := by
     rw [← Equiv.prod_comp (Equiv.swap 0 j), Fin.prod_univ_succ]
-    simp [w, v']
+    simp [w, v', Fin.tail]
   have hvS : ∑ i, v i = v j + ∑ i, v' i := by
     rw [← Equiv.sum_comp (Equiv.swap 0 j), Fin.sum_univ_succ]
-    simp [w, v']
+    simp [w, v', Fin.tail]
   have hcancel : ∀ a x z : ZMod (2 ^ 3), a * a = 1 → a * x = a * z → x = z := by decide
   have htP' : PadicInt.toZModPow 3 (∏ i, B (t i) (t i)) =
       PadicInt.toZModPow 3 (∏ i, v' i) := by
@@ -316,10 +316,11 @@ private theorem exists_basis_iIsOrtho_apply_self_eq_aux (n : ℕ) :
     v' (fun i ↦ hv _) htP' htS'
   obtain ⟨c, hc, -, hcd⟩ := hb.isSymm.isRefl.exists_orthogonal_basis_isUnit_apply_self_eq_cons hx'u
     ht' fun i ↦ ht'v i ▸ hv _
+  have ht'w (i : Fin (m + 1)) : B (t' i) (t' i) = Fin.tail w i := by
+    simpa only [restrict_apply, LinearMap.domRestrict_apply] using ht'v i
   have hcv (i : Fin (m + 2)) : B (c i) (c i) = w i := by
-    rw [hcd, ← Fin.cons_self_tail w, hx'x',
-      show (fun i ↦ B (t' i) (t' i)) = Fin.tail w from funext ht'v]
-    simp [w]
+    rw [hcd, hx'x', ← Fin.cons_self_tail w]
+    simp [ht'w, w]
   refine ⟨c.reindex (Equiv.swap 0 j), iIsOrtho_def.mpr fun i k hik ↦ ?_, fun i ↦ ?_⟩
   · simp only [Basis.reindex_apply, Equiv.symm_swap]
     exact iIsOrtho_def.mp hc _ _ ((Equiv.swap 0 j).injective.ne hik)

@@ -63,10 +63,7 @@ private theorem IsSymm.exists_basis_orthogonal_span_singleton_isUnit_det (hB : B
   rw [hdetT] at hdet
   have hTdet := isUnit_of_mul_isUnit_right (isUnit_of_mul_isUnit_right hdet)
   have hvspan : Submodule.span R (Set.range v) = R ∙ x := by simp [v]
-  clear hdet hdetT
-  revert t
-  rw [hvspan]
-  exact fun t hTdet ↦ ⟨t, hTdet⟩
+  exact hvspan ▸ ⟨t, hTdet⟩
 
 /-- **Two orthogonal unit values in an odd unimodular form.** A symmetric form of rank at least
 two whose Gram determinant is a unit and which represents a unit has two orthogonal vectors with
