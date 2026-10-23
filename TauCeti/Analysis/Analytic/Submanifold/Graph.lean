@@ -208,13 +208,15 @@ theorem IsAnalyticSubmanifold.graph_pi {m : ℕ} (hS : IsAnalyticSubmanifold d S
   | succ m ih =>
     -- Take the graph of the last `m` components, then the scalar graph of the first one over it.
     let π : (Fin (m + n) → 𝕜) →L[𝕜] Fin n → 𝕜 :=
-      ContinuousLinearMap.pi fun i ↦ ContinuousLinearMap.proj (Fin.natAdd m i)
+      Pi.compRightL 𝕜 (fun _ ↦ 𝕜) (Fin.natAdd m)
     let σ : (Fin (m + 1) → 𝕜) →L[𝕜] Fin m → 𝕜 :=
-      ContinuousLinearMap.pi fun j ↦ ContinuousLinearMap.proj j.succ
+      Pi.compRightL 𝕜 (fun _ ↦ 𝕜) Fin.succ
+    have hπ_apply (w : Fin (m + n) → 𝕜) : π w = fun i ↦ w (Fin.natAdd m i) :=
+      funext (Pi.compRightL_apply 𝕜 (fun _ ↦ 𝕜) (Fin.natAdd m) w)
     have hG := ih ((σ.analyticOnNhd univ).comp_analyticOnSubmanifold hf (mapsTo_univ _ _))
     have hπ : AnalyticOnSubmanifold d (f ∘ π) _ :=
       hf.comp ((π.analyticOnNhd _).analyticOnSubmanifold hG) fun w hw ↦ by
-        simpa [π, ContinuousLinearMap.coe_pi'] using hw.1
+        simpa only [hπ_apply] using hw.1
     have hgraph := hG.graph
       (((ContinuousLinearMap.proj 0).analyticOnNhd univ).comp_analyticOnSubmanifold hπ
         (mapsTo_univ _ _))
@@ -227,8 +229,8 @@ theorem IsAnalyticSubmanifold.graph_pi {m : ℕ} (hS : IsAnalyticSubmanifold d S
       Fin.ext (by simp [e]; omega)
     convert hgraph.preimage_comp_equiv e using 1
     ext v
-    simp only [mem_ofPred_eq, mem_preimage, Fin.tail, Function.comp_apply, h₀, hcast, hnat, π, σ,
-      ContinuousLinearMap.coe_pi', ContinuousLinearMap.proj_apply, funext_iff,
+    simp only [mem_ofPred_eq, mem_preimage, Fin.tail, Function.comp_apply, h₀, hcast, hnat,
+      hπ_apply, σ, Pi.compRightL_apply, ContinuousLinearMap.proj_apply, funext_iff,
       Fin.forall_fin_succ]
     tauto
 
