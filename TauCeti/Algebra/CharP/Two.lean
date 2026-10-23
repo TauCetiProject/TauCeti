@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.CharP.Two
+public import Mathlib.Algebra.Module.Defs
 
 /-!
 # Additive cancellation in characteristic two
@@ -13,7 +14,9 @@ public import Mathlib.Algebra.CharP.Two
 In a possibly nonassociative semiring of characteristic two, each element is its own additive
 inverse. Consequently addition is cancellative, even when the given semiring structure lacks
 additive cancellation. This supplies the cancellation needed by the grid commutation chain-map
-criterion.
+criterion. The same holds in any module over a semiring of characteristic two
+(`TauCeti.add_self_eq_zero_of_charTwo`), which is how terms appearing twice cancel in sign-free
+differentials.
 -/
 
 public section
@@ -28,5 +31,10 @@ theorem isCancelAdd_of_charTwo (R : Type*) [NonAssocSemiring R] [CharP R 2] : Is
   add_right_cancel a b c h := by
     have h' := congrArg (fun t => t + a) h
     simpa only [CharTwo.add_cancel_right] using h'
+
+/-- In a module over a semiring of characteristic two, each element is its own additive inverse. -/
+theorem add_self_eq_zero_of_charTwo (R : Type*) {M : Type*} [Semiring R] [CharP R 2]
+    [AddCommMonoid M] [Module R M] (x : M) : x + x = 0 := by
+  rw [← two_smul R, CharTwo.two_eq_zero, zero_smul]
 
 end TauCeti
