@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Operator.NormedSpace
-public import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 public import Mathlib.Topology.Algebra.Module.Equiv.Submodule
 
 /-!
@@ -36,7 +35,8 @@ namespace TauCeti
 
 variable (𝕜 : Type*) [NontriviallyNormedField 𝕜]
   (E : Type*) [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
-  (G : Type*) [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+  (G : Type*) [AddCommGroup G] [Module 𝕜 G] [TopologicalSpace G]
+  [IsTopologicalAddGroup G] [ContinuousConstSMul 𝕜 G]
 
 /-- The linear subspace of symmetric continuous bilinear maps. -/
 def symmetricBilinearMaps : Submodule 𝕜 (E →L[𝕜] E →L[𝕜] G) where
@@ -51,16 +51,14 @@ theorem mem_symmetricBilinearMaps (b : E →L[𝕜] E →L[𝕜] G) :
   Iff.rfl
 
 /-- Symmetry is closed in the topology of continuous bilinear maps. -/
-theorem isClosed_symmetricBilinearMaps [IsNormableSpace 𝕜 E] :
+theorem isClosed_symmetricBilinearMaps [ContinuousSMul 𝕜 E] [T2Space G] :
     IsClosed (symmetricBilinearMaps 𝕜 E G : Set (E →L[𝕜] E →L[𝕜] G)) := by
   have heq : (symmetricBilinearMaps 𝕜 E G : Set (E →L[𝕜] E →L[𝕜] G)) =
       ⋂ v, ⋂ w, {b | b v w = b w v} := by ext b; simp
   rw [heq]
   exact isClosed_iInter fun v ↦ isClosed_iInter fun w ↦
-    isClosed_eq ((ContinuousLinearMap.apply 𝕜 G w).continuous.comp
-      (ContinuousLinearMap.apply 𝕜 (E →L[𝕜] G) v).continuous)
-      ((ContinuousLinearMap.apply 𝕜 G v).continuous.comp
-        (ContinuousLinearMap.apply 𝕜 (E →L[𝕜] G) w).continuous)
+    isClosed_eq ((continuous_eval_const v).eval_const w)
+      ((continuous_eval_const w).eval_const v)
 
 end TauCeti
 
@@ -71,7 +69,8 @@ open TauCeti
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E F : Type*} [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
   [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F]
-  {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+  {G : Type*} [AddCommGroup G] [Module 𝕜 G] [TopologicalSpace G]
+  [IsTopologicalAddGroup G] [ContinuousConstSMul 𝕜 G]
 
 /-- A change of variables identifies the spaces of symmetric bilinear maps. -/
 def symmetricBilinearMapsCongr (e : E ≃L[𝕜] F) :
@@ -140,14 +139,8 @@ def symmetrize :
     map_smul' a b := by ext v w; simp [smul_add, smul_smul, mul_comm]
     cont := by
       apply Continuous.subtype_mk
-      -- The unbundled bound works with the intrinsic topology on iterated hom spaces,
-      -- without identifying its normed and seminormed instances.
-      have hf : IsBoundedLinearMap 𝕜
-          (fun b : V →L[𝕜] V →L[𝕜] G ↦ b.flip) :=
-        { map_add := fun b c ↦ by ext v w; simp
-          map_smul := fun a b ↦ by ext v w; simp
-          bound := ⟨1, by norm_num, fun b ↦ by simp⟩ }
-      exact (continuous_const (y := (2 : 𝕜)⁻¹)).smul (continuous_id.add hf.continuous) }
+      exact (continuous_const (y := (2 : 𝕜)⁻¹)).smul
+        (continuous_id.add (ContinuousLinearMap.flipₗᵢ 𝕜 V V G).continuous) }
 
 @[simp]
 theorem symmetrize_apply (b : V →L[𝕜] V →L[𝕜] G) (v w : V) :
@@ -160,8 +153,7 @@ theorem symmetrize_coe [NeZero (2 : 𝕜)] (b : symmetricBilinearMaps 𝕜 V G) 
     symmetrize b.val = b := by
   apply Subtype.ext
   ext v w
-  rw [symmetrize_apply, b.property v w, ← two_smul 𝕜,
-    inv_smul_smul₀ (NeZero.ne (2 : 𝕜))]
+  simp [symmetrize_apply, b.property v w, ← two_smul 𝕜, NeZero.ne (2 : 𝕜)]
 
 /-- Symmetrization commutes with simultaneous pullback of its two arguments. -/
 theorem symmetrize_bilinearComp
