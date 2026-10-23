@@ -70,8 +70,8 @@ to the inclusion of a closed subgroup scheme, whose coordinate algebra is again 
   base change identifies the geometric Frobenius with the `q`-Frobenius on points.
 * `BialgHom.map_fixedSubgroup_frobeniusPoints_of_surjective`: the fixed points of a closed
   subgroup scheme are its points that are fixed in the ambient group.
-* `TauCeti.FiniteField.finite_fixedSubgroup_geometricFrobenius`: `G^F` is finite for `H` of finite
-  type.
+* `TauCeti.FiniteField.finite_fixedSubgroup_mapDomain_geometricFrobeniusBialgHom`: `G^F` is
+  finite for `H` of finite type.
 * `TauCeti.FiniteField.baseChangePointsMulEquiv_symm_frobeniusPoints`: for a model over `ℤ` and
   `q = p ^ n`, the `q ^ m`-Frobenius is the iterated prime-power Frobenius
   `TauCeti.Bialgebra.iterateFrobeniusPoints p (n * m)`.
@@ -390,7 +390,7 @@ theorem mapDomain_rationalPointsMulEquivFixedSubgroupGeometricFrobenius (ψ : H 
 
 /-- **The fixed points of the geometric Frobenius form a finite group** when the coordinate algebra
 is of finite type. -/
-theorem finite_fixedSubgroup_geometricFrobenius [Algebra.FiniteType K H] :
+theorem finite_fixedSubgroup_mapDomain_geometricFrobeniusBialgHom [Algebra.FiniteType K H] :
     Finite (fixedSubgroup (BialgHom.mapDomain (A := k) (geometricFrobeniusBialgHom K k H))) :=
   have : Finite (WithConv (H →ₐ[K] K)) := .of_equiv _ (WithConv.equiv _).symm
   .of_equiv _ (rationalPointsMulEquivFixedSubgroupGeometricFrobenius K k H).toEquiv
