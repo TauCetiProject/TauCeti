@@ -28,6 +28,8 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.NonsplitReduction
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.SingularReduction
 -- Proof-only: a quadratic over a field splits exactly when it has a root.
 import TauCeti.Algebra.Polynomial.QuadraticDiscriminant
+-- Proof-only: a prime dividing a power to an exponent `n k + 1` divides the base to `k + 1`.
+import TauCeti.RingTheory.Multiplicity
 -- Proof-only: Tate's algorithm detects split multiplicative reduction.
 import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Reduction.Type
 -- Proof-only: a translation does not change the discriminant.
@@ -352,9 +354,9 @@ theorem index_nonsingularReduction_eq_localMinimalDiscriminantValuation
 /-- **At nonsplit multiplicative reduction of odd type `I₂ₘ₊₁`, every point has nonsingular
 reduction**: `E₀(F) = W(F)`. Here `ϖ` generates the maximal ideal of the valuation ring, Tate's
 algorithm, run on the integral model with uniformiser `ϖ`, stops with the symbol `I₂ₘ₊₁`, and the
-tangent quadratic `T² + a₁ T − a₂` has no root modulo `ϖ`. A point with singular reduction would
-make `Δ` a unit times a square (`WeierstrassCurve.exists_associated_sq_Δ_of_isSingular`), whereas
-`ϖ^(2m+1)` divides `Δ` exactly. -/
+tangent quadratic `T² + a₁ T − a₂` has no root modulo `ϖ`. This is the nonsplit-node criterion
+`WeierstrassCurve.Affine.nonsingularReduction_eq_top_of_not_splits`: `Δ` is not a unit times a
+square, since `ϖ^(2m+1)` divides `Δ` exactly. -/
 theorem nonsingularReduction_eq_top_of_isTateTerminal_I_of_not_hasTateTangentRoot
     {ϖ : v.valuationSubring} (hϖ : maximalIdeal v.valuationSubring = Ideal.span {ϖ}) {m : ℕ}
     (h : (integralModel v.valuationSubring W).IsTateTerminal ϖ (.I (2 * m + 1)))
@@ -378,18 +380,14 @@ theorem nonsingularReduction_eq_top_of_isTateTerminal_I_of_not_hasTateTangentRoo
     refine (mul_eq_zero.1 ?_).resolve_left hc₄
     simp only [map_mul, map_sub, map_add, map_ofNat, hb₄, hb₆] at ht
     linear_combination ht
-  -- `ϖ` is prime, so it divides the square `z²` to an even power, but `Δ` to the power `2m + 1`
+  -- `ϖ` is prime, so if `ϖ ^ (2m + 1)` divides a square `z²` then so does `ϖ ^ (2m + 2)`
   have hp : Prime ϖ := (Ideal.span_singleton_prime (h.ne_zero (by simp))).1
     (hϖ ▸ (maximalIdeal.isMaximal _).isPrime)
-  refine nonsingularReduction_eq_top_of_forall_not_isSingular v fun x y hE hs ↦ ?_
-  obtain ⟨z, hz⟩ := exists_associated_sq_Δ_of_isSingular Wo hE hs hc₄ hn
-  have he := (emultiplicity_eq_coe.2 ⟨hΔ, hΔ'⟩).symm.trans
-    ((emultiplicity_eq_of_associated_right hz).symm.trans (emultiplicity_pow hp))
-  obtain ⟨e, he'⟩ : ∃ e : ℕ, (e : ℕ∞) = emultiplicity ϖ z :=
-    ENat.ne_top_iff_exists.1 fun ht ↦ ENat.natCast_ne_top _ (he.trans (by simp [ht]))
-  rw [← he'] at he
-  norm_cast at he
-  omega
+  refine nonsingularReduction_eq_top_of_not_splits v hc₄ hn fun z hz ↦ hΔ' ?_
+  have hz' := hp.pow_succ_dvd_of_pow_mul_add_one_dvd_pow (n := 2) (k := m)
+    (hz.dvd_iff_dvd_right.2 hΔ)
+  rw [← hz.dvd_iff_dvd_right, show 2 * m + 2 = (m + 1) * 2 by ring, pow_mul]
+  exact pow_dvd_pow_of_dvd hz' 2
 
 /-- **Tate's local index is the point-group index** (Silverman, *Advanced Topics*, IV.9, Table 4.1).
 Suppose that the valuation ring of `v` is Henselian with finite residue field, for instance the
