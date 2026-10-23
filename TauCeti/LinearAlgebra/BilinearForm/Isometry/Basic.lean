@@ -137,12 +137,12 @@ theorem apply_symm_apply (f : B₁.IsometryEquiv B₂) (x : M₂) : f (f.symm x)
 theorem map_ker (f : B₁.IsometryEquiv B₂) :
     (LinearMap.ker B₁).map (f : M₁ ≃ₗ[R] M₂).toLinearMap = LinearMap.ker B₂ := by
   ext y
-  rw [Submodule.map_equiv_eq_comap_symm, Submodule.mem_comap, LinearMap.mem_ker,
-    LinearMap.mem_ker, LinearMap.ext_iff, LinearMap.ext_iff]
-  simp only [LinearMap.zero_apply]
-  refine (f : M₁ ≃ₗ[R] M₂).forall_congr fun z ↦ ?_
-  rw [← f.map_app]
-  exact iff_of_eq (congrArg (fun v ↦ B₂ v (f z) = 0) ((f : M₁ ≃ₗ[R] M₂).apply_symm_apply y))
+  obtain ⟨x, rfl⟩ := (f : M₁ ≃ₗ[R] M₂).surjective y
+  simp only [Submodule.mem_map_equiv, LinearEquiv.symm_apply_apply, LinearMap.mem_ker,
+    LinearMap.ext_iff, LinearMap.zero_apply]
+  -- Every vector of `M₂` is `f z`, and `B₂ (f x) (f z) = B₁ x z`.
+  rw [← (f : M₁ ≃ₗ[R] M₂).toEquiv.forall_congr_right]
+  simp
 
 end IsometryEquiv
 

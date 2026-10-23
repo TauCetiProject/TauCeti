@@ -343,8 +343,9 @@ variable {L} {M : IntegralLattice W}
 /-- An isometry of the rational forms of two lattices maps the radical of one onto the radical of
 the other. -/
 theorem map_radical_of_isometryEquiv (f : L.form.IsometryEquiv M.form) :
-    L.radical.map (f : V ≃ₗ[ℚ] W).toLinearMap = M.radical :=
-  f.map_ker
+    L.radical.map (f : V ≃ₗ[ℚ] W).toLinearMap = M.radical := by
+  rw [radical, radical]
+  exact f.map_ker
 
 /-- Lattices with isometric rational forms have the same positive index. -/
 theorem sigPos_eq_of_equivalent (h : L.form.Equivalent M.form) : L.sigPos = M.sigPos :=
