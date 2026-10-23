@@ -406,6 +406,7 @@ theorem relativeSpecPullbackFst_comp :
 /-- **Base change of relative spectra along the identity.** The projection
 `Spec_X (𝟙^* A) ⟶ Spec_X A` is the identification induced by the identity isomorphism
 `A ≅ 𝟙^* A` of pullback. -/
+@[simp]
 theorem relativeSpecPullbackFst_id :
     relativeSpecPullbackFst A (𝟙 X) =
       CommMon.relativeSpecMap ((QuasicoherentAlgebra.pullbackId X).inv.app A).hom := by
