@@ -206,6 +206,7 @@ theorem glueAlphabetIsometry_A_apply (n : ℕ) (hv : (A n).Valid) (ht : (A n).Is
 /-- On `Dₙ` with `n` even, the glue isometry is the Klein four identification
 `zmodTwoProdAddEquivCheckerboardDiscriminantGroup`, transported along
 `rootLatticeIsometryCheckerboard`. -/
+@[simp]
 theorem glueAlphabetIsometry_D_apply_of_even (n : ℕ) (hv : (D n).Valid)
     (ht : (D n).IsSimplyLaced) (hn : Even n) (x : (D n).glueAlphabet ht) :
     haveI : NeZero n := ⟨by have := valid_D.mp hv; omega⟩
@@ -221,6 +222,7 @@ theorem glueAlphabetIsometry_D_apply_of_even (n : ℕ) (hv : (D n).Valid)
 /-- On `Dₙ` with `n` odd, the glue isometry is the cyclic identification
 `zmodFourAddEquivCheckerboardDiscriminantGroup`, transported along
 `rootLatticeIsometryCheckerboard`. -/
+@[simp]
 theorem glueAlphabetIsometry_D_apply_of_odd (n : ℕ) (hv : (D n).Valid)
     (ht : (D n).IsSimplyLaced) (hn : Odd n) (x : (D n).glueAlphabet ht) :
     (D n).glueAlphabetIsometry hv ht x =
