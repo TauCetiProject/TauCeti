@@ -36,8 +36,8 @@ unity; these generate the exceptional torsion subgroups.
 
 * `TauCeti.NumberField.Units.torsionOrder_eq_two_or_four_or_six`: a field of degree at most `2`
   has two, four or six roots of unity.
-* `TauCeti.NumberField.isPrimitiveRoot_one_add_gen_div_two`: for `θ² = -3`, `(1 + θ)/2` is a
-  primitive sixth root of unity.
+* `TauCeti.NumberField.isPrimitiveRoot_one_add_div_two_of_sq_eq_neg_three`: in a field of
+  characteristic zero, for `θ² = -3`, `(1 + θ)/2` is a primitive sixth root of unity.
 * `TauCeti.NumberField.Units.torsionOrder_eq_of_minpoly_eq_X_sq_sub_C`: the torsion order of
   `ℚ(√d)` for squarefree `d` is `4` if `d = -1`, `6` if `d = -3`, and `2` otherwise.
 * `TauCeti.NumberField.Units.torsion_eq_top_of_isTotallyComplex`: every unit of an imaginary
@@ -55,13 +55,10 @@ namespace TauCeti.NumberField
 
 variable {K : Type*} [Field K] [NumberField K] {θ : 𝓞 K} {d : ℤ}
 
-/-- **The exceptional sixth root of unity.** If `θ² = -3`, then `(1 + θ)/2` is a primitive sixth
-root of unity: it is a root of `Φ₆ = X² - X + 1`. -/
-theorem isPrimitiveRoot_one_add_gen_div_two (hmin : minpoly ℤ θ = X ^ 2 - C (-3)) :
-    IsPrimitiveRoot ((1 + θ) / 2 : K) 6 := by
-  have h : (θ : K) ^ 2 = -3 := by
-    rw [coe_gen_sq hmin]
-    norm_num
+/-- **The exceptional sixth root of unity.** In a field of characteristic zero, if `θ² = -3`, then
+`(1 + θ)/2` is a primitive sixth root of unity: it is a root of `Φ₆ = X² - X + 1`. -/
+theorem isPrimitiveRoot_one_add_div_two_of_sq_eq_neg_three {F : Type*} [Field F] [CharZero F]
+    {θ : F} (h : θ ^ 2 = -3) : IsPrimitiveRoot ((1 + θ) / 2) 6 := by
   rw [← isRoot_cyclotomic_iff_charZero (by norm_num), cyclotomic_six]
   simp only [IsRoot.def, eval_add, eval_sub, eval_pow, eval_X, eval_one]
   linear_combination h / 4
@@ -120,7 +117,10 @@ theorem torsionOrder_eq_of_minpoly_eq_X_sq_sub_C (hK : finrank ℚ K = 2)
           (by simpa using hmin))
       omega
     · subst h3
-      have := dvd_torsionOrder_of_isPrimitiveRoot (isPrimitiveRoot_one_add_gen_div_two hmin)
+      have := dvd_torsionOrder_of_isPrimitiveRoot
+        (isPrimitiveRoot_one_add_div_two_of_sq_eq_neg_three (θ := (θ : K)) (by
+          rw [coe_gen_sq hmin]
+          norm_num))
       omega
     · rfl
   · simp [eq_neg_one_of_isPrimitiveRoot_four hK hmin hd hμ]

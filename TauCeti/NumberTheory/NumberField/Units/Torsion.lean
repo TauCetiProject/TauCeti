@@ -48,7 +48,8 @@ namespace TauCeti.NumberField.Units
 variable {K : Type*} [Field K] [NumberField K]
 
 /-- A number field contains a primitive root of unity whose order is the torsion order: a
-generator of the cyclic torsion subgroup of the units. -/
+generator of the cyclic torsion subgroup of the units. The argument is extracted from the proof
+of Mathlib's `IsCyclotomicExtension.Rat.torsionOrder_eq`. -/
 theorem exists_isPrimitiveRoot_torsionOrder : ∃ ζ : K, IsPrimitiveRoot ζ (torsionOrder K) := by
   obtain ⟨μ, hμ⟩ : ∃ μ : torsion K, orderOf μ = torsionOrder K :=
     IsCyclic.exists_ofOrder_eq_natCard
