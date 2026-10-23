@@ -35,10 +35,15 @@ satisfy the triangle inequality there — so it is bundled as a `MonoidWithZeroH
 standard normalization: `‖·‖_v` is the module of the local field at `v`, which is what the idele
 norm and the product formula require.
 
+Heights in Diophantine approximation instead use the degree-normalized absolute value
+`TauCeti.GlobalNumberFields.normAbs`, written `|·|_v`, the `[K : ℚ]`-th root of `‖·‖_v`, whose
+products over the places give absolute heights.
+
 ## Main definitions
 
 * `TauCeti.GlobalNumberFields.Place`: the places of `K`, finite and infinite together.
 * `TauCeti.GlobalNumberFields.normalizedAbsValue`: the normalized absolute value at a place.
+* `TauCeti.GlobalNumberFields.normAbs`: its `[K : ℚ]`-th root, the degree-normalized absolute value.
 
 ## Main results
 
@@ -48,12 +53,17 @@ norm and the product formula require.
 * `TauCeti.GlobalNumberFields.hasFiniteMulSupport_normalizedAbsValue`: a nonzero element of `K`
   has normalized absolute value `1` at all but finitely many places.
 * `TauCeti.GlobalNumberFields.finprod_normalizedAbsValue_eq_one`: the product formula, as a single
-  product over all places of `K`.
+  product over all places of `K`; `TauCeti.GlobalNumberFields.finprod_normAbs_eq_one` is its
+  degree-normalized form.
+* `TauCeti.GlobalNumberFields.hasFiniteMulSupport_iSup_normalizedAbsValue`: a nonzero tuple has
+  largest normalized absolute value `1` at all but finitely many places.
 
 ## References
 
 * J. W. S. Cassels and A. Fröhlich, eds., *Algebraic Number Theory*, Chapter II.
 * J. Neukirch, *Algebraic Number Theory*, Chapter III.
+* J.-H. Evertse and R. G. Ferretti, *A further improvement of the quantitative Subspace
+  Theorem*, Ann. of Math. 177 (2013), §1.1 (for `normAbs`).
 -/
 
 public section
@@ -219,5 +229,96 @@ theorem finprod_normalizedAbsValue_eq_one (hx : x ≠ 0) :
   rw [InfinitePlace.prod_eq_abs_norm]
   have h0 : |(Algebra.norm ℚ) x| ≠ 0 := by simpa [Algebra.norm_eq_zero_iff] using hx
   rw [← Rat.cast_mul, inv_mul_cancel₀ h0, Rat.cast_one]
+
+/-- A tuple of elements of a number field which is not identically zero has, at all but finitely
+many places, largest normalized absolute value `1`. -/
+theorem hasFiniteMulSupport_iSup_normalizedAbsValue {ι : Type*} [Finite ι] {y : ι → K}
+    (hy : y ≠ 0) : HasFiniteMulSupport fun v : Place K ↦ ⨆ i, normalizedAbsValue v (y i) := by
+  refine hasFiniteMulSupport_sum_type ?_ (Set.toFinite _)
+  convert (FinitePlace.hasFiniteMulSupport_iSup hy).comp_of_injective
+    FinitePlace.equivHeightOneSpectrum.symm.injective
+  ext v
+  simp [FinitePlace.equivHeightOneSpectrum_symm_apply, FinitePlace.norm_embedding]
+
+/-! ### The degree-normalized absolute value -/
+
+/-- The degree-normalized absolute value `|x|_v = normalizedAbsValue v x ^ (1 / [K : ℚ])` at a
+place `v` of a number field `K`. At an infinite place `w` it is `w x ^ (mult w / [K : ℚ])`
+(`normAbs_inr`), and at a finite place it is the `[K : ℚ]`-th root of the `v`-adic absolute value
+(`normAbs_inl`).
+
+This is the normalization of Evertse–Ferretti, in which the product of the local factors of a
+height is the absolute height: it does not change when `K` is replaced by a finite extension. -/
+noncomputable def normAbs (v : Place K) : K →*₀ ℝ where
+  toFun x := normalizedAbsValue v x ^ ((1 : ℝ) / Module.finrank ℚ K)
+  map_zero' := by
+    rw [map_zero, Real.zero_rpow]
+    exact one_div_ne_zero (Nat.cast_ne_zero.mpr Module.finrank_pos.ne')
+  map_one' := by simp
+  map_mul' x y := by
+    rw [map_mul, Real.mul_rpow (normalizedAbsValue_nonneg v x) (normalizedAbsValue_nonneg v y)]
+
+theorem normAbs_apply (v : Place K) (x : K) :
+    normAbs v x = normalizedAbsValue v x ^ ((1 : ℝ) / Module.finrank ℚ K) := (rfl)
+
+/-- At a finite place `v`, the degree-normalized absolute value is the `[K : ℚ]`-th root of the
+`v`-adic absolute value. -/
+@[simp]
+theorem normAbs_inl (v : HeightOneSpectrum (𝓞 K)) (x : K) :
+    normAbs (Sum.inl v) x =
+      NumberField.HeightOneSpectrum.adicAbv K v x ^ ((1 : ℝ) / Module.finrank ℚ K) := (rfl)
+
+/-- At an infinite place `w`, the degree-normalized absolute value is `w x ^ (mult w / [K : ℚ])`.
+-/
+@[simp]
+theorem normAbs_inr (w : InfinitePlace K) (x : K) :
+    normAbs (Sum.inr w) x = w x ^ ((w.mult : ℝ) / Module.finrank ℚ K) := by
+  rw [normAbs_apply, normalizedAbsValue_inr, ← Real.rpow_natCast,
+    ← Real.rpow_mul (apply_nonneg w x), mul_one_div]
+
+theorem normAbs_nonneg (v : Place K) (x : K) : 0 ≤ normAbs v x :=
+  Real.rpow_nonneg (normalizedAbsValue_nonneg v x) _
+
+theorem normAbs_pos (v : Place K) {x : K} (hx : x ≠ 0) : 0 < normAbs v x :=
+  Real.rpow_pos_of_pos (normalizedAbsValue_pos v hx) _
+
+/-- The `[K : ℚ]`-th power of the degree-normalized absolute value is the normalized absolute
+value. -/
+theorem normAbs_pow_finrank (v : Place K) (x : K) :
+    normAbs v x ^ Module.finrank ℚ K = normalizedAbsValue v x := by
+  rw [normAbs_apply, one_div,
+    Real.rpow_inv_natCast_pow (normalizedAbsValue_nonneg v x) Module.finrank_pos.ne']
+
+/-- The `[K : ℚ]`-th power of the largest degree-normalized absolute value of a finite tuple is
+its largest normalized absolute value. -/
+theorem iSup_normAbs_pow_finrank {ι : Type*} [Finite ι] (v : Place K) (y : ι → K) :
+    (⨆ i, normAbs v (y i)) ^ Module.finrank ℚ K = ⨆ i, normalizedAbsValue v (y i) := by
+  rcases isEmpty_or_nonempty ι with hι | hι
+  · simp [Module.finrank_pos.ne']
+  · rw [Finite.map_iSup_of_monotoneOn (pow_left_monotoneOn (M₀ := ℝ)) fun i ↦
+      Set.mem_Ici.mpr (normAbs_nonneg v (y i))]
+    simp_rw [normAbs_pow_finrank]
+
+/-- A tuple of elements of a number field which is not identically zero has, at all but finitely
+many places, largest degree-normalized absolute value `1`. -/
+theorem hasFiniteMulSupport_iSup_normAbs {ι : Type*} [Finite ι] {y : ι → K} (hy : y ≠ 0) :
+    HasFiniteMulSupport fun v : Place K ↦ ⨆ i, normAbs v (y i) := by
+  refine (hasFiniteMulSupport_iSup_normalizedAbsValue hy).of_eq_one_iff fun v ↦ ?_
+  rw [← iSup_normAbs_pow_finrank, pow_eq_one_iff_of_nonneg
+    (Real.iSup_nonneg fun i ↦ normAbs_nonneg v (y i)) Module.finrank_pos.ne']
+
+/-- A nonzero element of a number field has degree-normalized absolute value `1` at all but
+finitely many places. -/
+theorem hasFiniteMulSupport_normAbs (hx : x ≠ 0) :
+    HasFiniteMulSupport fun v : Place K ↦ normAbs v x :=
+  (hasFiniteMulSupport_normalizedAbsValue hx).subset fun v hv h ↦
+    hv (by beta_reduce at h ⊢; rw [normAbs_apply, h, Real.one_rpow])
+
+/-- **The product formula** for the degree-normalized absolute values of a number field. -/
+theorem finprod_normAbs_eq_one (hx : x ≠ 0) : ∏ᶠ v : Place K, normAbs v x = 1 := by
+  rw [← pow_eq_one_iff_of_nonneg (finprod_nonneg fun v ↦ normAbs_nonneg v x)
+    (Module.finrank_pos (R := ℚ) (M := K)).ne', finprod_pow (hasFiniteMulSupport_normAbs hx)]
+  simp_rw [normAbs_pow_finrank]
+  exact finprod_normalizedAbsValue_eq_one hx
 
 end TauCeti.GlobalNumberFields

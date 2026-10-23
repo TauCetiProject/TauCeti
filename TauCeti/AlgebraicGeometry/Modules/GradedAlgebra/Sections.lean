@@ -8,6 +8,8 @@ module
 public import TauCeti.CategoryTheory.GradedObject.MonObj
 public import TauCeti.AlgebraicGeometry.Modules.TensorProduct
 public import TauCeti.Algebra.Category.ModuleCat.Monoidal.GradedRing
+public import TauCeti.RingTheory.GradedAlgebra.DirectSum
+public import Mathlib.RingTheory.GradedAlgebra.RingHom
 
 /-!
 # Graded rings of sections of graded algebras
@@ -40,10 +42,13 @@ arguments here follow the proofs there.
   `CategoryTheory.CommMon.gAlgebraSections`: the graded
   commutative `Γ(X, U)`-algebra structure on `n ↦ Γ(Aₙ, U)`, characterized by
   `sections_gMul_def`, `sections_gOne_def` and `gAlgebraSections_toFun`;
+* `CategoryTheory.CommMon.gradedSectionsGrading`: the grading of `⨁ n, Γ(Aₙ, U)` by its
+  summands, as an internally graded algebra in the sense of `GradedAlgebra`;
 * `CategoryTheory.CommMon.restrictGradedSections`: restriction of
   sections along `V ≤ U`, a degree-preserving ring homomorphism, assembled into the presheaf of
   commutative rings `gradedSectionsPresheaf` under the structure presheaf of `X`
-  (`toGradedSectionsPresheaf`);
+  (`toGradedSectionsPresheaf`); its graded form is
+  `CategoryTheory.CommMon.restrictGradedSectionsGradedHom`;
 * `CategoryTheory.CommMon.gradedSectionsMap`: the degree-preserving
   `Γ(X, U)`-algebra homomorphism induced by a morphism of graded algebras, natural in `U`
   (`gradedSectionsPresheafMap`).
@@ -248,6 +253,64 @@ lemma _root_.CategoryTheory.CommMon.restrictGradedSections_algebraMap (r : Γ(X,
     map_gAlgebraSections_toFun]
 
 end Restriction
+
+/-- The grading of the ring `⨁ n, Γ(Aₙ, U)` of sections of a graded algebra by its summands
+`Γ(Aₙ, U)`. -/
+abbrev _root_.CategoryTheory.CommMon.gradedSectionsGrading :
+    ℕ → Submodule Γ(X, U) (⨁ n, Γ(A.X n, U)) :=
+  DirectSum.summand Γ(X, U) fun n ↦ Γ(A.X n, U)
+
+section GradedRestriction
+
+variable {A U} in
+/-- A homogeneous section of degree `n` lies in the degree-`n` summand. -/
+theorem _root_.CategoryTheory.CommMon.of_mem_gradedSectionsGrading (n : ℕ) (x : Γ(A.X n, U)) :
+    DirectSum.of _ n x ∈ A.gradedSectionsGrading U n :=
+  DirectSum.of_mem_summand (R := Γ(X, U)) (M := fun n ↦ Γ(A.X n, U)) n x
+
+variable {U} {V : X.Opens}
+
+/-- Restriction of sections along an inclusion of opens `V ≤ U`, as a graded ring homomorphism
+between the graded rings of sections. Its underlying ring homomorphism is
+`CategoryTheory.CommMon.restrictGradedSections`
+(`CategoryTheory.CommMon.restrictGradedSectionsGradedHom_toRingHom`). -/
+def _root_.CategoryTheory.CommMon.restrictGradedSectionsGradedHom (i : V ⟶ U) :
+    A.gradedSectionsGrading U →+*ᵍ A.gradedSectionsGrading V where
+  __ := A.restrictGradedSections i
+  map_mem {n x} hx := by
+    obtain ⟨x, rfl⟩ := DirectSum.mem_summand.mp hx
+    simpa using of_mem_gradedSectionsGrading n _
+
+/-- The underlying ring homomorphism of the graded restriction of sections is the restriction of
+sections. -/
+@[simp]
+theorem _root_.CategoryTheory.CommMon.restrictGradedSectionsGradedHom_toRingHom (i : V ⟶ U) :
+    (A.restrictGradedSectionsGradedHom i).toRingHom = A.restrictGradedSections i :=
+  (rfl)
+
+/-- The graded restriction of sections is the restriction of sections. -/
+@[simp]
+theorem _root_.CategoryTheory.CommMon.restrictGradedSectionsGradedHom_apply (i : V ⟶ U)
+    (x : ⨁ n, Γ(A.X n, U)) :
+    A.restrictGradedSectionsGradedHom i x = A.restrictGradedSections i x :=
+  (rfl)
+
+variable (U) in
+/-- Graded restriction of sections along the identity is the identity. -/
+@[simp]
+theorem _root_.CategoryTheory.CommMon.restrictGradedSectionsGradedHom_id :
+    A.restrictGradedSectionsGradedHom (𝟙 U) = GradedRingHom.id _ :=
+  GradedRingHom.ext fun x ↦ by simp
+
+/-- Graded restriction of sections along a composite of inclusions is the composite of the graded
+restrictions. -/
+theorem _root_.CategoryTheory.CommMon.restrictGradedSectionsGradedHom_comp {W : X.Opens}
+    (i : V ⟶ U) (j : W ⟶ V) :
+    A.restrictGradedSectionsGradedHom (j ≫ i) =
+      (A.restrictGradedSectionsGradedHom j).comp (A.restrictGradedSectionsGradedHom i) :=
+  GradedRingHom.ext fun x ↦ by simp [restrictGradedSections_comp]
+
+end GradedRestriction
 
 /-- The presheaf of graded rings of sections of a graded algebra: it sends an open
 `U` to `⨁ n, Γ(Aₙ, U)` and an inclusion of opens to `restrictGradedSections`. -/

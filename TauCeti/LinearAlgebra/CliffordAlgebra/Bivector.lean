@@ -9,6 +9,7 @@ import Mathlib.Tactic.NoncommRing
 import Mathlib.Data.Fin.Tuple.Reflection
 import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement
 public import Mathlib.LinearAlgebra.ExteriorPower.Basic
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Filtration
 
 /-!
@@ -47,6 +48,9 @@ rotation.
   `CliffordAlgebra.equivExterior_bivectorExterior`, and
   `CliffordAlgebra.bivectorExterior_injective`: the exterior model sends
   bivectors to exterior products, so the exterior-square map is injective.
+* `CliffordAlgebra.bivectorExterior_exteriorPower_basis`: the exterior-square map sends the basis
+  of `⋀² M` attached to a basis `b` of `M` to the matching vectors of the Clifford basis
+  `CliffordAlgebra.basis Q b`.
 * `CliffordAlgebra.bivector_mem_evenOdd_zero` and
   `CliffordAlgebra.bivector_mem_filtration_two`: it is even and has filtration
   degree at most two.
@@ -228,6 +232,15 @@ theorem bivectorExterior_injective : Function.Injective (bivectorExterior Q) := 
   change Function.Injective ((equivExterior Q).toLinearMap.comp (bivectorExterior Q))
   simpa only [equivExterior_comp_bivectorExterior] using
     Submodule.subtype_injective (⋀[R]^2 M)
+
+/-- The exterior-square Clifford bivector map sends the vector of the basis `b.exteriorPower 2` of
+`⋀² M` indexed by `s` to the vector of the Clifford basis `CliffordAlgebra.basis Q b` indexed by
+`s`. -/
+theorem bivectorExterior_exteriorPower_basis {I : Type*} [LinearOrder I] (b : Module.Basis I R M)
+    (s : Set.powersetCard I 2) :
+    bivectorExterior Q (b.exteriorPower 2 s) = basis Q b s := by
+  apply (equivExterior Q).injective
+  rw [equivExterior_bivectorExterior, equivExterior_basis, ExteriorAlgebra.basis_eq_coe_basis]
 
 /-- Interchanging the two vectors negates their Clifford bivector. -/
 theorem bivector_swap (a b : M) :

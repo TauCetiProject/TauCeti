@@ -31,6 +31,8 @@ linear maps and characterizes independence of complementary coordinate blocks.
 * `TauCeti.Probability.multivariateGaussian_zero_eq_map_stdGaussian_sqrt` writes the centred law as
   an image
   of the standard Gaussian.
+* `TauCeti.Probability.multivariateGaussian_zero_right` identifies the zero-covariance law with
+  the point mass at its mean.
 * `TauCeti.Probability.covariance_inner_matrix_multivariateGaussian` computes covariance after two
   matrix
   maps.
@@ -80,6 +82,12 @@ theorem multivariateGaussian_zero_eq_map_stdGaussian_sqrt [Fintype ι] [Decidabl
     multivariateGaussian 0 S =
       (stdGaussian (EuclideanSpace ℝ ι)).map
         (Matrix.toEuclideanCLM (𝕜 := ℝ) (CFC.sqrt S)) := by
+  simp [multivariateGaussian]
+
+/-- A multivariate Gaussian with zero covariance is the point mass at its mean. -/
+@[simp]
+theorem multivariateGaussian_zero_right [Fintype ι] [DecidableEq ι] (m : EuclideanSpace ℝ ι) :
+    multivariateGaussian m (0 : Matrix ι ι ℝ) = Measure.dirac m := by
   simp [multivariateGaussian]
 
 /-- The covariance of scalar inner-product projections after two matrix-valued linear maps of a

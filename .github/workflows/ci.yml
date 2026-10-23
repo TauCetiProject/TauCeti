@@ -38,10 +38,10 @@ jobs:
         with:
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@472566310e766bbc7933579a1f7743f41960046e
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@0f4096297f058bff8ccd873067aab7120202aecf
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 472566310e766bbc7933579a1f7743f41960046e
+          tools-ref: 0f4096297f058bff8ccd873067aab7120202aecf
           project-directory: .
       - name: Checkout the pinned merge policy (read-only)
         uses: ./.github/actions/checkout-merge-policy
@@ -57,10 +57,10 @@ jobs:
         with:
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@472566310e766bbc7933579a1f7743f41960046e
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@0f4096297f058bff8ccd873067aab7120202aecf
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 472566310e766bbc7933579a1f7743f41960046e
+          tools-ref: 0f4096297f058bff8ccd873067aab7120202aecf
           project-directory: .
       - name: Install elan (pinned + checksum) and the toolchain
         env:
@@ -127,10 +127,10 @@ jobs:
           fetch-depth: 0
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@472566310e766bbc7933579a1f7743f41960046e
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@0f4096297f058bff8ccd873067aab7120202aecf
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 472566310e766bbc7933579a1f7743f41960046e
+          tools-ref: 0f4096297f058bff8ccd873067aab7120202aecf
           project-directory: .
       - name: Infrastructure policy unit tests
         run: |
