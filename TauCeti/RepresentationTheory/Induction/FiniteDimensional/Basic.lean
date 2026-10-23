@@ -470,6 +470,7 @@ theorem indFDRepMap_id {k : Type u} {G : Type v} [Field k] [Group G] {S : Subgro
   simp [A', hInd]
 
 /-- Induction of intertwiners preserves composition. -/
+@[simp]
 theorem indFDRepMap_comp {k : Type u} {G : Type v} [Field k] [Group G] {S : Subgroup G}
     [S.FiniteIndex] {A B C : FDRep k S} (f : A ⟶ B) (g : B ⟶ C) :
     indFDRepMap (f ≫ g) = indFDRepMap f ≫ indFDRepMap g := by

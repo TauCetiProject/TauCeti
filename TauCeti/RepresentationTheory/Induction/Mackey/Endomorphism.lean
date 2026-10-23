@@ -49,7 +49,7 @@ noncomputable def indEndAlgHom [H.FiniteIndex] (A : FDRep k H) :
       map_add' := fun f g ↦ by ext; simp [End.add_asHom, indFDRepMap_add]
       map_smul' := fun r f ↦ by ext; simp [End.smul_asHom, indFDRepMap_smul] }
     (by ext; simp [End.one_asHom])
-    (fun f g ↦ by ext; simp [End.mul_asHom, indFDRepMap_comp])
+    (fun f g ↦ by ext; simp [End.mul_asHom])
 
 /-- The endomorphism algebra map acts by the native induction map on intertwiners. -/
 @[simp]
