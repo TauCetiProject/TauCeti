@@ -6,13 +6,21 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.MvPowerSeries.Order
+public import Mathlib.RingTheory.MvPowerSeries.Substitution
 
 /-!
-# Lowest-degree homogeneous components of powers
+# Lowest-degree homogeneous components of powers, products and substitutions
 
 If a series has order at least `p`, the degree-`n * p` homogeneous component of its `n`-th power
-is the `n`-th power of its degree-`p` component. This reduces lowest-degree coefficient
-computations for powers to homogeneous series, over arbitrary semirings.
+is the `n`-th power of its degree-`p` component, and similarly for finite products. This reduces
+lowest-degree coefficient computations for powers to homogeneous series, over arbitrary semirings.
+
+The same holds for substitution: if `f` has order at least `p` and the series `a i` have zero
+constant coefficient, the degree-`p` component of `f(a)` only depends on the degree-`p` component
+of `f` and on the linear parts of the `a i`, into which it is substituted
+(`MvPowerSeries.homogeneousComponent_subst_of_le_order`). This is how the lowest-degree term of an
+expression such as `f(F(X, Y), Z)`, for a formal group law `F(X, Y) = X + Y + ⋯`, is read off as
+the polynomial `f_p(X + Y, Z)`.
 
 For two-variable series with linear coefficients one, the degree-one component is `X + Y`.
 Over a ring, vanishing of the constant coefficient then puts the remainder after subtracting
@@ -26,6 +34,23 @@ namespace MvPowerSeries
 section Powers
 
 variable {σ R : Type*} [Semiring R] {f : MvPowerSeries σ R}
+
+/-- A variable is its own degree-one homogeneous component. -/
+@[simp]
+theorem homogeneousComponent_one_X (i : σ) :
+    homogeneousComponent 1 (X i : MvPowerSeries σ R) = X i := by
+  classical
+  ext d
+  rw [coeff_homogeneousComponent, coeff_X]
+  split_ifs with h₁ h₂ h₂ <;> simp_all
+
+/-- A series of order at least `n` without degree-`n` component has order at least `n + 1`. -/
+theorem succ_le_order_of_homogeneousComponent_eq_zero {n : ℕ} (hn : n ≤ f.order)
+    (h : homogeneousComponent n f = 0) : ((n + 1 : ℕ) : ℕ∞) ≤ f.order := by
+  refine nat_le_order fun d hd ↦ ?_
+  rcases Nat.lt_succ_iff_lt_or_eq.mp hd with hd | hd
+  · exact coeff_of_lt_order ((Nat.cast_lt.mpr hd).trans_le hn)
+  · simpa [coeff_homogeneousComponent, hd] using congrArg (coeff d) h
 
 /-- The lowest possible homogeneous component of a power is the corresponding power of the
 lowest possible homogeneous component. -/
@@ -44,6 +69,97 @@ theorem homogeneousComponent_pow_of_le_order {p : ℕ} (hf : p ≤ f.order) (n :
     rw [pow_succ, Nat.succ_mul, homogeneousComponent_mul_of_le_order hn hf, ih, pow_succ]
 
 end Powers
+
+section Products
+
+variable {σ R : Type*} [CommSemiring R]
+
+/-- The lowest possible homogeneous component of a finite product is the product of the lowest
+possible homogeneous components of the factors. -/
+theorem homogeneousComponent_prod_of_le_order {ι : Type*} (s : Finset ι)
+    {f : ι → MvPowerSeries σ R} {p : ι → ℕ} (hf : ∀ i ∈ s, p i ≤ (f i).order) :
+    homogeneousComponent (∑ i ∈ s, p i) (∏ i ∈ s, f i) =
+      ∏ i ∈ s, homogeneousComponent (p i) (f i) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty =>
+    ext d
+    by_cases hd : d = 0 <;>
+      simp [coeff_homogeneousComponent, coeff_one, Finsupp.degree_eq_zero_iff, hd]
+  | insert a s ha ih =>
+    have hs : ((∑ i ∈ s, p i : ℕ) : ℕ∞) ≤ (∏ i ∈ s, f i).order := by
+      push_cast
+      exact (Finset.sum_le_sum fun i hi ↦ hf i (Finset.mem_insert_of_mem hi)).trans
+        (le_order_prod f s)
+    rw [Finset.sum_insert ha, Finset.prod_insert ha, Finset.prod_insert ha,
+      homogeneousComponent_mul_of_le_order (hf a (Finset.mem_insert_self a s)) hs,
+      ih fun i hi ↦ hf i (Finset.mem_insert_of_mem hi)]
+
+/-- The monomial `aᵈ = ∏ᵢ (a i) ^ (d i)` in series without constant coefficient has order at least
+the degree of `d`. -/
+theorem degree_le_order_prod_pow {ι : Type*} {a : ι → MvPowerSeries σ R}
+    (ha₀ : ∀ i, constantCoeff (a i) = 0) (d : ι →₀ ℕ) :
+    (d.degree : ℕ∞) ≤ (d.prod fun i k ↦ a i ^ k).order := by
+  rw [Finsupp.prod, Finsupp.degree_apply]
+  push_cast
+  refine (Finset.sum_le_sum fun i _ ↦ ?_).trans (le_order_prod _ _)
+  simpa using le_order_pow_of_constantCoeff_eq_zero (d i) (ha₀ i)
+
+/-- The degree-`|d|` component of the monomial `aᵈ = ∏ᵢ (a i) ^ (d i)` in series without constant
+coefficient is the same monomial in their linear parts. -/
+theorem homogeneousComponent_degree_prod_pow {ι : Type*} {a : ι → MvPowerSeries σ R}
+    (ha₀ : ∀ i, constantCoeff (a i) = 0) (d : ι →₀ ℕ) :
+    homogeneousComponent d.degree (d.prod fun i k ↦ a i ^ k) =
+      d.prod fun i k ↦ homogeneousComponent 1 (a i) ^ k := by
+  have h1 (i : ι) : (1 : ℕ) ≤ (a i).order := by
+    simpa using (one_le_order_iff_constCoeff_eq_zero (f := a i)).mpr (ha₀ i)
+  rw [Finsupp.prod, Finsupp.prod, Finsupp.degree_apply,
+    homogeneousComponent_prod_of_le_order _ fun i _ ↦ ?_]
+  · refine Finset.prod_congr rfl fun i _ ↦ ?_
+    simpa using homogeneousComponent_pow_of_le_order (h1 i) (d i)
+  · simpa using le_order_pow_of_constantCoeff_eq_zero (d i) (ha₀ i)
+
+end Products
+
+section Subst
+
+variable {σ τ R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
+
+/-- **The lowest-degree component of a substitution.** If `f` has order at least `p` and the series
+`a i` have zero constant coefficient, the degree-`p` component of `f(a)` is the degree-`p` component
+of `f` evaluated at the linear parts of the `a i`. -/
+theorem homogeneousComponent_subst_of_le_order {f : MvPowerSeries σ R} {p : ℕ}
+    (hf : p ≤ f.order) {a : σ → MvPowerSeries τ S} (ha : HasSubst a)
+    (ha₀ : ∀ i, constantCoeff (a i) = 0) :
+    homogeneousComponent p (f.subst a) =
+      (homogeneousComponent p f).subst fun i ↦ homogeneousComponent 1 (a i) := by
+  have hl : HasSubst fun i ↦ homogeneousComponent 1 (a i) :=
+    { const_coeff s := by
+        simp [← coeff_zero_eq_constantCoeff_apply, coeff_homogeneousComponent]
+      coeff_zero d := (ha.coeff_zero d).subset fun s hs ↦ by
+        simp only [Set.mem_ofPred_eq, coeff_homogeneousComponent] at hs ⊢
+        split_ifs at hs
+        exacts [hs, (hs rfl).elim] }
+  ext e
+  rw [coeff_homogeneousComponent, coeff_subst ha, coeff_subst hl]
+  split_ifs with he
+  · refine finsum_congr fun d ↦ ?_
+    rw [coeff_homogeneousComponent]
+    split_ifs with hd
+    · rw [← homogeneousComponent_degree_prod_pow ha₀, coeff_homogeneousComponent,
+        ite_eq_left (he.trans hd.symm)]
+    · rcases lt_or_gt_of_ne hd with hlt | hgt
+      · rw [coeff_of_lt_order ((Nat.cast_lt.mpr hlt).trans_le hf), zero_smul, zero_smul]
+      · rw [coeff_of_lt_order ((Nat.cast_lt.mpr (he.trans_lt hgt)).trans_le
+          (degree_le_order_prod_pow ha₀ d)), smul_zero, zero_smul]
+  · refine (finsum_eq_zero_of_forall_eq_zero fun d ↦ ?_).symm
+    rw [coeff_homogeneousComponent]
+    split_ifs with hd
+    · rw [← homogeneousComponent_degree_prod_pow ha₀, coeff_homogeneousComponent,
+        ite_eq_right (hd ▸ he), smul_zero]
+    · rw [zero_smul]
+
+end Subst
 
 open Finsupp
 
