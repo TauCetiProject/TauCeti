@@ -108,6 +108,11 @@ instance : EquivLike (Iso I n d d') (Σ i, X i) (Σ i, X' i) where
 @[simp] theorem coe_toDiffeomorph (e : Iso I n d d') : ⇑e.toDiffeomorph = e :=
   (rfl)
 
+/-- An isomorphism built from a diffeomorphism acts as that diffeomorphism. -/
+@[simp] theorem coe_mk (f : (Σ i, X i) ≃ₘ^n⟮I, I⟯ (Σ i, X' i))
+    (hf : ∀ x y, flagRel d' (f x) (f y) ↔ flagRel d x y) : ⇑(⟨f, hf⟩ : Iso I n d d') = f :=
+  (rfl)
+
 /-- Two isomorphisms agreeing at every point of the normalization are equal. -/
 @[ext] theorem ext {e e' : Iso I n d d'} (h : ∀ x, e x = e' x) : e = e' :=
   DFunLike.ext _ _ h
@@ -132,6 +137,11 @@ protected def refl : Iso I n d d where
 @[simp] theorem refl_apply (x : Σ i, X i) : Iso.refl I n d x = x :=
   (rfl)
 
+/-- The underlying diffeomorphism of the identity isomorphism is the identity. -/
+@[simp] theorem refl_toDiffeomorph :
+    (Iso.refl I n d).toDiffeomorph = Diffeomorph.refl I (Σ i, X i) n :=
+  (rfl)
+
 /-- The inverse isomorphism. -/
 protected def symm (e : Iso I n d d') : Iso I n d' d where
   toDiffeomorph := e.toDiffeomorph.symm
@@ -151,6 +161,25 @@ protected def symm (e : Iso I n d d') : Iso I n d' d where
 @[simp] theorem symm_symm (e : Iso I n d d') : e.symm.symm = e :=
   ext fun _ ↦ rfl
 
+/-- The underlying diffeomorphism of the inverse is the inverse diffeomorphism. -/
+@[simp] theorem symm_toDiffeomorph (e : Iso I n d d') :
+    e.symm.toDiffeomorph = e.toDiffeomorph.symm :=
+  (rfl)
+
+/-- The inverse of the identity isomorphism is the identity. -/
+@[simp] theorem symm_refl : (Iso.refl I n d).symm = Iso.refl I n d :=
+  ext fun _ ↦ rfl
+
+/-- The inverse isomorphism sends `y` to `x` exactly when the isomorphism sends `x` to `y`. -/
+theorem symm_apply_eq (e : Iso I n d d') {x : Σ i, X i} {y : Σ i, X' i} :
+    e.symm y = x ↔ y = e x :=
+  ⟨fun h ↦ by rw [← h, apply_symm_apply], fun h ↦ by rw [h, symm_apply_apply]⟩
+
+/-- The isomorphism sends `x` to `y` exactly when the inverse sends `y` to `x`. -/
+theorem eq_symm_apply (e : Iso I n d d') {x : Σ i, X i} {y : Σ i, X' i} :
+    x = e.symm y ↔ e x = y :=
+  eq_comm.trans <| e.symm_apply_eq.trans eq_comm
+
 /-- The composite of two isomorphisms. -/
 protected def trans (e : Iso I n d d') (e' : Iso I n d' d'') : Iso I n d d'' where
   toDiffeomorph := e.toDiffeomorph.trans e'.toDiffeomorph
@@ -160,6 +189,16 @@ protected def trans (e : Iso I n d d') (e' : Iso I n d' d'') : Iso I n d d'' whe
 @[simp] theorem trans_apply (e : Iso I n d d') (e' : Iso I n d' d'') (x : Σ i, X i) :
     e.trans e' x = e' (e x) :=
   (rfl)
+
+/-- The underlying diffeomorphism of a composite is the composite of the diffeomorphisms. -/
+@[simp] theorem trans_toDiffeomorph (e : Iso I n d d') (e' : Iso I n d' d'') :
+    (e.trans e').toDiffeomorph = e.toDiffeomorph.trans e'.toDiffeomorph :=
+  (rfl)
+
+/-- The inverse of a composite is the composite of the inverses in the opposite order. -/
+@[simp] theorem symm_trans (e : Iso I n d d') (e' : Iso I n d' d'') :
+    (e.trans e').symm = e'.symm.trans e.symm :=
+  ext fun _ ↦ rfl
 
 /-- An isomorphism followed by its inverse is the identity. -/
 @[simp] theorem self_trans_symm (e : Iso I n d d') : e.trans e.symm = Iso.refl I n d :=
