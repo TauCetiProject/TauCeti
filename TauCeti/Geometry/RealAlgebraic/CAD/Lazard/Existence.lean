@@ -61,9 +61,7 @@ variables has a cylindrical algebraic decomposition of `ℝ ^ n` into analytic s
 each cell of which every member has constant Lazard valuation, when the coordinates are read in
 reverse order, from the coordinate added first by the cylindrical structure to the one added
 last. Every member is also sign-invariant on each cell. No well-orientedness hypothesis is
-imposed, and members may be nullified over base cells of positive dimension. The normalized
-gcd needed by the Lazard projection is chosen in the proof, so there is no
-`NormalizedGCDMonoid` hypothesis. -/
+imposed, and members may be nullified over base cells of positive dimension. -/
 theorem exists_isCAD_lazardValuationReindex_eq (F : Finset (MvPolynomial (Fin n) ℝ)) :
     ∃ 𝓒, IsCAD n 𝓒 ∧ (∀ E ∈ 𝓒, ∃ d, IsAnalyticSubmanifold d E) ∧
       (∀ f ∈ F, ∀ E ∈ 𝓒, ∀ x ∈ E, ∀ y ∈ E,
