@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.KroneckerPower
 public import TauCeti.RepresentationTheory.ClassicalGroups.BrauerGenerators.Orthogonal.Action
 
 /-!
@@ -22,13 +21,14 @@ of invariant theory for `O(n)`, needs more hypotheses on `R` and is not part of 
 The proof works one diagram at a time and does not use generators of the Brauer algebra. In the
 monomial basis a diagram `D` acts by the matrix `M` whose `(v, u)` entry is `1` when the labelling
 `Sum.elim u v` of the `2 * k` boundary points is constant on the arcs of `D`, and `g^{⊗k}` acts by
-the Kronecker power `K` with `(v, u)` entry `∏ i, g (v i) (u i)`. Conjugating `M` by `K` sums, over
-the labellings `m` constant on the arcs of `D`, the product of the entries `g (ℓ x) (m x)` at all
-boundary points `x`, where `ℓ` is the outer labelling. Such an `m` is the same as a free choice of
-one label per arc, so the sum factors as a product over the arcs, and the factor of an arc with
-endpoints `x` and `y` is `∑ c, g (ℓ x) c * g (ℓ y) c = (g * gᵀ) (ℓ x) (ℓ y)`, which is `1` when
-`ℓ x = ℓ y` and `0` otherwise (`TauCeti.BrauerDiagram.sum_isConstantOnArcs_prod_apply`). So
-`K * M * Kᵀ = M`, and since also `Kᵀ * K = 1` the matrices `M` and `K` commute.
+the Kronecker power `K = Matrix.kroneckerPower (Fin k) g` with `(v, u)` entry `∏ i, g (v i) (u i)`.
+Conjugating `M` by `K` sums, over the labellings `m` constant on the arcs of `D`, the product of the
+entries `g (ℓ x) (m x)` at all boundary points `x`, where `ℓ` is the outer labelling. Such an `m` is
+the same as a free choice of one label per arc (`TauCeti.BrauerDiagram.isConstantOnArcsEquiv`), so
+the sum factors as a product over the arcs, and the factor of an arc with endpoints `x` and `y` is
+`∑ c, g (ℓ x) c * g (ℓ y) c = (g * gᵀ) (ℓ x) (ℓ y)`, which is `1` when `ℓ x = ℓ y` and `0` otherwise
+(`TauCeti.BrauerDiagram.sum_isConstantOnArcs_prod_apply`). So `K * M * Kᵀ = M`, and since also
+`Kᵀ * K = 1` the matrices `M` and `K` commute.
 
 ## Main results
 
@@ -63,69 +63,6 @@ namespace BrauerDiagram
 
 variable {k : ℕ}
 
-/-! ### One label per arc -/
-
-section LowerEnd
-
-/-- The boundary point `x` is the **lower end** of its arc in `D`: it comes before its partner in
-the order of `Fin (k + k)`. Every arc has exactly one lower end, so the lower ends index the arcs.
--/
-private def IsLowerEnd (D : BrauerDiagram k) (x : Fin k ⊕ Fin k) : Prop :=
-  finSumFinEquiv x < finSumFinEquiv (D.val x)
-
-private instance (D : BrauerDiagram k) : DecidablePred D.IsLowerEnd :=
-  fun x => inferInstanceAs (Decidable (finSumFinEquiv x < finSumFinEquiv (D.val x)))
-
-/-- A boundary point that is not the lower end of its arc has the lower end as its partner. -/
-private theorem isLowerEnd_val_of_not (D : BrauerDiagram k) {x : Fin k ⊕ Fin k}
-    (hx : ¬D.IsLowerEnd x) : D.IsLowerEnd (D.val x) := by
-  have hne : finSumFinEquiv (D.val x) ≠ finSumFinEquiv x :=
-    finSumFinEquiv.injective.ne (D.apply_ne x)
-  rw [IsLowerEnd, D.apply_apply]
-  exact lt_of_le_of_ne (not_lt.mp hx) hne
-
-/-- The partner of a lower end is not a lower end. -/
-private theorem not_isLowerEnd_val (D : BrauerDiagram k) {x : Fin k ⊕ Fin k}
-    (hx : D.IsLowerEnd x) : ¬D.IsLowerEnd (D.val x) := by
-  rw [IsLowerEnd, D.apply_apply]
-  exact not_lt.mpr hx.le
-
-/-- The points that are not lower ends correspond to the lower ends, through the matching. -/
-private def notLowerEndEquiv (D : BrauerDiagram k) :
-    {x // ¬D.IsLowerEnd x} ≃ {x // D.IsLowerEnd x} where
-  toFun x := ⟨D.val x, D.isLowerEnd_val_of_not x.2⟩
-  invFun x := ⟨D.val x, D.not_isLowerEnd_val x.2⟩
-  left_inv x := Subtype.ext (D.apply_apply x)
-  right_inv x := Subtype.ext (D.apply_apply x)
-
-/-- A product over the boundary points is a product over the arcs, each arc contributing the
-factors at its lower end and at its partner. -/
-private theorem prod_eq_prod_isLowerEnd {M : Type*} [CommMonoid M] (D : BrauerDiagram k)
-    (f : Fin k ⊕ Fin k → M) :
-    ∏ x, f x = ∏ x : {x // D.IsLowerEnd x}, f x * f (D.val x) := by
-  rw [← Fintype.prod_subtype_mul_prod_subtype D.IsLowerEnd f, Finset.prod_mul_distrib]
-  exact congrArg _ (Fintype.prod_equiv D.notLowerEndEquiv _ _ fun x => by
-    simp [notLowerEndEquiv, D.apply_apply])
-
-/-- A labelling constant on the arcs of `D` is the same as a free choice of a label at each lower
-end. -/
-private def isConstantOnArcsEquiv {ι : Type*} (D : BrauerDiagram k) :
-    {m : Fin k ⊕ Fin k → ι // D.IsConstantOnArcs m} ≃ ({x // D.IsLowerEnd x} → ι) where
-  toFun m x := m.1 x
-  invFun g := ⟨fun x =>
-      if h : D.IsLowerEnd x then g ⟨x, h⟩ else g ⟨D.val x, D.isLowerEnd_val_of_not h⟩,
-    (D.isConstantOnArcs_def _).mpr fun x => by
-      by_cases h : D.IsLowerEnd x
-      · simp [h, D.not_isLowerEnd_val h, D.apply_apply]
-      · simp [h, D.isLowerEnd_val_of_not h]⟩
-  left_inv m := Subtype.ext <| funext fun x => by
-    by_cases h : D.IsLowerEnd x
-    · simp [h]
-    · simp [h, (D.isConstantOnArcs_def _).mp m.2 x]
-  right_inv g := funext fun x => by simp [x.2]
-
-end LowerEnd
-
 variable {R : Type u} [CommSemiring R] {ι : Type*} [Fintype ι] [DecidableEq ι]
 
 /-- **The arc tensor of a Brauer diagram is invariant.** For a matrix `A` with `A * Aᵀ = 1`,
@@ -152,7 +89,7 @@ theorem sum_isConstantOnArcs_prod_apply (D : BrauerDiagram k) {A : Matrix ι ι 
         refine Fintype.sum_congr _ _ fun g => ?_
         rw [prod_eq_prod_isLowerEnd D]
         refine Fintype.prod_congr _ _ fun x => ?_
-        simp [isConstantOnArcsEquiv, x.2, D.not_isLowerEnd_val x.2, D.apply_apply]
+        simp [isConstantOnArcsEquiv_symm_apply, x.2, D.not_isLowerEnd_val x.2, D.apply_apply]
     _ = ∏ x : {x // D.IsLowerEnd x}, if ℓ (D.val x) = ℓ x then 1 else 0 := by
         exact (Fintype.prod_sum fun (x : {x // D.IsLowerEnd x}) c =>
           A (ℓ x) c * A (ℓ (D.val x)) c).symm.trans (Fintype.prod_congr _ _ fun x => harc x)
@@ -162,7 +99,7 @@ theorem sum_isConstantOnArcs_prod_apply (D : BrauerDiagram k) {A : Matrix ι ι 
           fun x => ?_, fun hℓ x => (D.isConstantOnArcs_def ℓ).mp hℓ x⟩ rfl rfl)
         by_cases hlx : D.IsLowerEnd x
         · exact h ⟨x, hlx⟩
-        · have hx := h ⟨D.val x, D.isLowerEnd_val_of_not hlx⟩
+        · have hx := h ⟨D.val x, D.isLowerEnd_val_of_not_isLowerEnd hlx⟩
           rw [D.apply_apply] at hx
           exact hx.symm
 
@@ -171,9 +108,8 @@ theorem sum_isConstantOnArcs_prod_apply (D : BrauerDiagram k) {A : Matrix ι ι 
 Kronecker power of `A`, the matrix of `A` acting diagonally on the `k`-th tensor power. -/
 theorem commute_orthogonalActionMatrix (D : BrauerDiagram k) {A : Matrix ι ι R}
     (hA : Aᵀ * A = 1) :
-    Commute (D.orthogonalActionMatrix R ι)
-      (Matrix.of fun v u : Fin k → ι => ∏ i, A (v i) (u i)) := by
-  set K := Matrix.of fun v u : Fin k → ι => ∏ i, A (v i) (u i)
+    Commute (D.orthogonalActionMatrix R ι) (A.kroneckerPower (Fin k)) := by
+  set K := A.kroneckerPower (Fin k)
   set M := D.orthogonalActionMatrix R ι
   -- Conjugating `M` by `K` is the sum of `sum_isConstantOnArcs_prod_apply` at `Sum.elim u v`.
   have hconj : K * M * Kᵀ = M := by
@@ -183,7 +119,7 @@ theorem commute_orthogonalActionMatrix (D : BrauerDiagram k) {A : Matrix ι ι R
       rw [Fintype.prod_sum_type, mul_comm]
       simp only [Sum.elim_inl, Sum.elim_inr]
     rw [Matrix.mul_apply]
-    simp only [K, M, Matrix.mul_apply, Matrix.transpose_apply, Matrix.of_apply,
+    simp only [K, M, Matrix.mul_apply, Matrix.transpose_apply, kroneckerPower_apply,
       orthogonalActionMatrix_apply, mul_ite, mul_one, mul_zero, Finset.sum_mul, ite_mul, zero_mul]
     rw [← D.sum_isConstantOnArcs_prod_apply (mul_eq_one_comm.mp hA)
       (Sum.elim u v), Finset.sum_filter,
@@ -212,10 +148,8 @@ theorem commute_brauerActionOrth_piTensorProductMap (x : BrauerAlgebra R (n : R)
     Commute (brauerActionOrth R n k x) (PiTensorProduct.map fun _ : Fin k => A.mulVecLin) := by
   set T := PiTensorProduct.map fun _ : Fin k => A.mulVecLin
   have hT : T = Matrix.toLin (tensorPowerBasis R n k) (tensorPowerBasis R n k)
-      (Matrix.of fun v u : Fin k → Fin n => ∏ i, A (v i) (u i)) :=
-    (tensorPowerBasis R n k).ext fun u => by
-      simp only [Matrix.toLin_self, Matrix.of_apply]
-      exact Matrix.piTensorProductMap_tensorPowerBasis A u
+      (A.kroneckerPower (Fin k)) := by
+    rw [← A.toMatrix_piTensorProductMap_tensorPowerBasis, Matrix.toLin_toMatrix]
   -- Both products are linear in `x`, so it suffices to compare them on the diagram basis.
   have hlin : (LinearMap.mulRight R T).comp (brauerActionOrth R n k).toLinearMap =
       (LinearMap.mulLeft R T).comp (brauerActionOrth R n k).toLinearMap :=

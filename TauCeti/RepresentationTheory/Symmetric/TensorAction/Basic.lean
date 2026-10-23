@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.PiTensorProduct.Basis
 public import Mathlib.RepresentationTheory.Basic
+public import TauCeti.LinearAlgebra.Matrix.KroneckerPower
 
 /-!
 # Permuting tensor factors
@@ -35,8 +36,9 @@ It reuses `PiTensorProduct.reindex`; the convention is
 
 * `TauCeti.finrank_tensorPower` is the dimension count `dim (Rⁿ)^{⊗d} = nᵈ` that the monomial
   basis supplies.
-* `Matrix.piTensorProductMap_tensorPowerBasis`: in the monomial basis, a matrix `A` acting in
-  every tensor factor has the Kronecker power `∏ i, A (v i) (u i)` as its matrix.
+* `Matrix.piTensorProductMap_tensorPowerBasis` and
+  `Matrix.toMatrix_piTensorProductMap_tensorPowerBasis`: in the monomial basis, a matrix `A` acting
+  in every tensor factor has the Kronecker power `Matrix.kroneckerPower (Fin d) A` as its matrix.
 -/
 
 public section
@@ -196,7 +198,7 @@ the monomial basis is the Kronecker power of `A`. -/
 theorem _root_.Matrix.piTensorProductMap_tensorPowerBasis {R : Type u} [CommSemiring R] {n d : ℕ}
     (A : Matrix (Fin n) (Fin n) R) (u : Fin d → Fin n) :
     PiTensorProduct.map (fun _ : Fin d => A.mulVecLin) (tensorPowerBasis R n d u) =
-      ∑ v, (∏ i, A (v i) (u i)) • tensorPowerBasis R n d v := by
+      ∑ v, A.kroneckerPower (Fin d) v u • tensorPowerBasis R n d v := by
   have hcol : ∀ i, A.mulVecLin (Pi.single (u i) (1 : R)) =
       ∑ c, A c (u i) • Pi.single c (1 : R) := fun i => by
     rw [Matrix.mulVecLin_apply, Matrix.mulVec_single_one, ← (Pi.basisFun R (Fin n)).sum_repr
@@ -205,6 +207,18 @@ theorem _root_.Matrix.piTensorProductMap_tensorPowerBasis {R : Type u} [CommSemi
   simp only [tensorPowerBasis_apply, PiTensorProduct.map_tprod, hcol,
     MultilinearMap.map_sum_finset, MultilinearMap.map_smul_univ]
   simp
+
+/-- **The matrix of `A^{⊗d}` in the monomial basis is the Kronecker power of `A`.** The matrix of
+`A` acting in every tensor factor of `(Rⁿ)^{⊗d}`, in the basis `TauCeti.tensorPowerBasis`, is
+`Matrix.kroneckerPower (Fin d) A`. -/
+theorem _root_.Matrix.toMatrix_piTensorProductMap_tensorPowerBasis {R : Type u} [CommSemiring R]
+    {n d : ℕ} (A : Matrix (Fin n) (Fin n) R) :
+    LinearMap.toMatrix (tensorPowerBasis R n d) (tensorPowerBasis R n d)
+        (PiTensorProduct.map fun _ : Fin d => A.mulVecLin) =
+      A.kroneckerPower (Fin d) := by
+  ext v u
+  rw [LinearMap.toMatrix_apply, A.piTensorProductMap_tensorPowerBasis u, map_sum]
+  simp [Finsupp.single_apply, -tensorPowerBasis_apply]
 
 -- These two derived normal forms remain explicit rewrite lemmas: `simpNF` detects each as already
 -- provable from the underlying tensor-action rules, so adding them to the simp set is redundant.
