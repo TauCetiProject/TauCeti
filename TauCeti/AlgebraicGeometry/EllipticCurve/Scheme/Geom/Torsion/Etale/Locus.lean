@@ -38,6 +38,9 @@ of `E[n]` to an algebraic closure of that residue field, of rank `n²`, is not �
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.etale_torsion_hom_of_forall_intCast_ne_zero`: if
   `n` is invertible in every residue field of `S`, then `E[n]` is étale over `S`; it is finite
   over `S`, so it is finite étale.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.etale_subscheme_of_ker_torsionι_le`: a flat,
+  locally finitely presented closed subscheme of `E` contained in `E[n]` is étale over `S`
+  where `n` is invertible.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.etale_torsion_hom_iff`: for `n ≠ 0`, `E[n]` is
   étale over `S` if and only if `n` is invertible in every residue field of `S`.
 
@@ -94,6 +97,24 @@ theorem etale_torsion_hom_of_forall_intCast_ne_zero {n : ℤ}
     exact hn s Int.cast_zero
   have := E.flat_torsion_hom hn0
   have := E.formallyUnramified_torsion_hom hn
+  exact Etale.of_formallyUnramified_of_flat _
+
+/-- A flat, locally finitely presented closed subscheme of `E` contained in `E[n]` is étale
+over the base when `n` is invertible in every residue field. Containment is expressed as the
+reverse inclusion of ideal sheaves. -/
+theorem etale_subscheme_of_ker_torsionι_le (I : E.carrier.IdealSheafData) {n : ℤ}
+    [Flat (I.subschemeι ≫ E.structureMap)]
+    [LocallyOfFinitePresentation (I.subschemeι ≫ E.structureMap)]
+    (hn : ∀ s : S, (n : S.residueField s) ≠ 0) (hle : (E.torsionι n).left.ker ≤ I) :
+    Etale (I.subschemeι ≫ E.structureMap) := by
+  let j := IsClosedImmersion.lift (E.torsionι n).left I.subschemeι (by simpa using hle)
+  have hj : j ≫ (E.torsionι n).left = I.subschemeι := IsClosedImmersion.lift_fac _ _ _
+  have : Etale (E.torsion n).X.hom := E.etale_torsion_hom_of_forall_intCast_ne_zero hn
+  have : FormallyUnramified (j ≫ (E.torsionι n).left) := by rw [hj]; infer_instance
+  have : FormallyUnramified j := .of_comp j (E.torsionι n).left
+  have : FormallyUnramified (I.subschemeι ≫ E.structureMap) := by
+    rw [← hj, Category.assoc, torsionι_left_structureMap]
+    exact MorphismProperty.comp_mem _ _ _ inferInstance inferInstance
   exact Etale.of_formallyUnramified_of_flat _
 
 /-- **Criterion for `E[n]` to be étale** (Katz–Mazur 2.3.1). For an elliptic curve `E` over a
