@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Real.Sqrt
-public import TauCeti.Algebra.Order.Ring.Units
+public import Mathlib.Algebra.Ring.Subring.Units
 public import TauCeti.Algebra.Group.Units.Basic
 public import TauCeti.FieldTheory.SquareClassGroup.Basic
 
