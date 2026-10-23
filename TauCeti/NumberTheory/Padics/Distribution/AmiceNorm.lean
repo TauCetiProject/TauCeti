@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.PowerSeries.Exp
 public import Mathlib.RingTheory.PowerSeries.Log
 public import TauCeti.NumberTheory.Padics.Measure.MahlerDuality
 public import TauCeti.RingTheory.PowerSeries.OpenDisc
+import TauCeti.NumberTheory.Padics.Factorial
 import TauCeti.NumberTheory.Padics.PadicIntegers
 
 /-!
@@ -60,11 +61,13 @@ families; every statement assumes the relevant boundedness. The disc norm `S_h` 
   `TauCeti.norm_factorial_le_mul_amiceRadius_succ_pow`: `r_hⁿ ≤ ‖⌊n / pʰ⌋!‖ ≤ p r_{h+1}ⁿ`.
 * `TauCeti.gaussNorm_amiceRadius_le_amiceDualNorm`: `S_h(F) ≤ D_h(F)`.
 * `TauCeti.amiceDualNorm_le_mul_gaussNorm_amiceRadius_succ`: `D_h(F) ≤ p S_{h+1}(F)`.
-* `TauCeti.onOpenDisc_one_iff_forall_hasGaussNorm_amiceRadius` and
-  `TauCeti.onOpenDisc_one_iff_forall_bddAbove_amiceDual`: all disc norms, equivalently all dual
-  stage norms, are finite exactly when the series lies on the open unit disc.
-* `TauCeti.bddAbove_amiceDual_zero_exp` and `TauCeti.not_bddAbove_amiceDual_one_exp`: the
-  exponential series has finite dual stage norm at level zero but not at level one.
+* `TauCeti.onOpenDisc_iff_forall_hasGaussNorm_amiceRadius` and
+  `TauCeti.onOpenDisc_iff_forall_bddAbove_norm_coeff_mul_norm_factorial`: all disc norms,
+  equivalently all dual stage norms, are finite exactly when the series lies on the open unit
+  disc.
+* `TauCeti.bddAbove_norm_coeff_mul_norm_factorial_zero_exp` and
+  `TauCeti.not_bddAbove_norm_coeff_mul_norm_factorial_one_exp`: the exponential series has finite
+  dual stage norm at level zero but not at level one.
 * `TauCeti.not_bddAbove_norm_coeff_log` and `TauCeti.log_notMem_range_amiceTransform`: the
   coefficients of `log (1 + T)` are unbounded in `ℚ_p`, so it is not the Amice transform of a
   measure.
@@ -260,7 +263,7 @@ theorem hasGaussNorm_amiceRadius_of_bddAbove {h : ℕ}
     (hB ⟨n, rfl⟩).trans' (norm_coeff_mul_amiceRadius_pow_le F h n)⟩
 
 /-- A bounded Gauss norm at the radius `r_{h+1}` bounds the dual stage norm at level `h`. -/
-theorem bddAbove_amiceDual_of_hasGaussNorm {h : ℕ}
+theorem bddAbove_norm_coeff_mul_norm_factorial_of_hasGaussNorm {h : ℕ}
     (hF : F.HasGaussNorm norm (amiceRadius p (h + 1))) :
     BddAbove (Set.range fun n ↦ ‖F.coeff n‖ * ‖((n / p ^ h)! : ℚ_[p])‖) := by
   obtain ⟨B, hB⟩ := hF
@@ -287,16 +290,16 @@ theorem amiceDualNorm_le_mul_gaussNorm_amiceRadius_succ {h : ℕ}
 /-! ### Finiteness at every level -/
 
 /-- A series lies on the open unit disc exactly when it is restricted at every radius `r_h`. -/
-theorem onOpenDisc_one_iff_forall_isRestricted_amiceRadius :
+theorem onOpenDisc_iff_forall_isRestricted_amiceRadius :
     F.OnOpenDisc 1 ↔ ∀ h, F.IsRestricted (amiceRadius p h) :=
   PowerSeries.onOpenDisc_iff_of_tendsto
     (fun h ↦ (abs_of_pos (amiceRadius_pos h)).trans_lt (amiceRadius_lt_one h)) tendsto_amiceRadius
 
 /-- **All disc norms are finite exactly on the open unit disc.** A series has a finite Gauss norm
 at every radius `r_h` exactly when it is restricted at every radius `0 < ρ < 1`. -/
-theorem onOpenDisc_one_iff_forall_hasGaussNorm_amiceRadius :
+theorem onOpenDisc_iff_forall_hasGaussNorm_amiceRadius :
     F.OnOpenDisc 1 ↔ ∀ h, F.HasGaussNorm norm (amiceRadius p h) := by
-  rw [onOpenDisc_one_iff_forall_isRestricted_amiceRadius (p := p)]
+  rw [onOpenDisc_iff_forall_isRestricted_amiceRadius (p := p)]
   refine ⟨fun hF h ↦ TauCeti.PowerSeries.hasGaussNorm_of_isRestricted (hF h), fun hF h ↦ ?_⟩
   exact (hF (h + 1)).isRestricted_of_abs_lt
     ((abs_of_pos (amiceRadius_pos h)).trans_lt (strictMono_amiceRadius h.lt_succ_self))
@@ -304,11 +307,11 @@ theorem onOpenDisc_one_iff_forall_hasGaussNorm_amiceRadius :
 /-- **All dual stage norms are finite exactly on the open unit disc.** The families
 `‖coeff n F‖ ‖⌊n / pʰ⌋!‖` are bounded for every level `h` exactly when `F` is restricted at every
 radius `0 < ρ < 1`. -/
-theorem onOpenDisc_one_iff_forall_bddAbove_amiceDual :
+theorem onOpenDisc_iff_forall_bddAbove_norm_coeff_mul_norm_factorial :
     F.OnOpenDisc 1 ↔
       ∀ h, BddAbove (Set.range fun n ↦ ‖F.coeff n‖ * ‖((n / p ^ h)! : ℚ_[p])‖) := by
-  rw [onOpenDisc_one_iff_forall_hasGaussNorm_amiceRadius (p := p)]
-  exact ⟨fun hF h ↦ bddAbove_amiceDual_of_hasGaussNorm (hF (h + 1)),
+  rw [onOpenDisc_iff_forall_hasGaussNorm_amiceRadius (p := p)]
+  exact ⟨fun hF h ↦ bddAbove_norm_coeff_mul_norm_factorial_of_hasGaussNorm (hF (h + 1)),
     fun hF h ↦ hasGaussNorm_amiceRadius_of_bddAbove (hF h)⟩
 
 /-! ### Examples: the exponential and the logarithm -/
@@ -323,14 +326,14 @@ private theorem not_bddAbove_range_of_eq_pow {f : ℕ → ℝ} (g : ℕ → ℕ)
 
 /-- The moments `1 / n!` of the exponential series have a finite dual stage norm at level zero:
 every term `‖1 / n!‖ ‖n!‖` is `1`. -/
-theorem bddAbove_amiceDual_zero_exp :
+theorem bddAbove_norm_coeff_mul_norm_factorial_zero_exp :
     BddAbove (Set.range fun n ↦
       ‖(PowerSeries.exp ℚ_[p]).coeff n‖ * ‖((n / p ^ 0)! : ℚ_[p])‖) :=
   ⟨1, Set.forall_mem_range.mpr fun n ↦ by simp [PowerSeries.coeff_exp, factorial_ne_zero]⟩
 
 /-- **A bound at one level does not suffice.** The moments `1 / n!` of the exponential series have
 an infinite dual stage norm at level one: the term at `n = p k` is `‖k!‖ / ‖(p k)!‖ = pᵏ`. -/
-theorem not_bddAbove_amiceDual_one_exp :
+theorem not_bddAbove_norm_coeff_mul_norm_factorial_one_exp :
     ¬ BddAbove (Set.range fun n ↦
       ‖(PowerSeries.exp ℚ_[p]).coeff n‖ * ‖((n / p ^ 1)! : ℚ_[p])‖) :=
   not_bddAbove_range_of_eq_pow (p := p) (p * ·) fun k ↦ by
@@ -340,8 +343,9 @@ theorem not_bddAbove_amiceDual_one_exp :
 
 /-- The exponential series does not lie on the open unit disc of `ℚ_p`: its dual stage norm at
 level one is infinite. -/
-theorem not_onOpenDisc_one_exp : ¬ (PowerSeries.exp ℚ_[p]).OnOpenDisc 1 := fun h ↦
-  not_bddAbove_amiceDual_one_exp ((onOpenDisc_one_iff_forall_bddAbove_amiceDual (p := p)).mp h 1)
+theorem not_onOpenDisc_exp : ¬ (PowerSeries.exp ℚ_[p]).OnOpenDisc 1 := fun h ↦
+  not_bddAbove_norm_coeff_mul_norm_factorial_one_exp
+    ((onOpenDisc_iff_forall_bddAbove_norm_coeff_mul_norm_factorial (p := p)).mp h 1)
 
 /-- The coefficients of `log (1 + T)` are unbounded in `ℚ_p`: the coefficient of `T ^ (p ^ k)`
 has norm `pᵏ`. By contrast, `log (1 + T)` lies on the open unit disc

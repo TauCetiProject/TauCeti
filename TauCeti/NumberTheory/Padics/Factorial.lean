@@ -8,13 +8,19 @@ module
 public import Mathlib.NumberTheory.Padics.PadicNumbers
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Data.Nat.Factorial.Basic
+import TauCeti.NumberTheory.Padics.PadicIntegers
 
 /-!
-# Factorials tend to zero in every p-adic field
+# Factorials in p-adic fields
 
 The integers `n!` converge to zero at every finite place, although none is zero. This provides
 one sequence of rational parameters that simultaneously contracts every local unipotent
 one-parameter subgroup. Divisibility by each fixed prime power suffices for the convergence.
+
+## Main results
+
+* `TauCeti.tendsto_padic_natCast_factorial`: the factorials tend to zero in `ℚ_[p]`.
+* `Padic.norm_factorial_mul`: `‖(p k)!‖ = p ^ (-k) ‖k!‖` in `ℚ_[p]`, by Legendre's formula.
 -/
 
 public section
@@ -39,3 +45,22 @@ theorem tendsto_padic_natCast_factorial (p : ℕ) [hp : Fact p.Prime] :
   simpa only [dist_zero_right] using hnorm.trans_lt hk
 
 end TauCeti
+
+namespace Padic
+
+open Nat
+
+variable {p : ℕ} [Fact p.Prime]
+
+/-- The factorial of `p k` has `p`-adic norm `p ^ (-k) ‖k!‖`: by Legendre's formula, passing from
+`k!` to `(p k)!` raises the valuation by `k`. -/
+theorem norm_factorial_mul (k : ℕ) :
+    ‖((p * k)! : ℚ_[p])‖ = (p : ℝ) ^ (-(k : ℤ)) * ‖(k ! : ℚ_[p])‖ := by
+  have hp : (p : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
+  rw [norm_natCast_eq_zpow (factorial_ne_zero _), norm_natCast_eq_zpow (factorial_ne_zero _),
+    padicValNat_factorial_mul, ← zpow_add₀ hp]
+  congr 1
+  push_cast
+  ring
+
+end Padic
