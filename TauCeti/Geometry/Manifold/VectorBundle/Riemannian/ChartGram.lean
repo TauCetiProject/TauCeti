@@ -12,6 +12,7 @@ public import Mathlib.Geometry.Manifold.Algebra.Structures
 public import Mathlib.Geometry.Manifold.VectorBundle.LocalFrame
 public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
+import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 
 /-!
 # Chart Gram matrices of a Riemannian metric
@@ -34,12 +35,16 @@ API replace them.
 * `Riemannian.Tensor.chartLocalFrame` and `Riemannian.Tensor.chartLocalFrame_def`: the frame
   induced by the tangent trivialization at a chart centre and `Module.finBasis`, and its
   identification with that trivialization's local frame.
+* `Riemannian.Tensor.chartLocalFrame_eq_symmL`: the frame is the inverse trivialization applied to
+  the basis of the model space.
 * `Riemannian.Tensor.chartGramMatrix`: the metric Gram matrix in this frame.
 * `Riemannian.Tensor.chartGramMatrix_eq_toMatrix`: on the base set, it is the matrix of the fiber
   inner product in the basis given by the trivialization.
 * `Riemannian.Tensor.posDef_chartGramMatrix`: positive-definiteness on the base set.
 * `Riemannian.Tensor.chartGramMatrix_det_pos`: strict positivity of its determinant there.
 * `Riemannian.Tensor.contMDiffOn_chartGramMatrix_entry`: smoothness of Gram-matrix entries.
+* `Riemannian.Tensor.exists_norm_chartLocalFrame_le`: for a continuous metric, the frame has
+  bounded length over compact subsets of the chart source.
 * `Riemannian.Tensor.chartInvGramMatrix`: the inverse Gram matrix.
 * `Riemannian.Tensor.contMDiffOn_chartInvGramMatrix_entry`: smoothness of inverse entries.
 
@@ -93,6 +98,17 @@ theorem chartLocalFrame_apply_of_mem_chart_source (α : M) {x : M}
     (trivializationAt E (TangentSpace I) α).localFrame_apply_of_mem_baseSet
       (Module.finBasis ℝ E) (i := i) (by
         simpa only [TangentBundle.trivializationAt_baseSet] using hx)
+
+/-- The chart-local frame is the inverse tangent trivialization at `α` applied to the
+`Module.finBasis` basis of the model space. Both sides vanish off the trivialization base set, so
+no membership hypothesis is needed. -/
+theorem chartLocalFrame_eq_symmL (α x : M) (i : Fin (Module.finrank ℝ E)) :
+    chartLocalFrame (I := I) α i x =
+      (trivializationAt E (TangentSpace I) α).symmL ℝ x (Module.finBasis ℝ E i) := by
+  by_cases hx : x ∈ (trivializationAt E (TangentSpace I) α).baseSet
+  · rw [chartLocalFrame_def, TauCeti.Manifold.symmL_basis_eq_localFrame _ hx]
+  · rw [chartLocalFrame_def, Trivialization.localFrame_apply_of_notMem _ _ hx,
+      Trivialization.symmL_apply_of_notMem _ hx]
 
 /-- Each member of `chartLocalFrame` is `C^n` on the tangent-trivialization base set. -/
 theorem contMDiffOn_chartLocalFrame {n : ℕ∞ω} [IsManifold I (n + 1) M]
@@ -224,6 +240,30 @@ private lemma contMDiffOn_adjugate_chartGramMatrix_entry
     exact contMDiffOn_chartGramMatrix_entry (I := I) (n := n) α k l
 
 end Smooth
+
+/-- **The chart-local frame is bounded on compact sets.** For a continuous Riemannian metric, the
+vectors of the chart-local frame at `α` have uniformly bounded length over every compact subset of
+the chart source at `α`. -/
+theorem exists_norm_chartLocalFrame_le
+    [IsContMDiffRiemannianBundle I 0 E (fun x : M ↦ TangentSpace I x)]
+    (α : M) {K : Set M} (hK : IsCompact K) (hKs : K ⊆ (chartAt H α).source) :
+    ∃ C, ∀ y ∈ K, ∀ i, ‖chartLocalFrame (I := I) α i y‖ ≤ C := by
+  have : IsManifold I (0 + 1) M := by rwa [zero_add]
+  -- The squared lengths are the diagonal Gram entries, whose sum is continuous on `K`.
+  have hsq (y : M) (k : Fin (Module.finrank ℝ E)) :
+      chartGramMatrix (I := I) α y k k = ‖chartLocalFrame (I := I) α k y‖ ^ 2 := by
+    rw [chartGramMatrix_apply, real_inner_self_eq_norm_sq]
+  have hG : ContinuousOn (fun y ↦ ∑ k, chartGramMatrix (I := I) α y k k) K := by
+    refine continuousOn_finsetSum _ fun k _ ↦ ?_
+    have h := (contMDiffOn_chartGramMatrix_entry (I := I) (n := 0) α k k).continuousOn
+    rw [TangentBundle.trivializationAt_baseSet] at h
+    exact h.mono hKs
+  obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn hG
+  refine ⟨√C, fun y hy i ↦ Real.le_sqrt_of_sq_le ?_⟩
+  calc ‖chartLocalFrame (I := I) α i y‖ ^ 2 = chartGramMatrix (I := I) α y i i := (hsq y i).symm
+    _ ≤ ∑ k, chartGramMatrix (I := I) α y k k :=
+      Finset.single_le_sum (fun k _ ↦ (hsq y k).symm ▸ sq_nonneg _) (Finset.mem_univ i)
+    _ ≤ C := (le_abs_self _).trans (by simpa only [Real.norm_eq_abs] using hC y hy)
 
 /-- The inverse coordinate-metric matrix from do Carmo, *Riemannian Geometry*, Chapter 2. On the
 tangent-trivialization base set this is the inverse of a positive-definite matrix. -/
