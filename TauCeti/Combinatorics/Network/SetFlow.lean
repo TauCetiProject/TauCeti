@@ -439,38 +439,50 @@ def auxFlowEquiv (hAB : Disjoint A B) :
         sub_zero]
 
 @[simp]
-theorem auxFlowEquiv_apply_toFun (hAB : Disjoint A B) (f : SetFlow cap A B) :
-    (auxFlowEquiv hAB f).toFun =
-      auxTerminalCapacity f.toFun (fun a ↦ -excessAt f.toFun a) fun b ↦ excessAt f.toFun b :=
+theorem auxFlowEquiv_apply (hAB : Disjoint A B) (f : SetFlow cap A B) :
+    auxFlowEquiv hAB f = f.toAuxFlow :=
   (rfl)
 
 @[simp]
-theorem auxFlowEquiv_symm_apply_toFun (hAB : Disjoint A B)
+theorem auxFlowEquiv_symm_apply (hAB : Disjoint A B)
     (g : Flow (setFlowCapacity cap A B) (inr false) (inr true)) :
-    ((auxFlowEquiv hAB).symm g).toFun = auxTerminalRestrict g.toFun :=
+    (auxFlowEquiv hAB).symm g = g.toSetFlow hAB :=
   (rfl)
 
-/-- The correspondence with ordinary flows of the auxiliary network preserves the value. -/
 @[simp]
-theorem val_auxFlowEquiv (hAB : Disjoint A B) (f : SetFlow cap A B) :
-    (auxFlowEquiv hAB f).val = f.val := by
-  rw [BoundedFlow.val_def, AuxTerminalHom.excessAt_inr_true, auxFlowEquiv_apply_toFun]
+theorem toAuxFlow_toSetFlow (hAB : Disjoint A B) (f : SetFlow cap A B) :
+    f.toAuxFlow.toSetFlow hAB = f :=
+  (auxFlowEquiv hAB).symm_apply_apply f
+
+/-- The ordinary flow of the auxiliary network corresponding to an `A`–`B` flow has the same
+value. -/
+@[simp]
+theorem val_toAuxFlow (f : SetFlow cap A B) : f.toAuxFlow.val = f.val := by
+  rw [BoundedFlow.val_def, AuxTerminalHom.excessAt_inr_true, toAuxFlow_toFun]
   simp only [sum_auxTerminalCapacity_sink, sum_ite_mem, univ_inter, val_def]
 
+end SetFlow
+
 @[simp]
-theorem val_auxFlowEquiv_symm (hAB : Disjoint A B)
+theorem Flow.toSetFlow_toAuxFlow (hAB : Disjoint A B)
     (g : Flow (setFlowCapacity cap A B) (inr false) (inr true)) :
-    ((auxFlowEquiv hAB).symm g).val = g.val := by
-  rw [← val_auxFlowEquiv hAB, Equiv.apply_symm_apply]
+    (g.toSetFlow hAB).toAuxFlow = g :=
+  (SetFlow.auxFlowEquiv hAB).apply_symm_apply g
+
+/-- The `A`–`B` flow corresponding to an ordinary flow of the auxiliary network has the same
+value. -/
+@[simp]
+theorem Flow.val_toSetFlow (hAB : Disjoint A B)
+    (g : Flow (setFlowCapacity cap A B) (inr false) (inr true)) :
+    (g.toSetFlow hAB).val = g.val := by
+  rw [← SetFlow.val_toAuxFlow, g.toSetFlow_toAuxFlow hAB]
 
 /-- An `A`–`B` flow is maximum exactly when the corresponding flow of the auxiliary network is. -/
 @[simp]
-theorem isMaximum_auxFlowEquiv (hAB : Disjoint A B) {f : SetFlow cap A B} :
-    (auxFlowEquiv hAB f).IsMaximum ↔ f.IsMaximum := by
+theorem SetFlow.isMaximum_toAuxFlow (hAB : Disjoint A B) {f : SetFlow cap A B} :
+    f.toAuxFlow.IsMaximum ↔ f.IsMaximum := by
   rw [Flow.isMaximum_iff, isMaximum_iff, (auxFlowEquiv hAB).forall_congr_left]
   simp
-
-end SetFlow
 
 end AuxFlow
 
@@ -487,8 +499,8 @@ theorem exists_isMaximum_mem (hAB : Disjoint A B) (hcap : 0 ≤ cap) (H : AddSub
   classical
   obtain ⟨g, hg, hgH⟩ := Flow.exists_isMaximum_mem (s := inr false) (t := inr true)
     (setFlowCapacity_nonneg hcap) H (setFlowCapacity_mem hcapH)
-  refine ⟨(auxFlowEquiv hAB).symm g, ?_, fun _ _ e ↦ by simpa using hgH (AuxTerminalHom.original e)⟩
-  rwa [← isMaximum_auxFlowEquiv hAB, Equiv.apply_symm_apply]
+  refine ⟨g.toSetFlow hAB, ?_, fun _ _ e ↦ by simpa using hgH (AuxTerminalHom.original e)⟩
+  rwa [← isMaximum_toAuxFlow hAB, Flow.toSetFlow_toAuxFlow]
 
 omit [DecidableEq V] in
 /-- For disjoint `A` and `B` and nonnegative capacities, a maximum `A`–`B` flow exists. -/
@@ -546,10 +558,10 @@ example : exSetFlow.IsMaximum :=
 
 -- The flow of the auxiliary network has the same value, and carries minus the excess at `0` on
 -- the arrow from the fresh source to `0`.
-example : (SetFlow.auxFlowEquiv (by decide) exSetFlow).val = 3 := by
-  rw [SetFlow.val_auxFlowEquiv, val_exSetFlow]
+example : exSetFlow.toAuxFlow.val = 3 := by
+  rw [SetFlow.val_toAuxFlow, val_exSetFlow]
 
-example : (SetFlow.auxFlowEquiv (by decide) exSetFlow).toFun
+example : exSetFlow.toAuxFlow.toFun
     (AuxTerminalHom.source (B := {2, 3}) (a := 0) (by decide)) = 2 := by
   simp [excessAt_def, Fin.sum_univ_four, exSetFlow, exCap]
 
