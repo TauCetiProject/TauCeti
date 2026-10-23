@@ -14,8 +14,8 @@ The presentations at `q⁻¹` and `q` are isomorphic: fixing `E` and `F` while e
 and `K⁻¹` preserves all the defining relations.  This file constructs that algebra isomorphism
 and records its action, in both directions, on the four generators.
 
-This comparison is algebraic.  No compatibility with the standard coproduct is asserted here;
-transporting that coproduct gives a separate comparison.
+The coproduct transported through this algebra isomorphism is developed in
+`TauCeti.QuantumGroups.UqSl2.InverseParameter.Coproduct`.
 
 ## References
 
@@ -25,6 +25,11 @@ transporting that coproduct gives a separate comparison.
 public section
 
 namespace TauCeti.UqSl2
+
+/-- A nonzero quantum parameter has a nonzero inverse, so the native Hopf structure
+at the inverse parameter is available to importers. -/
+instance instFactInvNeZero (q : ℂ) [Fact (q ≠ 0)] : Fact (q⁻¹ ≠ 0) :=
+  ⟨inv_ne_zero Fact.out⟩
 
 /-- The generators of `UqSl2 q`, with `K` and `K⁻¹` exchanged, satisfy the relations at any
 parameter `p = q⁻¹`.  Taking `p` general lets the same tuple serve both directions. -/
