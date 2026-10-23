@@ -17,7 +17,8 @@ centre. It agrees with the measure of the closed ball, which therefore differs f
 by a null set. In a nontrivial space, concentric balls are ordered by measure as by radius, so the
 points `x` whose centered ball of radius `‖x‖` has measure below `m` form a set of measure `m`.
 The ratio of the measures of two closed balls is controlled by the ratio of their radii raised to
-the dimension, and the part of a ball outside a translate of itself is controlled by the distance
+the dimension, the shell between concentric balls has measure the difference of the powers of the
+radii, and the part of a ball outside a translate of itself is controlled by the distance
 between the centres. The measure of an affine image
 `y + r • S` relative to a ball of radius `r` is that of `S` relative to the unit ball, and a
 homothety of ratio `r ≠ 0` pushes the measure forward to its multiple by `|r|⁻ⁿ`. Comparing
@@ -37,6 +38,9 @@ closed ball of radius `‖f‖` bounds `|det f|` by `‖f‖` raised to the dime
   the centered ball has measure below `m` has measure `m`.
 * `MeasureTheory.Measure.addHaar_real_closedBall_div_le`: a closed ball of radius `R ≤ c r` has
   at most `cⁿ` times the measure of a closed ball of radius `r`.
+* `MeasureTheory.Measure.addHaar_real_closedBall_sdiff_ball`: the shell between the open ball of
+  radius `r > 0` and the concentric closed ball of radius `s ≥ r` has measure `(sⁿ - rⁿ)` times
+  that of the unit ball.
 * `MeasureTheory.Measure.addHaar_real_ball_sdiff_ball_le`: the part of a ball outside a ball of the
   same radius `s` whose centre is at distance `d` is no larger than a spherical shell of radii `s`
   and `s + d`.
@@ -138,6 +142,19 @@ theorem _root_.MeasureTheory.Measure.addHaar_real_closedBall_div_le
   rw [mu.addHaar_real_closedBall x hR, mu.addHaar_real_closedBall y hr.le,
     mul_div_mul_right _ _ hball.ne', div_le_iff₀ (by positivity), ← mul_pow]
   exact pow_le_pow_left₀ hR hRr _
+
+/-- The shell between the open ball of radius `r > 0` and the concentric closed ball of radius
+`s ≥ r` has real measure `(sⁿ - rⁿ)` times the real measure of the unit ball, where `n` is the
+dimension. -/
+theorem _root_.MeasureTheory.Measure.addHaar_real_closedBall_sdiff_ball
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (mu : Measure E) [mu.IsAddHaarMeasure]
+    (x : E) {r s : ℝ} (hr : 0 < r) (hrs : r ≤ s) :
+    mu.real (closedBall x s \ ball x r) =
+      (s ^ finrank ℝ E - r ^ finrank ℝ E) * mu.real (ball 0 1) := by
+  rw [measureReal_sdiff (ball_subset_closedBall.trans (closedBall_subset_closedBall hrs))
+    measurableSet_ball measure_closedBall_lt_top.ne, mu.addHaar_real_closedBall x (hr.le.trans hrs),
+    mu.addHaar_real_ball_of_pos x hr, sub_mul]
 
 /-- The part of the ball `ball y s` outside the ball `ball z s` of the same radius `s > 0` has
 measure at most `((s + dist y z)ⁿ - sⁿ)` times the measure of the unit ball, the measure of the
