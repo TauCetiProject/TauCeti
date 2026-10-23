@@ -22,9 +22,11 @@ packages that construction as a functor
 whose value on a morphism `φ : F ⟶ G` is the family of symmetric powers `Symⁿ φ`. Its degree-`n`
 component is naturally the symmetric power functor `QuasicoherentSheaf.symmetricPower X n`
 (`gradedSymmetricAlgebraDegreeIso`), and its degree-one component recovers `F`
-(`gradedSymmetricAlgebraDegreeOneIso`), so the functor is faithful. The
-graded algebras isomorphic to some `Sym F` are the coordinate algebras of linear schemes
-`Spec_X Sym F` over `X` (Stacks Project, tag 01M1).
+(`gradedSymmetricAlgebraDegreeOneIso`), so the functor is faithful. Its unit and multiplications
+are epimorphisms, so `Sym F` is generated in degree one and a graded algebra morphism out of it is
+determined in degree one; hence the functor is also full. The graded algebras isomorphic to some
+`Sym F` are the coordinate algebras of linear schemes `Spec_X Sym F` over `X` (Stacks Project,
+tag 01M1).
 
 ## Main declarations
 
@@ -37,7 +39,11 @@ graded algebras isomorphic to some `Sym F` are the coordinate algebras of linear
 * `TauCeti.AlgebraicGeometry.gradedSymmetricAlgebraDegreeIso`: the natural isomorphism between
   the degree-`n` component of `Sym F` and the quasicoherent symmetric power `Symⁿ F`;
 * `TauCeti.AlgebraicGeometry.gradedSymmetricAlgebraDegreeOneIso`: the natural isomorphism between
-  the degree-one component of `Sym F` and `F`.
+  the degree-one component of `Sym F` and `F`;
+* `TauCeti.AlgebraicGeometry.epi_one_gradedSymmetricAlgebra` and
+  `TauCeti.AlgebraicGeometry.epi_mul_gradedSymmetricAlgebra`: the unit and the multiplications of
+  `Sym F` are epimorphisms;
+* the instances `(gradedSymmetricAlgebra X).Faithful` and `(gradedSymmetricAlgebra X).Full`.
 -/
 
 public section
@@ -244,6 +250,50 @@ theorem gradedSymmetricAlgebraDegreeOneIso_inv_app_hom (F : QuasicoherentSheaf X
 recovered from its action in degree one. -/
 instance : (gradedSymmetricAlgebra X).Faithful :=
   Functor.Faithful.of_comp_iso (gradedSymmetricAlgebraDegreeOneIso X)
+
+/-- The unit `𝒪_X ⟶ Sym⁰ F` of the graded symmetric algebra is an epimorphism, being an
+isomorphism. -/
+instance epi_one_gradedSymmetricAlgebra (F : QuasicoherentSheaf X) :
+    Epi ((gradedSymmetricAlgebra X).obj F).obj.toMon.one := by
+  -- The factors of the unit are morphisms of `SheafOfModules X.ringCatSheaf`, whose category
+  -- instance is identified with that of `X.Modules` only by unfolding, so typeclass search does
+  -- not find their `Epi` instances; they are supplied by hand.
+  have h {A B : X.Modules} (p : A = B) : Epi (eqToHom p) := (eqToIso p).isIso_hom.epi_of_iso
+  rw [one_gradedSymmetricAlgebra]
+  exact epi_comp' (inferInstanceAs (Epi ((SheafOfModules.symmetricPowerZeroIso X.sheaf).inv.app
+    F.obj))) (h _)
+
+/-- The multiplications `Symⁱ F ⊗ Symʲ F ⟶ Symⁱ⁺ʲ F` of the graded symmetric algebra are
+epimorphisms; in particular the graded symmetric algebra is generated in degree one. -/
+instance epi_mul_gradedSymmetricAlgebra (F : QuasicoherentSheaf X) (i j : ℕ) :
+    Epi (((gradedSymmetricAlgebra X).obj F).obj.toMon.mul i j) := by
+  -- As for `epi_one_gradedSymmetricAlgebra`, the `Epi` instances of the factors are supplied by
+  -- hand.
+  have h {A B : X.Modules} (p : A = B) : Epi (eqToHom p) := (eqToIso p).isIso_hom.epi_of_iso
+  rw [mul_gradedSymmetricAlgebra]
+  exact epi_comp' (h _) (epi_comp' (SheafOfModules.epi_symmetricPowerMul (R := X.sheaf) F.obj i j)
+    (h _))
+
+/-- The graded symmetric algebra functor is full: since `Sym F` is generated in degree one, a
+morphism of graded algebras `Sym F ⟶ Sym G` is the graded symmetric algebra of its degree-one
+component `F ⟶ G`. -/
+instance : (gradedSymmetricAlgebra X).Full where
+  map_surjective {F G} φ := by
+    refine ⟨(gradedSymmetricAlgebraDegreeOneIso X).inv.app F ≫ degreeOne.map φ ≫
+      (gradedSymmetricAlgebraDegreeOneIso X).hom.app G, hom_ext_of_epi_mul ?_⟩
+    have h := NatIso.naturality_2 (gradedSymmetricAlgebraDegreeOneIso X)
+      ((gradedSymmetricAlgebraDegreeOneIso X).inv.app F ≫ degreeOne.map φ ≫
+        (gradedSymmetricAlgebraDegreeOneIso X).hom.app G)
+    simp only [Functor.id_obj, Functor.id_map, Iso.hom_inv_id_app_assoc, Category.assoc,
+      Iso.hom_inv_id_app, Functor.comp_map] at h
+    have h' := congrArg (fun f ↦ f.hom) ((Category.comp_id _).symm.trans h)
+    rw [degree_map_hom, degree_map_hom] at h'
+    -- The transports are cancelled as isomorphisms: typeclass search does not find their `Epi`
+    -- and `Mono` instances, as in `epi_one_gradedSymmetricAlgebra`.
+    exact ((Iso.cancel_iso_hom_right _ _
+      (eqToIso (degree_obj_obj ((gradedSymmetricAlgebra X).obj G) 1).symm)).1
+      ((Iso.cancel_iso_hom_left (eqToIso (degree_obj_obj ((gradedSymmetricAlgebra X).obj F) 1))
+        _ _).1 h')).symm
 
 end
 
