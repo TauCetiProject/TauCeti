@@ -8,7 +8,7 @@ module
 public import TauCeti.Probability.Exchangeability.Arrays.Extreme.Basic
 public import Mathlib.Probability.Kernel.Condexp
 import Mathlib.Probability.Independence.Conditional
-import TauCeti.Probability.Exchangeability.PermutationExtension
+import TauCeti.Data.Finset.Basic
 import TauCeti.Probability.Kernel.Invariant
 import TauCeti.Probability.Martingale.Convergence
 
@@ -82,8 +82,8 @@ theorem JointlyExchangeable.ae_jointlyExchangeable_condExpKernel_arrayTail
         (condExpKernel ρ (arrayTail (fun p (y : ℕ × ℕ → α) ↦ y p)) x).map (fun y ↦ g • y) =
           condExpKernel ρ (arrayTail (fun p (y : ℕ × ℕ → α) ↦ y p)) x :=
     map_condExpKernel_ae_eq_of_invariant hm (measurePreserving_smul g ρ)
-      (fun _ hs ↦ Filter.EventuallyEq.of_eq
-        (preimage_finitaryPerm_smul_array_eq_self_of_measurableSet_arrayTail hs g))
+      (fun _ hs ↦ by
+        rw [preimage_finitaryPerm_smul_array_eq_self_of_measurableSet_arrayTail hs g])
   filter_upwards [ae_all_iff.2 hinv] with x hx
   have : SMulInvariantMeasure FinitaryPerm (ℕ × ℕ → α)
       (condExpKernel ρ (arrayTail (fun p (y : ℕ × ℕ → α) ↦ y p)) x) := by
@@ -108,10 +108,10 @@ theorem SeparatelyExchangeable.ae_separatelyExchangeable_condExpKernel_arrayTail
             (pairReindex (FinitaryPerm.toPerm g.1) (FinitaryPerm.toPerm g.2)) =
           condExpKernel ρ (arrayTail (fun p (y : ℕ × ℕ → α) ↦ y p)) x :=
     map_condExpKernel_ae_eq_of_invariant hm (hρ.measurePreserving_pairReindex _ _)
-      (fun _ hs ↦ Filter.EventuallyEq.of_eq
-        (preimage_pairReindex_eq_self_of_measurableSet_arrayTail hs
+      (fun _ hs ↦ by
+        rw [preimage_pairReindex_eq_self_of_measurableSet_arrayTail hs
           (FinitaryPerm.finite_compl_fixedBy_toPerm g.1)
-          (FinitaryPerm.finite_compl_fixedBy_toPerm g.2)))
+          (FinitaryPerm.finite_compl_fixedBy_toPerm g.2)])
   filter_upwards [ae_all_iff.2 hinv] with x hx
   refine separatelyExchangeable_of_map_pairReindex_finitary fun σ τ hσ hτ ↦ ?_
   have hστ := hx (FinitaryPerm.ofPerm σ hσ, FinitaryPerm.ofPerm τ hτ)

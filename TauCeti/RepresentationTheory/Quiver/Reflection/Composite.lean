@@ -23,8 +23,8 @@ back to itself (`TauCeti.Quiver.reflectList_eq_self`). The resulting endofunctor
 functor** of this file, `TauCeti.coxeterFunctor`, and on dimension vectors it realizes the Coxeter
 transformation `TauCeti.vertexPreReflectionList` of the ordering.
 
-The Layer 4 identity `dim (C⁺ M) = c · dim M` is proved here for an indecomposable representation
-with finite-dimensional vertex spaces, with the zero representation as its alternative. The proof
+The identity `dim (C⁺ M) = c · dim M` is proved here for an indecomposable representation with
+finite-dimensional vertex spaces, with the zero representation as its alternative. The proof
 proceeds stagewise: away from the vertex simple at the current sink, reflection preserves
 indecomposability and transforms the dimension vector as predicted; at that vertex simple,
 reflection instead annihilates the representation (`TauCeti.isZero_reflectRep`). The corresponding
@@ -64,8 +64,8 @@ dichotomy for indecomposables is supplied by
 The quiver structure is carried as an *explicit argument* rather than as an instance, because the
 recursion changes it: the vertex type is fixed and the arrows are reversed, so the recursion is on
 the `Quiver` structure `TauCeti.Quiver.reflectAt`, not on a type synonym like
-`TauCeti.Quiver.Reflect`, whose iteration would change the type at each step and so leave the
-range of structural recursion. The existing `TauCeti.Quiver.instFintypeReflectHom` carries
+`TauCeti.Quiver.Reflect`, whose iteration would change the type at each step and so leave the range
+of structural recursion. The instance `TauCeti.Quiver.instFintypeReflectHom` carries
 arrow-finiteness along with it.
 
 A consequence is that two `Quiver` structures on one vertex type occur in the same statement, and
@@ -86,11 +86,8 @@ the ordering too.
 
 ## References
 
-This implements the “Coxeter functor” target of Layer 4 of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`, the engine of that
-roadmap's Layer 5 reflection induction. See Bernstein--Gelfand--Ponomarev, *Coxeter functors and
-Gabriel's theorem*, and Assem--Simson--Skowroński, *Elements of the Representation Theory of
-Associative Algebras* I, VII.5.
+See Bernstein--Gelfand--Ponomarev, *Coxeter functors and Gabriel's theorem*, and
+Assem--Simson--Skowroński, *Elements of the Representation Theory of Associative Algebras* I, VII.5.
 -/
 
 public section
@@ -356,7 +353,7 @@ Every finite acyclic quiver has such an ordering, by
 `TauCeti.Quiver.IsAcyclic.exists_isSinkAdmissible`; the ordering is an argument rather than a
 choice, since the Coxeter transformation it realizes on dimension vectors,
 `TauCeti.vertexPreReflectionList`, depends on it. -/
-noncomputable def coxeterFunctor (k : Type u) {V : Type v} [fld : Field k] [fV : Fintype V]
+noncomputable def coxeterFunctor (k : Type u) {V : Type v} [fld : Field k] [Fintype V]
     (q : _root_.Quiver.{w} V) (hq : ∀ a b : V, Fintype (@_root_.Quiver.Hom V q a b))
     {l : List V} (hnd : l.Nodup) (hall : ∀ v : V, v ∈ l)
     (hl : Quiver.IsSinkAdmissible q l) :
@@ -458,11 +455,9 @@ theorem isZero_coxeterFunctor_obj (q : _root_.Quiver.{w} V)
     Limits.IsZero ((coxeterFunctor.{u, v, w, x} k q hq hnd hall hl).obj M) :=
   (isZero_transportCodomain_obj _ _ M).mpr (isZero_reflectionFunctorList_obj l q hq hl M hM)
 
-/-- **The Coxeter functor on an indecomposable representation.** Either it is again
-indecomposable, with dimension vector the Coxeter transformation
-`TauCeti.vertexPreReflectionList` of the ordering applied to the dimension vector of `M`, or it is
-the zero representation. The proof applies the reflection dichotomy successively, with a vertex
-simple at the current sink providing the annihilated case. This is the Layer 4 statement
+/-- **The Coxeter functor on an indecomposable representation.** Either it is again indecomposable,
+with dimension vector the Coxeter transformation `TauCeti.vertexPreReflectionList` of the ordering
+applied to the dimension vector of `M`, or it is the zero representation. This is the statement
 `dim (C⁺ M) = c · dim M` for the Coxeter element `c`, with the boundary case named. -/
 theorem indecomposable_and_dimVector_coxeterFunctor_or_isZero [DecidableEq V]
     (q : _root_.Quiver.{w} V) (hq : ∀ a b : V, Fintype (@_root_.Quiver.Hom V q a b))

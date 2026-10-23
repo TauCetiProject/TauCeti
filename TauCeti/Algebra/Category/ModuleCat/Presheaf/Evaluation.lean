@@ -13,7 +13,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Presheaf.Monoidal
 Let `R` be a presheaf of commutative rings on a category `C` and `X` an object of `Cᵒᵖ`. The tensor
 product of presheaves of `R`-modules is computed sectionwise, so evaluation at `X`, valued in
 modules over the commutative ring `R.obj X`, is a strong monoidal functor whose unit and tensor
-comparisons are identities.
+comparisons are identities. The braiding is computed sectionwise as well, so evaluation is braided.
 
 Composed with the lax monoidal inclusion of sheaves of modules into presheaves of modules, this
 makes taking sections over an object lax monoidal; over a terminal object this is the global
@@ -23,7 +23,8 @@ sections functor.
 
 * `TauCeti.PresheafOfModulesOfCommRing.evaluation`: evaluation at `X`, as a functor to
   `ModuleCat (R.obj X)`;
-* `TauCeti.PresheafOfModulesOfCommRing.evaluationMonoidal`: its monoidal structure.
+* `TauCeti.PresheafOfModulesOfCommRing.evaluationMonoidal`: its monoidal structure;
+* `TauCeti.PresheafOfModulesOfCommRing.evaluationBraided`: evaluation preserves the braiding.
 -/
 
 public section
@@ -65,6 +66,11 @@ instance evaluationMonoidal (X : Cᵒᵖ) : (evaluation (R := R) X).Monoidal :=
         apply ModuleCat.MonoidalCategory.tensor_ext
         intros
         rfl }
+
+/-- Evaluation of presheaves of modules is braided: the braiding of presheaves of modules is
+computed sectionwise. -/
+instance evaluationBraided (X : Cᵒᵖ) : (evaluation (R := R) X).Braided where
+  braided _ _ := rfl
 
 variable (X : Cᵒᵖ)
 

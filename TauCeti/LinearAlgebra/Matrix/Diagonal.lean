@@ -22,6 +22,9 @@ Neither statement needs a unit or an associative multiplication in the entries: 
 over a `NonUnitalNonAssocSemiring`, and the second adds commutativity and cancellation by nonzero
 elements, which is what forces the off-diagonal entries to vanish.
 
+For linear maps between based modules, the coordinate matrix is diagonal exactly when each source
+basis vector maps to the corresponding scalar multiple of the target basis vector.
+
 ## Main results
 
 * `TauCeti.diagonal_mul_single_mul_diagonal`: multiplying `Eᵢⱼ(c)` on the left and right by
@@ -30,6 +33,8 @@ elements, which is what forces the off-diagonal entries to vanish.
   vanishing `(i, j)` entry wherever that diagonal matrix separates `i` from `j`.
 * `TauCeti.isDiag_of_commute_diagonal`: a matrix commuting with a diagonal matrix of pairwise
   distinct entries is itself diagonal.
+* `Module.Basis.toMatrix_eq_diagonal_iff`: a linear map has a specified diagonal matrix in two
+  bases exactly when it scales the corresponding basis vectors by the diagonal entries.
 -/
 
 public section
@@ -79,19 +84,23 @@ end TauCeti
 
 namespace Module.Basis
 
-/-- A map diagonal on a basis has that diagonal matrix in the basis coordinates. -/
-theorem toMatrix_eq_diagonal_of_basis
-    {R M ι : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
-    [Fintype ι] [DecidableEq ι]
-    (b : Module.Basis ι R M) (f : M →ₗ[R] M) (c : ι → R)
-    (hf : ∀ i, f (b i) = c i • b i) :
-    LinearMap.toMatrix b b f = Matrix.diagonal c := by
-  ext i j
-  simp only [LinearMap.toMatrix_apply, hf, map_smul, Module.Basis.repr_self,
-    Finsupp.smul_apply, Finsupp.single_apply, smul_eq_mul, Matrix.diagonal_apply]
-  by_cases h : i = j
-  · subst j
-    simp
-  · simp [h, Ne.symm h]
+/-- A linear map has a specified diagonal matrix in two bases exactly when it scales the
+corresponding basis vectors by the diagonal entries. -/
+@[simp]
+theorem toMatrix_eq_diagonal_iff
+    {R M N ι : Type*} [CommSemiring R] [AddCommMonoid M] [AddCommMonoid N]
+    [Module R M] [Module R N] [Fintype ι] [DecidableEq ι]
+    (b : Module.Basis ι R M) (b' : Module.Basis ι R N) (f : M →ₗ[R] N) (c : ι → R) :
+    LinearMap.toMatrix b b' f = Matrix.diagonal c ↔ ∀ i, f (b i) = c i • b' i := by
+  rw [← (Matrix.toLin b b').injective.eq_iff, Matrix.toLin_toMatrix]
+  constructor
+  · intro h i
+    simpa only [Matrix.toLin_self, Matrix.diagonal_apply, ite_smul, zero_smul,
+      Finset.sum_ite_eq', Finset.mem_univ, ite_true] using congrArg (fun g : M →ₗ[R] N => g (b i)) h
+  · intro hf
+    apply b.ext
+    intro i
+    simpa only [Matrix.toLin_self, Matrix.diagonal_apply, ite_smul, zero_smul,
+      Finset.sum_ite_eq', Finset.mem_univ, ite_true] using hf i
 
 end Module.Basis

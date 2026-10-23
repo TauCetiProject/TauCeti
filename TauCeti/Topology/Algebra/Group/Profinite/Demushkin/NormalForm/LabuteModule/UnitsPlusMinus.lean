@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.LabuteModule.Basic
-public import TauCeti.Topology.Algebra.Group.Profinite.ProP.CharacterKernelTwoGenerators
+public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Character.KernelTwoGenerators
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Relation.Module
 
 /-!

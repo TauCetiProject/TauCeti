@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.BumpFunction.Average
+public import TauCeti.MeasureTheory.Function.Lp.Convolution
 public import TauCeti.MeasureTheory.Function.Lp.Translation
+
+import TauCeti.Analysis.Convolution
 
 /-!
 # Smooth approximate identities in `Lᵖ`
@@ -31,6 +34,10 @@ This is the `Lᵖ` convergence input for mollification in Sobolev spaces.  Toget
 of mollification and weak differentiation, it approximates both the value and every weak derivative
 by the same smooth kernel.
 
+The averaging operator is represented almost everywhere by the classical convolution with
+the normalized bump. This formula applies to every `MemLp` representative, with no global
+integrability or compact support assumption on the function.
+
 ## Main declarations
 
 * `TauCeti.normedBumpLp`: averaging an `Lᵖ` function against a normalized smooth bump, as a
@@ -38,16 +45,28 @@ by the same smooth kernel.
 * `TauCeti.normedBumpLp_apply`: the defining Bochner integral of that operator.
 * `TauCeti.normedBumpLp_eq_normedBumpAverageL`: this operator is the normalized-bump average of
   the `Lᵖ` translation action.
+* `TauCeti.normedBumpLp_eq_convolutionLp`: this operator is convolution with the normalized bump.
+* `TauCeti.normedBumpLp_ae_eq_convolution`: its pointwise representative is the classical
+  convolution with the normalized bump.
 * `TauCeti.compLpL_normedBumpLp`: this operator commutes with postcomposition by a continuous
   linear map.
 * `TauCeti.norm_normedBumpLp_le_one`: this averaging operator is an `Lᵖ` contraction.
 * `TauCeti.tendsto_normedBumpLp`: normalized bumps whose radii shrink to zero converge strongly
   to the identity on `Lᵖ`.
+* `TauCeti.tendsto_eLpNorm_normed_convolution_sub`: the same convergence for the classical
+  convolution of a function in `Lᵖ` with these bumps.
+* `TauCeti.tendsto_setLIntegral_enorm_normed_convolution_sub`: for a locally integrable function
+  these convolutions converge in `L¹(K)` on every compact set `K`.
 
 ## References
 
 L. C. Evans, *Partial Differential Equations*, Chapter 5, §5.3.1; H. Brezis,
 *Functional Analysis, Sobolev Spaces and Partial Differential Equations*, Proposition 4.21.
+
+The pointwise representative formula follows LeanPool's
+`RellichKondrachov/L2Compactness/Smoothing.lean`, especially its `smoothFun` and `smoothL2`
+constructions, and Tau Ceti's `RepresentationTheory/Compact/Convolution.lean`, especially
+`convolutionCLM_toLp_apply`.
 -/
 
 public section
@@ -93,13 +112,28 @@ theorem normedBumpLp_eq_normedBumpAverageL (hp : p ≠ ∞) (phi : ContDiffBump 
       normedBumpAverageL phi mu (mu.translateLp p) (Measure.continuous_translateLp hp) :=
   (rfl)
 
+/-- Averaging against a normalized bump is convolution with the normalized bump, as an operator
+on `Lᵖ`. -/
+theorem normedBumpLp_eq_convolutionLp (hp : p ≠ ∞) (phi : ContDiffBump (0 : E)) :
+    normedBumpLp (F := F) hp phi mu = convolutionLp hp (phi.normed mu) mu := by
+  ext1 f
+  rw [normedBumpLp_apply, convolutionLp_apply hp phi.integrable_normed]
+
+/-- The `Lᵖ` approximate identity is represented almost everywhere by the usual pointwise
+convolution of any `MemLp` representative. -/
+theorem normedBumpLp_ae_eq_convolution [CompleteSpace F] (hp : p ≠ ∞)
+    (phi : ContDiffBump (0 : E)) {f : E → F} (hf : MemLp f p mu) :
+    normedBumpLp hp phi mu (hf.toLp f) =ᵐ[mu] phi.normed mu ⋆[lsmul ℝ ℝ, mu] f := by
+  rw [normedBumpLp_eq_convolutionLp]
+  exact convolutionLp_ae_eq_convolution hp phi.integrable_normed hf
+
 /-- Averaging against a normalized bump commutes with postcomposition by a continuous linear map
 between Banach spaces. -/
 theorem compLpL_normedBumpLp {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
     [CompleteSpace F] [CompleteSpace G] (hp : p ≠ ∞) (phi : ContDiffBump (0 : E))
     (L : F →L[ℝ] G) (f : Lp F p mu) :
     L.compLpL p mu (normedBumpLp hp phi mu f) = normedBumpLp hp phi mu (L.compLpL p mu f) :=
-  normedBumpAverageL_comm _ _ _ _ _ _ _ (Measure.compLpL_translateLp L) f
+  normedBumpAverageL_comm _ _ _ _ _ _ _ L.compLpL_translateLp f
 
 /-- Averaging against a normalized nonnegative bump does not increase the `Lᵖ` norm when
 `p < ∞`. -/
@@ -123,5 +157,50 @@ theorem tendsto_normedBumpLp [CompleteSpace F] {I : Type*} {l : Filter I}
   simpa only [normedBumpLp, Measure.translateLp_zero] using
     tendsto_normedBumpAverageL (F := Lp F p mu) hphi mu (mu.translateLp p)
       (Measure.continuous_translateLp hp) f
+
+/-- **Mollification converges in `Lᵖ`.** For `f ∈ Lᵖ` with `1 ≤ p < ∞` and normalized smooth bumps
+`phi i` centred at zero whose outer radii tend to zero, the classical convolutions
+`(phi i).normed mu ⋆ f` converge to `f` in `Lᵖ`. This is `TauCeti.tendsto_normedBumpLp` read on
+functions rather than on `Lᵖ` classes. -/
+theorem tendsto_eLpNorm_normed_convolution_sub [CompleteSpace F] {I : Type*} {l : Filter I}
+    (hp : p ≠ ∞) {phi : I → ContDiffBump (0 : E)}
+    (hphi : Tendsto (fun i ↦ (phi i).rOut) l (nhds 0)) {f : E → F} (hf : MemLp f p mu) :
+    Tendsto (fun i ↦ eLpNorm ((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] f - f) p mu) l (nhds 0) := by
+  refine ((Lp.tendsto_Lp_iff_tendsto_eLpNorm' _ _).1
+    (tendsto_normedBumpLp hp hphi (hf.toLp f))).congr fun i ↦ eLpNorm_congr_ae ?_
+  filter_upwards [normedBumpLp_ae_eq_convolution hp (phi i) hf, hf.coeFn_toLp]
+    with x h₁ h₂
+  rw [Pi.sub_apply, Pi.sub_apply, h₁, h₂]
+
+/-- **Mollification converges in `L¹_loc`.** For a locally integrable `f` and normalized smooth
+bumps `phi i` centred at zero whose outer radii tend to zero, the classical convolutions
+`(phi i).normed mu ⋆ f` converge to `f` in `L¹(K)` for every compact set `K`. -/
+theorem tendsto_setLIntegral_enorm_normed_convolution_sub [CompleteSpace F] {I : Type*}
+    {l : Filter I} {phi : I → ContDiffBump (0 : E)}
+    (hphi : Tendsto (fun i ↦ (phi i).rOut) l (nhds 0)) {f : E → F} (hf : LocallyIntegrable f mu)
+    {K : Set E} (hK : IsCompact K) :
+    Tendsto (fun i ↦ ∫⁻ x in K, ‖((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] f) x - f x‖ₑ ∂mu) l
+      (nhds 0) := by
+  -- On `K`, bumps of radius less than one only see `f` on the compact set `cthickening 1 K`,
+  -- where `f` is integrable, so the whole-space `L¹` convergence applies.
+  set s := cthickening 1 K
+  have hs : IsCompact s := hK.cthickening
+  have hfs : MemLp (s.indicator f) 1 mu := memLp_one_iff_integrable.2 <|
+    (hf.integrableOn_isCompact hs).integrable_indicator hs.measurableSet
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
+    (tendsto_eLpNorm_normed_convolution_sub ENNReal.one_ne_top hphi hfs)
+    (.of_forall fun _ ↦ zero_le) ?_
+  filter_upwards [hphi.eventually (gt_mem_nhds one_pos)] with i hi
+  have hKs (x : E) (hx : x ∈ K) :
+      ((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] f) x - f x =
+        ((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] s.indicator f) x - s.indicator f x := by
+    rw [indicator_of_mem (self_subset_cthickening K hx)]
+    refine congrArg (· - f x) (convolution_indicator_eq_of_forall_sub_mem _ fun t ht ↦ ?_).symm
+    rw [(phi i).support_normed_eq, mem_ball_zero_iff] at ht
+    refine mem_cthickening_of_dist_le _ x _ _ hx ?_
+    rw [dist_eq_norm, sub_sub_cancel_left, norm_neg]
+    exact ht.le.trans hi.le
+  rw [setLIntegral_congr_fun hK.measurableSet fun x hx ↦ by rw [hKs x hx]]
+  exact (setLIntegral_le_lintegral _ _).trans lintegral_enorm_le_eLpNorm_one
 
 end TauCeti

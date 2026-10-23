@@ -67,17 +67,14 @@ regime is there a tableau to speak of.
 
 ## Implementation notes
 
-The roadmap states the bijection with the bound `∀ i j, T i j < n` on the tableau side.  That
-form fails in exactly one case: for `n = 0` and `μ = ⊥` there is one (empty) pattern but no
-tableau at all, because the bound also constrains the entries off `μ`, which vanish.  The bound
-is therefore imposed on the cells of `μ`, where it is the intended condition; whenever `μ` is
-nonempty the two readings agree, since a nonempty shape forces `n ≠ 0`.
+With the bound `∀ i j, T i j < n` on every entry of the tableau, the bijection fails in exactly one
+case: for `n = 0` and `μ = ⊥` there is one (empty) pattern but no tableau at all, because the bound
+also constrains the entries off `μ`, which vanish. The bound is therefore imposed on the cells of
+`μ`, where it is the intended condition; whenever `μ` is nonempty the two readings agree, since a
+nonempty shape forces `n ≠ 0`.
 
 ## References
 
-* [Classical groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/ClassicalGroups/README.md),
-  Layer 6, "the Gelfand-Tsetlin pattern ↔ semistandard tableau bijection", which pins the name
-  `gtPatternEquivSSYT`.
 * W. Fulton and J. Harris, *Representation Theory: A First Course* (1991), §15.3.
 -/
 

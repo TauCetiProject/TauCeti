@@ -94,7 +94,7 @@ instance : FaithfulSMul (FundamentalGroup X x₀) (UniversalCover x₀) where
       Path.Homotopic.Quotient.trans_refl] at h'
     have hpath : g₁⁻¹.toPath = g₂⁻¹.toPath :=
       eq_of_heq ((UniversalCover.mk.injEq _ _ _ _).mp h').2
-    exact inv_injective hpath
+    exact inv_injective (CategoryTheory.End.ext hpath)
 
 /-- Every fundamental-group element acts continuously on the universal cover. -/
 instance : ContinuousConstSMul (FundamentalGroup X x₀) (UniversalCover x₀) where
@@ -118,7 +118,7 @@ instance : IsCancelSMul (FundamentalGroup X x₀) (UniversalCover x₀) where
     have h' := congrArg (fun r ↦ r.trans q.symm) hpath
     simp only [Path.Homotopic.Quotient.trans_assoc,
       Path.Homotopic.Quotient.trans_symm, Path.Homotopic.Quotient.trans_refl] at h'
-    exact inv_injective h'
+    exact inv_injective (CategoryTheory.End.ext h')
 
 /-- Two points of the universal cover have the same projection exactly when they lie in the
 same fundamental-group orbit. -/
@@ -130,7 +130,8 @@ theorem proj_eq_iff_mem_orbit {p₁ p₂ : UniversalCover x₀} :
     have hx : x₁ = x₂ := h
     subst hx
     refine ⟨(FundamentalGroup.fromPath (q₁.trans q₂.symm))⁻¹, ?_⟩
-    simp only [smul_mk, inv_inv, Path.Homotopic.Quotient.trans_assoc,
+    simp only [smul_mk, inv_inv, FundamentalGroup.toPath, FundamentalGroup.toArrow,
+      FundamentalGroup.fromPath, FundamentalGroup.fromArrow, Path.Homotopic.Quotient.trans_assoc,
       Path.Homotopic.Quotient.symm_trans, Path.Homotopic.Quotient.trans_refl]
   · rintro ⟨g, hg⟩
     rw [← hg, proj_smul]

@@ -58,6 +58,9 @@ the projection formula for cup products over an arbitrary coefficient ring.
   for smooth discrete representations over an arbitrary ring.
 * `TauCeti.ContinuousCohomology.res_comp_corestriction`,
   `TauCeti.ContinuousCohomology.corestriction_res`: **`cor ∘ res = [G : U] • id`** in every degree.
+* `TauCeti.ContinuousCohomology.corestriction_comp_res_eq_sum_of_trace_comp_unit`: `res ∘ cor`
+  is a sum of maps once the trace followed by the unit splits as a matching sum on coinduced
+  modules.
 * `TauCeti.ContinuousCohomology.corestriction_naturality`: corestriction is natural in the
   coefficient module.
 * `TauCeti.ContinuousCohomology.explicitH0Iso_corestriction`,
@@ -177,6 +180,45 @@ theorem corestriction_res (n : ℕ) (x : continuousCohomology n (ofDiscreteModul
   -- `([G : U] • 𝟙) x` is `[G : U] • x` by definition of the additive structure on its morphisms
   -- (`TopModuleCat.hom_nsmul`).
   exact h.trans rfl
+
+/-- **Restriction of corestriction from a formula on coinduced modules.** Let `V` be a subgroup
+of `G`, and let `a i : Hⁿ(U, M) ⟶ Hⁿ(V, M)` be finitely many maps that the Shapiro maps of `U` and
+`V` carry to the coefficient maps of `f i : Coind_U^G M ⟶ Coind_V^G M`. If the trace
+`Coind_U^G M → M` followed by the unit `M → Coind_V^G M` is `∑ i, f i`, then restriction to `V` of
+the corestriction from `U` is `∑ i, a i`. Both the Mackey double-coset formula and its normal
+subgroup case are read off from coinduced modules in this way. -/
+theorem corestriction_comp_res_eq_sum_of_trace_comp_unit (V : Subgroup G) {ι : Type*}
+    [Fintype ι] (n : ℕ)
+    (f : ι → (ofDiscreteModule ℤ G (DiscreteCoind G U M) ⟶
+      ofDiscreteModule ℤ G (DiscreteCoind G V M)))
+    (a : ι → (continuousCohomology n (ofDiscreteModule ℤ U M) ⟶
+      continuousCohomology n (ofDiscreteModule ℤ V M)))
+    (hf : ofDiscreteModuleMap (DiscreteCoind.trace G U M).toAddMonoidHom.toIntLinearMap
+        (fun g f => _root_.map_smul (DiscreteCoind.trace G U M) g f) ≫
+      ofDiscreteModuleMap (DiscreteCoind.unit G V M).toAddMonoidHom.toIntLinearMap
+        (fun g m => _root_.map_smul (DiscreteCoind.unit G V M) g m) = ∑ i, f i)
+    (ha : ∀ i, shapiroMap U M n ≫ a i = coeffMap (f i) n ≫ shapiroMap V M n) :
+    corestriction U M hU n ≫ res V (ofDiscreteModule ℤ G M) n = ∑ i, a i := by
+  have := isIso_shapiroMap U (U.isClosed_of_isOpen hU) M n
+  -- After the Shapiro isomorphism of `U`, both sides are coefficient maps followed by the Shapiro
+  -- map of `V`, and the two coefficient maps agree by `hf`.
+  -- The two sides are compared in term mode: their codomains `Hⁿ(V, res_V M)` and `Hⁿ(V, M)`
+  -- agree only up to `res_ofDiscreteModule`, which stops `rw` from abstracting them.
+  have hleft : shapiroMap U M n ≫ corestriction U M hU n ≫ res V (ofDiscreteModule ℤ G M) n =
+      coeffMap (ofDiscreteModuleMap (DiscreteCoind.trace G U M).toAddMonoidHom.toIntLinearMap
+          (fun g f => _root_.map_smul (DiscreteCoind.trace G U M) g f) ≫
+        ofDiscreteModuleMap (DiscreteCoind.unit G V M).toAddMonoidHom.toIntLinearMap
+          (fun g m => _root_.map_smul (DiscreteCoind.unit G V M) g m)) n ≫ shapiroMap V M n :=
+    (shapiroMap_comp_corestriction_assoc U M hU n _).trans <| by
+      rw [coeffMap_comp, Category.assoc]
+      exact congrArg _ (coeffMap_unit_comp_shapiroMap V M n).symm
+  have hright : shapiroMap U M n ≫ ∑ i, a i = coeffMap (∑ i, f i) n ≫ shapiroMap V M n := by
+    have hsum := (continuousCohomologyFunctor ℤ G n).map_sum f Finset.univ
+    simp only [continuousCohomologyFunctor_map] at hsum
+    rw [Preadditive.comp_sum, hsum]
+    exact (Finset.sum_congr rfl fun i _ => ha i).trans (Preadditive.sum_comp _ _ _).symm
+  exact (cancel_epi (shapiroMap U M n)).1
+    (hleft.trans ((congrArg (coeffMap · n ≫ _) hf).trans hright.symm))
 
 /-! ### Naturality in the coefficients -/
 

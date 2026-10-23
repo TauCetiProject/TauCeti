@@ -36,7 +36,7 @@ transport Cartier duality for finite locally free commutative group schemes over
 ## References
 
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Chapter 2.
-* J. S. Milne, *Algebraic Groups* (2017), Section 12.e.
+* J. S. Milne, *Algebraic Groups* (2017), Section 11.c, with Aside 11.17 for a base ring.
 -/
 
 public section

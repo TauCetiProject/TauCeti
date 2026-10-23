@@ -93,13 +93,6 @@ namespace TauCeti.Isogeny
 
 variable {F : Type*} [Field F] [DecidableEq F] (W : WeierstrassCurve F) [W.IsElliptic]
 
-/-- Ellipticity already makes the coordinate ring integrally closed, hence a Dedekind domain.
-Deriving it here as a `local instance` — the pattern `Affine/FunctionField/PointPlace.lean` uses —
-keeps the assumption out of the exported signatures instead of making every caller supply it. -/
-local instance : IsDedekindDomain W.toAffine.CoordinateRing :=
-  have := WeierstrassCurve.Affine.isIntegrallyClosed_coordinateRing W.toAffine
-  W.toAffine.isDedekindDomain_coordinateRing_of_isIntegrallyClosed
-
 omit [DecidableEq F] [W.IsElliptic] in
 /-- **Clearing the denominator of a coordinate difference.** A pulled-back coordinate is a quotient
 of coordinate-ring classes; subtracting a constant keeps the denominator and shifts the numerator by
@@ -183,7 +176,7 @@ theorem isEquiv_comap_pointPlace {x y : F} (h : W.toAffine.Nonsingular x y) {n :
   have hP0 : n • Affine.Point.some x y h ≠ 0 := hnP.trans_ne (Affine.Point.some_ne_zero h')
   have hn : psiFunctionField W n ≠ 0 :=
     psiFunctionField_ne_zero_of_Δ_ne_zero W W.isUnit_Δ.ne_zero (left_ne_zero_of_smul hP0)
-  set v := (CoordinateRing.pointPlace h.left).valuation W.toAffine.FunctionField with hvdef
+  let v := (CoordinateRing.pointPlace h.left).valuation W.toAffine.FunctionField
   set u := v.comap (mulByIntIsogeny W hn).fieldPullback.toRingHom with hudef
   -- an explicit element of value strictly between `0` and `1`: `[n]*x - x'` vanishes at `P`
   -- (so its value is below `1`) but is not the zero function (so its value is not `0`)

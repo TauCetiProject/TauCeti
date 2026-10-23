@@ -66,7 +66,7 @@ field distinct weights stay distinct (`TauCeti.weightChar_injective`).
   `ℤ`-linear combination equal to one takes every unit as a value.
 * `TauCeti.weightChar_injective`: over an infinite field, distinct weights give distinct
   characters of the torus; `TauCeti.weightChar_injective_of_algebraRat` specializes this to
-  fields that are `ℚ`-algebras.
+  fields that are `ℚ`-algebras, and `TauCeti.exists_torusCharacter_ne` reads it pointwise.
 * `TauCeti.eq_of_span_eq_top_of_torusCharacter_eq`: dually, weights generating the whole character
   lattice separate the points of the torus, over any coefficient ring.
 * `TauCeti.basisDiagonalHom_injective` and `TauCeti.basisWeightTorus_injective`: a diagonal
@@ -365,6 +365,12 @@ theorem weightChar_injective {K : Type*} [Field K] [Infinite K] :
   have hval := congrArg (fun χ : (κ → Kˣ) →* Kˣ ↦ χ (Pi.mulSingle c u)) h
   simp only [weightChar_apply, torusCharacter_mulSingle] at hval
   rw [zpow_sub, hval, mul_inv_cancel]
+
+/-- Over an infinite field, two distinct weights take different values at some point of the split
+torus. This is `TauCeti.weightChar_injective` read pointwise. -/
+theorem exists_torusCharacter_ne {K : Type*} [Field K] [Infinite K] {μ ν : κ → ℤ}
+    (h : μ ≠ ν) : ∃ s : κ → Kˣ, torusCharacter s μ ≠ torusCharacter s ν := by
+  simpa only [weightChar_apply] using DFunLike.ne_iff.mp (weightChar_injective.ne h)
 
 /-- The weight characters of a field that is a `ℚ`-algebra separate weights: such a field has
 characteristic zero, hence infinitely many elements. -/

@@ -10,7 +10,7 @@ public import TauCeti.Analysis.SpecialFunctions.LogIntegral
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.AbelSummation
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Convergence
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Counting
-import TauCeti.NumberTheory.ArithmeticDirichletSeries.Prime.DedekindZeta
+import TauCeti.NumberTheory.ArithmeticDirichletSeries.Prime.PrimeIdealTheorem
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Prime.IdealZetaSum
 import TauCeti.Analysis.Asymptotics.Lemmas
 public import TauCeti.NumberTheory.NumberField.DirichletDensityBounds
@@ -160,17 +160,13 @@ theorem hasNaturalDensity_biUnion_finset {ι : Type*} {s : Finset ι}
     (hf : ∀ i ∈ s, HasNaturalDensity (f i) (d i))
     (hdisj : (s : Set ι).PairwiseDisjoint f) :
     HasNaturalDensity (⋃ i ∈ s, f i) (∑ i ∈ s, d i) := by
-  classical
-  induction s using Finset.induction with
-  | empty => simp
-  | insert a s ha ih =>
-    rw [Finset.set_biUnion_insert, Finset.sum_insert ha]
-    refine (hf a (Finset.mem_insert_self a s)).union
-      (ih (fun i hi => hf i (Finset.mem_insert_of_mem hi))
-        (hdisj.subset (by simp))) ?_
-    rw [_root_.Set.disjoint_iUnion₂_right]
-    intro i hi
-    exact hdisj (by simp) (by simp [hi]) fun h => ha (h ▸ hi)
+  rw [hasNaturalDensity_def]
+  refine (tendsto_finsetSum s fun i hi ↦ hasNaturalDensity_def.mp (hf i hi)).congr' ?_
+  exact .of_forall fun x ↦ by
+    have hcount := congrArg
+      (fun y : ℝ ↦ y / TauCeti.primeCount K Set.univ x)
+      (TauCeti.primeCount_biUnion_finset s f hdisj x)
+    simpa only [Finset.sum_div] using hcount.symm
 
 /-- The complement of a set of natural density `δ` has natural density `1 - δ`. -/
 theorem HasNaturalDensity.compl (hS : HasNaturalDensity S δ) :

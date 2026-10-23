@@ -8,6 +8,7 @@ module
 public import TauCeti.Data.Fin.Basic
 public import TauCeti.LinearAlgebra.RootSystem.Positive
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Basic
+import TauCeti.Algebra.Group.AffineSequence
 import TauCeti.Algebra.Group.Submonoid.Telescoping
 import TauCeti.Data.Fin.DistinctPairs
 import TauCeti.LinearAlgebra.RootSystem.Swap
@@ -116,17 +117,11 @@ hypotheses this simply connected datum does not carry.
 ## References
 
 The coordinates and the node numbering follow Bourbaki, *Lie Groups and Lie Algebras, Chapters
-4--6*, Plate I, and Humphreys, *Introduction to Lie Algebras and Representation Theory*, section
-12.1. This is the `Aₙ` branch of the target "a named datum per valid type" in Layer 6 of
-`TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`. The positive-root count is the
-corresponding clause of the `Aₙ` worked example in the "Worked examples (acceptance criteria)"
-section of that README; it agrees with the count in Bourbaki, Plate I.
+4--6*, Plate I, and Humphreys, *Introduction to Lie Algebras and Representation Theory*,
+section 12.1. The positive-root count agrees with the count in Bourbaki, Plate I.
 
-The graph automorphism is the root-datum input to the isomorphism theorem for pinned groups in
-Layer 9 of `TauCetiRoadmap/ReductiveGroups/README.md`, whose consumer is the graph-twisted
-Steinberg map of milestone L1 of `TauCetiRoadmap/CFSGStatement/README.md`. The description of the
-type-`A` diagram automorphism as `X ↦ -J Xᵀ J` on `sl_{n+1}`, of which the map below is the
-root-datum shadow, is in R. W. Carter, *Simple Groups of Lie Type*, §12.2.
+The description of the type-`A` diagram automorphism as `X ↦ -J Xᵀ J` on `sl_{n+1}`, of which the
+map below is the root-datum shadow, is in R. W. Carter, *Simple Groups of Lie Type*, §12.2.
 -/
 
 public section
@@ -159,14 +154,14 @@ private lemma typeAWeight_dotProduct_typeACoweight {a c : ℕ} (ha : a ≤ n) (h
     typeAWeight n a ⬝ᵥ typeACoweight n c
       = (if a = c then 1 else 0) - (if a = n then 1 else 0) := by
   have key : ∀ b : ℕ, ∑ k : Fin n, (if b = (k : ℕ) then (1 : ℤ) else 0) *
-      (if c ≤ (k : ℕ) then 1 else 0) = if h : b < n then (if c ≤ b then (1 : ℤ) else 0) else 0 :=
+      (if c ≤ (k : ℕ) then 1 else 0) = if _ : b < n then (if c ≤ b then (1 : ℤ) else 0) else 0 :=
     fun b => by
       simp only [ite_mul, one_mul, zero_mul]
       simpa only [Nat.add_zero, Nat.sub_zero, Nat.zero_le, and_true] using
         sum_ite_val_add (fun k : Fin n => if c ≤ (k : ℕ) then (1 : ℤ) else 0) b 0
   have key' : ∀ b : ℕ, ∑ k : Fin n, (if b = (k : ℕ) + 1 then (1 : ℤ) else 0) *
       (if c ≤ (k : ℕ) then 1 else 0)
-        = if h : b - 1 < n ∧ 1 ≤ b then (if c ≤ b - 1 then (1 : ℤ) else 0) else 0 :=
+        = if _ : b - 1 < n ∧ 1 ≤ b then (if c ≤ b - 1 then (1 : ℤ) else 0) else 0 :=
     fun b => by
       simp only [ite_mul, one_mul, zero_mul]
       exact sum_ite_val_add (fun k : Fin n => if c ≤ (k : ℕ) then (1 : ℤ) else 0) b 1
@@ -206,7 +201,7 @@ private lemma typeAPairRoot_injective : Injective (typeAPairRoot (n := n)) := by
   intro p q hpq
   have h2 : typeAPairRoot q ⬝ᵥ typeAPairCoroot p = 2 := by rw [← hpq]; exact typeAPairRoot_self p
   rw [typeAPairing] at h2
-  have hp := p.2
+  have _ := p.2
   have hq := q.2
   refine Subtype.ext (Prod.ext ?_ ?_) <;> (split_ifs at h2 <;> simp_all)
 
@@ -215,7 +210,7 @@ private lemma typeAPairCoroot_injective : Injective (typeAPairCoroot (n := n)) :
   have h2 : typeAPairRoot p ⬝ᵥ typeAPairCoroot q = 2 := by rw [← hpq]; exact typeAPairRoot_self p
   rw [typeAPairing] at h2
   have hp := p.2
-  have hq := q.2
+  have _ := q.2
   refine Subtype.ext (Prod.ext ?_ ?_) <;> (split_ifs at h2 <;> simp_all)
 
 /-- Reflection in the root indexed by `p`, as the transposition of the two entries of `p` acting on
@@ -449,31 +444,6 @@ coroot lattice, so that the datum is the simply connected one. -/
 
 /-! ## The pinned base -/
 
-/-- **A sequence with vanishing second difference is linear.** In an additive cancellative
-commutative monoid, if `S 0 = 0` and `S (k + 1) + S (k + 1) = S k + S (k + 2)` for every `k < n`,
-then `S j = j • S 1` for every `j ≤ n + 1`. -/
-private lemma eq_nsmul_of_second_difference_zero {M : Type*} [AddCancelCommMonoid M] {S : ℕ → M}
-    {n : ℕ} (hS0 : S 0 = 0) (hrec : ∀ k < n, S (k + 1) + S (k + 1) = S k + S (k + 2)) :
-    ∀ j ≤ n + 1, S j = j • S 1 := by
-  intro j
-  induction j using Nat.strong_induction_on with
-  | _ j ih =>
-    match j with
-    | 0 => intro _; simpa using hS0
-    | 1 => intro _; simp
-    | (m + 2) =>
-      intro hm
-      have h0 := ih m (by omega) (by omega)
-      have h1 := ih (m + 1) (by omega) (by omega)
-      have h2 := hrec m (by omega)
-      -- the recurrence reads `(m + 1) • S 1 + (m + 1) • S 1 = m • S 1 + S (m + 2)`, and both
-      -- sides carry the summand `m • S 1`
-      rw [h0, h1] at h2
-      refine add_left_cancel (a := m • S 1) ?_
-      rw [← h2, ← add_smul, ← add_smul]
-      congr 1
-      omega
-
 /-- The simple roots of type `Aₙ` are linearly independent. A relation among the rows of
 `CartanMatrix.A n` forces its coefficients to grow linearly, and the missing row past the last node
 then makes the common ratio `(n + 1)`-torsion, hence zero. -/
@@ -505,8 +475,9 @@ private lemma linearIndependent_typeASimpleRoot (n : ℕ) :
     rw [e1, e2] at h
     linarith [h]
   have key : ∀ j : ℕ, j ≤ n + 1 → S j = j * S 1 := fun j hj => by
-    simpa [nsmul_eq_mul] using
-      eq_nsmul_of_second_difference_zero hS0 (fun k hk => hrec ⟨k, hk⟩) j hj
+    simpa [hS0, nsmul_eq_mul] using
+      eq_add_nsmul_sub_of_add_eq_two_nsmul (f := S) (N := n + 2)
+        (fun k hk => by rw [two_nsmul, hrec ⟨k, by omega⟩]) j (by omega)
   have hS1 : S 1 = 0 := by
     have h := key (n + 1) le_rfl
     rw [hSzero (n + 1) (by omega)] at h

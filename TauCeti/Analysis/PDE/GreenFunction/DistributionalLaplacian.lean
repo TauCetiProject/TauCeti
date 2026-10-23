@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.GreenFunction.Ball
 public import Mathlib.Analysis.Distribution.TestFunction
+import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.DistributionalLaplacian
 import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
 import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.Distribution

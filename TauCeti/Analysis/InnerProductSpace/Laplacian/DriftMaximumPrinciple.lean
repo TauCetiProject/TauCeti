@@ -40,7 +40,8 @@ Gilbarg--Trudinger, *Elliptic Partial Differential Equations of Second Order*, C
 
 * `TauCeti.laplacian_exp_inner`: `Δ (exp (α ⟪u, ·⟫)) x = α² ‖u‖² exp (α ⟪u, x⟫)`, the
   exponential barrier's Laplacian.
-* `TauCeti.fderiv_exp_inner_apply`: the directional derivative of the same barrier.
+* `TauCeti.fderiv_exp_inner_apply`, `TauCeti.fderiv_fderiv_exp_inner_apply`: the first and
+  second derivatives of the same barrier.
 * `TauCeti.not_isLocalMax_of_laplacian_add_fderiv_pos` /
   `TauCeti.not_isLocalMin_of_laplacian_add_fderiv_neg`: a strict sign of `Δ u + ⟪b, ∇u⟫`
   forbids an interior local extremum, with no hypothesis on `b`.
@@ -93,6 +94,16 @@ theorem contDiff_exp_inner (α : ℝ) (u : E) :
   rw [(hasFDerivAt_exp_inner α u x).fderiv]
   simp only [smul_apply, innerSL_apply_apply, smul_eq_mul]
 
+/-- The second derivative of the exponential barrier `y ↦ exp (α ⟪u, y⟫)`: it is the rank-one
+form `α² ⟪u, v⟫ ⟪u, w⟫` scaled by the barrier itself. -/
+@[simp] theorem fderiv_fderiv_exp_inner_apply (α : ℝ) (u x v w : E) :
+    fderiv ℝ (fderiv ℝ fun y : E ↦ Real.exp (α * ⟪u, y⟫)) x v w
+      = α ^ 2 * ⟪u, v⟫ * ⟪u, w⟫ * Real.exp (α * ⟪u, x⟫) := by
+  rw [funext fun y ↦ (hasFDerivAt_exp_inner α u y).fderiv,
+    ((hasFDerivAt_exp_inner α u x).smul_const (α • innerSL ℝ u)).fderiv]
+  simp only [ContinuousLinearMap.smulRight_apply, smul_apply, innerSL_apply_apply, smul_eq_mul]
+  ring
+
 section FiniteDimensional
 
 variable [FiniteDimensional ℝ E]
@@ -106,21 +117,13 @@ maximum principle with drift. -/
     Δ (fun y : E ↦ Real.exp (α * ⟪u, y⟫)) x
       = α ^ 2 * ‖u‖ ^ 2 * Real.exp (α * ⟪u, x⟫) := by
   set w : E → ℝ := fun y ↦ Real.exp (α * ⟪u, y⟫)
-  -- The first derivative of `w`, as a function of the base point.
-  have hfw : fderiv ℝ w = fun y ↦ Real.exp (α * ⟪u, y⟫) • (α • innerSL ℝ u) :=
-    funext fun y ↦ (hasFDerivAt_exp_inner α u y).fderiv
-  -- The second derivative at `x`.
-  have hw2 : HasFDerivAt (fun y ↦ Real.exp (α * ⟪u, y⟫) • (α • innerSL ℝ u))
-      ((Real.exp (α * ⟪u, x⟫) • (α • innerSL ℝ u)).smulRight (α • innerSL ℝ u)) x :=
-    (hasFDerivAt_exp_inner α u x).smul_const (α • innerSL ℝ u)
   -- Each diagonal Hessian entry along the standard orthonormal basis.
   have hterm : ∀ i, iteratedFDeriv ℝ 2 w x
       ![(stdOrthonormalBasis ℝ E) i, (stdOrthonormalBasis ℝ E) i]
       = α ^ 2 * ⟪u, (stdOrthonormalBasis ℝ E) i⟫ ^ 2 * Real.exp (α * ⟪u, x⟫) := by
     intro i
-    rw [iteratedFDeriv_two_apply, hfw, hw2.fderiv]
-    simp only [ContinuousLinearMap.smulRight_apply, smul_apply, innerSL_apply_apply, smul_eq_mul,
-      Matrix.cons_val_zero, Matrix.cons_val_one]
+    rw [iteratedFDeriv_two_apply, fderiv_fderiv_exp_inner_apply]
+    simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one]
     ring
   rw [congrFun (laplacian_eq_iteratedFDeriv_orthonormalBasis w
     (stdOrthonormalBasis ℝ E)) x]
@@ -276,7 +279,6 @@ private theorem le_of_strict_subsolution_barrier {K : Set E} (hK : IsCompact K)
       exact hzmax hxK
     have hzC : ε * w z ≤ ε * C :=
       mul_le_mul_of_nonneg_left (hCub (Set.mem_image_of_mem w hzK)) hε.le
-    have hexp : ε * (C - w x) = ε * C - ε * w x := by ring
     linarith [hbdry hzfr]
   exact le_of_forall_pos_mul_le (sub_nonneg.mpr hxC) key
 

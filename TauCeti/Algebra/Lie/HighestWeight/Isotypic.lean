@@ -104,7 +104,7 @@ universe u v w w₁
 variable {K : Type u} {L : Type v} [Field K] [CharZero K] [LieRing L]
   [LieAlgebra K L] [IsKilling K L] [FiniteDimensional K L]
   {H : LieSubalgebra K L} [H.IsCartanSubalgebra]
-  {M : Type w} [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M]
+  {M : Type w} [AddCommGroup M] [Module K M] [LieRingModule L M]
   {N : Type w₁} [AddCommGroup N] [Module K N] [LieRingModule L N] [LieModule K L N]
 
 section Triangularizable
@@ -122,6 +122,8 @@ private theorem isHighestWeightVector_generator (hv : IsHighestWeightVector b la
   isHighestWeightVector_coe_iff.mp hv
 
 /-! ### A finite-dimensional highest weight module is irreducible -/
+
+variable [LieModule K L M]
 
 /-- **A highest weight vector lies in one half of a direct-sum decomposition.** The two components
 of the generator of a highest weight module along a pair of complementary Lie submodules are each
@@ -168,6 +170,8 @@ private theorem mem_or_mem_of_isCompl_of_isHighestWeightVector_of_lieSpan_eq_top
 end Triangularizable
 
 section AlgClosed
+
+variable [LieModule K L M]
 
 variable [IsAlgClosed K] {b : (IsKilling.rootSystem H).Base} {lam : Dual K H} {v : M}
 

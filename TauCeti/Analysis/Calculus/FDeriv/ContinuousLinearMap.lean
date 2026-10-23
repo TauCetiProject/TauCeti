@@ -13,12 +13,20 @@ public import Mathlib.Analysis.Calculus.FDeriv.Add
 
 This file records a zero-value rule for differentiating the pointwise application of a varying
 continuous linear map. At a zero of the vector-valued argument, the variation of the operator
-contributes nothing to the derivative, so the operator-valued map need only be continuous.
+contributes nothing to the derivative, so the operator-valued map need only be continuous. It also
+records the derivative of the application of a varying continuous linear map to a fixed vector,
+the product rule for a varying bilinear map applied to two varying vectors, and the fact that
+the derivative of a field of symmetric bilinear maps takes symmetric values.
 
 ## Main declarations
 
 * `HasFDerivWithinAt.clm_apply_of_eq_zero`: the derivative of `y ↦ c y (u y)` at a zero of
   `u`, assuming only continuity of `c`.
+* `TauCeti.fderiv_clm_apply_const_apply`: the derivative of `y ↦ c y v` in the direction `w` is
+  `Dc(w) v`.
+* `TauCeti.fderiv_bilin_apply`: the product rule for `y ↦ c y (A y) (B y)`.
+* `TauCeti.fderiv_apply_apply_comm`: the derivative of a field of bilinear maps that is symmetric
+  near a point takes symmetric values there.
 -/
 
 public section
@@ -26,9 +34,10 @@ public section
 open Asymptotics Filter Set
 open scoped Topology
 
-variable {𝕜 E F F' : Type*} [NontriviallyNormedField 𝕜]
+variable {𝕜 E F G F' : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  [NormedAddCommGroup G] [NormedSpace 𝕜 G]
   [NormedAddCommGroup F'] [NormedSpace 𝕜 F']
 
 namespace TauCeti
@@ -52,6 +61,39 @@ theorem _root_.HasFDerivWithinAt.clm_apply_of_eq_zero {c : E → F →L[𝕜] F'
   · funext y
     simp
   · simp
+
+/-- Differentiating `y ↦ c y v` for a fixed vector `v` in the direction `w` gives the derivative
+of `c` in the direction `w`, applied to `v`. -/
+theorem fderiv_clm_apply_const_apply {c : E → F →L[𝕜] F'} {x : E} (hc : DifferentiableAt 𝕜 c x)
+    (v : F) (w : E) :
+    fderiv 𝕜 (fun y ↦ c y v) x w = fderiv 𝕜 c x w v := by
+  rw [fderiv_clm_apply hc (differentiableAt_const v)]
+  simp
+
+/-- The derivative of `y ↦ c y (A y) (B y)` for a field `c` of bilinear maps: the product rule. -/
+theorem fderiv_bilin_apply {c : E → F →L[𝕜] G →L[𝕜] F'} {A : E → F} {B : E → G} {x : E}
+    (hc : DifferentiableAt 𝕜 c x) (hA : DifferentiableAt 𝕜 A x) (hB : DifferentiableAt 𝕜 B x)
+    (u : E) :
+    fderiv 𝕜 (fun y ↦ c y (A y) (B y)) x u =
+      fderiv 𝕜 c x u (A x) (B x) + c x (fderiv 𝕜 A x u) (B x) + c x (A x) (fderiv 𝕜 B x u) := by
+  rw [((hc.hasFDerivAt.clm_apply hA.hasFDerivAt).clm_apply hB.hasFDerivAt).fderiv]
+  simp only [add_apply, ContinuousLinearMap.coe_comp, Function.comp_apply,
+    ContinuousLinearMap.flip_apply]
+  abel
+
+/-- If a field `c` of bilinear maps takes symmetric values near `x`, then so does each directional
+derivative of `c` at `x`. -/
+theorem fderiv_apply_apply_comm {c : E → F →L[𝕜] F →L[𝕜] G} {x : E}
+    (hc : ∀ᶠ y in 𝓝 x, ∀ v w, c y v w = c y w v) (u : E) (v w : F) :
+    fderiv 𝕜 c x u v w = fderiv 𝕜 c x u w v := by
+  by_cases hd : DifferentiableAt 𝕜 c x
+  · -- Both sides are derivatives of functions of `y` which agree near `x`.
+    have happ (a b : F) : fderiv 𝕜 (fun y ↦ c y a b) x u = fderiv 𝕜 c x u a b := by
+      rw [fderiv_clm_apply_const_apply (hd.clm_apply (differentiableAt_const a)),
+        fderiv_clm_apply_const_apply hd]
+    have heq : (fun y ↦ c y v w) =ᶠ[𝓝 x] fun y ↦ c y w v := hc.mono fun y hy ↦ hy v w
+    rw [← happ, ← happ, heq.fderiv_eq]
+  · simp [fderiv_zero_of_not_differentiableAt hd]
 
 end TauCeti
 

@@ -74,7 +74,7 @@ private noncomputable instance finiteSplittingField.finiteDimensional
     {n : ℕ} (e : E ⊗[K] A ≃ₐ[E] Matrix (Fin n) (Fin n) E) :
     FiniteDimensional K (finiteSplittingField K A e) := by
   apply IntermediateField.finiteDimensional_adjoin
-  intro x hx
+  intro x _
   exact (Algebra.IsAlgebraic.isAlgebraic x).isIntegral
 
 variable {K A}

@@ -6,15 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.AlgebraicIndependent.TranscendenceBasis
+import Mathlib.RingTheory.AlgebraicIndependent.AlgebraicClosure
 
 /-!
-# Algebraicity from transcendence degree in towers
+# Transcendence degree in towers
 
-This file records consequences of Mathlib's transcendence-degree tower inequality
-`lift_trdeg_add_le` for injective towers of commutative rings.
+This file records consequences of algebraic independence and Mathlib's transcendence-degree
+tower inequality `lift_trdeg_add_le` for towers of commutative rings.
 
 ## Main results
 
+* `TauCeti.trdeg_eq_of_isAlgebraic_base`: an injective algebraic extension of the base ring
+  preserves transcendence degree in any commutative algebra over the larger base.
 * `TauCeti.isAlgebraic_of_trdeg_eq`: if the top ring has the same finite transcendence degree
   over the bottom and middle rings, then the middle ring is algebraic over the bottom ring;
   `TauCeti.isAlgebraic_of_trdeg_eq_one` is the case of transcendence degree one.
@@ -27,9 +30,23 @@ namespace TauCeti
 universe u v w
 
 variable {R : Type u} {S : Type v} {A : Type w}
-variable [CommRing R] [Nontrivial R] [CommRing S] [CommRing A]
+variable [CommRing R] [CommRing S] [CommRing A]
 variable [Algebra R S] [Algebra S A] [Algebra R A] [IsScalarTower R S A]
-variable [FaithfulSMul R S] [FaithfulSMul S A]
+
+/-- An injective algebraic extension of the base ring preserves transcendence degree, provided
+the larger base has no zero divisors. The top algebra may have zero divisors, and its structure
+map need not be injective. -/
+theorem trdeg_eq_of_isAlgebraic_base
+    [NoZeroDivisors S] [FaithfulSMul R S] [Algebra.IsAlgebraic R S] :
+    Algebra.trdeg S A = Algebra.trdeg R A := by
+  -- Mathlib's algebraic-independence transfer identifies the sets in the defining supremum.
+  have h : AlgebraicIndepOn S (id : A → A) = AlgebraicIndepOn R id := by
+    funext s
+    exact propext (Algebra.IsAlgebraic.algebraicIndependent_iff R S (A := A)).symm
+  unfold Algebra.trdeg
+  rw [h]
+
+variable [Nontrivial R] [FaithfulSMul R S] [FaithfulSMul S A]
 
 /-- In an injective tower `R → S → A`, if `A` has the same finite transcendence degree over
 `R` and `S`, then `S` is algebraic over `R`. Finiteness allows cancellation in the

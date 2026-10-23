@@ -23,16 +23,17 @@ matrices. Over a field, its two Bruhat cells are represented by the identity and
 element whose square is not one. In particular, this holds over every infinite field.
 
 The maximal-solvability theorem is the abstract-group input for proving that the
-upper-triangular closed subgroup scheme of `SL₂` is a Borel subgroup. The field hypothesis is
-used only to rule out solvability of `SL₂`; the Bruhat decomposition itself holds over every
-field. Entrywise mapping makes the construction functorial in the coefficient ring.
+upper-triangular closed subgroup scheme of `SL₂` is a Borel subgroup. The hypothesis that the
+field has a nonzero element whose square is not one is used only to rule out solvability of
+`SL₂`; the Bruhat decomposition itself holds over every field. Entrywise mapping makes the
+construction functorial in the coefficient ring.
 
 ## Main declarations
 
 * `TauCeti.SL2Borel`: the upper-triangular subgroup of `SL₂`.
 * `TauCeti.SL2Borel.map`: entrywise mapping along a ring homomorphism.
-* `TauCeti.SL2Borel.mem_doubleCoset_modularGroup_S_iff`: the big cell of the rank-one Bruhat
-  decomposition is detected by the lower-left entry.
+* `TauCeti.SL2Borel.mem_doubleCoset_modularGroup_S_iff`: over any commutative ring, the big cell
+  of the rank-one Bruhat decomposition consists of the elements whose lower-left entry is a unit.
 * `TauCeti.SL2Borel.closure_insert_modularGroup_S_eq_top`: the Borel and the Weyl element generate
   `SL₂`.
 * `TauCeti.SL2Borel.le_of_isSolvable`: a solvable subgroup containing the Borel is contained in it
@@ -46,7 +47,6 @@ field. Entrywise mapping makes the construction functorial in the coefficient ri
 
 public section
 
-open Matrix
 open scoped MatrixGroups
 
 namespace TauCeti
@@ -57,6 +57,12 @@ universe u v
 upper-triangular subgroup of `GL₂(R)` back along the canonical inclusion. -/
 def SL2Borel (R : Type u) [CommRing R] : Subgroup SL(2, R) :=
   (GL2Borel R).comap Matrix.SpecialLinearGroup.toGL
+
+/-- The standard Borel subgroup of `SL₂(R)` is the preimage of the upper-triangular subgroup of
+`GL₂(R)`. -/
+theorem SL2Borel_def (R : Type u) [CommRing R] :
+    SL2Borel R = (GL2Borel R).comap Matrix.SpecialLinearGroup.toGL := by
+  rw [SL2Borel]
 
 namespace SL2Borel
 
@@ -90,8 +96,8 @@ def mk (a : Rˣ) (b : R) : SL2Borel R :=
 /-- The matrix underlying `mk a b`. -/
 @[simp]
 theorem coe_mk (a : Rˣ) (b : R) :
-    (mk a b : Matrix (Fin 2) (Fin 2) R) = !![(a : R), b; 0, ((a⁻¹ : Rˣ) : R)] :=
-  by rw [mk]
+    (mk a b : Matrix (Fin 2) (Fin 2) R) = !![(a : R), b; 0, ((a⁻¹ : Rˣ) : R)] := by
+  rw [mk]
 
 /-- Apply a ring homomorphism entrywise to an upper-triangular determinant-one matrix. -/
 def map {S : Type v} [CommRing S] (phi : R →+* S) : SL2Borel R →* SL2Borel S :=
@@ -105,8 +111,8 @@ def map {S : Type v} [CommRing S] (phi : R →+* S) : SL2Borel R →* SL2Borel S
 of its underlying matrix. -/
 @[simp]
 theorem coe_map {S : Type v} [CommRing S] (phi : R →+* S) (g : SL2Borel R) :
-    (map phi g : SL(2, S)) = Matrix.SpecialLinearGroup.map phi g.1 :=
-  by rfl
+    (map phi g : SL(2, S)) = Matrix.SpecialLinearGroup.map phi g.1 := by
+  simp only [map, MonoidHom.codRestrict_apply, MonoidHom.domRestrict_apply]
 
 /-- The `(i, j)` entry of the entrywise map of `g` is the image under `phi` of the `(i, j)`
 entry of `g`. -/
@@ -142,37 +148,29 @@ theorem map_comp {S T : Type*} [CommRing S] [CommRing T]
 
 /-- The canonical inclusion from the `SL₂` Borel to the `GL₂` Borel. -/
 def toGL2Borel : SL2Borel R →* GL2Borel R :=
-  Matrix.SpecialLinearGroup.toGL.restrict fun _ hg ↦ by
-    exact GL2Borel.mem_iff.mpr (mem_iff.mp hg)
+  Matrix.SpecialLinearGroup.toGL.subgroupComap (GL2Borel R)
 
 /-- The inclusion of the `SL₂` Borel into the `GL₂` Borel does not change the underlying
 general linear matrix. -/
 @[simp]
 theorem coe_toGL2Borel (g : SL2Borel R) :
     (toGL2Borel g : GL (Fin 2) R) = Matrix.SpecialLinearGroup.toGL g.1 :=
-  by
-    simp only [toGL2Borel, MonoidHom.restrict, MonoidHom.codRestrict_apply,
-      MonoidHom.domRestrict_apply]
+  MonoidHom.subgroupComap_apply_coe _ _ g
 
 /-- The inclusion from the `SL₂` Borel to the `GL₂` Borel is injective. -/
 theorem toGL2Borel_injective : Function.Injective (toGL2Borel (R := R)) :=
-  MonoidHom.restrict_injective _ Matrix.SpecialLinearGroup.toGL_injective
+  MonoidHom.subgroupComap_injective _ _ Matrix.SpecialLinearGroup.toGL_injective
 
 /-- The upper-left diagonal entry of an `SL₂` Borel matrix, bundled as a unit. -/
-def diag : SL2Borel R →* Rˣ where
-  toFun g := (GL2Borel.diag (toGL2Borel g)).1
-  map_one' := by
-    rw [map_one, map_one]
-    rfl
-  map_mul' g h := by
-    rw [map_mul, map_mul]
-    rfl
+def diag : SL2Borel R →* Rˣ :=
+  (MonoidHom.fst Rˣ Rˣ).comp (GL2Borel.diag.comp toGL2Borel)
 
 /-- The value of the diagonal parameter is the upper-left matrix entry. -/
 @[simp]
 theorem diag_val (g : SL2Borel R) :
     (diag g : R) = (g : Matrix (Fin 2) (Fin 2) R) 0 0 := by
-  exact GL2Borel.diag_fst_val (toGL2Borel g)
+  rw [diag, MonoidHom.comp_apply, MonoidHom.comp_apply, MonoidHom.coe_fst, GL2Borel.diag_fst_val,
+    coe_toGL2Borel, Matrix.SpecialLinearGroup.coe_GL_coe_matrix]
 
 /-- The free upper-right parameter of an `SL₂` Borel matrix. -/
 def upperRight (g : SL2Borel R) : R :=
@@ -180,8 +178,8 @@ def upperRight (g : SL2Borel R) : R :=
 
 /-- The upper-right parameter is the upper-right matrix entry. -/
 theorem upperRight_apply (g : SL2Borel R) :
-    upperRight g = (g : Matrix (Fin 2) (Fin 2) R) 0 1 :=
-  by rw [upperRight]
+    upperRight g = (g : Matrix (Fin 2) (Fin 2) R) 0 1 := by
+  rw [upperRight]
 
 /-- The diagonal parameter of a matrix built by `mk` is its first argument. -/
 @[simp]
@@ -231,6 +229,65 @@ theorem equivProd_symm_apply (p : Rˣ × R) :
 instance instIsSolvable : Group.IsSolvable (SL2Borel R) :=
   Group.isSolvable_of_isSolvable_injective (toGL2Borel_injective (R := R))
 
+/-- **The lower-left entry detects the big cell, one direction**: every element of `B S B` has an
+invertible lower-left entry, the product of two diagonal units. The public interface is the
+two-way `TauCeti.SL2Borel.mem_doubleCoset_modularGroup_S_iff`. -/
+private theorem isUnit_apply_one_zero_of_mem_doubleCoset_modularGroup_S {g : SL(2, R)}
+    (hg : g ∈ DoubleCoset.doubleCoset (((ModularGroup.S : SL(2, ℤ)) : SL(2, R)))
+      (SL2Borel R : Set SL(2, R)) (SL2Borel R : Set SL(2, R))) :
+    IsUnit (g 1 0) := by
+  obtain ⟨x, hx, y, hy, rfl⟩ := DoubleCoset.mem_doubleCoset.mp hg
+  have hx10 : x 1 0 = 0 := mem_iff.mp hx
+  have hy10 : y 1 0 = 0 := mem_iff.mp hy
+  have hxdet : x 0 0 * x 1 1 = 1 := by
+    simpa only [Matrix.det_fin_two, hx10, mul_zero, sub_zero] using x.2
+  have hydet : y 0 0 * y 1 1 = 1 := by
+    simpa only [Matrix.det_fin_two, hy10, mul_zero, sub_zero] using y.2
+  rw [Matrix.SpecialLinearGroup.coe_mul, Matrix.SpecialLinearGroup.coe_mul,
+    TauCeti.Matrix.SpecialLinearGroup.coe_modularGroup_S]
+  simpa only [Matrix.mul_apply, Fin.sum_univ_two, Matrix.of_apply, Matrix.cons_val_one,
+    Matrix.cons_val_zero, Matrix.head_cons, neg_mul, one_mul, zero_mul, add_zero, hx10, hy10,
+    mul_zero, mul_one, zero_add] using
+    (IsUnit.of_mul_eq_one_right _ hxdet).mul (IsUnit.of_mul_eq_one _ hydet)
+
+/-- **The Bruhat factorization.** An element `g = !![a, b; c, d]` of `SL₂(R)` whose lower-left
+entry `c` is a unit is `mk 1 (a c⁻¹) * S * mk c d`, so it lies in the big cell. The public
+interface is the two-way `TauCeti.SL2Borel.mem_doubleCoset_modularGroup_S_iff`. -/
+private theorem mem_doubleCoset_modularGroup_S_of_isUnit_apply_one_zero {g : SL(2, R)}
+    (hg : IsUnit (g 1 0)) :
+    g ∈ DoubleCoset.doubleCoset (((ModularGroup.S : SL(2, ℤ)) : SL(2, R)))
+      (SL2Borel R : Set SL(2, R)) (SL2Borel R : Set SL(2, R)) := by
+  obtain ⟨c, hc⟩ := hg
+  refine DoubleCoset.mem_doubleCoset.mpr
+    ⟨mk 1 (g 0 0 * ((c⁻¹ : Rˣ) : R)), (mk _ _).2, mk c (g 1 1), (mk _ _).2, ?_⟩
+  have hdet := g.2
+  rw [Matrix.det_fin_two] at hdet
+  have hcg : ((c⁻¹ : Rˣ) : R) * g 1 0 = 1 := by
+    rw [← hc]
+    exact c.inv_mul
+  apply Subtype.ext
+  rw [Matrix.SpecialLinearGroup.coe_mul, Matrix.SpecialLinearGroup.coe_mul,
+    TauCeti.Matrix.SpecialLinearGroup.coe_modularGroup_S, coe_mk, coe_mk, Matrix.mul_fin_two,
+    Matrix.mul_fin_two]
+  ext i j
+  fin_cases i <;> fin_cases j
+  · simp [mul_assoc]
+  · simp
+    linear_combination (-((c⁻¹ : Rˣ) : R)) * hdet - g 0 1 * hcg
+  · simp [hc]
+  · simp
+
+/-- **The lower-left entry detects the big cell.** An element of `SL₂(R)` lies in the double
+coset of `ModularGroup.S` by the standard Borel exactly when its lower-left entry is a unit.
+
+Not a `simp` lemma: `TauCeti.mem_doubleCoset_iff_mk_mem_orbit` rewrites double-coset membership
+to orbit membership, so the left-hand side is not simp-normal. -/
+theorem mem_doubleCoset_modularGroup_S_iff {g : SL(2, R)} :
+    g ∈ DoubleCoset.doubleCoset (((ModularGroup.S : SL(2, ℤ)) : SL(2, R)))
+      (SL2Borel R : Set SL(2, R)) (SL2Borel R : Set SL(2, R)) ↔ IsUnit (g 1 0) :=
+  ⟨isUnit_apply_one_zero_of_mem_doubleCoset_modularGroup_S,
+    mem_doubleCoset_modularGroup_S_of_isUnit_apply_one_zero⟩
+
 end CommRing
 
 section Field
@@ -241,83 +298,24 @@ variable {F : Type u} [Field F]
 represented by `ModularGroup.S`. -/
 theorem mem_doubleCoset_modularGroup_S_of_notMem {g : SL(2, F)} (hg : g ∉ SL2Borel F) :
     g ∈ DoubleCoset.doubleCoset (((ModularGroup.S : SL(2, ℤ)) : SL(2, F)))
-      (SL2Borel F : Set SL(2, F)) (SL2Borel F : Set SL(2, F)) := by
-  have hc : g 1 0 ≠ 0 := by
-    simpa only [mem_iff, not_false_eq_true] using hg
-  let x : SL(2, F) :=
-    ⟨!![1, g 0 0 * (g 1 0)⁻¹; 0, 1], by simp [Matrix.det_fin_two_of]⟩
-  let y : SL(2, F) :=
-    ⟨!![g 1 0, g 1 1; 0, (g 1 0)⁻¹], by simp [Matrix.det_fin_two_of, hc]⟩
-  have hx : x ∈ SL2Borel F := by
-    rw [mem_iff]
-    rfl
-  have hy : y ∈ SL2Borel F := by
-    rw [mem_iff]
-    rfl
-  refine DoubleCoset.mem_doubleCoset.mpr ⟨x, hx, y, hy, ?_⟩
-  apply Subtype.ext
-  rw [Matrix.SpecialLinearGroup.coe_mul, Matrix.SpecialLinearGroup.coe_mul,
-    TauCeti.Matrix.SpecialLinearGroup.coe_modularGroup_S]
-  dsimp only [x, y]
-  rw [Matrix.mul_fin_two, Matrix.mul_fin_two]
-  ext i j
-  fin_cases i <;> fin_cases j
-  · simp [hc]
-  · have hdet := g.2
-    rw [Matrix.det_fin_two] at hdet
-    simp
-    field_simp
-    linear_combination -hdet
-  · simp [hc]
-  · simp [hc]
-
-/-- **The lower-left entry detects the big cell.** An element of `SL₂(F)` lies in the double
-coset of `ModularGroup.S` by the standard Borel exactly when its lower-left entry is nonzero.
-
-Not a `simp` lemma: `TauCeti.mem_doubleCoset_iff_mk_mem_orbit` rewrites double-coset membership
-to orbit membership, so the left-hand side is not simp-normal. -/
-theorem mem_doubleCoset_modularGroup_S_iff {g : SL(2, F)} :
-    g ∈ DoubleCoset.doubleCoset (((ModularGroup.S : SL(2, ℤ)) : SL(2, F)))
-      (SL2Borel F : Set SL(2, F)) (SL2Borel F : Set SL(2, F)) ↔ g 1 0 ≠ 0 := by
-  constructor
-  · intro hg
-    obtain ⟨x, hx, y, hy, rfl⟩ := DoubleCoset.mem_doubleCoset.mp hg
-    have hx10 : x 1 0 = 0 := mem_iff.mp hx
-    have hy10 : y 1 0 = 0 := mem_iff.mp hy
-    have hxdet : x 0 0 * x 1 1 = 1 := by
-      simpa only [Matrix.det_fin_two, hx10, mul_zero, sub_zero] using x.2
-    have hydet : y 0 0 * y 1 1 = 1 := by
-      simpa only [Matrix.det_fin_two, hy10, mul_zero, sub_zero] using y.2
-    have hx11 : x 1 1 ≠ 0 := by
-      intro h
-      rw [h, mul_zero] at hxdet
-      exact zero_ne_one hxdet
-    have hy00 : y 0 0 ≠ 0 := by
-      intro h
-      rw [h, zero_mul] at hydet
-      exact zero_ne_one hydet
-    rw [Matrix.SpecialLinearGroup.coe_mul, Matrix.SpecialLinearGroup.coe_mul,
-      TauCeti.Matrix.SpecialLinearGroup.coe_modularGroup_S]
-    simpa only [Matrix.mul_apply, Fin.sum_univ_two, Matrix.of_apply, Matrix.cons_val_one,
-      Matrix.cons_val_zero, Matrix.head_cons, neg_mul, one_mul, zero_mul, add_zero, hx10, hy10,
-      mul_zero, mul_one, zero_add] using mul_ne_zero hx11 hy00
-  · intro hg
-    exact mem_doubleCoset_modularGroup_S_of_notMem (mem_iff.not.mpr hg)
+      (SL2Borel F : Set SL(2, F)) (SL2Borel F : Set SL(2, F)) :=
+  mem_doubleCoset_modularGroup_S_of_isUnit_apply_one_zero
+    (isUnit_iff_ne_zero.mpr (mem_iff.not.mp hg))
 
 /-- The upper-triangular subgroup and the Weyl element `ModularGroup.S` generate `SL₂(F)`. -/
 theorem closure_insert_modularGroup_S_eq_top :
     Subgroup.closure
         (insert (((ModularGroup.S : SL(2, ℤ)) : SL(2, F)))
-          (SL2Borel F : Set SL(2, F))) = ⊤ := by
-  exact Subgroup.closure_insert_eq_top_of_notMem_imp_mem_doubleCoset (SL2Borel F)
+          (SL2Borel F : Set SL(2, F))) = ⊤ :=
+  Subgroup.closure_insert_eq_top_of_notMem_imp_mem_doubleCoset (SL2Borel F)
     ((ModularGroup.S : SL(2, ℤ)) : SL(2, F)) mem_doubleCoset_modularGroup_S_of_notMem
 
 /-- Every solvable subgroup of `SL₂(F)` that contains the standard Borel is contained in it if
 `F` has a nonzero element whose square is not one. -/
 theorem le_of_isSolvable (hF : ∃ a : F, a ≠ 0 ∧ a ^ 2 ≠ 1)
     (P : Subgroup SL(2, F)) [Group.IsSolvable P]
-    (hBP : SL2Borel F ≤ P) : P ≤ SL2Borel F := by
-  exact Subgroup.le_of_isSolvable_of_not_isSolvable_of_notMem_imp_mem_doubleCoset
+    (hBP : SL2Borel F ≤ P) : P ≤ SL2Borel F :=
+  Subgroup.le_of_isSolvable_of_not_isSolvable_of_notMem_imp_mem_doubleCoset
     (SL2Borel F) P ((ModularGroup.S : SL(2, ℤ)) : SL(2, F))
     (Matrix.SpecialLinearGroup.not_isSolvable_fin_two F hF)
     mem_doubleCoset_modularGroup_S_of_notMem hBP
@@ -326,8 +324,8 @@ theorem le_of_isSolvable (hF : ∃ a : F, a ≠ 0 ∧ a ^ 2 ≠ 1)
 is contained in it. -/
 theorem le_of_isSolvable_of_infinite [Infinite F]
     (P : Subgroup SL(2, F)) [Group.IsSolvable P]
-    (hBP : SL2Borel F ≤ P) : P ≤ SL2Borel F := by
-  exact Subgroup.le_of_isSolvable_of_not_isSolvable_of_notMem_imp_mem_doubleCoset
+    (hBP : SL2Borel F ≤ P) : P ≤ SL2Borel F :=
+  Subgroup.le_of_isSolvable_of_not_isSolvable_of_notMem_imp_mem_doubleCoset
     (SL2Borel F) P ((ModularGroup.S : SL(2, ℤ)) : SL(2, F))
     (Matrix.SpecialLinearGroup.not_isSolvable_fin_two_of_infinite F)
     mem_doubleCoset_modularGroup_S_of_notMem hBP

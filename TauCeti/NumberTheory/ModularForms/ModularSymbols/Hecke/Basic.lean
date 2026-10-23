@@ -147,7 +147,7 @@ theorem mk_symbolIntRep_eq_of_rightCoset_eq {δ₁ δ₂ : GL (Fin 2) ℚ} (h₁
     (Coinvariants.mk _ : degreeZero R ⊗[R] homogeneousSubmodule (Fin 2) R w →ₗ[R]
         ModularSymbols R Γ₁ w) (symbolIntRep R w ⟨δ₁, h₁⟩ x) =
       Coinvariants.mk _ (symbolIntRep R w ⟨δ₂, mem_intEntries_of_rightCoset_eq 2 h₁ h⟩ x) :=
-  LinearMap.congr_fun (HeckeCoset.comp_eq_of_rightCoset_eq (symbolIntRep R w)
+  LinearMap.congr_fun (Representation.comp_eq_of_rightCoset_eq (symbolIntRep R w)
     (map_mapGL_le_intEntries 2 Γ₁) (fun _ hγ ↦ mk_comp_symbolIntRep_of_mem Γ₁ hγ) h₁
     (mem_intEntries_of_rightCoset_eq 2 h₁ h) h) x
 

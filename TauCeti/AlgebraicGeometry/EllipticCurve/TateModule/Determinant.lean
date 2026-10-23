@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateModule.WeilPairing
 public import Mathlib.LinearAlgebra.Determinant
-import TauCeti.LinearAlgebra.Determinant
+import TauCeti.LinearAlgebra.Determinant.Basic
 import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 
 /-!
@@ -20,7 +20,7 @@ Tate module or a generator of `ℤ_ℓ(1)`.
 
 The alternating Weil pairing identifies the determinant action with the action on the Tate
 twist. This uses the rank-two determinant transformation law
-`LinearMap.det_eq_of_compl₁₂_self_eq_smul` from `TauCeti.LinearAlgebra.Determinant`, together
+`LinearMap.det_eq_of_compl₁₂_self_eq_smul` from `TauCeti.LinearAlgebra.Determinant.Basic`, together
 with nondegeneracy of `WeierstrassCurve.tateModuleWeilPairing`. Cancellation is justified by
 the rank-one freeness of the Tate twist, so it does not require a perfect-pairing theorem.
 

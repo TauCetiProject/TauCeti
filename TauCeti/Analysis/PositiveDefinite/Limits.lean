@@ -18,11 +18,10 @@ This file derives pointwise- and locally-uniform-limit closure for
 `TauCeti.IsPositiveDefinite`, the positive-definite function predicate on an involutive additive
 monoid, from Mathlib's closedness theorem for the cone of positive-semidefinite matrices.
 
-This is the limit-closure item from Part C of the `OneParameterSemigroups` roadmap. The result is
-about positive-definiteness alone for pointwise limits; as the roadmap notes, continuity needs an
-additional hypothesis. Mathlib's `TendstoLocallyUniformly.continuous` provides continuity of a
-locally uniform limit when the approximating functions are frequently continuous, while this file
-provides the positive-definiteness conclusion.
+The result is about positive-definiteness alone for pointwise limits; continuity needs an additional
+hypothesis. Mathlib's `TendstoLocallyUniformly.continuous` provides continuity of a locally uniform
+limit when the approximating functions are frequently continuous, while this file provides the
+positive-definiteness conclusion.
 
 ## Main declarations
 

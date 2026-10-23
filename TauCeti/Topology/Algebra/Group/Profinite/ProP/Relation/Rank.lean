@@ -278,9 +278,8 @@ theorem lift_rank_H2_of_le_proPFrattini :
     Cardinal.lift.{u} (Module.rank (ZMod p) (H2 G (ZMod p))) =
       Cardinal.lift.{v} (topologicalGeneratorRank (R ⧸ (pLowerCentralStep p R).subgroupOf R)) := by
   have := freeProP.subsingleton_H2_zmod (p := p) (X := X)
-  -- `R ⧸ Rᵖ[R, F]` is a profinite pro-`p` group: `IsClosed` and `CompactSpace` are the instances
-  -- its topology and Burnside's basis theorem need.
-  have := isClosed_pLowerCentralStep_subgroupOf (p := p) R
+  -- `R ⧸ Rᵖ[R, F]` is a profinite pro-`p` group: `CompactSpace R` is the instance its topology
+  -- and Burnside's basis theorem need beyond those found by instance search.
   have : CompactSpace R := isCompact_iff_compactSpace.mp hRc.isCompact
   have hQ : IsProP p (R ⧸ (pLowerCentralStep p R).subgroupOf R) :=
     (isPGroup_quotient_pLowerCentralStep_subgroupOf R).isProP
@@ -302,7 +301,6 @@ theorem finrank_H2_of_le_proPFrattini
     Module.finrank (ZMod p) (H2 G (ZMod p)) =
       topologicalGeneratorRankNat (R ⧸ (pLowerCentralStep p R).subgroupOf R) h := by
   -- The profinite instances on `R ⧸ Rᵖ[R, F]`, as in `TauCeti.lift_rank_H2_of_le_proPFrattini`.
-  have := isClosed_pLowerCentralStep_subgroupOf (p := p) R
   have : CompactSpace R := isCompact_iff_compactSpace.mp hRc.isCompact
   have hrank := lift_rank_H2_of_le_proPFrattini hRc hR e htrivF htriv
   rw [← topologicalGeneratorRankNat_eq_topologicalGeneratorRank h, Cardinal.lift_natCast] at hrank

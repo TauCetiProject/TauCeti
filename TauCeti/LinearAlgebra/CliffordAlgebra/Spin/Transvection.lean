@@ -36,7 +36,7 @@ nontrivial unit as soon as `u` and `w` are linearly independent.
 
 * `CliffordAlgebra.spinTransvection hQ hu huw`: the Spin element `1 + ι w * ι u` lifting
   `E_{u,w}`.
-* `CliffordAlgebra.spinTransvectionHom hQ hu`: the homomorphism `w ↦ L_{u,w}` from the additive
+* `CliffordAlgebra.transvectionLiftHom hQ hu`: the homomorphism `w ↦ L_{u,w}` from the additive
   group of `u^⊥ / K ∙ u` into the Spin group.
 
 ## Main results
@@ -47,13 +47,15 @@ nontrivial unit as soon as `u` and `w` are linearly independent.
 * `QuadraticMap.Isometry.spinGroupMap_spinTransvection` and
   `QuadraticMap.IsometryEquiv.spinGroupEquiv_spinTransvection`: the canonical lifts are natural
   under isometries, in general map form and equivalence-specialized form.
-* `QuadraticMap.IsometryEquiv.spinGroupEquiv_comp_spinTransvectionHom`: the Spin root-subgroup
+* `QuadraticMap.IsometryEquiv.spinGroupEquiv_comp_transvectionLiftHom`: the Spin root-subgroup
   homomorphisms are natural under isometric equivalences.
 * `CliffordAlgebra.spinTransvection_eq_one_iff`: for `u ≠ 0`, `L_{u,w} = 1` exactly when
   `w ∈ K ∙ u`.
-* `CliffordAlgebra.spinToSpecialOrthogonal_comp_spinTransvectionHom`: the lifts lift
+* `CliffordAlgebra.spinToSpecialOrthogonal_comp_transvectionLiftHom`: the lifts lift
   `QuadraticMap.transvectionHom`.
-* `CliffordAlgebra.spinTransvectionHom_injective`: for `u ≠ 0` the lifts form a copy of
+* `CliffordAlgebra.spinTransvection_pow`: powers multiply the parameter by the exponent,
+  as for `TauCeti.QuadraticMap.transvection_pow`.
+* `CliffordAlgebra.transvectionLiftHom_injective`: for `u ≠ 0` the lifts form a copy of
   `u^⊥ / K ∙ u` inside the Spin group.
 * `CliffordAlgebra.spinorNorm_transvection` and `CliffordAlgebra.orthogonalSpinorNorm_transvection`:
   Eichler transvections have trivial spinor norm.
@@ -334,7 +336,7 @@ theorem spinTransvection_eq_one_iff (hQ : Q.Nondegenerate) (hu : Q u = 0)
     ← coe_spinToSpecialOrthogonal_spinTransvection hQ hu huw, h, map_one, OneMemClass.coe_one]
 
 /-- The Spin lifts with isotropic vector `u`, as a homomorphism out of the vectors orthogonal to
-`u`. It descends to `u^⊥ / K ∙ u` as `spinTransvectionHom`. -/
+`u`. It descends to `u^⊥ / K ∙ u` as `transvectionLiftHom`. -/
 private def spinTransvectionAddHom (hQ : Q.Nondegenerate) (hu : Q u = 0) :
     LinearMap.ker (Q.polarBilin u) →+ Additive (spinGroup Q) :=
   AddMonoidHom.mk' (fun w => Additive.ofMul (spinTransvection hQ hu (LinearMap.mem_ker.mp w.2)))
@@ -350,9 +352,9 @@ private theorem spinTransvectionAddHom_apply (hQ : Q.Nondegenerate) (hu : Q u = 
 
 /-- **The Spin lifts of the Eichler transvections with a fixed isotropic vector `u`**, as a
 homomorphism `w ↦ L_{u,w}` from the additive group of `u^⊥ / K ∙ u` into the Spin group. It lifts
-`QuadraticMap.transvectionHom` (`spinToSpecialOrthogonal_comp_spinTransvectionHom`) and is
-injective for `u ≠ 0` (`spinTransvectionHom_injective`). -/
-noncomputable def spinTransvectionHom (hQ : Q.Nondegenerate) (hu : Q u = 0) :
+`QuadraticMap.transvectionHom` (`spinToSpecialOrthogonal_comp_transvectionLiftHom`) and is
+injective for `u ≠ 0` (`transvectionLiftHom_injective`). -/
+noncomputable def transvectionLiftHom (hQ : Q.Nondegenerate) (hu : Q u = 0) :
     (LinearMap.ker (Q.polarBilin u) ⧸
         (K ∙ u).comap (LinearMap.ker (Q.polarBilin u)).subtype) →+
       Additive (spinGroup Q) :=
@@ -364,9 +366,9 @@ noncomputable def spinTransvectionHom (hQ : Q.Nondegenerate) (hu : Q u = 0) :
 
 /-- The quotient homomorphism sends the class of `w` to the Spin lift `L_{u,w}`. -/
 @[simp]
-theorem toMul_spinTransvectionHom_mk (hQ : Q.Nondegenerate) (hu : Q u = 0)
+theorem toMul_transvectionLiftHom_mk (hQ : Q.Nondegenerate) (hu : Q u = 0)
     (huw : polar Q u w = 0) :
-    Additive.toMul (spinTransvectionHom hQ hu (Submodule.Quotient.mk ⟨w, by simpa using huw⟩)) =
+    Additive.toMul (transvectionLiftHom hQ hu (Submodule.Quotient.mk ⟨w, by simpa using huw⟩)) =
       spinTransvection hQ hu huw :=
   -- `Submodule.Quotient.mk` is the additive quotient map, on which `QuotientAddGroup.lift`
   -- computes by definition.
@@ -374,11 +376,11 @@ theorem toMul_spinTransvectionHom_mk (hQ : Q.Nondegenerate) (hu : Q u = 0)
 
 /-- Spin root-subgroup homomorphisms are natural under isometric equivalences of quadratic
 forms. -/
-theorem _root_.QuadraticMap.IsometryEquiv.spinGroupEquiv_comp_spinTransvectionHom
+theorem _root_.QuadraticMap.IsometryEquiv.spinGroupEquiv_comp_transvectionLiftHom
     {V₂ : Type*} [AddCommGroup V₂] [Module K V₂] {Q₂ : QuadraticForm K V₂}
     (e : Q.IsometryEquiv Q₂) (hQ : Q.Nondegenerate) (hu : Q u = 0) :
-    e.spinGroupEquiv.toMonoidHom.toAdditive.comp (spinTransvectionHom hQ hu) =
-      (spinTransvectionHom (e.nondegenerate_iff.mp hQ) ((e.map_app u).trans hu)).comp
+    e.spinGroupEquiv.toMonoidHom.toAdditive.comp (transvectionLiftHom hQ hu) =
+      (transvectionLiftHom (e.nondegenerate_iff.mp hQ) ((e.map_app u).trans hu)).comp
         (e.transvectionParameterEquiv u).toLinearMap.toAddMonoidHom := by
   apply AddMonoidHom.ext
   intro q
@@ -397,15 +399,15 @@ theorem _root_.QuadraticMap.IsometryEquiv.spinGroupEquiv_comp_spinTransvectionHo
       congrFun e.spinGroupEquiv.coe_toMonoidHom _
     apply Additive.toMul.injective
     simp only [AddMonoidHom.comp_apply, MonoidHom.toAdditive_apply_apply, toMul_ofMul]
-    rw [hparam, e.transvectionParameterEquiv_mk, toMul_spinTransvectionHom_mk hQ hu huw,
-      toMul_spinTransvectionHom_mk (e.nondegenerate_iff.mp hQ) ((e.map_app u).trans hu)
+    rw [hparam, e.transvectionParameterEquiv_mk, toMul_transvectionLiftHom_mk hQ hu huw,
+      toMul_transvectionLiftHom_mk (e.nondegenerate_iff.mp hQ) ((e.map_app u).trans hu)
         ((e.polar_apply u w).trans huw), htransport,
       e.spinGroupEquiv_spinTransvection]
 
 /-- **The Spin lifts lift the Eichler transvections**: followed by the projection
 `Spin(Q) → SO(Q)`, the homomorphism `w ↦ L_{u,w}` is `w ↦ E_{u,w}`. -/
-theorem spinToSpecialOrthogonal_comp_spinTransvectionHom (hQ : Q.Nondegenerate) (hu : Q u = 0) :
-    (spinToSpecialOrthogonal Q).toAdditive.comp (spinTransvectionHom hQ hu) =
+theorem spinToSpecialOrthogonal_comp_transvectionLiftHom (hQ : Q.Nondegenerate) (hu : Q u = 0) :
+    (spinToSpecialOrthogonal Q).toAdditive.comp (transvectionLiftHom hQ hu) =
       transvectionHom Q hu := by
   refine AddMonoidHom.ext fun q => ?_
   induction q using Submodule.Quotient.induction_on with | H w => ?_
@@ -414,16 +416,32 @@ theorem spinToSpecialOrthogonal_comp_spinTransvectionHom (hQ : Q.Nondegenerate) 
   apply Additive.toMul.injective
   apply Subtype.ext
   rw [AddMonoidHom.comp_apply, MonoidHom.toAdditive_apply_apply, toMul_ofMul,
-    toMul_spinTransvectionHom_mk hQ hu huw, coe_spinToSpecialOrthogonal_spinTransvection,
+    toMul_transvectionLiftHom_mk hQ hu huw, coe_spinToSpecialOrthogonal_spinTransvection,
     coe_transvectionHom_mk hu huw]
 
 /-- For `u ≠ 0`, the Spin lifts of the Eichler transvections with isotropic vector `u` form a copy
 of the additive group `u^⊥ / K ∙ u` inside the Spin group. -/
-theorem spinTransvectionHom_injective (hQ : Q.Nondegenerate) (hu : Q u = 0) (hu₀ : u ≠ 0) :
-    Function.Injective (spinTransvectionHom hQ hu) := by
+theorem transvectionLiftHom_injective (hQ : Q.Nondegenerate) (hu : Q u = 0) (hu₀ : u ≠ 0) :
+    Function.Injective (transvectionLiftHom hQ hu) := by
   refine Function.Injective.of_comp (f := (spinToSpecialOrthogonal Q).toAdditive) ?_
-  rw [← AddMonoidHom.coe_comp, spinToSpecialOrthogonal_comp_spinTransvectionHom]
+  rw [← AddMonoidHom.coe_comp, spinToSpecialOrthogonal_comp_transvectionLiftHom]
   exact transvectionHom_injective hu (hQ.polarBilin_ne_zero hu₀)
+
+/-- The `n`th power of a canonical Spin transvection lift multiplies its parameter by `n`. -/
+@[simp]
+theorem spinTransvection_pow (hQ : Q.Nondegenerate) (hu : Q u = 0)
+    (huw : polar Q u w = 0) (n : ℕ) :
+    spinTransvection hQ hu huw ^ n = spinTransvection hQ (w := n • w) hu
+      (by simp [← Nat.cast_smul_eq_nsmul K, polar_smul_right, huw]) := by
+  have h := congrArg Additive.toMul
+    (map_nsmul (transvectionLiftHom hQ hu) n
+      (Submodule.Quotient.mk ⟨w, by simpa only [LinearMap.mem_ker, polarBilin_apply_apply]
+        using huw⟩))
+  simp only [← Nat.cast_smul_eq_nsmul K, ← Submodule.Quotient.mk_smul,
+    SetLike.mk_smul_mk, toMul_nsmul] at h
+  rw [toMul_transvectionLiftHom_mk hQ hu (by simp [polar_smul_right, huw]),
+    toMul_transvectionLiftHom_mk hQ hu huw] at h
+  simpa only [Nat.cast_smul_eq_nsmul] using h.symm
 
 variable [FiniteDimensional K V]
 

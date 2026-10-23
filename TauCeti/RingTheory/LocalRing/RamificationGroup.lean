@@ -84,6 +84,10 @@ integer indexing that Herbrand theory uses.
   `ξ` of a discrete valuation ring under a faithful action of a finite group.
 * `TauCeti.IsLocalRing.sum_min_lowerIndex_natCast`: the truncated count
   `∑_{σ ∈ G} min (i_G(σ), m) = ∑_{k < m} #G_k` for a finite group `G`.
+* `TauCeti.IsLocalRing.ramificationGroup_eq_comap_of_comap_maximalIdeal_pow`: along an
+  equivariant homomorphism of local rings inducing isomorphisms `S ⧸ 𝔪 ^ n ≃ T ⧸ 𝔪 ^ n`, such as
+  the inclusion of a discrete valuation ring into its completion, the ramification groups are the
+  preimages of each other.
 * `TauCeti.IsLocalRing.mem_ramificationGroup_iff_of_lowerIndex_eq` and
   `TauCeti.IsLocalRing.mem_ramificationGroupReal_iff_of_lowerIndex_eq`: when `i_G(σ) = n` is
   finite, `σ ∈ G_i ↔ i + 1 ≤ n` and `σ ∈ G_u ↔ u ≤ n - 1`.
@@ -670,6 +674,44 @@ theorem ramificationGroupGradedConj_mul (g h : G) (i : ℤ)
   | _ x => simp
 
 end Subgroup
+
+section Comap
+
+variable {G : Type*} [Group G] {S : Type*} [CommRing S] [IsLocalRing S] [MulSemiringAction G S]
+  {H : Type*} [Group H] {T : Type*} [CommRing T] [IsLocalRing T] [MulSemiringAction H T]
+
+/-- **Ramification groups along a map that is an isomorphism modulo every power of the maximal
+ideal.** Let `f : S →+* T` be a homomorphism of local rings, equivariant along `φ : G →* H`, such
+that `f⁻¹ (𝔪_T ^ n) = 𝔪_S ^ n` and `S` surjects onto `T ⧸ 𝔪_T ^ n` for every `n`, as for the
+inclusion of a discrete valuation ring into its completion. Then `G_i` is the preimage of `H_i`
+under `φ`.
+
+The approximation argument generalizes
+`IsDedekindDomain.HeightOneSpectrum.mem_ramificationGroup_iff_decompositionHom_mem` from
+`TauCeti/NumberTheory/NumberField/LocalGlobal/RamificationGroup.lean`. -/
+theorem ramificationGroup_eq_comap_of_comap_maximalIdeal_pow (φ : G →* H) (f : S →+* T)
+    (hf : ∀ (g : G) (x : S), f (g • x) = φ g • f x)
+    (hcomap : ∀ n : ℕ, (maximalIdeal T ^ n).comap f = maximalIdeal S ^ n)
+    (hdense : ∀ (n : ℕ) (y : T), ∃ x : S, y - f x ∈ maximalIdeal T ^ n) (i : ℤ) :
+    ramificationGroup G S i = (ramificationGroup H T i).comap φ := by
+  ext σ
+  rw [Subgroup.mem_comap, mem_ramificationGroup_iff, mem_ramificationGroup_iff]
+  refine ⟨fun h y ↦ ?_, fun h x ↦ ?_⟩
+  · -- approximate `y` by `f x`; then `φ σ` moves `y - f x` within `𝔪_T ^ n`, and moves `f x` by
+    -- the image of `σ • x - x`
+    obtain ⟨x, hx⟩ := hdense (i + 1).toNat y
+    have hσx : f (σ • x - x) ∈ maximalIdeal T ^ (i + 1).toNat := by
+      rw [← Ideal.mem_comap, hcomap]
+      exact h x
+    have hsplit : φ σ • y - y = φ σ • (y - f x) + f (σ • x - x) - (y - f x) := by
+      rw [map_sub, hf, smul_sub]
+      ring
+    rw [hsplit]
+    exact sub_mem (add_mem (smul_mem_maximalIdeal_pow _ hx) hσx) hx
+  · rw [← hcomap, Ideal.mem_comap, map_sub, hf]
+    exact h (f x)
+
+end Comap
 
 section Real
 

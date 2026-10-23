@@ -35,9 +35,6 @@ change.
 * J. S. Milne, *Basic Theory of Affine Group Schemes*, Chapter IV, §1.8.
 * The Stacks Project, Tags [01JO](https://stacks.math.columbia.edu/tag/01JO) and
   [022W](https://stacks.math.columbia.edu/tag/022W).
-
-This is the scalar-extension compatibility needed to assemble the `SLₙ` worked example in
-Layer 6, "Reductive and semisimple groups", of the ReductiveGroups roadmap.
 -/
 
 public section
@@ -101,6 +98,20 @@ theorem baseChangeMap_coordinateMap_comp_coordinateHopfAlgebraBaseChangeIso_hom 
     (definingHopfIdeal R n) (definingHopfIdeal K n)
     (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R K n)
     (map_baseChangeHopfIdeal_definingHopfIdeal R K n)
+
+/-- On a pure tensor of a restricted general-linear function, the special-linear
+base-change isomorphism is the general-linear isomorphism followed by restriction. -/
+theorem coordinateHopfAlgebraBaseChangeIso_hom_tmul_coordinateMap
+    (s : K) (x : GeneralLinear.coordinateHopfAlgebra R n) :
+    (coordinateHopfAlgebraBaseChangeIso R K n).hom.hom
+        (s ⊗ₜ[R] (coordinateMap R n).hom x) =
+      (coordinateMap K n).hom
+        ((GeneralLinear.coordinateHopfAlgebraBaseChangeIso R K n).hom.hom (s ⊗ₜ[R] x)) := by
+  have h := congrArg (fun f ↦ f.hom (s ⊗ₜ[R] x))
+    (baseChangeMap_coordinateMap_comp_coordinateHopfAlgebraBaseChangeIso_hom R K n)
+  simp only [CommHopfAlgCat.hom_comp, BialgHom.comp_apply] at h
+  rw [CommHopfAlgCat.baseChangeMap_apply_tmul (K := K)] at h
+  exact h
 
 /-- The finite-type coordinate Hopf algebra of `SLₙ` commutes with base change. -/
 noncomputable def finiteTypeCoordinateHopfAlgebraBaseChangeIso :

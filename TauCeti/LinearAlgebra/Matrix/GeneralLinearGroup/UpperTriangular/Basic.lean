@@ -217,6 +217,15 @@ theorem ker_diag :
   ext g
   rw [MonoidHom.mem_ker, Subgroup.mem_subgroupOf, diag_eq_one_iff]
 
+/-- Removing an invertible diagonal factor on the right of an upper-triangular matrix gives an
+upper-unitriangular matrix exactly when the factor equals its diagonal projection. -/
+theorem mul_inv_diagGL_mem_upperUnitriangularGroup_iff (g : upperTriangularGroup m R)
+    (d : m → Rˣ) :
+    (g : GL m R) * (diagGL d)⁻¹ ∈ upperUnitriangularGroup m R ↔ diag g = d := by
+  simpa only [Subgroup.coe_mul, Subgroup.coe_inv, coe_diagonalHom, map_mul, map_inv,
+    diag_diagonalHom, mul_inv_eq_one] using
+    (diag_eq_one_iff (g := g * (diagonalHom d)⁻¹)).symm
+
 end UpperTriangularGroup
 
 end TauCeti

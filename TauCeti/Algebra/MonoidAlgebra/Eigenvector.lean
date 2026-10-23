@@ -17,7 +17,9 @@ multiplication by `g` with eigenvalue `c`. When `g` has finite order, right mult
 `g ^ orderOf g = 1` is the identity, so when `R` has no zero divisors the eigenvalue is a root of
 unity of order dividing `orderOf g`. The equality `c ^ orderOf g = 1` also holds when `g` has
 infinite order, but is then vacuous because `orderOf g = 0`. In characteristic zero the only
-natural number that is such a root of unity is `1`.
+natural number that is such a root of unity is `1`. At the other extreme, an element of infinite
+order has no nonzero eigenvector of eigenvalue `1`: the support of such an eigenvector would be
+stable under right translation by `g`, hence infinite.
 
 ## Main statements
 
@@ -25,6 +27,9 @@ natural number that is such a root of unity is `1`.
   satisfies `c ^ orderOf g = 1`.
 * `TauCeti.nat_eq_one_of_mul_single_sub_eq_zero`: in characteristic zero, a
   natural-number eigenvalue of an element of finite order is `1`.
+* `TauCeti.eq_zero_of_mul_single_eq_self_of_not_isOfFinOrder`: if `g` has infinite order, then
+  `x * g = x` forces `x = 0`; its additive form is
+  `TauCeti.eq_zero_of_mul_single_eq_self_of_not_isOfFinAddOrder`.
 -/
 
 public section
@@ -76,5 +81,34 @@ theorem nat_eq_one_of_mul_single_sub_eq_zero [CharZero R] {x : MonoidAlgebra R G
   have ha : a ^ orderOf g = 1 := by
     exact_mod_cast pow_orderOf_eq_one_of_mul_single_sub_eq_zero hx h
   exact (Nat.pow_eq_one.mp ha).resolve_right hg.orderOf_pos.ne'
+
+section CancelMonoid
+
+variable {R : Type*} [Semiring R] {G : Type*} [CancelMonoid G]
+
+/-- An element `g` of infinite order has no nonzero eigenvector of eigenvalue `1` under right
+multiplication: `x * g = x` forces `x = 0`. -/
+@[to_additive (dont_translate := R) eq_zero_of_mul_single_eq_self_of_not_isOfFinAddOrder
+  /-- An element `a` of infinite order has no nonzero eigenvector of eigenvalue `1` under
+  multiplication by `e^a`: `x * e^a = x` forces `x = 0`. -/]
+theorem eq_zero_of_mul_single_eq_self_of_not_isOfFinOrder {x : MonoidAlgebra R G} {g : G}
+    (hg : ¬IsOfFinOrder g) (h : x * single g (1 : R) = x) : x = 0 := by
+  by_contra hx
+  obtain ⟨y, hy⟩ : ∃ y, x.coeff y ≠ 0 := by
+    by_contra! hall
+    exact hx (coeff_injective (Finsupp.ext hall))
+  -- The coefficient at `y` recurs at every `y * g ^ n`, and these are pairwise distinct.
+  have hpow (n : ℕ) : x.coeff (y * g ^ n) = x.coeff y := by
+    induction n with
+    | zero => rw [pow_zero, mul_one]
+    | succ n ih => rw [pow_succ, ← mul_assoc, ← ih, ← mul_one (x.coeff (y * g ^ n)),
+        ← coeff_mul_single_mul, h]
+  have hinj : Function.Injective fun n : ℕ ↦ y * g ^ n :=
+    fun _ _ hmn ↦ injective_pow_iff_not_isOfFinOrder.mpr hg (by simpa using mul_left_cancel hmn)
+  refine (Set.infinite_range_of_injective hinj).not_finite (x.coeff.support.finite_toSet.subset ?_)
+  rintro - ⟨n, rfl⟩
+  simpa [hpow n] using hy
+
+end CancelMonoid
 
 end TauCeti

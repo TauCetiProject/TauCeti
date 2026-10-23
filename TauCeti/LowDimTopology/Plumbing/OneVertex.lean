@@ -23,11 +23,9 @@ framing, the smallest plumbing whose differential is not forced to vanish: the a
 `ℍ(P, k) ≅ 𝔽₂[U]`,
 
 for every characteristic covector, hence for every spin^c structure. A one-vertex plumbing with
-framing `w < 0` is the disc bundle over the sphere with Euler number `w`, whose boundary is the
-lens space `L(-w, 1)`, and one tower per spin^c structure agrees with the lens-space computation
-of Ozsváth–Szabó, [arXiv:math/0203265](https://arxiv.org/abs/math/0203265). Up to now the only
-computed lattice homology was that of the zero-vertex plumbing, where the differential vanishes
-for lack of directions.
+framing `w < 0` is the disc bundle over the sphere with Euler number `w`, whose boundary is the lens
+space `L(-w, 1)`, and one tower per spin^c structure agrees with the lens-space computation of
+Ozsváth–Szabó, [arXiv:math/0203265](https://arxiv.org/abs/math/0203265).
 
 Two facts drive the computation. First, the lattice is `ℤ`, so the only cubes are lattice points
 and edges; the lattice differential is injective on chains of edges, so every cycle is a chain of
@@ -62,11 +60,8 @@ So the class of `x₀` generates lattice homology, and the augmentation already 
 
 ## References
 
-This advances `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane L ("lattice homology"),
-whose acceptance criterion asks for the lattice homology of a concrete negative-definite plumbing,
-matched against the literature. The complex and its weights follow A. Némethi,
-[arXiv:0709.0841](https://arxiv.org/abs/0709.0841), Section 3. The comparison computation for
-`HF⁻` of lens spaces is due to P. Ozsváth and Z. Szabó,
+The complex and its weights follow A. Némethi, [arXiv:0709.0841](https://arxiv.org/abs/0709.0841),
+Section 3. The comparison computation for `HF⁻` of lens spaces is due to P. Ozsváth and Z. Szabó,
 [arXiv:math/0203265](https://arxiv.org/abs/math/0203265).
 -/
 
@@ -117,8 +112,6 @@ private theorem characteristicWeight_add_single_sub_le (hw : P.weight default < 
     P.characteristicWeight k (x + Pi.single default 1) - P.characteristicWeight k x ≤
       P.characteristicWeight k (y + Pi.single default 1) - P.characteristicWeight k y := by
   rw [characteristicWeight_add_single_sub, characteristicWeight_add_single_sub]
-  have h1 : (0 : ℤ) ≤ y default - x default := by omega
-  have h2 : (0 : ℤ) < -P.weight default := by omega
   nlinarith
 
 variable {x₀ : V → ℤ}

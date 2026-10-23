@@ -51,7 +51,7 @@ private theorem SignRelation.signVariations_eq {L M : List R} (h : SignRelation 
     List.signVariations L = List.signVariations M ∧ firstSign L = firstSign M := by
   induction h with
   | nil => exact ⟨rfl, rfl⟩
-  | @same x y l m hx hy hs h ih =>
+  | @same x y l m hx hy hs _ ih =>
     refine ⟨?_, ?_⟩
     · rw [signVariations_cons l, signVariations_cons m, ih.1, ih.2, hs]
     · rw [firstSign_cons_of_ne_zero l hx, firstSign_cons_of_ne_zero m hy, hs]
@@ -119,12 +119,7 @@ theorem signVariationsAt_map_mul (cs : List (Polynomial R)) {d : Polynomial R} {
   simp only [signVariationsAt_def]
   have heq : (cs.map (d * ·)).map (Polynomial.eval x) =
       (cs.map (Polynomial.eval x)).map (d.eval x * ·) := by simp [List.map_map, Function.comp_def]
-  rw [heq]
-  rcases lt_or_gt_of_ne hd with hd | hd
-  · exact List.signVariations_map_of_sign_eq_neg
-      (fun y => by rw [sign_mul, sign_neg hd, neg_one_mul]) _
-  · exact List.signVariations_map
-      (fun y => by rw [sign_mul, sign_pos hd, one_mul]) _
+  rw [heq, List.signVariations_map_mul_left _ hd]
 
 end OrderedCommRing
 

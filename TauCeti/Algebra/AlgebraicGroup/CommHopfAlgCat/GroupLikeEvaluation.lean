@@ -53,8 +53,7 @@ theorem evaluationIso_naturality
   · intro x
     simp only [_root_.CommHopfAlgCat.hom_comp, _root_.BialgHom.comp_apply,
       _root_.CommHopfAlgCat.hom_ofHom, _root_.MonoidAlgebra.mapDomainBialgHom_single]
-    simp [evaluationIso, TauCeti.GroupLike.evaluationBialgHom_single,
-      TauCeti.GroupLike.val_map]
+    simp [evaluationIso, TauCeti.GroupLike.val_map]
   · apply AlgHom.ext
     intro r
     simp [evaluationIso, MonoidAlgebra.singleOneAlgHom_apply]

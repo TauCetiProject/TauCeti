@@ -16,6 +16,9 @@ Small pieces of product-measure theory with no `L²` or inner-product content.
 
 * `TauCeti.ae_of_ae_fst` / `TauCeti.ae_of_ae_snd` transfer an a.e. statement about one factor to the
   product measure, along `Measure.quasiMeasurePreserving_fst` / `_snd`.
+* `TauCeti.exists_ae_eq_const_of_ae_prod_eq`: if `f x = g y` for almost every `(x, y)` in a product
+  of nonzero measures, then `f` and `g` are almost everywhere the same constant. This is the
+  uniqueness of a function of the form `f(x) + g(y)` up to one additive constant.
 * `TauCeti.measurable_setLIntegral_of_measurableSet` proves measurability of a set integral whose
   truncating relation is jointly measurable.
 * `TauCeti.lintegral_mul_setLIntegral_eq` exchanges a weighted integral of set integrals over an
@@ -130,28 +133,46 @@ theorem lintegral_mul_setLIntegral_eq [SFinite μ] [SFinite κ] {g : α → ℝ�
           by_cases htx : R t x <;> simp [htx, ht, w'])).symm hx.symm
 
 /-- An a.e. statement on the first factor transfers to the product measure. -/
-theorem ae_of_ae_fst [SFinite ν] {p : α → Prop} (hp : ∀ᵐ x ∂μ, p x) :
+theorem ae_of_ae_fst {p : α → Prop} (hp : ∀ᵐ x ∂μ, p x) :
     ∀ᵐ q : α × β ∂(μ.prod ν), p q.1 :=
   Measure.quasiMeasurePreserving_fst.tendsto_ae.eventually hp
 
 /-- An a.e. statement on the second factor transfers to the product measure. -/
-theorem ae_of_ae_snd [SFinite ν] {p : β → Prop} (hp : ∀ᵐ y ∂ν, p y) :
+theorem ae_of_ae_snd {p : β → Prop} (hp : ∀ᵐ y ∂ν, p y) :
     ∀ᵐ q : α × β ∂(μ.prod ν), p q.2 :=
   Measure.quasiMeasurePreserving_snd.tendsto_ae.eventually hp
+
+/-- If `f x = g y` for `μ.prod ν`-almost every `(x, y)`, with both measures nonzero, then `f` and
+`g` are almost everywhere equal to one and the same constant. -/
+theorem exists_ae_eq_const_of_ae_prod_eq [SFinite ν] {δ : Type*} {f : α → δ} {g : β → δ}
+    (hμ : μ ≠ 0) (hν : ν ≠ 0) (h : ∀ᵐ z ∂μ.prod ν, f z.1 = g z.2) :
+    ∃ c, f =ᵐ[μ] (fun _ ↦ c) ∧ g =ᵐ[ν] (fun _ ↦ c) := by
+  have h' := Measure.ae_ae_of_ae_prod h
+  have : (ae μ).NeBot := ae_neBot.2 hμ
+  have : (ae ν).NeBot := ae_neBot.2 hν
+  obtain ⟨x₀, hx₀⟩ := h'.exists
+  refine ⟨f x₀, ?_, hx₀.mono fun _ hy ↦ hy.symm⟩
+  filter_upwards [h'] with x hx
+  obtain ⟨y, hxy, hx₀y⟩ := (hx.and hx₀).exists
+  rw [hxy, hx₀y]
 
 /-- **A rectangle bound for an integral against a product of conditional laws.** If `f` is bounded
 by `b` on `s ×ˢ t`, then its lower Lebesgue integral against the product of the laws of `μ` and `ν`
 conditioned on `s` and on `t` is at most `b`: conditioning confines each coordinate to its own set
-almost surely, so the bound holds almost everywhere on the product. -/
-theorem lintegral_cond_prod_le {s : Set α} {t : Set β} (hs : MeasurableSet s)
-    (ht : MeasurableSet t) (hμ : μ s ≠ 0) (hμtop : μ s ≠ ∞) (hν : ν t ≠ 0) (hνtop : ν t ≠ ∞)
-    {f : α × β → ℝ≥0∞} {b : ℝ≥0∞} (hf : ∀ x ∈ s, ∀ y ∈ t, f (x, y) ≤ b) :
+almost surely, so the bound holds almost everywhere on the product. The sets need only be
+null-measurable, and their measures may be zero or infinite: either case makes the corresponding
+conditional measure zero. -/
+theorem lintegral_cond_prod_le {s : Set α} {t : Set β} (hs : NullMeasurableSet s μ)
+    (ht : NullMeasurableSet t ν) {f : α × β → ℝ≥0∞} {b : ℝ≥0∞}
+    (hf : ∀ x ∈ s, ∀ y ∈ t, f (x, y) ≤ b) :
     ∫⁻ z, f z ∂((μ[|s]).prod (ν[|t])) ≤ b := by
-  have := ProbabilityTheory.cond_isProbabilityMeasure_of_finite hμ hμtop
-  have := ProbabilityTheory.cond_isProbabilityMeasure_of_finite hν hνtop
+  rcases eq_zero_or_isProbabilityMeasure (μ := μ[|s]) with hμ | hμ
+  · simp [hμ]
+  rcases eq_zero_or_isProbabilityMeasure (μ := ν[|t]) with hν | hν
+  · simp [hν]
   refine lintegral_le_const ?_
-  filter_upwards [ae_of_ae_fst (ν := ν[|t]) (ProbabilityTheory.ae_cond_mem (μ := μ) hs),
-    ae_of_ae_snd (μ := μ[|s]) (ProbabilityTheory.ae_cond_mem (μ := ν) ht)] with ⟨x, y⟩ hx hy
+  filter_upwards [ae_of_ae_fst (ν := ν[|t]) (ProbabilityTheory.ae_cond_mem₀ hs),
+    ae_of_ae_snd (μ := μ[|s]) (ProbabilityTheory.ae_cond_mem₀ ht)] with ⟨x, y⟩ hx hy
   exact hf x hx y hy
 
 /-- **The Dynkin (π-λ) step for Bochner integrals on a product space.** A function whose integral

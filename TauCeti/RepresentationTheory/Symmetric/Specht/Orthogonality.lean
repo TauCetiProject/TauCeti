@@ -56,6 +56,9 @@ its conjugate coincide.
   `TauCeti.sum_symmetricCharacterTable_mul_div_zPart` its rational form `∑_ν χ^μ(ν) χ^μ'(ν)/z_ν`.
 * `TauCeti.sum_finrank_spechtModule_sq`: **`∑_{μ ⊢ n} (f^μ)² = n !`**, column orthogonality at the
   identity class.
+* `TauCeti.sum_spechtChar_mul_spechtChar`: column orthogonality read at two permutations.
+* `TauCeti.eq_sum_spechtChar`: **every rational class function of `Sₙ` is
+  `∑_μ ⟨f, χ^μ⟩ χ^μ`**, so the Specht characters span the class functions.
 * `TauCeti.sum_finrank_spechtModule_mul_spechtChar`: **`∑_{μ ⊢ n} f^μ χ^μ(σ)` is `n !` at the
   identity and `0` elsewhere**, column orthogonality against the identity class: the character of
   the regular representation is `∑_μ f^μ χ^μ`.
@@ -304,5 +307,57 @@ theorem sum_finrank_spechtModule_sq (n : ℕ) :
   have h := sum_finrank_spechtModule_mul_spechtChar (n := n) 1
   simp only [spechtChar_one, ite_true] at h
   exact_mod_cast (Finset.sum_congr rfl fun μ _ ↦ sq _).trans h
+
+/-! ### Column orthogonality at permutations, and the expansion of class functions -/
+
+/-- **Second (column) orthogonality for `Sₙ`, read at two permutations**: `∑_μ χ^μ(σ) χ^μ(τ)` is
+the centralizer order `z_{ρ(σ)}` when `σ` and `τ` are conjugate, and `0` otherwise. -/
+theorem sum_spechtChar_mul_spechtChar (σ τ : Equiv.Perm (Fin n)) :
+    ∑ μ : n.Partition, spechtChar μ σ * spechtChar μ τ =
+      if IsConj σ τ then (zPart σ.partition : ℤ) else 0 := by
+  have hcol := symmetricCharacterTable_column_orthogonality
+    ((partitionEquivConjClasses n).symm (ConjClasses.mk σ))
+    ((partitionEquivConjClasses n).symm (ConjClasses.mk τ))
+  simp only [(partitionEquivConjClasses n).symm.injective.eq_iff, ConjClasses.mk_eq_mk_iff_isConj,
+    zPart_partitionEquivConjClasses_symm_mk] at hcol
+  rw [← hcol]
+  exact Finset.sum_congr rfl fun μ _ ↦ by
+    rw [spechtChar_eq_value, spechtChar_eq_value, symmetricCharacterTable_apply,
+      symmetricCharacterTable_apply]
+
+/-- **The Specht characters span the rational class functions of `Sₙ`**: a class function `f` is
+`∑_μ ⟨f, χ^μ⟩ χ^μ`, the coefficient of `χ^μ` being the character pairing
+`⟨f, χ^μ⟩ = (1 / n!) ∑_π f(π) χ^μ(π)`. -/
+theorem eq_sum_spechtChar (f : ClassFunction ℚ (Equiv.Perm (Fin n))) (σ : Equiv.Perm (Fin n)) :
+    (f : Equiv.Perm (Fin n) → ℚ) σ = ∑ μ : n.Partition,
+      ((n ! : ℚ)⁻¹ * ∑ π, (f : Equiv.Perm (Fin n) → ℚ) π * spechtChar μ π) * spechtChar μ σ := by
+  have hfac : (n ! : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.factorial_pos n).ne'
+  -- exchange the two sums and apply column orthogonality to the inner one
+  simp_rw [Finset.mul_sum (s := Finset.univ), Finset.sum_mul (s := Finset.univ)]
+  rw [Finset.sum_comm]
+  simp_rw [mul_assoc, ← Finset.mul_sum]
+  have hcol : ∀ π, ∑ μ : n.Partition, (spechtChar μ π : ℚ) * spechtChar μ σ =
+      if IsConj π σ then (zPart σ.partition : ℚ) else 0 := fun π => by
+    have h := congrArg (Int.cast : ℤ → ℚ) (sum_spechtChar_mul_spechtChar π σ)
+    push_cast at h
+    rw [h]
+    split_ifs with hπ
+    · rw [Equiv.Perm.partition_eq_of_isConj.mp hπ]
+    · rfl
+  simp_rw [hcol, mul_ite, mul_zero]
+  -- only the conjugacy class of `σ` survives, and it has `n! / z_{ρ(σ)}` elements
+  rw [Finset.sum_ite, Finset.sum_const_zero, add_zero,
+    Finset.sum_congr rfl fun π hπ => by
+      rw [ClassFunction.eq_of_isConj f (Finset.mem_filter.mp hπ).2],
+    Finset.sum_const, nsmul_eq_mul]
+  have hcard : ((Finset.univ.filter fun π : Equiv.Perm (Fin n) => IsConj π σ).card : ℚ) *
+      zPart σ.partition = n ! := by
+    have h := card_isConj_mul_zPart σ
+    rw [Nat.card_eq_fintype_card, Fintype.card_subtype] at h
+    conv_rhs => rw [← Fintype.card_fin n, ← h, Nat.cast_mul]
+    congr 3
+    exact Finset.filter_congr fun π _ => isConj_comm
+  field_simp
+  linear_combination -((f : Equiv.Perm (Fin n) → ℚ) σ) * hcard
 
 end TauCeti

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.PowerOrder
+public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.Finrank
 
 /-!
 # The Grothendieck group of a finite `p`-group in characteristic `p`
@@ -16,16 +17,24 @@ Grothendieck group of finitely generated `k[G]`-modules with `ℤ`: the class of
 dimension times the class of the trivial line. These are exact-sequence relations, so they also
 apply to modules which are not direct sums of trivial representations.
 
-The simple-module statement uses the invariant-vector theorem from
-`TauCeti/RepresentationTheory/PGroupInvariants.lean`. The Grothendieck-group statements specialize
-`TauCeti.eq_finrankK0_smul_of_finrank_eq_one` and `TauCeti.finrankK0Equiv`, using the trivial
-representation's existing `asModule` construction rather than another model of the trivial module.
+Induction from any subgroup `S` has image exactly the classes of dimension divisible by
+`[G : S]`. In particular, an integer multiple of the trivial class is induced from the
+trivial subgroup if and only if the group order divides that integer. Thus the group order
+is the least positive induction multiplier for a `p`-group in characteristic `p`.
+
+The simple-module statement specializes `TauCeti.nonempty_linearEquiv_trivial_of_forall_pow_eq_one`
+from `TauCeti/RepresentationTheory/GrothendieckGroup/GroupAlgebra/PowerOrder.lean`. The
+Grothendieck-group statements specialize `TauCeti.eq_finrankK0_smul_of_finrank_eq_one` and
+`TauCeti.finrankK0Equiv`, using the trivial representation's existing `asModule` construction
+rather than another model of the trivial module.
 
 ## Main results
 
 * `TauCeti.nonempty_linearEquiv_trivial_of_isPGroup`: every simple module is the trivial line.
 * `TauCeti.eq_finrankK0_smul_trivial_of_isPGroup`: dimension determines every class.
 * `TauCeti.pGroupFinrankK0Equiv`: dimension is an additive equivalence with `ℤ`.
+* `TauCeti.mem_range_indK0_iff_of_isPGroup`: the image of induction is detected by dimension.
+* `TauCeti.nsmul_one_mem_range_indK0_bot_iff_of_isPGroup`: the optimal induction multiplier.
 
 ## References
 
@@ -35,9 +44,9 @@ representation's existing `asModule` construction rather than another model of t
 
 public section
 
-namespace TauCeti
-
 open scoped MonoidAlgebra ModuleCat
+
+namespace TauCeti
 
 universe u v
 
@@ -111,5 +120,44 @@ theorem pGroupFinrankK0Equiv_symm_apply (hG : IsPGroup p G) (n : ℤ) :
       ExactK0.of (FGModuleCat.of k[G] (Representation.trivial k G k).asModule) := by
   rw [eq_finrankK0_smul_trivial_of_isPGroup p hG ((pGroupFinrankK0Equiv p hG).symm n),
     ← pGroupFinrankK0Equiv_apply p hG, AddEquiv.apply_symm_apply]
+
+/-- For a finite `p`-group in characteristic `p`, induction of the trivial class from `S`
+is the index of `S` times the trivial class of the whole group. -/
+theorem indK0_one_eq_index_nsmul_of_isPGroup (hG : IsPGroup p G) (S : Subgroup G) :
+    indK0 k S 1 = S.index • (1 : ExactK0 (finiteModulesExactStructure k[G])) := by
+  apply (pGroupFinrankK0Equiv p hG).injective
+  simp only [pGroupFinrankK0Equiv_apply]
+  rw [finrankK0_indK0, map_nsmul, finrankK0_one, finrankK0_one]
+  simp
+
+/-- For a finite `p`-group in characteristic `p`, a virtual class is induced from `S`
+exactly when its dimension is divisible by the index of `S`. -/
+theorem mem_range_indK0_iff_of_isPGroup (hG : IsPGroup p G) (S : Subgroup G)
+    (x : ExactK0 (finiteModulesExactStructure k[G])) :
+    x ∈ (indK0 k S).range ↔ (S.index : ℤ) ∣ finrankK0 k k[G] x := by
+  refine ⟨index_dvd_finrankK0_of_mem_range_indK0 S, ?_⟩
+  rintro ⟨n, hn⟩
+  refine ⟨n • 1, ?_⟩
+  rw [map_zsmul, indK0_one_eq_index_nsmul_of_isPGroup p hG]
+  apply (pGroupFinrankK0Equiv p hG).injective
+  simp only [pGroupFinrankK0Equiv_apply]
+  rw [map_zsmul, map_nsmul, finrankK0_one]
+  simpa [mul_comm] using hn.symm
+
+/-- An integer multiple of the trivial class of a finite `p`-group in characteristic `p`
+is induced from the trivial subgroup exactly when the group order divides the multiplier. -/
+theorem zsmul_one_mem_range_indK0_bot_iff_of_isPGroup (hG : IsPGroup p G) (n : ℤ) :
+    n • (1 : ExactK0 (finiteModulesExactStructure k[G])) ∈
+      (indK0 k (⊥ : Subgroup G)).range ↔ (Nat.card G : ℤ) ∣ n := by
+  rw [mem_range_indK0_iff_of_isPGroup p hG, map_zsmul, finrankK0_one]
+  simp [Subgroup.index_bot]
+
+/-- The group order is the least positive multiplier for induction from the trivial
+subgroup of a finite `p`-group in characteristic `p`: precisely its multiples work. -/
+theorem nsmul_one_mem_range_indK0_bot_iff_of_isPGroup (hG : IsPGroup p G) (n : ℕ) :
+    n • (1 : ExactK0 (finiteModulesExactStructure k[G])) ∈
+      (indK0 k (⊥ : Subgroup G)).range ↔ Nat.card G ∣ n := by
+  simpa only [natCast_zsmul, Int.natCast_dvd_natCast] using
+    zsmul_one_mem_range_indK0_bot_iff_of_isPGroup (k := k) p hG (n : ℤ)
 
 end TauCeti

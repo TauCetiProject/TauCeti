@@ -87,7 +87,7 @@ place below under the completion map. -/
 @[simp]
 theorem ideleInfiniteCoord_ideleExtension (w : InfinitePlace L) (x : IdeleGroup (𝓞 K) K) :
     w.ideleInfiniteCoord (ideleExtension K L x) =
-      Units.map (LiesOver.completionMap (v := w.comap (algebraMap K L)) (w := w)).toMonoidHom
+      Units.map (LiesOver.completionMap (w.comap (algebraMap K L)) w).toMonoidHom
         ((w.comap (algebraMap K L)).ideleInfiniteCoord x) := by
   apply Units.ext
   simp only [InfinitePlace.coe_ideleInfiniteCoord, coe_ideleExtension,

@@ -19,7 +19,8 @@ us recover its projection onto the input coordinates.
 This file gives the graph predicate its basic API.  It proves restriction, congruence, and
 piecewise-gluing laws and shows that polynomial maps are semialgebraic.  It deliberately does not
 assert closure under arbitrary composition, whose graph generally requires eliminating the
-intermediate coordinates.
+intermediate coordinates; images, inverse images, and composition are derived from projection
+closure in `TauCeti.Geometry.RealAlgebraic.Semialgebraic.Image`.
 
 ## References
 
@@ -64,6 +65,17 @@ theorem isSemialgebraicMap_def {f : (σ → R) → (τ → R)} :
     IsSemialgebraicMap f ↔
       IsSemialgebraic (Equiv.sumArrowEquivProdArrow σ τ R ⁻¹' univ.graphOn f) := by
   simp [IsSemialgebraicMap, IsSemialgebraicOn]
+
+omit [CommRing R] [LinearOrder R] in
+/-- A point of `σ ⊕ τ → R` lies on the encoded graph of `f` over `s` exactly when its input
+coordinates lie in `s` and `f` sends them to its output coordinates. -/
+theorem mem_preimage_sumArrowEquivProdArrow_graphOn {f : (σ → R) → (τ → R)} {s : Set (σ → R)}
+    {z : σ ⊕ τ → R} :
+    z ∈ Equiv.sumArrowEquivProdArrow σ τ R ⁻¹' s.graphOn f ↔
+      z ∘ Sum.inl ∈ s ∧ f (z ∘ Sum.inl) = z ∘ Sum.inr := by
+  rw [mem_preimage, mem_graphOn]
+  -- `Equiv.sumArrowEquivProdArrow σ τ R z` is `(z ∘ Sum.inl, z ∘ Sum.inr)` by definition.
+  rfl
 
 /-- The domain of a function semialgebraic on a set is semialgebraic. -/
 theorem IsSemialgebraicOn.isSemialgebraic {f : (σ → R) → (τ → R)} {s : Set (σ → R)}

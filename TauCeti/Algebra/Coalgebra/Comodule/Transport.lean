@@ -235,7 +235,6 @@ theorem transportHom_apply (eM : M ≃ₗ[R] N) (eN : M' ≃ₗ[R] N') (f : Hom 
   rfl
 
 /-- Transporting the identity morphism gives the identity morphism. -/
-@[simp]
 theorem transportHom_id (e : M ≃ₗ[R] N) :
     letI : Comodule R C N := Transport (R := R) (C := C) (M := M) (N := N) e
     transportHom (R := R) (C := C) (M := M) (M' := M) (N := N) (N' := N) e e
@@ -252,7 +251,6 @@ variable [AddCommMonoid P] [Module R P] [Comodule R C P]
 variable [AddCommMonoid P'] [Module R P']
 
 /-- Transporting morphisms preserves composition. -/
-@[simp]
 theorem transportHom_comp (eM : M ≃ₗ[R] N) (eM' : M' ≃ₗ[R] N') (eP : P ≃ₗ[R] P')
     (f : Hom R C M M') (g : Hom R C M' P) :
     letI : Comodule R C N := Transport (R := R) (C := C) (M := M) (N := N) eM
@@ -368,13 +366,11 @@ theorem transportIso_inv_toLinearMap (e : M ≃ₗ[R] N₀) :
   Comodule.transportInvHom_toLinearMap (R := R) (C := C) (M := M) (N := N₀) e
 
 /-- The forward map of the transport isomorphism applies as the original linear equivalence. -/
-@[simp]
 theorem transportIso_hom_apply (e : M ≃ₗ[R] N₀) (m : M) :
     (transportIso (R := R) (C := C) e).hom m = e m :=
   rfl
 
 /-- The inverse map of the transport isomorphism applies as the inverse linear equivalence. -/
-@[simp]
 theorem transportIso_inv_apply (e : M ≃ₗ[R] N₀) (n : N₀) :
     (transportIso (R := R) (C := C) e).inv n = e.symm n :=
   rfl

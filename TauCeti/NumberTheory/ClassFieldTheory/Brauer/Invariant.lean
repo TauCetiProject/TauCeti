@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.MaximalUnramified
 public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.Restriction
 import TauCeti.NumberTheory.ClassFieldTheory.Brauer.LocalH2Bound
-import TauCeti.NumberTheory.LocalField.FiniteExtension.Tower
+import TauCeti.NumberTheory.LocalField.AlgebraicExtension.Tower
 import TauCeti.NumberTheory.LocalField.Unramified.BaseChange
 
 /-!
@@ -43,7 +43,8 @@ inflated from the unramified extension `K_f/K` of degree `f` restricts to the cl
 along the base change `H²(Gal(K_f/K), K_fˣ) → H²(Gal(L_f/L), L_fˣ)`, where `L_f/L` is the
 unramified extension of degree `f`, which contains the image of `K_f` under the identification
 `Kˢ ≃ Lˢ` (`TauCeti.unramifiedExtension_le_restrictScalars_unramifiedExtension`,
-`TauCeti.ClassFieldTheory.brRes_relBrInfl`), and this base change multiplies the unramified
+`TauCeti.ClassFieldTheory.brBaseChange_eq_brRes`,
+`TauCeti.ClassFieldTheory.brBaseChange_relBrInfl`), and this base change multiplies the unramified
 invariant by `[L : K]` (`TauCeti.ClassFieldTheory.unramifiedInv_map_baseChange`). Since
 multiplication by `[L : K]` is surjective on `ℚ/ℤ`, restriction is surjective, and corestriction
 `TauCeti.ClassFieldTheory.brCor K L σ` preserves the invariant because
@@ -64,16 +65,24 @@ multiplication by `[L : K]` is surjective on `ℚ/ℤ`, restriction is surjectiv
   the unramified Brauer group.
 * `TauCeti.ClassFieldTheory.invMap_relBrInfl`: on a class inflated from an unramified layer, the
   invariant is the invariant `unramifiedInv` of the layer.
+* `TauCeti.ClassFieldTheory.invMap_relBrInfl_unramified`: the same, for an unramified extension
+  embedded in `Kˢ` by an arbitrary embedding.
 * `TauCeti.ClassFieldTheory.range_invMap_comp_relBrInfl`: the invariants of the classes split by a
-  finite Galois extension of degree `n` form the subgroup of `ℚ/ℤ` of order `n`.
+  finite normal extension `L/K` embedded in `Kˢ` by `σ` are the elements of `ℚ/ℤ` killed by
+  `[L : K]`.
 * `TauCeti.ClassFieldTheory.invMap_brRes`: the restriction square
   `inv_L (brRes x) = [L : K] • inv_K x`.
 * `TauCeti.ClassFieldTheory.brRes_surjective`: restriction of Brauer classes is surjective.
 * `TauCeti.ClassFieldTheory.invMap_brCor`: the corestriction square `inv_K (brCor y) = inv_L y`.
 * `TauCeti.ClassFieldTheory.brCor_bijective`: corestriction of Brauer classes is bijective.
+* `TauCeti.ClassFieldTheory.brBaseChange_eq_zero_of_dvd_finrank`: a finite extension of degree
+  divisible by `n` splits every `n`-torsion Brauer class.
+* `TauCeti.ClassFieldTheory.brBaseChange_eq_zero_of_isPrimitiveRoot`: a root of unity of
+  order `q^n - 1` splits every `n`-torsion Brauer class of a nonarchimedean local field.
 
 ## References
 
+* J. S. Milne, *Class Field Theory*, Chapter VII, Proposition 7.2 and Lemma 7.3.
 * J.-P. Serre, *Local Fields*, Chapter XIII, §3.
 * J. W. S. Cassels and A. Fröhlich (eds.), *Algebraic Number Theory*, Chapter VI (Serre, *Local
   Class Field Theory*), §1.
@@ -122,20 +131,20 @@ private theorem range_relBrInfl_unramifiedExtension_le
   -- structures, so the splitting criterion applies to the inflations along these inclusions.
   refine (relBrInfl_mem_range_relBrInfl_iff K (𝓤 n) E M M.val y).2 ?_
   -- The canonical structures of nonarchimedean local field on `Kₙ`, `E` and `M`.
-  let _ := finiteExtensionValuativeRel K (𝓤 n)
-  let _ := finiteExtensionNormedFieldTopology K (𝓤 n)
+  let _ := algebraicExtensionValuativeRel K (𝓤 n)
+  let _ := algebraicExtensionNormedFieldTopology K (𝓤 n)
   have := finiteExtension_isNonarchimedeanLocalField K (𝓤 n)
-  have := finiteExtension_valuativeExtension K (𝓤 n)
+  have := algebraicExtension_valuativeExtension K (𝓤 n)
   have : IsUnramified K (𝓤 n) := isUnramified_unramifiedExtension hn
-  let _ := finiteExtensionValuativeRel K E
-  let _ := finiteExtensionNormedFieldTopology K E
+  let _ := algebraicExtensionValuativeRel K E
+  let _ := algebraicExtensionNormedFieldTopology K E
   have := finiteExtension_isNonarchimedeanLocalField K E
-  have := finiteExtension_valuativeExtension K E
-  let _ := finiteExtensionValuativeRel K M
-  let _ := finiteExtensionNormedFieldTopology K M
+  have := algebraicExtension_valuativeExtension K E
+  let _ := algebraicExtensionValuativeRel K M
+  let _ := algebraicExtensionNormedFieldTopology K M
   have := finiteExtension_isNonarchimedeanLocalField K M
-  have : ValuativeExtension (𝓤 n) M := finiteExtension_valuativeExtension_tower K (𝓤 n) M
-  have : ValuativeExtension E M := finiteExtension_valuativeExtension_tower K E M
+  have : ValuativeExtension (𝓤 n) M := algebraicExtension_valuativeExtension_tower K (𝓤 n) M
+  have : ValuativeExtension E M := algebraicExtension_valuativeExtension_tower K E M
   -- `M/E` is unramified, being generated over `E` by the unramified extension `Kₙ`, and
   -- `[Kₙ : K] = [E : K]`.
   have : IsUnramified E M := IsUnramified.of_adjoin_range_eq_top (K := K) (L := 𝓤 n) _ hadj
@@ -152,15 +161,15 @@ theorem range_relBrInfl_eq_range_relBrInfl_unramifiedExtension
       (relBrInfl K (𝓤 (Module.finrank K E)) (𝓤 _).val).range := by
   set n := Module.finrank K E
   have hn : n ≠ 0 := Module.finrank_pos.ne'
-  let _ := finiteExtensionValuativeRel K (𝓤 n)
-  let _ := finiteExtensionNormedFieldTopology K (𝓤 n)
+  let _ := algebraicExtensionValuativeRel K (𝓤 n)
+  let _ := algebraicExtensionNormedFieldTopology K (𝓤 n)
   have := finiteExtension_isNonarchimedeanLocalField K (𝓤 n)
-  have := finiteExtension_valuativeExtension K (𝓤 n)
+  have := algebraicExtension_valuativeExtension K (𝓤 n)
   have : IsUnramified K (𝓤 n) := isUnramified_unramifiedExtension hn
-  let _ := finiteExtensionValuativeRel K E
-  let _ := finiteExtensionNormedFieldTopology K E
+  let _ := algebraicExtensionValuativeRel K E
+  let _ := algebraicExtensionNormedFieldTopology K E
   have := finiteExtension_isNonarchimedeanLocalField K E
-  have := finiteExtension_valuativeExtension K E
+  have := algebraicExtension_valuativeExtension K E
   have : Algebra.IsSeparable K E := Algebra.IsSeparable.of_algHom K _ E.val
   have : IsGalois K E := {}
   -- The two groups have orders dividing `n` and equal to `n`.
@@ -211,27 +220,30 @@ theorem invMap_relBrInfl (E : IntermediateField K (SeparableClosure K))
     invMap K (relBrInfl K E E.val y) = unramifiedInv K E y :=
   (invMap_eq_unramifiedBrInv K _ _).trans (unramifiedBrInv_relBrInfl E y)
 
-/-- **The degree-`n` piece of the Brauer group.** The invariants of the classes of `Br K` split by
-a finite Galois extension `E/K` of degree `n` inside `Kˢ` are the elements of `ℚ/ℤ` of order
-dividing `n`. -/
-theorem range_invMap_comp_relBrInfl (E : IntermediateField K (SeparableClosure K))
-    [FiniteDimensional K E] [Normal K E] :
-    Set.range (invMap K ∘ relBrInfl K E E.val) =
-      (AddSubgroup.torsionBy (AddCircle (1 : ℚ)) (Module.finrank K E) :
-        Set (AddCircle (1 : ℚ))) := by
-  set n := Module.finrank K E
-  have hn : n ≠ 0 := Module.finrank_pos.ne'
-  let _ := finiteExtensionValuativeRel K (𝓤 n)
-  let _ := finiteExtensionNormedFieldTopology K (𝓤 n)
-  have := finiteExtension_isNonarchimedeanLocalField K (𝓤 n)
-  have := finiteExtension_valuativeExtension K (𝓤 n)
-  have : IsUnramified K (𝓤 n) := isUnramified_unramifiedExtension hn
-  have h := range_unramifiedInv K (𝓤 n)
-  rw [finrank_unramifiedExtension hn] at h
-  rw [← h, Set.range_comp, ← AddMonoidHom.coe_range,
-    range_relBrInfl_eq_range_relBrInfl_unramifiedExtension K E, AddMonoidHom.coe_range,
-    ← Set.range_comp]
-  exact congrArg Set.range (funext fun y => invMap_relBrInfl (𝓤 n) y)
+/-- The local invariant of a class inflated from a finite unramified Galois extension `L/K`,
+embedded in `Kˢ` by an arbitrary `ι`, is its invariant `unramifiedInv K L` in the layer
+`H²(Gal(L/K), Lˣ)`. -/
+theorem invMap_relBrInfl_unramified (L : Type) [Field L] [ValuativeRel L] [TopologicalSpace L]
+    [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L] [FiniteDimensional K L]
+    [IsGalois K L] [IsUnramified K L] (ι : L →ₐ[K] SeparableClosure K)
+    (y : groupCohomology (Rep.ofMulDistribMulAction Gal(L/K) Lˣ) 2) :
+    invMap K (relBrInfl K L ι y) = unramifiedInv K L y := by
+  -- Transport `y` to the image `E = ι(L)`, an unramified layer inside `Kˢ`.
+  let E := ι.fieldRange
+  let e : L ≃ₐ[K] E := ι.equivFieldRange
+  let _ : FiniteDimensional K E := e.toLinearEquiv.finiteDimensional
+  let _ := algebraicExtensionValuativeRel K E
+  let _ := algebraicExtensionNormedFieldTopology K E
+  have := finiteExtension_isNonarchimedeanLocalField K E
+  have := algebraicExtension_valuativeExtension K E
+  have : IsGalois K E := IsGalois.of_algEquiv e
+  have : IsUnramified K E := IsUnramified.of_algEquiv e
+  let _ : Algebra L E := e.toAlgHom.toRingHom.toAlgebra
+  have : IsScalarTower K L E := IsScalarTower.of_algHom e.toAlgHom
+  have : ValuativeExtension L E := e.toAlgHom.valuativeExtension
+  have hι : E.val.comp (IsScalarTower.toAlgHom K L E) = ι :=
+    AlgHom.ext fun x => AlgHom.equivFieldRange_apply_coe ι x
+  rw [← unramifiedInv_map K L E y, ← invMap_relBrInfl E, relBrInfl_map, hι]
 
 /-! ### Restriction and corestriction -/
 
@@ -266,21 +278,43 @@ theorem invMap_brRes (x : Br K) :
   let _ : Algebra (𝓤 f) (𝓥 f) := ι.toAlgebra
   have : IsScalarTower K (𝓤 f) (𝓥 f) := .of_algebraMap_eq fun c => (ι.commutes c).symm
   -- The canonical structures of nonarchimedean local field on `K_f` and `L_f`.
-  let _ := finiteExtensionValuativeRel K (𝓤 f)
-  let _ := finiteExtensionNormedFieldTopology K (𝓤 f)
+  let _ := algebraicExtensionValuativeRel K (𝓤 f)
+  let _ := algebraicExtensionNormedFieldTopology K (𝓤 f)
   have := finiteExtension_isNonarchimedeanLocalField K (𝓤 f)
-  have := finiteExtension_valuativeExtension K (𝓤 f)
+  have := algebraicExtension_valuativeExtension K (𝓤 f)
   have : IsUnramified K (𝓤 f) := isUnramified_unramifiedExtension f.ne_zero
-  let _ := finiteExtensionValuativeRel L (𝓥 f)
-  let _ := finiteExtensionNormedFieldTopology L (𝓥 f)
+  let _ := algebraicExtensionValuativeRel L (𝓥 f)
+  let _ := algebraicExtensionNormedFieldTopology L (𝓥 f)
   have := finiteExtension_isNonarchimedeanLocalField L (𝓥 f)
-  have := finiteExtension_valuativeExtension L (𝓥 f)
+  have := algebraicExtension_valuativeExtension L (𝓥 f)
   have : IsUnramified L (𝓥 f) := isUnramified_unramifiedExtension f.ne_zero
   have : ValuativeExtension K (𝓥 f) := ValuativeExtension.trans K L (𝓥 f)
   have : ValuativeExtension (𝓤 f) (𝓥 f) := ι.valuativeExtension
-  rw [brRes_relBrInfl K L (𝓤 f) (𝓥 f) σ (𝓤 f).val (𝓥 f).val
-    (fun e => (separableClosureRingEquiv K L σ).apply_symm_apply e) y, invMap_relBrInfl,
+  rw [← brBaseChange_eq_brRes K L σ,
+    brBaseChange_relBrInfl K L (𝓤 f) (𝓥 f) (𝓤 f).val (𝓥 f).val y, invMap_relBrInfl,
     invMap_relBrInfl, unramifiedInv_map_baseChange]
+
+/-- **The degree-`n` piece of the Brauer group.** For a finite normal extension `L/K` of
+nonarchimedean local fields embedded in `Kˢ` by `σ`, the invariants of the classes split by `L`
+are exactly the elements of `ℚ/ℤ` killed by `[L : K]`. -/
+theorem range_invMap_comp_relBrInfl [FiniteDimensional K L] [Normal K L] :
+    Set.range (invMap K ∘ relBrInfl K L σ) =
+      (AddSubgroup.torsionBy (AddCircle (1 : ℚ)) (Module.finrank K L) :
+        Set (AddCircle (1 : ℚ))) := by
+  ext t
+  simp only [Set.mem_range, Function.comp_apply, SetLike.mem_coe,
+    AddSubgroup.torsionBy.nsmul_iff]
+  constructor
+  · rintro ⟨x, rfl⟩
+    have hx := (mem_range_relBrInfl_iff_brBaseChange_eq_zero K L σ _).mp ⟨x, rfl⟩
+    rw [brBaseChange_eq_brRes K L σ] at hx
+    rw [← invMap_brRes K L σ, hx, map_zero]
+  · intro ht
+    have hb : brBaseChange K L ((invMap K).symm t) = 0 := by
+      apply (invMap L).injective
+      rw [brBaseChange_eq_brRes K L σ, invMap_brRes, AddEquiv.apply_symm_apply, ht, map_zero]
+    obtain ⟨y, hy⟩ := (mem_range_relBrInfl_iff_brBaseChange_eq_zero K L σ _).mpr hb
+    exact ⟨y, by rw [hy, AddEquiv.apply_symm_apply]⟩
 
 /-- **Restriction of Brauer classes along a finite extension of nonarchimedean local fields is
 surjective**, since multiplication by `[L : K]` is surjective on `ℚ/ℤ`. -/
@@ -310,6 +344,35 @@ theorem brCor_bijective [FiniteDimensional K L] : Function.Bijective (brCor K L 
   rw [h]
   exact (invMap K).symm.bijective.comp (invMap L).bijective
 
+/-- **A finite extension of degree divisible by `n` splits every `n`-torsion Brauer class** of a
+nonarchimedean local field, since base change multiplies the invariant by the degree. -/
+theorem brBaseChange_eq_zero_of_dvd_finrank [Algebra.IsSeparable K L] {n : ℕ}
+    (hn : n ∣ Module.finrank K L) (x : Br K) (hx : n • x = 0) : brBaseChange K L x = 0 := by
+  obtain ⟨m, hm⟩ := hn
+  apply (invMap L).injective
+  rw [map_zero, brBaseChange_eq_brRes K L IsSepClosed.lift, invMap_brRes, hm, mul_nsmul,
+    ← map_nsmul, hx, map_zero, nsmul_zero]
+
 end Restriction
+
+open _root_.ValuativeRel
+
+/-- Adjoining a primitive `(q^n - 1)`-st root of unity splits every `n`-torsion Brauer class
+of a nonarchimedean local field with residue cardinality `q`. The extension need not be finite
+or carry a valuation. -/
+theorem brBaseChange_eq_zero_of_isPrimitiveRoot
+    {F L : Type} [Field F] [ValuativeRel F] [TopologicalSpace F]
+    [IsNonarchimedeanLocalField F] [Field L] [Algebra F L]
+    {n : ℕ} (hn : n ≠ 0) {ζ : L} (hζ : IsPrimitiveRoot ζ (Nat.card 𝓀[F] ^ n - 1))
+    (x : Br F) (hx : n • x = 0) : brBaseChange F L x = 0 := by
+  let E := unramifiedExtension F L n
+  let _ := algebraicExtensionValuativeRel F E
+  let _ := algebraicExtensionNormedFieldTopology F E
+  have := finiteExtension_isNonarchimedeanLocalField F E
+  have := algebraicExtension_valuativeExtension F E
+  have hE : brBaseChange F E x = 0 :=
+    brBaseChange_eq_zero_of_dvd_finrank F E
+      (finrank_unramifiedExtension_of_isPrimitiveRoot hn hζ).symm.dvd x hx
+  rw [← brBaseChange_brBaseChange F E L, hE, map_zero]
 
 end TauCeti.ClassFieldTheory

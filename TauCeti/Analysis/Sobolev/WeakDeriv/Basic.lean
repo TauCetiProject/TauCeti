@@ -13,6 +13,9 @@ public import Mathlib.Analysis.Distribution.TestFunction
 -- uniqueness, so downstream importers pay for neither.
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
+-- This import is public: directional derivatives of test functions vanish off their support
+-- (`TauCeti.lineDeriv_of_notMem_tsupport`), which the files building on this one also use.
+public import TauCeti.Analysis.Calculus.LineDeriv.Basic
 -- This import is public: `Gradient` supplies the `∇` of the weak derivative of a test function
 -- below, together with the Riesz correspondence `innerSL` in which that statement is phrased.
 public import Mathlib.Analysis.Calculus.Gradient.Basic
@@ -120,6 +123,8 @@ weaken them for no gain.
   `TauCeti.HasWeakLineDerivOn.locallyIntegrableOn_deriv` and
   `TauCeti.HasWeakLineDerivOn.integral_lineDeriv_smul_eq_neg_integral_smul`: the components of the
   definition.
+* `TauCeti.HasWeakFDerivOn.locallyIntegrableOn_deriv`: in finite dimension, a weak Fréchet
+  derivative is locally integrable as an operator-valued function.
 * `TauCeti.hasWeakLineDerivOn_iff`: the unbundled restatement of the defining identity.
 * `TauCeti.integrable_smul_of_locallyIntegrableOn` and
   `TauCeti.integrable_lineDeriv_smul_of_locallyIntegrableOn`: the two integrability facts that
@@ -137,9 +142,9 @@ weaken them for no gain.
   weak derivative `0`.
 * `TauCeti.HasWeakLineDerivOn.add`, `.neg`, `.sub`, `.const_smul`, `.sum` and their
   `TauCeti.HasWeakFDerivOn` counterparts: linearity in the function.
-* `TauCeti.HasWeakLineDerivOn.clm_comp`: a continuous linear map on the codomain passes through
-  the weak derivative, which is how a vector-valued weak derivative is read off its scalar
-  components.
+* `TauCeti.HasWeakLineDerivOn.clm_comp` and `TauCeti.HasWeakFDerivOn.clm_comp`: a continuous
+  linear map on the codomain passes through the weak derivative, which is how a vector-valued weak
+  derivative is read off its scalar components.
 * `TauCeti.HasWeakLineDerivOn.add_direction`, `.smul_direction`, `.sum_direction` and
   `TauCeti.hasWeakLineDerivOn_zero_direction`: linearity in the direction, which is what makes
   the `TauCeti.HasWeakFDerivOn` packaging the right one.
@@ -148,9 +153,15 @@ weaken them for no gain.
 * `TauCeti.hasWeakLineDerivOn_of_hasLineDerivAt` and
   `TauCeti.hasWeakFDerivOn_of_differentiableOn`: classical derivatives that are locally integrable
   on `Ω` are weak derivatives.
-* `TauCeti.hasWeakLineDerivOn_const`: against a Haar measure, a constant has weak derivative `0`.
+* `TauCeti.hasWeakLineDerivOn_const`: against a Haar measure, a constant has weak derivative `0`;
+  equivalently, `TestFunction.integral_lineDeriv_eq_zero`, `∫ ∂_w φ = 0` for a test function `φ`.
+* `TauCeti.hasWeakFDerivOn_gradient_of_contDiffOn`: a `C¹` function on `Ω` has weak derivative
+  the linear functional represented by its gradient.
 * `TauCeti.hasWeakFDerivOn_testFunction`: a test function has weak derivative the linear
   functional represented by its gradient.
+* `TestFunction.setIntegral_inner_gradient_eq_integral_inner_gradient`: the gradient of a test
+  function vanishes off its support, so pairings with it may be integrated over any set
+  containing it.
 * `TauCeti.HasWeakLineDerivOn.ae_eq` and `TauCeti.HasWeakFDerivOn.ae_eq`: uniqueness almost
   everywhere on `Ω`.
 * `TauCeti.HasWeakLineDerivOn.ae_eq_lineDeriv` and `TauCeti.HasWeakFDerivOn.ae_eq_fderiv`: where
@@ -167,16 +178,6 @@ open scoped ContDiff Distributions
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {Ω : Opens E} {v : E}
-
-/-! ### Derivatives of test functions -/
-
-/-- Outside its support, the directional derivative of a test function vanishes. -/
-theorem lineDeriv_eq_zero_of_notMem_tsupport (φ : 𝓓(Ω, ℝ)) {x : E}
-    (hx : x ∉ tsupport (φ : E → ℝ)) (v : E) : lineDeriv ℝ (φ : E → ℝ) x v = 0 := by
-  have hd : DifferentiableAt ℝ (φ : E → ℝ) x :=
-    (φ.contDiff.differentiable (by simp)) x
-  rw [hd.lineDeriv_eq_fderiv, fderiv_of_notMem_tsupport ℝ hx]
-  simp
 
 /-! ### The definitions -/
 
@@ -293,6 +294,44 @@ theorem HasWeakFDerivOn.mono {U : E → E →L[ℝ] F} {Ω' : Opens E} (h : HasW
 theorem HasWeakFDerivOn.hasWeakLineDerivOn {U : E → E →L[ℝ] F} (h : HasWeakFDerivOn μ Ω u U)
     (v : E) : HasWeakLineDerivOn μ Ω u (fun x => U x v) v := h v
 
+/-- In finite dimension, a weak derivative `U` of `u` on `Ω` is locally integrable on `Ω` as an
+operator-valued function: it is a finite sum of its values on a basis, each locally integrable by
+definition. -/
+theorem HasWeakFDerivOn.locallyIntegrableOn_deriv [FiniteDimensional ℝ E] {U : E → E →L[ℝ] F}
+    (h : HasWeakFDerivOn μ Ω u U) : LocallyIntegrableOn U Ω μ := by
+  obtain ⟨n, b, -⟩ : ∃ n, ∃ b : Module.Basis (Fin n) ℝ E, True :=
+    ⟨_, Module.finBasis ℝ E, trivial⟩
+  -- The `i`-th term `x ↦ (b.coord i).smulRight (U x (b i))` of the expansion of `U` in `b`.
+  let g : Fin n → E → E →L[ℝ] F := fun i x =>
+    ContinuousLinearMap.smulRightL ℝ E F (LinearMap.toContinuousLinearMap (b.coord i)) (U x (b i))
+  have hU : U = fun x => ∑ i, g i x := by
+    funext x
+    ext v
+    calc U x v = U x (∑ i, b.repr v i • b i) := by rw [b.sum_repr]
+      _ = _ := by rw [map_sum]; simp [g]
+  have hg : ∀ i, LocallyIntegrableOn (g i) Ω μ := fun i =>
+    (ContinuousLinearMap.smulRightL ℝ E F _).locallyIntegrableOn_comp
+      (h.hasWeakLineDerivOn (b i)).locallyIntegrableOn_deriv
+  have hsum : LocallyIntegrableOn (fun x => ∑ i, g i x) Ω μ :=
+    (locallyIntegrableOn_iff Ω.isOpen.isLocallyClosed).2 fun k hk hkc =>
+      integrable_finsetSum (f := g) _ fun i _ => (hg i).integrableOn_compact_subset hk hkc
+  rwa [hU]
+
+/-- Integration by parts on the whole space against every `C¹` function with compact support
+makes `U` a weak derivative of `u` on every open set. This is how a function with an integrable
+singularity, such as a fundamental solution, is shown to be weakly differentiable. -/
+theorem hasWeakFDerivOn_of_forall_integral_fderiv_smul [CompleteSpace F] {U : E → E →L[ℝ] F}
+    (hu : LocallyIntegrable u μ) (hU : LocallyIntegrable U μ)
+    (h : ∀ g : E → ℝ, ContDiff ℝ 1 g → HasCompactSupport g → ∀ v,
+      ∫ x, fderiv ℝ g x v • u x ∂μ = -∫ x, g x • U x v ∂μ) (Ω : Opens E) :
+    HasWeakFDerivOn μ Ω u U := by
+  refine fun v ↦ ⟨inferInstance, hu.locallyIntegrableOn _, ?_, fun φ ↦ ?_⟩
+  · simpa [Function.comp_def] using (ContinuousLinearMap.apply ℝ F v).locallyIntegrableOn_comp
+      (hU.locallyIntegrableOn Ω)
+  have hφ : ContDiff ℝ 1 (φ : E → ℝ) := φ.contDiff.of_le (by simp)
+  simp_rw [((hφ.differentiable one_ne_zero) _).lineDeriv_eq_fderiv]
+  exact h φ hφ φ.hasCompactSupport v
+
 /-- The zero function has weak derivative `0` in every direction, for every `μ`: no translation
 invariance is needed, since both sides of the defining identity vanish. Completeness of `F` is
 assumed because it is part of `TauCeti.HasWeakLineDerivOn`. This is the zero of the vector space
@@ -371,7 +410,7 @@ theorem setIntegral_lineDeriv_smul_eq_integral_lineDeriv_smul {w : E → F} (φ 
     ∫ x in (Ω : Set E), lineDeriv ℝ (φ : E → ℝ) x v • w x ∂μ =
       ∫ x, lineDeriv ℝ (φ : E → ℝ) x v • w x ∂μ := by
   refine setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx => ?_
-  rw [lineDeriv_eq_zero_of_notMem_tsupport φ (fun hmem => hx (φ.tsupport_subset hmem)) v]
+  rw [lineDeriv_of_notMem_tsupport (fun hmem => hx (φ.tsupport_subset hmem)) v]
   simp
 
 /-- Replacing `u` by a function agreeing with it almost everywhere on `Ω` preserves the weak
@@ -385,7 +424,7 @@ theorem HasWeakLineDerivOn.congr_ae {w : E → F} (h : HasWeakLineDerivOn μ Ω 
   filter_upwards [(ae_restrict_iff' Ω.isOpen.measurableSet).1 hw] with x hx
   by_cases hxΩ : x ∈ (Ω : Set E)
   · rw [hx hxΩ]
-  · rw [lineDeriv_eq_zero_of_notMem_tsupport φ (fun h' => hxΩ (φ.tsupport_subset h')) v]
+  · rw [lineDeriv_of_notMem_tsupport (fun h' => hxΩ (φ.tsupport_subset h')) v]
     simp
 
 /-- Replacing `u'` by a function agreeing with it almost everywhere on `Ω` preserves the weak
@@ -519,6 +558,18 @@ theorem HasWeakFDerivOn.sub {u₁ u₂ : E → F} {U₁ U₂ : E → E →L[ℝ]
     (h₁ : HasWeakFDerivOn μ Ω u₁ U₁) (h₂ : HasWeakFDerivOn μ Ω u₂ U₂) :
     HasWeakFDerivOn μ Ω (u₁ - u₂) (U₁ - U₂) := fun v => (h₁ v).sub (h₂ v)
 
+/-- Weak Fréchet differentiation commutes with a finite sum of functions. -/
+theorem HasWeakFDerivOn.sum {ι : Type*} [CompleteSpace F] {w : ι → E → F}
+    {W : ι → E → E →L[ℝ] F} (s : Finset ι) (h : ∀ i ∈ s, HasWeakFDerivOn μ Ω (w i) (W i)) :
+    HasWeakFDerivOn μ Ω (fun x => ∑ i ∈ s, w i x) (fun x => ∑ i ∈ s, W i x) := fun v => by
+  simpa using HasWeakLineDerivOn.sum s fun i hi => h i hi v
+
+/-- Weak Fréchet differentiation commutes with a continuous linear map on the codomain. -/
+theorem HasWeakFDerivOn.clm_comp {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    [CompleteSpace G] {U : E → E →L[ℝ] F} (h : HasWeakFDerivOn μ Ω u U) (L : F →L[ℝ] G) :
+    HasWeakFDerivOn μ Ω (fun x => L (u x)) (fun x => L.comp (U x)) := fun v =>
+  (h v).clm_comp L
+
 omit [OpensMeasurableSpace E] in
 /-- In the direction `0` every locally integrable function has weak derivative `0`. -/
 theorem hasWeakLineDerivOn_zero_direction [CompleteSpace F] {u : E → F}
@@ -626,6 +677,26 @@ theorem _root_.Module.Basis.hasWeakFDerivOn_of_forall {ι : Type*} [CompleteSpac
 
 end Basis
 
+/-- `Cᵏ` weak derivatives along an orthonormal basis assemble into a `Cᵏ` weak Fréchet
+derivative. Local integrability of `u` is needed separately when the basis is empty. -/
+theorem contDiffOn_sum_innerSL_and_hasWeakFDerivOn
+    {H ι : Type*} [NormedAddCommGroup H] [InnerProductSpace ℝ H]
+    [MeasurableSpace H] [OpensMeasurableSpace H] [Fintype ι]
+    {b : OrthonormalBasis ι ℝ H} {μ : Measure H} {Ω : Opens H}
+    {u : H → ℝ} {G : ι → H → ℝ} {k : ℕ∞ω}
+    (hG : ∀ i, ContDiffOn ℝ k (G i) Ω) (hu : LocallyIntegrableOn u Ω μ)
+    (hdG : ∀ i, HasWeakLineDerivOn μ Ω u (G i) (b i)) :
+    ContDiffOn ℝ k (fun x => ∑ i, G i x • innerSL ℝ (b i)) Ω ∧
+      HasWeakFDerivOn μ Ω u (fun x => ∑ i, G i x • innerSL ℝ (b i)) := by
+  classical
+  have hDb : ∀ i x, (∑ j, G j x • innerSL ℝ (b j)) (b i) = G i x := by
+    intro i x
+    simp [b.inner_eq_ite]
+  refine ⟨ContDiffOn.sum (fun i _ => (hG i).smul contDiffOn_const),
+    b.toBasis.hasWeakFDerivOn_of_forall hu ?_⟩
+  intro i
+  simpa only [OrthonormalBasis.coe_toBasis, hDb] using hdG i
+
 /-! ### Classical derivatives are weak derivatives
 
 This is where the measure has to be an additive Haar measure: integration by parts is available
@@ -669,6 +740,14 @@ theorem hasWeakLineDerivOn_const (c : F) :
   hasWeakLineDerivOn_of_hasLineDerivAt (locallyIntegrableOn_const c) locallyIntegrableOn_zero
     fun x _ => (hasFDerivAt_const c x).hasLineDerivAt v
 
+omit [CompleteSpace F] in
+/-- The directional derivative of a test function has integral zero against an additive Haar
+measure: `∫ ∂_w φ = 0`. -/
+theorem _root_.TestFunction.integral_lineDeriv_eq_zero (φ : 𝓓(Ω, ℝ)) (w : E) :
+    ∫ x, lineDeriv ℝ (φ : E → ℝ) x w ∂μ = 0 := by
+  simpa using HasWeakLineDerivOn.integral_lineDeriv_smul_eq_neg_integral_smul
+    (hasWeakLineDerivOn_const (μ := μ) (Ω := Ω) (v := w) (1 : ℝ)) φ
+
 /-- **A classical Fréchet derivative is a weak one.** If `u` is differentiable at every point of
 the open set `Ω`, and both `u` and `fderiv ℝ u` are locally integrable on `Ω`, then `fderiv ℝ u`
 is a weak derivative of `u` on `Ω`. -/
@@ -684,11 +763,11 @@ theorem hasWeakFDerivOn_of_differentiableOn (hu : LocallyIntegrableOn u Ω μ)
 
 end Classical
 
-/-! ### Test functions are weakly differentiable
+/-! ### `C¹` functions and test functions are weakly differentiable
 
-A test function is the basic example: it is smooth, so its classical derivative is also a weak
-one. On an inner product space the derivative is recorded through its Riesz representative, the
-gradient, which is the form in which the Sobolev spaces consume it. -/
+A function of class `C¹` on `Ω`, and in particular a test function, has its classical derivative
+as a weak one. On an inner product space the derivative is recorded through its Riesz
+representative, the gradient, which is the form in which the Sobolev spaces consume it. -/
 
 section TestFunction
 
@@ -697,19 +776,46 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
 
 open scoped Gradient InnerProductSpace
 
+omit [BorelSpace E] [μ.IsAddHaarMeasure] in
+/-- **A weak gradient is locally integrable.** If the functionals `⟪g x, ·⟫` form a weak
+derivative of `u` on `Ω`, then the vector field `g` is locally integrable on `Ω`. -/
+theorem HasWeakFDerivOn.locallyIntegrableOn_gradient {u : E → ℝ} {g : E → E}
+    (h : HasWeakFDerivOn μ Ω u fun x => innerSL ℝ (g x)) : LocallyIntegrableOn g Ω μ := by
+  have hg := ((InnerProductSpace.toDual ℝ E).symm.toContinuousLinearEquiv :
+    StrongDual ℝ E →SL[starRingEnd ℝ] E).locallyIntegrableOn_comp h.locallyIntegrableOn_deriv
+  convert hg using 1
+  funext x
+  simp only [Function.comp_apply, ContinuousLinearEquiv.coe_coe,
+    LinearIsometryEquiv.coe_toContinuousLinearEquiv]
+  exact ((InnerProductSpace.toDual ℝ E).symm_apply_eq.2 (ContinuousLinearMap.ext fun y => by
+    simp [InnerProductSpace.toDual_apply_apply])).symm
+
+/-- **A `C¹` function is weakly differentiable**, with weak derivative the continuous linear
+functional represented by its classical gradient. Only differentiability inside the open set `Ω`
+is used. -/
+theorem hasWeakFDerivOn_gradient_of_contDiffOn {u : E → ℝ} (hu : ContDiffOn ℝ 1 u Ω) :
+    HasWeakFDerivOn μ Ω u fun x => innerSL ℝ (∇ u x) := by
+  rw [show (fun x => innerSL ℝ (∇ u x)) = fderiv ℝ u from funext fun _ => toDual_gradient]
+  exact hasWeakFDerivOn_of_differentiableOn
+    (hu.continuousOn.locallyIntegrableOn Ω.isOpen.measurableSet)
+    ((hu.continuousOn_fderiv_of_isOpen Ω.isOpen le_rfl).locallyIntegrableOn
+      Ω.isOpen.measurableSet)
+    fun x hx => (hu.differentiableOn one_ne_zero).differentiableAt (Ω.isOpen.mem_nhds hx)
+
 /-- **A test function is weakly differentiable**, with weak derivative the continuous linear
 functional represented by its gradient. -/
 theorem hasWeakFDerivOn_testFunction (φ : 𝓓(Ω, ℝ)) :
-    HasWeakFDerivOn μ Ω (φ : E → ℝ) fun x => innerSL ℝ (∇ (φ : E → ℝ) x) := by
-  have hcoe : (fun x => innerSL ℝ (∇ (φ : E → ℝ) x)) = fderiv ℝ (φ : E → ℝ) := by
-    funext x
-    ext y
-    simp [inner_gradient_left (𝕜 := ℝ) (f := (φ : E → ℝ)) (x := x) (y := y)]
-  rw [hcoe]
-  refine hasWeakFDerivOn_of_differentiableOn ?_ ?_ fun x _ =>
-    (φ.contDiff.differentiable (by simp)) x
-  · exact φ.continuous.locallyIntegrable.locallyIntegrableOn _
-  · exact (φ.contDiff.continuous_fderiv (by simp)).locallyIntegrable.locallyIntegrableOn _
+    HasWeakFDerivOn μ Ω (φ : E → ℝ) fun x => innerSL ℝ (∇ (φ : E → ℝ) x) :=
+  hasWeakFDerivOn_gradient_of_contDiffOn (φ.contDiff.of_le (by simp)).contDiffOn
+
+omit [BorelSpace E] [μ.IsAddHaarMeasure] in
+/-- The gradient of a test function vanishes off its support, so pairing a field `g` with it
+over any set `s` containing that support is the same as over the whole space. -/
+theorem _root_.TestFunction.setIntegral_inner_gradient_eq_integral_inner_gradient
+    (φ : 𝓓(Ω, ℝ)) (g : E → E) {s : Set E} (hs : tsupport (φ : E → ℝ) ⊆ s) :
+    ∫ x in s, ⟪g x, ∇ (φ : E → ℝ) x⟫_ℝ ∂μ = ∫ x, ⟪g x, ∇ (φ : E → ℝ) x⟫_ℝ ∂μ :=
+  setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx => by
+    simp [gradient, fderiv_of_notMem_tsupport ℝ fun h => hx (hs h)]
 
 end TestFunction
 

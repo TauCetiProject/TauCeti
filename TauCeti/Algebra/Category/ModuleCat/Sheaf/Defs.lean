@@ -22,7 +22,9 @@ and the vanishing of every sheaf of modules over a sheaf of rings whose sections
 * `SheafOfModules.isZero_of_forall_subsingleton`: sheaves of modules over a sheaf of rings all of
   whose rings of sections are trivial are zero objects;
 * `SheafOfModules.sheafificationIso` identifies a sheaf of modules with the sheafification of its
-  underlying presheaf, naturally (`SheafOfModules.sheafificationIso_inv_naturality`).
+  underlying presheaf, naturally (`SheafOfModules.sheafificationIso_inv_naturality`);
+* `SheafOfModules.unit_comp_val_sheafification_map_comp_sheafificationIso_hom`: the
+  sheafification of a morphism to a sheaf restricts to that morphism along the sheafification map.
 
 This supports `TauCetiRoadmap/JacobianChallenge/README.md`, Layer A, item "Invertible sheaves on a
 scheme; the Picard group `Pic X` under `⊗`".
@@ -102,6 +104,19 @@ theorem sheafificationIso_hom_naturality {R : Sheaf J RingCat.{u}} {M N : SheafO
   rw [← cancel_epi (sheafificationIso R M).inv, Iso.inv_hom_id_assoc,
     ← Category.assoc, ← sheafificationIso_inv_naturality, Category.assoc,
     Iso.inv_hom_id, Category.comp_id]
+
+/-- On the sheafification map of a presheaf of modules `P`, the sheafification of a morphism
+`g : P ⟶ M` to a sheaf, followed by `sheafificationIso`, is `g`. -/
+theorem unit_comp_val_sheafification_map_comp_sheafificationIso_hom {R : Sheaf J RingCat.{u}}
+    {P : PresheafOfModules.{v} R.obj} {M : SheafOfModules.{v} R} (g : P ⟶ M.val) :
+    (PresheafOfModules.sheafificationAdjunction (𝟙 R.obj)).unit.app P ≫
+      ((PresheafOfModules.sheafification (𝟙 R.obj)).map g ≫ (sheafificationIso R M).hom).val =
+    g := by
+  rw [sheafificationIso_hom]
+  -- Move `g` past the sheafification map, then use a triangle identity.
+  let adj := PresheafOfModules.sheafificationAdjunction (𝟙 R.obj)
+  exact (adj.unit.naturality_assoc _ _).symm.trans
+    ((congrArg (g ≫ ·) (adj.right_triangle_components M)).trans (Category.comp_id _))
 
 end SheafOfModules
 

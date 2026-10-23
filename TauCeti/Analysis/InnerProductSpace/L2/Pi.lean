@@ -18,7 +18,7 @@ For a finite family of σ-finite measures `μ i` and `L²(μ i)` functions `f i`
 `x ↦ ∏ i, f i (x i)` belongs to `L²(Measure.pi μ)`, the assignment factors the inner product as a
 tensor, and coordinatewise Hilbert bases multiply to a Hilbert basis `TauCeti.piHilbertBasis` of
 `L²(Measure.pi μ)`. This is the `Fintype`-indexed analogue of the binary product basis
-`TauCeti.prodHilbertBasis`.
+`HilbertBasis.prod`.
 
 ## Main definitions
 

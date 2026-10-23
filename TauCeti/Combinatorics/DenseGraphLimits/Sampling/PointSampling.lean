@@ -10,7 +10,7 @@ public import TauCeti.Combinatorics.DenseGraphLimits.CutMetric.Distance
 import Mathlib.Probability.Independence.InfinitePi
 import TauCeti.Combinatorics.DenseGraphLimits.CutMetric.OfMatrixGrid
 import TauCeti.Combinatorics.DenseGraphLimits.CutMetric.Triangle
-import TauCeti.Combinatorics.DenseGraphLimits.Graphon.StandardBorelModel
+import TauCeti.Combinatorics.DenseGraphLimits.Graphon.StandardBorelModel.Basic
 import TauCeti.Combinatorics.DenseGraphLimits.StepGraphon.Approximation
 import TauCeti.MeasureTheory.MeasurableSpace.Finpartition
 import TauCeti.Probability.Moments.Pi
@@ -363,7 +363,6 @@ private theorem cutDist_comap_tendsto_inProbability_of_countablyGenerated
         (P.indexedPartition.mem_index z'), hx, hx']
   -- The sampling error beyond `3 L / ε` decays like `1 / n`.
   set A := 3 / ε + 9 * (Fintype.card P.parts : ℝ) ^ 3 / ε ^ 2 with hAdef
-  have hA : 0 ≤ A := by positivity
   obtain ⟨N, hN⟩ := exists_nat_gt (2 * A / δ)
   refine ⟨N, fun n hn => ?_⟩
   have hn1 : (0 : ℝ) < (n + 1 : ℕ) := by positivity

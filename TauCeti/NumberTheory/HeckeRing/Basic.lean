@@ -780,7 +780,7 @@ name, and only that: the matched representatives `aᵢ` and `rightCosetRep D (φ
 factor of `Γ₁`, so a summand that can see the representative still distinguishes them. Equating
 two sums over the families needs, in addition, a summand depending only on the coset — for a
 slash term, `HeckeRing.GL2.slash_eq_of_rightCoset_eq` on a `Γ₁`-invariant function; for a
-representation, `HeckeCoset.comp_eq_of_rightCoset_eq`. -/
+representation, `Representation.comp_eq_of_rightCoset_eq`. -/
 theorem exists_bijective_rightCosetRep_smul_eq {Γ₁ Γ₂ : Subgroup G} (D : HeckeCoset Δ Γ₁ Γ₂)
     {ι : Type*} (a : ι → G)
     (hcover : doubleCoset (D.out : G) Γ₁ Γ₂ = ⋃ i, MulOpposite.op (a i) • (Γ₁ : Set G))

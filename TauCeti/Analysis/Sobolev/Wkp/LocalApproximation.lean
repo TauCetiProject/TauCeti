@@ -212,8 +212,7 @@ private theorem tendsto_restrict_localTest (hp : p ≠ ∞) (hU : U ≤ Omega)
       simpa only [value_zero] using value_restrict_localTest hp hU chi hchi (phi i) 0 u
   | one =>
       intro u
-      rw [W1p.tendsto_iff_value_gradient]
-      constructor
+      refine W1p.tendsto_iff_value_gradient.2 ⟨?_, ?_⟩
       · have h : Tendsto (fun i => localAverage hp (phi i) (value 1 u)) l
             (𝓝 (value 1 (restrictL hU 1 u))) :=
           Wkp.tendsto_mollified_value hp hU hphi 1 u
@@ -288,5 +287,19 @@ theorem restrictL_mem_closure_range_ofTestFunctionₗ (hp : p ≠ ∞)
           (ofTestFunctionₗ (mu := mu) (p := p) k psi))) := by
   obtain ⟨psi, hpsi⟩ := exists_testFunction_approximation_restrictL hp hcompact hclosure k u
   exact mem_closure_of_tendsto hpsi (Eventually.of_forall fun j => ⟨psi j, rfl⟩)
+
+/-- The order-one case of `TauCeti.Wkp.restrictL_mem_closure_range_ofTestFunctionₗ`, stated with
+`W1p.restrictL` and `W1p.ofTestFunctionₗ` so that first-order callers need not rewrite through
+`Wkp.restrictL_one` and `Wkp.ofTestFunctionₗ_one`. -/
+theorem _root_.TauCeti.W1p.restrictL_mem_closure_range_ofTestFunctionₗ (hp : p ≠ ∞)
+    (hcompact : IsCompact (closure (U : Set E)))
+    (hclosure : closure (U : Set E) ⊆ Omega) (u : W1p mu Omega p) :
+    W1p.restrictL (SetLike.coe_subset_coe.mp (subset_closure.trans hclosure)) u ∈
+      closure (Set.range (fun psi : 𝓓(Omega, ℝ) =>
+        W1p.restrictL (SetLike.coe_subset_coe.mp (subset_closure.trans hclosure))
+          (W1p.ofTestFunctionₗ mu Omega p psi))) := by
+  have h := Wkp.restrictL_mem_closure_range_ofTestFunctionₗ hp hcompact hclosure 1 u
+  simp only [Wkp.restrictL_one, Wkp.ofTestFunctionₗ_one] at h
+  exact h
 
 end TauCeti.Wkp

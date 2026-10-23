@@ -55,7 +55,7 @@ this is the multiplicative Artin map on fractional ideals whose multiplicity van
 prime dividing the relative discriminant. -/
 noncomputable def artinHomAwayRamifiedSupport
     (hab : ∀ σ τ : L ≃ₐ[K] L, Commute σ τ) :
-    idealsAway (K := K) (NumberField.ramifiedSupport K L) →* (L ≃ₐ[K] L) :=
+    idealsAway K (NumberField.ramifiedSupport K L) →* (L ≃ₐ[K] L) :=
   artinHomAway (L := L) hab (NumberField.ramifiedSupport K L)
     NumberField.isUnramifiedAway_ramifiedSupport
 
@@ -75,7 +75,7 @@ theorem artinHomAwayRamifiedSupport_def (hab : ∀ σ τ : L ≃ₐ[K] L, Commut
 /-- **The Artin map away from the ramified support takes an unramified prime to Frobenius.** -/
 theorem artinHomAwayRamifiedSupport_apply_prime
     (hab : ∀ σ τ : L ≃ₐ[K] L, Commute σ τ)
-    (I : idealsAway (K := K) (NumberField.ramifiedSupport K L))
+    (I : idealsAway K (NumberField.ramifiedSupport K L))
     (v : HeightOneSpectrum (𝓞 K)) (hv : v ∉ NumberField.ramifiedSupport K L)
     (hI : ((I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) : FractionalIdeal (𝓞 K)⁰ K) =
       (v.asIdeal : FractionalIdeal (𝓞 K)⁰ K))

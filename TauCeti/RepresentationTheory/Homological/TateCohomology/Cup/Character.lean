@@ -10,6 +10,7 @@ public import TauCeti.RepresentationTheory.Homological.TateCohomology.Character
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Cup.Delta
 import TauCeti.RepresentationTheory.Homological.TateCohomology.Connecting.GroupHomology
 import TauCeti.RepresentationTheory.Homological.TateCohomology.Connecting.LowDegree
+import TauCeti.RepresentationTheory.Coinduced
 
 /-!
 # The low-degree Tate pairing with a character class
@@ -127,7 +128,7 @@ private theorem coindBot_ρ_inv_sub_character (g : G)
   apply (coindBotEquivPi ℤ G (AddCircle (1 : ℚ))).injective
   rw [map_sub, map_neg]
   funext h
-  rw [Pi.sub_apply, Pi.neg_apply, coindBotEquivPi_apply, coindBot_ρ_apply_coe,
+  rw [Pi.sub_apply, Pi.neg_apply, coindBotEquivPi_apply, Representation.coind_apply_coe_apply,
     coindBotEquivPi_apply, coindBotEquivPi_apply, coindBotUnit_hom_apply_coe]
   simp only [coindBotEquivPi_symm_apply_coe, Representation.trivial_apply]
   rw [map_mul, ofMul_mul, map_add, map_inv, ofMul_inv, map_neg]

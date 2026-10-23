@@ -18,11 +18,10 @@ zero-spatial axis to a positive-definite function of time. At the kernel level, 
 `(t, u) ↦ F (t + u, 0)` is positive definite, obtained from the BCR kernel by pulling back along
 `t ↦ (t, 0)`.
 
-This is the companion to the fixed-time spatial-slice API. It is a small prerequisite for the BCR
-semigroup--Bochner representation milestone in the `OneParameterSemigroups` roadmap: later proofs
-can separate the spatial Bochner slices from the remaining one-dimensional time-axis structure.
-When the spatial variable is trivial, this is the positive-definiteness statement left before the
-Bernstein/Laplace component of BCR.
+The time-axis restriction complements the fixed-time spatial slices by isolating the
+one-dimensional positive-definiteness condition used in the Bernstein/Laplace component of the
+BCR representation. When the spatial variable is trivial, the time-axis kernel is the full BCR
+kernel.
 
 Reading the alternating time differences of `TauCeti.timeDifference` on the axis `v = 0` gives the
 regularity of that one-dimensional function: it is antitone and all of its iterated forward
@@ -32,10 +31,6 @@ Those statements are the generic `TauCeti.IsPositiveDefinite` theory of
 function `t ↦ F (t, 0)` on `ℝ≥0` with its trivial involution and evaluated at the norm point
 `t / 2 + star (t / 2) = t`. Accordingly they assume only that the *time axis* is bounded,
 `‖F (t, 0)‖ ≤ C`, rather than that `F` is bounded on all of `ℝ≥0 × V`.
-
-This advances `TauCetiRoadmap/OneParameterSemigroups/README.md`, Part C, Milestone 2
-("BCR semigroup--Bochner"), specifically the reduction of a positive-definite function on
-`[0,∞) × V` to its zero-spatial time-axis kernel.
 
 ## Main declarations
 

@@ -6,17 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Fredholm.ClosedRange
-public import TauCeti.Analysis.Fredholm.Index
-public import Mathlib.Analysis.InnerProductSpace.Adjoint
-public import Mathlib.Analysis.InnerProductSpace.ProdL2
+public import TauCeti.Analysis.InnerProductSpace.Adjoint
+public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
 
 /-!
 # Adjoints of Fredholm operators
 
 This file proves the closed-range theorem for adjoints on Hilbert spaces and applies it to
 Fredholm operators. If a continuous linear map has closed range, then its adjoint has range
-equal to the orthogonal complement of the original kernel. Consequently, taking adjoints
-preserves Fredholm operators and negates their index.
+equal to the orthogonal complement of the original kernel. Consequently, an operator and its
+adjoint have rank at most `n` together, and taking adjoints preserves Fredholm operators and
+negates their index.
 
 The proof restricts an operator with closed range to a continuous linear equivalence from the
 orthogonal complement of its kernel onto its range. The adjoint of this equivalence is
@@ -31,6 +31,8 @@ surjective, which removes the closure from Mathlib's general identity
   closed-range theorem for adjoints.
 * `ContinuousLinearMap.isClosed_range_adjoint_iff`: an operator has closed range if and
   only if its adjoint does.
+* `ContinuousLinearMap.rank_adjoint_le_iff`: an operator has rank at most `n` if and only if
+  its adjoint does.
 * `ContinuousLinearMap.IsFredholm.adjoint`: the adjoint of a Fredholm operator is Fredholm.
 * `ContinuousLinearMap.index_adjoint`: taking the adjoint negates the Fredholm index.
 
@@ -108,38 +110,6 @@ section HilbertCodomain
 variable [InnerProductSpace 𝕜 F] [CompleteSpace F]
 
 
-/-- The adjoint of a continuous linear equivalence is bijective. -/
-private theorem _root_.ContinuousLinearMap.adjoint_bijective (e : E ≃L[𝕜] F) :
-    Function.Bijective ((e : E →L[𝕜] F)†) := by
-  let A : F →L[𝕜] E := ((e : E →L[𝕜] F)†)
-  let B : E →L[𝕜] F := ((e.symm : F →L[𝕜] E)†)
-  have hBA : B.comp A = ContinuousLinearMap.id 𝕜 F := by
-    rw [← ContinuousLinearMap.adjoint_comp]
-    have he : (e : E →L[𝕜] F).comp (e.symm : F →L[𝕜] E) =
-        ContinuousLinearMap.id 𝕜 F := by
-      ext x
-      simp
-    rw [he, ContinuousLinearMap.adjoint_id]
-  have hAB : A.comp B = ContinuousLinearMap.id 𝕜 E := by
-    rw [← ContinuousLinearMap.adjoint_comp]
-    rw [e.coe_symm_comp_coe, ContinuousLinearMap.adjoint_id]
-  -- Fold the displayed adjoint back to the local name used for the inverse identities.
-  change Function.Bijective A
-  constructor
-  · intro x y hxy
-    apply_fun B at hxy
-    simpa only [← ContinuousLinearMap.comp_apply, hBA, ContinuousLinearMap.id_apply] using hxy
-  · intro x
-    refine ⟨B x, ?_⟩
-    simp only [← ContinuousLinearMap.comp_apply, hAB, ContinuousLinearMap.id_apply]
-
-/-- The adjoint maps into the orthogonal complement of the kernel. Mathlib's
-`ContinuousLinearMap.orthogonal_ker` identifies `(ker T)ᗮ` with the *closure* of the adjoint's
-range, and the range is contained in its closure. -/
-private theorem _root_.ContinuousLinearMap.adjoint_mem_orthogonal_ker (T : E →L[𝕜] F) (y : F) :
-    (T†) y ∈ (LinearMap.ker (T : E →ₗ[𝕜] F))ᗮ := by
-  rw [T.orthogonal_ker]
-  exact Submodule.le_topologicalClosure _ (LinearMap.mem_range_self _ y)
 
 /-- The adjoint of `T`, restricted to the range of `T` and corestricted to `(ker T)ᗮ`, is
 surjective: it *is* the adjoint of the isomorphism `(ker T)ᗮ ≃L range T`, and the adjoint of an
@@ -149,28 +119,27 @@ private theorem _root_.ContinuousLinearMap.codRestrict_domRestrict_adjoint_surje
     (hT : IsClosed (LinearMap.range (T : E →ₗ[𝕜] F) : Set F)) :
     Function.Surjective
       (((T†).domRestrict (LinearMap.range (T : E →ₗ[𝕜] F))).codRestrict
-        (LinearMap.ker (T : E →ₗ[𝕜] F))ᗮ fun y => ContinuousLinearMap.adjoint_mem_orthogonal_ker T
-          y) := by
-  set K := LinearMap.ker (T : E →ₗ[𝕜] F) with hK
-  set R := LinearMap.range (T : E →ₗ[𝕜] F) with hR
+        (LinearMap.ker (T : E →ₗ[𝕜] F))ᗮ fun y => T.adjoint_apply_mem_orthogonal_ker y) := by
+  set K := LinearMap.ker (T : E →ₗ[𝕜] F) with _
+  set R := LinearMap.range (T : E →ₗ[𝕜] F) with _
   set e : Kᗮ ≃L[𝕜] R := ContinuousLinearMap.orthogonalKerEquivRange T hT with he
   have he_apply (x : Kᗮ) : (e x : F) = T (x : E) := by
     simpa only [he] using ContinuousLinearMap.orthogonalKerEquivRange_apply T hT x
   -- Peeling both restriction wrappers off the corestricted adjoint, once and by name.
   have hcoe (y : R) :
       ((((T†).domRestrict R).codRestrict Kᗮ
-          (fun y => ContinuousLinearMap.adjoint_mem_orthogonal_ker T y)) y : E)
+          (fun y => T.adjoint_apply_mem_orthogonal_ker y)) y : E)
         = (T†) (y : F) :=
     (ContinuousLinearMap.coe_codRestrict_apply _ _ _ y).trans
       (congrFun (ContinuousLinearMap.coe_domRestrict (T†) R) y)
   have hB : ((T†).domRestrict R).codRestrict Kᗮ
-    (fun y => ContinuousLinearMap.adjoint_mem_orthogonal_ker T y)
+    (fun y => T.adjoint_apply_mem_orthogonal_ker y)
       = ((e : Kᗮ →L[𝕜] R)†) :=
     (ContinuousLinearMap.eq_adjoint_iff _ _).2 fun y x => by
       rw [Submodule.coe_inner, hcoe, Submodule.coe_inner, T.adjoint_inner_left,
         ContinuousLinearEquiv.coe_coe, he_apply]
   rw [hB]
-  exact (ContinuousLinearMap.adjoint_bijective e).2
+  exact e.adjoint_bijective.2
 
 /-- A continuous linear map with closed range has adjoint range equal to the orthogonal
 complement of its kernel. -/
@@ -180,7 +149,7 @@ theorem _root_.ContinuousLinearMap.range_adjoint_eq_orthogonal_ker_of_isClosed_r
       (LinearMap.ker (T : E →ₗ[𝕜] F))ᗮ := by
   refine le_antisymm ?_ fun x hx => ?_
   · rintro _ ⟨y, rfl⟩
-    exact ContinuousLinearMap.adjoint_mem_orthogonal_ker T y
+    exact T.adjoint_apply_mem_orthogonal_ker y
   · obtain ⟨y, hy⟩ := ContinuousLinearMap.codRestrict_domRestrict_adjoint_surjective T hT ⟨x, hx⟩
     exact ⟨(y : F), congr_arg Subtype.val hy⟩
 
@@ -202,6 +171,26 @@ theorem _root_.ContinuousLinearMap.isClosed_range_adjoint_iff (T : E →L[𝕜] 
   · intro hT
     simpa using ContinuousLinearMap.isClosed_range_adjoint_of_isClosed_range (T†) hT
   · exact ContinuousLinearMap.isClosed_range_adjoint_of_isClosed_range T
+
+/-- An operator of rank at most `n` has an adjoint of rank at most `n`: its range is closed, so
+the range of `T†` is `(ker T)ᗮ`, which `T` maps isomorphically onto the range of `T`. -/
+private theorem _root_.ContinuousLinearMap.rank_adjoint_le_of_rank_le {T : E →L[𝕜] F} {n : ℕ}
+    (hT : (T : E →ₗ[𝕜] F).rank ≤ n) : (T† : F →ₗ[𝕜] E).rank ≤ n := by
+  have : FiniteDimensional 𝕜 (LinearMap.range (T : E →ₗ[𝕜] F)) :=
+    Module.rank_lt_aleph0_iff.mp (hT.trans_lt (Cardinal.natCast_lt_aleph0))
+  have hT' := Submodule.closed_of_finiteDimensional (LinearMap.range (T : E →ₗ[𝕜] F))
+  rw [LinearMap.rank, T.range_adjoint_eq_orthogonal_ker_of_isClosed_range hT',
+    ← Cardinal.lift_le_nat_iff, (T.orthogonalKerEquivRange hT').toLinearEquiv.lift_rank_eq,
+    Cardinal.lift_le_nat_iff]
+  exact hT
+
+/-- A continuous linear map between Hilbert spaces has rank at most `n` if and only if its
+adjoint does. -/
+@[simp]
+theorem _root_.ContinuousLinearMap.rank_adjoint_le_iff (T : E →L[𝕜] F) {n : ℕ} :
+    (T† : F →ₗ[𝕜] E).rank ≤ n ↔ (T : E →ₗ[𝕜] F).rank ≤ n :=
+  ⟨fun h ↦ by simpa using ContinuousLinearMap.rank_adjoint_le_of_rank_le h,
+    ContinuousLinearMap.rank_adjoint_le_of_rank_le⟩
 
 
 

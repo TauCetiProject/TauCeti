@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Asymptotics.Lemmas
+public import TauCeti.Analysis.Normed.Algebra.Basic
 public import TauCeti.Analysis.Normed.Algebra.BCH.Local
 public import TauCeti.Analysis.Normed.Algebra.Exponential
 
@@ -13,10 +14,10 @@ public import TauCeti.Analysis.Normed.Algebra.Exponential
 # The first-order term of the local Baker--Campbell--Hausdorff germ
 
 The local Baker--Campbell--Hausdorff germ of `TauCeti/Analysis/Normed/Algebra/BCH/Local.lean` is
-represented by `fun p ↦ logOneAdd (exp p.1 * exp p.2 - 1)`.  This file proves the law that fixes
+represented by `fun p ↦ log (exp p.1 * exp p.2)`.  This file proves the law that fixes
 its expansion at the origin:
 
-`logOneAdd (exp x * exp y - 1) = x + y + 2⁻¹ • (x * y - y * x) + O(‖(x, y)‖ ^ 3)`.
+`log (exp x * exp y) = x + y + 2⁻¹ • (x * y - y * x) + O(‖(x, y)‖ ^ 3)`.
 
 The second-order term `x * y - y * x` is the commutator `⁅x, y⁆` of the Lie ring underlying the
 associative ring, so this is the familiar `x + y + ½⁅x, y⁆` of the Baker--Campbell--Hausdorff
@@ -25,13 +26,13 @@ series.  It is written as a difference of products rather than as a bracket beca
 
 The proof is the classical formal computation, carried out with the two quadratic Taylor
 estimates that the ingredients satisfy, `NormedSpace.isBigO_exp_sub_quadratic` and
-`NormedSpace.isBigO_logOneAdd_sub_quadratic`.  Writing `u = exp x * exp y - 1` and `q = x + y`:
+`NormedSpace.isBigO_log_one_add_sub_quadratic`.  Writing `u = exp x * exp y - 1` and `q = x + y`:
 
 * multiplying the two quadratic truncations gives `u = q + 2⁻¹ • q ^ 2 + 2⁻¹ • (x * y - y * x)`
   to third order, the three leftover monomials `x * y ^ 2`, `x ^ 2 * y` and `x ^ 2 * y ^ 2` being
   of order at least three;
 * hence `u - q` is of order two, so `u ^ 2` and `q ^ 2` agree to third order;
-* and `logOneAdd u = u - 2⁻¹ • u ^ 2` to third order, with `‖u‖` of order one, so the two
+* and `log (1 + u) = u - 2⁻¹ • u ^ 2` to third order, with `‖u‖` of order one, so the two
   quadratic terms cancel and only `q + 2⁻¹ • (x * y - y * x)` survives.
 
 Only the germ at the origin is involved, so the statement transfers to any representative of
@@ -41,7 +42,7 @@ Only the germ at the origin is involved, so the statement transfers to any repre
 
 * `NormedSpace.isBigO_exp_mul_exp_sub_one_sub_quadratic`: the quadratic Taylor estimate for
   `exp x * exp y - 1`.
-* `NormedSpace.isBigO_logOneAdd_exp_mul_exp_sub_one_sub_firstOrder`: **the first-order law**, that
+* `NormedSpace.isBigO_log_exp_mul_exp_sub_firstOrder`: **the first-order law**, that
   the representative of the local Baker--Campbell--Hausdorff germ is
   `x + y + 2⁻¹ • (x * y - y * x)` up to `O(‖(x, y)‖ ^ 3)`.
 * `NormedSpace.isBigO_sub_firstOrder_of_coe_eq_localBCH`: the same for an arbitrary representative
@@ -57,6 +58,8 @@ noncomputable section
 namespace NormedSpace
 
 variable (A : Type*) [NormedRing A] [NormedAlgebra ℝ A] [CompleteSpace A]
+
+attribute [local instance] TauCeti.normedAlgebraRatOfReal
 
 /-! ### The quadratic Taylor estimate for a product of two exponentials -/
 
@@ -148,8 +151,8 @@ theorem isBigO_exp_mul_exp_sub_one_sub_quadratic :
 /-- **The first-order law of the local Baker--Campbell--Hausdorff germ.**  Its defining
 representative is `x + y + 2⁻¹ • (x * y - y * x)` up to third order at the origin; the
 second-order term is half the commutator. -/
-theorem isBigO_logOneAdd_exp_mul_exp_sub_one_sub_firstOrder :
-    (fun p : A × A ↦ logOneAdd ℝ A (exp p.1 * exp p.2 - 1) -
+theorem isBigO_log_exp_mul_exp_sub_firstOrder :
+    (fun p : A × A ↦ log (exp p.1 * exp p.2) -
         (p.1 + p.2 + (2⁻¹ : ℝ) • (p.1 * p.2 - p.2 * p.1)))
       =O[𝓝 ((0, 0) : A × A)] fun p ↦ ‖p‖ ^ 3 := by
   have hfst : (fun p : A × A ↦ p.1) =O[𝓝 ((0, 0) : A × A)] fun p ↦ ‖p‖ :=
@@ -200,13 +203,14 @@ theorem isBigO_logOneAdd_exp_mul_exp_sub_one_sub_firstOrder :
     have h := ((hexp.comp (continuous_fst.tendsto' ((0, 0) : A × A) 0 rfl)).mul
       (hexp.comp (continuous_snd.tendsto' ((0, 0) : A × A) 0 rfl))).sub_const 1
     simpa using h
-  have hlog : (fun p : A × A ↦ logOneAdd ℝ A (exp p.1 * exp p.2 - 1) -
+  have hlog : (fun p : A × A ↦ log (exp p.1 * exp p.2) -
         ((exp p.1 * exp p.2 - 1) - (2⁻¹ : ℝ) • (exp p.1 * exp p.2 - 1) ^ 2))
       =O[𝓝 ((0, 0) : A × A)] fun p ↦ ‖p‖ ^ 3 := by
-    have h : (fun p : A × A ↦ logOneAdd ℝ A (exp p.1 * exp p.2 - 1) -
+    have h : (fun p : A × A ↦ log (exp p.1 * exp p.2) -
           ((exp p.1 * exp p.2 - 1) - (2⁻¹ : ℝ) • (exp p.1 * exp p.2 - 1) ^ 2))
         =O[𝓝 ((0, 0) : A × A)] fun p : A × A ↦ ‖exp p.1 * exp p.2 - 1‖ ^ 3 :=
-      (isBigO_logOneAdd_sub_quadratic ℝ (A := A)).comp_tendsto htendsto
+      by simpa only [Function.comp_def, add_sub_cancel] using
+        (isBigO_log_one_add_sub_quadratic ℝ A).comp_tendsto htendsto
     exact h.trans (hord1.norm_left.pow 3)
   -- The quadratic terms cancel against half the square of `x + y`.
   have hcommutator : ∀ x y : A,
@@ -234,7 +238,7 @@ theorem isBigO_sub_firstOrder_of_coe_eq_localBCH (f : A × A → A)
     (fun p : A × A ↦ f p - (p.1 + p.2 + (2⁻¹ : ℝ) • (p.1 * p.2 - p.2 * p.1)))
       =O[𝓝 ((0, 0) : A × A)] fun p ↦ ‖p‖ ^ 3 := by
   rw [localBCH_def, Germ.coe_eq] at hf
-  exact (isBigO_logOneAdd_exp_mul_exp_sub_one_sub_firstOrder A).congr'
+  exact (isBigO_log_exp_mul_exp_sub_firstOrder A).congr'
     (hf.symm.sub EventuallyEq.rfl) EventuallyEq.rfl
 
 end NormedSpace

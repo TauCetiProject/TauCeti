@@ -92,18 +92,13 @@ private def typeDRawVector (r : TypeDRawIndex n) : Fin n → ℤ :=
 
 private lemma typeDPairVector_dotProduct_self (p : TypeDPair n) :
     typeDPairVector p ⬝ᵥ typeDPairVector p = 2 := by
-  have hp : p.val.1 ≠ p.val.2 := p.property
-  by_cases h : p.val.1 < p.val.2
-  · simp [typeDPairVector, h, hp]
-  · have h' : p.val.2 ≠ p.val.1 := Ne.symm hp
-    simp [typeDPairVector, h, hp, h']
+  unfold typeDPairVector
+  split_ifs <;> simp [p.2, p.2.symm]
 
 private lemma typeDRawVector_dotProduct_self (r : TypeDRawIndex n) :
     typeDRawVector r ⬝ᵥ typeDRawVector r = 2 := by
-  by_cases h : r.1 = 0
-  · simpa [typeDRawVector, h] using typeDPairVector_dotProduct_self r.2
-  · simpa [typeDRawVector, h] using
-      typeDPairVector_dotProduct_self r.2
+  unfold typeDRawVector
+  split_ifs <;> simp [typeDPairVector_dotProduct_self]
 
 /-- The integral vectors of squared length two. For `n ≥ 2`, these are exactly the classical
 roots `±e_a ±e_b` of type `Dₙ`. -/
@@ -115,20 +110,13 @@ private def typeDRawRoot (r : TypeDRawIndex n) : TypeDRoot n :=
 private lemma support_typeDPairVector (p : TypeDPair n) :
     Function.support (typeDPairVector p) = {p.val.1, p.val.2} := by
   ext i
-  have hp : p.val.1 ≠ p.val.2 := p.property
-  by_cases hlt : p.val.1 < p.val.2
-  · simp only [typeDPairVector, ite_eq_left hlt]
-    by_cases hi : i = p.val.1 <;> by_cases hj : i = p.val.2 <;>
-      simp_all
-  · simp only [typeDPairVector, ite_eq_right hlt]
-    by_cases hi : i = p.val.1 <;> by_cases hj : i = p.val.2 <;>
-      simp_all
+  unfold typeDPairVector
+  split_ifs <;> by_cases hi : i = p.val.1 <;> by_cases hj : i = p.val.2 <;> simp_all
 
 private lemma support_typeDRawVector (r : TypeDRawIndex n) :
     Function.support (typeDRawVector r) = {r.2.val.1, r.2.val.2} := by
-  by_cases h : r.1 = 0
-  · simpa [typeDRawVector, h] using support_typeDPairVector r.2
-  · simpa [typeDRawVector, h] using support_typeDPairVector r.2
+  unfold typeDRawVector
+  split_ifs <;> simp [support_typeDPairVector]
 
 private lemma typeDRawVector_injective : Injective (typeDRawVector (n := n)) := by
   rintro ⟨s, p⟩ ⟨t, q⟩ h
@@ -158,18 +146,12 @@ private lemma typeDRawVector_injective : Injective (typeDRawVector (n := n)) := 
     · fin_cases s <;> fin_cases t <;>
         simp [typeDRawVector, typeDPairVector, hgt, not_lt_of_ge (le_of_lt hgt), hp] at hv₁ hv₂
 
-private lemma typeDRawRoot_injective : Injective (typeDRawRoot (n := n)) := by
-  intro r s h
-  exact typeDRawVector_injective (congrArg Subtype.val h)
+private lemma typeDRawRoot_injective : Injective (typeDRawRoot (n := n)) :=
+  Subtype.coind_injective _ typeDRawVector_injective
 
-private lemma typeDRoot_sq_le_two (x : TypeDRoot n) (i : Fin n) : x.1 i ^ 2 ≤ 2 := by
-  have hnonneg : ∀ j : Fin n, 0 ≤ x.1 j ^ 2 := fun j => sq_nonneg _
-  have hi : x.1 i ^ 2 ≤ ∑ j : Fin n, x.1 j ^ 2 :=
-    Finset.single_le_sum (fun j _ => hnonneg j) (Finset.mem_univ i)
-  calc
-    x.1 i ^ 2 ≤ ∑ j : Fin n, x.1 j ^ 2 := hi
-    _ = x.1 ⬝ᵥ x.1 := by simp [dotProduct, pow_two]
-    _ = 2 := x.2
+private lemma typeDRoot_sq_le_two (x : TypeDRoot n) (i : Fin n) : x.1 i ^ 2 ≤ 2 :=
+  (Finset.single_le_sum (fun j _ => sq_nonneg (x.1 j)) (Finset.mem_univ i)).trans_eq
+    (by simpa [dotProduct, sq] using x.2)
 
 private lemma typeDRoot_support_card (x : TypeDRoot n) :
     (Finset.univ.filter fun i : Fin n => x.1 i ≠ 0).card = 2 := by
@@ -213,28 +195,17 @@ private lemma exists_typeDRawRoot_eq_of_lt (x : TypeDRoot n) {a b : Fin n} (hab 
 private lemma typeDRawRoot_surjective : Surjective (typeDRawRoot (n := n)) := by
   intro x
   obtain ⟨a, b, hab, hsupp⟩ := Finset.card_eq_two.mp (typeDRoot_support_card x)
-  have hamem : a ∈ Finset.univ.filter fun i : Fin n => x.1 i ≠ 0 := by
-    rw [hsupp]
-    simp
-  have hbmem : b ∈ Finset.univ.filter fun i : Fin n => x.1 i ≠ 0 := by
-    rw [hsupp]
-    simp
-  have ha0 : x.1 a ≠ 0 := (Finset.mem_filter.mp hamem).2
-  have hb0 : x.1 b ≠ 0 := (Finset.mem_filter.mp hbmem).2
-  have ha : x.1 a = 1 ∨ x.1 a = -1 := sq_eq_one_iff.mp
-    (Int.sq_eq_one_of_sq_le_three ((typeDRoot_sq_le_two x a).trans (by norm_num)) ha0)
-  have hb : x.1 b = 1 ∨ x.1 b = -1 := sq_eq_one_iff.mp
-    (Int.sq_eq_one_of_sq_le_three ((typeDRoot_sq_le_two x b).trans (by norm_num)) hb0)
+  have h : ∀ i ∈ ({a, b} : Finset (Fin n)), x.1 i = 1 ∨ x.1 i = -1 := fun i hi =>
+    sq_eq_one_iff.mp <| Int.sq_eq_one_of_sq_le_three
+      ((typeDRoot_sq_le_two x i).trans (by norm_num)) (Finset.mem_filter.mp (hsupp ▸ hi :)).2
   rcases lt_or_gt_of_ne hab with hab | hba
-  · exact exists_typeDRawRoot_eq_of_lt x hab hsupp ha hb
-  · exact exists_typeDRawRoot_eq_of_lt x hba (by simpa [Finset.pair_comm] using hsupp) hb ha
+  · exact exists_typeDRawRoot_eq_of_lt x hab hsupp (h a (by simp)) (h b (by simp))
+  · exact exists_typeDRawRoot_eq_of_lt x hba (by simpa [Finset.pair_comm] using hsupp)
+      (h b (by simp)) (h a (by simp))
 
 /-- The explicit signed-pair model enumerates every integral vector of squared length two. -/
 private noncomputable def typeDRawRootEquiv (n : ℕ) : TypeDRawIndex n ≃ TypeDRoot n :=
   Equiv.ofBijective typeDRawRoot ⟨typeDRawRoot_injective, typeDRawRoot_surjective⟩
-
-private lemma typeDRawRootEquiv_apply (r : TypeDRawIndex n) :
-    typeDRawRootEquiv n r = typeDRawRoot r := rfl
 
 /-- Every classical type-`D` root has one of the three coordinate shapes
 `eᵢ - eⱼ`, `eᵢ + eⱼ`, or `-eᵢ - eⱼ`, for distinct coordinates `i` and `j`.
@@ -307,14 +278,12 @@ private lemma typeDRootEquiv_apply (hn : 4 ≤ n) (k : Fin (2 * n * (n - 1))) :
 
 /-- There is room for the first `n` indices in the type `Dₙ` enumeration of `2 * n * (n - 1)`
 roots. -/
-private lemma typeD_le_two_mul_mul (hn : 4 ≤ n) : n ≤ 2 * n * (n - 1) := by
-  have h : n ≤ n * (n - 1) := Nat.le_mul_of_pos_right n (by omega)
-  have h' : n * (n - 1) ≤ 2 * (n * (n - 1)) := Nat.le_mul_of_pos_left _ (by norm_num)
-  simpa [mul_assoc] using h.trans h'
+private lemma typeD_le_two_mul_mul (hn : 2 ≤ n) : n ≤ 2 * n * (n - 1) :=
+  (Nat.le_mul_of_pos_left n two_pos).trans (Nat.le_mul_of_pos_right _ (by omega))
 
 /-- The `i`-th simple root occupies root index `i`. -/
 def typeDSimpleIndex (n : ℕ) (hn : 4 ≤ n) (i : Fin n) : Fin (2 * n * (n - 1)) :=
-  Fin.castLE (typeD_le_two_mul_mul hn) i
+  Fin.castLE (typeD_le_two_mul_mul (by omega)) i
 
 /-- The root index of the `i`-th simple root has value `i`. -/
 @[simp] lemma typeDSimpleIndex_val (hn : 4 ≤ n) (i : Fin n) :
@@ -323,7 +292,7 @@ def typeDSimpleIndex (n : ℕ) (hn : 4 ≤ n) (i : Fin n) : Fin (2 * n * (n - 1)
 
 /-- Distinct simple roots occupy distinct root indices. -/
 lemma typeDSimpleIndex_injective (hn : 4 ≤ n) : Injective (typeDSimpleIndex n hn) :=
-  Fin.castLE_injective (typeD_le_two_mul_mul hn)
+  Fin.castLE_injective (typeD_le_two_mul_mul (by omega))
 
 private def typeDSimpleRawIndex (n : ℕ) (hn : 4 ≤ n) (i : Fin n) : TypeDRawIndex n :=
   if h : (i : ℕ) + 1 < n then
@@ -335,32 +304,20 @@ private lemma typeDPairFinEquiv_chain (i : Fin n) (hi : (i : ℕ) + 1 < n) :
     typeDPairFinEquiv n
         ⟨(i, ⟨(i : ℕ) + 1, hi⟩), by simp [Fin.ext_iff]⟩ =
       ⟨i, lt_of_lt_of_le i.isLt (Nat.le_mul_of_pos_right n (by omega))⟩ := by
-  apply Fin.ext
-  rw [typeDPairFinEquiv_val]
-  have hdiff : (((⟨(i : ℕ) + 1, hi⟩ : Fin n) - i : Fin n) : ℕ) = 1 := by
-    have heq : n - (i : ℕ) + ((i : ℕ) + 1) = n + 1 := by omega
-    simp only [Fin.sub_def, heq, Nat.add_mod_left, Nat.mod_eq_of_lt (by omega : 1 < n)]
-  simp [hdiff]
+  ext
+  rw [typeDPairFinEquiv_val, Fin.sub_val_of_le (by simp [Fin.le_def])]
+  simp
 
 private lemma typeDPairFinEquiv_fork (hn : 2 ≤ n) :
     typeDPairFinEquiv n
         ⟨(⟨n - 1, by omega⟩, ⟨n - 2, by omega⟩), by simp [Fin.ext_iff]; omega⟩ =
       typeDForkOldIndex n hn := by
-  apply Fin.ext
-  rw [typeDPairFinEquiv_val]
-  have hdiff : (((⟨n - 2, by omega⟩ : Fin n) - ⟨n - 1, by omega⟩ : Fin n) : ℕ) = n - 1 := by
-    have heq : n - (n - 1) + (n - 2) = n - 1 := by omega
-    simp only [Fin.sub_def, heq, Nat.mod_eq_of_lt (by omega : n - 1 < n)]
-  rw [hdiff]
-  have hprev : n - 1 - 1 = n - 2 := by omega
-  rw [hprev]
-  -- both sides are `Fin.val` of explicit numerals, so this only strips the wrappers
-  change n - 1 + n * (n - 2) = n * (n - 1) - 1
-  have hmul : n * (n - 1) = n + n * (n - 2) := by
-    have hpred : n - 1 = (n - 2) + 1 := by omega
-    conv_lhs => rw [hpred]
-    ring
-  rw [hmul]
+  ext
+  rw [typeDPairFinEquiv_val, Fin.coe_sub_iff_lt.mpr (by simp [Fin.lt_def]; omega)]
+  simp only [typeDForkOldIndex]
+  have hsub : n + (n - 2) - (n - 1) - 1 = n - 2 := by omega
+  have hpred : n - 1 = n - 2 + 1 := by omega
+  rw [hsub, hpred, Nat.mul_succ]
   omega
 
 private lemma typeDRawFinEquiv_simple (hn : 4 ≤ n) (i : Fin n) :
@@ -382,10 +339,7 @@ private lemma typeDRawFinEquiv_simple (hn : 4 ≤ n) (i : Fin n) :
 private lemma typeDRootEquiv_simple (hn : 4 ≤ n) (i : Fin n) :
     typeDRootEquiv n hn (typeDSimpleIndex n hn i) =
       typeDRawRoot (typeDSimpleRawIndex n hn i) := by
-  rw [typeDRootEquiv_apply]
-  congr 1
-  apply (typeDRawFinEquiv n (by omega)).injective
-  rw [Equiv.apply_symm_apply, typeDRawFinEquiv_simple]
+  rw [typeDRootEquiv_apply, ← typeDRawFinEquiv_simple, Equiv.symm_apply_apply]
 
 /-! ## The Bourbaki simple roots -/
 
@@ -418,14 +372,10 @@ coordinate sum. -/
 theorem sum_typeDSimpleRoot (hn : 4 ≤ n) (i : Fin n) :
     ∑ j : Fin n, typeDSimpleRoot n hn i j = if (i : ℕ) + 1 < n then 0 else 2 := by
   split_ifs with hi
-  · rw [typeDSimpleRoot_of_add_one_lt hn hi]
-    simp_rw [Pi.sub_apply]
-    rw [Finset.sum_sub_distrib, Fintype.sum_pi_single', Fintype.sum_pi_single']
-    omega
-  · rw [typeDSimpleRoot_of_not_add_one_lt hn hi]
-    simp_rw [Pi.add_apply]
-    rw [Finset.sum_add_distrib, Fintype.sum_pi_single', Fintype.sum_pi_single']
-    norm_num
+  · simp only [typeDSimpleRoot_of_add_one_lt hn hi, Pi.sub_apply, Finset.sum_sub_distrib,
+      Fintype.sum_pi_single', sub_self]
+  · simp only [typeDSimpleRoot_of_not_add_one_lt hn hi, Pi.add_apply, Finset.sum_add_distrib,
+      Fintype.sum_pi_single', one_add_one_eq_two]
 
 /-- Every simple root has even coordinate sum. -/
 theorem even_sum_typeDSimpleRoot (hn : 4 ≤ n) (i : Fin n) :
@@ -502,15 +452,9 @@ theorem det_typeDSimpleRoot_eq_two (hn : 4 ≤ n) : (Matrix.of (typeDSimpleRoot 
 @[simp] theorem typeDRootEquiv_apply_typeDSimpleIndex (hn : 4 ≤ n) (i : Fin n) :
     (typeDRootEquiv n hn (typeDSimpleIndex n hn i)).1 = typeDSimpleRoot n hn i := by
   rw [typeDRootEquiv_simple]
-  by_cases hi : (i : ℕ) + 1 < n
-  · have hlt : i < (⟨(i : ℕ) + 1, hi⟩ : Fin n) := by simp [Fin.lt_def]
-    simp [typeDSimpleRawIndex, typeDRawRoot, typeDRawVector, typeDPairVector,
-      typeDSimpleRoot, hi, hlt]
-  · have hlt : ¬(⟨n - 1, by omega⟩ : Fin n) < ⟨n - 2, by omega⟩ := by
-      simp [Fin.lt_def]
-      omega
-    simp [typeDSimpleRawIndex, typeDRawRoot, typeDRawVector, typeDPairVector,
-      typeDSimpleRoot, hi, hlt]
+  have hlast : ¬n - 1 < n - 2 := by omega
+  by_cases hi : (i : ℕ) + 1 < n <;> simp [typeDSimpleRawIndex, typeDRawRoot, typeDRawVector,
+    typeDPairVector, hi, Fin.lt_def, hlast]
 
 /-! ## Coordinates in the simple-root basis -/
 
@@ -546,8 +490,8 @@ pairing it against an explicit integral family, twice the fundamental coweights.
 unavoidable — the last two fundamental coweights of type `Dₙ` are not integral vectors — and
 doubling is harmless, since `ℤ` is torsion free. That one family does two jobs: it is a dual family
 for the simple roots up to the factor two, which gives their linear independence, and it exhibits
-twice the coefficient map as the restriction of a linear map, which gives the action of a
-reflection on the coordinates. -/
+twice the coefficient map as the restriction of a linear map, which shows that the coefficients
+expand every vector of even coordinate sum. -/
 
 /-- Twice the `k`-th fundamental coweight of type `Dₙ`, in classical orthogonal coordinates. The
 last two fundamental coweights of type `Dₙ` are half-integral, so the doubling is what keeps this
@@ -670,27 +614,21 @@ theorem mem_span_range_typeDSimpleRoot_iff (hn : 4 ≤ n) {v : Fin n → ℤ} :
 
 /-! ## Reflections of the concrete roots -/
 
-private lemma typeDDot_apply_self (u : TypeDRoot n) :
-    dotProductBilin ℤ ℤ u.1 u.1 = 2 := u.2
-
 /-- Reflection in a type `Dₙ` root, as a linear equivalence of the ambient coordinate space:
 Mathlib's `Module.reflection` for the dot-product form of `u`. -/
 private def typeDAmbientReflection (u : TypeDRoot n) : (Fin n → ℤ) ≃ₗ[ℤ] (Fin n → ℤ) :=
-  Module.reflection (typeDDot_apply_self u)
+  Module.reflection (f := dotProductBilin ℤ ℤ u.1) u.2
 
 private lemma typeDAmbientReflection_apply (u : TypeDRoot n) (v : Fin n → ℤ) :
     typeDAmbientReflection u v = v - (v ⬝ᵥ u.1) • u.1 := by
-  rw [typeDAmbientReflection, Module.reflection_apply, dotProduct_comm]
-  rfl
-
-private lemma typeDAmbientReflection_dotProduct_self (u : TypeDRoot n) {v : Fin n → ℤ}
-    (hv : v ⬝ᵥ v = 2) : typeDAmbientReflection u v ⬝ᵥ typeDAmbientReflection u v = 2 := by
-  have h := reflect_vecMul_dotProduct_self Matrix.isSymm_one (u := u.1) (by simpa using u.2) v
-  simpa [typeDAmbientReflection_apply, hv] using h
+  rw [typeDAmbientReflection]
+  exact (Module.reflection_apply v _).trans (by rw [dotProductBilin_apply_apply, dotProduct_comm])
 
 /-- Reflection of a type `Dₙ` root `v` in the root `u`. -/
 def typeDRootReflection (u v : TypeDRoot n) : TypeDRoot n :=
-  ⟨typeDAmbientReflection u v.1, typeDAmbientReflection_dotProduct_self u v.2⟩
+  ⟨typeDAmbientReflection u v.1, by
+    simpa [typeDAmbientReflection_apply, v.2] using
+      reflect_vecMul_dotProduct_self Matrix.isSymm_one (u := u.1) (by simpa using u.2) v.1⟩
 
 /-- Reflection in a root acts by the classical formula on coordinates. -/
 @[simp] lemma typeDRootReflection_val (u v : TypeDRoot n) :
@@ -700,7 +638,7 @@ def typeDRootReflection (u v : TypeDRoot n) : TypeDRoot n :=
 /-- Reflection in a type `Dₙ` root is involutive. -/
 lemma typeDRootReflection_involutive (u : TypeDRoot n) :
     Function.Involutive (typeDRootReflection u) := fun v =>
-  Subtype.ext (Module.involutive_reflection (typeDDot_apply_self u) v.1)
+  Subtype.ext (Module.involutive_reflection (f := dotProductBilin ℤ ℤ u.1) u.2 v.1)
 
 /-- Reflection in a type `Dₙ` root, as an involutive permutation of all roots. -/
 def typeDRootReflectionEquiv (u : TypeDRoot n) : TypeDRoot n ≃ TypeDRoot n :=
@@ -755,9 +693,7 @@ first `n` root indices a base of the pinned root datum. -/
 theorem typeDSimpleRootCoordinates_nonneg_or_nonpos (hn : 4 ≤ n) (x : TypeDRoot n) :
     (∀ k, 0 ≤ typeDSimpleRootCoordinates n hn x k) ∨
       (∀ k, typeDSimpleRootCoordinates n hn x k ≤ 0) := by
-  obtain ⟨⟨s, p⟩, hx⟩ : ∃ r : TypeDRawIndex n, typeDRawRoot r = x :=
-    ⟨(typeDRawRootEquiv n).symm x, by
-      rw [← typeDRawRootEquiv_apply]; exact (typeDRawRootEquiv n).apply_symm_apply x⟩
+  obtain ⟨⟨s, p⟩, hx⟩ := typeDRawRoot_surjective x
   have hxv : x.1 = typeDRawVector (s, p) := (congrArg Subtype.val hx).symm
   by_cases hs : s = 0
   · exact Or.inl (typeDSimpleRootCoordinates_nonneg_of_pairVector hn x p
@@ -770,18 +706,14 @@ theorem typeDSimpleRootCoordinates_nonneg_or_nonpos (hn : 4 ≤ n) (x : TypeDRoo
     rw [typeDSimpleRootCoordinates_of_eq_neg hn hneg k, neg_nonpos]
     exact typeDSimpleRootCoordinates_nonneg_of_pairVector hn _ p hyv k
 
-/-- **Reflection acts on the simple-root coordinates by the classical formula.** Doubling the
-coordinates turns them into dot products, which are linear, and `ℤ` is torsion free. -/
+/-- **Reflection acts on the simple-root coordinates by the classical formula.** -/
 theorem typeDSimpleRootCoordinates_typeDRootReflection (hn : 4 ≤ n) (u v : TypeDRoot n) :
     typeDSimpleRootCoordinates n hn (typeDRootReflection u v) =
-      typeDSimpleRootCoordinates n hn v - (v.1 ⬝ᵥ u.1) • typeDSimpleRootCoordinates n hn u := by
-  funext k
-  have h := two_mul_typeDSimpleRootCoordinates hn (even_sum_typeDRoot (typeDRootReflection u v)) k
-  rw [typeDRootReflection_val, dotProduct_sub, dotProduct_smul, smul_eq_mul,
-    ← two_mul_typeDSimpleRootCoordinates hn (even_sum_typeDRoot v) k,
-    ← two_mul_typeDSimpleRootCoordinates hn (even_sum_typeDRoot u) k] at h
-  simp only [typeDRootReflection_val, Pi.sub_apply, Pi.smul_apply, smul_eq_mul]
-  linarith
+      typeDSimpleRootCoordinates n hn v - (v.1 ⬝ᵥ u.1) • typeDSimpleRootCoordinates n hn u :=
+  typeDSimpleRootCoordinates_eq_of_sum_smul_eq hn <| by
+    simp only [Pi.sub_apply, Pi.smul_apply, sub_smul, smul_assoc, Finset.sum_sub_distrib,
+      ← Finset.smul_sum, sum_smul_typeDSimpleRootCoordinates hn (even_sum_typeDRoot _),
+      typeDRootReflection_val]
 
 end DynkinType
 

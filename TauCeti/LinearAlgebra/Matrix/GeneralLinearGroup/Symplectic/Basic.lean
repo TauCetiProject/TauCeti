@@ -41,7 +41,7 @@ The final sections construct the elementary one-parameter subgroups belonging to
 `±2eᵢ` and the short roots `eᵢ-eⱼ`, `eᵢ+eⱼ`, and `-eᵢ-eⱼ` in `Fin (m+m)` coordinates. The
 symplectic coordinate Hopf algebra and group scheme live in
 `TauCeti.Algebra.AlgebraicGroup.Symplectic.Basic`; their root-subgroup morphisms live in
-`TauCeti.Algebra.AlgebraicGroup.Symplectic.RootSubgroup`.
+`TauCeti.Algebra.AlgebraicGroup.Symplectic.RootSubgroup.Basic`.
 
 ## Main declarations
 
@@ -286,6 +286,21 @@ theorem JFin_mul_self : JFin m R * JFin m R = -1 := by
     simp [Matrix.one_apply, finSumFinEquiv.symm.injective.eq_iff]
   have h' := congrArg (fun M => M.submatrix finSumFinEquiv.symm finSumFinEquiv.symm) h
   simpa [Matrix.submatrix_submatrix, hone] using h'
+
+variable {m R} in
+/-- A scalar matrix preserving the transported alternating form has scalar a square root of one,
+provided the form is nonempty: the relation reads `c ^ 2 • J = J`, and `J` has an entry equal to
+one. -/
+theorem sq_eq_one_of_smul_one_mul_JFin_mul_transpose_eq (hm : m ≠ 0) {c : R}
+    (h : (c • (1 : Matrix (Fin (m + m)) (Fin (m + m)) R)) * JFin m R *
+      (c • (1 : Matrix (Fin (m + m)) (Fin (m + m)) R))ᵀ = JFin m R) : c ^ 2 = 1 := by
+  have h' : (c ^ 2) • JFin m R = JFin m R := by simpa [smul_smul, sq] using h
+  -- Read the relation in `Fin m ⊕ Fin m` coordinates, where `J` has a visible entry `1`.
+  have hJ := congrArg (fun M ↦ M.submatrix finSumFinEquiv finSumFinEquiv) h'
+  simp only [Matrix.submatrix_smul, JFin_submatrix] at hJ
+  have hentry := congrFun (congrFun hJ (Sum.inr ⟨0, Nat.pos_of_ne_zero hm⟩))
+    (Sum.inl ⟨0, Nat.pos_of_ne_zero hm⟩)
+  simpa [Matrix.J] using hentry
 
 variable {m R} in
 /-- A matrix preserving the transported alternating form is a symplectic matrix in Mathlib's

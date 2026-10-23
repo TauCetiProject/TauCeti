@@ -100,7 +100,9 @@ theorem pLowerCentralStep_proPKernel :
       QuotientGroup.eq_one_iff]
     exact pow_mem_pLowerCentralStep hgR
   have hGS : IsProP p (G ⧸ S) :=
-    (isProP_maximalProPQuotient (p := p) (G := G)).of_ker_isProP hf hsurj hker.isProP
+    (isProP_maximalProPQuotient (p := p) (G := G)).of_ker_isProP
+      (MonoidHom.isOpenQuotientMap_of_isQuotientMap
+        (Topology.IsQuotientMap.of_surjective_continuous hsurj hf)).isOpenMap hsurj hker.isProP
   apply le_antisymm
     (pLowerCentralStep_le (p := p) (H := proPKernel p G)
       (isClosed_proPKernel (p := p) (G := G)))
@@ -143,7 +145,6 @@ finitely generated. -/
 theorem finite_H1ConjInvariants_iff :
     Finite (H1ConjInvariants G (ZMod p) N) ↔
       IsTopologicallyFinitelyGenerated (N ⧸ (pLowerCentralStep p N).subgroupOf N) := by
-  have hK := isClosed_pLowerCentralStep_subgroupOf (p := p) N
   have : CompactSpace N := isCompact_iff_compactSpace.mp hN.isCompact
   have hQ : IsProP p (N ⧸ (pLowerCentralStep p N).subgroupOf N) :=
     (isPGroup_quotient_pLowerCentralStep_subgroupOf N).isProP
@@ -159,7 +160,6 @@ theorem natCard_H1ConjInvariants
     (h : IsTopologicallyFinitelyGenerated (N ⧸ (pLowerCentralStep p N).subgroupOf N)) :
     Nat.card (H1ConjInvariants G (ZMod p) N) =
       p ^ topologicalGeneratorRankNat (N ⧸ (pLowerCentralStep p N).subgroupOf N) h := by
-  have hK := isClosed_pLowerCentralStep_subgroupOf (p := p) N
   have : CompactSpace N := isCompact_iff_compactSpace.mp hN.isCompact
   have hQ : IsProP p (N ⧸ (pLowerCentralStep p N).subgroupOf N) :=
     (isPGroup_quotient_pLowerCentralStep_subgroupOf N).isProP

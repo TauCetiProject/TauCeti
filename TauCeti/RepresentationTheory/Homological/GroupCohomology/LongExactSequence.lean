@@ -23,7 +23,9 @@ of `G`-representations, and a morphism `Φ : Res_f Y ⟶ X` of short complexes, 
 
 formed by the two connecting maps and the change-of-group maps `groupCohomology.map f Φ.τᵢ`
 commutes. Restriction to a subgroup and inflation from a quotient are both change-of-group maps,
-so this contains the compatibility of `δ` with each of them.
+so this contains the compatibility of `δ` with each of them. The file also records the
+isomorphism criterion for a coefficient map when the adjacent cohomology groups of its kernel
+vanish.
 
 ## Main definitions
 
@@ -35,6 +37,8 @@ so this contains the compatibility of `δ` with each of them.
 
 * `TauCeti.groupCohomology.δ_naturality`: the connecting map of group cohomology commutes with
   change-of-group maps.
+* `TauCeti.groupCohomology.isIso_map_of_shortExact_of_isZero`: vanishing of `Hⁿ` and `Hⁿ⁺¹` of
+  the first term of a short exact sequence makes its projection an isomorphism on `Hⁿ`.
 
 ## References
 
@@ -111,5 +115,17 @@ theorem δ_naturality (hY : Y.ShortExact) (hX : X.ShortExact) (Φ : Y.map (resFu
     δ hY i j hij ≫ map f Φ.τ₁ j = map f Φ.τ₃ i ≫ δ hX i j hij :=
   HomologicalComplex.HomologySequence.δ_naturality (cochainsMapShortComplex f Φ)
     (map_cochainsFunctor_shortExact hY) (map_cochainsFunctor_shortExact hX) i j hij
+
+/-- In a short exact sequence `0 → X₁ → X₂ → X₃ → 0`, vanishing of `Hⁿ(G, X₁)` and
+`Hⁿ⁺¹(G, X₁)` makes the coefficient map `Hⁿ(G, X₂) → Hⁿ(G, X₃)` an isomorphism. -/
+theorem isIso_map_of_shortExact_of_isZero {X : ShortComplex (Rep k G)}
+    (hX : X.ShortExact) (n : ℕ) (hn : Limits.IsZero (groupCohomology X.X₁ n))
+    (hn' : Limits.IsZero (groupCohomology X.X₁ (n + 1))) :
+    IsIso ((_root_.groupCohomology.functor k G n).map X.g) := by
+  have : Mono ((_root_.groupCohomology.functor k G n).map X.g) :=
+    (mapShortComplex₂_exact hX n).mono_g (hn.eq_zero_of_src _)
+  have : Epi ((_root_.groupCohomology.functor k G n).map X.g) :=
+    (mapShortComplex₃_exact hX (i := n) rfl).epi_f (hn'.eq_zero_of_tgt _)
+  exact isIso_of_mono_of_epi _
 
 end TauCeti.groupCohomology

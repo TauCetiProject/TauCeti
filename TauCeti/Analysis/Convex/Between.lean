@@ -13,6 +13,18 @@ public import Mathlib.Analysis.Convex.Between
 Two sides of a nondegenerate triangle meet only at their common vertex. This is the affine-space
 form of Mathlib's `segment_inter_eq_endpoint_of_linearIndependent_sub`, with affine independence
 of the three vertices in place of linear independence of the two edge vectors.
+
+Conversely, over a linearly ordered field, if the segments from `z` to `a` and to `b` meet only at
+`z`, then the directions `a -ᵥ z` and `b -ᵥ z` are nonzero and do not lie on a common ray from the
+origin: `0 ∉ [-(a -ᵥ z), b -ᵥ z]`. This is the form in which a separating functional can be
+found for the two directions (`TauCeti.exists_strongDual_neg_pos_ne_zero`).
+
+## Main results
+
+* `AffineIndependent.affineSegment_inter_eq_endpoint`: two sides of a nondegenerate triangle meet
+  only at their common vertex.
+* `TauCeti.zero_notMem_segment_of_affineSegment_inter_eq`: two segments from `z` meeting only at
+  `z` point in directions not on a common ray.
 -/
 
 public section
@@ -41,3 +53,27 @@ theorem AffineIndependent.affineSegment_inter_eq_endpoint {a b c : P}
     rw [neg_smul, ← sub_eq_add_neg, hst, sub_self])
   rw [← ht, neg_eq_zero.1 h0, AffineMap.lineMap_apply_zero]
   rfl
+
+namespace TauCeti
+
+variable {k : Type*} [Field k] [LinearOrder k] [IsStrictOrderedRing k] [Module k V]
+
+/-- If the segments from `z` to `a` and to `b` meet only at `z`, then `a -ᵥ z` and `b -ᵥ z` are
+nonzero and do not lie on a common ray from `0`: `0 ∉ [-(a -ᵥ z), b -ᵥ z]`. -/
+theorem zero_notMem_segment_of_affineSegment_inter_eq {a b z : P} (ha : a ≠ z) (hb : b ≠ z)
+    (hab : affineSegment k z a ∩ affineSegment k z b = {z}) :
+    (0 : V) ∉ segment k (-(a -ᵥ z)) (b -ᵥ z) := by
+  rintro ⟨s, t, hs, ht, hst, he⟩
+  rw [smul_neg, neg_add_eq_zero] at he
+  have hm : t • (b -ᵥ z) +ᵥ z ∈ affineSegment k z a ∩ affineSegment k z b :=
+    ⟨⟨s, ⟨hs, by linarith⟩, by rw [AffineMap.lineMap_apply, he]⟩,
+      ⟨t, ⟨ht, by linarith⟩, by rw [AffineMap.lineMap_apply]⟩⟩
+  rw [hab, Set.mem_singleton_iff, ← vsub_eq_zero_iff_eq, vadd_vsub, smul_eq_zero] at hm
+  rcases hm with rfl | hm
+  · rw [zero_smul, smul_eq_zero] at he
+    rcases he with rfl | he
+    · linarith
+    · exact ha (vsub_eq_zero_iff_eq.1 he)
+  · exact hb (vsub_eq_zero_iff_eq.1 hm)
+
+end TauCeti

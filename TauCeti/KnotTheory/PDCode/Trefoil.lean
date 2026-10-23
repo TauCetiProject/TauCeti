@@ -106,7 +106,7 @@ def rightHandedTrefoilPDCode : OrientedPDCode 3 where
       PDCode.crossingSlotEquiv_apply_val_mod_four, ← decide_not]
     exact Bool.decide_congr (PDCode.two_le_oppositeCrossingSlot_val_iff slot)
   crossinglessComponents := 0
-  crossinglessComponents_card := rfl
+  card_crossinglessComponents := rfl
 
 /-- The trefoil code numbers half-edges consecutively by their crossing slots. -/
 @[simp]

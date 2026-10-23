@@ -244,6 +244,21 @@ theorem HomotopyCategory.quotientFunctor_comp_parityShiftEquivalence_functor :
     (J := nullHomotopic (S := S) (w := w)) comap_parityShift_nullHomotopic.symm]
   exact MorphismIdeal.quotientFunctor_comp_map ..
 
+instance : (HomotopyCategory.parityShiftEquivalence (S := S) (w := w)).functor.Additive :=
+  MorphismIdeal.mapEquivalence_functor_additive
+    (TauCeti.MatrixFactorization.parityShiftEquivalence (S := S) (w := w)) _ _
+    comap_parityShift_nullHomotopic.symm
+
+/-- On the image of a factorization, the parity shift of the homotopy category is the image of
+its parity shift. -/
+@[simp]
+theorem HomotopyCategory.parityShiftEquivalence_functor_obj_quotientFunctor_obj
+    (X : MatrixFactorization S w) :
+    (HomotopyCategory.parityShiftEquivalence (S := S) (w := w)).functor.obj
+        ((nullHomotopic (S := S) (w := w)).quotientFunctor.obj X) =
+      (nullHomotopic (S := S) (w := w)).quotientFunctor.obj (parityShift.obj X) :=
+  Functor.congr_obj HomotopyCategory.quotientFunctor_comp_parityShiftEquivalence_functor X
+
 /-- A closed even map is null-homotopic precisely when it is the boundary of an odd map. -/
 @[simp] theorem mem_nullHomotopic_iff {X Y : MatrixFactorization S w} (f : X ⟶ Y) :
     f ∈ (nullHomotopic (S := S) (w := w)).hom X Y ↔

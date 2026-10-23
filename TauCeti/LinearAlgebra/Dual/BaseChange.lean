@@ -14,6 +14,8 @@ import Mathlib.LinearAlgebra.Contraction
 This file defines the canonical pairing between the scalar extensions of a module and its linear
 dual. It sends an `R`-linear functional extended to `A` to the corresponding `A`-linear functional
 on the scalar extension of its domain. For a finite projective module, this map is an equivalence.
+For an arbitrary base-change map, a nonzero functional remains nonzero when the scalar extension
+is faithful, as recorded by `IsBaseChange.toDual_ne_zero`.
 
 ## Main declarations
 
@@ -155,3 +157,21 @@ theorem eq_of_baseChange_eq [Module.Free R M] {x y : A ⊗[R] M}
   exact h (b.coord i)
 
 end TauCeti.Module.Dual
+
+namespace IsBaseChange
+
+variable {R A V W : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
+  [AddCommMonoid V] [Module R V] [AddCommMonoid W] [Module R W] [Module A W]
+  [IsScalarTower R A W] [FaithfulSMul R A] {j : V →ₗ[R] W}
+
+/-- A nonzero dual element remains nonzero under a faithful extension of scalars. -/
+theorem toDual_ne_zero (h : IsBaseChange A j) (s : Module.Dual R V) (hs : s ≠ 0) :
+    h.toDual s ≠ 0 := by
+  intro hz
+  apply hs
+  ext v
+  apply FaithfulSMul.algebraMap_injective R A
+  have hv := DFunLike.congr_fun hz (j v)
+  simpa only [toDual_comp_apply, LinearMap.zero_apply, map_zero] using hv
+
+end IsBaseChange

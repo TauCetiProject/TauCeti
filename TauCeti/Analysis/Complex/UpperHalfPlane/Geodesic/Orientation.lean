@@ -17,15 +17,22 @@ to the geodesic towards `C`, the oriented angle (`Orientation.oangle` for the st
 orientation of `ℂ`) between the two velocities at `A`. Its absolute value is the unoriented
 `UpperHalfPlane.interiorAngle A B C` (`UpperHalfPlane.interiorAngle_eq_abs_toReal_orientedAngle`),
 it is invariant under `PSL(2, ℝ)` when `A ≠ B` and `A ≠ C` (`orientedAngle_smul`), and it is
-additive (`UpperHalfPlane.orientedAngle_add`). For `A ≠ C`, its sign is the side of the line
-through `A` and `B` on which `C` lies: `+1` on the left, `-1` on the right, `0` on the line
+additive (`UpperHalfPlane.orientedAngle_add`). For a transformation fixing `A`, its angle of
+rotation is the argument of its derivative (`orientedAngle_smul_right_of_smul_eq_self`), and
+every angle is attained by points arbitrarily close to `A` (`frequently_orientedAngle_eq`). For
+`A ≠ C`, its sign is the side of the line through `A` and `B` on which `C` lies: `+1` on the left,
+`-1` on the right, `0` on the line
 (`orientedAngle_sign_eq_one_iff` and companions); in particular the angles of a nondegenerate
-triangle lie strictly between `0` and `π` (`interiorAngle_pos`, `interiorAngle_lt_pi`).
+triangle lie strictly between `0` and `π` (`interiorAngle_pos`, `interiorAngle_lt_pi`). The same
+sign reads off the closed half-planes via `mem_closure_leftHalfPlane_geodesicBetween_iff` and
+`mem_closure_rightHalfPlane_geodesicBetween_iff`.
 Three consequences used for polygons: orientation is cyclically invariant
 (`mem_leftHalfPlane_geodesicBetween_of_mem_leftHalfPlane`: if `C` is left of `A → B` then `A` is
-left of `B → C`), unoriented angles add when the middle geodesic lies between the outer two
-(`interiorAngle_add`), and the angular order of two points on the left of `A → B` is read off
-the side of the geodesic through the first (`toReal_orientedAngle_lt_iff`).
+left of `B → C`, and `notMem_leftHalfPlane_geodesicBetween_of_mem_leftHalfPlane`: two points are
+not each left of the geodesic from a third towards the other), unoriented angles add when the
+middle geodesic lies between the outer two (`interiorAngle_add`), and the angular order of two
+points on the left of `A → B` is read off the side of the geodesic through the first
+(`toReal_orientedAngle_lt_iff`).
 
 Source: Katok, *Fuchsian groups, geodesic flows…*, Clay Math. Proc. 10 (2010), Corollary 5.2
 p. 18 (Möbius transformations preserve angles and orientation). The sign–side correspondence and
@@ -37,7 +44,7 @@ public section
 noncomputable section
 
 open Matrix.ProjectiveSpecialLinearGroup Set UpperHalfPlane
-open scoped MatrixGroups Real
+open scoped MatrixGroups Real Topology
 
 namespace UpperHalfPlane
 
@@ -125,6 +132,19 @@ theorem orientedAngle_smul (h : PSL(2, ℝ)) {A B C : ℍ} (hAB : A ≠ B) (hAC 
 
 /-! ### The normal form: rotations of the imaginary axis -/
 
+/-- A transformation fixing `A` turns every geodesic from `A` through the argument of its
+derivative at `A`. The angle is read counterclockwise, in `Real.Angle`. -/
+theorem orientedAngle_smul_right_of_smul_eq_self {q : PSL(2, ℝ)} {A B : ℍ}
+    (hA : q • A = A) (hAB : A ≠ B) :
+    orientedAngle A B (q • B) = (smulDeriv q A).arg := by
+  have hg : geodesicBetween A (q • B) = q * geodesicBetween A B := by
+    simpa only [hA] using geodesicBetween_smul q hAB
+  rw [orientedAngle_def, hg, velocity_mul, geodesicLine_geodesicBetween_zero]
+  -- Compare both velocities to the unit vector, so multiplication adds arguments.
+  rw [← Complex.orientation.oangle_sub_left (one_ne_zero : (1 : ℂ) ≠ 0)
+    (velocity_ne_zero _ _) (mul_ne_zero (smulDeriv_ne_zero q A) (velocity_ne_zero _ _))]
+  simp [Complex.arg_mul_coe_angle (smulDeriv_ne_zero q A) (velocity_ne_zero _ _)]
+
 /-- The geodesic line from `I` to a point at positive parameter on the imaginary axis rotated by
 `θ` is that rotated axis (compare `geodesicBetween_I_geodesicLine_one`). -/
 theorem geodesicBetween_I_geodesicLine_rotation {t : ℝ} (ht : 0 < t) (θ : ℝ) :
@@ -149,6 +169,41 @@ theorem orientedAngle_I_geodesicLine_one_rotation {d t : ℝ} (hd : 0 < d) (ht :
     ← mul_assoc, Complex.I_mul_I, neg_one_mul, neg_neg, h, Complex.exp_mul_I,
     ← Complex.ofReal_cos, ← Complex.ofReal_sin, ← Real.Angle.cos_coe, ← Real.Angle.sin_coe,
     Complex.arg_cos_add_sin_mul_I_coe_angle]
+
+/-- **Every direction at `A` is realized arbitrarily close to `A`.** For every oriented angle `φ`,
+there are points `C ≠ A` arbitrarily close to `A` whose oriented angle at `A`, measured from the
+geodesic towards `B`, is `φ`. -/
+theorem frequently_orientedAngle_eq (A B : ℍ) (φ : Real.Angle) :
+    ∃ᶠ C in 𝓝[≠] A, orientedAngle A B C = φ := by
+  refine Filter.frequently_iff.2 fun {U} hU ↦ ?_
+  obtain ⟨ε, hε, hεU⟩ := Metric.mem_nhdsWithin_iff.1 hU
+  -- replace `B` by a point `B' ≠ A` on the same ray, and move `A` to `I` along that ray
+  obtain ⟨B', hAB', hB'⟩ := exists_ne_and_geodesicBetween_eq A B
+  set R := geodesicBetween A B'
+  have hRI : R • UpperHalfPlane.I = A := by
+    rw [← geodesicLine_zero, geodesicLine_geodesicBetween_zero]
+  -- the point at distance `ε / 2` from `A` on the ray at angle `φ`
+  set G : PSL(2, ℝ) := R * ↑(rotation (φ.toReal / 2))
+  have hG : geodesicLine G 0 = A := by
+    rw [geodesicLine_zero, mul_smul, pslMk_smul, rotation_smul_I, hRI]
+  have hdist : dist (geodesicLine G (ε / 2)) A = ε / 2 := by
+    rw [← hG, dist_geodesicLine, sub_zero, abs_of_pos (half_pos hε)]
+  have hAC : A ≠ geodesicLine G (ε / 2) := fun h ↦ (half_pos hε).ne' (by rw [← hdist, ← h,
+    dist_self])
+  refine ⟨geodesicLine G (ε / 2), hεU
+    ⟨Metric.mem_ball.2 (by rw [hdist]; exact half_lt_self hε), hAC.symm⟩, ?_⟩
+  obtain ⟨d, hd, hB⟩ : ∃ d, 0 < d ∧ R • geodesicLine 1 d = B' :=
+    ⟨_, dist_pos.2 hAB', by rw [smul_geodesicLine, mul_one, geodesicLine_geodesicBetween_dist]⟩
+  have hC : R • geodesicLine (↑(rotation (φ.toReal / 2))) (ε / 2) = geodesicLine G (ε / 2) :=
+    smul_geodesicLine _ _ _
+  have hIB : UpperHalfPlane.I ≠ geodesicLine 1 d := fun h ↦ hAB' (by
+    rw [← hRI, h, hB])
+  have hIC : UpperHalfPlane.I ≠ geodesicLine (↑(rotation (φ.toReal / 2))) (ε / 2) := fun h ↦
+    hAC (by rw [← hRI, h, hC])
+  rw [orientedAngle_def, ← hB', ← orientedAngle_def, ← hB, ← hC, ← hRI,
+    orientedAngle_smul R hIB hIC,
+    orientedAngle_I_geodesicLine_one_rotation hd (half_pos hε),
+    mul_div_cancel₀ _ two_ne_zero, Real.Angle.coe_toReal]
 
 /-! ### The sign of the oriented angle is the side of the line -/
 
@@ -207,6 +262,20 @@ theorem orientedAngle_sign_eq_zero_iff {A B C : ℍ} (hAC : A ≠ C) :
     (orientedAngle A B C).sign = 0 ↔ C ∈ Set.range (geodesicLine (geodesicBetween A B)) := by
   rw [sign_orientedAngle_eq hAC, sign_eq_zero_iff, mem_range_geodesicLine_iff, neg_eq_zero]
 
+/-- For `A ≠ C`, `C` lies in the closed left half-plane of the geodesic from `A` to `B` exactly
+when the oriented angle is not negative. -/
+theorem mem_closure_leftHalfPlane_geodesicBetween_iff {A B C : ℍ} (hAC : A ≠ C) :
+    C ∈ closure (leftHalfPlane (geodesicBetween A B)) ↔ (orientedAngle A B C).sign ≠ -1 := by
+  rw [mem_closure_leftHalfPlane_iff, Ne, orientedAngle_sign_eq_neg_one_iff hAC,
+    mem_rightHalfPlane_iff, not_lt]
+
+/-- For `A ≠ C`, `C` lies in the closed right half-plane of the geodesic from `A` to `B` exactly
+when the oriented angle is not positive. -/
+theorem mem_closure_rightHalfPlane_geodesicBetween_iff {A B C : ℍ} (hAC : A ≠ C) :
+    C ∈ closure (rightHalfPlane (geodesicBetween A B)) ↔ (orientedAngle A B C).sign ≠ 1 := by
+  rw [mem_closure_rightHalfPlane_iff, Ne, orientedAngle_sign_eq_one_iff hAC,
+    mem_leftHalfPlane_iff, not_lt]
+
 /-- The oriented angle of a nondegenerate triangle is neither `0` nor `π`. -/
 private theorem orientedAngle_ne_zero_and_ne_pi {A B C : ℍ}
     (hC : C ∉ Set.range (geodesicLine (geodesicBetween A B))) :
@@ -240,6 +309,19 @@ half-planes. -/
 theorem rightHalfPlane_geodesicBetween_swap {z w : ℍ} (hzw : z ≠ w) :
     rightHalfPlane (geodesicBetween w z) = leftHalfPlane (geodesicBetween z w) := by
   rw [geodesicBetween_swap hzw, rightHalfPlane_mul_pslS, leftHalfPlane_mul_dilation]
+
+/-- The geodesic from an earlier to a later point of a line has the same left half-plane as the
+line. -/
+theorem leftHalfPlane_geodesicBetween_geodesicLine_of_lt (g : PSL(2, ℝ)) {s t : ℝ} (hst : s < t) :
+    leftHalfPlane (geodesicBetween (geodesicLine g s) (geodesicLine g t)) = leftHalfPlane g := by
+  rw [geodesicBetween_geodesicLine_of_lt g hst, leftHalfPlane_mul_dilation]
+
+/-- The geodesic from an earlier to a later point of a line has the same right half-plane as the
+line. -/
+theorem rightHalfPlane_geodesicBetween_geodesicLine_of_lt (g : PSL(2, ℝ)) {s t : ℝ}
+    (hst : s < t) :
+    rightHalfPlane (geodesicBetween (geodesicLine g s) (geodesicLine g t)) = rightHalfPlane g := by
+  rw [geodesicBetween_geodesicLine_of_lt g hst, rightHalfPlane_mul_dilation]
 
 /-- A point of an open left half-plane is not on the bounding line. -/
 theorem notMem_range_geodesicLine_of_mem_leftHalfPlane {g : PSL(2, ℝ)} {z : ℍ}
@@ -281,6 +363,24 @@ theorem mem_rightHalfPlane_geodesicBetween_of_mem_rightHalfPlane {A B C : ℍ} (
     (notMem_range_geodesicLine_of_mem_leftHalfPlane hB)
   rw [← leftHalfPlane_geodesicBetween_swap hCB.symm]
   exact mem_leftHalfPlane_geodesicBetween_of_mem_leftHalfPlane hAC hB
+
+/-- Two points `x` and `y` cannot each lie to the left of the geodesic from a third point `v`
+towards the other. -/
+theorem notMem_leftHalfPlane_geodesicBetween_of_mem_leftHalfPlane {v x y : ℍ} (hvx : v ≠ x)
+    (hvy : v ≠ y) (hy : y ∈ leftHalfPlane (geodesicBetween v x)) :
+    x ∉ leftHalfPlane (geodesicBetween v y) := fun hx ↦ by
+  have h := (orientedAngle_sign_eq_one_iff hvx).2 hx
+  rw [orientedAngle_rev, Real.Angle.sign_neg, (orientedAngle_sign_eq_one_iff hvy).2 hy] at h
+  exact absurd h (by decide)
+
+/-- Two points `x` and `y` cannot each lie to the right of the geodesic from a third point `v`
+towards the other. -/
+theorem notMem_rightHalfPlane_geodesicBetween_of_mem_rightHalfPlane {v x y : ℍ} (hvx : v ≠ x)
+    (hvy : v ≠ y) (hy : y ∈ rightHalfPlane (geodesicBetween v x)) :
+    x ∉ rightHalfPlane (geodesicBetween v y) := fun hx ↦ by
+  have h := (orientedAngle_sign_eq_neg_one_iff hvx).2 hx
+  rw [orientedAngle_rev, Real.Angle.sign_neg, (orientedAngle_sign_eq_neg_one_iff hvy).2 hy] at h
+  exact absurd h (by decide)
 
 /-! ### Additivity of unoriented angles and the angular order -/
 

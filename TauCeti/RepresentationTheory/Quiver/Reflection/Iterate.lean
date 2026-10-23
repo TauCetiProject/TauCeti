@@ -55,8 +55,7 @@ The lists along which this iteration is sink-admissible are studied in
 `TauCeti.RepresentationTheory.Quiver.Reflection.Admissible`. A sink-admissible list may be empty,
 may repeat a vertex and need not exhaust the vertices; it is along a sink-admissible ordering — a
 sink-admissible list that is repetition-free and contains every vertex — that the reflection
-functors of Layer 4 of `TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`
-compose into the Coxeter functor. See Bernstein--Gelfand--Ponomarev, *Coxeter functors and
+functors compose into the Coxeter functor. See Bernstein--Gelfand--Ponomarev, *Coxeter functors and
 Gabriel's theorem*.
 -/
 

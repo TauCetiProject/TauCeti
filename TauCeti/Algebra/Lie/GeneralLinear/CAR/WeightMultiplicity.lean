@@ -52,7 +52,6 @@ namespace TauCeti
 open CliffordAlgebra LieModule Module
 
 attribute [local instance 100] LieRing.ofAssociativeRing
-attribute [local instance] Classical.decEq
 
 noncomputable section
 
@@ -145,14 +144,14 @@ private theorem pow_card_mul_finrank_carOccupationFixed
     simpa only [P, p] using this
   rw [← Finset.card_univ]
   apply pow_card_mul_finrank_iInf_fixedSubmodule p Finset.univ (u := u) (v := v)
-  · intro a ha
+  · intro a _
     exact (isIdempotentElem_carOccupationElement (K := K)
       (ne_of_lt (mem_carPositiveRootPairs.mp a.2))).map
         (Module.toModuleEnd K (carAlgebra K N))
-  · intro a ha b hb hab
+  · intro a _ b _ _
     exact (commute_carOccupationElement (K := K)).map
       (Module.toModuleEnd K (carAlgebra K N))
-  · intro a ha i hi hia
+  · intro a _ i _ hia
     apply (commute_carOccupationElement_carGenerator (K := K)
       (i := i.1.1) (j := i.1.2) (k := a.1.2) (l := a.1.1) ?_ ?_).map
         (Module.toModuleEnd K (carAlgebra K N))
@@ -161,7 +160,7 @@ private theorem pow_card_mul_finrank_carOccupationFixed
       apply hia
       apply Subtype.ext
       exact (Prod.ext (congrArg Prod.snd h) (congrArg Prod.fst h)).symm
-  · intro a ha i hi hia
+  · intro a _ i _ hia
     have hcomm := ((commute_carOccupationElement_carGenerator (K := K)
       (i := i.1.1) (j := i.1.2) (k := a.1.1) (l := a.1.2) ?_ ?_).smul_right
         (2 : K)⁻¹).map (Module.toModuleEnd K (carAlgebra K N))
@@ -170,24 +169,24 @@ private theorem pow_card_mul_finrank_carOccupationFixed
       apply hia
       exact Subtype.ext h.symm
     · exact carPositiveRootPair_ne_reverse a i
-  · intro a ha x hx
+  · intro a _ x hx
     dsimp only [p, u, carOccupationEnd, carLoweringEnd] at hx ⊢
     simp only [Module.toModuleEnd_apply, DistribSMul.toLinearMap_apply, smul_eq_mul] at hx ⊢
     rw [← mul_assoc, carOccupationElement_mul_carGenerator_snd
       (ne_of_lt (mem_carPositiveRootPairs.mp a.2)), zero_mul]
-  · intro a ha x hx
+  · intro a _ x hx
     dsimp only [p, v, carOccupationEnd, carScaledRaisingEnd] at hx ⊢
     simp only [Module.toModuleEnd_apply, DistribSMul.toLinearMap_apply, smul_eq_mul] at hx ⊢
     rw [← mul_assoc, mul_smul_comm,
       carOccupationElement_mul_carGenerator_fst
         (ne_of_lt (mem_carPositiveRootPairs.mp a.2))]
-  · intro a ha x hx
+  · intro a _ x hx
     dsimp only [p, u, v, carOccupationEnd, carLoweringEnd, carScaledRaisingEnd] at hx ⊢
     simp only [Module.toModuleEnd_apply, DistribSMul.toLinearMap_apply, smul_eq_mul] at hx ⊢
     rw [smul_mul_assoc, ← mul_assoc, ← smul_mul_assoc]
     rw [carOccupationElement_def (K := K) (n := Fin N)] at hx
     simpa only [← mul_assoc] using hx
-  · intro a ha x hx
+  · intro a _ x hx
     dsimp only [p, u, v, carOccupationEnd, carLoweringEnd, carScaledRaisingEnd] at hx ⊢
     simp only [Module.toModuleEnd_apply, DistribSMul.toLinearMap_apply, smul_eq_mul] at hx ⊢
     rw [← mul_assoc, mul_smul_comm]
@@ -236,7 +235,7 @@ private theorem sum_positive_diagonal_scalar
         ∑ k : Fin N, ((if i < k then (1 : K) else 0) +
           if k = i then (2 : K)⁻¹ else 0) := by
       apply Finset.sum_congr rfl
-      intro k hk
+      intro k _
       rcases lt_trichotomy k i with hki | rfl | hik
       · simp [hki, ne_of_lt hki, not_lt_of_ge hki.le]
       · simp
@@ -262,13 +261,6 @@ private theorem carOccupationElement_mul_eq_self_of_mem_commonFixed
   simpa [carOccupationEnd, Module.toModuleEnd_apply,
     DistribSMul.toLinearMap_apply, smul_eq_mul] using h
 
-private theorem matrix_single_self_eq_classical
-    {K : Type*} [Field K] {N : ℕ} (i : Fin N) :
-    Matrix.single i i (1 : K) =
-      @Matrix.single (Fin N) (Fin N) K (Classical.decEq _) (Classical.decEq _) _ i i 1 := by
-  ext a b
-  simp [Matrix.single_apply]
-
 private theorem diagonal_lie_eq_glHalfStaircase_smul_of_occupation_fixed
     {K : Type*} [Field K] [Invertible (2 : K)] {N : ℕ}
     (x : carAlgebra K N)
@@ -289,16 +281,13 @@ private theorem diagonal_lie_eq_glHalfStaircase_smul_of_occupation_fixed
         (∑ k : Fin N, if k < i then 1 - carOccupationElement (K := K) k i
           else carOccupationElement (K := K) i k) * x :=
       congrArg (fun z => z * x)
-        (by
-          rw [matrix_single_self_eq_classical]
-          exact glCliffordHom_single_self_eq_sum_positive_occupation
-            (K := K) (n := Fin N) i)
+        (glCliffordHom_single_self_eq_sum_positive_occupation (K := K) (n := Fin N) i)
     _ = ∑ k : Fin N, (if k < i then 1 - carOccupationElement (K := K) k i
           else carOccupationElement (K := K) i k) * x := by rw [Finset.sum_mul]
     _ = ∑ k : Fin N, (if k < i then (0 : K)
           else if k = i then (2 : K)⁻¹ else 1) • x := by
       apply Finset.sum_congr rfl
-      intro k hk
+      intro k _
       exact hterm k
     _ = glHalfStaircase K N i • x := by
       rw [← Finset.sum_smul, sum_positive_diagonal_scalar]
@@ -320,8 +309,7 @@ private theorem sum_upper_occupation_smul_eq_card_smul
     · simp [hki, ne_of_lt hki, not_lt_of_ge hki.le, hlower hki, sub_mul]
     · simp [carOccupationElement_self]
     · simp [hik, not_lt_of_ge hik.le]
-  rw [car_lie_def, matrix_single_self_eq_classical,
-    glCliffordHom_single_self_eq_sum_positive_occupation,
+  rw [car_lie_def, glCliffordHom_single_self_eq_sum_positive_occupation,
     Finset.sum_mul, Finset.sum_congr rfl fun k _ => hterm k] at hdiag
   have hsum :
       (∑ k : Fin N, if i < k then carOccupationElement (K := K) i k * x
@@ -370,7 +358,7 @@ private theorem glHalfStaircase_weightSpace_le_commonFixed
     intro m
     induction m using Nat.strong_induction_on with
     | h m ih =>
-        intro hm i him j hij
+        intro _ i him j hij
         have hlower {k : Fin N} (hki : k < i) :
             carOccupationElement (K := K) k i * x = x := by
           exact ih k.val (him ▸ hki) k.isLt k rfl i hki
@@ -383,7 +371,7 @@ private theorem glHalfStaircase_weightSpace_le_commonFixed
           exact isIdempotentElem_carOccupationElement (K := K)
             (ne_of_lt hik)
         have hcomm : (t : Set (Fin N)).Pairwise fun k l => Commute (p k) (p l) := by
-          intro k hk l hl hkl
+          intro k _ l _ _
           exact commute_carOccupationElement (K := K)
         have heigen : (∑ k ∈ t, p k) • x = (t.card : K) • x := by
           simpa [t, p] using hsum

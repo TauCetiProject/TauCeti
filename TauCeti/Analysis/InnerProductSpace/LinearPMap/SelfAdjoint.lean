@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Jon Crall, Claude Opus 5, Adam Bornemann
 -/
 module
 
@@ -19,15 +19,17 @@ form `⟪x, A x⟫` is real, so for a scalar `c` the shift `x ↦ c • x - A x`
 
 `‖c • x - A x‖² = (im c)² ‖x‖² + ‖re c • x - A x‖²`.
 
-For `im c ≠ 0` the shift is therefore bounded below with respect to the graph norm of `A`; if `A` is
-closed, its range is closed (`LinearPMap.isClosed_range_smul_sub_of_graph_norm_le`).  When `A` is
-self-adjoint the range is also dense, because a vector orthogonal to it is an eigenvector of `A†`
-for the eigenvalue `conj c` (`LinearPMap.exists_adjoint_apply_eq_of_inner_smul_sub_eq_zero`), and a
-symmetric operator has no nonreal eigenvalue
-(`LinearPMap.IsFormalAdjoint.eq_zero_of_apply_eq_smul`).  Hence every nonreal shift of a
-self-adjoint operator is surjective (`IsSelfAdjoint.smul_sub_surjective`), and with the lower bound
-it is bijective with bounded inverse (`IsSelfAdjoint.smul_sub_bijective`): the resolvent set
-contains every nonreal point.  The shifts `± i - A` are the classical deficiency operators, and
+For `im c ≠ 0` the shift is therefore bounded below by `|im c|`; if `A` is closed, its range is
+closed (`LinearPMap.isClosed_range_smul_sub_of_norm_le`).  When `A` is self-adjoint, the range of a
+shift that is bounded below is also dense, because a vector orthogonal to it is an eigenvector of
+`A†` for the eigenvalue `conj c` (`LinearPMap.exists_adjoint_apply_eq_of_inner_smul_sub_eq_zero`):
+for real `c` the lower bound excludes such an eigenvector, and for nonreal `c` so does symmetry, a
+symmetric operator having no nonreal eigenvalue
+(`LinearPMap.IsFormalAdjoint.eq_zero_of_apply_eq_smul`).  Hence every shift of a self-adjoint
+operator that is bounded below, at a real or nonreal scalar, is surjective
+(`IsSelfAdjoint.smul_sub_surjective_of_norm_le`); in particular every nonreal shift is bijective
+with bounded inverse (`IsSelfAdjoint.smul_sub_bijective`), so the resolvent set contains every
+nonreal point.  The shifts `± i - A` are the classical deficiency operators, and
 their surjectivity is the range condition that makes `± i • A` m-dissipative.
 
 The file also provides the formal-adjointness and quadratic-form API of self-adjoint partial
@@ -35,6 +37,8 @@ linear maps used by the semigroup development.
 
 ## Main results
 
+* `LinearPMap.IsFormalAdjoint.add`: formal adjointness is preserved by sums; in particular a sum
+  of symmetric partial linear maps is symmetric.
 * `IsSelfAdjoint.isFormalAdjoint`: a self-adjoint partial linear map is formally self-adjoint.
 * `LinearPMap.IsFormalAdjoint.im_inner_self_apply`: the quadratic form of a formally self-adjoint
   map is real.
@@ -45,6 +49,9 @@ linear maps used by the semigroup development.
   eigenvector for a nonreal eigenvalue.
 * `LinearPMap.exists_adjoint_apply_eq_of_inner_smul_sub_eq_zero`: a vector orthogonal to the range
   of the shift `c • x - A x` is an eigenvector of the adjoint `A†` for the eigenvalue `conj c`.
+* `IsSelfAdjoint.denseRange_smul_sub_of_norm_le` and
+  `IsSelfAdjoint.smul_sub_surjective_of_norm_le`: the range of a shift of a self-adjoint operator
+  that is bounded below is dense, and is the whole space.
 * `LinearPMap.IsFormalAdjoint.isClosed_range_smul_sub`, `IsSelfAdjoint.denseRange_smul_sub` and
   `IsSelfAdjoint.smul_sub_surjective`: the range of a nonreal shift is closed (closed symmetric
   operator), dense and the whole space (self-adjoint operator).
@@ -54,6 +61,20 @@ linear maps used by the semigroup development.
   the adjoint; `dense_domain_of_adjoint_eq_neg` and `isSelfAdjoint_smul_of_adjoint_eq_neg`: a
   skew-adjoint partial linear map has dense domain, and its multiple by a nonzero purely imaginary
   scalar is self-adjoint.
+
+## Provenance
+
+The shifted-surjectivity and domain-density criteria added here are adapted from
+[`ForTauCeti/Analysis/InnerProductSpace/OneParameterUnitaryGroup/Basic.lean`](https://github.com/AIQ-Kitware/aiq-dkps-formalization/blob/main/ForTauCeti/Analysis/InnerProductSpace/OneParameterUnitaryGroup/Basic.lean)
+and
+[`ForTauCeti/Analysis/InnerProductSpace/OneParameterUnitaryGroup/Stone.lean`](https://github.com/AIQ-Kitware/aiq-dkps-formalization/blob/main/ForTauCeti/Analysis/InnerProductSpace/OneParameterUnitaryGroup/Stone.lean)
+in the AIQ-Kitware DKPS formalization (copyright (c) 2026 Kitware, Inc.;
+authors Jon Crall and Claude Opus 5; Apache-2.0). The donor `Basic.lean`
+credits the earlier
+[`Spectra/OneParameterUnitaryGroup/Basic.lean`](https://github.com/adambornemann-glitch/Spectra/blob/8dbaaf6728d1342ae16acf79fd7eef7c59b37e63/Spectra/OneParameterUnitaryGroup/Basic.lean)
+at commit `8dbaaf6728d1342ae16acf79fd7eef7c59b37e63` (copyright (c) 2026
+Spectra Formalization Project; author Adam Bornemann; Apache-2.0).
+The present formulations use TauCeti's canonical `LinearPMap` adjoint API.
 
 ## References
 
@@ -66,9 +87,17 @@ public section
 
 noncomputable section
 
-open scoped NNReal
-
 namespace LinearPMap
+
+/-- Formal adjointness is preserved by sums: if `S₁` and `S₂` are formal adjoints of `T₁` and
+`T₂`, then `S₁ + S₂` is a formal adjoint of `T₁ + T₂`. In particular a sum of symmetric partial
+linear maps is symmetric. -/
+theorem IsFormalAdjoint.add {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E]
+    [InnerProductSpace 𝕜 E] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+    {T₁ T₂ : E →ₗ.[𝕜] F} {S₁ S₂ : F →ₗ.[𝕜] E} (h₁ : T₁.IsFormalAdjoint S₁)
+    (h₂ : T₂.IsFormalAdjoint S₂) : (T₁ + T₂).IsFormalAdjoint (S₁ + S₂) := fun x y ↦ by
+  rw [add_apply, add_apply, inner_add_left, inner_add_right, h₁ ⟨x, x.2.1⟩ ⟨y, y.2.1⟩,
+    h₂ ⟨x, x.2.2⟩ ⟨y, y.2.2⟩]
 
 variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
 
@@ -183,24 +212,11 @@ theorem IsFormalAdjoint.norm_apply_le_mul_norm_smul_sub {A : E →ₗ.[𝕜] E}
     _ = (1 + |RCLike.re c| * |RCLike.im c|⁻¹) * ‖c • (x : E) - A x‖ := by ring
 
 /-- The range of a nonreal shift of a closed, formally self-adjoint partial linear map is closed:
-the shift is bounded below with respect to the graph norm
-(`LinearPMap.isClosed_range_smul_sub_of_graph_norm_le`). -/
+the shift is bounded below by `|im c|` (`LinearPMap.isClosed_range_smul_sub_of_norm_le`). -/
 theorem IsFormalAdjoint.isClosed_range_smul_sub [CompleteSpace E] {A : E →ₗ.[𝕜] E}
     (hA : A.IsFormalAdjoint A) (hcl : A.IsClosed) {c : 𝕜} (hc : RCLike.im c ≠ 0) :
-    _root_.IsClosed (Set.range (fun x : A.domain => c • (x : E) - A x)) := by
-  have hpos : 0 < |RCLike.im c| := abs_pos.mpr hc
-  let K : ℝ≥0 := ⟨1 + (1 + |RCLike.re c|) * |RCLike.im c|⁻¹, by positivity⟩
-  have hK : (K : ℝ) = 1 + (1 + |RCLike.re c|) * |RCLike.im c|⁻¹ := NNReal.coe_mk _ _
-  have hinv0 : 0 ≤ |RCLike.re c| * |RCLike.im c|⁻¹ :=
-    mul_nonneg (abs_nonneg _) (inv_nonneg.mpr hpos.le)
-  have hK1 : |RCLike.im c|⁻¹ ≤ K := by rw [hK]; linarith
-  have hK2 : 1 + |RCLike.re c| * |RCLike.im c|⁻¹ ≤ K := by
-    rw [hK]; linarith [inv_nonneg.mpr hpos.le]
-  refine isClosed_range_smul_sub_of_graph_norm_le hcl (K := K) fun x => ?_
-  have hN0 : 0 ≤ ‖c • (x : E) - A x‖ := norm_nonneg _
-  exact max_le ((hA.norm_le_inv_abs_im_mul_norm_smul_sub hc x).trans
-    (mul_le_mul_of_nonneg_right hK1 hN0))
-    ((hA.norm_apply_le_mul_norm_smul_sub hc x).trans (mul_le_mul_of_nonneg_right hK2 hN0))
+    _root_.IsClosed (Set.range (fun x : A.domain => c • (x : E) - A x)) :=
+  isClosed_range_smul_sub_of_norm_le hcl (abs_pos.mpr hc) (hA.abs_im_mul_norm_le_norm_smul_sub c)
 
 /-- **A symmetric operator has no nonreal eigenvalue**: the quadratic form at an eigenvector for
 `c` is `c * ‖x‖²`, whose imaginary part vanishes only if `x = 0`. -/
@@ -212,35 +228,61 @@ theorem IsFormalAdjoint.eq_zero_of_apply_eq_smul {A : E →ₗ.[𝕜] E} (hA : A
     zero_add] at him
   exact norm_eq_zero.mp (pow_eq_zero_iff two_ne_zero |>.mp ((mul_eq_zero.mp him).resolve_left hc))
 
-/-- The range of a nonreal shift of a self-adjoint partial linear map is dense. -/
-theorem _root_.IsSelfAdjoint.denseRange_smul_sub [CompleteSpace E] {A : E →ₗ.[𝕜] E}
-    (hA : IsSelfAdjoint A) {c : 𝕜} (hc : RCLike.im c ≠ 0) :
+/-- **The range of a shift bounded below is dense.** If a shift `x ↦ c • x - A x` of a
+self-adjoint partial linear map dominates `K * ‖x‖` for some `K > 0`, its range is dense: a vector
+orthogonal to the range is an eigenvector of `A` for the eigenvalue `conj c`, which is excluded by
+the lower bound when `c` is real and by symmetry when `c` is nonreal. -/
+theorem _root_.IsSelfAdjoint.denseRange_smul_sub_of_norm_le [CompleteSpace E] {A : E →ₗ.[𝕜] E}
+    (hA : IsSelfAdjoint A) {c : 𝕜} {K : ℝ} (hK : 0 < K)
+    (hbound : ∀ x : A.domain, K * ‖(x : E)‖ ≤ ‖c • (x : E) - A x‖) :
     DenseRange (fun x : A.domain => c • (x : E) - A x) := by
   rw [DenseRange, ← A.coe_range_smulSub c]
   refine Submodule.dense_iff_topologicalClosure_eq_top.mpr
     (Submodule.topologicalClosure_eq_top_iff.mpr ((Submodule.eq_bot_iff _).mpr fun y hy => ?_))
   have hortho : ∀ x : A.domain, inner 𝕜 y (c • (x : E) - A x) = 0 := fun x =>
     (Submodule.mem_orthogonal' _ y).mp hy _ (LinearMap.mem_range.mpr ⟨x, A.smulSub_apply c x⟩)
-  have hc' : RCLike.im ((starRingEnd 𝕜) c) ≠ 0 := by
-    rw [RCLike.conj_im]
-    exact neg_ne_zero.mpr hc
   obtain ⟨hy, hAy⟩ := exists_adjoint_apply_eq_of_inner_smul_sub_eq_zero hA.dense_domain hortho
   obtain ⟨z, hz, hAz⟩ := LinearPMap.exists_of_le (LinearPMap.isSelfAdjoint_def.mp hA).le ⟨y, hy⟩
   have hz' : y = (z : E) := hz
-  exact hz'.trans (hA.isFormalAdjoint.eq_zero_of_apply_eq_smul hc' (x := z)
-    (by rw [← hAz, hAy, hz']))
+  have heig : A z = (starRingEnd 𝕜) c • (z : E) := by rw [← hAz, hAy, hz']
+  rw [hz']
+  by_cases hc : RCLike.im c = 0
+  · have h0 : c • (z : E) - A z = 0 := by
+      rw [heig, RCLike.conj_eq_iff_im.mpr hc, sub_self]
+    have h := hbound z
+    rw [h0, norm_zero] at h
+    exact norm_le_zero_iff.mp (nonpos_of_mul_nonpos_right h hK)
+  · refine hA.isFormalAdjoint.eq_zero_of_apply_eq_smul ?_ heig
+    rw [RCLike.conj_im]
+    exact neg_ne_zero.mpr hc
+
+/-- **A shift of a self-adjoint partial linear map that is bounded below is surjective**: its
+range is closed and dense. -/
+theorem _root_.IsSelfAdjoint.smul_sub_surjective_of_norm_le [CompleteSpace E] {A : E →ₗ.[𝕜] E}
+    (hA : IsSelfAdjoint A) {c : 𝕜} {K : ℝ} (hK : 0 < K)
+    (hbound : ∀ x : A.domain, K * ‖(x : E)‖ ≤ ‖c • (x : E) - A x‖) :
+    Function.Surjective (fun x : A.domain => c • (x : E) - A x) := by
+  intro y
+  have hrange : Set.range (fun x : A.domain => c • (x : E) - A x) = Set.univ := by
+    rw [← (isClosed_range_smul_sub_of_norm_le hA.isClosed hK hbound).closure_eq,
+      (hA.denseRange_smul_sub_of_norm_le hK hbound).closure_range]
+  rw [← Set.mem_range, hrange]
+  exact Set.mem_univ y
+
+/-- The range of a nonreal shift of a self-adjoint partial linear map is dense. -/
+theorem _root_.IsSelfAdjoint.denseRange_smul_sub [CompleteSpace E] {A : E →ₗ.[𝕜] E}
+    (hA : IsSelfAdjoint A) {c : 𝕜} (hc : RCLike.im c ≠ 0) :
+    DenseRange (fun x : A.domain => c • (x : E) - A x) :=
+  hA.denseRange_smul_sub_of_norm_le (abs_pos.mpr hc)
+    (hA.isFormalAdjoint.abs_im_mul_norm_le_norm_smul_sub c)
 
 /-- **Nonreal shifts of a self-adjoint partial linear map are surjective**: their ranges are
 closed and dense. -/
 theorem _root_.IsSelfAdjoint.smul_sub_surjective [CompleteSpace E] {A : E →ₗ.[𝕜] E}
     (hA : IsSelfAdjoint A) {c : 𝕜} (hc : RCLike.im c ≠ 0) :
-    Function.Surjective (fun x : A.domain => c • (x : E) - A x) := by
-  intro y
-  have hrange : Set.range (fun x : A.domain => c • (x : E) - A x) = Set.univ := by
-    rw [← (hA.isFormalAdjoint.isClosed_range_smul_sub hA.isClosed hc).closure_eq,
-      (hA.denseRange_smul_sub hc).closure_range]
-  rw [← Set.mem_range, hrange]
-  exact Set.mem_univ y
+    Function.Surjective (fun x : A.domain => c • (x : E) - A x) :=
+  hA.smul_sub_surjective_of_norm_le (abs_pos.mpr hc)
+    (hA.isFormalAdjoint.abs_im_mul_norm_le_norm_smul_sub c)
 
 /-- **Nonreal shifts of a self-adjoint partial linear map are bijective.** Together with the lower
 bound `IsFormalAdjoint.abs_im_mul_norm_le_norm_smul_sub`, which bounds the inverse by
@@ -309,6 +351,90 @@ theorem isSelfAdjoint_smul_of_adjoint_eq_neg [CompleteSpace E] {G : E →ₗ.[�
   rw [LinearPMap.isSelfAdjoint_def, adjoint_smul (dense_domain_of_adjoint_eq_neg hG) hc, hG, hconj,
     LinearPMap.smul_neg, LinearPMap.neg_smul, neg_neg]
 
+
+/-! ## Von Neumann's shifted-surjectivity criterion -/
+
+section VonNeumann
+
+open Complex InnerProductSpace
+
+variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
+
+/-- Surjectivity of `A + i` for a symmetric partial operator makes its domain dense.
+This supplies the density hypothesis needed when using the adjoint of the operator. -/
+theorem dense_domain_of_surjective_add_I (A : H →ₗ.[ℂ] H) (hsym : A.IsFormalAdjoint A)
+    (hplus : ∀ φ : H, ∃ ψ : A.domain, A ψ + I • (ψ : H) = φ) :
+    Dense (A.domain : Set H) := by
+  rw [Submodule.dense_iff_topologicalClosure_eq_top,
+    Submodule.topologicalClosure_eq_top_iff, Submodule.eq_bot_iff]
+  intro x hx
+  obtain ⟨ψ, hψ⟩ := hplus x
+  have hx0 : ⟪(ψ : H), x⟫_ℂ = 0 :=
+    (Submodule.mem_orthogonal _ x).mp hx (ψ : H) ψ.2
+  have hIm : (⟪(ψ : H), A ψ⟫_ℂ).im = 0 := hsym.im_inner_self_apply ψ
+  have hexp : ⟪(ψ : H), A ψ⟫_ℂ + I * ⟪(ψ : H), (ψ : H)⟫_ℂ = 0 := by
+    rw [← hψ, inner_add_right, inner_smul_right] at hx0
+    exact hx0
+  have him : (⟪(ψ : H), (ψ : H)⟫_ℂ).re = 0 := by
+    have hi := congrArg Complex.im hexp
+    simp only [Complex.add_im, Complex.mul_im, Complex.I_re, Complex.I_im, Complex.zero_im,
+      hIm, zero_mul, one_mul, zero_add] at hi
+    exact hi
+  have hψ0 : (ψ : H) = 0 :=
+    (re_inner_self_nonpos (𝕜 := ℂ) (x := (ψ : H))).mp
+      (by simpa only [RCLike.re_to_complex] using (le_of_eq him))
+  have : ψ = 0 := Subtype.ext hψ0
+  rw [this] at hψ
+  simpa using hψ.symm
+
+/-- **Von Neumann's criterion.** A symmetric partial linear map is self-adjoint if its
+shifts by `+i` and `-i` are surjective. Density follows from the first shift, so no
+independent density hypothesis is needed. -/
+theorem isSelfAdjoint_of_surjective_addSub
+    (A : H →ₗ.[ℂ] H) (hsym : A.IsFormalAdjoint A)
+    (hplus : ∀ φ : H, ∃ ψ : A.domain, A ψ + I • (ψ : H) = φ)
+    (hminus : ∀ φ : H, ∃ ψ : A.domain, A ψ - I • (ψ : H) = φ) :
+    IsSelfAdjoint A := by
+  have hdense := dense_domain_of_surjective_add_I A hsym hplus
+  rw [LinearPMap.isSelfAdjoint_def]
+  refine le_antisymm ?_ (hsym.le_adjoint hdense)
+  have hker : ∀ w : (A.adjoint).domain, A.adjoint w = I • (w : H) → (w : H) = 0 := by
+    intro w hw
+    obtain ⟨v, hv⟩ := hplus (w : H)
+    have hadj : ⟪A.adjoint w, (v : H)⟫_ℂ = ⟪(w : H), A v⟫_ℂ :=
+      LinearPMap.adjoint_isFormalAdjoint hdense w v
+    rw [hw, inner_smul_left, Complex.conj_I] at hadj
+    have key : ⟪(w : H), A v⟫_ℂ + I * ⟪(w : H), (v : H)⟫_ℂ =
+        ⟪(w : H), (w : H)⟫_ℂ := by
+      rw [← inner_smul_right, ← inner_add_right, hv]
+    have hww : ⟪(w : H), (w : H)⟫_ℂ = 0 := by rw [← key, ← hadj]; ring
+    exact inner_self_eq_zero.mp hww
+  apply LinearPMap.le_of_eqLocus_ge
+  intro w hw
+  set W : (A.adjoint).domain := ⟨w, hw⟩ with hWdef
+  obtain ⟨x, hx⟩ := hminus (A.adjoint W - I • (W : H))
+  have hxin : (x : H) ∈ (A.adjoint).domain := (hsym.le_adjoint hdense).1 x.2
+  have hxeq : A.adjoint (⟨(x : H), hxin⟩ : (A.adjoint).domain) = A x :=
+    ((hsym.le_adjoint hdense).2 (x := x) (y := ⟨(x : H), hxin⟩) rfl).symm
+  set W' : (A.adjoint).domain := W - ⟨(x : H), hxin⟩ with hW'def
+  have hW'val : (W' : H) = (W : H) - (x : H) := by
+    simp only [hW'def, Submodule.coe_sub]
+  have hrearr : A.adjoint W - A x = I • (W : H) - I • (x : H) := by
+    have h2 : A.adjoint W = A x - I • (x : H) + I • (W : H) := by rw [hx]; abel
+    rw [h2]; abel
+  have hAW' : A.adjoint W' = I • (W' : H) := by
+    have e1 : A.adjoint W' = A.adjoint W - A x := by
+      rw [hW'def, LinearPMap.map_sub, hxeq]
+    rw [e1, hrearr, hW'val, smul_sub]
+  have hWx : (W : H) = (x : H) := sub_eq_zero.mp (hW'val ▸ hker W' hAW')
+  have hwx : w = (x : H) := by
+    have hWcoe : (W : H) = w := by rw [hWdef]
+    rw [← hWcoe]
+    exact hWx
+  subst hwx
+  exact ⟨hw, x.2, hxeq⟩
+
+end VonNeumann
 
 end LinearPMap
 

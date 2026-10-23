@@ -78,15 +78,14 @@ theorem joined_one_spinReflectionPair_realCliffordForm_zero {n : ℕ} (hn : 2 �
     (hw : realCliffordForm n 0 w = 1) :
     Joined (1 : realCliffordSpinGroupZero n)
       (spinReflectionPair (realCliffordForm n 0) v w hv hw) := by
-  let uv : realCliffordUnitLevel n :=
-    ⟨v, (mem_realCliffordUnitLevel n v).mpr hv⟩
-  let uw : realCliffordUnitLevel n :=
-    ⟨w, (mem_realCliffordUnitLevel n w).mpr hw⟩
   obtain ⟨k, rfl⟩ : ∃ k, n = k + 2 := by
     exact ⟨n - 2, by omega⟩
   let _ : PathConnectedSpace (realCliffordUnitLevel (k + 2)) :=
     pathConnectedSpace_realCliffordUnitLevel_add_two k
-  have hjoined : Joined uv uw := PathConnectedSpace.joined uv uw
+  have : Joined
+      (⟨v, (mem_realCliffordUnitLevel (k + 2) v).mpr hv⟩ :
+        realCliffordUnitLevel (k + 2))
+      ⟨w, (mem_realCliffordUnitLevel (k + 2) w).mpr hw⟩ := PathConnectedSpace.joined _ _
   let f : realCliffordUnitLevel (k + 2) →
       {u : Fin (k + 2) → ℝ // realCliffordForm (k + 2) 0 u = 1} :=
     fun u => ⟨u.1, (mem_realCliffordUnitLevel (k + 2) _).mp u.2⟩
@@ -94,6 +93,6 @@ theorem joined_one_spinReflectionPair_realCliffordForm_zero {n : ℕ} (hn : 2 �
     apply continuous_induced_rng.mpr
     exact continuous_subtype_val
   exact joined_one_spinReflectionPair_of_joined v w hv hw
-    (by simpa only [f, uv, uw] using hjoined.map hf)
+    (by simpa only [f] using this.map hf)
 
 end CliffordAlgebra

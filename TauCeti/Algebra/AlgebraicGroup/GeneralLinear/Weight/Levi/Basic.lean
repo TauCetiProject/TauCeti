@@ -5,9 +5,8 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Parabolic
+public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Parabolic.Basic
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Order
-import TauCeti.CategoryTheory.Comma.Over
 
 /-!
 # Weight-Levi subgroup schemes of the general linear group
@@ -35,13 +34,10 @@ antipode calculations.
 
 * G. R. Kempf, *Instability in invariant theory*, Annals of Mathematics 108 (1978), §2.
 * J. S. Milne, *Algebraic Groups* (2017), Chapter 13.
-* The closed-subgroup packaging specializes the generic construction abstracted from
-  `TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Parabolic`, which in turn adapts
-  `TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Borel` and
-  `TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Basic`.
-
-This advances the dynamic-parabolic route in Layer 7, "Structure theory", of the ReductiveGroups
-roadmap by constructing the scheme-level Levi attached to a weight cocharacter.
+* The closed-subgroup packaging specializes the generic construction of
+  `TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Parabolic.Basic`, which was adapted from
+  the original construction of `TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Borel`, itself
+  adapted from `TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Basic`.
 -/
 
 public section
@@ -73,13 +69,10 @@ theorem weightLeviDefiningHopfIdeal_toIdeal_le_ker {A : Type*} [CommRing A] [Alg
     (hf : ∀ i j, w i ≠ w j → f (coordinateHopfAlgebraAlgEquiv R N
       (coordinateRingMap R N (MvPolynomial.X (i, j)))) = 0) :
     (weightLeviDefiningHopfIdeal R w).toIdeal ≤ RingHom.ker f.toRingHom := by
-  rw [weightLeviDefiningHopfIdeal_def, HopfIdeal.sup_toIdeal,
-    weightParabolicDefiningHopfIdeal_toIdeal, weightParabolicDefiningHopfIdeal_toIdeal]
-  refine sup_le (Ideal.span_le.2 fun x hx ↦ ?_) (Ideal.span_le.2 fun x hx ↦ ?_) <;>
-    obtain ⟨i, j, hij, rfl⟩ := (mem_weightParabolicRelationSet_iff R _ x).mp hx <;>
-    rw [SetLike.mem_coe, RingHom.mem_ker]
-  · exact hf i j hij.ne
-  · exact hf i j fun h ↦ hij.ne (by simp [h])
+  rw [weightLeviDefiningHopfIdeal_def, HopfIdeal.sup_toIdeal]
+  exact sup_le (weightParabolicDefiningHopfIdeal_toIdeal_le_ker R w f fun i j h ↦ hf i j h.ne)
+    (weightParabolicDefiningHopfIdeal_toIdeal_le_ker R (-w) f fun i j h ↦
+      hf i j fun e ↦ h.ne (by simp [e]))
 
 /-- The coordinate Hopf algebra of the weight Levi attached to `w`. -/
 noncomputable abbrev weightLeviCoordinateHopfAlgebra (w : Fin N → ℤ) :
@@ -116,7 +109,7 @@ theorem weightLeviInclusion_def (w : Fin N → ℤ) :
     weightLeviInclusion R w =
       CommHopfAlgCat.quotientSpecι (coordinateHopfAlgebra R N)
           (weightLeviDefiningHopfIdeal R w) ≫
-        (eqToIso (groupScheme_def R N).symm).hom := by
+        eqToHom (groupScheme_def R N).symm := by
   rw [weightLeviInclusion, hopfIdealInclusion_def]
 
 /-- The weight-Levi inclusion into `GL_N` is a closed immersion. -/
@@ -125,14 +118,9 @@ instance isClosedImmersion_weightLeviInclusion (w : Fin N → ℤ) :
   rw [weightLeviInclusion]
   infer_instance
 
-/-- The weight-Levi group scheme is locally of finite type over the base. -/
-instance locallyOfFiniteType_weightLeviGroupScheme (w : Fin N → ℤ) :
-    LocallyOfFiniteType (weightLeviGroupScheme R w).X.hom := by
-  infer_instance
-
 /-- The subgroup cut out by the weight-Levi ideal consists exactly of matrices preserving every
 weight space: entries between distinct weights vanish. -/
-@[simp]
+@[simp↓]
 theorem mem_weightLeviDefiningPointsSubgroup_iff_apply_eq_zero (w : Fin N → ℤ)
     {A : Type*} [CommRing A] [Algebra R A]
     (g : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R N)
@@ -154,5 +142,23 @@ theorem mem_weightLeviDefiningPointsSubgroup_iff_apply_eq_zero (w : Fin N → �
     · exact hlower hji
   · intro h
     exact ⟨fun i j hij ↦ h i j hij.ne, fun i j hji ↦ h i j hji.ne'⟩
+
+/-- In the weight-Levi quotient, an ambient entry between different weight blocks is zero. -/
+@[simp]
+theorem weightLeviQuotient_mk_genericMatrix_apply_of_ne (w : Fin N → ℤ)
+    {i j : Fin N} (hij : w i ≠ w j) :
+    Ideal.Quotient.mk (weightLeviDefiningHopfIdeal R w).toIdeal
+      (coordinateHopfAlgebraAlgEquiv R N
+        (coordinateRingMap R N (MvPolynomial.X (i, j)))) = 0 := by
+  rw [← genericMatrix_apply, Ideal.Quotient.eq_zero_iff_mem, weightLeviDefiningHopfIdeal_def,
+    HopfIdeal.sup_toIdeal, weightParabolicDefiningHopfIdeal_toIdeal,
+    weightParabolicDefiningHopfIdeal_toIdeal]
+  rcases lt_or_gt_of_ne hij with hij | hji
+  · apply Ideal.mem_sup_left
+    rw [genericMatrix_apply]
+    exact Ideal.subset_span (X_mem_weightParabolicRelationSet R w hij)
+  · apply Ideal.mem_sup_right
+    rw [genericMatrix_apply]
+    exact Ideal.subset_span (X_mem_weightParabolicRelationSet R (-w) (by simpa using hji))
 
 end TauCeti.GeneralLinear

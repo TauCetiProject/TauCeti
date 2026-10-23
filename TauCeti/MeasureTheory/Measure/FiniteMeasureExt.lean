@@ -138,7 +138,7 @@ private theorem abs_integral_mulExpNegMulSq_comp_sub_le_of_isTightMeasureSet_of_
       rw [mul_assoc]
       refine mul_le_of_le_one_right (sqrt_nonneg ε) (inv_mul_le_one_of_le₀ ?_ hC.le)
       exact (measureReal_mono (subset_univ K)).trans hμC
-    simp only [ContinuousMap.coe_coe] at hf hg hfg
+    simp only [ContinuousMap.coe_ofClass] at hf hg hfg
     rw [abs_lt] at hf hg
     rw [abs_le] at hfg ⊢
     constructor <;> linarith

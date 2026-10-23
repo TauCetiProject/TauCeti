@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import Mathlib.LinearAlgebra.RootSystem.WeylGroup
+public import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.RootDatum.Basic
 import Mathlib.GroupTheory.Perm.Sign
 
@@ -35,9 +35,6 @@ character lattice and the root-index type.
 
 * J. S. Milne, *Algebraic Groups* (2017), Example 19.7 and Section 21.1.
 * J. E. Humphreys, *Linear Algebraic Groups* (1975), Sections 16.1 and 26.3.
-
-This advances the split Weyl-group part of Layer 7, "Root datum of `(G, T)`", of the
-ReductiveGroups roadmap.
 -/
 
 public section
@@ -276,6 +273,21 @@ theorem coordinatePermMulEquivWeylGroup_indexEquiv_apply
   by
     rw [coordinatePermMulEquivWeylGroup_val,
       coordinatePermRootDatumAut_indexEquiv]
+
+/-- The Weyl group of the coordinate-difference datum acts faithfully on root indices,
+even though the roots need not span the full coordinate lattice. -/
+theorem coordinateRootDatum_weylGroupToPerm_injective :
+    Function.Injective (coordinateRootDatum σ).weylGroupToPerm := by
+  intro w v h
+  obtain ⟨e, rfl⟩ := coordinatePermMulEquivWeylGroup.surjective w
+  obtain ⟨f, rfl⟩ := coordinatePermMulEquivWeylGroup.surjective v
+  congr 1
+  apply coordinatePermRootIndexHom_injective
+  apply Equiv.ext
+  intro p
+  simpa only [coordinatePermRootIndexHom_apply,
+    RootPairing.weylGroupToPerm_apply, coordinatePermMulEquivWeylGroup_indexEquiv_apply] using
+    congrArg (fun g : Equiv.Perm (CoordinateRootIndex σ) ↦ g p) h
 
 /-- A coordinate transposition corresponds to the reflection in the associated root. -/
 @[simp]

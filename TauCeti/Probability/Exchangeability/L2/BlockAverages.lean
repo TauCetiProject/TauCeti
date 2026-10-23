@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Process.BlockAverage
+public import TauCeti.Probability.Process.BlockAverage.Measure
 public import TauCeti.Probability.Exchangeability.L2.Covariance
 
 /-!
@@ -20,7 +20,7 @@ contractable L² sequence (`contractable_covariance_structure`).
 For a real-valued process `X : ℕ → Ω → ℝ` and a finite selection `k : Fin n → ℕ`, the
 *block average* `blockAverage X k = n⁻¹ • ∑ i, X (k i)` is the empirical mean of the block
 `(X (k i))ᵢ`; it is defined, with its measure-free algebra, in
-`TauCeti.Probability.Process.BlockAverage`.
+`TauCeti.Probability.Process.BlockAverage.Basic`.
 When `X` is contractable with `L²` coordinates, its second-moment structure is
 uniform: all coordinate variances agree and all off-diagonal covariances agree
 (`contractable_covariance_structure`). Writing `v = Var[X 0]` and `c = cov[X 0, X 1]`, this
@@ -69,23 +69,6 @@ namespace TauCeti
 namespace Probability
 
 variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} {X : ℕ → Ω → ℝ}
-
-/-- A block average of `L²` coordinates is itself `L²`. -/
-theorem memLp_blockAverage {n : ℕ} (k : Fin n → ℕ) (hX_L2 : ∀ i, MemLp (X (k i)) 2 μ) :
-    MemLp (blockAverage X k) 2 μ := by
-  rw [blockAverage_eq_sum]
-  exact (memLp_finsetSum' _ fun i _ => hX_L2 i).const_smul _
-
-/-- **Conditional expectation commutes with block averages.** The conditional expectation of a
-block average of integrable coordinates is the block average of their conditional expectations. -/
-theorem condExp_blockAverage {m : MeasurableSpace Ω} {n : ℕ} (k : Fin n → ℕ)
-    (hX : ∀ i, Integrable (X (k i)) μ) :
-    μ[blockAverage X k | m] =ᵐ[μ] blockAverage (fun i => μ[X i | m]) k := by
-  rw [blockAverage_eq_sum]
-  refine (condExp_smul _ _ _).trans ?_
-  filter_upwards [condExp_finsetSum (μ := μ) (m := m) (s := Finset.univ)
-    (f := fun i : Fin n => X (k i)) fun i _ => hX i] with ω hω
-  rw [Pi.smul_apply, hω, Finset.sum_apply, blockAverage_apply, smul_eq_mul]
 
 /-- The double sum of block covariances splits along the diagonal into the common variance and
 the common off-diagonal covariance of a contractable `L²` sequence. -/

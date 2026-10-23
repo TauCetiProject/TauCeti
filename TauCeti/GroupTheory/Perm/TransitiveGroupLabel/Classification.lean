@@ -308,7 +308,6 @@ theorem not_referenceSubgroup_four_four_le_alternatingGroup :
 group on four points, the Klein four-group of `4T2` and the alternating group of `4T4` consist of
 even permutations, and the cyclic, dihedral and symmetric groups of `4T1`, `4T3` and `4T5` do
 not. -/
-@[simp]
 theorem referenceSubgroup_four_le_alternatingGroup_iff (j : TransitiveGroupIndex 4) :
     referenceSubgroup 4 j ≤ alternatingGroup (Fin 4) ↔ (j : ℕ) = 1 ∨ (j : ℕ) = 3 := by
   obtain ⟨a, ha⟩ := j
@@ -672,7 +671,6 @@ theorem not_referenceSubgroup_five_four_le_alternatingGroup :
 group on five points, the cyclic group of `5T1`, the dihedral group of `5T2` and the alternating
 group of `5T4` consist of even permutations, and the Frobenius group of `5T3` and the symmetric
 group of `5T5` do not. -/
-@[simp]
 theorem referenceSubgroup_five_le_alternatingGroup_iff (j : TransitiveGroupIndex 5) :
     referenceSubgroup 5 j ≤ alternatingGroup (Fin 5) ↔
       (j : ℕ) = 0 ∨ (j : ℕ) = 1 ∨ (j : ℕ) = 3 := by

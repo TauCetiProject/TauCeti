@@ -44,10 +44,8 @@ the arbitrary-rank case, the **split torus** `T = D(Multiplicative (σ →₀ �
   `X_*(T) = Additive (Multiplicative (σ →₀ ℤ) →* Multiplicative ℤ)`. We prove perfectness only
   in finite rank, the case relevant to root data.
 
-This advances the reductive-groups roadmap (`ReductiveGroups/README.md` in TauCetiRoadmap),
-Layer 4: "Tori: split ... the **character lattice `X*(T)`** and **cocharacter lattice
-`X_*(T)`** with their **perfect pairing**: the input to root data", extending the rank-`1`
-pairing of `DiagonalizableGroup.pairing_ofAdd` to the finite-rank split torus.
+This extends the rank-`1` pairing of `DiagonalizableGroup.pairing_ofAdd` to the finite-rank split
+torus.
 
 ## Main declarations
 
@@ -76,8 +74,6 @@ identification `TauCeti.freeAbelianCharEquiv` is `TauCeti.Algebra.Group.FreeAbel
 The dot-product form reuses Mathlib's `Finsupp.linearCombination` and the additive/multiplicative
 type-tag adjunction `AddMonoidHom.toMultiplicative`; the bilinear packaging `dotPairing` and its
 perfectness use Mathlib's free-forgetful adjunction `Finsupp.llift` and `LinearMap.IsPerfPair`.
-This realizes the finite-rank split-torus perfect pairing of the Tau Ceti reductive-groups
-roadmap (Layer 4).
 -/
 
 public section

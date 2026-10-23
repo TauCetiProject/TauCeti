@@ -7,7 +7,7 @@ module
 
 public import Mathlib.GroupTheory.Perm.Fin
 public import TauCeti.KnotTheory.Grid.Unknot.Basic
-import TauCeti.GroupTheory.Perm.CyclePower
+import TauCeti.GroupTheory.Perm.Cycle.Power
 
 /-!
 # The standard torus link grid diagrams

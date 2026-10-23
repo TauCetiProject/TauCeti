@@ -25,7 +25,8 @@ turns this into a bijection with the distinct monic irreducible factors of `p`, 
 the members of `Polynomial.Factors p`.
 
 The dictionary also identifies transitivity of the root action with irreducibility for a
-separable polynomial of positive degree, together with its relative form: inside a normal
+separable polynomial of positive degree, and in general with `p` being a unit times a power of one
+irreducible polynomial, together with the relative form of the separable case: inside a normal
 extension, irreducibility over an intermediate field is transitivity of the subgroup fixing that
 field. It records the same descriptions for the action inside the splitting field itself, where an
 irreducible polynomial acts transitively.
@@ -62,12 +63,20 @@ the instances identifying `Polynomial.Gal p` as a Galois group for that field ov
   polynomial has a transitive root action.
 * `Polynomial.Gal.galActionAux_isPretransitive_of_dvd_pow`: the same for every divisor of a
   power of an irreducible polynomial, separable or not.
+* `TauCeti.rootSetEquivOrbit`: identify the intrinsic root action of an irreducible polynomial
+  with the orbit of a chosen root in its splitting field.
 * `Polynomial.Gal.smul_eq_apply`: the action on the splitting field is evaluation.
 * `TauCeti.galIsGaloisGroup`: `Polynomial.Gal p` is a Galois group for its splitting field.
 * `TauCeti.orbitQuotientEquivFactors`: the orbit quotient is in bijection with the
   monic irreducible factors of `p`, the orbit of a root going to its minimal polynomial.
 * `TauCeti.natCard_orbit_eq_natDegree_factor`: along that bijection, a separable
   factor has as many roots in the matching orbit as its degree.
+* `TauCeti.isPretransitive_iff_exists_associated_pow` and
+  `Polynomial.Gal.galActionAux_isPretransitive_iff_exists_associated_pow`: without separability,
+  a nonzero `p` has a transitive root action exactly when it is a unit times a power of one
+  irreducible polynomial, equivalently (`TauCeti.isPretransitive_iff_subsingleton_factors`,
+  `Polynomial.Gal.galActionAux_isPretransitive_iff_subsingleton_factors`) when it has at most one
+  monic irreducible factor.
 -/
 
 public section
@@ -155,10 +164,8 @@ private theorem orbit_eq_preimage_rootSet_minpoly_aux {L : Type w} [Field L] [Al
     MulAction.orbit p.Gal x = Subtype.val ⁻¹' (minpoly F (x : L)).rootSet L := by
   have hint : IsIntegral F (x : L) := (isAlgebraic_of_mem_rootSet x.2).isIntegral
   ext y
-  rw [Set.mem_preimage, mem_rootSet, horbit y x]
-  refine ⟨fun h => ⟨minpoly.ne_zero hint, h ▸ minpoly.aeval F (y : L)⟩, fun h => ?_⟩
-  exact (minpoly.eq_of_irreducible_of_monic (minpoly.irreducible hint) h.2
-    (minpoly.monic hint)).symm
+  rw [Set.mem_preimage, (minpoly.monic hint).mem_rootSet, horbit y x, eq_comm,
+    minpoly.eq_iff_aeval_minpoly_eq_zero hint]
 
 -- The image description, from the preimage one and `minpoly F x ∣ p`.
 private theorem image_val_orbit_eq_rootSet_minpoly_aux {L : Type w} [Field L] [Algebra F L]
@@ -208,7 +215,8 @@ extension is transitive exactly when the polynomial is irreducible.
 Separability cannot be dropped: over `ℚ` the polynomial `(X ^ 2 - 2) ^ 2` is reducible, yet its
 Galois group acts transitively on its two distinct roots
 (`TauCeti.isPretransitive_gal_X_sq_sub_two_sq`). Without separability the forward
-implication only says that `p` is a unit times a power of one irreducible polynomial. -/
+implication only says that `p` is a unit times a power of one irreducible polynomial
+(`TauCeti.isPretransitive_iff_exists_associated_pow`). -/
 theorem isPretransitive_iff_irreducible (hsep : p.Separable) (hdeg : 0 < p.natDegree) :
     MulAction.IsPretransitive p.Gal (p.rootSet E) ↔ Irreducible p := by
   refine ⟨fun h => ?_, fun h => Gal.galAction_isPretransitive p E h⟩
@@ -279,7 +287,7 @@ theorem irreducible_map_iff_isPretransitive_fixingSubgroup [Normal F E]
     (by rwa [natDegree_map]), ← isPretransitive_algEquiv_rootSet_iff_gal]
   -- The roots of `p` over `F` and over `K` are the same subset of `E`.
   let g : p.rootSet E ≃ (p.map (algebraMap F K)).rootSet E :=
-    Equiv.subtypeEquivProp (rootSet_map E K p).symm
+    Equiv.subtypeEquivProp (congrArg (fun s x ↦ x ∈ s) (rootSet_map E K p).symm)
   -- `fixingSubgroupEquiv` preserves the underlying function of an automorphism, and `g`
   -- preserves the underlying root, so both sides of equivariance reduce to `⟨σ x, _⟩`.
   exact (MulAction.isPretransitive_congr (φ := K.fixingSubgroupEquiv)
@@ -318,10 +326,8 @@ distinct type with its own action, so the instance is restated here; it is what 
 `IsGaloisGroup` form of the Galois correspondence, and the fixed-field lemmas that come with it,
 apply to the polynomial Galois group. -/
 instance galIsGaloisGroup [IsGalois F p.SplittingField] :
-    IsGaloisGroup p.Gal F p.SplittingField where
-  faithful := ⟨fun {σ τ} h ↦ @Gal.ext F _ p σ τ fun y _ ↦ h y⟩
-  commutes := inferInstance
-  isInvariant := ⟨fun y hy ↦ (IsGalois.mem_range_algebraMap_iff_fixed y).2 fun σ ↦ hy σ⟩
+    IsGaloisGroup p.Gal F p.SplittingField :=
+  inferInstanceAs (IsGaloisGroup (p.SplittingField ≃ₐ[F] p.SplittingField) F p.SplittingField)
 
 /-- The Galois action on the roots in the splitting field is the action by evaluation. -/
 @[simp]
@@ -400,6 +406,59 @@ theorem _root_.Polynomial.Gal.galActionAux_isPretransitive (hp : Irreducible p) 
     MulAction.IsPretransitive p.Gal (p.rootSet p.SplittingField) :=
   Gal.galActionAux_isPretransitive_of_dvd_pow hp (n := 1) (by rw [pow_one])
 
+/-- The roots of an irreducible polynomial in its splitting field are identified with the orbit
+of a chosen root, preserving the underlying field element. -/
+noncomputable def rootSetEquivOrbit (hp : Irreducible p) {α : p.SplittingField}
+    (hα : α ∈ p.rootSet p.SplittingField) : p.rootSet p.SplittingField ≃ MulAction.orbit p.Gal α :=
+  Set.equivOfEq (by
+    ext β
+    constructor
+    · intro hβ
+      obtain ⟨g, hg⟩ := (Gal.galActionAux_isPretransitive hp).exists_smul_eq
+        (⟨α, hα⟩ : p.rootSet p.SplittingField) ⟨β, hβ⟩
+      exact ⟨g, congrArg Subtype.val hg⟩
+    · rintro ⟨g, rfl⟩
+      exact smul_mem_rootSet g hα)
+
+/-- The root-to-orbit identification preserves the underlying field element. -/
+@[simp]
+theorem coe_rootSetEquivOrbit_apply (hp : Irreducible p) {α : p.SplittingField}
+    (hα : α ∈ p.rootSet p.SplittingField) (y : p.rootSet p.SplittingField) :
+    (rootSetEquivOrbit hp hα y : p.SplittingField) = y := by
+  unfold rootSetEquivOrbit
+  rfl
+
+/-- The inverse orbit-to-root identification preserves the underlying field element. -/
+@[simp]
+theorem coe_rootSetEquivOrbit_symm_apply (hp : Irreducible p) {α : p.SplittingField}
+    (hα : α ∈ p.rootSet p.SplittingField) (y : MulAction.orbit p.Gal α) :
+    ((rootSetEquivOrbit hp hα).symm y : p.SplittingField) = y := by
+  unfold rootSetEquivOrbit
+  rfl
+
+/-- The identification of the roots with the orbit of a chosen root is equivariant. -/
+@[simp]
+theorem rootSetEquivOrbit_smul (hp : Irreducible p) {α : p.SplittingField}
+    (hα : α ∈ p.rootSet p.SplittingField) (g : p.Gal) (y : p.rootSet p.SplittingField) :
+    rootSetEquivOrbit hp hα (g • y) = g • rootSetEquivOrbit hp hα y := by
+  apply Subtype.ext
+  simp only [coe_rootSetEquivOrbit_apply, Gal.coe_smul, MulAction.orbit.coe_smul]
+  rfl
+
+/-- The root-to-orbit identification as an equivariant map. -/
+noncomputable def rootSetToOrbit (hp : Irreducible p) {α : p.SplittingField}
+    (hα : α ∈ p.rootSet p.SplittingField) :
+    p.rootSet p.SplittingField →[p.Gal] MulAction.orbit p.Gal α :=
+  { toFun := rootSetEquivOrbit hp hα
+    map_smul' := rootSetEquivOrbit_smul hp hα }
+
+/-- The equivariant root-to-orbit map has the root-to-orbit equivalence as its underlying map. -/
+@[simp]
+theorem coe_rootSetToOrbit (hp : Irreducible p) {α : p.SplittingField}
+    (hα : α ∈ p.rootSet p.SplittingField) :
+    (rootSetToOrbit hp hα : p.rootSet p.SplittingField → MulAction.orbit p.Gal α) =
+      rootSetEquivOrbit hp hα := (rfl)
+
 /-! ## Orbits and monic irreducible factors -/
 
 /-- Every monic irreducible factor of a nonzero `p` is the minimal polynomial of a root of `p`
@@ -469,5 +528,64 @@ theorem natCard_orbitQuotient (hp : p ≠ 0) :
     Nat.card (MulAction.orbitRel.Quotient p.Gal (p.rootSet E))
       = Nat.card p.Factors :=
   Nat.card_congr (orbitQuotientEquivFactors p E hp)
+
+/-! ## Transitivity without separability
+
+Without separability, transitivity of the root action no longer forces irreducibility; what it
+forces is that all roots have one minimal polynomial, so that `p` has a single monic irreducible
+factor, repeated. The statements below make this exact, for an arbitrary splitting extension and
+for the intrinsic action on the splitting field. -/
+
+/-- For nonzero `p`, the Galois action on the roots in a splitting extension is transitive exactly
+when `p` has at most one monic irreducible factor. -/
+theorem isPretransitive_iff_subsingleton_factors (hp : p ≠ 0) :
+    MulAction.IsPretransitive p.Gal (p.rootSet E) ↔ Subsingleton p.Factors := by
+  rw [MulAction.pretransitive_iff_subsingleton_quotient]
+  exact (orbitQuotientEquivFactors p E hp).subsingleton_congr
+
+/-- **Transitivity without separability.** For nonzero `p`, the Galois action on the roots in a
+splitting extension is transitive exactly when `p` is a unit times a power of one irreducible
+polynomial.
+
+A power higher than the first does occur: `(X ^ 2 - 2) ^ 2` over `ℚ` has a transitive root action
+(`TauCeti.isPretransitive_gal_X_sq_sub_two_sq`). For separable `p` of positive degree only the
+first power is possible, which is `TauCeti.isPretransitive_iff_irreducible`. -/
+theorem isPretransitive_iff_exists_associated_pow (hp : p ≠ 0) :
+    MulAction.IsPretransitive p.Gal (p.rootSet E) ↔
+      ∃ q : F[X], Irreducible q ∧ ∃ n : ℕ, Associated (q ^ n) p :=
+  (isPretransitive_iff_subsingleton_factors E hp).trans
+    Factors.subsingleton_iff_exists_associated_pow
+
+/-- For nonzero `p`, the intrinsic Galois action on the roots in the splitting field is transitive
+exactly when `p` has at most one monic irreducible factor.
+
+This is `TauCeti.isPretransitive_iff_subsingleton_factors` for the intrinsic action; see the note
+on the action inside the splitting field for why that instance is not the one the general
+statement carries. -/
+theorem _root_.Polynomial.Gal.galActionAux_isPretransitive_iff_subsingleton_factors
+    (hp : p ≠ 0) :
+    MulAction.IsPretransitive p.Gal (p.rootSet p.SplittingField) ↔ Subsingleton p.Factors := by
+  refine ⟨fun h ↦ ⟨fun a b ↦ ?_⟩, fun h ↦ ?_⟩
+  · -- Two factors are the minimal polynomials of two roots, which lie in one orbit.
+    have : Fact ((p.map (algebraMap F p.SplittingField)).Splits) := ⟨SplittingField.splits p⟩
+    obtain ⟨x, hx⟩ := exists_mem_rootSet_minpoly_eq p.SplittingField hp a
+    obtain ⟨y, hy⟩ := exists_mem_rootSet_minpoly_eq p.SplittingField hp b
+    obtain ⟨g, hg⟩ := h.exists_smul_eq y x
+    exact Subtype.ext (hx.symm.trans
+      ((mem_orbit_iff_minpoly_eq_splittingField.mp ⟨g, hg⟩).trans hy))
+  · obtain ⟨q, hq, n, hqp⟩ := Factors.subsingleton_iff_exists_associated_pow.mp h
+    exact Gal.galActionAux_isPretransitive_of_dvd_pow hq hqp.symm.dvd
+
+/-- **Transitivity without separability, inside the splitting field.** For nonzero `p`, the
+intrinsic Galois action on the roots in the splitting field is transitive exactly when `p` is a
+unit times a power of one irreducible polynomial.
+
+This is `TauCeti.isPretransitive_iff_exists_associated_pow` for the intrinsic action. -/
+theorem _root_.Polynomial.Gal.galActionAux_isPretransitive_iff_exists_associated_pow
+    (hp : p ≠ 0) :
+    MulAction.IsPretransitive p.Gal (p.rootSet p.SplittingField) ↔
+      ∃ q : F[X], Irreducible q ∧ ∃ n : ℕ, Associated (q ^ n) p :=
+  (Gal.galActionAux_isPretransitive_iff_subsingleton_factors hp).trans
+    Factors.subsingleton_iff_exists_associated_pow
 
 end TauCeti

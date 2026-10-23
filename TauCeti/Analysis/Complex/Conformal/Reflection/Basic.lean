@@ -215,7 +215,7 @@ lemma continuousOn_conj_conj (hf : ContinuousOn f S) :
   have hmaps : MapsTo (starRingEnd ℂ) ((starRingEnd ℂ) '' S) S := by
     rintro w ⟨x, hx, rfl⟩
     rwa [starRingEnd_self_apply]
-  simpa only [Function.comp_def, starRingEnd_apply] using
+  simpa only [Function.comp_def, starRingEnd_apply, Pi.star_def] using
     (hf.comp Complex.continuous_conj.continuousOn hmaps).star
 
 /--

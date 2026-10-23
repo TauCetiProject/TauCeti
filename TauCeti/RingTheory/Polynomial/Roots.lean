@@ -23,7 +23,8 @@ without choosing a global order on the root set.
 Second, the root set of a product of polynomials whose base changes to `E` are nonzero is the
 union of the root sets of the factors. This is the lemma that decomposes the roots of a
 polynomial along a factorisation, for instance the roots of a monic integer polynomial along its
-monic irreducible factors.
+monic irreducible factors. The same holds for the distinct roots of a finite product.
+For a separable product, the root sets of the factors are pairwise disjoint.
 
 Third, dividing a polynomial by the linear factor of a simple root removes exactly that root
 from the root set. Here `a` only has to be a simple root in `E`: `f a` vanishes and `f' a` does
@@ -32,6 +33,9 @@ not vanish after mapping to `E`, so the map `F → E` need not be injective.
 Fourth, translating the variable moves the roots: the roots of `f(X + t)` are the points `x`
 with `x + t` a root of `f`, so `x ↦ x + t` is a bijection between the two root sets, and
 `f(X + t)` is separable exactly when `f` is.
+
+Fifth, if every root of a nonzero polynomial is among a family of points `θ i`, then its roots
+are exactly the `θ i` in which it has positive multiplicity.
 
 Finally, the roots of a polynomial gcd form the multiset intersection of the roots of its
 inputs. In characteristic zero this identifies the degree lost to the gcd with the derivative as
@@ -43,12 +47,20 @@ the number of distinct roots.
   its root set enumerates its full root multiset after base change.
 * `Polynomial.rootSet_mul`: the root set of a product of polynomials whose base changes to `E` are
   nonzero is the union of the root sets of the factors.
+* `Polynomial.roots_prod_toFinset`: the distinct roots of a finite product of nonzero polynomials
+  are those of the factors together.
+* `Polynomial.aroots_prod_toFinset`: the distinct roots of a finite product of polynomials whose
+  base changes to `E` are nonzero are those of the factors together.
+* `Polynomial.Separable.pairwiseDisjoint_rootSet`: the factors of a separable product have
+  pairwise disjoint root sets.
 * `Polynomial.rootSet_divByMonic_X_sub_C`: if `f a = 0` and `f' a ≠ 0` in `E`, then the roots of
   `f /ₘ (X - C a)` are the roots of `f` other than `a`.
 * `Polynomial.rootSet_comp_X_add_C`: the roots of `f(X + t)` are the roots of `f` moved by `-t`.
 * `Polynomial.rootSetCompXAddCEquiv`: the bijection `x ↦ x + t` from the roots of `f(X + t)` to
   the roots of `f`.
 * `Polynomial.separable_comp_X_add_C_iff`: `f(X + t)` is separable exactly when `f` is.
+* `Polynomial.isRoot_iff_of_rootMultiplicity`: if every root of a nonzero polynomial is among
+  the `θ i`, then its roots are the `θ i` in which it has positive multiplicity.
 * `Polynomial.rootMultiplicity_gcd`: a root's multiplicity in a gcd is the minimum of its
   multiplicities in the two inputs.
 * `Polynomial.natDegree_sub_natDegree_gcd_derivative_eq_card_roots_toFinset`: over an
@@ -85,6 +97,42 @@ theorem _root_.Polynomial.rootSet_mul {g : F[X]} (hf : f.map (algebraMap F E) �
   ext x
   simp only [Set.mem_union, mem_rootSet', Polynomial.map_mul, map_mul, mul_eq_zero, ne_eq, hf, hg,
     or_self, not_false_eq_true, true_and]
+
+/-- The distinct roots of a finite product of nonzero polynomials are those of the factors
+together. -/
+theorem _root_.Polynomial.roots_prod_toFinset [IsDomain F] [DecidableEq F]
+    {ι : Type*} (s : Finset ι)
+    (f : ι → F[X]) (hf : ∀ k ∈ s, f k ≠ 0) :
+    (s.prod f).roots.toFinset = s.biUnion fun k ↦ (f k).roots.toFinset := by
+  classical
+  rw [roots_prod _ _ (Finset.prod_ne_zero_iff.mpr hf), Finset.bind_toFinset, s.val_toFinset]
+
+/-- The distinct roots in `E` of a finite product of polynomials are those of the factors together,
+provided no factor vanishes after base change to `E`. -/
+theorem _root_.Polynomial.aroots_prod_toFinset [DecidableEq E] {ι : Type*} (s : Finset ι)
+    (f : ι → F[X]) (hf : ∀ k ∈ s, (f k).map (algebraMap F E) ≠ 0) :
+    ((∏ k ∈ s, f k).aroots E).toFinset = s.biUnion fun k ↦ ((f k).aroots E).toFinset := by
+  ext z
+  simp only [Multiset.mem_toFinset, Finset.mem_biUnion, mem_aroots', Polynomial.map_prod,
+    Finset.prod_ne_zero_iff.2 hf, ne_eq, not_false_eq_true, true_and, map_prod,
+    Finset.prod_eq_zero_iff]
+  exact ⟨fun ⟨k, hk, h⟩ ↦ ⟨k, hk, hf k hk, h⟩, fun ⟨k, hk, _, h⟩ ↦ ⟨k, hk, h⟩⟩
+
+/-- The factors of a separable product have pairwise disjoint root sets: a common root of two
+factors would be a repeated root of the product. Together with `Polynomial.rootSet_prod`, the
+root set of the product is the disjoint union of the root sets of the factors. -/
+theorem _root_.Polynomial.Separable.pairwiseDisjoint_rootSet {ι : Type*} {s : Finset ι}
+    {g : ι → F[X]} (hsep : (∏ i ∈ s, g i).Separable) :
+    (s : Set ι).PairwiseDisjoint fun i => (g i).rootSet E := by
+  classical
+  intro i hi j hj hij
+  refine Set.disjoint_left.mpr fun y hyi hyj => ?_
+  have hdvd : g i * g j ∣ ∏ k ∈ s, g k := by
+    rw [← Finset.prod_pair hij]
+    exact Finset.prod_dvd_prod_of_subset _ _ _ (Finset.insert_subset hi (by simpa using hj))
+  obtain ⟨a, b, hab⟩ := (hsep.of_dvd hdvd).isCoprime
+  have := congrArg (aeval y) hab
+  simp [(mem_rootSet'.mp hyi).2, (mem_rootSet'.mp hyj).2] at this
 
 /-- Removing the linear factor of a simple root `a` removes exactly that root: if, in `E`, `f a`
 vanishes and `f' a` does not, then the roots of `f /ₘ (X - C a)` in `E` are the roots of `f`
@@ -157,6 +205,18 @@ theorem _root_.Polynomial.separable_comp_X_add_C_iff {t : F} :
     (f.comp (X + C t)).Separable ↔ f.Separable := by
   refine ⟨fun h => ?_, fun h => h.comp_X_add_C t⟩
   simpa [comp_assoc, add_assoc] using h.comp_X_add_C (-t)
+
+/-- If every root of a nonzero polynomial `p` is some `θ i`, and the multiplicity of each `θ i`
+as a root of `p` is `m i`, then the roots of `p` are the `θ i` with `0 < m i`. -/
+theorem _root_.Polynomial.isRoot_iff_of_rootMultiplicity {ι : Type*} {p : F[X]} {θ : ι → F}
+    {m : ι → ℕ} (hm : ∀ i, p.rootMultiplicity (θ i) = m i)
+    (hθ : ∀ t, p.IsRoot t → ∃ i, θ i = t) (hp : p ≠ 0) (t : F) :
+    p.IsRoot t ↔ ∃ i, θ i = t ∧ 0 < m i := by
+  refine ⟨fun ht ↦ ?_, fun ⟨i, hi, hpos⟩ ↦ ?_⟩
+  · obtain ⟨i, rfl⟩ := hθ t ht
+    exact ⟨i, rfl, hm i ▸ (rootMultiplicity_pos hp).2 ht⟩
+  · rw [← hi, ← rootMultiplicity_pos hp, hm i]
+    exact hpos
 
 section GCD
 

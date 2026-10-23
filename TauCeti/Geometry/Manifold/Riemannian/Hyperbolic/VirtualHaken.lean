@@ -20,9 +20,9 @@ boundary that admits a hyperbolic metric (`TauCeti.IsHyperbolic`) is virtually H
 (`TauCeti.IsVirtuallyHaken`).
 
 A closed 3-manifold is modelled, as in `TauCeti.VirtualFiberingConjecture`, on
-`EuclideanSpace ℝ (Fin 3)` with the boundaryless model `𝓡 3`, and is compact and connected. Its
-topology is that of a metric space, as `TauCeti.HyperbolicMetric` requires its metric to induce
-the given distance.
+`EuclideanSpace ℝ (Fin 3)` with the boundaryless model `𝓡 3`, and is compact and connected. The
+`[MetricSpace M]` hypothesis supplies the ambient metric structure required by this statement, while
+a `HyperbolicMetric` witness carries its own Riemannian metric for the completeness field.
 
 The conclusion asks for a finite cover that is a possibly nonorientable closed Haken 3-manifold,
 matching `TauCeti.IsPossiblyNonorientableClosedHakenThreeManifold`. Agol's theorem provides an

@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Boundary
+import TauCeti.Algebra.BigOperators.Finset.Fiber
 import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.SideLength
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
+import Mathlib.Topology.Maps.Proper.CompactlyGenerated
 
 /-!
 # Divergence of Schwarz--Christoffel boundary values at infinity
@@ -32,6 +34,8 @@ a finite vertex (`S < -1`) or to a vertex at infinity (`-1 ≤ S`, this file).
 * `TauCeti.tendsto_schwarzChristoffelBoundary_atTop_cobounded` and
   `TauCeti.tendsto_schwarzChristoffelBoundary_atBot_cobounded` show that the boundary values on
   those edges tend to the cobounded filter of `ℂ`.
+* `TauCeti.isProperMap_schwarzChristoffelBoundary` -- when also every finite prevertex is
+  integrable, the boundary map `ℝ → ℂ` is proper; in particular its range is closed.
 
 ## References
 
@@ -207,6 +211,19 @@ theorem tendsto_schwarzChristoffelBoundary_atBot_cobounded (a e : ι → ℝ)
     rw [hx, norm_mul, Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg hnonneg,
       Complex.norm_exp_ofReal_mul_I, mul_one]
   simpa [Function.comp_def] using (tendsto_const_sub_cobounded (B R)).comp hdiff
+
+/-- **The Schwarz--Christoffel boundary map is proper** when every finite prevertex is integrable
+and the total turning exponent is at least `-1`: it is continuous on all of `ℝ` and escapes every
+bounded set at both ends of the real axis. -/
+theorem isProperMap_schwarzChristoffelBoundary (a e : ι → ℝ) (z₀ : UpperHalfPlane)
+    (hfinite : ∀ j, -1 < ∑ i with a i = a j, e i) (hsum : -1 ≤ ∑ i, e i) :
+    IsProperMap (schwarzChristoffelBoundary a e z₀) := by
+  refine isProperMap_iff_tendsto_cocompact.mpr ⟨continuousOn_univ.mp ?_, ?_⟩
+  · exact continuousOn_schwarzChristoffelBoundary_of_exponent_sum_gt_neg_one a e z₀ fun x _ =>
+      lt_sum_filter_eq_of_forall_apply neg_one_lt_zero hfinite x
+  · rw [cocompact_eq_atBot_atTop, ← Metric.cobounded_eq_cocompact]
+    exact (tendsto_schwarzChristoffelBoundary_atBot_cobounded a e z₀ hsum).sup
+      (tendsto_schwarzChristoffelBoundary_atTop_cobounded a e z₀ hsum)
 
 end TauCeti
 

@@ -21,10 +21,6 @@ type. This file transports the sequence theorem along an equivalence with `ℕ`.
   explicit equivalence `ι ≃ ℕ`.
 * `conditionallyIID_of_exchangeableFamily` chooses such an equivalence from `[Countable ι]`
   and `[Infinite ι]`.
-
-This implements the Layer 8 target “de Finetti for other countable index types” in
-`TauCetiRoadmap/Exchangeability/README.md`. The proof reuses the sequence theorem
-`conditionallyIID_of_exchangeable`; no new measure-theoretic argument is required.
 -/
 
 public section

@@ -216,11 +216,7 @@ class-group point map**, both sending `P` to the point under it. In particular i
 in the point there. -/
 theorem pointMap_ofIsogeny_eq_toPointHom [IsSepClosed F]
     [Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.FunctionField] (P : W₁.Point) :
-    haveI := W₂.isIntegrallyClosed_coordinateRing
     (ofIsogeny φ).pointMap P = φ.toPointHom P := by
-  have := W₁.isIntegrallyClosed_coordinateRing
-  have := W₂.isIntegrallyClosed_coordinateRing
-  have := W₂.isDedekindDomain_coordinateRing_of_isIntegrallyClosed
   let _ := φ.fieldPullback.toRingHom.toAlgebra
   have := φ.isScalarTower_of_algebraMap_eq_fieldPullback fun _ ↦ rfl
   have := φ.finiteDimensional_functionField fun _ ↦ rfl
@@ -243,6 +239,14 @@ theorem comp_pointMap [W₃.IsElliptic] (g : Hom W₂ W₃) (f : Hom W₁ W₂) 
   exact ((isEquiv_comap_pointMap_ofIsogeny φ P).comap
     (ψ.fieldPullback : W₃.FunctionField →+* W₂.FunctionField)).trans
       (isEquiv_comap_pointMap_ofIsogeny ψ _)
+
+/-- A power of an endomorphism acts by iterating its action on points. -/
+theorem pow_pointMap (f : Hom W₁ W₁) (n : ℕ) (P : W₁.Point) :
+    (f ^ n).pointMap P = f.pointMap^[n] P := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [pow_succ', mul_def, comp_pointMap, ih, Function.iterate_succ_apply']
 
 /-- **A nonzero morphism has finite fibres on points.** -/
 theorem finite_setOf_pointMap_eq {f : Hom W₁ W₂} (hf : f ≠ 0) (Q : W₂.Point) :

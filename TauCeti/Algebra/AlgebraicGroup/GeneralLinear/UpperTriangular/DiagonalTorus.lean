@@ -17,10 +17,6 @@ below the diagonal, so it descends uniquely through the quotient defining the up
 group. Applying relative spectrum gives the inclusion `T → B`, whose composite with `B → GLₙ`
 is the standard diagonal torus.
 
-This supplies the containment of the standard maximal torus in the standard Borel candidate for
-the general-rank `GLₙ` example in Layer 7 of the ReductiveGroups roadmap. It supersedes the
-rank-two-only construction formerly in `TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Borel`.
-
 ## Main declarations
 
 * `TauCeti.GeneralLinear.UpperTriangular.diagonalTorusCoordinateMap`: the coordinate morphism
@@ -32,13 +28,13 @@ rank-two-only construction formerly in `TauCeti.Algebra.AlgebraicGroup.GeneralLi
 
 ## References
 
-* J. S. Milne, *Algebraic Groups* (2017), Sections 12 and 21.
+* J. S. Milne, *Algebraic Groups* (2017), Chapters 12 and 21.
 * T. A. Springer, *Linear Algebraic Groups*, second edition (1998), Sections 6.2 and 8.1.
 -/
 
 public section
 
-open CategoryTheory WithConv
+open CategoryTheory
 
 namespace TauCeti.GeneralLinear.UpperTriangular
 
@@ -75,19 +71,14 @@ noncomputable def diagonalTorusCoordinateMap :
       _root_.CommHopfAlgCat.of R
         (MonoidAlgebra R (Multiplicative (ULift.{u} (Fin n) →₀ ℤ))) :=
   CommHopfAlgCat.liftQuotient (definingHopfIdeal R n)
-    (GeneralLinear.diagonalTorusCoordinateMap (R := R) (N := n)) (by
-      rw [definingHopfIdeal_toIdeal, Ideal.span_le]
-      intro x hx
-      rw [mem_definingRelationSet_iff] at hx
-      obtain ⟨i, j, hji, rfl⟩ := hx
-      rw [SetLike.mem_coe, RingHom.mem_ker]
-      -- `RingHom.mem_ker` displays the bundled morphism through two underlying-map coercions;
-      -- restate it in the `BialgHom` form used by the coordinate computation lemma.
+    (GeneralLinear.diagonalTorusCoordinateMap (R := R) (N := n))
+    (definingHopfIdeal_toIdeal_le_ker R n _ fun i j hji ↦ by
+      -- The hypothesis displays the morphism through its algebra-hom coercion; restate it in the
+      -- `BialgHom` form used by the coordinate computation lemma.
       change (GeneralLinear.diagonalTorusCoordinateMap (R := R) (N := n)).hom
         (GeneralLinear.coordinateHopfAlgebraAlgEquiv R n
           (GeneralLinear.coordinateRingMap R n (MvPolynomial.X (i, j)))) = 0
-      have hij : i ≠ j := ne_of_gt hji
-      simpa only [hij, ↓reduceIte] using
+      simpa only [(ne_of_gt hji : i ≠ j), ↓reduceIte] using
         GeneralLinear.diagonalTorusCoordinateMap_X (R := R) (N := n) i j)
 
 /-- Precomposing the factored diagonal-torus coordinate morphism with the upper-triangular
@@ -130,20 +121,9 @@ theorem diagonalTorus_comp_inclusion :
   rw [diagonalTorus_def, inclusion, GeneralLinear.diagonalTorus_def,
     GeneralLinear.weightParabolicInclusion_def]
   simp only [Category.assoc, eqToHom_refl, Category.id_comp]
-  rw [CommHopfAlgCat.quotientSpecι_def]
-  have hmap :
-      (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map
-          (diagonalTorusCoordinateMap R n).op ≫
-        (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map
-          (CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra R n)
-            (definingHopfIdeal R n)).op =
-      (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map
-        (GeneralLinear.diagonalTorusCoordinateMap (R := R) (N := n)).op := by
-    rw [← Functor.map_comp, ← op_comp, ← coordinateMap_def R n,
-      coordinateMap_comp_diagonalTorusCoordinateMap]
-  congr 1
-  rw [← Category.assoc, hmap]
-  rfl
+  rw [← Category.assoc ((AlgebraicGeometry.hopfSpec _).map _),
+    CommHopfAlgCat.hopfSpec_map_comp_quotientSpecι, ← coordinateMap_def,
+    coordinateMap_comp_diagonalTorusCoordinateMap]
 
 variable {A : Type w} [CommRing A] [Algebra R A]
 
@@ -158,18 +138,14 @@ theorem pointsMulEquiv_diagonalTorusCoordinateMap
       upperTriangularGroup (Fin n) A) : GL (Fin n) A) =
       GeneralLinear.pointsMulEquiv n
         (GeneralLinear.diagonalTorusPoints (R := R) (N := n) f) := by
-  have hcoe := pointsMulEquiv_coe (R := R) (n := n) (A := A)
-    (WithConv.toConv (f.ofConv.comp (diagonalTorusCoordinateMap R n).hom))
-  rw [← hcoe, GeneralLinear.pointsMulEquiv_apply]
-  congr 1
-  rw [CommHopfAlgCat.quotientPointsHom_apply]
-  rw [WithConv.ofConv_toConv, AlgHom.comp_assoc, ← coordinateMap_def R n,
-    ← BialgHom.comp_toAlgHom, ← CommHopfAlgCat.hom_comp,
-    coordinateMap_comp_diagonalTorusCoordinateMap]
-  have hmap := GeneralLinear.mapPointsFunctor_diagonalTorusCoordinateMap_app
-    (R := R) (N := n) (CommAlgCat.of R A) f
-  rw [CommHopfAlgCat.mapPointsFunctor_app_apply] at hmap
-  exact hmap
+  have h := CommHopfAlgCat.mapPointsFunctor_eq_quotientPointsHom_of_mkQuotient_comp
+    (definingHopfIdeal R n) (diagonalTorusCoordinateMap R n)
+    (GeneralLinear.diagonalTorusCoordinateMap (R := R) (N := n))
+    (by simpa only [coordinateMap_def] using coordinateMap_comp_diagonalTorusCoordinateMap R n)
+    (CommAlgCat.of R A) f
+  rw [GeneralLinear.mapPointsFunctor_diagonalTorusCoordinateMap_app,
+    CommHopfAlgCat.Hom.mapPointsFunctor_app_apply] at h
+  rw [← pointsMulEquiv_coe, GeneralLinear.pointsMulEquiv_apply, ← h]
 
 end DiagonalTorus
 

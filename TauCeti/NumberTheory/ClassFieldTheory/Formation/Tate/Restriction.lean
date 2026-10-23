@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Tate.Basic
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Tate.Corestriction
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Restriction.AllDegrees
+import TauCeti.RepresentationTheory.Coinvariants
 
 /-!
 # Restriction of finite-layer Tate cohomology
@@ -308,8 +309,8 @@ theorem kerNormTransfer_trans_sub_mem (T : LayerRestriction a b) (T' : LayerRest
   -- Read the augmentation submodule in `htrans` over the image of the smallest Galois group
   -- directly, rather than through the image of the middle one.
   rw [MonoidHom.comp_assoc, ← Subgroup.subtype_comp_subgroupOfEquivOfLe hKH,
-    Representation.coinvariantsKer_comp_comp_of_surjective
-      ((T.trans T').galHom.range.subtype) _
+    ← MonoidHom.comp_assoc, Representation.coinvariantsKer_comp_of_surjective
+      ((c.rep F).ρ.comp ((T.trans T').galHom.range.subtype)) _
       (Subgroup.subgroupOfEquivOfLe hKH).surjective] at htrans
   -- Reading an element of the middle layer back to the smallest one directly agrees with going
   -- across to the largest and back along the composite.
@@ -319,7 +320,7 @@ theorem kerNormTransfer_trans_sub_mem (T : LayerRestriction a b) (T' : LayerRest
     exact congrArg (T.repIso F).inv.hom ((T'.repIso F).hom_inv_id_apply u).symm
   rw [kerNormTransfer_apply, kerNormTransfer_apply, kerNormTransfer_apply, hrep, ← map_sub]
   refine Representation.coinvariantsKer_map_le
-    (ρ := (c.rep F).ρ.comp ((T.trans T').galHom.range).subtype)
+    ((c.rep F).ρ.comp ((T.trans T').galHom.range).subtype)
     (MonoidHom.ofInjective (T.trans T').galHom_injective).symm
     (((T.trans T').repIso F).inv.hom.toLinearMap) (repIso_inv_comm_apply (T.trans T') F)
     (Submodule.mem_map_of_mem ?_)

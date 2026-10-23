@@ -16,15 +16,15 @@ lists `ℚ(√-5)`, with discriminant `-20` and genus field `ℚ(√-1, √5)`, 
 discriminant `-84` and genus field `ℚ(√-1, √-3, √-7)`. This file establishes the
 fundamental-discriminant component of those examples: each discriminant is derived as a product
 of prime discriminants through
-`isFundamentalDiscriminant_mul_prod_oddPrimeDiscriminant_of_isEvenPrimeDiscriminant`, rather than
+`isFundamentalDiscr_mul_prod_oddPrimeDiscriminant_of_isEvenPrimeDiscriminant`, rather than
 by unfolding the definition. Their class-group and concrete genus-field identifications remain
 future work.
 
 ## Main results
 
-* `TauCeti.Multiquadratic.isFundamentalDiscriminant_neg_twenty`: `-20` is a fundamental
+* `TauCeti.Multiquadratic.isFundamentalDiscr_neg_twenty`: `-20` is a fundamental
   discriminant.
-* `TauCeti.Multiquadratic.isFundamentalDiscriminant_neg_eighty_four`: `-84` is a fundamental
+* `TauCeti.Multiquadratic.isFundamentalDiscr_neg_eighty_four`: `-84` is a fundamental
   discriminant.
 -/
 
@@ -34,8 +34,8 @@ namespace TauCeti.Multiquadratic
 
 /-- **Worked example.** `-20`, the discriminant of `ℚ(√-5)`, is a fundamental discriminant: it is
 the product of the prime discriminants `-4` and `5`. -/
-theorem isFundamentalDiscriminant_neg_twenty : IsFundamentalDiscriminant (-20) := by
-  have h := isFundamentalDiscriminant_mul_prod_oddPrimeDiscriminant_of_isEvenPrimeDiscriminant
+theorem isFundamentalDiscr_neg_twenty : Int.IsFundamentalDiscr (-20) := by
+  have h := isFundamentalDiscr_mul_prod_oddPrimeDiscriminant_of_isEvenPrimeDiscriminant
     isEvenPrimeDiscriminant_neg_four (s := ({5} : Finset ℕ)) (p := id)
     (by intro i hi; simp only [Finset.mem_singleton] at hi; subst hi; norm_num)
     (by intro i hi; simp only [Finset.mem_singleton] at hi; subst hi; exact Nat.odd_iff.mpr rfl)
@@ -47,12 +47,12 @@ theorem isFundamentalDiscriminant_neg_twenty : IsFundamentalDiscriminant (-20) :
 
 /-- **Worked example.** `-84`, the discriminant of `ℚ(√-21)`, is a fundamental discriminant: it is
 the product of the prime discriminants `-4`, `-3` and `-7`. -/
-theorem isFundamentalDiscriminant_neg_eighty_four : IsFundamentalDiscriminant (-84) := by
-  have h := isFundamentalDiscriminant_mul_prod_oddPrimeDiscriminant_of_isEvenPrimeDiscriminant
+theorem isFundamentalDiscr_neg_eighty_four : Int.IsFundamentalDiscr (-84) := by
+  have h := isFundamentalDiscr_mul_prod_oddPrimeDiscriminant_of_isEvenPrimeDiscriminant
     isEvenPrimeDiscriminant_neg_four (s := ({3, 7} : Finset ℕ)) (p := id)
     (by intro i hi; fin_cases hi <;> norm_num)
     (by intro i hi; fin_cases hi <;> exact Nat.odd_iff.mpr rfl)
-    (by intro i hi j hj hij; simpa using hij)
+    (by intro i _ j _ hij; simpa using hij)
   have h3 : oddPrimeDiscriminant 3 = -3 := oddPrimeDiscriminant_of_mod_four_eq_three (by norm_num)
   have h7 : oddPrimeDiscriminant 7 = -7 := oddPrimeDiscriminant_of_mod_four_eq_three (by norm_num)
   have hval : (-4 : ℤ) * ∏ i ∈ ({3, 7} : Finset ℕ), oddPrimeDiscriminant (id i) = -84 := by

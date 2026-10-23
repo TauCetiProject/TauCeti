@@ -48,20 +48,20 @@ faithful representation in `GL(n, R)`. -/
 instance _root_.TauCeti.QuadraticMap.instTopologicalSpaceSpecialOrthogonalGroupPi
     (Q : QuadraticMap R (n → R) N) :
     TopologicalSpace (specialOrthogonalGroup Q) :=
-  TopologicalSpace.induced (specialOrthogonalToGeneralLinear Q) inferInstance
+  TopologicalSpace.induced (Q.specialOrthogonalToGeneralLinear) inferInstance
 
 /-- The coordinate inclusion of a special orthogonal group is a topological embedding. -/
 theorem _root_.TauCeti.QuadraticMap.isEmbedding_specialOrthogonalToGeneralLinear
     (Q : QuadraticMap R (n → R) N) :
-    Topology.IsEmbedding (specialOrthogonalToGeneralLinear Q) :=
-  (specialOrthogonalToGeneralLinear_injective Q).isEmbedding_induced
+    Topology.IsEmbedding (Q.specialOrthogonalToGeneralLinear) :=
+  (Q.specialOrthogonalToGeneralLinear_injective).isEmbedding_induced
 
 /-- A special orthogonal group in coordinates over a topological ring is a topological group. -/
 instance _root_.TauCeti.QuadraticMap.instIsTopologicalGroupSpecialOrthogonalGroupPi
     [IsTopologicalRing R]
     (Q : QuadraticMap R (n → R) N) :
     IsTopologicalGroup (specialOrthogonalGroup Q) :=
-  isTopologicalGroup_induced (specialOrthogonalToGeneralLinear Q)
+  isTopologicalGroup_induced (Q.specialOrthogonalToGeneralLinear)
 
 /-- A special orthogonal group in Hausdorff coordinates is Hausdorff. -/
 instance _root_.TauCeti.QuadraticMap.instT2SpaceSpecialOrthogonalGroupPi [T2Space R]

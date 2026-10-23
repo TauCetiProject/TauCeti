@@ -17,11 +17,11 @@ This file makes that split exact: the pairs are disjoint, have one common column
 The last case occurs exactly when the two rectangle moves return to the source state.
 
 The finite set `GridRectangleDecomposition.commonSideColumns` is the intersection of the two
-two-element side sets. Its cardinality is therefore at most two. Cardinality zero is the existing
-predicate `HasDisjointSides`; cardinality one is named `HasOneCommonSide`; and cardinality two is
-equivalent to equality of the source and target states. Consequently a nondiagonal coefficient
-of the differential square has precisely the two geometric cases used by the later pairing:
-disjoint rectangles or rectangles sharing exactly one side column.
+two-element side sets. Its cardinality is therefore at most two. Cardinality zero is the predicate
+`HasDisjointSides`; cardinality one is named `HasOneCommonSide`; and cardinality two is equivalent
+to equality of the source and target states. Consequently a nondiagonal coefficient of the
+differential square has precisely the two geometric cases of the rectangle pairing: disjoint
+rectangles or rectangles sharing exactly one side column.
 
 ## Main definitions
 
@@ -29,6 +29,9 @@ disjoint rectangles or rectangles sharing exactly one side column.
   rectangles in a decomposition.
 * `TauCeti.GridRectangleDecomposition.HasOneCommonSide`: the two rectangles share exactly one
   side column.
+* `TauCeti.GridRectangleDecomposition.HasSameSideOverlap` and
+  `TauCeti.GridRectangleDecomposition.HasMixedSideOverlap`: the common column has the same or
+  opposite orientation in the two rectangles.
 
 ## Main results
 
@@ -36,6 +39,10 @@ disjoint rectangles or rectangles sharing exactly one side column.
   are common.
 * `TauCeti.GridRectangleDecomposition.card_commonSideColumns_eq_two_iff`: both side columns are
   common exactly for a diagonal two-step path.
+* `TauCeti.GridRectangleDecomposition.hasOneCommonSide_iff_sameSideOverlap_or_mixedSideOverlap`:
+  the same-side and mixed-side orientations exhaust the one-common-side case.
+* `TauCeti.GridRectangleDecomposition.sum_filter_not_hasDisjointSides_eq_sameSide_add_mixedSide`:
+  off the diagonal, any weighted family splits into its two overlap orientations.
 * `TauCeti.GridRectangleDecomposition.hasDisjointSides_or_hasOneCommonSide_or_eq`: every
   decomposition belongs to one of the three cases.
 * `TauCeti.GridRectangleDecomposition.hasDisjointSides_of_disjoint`: a decomposition whose target
@@ -54,10 +61,8 @@ disjoint rectangles or rectangles sharing exactly one side column.
 
 ## References
 
-This supplies the side-overlap case split for
-`TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane G.3, "The complexes and `∂² = 0`".
-The split is the opening bookkeeping of the juxtaposition proof in
-Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapter 4.6.
+The split is the opening bookkeeping of the juxtaposition proof in Ozsváth--Stipsicz--Szabó, *Grid
+Homology for Knots and Links*, Chapter 4.6.
 -/
 
 public section
@@ -88,6 +93,30 @@ theorem card_commonSideColumns_le_two (D : GridRectangleDecomposition x z) :
 def HasOneCommonSide (D : GridRectangleDecomposition x z) : Prop :=
   D.commonSideColumns.card = 1
 
+/-- Two rectangles share exactly one side column, with that column initial for both rectangles or
+terminal for both rectangles. -/
+def HasSameSideOverlap (D : GridRectangleDecomposition x z) : Prop :=
+  D.HasOneCommonSide ∧
+    (D.first.left = D.second.left ∨ D.first.right = D.second.right)
+
+/-- Two rectangles share exactly one side column, with that column initial for one rectangle and
+terminal for the other. -/
+def HasMixedSideOverlap (D : GridRectangleDecomposition x z) : Prop :=
+  D.HasOneCommonSide ∧
+    (D.first.left = D.second.right ∨ D.first.right = D.second.left)
+
+/-- The defining alternatives for a same-side overlap. -/
+theorem hasSameSideOverlap_iff (D : GridRectangleDecomposition x z) :
+    D.HasSameSideOverlap ↔ D.HasOneCommonSide ∧
+      (D.first.left = D.second.left ∨ D.first.right = D.second.right) :=
+  Iff.rfl
+
+/-- The defining alternatives for a mixed-side overlap. -/
+theorem hasMixedSideOverlap_iff (D : GridRectangleDecomposition x z) :
+    D.HasMixedSideOverlap ↔ D.HasOneCommonSide ∧
+      (D.first.left = D.second.right ∨ D.first.right = D.second.left) :=
+  Iff.rfl
+
 /-- Having one common side means that there is a unique column which is a side of both
 rectangles. -/
 theorem hasOneCommonSide_iff_existsUnique (D : GridRectangleDecomposition x z) :
@@ -95,6 +124,65 @@ theorem hasOneCommonSide_iff_existsUnique (D : GridRectangleDecomposition x z) :
       ∃! c : Fin n, c ∈ D.first.sideColumns ∧ c ∈ D.second.sideColumns := by
   rw [HasOneCommonSide, Finset.card_eq_one_iff_existsUnique]
   simp only [mem_commonSideColumns]
+
+/-- Two rectangles sharing their initial side and having distinct terminal sides share exactly
+one side column. -/
+theorem hasOneCommonSide_of_left_eq_left (D : GridRectangleDecomposition x z)
+    (hcommon : D.first.left = D.second.left)
+    (hother : D.first.right ≠ D.second.right) : D.HasOneCommonSide := by
+  apply D.hasOneCommonSide_iff_existsUnique.mpr
+  refine ⟨D.first.left, ?_, ?_⟩
+  · simp [GridRectangleBetween.mem_sideColumns, hcommon]
+  · intro c hc
+    simp only [GridRectangleBetween.mem_sideColumns, ← hcommon] at hc
+    grind
+
+/-- Two rectangles sharing their terminal side and having distinct initial sides share exactly
+one side column. -/
+theorem hasOneCommonSide_of_right_eq_right (D : GridRectangleDecomposition x z)
+    (hcommon : D.first.right = D.second.right)
+    (hother : D.first.left ≠ D.second.left) : D.HasOneCommonSide := by
+  apply D.hasOneCommonSide_iff_existsUnique.mpr
+  refine ⟨D.first.right, ?_, ?_⟩
+  · simp [GridRectangleBetween.mem_sideColumns, hcommon]
+  · intro c hc
+    simp only [GridRectangleBetween.mem_sideColumns, ← hcommon] at hc
+    grind
+
+/-- Two rectangles sharing their initial side, the second ending strictly inside the first's
+column interval, share exactly one side column. -/
+theorem hasOneCommonSide_of_left_eq_left_of_mem_cIoo (D : GridRectangleDecomposition x z)
+    (hcommon : D.first.left = D.second.left)
+    (hcol : D.second.right ∈ Grid.cIoo D.first.left D.first.right) : D.HasOneCommonSide := by
+  exact D.hasOneCommonSide_of_left_eq_left hcommon (Grid.ne_right_of_mem_cIoo hcol).symm
+
+/-- Two rectangles, the first ending where the second starts, whose other sides differ share
+exactly one side column. -/
+theorem hasOneCommonSide_of_right_eq_left (D : GridRectangleDecomposition x z)
+    (hcommon : D.first.right = D.second.left) (hother : D.first.left ≠ D.second.right) :
+    D.HasOneCommonSide := by
+  apply D.hasOneCommonSide_iff_existsUnique.mpr
+  refine ⟨D.first.right, ?_, ?_⟩
+  · simp [GridRectangleBetween.mem_sideColumns, hcommon]
+  · intro c hc
+    simp only [GridRectangleBetween.mem_sideColumns, hcommon] at hc
+    have hfirst := D.first.left_ne_right
+    have hsecond := D.second.left_ne_right
+    grind
+
+/-- Two rectangles, the first starting where the second ends, whose other sides differ share
+exactly one side column. -/
+theorem hasOneCommonSide_of_left_eq_right (D : GridRectangleDecomposition x z)
+    (hcommon : D.first.left = D.second.right) (hother : D.first.right ≠ D.second.left) :
+    D.HasOneCommonSide := by
+  apply D.hasOneCommonSide_iff_existsUnique.mpr
+  refine ⟨D.first.left, ?_, ?_⟩
+  · simp [GridRectangleBetween.mem_sideColumns, hcommon]
+  · intro c hc
+    simp only [GridRectangleBetween.mem_sideColumns, hcommon] at hc
+    have hfirst := D.first.left_ne_right
+    have hsecond := D.second.left_ne_right
+    grind
 
 /-- If two rectangles share exactly one side column, that column occurs in one of the four
 possible ordered-side positions, and the two noncommon sides are distinct. -/
@@ -123,6 +211,33 @@ theorem side_eq_cases_of_hasOneCommonSide (D : GridRectangleDecomposition x z)
     refine ⟨hcfirst.symm.trans hcsecond, fun hother => ?_⟩
     have := hunique D.first.left ⟨by simp, by simp [← hother]⟩
     exact D.first.left_ne_right (this.trans hcfirst)
+
+/-- An overlap of exactly one side is either same-side or mixed-side. -/
+theorem hasSameSideOverlap_or_hasMixedSideOverlap (D : GridRectangleDecomposition x z)
+    (h : D.HasOneCommonSide) : D.HasSameSideOverlap ∨ D.HasMixedSideOverlap := by
+  rcases D.side_eq_cases_of_hasOneCommonSide h with
+    ⟨hleft, -⟩ | ⟨hmixed, -⟩ | ⟨hmixed, -⟩ | ⟨hright, -⟩
+  · exact Or.inl ⟨h, Or.inl hleft⟩
+  · exact Or.inr ⟨h, Or.inl hmixed⟩
+  · exact Or.inr ⟨h, Or.inr hmixed⟩
+  · exact Or.inl ⟨h, Or.inr hright⟩
+
+/-- Sharing exactly one side is equivalent to having a same-side or mixed-side overlap. -/
+theorem hasOneCommonSide_iff_sameSideOverlap_or_mixedSideOverlap
+    (D : GridRectangleDecomposition x z) :
+    D.HasOneCommonSide ↔ D.HasSameSideOverlap ∨ D.HasMixedSideOverlap := by
+  constructor
+  · exact D.hasSameSideOverlap_or_hasMixedSideOverlap
+  · rintro (h | h) <;> exact h.1
+
+/-- Same-side and mixed-side overlaps are mutually exclusive. -/
+theorem not_hasMixedSideOverlap_of_hasSameSideOverlap (D : GridRectangleDecomposition x z)
+    (h : D.HasSameSideOverlap) : ¬D.HasMixedSideOverlap := by
+  rintro ⟨-, hmixed⟩
+  rcases D.side_eq_cases_of_hasOneCommonSide h.1 with
+    ⟨hleft, hright⟩ | ⟨hleft, hright⟩ | ⟨hleft, hright⟩ | ⟨hleft, hright⟩ <;>
+      rcases h.2 with hsame | hsame <;> rcases hmixed with hmixed | hmixed <;>
+        grind [D.first.left_ne_right, D.second.left_ne_right]
 
 /-- If two rectangles share exactly one side column, their union of side columns has cardinality
 three. -/
@@ -185,7 +300,7 @@ theorem target_apply_ne_iff_mem_sideColumns_union (D : GridRectangleDecompositio
     z c ≠ x c ↔ c ∈ D.first.sideColumns ∪ D.second.sideColumns := by
   constructor
   · intro hne
-    contrapose! hne
+    contrapose hne
     rw [Finset.mem_union, not_or] at hne
     exact D.target_apply_of_notMem_sideColumns hne.1 hne.2
   · intro hc
@@ -394,6 +509,48 @@ theorem not_hasDisjointSides_of_hasOneCommonSide (D : GridRectangleDecomposition
   have hzero := D.card_commonSideColumns_eq_zero_iff.mpr hdisjoint
   rw [HasOneCommonSide] at h
   omega
+
+/-- Off the diagonal, failing to have disjoint side pairs is equivalent to having a same-side or
+mixed-side overlap. -/
+theorem not_hasDisjointSides_iff_sameSideOverlap_or_mixedSideOverlap_of_ne
+    (D : GridRectangleDecomposition x z) (hzx : z ≠ x) :
+    ¬D.HasDisjointSides ↔ D.HasSameSideOverlap ∨ D.HasMixedSideOverlap := by
+  rw [← D.hasOneCommonSide_iff_sameSideOverlap_or_mixedSideOverlap]
+  exact ⟨(D.hasDisjointSides_or_hasOneCommonSide_of_ne hzx).resolve_left,
+    D.not_hasDisjointSides_of_hasOneCommonSide⟩
+
+open scoped Classical in
+/-- Every two-step rectangle domain in a diagonal family has nondisjoint side pairs. -/
+@[simp]
+theorem filter_not_hasDisjointSides_eq_self {α : Type*} (S : Finset α)
+    (underlying : α → GridRectangleDecomposition x x) :
+    S.filter (fun D => ¬(underlying D).HasDisjointSides) = S :=
+  Finset.filter_true_of_mem fun D _ hD =>
+    (underlying D).target_ne_source_of_hasDisjointSides hD rfl
+
+open scoped Classical in
+/-- For an off-diagonal family of two-step rectangle domains, the sum over nondisjoint side pairs
+splits into the same-side and mixed-side overlap sums. -/
+theorem sum_filter_not_hasDisjointSides_eq_sameSide_add_mixedSide
+    {α M : Type*} [AddCommMonoid M] (S : Finset α)
+    (underlying : α → GridRectangleDecomposition x z) (w : α → M) (hzx : z ≠ x) :
+    ∑ D ∈ S.filter (fun D => ¬(underlying D).HasDisjointSides), w D =
+      (∑ D ∈ S.filter (fun D => (underlying D).HasSameSideOverlap), w D) +
+        ∑ D ∈ S.filter (fun D => (underlying D).HasMixedSideOverlap), w D := by
+  have hunion :
+      S.filter (fun D => ¬(underlying D).HasDisjointSides) =
+        S.filter (fun D => (underlying D).HasSameSideOverlap) ∪
+          S.filter (fun D => (underlying D).HasMixedSideOverlap) := by
+    ext D
+    simp only [Finset.mem_filter, Finset.mem_union, ← and_or_left,
+      (underlying D).not_hasDisjointSides_iff_sameSideOverlap_or_mixedSideOverlap_of_ne hzx]
+  have hdisjoint : Disjoint
+      (S.filter (fun D => (underlying D).HasSameSideOverlap))
+      (S.filter (fun D => (underlying D).HasMixedSideOverlap)) := by
+    rw [Finset.disjoint_filter]
+    intro D _ hsame
+    exact (underlying D).not_hasMixedSideOverlap_of_hasSameSideOverlap hsame
+  rw [hunion, Finset.sum_union hdisjoint]
 
 end GridRectangleDecomposition
 

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Basic
 import TauCeti.LinearAlgebra.RootSystem.E8Coordinates
-import Mathlib.Data.Rat.Star
+import Mathlib.Algebra.Order.Star.Rat
 
 /-!
 # Exceptional Cartan matrices are of finite type, and the simply-laced ones positive definite

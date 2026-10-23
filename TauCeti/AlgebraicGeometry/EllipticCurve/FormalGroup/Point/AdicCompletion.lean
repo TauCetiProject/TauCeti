@@ -97,8 +97,7 @@ private theorem valued_formalWEval {t : O_v} (ht : t ∈ m_v) :
   rw [WeierstrassCurve.formalWEval_eq_pow_mul_formalUEval W hE]
   push_cast
   rw [map_mul, map_pow, valued_coe_isUnit v
-      (WeierstrassCurve.isUnit_formalUEval W
-        (v.isAdic_maximalIdeal_adicCompletionIntegers (K := K)) ht), mul_one]
+      (WeierstrassCurve.isUnit_formalUEval W hE), mul_one]
 
 private theorem ne_of_valued_lt {a b : O_v}
     (h : Valued.v (a : K_v) < Valued.v (b : K_v)) : a ≠ b :=
@@ -168,7 +167,8 @@ private theorem exists_aux_param [(W.baseChange K_v).IsElliptic] {t : O_v}
       push_cast at hcoe
       rw [htwo', ha₁, zero_mul, zero_add] at hcoe
       have hw0 : (W.formalWEval s : K_v) ≠ 0 :=
-        W.algebraMap_formalWEval_ne_zero (Fact.out : IsAdic m_v) hsm
+        W.algebraMap_formalWEval_ne_zero
+          ((Fact.out : IsAdic m_v).isTopologicallyNilpotent_of_mem hsm)
           ((FaithfulSMul.algebraMap_injective O_v K_v).ne hs0)
       exact (mul_ne_zero ha₃ hw0) hcoe.symm
     · have ha₁O : W.a₁ ≠ 0 := fun h ↦ ha₁ (by simp [h])

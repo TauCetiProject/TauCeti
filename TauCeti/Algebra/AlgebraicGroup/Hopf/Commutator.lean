@@ -40,8 +40,7 @@ closed subgroup scheme containing the image, constructed in
 * J. S. Milne, *Algebraic Groups* (2017), §6d.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Chapter 10.
 
-This is the coordinate prerequisite for the derived group `G_der` in Layer 6 of the
-ReductiveGroups roadmap.
+This is the coordinate prerequisite for the derived group `G_der`.
 -/
 
 public section
@@ -93,7 +92,7 @@ theorem map_comp_commutatorAlgHom (f : H →ₐc[R] K) :
   have hleft :
       AlgHom.mapValue (H := H) (Bialgebra.TensorProduct.map f f).toAlgHom
           (toConv (commutatorAlgHom (R := R) (H := H))) =
-        AlgHom.mapDomain (A := K ⊗[R] K) f
+        BialgHom.mapDomain (A := K ⊗[R] K) f
           (toConv (commutatorAlgHom (R := R) (H := K))) := by
     have hinclLeft :
         (Bialgebra.TensorProduct.map f f).toAlgHom.comp
@@ -115,10 +114,10 @@ theorem map_comp_commutatorAlgHom (f : H →ₐc[R] K) :
           Algebra.TensorProduct.map_comp_includeRight f.toAlgHom f.toAlgHom
     rw [toConv_commutatorAlgHom, toConv_commutatorAlgHom]
     apply WithConv.ofConv_injective
-    simp only [map_mul, map_inv, AlgHom.mapValue_apply, AlgHom.mapDomain_apply]
+    simp only [map_mul, map_inv, AlgHom.mapValue_apply, BialgHom.mapDomain_apply]
     rw [hinclLeft, hinclRight]
   have h := congrArg WithConv.ofConv hleft
-  rw [AlgHom.mapValue_apply, AlgHom.mapDomain_apply, ofConv_toConv, ofConv_toConv,
+  rw [AlgHom.mapValue_apply, BialgHom.mapDomain_apply, ofConv_toConv, ofConv_toConv,
     ofConv_toConv, ofConv_toConv] at h
   exact congrFun (congrArg DFunLike.coe h) x
 

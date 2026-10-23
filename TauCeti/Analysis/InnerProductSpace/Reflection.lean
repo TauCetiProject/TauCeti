@@ -9,19 +9,36 @@ public import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
 import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
 
 /-!
-# Reflection across the orthogonal complement of a line
+# Reflections in inner product spaces
 
-These lemmas describe reflection across the hyperplane perpendicular to a vector in a real
-inner product space. They supply the reflection identities used by the half-space Green kernel.
+For a submodule `K` admitting an orthogonal projection, `Submodule.coe_reflection` expresses the
+reflection across `K`, as a bounded operator, as `2 P_K - 1`.
 
-In dimension at least two, composing the reflections in the hyperplanes orthogonal to a nonzero
-vector `v` and to a nonzero vector orthogonal to `v` gives a linear isometry of determinant `1`
-sending `v` to `-v` (`TauCeti.exists_det_eq_one_apply_eq_neg`).
+The remaining lemmas describe reflection across the hyperplane perpendicular to a vector in a real
+inner product space. They supply the reflection identities used by the half-space Green kernel,
+and the splitting of the squared distance from a point of the hyperplane into the squared distance
+to the foot of a point and its squared height (`TauCeti.norm_sub_sq_eq_of_inner_eq_zero`).
+
+In dimension at least two, every vector `v` is sent to `-v` by a linear isometry of determinant
+`1` (`TauCeti.exists_det_eq_one_apply_eq_neg`). For nonzero `v`, this is the composition of the
+reflections in the hyperplanes orthogonal to `v` and to a nonzero vector orthogonal to `v`.
 -/
 
 public section
 
 noncomputable section
+
+namespace Submodule
+
+variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+
+/-- The reflection across `K`, as a bounded operator, is `2 P_K - 1`. -/
+theorem coe_reflection (K : Submodule 𝕜 E) [K.HasOrthogonalProjection] :
+    (K.reflection : E →L[𝕜] E) = 2 • K.starProjection - 1 := by
+  ext x
+  simp [reflection_apply]
+
+end Submodule
 
 namespace TauCeti
 
@@ -90,6 +107,18 @@ theorem norm_sub_reflection_orthogonal_singleton_sq {v : F} (hv : ‖v‖ = 1) (
   rw [real_inner_comm y v, real_inner_comm x v]
   ring
 
+/-- For a point `y` of the hyperplane perpendicular to a unit vector `v`, the squared distance
+from `y` to `x` splits into the squared distance from `y` to the foot `x - ⟪v, x⟫ v` of `x` and
+the squared height of `x`. -/
+theorem norm_sub_sq_eq_of_inner_eq_zero {E : Type*} [SeminormedAddCommGroup E]
+    [InnerProductSpace ℝ E] {v : E} (hv : ‖v‖ = 1) (x : E) {y : E} (hy : ⟪v, y⟫_ℝ = 0) :
+    ‖y - x‖ ^ 2 = ‖y - (x - ⟪v, x⟫_ℝ • v)‖ ^ 2 + ⟪v, x⟫_ℝ ^ 2 := by
+  have hy' : ⟪y, v⟫_ℝ = 0 := by rwa [real_inner_comm]
+  simp only [norm_sub_sq_real, inner_sub_right, inner_smul_right, norm_smul, hv,
+    mul_one, Real.norm_eq_abs, sq_abs, hy', mul_zero, sub_zero]
+  rw [real_inner_comm x v]
+  ring
+
 /-- Both points in the positive half-space are closer to each other than to the image pole. -/
 theorem norm_sub_lt_norm_sub_reflection_orthogonal_singleton {v x y : F} (hv : ‖v‖ = 1)
     (hx : 0 < ⟪v, x⟫_ℝ) (hy : 0 < ⟪v, y⟫_ℝ) :
@@ -98,12 +127,14 @@ theorem norm_sub_lt_norm_sub_reflection_orthogonal_singleton {v x y : F} (hv : �
   nlinarith [norm_nonneg (y - x), norm_nonneg (y - (ℝ ∙ v)ᗮ.reflection x),
     mul_pos hx hy]
 
-/-- In dimension at least two, a nonzero vector `v` is sent to `-v` by a linear isometry of
-determinant `1`: the product of the reflections in the hyperplanes orthogonal to `v` and to a
-nonzero vector orthogonal to `v`. -/
-theorem exists_det_eq_one_apply_eq_neg [FiniteDimensional ℝ F] (hF : 2 ≤ Module.finrank ℝ F)
-    {v : F} (hv : v ≠ 0) :
+/-- In dimension at least two, every vector `v` is sent to `-v` by a linear isometry of
+determinant `1`. For nonzero `v`, take the product of the reflections in the hyperplanes
+orthogonal to `v` and to a nonzero vector orthogonal to `v`. -/
+theorem exists_det_eq_one_apply_eq_neg (hF : 2 ≤ Module.finrank ℝ F) (v : F) :
     ∃ r : F ≃ₗᵢ[ℝ] F, (LinearEquiv.det r.toLinearEquiv : ℝ) = 1 ∧ r v = -v := by
+  have : FiniteDimensional ℝ F := Module.finite_of_finrank_pos (by omega)
+  by_cases hv : v = 0
+  · exact ⟨LinearIsometryEquiv.refl ℝ F, by simp, by simp [hv]⟩
   have hdet (w : F) (hw : w ≠ 0) :
       (LinearEquiv.det (ℝ ∙ w)ᗮ.reflection.toLinearEquiv : ℝ) = -1 := by
     rw [Submodule.linearEquiv_det_reflection, Submodule.orthogonal_orthogonal,

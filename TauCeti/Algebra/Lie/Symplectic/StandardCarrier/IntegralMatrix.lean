@@ -71,8 +71,8 @@ theorem rootIntMatrix_inr_last :
 @[simp]
 theorem rootIntMatrix_inl_of_ne_last (i : Fin (n + 1)) (hi : i ≠ Fin.last n) :
     rootIntMatrix n (.inl i) =
-      Matrix.single (finSumFinEquiv (Sum.inl i)) (finSumFinEquiv (Sum.inl (next n i hi))) 1 -
-        Matrix.single (finSumFinEquiv (Sum.inr (next n i hi))) (finSumFinEquiv (Sum.inr i)) 1 := by
+      Matrix.single (finSumFinEquiv (Sum.inl i)) (finSumFinEquiv (Sum.inl (Order.succ i))) 1 -
+        Matrix.single (finSumFinEquiv (Sum.inr (Order.succ i))) (finSumFinEquiv (Sum.inr i)) 1 := by
   ext r s
   obtain ⟨a, rfl⟩ := finSumFinEquiv.surjective r
   obtain ⟨b, rfl⟩ := finSumFinEquiv.surjective s
@@ -85,8 +85,8 @@ theorem rootIntMatrix_inl_of_ne_last (i : Fin (n + 1)) (hi : i ≠ Fin.last n) :
 @[simp]
 theorem rootIntMatrix_inr_of_ne_last (i : Fin (n + 1)) (hi : i ≠ Fin.last n) :
     rootIntMatrix n (.inr i) =
-      Matrix.single (finSumFinEquiv (Sum.inl (next n i hi))) (finSumFinEquiv (Sum.inl i)) 1 -
-        Matrix.single (finSumFinEquiv (Sum.inr i)) (finSumFinEquiv (Sum.inr (next n i hi))) 1 := by
+      Matrix.single (finSumFinEquiv (Sum.inl (Order.succ i))) (finSumFinEquiv (Sum.inl i)) 1 -
+        Matrix.single (finSumFinEquiv (Sum.inr i)) (finSumFinEquiv (Sum.inr (Order.succ i))) 1 := by
   ext r s
   obtain ⟨a, rfl⟩ := finSumFinEquiv.surjective r
   obtain ⟨b, rfl⟩ := finSumFinEquiv.surjective s

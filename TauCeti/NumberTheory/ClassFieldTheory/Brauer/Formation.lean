@@ -155,8 +155,8 @@ private theorem explicitInfl2_explicitH2IsoGroupCohomology_symm_H2π
     (cocyclesMap2_apply _ _ _ _ _ _ _ _ _ p.1 p.2).trans ?_))
   rw [Z2AddEquivCocycles₂_symm_coe, TauCeti.groupCohomology.mapCocycles₂_apply]
   refine (congrArg Subtype.val (hφ _)).trans ?_
-  rw [ofOpenNormalRepEquiv_apply_coe, hf, hf, ContinuousMonoidHom.quotientMk_apply,
-    ContinuousMonoidHom.quotientMk_apply, hz]
+  rw [ofOpenNormalRepEquiv_apply_coe, hf, hf, Subgroup.quotientMkContinuousMonoidHom_apply,
+    Subgroup.quotientMkContinuousMonoidHom_apply, hz]
 
 /-- **Inflation into the Brauer group on cocycle classes.** `brInfl V` sends the class of a
 `2`-cocycle `c` of the layer `V ◁ G_K` to the Brauer class of every continuous `2`-cocycle `z` on
@@ -187,6 +187,23 @@ theorem exists_brInfl_eq (x : Br K) :
       (y : (NormalLayer.ofOpenNormal V).H (unitsFormation K) 2), brInfl V y = x := by
   obtain ⟨V, y, rfl⟩ := exists_brLevelInfl_eq x
   exact ⟨V, (layerBrLevelEquiv V).symm y, by rw [brInfl_apply, AddEquiv.apply_symm_apply]⟩
+
+variable {V} in
+/-- If the trivial subgroup is open, its layer contains every Brauer class. -/
+theorem brInfl_surjective_of_toSubgroup_eq_bot
+    (hV : V.toSubgroup = ⊥) : Function.Surjective (brInfl V) := by
+  intro x
+  obtain ⟨U, y, hy⟩ := exists_brLevelInfl_eq x
+  have hVU : V ≤ U := by
+    intro g hg
+    have hg' : g ∈ V.toSubgroup := hg
+    have hg1 : g = 1 := by simpa [hV] using hg'
+    rw [hg1]
+    exact one_mem U
+  refine ⟨(layerBrLevelEquiv V).symm
+    (explicitFiniteQuotientTransition2 _ (UnitsCoeff K) U V hVU y), ?_⟩
+  rw [brInfl_apply, AddEquiv.apply_symm_apply,
+    brLevelInfl_explicitFiniteQuotientTransition2 hVU, hy]
 
 end Inflation
 

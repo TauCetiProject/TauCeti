@@ -191,9 +191,9 @@ theorem nonempty_padicCompletionUnits_tensorRat_linearEquiv
           RingHom.ker (MonoidAlgebra.augmentation ℤ_[p] (L ≃ₐ[K] L)))) ⊗[ℤ_[p]] ℚ_[p])) := by
   have := Module.Finite.right ℚ_[p] K L
   -- Give `L` the local-field structure extending that of `ℚ_[p]`; the statement does not see it.
-  let _ := finiteExtensionValuativeRel ℚ_[p] L
-  let _ := finiteExtensionNormedFieldTopology ℚ_[p] L
-  have := finiteExtension_valuativeExtension ℚ_[p] L
+  let _ := algebraicExtensionValuativeRel ℚ_[p] L
+  let _ := algebraicExtensionNormedFieldTopology ℚ_[p] L
+  have := algebraicExtension_valuativeExtension ℚ_[p] L
   have := finiteExtension_isNonarchimedeanLocalField ℚ_[p] L
   obtain ⟨Φ, hΦ⟩ := exists_injective_linearMap_padicCompletionUnits p L K
   have := module_finite_padicCompletionUnits_padicInt (p := p) (L := L) (by

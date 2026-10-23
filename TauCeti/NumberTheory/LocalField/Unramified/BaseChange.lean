@@ -30,6 +30,8 @@ image of `a` then witnesses the same criterion for `M/F`.
   is generated over `F` by the image of `L`, then `M/F` is unramified.
 * `TauCeti.IsUnramified.of_fieldRange_sup_fieldRange_eq_top`: **composita**; if `M` is the
   compositum of the images of two unramified extensions of `K`, then `M/K` is unramified.
+* `TauCeti.IsUnramified.of_algEquiv`: a local field `K`-isomorphic to an unramified extension of
+  `K` is unramified over `K`.
 
 ## References
 
@@ -116,6 +118,13 @@ theorem IsUnramified.of_fieldRange_sup_fieldRange_eq_top [IsUnramified K L₁] [
     (IntermediateField.adjoin_range_eq_top_of_fieldRange_sup_fieldRange_eq_top ι₁
       ((sup_comm _ _).trans h))
   exact IsUnramified.trans K L₂ M
+
+/-- **Unramifiedness is invariant under isomorphism.** A nonarchimedean local field which is
+`K`-isomorphic to an unramified extension of `K` is unramified over `K`. -/
+theorem IsUnramified.of_algEquiv [IsUnramified K L₁] (e : L₁ ≃ₐ[K] M) : IsUnramified K M :=
+  IsUnramified.of_fieldRange_sup_fieldRange_eq_top (e : L₁ →ₐ[K] M) (e : L₁ →ₐ[K] M) <| by
+    rw [sup_idem, AlgHom.fieldRange_eq_top]
+    exact e.surjective
 
 end Compositum
 

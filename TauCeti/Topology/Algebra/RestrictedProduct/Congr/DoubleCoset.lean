@@ -11,12 +11,12 @@ public import TauCeti.GroupTheory.DoubleCoset.Map
 /-!
 # Change of reference family and double cosets
 
-The change-of-family isomorphism `restrictedProductCongr` identifies the ambient restricted
-products only.  It need not carry the everywhere-integral subgroup of one family onto that of the
-other; the counterexample `exists_map_integralSubgroup_ne` is recorded alongside the isomorphism
-in `TauCeti.Topology.Algebra.RestrictedProduct.Congr.Basic`.  For this reason the induced
-bijection of double-coset spaces, `doubleCosetCongr`, is stated along the transported subgroups
-rather than along the integral subgroup of the new family.
+The coordinatewise identity comparison `restrictedProductCongr` identifies the ambient
+restricted products only. It need not carry the everywhere-integral subgroup of one family onto
+that of the other; the counterexample `exists_map_integralSubgroup_ne` is recorded alongside the
+isomorphism in `TauCeti.Topology.Algebra.RestrictedProduct.Congr.Basic`. For this reason
+`doubleCosetCongr` is stated along the transported subgroups rather than along the integral
+subgroup of the new family.
 
 ## References
 

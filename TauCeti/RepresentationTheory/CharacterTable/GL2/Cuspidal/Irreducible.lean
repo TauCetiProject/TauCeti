@@ -12,14 +12,14 @@ public import Mathlib.NumberTheory.LegendreSymbol.Complex
 -- Non-public: nontriviality of the canonical primitive complex additive character of `F`.
 import TauCeti.NumberTheory.LegendreSymbol.Complex
 -- Non-public: bundling a representation with `FDRep.of` preserves its character.
-import TauCeti.RepresentationTheory.FDRep
+import TauCeti.RepresentationTheory.FDRep.Basic
 -- Non-public: Frobenius reciprocity for class functions turns each pairing with an induced
 -- character into a sum over the inducing subgroup.
 import TauCeti.RepresentationTheory.Induction.FrobeniusReciprocity
 -- Non-public: the `q`-power map fixes the units coming from `F`.
 import TauCeti.FieldTheory.Finite.FrobeniusFixed
 -- Non-public: lifting a unit of `E` lying in `F` to a unit of `F`.
-import TauCeti.Algebra.GroupWithZero.Units.Basic
+import TauCeti.Algebra.Group.Units.Basic
 -- Non-public: a nontrivial additive character of a finite field sums to zero.
 import Mathlib.NumberTheory.LegendreSymbol.AddCharacter
 -- Non-public: a nontrivial character of a finite group into a domain sums to zero.
@@ -119,7 +119,6 @@ private theorem sum_GL2CuspidalVirtualCharacter_mul_GL2ScalarUnipotentRep
           (GL2ScalarUnipotent.mulEquiv F (a, Multiplicative.ofAdd y))⁻¹ =
       (if y = 0 then (Fintype.card F : ℂ) else 0) - ψ (-y) := by
     intro a y
-    have hμa : (μ a : ℂ) ≠ 0 := Units.ne_zero _
     have hψy : ψ y ≠ 0 := (ψ.val_isUnit y).ne_zero
     rw [character_GL2ScalarUnipotentRep, map_inv, GL2ScalarUnipotent.linearChar_mulEquiv,
       GL2ScalarUnipotent.coe_mulEquiv_apply_eq_jordanGL]
@@ -248,7 +247,7 @@ theorem characterPairing_GL2ScalarUnipotentInduction_GL2CuspidalVirtualCharacter
   classical
   have hG : IsUnit (Nat.card (GL (Fin 2) F) : ℂ) :=
     (Nat.cast_ne_zero.mpr Nat.card_pos.ne').isUnit
-  rw [GL2ScalarUnipotentInduction_def, ← ClassFunction.ind_ofFDRep, characterPairing_ind hG,
+  rw [GL2ScalarUnipotentInduction_def, ← Subgroup.indClassFunction_ofFDRep, characterPairing_ind hG,
     ClassFunction.characterPairing_symm, ClassFunction.characterPairing_apply]
   simp only [ClassFunction.comap_apply, Subgroup.coe_subtype, ClassFunction.ofFDRep_apply]
   rw [sum_GL2CuspidalVirtualCharacter_mul_GL2ScalarUnipotentRep θ hψ,
@@ -269,7 +268,7 @@ theorem characterPairing_GL2EllipticInduction_GL2CuspidalVirtualCharacter {θ : 
   classical
   have hG : IsUnit (Nat.card (GL (Fin 2) F) : ℂ) :=
     (Nat.cast_ne_zero.mpr Nat.card_pos.ne').isUnit
-  rw [GL2EllipticInduction_def, ← ClassFunction.ind_ofFDRep, characterPairing_ind hG,
+  rw [GL2EllipticInduction_def, ← Subgroup.indClassFunction_ofFDRep, characterPairing_ind hG,
     ClassFunction.characterPairing_symm, ClassFunction.characterPairing_apply]
   simp only [ClassFunction.comap_apply, Subgroup.coe_subtype, ClassFunction.ofFDRep_apply]
   rw [sum_GL2CuspidalVirtualCharacter_mul_GL2NonSplitTorusRep hθ ψ, mul_zero]

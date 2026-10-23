@@ -56,7 +56,7 @@ theorem hilbertSymbol_unit_eq_ite_of_odd (h2 : IsUnit (2 : 𝒪[K]))
   by_cases hu : IsSquare uK
   · simp only [(hsq.mp hu), ↓reduceIte]
     exact hilbertSymbol_eq_one_of_isSquare_left hu b
-  · obtain ⟨Δ, hΔsq, hΔval, hΔ⟩ := exists_unramified_class (two_ne_zero_of_isUnit_two h2)
+  · obtain ⟨Δ, hΔsq, hΔval, -, hΔ⟩ := exists_unramified_class (two_ne_zero_of_isUnit_two h2)
     have hΔeven : Even (normalizedValuation K Δ).toAdd := by
       rw [hΔval]
       exact ⟨0, by simp⟩

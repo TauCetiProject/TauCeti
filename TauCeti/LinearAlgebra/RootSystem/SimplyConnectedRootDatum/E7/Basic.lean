@@ -18,8 +18,7 @@ first seven entries are the Bourbaki simple roots; the remaining positive roots 
 height, followed by their negatives. Completeness of the table among the norm-two vectors is proved
 in `TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.E7.Lattice`.
 
-The enumeration is the root-data input for Layer 6 of the root-systems roadmap. It follows
-Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Plate VI.
+The enumeration follows Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Plate VI.
 -/
 
 public section

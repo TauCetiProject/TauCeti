@@ -9,13 +9,13 @@ public import TauCeti.Topology.Algebra.CliffordAlgebra.Lipschitz.OpenMap
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Lipschitz.Norm
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Closed
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Projection
-public import TauCeti.Topology.Algebra.QuadraticForm.OrthogonalGroup.Compact
+public import TauCeti.Topology.Algebra.QuadraticForm.OrthogonalGroup.Compact.Basic
 public import Mathlib.Topology.Maps.Proper.CompactlyGenerated
 import Mathlib.Analysis.Normed.Field.ProperSpace
 import TauCeti.FieldTheory.SquareClassGroup.Multiplicative
 import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Basic
+import TauCeti.LinearAlgebra.QuadraticForm.Real
 import TauCeti.LinearAlgebra.QuadraticForm.Representation
-import TauCeti.Topology.Algebra.Group.Subgroup
 import TauCeti.Topology.Compactness.LocallyCompact
 
 /-!
@@ -51,6 +51,8 @@ form an unbounded family. This direction holds over any nontrivially normed fiel
   not compact.
 * `CliffordAlgebra.isCompact_spinGroup_iff`: the Spin group of a nondegenerate form is compact
   exactly when the form is anisotropic.
+* `CliffordAlgebra.isCompact_spinGroup_iff_posDef_or_negDef`: over `ℝ`, the Spin group of a
+  nondegenerate form is compact exactly when the form is positive or negative definite.
 
 ## References
 
@@ -77,7 +79,8 @@ invertible, the Spin group is not a compact subset of the Clifford algebra. -/
 theorem not_isCompact_spinGroup (hQ : Q.Nondegenerate) (hiso : ¬Q.Anisotropic) :
     ¬IsCompact (spinGroup Q : Set (CliffordAlgebra Q)) := by
   intro hcpt
-  obtain ⟨u, v, -, hu, hv, huv⟩ := hQ.exists_isotropic_pair hiso
+  obtain ⟨u, v, -, hu, hv, huv⟩ :=
+    _root_.QuadraticMap.exists_isotropic_pair_of_radical_eq_bot hQ.radical_eq_bot hiso
   have : CompactSpace (spinGroup Q) := isCompact_iff_compactSpace.mp hcpt
   refine QuadraticMap.not_isCompact_of_hyperbolicPairTorus_sq_mem Q hu hv huv
     (S := range fun x => ((spinToOrthogonal Q x : QuadraticMap.orthogonalGroup Q) : V ≃ₗ[K] V))
@@ -171,10 +174,9 @@ theorem isProperMap_spinToSpecialOrthogonal (hQ : Q.Nondegenerate) :
   have h : QuadraticMap.specialOrthogonalToOrthogonal Q ∘ spinToSpecialOrthogonal Q =
       spinToOrthogonal Q :=
     funext (specialOrthogonalToOrthogonal_spinToSpecialOrthogonal Q)
-  have hcont : Continuous (QuadraticMap.specialOrthogonalToOrthogonal Q) :=
-    (Subgroup.continuous_inclusion (QuadraticMap.specialOrthogonalGroup_le_orthogonalGroup Q)).congr
-      fun g => Subtype.ext (QuadraticMap.coe_specialOrthogonalToOrthogonal g).symm
-  exact isProperMap_of_comp_of_t2 (by fun_prop) hcont (h ▸ isProperMap_spinToOrthogonal Q hQ)
+  exact isProperMap_of_comp_of_t2 (by fun_prop)
+    (_root_.QuadraticMap.continuous_specialOrthogonalToOrthogonal Q)
+    (h ▸ isProperMap_spinToOrthogonal Q hQ)
 
 /-- **Compactness of the Spin group.** For a nondegenerate quadratic form on a finite-dimensional
 space over a locally compact nontrivially normed field in which `2` is invertible, such as `ℝ` or
@@ -189,5 +191,15 @@ theorem isCompact_spinGroup_iff (hQ : Q.Nondegenerate) :
   rw [preimage_univ, Topology.IsInducing.subtypeVal.isCompact_iff, image_univ,
     Subtype.range_coe] at this
   exact this
+
+/-- **Compactness of a real Spin group.** The Spin group of a nondegenerate quadratic form on a
+finite-dimensional real vector space is compact exactly when the form is positive or negative
+definite. This includes dimension zero, where both sides hold. -/
+theorem isCompact_spinGroup_iff_posDef_or_negDef {W : Type*} [AddCommGroup W] [Module ℝ W]
+    [FiniteDimensional ℝ W] (Q : QuadraticForm ℝ W) (hQ : Q.Nondegenerate) :
+    IsCompact (spinGroup Q : Set (CliffordAlgebra Q)) ↔ Q.PosDef ∨ (-Q).PosDef := by
+  let _ : Invertible (2 : ℝ) := invertibleOfNonzero two_ne_zero
+  exact (isCompact_spinGroup_iff Q hQ).trans
+    (_root_.QuadraticForm.anisotropic_iff_posDef_or_negDef Q)
 
 end CliffordAlgebra

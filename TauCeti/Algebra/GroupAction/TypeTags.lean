@@ -106,4 +106,12 @@ theorem toAdditive_apply (f : A →*[M] B) (x : Additive A) :
     f.toAdditive x = Additive.ofMul (f x.toMul) :=
   (rfl)
 
+/-- Reading equivariant monoid homomorphisms additively commutes with composition. -/
+@[simp]
+theorem toAdditive_comp {C : Type*} [Monoid C] [MulDistribMulAction M C]
+    (g : B →*[M] C) (f : A →*[M] B) :
+    (g.comp f).toAdditive = g.toAdditive.comp f.toAdditive := by
+  ext x
+  simp
+
 end MulDistribMulActionHom

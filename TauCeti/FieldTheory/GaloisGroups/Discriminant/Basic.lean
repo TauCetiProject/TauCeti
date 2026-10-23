@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.Galois.Infinite
-public import Mathlib.FieldTheory.PolynomialGaloisGroup
-public import Mathlib.GroupTheory.SpecificGroups.Alternating
+public import TauCeti.FieldTheory.GaloisGroups.Parity
 public import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
 
 /-!
@@ -55,6 +54,15 @@ nothing; this is recorded as
   valid away from characteristic `2`.
 * `Polynomial.Monic.isSquare_discr_of_char_two`: in characteristic `2` the discriminant of every
   monic polynomial is a square, so the test is vacuous there.
+* `Polynomial.Monic.isSquare_discr_iff_sign_eq_one`: the discriminant test in terms of the parity
+  character `Polynomial.Gal.sign`, with no choice of splitting extension.
+
+For a quadratic, the Galois image is even exactly when the quadratic has a root in the base field,
+in every characteristic and without reference to the discriminant
+(`Polynomial.Gal.range_le_alternatingGroup_iff_exists_isRoot_of_natDegree_eq_two`,
+in `TauCeti.FieldTheory.GaloisGroups.Parity`). Away from characteristic `2`, together with the
+quadratic formula `Polynomial.isSquare_discr_iff_exists_isRoot_of_degree_eq_two` this is the
+discriminant test for quadratics.
 
 ## References
 
@@ -84,7 +92,7 @@ permutation that `ϕ` induces on the roots of `f`. -/
 @[simp]
 theorem _root_.AlgEquiv.map_discrSqrt (ϕ : E ≃ₐ[F] E) (e : Fin f.natDegree ≃ f.rootSet E) :
     ϕ (discrSqrt e) =
-      Equiv.Perm.sign (Gal.galActionHom f E (Gal.restrict f E ϕ)) • discrSqrt e := by
+      Gal.sign f (Gal.restrict f E ϕ) • discrSqrt e := by
   -- Transport the induced permutation of the root set to a permutation of `Fin f.natDegree`
   -- along the numbering; the sign is unchanged, and `TauCeti.discrSqrt_trans` applies.
   obtain ⟨ρ, hcongr⟩ : ∃ ρ : Equiv.Perm (Fin f.natDegree),
@@ -103,7 +111,8 @@ theorem _root_.AlgEquiv.map_discrSqrt (ϕ : E ≃ₐ[F] E) (e : Fin f.natDegree 
   have hrenumber : discrSqrt (ρ.trans e)
       = ∏ i, ∏ j ∈ Finset.Ioi i, ((e (ρ i) : E) - (e (ρ j) : E)) := by
     simp only [discrSqrt_def, Equiv.trans_apply]
-  rw [himage, ← hrenumber, discrSqrt_trans, ← Equiv.Perm.sign_permCongr e ρ, hcongr]
+  rw [himage, ← hrenumber, discrSqrt_trans, ← Equiv.Perm.sign_permCongr e ρ, hcongr,
+    Gal.sign_galActionHom]
 
 open scoped Classical in
 /-- Away from characteristic `2`, the product of the root differences comes from the base field
@@ -119,10 +128,10 @@ theorem discrSqrt_mem_range_iff [IsGalois F E] (hchar : ringChar F ≠ 2)
   constructor
   · rintro hfix g ⟨σ, rfl⟩
     obtain ⟨ϕ, rfl⟩ := Gal.restrict_surjective f E σ
-    rw [Equiv.Perm.mem_alternatingGroup]
+    rw [Equiv.Perm.mem_alternatingGroup, Gal.sign_galActionHom]
     have hϕ := hfix ϕ
     rw [AlgEquiv.map_discrSqrt] at hϕ
-    rcases Int.units_eq_one_or (Equiv.Perm.sign (Gal.galActionHom f E (Gal.restrict f E ϕ)))
+    rcases Int.units_eq_one_or (Gal.sign f (Gal.restrict f E ϕ))
       with h1 | h1
     · exact h1
     -- An odd permutation would negate a nonzero element and fix it, forcing `2 = 0` in `E`.
@@ -133,7 +142,8 @@ theorem discrSqrt_mem_range_iff [IsGalois F E] (hchar : ringChar F ≠ 2)
       linear_combination -hϕ
     exact (mul_eq_zero.mp hdouble).resolve_left h2
   · intro hle ϕ
-    rw [AlgEquiv.map_discrSqrt, Equiv.Perm.mem_alternatingGroup.mp (hle ⟨_, rfl⟩), one_smul]
+    rw [AlgEquiv.map_discrSqrt, ← Gal.sign_galActionHom f E,
+      Equiv.Perm.mem_alternatingGroup.mp (hle ⟨_, rfl⟩), one_smul]
 
 open scoped Classical in
 /-- **The discriminant test.** For a monic separable polynomial over a field of characteristic
@@ -172,7 +182,7 @@ theorem _root_.Polynomial.Monic.isSquare_discr_of_char_two (hf : f.Monic)
     rw [hf.isSquare_discr_iff_mem_range hsep e, IsGalois.mem_range_algebraMap_iff_fixed]
     intro ϕ
     rw [AlgEquiv.map_discrSqrt]
-    rcases Int.units_eq_one_or (Equiv.Perm.sign (Gal.galActionHom f E (Gal.restrict f E ϕ)))
+    rcases Int.units_eq_one_or (Gal.sign f (Gal.restrict f E ϕ))
       with h1 | h1 <;> rw [h1]
     · rw [one_smul]
     · simp only [Units.smul_def, Units.val_neg, Units.val_one, neg_smul, one_smul]
@@ -181,5 +191,19 @@ theorem _root_.Polynomial.Monic.isSquare_discr_of_char_two (hf : f.Monic)
     simp [hdiscr]
 
 end Galois
+
+open scoped Classical in
+/-- **The discriminant test, intrinsically.** For a monic separable polynomial over a field of
+characteristic other than `2`, the discriminant is a square exactly when the parity character of
+the Galois group is trivial. Unlike
+`Polynomial.Monic.isSquare_discr_iff_range_le_alternatingGroup`, this mentions no splitting
+extension; through `Polynomial.Gal.sign_eq_one_iff_range_le_alternatingGroup` it reads the parity
+of the Galois image in any extension in which `f` splits. -/
+theorem _root_.Polynomial.Monic.isSquare_discr_iff_sign_eq_one (hf : f.Monic) (hsep : f.Separable)
+    (hchar : ringChar F ≠ 2) : IsSquare f.discr ↔ Gal.sign f = 1 := by
+  have : IsGalois F f.SplittingField := IsGalois.of_separable_splitting_field hsep
+  let _ : Fact ((f.map (algebraMap F f.SplittingField)).Splits) := ⟨SplittingField.splits f⟩
+  rw [Gal.sign_eq_one_iff_range_le_alternatingGroup f f.SplittingField]
+  exact hf.isSquare_discr_iff_range_le_alternatingGroup hsep hchar
 
 end TauCeti

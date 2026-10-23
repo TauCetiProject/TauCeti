@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.NumberField.Basic
 public import TauCeti.FieldTheory.Galois.FixedField
+public import TauCeti.FieldTheory.Galois.IsGaloisGroup
 import Mathlib.NumberTheory.RamificationInertia.Galois
 import TauCeti.NumberTheory.NumberField.AutomorphismAction
 
@@ -44,6 +45,8 @@ Uniqueness is not inertness — it excludes splitting, not ramification.
 * `Ideal.comap_inertia_fixedField_eq_subgroupOf`, `Ideal.card_inertia_fixedField_eq_card_inf`: the
   same two statements for the inertia group of `Q` in place of its stabilizer.
 * `NumberField.stabilizer_fixedField_zpowers_eq_top`: over `L ^ ⟨σ⟩`, every automorphism fixes `Q`.
+* `NumberField.isGaloisGroup_ringOfIntegers_fixedField`: `H` is a Galois group of `𝓞 L` over
+  `𝓞 (L ^ H)`.
 * `Ideal.eq_of_smul_eq_of_liesOver_under_fixedField`: `Q` is the only prime of `𝓞 L` lying over
   its contraction to `𝓞 (L ^ ⟨σ⟩)`.
 
@@ -125,6 +128,15 @@ theorem stabilizer_fixedField_zpowers_eq_top {σ : L ≃ₐ[K] L} [Finite (Subgr
   rw [← AlgEquiv.zpowers_toFixedFieldAlgEquiv_eq_top σ]
   exact Subgroup.zpowers_le.2 hmem
 
+/-- **A subgroup is the Galois group of the rings of integers over its fixed field.** This is
+Mathlib's ring-of-integers instance applied to `IsGaloisGroup.fixedField`. Instance search does
+not find it unaided: the action of `H` on `𝓞 L` restricted from `Gal(L/K)` and the one Mathlib's
+instance builds from the action of `H` on `L` agree only after unfolding past instance
+transparency. -/
+instance isGaloisGroup_ringOfIntegers_fixedField [NumberField K] [NumberField L]
+    (H : Subgroup (L ≃ₐ[K] L)) : IsGaloisGroup H (𝓞 ↥(fixedField H)) (𝓞 L) :=
+  instIsGaloisGroupRingOfIntegersOfNumberField ↥(fixedField H) L H
+
 end NumberField
 
 namespace Ideal
@@ -158,9 +170,9 @@ theorem eq_of_smul_eq_of_liesOver_under_fixedField {σ : L ≃ₐ[K] L} {Q : Ide
 
 section FixedFieldSubgroups
 
-omit [NumberField K] [NumberField L]
 variable [FiniteDimensional K L]
 
+omit [NumberField K] [NumberField L] in
 /-- **The decomposition group over a fixed field corresponds to the intersection.**  For a subgroup
 `H` of `Gal(L/K)` and `E = L ^ H`, the Galois correspondence `H ≃* Gal(L/E)` pulls the stabilizer
 of `Q` in `Gal(L/E)` back to the intersection of `H` with the stabilizer of `Q` in `Gal(L/K)`,
@@ -174,6 +186,7 @@ theorem comap_stabilizer_fixedField_eq_subgroupOf (Q : Ideal (𝓞 L)) (H : Subg
   simp only [Subgroup.mem_comap, MulAction.mem_stabilizer_iff, Subgroup.mem_subgroupOf]
   exact Eq.congr_left (H.subgroupEquivAlgEquiv_smul_ideal τ Q)
 
+omit [NumberField K] [NumberField L] in
 /-- A subgroup of `Gal(L / L ^ H)` whose pullback to `H` is `B.subgroupOf H` has as many elements as
 `B ⊓ H`. -/
 private theorem card_eq_card_inf_of_comap_eq (H : Subgroup (L ≃ₐ[K] L))
@@ -185,6 +198,7 @@ private theorem card_eq_card_inf_of_comap_eq (H : Subgroup (L ≃ₐ[K] L))
   exact Nat.card_congr
     (Subgroup.equivMapOfInjective _ _ (subgroupEquivAlgEquiv H).symm.injective).toEquiv
 
+omit [NumberField K] [NumberField L] in
 /-- **The decomposition group over a fixed field has the size of the intersection.**  For a
 subgroup `H` of `Gal(L/K)` and `E = L ^ H`, the stabilizer of `Q` in `Gal(L/E)` has as many
 elements as the intersection of `H` with the stabilizer of `Q` in `Gal(L/K)`. -/
@@ -196,6 +210,7 @@ theorem card_stabilizer_fixedField_eq_card_inf (Q : Ideal (𝓞 L)) (H : Subgrou
       = Nat.card ((MulAction.stabilizer (L ≃ₐ[K] L) Q ⊓ H : Subgroup (L ≃ₐ[K] L))) :=
   card_eq_card_inf_of_comap_eq H (comap_stabilizer_fixedField_eq_subgroupOf Q H)
 
+omit [NumberField K] [NumberField L] in
 /-- **The inertia group over a fixed field corresponds to the intersection.**  For a subgroup `H`
 of `Gal(L/K)` and `E = L ^ H`, the Galois correspondence `H ≃* Gal(L/E)` pulls the inertia group
 of `Q` in `Gal(L/E)` back to the intersection of `H` with the inertia group of `Q` in `Gal(L/K)`,
@@ -212,6 +227,7 @@ theorem comap_inertia_fixedField_eq_subgroupOf (Q : Ideal (𝓞 L)) (H : Subgrou
     NumberField.RingOfIntegers.ext (by simp)
   simp [this]
 
+omit [NumberField K] [NumberField L] in
 /-- **The inertia group over a fixed field has the size of the intersection.**  For a subgroup
 `H` of `Gal(L/K)` and `E = L ^ H`, the inertia group of `Q` in `Gal(L/E)` has as many elements as
 the intersection of `H` with the inertia group of `Q` in `Gal(L/K)`. -/

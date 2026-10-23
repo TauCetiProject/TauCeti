@@ -74,7 +74,7 @@ The resolvent of `f` itself may be inseparable here; this is the case the transf
 theorem exists_le_map_conj_of_isRoot_specialize_tschirnhausPolynomial [Normal F E]
     (hf : f.Monic) (hsep : f.Separable) (hdeg : f.natDegree = n)
     (hT : TschirnhausAdmissible f T) (e : f.rootSet E ≃ Fin n)
-    (hres : (spec.specialize F (f.tschirnhausPolynomial T)).Separable) {a : F}
+    (hres : ResolventSeparationEvidence spec (f.tschirnhausPolynomial T)) {a : F}
     (ha : (spec.specialize F (f.tschirnhausPolynomial T)).IsRoot a) :
     ∃ τ : Equiv.Perm (Fin n),
       (Gal.galActionHom f E).range.map
@@ -114,7 +114,7 @@ conjugate of the subgroup of the specification. -/
 theorem exists_isRoot_specialize_tschirnhausPolynomial_iff_exists_le_map_conj [IsGalois F E]
     (hf : f.Monic) (hsep : f.Separable) (hdeg : f.natDegree = n)
     (hT : TschirnhausAdmissible f T) (e : f.rootSet E ≃ Fin n)
-    (hres : (spec.specialize F (f.tschirnhausPolynomial T)).Separable) :
+    (hres : ResolventSeparationEvidence spec (f.tschirnhausPolynomial T)) :
     (∃ a : F, (spec.specialize F (f.tschirnhausPolynomial T)).IsRoot a) ↔
       ∃ τ : Equiv.Perm (Fin n),
         (Gal.galActionHom f E).range.map
@@ -135,7 +135,7 @@ multiset of sizes of the orbits of the Galois image of `f`, read through `e`, on
 theorem map_natDegree_normalizedFactors_specialize_tschirnhausPolynomial [Normal F E]
     (hf : f.Monic) (hdeg : f.natDegree = n)
     (hT : TschirnhausAdmissible f T) (e : f.rootSet E ≃ Fin n)
-    (hres : (spec.specialize F (f.tschirnhausPolynomial T)).Separable) :
+    (hres : ResolventSeparationEvidence spec (f.tschirnhausPolynomial T)) :
     (UniqueFactorizationMonoid.normalizedFactors
         (spec.specialize F (f.tschirnhausPolynomial T))).map natDegree
       = Finset.univ.val.map fun ω : MulAction.orbitRel.Quotient
@@ -186,7 +186,7 @@ implication is
 theorem HasGaloisLabel.exists_isRoot_specialize_tschirnhausPolynomial_iff
     (h : HasGaloisLabel f j) (hf : f.Monic) (hT : TschirnhausAdmissible f T)
     (spec : ResolventSpec n)
-    (hres : (spec.specialize F (f.tschirnhausPolynomial T)).Separable) :
+    (hres : ResolventSeparationEvidence spec (f.tschirnhausPolynomial T)) :
     (∃ a : F, (spec.specialize F (f.tschirnhausPolynomial T)).IsRoot a) ↔
       ∃ τ : Equiv.Perm (Fin n), referenceSubgroup n j ≤ spec.H.map (MulAut.conj τ).toMonoidHom := by
   have : IsGalois F f.SplittingField := IsGalois.of_separable_splitting_field h.separable

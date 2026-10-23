@@ -215,8 +215,7 @@ variable [IsNoetherian X]
 
 variable [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))]
   (hX : ∀ y : X, coheight y ≤ 1)
-include hX
-
+include hX in
 /-- **Every line bundle on a curve is the sheaf of a Weil divisor.** On a Noetherian integral
 scheme of dimension at most one whose codimension-one local rings are discrete valuation rings,
 every invertible sheaf is isomorphic to `𝒪_X(D)` for some Weil divisor `D`. -/
@@ -226,6 +225,7 @@ theorem exists_nonempty_iso_sheaf (L : InvertibleSheaf X) :
   obtain ⟨D, hD⟩ := L.obj.exists_coeff_eq_neg_ord e hU
   exact ⟨D, ⟨isoSheafOfCoeffEq hX hD⟩⟩
 
+include hX in
 /-- Every line-bundle class on such a curve is the class of `𝒪_X(D)` for a Weil divisor `D`. -/
 theorem toLineBundleClass_surjective : Function.Surjective (toLineBundleClass (X := X) hX) := by
   intro a
@@ -235,14 +235,13 @@ theorem toLineBundleClass_surjective : Function.Surjective (toLineBundleClass (X
   rw [toInvertibleSheaf_obj]
   exact φ.symm
 
+include hX in
 /-- **The map from divisor classes to line-bundle classes is surjective.** -/
 theorem classGroupToLineBundleClass_surjective :
     Function.Surjective (classGroupToLineBundleClass (X := X) hX) := by
   intro a
   obtain ⟨D, rfl⟩ := toLineBundleClass_surjective hX a
   exact ⟨_, classGroupToLineBundleClass_divisorClass hX D⟩
-
-omit hX
 
 variable [hX : Fact (∀ y : X, coheight y ≤ 1)]
 

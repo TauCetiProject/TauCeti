@@ -25,7 +25,7 @@ The proof has two halves.
 
 with `ωᵪ` the central character and `K_C` the class sum. Both `ωᵪ(K_C)` and `χ(g)` are algebraic
 integers (`TauCeti.Representation.isIntegral_centralCharacter_classSumCenter` and
-`TauCeti.Representation.isIntegral_char`), so the average `χ(g) / χ(1)` is one too. That is
+`Representation.isIntegral_char`), so the average `χ(g) / χ(1)` is one too. That is
 `Representation.isIntegral_char_div_finrank`, proved over any algebraically closed field. This
 first half is where the coprimality is spent.
 

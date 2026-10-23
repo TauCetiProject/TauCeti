@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Valuation.Integral
-public import TauCeti.FieldTheory.FunctionField.Place.Basic
-public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Basic
+public import TauCeti.FieldTheory.FunctionField.Place.Adic
 
 /-!
 # Affine models: a place finite on a Dedekind subring is one of its height one primes
@@ -21,8 +20,8 @@ the normalized `𝔭`-adic valuation. The prime in question is the centre `{r : 
 the place on `R`, so the valuation ring of the place is the localization of `R` there. The converse
 — that every height one prime of `R` arises this way, which upgrades this injection into a
 bijection — is not proved here; it is proved in
-`TauCeti/FieldTheory/FunctionField/AffineModel/Prime.lean`, which constructs the place of a
-prime.
+`TauCeti/FieldTheory/FunctionField/AffineModel/Prime.lean`, using the place of a prime from
+`TauCeti/FieldTheory/FunctionField/Place/Adic.lean`.
 
 This is the "places → height one primes" half of the affine-model dictionary that reduces divisor
 theory on the finite chart of a model to Mathlib's factorization calculus for fractional ideals.

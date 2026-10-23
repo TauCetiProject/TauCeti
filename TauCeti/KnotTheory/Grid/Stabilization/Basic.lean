@@ -7,6 +7,9 @@ module
 
 public import Mathlib.Logic.Equiv.Fin.Rotate
 public import TauCeti.KnotTheory.Grid.Diagram.Basic
+public import TauCeti.KnotTheory.Grid.Rotation
+
+import TauCeti.Data.Fin.Basic
 
 /-!
 # Elementary grid stabilization moves
@@ -36,6 +39,23 @@ types, and `GridDiagram.IsDestabilization` reverses the relation.
   stabilization constructions.
 * `TauCeti.GridDiagram.IsStabilization`, `TauCeti.GridDiagram.IsDestabilization`: elementary
   stabilization and destabilization relations.
+
+## Main results
+
+* `TauCeti.GridDiagram.stabilizeO_castSucc_eq_stabilizeX_succ` and
+  `TauCeti.GridDiagram.stabilizeO_succ_eq_stabilizeX_castSucc`: with the new column next to the
+  split column, an `O`-stabilization is the `X`-stabilization of the same column with the new
+  column on the other side.
+* `TauCeti.GridDiagram.stabilizeX_castSucc_swapColumns` and
+  `TauCeti.GridDiagram.stabilizeX_swapRows`: swapping the new column or row of an
+  `X`-stabilization with an adjacent old one moves it to the other side.
+* `TauCeti.GridDiagram.rotate_stabilizeX_succ`: reversing both coordinates exchanges the two
+  corner types of `X`-stabilization, whose new `O`-marking is the north-east or the south-west
+  corner of the new block.
+* `TauCeti.GridDiagram.stabilizeX_last_relabelRows`,
+  `TauCeti.GridDiagram.stabilizeX_last_relabelColumns` and
+  `TauCeti.GridDiagram.stabilizeO_last_relabelColumns`: a cyclic permutation moves a new last row
+  or column to the front.
 
 ## References
 
@@ -188,6 +208,127 @@ theorem splitPoint_castSucc_eq_insertPoint (x : GridState n) (s : Fin n)
       · rw [Fin.succAbove_castSucc_of_le _ _ h.le, ← Fin.succAbove_succ_of_lt _ _ h,
           insertPoint_apply_succAbove]
 
+/-- Splitting the point of column `s` across a column inserted just after it is inserting the
+point `(s.castSucc, newRow)`: the old point of column `s` moves to the new column `s.succ`. -/
+theorem splitPoint_succ_eq_insertPoint (x : GridState n) (s : Fin n) (newRow : Fin (n + 1)) :
+    x.splitPoint s.succ newRow s = x.insertPoint s.castSucc newRow := by
+  rw [splitPoint, Fin.succAbove_succ_self, swapColumns_comm,
+    ← x.splitPoint_castSucc_eq_insertPoint, splitPoint, Fin.succAbove_castSucc_self,
+    swapColumns_swapColumns]
+
+/-- Swapping an inserted column `s.castSucc` with the old column `s` just after it moves the
+inserted column to `s.succ`. -/
+theorem insertPoint_castSucc_swapColumns (x : GridState n) (s : Fin n) (newRow : Fin (n + 1)) :
+    (x.insertPoint s.castSucc newRow).swapColumns s.castSucc s.succ =
+      x.insertPoint s.succ newRow := by
+  simpa only [splitPoint, Fin.succAbove_castSucc_self] using
+    x.splitPoint_castSucc_eq_insertPoint s newRow
+
+/-- Swapping an inserted column `s.succ` with the old column `s` just before it moves the
+inserted column to `s.castSucc`. -/
+theorem insertPoint_succ_swapColumns (x : GridState n) (s : Fin n) (newRow : Fin (n + 1)) :
+    (x.insertPoint s.succ newRow).swapColumns s.castSucc s.succ =
+      x.insertPoint s.castSucc newRow := by
+  simpa only [splitPoint, Fin.succAbove_succ_self, swapColumns_comm] using
+    x.splitPoint_succ_eq_insertPoint s newRow
+
+/-- Reflecting in the diagonal exchanges the roles of the inserted row and column. -/
+theorem transpose_insertPoint (x : GridState n) (newColumn newRow : Fin (n + 1)) :
+    (x.insertPoint newColumn newRow).transpose = x.transpose.insertPoint newRow newColumn :=
+  GridState.ext fun r ↦ by simp [insertPoint, transpose, Equiv.optionCongr_symm]
+
+/-- Reversing both coordinates of a grid state with an inserted point reverses the coordinates of
+the inserted point. -/
+theorem rotate_insertPoint (x : GridState n) (newColumn newRow : Fin (n + 1)) :
+    (x.insertPoint newColumn newRow).rotate = x.rotate.insertPoint newColumn.rev newRow.rev := by
+  refine GridState.ext fun c ↦ ?_
+  induction c using Fin.succAboveCases newColumn.rev with
+  | x => rw [rotate_apply, Fin.rev_rev, insertPoint_apply_newColumn, insertPoint_apply_newColumn]
+  | p i =>
+    rw [rotate_apply, Fin.rev_succAbove, Fin.rev_rev, insertPoint_apply_succAbove,
+      Fin.rev_succAbove, insertPoint_apply_succAbove, rotate_apply]
+
+/-- Reversing both coordinates of a grid state with a split point reverses the inserted row and
+column and the split column. -/
+theorem rotate_splitPoint (x : GridState n) (newColumn newRow : Fin (n + 1))
+    (splitColumn : Fin n) :
+    (x.splitPoint newColumn newRow splitColumn).rotate =
+      x.rotate.splitPoint newColumn.rev newRow.rev splitColumn.rev := by
+  rw [splitPoint, splitPoint, swapColumns_rotate, rotate_insertPoint, Fin.rev_succAbove]
+
+/-- Swapping an inserted row `k.castSucc` with the old row `k` just above it moves the inserted
+row to `k.succ`. -/
+theorem insertPoint_swapRows (x : GridState n) (newColumn : Fin (n + 1)) (k : Fin n) :
+    (x.insertPoint newColumn k.castSucc).swapRows k.castSucc k.succ =
+      x.insertPoint newColumn k.succ := by
+  refine GridState.ext fun c ↦ ?_
+  induction c using Fin.succAboveCases newColumn with
+  | x => simp
+  | p c => simp [Fin.swap_castSucc_succ_succAbove]
+
+/-- Swapping an inserted row `k.castSucc` with the old row `k` just above it moves the inserted
+row of a split point to `k.succ`. -/
+theorem splitPoint_swapRows (x : GridState n) (newColumn : Fin (n + 1)) (k s : Fin n) :
+    (x.splitPoint newColumn k.castSucc s).swapRows k.castSucc k.succ =
+      x.splitPoint newColumn k.succ s := by
+  refine GridState.ext fun c ↦ ?_
+  induction c using Fin.succAboveCases newColumn with
+  | x => simp [Fin.swap_castSucc_succ_succAbove]
+  | p c =>
+    simp only [swapRows_apply, splitPoint_apply_succAbove]
+    split_ifs <;> simp [Fin.swap_castSucc_succ_succAbove]
+
+/-- Cyclically permuting the rows moves an inserted top row to the bottom. -/
+theorem insertPoint_last_relabelRows (x : GridState n) (newColumn : Fin (n + 1)) :
+    (x.insertPoint newColumn (Fin.last n)).relabelRows (finRotate (n + 1)) =
+      x.insertPoint newColumn 0 := by
+  refine GridState.ext fun c ↦ ?_
+  induction c using Fin.succAboveCases newColumn with
+  | x => simp
+  | p c => simp [finRotate_apply, Fin.coeSucc_eq_succ]
+
+/-- Cyclically permuting the rows moves the inserted top row of a split point to the bottom. -/
+theorem splitPoint_last_relabelRows (x : GridState n) (newColumn : Fin (n + 1)) (s : Fin n) :
+    (x.splitPoint newColumn (Fin.last n) s).relabelRows (finRotate (n + 1)) =
+      x.splitPoint newColumn 0 s := by
+  refine GridState.ext fun c ↦ ?_
+  induction c using Fin.succAboveCases newColumn with
+  | x => simp [finRotate_apply, Fin.coeSucc_eq_succ]
+  | p c =>
+    simp only [relabelRows_apply, splitPoint_apply_succAbove]
+    split_ifs <;> simp [finRotate_apply, Fin.coeSucc_eq_succ]
+
+/-- Cyclically permuting the columns moves an inserted last column to the front. -/
+theorem insertPoint_last_relabelColumns (x : GridState n) (newRow : Fin (n + 1)) :
+    (x.insertPoint (Fin.last n) newRow).relabelColumns (finRotate (n + 1)) =
+      x.insertPoint 0 newRow := by
+  refine GridState.ext fun c ↦ ?_
+  induction c using Fin.cases with
+  | zero =>
+    rw [relabelColumns_apply, (Equiv.symm_apply_eq _).mpr finRotate_last.symm,
+      insertPoint_apply_newColumn, insertPoint_apply_newColumn]
+  | succ c =>
+    rw [relabelColumns_apply,
+      (Equiv.symm_apply_eq _).mpr (by rw [finRotate_apply, Fin.coeSucc_eq_succ]),
+      ← Fin.succAbove_last_apply, ← Fin.succAbove_zero_apply, insertPoint_apply_succAbove,
+      insertPoint_apply_succAbove]
+
+/-- Cyclically permuting the columns moves the inserted last column of a split point to the
+front. -/
+theorem splitPoint_last_relabelColumns (x : GridState n) (newRow : Fin (n + 1)) (s : Fin n) :
+    (x.splitPoint (Fin.last n) newRow s).relabelColumns (finRotate (n + 1)) =
+      x.splitPoint 0 newRow s := by
+  refine GridState.ext fun c ↦ ?_
+  induction c using Fin.cases with
+  | zero =>
+    rw [relabelColumns_apply, (Equiv.symm_apply_eq _).mpr finRotate_last.symm,
+      splitPoint_apply_newColumn, splitPoint_apply_newColumn]
+  | succ c =>
+    rw [relabelColumns_apply,
+      (Equiv.symm_apply_eq _).mpr (by rw [finRotate_apply, Fin.coeSucc_eq_succ]),
+      ← Fin.succAbove_last_apply, ← Fin.succAbove_zero_apply, splitPoint_apply_succAbove,
+      splitPoint_apply_succAbove]
+
 end GridState
 
 namespace GridDiagram
@@ -298,6 +439,28 @@ theorem predAbove_X_stabilizeX (s : Fin n) (c : Fin (n + 1)) :
     · simp [h]
     · exact Fin.predAbove_succAbove _ _
 
+/-- Reversing both coordinates of an `O`-stabilization reverses the inserted row and column and
+the split column. -/
+theorem rotate_stabilizeO (newColumn newRow : Fin (n + 1)) (splitColumn : Fin n) :
+    (G.stabilizeO newColumn newRow splitColumn).rotate =
+      G.rotate.stabilizeO newColumn.rev newRow.rev splitColumn.rev := by
+  ext c <;> simp [GridState.rotate_insertPoint, GridState.rotate_splitPoint]
+
+/-- Reversing both coordinates of an `X`-stabilization reverses the inserted row and column and
+the split column. -/
+theorem rotate_stabilizeX (newColumn newRow : Fin (n + 1)) (splitColumn : Fin n) :
+    (G.stabilizeX newColumn newRow splitColumn).rotate =
+      G.rotate.stabilizeX newColumn.rev newRow.rev splitColumn.rev := by
+  ext c <;> simp [GridState.rotate_insertPoint, GridState.rotate_splitPoint]
+
+/-- The half-turn exchanges the two corner types of `X`-stabilization: the stabilization of `G`
+whose new `O`-marking is the north-east corner of the new block is carried to the stabilization
+of `G.rotate` whose new `O`-marking is the south-west corner. -/
+theorem rotate_stabilizeX_succ (s : Fin n) :
+    (G.stabilizeX s.succ (G.X s).succ s).rotate =
+      G.rotate.stabilizeX s.rev.castSucc (G.rotate.X s.rev).castSucc s.rev := by
+  rw [rotate_stabilizeX, Fin.rev_succ, Fin.rev_succ, rotate_X, GridState.rotate_apply, Fin.rev_rev]
+
 /-- Exchanging the marking types turns an `O`-stabilization into an `X`-stabilization. -/
 @[simp]
 theorem stabilizeO_swapMarkings (newColumn newRow : Fin (n + 1)) (splitColumn : Fin n) :
@@ -311,6 +474,86 @@ theorem stabilizeX_swapMarkings (newColumn newRow : Fin (n + 1)) (splitColumn : 
     (G.stabilizeX newColumn newRow splitColumn).swapMarkings =
       G.swapMarkings.stabilizeO newColumn newRow splitColumn := by
   ext c <;> simp
+
+/-- With the new column inserted just before the split column, the `X` state of an
+`X`-stabilization inserts its point in the column `s.succ` of the split marking. -/
+theorem stabilizeX_castSucc_X (s : Fin n) (newRow : Fin (n + 1)) :
+    (G.stabilizeX s.castSucc newRow s).X = G.X.insertPoint s.succ newRow := by
+  rw [stabilizeX_X, GridState.splitPoint_castSucc_eq_insertPoint]
+
+/-- With the new column inserted just after the split column, the `X` state of an
+`X`-stabilization inserts its point in the column `s.castSucc` of the split marking. -/
+theorem stabilizeX_succ_X (s : Fin n) (newRow : Fin (n + 1)) :
+    (G.stabilizeX s.succ newRow s).X = G.X.insertPoint s.castSucc newRow := by
+  rw [stabilizeX_X, GridState.splitPoint_succ_eq_insertPoint]
+
+/-- Splitting the `O`-marking of column `s` with a new column just before it gives the same
+diagram as splitting its `X`-marking with a new column just after it: both put an `O` at
+`(s.succ, newRow)` and an `X` at `(s.castSucc, newRow)`. -/
+theorem stabilizeO_castSucc_eq_stabilizeX_succ (s : Fin n) (newRow : Fin (n + 1)) :
+    G.stabilizeO s.castSucc newRow s = G.stabilizeX s.succ newRow s := by
+  ext1
+  · rw [stabilizeO_O, stabilizeX_O, GridState.splitPoint_castSucc_eq_insertPoint]
+  · rw [stabilizeO_X, stabilizeX_succ_X]
+
+/-- Splitting the `O`-marking of column `s` with a new column just after it gives the same
+diagram as splitting its `X`-marking with a new column just before it. -/
+theorem stabilizeO_succ_eq_stabilizeX_castSucc (s : Fin n) (newRow : Fin (n + 1)) :
+    G.stabilizeO s.succ newRow s = G.stabilizeX s.castSucc newRow s := by
+  ext1
+  · rw [stabilizeO_O, stabilizeX_O, GridState.splitPoint_succ_eq_insertPoint]
+  · rw [stabilizeO_X, stabilizeX_castSucc_X]
+
+/-- Swapping the two columns of the new block exchanges the `X`-stabilizations with the new
+column on either side of the split column. -/
+theorem stabilizeX_castSucc_swapColumns (s : Fin n) (newRow : Fin (n + 1)) :
+    (G.stabilizeX s.castSucc newRow s).swapColumns s.castSucc s.succ =
+      G.stabilizeX s.succ newRow s := by
+  ext1
+  · rw [swapColumns_O, stabilizeX_O, stabilizeX_O,
+      GridState.insertPoint_castSucc_swapColumns]
+  · rw [swapColumns_X, stabilizeX_castSucc_X, stabilizeX_succ_X,
+      GridState.insertPoint_succ_swapColumns]
+
+/-- Swapping the new row `k.castSucc` of an `X`-stabilization with the old row `k` just above it
+moves the new row to `k.succ`. -/
+theorem stabilizeX_swapRows (newColumn : Fin (n + 1)) (k s : Fin n) :
+    (G.stabilizeX newColumn k.castSucc s).swapRows k.castSucc k.succ =
+      G.stabilizeX newColumn k.succ s := by
+  ext1
+  · rw [swapRows_O, stabilizeX_O, stabilizeX_O, GridState.insertPoint_swapRows]
+  · rw [swapRows_X, stabilizeX_X, stabilizeX_X, GridState.splitPoint_swapRows]
+
+/-- Cyclically permuting the rows moves the new top row of an `X`-stabilization to the
+bottom. -/
+theorem stabilizeX_last_relabelRows (newColumn : Fin (n + 1)) (s : Fin n) :
+    (G.stabilizeX newColumn (Fin.last n) s).relabelRows (finRotate (n + 1)) =
+      G.stabilizeX newColumn 0 s := by
+  ext1
+  · rw [relabelRows_O, stabilizeX_O, stabilizeX_O, GridState.insertPoint_last_relabelRows]
+  · rw [relabelRows_X, stabilizeX_X, stabilizeX_X, GridState.splitPoint_last_relabelRows]
+
+/-- Cyclically permuting the columns moves the new last column of an `X`-stabilization to the
+front. -/
+theorem stabilizeX_last_relabelColumns (newRow : Fin (n + 1)) (s : Fin n) :
+    (G.stabilizeX (Fin.last n) newRow s).relabelColumns (finRotate (n + 1)) =
+      G.stabilizeX 0 newRow s := by
+  ext1
+  · rw [relabelColumns_O, stabilizeX_O, stabilizeX_O,
+      GridState.insertPoint_last_relabelColumns]
+  · rw [relabelColumns_X, stabilizeX_X, stabilizeX_X,
+      GridState.splitPoint_last_relabelColumns]
+
+/-- Cyclically permuting the columns moves the new last column of an `O`-stabilization to the
+front. -/
+theorem stabilizeO_last_relabelColumns (newRow : Fin (n + 1)) (s : Fin n) :
+    (G.stabilizeO (Fin.last n) newRow s).relabelColumns (finRotate (n + 1)) =
+      G.stabilizeO 0 newRow s := by
+  ext1
+  · rw [relabelColumns_O, stabilizeO_O, stabilizeO_O,
+      GridState.splitPoint_last_relabelColumns]
+  · rw [relabelColumns_X, stabilizeO_X, stabilizeO_X,
+      GridState.insertPoint_last_relabelColumns]
 
 /-- Two grid diagrams differ by an elementary stabilization that splits an `O`-marking.
 

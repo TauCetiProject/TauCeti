@@ -196,7 +196,7 @@ private theorem candidateGenusField_mem_fixingSubgroup_iff_fix_prodRoot {d : ℤ
     intro x hx
     rw [candidateGenusFieldBase_def] at hx
     refine IntermediateField.adjoin_induction (F := ℚ)
-      (s := {candidateGenusFieldBaseRoot hd}) (p := fun y _ => σ y = y)
+      (s := {candidateGenusFieldBaseRoot hd}) (motive := fun y _ => σ y = y)
       ?_ ?_ ?_ ?_ ?_ (x := x) (h := hx)
     · intro y hy
       simpa only [Set.mem_singleton_iff] using hy ▸ hroot

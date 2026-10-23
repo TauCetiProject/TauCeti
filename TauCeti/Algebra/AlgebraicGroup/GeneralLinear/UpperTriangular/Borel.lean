@@ -6,14 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Borel.Conjugation
+public import TauCeti.Algebra.AlgebraicGroup.Borel.Over
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.UpperTriangular.Basic
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Coordinate.BaseChange
+import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Conjugation
 import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.StandardComodule
 import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.UpperTriangular.SmoothConnected
 import TauCeti.Algebra.AlgebraicGroup.Smooth.GeometricallyReduced
 import TauCeti.Algebra.AlgebraicGroup.Solvable.LieKolchin
 import TauCeti.Algebra.AlgebraicGroup.Solvable.UpperTriangular
-import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.ChangeBasis
 
 /-!
 # Borel subgroups of `GLₙ`
@@ -33,8 +34,9 @@ inclusion of closed subgroups to be proved.
 Since the upper-triangular subgroup is itself smooth, connected, and solvable, the generic
 conjugacy results for Borel subgroups then show that it is a Borel subgroup, that the Borel
 subgroups of `GLₙ` over an algebraically closed field are exactly its conjugates, and that any
-two of them are conjugate. Base change to an algebraic closure shows that the upper-triangular
-subgroup is a Borel subgroup of `GLₙ` over every field.
+two of them are conjugate. Its defining ideal commutes with arbitrary base change. Together
+with smoothness over the base, this makes it a Borel subgroup of `GLₙ` over every commutative
+ring.
 
 ## Main declarations
 
@@ -47,6 +49,8 @@ subgroup is a Borel subgroup of `GLₙ` over every field.
 * `TauCeti.GeneralLinear.UpperTriangular.isBorelOverAlgClosed_definingHopfIdeal` and
   `TauCeti.GeneralLinear.UpperTriangular.isBorel_definingHopfIdeal`: the upper-triangular
   subgroup is a Borel subgroup of `GLₙ`, over an algebraically closed field and over every field.
+* `TauCeti.GeneralLinear.UpperTriangular.isBorelOver_definingHopfIdeal`: the upper-triangular
+  subgroup is a Borel subgroup over every commutative ring.
 * `TauCeti.GeneralLinear.UpperTriangular.isBorelOverAlgClosed_iff_exists_eq_conjugate`: over an
   algebraically closed field, the Borel subgroups of `GLₙ` are exactly the conjugates of the
   upper-triangular subgroup.
@@ -96,7 +100,7 @@ theorem exists_map_inv_mul_mul_map_mem_upperTriangularGroup [IsAlgClosed k]
           pointsMulEquiv n (toConv (π : coordinateHopfAlgebra k n →ₐ[k] Q)) *
           Matrix.GeneralLinearGroup.map (algebraMap k Q) P ∈
         upperTriangularGroup (Fin n) Q := by
-  let _ : Comodule k Q (Fin n → k) := Comodule.Corestrict π.toCoalgHom
+  let _ := corestrictStandardComodule k n π
   obtain ⟨m, b, hb, -⟩ :=
     Comodule.exists_basis_coefficientMatrix_isUpperTriangular_of_geometricallySolvable
       (k := k) (H := Q) (M := Fin n → k) hconn hsolv
@@ -110,14 +114,10 @@ theorem exists_map_inv_mul_mul_map_mem_upperTriangularGroup [IsAlgClosed k]
   have hmat : pointsMulEquiv n (toConv π.toAlgHom) *
       Matrix.GeneralLinearGroup.map (algebraMap k Q) P =
       Matrix.GeneralLinearGroup.map (algebraMap k Q) P * U := by
-    have h := Module.Basis.coefficientMatrix_mul_toMatrix (C := Q) (Pi.basisFun k (Fin n)) b
-    rw [Comodule.coefficientMatrix_corestrict, coefficientMatrix_basisFun] at h
-    ext i j
-    simpa only [Matrix.GeneralLinearGroup.coe_mul, Matrix.GeneralLinearGroup.map_apply,
-      val_unitOfInvertible, Matrix.GeneralLinearGroup.val_mk'', P, U,
-      pointsMulEquiv_apply, pointToGeneralLinear_apply, genericMatrix_apply,
-      Matrix.mul_apply, Matrix.map_apply, BialgHom.toCoalgHom_apply,
-      BialgHom.coe_toAlgHom, ofConv_toConv] using congrFun (congrFun h i) j
+    ext : 1
+    simpa only [Matrix.GeneralLinearGroup.coe_mul, Matrix.GeneralLinearGroup.val_map_apply,
+      val_unitOfInvertible, Matrix.GeneralLinearGroup.val_mk'', P, U, pointsMulEquiv_apply] using
+      pointToGeneralLinear_mul_map_toMatrix k n π b
   refine ⟨P, ?_⟩
   rw [map_inv, mul_assoc, hmat, inv_mul_cancel_left]
   exact UpperTriangularGroup.mem_iff.mpr hb
@@ -153,9 +153,7 @@ theorem exists_conjugate_definingHopfIdeal_le [IsAlgClosed k]
         GeneralLinear.pointsMulEquiv n
           (toConv (π : GeneralLinear.coordinateHopfAlgebra k n →ₐ[k] Q)) *
         Matrix.GeneralLinearGroup.map (algebraMap k Q) P := by
-    rw [HopfAlgebra.comp_pointConjugationAlgHom, map_mul, map_mul, map_inv,
-      GeneralLinear.pointsMulEquiv_mapValue, MulEquiv.apply_symm_apply, map_inv, inv_inv,
-      map_inv, Algebra.toRingHom_ofId]
+    rw [GeneralLinear.pointsMulEquiv_toConv_comp_pointConjugationAlgHom, map_inv, inv_inv]
   exact ⟨g⁻¹, HopfIdeal.conjugate_inv_le_of_mem_quotientPointsSubgroup_mkQuotient
     I (definingHopfIdeal k n) g
     ((mem_definingPointsSubgroup_iff k n _).mpr (by rw [hkey]; exact hP))⟩
@@ -226,10 +224,10 @@ theorem exists_conjugate_eq_of_isBorelOverAlgClosed [IsAlgClosed k]
     exists_conjugate_definingHopfIdeal_le_of_isBorelOverAlgClosed hI hJ
 
 /-- The general-linear base-change isomorphism carries the scalar extension of the
-upper-triangular defining ideal to the upper-triangular defining ideal over the new field. -/
+upper-triangular defining ideal to the upper-triangular defining ideal over the new base ring. -/
 @[simp]
 theorem map_baseChangeHopfIdeal_definingHopfIdeal
-    (k K : Type u) [Field k] [Field K] [Algebra k K] :
+    (k : Type u) (K : Type max u v) [CommRing k] [CommRing K] [Algebra k K] :
     (CommHopfAlgCat.baseChangeHopfIdeal (K := K) (definingHopfIdeal k n)).map
         (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K n).hom.hom =
       definingHopfIdeal K n := by
@@ -243,7 +241,7 @@ theorem map_baseChangeHopfIdeal_definingHopfIdeal
             (GeneralLinear.coordinateRingMap k n (MvPolynomial.X (i, j)))) =
         GeneralLinear.coordinateHopfAlgebraAlgEquiv K n
           (GeneralLinear.coordinateRingMap K n (MvPolynomial.X (i, j))) := by
-    simpa using GeneralLinear.coordinateHopfAlgebraBaseChangeIso_hom_apply.{u, u}
+    simpa using GeneralLinear.coordinateHopfAlgebraBaseChangeIso_hom_apply.{u, v}
       k K n 1 (MvPolynomial.X (i, j))
   ext x
   constructor
@@ -254,23 +252,28 @@ theorem map_baseChangeHopfIdeal_definingHopfIdeal
     obtain ⟨i, j, hji, rfl⟩ := (mem_definingRelationSet_iff K n x).mp hx
     exact ⟨_, (mem_definingRelationSet_iff k n _).mpr ⟨i, j, hji, rfl⟩, hentry i j⟩
 
+/-- The upper-triangular subgroup of `GLₙ` is a Borel subgroup over every commutative
+ring: it is smooth over the base and has Borel geometric fibers. -/
+theorem isBorelOver_definingHopfIdeal (R : Type u) [CommRing R] (n : ℕ) :
+    HopfIdeal.IsBorelOver R (GeneralLinear.coordinateHopfAlgebra R n) (definingHopfIdeal R n) := by
+  refine HopfIdeal.IsBorelOver.mk ?_ fun k _ _ _ ↦ ?_
+  · exact (smoothCommHopfAlgProperty_iff _).mp
+      (smoothCommHopfAlgProperty_coordinateHopfAlgebra n R)
+  · let e : FiniteTypeCommHopfAlgCat.baseChange (K := k)
+          (FiniteTypeCommHopfAlgCat.of R (GeneralLinear.coordinateHopfAlgebra R n)) ≅
+        FiniteTypeCommHopfAlgCat.of k (GeneralLinear.coordinateHopfAlgebra k n) :=
+      ObjectProperty.isoMk _ (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R k n)
+    exact HopfIdeal.IsBorelOverAlgClosed.of_map_eq e
+      (map_baseChangeHopfIdeal_definingHopfIdeal R k)
+      (isBorelOverAlgClosed_definingHopfIdeal k n)
+
 variable (k n) in
 /-- **The upper-triangular subgroup of `GLₙ` is a Borel subgroup over every field.** Its base
 change to an algebraic closure is smooth, connected, solvable, and maximal among closed
 subgroups with those properties. -/
 theorem isBorel_definingHopfIdeal :
-    HopfIdeal.IsBorel k (GeneralLinear.coordinateHopfAlgebra k n) (definingHopfIdeal k n) := by
-  let K := AlgebraicClosure k
-  let H' := FiniteTypeCommHopfAlgCat.baseChange (K := K)
-    (FiniteTypeCommHopfAlgCat.of k (GeneralLinear.coordinateHopfAlgebra k n))
-  let L := FiniteTypeCommHopfAlgCat.of K (GeneralLinear.coordinateHopfAlgebra K n)
-  let e : H' ≅ L := ObjectProperty.isoMk _
-    (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K n)
-  have hpull := HopfIdeal.IsBorelOverAlgClosed.of_map_eq e
-    (map_baseChangeHopfIdeal_definingHopfIdeal k K)
-    (isBorelOverAlgClosed_definingHopfIdeal K n)
-  exact (HopfIdeal.isBorel_iff_isBorelOverAlgClosed_baseChange
-    k (GeneralLinear.coordinateHopfAlgebra k n) (definingHopfIdeal k n)).2 hpull
+    HopfIdeal.IsBorel k (GeneralLinear.coordinateHopfAlgebra k n) (definingHopfIdeal k n) :=
+  (isBorelOver_definingHopfIdeal k n).isBorel
 
 end UpperTriangular
 

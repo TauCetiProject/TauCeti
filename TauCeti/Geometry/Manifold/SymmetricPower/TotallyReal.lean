@@ -201,7 +201,7 @@ private theorem injective_and_isTotallyReal_comp_pi_smulRight
   · rw [ContinuousLinearMap.toLinearMap_comp, LinearMap.range_comp, coe_diagonalSmulRight]
     refine (isTotallyReal_range_pi_smulRight).map hT' ?_
     refine LinearMap.ext fun c => ?_
-    simp [AlmostComplexStructure.ofComplexModule]
+    simp
 
 variable {γ : Fin n → ℝ → α} {t₀ : Fin n → ℝ} {v : Fin n → ℂ}
 

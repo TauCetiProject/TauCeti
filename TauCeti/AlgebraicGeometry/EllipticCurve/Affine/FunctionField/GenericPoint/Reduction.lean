@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Gener
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.PointPlace
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.DegreeOneReduction
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Galois
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Map
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Map.Basic
 -- Proof-only: a nontrivial valuation bounded by `1` on a Dedekind domain is adic up to equivalence.
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.Basic
 
@@ -57,13 +57,6 @@ open Polynomial TauCeti
 namespace WeierstrassCurve.Affine
 
 variable {F : Type*} [Field F] (W : Affine F) [W.IsElliptic]
-
-/-- The coordinate ring of an elliptic curve is a Dedekind domain. -/
--- Named: an anonymous `local instance` here gets the same generated name as the one in
--- `Affine/FunctionField/Genus.lean`, and the two modules are siblings under `PointPlace.lean`.
-local instance isDedekindDomain_coordinateRing_of_isElliptic : IsDedekindDomain W.CoordinateRing :=
-  have := isIntegrallyClosed_coordinateRing W
-  W.isDedekindDomain_coordinateRing_of_isIntegrallyClosed
 
 /-- **`x - a` vanishes at the place of `(a, b)`**: the class of `X - a` lies in the point ideal. -/
 theorem valuation_pointPlace_genericX_sub_lt_one {x y : F} (h : W.Equation x y) :

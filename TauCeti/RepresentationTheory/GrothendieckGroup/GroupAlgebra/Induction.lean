@@ -10,8 +10,11 @@ public import TauCeti.Algebra.Category.ModuleCat.CartanMap.CoextendScalars
 public import TauCeti.Algebra.MonoidAlgebra.CosetBasis
 public import TauCeti.Algebra.MonoidAlgebra.Finite
 public import TauCeti.RepresentationTheory.Coinduced
+public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.Permutation.Basic
+public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.Restriction
 public import TauCeti.RepresentationTheory.Induction.FiniteDimensional.Basic
 public import TauCeti.RepresentationTheory.Induction.Permutation
+public import TauCeti.RepresentationTheory.OfModule
 
 /-!
 # Induction between Grothendieck groups of group algebras
@@ -31,11 +34,17 @@ isomorphic to the induced module. So on the class of a representation `ρ` of `S
 class of the induced representation `Ind_S^G ρ` (`TauCeti.indK0_of_asModule_of_equiv`), in
 particular of Tau Ceti's finite-dimensional induction `TauCeti.indFDRep` over a field
 (`TauCeti.indK0_of_indFDRep`), and the class of the trivial line goes to the class of the
-permutation module `k[G ⧸ S]` (`TauCeti.indK0_of_trivial`).
+permutation module `k[G ⧸ S]`, that is, to the permutation class `TauCeti.permK0 k G (G ⧸ S)`
+(`TauCeti.indK0_of_trivial`).
 
 The exactness of induction is what makes `ind S` well defined on the exact Grothendieck group,
 whose relations come from all short exact sequences, including the non-split ones that occur when
 the characteristic of `k` divides the order of `G`.
+
+Induction is transitive: for subgroups `S ≤ T` of `G`, inducing from `S` to `T` and then to `G`
+is inducing from `S` to `G` (`TauCeti.indK0_indK0`). Since `G₀` of a subgroup of `T` is indexed by
+`S.subgroupOf T` rather than by `S`, the statement transports classes between the two along the
+isomorphism `Subgroup.subgroupOfEquivOfLe`, by restriction (`TauCeti.resK0`).
 
 ## Main definitions
 
@@ -47,12 +56,14 @@ the characteristic of `k` divides the order of `G`.
 * `TauCeti.indK0_of`: the class of a module goes to the class of its coinduced module.
 * `TauCeti.indK0_of_asModule_of_equiv`: the class of a representation goes to the class of any
   representation equivalent to its induced representation.
-* `TauCeti.indK0_of_trivial`: the class of the trivial line goes to the class of the permutation
-  module on the cosets.
+* `TauCeti.indK0_of_trivial`: the class of the trivial line goes to the permutation class of the
+  cosets.
 * `TauCeti.indK0_of_ofMulAction_quotient`: for `D ≤ S`, the class of the permutation module
   `k[S ⧸ (D ⊓ S)]` goes to the class of the permutation module `k[G ⧸ D]`.
 * `TauCeti.indK0_of_indFDRep`: over a field, the class of a finite-dimensional representation goes
   to the class of `TauCeti.indFDRep` of it.
+* `TauCeti.indK0_comp_indK0` and `TauCeti.indK0_indK0`: induction is transitive along a chain of
+  subgroups `S ≤ T ≤ G`.
 
 ## References
 
@@ -121,16 +132,15 @@ theorem indK0_of_asModule_of_equiv {V W : Type u} [AddCommGroup V] [Module k V]
             (Representation.asModuleLinearEquivOfEquiv e)))))
 
 /-- **Induction of the trivial line.** Induction from `S` sends the class of the trivial
-one-dimensional representation to the class of the permutation module `k[G ⧸ S]`. -/
+one-dimensional representation to the permutation class of `G ⧸ S`, the class of the permutation
+module `k[G ⧸ S]`. -/
 @[simp high + 1]
 theorem indK0_of_trivial :
     letI : Module.Finite k[S] (Representation.trivial k S k).asModule :=
       Module.Finite.of_restrictScalars_finite k k[S] _
-    letI : Module.Finite k[G] (Representation.ofMulAction k G (G ⧸ S)).asModule :=
-      Module.Finite.of_restrictScalars_finite k k[G] _
     indK0 k S (ExactK0.of (FGModuleCat.of k[S] (Representation.trivial k S k).asModule)) =
-      ExactK0.of (FGModuleCat.of k[G] (Representation.ofMulAction k G (G ⧸ S)).asModule) :=
-  indK0_of_asModule_of_equiv k S _ _ (indTrivialEquiv k S)
+      permK0 k G (G ⧸ S) :=
+  (indK0_of_asModule_of_equiv k S _ _ (indTrivialEquiv k S)).trans (permK0_def k (G ⧸ S)).symm
 
 /-- **Induction of a coset permutation module.** For a subgroup `D ≤ S`, induction from `S` sends
 the class of the permutation module `k[S ⧸ (D ⊓ S)]` to the class of the permutation module
@@ -145,6 +155,41 @@ theorem indK0_of_ofMulAction_quotient {D : Subgroup G} (h : D ≤ S) :
         (Representation.ofMulAction k S (S ⧸ D.subgroupOf S)).asModule)) =
       ExactK0.of (FGModuleCat.of k[G] (Representation.ofMulAction k G (G ⧸ D)).asModule) :=
   indK0_of_asModule_of_equiv k S _ _ (indOfMulActionQuotientEquiv k h)
+
+/-- **Induction is transitive.** For subgroups `S ≤ T` of `G`, inducing from `S.subgroupOf T` to
+`T` and then from `T` to `G` is inducing from `S` to `G`, after transporting classes from
+`S.subgroupOf T` to `S` by restriction along `Subgroup.subgroupOfEquivOfLe`. -/
+theorem indK0_comp_indK0 {T : Subgroup G} (h : S ≤ T) :
+    (indK0 k T).comp (indK0 k (S.subgroupOf T)) =
+      (indK0 k S).comp (resK0 k (Subgroup.subgroupOfEquivOfLe h).symm.toMonoidHom) := by
+  ext M
+  -- Write `M` as the module of the representation `ρ` it defines.
+  let := Module.restrictScalars k k[S.subgroupOf T] M.obj
+  have := IsScalarTower.restrictScalars k k[S.subgroupOf T] M.obj
+  have : Module.Finite k[S.subgroupOf T] M.obj := M.2
+  have : Module.Finite k M.obj := Module.Finite.trans k[S.subgroupOf T] M.obj
+  let ρ := Representation.ofModule' (k := k) (G := S.subgroupOf T) M.obj
+  have : Module.Finite k[S.subgroupOf T] ρ.asModule :=
+    Module.Finite.of_restrictScalars_finite k _ ρ.asModule
+  have hM : (ExactK0.of M : ExactK0 (finiteModulesExactStructure k[S.subgroupOf T])) =
+      ExactK0.of (FGModuleCat.of _ ρ.asModule) :=
+    ExactK0.of_congr (Representation.ofModule'AsModuleEquiv M.obj).symm.toFGModuleCatIso
+  -- Both sides are the class of `Ind_T (Ind_{S.subgroupOf T} ρ)`; on the right this is
+  -- induction in stages, `TauCeti.Rep.indFunctorSubgroupOfIso`.
+  simp only [AddMonoidHom.coe_comp, Function.comp_apply, hM]
+  rw [resK0_of_asModule, indK0_of_asModule_of_equiv k S _ _
+      (Representation.equivOfIso ((Rep.indFunctorSubgroupOfIso h).app (Rep.of ρ)).symm),
+    indK0_of_asModule_of_equiv k (S.subgroupOf T) ρ _ (Representation.Equiv.refl _),
+    indK0_of_asModule_of_equiv k T _ _ (Representation.Equiv.refl _)]
+  -- `Rep.indFunctor_obj` unfolds the functor-composite form to the representation-level form.
+  simp only [Functor.comp_obj, Rep.indFunctor_obj]
+
+/-- **Induction is transitive**, on classes: `TauCeti.indK0_comp_indK0` evaluated at `x`. -/
+theorem indK0_indK0 {T : Subgroup G} (h : S ≤ T)
+    (x : ExactK0 (finiteModulesExactStructure k[S.subgroupOf T])) :
+    indK0 k T (indK0 k (S.subgroupOf T) x) =
+      indK0 k S (resK0 k (Subgroup.subgroupOfEquivOfLe h).symm.toMonoidHom x) :=
+  DFunLike.congr_fun (indK0_comp_indK0 k S h) x
 
 end CommRing
 

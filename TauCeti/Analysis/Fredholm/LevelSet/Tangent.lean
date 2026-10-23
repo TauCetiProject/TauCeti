@@ -81,7 +81,7 @@ theorem hasFDerivAt_coe_levelSetChart_symm_of_mem (hf : HasStrictFDerivAt f f' a
     HasFDerivAt (fun k ↦ (((levelSetChart hf hf' hker ha).symm k : ↥{x | f x = c}) : E))
       (A.kerSection (Classical.choose hker)) k := by
   subst c
-  set Φ := hf.implicitToOpenPartialHomeomorphOfComplemented f f' hf' hker with hΦ
+  set Φ := hf.implicitToOpenPartialHomeomorphOfComplemented f f' hf' hker
   have hval : (((levelSetChart hf hf' hker rfl).symm k : ↥{x | f x = f a}) : E) = Φ.symm (f a, k) :=
     levelSetChart_symm_apply hf hf' hker rfl hk
   have hktarget : (f a, k) ∈ Φ.target := by

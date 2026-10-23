@@ -95,16 +95,16 @@ theorem pointsMulEquiv_mapPointsFunctor_mem_hopfIdealPointsSubgroup
     (hφ : I.toIdeal ≤ RingHom.ker φ.hom.toAlgHom.toRingHom)
     (A : Type w) [CommRing A] [Algebra R A]
     (p : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R A)) :
-    pointsMulEquiv n ((CommHopfAlgCat.mapPointsFunctor φ).app (CommAlgCat.of R A) p) ∈
+    pointsMulEquiv n ((CommHopfAlgCat.Hom.mapPointsFunctor φ).app (CommAlgCat.of R A) p) ∈
       hopfIdealPointsSubgroup n I A := by
   let q : HopfAlgebra.points
       (R := R) (H := coordinateHopfAlgebra R n) (CommAlgCat.of R A) :=
-    (CommHopfAlgCat.mapPointsFunctor φ).app (CommAlgCat.of R A) p
+    (CommHopfAlgCat.Hom.mapPointsFunctor φ).app (CommAlgCat.of R A) p
   apply pointsMulEquiv_mem_hopfIdealPointsSubgroup n I A q
   rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff]
   intro x hx
   dsimp only [q]
-  rw [CommHopfAlgCat.mapPointsFunctor_app_apply_apply]
+  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply_apply]
   have hx' := hφ hx
   rw [RingHom.mem_ker] at hx'
   have hxmap : φ.hom x = 0 := by

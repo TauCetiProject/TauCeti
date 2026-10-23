@@ -150,9 +150,10 @@ theorem IsHeisenbergCochain.transgression_negRestrict :
     transgression G P N hN
         ⟨hh.negRestrict haN hbN, hh.negRestrict_mem_H1ConjInvariants haN hbN⟩ =
       explicitCup11 (G ⧸ N) (FixedPoints.addSubgroup N M) (FixedPoints.addSubgroup N A)
-        (FixedPoints.addSubgroup N P) (fixedPointsPairing N μ fun n => hequiv (n : G))
-        (continuous_fixedPointsPairing N μ (fun n => hequiv (n : G)) hμ)
-        (fixedPointsPairing_quotient_smul N μ hequiv) (descendZ1 a haN) (descendZ1 b hbN) := by
+        (FixedPoints.addSubgroup N P) (Subgroup.fixedPointsPairing N μ fun n => hequiv (n : G))
+        (Subgroup.continuous_fixedPointsPairing N μ (fun n => hequiv (n : G)) hμ)
+        (Subgroup.fixedPointsPairing_quotient_smul N μ hequiv)
+        (descendZ1 a haN) (descendZ1 b hbN) := by
   have hf : IsTransgressionLift ((hh.negRestrict haN hbN : Z1 N P) : N → P) fun g => -h g := by
     rw [coe_negRestrict]
     exact hh.isTransgressionLift haN hbN
@@ -165,7 +166,7 @@ theorem IsHeisenbergCochain.transgression_negRestrict :
     induction q₂ using QuotientGroup.induction_on with
     | H g' =>
       refine Subtype.ext ?_
-      rw [IsTransgressionLift.coe_cocycle_apply_mk, coe_fixedPointsPairing,
+      rw [IsTransgressionLift.coe_cocycle_apply_mk, Subgroup.coe_fixedPointsPairing,
         coe_quotient_smul_fixedPoints_addSubgroup, coe_smul_fixedPoints_addSubgroup,
         coe_descendZ1_apply_mk, coe_descendZ1_apply_mk]
       exact congrFun hh.d1_neg (g, g')

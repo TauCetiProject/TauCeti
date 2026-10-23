@@ -27,10 +27,9 @@ never has to unfold `hermiteHilbertBasis` to expand a function in Hermite functi
 * `TauCeti.hasSum_hermiteFunctionLp_expansion` — the Hermite expansion `∑' n, ⟪ψₙ, f⟫ • ψₙ = f`.
 
 Every statement holds for an arbitrary `RCLike` scalar field, so `𝕜 = ℝ` and `𝕜 = ℂ` are the same
-theorem. The roadmap `OrthogonalL2Bases` Part A3 acceptance criteria on the coordinates and norm
-of `ψ₀` follow by instantiating `hermiteHilbertBasis_repr_self` and
-`tsum_norm_sq_inner_hermiteFunctionLp` at `f = ψ₀`, together with `norm_hermiteFunctionLp_zero`;
-no separate declaration is needed for that specialization.
+theorem. The statements about the coordinates and norm of `ψ₀` follow by instantiating
+`hermiteHilbertBasis_repr_self` and `tsum_norm_sq_inner_hermiteFunctionLp` at `f = ψ₀`, together
+with `norm_hermiteFunctionLp_zero`; no separate declaration is needed for that specialization.
 -/
 
 public section
@@ -56,7 +55,7 @@ theorem tsum_inner_mul_inner_hermiteFunctionLp (f g : Lp 𝕜 2 (volume : Measur
   simpa using (hermiteHilbertBasis 𝕜).tsum_inner_mul_inner f g
 
 /-- **Parseval's identity for the Hermite basis** (norm-square form): the squared Hermite
-coordinates of `f` sum to `‖f‖²`. This is the roadmap's Part A3 acceptance criterion. -/
+coordinates of `f` sum to `‖f‖²`. -/
 theorem tsum_norm_sq_inner_hermiteFunctionLp (f : Lp 𝕜 2 (volume : Measure ℝ)) :
     ∑' n : ℕ, ‖inner 𝕜 (hermiteFunctionLp 𝕜 n) f‖ ^ 2 = ‖f‖ ^ 2 := by
   simpa using (hermiteHilbertBasis 𝕜).tsum_norm_sq_inner f

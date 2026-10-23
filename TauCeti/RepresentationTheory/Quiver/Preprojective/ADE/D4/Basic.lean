@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Ring.ThreeArmVanishing
-public import TauCeti.RepresentationTheory.Quiver.AdmissibleIdeal
+public import TauCeti.RepresentationTheory.Quiver.AdmissibleIdeal.Basic
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Admissible
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.ADE.Preprojective
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Signless
@@ -71,7 +71,7 @@ private theorem zigzagD4Graph_adj_iff (i j : Fin 4) :
   fin_cases i <;> fin_cases j <;> decide
 
 /-- The neighbours of a vertex of `D₄` form a finite type; this is the finiteness structure of the
-orientation comparisons of `TauCeti.RepresentationTheory.Quiver.Zigzag.Preprojective`. -/
+orientation comparisons of `TauCeti.RepresentationTheory.Quiver.Preprojective.GraphOrientation`. -/
 noncomputable local instance d4NeighborSetFintype (i : Fin 4) :
     Fintype (zigzagD4Graph.neighborSet i) := Fintype.ofFinite _
 

@@ -37,9 +37,8 @@ constructed, no separate solvability argument is needed to show that it is trivi
 * J. S. Milne, *Algebraic Groups* (2017), §§21.10 and 21.15.
 * T. A. Springer, *Linear Algebraic Groups*, §8.1.
 
-This advances Layer 6, "Reductive and semisimple groups", of the ReductiveGroups roadmap. It is
-the central-subgroup triviality step used in proving that the centre of a semisimple group is
-finite and in constructing its adjoint form.
+This is the central-subgroup triviality step used in proving that the centre of a semisimple group
+is finite and in constructing its adjoint form.
 -/
 
 public section

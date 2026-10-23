@@ -9,7 +9,7 @@ public import Mathlib.MeasureTheory.Measure.DiracProba
 public import TauCeti.MeasureTheory.Measure.Measurability
 public import TauCeti.Probability.Exchangeability.MixedMarkovChain
 public import TauCeti.Probability.Exchangeability.RowExchangeable
-public import TauCeti.Probability.Exchangeability.SuccessorArray
+public import TauCeti.Probability.Process.SuccessorArray
 
 /-!
 # From a row exchangeable successor array back to a mixture of Markov chains
@@ -96,7 +96,7 @@ theorem mixedMarkovChainWith_of_rowExchangeable [Countable α]
     [MeasurableSingletonClass α] [IsProbabilityMeasure μ]
     (hX : ∀ i, AEMeasurable (X i) μ) (h0 : ∀ᵐ ω ∂μ, X 0 ω = a₀)
     (hY : ∀ᵐ ω ∂μ, ∀ n, Y (visitCell (fun j => X j ω) n) ω = X (n + 1) ω)
-    (hrow : RowExchangeable μ Y) (hlam : MixedIIDWith μ (arrayColumn Y) lam) :
+    (hrow : RowExchangeable μ Y) (hlam : MixedIIDWith μ (arrayCol Y) lam) :
     MixedMarkovChainWith μ X (fun _ => diracProba a₀) fun ω a =>
       (lam ω).map (fun x => x a) := by
   classical

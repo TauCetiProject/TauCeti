@@ -49,7 +49,7 @@ private theorem legendreSym_eq_one_of_ncard_primesOver_eq_finrank {ι : Type*} (
   -- Lift the residue of `R` to an integer `a`, so `R ≡ a (mod Q)`.
   let R : 𝓞 K := integralSqrt (hr i)
   have hbij :=
-    NumberField.bijective_algebraMap_quotient_of_ncard_primesOver_eq_finrank Q hsplit
+    Ideal.bijective_algebraMap_quotient_of_ncard_primesOver_eq_finrank Q hsplit
   obtain ⟨c, hc⟩ := hbij.surjective (Ideal.Quotient.mk Q R)
   obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective c
   -- The algebra map `ℤ ⧸ (p) → 𝓞 K ⧸ Q` is `Ideal.quotientMap`, which sends `mk a` to
@@ -221,7 +221,7 @@ theorem ncard_primesOver_multiquadratic_iff {ι : Type*} [Finite ι] (d : ι →
   have := hQo
   refine ⟨fun hsplit i =>
     legendreSym_eq_one_of_ncard_primesOver_eq_finrank d r hr (hcop i) Q hsplit, fun hqr => ?_⟩
-  rw [ncard_primesOver_eq_finrank_iff_stabilizer_eq_bot K Q]
+  rw [ncard_primesOver_eq_finrank_iff_stabilizer_eq_bot ℚ K (span {(p : ℤ)}) Q]
   exact stabilizer_eq_bot_of_forall_legendreSym_eq_one d r hr htop hodd hqr Q
 
 end

@@ -51,6 +51,8 @@ decomposition follows from the regular one.
   class of rank two is the hyperbolic class.
 * `QuadraticForm.exists_equivalent_hyperbolicPresentation_prod`: the decomposition read as an
   isometry of quadratic forms.
+* `QuadraticForm.mem_unitValueSet_iff_not_anisotropic_mk_rankOne_add`: a regular form represents
+  a unit `c` exactly when adjoining `⟨-c⟩` to its class gives an isotropic class.
 
 ## References
 
@@ -387,6 +389,23 @@ theorem _root_.QuadraticForm.anisotropic_of_finrank_le_one (Q : QuadraticForm K 
     (hQ : Q.Nondegenerate) (hV : Module.finrank K V ≤ 1) : Q.Anisotropic := by
   rw [← QuadraticForm.anisotropic_formClass Q hQ]
   exact RegularFormClass.anisotropic_of_rank_le_one (by rwa [rank_formClass])
+
+/-- A regular form represents a unit `c` exactly when adjoining the line `⟨-c⟩` to its isometry
+class gives an isotropic class. This reduces questions about represented values to the isotropy
+criteria, which are stated in terms of the invariants of a class. -/
+theorem _root_.QuadraticForm.mem_unitValueSet_iff_not_anisotropic_mk_rankOne_add
+    (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (c : Kˣ) :
+    c ∈ Q.unitValueSet ↔
+      ¬RegularFormClass.Anisotropic
+        (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => -c⟩ + formClass Q hQ) := by
+  -- The line `⟨-c⟩` is the form `x ↦ -c x²` adjoined by the form-level criterion.
+  have hline : ((-(c : K)) • QuadraticMap.sq : QuadraticForm K K).Equivalent
+      (presentedForm ⟨1, fun _ => -c⟩) :=
+    ⟨⟨(LinearEquiv.funUnique (Fin 1) K K).symm, fun v => by rw [presentedForm_apply]; simp⟩⟩
+  have hsq := QuadraticMap.nondegenerate_smul_sq (neg_ne_zero.mpr c.ne_zero)
+  rw [QuadraticMap.mem_unitValueSet_iff_not_anisotropic_prod Q hQ c,
+    ← anisotropic_formClass _ (hQ.prod hsq), formClass_prod Q hQ _ hsq,
+    formClass_mk _ hsq _ hline, add_comm]
 
 /-- **Witt decomposition** for a regular form: a nondegenerate quadratic form on a
 finite-dimensional space is isometric to the orthogonal sum of `m` hyperbolic planes and an

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.BilinearForm.Prod
 public import TauCeti.LinearAlgebra.IntegralLattice.Even
 public import TauCeti.LinearAlgebra.IntegralLattice.Gram
 public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Group
@@ -68,6 +69,15 @@ theorem orthogonalSumForm_apply (L : IntegralLattice V) (M : IntegralLattice W)
     (p q : V × W) :
     orthogonalSumForm L M p q = L.form p.1 q.1 + M.form p.2 q.2 :=
   (rfl)
+
+/-- The ambient orthogonal-sum form is the product of the two ambient forms. -/
+theorem orthogonalSumForm_eq_prod (L : IntegralLattice V) (M : IntegralLattice W) :
+    orthogonalSumForm L M = L.form.prod M.form := by
+  apply LinearMap.ext
+  intro x
+  apply LinearMap.ext
+  intro y
+  simp only [orthogonalSumForm_apply, LinearMap.BilinForm.prod_apply]
 
 /-- The product of two full integral carriers is a full integral carrier. -/
 private theorem isLattice_prod (L : IntegralLattice V) (M : IntegralLattice W) :
@@ -236,6 +246,33 @@ theorem integralForm_orthogonalSum (L : IntegralLattice V) (M : IntegralLattice 
   simp only [Int.cast_add, integralForm_cast, orthogonalSum_form, orthogonalSumForm_apply,
     orthogonalSumFst_apply, orthogonalSumSnd_apply, coe_orthogonalSumCarrierEquiv_fst,
     coe_orthogonalSumCarrierEquiv_snd]
+
+/-- The carrier-product equivalence preserves the integral forms of an orthogonal sum. -/
+def orthogonalSumCarrierIsometry (L : IntegralLattice V) (M : IntegralLattice W) :
+    (L.orthogonalSum M).integralForm.IsometryEquiv (L.integralForm.prod M.integralForm) where
+  toLinearEquiv := L.orthogonalSumCarrierEquiv M
+  map_app' x y := by
+    simpa only [AddHom.toFun_eq_coe, LinearMap.coe_toAddHom, LinearEquiv.coe_coe,
+      LinearMap.BilinForm.prod_apply, orthogonalSumFst_apply,
+      orthogonalSumSnd_apply] using (L.integralForm_orthogonalSum M x y).symm
+
+/-- The integral carrier isometry acts by the carrier-product equivalence. -/
+@[simp]
+theorem orthogonalSumCarrierIsometry_apply (L : IntegralLattice V) (M : IntegralLattice W)
+    (x : L.orthogonalSum M) :
+    L.orthogonalSumCarrierIsometry M x = L.orthogonalSumCarrierEquiv M x :=
+  (rfl)
+
+/-- The inverse integral carrier isometry adds the two canonical inclusions. -/
+@[simp]
+theorem orthogonalSumCarrierIsometry_symm_apply (L : IntegralLattice V) (M : IntegralLattice W)
+    (x : L) (y : M) :
+    (L.orthogonalSumCarrierIsometry M).symm (x, y) =
+      L.orthogonalSumInl M x + L.orthogonalSumInr M y := by
+  apply (L.orthogonalSumCarrierIsometry M).toLinearEquiv.symm_apply_eq.mpr
+  simp only [LinearMap.BilinForm.IsometryEquiv.coe_toLinearEquiv,
+    orthogonalSumCarrierIsometry_apply, map_add, orthogonalSumCarrierEquiv_inl,
+    orthogonalSumCarrierEquiv_inr, Prod.mk_add_mk, add_zero, zero_add]
 
 /-- The integral norm of an orthogonal-sum vector is the sum of its component norms. -/
 @[simp]

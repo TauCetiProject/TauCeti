@@ -96,7 +96,7 @@ theorem coe_toContMDiffMap (f : SmoothEmbedding I J n M N) :
 
 /-- The continuous map underlying a bundled smooth embedding. -/
 abbrev toContinuousMap (f : SmoothEmbedding I J n M N) : C(M, N) :=
-  _root_.toContinuousMap f
+  ContinuousMap.ofClass f
 
 @[simp]
 theorem toContinuousMap_apply (f : SmoothEmbedding I J n M N) (x : M) :
@@ -111,7 +111,7 @@ theorem coe_toContinuousMap (f : SmoothEmbedding I J n M N) :
 /-- The underlying continuous map determines a bundled smooth embedding. -/
 theorem toContinuousMap_injective :
     Function.Injective (toContinuousMap : SmoothEmbedding I J n M N → C(M, N)) :=
-  ContinuousMap.coe_injective'
+  ContinuousMap.injective_ofClass
 
 theorem toContinuousMap_inj {f g : SmoothEmbedding I J n M N} :
     (toContinuousMap f : C(M, N)) = toContinuousMap g ↔ f = g :=
@@ -133,6 +133,19 @@ theorem isImmersion (f : SmoothEmbedding I J n M N) : Manifold.IsImmersion I J n
 /-- A bundled smooth embedding is a topological embedding. -/
 theorem isEmbedding (f : SmoothEmbedding I J n M N) : IsEmbedding f :=
   f.isSmoothEmbedding.isEmbedding
+
+/-- The coordinate differential of an embedding remains split-injective on the overlap
+of its tangent charts, including for infinite-dimensional models. -/
+theorem hasLeftInverse_inTangentCoordinates_mfderiv [IsManifold I 1 M] [IsManifold J 1 N]
+    (f : SmoothEmbedding I J n M N)
+    (hn : n ≠ 0) {x₀ x : M} (hx : x ∈ (chartAt H x₀).source)
+    (hy : f x ∈ (chartAt H' (f x₀)).source) :
+    (inTangentCoordinates I J _root_.id (f : M → N)
+      (mfderiv I J (f : M → N)) x₀ x).HasLeftInverse := by
+  rw [inTangentCoordinates,
+    ContinuousLinearMap.inCoordinates_eq (by simpa using hx) (by simpa using hy)]
+  exact ((isDiffImmersionAt_iff.mp (f.isImmersion.isDiffImmersionAt hn x)).comp
+    (ContinuousLinearEquiv.hasLeftInverse _)).continuousLinearEquivalence_comp
 
 /-- Bundle a map satisfying Mathlib's smooth-embedding predicate as a smooth embedding. -/
 def ofIsSmoothEmbedding (f : M → N) (hf : Manifold.IsSmoothEmbedding I J n f) :

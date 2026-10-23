@@ -231,7 +231,7 @@ private lemma residueTheorem_step {c : ℂ} {R : ℝ} (hR : 0 < R) (S : Finset �
   have hs₀_ball : s₀ ∈ ball c R := hS (Finset.mem_coe.2 hs₀S)
   have hF_mero_s₀ : MeromorphicAt F s₀ := hF_mero s₀ (hmem_cb s₀ hs₀S)
   have hord_ne_top : meromorphicOrderAt F s₀ ≠ ⊤ := ne_top_of_lt hs₀_neg
-  obtain ⟨g, hg_an, hg_ne, hF_germ⟩ := (meromorphicOrderAt_ne_top_iff hF_mero_s₀).1 hord_ne_top
+  obtain ⟨g, hg_an, _, hF_germ⟩ := (meromorphicOrderAt_ne_top_iff hF_mero_s₀).1 hord_ne_top
   set n₀ : ℤ := (meromorphicOrderAt F s₀).untop₀ with hn₀_def
   have hFs₀ : meromorphicOrderAt F s₀ = (n₀ : WithTop ℤ) :=
     (WithTop.coe_untop₀_of_ne_top hord_ne_top).symm

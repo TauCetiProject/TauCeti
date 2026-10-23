@@ -49,16 +49,12 @@ classical example of nonisomorphic groups with equal character tables.
 
 ## References
 
-This closes the `Q₈ = QuaternionGroup 2` part of "Rational tables (first executable milestone)"
-in Layer 6 of the
-[character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md).
-
 * J. D. Dixon, *High speed computation of group characters*, Numerische Mathematik 10 (1967),
   446--450.
 * G. Schneider, *Dixon's character table algorithm revisited*, J. Symbolic Comput. 9 (1990),
   601--606.
 * The formal template is
-  `TauCeti.RepresentationTheory.CharacterTable.Dixon.Rational.DihedralFour`; this file and its
+  `TauCeti.RepresentationTheory.CharacterTable.Dixon.Rational.Dihedral.Four`; this file and its
   quaternion class-data and good-prime prerequisites adapt the corresponding dihedral development.
 -/
 

@@ -38,7 +38,7 @@ transpose, so the resulting map is continuous for the induced topology.
 
 public section
 
-open Matrix
+open Matrix QuadraticMap
 
 namespace TauCeti
 
@@ -119,7 +119,7 @@ theorem isClosed_range_specialOrthogonalToGeneralLinear_realCliffordForm (n : �
     rw [← MonoidHom.coe_range]
     exact mem_range_specialOrthogonalToGeneralLinear_realCliffordForm_iff n U
   rw [hrange]
-  exact (Matrix.isClosed_specialOrthogonalGroup (n := Fin n) (R := ℝ)).preimage
+  exact (TauCeti.Matrix.isClosed_specialOrthogonalGroup (n := Fin n) (R := ℝ)).preimage
     (Units.continuous_val : Continuous (fun U : Matrix.GeneralLinearGroup (Fin n) ℝ =>
       (U : Matrix (Fin n) (Fin n) ℝ)))
 

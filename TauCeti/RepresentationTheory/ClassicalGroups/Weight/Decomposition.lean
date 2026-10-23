@@ -48,9 +48,8 @@ The tensor, symmetric and exterior powers of the standard representation are pol
 (`TauCeti.IsPolynomialRep.isRationalRep`), so their decompositions are instances of the theorem
 below and are not restated as separate declarations.
 
-The pinned roadmap signature carries `[FiniteDimensional ℂ W]` as well. It is dropped here: it is
-implied by `TauCeti.IsRationalRep.finite`, and an unused hypothesis on the statement would be both
-weaker and flagged by the linter.
+No `[FiniteDimensional ℂ W]` hypothesis is assumed: it is implied by `TauCeti.IsRationalRep.finite`,
+and an unused hypothesis on the statement would be both weaker and flagged by the linter.
 
 ## Main results
 
@@ -63,14 +62,14 @@ weaker and flagged by the linter.
 * `TauCeti.IsRationalRep.iSup_weightSpace_eq_top` and
   `TauCeti.IsRationalRep.isInternal_weightSpace`: **a rational representation of `GL n ℂ` is the
   internal direct sum of its weight spaces.**
+* `TauCeti.IsRationalRep.exists_weightSpace_ne_bot`: a nonzero rational representation has a
+  weight.
 * `TauCeti.finite_setOf_weightSpace_ne_bot`: a finite-dimensional representation has only finitely
   many weights. This reads off the independence of the weight spaces alone, so it needs neither
   rationality nor an infinite field.
 
 ## References
 
-* [Classical groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/ClassicalGroups/README.md),
-  Layer 3, "The maximal torus and weight spaces".
 * W. Fulton and J. Harris, *Representation Theory: A First Course* (1991), Lecture 15.
 * R. Goodman and N. R. Wallach, *Symmetry, Representations, and Invariants* (2009), Section 1.5.
 -/
@@ -222,14 +221,22 @@ theorem IsRationalRep.iSup_weightSpace_eq_top (h : IsRationalRep ρ) :
   exact Submodule.sum_mem _ fun l hl ↦ Submodule.mem_iSup_of_mem l
     (apply_mem_weightSpace_of_forall_diagGL_eq_sum_smul hA hl w)
 
-/-- **The weight-space decomposition.** A rational representation of `GL n ℂ` is the internal
-direct sum of its weight spaces: the diagonal torus is simultaneously diagonalizable on it, and the
+/-- **A nonzero rational representation has a weight.** Its weight spaces span it, so they cannot
+all be zero. -/
+theorem IsRationalRep.exists_weightSpace_ne_bot [Nontrivial W] (h : IsRationalRep ρ) :
+    ∃ l : Fin n → ℤ, weightSpace ρ l ≠ ⊥ := by
+  by_contra! hbot
+  have htop := h.iSup_weightSpace_eq_top
+  simp only [hbot, iSup_bot] at htop
+  exact bot_ne_top htop
+
+/-- **The weight-space decomposition.** A rational representation of `GL n ℂ` is the internal direct
+sum of its weight spaces: the diagonal torus is simultaneously diagonalizable on it, and the
 decomposition is indexed by the integer weights `l`, the summand at `l` being the joint eigenspace
 of the character `t ↦ ∏ i, tᵢ ^ lᵢ`. The sum runs over all of `Fin n → ℤ`; which weights actually
-occur — that is, for which `l` the summand is nonzero — is not part of the statement. The roadmap
-pins this statement
-as `weightSpace_isInternal`; it is named for its conclusion here, matching the standard-
-representation case `TauCeti.isInternal_weightSpace_stdRep`. -/
+occur — that is, for which `l` the summand is nonzero — is not part of the statement. It is named
+for its conclusion, matching the standard- representation case
+`TauCeti.isInternal_weightSpace_stdRep`. -/
 theorem IsRationalRep.isInternal_weightSpace (h : IsRationalRep ρ) :
     DirectSum.IsInternal fun l : Fin n → ℤ ↦ weightSpace ρ l :=
   isInternal_weightSpace_of_iSup_eq_top weightChar_injective h.iSup_weightSpace_eq_top

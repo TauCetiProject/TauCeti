@@ -100,9 +100,9 @@ private theorem spinTwoBasis_isOrtho :
     (realCliffordForm 2 0).IsOrtho
       (Pi.basisFun ℝ (Fin 2) 0) (Pi.basisFun ℝ (Fin 2) 1) := by
   have h0 : realCliffordForm 2 0 (Pi.basisFun ℝ (Fin 2) 0) = 1 := by
-    simpa only [Pi.basisFun_apply] using realCliffordForm_unitVector 2 0
+    simpa only [Pi.basisFun_apply] using realCliffordForm_zero_single_one 2 0
   have h1 : realCliffordForm 2 0 (Pi.basisFun ℝ (Fin 2) 1) = 1 := by
-    simpa only [Pi.basisFun_apply] using realCliffordForm_unitVector 2 1
+    simpa only [Pi.basisFun_apply] using realCliffordForm_zero_single_one 2 1
   rw [QuadraticMap.isOrtho_def, spinTwoBasis_add_norm, h0, h1]
   norm_num
 
@@ -113,8 +113,8 @@ theorem joined_one_negOne_realCliffordSpinGroupZero_two :
         (nondegenerate_realCliffordForm 2 0).ne_zero) := by
   exact ⟨spinRotationPath (realCliffordForm 2 0)
     (Pi.basisFun ℝ (Fin 2) 0) (Pi.basisFun ℝ (Fin 2) 1)
-      (by simpa only [Pi.basisFun_apply] using realCliffordForm_unitVector 2 0)
-      (by simpa only [Pi.basisFun_apply] using realCliffordForm_unitVector 2 1)
+      (by simpa only [Pi.basisFun_apply] using realCliffordForm_zero_single_one 2 0)
+      (by simpa only [Pi.basisFun_apply] using realCliffordForm_zero_single_one 2 1)
       spinTwoBasis_isOrtho⟩
 
 /-- The identity and the canonical scalar `-1` are joined in every compact Spin group of

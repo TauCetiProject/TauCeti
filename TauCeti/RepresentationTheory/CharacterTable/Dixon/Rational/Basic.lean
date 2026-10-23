@@ -31,11 +31,6 @@ hypothesis of the theorem below is stated in terms of them.
 
 * `TauCeti.ClassData.liftedCentralRows_eq_image_of_centralCharacterSearch_eq`: a displayed integral
   matrix is recovered from the modular search when all its entries lie in the signed residue range.
-
-## References
-
-This is shared infrastructure for the rational-table milestone in Layer 6 of the
-[character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md).
 -/
 
 public section

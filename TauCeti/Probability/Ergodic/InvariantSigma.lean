@@ -83,7 +83,7 @@ private theorem invariantRepresentative_comp (T : Ω → Ω) (g : Ω → ℝ) :
     limsup_nat_add (fun n : ℕ => (g ((T^[n]) ω) : EReal)) 1
 
 private theorem iterate_comp_ae_eq_of_comp_ae_eq {T : Ω → Ω}
-    (hT : Measure.QuasiMeasurePreserving T μ μ) {g : Ω → ℝ} (hg : g ∘ T =ᵐ[μ] g) :
+    (hT : QuasiMeasurePreserving T μ μ) {g : Ω → ℝ} (hg : g ∘ T =ᵐ[μ] g) :
     ∀ n : ℕ, g ∘ T^[n] =ᵐ[μ] g := by
   intro n
   induction n with
@@ -93,7 +93,7 @@ private theorem iterate_comp_ae_eq_of_comp_ae_eq {T : Ω → Ω}
       exact (hT.ae_eq_comp hn).trans hg
 
 private theorem invariantRepresentative_ae_eq {T : Ω → Ω}
-    (hT : Measure.QuasiMeasurePreserving T μ μ) {g : Ω → ℝ} (hg : g ∘ T =ᵐ[μ] g) :
+    (hT : QuasiMeasurePreserving T μ μ) {g : Ω → ℝ} (hg : g ∘ T =ᵐ[μ] g) :
     invariantRepresentative T g =ᵐ[μ] g := by
   have hiter : ∀ᵐ ω ∂μ, ∀ n : ℕ, g ((T^[n]) ω) = g ω := by
     rw [ae_all_iff]
@@ -111,7 +111,7 @@ function has a representative measurable for Mathlib's invariant σ-algebra.
 The nonsingular endomorphism is arbitrary: path-space shift is the specialization used by the
 Koopman route to de Finetti's theorem. -/
 theorem aestronglyMeasurable_invariants_of_comp_ae_eq {T : Ω → Ω}
-    (hT : Measure.QuasiMeasurePreserving T μ μ) {f : Ω → ℝ} (hf : AEStronglyMeasurable f μ)
+    (hT : QuasiMeasurePreserving T μ μ) {f : Ω → ℝ} (hf : AEStronglyMeasurable f μ)
     (hfix : f ∘ T =ᵐ[μ] f) :
     AEStronglyMeasurable[MeasurableSpace.invariants T] f μ := by
   let g := hf.mk f
@@ -133,7 +133,7 @@ everywhere fixed by composition. -/
 theorem AEStronglyMeasurable.comp_ae_eq_of_invariants {T : Ω → Ω}
     {E : Type*} [TopologicalSpace E] [TopologicalSpace.PseudoMetrizableSpace E]
     [MeasurableSpace E] [BorelSpace E] [MeasurableSingletonClass E]
-    (hT : Measure.QuasiMeasurePreserving T μ μ) {f : Ω → E}
+    (hT : QuasiMeasurePreserving T μ μ) {f : Ω → E}
     (hf : AEStronglyMeasurable[MeasurableSpace.invariants T] f μ) :
     f ∘ T =ᵐ[μ] f := by
   let g := hf.mk f
@@ -148,7 +148,7 @@ almost-everywhere strong measurability for the invariant σ-algebra is equivalen
 almost-everywhere invariance under composition. -/
 @[simp]
 theorem aestronglyMeasurable_invariants_iff_comp_ae_eq {T : Ω → Ω}
-    (hT : Measure.QuasiMeasurePreserving T μ μ) {f : Ω → ℝ} (hf : AEStronglyMeasurable f μ) :
+    (hT : QuasiMeasurePreserving T μ μ) {f : Ω → ℝ} (hf : AEStronglyMeasurable f μ) :
     AEStronglyMeasurable[MeasurableSpace.invariants T] f μ ↔ f ∘ T =ᵐ[μ] f :=
   ⟨fun h => AEStronglyMeasurable.comp_ae_eq_of_invariants hT h,
     aestronglyMeasurable_invariants_of_comp_ae_eq hT hf⟩

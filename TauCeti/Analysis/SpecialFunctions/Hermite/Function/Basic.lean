@@ -15,15 +15,13 @@ public import TauCeti.RingTheory.Polynomial.Hermite.Derivative
 /-!
 # Basic Hermite functions
 
-This file starts the object API for the Hermite functions used by the
-`OrthogonalL2Bases` roadmap.  The `n`th function is the normalized
-probabilists' Hermite polynomial evaluated at `x * sqrt 2`, multiplied by the
-Gaussian envelope `exp (-x^2 / 2)`.
+This file starts the object API for the Hermite functions. The `n`th function is the normalized
+probabilists' Hermite polynomial evaluated at `x * sqrt 2`, multiplied by the Gaussian envelope
+`exp (-x^2 / 2)`.
 
-The API here is deliberately pointwise: the definition, continuity and
-smoothness, the first three base formulas `ψ₀`, `ψ₁`, and `ψ₂`, and the parity formula
-`ψₙ(-x) = (-1)ⁿ ψₙ(x)`. Orthogonality, `L²` packaging, and the oscillator identities are later
-milestones built on this basic object.
+The API here is deliberately pointwise: the definition, continuity and smoothness, the first three
+base formulas `ψ₀`, `ψ₁`, and `ψ₂`, and the parity formula `ψₙ(-x) = (-1)ⁿ ψₙ(x)`. Orthogonality,
+`L²` packaging, and the oscillator identities are built on this object in the sibling files.
 -/
 
 public section
@@ -130,8 +128,8 @@ lemma hermiteFunction_two (x : ℝ) :
 
 /-! ## Parity -/
 
-/-- **Target A2 (parity).** `ψₙ(-x) = (-1)ⁿ ψₙ(x)`: the Gaussian envelope `exp(-x²/2)` is even and
-the polynomial factor `Hₙ(x√2)` carries the parity of `Hₙ` (`Polynomial.hermite_aeval_neg`). -/
+/-- **Parity.** `ψₙ(-x) = (-1)ⁿ ψₙ(x)`: the Gaussian envelope `exp(-x²/2)` is even and the
+polynomial factor `Hₙ(x√2)` carries the parity of `Hₙ` (`Polynomial.hermite_aeval_neg`). -/
 @[simp]
 theorem hermiteFunction_neg (n : ℕ) (x : ℝ) :
     hermiteFunction n (-x) = (-1) ^ n * hermiteFunction n x := by

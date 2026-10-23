@@ -36,9 +36,8 @@ characterizes it uniquely and gives its identity, composition, and inverse laws.
 The formal organization follows
 `TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Isomorphism`.
 
-This supplies the isomorphism-invariance interface for the solvable radical required by Layer 6,
-"Reductive and semisimple groups", of the ReductiveGroups roadmap. It lets the subsequent
-structure theory use the radical independently of a chosen coordinate presentation.
+This supplies the isomorphism-invariance interface for the solvable radical, so that the radical
+can be used independently of a chosen coordinate presentation.
 -/
 
 public section

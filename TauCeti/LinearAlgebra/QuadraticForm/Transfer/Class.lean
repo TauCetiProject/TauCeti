@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Module.LinearMap.DivisionRing
 public import TauCeti.LinearAlgebra.QuadraticForm.Transfer.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Basic
 

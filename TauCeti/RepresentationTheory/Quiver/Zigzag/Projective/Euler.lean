@@ -53,9 +53,7 @@ theorem isGradedEulerAdmissible_zigzagGradedProjective
       (zigzagGradedProjective k G i) (zigzagGradedProjective k G j) := by
   apply isGradedEulerAdmissible_of_projective
   exact (hasFiniteLaurentSupport_zigzagGradedProjective_hom k G hns i j).of_equiv
-    fun d ↦ Linear.homCongr k (Iso.refl _)
-      ((GradedModuleCat.shiftPowIso (zigzagIntegerGrade k G) d).app
-        (zigzagGradedProjective k G j)).symm
+    fun d ↦ (GradedModuleCat.homShiftPowEquiv (zigzagIntegerGrade k G) _ _ d).symm
 
 /-- The graded Ext-Euler characteristic of vertex projectives is their projective q-Hom
 polynomial, hence the corresponding entry of the quantum Cartan matrix. This holds for every
@@ -72,9 +70,7 @@ theorem gradedExtEuler_zigzagGradedProjective
           (zigzagGradedProjective k G j).shiftObj d)
         (hasFiniteLaurentSupport_zigzagGradedProjective_hom k G hns i j) :=
       targetShiftGradedDimension_congr _ _ fun d ↦
-        (Linear.homCongr k (Iso.refl _)
-          ((GradedModuleCat.shiftPowIso (zigzagIntegerGrade k G) d).app
-            (zigzagGradedProjective k G j))).finrank_eq
+        (GradedModuleCat.homShiftPowEquiv (zigzagIntegerGrade k G) _ _ d).finrank_eq
     _ = _ := targetShiftGradedDimension_zigzagGradedProjective_hom k G hns i j
 
 end TauCeti

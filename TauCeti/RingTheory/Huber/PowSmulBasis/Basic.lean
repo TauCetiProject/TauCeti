@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Module.Submodule.Pointwise
 public import TauCeti.RingTheory.Huber.Basic
 import TauCeti.Topology.Algebra.Nonarchimedean.SubmodulesBasis
+public import TauCeti.Topology.Algebra.Ring.Subring
 
 /-!
 # The `ϖⁿ • M₀` submodules basis, and the `A`-module topology it induces
@@ -23,7 +23,7 @@ for an arbitrary `SubmodulesBasis` in
 `hasBasis_nhds_zero_pow_smul` specializes it to this family. The abstract result that mutually
 cofinal families induce the same topology is `SubmodulesBasis.topology_eq`;
 `submodulesBasis_pow_smul_topology_eq` combines it with the lattice- and
-pseudouniformiser-cofinality theorems below.
+pseudouniformiser-cofinality lemmas for open subrings.
 
 **Two of Proposition 6.18(1)'s clauses are established for the induced topology** — that it is an
 `A`-module topology (`powSmulModuleFilterBasis`, since `SubmodulesBasis.toModuleFilterBasis`
@@ -42,31 +42,18 @@ ring of definition `A₀`: the remark chooses `A₀` as well, and independence o
 proved here. Nor is it 6.18(1)'s uniqueness, which quantifies over topologies never presented by a
 lattice at all.
 
-**The hypotheses are weaker than Wedhorn's, deliberately.** Remark 6.19 assumes `A` noetherian
-and `M₀` finitely generated. The basis and topology declarations use neither — only `A · M₀ = M`
-— and `exists_pow_smul_le` and `exists_pow_smul_le_pow_smul` not even that, asking instead the
-weaker containment that one lattice lie in the `A`-span of the other. Finite generation enters in
-those two, as a hypothesis on the submodule being compared, where a single exponent has to serve a
-whole submodule at once. `submodulesBasis_pow_smul_topology_eq` asks *both* of *each* lattice:
-spanning, because each side has to present a topology at all, and finite generation, because it
-runs the comparison in both directions. `A` noetherian is used nowhere in this file.
-Several declarations are weaker still, taking an arbitrary `S : Subring A` rather than a ring of
-definition, so a caller holding `powerBoundedSubring A` can use them.
+**The hypotheses are weaker than Wedhorn's.** Remark 6.19 assumes `A` noetherian and `M₀`
+finitely generated. The basis and topology declarations use neither — only `A · M₀ = M`.
+The absorption and cofinality lemmas in `TauCeti.Topology.Algebra.Ring.Subring` work over any
+open subring and need only separately continuous multiplication on `A`. Their finite-generation
+hypotheses enter when one exponent must serve a whole submodule. The topology comparison here
+uses both spanning and finite generation for both lattices. `A` noetherian is used nowhere.
 
 ## Main results
 
-* `TauCeti.Huber.PairOfDefinition.exists_pow_smul_mem`: a power of `ϖ` carries any element of
-  the `A`-span of `M₀` into `M₀`.
 * `TauCeti.Huber.PairOfDefinition.submodulesBasis_pow_smul`: the family is a `SubmodulesBasis`.
 * `TauCeti.Huber.PairOfDefinition.powSmulModuleFilterBasis`: the same family as a filter basis
   for scalars from `A`, not just from `A₀` — Proposition 6.18(1)'s `A`-module clause.
-* `TauCeti.Huber.PairOfDefinition.exists_pow_smul_le` and
-  `TauCeti.Huber.PairOfDefinition.exists_pow_smul_le_pow_smul`: the family built from a finitely
-  generated lattice is cofinal in the one built from `M₀`. This is one direction of the comparison
-  behind Remark 6.19's well-definedness in the lattice.
-* `TauCeti.Huber.PairOfDefinition.exists_pow_smul_le_pow_smul_of_isPseudoUniformizer`: the
-  filtrations of one lattice by two pseudouniformisers are cofinal (one of the two scalars need
-  only be a unit).
 * `TauCeti.Huber.PairOfDefinition.submodulesBasis_pow_smul_topology_eq_of_isPseudoUniformizer`:
   changing the pseudouniformiser does not change the topology induced by a fixed spanning lattice.
 * `TauCeti.Huber.PairOfDefinition.submodulesBasis_pow_smul_topology_eq`: two finitely
@@ -92,10 +79,10 @@ pointwise action on submodules already *is* that operation, and
 `TauCeti.Algebra.Module.Submodule.Pointwise` supplies the facts about it.
 
 The family is `ϖⁿ • M₀` rather than `Iⁿ • M₀` for the ideal of definition `I`. That is Wedhorn's
-own indexing, and it is what the proofs below run on: both `exists_pow_smul_mem` and
-`eventually_smul_mem_pow_smul` consume the pseudouniformiser's own neighbourhood basis,
-`TauCeti.Huber.IsPseudoUniformizer.hasBasis_nhds_zero`. This is a choice of presentation and not
-a constraint — nothing here shows an `I`-indexed family would fail.
+own indexing. The topology constructions consume the pseudouniformiser's neighbourhood basis,
+`TauCeti.Huber.IsPseudoUniformizer.hasBasis_nhds_zero`; the absorption lemmas need only
+topological nilpotence and the openness of the ring of definition. This is a choice of
+presentation and not a constraint — nothing here shows an `I`-indexed family would fail.
 
 ## References
 
@@ -114,47 +101,17 @@ variable {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
   {M : Type*} [AddCommGroup M] [Module A M]
 
 
-/-- **A power of `s` carries any element of `M = A · M₀` into `M₀`.** This is where the
-hypothesis `A · M₀ = M` is spent, and it is what makes the `smul` condition of
-`SubmodulesBasis` an identity inside `A₀`. -/
-theorem exists_pow_smul_mem (P : PairOfDefinition A) {s : A} (hs : IsTopologicallyNilpotent s)
-    (hs0 : s ∈ P.ringOfDefinition) (M₀ : Submodule P.ringOfDefinition M) {m : M}
-    (hm : m ∈ Submodule.span A (M₀ : Set M)) :
-    ∃ k : ℕ, s ^ k • m ∈ M₀ := by
-  induction hm using Submodule.span_induction with
-  | mem x hx => exact ⟨0, by simpa using hx⟩
-  | zero => exact ⟨0, by simp⟩
-  | add x y _ _ ihx ihy =>
-      obtain ⟨kx, hkx⟩ := ihx; obtain ⟨ky, hky⟩ := ihy
-      refine ⟨max kx ky, ?_⟩
-      have hx' : s ^ (max kx ky) • x ∈ M₀ := by
-        have he : max kx ky = (max kx ky - kx) + kx := by omega
-        rw [he]; exact M₀.pow_add_smul_mem hs0 _ _ _ hkx
-      have hy' : s ^ (max kx ky) • y ∈ M₀ := by
-        have he : max kx ky = (max kx ky - ky) + ky := by omega
-        rw [he]; exact M₀.pow_add_smul_mem hs0 _ _ _ hky
-      rw [smul_add]; exact M₀.add_mem hx' hy'
-  | smul c x _ ih =>
-      obtain ⟨k, hk⟩ := ih
-      obtain ⟨i, hi⟩ := P.exists_pow_mul_mem hs c
-      refine ⟨i + k, ?_⟩
-      have he : s ^ (i + k) • (c • x) = (⟨s ^ i * c, hi⟩ : P.ringOfDefinition) • (s ^ k • x) := by
-        rw [smul_smul, Subring.smul_def, ← smul_assoc, smul_eq_mul]
-        congr 1
-        push_cast
-        rw [pow_add]; ring
-      rw [he]; exact M₀.smul_mem _ hk
-
 /-- **The `smul` half of `SubmodulesBasis`**: every scalar close enough to `0` in `A₀` carries a
 given `m` into `ϖⁿ • M₀`.
 
-`m` is carried into `M₀` by `ϖᵏ` for some `k` (`exists_pow_smul_mem`), and `ϖⁿ⁺ᵏ A₀` is a
+`m` is carried into `M₀` by `ϖᵏ` for some `k` (`Subring.exists_pow_smul_mem`), and `ϖⁿ⁺ᵏ A₀` is a
 neighbourhood of `0`; the two combine by arithmetic inside `A₀`. -/
 theorem eventually_smul_mem_pow_smul (P : PairOfDefinition A) {s : A} (hs : IsPseudoUniformizer s)
     (hs0 : s ∈ P.ringOfDefinition) (M₀ : Submodule P.ringOfDefinition M) {m : M}
     (hm : m ∈ Submodule.span A (M₀ : Set M)) (n : ℕ) :
     ∀ᶠ a in 𝓝 (0 : P.ringOfDefinition), a • m ∈ (⟨s, hs0⟩ : P.ringOfDefinition) ^ n • M₀ := by
-  obtain ⟨k, hk⟩ := P.exists_pow_smul_mem hs.isTopologicallyNilpotent hs0 M₀ hm
+  obtain ⟨k, hk⟩ := P.ringOfDefinition.exists_pow_smul_mem P.isOpen_ringOfDefinition
+    hs.isTopologicallyNilpotent hs0 M₀ hm
   have hnhd : ∀ᶠ a : P.ringOfDefinition in 𝓝 0,
       (a : A) ∈ (s ^ (n + k)) • (P.ringOfDefinition : Set A) :=
     continuous_subtype_val.continuousAt.preimage_mem_nhds
@@ -187,12 +144,7 @@ theorem submodulesBasis_pow_smul (P : PairOfDefinition A) {s : A} (hs : IsPseudo
 
 /-- **The A-module filter basis.** `SubmodulesBasis.toModuleFilterBasis` only ever produces a
 filter basis over `A₀`; Wedhorn's Proposition 6.18(1) is about an `A`-module topology, so the
-three `ModuleFilterBasis` axioms are re-established with scalars from `A`.
-
-Exposed because `TauCeti.Huber.PairOfDefinition.powSmulModuleFilterBasis_topology` states an
-equation between this basis's topology and the `SubmodulesBasis` one, which no proof can
-establish without unfolding this body. -/
-@[expose]
+three `ModuleFilterBasis` axioms are re-established with scalars from `A`. -/
 def powSmulModuleFilterBasis (P : PairOfDefinition A) {s : A} (hs : IsPseudoUniformizer s)
     (hs0 : s ∈ P.ringOfDefinition) (M₀ : Submodule P.ringOfDefinition M)
     (hspan : Submodule.span A (M₀ : Set M) = ⊤) : ModuleFilterBasis A M where
@@ -207,7 +159,9 @@ def powSmulModuleFilterBasis (P : PairOfDefinition A) {s : A} (hs : IsPseudoUnif
     exact ((⟨s, hs0⟩ : P.ringOfDefinition) ^ n • M₀).smul_mem ⟨a, ha⟩ hm
   smul_left' := by
     rintro a _ ⟨n, rfl⟩
-    obtain ⟨k, hk⟩ := P.exists_pow_mul_mem hs.isTopologicallyNilpotent a
+    obtain ⟨k, hk⟩ := exists_mul_pow_mem_of_isTopologicallyNilpotent
+      hs.isTopologicallyNilpotent P.isOpen_ringOfDefinition a
+    rw [mul_comm] at hk
     refine ⟨_, ⟨n + k, rfl⟩, fun x hx ↦ ?_⟩
     simp only [SetLike.mem_coe, Set.mem_preimage, Submodule.mem_smul_pointwise_iff_exists] at hx ⊢
     obtain ⟨y, hy, rfl⟩ := hx
@@ -221,7 +175,8 @@ def powSmulModuleFilterBasis (P : PairOfDefinition A) {s : A} (hs : IsPseudoUnif
     rw [pow_add]; ring
   smul_right' := by
     rintro m _ ⟨n, rfl⟩
-    obtain ⟨k, hk⟩ := P.exists_pow_smul_mem hs.isTopologicallyNilpotent hs0 M₀
+    obtain ⟨k, hk⟩ := P.ringOfDefinition.exists_pow_smul_mem P.isOpen_ringOfDefinition
+      hs.isTopologicallyNilpotent hs0 M₀
       (hspan ▸ Submodule.mem_top)
     filter_upwards [(hs.hasBasis_nhds_zero P).mem_of_mem (i := n + k) trivial] with c hc
     obtain ⟨b, hb, hcb⟩ := hc
@@ -237,7 +192,7 @@ theorem mem_powSmulModuleFilterBasis (P : PairOfDefinition A) {s : A}
     {U : Set M} :
     U ∈ (P.powSmulModuleFilterBasis hs hs0 M₀ hspan).toFilterBasis ↔
       ∃ n : ℕ, U = ((⟨s, hs0⟩ : P.ringOfDefinition) ^ n • M₀ : Submodule _ M) :=
-  Iff.rfl
+  (Iff.rfl)
 
 /-- **The `A`-module topology is the `A₀`-level one.** Widening the scalars from `A₀` to `A`
 re-establishes the `ModuleFilterBasis` axioms but leaves the underlying `AddGroupFilterBasis`
@@ -249,7 +204,7 @@ theorem powSmulModuleFilterBasis_topology (P : PairOfDefinition A) {s : A}
     (M₀ : Submodule P.ringOfDefinition M) (hspan : Submodule.span A (M₀ : Set M) = ⊤) :
     (P.powSmulModuleFilterBasis hs hs0 M₀ hspan).topology
       = (P.submodulesBasis_pow_smul hs hs0 M₀ hspan).topology :=
-  rfl
+  (rfl)
 
 /-- **The `ϖⁿ • M₀` family is a neighbourhood basis at `0`, indexed by `ℕ`.** A set is a
 neighbourhood of `0` for the topology `M₀` induces exactly when it contains `ϖⁿ • M₀` for some
@@ -278,101 +233,9 @@ theorem isCountablyGenerated_nhds_zero (P : PairOfDefinition A) {s : A}
     (@nhds M (P.submodulesBasis_pow_smul hs hs0 M₀ hspan).topology 0).IsCountablyGenerated :=
   (P.hasBasis_nhds_zero_pow_smul hs hs0 M₀ hspan).isCountablyGenerated
 
-/-- **A power of `ϖ` carries a finitely generated `A₀`-submodule into `M₀` wholesale.**
-
-A *single* exponent serves all of `M₁` at once. That uniformity is exactly what finite generation
-buys: without it `exists_pow_smul_mem` still gives an exponent for each element separately, but
-those exponents need not be bounded, and no power of `ϖ` need carry the whole submodule.
-
-`M₀` is not required to span `M`; only `M₁` need lie in its span. -/
-theorem exists_pow_smul_le (P : PairOfDefinition A) {s : A} (hs : IsTopologicallyNilpotent s)
-    (hs0 : s ∈ P.ringOfDefinition) (M₀ M₁ : Submodule P.ringOfDefinition M)
-    (hspan : (M₁ : Set M) ⊆ Submodule.span A (M₀ : Set M)) (hfg : M₁.FG) :
-    ∃ k : ℕ, (⟨s, hs0⟩ : P.ringOfDefinition) ^ k • M₁ ≤ M₀ := by
-  obtain ⟨G, hG⟩ := hfg
-  choose! f hf using fun (z : M) (hz : z ∈ Submodule.span A (M₀ : Set M)) ↦
-    P.exists_pow_smul_mem hs hs0 M₀ hz
-  have hGmem : ∀ g ∈ (G : Set M), g ∈ Submodule.span A (M₀ : Set M) := fun g hg ↦
-    hspan (hG ▸ Submodule.subset_span hg)
-  refine ⟨G.sup f, ?_⟩
-  have key : ∀ x ∈ M₁, s ^ G.sup f • x ∈ M₀ := by
-    intro x hx
-    rw [← hG] at hx
-    induction hx using Submodule.span_induction with
-    | mem g hg =>
-        obtain ⟨d, hd⟩ := Nat.exists_eq_add_of_le (Finset.le_sup (f := f) hg)
-        rw [hd, Nat.add_comm]
-        exact M₀.pow_add_smul_mem hs0 d (f g) g (hf g (hGmem g hg))
-    | zero => simp
-    | add x y _ _ ihx ihy => simpa [smul_add] using M₀.add_mem ihx ihy
-    | smul a x _ ih =>
-        rw [smul_comm]
-        exact M₀.smul_mem _ ih
-  rintro _ ⟨x, hx, rfl⟩
-  simp only [DistribSMul.toLinearMap_apply]
-  have hcast : (((⟨s, hs0⟩ : P.ringOfDefinition) ^ G.sup f : P.ringOfDefinition) : A) • x
-      = s ^ G.sup f • x := by
-    rw [SubmonoidClass.coe_pow]
-  exact hcast ▸ key x hx
-
-/-- **One-sided cofinality of the two `ϖ`-adic filtrations.** Every member of the family built
-from `M₀` contains a member of the family built from a finitely generated `M₁`.
-
-This is the comparison Remark 6.19's well-definedness in the lattice rests on, in one direction
-only: it gives the inclusion of the induced neighbourhood filters, not their equality. The reverse
-inclusion is this same theorem with the roles of `M₀` and `M₁` exchanged, which asks instead that
-`M₀` lie in the `A`-span of `M₁` and that `M₀` be finitely generated. Note it is not that `M₁`
-spans `M`: the hypothesis is one containment, not a spanning condition.
-`submodulesBasis_pow_smul_topology_eq` combines this with the analogous cofinality of the
-filtrations defined by two pseudouniformisers.
-
-`submodulesBasis_pow_smul` proves the basis half of Remark 6.19 without finite generation; this is
-where `M₁.FG` does its work. -/
-theorem exists_pow_smul_le_pow_smul (P : PairOfDefinition A) {s : A}
-    (hs : IsTopologicallyNilpotent s) (hs0 : s ∈ P.ringOfDefinition)
-    (M₀ M₁ : Submodule P.ringOfDefinition M) (hspan : (M₁ : Set M) ⊆ Submodule.span A (M₀ : Set M))
-    (hfg : M₁.FG) (n : ℕ) : ∃ k : ℕ, (⟨s, hs0⟩ : P.ringOfDefinition) ^ k • M₁
-      ≤ (⟨s, hs0⟩ : P.ringOfDefinition) ^ n • M₀ := by
-  obtain ⟨k, hk⟩ := P.exists_pow_smul_le hs hs0 M₀ M₁ hspan hfg
-  refine ⟨n + k, ?_⟩
-  have hsplit : (⟨s, hs0⟩ : P.ringOfDefinition) ^ (n + k) • M₁
-      = (⟨s, hs0⟩ : P.ringOfDefinition) ^ n • ((⟨s, hs0⟩ : P.ringOfDefinition) ^ k • M₁) := by
-    rw [pow_add, mul_smul]
-  rw [hsplit]
-  exact smul_mono_right ((⟨s, hs0⟩ : P.ringOfDefinition) ^ n) hk
-
-/-- **The filtrations defined by two pseudouniformisers are cofinal.** For every `sⁿ • M₀`,
-some `tᵏ • M₀` is contained in it.
-
-Only `t` need be a pseudouniformiser (`s` need only be a unit), and no finite-generation or
-spanning hypothesis on `M₀` is needed. -/
-theorem exists_pow_smul_le_pow_smul_of_isPseudoUniformizer (P : PairOfDefinition A) {s t : A}
-    (hs : IsUnit s) (ht : IsPseudoUniformizer t)
-    (hs0 : s ∈ P.ringOfDefinition) (ht0 : t ∈ P.ringOfDefinition)
-    (M₀ : Submodule P.ringOfDefinition M) (n : ℕ) :
-    ∃ k : ℕ, (⟨t, ht0⟩ : P.ringOfDefinition) ^ k • M₀
-      ≤ (⟨s, hs0⟩ : P.ringOfDefinition) ^ n • M₀ := by
-  have hsn : (s ^ n) • (P.ringOfDefinition : Set A) ∈ 𝓝 (0 : A) := by
-    have h := (hs.pow n).smul_mem_nhds_smul_iff (s := (P.ringOfDefinition : Set A)) (a := (0 : A))
-    rw [smul_zero] at h
-    exact h.mpr (P.isOpen_ringOfDefinition.mem_nhds P.ringOfDefinition.zero_mem)
-  obtain ⟨k, -, hk⟩ := (ht.hasBasis_nhds_zero P).mem_iff.mp hsn
-  have htk : t ^ k ∈ (s ^ n) • (P.ringOfDefinition : Set A) :=
-    hk (Set.mem_smul_set.mpr ⟨1, P.ringOfDefinition.one_mem, by simp⟩)
-  obtain ⟨a, ha, hsa⟩ := Set.mem_smul_set.mp htk
-  refine ⟨k, fun x hx ↦ ?_⟩
-  obtain ⟨y, hy, hty⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).mp hx
-  apply (Submodule.mem_smul_pointwise_iff_exists _ _ _).mpr
-  refine ⟨(⟨a, ha⟩ : P.ringOfDefinition) • y, M₀.smul_mem _ hy, ?_⟩
-  have hcoeff : (⟨s, hs0⟩ : P.ringOfDefinition) ^ n •
-      (⟨a, ha⟩ : P.ringOfDefinition) = (⟨t, ht0⟩ : P.ringOfDefinition) ^ k := by
-    ext
-    simpa only [SubmonoidClass.coe_pow, Subring.coe_mul, smul_eq_mul] using hsa
-  rw [← smul_assoc, hcoeff, hty]
-
 /-- **Changing the pseudouniformiser does not change the induced topology.** This is the direct
 topological form of
-`TauCeti.Huber.PairOfDefinition.exists_pow_smul_le_pow_smul_of_isPseudoUniformizer`; unlike the
+`Subring.exists_pow_smul_le_pow_smul_of_isUnit`; unlike the
 comparison of two lattices, it requires no finite-generation hypothesis. -/
 theorem submodulesBasis_pow_smul_topology_eq_of_isPseudoUniformizer (P : PairOfDefinition A)
     {s t : A} (hs : IsPseudoUniformizer s) (ht : IsPseudoUniformizer t)
@@ -382,8 +245,10 @@ theorem submodulesBasis_pow_smul_topology_eq_of_isPseudoUniformizer (P : PairOfD
       = (P.submodulesBasis_pow_smul ht ht0 M₀ hspan).topology :=
   (P.submodulesBasis_pow_smul hs hs0 M₀ hspan).topology_eq
     (P.submodulesBasis_pow_smul ht ht0 M₀ hspan)
-    (P.exists_pow_smul_le_pow_smul_of_isPseudoUniformizer hs.isUnit ht hs0 ht0 M₀)
-    (P.exists_pow_smul_le_pow_smul_of_isPseudoUniformizer ht.isUnit hs ht0 hs0 M₀)
+    (P.ringOfDefinition.exists_pow_smul_le_pow_smul_of_isUnit P.isOpen_ringOfDefinition
+      hs.isUnit ht.isTopologicallyNilpotent hs0 ht0 M₀)
+    (P.ringOfDefinition.exists_pow_smul_le_pow_smul_of_isUnit P.isOpen_ringOfDefinition
+      ht.isUnit hs.isTopologicallyNilpotent ht0 hs0 M₀)
 
 /-- **The induced topology does not depend on the lattice or the pseudouniformiser.** Two finitely
 generated `A₀`-submodules that each span `M` over `A`, filtered by any two pseudouniformisers in
@@ -412,16 +277,20 @@ theorem submodulesBasis_pow_smul_topology_eq (P : PairOfDefinition A) {s t : A}
   apply (P.submodulesBasis_pow_smul hs hs0 M₀ hspan₀).topology_eq
     (P.submodulesBasis_pow_smul ht ht0 M₁ hspan₁)
   · intro n
-    obtain ⟨j, hj⟩ := P.exists_pow_smul_le_pow_smul hs.isTopologicallyNilpotent hs0 M₀ M₁
+    obtain ⟨j, hj⟩ := P.ringOfDefinition.exists_pow_smul_le_pow_smul P.isOpen_ringOfDefinition
+      hs.isTopologicallyNilpotent hs0 M₀ M₁
       (by rw [hspan₀]; exact fun _ _ ↦ Submodule.mem_top) hfg₁ n
     obtain ⟨k, hk⟩ :=
-      P.exists_pow_smul_le_pow_smul_of_isPseudoUniformizer hs.isUnit ht hs0 ht0 M₁ j
+      P.ringOfDefinition.exists_pow_smul_le_pow_smul_of_isUnit P.isOpen_ringOfDefinition
+        hs.isUnit ht.isTopologicallyNilpotent hs0 ht0 M₁ j
     exact ⟨k, hk.trans hj⟩
   · intro n
-    obtain ⟨j, hj⟩ := P.exists_pow_smul_le_pow_smul ht.isTopologicallyNilpotent ht0 M₁ M₀
+    obtain ⟨j, hj⟩ := P.ringOfDefinition.exists_pow_smul_le_pow_smul P.isOpen_ringOfDefinition
+      ht.isTopologicallyNilpotent ht0 M₁ M₀
       (by rw [hspan₁]; exact fun _ _ ↦ Submodule.mem_top) hfg₀ n
     obtain ⟨k, hk⟩ :=
-      P.exists_pow_smul_le_pow_smul_of_isPseudoUniformizer ht.isUnit hs ht0 hs0 M₀ j
+      P.ringOfDefinition.exists_pow_smul_le_pow_smul_of_isUnit P.isOpen_ringOfDefinition
+        ht.isUnit hs.isTopologicallyNilpotent ht0 hs0 M₀ j
     exact ⟨k, hk.trans hj⟩
 
 end TauCeti.Huber.PairOfDefinition

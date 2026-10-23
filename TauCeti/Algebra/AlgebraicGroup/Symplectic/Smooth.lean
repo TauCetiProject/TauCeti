@@ -33,9 +33,6 @@ Finite presentation follows from the finite set of entries of the matrix equatio
 
 * SGA 3, Exposé XXII, for the split symplectic group scheme.
 * The Stacks Project, Tags 00TH, 00TI, 00T2, and 00TN, for formal smoothness and smooth algebras.
-
-This supplies the smoothness prerequisite for the `Sp_{2n}` reductivity worked example in Layer 6
-of the ReductiveGroups roadmap.
 -/
 
 public section

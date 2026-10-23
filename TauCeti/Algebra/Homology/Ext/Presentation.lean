@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Linear.HomCokernel
+public import TauCeti.CategoryTheory.Linear.HomCokernel.Basic
 public import TauCeti.Algebra.Homology.Ext.Basic
 public import Mathlib.Algebra.Homology.DerivedCategory.Ext.EnoughProjectives
 import Mathlib.LinearAlgebra.Isomorphisms
@@ -16,7 +16,7 @@ import Mathlib.LinearAlgebra.Isomorphisms
 For a short exact sequence `S : 0 → P₁ → P₀ → M → 0` with `P₀` projective,
 `homCokernelEquivExt` identifies the explicit quotient
 `Hom(P₁, Y) / im(Hom(P₀, Y))` with `Ext¹(M, Y)`. The quotient is defined
-independently of derived categories in `TauCeti.CategoryTheory.Linear.HomCokernel`.
+independently of derived categories in `TauCeti.CategoryTheory.Linear.HomCokernel.Basic`.
 The comparison is natural in `Y` and identifies the quotients obtained from any
 two projective presentations of `M`. No projectivity of `P₁` is needed to compute
 degree one.

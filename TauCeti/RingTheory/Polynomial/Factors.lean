@@ -39,6 +39,8 @@ for the Chinese Remainder decomposition of `K[X] ⧸ (f)` into the fields `K[X] 
 * `Polynomial.Factors.finite`: a nonzero polynomial has finitely many factors.
 * `Polynomial.Factors.normalizedFactors_eq_map_univ_val`: for a nonzero squarefree polynomial,
   its normalized factors are precisely the distinct monic irreducible factors.
+* `Polynomial.Factors.subsingleton_iff_exists_associated_pow`: a polynomial has at most one factor
+  exactly when it is a unit times a power of an irreducible polynomial.
 * `Polynomial.Factors.isCoprime`: distinct factors are coprime.
 * `Polynomial.Factors.span_eq_iInf_span`: for `f` nonzero and squarefree,
   `(f) = ⨅ p, (p)`.
@@ -46,6 +48,10 @@ for the Chinese Remainder decomposition of `K[X] ⧸ (f)` into the fields `K[X] 
   factors, counted with multiplicity, sum to the degree.
 * `Polynomial.map_natDegree_normalizedFactors_eq_singleton_iff`: those degrees form a singleton
   exactly when the polynomial is irreducible.
+* `Polynomial.count_one_map_natDegree_normalizedFactors`: a nonzero squarefree polynomial has as
+  many linear normalized factors as distinct roots.
+* `Polynomial.monic_squarefree_normalizedFactors_prod`: a product of distinct monic irreducible
+  polynomials is monic and squarefree, and its normalized factors are those polynomials.
 
 ## Provenance
 
@@ -107,6 +113,36 @@ lemma normalizedFactors_eq_map_univ_val [Fintype f.Factors] [DecidableEq K]
 lemma nonempty (hu : ¬ IsUnit f) : Nonempty f.Factors :=
   let ⟨p, hmonic, hirr, hdvd⟩ := f.exists_monic_irreducible_factor hu
   ⟨⟨p, hirr, hmonic, hdvd⟩⟩
+
+/-- A polynomial has at most one monic irreducible factor exactly when it is a unit times a power
+of one irreducible polynomial. -/
+lemma subsingleton_iff_exists_associated_pow :
+    Subsingleton f.Factors ↔ ∃ q : K[X], Irreducible q ∧ ∃ n : ℕ, Associated (q ^ n) f := by
+  classical
+  by_cases hf : f = 0
+  · subst f
+    constructor
+    · intro h
+      let x : (0 : K[X]).Factors := ⟨X, irreducible_X, monic_X, dvd_zero X⟩
+      let y : (0 : K[X]).Factors :=
+        ⟨X - C 1, irreducible_X_sub_C 1, monic_X_sub_C 1, dvd_zero (X - C 1)⟩
+      have hxy : (x : K[X]) = y := congrArg Subtype.val (h.elim x y)
+      have := congrArg (coeff · 0) hxy
+      simp [x, y] at this
+    · rintro ⟨q, hq, n, hq0⟩
+      exact ((pow_ne_zero n hq.ne_zero) (hq0.eq_zero_iff.mpr rfl)).elim
+  refine ⟨fun h ↦ ?_, fun ⟨q, hq, n, hqf⟩ ↦ ⟨fun a b ↦ Subtype.ext ?_⟩⟩
+  · by_cases hu : IsUnit f
+    · exact ⟨X, irreducible_X, 0, by rw [pow_zero]; exact (associated_one_iff_isUnit.mpr hu).symm⟩
+    obtain ⟨q⟩ := nonempty hu
+    refine ⟨q, q.irreducible, exists_associated_prime_pow_of_unique_normalized_factor
+      (fun {m} hm ↦ ?_) hf⟩
+    exact congrArg Subtype.val
+      (Subsingleton.elim (⟨m, (Polynomial.mem_normalizedFactors_iff hf).mp hm⟩ : f.Factors) q)
+  · -- Every factor divides `q ^ n`, hence `q`, so all of them are associated to `q`.
+    have key (r : f.Factors) : Associated (r : K[X]) q :=
+      r.irreducible.associated_of_dvd hq (r.prime.dvd_of_dvd_pow (r.dvd.trans hqf.symm.dvd))
+    exact eq_of_monic_of_associated a.monic b.monic ((key a).trans (key b).symm)
 
 /-- The monic linear factors of `f` correspond to the roots of `f`. -/
 noncomputable def linearEquivRoots :
@@ -237,6 +273,35 @@ lemma map_natDegree_normalizedFactors_eq_singleton_iff {g : K[X]} :
   refine ⟨fun h ↦ irreducible_of_card_normalizedFactors_eq_one ?_, fun h ↦ ?_⟩
   · simpa using congrArg Multiset.card h
   · rw [normalizedFactors_irreducible h, Multiset.map_singleton, natDegree_normalize]
+
+/-- For a nonzero squarefree polynomial over a field, the number of linear factors among its
+normalized irreducible factors is the number of its distinct roots. Over a finite field this
+bounds the number of linear factors by the number of elements of the field. -/
+lemma count_one_map_natDegree_normalizedFactors {g : K[X]} (hg : g ≠ 0) (hsq : Squarefree g) :
+    ((normalizedFactors g).map natDegree).count 1 = g.roots.toFinset.card := by
+  have := Factors.finite hg
+  let _ : Fintype g.Factors := Fintype.ofFinite _
+  -- Squarefreeness lists the normalized factors as the distinct factors `g.Factors`; the linear
+  -- ones correspond to the roots through `Factors.linearEquivRoots`.
+  rw [Multiset.count_map, Factors.normalizedFactors_eq_map_univ_val hg hsq, Multiset.filter_map,
+    Multiset.card_map, ← Finset.filter_val, Finset.card_val]
+  simp only [Function.comp_apply, eq_comm (a := 1)]
+  rw [← Fintype.card_subtype, ← Nat.card_eq_fintype_card,
+    Nat.card_congr Factors.linearEquivRoots, ← Nat.card_eq_finsetCard]
+  exact Nat.card_congr (Equiv.subtypeEquivRight fun x ↦ by simp [hg])
+
+/-- The product of a duplicate-free multiset of monic irreducible polynomials is monic and
+squarefree, and its normalized factors are the multiset itself. -/
+theorem monic_squarefree_normalizedFactors_prod {s : Multiset K[X]}
+    (smonic : ∀ p ∈ s, p.Monic) (sirr : ∀ p ∈ s, Irreducible p) (snodup : s.Nodup) :
+    s.prod.Monic ∧ Squarefree s.prod ∧ normalizedFactors s.prod = s := by
+  have hfac : normalizedFactors s.prod = s := by
+    rw [normalizedFactors_prod_eq s sirr]
+    exact (Multiset.map_congr rfl fun p hp ↦ (smonic p hp).normalize_eq_self).trans s.map_id'
+  refine ⟨by simpa using monic_multiset_prod_of_monic s id smonic, ?_, hfac⟩
+  rw [squarefree_iff_nodup_normalizedFactors
+    (Multiset.prod_ne_zero fun hp ↦ (sirr 0 hp).ne_zero rfl), hfac]
+  exact snodup
 
 end Polynomial
 

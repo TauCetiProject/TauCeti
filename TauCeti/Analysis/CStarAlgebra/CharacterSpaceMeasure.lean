@@ -13,6 +13,7 @@ import Mathlib.Analysis.RCLike.ContinuousMap
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.MeasureTheory.Integral.RieszMarkovKakutani.Real
 import Mathlib.Topology.ContinuousMap.Lattice
+import TauCeti.MeasureTheory.Integral.ContinuousMap
 
 /-!
 # Positive functionals on commutative C⋆-algebras are measures on the character space
@@ -137,26 +138,14 @@ theorem LinearMap.exists_isFiniteMeasure_integral_characterSpace_eq (f : A →�
   set Λ := realFunctional f hf
   set μ := RealRMK.rieszMeasure Λ
   refine ⟨μ, inferInstance, inferInstance, fun a ↦ ?_⟩
-  -- Split the Gelfand transform `F` of `a` into its real part `u` and imaginary part `v`.
-  set F := gelfandStarTransform A a
-  let u : C(characterSpace ℂ A, ℝ) := ⟨fun ω ↦ (F ω).re, Complex.continuous_re.comp F.continuous⟩
-  let v : C(characterSpace ℂ A, ℝ) := ⟨fun ω ↦ (F ω).im, Complex.continuous_im.comp F.continuous⟩
-  have hF : F = u.realToRCLike ℂ + Complex.I • v.realToRCLike ℂ := by
-    ext ω
-    simp [u, v, mul_comm Complex.I]
-  -- On a real function, `f` agrees with the Riesz–Markov–Kakutani integral.
-  have hreal (g : C(characterSpace ℂ A, ℝ)) :
-      f ((gelfandStarTransform A).symm (g.realToRCLike ℂ)) = ((∫ ω, g ω ∂μ : ℝ) : ℂ) := by
+  -- Pulled back along the Gelfand transform, `f` agrees with the Riesz–Markov–Kakutani integral
+  -- on real functions, hence on all functions.
+  let φ := f ∘ₗ ((gelfandStarTransform A).symm : C(characterSpace ℂ A, ℂ) →ₗ[ℂ] A)
+  have hreal (g : C(characterSpace ℂ A, ℝ)) : φ (g.realToRCLike ℂ) = ((∫ ω, g ω ∂μ : ℝ) : ℂ) := by
     have h := RealRMK.integral_rieszMeasure Λ ⟨g, .of_compactSpace _⟩
     rw [realFunctional_apply, CompactlySupportedContinuousMap.coe_mk] at h
-    rw [apply_symm_realToRCLike_eq_re f hf g, h]
-  have hFint : Integrable F μ :=
-    F.continuous.integrable_of_hasCompactSupport (.of_compactSpace _)
-  calc f a = f ((gelfandStarTransform A).symm F) := by simp [F]
-    _ = (∫ ω, u ω ∂μ : ℝ) + ((∫ ω, v ω ∂μ : ℝ) : ℂ) * Complex.I := by
-      rw [hF, map_add, map_smul, map_add, map_smul, hreal, hreal, smul_eq_mul, mul_comm]
-    _ = ∫ ω, F ω ∂μ := integral_re_add_im hFint
-    _ = ∫ ω, ω a ∂μ := by simp [F]
+    rw [LinearMap.comp_apply, LinearMap.coe_ofClass, apply_symm_realToRCLike_eq_re f hf g, h]
+  simpa [φ] using φ.apply_eq_integral_of_forall_realToRCLike hreal (gelfandStarTransform A a)
 
 /-- For a measure `μ` on the character space of a unital C⋆-algebra, integrating
 `ω ↦ ω (star a * a) = |ω a|²` gives the squared `L²` norm of `ω ↦ ω a`. Hence if `μ` represents a

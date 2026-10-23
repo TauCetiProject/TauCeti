@@ -50,6 +50,8 @@ Hilbert 90 gives `H¹(H, Lˣ) = 0` without any finiteness assumption on `L/K`.
 * `TauCeti.isCoboundary₁_of_isCocycle₁_of_quotient_to_fixedPoints`: Hilbert 90 at a finite layer
   `Gal(L/K) ⧸ U` with coefficients `(Lˣ)^U`.
 * `TauCeti.subsingleton_H1_additive_units`: `H¹(Gal(L/K), Lˣ) = 0` for any Galois `L/K`.
+* `TauCeti.isMulCoboundary₁_of_isMulCocycle₁_of_isLocallyConstant`: the same for an explicit
+  locally constant multiplicative cocycle `Gal(L/K) → Lˣ`.
 * `TauCeti.subsingleton_H1_unitsCoeff`: `H¹(G_K, (Kˢ)ˣ) = 0`.
 * `TauCeti.subsingleton_H1_unitsCoeff_fixingSubgroup`,
   `TauCeti.subsingleton_H1_unitsCoeff_of_isClosed`: `H¹(N, (Kˢ)ˣ) = 0` for the subgroup `N` fixing
@@ -181,8 +183,8 @@ vanishes, the units of `L` being written additively and carrying the discrete to
 `TauCeti.isCoboundary₁_of_isCocycle₁_of_quotient_to_fixedPoints`.
 
 The continuity of the action is automatic for the discrete topology
-(`TauCeti.stabilizer_isOpen_units`) and is an instance argument only because `H¹` is formed under
-it. -/
+(`Units.stabilizer_isOpen_of_isIntegral`) and is an instance argument only because `H¹` is formed
+under it. -/
 theorem subsingleton_H1_additive_units {K L : Type*} [Field K] [Field L] [Algebra K L]
     [IsGalois K L] [TopologicalSpace (Additive Lˣ)] [DiscreteTopology (Additive Lˣ)]
     [ContinuousSMul Gal(L/K) (Additive Lˣ)] :
@@ -192,6 +194,26 @@ theorem subsingleton_H1_additive_units {K L : Type*} [Field K] [Field L] [Algebr
     | H z =>
       exact H1pi_eq_zero_iff.2 (mem_B1_iff.2
         (isCoboundary₁_of_isCocycle₁_of_quotient_to_fixedPoints U (mem_Z1_iff.1 z.2).2))
+
+/-- **Hilbert 90 for explicit cocycles.** For a Galois extension `L/K`, finite or not, every
+locally constant multiplicative `1`-cocycle `f : Gal(L/K) → Lˣ`, that is
+`f (σ * τ) = σ (f τ) * f σ`, is a coboundary: `f σ = σ x / x` for some `x : Lˣ`. -/
+theorem isMulCoboundary₁_of_isMulCocycle₁_of_isLocallyConstant {K L : Type*} [Field K]
+    [Field L] [Algebra K L] [IsGalois K L] {f : Gal(L/K) → Lˣ} (hf : IsMulCocycle₁ f)
+    (hc : IsLocallyConstant f) : IsMulCoboundary₁ f := by
+  let _ : TopologicalSpace (Additive Lˣ) := ⊥
+  have : DiscreteTopology (Additive Lˣ) := ⟨rfl⟩
+  have : ContinuousSMul Gal(L/K) (Additive Lˣ) := continuousSMul_iff_stabilizer_isOpen.2 fun x ↦
+    x.toMul.stabilizer_isOpen_of_isIntegral (Algebra.IsIntegral.isIntegral _)
+  have := subsingleton_H1_additive_units (K := K) (L := L)
+  have hz : Additive.ofMul ∘ f ∈ Z1 Gal(L/K) (Additive Lˣ) :=
+    mem_Z1_iff.2 ⟨(hc.comp _).continuous, fun σ τ ↦ by
+      simp only [Function.comp_apply, hf σ τ, ofMul_mul, Additive.ofMul_smul]⟩
+  obtain ⟨x, hx⟩ := mem_B1_iff.1 (H1pi_eq_zero_iff.1 (Subsingleton.elim (H1pi _ _ ⟨_, hz⟩) 0))
+  obtain ⟨y, rfl⟩ := Additive.ofMul.surjective x
+  refine ⟨y, fun σ ↦ Additive.ofMul.injective ?_⟩
+  rw [ofMul_div, Additive.ofMul_smul]
+  exact hx σ
 
 variable (K : Type*) [Field K]
 
@@ -244,14 +266,7 @@ the canonical all-degree theory, where it makes the Kummer map `Kˣ → H¹(G_K,
 `n` positive and invertible in `K`. -/
 theorem hilbert90 :
     Limits.IsZero (continuousCohomology 1
-      (ofDiscreteModule ℤ (AbsoluteGaloisGroup K) (UnitsCoeff K))) := by
-  let h : Subsingleton (DiscreteH1 (AbsoluteGaloisGroup K) (UnitsCoeff K)) :=
-    (discreteH1Equiv (AbsoluteGaloisGroup K) (UnitsCoeff K)).toEquiv.subsingleton_congr.mpr
-      inferInstance
-  rw [← (explicitH1IsoContinuousCohomology
-    (AbsoluteGaloisGroup K) (UnitsCoeff K)).isZero_iff]
-  rw [Limits.IsZero.iff_id_eq_zero]
-  ext x
-  exact h.elim _ _
+      (ofDiscreteModule ℤ (AbsoluteGaloisGroup K) (UnitsCoeff K))) :=
+  isZero_continuousCohomology_one_of_subsingleton _ _
 
 end TauCeti

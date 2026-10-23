@@ -39,6 +39,8 @@ the Laplacian.
   the sphere variable outermost.
 * `TauCeti.integral_eq_integral_Ioi_integral_toSphere`: integration in polar coordinates, with
   the radial variable outermost.
+* `TauCeti.lintegral_volumeIoiPow`, `TauCeti.lintegral_eq_lintegral_toSphere_lintegral_Ioi`: the
+  analogues of the first two for nonnegative functions, with no integrability hypothesis.
 * `TauCeti.integral_norm_rpow_neg_finrank_mul_fderiv_apply_self`: the radial fundamental theorem
   of calculus.
 * `ContinuousOn.integral_toSphere_smul`: the sphere integrals `r ↦ ∫ u ∈ S, f (r • u)` depend
@@ -47,6 +49,8 @@ the Laplacian.
 * `TauCeti.setIntegral_ball_zero_eq_integral_Ioo`,
   `TauCeti.integral_Ioo_pow_mul_toSphere_real_univ`: integration over a ball about the origin in
   polar coordinates, and the corresponding formula for the measure of the ball.
+* `LinearIsometryEquiv.map_toSphere`: a linear isometric equivalence carries the surface
+  measure of `μ` to the surface measure of the image of `μ`.
 -/
 
 public section
@@ -56,6 +60,7 @@ noncomputable section
 namespace TauCeti
 
 open MeasureTheory Metric Set Filter Topology
+open scoped ENNReal
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [Nontrivial E] {μ : Measure E} [μ.IsAddHaarMeasure]
@@ -71,10 +76,43 @@ theorem integral_volumeIoiPow (k : ℕ) (h : ℝ → F) :
   refine setIntegral_congr_fun measurableSet_Ioi fun r hr ↦ ?_
   rw [NNReal.smul_def, Real.coe_toNNReal _ (pow_nonneg (le_of_lt hr) _)]
 
+/-- Lower Lebesgue integration against `MeasureTheory.Measure.volumeIoiPow k` is integration on
+`(0, ∞)` against the weight `r ^ k`. No measurability hypothesis is needed. -/
+theorem lintegral_volumeIoiPow (k : ℕ) (h : ℝ → ℝ≥0∞) :
+    ∫⁻ r : Ioi (0 : ℝ), h r ∂(Measure.volumeIoiPow k) =
+      ∫⁻ r in Ioi (0 : ℝ), ENNReal.ofReal (r ^ k) * h r := by
+  rw [Measure.volumeIoiPow, lintegral_withDensity_eq_lintegral_mul_non_measurable _
+      (measurable_subtype_coe.pow_const k).ennreal_ofReal
+      (ae_of_all _ fun _ ↦ ENNReal.ofReal_lt_top),
+    ← lintegral_subtype_comap measurableSet_Ioi (fun r ↦ ENNReal.ofReal (r ^ k) * h r)]
+  simp only [Pi.mul_apply]
+
+/-- **Integration in polar coordinates**, for nonnegative functions. A measurable function
+`f : E → ℝ≥0∞` on a finite-dimensional real normed space is integrated by first integrating along
+each ray `r ↦ r • u`, against the radial Jacobian `r ^ (d - 1)`, and then over the unit sphere
+against `μ.toSphere`. No integrability hypothesis is needed. -/
+theorem lintegral_eq_lintegral_toSphere_lintegral_Ioi {f : E → ℝ≥0∞} (hf : Measurable f) :
+    ∫⁻ x, f x ∂μ = ∫⁻ u : sphere (0 : E) 1, (∫⁻ r in Ioi (0 : ℝ),
+      ENNReal.ofReal (r ^ (Module.finrank ℝ E - 1)) * f (r • (u : E))) ∂μ.toSphere := by
+  calc ∫⁻ x, f x ∂μ = ∫⁻ x : ({0}ᶜ : Set E), f x ∂(μ.comap Subtype.val) := by
+        rw [lintegral_subtype_comap (measurableSet_singleton _).compl, restrict_compl_singleton]
+    _ = ∫⁻ p : sphere (0 : E) 1 × Ioi (0 : ℝ), f ((p.2 : ℝ) • (p.1 : E))
+          ∂(μ.toSphere.prod (Measure.volumeIoiPow (Module.finrank ℝ E - 1))) := by
+        rw [← μ.measurePreserving_homeomorphUnitSphereProd.lintegral_comp_emb
+          (homeomorphUnitSphereProd E).measurableEmbedding]
+        refine lintegral_congr fun x ↦ ?_
+        have hx : ‖(x : E)‖ ≠ 0 := norm_ne_zero_iff.mpr x.2
+        simp [smul_smul, hx]
+    _ = _ := by
+        have hm : Measurable fun p : sphere (0 : E) 1 × Ioi (0 : ℝ) ↦ (p.2 : ℝ) • (p.1 : E) := by
+          fun_prop
+        refine (lintegral_prod _ (hf.comp hm).aemeasurable).trans (lintegral_congr fun u ↦ ?_)
+        exact lintegral_volumeIoiPow _ fun r ↦ f (r • (u : E))
+
 /-- The polar-coordinate identification of `μ` with the product of `μ.toSphere` and the radial
 measure, for an integrable function: the transported integrand is integrable for the product
 measure, and integrates to `∫ f ∂μ`. -/
-private lemma integrable_and_integral_eq_integral_prod_toSphere (f : E → F)
+theorem integrable_and_integral_eq_integral_prod_toSphere (f : E → F)
     (hf : Integrable f μ) :
     Integrable (fun p : sphere (0 : E) 1 × Ioi (0 : ℝ) ↦ f ((p.2 : ℝ) • (p.1 : E)))
         (μ.toSphere.prod (Measure.volumeIoiPow (Module.finrank ℝ E - 1))) ∧
@@ -258,3 +296,42 @@ theorem integral_norm_rpow_neg_finrank_mul_fderiv_apply_self {f : E → ℝ} (hf
   ring
 
 end TauCeti
+
+namespace LinearIsometryEquiv
+
+open MeasureTheory Metric Set
+open scoped Pointwise
+
+section Isometry
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E]
+  [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F] [MeasurableSpace F] [BorelSpace F]
+
+/-- A linear isometric equivalence `f` carries the surface measure `μ.toSphere` to the surface
+measure of the image measure `μ.map f`, through the restriction of `f` to the unit spheres. -/
+theorem map_toSphere (f : E ≃ₗᵢ[ℝ] F) (μ : Measure E) :
+    μ.toSphere.map (Subtype.map f fun x hx ↦ by simpa using hx) = (μ.map f).toSphere := by
+  set g : sphere (0 : E) 1 → sphere (0 : F) 1 := Subtype.map f fun x hx ↦ by simpa using hx
+  have hg : Measurable g := f.continuous.measurable.subtype_map _
+  ext s hs
+  -- The cone over `g ⁻¹' s` is the preimage under `f` of the cone over `s`.
+  have hcone : Ioo (0 : ℝ) 1 • ((↑) '' (g ⁻¹' s) : Set E) =
+      f ⁻¹' (Ioo (0 : ℝ) 1 • ((↑) '' s : Set F)) := by
+    ext x
+    simp only [mem_preimage, Set.mem_smul, mem_image, exists_exists_and_eq_and]
+    constructor
+    · rintro ⟨r, hr, u, hu, rfl⟩
+      exact ⟨r, hr, g u, hu, by simp [g]⟩
+    · rintro ⟨r, hr, v, hv, hx⟩
+      refine ⟨r, hr, ⟨f.symm v, by simp⟩, ?_, ?_⟩
+      · simpa [g, Subtype.map] using hv
+      · simpa using congrArg f.symm hx
+  -- Pushing forward along `f` evaluates any set through its preimage, measurable or not.
+  have hmap : ∀ t : Set F, μ.map f t = μ (f ⁻¹' t) := fun t ↦ by
+    simpa using f.toHomeomorph.toMeasurableEquiv.map_apply (μ := μ) t
+  rw [Measure.map_apply hg hs, Measure.toSphere_apply' _ (hg hs), Measure.toSphere_apply' _ hs,
+    hmap, hcone, f.toLinearEquiv.finrank_eq]
+
+end Isometry
+
+end LinearIsometryEquiv

@@ -6,7 +6,7 @@ Authors: Chris Birkbeck
 module
 
 public import TauCeti.Analysis.Contour.Winding.Number.Basic
-import TauCeti.Analysis.Contour.Winding.Integer
+import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Basic
 import TauCeti.Analysis.Contour.Curve.IntegralBound
 
 /-!
@@ -17,11 +17,13 @@ differentiable off a countable set, with interval-integrable derivative, the gen
 number `fun w ↦ windingNumber γ a b w` vanishes for every `w` sufficiently far from the origin:
 `windingNumber_eventually_zero_cocompact` states this as an eventual property along the cocompact
 filter, together with the fact that such `w` lie off the curve. This is the input to the Liouville
-step of Dixon's proof of the homology form of Cauchy's theorem (roadmap `homologyCauchyTheorem`):
+step of Dixon's proof of the homology form of Cauchy's theorem:
 the Dixon function agrees with `dixonH2` wherever the winding number is zero.
 
 ## Main results
 
+* `ContinuousOn.windingNumber_eventually_zero_cocompact_of_integer` — far-field vanishing for
+  a continuous curve with interval-integrable derivative and integer winding numbers off its trace.
 * `TauCeti.Contour.windingNumber_eventually_zero_cocompact` — off the curve, the winding number is
   eventually `0` along `cocompact ℂ`.
 
@@ -47,13 +49,13 @@ private theorem norm_inv_two_pi_I : ‖(2 * (Real.pi : ℂ) * Complex.I)⁻¹‖
       by push_cast; ring, norm_mul, Complex.norm_I, mul_one, Complex.norm_real, Real.norm_eq_abs,
     abs_of_pos (by positivity)]
 
-/-- **The winding number vanishes for a point far from a bounded closed curve.** If the closed curve
-`γ` lies in the closed ball of radius `R` and `‖w‖` exceeds `R + (∫ ‖deriv γ‖) / (2π)`, then the
+/-- **An integer winding number vanishes far from a bounded curve.** If the curve `γ` lies in the
+closed ball of radius `R` and `‖w‖` exceeds `R + (∫ ‖deriv γ‖) / (2π)`, then the
 integer-valued winding number about `w` has absolute value below `1`, hence is `0`. -/
-private theorem windingNumber_eq_zero_of_far {γ : ℝ → ℂ} {a b R : ℝ} {P : Set ℝ} {w : ℂ}
-    (hclosed : γ a = γ b) (hP : P.Countable) (hγ_cont : ContinuousOn γ (uIcc a b))
-    (hγ_diff : ∀ t ∈ Ioo (min a b) (max a b) \ P, DifferentiableAt ℝ γ t)
+private theorem windingNumber_eq_zero_of_far {γ : ℝ → ℂ} {a b R : ℝ} {w : ℂ}
+    (hγ_cont : ContinuousOn γ (uIcc a b))
     (hderiv_int : IntervalIntegrable (fun t ↦ deriv γ t) volume a b)
+    (hint : ∃ n : ℤ, windingNumber γ a b w = n)
     (hR : ∀ t ∈ uIcc a b, ‖γ t‖ ≤ R) (hw : R + (∫ t in Ι a b, ‖deriv γ t‖) / (2 * Real.pi) < ‖w‖) :
     windingNumber γ a b w = 0 := by
   have h2pi_pos : (0 : ℝ) < 2 * Real.pi := by positivity
@@ -63,8 +65,7 @@ private theorem windingNumber_eq_zero_of_far {γ : ℝ → ℂ} {a b R : ℝ} {P
   have hpos : 0 < ‖w‖ - R := by linarith
   have h_off : ∀ t ∈ uIcc a b, γ t ≠ w := fun t ht heq => by
     have h := hR t ht; rw [heq] at h; linarith
-  obtain ⟨n, hn⟩ := exists_int_windingNumber_of_closed hclosed hP hγ_cont hγ_diff h_off
-    (intervalIntegrable_inv_sub_mul_deriv hγ_cont h_off hderiv_int)
+  obtain ⟨n, hn⟩ := hint
   have h_norm_wind : ‖windingNumber γ a b w‖
       ≤ (2 * Real.pi)⁻¹ * ((∫ t in Ι a b, ‖deriv γ t‖) / (‖w‖ - R)) := by
     rw [windingNumber_eq_integral_of_avoidance hγ_cont h_off
@@ -83,6 +84,34 @@ private theorem windingNumber_eq_zero_of_far {γ : ℝ → ℂ} {a b R : ℝ} {P
     rwa [hn, Complex.norm_intCast] at h
   rw [hn, show n = 0 from Int.abs_lt_one_iff.mp (by exact_mod_cast h_abs), Int.cast_zero]
 
+/-- A continuous curve with interval-integrable derivative and integer winding numbers off its
+trace has winding number zero sufficiently far from the origin. -/
+theorem _root_.ContinuousOn.windingNumber_eventually_zero_cocompact_of_integer
+    {γ : ℝ → ℂ} {a b : ℝ}
+    (hγ_cont : ContinuousOn γ (uIcc a b))
+    (hderiv_int : IntervalIntegrable (fun t ↦ deriv γ t) volume a b)
+    (hint : ∀ w, w ∉ γ '' uIcc a b → ∃ n : ℤ, windingNumber γ a b w = n) :
+    ∀ᶠ w in Filter.cocompact ℂ,
+      w ∉ γ '' uIcc a b ∧ windingNumber γ a b w = 0 := by
+  obtain ⟨R, hR⟩ := isCompact_uIcc.exists_bound_of_continuousOn hγ_cont
+  have hD_nonneg : 0 ≤ ∫ t in Ι a b, ‖deriv γ t‖ := integral_nonneg fun _ => norm_nonneg _
+  set RR : ℝ := R + (∫ t in Ι a b, ‖deriv γ t‖) / (2 * Real.pi) with hRR_def
+  have hR_le_RR : R ≤ RR := le_add_of_nonneg_right (div_nonneg hD_nonneg (by positivity))
+  have h_mem : {w : ℂ | RR < ‖w‖} ∈ Filter.cocompact ℂ := by
+    rw [Filter.mem_cocompact]
+    exact ⟨Metric.closedBall 0 RR, isCompact_closedBall 0 RR, fun w hw => by
+      simpa [mem_compl_iff, Metric.mem_closedBall, dist_zero_right, not_le] using hw⟩
+  filter_upwards [h_mem] with w (hw : RR < ‖w‖)
+  have hoff : ∀ t ∈ uIcc a b, γ t ≠ w := by
+    intro t ht heq
+    have h := hR t ht
+    rw [heq] at h
+    linarith [lt_of_le_of_lt hR_le_RR hw]
+  have hwtrace : w ∉ γ '' uIcc a b := by
+    simpa only [mem_image, not_exists, not_and] using hoff
+  exact ⟨hwtrace, windingNumber_eq_zero_of_far hγ_cont hderiv_int
+    (hint w hwtrace) hR (hRR_def ▸ hw)⟩
+
 /-- **The winding number is eventually zero far from a bounded closed curve.** For a closed curve
 `γ` (`γ a = γ b`) continuous on `Set.uIcc a b`, differentiable off a countable set `P`, with
 interval-integrable derivative, every point `w` far enough from the origin lies off the curve and
@@ -96,18 +125,10 @@ theorem windingNumber_eventually_zero_cocompact {γ : ℝ → ℂ} {a b : ℝ} {
     (hderiv_int : IntervalIntegrable (fun t ↦ deriv γ t) volume a b) :
     ∀ᶠ w in Filter.cocompact ℂ,
       (∀ t ∈ uIcc a b, γ t ≠ w) ∧ windingNumber γ a b w = 0 := by
-  obtain ⟨R, hR⟩ := isCompact_uIcc.exists_bound_of_continuousOn hγ_cont
-  have hD_nonneg : 0 ≤ ∫ t in Ι a b, ‖deriv γ t‖ := integral_nonneg fun _ => norm_nonneg _
-  set RR : ℝ := R + (∫ t in Ι a b, ‖deriv γ t‖) / (2 * Real.pi) with hRR_def
-  have hR_le_RR : R ≤ RR := le_add_of_nonneg_right (div_nonneg hD_nonneg (by positivity))
-  have h_mem : {w : ℂ | RR < ‖w‖} ∈ Filter.cocompact ℂ := by
-    rw [Filter.mem_cocompact]
-    exact ⟨Metric.closedBall 0 RR, isCompact_closedBall 0 RR, fun w hw => by
-      simpa [mem_compl_iff, Metric.mem_closedBall, dist_zero_right, not_le] using hw⟩
-  filter_upwards [h_mem] with w (hw : RR < ‖w‖)
-  refine ⟨fun t ht heq => ?_, windingNumber_eq_zero_of_far hclosed hP hγ_cont hγ_diff hderiv_int hR
-    (hRR_def ▸ hw)⟩
-  have h := hR t ht; rw [heq] at h
-  linarith [lt_of_le_of_lt hR_le_RR hw]
+  have hac := hγ_cont.absolutelyContinuousOnInterval_of_hasDerivAt_off_countable hP
+    (fun t ht ↦ (hγ_diff t ht).hasDerivAt) hderiv_int
+  simpa only [mem_image, not_exists, not_and] using
+    (hγ_cont.windingNumber_eventually_zero_cocompact_of_integer hderiv_int
+      (fun _ hz ↦ hac.exists_int_windingNumber hclosed hz))
 
 end TauCeti.Contour

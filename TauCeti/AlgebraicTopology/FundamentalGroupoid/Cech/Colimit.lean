@@ -119,7 +119,7 @@ private lemma coconeLeg_singleton_compat (c : Cocone (cechDiagram U)) (i j : ι)
     · exact hx.1
     · exact Finset.mem_singleton.1 hk ▸ hx.2
   -- Both composites factor through the inclusion into the intersection indexed by `{i, j}`.
-  have key : ∀ k (f : s ⟶ CechIndex.singleton k)
+  have key : ∀ k (_ : s ⟶ CechIndex.singleton k)
       (h : (cechIntersection U (CechIndex.singleton i) : Set X) ∩
         cechIntersection U (CechIndex.singleton j) ⊆ cechIntersection U (CechIndex.singleton k)),
       fundamentalGroupoidFunctor.map (TopCat.ofHom (ContinuousMap.inclusion h)) ≫

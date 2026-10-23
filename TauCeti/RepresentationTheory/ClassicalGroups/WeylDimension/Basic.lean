@@ -59,8 +59,6 @@ list.
 
 ## References
 
-* [Classical groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/ClassicalGroups/README.md),
-  Layer 5, “The Weyl dimension formula”.
 * W. Fulton and J. Harris, *Representation Theory: A First Course* (1991), Theorem 6.3 and
   Exercise 15.4.
 -/

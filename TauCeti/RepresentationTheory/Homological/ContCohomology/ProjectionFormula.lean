@@ -51,8 +51,7 @@ whose `d¹` is the difference of the two sides
 ## Main statements
 
 * `TauCeti.ContCohomology.explicitCup_projection`: the `(0,1)` shape
-  `cor¹ (res⁰ a ⌣ b) = a ⌣ cor¹ b`. The roadmap's `Suggested.lean` fixes the unsuffixed name for
-  this shape, which is why the five companions below carry their bidegree and this one does not.
+  `cor¹ (res⁰ a ⌣ b) = a ⌣ cor¹ b`. The five companions below carry their bidegree.
 * `TauCeti.ContCohomology.explicitCup_projection00`,
   `TauCeti.ContCohomology.explicitCup_projection10`,
   `TauCeti.ContCohomology.explicitCup_projection02` and
@@ -68,9 +67,6 @@ whose `d¹` is the difference of the two sides
   `TauCeti.ContCohomology.cup20ProjectionHomotopy_spec`. With the six shapes above, the projection
   formula with the restriction on the first factor holds in every bidegree of total degree at most
   two.
-
-This implements the projection-formula item of the "compatibilities" milestone of Layer 8 of the
-human-authored roadmap at `TauCetiRoadmap/ProfiniteCohomology/README.md`.
 
 ## References
 
@@ -123,9 +119,10 @@ section DegreeOne
 Openness of `U` enters exactly as in `TauCeti.ContCohomology.explicitCor1`: it is what makes the
 corestriction of a continuous cochain continuous. -/
 
+section ExplicitCup01
+
 variable (G : Type u) [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G]
-  (M : Type v) [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
-    [DistribMulAction G M] [ContinuousSMul G M]
+  (M : Type v) [AddCommGroup M] [TopologicalSpace M] [DistribMulAction G M]
   (N : Type w) [AddCommGroup N] [TopologicalSpace N] [IsTopologicalAddGroup N]
     [DistribMulAction G N] [ContinuousSMul G N]
   (P : Type x) [AddCommGroup P] [TopologicalSpace P] [IsTopologicalAddGroup P]
@@ -136,10 +133,8 @@ variable (G : Type u) [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G]
 
 include hU hμ hequiv
 
-omit [IsTopologicalAddGroup M] [ContinuousSMul G M] in
 /-- **The `(0,1)` projection formula**, `cor¹ (res⁰ a ⌣ b) = a ⌣ cor¹ b` for an open subgroup `U`
-of finite index. The roadmap's `Suggested.lean` fixes the name `explicitCup_projection` for this
-shape, and it fixes the normalization of the four companion shapes. -/
+of finite index. -/
 theorem explicitCup_projection (a : H0 G M) (b : H1 U N) :
     explicitCor1 G P U hU
         (explicitCup01 U M N P μ hμ (fun g m y => hequiv (g : G) m y)
@@ -158,7 +153,22 @@ theorem explicitCup_projection (a : H0 G M) (b : H1 U N) :
     exact (map_cochainsCor1 G N U Quotient.out Quotient.out_eq (μ (a : M))
       (fun g y => pairingLeft_smul μ hequiv a g y) (c : U → N) γ).symm
 
-omit [IsTopologicalAddGroup N] [ContinuousSMul G N] in
+end ExplicitCup01
+
+section ExplicitCup10
+
+variable (G : Type u) [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G]
+  (M : Type v) [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
+    [DistribMulAction G M] [ContinuousSMul G M]
+  (N : Type w) [AddCommGroup N] [TopologicalSpace N] [DistribMulAction G N]
+  (P : Type x) [AddCommGroup P] [TopologicalSpace P] [IsTopologicalAddGroup P]
+    [DistribMulAction G P] [ContinuousSMul G P]
+  (U : Subgroup G) [U.FiniteIndex] (hU : IsOpen (U : Set G))
+  (μ : M →+ N →+ P) (hμ : Continuous fun p : M × N => μ p.1 p.2)
+  (hequiv : ∀ (g : G) (m : M) (y : N), μ (g • m) (g • y) = g • μ m y)
+
+include hU hμ hequiv
+
 /-- **The `(1,0)` projection formula**, `cor¹ (b ⌣ res⁰ n) = cor¹ b ⌣ n`. The translation factors
 of the `(1,0)` cochain formula act trivially on the invariant `n`, which is what leaves a plain
 naturality statement behind. -/
@@ -181,6 +191,8 @@ theorem explicitCup_projection10 (b : H1 U M) (n : H0 G N) :
     simp only [AddMonoidHom.flip_apply] at key
     exact key.symm
 
+end ExplicitCup10
+
 end DegreeOne
 
 section DegreeTwo
@@ -191,9 +203,10 @@ The `2`-cochains of the subgroup are functions on `U × U`, so the cup products 
 to be a topological group. Degree one needs separately continuous multiplication on `G`;
 degree two uses `[IsTopologicalGroup G]` to obtain the corresponding structure on `U`. -/
 
+section ExplicitCup02
+
 variable (G : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-  (M : Type v) [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
-    [DistribMulAction G M] [ContinuousSMul G M]
+  (M : Type v) [AddCommGroup M] [TopologicalSpace M] [DistribMulAction G M]
   (N : Type w) [AddCommGroup N] [TopologicalSpace N] [IsTopologicalAddGroup N]
     [DistribMulAction G N] [ContinuousSMul G N]
   (P : Type x) [AddCommGroup P] [TopologicalSpace P] [IsTopologicalAddGroup P]
@@ -204,7 +217,6 @@ variable (G : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 
 include hU hμ hequiv
 
-omit [IsTopologicalAddGroup M] [ContinuousSMul G M] in
 /-- **The `(0,2)` projection formula**, `cor² (res⁰ a ⌣ b) = a ⌣ cor² b`. -/
 theorem explicitCup_projection02 (a : H0 G M) (b : H2 U N) :
     explicitCor2 G P U hU
@@ -223,7 +235,22 @@ theorem explicitCup_projection02 (a : H0 G M) (b : H2 U N) :
     exact (map_cochainsCor2 G N U Quotient.out Quotient.out_eq (μ (a : M))
       (fun g y => pairingLeft_smul μ hequiv a g y) (c : U × U → N) γ η).symm
 
-omit [IsTopologicalAddGroup N] [ContinuousSMul G N] in
+end ExplicitCup02
+
+section ExplicitCup20
+
+variable (G : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  (M : Type v) [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
+    [DistribMulAction G M] [ContinuousSMul G M]
+  (N : Type w) [AddCommGroup N] [TopologicalSpace N] [DistribMulAction G N]
+  (P : Type x) [AddCommGroup P] [TopologicalSpace P] [IsTopologicalAddGroup P]
+    [DistribMulAction G P] [ContinuousSMul G P]
+  (U : Subgroup G) [U.FiniteIndex] (hU : IsOpen (U : Set G))
+  (μ : M →+ N →+ P) (hμ : Continuous fun p : M × N => μ p.1 p.2)
+  (hequiv : ∀ (g : G) (m : M) (y : N), μ (g • m) (g • y) = g • μ m y)
+
+include hU hμ hequiv
+
 /-- **The `(2,0)` projection formula**, `cor² (b ⌣ res⁰ n) = cor² b ⌣ n`. -/
 theorem explicitCup_projection20 (b : H2 U M) (n : H0 G N) :
     explicitCor2 G P U hU
@@ -245,6 +272,8 @@ theorem explicitCup_projection20 (b : H2 U M) (n : H0 G N) :
     simp only [AddMonoidHom.flip_apply] at key
     exact key.symm
 
+end ExplicitCup20
+
 end DegreeTwo
 
 section CupOneOneHomotopy
@@ -257,10 +286,12 @@ coboundary, and this section writes down a primitive for it. Nothing here needs 
 identity `TauCeti.ContCohomology.cup11ProjectionHomotopy_spec` is an identity of plain cochains,
 just like the corestriction cochain identities it is proved from. -/
 
+section Def
+
 variable (G : Type u) [Group G]
-  (M : Type v) [AddCommGroup M] [DistribMulAction G M]
+  (M : Type v) [AddCommGroup M]
   (N : Type w) [AddCommGroup N] [DistribMulAction G N]
-  (P : Type x) [AddCommGroup P] [DistribMulAction G P]
+  (P : Type x) [AddCommGroup P]
   (U : Subgroup G) [U.FiniteIndex]
   (μ : M →+ N →+ P)
   (t : G ⧸ U → G) (ht : ∀ u : G ⧸ U, (QuotientGroup.mk (t u) : G ⧸ U) = u)
@@ -280,22 +311,12 @@ projection formula, `TauCeti.ContCohomology.cup11ProjectionHomotopy_spec`. -/
 noncomputable def cup11ProjectionHomotopy (α : G → M) (β : U → N) (γ : G) : P :=
   ∑ u : G ⧸ U, μ (α (t u)) (t u • β ⟨lWord U t u γ, lWord_mem U t ht u γ⟩)
 
-omit [DistribMulAction G M] [DistribMulAction G P] in
 /-- The defining formula for the `(1,1)` projection-formula homotopy. -/
 @[simp]
 theorem cup11ProjectionHomotopy_apply (α : G → M) (β : U → N) (γ : G) :
     cup11ProjectionHomotopy G M N P U μ t ht α β γ =
       ∑ u : G ⧸ U, μ (α (t u)) (t u • β ⟨lWord U t u γ, lWord_mem U t ht u γ⟩) := (rfl)
 
-/-- Translating the homotopy: `γ • kᵗ(η)` pairs `γ • α (t u)` against `(γ * t u) • β (ℓᵗ_u η)`. -/
-private theorem smul_cup11ProjectionHomotopy
-    (hequiv : ∀ (g : G) (m : M) (y : N), μ (g • m) (g • y) = g • μ m y) (α : G → M) (β : U → N)
-    (γ η : G) :
-    γ • cup11ProjectionHomotopy G M N P U μ t ht α β η =
-      ∑ u : G ⧸ U, μ (γ • α (t u)) ((γ * t u) • β ⟨lWord U t u η, lWord_mem U t ht u η⟩) := by
-  simp only [cup11ProjectionHomotopy_apply, Finset.smul_sum, ← hequiv, mul_smul]
-
-omit [DistribMulAction G M] [DistribMulAction G P] in
 /-- The homotopy at a product: by the `1`-cocycle law of `β`, `kᵗ(γη)` is `kᵗ(γ)` plus the sum
 pairing `α (t (γ • u))` against `(γ * t u) • β (ℓᵗ_u η)`. -/
 private theorem cup11ProjectionHomotopy_mul (α : G → M) {β : U → N}
@@ -310,6 +331,26 @@ private theorem cup11ProjectionHomotopy_mul (α : G → M) {β : U → N}
   -- Reindex the second sum by translation by `γ`.
   refine congrArg _ (Fintype.sum_equiv (MulAction.toPerm γ) _ _ fun u => ?_).symm
   simp only [MulAction.toPerm_apply, inv_smul_smul]
+
+end Def
+
+variable (G : Type u) [Group G]
+  (M : Type v) [AddCommGroup M] [DistribMulAction G M]
+  (N : Type w) [AddCommGroup N] [DistribMulAction G N]
+  (P : Type x) [AddCommGroup P] [DistribMulAction G P]
+  (U : Subgroup G) [U.FiniteIndex]
+  (μ : M →+ N →+ P)
+  (t : G ⧸ U → G) (ht : ∀ u : G ⧸ U, (QuotientGroup.mk (t u) : G ⧸ U) = u)
+
+attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
+
+/-- Translating the homotopy: `γ • kᵗ(η)` pairs `γ • α (t u)` against `(γ * t u) • β (ℓᵗ_u η)`. -/
+private theorem smul_cup11ProjectionHomotopy
+    (hequiv : ∀ (g : G) (m : M) (y : N), μ (g • m) (g • y) = g • μ m y) (α : G → M) (β : U → N)
+    (γ η : G) :
+    γ • cup11ProjectionHomotopy G M N P U μ t ht α β η =
+      ∑ u : G ⧸ U, μ (γ • α (t u)) ((γ * t u) • β ⟨lWord U t u η, lWord_mem U t ht u η⟩) := by
+  simp only [cup11ProjectionHomotopy_apply, Finset.smul_sum, ← hequiv, mul_smul]
 
 /-- The corestriction side of the `(1,1)` projection formula, reindexed by translation by `γ` so
 that its second pairing argument is `(γ * t u) • β (ℓᵗ_u η)`; the cocycle law of `α` then turns
@@ -363,13 +404,12 @@ Continuity of the homotopy is what makes it a primitive in `B²`, which is the i
 *continuous* `1`-cochains, and it comes — as everywhere in this file — from openness of `U`
 through `TauCeti.continuous_lWord`. -/
 
+section ContinuousHomotopy
+
 variable (G : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-  (M : Type v) [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
-    [DistribMulAction G M] [ContinuousSMul G M]
-  (N : Type w) [AddCommGroup N] [TopologicalSpace N] [IsTopologicalAddGroup N]
-    [DistribMulAction G N] [ContinuousSMul G N]
+  (M : Type v) [AddCommGroup M] [TopologicalSpace M]
+  (N : Type w) [AddCommGroup N] [TopologicalSpace N] [DistribMulAction G N] [ContinuousSMul G N]
   (P : Type x) [AddCommGroup P] [TopologicalSpace P] [IsTopologicalAddGroup P]
-    [DistribMulAction G P] [ContinuousSMul G P]
   (U : Subgroup G) [U.FiniteIndex] (hU : IsOpen (U : Set G))
   (μ : M →+ N →+ P) (hμ : Continuous fun p : M × N => μ p.1 p.2)
   (t : G ⧸ U → G) (ht : ∀ u : G ⧸ U, (QuotientGroup.mk (t u) : G ⧸ U) = u)
@@ -378,8 +418,6 @@ attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
 
 include hU hμ
 
-omit [IsTopologicalAddGroup M] [DistribMulAction G M] [ContinuousSMul G M]
-  [IsTopologicalAddGroup N] [DistribMulAction G P] [ContinuousSMul G P] in
 /-- The `(1,1)` projection-formula homotopy of continuous data is continuous. As for the
 corestriction cochains themselves, no continuity is required of the transversal `t`. -/
 theorem continuous_cup11ProjectionHomotopy (α : G → M) {β : U → N} (hβ : Continuous β) :
@@ -390,9 +428,22 @@ theorem continuous_cup11ProjectionHomotopy (α : G → M) {β : U → N} (hβ : 
     hμ.comp (continuous_const.prodMk
       ((hβ.comp ((continuous_lWord U t hU u).subtype_mk _)).const_smul (t u)))
 
-variable (hequiv : ∀ (g : G) (m : M) (y : N), μ (g • m) (g • y) = g • μ m y)
+end ContinuousHomotopy
 
-include hequiv
+variable (G : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  (M : Type v) [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
+    [DistribMulAction G M] [ContinuousSMul G M]
+  (N : Type w) [AddCommGroup N] [TopologicalSpace N] [IsTopologicalAddGroup N]
+    [DistribMulAction G N] [ContinuousSMul G N]
+  (P : Type x) [AddCommGroup P] [TopologicalSpace P] [IsTopologicalAddGroup P]
+    [DistribMulAction G P] [ContinuousSMul G P]
+  (U : Subgroup G) [U.FiniteIndex] (hU : IsOpen (U : Set G))
+  (μ : M →+ N →+ P) (hμ : Continuous fun p : M × N => μ p.1 p.2)
+  (hequiv : ∀ (g : G) (m : M) (y : N), μ (g • m) (g • y) = g • μ m y)
+
+attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
+
+include hU hμ hequiv
 
 /-- **The `(1,1)` projection formula**, `cor² (res¹ a ⌣ b) = a ⌣ cor¹ b`. Unlike the five shapes
 with a degree-`0` factor, this one is not an identity of cochains: the two sides differ by `d¹` of
@@ -434,13 +485,15 @@ The invariance of `n` under `U` is what makes every translate `(t u * ℓᵗ_u �
 `t u • n`, so that all the sums below have the fixed second pairing argument `t u • n`; what moves
 is only the first argument, and there the cocycle law of `α` does the work. -/
 
+section Def
+
 variable (G : Type u) [Group G]
-  (M : Type v) [AddCommGroup M] [DistribMulAction G M]
+  (M : Type v) [AddCommGroup M]
   (N : Type w) [AddCommGroup N] [DistribMulAction G N]
-  (P : Type x) [AddCommGroup P] [DistribMulAction G P]
+  (P : Type x) [AddCommGroup P]
   (U : Subgroup G) [U.FiniteIndex]
   (μ : M →+ N →+ P)
-  (t : G ⧸ U → G) (ht : ∀ u : G ⧸ U, (QuotientGroup.mk (t u) : G ⧸ U) = u)
+  (t : G ⧸ U → G)
 
 attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
 
@@ -451,7 +504,6 @@ of the two sides of `cor¹ (res¹ α ⌣ n) = α ⌣ cor⁰ n`,
 noncomputable def cup10ProjectionHomotopy (α : G → M) (n : N) : P :=
   ∑ u : G ⧸ U, μ (α (t u)) (t u • n)
 
-omit [DistribMulAction G M] [DistribMulAction G P] in
 /-- The defining formula for the `(1,0)` projection-formula homotopy. -/
 @[simp]
 theorem cup10ProjectionHomotopy_apply (α : G → M) (n : N) :
@@ -469,16 +521,26 @@ where `ℓᵗ` is the transversal word `TauCeti.lWord`. Its `d¹` is the differe
 noncomputable def cup20ProjectionHomotopy (α : G × G → M) (n : N) (γ : G) : P :=
   ∑ u : G ⧸ U, μ (α (t u, lWord U t u γ) - α (γ, t (γ⁻¹ • u))) (t u • n)
 
-omit [DistribMulAction G M] [DistribMulAction G P] in
 /-- The defining formula for the `(2,0)` projection-formula homotopy. -/
 @[simp]
 theorem cup20ProjectionHomotopy_apply (α : G × G → M) (n : N) (γ : G) :
     cup20ProjectionHomotopy G M N P U μ t α n γ =
       ∑ u : G ⧸ U, μ (α (t u, lWord U t u γ) - α (γ, t (γ⁻¹ • u))) (t u • n) := (rfl)
 
+end Def
+
+section TransversalSubgroup
+
+variable (G : Type u) [Group G]
+  (M : Type v) [AddCommGroup M]
+  (N : Type w) [AddCommGroup N] [DistribMulAction G N]
+  (P : Type x) [AddCommGroup P]
+  (U : Subgroup G)
+  (μ : M →+ N →+ P)
+  (t : G ⧸ U → G) (ht : ∀ u : G ⧸ U, (QuotientGroup.mk (t u) : G ⧸ U) = u)
+
 include ht
 
-omit [DistribMulAction G M] [DistribMulAction G P] [U.FiniteIndex] in
 /-- For a `U`-invariant `n`, the translate `(γ * t (γ⁻¹ • u)) • n` is `t u • n`: the group element
 is `t u * ℓᵗ_u γ`, and the transversal word acts trivially. -/
 private theorem mul_transversal_inv_smul_smul {n : N} (hn : n ∈ H0 U N) (u : G ⧸ U) (γ : G) :
@@ -486,7 +548,10 @@ private theorem mul_transversal_inv_smul_smul {n : N} (hn : n ∈ H0 U N) (u : G
   rw [← transversal_mul_lWord U t u γ, mul_smul]
   exact congrArg (t u • ·) ((FixedPoints.mem_addSubgroup U N n).1 hn ⟨_, lWord_mem U t ht u γ⟩)
 
-omit [DistribMulAction G M] [DistribMulAction G P] in
+variable [U.FiniteIndex]
+
+attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
+
 /-- Summing the values `(γ * t u) • n` of a `U`-invariant `n` against coefficients `c u` is
 summing `t u • n` against the reindexed coefficients `c (γ⁻¹ • u)`: the reindexing step shared by
 the two homotopy identities. -/
@@ -494,6 +559,60 @@ private theorem sum_smul_mul_transversal_smul {n : N} (hn : n ∈ H0 U N) (c : G
     ∑ u : G ⧸ U, μ (c u) ((γ * t u) • n) = ∑ u : G ⧸ U, μ (c (γ⁻¹ • u)) (t u • n) := by
   refine (Fintype.sum_equiv (MulAction.toPerm γ⁻¹) _ _ fun u => ?_).symm
   rw [MulAction.toPerm_apply, mul_transversal_inv_smul_smul G N U t ht hn]
+
+end TransversalSubgroup
+
+section CocycleHelper
+
+variable (G : Type u) [Group G]
+  (M : Type v) [AddCommGroup M] [DistribMulAction G M]
+  (U : Subgroup G)
+  (t : G ⧸ U → G)
+
+/-- The `2`-cocycle identity behind the `(2,0)` homotopy: at `x = t u`, `y = ℓᵗ_u γ`,
+`z = ℓᵗ_{γ⁻¹ • u} η`, with `x * y = γ * t (γ⁻¹ • u)` and `y * z = ℓᵗ_u (γη)`, the cocycle law of
+`α` at the three triples `(x, y, z)`, `(γ, t (γ⁻¹ • u), z)` and `(γ, η, t ((γη)⁻¹ • u))` expresses
+`t u • α (y, z) - α (γ, η)` through the values of the homotopy's coefficient
+`c_u(γ) = α (t u, ℓᵗ_u γ) - α (γ, t (γ⁻¹ • u))`. -/
+private theorem transversal_smul_apply_lWord_sub_of_isCocycle₂ {α : G × G → M}
+    (hα : groupCohomology.IsCocycle₂ α) (u : G ⧸ U) (γ η : G) :
+    t u • α (lWord U t u γ, lWord U t (γ⁻¹ • u) η) - α (γ, η) =
+      γ • (α (t (γ⁻¹ • u), lWord U t (γ⁻¹ • u) η) - α (η, t (η⁻¹ • γ⁻¹ • u))) -
+        (α (t u, lWord U t u (γ * η)) - α (γ * η, t ((γ * η)⁻¹ • u))) +
+        (α (t u, lWord U t u γ) - α (γ, t (γ⁻¹ • u))) := by
+  have h₁ := hα (t u) (lWord U t u γ) (lWord U t (γ⁻¹ • u) η)
+  have h₂ := hα γ (t (γ⁻¹ • u)) (lWord U t (γ⁻¹ • u) η)
+  have h₃ := hα γ η (t (η⁻¹ • γ⁻¹ • u))
+  rw [transversal_mul_lWord, lWord_mul_lWord] at h₁
+  rw [transversal_mul_lWord] at h₂
+  rw [mul_inv_rev, mul_smul]
+  -- `h₁` expresses `t u • α (y, z)`, `h₂` expresses `α (γ * t (γ⁻¹ • u), z)` and `h₃` expresses
+  -- `α (γ, η * t ((γη)⁻¹ • u))`; eliminating the latter two from the first leaves the claim.
+  have e₁ : t u • α (lWord U t u γ, lWord U t (γ⁻¹ • u) η) =
+      α (γ * t (γ⁻¹ • u), lWord U t (γ⁻¹ • u) η) + α (t u, lWord U t u γ) -
+        α (t u, lWord U t u (γ * η)) := eq_sub_of_add_eq h₁.symm
+  have e₂ : α (γ * t (γ⁻¹ • u), lWord U t (γ⁻¹ • u) η) =
+      γ • α (t (γ⁻¹ • u), lWord U t (γ⁻¹ • u) η) + α (γ, η * t (η⁻¹ • γ⁻¹ • u)) -
+        α (γ, t (γ⁻¹ • u)) := eq_sub_of_add_eq h₂
+  have e₃ : α (γ, η * t (η⁻¹ • γ⁻¹ • u)) =
+      α (γ * η, t (η⁻¹ • γ⁻¹ • u)) + α (γ, η) - γ • α (η, t (η⁻¹ • γ⁻¹ • u)) :=
+    eq_sub_of_add_eq ((add_comm _ _).trans h₃.symm)
+  rw [e₁, e₂, e₃, smul_sub]
+  abel
+
+end CocycleHelper
+
+variable (G : Type u) [Group G]
+  (M : Type v) [AddCommGroup M] [DistribMulAction G M]
+  (N : Type w) [AddCommGroup N] [DistribMulAction G N]
+  (P : Type x) [AddCommGroup P] [DistribMulAction G P]
+  (U : Subgroup G) [U.FiniteIndex]
+  (μ : M →+ N →+ P)
+  (t : G ⧸ U → G) (ht : ∀ u : G ⧸ U, (QuotientGroup.mk (t u) : G ⧸ U) = u)
+
+attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
+
+include ht
 
 /-- **The `(1,0)` projection formula with restriction on the cocycle, on cochains, up to the
 explicit coboundary.** For a `1`-cocycle `α` of `G` and a `U`-invariant `n`, the difference between
@@ -545,37 +664,6 @@ private theorem smul_cup20ProjectionHomotopy
     ht hn (fun u => γ • (α (t u, lWord U t u η) - α (η, t (η⁻¹ • u)))) γ)
   rw [← hequiv, smul_smul]
 
-omit ht [U.FiniteIndex] in
-/-- The `2`-cocycle identity behind the `(2,0)` homotopy: at `x = t u`, `y = ℓᵗ_u γ`,
-`z = ℓᵗ_{γ⁻¹ • u} η`, with `x * y = γ * t (γ⁻¹ • u)` and `y * z = ℓᵗ_u (γη)`, the cocycle law of
-`α` at the three triples `(x, y, z)`, `(γ, t (γ⁻¹ • u), z)` and `(γ, η, t ((γη)⁻¹ • u))` expresses
-`t u • α (y, z) - α (γ, η)` through the values of the homotopy's coefficient
-`c_u(γ) = α (t u, ℓᵗ_u γ) - α (γ, t (γ⁻¹ • u))`. -/
-private theorem transversal_smul_apply_lWord_sub_of_isCocycle₂ {α : G × G → M}
-    (hα : groupCohomology.IsCocycle₂ α) (u : G ⧸ U) (γ η : G) :
-    t u • α (lWord U t u γ, lWord U t (γ⁻¹ • u) η) - α (γ, η) =
-      γ • (α (t (γ⁻¹ • u), lWord U t (γ⁻¹ • u) η) - α (η, t (η⁻¹ • γ⁻¹ • u))) -
-        (α (t u, lWord U t u (γ * η)) - α (γ * η, t ((γ * η)⁻¹ • u))) +
-        (α (t u, lWord U t u γ) - α (γ, t (γ⁻¹ • u))) := by
-  have h₁ := hα (t u) (lWord U t u γ) (lWord U t (γ⁻¹ • u) η)
-  have h₂ := hα γ (t (γ⁻¹ • u)) (lWord U t (γ⁻¹ • u) η)
-  have h₃ := hα γ η (t (η⁻¹ • γ⁻¹ • u))
-  rw [transversal_mul_lWord, lWord_mul_lWord] at h₁
-  rw [transversal_mul_lWord] at h₂
-  rw [mul_inv_rev, mul_smul]
-  -- `h₁` expresses `t u • α (y, z)`, `h₂` expresses `α (γ * t (γ⁻¹ • u), z)` and `h₃` expresses
-  -- `α (γ, η * t ((γη)⁻¹ • u))`; eliminating the latter two from the first leaves the claim.
-  have e₁ : t u • α (lWord U t u γ, lWord U t (γ⁻¹ • u) η) =
-      α (γ * t (γ⁻¹ • u), lWord U t (γ⁻¹ • u) η) + α (t u, lWord U t u γ) -
-        α (t u, lWord U t u (γ * η)) := eq_sub_of_add_eq h₁.symm
-  have e₂ : α (γ * t (γ⁻¹ • u), lWord U t (γ⁻¹ • u) η) =
-      γ • α (t (γ⁻¹ • u), lWord U t (γ⁻¹ • u) η) + α (γ, η * t (η⁻¹ • γ⁻¹ • u)) -
-        α (γ, t (γ⁻¹ • u)) := eq_sub_of_add_eq h₂
-  have e₃ : α (γ, η * t (η⁻¹ • γ⁻¹ • u)) =
-      α (γ * η, t (η⁻¹ • γ⁻¹ • u)) + α (γ, η) - γ • α (η, t (η⁻¹ • γ⁻¹ • u)) :=
-    eq_sub_of_add_eq ((add_comm _ _).trans h₃.symm)
-  rw [e₁, e₂, e₃, smul_sub]
-  abel
 
 /-- **The `(2,0)` projection formula with restriction on the cocycle, on cochains, up to the
 explicit coboundary.** For a `2`-cocycle `α` of `G` and a `U`-invariant `n`, the difference between
@@ -621,13 +709,12 @@ factor, `cor (res a ⌣ n) = a ⌣ cor⁰ n`. Together with the six shapes above
 projection formula with the restriction on the first factor in every bidegree `(p, q)` with
 `p + q ≤ 2`. -/
 
+section ContinuousHomotopy
+
 variable (G : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   (M : Type v) [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
-    [DistribMulAction G M] [ContinuousSMul G M]
-  (N : Type w) [AddCommGroup N] [TopologicalSpace N] [IsTopologicalAddGroup N]
-    [DistribMulAction G N] [ContinuousSMul G N]
+  (N : Type w) [AddCommGroup N] [TopologicalSpace N] [DistribMulAction G N]
   (P : Type x) [AddCommGroup P] [TopologicalSpace P] [IsTopologicalAddGroup P]
-    [DistribMulAction G P] [ContinuousSMul G P]
   (U : Subgroup G) [U.FiniteIndex] (hU : IsOpen (U : Set G))
   (μ : M →+ N →+ P) (hμ : Continuous fun p : M × N => μ p.1 p.2)
 
@@ -635,8 +722,6 @@ attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
 
 include hU hμ
 
-omit [IsTopologicalAddGroup N] [ContinuousSMul G N] [DistribMulAction G M] [ContinuousSMul G M]
-  [DistribMulAction G P] [ContinuousSMul G P] in
 /-- The `(2,0)` projection-formula homotopy of a continuous cocycle is continuous: the transversal
 word is continuous by `TauCeti.continuous_lWord`, and `γ ↦ t (γ⁻¹ • u)` is locally constant because
 `U` is open. -/
@@ -650,11 +735,22 @@ theorem continuous_cup20ProjectionHomotopy (t : G ⧸ U → G) {α : G × G → 
     (hα.comp (continuous_id.prodMk
       (continuous_of_discreteTopology.comp (continuous_inv.smul continuous_const))))
 
-variable (hequiv : ∀ (g : G) (m : M) (y : N), μ (g • m) (g • y) = g • μ m y)
+end ContinuousHomotopy
 
-include hequiv
+variable (G : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  (M : Type v) [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
+    [DistribMulAction G M] [ContinuousSMul G M]
+  (N : Type w) [AddCommGroup N] [TopologicalSpace N] [DistribMulAction G N]
+  (P : Type x) [AddCommGroup P] [TopologicalSpace P] [IsTopologicalAddGroup P]
+    [DistribMulAction G P] [ContinuousSMul G P]
+  (U : Subgroup G) [U.FiniteIndex] (hU : IsOpen (U : Set G))
+  (μ : M →+ N →+ P) (hμ : Continuous fun p : M × N => μ p.1 p.2)
+  (hequiv : ∀ (g : G) (m : M) (y : N), μ (g • m) (g • y) = g • μ m y)
 
-omit [IsTopologicalAddGroup N] [ContinuousSMul G N] in
+attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
+
+include hU hμ hequiv
+
 /-- **The `(1,0)` projection formula with restriction on the cocycle**,
 `cor¹ (res¹ a ⌣ n) = a ⌣ cor⁰ n`. The two sides differ on cochains by `d⁰` of
 `TauCeti.ContCohomology.cup10ProjectionHomotopy`, which is
@@ -674,7 +770,6 @@ theorem explicitCup_projection10_res_left (a : H1 G M) (n : H0 U N) :
     exact cup10ProjectionHomotopy_spec G M N P U μ Quotient.out Quotient.out_eq hequiv
       (mem_Z1_iff.1 α.2).2 n.2 γ
 
-omit [IsTopologicalAddGroup N] [ContinuousSMul G N] in
 /-- **The `(2,0)` projection formula with restriction on the cocycle**,
 `cor² (res² a ⌣ n) = a ⌣ cor⁰ n`. The two sides differ on cochains by `d¹` of
 `TauCeti.ContCohomology.cup20ProjectionHomotopy`, which is
@@ -691,7 +786,7 @@ theorem explicitCup_projection20_res_left (a : H2 G M) (n : H0 U N) :
         (mem_Z2_iff.1 α.2).1 (n : N), fun γ η => ?_⟩
     -- Restriction is evaluation of the cochain at the inclusion, by `cocyclesMap2_apply`.
     have hres : ((cocyclesMap2 G M U M (ContinuousMonoidHom.subgroupSubtype U) (AddMonoidHom.id M)
-        continuous_id (id_subgroupSubtype_smul G M U) α : Z2 U M) : U × U → M) =
+        continuous_id (ContinuousMonoidHom.id_subgroupSubtype_smul M U) α : Z2 U M) : U × U → M) =
           fun q => (α : G × G → M) ((q.1 : G), (q.2 : G)) :=
       funext fun q => cocyclesMap2_apply G M U M _ _ _ _ α q.1 q.2
     simp only [Pi.sub_apply, coe_cocyclesCor2, hres, Subgroup.smul_def, coe_explicitCor0]

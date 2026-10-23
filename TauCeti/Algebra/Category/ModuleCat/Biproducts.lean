@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Biproducts
 public import Mathlib.Algebra.DirectSum.Module
 
 /-!
-# The carrier of a finite biproduct in `ModuleCat`
+# The carrier of a biproduct in `ModuleCat`
 
 Mathlib's `ModuleCat.biproductIsoPi` identifies a finite biproduct in `ModuleCat A` with the
 dependent function type `∀ i, P i`. Over a finite index type the external direct sum `⨁ i, P i` is
@@ -20,6 +20,10 @@ biproduct inclusion to the corresponding direct-sum inclusion.
 
 This is the transport along which results about `DirectSum` decompositions of a module — the
 Krull-Schmidt theorem among them — can be read as results about biproducts in `ModuleCat A`.
+
+For a binary biproduct, Mathlib's `ModuleCat.biprodIsoProd` identifies `M ⊞ N` with the product
+module `M × N`; this file also records that it carries the biproduct inclusions to
+`LinearMap.inl` and `LinearMap.inr`.
 
 ## Main definitions
 
@@ -32,6 +36,9 @@ Krull-Schmidt theorem among them — can be read as results about biproducts in 
   projection.
 * `TauCeti.biproductDirectSumEquiv_ι`: it carries the `i`-th biproduct inclusion to the `i`-th
   direct-sum inclusion.
+* `ModuleCat.inl_comp_biprodIsoProd_hom`, `ModuleCat.inr_comp_biprodIsoProd_hom`: under
+  `ModuleCat.biprodIsoProd`, the binary biproduct inclusions are `LinearMap.inl` and
+  `LinearMap.inr`.
 -/
 
 public section
@@ -88,3 +95,29 @@ theorem biproductDirectSumEquiv_ι [DecidableEq ι] (i : ι) (y : (P i : Type v)
   · simp [h]
 
 end TauCeti
+
+namespace ModuleCat
+
+open CategoryTheory CategoryTheory.Limits
+
+universe u v
+
+variable {R : Type u} [Ring R] (M N : ModuleCat.{v} R)
+
+/-- The first biproduct inclusion followed by the identification of the biproduct with the product
+module is the first inclusion `LinearMap.inl` into the product. -/
+@[reassoc (attr := simp)]
+theorem inl_comp_biprodIsoProd_hom :
+    biprod.inl ≫ (biprodIsoProd M N).hom = ofHom (LinearMap.inl R M N) := by
+  rw [← Iso.eq_comp_inv]
+  apply biprod.hom_ext <;> ext x <;> simp
+
+/-- The second biproduct inclusion followed by the identification of the biproduct with the
+product module is the second inclusion `LinearMap.inr` into the product. -/
+@[reassoc (attr := simp)]
+theorem inr_comp_biprodIsoProd_hom :
+    biprod.inr ≫ (biprodIsoProd M N).hom = ofHom (LinearMap.inr R M N) := by
+  rw [← Iso.eq_comp_inv]
+  apply biprod.hom_ext <;> ext x <;> simp
+
+end ModuleCat

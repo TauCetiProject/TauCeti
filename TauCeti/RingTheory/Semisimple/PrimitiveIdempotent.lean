@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.PrimitiveIdempotent
+public import TauCeti.RingTheory.Idempotents.Primitive.Basic
 
 /-!
 # Simple modules and primitive idempotents of semisimple rings
@@ -28,7 +28,7 @@ No finite-dimensionality or base field is needed.
 
 ## References
 
-* `TauCeti.RingTheory.PrimitiveIdempotent`: the primitive-idempotent/indecomposable-ideal
+* `TauCeti.RingTheory.Idempotents.Primitive.Basic`: the primitive-idempotent/indecomposable-ideal
   correspondence.
 * Mathlib's `IsSemisimpleRing.exists_linearEquiv_ideal_of_isSimpleModule` and
   `IsSemisimpleRing.ideal_eq_span_idempotent`: simple-module representatives and idempotent

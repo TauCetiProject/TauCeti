@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Tensor
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Metric
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Torsion
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
+import TauCeti.Geometry.Manifold.VectorField.LieBracket
 
 /-!
 # The first Bianchi identity
@@ -54,13 +56,6 @@ theorem curvatureOperator_cyclic_eq_zero
     (isTorsionFree_iff cov).mp ht
   let _ : IsManifold I (minSmoothness ℝ 3) M :=
     IsManifold.of_le (m := minSmoothness ℝ 3) (n := ∞) (by simp)
-  let _ : IsManifold I ((∞ : ℕ∞ω) + 1) M :=
-    IsManifold.of_le (m := (∞ : ℕ∞ω) + 1) (n := ∞) (by simp)
-  have hbr {U V : Π y : M, TangentSpace I y}
-      (hU : CMDiff ∞ (T% U)) (hV : CMDiff ∞ (T% V)) :
-      CMDiff ∞ (T% (mlieBracket I U V)) :=
-    ContDiff.mlieBracket_vectorField (m := (⊤ : ℕ∞)) (n := (⊤ : ℕ∞)) hU hV (by
-      simp [minSmoothness_of_isRCLikeNormedField])
   have ht' {U V : Π y : M, TangentSpace I y}
       (hU : CMDiff ∞ (T% U)) (hV : CMDiff ∞ (T% V)) :
       mlieBracket I U V x = cov V x (U x) - cov U x (V x) :=
@@ -69,7 +64,8 @@ theorem curvatureOperator_cyclic_eq_zero
     (hX.of_le (by simp [minSmoothness_of_isRCLikeNormedField])).contMDiffAt
     (hY.of_le (by simp [minSmoothness_of_isRCLikeNormedField])).contMDiffAt
     (hZ.of_le (by simp [minSmoothness_of_isRCLikeNormedField])).contMDiffAt (x := x)
-  rw [ht' hX (hbr hY hZ), ht' (hbr hX hY) hZ, ht' hY (hbr hX hZ),
+  rw [ht' hX (contMDiff_mlieBracket hY hZ), ht' (contMDiff_mlieBracket hX hY) hZ,
+    ht' hY (contMDiff_mlieBracket hX hZ),
     cov.covariantDerivative_mlieBracket_apply_eq_sub_of_torsion_free ht hY hZ x (X x),
     cov.covariantDerivative_mlieBracket_apply_eq_sub_of_torsion_free ht hX hY x (Z x),
     cov.covariantDerivative_mlieBracket_apply_eq_sub_of_torsion_free ht hX hZ x (Y x)] at hj
@@ -95,5 +91,41 @@ theorem curvatureTensor_cyclic_eq_zero (ht : cov.torsion = 0)
     curvatureTensor_apply cov x hZ hX hY]
   exact curvatureOperator_cyclic_eq_zero
     ((isTorsionFree_iff_torsion_eq_zero cov).mpr ht) hX hY hZ x
+
+section Riemannian
+
+variable [RiemannianBundle (TangentSpace I : M → Type _)]
+  [IsContMDiffRiemannianBundle I 2 E (TangentSpace I : M → Type _)]
+
+/-- The metric-lowered curvature tensor of a metric-compatible torsion-free connection is
+unchanged when its two pairs of arguments are interchanged. -/
+theorem IsMetricCompatible.inner_curvatureTensor_swap_pairs
+    (hcov : CovariantDerivative.IsMetricCompatible
+      (V := fun y : M ↦ TangentSpace I y) cov) (ht : cov.torsion = 0)
+    (x : M) (u v w z : TangentSpace I x) :
+    inner ℝ (cov.curvatureTensor x u v w) z =
+      inner ℝ (cov.curvatureTensor x w z u) v := by
+  let R : TangentSpace I x → TangentSpace I x → TangentSpace I x →
+      TangentSpace I x → ℝ := fun a b c d ↦ inner ℝ (cov.curvatureTensor x a b c) d
+  have hfirst (a b c d : TangentSpace I x) : R a b c d = -R b a c d := by
+    simp only [R, cov.curvatureTensor_antisymm x a b, LinearMap.neg_apply, inner_neg_left]
+  have hlast (a b c d : TangentSpace I x) : R a b c d = -R a b d c := by
+    simpa only [R, real_inner_comm] using hcov.inner_curvatureTensor_eq_neg x a b c d
+  have hbianchi (a b c d : TangentSpace I x) :
+      R a b c d + R b c a d + R c a b d = 0 := by
+    simpa only [R, inner_add_left, inner_zero_left] using
+      congrArg (fun q ↦ inner ℝ q d) (cov.curvatureTensor_cyclic_eq_zero ht x a b c)
+  have h₁ := hbianchi u v w z
+  have h₂ := hbianchi v u z w
+  have h₃ := hbianchi w z u v
+  have h₄ := hbianchi v w z u
+  rw [hfirst v u z w, hlast u v z w] at h₂
+  rw [hlast z u w v, hfirst z u v w, hlast u w z v,
+    hfirst u w v z] at h₃
+  rw [hlast v w z u, hlast w z v u, hlast z v w u] at h₄
+  dsimp only [R] at h₁ h₂ h₃ h₄ ⊢
+  linarith
+
+end Riemannian
 
 end CovariantDerivative

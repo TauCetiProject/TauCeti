@@ -37,7 +37,7 @@ noncomputable def liftBialgHom (f : GroupLike R A →* GroupLike R B)
     (hlinear : LinearIndependent R (GroupLike.val (R := R) (A := A)))
     (hA : Submodule.span R (Set.range (GroupLike.val (R := R) (A := A))) = ⊤) :
     A →ₐc[R] B :=
-  (TauCeti.GroupLike.evaluationBialgHom R B).comp
+  (MonoidAlgebra.liftGroupLikeBialgHom (R := R) (A := B)).comp
     ((MonoidAlgebra.mapDomainBialgHom R f).comp
       (TauCeti.GroupLike.evaluationBialgEquivOfLinearIndependentOfSpanEqTop
         R A hlinear hA).symm.toBialgHom)
@@ -56,7 +56,7 @@ theorem liftBialgHom_apply_val (f : GroupLike R A →* GroupLike R B)
       (TauCeti.GroupLike.evaluationBialgEquivOfLinearIndependentOfSpanEqTop R A hlinear hA)
     simp only [BialgEquiv.apply_symm_apply,
       TauCeti.GroupLike.evaluationBialgEquivOfLinearIndependentOfSpanEqTop_apply,
-      TauCeti.GroupLike.evaluationBialgHom_single, one_smul]
+      MonoidAlgebra.liftGroupLikeBialgHom_single, one_smul]
   simp [liftBialgHom, hx]
 
 /-- Restricting the extension to group-like elements recovers the given homomorphism. -/

@@ -20,9 +20,7 @@ written in real coordinates `ℝ × ℝ ≅ ℂ` as `(x, y) ↦ (x² - y², 2xy)
 constant-structure `J`-holomorphic for the standard structure `AlmostComplexStructure.product ℝ`,
 `(s, t) ↦ (-t, s)`, on both source and target, even though it is genuinely nonlinear.
 
-This is the rule-out-vacuous-definitions check the analytic Heegaard Floer roadmap asks for
-(`TauCetiRoadmap/HeegaardFloer/README.md`, the "checks along the way" acceptance criteria that
-rule out vacuous or mis-stated definitions): the constant-structure Cauchy--Riemann equation
+This rules out a vacuous definition: the constant-structure Cauchy--Riemann equation
 `df ∘ J = J' ∘ df` really does hold for a map whose derivative varies from point to point, so the
 predicate captures ordinary complex differentiability and is not accidentally restricted to the
 linear instances.
@@ -86,7 +84,7 @@ theorem isConstStructureJHolomorphicAt_sqMap (a : ℝ × ℝ) :
     simp [AlmostComplexStructure.product_apply] <;> ring
 
 /-- The complex squaring map is globally constant-structure `J`-holomorphic for the standard almost
-complex structure on source and target. This is the roadmap's nonlinear acceptance example. -/
+complex structure on source and target. -/
 theorem isConstStructureJHolomorphic_sqMap :
     IsConstStructureJHolomorphic (AlmostComplexStructure.product ℝ)
       (AlmostComplexStructure.product ℝ) sqMap :=

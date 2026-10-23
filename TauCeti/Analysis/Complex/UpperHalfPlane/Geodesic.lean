@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Metric
 public import TauCeti.Analysis.Complex.UpperHalfPlane.ProperAction
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Dilation
-import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Affine
+public import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Affine
 import TauCeti.Analysis.Complex.UpperHalfPlane.Rotation
 
 /-!
@@ -67,6 +67,9 @@ reverses the axis (`geodesicLine_mul_pslS`).
 * `TauCeti.UpperHalfPlane.exists_geodesicLine_zero_eq_and_dist_eq` — two-point transitivity:
   a geodesic line with `z` at parameter `0` and `w` at parameter `dist z w`, for any `z`, `w`;
   `exists_mem_range_geodesicLine_and_mem_range` is the same at the level of the line as a set.
+* `UpperHalfPlane.re_geodesicLine_toPoint`, `UpperHalfPlane.im_geodesicLine_toPoint`: the
+  upward vertical `geodesicLine (toPoint A)` keeps the real part of `A` and has height
+  `Im A · exp t`.
 -/
 
 public section
@@ -250,3 +253,24 @@ theorem exists_mem_range_geodesicLine_and_mem_range (z w : ℍ) :
   exact ⟨g, ⟨0, hz⟩, ⟨dist z w, hw⟩⟩
 
 end TauCeti.UpperHalfPlane
+
+namespace UpperHalfPlane
+
+open TauCeti.UpperHalfPlane
+
+/-- The upward vertical through `A` keeps the real part of `A`. -/
+@[simp]
+theorem re_geodesicLine_toPoint (A : ℍ) (t : ℝ) : (geodesicLine (toPoint A) t).re = A.re := by
+  rw [← coe_re, ← mul_one (toPoint A), ← smul_geodesicLine, coe_toPoint_smul,
+    geodesicLine_one_apply]
+  simp only [Complex.add_re, Complex.re_ofReal_mul, Complex.ofReal_re, mul_zero, zero_add]
+
+/-- The upward vertical through `A` reaches height `Im A · exp t` at parameter `t`. -/
+@[simp]
+theorem im_geodesicLine_toPoint (A : ℍ) (t : ℝ) :
+    (geodesicLine (toPoint A) t).im = A.im * Real.exp t := by
+  rw [← coe_im, ← mul_one (toPoint A), ← smul_geodesicLine, coe_toPoint_smul,
+    geodesicLine_one_apply]
+  simp only [Complex.add_im, Complex.im_ofReal_mul, Complex.ofReal_im, add_zero]
+
+end UpperHalfPlane

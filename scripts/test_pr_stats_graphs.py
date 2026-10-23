@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 from collections import Counter
 import shutil
@@ -18,6 +19,24 @@ from unittest.mock import patch
 
 import chart_style
 import pr_stats_graphs as stats
+
+
+# Helvetica's ascender and descender as fractions of the size: the box a line of text sits in.
+# Chromium's ink for these headers stays inside it (two subtitle lines' ink spans 0.94 of the size).
+ASCENT, DESCENT = 0.77, 0.23
+
+
+def header_gaps(root):
+    """The clear space between each pair of consecutive header lines (the title, then each subtitle
+    line), as a fraction of the subtitle's rendered size."""
+    width = float(root.attrib["viewBox"].split()[2])
+    scale = width / chart_style.REFERENCE_WIDTH
+    sizes = {"title": chart_style.TITLE_SIZE * scale, "subtitle": chart_style.SUBTITLE_SIZE * scale}
+    lines = [(float(node.attrib["y"]), sizes[node.attrib["class"]])
+             for node in root.iter("{http://www.w3.org/2000/svg}text")
+             if node.attrib.get("class") in sizes]
+    return [((lower - ASCENT * lower_size) - (upper + DESCENT * upper_size)) / sizes["subtitle"]
+            for (upper, upper_size), (lower, lower_size) in zip(lines, lines[1:])]
 
 
 UTC = timezone.utc
@@ -301,6 +320,18 @@ class MetricsTest(unittest.TestCase):
                     self.assertEqual(stats.run_gh(["api", "graphql"]), "done")
         self.assertEqual(run.call_count, 2)
         sleep.assert_called_once_with(42.0)
+
+    def test_rate_limit_wait_uses_the_exhausted_api_budget(self):
+        limited = SimpleNamespace(returncode=1, stdout="", stderr="API rate limit exceeded")
+        success = SimpleNamespace(returncode=0, stdout="done", stderr="")
+        for arguments, resource in [(["api", "graphql"], "graphql"),
+                                    (["api", "--paginate", "repos/o/r/issues/comments"], "core")]:
+            with self.subTest(resource=resource):
+                with (patch.object(stats.subprocess, "run", side_effect=[limited, success]),
+                      patch.object(stats, "rate_limit_reset_wait", return_value=42.0) as reset,
+                      patch.object(stats.time, "sleep")):
+                    self.assertEqual(stats.run_gh(arguments), "done")
+                reset.assert_called_once_with(resource)
 
     def test_run_gh_gives_up_when_the_budget_will_not_refill(self):
         limited = SimpleNamespace(
@@ -594,6 +625,7 @@ class MetricsTest(unittest.TestCase):
         ]
         with (
             patch.object(stats, "fetch_prs", return_value=prs),
+            patch.object(stats, "fetch_bors_merges", return_value=({}, timestamp(3))),
             patch.object(stats, "fetch_scoreboards",
                          return_value=([], {}, timestamp(3))) as fetch,
         ):
@@ -632,6 +664,90 @@ class MetricsTest(unittest.TestCase):
             cutoff=datetime(2026, 1, 3, 12, tzinfo=UTC),
         )
         self.assertEqual(dict(totals), {"before": 1})
+
+
+class BorsMergesTest(unittest.TestCase):
+    def test_receipts_filter_bot_identity_branch_and_success(self):
+        comments = [
+            {"user": {"type": kind, "login": login}, "body": body,
+             "issue_url": "https://api.github.com/repos/o/r/issues/42",
+             "created_at": timestamp(9)}
+            for kind, login, body in [
+                ("Bot", stats.BORS_LOGIN, stats.BORS_SUCCESS + "Build succeeded"),
+                ("User", stats.BORS_LOGIN, stats.BORS_SUCCESS),
+                ("Bot", "other[bot]", stats.BORS_SUCCESS),
+                ("Bot", stats.BORS_LOGIN, "Pull request successfully merged into staging.\n\n"),
+                ("Bot", stats.BORS_LOGIN, "Build succeeded"),
+            ]
+        ]
+        def run(arguments):
+            return subprocess.run(["jq", "-c", arguments[-1]], input=json.dumps(comments),
+                                  text=True, check=True, capture_output=True).stdout
+        if shutil.which("jq") is None:
+            self.skipTest("jq unavailable")
+        with patch.object(stats, "run_gh", side_effect=run):
+            merges, _ = stats.fetch_bors_merges("o/r")
+        self.assertEqual(merges, {"42": timestamp(9)})
+
+    def test_old_snapshot_forces_full_history_and_new_one_keeps_receipts(self):
+        now = stats.parse_dt(timestamp(15))
+        old = {"scoreboards_scanned_at": timestamp(14)}
+        with patch.object(stats, "run_gh", return_value='') as run:
+            merges, scanned = stats.fetch_bors_merges("o/r", old, now)
+        self.assertNotIn("since=", run.call_args.args[0][2])
+        new = {"bors_merges_scanned_at": scanned, "bors_merges": {"42": timestamp(9)}}
+        receipts = '\n'.join(json.dumps({"number": 42, "created_at": timestamp(day)})
+                             for day in (10, 9))
+        with patch.object(stats, "run_gh", return_value=receipts) as run:
+            merges, _ = stats.fetch_bors_merges("o/r", new, now)
+        self.assertIn("since=2026-01-14T23:00:00Z", run.call_args.args[0][2])
+        self.assertEqual(merges, {"42": timestamp(9)})
+
+    def test_bors_and_native_merges_count_once_in_all_histories(self):
+        prs = [pr(1, 1), pr(2, 1, merged_day=8), pr(3, 1), pr(4, 1, state="OPEN")]
+        stats.apply_bors_merges(prs, {"1": timestamp(9), "2": timestamp(9),
+                                      "4": timestamp(9), "999": timestamp(9)})
+        self.assertEqual(prs[0]["state"], "MERGED")
+        self.assertEqual(prs[1]["merged_at"], timestamp(8, 12))
+        self.assertIsNone(prs[2]["merged_at"])
+        self.assertIsNone(prs[3]["merged_at"])
+        with tempfile.TemporaryDirectory() as folder:
+            metrics = stats.generate({"prs": prs, "fetched_at": timestamp(10),
+                                      "scoreboards": []}, Path(folder))
+        self.assertEqual(metrics["rolling_seven_day"][-1]["merges"], 2)
+        self.assertEqual(metrics["merge_totals_by_contributor"], {"alice": 2})
+        self.assertEqual(metrics["cumulative_merges_plotted"]["alice"][-1], 2)
+
+    def test_unchanged_cached_timeline_still_gets_historical_merge_backfill(self):
+        old_pr = pr(42, 1, author="bors-only-author")
+        old_pr.update(closed_at=timestamp(9), updated_at=timestamp(9), labeled_events=[])
+        previous = {"repo": "o/r", "prs": [old_pr]}
+        page = {"repository": {"pullRequests": {
+            "pageInfo": {"hasNextPage": False, "endCursor": None}, "nodes": [{
+                "number": 42, "createdAt": timestamp(1), "updatedAt": timestamp(9),
+                "mergedAt": None, "closedAt": timestamp(9), "state": "CLOSED",
+                "isDraft": False, "author": {"login": "bors-only-author"},
+                "labels": {"nodes": []},
+            }],
+        }}}
+        with (patch.object(stats, "graphql", return_value=page) as query,
+              patch.object(stats, "fetch_bors_merges",
+                           return_value=({"42": timestamp(9)}, timestamp(10))),
+              patch.object(stats, "fetch_scoreboards", return_value=([], {}, timestamp(10)))):
+            snapshot = stats.fetch_snapshot("o/r", previous)
+        self.assertEqual(query.call_count, 1)  # Only metadata; reused label history.
+        self.assertEqual(snapshot["prs"][0]["merged_at"], timestamp(9))
+
+    def test_backfill_restores_bors_contributor_review_trust(self):
+        prs = [pr(42, 1, author="bors-only-author")]
+        old = {"repo": "o/r", "scoreboards_scanned_at": timestamp(10)}
+        with (patch.object(stats, "fetch_prs", return_value=prs),
+              patch.object(stats, "fetch_bors_merges",
+                           return_value=({"42": timestamp(9)}, timestamp(10))),
+              patch.object(stats, "fetch_scoreboards", return_value=([], {}, timestamp(10))) as scan):
+            snapshot = stats.fetch_snapshot("o/r", old)
+        scan.assert_called_once_with("o/r", {42}, {"bors-only-author"}, None)
+        self.assertEqual(snapshot["prs"][0]["merge_source"], "bors")
 
 
 class RoadmapMatrixTest(unittest.TestCase):
@@ -717,6 +833,163 @@ class RoadmapMatrixTest(unittest.TestCase):
         matrix = self.matrix(prs, boards)
 
         self.assertEqual(matrix["merges"]["axis"], matrix["reviews"]["axis"])
+
+
+class CategoryGroupingTest(unittest.TestCase):
+    """With a TauCetiRoadmap checkout, the who-works-where grids count each PR under the arXiv
+    category of the roadmap it advances, as declared in that roadmap's metadata.toml."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        root = Path(self.tmp.name)
+        for base, name, meta in (("TauCetiRoadmap", "Primes", 'topic = "math.NT"\n'),
+                                 ("TauCetiRoadmap", "Forms", 'topic = "math.NT"\n'),
+                                 ("TauCetiRoadmap", "Curves", 'topic = "math.AG"\n'),
+                                 ("TauCetiRoadmap", "Bare", None),
+                                 ("TauCetiRoadmap", "Odd", 'topic = "<script>"\n'),
+                                 ("TauCetiRoadmap", "Broken", "topic =\n"),
+                                 ("Completed", "Finished", 'topic = "math.CO"\n'),
+                                 ("Completed", "Curves", 'topic = "math.NT"\n'),
+                                 # Active with no usable category, archived with one: still unsorted.
+                                 ("TauCetiRoadmap", "Revived", None),
+                                 ("Completed", "Revived", 'topic = "math.CO"\n'),
+                                 ("TauCetiRoadmap", "Rewritten", "topic = \"math.nt\"\n"),
+                                 ("Completed", "Rewritten", 'topic = "math.CO"\n'),
+                                 ("TauCetiRoadmap", "Garbled", "topic =\n"),
+                                 ("Completed", "Garbled", 'topic = "math.CO"\n')):
+            d = root / base / name
+            d.mkdir(parents=True)
+            (d / "README.md").write_text(f"# {name}\n")
+            if meta is not None:
+                (d / "metadata.toml").write_text(meta)
+        # Not a roadmap (no README): its metadata is never read.
+        (root / "TauCetiRoadmap" / "references").mkdir()
+        (root / "TauCetiRoadmap" / "references" / "metadata.toml").write_text('topic = "math.GT"\n')
+        self.root = root
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def labelled(self, number, author, area):
+        return {
+            "number": number, "author": author, "labels": [f"roadmap/{area}"],
+            "created_at": "2026-01-10T00:00:00Z", "merged_at": "2026-01-10T12:00:00Z",
+            "closed_at": None, "state": "MERGED", "is_draft": False, "events": [],
+        }
+
+    def test_categories_come_from_each_roadmap_s_metadata(self):
+        self.assertEqual(stats.roadmap_categories(self.root), {
+            "roadmap/Primes": "math.NT", "roadmap/Forms": "math.NT", "roadmap/Curves": "math.AG",
+            "roadmap/Finished": "math.CO",
+        })
+        # The active roadmap decides: its archived namesake's category never stands in for a
+        # missing, invalid or unreadable one of its own (review on TauCetiProject/TauCeti#10413).
+        for name in ("Revived", "Rewritten", "Garbled"):
+            self.assertNotIn(f"roadmap/{name}", stats.roadmap_categories(self.root))
+
+    def test_no_checkout_means_no_categories(self):
+        self.assertEqual(stats.roadmap_categories(self.root / "missing"), {})
+
+    @unittest.skipIf(not hasattr(os, "geteuid") or os.geteuid() == 0,
+                     "needs POSIX permissions, which root bypasses")
+    def test_an_unreadable_checkout_raises_rather_than_reading_as_empty(self):
+        """An empty map would publish every PR as unsorted; failing keeps the committed charts."""
+        active = self.root / "TauCetiRoadmap"
+        active.chmod(0o300)  # searchable, not listable
+        try:
+            with self.assertRaises(OSError):
+                stats.roadmap_categories(self.root)
+        finally:
+            active.chmod(0o755)
+
+    def test_prs_count_under_their_roadmap_s_category(self):
+        prs = [self.labelled(1, "alice", "Primes"), self.labelled(2, "alice", "Forms"),
+               self.labelled(3, "bob", "Curves"), self.labelled(4, "bob", "Bare")]
+        boards = [{"pr": 2, "user": "carol", "created_at": "2026-01-10T13:00:00Z"}]
+        matrix = stats.roadmap_matrix(prs, boards, date(2026, 1, 31),
+                                      column_of=stats.roadmap_categories(self.root))
+        self.assertEqual(matrix["grouping"], "category")
+        self.assertEqual(matrix["merges"]["counts"]["alice\tmath.NT"], 2)
+        self.assertEqual(matrix["merges"]["counts"]["bob\tmath.AG"], 1)
+        self.assertEqual(matrix["merges"]["counts"][f"bob\t{stats.UNSORTED_CATEGORY}"], 1)
+        self.assertEqual(matrix["reviews"]["counts"]["carol\tmath.NT"], 1)
+        self.assertEqual(matrix["columns"][0], "math.NT")
+        self.assertIn({"contributor": "alice", "category": "math.NT", "count": 2},
+                      matrix["exact"]["merges"])
+
+    def test_the_grid_is_labelled_by_category(self):
+        prs = [self.labelled(1, "alice", "Primes"), self.labelled(2, "bob", "Bare")]
+        matrix = stats.roadmap_matrix(prs, [], date(2026, 1, 31),
+                                      column_of=stats.roadmap_categories(self.root))
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "heat.svg"
+            stats.render_roadmap_heatmap(path, "Grid", "merged PRs", matrix, "merges")
+            svg = path.read_text(encoding="utf-8")
+        ET.fromstring(svg)
+        self.assertIn(">Number Theory</text>", svg)  # the name, never the code
+        self.assertNotIn(">math.NT</text>", svg)
+        self.assertIn(">Unsorted</text>", svg)
+        self.assertNotIn(stats.UNSORTED_CATEGORY, svg)
+        self.assertIn("per contributor per arXiv category", svg)
+
+    def test_subtitles_and_headings_fit_the_card(self):
+        """Each subtitle line is one unwrapped <text>. Its right edge is estimated at 0.5 em per
+        character; Chromium measures these lines in the site's font stack at 0.46 em, and the first
+        category wording of this chart (168 characters) overflowed by 87-96 units at every width.
+        The column headings are category names up to 27 characters, rotated 45 degrees: the last
+        one must end inside the card too (estimated at HEADING_ASPECT, the chart's own allowance).
+        Vertically, each header line clears the one above by at least 0.15 of the subtitle's size. A
+        wide grid scales the type up, and with the old fixed baselines the two subtitle lines touched
+        at 1,939 units (review on TauCetiProject/TauCeti#10413)."""
+        def subtitles_fit(matrix):
+            for key in ("merges", "reviews"):
+                with tempfile.TemporaryDirectory() as temporary:
+                    path = Path(temporary) / "heat.svg"
+                    stats.render_roadmap_heatmap(path, "Merged PRs by arXiv category and contributor",
+                                                 "merged PRs", matrix, key)
+                    root = ET.parse(path).getroot()
+                width = float(root.attrib["viewBox"].split()[2])
+                em = 13 * width / chart_style.REFERENCE_WIDTH
+                heading_em = 12 * width / chart_style.REFERENCE_WIDTH
+                for text in root.iter("{http://www.w3.org/2000/svg}text"):
+                    if text.attrib.get("class") == "subtitle":
+                        right = float(text.attrib["x"]) + len(text.text) * em * 0.5
+                        self.assertLessEqual(right, width, f"{len(text.text)} characters: {text.text}")
+                    if text.attrib.get("class") == "collab":
+                        right = float(text.attrib["x"]) + len(text.text) * heading_em * stats.HEADING_ASPECT / 1.414
+                        self.assertLessEqual(right, width, f"heading {text.text!r}")
+                gaps = header_gaps(root)
+                self.assertEqual(len(gaps), 2)
+                for gap in gaps:
+                    self.assertGreaterEqual(gap, 0.15, f"header lines crowd at width {width:g}")
+
+        by_length = sorted(stats.ARXIV_MATH, key=lambda code: (-len(stats.ARXIV_MATH[code]), code))
+        for n in (1, 2, 17, 20):
+            codes = by_length[:n]
+            # Columns are ordered by merges, so give the longest name the fewest: its heading is
+            # then the last one, the one that runs toward the card's right edge.
+            prs, column_of = [], {}
+            for i, code in enumerate(codes):
+                column_of[f"roadmap/Area{i:02d}"] = code
+                for _ in range(1 if i == 0 else 2):
+                    prs.append(self.labelled(len(prs) + 1, f"person-{i:02d}", f"Area{i:02d}"))
+            matrix = stats.roadmap_matrix(prs, [], date(2026, 1, 31), column_of=column_of,
+                                          roadmap_limit=stats.CATEGORY_LIMIT)
+            self.assertEqual(matrix["merges"]["axis"][-1], codes[0])
+            subtitles_fit(matrix)
+        prs = [self.labelled(i + 1, "alice", f"Area{i:02d}") for i in range(15)]
+        subtitles_fit(stats.roadmap_matrix(prs, [], date(2026, 1, 31)))
+
+    def test_generate_groups_by_category_given_a_checkout(self):
+        data = {"repo": "TauCetiProject/TauCeti", "fetched_at": "2026-01-31T23:00:00Z",
+                "prs": [self.labelled(1, "alice", "Primes")], "scoreboards": []}
+        with tempfile.TemporaryDirectory() as temporary:
+            out = Path(temporary)
+            metrics = stats.generate(data, out, history_days=30, roadmap_dir=self.root)
+            svg = (out / "merges-by-roadmap-and-contributor.svg").read_text(encoding="utf-8")
+        self.assertEqual(metrics["by_roadmap_and_contributor"]["grouping"], "category")
+        self.assertEqual(metrics["by_roadmap_and_contributor"]["roadmap_categories"]["roadmap/Primes"], "math.NT")
+        self.assertIn("Merged PRs by arXiv category and contributor", svg)
 
 
 class HeatBucketTest(unittest.TestCase):
@@ -851,7 +1124,9 @@ class HeatmapRenderTest(unittest.TestCase):
         worst = self.headings_clear_the_subtitle(svg)
 
         self.assertIsNotNone(worst)
-        self.assertGreater(worst, stats.HEADING_SUBTITLE_FLOOR, "a heading crosses the subtitle")
+        lowest = max(float(node.attrib["y"]) for node in ET.fromstring(svg).iter(
+            "{http://www.w3.org/2000/svg}text") if node.attrib.get("class") == "subtitle")
+        self.assertGreater(worst, lowest, "a heading crosses the subtitle")
 
     def test_short_headings_do_not_pay_for_the_long_ones(self):
         """The band is sized from the labels, so a grid of short names stays compact."""
@@ -868,6 +1143,33 @@ class HeatmapRenderTest(unittest.TestCase):
         svg = self.render(self.matrix_for(prs))
         self.assertNotIn(stats.OTHER_CONTRIBUTOR, svg)
         self.assertNotIn(stats.OTHER_ROADMAP, svg)
+
+
+class HeaderSpacingTest(unittest.TestCase):
+    def test_cards_up_to_1500_wide_keep_the_design_positions(self):
+        self.assertEqual(stats.subtitle_baselines(chart_style.REFERENCE_WIDTH, 2), [72, 94])
+        for width in (1250, 1500):
+            self.assertEqual(stats.subtitle_baselines(width, 1), [72])
+
+    def test_the_queue_age_header_clears_its_panels(self):
+        """The one two-line header besides the grids, on a 1,710-unit card: its lines are spread
+        apart, and the panel headings beneath stay where they were, so they must still clear it."""
+        metrics = {"total_open_hours": [5, 30, 200], "awaiting_author_hours": [3, 50],
+                   "in_review_hours": [7], "other_open_prs": 12, "missing_transition_fallbacks": 3}
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "queue.svg"
+            stats.render_queue_age(path, metrics, datetime(2026, 1, 31, 12, tzinfo=timezone.utc))
+            root = ET.parse(path).getroot()
+        gaps = header_gaps(root)
+        self.assertEqual(len(gaps), 2)
+        for gap in gaps:
+            self.assertGreaterEqual(gap, 0.15)
+        scale = float(root.attrib["viewBox"].split()[2]) / chart_style.REFERENCE_WIDTH
+        texts = list(root.iter("{http://www.w3.org/2000/svg}text"))
+        lowest = max(float(t.attrib["y"]) for t in texts if t.attrib.get("class") == "subtitle")
+        panel = min(float(t.attrib["y"]) for t in texts if t.attrib.get("class") == "panel")
+        clear = (panel - ASCENT * 15 * scale) - (lowest + DESCENT * chart_style.SUBTITLE_SIZE * scale)
+        self.assertGreaterEqual(clear / (chart_style.SUBTITLE_SIZE * scale), 0.15)
 
 
 class RenderingTest(unittest.TestCase):

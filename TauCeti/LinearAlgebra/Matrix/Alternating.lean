@@ -8,6 +8,9 @@ module
 public import Mathlib.Data.Matrix.Basic
 public import Mathlib.Data.Matrix.Basis
 public import Mathlib.Algebra.CharP.Defs
+public import Mathlib.Algebra.Ring.Invertible
+public import Mathlib.LinearAlgebra.Matrix.Trace
+public import Mathlib.SetTheory.Cardinal.Finite
 
 /-!
 # Matrices equal to the negative of their transpose
@@ -26,8 +29,12 @@ covers every ring of odd characteristic.
 * `Matrix.diag_eq_zero_of_transpose_eq_neg`: the diagonal vanishes when doubling is injective at
   zero, with `Matrix.diag_eq_zero_of_transpose_eq_neg_of_charP` reading that off an odd
   characteristic.
+* `Matrix.trace_eq_zero_of_transpose_eq_neg`: the trace vanishes when `2` is invertible.
 * `Matrix.ext_of_lt_of_transpose_eq_neg`: two such matrices with vanishing diagonals agree as soon
   as they agree above the diagonal.
+* `Matrix.natCard_transpose_eq_neg`: when doubling is injective at zero, the `Nat.card` of such
+  matrices with entries in an additive subgroup `I` is `(Nat.card I) ^ (k.choose 2)`, for an
+  index type of cardinality `k`; for finite `I` this is the number of such matrices.
 -/
 
 public section
@@ -63,6 +70,16 @@ theorem diag_eq_zero_of_transpose_eq_neg [AddGroup S] {M : Matrix n n S} (hM : M
   nth_rewrite 1 [h]
   rw [neg_add_cancel]
 
+/-- A skew-symmetric matrix has trace zero when `2` is invertible. -/
+theorem trace_eq_zero_of_transpose_eq_neg {R : Type*} [Fintype n] [Ring R]
+    [Invertible (2 : R)] (X : Matrix n n R) (hX : Xᵀ = -X) : trace X = 0 := by
+  have h2 : ∀ x : R, x + x = 0 → x = 0 := by
+    intro x hx
+    calc
+      x = ⅟(2 : R) * ((2 : R) * x) := by simp
+      _ = 0 := by rw [two_mul, hx, mul_zero]
+  exact Finset.sum_eq_zero fun a _ => diag_eq_zero_of_transpose_eq_neg hX h2 a
+
 /-- **In a ring of odd characteristic the diagonal of a matrix equal to the negative of its
 transpose vanishes**: odd characteristic implies that doubling is injective at zero, which
 is what the diagonal entries need. -/
@@ -93,5 +110,44 @@ theorem ext_of_lt_of_transpose_eq_neg [LinearOrder n] [Zero S] [Neg S] {M N : Ma
   · exact h a b hab
   · rw [hMd a, hNd a]
   · rw [hskew M hM b a, hskew N hN b a, h b a hab]
+
+/-- **Counting matrices equal to the negative of their transpose with entries in a subgroup.**
+When zero is the only element that doubles to zero, such a matrix is determined by its entries
+above the diagonal, and these are arbitrary elements of the subgroup; for an index type of
+cardinality `k` there are `k.choose 2` of them. As an identity of `Nat.card`s this holds for
+every subgroup; when the subgroup is finite it counts the matrices. -/
+theorem natCard_transpose_eq_neg [Fintype n] [AddCommGroup S] (I : AddSubgroup S)
+    (h2 : ∀ x : S, x + x = 0 → x = 0) :
+    Nat.card {M : Matrix n n S // (∀ i j, M i j ∈ I) ∧ Mᵀ = -M} =
+      Nat.card I ^ (Fintype.card n).choose 2 := by
+  classical
+  let : LinearOrder n := LinearOrder.lift' (Fintype.equivFin n) (Fintype.equivFin n).injective
+  have hpairs : Nat.card {q : n × n // q.1 < q.2} = (Fintype.card n).choose 2 := by
+    rw [Nat.card_eq_fintype_card, Fintype.card_subtype, Fintype.card_product_filter_lt]
+  have hskew : ∀ M : Matrix n n S, Mᵀ = -M → ∀ i j, M j i = -M i j := fun M hM i j => by
+    simpa only [transpose_apply, neg_apply] using congrFun (congrFun hM i) j
+  rw [← hpairs, ← Nat.card_fun]
+  refine Nat.card_congr
+    { toFun := fun M q => ⟨M.1 q.1.1 q.1.2, M.2.1 _ _⟩
+      invFun := fun g => ⟨of fun i j => if h : i < j then (g ⟨(i, j), h⟩ : S)
+          else if h' : j < i then -(g ⟨(j, i), h'⟩ : S) else 0, fun i j => ?_, ?_⟩
+      left_inv := fun M => Subtype.ext ?_
+      right_inv := fun g => funext fun q => Subtype.ext ?_ }
+  · rw [of_apply]
+    split_ifs
+    exacts [(g _).2, I.neg_mem (g _).2, I.zero_mem]
+  · ext i j
+    simp only [transpose_apply, neg_apply, of_apply]
+    rcases lt_trichotomy i j with h | rfl | h
+    · simp [h, h.not_gt]
+    · simp
+    · simp [h, h.not_gt]
+  · ext i j
+    simp only [of_apply]
+    rcases lt_trichotomy i j with h | rfl | h
+    · simp [h]
+    · simp [diag_eq_zero_of_transpose_eq_neg M.2.2 h2 i]
+    · simp [h, h.not_gt, hskew M.1 M.2.2 j i]
+  · simp [q.2]
 
 end Matrix

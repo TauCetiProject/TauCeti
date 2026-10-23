@@ -88,6 +88,20 @@ the real extension embedding. -/
 theorem continuousMulEquivRealOfIsReal_apply (hw : w.IsReal) (x : w.Completion) :
     continuousMulEquivRealOfIsReal hw x = extensionEmbeddingOfIsReal hw x := (rfl)
 
+/-- The extension embedding inverts the continuous multiplicative isomorphism
+`w.Completion ≃ₜ* ℂ` of a complex place. -/
+@[simp]
+theorem extensionEmbedding_continuousMulEquivComplexOfIsComplex_symm (hw : w.IsComplex)
+    (z : ℂ) : extensionEmbedding w ((continuousMulEquivComplexOfIsComplex hw).symm z) = z :=
+  (continuousMulEquivComplexOfIsComplex hw).apply_symm_apply z
+
+/-- The real extension embedding inverts the continuous multiplicative isomorphism
+`w.Completion ≃ₜ* ℝ` of a real place. -/
+@[simp]
+theorem extensionEmbeddingOfIsReal_continuousMulEquivRealOfIsReal_symm (hw : w.IsReal) (x : ℝ) :
+    extensionEmbeddingOfIsReal hw ((continuousMulEquivRealOfIsReal hw).symm x) = x :=
+  (continuousMulEquivRealOfIsReal hw).apply_symm_apply x
+
 /-- The inverse of the continuous multiplicative isomorphism `w.Completion ≃ₜ* ℂ` of a complex
 place preserves norms. -/
 @[simp]

@@ -21,7 +21,7 @@ standard-Borel, atomlessness, or common-carrier assumption is needed.
 
 This is the easy direction of the inverse-counting/separation theorem.  The converse — equality of
 all homomorphism densities implies cut distance zero — is the inverse counting lemma
-`TauCeti.DenseGraphLimits.cutDist_eq_zero_of_forall_homDensity_eq` in
+`TauCeti.DenseGraphLimits.cutDist_eq_zero_of_forall_homDensity_eq_cross` in
 `TauCeti.Combinatorics.DenseGraphLimits.Separation.Inverse`.
 
 ## Main results

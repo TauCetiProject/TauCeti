@@ -20,8 +20,7 @@ The ordinary graph automorphisms preserve the relevant Cartan matrix.  The Suzuk
 permutations instead exchange long and short nodes; the corresponding special isogenies attach
 different field exponents to the two root lengths.
 
-The conventions follow Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, plates I--IX, and
-the `CFSGStatement` roadmap's conventions for Steinberg endomorphisms.
+The conventions follow Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, plates I--IX.
 
 ## Main definitions
 

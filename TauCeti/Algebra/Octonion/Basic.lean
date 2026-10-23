@@ -50,6 +50,9 @@ nothing more.
   involution.
 * `TauCeti.Octonion.trace` and `TauCeti.Octonion.norm`: the trace `a + b` and the norm
   `a * b - v ⬝ᵥ w` of the composition algebra.
+* `TauCeti.Octonion.intCast`: coordinatewise transport of integral octonions to another ring.
+* `TauCeti.Octonion.trialityTrilinearForm`: the trace of a triple octonion product as a bundled
+  trilinear form.
 * `TauCeti.Octonion.imaginary`: the imaginary octonions, the kernel of the trace.
 
 ## Main results
@@ -58,6 +61,11 @@ nothing more.
 * `TauCeti.Octonion.self_mul_conj` and `TauCeti.Octonion.conj_mul_self`:
   `x * conj x = conj x * x = N x • 1`.
 * `TauCeti.Octonion.norm_mul`: the norm is **multiplicative**, so `𝕆` is a composition algebra.
+* `TauCeti.Octonion.trace_mul_assoc`: the trace of a triple product is independent of bracketing.
+* `TauCeti.Octonion.polar_normQuadraticForm_mul_left` and
+  `TauCeti.Octonion.polar_normQuadraticForm_mul_right`: multiplication is adjoint to multiplication
+  by the conjugate for the polar form of the norm. The corresponding associated-form identities
+  require that `2` be invertible.
 * `TauCeti.Octonion.normQuadraticForm`: the norm, bundled as a `QuadraticForm`, so that Mathlib's
   `QuadraticMap.polar` API supplies the associated symmetric bilinear form. That form is visible
   inside the algebra as `TauCeti.Octonion.mul_conj_add_mul_conj`,
@@ -65,6 +73,9 @@ nothing more.
   form of the composition algebra, `TauCeti.Octonion.trace_mul_conj`.
 * `TauCeti.Octonion.left_alternative`, `TauCeti.Octonion.right_alternative` and
   `TauCeti.Octonion.flexible`: `𝕆` is **alternative** and **flexible**.
+* `TauCeti.Octonion.conj_mul_mul` and `TauCeti.Octonion.mul_mul_conj`: multiplication by
+  an octonion and its conjugate cancels to its norm, on either side. Their polarizations
+  reduce the corresponding mixed triple products to the polar form of the norm.
 * `TauCeti.Octonion.moufang_left`, `TauCeti.Octonion.moufang_right` and
   `TauCeti.Octonion.moufang_middle`: the three **Moufang identities**.
 * `TauCeti.Octonion.mul_self`: every octonion satisfies its rank-two equation
@@ -349,6 +360,87 @@ def trace : Octonion R →ₗ[R] R where
 
 @[simp] theorem trace_apply (x : Octonion R) : trace x = x.a + x.b := (rfl)
 
+/-- Transport an integral octonion coordinatewise to a ring. -/
+def intCast (S : Type*) [Ring S] (x : Octonion ℤ) : Octonion S :=
+  ⟨x.a, x.b, fun i ↦ x.v i, fun i ↦ x.w i⟩
+
+@[simp] theorem intCast_a (S : Type*) [Ring S] (x : Octonion ℤ) :
+    (intCast S x).a = x.a := (rfl)
+@[simp] theorem intCast_b (S : Type*) [Ring S] (x : Octonion ℤ) :
+    (intCast S x).b = x.b := (rfl)
+@[simp] theorem intCast_v (S : Type*) [Ring S] (x : Octonion ℤ) (i : Fin 3) :
+    (intCast S x).v i = x.v i := (rfl)
+@[simp] theorem intCast_w (S : Type*) [Ring S] (x : Octonion ℤ) (i : Fin 3) :
+    (intCast S x).w i = x.w i := (rfl)
+
+/-- Coordinatewise integer casting preserves zero. -/
+@[simp]
+theorem intCast_zero (S : Type*) [Ring S] : intCast S 0 = 0 := by
+  apply Octonion.ext
+  · simp
+  · simp
+  · funext i; simp
+  · funext i; simp
+
+/-- Coordinatewise integer casting preserves one. -/
+@[simp]
+theorem intCast_one (S : Type*) [Ring S] : intCast S 1 = 1 := by
+  apply Octonion.ext
+  · simp
+  · simp
+  · funext i; simp
+  · funext i; simp
+
+/-- Coordinatewise integer casting preserves addition. -/
+@[simp]
+theorem intCast_add (S : Type*) [Ring S] (x y : Octonion ℤ) :
+    intCast S (x + y) = intCast S x + intCast S y := by
+  apply Octonion.ext
+  · simp
+  · simp
+  · funext i; simp
+  · funext i; simp
+
+/-- Coordinatewise integer casting preserves negation. -/
+@[simp]
+theorem intCast_neg (S : Type*) [Ring S] (x : Octonion ℤ) :
+    intCast S (-x) = -intCast S x := by
+  apply Octonion.ext
+  · simp
+  · simp
+  · funext i; simp
+  · funext i; simp
+
+/-- Coordinatewise integer casting preserves octonion multiplication. -/
+@[simp]
+theorem intCast_mul (S : Type*) [CommRing S] (x y : Octonion ℤ) :
+    intCast S (x * y) = intCast S x * intCast S y := by
+  apply Octonion.ext
+  · simp [intCast, mul_a, Matrix.vec3_dotProduct]
+  · simp [intCast, mul_b, Matrix.vec3_dotProduct]
+  · funext i
+    fin_cases i <;> simp [intCast, mul_v, cross_apply]
+  · funext i
+    fin_cases i <;> simp [intCast, mul_w, cross_apply]
+
+/-- The trace of an integral octonion commutes with coordinatewise integer casting. -/
+theorem trace_intCast (S : Type*) [CommRing S] (x : Octonion ℤ) :
+    trace (R := S) (intCast S x) = (trace (R := ℤ) x : S) := by
+  simp [intCast, trace_apply]
+
+/-- The trace of a triple octonion product, bundled as a trilinear form. -/
+def trialityTrilinearForm (R : Type*) [CommRing R] :
+    Octonion R →ₗ[R] Octonion R →ₗ[R] Octonion R →ₗ[R] R := by
+  let m := LinearMap.mul R (Octonion R)
+  exact m.compr₂ (m.compr₂ trace)
+
+/-- The octonion triality form evaluates as the trace of a triple product. -/
+@[simp]
+theorem trialityTrilinearForm_apply (R : Type*) [CommRing R]
+    (x y z : Octonion R) :
+    trialityTrilinearForm R x y z = trace (x * y * z) :=
+  by simp [trialityTrilinearForm]
+
 /-- The trace of `1` is `2`, not `1`: the identity vector matrix has two diagonal entries. Not a
 `simp` lemma, because `TauCeti.Octonion.trace_apply` already takes its left-hand side apart. -/
 theorem trace_one : trace (1 : Octonion R) = 2 := by
@@ -357,6 +449,12 @@ theorem trace_one : trace (1 : Octonion R) = 2 := by
 /-- An octonion and its conjugate add up to a scalar: the trace. -/
 theorem add_conj (x : Octonion R) : x + conj x = trace x • 1 := by
   refine Octonion.ext ?_ ?_ ?_ ?_ <;> simp [add_comm]
+
+/-- Conjugation is reflection in the trace: `conj x = trace x • 1 - x`. -/
+theorem conj_eq_trace_smul_one_sub (x : Octonion R) :
+    conj x = trace x • (1 : Octonion R) - x := by
+  rw [← add_conj]
+  abel
 
 /-- Conjugation preserves the trace: it only exchanges the two diagonal entries. Not a `simp`
 lemma, for the same reason as `TauCeti.Octonion.trace_one`. -/
@@ -368,6 +466,14 @@ products of a Zorn product are exchanged when the factors are. Not a `simp` lemm
 reason as `TauCeti.Octonion.trace_one`. -/
 theorem trace_mul_comm (x y : Octonion R) : trace (x * y) = trace (y * x) := by
   simp [dotProduct_comm, mul_comm]
+  ring
+
+/-- The trace of a triple octonion product is independent of its bracketing. -/
+theorem trace_mul_assoc (x y z : Octonion R) : trace (x * y * z) = trace (x * (y * z)) := by
+  simp only [trace_apply, mul_a, mul_b, mul_v, mul_w, add_dotProduct, sub_dotProduct,
+    dotProduct_add, dotProduct_sub, smul_dotProduct, dotProduct_smul, smul_eq_mul]
+  rw [dotProduct_comm (x.w ⨯₃ y.w) z.w, dotProduct_comm (x.v ⨯₃ y.v) z.v,
+    triple_product_permutation z.w x.w y.w, triple_product_permutation z.v x.v y.v]
   ring
 
 /-- **The norm** `⟨a, b, v, w⟩ ↦ a * b - v ⬝ᵥ w` of a vector matrix: the determinant of the matrix,
@@ -438,6 +544,16 @@ def normQuadraticForm (R : Type*) [CommRing R] : QuadraticForm R (Octonion R) :=
 
 @[simp] theorem normQuadraticForm_apply (x : Octonion R) : normQuadraticForm R x = norm x := (rfl)
 
+/-- Left multiplication scales the polar norm form by the norm of the multiplying octonion. -/
+theorem polar_norm_mul_left {R : Type*} [CommRing R] (x y z : TauCeti.Octonion R) :
+    QuadraticMap.polar (TauCeti.Octonion.normQuadraticForm R) (x * y) (x * z) =
+      TauCeti.Octonion.norm x * QuadraticMap.polar (TauCeti.Octonion.normQuadraticForm R) y z := by
+  rw [QuadraticMap.polar, QuadraticMap.polar]
+  simp only [TauCeti.Octonion.normQuadraticForm_apply]
+  rw [← mul_add]
+  simp only [TauCeti.Octonion.norm_mul]
+  ring
+
 /-- The polar form of the norm, read off the entries of the two vector matrices. Stated for
 `QuadraticMap.polar` rather than for `QuadraticMap.polarBilin`, which `simp` unfolds to it. Not a
 `simp` lemma: the polar form and its half `QuadraticMap.associated` are the interface the Hermitian
@@ -463,6 +579,42 @@ theorem trace_mul_conj (x y : Octonion R) :
     trace (x * conj y) = QuadraticMap.polar (normQuadraticForm R) x y := by
   simp [polar_normQuadraticForm, dotProduct_comm]
   ring
+
+/-- Left multiplication by `x` is adjoint to left multiplication by `conj x` for the polar
+form of the norm. This identity does not require that `2` be invertible. -/
+theorem polar_normQuadraticForm_mul_left (x y z : Octonion R) :
+    QuadraticMap.polar (normQuadraticForm R) (x * y) z =
+      QuadraticMap.polar (normQuadraticForm R) y (conj x * z) := by
+  rw [← trace_mul_conj, ← trace_mul_conj, conj_mul, conj_conj]
+  calc
+    trace (x * y * conj z) = trace (x * (y * conj z)) := trace_mul_assoc _ _ _
+    _ = trace ((y * conj z) * x) := trace_mul_comm _ _
+    _ = trace (y * (conj z * x)) := trace_mul_assoc _ _ _
+
+/-- Right multiplication by `y` is adjoint to right multiplication by `conj y` for the polar
+form of the norm. This identity does not require that `2` be invertible. -/
+theorem polar_normQuadraticForm_mul_right (x y z : Octonion R) :
+    QuadraticMap.polar (normQuadraticForm R) (x * y) z =
+      QuadraticMap.polar (normQuadraticForm R) x (z * conj y) := by
+  rw [← trace_mul_conj, ← trace_mul_conj, conj_mul, conj_conj, trace_mul_assoc]
+
+/-- Left multiplication and conjugate left multiplication are adjoint for the associated
+bilinear form of the norm when `2` is invertible. -/
+theorem associated_normQuadraticForm_mul_left [Invertible (2 : R)] (x y z : Octonion R) :
+    QuadraticMap.associated (normQuadraticForm R) (x * y) z =
+      QuadraticMap.associated (normQuadraticForm R) y (conj x * z) := by
+  simpa only [QuadraticMap.associated_apply, QuadraticMap.polar] using
+    congrArg (fun t : R => ⅟(2 : Module.End R R) • t)
+      (polar_normQuadraticForm_mul_left x y z)
+
+/-- Right multiplication and conjugate right multiplication are adjoint for the associated
+bilinear form of the norm when `2` is invertible. -/
+theorem associated_normQuadraticForm_mul_right [Invertible (2 : R)] (x y z : Octonion R) :
+    QuadraticMap.associated (normQuadraticForm R) (x * y) z =
+      QuadraticMap.associated (normQuadraticForm R) x (z * conj y) := by
+  simpa only [QuadraticMap.associated_apply, QuadraticMap.polar] using
+    congrArg (fun t : R => ⅟(2 : Module.End R R) • t)
+      (polar_normQuadraticForm_mul_right x y z)
 
 /-- **The polar form of the norm is visible inside the algebra**: `x * conj y + y * conj x` is the
 scalar `QuadraticMap.polar (normQuadraticForm R) x y · 1`. Together with
@@ -502,6 +654,52 @@ theorem right_alternative (x y : Octonion R) : x * y * y = x * (y * y) := by
   simpa only [conj_mul, conj_conj] using h.symm
 
 end Vector
+
+/-! ### Conjugate cancellation and its polarization
+
+These identities reduce nested products with a repeated octonion to a scalar norm. Their
+polarizations give the mixed terms when two octonions occupy the same off-diagonal slot in
+Hermitian matrix products. No inverse of the norm or characteristic assumption is needed.
+-/
+
+/-- Left multiplication by an octonion followed by its conjugate is scalar multiplication
+by its norm. -/
+@[simp, grind =]
+theorem conj_mul_mul (x y : Octonion R) : conj x * (x * y) = norm x • y := by
+  calc
+    conj x * (x * y) = (conj x * x) * y := by
+      simp only [conj_eq_trace_smul_one_sub, sub_mul, smul_mul_assoc, one_mul,
+        left_alternative]
+    _ = norm x • y := by rw [conj_mul_self, smul_mul_assoc, one_mul]
+
+/-- Right multiplication by an octonion followed by its conjugate is scalar multiplication
+by its norm. -/
+@[simp, grind =]
+theorem mul_mul_conj (x y : Octonion R) : x * y * conj y = norm y • x := by
+  have h := congrArg conj (conj_mul_mul (conj y) (conj x))
+  simpa only [conj_mul, conj_conj, map_smul, norm_conj] using h
+
+/-- The mixed terms of left conjugate cancellation give the polar form of the norm,
+without dividing by `2`. -/
+theorem conj_mul_mul_add_conj_mul_mul (x y z : Octonion R) :
+    conj x * (y * z) + conj y * (x * z) =
+      QuadraticMap.polar (normQuadraticForm R) x y • z := by
+  have h := conj_mul_mul (x + y) z
+  simp only [map_add, add_mul, mul_add, conj_mul_mul] at h
+  rw [QuadraticMap.polar, normQuadraticForm_apply, normQuadraticForm_apply,
+    normQuadraticForm_apply, sub_smul, sub_smul]
+  apply eq_sub_iff_add_eq.mpr
+  apply eq_sub_iff_add_eq.mpr
+  simpa only [add_assoc, add_comm, add_left_comm] using h
+
+/-- The mixed terms of right conjugate cancellation give the polar form of the norm,
+without dividing by `2`. -/
+theorem mul_mul_conj_add_mul_mul_conj (x y z : Octonion R) :
+    z * x * conj y + z * y * conj x =
+      QuadraticMap.polar (normQuadraticForm R) x y • z := by
+  have h := congrArg conj (conj_mul_mul_add_conj_mul_mul (conj x) (conj y) (conj z))
+  simpa only [map_add, map_smul, conj_mul, conj_conj, polar_normQuadraticForm_conj,
+    add_comm] using h
 
 /-! ### The Moufang identities
 

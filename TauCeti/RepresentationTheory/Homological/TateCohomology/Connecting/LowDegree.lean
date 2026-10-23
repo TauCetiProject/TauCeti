@@ -81,7 +81,7 @@ theorem δ_neg_one_HNegOneπ {S : ShortComplex (Rep R G)} (hS : S.ShortExact)
       _ = _ := by
         -- The differential at the join is the Tate norm; the two comparison isomorphisms cancel.
         have hn : (chainsIso₀ S.X₂).inv ≫ (tateComplex S.X₂).d (-1) 0 ≫
-            (cochainsIso₀ S.X₂).hom = S.X₂.norm.toModuleCatHom := by
+            (cochainsIso₀ S.X₂).hom = S.X₂.norm.asHom.toModuleCatHom := by
           rw [tateComplex_d_neg_one, Rep.tateNorm]
           simp only [Category.assoc, Iso.inv_hom_id_assoc, Iso.inv_hom_id, Category.comp_id]
         simpa only [ConcreteCategory.comp_apply] using!
@@ -113,7 +113,7 @@ theorem δ_neg_one_HNegOneπ {S : ShortComplex (Rep R G)} (hS : S.ShortExact)
   -- norm-kernel and invariant representatives. Forgetting a module morphism retains its action.
   dsimp only [ShortComplex.map_X₁, ShortComplex.map_X₃, tateComplexFunctor_obj] at h
   erw [hc₃', hc₁'] at h
-  rw [HNegOneπ_eq_cyclesIso_inv_comp_homologyπ, H0π_eq_cyclesIso_inv_comp_homologyπ]
+  rw [HNegOneπ_eq_HNegOneCyclesIso_inv_comp_homologyπ, H0π_eq_H0CyclesIso_inv_comp_homologyπ]
   exact h
 
 /-- Every class in degree `-1` admits lifts realizing the norm formula for its connecting image. -/

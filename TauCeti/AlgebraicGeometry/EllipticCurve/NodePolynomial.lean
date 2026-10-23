@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.EllipticCurve.VariableChange
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Singular
 public import TauCeti.Algebra.Polynomial.QuadraticDiscriminant
 
 /-!
@@ -18,6 +18,7 @@ distinguishes split from nonsplit multiplicative reduction.
 This file defines `WeierstrassCurve.nodePolynomial` over a commutative ring and proves:
 
 * its discriminant is `-c₄ c₆`;
+* for a model singular at the origin, it is `c₄` times the tangent quadratic `T² + a₁ T - a₂`;
 * it commutes with base change;
 * a change of variables `(u, r, s, t)` acts by the substitution `T ↦ u T + s` and the
   scalar `u⁻⁶`, preserving splitting over a field;
@@ -84,6 +85,16 @@ theorem nodePolynomial_eq_C_mul (W : WeierstrassCurve A) {n : A}
   rw [nodePolynomial_def]
   simp only [map_mul, map_sub, map_add, map_neg, map_ofNat] at hC ⊢
   linear_combination -hC
+
+/-- For a model singular at the origin, the node polynomial is `c₄` times the tangent quadratic
+`T² + a₁ T - a₂`, written in the coefficient form used by the quadratic polynomial API. -/
+theorem nodePolynomial_eq_of_isSingular_zero (W : WeierstrassCurve A)
+    (h : W.toAffine.IsSingular 0 0) :
+    W.nodePolynomial = .C W.c₄ * (.C 1 * .X ^ 2 + .C W.a₁ * .X + .C (-W.a₂)) := by
+  obtain ⟨h₆, h₄, h₃⟩ := (Affine.isSingular_zero _).1 h
+  have hn : W.c₄ * (-W.a₂) = W.nodePolynomial.coeff 0 := by
+    simp [nodePolynomial_coeff_zero, b₄, b₆, h₆, h₄, h₃, mul_comm]
+  simpa using W.nodePolynomial_eq_C_mul hn
 
 /-- The discriminant of the node polynomial is `-c₄ c₆`. Hence — away from residue characteristic
 two, and provided `c₄` survives the reduction — the tangent directions at the node are rational

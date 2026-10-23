@@ -62,7 +62,7 @@ theorem isProPSylow_limitSubgroup (S : ∀ U : OpenNormalSubgroup G, Sylow p (G 
     rw [P.isProP_iff_isPGroup_map_mk']
     intro U
     rw [hPmap U]
-    exact (S U).isPGroup'
+    exact (S U).isPGroup
   refine isProPSylow_iff.mpr ⟨hPclosed, hPpro, fun U ↦ ?_⟩
   rw [hPmap U]
   exact (S U).not_dvd_index

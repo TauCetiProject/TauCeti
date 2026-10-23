@@ -115,12 +115,12 @@ private noncomputable def diag2nLaurentPath
       (K ⊗[k] coordinateHopfAlgebra k n →ₐ[K] LaurentPolynomial K) :=
   (baseChangeSpecialLinearPointsMulEquiv (k := k) (K := K) n
     (LaurentPolynomial K)).symm
-      (Matrix.SpecialLinearGroup.diag2nUnit hij (MultiplicativeGroup.genericUnit K))
+      (Matrix.SpecialLinearGroup.diag2nUnit hij (LaurentPolynomial.genericUnit K))
 
 private theorem mapValue_diag2nLaurentPath
     (n : ℕ) {i j : Fin n} (hij : i ≠ j) (b : Kˣ) :
     AlgHom.mapValue (H := K ⊗[k] coordinateHopfAlgebra k n)
-        (MultiplicativeGroup.point b) (diag2nLaurentPath (k := k) n hij) =
+        (laurentEval b) (diag2nLaurentPath (k := k) n hij) =
       (baseChangeSpecialLinearPointsMulEquiv (k := k) (K := K) n K).symm
         (Matrix.SpecialLinearGroup.diag2n hij b (Units.ne_zero b)) := by
   apply (baseChangeSpecialLinearPointsMulEquiv (k := k) (K := K) n K).injective
@@ -132,7 +132,7 @@ private theorem mapValue_diag2nLaurentPath
 private theorem mapValue_diag2nLaurentPath_one
     (n : ℕ) {i j : Fin n} (hij : i ≠ j) :
     AlgHom.mapValue (H := K ⊗[k] coordinateHopfAlgebra k n)
-        (MultiplicativeGroup.point (1 : Kˣ))
+        (laurentEval (1 : Kˣ))
         (diag2nLaurentPath (k := k) n hij) = 1 := by
   have hdiag : Matrix.SpecialLinearGroup.diag2n hij
       (1 : K) (Units.ne_zero (1 : Kˣ)) = 1 := by
@@ -140,7 +140,7 @@ private theorem mapValue_diag2nLaurentPath_one
     simp
   calc
     AlgHom.mapValue (H := K ⊗[k] coordinateHopfAlgebra k n)
-        (MultiplicativeGroup.point (1 : Kˣ))
+        (laurentEval (1 : Kˣ))
         (diag2nLaurentPath (k := k) n hij) =
       (baseChangeSpecialLinearPointsMulEquiv (k := k) (K := K) n K).symm
         (Matrix.SpecialLinearGroup.diag2n hij
@@ -159,7 +159,7 @@ private theorem rightTranslationAlgHom_eq_self_of_diag2n
           (Matrix.SpecialLinearGroup.diag2n hij a ha)) e = e := by
   let xT := diag2nLaurentPath (k := k) (K := K) n hij
   let eval (b : Kˣ) : LaurentPolynomial K →ₐ[K] K :=
-    MultiplicativeGroup.point b
+    laurentEval b
   have hx (b : Kˣ) := mapValue_diag2nLaurentPath (k := k) (K := K) n hij b
   let au : Kˣ := Units.mk0 a ha
   let ga := (baseChangeSpecialLinearPointsMulEquiv (k := k) (K := K) n K).symm

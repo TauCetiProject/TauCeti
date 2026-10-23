@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Dual
 public import Mathlib.Analysis.LocallyConvex.Separation
-public import TauCeti.Analysis.Convex.Conjugate
+public import TauCeti.Analysis.Convex.Subdifferential
 
 /-!
 # The Fenchel–Moreau theorem
@@ -31,6 +31,10 @@ nor any topology on `F` is needed. For a complete real inner product space the i
 represents every continuous linear functional (the Fréchet–Riesz theorem), which gives the
 self-dual form used in Euclidean optimal transport.
 
+Conversely, slopes can be confined: on a Hilbert space, the conjugate `g⋆` of a function that is
+`⊤` off a closed convex set `K` is a supremum of affine functions with slopes in `K`, and by
+separation all of its subgradients lie in `K`.
+
 ## Main statements
 
 * `TauCeti.exists_affine_le_of_lt` — a convex lower-semicontinuous function
@@ -41,7 +45,11 @@ self-dual form used in Euclidean optimal transport.
   `TauCeti.fenchelConjugate_flip_fenchelConjugate_eq_iff`, its converse for a compatible
   topology;
 * `TauCeti.fenchelConjugate_innerₗ_fenchelConjugate_innerₗ` — the Fenchel–Moreau theorem on a
-  complete real inner product space.
+  complete real inner product space;
+* `TauCeti.subdifferential_fenchelConjugate_subset_of_eq_top` — on a Hilbert space, the
+  subgradients of the conjugate of a function that is `⊤` off a closed convex set `K` lie in `K`,
+  and `TauCeti.exists_le_subdifferential_subset` — every function lies above a convex, lower
+  semicontinuous one with all slopes in `K` that keeps its slopes in `K`.
 
 ## Implementation notes
 
@@ -145,7 +153,7 @@ theorem exists_affine_le_of_lt (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2})
     obtain ⟨ℓ, c, hle, hlt⟩ := h
     refine ⟨ℓ, t - ℓ x₀, fun x => le_trans ?_ (hle x), by ring⟩
     exact EReal.coe_le_coe_iff.2 (by linarith)
-  rcases ne_or_eq (f x₀) ⊤ with htop | htop
+  rcases ne_or_eq (f x₀) ⊤ with htop | _
   · exact exists_lt_of_lt_of_ne_top hf hlsc hbot ht htop
   by_cases hdom : ∀ x, f x = ⊤
   · exact ⟨0, t + 1, fun x => by simp [hdom x], by simp⟩
@@ -243,5 +251,68 @@ theorem fenchelConjugate_innerₗ_fenchelConjugate_innerₗ {G : Type*} [NormedA
     ⟨(InnerProductSpace.toDual ℝ G).symm ℓ, fun x => by
       rw [innerₗ_apply_apply, real_inner_comm, InnerProductSpace.toDual_symm_apply]⟩) hf hlsc hbot
   rwa [flip_innerₗ] at h
+
+section Hilbert
+
+variable {G : Type*} [NormedAddCommGroup G] [InnerProductSpace ℝ G] [CompleteSpace G]
+
+/-- **A conjugate has its slopes in the closed convex set where its argument is finite.** On a
+real Hilbert space, let `g : G → EReal` be `⊤` off a closed convex set `K`, so that its conjugate
+`g⋆ x = ⨆ y ∈ K, (⟪y, x⟫ - g y)` is a supremum of affine functions with slopes in `K`. Then every
+subgradient of `g⋆` lies in `K`. -/
+theorem subdifferential_fenchelConjugate_subset_of_eq_top {K : Set G}
+    (hKc : Convex ℝ K) (hKcl : IsClosed K) {g : G → EReal} (hg : ∀ y ∉ K, g y = ⊤) (x : G) :
+    subdifferential (innerₗ G) (fenchelConjugate (innerₗ G) g) x ⊆ K := by
+  intro z hz
+  by_contra hzK
+  -- Separate `z` from `K` by a functional `ℓ = ⟪w, ·⟫`: `ℓ z < c < ℓ y` for `y ∈ K`.
+  obtain ⟨ℓ, c, hℓz, hℓK⟩ := geometric_hahn_banach_point_closed hKc hKcl hzK
+  set w := (InnerProductSpace.toDual ℝ G).symm ℓ
+  have hw : ∀ v, inner ℝ w v = ℓ v := fun _ => InnerProductSpace.toDual_symm_apply
+  obtain ⟨r, hr⟩ : ∃ r : ℝ, fenchelConjugate (innerₗ G) g x = r :=
+    ⟨_, (EReal.coe_toReal (ne_top_of_mem_subdifferential _ hz)
+      (ne_bot_of_mem_subdifferential _ hz)).symm⟩
+  -- Moving from `x` to `x - w` lowers every term of the supremum by more than `c`.
+  have hle : fenchelConjugate (innerₗ G) g (x - w) ≤ ((r - c : ℝ) : EReal) := by
+    refine fenchelConjugate_le _ fun y => ?_
+    by_cases hy : y ∈ K
+    · have h₁ := sub_le_fenchelConjugate (innerₗ G) g y x
+      rw [hr, EReal.coe_sub_le_comm] at h₁
+      rw [EReal.coe_sub_le_comm]
+      refine le_trans ?_ h₁
+      simp only [innerₗ_apply_apply, inner_sub_right, real_inner_comm w y, hw]
+      norm_cast
+      linarith [hℓK y hy]
+    · rw [hg y hy, EReal.sub_top]
+      exact bot_le
+  have hsub := (add_le_of_mem_subdifferential (innerₗ G) hz (x - w)).trans hle
+  simp only [hr, sub_sub_cancel_left, innerₗ_apply_apply, inner_neg_left, hw] at hsub
+  norm_cast at hsub
+  linarith
+
+/-- **Confining the slopes of a function to a closed convex set.** On a real Hilbert space, let
+`K` be closed and convex. Every `u : G → EReal` lies above a convex, lower semicontinuous `v`
+whose subgradients all lie in `K` and which keeps every subgradient of `u` that lies in `K`:
+`∂u(x) ∩ K ⊆ ∂v(x)` for every `x`. One such `v` is the conjugate of the function equal to `u⋆` on
+`K` and to `⊤` off `K`. -/
+theorem exists_le_subdifferential_subset (u : G → EReal) {K : Set G}
+    (hKc : Convex ℝ K) (hKcl : IsClosed K) :
+    ∃ v : G → EReal, Convex ℝ {p : G × ℝ | v p.1 ≤ p.2} ∧ LowerSemicontinuous v ∧ v ≤ u ∧
+      (∀ x, subdifferential (innerₗ G) v x ⊆ K) ∧
+      ∀ x, subdifferential (innerₗ G) u x ∩ K ⊆ subdifferential (innerₗ G) v x := by
+  classical
+  set φ : G → EReal := fun y => if y ∈ K then fenchelConjugate (innerₗ G) u y else ⊤
+  have hφ : fenchelConjugate (innerₗ G) u ≤ φ := fun y => by
+    simp only [φ]
+    split_ifs <;> simp
+  refine ⟨fenchelConjugate (innerₗ G) φ, convex_epigraph_fenchelConjugate (innerₗ G) φ,
+    lowerSemicontinuous_fenchelConjugate_innerₗ φ, (fenchelConjugate_antitone _ hφ).trans
+      (by simpa only [flip_innerₗ] using fenchelConjugate_flip_fenchelConjugate_le (innerₗ G) u),
+    subdifferential_fenchelConjugate_subset_of_eq_top hKc hKcl fun y hy => by simp [φ, hy],
+    fun x y hy => ?_⟩
+  simpa only [flip_innerₗ] using
+    mem_subdifferential_fenchelConjugate_flip_of_le (innerₗ G) hφ (by simp [φ, hy.2]) hy.1
+
+end Hilbert
 
 end TauCeti

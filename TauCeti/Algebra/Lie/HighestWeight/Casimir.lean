@@ -74,14 +74,12 @@ representing it under the Killing form (`TauCeti.killingExtend`). That extension
 `λ` on `H` and vanishes on every root space, which is what lets the zero-weight term be summed
 without a case distinction on whether the zero functional is a weight at all.
 
-## References
+The unadorned name `casimir_smul_of_isHighestWeightVector` goes to the statement on the generator,
+from which the statement on the whole module,
+`casimir_smul_of_isHighestWeightVector_of_lieSpan_eq_top`, follows by adding the cyclicity
+hypothesis its name records.
 
-This is the "Casimir element" item of Layer 5 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`, whose target signature
-`casimir_smul_of_isHighestWeightVector` is pinned in the accompanying `Suggested.lean`. The
-unadorned name goes to the statement on the generator, from which the statement on the whole
-module, `casimir_smul_of_isHighestWeightVector_of_lieSpan_eq_top`, follows by adding the
-cyclicity hypothesis its name records.
+## References
 
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, §22.1, where
   the Casimir element is shown to act on a standard cyclic module of highest weight `λ` by the

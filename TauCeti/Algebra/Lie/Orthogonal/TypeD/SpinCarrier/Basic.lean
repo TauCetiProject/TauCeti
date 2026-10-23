@@ -75,9 +75,7 @@ The carrier API follows the formal template of
 `TauCeti.Algebra.Lie.E6.Minuscule.GroupScheme` and
 `TauCeti.Algebra.Lie.Symplectic.StandardCarrier.Scheme`, and the pinning equations below follow
 that of `TauCeti.Algebra.Lie.Symplectic.StandardCarrier.RootDatum`; the split spin representation,
-exterior lattice, and type-`D` weights are specific to this construction. This advances Layer 9,
-"The Chevalley--Demazure construction", of the ReductiveGroups roadmap and supplies the type-`D`
-carrier required by milestone L0 of the CFSGStatement roadmap.
+exterior lattice, and type-`D` weights are specific to this construction.
 -/
 
 public section
@@ -461,9 +459,18 @@ theorem points_def (A : Type v) [CommRing A] :
   rw [points, definingIdeal]
   exact kostantToralPointsSubgroup_def _ _ _ _ _ _ _ _ A
 
+/-- The carrier points are the points of the generic Kostant toral closure they are cut out from. -/
+theorem points_eq_kostantToralPointsSubgroup (A : Type v) [CommRing A] :
+    points n hn A =
+      kostantToralPointsSubgroup
+        (TauCeti.serreRootGenerator (CartanMatrix.D n))
+        (TauCeti.serreH ℚ (CartanMatrix.D n)) (rep n hn) (lattice n).toAddSubgroup
+        (rep_kostantForm_mem_lattice n hn)
+        (isNilpotent_rep_rootGenerator n hn) (latticeBasis n) (basisWeight n) A := (rfl)
+
 /-- A matrix is a carrier point exactly when its associated convolution point kills the
 defining Hopf ideal. -/
-@[simp]
+-- Not `@[simp]`: rewriting membership into this raw condition defeats the membership lemmas.
 theorem mem_points_iff (A : Type v) [CommRing A]
     (g : _root_.Matrix.GeneralLinearGroup (Fin (dimension n)) A) :
     g ∈ points n hn A ↔
@@ -536,7 +543,7 @@ theorem weightTorusPoints_conj_rootSubgroupPoints (k : Fin n ⊕ Fin n) (A : Typ
 
 /-- **Conjugation by the spin weight torus acts on each numbered root subgroup through its
 positive or negative simple-root character.** -/
-@[simp]
+-- Not `@[simp]`: `simp` does not match its left-hand side, even with the lemma alone; use `rw`.
 theorem weightTorus_conj_rootSubgroup (k : Fin n ⊕ Fin n) (A : Type) [CommRing A]
     (s : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of ℤ)) ⟶
       (SplitTorus.groupScheme ℤ (Fin n)).X)

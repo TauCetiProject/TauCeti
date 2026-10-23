@@ -98,8 +98,8 @@ theorem natCard_linearMap_quotient_eq_of_tensorRat (P : Type v) [AddCommGroup P]
   -- `Hom(P, M)` and `Hom(P, N)` are free of finite rank over `ℤ_p` and embed in each other.
   have : Module.Finite ℤ_[p] M := .trans A M
   have : Module.Finite ℤ_[p] N := .trans A N
-  have : Module.Finite ℤ_[p] (P →ₗ[A] M) := .linearMap_of_isNoetherianRing
-  have : Module.Finite ℤ_[p] (P →ₗ[A] N) := .linearMap_of_isNoetherianRing
+  have : Module.Finite ℤ_[p] (P →ₗ[A] M) := .linearMap_of_isNoetherian
+  have : Module.Finite ℤ_[p] (P →ₗ[A] N) := .linearMap_of_isNoetherian
   have hfP : Function.Injective (LinearMap.compRight (M := P) ℤ_[p] f) := fun a b hab ↦
     LinearMap.ext fun x ↦ hf (LinearMap.congr_fun hab x)
   have hgP : Function.Injective (LinearMap.compRight (M := P) ℤ_[p] g) := fun a b hab ↦
@@ -108,11 +108,9 @@ theorem natCard_linearMap_quotient_eq_of_tensorRat (P : Type v) [AddCommGroup P]
     (LinearMap.finrank_le_finrank_of_injective hfP).antisymm
       (LinearMap.finrank_le_finrank_of_injective hgP)
   -- The maps from `P` into a reduction are the reductions of the maps into the lattice.
-  have hp : IsRegular (p : ℤ_[p]) := isRegular_iff_ne_zero.mpr (Nat.cast_ne_zero.mpr
-    (Fact.out : p.Prime).ne_zero)
   have hcast : (p : A) = algebraMap ℤ_[p] A p := (map_natCast _ p).symm
-  rw [hcast, ← Nat.card_congr (quotientSMulTopLinearMapEquiv P hp.isSMulRegular).toEquiv,
-    ← Nat.card_congr (quotientSMulTopLinearMapEquiv P hp.isSMulRegular).toEquiv]
+  rw [hcast, ← Nat.card_congr (quotientSMulTopLinearMapEquiv P (p : ℤ_[p])).toEquiv,
+    ← Nat.card_congr (quotientSMulTopLinearMapEquiv P (p : ℤ_[p])).toEquiv]
   refine Nat.card_congr (Submodule.Quotient.equiv _ _ E ?_).toEquiv
   rw [Submodule.map_pointwise_smul, Submodule.map_top, LinearEquiv.range]
 

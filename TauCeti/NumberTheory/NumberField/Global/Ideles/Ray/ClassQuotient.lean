@@ -10,6 +10,8 @@ public import TauCeti.NumberTheory.NumberField.Global.Approximation.Weak
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.FiniteIdeal
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.Ray.Subgroup
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Basic
+public import TauCeti.NumberTheory.NumberField.Global.RayClass.Exact
+public import TauCeti.NumberTheory.NumberField.Global.RayClass.Finite
 
 /-!
 # The ray class group as a quotient of the idele class group
@@ -43,8 +45,12 @@ description determines a well-defined homomorphism on idele classes.
   congruent to one is the ray class of the fractional ideal of its finite component.
 * `TauCeti.GlobalNumberFields.rayClassQuotient_surjective`: the map is surjective.
 * `TauCeti.GlobalNumberFields.ker_rayClassQuotient`: its kernel is `raySubgroup 𝔪`.
+* `TauCeti.GlobalNumberFields.finiteIndex_raySubgroup`: hence the ray subgroup has finite index.
 * `TauCeti.GlobalNumberFields.classMap_comp_rayClassQuotient`: the maps are compatible with the
   transition maps between ray class groups.
+* `TauCeti.GlobalNumberFields.rayClassQuotient_ofCompletion_neg_one`: the idele that is `-1` at
+  one real place of `𝔪` and `1` elsewhere is sent to the ray class of the trivial residue and the
+  sign pattern that is `-1` exactly at that place.
 
 ## References
 
@@ -78,14 +84,14 @@ theorem exists_unitEmbedding_mul_mem_ideleCongrOneSubgroup (𝔪 : Modulus K)
   have hr (w : 𝔪.infinitePart) : r w ≠ 0 :=
     (map_ne_zero _).mpr (w.1.1.ideleInfiniteCoord x).ne_zero
   -- The open set of targets at the places of `𝔪` for which the product is congruent to one.
-  let U : Set ((∀ v : 𝔪.support, v.1.adicCompletion K) × (∀ w : 𝔪.infinitePart, ℝ)) :=
+  let U : Set ((∀ v : 𝔪.support, v.1.adicCompletion K) × (∀ _ : 𝔪.infinitePart, ℝ)) :=
     {p | (∀ v : 𝔪.support, Valued.v (p.1 v * (v.1.ideleFiniteCoord x : v.1.adicCompletion K) - 1)
         ≤ WithZero.exp (-(𝔪.exponent v.1 : ℤ))) ∧ ∀ w : 𝔪.infinitePart, 0 < p.2 w * r w}
   have hU : IsOpen U := by
     simp only [U, Set.ofPred_and, Set.ofPred_forall]
     refine (isOpen_iInter_of_finite fun v ↦ ?_).inter (isOpen_iInter_of_finite fun w ↦ ?_)
     · exact (v.1.isOpen_setOf_valued_le (K := K) WithZero.exp_ne_zero).preimage
-        (f := fun p : (∀ v : 𝔪.support, v.1.adicCompletion K) × (∀ w : 𝔪.infinitePart, ℝ) ↦
+        (f := fun p : (∀ v : 𝔪.support, v.1.adicCompletion K) × (∀ _ : 𝔪.infinitePart, ℝ) ↦
           p.1 v * (v.1.ideleFiniteCoord x : v.1.adicCompletion K) - 1) (by fun_prop)
     · exact isOpen_lt continuous_const (by fun_prop)
   have hp₀ : ((fun v : 𝔪.support ↦
@@ -309,6 +315,12 @@ theorem ker_rayClassQuotient (𝔪 : Modulus K) : (rayClassQuotient 𝔪).ker = 
   rw [mk_eq_mk_unitEmbedding_mul x α, MonoidHom.mem_ker]
   exact rayClassQuotient_mk_eq_one_iff_of_mem hα
 
+/-- **The ray subgroup has finite index**: it is the kernel of the surjection `rayClassQuotient 𝔪`
+onto the finite ray class group. -/
+instance finiteIndex_raySubgroup (𝔪 : Modulus K) : (raySubgroup 𝔪).FiniteIndex := by
+  rw [← ker_rayClassQuotient]
+  infer_instance
+
 /-- **The ray class maps are compatible with the transition maps**: for `𝔪 ∣ 𝔫`, the ray class of
 an idele class modulo `𝔫`, carried to the ray class group of `𝔪`, is its ray class modulo `𝔪`. -/
 theorem classMap_comp_rayClassQuotient {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫) :
@@ -325,5 +337,49 @@ theorem classMap_comp_rayClassQuotient {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ �
     (c : IdeleClassGroup (𝓞 K) K) :
     classMap h (rayClassQuotient 𝔫 c) = rayClassQuotient 𝔪 c := by
   rw [← MonoidHom.comp_apply, classMap_comp_rayClassQuotient]
+
+/-! ### Signs at the real places -/
+
+/-- **The ray class of the sign `-1` at a real place of the modulus.**  The class of the idele that
+is `-1` at a real place `w` of `𝔪` and `1` at every other place is the class
+`residueSignRayClass 𝔪 (1, Pi.mulSingle w (-1))` of the trivial residue and of the sign pattern
+that is `-1` at `w` and `1` at the other real places of `𝔪`.
+
+At a real place outside `𝔪` the corresponding class is trivial (`ofCompletion_mem_raySubgroup`). -/
+theorem rayClassQuotient_ofCompletion_neg_one (𝔪 : Modulus K) [DecidableEq 𝔪.infinitePart]
+    (w : 𝔪.infinitePart) :
+    rayClassQuotient 𝔪 (IdeleClassGroup.ofCompletion (𝓞 K) K w.1.1 (-1)) =
+      residueSignRayClass 𝔪 (1, Pi.mulSingle w (-1)) := by
+  -- An element `x` with trivial residue and these signs makes the idele congruent to one, without
+  -- changing its class; the ray class is then the principal ray class of `x`.
+  obtain ⟨x, hx⟩ := residueSignHom_surjective 𝔪 (1, Pi.mulSingle w (-1))
+  have hres : residue 𝔪 x = 1 := by
+    rw [← coe_residueHom, ← residueSignHom_fst, hx, Units.val_one]
+  have hsign (w' : 𝔪.infinitePart) :
+      signHom (x : Kˣ) w'.1 = (Pi.mulSingle w (-1) : 𝔪.infinitePart → ℤˣ) w' := by
+    rw [← modulusSignHom_apply, ← residueSignHom_snd, hx]
+  set z := IdeleGroup.unitEmbedding (𝓞 K) K (x : Kˣ) *
+    IdeleGroup.ofCompletion (𝓞 K) K w.1.1 (-1) with hz_def
+  have hz : z ∈ ideleCongrOneSubgroup 𝔪 := by
+    refine mem_ideleCongrOneSubgroup_iff.mpr ⟨fun v hv ↦ ?_, fun w' hw' ↦ ?_⟩
+    · -- At a finite divisor of `𝔪` the coordinate of `z` is that of `x`, which is congruent to one.
+      rw [hz_def, map_mul, ideleFiniteCoord_ofCompletion, mul_one,
+        valued_ideleFiniteCoord_unitEmbedding_sub_one]
+      exact (residue_eq_one_iff x).mp hres v hv
+    · -- At a real place of `𝔪` the sign of `x` cancels the sign of the archimedean component.
+      have hs := hsign ⟨w', hw'⟩
+      simp only [hz_def, map_mul, Units.val_mul, InfinitePlace.ideleInfiniteCoord_unitEmbedding]
+      by_cases h : w' = w.1
+      · subst h
+        rw [Pi.mulSingle_eq_same] at hs
+        rw [InfinitePlace.ideleInfiniteCoord_ofCompletion_self]
+        simpa using (signHom_apply_eq_neg_one_iff _ _).mp hs
+      · rw [Pi.mulSingle_eq_of_ne fun h' ↦ h (congrArg Subtype.val h')] at hs
+        rw [InfinitePlace.ideleInfiniteCoord_ofCompletion_of_ne _ fun h' ↦ h (Subtype.ext h')]
+        simpa using (signHom_apply_eq_one_iff _ _).mp hs
+  rw [IdeleClassGroup.ofCompletion_apply, mk_eq_mk_unitEmbedding_mul _ (x : Kˣ),
+    rayClassQuotient_mk_of_mem hz, ← hx, residueSignRayClass_residueSignHom,
+    principalRayClass_apply]
+  exact congrArg _ (Subtype.ext (by simp [hz_def, NumberFieldArithmetic.coe_principalIdealAway]))
 
 end TauCeti.GlobalNumberFields

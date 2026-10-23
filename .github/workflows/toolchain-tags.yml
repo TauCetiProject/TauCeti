@@ -28,6 +28,10 @@ on:
   push:
     branches: [main]
     paths: [lean-toolchain]
+  # Default-branch definition: the cursor can still point at a historical commit
+  # that predates this workflow. The trusted updater dispatches after advancement.
+  repository_dispatch:
+    types: [security-audit-advanced]
   workflow_dispatch:
     inputs:
       wait:
@@ -67,6 +71,12 @@ jobs:
           # The tool re-fetches origin/main before auditing, because the wait below can run
           # for over an hour and this checkout is a snapshot from before it.
 
+      - name: Prepare pinned shared tools
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+        with:
+          tools-repository: TauCetiProject/TauCetiTools
+          tools-ref: ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+          project-directory: .
       - name: Wait for CI, then report to Zulip if anything changed
         env:
           GH_TOKEN: ${{ github.token }}
@@ -79,7 +89,7 @@ jobs:
           # bookkeeping.
           ZULIP_TOPIC: Toolchain tags
           SHA: ${{ github.sha }}
-          WAIT: ${{ github.event_name == 'push' || inputs.wait }}
+          WAIT: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main') || inputs.wait }}
         run: |
           set -euo pipefail
           if [ "$WAIT" = "true" ]; then

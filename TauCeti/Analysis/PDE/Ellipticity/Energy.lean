@@ -12,13 +12,13 @@ public import TauCeti.Analysis.PDE.EnergyLowerBounds
 
 `TauCeti.Analysis.PDE.EnergyForm.Basic` and `TauCeti.Analysis.PDE.EnergyLowerBounds` prove the
 pointwise estimates for divergence-form energy integrands from raw coefficient bounds.
-This file packages the same estimates for callers that hold the roadmap's named principal
+This file packages the same estimates for callers that hold the principal
 coefficient hypothesis `UniformlyEllipticOn Ω a λ Λ`.
 
 The statements are still pointwise finite-dimensional estimates on jets
 `ℝ × EuclideanSpace ℝ n`, not integrated Sobolev-space theorems, and they are not the
 hypothesis of Lax--Milgram: that needs coercivity of the *integrated* form on a complete
-inner-product (H¹-type) space, later Lane A/D work.  They are the pointwise boundedness and
+inner-product (H¹-type) space.  They are the pointwise boundedness and
 diagonal lower bounds that the integrated inequality of
 `TauCeti.Analysis.PDE.EnergyForm.Integrated.Basic` consumes after integrating over the domain.
 
@@ -43,10 +43,9 @@ the same symmetry lemmas.
 * `TauCeti.PDE.UniformlyEllipticOn.garding_energyIntegrand_self_of_mass_lower_bound`:
   the pointwise Gårding lower bound with a mass floor.
 * `TauCeti.PDE.UniformlyEllipticOn.min_diagonal_lower_bound_mul_norm_sq_le_energyIntegrand_self`:
-  the explicit diagonal estimate when the mass floor non-strictly dominates the
-  drift defect.
+  the explicit diagonal estimate for a signed mass floor.
 * `TauCeti.PDE.UniformlyEllipticOn.min_lam_mass_mul_norm_sq_le_energyIntegrand_zero_drift_self`:
-  the zero-drift diagonal estimate from uniform ellipticity and nonnegative mass.
+  the zero-drift diagonal estimate from uniform ellipticity and arbitrary mass.
 * `TauCeti.PDE.UniformlyEllipticOn.mul_norm_snd_sq_le_energyIntegrand_zero_drift_self`:
   the zero-drift lower bound for the squared gradient component.
 -/
@@ -140,31 +139,31 @@ grind_pattern garding_energyIntegrand_self_of_mass_lower_bound =>
   energyIntegrand (a x) b₀ c₀ U U
 
 /-- The lower-bound estimate implies the explicit diagonal estimate with constant
-`min (λ / 2) (μ - β² / (2λ))`, assuming this second coefficient is nonnegative. -/
+`min (λ / 2) (μ - β² / (2λ))`, allowing the second coefficient to have either sign. -/
 lemma min_diagonal_lower_bound_mul_norm_sq_le_energyIntegrand_self
     (h : UniformlyEllipticOn Ω a lam Lam) {x : X} (hx : x ∈ Ω) {b₀ : EuclideanSpace ℝ n} {c₀ : ℝ}
-    (hb : ‖b₀‖ ≤ beta) (hc : mu ≤ c₀) (hmu : beta ^ 2 / (2 * lam) ≤ mu)
+    (hb : ‖b₀‖ ≤ beta) (hc : mu ≤ c₀)
     (U : ℝ × EuclideanSpace ℝ n) :
     min (lam / 2) (mu - beta ^ 2 / (2 * lam)) * ‖U‖ ^ 2
       ≤ energyIntegrand (a x) b₀ c₀ U U :=
   PDE.min_diagonal_lower_bound_mul_norm_sq_le_energyIntegrand_self h.pos (h.lower_bound hx)
-    hb hc hmu U
+    hb hc U
 
 grind_pattern min_diagonal_lower_bound_mul_norm_sq_le_energyIntegrand_self =>
   UniformlyEllipticOn Ω a lam Lam, x ∈ Ω, ‖b₀‖ ≤ beta, mu ≤ c₀,
   energyIntegrand (a x) b₀ c₀ U U
 
-/-- Zero-drift diagonal lower bound for a uniformly elliptic principal coefficient and a
-nonnegative mass coefficient. -/
+/-- Zero-drift diagonal lower bound for a uniformly elliptic principal coefficient and an
+arbitrary mass coefficient. -/
 lemma min_lam_mass_mul_norm_sq_le_energyIntegrand_zero_drift_self
-    (h : UniformlyEllipticOn Ω a lam Lam) {x : X} (hx : x ∈ Ω) {c₀ : ℝ} (hc : 0 ≤ c₀)
+    (h : UniformlyEllipticOn Ω a lam Lam) {x : X} (hx : x ∈ Ω) {c₀ : ℝ}
     (U : ℝ × EuclideanSpace ℝ n) :
     min lam c₀ * ‖U‖ ^ 2 ≤ energyIntegrand (a x) 0 c₀ U U :=
   PDE.min_lam_mass_mul_norm_sq_le_energyIntegrand_zero_drift_self h.pos.le
-    (h.lower_bound hx) hc U
+    (h.lower_bound hx) U
 
 grind_pattern min_lam_mass_mul_norm_sq_le_energyIntegrand_zero_drift_self =>
-  UniformlyEllipticOn Ω a lam Lam, x ∈ Ω, 0 ≤ c₀, energyIntegrand (a x) 0 c₀ U U
+  UniformlyEllipticOn Ω a lam Lam, x ∈ Ω, energyIntegrand (a x) 0 c₀ U U
 
 /-- A zero-drift energy density for a uniformly elliptic principal coefficient dominates the
 squared gradient component when the mass coefficient is nonnegative. -/

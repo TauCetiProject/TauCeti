@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Intertwining
 public import TauCeti.RepresentationTheory.OfModule
-public import TauCeti.RingTheory.PrimitiveIdempotent
+public import TauCeti.RingTheory.Idempotents.Primitive.Basic
 
 import Mathlib.LinearAlgebra.PID
 import TauCeti.Algebra.MonoidAlgebra.Trace

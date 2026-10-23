@@ -147,6 +147,19 @@ def IsConstantCurvatureTensor
     ∀ (x : M) (w u v : TangentSpace I x),
     cov.curvatureTensor x w u v = κ • (Inner.inner ℝ u v • w - Inner.inner ℝ w v • u)
 
+/-- A connection has constant-curvature tensor `κ` precisely when it satisfies the
+constant-curvature equation on every tangent triple. -/
+theorem isConstantCurvatureTensor_iff
+    (g : RiemannianMetric (fun x : M ↦ TangentSpace I x))
+    (cov : CovariantDerivative I E (fun x : M ↦ TangentSpace I x))
+    (hcov : CovariantDerivative.ContMDiffCovariantDerivative cov ∞) (κ : ℝ) :
+    g.IsConstantCurvatureTensor cov hcov κ ↔
+      letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g⟩
+      letI := hcov
+      ∀ (x : M) (w u v : TangentSpace I x),
+        cov.curvatureTensor x w u v = κ • (Inner.inner ℝ u v • w - Inner.inner ℝ w v • u) :=
+  (Iff.rfl)
+
 /-- The pointwise curvature equation carried by `h`. -/
 theorem IsConstantCurvatureTensor.curvatureTensor_eq
     (g : RiemannianMetric (fun x : M ↦ TangentSpace I x))
@@ -175,6 +188,17 @@ def IsConstantCurvatureTensor
   letI : IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x) := inferInstance
   g.toRiemannianMetric.IsConstantCurvatureTensor
     (CovariantDerivative.leviCivitaConnection I M) inferInstance κ
+
+/-- A smooth metric has constant-curvature tensor precisely when its Levi-Civita
+connection satisfies the constant-curvature equation on every tangent triple. -/
+theorem isConstantCurvatureTensor_iff
+    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) (κ : ℝ) :
+    g.IsConstantCurvatureTensor κ ↔
+      letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+      ∀ (x : M) (w u v : TangentSpace I x),
+        (CovariantDerivative.leviCivitaConnection I M).curvatureTensor x w u v =
+          κ • (Inner.inner ℝ u v • w - Inner.inner ℝ w v • u) :=
+  (Iff.rfl)
 
 /-- The pointwise curvature equation carried by the smooth metric predicate `h`. -/
 theorem IsConstantCurvatureTensor.curvatureTensor_eq

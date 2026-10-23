@@ -46,7 +46,9 @@ whose size is fixed by how often the erased letter occurred.
 
 * `TauCeti.prod_hsymm_eq_sum_diagramKostkaNumber_smul_diagramSchurPoly`: **the expansion of
   `h_{c₀} ⋯ h_{c_{k-1}}` in the Schur polynomials**, for an arbitrary sequence of degrees, and
-  `TauCeti.prod_hsymm_eq_sum_diagramKostkaNumber_smul_schurPoly`, the same in a finite alphabet.
+  `TauCeti.prod_hsymm_eq_sum_diagramKostkaNumber_smul_schurPoly`, the same in a finite alphabet,
+  and `TauCeti.prod_hsymm_eq_sum_coeff_schurPoly_smul_schurPoly`, with the exponents indexed by a
+  second finite alphabet and the Kostka numbers read off as coefficients of Schur polynomials.
 * `TauCeti.hsymmPart_eq_sum_kostkaNumber_smul_schurPoly`: **`h_ν = ∑_μ K_{μν} s_μ`** for a partition
   `ν`, in a finite alphabet.
 * `TauCeti.coeff_hsymmPart`: the coefficient of `h_ν` at an arbitrary monomial `x^d` is
@@ -67,6 +69,8 @@ open MvPolynomial Finset
 
 namespace TauCeti
 
+open YoungDiagram (ofPartition card_ofPartition)
+
 variable {R : Type*} [CommSemiring R]
 
 open scoped Classical in
@@ -74,27 +78,28 @@ open scoped Classical in
 `μ` that contribute are the Young diagrams of the partitions of `|μ| - c k`. -/
 private theorem card_weight_eq_sum_partition {k n : ℕ} (c : Fin (k + 1) → ℕ)
     (μ : (n + c (Fin.last k)).Partition) :
-    Nat.card {T : BoundedSSYT (k + 1) (diagramOf μ) // ⇑(BoundedSSYT.weight T) = c} =
-      ∑ ν : n.Partition with (diagramOf μ).InterlacedBy (diagramOf ν),
-        Nat.card {T : BoundedSSYT k (diagramOf ν) //
+    Nat.card {T : BoundedSSYT (k + 1) (ofPartition μ) // ⇑(BoundedSSYT.weight T) = c} =
+      ∑ ν : n.Partition with (ofPartition μ).InterlacedBy (ofPartition ν),
+        Nat.card {T : BoundedSSYT k (ofPartition ν) //
           ⇑(BoundedSSYT.weight T) = fun i => c i.castSucc} := by
   classical
   rw [BoundedSSYT.card_weight_eq_sum_interlacingShapes]
   symm
-  refine sum_bij_ne_zero (fun ν _ _ => diagramOf ν) (fun ν hν hne => ?_)
-    (fun ν₁ _ _ ν₂ _ _ h => diagramOf_injective h) (fun ν hν hne => ?_) fun _ _ _ => rfl
+  refine sum_bij_ne_zero (fun ν _ _ => ofPartition ν) (fun ν hν hne => ?_)
+    (fun ν₁ _ _ ν₂ _ _ h => YoungDiagram.ofPartition_injective h) (fun ν hν hne => ?_)
+    fun _ _ _ => rfl
   · refine mem_filter.mpr ⟨YoungDiagram.mem_interlacingShapes.mpr
       ⟨(mem_filter.mp hν).2, not_lt.mp fun hlt => hne ?_⟩, ?_⟩
     · have := BoundedSSYT.isEmpty_of_lt_colLen hlt
       exact Nat.card_of_isEmpty
-    · rw [card_diagramOf, card_diagramOf]
+    · rw [card_ofPartition, card_ofPartition]
   · obtain ⟨hν, hcard⟩ := mem_filter.mp hν
-    have hn : ν.card = n := by rw [card_diagramOf] at hcard; omega
-    refine ⟨toPartition ν hn, mem_filter.mpr ⟨mem_univ _, ?_⟩, ?_, ?_⟩
-    · rw [diagramOf_toPartition]
+    have hn : ν.card = n := by rw [card_ofPartition] at hcard; omega
+    refine ⟨ν.toPartition hn, mem_filter.mpr ⟨mem_univ _, ?_⟩, ?_, ?_⟩
+    · rw [YoungDiagram.ofPartition_toPartition]
       exact (YoungDiagram.mem_interlacingShapes.mp hν).1
-    · rwa [diagramOf_toPartition]
-    · exact diagramOf_toPartition ν hn
+    · rwa [YoungDiagram.ofPartition_toPartition]
+    · exact YoungDiagram.ofPartition_toPartition hn
 
 open scoped Classical in
 /-- The expansion of a product of complete homogeneous symmetric polynomials in the Schur
@@ -103,15 +108,15 @@ the size `n` of the shapes a parameter fixed by a hypothesis. -/
 private theorem prod_hsymm_eq_sum_card_smul (N : ℕ) :
     ∀ (k : ℕ) (c : Fin k → ℕ) (n : ℕ), ∑ i, c i = n →
       ∏ i, hsymm (Fin N) R (c i) = ∑ μ : n.Partition,
-        (Nat.card {T : BoundedSSYT k (diagramOf μ) // ⇑(BoundedSSYT.weight T) = c} : R) •
-          diagramSchurPoly N R (diagramOf μ)
+        (Nat.card {T : BoundedSSYT k (ofPartition μ) // ⇑(BoundedSSYT.weight T) = c} : R) •
+          diagramSchurPoly N R (ofPartition μ)
   | 0, c, n, hc => by
     rw [Fin.sum_univ_zero] at hc
     subst hc
-    have hbot : diagramOf (default : Nat.Partition 0) = ⊥ :=
-      YoungDiagram.ext ((Finset.card_eq_zero.mp (card_diagramOf _)).trans
+    have hbot : ofPartition (default : Nat.Partition 0) = ⊥ :=
+      YoungDiagram.ext ((Finset.card_eq_zero.mp (card_ofPartition _)).trans
         YoungDiagram.cells_bot.symm)
-    have hcard : Nat.card {T : BoundedSSYT 0 (diagramOf (default : Nat.Partition 0)) //
+    have hcard : Nat.card {T : BoundedSSYT 0 (ofPartition (default : Nat.Partition 0)) //
         ⇑(BoundedSSYT.weight T) = c} = 1 := by
       rw [hbot, Nat.card_eq_one_iff_unique]
       exact ⟨⟨fun T T' => Subtype.ext (Subsingleton.elim _ _)⟩,
@@ -122,11 +127,11 @@ private theorem prod_hsymm_eq_sum_card_smul (N : ℕ) :
     rw [Fin.sum_univ_castSucc] at hc
     subst hc
     have pieri (ν : (∑ i : Fin k, c i.castSucc).Partition) :
-        hsymm (Fin N) R (c (Fin.last k)) * diagramSchurPoly N R (diagramOf ν) =
+        hsymm (Fin N) R (c (Fin.last k)) * diagramSchurPoly N R (ofPartition ν) =
           ∑ μ : (∑ i : Fin k, c i.castSucc + c (Fin.last k)).Partition with
-            (diagramOf μ).InterlacedBy (diagramOf ν), diagramSchurPoly N R (diagramOf μ) := by
-      have h := hsymm_mul_diagramSchurPoly (R := R) (N := N) (diagramOf ν) (c (Fin.last k))
-      rwa [card_diagramOf] at h
+            (ofPartition μ).InterlacedBy (ofPartition ν), diagramSchurPoly N R (ofPartition μ) := by
+      have h := hsymm_mul_diagramSchurPoly (R := R) (N := N) (ofPartition ν) (c (Fin.last k))
+      rwa [card_ofPartition] at h
     rw [Fin.prod_univ_castSucc, prod_hsymm_eq_sum_card_smul N k _ _ rfl, mul_comm, mul_sum]
     simp_rw [mul_smul_comm, pieri, Finset.smul_sum, sum_filter]
     rw [sum_comm]
@@ -145,8 +150,8 @@ nothing, their Schur polynomials vanishing in `N` variables. -/
 theorem prod_hsymm_eq_sum_diagramKostkaNumber_smul_diagramSchurPoly {N k n : ℕ} (d : Fin k →₀ ℕ)
     (hd : d.degree = n) :
     ∏ i, hsymm (Fin N) R (d i) = ∑ μ : n.Partition,
-      (diagramKostkaNumber (diagramOf μ) (Finsupp.mapDomain Fin.val d) : R) •
-        diagramSchurPoly N R (diagramOf μ) := by
+      (diagramKostkaNumber (ofPartition μ) (Finsupp.mapDomain Fin.val d) : R) •
+        diagramSchurPoly N R (ofPartition μ) := by
   rw [prod_hsymm_eq_sum_card_smul N k d n ((Finsupp.degree_eq_sum d).symm.trans hd)]
   refine sum_congr rfl fun μ _ => ?_
   rw [← BoundedSSYT.card_weight_eq,
@@ -159,13 +164,34 @@ alphabet `σ`: for a sequence of degrees `d₀, …, d_{k-1}` summing to `n`,
 theorem prod_hsymm_eq_sum_diagramKostkaNumber_smul_schurPoly {σ : Type*} [Fintype σ]
     [DecidableEq σ] {k n : ℕ} (d : Fin k →₀ ℕ) (hd : d.degree = n) :
     ∏ i, hsymm σ R (d i) = ∑ μ : n.Partition,
-      (diagramKostkaNumber (diagramOf μ) (Finsupp.mapDomain Fin.val d) : R) • schurPoly σ R μ := by
+      (diagramKostkaNumber (ofPartition μ) (Finsupp.mapDomain Fin.val d) : R) •
+        schurPoly σ R μ := by
   have h := prod_hsymm_eq_sum_diagramKostkaNumber_smul_diagramSchurPoly (R := R)
     (N := Fintype.card σ) d hd
   apply_fun rename (Fintype.equivFin σ).symm at h
   rw [map_prod, map_sum] at h
   simp only [rename_hsymm, map_smul, ← schurPoly_eq_rename] at h
   exact h
+
+/-- For an exponent vector `l` on `σ` of total degree `n`, the product of the complete homogeneous
+symmetric polynomials `h_{lᵢ}` in the alphabet `τ` is `∑_{μ ⊢ n} c_μ s_μ`, where `c_μ` is the
+coefficient of `x^l` in the Schur polynomial `s_μ` in the alphabet `σ`: both are the Kostka number
+`K_{μ l}`.  This is `TauCeti.prod_hsymm_eq_sum_diagramKostkaNumber_smul_schurPoly` with the
+exponent vector indexed by `σ` rather than by its numbering. -/
+theorem prod_hsymm_eq_sum_coeff_schurPoly_smul_schurPoly {σ : Type*} [Fintype σ]
+    (τ : Type*) [Fintype τ] [DecidableEq τ] {n : ℕ} {l : σ →₀ ℕ} (hl : l.degree = n) :
+    ∏ i, hsymm τ R (l i) =
+      ∑ μ : n.Partition, (schurPoly σ R μ).coeff l • schurPoly τ R μ := by
+  -- Number the alphabet `σ` as in `TauCeti.schurPoly`.
+  let e := Fintype.equivFin σ
+  have hdeg : (Finsupp.equivMapDomain e l).degree = n := by
+    rw [Finsupp.degree_eq_sum, ← hl, Finsupp.degree_eq_sum]
+    exact Fintype.sum_equiv e.symm _ _ fun i => by simp
+  rw [Fintype.prod_equiv e _ (fun i => hsymm τ R (Finsupp.equivMapDomain e l i)) fun i => by simp,
+    prod_hsymm_eq_sum_diagramKostkaNumber_smul_schurPoly _ hdeg]
+  refine sum_congr rfl fun μ _ => ?_
+  rw [coeff_schurPoly, Finsupp.equivMapDomain_eq_mapDomain, ← Finsupp.mapDomain_comp,
+    Function.comp_def]
 
 /-- **`h_ν = ∑_μ K_{μν} s_μ`.**  In a finite alphabet, the product `h_ν = h_{ν₁} ⋯ h_{ν_k}` of the
 complete homogeneous symmetric polynomials over the parts of a partition `ν` of `n` expands in the
@@ -176,19 +202,19 @@ theorem hsymmPart_eq_sum_kostkaNumber_smul_schurPoly (σ : Type*) [Fintype σ] [
     {n : ℕ} (ν : n.Partition) :
     hsymmPart σ R ν = ∑ μ : n.Partition, (kostkaNumber μ ν : R) • schurPoly σ R μ := by
   -- Expand along the row lengths `l` of the shape of `ν`.
-  set l := (diagramOf ν).rowLens with hl
-  have hl_apply (i : Fin l.length) : rowLenWeight l.length (diagramOf ν) i = l[i.1] := by
+  set l := (ofPartition ν).rowLens with hl
+  have hl_apply (i : Fin l.length) : rowLenWeight l.length (ofPartition ν) i = l[i.1] := by
     rw [rowLenWeight_apply, ← YoungDiagram.getD_rowLens]
     exact List.getD_eq_getElem l 0 i.2
-  have hdeg : (rowLenWeight l.length (diagramOf ν)).degree = n := by
+  have hdeg : (rowLenWeight l.length (ofPartition ν)).degree = n := by
     rw [Finsupp.degree_eq_sum]
     simp only [hl_apply]
     refine (Fin.sum_univ_fun_getElem l id).trans ?_
-    rw [List.map_id, hl, YoungDiagram.sum_rowLens_eq_card, card_diagramOf]
-  have hprod : hsymmPart σ R ν = ∏ i, hsymm σ R (rowLenWeight l.length (diagramOf ν) i) := by
+    rw [List.map_id, hl, YoungDiagram.sum_rowLens_eq_card, card_ofPartition]
+  have hprod : hsymmPart σ R ν = ∏ i, hsymm σ R (rowLenWeight l.length (ofPartition ν) i) := by
     simp only [hl_apply]
-    rw [Fin.prod_univ_fun_getElem, hsymmPart, hl, rowLens_diagramOf, ← Multiset.prod_coe,
-      ← Multiset.map_coe, Multiset.sort_eq]
+    rw [Fin.prod_univ_fun_getElem, hsymmPart, hl, YoungDiagram.rowLens_ofPartition_eq_sort_parts,
+      ← Multiset.prod_coe, ← Multiset.map_coe, Multiset.sort_eq]
   rw [hprod, prod_hsymm_eq_sum_diagramKostkaNumber_smul_schurPoly _ hdeg,
     mapDomain_rowLenWeight (by rw [hl, YoungDiagram.length_rowLens])]
   simp only [kostkaNumber_def]
@@ -200,7 +226,7 @@ as in `TauCeti.coeff_schurPoly`. -/
 theorem coeff_hsymmPart {σ : Type*} [Fintype σ] [DecidableEq σ] {n : ℕ} (ν : n.Partition)
     (d : σ →₀ ℕ) :
     (hsymmPart σ R ν).coeff d =
-      ∑ μ : n.Partition, (kostkaNumber μ ν * diagramKostkaNumber (diagramOf μ)
+      ∑ μ : n.Partition, (kostkaNumber μ ν * diagramKostkaNumber (ofPartition μ)
         (Finsupp.mapDomain (fun x => (Fintype.equivFin σ x : ℕ)) d) : R) := by
   rw [hsymmPart_eq_sum_kostkaNumber_smul_schurPoly, coeff_sum]
   exact sum_congr rfl fun μ _ => by rw [coeff_smul, coeff_schurPoly, smul_eq_mul]
@@ -209,7 +235,7 @@ theorem coeff_hsymmPart {σ : Type*} [Fintype σ] [DecidableEq σ] {n : ℕ} (ν
 of `ξ` in `h_ν` is `∑_μ K_{μν} K_{μξ}`.  The row bound is what makes the monomial record all of
 `ξ`, as in `TauCeti.coeff_schurPoly_partWeight`. -/
 theorem coeff_hsymmPart_partWeight {σ : Type*} [Fintype σ] [DecidableEq σ] {n : ℕ}
-    (ν ξ : n.Partition) (h : (diagramOf ξ).colLen 0 ≤ Fintype.card σ) :
+    (ν ξ : n.Partition) (h : (ofPartition ξ).colLen 0 ≤ Fintype.card σ) :
     (hsymmPart σ R ν).coeff (partWeight σ ξ) =
       ∑ μ : n.Partition, (kostkaNumber μ ν * kostkaNumber μ ξ : R) := by
   rw [coeff_hsymmPart]

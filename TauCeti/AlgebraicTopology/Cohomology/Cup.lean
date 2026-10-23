@@ -297,3 +297,16 @@ end Laws
 end Cohomology
 
 end TopCat
+
+namespace TauCeti
+
+/-- The singular cup product is the cohomological product along the Alexander–Whitney diagonal. -/
+lemma singularCup_def {C : Type u} [Category.{v} C] [Abelian C] [HasCoproducts.{w} C]
+    [MonoidalCategory C] [MonoidalPreadditive C] (k : Type*) [CommRing k] [Linear k C]
+    [MonoidalLinear k C] {X : TopCat.{w}} {R S T M N P : C}
+    (u : T ⟶ R ⊗ S) (μ : M ⊗ N ⟶ P) (p q n : ℕ) (h : p + q = n) :
+    X.singularCup k u μ p q n h =
+      ChainComplex.cup k (X.alexanderWhitneyDiagonal u) μ p q n h :=
+  (rfl)
+
+end TauCeti

@@ -161,21 +161,23 @@ namespace freeProCPointed
 /-- The canonical continuous quotient map from the free pro-`C` group on the type `X` to the free
 pro-`C` group on the pointed space `(X, x₀)`. -/
 noncomputable def mk : freeProC C X →ₜ* freeProCPointed C x₀ :=
-  ContinuousMonoidHom.quotientMk (kernel C x₀)
+  Subgroup.quotientMkContinuousMonoidHom (kernel C x₀)
 
 /-- The canonical quotient map sends an element to its class. -/
 theorem mk_apply (y : freeProC C X) : mk C x₀ y = (y : freeProCPointed C x₀) :=
-  (rfl)
+  Subgroup.quotientMkContinuousMonoidHom_apply (kernel C x₀) y
 
 /-- The canonical quotient map, as a monoid homomorphism, is the quotient projection. -/
 @[simp]
 theorem coe_mk :
     (mk C x₀ : freeProC C X →* freeProCPointed C x₀) = QuotientGroup.mk' (kernel C x₀) :=
-  (rfl)
+  Subgroup.coe_quotientMkContinuousMonoidHom (kernel C x₀)
 
 /-- The canonical quotient map is surjective. -/
-theorem mk_surjective : Function.Surjective (mk C x₀) :=
-  QuotientGroup.mk'_surjective _
+theorem mk_surjective : Function.Surjective (mk C x₀) := by
+  intro q
+  obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective q
+  exact ⟨g, mk_apply C x₀ g⟩
 
 /-- The canonical map from the pointed space to its free pro-`C` group. -/
 noncomputable def of (x : X) : freeProCPointed C x₀ :=
@@ -192,12 +194,16 @@ corresponding point. -/
 @[simp]
 theorem coe_freeProC_of (x : X) :
     ((freeProC.of x : freeProC C X) : freeProCPointed C x₀) = of C x₀ x :=
-  (rfl)
+  (mk_apply C x₀ (freeProC.of x)).symm
 
 /-- The canonical map kills the base point. -/
 @[simp]
-theorem of_basePoint : of C x₀ x₀ = 1 :=
-  (QuotientGroup.eq_one_iff _).mpr ((mem_kernel_iff C x₀).mpr fun _ hU ↦ hU.2)
+theorem of_basePoint : of C x₀ x₀ = 1 := by
+  -- Expand the local generator map of to exhibit the canonical projection mk.
+  -- The next public mk_apply rewrite computes it without unfolding the quotient map.
+  change mk C x₀ (freeProC.of x₀) = 1
+  rw [mk_apply]
+  exact (QuotientGroup.eq_one_iff _).mpr ((mem_kernel_iff C x₀).mpr fun _ hU ↦ hU.2)
 
 /-- **The canonical map from the pointed space to its free pro-`C` group is continuous.** -/
 theorem continuous_of : Continuous (of C x₀) := by
@@ -284,7 +290,7 @@ private theorem kernel_le_ker_lift (hP : IsProC C P) {f : X → P} (hf : Continu
 pro-`C` group extending a continuous map that kills the base point. -/
 noncomputable def lift (hP : IsProC C P) (f : X → P) (hf : Continuous f) (hf₀ : f x₀ = 1) :
     freeProCPointed C x₀ →ₜ* P :=
-  ContinuousMonoidHom.quotientLift (kernel C x₀) (freeProC.lift hP f) (kernel_le_ker_lift hP hf hf₀)
+  ContinuousMonoidHom.quotientLift (freeProC.lift hP f) (kernel C x₀) (kernel_le_ker_lift hP hf hf₀)
 
 /-- The lift recovers the free pro-`C` lift along the quotient map. -/
 @[simp]

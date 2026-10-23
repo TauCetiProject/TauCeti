@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Category.ModuleCat.Indecomposable
 public import TauCeti.CategoryTheory.Preadditive.Equivalence
 public import TauCeti.RepresentationTheory.Quiver.Representation.FiniteDimensional
+import TauCeti.CategoryTheory.Functor.RingEquivEnd
 
 /-!
 # Fitting's lemma for quiver representations
@@ -51,7 +52,7 @@ variable {k : Type u} {Q : Type v} [Field k] [Quiver.{w} Q] [Finite Q]
 /-- Every endomorphism of a pointwise finite-dimensional indecomposable representation of a
 quiver with finitely many vertices is nilpotent or an isomorphism. -/
 theorem isNilpotent_or_isIso (hfin : IsFinDim k Q M) (hM : Indecomposable M) (f : End M) :
-    IsNilpotent f ∨ IsIso f := by
+    IsNilpotent f ∨ IsIso f.asHom := by
   let E := quiverRepEquivalence.{u, v, w, t} k Q
   have : Module.Finite k (E.functor.obj M) :=
     module_finite_quiverRepEquivalenceFunctorObj_of_isFinDim k Q M hfin
@@ -60,10 +61,7 @@ theorem isNilpotent_or_isIso (hfin : IsFinDim k Q M) (hM : Indecomposable M) (f 
   have hind : Indecomposable (E.functor.obj M) :=
     Functor.indecomposable_obj_of_map_bijective E.functor hM
       (E.fullyFaithfulFunctor.map_bijective M M)
-  let eCat : End M ≃+* End (E.functor.obj M) :=
-    { E.fullyFaithfulFunctor.mulEquivEnd M with
-      map_add' := fun _ _ ↦ E.functor.map_add }
-  let e := eCat.trans (ModuleCat.endRingEquiv (E.functor.obj M))
+  let e := (E.fullyFaithfulFunctor.ringEquivEnd M).trans (ModuleCat.endRingEquiv (E.functor.obj M))
   rcases ((TauCeti.indecomposable_iff_isIndecomposableModule _).mp hind).isNilpotent_or_isUnit
       (e f) with hnil | hunit
   · exact Or.inl (by simpa only [RingEquiv.symm_apply_apply] using hnil.map e.symm)
@@ -77,21 +75,19 @@ theorem indecomposable_iff_isLocalRing_end (hfin : IsFinDim k Q M) :
   constructor
   · intro hM
     have hid : (1 : End M) ≠ 0 := fun h ↦
-      hM.1 ((IsZero.iff_id_eq_zero M).mpr h)
+      hM.1 ((IsZero.iff_id_eq_zero M).mpr (congrArg End.asHom h))
     have : Nontrivial (End M) := nontrivial_of_ne 1 0 hid
     refine IsLocalRing.of_isUnit_or_isUnit_one_sub_self fun f ↦ ?_
     exact (isNilpotent_or_isIso hfin hM f).symm.imp
       (isUnit_iff_isIso f).mpr IsNilpotent.isUnit_one_sub
   · intro hlocal
     have : IsLocalRing (End M) := hlocal
-    refine indecomposable_of_injective_of_isLocalRing ?_ (id : End M → End M)
-      Function.injective_id rfl rfl (fun _ ↦ rfl)
-    exact fun h ↦ one_ne_zero (α := End M) ((IsZero.iff_id_eq_zero M).mp h)
+    exact indecomposable_of_isLocalRing_end
 
 /-- In a pointwise finite-dimensional indecomposable representation of a quiver with finitely
 many vertices, an endomorphism is nilpotent exactly when it is not an isomorphism. -/
 theorem isNilpotent_iff_not_isIso (hfin : IsFinDim k Q M) (hM : Indecomposable M) (f : End M) :
-    IsNilpotent f ↔ ¬ IsIso f := by
+    IsNilpotent f ↔ ¬ IsIso f.asHom := by
   have : IsLocalRing (End M) := (indecomposable_iff_isLocalRing_end hfin).mp hM
   exact ⟨fun hf hi ↦ hf.not_isUnit ((isUnit_iff_isIso f).mpr hi),
     fun hf ↦ (isNilpotent_or_isIso hfin hM f).resolve_right hf⟩

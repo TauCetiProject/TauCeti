@@ -68,6 +68,9 @@ are also available separately. They control preimages near a specified boundary 
   component of the boundary path meeting the image lies in the image.
 * `TauCeti.image_schwarzChristoffelPrimitive_eq_of_subset` -- a preconnected set avoiding the
   boundary path and containing the image is the image.
+* `TauCeti.isClosed_upperHalfPlaneSet_inter_preimage_schwarzChristoffelPrimitive` -- under
+  integrability at the finite prevertices alone, the preimage of a closed set avoiding the
+  boundary values on `ℝ` is closed.
 * `TauCeti.isCompact_upperHalfPlaneSet_inter_preimage_schwarzChristoffelPrimitive` -- the
   preimage of a closed set avoiding the boundary path is compact.
 
@@ -310,6 +313,32 @@ theorem image_schwarzChristoffelPrimitive_eq_of_subset (a e : ι → ℝ) (z₀ 
   · rw [closure_image_schwarzChristoffelPrimitive a e z₀ hfinite hinfty] at hw
     exact hw.resolve_right (disjoint_left.mp hWP hwW)
 
+/-- **The points of the upper half-plane sent into a closed set avoiding the boundary are a closed
+set.**  If every finite prevertex is integrable and `K` is a closed set disjoint from the range of
+the boundary map on `ℝ`, then `upperHalfPlaneSet ∩ F ⁻¹' K` is closed in `ℂ`. -/
+theorem isClosed_upperHalfPlaneSet_inter_preimage_schwarzChristoffelPrimitive (a e : ι → ℝ)
+    (z₀ : UpperHalfPlane) (hfinite : ∀ j, -1 < ∑ i with a i = a j, e i) {K : Set ℂ}
+    (hK : IsClosed K) (hKB : Disjoint K (range (schwarzChristoffelBoundary a e z₀))) :
+    IsClosed (upperHalfPlaneSet ∩ schwarzChristoffelPrimitive a e z₀ ⁻¹' K) := by
+  set F := schwarzChristoffelPrimitive a e z₀
+  refine isClosed_of_closure_subset fun z hz => ?_
+  -- A limit point `z` is either in the upper half-plane, where `F` is continuous, or real,
+  -- where `F` tends to a boundary value; the latter would have to lie in `K`.
+  have hzH : z ∈ closure upperHalfPlaneSet := closure_mono inter_subset_left hz
+  have : (𝓝[upperHalfPlaneSet ∩ F ⁻¹' K] z).NeBot := mem_closure_iff_nhdsWithin_neBot.mp hz
+  have hFK : ∀ᶠ w in 𝓝[upperHalfPlaneSet ∩ F ⁻¹' K] z, F w ∈ K :=
+    eventually_nhdsWithin_of_forall fun w hw => hw.2
+  by_cases hzH' : z ∈ upperHalfPlaneSet
+  · have hcont := (differentiableOn_schwarzChristoffelPrimitive a e z₀).continuousOn.continuousAt
+      (isOpen_upperHalfPlaneSet.mem_nhds hzH')
+    exact ⟨hzH', hK.mem_of_tendsto (hcont.tendsto.mono_left nhdsWithin_le_nhds) hFK⟩
+  · have hre := ofReal_re_eq_of_mem_closure_of_notMem hzH hzH'
+    have ht := (tendsto_schwarzChristoffelPrimitive_boundary a e z₀ z.re
+      (lt_sum_filter_eq_of_forall_apply neg_one_lt_zero hfinite z.re)).mono_left
+        (nhdsWithin_mono _ (inter_subset_left (t := F ⁻¹' K)))
+    rw [hre] at ht
+    exact absurd (mem_range_self z.re) (disjoint_left.mp hKB (hK.mem_of_tendsto ht hFK))
+
 /-- **The Schwarz--Christoffel primitive is proper over the complement of its boundary path.**
 The points of the upper half-plane that the primitive sends into a closed set `K` avoiding the
 compactified boundary path form a compact set. -/
@@ -318,35 +347,22 @@ theorem isCompact_upperHalfPlaneSet_inter_preimage_schwarzChristoffelPrimitive (
     (hinfty : ∑ i, e i < -1) {K : Set ℂ} (hK : IsClosed K)
     (hKP : Disjoint K (range (schwarzChristoffelCompactifiedBoundary a e z₀))) :
     IsCompact (upperHalfPlaneSet ∩ schwarzChristoffelPrimitive a e z₀ ⁻¹' K) := by
-  set F := schwarzChristoffelPrimitive a e z₀
-  refine Metric.isCompact_of_isClosed_isBounded (isClosed_of_closure_subset fun z hz => ?_) ?_
-  · -- A limit point `z` is either in the upper half-plane, where `F` is continuous, or real,
-    -- where `F` tends to a boundary value; the latter would have to lie in `K`.
-    have hzH : z ∈ closure upperHalfPlaneSet := closure_mono inter_subset_left hz
-    have : (𝓝[upperHalfPlaneSet ∩ F ⁻¹' K] z).NeBot := mem_closure_iff_nhdsWithin_neBot.mp hz
-    have hFK : ∀ᶠ w in 𝓝[upperHalfPlaneSet ∩ F ⁻¹' K] z, F w ∈ K :=
-      eventually_nhdsWithin_of_forall fun w hw => hw.2
-    by_cases hzH' : z ∈ upperHalfPlaneSet
-    · have hcont := (differentiableOn_schwarzChristoffelPrimitive a e z₀).continuousOn.continuousAt
-        (isOpen_upperHalfPlaneSet.mem_nhds hzH')
-      exact ⟨hzH', hK.mem_of_tendsto (hcont.tendsto.mono_left nhdsWithin_le_nhds) hFK⟩
-    · have hre := ofReal_re_eq_of_mem_closure_of_notMem hzH hzH'
-      have ht := (tendsto_schwarzChristoffelPrimitive_boundary a e z₀ z.re
-        (lt_sum_filter_eq_of_forall_apply neg_one_lt_zero hfinite z.re)).mono_left
-          (nhdsWithin_mono _ (inter_subset_left (t := F ⁻¹' K)))
-      rw [hre] at ht
-      exact absurd ⟨(z.re : OnePoint ℝ), schwarzChristoffelCompactifiedBoundary_coe a e z₀ z.re⟩
-        (disjoint_left.mp hKP (hK.mem_of_tendsto ht hFK))
-  · -- Far out, `F` stays in a neighbourhood of the vertex at infinity that misses `K`.
-    have hV : schwarzChristoffelVertexAtInfinity a e z₀ ∉ K := fun hV =>
-      disjoint_left.mp hKP hV ⟨∞, schwarzChristoffelCompactifiedBoundary_infty a e z₀⟩
-    have h := (tendsto_schwarzChristoffelPrimitive_atInfinity a e z₀ hinfty).eventually
-      (hK.isOpen_compl.mem_nhds hV)
-    rw [eventually_inf_principal, hasBasis_cobounded_norm.eventually_iff] at h
-    obtain ⟨R, -, hR⟩ := h
-    refine (isBounded_ball (x := (0 : ℂ)) (r := R)).subset fun z hz => ?_
-    rw [mem_ball_zero_iff]
-    by_contra hzR
-    exact hR (not_lt.mp hzR) hz.1 hz.2
+  have hB : range (schwarzChristoffelBoundary a e z₀) ⊆
+      range (schwarzChristoffelCompactifiedBoundary a e z₀) := range_subset_iff.mpr fun x =>
+    schwarzChristoffelCompactifiedBoundary_coe a e z₀ x ▸ mem_range_self (x : OnePoint ℝ)
+  refine Metric.isCompact_of_isClosed_isBounded
+    (isClosed_upperHalfPlaneSet_inter_preimage_schwarzChristoffelPrimitive a e z₀ hfinite hK
+      (hKP.mono_right hB)) ?_
+  -- Far out, `F` stays in a neighbourhood of the vertex at infinity that misses `K`.
+  have hV : schwarzChristoffelVertexAtInfinity a e z₀ ∉ K := fun hV =>
+    disjoint_left.mp hKP hV ⟨∞, schwarzChristoffelCompactifiedBoundary_infty a e z₀⟩
+  have h := (tendsto_schwarzChristoffelPrimitive_atInfinity a e z₀ hinfty).eventually
+    (hK.isOpen_compl.mem_nhds hV)
+  rw [eventually_inf_principal, hasBasis_cobounded_norm.eventually_iff] at h
+  obtain ⟨R, -, hR⟩ := h
+  refine (isBounded_ball (x := (0 : ℂ)) (r := R)).subset fun z hz => ?_
+  rw [mem_ball_zero_iff]
+  by_contra hzR
+  exact hR (not_lt.mp hzR) hz.1 hz.2
 
 end TauCeti

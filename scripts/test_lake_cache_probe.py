@@ -46,6 +46,20 @@ class ExactMapProbe(unittest.TestCase):
         )
         self.assertTrue(found, reason)
 
+    def test_shared_parser_preserves_probe_version_policy(self):
+        raw = b'"future-schema"\n["44b76000326a96d8","40b5fb725e1abfb8.ltar"]\n'
+        version, entries = cache_probe.parse_map(raw)
+        self.assertEqual(version, "future-schema")
+        self.assertEqual(entries, [("44b76000326a96d8", "40b5fb725e1abfb8.ltar")])
+        found, _url, reason = cache_probe.probe(ENDPOINT, TOOLCHAIN, SHA, response(raw.decode()))
+        self.assertTrue(found, reason)
+        for malformed in (b'""\n["44b76000326a96d8","40b5fb725e1abfb8.ltar"]\n',
+                          b'"2026-03-17"\n[true,"40b5fb725e1abfb8.ltar"]\n',
+                          b'"2026-03-17"\n["44b76000326a96d8","../escape.ltar"]\n',
+                          b'"2026-03-17"\n["44b76000326a96d8"]\n', b"\xff"):
+            with self.subTest(raw=malformed), self.assertRaises((UnicodeError, ValueError)):
+                cache_probe.parse_map(malformed)
+
     def test_a_curl_failure_is_an_inconclusive_miss(self):
         found, _url, reason = cache_probe.probe(
             ENDPOINT, TOOLCHAIN, SHA, response("", 22, "HTTP 404"),
@@ -76,6 +90,14 @@ class ExactMapProbe(unittest.TestCase):
         )
         self.assertFalse(found)
         self.assertEqual(url, "")
+
+    def test_shared_endpoint_rejects_curl_config_injection(self):
+        for value in ('https://cache.example/"x', 'https://cache.example/\n',
+                      'https://cache.example/\\escape', 'https://user:pass@cache.example'):
+            with self.subTest(endpoint=value):
+                found, url, _reason = cache_probe.probe(value, TOOLCHAIN, SHA, response(""))
+                self.assertFalse(found)
+                self.assertEqual(url, "")
 
     def test_expected_map_must_match_the_public_bytes(self):
         body = '"2026-03-17"\n["44b76000326a96d8","40b5fb725e1abfb8.ltar"]\n'
@@ -136,18 +158,19 @@ class SharedPublicationContract(unittest.TestCase):
 
     def test_publisher_uses_the_shared_helper_not_a_shell_url_copy(self):
         confirm = step(self.publisher, "Confirm the exact revision map on the public endpoint")
-        self.assertIn("python3 scripts/lake_cache_probe.py", confirm)
-        self.assertIn('--expected "$STAGING/outputs.jsonl"', confirm)
+        self.assertIn("python3 publisher-tools/scripts/lake_cache_probe.py", confirm)
+        self.assertIn('--expected "$RUNNER_TEMP/lake-publication-plan/outputs.jsonl"', confirm)
         self.assertNotIn("TOOLCHAIN_DIR=", self.publisher)
         self.assertNotIn("PUBLIC_URL=", self.publisher)
 
-    def test_shared_helper_runs_only_after_the_key_bearing_step(self):
+    def test_shared_helper_is_workflow_pinned_and_runs_without_the_key(self):
         checkout = step(
-            self.publisher, "Check out the toolchain pin and key-free confirmation helper",
+            self.publisher, "Check out workflow-pinned publication planning tools",
         )
         upload = step(self.publisher, "Publish the staged Lake cache")
         confirm = step(self.publisher, "Confirm the exact revision map on the public endpoint")
         self.assertIn("scripts/lake_cache_probe.py", checkout)
+        self.assertIn("ref: ${{ github.workflow_sha }}", checkout)
         self.assertIn("LAKE_CACHE_KEY_RAW", upload)
         self.assertNotIn("lake_cache_probe.py", upload)
         self.assertNotIn("LAKE_CACHE_KEY", confirm)

@@ -155,7 +155,7 @@ private theorem conjScale_descendExtraGamma_mul_inv_mod {N : ℕ} (hp : p.Prime)
   have hplN : p ∣ l * N := dvd_mul_of_dvd_right hpN l
   have hpsq' : ¬ p ^ 2 ∣ l * N := fun h ↦
     hpsq ((Nat.Coprime.pow_left 2 hpl).dvd_of_dvd_mul_left h)
-  obtain ⟨h00, h11, hcN⟩ := descendExtraGamma_mul_left_mod_div hp hpN hpsq hpl hc
+  obtain ⟨_, h11, hcN⟩ := descendExtraGamma_mul_left_mod_div hp hpN hpsq hpl hc
   have e₁ (i j : Fin 2) : ((descendExtraGamma p (l * N) i j : ℤ) : ZMod p) =
       ((ModularGroup.S i j : ℤ) : ZMod p) := by
     simpa only [map_apply_coe, RingHom.mapMatrix_apply, Matrix.map_apply, eq_intCast] using
@@ -262,12 +262,6 @@ private theorem val_descendIndexMulPerm_of_lt (hp : p.Prime) (hpl : Nat.Coprime 
     {w : Fin (descendMatrixCount p N)} (hw : w.val < p) :
     (descendIndexMulPerm hp hpl N w).val = l * w % p := by
   have : NeZero p := ⟨hp.ne_zero⟩
-  have hcount : p ≤ descendMatrixCount p N := by
-    by_cases h' : p ^ 2 ∣ N
-    · exact le_of_eq (descendMatrixCount_of_sq_dvd h').symm
-    · exact (descendMatrixCount_of_not_sq_dvd h') ▸ Nat.le_succ p
-  have hmod : l * (w : ℕ) % p < descendMatrixCount p N :=
-    lt_of_lt_of_le (Nat.mod_lt _ hp.pos) hcount
   rw [descendIndexMulPerm]
   split
   · simp
@@ -280,7 +274,6 @@ private theorem val_descendIndexMulPerm_of_le (hp : p.Prime) (hpl : Nat.Coprime 
     {w : Fin (descendMatrixCount p N)} (hw : p ≤ w.val) :
     (descendIndexMulPerm hp hpl N w).val = w.val := by
   have : NeZero p := ⟨hp.ne_zero⟩
-  have hlt := w.isLt
   have h : ¬ p ^ 2 ∣ N := by
     intro hd
     have := descendMatrixCount_of_sq_dvd (p := p) (N := N) hd

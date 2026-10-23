@@ -49,11 +49,40 @@ open scoped TensorProduct ComplexOrder
 
 namespace TauCeti.Hodge
 
+open IsBaseChange
+
 variable {V : Type*} {V' : Type*} {Vℂ : Type*} {V'ℂ : Type*}
 variable [AddCommGroup V] [AddCommGroup V'] [AddCommGroup Vℂ] [Module ℂ Vℂ]
 variable [AddCommGroup V'ℂ] [Module ℂ V'ℂ]
 variable {ιℂ : V →ₗ[ℤ] Vℂ} {ι'ℂ : V' →ₗ[ℤ] V'ℂ}
 variable {hℂ : IsBaseChange ℂ ιℂ} {h'ℂ : IsBaseChange ℂ ι'ℂ} {n n' : ℤ}
+
+-- The lattice uses the canonical integer action; the generic tensor map uses the action
+-- induced from a factor. Compare values on lattice tensors to transport the generic rule.
+private theorem bilinForm_tmul_on_lattices (hℂ : IsBaseChange ℂ ιℂ)
+    (h'ℂ : IsBaseChange ℂ ι'ℂ) (Q : LinearMap.BilinForm ℤ V)
+    (Q' : LinearMap.BilinForm ℤ V') :
+    bilinForm (isBaseChange_tensorLatticeMap hℂ h'ℂ) (Q.tmul Q') =
+      (bilinForm hℂ Q).tmul (bilinForm h'ℂ Q') := by
+  rw [← IsBaseChange.bilinForm_tmul hℂ h'ℂ Q Q']
+  refine (bilinForm_unique _ _ _ fun x y ↦ ?_).symm
+  induction x with
+  | tmul v w =>
+    induction y with
+    | tmul v' w' =>
+      rw [tensorLatticeMap_tmul, tensorLatticeMap_tmul]
+      have hp := (hℂ.tensorProduct h'ℂ).bilinForm_apply (Q.tmul Q')
+        (v ⊗ₜ[ℤ] w) (v' ⊗ₜ[ℤ] w')
+      rw [LinearMap.comp_apply, LinearMap.comp_apply, TensorProduct.map_tmul,
+        TensorProduct.map_tmul, TensorProduct.mapOfCompatibleSMul_tmul,
+        TensorProduct.mapOfCompatibleSMul_tmul, LinearMap.BilinForm.tensorDistrib_tmul,
+        smul_eq_mul] at hp
+      exact hp.trans (congrArg _
+        (LinearMap.BilinForm.tensorDistrib_tmul ℤ ℤ Q Q' v w v' w').symm)
+    | add y y' hy hy' => rw [map_add, map_add, map_add, hy, hy', map_add]
+  | add x x' hx hx' =>
+    rw [map_add, map_add, LinearMap.add_apply, hx, hx', ← map_add]
+    exact congrArg _ (LinearMap.map_add₂ (Q.tmul Q') x x' y).symm
 
 /-! ### The tensor product of two polarizations -/
 
@@ -65,9 +94,9 @@ variable {Q : LinearMap.BilinForm ℤ V} {Q' : LinearMap.BilinForm ℤ V'}
 /-- The complexified tensor product form has the weight symmetry of weight `n + n'`. -/
 private theorem tmul_symm_weight (h : IsPolarization hℂ hs Q) (h' : IsPolarization h'ℂ hs' Q')
     (x y : Vℂ ⊗[ℂ] V'ℂ) :
-    (integralFormBaseChange hℂ Q).tmul (integralFormBaseChange h'ℂ Q') y x =
+    (bilinForm hℂ Q).tmul (bilinForm h'ℂ Q') y x =
       ((n + n').negOnePow : ℤ) *
-        (integralFormBaseChange hℂ Q).tmul (integralFormBaseChange h'ℂ Q') x y := by
+        (bilinForm hℂ Q).tmul (bilinForm h'ℂ Q') x y := by
   induction x with
   | tmul a b =>
     induction y with
@@ -85,13 +114,13 @@ private theorem tmul_eq_zero_of_mem_piece (h : IsPolarization hℂ hs Q)
     (h' : IsPolarization h'ℂ hs' Q') {q s : ℤ} (hqs : q + s ≠ n + n') {x y : Vℂ ⊗[ℂ] V'ℂ}
     (hx : x ∈ (HodgeStructureOn.tensorProduct hs hs').piece q)
     (hy : y ∈ (HodgeStructureOn.tensorProduct hs hs').piece s) :
-    (integralFormBaseChange hℂ Q).tmul (integralFormBaseChange h'ℂ Q') x y = 0 := by
+    (bilinForm hℂ Q).tmul (bilinForm h'ℂ Q') x y = 0 := by
   rw [HodgeStructureOn.tensorProduct_piece_eq_iSup] at hx hy
   have hle : (⨆ r, Submodule.map₂ (TensorProduct.mk ℂ Vℂ V'ℂ) (hs.piece r)
       (hs'.piece (q - r))) ≤
       (⨆ t, Submodule.map₂ (TensorProduct.mk ℂ Vℂ V'ℂ) (hs.piece t)
         (hs'.piece (s - t))).dualAnnihilator.comap
-          ((integralFormBaseChange hℂ Q).tmul (integralFormBaseChange h'ℂ Q')) := by
+          ((bilinForm hℂ Q).tmul (bilinForm h'ℂ Q')) := by
     refine iSup_le fun r ↦ Submodule.map₂_le.mpr fun a ha b hb ↦ ?_
     rw [Submodule.mem_comap, Submodule.mem_dualAnnihilator]
     refine fun w hw ↦ LinearMap.mem_ker.mp ((iSup_le fun t ↦
@@ -107,14 +136,14 @@ private theorem tmul_eq_zero_of_mem_piece (h : IsPolarization hℂ hs Q)
 the Hodge forms of the two polarizations. -/
 private theorem tmul_weilOperator_conj_self_pos (h : IsPolarization hℂ hs Q)
     (h' : IsPolarization h'ℂ hs' Q') {x : Vℂ ⊗[ℂ] V'ℂ} (hx : x ≠ 0) :
-    0 < (integralFormBaseChange hℂ Q).tmul (integralFormBaseChange h'ℂ Q')
+    0 < (bilinForm hℂ Q).tmul (bilinForm h'ℂ Q')
       ((HodgeStructureOn.tensorProduct hs hs').weilOperator
         (((latticeConjugation hℂ).tensorProduct (latticeConjugation h'ℂ)).toEquiv x)) x := by
   let P : Polarization hℂ hs := ⟨Q, h⟩
   let P' : Polarization h'ℂ hs' := ⟨Q', h'⟩
   -- `H u v = B (C (conj u)) v`, so the goal is `0 < H x x`.
   refine apply_self_pos_of_apply_tmul_tmul
-    (H := ((integralFormBaseChange hℂ Q).tmul (integralFormBaseChange h'ℂ Q') ∘ₗ
+    (H := ((bilinForm hℂ Q).tmul (bilinForm h'ℂ Q') ∘ₗ
       (HodgeStructureOn.tensorProduct hs hs').weilOperator) ∘ₛₗ
         ((latticeConjugation hℂ).tensorProduct (latticeConjugation h'ℂ)).toEquiv.toLinearMap)
     (fun a b c d ↦ ?_) P.isSymm_hodgeForm P'.isSymm_hodgeForm (fun _ ↦ P.hodgeForm_self_pos)
@@ -133,25 +162,25 @@ theorem tensorProduct (h : IsPolarization hℂ hs Q) (h' : IsPolarization h'ℂ 
   -- Read `Q ⊗ Q'` through the canonical `ℤ`-module structure of `V ⊗[ℤ] V'`, the one the fields of
   -- `IsPolarization` are stated for; Mathlib's `tmul` uses the tensor-product one.
   set B : LinearMap.BilinForm ℤ (V ⊗[ℤ] V') := Q.tmul Q'
-  have hBℂ : integralFormBaseChange (isBaseChange_tensorLatticeMap hℂ h'ℂ) B =
-      (integralFormBaseChange hℂ Q).tmul (integralFormBaseChange h'ℂ Q') :=
-    integralFormBaseChange_tmul hℂ h'ℂ Q Q'
+  have hBℂ : bilinForm (isBaseChange_tensorLatticeMap hℂ h'ℂ) B =
+      (bilinForm hℂ Q).tmul (bilinForm h'ℂ Q') :=
+    bilinForm_tmul_on_lattices hℂ h'ℂ Q Q'
   have hsymm : ∀ x y, B y x = ((n + n').negOnePow : ℤ) * B x y := by
     intro x y
-    apply Int.cast_injective (α := ℂ)
-    rw [Int.cast_mul, ← integralFormBaseChange_ι (isBaseChange_tensorLatticeMap hℂ h'ℂ) B,
-      ← integralFormBaseChange_ι (isBaseChange_tensorLatticeMap hℂ h'ℂ) B, hBℂ]
-    exact tmul_symm_weight h h' _ _
+    apply FaithfulSMul.algebraMap_injective ℤ ℂ
+    rw [map_mul, ← bilinForm_apply (isBaseChange_tensorLatticeMap hℂ h'ℂ) B,
+      ← bilinForm_apply (isBaseChange_tensorLatticeMap hℂ h'ℂ) B, hBℂ]
+    simpa only [eq_intCast] using tmul_symm_weight h h' _ _
   refine ⟨hsymm, ?_, fun p x hx y hy ↦ ?_, fun p x hx hx0 ↦ ?_⟩
   · refine (LinearMap.IsRefl.nondegenerate_iff_separatingLeft fun x y hxy ↦ by
       rw [hsymm, hxy, mul_zero]).mpr fun v hv ↦ ?_
     -- The complexification of `v` pairs to zero with everything, hence with the conjugate of its
     -- Weil transform, so it vanishes by positivity of the Hodge form.
-    have hzero : ∀ z, (integralFormBaseChange hℂ Q).tmul (integralFormBaseChange h'ℂ Q')
+    have hzero : ∀ z, (bilinForm hℂ Q).tmul (bilinForm h'ℂ Q')
         (tensorLatticeMap ιℂ ι'ℂ v) z = 0 := by
       intro z
       induction z using (isBaseChange_tensorLatticeMap hℂ h'ℂ).inductionOn with
-      | tmul w => rw [← hBℂ, integralFormBaseChange_ι, hv w, Int.cast_zero]
+      | tmul w => rw [← hBℂ, bilinForm_apply, hv w, map_zero]
       | smul c z hz => rw [map_smul, hz, smul_zero]
       | add z z' hz hz' => rw [map_add, hz, hz', add_zero]
     have hι : tensorLatticeMap ιℂ ι'ℂ v = 0 := by
@@ -171,7 +200,7 @@ theorem tensorProduct (h : IsPolarization hℂ hs Q) (h' : IsPolarization h'ℂ 
     have hle : (⨆ q, ⨆ (_ : p ≤ q), (HodgeStructureOn.tensorProduct hs hs').piece q) ≤
         (⨆ s, ⨆ (_ : n + n' + 1 - p ≤ s),
           (HodgeStructureOn.tensorProduct hs hs').piece s).dualAnnihilator.comap
-            ((integralFormBaseChange hℂ Q).tmul (integralFormBaseChange h'ℂ Q')) := by
+            ((bilinForm hℂ Q).tmul (bilinForm h'ℂ Q')) := by
       refine iSup_le fun q ↦ iSup_le fun hq x hx ↦ ?_
       rw [Submodule.mem_comap, Submodule.mem_dualAnnihilator]
       exact fun w hw ↦ LinearMap.mem_ker.mp ((iSup_le fun s ↦ iSup_le fun hs y hy ↦
@@ -206,7 +235,7 @@ theorem Polarization.tensorProduct_Qint (P : Polarization hℂ hs) (P' : Polariz
 theorem Polarization.tensorProduct_Q (P : Polarization hℂ hs) (P' : Polarization h'ℂ hs') :
     (P.tensorProduct P').Q = P.Q.tmul P'.Q := by
   rw [Polarization.Q_def, Polarization.Q_def, Polarization.Q_def, Polarization.tensorProduct_Qint,
-    integralFormBaseChange_tmul]
+    bilinForm_tmul_on_lattices]
 
 /-- The Hodge form of a tensor product of polarizations is the product of their Hodge forms on
 pure tensors. -/

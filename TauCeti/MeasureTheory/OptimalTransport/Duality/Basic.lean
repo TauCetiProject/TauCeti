@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Data.EReal.Operations
 public import TauCeti.MeasureTheory.Integral.Bochner.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Cost.Basic
 
@@ -201,14 +202,6 @@ theorem kantorovichDualValue_eq_integral (hπ : IsCoupling π μ ν) (hφ : Inte
 
 section WeakDuality
 
-private theorem real_coe_le_ennreal_coe_of_ofReal_le {x : ℝ} {a : ℝ≥0∞}
-    (h : ENNReal.ofReal x ≤ a) : (x : EReal) ≤ (a : EReal) := by
-  calc
-    (x : EReal) ≤ (ENNReal.ofReal x : EReal) := by
-      rw [EReal.coe_ennreal_ofReal]
-      exact le_max_left (x : EReal) 0
-    _ ≤ (a : EReal) := EReal.coe_ennreal_le_coe_ennreal_iff.2 h
-
 /-- **Weak duality against a fixed coupling, in extended-nonnegative form.** The positive part of
 the dual value is bounded by the cost of every coupling. -/
 theorem DualFeasible.ofReal_kantorovichDualValue_le_lintegral
@@ -227,7 +220,8 @@ theorem DualFeasible.kantorovichDualValue_le_lintegral
     (h : DualFeasible (fun z ↦ (c z : EReal)) φ ψ)
     (hφ : Integrable φ μ) (hψ : Integrable ψ ν) (hπ : IsCoupling π μ ν) :
     (kantorovichDualValue μ ν φ ψ : EReal) ≤ ((∫⁻ z, c z ∂π) : ℝ≥0∞) := by
-  exact real_coe_le_ennreal_coe_of_ofReal_le <| h.ofReal_kantorovichDualValue_le_lintegral hφ hψ hπ
+  exact EReal.coe_le_coe_ennreal_of_ofReal_le <|
+    h.ofReal_kantorovichDualValue_le_lintegral hφ hψ hπ
 
 /-- **Kantorovich weak duality, in extended-nonnegative form.** The positive part of every
 integrable feasible dual value is at most the primal transport cost. -/
@@ -252,7 +246,8 @@ theorem DualFeasible.kantorovichDualValue_le_transportCost
     (h : DualFeasible (fun z ↦ (c z : EReal)) φ ψ)
     (hφ : Integrable φ μ) (hψ : Integrable ψ ν) :
     (kantorovichDualValue μ ν φ ψ : EReal) ≤ (transportCost c μ ν : ℝ≥0∞) := by
-  exact real_coe_le_ennreal_coe_of_ofReal_le <| h.ofReal_kantorovichDualValue_le_transportCost hφ hψ
+  exact EReal.coe_le_coe_ennreal_of_ofReal_le <|
+    h.ofReal_kantorovichDualValue_le_transportCost hφ hψ
 
 end WeakDuality
 

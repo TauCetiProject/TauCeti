@@ -83,7 +83,7 @@ theorem fundamentalGroupMulEquiv_apply_eq_iff (hk : 1 ≤ k) {x : LensSpace m �
     (a : Multiplicative (ZMod m)) :
     fundamentalGroupMulEquiv m ℓ hk e γ = a ↔
       lensRotation m ℓ a (e : EuclideanSpace ℂ (Fin (k + 1))) =
-        ((isCoveringMap_mk m ℓ).monodromy γ e : EuclideanSpace ℂ (Fin (k + 1))) := by
+        ((isCoveringMap_mk m ℓ).monodromy γ.asHom e : EuclideanSpace ℂ (Fin (k + 1))) := by
   have := simplyConnectedSpace_sphere_euclideanSpace_complex hk
   rw [fundamentalGroupMulEquiv, MulEquiv.trans_apply, MulEquiv.trans_apply,
     MulEquiv.symm_apply_eq]
@@ -95,7 +95,7 @@ theorem fundamentalGroupMulEquiv_apply_eq_iff (hk : 1 ≤ k) {x : LensSpace m �
       (isQuotientCoveringMap_mk m ℓ).fundamentalGroupToMulOpposite e γ :=
     rfl
   rw [← MulOpposite.op_inj, MulOpposite.op_unop, hF,
-    IsQuotientCoveringMap.fundamentalGroupToMulOpposite_apply_eq_Iff, MulOpposite.unop_op,
+    IsQuotientCoveringMap.fundamentalGroupToMulOpposite_apply_eq_iff, MulOpposite.unop_op,
     Subtype.ext_iff, Subgroup.smul_def, LinearIsometryEquiv.coe_smul_unitSphere,
     coe_lensGroupEquiv_apply]
 

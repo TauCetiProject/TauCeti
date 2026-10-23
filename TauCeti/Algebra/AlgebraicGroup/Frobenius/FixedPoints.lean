@@ -50,17 +50,17 @@ finiteness is asserted.
 * `TauCeti.Bialgebra.fixedSubgroup_iterateFrobeniusPoints_le_of_dvd`: the fixed subgroups grow
   along divisibility of the exponent, the inclusion `G(𝔽_{p ^ m}) ⊆ G(𝔽_{p ^ k})` in the
   motivating case.
+* `TauCeti.Bialgebra.fixedSubgroup_iterateFrobeniusPoints_inf`: fixed subgroups at exponents
+  `m` and `n` intersect in the fixed subgroup at `m.gcd n`.
 * `TauCeti.Bialgebra.map_fixedSubgroup_iterateFrobeniusPoints_le` and
   `TauCeti.Bialgebra.mapValue_mem_fixedSubgroup_iterateFrobeniusPoints`: a homomorphism of value
   algebras carries Frobenius-fixed points to Frobenius-fixed points.
+* `TauCeti.Bialgebra.map_fixedSubgroup_iterateFrobeniusPoints_of_injective`: for an injective
+  homomorphism, those images are exactly the Frobenius-fixed points in its range.
 
 ## References
 
-This advances the target "points over an algebraically closed field as a group, functorially in
-the field, so that a field endomorphism induces a group endomorphism of the points" in Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`, which names the `q`-power Frobenius as the first case
-a consumer asks for. The consumer is milestone L3 of `TauCetiRoadmap/CFSGStatement/README.md`,
-which sets `H_d = fixedSubgroup d.steinberg`; the construction is standard, see R. W. Carter,
+For the fixed-point construction of finite groups of Lie type, see R. W. Carter,
 *Finite Groups of Lie Type: Conjugacy Classes and Complex Characters*, §1.17.
 -/
 
@@ -93,30 +93,6 @@ theorem iterateFrobeniusPoints_eq_self_iff {f : WithConv (H →ₐ[ℤ] A)} :
     refine WithConv.ofConv_injective (AlgHom.ext fun h => ?_)
     rw [iterateFrobeniusPoints_apply_apply]
     exact hf h
-
-/-- The corestriction of a point all of whose values are Frobenius-fixed to a point valued in the
-Frobenius-fixed subring. Private: the public interface is `frobeniusFixedInclusion` together with
-`range_frobeniusFixedInclusion`, which say the same thing without exposing a second spelling of a
-point. -/
-private def corestrictFrobeniusFixed (f : H →ₐ[ℤ] A)
-    (hf : ∀ h : H, f h ∈ frobeniusFixedSubring A p n) :
-    H →ₐ[ℤ] ↥(frobeniusFixedSubring A p n) :=
-  -- `AlgHom.codRestrict` corestricts to a `Subalgebra`, so the corestriction is literally valued
-  -- in `↥(subalgebraOfSubring (frobeniusFixedSubring A p n))`. That subtype has the same carrier
-  -- as `↥(frobeniusFixedSubring A p n)` and, since the base is `ℤ`, the same algebra structure
-  -- (`Subalgebra.algebra` and `algebraInt` agree definitionally on it), so the declared type is
-  -- the `Subring` spelling of the same object; Mathlib has no lemma naming that identification.
-  f.codRestrict (subalgebraOfSubring (frobeniusFixedSubring A p n))
-    fun h => mem_subalgebraOfSubring.mpr (hf h)
-
-/-- The corestriction of a point to the Frobenius-fixed subring has the same values as the point
-itself. Private, like the corestriction it describes. -/
-private theorem coe_corestrictFrobeniusFixed_apply (f : H →ₐ[ℤ] A)
-    (hf : ∀ h : H, f h ∈ frobeniusFixedSubring A p n) (h : H) :
-    (corestrictFrobeniusFixed p n f hf h : A) = f h :=
-  -- `AlgHom.coe_codRestrict` states this for the `Subalgebra` coercion; it applies because that
-  -- coercion is the `Subring` one, as recorded in the comment on `corestrictFrobeniusFixed`.
-  AlgHom.coe_codRestrict _ _ _ h
 
 /-- The homomorphism of convolution monoids that reads a point valued in the Frobenius-fixed
 subring of `A` as a point valued in `A`. It is post-composition with the inclusion of the subring,
@@ -159,10 +135,14 @@ theorem range_frobeniusFixedInclusion :
     simpa only [frobeniusFixedInclusion_apply_apply] using
       mem_frobeniusFixedSubring.mp (g.ofConv h).2
   · intro hf
-    refine ⟨toConv (corestrictFrobeniusFixed p n f.ofConv fun h =>
-      mem_frobeniusFixedSubring.mpr (hf h)), ?_⟩
+    -- Over `ℤ`, the subalgebra and subring have definitionally equal subtype algebra
+    -- structures, so `codRestrict` is valued in the fixed subring with its usual algebra.
+    refine ⟨toConv (f.ofConv.codRestrict
+      (subalgebraOfSubring (frobeniusFixedSubring A p n)) fun h =>
+        mem_subalgebraOfSubring.mpr (mem_frobeniusFixedSubring.mpr (hf h))), ?_⟩
     refine WithConv.ofConv_injective (AlgHom.ext fun h => ?_)
-    rw [frobeniusFixedInclusion_apply_apply, ofConv_toConv, coe_corestrictFrobeniusFixed_apply]
+    rw [frobeniusFixedInclusion_apply_apply, ofConv_toConv]
+    exact AlgHom.coe_codRestrict _ _ _ h
 
 /-- The fixed points of the `p ^ n`-power Frobenius on the `A`-valued points of `H` are the points
 of `H` valued in the Frobenius-fixed subring of `A`. When `H` is moreover commutative these are
@@ -209,11 +189,9 @@ theorem coe_frobeniusFixedPointsMulEquiv_symm_apply_apply
 
 /-! ### Elementary properties of the fixed subgroup -/
 
-/-- The zeroth Frobenius iterate fixes every point.
-
-Deliberately not `@[simp]`: `iterateFrobeniusPoints_zero` already rewrites the endomorphism to the
-identity, after which `MonoidHom.eqLocus_same` closes the goal, so a `simp` attribute here would be
-redundant and the `simpNF` linter rejects it. -/
+/-- The zeroth Frobenius iterate fixes every point. -/
+-- Not `@[simp]`: `iterateFrobeniusPoints_zero` already rewrites the endomorphism to the
+-- identity, after which `MonoidHom.eqLocus_same` closes the goal.
 theorem fixedSubgroup_iterateFrobeniusPoints_zero :
     fixedSubgroup (iterateFrobeniusPoints p 0 (H := H) (A := A)) = ⊤ :=
   fixedSubgroup_eq_top_iff.mpr (iterateFrobeniusPoints_zero p)
@@ -226,6 +204,24 @@ theorem fixedSubgroup_iterateFrobeniusPoints_le_of_dvd {m k : ℕ} (hmk : m ∣ 
   (iterateFrobeniusPoints_eq_self_iff p k).mpr fun h =>
     mem_frobeniusFixedSubring.mp (frobeniusFixedSubring_le_of_dvd hmk
       (mem_frobeniusFixedSubring.mpr ((iterateFrobeniusPoints_eq_self_iff p m).mp hf h)))
+
+/-- Two Frobenius-fixed point subgroups intersect in the fixed subgroup at the gcd of their
+exponents. In the motivating case this is the intersection formula for groups of rational points. -/
+@[simp]
+theorem fixedSubgroup_iterateFrobeniusPoints_inf (m n : ℕ) :
+    fixedSubgroup (iterateFrobeniusPoints p m (H := H) (A := A)) ⊓
+        fixedSubgroup (iterateFrobeniusPoints p n) =
+      fixedSubgroup (iterateFrobeniusPoints p (m.gcd n)) := by
+  refine le_antisymm ?_ (le_inf
+    (fixedSubgroup_iterateFrobeniusPoints_le_of_dvd p (Nat.gcd_dvd_left m n))
+    (fixedSubgroup_iterateFrobeniusPoints_le_of_dvd p (Nat.gcd_dvd_right m n)))
+  rintro f ⟨hm, hn⟩
+  apply (iterateFrobeniusPoints_eq_self_iff p (m.gcd n)).mpr
+  intro h
+  apply mem_frobeniusFixedSubring.mp
+  rw [← frobeniusFixedSubring_inf m n]
+  exact ⟨mem_frobeniusFixedSubring.mpr ((iterateFrobeniusPoints_eq_self_iff p m).mp hm h),
+    mem_frobeniusFixedSubring.mpr ((iterateFrobeniusPoints_eq_self_iff p n).mp hn h)⟩
 
 variable {B : Type w} [CommRing B] [ExpChar B p]
 
@@ -241,6 +237,17 @@ theorem map_fixedSubgroup_iterateFrobeniusPoints_le (φ : A →ₐ[ℤ] B) :
         (fixedSubgroup (iterateFrobeniusPoints p n)) ≤
       fixedSubgroup (iterateFrobeniusPoints p n) :=
   map_fixedSubgroup_le _ (mapValue_comp_iterateFrobeniusPoints p n φ)
+
+/-- Under an injective homomorphism of value algebras, the image of the Frobenius-fixed points
+is exactly the intersection of the image on points with the target Frobenius-fixed subgroup. -/
+theorem map_fixedSubgroup_iterateFrobeniusPoints_of_injective (φ : A →ₐ[ℤ] B)
+    (hφ : Function.Injective φ) :
+    Subgroup.map (AlgHom.mapValue (H := H) φ)
+        (fixedSubgroup (iterateFrobeniusPoints p n)) =
+      (AlgHom.mapValue (H := H) φ).range ⊓ fixedSubgroup (iterateFrobeniusPoints p n) :=
+  (AlgHom.mapValue (H := H) φ).map_fixedSubgroup_of_injective
+    (mapValue_comp_iterateFrobeniusPoints p n φ)
+    (AlgHom.mapValue_injective hφ)
 
 /-- The pointwise form of `map_fixedSubgroup_iterateFrobeniusPoints_le`: a homomorphism of value
 algebras carries Frobenius-fixed points to Frobenius-fixed points. -/

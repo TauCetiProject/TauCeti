@@ -136,7 +136,7 @@ theorem precomp {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace ℝ E'']
 
 /-- Smooth ambient isotopy implies continuous ambient isotopy after forgetting smoothness. -/
 theorem ambientIsotopic (hfg : SmoothAmbientIsotopic f g) :
-    AmbientIsotopic (toContinuousMap f) (toContinuousMap g) := by
+    AmbientIsotopic (ContinuousMap.ofClass f) (ContinuousMap.ofClass g) := by
   obtain ⟨Φ, hΦ⟩ := hfg
   apply ambientIsotopic_def.mpr
   refine ⟨Φ.toAmbientIsotopy, ?_⟩

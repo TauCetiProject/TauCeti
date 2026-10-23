@@ -35,8 +35,8 @@ radical.
 * J. S. Milne, *Algebraic Groups* (2017), Proposition 6.42 and Sections 5.a, 6.a, 10.a.
 * A. Borel, *Linear Algebraic Groups*, Section 11.21.
 
-This supplies the shared maximal-dimension comparison used in Layers 5 and 6 of the
-ReductiveGroups roadmap to construct the unipotent and solvable radicals.
+This supplies the shared maximal-dimension comparison used to construct the unipotent and solvable
+radicals.
 -/
 
 public section

@@ -18,6 +18,11 @@ used to prove that Hasse invariants are independent of a diagonalization.
 The result is stated over a commutative ring: Mathlib's Clifford-algebra construction and its
 quaternion equivalence require neither a field nor invertibility of two.
 
+## Main definitions
+
+* `TauCeti.QuaternionAlgebra.weightedSumSquaresIsometryEquivQ`: the diagonal binary form
+  `⟨w 0, w 1⟩` is isometric to Mathlib's quaternion plane form `CliffordAlgebraQuaternion.Q`.
+
 ## Main result
 
 * `TauCeti.QuaternionAlgebra.nonempty_algEquiv_of_equivalent_binary`: equivalent binary
@@ -39,6 +44,14 @@ universe u
 
 variable {R : Type u} [CommRing R]
 
+/-- The diagonal binary form `⟨w 0, w 1⟩` is isometric to Mathlib's quaternion plane form
+`CliffordAlgebraQuaternion.Q (w 0) (w 1)`, whose Clifford algebra is `ℍ[R, w 0, w 1]`, through
+the coordinate identification `(Fin 2 → R) ≃ R × R`. -/
+def weightedSumSquaresIsometryEquivQ (w : Fin 2 → R) :
+    (weightedSumSquares R w).IsometryEquiv (CliffordAlgebraQuaternion.Q (w 0) (w 1)) :=
+  ⟨LinearEquiv.finTwoArrow R R, fun v ↦ by
+    simp [weightedSumSquares_apply, CliffordAlgebraQuaternion.Q_apply, Fin.sum_univ_two]⟩
+
 /-- **The binary quaternion lemma.** If the diagonal binary forms `⟨a, b⟩` and `⟨c, d⟩`
 are equivalent, then the quaternion algebras `ℍ[R,a,b]` and `ℍ[R,c,d]` are isomorphic as
 `R`-algebras.
@@ -50,13 +63,9 @@ theorem nonempty_algEquiv_of_equivalent_binary (a b c d : R)
       (weightedSumSquares R ![c, d])) :
     Nonempty (ℍ[R,(a : R),(b : R)] ≃ₐ[R] ℍ[R,(c : R),(d : R)]) := by
   obtain ⟨e⟩ := h
-  let toCliffordQ (x y : R) :
-      (weightedSumSquares R ![x, y]).IsometryEquiv (CliffordAlgebraQuaternion.Q x y) :=
-    ⟨LinearEquiv.finTwoArrow R R, fun v ↦ by
-      simp [weightedSumSquares_apply, CliffordAlgebraQuaternion.Q_apply]⟩
   exact ⟨CliffordAlgebraQuaternion.equiv.symm |>.trans
-    (CliffordAlgebra.equivOfIsometry
-      ((toCliffordQ a b).symm.trans (e.trans (toCliffordQ c d)))) |>.trans
+    (CliffordAlgebra.equivOfIsometry ((weightedSumSquaresIsometryEquivQ ![a, b]).symm.trans
+      (e.trans (weightedSumSquaresIsometryEquivQ ![c, d])))) |>.trans
     CliffordAlgebraQuaternion.equiv⟩
 
 end TauCeti.QuaternionAlgebra

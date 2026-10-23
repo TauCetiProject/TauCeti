@@ -9,7 +9,6 @@ public import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Logari
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Prime.Boundary
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Estimates
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Trivial
-import TauCeti.NumberTheory.NumberField.DedekindZeta
 
 /-!
 # The von Mangoldt series of all prime ideals is `-ζ_K'/ζ_K`
@@ -32,11 +31,8 @@ Mangoldt transform is `Λ_K`.
 The constructor `TauCeti.PrimeBoundaryRemainder.ofDedekindZeta` obtains the series condition of
 the boundary data `TauCeti.PrimeBoundaryRemainder K Set.univ 1` from this identity, and builds the
 package from a single function `G`, continuous on `Re s ≥ 1`, that agrees with
-`-ζ_K'(s)/ζ_K(s) - 1/(s - 1)` on `Re s > 1`.  Such a `G` exists because `ζ_K` continues
-meromorphically across `Re s = 1`, with a simple pole at `1` and no zeros on that line
-(`TauCeti.exists_continuousOn_eq_neg_deriv_dedekindZeta_div_sub`), so the package exists
-unconditionally: `TauCeti.LFunctions.primeIdealVonMangoldtBoundary`.  Applied to it,
-`TauCeti.primeIdealTheorem_of_boundary` gives the prime ideal theorem `TauCeti.primeIdealTheorem`.
+`-ζ_K'(s)/ζ_K(s) - 1/(s - 1)` on `Re s > 1`. The unconditional construction of such a
+function belongs to the analytic theory of the Dedekind zeta function.
 
 ## Main results
 
@@ -47,11 +43,6 @@ unconditionally: `TauCeti.LFunctions.primeIdealVonMangoldtBoundary`.  Applied to
   norm-regrouped coefficients, in Mathlib's `LSeries` vocabulary.
 * `TauCeti.PrimeBoundaryRemainder.ofDedekindZeta`: boundary data with residue one for all primes
   from a continuous extension of `-ζ_K'/ζ_K - 1/(s - 1)` to `Re s ≥ 1`.
-* `TauCeti.LFunctions.primeIdealVonMangoldtBoundary`: the boundary data with residue one for all
-  primes of `K`.
-* `TauCeti.primeIdealTheorem`: the prime ideal theorem `ψ_K(x) ~ x`, `ϑ_K(x) ~ x`, and
-  `π_K(x) ~ Li(x)`.
-* `TauCeti.primeCount_univ_isEquivalent_div_log`: its classical form `π_K(x) ~ x / log x`.
 
 ## References
 
@@ -128,47 +119,5 @@ theorem ofDedekindZeta_remainder (s : {s : ℂ // 1 ≤ s.re}) :
   rw [ofDedekindZeta, ofFunctions_remainder]
 
 end PrimeBoundaryRemainder
-
-namespace LFunctions
-
-/-- **Boundary data for all primes of a number field.** The von Mangoldt series of all primes of
-`K` sums to `-ζ_K'(s)/ζ_K(s)` on `Re s > 1`, and `-ζ_K'(s)/ζ_K(s) - 1/(s - 1)` extends continuously
-to `Re s ≥ 1` (`TauCeti.exists_continuousOn_eq_neg_deriv_dedekindZeta_div_sub`). Through
-`TauCeti.primeIdealTheorem_of_boundary` it yields `TauCeti.primeIdealTheorem`. -/
-noncomputable def primeIdealVonMangoldtBoundary (K : Type*) [Field K] [NumberField K] :
-    PrimeBoundaryRemainder K Set.univ 1 :=
-  PrimeBoundaryRemainder.ofDedekindZeta _
-    (exists_continuousOn_eq_neg_deriv_dedekindZeta_div_sub K).choose_spec.1
-    (exists_continuousOn_eq_neg_deriv_dedekindZeta_div_sub K).choose_spec.2
-
-@[simp]
-theorem primeIdealVonMangoldtBoundary_series (s : {s : ℂ // 1 < s.re}) :
-    (primeIdealVonMangoldtBoundary K).series s =
-      -deriv (dedekindZeta K) (s : ℂ) / dedekindZeta K (s : ℂ) := by
-  rw [primeIdealVonMangoldtBoundary, PrimeBoundaryRemainder.ofDedekindZeta_series]
-
-end LFunctions
-
-section PrimeIdealTheorem
-
-open Asymptotics Filter
-
-variable (K) in
-/-- **The prime ideal theorem.** For a number field `K`, Chebyshev's functions satisfy
-`ψ_K(x) ~ x` and `ϑ_K(x) ~ x`, and the number `π_K(x)` of prime ideals of norm at most `x`
-satisfies `π_K(x) ~ Li(x)`. -/
-theorem primeIdealTheorem :
-    primePsi K Set.univ ~[atTop] (fun x : ℝ ↦ x) ∧
-      primeTheta K Set.univ ~[atTop] (fun x : ℝ ↦ x) ∧
-      primeCount K Set.univ ~[atTop] Real.logIntegral :=
-  primeIdealTheorem_of_boundary (LFunctions.primeIdealVonMangoldtBoundary K)
-
-variable (K) in
-/-- **The prime ideal theorem, in the form `π_K(x) ~ x / log x`.** -/
-theorem primeCount_univ_isEquivalent_div_log :
-    primeCount K Set.univ ~[atTop] fun x : ℝ ↦ x / Real.log x :=
-  (primeIdealTheorem K).2.2.trans Real.logIntegral_isEquivalent_div_log
-
-end PrimeIdealTheorem
 
 end TauCeti

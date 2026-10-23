@@ -12,12 +12,16 @@ public import Mathlib.RingTheory.Valuation.Basic
 
 Mathlib's `Valuation.map_sum_le` bounds the value of a finite sum by a common bound on the values
 of its terms. This file records the weighted form: if every term satisfies `v (f i) * c ≤ B`, then
-so does the sum. Weighted bounds of this shape arise when estimating the terms of polynomial
-expressions against a varying scale, as in `TauCeti/RingTheory/Valuation/Polynomial.lean`.
+so does the sum, and `Valuation.map_sub_mul_le` is the corresponding weighted form of
+`Valuation.map_sub_le` for a difference. Weighted bounds of this shape arise when estimating the
+terms of polynomial expressions against a varying scale, as in
+`TauCeti/RingTheory/Valuation/Polynomial.lean`.
 
 ## Main results
 
 * `Valuation.map_sum_mul_le`: the ultrametric bound on a finite sum, with every term weighted by a
+  common factor.
+* `Valuation.map_sub_mul_le`: the ultrametric bound on a difference, with both terms weighted by a
   common factor.
 -/
 
@@ -37,6 +41,13 @@ theorem map_sum_mul_le {ι : Type*} {s : Finset ι} {f : ι → R} {c B : Γ₀}
     refine (mul_le_mul_left (v.map_add _ _) c).trans ?_
     rw [max_mul]
     exact max_le (h i (by simp)) (ih fun j hj ↦ h j (by simp [hj]))
+
+/-- The ultrametric bound on a difference, with both terms weighted by a common factor `c`. -/
+theorem map_sub_mul_le {x y : R} {c B : Γ₀} (hx : v x * c ≤ B) (hy : v y * c ≤ B) :
+    v (x - y) * c ≤ B := by
+  refine (mul_le_mul_left (v.map_sub x y) c).trans ?_
+  rw [max_mul]
+  exact max_le hx hy
 
 end Valuation
 

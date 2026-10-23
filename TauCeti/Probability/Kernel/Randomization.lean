@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Kernel.ProbabilityMeasure
 public import Mathlib.Probability.Kernel.Representation
+public import Mathlib.Probability.Kernel.Condexp
 public import Mathlib.Probability.ProductMeasure
 import Mathlib.Probability.Kernel.CondDistrib
 import Mathlib.Probability.Kernel.CompProdEqIff
@@ -49,6 +50,10 @@ randomization step used when a probabilistic representation is converted into la
   on `I` to its parameter.
 * `TauCeti.Probability.map_infinitePi_volume_unitIntervalCoding` — applying it coordinatewise to
   i.i.d. uniform noise produces the `ι`-fold power of the parameter for an arbitrary index type.
+* `TauCeti.Probability.exists_kernel_of_ae_condExpKernel` — parametrizes conditional laws given
+  an arbitrary sub-σ-algebra by a Markov kernel on the unit interval.
+* `TauCeti.Probability.exists_coding_of_ae_condExpKernel` — samples those conditional laws using
+  a second independent uniform variable.
 * `TauCeti.Probability.exists_measurable_map_prod_volume_eq_compProd` — a Markov kernel and
   a base measure are jointly realized from the base point and independent uniform noise.
 * `TauCeti.Probability.exists_measurable_map_prod_volume_eq` — every finite joint law has
@@ -333,6 +338,66 @@ theorem exists_measurable_map_prod_volume_eq_map_prodMk
     _ = μ.map fun ω => (X ω, Y ω) := hcode
 
 end Conditional
+
+section ConditionalLaw
+
+variable {β : Type*} [mβ : MeasurableSpace β] [StandardBorelSpace β]
+  {ρ : @Measure β mβ} [IsProbabilityMeasure ρ] {P : @Measure β mβ → Prop}
+  {m : MeasurableSpace β}
+
+/-- **Conditional laws given a sub-σ-algebra, sampled by a uniform variable.** Drawing the
+conditioning variable through the canonical uniform coding presents the conditional laws as a
+Markov kernel from the unit interval whose composition with the uniform law is the original law.
+Any supplied almost-sure property of the conditional laws holds for almost every component. -/
+theorem exists_kernel_of_ae_condExpKernel (hm : m ≤ mβ)
+    (hP : ∀ᵐ x ∂ρ, P (condExpKernel (mΩ := mβ) ρ m x)) :
+    ∃ κ : @Kernel I β _ mβ, IsMarkovKernel κ ∧
+      (∀ᵐ u ∂(volume : Measure I), P (κ u)) ∧ κ ∘ₘ (volume : Measure I) = ρ := by
+  let _ : MeasurableSpace β := mβ
+  have : Nonempty β := nonempty_of_isProbabilityMeasure ρ
+  let Q : @ProbabilityMeasure β mβ := ⟨ρ, inferInstance⟩
+  let f := unitIntervalCoding β Q
+  have hf : @Measurable I β _ mβ f := measurable_unitIntervalCoding Q
+  have hpres : @MeasurePreserving I β _ mβ f (volume : Measure I) ρ :=
+    ⟨hf, map_volume_unitIntervalCoding Q⟩
+  let K := condExpKernel (mΩ := mβ) ρ m
+  let κ := K.comap f (hf.mono le_rfl hm)
+  refine ⟨κ, inferInstance, hpres.quasiMeasurePreserving.ae hP, ?_⟩
+  -- Integrating the conditional law uses the trimmed measure; the coding map samples the
+  -- ambient law, so pass between them only for sub-σ-algebra-measurable integrands.
+  rw [← condExpKernel_comp_trim (μ := ρ) hm]
+  ext s hs
+  rw [Measure.bind_apply hs κ.aemeasurable, Measure.bind_apply hs K.aemeasurable]
+  simp only [κ, Kernel.comap_apply]
+  rw [lintegral_trim hm (K.measurable_coe hs)]
+  exact hpres.lintegral_comp ((K.measurable_coe hs).mono hm le_rfl)
+
+/-- **A probability law is sampled by two independent uniform variables**, the first selecting a
+conditional law given a sub-σ-algebra and the second sampling from it. The coding is jointly
+measurable, and one almost-sure set of first variables works for the supplied property. -/
+theorem exists_coding_of_ae_condExpKernel (hm : m ≤ mβ)
+    (hP : ∀ᵐ x ∂ρ, P (condExpKernel (mΩ := mβ) ρ m x)) :
+    ∃ f : I → I → β, @Measurable (I × I) β _ mβ (Function.uncurry f) ∧
+      (∀ᵐ u ∂(volume : Measure I),
+        P (@Measure.map I β _ mβ (f u) (volume : Measure I))) ∧
+      @Measure.map (I × I) β _ mβ (Function.uncurry f)
+        ((volume : Measure I).prod volume) = ρ := by
+  let _ : MeasurableSpace β := mβ
+  have : Nonempty β := nonempty_of_isProbabilityMeasure ρ
+  obtain ⟨κ, hκ, hgood, hmix⟩ := exists_kernel_of_ae_condExpKernel hm hP
+  obtain ⟨f, hf, hmap⟩ := Kernel.exists_measurable_map_eq_unitInterval κ
+  refine ⟨f, hf, ?_, ?_⟩
+  · simpa only [hmap] using hgood
+  · have hjoint := κ.map_prod_eq_compProd_of_map
+      (μ := (volume : Measure I)) volume f hf hmap
+    have hsnd := congrArg Measure.snd hjoint
+    rw [Measure.snd_compProd, hmix] at hsnd
+    have hpair : Measurable (fun p : I × I => (p.1, f p.1 p.2)) :=
+      measurable_fst.prodMk hf
+    rw [Measure.snd, Measure.map_map measurable_snd hpair] at hsnd
+    exact hsnd
+
+end ConditionalLaw
 
 end Probability
 

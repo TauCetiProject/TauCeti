@@ -28,8 +28,13 @@ predicates `Equation` and `Nonsingular` that cut the curve out.
 * `WeierstrassCurve.Affine.variableChange_equation`, `_nonsingular`: `(x, y)` lies on `C • W`,
   respectively is a smooth point of it, exactly when its image lies on `W`. Both are `@[simp]`.
   These are what make the change of variables carry points to points.
+* `WeierstrassCurve.Affine.baseChange_variableChange_equation`: the criterion of
+  `variableChange_equation` for a pair `(x, y)` of elements of an `R`-algebra. It is `@[simp]`.
 * `WeierstrassCurve.Affine.variableChange_slope`: the slope of the chord or tangent scales by `u`
   and translates by `s`.
+* `WeierstrassCurve.variableChange_translate_a₃`, `variableChange_translate_a₄` and
+  `variableChange_translate_a₆_of_equation`: the coefficients of the model translated to a point
+  `(x, y)`, namely the values there of the two partial derivatives and of the equation.
 
 ## Implementation notes
 
@@ -157,6 +162,21 @@ change of variables scales the Weierstrass polynomial by `u⁶`, and `u` is a un
       - (C.u : R) ^ 3 * y * u_pow_mul_variableChange_a₃ W C
       + (C.u : R) ^ 2 * x * u_pow_mul_variableChange_a₄ W C + u_pow_mul_variableChange_a₆ W C
 
+/-- A pair `(x, y)` of elements of an `R`-algebra `A` satisfies the Weierstrass equation of the
+base change of `C • W` to `A` if and only if `(u²x + r, u³y + u²sx + t)` satisfies that of the
+base change of `W`, where `u`, `r`, `s` and `t` are mapped to `A`. -/
+@[simp] lemma baseChange_variableChange_equation {A : Type*} [CommRing A] [Algebra R A] (x y : A) :
+    (W.baseChange A).toAffine.Equation (algebraMap R A C.u ^ 2 * x + algebraMap R A C.r)
+        (algebraMap R A C.u ^ 3 * y + algebraMap R A C.u ^ 2 * algebraMap R A C.s * x
+          + algebraMap R A C.t)
+      ↔ ((C • W).baseChange A).toAffine.Equation x y := by
+  -- the base change of `C • W` is that of `W` acted on by the image of `C` over `A`
+  rw [WeierstrassCurve.baseChange, WeierstrassCurve.baseChange, ← map_variableChange,
+    ← variableChange_equation]
+  -- the components of the image of `C` over `A` are the images of `u`, `r`, `s` and `t`
+  simp only [VariableChange.map_u, Units.coe_map, MonoidHom.coe_ofClass, VariableChange.map_r,
+    VariableChange.map_s, VariableChange.map_t]
+
 /-- **`polynomialY` under the change of variables**, scaling by `u³`. The `Y`-partial derivative
 of the Weierstrass polynomial, evaluated at the image point, is `u³` times the corresponding
 derivative of `C • W` evaluated at the source point. This is the second row `(0, u³)` of the
@@ -274,5 +294,43 @@ lemma variableChange_slope [DecidableEq F] {x₁ x₂ y₁ y₂ : F}
 end Field
 
 end WeierstrassCurve.Affine
+
+/-! ### Translating a point to the origin
+
+The translation `x ↦ x + x₀`, `y ↦ y + y₀` carries a solution `(x₀, y₀)` to the origin. The
+translated model's `a₃` and `a₄` are the values at `(x₀, y₀)` of the two partial derivatives. -/
+
+namespace WeierstrassCurve
+
+variable {R : Type*} [CommRing R]
+
+section Translate
+
+variable (W : WeierstrassCurve R) (x y : R)
+
+/-- **`a₃` of the model translated to `(x, y)`** is the value there of the `Y`-partial derivative
+of the Weierstrass polynomial. -/
+theorem variableChange_translate_a₃ :
+    (VariableChange.mk 1 x 0 y • W).a₃ = W.toAffine.polynomialY.evalEval x y := by
+  simp only [variableChange_a₃, inv_one, Units.val_one, one_pow, one_mul,
+    Affine.evalEval_polynomialY]
+  ring
+
+/-- **`a₄` of the model translated to `(x, y)`** is minus the value there of the `X`-partial
+derivative of the Weierstrass polynomial. -/
+theorem variableChange_translate_a₄ :
+    (VariableChange.mk 1 x 0 y • W).a₄ = -W.toAffine.polynomialX.evalEval x y := by
+  simp only [variableChange_a₄, inv_one, Units.val_one, one_pow, one_mul,
+    Affine.evalEval_polynomialX]
+  ring
+
+/-- **Translating a solution `(x, y)` to the origin gives `a₆ = 0`.** -/
+theorem variableChange_translate_a₆_of_equation {x y : R} (h : W.toAffine.Equation x y) :
+    (VariableChange.mk 1 x 0 y • W).a₆ = 0 :=
+  Affine.equation_zero.mp ((W.toAffine.equation_iff_variableChange x y).mp h)
+
+end Translate
+
+end WeierstrassCurve
 
 end

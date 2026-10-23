@@ -64,10 +64,14 @@ fibre-constant for `F₁ / F₀`, and the traces compose, so the cotrace is tran
   `Con (ω) + Diff(F'/F) ≤ (Cotr ω)` for a nonzero Weil differential `ω`.
 * `TauCeti.weilDifferentialDivisor_weilDifferentialCotrace`: **the divisor of the cotrace**,
   `(Cotr ω) = Con (ω) + Diff(F'/F)` (Stichtenoth, Theorem 3.4.6).
+* `TauCeti.trace_finsum_repartitionDualComponent_weilDifferentialCotrace`: the local components of
+  `Cotr ω` at the places over `P` sum to `ω_P ∘ Tr_{F'/F}`, up to `Tr_{k'/k}`.
 * `TauCeti.weilDifferentialCotrace_smul`: the cotrace is `F`-semilinear,
   `Cotr (f · ω) = f · Cotr ω` (Stichtenoth, Proposition 3.4.11(a)).
 * `TauCeti.weilDifferentialCotrace_weilDifferentialCotrace`: the cotrace is transitive in
   towers, `Cotr_{F₂/F₁} ∘ Cotr_{F₁/F₀} = Cotr_{F₂/F₀}` (Stichtenoth, Proposition 3.4.11(b)).
+* `TauCeti.weilDifferentialCotrace_apply_eq_repartitionTrace`: the cotrace is compatible with a
+  `k`-isomorphism `F₁ ≃ F₂` respecting two embeddings of `E`.
 
 ## References
 
@@ -419,6 +423,40 @@ theorem weilDifferentialDivisor_weilDifferentialCotrace (hF : IsFunctionField k 
   rw [repartitionDualComponent_apply, ← htrβ, ← trace_weilDifferentialCotrace_apply hF hF' ω,
     weilDifferentialFiltration_apply_eq_zero_of_mem_adeleFiltration hbound _ hpull, map_zero]
 
+/-- **The local components of a cotrace over one fibre**: for a place `P` of `F` and `v ∈ F'`,
+the local components at the places `P'` over `P` of `Cotr ω`, evaluated at `v`, sum to the local
+component of `ω` at `P` evaluated at `Tr_{F'/F} v`, up to the trace of `k' / k`:
+
+`Tr_{k'/k} (∑_{P' ∣ P} (Cotr ω)_{P'} v) = ω_P (Tr_{F'/F} v)`.
+
+This is the defining identity of the cotrace on the fibre-constant repartition that is `v` over `P`
+and `0` elsewhere. -/
+theorem trace_finsum_repartitionDualComponent_weilDifferentialCotrace (hF : IsFunctionField k F)
+    (hF' : IsFunctionField k' F') (ω : ↥(weilDifferentialSpace k F)) (P : Place k F) (v : F') :
+    Algebra.trace k k' (∑ᶠ (P' : Place k' F') (_ : P'.restrict k F = P),
+        repartitionDualComponent (weilDifferentialCotrace k' F' hF hF' ω :
+          Module.Dual k' ↥(repartitionSpace k' F')) P' v) =
+      repartitionDualComponent (ω : Module.Dual k ↥(repartitionSpace k F)) P
+        (Algebra.trace F F' v) := by
+  classical
+  let β : ↥(relativeRepartitionSpace k F F') :=
+    ⟨Pi.single P v, mem_relativeRepartitionSpace_iff.mpr <| Filter.eventually_cofinite.mpr <|
+      (Set.finite_singleton P).subset fun Q hQ ↦ by
+        by_contra hne
+        exact hQ (by simp [Pi.single_eq_of_ne (Set.mem_singleton_iff.not.mp hne)])⟩
+  have htr : repartitionTrace k F F' hF β = singleRepartition P (Algebra.trace F F' v) :=
+    Subtype.ext <| funext fun Q ↦ by
+      rw [repartitionTrace_apply]
+      rcases eq_or_ne Q P with rfl | hQ
+      · simp [β]
+      · simp [β, hQ, singleRepartition_of_ne hQ]
+  rw [repartitionDualComponent_apply, ← htr, ← trace_weilDifferentialCotrace_apply hF hF' ω β,
+    apply_eq_finsum_repartitionDualComponent (weilDifferentialCotrace k' F' hF hF' ω).2]
+  congr 1
+  refine finsum_congr fun P' ↦ ?_
+  rw [relativeRepartitionPullback_apply]
+  by_cases hP' : P'.restrict k F = P <;> simp [β, hP']
+
 end Cotrace
 
 /-! ### The cotrace in a tower -/
@@ -515,5 +553,49 @@ theorem weilDifferentialCotrace_weilDifferentialCotrace (hF₀ : IsFunctionField
     trace_weilDifferentialCotrace_apply, htrγ]
 
 end Tower
+
+/-! ### The cotrace along isomorphic embeddings -/
+
+section Isomorphism
+
+variable {k : Type u} {E F₁ F₂ : Type*} [Field k] [Field E] [Field F₁] [Field F₂]
+variable [Algebra k E] [Algebra k F₁] [Algebra k F₂] [i₁ : Algebra E F₁] [i₂ : Algebra E F₂]
+variable [IsScalarTower k E F₁] [IsScalarTower k E F₂]
+variable [FiniteDimensional E F₁] [FiniteDimensional E F₂]
+variable [Algebra.IsSeparable E F₁]
+
+/-- Let `σ : F₁ ≃ F₂` be a `k`-isomorphism compatible with two embeddings of `E`. Then the cotrace
+to `F₁` of a Weil differential `ω` of `E`, evaluated at the repartition of `F₁` obtained by moving
+a fibre-constant repartition `β` of `F₂` back along `σ`, is `ω (Tr β)`: moving back along `σ`
+matches the fibres over `E`, the fibre-constant repartitions and the traces of the two
+extensions. -/
+theorem weilDifferentialCotrace_apply_eq_repartitionTrace (hE : IsFunctionField k E)
+    (hF₁ : IsFunctionField k F₁) (σ : F₁ ≃ₐ[k] F₂)
+    (hσ : ∀ r : E, σ (algebraMap E F₁ r) = algebraMap E F₂ r) (ω : ↥(weilDifferentialSpace k E))
+    (β : ↥(relativeRepartitionSpace k E F₂)) (a : ↥(repartitionSpace k F₁))
+    (ha : ∀ P : Place k F₁,
+      (a : Place k F₁ → F₁) P = σ.symm ((β : Place k E → F₂) ((P.map σ).restrict k E))) :
+    (weilDifferentialCotrace k F₁ hE hF₁ ω : Module.Dual k ↥(repartitionSpace k F₁)) a =
+      (ω : Module.Dual k ↥(repartitionSpace k E)) (repartitionTrace k E F₂ hE β) := by
+  let σE : F₁ ≃ₐ[E] F₂ := AlgEquiv.ofRingEquiv (f := σ.toRingEquiv) hσ
+  -- `σ` matches the places of `F₁` and `F₂` over each place of `E`.
+  have hres (P : Place k F₁) : (P.map σ).restrict k E = P.restrict k E :=
+    Place.restrict_map_restrictScalars P σE
+  -- So the family moved back along `σ` is a fibre-constant repartition of `F₁`, ...
+  have hmem : (fun Q ↦ σ.symm ((β : Place k E → F₂) Q)) ∈ relativeRepartitionSpace k E F₁ := by
+    refine (comp_restrict_mem_repartitionSpace_iff hF₁).mp ?_
+    convert a.2 using 1
+    exact funext fun P ↦ by rw [ha, hres]
+  have hpull : relativeRepartitionPullback k k E F₁ ⟨_, hmem⟩ = a :=
+    Subtype.ext <| funext fun P ↦ by rw [relativeRepartitionPullback_apply, ha, hres]
+  -- ... whose trace to `E` is the trace of `β`, because `σ` is an isomorphism over `E`.
+  have htrace : repartitionTrace k E F₁ hE ⟨_, hmem⟩ = repartitionTrace k E F₂ hE β :=
+    Subtype.ext <| funext fun Q ↦ by
+      rw [repartitionTrace_apply, repartitionTrace_apply]
+      exact Algebra.trace_eq_of_algEquiv σE.symm _
+  have h := trace_weilDifferentialCotrace_apply hE hF₁ ω ⟨_, hmem⟩
+  rwa [Algebra.trace_self_apply, hpull, htrace] at h
+
+end Isomorphism
 
 end TauCeti

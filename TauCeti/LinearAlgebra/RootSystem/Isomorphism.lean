@@ -37,11 +37,9 @@ their supports compatibly with the Cartan matrices.
 
 ## References
 
-This file proves `nonempty_equiv_of_hasCartanType`, the final isomorphism step of Layer 5 of
-`TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`, following the target signature in
-`TauCetiRoadmap/RepresentationTheory/RootSystems/Suggested.lean`. See Bourbaki, *Lie Groups and Lie
-Algebras, Chapters 4-6*, chapter VI, §4, and Humphreys, *Introduction to Lie Algebras and
-Representation Theory*, §11.1, for the isomorphism theorem in the classical language.
+This file proves `nonempty_equiv_of_hasCartanType`. See Bourbaki, *Lie Groups and Lie Algebras,
+Chapters 4-6*, chapter VI, §4, and Humphreys, *Introduction to Lie Algebras and Representation
+Theory*, §11.1, for the isomorphism theorem in the classical language.
 -/
 
 public section

@@ -79,10 +79,8 @@ completeness of the irreducible characters.
 
 ## References
 
-This implements the "primitive central idempotents" item of Layer 3 of the
-[character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md).
-See J.-P. Serre, *Linear Representations of Finite Groups*, Section 2.6, or I. M. Isaacs,
-*Character Theory of Finite Groups*, Theorem 2.12.
+See J.-P. Serre, *Linear Representations of Finite Groups*, Section 2.6, or I. M. Isaacs, *Character
+Theory of Finite Groups*, Theorem 2.12.
 -/
 
 public section
@@ -232,7 +230,7 @@ end Product
 
 section Scalar
 
-variable [Fintype G] [FiniteDimensional k V] [FiniteDimensional k W] [IsAlgClosed k]
+variable [Fintype G] [FiniteDimensional k W] [IsAlgClosed k]
 variable [Invertible (Nat.card G : k)] [ρ.IsIrreducible] [σ.IsIrreducible]
 
 open scoped Classical in

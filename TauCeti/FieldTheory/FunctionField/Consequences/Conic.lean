@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Consequences.GenusZero
-public import TauCeti.FieldTheory.FunctionField.Hyperelliptic.Genus
+public import TauCeti.FieldTheory.FunctionField.Hyperelliptic.Genus.Basic
 public import TauCeti.FieldTheory.FunctionField.Place.Map
 -- Proof-only: `-(X ^ 2 + 1)` is squarefree away from characteristic two.
 import TauCeti.Algebra.Polynomial.Squarefree

@@ -9,6 +9,7 @@ import Mathlib.Tactic.NoncommRing
 import Mathlib.Data.Fin.Tuple.Reflection
 import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement
 public import Mathlib.LinearAlgebra.ExteriorPower.Basic
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Filtration
 
 /-!
@@ -22,16 +23,13 @@ The formula is valid over every commutative ring in which `2` is invertible. The
 forced: the commutator of the unnormalized expression acts by twice the desired infinitesimal
 rotation.
 
-This is a shared generic prerequisite for the roadmap's Layer 3 standard-form normalization and
-the later Layer 9 arbitrary-form realization. It constructs neither `bivectorEquivSo` nor
-`soEquivQuadratic`, and it does not construct a transported Lie bracket, a Spin action, or the
-Layer 9 CAR worked instance.
-
 ## Main definitions
 
 * `CliffordAlgebra.bivector`: the half-normalized commutator of two Clifford
   generators.
 * `CliffordAlgebra.bivectorAlternating`: the corresponding alternating map.
+* `CliffordAlgebra.bivectorBilinear`: the same operation as a linear map in
+  each argument.
 * `CliffordAlgebra.bivectorExterior`: the induced linear map from the second
   exterior power.
 
@@ -50,16 +48,14 @@ Layer 9 CAR worked instance.
   `CliffordAlgebra.equivExterior_bivectorExterior`, and
   `CliffordAlgebra.bivectorExterior_injective`: the exterior model sends
   bivectors to exterior products, so the exterior-square map is injective.
+* `CliffordAlgebra.bivectorExterior_exteriorPower_basis`: the exterior-square map sends the basis
+  of `⋀² M` attached to a basis `b` of `M` to the matching vectors of the Clifford basis
+  `CliffordAlgebra.basis Q b`.
 * `CliffordAlgebra.bivector_mem_evenOdd_zero` and
   `CliffordAlgebra.bivector_mem_filtration_two`: it is even and has filtration
   degree at most two.
 * `CliffordAlgebra.bivectorExterior_range_le_of_bivector_mem`: the
   exterior-square map lands in any submodule containing the Clifford bivectors.
-
-## References
-
-* [Clifford algebras, Pin and Spin, and spin representations roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SpinRepresentations/README.md),
-  Layer 3, "the Lie algebra `𝔰𝔬(V) ≅ ⋀²V` inside the Clifford algebra".
 -/
 
 public section
@@ -143,6 +139,48 @@ theorem bivectorAlternating_apply (a b : M) :
     bivectorAlternating Q ![a, b] = bivector Q a b :=
   bivectorAlternating_apply_internal Q a b
 
+/-- The half-normalized Clifford bivector, regarded as a linear map in each argument. -/
+noncomputable def bivectorBilinear : M →ₗ[R] M →ₗ[R] CliffordAlgebra Q :=
+  LinearMap.mk₂ R (bivector Q)
+    (fun x y z ↦ by
+      rw [← bivectorAlternating_apply, ← bivectorAlternating_apply,
+        ← bivectorAlternating_apply]
+      have hu (a b : M) : Function.update ![0, b] 0 a = ![a, b] := by
+        funext i
+        fin_cases i <;> simp
+      simpa only [hu] using
+        (bivectorAlternating Q).map_update_add (v := ![0, z]) 0 x y)
+    (fun c x y ↦ by
+      rw [← bivectorAlternating_apply, ← bivectorAlternating_apply]
+      have hu (a b : M) : Function.update ![0, b] 0 a = ![a, b] := by
+        funext i
+        fin_cases i <;> simp
+      simpa only [hu] using
+        (bivectorAlternating Q).map_update_smul (v := ![0, y]) 0 c x)
+    (fun x y z ↦ by
+      rw [← bivectorAlternating_apply, ← bivectorAlternating_apply,
+        ← bivectorAlternating_apply]
+      have hu (a b : M) : Function.update ![a, 0] 1 b = ![a, b] := by
+        funext i
+        fin_cases i <;> simp
+      simpa only [hu] using
+        (bivectorAlternating Q).map_update_add (v := ![x, 0]) 1 y z)
+    (fun c x y ↦ by
+      rw [← bivectorAlternating_apply, ← bivectorAlternating_apply]
+      have hu (a b : M) : Function.update ![a, 0] 1 b = ![a, b] := by
+        funext i
+        fin_cases i <;> simp
+      simpa only [hu] using
+        (bivectorAlternating Q).map_update_smul (v := ![x, 0]) 1 c y)
+
+private theorem bivectorBilinear_apply_internal (a b : M) :
+    bivectorBilinear Q a b = bivector Q a b := rfl
+
+/-- Evaluating the bilinear Clifford bivector map gives the half-normalized commutator. -/
+@[simp]
+theorem bivectorBilinear_apply (a b : M) : bivectorBilinear Q a b = bivector Q a b :=
+  bivectorBilinear_apply_internal Q a b
+
 /-- The linear map from the second exterior power induced by the Clifford bivector. -/
 noncomputable def bivectorExterior : ⋀[R]^2 M →ₗ[R] CliffordAlgebra Q :=
   exteriorPower.alternatingMapLinearEquiv (bivectorAlternating Q)
@@ -194,6 +232,15 @@ theorem bivectorExterior_injective : Function.Injective (bivectorExterior Q) := 
   change Function.Injective ((equivExterior Q).toLinearMap.comp (bivectorExterior Q))
   simpa only [equivExterior_comp_bivectorExterior] using
     Submodule.subtype_injective (⋀[R]^2 M)
+
+/-- The exterior-square Clifford bivector map sends the vector of the basis `b.exteriorPower 2` of
+`⋀² M` indexed by `s` to the vector of the Clifford basis `CliffordAlgebra.basis Q b` indexed by
+`s`. -/
+theorem bivectorExterior_exteriorPower_basis {I : Type*} [LinearOrder I] (b : Module.Basis I R M)
+    (s : Set.powersetCard I 2) :
+    bivectorExterior Q (b.exteriorPower 2 s) = basis Q b s := by
+  apply (equivExterior Q).injective
+  rw [equivExterior_bivectorExterior, equivExterior_basis, ExteriorAlgebra.basis_eq_coe_basis]
 
 /-- Interchanging the two vectors negates their Clifford bivector. -/
 theorem bivector_swap (a b : M) :

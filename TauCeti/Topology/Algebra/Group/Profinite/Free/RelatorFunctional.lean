@@ -215,9 +215,10 @@ theorem relatorEval_explicitCup11 (r : R) (a b : H1 G (ZMod p)) :
       -degreeOneForm (gradedMk p (freeProP p X) 1
           ⟨r, (pLowerCentralSeries_one_eq_proPFrattini Fact.out).symm.le (hR r.2)⟩)
         (((e : freeProP p X ⧸ R →ₜ* G).comp
-          (ContinuousMonoidHom.quotientMk R)).continuousZModDualMap (H1EquivOfSmulEqSelf htriv a))
+          (Subgroup.quotientMkContinuousMonoidHom R)).continuousZModDualMap (H1EquivOfSmulEqSelf
+            htriv a))
         (((e : freeProP p X ⧸ R →ₜ* G).comp
-          (ContinuousMonoidHom.quotientMk R)).continuousZModDualMap
+          (Subgroup.quotientMkContinuousMonoidHom R)).continuousZModDualMap
             (H1EquivOfSmulEqSelf htriv b)) := by
   induction a using QuotientAddGroup.induction_on with
   | _ c =>
@@ -225,7 +226,7 @@ theorem relatorEval_explicitCup11 (r : R) (a b : H1 G (ZMod p)) :
   | _ d =>
   have := freeProP.subsingleton_H2_zmod (p := p) (X := X)
   set φ : freeProP p X →ₜ* G :=
-    (e : freeProP p X ⧸ R →ₜ* G).comp (ContinuousMonoidHom.quotientMk R) with hφ
+    (e : freeProP p X ⧸ R →ₜ* G).comp (Subgroup.quotientMkContinuousMonoidHom R) with hφ
   -- The pullback to `F` of a cocycle on `G`, as a cocycle; it vanishes on `R`.
   let pull (c : Z1 G (ZMod p)) : Z1 (freeProP p X) (ZMod p) :=
     (Z1EquivOfSmulEqSelf htrivF).symm
@@ -234,7 +235,7 @@ theorem relatorEval_explicitCup11 (r : R) (a b : H1 G (ZMod p)) :
       (pull c : freeProP p X → ZMod p) g = (c : G → ZMod p) (φ g) := by
     simp [pull]
   have hφ_coe (n : R) : φ n = 1 := by
-    rw [hφ, ContinuousMonoidHom.comp_toFun, ContinuousMonoidHom.quotientMk_apply,
+    rw [hφ, ContinuousMonoidHom.comp_toFun, Subgroup.quotientMkContinuousMonoidHom_apply,
       (QuotientGroup.eq_one_iff (n : freeProP p X)).2 n.2, map_one]
   have hpullR (c : Z1 G (ZMod p)) (n : R) : (pull c : freeProP p X → ZMod p) n = 0 := by
     rw [hpull, hφ_coe]
@@ -264,18 +265,18 @@ theorem relatorEval_explicitCup11 (r : R) (a b : H1 G (ZMod p)) :
       (Subtype.ext (funext fun g ↦ ?_))
     obtain ⟨f, hf⟩ := QuotientGroup.mk_surjective (e.symm g)
     have hφf : φ f = g := by
-      rw [hφ, ContinuousMonoidHom.comp_toFun, ContinuousMonoidHom.quotientMk_apply, hf]
+      rw [hφ, ContinuousMonoidHom.comp_toFun, Subgroup.quotientMkContinuousMonoidHom_apply, hf]
       exact e.apply_symm_apply g
     have hef : (e.symm : G →ₜ* freeProP p X ⧸ R) g = (f : freeProP p X ⧸ R) := hf.symm
     rw [cocyclesMap1_apply, hef, AddSubgroup.coe_subtype, coe_descendZ1_apply_mk, hpull, hφf]
   have hpair : ∀ (m x : FixedPoints.addSubgroup R (ZMod p)),
       (FixedPoints.addSubgroup R (ZMod p)).subtype
-          (fixedPointsPairing R AddMonoidHom.mul
+          (Subgroup.fixedPointsPairing R AddMonoidHom.mul
             (fun n ↦ smul_mul_smul_of_smul_eq_self htrivF (n : freeProP p X)) m x) =
         AddMonoidHom.mul ((FixedPoints.addSubgroup R (ZMod p)).subtype m)
           ((FixedPoints.addSubgroup R (ZMod p)).subtype x) := fun m x ↦ by
     simp only [AddSubgroup.coe_subtype]
-    exact coe_fixedPointsPairing R AddMonoidHom.mul _ m x
+    exact Subgroup.coe_fixedPointsPairing R AddMonoidHom.mul _ m x
   -- The transgression formula, read on `G`.
   have key : explicitCup11 G (ZMod p) (ZMod p) (ZMod p) AddMonoidHom.mul continuous_mul
       (smul_mul_smul_of_smul_eq_self htriv) (c : H1 G (ZMod p)) (d : H1 G (ZMod p)) =
@@ -365,10 +366,10 @@ theorem relatorFunctional_cupFp (r : R) (a b : cohomFp p G 1) :
       -degreeOneForm (gradedMk p (freeProP p X) 1
           ⟨r, (pLowerCentralSeries_one_eq_proPFrattini Fact.out).symm.le (hR r.2)⟩)
         (((e : freeProP p X ⧸ R →ₜ* G).comp
-          (ContinuousMonoidHom.quotientMk R)).continuousZModDualMap
+          (Subgroup.quotientMkContinuousMonoidHom R)).continuousZModDualMap
             (cohomFpLinearEquivContinuousZModDual p G a))
         (((e : freeProP p X ⧸ R →ₜ* G).comp
-          (ContinuousMonoidHom.quotientMk R)).continuousZModDualMap
+          (Subgroup.quotientMkContinuousMonoidHom R)).continuousZModDualMap
             (cohomFpLinearEquivContinuousZModDual p G b)) := by
   let _ := trivialZModAction p (freeProP p X)
   let _ := trivialZModAction p G

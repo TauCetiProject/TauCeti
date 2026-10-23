@@ -31,6 +31,8 @@ of full measure for a measure that is positive on open sets is dense.
 * `HolderOnWith.of_dist_le`: a Hölder bound stated with `dist` gives `HolderOnWith`; the converse
   is Mathlib's `HolderOnWith.dist_le`.
 * `holderOnWith_iff_dist_le`: `HolderOnWith` is equivalent to the Hölder bound stated with `dist`.
+* `HolderOnWith.dist_le_mul_rpow_of_mem_ball`: on a ball of radius `ρ`, a Hölder function with
+  constant `C` and exponent `r` stays within `C ρ^r` of its value at the centre.
 * `HolderOnWith.extend_of_dense`: a Hölder function on a dense set extends to a Hölder
   function on the whole space.
 -/
@@ -84,3 +86,14 @@ theorem holderOnWith_iff_dist_le {X Y : Type*} [PseudoMetricSpace X] [PseudoMetr
     {C r : ℝ≥0} {f : X → Y} {s : Set X} :
     HolderOnWith C r f s ↔ ∀ x ∈ s, ∀ y ∈ s, dist (f x) (f y) ≤ C * dist x y ^ (r : ℝ) :=
   ⟨fun hf _ hx _ hy => hf.dist_le hx hy, HolderOnWith.of_dist_le⟩
+
+/-- A function that is Hölder continuous with constant `C` and exponent `r` on the ball
+`ball x₀ ρ` stays within `C ρ^r` of its value at the centre. -/
+theorem HolderOnWith.dist_le_mul_rpow_of_mem_ball {X Y : Type*} [PseudoMetricSpace X]
+    [PseudoMetricSpace Y] {C r : ℝ≥0} {f : X → Y} {x₀ x : X} {ρ : ℝ}
+    (hf : HolderOnWith C r f (Metric.ball x₀ ρ)) (hx : x ∈ Metric.ball x₀ ρ) :
+    dist (f x) (f x₀) ≤ C * ρ ^ (r : ℝ) := by
+  have hx' := Metric.mem_ball.1 hx
+  calc dist (f x) (f x₀) ≤ C * dist x x₀ ^ (r : ℝ) :=
+        hf.dist_le hx (Metric.mem_ball_self (dist_nonneg.trans_lt hx'))
+    _ ≤ C * ρ ^ (r : ℝ) := by gcongr

@@ -41,6 +41,8 @@ quotient or a Sylow subgroup.
 * `TauCeti.zHat.maximalProPQuotientEquivPadicInt_mk_gen`,
   `TauCeti.zHat.maximalProPQuotientEquivPadicInt_symm_apply`: the isomorphism sends the class
   of the generator to `1`, and its inverse is the `p`-adic power of that class.
+* `TauCeti.zHat.profiniteOrder_eq_top`: the supernatural order of `ℤ̂` is `∏_ℓ ℓ ^ ∞`, since
+  `ℤ̂` maps onto every `ℤ_ℓ`.
 
 ## References
 
@@ -171,6 +173,22 @@ theorem maximalProPQuotientEquivZModPowLimit_mk_gen_proj (n : ℕ) :
     PadicInt.inverseLimit.proj_apply, PadicInt.toInverseLimit_apply, map_one]
 
 end MaximalProPQuotient
+
+/-- **The supernatural order of `ℤ̂` is `∏_ℓ ℓ ^ ∞`**, the greatest supernatural number. For
+every prime `ℓ`, `ℤ̂` maps continuously onto its maximal pro-`ℓ` quotient `ℤ_ℓ`, whose order is
+`ℓ ^ ∞`. -/
+@[simp]
+theorem profiniteOrder_eq_top : profiniteOrder zHat = ⊤ := by
+  ext ℓ
+  have : Fact (ℓ : ℕ).Prime := ⟨ℓ.prop⟩
+  let e := maximalProPQuotientEquivPadicInt (ℓ : ℕ)
+  have h := Supernatural.le_iff.mp
+    (profiniteOrder_le_of_surjective (e.toMonoidHom.comp (maximalProPQuotient.mk ℓ zHat))
+      (e.continuous.comp (maximalProPQuotient.continuous_mk ℓ zHat))
+      (e.surjective.comp (maximalProPQuotient.mk_surjective ℓ zHat))) ℓ
+  rw [profiniteOrder_multiplicative_padicInt] at h
+  rw [Supernatural.top_apply, ← top_le_iff]
+  exact (Supernatural.primePower_apply_self ℓ ⊤).symm.trans_le h
 
 end zHat
 

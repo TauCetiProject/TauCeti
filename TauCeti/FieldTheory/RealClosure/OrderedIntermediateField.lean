@@ -48,7 +48,7 @@ private def ofEmbedding {E : Type*} [Field E] [LinearOrder E] [IsOrderedRing E]
   toIntermediateField := F
   nonneg := (Subsemiring.nonneg E).map f.toRingHom
   nonneg_subset := by
-    rintro x ⟨y, hy, rfl⟩
+    rintro x ⟨y, _, rfl⟩
     exact (hF _).2 ⟨y, rfl⟩
   mem_or_neg_mem := by
     intro x hx

@@ -51,14 +51,14 @@ theorem character_indFDRep_ofLinearCharacter_map (ψ : S →* Kˣ) :
     (indFDRep
       (FDRep.ofLinearCharacter ((Units.map (algebraMap K L : K →* L)).comp ψ))).character =
       algebraMap K L ∘ (indFDRep (FDRep.ofLinearCharacter ψ)).character := by
-  rw [← indClassFun_ofFDRep_character, ← indClassFun_ofFDRep_character]
+  rw [← Subgroup.indClassFun_ofFDRep_character, ← Subgroup.indClassFun_ofFDRep_character]
   have hχ :
       (FDRep.ofLinearCharacter ((Units.map (algebraMap K L : K →* L)).comp ψ)).character =
       algebraMap K L ∘ (FDRep.ofLinearCharacter ψ).character := by
     funext g
     simp
   rw [hχ]
-  exact indClassFun_comp (algebraMap K L).toAddMonoidHom _
+  exact Subgroup.indClassFun_comp S (algebraMap K L).toAddMonoidHom _
 
 /-- In characteristic zero, extending scalars after inducing a linear character gives the
 representation induced from the extended linear character. -/

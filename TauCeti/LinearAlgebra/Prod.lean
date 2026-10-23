@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.LinearAlgebra.Determinant
+public import Mathlib.LinearAlgebra.Basis.Prod
 public import Mathlib.LinearAlgebra.Prod
 
 /-!
@@ -14,8 +15,9 @@ public import Mathlib.LinearAlgebra.Prod
 
 Mathlib builds the product `e₁.prodCongr e₂` of two linear equivalences, acting on `M₁ × M₂`
 componentwise. This file identifies which automorphisms of `M₁ × M₂` arise this way, records the
-determinant of such a product, and records that scalar multiplication on a product of complex
-modules is the product map of the two scalar multiplications.
+determinants of such a product and of a block triangular `skewProd` automorphism, and records
+that scalar multiplication on a product of complex modules is the product map of the two scalar
+multiplications.
 
 The characterization needs only containment: an automorphism `g` of `M₁ × M₂` that maps
 `M₁ × 0` into `M₁ × 0` and `0 × M₂` into `0 × M₂` already acts componentwise, and each component
@@ -31,6 +33,9 @@ quadratic forms with the subgroup preserving both summands.
   automorphisms `e₁` of `M₁` and `e₂` of `M₂` exactly when it maps each factor into itself.
 * `LinearEquiv.det_prodCongr`: `det (e₁.prodCongr e₂) = det e₁ * det e₂` for finite free
   modules; this is `LinearMap.det_prodMap` for linear equivalences.
+* `Module.Basis.det_prod`: changes between product bases have the product determinant.
+* `LinearEquiv.det_skewProd`: the same determinant formula for block triangular
+  automorphisms, independently of the off-diagonal block.
 * `TauCeti.LinearMap.lsmul_restrictScalars_prodMap`: multiplication by a scalar on a product of
   complex modules is the product map of the two multiplications.
 -/
@@ -95,9 +100,48 @@ theorem det_prodCongr (e₁ : M₁ ≃ₗ[R] M₁) (e₂ : M₂ ≃ₗ[R] M₂) 
   ext
   simp [coe_det, LinearMap.det_prodMap]
 
+/-- The determinant of a block triangular linear automorphism is the product of the
+determinants of its diagonal blocks. -/
+@[simp]
+theorem det_skewProd (e₁ : M₁ ≃ₗ[R] M₁) (e₂ : M₂ ≃ₗ[R] M₂) (f : M₁ →ₗ[R] M₂) :
+    (e₁.skewProd e₂ f).det = e₁.det * e₂.det := by
+  classical
+  let b₁ := Module.Free.chooseBasis R M₁
+  let b₂ := Module.Free.chooseBasis R M₂
+  have hmat : LinearMap.toMatrix (b₁.prod b₂) (b₁.prod b₂)
+      (e₁.skewProd e₂ f).toLinearMap =
+      Matrix.fromBlocks (LinearMap.toMatrix b₁ b₁ e₁.toLinearMap) 0
+        (LinearMap.toMatrix b₁ b₂ f) (LinearMap.toMatrix b₂ b₂ e₂.toLinearMap) := by
+    ext i j
+    cases i <;> cases j <;>
+      simp [LinearMap.toMatrix_apply, LinearEquiv.skewProd_apply]
+  apply Units.ext
+  simp only [coe_det, Units.val_mul]
+  rw [← LinearMap.det_toMatrix (b₁.prod b₂), hmat, Matrix.det_fromBlocks_zero₁₂,
+    LinearMap.det_toMatrix, LinearMap.det_toMatrix]
+
 end CommRing
 
 end LinearEquiv
+
+namespace Module.Basis
+
+variable {R E F ι κ : Type*} [CommRing R] [AddCommGroup E] [Module R E]
+  [AddCommGroup F] [Module R F] [Fintype ι] [DecidableEq ι] [Fintype κ] [DecidableEq κ]
+
+/-- The determinant of a change between product bases is the product of the two factor
+change-of-basis determinants. -/
+theorem det_prod (b b' : Basis ι R E) (c c' : Basis κ R F) :
+    (b.prod c).det (b'.prod c') = b.det b' * c.det c' := by
+  rw [Basis.det_apply, Basis.det_apply, Basis.det_apply]
+  have he : (b.prod c).toMatrix (b'.prod c') =
+      Matrix.fromBlocks (b.toMatrix b') 0 0 (c.toMatrix c') := by
+    ext i j
+    cases i <;> cases j <;>
+      simp [Basis.toMatrix_apply]
+  rw [he, Matrix.det_fromBlocks_zero₂₁]
+
+end Module.Basis
 
 namespace TauCeti
 

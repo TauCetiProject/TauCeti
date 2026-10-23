@@ -82,7 +82,7 @@ projections, up to its degree-one shift. -/
 @[simp]
 theorem map_decompose (hM : IsCurvedDGLeftModule h ℳ dM) (p : ℤ) (x : M) :
     dM (decompose ℳ x p : M) = (decompose ℳ (dM x) (p + 1) : M) :=
-  DirectSum.map_decompose_shift ℳ ℳ dM (· + 1) (add_left_injective 1)
+  DirectSum.map_decompose_shift ℳ ℳ dM.toAddMonoidHom (· + 1) (add_left_injective 1)
     (fun _ _ hy ↦ hM.isHomogeneous.map_mem hy) p x
 
 /-- The left Leibniz rule against a module element killed by the differential. The signed term

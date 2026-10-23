@@ -29,8 +29,9 @@ vectors which enter the definition of a regular cone and, later, its affine mono
   nonvanishing, and primitivity lemmas.
 * `TauCeti.Toric.IsPrimitiveGenerator.unique`: two primitive generators of the same salient ray in
   an integral lattice are equal.
-* `TauCeti.Toric.isPrimitiveGenerator_faceEmbedding`: being a primitive generator of a ray does not
-  depend on which cone the ray is viewed as a face of.
+* `TauCeti.Toric.isPrimitiveGenerator_faceEmbedding` and
+  `TauCeti.Toric.primitiveGenerator_faceEmbedding`: being a primitive generator of a ray, and the
+  canonical primitive generator, do not depend on which cone the ray is viewed as a face of.
 * `TauCeti.Toric.IsPrimitiveGenerator.prodInl` and
   `TauCeti.Toric.IsPrimitiveGenerator.prodInr`: primitive generators remain primitive generators
   under the two inclusions into a product cone.
@@ -205,5 +206,16 @@ theorem isPrimitiveGenerator_iff_eq_primitiveGenerator {v : N} (hi : IsIntegralL
     IsPrimitiveGenerator i ρ v ↔ v = primitiveGenerator hi hσ ρ :=
   ⟨fun hv ↦ hv.eq_primitiveGenerator hi hσ,
     fun hv ↦ hv ▸ isPrimitiveGenerator_primitiveGenerator hi hσ ρ⟩
+
+/-- The canonical primitive generator of a ray of a face `τ` of a toric cone `σ` is its canonical
+primitive generator as a ray of `σ`. -/
+@[simp]
+theorem primitiveGenerator_faceEmbedding (hi : IsIntegralLattice i) (hσ : IsToricCone i σ)
+    {τ : PointedCone ℝ V} (hτ : τ.IsFaceOf σ) (ρ : ToricRay τ) :
+    primitiveGenerator hi hσ (ToricRay.faceEmbedding hτ ρ) =
+      primitiveGenerator hi (hσ.of_isFaceOf hτ) ρ :=
+  (((isPrimitiveGenerator_faceEmbedding hτ ρ).2
+    (isPrimitiveGenerator_primitiveGenerator hi (hσ.of_isFaceOf hτ) ρ)).eq_primitiveGenerator
+      hi hσ).symm
 
 end TauCeti.Toric

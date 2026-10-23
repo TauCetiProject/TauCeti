@@ -89,8 +89,8 @@ theorem restrict_Ioc_measure_summatoryStieltjes {w : ι → ℝ} (hw : ∀ i, 0 
   · refine Finset.sum_congr rfl fun i hi ↦ ?_
     by_cases his : (N i : ℝ) ∈ s
     · rw [indicator_of_mem (mem_inter his ((hmem i).mp hi)), indicator_of_mem his]
-    · rw [indicator_of_notMem (fun h ↦ his h.1), indicator_of_notMem his]
-  · rw [indicator_of_notMem (fun h ↦ hi ((hmem i).mpr h.2)), mul_zero]
+    · rw [indicator_of_notMem (fun h ↦ his (mem_of_mem_inter_left h)), indicator_of_notMem his]
+  · rw [indicator_of_notMem (fun h ↦ hi ((hmem i).mpr (mem_of_mem_inter_right h))), mul_zero]
 
 /-! ### Integrals against the Stieltjes measure -/
 

@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Algebra.Quaternion
 public import Mathlib.RingTheory.TensorProduct.Basic
+public import TauCeti.Algebra.BrauerGroup.BaseChange
+public import TauCeti.Algebra.Quaternion.BrauerClass
 import Mathlib.LinearAlgebra.TensorProduct.Pi
 
 /-!
@@ -174,3 +176,22 @@ theorem baseChangeTwoParams_symm_mk (w x y z : S) :
   rfl
 
 end TauCeti.QuaternionAlgebra
+
+namespace TauCeti.BrauerGroup
+
+universe u
+
+variable {K L : Type u} [Field K] [Field L] [Algebra K L]
+  [Invertible (2 : K)] [Invertible (2 : L)]
+
+/-- **Scalar extension of a quaternion symbol**: the Brauer class of a quaternion algebra is
+carried to the class with the same parameters viewed in the extension field. -/
+@[simp]
+theorem baseChange_quaternionClass (a b : Kˣ) :
+    baseChange K L (quaternionClass a b) =
+      quaternionClass (Units.map (algebraMap K L).toMonoidHom a)
+        (Units.map (algebraMap K L).toMonoidHom b) := by
+  rw [quaternionClass_def, baseChange_mk, quaternionClass_def]
+  exact mk_eq_mk_of_algEquiv (QuaternionAlgebra.baseChangeTwoParams K L a b)
+
+end TauCeti.BrauerGroup

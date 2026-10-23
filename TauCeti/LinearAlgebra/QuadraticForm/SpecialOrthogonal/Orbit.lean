@@ -44,15 +44,12 @@ theorem exists_specialOrthogonal_map_eq_of_nondegenerate (Q : QuadraticForm K V)
     rw [reflectionPairSpecialOrthogonal_apply]
     rw [reflection_sub_apply_eq_of_map_eq Q x y hxy]
     exact reflection_apply_of_isOrtho Q z hzy
-  · let _ : Invertible (Q (x - -y)) := by
-      simpa only [sub_neg_eq_add] using hadd.invertible
+  · let _ : Invertible (Q (x + y)) := hadd.invertible
     have hyUnit : IsUnit (Q y) := isUnit_iff_ne_zero.mpr hy
     let _ : Invertible (Q y) := hyUnit.invertible
-    refine ⟨reflectionPairSpecialOrthogonal Q y (x - -y), ?_⟩
-    rw [reflectionPairSpecialOrthogonal_apply]
-    rw [reflection_sub_apply_eq_of_map_eq Q x (-y)]
-    · simp
-    · simpa [QuadraticMap.map_neg] using hxy
+    refine ⟨reflectionPairSpecialOrthogonal Q y (x + y), ?_⟩
+    rw [reflectionPairSpecialOrthogonal_apply, reflection_add_apply_eq_neg_of_map_eq Q x y hxy]
+    simp
 
 end
 

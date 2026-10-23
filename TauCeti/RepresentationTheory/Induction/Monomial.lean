@@ -46,7 +46,7 @@ The proof is by induction on `|G|`.  Let `W` be irreducible.
 * By the Clifford correspondence (`FDRep.exists_simple_liesOver_inertia_nonempty_iso_indFDRep`)
   `W ≅ Ind_T^G U` for an irreducible `U` of `T`, and `T` is nilpotent and smaller, so
   `χ_U = Ind_L^T χ` by induction.  Transitivity of induction
-  (`TauCeti.indClassFun_indClassFun_subgroupOf`) finishes.
+  (`Subgroup.indClassFun_indClassFun_subgroupOf`) finishes.
 
 ## Main statements
 
@@ -80,14 +80,15 @@ Over an algebraically closed field of characteristic zero, for every irreducible
 with `χ_W = Ind_H^G χ`. -/
 theorem exists_character_eq_indClassFun_of_isNilpotent [IsAlgClosed k] [CharZero k] [Finite G]
     [Group.IsNilpotent G] (W : FDRep k G) [Simple W] :
-    ∃ (H : Subgroup G) (χ : H →* kˣ), W.character = indClassFun H fun h => (χ h : k) := by
+    ∃ (H : Subgroup G) (χ : H →* kˣ), W.character = Subgroup.indClassFun H fun h => (χ h : k) := by
   obtain ⟨n, hn⟩ : ∃ n, Nat.card G = n := ⟨_, rfl⟩
   induction n using Nat.strong_induction_on generalizing G with
   | _ n ih =>
   by_cases hcomm : ∀ g h : G, Commute (W.ρ g) (W.ρ h)
   · obtain ⟨χ, hχ⟩ := exists_character_eq_of_commute W hcomm
     refine ⟨⊤, χ.comp (⊤ : Subgroup G).subtype, hχ.trans (funext fun g => ?_)⟩
-    rw [indClassFun_top (MonoidHom.comp_mem_classFunction _ Units.val)]
+    rw [Subgroup.indClassFun_top (ClassFunction.mem_iff.mp (MonoidHom.comp_mem_classFunction _
+      Units.val))]
     rfl
   have hW := FDRep.isIrreducible_of_simple W
   have : Nontrivial W := hW.nontrivial
@@ -119,8 +120,9 @@ theorem exists_character_eq_indClassFun_of_isNilpotent [IsAlgClosed k] [CharZero
     ⟨L₀.map (inertia V).subtype, Subgroup.map_subtype_le L₀,
       Subgroup.comap_map_eq_self_of_injective (inertia V).subtype_injective L₀⟩
   refine ⟨L, χ.comp (Subgroup.subgroupOfEquivOfLe hLT).symm.toMonoidHom, ?_⟩
-  rw [← char_iso e, ← indClassFun_ofFDRep_character, hχ,
-    ← indClassFun_indClassFun_subgroupOf hLT (MonoidHom.comp_mem_classFunction _ Units.val)]
+  rw [← char_iso e, ← Subgroup.indClassFun_ofFDRep_character, hχ,
+    ← Subgroup.indClassFun_indClassFun_subgroupOf L hLT
+      (ClassFunction.mem_iff.mp (MonoidHom.comp_mem_classFunction _ Units.val))]
   simp
 
 /-- **Finite nilpotent groups are M-groups.**  Over an algebraically closed field of
@@ -131,7 +133,7 @@ theorem exists_nonempty_iso_indFDRep_ofLinearCharacter_of_isNilpotent [IsAlgClos
     ∃ (H : Subgroup G) (χ : H →* kˣ), Nonempty (W ≅ indFDRep (ofLinearCharacter χ)) := by
   obtain ⟨H, χ, hχ⟩ := exists_character_eq_indClassFun_of_isNilpotent W
   refine ⟨H, χ, nonempty_iso_of_character_eq _ _ ?_⟩
-  rw [hχ, ← indClassFun_ofFDRep_character]
-  exact congrArg (indClassFun H) (funext fun h => (char_ofLinearCharacter χ h).symm)
+  rw [hχ, ← Subgroup.indClassFun_ofFDRep_character]
+  exact congrArg (Subgroup.indClassFun H) (funext fun h => (char_ofLinearCharacter χ h).symm)
 
 end FDRep

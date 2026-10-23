@@ -42,8 +42,6 @@ the determinant twist changes no pattern-fiber cardinality.
 
 ## References
 
-* [Classical groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/ClassicalGroups/README.md),
-  Layer 6, "Gelfand-Tsetlin patterns" and "the Gelfand-Tsetlin dimension formula".
 * W. Fulton and J. Harris, *Representation Theory: A First Course* (1991), §15.3.
 -/
 

@@ -301,7 +301,7 @@ theorem _root_.LieSubmodule.exists_isCompl_of_le_ker [FiniteDimensional K M]
   let N₀ : LieSubmodule K (L ⧸ I) M :=
     { N.toSubmodule with
       lie_mem := fun {y m} hm ↦ by
-        obtain ⟨x, rfl⟩ := I.mkQ_surjective y
+        obtain ⟨x, rfl⟩ := I.surjective_mkQ y
         rw [hlie]
         exact N.lie_mem hm }
   obtain ⟨N₀', h⟩ := exists_isCompl_of_isKilling N₀

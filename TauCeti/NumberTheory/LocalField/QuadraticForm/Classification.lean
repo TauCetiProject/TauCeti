@@ -25,6 +25,11 @@ least three, this allows a common line to be split off and the classification to
 inductively to the binary criterion. The diagonal-chain API aligns the represented value
 with the leading coefficient; the orthogonal-sum formulas recover the invariants of the tails.
 
+Since the local Hasse invariant takes only the values `±1`, a rank and a discriminant leave at most
+two classes, with opposite Hasse invariants. Consequently, if `p ≠ p'` share their rank and
+discriminant, then `p ⊥ x ≅ p' ⊥ y` for any classes `x ≠ y` that share their rank and
+discriminant.
+
 ## References
 
 * J.-P. Serre, *A Course in Arithmetic*, Chapter IV, §2.3, Theorem 7.
@@ -137,6 +142,23 @@ theorem eq_iff_rank_eq_and_signedDiscr_eq_and_localHasse_eq {x y : RegularFormCl
   -- cancelled through the injectivity of translation in the group.
   exact and_congr_left'
     (Equiv.addLeft ((rank y).choose 2 • squareClass (-1 : Kˣ))).injective.eq_iff.symm
+
+/-- **At most two classes of each rank and discriminant.** Distinct classes with the same rank
+and plain discriminant have opposite local Hasse invariants. -/
+theorem localHasse_eq_neg_of_ne {x y : RegularFormClass K} (hrank : x.rank = y.rank)
+    (hd : discr x = discr y) (hne : x ≠ y) : localHasse x = -localHasse y :=
+  Int.units_ne_iff_eq_neg.mp fun hs => hne (eq_of_discr_eq_of_localHasse_eq hrank hd hs)
+
+/-- **Exchanging two pairs of distinct classes.** Let `p ≠ p'` be classes with the same rank and
+plain discriminant, and let `x, y` be classes with the same rank and plain discriminant. Then
+`p + x = p' + y`, that is `p ⊥ x ≅ p' ⊥ y`, exactly when `x ≠ y`. -/
+theorem add_eq_add_iff_ne {p p' x y : RegularFormClass K} (hpr : p.rank = p'.rank)
+    (hpd : discr p = discr p') (hp : p ≠ p') (hxr : x.rank = y.rank) (hxd : discr x = discr y) :
+    p + x = p' + y ↔ x ≠ y := by
+  refine ⟨fun h hxy => hp (add_right_cancel (hxy ▸ h)), fun hxy => ?_⟩
+  refine eq_of_discr_eq_of_localHasse_eq (by simp [rank_add, hpr, hxr]) (by simp [hpd, hxd]) ?_
+  rw [localHasse_add, localHasse_add, localHasse_eq_neg_of_ne hpr hpd hp,
+    localHasse_eq_neg_of_ne hxr hxd hxy, hpd, hxd, neg_mul_neg]
 
 end RegularFormClass
 

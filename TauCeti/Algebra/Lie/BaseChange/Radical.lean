@@ -29,8 +29,9 @@ IsSolvable ↥(I.baseChange A) ↔ IsSolvable ↥I,   IsNilpotent ↥(I.baseChan
 
 Ascent — transferring either property from `I` to `I.baseChange A` — asks nothing of `A`.  Descent,
 the `→` direction of the equivalences as displayed, is exactly where faithful flatness enters,
-through `Submodule.baseChange_inj`: a term of either series can vanish after extending scalars
-only if it vanished already.  Applied to the two largest ideals, ascent gives
+through `LieSubmodule.baseChange_inj`: a term of either series can vanish after extending scalars
+only if it vanished already. Since extension of scalars preserves suprema of Lie submodules,
+ascent applied to all solvable or nilpotent ideals gives, without any Noetherian hypothesis,
 
 ```text
 (radical R L).baseChange A ≤ radical A (A ⊗[R] L),
@@ -41,11 +42,13 @@ Neither containment is forced to be an equality by the transfer principles, beca
 `A ⊗[R] L` need not be extended from `L` at all, and nothing above bounds the ideals that are
 not.  The case where both sides are `⊥` is the separate statement
 `LieAlgebra.hasTrivialRadical_baseChange_iff`: over a field of characteristic zero a
-finite-dimensional Lie algebra has trivial radical exactly when some field extension of it does,
-so extending scalars can neither destroy nor *create* a solvable ideal of a semisimple algebra.
+finite-dimensional Lie algebra has trivial radical exactly when its extension of scalars to a
+principal ideal domain does. This includes field extensions: in this setting extension of scalars
+preserves and reflects triviality of the radical.
 
 For a finite-dimensional Lie algebra over a field of characteristic zero the containment is an
-equality: `LieAlgebra.radical_baseChange` says the radical commutes with a field extension, and
+equality: `LieAlgebra.radical_baseChange` says the radical commutes with extension of scalars to
+any principal ideal domain, and
 `LieAlgebra.one_tmul_mem_radical_baseChange_iff` reads that as a criterion, so membership in the
 radical may be tested after extending scalars.  The corresponding statement for the nilradical is
 *not* proved here and does not follow, since `L ⧸ nilradical K L` need not have trivial
@@ -59,10 +62,14 @@ nilradical.
 * `LieAlgebra.baseChange_radical_le` and `LieAlgebra.baseChange_nilradical_le`: the extension of
   the radical, respectively of the nilradical, lands in the radical, respectively the nilradical,
   of the extended algebra.
+* `LieAlgebra.hasTrivialRadical_of_baseChange`: triviality of the radical descends along a
+  faithfully flat extension, with no finiteness or characteristic hypothesis.
 * `LieAlgebra.hasTrivialRadical_baseChange_iff`: **in characteristic zero a finite-dimensional Lie
-  algebra has trivial radical exactly when its extension to a field extension does.**
+  algebra has trivial radical exactly when its extension to a field extension, or any principal
+  ideal domain, does.**
 * `LieAlgebra.radical_baseChange`: **in characteristic zero the solvable radical of a
-  finite-dimensional Lie algebra commutes with a field extension**, with
+  finite-dimensional Lie algebra commutes with extension of scalars to a field extension, or any
+  principal ideal domain**, with
   `LieAlgebra.one_tmul_mem_radical_baseChange_iff` reading it as a membership criterion that may
   be checked after extending scalars.
 
@@ -120,72 +127,91 @@ theorem isNilpotent_baseChange [LieRing.IsNilpotent I] :
 @[simp]
 theorem isSolvable_baseChange_iff [Module.FaithfullyFlat R A] :
     LieAlgebra.IsSolvable (I.baseChange A) ↔ LieAlgebra.IsSolvable I := by
-  refine ⟨fun h ↦ ?_, fun _ ↦ isSolvable_baseChange A I⟩
-  obtain ⟨k, hk⟩ := (LieAlgebra.isSolvable_iff A ↥(I.baseChange A)).mp h
-  rw [derivedSeries_eq_bot_iff, LieAlgebra.derivedSeriesOfIdeal_baseChange,
-    ← LieSubmodule.toSubmodule_eq_bot, LieSubmodule.coe_baseChange,
-    ← Submodule.baseChange_bot (R := R) (M := L) (A := A), Submodule.baseChange_inj,
-    LieSubmodule.toSubmodule_eq_bot] at hk
-  exact (LieAlgebra.isSolvable_iff R ↥I).mpr ⟨k, (derivedSeries_eq_bot_iff I k).mpr hk⟩
+  simp only [LieAlgebra.isSolvable_iff A, LieAlgebra.isSolvable_iff R,
+    derivedSeries_eq_bot_iff, LieAlgebra.derivedSeriesOfIdeal_baseChange,
+    ← LieSubmodule.baseChange_bot A (R := R) (L := L) (M := L),
+    LieSubmodule.baseChange_inj]
 
 /-- **An ideal is nilpotent exactly when its faithfully flat extension of scalars is nilpotent.** -/
 @[simp]
 theorem isNilpotent_baseChange_iff [Module.FaithfullyFlat R A] :
     LieRing.IsNilpotent (I.baseChange A) ↔ LieRing.IsNilpotent I := by
-  rw [isNilpotent_iff_exists_lcs_eq_bot, isNilpotent_iff_exists_lcs_eq_bot]
-  refine exists_congr fun k ↦ ?_
-  rw [lcs_baseChange, ← LieSubmodule.toSubmodule_eq_bot, LieSubmodule.coe_baseChange,
-    ← Submodule.baseChange_bot (R := R) (M := L) (A := A), Submodule.baseChange_inj,
-    LieSubmodule.toSubmodule_eq_bot]
+  simp only [isNilpotent_iff_exists_lcs_eq_bot, lcs_baseChange,
+    ← LieSubmodule.baseChange_bot A (R := R) (L := L) (M := L),
+    LieSubmodule.baseChange_inj]
 
 end LieIdeal
 
 namespace LieAlgebra
 
-section Noetherian
+section CommRing
 
 open TauCeti.LieAlgebra
 
 variable (R L : Type*) [CommRing R] [LieRing L] [LieAlgebra R L]
 variable (A : Type*) [CommRing A] [Algebra R A]
 
-/-- **The extension of scalars of the solvable radical lands in the solvable radical.**  Nothing
-formal makes the containment an equality, since an ideal of `A ⊗[R] L` need not be extended from
-`L`; over a field of characteristic zero it is one, which is `LieAlgebra.radical_baseChange`. -/
-theorem baseChange_radical_le [IsNoetherian R L] :
-    (radical R L).baseChange A ≤ radical A (A ⊗[R] L) :=
-  le_sSup (LieIdeal.isSolvable_baseChange A (radical R L))
+/-- **The extension of scalars of the solvable radical lands in the solvable radical.**
+No Noetherian hypothesis is needed. An ideal of `A ⊗[R] L` need not be extended from `L`, so the
+containment need not be an equality; the characteristic-zero equality is
+`LieAlgebra.radical_baseChange`. -/
+theorem baseChange_radical_le :
+    (radical R L).baseChange A ≤ radical A (A ⊗[R] L) := by
+  rw [radical, sSup_eq_iSup]
+  simp only [LieSubmodule.baseChange_iSup]
+  refine iSup_le fun I ↦ iSup_le fun hI ↦ ?_
+  have : IsSolvable I := hI
+  exact le_sSup (LieIdeal.isSolvable_baseChange A I)
 
-/-- **The extension of scalars of the nilradical lands in the nilradical.** -/
-theorem baseChange_nilradical_le [IsNoetherian R L] :
-    (nilradical R L).baseChange A ≤ nilradical A (A ⊗[R] L) :=
-  LieIdeal.le_nilradical A (A ⊗[R] L) _ (LieIdeal.isNilpotent_baseChange A (nilradical R L))
+/-- **The extension of scalars of the nilradical lands in the nilradical.**
+No Noetherian hypothesis is needed. -/
+theorem baseChange_nilradical_le :
+    (nilradical R L).baseChange A ≤ nilradical A (A ⊗[R] L) := by
+  rw [nilradical_def, sSup_eq_iSup]
+  simp only [LieSubmodule.baseChange_iSup]
+  refine iSup_le fun I ↦ iSup_le fun hI ↦ ?_
+  have : LieRing.IsNilpotent I := hI
+  exact LieIdeal.le_nilradical A (A ⊗[R] L) _ (LieIdeal.isNilpotent_baseChange A I)
 
-end Noetherian
+/-- **Triviality of the radical descends along a faithfully flat extension of scalars.**
+No finiteness or characteristic hypothesis is needed: a solvable ideal extends to a solvable
+ideal, and faithful flatness reflects its vanishing. -/
+theorem hasTrivialRadical_of_baseChange [Module.FaithfullyFlat R A]
+    [HasTrivialRadical A (A ⊗[R] L)] : HasTrivialRadical R L := by
+  refine hasTrivialRadical_of_no_solvable_ideals fun I hI ↦ ?_
+  have : IsSolvable (I.baseChange A) := LieIdeal.isSolvable_baseChange A I
+  have hbot := HasTrivialRadical.eq_bot_of_isSolvable (I.baseChange A)
+  simpa only [← LieSubmodule.baseChange_bot A (R := R) (L := L) (M := L),
+    LieSubmodule.baseChange_inj] using hbot
 
-section CharZero
+end CommRing
+
+section PrincipalIdealDomain
 
 variable (K L A : Type*) [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
-  [FiniteDimensional K L] [Field A] [Algebra K A]
+  [FiniteDimensional K L] [CommRing A] [IsDomain A] [IsPrincipalIdealRing A] [Algebra K A]
 
-/-- **Triviality of the radical is insensitive to a field extension.**  In characteristic zero a
-finite-dimensional Lie algebra has trivial radical exactly when its extension of scalars to a
-field extension does.
+/-- **Triviality of the radical is insensitive to extension of scalars to a principal ideal
+domain**, such as a field extension.  In characteristic zero a finite-dimensional Lie algebra has
+trivial radical exactly when its extension of scalars to such a domain does.
 
-The `←` direction is the substantive one: it says that extending scalars cannot *create* a
-solvable ideal.  Neither direction follows from `LieIdeal.isSolvable_baseChange_iff`, which only
-speaks of ideals extended from `L`.  Characteristic zero is a genuine hypothesis here, not a
-convenience. -/
+The `←` direction is the substantive one: extending scalars cannot *create* a solvable ideal.
+It does not follow from `LieIdeal.isSolvable_baseChange_iff`, which only speaks of ideals extended
+from `L`. The `→` direction is the general faithfully flat descent theorem
+`LieAlgebra.hasTrivialRadical_of_baseChange`. Characteristic zero is a genuine hypothesis for
+ascent, not a convenience. -/
 @[simp]
 theorem hasTrivialRadical_baseChange_iff :
     HasTrivialRadical A (A ⊗[K] L) ↔ HasTrivialRadical K L := by
   have : CharZero A := charZero_of_injective_algebraMap (algebraMap K A).injective
-  rw [hasTrivialRadical_iff_isKilling, hasTrivialRadical_iff_isKilling]
-  exact TauCeti.isKilling_baseChange_iff K A L
+  refine ⟨fun _ ↦ hasTrivialRadical_of_baseChange K L A, fun _ ↦ ?_⟩
+  rw [hasTrivialRadical_iff_isKilling, TauCeti.isKilling_baseChange_iff K A L]
+  infer_instance
 
-/-- **In characteristic zero the solvable radical commutes with a field extension.**  For a
-finite-dimensional Lie algebra `L` over a field `K` of characteristic zero and a field extension
-`A` of `K`, the radical of `A ⊗[K] L` is the extension of scalars of the radical of `L`.
+/-- **In characteristic zero the solvable radical commutes with extension of scalars to a
+principal ideal domain**, such as a field extension.  For a finite-dimensional Lie algebra `L`
+over a field `K` of characteristic zero and a `K`-algebra `A` that is a principal ideal domain,
+the radical of `A ⊗[K] L` is the extension of scalars of the radical of `L`.
 
 Characteristic zero is a genuine hypothesis, not a convenience.  The equality determines the
 radical of `A ⊗[K] L` completely, although it says nothing about individual solvable ideals of
@@ -206,13 +232,14 @@ theorem radical_baseChange :
   -- radical is the only ideal of that kind.
   exact ((hasTrivialRadical_quotient_iff _).mp htriv).symm
 
-/-- **Membership in the radical may be checked after a field extension.**  In characteristic zero
-a vector of a finite-dimensional Lie algebra lies in the solvable radical exactly when its
-canonical image in an extension of scalars does. -/
+/-- **Membership in the radical may be checked after extending scalars to a principal ideal
+domain**, such as a field extension.  In characteristic zero a vector of a finite-dimensional Lie
+algebra lies in the solvable radical exactly when its canonical image in such an extension of
+scalars does. -/
 theorem one_tmul_mem_radical_baseChange_iff (x : L) :
     (1 : A) ⊗ₜ[K] x ∈ radical A (A ⊗[K] L) ↔ x ∈ radical K L := by
   rw [radical_baseChange, LieSubmodule.one_tmul_mem_baseChange_iff]
 
-end CharZero
+end PrincipalIdealDomain
 
 end LieAlgebra

@@ -8,11 +8,17 @@ module
 public import TauCeti.GroupTheory.Perm.TransitiveGroupLabel.Basic
 
 import Mathlib.GroupTheory.PGroup
+import Mathlib.GroupTheory.SpecificGroups.Alternating.Simple
 import TauCeti.GroupTheory.Perm.TransitiveGroupLabel.Classification
 import TauCeti.GroupTheory.Perm.TransitiveGroupLabel.Cyclic
 
 /-!
-# Solvable transitive subgroups of the symmetric group on five points
+# Solvable transitive subgroups of the symmetric groups of degree at most five
+
+This file determines the solvability column of the table of transitive groups of degree at most
+five. In degree at most four every reference subgroup is solvable, because the whole symmetric
+group on at most four points is (Mathlib's `Equiv.Perm.isSolvable`). In degree five the labels
+`5T1`, `5T2` and `5T3` are solvable, while `5T4 = A₅` and `5T5 = S₅` are not.
 
 The solvable transitive subgroups of `Equiv.Perm (Fin 5)` are precisely the subgroups conjugate
 into the Frobenius group `5T3` of order twenty.  The forward implication uses the classification
@@ -22,9 +28,17 @@ of transitive subgroups: `5T1`, `5T2`, and `5T3` lie in `5T3`, while `5T4 = A₅
 The solvability of `5T3` comes from its normal cyclic subgroup `5T1` of order five.  The quotient
 has order four, hence is commutative, so both the subgroup and quotient are solvable.
 
+Solvability of a permutation group with a transitive-group label depends only on the label
+(`TauCeti.TransitiveGroupLabel.isSolvable_iff`), so the table applies to every transitive
+subgroup of degree at most five.
+
 ## Main results
 
 * `TauCeti.isSolvable_referenceSubgroup_five_iff`: exactly `5T1`, `5T2`, and `5T3` are solvable.
+* `TauCeti.isSolvable_referenceSubgroup_iff`: the solvability column of the table of transitive
+  groups of degree at most five.
+* `TauCeti.TransitiveGroupLabel.isSolvable_iff_ne_five_or_lt_three`: a permutation group with a
+  label is solvable unless its label is `5T4` or `5T5`.
 * `TauCeti.isSolvable_iff_exists_le_map_conj_referenceSubgroup_five_two`: a transitive subgroup
   of `S₅` is solvable exactly when it is contained in a conjugate of `5T3`.
 -/
@@ -111,7 +125,6 @@ theorem not_isSolvable_referenceSubgroup_five_four :
 
 /-- A degree-five reference subgroup is solvable exactly for the labels `5T1`, `5T2`, and
 `5T3`. -/
-@[simp]
 theorem isSolvable_referenceSubgroup_five_iff (j : TransitiveGroupIndex 5) :
     Group.IsSolvable (referenceSubgroup 5 j) ↔ (j : ℕ) < 3 := by
   obtain ⟨j, hj⟩ := j
@@ -121,6 +134,30 @@ theorem isSolvable_referenceSubgroup_five_iff (j : TransitiveGroupIndex 5) :
       isSolvable_referenceSubgroup_five_one, isSolvable_referenceSubgroup_five_two,
       not_isSolvable_referenceSubgroup_five_three,
       not_isSolvable_referenceSubgroup_five_four, Nat.reduceLT]
+
+/-- **The solvability column of the table of transitive groups of degree at most five.** A
+reference subgroup is solvable unless its label is `5T4` or `5T5`, the alternating and symmetric
+groups on five points. -/
+@[simp]
+theorem isSolvable_referenceSubgroup_iff {n : ℕ} (j : TransitiveGroupIndex n) :
+    Group.IsSolvable (referenceSubgroup n j) ↔ n ≠ 5 ∨ (j : ℕ) < 3 := by
+  rcases lt_trichotomy n 5 with hn | rfl | hn
+  · -- The whole symmetric group on at most four points is solvable.
+    have : Group.IsSolvable (Perm (Fin n)) :=
+      Perm.isSolvable ((Nat.card_fin n).trans_le (by omega))
+    exact iff_of_true inferInstance (Or.inl hn.ne)
+  · rw [isSolvable_referenceSubgroup_five_iff]
+    simp
+  · have hj := j.isLt
+    have h0 := numTransitiveGroups_eq_zero_of_five_lt hn
+    omega
+
+/-- A permutation group with a transitive-group label is solvable unless its label is `5T4` or
+`5T5`. -/
+theorem TransitiveGroupLabel.isSolvable_iff_ne_five_or_lt_three {n : ℕ}
+    {j : TransitiveGroupIndex n} {G : Subgroup (Perm (Fin n))} (h : TransitiveGroupLabel j G) :
+    Group.IsSolvable G ↔ n ≠ 5 ∨ (j : ℕ) < 3 := by
+  rw [h.isSolvable_iff, isSolvable_referenceSubgroup_iff]
 
 /-- **Solvable transitive subgroups of `S₅`.** A transitive subgroup of the symmetric group on
 five points is solvable if and only if it is contained in a conjugate of the Frobenius reference

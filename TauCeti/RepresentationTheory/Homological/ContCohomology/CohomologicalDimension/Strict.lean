@@ -45,6 +45,9 @@ The long exact sequence of continuous cohomology is available for coefficients i
   `CohomologicalDimensionLE p G n` implies `StrictCohomologicalDimensionLE p G (n + 1)`.
 * `TauCeti.strictCohomologicalDimensionAt_le_cohomologicalDimensionAt_add_one`:
   `scd_p G ≤ cd_p G + 1` in `ℕ∞`, including the case `cd_p G = ⊤`.
+* `TauCeti.StrictCohomologicalDimensionLE.primaryComponent_eq_bot_of_isSmoothDiscrete`: the strict
+  vanishing predicate read on a smooth discrete object of `TopRep ℤ G`, such as the trivial
+  module `ℤ`.
 
 ## References
 
@@ -62,6 +65,26 @@ universe u
 
 variable {p : ℕ} {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [CompactSpace G]
+
+omit [CompactSpace G] in
+attribute [local instance] TopRep.distribMulAction in
+/-- **The strict vanishing predicate on a smooth discrete coefficient object.** Under
+`StrictCohomologicalDimensionLE p G n`, the `p`-primary component of `Hⁱ(G, X)` vanishes for every
+`i > n` and every smooth discrete object `X` of `TopRep ℤ G`, not only for the objects
+`ofDiscreteModule ℤ G M` the predicate is stated with. -/
+theorem StrictCohomologicalDimensionLE.primaryComponent_eq_bot_of_isSmoothDiscrete {n : ℕ}
+    (h : StrictCohomologicalDimensionLE.{u} p G n) (X : TopRep.{u} ℤ G)
+    (hX : IsSmoothDiscrete ℤ X) {i : ℕ} (hi : n < i) :
+    AddCommGroup.primaryComponent (continuousCohomology i X) p = ⊥ := by
+  have := hX.discreteTopology
+  have := (isSmoothDiscrete_iff_continuousSMul X).1 hX
+  -- `ofDiscreteModule` reads `X` through the canonical `ℤ`-module structure of an additive group,
+  -- which agrees with that of `X` because a `ℤ`-module structure is unique
+  have hXX : ofDiscreteModule ℤ G X.V = X := by
+    convert ofDiscreteModule_eq_self X
+    exact Subsingleton.elim _ _
+  rw [← hXX]
+  exact strictCohomologicalDimensionLE_iff.1 h X.V i hi
 
 /-- **Multiplication by `p` is injective above `cd_p + 1`.** For a compact group `G` with
 `CohomologicalDimensionLE p G n`, multiplication by `p` is injective on `Hⁱ(G, M)` for every

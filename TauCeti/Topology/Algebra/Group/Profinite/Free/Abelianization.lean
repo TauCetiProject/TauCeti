@@ -241,14 +241,15 @@ noncomputable def abelianizationEquiv :
     classical
     obtain ⟨y, rfl⟩ := QuotientGroup.mk_surjective x
     have h : (abelianizationInv p X).comp ((TopologicalAbelianization.lift (exponentSum p X)).comp
-        (ContinuousMonoidHom.quotientMk _)) = ContinuousMonoidHom.quotientMk _ :=
+        (Subgroup.quotientMkContinuousMonoidHom _)) = Subgroup.quotientMkContinuousMonoidHom _ :=
       hom_ext fun x ↦ by
         simp only [ContinuousMonoidHom.coe_comp, Function.comp_apply,
-          ContinuousMonoidHom.quotientMk_apply, TopologicalAbelianization.lift_mk, exponentSum_of,
+          Subgroup.quotientMkContinuousMonoidHom_apply, TopologicalAbelianization.lift_mk,
+            exponentSum_of,
           abelianizationInv_ofAdd_single]
     have := DFunLike.congr_fun h y
     simpa only [ContinuousMonoidHom.coe_comp, Function.comp_apply,
-      ContinuousMonoidHom.quotientMk_apply] using this
+      Subgroup.quotientMkContinuousMonoidHom_apply] using this
   right_inv u := by
     classical
     have h : (TopologicalAbelianization.lift (exponentSum p X)).comp (abelianizationInv p X) =

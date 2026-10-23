@@ -55,6 +55,8 @@ Lie-algebra theory.
 * `Matrix.IsUpperUnitriangular` — an upper-triangular matrix with diagonal one.
 * `Matrix.IsUpperUnitriangular.ext` — upper-unitriangular matrices are determined by their
   entries strictly above the diagonal.
+* `Matrix.IsUpperUnitriangular.submatrix` — selecting rows and columns by a strictly increasing
+  map preserves upper unitriangularity.
 * `Matrix.IsUpperUnitriangular.det_eq_one` — an upper-unitriangular matrix has determinant one.
 * `Matrix.isNilpotent_of_isUpperTriangular_of_diag_eq_zero` — strict upper triangularity implies
   nilpotence.
@@ -99,6 +101,14 @@ theorem IsUpperUnitriangular.isUpperTriangular [LT m] [Zero R] [One R]
 theorem IsUpperUnitriangular.apply_diag [LT m] [Zero R] [One R]
     {M : Matrix m m R} (hM : M.IsUpperUnitriangular) (i : m) : M i i = 1 :=
   ((isUpperUnitriangular_def M).1 hM).2 i
+
+/-- Selecting the same strictly increasing family of rows and columns preserves upper
+unitriangularity. In particular, this applies to principal submatrices and order-preserving
+reindexing. -/
+theorem IsUpperUnitriangular.submatrix {n : Type*} [Preorder m] [Preorder n] [Zero R] [One R]
+    {M : Matrix m m R} (hM : M.IsUpperUnitriangular) {f : n → m} (hf : StrictMono f) :
+    (M.submatrix f f).IsUpperUnitriangular :=
+  ⟨fun _ _ hij ↦ hM.isUpperTriangular (hf hij), fun i ↦ hM.apply_diag (f i)⟩
 
 /-- Two upper-unitriangular matrices are equal if their entries strictly above the diagonal
 agree. -/

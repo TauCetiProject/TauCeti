@@ -34,7 +34,7 @@ there is a decomposition to count there; if in addition `k` splits the constitue
 dimension produced below is literally the classical multiplicity `e`.
 
 What makes the transport work is the one identity Clifford theory runs on, `ρ g ∘ ρ n = ρ (g n g⁻¹)
-∘ ρ g` (`TauCeti.Representation.apply_conjNormal_inv`, read in the other direction).  On the
+∘ ρ g` (`Representation.apply_conjNormal_inv`, read in the other direction).  On the
 restriction viewed as a module over `k[N]`, it says that translation by `ρ g`
 (`Representation.asModuleConjEquiv`) is not `k[N]`-linear but **semilinear over the conjugation
 automorphism** `MonoidAlgebra.conjNormalAlgAut k N g` of `k[N]`
@@ -154,7 +154,7 @@ theorem asModuleConjEquiv_symm (g : G) :
 
 /-- **Translation is semilinear over conjugation.**  Moving a group-algebra scalar across
 translation by `ρ g` conjugates it: this is the conjugation identity
-`TauCeti.Representation.apply_conjNormal_inv`, read in the other direction and extended from the
+`Representation.apply_conjNormal_inv`, read in the other direction and extended from the
 basis to all of `k[N]` by linearity.  It is the reason a single translation does not act on
 `k[N]`-linear maps, and the reason a conjugate pair of translations does. -/
 @[simp]
@@ -163,14 +163,10 @@ theorem asModuleConjEquiv_smul (g : G) (a : k[N])
     asModuleConjEquiv ρ (N := N) g (a • v)
       = conjNormalAlgAut k N g a • asModuleConjEquiv ρ (N := N) g v := by
   -- `apply_conjNormal_inv` read in the other direction: acting by `n` and then by `g` is acting by
-  -- `g` and then by the conjugate `g n g⁻¹`.  It stays a local `have`: as a standalone lemma it
-  -- would have to live either beside its twin in `Clifford/Basic.lean`, into whose
-  -- `TauCeti.Representation` namespace `scripts/lint-dot-notation.py` admits no new declaration,
-  -- or in the root `Representation` namespace, which would split one identity across two
-  -- namespaces.
+  -- `g` and then by the conjugate `g n g⁻¹`.
   have hconj : ∀ (n : N) (w : V), ρ g (ρ (n : G) w) = ρ (MulAut.conjNormal g n : G) (ρ g w) :=
     fun n w => by
-      have h := apply_conjNormal_inv ρ g (MulAut.conjNormal g n) w
+      have h := ρ.apply_conjNormal_inv g (MulAut.conjNormal g n) w
       rwa [map_inv, MulAut.inv_apply_self] at h
   induction a using MonoidAlgebra.induction_linear with
   | zero => simp

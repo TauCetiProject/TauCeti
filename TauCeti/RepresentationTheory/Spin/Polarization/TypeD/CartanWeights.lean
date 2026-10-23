@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.D.SpinWeight
+public import TauCeti.RepresentationTheory.Spin.Polarization.TypeD.Representation
 public import TauCeti.RepresentationTheory.Spin.Polarization.TypeD.RootGenerators
 
 /-!
@@ -23,6 +24,8 @@ type-D root datum.
 
 * `SpinPolarizationData.spinAction_typeDQuadraticEquiv_cartanGenerator_basis`: the concrete
   numbered Cartan generator acts on each exterior-basis vector by its type-D spin weight.
+* `SpinPolarizationData.typeDSpinLieRep_apply_cartan_exteriorBasis`: every element of the
+  diagonal Cartan acts through the corresponding sign-vector weight functional.
 * `SpinPolarizationData.spinAction_typeDSimpleCorootBivector_basis`: the corresponding reusable
   simple-coroot calculation over any commutative ring.
 
@@ -113,5 +116,38 @@ theorem spinAction_typeDQuadraticEquiv_cartanGenerator_basis
   exact P.spinAction_typeDSimpleCorootBivector_basis b (by omega) i s
 
 end Field
+
+section LinearOrder
+
+universe w
+
+variable {K : Type u} [Field K] {V : Type v} [AddCommGroup V] [Module K V]
+  {Q : QuadraticForm K V} (P : SpinPolarizationData Q)
+  {ι : Type w} [Fintype ι] [LinearOrder ι] (b : Module.Basis ι K P.W)
+  [Invertible (2 : K)]
+
+/-- Every element of the diagonal Cartan acts on an exterior-basis spinor through the
+corresponding sign-vector weight functional. -/
+theorem typeDSpinLieRep_apply_cartan_exteriorBasis
+    (hline : P.line = ⊥) (A : typeDDiagonalCartan K ι) (s : Finset ι) :
+    P.typeDSpinLieRep b hline
+        (A : LieAlgebra.Orthogonal.typeD ι K) (b.ExteriorAlgebra s) =
+      typeDWeightEquiv (spinWeight K s) A • b.ExteriorAlgebra s := by
+  let _ : Module.Finite K V := Module.Finite.of_basis (P.typeDBasis b hline)
+  let lhs : typeDDiagonalCartan K ι →ₗ[K] ExteriorAlgebra K P.W :=
+    { toFun := fun A => P.typeDSpinLieRep b hline
+          (A : LieAlgebra.Orthogonal.typeD ι K) (b.ExteriorAlgebra s)
+      map_add' := by simp
+      map_smul' := by simp }
+  let rhs := (typeDWeightEquiv (K := K) (spinWeight K s)).smulRight
+    (b.ExteriorAlgebra s)
+  have h : lhs = rhs :=
+    (typeDDiagonalCartanBasis (K := K) (ι := ι)).ext fun i => by
+      simp only [lhs, LinearMap.coe_mk, AddHom.coe_mk]
+      rw [P.typeDSpinLieRep_apply, P.spinAction_typeDQuadraticEquiv_basis]
+      simp [rhs, Pi.single_apply]
+  exact LinearMap.congr_fun h A
+
+end LinearOrder
 
 end TauCeti.SpinPolarizationData

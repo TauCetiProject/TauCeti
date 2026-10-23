@@ -57,10 +57,6 @@ coordinate lattice reduces finite generation to Noetherianity of `ℤ`.
   Proc. Amer. Math. Soc. **145** (2017), 3233--3247.
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, §§26--27.
 * J. C. Jantzen, *Representations of Algebraic Groups*, II.1.
-
-This advances the Chevalley--Demazure construction of Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`. Its consumer is the explicit pinned ambient group in
-milestone L0 of `TauCetiRoadmap/CFSGStatement/README.md`.
 -/
 
 public section

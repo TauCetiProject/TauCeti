@@ -19,6 +19,12 @@ an algebra structure on the coalgebra.
 
 * `TauCeti.Coalgebra.baseChange_comul_tmul`: the comultiplication of a scalar extension on
   pure tensors.
+* `TauCeti.Coalgebra.baseChange_comul`: the comultiplication of a scalar extension is the scalar
+  extension of the comultiplication, followed by `distribBaseChange`.
+* `TensorProduct.rid_counit_cancelBaseChange`: contraction against the counit commutes
+  with cancellation of scalar extension.
+* `LinearMap.counit_rTensor`: the counit of `B ⊗[R] H` on the image of `x ∈ A ⊗[R] H` under
+  `f ⊗ id`, for an `R`-linear map `f : A → B`, is `f` of the counit of `x`.
 * `TauCeti.Coalgebra.IsCocomm.of_baseChange`: cocommutativity descends along a faithfully flat
   commutative algebra.
 -/
@@ -50,7 +56,59 @@ theorem baseChange_comul_tmul (a : A) (h : H) :
         TensorProduct.tmul_eq_smul_one_tmul a k, TensorProduct.tmul_smul]
       exact TensorProduct.smul_tmul' a (1 ⊗ₜ[R] g) (1 ⊗ₜ[R] k)
 
+/-- The comultiplication of a base-changed coalgebra is the base change of the comultiplication,
+followed by `distribBaseChange`. -/
+theorem baseChange_comul :
+    Coalgebra.comul (R := A) (A := A ⊗[R] H) =
+      (TensorProduct.AlgebraTensorModule.distribBaseChange R A H H).toLinearMap ∘ₗ
+        (Coalgebra.comul (R := R) (A := H)).baseChange A := by
+  ext h
+  simp only [TensorProduct.AlgebraTensorModule.curry_apply, TensorProduct.curry_apply,
+    LinearMap.coe_restrictScalars, LinearMap.coe_comp, Function.comp_apply, LinearEquiv.coe_coe,
+    LinearMap.baseChange_tmul]
+  exact baseChange_comul_tmul A 1 h
+
 end TauCeti.Coalgebra
+
+namespace TensorProduct
+
+variable {R A C M : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
+  [AddCommMonoid C] [Module R C] [CoalgebraStruct R C]
+  [AddCommMonoid M] [Module A M] [Module R M] [IsScalarTower R A M]
+
+/-- Tensor cancellation identifies contraction against a base-changed counit with
+contraction against the original counit. -/
+theorem rid_counit_cancelBaseChange (z : M ⊗[A] (A ⊗[R] C)) :
+    TensorProduct.rid R M (Coalgebra.counit.lTensor M
+        (AlgebraTensorModule.cancelBaseChange R A A M C z)) =
+      AlgebraTensorModule.rid A A M (Coalgebra.counit.lTensor M z) := by
+  induction z using TensorProduct.inductionOn with
+  | add z t hz ht => simp only [map_add, hz, ht]
+  | tmul m d =>
+    induction d using TensorProduct.inductionOn with
+    | add d e hd he => simp only [TensorProduct.tmul_add, map_add, hd, he]
+    | tmul a c =>
+      simp only [AlgebraTensorModule.cancelBaseChange_tmul, LinearMap.lTensor_tmul,
+        TensorProduct.rid_tmul,
+        TensorProduct.counit_tmul, CommSemiring.counit_apply, AlgebraTensorModule.rid_tmul]
+      rw [← IsScalarTower.algebraMap_smul A, smul_smul, _root_.Algebra.smul_def, mul_comm]
+
+end TensorProduct
+
+namespace LinearMap
+
+variable {R A B H : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A] [CommSemiring B]
+  [Algebra R B] (f : A →ₗ[R] B) [AddCommMonoid H] [Module R H] [CoalgebraStruct R H]
+
+/-- The counit of `B ⊗[R] H` on the image of `x` under `f ⊗ id` is `f` of the counit of `x`. -/
+@[simp]
+theorem counit_rTensor (x : A ⊗[R] H) :
+    Coalgebra.counit (R := B) (f.rTensor H x) = f (Coalgebra.counit (R := A) x) := by
+  induction x using TensorProduct.inductionOn with
+  | tmul a h => simp
+  | add x y hx hy => simp only [map_add, hx, hy]
+
+end LinearMap
 
 namespace TauCeti.Coalgebra.IsCocomm
 

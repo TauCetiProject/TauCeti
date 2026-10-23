@@ -1,0 +1,4259 @@
+{
+  "schema_version": 1,
+  "roadmap_commit": "aa71379bd87aef88ad0b32d920cc8ae299e9065e",
+  "library_commit": "b8db0474eb2d3d0831a82689f429f61a3129b234",
+  "last_full_day": "2026-10-07",
+  "history": [
+    {
+      "date": "2026-06-03",
+      "roadmaps": 4,
+      "completed_roadmaps": 0,
+      "spec_lines": 1183,
+      "completed_spec_lines": 0,
+      "layers": 26,
+      "completed_layers": 0,
+      "unassessed_layers": 26,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 0,
+        "layers": 0
+      }
+    },
+    {
+      "date": "2026-06-04",
+      "roadmaps": 4,
+      "completed_roadmaps": 0,
+      "spec_lines": 1183,
+      "completed_spec_lines": 0,
+      "layers": 26,
+      "completed_layers": 0,
+      "unassessed_layers": 26,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 0,
+        "layers": 0
+      }
+    },
+    {
+      "date": "2026-06-05",
+      "roadmaps": 4,
+      "completed_roadmaps": 0,
+      "spec_lines": 1183,
+      "completed_spec_lines": 0,
+      "layers": 26,
+      "completed_layers": 0,
+      "unassessed_layers": 26,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 0,
+        "layers": 0
+      }
+    },
+    {
+      "date": "2026-06-06",
+      "roadmaps": 4,
+      "completed_roadmaps": 0,
+      "spec_lines": 1183,
+      "completed_spec_lines": 0,
+      "layers": 26,
+      "completed_layers": 0,
+      "unassessed_layers": 26,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 0,
+        "layers": 0
+      }
+    },
+    {
+      "date": "2026-06-07",
+      "roadmaps": 4,
+      "completed_roadmaps": 0,
+      "spec_lines": 1183,
+      "completed_spec_lines": 0,
+      "layers": 26,
+      "completed_layers": 0,
+      "unassessed_layers": 26,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 0,
+        "layers": 0
+      }
+    },
+    {
+      "date": "2026-06-08",
+      "roadmaps": 4,
+      "completed_roadmaps": 0,
+      "spec_lines": 1183,
+      "completed_spec_lines": 0,
+      "layers": 26,
+      "completed_layers": 0,
+      "unassessed_layers": 26,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 0,
+        "layers": 0
+      }
+    },
+    {
+      "date": "2026-06-09",
+      "roadmaps": 4,
+      "completed_roadmaps": 0,
+      "spec_lines": 1183,
+      "completed_spec_lines": 0,
+      "layers": 26,
+      "completed_layers": 0,
+      "unassessed_layers": 26,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 0,
+        "layers": 0
+      }
+    },
+    {
+      "date": "2026-06-10",
+      "roadmaps": 4,
+      "completed_roadmaps": 0,
+      "spec_lines": 1183,
+      "completed_spec_lines": 0,
+      "layers": 26,
+      "completed_layers": 0,
+      "unassessed_layers": 26,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 0,
+        "layers": 0
+      }
+    },
+    {
+      "date": "2026-06-11",
+      "roadmaps": 5,
+      "completed_roadmaps": 0,
+      "spec_lines": 1769,
+      "completed_spec_lines": 0,
+      "layers": 40,
+      "completed_layers": 0,
+      "unassessed_layers": 40,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 0,
+        "layers": 0
+      }
+    },
+    {
+      "date": "2026-06-12",
+      "roadmaps": 7,
+      "completed_roadmaps": 0,
+      "spec_lines": 2241,
+      "completed_spec_lines": 0,
+      "layers": 48,
+      "completed_layers": 0,
+      "unassessed_layers": 48,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 0,
+        "layers": 0
+      }
+    },
+    {
+      "date": "2026-06-13",
+      "roadmaps": 7,
+      "completed_roadmaps": 0,
+      "spec_lines": 2257,
+      "completed_spec_lines": 0,
+      "layers": 48,
+      "completed_layers": 0,
+      "unassessed_layers": 48,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 0,
+        "layers": 0
+      }
+    },
+    {
+      "date": "2026-06-14",
+      "roadmaps": 7,
+      "completed_roadmaps": 0,
+      "spec_lines": 2257,
+      "completed_spec_lines": 0,
+      "layers": 48,
+      "completed_layers": 0,
+      "unassessed_layers": 48,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 0,
+        "layers": 0
+      }
+    },
+    {
+      "date": "2026-06-15",
+      "roadmaps": 7,
+      "completed_roadmaps": 0,
+      "spec_lines": 2257,
+      "completed_spec_lines": 0,
+      "layers": 48,
+      "completed_layers": 0,
+      "unassessed_layers": 48,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 0,
+        "layers": 0
+      }
+    },
+    {
+      "date": "2026-06-16",
+      "roadmaps": 7,
+      "completed_roadmaps": 0,
+      "spec_lines": 2225,
+      "completed_spec_lines": 0,
+      "layers": 48,
+      "completed_layers": 0,
+      "unassessed_layers": 48,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 0,
+        "layers": 0
+      }
+    },
+    {
+      "date": "2026-06-17",
+      "roadmaps": 7,
+      "completed_roadmaps": 0,
+      "spec_lines": 2225,
+      "completed_spec_lines": 0,
+      "layers": 48,
+      "completed_layers": 0,
+      "unassessed_layers": 48,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 0,
+        "layers": 0
+      }
+    },
+    {
+      "date": "2026-06-18",
+      "roadmaps": 7,
+      "completed_roadmaps": 0,
+      "spec_lines": 2225,
+      "completed_spec_lines": 0,
+      "layers": 48,
+      "completed_layers": 0,
+      "unassessed_layers": 48,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 0,
+        "layers": 0
+      }
+    },
+    {
+      "date": "2026-06-19",
+      "roadmaps": 9,
+      "completed_roadmaps": 0,
+      "spec_lines": 5668,
+      "completed_spec_lines": 0,
+      "layers": 57,
+      "completed_layers": 0,
+      "unassessed_layers": 57,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 0,
+        "layers": 0
+      }
+    },
+    {
+      "date": "2026-06-20",
+      "roadmaps": 10,
+      "completed_roadmaps": 0,
+      "spec_lines": 5950,
+      "completed_spec_lines": 0,
+      "layers": 60,
+      "completed_layers": 0,
+      "unassessed_layers": 60,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 0,
+        "layers": 0
+      }
+    },
+    {
+      "date": "2026-06-21",
+      "roadmaps": 10,
+      "completed_roadmaps": 0,
+      "spec_lines": 5950,
+      "completed_spec_lines": 0,
+      "layers": 60,
+      "completed_layers": 0,
+      "unassessed_layers": 60,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 0,
+        "layers": 0
+      }
+    },
+    {
+      "date": "2026-06-22",
+      "roadmaps": 10,
+      "completed_roadmaps": 0,
+      "spec_lines": 5950,
+      "completed_spec_lines": 0,
+      "layers": 60,
+      "completed_layers": 0,
+      "unassessed_layers": 60,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 0,
+        "layers": 0
+      }
+    },
+    {
+      "date": "2026-06-23",
+      "roadmaps": 10,
+      "completed_roadmaps": 0,
+      "spec_lines": 5957,
+      "completed_spec_lines": 0,
+      "layers": 60,
+      "completed_layers": 0,
+      "unassessed_layers": 60,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 0,
+        "layers": 0
+      }
+    },
+    {
+      "date": "2026-06-24",
+      "roadmaps": 10,
+      "completed_roadmaps": 0,
+      "spec_lines": 5957,
+      "completed_spec_lines": 0,
+      "layers": 60,
+      "completed_layers": 0,
+      "unassessed_layers": 60,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 0,
+        "layers": 0
+      }
+    },
+    {
+      "date": "2026-06-25",
+      "roadmaps": 11,
+      "completed_roadmaps": 0,
+      "spec_lines": 6836,
+      "completed_spec_lines": 0,
+      "layers": 69,
+      "completed_layers": 0,
+      "unassessed_layers": 69,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 0,
+        "layers": 0
+      }
+    },
+    {
+      "date": "2026-06-26",
+      "roadmaps": 11,
+      "completed_roadmaps": 0,
+      "spec_lines": 6836,
+      "completed_spec_lines": 0,
+      "layers": 69,
+      "completed_layers": 0,
+      "unassessed_layers": 69,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 0,
+        "layers": 0
+      }
+    },
+    {
+      "date": "2026-06-27",
+      "roadmaps": 12,
+      "completed_roadmaps": 0,
+      "spec_lines": 7130,
+      "completed_spec_lines": 0,
+      "layers": 73,
+      "completed_layers": 0,
+      "unassessed_layers": 73,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 0,
+        "layers": 0
+      }
+    },
+    {
+      "date": "2026-06-28",
+      "roadmaps": 12,
+      "completed_roadmaps": 0,
+      "spec_lines": 7130,
+      "completed_spec_lines": 0,
+      "layers": 73,
+      "completed_layers": 0,
+      "unassessed_layers": 73,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 0,
+        "layers": 0
+      }
+    },
+    {
+      "date": "2026-06-29",
+      "roadmaps": 13,
+      "completed_roadmaps": 0,
+      "spec_lines": 7765,
+      "completed_spec_lines": 0,
+      "layers": 80,
+      "completed_layers": 0,
+      "unassessed_layers": 80,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 0,
+        "layers": 0
+      }
+    },
+    {
+      "date": "2026-06-30",
+      "roadmaps": 13,
+      "completed_roadmaps": 0,
+      "spec_lines": 7765,
+      "completed_spec_lines": 0,
+      "layers": 80,
+      "completed_layers": 0,
+      "unassessed_layers": 80,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 0,
+        "layers": 0
+      }
+    },
+    {
+      "date": "2026-07-01",
+      "roadmaps": 13,
+      "completed_roadmaps": 0,
+      "spec_lines": 7765,
+      "completed_spec_lines": 0,
+      "layers": 80,
+      "completed_layers": 0,
+      "unassessed_layers": 80,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 0,
+        "layers": 0
+      }
+    },
+    {
+      "date": "2026-07-02",
+      "roadmaps": 14,
+      "completed_roadmaps": 1,
+      "spec_lines": 8408,
+      "completed_spec_lines": 235,
+      "layers": 85,
+      "completed_layers": 4,
+      "unassessed_layers": 81,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 235,
+        "layers": 4
+      }
+    },
+    {
+      "date": "2026-07-03",
+      "roadmaps": 14,
+      "completed_roadmaps": 1,
+      "spec_lines": 8408,
+      "completed_spec_lines": 235,
+      "layers": 85,
+      "completed_layers": 4,
+      "unassessed_layers": 81,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 235,
+        "layers": 4
+      }
+    },
+    {
+      "date": "2026-07-04",
+      "roadmaps": 14,
+      "completed_roadmaps": 1,
+      "spec_lines": 8408,
+      "completed_spec_lines": 235,
+      "layers": 85,
+      "completed_layers": 4,
+      "unassessed_layers": 81,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 235,
+        "layers": 4
+      }
+    },
+    {
+      "date": "2026-07-05",
+      "roadmaps": 14,
+      "completed_roadmaps": 1,
+      "spec_lines": 8418,
+      "completed_spec_lines": 240,
+      "layers": 85,
+      "completed_layers": 4,
+      "unassessed_layers": 81,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 235,
+        "layers": 4
+      }
+    },
+    {
+      "date": "2026-07-06",
+      "roadmaps": 14,
+      "completed_roadmaps": 1,
+      "spec_lines": 8419,
+      "completed_spec_lines": 240,
+      "layers": 85,
+      "completed_layers": 4,
+      "unassessed_layers": 81,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 235,
+        "layers": 4
+      }
+    },
+    {
+      "date": "2026-07-07",
+      "roadmaps": 14,
+      "completed_roadmaps": 1,
+      "spec_lines": 8419,
+      "completed_spec_lines": 240,
+      "layers": 85,
+      "completed_layers": 4,
+      "unassessed_layers": 81,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 235,
+        "layers": 4
+      }
+    },
+    {
+      "date": "2026-07-08",
+      "roadmaps": 14,
+      "completed_roadmaps": 1,
+      "spec_lines": 8419,
+      "completed_spec_lines": 240,
+      "layers": 85,
+      "completed_layers": 4,
+      "unassessed_layers": 81,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 235,
+        "layers": 4
+      }
+    },
+    {
+      "date": "2026-07-09",
+      "roadmaps": 14,
+      "completed_roadmaps": 1,
+      "spec_lines": 8419,
+      "completed_spec_lines": 240,
+      "layers": 85,
+      "completed_layers": 4,
+      "unassessed_layers": 81,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 235,
+        "layers": 4
+      }
+    },
+    {
+      "date": "2026-07-10",
+      "roadmaps": 14,
+      "completed_roadmaps": 1,
+      "spec_lines": 8419,
+      "completed_spec_lines": 240,
+      "layers": 85,
+      "completed_layers": 4,
+      "unassessed_layers": 81,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 235,
+        "layers": 4
+      }
+    },
+    {
+      "date": "2026-07-11",
+      "roadmaps": 14,
+      "completed_roadmaps": 1,
+      "spec_lines": 8419,
+      "completed_spec_lines": 240,
+      "layers": 85,
+      "completed_layers": 4,
+      "unassessed_layers": 81,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 235,
+        "layers": 4
+      }
+    },
+    {
+      "date": "2026-07-12",
+      "roadmaps": 14,
+      "completed_roadmaps": 1,
+      "spec_lines": 8419,
+      "completed_spec_lines": 240,
+      "layers": 85,
+      "completed_layers": 4,
+      "unassessed_layers": 81,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 235,
+        "layers": 4
+      }
+    },
+    {
+      "date": "2026-07-13",
+      "roadmaps": 14,
+      "completed_roadmaps": 1,
+      "spec_lines": 8419,
+      "completed_spec_lines": 240,
+      "layers": 85,
+      "completed_layers": 4,
+      "unassessed_layers": 81,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 235,
+        "layers": 4
+      }
+    },
+    {
+      "date": "2026-07-14",
+      "roadmaps": 14,
+      "completed_roadmaps": 1,
+      "spec_lines": 8419,
+      "completed_spec_lines": 240,
+      "layers": 85,
+      "completed_layers": 4,
+      "unassessed_layers": 81,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 235,
+        "layers": 4
+      }
+    },
+    {
+      "date": "2026-07-15",
+      "roadmaps": 14,
+      "completed_roadmaps": 1,
+      "spec_lines": 8473,
+      "completed_spec_lines": 240,
+      "layers": 85,
+      "completed_layers": 4,
+      "unassessed_layers": 81,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 235,
+        "layers": 4
+      }
+    },
+    {
+      "date": "2026-07-16",
+      "roadmaps": 14,
+      "completed_roadmaps": 1,
+      "spec_lines": 8492,
+      "completed_spec_lines": 240,
+      "layers": 85,
+      "completed_layers": 4,
+      "unassessed_layers": 81,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 235,
+        "layers": 4
+      }
+    },
+    {
+      "date": "2026-07-17",
+      "roadmaps": 14,
+      "completed_roadmaps": 1,
+      "spec_lines": 8492,
+      "completed_spec_lines": 240,
+      "layers": 85,
+      "completed_layers": 4,
+      "unassessed_layers": 81,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 235,
+        "layers": 4
+      }
+    },
+    {
+      "date": "2026-07-18",
+      "roadmaps": 14,
+      "completed_roadmaps": 1,
+      "spec_lines": 8492,
+      "completed_spec_lines": 240,
+      "layers": 85,
+      "completed_layers": 4,
+      "unassessed_layers": 81,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 235,
+        "layers": 4
+      }
+    },
+    {
+      "date": "2026-07-19",
+      "roadmaps": 14,
+      "completed_roadmaps": 1,
+      "spec_lines": 8484,
+      "completed_spec_lines": 240,
+      "layers": 85,
+      "completed_layers": 4,
+      "unassessed_layers": 81,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 235,
+        "layers": 4
+      }
+    },
+    {
+      "date": "2026-07-20",
+      "roadmaps": 14,
+      "completed_roadmaps": 1,
+      "spec_lines": 8484,
+      "completed_spec_lines": 240,
+      "layers": 85,
+      "completed_layers": 4,
+      "unassessed_layers": 81,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 235,
+        "layers": 4
+      }
+    },
+    {
+      "date": "2026-07-21",
+      "roadmaps": 14,
+      "completed_roadmaps": 1,
+      "spec_lines": 8484,
+      "completed_spec_lines": 240,
+      "layers": 85,
+      "completed_layers": 4,
+      "unassessed_layers": 81,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 235,
+        "layers": 4
+      }
+    },
+    {
+      "date": "2026-07-22",
+      "roadmaps": 14,
+      "completed_roadmaps": 1,
+      "spec_lines": 8651,
+      "completed_spec_lines": 240,
+      "layers": 85,
+      "completed_layers": 4,
+      "unassessed_layers": 81,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 235,
+        "layers": 4
+      }
+    },
+    {
+      "date": "2026-07-23",
+      "roadmaps": 14,
+      "completed_roadmaps": 1,
+      "spec_lines": 8651,
+      "completed_spec_lines": 240,
+      "layers": 85,
+      "completed_layers": 4,
+      "unassessed_layers": 81,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 235,
+        "layers": 4
+      }
+    },
+    {
+      "date": "2026-07-24",
+      "roadmaps": 14,
+      "completed_roadmaps": 1,
+      "spec_lines": 8651,
+      "completed_spec_lines": 240,
+      "layers": 85,
+      "completed_layers": 4,
+      "unassessed_layers": 81,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 235,
+        "layers": 4
+      }
+    },
+    {
+      "date": "2026-07-25",
+      "roadmaps": 14,
+      "completed_roadmaps": 1,
+      "spec_lines": 8651,
+      "completed_spec_lines": 240,
+      "layers": 85,
+      "completed_layers": 4,
+      "unassessed_layers": 81,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 235,
+        "layers": 4
+      }
+    },
+    {
+      "date": "2026-07-26",
+      "roadmaps": 15,
+      "completed_roadmaps": 1,
+      "spec_lines": 20632,
+      "completed_spec_lines": 240,
+      "layers": 179,
+      "completed_layers": 4,
+      "unassessed_layers": 175,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 235,
+        "layers": 4
+      }
+    },
+    {
+      "date": "2026-07-27",
+      "roadmaps": 15,
+      "completed_roadmaps": 1,
+      "spec_lines": 20632,
+      "completed_spec_lines": 240,
+      "layers": 179,
+      "completed_layers": 4,
+      "unassessed_layers": 175,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 235,
+        "layers": 4
+      }
+    },
+    {
+      "date": "2026-07-28",
+      "roadmaps": 15,
+      "completed_roadmaps": 1,
+      "spec_lines": 20632,
+      "completed_spec_lines": 240,
+      "layers": 179,
+      "completed_layers": 4,
+      "unassessed_layers": 175,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 235,
+        "layers": 4
+      }
+    },
+    {
+      "date": "2026-07-29",
+      "roadmaps": 15,
+      "completed_roadmaps": 1,
+      "spec_lines": 20632,
+      "completed_spec_lines": 240,
+      "layers": 179,
+      "completed_layers": 4,
+      "unassessed_layers": 175,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 235,
+        "layers": 4
+      }
+    },
+    {
+      "date": "2026-07-30",
+      "roadmaps": 15,
+      "completed_roadmaps": 1,
+      "spec_lines": 20632,
+      "completed_spec_lines": 240,
+      "layers": 179,
+      "completed_layers": 4,
+      "unassessed_layers": 175,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 235,
+        "layers": 4
+      }
+    },
+    {
+      "date": "2026-07-31",
+      "roadmaps": 15,
+      "completed_roadmaps": 1,
+      "spec_lines": 20632,
+      "completed_spec_lines": 240,
+      "layers": 179,
+      "completed_layers": 4,
+      "unassessed_layers": 175,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 235,
+        "layers": 4
+      }
+    },
+    {
+      "date": "2026-08-01",
+      "roadmaps": 15,
+      "completed_roadmaps": 1,
+      "spec_lines": 20632,
+      "completed_spec_lines": 240,
+      "layers": 179,
+      "completed_layers": 4,
+      "unassessed_layers": 175,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 235,
+        "layers": 4
+      }
+    },
+    {
+      "date": "2026-08-02",
+      "roadmaps": 16,
+      "completed_roadmaps": 1,
+      "spec_lines": 22295,
+      "completed_spec_lines": 240,
+      "layers": 192,
+      "completed_layers": 4,
+      "unassessed_layers": 188,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 235,
+        "layers": 4
+      }
+    },
+    {
+      "date": "2026-08-03",
+      "roadmaps": 16,
+      "completed_roadmaps": 1,
+      "spec_lines": 22295,
+      "completed_spec_lines": 240,
+      "layers": 192,
+      "completed_layers": 4,
+      "unassessed_layers": 188,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 235,
+        "layers": 4
+      }
+    },
+    {
+      "date": "2026-08-04",
+      "roadmaps": 16,
+      "completed_roadmaps": 1,
+      "spec_lines": 22295,
+      "completed_spec_lines": 240,
+      "layers": 192,
+      "completed_layers": 4,
+      "unassessed_layers": 188,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 235,
+        "layers": 4
+      }
+    },
+    {
+      "date": "2026-08-05",
+      "roadmaps": 17,
+      "completed_roadmaps": 1,
+      "spec_lines": 24825,
+      "completed_spec_lines": 240,
+      "layers": 211,
+      "completed_layers": 4,
+      "unassessed_layers": 207,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 235,
+        "layers": 4
+      }
+    },
+    {
+      "date": "2026-08-06",
+      "roadmaps": 17,
+      "completed_roadmaps": 1,
+      "spec_lines": 24825,
+      "completed_spec_lines": 240,
+      "layers": 211,
+      "completed_layers": 4,
+      "unassessed_layers": 207,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 235,
+        "layers": 4
+      }
+    },
+    {
+      "date": "2026-08-07",
+      "roadmaps": 19,
+      "completed_roadmaps": 1,
+      "spec_lines": 27722,
+      "completed_spec_lines": 240,
+      "layers": 227,
+      "completed_layers": 4,
+      "unassessed_layers": 223,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 235,
+        "layers": 4
+      }
+    },
+    {
+      "date": "2026-08-08",
+      "roadmaps": 20,
+      "completed_roadmaps": 1,
+      "spec_lines": 28956,
+      "completed_spec_lines": 240,
+      "layers": 235,
+      "completed_layers": 4,
+      "unassessed_layers": 231,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 235,
+        "layers": 4
+      }
+    },
+    {
+      "date": "2026-08-09",
+      "roadmaps": 20,
+      "completed_roadmaps": 1,
+      "spec_lines": 28956,
+      "completed_spec_lines": 240,
+      "layers": 235,
+      "completed_layers": 4,
+      "unassessed_layers": 231,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 235,
+        "layers": 4
+      }
+    },
+    {
+      "date": "2026-08-10",
+      "roadmaps": 20,
+      "completed_roadmaps": 1,
+      "spec_lines": 28956,
+      "completed_spec_lines": 240,
+      "layers": 235,
+      "completed_layers": 4,
+      "unassessed_layers": 231,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 235,
+        "layers": 4
+      }
+    },
+    {
+      "date": "2026-08-11",
+      "roadmaps": 20,
+      "completed_roadmaps": 1,
+      "spec_lines": 28956,
+      "completed_spec_lines": 240,
+      "layers": 235,
+      "completed_layers": 4,
+      "unassessed_layers": 231,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 235,
+        "layers": 4
+      }
+    },
+    {
+      "date": "2026-08-12",
+      "roadmaps": 20,
+      "completed_roadmaps": 1,
+      "spec_lines": 28956,
+      "completed_spec_lines": 240,
+      "layers": 235,
+      "completed_layers": 4,
+      "unassessed_layers": 231,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 235,
+        "layers": 4
+      }
+    },
+    {
+      "date": "2026-08-13",
+      "roadmaps": 21,
+      "completed_roadmaps": 1,
+      "spec_lines": 30347,
+      "completed_spec_lines": 240,
+      "layers": 239,
+      "completed_layers": 4,
+      "unassessed_layers": 235,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 235,
+        "layers": 4
+      }
+    },
+    {
+      "date": "2026-08-14",
+      "roadmaps": 24,
+      "completed_roadmaps": 1,
+      "spec_lines": 34216,
+      "completed_spec_lines": 240,
+      "layers": 264,
+      "completed_layers": 4,
+      "unassessed_layers": 260,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 235,
+        "layers": 4
+      }
+    },
+    {
+      "date": "2026-08-15",
+      "roadmaps": 24,
+      "completed_roadmaps": 1,
+      "spec_lines": 34216,
+      "completed_spec_lines": 240,
+      "layers": 264,
+      "completed_layers": 4,
+      "unassessed_layers": 260,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 235,
+        "layers": 4
+      }
+    },
+    {
+      "date": "2026-08-16",
+      "roadmaps": 24,
+      "completed_roadmaps": 1,
+      "spec_lines": 34217,
+      "completed_spec_lines": 240,
+      "layers": 264,
+      "completed_layers": 4,
+      "unassessed_layers": 260,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 235,
+        "layers": 4
+      }
+    },
+    {
+      "date": "2026-08-17",
+      "roadmaps": 29,
+      "completed_roadmaps": 2,
+      "spec_lines": 41899,
+      "completed_spec_lines": 962,
+      "layers": 311,
+      "completed_layers": 8,
+      "unassessed_layers": 303,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 957,
+        "layers": 8
+      }
+    },
+    {
+      "date": "2026-08-18",
+      "roadmaps": 29,
+      "completed_roadmaps": 2,
+      "spec_lines": 41899,
+      "completed_spec_lines": 962,
+      "layers": 311,
+      "completed_layers": 8,
+      "unassessed_layers": 303,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 957,
+        "layers": 8
+      }
+    },
+    {
+      "date": "2026-08-19",
+      "roadmaps": 31,
+      "completed_roadmaps": 2,
+      "spec_lines": 48628,
+      "completed_spec_lines": 962,
+      "layers": 336,
+      "completed_layers": 8,
+      "unassessed_layers": 328,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 957,
+        "layers": 8
+      }
+    },
+    {
+      "date": "2026-08-20",
+      "roadmaps": 31,
+      "completed_roadmaps": 2,
+      "spec_lines": 48628,
+      "completed_spec_lines": 962,
+      "layers": 336,
+      "completed_layers": 8,
+      "unassessed_layers": 328,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 957,
+        "layers": 8
+      }
+    },
+    {
+      "date": "2026-08-21",
+      "roadmaps": 31,
+      "completed_roadmaps": 2,
+      "spec_lines": 48628,
+      "completed_spec_lines": 962,
+      "layers": 336,
+      "completed_layers": 8,
+      "unassessed_layers": 328,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 957,
+        "layers": 8
+      }
+    },
+    {
+      "date": "2026-08-22",
+      "roadmaps": 31,
+      "completed_roadmaps": 2,
+      "spec_lines": 48628,
+      "completed_spec_lines": 962,
+      "layers": 336,
+      "completed_layers": 8,
+      "unassessed_layers": 328,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 957,
+        "layers": 8
+      }
+    },
+    {
+      "date": "2026-08-23",
+      "roadmaps": 31,
+      "completed_roadmaps": 2,
+      "spec_lines": 48628,
+      "completed_spec_lines": 962,
+      "layers": 336,
+      "completed_layers": 8,
+      "unassessed_layers": 328,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 957,
+        "layers": 8
+      }
+    },
+    {
+      "date": "2026-08-24",
+      "roadmaps": 31,
+      "completed_roadmaps": 2,
+      "spec_lines": 48628,
+      "completed_spec_lines": 962,
+      "layers": 336,
+      "completed_layers": 8,
+      "unassessed_layers": 328,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 957,
+        "layers": 8
+      }
+    },
+    {
+      "date": "2026-08-25",
+      "roadmaps": 31,
+      "completed_roadmaps": 2,
+      "spec_lines": 48628,
+      "completed_spec_lines": 962,
+      "layers": 336,
+      "completed_layers": 8,
+      "unassessed_layers": 328,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 957,
+        "layers": 8
+      }
+    },
+    {
+      "date": "2026-08-26",
+      "roadmaps": 31,
+      "completed_roadmaps": 2,
+      "spec_lines": 48628,
+      "completed_spec_lines": 962,
+      "layers": 336,
+      "completed_layers": 8,
+      "unassessed_layers": 328,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 957,
+        "layers": 8
+      }
+    },
+    {
+      "date": "2026-08-27",
+      "roadmaps": 31,
+      "completed_roadmaps": 2,
+      "spec_lines": 48629,
+      "completed_spec_lines": 962,
+      "layers": 336,
+      "completed_layers": 8,
+      "unassessed_layers": 328,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 957,
+        "layers": 8
+      }
+    },
+    {
+      "date": "2026-08-28",
+      "roadmaps": 37,
+      "completed_roadmaps": 2,
+      "spec_lines": 71166,
+      "completed_spec_lines": 962,
+      "layers": 396,
+      "completed_layers": 8,
+      "unassessed_layers": 388,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 957,
+        "layers": 8
+      }
+    },
+    {
+      "date": "2026-08-29",
+      "roadmaps": 38,
+      "completed_roadmaps": 2,
+      "spec_lines": 72490,
+      "completed_spec_lines": 962,
+      "layers": 410,
+      "completed_layers": 8,
+      "unassessed_layers": 402,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 957,
+        "layers": 8
+      }
+    },
+    {
+      "date": "2026-08-30",
+      "roadmaps": 38,
+      "completed_roadmaps": 3,
+      "spec_lines": 72674,
+      "completed_spec_lines": 1559,
+      "layers": 410,
+      "completed_layers": 13,
+      "unassessed_layers": 397,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 1554,
+        "layers": 13
+      }
+    },
+    {
+      "date": "2026-08-31",
+      "roadmaps": 38,
+      "completed_roadmaps": 3,
+      "spec_lines": 72674,
+      "completed_spec_lines": 1559,
+      "layers": 410,
+      "completed_layers": 13,
+      "unassessed_layers": 397,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 1554,
+        "layers": 13
+      }
+    },
+    {
+      "date": "2026-09-01",
+      "roadmaps": 38,
+      "completed_roadmaps": 3,
+      "spec_lines": 72674,
+      "completed_spec_lines": 1559,
+      "layers": 410,
+      "completed_layers": 13,
+      "unassessed_layers": 397,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 1554,
+        "layers": 13
+      }
+    },
+    {
+      "date": "2026-09-02",
+      "roadmaps": 39,
+      "completed_roadmaps": 3,
+      "spec_lines": 73406,
+      "completed_spec_lines": 1559,
+      "layers": 417,
+      "completed_layers": 13,
+      "unassessed_layers": 404,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 1554,
+        "layers": 13
+      }
+    },
+    {
+      "date": "2026-09-03",
+      "roadmaps": 42,
+      "completed_roadmaps": 3,
+      "spec_lines": 85407,
+      "completed_spec_lines": 1559,
+      "layers": 452,
+      "completed_layers": 13,
+      "unassessed_layers": 439,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 1554,
+        "layers": 13
+      }
+    },
+    {
+      "date": "2026-09-04",
+      "roadmaps": 42,
+      "completed_roadmaps": 3,
+      "spec_lines": 85407,
+      "completed_spec_lines": 1559,
+      "layers": 452,
+      "completed_layers": 13,
+      "unassessed_layers": 439,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 1554,
+        "layers": 13
+      }
+    },
+    {
+      "date": "2026-09-05",
+      "roadmaps": 42,
+      "completed_roadmaps": 3,
+      "spec_lines": 85407,
+      "completed_spec_lines": 1559,
+      "layers": 452,
+      "completed_layers": 13,
+      "unassessed_layers": 439,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 1554,
+        "layers": 13
+      }
+    },
+    {
+      "date": "2026-09-06",
+      "roadmaps": 42,
+      "completed_roadmaps": 3,
+      "spec_lines": 85407,
+      "completed_spec_lines": 1559,
+      "layers": 452,
+      "completed_layers": 13,
+      "unassessed_layers": 439,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 1554,
+        "layers": 13
+      }
+    },
+    {
+      "date": "2026-09-07",
+      "roadmaps": 42,
+      "completed_roadmaps": 3,
+      "spec_lines": 85407,
+      "completed_spec_lines": 1559,
+      "layers": 452,
+      "completed_layers": 13,
+      "unassessed_layers": 439,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 1554,
+        "layers": 13
+      }
+    },
+    {
+      "date": "2026-09-08",
+      "roadmaps": 42,
+      "completed_roadmaps": 3,
+      "spec_lines": 85407,
+      "completed_spec_lines": 1559,
+      "layers": 452,
+      "completed_layers": 13,
+      "unassessed_layers": 439,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 1554,
+        "layers": 13
+      }
+    },
+    {
+      "date": "2026-09-09",
+      "roadmaps": 42,
+      "completed_roadmaps": 3,
+      "spec_lines": 86634,
+      "completed_spec_lines": 1559,
+      "layers": 455,
+      "completed_layers": 13,
+      "unassessed_layers": 442,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 1554,
+        "layers": 13
+      }
+    },
+    {
+      "date": "2026-09-10",
+      "roadmaps": 43,
+      "completed_roadmaps": 4,
+      "spec_lines": 88172,
+      "completed_spec_lines": 2825,
+      "layers": 467,
+      "completed_layers": 18,
+      "unassessed_layers": 449,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 2820,
+        "layers": 18
+      }
+    },
+    {
+      "date": "2026-09-11",
+      "roadmaps": 45,
+      "completed_roadmaps": 4,
+      "spec_lines": 90077,
+      "completed_spec_lines": 2825,
+      "layers": 482,
+      "completed_layers": 18,
+      "unassessed_layers": 464,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 2820,
+        "layers": 18
+      }
+    },
+    {
+      "date": "2026-09-12",
+      "roadmaps": 45,
+      "completed_roadmaps": 4,
+      "spec_lines": 90078,
+      "completed_spec_lines": 2825,
+      "layers": 482,
+      "completed_layers": 18,
+      "unassessed_layers": 464,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 2820,
+        "layers": 18
+      }
+    },
+    {
+      "date": "2026-09-13",
+      "roadmaps": 45,
+      "completed_roadmaps": 4,
+      "spec_lines": 90077,
+      "completed_spec_lines": 2825,
+      "layers": 482,
+      "completed_layers": 18,
+      "unassessed_layers": 464,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 2820,
+        "layers": 18
+      }
+    },
+    {
+      "date": "2026-09-14",
+      "roadmaps": 47,
+      "completed_roadmaps": 4,
+      "spec_lines": 95542,
+      "completed_spec_lines": 2825,
+      "layers": 509,
+      "completed_layers": 18,
+      "unassessed_layers": 491,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 2820,
+        "layers": 18
+      }
+    },
+    {
+      "date": "2026-09-15",
+      "roadmaps": 47,
+      "completed_roadmaps": 4,
+      "spec_lines": 95542,
+      "completed_spec_lines": 2825,
+      "layers": 509,
+      "completed_layers": 18,
+      "unassessed_layers": 491,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 2820,
+        "layers": 18
+      }
+    },
+    {
+      "date": "2026-09-16",
+      "roadmaps": 47,
+      "completed_roadmaps": 4,
+      "spec_lines": 95542,
+      "completed_spec_lines": 2825,
+      "layers": 509,
+      "completed_layers": 18,
+      "unassessed_layers": 491,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 2820,
+        "layers": 18
+      }
+    },
+    {
+      "date": "2026-09-17",
+      "roadmaps": 48,
+      "completed_roadmaps": 4,
+      "spec_lines": 97002,
+      "completed_spec_lines": 2825,
+      "layers": 516,
+      "completed_layers": 18,
+      "unassessed_layers": 498,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 2820,
+        "layers": 18
+      }
+    },
+    {
+      "date": "2026-09-18",
+      "roadmaps": 48,
+      "completed_roadmaps": 4,
+      "spec_lines": 97002,
+      "completed_spec_lines": 2825,
+      "layers": 516,
+      "completed_layers": 18,
+      "unassessed_layers": 498,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 2820,
+        "layers": 18
+      }
+    },
+    {
+      "date": "2026-09-19",
+      "roadmaps": 48,
+      "completed_roadmaps": 4,
+      "spec_lines": 97002,
+      "completed_spec_lines": 2825,
+      "layers": 516,
+      "completed_layers": 18,
+      "unassessed_layers": 498,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 2820,
+        "layers": 18
+      }
+    },
+    {
+      "date": "2026-09-20",
+      "roadmaps": 48,
+      "completed_roadmaps": 4,
+      "spec_lines": 97003,
+      "completed_spec_lines": 2825,
+      "layers": 516,
+      "completed_layers": 18,
+      "unassessed_layers": 498,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 2820,
+        "layers": 18
+      }
+    },
+    {
+      "date": "2026-09-21",
+      "roadmaps": 49,
+      "completed_roadmaps": 4,
+      "spec_lines": 98404,
+      "completed_spec_lines": 2825,
+      "layers": 520,
+      "completed_layers": 18,
+      "unassessed_layers": 502,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 2820,
+        "layers": 18
+      }
+    },
+    {
+      "date": "2026-09-22",
+      "roadmaps": 50,
+      "completed_roadmaps": 4,
+      "spec_lines": 100928,
+      "completed_spec_lines": 2825,
+      "layers": 524,
+      "completed_layers": 18,
+      "unassessed_layers": 506,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 2820,
+        "layers": 18
+      }
+    },
+    {
+      "date": "2026-09-23",
+      "roadmaps": 50,
+      "completed_roadmaps": 4,
+      "spec_lines": 100928,
+      "completed_spec_lines": 2825,
+      "layers": 524,
+      "completed_layers": 18,
+      "unassessed_layers": 506,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 2820,
+        "layers": 18
+      }
+    },
+    {
+      "date": "2026-09-24",
+      "roadmaps": 50,
+      "completed_roadmaps": 4,
+      "spec_lines": 100928,
+      "completed_spec_lines": 2825,
+      "layers": 524,
+      "completed_layers": 18,
+      "unassessed_layers": 506,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 2820,
+        "layers": 18
+      }
+    },
+    {
+      "date": "2026-09-25",
+      "roadmaps": 50,
+      "completed_roadmaps": 4,
+      "spec_lines": 100928,
+      "completed_spec_lines": 2825,
+      "layers": 524,
+      "completed_layers": 18,
+      "unassessed_layers": 506,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 2820,
+        "layers": 18
+      }
+    },
+    {
+      "date": "2026-09-26",
+      "roadmaps": 50,
+      "completed_roadmaps": 4,
+      "spec_lines": 100928,
+      "completed_spec_lines": 2825,
+      "layers": 524,
+      "completed_layers": 18,
+      "unassessed_layers": 506,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 2820,
+        "layers": 18
+      }
+    },
+    {
+      "date": "2026-09-27",
+      "roadmaps": 53,
+      "completed_roadmaps": 5,
+      "spec_lines": 109007,
+      "completed_spec_lines": 3415,
+      "layers": 552,
+      "completed_layers": 156,
+      "unassessed_layers": 147,
+      "stale_assessments": 3,
+      "completion_credit": {
+        "spec_lines": 3410,
+        "layers": 156
+      }
+    },
+    {
+      "date": "2026-09-28",
+      "roadmaps": 55,
+      "completed_roadmaps": 5,
+      "spec_lines": 112046,
+      "completed_spec_lines": 3415,
+      "layers": 562,
+      "completed_layers": 156,
+      "unassessed_layers": 157,
+      "stale_assessments": 3,
+      "completion_credit": {
+        "spec_lines": 3410,
+        "layers": 156
+      }
+    },
+    {
+      "date": "2026-09-29",
+      "roadmaps": 55,
+      "completed_roadmaps": 5,
+      "spec_lines": 112836,
+      "completed_spec_lines": 3415,
+      "layers": 567,
+      "completed_layers": 156,
+      "unassessed_layers": 162,
+      "stale_assessments": 3,
+      "completion_credit": {
+        "spec_lines": 3410,
+        "layers": 156
+      }
+    },
+    {
+      "date": "2026-09-30",
+      "roadmaps": 55,
+      "completed_roadmaps": 5,
+      "spec_lines": 112836,
+      "completed_spec_lines": 3415,
+      "layers": 567,
+      "completed_layers": 210,
+      "unassessed_layers": 14,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 3410,
+        "layers": 210
+      }
+    },
+    {
+      "date": "2026-10-01",
+      "roadmaps": 55,
+      "completed_roadmaps": 5,
+      "spec_lines": 117854,
+      "completed_spec_lines": 3415,
+      "layers": 568,
+      "completed_layers": 225,
+      "unassessed_layers": 8,
+      "stale_assessments": 5,
+      "completion_credit": {
+        "spec_lines": 3410,
+        "layers": 225
+      }
+    },
+    {
+      "date": "2026-10-02",
+      "roadmaps": 55,
+      "completed_roadmaps": 5,
+      "spec_lines": 117854,
+      "completed_spec_lines": 3415,
+      "layers": 568,
+      "completed_layers": 247,
+      "unassessed_layers": 0,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 3410,
+        "layers": 247
+      }
+    },
+    {
+      "date": "2026-10-03",
+      "roadmaps": 56,
+      "completed_roadmaps": 5,
+      "spec_lines": 121988,
+      "completed_spec_lines": 3415,
+      "layers": 579,
+      "completed_layers": 247,
+      "unassessed_layers": 11,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 3410,
+        "layers": 247
+      }
+    },
+    {
+      "date": "2026-10-04",
+      "roadmaps": 56,
+      "completed_roadmaps": 5,
+      "spec_lines": 125828,
+      "completed_spec_lines": 3415,
+      "layers": 579,
+      "completed_layers": 247,
+      "unassessed_layers": 11,
+      "stale_assessments": 3,
+      "completion_credit": {
+        "spec_lines": 3410,
+        "layers": 247
+      }
+    },
+    {
+      "date": "2026-10-05",
+      "roadmaps": 56,
+      "completed_roadmaps": 5,
+      "spec_lines": 125828,
+      "completed_spec_lines": 3415,
+      "layers": 579,
+      "completed_layers": 293,
+      "unassessed_layers": 0,
+      "stale_assessments": 0,
+      "completion_credit": {
+        "spec_lines": 3410,
+        "layers": 293
+      }
+    },
+    {
+      "date": "2026-10-06",
+      "roadmaps": 57,
+      "completed_roadmaps": 5,
+      "spec_lines": 129756,
+      "completed_spec_lines": 3415,
+      "layers": 592,
+      "completed_layers": 298,
+      "unassessed_layers": 13,
+      "stale_assessments": 2,
+      "completion_credit": {
+        "spec_lines": 3410,
+        "layers": 298
+      }
+    },
+    {
+      "date": "2026-10-07",
+      "roadmaps": 57,
+      "completed_roadmaps": 6,
+      "spec_lines": 129844,
+      "completed_spec_lines": 4468,
+      "layers": 592,
+      "completed_layers": 306,
+      "unassessed_layers": 13,
+      "stale_assessments": 2,
+      "completion_credit": {
+        "spec_lines": 4463,
+        "layers": 306
+      }
+    }
+  ],
+  "completion_events": [
+    {
+      "date": "2026-07-02",
+      "basis": "spec_lines",
+      "units": 235,
+      "id": "Completed/EffectiveBounds",
+      "library_lines": 69969
+    },
+    {
+      "date": "2026-07-02",
+      "basis": "layers",
+      "units": 1,
+      "id": "Completed/EffectiveBounds/Layer 0",
+      "library_lines": 69969
+    },
+    {
+      "date": "2026-07-02",
+      "basis": "layers",
+      "units": 1,
+      "id": "Completed/EffectiveBounds/Layer 1",
+      "library_lines": 69969
+    },
+    {
+      "date": "2026-07-02",
+      "basis": "layers",
+      "units": 1,
+      "id": "Completed/EffectiveBounds/Layer 2",
+      "library_lines": 69969
+    },
+    {
+      "date": "2026-07-02",
+      "basis": "layers",
+      "units": 1,
+      "id": "Completed/EffectiveBounds/Layer 3",
+      "library_lines": 69969
+    },
+    {
+      "date": "2026-08-17",
+      "basis": "spec_lines",
+      "units": 722,
+      "id": "Completed/OrthogonalL2Bases",
+      "library_lines": 543203
+    },
+    {
+      "date": "2026-08-17",
+      "basis": "layers",
+      "units": 1,
+      "id": "Completed/OrthogonalL2Bases/Part A",
+      "library_lines": 543203
+    },
+    {
+      "date": "2026-08-17",
+      "basis": "layers",
+      "units": 1,
+      "id": "Completed/OrthogonalL2Bases/Part B",
+      "library_lines": 543203
+    },
+    {
+      "date": "2026-08-17",
+      "basis": "layers",
+      "units": 1,
+      "id": "Completed/OrthogonalL2Bases/Part C",
+      "library_lines": 543203
+    },
+    {
+      "date": "2026-08-17",
+      "basis": "layers",
+      "units": 1,
+      "id": "Completed/OrthogonalL2Bases/Part D",
+      "library_lines": 543203
+    },
+    {
+      "date": "2026-08-30",
+      "basis": "spec_lines",
+      "units": 597,
+      "id": "Completed/ContourIntegration",
+      "library_lines": 936929
+    },
+    {
+      "date": "2026-08-30",
+      "basis": "layers",
+      "units": 1,
+      "id": "Completed/ContourIntegration/Layer 0",
+      "library_lines": 936929
+    },
+    {
+      "date": "2026-08-30",
+      "basis": "layers",
+      "units": 1,
+      "id": "Completed/ContourIntegration/Layer 1",
+      "library_lines": 936929
+    },
+    {
+      "date": "2026-08-30",
+      "basis": "layers",
+      "units": 1,
+      "id": "Completed/ContourIntegration/Layer 2",
+      "library_lines": 936929
+    },
+    {
+      "date": "2026-08-30",
+      "basis": "layers",
+      "units": 1,
+      "id": "Completed/ContourIntegration/Layer 3",
+      "library_lines": 936929
+    },
+    {
+      "date": "2026-08-30",
+      "basis": "layers",
+      "units": 1,
+      "id": "Completed/ContourIntegration/Layer 4",
+      "library_lines": 936929
+    },
+    {
+      "date": "2026-09-10",
+      "basis": "spec_lines",
+      "units": 1266,
+      "id": "Completed/IntegralLattices",
+      "library_lines": 1126787
+    },
+    {
+      "date": "2026-09-10",
+      "basis": "layers",
+      "units": 1,
+      "id": "Completed/IntegralLattices/Layer 1",
+      "library_lines": 1126787
+    },
+    {
+      "date": "2026-09-10",
+      "basis": "layers",
+      "units": 1,
+      "id": "Completed/IntegralLattices/Layer 2",
+      "library_lines": 1126787
+    },
+    {
+      "date": "2026-09-10",
+      "basis": "layers",
+      "units": 1,
+      "id": "Completed/IntegralLattices/Layer 3",
+      "library_lines": 1126787
+    },
+    {
+      "date": "2026-09-10",
+      "basis": "layers",
+      "units": 1,
+      "id": "Completed/IntegralLattices/Layer 4",
+      "library_lines": 1126787
+    },
+    {
+      "date": "2026-09-10",
+      "basis": "layers",
+      "units": 1,
+      "id": "Completed/IntegralLattices/Layer 5",
+      "library_lines": 1126787
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "spec_lines",
+      "units": 590,
+      "id": "Completed/UniversalCovers",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "Completed/UniversalCovers/Stage 0",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "Completed/UniversalCovers/Stage 1",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "Completed/UniversalCovers/Stage 2",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "Completed/UniversalCovers/Stage 3",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "Completed/UniversalCovers/Stage 4",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/AdicSpaces/Layer 1",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/AlgebraicCodingTheory/Layer 1",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/AlgebraicCodingTheory/Layer 3",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/AlgebraicCodingTheory/Layer 4",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/AlgebraicCodingTheory/Layer 5",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/AlgebraicCodingTheory/Layer 6",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/AlgebraicCodingTheory/Layer 7",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/AlgebraicCurves/Layer 0",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/AlgebraicCurves/Layer 1",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/AlgebraicCurves/Layer 2",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/AlgebraicCurves/Layer 3",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/AlgebraicCurves/Layer 4",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/AnalyticToricGeometry/Layer 1",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/CFSGStatement/A0",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/CFSGStatement/I0",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/CFSGStatement/L0",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/CFSGStatement/L1",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/CFSGStatement/L2",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/CFSGStatement/L3",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/CFSGStatement/S0",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/CFSGStatement/S1",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/ClassFieldTheory/Layer 2",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/DenseGraphLimits/Layer 0",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/DenseGraphLimits/Layer 1",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/DenseGraphLimits/Layer 3",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/DenseGraphLimits/Layer 4",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/DenseGraphLimits/Layer 6",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/DenseGraphLimits/Layer 7",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/DenseGraphLimits/Layer 8a",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/DenseGraphLimits/Layer 8b",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/DenseGraphLimits/Layer 9a",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/DenseGraphLimits/Layer 9b",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/DenseGraphLimits/Layer 9c",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/EllipticCurves/Layer 0",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/Exchangeability/Layer 0",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/Exchangeability/Layer 1",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/Exchangeability/Layer 2",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/Exchangeability/Layer 3",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/Exchangeability/Layer 4",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/Exchangeability/Layer 5",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/Exchangeability/Layer 6",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/Exchangeability/Layer 7",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/FuchsianOrbifolds/Layer 0",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/GlobalNumberFields/Layer 1",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/GlobalNumberFields/Layer 2",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/GlobalQuadraticForms/Layer 1",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/ModularForms/Layer 1",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/Multiquadratic/Layer 0",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/Multiquadratic/Layer 1",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/Multiquadratic/Layer 2",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/Multiquadratic/Layer 3",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/NumberFieldArithmetic/Layer 2",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/NumberFieldArithmetic/Layer 3",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/NumberFieldArithmetic/Layer 4",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/NumberFieldArithmetic/Layer 5",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/OneParameterSemigroups/Part A",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/OneParameterSemigroups/Part C",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/ProfiniteCohomology/Layer 5",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/QuadraticFormInvariants/Layer 2",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/ReductiveGroups/Layer 0",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/ReductiveGroups/Layer 1",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/ReductiveGroups/Layer 2",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/ReductiveGroups/Layer 4",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/AdoIwasawa/Layer 0",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/CharacterTheory/Layer 0",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/CharacterTheory/Layer 1",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/CharacterTheory/Layer 2",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/CharacterTheory/Layer 3",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/CharacterTheory/Layer 4",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/CharacterTheory/Layer 5",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/CharacterTheory/Layer 7",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/ClassicalGroups/Layer 0",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/ClassicalGroups/Layer 1",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/CompactGroups/Layer 0",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/CompactGroups/Layer 1",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/CompactGroups/Layer 2",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/CompactGroups/Layer 3",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/CompactGroups/Layer 4",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/CompactGroups/Layer 5",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/InductionRestriction/Layer 0",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/InductionRestriction/Layer 1",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/InductionRestriction/Layer 2",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/InductionRestriction/Layer 3",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/InductionRestriction/Layer 3a",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/InductionRestriction/Layer 3b",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/LieGroups/Layer 0",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/LieHighestWeight/Layer 0",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/LieHighestWeight/Layer 1",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/LieHighestWeight/Layer 2",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/LieHighestWeight/Layer 3",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/LieHighestWeight/Layer 4",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/LieHighestWeight/Layer 5",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/LieHighestWeight/Layer 6",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/Layer 0",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/Layer 4",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/RootSystems/Layer 1",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/RootSystems/Layer 2",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/RootSystems/Layer 3",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/RootSystems/Layer 4",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/RootSystems/Layer 5",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/RootSystems/Layer 6",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/SchurWeyl/Layer 0",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/SchurWeyl/Layer 1",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/SchurWeyl/Layer 2",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/SchurWeyl/Layer 3",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/SchurWeyl/Layer 4",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/SchurWeyl/Layer 5",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/SemisimpleAlgebras/Layer 0",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/SemisimpleAlgebras/Layer 1",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/SemisimpleAlgebras/Layer 1.5",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/SemisimpleAlgebras/Layer 2",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/SemisimpleAlgebras/Layer 3",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/SemisimpleAlgebras/Layer 4",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/SemisimpleAlgebras/Layer 5",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/SemisimpleAlgebras/Layer 6",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/SpinRepresentations/Layer 0",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/SpinRepresentations/Layer 1",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/SpinRepresentations/Layer 2",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/SpinRepresentations/Layer 3",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/SpinRepresentations/Layer 6",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/SpinRepresentations/Layer 7",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RestrictedProducts/Layer 0",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RestrictedProducts/Layer 1",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RestrictedProducts/Layer 2",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RestrictedProducts/Layer 3",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/StablePeriodicCurved/Layer 0",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/StandardDistributions/Layer 0",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/StandardDistributions/Layer 1",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/StandardDistributions/Layer 2",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/StandardDistributions/Layer 3",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/StandardDistributions/Layer 4",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/StandardDistributions/Layer 5",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-27",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/StandardDistributions/Layer 6",
+      "library_lines": 1766697
+    },
+    {
+      "date": "2026-09-30",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/AlgebraicCodingTheory/Layer 2",
+      "library_lines": 1947046
+    },
+    {
+      "date": "2026-09-30",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/AlgebraicCurves/Layer 6",
+      "library_lines": 1947046
+    },
+    {
+      "date": "2026-09-30",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/ArithmeticDirichletSeries/Layer 0",
+      "library_lines": 1947046
+    },
+    {
+      "date": "2026-09-30",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/ArithmeticDirichletSeries/Layer 1",
+      "library_lines": 1947046
+    },
+    {
+      "date": "2026-09-30",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/ArithmeticDirichletSeries/Layer 10",
+      "library_lines": 1947046
+    },
+    {
+      "date": "2026-09-30",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/ArithmeticDirichletSeries/Layer 2",
+      "library_lines": 1947046
+    },
+    {
+      "date": "2026-09-30",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/ArithmeticDirichletSeries/Layer 3",
+      "library_lines": 1947046
+    },
+    {
+      "date": "2026-09-30",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/ArithmeticDirichletSeries/Layer 4",
+      "library_lines": 1947046
+    },
+    {
+      "date": "2026-09-30",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/ArithmeticDirichletSeries/Layer 5",
+      "library_lines": 1947046
+    },
+    {
+      "date": "2026-09-30",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/ArithmeticDirichletSeries/Layer 7",
+      "library_lines": 1947046
+    },
+    {
+      "date": "2026-09-30",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/ArithmeticDirichletSeries/Layer 8",
+      "library_lines": 1947046
+    },
+    {
+      "date": "2026-09-30",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/ArithmeticDirichletSeries/Layer 9",
+      "library_lines": 1947046
+    },
+    {
+      "date": "2026-09-30",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/BelyiMaps/Layer 4",
+      "library_lines": 1947046
+    },
+    {
+      "date": "2026-09-30",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/ClassFieldTheory/Layer 1",
+      "library_lines": 1947046
+    },
+    {
+      "date": "2026-09-30",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/ConformalMapping/L0",
+      "library_lines": 1947046
+    },
+    {
+      "date": "2026-09-30",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/ConformalMapping/L1",
+      "library_lines": 1947046
+    },
+    {
+      "date": "2026-09-30",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/ConformalMapping/L2",
+      "library_lines": 1947046
+    },
+    {
+      "date": "2026-09-30",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/ConformalMapping/L3",
+      "library_lines": 1947046
+    },
+    {
+      "date": "2026-09-30",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/ConformalMapping/L4",
+      "library_lines": 1947046
+    },
+    {
+      "date": "2026-09-30",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/ConformalMapping/L5",
+      "library_lines": 1947046
+    },
+    {
+      "date": "2026-09-30",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/ConformalMapping/L6",
+      "library_lines": 1947046
+    },
+    {
+      "date": "2026-09-30",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/DenseGraphLimits/Layer 2",
+      "library_lines": 1947046
+    },
+    {
+      "date": "2026-09-30",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/DenseGraphLimits/Layer 5",
+      "library_lines": 1947046
+    },
+    {
+      "date": "2026-09-30",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/GlobalNumberFields/Layer 3",
+      "library_lines": 1947046
+    },
+    {
+      "date": "2026-09-30",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/GrothendieckEulerForms/Layer 0",
+      "library_lines": 1947046
+    },
+    {
+      "date": "2026-09-30",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/GrothendieckEulerForms/Layer 7",
+      "library_lines": 1947046
+    },
+    {
+      "date": "2026-09-30",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/HodgeStructures/L0",
+      "library_lines": 1947046
+    },
+    {
+      "date": "2026-09-30",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/HodgeStructures/L1",
+      "library_lines": 1947046
+    },
+    {
+      "date": "2026-09-30",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/HodgeStructures/L2",
+      "library_lines": 1947046
+    },
+    {
+      "date": "2026-09-30",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/HodgeStructures/L3",
+      "library_lines": 1947046
+    },
+    {
+      "date": "2026-09-30",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/HopfRinow/Layer 0",
+      "library_lines": 1947046
+    },
+    {
+      "date": "2026-09-30",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/HopfRinow/Layer 1",
+      "library_lines": 1947046
+    },
+    {
+      "date": "2026-09-30",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/HopfRinow/Layer 3",
+      "library_lines": 1947046
+    },
+    {
+      "date": "2026-09-30",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/JacobianChallenge/Layer A",
+      "library_lines": 1947046
+    },
+    {
+      "date": "2026-09-30",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/LocalGaloisGroups/Layer 0",
+      "library_lines": 1947046
+    },
+    {
+      "date": "2026-09-30",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/NumberFieldArithmetic/Layer 1",
+      "library_lines": 1947046
+    },
+    {
+      "date": "2026-09-30",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/NumberFieldArithmetic/Layer 6",
+      "library_lines": 1947046
+    },
+    {
+      "date": "2026-09-30",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/NumberFieldArithmetic/Layer 7",
+      "library_lines": 1947046
+    },
+    {
+      "date": "2026-09-30",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/NumberFieldArithmetic/Layer 8",
+      "library_lines": 1947046
+    },
+    {
+      "date": "2026-09-30",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/OptimalTransport/Layer 0",
+      "library_lines": 1947046
+    },
+    {
+      "date": "2026-09-30",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/OptimalTransport/Layer 1",
+      "library_lines": 1947046
+    },
+    {
+      "date": "2026-09-30",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/PDE/Lane D",
+      "library_lines": 1947046
+    },
+    {
+      "date": "2026-09-30",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/PeripheralActions/Layer 0",
+      "library_lines": 1947046
+    },
+    {
+      "date": "2026-09-30",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/PolynomialGaloisGroups/Layer 0",
+      "library_lines": 1947046
+    },
+    {
+      "date": "2026-09-30",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/PolynomialGaloisGroups/Layer 2",
+      "library_lines": 1947046
+    },
+    {
+      "date": "2026-09-30",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/PolynomialGaloisGroups/Layer 9",
+      "library_lines": 1947046
+    },
+    {
+      "date": "2026-09-30",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/ProfiniteProPGroups/Layer 10",
+      "library_lines": 1947046
+    },
+    {
+      "date": "2026-09-30",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/ProfiniteProPGroups/Layer 6",
+      "library_lines": 1947046
+    },
+    {
+      "date": "2026-09-30",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/QuadraticFormInvariants/Layer 4",
+      "library_lines": 1947046
+    },
+    {
+      "date": "2026-09-30",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/InductionRestriction/Layer 5",
+      "library_lines": 1947046
+    },
+    {
+      "date": "2026-09-30",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/SpinRepresentations/Layer 4",
+      "library_lines": 1947046
+    },
+    {
+      "date": "2026-09-30",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/ZigzagPreprojective/Layer 0",
+      "library_lines": 1947046
+    },
+    {
+      "date": "2026-09-30",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/ZigzagPreprojective/Layer 1",
+      "library_lines": 1947046
+    },
+    {
+      "date": "2026-09-30",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/ZigzagPreprojective/Layer 2",
+      "library_lines": 1947046
+    },
+    {
+      "date": "2026-10-01",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/AdicSpaces/Layer 3",
+      "library_lines": 2017182
+    },
+    {
+      "date": "2026-10-01",
+      "basis": "layers",
+      "units": -1,
+      "id": "TauCetiRoadmap/AnalyticToricGeometry/Layer 1",
+      "library_lines": 2017182
+    },
+    {
+      "date": "2026-10-01",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/Chebotarev/Layer 1",
+      "library_lines": 2017182
+    },
+    {
+      "date": "2026-10-01",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/Chebotarev/Layer 10",
+      "library_lines": 2017182
+    },
+    {
+      "date": "2026-10-01",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/Chebotarev/Layer 11",
+      "library_lines": 2017182
+    },
+    {
+      "date": "2026-10-01",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/Chebotarev/Layer 12",
+      "library_lines": 2017182
+    },
+    {
+      "date": "2026-10-01",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/Chebotarev/Layer 13",
+      "library_lines": 2017182
+    },
+    {
+      "date": "2026-10-01",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/Chebotarev/Layer 14",
+      "library_lines": 2017182
+    },
+    {
+      "date": "2026-10-01",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/Chebotarev/Layer 2",
+      "library_lines": 2017182
+    },
+    {
+      "date": "2026-10-01",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/Chebotarev/Layer 3",
+      "library_lines": 2017182
+    },
+    {
+      "date": "2026-10-01",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/Chebotarev/Layer 4",
+      "library_lines": 2017182
+    },
+    {
+      "date": "2026-10-01",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/Chebotarev/Layer 5",
+      "library_lines": 2017182
+    },
+    {
+      "date": "2026-10-01",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/Chebotarev/Layer 6",
+      "library_lines": 2017182
+    },
+    {
+      "date": "2026-10-01",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/Chebotarev/Layer 7",
+      "library_lines": 2017182
+    },
+    {
+      "date": "2026-10-01",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/Chebotarev/Layer 8",
+      "library_lines": 2017182
+    },
+    {
+      "date": "2026-10-01",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/Chebotarev/Layer 9",
+      "library_lines": 2017182
+    },
+    {
+      "date": "2026-10-01",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/OneParameterSemigroups/Part B",
+      "library_lines": 2017182
+    },
+    {
+      "date": "2026-10-02",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/AlgebraicCurves/Layer 7",
+      "library_lines": 2128860
+    },
+    {
+      "date": "2026-10-02",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/AnalyticToricGeometry/Layer 1",
+      "library_lines": 2128860
+    },
+    {
+      "date": "2026-10-02",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/AnalyticToricGeometry/Layer 2",
+      "library_lines": 2128860
+    },
+    {
+      "date": "2026-10-02",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/AnalyticToricGeometry/Layer 3G",
+      "library_lines": 2128860
+    },
+    {
+      "date": "2026-10-02",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/GlobalQuadraticForms/Layer 0",
+      "library_lines": 2128860
+    },
+    {
+      "date": "2026-10-02",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/HopfRinow/Layer 2",
+      "library_lines": 2128860
+    },
+    {
+      "date": "2026-10-02",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/HopfRinow/Layer 4",
+      "library_lines": 2128860
+    },
+    {
+      "date": "2026-10-02",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/PeripheralActions/Layer 1",
+      "library_lines": 2128860
+    },
+    {
+      "date": "2026-10-02",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/PeripheralActions/Layer 2",
+      "library_lines": 2128860
+    },
+    {
+      "date": "2026-10-02",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/PeripheralActions/Layer 4",
+      "library_lines": 2128860
+    },
+    {
+      "date": "2026-10-02",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/PolynomialGaloisGroups/Layer 1",
+      "library_lines": 2128860
+    },
+    {
+      "date": "2026-10-02",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/PolynomialGaloisGroups/Layer 3",
+      "library_lines": 2128860
+    },
+    {
+      "date": "2026-10-02",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/PolynomialGaloisGroups/Layer 5",
+      "library_lines": 2128860
+    },
+    {
+      "date": "2026-10-02",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/PolynomialGaloisGroups/Layer 6",
+      "library_lines": 2128860
+    },
+    {
+      "date": "2026-10-02",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/ProfiniteArithmetic/Layer 0",
+      "library_lines": 2128860
+    },
+    {
+      "date": "2026-10-02",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/ProfiniteProPGroups/Layer 2",
+      "library_lines": 2128860
+    },
+    {
+      "date": "2026-10-02",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/ProfiniteProPGroups/Layer 7",
+      "library_lines": 2128860
+    },
+    {
+      "date": "2026-10-02",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/ProfiniteProPGroups/Layer 8",
+      "library_lines": 2128860
+    },
+    {
+      "date": "2026-10-02",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/ProfiniteProPGroups/Layer 9",
+      "library_lines": 2128860
+    },
+    {
+      "date": "2026-10-02",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/AdoIwasawa/Layer 7",
+      "library_lines": 2128860
+    },
+    {
+      "date": "2026-10-02",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/CompactGroups/Layer 6",
+      "library_lines": 2128860
+    },
+    {
+      "date": "2026-10-02",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/Layer 2",
+      "library_lines": 2128860
+    },
+    {
+      "date": "2026-10-05",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/AlgebraicCurves/Layer 5",
+      "library_lines": 2347733
+    },
+    {
+      "date": "2026-10-05",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/AlgebraicTopology/Stage 1",
+      "library_lines": 2347733
+    },
+    {
+      "date": "2026-10-05",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/AlgebraicTopology/Stage 3",
+      "library_lines": 2347733
+    },
+    {
+      "date": "2026-10-05",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/AnalyticToricGeometry/Layer 3",
+      "library_lines": 2347733
+    },
+    {
+      "date": "2026-10-05",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/ArithmeticDirichletSeries/Layer 6",
+      "library_lines": 2347733
+    },
+    {
+      "date": "2026-10-05",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/BelyiMaps/Layer 2",
+      "library_lines": 2347733
+    },
+    {
+      "date": "2026-10-05",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/BelyiMaps/Layer 6",
+      "library_lines": 2347733
+    },
+    {
+      "date": "2026-10-05",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/ClassFieldTheory/Layer 3",
+      "library_lines": 2347733
+    },
+    {
+      "date": "2026-10-05",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/ClassFieldTheory/Layer 4",
+      "library_lines": 2347733
+    },
+    {
+      "date": "2026-10-05",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/EllipticCurves/Layer 4.5b",
+      "library_lines": 2347733
+    },
+    {
+      "date": "2026-10-05",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/Exchangeability/Layer 8",
+      "library_lines": 2347733
+    },
+    {
+      "date": "2026-10-05",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/FuchsianOrbifolds/Layer 1",
+      "library_lines": 2347733
+    },
+    {
+      "date": "2026-10-05",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/GeometricTopology/Layer 3",
+      "library_lines": 2347733
+    },
+    {
+      "date": "2026-10-05",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/GlobalNumberFields/Layer 5",
+      "library_lines": 2347733
+    },
+    {
+      "date": "2026-10-05",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/GlobalNumberFields/Layer 7",
+      "library_lines": 2347733
+    },
+    {
+      "date": "2026-10-05",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/GlobalNumberFields/Layer 9",
+      "library_lines": 2347733
+    },
+    {
+      "date": "2026-10-05",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/GrothendieckEulerForms/Layer 1",
+      "library_lines": 2347733
+    },
+    {
+      "date": "2026-10-05",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/GrothendieckEulerForms/Layer 2",
+      "library_lines": 2347733
+    },
+    {
+      "date": "2026-10-05",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/LocalFieldsRamification/Layer 1",
+      "library_lines": 2347733
+    },
+    {
+      "date": "2026-10-05",
+      "basis": "layers",
+      "units": -1,
+      "id": "TauCetiRoadmap/LocalGaloisGroups/Layer 0",
+      "library_lines": 2347733
+    },
+    {
+      "date": "2026-10-05",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/OrthogonalSpinGroups/Layer 0",
+      "library_lines": 2347733
+    },
+    {
+      "date": "2026-10-05",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/PeripheralActions/Layer 3",
+      "library_lines": 2347733
+    },
+    {
+      "date": "2026-10-05",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/PolynomialGaloisGroups/Layer 4",
+      "library_lines": 2347733
+    },
+    {
+      "date": "2026-10-05",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/ProfiniteArithmetic/Layer 1",
+      "library_lines": 2347733
+    },
+    {
+      "date": "2026-10-05",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/ProfiniteArithmetic/Layer 3",
+      "library_lines": 2347733
+    },
+    {
+      "date": "2026-10-05",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/ProfiniteCohomology/Layer 12",
+      "library_lines": 2347733
+    },
+    {
+      "date": "2026-10-05",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/ProfiniteProPGroups/Layer 0",
+      "library_lines": 2347733
+    },
+    {
+      "date": "2026-10-05",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/ProfiniteProPGroups/Layer 1",
+      "library_lines": 2347733
+    },
+    {
+      "date": "2026-10-05",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/ProfiniteProPGroups/Layer 3",
+      "library_lines": 2347733
+    },
+    {
+      "date": "2026-10-05",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/ProfiniteProPGroups/Layer 4",
+      "library_lines": 2347733
+    },
+    {
+      "date": "2026-10-05",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/ProfiniteProPGroups/Layer 5",
+      "library_lines": 2347733
+    },
+    {
+      "date": "2026-10-05",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/ProfiniteProPGroups/Layer 9 prerequisites",
+      "library_lines": 2347733
+    },
+    {
+      "date": "2026-10-05",
+      "basis": "layers",
+      "units": -1,
+      "id": "TauCetiRoadmap/QuadraticFormInvariants/Layer 4",
+      "library_lines": 2347733
+    },
+    {
+      "date": "2026-10-05",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RealAlgebraicGeometry/Layer 1",
+      "library_lines": 2347733
+    },
+    {
+      "date": "2026-10-05",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RealAlgebraicGeometry/Layer 2",
+      "library_lines": 2347733
+    },
+    {
+      "date": "2026-10-05",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RealAlgebraicGeometry/Layer 4",
+      "library_lines": 2347733
+    },
+    {
+      "date": "2026-10-05",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/AdoIwasawa/Layer 1",
+      "library_lines": 2347733
+    },
+    {
+      "date": "2026-10-05",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/AdoIwasawa/Layer 3",
+      "library_lines": 2347733
+    },
+    {
+      "date": "2026-10-05",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/AdoIwasawa/Layer 4",
+      "library_lines": 2347733
+    },
+    {
+      "date": "2026-10-05",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/AdoIwasawa/Layer 5",
+      "library_lines": 2347733
+    },
+    {
+      "date": "2026-10-05",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/AdoIwasawa/Layer 6",
+      "library_lines": 2347733
+    },
+    {
+      "date": "2026-10-05",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/AdoIwasawa/Layer 8",
+      "library_lines": 2347733
+    },
+    {
+      "date": "2026-10-05",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/AdoIwasawa/Layer 9",
+      "library_lines": 2347733
+    },
+    {
+      "date": "2026-10-05",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/CharacterTheory/Layer 9",
+      "library_lines": 2347733
+    },
+    {
+      "date": "2026-10-05",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/InductionRestriction/Layer 6",
+      "library_lines": 2347733
+    },
+    {
+      "date": "2026-10-05",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/InductionRestriction/Layer 7",
+      "library_lines": 2347733
+    },
+    {
+      "date": "2026-10-05",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/LieGroups/Layer 2",
+      "library_lines": 2347733
+    },
+    {
+      "date": "2026-10-05",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/ModularInduction/Layer 0",
+      "library_lines": 2347733
+    },
+    {
+      "date": "2026-10-05",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/ModularInduction/Layer 2",
+      "library_lines": 2347733
+    },
+    {
+      "date": "2026-10-05",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/Layer 5",
+      "library_lines": 2347733
+    },
+    {
+      "date": "2026-10-06",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/GlobalQuadraticForms/Layer 2",
+      "library_lines": 2390939
+    },
+    {
+      "date": "2026-10-06",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/LocalFieldsRamification/Layer 2",
+      "library_lines": 2390939
+    },
+    {
+      "date": "2026-10-06",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/ProfiniteArithmetic/Layer 2",
+      "library_lines": 2390939
+    },
+    {
+      "date": "2026-10-06",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/ProfiniteCohomology/Layer 10",
+      "library_lines": 2390939
+    },
+    {
+      "date": "2026-10-06",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/ProfiniteCohomology/Layer 3",
+      "library_lines": 2390939
+    },
+    {
+      "date": "2026-10-07",
+      "basis": "spec_lines",
+      "units": 1053,
+      "id": "Completed/HodgeStructures",
+      "library_lines": 2452343
+    },
+    {
+      "date": "2026-10-07",
+      "basis": "layers",
+      "units": 1,
+      "id": "Completed/HodgeStructures/L0",
+      "library_lines": 2452343
+    },
+    {
+      "date": "2026-10-07",
+      "basis": "layers",
+      "units": 1,
+      "id": "Completed/HodgeStructures/L1",
+      "library_lines": 2452343
+    },
+    {
+      "date": "2026-10-07",
+      "basis": "layers",
+      "units": 1,
+      "id": "Completed/HodgeStructures/L2",
+      "library_lines": 2452343
+    },
+    {
+      "date": "2026-10-07",
+      "basis": "layers",
+      "units": 1,
+      "id": "Completed/HodgeStructures/L3",
+      "library_lines": 2452343
+    },
+    {
+      "date": "2026-10-07",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/GlobalNumberFields/Layer 0",
+      "library_lines": 2452343
+    },
+    {
+      "date": "2026-10-07",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/GlobalNumberFields/Layer 10",
+      "library_lines": 2452343
+    },
+    {
+      "date": "2026-10-07",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/GlobalNumberFields/Layer 8",
+      "library_lines": 2452343
+    },
+    {
+      "date": "2026-10-07",
+      "basis": "layers",
+      "units": -1,
+      "id": "TauCetiRoadmap/HodgeStructures/L0",
+      "library_lines": 2452343
+    },
+    {
+      "date": "2026-10-07",
+      "basis": "layers",
+      "units": -1,
+      "id": "TauCetiRoadmap/HodgeStructures/L1",
+      "library_lines": 2452343
+    },
+    {
+      "date": "2026-10-07",
+      "basis": "layers",
+      "units": -1,
+      "id": "TauCetiRoadmap/HodgeStructures/L2",
+      "library_lines": 2452343
+    },
+    {
+      "date": "2026-10-07",
+      "basis": "layers",
+      "units": -1,
+      "id": "TauCetiRoadmap/HodgeStructures/L3",
+      "library_lines": 2452343
+    },
+    {
+      "date": "2026-10-07",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/LocalGaloisGroups/Layer 2",
+      "library_lines": 2452343
+    },
+    {
+      "date": "2026-10-07",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/LocalGaloisGroups/Layer 3",
+      "library_lines": 2452343
+    },
+    {
+      "date": "2026-10-07",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/LocalGaloisGroups/Layer 4",
+      "library_lines": 2452343
+    },
+    {
+      "date": "2026-10-07",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/ModularForms/Layer 3",
+      "library_lines": 2452343
+    },
+    {
+      "date": "2026-10-07",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/OrthogonalSpinGroups/Layer 2",
+      "library_lines": 2452343
+    },
+    {
+      "date": "2026-10-07",
+      "basis": "layers",
+      "units": 1,
+      "id": "TauCetiRoadmap/RepresentationTheory/InductionRestriction/Layer 4",
+      "library_lines": 2452343
+    },
+    {
+      "date": "2026-10-07",
+      "basis": "layers",
+      "units": -1,
+      "id": "TauCetiRoadmap/RepresentationTheory/SpinRepresentations/Layer 7",
+      "library_lines": 2452343
+    }
+  ],
+  "forecast": {
+    "window_days": 7,
+    "last_full_day": "2026-10-07",
+    "library_lines": 2452343,
+    "library_growth_lines_per_day": 72185.28571428571,
+    "calibration_added_library_lines": 2452343,
+    "estimates": {
+      "spec_lines": {
+        "backlog": 125376,
+        "observed_completion_units": 4463,
+        "completion_units_per_library_line": 0.0018198922418275094,
+        "completion_units_per_day": 131.36944144553073,
+        "authoring_units_per_day": 2429.714285714286,
+        "stop_authoring": {
+          "days": 954.3772023418721,
+          "state": "finite"
+        },
+        "continue_authoring": {
+          "days": null,
+          "state": "not-catching-up"
+        }
+      },
+      "layers": {
+        "backlog": 286,
+        "observed_completion_units": 306,
+        "completion_units_per_library_line": 0.00012477863006928475,
+        "completion_units_per_day": 9.007181062588483,
+        "authoring_units_per_day": 3.5714285714285716,
+        "stop_authoring": {
+          "days": 31.752442635788356,
+          "state": "finite"
+        },
+        "continue_authoring": {
+          "days": 52.614610482195026,
+          "state": "finite"
+        }
+      }
+    }
+  },
+  "definitions": {
+    "spec_lines": "Markdown and Lean within roadmap directories, including reference notes and Completed/, excluding generated STATUS.md and PROGRESS.md.",
+    "completed_roadmap": "A roadmap under Completed/, the maintainers' archival decision.",
+    "completed_layer": "A current layer recorded done by a machine coverage marker, or belonging to an archived roadmap. Partial/unassessed earn zero credit; transitional hand-read assessments are not replayed.",
+    "observation_date": "First observed in the last first-parent commit of a complete UTC day; reporting and archival may lag implementation.",
+    "completion_events": "Signed changes in recorded completion credit; archival can emit offsetting negative active-layer and positive archived-layer entries, with no net new completion.",
+    "calibration": "Net observed completions (roadmap size frozen at archival) divided by added library LOC over the recorded roadmap history.",
+    "authoring": "Nonnegative net increase in all specification lines or layers over seven complete UTC days, divided by seven."
+  }
+}

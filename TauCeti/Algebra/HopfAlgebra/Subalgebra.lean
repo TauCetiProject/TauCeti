@@ -227,7 +227,7 @@ theorem coe_antipode_apply (x : A) :
   (rfl)
 
 /-- The inclusion of a Hopf subalgebra, as a bialgebra homomorphism. -/
-noncomputable def valBialgHom :
+@[expose] noncomputable def valBialgHom :
     letI : HopfAlgebra R A := hA.hopfAlgebra
     A →ₐc[R] H :=
   letI : HopfAlgebra R A := hA.hopfAlgebra
@@ -290,7 +290,8 @@ noncomputable abbrev ofHopfSubalgebra (hA : A.IsHopfSubalgebra) :
   _root_.CommHopfAlgCat.of R A
 
 /-- The inclusion of a Hopf subalgebra as a morphism of commutative Hopf algebras. -/
-noncomputable def hopfSubalgebraι (hA : A.IsHopfSubalgebra) : ofHopfSubalgebra hA ⟶ H :=
+@[expose] noncomputable def hopfSubalgebraι (hA : A.IsHopfSubalgebra) :
+    ofHopfSubalgebra hA ⟶ H :=
   _root_.CommHopfAlgCat.ofHom hA.valBialgHom
 
 /-- The inclusion morphism of a Hopf subalgebra is the inclusion of the underlying subalgebra. -/

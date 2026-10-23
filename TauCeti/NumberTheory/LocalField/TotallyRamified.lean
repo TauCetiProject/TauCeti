@@ -79,7 +79,7 @@ end Tower
 
 section Units
 
-open ValuativeRel IsLocalRing IsNonarchimedeanLocalField
+open _root_.ValuativeRel IsLocalRing IsNonarchimedeanLocalField
 
 /-- In a totally ramified extension of nonarchimedean local fields, every unit of `𝒪[L]` is the
 image of a unit of `𝒪[K]` times the `n`-th power of a unit of `𝒪[L]`, for every `n` invertible

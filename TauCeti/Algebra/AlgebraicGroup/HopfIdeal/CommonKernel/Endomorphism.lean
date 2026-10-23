@@ -58,6 +58,8 @@ In the namespace `TauCeti.CommHopfAlgCat`:
 
 public section
 
+open _root_.CommHopfAlgCat _root_.CommHopfAlgCat.Hom
+
 open AlgebraicGeometry CategoryTheory
 
 namespace TauCeti.CommHopfAlgCat

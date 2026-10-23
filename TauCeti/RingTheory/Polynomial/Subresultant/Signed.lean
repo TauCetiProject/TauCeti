@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Polynomial.Subresultant.DegreeDrop
+public import TauCeti.RingTheory.Polynomial.Subresultant.DegreeDrop.Basic
 import TauCeti.Data.Nat.Choose.Basic
 
 /-!

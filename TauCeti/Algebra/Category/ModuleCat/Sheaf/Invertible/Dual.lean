@@ -9,7 +9,7 @@ public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Invertible.LocalTrivialit
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.LocalIsomorphism
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Dual
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Restriction.Closed
-public import TauCeti.CategoryTheory.Monoidal.Rigid.Functor
+public import TauCeti.CategoryTheory.Monoidal.Closed.Functor
 
 /-!
 # Duals of invertible sheaves
@@ -89,21 +89,21 @@ instance _root_.SheafOfModules.isIso_evaluation_dual_of_isInvertible
       (unit ((ringCatSheaf R).over (t.X i)))) :=
     isIso_evaluation_dual_of_iso_freePUnit (R := R.over (t.X i))
       (M.over (t.X i)) (t.iso i)
-  have : IsIso (F.ihomComparison M).natTrans := by
+  have : IsIso (F.ihomComparison M) := by
     rw [← overIhomComparison_def]
     infer_instance
-  have : IsIso ((F.ihomComparison M).natTrans.app (unit (ringCatSheaf R))) :=
+  have : IsIso ((F.ihomComparison M).app (unit (ringCatSheaf R))) :=
     NatIso.isIso_app_of_isIso _ _
   have : IsIso (Functor.OplaxMonoidal.η F) := inferInstance
   have : IsIso ((ihom (M.over (t.X i))).map (Functor.OplaxMonoidal.η F)) := inferInstance
-  have : IsIso ((F.ihomComparison M).natTrans.app (unit (ringCatSheaf R)) ≫
+  have : IsIso ((F.ihomComparison M).app (unit (ringCatSheaf R)) ≫
       (ihom (M.over (t.X i))).map (Functor.OplaxMonoidal.η F)) := inferInstance
   have : IsIso (M.over (t.X i) ◁
-      ((F.ihomComparison M).natTrans.app (unit (ringCatSheaf R)) ≫
+      ((F.ihomComparison M).app (unit (ringCatSheaf R)) ≫
         (ihom (M.over (t.X i))).map (Functor.OplaxMonoidal.η F))) := inferInstance
   have h := F.whiskerLeft_ihomComparison_app_unit_comp_map_η_comp_ev M
   have hlocal : IsIso (M.over (t.X i) ◁
-      ((F.ihomComparison M).natTrans.app (unit (ringCatSheaf R)) ≫
+      ((F.ihomComparison M).app (unit (ringCatSheaf R)) ≫
         (ihom (M.over (t.X i))).map (Functor.OplaxMonoidal.η F)) ≫
       (ihom.ev (M.over (t.X i))).app (unit ((ringCatSheaf R).over (t.X i)))) :=
     IsIso.comp_isIso' inferInstance heval

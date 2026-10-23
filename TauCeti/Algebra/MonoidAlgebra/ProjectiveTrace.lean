@@ -144,7 +144,8 @@ theorem trace_ofModule'_eq_zero_of_dvd_orderOf (hp : ¬IsUnit (p : A)) {g : G}
       φ (single q' (1 : A)) • (single s (1 : A) : MonoidAlgebra A G) • x
     rw [← mul_smul]
     simp [φ, q', single_mul_single, hsq.eq]
-  have hm : IsUnit (m : A) := IsLocalRing.isUnit_natCast_of_not_dvd Fact.out hp hpm
+  have hm : IsUnit (m : A) :=
+    (Nat.coprime_comm.mp ((Nat.Prime.coprime_iff_not_dvd Fact.out).mpr hpm)).isUnit_natCast hp
   have hq' : q' ≠ 1 := fun h ↦ hq1 (congrArg Subtype.val h)
   have : Fintype Q := Fintype.ofFinite Q
   rw [hg', LinearMap.trace_restrictScalars_smul_of_pow_eq_one S (MonoidAlgebra.lift A A Q 1) hm hS,

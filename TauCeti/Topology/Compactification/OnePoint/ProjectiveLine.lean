@@ -10,6 +10,8 @@ public import Mathlib.Topology.Compactification.OnePoint.ProjectiveLine
 -- `PGL(2, K)` occurs in the statements.
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Projective
 public import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup.FinTwo
+-- `sl2zToPSL2R` occurs in `TauCeti.sl2zToPSL2R_smul_infty_eq_infty_iff`.
+public import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
 
 /-!
 # Möbius transformations of the projective line
@@ -50,7 +52,9 @@ stabilizer of a cusp, moved to `∞`, consists of translations.
 * `OnePoint.instMulActionPSL`: the action of `PSL(2, K)` on `OnePoint K`, with `pslMk_smul`.
 * `Matrix.ProjectiveSpecialLinearGroup.mk_smul_zero_eq_infty_iff`,
   `mk_smul_infty_eq_infty_iff`, `mk_smul_zero_eq_coe_iff`, `mk_smul_infty_eq_coe_iff`: where the
-  class of `!![a, b; c, d]` sends the points `0` and `∞`, in terms of its entries.
+  class of `!![a, b; c, d]` sends the points `0` and `∞`, in terms of its entries, and
+  `TauCeti.sl2zToPSL2R_smul_infty_eq_infty_iff`: the image of `g ∈ SL(2, ℤ)` in `PSL(2, ℝ)` fixes
+  `∞` exactly when `g 1 0 = 0`.
 * `Matrix.ProjectiveSpecialLinearGroup.IsParabolic.smul_eq_self_iff`: a parabolic element fixes
   a point exactly when it is `parabolicFixedPoint g` (in characteristic other than two).
 * `Matrix.ProjectiveSpecialLinearGroup.isParabolic_iff_exists_eq_upperRightHom`: an element
@@ -414,3 +418,15 @@ theorem isParabolic_iff_exists_conj_upperRightHom [NeZero (2 : K)] {g : PSL(2, K
   exact ⟨σ, x, hx, by rw [← hgx]; group⟩
 
 end Matrix.ProjectiveSpecialLinearGroup
+
+namespace TauCeti
+
+open Matrix.ProjectiveSpecialLinearGroup OnePoint
+
+/-- An element of `SL(2, ℤ)` fixes `∞ ∈ OnePoint ℝ` exactly when its lower-left entry vanishes. -/
+theorem sl2zToPSL2R_smul_infty_eq_infty_iff (g : SL(2, ℤ)) :
+    sl2zToPSL2R g • (∞ : OnePoint ℝ) = ∞ ↔ g 1 0 = 0 := by
+  rw [sl2zToPSL2R_apply, mk_smul_infty_eq_infty_iff]
+  simp
+
+end TauCeti

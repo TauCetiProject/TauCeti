@@ -35,7 +35,7 @@ of the two subgroups, whose types differ. The case used by dimension shifting is
 
 The topological input is that `U` is relatively compact in `G`, `IsCompact (closure U)`: a locally
 constant function on `G` is then locally constant under right translation uniformly in the
-translating element `u ∈ U` (`TauCeti.exists_isOpen_forall_mem_mul_right_eq`), which is what makes
+translating element `u ∈ U` (`IsLocallyConstant.exists_isOpen_forall_mem_mul_right_eq`), which makes
 `g ↦ (u ↦ φ (u * g))` locally constant. In a compact group, as in the profinite setting, every
 subgroup is relatively compact.
 
@@ -95,7 +95,7 @@ def transEquiv : DiscreteCoind G U (DiscreteCoind U V A) ≃+ DiscreteCoind G W 
       -- `φ` is locally constant under right translation uniformly in `u ∈ U`, the closure of `U`
       -- being compact
       obtain ⟨N, hN, hgN, h⟩ :=
-        exists_isOpen_forall_mem_mul_right_eq (isLocallyConstant φ) hU continuous_id g
+        (isLocallyConstant φ).exists_isOpen_forall_mem_mul_right_eq hU g continuous_id.continuousAt
       exact ⟨N, hN, hgN, fun g' hg' => ext fun u => by
         rw [mk_apply, mk_apply]; exact h g' hg' u (subset_closure u.2)⟩)
     (fun u₀ g => ext fun u => by

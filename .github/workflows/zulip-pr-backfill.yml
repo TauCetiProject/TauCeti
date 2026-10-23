@@ -13,6 +13,11 @@ on:
         required: true
         default: true
         type: boolean
+      bors_only:
+        description: "Repair only closed PRs whose titles have the bors merge marker"
+        required: true
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -42,6 +47,12 @@ jobs:
       - uses: actions/checkout@v4
         with:
           sparse-checkout: scripts/pr_status
+      - name: Prepare pinned shared tools
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+        with:
+          tools-repository: TauCetiProject/TauCetiTools
+          tools-ref: ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+          project-directory: .
       - name: Reconcile all existing PR posts
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
@@ -49,6 +60,7 @@ jobs:
           ZULIP_EMAIL: ${{ secrets.ZULIP_EMAIL }}
           ZULIP_SITE: https://leanprover.zulipchat.com
           DRY_RUN: ${{ inputs.dry_run }}
+          BORS_ONLY: ${{ inputs.bors_only }}
         run: |
           set -euo pipefail
           args=(--strict)
@@ -68,4 +80,6 @@ jobs:
               author: .user.login,
               roadmaps: [.labels[].name | select(startswith("roadmap/"))]
             }' |
+            jq -c --argjson bors_only "$BORS_ONLY" \
+              'select(($bors_only | not) or (.state == "closed" and (.title | test("^\\[Merged by Bors\\] - "; "i"))))' |
             python3 scripts/pr_status/zulip.py backfill "${args[@]}"

@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.Conformal.Jordan.UpperHalfPlane
 public import Mathlib.Topology.Compactification.OnePoint.Basic
 import Mathlib.Topology.Bornology.BoundedOperation
+import TauCeti.Analysis.Complex.PlaneSeparation.RiemannSphere
 
 /-!
 # Unbounded Jordan domains
@@ -17,9 +18,11 @@ together with the point at infinity, is a Jordan curve in `OnePoint ℂ`: for in
 half-plane, a sector, or an unbounded polygonal domain.  Inverting such a domain about a point `q`
 outside its closure, `z ↦ (z - q)⁻¹`, gives a bounded domain whose frontier is the inverted
 frontier of `U` together with `0`, the image of infinity; so it is a bounded Jordan domain of the
-plane.  Carathéodory's theorem for that bounded domain, read back through the inversion, gives the
-Riemann map of `U` on the closed upper half-plane: a homeomorphism onto the closure of `U` which
-sends the real line onto the frontier and tends to infinity at infinity.
+plane.  Such a point exists by Jordan separation on the Riemann sphere
+(`TauCeti.exists_notMem_closure_of_isJordanCurve_insert_infty`).  Carathéodory's theorem for that
+bounded domain, read back through the inversion, gives the Riemann map of `U` on the closed upper
+half-plane: a homeomorphism onto the closure of `U` which sends the real line onto the frontier
+and tends to infinity at infinity.
 
 ## Main statements
 
@@ -57,7 +60,8 @@ theorem isOpen_image_inv_sub (hUo : IsOpen U) (hqU : q ∉ U) :
     rw [image_eq_preimage_of_inverse (f := fun z : ℂ => (z - q)⁻¹)
       (g := fun w : ℂ => q + w⁻¹)
       (by intro z; simp) (by intro w; simp)]
-    exact (inter_eq_right.mpr fun w hw (hw0 : w = 0) => hqU (by simpa [hw0] using hw)).symm
+    exact (inter_eq_right (s := {0}ᶜ).mpr fun w hw (hw0 : w = 0) =>
+      hqU (by simpa [hw0] using hw)).symm
   rw [this]
   exact (continuousOn_const.add continuousOn_inv₀).isOpen_inter_preimage isOpen_compl_singleton hUo
 
@@ -141,54 +145,61 @@ theorem frontier_image_inv_sub (hUo : IsOpen U) (hq : q ∉ closure U) (hUb : ¬
     hUo.frontier_eq, image_sdiff (f := fun z : ℂ => (z - q)⁻¹)
       (inv_injective.comp (sub_left_injective (b := q)))]
 
-/-- **Inverting an unbounded Jordan domain gives a bounded Jordan domain.**  If the frontier of an
-open unbounded set `U`, together with the point at infinity, is a Jordan curve of the Riemann sphere
-`OnePoint ℂ`, then the frontier of the inversion of `U` about a point `q` outside its closure is a
-Jordan curve of the plane, passing through `0`. -/
-theorem isJordanCurve_frontier_image_inv_sub (hUo : IsOpen U) (hq : q ∉ closure U)
-    (hUJ : IsJordanCurve (insert ∞ (((↑) : ℂ → OnePoint ℂ) '' frontier U))) :
-    IsJordanCurve (frontier ((fun z : ℂ => (z - q)⁻¹) '' U)) := by
-  -- the inversion of the Riemann sphere, sending infinity to `0`, carries the curve onto the
-  -- frontier of the inverted domain
+/-- Inverting the finite part of a spherical Jordan curve through infinity about a point off
+that curve gives a planar Jordan curve through `0`. No domain or frontier identification is
+needed. -/
+theorem isJordanCurve_insert_zero_image_inv_sub {S : Set ℂ} (hq : q ∉ S)
+    (hS : IsJordanCurve (insert ∞ (((↑) : ℂ → OnePoint ℂ) '' S))) :
+    IsJordanCurve (insert 0 ((fun z : ℂ => (z - q)⁻¹) '' S)) := by
   let g : OnePoint ℂ → ℂ := fun x => x.elim 0 fun z => (z - q)⁻¹
-  have himg : g '' insert ∞ (((↑) : ℂ → OnePoint ℂ) '' frontier U) =
-      insert 0 ((fun z : ℂ => (z - q)⁻¹) '' frontier U) := by
+  have himg : g '' insert ∞ (((↑) : ℂ → OnePoint ℂ) '' S) =
+      insert 0 ((fun z : ℂ => (z - q)⁻¹) '' S) := by
     rw [image_insert_eq, image_image]
     rfl
-  rw [frontier_image_inv_sub hUo hq (not_isBounded_of_isJordanCurve_frontier hUJ), ← himg]
-  refine hUJ.image (fun x hx => ContinuousAt.continuousWithinAt ?_) ?_
+  rw [← himg]
+  refine hS.image (fun x hx => ContinuousAt.continuousWithinAt ?_) ?_
   · cases x with
     | infty =>
       refine OnePoint.continuousAt_infty'.mpr ?_
       rw [coclosedCompact_eq_cocompact, ← Metric.cobounded_eq_cocompact]
       exact tendsto_inv₀_cobounded.comp (tendsto_sub_const_cobounded q)
     | coe z =>
-      have hz : z ∈ frontier U := by simpa using hx
+      have hz : z ∈ S := by simpa using hx
       exact OnePoint.continuousAt_coe.mpr (ContinuousAt.inv₀ (by fun_prop)
-        (sub_ne_zero.mpr fun h => hq (frontier_subset_closure (h ▸ hz))))
+        (sub_ne_zero.mpr fun h => hq (h ▸ hz)))
   · refine (injOn_insert OnePoint.infty_notMem_image_coe).mpr
       ⟨InjOn.image_of_comp (inv_injective.comp (sub_left_injective (b := q))).injOn, ?_⟩
     rintro ⟨_, ⟨z, hz, rfl⟩, hz0⟩
     have hzq : z = q := by simpa [g, sub_eq_zero] using hz0
-    exact hq (frontier_subset_closure (hzq ▸ hz))
+    exact hq (hzq ▸ hz)
+
+/-- **Inverting an unbounded Jordan domain gives a bounded Jordan domain.** If the frontier of an
+open set `U`, together with infinity, is a spherical Jordan curve, inversion about a point outside
+its closure gives a planar Jordan frontier through `0`. -/
+theorem isJordanCurve_frontier_image_inv_sub (hUo : IsOpen U) (hq : q ∉ closure U)
+    (hUJ : IsJordanCurve (insert ∞ (((↑) : ℂ → OnePoint ℂ) '' frontier U))) :
+    IsJordanCurve (frontier ((fun z : ℂ => (z - q)⁻¹) '' U)) := by
+  rw [frontier_image_inv_sub hUo hq (not_isBounded_of_isJordanCurve_frontier hUJ)]
+  exact isJordanCurve_insert_zero_image_inv_sub
+    (fun h => hq (frontier_subset_closure h)) hUJ
 
 /-- **Carathéodory's theorem on the closed upper half-plane for an unbounded Jordan domain.**  Let
-`U` be a connected open subset of `ℂ` with a point `q` outside its closure, and suppose that
-the frontier of `U` together with the point at infinity is a Jordan curve of the Riemann sphere, so
-that `U` is unbounded.  Then there is a map which is continuous on the closed upper half-plane,
-holomorphic on the open upper half-plane, a bijection from the open upper half-plane onto `U`, from
-the closed upper half-plane onto `closure U` and from the real line onto `frontier U`, and which
-tends to infinity at infinity within the closed half-plane.
-
-The Jordan curve theorem on the sphere would supply the exterior point `q` from the other
-hypotheses; here it is assumed. -/
+`U` be a connected open subset of `ℂ`, and suppose that the frontier of `U` together with the
+point at infinity is a Jordan curve of the Riemann sphere, so that `U` is unbounded.  Then there is
+a map which is continuous on the closed upper half-plane, holomorphic on the open upper half-plane,
+a bijection from the open upper half-plane onto `U`, from the closed upper half-plane onto
+`closure U` and from the real line onto `frontier U`, and which
+tends to infinity at infinity within the closed half-plane. -/
 theorem exists_continuousOn_bijOn_upperHalfPlaneSet_of_isJordanCurve_insert_infty (hUo : IsOpen U)
-    (hUc : IsConnected U) (hq : q ∉ closure U)
+    (hUc : IsConnected U)
     (hUJ : IsJordanCurve (insert ∞ (((↑) : ℂ → OnePoint ℂ) '' frontier U))) :
     ∃ f : ℂ → ℂ, ContinuousOn f {z | 0 ≤ z.im} ∧ DifferentiableOn ℂ f upperHalfPlaneSet ∧
       BijOn f upperHalfPlaneSet U ∧ BijOn f {z | 0 ≤ z.im} (closure U) ∧
       BijOn f {z | z.im = 0} (frontier U) ∧
       Tendsto f (cobounded ℂ ⊓ 𝓟 {z | 0 ≤ z.im}) (cobounded ℂ) := by
+  -- invert about a point `q` outside the closure of `U`
+  obtain ⟨q, hq⟩ :=
+    exists_notMem_closure_of_isJordanCurve_insert_infty hUo hUc.isPreconnected hUJ
   have hqU : q ∉ U := fun h => hq (subset_closure h)
   have hUb := not_isBounded_of_isJordanCurve_frontier hUJ
   -- the inverted domain is a bounded Jordan domain with `0` on its frontier
@@ -229,7 +240,7 @@ theorem exists_continuousOn_bijOn_upperHalfPlaneSet_of_isJordanCurve_insert_inft
 infinity to infinity, together with real prevertices `a i` mapping to prescribed distinct points
 `v i` of the frontier of `U`. -/
 theorem exists_prevertices_of_isJordanCurve_insert_infty {ι : Type*} (hUo : IsOpen U)
-    (hUc : IsConnected U) (hq : q ∉ closure U)
+    (hUc : IsConnected U)
     (hUJ : IsJordanCurve (insert ∞ (((↑) : ℂ → OnePoint ℂ) '' frontier U))) {v : ι → ℂ}
     (hv : Injective v) (hvU : ∀ i, v i ∈ frontier U) :
     ∃ f : ℂ → ℂ, ∃ a : ι → ℝ, Injective a ∧
@@ -237,7 +248,7 @@ theorem exists_prevertices_of_isJordanCurve_insert_infty {ι : Type*} (hUo : IsO
       InjOn f {z : ℂ | 0 ≤ z.im} ∧ BijOn f upperHalfPlaneSet U ∧ (∀ i, f (a i) = v i) ∧
       Tendsto f (cobounded ℂ ⊓ 𝓟 {z : ℂ | 0 ≤ z.im}) (cobounded ℂ) := by
   obtain ⟨f, hfc, hfd, hfH, hfcl, hfR, hfinf⟩ :=
-    exists_continuousOn_bijOn_upperHalfPlaneSet_of_isJordanCurve_insert_infty hUo hUc hq hUJ
+    exists_continuousOn_bijOn_upperHalfPlaneSet_of_isJordanCurve_insert_infty hUo hUc hUJ
   obtain ⟨a, ha, hfa⟩ := exists_injective_forall_eq_of_surjOn_im_eq_zero hfR.surjOn hv hvU
   exact ⟨f, a, ha, hfd, hfc, hfcl.injOn, hfH, hfa, hfinf⟩
 

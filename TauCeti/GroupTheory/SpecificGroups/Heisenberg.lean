@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.CharP.Defs
 public import Mathlib.GroupTheory.PGroup
 public import TauCeti.GroupTheory.PLowerCentralSeries
+public import TauCeti.GroupTheory.ProperPower
 
 /-!
 # The Heisenberg group over a ring
@@ -30,6 +31,8 @@ group.
 
 * `TauCeti.HeisenbergGroup`: the Heisenberg group over a ring, with its group structure.
 * `TauCeti.HeisenbergGroup.zAxis`: the central subgroup of elements `(0, 0, z)`.
+* `TauCeti.HeisenbergGroup.map`: the homomorphism induced by a ring homomorphism, with
+  `map_id` and `map_comp`.
 
 ## Main results
 
@@ -158,6 +161,38 @@ theorem commutatorElement_eq_one_of_mem_zAxis {a : HeisenbergGroup R} (ha : a �
   commutatorElement_eq_one_iff_mul_comm.mpr
     ((Subgroup.mem_center_iff.mp (zAxis_le_center ha) b).symm)
 
+/-- A ring homomorphism `f : R →+* S` induces the group homomorphism
+`HeisenbergGroup R →* HeisenbergGroup S` applying `f` to each coordinate. -/
+def map {S : Type*} [Ring S] (f : R →+* S) : HeisenbergGroup R →* HeisenbergGroup S where
+  toFun a := ⟨f a.x, f a.y, f a.z⟩
+  map_one' := by ext <;> simp
+  map_mul' a b := by ext <;> simp
+
+@[simp]
+theorem map_apply {S : Type*} [Ring S] (f : R →+* S) (a : HeisenbergGroup R) :
+    map f a = ⟨f a.x, f a.y, f a.z⟩ :=
+  (rfl)
+
+/-- The identity ring homomorphism induces the identity of the Heisenberg group. -/
+@[simp]
+theorem map_id : map (RingHom.id R) = MonoidHom.id (HeisenbergGroup R) := by
+  ext <;> simp
+
+/-- The homomorphism induced by a composite of ring homomorphisms is the composite of the induced
+homomorphisms. -/
+@[simp]
+theorem map_comp {S T : Type*} [Ring S] [Ring T] (g : S →+* T) (f : R →+* S) :
+    map (g.comp f) = (map g).comp (map f) := by
+  ext <;> simp
+
+/-- The homomorphism induced by a surjective ring homomorphism is surjective. -/
+theorem map_surjective {S : Type*} [Ring S] {f : R →+* S} (hf : Function.Surjective f) :
+    Function.Surjective (map f) := fun b ↦ by
+  obtain ⟨x, hx⟩ := hf b.x
+  obtain ⟨y, hy⟩ := hf b.y
+  obtain ⟨z, hz⟩ := hf b.z
+  exact ⟨⟨x, y, z⟩, by ext <;> simp [hx, hy, hz]⟩
+
 section CharP
 
 variable (p : ℕ) [CharP R p]
@@ -195,6 +230,24 @@ end CharP
 /-- The Heisenberg group over `ZMod p` is a `p`-group; for `p > 0` it has order `p ^ 3`. -/
 theorem isPGroup_zmod (p : ℕ) : IsPGroup p (HeisenbergGroup (ZMod p)) :=
   IsPGroup.of_card (n := 3) (by rw [card_eq, Nat.card_zmod])
+
+/-- The central element with third coordinate one in the integer Heisenberg group is not a
+proper power. -/
+theorem not_isProperPower_mk_zero_zero_one :
+    ¬ Group.IsProperPower (⟨0, 0, 1⟩ : HeisenbergGroup ℤ) := by
+  intro h
+  obtain ⟨y, n, hn, heq⟩ := Group.isProperPower_iff.mp h
+  have hx := congrArg HeisenbergGroup.x heq
+  have hy := congrArg HeisenbergGroup.y heq
+  simp only [pow_eq, Int.nsmul_eq_mul, zero_eq_mul, Int.natCast_eq_zero] at hx hy
+  have hxy : y.x = 0 ∧ y.y = 0 := by
+    constructor <;> omega
+  have hz := congrArg HeisenbergGroup.z heq
+  simp only [pow_eq, hxy.1, nsmul_zero, hxy.2,
+    Int.nsmul_eq_mul, mul_zero, add_zero] at hz
+  have hdiv' : n ∣ 1 := Int.natCast_dvd_natCast.mp ⟨y.z, hz⟩
+  have hle : n ≤ 1 := Nat.le_of_dvd (by omega) hdiv'
+  omega
 
 end HeisenbergGroup
 

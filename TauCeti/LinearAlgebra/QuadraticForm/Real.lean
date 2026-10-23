@@ -8,6 +8,8 @@ module
 public import Mathlib.LinearAlgebra.QuadraticForm.Real
 import Mathlib.Topology.Order.IntermediateValue
 import TauCeti.Analysis.Real.Sqrt
+import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Basic
+import TauCeti.LinearAlgebra.QuadraticForm.Standard
 public import TauCeti.Data.SignType.Cardinality
 public import TauCeti.LinearAlgebra.QuadraticForm.Isometry
 public import TauCeti.LinearAlgebra.QuadraticForm.Signature
@@ -35,6 +37,11 @@ criteria for real orthogonal groups with the usual order-theoretic notion of def
 
 * `QuadraticForm.anisotropic_iff_posDef_or_negDef`: real anisotropic forms are exactly the
   positive and negative definite forms, including forms on the zero space.
+* `QuadraticForm.anisotropic_iff_sigNeg_eq_zero_or_sigPos_eq_zero`: a real form with trivial
+  radical on a finite-dimensional space is anisotropic exactly when one of its two indices of
+  inertia vanishes.
+* `QuadraticMap.anisotropic_weightedSumSquares_iff`: a real diagonal form is anisotropic exactly
+  when its coefficients are all positive or all negative.
 * `QuadraticMap.map_inv_sqrt_smul_eq_one`: a vector of positive quadratic value can be
   normalized to value one by inverse-square-root scaling. This normalization feeds the
   reflection-pair construction for compact real Clifford forms.
@@ -131,6 +138,24 @@ theorem anisotropic_iff_posDef_or_negDef (Q : _root_.QuadraticForm ℝ M) :
   · rintro (hQ | hQ)
     · exact hQ.anisotropic
     · exact fun x hx ↦ hQ.anisotropic x (by simpa using hx)
+
+/-- A real quadratic form with trivial radical on a finite-dimensional space is anisotropic if and
+only if one of its two indices of inertia vanishes: an indefinite regular real form is isotropic. -/
+theorem anisotropic_iff_sigNeg_eq_zero_or_sigPos_eq_zero [FiniteDimensional ℝ M]
+    {Q : _root_.QuadraticForm ℝ M} (hQ : Q.radical = ⊥) :
+    Q.Anisotropic ↔ sigNeg Q = 0 ∨ sigPos Q = 0 := by
+  rw [anisotropic_iff_posDef_or_negDef, posDef_iff_sigNeg_eq_zero_and_radical_eq_bot,
+    posDef_iff_sigNeg_eq_zero_and_radical_eq_bot, sigNeg_neg, radical_neg]
+  simp [hQ]
+
+/-- A real diagonal form `⟨b₁, …, bₙ⟩` is anisotropic exactly when its coefficients are all
+positive or all negative. No nonvanishing hypothesis is needed: a zero coefficient makes the
+corresponding basis vector isotropic and rules out both alternatives. -/
+theorem _root_.QuadraticMap.anisotropic_weightedSumSquares_iff {ι : Type*} [Fintype ι]
+    (b : ι → ℝ) : (weightedSumSquares ℝ b).Anisotropic ↔ (∀ i, 0 < b i) ∨ ∀ i, b i < 0 := by
+  rw [anisotropic_iff_posDef_or_negDef, neg_weightedSumSquares, posDef_weightedSumSquares_iff,
+    posDef_weightedSumSquares_iff]
+  simp only [Pi.neg_apply, Left.neg_pos_iff]
 
 end Definiteness
 
@@ -306,3 +331,36 @@ theorem exists_nondegenerate_and_sigPos_eq_and_sigNeg_eq {n p : ℕ} (h : p ≤ 
     by rw [Equivalent.sigNeg_eq ⟨f⟩, sigNeg_realSignatureForm]⟩
 
 end QuadraticForm
+
+namespace TauCeti
+
+variable {V : Type*} [AddCommGroup V] [Module ℝ V] [FiniteDimensional ℝ V]
+  {Q : _root_.QuadraticForm ℝ V}
+
+/-- A positive definite real quadratic form is isometric to the standard sum-of-squares form
+in its dimension. -/
+theorem nonempty_isometryEquiv_toQuadraticForm'_one_of_posDef (hQ : Q.PosDef) :
+    Nonempty (Q.IsometryEquiv
+      (Matrix.toQuadraticForm' (1 : Matrix (Fin (Module.finrank ℝ V))
+        (Fin (Module.finrank ℝ V)) ℝ))) := by
+  obtain ⟨w, hw, ⟨e⟩⟩ := Q.equivalent_one_zero_neg_one_weighted_sum_squared
+  have hwpos (i : Fin (Module.finrank ℝ V)) : 0 < w i := by
+    have h := hQ (e.symm (Pi.single i 1)) (by simp)
+    rw [← e.map_app] at h
+    simpa [QuadraticMap.weightedSumSquares_apply, Pi.single_apply,
+      Finset.sum_ite_eq'] using h
+  have hwone : w = 1 := funext fun i ↦ by
+    rcases hw i with h | h | h
+    · exfalso
+      have hp := hwpos i
+      norm_num [h] at hp
+    · exact False.elim (by simpa [h] using hwpos i)
+    · exact h
+  have hstandard : QuadraticMap.weightedSumSquares ℝ w =
+      Matrix.toQuadraticForm' (1 : Matrix (Fin (Module.finrank ℝ V))
+        (Fin (Module.finrank ℝ V)) ℝ) := by
+    rw [hwone, weightedSumSquares_eq_toQuadraticForm_diagonal, Matrix.diagonal_one']
+  rw [hstandard] at e
+  exact ⟨e⟩
+
+end TauCeti

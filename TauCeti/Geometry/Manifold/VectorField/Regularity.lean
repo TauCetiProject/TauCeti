@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
+public import Mathlib.Geometry.Manifold.VectorField.Pullback
+public import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import Mathlib.Geometry.Manifold.VectorBundle.Tangent
 
 /-!
@@ -18,8 +20,8 @@ manifold differential of a function to tangent vectors whose base point varies.
 
 * `contMDiff_tangentBundle_mk_zero`: smoothness of the zero tangent vector over a varying point.
 * `contMDiff_tangentBundle_mk_constBase`: smoothness of a varying model vector over a fixed point.
-* `mvfderiv_apply_eq_mfderiv_apply`: identifies `mvfderiv` with `mfderiv` when the target is a
-  normed vector space.
+* `TauCeti.mdifferentiableAt_mvfderiv_apply`: a directional derivative of a `C²` function
+  along a differentiable vector field is differentiable at the point.
 * `ContMDiff.contMDiff_mvfderiv_apply`: applying the differential of a `C^n` function on the
   tangent bundle is `C^m` when `m + 1 ≤ n`.
 * `ContMDiffOn.contMDiffOn_mvfderiv_apply`: the derivative of a `C^n` function along a `C^m`
@@ -27,6 +29,15 @@ manifold differential of a function to tangent vectors whose base point varies.
 * `ContMDiffOn.contMDiffOn_totalSpaceMk_mfderiv_apply`: the lifted directional derivative
   `z ↦ (f z, df_z ξ)` of a `C^n` map from an open subset of a normed space into a manifold is
   `C^m` into the tangent bundle, when `m + 1 ≤ n`.
+* `VectorField.mpullbackWithin_extChartAt_symm_apply`: inverse-chart pullbacks are the
+  tangent-bundle coordinate expressions of vector fields.
+* `VectorField.mpullbackWithin_extChartAt_symm_self`: at the chart centre, the inverse-chart
+  pullback is the value of the field.
+* `MDifferentiableWithinAt.differentiableWithinAt_mpullbackWithin_extChartAt_symm`:
+  differentiability of these coordinate expressions without a completeness assumption.
+* `TauCeti.mdifferentiableWithinAt_vectorSpace_iff_differentiableWithinAt` and its `At` and `On`
+  forms: a vector field on a normed space is differentiable in the manifold sense exactly when it
+  is differentiable as a map of the space.
 
 ## References
 
@@ -39,12 +50,24 @@ public section
 open Bundle Manifold Set
 open scoped ContDiff Manifold
 
+section
+
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
   {n m : ℕ∞ω}
+
+/-- A constant model vector gives a smooth section of the tangent bundle of a model space. -/
+theorem contMDiff_tangentBundleModelSpaceHomeomorph_symm_prodMk_const
+    (I : ModelWithCorners 𝕜 E H) (v : E) (n : ℕ∞ω) :
+    ContMDiff I I.tangent n
+      (fun x : H ↦ (tangentBundleModelSpaceHomeomorph I).symm (x, v)) := by
+  have hpair : ContMDiff I I.tangent n (fun x : H ↦ (x, v)) :=
+    contMDiff_id.prodMk contMDiff_const
+  rw [chartedSpaceSelf_prod] at hpair
+  exact contMDiff_tangentBundleModelSpaceHomeomorph_symm.comp hpair
 
 section TangentBundleInputs
 
@@ -80,15 +103,6 @@ theorem contMDiff_tangentBundle_mk_constBase {v : N → E}
     exact hv p
 
 end TangentBundleInputs
-
-omit [IsManifold I 1 M] in
-/-- For a normed vector-space target, the tangent-space identification in `mvfderiv` is the
-canonical one, so evaluating it agrees with evaluating `mfderiv`. -/
-@[simp] theorem mvfderiv_apply_eq_mfderiv_apply (f : M → F) (x : M) (v : TangentSpace I x) :
-    mvfderiv I f x v = mfderiv I 𝓘(𝕜, F) f x v := by
-  rw [mvfderiv, ContinuousLinearMap.comp_apply]
-  -- `fromTangentSpace` is Mathlib's explicit interface for this canonical identification.
-  rfl
 
 /-- The map that applies the differential of a `C^n` function to tangent vectors is `C^m` on the
 tangent bundle when `m + 1 ≤ n`. -/
@@ -158,3 +172,144 @@ theorem ContMDiffOn.contMDiffOn_totalSpaceMk_mfderiv_apply {f : F → M} {U : Se
     (fun z hz ↦ hz)
   refine hcomp.congr fun z hz ↦ ?_
   simp only [Function.comp_apply, tangentMapWithin, mfderivWithin_of_isOpen hU hz]
+
+namespace TauCeti
+
+/-- A vector field on a normed space is differentiable in the manifold sense iff it is
+differentiable in the vector space sense. This is the differentiable counterpart of Mathlib's
+`contMDiffWithinAt_vectorSpace_iff_contDiffWithinAt`. -/
+theorem mdifferentiableWithinAt_vectorSpace_iff_differentiableWithinAt
+    {V : Π x : E, TangentSpace 𝓘(𝕜, E) x} {s : Set E} {x : E} :
+    MDiffAt[s] (T% V) x ↔ DifferentiableWithinAt 𝕜 V s x := by
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · exact MDifferentiableWithinAt.differentiableWithinAt <|
+      ((contMDiff_snd_tangentBundle_modelSpace E 𝓘(𝕜, E) (n := 1)).mdifferentiable one_ne_zero
+        _).comp_mdifferentiableWithinAt _ h
+  · refine (mdifferentiableWithinAt_totalSpace ..).2 ⟨mdifferentiableWithinAt_id, ?_⟩
+    convert! h.mdifferentiableWithinAt with y
+    simp
+
+/-- A vector field on a normed space is differentiable in the manifold sense iff it is
+differentiable in the vector space sense. -/
+theorem mdifferentiableAt_vectorSpace_iff_differentiableAt
+    {V : Π x : E, TangentSpace 𝓘(𝕜, E) x} {x : E} :
+    MDiffAt (T% V) x ↔ DifferentiableAt 𝕜 V x :=
+  mdifferentiableWithinAt_univ.symm.trans
+    (mdifferentiableWithinAt_vectorSpace_iff_differentiableWithinAt.trans
+      differentiableWithinAt_univ)
+
+/-- A vector field on a normed space is differentiable in the manifold sense iff it is
+differentiable in the vector space sense. -/
+theorem mdifferentiableOn_vectorSpace_iff_differentiableOn
+    {V : Π x : E, TangentSpace 𝓘(𝕜, E) x} {s : Set E} :
+    MDiff[s] (T% V) ↔ DifferentiableOn 𝕜 V s := by
+  simp only [MDifferentiableOn, DifferentiableOn,
+    mdifferentiableWithinAt_vectorSpace_iff_differentiableWithinAt]
+
+end TauCeti
+
+namespace VectorField
+
+variable {V : (x : M) → TangentSpace I x} {s : Set M} {x : M}
+
+/-- The pullback of a vector field along an inverse extended chart is its tangent-bundle
+coordinate expression on the chart source. -/
+theorem mpullbackWithin_extChartAt_symm_apply (V : (x : M) → TangentSpace I x) {y : M}
+    (hy : y ∈ (extChartAt I x).source) :
+    VectorField.mpullbackWithin 𝓘(𝕜, E) I (extChartAt I x).symm V (range I)
+      (extChartAt I x y) =
+        (trivializationAt E (TangentSpace I) x (V y)).2 := by
+  rw [VectorField.mpullbackWithin_apply, (extChartAt I x).left_inv hy]
+  apply (isInvertible_mfderivWithin_extChartAt_symm
+    ((extChartAt I x).map_source hy)).inverse_apply_eq.mpr
+  have hy' : y ∈ (chartAt H x).source := by simpa only [extChartAt_source] using hy
+  rw [← TangentBundle.symmL_trivializationAt hy']
+  rw [← Trivialization.continuousLinearMapAt_apply_of_mem (R := 𝕜)
+    (trivializationAt E (TangentSpace I) x)
+    (by simpa using hy')]
+  exact (Trivialization.symmL_continuousLinearMapAt (R := 𝕜)
+    (trivializationAt E (TangentSpace I) x) (by simpa using hy') _).symm
+
+/-- At the centre of the preferred chart, the inverse-chart pullback of a vector field is the
+value of the field. -/
+theorem mpullbackWithin_extChartAt_symm_self (V : (x : M) → TangentSpace I x) (x : M) :
+    VectorField.mpullbackWithin 𝓘(𝕜, E) I (extChartAt I x).symm V (range I)
+      (extChartAt I x x) = V x := by
+  rw [VectorField.mpullbackWithin_apply, extChartAt_to_inv]
+  exact mfderivWithin_extChartAt_symm_inverse_apply _
+
+end VectorField
+
+open Filter
+open scoped Topology
+
+variable {V : (x : M) → TangentSpace I x} {s : Set M} {x : M}
+
+/-- Differentiability of a vector field as a tangent-bundle section implies differentiability
+of its inverse-chart pullback within the corresponding chart set. No completeness of the model
+space is needed: the pullback agrees with the vector bundle's preferred fibre coordinates. -/
+theorem MDifferentiableWithinAt.differentiableWithinAt_mpullbackWithin_extChartAt_symm
+    (hV : MDifferentiableWithinAt I I.tangent
+      (fun y ↦ (V y : TangentBundle I M)) s x) :
+    DifferentiableWithinAt 𝕜
+      (VectorField.mpullbackWithin 𝓘(𝕜, E) I (extChartAt I x).symm V (range I))
+      ((extChartAt I x).symm ⁻¹' s ∩ range I) (extChartAt I x x) := by
+  have hc := (mdifferentiableWithinAt_section I V).mp hV
+  have hd := hc.differentiableWithinAt_writtenInExtChartAt
+  simp only [writtenInExtChartAt, extChartAt_model_space_eq_id,
+    PartialEquiv.refl_coe, Function.comp_def, id_eq] at hd
+  have heq : (fun z ↦ (trivializationAt E (TangentSpace I) x
+      (V ((extChartAt I x).symm z))).2) =ᶠ[𝓝[range I] (extChartAt I x x)]
+      VectorField.mpullbackWithin 𝓘(𝕜, E) I (extChartAt I x).symm V (range I) := by
+    filter_upwards [extChartAt_target_mem_nhdsWithin (I := I) x] with z hz
+    have hh := VectorField.mpullbackWithin_extChartAt_symm_apply V ((extChartAt I x).map_target hz)
+    rw [(extChartAt I x).right_inv hz] at hh
+    exact hh.symm
+  exact hd.congr_of_eventuallyEq
+    (heq.symm.filter_mono (nhdsWithin_mono _ inter_subset_right))
+    (by
+      rw [extChartAt_to_inv]
+      exact VectorField.mpullbackWithin_extChartAt_symm_apply V (mem_extChartAt_source x))
+
+end
+
+namespace TauCeti
+
+section DirectionalDerivative
+
+open Filter
+open scoped Topology
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {n : ℕ∞ω}
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  [IsManifold I (minSmoothness 𝕜 2) M]
+
+/-- Let `f` be a vector-valued function that is `C^n` at `x` with `n ≥ minSmoothness 𝕜 2` (so `C²`
+over `ℝ` or `ℂ`), and let `U` be a vector field differentiable at `x`. Then the directional
+derivative `y ↦ df_y (U y)` is differentiable at `x`. -/
+theorem mdifferentiableAt_mvfderiv_apply
+    {f : M → F} {U : ∀ y : M, TangentSpace I y} {x : M}
+    (hf : CMDiffAt n f x) (hn : minSmoothness 𝕜 2 ≤ n)
+    (hU : MDiffAt (fun y ↦ (U y : TangentBundle I M)) x) :
+    MDiffAt (fun y ↦ mvfderiv I f y (U y)) x := by
+  have h2n : (2 : ℕ∞ω) ≤ n :=
+    (le_minSmoothness (𝕜 := 𝕜) (n := (2 : ℕ∞ω))).trans hn
+  have htangent : MDiffAt (fun y ↦ tangentMap I 𝓘(𝕜, F) f
+      (U y : TangentBundle I M)) x :=
+    ((hf.contMDiffAt_tangentMap (m := 1) (by norm_num; exact h2n)).mdifferentiableAt
+      (by norm_num)).comp x hU
+  have hsnd : MDiffAt (fun p : TangentBundle 𝓘(𝕜, F) F ↦ @id F p.2)
+      (tangentMap I 𝓘(𝕜, F) f (U x : TangentBundle I M)) :=
+    (contMDiff_snd_tangentBundle_modelSpace F 𝓘(𝕜, F)
+      (n := 1)).mdifferentiable (by norm_num) |>.mdifferentiableAt
+  apply (hsnd.comp x htangent).congr_of_eventuallyEq
+  filter_upwards with y
+  rw [Function.comp_apply, tangentMap_snd, mvfderiv_apply_eq_mfderiv_apply]
+  rfl
+
+end DirectionalDerivative
+
+end TauCeti

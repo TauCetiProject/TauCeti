@@ -9,18 +9,22 @@ public import TauCeti.RingTheory.DividedPowers.Associative
 public import Mathlib.RingTheory.Nilpotent.Exp
 
 /-!
-# The integral exponential of a nilpotent element
+# Nilpotent exponentials and their integral forms
 
 Let `A` be an associative `ℚ`-algebra and `x : A` a nilpotent element. Mathlib's
-`IsNilpotent.exp x` is the finite sum `∑ i, xⁱ / i!`. This file rewrites that sum in terms of the
+`IsNilpotent.exp x` is the finite sum `∑ i, xⁱ / i!`. It commutes with passage to the opposite
+ring, and exponentiating left or right multiplication by `x` gives multiplication by `exp x`.
+
+This file also rewrites that sum in terms of the
 divided powers `x⁽ⁱ⁾ = xⁱ / i!` of `TauCeti/RingTheory/DividedPowers/Associative.lean`, so that
 
 ```text
 exp (t • x) = ∑ i, tⁱ • x⁽ⁱ⁾
 ```
 
-has *integer* coefficients when `t` is an integer. Consequently `exp (t • x)` lies in any
-additive subgroup containing the divided powers of `x`, and it preserves any additive subgroup of a
+holds for any monoid acting additively by central scalars. When `t` is an integer it has *integer*
+coefficients. Consequently `exp (t • x)` lies in any additive subgroup containing the divided powers
+of `x`, and it preserves any additive subgroup of a
 module that the divided powers of `x` preserve. The map `t ↦ exp (t • x)` is a homomorphism from the
 additive group of integers to `Aˣ`, whose values lie in such an additive subgroup.
 
@@ -31,6 +35,9 @@ the exponentials above preserve an integral lattice. The application to the Kost
 
 ## Main results
 
+* `IsNilpotent.unop_exp_op`: the exponential commutes with passage to the opposite ring.
+* `IsNilpotent.exp_mulLeft_apply`, `IsNilpotent.exp_mulRight_apply`: exponentiating multiplication
+  by a nilpotent element gives multiplication by its exponential.
 * `TauCeti.nilpotencyClass_le_of_pow_eq_zero`: a vanishing power bounds the nilpotency class.
 * `TauCeti.exp_smul_eq_sum_smul_dividedPower`: the rescaled expansion `exp (r • x) = ∑ rⁱ • x⁽ⁱ⁾`.
 * `TauCeti.exp_zsmul_eq_sum_zsmul_dividedPower`: the same expansion with integer coefficients.
@@ -51,6 +58,47 @@ the exponentials above preserve an integral lattice. The application to the Kost
 
 public section
 
+namespace IsNilpotent
+
+open Finset
+
+variable {A : Type*} [Ring A] [Module ℚ A]
+
+/-- Taking a nilpotent exponential in the opposite ring and reading it back in the original ring
+gives the original exponential. -/
+@[simp]
+theorem unop_exp_op {x : A} (hx : IsNilpotent x) :
+    MulOpposite.unop (exp (MulOpposite.op x)) = exp x := by
+  obtain ⟨k, hk⟩ := hx
+  have hk_op : MulOpposite.op x ^ k = 0 := by
+    rw [← MulOpposite.op_pow, hk, MulOpposite.op_zero]
+  rw [exp_eq_sum hk, exp_eq_sum hk_op]
+  simp
+
+variable {R : Type*} [Semiring R] [Module R A]
+
+variable [SMulCommClass R A A] in
+/-- The exponential of left multiplication is left multiplication by the exponential. -/
+@[simp]
+theorem exp_mulLeft_apply {x : A} (hx : IsNilpotent x) (a : A) :
+    exp (LinearMap.mulLeft R x) a = exp x * a := by
+  obtain ⟨k, hk⟩ := hx
+  have hk_left : LinearMap.mulLeft R x ^ k = 0 := by
+    simp [LinearMap.pow_mulLeft, hk]
+  simp [exp_eq_sum hk_left, exp_eq_sum hk, sum_mul, smul_mul_assoc]
+
+variable [IsScalarTower R A A] in
+/-- The exponential of right multiplication is right multiplication by the exponential. -/
+@[simp]
+theorem exp_mulRight_apply {x : A} (hx : IsNilpotent x) (a : A) :
+    exp (LinearMap.mulRight R x) a = a * exp x := by
+  obtain ⟨k, hk⟩ := hx
+  have hk_right : LinearMap.mulRight R x ^ k = 0 := by
+    simp [LinearMap.pow_mulRight, hk]
+  simp [exp_eq_sum hk_right, exp_eq_sum hk, mul_sum, mul_smul_comm]
+
+end IsNilpotent
+
 namespace TauCeti
 
 open Finset IsNilpotent
@@ -67,25 +115,24 @@ variable {A : Type*} [Ring A] [Algebra ℚ A]
 
 /-! ## The divided-power expansion -/
 
-/-- The exponential of a rational multiple of a nilpotent element, expanded in divided powers.
+/-- The exponential of a scalar multiple of a nilpotent element, expanded in divided powers.
 
-The divided powers themselves do not depend on the scalar: rescaling `x` only rescales the
-coefficients. -/
-theorem exp_smul_eq_sum_smul_dividedPower {x : A} {k : ℕ} (hk : x ^ k = 0) (r : ℚ) :
+The scalars act additively and commute with multiplication in `A`. The divided powers themselves
+do not depend on the scalar: rescaling `x` only rescales the coefficients. -/
+theorem exp_smul_eq_sum_smul_dividedPower {M : Type*} [Monoid M] [DistribMulAction M A]
+    [IsScalarTower M A A] [SMulCommClass M A A]
+    {x : A} {k : ℕ} (hk : x ^ k = 0) (r : M) :
     exp (r • x) = ∑ i ∈ range k, r ^ i • Associative.dividedPower i x := by
   have hk' : (r • x) ^ k = 0 := by rw [smul_pow, hk, smul_zero]
   rw [exp_eq_sum hk']
-  exact sum_congr rfl fun i _ =>
-    (Associative.dividedPower_def i (r • x)).symm.trans
-      (Associative.dividedPower_smul r i x)
+  exact sum_congr rfl fun i _ => by
+    rw [smul_pow, Associative.dividedPower_def, smul_comm]
 
 /-- The exponential of an integer multiple of a nilpotent element has integer coefficients on the
 divided powers. This is the integrality that lets a root subgroup map be defined over `ℤ`. -/
 theorem exp_zsmul_eq_sum_zsmul_dividedPower {x : A} {k : ℕ} (hk : x ^ k = 0) (t : ℤ) :
-    exp (t • x) = ∑ i ∈ range k, t ^ i • Associative.dividedPower i x := by
-  rw [← Int.cast_smul_eq_zsmul ℚ t x, exp_smul_eq_sum_smul_dividedPower hk]
-  refine sum_congr rfl fun i _ => ?_
-  rw [← Int.cast_pow, Int.cast_smul_eq_zsmul]
+    exp (t • x) = ∑ i ∈ range k, t ^ i • Associative.dividedPower i x :=
+  exp_smul_eq_sum_smul_dividedPower hk t
 
 /-- An additive subgroup containing every divided power of a nilpotent element contains every
 integral exponential of it. -/

@@ -1,0 +1,35 @@
+name: Live CI summary
+on:
+  workflow_run:
+    workflows: [pr-build, CI]
+    types: [completed]
+permissions:
+  contents: read
+  actions: read
+  id-token: write
+jobs:
+  summarize:
+    if: ${{ github.event.workflow_run.repository.full_name == github.repository }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.workflow_sha }}
+          persist-credentials: false
+          sparse-checkout: scripts/ci_live_summary.py
+      - name: Prepare pinned shared tools
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+        with:
+          tools-repository: TauCetiProject/TauCetiTools
+          tools-ref: ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+          project-directory: .
+      - name: Publish bounded data-only summary
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_READ_TOKEN: ${{ github.token }}
+          TAUCETI_GITHUB_READ_ROLE: ci-workflow-read
+          TAUCETI_GITHUB_WRITE_ROLE: ci-workflow-write
+          TARGET_RUN: ${{ github.event.workflow_run.id }}
+          TARGET_ATTEMPT: ${{ github.event.workflow_run.run_attempt }}
+        run: python3 scripts/ci_live_summary.py --run-id "$TARGET_RUN" --attempt "$TARGET_ATTEMPT"

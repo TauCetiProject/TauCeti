@@ -34,17 +34,26 @@ closes up to a crossing-free circle.
 * `TauCeti.BraidWord.crossingsAt`: the crossings involving a strand position, from the bottom.
 * `TauCeti.BraidWord.nextCrossing`: the next crossing met along a strand position.
 * `TauCeti.BraidWord.closure`: the oriented PD-code of the closure of a braid word.
+* `TauCeti.BraidWord.crossinglessPosition`: the strand position of a crossing-free circle of the
+  closure.
 
 ## Main results
 
+* `TauCeti.BraidWord.crossingsAt_cons`: a letter added at the bottom of a word comes first along
+  its two strand positions.
 * `TauCeti.BraidWord.edgePair_closure_outgoingSlot`: the arcs of the closure join each crossing
   to the next crossing along the same strand position.
 * `TauCeti.BraidWord.edgePair_closure_incomingSlot`: the same arcs, read from the crossing they
   enter.
 * `TauCeti.BraidWord.edgePair_closure_crossingSlotEquiv_zero` and its siblings for the slots `1`,
   `2` and `3`: the arc at each slot of a crossing of the closure.
+* `TauCeti.BraidWord.edgePair_closure_eq_of_outgoingSlot`: a perfect matching of the half-edges
+  agreeing with the arcs of the closure at the slots where strands leave their crossings is the arc
+  matching of the closure.
 * `TauCeti.BraidWord.crossingSign_closure`: the sign of each crossing is the sign of its letter.
 * `TauCeti.BraidWord.writhe_closure`: the writhe of the closure is the exponent sum of the braid.
+* `TauCeti.BraidWord.range_crossinglessPosition`: the crossing-free circles of the closure are the
+  strand positions crossed by no letter.
 * `TauCeti.BraidWord.closure_nil`: the closure of the empty word on `n` strands is the
   `n`-component unlink.
 
@@ -71,6 +80,13 @@ variable {n : ℕ} (w : BraidWord n)
 letters `(i, ε)` with `p = i` or `p = i + 1`. -/
 def crossingsAt (p : Fin n) : List (Fin w.length) :=
   (List.finRange w.length).filter fun j ↦ p = strand w[j.1].1 ∨ p = strandSucc w[j.1].1
+
+/-- The crossings involving a strand position are the indices of the letters with that position
+as one of their two strands, in increasing order. -/
+theorem crossingsAt_def (p : Fin n) :
+    w.crossingsAt p =
+      (List.finRange w.length).filter fun j ↦ p = strand w[j.1].1 ∨ p = strandSucc w[j.1].1 :=
+  (rfl)
 
 /-- A crossing involves a strand position exactly when that position is one of its two strands. -/
 @[simp]
@@ -99,6 +115,63 @@ theorem crossingsAt_eq_nil_iff {p : Fin n} :
 theorem sortedLT_crossingsAt (p : Fin n) : (w.crossingsAt p).SortedLT := by
   rw [List.sortedLT_iff_pairwise] at ⊢
   exact (List.sortedLT_iff_pairwise.1 (List.sortedLT_finRange w.length)).filter _
+
+/-- An empty braid word has no crossings at any strand position. -/
+@[simp]
+theorem crossingsAt_nil (p : Fin n) : crossingsAt ([] : BraidWord n) p = [] := by
+  simp [crossingsAt_def]
+
+/-- Adding a letter at the bottom of a braid word: along a strand position, its crossing comes
+first when the letter involves that position, followed by the crossings of the old word. -/
+theorem crossingsAt_cons (x : Fin (n - 1) × ℤˣ) (v : BraidWord n) (p : Fin n) :
+    crossingsAt (x :: v) p =
+      (if p = strand x.1 ∨ p = strandSucc x.1 then [0] else []) ++
+        (v.crossingsAt p).map Fin.succ := by
+  refine List.SortedLT.eq_of_mem_iff (sortedLT_crossingsAt _ p) ?_ fun k ↦ ?_
+  · rw [List.sortedLT_append, Fin.strictMono_succ.sortedLT_listMap]
+    refine ⟨?_, sortedLT_crossingsAt v p, ?_⟩
+    · split_ifs <;> simp [List.sortedLT_iff_pairwise]
+    · intro a ha b hb
+      split_ifs at ha <;> simp only [List.mem_singleton, List.not_mem_nil] at ha
+      subst ha
+      obtain ⟨b, -, rfl⟩ := List.mem_map.1 hb
+      exact Fin.succ_pos b
+  · refine Fin.cases ?_ (fun k ↦ ?_) k
+    · rw [mem_crossingsAt (w := x :: v) (j := 0)]
+      simp
+    · rw [mem_crossingsAt (w := x :: v) (j := k.succ)]
+      simp [Fin.succ_ne_zero]
+
+/-- A position remains crossing-free after adding a letter exactly when it was crossing-free
+and is outside the two positions of that letter. -/
+@[simp]
+theorem crossingsAt_cons_eq_nil_iff (x : Fin (n - 1) × ℤˣ) (v : BraidWord n) (p : Fin n) :
+    crossingsAt (x :: v) p = [] ↔
+      v.crossingsAt p = [] ∧ p ≠ strand x.1 ∧ p ≠ strandSucc x.1 := by
+  rw [crossingsAt_cons]
+  split_ifs with h
+  · simp only [List.cons_append, List.cons_ne_nil, false_iff]
+    tauto
+  · simp [not_or.mp h]
+
+/-- A position is crossing-free in a concatenation exactly when it is crossing-free in
+both words. -/
+@[simp]
+theorem crossingsAt_append_eq_nil_iff (u v : BraidWord n) (p : Fin n) :
+    crossingsAt (u ++ v) p = [] ↔ u.crossingsAt p = [] ∧ v.crossingsAt p = [] := by
+  induction u with
+  | nil => simp
+  | cons x u ih => simp only [List.cons_append, crossingsAt_cons_eq_nil_iff, ih]; tauto
+
+/-- Two letters on the same positions come first on either position, followed by the old
+crossings shifted by two. Positions outside the pair see only the shifted old crossings. -/
+theorem crossingsAt_cons_cons_same_index (v : BraidWord n) (i : Fin (n - 1)) (ε η : ℤˣ)
+    (p : Fin n) :
+    crossingsAt ((i, ε) :: (i, η) :: v) p =
+      (if p = strand i ∨ p = strandSucc i then [0, 1] else []) ++
+        (v.crossingsAt p).map (fun j => j.succ.succ) := by
+  rw [crossingsAt_cons, crossingsAt_cons]
+  split_ifs <;> simp
 
 /-- The crossing met next along the strand position `p` after the crossing `j`: the next
 crossing above `j` involving `p`, or, through the closure, the lowest one. Crossings not
@@ -161,6 +234,36 @@ theorem outgoingSlot_strand (j : Fin w.length) : w.outgoingSlot j (strand w[j.1]
 theorem outgoingSlot_strandSucc (j : Fin w.length) :
     w.outgoingSlot j (strandSucc w[j.1].1) = 1 := by
   simp [outgoingSlot, (strand_ne_strandSucc _).symm]
+
+/-- A strand enters a crossing at slot `0` or slot `3`. -/
+theorem incomingSlot_eq_zero_or_three (j : Fin w.length) (p : Fin n) :
+    w.incomingSlot j p = 0 ∨ w.incomingSlot j p = 3 := by
+  unfold incomingSlot
+  split_ifs <;> simp
+
+/-- A strand leaves a crossing at slot `1` or slot `2`. -/
+theorem outgoingSlot_eq_one_or_two (j : Fin w.length) (p : Fin n) :
+    w.outgoingSlot j p = 1 ∨ w.outgoingSlot j p = 2 := by
+  unfold outgoingSlot
+  split_ifs <;> simp
+
+/-- A crossing is left upwards along the two positions of its letter at different slots. -/
+theorem eq_of_outgoingSlot_eq {j : Fin w.length} {p q : Fin n} (hp : j ∈ w.crossingsAt p)
+    (hq : j ∈ w.crossingsAt q) (h : w.outgoingSlot j p = w.outgoingSlot j q) : p = q := by
+  rw [mem_crossingsAt] at hp hq
+  have hne := strand_ne_strandSucc w[j.1].1
+  unfold outgoingSlot at h
+  rcases hp with rfl | rfl <;> rcases hq with hq | hq <;> simp_all
+
+/-- The incoming slot at a crossing depends only on the letter of that crossing. -/
+theorem incomingSlot_congr {w w' : BraidWord n} {j : Fin w'.length} {i : Fin w.length}
+    (h : w'[j.1] = w[i.1]) (p : Fin n) : w'.incomingSlot j p = w.incomingSlot i p := by
+  rw [incomingSlot, incomingSlot, h]
+
+/-- The outgoing slot at a crossing depends only on the letter of that crossing. -/
+theorem outgoingSlot_congr {w w' : BraidWord n} {j : Fin w'.length} {i : Fin w.length}
+    (h : w'[j.1] = w[i.1]) (p : Fin n) : w'.outgoingSlot j p = w.outgoingSlot i p := by
+  rw [outgoingSlot, outgoingSlot, h]
 
 /-! ### The arcs of the closure -/
 
@@ -293,7 +396,7 @@ def closure : OrientedPDCode w.length where
     fin_cases slot <;> decide
   crossinglessComponents :=
     Multiset.replicate (Finset.univ.filter fun p ↦ w.crossingsAt p = []).card true
-  crossinglessComponents_card := Multiset.card_replicate _ _
+  card_crossinglessComponents := Multiset.card_replicate _ _
 
 /-- The half-edges of the closure are labelled by their crossing slots. -/
 @[simp]
@@ -377,6 +480,21 @@ theorem orientation_closure (j : Fin w.length) (slot : Fin 4) :
       decide (slot = 1 ∨ slot = 2) := by
   simp [closure, IsOutgoing]
 
+/-- The arcs of the closure are determined by the arcs leaving the crossings upwards: a perfect
+matching of the half-edges agreeing with them is the arc matching of the closure. -/
+theorem edgePair_closure_eq_of_outgoingSlot {M : PerfectMatching (Fin (4 * w.length))}
+    (h : ∀ j p, j ∈ w.crossingsAt p →
+      w.closure.edgePair.val (crossingSlotEquiv _ (j, w.outgoingSlot j p)) =
+        M.val (crossingSlotEquiv _ (j, w.outgoingSlot j p))) :
+    w.closure.edgePair = M := by
+  refine PerfectMatching.ext_of_eqOn (s := {x | w.closure.orientation x = true})
+    (fun x hx ↦ by simpa using hx) fun x hx ↦ ?_
+  obtain ⟨⟨j, slot⟩, rfl⟩ := (crossingSlotEquiv _).surjective x
+  simp only [Set.mem_ofPred_eq, orientation_closure, decide_eq_true_eq] at hx
+  rcases hx with rfl | rfl
+  · simpa using h j _ (w.mem_crossingsAt_strandSucc j)
+  · simpa using h j _ (w.mem_crossingsAt_strand j)
+
 /-- The crossing-free circles of the closure are the strand positions involved in no crossing. -/
 @[simp]
 theorem crossinglessComponentCount_closure :
@@ -390,6 +508,44 @@ theorem crossinglessComponents_closure :
     w.closure.crossinglessComponents =
       Multiset.replicate (Finset.univ.filter fun p ↦ w.crossingsAt p = []).card true := by
   simp [closure]
+
+/-! ### The crossing-free circles of the closure -/
+
+/-- The strand position of a crossing-free circle of the closure. The crossing-free circles are
+the strand positions crossed by no letter, numbered in increasing order. -/
+def crossinglessPosition (c : Fin w.closure.crossinglessComponentCount) : Fin n :=
+  ((Finset.univ.filter fun p ↦ w.crossingsAt p = []).orderIsoOfFin
+    w.crossinglessComponentCount_closure.symm c).1
+
+/-- No letter crosses the strand position of a crossing-free circle. -/
+@[simp]
+theorem crossingsAt_crossinglessPosition (c : Fin w.closure.crossinglessComponentCount) :
+    w.crossingsAt (w.crossinglessPosition c) = [] :=
+  (Finset.mem_filter.1 ((Finset.univ.filter fun p ↦ w.crossingsAt p = []).orderIsoOfFin
+    w.crossinglessComponentCount_closure.symm c).2).2
+
+/-- The crossing-free circles are numbered in increasing order of their strand positions. -/
+theorem crossinglessPosition_strictMono : StrictMono w.crossinglessPosition :=
+  fun _ _ h ↦ ((Finset.univ.filter fun p ↦ w.crossingsAt p = []).orderIsoOfFin
+    w.crossinglessComponentCount_closure.symm).strictMono h
+
+/-- The crossing-free circle on a strand position crossed by no letter. -/
+def crossinglessIndex {p : Fin n} (h : w.crossingsAt p = []) :
+    Fin w.closure.crossinglessComponentCount :=
+  ((Finset.univ.filter fun p ↦ w.crossingsAt p = []).orderIsoOfFin
+    w.crossinglessComponentCount_closure.symm).symm ⟨p, by simpa using h⟩
+
+/-- The crossing-free circle indexed by a crossing-free strand position lies on that position. -/
+@[simp]
+theorem crossinglessPosition_crossinglessIndex {p : Fin n} (h : w.crossingsAt p = []) :
+    w.crossinglessPosition (w.crossinglessIndex h) = p := by
+  simp [crossinglessPosition, crossinglessIndex]
+
+/-- The strand positions of the crossing-free circles are exactly those crossed by no letter. -/
+theorem range_crossinglessPosition :
+    Set.range w.crossinglessPosition = {p | w.crossingsAt p = []} :=
+  Set.ext fun _ ↦ ⟨by rintro ⟨c, rfl⟩; exact w.crossingsAt_crossinglessPosition c,
+    fun h ↦ ⟨w.crossinglessIndex h, w.crossinglessPosition_crossinglessIndex h⟩⟩
 
 /-- The sign of each crossing of the closure is the sign of its letter. -/
 @[simp]

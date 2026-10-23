@@ -110,7 +110,7 @@ restriction of cochains: both send a cycle to its value, a `G`-invariant element
 private theorem cyclesMap_cochainsExtToTate_zero_comp_inclusion (M : Rep R G) (H : Subgroup G) :
     HomologicalComplex.cyclesMap ((cochainsExtToTate R G).app M) 0 ≫
         (H0CyclesIso M).hom ≫ ModuleCat.ofHom (Submodule.inclusion
-          (Representation.invariants_le_invariants_comp_subtype (ρ := M.ρ) (H := H))) =
+          (M.ρ.invariants_le_invariants_comp H.subtype)) =
       HomologicalComplex.cyclesMap ((cochainsExtToTateRes H).app M) 0 ≫
         (H0CyclesIso (Rep.res H.subtype M)).hom := by
   have : Mono (ModuleCat.ofHom (Rep.res H.subtype M).ρ.invariants.subtype) :=
@@ -141,15 +141,11 @@ private theorem homologyMap_cochainsExtToTate_comp_H0Res (M : Rep R G) (H : Subg
   refine (cancel_epi (HomologicalComplex.homologyπ _ 0)).1 ?_
   refine (HomologicalComplex.homologyπ_naturality_assoc _ _ _).trans (Eq.trans ?_
     (HomologicalComplex.homologyπ_naturality _ _).symm)
-  -- On degree-zero cycles, the projection to Tate cohomology is `H0π` on invariants.
-  have hπ : ∀ {K : Type u} [Group K] [Fintype K] (N : Rep R K),
-      (tateComplex N).homologyπ 0 = (H0CyclesIso N).hom ≫ H0π N :=
-    fun N ↦ by rw [H0π_eq_cyclesIso_inv_comp_homologyπ]; exact (Iso.hom_inv_id_assoc _ _).symm
-  refine (congrArg (_ ≫ · ≫ H0Res M H) (hπ M)).trans ?_
+  refine (congrArg (_ ≫ · ≫ H0Res M H) (H0CyclesIso_hom_comp_H0π M).symm).trans ?_
   refine (congrArg (_ ≫ ·) ((Category.assoc _ _ _).trans
     (congrArg (_ ≫ ·) (H0π_comp_H0Res M H)))).trans ?_
   exact ((reassoc_of% cyclesMap_cochainsExtToTate_zero_comp_inclusion M H) _).trans
-    (congrArg (_ ≫ ·) (hπ (Rep.res H.subtype M)).symm)
+    (congrArg (_ ≫ ·) (H0CyclesIso_hom_comp_H0π (Rep.res H.subtype M)))
 
 /-- In nonnegative degrees, the identity of cochains followed by Tate restriction is restriction
 of cochains. -/

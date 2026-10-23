@@ -46,12 +46,13 @@ vector `2 u` and the lower vector `2 t`, so with `2` invertible every imaginary 
 `2⁻¹ w`. Together these two directions say that `Im 𝕆` is a *minimal* nonzero Lie submodule of `𝕆`
 (`TauCeti.Octonion.eq_imaginaryLieSubmodule_of_le_of_ne_bot`), which is irreducibility.
 
-Some hypothesis on `2` is necessary, and it is the same one that
-`TauCeti.Octonion.isFaithful_imaginaryLieSubmodule` needs: where `2` vanishes so does `trace 1`, so
+Some hypothesis on `2` is necessary for irreducibility: where `2` vanishes so does `trace 1`, so
 `1` is imaginary, and a derivation kills `1`, so the line through `1` is a Lie submodule of `Im 𝕆`
 different from `0` and from `Im 𝕆`. That is
 `TauCeti.Octonion.not_isIrreducible_imaginaryLieSubmodule_of_two_eq_zero`, proved below over every
 nontrivial base ring in which `2` vanishes, so the hypothesis is not an artefact of the argument.
+Faithfulness, however, holds over every commutative ring by
+`TauCeti.Octonion.isFaithful_imaginaryLieSubmodule`.
 
 ## Main results
 

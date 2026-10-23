@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Map
+public import TauCeti.Algebra.Bialgebra.TensorProduct
 public import Mathlib.Algebra.Lie.Prod
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 import Mathlib.LinearAlgebra.Basis.VectorSpace
@@ -40,9 +41,8 @@ arbitrary commutative coefficient algebra; it needs no antipode, finiteness, or 
 * J. S. Milne, *Algebraic Groups* (2017), §10.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Chapter 11.
 
-This supplies the direct-product compatibility for `Lie(G)` in Layer 2, "Tangent space at the
-identity / `Lie(G)`", of the ReductiveGroups roadmap. It also gives the additive tangent-dimension
-formula needed by the same layer's dimension tools.
+This supplies the direct-product compatibility for `Lie(G)` and the additive tangent-dimension
+formula.
 -/
 
 public section

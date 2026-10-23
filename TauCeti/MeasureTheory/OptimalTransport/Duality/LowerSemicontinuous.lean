@@ -7,7 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.OptimalTransport.Duality.Compact
 import TauCeti.MeasureTheory.OptimalTransport.Duality.Attainment
-import TauCeti.MeasureTheory.OptimalTransport.Existence
+import TauCeti.MeasureTheory.OptimalTransport.Existence.Basic
 
 /-!
 # Kantorovich duality for lower-semicontinuous costs

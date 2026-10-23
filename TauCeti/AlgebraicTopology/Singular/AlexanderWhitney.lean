@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicTopology.SimplicialSet.TopAdj
 public import Mathlib.AlgebraicTopology.SingularHomology.Basic
 public import Mathlib.Topology.Category.TopCat.Monoidal
-public import TauCeti.Algebra.Homology.Monoidal.TensorCochain
+public import TauCeti.Algebra.Homology.Monoidal.Tensor.Cochain
 public import TauCeti.AlgebraicTopology.SimplicialSet.AlexanderWhitney
 
 /-!
@@ -18,7 +19,8 @@ chain map from the singular chains of `X × Y` with coefficients in `R ⊗ S` to
 the singular chains of `X` and of `Y`.  A singular simplex `σ` of `X × Y` is sent to
 `∑_{p + q = n} (pr₁ ∘ σ)|[0, …, p] ⊗ (pr₂ ∘ σ)|[p, …, n]`: it is the simplicial Alexander–Whitney
 map `SSet.alexanderWhitney` precomposed with the map `Sing(X × Y) ⟶ Sing X × Sing Y` induced by the
-two projections (`CartesianMonoidalCategory.prodComparison`).  It is natural in both spaces.
+two projections (`CartesianMonoidalCategory.prodComparison`).  It is natural in both spaces and
+coassociative (`TopCat.alexanderWhitney_coassoc`).
 
 For a single space `X` and a coefficient morphism `u : T ⟶ R ⊗ S`, the Alexander–Whitney diagonal
 `X.alexanderWhitneyDiagonal u : C(X; T) ⟶ C(X; R) ⊗ C(X; S)` is `u`, followed by the chain map
@@ -29,9 +31,12 @@ of singular cochains and cap products of singular chains with singular cochains 
 ## Main definitions and results
 
 * `TopCat.alexanderWhitney`: the Alexander–Whitney map on singular chains.
+* `TopCat.alexanderWhitney_def`: its factorization through the product of singular simplicial
+  sets.
 * `TopCat.ιChainComplex_alexanderWhitney_f`: its value on a singular simplex.
 * `TopCat.alexanderWhitney_naturality`: it is natural in both spaces.
 * `TopCat.alexanderWhitney_coefficient_naturality`: it is natural in both coefficient objects.
+* `TopCat.alexanderWhitney_coassoc`: it is coassociative.
 * `TopCat.alexanderWhitneyDiagonal`: the Alexander–Whitney diagonal of a space, with
   `TopCat.ιChainComplex_alexanderWhitneyDiagonal_f` its value on a singular simplex and
   `TopCat.alexanderWhitneyDiagonal_naturality` its naturality.
@@ -68,6 +73,14 @@ def alexanderWhitney (X Y : TopCat.{w}) (R S : C) :
       (toSSet.obj X).chainComplex R ⊗ (toSSet.obj Y).chainComplex S :=
   SSet.chainComplexMap (CartesianMonoidalCategory.prodComparison toSSet X Y) (R ⊗ S) ≫
     SSet.alexanderWhitney _ _ R S
+
+/-- The singular Alexander--Whitney map is the map induced by the two projections, followed by
+the simplicial Alexander--Whitney map on the resulting product of singular simplicial sets. -/
+lemma alexanderWhitney_def (X Y : TopCat.{w}) (R S : C) :
+    alexanderWhitney X Y R S =
+      SSet.chainComplexMap (CartesianMonoidalCategory.prodComparison toSSet X Y) (R ⊗ S) ≫
+        SSet.alexanderWhitney (toSSet.obj X) (toSSet.obj Y) R S :=
+  (rfl)
 
 /-- The Alexander–Whitney map on the summand of a singular simplex `σ` of `X × Y` is the
 simplicial Alexander–Whitney map on the pair of its projections to `X` and `Y`. -/
@@ -107,6 +120,36 @@ lemma alexanderWhitney_coefficient_naturality (X Y : TopCat.{w}) {R S R' S' : C}
     ← ((SSet.chainComplexFunctor C).map (f ⊗ₘ g)).naturality
       (CartesianMonoidalCategory.prodComparison toSSet X Y),
     Category.assoc, SSet.alexanderWhitney_coefficient_naturality, Category.assoc]
+
+/-- **Coassociativity of the Alexander–Whitney map** on singular chains: splitting a singular
+simplex of `X × Y × Z` into a front face in `X`, a middle face in `Y` and a back face in `Z` gives
+the same chain in either order, up to the associators of the spaces, of the coefficients and of
+the chain complexes. -/
+@[reassoc]
+lemma alexanderWhitney_coassoc (X Y Z : TopCat.{w}) (R S T : C) :
+    alexanderWhitney (X ⊗ Y) Z (R ⊗ S) T ≫
+        alexanderWhitney X Y R S ▷ (toSSet.obj Z).chainComplex T ≫
+        (α_ ((toSSet.obj X).chainComplex R) ((toSSet.obj Y).chainComplex S)
+          ((toSSet.obj Z).chainComplex T)).hom =
+      ((SSet.chainComplexFunctor C).map (α_ R S T).hom).app (toSSet.obj ((X ⊗ Y) ⊗ Z)) ≫
+        SSet.chainComplexMap (toSSet.map (α_ X Y Z).hom) (R ⊗ S ⊗ T) ≫
+        alexanderWhitney X (Y ⊗ Z) R (S ⊗ T) ≫
+        (toSSet.obj X).chainComplex R ◁ alexanderWhitney Y Z S T := by
+  have h₁ := SSet.alexanderWhitney_naturality (R ⊗ S) T
+    (CartesianMonoidalCategory.prodComparison toSSet X Y) (𝟙 (toSSet.obj Z))
+  have h₂ := SSet.alexanderWhitney_naturality R (S ⊗ T) (𝟙 (toSSet.obj X))
+    (CartesianMonoidalCategory.prodComparison toSSet Y Z)
+  simp only [CategoryTheory.Functor.map_id, tensorHom_id, id_tensorHom] at h₁ h₂
+  -- the comparison maps `Sing (X × Y) ⟶ Sing X × Sing Y` are associative, as the components of
+  -- the oplax monoidal structure of `toSSet`
+  have h₃ := Functor.OplaxMonoidal.associativity toSSet X Y Z
+  simp only [Functor.OplaxMonoidal.δ_of_cartesianMonoidalCategory] at h₃
+  simp only [alexanderWhitney, comp_whiskerRight, whiskerLeft_comp, Category.assoc]
+  rw [← reassoc_of% h₁, SSet.alexanderWhitney_coassoc, ← reassoc_of% h₂,
+    ← ((SSet.chainComplexFunctor C).map (α_ R S T).hom).naturality_assoc,
+    ← ((SSet.chainComplexFunctor C).map (α_ R S T).hom).naturality_assoc]
+  simp only [← Functor.map_comp_assoc, h₃]
+  simp only [Functor.map_comp, Category.assoc, NatTrans.naturality_assoc]
 
 section AlexanderWhitneyDiagonal
 
@@ -205,3 +248,18 @@ lemma alexanderWhitneyDiagonal_naturality {X Y : TopCat.{w}} (f : X ⟶ Y)
 end AlexanderWhitneyDiagonal
 
 end TopCat
+
+namespace TauCeti
+
+/-- The Alexander–Whitney diagonal factors through coefficient change and the diagonal
+of the space. -/
+lemma alexanderWhitneyDiagonal_def {C : Type u} [Category.{v} C] [Preadditive C]
+    [MonoidalCategory C] [MonoidalPreadditive C] [HasCoproducts.{w} C]
+    {X : TopCat.{w}} {R S T : C} (u : T ⟶ R ⊗ S) :
+    X.alexanderWhitneyDiagonal u =
+      ((SSet.chainComplexFunctor C).map u).app _ ≫
+        SSet.chainComplexMap (TopCat.toSSet.map (lift (𝟙 X) (𝟙 X))) (R ⊗ S) ≫
+          TopCat.alexanderWhitney X X R S :=
+  (rfl)
+
+end TauCeti

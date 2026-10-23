@@ -13,10 +13,8 @@ public import TauCeti.Geometry.Symplectic.SymplecticTransport
 # Products, transports, and graphs of Lagrangian subspaces
 
 This file collects the linear symplectic constructions that produce isotropic, coisotropic, and
-Lagrangian subspaces out of existing ones, used by the analytic Heegaard Floer roadmap before the
-manifold, bundle, and Floer-boundary layers restate them in local trivializations. All three
-groups are pointwise linear algebra over the symplectic-form API in
-`TauCeti.Geometry.Symplectic.Lagrangian.Basic`.
+Lagrangian subspaces out of existing ones. All three groups are pointwise linear algebra over the
+symplectic-form API in `TauCeti.Geometry.Symplectic.Lagrangian.Basic`.
 
 * **Products.** The direct-sum symplectic form `ω₁.prod ω₂` on `V × W` has the product
   orthogonal-complement formula `(L₁ × L₂)^(ω₁ ⊕ ω₂) = L₁^ω₁ × L₂^ω₂`, so isotropy, coisotropy,
@@ -28,18 +26,19 @@ groups are pointwise linear algebra over the symplectic-form API in
 * **Graphs.** In the twisted product `(V × W, ω₁ ⊖ ω₂)` the graph `{(v, e v)}` of a real-linear
   isomorphism `e : V ≃ W` is Lagrangian exactly when `e` is a symplectomorphism; the special case
   `e = id` makes the diagonal of `(V × V, ω ⊖ ω)` Lagrangian. This is the linear model of the
-  Lagrangian-correspondence principle needed by Lagrangian Floer homology (Lane F3): the boundary
+  Lagrangian-correspondence principle needed by Lagrangian Floer homology: the boundary
   conditions of Floer strips between two Lagrangians are packaged as a single Lagrangian in the
   twisted product, and the diagonal is the model boundary condition for the identity continuation.
 
 ## Main declarations
 
 * `TauCeti.SymplecticForm.orthogonal_prod`, `isIsotropic_prod_iff`, `isCoisotropic_prod_iff`,
-  `isLagrangian_prod_iff`, and the one-way `IsIsotropic.prod`, `IsCoisotropic.prod`,
-  `IsLagrangian.prod`: the product API.
+  `isLagrangian_prod_iff`, `isSymplectic_prod_iff`, and the one-way `IsIsotropic.prod`,
+  `IsCoisotropic.prod`, `IsLagrangian.prod`, `IsSymplectic.prod`: the product API.
 * `TauCeti.SymplecticForm.orthogonal_map_transport`, `isIsotropic_map_transport_iff`,
-  `isCoisotropic_map_transport_iff`, `isLagrangian_map_transport_iff`, and the one-way
-  `IsIsotropic.map_transport`, `IsCoisotropic.map_transport`, `IsLagrangian.map_transport`: the
+  `isCoisotropic_map_transport_iff`, `isLagrangian_map_transport_iff`,
+  `isSymplectic_map_transport_iff`, and the one-way `IsIsotropic.map_transport`,
+  `IsCoisotropic.map_transport`, `IsLagrangian.map_transport`, `IsSymplectic.map_transport`: the
   transport API.
 * `TauCeti.SymplecticForm.isIsotropic_graph_iff`, `isIsotropic_linearEquiv_graph_iff`,
   `IsSymplectomorphism.isLagrangian_graph`, `isLagrangian_graph_iff`, and `isLagrangian_diagonal`:
@@ -125,6 +124,20 @@ lemma IsLagrangian.prod (h₁ : ω₁.IsLagrangian L₁) (h₂ : ω₂.IsLagrang
     (ω₁.prod ω₂).IsLagrangian (L₁.prod L₂) :=
   isLagrangian_prod_iff.2 ⟨h₁, h₂⟩
 
+/-- A product subspace is symplectic for the direct-sum symplectic form exactly when both factors
+are symplectic. -/
+@[simp]
+lemma isSymplectic_prod_iff :
+    (ω₁.prod ω₂).IsSymplectic (L₁.prod L₂) ↔ ω₁.IsSymplectic L₁ ∧ ω₂.IsSymplectic L₂ := by
+  rw [isSymplectic_iff_disjoint, isSymplectic_iff_disjoint, isSymplectic_iff_disjoint,
+    orthogonal_prod, disjoint_iff, disjoint_iff, disjoint_iff, Submodule.prod_inf_prod,
+    Submodule.prod_eq_bot_iff]
+
+/-- The product of two symplectic subspaces is symplectic for the direct-sum symplectic form. -/
+lemma IsSymplectic.prod (h₁ : ω₁.IsSymplectic L₁) (h₂ : ω₂.IsSymplectic L₂) :
+    (ω₁.prod ω₂).IsSymplectic (L₁.prod L₂) :=
+  isSymplectic_prod_iff.2 ⟨h₁, h₂⟩
+
 end Prod
 
 section Transport
@@ -201,6 +214,14 @@ lemma isLagrangian_map_transport_iff :
   rw [isLagrangian_iff, isLagrangian_iff, isIsotropic_map_transport_iff,
     isCoisotropic_map_transport_iff]
 
+/-- Being a symplectic subspace is invariant under transporting both the symplectic form and the
+subspace along a linear equivalence. -/
+@[simp]
+lemma isSymplectic_map_transport_iff :
+    (ω.transport e).IsSymplectic (L.map e.toLinearMap) ↔ ω.IsSymplectic L := by
+  rw [isSymplectic_iff_disjoint, isSymplectic_iff_disjoint, orthogonal_map_transport]
+  exact disjoint_map_orderIso_iff (Submodule.orderIsoMapComap e)
+
 namespace IsIsotropic
 
 /-- Transport an isotropic subspace along a linear equivalence, together with the transported
@@ -230,6 +251,16 @@ lemma map_transport (h : ω.IsLagrangian L) :
   isLagrangian_map_transport_iff.2 h
 
 end IsLagrangian
+
+namespace IsSymplectic
+
+/-- Transport a symplectic subspace along a linear equivalence, together with the transported
+symplectic form. -/
+lemma map_transport (h : ω.IsSymplectic L) :
+    (ω.transport e).IsSymplectic (L.map e.toLinearMap) :=
+  isSymplectic_map_transport_iff.2 h
+
+end IsSymplectic
 
 end Transport
 

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.NumberField.Completion.Ramification
 public import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Basic
+public import TauCeti.NumberTheory.NumberField.InfinitePlace.Basic
 
 /-!
 # Normalized archimedean absolute values under field extension
@@ -59,17 +60,36 @@ instance (v : InfinitePlace K) (w : InfinitePlace L) [w.LiesOver v] :
   rw [← mult_mul_finrank v w, mul_ne_zero_iff] at h
   exact Nat.pos_of_ne_zero h.2
 
+/-- Canonical maps between archimedean completions compose in a tower of fields. -/
+@[simp]
+theorem _root_.NumberField.LiesOver.completionMap_comp
+    {M : Type*} [Field M] [Algebra L M] [Algebra K M] [IsScalarTower K L M]
+    {v : InfinitePlace K} {w : InfinitePlace L} {u : InfinitePlace M}
+    [w.LiesOver v] [u.LiesOver w] :
+    (LiesOver.completionMap w u).comp
+        (LiesOver.completionMap v w) =
+      @LiesOver.completionMap K M _ _ _ v u (InfinitePlace.LiesOver.trans u w v) := by
+  let _ : u.LiesOver v := InfinitePlace.LiesOver.trans u w v
+  apply DFunLike.coe_injective
+  apply (InfinitePlace.Completion.denseRange_coe v).equalizer
+    ((LiesOver.continuous_completionMap w u).comp (LiesOver.continuous_completionMap v w))
+    (LiesOver.continuous_completionMap v u)
+  funext x
+  simp [Function.comp_apply, LiesOver.completionMap_coe,
+    WithAbs.algebraMap_left_apply, WithAbs.algebraMap_right_apply,
+    ← IsScalarTower.algebraMap_apply]
+
 /-- Extension of archimedean completions preserves the ordinary norm. -/
 @[simp]
 theorem Completion.norm_completionMap
     {v : InfinitePlace K} {w : InfinitePlace L} [w.LiesOver v] (x : v.Completion) :
-    ‖LiesOver.completionMap (w := w) x‖ = ‖x‖ := by
+    ‖LiesOver.completionMap v w x‖ = ‖x‖ := by
   -- `completionMap` has an unexposed body, so use its public continuity and coercion lemmas
   -- to transport Mathlib's norm preservation from the dense base field.
   induction x using InfinitePlace.Completion.induction_on with
   | hp =>
     exact isClosed_eq
-      (continuous_norm.comp (LiesOver.continuous_completionMap (v := v) (w := w)))
+      (continuous_norm.comp (LiesOver.continuous_completionMap v w))
       continuous_norm
   | ih y =>
     rw [LiesOver.completionMap_coe]
@@ -82,7 +102,7 @@ local degree. This includes the real-to-complex case and the value at zero. -/
 @[simp↓]
 theorem completionNormalizedAbsValue_completionMap
     {v : InfinitePlace K} {w : InfinitePlace L} [w.LiesOver v] (x : v.Completion) :
-    completionNormalizedAbsValue w (LiesOver.completionMap x) =
+    completionNormalizedAbsValue w (LiesOver.completionMap v w x) =
       completionNormalizedAbsValue v x ^ Module.finrank v.Completion w.Completion := by
   rw [completionNormalizedAbsValue_apply, Completion.norm_completionMap,
     completionNormalizedAbsValue_apply, ← pow_mul, InfinitePlace.mult_mul_finrank]

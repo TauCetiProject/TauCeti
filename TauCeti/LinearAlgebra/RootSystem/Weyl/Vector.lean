@@ -86,6 +86,8 @@ public section
 
 namespace TauCeti
 
+open RootPairing
+
 universe u v w x
 
 variable {ι : Type u} {R : Type v} {M : Type w} {N : Type x}
@@ -305,7 +307,7 @@ theorem openDominantChamber_nonempty : (openDominantChamber P b).Nonempty :=
   ⟨weylVector P b, weylVector_mem_openDominantChamber P b⟩
 
 /-- **The Weyl vector pairs to at least `1` with the coroot of every positive root.** This sharpens
-`TauCeti.coroot'_pos_of_mem_posRoots` at `ρ` from a strict inequality to an integral one: the
+`RootPairing.coroot'_pos_of_mem_posRoots` at `ρ` from a strict inequality to an integral one: the
 pairing is the height of the coroot, a positive integer. It is the positivity of the denominators
 of the Weyl dimension formula. -/
 theorem one_le_coroot'_weylVector_of_mem_posRoots [P.flip.IsReduced] {i : ι}

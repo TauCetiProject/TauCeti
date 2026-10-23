@@ -8,7 +8,7 @@ module
 public import Mathlib.NumberTheory.ModularForms.BoundedAtCusp
 
 /-!
-# Vanishing and boundedness at a cusp are closed under finite sums and scalars
+# Limits, vanishing, and boundedness at cusps
 
 Mathlib's `OnePoint.IsZeroAt` and `OnePoint.IsBoundedAt` are closed under binary sums
 (`OnePoint.IsZeroAt.add`, `OnePoint.IsBoundedAt.add`), but the zero function and a
@@ -21,8 +21,12 @@ an operator preserves vanishing at the cusps is an induction over the summands, 
 `OnePoint.IsZeroAt.sum` each call site has to rerun that induction by hand. The scalar half is
 what the nebentypus twist needs, where each summand carries a character value as its weight.
 
+An upper-triangular slash preserves the filter at infinity and has constant automorphy factor.
+The limit-transport lemma records this factor, including the conjugation for negative determinant.
+
 ## Main declarations
 
+* `TauCeti.tendsto_slash_atImInfty_of_upperTriangular`: the limit of an upper-triangular slash.
 * `UpperHalfPlane.isZeroAtImInfty_zero`: the zero analogue of Mathlib's
   `zero_form_isBoundedAtImInfty`, which is absent upstream.
 * `OnePoint.IsZeroAt.zero`, `OnePoint.IsBoundedAt.zero`: the zero function vanishes, and is
@@ -49,6 +53,25 @@ arbitrary index type).
 public section
 
 open UpperHalfPlane
+
+open scoped MatrixGroups ModularForm Topology
+
+namespace TauCeti
+
+/-- An upper-triangular slash carries a limit at infinity to the same limit times its
+constant automorphy factor, with complex conjugation when the determinant is negative. -/
+lemma tendsto_slash_atImInfty_of_upperTriangular {f : ℍ → ℂ} {c : ℂ} (k : ℤ)
+    (g : GL (Fin 2) ℝ) (hg : g 1 0 = 0) (hf : Filter.Tendsto f atImInfty (𝓝 c)) :
+    Filter.Tendsto (f ∣[k] g) atImInfty
+      (𝓝 (σ g c * |g.det.val| ^ (k - 1) * (g 1 1 : ℂ) ^ (-k))) := by
+  have h := (((σ g).continuous.tendsto c).comp
+    (hf.comp (tendsto_smul_atImInfty hg))).mul_const
+      (|g.det.val| ^ (k - 1) : ℂ)
+  convert h.mul_const ((g 1 1 : ℂ) ^ (-k)) using 1
+  ext z
+  simp [ModularForm.slash_apply, denom, hg]
+
+end TauCeti
 
 namespace UpperHalfPlane
 

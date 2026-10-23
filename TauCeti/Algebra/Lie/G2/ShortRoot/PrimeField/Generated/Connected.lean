@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.Generated.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Connected.Generated
+public import TauCeti.Algebra.AlgebraicGroup.Connected.BaseChange
 import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.SmoothConnected
 import Mathlib.Algebra.MonoidAlgebra.NoZeroDivisors
 
@@ -18,6 +19,7 @@ numbered root subgroups and the rank-two weight torus generate a geometrically c
 closed subgroup of `GL₇`. Their coordinate algebras are scalar extensions of a polynomial
 algebra and a Laurent polynomial algebra, respectively, so each has connected spectrum.
 The common-kernel construction then preserves connectedness of the generated subgroup.
+The scalar-extension identification transfers this property to the prime-field carrier itself.
 
 This supplies a geometric property of the generated subgroup needed when comparing the
 short-root carrier with a pinned simply connected type-`G₂` group scheme.
@@ -25,8 +27,10 @@ short-root carrier with a pinned simply connected type-`G₂` group scheme.
 ## References
 
 * J. S. Milne, *Algebraic Groups* (2017), Propositions 2.37 and 2.48.
+* `TauCeti.Algebra.Lie.F4.ShortRoot.PrimeField.Generated.Connected`: the carrier/base-change
+  connectedness comparison.
 
-The formal argument follows `TauCeti.Algebra.Lie.D4.Tripled.GeneratedConnected`.
+The formal argument follows `TauCeti.Algebra.Lie.D4.Tripled.Generated.Connected`.
 -/
 
 public section
@@ -56,5 +60,13 @@ theorem geometricallyConnectedCommHopfAlgProperty_generatedCoordinateHopfAlgebra
   rw [generatedCoordinateHopfAlgebra_def, generatedDefiningIdeal_def]
   exact CommHopfAlgCat.geometricallyConnectedCommHopfAlgProperty_commonKernelQuotient
     (baseChangeGenerator k) (connectedSpace_baseChangeGeneratorCodomain k)
+
+/-- The short-root type-`G₂` carrier over `𝔽₃` is geometrically connected. -/
+theorem geometricallyConnectedCommHopfAlgProperty_carrierAlgebra :
+    geometricallyConnectedCommHopfAlgProperty (ZMod 3) carrierAlgebra :=
+  geometricallyConnectedCommHopfAlgProperty.of_baseChange (ZMod 3) (AlgebraicClosure (ZMod 3)) _
+    ((geometricallyConnectedCommHopfAlgProperty _).prop_of_iso
+      (coordinateHopfAlgebraGeneratedIso _).symm
+      (geometricallyConnectedCommHopfAlgProperty_generatedCoordinateHopfAlgebra _))
 
 end TauCeti.G2ShortRoot.PrimeField

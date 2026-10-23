@@ -37,6 +37,10 @@ Mathlib's `GL(2, ℝ)`-invariance).
   mapping to `ℝ`) on `(ℍ, volume)`.
 * `UpperHalfPlane.smul_eq_smul_of_coe_eq_smul` — matrices differing by a nonzero scalar act
   identically on `ℍ`.
+* `UpperHalfPlane.psl2zToPSL2R_smul` and `UpperHalfPlane.sl2zToPSL2R_smul` — the integral
+  actions factor through the `PSL(2, ℝ)`-action along `psl2zToPSL2R` and `sl2zToPSL2R`.
+* `Subgroup.orbitRel_map_sl2zToPSL2R_iff` — the orbits of the image in `PSL(2, ℝ)` of a
+  subgroup `Γ ≤ SL(2, ℤ)` are the orbits of `Γ`.
 * `UpperHalfPlane.glPosToPSL2R_smul` — the det-normalized projective representative of a
   `GL(2, ℝ)⁺` element (multiplicative by `Real.sqrt_mul` together with the centrality of
   positive scalars) acts on `ℍ` exactly as the original element.
@@ -187,6 +191,23 @@ theorem psl2zToPSL2R_smul (g : PSL(2, ℤ)) (τ : ℍ) : psl2zToPSL2R g • τ =
   -- the `SL(2, ℤ)`-action and the cast `SL(2, ℝ)`-action are definitionally the
   -- `GL(2, ℝ)`-action of the common `mapGL ℝ` image
   rfl
+
+/-- The `SL(2, ℤ)`-action factors through the `PSL(2, ℝ)`-action along `sl2zToPSL2R`. -/
+-- not `@[simp]`: `sl2zToPSL2R_apply` rewrites the left-hand side out of simp normal form
+theorem sl2zToPSL2R_smul (g : SL(2, ℤ)) (τ : ℍ) : sl2zToPSL2R g • τ = g • τ := by
+  rw [← psl2zToPSL2R_mk, psl2zToPSL2R_smul, pslMk_smul]
+
+/-- **Orbits of the effective image of `Γ`** are the orbits of `Γ` itself: two points are related
+exactly when an element of `Γ` carries one to the other. -/
+theorem _root_.Subgroup.orbitRel_map_sl2zToPSL2R_iff (Γ : Subgroup SL(2, ℤ)) {z w : ℍ} :
+    MulAction.orbitRel (Γ.map sl2zToPSL2R) ℍ z w ↔ ∃ g ∈ Γ, g • w = z := by
+  rw [MulAction.orbitRel_apply, MulAction.mem_orbit_iff]
+  constructor
+  · rintro ⟨⟨_, g, hg, rfl⟩, h⟩
+    exact ⟨g, hg, by rwa [Subgroup.smul_def, sl2zToPSL2R_smul] at h⟩
+  · rintro ⟨g, hg, h⟩
+    exact ⟨⟨sl2zToPSL2R g, Subgroup.mem_map_of_mem _ hg⟩,
+      by rwa [Subgroup.smul_def, sl2zToPSL2R_smul]⟩
 
 /-- The `PSL(2, ℤ)`-action on `ℍ` is faithful, through the injective descent
 `psl2zToPSL2R` and the faithfulness of the `PSL(2, ℝ)`-action. -/

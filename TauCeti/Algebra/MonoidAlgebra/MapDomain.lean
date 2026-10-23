@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.MonoidAlgebra.Basic
 public import Mathlib.Algebra.MonoidAlgebra.MapDomain
 
 /-!
@@ -16,7 +17,9 @@ identity, a composite induces the composite, and a surjection induces a surjecti
 the first two only for the bundled ring and algebra homomorphisms `mapDomainRingHom` and
 `mapDomainAlgHom`; the unbundled forms are what a computation with the coefficients of an
 inverse system of group algebras uses. Also: the image of `mapDomain f` commutes with a monomial
-`single n r` as soon as every `f m` commutes with `n` and `r` is central.
+`single n r` as soon as every `f m` commutes with `n` and `r` is central, and the algebra map
+`lift F` out of `k[N]` induced by a monoid homomorphism `F` restricts along `mapDomain φ` to `lift`
+of the composite `F ∘ φ`.
 
 ## Main results
 
@@ -24,6 +27,7 @@ inverse system of group algebras uses. Also: the image of `mapDomain f` commutes
 * `MonoidAlgebra.mapDomain_surjective`: the map induced by a surjection is surjective.
 * `MonoidAlgebra.mapDomain_commute_single`: the image of `mapDomain f` commutes with `single n r`
   when the values of `f` commute with `n` and `r` is central.
+* `MonoidAlgebra.lift_mapDomain`: `lift F ∘ mapDomain φ = lift (F ∘ φ)`.
 -/
 
 public section
@@ -58,5 +62,16 @@ theorem mapDomain_commute_single [Mul N] {f : M → N} {n : N} {r : R} (hm : ∀
   | zero => simp only [mapDomain_zero]; exact Commute.zero_left _
   | add x y hx hy => rw [mapDomain_add]; exact hx.add_left hy
   | single m s => rw [mapDomain_single]; exact single_commute_single (hm m) (hr s)
+
+/-- The algebra map out of `k[N]` induced by a monoid homomorphism `F : N →* A`, after the map
+induced by `φ : M →* N`, is the algebra map induced by `F ∘ φ`. -/
+@[simp]
+theorem lift_mapDomain {k A : Type*} [CommSemiring k] [Monoid M] [Monoid N] [Semiring A]
+    [Algebra k A] (F : N →* A) (φ : M →* N) (x : MonoidAlgebra k M) :
+    lift k A N F (mapDomain φ x) = lift k A M (F.comp φ) x := by
+  induction x using induction_linear with
+  | zero => simp
+  | add x y hx hy => rw [mapDomain_add, map_add, map_add, hx, hy]
+  | single m r => simp [lift_single]
 
 end MonoidAlgebra

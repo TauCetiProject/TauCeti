@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Constructions.UnitInterval
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
+public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import Mathlib.MeasureTheory.Constructions.Pi
 public import Mathlib.Probability.UniformOn
 import Mathlib.MeasureTheory.Function.Floor
@@ -54,6 +55,9 @@ top cell `[(m-1)/m, 1] = Set.Ici ((m-1)/m)`.
 * `TauCeti.unitInterval.integral_pi_comp_cellIdx_eq_inv_smul_sum` — a function of the cell indices
   of finitely many independent uniform points integrates to the average of its values over
   `V → Fin m`.
+
+The file also records `TauCeti.intervalIntegral_eq_integral_unitInterval`: an interval integral
+over `[0, 1]` is the integral over the unit interval `I` with its volume measure.
 
 ## References
 
@@ -197,6 +201,23 @@ theorem measurePreserving_cellFin [NeZero m] :
     volume_preimage_cellIdx i.isLt, ProbabilityTheory.uniformOn_univ, Measure.count_singleton,
     Fintype.card_fin, one_div]
 
+/-- Every cell of the unit interval is nonempty: the cell index map onto `Fin m` is surjective. -/
+theorem cellFin_surjective [NeZero m] : Function.Surjective (cellFin m) := by
+  intro i
+  have h : (volume : Measure I) (cellFin m ⁻¹' {i}) ≠ 0 := by
+    rw [preimage_cellFin_singleton, volume_preimage_cellIdx i.isLt]
+    exact ENNReal.inv_ne_zero.2 (ENNReal.natCast_ne_top m)
+  obtain ⟨x, hx⟩ := nonempty_of_measure_ne_zero h
+  exact ⟨x, hx⟩
+
+/-- **The cells of a set of indices.** The union of the cells indexed by `C` has volume the
+proportion `|C| / m` of indices it contains. -/
+theorem volume_real_preimage_cellFin [NeZero m] (C : Finset (Fin m)) :
+    volume.real (cellFin m ⁻¹' (C : Set (Fin m))) = C.card / m := by
+  rw [measurePreserving_cellFin.measureReal_preimage C.measurableSet.nullMeasurableSet,
+    measureReal_def, ProbabilityTheory.uniformOn_univ]
+  simp [ENNReal.toReal_div]
+
 variable {V E : Type*} [Fintype V] [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
 
 open scoped Classical in
@@ -260,5 +281,11 @@ theorem integral_pi_comp_cellIdx_eq_inv_smul_sum (hm : 0 < m) (f : (V → ℕ) �
         rw [← Finset.smul_sum, inv_pow]
 
 end unitInterval
+
+/-- An interval integral over `[0, 1]` is the integral over the unit interval. -/
+theorem intervalIntegral_eq_integral_unitInterval {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] (f : ℝ → G) : ∫ t in (0 : ℝ)..1, f t = ∫ t : I, f t := by
+  rw [intervalIntegral.integral_of_le zero_le_one, ← integral_Icc_eq_integral_Ioc,
+    ← integral_subtype measurableSet_Icc]
 
 end TauCeti

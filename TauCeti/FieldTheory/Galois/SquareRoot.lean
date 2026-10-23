@@ -8,10 +8,15 @@ module
 public import Mathlib.Algebra.Algebra.Equiv
 public import Mathlib.Algebra.Algebra.Tower
 public import Mathlib.Algebra.Group.Subgroup.Defs
+public import Mathlib.FieldTheory.IntermediateField.Adjoin.Defs
+public import Mathlib.FieldTheory.Separable
+public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.SetTheory.Cardinal.Finite
 import TauCeti.Algebra.Algebra.Equiv
 import Mathlib.Algebra.Ring.Commute
 import Mathlib.Data.Fintype.Pi
+import TauCeti.FieldTheory.Galois.Basic
+import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
 import Mathlib.GroupTheory.OrderOfElement
 import Mathlib.Tactic.IntervalCases
 
@@ -22,11 +27,14 @@ An automorphism `σ` of a commutative `F`-algebra `L` without zero divisors send
 of an element of `F` to another square root of it, so `σ x = x` or `σ x = -x`. An algebra tower
 also allows the radicands to come from a smaller semiring. Consequently an automorphism is
 known on such roots once its signs on them are, and a group of automorphisms in which only the
-identity fixes each of `n` square roots has at most `2ⁿ` elements.
+identity fixes each of `n` square roots has at most `2ⁿ` elements. Conversely, a square root
+generating a separable quadratic extension is negated by an automorphism.
 
 ## Main results
 
 * `AlgEquiv.apply_eq_or_eq_neg_of_sq_eq`: `σ x = ± x` when `x ^ 2` comes from the base.
+* `TauCeti.exists_algEquiv_apply_eq_neg_of_sq_eq`: some automorphism negates a square root
+  `y` generating a separable quadratic extension `K⟮y⟯ / K`.
 * `Subgroup.card_le_two_pow_of_forall_apply_eq_self`: a subgroup in which only the identity fixes
   each of `n` square roots has at most `2ⁿ` elements.
 * `Subgroup.card_eq_four_of_exists_apply_eq_neg`: a finite subgroup of order at most four
@@ -35,6 +43,8 @@ identity fixes each of `n` square roots has at most `2ⁿ` elements.
 -/
 
 public section
+
+open scoped IntermediateField
 
 namespace AlgEquiv
 
@@ -49,6 +59,24 @@ theorem apply_eq_or_eq_neg_of_sq_eq (σ : L ≃ₐ[F] L) {x : L} {c : R}
     rw [← map_pow, hx, IsScalarTower.algebraMap_apply R F L, AlgEquiv.commutes])
 
 end AlgEquiv
+
+namespace TauCeti
+
+/-- **A square root generating a separable quadratic extension is negated by an automorphism**:
+if `L = K⟮y⟯` is a separable extension of degree two and `y ^ 2 ∈ K`, then some `K`-automorphism
+of `L` sends `y` to `-y`. -/
+theorem exists_algEquiv_apply_eq_neg_of_sq_eq {K L : Type*} [Field K] [Field L] [Algebra K L]
+    (hL : Module.finrank K L = 2) [Algebra.IsSeparable K L] {y : L} (hgen : K⟮y⟯ = ⊤) {c : K}
+    (hy : y ^ 2 = algebraMap K L c) : ∃ σ : L ≃ₐ[K] L, σ y = -y := by
+  have : Algebra.IsQuadraticExtension K L := ⟨hL⟩
+  obtain ⟨σ, hσ⟩ := Algebra.IsQuadraticExtension.exists_algEquiv_ne_one K L
+  refine ⟨σ, (σ.apply_eq_or_eq_neg_of_sq_eq hy).resolve_left fun h ↦ hσ ?_⟩
+  apply TauCeti.IntermediateField.algEquiv_eq_one_of_adjoin_eq_top hgen
+  intro x hx
+  obtain rfl := Set.mem_singleton_iff.mp hx
+  exact h
+
+end TauCeti
 
 namespace Subgroup
 

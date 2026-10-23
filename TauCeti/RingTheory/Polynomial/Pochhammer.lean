@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.Monic
+public import Mathlib.Data.Int.Interval
 public import Mathlib.Data.Nat.Factorial.BigOperators
 public import Mathlib.RingTheory.Polynomial.Pochhammer
 import Mathlib.RingTheory.Binomial
@@ -14,11 +15,10 @@ import Mathlib.RingTheory.Binomial
 # Descending Pochhammer polynomials
 
 This module provides basic lemmas for descending Pochhammer polynomials `descPochhammer R n`
-over general rings.
+over general rings, together with their sums over integer intervals.
 
-Unlike Mathlib's `monic_descPochhammer` and `descPochhammer_natDegree`, which require
-`[NoZeroDivisors R]` or `[Nontrivial R]`, the results here hold under minimal hypotheses by
-transporting from the integer case `descPochhammer ℤ n`.
+The monicity result holds over any ring, and the degree results require only a nontrivial ring.
+The summation identity also holds over arbitrary rings; no division by `m + 1` is needed.
 
 ## Main declarations
 
@@ -27,6 +27,8 @@ transporting from the integer case `descPochhammer ℤ n`.
 * `TauCeti.descPochhammer_degree`: `(descPochhammer R n).degree = n` for nontrivial `R`.
 * `TauCeti.descPochhammer_succ_eval_add_one`: the falling factorial of degree `m + 1` at `x + 1` is
   `x + 1` times the one of degree `m` at `x`.
+* `TauCeti.sum_Ico_descPochhammer_eval`: its sum over a half-open integer interval is the endpoint
+  difference of the next falling factorial, after clearing the denominator.
 * `TauCeti.mul_prod_sq_sub_sq_eq_descPochhammer_eval`: the odd polynomial
   `x (x² - 1²) ⋯ (x² - k²)` is the falling factorial of degree `2k + 1` at `x + k`.
 * `TauCeti.factorial_dvd_mul_prod_sq_sub_sq`: its values at the integers are divisible by
@@ -80,6 +82,34 @@ theorem descPochhammer_succ_eval_add_one {R : Type*} [Ring R] (m : ℕ) (x : R) 
   rw [← descPochhammer_map (Int.castRingHom R), ← descPochhammer_map (Int.castRingHom R) m,
     eval_map, eval_map, ← algebraMap_int_eq, ← aeval_def, ← aeval_def, descPochhammer_succ_left,
     map_mul, aeval_X, aeval_comp, map_sub, aeval_X, map_one, add_sub_cancel_right]
+
+/-! ### Sums over integer intervals -/
+
+/-- **The discrete antiderivative of a falling factorial.** Summing the degree `m` falling
+factorial over the integer range `p ≤ t < q` gives the difference of the degree `m + 1` falling
+factorial at the endpoints, after multiplying the sum by `m + 1`. The identity holds in any
+coefficient ring; it does not require `m + 1` to be invertible.
+
+For `q < p` the interval is empty while the endpoint difference need not vanish. -/
+theorem sum_Ico_descPochhammer_eval {R : Type*} [Ring R] (m : ℕ) {p q : ℤ} (h : p ≤ q) :
+    ((m : R) + 1) * ∑ t ∈ Finset.Ico p q, (descPochhammer R m).eval (t : R)
+      = (descPochhammer R (m + 1)).eval (q : R)
+        - (descPochhammer R (m + 1)).eval (p : R) := by
+  -- Translate the integer interval to a range so that the range telescoping identity applies.
+  rw [Int.Ico_eq_finset_map, Finset.sum_map, Finset.mul_sum]
+  simp only [Function.Embedding.trans_apply, Nat.castEmbedding_apply, addLeftEmbedding_apply]
+  have hq : (((q - p).toNat : ℕ) : ℤ) = q - p := by omega
+  have key := Finset.sum_range_sub
+    (fun k : ℕ => (descPochhammer R (m + 1)).eval ((p + k : ℤ) : R))
+    (q - p).toNat
+  simp only [hq, Nat.cast_zero, add_zero] at key
+  simp only [Int.cast_add, Int.cast_natCast, Nat.cast_add, Nat.cast_one] at key
+  rw [Finset.sum_congr rfl (fun k _ => by
+    have hdiff := Ring.descPochhammer_succ_succ_smeval ((p : R) + k) m
+    simp only [← aeval_eq_smeval, aeval_def, algebraMap_int_eq, ← eval_map,
+      descPochhammer_map, nsmul_eq_mul, Nat.cast_add_one] at hdiff
+    simpa only [add_assoc, Int.cast_one] using sub_eq_iff_eq_add.mpr hdiff)] at key
+  simpa using key
 
 /-! ### An odd polynomial as a falling factorial -/
 

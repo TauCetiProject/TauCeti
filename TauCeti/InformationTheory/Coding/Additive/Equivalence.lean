@@ -250,6 +250,14 @@ section Ring
 
 variable {R : Type*} [Ring R]
 
+/-- Over a ring, additive-code reindexing can be expressed using the underlying additive
+equivalence of the corresponding linear coordinate relabelling. -/
+theorem reindex_eq_map_funCongrLeft (C : AddSubgroup (ι → R)) (e : κ ≃ ι) :
+    reindex C e =
+      C.map (LinearEquiv.funCongrLeft R R e).toAddEquiv.toAddMonoidHom := by
+  rw [reindex_def]
+  congr 1
+
 /-- Additive coordinate transport agrees with the underlying subgroup of a linear image. -/
 theorem reindex_toAddSubgroup_eq_map (C : Submodule R (ι → R)) (e : κ ≃ ι) :
     reindex C.toAddSubgroup e =

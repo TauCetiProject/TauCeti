@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Homotopy.Lifting
 public import TauCeti.AlgebraicTopology.UniversalCover.Basic
+public import TauCeti.Topology.IsLocalHomeomorph
 
 /-!
 # Universal cover: covering map, simple connectedness, universal property
@@ -24,9 +25,12 @@ This file is adapted from Kim Morrison's
 
 * `UniversalCover.isCoveringMap`: the endpoint projection is a covering map.
 * `UniversalCover.discreteTopology_fiber`: fibers of the universal cover are discrete.
+* `UniversalCover.locallyPathConnectedSpace`: the universal cover is locally path-connected.
 * `UniversalCover.pathConnectedSpace`: the universal cover is path-connected.
 * `UniversalCover.simplyConnectedSpace`: the universal cover is simply connected.
 * `UniversalCover.existsUnique_continuousMap_lifts`: the universal lifting property.
+* `UniversalCover.apply_one_eq_ofBasedPath`: a lift of a based path starting at the constant-path
+  point ends at the class of that path.
 
 ## Implementation notes
 
@@ -91,6 +95,13 @@ instance discreteTopology_fiber [LocallyPathConnectedSpace X]
     DiscreteTopology (proj (x₀ := x₀) ⁻¹' {x}) :=
   (isCoveringMap x₀ x).discreteTopology_fiber
 
+/-- The universal cover of a locally path-connected, semilocally simply connected space is
+locally path-connected, since its projection is a local homeomorphism. -/
+instance locallyPathConnectedSpace [LocallyPathConnectedSpace X]
+    [SemilocallySimplyConnectedSpace X] (x₀ : X) :
+    LocallyPathConnectedSpace (TauCeti.UniversalCover x₀) :=
+  (isCoveringMap x₀).isLocalHomeomorph.locallyPathConnectedSpace
+
 /-- Every point of `UniversalCover x₀` is joined to the point represented by the constant
 path. The connecting path is the family of initial segments `t ↦ α |_[0, t]`. -/
 theorem joined_basepoint_ofBasedPath (α : BasedPath x₀) :
@@ -136,6 +147,18 @@ theorem liftPath_apply_one_eq_ofBasedPath_append
   change ofBasedPath x₀ (α.append (γ.initialSegmentFamily 1)) = _
   rw [Path.initialSegmentFamily_one]
   rfl
+
+/-- **The endpoint of a lift of a based path.** A continuous path in the universal cover that starts
+at the constant-path point and lies over the based path `γ` ends at the class of `γ`: by unique
+path lifting it agrees with the family of initial segments `t ↦ γ |_[0, t]`. -/
+theorem apply_one_eq_ofBasedPath [LocallyPathConnectedSpace X] [SemilocallySimplyConnectedSpace X]
+    {g : I → TauCeti.UniversalCover x₀} (hg : Continuous g) (γ : BasedPath x₀)
+    (hγ : ∀ t, (g t).proj = γ t) (h₀ : g 0 = ofBasedPath x₀ (BasedPath.refl x₀)) :
+    g 1 = ofBasedPath x₀ γ := by
+  have h := (isCoveringMap x₀).eq_of_comp_eq hg
+    (g₂ := fun t ↦ ofBasedPath x₀ (γ.initialSegmentFamily t)) (by fun_prop)
+    (funext fun t ↦ by simp [hγ]) 0 (by simpa using h₀)
+  simpa using congrFun h 1
 
 /-- **A loop whose appended class returns to `α` is nullhomotopic.** If appending the loop `γ` to
 `α` leaves the class of `α` unchanged in the universal cover, then `γ` is trivial in the

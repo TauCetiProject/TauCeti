@@ -23,7 +23,7 @@ The consequence the file exists for is that a **nontrivial** linear character `�
 lemma would make it trivial. So the odd permutations move `χ`, and `{χ, χ⁻¹}` is a single orbit of
 two characters under the conjugation action of `Equiv.Perm α`. That is exactly the hypothesis of the
 Mackey irreducibility criterion for an induced linear character, applied to `A₄ ◁ S₄` in
-`TauCeti.RepresentationTheory.Induction.Clifford.Alternating`.
+`TauCeti.RepresentationTheory.Induction.Clifford.Alternating.Basic`.
 
 For that application to be about something, `alternatingGroup α` must *have* a nontrivial linear
 character, and for `Nat.card α = 4` this file lists the characters exactly. Mathlib's

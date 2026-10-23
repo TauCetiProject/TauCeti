@@ -10,9 +10,11 @@ public import TauCeti.LinearAlgebra.IntegralLattice.ConstructionA.Naturality
 /-!
 # Monomial coordinate changes and Construction A
 
-A monomial change of coordinates preserves the rational form used in Construction A exactly
-when each of its coefficients is a sign. Thus a monomial code equivalence has a coordinatewise
-isometric lift precisely when its coefficients modulo the modulus are reductions of signs.
+For a nonzero modulus, a monomial change of coordinates preserves the rational form used in
+Construction A exactly when each of its coefficients is a sign. At modulus zero the form is zero,
+so every monomial map preserves it. Thus, for a nonzero modulus, a monomial code equivalence has
+a coordinatewise isometric lift precisely when its coefficients modulo the modulus are reductions
+of signs.
 The existing signed-coordinate isometry then supplies the lattice isometry.
 -/
 
@@ -26,9 +28,10 @@ section
 
 variable [Fintype ι] [Fintype κ]
 
-/-- A rational monomial map preserves the Construction A form exactly when every multiplier is
-a sign. This criterion is independent of the modulus. -/
-theorem form_monomialEquiv_iff (m : ℕ+) (u : ι → ℚˣ) (e : ι ≃ κ) :
+/-- For a nonzero modulus, a rational monomial map preserves the Construction A form exactly
+when every multiplier is a sign. The criterion does not depend on which nonzero modulus is used;
+at modulus zero the form is zero, so every monomial map preserves it. -/
+theorem form_monomialEquiv_iff (m : ℕ) [NeZero m] (u : ι → ℚˣ) (e : ι ≃ κ) :
     (∀ x y : ι → ℚ, form m (monomialEquiv u e x) (monomialEquiv u e y) =
       form m x y) ↔ ∀ i, (u i : ℚ) ^ 2 = 1 := by
   constructor
@@ -37,13 +40,14 @@ theorem form_monomialEquiv_iff (m : ℕ+) (u : ι → ℚˣ) (e : ι ≃ κ) :
     intro x y
     have hxy := h x y
     simp only [form_apply] at hxy
-    exact (div_left_inj' (by exact_mod_cast m.ne_zero)).mp hxy
+    exact (div_left_inj' (by exact_mod_cast NeZero.ne m)).mp hxy
   · intro h x y
     simp only [form_apply]
     rw [(dotProduct_monomialEquiv_iff u e).mpr h x y]
 
-/-- Rational monomial isometries are precisely signed coordinate changes. -/
-theorem monomialEquiv_preserves_form_iff_exists_signed (m : ℕ+) (u : ι → ℚˣ)
+/-- For a nonzero modulus, rational monomial isometries of the Construction A form are precisely
+signed coordinate changes. -/
+theorem monomialEquiv_preserves_form_iff_exists_signed (m : ℕ) [NeZero m] (u : ι → ℚˣ)
     (e : ι ≃ κ) :
     (∀ x y : ι → ℚ, form m (monomialEquiv u e x) (monomialEquiv u e y) =
       form m x y) ↔
@@ -62,7 +66,7 @@ theorem monomialEquiv_preserves_form_iff_exists_signed (m : ℕ+) (u : ι → �
 
 end
 
-variable {m : ℕ+}
+variable {m : ℕ}
 
 /-- A modular monomial map acts on a Construction A carrier through a rational signed
 coordinate change exactly when all its coefficients are signed residues. -/
@@ -85,7 +89,7 @@ theorem exists_signedEquiv_and_lattice_map_monomialEquiv_iff
 
 section
 
-variable [Fintype ι] [Fintype κ]
+variable [Fintype ι] [Fintype κ] [NeZero m]
 
 /-- A modular monomial map lifts to a signed isometry of the associated Construction A
 integral lattices exactly when all its coefficients are signed residues. -/

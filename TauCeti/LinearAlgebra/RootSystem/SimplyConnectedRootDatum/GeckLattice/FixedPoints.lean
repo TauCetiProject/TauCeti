@@ -82,14 +82,6 @@ identification with a classical matrix group is available here, so the fixed gro
 the carrier's points over the fixed subring instead. The coordinate-free form of the isomorphism,
 for the points of a Hopf algebra rather than for matrix points, is
 `TauCeti.Bialgebra.frobeniusFixedPointsMulEquiv`.
-
-## Roadmap
-
-This advances the target "points over an algebraically closed field as a group, functorially in the
-field, so that a field endomorphism induces a group endomorphism of the points. The `q`-power
-Frobenius is the case a consumer asks for first" in Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`, by naming an isomorphism onto the group that
-endomorphism fixes, from the points over the fixed subring.
 -/
 
 public section

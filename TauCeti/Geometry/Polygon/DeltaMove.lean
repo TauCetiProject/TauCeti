@@ -168,68 +168,89 @@ end IsSimple
 
 section DeltaMove
 
-variable [Ring R] [PartialOrder R] [IsOrderedRing R] [Nontrivial R] [AddCommGroup V] [Module R V]
-  [AddTorsor V P] {poly : Polygon P n} {i : Fin n} {c : P}
+variable [Ring R] [PartialOrder R] [AddCommGroup V] [Module R V] [AddTorsor V P]
+  {poly : Polygon P n} {i : Fin n} {c : P}
+
+section Distinctness
+
+variable [Nontrivial R]
 
 namespace IsDeltaMove
 
 variable (h : poly.IsDeltaMove R i c)
 include h
 
-omit [IsOrderedRing R] in
 /-- The two endpoints of the edge replaced by a Δ-move are distinct. -/
 theorem left_ne_right : poly i ≠ poly (finRotate n i) := by
   simpa using h.affineIndependent.injective.ne (a₁ := 0) (a₂ := 1) (by decide)
 
-omit [IsOrderedRing R] in
 /-- The new vertex of a Δ-move differs from the start of the replaced edge. -/
 theorem left_ne_apex : poly i ≠ c := by
   simpa using h.affineIndependent.injective.ne (a₁ := 0) (a₂ := 2) (by decide)
 
-omit [IsOrderedRing R] in
 /-- The new vertex of a Δ-move differs from the end of the replaced edge. -/
 theorem apex_ne_right : c ≠ poly (finRotate n i) := by
   simpa using h.affineIndependent.injective.ne (a₁ := 2) (a₂ := 1) (by decide)
 
-omit [Nontrivial R] in
+/-- The end of the replaced edge is not on the first new edge. -/
+theorem right_notMem_affineSegment : poly (finRotate n i) ∉ affineSegment R (poly i) c := by
+  intro hx
+  have hx' : poly (finRotate n i) ∈ affineSpan R
+      ((![poly i, poly (finRotate n i), c] : Fin 3 → P) '' {0, 2}) := by
+    simpa using affineSegment_subset_affineSpan R (poly i) c hx
+  have := (h.affineIndependent.mem_affineSpan_iff 1 {0, 2}).1 hx'
+  norm_num at this
+
+/-- The start of the replaced edge is not on the second new edge. -/
+theorem left_notMem_affineSegment : poly i ∉ affineSegment R c (poly (finRotate n i)) := by
+  intro hx
+  have hx' : poly i ∈ affineSpan R
+      ((![poly i, poly (finRotate n i), c] : Fin 3 → P) '' {2, 1}) := by
+    simpa using affineSegment_subset_affineSpan R c (poly (finRotate n i)) hx
+  have := (h.affineIndependent.mem_affineSpan_iff 0 {2, 1}).1 hx'
+  norm_num at this
+
+end IsDeltaMove
+
+end Distinctness
+
+section Boundary
+
+namespace IsDeltaMove
+
+variable (h : poly.IsDeltaMove R i c)
+include h
+
+section
+
+variable [ZeroLEOneClass R]
+
 /-- The two new edges meet only at the new vertex. -/
 theorem affineSegment_inter_affineSegment :
     affineSegment R (poly i) c ∩ affineSegment R c (poly (finRotate n i)) = {c} :=
   h.affineIndependent.comm_right.affineSegment_inter_eq_endpoint
 
-/-- The end of the replaced edge is not on the first new edge. -/
-theorem right_notMem_affineSegment : poly (finRotate n i) ∉ affineSegment R (poly i) c := by
-  intro hB
-  have := h.affineSegment_inter_affineSegment.subset ⟨hB, right_mem_affineSegment _ _ _⟩
-  exact h.apex_ne_right (this : _ = c).symm
+end
 
-/-- The start of the replaced edge is not on the second new edge. -/
-theorem left_notMem_affineSegment : poly i ∉ affineSegment R c (poly (finRotate n i)) := by
-  intro hA
-  have := h.affineSegment_inter_affineSegment.subset ⟨left_mem_affineSegment _ _ _, hA⟩
-  exact h.left_ne_apex (this : _ = c)
+variable [IsOrderedRing R]
 
-omit [Nontrivial R] in
 /-- The replaced edge is a side of the triangle of a Δ-move. -/
 theorem edgeSet_subset_closedInterior : poly.edgeSet R i ⊆ h.triangle.closedInterior :=
   (h.triangle.closedInterior_face_eq_affineSegment (i := 0) (j := 1)
     (by decide)).symm.subset.trans (h.triangle.closedInterior_face_subset_closedInterior _)
 
-omit [Nontrivial R] in
 /-- The first new edge is a side of the triangle of a Δ-move. -/
 theorem affineSegment_left_subset_closedInterior :
     affineSegment R (poly i) c ⊆ h.triangle.closedInterior :=
   (h.triangle.closedInterior_face_eq_affineSegment (i := 0) (j := 2)
     (by decide)).symm.subset.trans (h.triangle.closedInterior_face_subset_closedInterior _)
 
-omit [Nontrivial R] in
 /-- The second new edge is a side of the triangle of a Δ-move. -/
 theorem affineSegment_right_subset_closedInterior :
     affineSegment R c (poly (finRotate n i)) ⊆ h.triangle.closedInterior :=
   (h.triangle.closedInterior_face_eq_affineSegment (i := 2) (j := 1)
     (by decide)).symm.subset.trans (h.triangle.closedInterior_face_subset_closedInterior _)
 
-omit [Nontrivial R] in
 /-- Before a Δ-move, the triangle meets the polygon exactly in the edge it replaces: `D ∩ k = u`
 in Burde–Zieschang, Definition 1.6. -/
 theorem closedInterior_inter_boundary :
@@ -242,7 +263,6 @@ theorem closedInterior_inter_boundary :
   · rcases h.edgeSet_inter_closedInterior_subset hki ⟨hk, hxT⟩ with rfl | rfl
     exacts [left_mem_affineSegment _ _ _, right_mem_affineSegment _ _ _]
 
-omit [Nontrivial R] in
 /-- After a Δ-move, the triangle meets the polygon exactly in the two new edges: `D ∩ k' = v ∪ w`,
 the condition for the inverse move. -/
 theorem closedInterior_inter_boundary_insertVertex :
@@ -261,7 +281,8 @@ theorem closedInterior_inter_boundary_insertVertex :
 
 end IsDeltaMove
 
-omit [Nontrivial R] in
+variable [IsOrderedRing R]
+
 /-- **The textbook form of a Δ-move.** For a simple polygon, inserting `c` after vertex `i` is a
 Δ-move exactly when the edge's endpoints and `c` span a triangle meeting the polygon exactly in
 edge `i` (Burde–Zieschang, Definition 1.6). -/
@@ -274,7 +295,6 @@ theorem isDeltaMove_iff_of_isSimple (hp : poly.IsSimple R) :
   rcases hp.eq_vertex_of_mem_edgeSet hk hxk hxi with ⟨-, rfl⟩ | ⟨rfl, rfl⟩
   exacts [.inl rfl, .inr rfl]
 
-omit [Nontrivial R] in
 /-- **The textbook form of an inverse Δ-move.** For a polygon that is simple after `c` is inserted
 after vertex `i`, the insertion is a Δ-move exactly when the endpoints of edge `i` and `c` span a
 triangle meeting the new polygon exactly in the two new edges, which is the condition for removing
@@ -291,10 +311,21 @@ theorem isDeltaMove_iff_of_isSimple_insertVertex (hq : (poly.insertVertex i c).I
   · exact .inl (eq_and_finRotate_eq_of_isSimple_insertVertex c hq hk hxk hx).1
   · exact .inr (eq_and_eq_finRotate_of_isSimple_insertVertex c hq hk hxk hx).1
 
+end Boundary
+
+section Simplicity
+
+variable [IsOrderedRing R] [Nontrivial R]
+
+namespace IsDeltaMove
+
+variable (h : poly.IsDeltaMove R i c)
+include h
+
 /-- **The inverse of a Δ-move keeps a polygon simple.** If the polygon is simple after a Δ-move, it
 was simple before. -/
-theorem IsDeltaMove.isSimple_of_isSimple_insertVertex (h : poly.IsDeltaMove R i c)
-    (hq : (poly.insertVertex i c).IsSimple R) : poly.IsSimple R := by
+theorem isSimple_of_isSimple_insertVertex (hq : (poly.insertVertex i c).IsSimple R) :
+    poly.IsSimple R := by
   refine ⟨fun k => ?_, fun k₁ k₂ x hne hx₁ hx₂ => ?_⟩
   · by_cases hk : k = i
     · exact hk ▸ h.left_ne_right
@@ -331,9 +362,8 @@ theorem IsDeltaMove.isSimple_of_isSimple_insertVertex (h : poly.IsDeltaMove R i 
 /-- After a Δ-move on a simple polygon, an old edge `k` meets the first new edge only at vertex
 `i`, which it reaches as the edge before vertex `i`. This is the condition of
 `Polygon.IsSimple.eq_vertex_of_mem_edgeSet` for these two edges. -/
-private theorem IsDeltaMove.eq_vertex_of_mem_affineSegment_left (h : poly.IsDeltaMove R i c)
-    (hp : poly.IsSimple R) {k : Fin n} (hk : k ≠ i) {x : P} (hxk : x ∈ poly.edgeSet R k)
-    (hx : x ∈ affineSegment R (poly i) c) :
+private theorem eq_vertex_of_mem_affineSegment_left (hp : poly.IsSimple R) {k : Fin n}
+    (hk : k ≠ i) {x : P} (hxk : x ∈ poly.edgeSet R k) (hx : x ∈ affineSegment R (poly i) c) :
     (i.castSucc = finRotate (n + 1) (i.succ.succAbove k) ∧
         x = poly.insertVertex i c i.castSucc) ∨
       (i.succ.succAbove k = finRotate (n + 1) i.castSucc ∧
@@ -351,8 +381,8 @@ private theorem IsDeltaMove.eq_vertex_of_mem_affineSegment_left (h : poly.IsDelt
 /-- After a Δ-move on a simple polygon, an old edge `k` meets the second new edge only at the
 vertex after `i`, which it reaches as the edge after that vertex. This is the condition of
 `Polygon.IsSimple.eq_vertex_of_mem_edgeSet` for these two edges. -/
-private theorem IsDeltaMove.eq_vertex_of_mem_affineSegment_right (h : poly.IsDeltaMove R i c)
-    (hp : poly.IsSimple R) {k : Fin n} (hk : k ≠ i) {x : P} (hxk : x ∈ poly.edgeSet R k)
+private theorem eq_vertex_of_mem_affineSegment_right (hp : poly.IsSimple R) {k : Fin n}
+    (hk : k ≠ i) {x : P} (hxk : x ∈ poly.edgeSet R k)
     (hx : x ∈ affineSegment R c (poly (finRotate n i))) :
     (i.succ = finRotate (n + 1) (i.succ.succAbove k) ∧ x = poly.insertVertex i c i.succ) ∨
       (i.succ.succAbove k = finRotate (n + 1) i.succ ∧
@@ -368,7 +398,7 @@ private theorem IsDeltaMove.eq_vertex_of_mem_affineSegment_right (h : poly.IsDel
         (insertVertex_apply_succAbove _ _ _ _).symm⟩
 
 /-- **A Δ-move keeps a polygon simple.** -/
-theorem IsDeltaMove.isSimple_insertVertex (h : poly.IsDeltaMove R i c) (hp : poly.IsSimple R) :
+theorem isSimple_insertVertex (hp : poly.IsSimple R) :
     (poly.insertVertex i c).IsSimple R := by
   refine ⟨fun j => ?_, fun j₁ j₂ x hne hx₁ hx₂ => ?_⟩
   · obtain rfl | ⟨k, rfl⟩ := Fin.eq_self_or_eq_succAbove i.succ j
@@ -433,9 +463,13 @@ theorem IsDeltaMove.isSimple_insertVertex (h : poly.IsDeltaMove R i c) (hp : pol
         (insertVertex_apply_succAbove _ _ _ _).symm⟩
 
 /-- **A Δ-move keeps a polygon simple, and so does its inverse.** -/
-theorem IsDeltaMove.isSimple_insertVertex_iff (h : poly.IsDeltaMove R i c) :
+theorem isSimple_insertVertex_iff :
     (poly.insertVertex i c).IsSimple R ↔ poly.IsSimple R :=
   ⟨h.isSimple_of_isSimple_insertVertex, h.isSimple_insertVertex⟩
+
+end IsDeltaMove
+
+end Simplicity
 
 end DeltaMove
 
@@ -451,7 +485,7 @@ theorem toPolygon_insertVertex_one (t : Affine.Triangle R P) (c : P) :
   congrArg Polygon.mk <| (Polygon.insertVertex_vertices _ _ _).trans <| funext fun j => by
     fin_cases j <;> rfl
 
-variable [PartialOrder R] [IsOrderedRing R]
+variable [PartialOrder R] [IsOrderedAddMonoid R]
 
 /-- **A triangle becomes a parallelogram by a Δ-move.** For a triangle with vertices `a`, `b`, `d`,
 inserting the fourth vertex `c = b + (d - a)` of the parallelogram after `b` is a Δ-move across the
@@ -479,14 +513,9 @@ theorem isDeltaMove_parallelogram (t : Affine.Triangle R P) :
       ← linearIndependent_equiv (finSuccAboveEquiv (0 : Fin 3))]
     have hdb : d -ᵥ b = (d -ᵥ a) - (b -ᵥ a) := (vsub_sub_vsub_cancel_right d b a).symm
     have hcb : c -ᵥ b = d -ᵥ a := vadd_vsub _ _
-    have hli' : LinearIndependent R ![(d -ᵥ a) - (b -ᵥ a), d -ᵥ a] :=
-      LinearIndependent.pair_iff.2 fun r s hrs => by
-        obtain ⟨h₁, h₂⟩ := LinearIndependent.pair_iff.1 hli (-r) (r + s) (by
-          rw [← hrs, smul_sub, add_smul, neg_smul]
-          abel)
-        rw [neg_eq_zero] at h₁
-        rw [h₁, zero_add] at h₂
-        exact ⟨h₁, h₂⟩
+    have hli' : LinearIndependent R ![(d -ᵥ a) - (b -ᵥ a), d -ᵥ a] := by
+      simpa only [sub_eq_add_neg, add_comm (d -ᵥ a), LinearIndependent.pair_add_left_iff,
+        LinearIndependent.pair_neg_left_iff] using hli
     convert hli' using 1
     ext j
     fin_cases j

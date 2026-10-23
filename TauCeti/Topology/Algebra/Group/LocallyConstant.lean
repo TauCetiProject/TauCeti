@@ -5,11 +5,18 @@ Authors: Claude
 -/
 module
 
-public import Mathlib.Topology.Algebra.OpenSubgroup
-public import Mathlib.Topology.LocallyConstant.Basic
+public import Mathlib.Topology.Algebra.ClopenNhdofOne
+public import Mathlib.Topology.UniformSpace.CompactConvergence
+public import TauCeti.Topology.LocallyConstant.Compact
+import Mathlib.Topology.Separation.Connected
+import Mathlib.Topology.Separation.DisjointCover
 
 /-!
-# Locally constant functions on a compact group are uniformly locally constant
+# Locally constant functions on topological groups
+
+An additive homomorphism from a group with separately continuous addition whose kernel is open
+is locally constant, even when its codomain is only an `AddZeroClass`. Open kernels are preserved
+by taking integer multiples of additive homomorphisms into an additive commutative group.
 
 A locally constant function `f : G → A` on a topological group is constant near each point, but
 the neighbourhood on which it is constant depends on the point. On a *compact* group the
@@ -18,60 +25,100 @@ dependence disappears: there is a single open subgroup `V` with `f (x * v) = f x
 `TauCeti.rightTranslationStabilizer f`, and its openness,
 `TauCeti.isOpen_rightTranslationStabilizer`.
 
-The proof is the tube lemma. The set of pairs `(x, g)` with `f (x * g) = f x` is open, because it
-is the locus where two locally constant functions of `(x, g)` agree, and it contains `G × {1}`;
-compactness of `G` produces a single open `V ∋ 1` that works for every `x` at once. Being a
-subgroup that is a neighbourhood of `1`, the stabilizer is then open.
-
-Compactness is the hypothesis the tube lemma consumes, and it is what turns "for each `x` there
-is a neighbourhood of `1`" into "there is a neighbourhood of `1` that works for every `x`". Nothing
-weaker is claimed for the stabilizer: for a non-compact `G` the argument produces a neighbourhood
-depending on `x` and no uniform one, and the statements below about the stabilizer assume `G`
-compact.
-
 Uniform local constancy is what makes the coinduced module of locally constant equivariant maps a
-*discrete* `G`-module, its right-translation stabilizers being open.
+*discrete* `G`-module, its right-translation stabilizers being open. Since an open subgroup of a
+compact group contains an open normal subgroup, the locally constant functions on a compact group
+are exactly those factoring through a finite quotient `G ⧸ U`
+(`TauCeti.isLocallyConstant_iff_exists_comp_quotientMk_eq`), and on a profinite group such
+cylinder functions are dense among all continuous functions
+(`TauCeti.dense_setOf_comp_quotientMk`).
 
-The tube-lemma step itself needs only a compact *set* `K ⊆ G`, not a compact group:
-`TauCeti.exists_isOpen_forall_mem_mul_right_eq` is that statement, uniform in the translated point
-`x ∈ K`, and the stabilizer's openness is its case `K = G`.
+The uniformity statement itself needs only a compact *set* `K ⊆ G` and continuous multiplication:
+`IsLocallyConstant.exists_isOpen_forall_mem_mul_right_eq` is that statement, uniform in the point
+`x ∈ K`, for the family `x ↦ f (x * σ p)`. The parameter map `σ` needs continuity only at the
+chosen point; no associativity, identity or inverse is needed.
 
-`TauCeti.exists_isOpen_forall_mul_right_eq` is the form in which a cochain construction consumes
-the stabilizer: a continuous family `σ : P → G` of right translations moves `f` only locally in
-the parameter `p`, uniformly in the point being translated.
+`IsLocallyConstant.exists_isOpen_forall_mul_right_eq` specializes to a compact space.
+`IsLocallyConstant.exists_isOpen_translate₂` and `IsLocallyConstant.exists_isOpen_translate₃` give
+uniformity for the families `(y, y * g)` and `(y, y * g, y * g * h)` used in cochain constructions.
 -/
 
 public section
 
-namespace TauCeti
+namespace AddMonoidHom
 
-section Mul
+variable {G A : Type*} [AddGroup G] [TopologicalSpace G] [SeparatelyContinuousAdd G]
+
+/-- An additive homomorphism with open kernel is locally constant. -/
+theorem isLocallyConstant_of_isOpen_ker [AddZeroClass A] (χ : G →+ A)
+    (hχ : IsOpen (χ.ker : Set G)) : IsLocallyConstant (χ : G → A) := by
+  refine (IsLocallyConstant.iff_eventually_eq _).2 fun x ↦ ?_
+  -- Near `x`, the difference `-x + y` lies in the open kernel.
+  have hopen : IsOpen ((fun y : G ↦ -x + y) ⁻¹' (χ.ker : Set G)) :=
+    hχ.preimage (continuous_id.const_add (-x))
+  filter_upwards [hopen.mem_nhds (by simp)] with y hy
+  exact χ.eq_iff.mpr hy
+
+/-- The kernel of an integer multiple of an additive homomorphism with open kernel is open. -/
+theorem isOpen_ker_zsmul [AddCommGroup A] (χ : G →+ A)
+    (hχ : IsOpen (χ.ker : Set G)) (k : ℤ) :
+    IsOpen ((k • χ).ker : Set G) :=
+  AddSubgroup.isOpen_mono (fun x hx ↦ by simp_all) hχ
+
+end AddMonoidHom
+
+namespace IsLocallyConstant
 
 variable {G : Type*} [Mul G] [TopologicalSpace G] [ContinuousMul G] {A : Type*}
 
-/-- **Uniform local constancy on a compact set, in a parameter.** For a locally constant `f` on a
-space with a continuous multiplication, a compact set `K` and a continuous family `σ : P → G` of
-right translations, every parameter has a neighbourhood on which `x ↦ f (x * σ p)` does not change
-at all on `K`: the neighbourhood is uniform in `x ∈ K`. No compactness of `G` is needed, only of
-`K`, and no group structure. -/
+/-- For a locally constant `f` on a space with continuous multiplication and a compact set `K`,
+a family of right translations `σ : P → G` continuous at `p₀` leaves `x ↦ f (x * σ p)` unchanged
+on a neighbourhood of `p₀`, uniformly in `x ∈ K`. Only `K` must be compact; no group structure
+or continuity of `σ` away from `p₀` is needed. -/
 theorem exists_isOpen_forall_mem_mul_right_eq
     {f : G → A} (hf : IsLocallyConstant f) {K : Set G} (hK : IsCompact K) {P : Type*}
-    [TopologicalSpace P] {σ : P → G} (hσ : Continuous σ) (p₀ : P) :
+    [TopologicalSpace P] {σ : P → G} (p₀ : P) (hσ : ContinuousAt σ p₀) :
     ∃ V : Set P, IsOpen V ∧ p₀ ∈ V ∧ ∀ p ∈ V, ∀ x ∈ K, f (x * σ p) = f (x * σ p₀) := by
-  -- the locus where the two locally constant functions `(x, p) ↦ f (x * σ p)` and
-  -- `(x, p) ↦ f (x * σ p₀)` agree is open, and it contains the tube `K × {p₀}`
-  have hmul : IsLocallyConstant fun q : G × P => f (q.1 * σ q.2) :=
-    hf.comp_continuous (continuous_fst.mul (hσ.comp continuous_snd))
-  have hconst : IsLocallyConstant fun q : G × P => f (q.1 * σ p₀) :=
-    hf.comp_continuous (continuous_fst.mul continuous_const)
-  have hopen : IsOpen {q : G × P | f (q.1 * σ q.2) = f (q.1 * σ p₀)} :=
-    (hmul.prodMk hconst) {a : A × A | a.1 = a.2}
-  obtain ⟨u, v, -, hvopen, hKu, hv, huv⟩ :=
-    generalized_tube_lemma hK (isCompact_singleton (x := p₀)) hopen fun q hq => by
-      simp only [Set.mem_ofPred_eq, Set.mem_singleton_iff.mp hq.2]
-  exact ⟨v, hvopen, hv rfl, fun p hp x hx => huv (Set.mk_mem_prod (hKu hx) hp)⟩
+  -- The compact-family lemma applied to `(x, g) ↦ f (x * g)` gives a uniform neighbourhood.
+  obtain ⟨V, hVopen, hVσ, hV⟩ :=
+    (hf.comp_continuous continuous_mul).exists_isOpen_forall_mem_eq hK (σ p₀)
+  -- Continuity at `p₀` pulls this neighbourhood back to the parameter space.
+  obtain ⟨W, hWV, hWopen, hWp₀⟩ :=
+    mem_nhds_iff.mp (hσ.preimage_mem_nhds (hVopen.mem_nhds hVσ))
+  exact ⟨W, hWopen, hWp₀, fun p hp x hx ↦ hV (σ p) (hWV hp) x hx⟩
 
-end Mul
+/-- On a compact space with continuous multiplication, a family of right translations continuous
+at `p₀` leaves a locally constant `f` unchanged near `p₀`, uniformly in the translated point. -/
+theorem exists_isOpen_forall_mul_right_eq [CompactSpace G]
+    {f : G → A} (hf : IsLocallyConstant f) {P : Type*} [TopologicalSpace P] {σ : P → G}
+    (p₀ : P) (hσ : ContinuousAt σ p₀) :
+    ∃ V : Set P, IsOpen V ∧ p₀ ∈ V ∧ ∀ p ∈ V, ∀ x : G, f (x * σ p) = f (x * σ p₀) := by
+  simpa using exists_isOpen_forall_mem_mul_right_eq hf isCompact_univ p₀ hσ
+
+/-- A locally constant function `N : G × G → A`, evaluated along `(y, y * g)`, is locally
+constant in `g`, uniformly in `y`, on a compact space with continuous multiplication. -/
+theorem exists_isOpen_translate₂ [CompactSpace G]
+    {N : G × G → A} (hN : IsLocallyConstant N) (g₀ : G) :
+    ∃ V : Set G, IsOpen V ∧ g₀ ∈ V ∧ ∀ g ∈ V, ∀ y : G, N (y, y * g) = N (y, y * g₀) := by
+  simpa using (hN.comp_continuous
+    (continuous_fst.prodMk (continuous_fst.mul continuous_snd))).exists_isOpen_forall_mem_eq
+    isCompact_univ g₀
+
+/-- A locally constant function `Q : G × G × G → A`, evaluated along
+`(y, y * g, y * g * h)`, is locally constant in `(g, h)`, uniformly in `y`, on a compact space
+with continuous multiplication. -/
+theorem exists_isOpen_translate₃ [CompactSpace G]
+    {Q : G × G × G → A} (hQ : IsLocallyConstant Q) (q₀ : G × G) :
+    ∃ V : Set (G × G), IsOpen V ∧ q₀ ∈ V ∧
+      ∀ q ∈ V, ∀ y : G, Q (y, y * q.1, y * q.1 * q.2) = Q (y, y * q₀.1, y * q₀.1 * q₀.2) := by
+  simpa using (hQ.comp_continuous (continuous_fst.prodMk
+    ((continuous_fst.mul (continuous_fst.comp continuous_snd)).prodMk
+      ((continuous_fst.mul (continuous_fst.comp continuous_snd)).mul
+        (continuous_snd.comp continuous_snd))))).exists_isOpen_forall_mem_eq isCompact_univ q₀
+
+end IsLocallyConstant
+
+namespace TauCeti
 
 variable {G : Type*} [Group G] {A : Type*}
 
@@ -95,65 +142,64 @@ its right-translation stabilizer is an open subgroup, so a single open neighbour
 theorem isOpen_rightTranslationStabilizer [TopologicalSpace G] [ContinuousMul G]
     [CompactSpace G] {f : G → A} (hf : IsLocallyConstant f) :
     IsOpen (rightTranslationStabilizer f : Set G) := by
-  -- uniform local constancy on the compact set `G` at the parameter `1` gives a neighbourhood of
-  -- `1` inside the stabilizer, which is a subgroup
+  -- Uniform local constancy near `1` gives a neighbourhood inside the stabilizer subgroup.
   obtain ⟨V, hVopen, hV1, hV⟩ :=
-    exists_isOpen_forall_mem_mul_right_eq hf isCompact_univ continuous_id (1 : G)
+    hf.exists_isOpen_forall_mul_right_eq (1 : G) continuous_id.continuousAt
   refine Subgroup.isOpen_of_mem_nhds _ (Filter.mem_of_superset (hVopen.mem_nhds hV1)
     fun g hg x => ?_)
-  exact (hV g hg x (Set.mem_univ x)).trans (congrArg f (mul_one x))
+  simpa using hV g hg x
 
-/-- **Uniform local constancy in a parameter.** For a locally constant `f` on a compact group and
-a continuous family `σ : P → G` of right translations, every parameter has a neighbourhood on
-which `x ↦ f (x * σ p)` does not change at all: the neighbourhood is uniform in `x`. This is the
-form in which a cochain built by right-translating a locally constant function is proved locally
-constant in its group arguments. -/
-theorem exists_isOpen_forall_mul_right_eq [TopologicalSpace G] [ContinuousMul G] [CompactSpace G]
-    {f : G → A} (hf : IsLocallyConstant f) {P : Type*} [TopologicalSpace P] {σ : P → G}
-    (hσ : Continuous σ) (p₀ : P) :
-    ∃ V : Set P, IsOpen V ∧ p₀ ∈ V ∧ ∀ p ∈ V, ∀ x : G, f (x * σ p) = f (x * σ p₀) := by
-  refine ⟨(fun p => (σ p₀)⁻¹ * σ p) ⁻¹' (rightTranslationStabilizer f : Set G),
-    (isOpen_rightTranslationStabilizer hf).preimage (continuous_const.mul hσ), by simp,
-    fun p hp x => ?_⟩
-  have hx := (mem_rightTranslationStabilizer.1 hp) (x * σ p₀)
-  rwa [mul_assoc, mul_inv_cancel_left] at hx
+end TauCeti
 
-/-- A locally constant function `N : G × G → A`, evaluated along `(y, y * g)`, is locally
-constant in `g`, uniformly in `y`. -/
-theorem exists_isOpen_translate₂ [TopologicalSpace G] [ContinuousMul G] [CompactSpace G]
-    {N : G × G → A} (hN : IsLocallyConstant N) (g₀ : G) :
-    ∃ V : Set G, IsOpen V ∧ g₀ ∈ V ∧ ∀ g ∈ V, ∀ y : G, N (y, y * g) = N (y, y * g₀) := by
-  obtain ⟨V, hVopen, hg₀, hV⟩ := exists_isOpen_forall_mul_right_eq hN
-    (σ := fun g : G => ((1 : G), g₀⁻¹ * g))
-    (continuous_const.prodMk (continuous_const.mul continuous_id)) g₀
-  refine ⟨V, hVopen, hg₀, fun g hg y => ?_⟩
-  have hy := hV g hg (y, y * g₀)
-  have h1 : ((y, y * g₀) : G × G) * ((1 : G), g₀⁻¹ * g) = (y, y * g) := by
-    simp [mul_assoc]
-  have h2 : ((y, y * g₀) : G × G) * ((1 : G), g₀⁻¹ * g₀) = (y, y * g₀) := by
-    simp
-  rwa [h1, h2] at hy
+namespace IsLocallyConstant
 
-/-- A locally constant function `Q : G × G × G → A`, evaluated along
-`(y, y * g, y * g * h)`, is locally constant in `(g, h)`, uniformly in `y`. -/
-theorem exists_isOpen_translate₃ [TopologicalSpace G] [ContinuousMul G] [CompactSpace G]
-    {Q : G × G × G → A} (hQ : IsLocallyConstant Q) (q₀ : G × G) :
-    ∃ V : Set (G × G), IsOpen V ∧ q₀ ∈ V ∧
-      ∀ q ∈ V, ∀ y : G, Q (y, y * q.1, y * q.1 * q.2) = Q (y, y * q₀.1, y * q₀.1 * q₀.2) := by
-  obtain ⟨V, hVopen, hq₀, hV⟩ := exists_isOpen_forall_mul_right_eq hQ
-    (σ := fun q : G × G => ((1 : G), q₀.1⁻¹ * q.1, (q₀.1 * q₀.2)⁻¹ * (q.1 * q.2)))
-    (continuous_const.prodMk ((continuous_const.mul continuous_fst).prodMk
-      (continuous_const.mul (continuous_fst.mul continuous_snd)))) q₀
-  refine ⟨V, hVopen, hq₀, fun q hq y => ?_⟩
-  have hy := hV q hq (y, y * q₀.1, y * q₀.1 * q₀.2)
-  have h1 : ((y, y * q₀.1, y * q₀.1 * q₀.2) : G × G × G) *
-      ((1 : G), q₀.1⁻¹ * q.1, (q₀.1 * q₀.2)⁻¹ * (q.1 * q.2)) =
-        (y, y * q.1, y * q.1 * q.2) := by
-    simp [mul_assoc]
-  have h2 : ((y, y * q₀.1, y * q₀.1 * q₀.2) : G × G × G) *
-      ((1 : G), q₀.1⁻¹ * q₀.1, (q₀.1 * q₀.2)⁻¹ * (q₀.1 * q₀.2)) =
-        (y, y * q₀.1, y * q₀.1 * q₀.2) := by
-    simp
-  rwa [h1, h2] at hy
+variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
+  {A : Type*}
+
+/-- A locally constant function on a compact topological group factors through the quotient by
+an open normal subgroup. -/
+theorem exists_comp_quotientMk_eq {f : G → A} (hf : IsLocallyConstant f) :
+    ∃ (U : OpenNormalSubgroup G) (g : G ⧸ U.toSubgroup → A), g ∘ (↑) = f := by
+  -- The open stabilizer `S` of `f` under right translation contains an open normal subgroup.
+  let S : OpenSubgroup G :=
+    ⟨TauCeti.rightTranslationStabilizer f, TauCeti.isOpen_rightTranslationStabilizer hf⟩
+  obtain ⟨U, hU⟩ :=
+    IsTopologicalGroup.exist_openNormalSubgroup_sub_clopen_nhds_of_one S.isClopen S.one_mem
+  have hrel : ∀ x y : G, QuotientGroup.leftRel U.toSubgroup x y → f x = f y := fun x y hxy ↦ by
+    simpa using (TauCeti.mem_rightTranslationStabilizer.mp
+      (hU (QuotientGroup.leftRel_apply.mp hxy)) x).symm
+  exact ⟨U, fun q ↦ Quotient.liftOn' q f hrel, rfl⟩
+
+end IsLocallyConstant
+
+namespace TauCeti
+
+variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
+
+/-- A function on a compact topological group is locally constant exactly when it factors
+through the finite quotient by some open normal subgroup. -/
+theorem isLocallyConstant_iff_exists_comp_quotientMk_eq {A : Type*} {f : G → A} :
+    IsLocallyConstant f ↔ ∃ (U : OpenNormalSubgroup G) (g : G ⧸ U.toSubgroup → A), g ∘ (↑) = f := by
+  refine ⟨IsLocallyConstant.exists_comp_quotientMk_eq, ?_⟩
+  rintro ⟨U, g, rfl⟩
+  exact (IsLocallyConstant.of_discrete g).comp_continuous QuotientGroup.continuous_mk
+
+variable [TotallyDisconnectedSpace G]
+
+/-- **Density of cylinder functions.** On a profinite group, the continuous functions that factor
+through the quotient by some open normal subgroup are dense in `C(G, R)` for every uniform
+space `R`. -/
+theorem dense_setOf_comp_quotientMk (R : Type*) [UniformSpace R] :
+    Dense {F : C(G, R) |
+      ∃ (U : OpenNormalSubgroup G) (g : G ⧸ U.toSubgroup → R), g ∘ (↑) = F} := by
+  refine fun f ↦ (mem_closure_iff_nhds_basis
+    (nhds_basis_uniformity' ContinuousMap.hasBasis_compactConvergenceUniformity_of_compact)).mpr
+    fun V hV ↦ ?_
+  -- Approximate `f` within `V` by a function factoring through a finite discrete space.
+  obtain ⟨N, c, h, hc, hch⟩ := ContinuousMap.exists_finite_approximation_of_mem_nhds_diagonal f
+    (nhdsSet_diagonal_le_uniformity hV)
+  have hloc : IsLocallyConstant (h ∘ c) :=
+    (IsLocallyConstant.of_discrete h).comp_continuous hc
+  exact ⟨⟨h ∘ c, hloc.continuous⟩, hloc.exists_comp_quotientMk_eq, fun x ↦ hch x⟩
 
 end TauCeti

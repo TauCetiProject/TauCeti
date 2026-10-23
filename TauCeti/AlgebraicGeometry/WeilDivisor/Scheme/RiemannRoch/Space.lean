@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicGeometry.Cohomology.Module.Base
 public import TauCeti.AlgebraicGeometry.Scheme.ClosedPoint
 public import TauCeti.AlgebraicGeometry.WeilDivisor.LinearSystem.Basic
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Picard
-public import TauCeti.Topology.KrullDimension
+public import TauCeti.Topology.KrullDimension.Basic
 public import Mathlib.AlgebraicGeometry.Morphisms.Proper
 
 /-!
@@ -172,6 +172,17 @@ lemma residueMap_eq_zero_iff {g : X.functionField} (hg0 : g ≠ 0)
   rw [mem_sections_iff_mem_maximalIdeal hg0 hg s.2
     (exists_algebraMap_eq_mul hg0 hg s.2).choose_spec]
   exact IsLocalRing.residue_eq_zero_iff _
+
+/-- The residue map takes the residue of any stalk element representing `g` times the given
+global rational section. This equation is independent of the choice of that representative. -/
+lemma residueMap_eq_residue {g : X.functionField} (hg0 : g ≠ 0)
+    (hg : X.ord g y = WeilDivisor.coeff D y + 1)
+    (s : sections (D + WeilDivisor.ofPoint y) ⊤) {r : X.presheaf.stalk (y : X)}
+    (hr : algebraMap _ X.functionField r = g * Scheme.rationalFunctionsEquiv ⊤ s) :
+    residueMap D y hg0 hg s = X.residue y r := by
+  rw [residueMap]
+  exact congrArg (X.residue y) (IsFractionRing.injective _ X.functionField
+    ((exists_algebraMap_eq_mul hg0 hg s.2).choose_spec.trans hr.symm))
 
 /-- **Adding a point to a divisor preserves finite generation of global sections.** If the global
 sections of `𝒪_X(D)` are finitely generated over a Noetherian ring `Γ(X, ⊤)`, and the residue

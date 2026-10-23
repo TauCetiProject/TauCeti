@@ -36,8 +36,7 @@ bialgebra and convolution monoid APIs.
 
 public section
 
-open _root_.Coalgebra HopfAlgebra SymmetricAlgebra WithConv
-open scoped TensorProduct
+open SymmetricAlgebra WithConv
 
 namespace TauCeti
 
@@ -55,7 +54,7 @@ variable {B : Type*} [CommSemiring B] [Algebra R B]
 the convolution monoid of `R`-algebra maps out of `SymmetricAlgebra R M` is the additive monoid
 of `R`-linear maps `M →ₗ[R] A`: a point `F` corresponds to the linear map `x ↦ F (ι x)`, and
 convolution of points corresponds to addition of linear maps. -/
-@[expose] noncomputable def pointsMulEquiv :
+@[expose] def pointsMulEquiv :
     WithConv (SymmetricAlgebra R M →ₐ[R] A) ≃* Multiplicative (M →ₗ[R] A) where
   toFun F := Multiplicative.ofAdd (SymmetricAlgebra.lift.symm F.ofConv)
   invFun φ := toConv (SymmetricAlgebra.lift (Multiplicative.toAdd φ))
@@ -128,18 +127,11 @@ section RingPoints
 variable {R : Type u} [CommRing R] {M : Type v} [AddCommMonoid M] [Module R M]
 variable {A : Type w} [CommRing A] [Algebra R A]
 
-/-- Over commutative rings, `pointsMulEquiv` identifies the convolution inverse of a point with
-negation of the corresponding linear map. -/
-@[simp]
-theorem pointsMulEquiv_inv (F : WithConv (SymmetricAlgebra R M →ₐ[R] A)) :
-    pointsMulEquiv (F⁻¹) = (pointsMulEquiv F)⁻¹ :=
-  map_inv pointsMulEquiv F
-
 /-- In additive notation, the convolution inverse of a point corresponds to negating its linear
 map of generator values. -/
 theorem toAdd_pointsMulEquiv_inv (F : WithConv (SymmetricAlgebra R M →ₐ[R] A)) :
     Multiplicative.toAdd (pointsMulEquiv (F⁻¹)) = -Multiplicative.toAdd (pointsMulEquiv F) := by
-  rw [pointsMulEquiv_inv]
+  rw [map_inv]
   rfl
 
 end RingPoints
@@ -255,18 +247,11 @@ section GaRing
 
 variable {R : Type u} [CommRing R] {A : Type w} [CommRing A] [Algebra R A]
 
-/-- Over commutative rings, `gaPointsMulEquiv` identifies the convolution inverse of a
-`𝔾ₐ`-point with negation in the value ring. -/
-@[simp]
-theorem gaPointsMulEquiv_inv (F : WithConv (SymmetricAlgebra R R →ₐ[R] A)) :
-    gaPointsMulEquiv (F⁻¹) = (gaPointsMulEquiv F)⁻¹ :=
-  map_inv gaPointsMulEquiv F
-
 /-- In additive notation, the convolution inverse of a `𝔾ₐ`-point is the negative of its value
 on the generator `ι 1`. -/
 theorem toAdd_gaPointsMulEquiv_inv (F : WithConv (SymmetricAlgebra R R →ₐ[R] A)) :
     Multiplicative.toAdd (gaPointsMulEquiv (F⁻¹)) = -Multiplicative.toAdd (gaPointsMulEquiv F) := by
-  rw [gaPointsMulEquiv_inv]
+  rw [map_inv]
   rfl
 
 end GaRing

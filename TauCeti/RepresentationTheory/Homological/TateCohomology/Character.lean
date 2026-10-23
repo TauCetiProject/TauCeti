@@ -11,6 +11,7 @@ public import Mathlib.RepresentationTheory.Homological.TateCohomology.Basic
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Connecting.GroupCohomology
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.DimensionShift
 public import TauCeti.RepresentationTheory.Rep.Trivial
+import TauCeti.RepresentationTheory.Coinduced
 
 /-!
 # The connecting class of a character
@@ -104,7 +105,7 @@ def characterDimensionShift
       apply (coindBotEquivPi ℤ G (AddCircle (1 : ℚ))).injective
       rw [map_add]
       funext h
-      rw [coindBotEquivPi_apply, coindBot_ρ_apply_coe]
+      rw [coindBotEquivPi_apply, Representation.coind_apply_coe_apply]
       simp only [Pi.add_apply]
       rw [coindBotEquivPi_apply, coindBotEquivPi_apply,
         coindBotEquivPi_symm_apply_coe, coindBotUnit_hom_apply_coe]
@@ -165,7 +166,7 @@ theorem dimensionShiftUpIso_characterDimensionShift
     funext h
     simp only [S, Function.comp_apply]
     rw [coindBotEquivPi_apply, coindBotUnit_hom_apply_coe, Pi.sub_apply,
-      coindBotEquivPi_apply, coindBot_ρ_apply_coe, coindBotEquivPi_apply]
+      coindBotEquivPi_apply, Representation.coind_apply_coe_apply, coindBotEquivPi_apply]
     simp only [c, f, coindBotEquivPi_symm_apply_coe, Representation.trivial_apply]
     rw [map_mul, ofMul_mul, map_add]
     abel

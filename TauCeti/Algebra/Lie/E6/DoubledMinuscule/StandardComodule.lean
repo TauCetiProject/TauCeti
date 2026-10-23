@@ -96,7 +96,7 @@ theorem summandSubcomodule_toSubmodule (dual : Bool) :
   Module.Basis.coordinateSpanSubcomodule_toSubmodule _ _ _
 
 /-- Membership in a minuscule summand means vanishing outside its coordinate block. -/
-@[simp]
+@[simp↓]
 theorem mem_summandSubcomodule (dual : Bool) (v : Fin 54 → R) :
     v ∈ summandSubcomodule R dual ↔
       ∀ a, matrixSummand a ≠ (if dual then 1 else 0) → v a = 0 := by
@@ -163,7 +163,7 @@ theorem points_mulVec_mem
     ((g : Matrix.GeneralLinearGroup (Fin 54) R) : Matrix (Fin 54) (Fin 54) R) *ᵥ w ∈ N := by
   have h := GeneralLinear.corestrictStandardComodule_mulVec_mem R 54
     (coordinateMap R).hom N ((specializedPointsMulEquiv R).symm g) hw
-  have hpoint : AlgHom.mapDomain (coordinateMap R).hom
+  have hpoint : BialgHom.mapDomain (coordinateMap R).hom
       ((specializedPointsMulEquiv R).symm g) = _ :=
     mapPointsFunctor_coordinateMap_app R _
   rw [hpoint] at h

@@ -264,7 +264,8 @@ theorem hasDirichletDensity_contraction [Algebra K E] {Z : Set (HeightOneSpectru
   rw [← hasDirichletDensity_iff_of_symmDiff
     (TauCeti.hasDirichletDensity_higherDegreePrimes.zero_of_subset
       (symmDiff_setOf_inertiaDeg_eq_one_subset (K := K) T))]
-  exact hasDirichletDensity_iff_of_card_fiber_of_negligible hZ
+  exact hasDirichletDensity_iff_of_card_fiber_of_negligible
+    (T := {𝔓 | 𝔓 ∈ T ∧ 𝔓.asIdeal.inertiaDeg (𝓞 K) = 1}) hZ
     (fun 𝔓 h𝔓 ↦ ⟨hmaps 𝔓 h𝔓.1.1 h𝔓.1.2 h𝔓.2, h𝔓.2⟩)
     (fun 𝔓 h𝔓 ↦ HeightOneSpectrum.absNorm_eq_absNorm_under_of_inertiaDeg_eq_one h𝔓.1.2)
     (fun 𝔓 h𝔓 ↦ (HeightOneSpectrum.absNorm_eq_absNorm_under_of_inertiaDeg_eq_one h𝔓.1.2).ge)
@@ -431,7 +432,8 @@ theorem hasNaturalDensity_contraction [Algebra K E] {Z : Set (HeightOneSpectrum 
   rw [← hasNaturalDensity_iff_of_symmDiff
     (TauCeti.hasNaturalDensity_higherDegreePrimes.zero_of_subset
       (symmDiff_setOf_inertiaDeg_eq_one_subset (K := K) T))]
-  exact hasNaturalDensity_iff_of_card_fiber_of_negligible hZ
+  exact hasNaturalDensity_iff_of_card_fiber_of_negligible
+    (T := {𝔓 | 𝔓 ∈ T ∧ 𝔓.asIdeal.inertiaDeg (𝓞 K) = 1}) hZ
     (fun 𝔓 h𝔓 ↦ ⟨hmaps 𝔓 h𝔓.1.1 h𝔓.1.2 h𝔓.2, h𝔓.2⟩)
     (fun 𝔓 h𝔓 ↦ HeightOneSpectrum.absNorm_eq_absNorm_under_of_inertiaDeg_eq_one h𝔓.1.2)
     (fun 𝔓 h𝔓 ↦ (HeightOneSpectrum.absNorm_eq_absNorm_under_of_inertiaDeg_eq_one h𝔓.1.2).ge)

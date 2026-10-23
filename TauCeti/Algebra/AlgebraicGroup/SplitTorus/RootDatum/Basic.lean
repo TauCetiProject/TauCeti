@@ -47,8 +47,7 @@ reflecting root. The construction is independent of any choice of an enumeration
 The ordered-pair construction and its proof plan are adapted from the formal template in
 `TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.A`.
 
-This is the coordinate-lattice construction used by the diagonal-torus root datum of `GL_n` in
-Layer 7 of the ReductiveGroups roadmap.
+This is the coordinate-lattice construction used by the diagonal-torus root datum of `GL_n`.
 -/
 
 public section
@@ -141,6 +140,10 @@ noncomputable def coordinateRoot (i j : σ) : σ →₀ ℤ := by
   classical
   exact Finsupp.single i 1 - Finsupp.single j 1
 
+/-- A coordinate root is the difference of the two coordinate basis vectors. -/
+theorem coordinateRoot_def (i j : σ) :
+    coordinateRoot i j = Finsupp.single i 1 - Finsupp.single j 1 := (rfl)
+
 /-- The cocharacter-lattice vector `e_i - e_j`, defined for any two coordinates. -/
 noncomputable def coordinateCoroot (i j : σ) : σ → ℤ :=
   ⇑(coordinateRoot i j)
@@ -192,7 +195,6 @@ private theorem coordinateRoot_injective :
     rw [← hroot]
     exact coordinateRoot_coroot_two p
   rw [dotPairing_coordinateRoot_coordinateCoroot] at htwo
-  have hp := p.2
   have hq := q.2
   refine Subtype.ext (Prod.ext ?_ ?_) <;> (split_ifs at htwo <;> simp_all)
 

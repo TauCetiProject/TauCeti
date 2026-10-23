@@ -14,8 +14,9 @@ public import TauCeti.NumberTheory.DirichletCharacter.Conductor
 
 This file extends the Gauss-sum API from finite fields to primitive Dirichlet characters of an
 arbitrary level. For a primitive character `χ` and a primitive additive character `e` of
-`ZMod N`, the product of the Gauss sums for `(χ, e)` and `(χ⁻¹, e⁻¹)` is `N`. For a
-quadratic character this gives the familiar square formula
+`ZMod N`, the product of the Gauss sums for `(χ, e)` and `(χ⁻¹, e⁻¹)` is `N`. Against the
+same additive character, the product is `χ (-1) * N`. For a quadratic character this gives
+the familiar square formula
 `gaussSum χ e ^ 2 = χ (-1) * N`.
 
 The characteristic-zero specialization `gaussSumOfPrimitiveRoot χ hζ` uses the additive
@@ -76,6 +77,29 @@ theorem gaussSum_mul_gaussSum_inv_eq_card_of_isPrimitive
         simp [sub_eq_zero, hb]
       · simp
 
+/-- For a primitive Dirichlet character and a primitive additive character, the Gauss sums of
+the character and its inverse against the same additive character multiply to the character's
+value at `-1` times the level. -/
+theorem gaussSum_mul_gaussSum_inv_eq_neg_one_mul_card_of_isPrimitive
+    {R : Type*} [CommRing R] [IsDomain R] {n : ℕ} [NeZero n]
+    {χ : DirichletCharacter R n} (hχ : IsPrimitive χ)
+    {e : AddChar (ZMod n) R} (he : e.IsPrimitive) :
+    gaussSum χ e * gaussSum χ⁻¹ e = χ (-1) * Fintype.card (ZMod n) := by
+  have hshift : gaussSum χ⁻¹ e⁻¹ = χ (-1) * gaussSum χ⁻¹ e := by
+    rw [e.inv_mulShift, ← Units.coe_neg_one, gaussSum_mulShift_eq, inv_inv]
+  have hprod := gaussSum_mul_gaussSum_inv_eq_card_of_isPrimitive hχ he
+  rw [hshift] at hprod
+  have hsign : χ (-1) * χ (-1) = 1 := by
+    rw [← map_mul]
+    simp
+  calc
+    _ = χ (-1) * (gaussSum χ e * (χ (-1) * gaussSum χ⁻¹ e)) := by
+      symm
+      calc
+        _ = (χ (-1) * χ (-1)) * (gaussSum χ e * gaussSum χ⁻¹ e) := by ring
+        _ = _ := by rw [hsign, one_mul]
+    _ = _ := by rw [hprod]
+
 /-- The square of the Gauss sum of a primitive quadratic Dirichlet character is its value at
 `-1` times the level. -/
 theorem gaussSum_sq_of_isPrimitive_of_isQuadratic
@@ -83,19 +107,8 @@ theorem gaussSum_sq_of_isPrimitive_of_isQuadratic
     {χ : DirichletCharacter R n} (hχ : IsPrimitive χ) (hquad : χ.IsQuadratic)
     {e : AddChar (ZMod n) R} (he : e.IsPrimitive) :
     gaussSum χ e ^ 2 = χ (-1) * Fintype.card (ZMod n) := by
-  have hinv : χ⁻¹ = χ := hquad.inv
-  have hshift : gaussSum χ⁻¹ e⁻¹ = χ (-1) * gaussSum χ e := by
-    rw [hinv, e.inv_mulShift, ← Units.coe_neg_one, gaussSum_mulShift_eq, hinv]
-  have hprod := gaussSum_mul_gaussSum_inv_eq_card_of_isPrimitive hχ he
-  rw [hshift] at hprod
-  have hsign : χ (-1) * χ (-1) = 1 := by
-    rw [← map_mul]
-    norm_num
-  calc
-    gaussSum χ e ^ 2 = 1 * gaussSum χ e ^ 2 := by rw [one_mul]
-    _ = (χ (-1) * χ (-1)) * gaussSum χ e ^ 2 := by rw [hsign]
-    _ = χ (-1) * (gaussSum χ e * (χ (-1) * gaussSum χ e)) := by ring
-    _ = χ (-1) * Fintype.card (ZMod n) := by rw [hprod]
+  simpa only [hquad.inv, pow_two] using
+    gaussSum_mul_gaussSum_inv_eq_neg_one_mul_card_of_isPrimitive hχ he
 
 /-! ### Galois action in characteristic zero -/
 

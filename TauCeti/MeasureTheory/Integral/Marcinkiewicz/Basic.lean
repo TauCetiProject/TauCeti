@@ -103,20 +103,14 @@ private theorem lintegral_rpow_le_of_mul_meas_ofReal_lt_le_of_measurable_of_sFin
   have hGval : ∀ (t : ℝ) (x : α), G (t, x) =
       ENNReal.ofReal (t ^ (p - 2)) * {x | ENNReal.ofReal (c * t) < f x}.indicator f x := by
     intro t x
-    have hmem : (t, x) ∈ S ↔ x ∈ {x | ENNReal.ofReal (c * t) < f x} := by
-      simp only [hS, Set.mem_ofPred]
-    by_cases hx : x ∈ {x | ENNReal.ofReal (c * t) < f x}
-    · rw [hG, Set.indicator_of_mem (hmem.2 hx), Set.indicator_of_mem hx]
-    · rw [hG, Set.indicator_of_notMem (hmem.not.2 hx), Set.indicator_of_notMem hx, mul_zero]
+    rw [hG, Set.indicator_mul_right]
+    simp only [Set.indicator_apply, hS, Set.mem_ofPred]
   have hGvalt : ∀ (t : ℝ) (x : α), G (t, x) =
       {t : ℝ | ENNReal.ofReal (c * t) < f x}.indicator
         (fun t => ENNReal.ofReal (t ^ (p - 2))) t * f x := by
     intro t x
-    have hmem : (t, x) ∈ S ↔ t ∈ {t : ℝ | ENNReal.ofReal (c * t) < f x} := by
-      simp only [hS, Set.mem_ofPred]
-    by_cases ht : t ∈ {t : ℝ | ENNReal.ofReal (c * t) < f x}
-    · rw [hG, Set.indicator_of_mem (hmem.2 ht), Set.indicator_of_mem ht]
-    · rw [hG, Set.indicator_of_notMem (hmem.not.2 ht), Set.indicator_of_notMem ht, zero_mul]
+    rw [hG, Set.indicator_mul_left]
+    simp only [Set.indicator_apply, hS, Set.mem_ofPred]
   -- Its slices are the truncated integrals appearing in the hypothesis.
   have hslice : ∀ t : ℝ, ∫⁻ x, G (t, x) ∂μ =
       ENNReal.ofReal (t ^ (p - 2)) * ∫⁻ x in {x | ENNReal.ofReal (c * t) < f x}, f x ∂μ := by
@@ -185,7 +179,6 @@ private theorem lintegral_rpow_le_of_mul_meas_ofReal_lt_le_of_measurable
     ∫⁻ y, u y ^ p ∂ν ≤
       ENNReal.ofReal (p * c ^ (1 - p) / (p - 1)) * A * ∫⁻ x, f x ^ p ∂μ := by
   have hp0 : (0 : ℝ) < p := by linarith
-  have hp1 : (0 : ℝ) < p - 1 := by linarith
   have hK : (0 : ℝ) < p * c ^ (1 - p) / (p - 1) := by positivity
   rcases eq_or_ne A 0 with hA | hA
   · -- With `A = 0` the hypothesis holds over the zero measure as well, and there it already
@@ -285,7 +278,7 @@ theorem mul_meas_ofReal_lt_le_setLIntegral
   have hdt : 0 ≤ d * t := (mul_pos hd ht).le
   have hbct : 0 ≤ b * (c * t) := mul_nonneg hb hct
   have hdinv : 0 ≤ d⁻¹ := inv_nonneg.2 hd.le
-  set g : α → G := hv.mk v with hgdef
+  set g : α → G := hv.mk v with _
   have hvg : v =ᵐ[μ] g := hv.ae_eq_mk
   have hgmeas : Measurable g := hv.measurable_mk
   set S : Set α := {x | ENNReal.ofReal (c * t) < ‖g x‖ₑ} with hSdef

@@ -191,6 +191,12 @@ jobs:
 
       # Current main is policy input only: a bump must move forward from it. The measured base is
       # the PR's merge base (or the immutable queue base), checked out separately below.
+      - name: Prepare pinned shared tools
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+        with:
+          tools-repository: TauCetiProject/TauCetiTools
+          tools-ref: ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+          project-directory: gate
       - name: Checkout current policy base (trusted)
         uses: actions/checkout@v4
         with:
@@ -383,8 +389,8 @@ jobs:
               '  sudo dpkg -i "bubblewrap_${ver}_amd64.deb"' \
               '  sha256sum /usr/bin/bwrap                  # BWRAP_SHA256' \
               '' \
-              'Set BWRAP_VER, BWRAP_DEB_SHA256 and BWRAP_SHA256 in all three of' \
-              '.github/workflows/{pr-build,pr-profile,nightly-verify}.yml. They must agree;' \
+              'Set BWRAP_VER, BWRAP_DEB_SHA256 and BWRAP_SHA256 in all five of' \
+              '.github/workflows/{pr-build,pr-profile,nightly-verify,shadow-audits,warm-dependencies}.yml. They must agree;' \
               'scripts/test_bwrap_pin.py fails if they do not.' \
               '' \
               'ON VERSIONS: 0.12.0 or newer is safe on its own. Below that, the' \

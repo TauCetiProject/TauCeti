@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Group.Subgroup.Even
 public import Mathlib.GroupTheory.Schreier
+import Mathlib.GroupTheory.Perm.Cycle.Type
 import Mathlib.Tactic.NormNum
 
 /-!
@@ -24,14 +25,27 @@ root that is a bare element of `M`.
 `n`th-power homomorphism has index at most `n ^ S.card` when `n` is nonzero. In particular, the
 range of the squaring homomorphism has index at most `2 ^ S.card`.
 
+*When is it proper?* In a finite commutative group `G` whose order is not prime to `n`, the
+`n`th powers form a proper subgroup: by Cauchy's theorem some prime `p` dividing both has an
+element of order `p`, killed by the `n`th power map, which is then not injective and so, `G` being
+finite, not surjective.
+
+*Which exponents give the same subgroup?* In a commutative group of order `N`, the `d`-th powers
+are exactly the `gcd(N, d)`-th powers, by Bézout's identity and `y ^ N = 1`.
+
 *How does it move along homomorphisms?* A homomorphism carries squares to squares, so `G²` lands
 inside the preimage of `H²`. This is the side condition that descends a homomorphism to the
-quotients by squares.
+quotients by squares. In the same way `Gⁿ` lands inside the preimage of `Hⁿ`, so a subgroup with
+finite image in `G ⧸ Gⁿ` has finite image in `H ⧸ Hⁿ`.
 
 ## Main results
 
 * `TauCeti.powMonoidHom_range_mk_eq_one_iff_exists_pow`: the class of a unit in `Mˣ ⧸ (Mˣ)ⁿ` is
   trivial iff the unit is an `n`th power in `M`.
+* `TauCeti.powMonoidHom_range_ne_top_of_not_coprime`, and its additive counterpart: `Gⁿ ≠ G` for a
+  finite `G` whose order is not prime to `n`.
+* `TauCeti.range_powMonoidHom_gcd`, and its additive counterpart: the `d`-th powers of a
+  commutative group with `y ^ n = 1` for all `y` are the `gcd(n, d)`-th powers.
 * `TauCeti.square_eq_range_powMonoidHom`: `G²` is the range of the squaring homomorphism.
 * `MonoidHom.square_le_comap`: `G² ≤ (H²).comap f` for a homomorphism `f : G →* H`.
 * `TauCeti.index_square_le_of_closure_eq_top`: `[G : G²] ≤ 2 ^ S.card`.
@@ -105,6 +119,48 @@ private theorem index_powMonoidHom_range_le_of_closure_eq_top {G : Type*} [CommG
       = Nat.card (G ⧸ H) := Subgroup.index_eq_card H
     _ ≤ n ^ Group.rank (G ⧸ H) := Nat.le_of_dvd (pow_pos (Nat.pos_of_ne_zero hn) _) hcard
     _ ≤ n ^ S.card := Nat.pow_le_pow_right (Nat.pos_of_ne_zero hn) hrank
+
+/-- **The `n`th powers of a finite group of order not prime to `n` form a proper subgroup.** By
+Cauchy's theorem some prime dividing both `n` and the order of `G` is the order of an element
+`x ≠ 1`. Then `x ^ n = 1 ^ n`, so the `n`th power map is not injective, hence, `G` being finite,
+not surjective. -/
+@[to_additive /-- **The multiples `n • G` of a finite additive group of order not prime to `n`
+form a proper subgroup.** By Cauchy's theorem some prime dividing both `n` and the order of `G` is
+the order of an element `x ≠ 0`, so multiplication by `n` is not injective, hence not
+surjective. -/]
+theorem powMonoidHom_range_ne_top_of_not_coprime {G : Type*} [CommGroup G] [Finite G] {n : ℕ}
+    (hn : ¬(Nat.card G).Coprime n) : (powMonoidHom n : G →* G).range ≠ ⊤ := by
+  obtain ⟨p, hp, hpG, hpn⟩ := Nat.Prime.not_coprime_iff_dvd.1 hn
+  have : Fact p.Prime := ⟨hp⟩
+  obtain ⟨x, hx⟩ := exists_prime_orderOf_dvd_card' p hpG
+  intro htop
+  have hx1 : x = 1 := Finite.injective_iff_surjective.2 (MonoidHom.range_eq_top.1 htop) <| by
+    rw [powMonoidHom_apply, powMonoidHom_apply, one_pow, ← orderOf_dvd_iff_pow_eq_one, hx]
+    exact hpn
+  rw [hx1, orderOf_one] at hx
+  exact hp.one_lt.ne hx
+
+/-- In a commutative group all of whose elements satisfy `y ^ n = 1`, the `d`-th powers are
+exactly the `gcd(n, d)`-th powers. For a group of order `N` this applies with `n = N` (Mathlib's
+`pow_card_eq_one'`). -/
+@[to_additive /-- In an additive commutative group all of whose elements satisfy `n • y = 0`, the
+`d`-th multiples are exactly the `gcd(n, d)`-th multiples. -/]
+theorem range_powMonoidHom_gcd {G : Type*} [CommGroup G] {n : ℕ} (hn : ∀ y : G, y ^ n = 1)
+    (d : ℕ) : (powMonoidHom (n.gcd d) : G →* G).range = (powMonoidHom d : G →* G).range := by
+  refine le_antisymm ?_ ?_
+  -- Bézout: writing `gcd(n, d) = n * a + d * b`, `y ^ gcd(n, d) = (y ^ b) ^ d` as `y ^ n = 1`.
+  · rintro _ ⟨y, rfl⟩
+    refine ⟨y ^ n.gcdB d, ?_⟩
+    have ha : y ^ ((n : ℤ) * n.gcdA d) = 1 := by simp [zpow_mul, hn]
+    have hb : (y ^ n.gcdB d) ^ d = y ^ ((d : ℤ) * n.gcdB d) := by
+      rw [mul_comm, zpow_mul, zpow_natCast]
+    simp only [powMonoidHom_apply, hb, ← zpow_natCast y (n.gcd d), Nat.gcd_eq_gcd_ab, zpow_add,
+      ha, one_mul]
+  -- Every `d`-th power is a `gcd(n, d)`-th power since `gcd(n, d)` divides `d`.
+  · rintro _ ⟨y, rfl⟩
+    refine ⟨y ^ (d / n.gcd d), ?_⟩
+    rw [powMonoidHom_apply, powMonoidHom_apply, ← pow_mul,
+      Nat.div_mul_cancel (Nat.gcd_dvd_right _ _)]
 
 /-- In a commutative group, Mathlib's subgroup of squares agrees with the range of the
 squaring homomorphism. -/

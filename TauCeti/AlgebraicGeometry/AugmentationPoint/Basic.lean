@@ -46,6 +46,16 @@ theorem kernelPoint_asIdeal :
   rw [IsLocalRing.maximalIdeal_eq_bot]
   rfl
 
+/-- A kernel point belongs to a basic open exactly when its defining homomorphism is
+nonzero on the defining element. -/
+@[simp]
+theorem _root_.AlgHom.kernelPoint_mem_basicOpen_iff (a : H) :
+    (kernelPoint f : PrimeSpectrum H) ∈ PrimeSpectrum.basicOpen a ↔ f a ≠ 0 := by
+  -- Expose ideal membership to bridge the scheme carrier and the prime-spectrum basic open.
+  change a ∉ (kernelPoint f).asIdeal ↔ f a ≠ 0
+  rw [kernelPoint_asIdeal, RingHom.mem_ker]
+  rfl
+
 /-- Contracting a kernel point along an algebra homomorphism gives the kernel point of the
 composite algebra homomorphism. -/
 @[simp]

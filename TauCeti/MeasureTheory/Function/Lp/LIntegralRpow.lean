@@ -25,7 +25,8 @@ covers comparing a function with its derivative.
 ## Main declarations
 
 * `TauCeti.eLpNorm_rpow_eq_lintegral`: for an a.e. measurable `ℝ≥0∞`-valued function, the `p`-th
-  power of the `Lᵖ` seminorm is the integral `∫⁻ f ^ p`.
+  power of the `Lᵖ` seminorm is the integral `∫⁻ f ^ p`; `TauCeti.eLpNorm_eq_lintegral_rpow` is
+  the same identity solved for the seminorm.
 * `TauCeti.eLpNorm_le_of_ae_tendsto_ennreal`: an `ℝ≥0∞`-valued Fatou lemma for the `Lᵖ`
   seminorm.
 * `TauCeti.eLpNorm_le_eLpNorm_of_lintegral_rpow_le`: for an a.e. strongly measurable `v`, from
@@ -55,6 +56,15 @@ theorem eLpNorm_rpow_eq_lintegral {α : Type*} [MeasurableSpace α]
   rw [eLpNorm_eq_eLpNorm' hp0 hp hf.aestronglyMeasurable,
     ← lintegral_rpow_enorm_eq_rpow_eLpNorm' (ENNReal.toReal_pos hp0 hp)]
   simp
+
+/-- For a finite nonzero exponent, the `Lᵖ` seminorm of an a.e. measurable `ℝ≥0∞`-valued function
+is the `p`-th root of the integral of the `p`-th power of that function. -/
+theorem eLpNorm_eq_lintegral_rpow {α : Type*} [MeasurableSpace α]
+    {p : ℝ≥0∞} (hp0 : p ≠ 0) (hp : p ≠ ∞) {f : α → ℝ≥0∞} {μ : Measure α}
+    (hf : AEMeasurable f μ) :
+    eLpNorm f p μ = (∫⁻ a, f a ^ p.toReal ∂μ) ^ (1 / p.toReal) := by
+  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp hf.aestronglyMeasurable]
+  simp only [enorm_eq_self]
 
 /-- **Fatou's lemma for the `Lᵖ` seminorm of `ℝ≥0∞`-valued functions.** For a finite nonzero
 exponent, an almost everywhere pointwise limit of functions whose `Lᵖ` seminorms are bounded by
