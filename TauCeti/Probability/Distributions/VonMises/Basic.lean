@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Fourier.AddCircle
 public import Mathlib.Probability.HasLaw
-public import TauCeti.Analysis.SpecialFunctions.BesselI
+public import TauCeti.Analysis.Fourier.ExpCos
 public import TauCeti.MeasureTheory.Measure.WithDensity
 
 /-!
