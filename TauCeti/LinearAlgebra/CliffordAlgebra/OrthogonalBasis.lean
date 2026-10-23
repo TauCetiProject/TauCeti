@@ -218,13 +218,22 @@ theorem ι_mul_basis (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (a : I) (t 
       have hsd : insert c t ∆ {a} = insert c (t ∆ {a}) := by
         ext x; simp only [Finset.mem_symmDiff, Finset.mem_insert, Finset.mem_singleton]; grind
       have hcf : c ∉ t.filter (· < a) := fun hx ↦ hct (Finset.mem_filter.mp hx).1
-      rw [← mul_assoc, ι_mul_ι_comm_of_isOrtho (QuadraticMap.associated_isOrtho.mp (hb hac)),
-        neg_mul, mul_assoc, ih, mul_smul_comm, ← basis_insert_of_forall_lt hb hct', hsd,
-        Finset.filter_insert, ite_eq_left h, Finset.card_insert_of_notMem hcf,
-        if_congr (show a ∈ insert c t ↔ a ∈ t by rw [Finset.mem_insert, or_iff_right hac]) rfl rfl,
-        ← neg_smul]
-      congr 1
-      ring
+      have hf : ((insert c t).filter (· < a)).card = (t.filter (· < a)).card + 1 := by
+        simp [Finset.filter_insert, h, hcf]
+      have hmem : a ∈ insert c t ↔ a ∈ t := by simp [hac]
+      calc
+        ι Q (b a) * (ι Q (b c) * basis Q b t) =
+            -(ι Q (b c) * (ι Q (b a) * basis Q b t)) := by
+          rw [← mul_assoc,
+            ι_mul_ι_comm_of_isOrtho (QuadraticMap.associated_isOrtho.mp (hb hac))]
+          simp only [neg_mul, mul_assoc]
+        _ = -(((-1 : R) ^ (t.filter (· < a)).card * if a ∈ t then Q (b a) else 1) •
+            basis Q b (insert c (t ∆ {a}))) := by
+          rw [ih, mul_smul_comm, basis_insert_of_forall_lt hb hct']
+        _ = _ := by
+          simp only [hsd, hf, hmem, ← neg_smul]
+          congr 1
+          ring
 
 /-- **The multiplication rule for the basis of an orthogonal basis**:
 `e_s * e_t = ((-1) ^ N * ∏ i ∈ s ∩ t, Q (b i)) • e_{s ∆ t}`, where
@@ -249,8 +258,9 @@ theorem basis_mul_basis (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (s t : F
     have hsd : s ∆ t ∆ {a} = insert a s ∆ t := by
       ext x; simp only [Finset.mem_symmDiff, Finset.mem_insert, Finset.mem_singleton]; grind
     have hmem : a ∈ s ∆ t ↔ a ∈ t := by rw [Finset.mem_symmDiff]; tauto
-    rw [basis_insert_of_forall_lt hb ha, mul_assoc, ih, mul_smul_comm, ι_mul_basis hb, smul_smul,
-      hf, hsd, Finset.sum_insert has, if_congr hmem rfl rfl]
+    -- First multiply the generators, then normalize the index sets and scalar coefficient.
+    rw [basis_insert_of_forall_lt hb ha, mul_assoc, ih, mul_smul_comm, ι_mul_basis hb]
+    simp only [smul_smul, hf, hsd, Finset.sum_insert has, hmem]
     congr 1
     by_cases hat : a ∈ t
     · rw [ite_eq_left hat, Finset.insert_inter_of_mem hat,
