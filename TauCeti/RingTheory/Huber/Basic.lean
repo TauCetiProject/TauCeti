@@ -622,6 +622,15 @@ private noncomputable def comapRingOfDefinitionEquiv (P : PairOfDefinition A) {B
   (Subring.equivMapOfInjective _ f hf).trans
     (RingEquiv.subringCongr (Subring.map_comap_eq_self hP))
 
+/-- The identification `f⁻¹(A₀) ≃+* A₀` acts as `f` on underlying elements. -/
+private theorem coe_comapRingOfDefinitionEquiv_apply (P : PairOfDefinition A) {B : Type*}
+    [CommRing B] (f : B →+* A) (hf : Function.Injective f) (hP : P.ringOfDefinition ≤ f.range)
+    (b : P.ringOfDefinition.comap f) :
+    (P.comapRingOfDefinitionEquiv f hf hP b : A) = f b :=
+  -- Both `Subring.equivMapOfInjective` and `RingEquiv.subringCongr` act as the identity on the
+  -- underlying element in `A`, so this holds by unfolding them.
+  rfl
+
 /-- The pullback of a pair of definition along an embedding `f : B →+* A` whose image
 contains the ring of definition: its ring of definition is `f⁻¹(A₀)`, which `f` identifies with
 `A₀` as a topological ring, and its ideal of definition is the preimage of `I` under that
@@ -659,7 +668,8 @@ theorem mem_comap_idealOfDefinition [IsTopologicalRing A] {B : Type*} [CommRing 
     b ∈ (P.comap f hf hP).idealOfDefinition ↔
       (⟨f b, Subring.mem_comap.mp (P.comap_ringOfDefinition f hf hP ▸ b.2)⟩ :
         P.ringOfDefinition) ∈ P.idealOfDefinition :=
-  (Iff.rfl)
+  Ideal.mem_comap.trans <| Iff.of_eq <| congrArg (· ∈ P.idealOfDefinition) <| Subtype.ext <|
+    P.coe_comapRingOfDefinitionEquiv_apply f hf.injective hP b
 
 /-- **The neighbourhood basis of the pullback pair is the preimage of the original one**: the
 image in `B` of the `n`-th power of the ideal of definition of `P.comap f hf hP` is the preimage
@@ -678,10 +688,11 @@ theorem comap_idealImage [IsTopologicalRing A] {B : Type*} [CommRing B] [Topolog
   rw [hI, ← comap_pow_of_equiv]
   constructor
   · rintro ⟨y, hy, rfl⟩
-    exact ⟨e y, hy, rfl⟩
+    exact ⟨e y, hy, P.coe_comapRingOfDefinitionEquiv_apply f hf.injective hP y⟩
   · rintro ⟨z, hz, hzx⟩
     have hx : f x ∈ P.ringOfDefinition := hzx ▸ z.2
-    have hez : e ⟨x, hx⟩ = z := Subtype.ext hzx.symm
+    have hez : e ⟨x, hx⟩ = z := Subtype.ext <|
+      (P.coe_comapRingOfDefinitionEquiv_apply f hf.injective hP ⟨x, hx⟩).trans hzx.symm
     exact ⟨⟨x, hx⟩, by rwa [Ideal.mem_comap, hez], rfl⟩
 
 
