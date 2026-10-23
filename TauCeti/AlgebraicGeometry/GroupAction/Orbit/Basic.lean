@@ -52,6 +52,10 @@ def orbit (x : 𝟙_ (Over S) ⟶ X) : Set X.left :=
 theorem mem_orbit (x : 𝟙_ (Over S) ⟶ X) (p : X.left) :
     p ∈ orbit G x ↔ ∃ g : G.left, (orbitMap G x).left g = p := Iff.rfl
 
+/-- The geometric orbit is the full range of the orbit morphism. -/
+theorem orbit_def (x : 𝟙_ (Over S) ⟶ X) :
+    orbit G x = Set.range (orbitMap G x).left := (rfl)
+
 /-- The closure of the full geometric orbit image. -/
 def orbitClosure (x : 𝟙_ (Over S) ⟶ X) : Set X.left := closure (orbit G x)
 
