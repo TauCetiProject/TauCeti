@@ -54,7 +54,8 @@ theorem locallyPathConnectedSpace (I : ModelWithCorners ℝ E H) : LocallyPathCo
   let _ : LocallyPathConnectedSpace I.target := hconvex.locallyPathConnectedSpace
   exact e.symm.locallyPathConnectedSpace
 
-/-- A charted space modelled on a real normed space is semilocally simply connected. -/
+/-- A charted space modelled on `H`, where `I : ModelWithCorners ℝ E H`, is semilocally
+simply connected. -/
 theorem semilocallySimplyConnectedSpace (I : ModelWithCorners ℝ E H) (M : Type*)
     [TopologicalSpace M] [ChartedSpace H M] :
     TauCeti.SemilocallySimplyConnectedSpace M := by
@@ -97,7 +98,7 @@ theorem semilocallySimplyConnectedSpace (I : ModelWithCorners ℝ E H) (M : Type
       (continuousAt_extChartAt x).preimage_mem_nhds hball
     apply Filter.mem_of_superset (Filter.inter_mem hsource hpre)
     rintro z ⟨hzsource, hzb⟩
-    change z ∈ ce.symm '' s
+    dsimp only [d]
     have hzrange : ce z ∈ Set.range I :=
       extChartAt_target_subset_range x (ce.map_source hzsource)
     exact ⟨ce z, ⟨⟨hzb, hzrange⟩, ce.left_inv hzsource⟩⟩

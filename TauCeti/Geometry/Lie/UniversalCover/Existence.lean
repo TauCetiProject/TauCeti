@@ -33,11 +33,10 @@ variable {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensio
   {G : Type w} [TopologicalSpace G] [ChartedSpace H G]
   [Group G] [LieGroup I ∞ G]
 
-/-- A connected finite-dimensional real Lie group is covered by its simply connected universal
-covering Lie group. The local path-connectedness and semilocal simple-connectedness needed by the
-based-path construction are obtained from convex model neighborhoods and extended charts. The
-covering homomorphism is the endpoint projection, with its smoothness, covering property, and
-Lie-group laws supplied by the canonical construction and its pulled-back instances.
+/-- A connected finite-dimensional real Lie group admits a simply connected Lie-group cover.
+
+There exist a simply connected Lie group `Gt` and a smooth homomorphism `p : Gt →* G` that is a
+covering map and whose induced Lie-algebra map is bijective.
 -/
 theorem exists_universalCover [ConnectedSpace G] :
     ∃ (Gt : Type w) (_ : TopologicalSpace Gt) (_ : ChartedSpace H Gt)
@@ -53,14 +52,13 @@ theorem exists_universalCover [ConnectedSpace G] :
   let _ : PathConnectedSpace G := PathConnectedSpace.of_locallyPathConnectedSpace
   let Gt := UniversalCover (1 : G)
   let p : Gt →* G := (UniversalCover.projHom : UniversalCover (1 : G) →ₜ* G)
+  have hpc : (p : Gt → G) = (UniversalCover.projHom : Gt → G) := by
+    rfl
   have hp : IsCoveringMap (p : Gt → G) := by
-    -- The endpoint projection has distinct monoid-hom and continuous-map coercions;
-    -- select the native coercion expected by its covering theorem.
-    change IsCoveringMap (UniversalCover.projHom : UniversalCover (1 : G) →ₜ* G)
+    rw [hpc]
     exact UniversalCover.isCoveringMap_projHom
   have hsmooth : ContMDiff I I ∞ (p : Gt → G) := by
-    dsimp [p]
-    rw [UniversalCover.coe_projHom]
+    rw [hpc, UniversalCover.coe_projHom]
     exact UniversalCover.contMDiff_proj (x₀ := (1 : G))
   have hlie : Function.Bijective
       (lieMap (ContinuousMonoidHom.toContMDiffMonoidMorphism I I
@@ -71,9 +69,7 @@ theorem exists_universalCover [ConnectedSpace G] :
         (UniversalCover.projHom : UniversalCover (1 : G) →ₜ* G) := by
     apply DFunLike.coe_injective
     simp only [ContinuousMonoidHom.coe_toContMDiffMonoidMorphism]
-    funext x
-    change p x = (UniversalCover.projHom : Gt → G) x
-    rfl
+    exact hpc
   exact ⟨Gt, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance, p, hsmooth,
     UniversalCover.simplyConnectedSpace (1 : G), hp, by rw [hpm]; exact hlie⟩
 
