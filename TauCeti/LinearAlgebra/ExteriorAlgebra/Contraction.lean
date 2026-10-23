@@ -33,11 +33,17 @@ Every basis vector is the product of the exterior-algebra generators of its inde
 increasing order; for index sets with one or two elements this is also recorded in the explicit
 forms `TauCeti.ExteriorAlgebra.basis_singleton` and `TauCeti.ExteriorAlgebra.basis_pair`.
 
+Independently of a basis, `ExteriorAlgebra.contractLeft_map` states naturality under a linear
+map: pull back the contracting functional and then map the contracted element. This follows
+from the general quadratic-isometry statement `CliffordAlgebra.contractLeft_map`.
+
 Independently of a basis, the grade involution is the sign `(-1) ^ n` on the `n`-th exterior power,
 a contraction carries the `(n + 1)`-th exterior power into the `n`-th, and a vector graded-commutes
 with every multivector: `ι m * x = involute x * ι m`.  Together with the graded Leibniz rule
 `CliffordAlgebra.contractLeft_mul`, these say that a contraction is an odd derivation of degree
-`-1` of the graded-commutative exterior algebra.
+`-1` of the graded-commutative exterior algebra. On a wedge product of vectors it is the alternating
+sum of deletions (`TauCeti.ExteriorAlgebra.contractLeft_ιMulti`); this is the differential of the
+Koszul complex.
 
 In degree at least the rank, contraction loses no information: if `d m = 1` and
 `finrank R M ≤ n`, every `x ∈ ⋀ⁿ M` is `m ∧ (d ⌋ x)`. Hence two forms killed by `d` multiply to
@@ -429,14 +435,44 @@ theorem contractLeft_mem_exteriorPower (d : Module.Dual R M) {n : ℕ}
     · rw [contractLeft_eq_zero_of_mem_exteriorPower_zero d hx, mul_zero]
       exact zero_mem _
     · rw [Nat.add_sub_cancel] at ih
-      rw [_root_.ExteriorAlgebra.exteriorPower, pow_succ']
-      exact Submodule.mul_mem_mul (LinearMap.mem_range_self _ v) ih
+      exact ι_mul_mem_exteriorPower v ih
+
+/-- **Contraction of a wedge product of vectors** is the alternating sum of the contractions of
+its factors: `d ⌋ (v₀ ∧ ⋯ ∧ vₙ) = ∑ᵢ (-1) ^ i d(vᵢ) v₀ ∧ ⋯ ∧ v̂ᵢ ∧ ⋯ ∧ vₙ`. -/
+theorem contractLeft_ιMulti (d : Module.Dual R M) {n : ℕ} (v : Fin (n + 1) → M) :
+    contractLeft (Q := (0 : QuadraticForm R M)) d (ExteriorAlgebra.ιMulti R (n + 1) v) =
+      ∑ i : Fin (n + 1), ((-1 : R) ^ (i : ℕ) * d (v i)) •
+        ExteriorAlgebra.ιMulti R n (i.removeNth v) := by
+  induction n with
+  | zero => simp [Algebra.algebraMap_eq_smul_one]
+  | succ n ih =>
+    have hrem (i : Fin (n + 1)) : ExteriorAlgebra.ιMulti R (n + 1) (i.succ.removeNth v) =
+        ExteriorAlgebra.ι R (v 0) *
+          ExteriorAlgebra.ιMulti R n (i.removeNth (Matrix.vecTail v)) := by
+      rw [ExteriorAlgebra.ιMulti_succ_apply]
+      congr 2
+      ext j
+      simp [Matrix.vecTail, Fin.removeNth_apply, Fin.succ_succAbove_succ]
+    rw [ExteriorAlgebra.ιMulti_succ_apply, contractLeft_ι_mul, ih, Fin.sum_univ_succ (n := n + 1),
+      Finset.mul_sum]
+    simp [hrem, pow_succ, sub_eq_add_neg, Matrix.vecTail, Fin.tail,
+      Function.comp_def]
 
 end TauCeti.ExteriorAlgebra
 
 namespace ExteriorAlgebra
 
 variable {R : Type*} {M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+
+/-- Contraction against a functional commutes with an exterior-algebra map after pulling
+back the functional. -/
+theorem contractLeft_map {N : Type*} [AddCommGroup N] [Module R N] (f : M →ₗ[R] N)
+    (d : Module.Dual R N) (x : ExteriorAlgebra R M) :
+    contractLeft (Q := (0 : QuadraticForm R N)) d (_root_.ExteriorAlgebra.map f x) =
+      _root_.ExteriorAlgebra.map f
+        (contractLeft (Q := (0 : QuadraticForm R M)) (d ∘ₗ f) x) := by
+  -- The exterior-algebra map is the zero-quadratic-form case of the Clifford-algebra map.
+  exact CliffordAlgebra.contractLeft_map { f with map_app' := fun _ => rfl } d x
 
 /-- **A vector graded-commutes with every multivector**: moving `ι R m` past `x` applies the grade
 involution to `x`. -/

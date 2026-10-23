@@ -52,9 +52,7 @@ one convenient witness that every graph admits an orientation.
 
 ## References
 
-This is the orientation comparison required in Layer 0 of
-`TauCetiRoadmap/ZigzagPreprojective/README.md`. It uses Mathlib's universal property
-`Quiver.Symmetrify.lift`.
+The comparison uses Mathlib's universal property `Quiver.Symmetrify.lift`.
 -/
 
 public section
@@ -289,8 +287,8 @@ theorem card_symmetrify_hom [DecidableRel G.Adj] (i j : V) :
 /-- **A weight on a graph read on an orientation**: for every vertex `i`, the multigraph sum
 `∑_j (#(i ⟶ j) + #(j ⟶ i)) δ_j` over the vertices of the oriented quiver is the neighbour sum
 `∑_{j ∼ i} δ_j`, since an orientation has exactly one arrow over each edge. -/
-theorem sum_card_hom_add_card_hom_mul [Fintype V] [DecidableRel G.Adj] {S : Type*} [Semiring S]
-    (δ : V → S) (i : V) :
+theorem sum_card_hom_add_card_hom_mul [Fintype V] [DecidableRel G.Adj] {S : Type*}
+    [NonAssocSemiring S] (δ : V → S) (i : V) :
     ∑ j : OrientedQuiver G o, ((Fintype.card (vertex G o i ⟶ j) +
         Fintype.card (j ⟶ vertex G o i) : ℕ) : S) * δ ((vertexEquiv G o).symm j) =
       ∑ j ∈ G.neighborFinset i, δ j := by
@@ -301,18 +299,16 @@ theorem sum_card_hom_add_card_hom_mul [Fintype V] [DecidableRel G.Adj] {S : Type
     split_ifs <;> simp
   have hsum :
       ∑ j ∈ G.neighborFinset i, δ j = ∑ j : V, (if G.Adj i j then (1 : S) else 0) * δ j := by
-    simp only [ite_mul, one_mul, zero_mul]
-    rw [← Finset.sum_filter]
-    exact Finset.sum_congr (by ext j; simp) fun _ _ => rfl
+    simp [SimpleGraph.neighborFinset_eq_filter, Finset.sum_filter, ite_mul]
   refine (hsum.trans (Fintype.sum_equiv (vertexEquiv G o) _ _ fun j => ?_)).symm
   simp only [vertexEquiv_apply, vertexEquiv_symm_vertex, hc j]
 
 /-- **A positive superadditive weight on an oriented graph excludes isolated vertices.** Let `δ`
-be a weight on the vertices of an orientation of a finite simple graph over a strictly ordered
-commutative ring, positive at every vertex, with `2 δ_i ≤ ∑_j (#(i ⟶ j) + #(j ⟶ i)) δ_j` at every
+be a weight on the vertices of an orientation of a finite simple graph over an ordered
+semiring, positive at every vertex, with `2 δ_i ≤ ∑_j (#(i ⟶ j) + #(j ⟶ i)) δ_j` at every
 vertex of the oriented quiver. Then every vertex of the graph has a neighbour. -/
 theorem exists_adj_of_pos_two_mul_le_sum [Finite V]
-    {S : Type*} [CommRing S] [LinearOrder S] [IsStrictOrderedRing S]
+    {S : Type*} [Semiring S] [PartialOrder S] [IsOrderedRing S]
     (δ : OrientedQuiver G o → S) (hδ : ∀ i, 0 < δ i)
     (hδle : ∀ i, 2 * δ i ≤
       ∑ j, ((Fintype.card (i ⟶ j) + Fintype.card (j ⟶ i) : ℕ) : S) * δ j)
