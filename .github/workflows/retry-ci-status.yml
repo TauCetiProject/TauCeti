@@ -41,10 +41,10 @@ jobs:
           persist-credentials: false
 
       - name: Prepare pinned shared reporting tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@ff9215582dc94abc72b0451a54388510c18b103e
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@580b5cbabe91227a70a95201c5de75c361d415e6
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: ff9215582dc94abc72b0451a54388510c18b103e
+          tools-ref: 580b5cbabe91227a70a95201c5de75c361d415e6
           project-directory: .
 
       - name: Discover retained intents from this exact original run
@@ -97,7 +97,7 @@ jobs:
       - name: Prepare scoped CI reporting credentials
         if: steps.intents.outputs.present == 'true'
         id: credentials
-        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@ff9215582dc94abc72b0451a54388510c18b103e
+        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@580b5cbabe91227a70a95201c5de75c361d415e6
         with:
           workflow-token: ${{ github.token }}
           owner: ${{ github.repository_owner }}
