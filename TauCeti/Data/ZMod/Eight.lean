@@ -13,17 +13,17 @@ import Mathlib.Tactic.LinearCombination
 /-!
 # Diagonal residue families modulo eight
 
-The units of `ℤ/8` are `1, 3, 5, 7`, each squaring to `1`. Fix a unit `y`. Suppose two families
-`dᵢ` and `vᵢ` of the same length `N` have residues in `{y, 5y}` and `{-y, -5y}` respectively.
-Their products and sums agree only when `N ≥ 4`. A unit diagonal of a dyadic form is read modulo
-`8` through its product (the determinant square class) and its sum (the oddity). So this counting
-statement shows that a target diagonal whose entries all have the opposite residue modulo `4`
-forces rank at least four.
+The units of `ℤ/8` are `1, 3, 5, 7`, each squaring to `1`. Fix a unit `y`. Suppose two families `dᵢ`
+and `vᵢ` of the same nonzero length `N` have residues in `{y, 5y}` and `{-y, -5y}` respectively.
+Their products and sums agree only when `N ≥ 4`. A unit diagonal of a dyadic form is read modulo `8`
+through its product (the determinant square class) and its sum (the oddity). So this counting
+statement shows that a target diagonal whose entries all have the opposite residue modulo `4` forces
+rank at least four.
 
 ## Main results
 
-* `ZMod.four_le_of_forall_eq_or_eq`: families in `{y, 5y}` and `{-y, -5y}` modulo `8` with the
-  same product and the same sum have at least four members.
+* `ZMod.four_le_of_forall_eq_or_eq`: nonempty families in `{y, 5y}` and `{-y, -5y}` modulo `8`
+  with the same product and the same sum have at least four members.
 -/
 
 public section
@@ -31,8 +31,9 @@ public section
 namespace ZMod
 
 /-- **The determinant class and oddity of a diagonal determine at least four entries.** Let the
-residues `dᵢ` all lie in `{y, 5y}` and the residues `vᵢ` all lie in `{-y, -5y}` modulo `8`. If the
-two families have the same product and the same sum, then there are at least four of them. -/
+residues `dᵢ` all lie in `{y, 5y}` and the residues `vᵢ` all lie in `{-y, -5y}` modulo `8`, for a
+nonzero number `N` of indices. If the two families have the same product and the same sum, then
+there are at least four of them. -/
 theorem four_le_of_forall_eq_or_eq {N : ℕ} (hN : N ≠ 0) {y : ZMod (2 ^ 3)}
     (hy : y * y = 1) {d v : Fin N → ZMod (2 ^ 3)} (hd : ∀ i, d i = y ∨ d i = 5 * y)
     (hv : ∀ i, v i = -y ∨ v i = -(5 * y)) (hP : ∏ i, d i = ∏ i, v i)
