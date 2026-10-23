@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Geometry.Manifold.SmoothIsotopy.Linear
 public import TauCeti.Geometry.Manifold.SmoothIsotopy.Linearization
+public import TauCeti.Geometry.Manifold.SmoothIsotopy.LocalDiffeomorph
+public import TauCeti.Geometry.Manifold.SmoothIsotopy.Shrinking
 public import TauCeti.Geometry.Manifold.SmoothIsotopy.Trans
 
 /-!
@@ -24,6 +26,11 @@ Smooth concatenation and translation back give the relative isotopy. This is the
 Euclidean ambient-space case of the disc theorem, for the open-disc source `ℝⁿ`.
 It provides the comparison of embeddings in Euclidean coordinates; it does not assert
 an ambient isotopy or compare embeddings into a general manifold.
+
+For self-embeddings with values in a Euclidean ball about the common centre, the isotopy can be
+confined to that ball (`exists_smoothIsotopy_mapsTo_ball`): the motion is followed by a radial
+contraction onto the ball, and its ends are joined to the two embeddings by radial contractions,
+which keep the ball in place. This is the form in which a chart carries the theorem to a manifold.
 
 ## References
 
@@ -148,5 +155,42 @@ theorem exists_smoothIsotopy_of_det_mul_pos
     simpa only [Lf, Lg, ContinuousLinearMap.coe_toContinuousLinearEquivOfDetNeZero,
       inv_mul_eq_div, div_pos_iff] using mul_pos_iff.mp hdet
   exact f.exists_smoothIsotopy_of_det_pos g hcentre Lf Lg hLf hLg hrelative
+
+/-- **The disc theorem in a ball.** Smooth self-embeddings with values in a Euclidean ball, centred
+at its centre, with the same derivative orientation there, are smoothly isotopic relative to the
+centre through embeddings with values in the ball. -/
+theorem exists_smoothIsotopy_mapsTo_ball {c : E} {r : ℝ} (hr : 0 < r)
+    (f g : SmoothEmbedding 𝓘(ℝ, E) 𝓘(ℝ, E) ∞ E E) (hf0 : f 0 = c) (hg0 : g 0 = c)
+    (hf : ∀ x, f x ∈ Euclidean.ball c r) (hg : ∀ x, g x ∈ Euclidean.ball c r)
+    (hdet : 0 < (fderiv ℝ f 0).det * (fderiv ℝ g 0).det) :
+    ∃ L : SmoothIsotopy f.toContMDiffMap g.toContMDiffMap,
+      (∀ q, L q ∈ Euclidean.ball c r) ∧ ∀ t : unitInterval, L (t, 0) = c := by
+  obtain ⟨K, hK⟩ := f.exists_smoothIsotopy_of_det_mul_pos g (hf0.trans hg0.symm) hdet
+  -- Follow `K` by the radial contraction onto the ball, and join its ends to `f` and `g` by
+  -- radial contractions, which keep the ball in place.
+  have hκ : (0 : ℝ) ≤ r⁻¹ ^ 2 := sq_nonneg _
+  let τK := K.postcomp (radialContraction c (r⁻¹ ^ 2)) (s := Set.univ) (fun _ => trivial)
+    (fun y _ => isLocalDiffeomorph_iff.1 (isLocalDiffeomorph_radialContraction c hκ) y)
+    ((isEmbedding_radialContraction c hκ).comp Topology.IsEmbedding.subtypeVal)
+    (f.transRadialContraction c hκ).toContMDiffMap (g.transRadialContraction c hκ).toContMDiffMap
+    (fun x => by simp) (fun x => by simp)
+  have hτK (q : unitInterval × E) : τK q = radialContraction c (r⁻¹ ^ 2) (K q) :=
+    SmoothIsotopy.postcomp_apply ..
+  refine ⟨((f.transRadialContractionIsotopy c hκ).trans τK le_rfl).trans
+    (g.transRadialContractionIsotopy c hκ).symm le_rfl, fun q => ?_, fun t => ?_⟩
+  · refine SmoothIsotopy.trans_apply_mem _ _ _ (fun t => ?_) (fun t => ?_) q.1
+    · refine SmoothIsotopy.trans_apply_mem _ _ _
+        (fun t => f.transRadialContractionIsotopy_mem_ball hκ hf _) (fun t => ?_) t
+      rw [hτK]
+      exact radialContraction_mem_ball c _ hr
+    · rw [SmoothIsotopy.symm_apply]
+      exact g.transRadialContractionIsotopy_mem_ball hκ hg _
+  · refine SmoothIsotopy.trans_apply_mem (s := {c}) _ _ _ (fun t => ?_) (fun t => ?_) t
+    · refine SmoothIsotopy.trans_apply_mem (s := {c}) _ _ _ (fun t => ?_) (fun t => ?_) t
+      · rw [Set.mem_singleton_iff, transRadialContractionIsotopy_apply, hf0,
+          radialContraction_self]
+      · rw [Set.mem_singleton_iff, hτK, hK, hf0, radialContraction_self]
+    · rw [Set.mem_singleton_iff, SmoothIsotopy.symm_apply, transRadialContractionIsotopy_apply,
+        hg0, radialContraction_self]
 
 end TauCeti.SmoothEmbedding
