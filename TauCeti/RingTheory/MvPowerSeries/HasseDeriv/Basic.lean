@@ -107,7 +107,8 @@ theorem hasseDeriv_monomial (d m : σ →₀ ℕ) (a : R) :
   by_cases h : n + d = m
   · subst h
     simp only [↓reduceIte, add_tsub_cancel_right]
-    congr 2
+    rw [Finsupp.prod_congr (g2 := fun j k ↦ ((n + d) j).choose k) fun j _ ↦ by
+      rw [Finsupp.add_apply]]
   · rw [ite_eq_right_iff.2 fun h' ↦ absurd h' h, mul_zero, eq_comm, ite_eq_right_iff]
     intro hn
     by_cases hdm : d ≤ m
@@ -148,20 +149,9 @@ theorem hasseDeriv_comp (a b : σ →₀ ℕ) :
   simp only [LinearMap.comp_apply, LinearMap.smul_apply, MvPolynomial.hasseDeriv_coeff,
     MvPolynomial.coeff_smul, MvPolynomial.coeff_monomial, Nat.cast_id, add_assoc, ite_true,
     mul_one, smul_eq_mul] at key
-  rw [LinearMap.comp_apply, LinearMap.smul_apply, map_nsmul, coeff_hasseDeriv, coeff_hasseDeriv,
-    coeff_hasseDeriv, nsmul_eq_mul, ← mul_assoc, ← mul_assoc, ← Nat.cast_mul, ← Nat.cast_mul, key,
-    add_assoc]
-
-/-- The multi-index binomial factor `∏ⱼ (aⱼ + bⱼ choose aⱼ)` of the composition rule is symmetric
-in `a` and `b`. -/
-private theorem prod_choose_add_comm (a b : σ →₀ ℕ) :
-    (a.prod fun j k ↦ (k + b j).choose k) = b.prod fun j k ↦ (k + a j).choose k := by
-  classical
-  rw [Finsupp.prod_of_support_subset a Finset.subset_union_left (fun j k ↦ (k + b j).choose k)
-      (fun _ _ ↦ Nat.choose_zero_right _),
-    Finsupp.prod_of_support_subset b (Finset.subset_union_right (s₁ := a.support))
-      (fun j k ↦ (k + a j).choose k) (fun _ _ ↦ Nat.choose_zero_right _)]
-  exact Finset.prod_congr rfl fun j _ ↦ by rw [Nat.choose_symm_add, add_comm]
+  simp only [LinearMap.comp_apply, LinearMap.smul_apply, map_nsmul, coeff_hasseDeriv]
+  rw [nsmul_eq_mul, ← mul_assoc, ← mul_assoc, add_assoc]
+  exact_mod_cast congrArg (fun c : ℕ ↦ (c : R) * coeff (m + (a + b)) f) key
 
 /-- Hasse derivatives commute: `∂^a ∘ ∂^b = ∂^b ∘ ∂^a`. In particular Hasse derivatives in
 different variables commute. -/
