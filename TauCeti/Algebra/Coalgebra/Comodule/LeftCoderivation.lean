@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Coalgebra.Basic
+public import TauCeti.Algebra.Coalgebra.Comodule.Cofree
 public import TauCeti.Algebra.Module.GradedModule.Internal
 
 /-!
@@ -205,18 +205,8 @@ theorem assoc_comp_rTensor_map_counit_comp_assoc_symm_comp_lTensor_comul (δ : Y
   have hid : ((TensorProduct.rid R Y).toLinearMap ∘ₗ
       (Coalgebra.counit (R := R) (A := E)).lTensor Y).rTensor E ∘ₗ
         (TensorProduct.assoc R Y E E).symm.toLinearMap ∘ₗ Coalgebra.comul.lTensor Y =
-      LinearMap.id := by
-    refine TensorProduct.ext' fun y v ↦ ?_
-    have key : ∀ s : E ⊗[R] E,
-        ((TensorProduct.rid R Y).toLinearMap ∘ₗ
-          (Coalgebra.counit (R := R) (A := E)).lTensor Y).rTensor E
-            ((TensorProduct.assoc R Y E E).symm (y ⊗ₜ s)) =
-          y ⊗ₜ TensorProduct.lid R E ((Coalgebra.counit (R := R) (A := E)).rTensor E s) := by
-      intro s
-      induction s using TensorProduct.inductionOn with
-      | tmul a b => simp [TensorProduct.smul_tmul]
-      | add x x' hx hx' => simp only [TensorProduct.tmul_add, map_add, hx, hx']
-    simp [key]
+      LinearMap.id :=
+    rTensor_rid_comp_lTensor_counit_comp_cofreeCoact
   rw [hid, ← LinearMap.rTensor_def]
 
 end Bicomodule
@@ -411,19 +401,15 @@ theorem leftCoactRTensor_comp_lTensor_comp_rTensor_map {P' N' : Type*} [AddCommM
         (k.lTensor (C ⊗[R] P') ∘ₗ (TensorProduct.map τ h).rTensor N) =
       TensorProduct.map τ (k.lTensor (C ⊗[R] P') ∘ₗ (TensorProduct.map τ h).rTensor N) ∘ₗ
         leftCoactRTensor N (leftCofreeCoact R C P) := by
-  refine TensorProduct.ext' fun y n ↦ ?_
-  induction y using TensorProduct.inductionOn with
-  | tmul c p =>
-    have hc := LinearMap.congr_fun hτ c
-    simp only [LinearMap.comp_apply] at hc
-    simp only [LinearMap.comp_apply, LinearMap.rTensor_tmul, LinearMap.lTensor_tmul,
-      TensorProduct.map_tmul, leftCoactRTensor_tmul, leftCofreeCoact_tmul, hc]
-    induction Coalgebra.comul (R := R) c using TensorProduct.inductionOn with
-    | tmul a b => simp
-    | add x x' hx hx' => simp only [TensorProduct.add_tmul, map_add, hx, hx']
-  | add x x' hx hx' =>
-    simp only [LinearMap.comp_apply, TensorProduct.add_tmul, map_add] at hx hx' ⊢
-    rw [hx, hx']
+  rw [← LinearMap.comp_assoc, leftCoactRTensor_comp_lTensor, LinearMap.comp_assoc,
+    leftCoactRTensor_comp_rTensor, leftCofreeCoact_comp_map hτ, ← LinearMap.lTensor_comp_map,
+    leftCoactRTensor_def, LinearMap.rTensor_comp]
+  -- What remains is the naturality of the associator in its first two factors.
+  simp only [← LinearMap.comp_assoc]
+  congr 1
+  simp only [LinearMap.comp_assoc]
+  congr 1
+  exact TensorProduct.ext_threefold fun c y n ↦ by simp
 
 /-- A coassociative left coaction stays coassociative when extended by a right factor. -/
 theorem leftCofreeCoact_comp_leftCoactRTensor {δ : Y →ₗ[R] C ⊗[R] Y}

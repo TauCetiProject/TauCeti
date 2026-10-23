@@ -327,6 +327,17 @@ theorem cofreeLift_rid_comp_lTensor_counit_comp [Comodule R C P] (φ : Hom R C P
 
 end Hom
 
+/-- The cofree coaction is retracted by its counit projection on the right factor: applying the
+counit of `C` to the middle factor and then the right unitor of `M` gives back the element.
+This is the right-counit law of `C` transported to `M ⊗[R] C`. -/
+theorem rTensor_rid_comp_lTensor_counit_comp_cofreeCoact :
+    ((TensorProduct.rid R M).toLinearMap ∘ₗ
+        (Coalgebra.counit (R := R) (A := C)).lTensor M).rTensor C ∘ₗ cofreeCoact R C M =
+      LinearMap.id :=
+  LinearMap.ext fun z ↦ by
+    rw [LinearMap.rTensor_comp, LinearMap.comp_apply, LinearMap.comp_apply, Hom.cofree_retract,
+      LinearMap.id_apply]
+
 /-- A linear map `E` into a cofree comodule whose coaction factors as `(E ⊗ id) ∘ ρ`, for some
 linear map `ρ : P → P ⊗[R] C`, is determined by its counit component `π ∘ E`: it equals
 `(π ∘ E ⊗ id) ∘ ρ`, where `π` applies the counit and the right unitor.  For `ρ` the coaction of a
