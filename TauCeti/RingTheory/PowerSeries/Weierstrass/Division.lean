@@ -36,18 +36,24 @@ norm is multiplicative, and over a commutative ring when `f` is multiplicatively
 (`TauCeti.PowerSeries.IsMulDistinguished`), which is the form the estimate takes for divisors over
 Banach rings.
 
-It then proves existence for restricted `f` whose coefficient in degree `s` is a unit, over a
-complete ultrametric normed commutative ring whose norm is multiplicative. Over a field the unit
-condition is automatic. Over a ring it is what makes the polynomial part `f⁻ = f.trunc (s + 1)` a
-unit multiple of a monic polynomial, so that a truncation of the dividend can be divided by it as
-an ordinary division of polynomials. The division leaves a defect built from the tail `f - f⁻`,
-whose Gauss norm is strictly smaller than that of `f`. Each step therefore shrinks the dividend by
+It then proves existence over a complete ultrametric normed commutative ring, for a restricted
+divisor `f` which is multiplicatively distinguished. The norm of the coefficient ring need not be
+multiplicative, so the ring may have nilpotents, as the coefficient algebras of families do. That
+`f` has a unit coefficient in degree `s` makes its polynomial part `f⁻ = f.trunc (s + 1)` a unit
+multiple of a monic polynomial, so that a truncation of the dividend can be divided by it as an
+ordinary division of polynomials; that this unit is multiplicative makes the norm identity bound
+the polynomial quotient and remainder. The division leaves a defect built from the tail `f - f⁻`,
+whose Gauss norm is strictly smaller than that of `f`, and submultiplicativity of the Gauss norm
+bounds the product of the quotient with that tail. Each step therefore shrinks the dividend by
 a fixed factor, and the resulting series of quotients and remainders converges coefficientwise.
 
-The coefficient ring is allowed to be a ring, rather than a field, for the noetherianity of Tate
-algebras in several variables: the Tate algebra in `n` variables is a ring of restricted series in
-one variable over the Tate algebra in `n - 1` variables, whose Gauss norm is multiplicative, and
-Bosch–Güntzer–Remmert divide there by series whose dominant coefficient is a unit.
+When the norm of the coefficient ring is multiplicative, a distinguished series is multiplicatively
+distinguished exactly when its coefficient in degree `s` is a unit, which over a field is
+automatic. This recovers the division of Bosch–Güntzer–Remmert. The coefficient ring is allowed to
+be a ring, rather than a field, for the noetherianity of Tate algebras in several variables: the
+Tate algebra in `n` variables is a ring of restricted series in one variable over the Tate algebra
+in `n - 1` variables, whose Gauss norm is multiplicative, and Bosch–Güntzer–Remmert divide there by
+series whose dominant coefficient is a unit.
 
 Since the quotient and the remainder are themselves restricted at `c`, the division is also
 recorded inside the subring `PowerSeries.IsRestricted.subring c` of `R⟦X⟧`, which is the form
@@ -61,20 +67,30 @@ its ideal-theoretic consequences use.
   divisor over a commutative ring.
 * `TauCeti.PowerSeries.IsDistinguished.eq_and_eq_of_mul_add_eq_mul_add`: the quotient and the
   remainder of a Weierstrass division are unique.
+* `TauCeti.PowerSeries.IsMulDistinguished.gaussNorm_le_div_of_mul_add_eq` and
+  `TauCeti.PowerSeries.IsMulDistinguished.gaussNorm_le_of_mul_add_eq`: the bounds
+  `‖q‖ ≤ ‖f‖ / ‖g‖` and `‖r‖ ≤ ‖f‖` for a decomposition `f = g * q + r` by a multiplicatively
+  distinguished `g`.
+* `TauCeti.PowerSeries.IsMulDistinguished.exists_mul_add_eq` and
+  `TauCeti.PowerSeries.IsMulDistinguished.existsUnique_mul_add_eq`: over a complete ultrametric
+  normed commutative ring, every restricted power series has a unique Weierstrass division by a
+  restricted multiplicatively distinguished series.
 * `TauCeti.PowerSeries.IsDistinguished.exists_mul_add_eq` and
-  `TauCeti.PowerSeries.IsDistinguished.existsUnique_mul_add_eq`: over a complete ultrametric
-  normed commutative ring with multiplicative norm, every restricted power series has a unique
-  Weierstrass division by `f`, provided the coefficient of `f` in degree `s` is a unit.
-* `TauCeti.PowerSeries.IsDistinguished.exists_mul_add_eq_subring` and
-  `TauCeti.PowerSeries.IsDistinguished.existsUnique_mul_add_eq_subring`: the same division read
-  inside the subring `PowerSeries.IsRestricted.subring c` of series restricted at `c`, where
-  quotient and remainder are elements of that subring.
+  `TauCeti.PowerSeries.IsDistinguished.existsUnique_mul_add_eq`: the case of a multiplicative
+  norm, where it suffices that the coefficient of `f` in degree `s` is a unit.
+* `TauCeti.PowerSeries.IsMulDistinguished.exists_mul_add_eq_subring`,
+  `TauCeti.PowerSeries.IsDistinguished.exists_mul_add_eq_subring` and their `existsUnique`
+  forms: the same divisions read inside the subring `PowerSeries.IsRestricted.subring c` of series
+  restricted at `c`, where quotient and remainder are elements of that subring.
 
 ## References
 
 * Bosch, Güntzer, Remmert, *Non-Archimedean Analysis*, §5.2.1, Theorem 2, whose norm identity,
   uniqueness assertion and existence assertion these are; the statements there are for the unit
   radius.
+* F. Martin, *Overconvergent subanalytic subsets in the framework of Berkovich spaces*,
+  J. Eur. Math. Soc. 18 (2016), Proposition 1.27, the division by a multiplicatively
+  distinguished series over a Banach ring.
 
 Mathlib's `PowerSeries.IsWeierstrassDivisionAt` is a different division theorem, for a different
 notion of divisor: there the divisor is measured by the order of its image modulo an ideal `I` of an
@@ -221,7 +237,7 @@ end NormedRing
 section MulDistinguished
 
 variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] {c : ℝ} {s : ℕ}
-  {g q r : PowerSeries R}
+  {f g q r : PowerSeries R}
 
 /-- **The Weierstrass division estimate for a multiplicatively distinguished divisor.** Over an
 ultrametric normed commutative ring, if `g` is multiplicatively distinguished of degree `s` at the
@@ -240,31 +256,52 @@ theorem IsMulDistinguished.gaussNorm_mul_add_eq_max (hg : IsMulDistinguished c s
   exact hg.toIsDistinguished.gaussNorm_mul_add_eq_max hc
     (fun x ↦ by rw [mul_comm, hg.isNormMulUnit_coeff.norm_mul, mul_comm]) hq hr
 
+/-- **The quotient bound in Weierstrass division over a Banach ring.** In a decomposition
+`f = g * q + r` by a multiplicatively distinguished `g` of degree `s`, with `q` restricted and `r`
+vanishing in every degree `≥ s`, the Gauss norms satisfy `‖q‖ ≤ ‖f‖ / ‖g‖`. -/
+theorem IsMulDistinguished.gaussNorm_le_div_of_mul_add_eq (hg : IsMulDistinguished c s g)
+    (hc : 0 < c) (hq : q.IsRestricted c) (hr : ∀ m, s ≤ m → r.coeff m = 0)
+    (h : g * q + r = f) : q.gaussNorm norm c ≤ f.gaussNorm norm c / g.gaussNorm norm c := by
+  rw [le_div_iff₀ hg.toIsDistinguished.gaussNorm_pos, mul_comm, ← h,
+    hg.gaussNorm_mul_add_eq_max hc hq hr]
+  exact le_max_left _ _
+
+/-- **The remainder bound in Weierstrass division over a Banach ring.** In a decomposition
+`f = g * q + r` by a multiplicatively distinguished `g` of degree `s`, with `q` restricted and `r`
+vanishing in every degree `≥ s`, the Gauss norms satisfy `‖r‖ ≤ ‖f‖`. -/
+theorem IsMulDistinguished.gaussNorm_le_of_mul_add_eq (hg : IsMulDistinguished c s g)
+    (hc : 0 < c) (hq : q.IsRestricted c) (hr : ∀ m, s ≤ m → r.coeff m = 0)
+    (h : g * q + r = f) : r.gaussNorm norm c ≤ f.gaussNorm norm c := by
+  rw [← h, hg.gaussNorm_mul_add_eq_max hc hq hr]
+  exact le_max_right _ _
+
 end MulDistinguished
 
-section NormedCommRing
+section Existence
 
-variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] [NormMulClass R] {c : ℝ} {s : ℕ}
+variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] {c : ℝ} {s : ℕ}
   {f g : PowerSeries R}
 
 /-- One step of the Weierstrass division algorithm. Dividing a sufficiently long truncation of
 `g` by the polynomial part of `f` — an ordinary division of polynomials by one whose leading
 coefficient is a unit — leaves a defect whose Gauss norm has shrunk by the factor `θ` measuring
 the tail of `f`. -/
-private theorem exists_gaussNorm_sub_mul_add_le (hf : IsDistinguished c s f)
-    (hu : IsUnit (f.coeff s)) (hc : 0 < c) (hfr : f.IsRestricted c) {θ : ℝ} (hθ : 0 < θ)
+private theorem exists_gaussNorm_sub_mul_add_le (hf : IsMulDistinguished c s f) (hc : 0 < c)
+    (hfr : f.IsRestricted c) {θ : ℝ} (hθ : 0 < θ)
     (hθf : (f - ((f.trunc (s + 1) : Polynomial R) : PowerSeries R)).gaussNorm norm c
       ≤ θ * f.gaussNorm norm c) (hg : g.IsRestricted c) :
     ∃ q r : PowerSeries R, q.IsRestricted c ∧ (∀ m, s ≤ m → r.coeff m = 0) ∧
       q.gaussNorm norm c * f.gaussNorm norm c ≤ g.gaussNorm norm c ∧
       r.gaussNorm norm c ≤ g.gaussNorm norm c ∧
       (g - (q * f + r)).gaussNorm norm c ≤ θ * g.gaussNorm norm c := by
-  -- The polynomial part `f⁻` of `f`, which is again distinguished of degree `s`, and its tail.
+  -- The polynomial part `f⁻` of `f`, which is again multiplicatively distinguished of degree `s`,
+  -- and its tail.
   have hzero : (0 : PowerSeries R).gaussNorm norm c = 0 :=
     PowerSeries.gaussNorm_zero norm c (norm_zero : ‖(0 : R)‖ = 0)
-  have hFd : IsDistinguished c s ((f.trunc (s + 1) : Polynomial R) : PowerSeries R) := hf.trunc
+  have hFd : IsMulDistinguished c s ((f.trunc (s + 1) : Polynomial R) : PowerSeries R) :=
+    hf.trunc
   have hFn : ((f.trunc (s + 1) : Polynomial R) : PowerSeries R).gaussNorm norm c
-      = f.gaussNorm norm c := hf.gaussNorm_trunc
+      = f.gaussNorm norm c := hf.toIsDistinguished.gaussNorm_trunc
   have htailr : (f - ((f.trunc (s + 1) : Polynomial R) : PowerSeries R)).IsRestricted c := by
     rw [sub_eq_add_neg]
     exact hfr.add (isRestricted_polynomial _).neg
@@ -312,8 +349,8 @@ private theorem exists_gaussNorm_sub_mul_add_le (hf : IsDistinguished c s f)
   obtain ⟨Qp, rp, hdiv, hrdeg⟩ : ∃ Qp rp : Polynomial R,
       (g.trunc N : Polynomial R) = (f.trunc (s + 1) : Polynomial R) * Qp + rp ∧
         rp.degree < (s : WithBot ℕ) := by
-    obtain ⟨u, hu⟩ := hu
-    have : Nontrivial R := nontrivial_of_ne _ _ hf.coeff_ne_zero
+    obtain ⟨u, hu⟩ := hf.isNormMulUnit_coeff.isUnit
+    have : Nontrivial R := nontrivial_of_ne _ _ hf.toIsDistinguished.coeff_ne_zero
     have hPm : (Polynomial.C (u⁻¹ : Rˣ).val * (f.trunc (s + 1) : Polynomial R)).IsMonicOfDegree
         s := (Polynomial.isMonicOfDegree_iff _ s).mpr
       ⟨(Polynomial.natDegree_C_mul_le _ _).trans
@@ -333,18 +370,23 @@ private theorem exists_gaussNorm_sub_mul_add_le (hf : IsDistinguished c s f)
   have hQr : ((Qp : Polynomial R) : PowerSeries R).IsRestricted c :=
     isRestricted_polynomial Qp
   have hdivPS : ((g.trunc N : Polynomial R) : PowerSeries R)
-      = (Qp : PowerSeries R) * ((f.trunc (s + 1) : Polynomial R) : PowerSeries R)
+      = ((f.trunc (s + 1) : Polynomial R) : PowerSeries R) * (Qp : PowerSeries R)
         + (rp : PowerSeries R) := by
     rw [hdiv]; push_cast; ring
   -- The norm identity for `f⁻` bounds the quotient and the remainder by `‖g‖`.
-  have hnorm := hFd.gaussNorm_mul_add_eq_max hc (fun _ ↦ norm_mul _ _) hQr hrpz
+  have hnorm := hFd.gaussNorm_mul_add_eq_max hc hQr hrpz
   rw [← hdivPS, hFn] at hnorm
-  have hmax : max ((Qp : PowerSeries R).gaussNorm norm c * f.gaussNorm norm c)
+  have hmax : max (f.gaussNorm norm c * (Qp : PowerSeries R).gaussNorm norm c)
       ((rp : PowerSeries R).gaussNorm norm c) ≤ g.gaussNorm norm c := by
     rw [← hnorm]; exact hGn
-  refine ⟨(Qp : PowerSeries R), (rp : PowerSeries R), hQr, hrpz,
-    (le_max_left _ _).trans hmax, (le_max_right _ _).trans hmax, ?_⟩
-  -- What is left is the discarded tail of `g` minus the quotient times the tail of `f`.
+  have hQn : (Qp : PowerSeries R).gaussNorm norm c * f.gaussNorm norm c
+      ≤ g.gaussNorm norm c := by
+    rw [mul_comm]
+    exact (le_max_left _ _).trans hmax
+  refine ⟨(Qp : PowerSeries R), (rp : PowerSeries R), hQr, hrpz, hQn,
+    (le_max_right _ _).trans hmax, ?_⟩
+  -- What is left is the discarded tail of `g` minus the quotient times the tail of `f`; the
+  -- latter is bounded by submultiplicativity, without any multiplicativity of the norm of `R`.
   have hdefect : g - ((Qp : PowerSeries R) * f + (rp : PowerSeries R))
       = (g - ((g.trunc N : Polynomial R) : PowerSeries R))
         + -((Qp : PowerSeries R)
@@ -355,15 +397,19 @@ private theorem exists_gaussNorm_sub_mul_add_le (hf : IsDistinguished c s f)
     hQr.mul htailr
   have hmulbound : ((Qp : PowerSeries R)
       * (f - ((f.trunc (s + 1) : Polynomial R) : PowerSeries R))).gaussNorm norm c
-      ≤ θ * g.gaussNorm norm c := by
-    rw [gaussNorm_mul_of_isRestricted hc hQr htailr]
-    calc (Qp : PowerSeries R).gaussNorm norm c
-          * (f - ((f.trunc (s + 1) : Polynomial R) : PowerSeries R)).gaussNorm norm c
-        ≤ (Qp : PowerSeries R).gaussNorm norm c * (θ * f.gaussNorm norm c) :=
+      ≤ θ * g.gaussNorm norm c :=
+    calc ((Qp : PowerSeries R)
+          * (f - ((f.trunc (s + 1) : Polynomial R) : PowerSeries R))).gaussNorm norm c
+        ≤ (Qp : PowerSeries R).gaussNorm norm c
+          * (f - ((f.trunc (s + 1) : Polynomial R) : PowerSeries R)).gaussNorm norm c :=
+          MvPowerSeries.gaussNorm_mul_le norm (fun _ : Unit ↦ c) _ _ (fun _ ↦ hc.le)
+            norm_nonneg norm_mul_le IsUltrametricDist.isNonarchimedean_norm norm_zero
+            (hasGaussNorm_of_isRestricted hQr).hasMvGaussNorm
+            (hasGaussNorm_of_isRestricted htailr).hasMvGaussNorm
+      _ ≤ (Qp : PowerSeries R).gaussNorm norm c * (θ * f.gaussNorm norm c) :=
           mul_le_mul_of_nonneg_left hθf (PowerSeries.gaussNorm_nonneg norm c _ norm_nonneg)
       _ = θ * ((Qp : PowerSeries R).gaussNorm norm c * f.gaussNorm norm c) := by ring
-      _ ≤ θ * g.gaussNorm norm c :=
-          mul_le_mul_of_nonneg_left ((le_max_left _ _).trans hmax) hθ.le
+      _ ≤ θ * g.gaussNorm norm c := mul_le_mul_of_nonneg_left hQn hθ.le
   rw [hdefect]
   refine le_trans (PowerSeries.gaussNorm_add_le_max norm c _ _ hc.le norm_nonneg
     IsUltrametricDist.isNonarchimedean_norm (hasGaussNorm_of_isRestricted hsmallr)
@@ -377,62 +423,60 @@ private theorem exists_gaussNorm_sub_mul_add_le (hf : IsDistinguished c s f)
   rw [hneg]
   exact hmulbound
 
-/-- **Weierstrass division** (Bosch–Güntzer–Remmert §5.2.1, Theorem 2). Over a complete
-ultrametric normed commutative ring with multiplicative norm, a restricted series `f`
-distinguished of degree `s` at a positive radius `c`, whose coefficient in degree `s` is a unit,
-divides every restricted series `g`:
+/-- **Weierstrass division over a Banach ring** (Martin, Proposition 1.27). Over a complete
+ultrametric normed commutative ring, a restricted series `g` multiplicatively distinguished of
+degree `s` at a positive radius `c` divides every restricted series `f`:
 
 ```text
-g = q * f + r,    q restricted,    r a polynomial of degree less than s.
+f = g * q + r,    q restricted,    r a polynomial of degree less than s.
 ```
 
-Over a field the unit condition is automatic, since a distinguished series has a nonzero
-coefficient in its distinguished degree (`TauCeti.PowerSeries.IsDistinguished.coeff_ne_zero`).
-Over a ring it cannot be dropped: a series distinguished of degree `0` whose constant coefficient
-is not a unit does not divide `1` with zero remainder. The coefficient ring of interest is the
-Tate algebra in fewer variables, over which the Tate algebra in one more variable is a ring of
-restricted series. The decomposition is unique by
-`TauCeti.PowerSeries.IsDistinguished.eq_and_eq_of_mul_add_eq_mul_add`. -/
-theorem IsDistinguished.exists_mul_add_eq [CompleteSpace R] (hf : IsDistinguished c s f)
-    (hu : IsUnit (f.coeff s)) (hc : 0 < c) (hfr : f.IsRestricted c) (hg : g.IsRestricted c) :
+The norm of the coefficient ring need not be multiplicative, and the ring may have nilpotents.
+The decomposition is unique (`TauCeti.PowerSeries.IsMulDistinguished.existsUnique_mul_add_eq`),
+and it satisfies `‖f‖ = max (‖g‖ * ‖q‖) ‖r‖`
+(`TauCeti.PowerSeries.IsMulDistinguished.gaussNorm_mul_add_eq_max`), so that `‖q‖ ≤ ‖f‖ / ‖g‖`
+and `‖r‖ ≤ ‖f‖`. -/
+theorem IsMulDistinguished.exists_mul_add_eq [CompleteSpace R] (hg : IsMulDistinguished c s g)
+    (hc : 0 < c) (hgr : g.IsRestricted c) (hf : f.IsRestricted c) :
     ∃ q r : PowerSeries R, q.IsRestricted c ∧ (∀ m, s ≤ m → r.coeff m = 0) ∧
-      q * f + r = g := by
-  have hfpos : 0 < f.gaussNorm norm c := hf.gaussNorm_pos
+      g * q + r = f := by
+  have hgpos : 0 < g.gaussNorm norm c := hg.toIsDistinguished.gaussNorm_pos
   obtain ⟨θ, hθ0, hθ1, hθf⟩ : ∃ θ : ℝ, 0 < θ ∧ θ < 1 ∧
-      (f - ((f.trunc (s + 1) : Polynomial R) : PowerSeries R)).gaussNorm norm c
-        ≤ θ * f.gaussNorm norm c := by
-    refine ⟨max (1 / 2) ((f - ((f.trunc (s + 1) : Polynomial R) : PowerSeries R)).gaussNorm
-      norm c / f.gaussNorm norm c), lt_of_lt_of_le (by norm_num) (le_max_left _ _),
-      max_lt (by norm_num) ((div_lt_one hfpos).mpr (hf.gaussNorm_sub_trunc_lt hc hfr)), ?_⟩
-    rw [← div_le_iff₀ hfpos]
+      (g - ((g.trunc (s + 1) : Polynomial R) : PowerSeries R)).gaussNorm norm c
+        ≤ θ * g.gaussNorm norm c := by
+    refine ⟨max (1 / 2) ((g - ((g.trunc (s + 1) : Polynomial R) : PowerSeries R)).gaussNorm
+      norm c / g.gaussNorm norm c), lt_of_lt_of_le (by norm_num) (le_max_left _ _),
+      max_lt (by norm_num)
+        ((div_lt_one hgpos).mpr (hg.toIsDistinguished.gaussNorm_sub_trunc_lt hc hgr)), ?_⟩
+    rw [← div_le_iff₀ hgpos]
     exact le_max_right _ _
   -- A choice of one division step at every restricted series, with contraction factor `θ`.
   have hstep : ∀ h : PowerSeries R, ∃ p : PowerSeries R × PowerSeries R, h.IsRestricted c →
       p.1.IsRestricted c ∧ (∀ m, s ≤ m → p.2.coeff m = 0) ∧
-      p.1.gaussNorm norm c * f.gaussNorm norm c ≤ h.gaussNorm norm c ∧
+      p.1.gaussNorm norm c * g.gaussNorm norm c ≤ h.gaussNorm norm c ∧
       p.2.gaussNorm norm c ≤ h.gaussNorm norm c ∧
-      (h - (p.1 * f + p.2)).gaussNorm norm c ≤ θ * h.gaussNorm norm c := by
+      (h - (p.1 * g + p.2)).gaussNorm norm c ≤ θ * h.gaussNorm norm c := by
     intro h
     by_cases hh : h.IsRestricted c
     · obtain ⟨q, r, h1, h2, h3, h4, h5⟩ :=
-        exists_gaussNorm_sub_mul_add_le hf hu hc hfr hθ0 hθf hh
+        exists_gaussNorm_sub_mul_add_le hg hc hgr hθ0 hθf hh
       exact ⟨(q, r), fun _ ↦ ⟨h1, h2, h3, h4, h5⟩⟩
     · exact ⟨(0, 0), fun hcon ↦ absurd hcon hh⟩
   choose F hF using hstep
   -- The sequence of successive defects.
   let G : ℕ → PowerSeries R := fun n ↦
-    Nat.rec (motive := fun _ ↦ PowerSeries R) g (fun _ h ↦ h - ((F h).1 * f + (F h).2)) n
-  have hG0 : G 0 = g := rfl
-  have hGsucc : ∀ n, G (n + 1) = G n - ((F (G n)).1 * f + (F (G n)).2) := fun _ ↦ rfl
+    Nat.rec (motive := fun _ ↦ PowerSeries R) f (fun _ h ↦ h - ((F h).1 * g + (F h).2)) n
+  have hG0 : G 0 = f := rfl
+  have hGsucc : ∀ n, G (n + 1) = G n - ((F (G n)).1 * g + (F (G n)).2) := fun _ ↦ rfl
   have hGr : ∀ n, (G n).IsRestricted c := by
     intro n
     induction n with
-    | zero => exact hg
+    | zero => exact hf
     | succ n ih =>
       rw [hGsucc n, sub_eq_add_neg]
-      exact ih.add (((hF (G n) ih).1.mul hfr).add
+      exact ih.add (((hF (G n) ih).1.mul hgr).add
           (isRestricted_of_forall_coeff_eq_zero (hF (G n) ih).2.1)).neg
-  have hGn : ∀ n, (G n).gaussNorm norm c ≤ θ ^ n * g.gaussNorm norm c := by
+  have hGn : ∀ n, (G n).gaussNorm norm c ≤ θ ^ n * f.gaussNorm norm c := by
     intro n
     induction n with
     | zero => simp [hG0]
@@ -442,18 +486,18 @@ theorem IsDistinguished.exists_mul_add_eq [CompleteSpace R] (hf : IsDistinguishe
       rw [pow_succ', mul_assoc]
       exact mul_le_mul_of_nonneg_left ih hθ0.le
   -- The quotients and remainders produced along the way have geometrically small Gauss norms.
-  have hgeo : Summable fun k : ℕ ↦ θ ^ k * g.gaussNorm norm c :=
+  have hgeo : Summable fun k : ℕ ↦ θ ^ k * f.gaussNorm norm c :=
     (summable_geometric_of_lt_one hθ0.le hθ1).mul_right _
   have hsQ : Summable fun k ↦ ((F (G k)).1).gaussNorm norm c := by
     refine Summable.of_nonneg_of_le
       (fun k ↦ PowerSeries.gaussNorm_nonneg norm c _ norm_nonneg) (fun k ↦ ?_)
-      (hgeo.div_const (f.gaussNorm norm c))
-    rw [le_div_iff₀ hfpos]
+      (hgeo.div_const (g.gaussNorm norm c))
+    rw [le_div_iff₀ hgpos]
     exact ((hF (G k) (hGr k)).2.2.1).trans (hGn k)
   have hsr : Summable fun k ↦ ((F (G k)).2).gaussNorm norm c :=
     Summable.of_nonneg_of_le (fun k ↦ PowerSeries.gaussNorm_nonneg norm c _ norm_nonneg)
       (fun k ↦ ((hF (G k) (hGr k)).2.2.2.1).trans (hGn k)) hgeo
-  -- Sum them coefficientwise; the defects tend to zero, so the sums telescope to `g`.
+  -- Sum them coefficientwise; the defects tend to zero, so the sums telescope to `f`.
   set q : PowerSeries R := PowerSeries.mk fun i ↦ ∑' k, ((F (G k)).1).coeff i with hqdef
   set rr : PowerSeries R := PowerSeries.mk fun i ↦ ∑' k, ((F (G k)).2).coeff i with hrdef
   have hsumQ : ∀ i, HasSum (fun k ↦ ((F (G k)).1).coeff i) (q.coeff i) := fun i ↦ by
@@ -470,38 +514,88 @@ theorem IsDistinguished.exists_mul_add_eq [CompleteSpace R] (hf : IsDistinguishe
   · have hz : (fun k ↦ ((F (G k)).2).coeff m) = fun _ : ℕ ↦ (0 : R) :=
       funext fun k ↦ (hF (G k) (hGr k)).2.1 m hm
     exact (hasSum_zero.unique (hz ▸ hsumr m)).symm
-  · refine PowerSeries.ext fun n ↦ ?_
-    have hmul : HasSum (fun k ↦ ((F (G k)).1 * f).coeff n) ((q * f).coeff n) := by
+  · rw [mul_comm g q]
+    refine PowerSeries.ext fun n ↦ ?_
+    have hmul : HasSum (fun k ↦ ((F (G k)).1 * g).coeff n) ((q * g).coeff n) := by
       have h := hasSum_sum (s := Finset.antidiagonal n)
-        (f := fun p : ℕ × ℕ ↦ fun k ↦ ((F (G k)).1).coeff p.1 * f.coeff p.2)
-        (a := fun p : ℕ × ℕ ↦ q.coeff p.1 * f.coeff p.2)
-        (fun p _ ↦ (hsumQ p.1).mul_right (f.coeff p.2))
+        (f := fun p : ℕ × ℕ ↦ fun k ↦ ((F (G k)).1).coeff p.1 * g.coeff p.2)
+        (a := fun p : ℕ × ℕ ↦ q.coeff p.1 * g.coeff p.2)
+        (fun p _ ↦ (hsumQ p.1).mul_right (g.coeff p.2))
       simpa only [← PowerSeries.coeff_mul] using h
     have heq : (fun k ↦ (G k).coeff n - (G (k + 1)).coeff n)
-        = fun k ↦ ((F (G k)).1 * f).coeff n + ((F (G k)).2).coeff n := by
+        = fun k ↦ ((F (G k)).1 * g).coeff n + ((F (G k)).2).coeff n := by
       funext k
       rw [hGsucc k, map_sub, map_add]
       ring
     have hstepSum : HasSum (fun k ↦ (G k).coeff n - (G (k + 1)).coeff n)
-        ((q * f + rr).coeff n) := by
+        ((q * g + rr).coeff n) := by
       rw [heq, map_add]
       exact hmul.add (hsumr n)
-    have hbound : ∀ m : ℕ, ‖(G m).coeff n‖ ≤ θ ^ m * g.gaussNorm norm c / c ^ n := fun m ↦ by
+    have hbound : ∀ m : ℕ, ‖(G m).coeff n‖ ≤ θ ^ m * f.gaussNorm norm c / c ^ n := fun m ↦ by
       rw [le_div_iff₀ (pow_pos hc n)]
       exact (PowerSeries.le_gaussNorm norm c _
         (hasGaussNorm_of_isRestricted (hGr m)) n).trans (hGn m)
     have hzero : Filter.Tendsto (fun m ↦ (G m).coeff n) Filter.atTop (nhds 0) :=
       squeeze_zero_norm hbound (by
         simpa using ((tendsto_pow_atTop_nhds_zero_of_lt_one hθ0.le hθ1).mul_const
-          (g.gaussNorm norm c)).div_const (c ^ n))
-    have htel : HasSum (fun k ↦ (G k).coeff n - (G (k + 1)).coeff n) (g.coeff n) := by
+          (f.gaussNorm norm c)).div_const (c ^ n))
+    have htel : HasSum (fun k ↦ (G k).coeff n - (G (k + 1)).coeff n) (f.coeff n) := by
       rw [hstepSum.summable.hasSum_iff_tendsto_nat]
       have hpartial : ∀ m : ℕ, (∑ k ∈ Finset.range m, ((G k).coeff n - (G (k + 1)).coeff n))
-          = g.coeff n - (G m).coeff n := fun m ↦ by
+          = f.coeff n - (G m).coeff n := fun m ↦ by
         rw [Finset.sum_range_sub' (fun k ↦ (G k).coeff n) m, hG0]
       simp only [hpartial]
       simpa using tendsto_const_nhds.sub hzero
     exact hstepSum.unique htel
+
+
+/-- **Weierstrass division over a Banach ring** (Martin, Proposition 1.27), in its
+unique-existence form: over a complete ultrametric normed commutative ring, a restricted series
+`g` multiplicatively distinguished of degree `s` at a positive radius divides every restricted
+series `f` in exactly one way, with a restricted quotient and a remainder that is a polynomial of
+degree less than `s`. -/
+theorem IsMulDistinguished.existsUnique_mul_add_eq [CompleteSpace R]
+    (hg : IsMulDistinguished c s g) (hc : 0 < c) (hgr : g.IsRestricted c)
+    (hf : f.IsRestricted c) :
+    ∃! p : PowerSeries R × PowerSeries R,
+      p.1.IsRestricted c ∧ (∀ m, s ≤ m → p.2.coeff m = 0) ∧ g * p.1 + p.2 = f := by
+  obtain ⟨q, r, hq, hr, hqr⟩ := hg.exists_mul_add_eq hc hgr hf
+  refine ⟨(q, r), ⟨hq, hr, hqr⟩, fun p ⟨h1, h2, h3⟩ ↦ ?_⟩
+  rw [mul_comm] at h3 hqr
+  obtain ⟨e1, e2⟩ := hg.toIsDistinguished.eq_and_eq_of_mul_add_eq_mul_add hc
+    (fun x ↦ by rw [mul_comm, hg.isNormMulUnit_coeff.norm_mul, mul_comm]) h1 hq h2 hr
+    (h3.trans hqr.symm)
+  exact Prod.ext e1 e2
+
+section NormMulClass
+
+variable [NormMulClass R]
+
+/-- **Weierstrass division** (Bosch–Güntzer–Remmert §5.2.1, Theorem 2). Over a complete
+ultrametric normed commutative ring with multiplicative norm, a restricted series `f`
+distinguished of degree `s` at a positive radius `c`, whose coefficient in degree `s` is a unit,
+divides every restricted series `g`:
+
+```text
+g = q * f + r,    q restricted,    r a polynomial of degree less than s.
+```
+
+Over a field the unit condition is automatic, since a distinguished series has a nonzero
+coefficient in its distinguished degree (`TauCeti.PowerSeries.IsDistinguished.coeff_ne_zero`).
+Over a ring it cannot be dropped: a series distinguished of degree `0` whose constant coefficient
+is not a unit does not divide `1` with zero remainder. The coefficient ring of interest is the
+Tate algebra in fewer variables, over which the Tate algebra in one more variable is a ring of
+restricted series. With a multiplicative norm such an `f` is multiplicatively distinguished
+(`TauCeti.PowerSeries.isMulDistinguished_iff_isUnit`), so this is a case of
+`TauCeti.PowerSeries.IsMulDistinguished.exists_mul_add_eq`. The decomposition is unique by
+`TauCeti.PowerSeries.IsDistinguished.eq_and_eq_of_mul_add_eq_mul_add`. -/
+theorem IsDistinguished.exists_mul_add_eq [CompleteSpace R] (hf : IsDistinguished c s f)
+    (hu : IsUnit (f.coeff s)) (hc : 0 < c) (hfr : f.IsRestricted c) (hg : g.IsRestricted c) :
+    ∃ q r : PowerSeries R, q.IsRestricted c ∧ (∀ m, s ≤ m → r.coeff m = 0) ∧
+      q * f + r = g := by
+  obtain ⟨q, r, hq, hr, hqr⟩ :=
+    (isMulDistinguished_iff_isUnit.mpr ⟨hf, hu⟩).exists_mul_add_eq hc hfr hg
+  exact ⟨q, r, hq, hr, by rw [mul_comm, hqr]⟩
 
 /-- **Weierstrass division** (Bosch–Güntzer–Remmert §5.2.1, Theorem 2), in its unique-existence
 form: over a complete ultrametric normed commutative ring with multiplicative norm, a restricted
@@ -512,18 +606,69 @@ theorem IsDistinguished.existsUnique_mul_add_eq [CompleteSpace R] (hf : IsDistin
     (hu : IsUnit (f.coeff s)) (hc : 0 < c) (hfr : f.IsRestricted c) (hg : g.IsRestricted c) :
     ∃! p : PowerSeries R × PowerSeries R,
       p.1.IsRestricted c ∧ (∀ m, s ≤ m → p.2.coeff m = 0) ∧ p.1 * f + p.2 = g := by
-  obtain ⟨q, r, hq, hr, hqr⟩ := hf.exists_mul_add_eq hu hc hfr hg
-  refine ⟨(q, r), ⟨hq, hr, hqr⟩, fun p ⟨h1, h2, h3⟩ ↦ ?_⟩
-  obtain ⟨e1, e2⟩ := hf.eq_and_eq_of_mul_add_eq_mul_add hc (fun _ ↦ norm_mul _ _) h1 hq h2 hr
-    (h3.trans hqr.symm)
-  exact Prod.ext e1 e2
+  simpa only [mul_comm _ f] using
+    (isMulDistinguished_iff_isUnit.mpr ⟨hf, hu⟩).existsUnique_mul_add_eq hc hfr hg
 
-end NormedCommRing
+end NormMulClass
+
+end Existence
 
 section Subring
 
-variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] [NormMulClass R] [CompleteSpace R]
-  {c : ℝ} {s : ℕ}
+variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] [CompleteSpace R] {c : ℝ} {s : ℕ}
+
+/-- **Weierstrass division inside the ring of restricted power series, over a Banach ring.**
+Over a complete ultrametric normed commutative ring, a member `g` of the ring of series
+restricted at a positive radius `c` which is multiplicatively distinguished of degree `s` divides
+every member `f` with remainder:
+
+```text
+f = g * q + r,    r a polynomial of degree less than s,
+```
+
+with `q` and `r` again restricted at `c`. This is
+`TauCeti.PowerSeries.IsMulDistinguished.exists_mul_add_eq` read in the ring of restricted series.
+The pair `(q, r)` is unique, by
+`TauCeti.PowerSeries.IsMulDistinguished.existsUnique_mul_add_eq_subring`. -/
+theorem IsMulDistinguished.exists_mul_add_eq_subring (hc : 0 < c)
+    {g : PowerSeries.IsRestricted.subring (R := R) c}
+    (hg : IsMulDistinguished c s (g : PowerSeries R))
+    (f : PowerSeries.IsRestricted.subring (R := R) c) :
+    ∃ q r : PowerSeries.IsRestricted.subring (R := R) c,
+      (∀ m, s ≤ m → (r : PowerSeries R).coeff m = 0) ∧ g * q + r = f := by
+  obtain ⟨q, r, hq, hr, hqr⟩ := hg.exists_mul_add_eq hc g.2 f.2
+  -- the coercion of a sum and of a product in a subring reduces to the sum and product of the
+  -- coercions, so `hqr` is literally the required equation of underlying series
+  exact ⟨⟨q, hq⟩, ⟨r, isRestricted_of_forall_coeff_eq_zero hr⟩, hr, Subtype.ext hqr⟩
+
+/-- **Weierstrass division inside the ring of restricted power series over a Banach ring is
+unique.** A member `f` of the ring of series restricted at a positive radius `c` is written as
+`g * q + r`, with `r` a polynomial of degree less than the degree `s` of the multiplicatively
+distinguished `g`, in exactly one way. This is
+`TauCeti.PowerSeries.IsMulDistinguished.existsUnique_mul_add_eq` read in that ring. -/
+theorem IsMulDistinguished.existsUnique_mul_add_eq_subring (hc : 0 < c)
+    {g : PowerSeries.IsRestricted.subring (R := R) c}
+    (hg : IsMulDistinguished c s (g : PowerSeries R))
+    (f : PowerSeries.IsRestricted.subring (R := R) c) :
+    ∃! p : PowerSeries.IsRestricted.subring (R := R) c ×
+        PowerSeries.IsRestricted.subring (R := R) c,
+      (∀ m, s ≤ m → (p.2 : PowerSeries R).coeff m = 0) ∧ g * p.1 + p.2 = f := by
+  obtain ⟨q, r, hr, hqr⟩ := hg.exists_mul_add_eq_subring hc f
+  refine ⟨(q, r), ⟨hr, hqr⟩, fun p ⟨h2, h3⟩ ↦ ?_⟩
+  -- the coercions of the two decompositions are equations of underlying series, to which the
+  -- uniqueness of Weierstrass division applies
+  have hcoe (x y : PowerSeries.IsRestricted.subring (R := R) c) (h : g * x + y = f) :
+      (g : PowerSeries R) * (x : PowerSeries R) + (y : PowerSeries R) = f := by
+    simpa using congrArg (Subtype.val (p := (· ∈ PowerSeries.IsRestricted.subring (R := R) c))) h
+  have huniq := (hg.existsUnique_mul_add_eq hc g.2 f.2).unique
+    (y₁ := ((p.1 : PowerSeries R), (p.2 : PowerSeries R)))
+    (y₂ := ((q : PowerSeries R), (r : PowerSeries R)))
+    ⟨p.1.2, h2, hcoe _ _ h3⟩ ⟨q.2, hr, hcoe _ _ hqr⟩
+  exact Prod.ext (Subtype.ext (congrArg Prod.fst huniq)) (Subtype.ext (congrArg Prod.snd huniq))
+
+section NormMulClass
+
+variable [NormMulClass R]
 
 /-- **Weierstrass division inside the ring of restricted power series.** Over a complete
 ultrametric normed commutative ring with multiplicative norm, a member `f` of the ring of series
@@ -544,10 +689,9 @@ theorem IsDistinguished.exists_mul_add_eq_subring (hc : 0 < c)
     (g : PowerSeries.IsRestricted.subring (R := R) c) :
     ∃ q r : PowerSeries.IsRestricted.subring (R := R) c,
       (∀ m, s ≤ m → (r : PowerSeries R).coeff m = 0) ∧ q * f + r = g := by
-  obtain ⟨q, r, hq, hr, hqr⟩ := hf.exists_mul_add_eq hu hc f.2 g.2
-  -- the coercion of a sum and of a product in a subring reduces to the sum and product of the
-  -- coercions, so `hqr` is literally the required equation of underlying series
-  exact ⟨⟨q, hq⟩, ⟨r, isRestricted_of_forall_coeff_eq_zero hr⟩, hr, Subtype.ext hqr⟩
+  obtain ⟨q, r, hr, hqr⟩ :=
+    (isMulDistinguished_iff_isUnit.mpr ⟨hf, hu⟩).exists_mul_add_eq_subring hc g
+  exact ⟨q, r, hr, by rw [mul_comm, hqr]⟩
 
 /-- **Weierstrass division inside the ring of restricted power series is unique.** The quotient and
 remainder of `TauCeti.PowerSeries.IsDistinguished.exists_mul_add_eq_subring` are the only ones: a
@@ -561,18 +705,10 @@ theorem IsDistinguished.existsUnique_mul_add_eq_subring (hc : 0 < c)
     ∃! p : PowerSeries.IsRestricted.subring (R := R) c ×
         PowerSeries.IsRestricted.subring (R := R) c,
       (∀ m, s ≤ m → (p.2 : PowerSeries R).coeff m = 0) ∧ p.1 * f + p.2 = g := by
-  obtain ⟨q, r, hr, hqr⟩ := hf.exists_mul_add_eq_subring hc hu g
-  refine ⟨(q, r), ⟨hr, hqr⟩, fun p ⟨h2, h3⟩ ↦ ?_⟩
-  -- the coercions of the two decompositions are equations of underlying series, to which the
-  -- uniqueness of Weierstrass division applies
-  have hcoe : (p.1 : PowerSeries R) * (f : PowerSeries R) + (p.2 : PowerSeries R)
-      = (q : PowerSeries R) * (f : PowerSeries R) + (r : PowerSeries R) := by
-    have := congrArg (Subtype.val (p := (· ∈ PowerSeries.IsRestricted.subring (R := R) c)))
-      (h3.trans hqr.symm)
-    simpa using this
-  obtain ⟨e1, e2⟩ := hf.eq_and_eq_of_mul_add_eq_mul_add hc (fun _ ↦ norm_mul _ _) p.1.2 q.2 h2 hr
-    hcoe
-  exact Prod.ext (Subtype.ext e1) (Subtype.ext e2)
+  simpa only [mul_comm _ f] using
+    (isMulDistinguished_iff_isUnit.mpr ⟨hf, hu⟩).existsUnique_mul_add_eq_subring hc g
+
+end NormMulClass
 
 end Subring
 
