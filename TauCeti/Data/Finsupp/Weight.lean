@@ -35,6 +35,9 @@ at `h` of the pushforward `Finsupp.mapDomain b`.
 * `Finsupp.weight_toFinsupp`: multiset multiplicities recover the sum of entry weights.
 * `Finsupp.prod_pow_eq_pow_degree`: `∏ a ^ tᵢ = a ^ degree t`.
 * `Finsupp.degree_optionElim`: extending by `y` at `none` adds `y` to the degree.
+* `Finsupp.prod_pow_optionElim`, `Finsupp.sum_nsmul_optionElim`: extending by `n` at `none`
+  splits off the factor `c none ^ n` from the weighted product `∏ c i ^ (f.optionElim n) i`, and
+  the summand `n • c none` from the weighted sum.
 * `Finsupp.pow_degree_le_pow_degree_optionElim`: `a ^ degree f ≤ b ^ degree (f.optionElim m)`
   for `0 ≤ a ≤ b` and `1 ≤ b`.
 * `Finsupp.weight_le_degree_nsmul`: if `w s ≤ c` for all `s`, then `weight w f ≤ degree f • c`.
@@ -81,6 +84,16 @@ theorem degree_optionElim {σ R : Type*} [AddCommMonoid R] (f : σ →₀ R) (y 
   have h (g : Option σ →₀ R) : g.degree = g.sum fun _ e ↦ e := degree_apply g
   rw [h, sum_option_index _ _ (fun _ ↦ rfl) fun _ _ _ ↦ rfl, optionElim_apply_none,
     some_optionElim, degree_apply, Finsupp.sum]
+
+/-- The weighted product of `f.optionElim n` splits off the factor `c none ^ n`. This is the
+form of Mathlib's `Finsupp.prod_option_index` used to separate one variable from the monomial
+weights of multivariate series. -/
+@[to_additive /-- The weighted sum of `f.optionElim n` splits off the summand `n • c none`. -/]
+theorem prod_pow_optionElim {α N : Type*} [CommMonoid N] (c : Option α → N) (n : ℕ)
+    (f : α →₀ ℕ) :
+    (f.optionElim n).prod (c · ^ ·) = c none ^ n * f.prod (fun i k ↦ c (Option.some i) ^ k) := by
+  rw [prod_option_index _ _ (fun _ ↦ pow_zero _) fun _ _ _ ↦ pow_add _ _ _,
+    optionElim_apply_none, some_optionElim]
 
 /-- A power `a ^ degree f` is bounded by the power `b ^ degree (f.optionElim m)` of a larger
 base `b ≥ 1`, for any value `m` at `none`. -/

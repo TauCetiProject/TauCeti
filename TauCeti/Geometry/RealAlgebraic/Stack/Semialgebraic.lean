@@ -9,7 +9,7 @@ public import TauCeti.Geometry.RealAlgebraic.CAD.Basic
 public import TauCeti.Geometry.RealAlgebraic.Stack.Delineation
 public import TauCeti.Geometry.RealAlgebraic.Stack.RootCount
 import TauCeti.Geometry.RealAlgebraic.Semialgebraic.SharedRoots
-import TauCeti.FieldTheory.IsRealClosed.Real
+import Mathlib.FieldTheory.IsRealClosed.Real
 
 /-!
 # Semialgebraicity of polynomial delineations

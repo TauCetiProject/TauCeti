@@ -27,6 +27,8 @@ parity `n` has.
 * `isTopologicallyNilpotent_neg` : the same fact as a `simp` iff, mirroring `isPowerBounded_neg`.
 * `eventually_mul_pow_mem_of_isTopologicallyNilpotent`, and its `.exists` form: a topologically
   nilpotent element absorbs any fixed element into any open subring.
+* `Prod.isTopologicallyNilpotent_iff` : an element of a product is topologically nilpotent exactly
+  when both of its components are.
 
 ## Provenance
 
@@ -97,5 +99,21 @@ theorem exists_mul_pow_mem_of_isTopologicallyNilpotent {s : A}
   (eventually_mul_pow_mem_of_isTopologicallyNilpotent hs hB a).exists
 
 end Absorb
+
+section Prod
+
+variable {M N : Type*} [MonoidWithZero M] [MonoidWithZero N] [TopologicalSpace M]
+  [TopologicalSpace N]
+
+/-- An element of a product of topological monoids with zero is topologically nilpotent exactly
+when both of its components are: the powers of `x` are taken componentwise, and a sequence in a
+product converges exactly when both of its component sequences do. -/
+@[simp]
+theorem Prod.isTopologicallyNilpotent_iff {x : M × N} :
+    IsTopologicallyNilpotent x ↔ IsTopologicallyNilpotent x.1 ∧ IsTopologicallyNilpotent x.2 := by
+  simp only [IsTopologicallyNilpotent, Prod.tendsto_iff, Prod.pow_fst, Prod.pow_snd, Prod.fst_zero,
+    Prod.snd_zero]
+
+end Prod
 
 end

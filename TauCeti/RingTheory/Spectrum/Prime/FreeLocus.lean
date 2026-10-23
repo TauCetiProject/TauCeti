@@ -29,7 +29,8 @@ that are not finitely generated over the base, as in the proof of generic freene
 The rank of `R^k` at every prime is `k`, with no nontriviality hypothesis on `R`: a ring with a
 prime ideal is nontrivial.
 The support of a finitely presented flat module `M` is the basic open set of an idempotent `e`,
-and `M × R ⧸ (e)` has positive rank at every prime.
+and `M × R ⧸ (e)` has positive rank at every prime. The rank of a base change of a finite flat
+module is constant when the base change sees the elements cutting out the rank loci uniformly.
 
 ## Main declarations
 
@@ -42,6 +43,8 @@ and `M × R ⧸ (e)` has positive rank at every prime.
   module is the basic open set of an idempotent.
 * `Module.exists_rankAtStalk_prod_quotient_eq_max`: adding the complement of that support gives a
   module of positive rank at every prime.
+* `TauCeti.Module.exists_rankAtStalk_tensorProduct_eq`: a finite flat module whose rank is
+  constant on the primes under a base change acquires constant rank after that base change.
 
 ## References
 
@@ -170,6 +173,26 @@ theorem exists_rankAtStalk_prod_quotient_eq_max {R : Type*} (M : Type*) [CommRin
     omega
 
 end Module
+
+namespace TauCeti.Module
+
+open _root_.Module
+
+open scoped TensorProduct in
+/-- If a finite flat module `M` has the same rank at all primes of `R` lying under primes of `T'`,
+then the base change of `M` to `T'` has constant rank. -/
+theorem exists_rankAtStalk_tensorProduct_eq {R T' M : Type*} [CommRing R] [CommRing T']
+    [Algebra R T'] [AddCommGroup M] [Module R M] [Module.Flat R M] [Module.Finite R M]
+    (h : ∀ q q' : PrimeSpectrum T', rankAtStalk (R := R) M (q.comap (algebraMap R T')) =
+      rankAtStalk (R := R) M (q'.comap (algebraMap R T'))) :
+    ∃ m : ℕ, rankAtStalk (R := T') (T' ⊗[R] M) = m := by
+  by_cases hne : Nonempty (PrimeSpectrum T')
+  · obtain ⟨q₀⟩ := hne
+    exact ⟨rankAtStalk M (q₀.comap (algebraMap R T')), funext fun q ↦ by
+      rw [rankAtStalk_baseChange, Pi.natCast_apply, h q₀ q, Nat.cast_id]⟩
+  · exact ⟨0, funext fun q ↦ (hne ⟨q⟩).elim⟩
+
+end TauCeti.Module
 
 namespace PrimeSpectrum
 
