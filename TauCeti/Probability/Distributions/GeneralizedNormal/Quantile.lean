@@ -83,9 +83,10 @@ theorem quantile_generalizedNormalMeasure (hs : 0 < s) (hp : 0 < p) (hu : u ∈ 
         m + s * sign (2 * u - 1) * inverseRegularizedGamma p⁻¹ |2 * u - 1| ^ p⁻¹ := by
   split_ifs with hhalf
   · rw [hhalf, one_div, quantile_generalizedNormalMeasure_half hs hp]
-  · apply (quantile_generalizedNormalMeasure_eq_iff hs hp hu).mpr
-    rw [← cdf_generalizedNormalMeasure_eq hs hp]
-    exact cdf_generalizedNormalMeasure_signed_inverse hs hp hu hhalf
+  · have h := cdf_generalizedNormalMeasure_signed_inverse (m := m) hs hp hu hhalf
+    exact (congrArg (generalizedNormalMeasure m s p).quantile h).symm.trans
+      (Measure.quantile_cdf _ ((strictMono_cdf_generalizedNormalMeasure hs hp).strictMonoOn _)
+        (by rw [h]; exact hu))
 
 /-- Generalized normal quantiles vary continuously with interior probability levels. -/
 theorem continuousOn_quantile_generalizedNormalMeasure (hs : 0 < s) (hp : 0 < p) :
