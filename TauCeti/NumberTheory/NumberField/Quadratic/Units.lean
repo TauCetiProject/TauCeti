@@ -11,9 +11,8 @@ import TauCeti.Algebra.Squarefree
 import TauCeti.Data.Nat.Totient
 import TauCeti.NumberTheory.EffectiveBounds.Regulator
 import TauCeti.NumberTheory.NumberField.Units.Torsion
+import TauCeti.RingTheory.RootsOfUnity.FourthAndSixth
 import Mathlib.NumberTheory.NumberField.Cyclotomic.Basic
-import Mathlib.RingTheory.Polynomial.Cyclotomic.Expand
-import Mathlib.RingTheory.Polynomial.Cyclotomic.Roots
 
 /-!
 # Roots of unity and units of quadratic fields
@@ -31,18 +30,13 @@ root `ζ` gives the square root `2ζ - 1` of `-3`. Since the squarefree radicand
 squarefree integer other than `1` with a square root in `K`
 (`NumberField.eq_of_sq_eq_intCast_of_squarefree`), these force `d = -1` and `d = -3`. Conversely
 `θ = √-1` is a primitive fourth root of unity, and `(1 + √-3)/2` is a primitive sixth root of
-unity; these generate the exceptional torsion subgroups.
+unity (`TauCeti.RingTheory.RootsOfUnity.FourthAndSixth`); these generate the exceptional torsion
+subgroups.
 
 ## Main results
 
 * `TauCeti.NumberField.Units.torsionOrder_eq_two_or_four_or_six`: a field of degree at most `2`
   has two, four or six roots of unity.
-* `TauCeti.NumberField.isPrimitiveRoot_four_of_sq_eq_neg_one`: in a field of characteristic
-  zero, a square root of `-1` is a primitive fourth root of unity.
-* `TauCeti.NumberField.isPrimitiveRoot_six_iff`: in a field of characteristic zero, `μ` is a
-  primitive sixth root of unity if and only if `μ² - μ + 1 = 0`.
-* `TauCeti.NumberField.isPrimitiveRoot_one_add_div_two_of_sq_eq_neg_three`: in a field of
-  characteristic zero, for `θ² = -3`, `(1 + θ)/2` is a primitive sixth root of unity.
 * `TauCeti.NumberField.Units.torsionOrder_eq_of_minpoly_eq_X_sq_sub_C`: the torsion order of
   `ℚ(√d)` for squarefree `d` is `4` if `d = -1`, `6` if `d = -3`, and `2` otherwise.
 * `TauCeti.NumberField.Units.torsion_eq_top_of_isTotallyComplex`: every unit of an imaginary
@@ -59,30 +53,6 @@ open scoped NumberField
 namespace TauCeti.NumberField
 
 variable {K : Type*} [Field K] [NumberField K] {θ : 𝓞 K} {d : ℤ}
-
-/-- **The exceptional fourth root of unity.** In a field of characteristic zero, a square root of
-`-1` is a primitive fourth root of unity: it is a root of `Φ₄ = X² + 1`. -/
-theorem isPrimitiveRoot_four_of_sq_eq_neg_one {F : Type*} [Field F] [CharZero F] {θ : F}
-    (h : θ ^ 2 = -1) : IsPrimitiveRoot θ 4 := by
-  -- Mathlib evaluates `Φ_{p^(k+1)}` as a geometric sum; `Φ₄` is the case `p = 2`, `k = 1`, where
-  -- the sum is `1 + X²`.
-  have hfour : (4 : ℕ) = 2 ^ (1 + 1) := by norm_num
-  rw [← isRoot_cyclotomic_iff_charZero (by norm_num), hfour,
-    cyclotomic_prime_pow_eq_geom_sum Nat.prime_two]
-  simp [Finset.sum_range_succ, h]
-
-/-- In a field of characteristic zero, the primitive sixth roots of unity are the roots of
-`Φ₆ = X² - X + 1`. -/
-theorem isPrimitiveRoot_six_iff {F : Type*} [Field F] [CharZero F] {μ : F} :
-    IsPrimitiveRoot μ 6 ↔ μ ^ 2 - μ + 1 = 0 := by
-  rw [← isRoot_cyclotomic_iff_charZero (by norm_num), cyclotomic_six]
-  simp only [IsRoot.def, eval_add, eval_sub, eval_pow, eval_X, eval_one]
-
-/-- **The exceptional sixth root of unity.** In a field of characteristic zero, if `θ² = -3`, then
-`(1 + θ)/2` is a primitive sixth root of unity: it is a root of `Φ₆ = X² - X + 1`. -/
-theorem isPrimitiveRoot_one_add_div_two_of_sq_eq_neg_three {F : Type*} [Field F] [CharZero F]
-    {θ : F} (h : θ ^ 2 = -3) : IsPrimitiveRoot ((1 + θ) / 2) 6 :=
-  isPrimitiveRoot_six_iff.2 (by linear_combination h / 4)
 
 namespace Units
 

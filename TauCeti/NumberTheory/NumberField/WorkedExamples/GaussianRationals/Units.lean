@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.NumberField.WorkedExamples.GaussianRationals.Invariants
 public import Mathlib.NumberTheory.NumberField.Units.DirichletTheorem
-import TauCeti.NumberTheory.NumberField.Quadratic.Units
+import TauCeti.RingTheory.RootsOfUnity.FourthAndSixth
 
 /-!
 # The units of `ℚ(i)`
