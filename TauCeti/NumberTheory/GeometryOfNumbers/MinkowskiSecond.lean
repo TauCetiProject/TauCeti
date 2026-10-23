@@ -465,9 +465,13 @@ private theorem prod_mul_measure_interior_le (L : Submodule ℤ E) [DiscreteTopo
   have hCc : Convex ℝ (φ '' ((1 / 2 : ℝ) • interior K)) :=
     (hK.interior.smul _).linear_image φ.toLinearMap
   let g' : ℕ → ℝ := fun i ↦ if h : i < n then g ⟨i, h⟩ else 0
-  have hflag : ∀ j, ∀ v ∈ span ℝ (a '' Iio j), φ v j = 0 := fun j v hv ↦
-    bR.repr_eq_zero_of_mem_span_image_Iio
-      (fun l ↦ by rw [b.ofZLatticeBasis_apply ℝ L l]; exact (hb l).1) (he ▸ hv) (le_refl j)
+  have hflag : ∀ j, ∀ v ∈ span ℝ (a '' Iio j), φ v j = 0 := fun j v hv ↦ by
+    have hv' : v ∈ e.flag j.castSucc := by
+      simp only [Basis.flag, Fin.castSucc_lt_castSucc_iff]
+      exact he ▸ hv
+    rw [← bR.flag_eq_of_triangular
+      (fun l ↦ by rw [b.ofZLatticeBasis_apply ℝ L l]; exact (hb l).1)] at hv'
+    exact bR.mem_flag_iff_repr_eq_zero.1 hv' j le_rfl
   have core := prod_mul_volume_le_one hCopen.measurableSet hCc g'
     (fun i hi ↦ by simp [g', hi, hg0]) (fun i j hij hj ↦ by
       simp only [g', hj, lt_of_le_of_lt hij hj, dite_true]
