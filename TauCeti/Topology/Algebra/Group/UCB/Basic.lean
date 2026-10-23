@@ -164,8 +164,8 @@ abbrev UCB : Type _ := ucb G
 
 /-- The defining condition of `ucb G`. -/
 theorem mem_ucb_iff {f : G →ᵇ ℝ} :
-    f ∈ ucb G ↔ ∀ ε > 0, ∀ᶠ u in 𝓝 (1 : G), ∀ x, |f (u * x) - f x| < ε :=
-  Iff.rfl
+    f ∈ ucb G ↔ ∀ ε > 0, ∀ᶠ u in 𝓝 (1 : G), ∀ x, |f (u * x) - f x| < ε := by
+  simp only [ucb, mem_ucbSubalgebra_iff, Real.norm_eq_abs]
 
 /-- Membership in `ucb G` says that `u ↦ f (u * ·)` tends to `f` in supremum norm as `u → 1`. -/
 theorem mem_ucb_iff_tendsto {f : G →ᵇ ℝ} :

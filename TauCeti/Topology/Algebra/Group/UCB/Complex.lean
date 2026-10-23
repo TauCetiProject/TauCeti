@@ -93,14 +93,18 @@ imaginary part, gives a function in `ucb G`. -/
 theorem compLeftContinuousBounded_mem_ucb (L : ℂ →L[ℝ] ℝ) {f : G →ᵇ ℂ}
     (hf : f ∈ complexUCB G) : L.compLeftContinuousBounded G f ∈ ucb G :=
   mem_ucb_iff_tendsto.2 <|
-    ((L.compLeftContinuousBounded G).continuous.tendsto f).comp (mem_complexUCB_iff_tendsto.1 hf)
+    (((L.compLeftContinuousBounded G).continuous.tendsto f).comp
+      (mem_complexUCB_iff_tendsto.1 hf)).congr fun _ =>
+        L.compLeftContinuousBounded_compContinuous ..
 
 /-- Postcomposing a function in `ucb G` with a real linear map `ℝ → ℂ`, such as the inclusion
 `ℝ → ℂ`, gives a function in `complexUCB G`. -/
 theorem compLeftContinuousBounded_mem_complexUCB (L : ℝ →L[ℝ] ℂ) {f : G →ᵇ ℝ}
     (hf : f ∈ ucb G) : L.compLeftContinuousBounded G f ∈ complexUCB G :=
   mem_complexUCB_iff_tendsto.2 <|
-    ((L.compLeftContinuousBounded G).continuous.tendsto f).comp (mem_ucb_iff_tendsto.1 hf)
+    (((L.compLeftContinuousBounded G).continuous.tendsto f).comp
+      (mem_ucb_iff_tendsto.1 hf)).congr fun _ =>
+        L.compLeftContinuousBounded_compContinuous ..
 
 /-- A complex function lies in `complexUCB G` exactly when its real and imaginary parts lie in
 `ucb G`. -/
@@ -121,9 +125,7 @@ theorem mem_complexUCB_iff_re_im {f : G →ᵇ ℂ} :
 /-- A left translate `x ↦ f (g * x)` of a function in `complexUCB G` lies in `complexUCB G`. -/
 theorem compContinuous_mulLeft_mem_complexUCB {f : G →ᵇ ℂ} (hf : f ∈ complexUCB G) (g : G) :
     f.compContinuous (ContinuousMap.mulLeft g) ∈ complexUCB G :=
-  mem_complexUCB_iff_re_im.2
-    ⟨compContinuous_mulLeft_mem_ucb (mem_complexUCB_iff_re_im.1 hf).1 g,
-      compContinuous_mulLeft_mem_ucb (mem_complexUCB_iff_re_im.1 hf).2 g⟩
+  compContinuous_mulLeft_mem_ucbSubalgebra hf g
 
 namespace ComplexUCB
 

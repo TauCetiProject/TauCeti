@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Operator.LinearIsometry
 public import TauCeti.Topology.Algebra.Group.UCB.Basic
+public import TauCeti.Topology.ContinuousMap.Bounded.Normed
 
 /-!
 # Translations of bounded uniformly continuous functions
@@ -28,15 +29,14 @@ of `UCB G`; no continuity statement is made for right translations.
 
 ## Main definitions
 
-* `Subalgebra.compContinuousₗᵢ`: precomposition with a homeomorphism, as a linear isometry
-  equivalence of a subalgebra of bounded continuous functions that it preserves.
 * `TauCeti.UCB.leftTranslation`: `g ↦ L_g`, with `L_g f = f (g⁻¹ * ·)`.
 * `TauCeti.UCB.rightTranslation`: `g ↦ R_g`, with `R_g f = f (· * g)`.
 
 ## Main results
 
-* `TauCeti.compContinuous_mulLeft_mem_ucb`, `TauCeti.compContinuous_mulRight_mem_ucb`: `ucb G` is
-  closed under left and right translation.
+* `TauCeti.compContinuous_mulLeft_mem_ucbSubalgebra`,
+  `TauCeti.compContinuous_mulRight_mem_ucbSubalgebra`: `ucbSubalgebra 𝕜 G`, and in particular
+  `ucb G`, is closed under left and right translation.
 * `TauCeti.UCB.leftTranslation_le_leftTranslation_iff`,
   `TauCeti.UCB.leftTranslation_apply_algebraMap`: left translation preserves the order and the
   constant functions; likewise for right translation.
@@ -60,67 +60,42 @@ open scoped BoundedContinuousFunction
 
 namespace TauCeti
 
-variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+variable {𝕜 G : Type*} [NormedField 𝕜] [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 
-/-- A left translate `x ↦ f (g * x)` of a function in `ucb G` lies in `ucb G`. -/
-theorem compContinuous_mulLeft_mem_ucb {f : G →ᵇ ℝ} (hf : f ∈ ucb G) (g : G) :
-    f.compContinuous (ContinuousMap.mulLeft g) ∈ ucb G := by
+/-- A left translate `x ↦ f (g * x)` of a function in `ucbSubalgebra 𝕜 G` lies in
+`ucbSubalgebra 𝕜 G`. -/
+theorem compContinuous_mulLeft_mem_ucbSubalgebra {f : G →ᵇ 𝕜} (hf : f ∈ ucbSubalgebra 𝕜 G)
+    (g : G) : f.compContinuous (ContinuousMap.mulLeft g) ∈ ucbSubalgebra 𝕜 G := by
   -- `g * u * x = (g * u * g⁻¹) * (g * x)`, and `g * u * g⁻¹ → 1` as `u → 1`.
   have hconj : Tendsto (fun u : G => g * u * g⁻¹) (𝓝 1) (𝓝 1) := by
     simpa using ((continuous_const_mul g).mul_const g⁻¹).tendsto (1 : G)
-  rw [mem_ucb_iff] at hf ⊢
+  rw [mem_ucbSubalgebra_iff] at hf ⊢
   intro ε hε
   filter_upwards [hconj.eventually (hf ε hε)] with u hu x
   simpa [mul_assoc] using hu (g * x)
 
-/-- A right translate `x ↦ f (x * g)` of a function in `ucb G` lies in `ucb G`. -/
-theorem compContinuous_mulRight_mem_ucb {f : G →ᵇ ℝ} (hf : f ∈ ucb G) (g : G) :
-    f.compContinuous (ContinuousMap.mulRight g) ∈ ucb G := by
-  rw [mem_ucb_iff] at hf ⊢
+/-- A right translate `x ↦ f (x * g)` of a function in `ucbSubalgebra 𝕜 G` lies in
+`ucbSubalgebra 𝕜 G`. -/
+theorem compContinuous_mulRight_mem_ucbSubalgebra {f : G →ᵇ 𝕜} (hf : f ∈ ucbSubalgebra 𝕜 G)
+    (g : G) : f.compContinuous (ContinuousMap.mulRight g) ∈ ucbSubalgebra 𝕜 G := by
+  rw [mem_ucbSubalgebra_iff] at hf ⊢
   intro ε hε
   filter_upwards [hf ε hε] with u hu x
   simpa [mul_assoc] using hu (x * g)
 
-/-- Precomposition with a continuous map `a` of `α` that has a continuous inverse `b`, as a linear
-isometry equivalence of a subalgebra `S` of `α →ᵇ 𝕜` preserved by both `a` and `b`. -/
-def _root_.Subalgebra.compContinuousₗᵢ {α 𝕜 : Type*} [TopologicalSpace α] [NormedField 𝕜]
-    (S : Subalgebra 𝕜 (α →ᵇ 𝕜)) (a b : C(α, α)) (hab : ∀ x, a (b x) = x)
-    (hba : ∀ x, b (a x) = x) (ha : ∀ f ∈ S, f.compContinuous a ∈ S)
-    (hb : ∀ f ∈ S, f.compContinuous b ∈ S) : S ≃ₗᵢ[𝕜] S where
-  toFun f := ⟨(f : α →ᵇ 𝕜).compContinuous a, ha _ f.2⟩
-  invFun f := ⟨(f : α →ᵇ 𝕜).compContinuous b, hb _ f.2⟩
-  map_add' _ _ := Subtype.ext <| BoundedContinuousFunction.ext fun _ => by simp
-  map_smul' _ _ := Subtype.ext <| BoundedContinuousFunction.ext fun _ => by simp
-  left_inv f := Subtype.ext <| BoundedContinuousFunction.ext fun x =>
-    congrArg (f : α →ᵇ 𝕜) (hab x)
-  right_inv f := Subtype.ext <| BoundedContinuousFunction.ext fun x =>
-    congrArg (f : α →ᵇ 𝕜) (hba x)
-  norm_map' f := by
-    rw [AddSubgroupClass.coe_norm, AddSubgroupClass.coe_norm]
-    refine le_antisymm ((f : α →ᵇ 𝕜).norm_compContinuous_le a) ?_
-    calc ‖(f : α →ᵇ 𝕜)‖ = ‖((f : α →ᵇ 𝕜).compContinuous a).compContinuous b‖ := by
-          congr 1
-          ext x
-          exact congrArg (f : α →ᵇ 𝕜) (hab x).symm
-      _ ≤ ‖(f : α →ᵇ 𝕜).compContinuous a‖ := BoundedContinuousFunction.norm_compContinuous_le _ _
+/-- A left translate `x ↦ f (g * x)` of a function in `ucb G` lies in `ucb G`. -/
+theorem compContinuous_mulLeft_mem_ucb {f : G →ᵇ ℝ} (hf : f ∈ ucb G) (g : G) :
+    f.compContinuous (ContinuousMap.mulLeft g) ∈ ucb G :=
+  mem_ucb_iff_tendsto.2 <| mem_ucbSubalgebra_iff_tendsto.1 <|
+    compContinuous_mulLeft_mem_ucbSubalgebra
+      (mem_ucbSubalgebra_iff_tendsto.2 (mem_ucb_iff_tendsto.1 hf)) g
 
-/-- `S.compContinuousₗᵢ a b … f` is the precomposition of `f` with `a`. -/
-@[simp]
-theorem _root_.Subalgebra.compContinuousₗᵢ_apply {α 𝕜 : Type*} [TopologicalSpace α]
-    [NormedField 𝕜] (S : Subalgebra 𝕜 (α →ᵇ 𝕜)) (a b : C(α, α)) (hab : ∀ x, a (b x) = x)
-    (hba : ∀ x, b (a x) = x) (ha : ∀ f ∈ S, f.compContinuous a ∈ S)
-    (hb : ∀ f ∈ S, f.compContinuous b ∈ S) (f : S) :
-    (S.compContinuousₗᵢ a b hab hba ha hb f : α →ᵇ 𝕜) = (f : α →ᵇ 𝕜).compContinuous a :=
-  (rfl)
-
-/-- The inverse of `S.compContinuousₗᵢ a b …` is precomposition with `b`. -/
-@[simp]
-theorem _root_.Subalgebra.compContinuousₗᵢ_symm_apply {α 𝕜 : Type*} [TopologicalSpace α]
-    [NormedField 𝕜] (S : Subalgebra 𝕜 (α →ᵇ 𝕜)) (a b : C(α, α)) (hab : ∀ x, a (b x) = x)
-    (hba : ∀ x, b (a x) = x) (ha : ∀ f ∈ S, f.compContinuous a ∈ S)
-    (hb : ∀ f ∈ S, f.compContinuous b ∈ S) (f : S) :
-    ((S.compContinuousₗᵢ a b hab hba ha hb).symm f : α →ᵇ 𝕜) = (f : α →ᵇ 𝕜).compContinuous b :=
-  (rfl)
+/-- A right translate `x ↦ f (x * g)` of a function in `ucb G` lies in `ucb G`. -/
+theorem compContinuous_mulRight_mem_ucb {f : G →ᵇ ℝ} (hf : f ∈ ucb G) (g : G) :
+    f.compContinuous (ContinuousMap.mulRight g) ∈ ucb G :=
+  mem_ucb_iff_tendsto.2 <| mem_ucbSubalgebra_iff_tendsto.1 <|
+    compContinuous_mulRight_mem_ucbSubalgebra
+      (mem_ucbSubalgebra_iff_tendsto.2 (mem_ucb_iff_tendsto.1 hf)) g
 
 namespace UCB
 
@@ -153,22 +128,22 @@ def rightTranslation : G →* (UCB G ≃ₗᵢ[ℝ] UCB G) where
 /-- The left translate `L_g f` is the precomposition of `f` with `x ↦ g⁻¹ * x`. -/
 theorem coe_leftTranslation (g : G) (f : UCB G) :
     (leftTranslation g f : G →ᵇ ℝ) = (f : G →ᵇ ℝ).compContinuous (ContinuousMap.mulLeft g⁻¹) :=
-  (rfl)
+  Subalgebra.compContinuousₗᵢ_apply ..
 
 /-- The right translate `R_g f` is the precomposition of `f` with `x ↦ x * g`. -/
 theorem coe_rightTranslation (g : G) (f : UCB G) :
     (rightTranslation g f : G →ᵇ ℝ) = (f : G →ᵇ ℝ).compContinuous (ContinuousMap.mulRight g) :=
-  (rfl)
+  Subalgebra.compContinuousₗᵢ_apply ..
 
 @[simp]
 theorem leftTranslation_apply (g : G) (f : UCB G) (x : G) :
     (leftTranslation g f : G →ᵇ ℝ) x = (f : G →ᵇ ℝ) (g⁻¹ * x) :=
-  (rfl)
+  DFunLike.congr_fun (coe_leftTranslation g f) x
 
 @[simp]
 theorem rightTranslation_apply (g : G) (f : UCB G) (x : G) :
     (rightTranslation g f : G →ᵇ ℝ) x = (f : G →ᵇ ℝ) (x * g) :=
-  (rfl)
+  DFunLike.congr_fun (coe_rightTranslation g f) x
 
 @[simp]
 theorem leftTranslation_symm (g : G) : (leftTranslation g).symm = leftTranslation g⁻¹ := by
