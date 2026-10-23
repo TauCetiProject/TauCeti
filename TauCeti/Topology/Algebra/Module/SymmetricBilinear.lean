@@ -21,9 +21,9 @@ spaces, so it applies to bundle fibres without choosing fibre norms. The identit
 and composition laws give consistent coordinates on overlaps. In finite dimensions these
 equivalences also identify the dimensions of the symmetric fibres.
 
-On a normed model fibre, `ContinuousLinearMap.symmetrize` is the continuous linear retraction
-`b ↦ (b + bᵀ) / 2` when two is nonzero. It commutes with changes of variables, so its image
-is independent of the chosen fibre coordinates. Taking real-valued maps on tangent spaces
+On a normed model fibre, `ContinuousLinearMap.symmetrizeBilinear` is the continuous linear
+retraction `b ↦ (b + bᵀ) / 2` when two is nonzero. It commutes with changes of variables, so its
+image is independent of the chosen fibre coordinates. Taking real-valued maps on tangent spaces
 gives the fibre model for symmetric covariant two-tensors, the ambient tensors for metrics.
 -/
 
@@ -132,7 +132,7 @@ section Normed
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace 𝕜 V]
 
 /-- Averaging a bilinear map with its transpose, with codomain the symmetric subspace. -/
-def symmetrize :
+def symmetrizeBilinear :
     (V →L[𝕜] V →L[𝕜] G) →L[𝕜] symmetricBilinearMaps 𝕜 V G :=
   { toFun b := ⟨(2 : 𝕜)⁻¹ • (b + b.flip), fun v w ↦ by simp [add_comm]⟩
     map_add' b c := by ext v w; simp; module
@@ -143,24 +143,24 @@ def symmetrize :
         (continuous_id.add (ContinuousLinearMap.flipₗᵢ 𝕜 V V G).continuous) }
 
 @[simp]
-theorem symmetrize_apply (b : V →L[𝕜] V →L[𝕜] G) (v w : V) :
-    (symmetrize b).val v w = (2 : 𝕜)⁻¹ • (b v w + b w v) :=
+theorem symmetrizeBilinear_apply (b : V →L[𝕜] V →L[𝕜] G) (v w : V) :
+    (symmetrizeBilinear b).val v w = (2 : 𝕜)⁻¹ • (b v w + b w v) :=
   (rfl)
 
 /-- Symmetrization is the identity on symmetric bilinear maps. -/
 @[simp]
-theorem symmetrize_coe [NeZero (2 : 𝕜)] (b : symmetricBilinearMaps 𝕜 V G) :
-    symmetrize b.val = b := by
+theorem symmetrizeBilinear_coe [NeZero (2 : 𝕜)] (b : symmetricBilinearMaps 𝕜 V G) :
+    symmetrizeBilinear b.val = b := by
   apply Subtype.ext
   ext v w
-  simp [symmetrize_apply, b.property v w, ← two_smul 𝕜, NeZero.ne (2 : 𝕜)]
+  simp [symmetrizeBilinear_apply, b.property v w, ← two_smul 𝕜, NeZero.ne (2 : 𝕜)]
 
 /-- Symmetrization commutes with simultaneous pullback of its two arguments. -/
-theorem symmetrize_bilinearComp
+theorem symmetrizeBilinear_bilinearComp
     {W : Type*} [NormedAddCommGroup W] [NormedSpace 𝕜 W]
     (b : V →L[𝕜] V →L[𝕜] G) (A : W →L[𝕜] V) :
-    (symmetrize (b.bilinearComp A A)).val =
-      (symmetrize b).val.bilinearComp A A := by
+    (symmetrizeBilinear (b.bilinearComp A A)).val =
+      (symmetrizeBilinear b).val.bilinearComp A A := by
   ext v w
   simp
 
