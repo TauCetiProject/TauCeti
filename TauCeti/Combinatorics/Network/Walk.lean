@@ -337,6 +337,18 @@ theorem PositiveReachable.trans (h : PositiveReachable c s t) (h' : PositiveReac
   rw [ArrowWalk.arrows_comp, List.mem_append] at ha
   exact ha.elim (hp a) (hp' a)
 
+/-- The target of every arrow on a walk from `s` along arrows of positive capacity is positively
+reachable from `s`. -/
+theorem positiveReachable_of_mem_arrows {p : ArrowWalk Q s t} (hp : ∀ a ∈ p.arrows, 0 < c a.2.2)
+    {a : Σ x y, Q x y} (ha : a ∈ p.arrows) : PositiveReachable c s a.2.1 := by
+  induction p with
+  | nil => simp at ha
+  | cons p e ih =>
+    simp only [ArrowWalk.arrows_cons, List.mem_append, List.mem_singleton] at hp ha
+    rcases ha with ha | rfl
+    · exact ih (fun a ha ↦ hp a (.inl ha)) ha
+    · exact positiveReachable_def.2 ⟨ArrowWalk.cons p e, fun a ha ↦ hp a (by simpa using ha)⟩
+
 /-- Positive reachability is witnessed by a path. -/
 theorem positiveReachable_iff_exists_isPath :
     PositiveReachable c s t ↔ ∃ p : ArrowWalk Q s t, p.IsPath ∧ ∀ a ∈ p.arrows, 0 < c a.2.2 := by

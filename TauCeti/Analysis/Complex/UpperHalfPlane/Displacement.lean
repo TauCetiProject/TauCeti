@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Metric
 import TauCeti.Analysis.Complex.UpperHalfPlane.Rotation
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ConjAct
+import TauCeti.LinearAlgebra.Matrix.Trace.FinTwo
 
 /-!
 # Displacements and commutator traces in `SL(2, ℝ)`
@@ -29,13 +30,30 @@ the rotation through angle `2θ` about `z`.
 Both are proved by conjugating `z` to `I`, where `g` becomes `!![a, b; -b, a]` with
 `a² + b² = 1`. They are the computations behind Jørgensen's inequality for elliptic elements.
 
+For arbitrary `g, h ∈ SL(2, ℝ)` and `z ∈ ℍ`, the displacements `δ_g = dist (g • z) z` and
+`δ_h = dist (h • z) z` bound the traces appearing in Jørgensen's inequality:
+
+* `tr² g - 4 ≤ 2 (cosh δ_g - 1)`;
+* `|tr ⁅g, h⁆ - 2| ≤ 4 (cosh δ_g cosh δ_h - 1)`.
+
+At `z = I`, write `g = p + q J + r S₁ + s S₂` with `J` the rotation generator and `S₁`, `S₂`
+the traceless symmetric matrices `!![1, 0; 0, -1]` and `!![0, 1; 1, 0]`. Then
+`cosh δ_g = 1 + 2 (r² + s²)`, and `tr ⁅g, h⁆ - 2 = -det (g h - h g)` is
+`4 ((q' s - q s')² + (q r' - q' r)² - (r s' - s r')²)`, which vanishes when both elements are
+rotations about `I`. These bounds feed the Margulis lemma for Fuchsian groups.
+
 ## Main results
 
 * `Matrix.SpecialLinearGroup.cosh_dist_smul_I`: the distance moved by `I`.
+* `Matrix.SpecialLinearGroup.dist_smul_smul_eq`: changing the base point conjugates the action.
 * `Matrix.SpecialLinearGroup.cosh_dist_smul_of_smul_eq_self`: the displacement of a point by an
   element fixing `z`.
 * `Matrix.SpecialLinearGroup.trace_commutatorElement_of_smul_eq_self`: the trace of a commutator
   with an element fixing `z`.
+* `Matrix.SpecialLinearGroup.trace_sq_sub_four_le`: the trace of an element is controlled by the
+  distance it moves any point.
+* `Matrix.SpecialLinearGroup.abs_trace_commutatorElement_sub_two_le`: the trace of a commutator is
+  controlled by the distances its two factors move a common point.
 
 ## References
 
@@ -128,6 +146,11 @@ theorem cosh_dist_smul_of_smul_eq_self {g : SL(2, ℝ)} {z : ℍ} (hz : g • z 
     (((Q⁻¹ * P) 0 0 ^ 2 + (Q⁻¹ * P) 0 1 ^ 2 + (Q⁻¹ * P) 1 0 ^ 2 + (Q⁻¹ * P) 1 1 ^ 2) ^ 2 / 2 - 2) *
       hab
 
+/-- Changing the base point from `z` to `P • z` conjugates the acting matrix. -/
+theorem dist_smul_smul_eq (P k : SL(2, ℝ)) (z : ℍ) :
+    dist (k • P • z) (P • z) = dist ((P⁻¹ * k * P) • z) z := by
+  rw [← dist_smul P⁻¹, inv_smul_smul, mul_smul, mul_smul]
+
 /-- **The trace of a commutator with an element fixing a point.** If `g ∈ SL(2, ℝ)` fixes
 `z ∈ ℍ`, then for every `h ∈ SL(2, ℝ)`,
 `tr ⁅g, h⁆ = 2 + (4 - tr² g) / 2 · (cosh (dist (h • z) z) - 1)`. -/
@@ -148,7 +171,7 @@ theorem trace_commutatorElement_of_smul_eq_self {g : SL(2, ℝ)} {z : ℍ} (hz :
     simp only [hk, hX, commutatorElement_def]
     group
   have hdist : dist (h • P • I) (P • I) = dist (X • I) I := by
-    rw [← dist_smul P⁻¹, inv_smul_smul, ← mul_smul, ← mul_smul, hX, mul_assoc]
+    exact dist_smul_smul_eq P h I
   have hg : P * k * P⁻¹ = g := by
     rw [hk]
     group
@@ -163,5 +186,84 @@ theorem trace_commutatorElement_of_smul_eq_self {g : SL(2, ℝ)} {z : ℍ} (hz :
     Matrix.cons_val_one, Matrix.empty_val', Matrix.cons_val_fin_one, Matrix.trace_fin_two, h₁₁,
     h₁₀]
   linear_combination 2 * k 0 0 ^ 2 * hdet + (X 0 0 ^ 2 + X 0 1 ^ 2 + X 1 0 ^ 2 + X 1 1 ^ 2) * hab
+
+/-! ### Bounds from the displacement of a point -/
+
+/-- The polynomial inequality behind `abs_trace_commutatorElement_sub_two_le`, in the coordinates
+`g = p + q J + r S₁ + s S₂` adapted to the rotations about `I`: the determinant condition is
+`p² + q² - r² - s² = 1`, the displacement of `I` is `cosh δ = p² + q² + r² + s²`, and the commutator
+trace is `tr ⁅g, h⁆ = 2 + 4 ((q' s - q s')² + (q r' - q' r)² - (r s' - s r')²)`. -/
+private theorem abs_commutator_sub_le {p q r s p' q' r' s' : ℝ}
+    (h : p ^ 2 + q ^ 2 - r ^ 2 - s ^ 2 = 1) (h' : p' ^ 2 + q' ^ 2 - r' ^ 2 - s' ^ 2 = 1) :
+    |(q' * s - q * s') ^ 2 + (q * r' - q' * r) ^ 2 - (r * s' - s * r') ^ 2| ≤
+      (p ^ 2 + q ^ 2 + r ^ 2 + s ^ 2) * (p' ^ 2 + q' ^ 2 + r' ^ 2 + s' ^ 2) - 1 := by
+  rw [abs_le]
+  constructor
+  · nlinarith [sq_nonneg (q' * s - q * s'), sq_nonneg (q * r' - q' * r),
+      sq_nonneg (r * r' + s * s'), sq_nonneg r, sq_nonneg s, sq_nonneg r', sq_nonneg s',
+      mul_nonneg (add_nonneg (sq_nonneg r) (sq_nonneg s))
+        (add_nonneg (sq_nonneg r') (sq_nonneg s'))]
+  · have hsos : (p ^ 2 + q ^ 2 + r ^ 2 + s ^ 2) * (p' ^ 2 + q' ^ 2 + r' ^ 2 + s' ^ 2) - 1 -
+        ((q' * s - q * s') ^ 2 + (q * r' - q' * r) ^ 2 - (r * s' - s * r') ^ 2) =
+        2 * (r ^ 2 + s ^ 2) * p' ^ 2 + 2 * (r' ^ 2 + s' ^ 2) * p ^ 2 + (q' * s + q * s') ^ 2 +
+          (q * r' + q' * r) ^ 2 + (r * s' - s * r') ^ 2 := by
+      linear_combination (p' ^ 2 + q' ^ 2 - r' ^ 2 - s' ^ 2) * h + h'
+    nlinarith [hsos, sq_nonneg p, sq_nonneg p', sq_nonneg (q' * s + q * s'),
+      sq_nonneg (q * r' + q' * r), sq_nonneg (r * s' - s * r'),
+      mul_nonneg (add_nonneg (sq_nonneg r) (sq_nonneg s)) (sq_nonneg p'),
+      mul_nonneg (add_nonneg (sq_nonneg r') (sq_nonneg s')) (sq_nonneg p)]
+
+/-- The case `z = I` of `trace_sq_sub_four_le`. -/
+private theorem trace_sq_sub_four_le_of_I (g : SL(2, ℝ)) :
+    (g : Matrix (Fin 2) (Fin 2) ℝ).trace ^ 2 - 4 ≤ 2 * (Real.cosh (dist (g • I) I) - 1) := by
+  have hg := g.det_coe
+  rw [Matrix.det_fin_two] at hg
+  rw [cosh_dist_smul_I, Matrix.trace_fin_two]
+  nlinarith [sq_nonneg (g 0 1 - g 1 0)]
+
+/-- The case `z = I` of `abs_trace_commutatorElement_sub_two_le`. -/
+private theorem abs_trace_commutatorElement_sub_two_le_of_I (g h : SL(2, ℝ)) :
+    |((⁅g, h⁆ : SL(2, ℝ)) : Matrix (Fin 2) (Fin 2) ℝ).trace - 2| ≤
+      4 * (Real.cosh (dist (g • I) I) * Real.cosh (dist (h • I) I) - 1) := by
+  have hg := g.det_coe
+  have hh := h.det_coe
+  rw [Matrix.det_fin_two] at hg hh
+  have key := abs_commutator_sub_le
+    (p := (g 0 0 + g 1 1) / 2) (q := (g 1 0 - g 0 1) / 2) (r := (g 0 0 - g 1 1) / 2)
+    (s := (g 0 1 + g 1 0) / 2) (p' := (h 0 0 + h 1 1) / 2) (q' := (h 1 0 - h 0 1) / 2)
+    (r' := (h 0 0 - h 1 1) / 2) (s' := (h 0 1 + h 1 0) / 2)
+    (by linear_combination hg) (by linear_combination hh)
+  rw [trace_commutatorElement_sub_two_fin_two, Matrix.det_fin_two, cosh_dist_smul_I,
+    cosh_dist_smul_I]
+  simp only [Matrix.sub_apply, Matrix.mul_apply, Fin.sum_univ_two]
+  -- both sides are `4` times the two sides of `key`, as polynomials in the entries
+  rw [abs_le] at key ⊢
+  constructor <;> linarith [key.1, key.2]
+
+/-- **The trace of an element and the displacement of a point.** For `g ∈ SL(2, ℝ)` and `z ∈ ℍ`,
+`tr² g - 4 ≤ 2 (cosh (dist (g • z) z) - 1)`. In particular an element moving some point a small
+distance has trace close to `±2` unless it is elliptic. -/
+theorem trace_sq_sub_four_le (g : SL(2, ℝ)) (z : ℍ) :
+    (g : Matrix (Fin 2) (Fin 2) ℝ).trace ^ 2 - 4 ≤ 2 * (Real.cosh (dist (g • z) z) - 1) := by
+  obtain ⟨P, rfl⟩ := MulAction.exists_smul_eq SL(2, ℝ) I z
+  have htr : (g : Matrix (Fin 2) (Fin 2) ℝ).trace = ((P⁻¹ * g * P : SL(2, ℝ)) :
+      Matrix (Fin 2) (Fin 2) ℝ).trace := by
+    simpa using (trace_mul_mul_inv P⁻¹ g).symm
+  rw [dist_smul_smul_eq P g I, htr]
+  exact trace_sq_sub_four_le_of_I _
+
+/-- **The commutator trace and the displacement of a point.** For `g, h ∈ SL(2, ℝ)` and `z ∈ ℍ`,
+`|tr ⁅g, h⁆ - 2| ≤ 4 (cosh (dist (g • z) z) cosh (dist (h • z) z) - 1)`. Thus two elements both
+moving a common point a small distance have commutator trace close to `2`, whatever their
+rotational parts are. -/
+theorem abs_trace_commutatorElement_sub_two_le (g h : SL(2, ℝ)) (z : ℍ) :
+    |((⁅g, h⁆ : SL(2, ℝ)) : Matrix (Fin 2) (Fin 2) ℝ).trace - 2| ≤
+      4 * (Real.cosh (dist (g • z) z) * Real.cosh (dist (h • z) z) - 1) := by
+  obtain ⟨P, rfl⟩ := MulAction.exists_smul_eq SL(2, ℝ) I z
+  have hcomm : ⁅g, h⁆ = P * ⁅P⁻¹ * g * P, P⁻¹ * h * P⁆ * P⁻¹ := by
+    simp only [commutatorElement_def]
+    group
+  rw [dist_smul_smul_eq P g I, dist_smul_smul_eq P h I, hcomm, trace_mul_mul_inv]
+  exact abs_trace_commutatorElement_sub_two_le_of_I _ _
 
 end Matrix.SpecialLinearGroup

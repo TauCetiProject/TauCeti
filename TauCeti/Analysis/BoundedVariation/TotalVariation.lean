@@ -40,11 +40,12 @@ For `u` not locally integrable on `Ω` the integrals in the supremum may be Math
 * `TauCeti.totalVariationOn μ Ω u`: the total variation of `u` on `Ω`.
 * `TauCeti.ofReal_abs_integral_le_totalVariationOn`: every admissible pairing is bounded by the
   total variation, and `TauCeti.totalVariationOn_le_iff` characterises upper bounds.
-  `TauCeti.ofReal_integral_le_mul_totalVariationOn` bounds the pairing with a test vector field of
-  norm at most `c` by `c` times the total variation.
+* `TauCeti.ofReal_abs_integral_le_ofReal_mul_totalVariationOn`: a test vector field bounded by `c`
+  pairs to at most `c |Du|(Ω)`.
 * `TauCeti.totalVariationOn_congr_ae`: the total variation only sees `u` almost everywhere on
   `Ω`.
-* `TauCeti.totalVariationOn_mono`: monotonicity in the open set.
+* `TauCeti.totalVariationOn_mono` and `TauCeti.totalVariationOn_iSup`: monotonicity and inner
+  continuity in the open set.
 * `TauCeti.totalVariationOn_neg`, `TauCeti.totalVariationOn_smul` and
   `TauCeti.totalVariationOn_add_le`: the total variation is a seminorm.
 * `TauCeti.totalVariationOn_add_const` and `TauCeti.totalVariationOn_const`: against an additive
@@ -115,26 +116,6 @@ theorem ofReal_abs_integral_le_totalVariationOn (φ : 𝓓(Ω, E)) (hφ : ∀ x,
     rw [abs_of_nonpos h, hneg]
     exact ofReal_integral_le_totalVariationOn (-φ) fun x => by simpa using hφ x
 
-/-- A test vector field of norm at most `c` bounds `c` times the total variation from below. -/
-theorem ofReal_integral_le_mul_totalVariationOn (φ : 𝓓(Ω, E)) {c : ℝ} (hφ : ∀ x, ‖φ x‖ ≤ c) :
-    ENNReal.ofReal (∫ x, divergenceCLM φ x * u x ∂μ) ≤
-      ENNReal.ofReal c * totalVariationOn μ Ω u := by
-  rcases (norm_nonneg _).trans (hφ 0) |>.eq_or_lt with hc | hc
-  · have hφ0 : φ = 0 := by
-      ext x
-      simpa [← hc] using hφ x
-    simp [hφ0]
-  · have hscale : ∫ x, divergenceCLM φ x * u x ∂μ =
-        c * ∫ x, divergenceCLM (c⁻¹ • φ) x * u x ∂μ := by
-      rw [← integral_const_mul]
-      congr 1 with x
-      simp only [map_smul, FunLike.coe_smul, Pi.smul_apply, smul_eq_mul]
-      field_simp
-    rw [hscale, ENNReal.ofReal_mul hc.le]
-    refine mul_le_mul_right (ofReal_integral_le_totalVariationOn _ fun x => ?_) _
-    rw [FunLike.coe_smul, Pi.smul_apply, norm_smul, norm_inv, Real.norm_of_nonneg hc.le]
-    exact inv_mul_le_one_of_le₀ (hφ x) hc.le
-
 /-- The total variation of the zero function vanishes. -/
 @[simp]
 theorem totalVariationOn_zero : totalVariationOn μ Ω 0 = 0 := by
@@ -161,6 +142,21 @@ theorem totalVariationOn_mono (h : Ω' ≤ Ω) :
   simpa only [divergenceCLM_monoCLM h] using
     ofReal_integral_le_totalVariationOn (μ := μ) (u := u) (monoCLM ℝ φ : 𝓓(Ω, E))
       fun x => by simpa only [hcoe] using hφ x
+
+/-- **Inner continuity in the open set.** The total variation on the union of a directed family
+of open sets is the supremum of the total variations on its members. -/
+theorem totalVariationOn_iSup {ι : Type*} [Nonempty ι] {Ω : ι → Opens E}
+    (hΩ : Directed (· ≤ ·) Ω) :
+    totalVariationOn μ (⨆ i, Ω i) u = ⨆ i, totalVariationOn μ (Ω i) u := by
+  refine le_antisymm (totalVariationOn_le_iff.mpr fun φ hφ => ?_)
+    (iSup_le fun i => totalVariationOn_mono (le_iSup Ω i))
+  -- The compact support of a test vector field lies in one member of the family.
+  obtain ⟨i, hi⟩ := φ.hasCompactSupport.isCompact.elim_directed_cover (fun i => (Ω i : Set E))
+    (fun i => (Ω i).isOpen) (by simpa using φ.tsupport_subset) (hΩ.mono_comp _ fun _ _ h => h)
+  let φ' : 𝓓(Ω i, E) := ⟨φ, φ.contDiff, φ.hasCompactSupport, hi⟩
+  have hφ' (x : E) : divergenceCLM φ' x = divergenceCLM φ x := by simp [φ']
+  refine le_iSup_of_le i ?_
+  simpa only [hφ'] using ofReal_integral_le_totalVariationOn (μ := μ) (u := u) φ' hφ
 
 /-- The total variation of `-u` is that of `u`. -/
 @[simp]
@@ -191,6 +187,24 @@ theorem totalVariationOn_smul (c : ℝ) :
   · rw [abs_of_nonneg hc, totalVariationOn_smul_of_nonneg hc]
   · rw [abs_of_nonpos hc, ← totalVariationOn_smul_of_nonneg (neg_nonneg.mpr hc), neg_smul,
       totalVariationOn_neg]
+
+/-- A test vector field bounded by `c` pairs to at most `c |Du|(Ω)`. -/
+theorem ofReal_abs_integral_le_ofReal_mul_totalVariationOn (φ : 𝓓(Ω, E)) {c : ℝ}
+    (hφ : ∀ x, ‖φ x‖ ≤ c) :
+    ENNReal.ofReal |∫ x, divergenceCLM φ x * u x ∂μ| ≤
+      ENNReal.ofReal c * totalVariationOn μ Ω u := by
+  rcases le_or_gt c 0 with hc | hc
+  · have hφ0 : φ = 0 := by
+      ext x
+      exact norm_le_zero_iff.1 ((hφ x).trans hc)
+    simp [hφ0]
+  -- Pair `c⁻¹ • φ`, which is admissible, with `c • u`.
+  rw [← totalVariationOn_smul_of_nonneg hc.le]
+  convert ofReal_abs_integral_le_totalVariationOn (u := c • u) (c⁻¹ • φ) fun x => ?_ using 3
+  · congr 1 with x
+    simp only [map_smul, smul_apply, Pi.smul_apply, smul_eq_mul]
+    field_simp
+  · simpa [norm_smul, abs_of_pos hc, inv_mul_le_iff₀ hc] using hφ x
 
 /-- **Subadditivity.** For functions locally integrable on `Ω`,
 `|D(u + v)|(Ω) ≤ |Du|(Ω) + |Dv|(Ω)`. -/

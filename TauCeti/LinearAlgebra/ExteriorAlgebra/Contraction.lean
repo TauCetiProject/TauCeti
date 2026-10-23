@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.ExteriorAlgebra.Basis
 import Mathlib.GroupTheory.Perm.Fin
 import Mathlib.Order.Fin.Tuple
 import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
+import TauCeti.LinearAlgebra.ExteriorPower.Basic
 
 /-!
 # Coordinate projections on an exterior algebra
@@ -32,11 +33,21 @@ Every basis vector is the product of the exterior-algebra generators of its inde
 increasing order; for index sets with one or two elements this is also recorded in the explicit
 forms `TauCeti.ExteriorAlgebra.basis_singleton` and `TauCeti.ExteriorAlgebra.basis_pair`.
 
+Independently of a basis, `ExteriorAlgebra.contractLeft_map` states naturality under a linear
+map: pull back the contracting functional and then map the contracted element. This follows
+from the general quadratic-isometry statement `CliffordAlgebra.contractLeft_map`.
+
 Independently of a basis, the grade involution is the sign `(-1) ^ n` on the `n`-th exterior power,
 a contraction carries the `(n + 1)`-th exterior power into the `n`-th, and a vector graded-commutes
 with every multivector: `ι m * x = involute x * ι m`.  Together with the graded Leibniz rule
 `CliffordAlgebra.contractLeft_mul`, these say that a contraction is an odd derivation of degree
 `-1` of the graded-commutative exterior algebra.
+
+In degree at least the rank, contraction loses no information: if `d m = 1` and
+`finrank R M ≤ n`, every `x ∈ ⋀ⁿ M` is `m ∧ (d ⌋ x)`. Hence two forms killed by `d` multiply to
+zero once their degrees add up to the rank, and in rank at most four a two-form `x` satisfies
+`x ∧ x = 2 x ∧ m ∧ (d ⌋ x)`. This is the algebra behind the splitting of a two-form on a product
+`ℝ × Y` along the unit normal of the factor `Y`.
 -/
 
 public section
@@ -431,6 +442,16 @@ namespace ExteriorAlgebra
 
 variable {R : Type*} {M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
 
+/-- Contraction against a functional commutes with an exterior-algebra map after pulling
+back the functional. -/
+theorem contractLeft_map {N : Type*} [AddCommGroup N] [Module R N] (f : M →ₗ[R] N)
+    (d : Module.Dual R N) (x : ExteriorAlgebra R M) :
+    contractLeft (Q := (0 : QuadraticForm R N)) d (_root_.ExteriorAlgebra.map f x) =
+      _root_.ExteriorAlgebra.map f
+        (contractLeft (Q := (0 : QuadraticForm R M)) (d ∘ₗ f) x) := by
+  -- The exterior-algebra map is the zero-quadratic-form case of the Clifford-algebra map.
+  exact CliffordAlgebra.contractLeft_map { f with map_app' := fun _ => rfl } d x
+
 /-- **A vector graded-commutes with every multivector**: moving `ι R m` past `x` applies the grade
 involution to `x`. -/
 theorem ι_mul_eq_involute_mul (m : M) (x : ExteriorAlgebra R M) :
@@ -445,3 +466,79 @@ theorem ι_mul_eq_involute_mul (m : M) (x : ExteriorAlgebra R M) :
   | add x y hx hy => rw [mul_add, hx, hy, map_add, add_mul]
 
 end ExteriorAlgebra
+
+namespace TauCeti.ExteriorAlgebra
+
+open _root_.ExteriorAlgebra
+
+variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+
+/-! ### Contraction in degree at least the rank -/
+
+variable [Module.Free R M] [Module.Finite R M]
+
+/-- **A form of degree at least the rank is divisible by any vector `m` with `d m = 1`**: if
+`d m = 1` and `finrank R M ≤ n`, then every `x ∈ ⋀ⁿ M` is `m ∧ (d ⌋ x)`. -/
+theorem eq_ι_mul_contractLeft_of_finrank_le {d : Module.Dual R M} {m : M} (hdm : d m = 1)
+    {n : ℕ} (hn : Module.finrank R M ≤ n) {x : _root_.ExteriorAlgebra R M} (hx : x ∈ ⋀[R]^n M) :
+    x = ι R m * contractLeft (Q := (0 : QuadraticForm R M)) d x := by
+  -- `m ∧ x` lies above the rank, so it vanishes, and contracting it by `d` gives the claim.
+  have h0 : ι R m * x = 0 := ZeroMemClass.coe_eq_zero.mpr <|
+    exteriorPower.eq_zero_of_finrank_lt (1 + n) (by omega)
+      ⟨_, SetLike.mul_mem_graded (ι_mem_exteriorPower_one m) hx⟩
+  have h := congrArg (contractLeft (Q := (0 : QuadraticForm R M)) d) h0
+  rwa [contractLeft_ι_mul, hdm, one_smul, map_zero, sub_eq_zero] at h
+
+/-- **Forms killed by a contraction multiply to zero in degree at least the rank**: if `d m = 1`,
+the forms `x ∈ ⋀ᵏ M` and `y ∈ ⋀ˡ M` satisfy `d ⌋ x = 0` and `d ⌋ y = 0`, and
+`finrank R M ≤ k + l`, then `x ∧ y = 0`. -/
+theorem mul_eq_zero_of_contractLeft_eq_zero {d : Module.Dual R M} {m : M} (hdm : d m = 1)
+    {k l : ℕ} (hkl : Module.finrank R M ≤ k + l) {x y : _root_.ExteriorAlgebra R M}
+    (hx : x ∈ ⋀[R]^k M) (hy : y ∈ ⋀[R]^l M)
+    (hdx : contractLeft (Q := (0 : QuadraticForm R M)) d x = 0)
+    (hdy : contractLeft (Q := (0 : QuadraticForm R M)) d y = 0) : x * y = 0 := by
+  rw [eq_ι_mul_contractLeft_of_finrank_le hdm hkl (SetLike.mul_mem_graded hx hy), contractLeft_mul,
+    hdx, hdy, zero_mul, mul_zero, add_zero, mul_zero]
+
+/-- **The square of a two-form in rank at most four.** If `d m = 1` and `finrank R M ≤ 4`, a
+two-form `x` satisfies `x ∧ x = 2 x ∧ m ∧ (d ⌋ x)`. -/
+theorem mul_self_eq_two_smul_mul_ι_mul_contractLeft {d : Module.Dual R M} {m : M}
+    (hdm : d m = 1) (h4 : Module.finrank R M ≤ 4) {x : _root_.ExteriorAlgebra R M}
+    (hx : x ∈ ⋀[R]^2 M) :
+    x * x = 2 • (x * (ι R m * contractLeft (Q := (0 : QuadraticForm R M)) d x)) := by
+  -- Write `x = m ∧ a + b` with `a = d ⌋ x`. Then `d ⌋ b = 0`, so `b ∧ b = 0` in rank at most
+  -- four; also `(m ∧ a) ∧ (m ∧ a) = 0`, and the two-forms `m ∧ a` and `b` commute.
+  -- The contraction `d ⌋ x` is a vector `a`.
+  obtain ⟨a, ha⟩ : ∃ a, ι R a = contractLeft (Q := (0 : QuadraticForm R M)) d x :=
+    ⟨_, ι_ιInv_of_mem_exteriorPower_one (contractLeft_mem_exteriorPower d (n := 1) hx)⟩
+  rw [← ha]
+  set g := ι R m * ι R a with hg
+  have hgmem : g ∈ ⋀[R]^2 M :=
+    SetLike.mul_mem_graded (ι_mem_exteriorPower_one m) (ι_mem_exteriorPower_one a)
+  -- The remainder `b = x - m ∧ a` is a two-form killed by `d`.
+  set b := x - g with hb
+  have hbmem : b ∈ ⋀[R]^2 M := sub_mem hx hgmem
+  have hdb : contractLeft (Q := (0 : QuadraticForm R M)) d b = 0 := by
+    have hda : contractLeft (Q := (0 : QuadraticForm R M)) d (ι R a) = 0 := by
+      rw [ha, contractLeft_contractLeft]
+    rw [hb, map_sub, hg, contractLeft_ι_mul, hdm, one_smul, hda, mul_zero, sub_zero, ha,
+      sub_self]
+  have hbb : b * b = 0 :=
+    mul_eq_zero_of_contractLeft_eq_zero hdm (by omega) hbmem hbmem hdb hdb
+  have hgg : g * g = 0 := by
+    have h := ι_add_mul_swap (R := R) a m
+    rw [add_eq_zero_iff_eq_neg] at h
+    calc g * g = ι R m * (ι R a * ι R m) * ι R a := by simp only [hg, mul_assoc]
+      _ = 0 := by rw [h, mul_neg, ← mul_assoc, ι_sq_zero, zero_mul, neg_zero, zero_mul]
+  -- A two-form is fixed by the grade involution, so it commutes with the two-form `g`.
+  have hinv : involute (Q := (0 : QuadraticForm R M)) b = b := by
+    rw [involute_of_mem_exteriorPower hbmem]
+    simp
+  have hcomm : g * b = b * g := by
+    rw [hg, mul_assoc, ι_mul_eq_involute_mul a b, hinv, ← mul_assoc, ι_mul_eq_involute_mul m b,
+      hinv, mul_assoc]
+  have hx' : x = b + g := (sub_add_cancel x g).symm
+  rw [hx', add_mul, mul_add, mul_add, hbb, hgg, hcomm, add_mul, hgg, two_smul]
+  abel
+
+end TauCeti.ExteriorAlgebra

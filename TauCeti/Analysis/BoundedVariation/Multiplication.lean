@@ -104,7 +104,8 @@ theorem totalVariationOn_mul_le {χ : E → ℝ} (hχ : ContDiff ℝ ∞ χ) {c 
           ENNReal.ofReal |∫ x, a x * u x ∂μ| := by
         refine (ENNReal.ofReal_le_ofReal ?_).trans ENNReal.ofReal_add_le
         linarith [neg_abs_le (∫ x, a x * u x ∂μ)]
-    _ ≤ _ := add_le_add (ofReal_integral_le_mul_totalVariationOn χφ hχφ) hrem
+    _ ≤ _ := add_le_add ((ENNReal.ofReal_le_ofReal (le_abs_self _)).trans
+          (ofReal_abs_integral_le_ofReal_mul_totalVariationOn χφ hχφ)) hrem
 
 /-- **Variation of a cut-off function on the whole space.** If `χ` is smooth with `|χ| ≤ c`,
 `‖Dχ‖ ≤ C` and `tsupport χ ⊆ Ω`, then every `u` locally integrable on `Ω` satisfies

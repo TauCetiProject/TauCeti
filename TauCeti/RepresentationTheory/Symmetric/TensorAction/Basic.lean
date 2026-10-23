@@ -35,6 +35,8 @@ It reuses `PiTensorProduct.reindex`; the convention is
 
 * `TauCeti.finrank_tensorPower` is the dimension count `dim (Rⁿ)^{⊗d} = nᵈ` that the monomial
   basis supplies.
+* `PiTensorProduct.map_reindex_range_reindexRepresentation_asAlgebraHom` transports the image of
+  a group-algebra element along any equivalence of tensor-factor index types.
 -/
 
 public section
@@ -101,6 +103,30 @@ theorem reindexRepresentation_asAlgebraHom_apply_tprod
   simp [Representation.asAlgebraHom_def, MonoidAlgebra.lift_apply, Finsupp.sum,
     LinearMap.sum_apply]
 
+/-- Relabeling tensor factors along an equivalence transports the image of a group-algebra
+element onto the image of its transport to the permutation group of the new index type. -/
+theorem map_reindex_range_reindexRepresentation_asAlgebraHom {κ : Type*} (e : ι ≃ κ)
+    (a : MonoidAlgebra R (Equiv.Perm ι)) :
+    (LinearMap.range ((reindexRepresentation R M ι).asAlgebraHom a)).map
+        (reindex R (fun _ => M) e : (⨂[R] _ : ι, M) →ₗ[R] (⨂[R] _ : κ, M)) =
+      LinearMap.range ((reindexRepresentation R M κ).asAlgebraHom
+        (MonoidAlgebra.domCongr R R e.permCongrHom a)) := by
+  have h :
+      (reindex R (fun _ => M) e).toLinearMap ∘ₗ
+          (reindexRepresentation R M ι).asAlgebraHom a =
+        (reindexRepresentation R M κ).asAlgebraHom
+            (MonoidAlgebra.domCongr R R e.permCongrHom a) ∘ₗ
+          (reindex R (fun _ => M) e).toLinearMap := by
+    induction a using MonoidAlgebra.induction_on with
+    | of σ =>
+      ext f
+      simp [MonoidAlgebra.of_apply, Equiv.permCongrHom_coe, Equiv.permCongr_def,
+        ← Equiv.trans_assoc]
+    | add a b ha hb => simp [ha, hb, LinearMap.comp_add, LinearMap.add_comp]
+    | smul r a ha => simp [ha, LinearMap.comp_smul, LinearMap.smul_comp]
+  rw [← LinearMap.range_comp, h]
+  exact LinearMap.range_comp_of_range_eq_top _ (LinearEquiv.range _)
+
 end PiTensorProduct
 
 namespace TauCeti
@@ -160,6 +186,19 @@ theorem permTensorActionAlgHom_apply_tprod (a : MonoidAlgebra R (Equiv.Perm (Fin
       a.coeff.sum fun σ r => r • PiTensorProduct.tprod R fun i => m (σ.symm i) := by
   rw [permTensorActionAlgHom_def, permTensorAction_def]
   exact PiTensorProduct.reindexRepresentation_asAlgebraHom_apply_tprod R (Fin n → R) (Fin d) a m
+
+/-- Relabeling the tensor factors along `finCongr h`, for `h : m = d`, transports the image of
+`a ∈ R[S_m]` onto the image of its transport to `R[S_d]`. -/
+theorem map_reindex_range_permTensorAction_asAlgebraHom {m : ℕ} (h : m = d)
+    (a : MonoidAlgebra R (Equiv.Perm (Fin m))) :
+    (LinearMap.range ((permTensorAction R n m).asAlgebraHom a)).map
+        (PiTensorProduct.reindex R (fun _ => Fin n → R) (finCongr h) :
+          (⨂[R] _ : Fin m, Fin n → R) →ₗ[R] (⨂[R] _ : Fin d, Fin n → R)) =
+      LinearMap.range ((permTensorAction R n d).asAlgebraHom
+        (MonoidAlgebra.domCongr R R (finCongr h).permCongrHom a)) := by
+  simpa only [permTensorAction_def] using
+    PiTensorProduct.map_reindex_range_reindexRepresentation_asAlgebraHom R (Fin n → R) (Fin m)
+      (finCongr h) a
 
 /-- The monomial basis of `(Rⁿ)^{⊗d}`: the basis vector at `f : Fin d → Fin n` is the pure tensor
 whose `i`-th factor is the `f i`-th standard basis vector of `Rⁿ`. -/
