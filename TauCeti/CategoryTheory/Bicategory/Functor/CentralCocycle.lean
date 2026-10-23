@@ -88,13 +88,6 @@ lemma associator_id_inv (C : Type w) [Category.{v} C] :
   ext X
   simp
 
-/-- The left unitor of the identity functor in `Cat` is the identity. -/
-@[simp]
-lemma leftUnitor_id_hom (C : Type w) [Category.{v} C] :
-    (λ_ (𝟙 (Cat.of C))).hom = 𝟙 _ := by
-  ext X
-  simp
-
 /-- The right unitor of the identity functor in `Cat` is the identity. -/
 @[simp]
 lemma rightUnitor_id_hom (C : Type w) [Category.{v} C] :
@@ -140,18 +133,16 @@ lemma centralUnitIso_inv (z : (CatCenter C)ˣ) :
   (rfl)
 
 /-- Right whiskering a central automorphism by the identity functor leaves it unchanged. -/
-@[simp]
-lemma centralUnitIso_hom_whiskerRight_id (z : (CatCenter C)ˣ) :
+private lemma centralUnitIso_hom_whiskerRight_id (z : (CatCenter C)ˣ) :
     (centralUnitIso C z).hom ▷ 𝟙 (Cat.of C) = (centralUnitIso C z).hom := by
-  ext X
-  simp
+  simp only [whiskerRight_id, Cat.rightUnitor_id_hom, Cat.rightUnitor_id_inv,
+    Category.id_comp, Category.comp_id]
 
 /-- Left whiskering a central automorphism by the identity functor leaves it unchanged. -/
-@[simp]
-lemma centralUnitIso_id_whiskerLeft_hom (z : (CatCenter C)ˣ) :
+private lemma centralUnitIso_id_whiskerLeft_hom (z : (CatCenter C)ˣ) :
     𝟙 (Cat.of C) ◁ (centralUnitIso C z).hom = (centralUnitIso C z).hom := by
-  ext X
-  simp
+  simp only [id_whiskerLeft, unitors_equal, unitors_inv_equal, Cat.rightUnitor_id_hom,
+    Cat.rightUnitor_id_inv, Category.id_comp, Category.comp_id]
 
 @[simp]
 lemma centralUnitIso_one : centralUnitIso C 1 = Iso.refl _ :=
@@ -203,7 +194,7 @@ unit comparison `centralUnitIso C u`, evaluated at `g`, is `c (g, 1) * u = 1`. -
 lemma centralUnitIso_left_unitor_iff (c : G × G → (CatCenter C)ˣ) (u : (CatCenter C)ˣ) (g : G) :
     (centralUnitIso C (c (g, 1))).hom ≫ (centralUnitIso C u).hom ▷ 𝟙 (Cat.of C) ≫
         (λ_ (𝟙 (Cat.of C))).hom = 𝟙 _ ↔ c (g, 1) * u = 1 := by
-  simp only [centralUnitIso_hom_whiskerRight_id, Cat.leftUnitor_id_hom,
+  simp only [centralUnitIso_hom_whiskerRight_id, unitors_equal, Cat.rightUnitor_id_hom,
     Category.comp_id, centralUnitIso_hom_comp_hom, centralUnitIso_hom_eq_id_iff]
 
 /-- The right unit condition of a pseudofunctor out of `LocallyDiscrete (SingleObj G)` with
@@ -276,7 +267,7 @@ lemma centralUnitIso_naturality_id_iff (b : G → (CatCenter C)ˣ) (u u' : (CatC
           (ρ_ (𝟙 (Cat.of C))).inv ↔
       b 1 * u' = u := by
   simp only [centralUnitIso_hom_whiskerRight_id, centralUnitIso_id_whiskerLeft_hom,
-    Cat.leftUnitor_id_hom, Cat.rightUnitor_id_inv, Category.comp_id,
+    unitors_equal, Cat.rightUnitor_id_hom, Cat.rightUnitor_id_inv, Category.comp_id,
     centralUnitIso_hom_comp_hom]
   rw [centralUnitIso_hom_inj]
 
