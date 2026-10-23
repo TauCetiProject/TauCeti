@@ -27,6 +27,8 @@ them; that classification, which runs through the action on the projective line,
 
 ## Main declarations
 
+* `Matrix.ProjectiveSpecialLinearGroup.mk_inv_mul_mul`: projection to `PSL(2, R)` preserves
+  conjugation, with the inverse on the left.
 * `Matrix.ProjectiveSpecialLinearGroup.mk_eq_mk_iff`: over a ring without zero divisors, two
   matrices of `SL(2, R)` have the same class exactly when they agree up to sign.
 * `Matrix.ProjectiveSpecialLinearGroup.IsParabolic`: an element of `PSL(2, R)` is parabolic when
@@ -56,6 +58,11 @@ open scoped MatrixGroups
 namespace Matrix.ProjectiveSpecialLinearGroup
 
 variable {R : Type*} [CommRing R]
+
+/-- Projection to `PSL(2, R)` preserves conjugation, with the inverse on the left. -/
+theorem mk_inv_mul_mul (S Y : SL(2, R)) :
+    ((S⁻¹ * Y * S : SL(2, R)) : PSL(2, R)) = (S : PSL(2, R))⁻¹ * Y * S := by
+  rw [QuotientGroup.mk_mul, QuotientGroup.mk_mul, QuotientGroup.mk_inv]
 
 /-- An element of `PSL(2, R)` is *parabolic* when it is the class of a parabolic matrix of
 `SL(2, R)`. When `R` has no zero divisors every representative is then parabolic

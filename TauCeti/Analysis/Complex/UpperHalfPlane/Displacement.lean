@@ -45,6 +45,7 @@ rotations about `I`. These bounds feed the Margulis lemma for Fuchsian groups.
 ## Main results
 
 * `Matrix.SpecialLinearGroup.cosh_dist_smul_I`: the distance moved by `I`.
+* `Matrix.SpecialLinearGroup.dist_smul_smul_eq`: changing the base point conjugates the action.
 * `Matrix.SpecialLinearGroup.cosh_dist_smul_of_smul_eq_self`: the displacement of a point by an
   element fixing `z`.
 * `Matrix.SpecialLinearGroup.trace_commutatorElement_of_smul_eq_self`: the trace of a commutator
@@ -145,9 +146,9 @@ theorem cosh_dist_smul_of_smul_eq_self {g : SL(2, ℝ)} {z : ℍ} (hz : g • z 
     (((Q⁻¹ * P) 0 0 ^ 2 + (Q⁻¹ * P) 0 1 ^ 2 + (Q⁻¹ * P) 1 0 ^ 2 + (Q⁻¹ * P) 1 1 ^ 2) ^ 2 / 2 - 2) *
       hab
 
-/-- Moving the base point to `I` conjugates the acting matrix. -/
-private theorem dist_smul_smul_I_eq (P k : SL(2, ℝ)) :
-    dist (k • P • I) (P • I) = dist ((P⁻¹ * k * P) • I) I := by
+/-- Changing the base point from `z` to `P • z` conjugates the acting matrix. -/
+theorem dist_smul_smul_eq (P k : SL(2, ℝ)) (z : ℍ) :
+    dist (k • P • z) (P • z) = dist ((P⁻¹ * k * P) • z) z := by
   rw [← dist_smul P⁻¹, inv_smul_smul, mul_smul, mul_smul]
 
 /-- **The trace of a commutator with an element fixing a point.** If `g ∈ SL(2, ℝ)` fixes
@@ -170,7 +171,7 @@ theorem trace_commutatorElement_of_smul_eq_self {g : SL(2, ℝ)} {z : ℍ} (hz :
     simp only [hk, hX, commutatorElement_def]
     group
   have hdist : dist (h • P • I) (P • I) = dist (X • I) I := by
-    exact dist_smul_smul_I_eq P h
+    exact dist_smul_smul_eq P h I
   have hg : P * k * P⁻¹ = g := by
     rw [hk]
     group
@@ -248,7 +249,7 @@ theorem trace_sq_sub_four_le (g : SL(2, ℝ)) (z : ℍ) :
   have htr : (g : Matrix (Fin 2) (Fin 2) ℝ).trace = ((P⁻¹ * g * P : SL(2, ℝ)) :
       Matrix (Fin 2) (Fin 2) ℝ).trace := by
     simpa using (trace_mul_mul_inv P⁻¹ g).symm
-  rw [dist_smul_smul_I_eq P g, htr]
+  rw [dist_smul_smul_eq P g I, htr]
   exact trace_sq_sub_four_le_of_I _
 
 /-- **The commutator trace and the displacement of a point.** For `g, h ∈ SL(2, ℝ)` and `z ∈ ℍ`,
@@ -262,7 +263,7 @@ theorem abs_trace_commutatorElement_sub_two_le (g h : SL(2, ℝ)) (z : ℍ) :
   have hcomm : ⁅g, h⁆ = P * ⁅P⁻¹ * g * P, P⁻¹ * h * P⁆ * P⁻¹ := by
     simp only [commutatorElement_def]
     group
-  rw [dist_smul_smul_I_eq P g, dist_smul_smul_I_eq P h, hcomm, trace_mul_mul_inv]
+  rw [dist_smul_smul_eq P g I, dist_smul_smul_eq P h I, hcomm, trace_mul_mul_inv]
   exact abs_trace_commutatorElement_sub_two_le_of_I _ _
 
 end Matrix.SpecialLinearGroup

@@ -102,7 +102,7 @@ namespace Subgroup
 open TauCeti (jorgensenSeq jorgensenSeq_zero jorgensenSeq_succ jorgensenSeq_mem
   map_jorgensenSeq)
 open Matrix.ProjectiveSpecialLinearGroup (parabolicFixedPoint upperRightHom upperRightHom_apply
-  mk_eq_mk_iff mk_smul_infty_eq_infty_iff)
+  mk_eq_mk_iff mk_smul_infty_eq_infty_iff mk_inv_mul_mul)
 open Matrix.SpecialLinearGroup (dilation dilation_inv dilation_zpow conj_dilation_apply_zero_zero
   conj_dilation_apply_zero_one conj_dilation_apply_one_zero conj_dilation_apply_one_one
   dilation_conj_apply_zero_zero dilation_conj_apply_zero_one dilation_conj_apply_one_zero
@@ -287,11 +287,6 @@ private theorem abs_trace_sq_sub_four_add_abs_trace_commutatorElement_sub_two_eq
     abs_neg, abs_mul, abs_sq, ← Real.four_mul_sinh_half_sq]
   ring
 
-/-- Coercion to `PSL(2, ℝ)` preserves change of frame. -/
-private theorem coe_conj (S Y : SL(2, ℝ)) :
-    ((S⁻¹ * Y * S : SL(2, ℝ)) : PSL(2, ℝ)) = (S : PSL(2, ℝ))⁻¹ * Y * S := by
-  rw [QuotientGroup.mk_mul, QuotientGroup.mk_mul, QuotientGroup.mk_inv]
-
 /-- **Jørgensen's inequality for hyperbolic elements.** Let `Γ ≤ PSL(2, ℝ)` be a discrete subgroup
 and let `A, B ∈ SL(2, ℝ)` lift elements of `Γ`, with `A` hyperbolic: `|tr A| > 2`. Unless `B`
 conjugates the class of `A` to itself or to its inverse, that is, unless `B` fixes or exchanges
@@ -308,7 +303,7 @@ theorem one_le_abs_trace_sq_sub_four_add_abs_trace_commutatorElement_sub_two_of_
   obtain ⟨P, rfl⟩ := QuotientGroup.mk_surjective g
   -- move to the frame where `A` is the dilation: `X = P⁻¹ B P` and `Γ' = P⁻¹ Γ P`
   set X : SL(2, ℝ) := P⁻¹ * B * P with hX
-  have hXcoe : (X : PSL(2, ℝ)) = (P : PSL(2, ℝ))⁻¹ * B * P := coe_conj P B
+  have hXcoe : (X : PSL(2, ℝ)) = (P : PSL(2, ℝ))⁻¹ * B * P := mk_inv_mul_mul P B
   set Γ' : Subgroup PSL(2, ℝ) := ConjAct.toConjAct (P : PSL(2, ℝ))⁻¹ • Γ
   have : DiscreteTopology Γ' := TauCeti.discreteTopology_of_conjAct_smul_eq rfl
   have hD : (dilation s : PSL(2, ℝ)) ∈ Γ' := by
@@ -479,15 +474,15 @@ theorem one_le_abs_trace_commutatorElement_sub_two_of_isParabolic [DiscreteTopol
   set Γ' : Subgroup PSL(2, ℝ) := ConjAct.toConjAct (S : PSL(2, ℝ))⁻¹ • Γ
   have : DiscreteTopology Γ' := TauCeti.discreteTopology_of_conjAct_smul_eq rfl
   have hTmem : (T : PSL(2, ℝ)) ∈ Γ' :=
-    (coe_conj S A) ▸ (inv_mul_mul_mem_conjAct_smul_iff (S : PSL(2, ℝ)) _ Γ).2 hA
+    (mk_inv_mul_mul S A) ▸ (inv_mul_mul_mem_conjAct_smul_iff (S : PSL(2, ℝ)) _ Γ).2 hA
   have hXmem : (X : PSL(2, ℝ)) ∈ Γ' :=
-    (coe_conj S B) ▸ (inv_mul_mul_mem_conjAct_smul_iff (S : PSL(2, ℝ)) _ Γ).2 hB
-  have hTx : (T : PSL(2, ℝ)) = upperRightHom x := (coe_conj S A).trans hAx
+    (mk_inv_mul_mul S B) ▸ (inv_mul_mul_mem_conjAct_smul_iff (S : PSL(2, ℝ)) _ Γ).2 hB
+  have hTx : (T : PSL(2, ℝ)) = upperRightHom x := (mk_inv_mul_mul S A).trans hAx
   -- the conjugate `X` of `B` does not fix `∞`, so Shimizu's lemma bounds its lower-left entry
   have hX0 : X 1 0 ≠ 0 := by
     intro h
     have h' := (mk_smul_infty_eq_infty_iff X).2 h
-    rw [coe_conj, mul_smul, mul_smul, hσ, inv_smul_eq_iff] at h'
+    rw [mk_inv_mul_mul, mul_smul, mul_smul, hσ, inv_smul_eq_iff] at h'
     exact hBc (h'.trans hσ)
   have hshim := inv_le_abs_apply_one_zero_of_upperRightHom_mem hx (hTx ▸ hTmem) hXmem
     hX0
