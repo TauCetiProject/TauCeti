@@ -43,6 +43,7 @@ universe u v
 
 noncomputable section
 
+/-- The coordinate weight of the normalized diagonal lift, with its last coordinate zero. -/
 private def diagonalLiftWeight (r : ℕ) (k : Fin (r + 1)) : ULift.{u} (Fin r) → ℤ :=
   fun i ↦ if k = i.down.castSucc then 1 else 0
 
