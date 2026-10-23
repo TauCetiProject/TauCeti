@@ -201,7 +201,7 @@ theorem finite_single (j : ℤ) (Y : ModuleCat.{u} k) [Module.Finite k Y] :
 
 /-- The one-dimensional space `M = k` in degree `0` is finite. -/
 theorem finite_unit : finite k (unit k) :=
-  finite_single k 0 (ModuleCat.of k k)
+  unit_def k ▸ finite_single k 0 (ModuleCat.of k k)
 
 /-- The pieces of the one-dimensional space `M = k` in degree `0` have finite Laurent support. -/
 theorem hasFiniteLaurentSupport_unit : HasFiniteLaurentSupport k fun j ↦ (unit k j : Type u) :=
