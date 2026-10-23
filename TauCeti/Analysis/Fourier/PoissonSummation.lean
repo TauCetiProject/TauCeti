@@ -67,6 +67,8 @@ variable (o : OrthonormalBasis ι ℝ E)
 private noncomputable def toTorus (x : E) : UnitAddTorus ι :=
   fun i ↦ (o.repr x i : UnitAddCircle)
 
+private theorem toTorus_def (x : E) : o.toTorus x = fun i ↦ (o.repr x i : UnitAddCircle) := rfl
+
 /-- Two vectors have the same image on the torus exactly when they differ by a vector of the
 lattice spanned by `o`. -/
 private theorem toTorus_eq_toTorus_iff {x y : E} :
@@ -120,6 +122,9 @@ variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 private noncomputable def coords : E ≃ᵐ (ι → ℝ) :=
   o.measurableEquiv.trans (MeasurableEquiv.toLp 2 (ι → ℝ)).symm
 
+omit [FiniteDimensional ℝ E] in
+private theorem coords_apply (x : E) : o.coords x = ⇑(o.repr x) := rfl
+
 private theorem measurePreserving_coords : MeasurePreserving o.coords :=
   (EuclideanSpace.volume_preserving_symm_measurableEquiv_toLp ι).comp
     o.measurePreserving_measurableEquiv
@@ -137,10 +142,8 @@ private theorem coords_preimage_ae_eq_fundamentalDomain :
   have hset : o.coords ⁻¹' (univ.pi fun _ : ι ↦ Ico (0 : ℝ) 1) =
       ZSpan.fundamentalDomain o.toBasis := by
     ext x
-    -- `o.measurableEquiv x` is `o.repr x` by definition.
-    simp only [coords, MeasurableEquiv.trans_apply, MeasurableEquiv.toLp_symm_apply,
-      mem_preimage, mem_univ_pi, ZSpan.mem_fundamentalDomain, o.coe_toBasis_repr_apply]
-    rfl
+    simp only [mem_preimage, mem_univ_pi, coords_apply, ZSpan.mem_fundamentalDomain,
+      o.coe_toBasis_repr_apply]
   rw [← hset]
   exact o.measurePreserving_coords.quasiMeasurePreserving.preimage_ae_eq hcube
 
@@ -192,9 +195,9 @@ private theorem mFourierCoeff_periodization_eq_setIntegral (n : ι → ℤ) :
   rw [mFourierCoeff_eq_integral _ n 0,
     ← o.measurePreserving_coords.setIntegral_preimage_emb o.coords.measurableEmbedding,
     setIntegral_congr_set o.coords_preimage_ae_eq_fundamentalDomain]
+  refine setIntegral_congr_fun (ZSpan.fundamentalDomain_measurableSet o.toBasis) fun x _ ↦ ?_
   -- At `o.coords x`, the coordinates read on the torus are `o.toTorus x`.
-  exact setIntegral_congr_fun (ZSpan.fundamentalDomain_measurableSet o.toBasis) fun x _ ↦
-    congrArg (mFourier (-n) (o.toTorus x) * ·) (periodization_toTorus f o x)
+  simp only [coords_apply, ← toTorus_def, smul_eq_mul, periodization_toTorus]
 
 /-- Over the bounded fundamental domain, the periodization may be integrated term by term
 against a character. -/

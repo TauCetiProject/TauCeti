@@ -19,8 +19,9 @@ summable over a discrete subgroup `L` of a finite-dimensional real normed space 
 `1 + ‖ℓ‖ ≤ (1 + ‖x‖) (1 + ‖x + ℓ‖)` the domination is uniform for `x` in a ball, so the
 periodization `x ↦ ∑' ℓ : L, f (x + ℓ)` is continuous.
 
-These are the two summability statements behind Poisson summation over a full lattice `L` in a
-finite-dimensional real inner product space, which is not proved here,
+The summability of both sides and the continuity of the periodization are the analytic inputs
+to Poisson summation over a full lattice `L` in a finite-dimensional real inner product space,
+which is not proved here,
 
 `∑' ℓ : L, f (v + ℓ) = (covolume L)⁻¹ * ∑' m : L^∨, exp (2πi ⟪v, m⟫) • 𝓕 f m`,
 
