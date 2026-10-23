@@ -28,6 +28,8 @@ of `UCB G`; no continuity statement is made for right translations.
 
 ## Main definitions
 
+* `Subalgebra.compContinuousₗᵢ`: precomposition with a homeomorphism, as a linear isometry
+  equivalence of a subalgebra of bounded continuous functions that it preserves.
 * `TauCeti.UCB.leftTranslation`: `g ↦ L_g`, with `L_g f = f (g⁻¹ * ·)`.
 * `TauCeti.UCB.rightTranslation`: `g ↦ R_g`, with `R_g f = f (· * g)`.
 
@@ -79,53 +81,57 @@ theorem compContinuous_mulRight_mem_ucb {f : G →ᵇ ℝ} (hf : f ∈ ucb G) (g
   filter_upwards [hf ε hε] with u hu x
   simpa [mul_assoc] using hu (x * g)
 
-namespace UCB
-
-/-- Precomposition with a continuous map `a` of `G` that preserves `ucb G` and has a continuous
-inverse `b` preserving `ucb G`, as a linear isometry equivalence of `UCB G`. -/
-private def compContinuousₗᵢ (a b : C(G, G)) (hab : ∀ x, a (b x) = x) (hba : ∀ x, b (a x) = x)
-    (ha : ∀ f ∈ ucb G, f.compContinuous a ∈ ucb G)
-    (hb : ∀ f ∈ ucb G, f.compContinuous b ∈ ucb G) : UCB G ≃ₗᵢ[ℝ] UCB G where
-  toFun f := ⟨(f : G →ᵇ ℝ).compContinuous a, ha _ f.2⟩
-  invFun f := ⟨(f : G →ᵇ ℝ).compContinuous b, hb _ f.2⟩
-  map_add' _ _ := ext fun _ => by simp
-  map_smul' _ _ := ext fun _ => by simp
-  left_inv f := ext fun x => congrArg (f : G →ᵇ ℝ) (hab x)
-  right_inv f := ext fun x => congrArg (f : G →ᵇ ℝ) (hba x)
+/-- Precomposition with a continuous map `a` of `α` that has a continuous inverse `b`, as a linear
+isometry equivalence of a subalgebra `S` of `α →ᵇ 𝕜` preserved by both `a` and `b`. -/
+@[expose]
+def _root_.Subalgebra.compContinuousₗᵢ {α 𝕜 : Type*} [TopologicalSpace α] [NormedField 𝕜]
+    (S : Subalgebra 𝕜 (α →ᵇ 𝕜)) (a b : C(α, α)) (hab : ∀ x, a (b x) = x)
+    (hba : ∀ x, b (a x) = x) (ha : ∀ f ∈ S, f.compContinuous a ∈ S)
+    (hb : ∀ f ∈ S, f.compContinuous b ∈ S) : S ≃ₗᵢ[𝕜] S where
+  toFun f := ⟨(f : α →ᵇ 𝕜).compContinuous a, ha _ f.2⟩
+  invFun f := ⟨(f : α →ᵇ 𝕜).compContinuous b, hb _ f.2⟩
+  map_add' _ _ := Subtype.ext <| BoundedContinuousFunction.ext fun _ => by simp
+  map_smul' _ _ := Subtype.ext <| BoundedContinuousFunction.ext fun _ => by simp
+  left_inv f := Subtype.ext <| BoundedContinuousFunction.ext fun x =>
+    congrArg (f : α →ᵇ 𝕜) (hab x)
+  right_inv f := Subtype.ext <| BoundedContinuousFunction.ext fun x =>
+    congrArg (f : α →ᵇ 𝕜) (hba x)
   norm_map' f := by
     rw [AddSubgroupClass.coe_norm, AddSubgroupClass.coe_norm]
-    refine le_antisymm ((f : G →ᵇ ℝ).norm_compContinuous_le a) ?_
-    calc ‖(f : G →ᵇ ℝ)‖ = ‖((f : G →ᵇ ℝ).compContinuous a).compContinuous b‖ := by
+    refine le_antisymm ((f : α →ᵇ 𝕜).norm_compContinuous_le a) ?_
+    calc ‖(f : α →ᵇ 𝕜)‖ = ‖((f : α →ᵇ 𝕜).compContinuous a).compContinuous b‖ := by
           congr 1
           ext x
-          exact congrArg (f : G →ᵇ ℝ) (hab x).symm
-      _ ≤ ‖(f : G →ᵇ ℝ).compContinuous a‖ := BoundedContinuousFunction.norm_compContinuous_le _ _
+          exact congrArg (f : α →ᵇ 𝕜) (hab x).symm
+      _ ≤ ‖(f : α →ᵇ 𝕜).compContinuous a‖ := BoundedContinuousFunction.norm_compContinuous_le _ _
+
+namespace UCB
 
 /-- Left translation `g ↦ L_g`, where `(L_g f)(x) = f (g⁻¹ * x)`, as a group homomorphism from `G`
 to the linear isometry equivalences of `UCB G`. -/
 def leftTranslation : G →* (UCB G ≃ₗᵢ[ℝ] UCB G) where
-  toFun g := compContinuousₗᵢ (ContinuousMap.mulLeft g⁻¹) (ContinuousMap.mulLeft g)
+  toFun g := (ucb G).compContinuousₗᵢ (ContinuousMap.mulLeft g⁻¹) (ContinuousMap.mulLeft g)
     (by simp) (by simp) (fun _ hf => compContinuous_mulLeft_mem_ucb hf _)
     (fun _ hf => compContinuous_mulLeft_mem_ucb hf _)
   map_one' := by
     ext
-    simp [compContinuousₗᵢ]
+    simp [Subalgebra.compContinuousₗᵢ]
   map_mul' g h := by
     ext
-    simp [compContinuousₗᵢ, mul_assoc]
+    simp [Subalgebra.compContinuousₗᵢ, mul_assoc]
 
 /-- Right translation `g ↦ R_g`, where `(R_g f)(x) = f (x * g)`, as a group homomorphism from `G`
 to the linear isometry equivalences of `UCB G`. -/
 def rightTranslation : G →* (UCB G ≃ₗᵢ[ℝ] UCB G) where
-  toFun g := compContinuousₗᵢ (ContinuousMap.mulRight g) (ContinuousMap.mulRight g⁻¹)
+  toFun g := (ucb G).compContinuousₗᵢ (ContinuousMap.mulRight g) (ContinuousMap.mulRight g⁻¹)
     (by simp) (by simp) (fun _ hf => compContinuous_mulRight_mem_ucb hf _)
     (fun _ hf => compContinuous_mulRight_mem_ucb hf _)
   map_one' := by
     ext
-    simp [compContinuousₗᵢ]
+    simp [Subalgebra.compContinuousₗᵢ]
   map_mul' g h := by
     ext
-    simp [compContinuousₗᵢ, mul_assoc]
+    simp [Subalgebra.compContinuousₗᵢ, mul_assoc]
 
 /-- The left translate `L_g f` is the precomposition of `f` with `x ↦ g⁻¹ * x`. -/
 theorem coe_leftTranslation (g : G) (f : UCB G) :

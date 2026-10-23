@@ -28,7 +28,8 @@ spaces.
 
 ## Main definitions
 
-* `TauCeti.complexUCB G`: the subalgebra of `G →ᵇ ℂ` defined by the condition above.
+* `TauCeti.complexUCB G`: the subalgebra of `G →ᵇ ℂ` defined by the condition above, the case
+  `𝕜 = ℂ` of `TauCeti.ucbSubalgebra 𝕜 G`.
 * `TauCeti.ComplexUCB G`: its carrier type, a complex normed algebra.
 * `TauCeti.ComplexUCB.re`, `TauCeti.ComplexUCB.im`: the real and imaginary parts, as real linear
   maps to `UCB G`.
@@ -67,20 +68,8 @@ variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 variable (G) in
 /-- The complex bounded continuous functions `f` on `G` such that `f (u * x)` is uniformly close
 to `f x` for all `u` near `1`, as a subalgebra of `G →ᵇ ℂ`. -/
-def complexUCB : Subalgebra ℂ (G →ᵇ ℂ) where
-  carrier := {f | ∀ ε > 0, ∀ᶠ u in 𝓝 (1 : G), ∀ x, ‖f (u * x) - f x‖ < ε}
-  mul_mem' {f g} hf hg := by
-    simp only [Set.mem_ofPred_eq, ← dist_eq_norm,
-      ← BoundedContinuousFunction.tendsto_compContinuous_mulLeft_iff] at hf hg ⊢
-    exact hf.mul hg
-  add_mem' {f g} hf hg := by
-    simp only [Set.mem_ofPred_eq, ← dist_eq_norm,
-      ← BoundedContinuousFunction.tendsto_compContinuous_mulLeft_iff] at hf hg ⊢
-    exact hf.add hg
-  algebraMap_mem' c := by
-    simp only [Set.mem_ofPred_eq, ← dist_eq_norm,
-      ← BoundedContinuousFunction.tendsto_compContinuous_mulLeft_iff]
-    exact tendsto_const_nhds
+def complexUCB : Subalgebra ℂ (G →ᵇ ℂ) :=
+  ucbSubalgebra ℂ G
 
 variable (G) in
 /-- The complex normed algebra of bounded complex functions on `G` that are uniformly continuous
@@ -90,15 +79,14 @@ abbrev ComplexUCB : Type _ := complexUCB G
 /-- The defining condition of `complexUCB G`. -/
 theorem mem_complexUCB_iff {f : G →ᵇ ℂ} :
     f ∈ complexUCB G ↔ ∀ ε > 0, ∀ᶠ u in 𝓝 (1 : G), ∀ x, ‖f (u * x) - f x‖ < ε :=
-  Iff.rfl
+  mem_ucbSubalgebra_iff
 
 /-- Membership in `complexUCB G` says that `u ↦ f (u * ·)` tends to `f` in supremum norm as
 `u → 1`. -/
 theorem mem_complexUCB_iff_tendsto {f : G →ᵇ ℂ} :
     f ∈ complexUCB G ↔
-      Tendsto (fun u => f.compContinuous (ContinuousMap.mulLeft u)) (𝓝 1) (𝓝 f) := by
-  simp only [mem_complexUCB_iff, ← dist_eq_norm,
-    BoundedContinuousFunction.tendsto_compContinuous_mulLeft_iff]
+      Tendsto (fun u => f.compContinuous (ContinuousMap.mulLeft u)) (𝓝 1) (𝓝 f) :=
+  mem_ucbSubalgebra_iff_tendsto
 
 /-- Postcomposing a function in `complexUCB G` with a real linear map `ℂ → ℝ`, such as the real or
 imaginary part, gives a function in `ucb G`. -/
@@ -245,31 +233,16 @@ theorem norm_ofReal (f : UCB G) : ‖ofReal f‖ = ‖f‖ := by
 /-- Left translation `g ↦ L_g`, where `(L_g f)(x) = f (g⁻¹ * x)`, as a group homomorphism from `G`
 to the complex linear isometry equivalences of `ComplexUCB G`. -/
 def leftTranslation : G →* (ComplexUCB G ≃ₗᵢ[ℂ] ComplexUCB G) where
-  toFun g :=
-    { toFun f := ⟨(f : G →ᵇ ℂ).compContinuous (ContinuousMap.mulLeft g⁻¹),
-        compContinuous_mulLeft_mem_complexUCB f.2 _⟩
-      invFun f := ⟨(f : G →ᵇ ℂ).compContinuous (ContinuousMap.mulLeft g),
-        compContinuous_mulLeft_mem_complexUCB f.2 _⟩
-      map_add' _ _ := ext fun _ => by simp
-      map_smul' _ _ := ext fun _ => by simp
-      left_inv f := ext fun _ => by simp
-      right_inv f := ext fun _ => by simp
-      norm_map' f := by
-        rw [AddSubgroupClass.coe_norm, AddSubgroupClass.coe_norm]
-        refine le_antisymm (BoundedContinuousFunction.norm_compContinuous_le _ _) ?_
-        calc ‖(f : G →ᵇ ℂ)‖
-            = ‖((f : G →ᵇ ℂ).compContinuous (ContinuousMap.mulLeft g⁻¹)).compContinuous
-                (ContinuousMap.mulLeft g)‖ := by
-              congr 1
-              ext
-              simp
-          _ ≤ _ := BoundedContinuousFunction.norm_compContinuous_le _ _ }
+  toFun g := (complexUCB G).compContinuousₗᵢ (ContinuousMap.mulLeft g⁻¹)
+    (ContinuousMap.mulLeft g) (by simp) (by simp)
+    (fun _ hf => compContinuous_mulLeft_mem_complexUCB hf _)
+    (fun _ hf => compContinuous_mulLeft_mem_complexUCB hf _)
   map_one' := by
     ext
-    simp
+    simp [Subalgebra.compContinuousₗᵢ]
   map_mul' g h := by
     ext
-    simp [mul_assoc]
+    simp [Subalgebra.compContinuousₗᵢ, mul_assoc]
 
 @[simp]
 theorem leftTranslation_apply (g : G) (f : ComplexUCB G) (x : G) :

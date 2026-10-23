@@ -33,7 +33,9 @@ general group can differ, so no `IsUniformGroup` structure is used.
 
 ## Main definitions
 
-* `TauCeti.ucb G`: the subalgebra of `G →ᵇ ℝ` defined by the condition above.
+* `TauCeti.ucbSubalgebra 𝕜 G`: the subalgebra of `G →ᵇ 𝕜` defined by the same condition with
+  `‖·‖` in place of `|·|`, for a normed field `𝕜`.
+* `TauCeti.ucb G`: the subalgebra of `G →ᵇ ℝ` defined by the condition above, the case `𝕜 = ℝ`.
 * `TauCeti.UCB G`: its carrier type, a real Banach algebra and lattice.
 
 ## Main results
@@ -84,7 +86,7 @@ end BoundedContinuousFunction
 
 namespace TauCeti
 
-variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+variable {𝕜 G : Type*} [NormedField 𝕜] [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 
 section UniformContinuous
 
@@ -117,23 +119,43 @@ end UniformContinuous
 
 section UCB
 
-variable (G) in
-/-- The real bounded continuous functions `f` on `G` such that `f (u * x)` is uniformly close to
-`f x` for all `u` near `1`, as a subalgebra of `G →ᵇ ℝ`. -/
-def ucb : Subalgebra ℝ (G →ᵇ ℝ) where
-  carrier := {f | ∀ ε > 0, ∀ᶠ u in 𝓝 (1 : G), ∀ x, |f (u * x) - f x| < ε}
+variable (𝕜 G) in
+/-- The bounded continuous functions `f : G →ᵇ 𝕜` such that `f (u * x)` is uniformly close to
+`f x` for all `u` near `1`, as a subalgebra of `G →ᵇ 𝕜`. The real space `ucb G` is the case
+`𝕜 = ℝ`. -/
+def ucbSubalgebra : Subalgebra 𝕜 (G →ᵇ 𝕜) where
+  carrier := {f | ∀ ε > 0, ∀ᶠ u in 𝓝 (1 : G), ∀ x, ‖f (u * x) - f x‖ < ε}
   mul_mem' {f g} hf hg := by
-    simp only [Set.mem_ofPred_eq, ← Real.dist_eq,
+    simp only [Set.mem_ofPred_eq, ← dist_eq_norm,
       ← BoundedContinuousFunction.tendsto_compContinuous_mulLeft_iff] at hf hg ⊢
     exact hf.mul hg
   add_mem' {f g} hf hg := by
-    simp only [Set.mem_ofPred_eq, ← Real.dist_eq,
+    simp only [Set.mem_ofPred_eq, ← dist_eq_norm,
       ← BoundedContinuousFunction.tendsto_compContinuous_mulLeft_iff] at hf hg ⊢
     exact hf.add hg
   algebraMap_mem' c := by
-    simp only [Set.mem_ofPred_eq, ← Real.dist_eq,
+    simp only [Set.mem_ofPred_eq, ← dist_eq_norm,
       ← BoundedContinuousFunction.tendsto_compContinuous_mulLeft_iff]
     exact tendsto_const_nhds
+
+/-- The defining condition of `ucbSubalgebra 𝕜 G`. -/
+theorem mem_ucbSubalgebra_iff {f : G →ᵇ 𝕜} :
+    f ∈ ucbSubalgebra 𝕜 G ↔ ∀ ε > 0, ∀ᶠ u in 𝓝 (1 : G), ∀ x, ‖f (u * x) - f x‖ < ε :=
+  Iff.rfl
+
+/-- Membership in `ucbSubalgebra 𝕜 G` says that `u ↦ f (u * ·)` tends to `f` in supremum norm as
+`u → 1`. -/
+theorem mem_ucbSubalgebra_iff_tendsto {f : G →ᵇ 𝕜} :
+    f ∈ ucbSubalgebra 𝕜 G ↔
+      Tendsto (fun u => f.compContinuous (ContinuousMap.mulLeft u)) (𝓝 1) (𝓝 f) := by
+  simp only [mem_ucbSubalgebra_iff, ← dist_eq_norm,
+    BoundedContinuousFunction.tendsto_compContinuous_mulLeft_iff]
+
+variable (G) in
+/-- The real bounded continuous functions `f` on `G` such that `f (u * x)` is uniformly close to
+`f x` for all `u` near `1`, as a subalgebra of `G →ᵇ ℝ`. -/
+def ucb : Subalgebra ℝ (G →ᵇ ℝ) :=
+  ucbSubalgebra ℝ G
 
 variable (G) in
 /-- The real Banach algebra of bounded functions on `G` that are uniformly continuous under small
@@ -147,9 +169,8 @@ theorem mem_ucb_iff {f : G →ᵇ ℝ} :
 
 /-- Membership in `ucb G` says that `u ↦ f (u * ·)` tends to `f` in supremum norm as `u → 1`. -/
 theorem mem_ucb_iff_tendsto {f : G →ᵇ ℝ} :
-    f ∈ ucb G ↔ Tendsto (fun u => f.compContinuous (ContinuousMap.mulLeft u)) (𝓝 1) (𝓝 f) := by
-  simp only [mem_ucb_iff, ← Real.dist_eq,
-    BoundedContinuousFunction.tendsto_compContinuous_mulLeft_iff]
+    f ∈ ucb G ↔ Tendsto (fun u => f.compContinuous (ContinuousMap.mulLeft u)) (𝓝 1) (𝓝 f) :=
+  mem_ucbSubalgebra_iff_tendsto
 
 /-- Membership in `ucb G` is uniform continuity for the right uniformity of `G`. -/
 theorem mem_ucb_iff_uniformContinuous {f : G →ᵇ ℝ} :
@@ -163,7 +184,7 @@ theorem isClosed_ucb : IsClosed (ucb G : Set (G →ᵇ ℝ)) := by
   refine isClosed_of_closure_subset fun f hf ε hε => ?_
   obtain ⟨g, hg, hfg⟩ := Metric.mem_closure_iff.1 hf (ε / 3) (by positivity)
   filter_upwards [hg (ε / 3) (by positivity)] with u hu x
-  simp only [← Real.dist_eq] at hu ⊢
+  simp only [← dist_eq_norm] at hu ⊢
   calc dist (f (u * x)) (f x)
       ≤ dist (f (u * x)) (g (u * x)) + dist (g (u * x)) (g x) + dist (g x) (f x) :=
         dist_triangle4 _ _ _ _

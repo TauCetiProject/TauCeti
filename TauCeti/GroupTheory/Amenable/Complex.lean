@@ -169,6 +169,7 @@ theorem coe_toContinuousLinearMap : ⇑M.toContinuousLinearMap = ⇑M :=
   (rfl)
 
 /-- A complex mean has operator norm one. -/
+@[simp]
 theorem norm_toContinuousLinearMap : ‖M.toContinuousLinearMap‖ = 1 := by
   refine le_antisymm (M.toLinearMap.mkContinuous_norm_le zero_le_one _) ?_
   simpa using M.toContinuousLinearMap.le_opNorm 1
