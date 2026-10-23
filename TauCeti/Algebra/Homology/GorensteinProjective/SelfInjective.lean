@@ -48,7 +48,9 @@ theorem isGorensteinProjective_of_moduleInjective_self
   let F := forget₂ (FGModuleCat.{u} Aᵐᵒᵖ) (ModuleCat.{u} Aᵐᵒᵖ)
   let hE := FGModuleCat.abelian_isFrobenius k hr hl
   let R := hE.completeResolution (FGModuleCat.of Aᵐᵒᵖ M)
-  let T (n : ℤ) := (ShortComplex.mk (R.ι n) (R.π n) (R.ι_π n)).map F
+  -- The image of `R.complex` under `F`, spliced from the images of the conflations of `R` so
+  -- that `acyclic_splice` and `spliceCyclesIso` apply.
+  let T (n : ℤ) := (R.shortComplex n).map F
   let e (n : ℤ) : (T n).X₃ ≅ (T (n + 1)).X₁ := Iso.refl _
   have hT (n : ℤ) : (T n).ShortExact :=
     ((ExactStructure.abelian_conflation _).mp (R.conflation n)).map_of_exact F

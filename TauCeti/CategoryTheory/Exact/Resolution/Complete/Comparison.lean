@@ -53,6 +53,13 @@ injectivity of the terms of the two resolutions are all it uses.
   complete resolutions and their uniqueness up to homotopy.
 * Theo Bühler, *Exact categories*, Expositiones Mathematicae **28** (2010), 1--69, Section 12, for
   the comparison theorem for projective resolutions in an exact category.
+* `Mathlib/CategoryTheory/Abelian/Projective/Resolution.lean`, whose `lift`, `liftHomotopyZero`,
+  `liftHomotopy`, `liftIdHomotopy`, `liftCompHomotopy` and `homotopyEquiv` API for projective
+  resolutions in abelian categories is followed here, including the derivation of
+  `liftHomotopy` from `liftHomotopyZero` through `Homotopy.equivSubZero`.
+* `TauCeti/CategoryTheory/Exact/Resolution/Comparison.lean`, the comparison theorem for finite
+  projective resolutions in an exact category (`TauCeti.ExactStructure.FiniteResolution.lift`,
+  `liftHomotopy`, `homotopyEquiv`), of which this is the bi-infinite analogue.
 -/
 
 public section

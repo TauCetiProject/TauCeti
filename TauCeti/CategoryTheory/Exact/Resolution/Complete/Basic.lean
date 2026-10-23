@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Homology.HomologicalComplex
+public import TauCeti.Algebra.Homology.ShortComplex.Splice
 public import TauCeti.CategoryTheory.Exact.Stable.Basic
 
 /-!
@@ -105,11 +105,18 @@ theorem d_π (n : ℤ) : r.d n ≫ r.π (n + 1) = 0 := by simp [d_def]
 @[reassoc (attr := simp)]
 theorem d_d (n : ℤ) : r.d n ≫ r.d (n + 1) = 0 := by simp [d_def]
 
-/-- The cochain complex spliced from the conflations of a complete resolution. -/
-noncomputable abbrev complex : CochainComplex C ℤ := CochainComplex.of r.X r.d r.d_d
+/-- The `n`-th conflation `Zⁿ ↪ Xⁿ ↠ Zⁿ⁺¹` of a complete resolution, as a short complex. -/
+abbrev shortComplex (n : ℤ) : ShortComplex C := ShortComplex.mk (r.ι n) (r.π n) (r.ι_π n)
+
+/-- The cochain complex spliced from the conflations of a complete resolution, through
+`CochainComplex.splice`: consecutive conflations share their end terms `Zⁿ⁺¹`, so the connecting
+isomorphisms are identities. -/
+noncomputable abbrev complex : CochainComplex C ℤ :=
+  CochainComplex.splice r.shortComplex fun _ ↦ Iso.refl _
 
 /-- The differential of the complex in consecutive degrees, in the form `rw` can use. -/
-theorem complex_d (n : ℤ) : r.complex.d n (n + 1) = r.d n := CochainComplex.of_d _ _ n
+theorem complex_d (n : ℤ) : r.complex.d n (n + 1) = r.d n := by
+  rw [CochainComplex.splice_d, Iso.refl_hom, Category.id_comp, d_def]
 
 /-- The differential of the complex out of degree `-1`, whose target index is not syntactically
 of the form `n + 1`. -/
