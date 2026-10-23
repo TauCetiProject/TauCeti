@@ -18,11 +18,12 @@ adjoint to the degree-one functor:
 
 `gradedSymmetricAlgebraAdjunction X : gradedSymmetricAlgebra X ⊣ degreeOne`.
 
-Its unit is the identification `F ≅ Sym¹ F` (`gradedSymmetricAlgebraAdjunction_unit`), an
-isomorphism, matching the fact that `gradedSymmetricAlgebra X` is fully faithful: it identifies
-quasicoherent sheaves with its essential image, the graded quasicoherent algebras freely
-generated in degree one. Under graded relative `Spec` these are the coordinate algebras of the
-linear schemes `Spec_X Sym F` over `X`.
+Its counit `Sym A₁ ⟶ A` extends the identity of `A₁`
+(`gradedSymmetricAlgebraAdjunction_counit_app`). Its unit is the identification `F ≅ Sym¹ F`
+(`gradedSymmetricAlgebraAdjunction_unit`), an isomorphism, matching the fact that
+`gradedSymmetricAlgebra X` is fully faithful: it identifies quasicoherent sheaves with its
+essential image, the graded quasicoherent algebras freely generated in degree one. Under graded
+relative `Spec` these are the coordinate algebras of the linear schemes `Spec_X Sym F` over `X`.
 
 The extension `Symⁿ F ⟶ Aₙ` is built over each open `U` from the universal property of the
 symmetric algebra of the `Γ(X, U)`-module `Γ(F, U)`, with values in the graded ring
@@ -39,7 +40,8 @@ adjunction. Uniqueness holds because `Sym F` is generated in degree one
   `gradedSymmetricAlgebraDegreeOneIso_inv_app_comp_degreeOne_map_lift`;
 * `TauCeti.AlgebraicGeometry.gradedSymmetricAlgebraAdjunction`: the adjunction
   `gradedSymmetricAlgebra X ⊣ degreeOne`, whose unit is the identification `F ≅ Sym¹ F`
-  (`gradedSymmetricAlgebraAdjunction_unit`).
+  (`gradedSymmetricAlgebraAdjunction_unit`) and whose counit `Sym A₁ ⟶ A` extends the identity
+  of `A₁` (`gradedSymmetricAlgebraAdjunction_counit_app`).
 
 ## References
 
@@ -164,6 +166,22 @@ private abbrev forgetPresheaf : X.Modules ⥤ PresheafOfModulesOfCommRing.{u} X.
 private instance : (forgetPresheaf X).LaxMonoidal :=
   TauCeti.SheafOfModules.forgetLaxMonoidal X.sheaf
 
+/-- On a pure tensor `x ⊗ₜ y` of sections over `U`, the tensor product of the degree-`i` and
+degree-`j` parts of the extension, followed by the multiplication of `A`, is the multiplication of
+`A` applied to the tensor product of the homogeneous components of the images of `x` and `y`
+(their product in the graded ring of sections, by `sections_gMul_def`). -/
+private lemma presheafLift_tensorHom_comp_mul_app_tmul (φ : F ⟶ A.X 1) (i j : ℕ)
+    (U : X.Opensᵒᵖ)
+    (x : (PresheafOfModulesOfCommRing.obj (R := X.presheaf) F.val U).symmetricPower i)
+    (y : (PresheafOfModulesOfCommRing.obj (R := X.presheaf) F.val U).symmetricPower j) :
+    ((presheafLift φ i ⊗ₘ presheafLift φ j) ≫
+        Functor.LaxMonoidal.μ (forgetPresheaf X) (A.X i) (A.X j) ≫
+          (forgetPresheaf X).map (A.toMon.mul i j)).app U (x ⊗ₜ y) =
+      (A.toMon.mul i j).app U.unop
+        (Functor.LaxMonoidal.μ (Scheme.Modules.sectionsFunctor U.unop) _ _
+          (sectionsLift φ U.unop x.1 i ⊗ₜ sectionsLift φ U.unop y.1 j)) :=
+  (rfl)
+
 /-- The extension is multiplicative on sections. -/
 private lemma presheafLift_mul (φ : F ⟶ A.X 1) (i j : ℕ) :
     (presheafLift φ i ⊗ₘ presheafLift φ j) ≫
@@ -174,22 +192,22 @@ private lemma presheafLift_mul (φ : F ⟶ A.X 1) (i j : ℕ) :
   refine ModuleCat.MonoidalCategory.tensor_ext fun x y ↦ ?_
   have hx := sectionsLift_homogeneous φ U.unop x.2
   have hy := sectionsLift_homogeneous φ U.unop y.2
-  -- The left side is the homogeneous product of the two degree components (by definition of the
-  -- tensor maps involved), and the right side is the degree-`(i + j)` component of the image of
-  -- the product `x * y`.
-  refine Eq.trans (b := (A.toMon.mul i j).app U.unop
-      (Functor.LaxMonoidal.μ (Scheme.Modules.sectionsFunctor U.unop) _ _
-        (sectionsLift φ U.unop x.1 i ⊗ₜ sectionsLift φ U.unop y.1 j))) (rfl) ?_
+  refine (presheafLift_tensorHom_comp_mul_app_tmul φ i j U x y).trans ?_
   refine Eq.trans ?_ (presheafLift_app_apply φ (i + j) U
     ((PresheafOfModulesOfCommRing.symmetricPowerMul F.val i j).app U (x ⊗ₜ y))).symm
   rw [← sections_gMul_def]
   -- The sections of the presheaf symmetric power are those of `ModuleCat.symmetricPower` only up
   -- to `rfl`.
-  erw [PresheafOfModulesOfCommRing.symmetricPowerMul_app, ModuleCat.symmetricPower.coe_mul_tmul,
-    map_mul, hx, hy, DirectSum.of_mul_of]
-  simp only [DirectSum.of_eq_same]
-  -- The two sides differ only in how the homogeneous components are typed.
-  rfl
+  conv_rhs => erw [PresheafOfModulesOfCommRing.symmetricPowerMul_app,
+    ModuleCat.symmetricPower.coe_mul_tmul, map_mul, hx, hy, DirectSum.of_mul_of]
+  exact (DirectSum.of_eq_same (β := fun n ↦ Γ(A.X n, U.unop)) _ _).symm
+
+/-- A morphism of `𝒪_X`-modules acts on sections over `U` as its underlying morphism of presheaves
+of modules does. -/
+private lemma app_apply_eq_val_app_apply {M N : X.Modules} (ψ : M ⟶ N) (U : X.Opensᵒᵖ)
+    (x : Γ(M, U.unop)) :
+    ψ.app U.unop x = ψ.val.app U x :=
+  (rfl)
 
 /-- The extension is unital on sections. -/
 private lemma presheafLift_one (φ : F ⟶ A.X 1) :
@@ -206,8 +224,7 @@ private lemma presheafLift_one (φ : F ⟶ A.X 1) :
     (ModuleCat.symmetricPower.coe_iso₀_inv_apply _ 1)).trans ?_
   rw [map_one, map_one, DirectSum.one_def, DirectSum.of_eq_same, sections_gOne_def,
     Scheme.Modules.sectionsFunctor_ε]
-  -- Both sides are the unit of `A` applied to `1`, read through the sections functor.
-  rfl
+  exact app_apply_eq_val_app_apply A.toMon.one U _
 
 /-- In degree one, the extension restricts to `φ` along `Sym¹ F.val ≅ F.val`. -/
 private lemma presheafLift_degreeOne (φ : F ⟶ A.X 1) :
@@ -223,8 +240,7 @@ private lemma presheafLift_degreeOne (φ : F ⟶ A.X 1) :
       (PresheafOfModulesOfCommRing.obj (R := X.presheaf) F.val U) m)).trans ?_
   refine (congrArg (· 1) (sectionsLift_ι φ U.unop m)).trans ?_
   rw [DirectSum.of_eq_same]
-  -- Both sides are the sections of `φ` applied to `m`.
-  rfl
+  exact app_apply_eq_val_app_apply φ U m
 
 variable (F) in
 /-- The symmetric power `Symⁿ F`, typed as an `𝒪_X`-module so that the monoidal structure of
@@ -253,11 +269,18 @@ private lemma liftDegree_one (φ : F ⟶ A.X 1) :
   TauCeti.SheafOfModules.symmetricPowerZeroIso_inv_app_comp_symmetricPowerLift (R := X.sheaf)
     (presheafLift_one φ)
 
-private lemma liftDegree_degreeOne (φ : F ⟶ A.X 1) :
+/-- In degree one, the extension of `φ` restricts to `φ` along `F ≅ Sym¹ F`. It is stated for `φ`
+followed by an identification `h` of its target with `A₁`, the form in which
+`gradedSymmetricAlgebraLift` uses it. -/
+private lemma liftDegree_degreeOne {M : X.Modules} (φ : F ⟶ M) (h : M = A.X 1) :
     ((SheafOfModules.symmetricPowerOneIso X.sheaf).inv.app F : F ⟶ symPow F 1) ≫
-      liftDegree φ 1 = φ :=
-  TauCeti.SheafOfModules.symmetricPowerOneIso_inv_app_comp_symmetricPowerLift (R := X.sheaf)
-    (presheafLift_degreeOne φ)
+      liftDegree (φ ≫ eqToHom h) 1 ≫ eqToHom h.symm = φ := by
+  subst h
+  -- `symPow F 1` is a module over `ringCatSheaf X.sheaf`, identified with an object of
+  -- `X.Modules` only by unfolding, so the identity laws are rewritten up to that unfolding.
+  erw [eqToHom_refl, Category.comp_id, Category.comp_id]
+  exact TauCeti.SheafOfModules.symmetricPowerOneIso_inv_app_comp_symmetricPowerLift
+    (R := X.sheaf) (presheafLift_degreeOne φ)
 
 end Sections
 
@@ -278,6 +301,32 @@ def gradedSymmetricAlgebraLift {F : QuasicoherentSheaf X} {A : GradedQuasicohere
     (liftDegree (A := A.obj) (φ.hom ≫ eqToHom (degree_obj_obj A 1)))
     (liftDegree_one _) (liftDegree_mul _)
 
+/-- The degree-`n` component of `gradedSymmetricAlgebraLift φ` is `liftDegree`, up to the
+identification `gradedSymmetricAlgebra_obj_obj_X`. -/
+private lemma gradedSymmetricAlgebraLift_hom_hom_hom {F : QuasicoherentSheaf X}
+    {A : GradedQuasicoherentAlgebra X} (φ : F ⟶ degreeOne.obj A) (n : ℕ) :
+    (gradedSymmetricAlgebraLift φ).hom.hom.hom n =
+      eqToHom (gradedSymmetricAlgebra_obj_obj_X F n) ≫
+        liftDegree (A := A.obj) (φ.hom ≫ eqToHom (degree_obj_obj A 1)) n ≫ eqToHom rfl :=
+  homMkOfEq_hom_hom_hom _ _ _ _ _ _ _ _ _ n
+
+/-- The degree-`n` component of `gradedSymmetricAlgebraLift φ`, as a morphism of quasicoherent
+sheaves, is `liftDegree`, up to the identifications `degree_obj_gradedSymmetricAlgebra_obj` and
+`degree_obj_obj`. -/
+private lemma degree_map_gradedSymmetricAlgebraLift_hom {F : QuasicoherentSheaf X}
+    {A : GradedQuasicoherentAlgebra X} (φ : F ⟶ degreeOne.obj A) (n : ℕ) :
+    ((degree n).map (gradedSymmetricAlgebraLift φ)).hom =
+      eqToHom (degree_obj_gradedSymmetricAlgebra_obj F n) ≫
+        liftDegree (A := A.obj) (φ.hom ≫ eqToHom (degree_obj_obj A 1)) n ≫
+        eqToHom (degree_obj_obj A n).symm := by
+  rw [degree_map_hom, gradedSymmetricAlgebraLift_hom_hom_hom]
+  -- As in `degree_map_gradedSymmetricAlgebra_map_hom`, the transports are composed partly in
+  -- `SheafOfModules X.ringCatSheaf` and partly in `X.Modules`, whose instances `simp` does not
+  -- identify, so they are removed up to heterogeneous equality.
+  exact eq_of_heq (((eqToHom_comp_heq _ _).trans ((comp_eqToHom_heq _ _).trans
+    ((eqToHom_comp_heq _ _).trans (comp_eqToHom_heq _ _)))).trans
+      ((eqToHom_comp_heq _ _).trans (comp_eqToHom_heq _ _)).symm)
+
 /-- The degree-one component of `gradedSymmetricAlgebraLift φ` is `φ`, through the
 identification `F ≅ Sym¹ F`. -/
 @[reassoc (attr := simp)]
@@ -286,20 +335,10 @@ theorem gradedSymmetricAlgebraDegreeOneIso_inv_app_comp_degreeOne_map_lift
     (gradedSymmetricAlgebraDegreeOneIso X).inv.app F ≫
       degreeOne.map (gradedSymmetricAlgebraLift φ) = φ := by
   ext1
-  have h1 := liftDegree_degreeOne (A := A.obj) (φ.hom ≫ eqToHom (degree_obj_obj A 1))
-  have hL : (gradedSymmetricAlgebraLift φ).hom.hom.hom 1 =
-      eqToHom (gradedSymmetricAlgebra_obj_obj_X F 1) ≫
-        liftDegree (A := A.obj) (φ.hom ≫ eqToHom (degree_obj_obj A 1)) 1 ≫ eqToHom rfl :=
-    homMkOfEq_hom_hom_hom _ _ _ _ _ _ _ _ _ 1
   simp only [ObjectProperty.FullSubcategory.comp_hom,
-    gradedSymmetricAlgebraDegreeOneIso_inv_app_hom, degree_map_hom, hL, Category.assoc]
-  -- The transports between the components of `Sym F` and the symmetric powers are composed partly
-  -- in `SheafOfModules (ringCatSheaf X.sheaf)` and partly in `X.Modules`, whose instances `simp`
-  -- does not identify, so they are removed up to heterogeneous equality.
-  refine eq_of_heq ((heq_comp rfl rfl (degree_obj_obj A 1) HEq.rfl ?_).trans
-    ((heq_of_eq h1).trans (comp_eqToHom_heq _ _)))
-  exact (eqToHom_comp_heq _ _).trans ((eqToHom_comp_heq _ _).trans ((comp_eqToHom_heq _ _).trans
-    ((eqToHom_comp_heq _ _).trans (comp_eqToHom_heq _ _))))
+    gradedSymmetricAlgebraDegreeOneIso_inv_app_hom, degree_map_gradedSymmetricAlgebraLift_hom,
+    Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
+  exact liftDegree_degreeOne _ _
 
 variable (X) in
 /-- The graded symmetric algebra functor is left adjoint to the degree-one functor: morphisms of
@@ -350,6 +389,15 @@ theorem gradedSymmetricAlgebraAdjunction_unit :
   rw [← Adjunction.homEquiv_id, gradedSymmetricAlgebraAdjunction_homEquiv_apply,
     CategoryTheory.Functor.map_id]
   exact Category.comp_id _
+
+/-- The counit of `gradedSymmetricAlgebraAdjunction` at `A` is the morphism `Sym A₁ ⟶ A`
+extending the identity of the degree-one component `A₁`. -/
+@[simp]
+theorem gradedSymmetricAlgebraAdjunction_counit_app (A : GradedQuasicoherentAlgebra X) :
+    (gradedSymmetricAlgebraAdjunction X).counit.app A =
+      gradedSymmetricAlgebraLift (𝟙 (degreeOne.obj A)) := by
+  rw [← gradedSymmetricAlgebraAdjunction_homEquiv_symm_apply, Adjunction.homEquiv_counit,
+    CategoryTheory.Functor.map_id, Category.id_comp]
 
 end
 
