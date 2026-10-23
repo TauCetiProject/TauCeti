@@ -34,6 +34,7 @@ the coaugmented tensor coalgebra.
 ## Main results
 
 * `TauCeti.AInfinityAlgebra.brace_taylor_taylor`: the brace equation `m{m} = 0`.
+* `TauCeti.AInfinityAlgebra.hochschildDifferential_eq_brace_sub`: `[m, F] = m{F} - (-1)^q F{m}`.
 * `TauCeti.AInfinityAlgebra.hochschildDifferential_taylor`: `[m, m] = 0`.
 * `TauCeti.AInfinityAlgebra.gradedCoderiv_hochschildDifferential`: the coderivation of `[m, F]` is
   the graded commutator of the bar differential with the coderivation of `F`.
@@ -77,6 +78,14 @@ theorem hochschildDifferential_def (q : ℤ) (F : ReducedTensorWords R A →ₗ[
     𝒜.hochschildDifferential q F =
       gerstenhaberBracket (𝒜.grading.shift 1) 1 q 𝒜.taylor F :=
   (rfl)
+
+/-- The Hochschild differential in terms of braces: `[m, F] = m{F} - (-1)^q F{m}` for a cochain
+`F` of degree `q`. -/
+theorem hochschildDifferential_eq_brace_sub (q : ℤ) (F : ReducedTensorWords R A →ₗ[R] A) :
+    𝒜.hochschildDifferential q F =
+      brace (𝒜.grading.shift 1) 𝒜.taylor F q -
+        negOnePowCast R q • brace (𝒜.grading.shift 1) F 𝒜.taylor 1 := by
+  rw [hochschildDifferential_def, gerstenhaberBracket_def, one_mul]
 
 /-- The Hochschild differential is additive. -/
 @[simp]

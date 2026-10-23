@@ -21,7 +21,9 @@ The local formula and its normalization follow Evertse--Ferretti, where this Euc
 used for Plücker coordinates of subspaces. The elementary API here records the zero convention,
 reindexing, sign changes of coordinates, and the corresponding logarithmic and affine heights.
 Over `ℚ`, the Euclidean height of a tuple of coprime integers is its Euclidean norm
-(`TauCeti.height2_intCast_eq_sqrt_of_gcd_eq_one`).
+(`TauCeti.height2_intCast_eq_sqrt_of_gcd_eq_one`), and for any tuple of integers it is the
+Euclidean norm divided by the greatest common divisor of the entries
+(`TauCeti.gcd_mul_height2_intCast`).
 
 ## Main definitions
 
@@ -39,7 +41,10 @@ Over `ℚ`, the Euclidean height of a tuple of coprime integers is its Euclidean
 `TauCeti.height2_intCast_eq_sqrt_of_gcd_eq_one` is adapted from Ralf Stephan's
 `NumberField.arakelovMulHeight_intCast_of_gcd_eq_one` in `ArithmeticHeights/RationalLattice.lean`
 of [`rwst/Subspace-Theorems`](https://github.com/rwst/Subspace-Theorems/blob/9894a1c4baf805296b249e95575f0e16e8e1afa3/ArithmeticHeights/RationalLattice.lean),
-commit `9894a1c4baf805296b249e95575f0e16e8e1afa3` (Apache 2.0).
+commit `9894a1c4baf805296b249e95575f0e16e8e1afa3` (Apache 2.0), and
+`TauCeti.gcd_mul_height2_intCast` from his `NumberField.gcd_mul_arakelovMulHeight_intCast` in
+`ArithmeticHeights/BombieriVaaler.lean` of the same repository at
+[commit `09835cb23557ae5ae0cf55a9c4ab9055f5d60338`](https://github.com/rwst/Subspace-Theorems/blob/09835cb23557ae5ae0cf55a9c4ab9055f5d60338/ArithmeticHeights/BombieriVaaler.lean).
 -/
 
 public noncomputable section
@@ -460,5 +465,26 @@ theorem height2_intCast_eq_sqrt_of_gcd_eq_one {ι : Type*} [Fintype ι] {x : ι 
     one_div, Real.sqrt_eq_rpow]
   -- The two sides differ only in the `Fintype` instance on `ι` used to form the sums.
   convert rfl
+
+/-- Over `ℚ`, the Euclidean height of a tuple of integers, multiplied by the greatest common divisor
+of its entries, is its Euclidean norm. Both sides vanish for the zero tuple. This is the Euclidean
+analogue of the sup-norm statement that the height of an integer tuple is its largest absolute value
+divided by the greatest common divisor of its entries. -/
+theorem gcd_mul_height2_intCast {ι : Type*} [Fintype ι] (x : ι → ℤ) :
+    ((Finset.univ.gcd x : ℤ) : ℝ) * height2 (((↑) : ℤ → ℚ) ∘ x) = √(∑ i, (x i : ℝ) ^ 2) := by
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp [Finset.gcd_eq_zero_iff.mpr]
+  obtain ⟨i₀, hi₀⟩ := Function.ne_iff.mp hx
+  -- Write `x = g • y` with `g = gcd(x) ≠ 0` and `gcd(y) = 1`.
+  obtain ⟨y, hxy, hy⟩ := Finset.univ.extract_gcd x ⟨i₀, Finset.mem_univ _⟩
+  have hg : Finset.univ.gcd x ≠ 0 := fun h ↦
+    hi₀ (Finset.gcd_eq_zero_iff.mp h i₀ (Finset.mem_univ _))
+  have hcast : ((↑) : ℤ → ℚ) ∘ x = ((Finset.univ.gcd x : ℤ) : ℚ) • (((↑) : ℤ → ℚ) ∘ y) := by
+    ext i
+    simp [hxy i (Finset.mem_univ i)]
+  have hnn : (0 : ℝ) ≤ (Finset.univ.gcd x : ℤ) := mod_cast Finset.Int.finsetGcd_nonneg
+  rw [hcast, height2_smul _ (Int.cast_ne_zero.mpr hg), height2_intCast_eq_sqrt_of_gcd_eq_one hy,
+    ← Real.sqrt_sq hnn, ← Real.sqrt_mul (sq_nonneg _), Finset.mul_sum]
+  simp_rw [hxy _ (Finset.mem_univ _), Int.cast_mul, mul_pow]
 
 end TauCeti

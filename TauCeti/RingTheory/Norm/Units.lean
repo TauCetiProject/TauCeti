@@ -118,6 +118,18 @@ theorem mem_normGroup_iff [Module.Finite K L] {x : Kˣ} :
   simp [normGroup, Units.ext_iff]
 
 variable {K L} in
+/-- An element of `Kˣ` lies in the norm group exactly when it is `Algebra.normUnits K y` for a
+unit `y` of `L`. -/
+theorem mem_normGroup_iff_exists_normUnits [Module.Finite K L] {x : Kˣ} :
+    x ∈ normGroup K L ↔ ∃ y : Lˣ, Algebra.normUnits K y = x :=
+  Iff.rfl
+
+/-- The norm of a unit of `L` lies in the norm group `N_{L/K}(Lˣ)`. -/
+theorem normUnits_mem_normGroup [Module.Finite K L] (y : Lˣ) :
+    Algebra.normUnits K y ∈ normGroup K L :=
+  ⟨y, rfl⟩
+
+variable {K L} in
 /-- **A larger extension has a smaller norm group.** A `K`-algebra map `f : M →ₐ[K] L` of finite
 extensions makes `L` an extension of `M`, and by transitivity of the norm every norm from `L` is
 a norm from `M`. -/

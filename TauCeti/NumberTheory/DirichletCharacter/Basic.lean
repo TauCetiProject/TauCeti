@@ -34,6 +34,8 @@ case the descent uses is `d = L N / p` with `p ∣ N` coprime to `L`, where the 
   specialisation, from `L N / p` to `N / p`.
 * `DirichletCharacter.exists_eq_comp_unitsMap_of_factorsThrough`: a factorisation of
   `MulChar.ofUnitHom χ` through `d`, read back on unit homomorphisms as `χ = χ₀ ∘ unitsMap`.
+* `DirichletCharacter.changeLevel_natCast_of_coprime`: changing the level preserves the values
+  at naturals prime to the new level.
 * `DirichletCharacter.even_changeLevel_iff`: changing the level preserves parity.
 * `DirichletCharacter.conductor_eq_prime_pow_of_emod_eq_of_apply_ne_apply`: a primitivity
   criterion at a prime-power level, obtained by comparing values on congruent units, and its
@@ -166,6 +168,12 @@ theorem exists_eq_comp_unitsMap_of_factorsThrough {R : Type*} [CommMonoidWithZer
   have h := congrArg MulChar.toUnitHom hfac.eq_changeLevel
   rw [changeLevel_toUnitHom] at h
   simpa using h
+
+/-- Raising the level of a Dirichlet character does not change its value at a natural number
+prime to the new level. -/
+theorem changeLevel_natCast_of_coprime {R : Type*} [CommMonoidWithZero R] {d n : ℕ} (h : d ∣ n)
+    (χ : DirichletCharacter R d) {m : ℕ} (hm : m.Coprime n) : changeLevel h χ m = χ m := by
+  simpa using changeLevel_eq_cast_of_dvd' χ h (a := (m : ℤ)) (Nat.isCoprime_iff_coprime.mpr hm)
 
 /-- **Changing the level preserves parity**: the value at `-1` of a Dirichlet character is the
 value at `-1` of its lift to any multiple level. -/

@@ -39,10 +39,11 @@ import TauCeti.Data.Set.PowersetCard
   `Finset.sum_Icc_neg_one_pow_card_sub_card_right` compute the Möbius function of the Boolean
   lattice of finsets: the signed sum over an interval `[s, t]` is `1` if `s = t` and `0`
   otherwise.
-* `Finset.neg_one_pow_card_filter_lt_mul_insert` and
-  `Finset.neg_one_pow_card_filter_lt_mul_erase` show that inserting a new element and deleting an
-  existing element of an ordered finset in either order, or deleting two distinct elements in
-  either order, gives opposite Koszul signs.
+* `Finset.neg_one_pow_card_filter_lt_mul_insert`, `Finset.neg_one_pow_card_filter_lt_mul_erase`
+  and `Finset.neg_one_pow_card_filter_lt_mul_insert_insert` show that inserting a new element and
+  deleting an existing element of an ordered finset in either order, deleting two distinct
+  elements in either order, or inserting two distinct new elements in either order, gives
+  opposite Koszul signs.
 * `Finset.card_symmDiff_add_two_mul_card_inter` and `Finset.even_card_symmDiff_iff` compare the
   cardinality of a symmetric difference with the cardinalities of its two arguments: exactly, and
   modulo two.
@@ -457,6 +458,20 @@ theorem neg_one_pow_card_filter_lt_mul_erase {α R : Type*} [LinearOrder α] [Mo
   · have hi' : i ∉ {k ∈ s | k < j} := by simp [hji.not_gt]
     have hj' : j ∈ {k ∈ s | k < i} := mem_filter.2 ⟨hj, hji⟩
     simp only [filter_erase, erase_eq_of_notMem hi', ← card_erase_add_one hj', pow_succ]
+    simp [← pow_add, add_comm]
+
+/-- **Inserting two distinct new elements into an ordered finset in either order gives opposite
+Koszul signs.** -/
+theorem neg_one_pow_card_filter_lt_mul_insert_insert {α R : Type*} [LinearOrder α] [Monoid R]
+    [HasDistribNeg R] {s : Finset α} {i j : α} (hi : i ∉ s) (hj : j ∉ s) (hij : i ≠ j) :
+    (-1 : R) ^ ({k ∈ s | k < i}).card * (-1) ^ ({k ∈ insert i s | k < j}).card =
+      -((-1) ^ ({k ∈ s | k < j}).card * (-1) ^ ({k ∈ insert j s | k < i}).card) := by
+  rcases hij.lt_or_gt with hij | hji
+  · have hi' : i ∉ {k ∈ s | k < j} := by simp [hi]
+    simp only [filter_insert, hij, hij.not_gt, ↓reduceIte, card_insert_of_notMem hi', pow_succ]
+    simp [← pow_add, add_comm]
+  · have hj' : j ∉ {k ∈ s | k < i} := by simp [hj]
+    simp only [filter_insert, hji, hji.not_gt, ↓reduceIte, card_insert_of_notMem hj', pow_succ]
     simp [← pow_add, add_comm]
 
 /-- The sum over a finite type of a function that vanishes away from two distinct points is the sum

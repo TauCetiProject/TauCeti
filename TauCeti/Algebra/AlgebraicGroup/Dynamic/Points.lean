@@ -36,6 +36,10 @@ extension and evaluation operations used to define dynamic parabolic subgroups a
 * `BialgHom.oppositeCocharacter`: the opposite cocharacter, with its point formulas
   `TauCeti.Cocharacter.pointsHom_oppositeCocharacter` and
   `TauCeti.Cocharacter.genericPoint_oppositeCocharacter`.
+* `BialgHom.powCocharacter`: the power `t ↦ λ(tⁿ)` of a cocharacter, with
+  `BialgHom.powCocharacter_one`, `BialgHom.powCocharacter_powCocharacter`,
+  `BialgHom.powCocharacter_neg_one` (the power `λ⁻¹` is the opposite cocharacter) and the point
+  formula `BialgHom.pointsHom_powCocharacter`.
 * `TauCeti.Cocharacter.mapValue_ofPolyPoint` and `TauCeti.Cocharacter.mapValue_evalZeroPoint`:
   naturality of inclusion and evaluation.
 -/
@@ -64,6 +68,39 @@ theorem oppositeCocharacter_oppositeCocharacter (l : H →ₐc[R] LaurentPolynom
     l.oppositeCocharacter.oppositeCocharacter = l := by
   ext h : 1
   simpa only [oppositeCocharacter_apply] using LaurentPolynomial.involutive_invert (l h)
+
+/-- The `n`-th power `t ↦ λ(tⁿ)` of a cocharacter `λ`: its composite with the `n`-th power
+map of the multiplicative group. -/
+noncomputable def powCocharacter (l : H →ₐc[R] LaurentPolynomial R) (n : ℤ) :
+    H →ₐc[R] LaurentPolynomial R :=
+  (AddMonoidAlgebra.mapDomainBialgHom R (AddMonoidHom.mulRight n)).comp l
+
+/-- On coordinates the `n`-th power of a cocharacter substitutes `Tⁿ` for the Laurent
+variable. -/
+@[simp]
+theorem powCocharacter_apply (l : H →ₐc[R] LaurentPolynomial R) (n : ℤ) (h : H) :
+    l.powCocharacter n h = AddMonoidAlgebra.mapDomain (· * n) (l h) := (rfl)
+
+/-- The first power of a cocharacter is the cocharacter itself. -/
+@[simp]
+theorem powCocharacter_one (l : H →ₐc[R] LaurentPolynomial R) : l.powCocharacter 1 = l := by
+  ext h k : 2
+  simp
+
+/-- Powers of a cocharacter compose by multiplying the exponents: `(λᵐ)ⁿ = λ^{mn}`. -/
+@[simp]
+theorem powCocharacter_powCocharacter (l : H →ₐc[R] LaurentPolynomial R) (m n : ℤ) :
+    (l.powCocharacter m).powCocharacter n = l.powCocharacter (m * n) := by
+  ext h k : 2
+  simp only [powCocharacter_apply, AddMonoidAlgebra.coeff_mapDomain, ← Finsupp.mapDomain_comp,
+    Function.comp_def, mul_assoc]
+
+/-- The power `λ⁻¹` of a cocharacter is its opposite cocharacter. -/
+@[simp]
+theorem powCocharacter_neg_one (l : H →ₐc[R] LaurentPolynomial R) :
+    l.powCocharacter (-1) = l.oppositeCocharacter := by
+  ext h k : 2
+  simpa using Finsupp.mapDomain_apply_of_injective neg_injective (l h).coeff (-k)
 
 end BialgHom
 
@@ -175,6 +212,17 @@ theorem pointsHom_oppositeCocharacter (l : H →ₐc[R] LaurentPolynomial R) (u 
     pointsHom A l.oppositeCocharacter u = pointsHom A l u⁻¹ := by
   ext h
   simp [pointsHom_apply, BialgHom.mapDomain_apply, laurentEval_invert]
+
+/-- The `n`-th power of a cocharacter evaluates at the `n`-th power of a unit. -/
+@[simp]
+theorem _root_.BialgHom.pointsHom_powCocharacter (l : H →ₐc[R] LaurentPolynomial R) (n : ℤ)
+    (u : Aˣ) :
+    pointsHom A (l.powCocharacter n) u = pointsHom A l (u ^ n) := by
+  ext h
+  rw [pointsHom_apply, pointsHom_apply, ← laurentEval_comp_mapDomainAlgHom_mulRight]
+  simp only [BialgHom.mapDomain_apply, ofConv_toConv, AlgHom.comp_apply, BialgHom.coe_toAlgHom,
+    BialgHom.powCocharacter_apply, AddMonoidAlgebra.mapDomainAlgHom_apply,
+    AddMonoidHom.coe_mulRight]
 
 /-- Images of multiplicative-group points commute: they lie in the image of the commutative
 group `𝔾ₘ(A)`. -/

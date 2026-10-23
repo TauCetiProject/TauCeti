@@ -23,7 +23,8 @@ The first is the `Subring` case of the family `Subsemigroup.coe_topologicalClosu
 `Submonoid.coe_topologicalClosure`, `Subsemiring.topologicalClosure_coe`; Mathlib stops short of
 `Subring`, so the equation is only available as a definitional unfolding, which is what this file
 supplies as a rewrite. The second is the observation that the integral closure contains `R` and
-that an additive subgroup containing an open one is open.
+that an additive subgroup containing an open one is open. The same observation shows that an ideal
+of `B` is open exactly when its trace on an open subring is.
 
 Powers of a topologically nilpotent scalar absorb elements of the ambient ring into any open
 subring. For submodules over that subring, they absorb the ambient span element by element,
@@ -36,6 +37,7 @@ multiplication on the ambient ring. Scalar absorption is supplied by
 
 * `Subring.topologicalClosure_coe`: `↑S.topologicalClosure = closure ↑S`.
 * `isOpen_integralClosure_toSubring`: the integral closure of an open subring is open.
+* `Ideal.isOpen_comap_subtype_iff`: an ideal is open exactly when its trace on an open subring is.
 * `Subring.exists_pow_smul_mem`: a power carries an element of the ambient span into a
   submodule over the open subring.
 * `Subring.exists_pow_smul_le` and `Subring.exists_pow_smul_le_pow_smul`: the uniform and
@@ -75,6 +77,18 @@ theorem isOpen_integralClosure_toSubring {R : Subring B} (hR : IsOpen (R : Set B
   AddSubgroup.isOpen_mono (H₁ := R.toAddSubgroup)
     (H₂ := (integralClosure R B).toSubring.toAddSubgroup)
     (fun x hx ↦ (integralClosure R B).algebraMap_mem ⟨x, hx⟩) hR
+
+/-- **An ideal is open exactly when its trace on an open subring is.** For an open subring `R` of
+`B`, with the subspace topology, the contraction `p.comap R.subtype` of an ideal `p` of `B` is open
+in `R` if and only if `p` is open in `B`. -/
+theorem Ideal.isOpen_comap_subtype_iff (p : Ideal B) {R : Subring B} (hR : IsOpen (R : Set B)) :
+    IsOpen (p.comap R.subtype : Set R) ↔ IsOpen (p : Set B) := by
+  refine ⟨fun h ↦ AddSubgroup.isOpen_of_mem_nhds p.toAddSubgroup (g := 0) ?_,
+    fun h ↦ h.preimage continuous_subtype_val⟩
+  -- the image of the open trace is an open neighbourhood of `0` in `B` contained in `p`
+  refine Filter.mem_of_superset ((hR.isOpenMap_subtype_val _ h).mem_nhds ⟨0, by simp, rfl⟩) ?_
+  rintro _ ⟨x, hx, rfl⟩
+  exact hx
 
 namespace Subring
 

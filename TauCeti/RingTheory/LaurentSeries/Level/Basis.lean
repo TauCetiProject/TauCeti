@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.PowerBasis
 public import TauCeti.Algebra.Group.Coprime
-public import TauCeti.RingTheory.LaurentSeries.Puiseux
+public import TauCeti.RingTheory.LaurentSeries.Puiseux.Basic
 
 /-!
 # Power bases of ramified Laurent-series levels
@@ -385,7 +385,7 @@ theorem isAlgebraic_laurentSeries (K : Type*) [Field K] :
 /-- The generator of the level-`d` power basis is the monomial `t ^ (1 / d)`. -/
 theorem coe_levelPowerBasis_gen (K : Type*) [Field K] (d : ℕ+) :
     (((levelPowerBasis K d).gen : TauCeti.puiseuxField K) : HahnSeries ℚ K) =
-      single (d⁻¹ : ℚ) 1 := by
+      HahnSeries.single (d⁻¹ : ℚ) 1 := by
   simp
 
 /-- The level parameters are compatible: if `L = e * k`, then `(t ^ (1 / L)) ^ k = t ^ (1 / e)`. -/

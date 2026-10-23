@@ -51,6 +51,8 @@ especially Proposition 4.5.8.
 * `TauCeti.OrientedPDCode.reverse`: reversal of every component orientation.
 * `TauCeti.OrientedPDCode.crossingSign`: the sign derived from the local oriented crossing data.
 * `TauCeti.OrientedPDCode.writhe`: the sum of the crossing signs.
+* `TauCeti.OrientedPDCode.positiveCrossingCount`, `TauCeti.OrientedPDCode.negativeCrossingCount`:
+  the numbers `n₊` and `n₋` of positive and negative crossings.
 
 ## Main results
 
@@ -629,6 +631,42 @@ def writhe (D : OrientedPDCode n) : ℤ :=
 /-- Expand the writhe as the sum of the crossing signs. -/
 theorem writhe_def (D : OrientedPDCode n) : D.writhe = ∑ i : Fin n, D.crossingSign i := (rfl)
 
+open Finset in
+/-- The number `n₊` of positive crossings of an oriented code. -/
+def positiveCrossingCount (D : OrientedPDCode n) : ℕ :=
+  #{i | D.crossingSign i = 1}
+
+open Finset in
+/-- The number `n₋` of negative crossings of an oriented code. -/
+def negativeCrossingCount (D : OrientedPDCode n) : ℕ :=
+  #{i | D.crossingSign i = -1}
+
+open Finset in
+/-- Expand `n₊` as the number of crossings of sign `1`. -/
+theorem positiveCrossingCount_def (D : OrientedPDCode n) :
+    D.positiveCrossingCount = #{i | D.crossingSign i = 1} := (rfl)
+
+open Finset in
+/-- Expand `n₋` as the number of crossings of sign `-1`. -/
+theorem negativeCrossingCount_def (D : OrientedPDCode n) :
+    D.negativeCrossingCount = #{i | D.crossingSign i = -1} := (rfl)
+
+/-- Every crossing is positive or negative: `n₊ + n₋ = n`. -/
+theorem positiveCrossingCount_add_negativeCrossingCount (D : OrientedPDCode n) :
+    D.positiveCrossingCount + D.negativeCrossingCount = n := by
+  have h : ∀ i, ¬D.crossingSign i = 1 ↔ D.crossingSign i = -1 := fun i ↦
+    ⟨(D.crossingSign_eq_one_or_neg_one i).resolve_left, fun h ↦ by simp [h]⟩
+  rw [positiveCrossingCount_def, negativeCrossingCount_def, ← Finset.filter_congr fun i _ ↦ h i,
+    Finset.card_filter_add_card_filter_not, Finset.card_univ, Fintype.card_fin]
+
+/-- The writhe is the number of positive crossings minus the number of negative ones. -/
+theorem writhe_eq_positiveCrossingCount_sub_negativeCrossingCount (D : OrientedPDCode n) :
+    D.writhe = D.positiveCrossingCount - D.negativeCrossingCount := by
+  rw [writhe_def, positiveCrossingCount_def, negativeCrossingCount_def, Finset.natCast_card_filter,
+    Finset.natCast_card_filter, ← Finset.sum_sub_distrib]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rcases D.crossingSign_eq_one_or_neg_one i with h | h <;> simp [h]
+
 /-- Reverse every component orientation while preserving the underlying unoriented code. -/
 def reverse (D : OrientedPDCode n) : OrientedPDCode n where
   toPDCode := D.toPDCode
@@ -743,6 +781,18 @@ theorem relabel_relabel {r : ℕ} (half₂ : Fin (4 * m) ≃ Fin (4 * r)) (cross
   simp only [writhe_def, crossingSign_relabel]
   exact Equiv.sum_comp cross.symm D.crossingSign
 
+/-- Relabelling matches the crossings bijectively, so it preserves `n₊`. -/
+@[simp] theorem positiveCrossingCount_relabel :
+    (D.relabel half cross).positiveCrossingCount = D.positiveCrossingCount := by
+  simp only [positiveCrossingCount_def, crossingSign_relabel]
+  exact Finset.card_equiv cross.symm (by simp)
+
+/-- Relabelling matches the crossings bijectively, so it preserves `n₋`. -/
+@[simp] theorem negativeCrossingCount_relabel :
+    (D.relabel half cross).negativeCrossingCount = D.negativeCrossingCount := by
+  simp only [negativeCrossingCount_def, crossingSign_relabel]
+  exact Finset.card_equiv cross.symm (by simp)
+
 end Relabel
 
 /-- Reflection negates the writhe. -/
@@ -752,6 +802,26 @@ end Relabel
 /-- Reversing every component orientation preserves the writhe. -/
 @[simp] theorem writhe_reverse (D : OrientedPDCode n) : D.reverse.writhe = D.writhe := by
   simp [writhe_def]
+
+/-- Reflection turns the positive crossings into the negative ones. -/
+@[simp] theorem positiveCrossingCount_mirror (D : OrientedPDCode n) :
+    D.mirror.positiveCrossingCount = D.negativeCrossingCount := by
+  simp [positiveCrossingCount_def, negativeCrossingCount_def, neg_eq_iff_eq_neg]
+
+/-- Reflection turns the negative crossings into the positive ones. -/
+@[simp] theorem negativeCrossingCount_mirror (D : OrientedPDCode n) :
+    D.mirror.negativeCrossingCount = D.positiveCrossingCount := by
+  simp [positiveCrossingCount_def, negativeCrossingCount_def]
+
+/-- Reversing every component orientation preserves `n₊`. -/
+@[simp] theorem positiveCrossingCount_reverse (D : OrientedPDCode n) :
+    D.reverse.positiveCrossingCount = D.positiveCrossingCount := by
+  simp [positiveCrossingCount_def]
+
+/-- Reversing every component orientation preserves `n₋`. -/
+@[simp] theorem negativeCrossingCount_reverse (D : OrientedPDCode n) :
+    D.reverse.negativeCrossingCount = D.negativeCrossingCount := by
+  simp [negativeCrossingCount_def]
 
 /-- Reflection and orientation reversal commute. -/
 @[simp]

@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Ring.Parity
 public import TauCeti.Geometry.Symplectic.Complex.Module.Basic
 public import TauCeti.LinearAlgebra.Complex.Finrank
+public import TauCeti.LinearAlgebra.Eigenspace.Anticommute
 public import TauCeti.LinearAlgebra.TotallyReal.Finrank
 
 /-!
@@ -35,6 +36,10 @@ assumption.
   twice the complex dimension, `finrank ℝ V = 2 * J.complexFinrank`.
 * `TauCeti.AlmostComplexStructure.even_finrank_real`: the real dimension of a module carrying an
   almost complex structure is even.
+* `TauCeti.AlmostComplexStructure.even_finrank_of_forall_mem`: a `J`-invariant subspace has even
+  real dimension.
+* `TauCeti.AlmostComplexStructure.even_finrank_genEigenspace_zero_of_anticommute`: the generalized
+  `0`-eigenspaces of an endomorphism anticommuting with `J` have even real dimension.
 * `TauCeti.AlmostComplexStructure.isEmpty_of_odd_finrank`: an odd-dimensional real module admits no
   almost complex structure.
 * `TauCeti.AlmostComplexStructure.finrank_eq_complexFinrank_of_isMaximalTotallyReal`: a maximal
@@ -83,6 +88,23 @@ theorem even_finrank_real (J : AlmostComplexStructure V) :
     Even (Module.finrank ℝ V) := by
   rw [J.finrank_real_eq_two_mul_complexFinrank]
   exact even_two_mul _
+
+/-- A real subspace invariant under an almost complex structure has even real dimension: `J`
+restricts to an almost complex structure on it. -/
+theorem even_finrank_of_forall_mem (J : AlmostComplexStructure V) {p : Submodule ℝ V}
+    (hp : ∀ v ∈ p, J v ∈ p) : Even (Module.finrank ℝ p) :=
+  even_finrank_real
+    { toLinearMap := J.toLinearMap.restrict hp
+      square_neg := by ext v; simp }
+
+/-- If an endomorphism `f` anticommutes with an almost complex structure `J`, then its
+generalized `0`-eigenspaces, in particular its kernel, are `J`-invariant and therefore have even
+real dimension. -/
+theorem even_finrank_genEigenspace_zero_of_anticommute (J : AlmostComplexStructure V)
+    {f : Module.End ℝ V} (h : f * J.toLinearMap + J.toLinearMap * f = 0) (k : ℕ∞) :
+    Even (Module.finrank ℝ (f.genEigenspace 0 k)) :=
+  J.even_finrank_of_forall_mem fun _ hv ↦ by
+    simpa using Module.End.mapsTo_genEigenspace_neg_of_anticommute h 0 k hv
 
 /-- A maximal totally real subspace `L` of a finite-dimensional almost complex module has real
 dimension equal to the complex dimension of the ambient module: `L` is "half-dimensional".

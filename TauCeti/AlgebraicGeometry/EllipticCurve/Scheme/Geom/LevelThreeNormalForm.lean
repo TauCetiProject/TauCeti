@@ -63,6 +63,9 @@ over its copy `ULift.{u} ℤ[1/3, ζ₃][μ, 1/(μ³ - 1)]`
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.existsUnique_levelThreeNormalForm_curveGeom`: the
   same universal property, with the universal level-three normal form read as the elliptic curve
   `curveGeom`.
+* `TauCeti.AlgebraicGeometry.UniversalLevelThree.firstPointHom_left_comp_mulBy_three_left`,
+  `TauCeti.AlgebraicGeometry.UniversalLevelThree.secondPointHom_left_ne_firstPointHom_left` and
+  their siblings: the universal basis satisfies the conditions.
 
 ## References
 
@@ -612,5 +615,60 @@ theorem existsUnique_levelThreeNormalForm_curveGeom :
   exact Prod.ext this.1 (by simp [← this.2])
 
 end EllipticCurveGeom
+
+namespace UniversalLevelThree
+
+open MonoidalCategory
+
+/-! ### The universal basis of the `3`-torsion -/
+
+-- The universal basis satisfies the conditions of the level-three normal form, as the basis it is
+-- carried to by the identity.
+private theorem basisHom_conditions :
+    (∀ s, firstPointHom.{u}.left s ≠ curveGeom.zero s) ∧
+      (∀ s, secondPointHom.{u}.left s ≠ curveGeom.zero s) ∧
+      firstPointHom.{u}.left ≫ (curveGeom.mulBy 3).left = curveGeom.zero ∧
+      secondPointHom.{u}.left ≫ (curveGeom.mulBy 3).left = curveGeom.zero ∧
+      ∀ s, secondPointHom.{u}.left s ≠ firstPointHom.left s ∧
+        secondPointHom.{u}.left s ≠ (firstPointHom.left ≫ curveGeom.neg) s :=
+  (curveGeom.exists_levelThreeNormalForm_iff (Over.w firstPointHom) (Over.w secondPointHom)).mp
+    ⟨𝟙 _, (toEllipticCurveGeomIso curveULift).hom,
+      IsPullback.of_horiz_isIso
+        ⟨by rw [toEllipticCurveGeomIso_hom_projModelOver, Category.comp_id]⟩,
+      by rw [zero_toEllipticCurveGeomIso_hom, Category.id_comp], by simp, by simp⟩
+
+/-- The point `(0, 0)` of `curveGeom` misses the zero section at every point of the base. -/
+theorem firstPointHom_left_ne_zero (s) : firstPointHom.{u}.left s ≠ curveGeom.zero s :=
+  basisHom_conditions.1 s
+
+/-- The point `(-(μ² + μ + 1), (μ² + μ + 1)(μ - ζ))` of `curveGeom` misses the zero section at
+every point of the base. -/
+theorem secondPointHom_left_ne_zero (s) : secondPointHom.{u}.left s ≠ curveGeom.zero s :=
+  basisHom_conditions.2.1 s
+
+/-- The point `(0, 0)` of `curveGeom` is killed by `3`. -/
+@[reassoc]
+theorem firstPointHom_left_comp_mulBy_three_left :
+    firstPointHom.{u}.left ≫ (curveGeom.mulBy 3).left = curveGeom.zero :=
+  basisHom_conditions.2.2.1
+
+/-- The point `(-(μ² + μ + 1), (μ² + μ + 1)(μ - ζ))` of `curveGeom` is killed by `3`. -/
+@[reassoc]
+theorem secondPointHom_left_comp_mulBy_three_left :
+    secondPointHom.{u}.left ≫ (curveGeom.mulBy 3).left = curveGeom.zero :=
+  basisHom_conditions.2.2.2.1
+
+/-- The two basis points of `curveGeom` differ at every point of the base. -/
+theorem secondPointHom_left_ne_firstPointHom_left (s) :
+    secondPointHom.{u}.left s ≠ firstPointHom.{u}.left s :=
+  (basisHom_conditions.2.2.2.2 s).1
+
+/-- The point `(-(μ² + μ + 1), (μ² + μ + 1)(μ - ζ))` of `curveGeom` differs from the negative of
+`(0, 0)` at every point of the base. -/
+theorem secondPointHom_left_ne_firstPointHom_left_neg (s) :
+    secondPointHom.{u}.left s ≠ (firstPointHom.{u}.left ≫ curveGeom.neg) s :=
+  (basisHom_conditions.2.2.2.2 s).2
+
+end UniversalLevelThree
 
 end TauCeti.AlgebraicGeometry

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.Gamma.Basic
 public import TauCeti.Probability.Distributions.NegativeBinomial.Basic
-public import TauCeti.Probability.Distributions.Poisson.Mixed
+public import TauCeti.Probability.Distributions.Poisson.Mixed.Basic
 public import Mathlib.Probability.Distributions.Poisson.Basic
 
 import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
@@ -55,6 +55,37 @@ namespace TauCeti
 namespace Probability
 
 
+/-- Multiplying a Gamma kernel by finitely many Poisson masses shifts its shape by the total
+count and its rate by the sum of the Poisson weights. The identity holds for arbitrary real
+parameters at every nonzero point, without positivity or normalization assumptions. -/
+theorem _root_.Real.gammaKernel_mul_prod_exp_mul_pow_div_factorial {ι : Type*} [Fintype ι]
+    (c r : ℝ) (p : ι → ℝ) (k : ι → ℕ) {x : ℝ} (hx : x ≠ 0) :
+    c ^ r / Real.Gamma r * x ^ (r - 1) * Real.exp (-(c * x)) *
+        (∏ i, (Real.exp (-(p i * x)) * (p i * x) ^ k i / (k i).factorial)) =
+      (c ^ r / Real.Gamma r * (∏ i, p i ^ k i) / (∏ i, ((k i).factorial : ℝ))) *
+        (x ^ (r + ∑ i, (k i : ℝ) - 1) * Real.exp (-((c + ∑ i, p i) * x))) := by
+  -- Combine the powers at the shifted shape, using only that the point is nonzero.
+  have hpow : x ^ (r - 1) * x ^ (∑ i, k i) = x ^ (r + ∑ i, (k i : ℝ) - 1) := by
+    rw [← Real.rpow_add_natCast hx]
+    congr 1
+    push_cast
+    ring
+  -- The product of exponentials adds the Poisson rates to the Gamma rate.
+  have hexp : Real.exp (-(c * x)) * (∏ i, Real.exp (-(p i * x))) =
+      Real.exp (-((c + ∑ i, p i) * x)) := by
+    rw [← Real.exp_sum, ← Real.exp_add]
+    congr 1
+    simp only [Finset.sum_neg_distrib, ← Finset.sum_mul]
+    ring
+  -- Separate the finite products; ordinary ring normalization collects the constants.
+  simp only [Finset.prod_div_distrib, Finset.prod_mul_distrib, mul_pow,
+    Finset.prod_pow_eq_pow_sum]
+  calc
+    _ = (c ^ r / Real.Gamma r * (∏ i, p i ^ k i) / (∏ i, ((k i).factorial : ℝ))) *
+        ((x ^ (r - 1) * x ^ (∑ i, k i)) *
+          (Real.exp (-(c * x)) * (∏ i, Real.exp (-(p i * x))))) := by ring
+    _ = _ := by rw [hpow, hexp]
+
 /-- Collecting `c ^ r / Γ r * x ^ (r - 1) * exp (-(c * x))` against `exp (-x) * x ^ k / k !` at a
 nonzero point: the two powers of `x` and the two exponentials each combine, leaving
 `x ^ (r + k - 1) * exp (-((c + 1) * x))` under the constant `c ^ r / (Γ r * k !)`.
@@ -74,21 +105,9 @@ theorem _root_.Real.gammaKernel_mul_exp_mul_pow_div_factorial (c r : ℝ) (k : �
         (Real.exp (-x) * x ^ k / k.factorial) =
       c ^ r / (Real.Gamma r * k.factorial) *
         (x ^ (r + (k : ℝ) - 1) * Real.exp (-((c + 1) * x))) := by
-  have hxpow : x ^ (r - 1) * x ^ k = x ^ (r + (k : ℝ) - 1) := by
-    -- `Real.rpow_add_natCast` fires only on an exponent already in the shape `y + (n : ℕ)`,
-    -- so reassociate `r + k - 1` into `(r - 1) + k` before rewriting.
-    rw [show r + (k : ℝ) - 1 = r - 1 + (k : ℕ) by ring,
-      Real.rpow_add_natCast hx]
-  have hexp : Real.exp (-(c * x)) * Real.exp (-x) = Real.exp (-((c + 1) * x)) := by
-    rw [← Real.exp_add]
-    congr 1
-    ring
-  calc
-    c ^ r / Real.Gamma r * x ^ (r - 1) * Real.exp (-(c * x)) *
-        (Real.exp (-x) * x ^ k / k.factorial) =
-        c ^ r / (Real.Gamma r * k.factorial) *
-          ((x ^ (r - 1) * x ^ k) * (Real.exp (-(c * x)) * Real.exp (-x))) := by ring
-    _ = _ := by rw [hxpow, hexp]
+  simpa [div_div] using
+    (Real.gammaKernel_mul_prod_exp_mul_pow_div_factorial c r (fun _ : Unit => 1)
+      (fun _ => k) hx)
 
 private lemma integral_poissonMass_gammaMeasure {r p : ℝ} (hr : 0 < r) (hp : 0 < p)
     (hp1 : p < 1) (k : ℕ) :

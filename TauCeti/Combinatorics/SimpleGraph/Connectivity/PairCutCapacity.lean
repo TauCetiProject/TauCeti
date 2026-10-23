@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
 public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 public import Mathlib.Combinatorics.SimpleGraph.Basic
 public import Mathlib.Data.Finset.Sym
@@ -25,8 +24,9 @@ support graph. Diagonal pairs never contribute to a cut and are ignored by the s
 
 ## Main result
 
-* `TauCeti.isSubmodular_pairCutCapacity`: a nonnegative pair-capacity function has a submodular
-  cut function.
+* `TauCeti.isSubmodular_pairCutCapacity`: a pair-capacity function nonnegative off the diagonal
+  has a submodular cut function.
+* `TauCeti.isSymmSubmodular_pairCutCapacity`: the same cut function is symmetric submodular.
 -/
 
 public section
@@ -63,10 +63,12 @@ theorem pairCutCapacity_compl [Fintype V] [DecidableEq V] [AddCommMonoid K]
   classical
   simp only [pairCutCapacity, Finset.coe_compl, Sym2.crosses_compl]
 
-/-- The cut function of nonnegative weights on unordered vertex pairs is submodular. Together with
-`pairCutCapacity_compl`, this makes it a symmetric submodular set function. -/
+/-- The cut function of weights nonnegative on pairs of distinct vertices is submodular.
+Diagonal weights are unrestricted. Together with `pairCutCapacity_compl`, this makes it a symmetric
+submodular set function. -/
 theorem isSubmodular_pairCutCapacity [Fintype V] [DecidableEq V] [AddCommMonoid K]
-    [PartialOrder K] [IsOrderedAddMonoid K] (c : Sym2 V → K) (hc : 0 ≤ c) :
+    [Preorder K] [IsOrderedAddMonoid K] (c : Sym2 V → K)
+    (hc : ∀ x y, x ≠ y → 0 ≤ c s(x, y)) :
     IsSubmodular (pairCutCapacity c) := by
   classical
   rw [isSubmodular_def]
@@ -78,11 +80,22 @@ theorem isSubmodular_pairCutCapacity [Fintype V] [DecidableEq V] [AddCommMonoid 
   intro p _
   induction p using Sym2.inductionOn with
   | _ x y =>
-    have hp := hc s(x, y)
+    by_cases hxy : x = y
+    · subst y
+      simp only [Sym2.not_crosses_diag, ↓reduceIte, add_zero, le_refl]
+    have hp := hc x y hxy
     have hpp := add_nonneg hp hp
     by_cases hxS : x ∈ S <;> by_cases hxT : x ∈ T <;>
       by_cases hyS : y ∈ S <;> by_cases hyT : y ∈ T <;>
       simp_all
+
+/-- The cut function of weights nonnegative on pairs of distinct vertices is symmetric submodular.
+Diagonal weights are unrestricted. -/
+theorem isSymmSubmodular_pairCutCapacity [Fintype V] [DecidableEq V] [AddCommMonoid K]
+    [Preorder K] [IsOrderedAddMonoid K] (c : Sym2 V → K)
+    (hc : ∀ x y, x ≠ y → 0 ≤ c s(x, y)) :
+    IsSymmSubmodular (pairCutCapacity c) :=
+  ⟨pairCutCapacity_compl c, isSubmodular_pairCutCapacity c hc⟩
 
 /-- Diagonal values do not affect pair cut capacities. -/
 theorem pairCutCapacity_eq_of_offDiagonal_eq [Fintype V] [AddCommMonoid K]

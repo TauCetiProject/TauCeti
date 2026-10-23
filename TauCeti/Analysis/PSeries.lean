@@ -11,7 +11,7 @@ import Mathlib.Analysis.Real.Pi.Bounds
 import Mathlib.NumberTheory.ZetaValues
 
 /-!
-# A clean constant bound for the `p`-series beyond exponent two
+# `p`-series: a clean constant bound beyond exponent two, and shifted weights on `ℤ`
 
 `∑' m : ℕ, m ^ (-t) ≤ 2` for every real `t ≥ 2`. Mathlib supplies the exact value at the endpoint,
 `ζ (2) = π ^ 2 / 6`, and summability throughout `t > 1`, but no inequality valid across a range of
@@ -24,9 +24,13 @@ inequalities and none of them wants `π` in the goal.
 Nothing here is specific to any application, and the file contains no number theory. The `m = 0`
 term is `0`, by the junk value of `0 ^ (-t)`.
 
+The file also records the summability over `ℤ` of the shifted weights `(1 + |n|) ^ r` for
+`r < -1`, the form in which the `p`-series enters weighted sequence spaces.
+
 ## Main results
 
 * `TauCeti.tsum_nat_rpow_neg_le_two` — `∑' m : ℕ, m ^ (-t) ≤ 2` for `2 ≤ t`.
+* `TauCeti.summable_one_add_abs_int_rpow` — `∑ n : ℤ, (1 + |n|) ^ r` converges for `r < -1`.
 -/
 
 public section
@@ -52,6 +56,16 @@ theorem tsum_nat_rpow_neg_le_two {t : ℝ} (ht : 2 ≤ t) : ∑' m : ℕ, (m : �
     · exact Real.rpow_le_rpow_of_exponent_le (by exact_mod_cast hm) (by linarith)
   · rw [hzeta]
     nlinarith [Real.pi_lt_d2, Real.pi_pos]
+
+/-- The weights `(1 + |n|) ^ r` are summable over `ℤ` for `r < -1`. -/
+theorem summable_one_add_abs_int_rpow {r : ℝ} (hr : r < -1) :
+    Summable fun n : ℤ ↦ (1 + |(n : ℝ)|) ^ r := by
+  refine Summable.of_norm_bounded_eventually (Real.summable_abs_int_rpow (b := -r) (by linarith))
+    ?_
+  filter_upwards [Filter.eventually_cofinite_ne 0] with n hn
+  rw [neg_neg, Real.norm_of_nonneg (by positivity)]
+  exact Real.rpow_le_rpow_of_nonpos (abs_pos.2 (Int.cast_ne_zero.2 hn))
+    (le_add_of_nonneg_left zero_le_one) (by linarith)
 
 end TauCeti
 

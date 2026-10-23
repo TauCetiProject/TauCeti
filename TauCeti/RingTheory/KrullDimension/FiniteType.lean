@@ -20,6 +20,7 @@ public import TauCeti.RingTheory.KrullDimension.Integral
 public import TauCeti.RingTheory.KrullDimension.Quotient
 import Mathlib.RingTheory.Ideal.KrullsHeightTheorem
 import TauCeti.RingTheory.KrullDimension.Basic
+import TauCeti.RingTheory.KrullDimension.Fiber
 
 /-!
 # Krull dimension of finitely generated algebras over a field
@@ -74,6 +75,8 @@ type over a field a local property.
   algebra `A` with irreducible spectrum over `k` has height `dim A`.
 * `Ideal.isMaximal_under_of_finiteType`: along a homomorphism of `k`-algebras `A → B` with `B`
   finitely generated, maximal ideals of `B` contract to maximal ideals of `A`.
+* `Ideal.height_eq_height_under_of_finite_of_finiteType`: a finite faithful extension of domains
+  preserves prime heights when the base is a finitely generated algebra over a field.
 * `TauCeti.topologicalKrullDim_inter_eq_of_finiteType`: in `Spec A`, a nonempty open part of an
   irreducible closed subset has the dimension of that subset.
 
@@ -84,6 +87,10 @@ type over a field a local property.
   transcendence degree)
 * R. Hartshorne, *Algebraic Geometry* (1977), Chapter I, Theorem 1.8A (heights of
   primes in finitely generated domains over a field)
+* The finite-extension height theorem is ported from T. Dupuy, T. Tucker and Z. Wang,
+  [pcfawd-formalization](https://github.com/tdupu/pcfawd-formalization), commit
+  `9a20b3f351446d64e6015d704198bc71c7002008` (Apache-2.0),
+  `Pcf.height_under_eq_of_finite_of_finiteType` in `lean/Pcf/Bounding/Divisors.lean`.
 -/
 
 public section
@@ -113,6 +120,35 @@ theorem finiteRingKrullDim_of_finiteType (A : Type*) [CommRing A] [Nontrivial A]
   obtain ⟨s, g, hinj, hint⟩ := exists_integral_inj_algHom_of_fg k A
   exact .of_ringKrullDim_eq_natCast
     (ringKrullDim_eq_of_injective_of_isIntegral_mvPolynomial g hinj hint)
+
+variable (k) in
+/-- A finite faithful extension of domains preserves prime heights when the base is a finitely
+generated algebra over a field. -/
+theorem _root_.Ideal.height_eq_height_under_of_finite_of_finiteType {R S : Type*}
+    [CommRing R] [CommRing S] [IsDomain S] [Algebra k R]
+    [Algebra.FiniteType k R] [Algebra R S] [Module.Finite R S] [FaithfulSMul R S]
+    (prime : Ideal S) [prime.IsPrime] : prime.height = (prime.under R).height := by
+  have : IsDomain R := (FaithfulSMul.algebraMap_injective R S).isDomain (algebraMap R S)
+  obtain ⟨numVars, embedding, hinj, hfinite⟩ := exists_finite_inj_algHom_of_fg k R
+  let polynomial := MvPolynomial (Fin numVars) k
+  let : Algebra polynomial R := embedding.toRingHom.toAlgebra
+  have : Module.Finite polynomial R := hfinite
+  have : FaithfulSMul polynomial R :=
+    (faithfulSMul_iff_algebraMap_injective polynomial R).mpr hinj
+  let : Algebra polynomial S := ((algebraMap R S).comp (algebraMap polynomial R)).toAlgebra
+  have : IsScalarTower polynomial R S := IsScalarTower.of_algebraMap_eq' rfl
+  have : Module.Finite polynomial S := Module.Finite.trans R S
+  have : FaithfulSMul polynomial S :=
+    (faithfulSMul_iff_algebraMap_injective polynomial S).mpr
+      ((FaithfulSMul.algebraMap_injective R S).comp hinj)
+  have : IsNoetherianRing R := Algebra.FiniteType.isNoetherianRing k R
+  have : IsNoetherianRing S := IsNoetherianRing.of_finite R S
+  calc
+    prime.height = (prime.under polynomial).height :=
+      Ideal.height_eq_height_under_of_quasiFinite prime
+    _ = ((prime.under R).under polynomial).height := by rw [Ideal.under_under]
+    _ = (prime.under R).height :=
+      (Ideal.height_eq_height_under_of_quasiFinite (prime.under R)).symm
 
 /-- The Krull dimension of `K ⊗[k] A`, for a Noetherian `k`-algebra `K` and a finitely generated
 `k`-algebra `A`, is the sum of the Krull dimensions of `K` and `A`. -/

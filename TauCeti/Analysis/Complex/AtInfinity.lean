@@ -13,7 +13,8 @@ import Mathlib.Topology.Bornology.BoundedOperation
 # Complex limits at infinity
 
 If `z * ψ z` has a finite limit along a filter approaching infinity, then `ψ z` tends to zero.
-If `ζ` tends to infinity, then so does the normalized coordinate `(ζ - c) / b`, for `b ≠ 0`.
+If `ζ` tends to infinity, then so does the normalized coordinate `(ζ - c) / b`, for `b ≠ 0`; in
+particular so does `(q + g⁻¹ - c) / b` when `g` tends to `0` without vanishing.
 -/
 
 public section
@@ -40,6 +41,14 @@ theorem tendsto_sub_div_of_tendsto_cobounded {α : Type*} {l : Filter α} {ζ : 
     Tendsto (fun a => (ζ a - c) / b) l (cobounded ℂ) := by
   simpa [div_eq_mul_inv, Function.comp_def] using
     (tendsto_mul_right_cobounded (inv_ne_zero hb)).comp ((tendsto_sub_const_cobounded c).comp hζ)
+
+/-- If `g` tends to `0` without vanishing, the normalized coordinate `(q + g⁻¹ - c) / b` of the
+inverted point `q + g⁻¹` tends to infinity, for `b ≠ 0`. -/
+theorem tendsto_cobounded_div_of_tendsto_nhdsNE_zero {α : Type*} {l : Filter α} {g : α → ℂ}
+    {q c b : ℂ} (hb : b ≠ 0) (hg : Tendsto g l (𝓝[≠] 0)) :
+    Tendsto (fun a => (q + (g a)⁻¹ - c) / b) l (cobounded ℂ) :=
+  tendsto_sub_div_of_tendsto_cobounded hb
+    ((tendsto_const_add_cobounded q).comp (tendsto_inv₀_nhdsNE_zero.comp hg))
 
 end TauCeti
 

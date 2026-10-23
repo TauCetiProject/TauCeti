@@ -600,7 +600,7 @@ private theorem exists_ae_value_le_add_mul_rpow_mul_rpow_mul_rpow_mul_sqrt_setIn
       ∃ ψ : EuclideanSpace ℝ ι → ℝ, ContDiff ℝ ∞ ψ ∧ range ψ ⊆ Icc 0 1 ∧
         EqOn ψ 1 (Metric.closedBall x₀ r) ∧ tsupport ψ ⊆ Metric.closedBall x₀ R ∧
           ∀ x, ‖∇ ψ x‖ ≤ (c + 1) / (R - r) := fun x₀ r R hr hrR => by
-    obtain ⟨ψ, h1, h2, h3, h4, h5⟩ := hc x₀ hr hrR
+    obtain ⟨ψ, h1, h2, h3, h4, h5, -⟩ := hc x₀ hr.le hrR
     exact ⟨ψ, h1, h2, h3, h4, fun x =>
       (h5 x).trans (div_le_div_of_nonneg_right (by linarith) (sub_pos.2 hrR).le)⟩
   set F : ℝ := 2 * (64 * (c + 1) ^ 2) * 4 ^ α

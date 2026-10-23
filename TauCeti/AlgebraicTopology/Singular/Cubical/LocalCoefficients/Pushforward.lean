@@ -30,6 +30,8 @@ space and in the coefficient system.
 
 ## Main results
 
+* `TauCeti.LocalCoefficientSystem.NormalizedTwistedCubicalChain.pushforward_ofCube`: the
+  pushforward of a cube is the composite cube with the transported coefficient.
 * `TauCeti.LocalCoefficientSystem.NormalizedTwistedCubicalChain.boundary_pushforward`: it
   commutes with the boundaries.
 * `TauCeti.LocalCoefficientSystem.NormalizedTwistedCubicalChain.pushforward_map`: change of the
@@ -162,14 +164,23 @@ def pushforward (n : ℕ) :
 
 variable {L f z₀}
 
-/-- The twisted pushforward of the class of a cube. -/
-@[simp]
-theorem pushforward_ofCube {n : ℕ} (d : SingularCube Z n)
+/-- The twisted pushforward of the class of a cube, as a class of an unnormalized chain. -/
+theorem pushforward_ofCube_eq_mk {n : ℕ} (d : SingularCube Z n)
     (a : L.obj (FundamentalGroupoid.mk (f z₀))) :
     pushforward L f z₀ n (NormalizedCubicalChain.ofCube Z (ULift.{v} ℤ) d) a =
       Submodule.Quotient.mk (pushCube L f z₀ d a) := by
   rw [pushforward, NormalizedCubicalChain.ofCube_def, Submodule.liftQ_apply,
     Finsupp.linearCombination_single, one_smul, LinearMap.comp_apply, Submodule.mkQ_apply]
+
+/-- The twisted pushforward of the class of a cube is the class of the composite cube, with the
+coefficient transported from `f z₀` to the origin of the cube. -/
+@[simp]
+theorem pushforward_ofCube {n : ℕ} (d : SingularCube Z n)
+    (a : L.obj (FundamentalGroupoid.mk (f z₀))) :
+    pushforward L f z₀ n (NormalizedCubicalChain.ofCube Z (ULift.{v} ℤ) d) a =
+      ofCube L (f.comp d) (L.map (f.pathClass z₀ (d 0)) a) :=
+  (pushforward_ofCube_eq_mk d a).trans
+    ((congrArg Submodule.Quotient.mk (pushCube_apply d a)).trans (ofCube_apply _ _).symm)
 
 /-- The twisted pushforward commutes with the boundaries. -/
 theorem boundary_pushforward {n : ℕ} (y : NormalizedCubicalChain Z (ULift.{v} ℤ) (n + 1))
@@ -179,8 +190,10 @@ theorem boundary_pushforward {n : ℕ} (y : NormalizedCubicalChain Z (ULift.{v} 
   induction y using NormalizedCubicalChain.induction_on with
   | zero => simp
   | ofCube d =>
-    rw [pushforward_ofCube, boundary_mk, boundary_pushCube, NormalizedCubicalChain.boundary_ofCube]
-    simp [map_sum, map_sub, ULift.smul_def, pushforward_ofCube, ← Submodule.mkQ_apply]
+    rw [pushforward_ofCube_eq_mk, boundary_mk, boundary_pushCube,
+      NormalizedCubicalChain.boundary_ofCube]
+    simp [map_sum, map_sub, ULift.smul_def, -pushforward_ofCube,
+      pushforward_ofCube_eq_mk, ← Submodule.mkQ_apply]
   | add y y' hy hy' => simp only [map_add, LinearMap.add_apply, hy, hy']
   | smul r y hy => simp only [LinearMap.smul_apply, ULift.smul_def, map_zsmul, hy]
 
@@ -194,7 +207,8 @@ theorem pushforward_map {Z' : Type*} [TopologicalSpace Z'] [SimplyConnectedSpace
       pushforward L (f.comp g) w₀ n y (L.map (f.pathClass z₀ (g w₀)) a) := by
   induction y using NormalizedCubicalChain.induction_on with
   | zero => simp
-  | ofCube d => rw [NormalizedCubicalChain.map_ofCube, pushforward_ofCube, pushforward_ofCube,
+  | ofCube d =>
+    rw [NormalizedCubicalChain.map_ofCube, pushforward_ofCube_eq_mk, pushforward_ofCube_eq_mk,
       pushCube_comp]
   | add y y' hy hy' => simp only [map_add, LinearMap.add_apply, hy, hy']
   | smul r y hy => simp only [LinearMap.smul_apply, ULift.smul_def, map_zsmul, hy]
@@ -210,8 +224,8 @@ theorem map_pushforward {Y : TopCat.{v}} (h : C(X, Y)) (L : LocalCoefficientSyst
     rw [map_zero, LinearMap.zero_apply, map_zero, map_zero]
     rfl
   | ofCube d =>
-    rw [pushforward_ofCube, map_mk, map_pushCube]
-    exact (pushforward_ofCube (L := L) (f := h.comp f) (z₀ := z₀) d a).symm
+    rw [pushforward_ofCube_eq_mk, map_mk, map_pushCube]
+    exact (pushforward_ofCube_eq_mk (L := L) (f := h.comp f) (z₀ := z₀) d a).symm
   -- The fibres of the pulled back system are those of `L` only by definition, which leaves the
   -- evaluation of a sum or a multiple of linear maps to be closed by `rfl`.
   | add y y' hy hy' =>
@@ -228,7 +242,8 @@ theorem coefficientMap_pushforward {K : LocalCoefficientSystem.{u, v, w} R X} (�
   induction y using NormalizedCubicalChain.induction_on with
   | zero => simp
   | ofCube d =>
-    rw [pushforward_ofCube, pushforward_ofCube, coefficientMap_mk, coefficientMap_pushCube]
+    rw [pushforward_ofCube_eq_mk, pushforward_ofCube_eq_mk, coefficientMap_mk,
+      coefficientMap_pushCube]
   | add y y' hy hy' => simp only [map_add, LinearMap.add_apply, hy, hy']
   | smul r y hy => simp only [LinearMap.smul_apply, ULift.smul_def, map_zsmul, hy]
 

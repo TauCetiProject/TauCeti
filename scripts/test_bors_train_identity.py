@@ -83,7 +83,9 @@ class TrainIdentityTests(unittest.TestCase):
         self.assertIn('bors-staging-{0}-{1}-{2}-{3}-{4}', WORKFLOW['concurrency']['group'])
         self.assertTrue(WORKFLOW['concurrency']['cancel-in-progress'])
         self.assertIn('STAGING_REF', STEP['run'])
-        self.assertIn('compare/$BASE_REF...$SHA', STEP['run'])
+        self.assertIn('if ! identity=$(python3 gate/scripts/ci_git.py resolve', STEP['run'])
+        self.assertIn('--head "$SHA" --base-ref "$BASE_REF"', STEP['run'])
+        self.assertIn('identity_args+=(--staging-ref "$STAGING_REF")', STEP['run'])
 
 
 if __name__ == '__main__':

@@ -10,10 +10,11 @@ public import Mathlib.Analysis.InnerProductSpace.LinearMap
 import Mathlib.Tactic.Ring
 
 /-!
-# Diagonal and absorption identities for continuous linear operators
+# Diagonal, polarization, and absorption identities for continuous linear operators
 
 This module collects operator identities independent of projection-valued measures.
 
+* `ContinuousLinearMap.inner_polarization` recovers `⟪ψ, T ξ⟫` from four diagonal values.
 * `ContinuousLinearMap.eq_of_diagonal` uses complex polarization to identify operators from
   their diagonal inner products.
 * `ContinuousLinearMap.norm_sub_sq_of_selfAdjoint_idempotent_absorption` computes the squared
@@ -43,6 +44,21 @@ theorem eq_of_diagonal (S T : H →L[ℂ] H)
   -- `ext_inner_map` compares linear maps; applying a continuous linear map is the same.
   change ⟪S x, x⟫_ℂ = ⟪T x, x⟫_ℂ
   rw [← inner_conj_symm (S x) x, ← inner_conj_symm (T x) x, h x]
+
+/-- The complex polarization identity for the sesquilinear form of a bounded
+operator, recovered from its diagonal quadratic form. -/
+theorem inner_polarization (T : H →L[ℂ] H) (ψ ξ : H) :
+    (1 / 4 : ℂ) *
+        (⟪ξ + ψ, T (ξ + ψ)⟫_ℂ
+          + Complex.I * ⟪ξ + Complex.I • ψ, T (ξ + Complex.I • ψ)⟫_ℂ
+          - ⟪ξ - ψ, T (ξ - ψ)⟫_ℂ
+          - Complex.I * ⟪ξ - Complex.I • ψ, T (ξ - Complex.I • ψ)⟫_ℂ)
+      = ⟪ψ, T ξ⟫_ℂ := by
+  simp only [map_add, map_sub, map_smul, inner_add_left, inner_add_right,
+    inner_sub_left, inner_sub_right, inner_smul_left, inner_smul_right, Complex.conj_I]
+  ring_nf
+  rw [Complex.I_sq]
+  ring
 
 section RCLike
 

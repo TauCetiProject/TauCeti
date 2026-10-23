@@ -18,6 +18,8 @@ analytic API of the real-valued Poisson law. For a rate
 `exp (r * (exp t - 1))`, cumulant-generating function `r * (exp t - 1)`, and both mean and
 variance equal to `r`.
 
+The zero-rate law is recorded explicitly as the point mass at zero.
+
 The series calculation for the probability-generating function follows the calculation of
 `ProbabilityTheory.charFun_map_cast_poissonMeasure` in Mathlib; the moment-generating function is
 its value at `exp t`. The same series, together with the factorial-moment series
@@ -32,6 +34,13 @@ open MeasureTheory ProbabilityTheory Real
 open scoped NNReal Nat
 
 namespace TauCeti.Probability
+
+/-- A Poisson law of rate zero is concentrated at zero. -/
+@[simp]
+theorem poissonMeasure_zero : poissonMeasure 0 = Measure.dirac 0 := by
+  apply Measure.ext_of_singleton
+  intro n
+  cases n <;> simp [poissonMeasure_singleton]
 
 /-- The probability-generating series of a Poisson law: weighted by the Poisson masses, the powers
 `z ^ k` sum to `exp ((z - 1) * r)`. -/
@@ -175,6 +184,28 @@ theorem variance_id_map_cast_poissonMeasure (r : ℝ≥0) :
   rw [integral_sq_map_cast_poissonMeasure,
     integral_id_map_cast_poissonMeasure]
   ring
+
+/-- Every nonnegative real power of the native Poisson count is integrable. -/
+theorem integrable_natCast_rpow_poissonMeasure (r : ℝ≥0) {p : ℝ} (hp : 0 ≤ p) :
+    Integrable (fun n : ℕ ↦ (n : ℝ) ^ p) (poissonMeasure r) := by
+  have h := integrable_rpow_of_mem_interior_integrableExpSet
+    (X := fun x : ℝ ↦ x) (μ := Po(ℝ, r)) (by simp) hp
+  simpa only [Function.comp_def] using
+    (integrable_map_measure (f := (Nat.cast : ℕ → ℝ)) (by fun_prop) (by fun_prop)).1 h
+
+/-- The mean of the native Poisson count is its rate. -/
+@[simp]
+theorem integral_natCast_poissonMeasure (r : ℝ≥0) :
+    ∫ n : ℕ, (n : ℝ) ∂poissonMeasure r = r := by
+  have h := integral_id_map_cast_poissonMeasure r
+  rwa [integral_map (by fun_prop) (by fun_prop)] at h
+
+/-- The variance of the native Poisson count is its rate. -/
+@[simp]
+theorem variance_natCast_poissonMeasure (r : ℝ≥0) :
+    variance (fun n : ℕ ↦ (n : ℝ)) (poissonMeasure r) = r := by
+  have h := variance_id_map_cast_poissonMeasure r
+  rwa [variance_map (by fun_prop) (by fun_prop), Function.id_comp] at h
 
 /-- A real random variable with Poisson law has expectation equal to the rate. -/
 theorem integral_of_hasLaw_map_cast_poissonMeasure {Ω : Type*} [MeasurableSpace Ω]
