@@ -72,11 +72,8 @@ theorem contMDiff_normalRepresentative_normalClass
   let g := ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle
     (IB := J) (n := m) (F := V) (V := fun y : N => TangentSpace J y)
   let a := g.pullback f (f.contMDiff.of_le (by simpa using hm)) (f.isImmersion.mfderiv_injective hn)
-  have ha (x : M) : (a.inner x).IsInvertible := by
-    apply ContinuousLinearMap.isInvertible_of_separatingLeft (E := E)
-    intro v hv
-    by_contra hv0
-    exact (a.pos x v hv0).ne' (hv v)
+  have ha (x : M) : (a.inner x).IsInvertible :=
+    ContinuousLinearMap.isInvertible_of_pos (E := E) (a.pos x)
   let fc : C^m⟮I, M; J, N⟯ := ⟨f, f.contMDiff.of_le (le_self_add.trans hm)⟩
   let := TangentBundle.contMDiffVectorBundle (I := I) (M := M) (n := m)
   let := TangentBundle.contMDiffVectorBundle (I := J) (M := N) (n := m)
@@ -93,29 +90,12 @@ theorem contMDiff_normalRepresentative_normalClass
     (g.inner (f x) v).comp (mfderiv I J f x)
   have hφ : ContMDiff (I.prod 𝓘(ℝ, V)) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) m
       (fun p : TotalSpace V ((f : M → N) *ᵖ (TangentSpace J)) =>
-        (⟨p.proj, φ p.proj p.2⟩ : CotangentBundle I M)) := by
-    intro p
-    have hΨ : ContMDiff (I.prod 𝓘(ℝ, V)) (J.prod 𝓘(ℝ, V →L[ℝ] ℝ)) m
-        (fun q : TotalSpace V ((f : M → N) *ᵖ (TangentSpace J)) =>
-          (⟨f q.proj, g.inner (f q.proj) q.2⟩ : CotangentBundle J N)) :=
-      (g.contMDiff.comp (fc.contMDiff.comp hbase)).clm_bundle_apply hlift
-    have hΨp := hΨ p
-    rw [contMDiffAt_hom_bundle] at hΨp ⊢
-    refine ⟨hbase p, ?_⟩
-    -- As in CotangentBundle.contMDiff_mk_comp_mfderiv, compose in coordinates.
-    -- Using mfderiv_const on the base avoids a C¹ assumption on the total space.
-    have hd := ((f.contMDiff p.proj).mfderiv_const hm).comp p (hbase p)
-    refine (hΨp.2.clm_comp hd).congr_of_eventuallyEq ?_
-    have hb := fc.contMDiff.continuous.continuousAt.comp (hbase p).continuousAt
-    filter_upwards [hb.preimage_mem_nhds
-      ((trivializationAt V (TangentSpace J) (f p.proj)).open_baseSet.mem_nhds
-        (FiberBundle.mem_baseSet_trivializationAt' _))] with q hq
-    ext w
-    simp only [φ, Function.comp_apply, ContinuousLinearMap.inCoordinates, inTangentCoordinates,
-      ContinuousLinearMap.comp_apply, Trivial.fiberBundle_trivializationAt',
-      Trivial.continuousLinearMapAt_trivialization, ContinuousLinearMap.id_apply]
-    rw [Trivialization.symmL_continuousLinearMapAt _ (b := f q.proj) hq]
-    rfl
+        (⟨p.proj, φ p.proj p.2⟩ : CotangentBundle I M)) :=
+    CotangentBundle.contMDiff_mk_comp_mfderiv
+      (Ψ := fun q : TotalSpace V ((f : M → N) *ᵖ (TangentSpace J)) =>
+        (⟨f q.proj, g.inner (f q.proj) q.2⟩ : CotangentBundle J N))
+      (fun _ => rfl) ((g.contMDiff.comp (fc.contMDiff.comp hbase)).clm_bundle_apply hlift)
+      hbase f.contMDiff hm
   -- Invert the induced metric and push the resulting tangential component forward.
   let u := fun (x : M) (v : TangentSpace J (f x)) =>
     (a.inner x).inverse (φ x v)

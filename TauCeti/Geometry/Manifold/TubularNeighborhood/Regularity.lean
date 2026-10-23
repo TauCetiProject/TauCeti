@@ -37,25 +37,28 @@ variable {E V P H G M N : Type*}
   [NormedAddCommGroup P] [NormedSpace ℝ P] [FiniteDimensional ℝ P]
   [TopologicalSpace H] [TopologicalSpace G]
   {I : ModelWithCorners ℝ E H} {J : ModelWithCorners ℝ V G}
-  [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
+  [TopologicalSpace M] [ChartedSpace H M]
   [TopologicalSpace N] [ChartedSpace G N] [IsManifold J ∞ N]
   [J.Boundaryless] [T2Space N] {n : ℕ∞ω}
   [RiemannianBundle (fun y : N ↦ TangentSpace J y)]
   [IsContMDiffRiemannianBundle J ∞ V (fun y : N ↦ TangentSpace J y)]
 
 /-- The natural normal-exponential domain is open in the total intrinsic normal bundle. -/
-theorem isOpen_normalExpDomain
-    (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) (hm : ∞ ≤ n)
+theorem isOpen_normalExpDomain [IsManifold I 1 M]
+    (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
     (hdim : Module.finrank ℝ P = Module.finrank ℝ V - Module.finrank ℝ E) :
     letI := f.normalSpaceFiberBundle hn hdim
     IsOpen (f.normalExpDomain (P := P) hn) := by
-  have : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
-  have : IsManifold J (∞ + 1) N := by simpa using (inferInstance : IsManifold J ∞ N)
+  have : IsManifold I (0 + 1) M := by simpa using (inferInstance : IsManifold I 1 M)
+  have : IsManifold J (0 + 1) N := by simpa using (inferInstance : IsManifold J 1 N)
   let := f.normalSpaceFiberBundle hn hdim
   convert (Manifold.isOpen_setOfPred_mem_expDomain (I := J) (M := N)).preimage
-    (f.contMDiff_normalRepresentative (m := ∞) hn (by simpa using hm) hdim).continuous using 1
+    (f.contMDiff_normalRepresentative (m := 0) hn
+      (by simpa using ENat.one_le_iff_ne_zero_withTop.mpr hn) hdim).continuous using 1
   ext p
   exact f.mem_normalExpDomain hn p
+
+variable [IsManifold I ∞ M]
 
 /-- The normal exponential is smooth on its natural open domain in the total normal bundle. -/
 theorem contMDiffOn_normalExp
