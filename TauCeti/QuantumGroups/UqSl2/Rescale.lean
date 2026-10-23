@@ -158,4 +158,16 @@ theorem kUnit_zpow_mul_e_mul_inv (b : ℤ) :
     ← zpow_mul]
   norm_num
 
+/-- Commuting `E` past an integer power of `K` multiplies by `q ^ (-2b)`. -/
+theorem e_mul_kUnit_zpow (b : ℤ) :
+    e q * ((kUnit q ^ b : (UqSl2 q)ˣ) : UqSl2 q) =
+      q ^ (-2 * b) • (((kUnit q ^ b : (UqSl2 q)ˣ) : UqSl2 q) * e q) := by
+  have h := kUnit_zpow_mul_e_mul_inv (q := q) (-b)
+  rw [zpow_neg, inv_inv] at h
+  have hconj : e q * ((kUnit q ^ b : (UqSl2 q)ˣ) : UqSl2 q) =
+      ((kUnit q ^ b : (UqSl2 q)ˣ) : UqSl2 q) *
+        (((kUnit q ^ b)⁻¹ : (UqSl2 q)ˣ) * e q * ((kUnit q ^ b : (UqSl2 q)ˣ) : UqSl2 q)) := by
+    rw [mul_assoc, Units.mul_inv_cancel_left]
+  rw [hconj, h, mul_smul_comm, mul_neg, neg_mul]
+
 end TauCeti.UqSl2

@@ -140,18 +140,6 @@ theorem f_pow_mul_kUnit_zpow (a : ℕ) (b : ℤ) :
         simp only [smul_mul_assoc, smul_smul, mul_assoc,
           ← zpow_add₀ (Fact.out : q ≠ 0)]
 
-/-- Commuting `E` past an integer power of `K` multiplies by `q ^ (-2b)`. -/
-theorem e_mul_kUnit_zpow (b : ℤ) :
-    e q * ((kUnit q ^ b : (UqSl2 q)ˣ) : UqSl2 q) =
-      q ^ (-2 * b) • (((kUnit q ^ b : (UqSl2 q)ˣ) : UqSl2 q) * e q) := by
-  have h := kUnit_zpow_mul_e_mul_inv (q := q) (-b)
-  rw [zpow_neg, inv_inv] at h
-  have hconj : e q * ((kUnit q ^ b : (UqSl2 q)ˣ) : UqSl2 q) =
-      ((kUnit q ^ b : (UqSl2 q)ˣ) : UqSl2 q) *
-        (((kUnit q ^ b)⁻¹ : (UqSl2 q)ˣ) * e q * ((kUnit q ^ b : (UqSl2 q)ˣ) : UqSl2 q)) := by
-    rw [mul_assoc, Units.mul_inv_cancel_left]
-  rw [hconj, h, mul_smul_comm, mul_neg, neg_mul]
-
 /-- The reindexing from the nested Ore-extension exponents to PBW exponents `(a, b, c)`. -/
 private def pbwIndexEquiv : ((ℤ × ℕ) × ℕ) ≃ ℕ × ℤ × ℕ where
   toFun := fun ⟨⟨b, a⟩, c⟩ => (a, b, c)
