@@ -35,6 +35,9 @@ of chain rules for Sobolev functions.
 
 ## Main declarations
 
+* `expNegInvGlue.lt_one`: `expNegInvGlue x < 1`.
+* `expNegInvGlue.hasDerivAt`: the derivative of `expNegInvGlue` at `x` is
+  `x⁻² expNegInvGlue x`.
 * `Real.smoothTransition.deriv_of_neg`: `deriv Real.smoothTransition x = 0` for `x < 0`.
 * `Real.smoothTransition.deriv_of_one_lt`: `deriv Real.smoothTransition x = 0` for `1 < x`.
 * `Real.smoothTransition.hasCompactSupport_deriv`: the derivative is compactly supported.
@@ -55,6 +58,22 @@ noncomputable section
 
 open Filter Set MeasureTheory
 open scoped ContDiff NNReal Topology
+
+namespace expNegInvGlue
+
+/-- The function `expNegInvGlue` is less than `1` everywhere. -/
+theorem lt_one (x : ℝ) : expNegInvGlue x < 1 := by
+  rcases le_or_gt x 0 with hx | hx
+  · simp [zero_of_nonpos hx]
+  · simp only [expNegInvGlue, hx.not_ge, ↓reduceIte]
+    exact Real.exp_lt_one_iff.2 (neg_neg_of_pos (inv_pos.2 hx))
+
+/-- The derivative of `expNegInvGlue` at `x` is `x⁻² expNegInvGlue x`, also for `x ≤ 0`, where
+both sides vanish. -/
+theorem hasDerivAt (x : ℝ) : HasDerivAt expNegInvGlue (x⁻¹ ^ 2 * expNegInvGlue x) x := by
+  simpa using hasDerivAt_polynomial_eval_inv_mul 1 x
+
+end expNegInvGlue
 
 namespace Real.smoothTransition
 

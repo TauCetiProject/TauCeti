@@ -16,7 +16,8 @@ The Hasse derivative `∂^j` lowers the weight of every monomial by the weight o
 `[X^c] ∂^j φ` is a multiple of `[X^(c + j)] φ`, a polynomial `φ` that is weighted homogeneous of
 weight `m` has `∂^j φ` weighted homogeneous of weight `m - weight w j`. When the weights are
 canonically ordered (for instance natural numbers), a nonzero derivative `∂^j φ ≠ 0` forces
-`weight w j ≤ m`.
+`weight w j ≤ m`. The residual-weight formula also applies to ordered additive groups, allowing
+negative weights.
 
 With the indicator weight of a block `b` of variables `X_{b,l}`, weighted homogeneity of weight
 `d` is homogeneity of degree `d` in the variables of block `b`. For such a polynomial, a nonzero
@@ -46,11 +47,12 @@ public section
 
 namespace MvPolynomial
 
-variable {R σ M : Type*} [CommSemiring R]
+variable {R σ M : Type*} [CommSemiring R] [AddCommMonoid M] {w : σ → M}
+  {φ : MvPolynomial σ R} {m : M}
 
 section AddCancel
 
-variable [AddCommMonoid M] [IsRightCancelAdd M] {w : σ → M} {φ : MvPolynomial σ R} {m : M}
+variable [IsRightCancelAdd M]
 
 /-- If `φ` is weighted homogeneous of weight `m` and `n + weight w j = m`, then the Hasse
 derivative `∂^j φ` is weighted homogeneous of weight `n`. -/
@@ -67,8 +69,7 @@ end AddCancel
 
 section CanonicallyOrdered
 
-variable [AddCommMonoid M] [PartialOrder M] [CanonicallyOrderedAdd M] {w : σ → M}
-  {φ : MvPolynomial σ R} {m : M}
+variable [LE M] [CanonicallyOrderedAdd M]
 
 /-- A nonzero Hasse derivative `∂^j φ` of a weighted homogeneous polynomial of weight `m` has
 order of weight at most `m`. -/
@@ -80,17 +81,23 @@ theorem IsWeightedHomogeneous.weight_le_of_hasseDeriv_ne_zero
   rw [← hφ (right_ne_zero_of_mul hc), map_add]
   exact le_add_self
 
+end CanonicallyOrdered
+
+section OrderedSub
+
+variable [PartialOrder M] [Sub M] [OrderedSub M] [AddLeftReflectLE M]
+
 /-- The Hasse derivative `∂^j φ` of a weighted homogeneous polynomial of weight `m` is weighted
 homogeneous of the residual weight `m - weight w j`. -/
-theorem IsWeightedHomogeneous.hasseDeriv_tsub [Sub M] [OrderedSub M] [IsRightCancelAdd M]
+theorem IsWeightedHomogeneous.hasseDeriv_tsub
     (hφ : φ.IsWeightedHomogeneous w m) (j : σ →₀ ℕ) :
     (MvPolynomial.hasseDeriv j φ).IsWeightedHomogeneous w (m - Finsupp.weight w j) := by
-  by_cases hj : MvPolynomial.hasseDeriv j φ = 0
-  · rw [hj]
-    exact isWeightedHomogeneous_zero R w _
-  · exact hφ.hasseDeriv j (tsub_add_cancel_of_le (hφ.weight_le_of_hasseDeriv_ne_zero hj))
+  intro c hc
+  rw [hasseDeriv_coeff] at hc
+  apply eq_tsub_of_add_eq
+  simpa only [map_add] using hφ (right_ne_zero_of_mul hc)
 
-end CanonicallyOrdered
+end OrderedSub
 
 section Block
 

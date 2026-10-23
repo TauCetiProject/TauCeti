@@ -370,15 +370,11 @@ theorem isSimpleModule (hq : IsGenericQuantumParameter q) :
 
 /-- At a generic parameter, a `UqSl2 q`-module map out of `L_m^ε` is determined by its value at
 the highest vector `v₀`. -/
-theorem hom_ext (hq : IsGenericQuantumParameter q) {V : Type*} [AddCommGroup V]
+theorem hom_ext (hq : IsGenericQuantumParameter q) {V : Type*} [AddCommMonoid V]
     [Module (UqSl2 q) V] {φ ψ : LadderModule q m ε →ₗ[UqSl2 q] V}
     (h : φ (vec q m ε 0) = ψ (vec q m ε 0)) : φ = ψ := by
-  refine LinearMap.ext fun x => ?_
-  have hx : x ∈ Submodule.span (UqSl2 q) {vec q m ε 0} := by
-    rw [span_singleton_eq_top hq (by simp)]
-    exact Submodule.mem_top
-  obtain ⟨a, rfl⟩ := Submodule.mem_span_singleton.mp hx
-  rw [map_smul, map_smul, h]
+  refine LinearMap.ext_on (span_singleton_eq_top hq (x := vec q m ε 0) (by simp)) ?_
+  simpa only [Set.eqOn_singleton] using h
 
 /-! ### Universal property -/
 
@@ -428,11 +424,8 @@ include hq hv he in
 private theorem e_smul_string (j : ℕ) :
     e q • string q v (j + 1) = (ε * quantumInteger q (m - j)) • string q v j := by
   have hq0 := hq.ne_zero
-  have hμ : (ε * q ^ m : ℂ) ≠ 0 := mul_ne_zero (by simp) (pow_ne_zero _ hq0)
   have hk : k q • v = (ε * q ^ m : ℂ) • v := mem_weightSpace_iff.mp hv
-  have hkInv : kInv q • v = (ε * q ^ m : ℂ)⁻¹ • v := by
-    rw [← inv_smul_smul₀ hμ (kInv q • v), smul_comm _ (kInv q), ← hk, ← mul_smul, kInv_mul_k,
-      one_smul]
+  have hkInv := kInv_smul_of_mem_weightSpace hv
   -- Apply the commutator formula to `v`; only its `K`, `K⁻¹` term survives.
   have h := congrArg (· • v) (e_mul_f_pow hq.sub_inv_ne_zero (j + 1))
   simp only [add_smul, mul_smul, he, smul_zero, zero_add, smul_assoc, sub_smul, hk, hkInv,
