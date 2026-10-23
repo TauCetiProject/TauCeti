@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Algebra.Bilinear
 public import Mathlib.Algebra.Algebra.Subalgebra.Basic
+public import Mathlib.Algebra.Lie.AdjointAction.Basic
 public import Mathlib.Algebra.Lie.OfAssociative
 public import Mathlib.Data.Nat.Choose.Sum
 
@@ -23,7 +24,8 @@ difference of the commuting endomorphisms `LinearMap.mulLeft R a` and `LinearMap
 `n`-fold iterated commutator is their binomial expansion: a sum of the products
 `a ^ m * b * (-a) ^ (n - m)`, with the sign absorbed into `(-a) ^ (n - m)` rather than carried as a
 separate `(-1) ^ k`.  Alongside it, `ad_eq_zero_iff_mem_center` records that the adjoint action of
-`a` vanishes exactly when `a` is central.
+`a` vanishes exactly when `a` is central, so shifting `a` by a scalar does not change `ad R A a`;
+in particular a scalar plus a nilpotent element has nilpotent adjoint action.
 
 Over an algebra of exponential characteristic `p` the expansion collapses at `n = p ^ e`, which is
 the subject of `TauCeti.Algebra.Lie.AdjointAction.Frobenius`.
@@ -33,6 +35,8 @@ the subject of `TauCeti.Algebra.Lie.AdjointAction.Frobenius`.
 * `TauCeti.LieAlgebra.ad_pow_eq_sum` and `TauCeti.LieAlgebra.ad_pow_apply`: the
   iterated-commutator expansion of `ad R A a ^ n`, at operator level and evaluated.
 * `TauCeti.LieAlgebra.ad_eq_zero_iff_mem_center`: `ad R A a` vanishes exactly on the centre.
+* `TauCeti.LieAlgebra.isNilpotent_ad_of_isNilpotent_sub_algebraMap`: a scalar plus a nilpotent
+  element has nilpotent adjoint action.
 
 ## References
 
@@ -85,5 +89,13 @@ theorem ad_eq_zero_iff_mem_center (a : A) :
   rw [LinearMap.ext_iff, Subalgebra.mem_center_iff]
   refine forall_congr' fun b ↦ ?_
   rw [LieAlgebra.ad_apply, Ring.lie_def, LinearMap.zero_apply, sub_eq_zero, eq_comm]
+
+/-- Shifting by a scalar does not change the adjoint action, so a scalar plus a nilpotent element
+of an associative algebra has nilpotent adjoint action. -/
+theorem isNilpotent_ad_of_isNilpotent_sub_algebraMap {a : A} {c : R}
+    (h : IsNilpotent (a - algebraMap R A c)) : IsNilpotent (LieAlgebra.ad R A a) := by
+  have hc : LieAlgebra.ad R A (algebraMap R A c) = 0 :=
+    (ad_eq_zero_iff_mem_center _).mpr (Subalgebra.algebraMap_mem _ c)
+  simpa [hc] using LieAlgebra.ad_nilpotent_of_nilpotent (R := R) h
 
 end TauCeti.LieAlgebra

@@ -12,8 +12,9 @@ import TauCeti.Algebra.Lie.AdjointAction.Basic
 /-!
 # Ad-nilpotent endomorphisms
 
-The adjoint action of an associative algebra does not see its centre: shifting `a` by a scalar
-does not change `ad a`. So the adjoint action of a scalar plus a nilpotent element is nilpotent.
+The adjoint action of an associative algebra does not see its centre, so the adjoint action of a
+scalar plus a nilpotent element is nilpotent
+(`TauCeti.LieAlgebra.isNilpotent_ad_of_isNilpotent_sub_algebraMap`, over any commutative ring).
 For the endomorphisms of a finite-dimensional vector space over a perfect field this is the only
 way `ad f` can be nilpotent: the semisimple part `s` of the Jordan–Chevalley decomposition
 `f = n + s` has a semisimple adjoint action, which is also nilpotent since it is `ad f - ad n`.
@@ -30,8 +31,6 @@ The perfectness hypothesis cannot be dropped: if `K` has characteristic `p` and 
 
 ## Main statements
 
-* `TauCeti.LieAlgebra.isNilpotent_ad_of_isNilpotent_sub_algebraMap`: over any commutative ring,
-  a scalar plus a nilpotent element has nilpotent adjoint action.
 * `TauCeti.LieAlgebra.isNilpotent_ad_iff_exists_isNilpotent_sub_algebraMap`: over a perfect field,
   an endomorphism of a finite-dimensional space is ad-nilpotent exactly when it is a scalar plus a
   nilpotent endomorphism.
@@ -46,15 +45,6 @@ public section
 namespace TauCeti.LieAlgebra
 
 attribute [local instance 100] LieRing.ofAssociativeRing
-
-/-- Shifting by a scalar does not change the adjoint action, so a scalar plus a nilpotent element
-of an associative algebra has nilpotent adjoint action. -/
-theorem isNilpotent_ad_of_isNilpotent_sub_algebraMap {R A : Type*} [CommRing R] [Ring A]
-    [Algebra R A] {a : A} {c : R} (h : IsNilpotent (a - algebraMap R A c)) :
-    IsNilpotent (LieAlgebra.ad R A a) := by
-  have hc : LieAlgebra.ad R A (algebraMap R A c) = 0 :=
-    (ad_eq_zero_iff_mem_center _).mpr (Subalgebra.algebraMap_mem _ c)
-  simpa [hc] using LieAlgebra.ad_nilpotent_of_nilpotent (R := R) h
 
 variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
 
