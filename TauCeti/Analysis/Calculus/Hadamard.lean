@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.TaylorIntegral
 public import TauCeti.Analysis.Calculus.ParametricIntegral
+import TauCeti.MeasureTheory.Constructions.UnitInterval
 
 /-!
 # Smooth Hadamard factorization
@@ -21,7 +22,7 @@ public section
 noncomputable section
 
 open MeasureTheory
-open scoped ContDiff
+open scoped ContDiff unitInterval
 
 universe u v
 
@@ -44,19 +45,16 @@ weight is interval integrable. -/
 theorem ContDiff.contDiff_segmentAverage {n : ℕ∞} {w : ℝ → ℝ} {g : E → F}
     (hg : ContDiff ℝ n g) (hw : IntervalIntegrable w volume 0 1) (x : E) :
     ContDiff ℝ n (segmentAverage w g x) := by
-  rw [segmentAverage_eq_integral_Icc]
   have hwi : IntegrableOn w (Set.Icc (0 : ℝ) 1) :=
     (intervalIntegrable_iff_integrableOn_Icc_of_le zero_le_one).mp hw
-  have hi := TauCeti.contDiffOn_integral_smul_of_contDiffOn
+  rw [← contDiffOn_univ]
+  refine (TauCeti.contDiffOn_integral_smul_of_contDiffOn (μ := (volume : Measure I))
     ((integrableOn_iff_comap_subtypeVal measurableSet_Icc).mp hwi)
-    (continuous_subtype_val : Continuous (Subtype.val : Set.Icc (0 : ℝ) 1 → ℝ))
-    isOpen_univ
+    continuous_subtype_val isOpen_univ
     ((hg.comp (by fun_prop : ContDiff ℝ n (fun p : E × ℝ ↦ x + p.2 • p.1))).contDiffOn)
-    isOpen_univ (fun _ _ _ ↦ Set.mem_univ _)
-  rw [contDiffOn_univ] at hi
-  convert hi using 1
-  funext v
-  exact (integral_subtype_comap measurableSet_Icc (fun t ↦ w t • g (x + t • v))).symm
+    isOpen_univ (fun _ _ _ ↦ Set.mem_univ _)).congr fun v _ ↦ ?_
+  rw [segmentAverage, TauCeti.intervalIntegral_eq_integral_unitInterval]
+  rfl
 
 /-- A continuous linear map commutes with a weighted segment average. -/
 theorem ContinuousLinearMap.segmentAverage_apply
