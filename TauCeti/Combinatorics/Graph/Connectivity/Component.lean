@@ -321,6 +321,13 @@ theorem ConnectedComponent.eq_of_mem_of_mem {C D : G.ConnectedComponent} {x : α
     (hxC : x ∈ V(C.1)) (hxD : x ∈ V(D.1)) : C = D :=
   Subtype.ext (C.property.eq_of_mem_of_mem D.property hxC hxD)
 
+/-- Two actual vertices have the same simple component exactly when they are reachable from each
+other. -/
+theorem toSimpleGraph_connectedComponentMk_eq_iff {z w : V(G)} :
+    G.toSimpleGraph.connectedComponentMk z = G.toSimpleGraph.connectedComponentMk w ↔
+      G.Reachable z w := by
+  rw [SimpleGraph.ConnectedComponent.eq, toSimpleGraph_reachable_iff]
+
 /-- The connected-component subgraph containing an actual vertex. -/
 def connectedComponentOf (G : Graph α β) (x : α) (hx : x ∈ V(G)) : G.ConnectedComponent :=
   ConnectedComponent.ofSimple (G.toSimpleGraph.connectedComponentMk ⟨x, hx⟩)
@@ -472,8 +479,25 @@ component of `w` in `G` exactly when `w` is reachable from `z` in `G`. -/
 theorem map_toSimpleGraphHomOfLE_connectedComponentMk_eq_iff (hHG : H ≤ G) {z : V(H)}
     {w : V(G)} : (H.toSimpleGraph.connectedComponentMk z).map (toSimpleGraphHomOfLE hHG) =
       G.toSimpleGraph.connectedComponentMk w ↔ G.Reachable z w := by
-  rw [SimpleGraph.ConnectedComponent.map_mk, SimpleGraph.ConnectedComponent.eq,
-    toSimpleGraph_reachable_iff, coe_toSimpleGraphHomOfLE_apply]
+  rw [SimpleGraph.ConnectedComponent.map_mk, toSimpleGraph_connectedComponentMk_eq_iff,
+    coe_toSimpleGraphHomOfLE_apply]
+
+/-- Along a subgraph inclusion `H ≤ G`, the simple component in `H` of an actual vertex `z` of `H`
+maps to the simple component of `z` in `G`. -/
+theorem map_toSimpleGraphHomOfLE_connectedComponentMk (hHG : H ≤ G) {z : V(G)}
+    (hz : (z : α) ∈ V(H)) :
+    (H.toSimpleGraph.connectedComponentMk ⟨z, hz⟩).map (toSimpleGraphHomOfLE hHG) =
+      G.toSimpleGraph.connectedComponentMk z :=
+  (map_toSimpleGraphHomOfLE_connectedComponentMk_eq_iff hHG).mpr (Reachable.refl z.2)
+
+/-- Along a subgraph inclusion `H ≤ G`, the simple components in `H` of `z` and `w` have the same
+image exactly when `w` is reachable from `z` in `G`. -/
+theorem map_toSimpleGraphHomOfLE_connectedComponentMk_eq_map_iff (hHG : H ≤ G) {z w : V(H)} :
+    (H.toSimpleGraph.connectedComponentMk z).map (toSimpleGraphHomOfLE hHG) =
+      (H.toSimpleGraph.connectedComponentMk w).map (toSimpleGraphHomOfLE hHG) ↔
+        G.Reachable z w := by
+  rw [SimpleGraph.ConnectedComponent.map_mk _ w,
+    map_toSimpleGraphHomOfLE_connectedComponentMk_eq_iff, coe_toSimpleGraphHomOfLE_apply]
 
 /-! ### Basic examples -/
 

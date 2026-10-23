@@ -118,35 +118,11 @@ theorem IsLink.not_isBridge_of_isLink_of_ne (he : G.IsLink e x y) (hf : G.IsLink
 
 /-! ### Bridges and connected components -/
 
-/-- After deleting an edge joining `x` and `y`, every vertex reachable from `x` remains
-reachable from `x` or from `y`. -/
-theorem IsLink.reachable_iff_reachable_deleteEdges_or (h : G.IsLink e x y) :
-    G.Reachable x u ↔ (G.deleteEdges {e}).Reachable x u ∨ (G.deleteEdges {e}).Reachable y u := by
-  refine ⟨fun hu ↦ ?_, fun hu ↦ ?_⟩
-  · obtain ⟨-, ⟨p⟩⟩ := reachable_def.mp hu.symm
-    clear hu
-    suffices ∀ {v z} (_ : G.Walk v z), z = x → (G.deleteEdges {e}).Reachable v x ∨
-        (G.deleteEdges {e}).Reachable v y from (this p rfl).imp Reachable.symm Reachable.symm
-    intro v z q hz
-    induction q with
-    | nil => subst hz; exact .inl (Reachable.refl (by simpa using h.left_mem))
-    | @cons v w _ f hf q ih =>
-      by_cases hfe : f = e
-      · subst hfe
-        obtain rfl | rfl := hf.left_eq_or_eq h
-        · exact .inl (Reachable.refl (by simpa using h.left_mem))
-        · exact .inr (Reachable.refl (by simpa using h.right_mem))
-      · have hvw : (G.deleteEdges {e}).Reachable v w :=
-          IsLink.reachable (e := f) (by simpa [deleteEdges_isLink] using ⟨hf, hfe⟩)
-        exact (ih hz).imp hvw.trans hvw.trans
-  · rcases hu with hu | hu
-    · exact hu.mono deleteEdges_le
-    · exact h.reachable.trans (hu.mono deleteEdges_le)
-
-/-- If `v` is reachable from `u`, then it remains reachable after deleting an edge joining `x`
-and `y`, unless `x` is reachable from `u`. -/
-theorem IsLink.reachable_deleteEdges_or_reachable (h : G.IsLink e x y)
-    (huv : G.Reachable u v) : (G.deleteEdges {e}).Reachable u v ∨ G.Reachable u x := by
+/-- After deleting an edge joining `x` and `y`, a vertex `v` reachable from `u` remains reachable
+from `u`, unless `x` or `y` is reachable from `u` in the deletion. -/
+theorem IsLink.reachable_deleteEdges_or_reachable_deleteEdges_or (h : G.IsLink e x y)
+    (huv : G.Reachable u v) : (G.deleteEdges {e}).Reachable u v ∨
+      (G.deleteEdges {e}).Reachable u x ∨ (G.deleteEdges {e}).Reachable u y := by
   obtain ⟨hu, ⟨p⟩⟩ := reachable_def.mp huv
   clear huv
   induction p with
@@ -155,11 +131,30 @@ theorem IsLink.reachable_deleteEdges_or_reachable (h : G.IsLink e x y)
     by_cases hfe : f = e
     · subst hfe
       obtain rfl | rfl := hf.left_eq_or_eq h
-      · exact .inr (Reachable.refl hu)
-      · exact .inr h.reachable.symm
+      · exact .inr (.inl (Reachable.refl (by simpa using hu)))
+      · exact .inr (.inr (Reachable.refl (by simpa using hu)))
     · have huw : (G.deleteEdges {e}).Reachable u w :=
         IsLink.reachable (e := f) (by simpa [deleteEdges_isLink] using ⟨hf, hfe⟩)
-      exact (ih hf.right_mem).imp huw.trans fun hw ↦ (huw.mono deleteEdges_le).trans hw
+      exact (ih hf.right_mem).imp huw.trans (Or.imp huw.trans huw.trans)
+
+/-- After deleting an edge joining `x` and `y`, every vertex reachable from `x` remains
+reachable from `x` or from `y`. -/
+theorem IsLink.reachable_iff_reachable_deleteEdges_or (h : G.IsLink e x y) :
+    G.Reachable x u ↔ (G.deleteEdges {e}).Reachable x u ∨ (G.deleteEdges {e}).Reachable y u := by
+  refine ⟨fun hu ↦ ?_, fun hu ↦ ?_⟩
+  · rcases h.reachable_deleteEdges_or_reachable_deleteEdges_or hu.symm with hux | hux | huy
+    exacts [.inl hux.symm, .inl hux.symm, .inr huy.symm]
+  · rcases hu with hu | hu
+    · exact hu.mono deleteEdges_le
+    · exact h.reachable.trans (hu.mono deleteEdges_le)
+
+/-- If `v` is reachable from `u`, then it remains reachable after deleting an edge joining `x`
+and `y`, unless `x` is reachable from `u`. -/
+theorem IsLink.reachable_deleteEdges_or_reachable (h : G.IsLink e x y)
+    (huv : G.Reachable u v) : (G.deleteEdges {e}).Reachable u v ∨ G.Reachable u x :=
+  (h.reachable_deleteEdges_or_reachable_deleteEdges_or huv).imp_right fun hu ↦
+    hu.elim (Reachable.mono deleteEdges_le) fun huy ↦
+      (huy.mono deleteEdges_le).trans h.reachable.symm
 
 /-- Deleting an edge joining `x` and `y` does not change reachability from a vertex `u` from
 which `x` is unreachable: the components not containing the ends of the edge are unaffected. -/
@@ -195,14 +190,10 @@ theorem componentCount_deleteEdges_of_not_isBridge (he : ¬ G.IsBridge e) :
     (SimpleGraph.ConnectedComponent.map (toSimpleGraphHomOfLE hle)) ⟨fun C D hCD ↦ ?_, fun C ↦ ?_⟩)
   · induction C using SimpleGraph.ConnectedComponent.ind with | h z => ?_
     induction D using SimpleGraph.ConnectedComponent.ind with | h w => ?_
-    have hzw : G.Reachable z w := by
-      simpa using (map_toSimpleGraphHomOfLE_connectedComponentMk_eq_iff hle).mp
-        (hCD.trans (SimpleGraph.ConnectedComponent.map_mk _ _))
-    rw [SimpleGraph.ConnectedComponent.eq, toSimpleGraph_reachable_iff]
-    exact (reachable_deleteEdges_iff_of_not_isBridge he).mpr hzw
+    rw [toSimpleGraph_connectedComponentMk_eq_iff, reachable_deleteEdges_iff_of_not_isBridge he]
+    exact (map_toSimpleGraphHomOfLE_connectedComponentMk_eq_map_iff hle).mp hCD
   · induction C using SimpleGraph.ConnectedComponent.ind with | h z => ?_
-    exact ⟨_, (map_toSimpleGraphHomOfLE_connectedComponentMk_eq_iff hle (z := ⟨z, by simp⟩)).mpr
-      (Reachable.refl z.2)⟩
+    exact ⟨_, map_toSimpleGraphHomOfLE_connectedComponentMk hle (by simp)⟩
 
 /-- Deleting a bridge increases the number of connected components by exactly one: the
 component containing its ends splits into the components of its two ends, and every other
@@ -214,13 +205,10 @@ theorem IsBridge.componentCount_deleteEdges [Finite G.ConnectedComponent] (he : 
   have hle : G.deleteEdges {e} ≤ G := deleteEdges_le
   let mk := (G.deleteEdges {e}).toSimpleGraph.connectedComponentMk
   let A := mk ⟨y, by simpa using h.right_mem⟩
-  have hmk : ∀ {z w}, mk z = mk w ↔ (G.deleteEdges {e}).Reachable z w := by
-    intro z w
-    rw [SimpleGraph.ConnectedComponent.eq, toSimpleGraph_reachable_iff]
   -- A vertex reachable from `x` but outside the component of `y` stays reachable from `x`.
   have hside : ∀ {z}, mk z ≠ A → G.Reachable x z → (G.deleteEdges {e}).Reachable x z :=
     fun hz hxz ↦ (h.reachable_iff_reachable_deleteEdges_or.mp hxz).resolve_right fun hyz ↦
-      hz (hmk.mpr hyz.symm)
+      hz (toSimpleGraph_connectedComponentMk_eq_iff.mpr hyz.symm)
   -- Away from the component of `y` in the deletion, the induced map of components is bijective.
   let ψ : {C // C ≠ A} → G.toSimpleGraph.ConnectedComponent :=
     fun C ↦ SimpleGraph.ConnectedComponent.map (toSimpleGraphHomOfLE hle) C
@@ -228,20 +216,20 @@ theorem IsBridge.componentCount_deleteEdges [Finite G.ConnectedComponent] (he : 
     refine ⟨fun ⟨C, hC⟩ ⟨D, hD⟩ hCD ↦ ?_, fun C ↦ ?_⟩
     · induction C using SimpleGraph.ConnectedComponent.ind with | h z => ?_
       induction D using SimpleGraph.ConnectedComponent.ind with | h w => ?_
-      have hzw : G.Reachable z w := by
-        simpa using (map_toSimpleGraphHomOfLE_connectedComponentMk_eq_iff hle).mp
-          (hCD.trans (SimpleGraph.ConnectedComponent.map_mk _ _))
+      have hzw : G.Reachable z w :=
+        (map_toSimpleGraphHomOfLE_connectedComponentMk_eq_map_iff hle).mp hCD
       rw [Subtype.mk.injEq]
-      refine hmk.mpr ((h.reachable_deleteEdges_or_reachable hzw).elim id fun hzx ↦ ?_)
+      refine toSimpleGraph_connectedComponentMk_eq_iff.mpr
+        ((h.reachable_deleteEdges_or_reachable hzw).elim id fun hzx ↦ ?_)
       exact (hside hC hzx.symm).symm.trans (hside hD (hzx.symm.trans hzw))
     · induction C using SimpleGraph.ConnectedComponent.ind with | h z => ?_
       by_cases hz : mk ⟨z, by simp⟩ = A
       · refine ⟨⟨mk ⟨x, by simpa using h.left_mem⟩,
-          fun hxA ↦ he.not_reachable_deleteEdges h (hmk.mp hxA)⟩,
+          fun hxA ↦ he.not_reachable_deleteEdges h
+            (toSimpleGraph_connectedComponentMk_eq_iff.mp hxA)⟩,
           (map_toSimpleGraphHomOfLE_connectedComponentMk_eq_iff hle).mpr ?_⟩
-        exact h.reachable.trans ((hmk.mp hz).symm.mono hle)
-      · exact ⟨⟨_, hz⟩, (map_toSimpleGraphHomOfLE_connectedComponentMk_eq_iff hle).mpr
-          (Reachable.refl z.2)⟩
+        exact h.reachable.trans ((toSimpleGraph_connectedComponentMk_eq_iff.mp hz).symm.mono hle)
+      · exact ⟨⟨_, hz⟩, map_toSimpleGraphHomOfLE_connectedComponentMk hle _⟩
   have : Finite G.toSimpleGraph.ConnectedComponent := Finite.of_equiv _ G.connectedComponentEquiv
   have : Finite {C // C ≠ A} := Finite.of_equiv _ (Equiv.ofBijective ψ hψ).symm
   rw [componentCount_eq_natCard_toSimpleGraph, componentCount_eq_natCard_toSimpleGraph,
