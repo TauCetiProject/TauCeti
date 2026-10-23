@@ -61,8 +61,9 @@ theorem chartDerivativeSeminorm_apply (x : M)
     (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯) :
     chartDerivativeSeminorm x K m hm f = ‖(chartIteratedFDeriv f x m hm).restrict K‖ := by
   rw [chartDerivativeSeminorm, Seminorm.comp_apply]
-  simp only [coe_normSeminorm, LinearMap.coe_mk, AddHom.coe_mk,
-    chartIteratedFDerivLinearMap_apply]
+  simp only [coe_normSeminorm, LinearMap.coe_mk, AddHom.coe_mk]
+  exact congrArg (fun j : C((extChartAt I x).target, E [×m]→L[𝕜] F) ↦ ‖j.restrict K‖)
+    (chartIteratedFDerivLinearMap_apply x m hm f)
 
 /-- A nonnegative bound on the derivative seminorm is a pointwise bound on the compact set. -/
 theorem chartDerivativeSeminorm_le_iff (x : M)
@@ -178,8 +179,10 @@ theorem mem_ball_chartCkSeminorm_iff (x : M)
   have hsub (m : ℕ) (hm : m ≤ n) :
       chartIteratedFDeriv (g - f) x m hm =
         chartIteratedFDeriv g x m hm - chartIteratedFDeriv f x m hm := by
-    simpa only [chartIteratedFDerivLinearMap_apply] using
-      map_sub (chartIteratedFDerivLinearMap (F := F) x m hm) g f
+    exact (chartIteratedFDerivLinearMap_apply x m hm (g - f)).symm.trans
+      ((map_sub (chartIteratedFDerivLinearMap (F := F) x m hm) g f).trans
+        (congrArg₂ (· - ·) (chartIteratedFDerivLinearMap_apply x m hm g)
+          (chartIteratedFDerivLinearMap_apply x m hm f)))
   simp only [hsub, ContinuousMap.sub_apply]
 
 /-- A ball of a compact coordinate derivative seminorm is weak Whitney open. -/
@@ -203,9 +206,14 @@ theorem isOpen_ball_chartDerivativeSeminorm (x : M)
         (chartIteratedFDeriv f x m hm).restrict K := by
     apply ContinuousMap.ext
     intro z
-    simpa only [ContinuousMap.restrict_apply, ContinuousMap.sub_apply,
-      chartIteratedFDerivLinearMap_apply] using DFunLike.congr_fun
-        (map_sub (chartIteratedFDerivLinearMap (F := F) x m hm) g f) z.1
+    have h : chartIteratedFDeriv (g - f) x m hm =
+        chartIteratedFDeriv g x m hm - chartIteratedFDeriv f x m hm :=
+      (chartIteratedFDerivLinearMap_apply x m hm (g - f)).symm.trans
+        ((map_sub (chartIteratedFDerivLinearMap (F := F) x m hm) g f).trans
+          (congrArg₂ (· - ·) (chartIteratedFDerivLinearMap_apply x m hm g)
+            (chartIteratedFDerivLinearMap_apply x m hm f)))
+    simpa only [ContinuousMap.restrict_apply, ContinuousMap.sub_apply] using
+      DFunLike.congr_fun h z.1
   rw [hsub]
 
 /-- A compact chart `C^k` ball about a map is open in the weak Whitney topology. -/

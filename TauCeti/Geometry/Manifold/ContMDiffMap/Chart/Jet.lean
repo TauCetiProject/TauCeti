@@ -137,10 +137,13 @@ noncomputable def chartIteratedFDerivLinearMap (x : M) (m : ℕ) (hm : m ≤ n) 
       (uniqueDiffOn_extChartAt_target x) z.2)
 
 /-- The linear coordinate-derivative map agrees with the existing chart jet. -/
+-- Spell out the chart target in the coercion type, as for `chartIteratedFDeriv_apply`.
 @[simp]
 theorem chartIteratedFDerivLinearMap_apply (x : M) (m : ℕ) (hm : m ≤ n)
     (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯) :
-    chartIteratedFDerivLinearMap x m hm f = chartIteratedFDeriv f x m hm :=
+    DFunLike.coe (F := C^n⟮I, M; 𝓘(𝕜, F), F⟯ →ₗ[𝕜]
+      C(↥(I.target ∩ I.symm ⁻¹' (chartAt H x).target), E [×m]→L[𝕜] F))
+      (chartIteratedFDerivLinearMap x m hm) f = chartIteratedFDeriv f x m hm :=
   (rfl)
 
 end ContMDiffMap
