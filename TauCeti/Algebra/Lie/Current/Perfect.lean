@@ -20,10 +20,8 @@ We use Mathlib's `LieAlgebra.ofTwoCocycle` directly. The form `Φ` has Mathlib's
 convention `Res(f dg) Φ(x, y)`; the affine convention with level form `κ` uses `Φ = -κ`.
 No degree derivation is adjoined. Perfectness is expressed by `derivedSeries R L 1 = ⊤`.
 
-The proof distinguishes the split extension: brackets then have zero central coordinate.
-For a nonzero form, subtracting a bracket of constant currents from a bracket of opposite
-modes produces a nonzero central element. Bracketing arbitrary currents with constants
-recovers the entire current summand when the coefficient Lie algebra is perfect.
+The derived-algebra membership lemmas can also be used over commutative rings to study the
+current summand and central form values separately, including the split extension at zero level.
 
 ## References
 
@@ -49,8 +47,7 @@ local notation "Z" => TrivialLieModule R C R
 local notation "c" => twoCocycleOfBilinear R L Φ hΦ hΦs
 local notation "E" => ofTwoCocycle c
 
-/-- Values of the form occur as central elements in the derived algebra, by taking the
-difference of the opposite-mode bracket and the constant-mode bracket. -/
+/-- Values of the form occur as central elements in the derived algebra. -/
 theorem ofProd_form_mem_derivedSeries (x y : L) :
     ofProd c (0, (TrivialLieModule.equiv R C R).symm (Φ x y)) ∈ derivedSeries R E 1 := by
   have h (u v : C) : ⁅ofProd c (u, 0), ofProd c (v, 0)⁆ ∈ derivedSeries R E 1 :=
