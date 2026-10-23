@@ -268,8 +268,9 @@ theorem setLIntegral_enorm_comp_add_sub_le_mul_totalVariationOn
           rw [htrans, ← integral_sub hgh hg₀]
           congr 1 with x
           ring
-  rw [hpair, ← ofReal_norm, Real.norm_eq_abs]
-  exact ofReal_abs_integral_le_ofReal_mul_totalVariationOn ψ hψh
+  rw [hpair, ← ofReal_norm]
+  exact (ENNReal.ofReal_le_ofReal (le_abs_self _)).trans
+    (ofReal_abs_integral_le_ofReal_mul_totalVariationOn ψ hψh)
 
 /-- **The translation estimate on the whole space.** Every locally integrable `u` satisfies
 `∫ |u (x + h) - u x| dx ≤ ‖h‖ |Du|(E)`, finite or infinite. -/
