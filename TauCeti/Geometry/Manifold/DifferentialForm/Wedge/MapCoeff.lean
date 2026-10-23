@@ -98,10 +98,8 @@ theorem mapCoeff_wedgeWith_mapCoeff (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (L
 theorem mapCoeff_wedgeWith_eq_postcomp (L : F₃ →L[ℝ] G) (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (φ : RoughForm I M F₁ k) (ψ : RoughForm I M F₂ l) :
     mapCoeff L (φ.wedgeWith μ ψ) = φ.wedgeWith ((ContinuousLinearMap.postcomp F₂ L).comp μ) ψ := by
-  ext x v
-  rw [mapCoeff_apply, wedgeWith_apply', wedgeWith_apply',
-    ContinuousAlternatingMap.pairedWedge_postcomp L μ μ.continuous₂ (φ x) (ψ x),
-    ContinuousLinearMap.compContinuousAlternatingMap_coe, Function.comp_apply]
+  simpa only [mapCoeff_id] using mapCoeff_wedgeWith μ ((ContinuousLinearMap.postcomp F₂ L).comp μ)
+    (.id ℝ F₁) (.id ℝ F₂) L (fun _ _ ↦ rfl) φ ψ
 
 section RestrictScalars
 
