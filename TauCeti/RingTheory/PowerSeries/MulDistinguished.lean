@@ -83,6 +83,10 @@ theorem isMulDistinguished_iff_isUnit [NormMulClass R] :
     IsMulDistinguished c s g ↔ IsDistinguished c s g ∧ IsUnit (g.coeff s) := by
   rw [isMulDistinguished_iff, isNormMulUnit_iff_isUnit]
 
+/-- The coefficient ring of a multiplicatively distinguished series is nontrivial. -/
+theorem IsMulDistinguished.nontrivial (hg : IsMulDistinguished c s g) : Nontrivial R :=
+  nontrivial_of_ne _ _ hg.coeff_ne_zero
+
 /-- The truncation of a multiplicatively distinguished series just past its distinguished degree
 is again multiplicatively distinguished of that degree. -/
 theorem IsMulDistinguished.trunc (hg : IsMulDistinguished c s g) :
@@ -113,6 +117,12 @@ section NormedRing
 
 variable {R : Type*} [NormedRing R] {c : ℝ} {s : ℕ} {g q : PowerSeries R}
 
+/-- The norm of the coefficient ring of a multiplicatively distinguished series takes the value
+`1` at `1`, since the distinguished coefficient is a nonzero multiplicative unit. -/
+theorem IsMulDistinguished.normOneClass (hg : IsMulDistinguished c s g) : NormOneClass R :=
+  ⟨NormedRing.norm_one_of_norm_mul (norm_ne_zero_iff.mpr hg.coeff_ne_zero)
+    hg.isNormMulUnit_coeff.norm_mul⟩
+
 /-- A monomial whose coefficient is a multiplicative unit is multiplicatively distinguished of
 its degree at a positive radius, over a nontrivial ring. -/
 theorem isMulDistinguished_monomial [Nontrivial R] (hc : 0 < c) {a : R} (ha : IsNormMulUnit a)
@@ -128,9 +138,7 @@ for `X - 1` at the radius `1`. -/
 theorem isMulDistinguished_iff_gaussNorm_eq [NormOneClass R] (hc : 0 < c) {p : Polynomial R}
     (hp : p.IsMonicOfDegree s) :
     IsMulDistinguished c s (p : PowerSeries R) ↔ (p : PowerSeries R).gaussNorm norm c = c ^ s := by
-  have hs : (p : PowerSeries R).coeff s = 1 := by
-    rw [Polynomial.coeff_coe, ← hp.natDegree_eq]
-    exact hp.monic.coeff_natDegree
+  have hs := hp.coeff_coe_self
   refine ⟨fun h ↦ by rw [← h.norm_coeff_mul_pow_eq, hs, norm_one, one_mul], fun h ↦
     ⟨isDistinguished_of_isMonicOfDegree hc hp fun k _ ↦ ?_, by rw [hs]; exact isNormMulUnit_one⟩⟩
   rw [← h, ← Polynomial.coeff_coe]

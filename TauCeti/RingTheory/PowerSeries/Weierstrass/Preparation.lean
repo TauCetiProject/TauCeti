@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.Degree.IsMonicOfDegree
-public import TauCeti.Analysis.Normed.Ring.MulUnit
 public import TauCeti.RingTheory.PowerSeries.TateAlgebra
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.Division
 
@@ -158,8 +157,7 @@ theorem IsMulDistinguished.isNormMulUnit_of_mul_eq [Fact (0 < c)] (hg : IsMulDis
     (hω : IsMulDistinguished c t ω) {e : PowerSeries.IsRestricted.subring (R := R) c}
     (he : IsUnit e) (h : (e : PowerSeries R) * ω = g) : IsNormMulUnit e := by
   have hc : 0 < c := Fact.out
-  have : Nontrivial R := nontrivial_of_ne _ _ hg.coeff_ne_zero
-  have : NormOneClass R := ⟨hg.isNormMulUnit_coeff.norm_one⟩
+  have : NormOneClass R := hg.normOneClass
   -- `‖ω‖ * ‖e * x‖ = ‖g‖ * ‖x‖` for every restricted `x`.
   have key : ∀ x : PowerSeries.IsRestricted.subring (R := R) c,
       ω.gaussNorm norm c * ‖e * x‖ = g.gaussNorm norm c * ‖x‖ := fun x ↦ by
@@ -178,8 +176,8 @@ private theorem IsMulDistinguished.exists_isMonicOfDegree_eq_mul [CompleteSpace 
     (hg : IsMulDistinguished c s g) (hc : 0 < c) (hgr : g.IsRestricted c) :
     ∃ (q : PowerSeries R) (ω : Polynomial R), q.IsRestricted c ∧ ω.IsMonicOfDegree s ∧
       IsMulDistinguished c s (ω : PowerSeries R) ∧ (ω : PowerSeries R) = g * q := by
-  have : Nontrivial R := nontrivial_of_ne _ _ hg.coeff_ne_zero
-  have : NormOneClass R := ⟨hg.isNormMulUnit_coeff.norm_one⟩
+  have : Nontrivial R := hg.nontrivial
+  have : NormOneClass R := hg.normOneClass
   -- Divide `X ^ s` by `g`.
   have hXr : (PowerSeries.X ^ s : PowerSeries R).IsRestricted c := by
     rw [← Polynomial.coe_X, ← Polynomial.coe_pow]
@@ -244,8 +242,7 @@ theorem IsMulDistinguished.exists_isNormMulUnit_isMonicOfDegree_mul_eq [Complete
       IsNormMulUnit e ∧ ω.IsMonicOfDegree s ∧ (ω : PowerSeries R).gaussNorm norm c = c ^ s ∧
       (e : PowerSeries R) * (ω : PowerSeries R) = g := by
   have hc : 0 < c := Fact.out
-  have : Nontrivial R := nontrivial_of_ne _ _ hg.coeff_ne_zero
-  have : NormOneClass R := ⟨hg.isNormMulUnit_coeff.norm_one⟩
+  have : NormOneClass R := hg.normOneClass
   obtain ⟨q, ω, hq, hωm, hωd, hωq⟩ := hg.exists_isMonicOfDegree_eq_mul hc hgr
   -- Divide `g` by `ω`: `g = ω * e + r'`. Then `g = g * (q * e) + r'`, and uniqueness of division
   -- by `g` makes `e` an inverse of `q` and the remainder `r'` zero.
@@ -305,8 +302,7 @@ theorem IsMulDistinguished.existsUnique_isNormMulUnit_isMonicOfDegree_mul_eq [Co
       IsNormMulUnit p.1 ∧ p.2.IsMonicOfDegree s ∧ (p.2 : PowerSeries R).gaussNorm norm c = c ^ s ∧
       (p.1 : PowerSeries R) * (p.2 : PowerSeries R) = g := by
   have hc : 0 < c := Fact.out
-  have : Nontrivial R := nontrivial_of_ne _ _ hg.coeff_ne_zero
-  have : NormOneClass R := ⟨hg.isNormMulUnit_coeff.norm_one⟩
+  have : NormOneClass R := hg.normOneClass
   obtain ⟨e, ω, he, hm, hn, heq⟩ := hg.exists_isNormMulUnit_isMonicOfDegree_mul_eq hgr
   refine ⟨(e, ω), ⟨he, hm, hn, heq⟩, fun p ⟨h1, h2, _, h4⟩ ↦ ?_⟩
   obtain ⟨u1, u2⟩ := ((isMulDistinguished_iff_gaussNorm_eq hc hm).mpr hn).eq_and_eq_of_mul_eq_mul
@@ -379,11 +375,9 @@ theorem IsDistinguished.eq_and_eq_of_mul_eq_mul (hf : IsDistinguished c s f) (hc
     e = e' ∧ ω = ω' := by
   have hωd : IsDistinguished c s (ω : PowerSeries R) :=
     IsDistinguished.of_isUnit_mul (by rw [h]; exact hf) hc he
-  have hωs : (ω : PowerSeries R).coeff s = 1 := by
-    rw [Polynomial.coeff_coe, ← hω.natDegree_eq]
-    exact hω.monic.coeff_natDegree
-  exact (isMulDistinguished_iff_isUnit.mpr ⟨hωd, hωs ▸ isUnit_one⟩).eq_and_eq_of_mul_eq_mul hc hω
-    hω' he' (h.trans h'.symm)
+  have hωd' : IsMulDistinguished c s (ω : PowerSeries R) :=
+    isMulDistinguished_iff_isUnit.mpr ⟨hωd, hω.coeff_coe_self ▸ isUnit_one⟩
+  exact hωd'.eq_and_eq_of_mul_eq_mul hc hω hω' he' (h.trans h'.symm)
 
 /-- **Weierstrass preparation** (Bosch–Güntzer–Remmert §5.2.2, Theorem 1), in its unique-existence
 form: over a complete ultrametric normed commutative ring with multiplicative norm, a restricted

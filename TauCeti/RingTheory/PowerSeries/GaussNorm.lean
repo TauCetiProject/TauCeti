@@ -532,15 +532,18 @@ section SeminormedRing
 
 variable {R : Type*} [SeminormedRing R] {c : ℝ} {s : ℕ} {f : PowerSeries R}
 
+/-- A monic polynomial of degree `s` has coefficient `1` in degree `s` as a power series. -/
+theorem _root_.Polynomial.IsMonicOfDegree.coeff_coe_self {p : Polynomial R}
+    (hp : p.IsMonicOfDegree s) : (p : PowerSeries R).coeff s = 1 := by
+  rw [Polynomial.coeff_coe, ← hp.natDegree_eq, hp.monic.coeff_natDegree]
+
 /-- A monic polynomial of degree `s` whose lower weighted coefficients are at most `c ^ s` is
 distinguished of degree `s` at the radius `c > 0`: its Gauss norm `c ^ s` is attained by the
 leading coefficient, and every later coefficient vanishes. -/
 theorem isDistinguished_of_isMonicOfDegree [NormOneClass R] (hc : 0 < c) {p : Polynomial R}
     (hp : p.IsMonicOfDegree s) (hle : ∀ k < s, ‖p.coeff k‖ * c ^ k ≤ c ^ s) :
     IsDistinguished c s (p : PowerSeries R) := by
-  have hs : p.coeff s = 1 := by
-    rw [← hp.natDegree_eq]
-    exact hp.monic.coeff_natDegree
+  have hs : p.coeff s = 1 := (Polynomial.coeff_coe p s).symm.trans hp.coeff_coe_self
   have hzero (m : ℕ) (hm : s < m) : p.coeff m = 0 :=
     Polynomial.coeff_eq_zero_of_natDegree_lt (hp.natDegree_eq ▸ hm)
   have hnorm : (p : PowerSeries R).gaussNorm norm c = c ^ s := by
