@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.Basic
+public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.BaseChange
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.SymmetricAlgebra
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.GradedMap
 public import Mathlib.CategoryTheory.Endomorphism
@@ -92,10 +92,10 @@ it commutes with the structure morphisms `TauCeti.SymmetricAlgebra.projToSpec`. 
 @[reassoc (attr := simp↓)]
 theorem symmetricAlgebraMapIso_hom_projToSpec (e : M ≃ₗ[R] N) :
     (symmetricAlgebraMapIso R e).hom ≫ projToSpec R M = projToSpec R N := by
-  rw [symmetricAlgebraMapIso_hom, projToSpec_def, projToSpec_def, map_toSpecZero_assoc,
-    ← Spec.map_comp, ← CommRingCat.ofHom_comp]
-  congr 3
-  ext r
+  rw [symmetricAlgebraMapIso_hom, projToSpec_def, projToSpec_def, ← toSpecCoeff_def,
+    ← toSpecCoeff_def, map_toSpecCoeff]
+  intro r
+  apply Subtype.ext
   simp [GradedRingHom.gradedZeroRingHom]
 
 /-- Inverting a linear equivalence inverts its projective isomorphism. -/

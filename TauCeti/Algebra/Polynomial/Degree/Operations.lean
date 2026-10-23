@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.Degree.Operations
+public import Mathlib.Algebra.Polynomial.Degree.SmallDegree
 
 /-!
 # Degrees of polynomial sums and products
@@ -21,6 +22,9 @@ into the coefficient window used for polynomial relations with formal degree bou
 `Polynomial.natDegree_multiset_prod_X_sub_C_le` bounds the degree of a product of `card s` monic
 linear factors by `card s` over any commutative ring, without the nontriviality that Mathlib's
 `Polynomial.natDegree_multiset_prod_X_sub_C_eq_card` needs.
+`Polynomial.natDegree_X_pow_add_C_mul_X_add_C` reads off the degree of the trinomial
+`X ^ n + C a * X + C b` for `2 ≤ n`. `Polynomial.sub_C_ne_zero` records that a nonconstant
+polynomial differs from every constant polynomial.
 -/
 
 public section
@@ -66,5 +70,17 @@ theorem _root_.Polynomial.natDegree_multiset_prod_X_sub_C_le {S : Type*} [CommRi
   | cons a s ih =>
     rw [Multiset.map_cons, Multiset.prod_cons, Multiset.card_cons, add_comm]
     exact natDegree_mul_le.trans (add_le_add (natDegree_X_sub_C_le a) ih)
+
+/-- A nonconstant polynomial differs from every constant polynomial. -/
+theorem _root_.Polynomial.sub_C_ne_zero {S : Type*} [Ring S] {p : S[X]} (hp : 0 < p.natDegree)
+    (a : S) : p - C a ≠ 0 :=
+  ne_zero_of_natDegree_gt (n := 0) (by rwa [natDegree_sub_C])
+
+/-- For `2 ≤ n`, the trinomial `X ^ n + C a * X + C b` has degree `n`. -/
+theorem _root_.Polynomial.natDegree_X_pow_add_C_mul_X_add_C [Nontrivial R] (a b : R) {n : ℕ}
+    (hn : 2 ≤ n) : (X ^ n + C a * X + C b).natDegree = n := by
+  rw [add_assoc, natDegree_add_eq_left_of_degree_lt, natDegree_X_pow]
+  rw [degree_X_pow]
+  exact degree_linear_le.trans_lt (by exact_mod_cast (by omega : 1 < n))
 
 end TauCeti

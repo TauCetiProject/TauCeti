@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import Mathlib.Analysis.InnerProductSpace.Trace
+public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.Geometry.Manifold.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
 public import TauCeti.Analysis.Normed.Module.Trace
@@ -15,6 +16,8 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCiv
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
+import Mathlib.Analysis.SpecialFunctions.Log.Deriv
+import TauCeti.Geometry.Manifold.Riemannian.Gradient.ChainRule
 import TauCeti.Geometry.Manifold.Riemannian.Gradient.NormedSpace
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.VectorSpace
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
@@ -25,8 +28,11 @@ import TauCeti.Geometry.Manifold.VectorField.LieBracket
 This file introduces the pointwise Riemannian divergence as the trace of the Levi–Civita
 covariant derivative, the scalar Hessian obtained by pairing that derivative of the gradient,
 and the Laplace–Beltrami operator with the convention `Δ = div ∘ grad`.  The orthonormal-basis
-trace formula makes the relationship between the Laplacian and the Hessian explicit. On a
-finite-dimensional inner-product space, the operator agrees with Mathlib's flat Laplacian.
+trace formula makes the relationship between the Laplacian and the Hessian explicit. The operator
+laws include the Leibniz rule and the chain rule `Δ (h ∘ f) = h'(f) Δ f + h''(f) |grad f|²` for a
+real function `h`, with its special case `Δ (log f) = Δ f / f - |grad f|² / f²`. On a
+finite-dimensional inner-product space, the operator agrees with Mathlib's
+flat Laplacian.
 
 -/
 
@@ -344,13 +350,10 @@ theorem hessian_add {f g : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f)
   let : IsManifold I ((1 : ℕ∞ω) + 1) M := by
     simpa only [one_add_one_eq_two] using (inferInstance : IsManifold I 2 M)
   simp only [hessian, mgradient_add (hf.mdifferentiable (by simp))
-      (hg.mdifferentiable (by simp)),
+    (hg.mdifferentiable (by simp)),
     (CovariantDerivative.leviCivitaConnection I M).isCovariantDerivativeOnUniv.add
-      ((contMDiff_mgradient (n := 1)
-      (by simpa only [one_add_one_eq_two] using hf)).mdifferentiableAt (by simp))
-      ((contMDiff_mgradient (n := 1)
-      (by simpa only [one_add_one_eq_two] using hg)).mdifferentiableAt
-        (by simp)),
+      (mdifferentiable_mgradient (I := I) hf x)
+      (mdifferentiable_mgradient (I := I) hg x),
     add_apply, inner_add_left]
 
 /-- The Hessian commutes with multiplication of a `C²` function by a real constant. -/
@@ -361,9 +364,7 @@ theorem hessian_smul (c : ℝ) {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f)
     simpa only [one_add_one_eq_two] using (inferInstance : IsManifold I 2 M)
   simp only [hessian, mgradient_smul c (hf.mdifferentiable (by simp)),
     (CovariantDerivative.leviCivitaConnection I M).isCovariantDerivativeOnUniv.smul_const c
-      ((contMDiff_mgradient (n := 1)
-      (by simpa only [one_add_one_eq_two] using hf)).mdifferentiableAt
-        (by simp)),
+      (mdifferentiable_mgradient (I := I) hf x),
     smul_apply, real_inner_smul_left]
 
 /-- The Laplace–Beltrami operator vanishes on constants. -/
@@ -386,10 +387,47 @@ theorem laplaceBeltrami_add {f g : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f)
   simp only [laplaceBeltrami,
     mgradient_add (hf.mdifferentiable (by simp)) (hg.mdifferentiable (by simp))]
   exact divergence_add I _ _ x
-    ((contMDiff_mgradient (n := 1)
-      (by simpa only [one_add_one_eq_two] using hf)).mdifferentiableAt (by simp))
-    ((contMDiff_mgradient (n := 1)
-      (by simpa only [one_add_one_eq_two] using hg)).mdifferentiableAt (by simp))
+    (mdifferentiable_mgradient (I := I) hf x)
+    (mdifferentiable_mgradient (I := I) hg x)
+
+/- The product rule below is the manifold counterpart of
+`ContDiffAt.laplacian_fun_mul` for the flat Laplacian. -/
+/-- **Leibniz rule for the Laplace--Beltrami operator.** For twice continuously differentiable
+functions, the Laplacian of a product is the sum of the two scalar terms and twice the inner
+product of their gradients. -/
+theorem laplaceBeltrami_mul {f g : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f)
+    (hg : ContMDiff I 𝓘(ℝ) 2 g) (x : M) :
+    laplaceBeltrami I (f * g) x =
+      f x * laplaceBeltrami I g x +
+        2 * inner ℝ (mgradient I f x) (mgradient I g x) +
+          g x * laplaceBeltrami I f x := by
+  have hgradf : MDifferentiableAt I I.tangent
+      (fun y ↦ (⟨y, mgradient I f y⟩ : TangentBundle I M)) x :=
+    mdifferentiable_mgradient (I := I) hf x
+  have hgradg : MDifferentiableAt I I.tangent
+      (fun y ↦ (⟨y, mgradient I g y⟩ : TangentBundle I M)) x :=
+    mdifferentiable_mgradient (I := I) hg x
+  have hscaledg : MDifferentiableAt I I.tangent
+      (fun y ↦ (⟨y, f y • mgradient I g y⟩ : TangentBundle I M)) x := by
+    exact (hf.mdifferentiableAt (by simp)).smul_section hgradg
+  have hscaledf : MDifferentiableAt I I.tangent
+      (fun y ↦ (⟨y, g y • mgradient I f y⟩ : TangentBundle I M)) x := by
+    exact (hg.mdifferentiableAt (by simp)).smul_section hgradf
+  -- Normalize pointwise scalar multiplication so the divergence APIs match their section forms.
+  rw [laplaceBeltrami, mgradient_mul (hf.mdifferentiable (by simp)) (hg.mdifferentiable (by simp)),
+    show (fun y ↦ f y • mgradient I g y + g y • mgradient I f y) =
+      (fun y ↦ f y • mgradient I g y) + (fun y ↦ g y • mgradient I f y) by rfl,
+    divergence_add I _ _ x hscaledg hscaledf]
+  rw [show (fun y ↦ f y • mgradient I g y) = f • mgradient I g by rfl,
+    show (fun y ↦ g y • mgradient I f y) = g • mgradient I f by rfl,
+    divergence_smul_function I f (mgradient I g) x
+      (hf.mdifferentiableAt (by simp)) hgradg,
+    divergence_smul_function I g (mgradient I f) x
+      (hg.mdifferentiableAt (by simp)) hgradf]
+  simp only [laplaceBeltrami_def]
+  rw [← inner_mgradient (I := I) (f := f) (x := x),
+    ← inner_mgradient (I := I) (f := g) (x := x), real_inner_comm]
+  ring
 
 /-- The Laplace–Beltrami operator commutes with real scalar multiplication on `C²` functions. -/
 theorem laplaceBeltrami_smul (c : ℝ) {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f) (x : M) :
@@ -398,8 +436,42 @@ theorem laplaceBeltrami_smul (c : ℝ) {f : M → ℝ} (hf : ContMDiff I 𝓘(�
     simpa only [one_add_one_eq_two] using (inferInstance : IsManifold I 2 M)
   simp only [laplaceBeltrami, mgradient_smul c (hf.mdifferentiable (by simp))]
   exact divergence_smul I c _ x
-    ((contMDiff_mgradient (n := 1)
-      (by simpa only [one_add_one_eq_two] using hf)).mdifferentiableAt (by simp))
+    (mdifferentiable_mgradient (I := I) hf x)
+
+/-- **Chain rule for the Laplace--Beltrami operator.** If `h` is `C²` on an open set of real
+numbers containing all values of a `C²` function `f`, then
+`Δ (h ∘ f) = h'(f) Δ f + h''(f) |grad f|²`. -/
+theorem laplaceBeltrami_comp {h : ℝ → ℝ} {s : Set ℝ} (hs : IsOpen s) (hh : ContDiffOn ℝ 2 h s)
+    {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f) (hfs : ∀ y, f y ∈ s) (x : M) :
+    laplaceBeltrami I (h ∘ f) x =
+      deriv h (f x) * laplaceBeltrami I f x +
+        deriv (deriv h) (f x) * ‖mgradient I f x‖ ^ 2 := by
+  have hfd : ∀ y, MDifferentiableAt I 𝓘(ℝ) f y := fun y ↦ hf.mdifferentiableAt (by simp)
+  have hh' : ContDiffOn ℝ 1 (deriv h) s := hh.deriv_of_isOpen hs (by norm_num)
+  -- The gradient of `h ∘ f` is the section `h'(f) • grad f`, to which the product rule applies.
+  have hgrad : mgradient I (h ∘ f) = (deriv h ∘ f) • mgradient I f := by
+    funext y
+    exact mgradient_comp_deriv ((hh.differentiableOn (by norm_num) _ (hfs y)).differentiableAt
+      (hs.mem_nhds (hfs y))) (hfd y)
+  have hd : DifferentiableAt ℝ (deriv h) (f x) :=
+    (hh'.differentiableOn one_ne_zero _ (hfs x)).differentiableAt (hs.mem_nhds (hfs x))
+  rw [laplaceBeltrami, hgrad, divergence_smul_function I _ _ x
+      (hd.comp_mdifferentiableAt (hfd x)) (mdifferentiable_mgradient (I := I) hf x),
+    ← laplaceBeltrami_def, ← inner_mgradient, mgradient_comp_deriv hd (hfd x),
+    real_inner_smul_left, real_inner_self_eq_norm_sq, Function.comp_apply]
+
+/-- The Laplace--Beltrami operator of the logarithm of a nowhere-vanishing `C²` function:
+`Δ (log f) = Δ f / f - |grad f|² / f²`. -/
+theorem laplaceBeltrami_log {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f) (hf0 : ∀ y, f y ≠ 0)
+    (x : M) :
+    laplaceBeltrami I (fun y ↦ Real.log (f y)) x =
+      laplaceBeltrami I f x / f x - ‖mgradient I f x‖ ^ 2 / f x ^ 2 := by
+  have hdd : deriv (deriv Real.log) (f x) = -(f x ^ 2)⁻¹ := by
+    rw [Real.deriv_log', deriv_inv]
+  rw [show (fun y ↦ Real.log (f y)) = Real.log ∘ f from rfl,
+    laplaceBeltrami_comp I isOpen_compl_singleton Real.contDiffOn_log hf hf0 x,
+    Real.deriv_log, hdd]
+  ring
 
 end OperatorLaws
 

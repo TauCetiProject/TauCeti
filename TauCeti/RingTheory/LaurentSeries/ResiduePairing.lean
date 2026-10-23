@@ -17,8 +17,10 @@ For Laurent series over a commutative ring, this file packages the bilinear form
 The pairing is alternating, hence skew-symmetric, over every commutative ring: in the residue of
 `f df` the terms indexed by `Xⁱ` and `X⁻ⁱ` cancel in pairs, so no characteristic assumption is
 needed.  It satisfies the cyclic identity obtained
-by taking the residue of `d(fgh)`.  Its value on monomials fixes the sign convention, and it
-vanishes on two power series.  Over a field it is continuous for the Laurent valuation topology.
+by taking the residue of `d(fgh)`.  Its value on monomials fixes the sign convention; more
+generally it is the finite sum `∑ n f₋ₙ gₙ` over the exponents allowed by the orders of `f` and
+`g`, and it vanishes on two power series.  Over a field it is continuous for the Laurent
+valuation topology.
 
 The convention agrees with `LieAlgebra.LoopAlgebra.residuePairing`: on monomials it is
 `Res(aX^m d(bX^n)) = n(ab)` when `m + n = 0` and zero otherwise.
@@ -30,6 +32,7 @@ The convention agrees with `LieAlgebra.LoopAlgebra.residuePairing`: on monomials
 * `LaurentSeries.residuePairing_self`: alternation over every commutative ring.
 * `LaurentSeries.residuePairing_mul_add_cyclic`: the cyclic identity.
 * `LaurentSeries.residuePairing_single`: its value on Laurent monomials.
+* `LaurentSeries.residuePairing_eq_sum`: its finite coefficient formula.
 * `LaurentSeries.residuePairing_coe_powerSeries`: vanishing on formal power series.
 * `LaurentSeries.continuous_residuePairing`: joint continuity over a field.
 -/
@@ -146,6 +149,43 @@ theorem residuePairing_single (m n : ℤ) (a b : R) :
   · have hi : -1 - m + 1 ≠ n := by omega
     rw [residuePairing_apply, coeff_single_mul, coeff_derivative,
       coeff_single_of_ne hi, smul_zero, mul_zero, ite_eq_right hmn]
+
+/-- The residue pairing is a finite sum of coefficients: if `f` has order at least `M` and `g`
+has order at least `N`, then `Res(f dg) = ∑_{N ≤ n ≤ -M} n f₋ₙ gₙ`. -/
+theorem residuePairing_eq_sum {M N : ℤ} {f g : R⸨X⸩} (hf : (M : WithTop ℤ) ≤ f.orderTop)
+    (hg : (N : WithTop ℤ) ≤ g.orderTop) :
+    residuePairing R f g = ∑ n ∈ Finset.Icc N (-M), n • (f.coeff (-n) * g.coeff n) := by
+  -- Match the term `fᵢ g'ⱼ` with `i + j = -1` to the index `n = j + 1`.
+  rw [residuePairing_apply, coeff_mul]
+  refine Finset.sum_bij_ne_zero (fun ij _ _ ↦ ij.2 + 1) ?_ ?_ ?_ ?_
+  · rintro ⟨i, j⟩ hij hne
+    rw [Finset.mem_antidiagonal] at hij
+    obtain ⟨hi, hj, hij⟩ := hij
+    rw [Finset.mem_Icc]
+    constructor
+    · by_contra! h
+      apply hj
+      rw [coeff_derivative, HahnSeries.le_orderTop_iff_forall.mp hg _ (by exact_mod_cast h),
+        smul_zero]
+    · by_contra! h
+      exact hi (HahnSeries.le_orderTop_iff_forall.mp hf _ (by exact_mod_cast (by omega : i < M)))
+  · rintro ⟨i, j⟩ hij _ ⟨i', j'⟩ hij' _ h
+    rw [Finset.mem_antidiagonal] at hij hij'
+    simp only at h
+    ext <;> simp only <;> omega
+  · intro n _ hn
+    refine ⟨(-n, n - 1), ?_, ?_, by simp⟩
+    · rw [Finset.mem_antidiagonal]
+      refine ⟨fun h ↦ hn ?_, fun h ↦ hn ?_, by omega⟩
+      · simp [h]
+      · rw [coeff_derivative, sub_add_cancel] at h
+        rw [← mul_smul_comm, h, mul_zero]
+    · rw [coeff_derivative, sub_add_cancel, mul_smul_comm]
+      simpa using hn
+  · rintro ⟨i, j⟩ hij _
+    rw [Finset.mem_antidiagonal] at hij
+    have hi : i = -(j + 1) := by omega
+    rw [coeff_derivative, hi, mul_smul_comm]
 
 /-- A constant in the differentiated input pairs to zero. -/
 @[simp]

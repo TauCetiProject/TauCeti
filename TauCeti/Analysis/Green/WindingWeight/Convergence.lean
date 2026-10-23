@@ -62,7 +62,6 @@ theorem tendsto_integral_abs_windingWeight_sub {γn : ℕ → ℝ → ℂ} (hab 
       (fun n ↦ ∫ t in Ioc a b, ‖deriv (γn n) t - deriv γ t‖) atTop (𝓝 0) := by
     simpa only [intervalIntegral.integral_of_le hab] using hderiv
   have hpot := (integrable_truncatedCauchyKernel (2 * R)).tendsto_integral_norm_kernel_potential_sub
-    (measurable_truncatedCauchyKernel (2 * R))
     (fun n ↦ (hγn n).aemeasurable_restrict_Ioc hab) (hγ.aemeasurable_restrict_Ioc hab)
     (fun n ↦ (hγn n).integrableOn_deriv_Ioc hab) (hγ.integrableOn_deriv_Ioc hab) hμconv hderiv'
   have hbound := hpot.const_mul ‖(2 * (Real.pi : ℂ) * Complex.I)⁻¹‖

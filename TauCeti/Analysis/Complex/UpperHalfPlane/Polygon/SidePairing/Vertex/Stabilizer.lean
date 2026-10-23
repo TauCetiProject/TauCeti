@@ -60,26 +60,6 @@ namespace TauCeti.UpperHalfPlane.ConvexPolygon.SidePairing
 
 variable {n : ℕ} [NeZero n] {P : ConvexPolygon n} (σ : P.SidePairing) {Γ : Subgroup PSL(2, ℝ)}
 
-/-- In the common angular coordinate at a finite vertex, a point at clockwise angle `x` from the
-incoming ray of the first tile is interior to the sector of the `m`-th tile when `x` lies strictly
-between the angles accumulated before and after that tile. -/
-private theorem mem_interior_inv_partialCycleMap_smul_vertexSector {j : Fin n} {z w : ℍ}
-    (hz : P.vertex j = .inl z) (hw : z ≠ w) {m : ℕ} {x : ℝ}
-    (hx : x ∈ Ioo (∑ l ∈ Finset.range m, P.interiorAngle (σ.next^[l] j))
-      (∑ l ∈ Finset.range (m + 1), P.interiorAngle (σ.next^[l] j)))
-    (hwx : orientedAngle z (geodesicLine (rayToward z (P.vertex (j - 1))) 1) w =
-      ((-x : ℝ) : Real.Angle)) :
-    w ∈ interior ((σ.partialCycleMap j m)⁻¹ • P.vertexSector (σ.next^[m] j)) := by
-  have hle := P.interiorAngle_le_pi (σ.next^[m] j)
-  rw [Finset.sum_range_succ] at hx
-  rw [← vertexSector_smul, ((σ.partialCycleMap j m)⁻¹ •
-      P).mem_interior_vertexSector_iff_toReal_orientedAngle_mem_Ioo
-      (σ.inv_partialCycleMap_smul_vertex hz m) hw, interiorAngle_smul,
-    σ.orientedAngle_rayToward_inv_partialCycleMap_smul_vertex_add_one_left hz m w, hwx,
-    ← Real.Angle.coe_add, Finset.sum_range_succ,
-    Real.Angle.toReal_coe_eq_self_iff.2 ⟨by linarith [Real.pi_pos, hx.2], by linarith [hx.1]⟩]
-  exact ⟨by linarith [hx.2], by linarith [hx.1]⟩
-
 /-- **Overlapping tiles around a vertex coincide.** If a direction at the finite vertex lies
 strictly inside the sector of the `m`-th tile and, up to a multiple of `2π`, strictly inside that
 of the `m'`-th tile, then the two tiles are the same translate of `P`. -/
@@ -108,10 +88,14 @@ private theorem partialCycleMap_eq_of_coe_eq {j : Fin n} {z : ℍ} (hz : P.verte
   have hwx' : orientedAngle z (geodesicLine (rayToward z (P.vertex (j - 1))) 1) w =
       ((-x' : ℝ) : Real.Angle) := by
     rw [hwx, Real.Angle.coe_neg, Real.Angle.coe_neg, hxx']
-  have h := hm.mem_interior_iff.2
-    (σ.mem_interior_inv_partialCycleMap_smul_vertexSector hz (Ne.symm hwz) hx hwx)
-  have h' := hm'.mem_interior_iff.2
-    (σ.mem_interior_inv_partialCycleMap_smul_vertexSector hz (Ne.symm hwz) hx' hwx')
+  have h := hm.mem_interior_iff.2 (by
+    rw [interior_smul]
+    exact (σ.mem_inv_partialCycleMap_smul_interior_vertexSector_iff hz (Ne.symm hwz) m).2
+      ⟨x, hx, hwx⟩)
+  have h' := hm'.mem_interior_iff.2 (by
+    rw [interior_smul]
+    exact (σ.mem_inv_partialCycleMap_smul_interior_vertexSector_iff hz (Ne.symm hwz) m').2
+      ⟨x', hx', hwx'⟩)
   rw [interior_smul] at h
   exact inv_injective (P.eq_of_smul_interior_inter_smul_carrier_nonempty hdisj
     (Γ.inv_mem (σ.partialCycleMap_mem hmap j m)) (Γ.inv_mem (σ.partialCycleMap_mem hmap j m'))

@@ -35,6 +35,10 @@ transfer through a supplied Morita equivalence.
 an `(A,B)`-bimodule tensored over `B` with a left `B`-module is a left `A`-module.
 Both constructions are linear in each variable.
 
+`GradedBimoduleCat` is the category of graded bimodules of a graded algebra with an
+internal grading, and `GradedModuleCat.bimoduleTensor` is the balanced bimodule tensor of
+that setting.
+
 ## References
 
 * B. Keller, *Deriving DG categories*, Section 6.1.
@@ -959,3 +963,15 @@ instance : (bimoduleTensor Γ Δ Θ).flip.Linear k where
 end Tensor
 
 end TauCeti.GradedModuleCat
+
+namespace TauCeti
+
+universe w uA
+
+/-- The category of graded bimodules over the graded algebra `A` with internal grading `Ξ`:
+the graded modules over the enveloping grading `Ξ.tensorProduct Ξ.opposite`. -/
+abbrev GradedBimoduleCat (k : Type w) [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
+    (Ξ : InternalGrading k A) :=
+  GradedModuleCat.{max uA w} (Ξ.tensorProduct Ξ.opposite).piece
+
+end TauCeti

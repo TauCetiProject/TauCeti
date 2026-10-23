@@ -131,6 +131,14 @@ theorem range_endCube_subset {m : ℕ} (hm : (m : ℕ∞) < n) (c : SingularCube
   rintro _ ⟨y, rfl⟩
   exact D.homotopy_one_mem hm c y
 
+/-- The deformation of a cube whose faces have dimension less than `n` ends in a cube sending the
+boundary of the cube into `A`. -/
+theorem mapsTo_endCube_boundary {m : ℕ} (hm : (m : ℕ∞) < n) (c : SingularCube X (m + 1)) :
+    MapsTo (D.endCube c) (Cube.boundary (Fin (m + 1))) A := by
+  rintro y ⟨i, hi⟩
+  rw [endCube_apply, ← Fin.insertNth_self_removeNth i y, D.homotopy_insertNth c i hi]
+  exact D.homotopy_one_mem hm _ _
+
 /-- The end of the deformation commutes with the faces at the endpoints of the interval. -/
 theorem face_endCube {m : ℕ} (c : SingularCube X (m + 1)) (i : Fin (m + 1)) {t : I}
     (ht : t = 0 ∨ t = 1) :
@@ -163,6 +171,12 @@ def sweep {m : ℕ} (c : SingularCube X m) : SingularCube X (m + 1) :=
 theorem sweep_apply {m : ℕ} (c : SingularCube X m) (y : Fin (m + 1) → I) :
     D.sweep c y = D.homotopy c (y 0, Fin.tail y) := by
   simp [sweep]
+
+/-- The swept cube starts at the origin of `c`. -/
+theorem sweep_apply_zero {m : ℕ} (c : SingularCube X m) : D.sweep c 0 = c 0 := by
+  rw [sweep_apply, Pi.zero_apply, D.homotopy_zero]
+  -- `Fin.tail 0` is the zero vector, coordinatewise by definition.
+  exact congrArg c (funext fun _ ↦ rfl)
 
 /-- The swept cube starts at `c`. -/
 @[simp]

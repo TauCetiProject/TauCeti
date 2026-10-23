@@ -64,13 +64,12 @@ private theorem tendsto_const_mul_schwarzChristoffelPrimitive_add_cobounded (a e
 infinity.** Let `A * F + B` and `A' * F' + B'` be affine images of normalized Schwarz--Christoffel
 primitives whose total exponents at each prevertex are greater than `-1` and whose total exponents
 are at least `-1`. Suppose both map the upper half-plane bijectively onto the same domain `U`, whose
-frontier together with the point at infinity is a Jordan curve of the Riemann sphere and which has
-a point outside its closure. Suppose also that they send each prevertex to the same vertex. If `a`
-and `a'` agree at two distinct prevertices, then `a' = a` and the two maps coincide on the upper
-half-plane. -/
+frontier together with the point at infinity is a Jordan curve of the Riemann sphere. Suppose also
+that they send each prevertex to the same vertex. If `a` and `a'` agree at two distinct
+prevertices, then `a' = a` and the two maps coincide on the upper half-plane. -/
 theorem eq_and_eqOn_of_bijOn_schwarzChristoffelPrimitive_of_isJordanCurve_insert_infty
-    {U : Set ℂ} {q : ℂ} (hq : q ∉ closure U)
-    (hUJ : IsJordanCurve (insert ∞ (((↑) : ℂ → OnePoint ℂ) '' frontier U))) {a e a' e' : ι → ℝ}
+    {U : Set ℂ} (hUJ : IsJordanCurve (insert ∞ (((↑) : ℂ → OnePoint ℂ) '' frontier U)))
+    {a e a' e' : ι → ℝ}
     (he : ∀ i, -1 < ∑ l with a l = a i, e l) (he' : ∀ i, -1 < ∑ l with a' l = a' i, e' l)
     (hsum : -1 ≤ ∑ i, e i) (hsum' : -1 ≤ ∑ i, e' i) (z₀ z₀' : UpperHalfPlane) {A B A' B' : ℂ}
     (hf : BijOn (fun z => A * schwarzChristoffelPrimitive a e z₀ z + B) upperHalfPlaneSet U)
@@ -87,7 +86,7 @@ theorem eq_and_eqOn_of_bijOn_schwarzChristoffelPrimitive_of_isJordanCurve_insert
     ((tendsto_schwarzChristoffelPrimitive a' e' z₀' m (he' m)).const_mul A').add_const B'
   have heq : EqOn (fun z => A' * schwarzChristoffelPrimitive a' e' z₀' z + B')
       (fun z => A * schwarzChristoffelPrimitive a e z₀ z + B) upperHalfPlaneSet :=
-    eqOn_upperHalfPlaneSet_of_tendsto_of_bijOn_of_isJordanCurve_insert_infty hq hUJ hd' hd hf' hf
+    eqOn_upperHalfPlaneSet_of_tendsto_of_bijOn_of_isJordanCurve_insert_infty hUJ hd' hd hf' hf
       (tendsto_const_mul_schwarzChristoffelPrimitive_add_cobounded a' e' z₀' hsum'
         (ne_zero_of_injOn_const_mul_add hf'.injOn) B')
       (tendsto_const_mul_schwarzChristoffelPrimitive_add_cobounded a e z₀ hsum
@@ -95,7 +94,7 @@ theorem eq_and_eqOn_of_bijOn_schwarzChristoffelPrimitive_of_isJordanCurve_insert
       hij (hi ▸ ht' i) (hj ▸ ht' j) (ht i) (ht j)
   refine ⟨funext fun m => ?_, heq⟩
   -- the second map also tends to the `m`-th vertex at `a m`, so `a' m = a m`
-  refine eq_of_tendsto_of_bijOn_upperHalfPlaneSet_of_isJordanCurve_insert_infty hq hUJ hd' hf'
+  refine eq_of_tendsto_of_bijOn_upperHalfPlaneSet_of_isJordanCurve_insert_infty hUJ hd' hf'
     (ht' m) ?_
   exact (ht m).congr' (eventually_nhdsWithin_of_forall fun z hz => (heq hz).symm)
 
@@ -104,12 +103,12 @@ theorem eq_and_eqOn_of_bijOn_schwarzChristoffelPrimitive_of_isJordanCurve_insert
 `(a, e, z₀)` and `(a', e', z₀')`, whose total exponents at each prevertex are greater than `-1`
 and whose total exponents are at least `-1`. Suppose both map the upper half-plane bijectively onto
 the same domain, whose frontier together with the point at infinity is a Jordan curve of the
-Riemann sphere and which has a point outside its closure, and send each prevertex to the same
-vertex. If the prevertices `a i` are distinct and `a'` agrees with `a` at two of them, then
-`a' = a`, `e' = e`, `A' = A` and `B' = A * F z₀' + B`, which is `B` when `z₀' = z₀`. -/
+Riemann sphere, and send each prevertex to the same vertex. If the prevertices `a i` are distinct
+and `a'` agrees with `a` at two of them, then `a' = a`, `e' = e`, `A' = A` and
+`B' = A * F z₀' + B`, which is `B` when `z₀' = z₀`. -/
 theorem param_eq_of_bijOn_schwarzChristoffelPrimitive_of_isJordanCurve_insert_infty
-    {U : Set ℂ} {q : ℂ} (hq : q ∉ closure U)
-    (hUJ : IsJordanCurve (insert ∞ (((↑) : ℂ → OnePoint ℂ) '' frontier U))) {a e a' e' : ι → ℝ}
+    {U : Set ℂ} (hUJ : IsJordanCurve (insert ∞ (((↑) : ℂ → OnePoint ℂ) '' frontier U)))
+    {a e a' e' : ι → ℝ}
     (ha : Injective a) (he : ∀ i, -1 < ∑ l with a l = a i, e l)
     (he' : ∀ i, -1 < ∑ l with a' l = a' i, e' l) (hsum : -1 ≤ ∑ i, e i)
     (hsum' : -1 ≤ ∑ i, e' i) (z₀ z₀' : UpperHalfPlane) {A B A' B' : ℂ}
@@ -121,7 +120,7 @@ theorem param_eq_of_bijOn_schwarzChristoffelPrimitive_of_isJordanCurve_insert_in
     a' = a ∧ e' = e ∧ A' = A ∧ B' = A * schwarzChristoffelPrimitive a e z₀ z₀' + B := by
   obtain ⟨rfl, heq⟩ :=
     eq_and_eqOn_of_bijOn_schwarzChristoffelPrimitive_of_isJordanCurve_insert_infty
-      hq hUJ he he' hsum hsum' z₀ z₀' hf hf' hv (ha.ne hij) hi hj
+      hUJ he he' hsum hsum' z₀ z₀' hf hf' hv (ha.ne hij) hi hj
   exact ⟨rfl, (eqOn_const_mul_schwarzChristoffelPrimitive_add_iff ha z₀ z₀'
     (ne_zero_of_injOn_const_mul_add hf.injOn)).mp heq⟩
 

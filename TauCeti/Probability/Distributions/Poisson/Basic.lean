@@ -185,6 +185,28 @@ theorem variance_id_map_cast_poissonMeasure (r : ℝ≥0) :
     integral_id_map_cast_poissonMeasure]
   ring
 
+/-- Every nonnegative real power of the native Poisson count is integrable. -/
+theorem integrable_natCast_rpow_poissonMeasure (r : ℝ≥0) {p : ℝ} (hp : 0 ≤ p) :
+    Integrable (fun n : ℕ ↦ (n : ℝ) ^ p) (poissonMeasure r) := by
+  have h := integrable_rpow_of_mem_interior_integrableExpSet
+    (X := fun x : ℝ ↦ x) (μ := Po(ℝ, r)) (by simp) hp
+  simpa only [Function.comp_def] using
+    (integrable_map_measure (f := (Nat.cast : ℕ → ℝ)) (by fun_prop) (by fun_prop)).1 h
+
+/-- The mean of the native Poisson count is its rate. -/
+@[simp]
+theorem integral_natCast_poissonMeasure (r : ℝ≥0) :
+    ∫ n : ℕ, (n : ℝ) ∂poissonMeasure r = r := by
+  have h := integral_id_map_cast_poissonMeasure r
+  rwa [integral_map (by fun_prop) (by fun_prop)] at h
+
+/-- The variance of the native Poisson count is its rate. -/
+@[simp]
+theorem variance_natCast_poissonMeasure (r : ℝ≥0) :
+    variance (fun n : ℕ ↦ (n : ℝ)) (poissonMeasure r) = r := by
+  have h := variance_id_map_cast_poissonMeasure r
+  rwa [variance_map (by fun_prop) (by fun_prop), Function.id_comp] at h
+
 /-- A real random variable with Poisson law has expectation equal to the rate. -/
 theorem integral_of_hasLaw_map_cast_poissonMeasure {Ω : Type*} [MeasurableSpace Ω]
     {P : Measure Ω} {X : Ω → ℝ} {r : ℝ≥0} (hX : HasLaw X Po(ℝ, r) P) :

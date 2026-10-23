@@ -77,7 +77,7 @@ theorem mfderiv_alongCurveWithin_mpullback (Φ : RiemannianIsometry I J M N)
       (hasMFDerivWithinAt_curveVelocityWithin
         ((Φ.mdifferentiableAt (γ t)).comp_mdifferentiableWithinAt t hγ)) hY]
   rw [TauCeti.Manifold.curveVelocityWithin_map (Φ.mdifferentiableAt (γ t)) hs hγ]
-  exact Φ.mfderiv_leviCivitaConnection_mpullback hY _
+  exact Φ.isLocalRiemannianIsometry.mfderiv_leviCivitaConnection_mpullback hY _
 
 /-- For a differentiable curve, the unrestricted along-curve Levi-Civita derivative of a
 pulled-back ambient field is carried to the derivative of that field along the image curve. -/

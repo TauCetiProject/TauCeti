@@ -126,7 +126,7 @@ theorem exists_eLpNorm_rpow_le_mul_eLpNorm_rpow :
   set ρ' := (r + ρ) / 2
   have hrρ' : r < ρ' := by simp only [ρ']; linarith
   have hρ'ρ : ρ' < ρ := by simp only [ρ']; linarith
-  obtain ⟨ψ, hψ, hψr, hψ1, hψts, hψg⟩ := hcut x₀ hr hrρ'
+  obtain ⟨ψ, hψ, hψr, hψ1, hψts, hψg, -⟩ := hcut x₀ hr.le hrρ'
   set G := c / (ρ' - r)
   have hρ'B : Metric.closedBall x₀ ρ' ⊆ Metric.ball x₀ ρ :=
     Metric.closedBall_subset_ball hρ'ρ
