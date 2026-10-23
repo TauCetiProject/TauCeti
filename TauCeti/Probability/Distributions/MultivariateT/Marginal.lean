@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Distributions.Affine
 public import TauCeti.Probability.Distributions.MultivariateT.Basic
 public import TauCeti.Probability.Distributions.StudentT.ChiSquared
+import TauCeti.MeasureTheory.Constructions.EuclideanSpace
 import TauCeti.Probability.Distributions.Gaussian.Transforms
 
 /-!
@@ -109,20 +110,7 @@ theorem multivariateTMeasure_eq_map_single [Unique ι] (m : EuclideanSpace ℝ �
     multivariateTMeasure m S ν =
       ((studentTMeasure ν).map fun t => m default + √(S default default) * t).map
         (EuclideanSpace.single default) := by
-  -- `EuclideanSpace.single` is `toLp` applied to `Pi.single`.
-  have hsingle : Measurable (EuclideanSpace.single (default : ι) : ℝ → EuclideanSpace ℝ ι) := by
-    have h (a : ℝ) : EuclideanSpace.single (default : ι) a =
-        WithLp.toLp 2 (Pi.single (M := fun _ : ι => ℝ) default a) :=
-      (PiLp.toLp_single 2 (β := fun _ : ι => ℝ) default a).symm
-    rw [funext h]
-    exact (WithLp.measurable_toLp 2 _).comp (continuous_single default).measurable
-  have hcomp : (EuclideanSpace.single (default : ι)) ∘
-      (fun x : EuclideanSpace ℝ ι => x default) = id := by
-    funext x
-    ext i
-    simp [Unique.eq_default i]
-  rw [← map_eval_multivariateTMeasure m hS ν default,
-    Measure.map_map hsingle (by fun_prop), hcomp, Measure.map_id]
+  rw [← map_eval_multivariateTMeasure m hS ν default, EuclideanSpace.map_single_map_eval]
 
 /-- **Quantiles of linear projections of multivariate t laws.** For `0 < u < 1`, the lower
 quantile of `x ↦ ⟪θ, x⟫` is `⟪θ, m⟫ + √⟪θ, S θ⟫ * q`, where `q` is the lower quantile of the
