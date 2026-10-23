@@ -11,14 +11,17 @@ public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Quotient
 import TauCeti.Analysis.Normed.Operator.NormedAddGroupHom
 
 /-!
-# Operator norms on quotient spaces
+# Norm estimates on quotient modules
 
 Descending a continuous semilinear map through a submodule contained in its kernel preserves its
 operator norm. Equivalently, precomposition with the quotient projection preserves operator
 norms. These facts apply to seminormed spaces and arbitrary submodules, and supply the metric
 part of the duality between a quotient and the annihilator of its defining submodule.
 
-The estimates reuse the quotient lift for bounded additive homomorphisms from Mathlib.
+The quotient module also inherits a contractive action of a possibly noncommutative
+seminormed ring. In particular, this applies to quotients of a normed ring by left ideals.
+
+The estimates reuse Mathlib's quotient norm and quotient lift for bounded additive homomorphisms.
 -/
 
 public section
@@ -72,3 +75,26 @@ theorem norm_liftQL (S : Submodule 𝕜 E) (f : E →SL[σ] F) (h : S ≤ f.ker)
   rw [← S.norm_comp_mkQL (S.liftQL f h), heq]
 
 end Submodule
+
+namespace Submodule.Quotient
+
+variable {R E : Type*} [SeminormedRing R] [SeminormedAddCommGroup E]
+  [Module R E] [IsBoundedSMul R E]
+
+/-- The quotient action of a seminormed ring is contractive whenever the original action is.
+The ring need not be commutative, and the submodule need not be closed. -/
+instance isBoundedSMul (S : Submodule R E) : IsBoundedSMul R (E ⧸ S) :=
+  .of_norm_smul_le fun r x => by
+    have hbound (y : E) :
+        ‖r • (Submodule.Quotient.mk y : E ⧸ S)‖ ≤ ‖r‖ * ‖y‖ :=
+      (norm_mk_le S (r • y)).trans (norm_smul_le r y)
+    by_cases hr : ‖r‖ = 0
+    · obtain ⟨y, rfl⟩ := S.mkQ_surjective x
+      simpa only [Submodule.mkQ_apply, hr, zero_mul] using hbound y
+    · have hrpos : 0 < ‖r‖ := lt_of_le_of_ne (norm_nonneg r) (Ne.symm hr)
+      apply (div_le_iff₀' hrpos).mp
+      apply QuotientAddGroup.le_norm_iff.mpr
+      intro y hy
+      exact (div_le_iff₀' hrpos).mpr (hy ▸ hbound y)
+
+end Submodule.Quotient
