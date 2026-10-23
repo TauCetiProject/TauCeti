@@ -343,8 +343,11 @@ section Vertex
 
 /-- An isomorphism maps each connected component of the normalization into a single component. -/
 theorem fst_apply_eq_fst_apply [∀ i, PreconnectedSpace (X i)] (e : Iso I n d d')
-    {x y : Σ i, X i} (h : x.1 = y.1) : (e x).1 = (e y).1 :=
-  e.continuous.fst_apply_eq_fst_apply_of_fst_eq h
+    {x y : Σ i, X i} (h : x.1 = y.1) : (e x).1 = (e y).1 := by
+  obtain ⟨i, a⟩ := x
+  obtain ⟨j, b⟩ := y
+  subst h
+  exact (e.continuous.comp continuous_sigmaMk).fst_apply_eq_fst_apply a b
 
 variable [∀ i, ConnectedSpace (X i)] [∀ i, ConnectedSpace (X' i)]
 
