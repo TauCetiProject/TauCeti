@@ -70,6 +70,13 @@ Unlike a bound on the exponent, the condition is elementwise: for prime `p`,
 
 public section
 
+/-- The additive subgroup and additive submonoid primary components agree after forgetting
+additive inverses. -/
+@[simp]
+theorem AddCommGroup.primaryComponent_toAddSubmonoid {G : Type*} [AddCommGroup G] (p : ℕ) :
+    (AddCommGroup.primaryComponent G p).toAddSubmonoid = AddCommMonoid.primaryComponent G p :=
+  (rfl)
+
 namespace TauCeti
 
 open CommGroup (torsion)

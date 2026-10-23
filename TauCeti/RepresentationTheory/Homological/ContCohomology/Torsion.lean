@@ -228,8 +228,10 @@ theorem primaryComponent_middle_eq_bot (S : DiscreteShortExact G A B C) (hp : p.
   -- `a` may be replaced by a `p`-primary class with the same image, and that class vanishes
   obtain ⟨a', ha', hia'⟩ := exists_mem_primaryComponent_apply_eq
     (coeffMap (ofDiscreteModuleMap S.incl.toIntLinearMap S.incl_equivariant) (n + 1)).hom hp
-    (isAddTorsion_continuousCohomology n a) hx
-  rw [AddCommMonoid.mem_primaryComponent, ← AddCommGroup.mem_primaryComponent, hA,
+    (isAddTorsion_continuousCohomology n a) (by
+      simpa only [← AddCommGroup.primaryComponent_toAddSubmonoid,
+        AddSubgroup.mem_toAddSubmonoid] using hx)
+  rw [← AddCommGroup.primaryComponent_toAddSubmonoid, AddSubgroup.mem_toAddSubmonoid, hA,
     AddSubgroup.mem_bot] at ha'
   rw [← hia', ha', _root_.map_zero]
 
@@ -254,8 +256,10 @@ theorem primaryComponent_right_eq_bot (S : DiscreteShortExact G A B C) (hp : p.P
   -- `b` may be replaced by a `p`-primary class with the same image, and that class vanishes
   obtain ⟨b', hb', hb'x⟩ := exists_mem_primaryComponent_apply_eq
     (coeffMap (ofDiscreteModuleMap S.proj.toIntLinearMap S.proj_equivariant) (n + 1)).hom hp
-    (isAddTorsion_continuousCohomology n b) hx
-  rw [AddCommMonoid.mem_primaryComponent, ← AddCommGroup.mem_primaryComponent, hB,
+    (isAddTorsion_continuousCohomology n b) (by
+      simpa only [← AddCommGroup.primaryComponent_toAddSubmonoid,
+        AddSubgroup.mem_toAddSubmonoid] using hx)
+  rw [← AddCommGroup.primaryComponent_toAddSubmonoid, AddSubgroup.mem_toAddSubmonoid, hB,
     AddSubgroup.mem_bot] at hb'
   rw [← hb'x, hb', _root_.map_zero]
 

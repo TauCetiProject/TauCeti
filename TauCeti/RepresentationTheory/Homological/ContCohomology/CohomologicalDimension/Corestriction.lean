@@ -92,8 +92,13 @@ theorem StrictCohomologicalDimensionLE.corestriction_surjOn_primaryComponent (hp
   | succ n =>
     -- `Hⁿ⁺¹(U, M)` is torsion, so a preimage of `x` can be replaced by a `p`-primary one
     obtain ⟨y, rfl⟩ := h.exists_corestriction_eq hU M hx
-    exact exists_mem_primaryComponent_apply_eq (corestriction U M hU (n + 1)).hom hp
-      (isAddTorsion_continuousCohomology n y) hx
+    simpa only [← AddCommGroup.primaryComponent_toAddSubmonoid,
+      AddSubgroup.mem_toAddSubmonoid, TopModuleCat.Hom.hom, SetLike.mem_coe,
+      Set.mem_image] using
+      exists_mem_primaryComponent_apply_eq (corestriction U M hU (n + 1)).hom hp
+        (isAddTorsion_continuousCohomology n y) (by
+          simpa only [← AddCommGroup.primaryComponent_toAddSubmonoid,
+            AddSubgroup.mem_toAddSubmonoid, TopModuleCat.Hom.hom, SetLike.mem_coe] using hx)
   | zero =>
     -- `x` comes from `H⁰(G, M[p ^ k])`, whose classes are corestrictions of classes killed by
     -- `p ^ k`; corestriction is natural in the coefficients `M[p ^ k] → M`
@@ -277,7 +282,9 @@ private theorem mem_conjDiffClosure_of_isAddTorsion (hp : p.Prime) {n : ℕ}
   obtain ⟨b₀, hb₀⟩ := (S₁.longExact_exact₂ n c).1 htr
   obtain ⟨b, hbp, hbb⟩ := exists_mem_primaryComponent_apply_eq
     (coeffMap (ofDiscreteModuleMap S₁.incl.toIntLinearMap S₁.incl_equivariant) n).hom hp (hB b₀)
-    (hb₀ ▸ hcp)
+    (by simpa only [← AddCommGroup.primaryComponent_toAddSubmonoid,
+      AddSubgroup.mem_toAddSubmonoid] using hb₀ ▸ hcp)
+  rw [← AddCommGroup.primaryComponent_toAddSubmonoid, AddSubgroup.mem_toAddSubmonoid] at hbp
   -- Its connecting image is `p`-primary in degree `n + 1`, hence zero, so `b` comes from a
   -- `p`-primary class `a` of the cover.
   have hδ : S₂.delta n b = 0 := by
@@ -289,7 +296,9 @@ private theorem mem_conjDiffClosure_of_isAddTorsion (hp : p.Prime) {n : ℕ}
   obtain ⟨a₀, ha₀⟩ := (S₂.longExact_exact₃ n b).1 hδ
   obtain ⟨a, hap, haa⟩ := exists_mem_primaryComponent_apply_eq
     (coeffMap (ofDiscreteModuleMap S₂.proj.toIntLinearMap S₂.proj_equivariant) n).hom hp (hP a₀)
-    (ha₀ ▸ hbp)
+    (by simpa only [← AddCommGroup.primaryComponent_toAddSubmonoid,
+      AddSubgroup.mem_toAddSubmonoid] using ha₀ ▸ hbp)
+  rw [← AddCommGroup.primaryComponent_toAddSubmonoid, AddSubgroup.mem_toAddSubmonoid] at hap
   -- Then `y` is the sum of the differences `(σ)_* w - w` of the Shapiro images of the components.
   have hy' := shapiroMap_coeffMap_traceKerCover M hU n a
   rw [haa, ha₀, hbb, hb₀, hc] at hy'
