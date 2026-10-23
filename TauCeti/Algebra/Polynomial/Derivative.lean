@@ -32,6 +32,9 @@ A self-reciprocal polynomial `p` of even degree bound `2 g`, one with `X ^ (2 g)
 satisfies `p' (1) = g p (1)`: the coefficients in degrees `i` and `2 g - i` agree and their
 weights `i - g` and `g - i` cancel. The characteristic polynomial of a symplectic matrix is the
 basic example.
+
+For `δ ≠ 0` over a semiring without zero divisors, the operator `q ↦ q' + δ q` and all of its
+iterates preserve the degree of a polynomial and have trivial kernel.
 -/
 
 public section
@@ -149,6 +152,21 @@ theorem _root_.Polynomial.derivative_add_C_mul_eq_zero_iff (hδ : δ ≠ 0) :
   refine ⟨fun h ↦ ?_, fun h ↦ by simp [h]⟩
   by_contra hq
   exact coeff_natDegree_derivative_add_C_mul_ne_zero hδ hq (by rw [h, coeff_zero])
+
+/-- For `δ ≠ 0`, every iterate of the operator `q ↦ q' + δ q` preserves the degree of a
+polynomial. -/
+theorem _root_.Polynomial.natDegree_iterate_derivative_add_C_mul (hδ : δ ≠ 0) (n : ℕ) :
+    ((fun r ↦ derivative r + C δ * r)^[n] q).natDegree = q.natDegree := by
+  induction n with
+  | zero => rfl
+  | succ n ih => rw [Function.iterate_succ_apply', natDegree_derivative_add_C_mul hδ, ih]
+
+/-- For `δ ≠ 0`, every iterate of the operator `q ↦ q' + δ q` has trivial kernel. -/
+theorem _root_.Polynomial.iterate_derivative_add_C_mul_eq_zero_iff (hδ : δ ≠ 0) (n : ℕ) :
+    (fun r ↦ derivative r + C δ * r)^[n] q = 0 ↔ q = 0 := by
+  induction n with
+  | zero => rfl
+  | succ n ih => rw [Function.iterate_succ_apply', derivative_add_C_mul_eq_zero_iff hδ, ih]
 
 end ShiftedDerivative
 

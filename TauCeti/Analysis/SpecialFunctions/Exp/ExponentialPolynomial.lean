@@ -18,9 +18,10 @@ import TauCeti.Analysis.Calculus.LocalExtr.Rolle
 # Real zeros of exponential polynomials
 
 A real *exponential polynomial* is a function `f(x) = ∑ₖ pₖ(x) exp(γₖ x)` with real polynomials
-`pₖ` and real exponents `γₖ`. If the exponents are pairwise distinct and the `pₖ` are nonzero,
-then `f` has fewer than `∑ₖ (deg pₖ + 1)` real zeros
-(`TauCeti.card_lt_of_sum_eval_mul_exp_eq_zero`); in particular its zero set is finite.
+`pₖ` and real exponents `γₖ`, indexed by a finite set. If the index set is nonempty, the
+exponents are pairwise distinct and the `pₖ` are nonzero, then `f` has fewer than
+`∑ₖ (deg pₖ + 1)` real zeros (`TauCeti.card_lt_of_sum_eval_mul_exp_eq_zero`); in particular its
+zero set is finite. Nonemptiness is needed: the empty sum vanishes everywhere.
 For a single term this is the bound on the number of roots of a polynomial.
 
 The proof is by induction on the number of terms. Multiplying `f` by `exp(-γ x)` for one of
@@ -35,9 +36,11 @@ than the number of its coefficients.
 
 ## Main results
 
-* `TauCeti.card_lt_of_sum_eval_mul_exp_eq_zero`: a finite set of zeros of
-  `∑ₖ pₖ(x) exp(γₖ x)` has fewer than `∑ₖ (deg pₖ + 1)` points.
-* `TauCeti.finite_setOf_sum_eval_mul_exp_eq_zero`: the zero set of such a function is finite.
+* `TauCeti.card_lt_of_sum_eval_mul_exp_eq_zero`: for a nonempty finite index set, pairwise
+  distinct exponents `γₖ` and nonzero `pₖ`, a finite set of zeros of `∑ₖ pₖ(x) exp(γₖ x)` has
+  fewer than `∑ₖ (deg pₖ + 1)` points.
+* `TauCeti.finite_setOf_sum_eval_mul_exp_eq_zero`: under the same hypotheses, the zero set of
+  such a function is finite.
 
 ## References
 
@@ -59,19 +62,6 @@ private theorem hasDerivAt_sum_eval_mul_exp {ι : Type*} (s : Finset ι) (γ : �
   refine (((p i).hasDerivAt x).fun_mul ((hasDerivAt_id' x).const_mul (γ i)).exp).congr_deriv ?_
   simp only [eval_add, eval_mul, eval_C, mul_one]
   ring
-
-/-- For `δ ≠ 0`, every iterate of the operator `q ↦ q' + δ q` keeps a nonzero polynomial `q`
-nonzero and preserves its degree. -/
-private theorem iterate_derivative_add_C_mul {δ : ℝ} (hδ : δ ≠ 0) {q : ℝ[X]} (hq : q ≠ 0)
-    (n : ℕ) :
-    (fun r ↦ derivative r + C δ * r)^[n] q ≠ 0 ∧
-      ((fun r ↦ derivative r + C δ * r)^[n] q).natDegree = q.natDegree := by
-  induction n with
-  | zero => exact ⟨hq, rfl⟩
-  | succ n ih =>
-    rw [Function.iterate_succ_apply', Ne, derivative_add_C_mul_eq_zero_iff hδ,
-      natDegree_derivative_add_C_mul hδ]
-    exact ih
 
 /-- **Zero estimate for real exponential polynomials** (Evertse, Lemma 4.23). Let `s` be a
 nonempty finite index set, `γ` exponents that are pairwise distinct on `s`, and `p` nonzero real
@@ -125,10 +115,10 @@ theorem card_lt_of_sum_eval_mul_exp_eq_zero {ι : Type*} {s : Finset ι} (hs : s
       fun x ↦ by simp only [F, sum_cons, hDa, eval_zero, zero_mul, zero_add]
     have hlt := ih (γ := δ) (fun i hi j hj h ↦ hγ' hi hj (sub_left_inj.1 h))
       (p := fun i ↦ (D (δ i))^[N] (p i))
-      (fun i hi ↦ (iterate_derivative_add_C_mul (hδ i hi) (hp.2 i hi) N).1)
+      (fun i hi ↦ (iterate_derivative_add_C_mul_eq_zero_iff (hδ i hi) N).not.2 (hp.2 i hi))
       (fun x hx ↦ (hFN x).symm.trans (hZ' x hx))
     rw [sum_congr rfl fun i hi ↦ by
-      rw [(iterate_derivative_add_C_mul (hδ i hi) (hp.2 i hi) N).2]] at hlt
+      rw [natDegree_iterate_derivative_add_C_mul (hδ i hi) N]] at hlt
     rw [sum_cons]
     omega
 
