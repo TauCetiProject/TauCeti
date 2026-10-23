@@ -54,7 +54,7 @@ theorem mem_atlas_iff (e : OpenPartialHomeomorph (ComplexProjectiveSpace n) (Fin
 theorem contDiffOn_affineChart_transition (k l : Fin (n + 1)) (r : ℕ∞ω) :
     ContDiffOn ℂ r ((affineChart k).symm.trans (affineChart l))
       ((affineChart k).symm.trans (affineChart l)).source := by
-  refine (contDiffOn_finInsertNth_one_div k l).mono (fun z hz ↦ ?_) |>.congr
+  refine (Fin.contDiffOn_insertNth_one_div k l).mono (fun z hz ↦ ?_) |>.congr
     fun z _ ↦ funext (affineChart_transition k l z)
   apply (affineParam_mem_affineOpen_iff k l z).1
   simpa only [OpenPartialHomeomorph.symm_symm, Set.mem_preimage,

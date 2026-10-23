@@ -38,10 +38,12 @@ theorem ContDiff.finInsertNth {F : Fin (n + 1) → Type*} [∀ j, NormedAddCommG
   | x => simpa using hf
   | p j => simpa using contDiff_pi.1 hg j
 
+namespace Fin
+
 /-- The homogeneous-ratio map `z ↦ (w (j.succAbove k) / w j)_k`, where `w = Fin.insertNth i 1 z`
 inserts the coordinate `1` in position `i`, is `C^r` on the set where `w j ≠ 0`. These maps are
 the transition maps between the standard affine charts of projective space. -/
-theorem contDiffOn_finInsertNth_one_div (i j : Fin (n + 1)) :
+theorem contDiffOn_insertNth_one_div (i j : Fin (n + 1)) :
     ContDiffOn 𝕜 r
       (fun z : Fin n → 𝕜 ↦ fun k ↦
         Fin.insertNth (α := fun _ ↦ 𝕜) i 1 z (j.succAbove k) /
@@ -51,3 +53,5 @@ theorem contDiffOn_finInsertNth_one_div (i j : Fin (n + 1)) :
       ContDiff 𝕜 r fun z : Fin n → 𝕜 ↦ Fin.insertNth (α := fun _ ↦ 𝕜) i 1 z l :=
     contDiff_pi.1 ((contDiff_const (c := (1 : 𝕜))).finInsertNth (F := fun _ ↦ 𝕜) i contDiff_id) l
   exact contDiffOn_pi.2 fun k ↦ (hw _).contDiffOn.div (hw j).contDiffOn fun _ hz ↦ hz
+
+end Fin

@@ -70,7 +70,7 @@ theorem contDiffOn_affineChart_symm_trans (i j : Fin (n + 1)) (r : ℕ∞ω) :
     ContDiffOn 𝕜 r ((affineChart i).symm.trans (affineChart j))
       ((affineChart (K := 𝕜) i).symm.trans (affineChart j)).source := by
   rw [affineChart_symm_trans_source]
-  exact (contDiffOn_finInsertNth_one_div i j).congr fun z _ ↦ affineChart_symm_trans_apply i j z
+  exact (Fin.contDiffOn_insertNth_one_div i j).congr fun z _ ↦ affineChart_symm_trans_apply i j z
 
 /-- Projective space over a nontrivially normed field, with its standard affine charts, is a
 `C^r` manifold for every `r`; for `r = ω` it is an analytic manifold. Over `ℂ` this is the
