@@ -175,6 +175,10 @@ lemma cellularResolution_complex [ContractibleSpace (p ⁻¹' C)] :
     (cellularResolution C hG R).complex = cellularChainComplexRep C hG R :=
   (rfl)
 
+-- A public statement cannot unfold the unexposed body of `TauCeti.cellularResolution`, so the
+-- source of its `π` is not definitionally `cellularChainComplexRep C hG R` there, and the
+-- statement transports along `cellularResolution_complex`. The proof does see the body: there the
+-- transport is `eqToHom rfl`, definitionally the identity, so it is `Category.id_comp`.
 /-- The augmentation of `TauCeti.cellularResolution` is that of the lifted cellular chain
 complex. -/
 @[simp]

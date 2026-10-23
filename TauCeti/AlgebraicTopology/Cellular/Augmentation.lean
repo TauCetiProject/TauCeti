@@ -126,6 +126,10 @@ lemma ι_cellularChainGroupIso_inv_comp_cellularAugmentation (j : cell C 0) :
   let φ := TopPair.sigmaι (fun _ ↦ diskBoundaryPair.{w} 0) j ≫
     (sigmaDiskBoundaryPairIso (cell C 0) 0).hom ≫ characteristicPairMap C 0
   -- The generator is the image of the class of the point `D⁰` under the characteristic map.
+  -- As in `singularHomologyπ_comp_cellularAugmentation`, the singular homology of `D⁰` appears
+  -- both as `SSet.homology` and as `singularHomologyFunctor`, which agree only up to unfolding.
+  -- The goals are then not type-correct at the transparency `rw` checks, so `rw` and `simp` cannot
+  -- reassociate them and the composites are reassociated by terms.
   have hφ : (diskBoundaryPair.{w} 0).singularHomologyπ R 0 ≫
       TopPair.singularHomologyMap φ R 0 ≫ cellularAugmentation C R =
         (TopCat.disk.{w} 0).singularHomology₀ε R :=
