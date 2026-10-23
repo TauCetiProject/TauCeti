@@ -201,8 +201,8 @@ theorem stabilizerHopfIdeal_le_iff (v : M) (J : HopfIdeal k H) :
       simp [Φ, (Submodule.Quotient.mk_eq_zero _).mpr (Submodule.mem_span_singleton_self _)]
     have h01 : Φ (0, 1) = -(Φ ∘ₗ LinearMap.inl k M k) v := by
       have : ((0, 1) : M × k) = (v, 1) - LinearMap.inl k M k v := by simp
-      rw [this, map_sub, hΦ, zero_sub, LinearMap.comp_apply]
-      rfl
+      conv_rhs => rw [LinearMap.comp_apply]
+      rw [this, map_sub, hΦ, zero_sub]
     rw [matrixCoefficient_smul, matrixCoefficient_prodTrivial, h01, map_neg, ← sub_eq_add_neg,
       Algebra.smul_def]
     exact J.toIdeal.mul_mem_left _ (h _)
