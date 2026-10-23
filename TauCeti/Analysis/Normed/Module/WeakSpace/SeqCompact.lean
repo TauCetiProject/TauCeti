@@ -36,8 +36,8 @@ The separation argument is the one carried out inline in Mathlib's
 
 * `TauCeti.exists_seq_dual_injOn_of_isSeparable`: countably many functionals of norm at
   most one separate the points of a norm-separable set.
-* `TauCeti.metrizableSpace_toWeakSpace_of_isSeparable`: a weakly compact, norm-separable set is
-  metrizable in the weak topology.
+* `TauCeti.metrizableSpace_toWeakSpace_of_isSeparable_of_isCompact`: a weakly compact,
+  norm-separable set is metrizable in the weak topology.
 * `TauCeti.isSeqCompact_toWeakSpace_of_isCompact`: weakly compact sets are weakly sequentially
   compact.
 * `TauCeti.tendsto_subseq_toWeakSpace_of_isCompact_closure`: every sequence in a relatively
@@ -87,7 +87,7 @@ theorem exists_seq_dual_injOn_of_isSeparable {s : Set E} (hs : IsSeparable s) :
   linarith [hle n]
 
 /-- A weakly compact, norm-separable set is metrizable in the weak topology. -/
-theorem metrizableSpace_toWeakSpace_of_isSeparable {K : Set E} (hsep : IsSeparable K)
+theorem metrizableSpace_toWeakSpace_of_isSeparable_of_isCompact {K : Set E} (hsep : IsSeparable K)
     (hK : IsCompact (toWeakSpace 𝕜 E '' K)) : MetrizableSpace (toWeakSpace 𝕜 E '' K) := by
   have : CompactSpace (toWeakSpace 𝕜 E '' K) := isCompact_iff_compactSpace.mp hK
   obtain ⟨f, -, hf⟩ := exists_seq_dual_injOn_of_isSeparable 𝕜 hsep
@@ -125,7 +125,8 @@ theorem isSeqCompact_toWeakSpace_of_isCompact {K : Set E}
     rw [image_inter (toWeakSpace 𝕜 E).injective]
     exact hK.inter_right hYclosed
   have : CompactSpace (toWeakSpace 𝕜 E '' (K ∩ Y)) := isCompact_iff_compactSpace.mp hKY
-  have := metrizableSpace_toWeakSpace_of_isSeparable (hYsep.mono inter_subset_right) hKY
+  have :=
+    metrizableSpace_toWeakSpace_of_isSeparable_of_isCompact (hYsep.mono inter_subset_right) hKY
   obtain ⟨⟨a, ha⟩, φ, hφ, hlim⟩ := SeqCompactSpace.tendsto_subseq
     (fun n ↦ (⟨u n, v n, ⟨hvK n, hvY n⟩, hv n⟩ : toWeakSpace 𝕜 E '' (K ∩ Y)))
   exact ⟨a, image_mono inter_subset_left ha, φ, hφ, (continuous_subtype_val.tendsto _).comp hlim⟩
