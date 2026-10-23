@@ -17,9 +17,10 @@ taking the ordinary Lazard valuation.
 
 `MvPolynomial.lazardValuationReindex` packages this simultaneous reindexing.  It preserves
 evaluation at the original point, so its zero and top cases have the same intrinsic
-characterizations as the ordinary valuation.  Reindexings compose, and the basic product law
-continues to hold.  The finite rotation formula identifies the coordinate order used when a
-cylindrical stack moves its distinguished coordinate from the front to the end.
+characterizations as the ordinary valuation.  Reindexings compose, renaming by the
+inverse equivalence cancels the reindexing, and the basic product law continues to hold.  The
+finite rotation formula identifies the coordinate order used when a cylindrical stack moves its
+distinguished coordinate from the front to the end.
 
 This interface makes the coordinate order explicit in projection-and-lifting arguments, where
 successive stages use different presentations of the same ambient variables.
@@ -64,6 +65,14 @@ theorem lazardValuationReindex_trans [CommSemiring R]
       (rename e p).lazardValuationReindex f (a ∘ e.symm) := by
   rw [lazardValuationReindex_def, lazardValuationReindex_def]
   simp [Function.comp_def]
+
+/-- Reindexing a polynomial renamed by the inverse equivalence gives the ordinary Lazard
+valuation at the reindexed point. -/
+@[simp]
+theorem lazardValuationReindex_rename_symm [CommSemiring R] [LinearOrder τ] [WellFoundedGT τ]
+    (p : MvPolynomial τ R) (e : σ ≃ τ) (a : σ → R) :
+    (rename e.symm p).lazardValuationReindex e a = p.lazardValuation (a ∘ e.symm) := by
+  rw [lazardValuationReindex_def, rename_rename, e.self_comp_symm, rename_id_apply]
 
 /-- A reindexed Lazard valuation is zero exactly when the original polynomial does not vanish
 at the original point. -/

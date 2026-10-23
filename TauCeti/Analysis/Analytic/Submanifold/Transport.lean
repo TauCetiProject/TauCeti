@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Analytic.Submanifold.Basic
 public import Mathlib.Topology.OpenPartialHomeomorph.Composition
+import Mathlib.Topology.Algebra.Module.Equiv.Pi
 
 /-!
 # Analytic changes of ambient coordinates
@@ -63,5 +64,12 @@ theorem IsAnalyticSubmanifold.preimage (hS : IsAnalyticSubmanifold d S)
     simpa only [OpenPartialHomeomorph.trans_source,
       Homeomorph.toOpenPartialHomeomorph_source, Homeomorph.toOpenPartialHomeomorph_apply,
       univ_inter, mem_preimage] using hxc
+
+/-- Permuting the ambient coordinates preserves analytic submanifolds and their dimension. -/
+theorem IsAnalyticSubmanifold.preimage_comp_equiv (hS : IsAnalyticSubmanifold d S)
+    (e : Fin n ≃ Fin n) : IsAnalyticSubmanifold d ((fun x ↦ x ∘ e) ⁻¹' S) :=
+  -- Precomposition with a permutation of coordinates is a continuous linear equivalence.
+  let L := (ContinuousLinearEquiv.piCongrLeft 𝕜 (fun _ : Fin n ↦ 𝕜) e).symm
+  hS.preimage L.toHomeomorph (fun y _ ↦ L.analyticAt y) (fun y _ ↦ L.symm.analyticAt y)
 
 end TauCeti
