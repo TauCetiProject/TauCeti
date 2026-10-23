@@ -33,8 +33,6 @@ in `not_isSquare_prod_optionNeg`, and the CM degree is the corollary for `K = �
   arbitrary ordered field for the `Option`-indexed family.
 * `TauCeti.Multiquadratic.finrank_adjoin_I_sqrt_primes`: `[ℚ(i, √p₁, …, √pₙ) : ℚ] = 2^{|ι|+1}`
   for a finite family of distinct primes — the multiquadratic CM degree.
-* `TauCeti.Multiquadratic.insert_I_range_sqrt_unit`: the Unit-indexed constant radical range
-  collapses to a singleton — the set identity behind the one-prime corollaries.
 * `TauCeti.Multiquadratic.finrank_adjoin_I_sqrt_prime`: `[ℚ(i, √p) : ℚ] = 4` for a prime `p` —
   the one-prime case of the multiquadratic CM degree.
 * `TauCeti.Multiquadratic.finrank_adjoin_I_sqrt_two`: `[ℚ(i, √2) : ℚ] = 4`, the smallest
@@ -158,13 +156,6 @@ theorem not_isSquare_prod_cmRadicand (hp : ∀ i, (p i).Prime) (hinj : Function.
 
 end CMFamily
 
-/-- The Unit-indexed single-radican range collapses to a singleton: `i` together with the range
-of the constant map with value `√p` over `Unit` is the two-element generator set `{i, √p}`. -/
-theorem insert_I_range_sqrt_unit (p : ℕ) :
-    insert Complex.I (Set.range fun _ : Unit => ((Real.sqrt p : ℝ) : ℂ))
-      = ({Complex.I, ((Real.sqrt p : ℝ) : ℂ)} : Set ℂ) := by
-  simp [Set.range_const]
-
 /-- **Degree of a multiquadratic CM field.** For a finite family of distinct primes `p : ι → ℕ`,
 the field `ℚ(i, √p₁, …, √pₙ)` generated over `ℚ` by `i` and the real square roots of the `p i`
 has degree `2^{|ι|+1}`. This recovers the Erdős CM field `ℚ(i, √q₀, …, √q_{g-1})` as a
@@ -191,7 +182,7 @@ theorem finrank_adjoin_I_sqrt_prime (p : ℕ) (hp : p.Prime) :
         ({Complex.I, ((Real.sqrt p : ℝ) : ℂ)} : Set ℂ)) = 4 := by
   have h := finrank_adjoin_I_sqrt_primes (ι := Unit) (fun _ => p) (fun _ => hp)
     (fun _ _ _ => Subsingleton.elim _ _)
-  rw [insert_I_range_sqrt_unit p] at h
+  rw [Set.range_const] at h
   exact h.trans (by simp)
 
 /-- **Worked example: `[ℚ(i, √2) : ℚ] = 4`.** The smallest nontrivial multiquadratic CM degree,
