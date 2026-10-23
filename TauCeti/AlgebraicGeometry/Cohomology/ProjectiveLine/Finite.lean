@@ -44,23 +44,23 @@ private lemma exists_two_affine_opens_projectiveLine (R : Type u) [CommRing R] :
     Proj.isAffineOpen_basicOpen _ _ (projectiveLine.coord_mem R 1) one_pos,
     projectiveLine.basicOpen_coord_sup_eq_top R⟩
 
+/-- A quasicoherent sheaf on a locally Noetherian scheme affine over the projective line
+has no cohomology in degrees at least two. -/
+theorem subsingleton_cohomology_of_two_le_of_isAffineHom_to_projectiveLine
+    (R : Type u) [CommRing R] {X : Scheme.{u}} [IsLocallyNoetherian X]
+    (f : X ⟶ projectiveLine R) [IsAffineHom f]
+    (M : X.Modules) [M.IsQuasicoherent] (n : ℕ) (hn : 2 ≤ n) :
+    Subsingleton (Cohomology M n) := by
+  obtain ⟨U, V, hU, hV, hUV⟩ := exists_two_affine_opens_projectiveLine R
+  exact subsingleton_cohomology_of_two_le_of_isAffineOpen M (hU.preimage f) (hV.preimage f)
+    (by rw [← f.preimage_inf]; exact (hU.inf hV).preimage f)
+    (f.preimage_sup_eq_top hUV) n hn
+
 variable (R : Type u) [CommRing R] [IsNoetherianRing R]
   {X : Scheme.{u}} [X.Over (Spec (.of R))]
   (f : X ⟶ projectiveLine R) [IsFinite f] [f.IsOver (Spec (.of R))]
 
 include f
-
-omit [X.Over (Spec (.of R))] [f.IsOver (Spec (.of R))] in
-/-- A quasicoherent sheaf on a scheme finite over the projective line over a Noetherian ring
-has no cohomology in degrees at least two. -/
-theorem subsingleton_cohomology_of_two_le_of_isFinite_to_projectiveLine
-    (M : X.Modules) [M.IsQuasicoherent] (n : ℕ) (hn : 2 ≤ n) :
-    Subsingleton (Cohomology M n) := by
-  have : IsLocallyNoetherian X := LocallyOfFiniteType.isLocallyNoetherian f
-  obtain ⟨U, V, hU, hV, hUV⟩ := exists_two_affine_opens_projectiveLine R
-  exact subsingleton_cohomology_of_two_le_of_isAffineOpen M (hU.preimage f) (hV.preimage f)
-    (by rw [← f.preimage_inf]; exact (hU.inf hV).preimage f)
-    (by rw [← f.preimage_sup, hUV, f.preimage_top]) n hn
 
 /-- Every cohomology group of a quasicoherent sheaf of finite type on a scheme finite over
 `ℙ¹_R` is finite over the Noetherian ring `R`. Neither the morphism nor the coefficient
@@ -81,7 +81,7 @@ theorem finite_cohomology_of_isFinite_to_projectiveLine (M : X.Modules)
       exact (f.moduleFinite_cohomology_one_pushforward_iff_of_two_affine_opens (R := R)
         M U V hU hV hUV).mp inferInstance
     | succ n =>
-      have := subsingleton_cohomology_of_two_le_of_isFinite_to_projectiveLine R f M (n + 2)
+      have := subsingleton_cohomology_of_two_le_of_isAffineHom_to_projectiveLine R f M (n + 2)
         (by omega)
       infer_instance
 
