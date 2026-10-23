@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.NovikovSeries.TopologicalRing
+public import Mathlib.Analysis.Normed.Algebra.Exponential
+public import Mathlib.Analysis.Normed.Algebra.Logarithm
 public import Mathlib.RingTheory.PowerSeries.Evaluation
 public import Mathlib.RingTheory.PowerSeries.Log
 public import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
@@ -19,7 +21,8 @@ import Mathlib.Data.Nat.Choose.Cast
 
 Let `K` be a commutative `ℚ`-algebra, `H` an additive commutative monoid and `N : H →+ ℝ` a
 period homomorphism. In the nonnegative subring of the Novikov ring `Nov(K, H, N)`, a series `a`
-of the positive ideal is topologically nilpotent, so the exponential and logarithm series
+of the positive ideal is topologically nilpotent, so the series of Mathlib's exponential
+`NormedSpace.exp` and logarithm `NormedSpace.log`
 
 `exp a = ∑ aⁿ / n!`,    `log (1 + a) = ∑ (-1)ⁿ⁺¹ aⁿ / n`
 
@@ -43,10 +46,6 @@ exponential series in the complete nonarchimedean ring; its proof follows that o
 
 ## Main definitions
 
-* `TauCeti.NovikovSeries.exp`: the exponential series `∑ aⁿ / n!` of a series of nonnegative
-  periods.
-* `TauCeti.NovikovSeries.log`: the logarithm series `∑ (-1)ⁿ⁺¹ (u - 1)ⁿ / n` of a series of
-  nonnegative periods.
 * `TauCeti.NovikovSeries.expMulEquiv`: the exponential, as an isomorphism from the additive group
   of the positive ideal onto the principal unit group, with inverse the logarithm.
 
@@ -118,16 +117,6 @@ end Evaluation
 
 variable [Algebra ℚ K]
 
-/-- The exponential series `exp a = ∑ aⁿ / n!` of a series of nonnegative periods. It converges
-when `a` lies in the positive ideal (`TauCeti.NovikovSeries.hasSum_exp`). -/
-def exp (a : nonnegSubring K N) : nonnegSubring K N :=
-  ∑' n : ℕ, (n ! : ℚ)⁻¹ • a ^ n
-
-/-- The logarithm series `log u = ∑ (-1)ⁿ⁺¹ (u - 1)ⁿ / n` of a series of nonnegative periods.
-It converges when `u - 1` lies in the positive ideal (`TauCeti.NovikovSeries.hasSum_log`). -/
-def log (u : nonnegSubring K N) : nonnegSubring K N :=
-  ∑' n : ℕ, ((-1) ^ (n + 1) / n : ℚ) • (u - 1) ^ n
-
 section Evaluation
 
 variable [UniformSpace K] [DiscreteUniformity K] {a u : nonnegSubring K N}
@@ -153,12 +142,16 @@ private theorem hasSum_log_aeval (hu : u - 1 ∈ posIdeal K N) :
     split_ifs with hn <;> simp [hn]
 
 private theorem exp_eq_aeval (ha : a ∈ posIdeal K N) :
-    exp a = PowerSeries.aeval (R := K) (hasEval_of_mem_posIdeal ha) (PowerSeries.exp K) :=
-  (hasSum_exp_aeval ha).tsum_eq
+    NormedSpace.exp a =
+      PowerSeries.aeval (R := K) (hasEval_of_mem_posIdeal ha) (PowerSeries.exp K) := by
+  rw [NormedSpace.exp_eq_tsum_rat]
+  exact (hasSum_exp_aeval ha).tsum_eq
 
 private theorem log_eq_aeval (hu : u - 1 ∈ posIdeal K N) :
-    log u = PowerSeries.aeval (R := K) (hasEval_of_mem_posIdeal hu) (PowerSeries.log K) :=
-  (hasSum_log_aeval hu).tsum_eq
+    NormedSpace.log u =
+      PowerSeries.aeval (R := K) (hasEval_of_mem_posIdeal hu) (PowerSeries.log K) := by
+  rw [NormedSpace.log_eq_tsum ℚ]
+  exact (hasSum_log_aeval hu).tsum_eq
 
 end Evaluation
 
@@ -166,7 +159,7 @@ variable {a b u v : nonnegSubring K N}
 
 /-- For `a` in the positive ideal, the exponential series `∑ aⁿ / n!` converges to `exp a`. -/
 theorem hasSum_exp (ha : a ∈ posIdeal K N) :
-    HasSum (fun n : ℕ => (n ! : ℚ)⁻¹ • a ^ n) (exp a) := by
+    HasSum (fun n : ℕ => (n ! : ℚ)⁻¹ • a ^ n) (NormedSpace.exp a) := by
   let : UniformSpace K := ⊥
   rw [exp_eq_aeval ha]
   exact hasSum_exp_aeval ha
@@ -174,50 +167,42 @@ theorem hasSum_exp (ha : a ∈ posIdeal K N) :
 /-- For `u - 1` in the positive ideal, the logarithm series `∑ (-1)ⁿ⁺¹ (u - 1)ⁿ / n` converges
 to `log u`. -/
 theorem hasSum_log (hu : u - 1 ∈ posIdeal K N) :
-    HasSum (fun n : ℕ => ((-1) ^ (n + 1) / n : ℚ) • (u - 1) ^ n) (log u) := by
+    HasSum (fun n : ℕ => ((-1) ^ (n + 1) / n : ℚ) • (u - 1) ^ n) (NormedSpace.log u) := by
   let : UniformSpace K := ⊥
   rw [log_eq_aeval hu]
   exact hasSum_log_aeval hu
 
-theorem exp_sub_one_mem_posIdeal (ha : a ∈ posIdeal K N) : exp a - 1 ∈ posIdeal K N := by
+theorem exp_sub_one_mem_posIdeal (ha : a ∈ posIdeal K N) :
+    NormedSpace.exp a - 1 ∈ posIdeal K N := by
   let : UniformSpace K := ⊥
   rw [exp_eq_aeval ha, ← map_one (PowerSeries.aeval (R := K) (hasEval_of_mem_posIdeal ha)),
     ← map_sub]
   exact aeval_mem_posIdeal ha (by simp)
 
-theorem log_mem_posIdeal (hu : u - 1 ∈ posIdeal K N) : log u ∈ posIdeal K N := by
+theorem log_mem_posIdeal (hu : u - 1 ∈ posIdeal K N) : NormedSpace.log u ∈ posIdeal K N := by
   let : UniformSpace K := ⊥
   rw [log_eq_aeval hu]
   exact aeval_mem_posIdeal hu constantCoeff_log
 
 /-- The exponential of the logarithm: `exp (log u) = u` when `u - 1` lies in the positive
 ideal. -/
-theorem exp_log (hu : u - 1 ∈ posIdeal K N) : exp (log u) = u := by
+theorem exp_log (hu : u - 1 ∈ posIdeal K N) : NormedSpace.exp (NormedSpace.log u) = u := by
   let : UniformSpace K := ⊥
   rw [exp_eq_aeval (log_mem_posIdeal hu),
     aeval_eq_aeval_subst hu (log_mem_posIdeal hu) constantCoeff_log (log_eq_aeval hu).symm,
     subst_exp_log, map_add, map_one, aeval_X_of_mem_posIdeal hu, add_sub_cancel]
 
 /-- The logarithm of the exponential: `log (exp a) = a` when `a` lies in the positive ideal. -/
-theorem log_exp (ha : a ∈ posIdeal K N) : log (exp a) = a := by
+theorem log_exp (ha : a ∈ posIdeal K N) : NormedSpace.log (NormedSpace.exp a) = a := by
   let : UniformSpace K := ⊥
   rw [log_eq_aeval (exp_sub_one_mem_posIdeal ha),
     aeval_eq_aeval_subst ha (exp_sub_one_mem_posIdeal ha) (g := PowerSeries.exp K - 1)
       (by simp) (by rw [map_sub, map_one, exp_eq_aeval ha]),
     subst_log_exp_sub_one, aeval_X_of_mem_posIdeal ha]
 
-@[simp]
-theorem log_one : log (1 : nonnegSubring K N) = 0 := by
-  refine (tsum_congr fun n => ?_).trans tsum_zero
-  rcases n with _ | n <;> simp
-
-@[simp]
-theorem exp_zero : exp (0 : nonnegSubring K N) = 1 := by
-  simpa using exp_log (u := (1 : nonnegSubring K N)) (by simp)
-
 /-- The exponential turns sums of series of the positive ideal into products. -/
 theorem exp_add (ha : a ∈ posIdeal K N) (hb : b ∈ posIdeal K N) :
-    exp (a + b) = exp a * exp b := by
+    NormedSpace.exp (a + b) = NormedSpace.exp a * NormedSpace.exp b := by
   -- The Cauchy product is stated for abstract families: instantiating it directly at the
   -- exponential series makes the elaborator unfold the scalar actions, which times out.
   have cauchy : ∀ f g : ℕ → nonnegSubring K N, Summable f → Summable g →
@@ -236,7 +221,7 @@ theorem exp_add (ha : a ∈ posIdeal K N) (hb : b ∈ posIdeal K N) :
 /-- The logarithm turns products into sums: `log (u * v) = log u + log v` when `u - 1` and
 `v - 1` lie in the positive ideal. -/
 theorem log_mul (hu : u - 1 ∈ posIdeal K N) (hv : v - 1 ∈ posIdeal K N) :
-    log (u * v) = log u + log v := by
+    NormedSpace.log (u * v) = NormedSpace.log u + NormedSpace.log v := by
   rw [← log_exp (add_mem (log_mem_posIdeal hu) (log_mem_posIdeal hv)),
     exp_add (log_mem_posIdeal hu) (log_mem_posIdeal hv), exp_log hu, exp_log hv]
 
@@ -245,11 +230,11 @@ variable (K N) in
 an isomorphism from the additive group of the positive ideal onto the principal unit group of the
 nonnegative subring, with inverse the logarithm. -/
 def expMulEquiv : Multiplicative (posIdeal K N) ≃* principalUnitGroup K N where
-  toFun a := ⟨⟨exp a.toAdd, exp (-a.toAdd),
-      by rw [← exp_add a.toAdd.2 (neg_mem a.toAdd.2), add_neg_cancel, exp_zero],
-      by rw [← exp_add (neg_mem a.toAdd.2) a.toAdd.2, neg_add_cancel, exp_zero]⟩,
+  toFun a := ⟨⟨NormedSpace.exp a.toAdd, NormedSpace.exp (-a.toAdd),
+      by rw [← exp_add a.toAdd.2 (neg_mem a.toAdd.2), add_neg_cancel, NormedSpace.exp_zero],
+      by rw [← exp_add (neg_mem a.toAdd.2) a.toAdd.2, neg_add_cancel, NormedSpace.exp_zero]⟩,
     mem_principalUnitGroup.2 (exp_sub_one_mem_posIdeal a.toAdd.2)⟩
-  invFun u := .ofAdd ⟨log ((u : (nonnegSubring K N)ˣ) : nonnegSubring K N),
+  invFun u := .ofAdd ⟨NormedSpace.log ((u : (nonnegSubring K N)ˣ) : nonnegSubring K N),
     log_mem_posIdeal (mem_principalUnitGroup.1 u.2)⟩
   left_inv a := Subtype.ext (log_exp a.toAdd.2)
   right_inv u := Subtype.ext (Units.ext (exp_log (mem_principalUnitGroup.1 u.2)))
@@ -257,13 +242,14 @@ def expMulEquiv : Multiplicative (posIdeal K N) ≃* principalUnitGroup K N wher
 
 @[simp]
 theorem coe_expMulEquiv_apply (a : posIdeal K N) :
-    ((expMulEquiv K N (.ofAdd a) : (nonnegSubring K N)ˣ) : nonnegSubring K N) = exp a :=
+    ((expMulEquiv K N (.ofAdd a) : (nonnegSubring K N)ˣ) : nonnegSubring K N) =
+      NormedSpace.exp (a : nonnegSubring K N) :=
   (rfl)
 
 @[simp]
 theorem coe_expMulEquiv_symm_apply (u : principalUnitGroup K N) :
     (((expMulEquiv K N).symm u).toAdd : nonnegSubring K N) =
-      log ((u : (nonnegSubring K N)ˣ) : nonnegSubring K N) :=
+      NormedSpace.log ((u : (nonnegSubring K N)ˣ) : nonnegSubring K N) :=
   (rfl)
 
 end NovikovSeries
