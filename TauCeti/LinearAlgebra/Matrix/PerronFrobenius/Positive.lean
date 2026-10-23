@@ -88,28 +88,33 @@ section OrderedSemifield
 variable {K : Type*} [Semifield K] [LinearOrder K] [IsStrictOrderedRing K] {A : Matrix n n K}
   {v w y : n → K} {r μ t : K}
 
+omit [Fintype n] in
+/-- Comparing coordinate ratios gives a scalar multiple lying above a vector and touching it. -/
+private theorem exists_le_smul_of_pos [Finite n] (hv : ∀ i, 0 < v i) (j : n) (y : n → K) :
+    ∃ i, y ≤ (y i / v i) • v ∧ y i = y i / v i * v i := by
+  have : Nonempty n := ⟨j⟩
+  obtain ⟨i, hi⟩ := Finite.exists_max fun i => y i / v i
+  refine ⟨i, fun k ↦ ?_, (div_mul_cancel₀ _ (hv i).ne').symm⟩
+  simpa [mul_comm] using (div_le_iff₀ (hv k)).1 (hi k)
+
 /-- **Collatz–Wielandt bound.** Let `A` be entrywise nonnegative with `A v ≤ r v` for a vector `v`
 all of whose entries are strictly positive. If `t y ≤ A y` entrywise for some nonzero nonnegative
 vector `y`, then `t ≤ r`. -/
 theorem le_of_smul_le_mulVec (hA : ∀ i j, 0 ≤ A i j) (hv : ∀ i, 0 < v i)
     (hAv : A *ᵥ v ≤ r • v) (hy : 0 ≤ y) (hy0 : y ≠ 0) (h : t • y ≤ A *ᵥ y) : t ≤ r := by
   obtain ⟨j, hj⟩ := Function.ne_iff.1 hy0
-  have : Nonempty n := ⟨j⟩
-  -- Compare `y` with the smallest multiple `c • v` lying above it, at a coordinate `i` where
-  -- the two agree.
-  obtain ⟨i, hi⟩ := Finite.exists_max fun i => y i / v i
+  obtain ⟨i, hyc, hyi⟩ := exists_le_smul_of_pos hv j y
   set c := y i / v i
-  have hyc : y ≤ c • v := fun k => by
-    simpa [mul_comm] using (div_le_iff₀ (hv k)).1 (hi k)
-  have hyi : y i = c * v i := (div_mul_cancel₀ _ (hv i).ne').symm
-  have hc : 0 < c := (div_pos ((hy j).lt_of_ne' hj) (hv j)).trans_le (hi j)
+  have hc : 0 < c := (mul_pos_iff_of_pos_right (hv j)).mp <| by
+    simpa only [Pi.smul_apply, smul_eq_mul, Pi.zero_apply] using
+      ((hy j).lt_of_ne' hj).trans_le (hyc j)
   have key : t * y i ≤ r * y i :=
     calc t * y i = (t • y) i := by rw [Pi.smul_apply, smul_eq_mul]
       _ ≤ (A *ᵥ y) i := h i
       _ ≤ (A *ᵥ (c • v)) i := mulVec_mono hA hyc i
       _ ≤ (c • (r • v)) i := by
         rw [mulVec_smul]
-        exact mul_le_mul_of_nonneg_left (hAv i) hc.le
+        exact smul_le_smul_of_nonneg_left hAv hc.le i
       _ = r * y i := by simp [hyi, mul_left_comm]
   exact le_of_mul_le_mul_right key (hyi ▸ mul_pos hc (hv i))
 
@@ -132,23 +137,20 @@ theorem exists_pos_eq_smul_of_mulVec_eq_smul (hA : ∀ i j, 0 < A i j) (hv : ∀
     ∃ c : K, 0 < c ∧ w = c • v := by
   obtain rfl := eq_of_mulVec_eq_smul_of_nonneg hA hv hAv hw hw0 hAw
   obtain ⟨j, -⟩ := Function.ne_iff.1 hw0
-  have : Nonempty n := ⟨j⟩
-  obtain ⟨i, hi⟩ := Finite.exists_max fun i => w i / v i
+  obtain ⟨i, hwc, hwi⟩ := exists_le_smul_of_pos hv j w
   set c := w i / v i
-  have hwc : w ≤ c • v := fun k => by
-    simpa [mul_comm] using (div_le_iff₀ (hv k)).1 (hi k)
-  have hwi : w i = c * v i := (div_mul_cancel₀ _ (hv i).ne').symm
   -- Equality in row `i` of the comparison forces equality in every coordinate, since each
   -- coefficient in that row is strictly positive.
-  have hsum : ∑ k, A i k * w k = ∑ k, A i k * (c * v k) := by
-    calc
-      _ = μ * w i := congrFun hAw i
-      _ = (A *ᵥ (c • v)) i := by simp [mulVec_smul, hAv, hwi, mul_left_comm]
-      _ = _ := rfl
+  have hsum : (A *ᵥ w) i = (A *ᵥ (c • v)) i := by
+    rw [hAw, mulVec_smul, hAv]
+    simp only [Pi.smul_apply, smul_eq_mul, hwi, mul_left_comm]
+  simp only [mulVec, dotProduct, Pi.smul_apply, smul_eq_mul] at hsum
   refine ⟨c, div_pos (pos_of_mulVec_eq_smul hA hw hw0 hAw i) (hv i), funext fun k => ?_⟩
   exact mul_left_cancel₀ (hA i k).ne' <|
     (Finset.sum_eq_sum_iff_of_le fun k _ =>
-      mul_le_mul_of_nonneg_left (hwc k) (hA i k).le).1 hsum k (Finset.mem_univ k)
+      mul_le_mul_of_nonneg_left
+        (by simpa only [Pi.smul_apply, smul_eq_mul] using hwc k) (hA i k).le).1
+      hsum k (Finset.mem_univ k)
 
 end OrderedSemifield
 
