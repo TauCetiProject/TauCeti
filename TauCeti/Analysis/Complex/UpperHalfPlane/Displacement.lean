@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Metric
+public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Dilation
+import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Affine
 import TauCeti.Analysis.Complex.UpperHalfPlane.Rotation
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ConjAct
 import TauCeti.LinearAlgebra.Matrix.Trace.FinTwo
@@ -42,12 +44,24 @@ the traceless symmetric matrices `!![1, 0; 0, -1]` and `!![0, 1; 1, 0]`. Then
 `4 ((q' s - q s')² + (q r' - q' r)² - (r s' - s r')²)`, which vanishes when both elements are
 rotations about `I`. These bounds feed the Margulis lemma for Fuchsian groups.
 
+Two further computations concern elements translating along the imaginary axis or reversing it.
+The dilation `z ↦ exp s * z` moves `z` a distance `δ` with
+`cosh δ = 1 + (cosh s - 1) (1 + (Re z / Im z)²)`; the quantity `1 + (Re z / Im z)²` is
+`cosh² ρ` for the distance `ρ` from `z` to the axis. An antidiagonal matrix `!![0, b; c, 0]`,
+which exchanges the endpoints `0` and `∞` of the axis, moves `z` a distance `δ` with
+`cosh δ ≥ 1 + 2 (Re z / Im z)²`, that is `δ ≥ 2 ρ`. Thus points far from the axis are moved far
+by both kinds of element, except by dilations with `s` close to `0`.
+
 ## Main results
 
 * `Matrix.SpecialLinearGroup.cosh_dist_smul_I`: the distance moved by `I`.
 * `Matrix.SpecialLinearGroup.dist_smul_smul_eq`: changing the base point conjugates the action.
 * `Matrix.SpecialLinearGroup.cosh_dist_smul_of_smul_eq_self`: the displacement of a point by an
   element fixing `z`.
+* `Matrix.SpecialLinearGroup.cosh_dist_dilation_smul`: the displacement of a point by a dilation,
+  at least `|s|` by `Matrix.SpecialLinearGroup.abs_le_dist_dilation_smul`.
+* `Matrix.SpecialLinearGroup.one_add_two_mul_sq_le_cosh_dist_smul`: a lower bound for the
+  displacement of a point by an antidiagonal matrix.
 * `Matrix.SpecialLinearGroup.trace_commutatorElement_of_smul_eq_self`: the trace of a commutator
   with an element fixing `z`.
 * `Matrix.SpecialLinearGroup.trace_sq_sub_four_le`: the trace of an element is controlled by the
@@ -265,5 +279,80 @@ theorem abs_trace_commutatorElement_sub_two_le (g h : SL(2, ℝ)) (z : ℍ) :
     group
   rw [dist_smul_smul_eq P g I, dist_smul_smul_eq P h I, hcomm, trace_mul_mul_inv]
   exact abs_trace_commutatorElement_sub_two_le_of_I _ _
+
+/-- **Displacement by a dilation.** The dilation `z ↦ exp s * z` moves `z ∈ ℍ` a hyperbolic
+distance `δ` with `cosh δ = 1 + (cosh s - 1) (1 + (Re z / Im z)²)`. In particular it moves every
+point of the imaginary axis the distance `|s|`, and every other point at least as far. -/
+theorem cosh_dist_dilation_smul (s : ℝ) (z : ℍ) :
+    Real.cosh (dist (dilation s • z) z) = 1 + (Real.cosh s - 1) * (1 + (z.re / z.im) ^ 2) := by
+  have hre : (dilation s • z).re = Real.exp s * z.re := by
+    rw [← UpperHalfPlane.coe_re, TauCeti.UpperHalfPlane.coe_dilation_smul, Complex.re_ofReal_mul,
+      UpperHalfPlane.coe_re]
+  have him : (dilation s • z).im = Real.exp s * z.im := by
+    rw [← UpperHalfPlane.coe_im, TauCeti.UpperHalfPlane.coe_dilation_smul, Complex.im_ofReal_mul,
+      UpperHalfPlane.coe_im]
+  have hy := z.im_pos
+  have he := Real.exp_pos s
+  rw [cosh_dist', hre, him, Real.cosh_eq, Real.exp_neg]
+  field_simp
+  ring
+
+/-- The dilation `z ↦ exp s * z` moves every point of `ℍ` at least the distance `|s|`. -/
+theorem abs_le_dist_dilation_smul (s : ℝ) (z : ℍ) : |s| ≤ dist (dilation s • z) z := by
+  have h : Real.cosh |s| ≤ Real.cosh (dist (dilation s • z) z) := by
+    rw [Real.cosh_abs, cosh_dist_dilation_smul]
+    nlinarith [Real.one_le_cosh s, sq_nonneg (z.re / z.im)]
+  simpa [abs_of_nonneg dist_nonneg] using Real.cosh_le_cosh.1 h
+
+/-- The dilation `z ↦ exp s * z` moves `I` exactly the distance `|s|`. -/
+@[simp]
+theorem dist_dilation_smul_I (s : ℝ) : dist (dilation s • I) I = |s| := by
+  have h : Real.cosh (dist (dilation s • I) I) = Real.cosh |s| := by
+    rw [cosh_dist_dilation_smul, Real.cosh_abs]
+    simp
+  refine le_antisymm ?_ (abs_le_dist_dilation_smul s I)
+  simpa [abs_of_nonneg dist_nonneg] using Real.cosh_le_cosh.1 h.le
+
+/-- **Displacement by an antidiagonal matrix.** A matrix `g = !![0, b; c, 0] ∈ SL(2, ℝ)`, acting as
+`z ↦ -b² / z` and so exchanging the endpoints `0` and `∞` of the imaginary axis, moves `z ∈ ℍ` a
+hyperbolic distance `δ` with `cosh δ ≥ 1 + 2 (Re z / Im z)²`. -/
+theorem one_add_two_mul_sq_le_cosh_dist_smul {g : SL(2, ℝ)} (h₀₀ : g 0 0 = 0) (h₁₁ : g 1 1 = 0)
+    (z : ℍ) : 1 + 2 * (z.re / z.im) ^ 2 ≤ Real.cosh (dist (g • z) z) := by
+  have hdet : g 0 1 * g 1 0 = -1 := by
+    have := g.det_coe
+    rw [Matrix.det_fin_two, h₀₀, h₁₁] at this
+    linarith
+  have hb : g 0 1 ≠ 0 := by
+    rintro h
+    simp [h] at hdet
+  have hc : g 1 0 ≠ 0 := by
+    rintro h
+    simp [h] at hdet
+  have hz : (z : ℂ) ≠ 0 := z.ne_zero
+  have hcoe : ((g • z : ℍ) : ℂ) = -(g 0 1 ^ 2 : ℝ) / z := by
+    rw [UpperHalfPlane.coe_specialLinearGroup_apply]
+    simp only [h₀₀, h₁₁]
+    have hc' : (g 1 0 : ℂ) ≠ 0 := Complex.ofReal_ne_zero.2 hc
+    field_simp
+    have : ((g 0 1 : ℝ) : ℂ) * (g 1 0 : ℂ) = -1 := by exact_mod_cast hdet
+    push_cast
+    linear_combination (z : ℂ) * (g 0 1 : ℂ) * this
+  have hre : (g • z).re = -(g 0 1 ^ 2) * z.re / (z.re ^ 2 + z.im ^ 2) := by
+    rw [← UpperHalfPlane.coe_re, hcoe, Complex.div_re, Complex.neg_re, Complex.neg_im,
+      Complex.ofReal_re, Complex.ofReal_im, Complex.normSq_apply, UpperHalfPlane.coe_re,
+      UpperHalfPlane.coe_im]
+    ring
+  have him : (g • z).im = g 0 1 ^ 2 * z.im / (z.re ^ 2 + z.im ^ 2) := by
+    rw [← UpperHalfPlane.coe_im, hcoe, Complex.div_im, Complex.neg_re, Complex.neg_im,
+      Complex.ofReal_re, Complex.ofReal_im, Complex.normSq_apply, UpperHalfPlane.coe_re,
+      UpperHalfPlane.coe_im]
+    ring
+  have hy := z.im_pos
+  have hb2 : 0 < g 0 1 ^ 2 := by positivity
+  have hr : 0 < z.re ^ 2 + z.im ^ 2 := by positivity
+  rw [cosh_dist', hre, him, le_div_iff₀ (by positivity), div_pow]
+  field_simp
+  -- the difference of the two sides is a positive multiple of `(|z|² - b²)²`
+  nlinarith [sq_nonneg (z.re ^ 2 + z.im ^ 2 - g 0 1 ^ 2), mul_pos hr hy]
 
 end Matrix.SpecialLinearGroup
