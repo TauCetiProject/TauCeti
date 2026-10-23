@@ -41,34 +41,37 @@ namespace TauCeti.AlgebraicGeometry.SchemeWeilDivisor
 universe u
 
 variable {k : Type u} [Field k] {X : Scheme.{u}} [X.Over (Spec (.of k))]
-  [IsIntegral X] [IsNoetherian X] [IsProper (X ↘ Spec (.of k))]
+  [IsIntegral X] [IsLocallyNoetherian X] [IsProper (X ↘ Spec (.of k))]
   [∀ x : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (x : X))]
   (hdim : ∀ x : X, coheight x ≤ 1)
   [FiniteDimensional k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1)]
   (hφ : Function.Surjective (Scheme.Modules.baseRingToGlobalSections k X))
 
 include hφ in
-/-- The normalized Abel map on line-bundle classes is onto when the normalization divisor has
-degree at least the genus. The effective preimage has the same degree as the normalization. -/
+/-- If `deg B ≥ g`, every degree-zero line-bundle class `a` equals `𝒪_X(E) / 𝒪_X(B)` for some
+effective Weil divisor `E` with `deg E = deg B`. -/
 theorem exists_isEffective_toLineBundleClass_div_eq (B : SchemeWeilDivisor X)
     (hB : (finrank k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1) : ℤ) ≤
       relativeDegree (X ↘ Spec (.of k)) B)
     (a : LineBundleClass X) (ha : LineBundleClass.eulerDegree k a = 0) :
+    letI : IsNoetherian X :=
+      { toIsLocallyNoetherian := inferInstance
+        toCompactSpace := compactSpace_of_universallyClosed (X ↘ Spec (.of k)) }
     ∃ E : SchemeWeilDivisor X, WeilDivisor.IsEffective E ∧
       relativeDegree (X ↘ Spec (.of k)) E = relativeDegree (X ↘ Spec (.of k)) B ∧
         toLineBundleClass hdim E / toLineBundleClass hdim B = a := by
+  have : IsNoetherian X :=
+    { toIsLocallyNoetherian := inferInstance
+      toCompactSpace := compactSpace_of_universallyClosed (X ↘ Spec (.of k)) }
   obtain ⟨L, hL⟩ := LineBundleClass.mk_surjective (a * toLineBundleClass hdim B)
   have hdegree : L.eulerDegree k = relativeDegree (X ↘ Spec (.of k)) B := by
     rw [← LineBundleClass.eulerDegree_mk, hL,
       LineBundleClass.eulerDegree_mul k hdim, ha,
       LineBundleClass.eulerDegree_toLineBundleClass, zero_add]
-  obtain ⟨E, hE, ⟨e⟩, hdegE⟩ :=
+  obtain ⟨E, hE, -, hdegE, hclass⟩ :=
     InvertibleSheaf.exists_isEffective_iso_sheaf_of_genus_le_eulerDegree hdim hφ L
       (hdegree.symm ▸ hB)
   refine ⟨E, hE, hdegE.trans hdegree, ?_⟩
-  have hclass : toLineBundleClass hdim E = LineBundleClass.mk L := by
-    apply (toLineBundleClass_eq_mk_iff hdim).mpr
-    exact ⟨eqToIso (toInvertibleSheaf_obj hdim E) ≪≫ e.symm⟩
   rw [hclass, hL, mul_div_cancel_right]
 
 end TauCeti.AlgebraicGeometry.SchemeWeilDivisor

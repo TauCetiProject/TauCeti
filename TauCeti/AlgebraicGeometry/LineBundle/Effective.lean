@@ -51,12 +51,17 @@ variable {k : Type u} [Field k] [X.Over (Spec (.of k))]
 
 include hdim hφ in
 /-- On a proper regular integral curve with constant global functions, a line bundle of degree
-at least the genus is represented by an effective Weil divisor of that degree. -/
+at least the genus is represented by an effective Weil divisor of that degree, with the same
+line-bundle class. -/
 theorem exists_isEffective_iso_sheaf_of_genus_le_eulerDegree (L : InvertibleSheaf X)
     (hL : (finrank k (Scheme.Modules.Cohomology (trivial X).obj 1) : ℤ) ≤ L.eulerDegree k) :
+    letI : IsNoetherian X :=
+      { toIsLocallyNoetherian := inferInstance
+        toCompactSpace := compactSpace_of_universallyClosed (X ↘ Spec (.of k)) }
     ∃ D : SchemeWeilDivisor X, WeilDivisor.IsEffective D ∧
       Nonempty (L.obj ≅ SchemeWeilDivisor.sheaf D) ∧
-        SchemeWeilDivisor.relativeDegree (X ↘ Spec (.of k)) D = L.eulerDegree k := by
+        SchemeWeilDivisor.relativeDegree (X ↘ Spec (.of k)) D = L.eulerDegree k ∧
+          SchemeWeilDivisor.toLineBundleClass hdim D = LineBundleClass.mk L := by
   have : IsNoetherian X :=
     { toIsLocallyNoetherian := LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
       toCompactSpace := compactSpace_of_universallyClosed (X ↘ Spec (.of k)) }
@@ -66,7 +71,9 @@ theorem exists_isEffective_iso_sheaf_of_genus_le_eulerDegree (L : InvertibleShea
     k hdim hφ (D := D) (by simpa only [Scheme.genus_def, ← hdegree] using hL)
   obtain ⟨hEff, hlin⟩ := (WeilDivisor.OrderSystem.ofScheme X).mem_completeLinearSystem.mp hE
   obtain ⟨eE⟩ := SchemeWeilDivisor.nonempty_iso_sheaf_of_linearlyEquivalent hlin
-  exact ⟨E, hEff, ⟨e ≪≫ eE⟩, (eulerDegree_eq_relativeDegree k hdim (e ≪≫ eE)).symm⟩
+  refine ⟨E, hEff, ⟨e ≪≫ eE⟩, (eulerDegree_eq_relativeDegree k hdim (e ≪≫ eE)).symm, ?_⟩
+  apply (SchemeWeilDivisor.toLineBundleClass_eq_mk_iff hdim).mpr
+  exact ⟨eqToIso (SchemeWeilDivisor.toInvertibleSheaf_obj hdim E) ≪≫ (e ≪≫ eE).symm⟩
 
 include hdim hφ in
 /-- A line bundle of degree at least the genus on a proper regular curve with constant global
@@ -78,13 +85,13 @@ theorem exists_isEffective_cartierDivisor_of_genus_le_eulerDegree (L : Invertibl
   have : IsNoetherian X :=
     { toIsLocallyNoetherian := LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
       toCompactSpace := compactSpace_of_universallyClosed (X ↘ Spec (.of k)) }
-  obtain ⟨D, hD, ⟨e⟩, -⟩ := exists_isEffective_iso_sheaf_of_genus_le_eulerDegree hdim hφ L hL
+  obtain ⟨D, hD, -, -, hclass⟩ :=
+    exists_isEffective_iso_sheaf_of_genus_le_eulerDegree hdim hφ L hL
   refine ⟨SchemeWeilDivisor.equivCartierDivisor hdim D,
     (SchemeWeilDivisor.isEffective_equivCartierDivisor_iff hdim D).mpr hD, ?_⟩
   rw [Scheme.CartierDivisor.toLineBundleClass_eq_toWeilDivisor hdim,
     ← SchemeWeilDivisor.equivCartierDivisor_symm_apply hdim,
     AddEquiv.symm_apply_apply]
-  apply (SchemeWeilDivisor.toLineBundleClass_eq_mk_iff hdim).mpr
-  exact ⟨eqToIso (SchemeWeilDivisor.toInvertibleSheaf_obj hdim D) ≪≫ e.symm⟩
+  exact hclass
 
 end TauCeti.AlgebraicGeometry.InvertibleSheaf
