@@ -14,11 +14,12 @@ import Mathlib.MeasureTheory.Measure.Real
 In a finite-dimensional real normed space, the real measure of a positive-radius ball is its
 radius raised to the dimension times the real measure of the unit ball, independently of its
 centre. It agrees with the measure of the closed ball, which therefore differs from the open ball
-by a null set. In a nontrivial space, concentric balls are ordered by measure as by radius, so the
-points `x` whose centered ball of radius `‖x‖` has measure below `m` form a set of measure `m`.
-The ratio of the measures of two closed balls is controlled by the ratio of their radii raised to
-the dimension, and the part of a ball outside a translate of itself is controlled by the distance
-between the centres. The measure of an affine image
+by a null set. A set inside a closed ball with the measure of a ball of the same radius likewise
+agrees with it up to a null set. In a nontrivial space, concentric balls are ordered by measure as
+by radius, so the points `x` whose centered ball of radius `‖x‖` has measure below `m` form a set
+of measure `m`. The ratio of the measures of two closed balls is controlled by the ratio of their
+radii raised to the dimension, and the part of a ball outside a translate of itself is controlled
+by the distance between the centres. The measure of an affine image
 `y + r • S` relative to a ball of radius `r` is that of `S` relative to the unit ball, and a
 homothety of ratio `r ≠ 0` pushes the measure forward to its multiple by `|r|⁻ⁿ`. Comparing
 the measure of the image of the closed unit ball under a linear endomorphism `f` with that of the
@@ -31,6 +32,8 @@ closed ball of radius `‖f‖` bounds `|det f|` by `‖f‖` raised to the dime
   set in a nontrivial space.
 * `MeasureTheory.Measure.addHaar_closedBall_ae_eq_ball_of_ne_zero`: the same agreement at nonzero
   radius, including trivial spaces.
+* `MeasureTheory.Measure.ae_eq_closedBall_of_subset_of_measure_eq`: a set inside a closed ball,
+  with the measure of a closed ball of the same radius, agrees with it up to a null set.
 * `MeasureTheory.Measure.addHaar_ball_lt_addHaar_ball_iff`: concentric balls are ordered by
   measure as by radius.
 * `MeasureTheory.Measure.addHaar_setOf_addHaar_ball_norm_lt`: in a nontrivial space, the set where
@@ -85,6 +88,18 @@ theorem _root_.MeasureTheory.Measure.addHaar_closedBall_ae_eq_ball_of_ne_zero
     ext y
     simp [mem_closedBall, mem_ball, Subsingleton.elim y x, le_iff_lt_or_eq, Ne.symm hr]
   · exact mu.addHaar_closedBall_ae_eq_ball x r
+
+/-- A null-measurable set inside a closed ball of radius `r`, with the measure of some closed ball
+of radius `r`, agrees up to a null set with the ball containing it. -/
+theorem _root_.MeasureTheory.Measure.ae_eq_closedBall_of_subset_of_measure_eq
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (mu : Measure E) [mu.IsAddHaarMeasure] {s : Set E}
+    (hsm : NullMeasurableSet s mu) {c x : E} {r : ℝ} (hc : s ⊆ closedBall c r)
+    (h : mu s = mu (closedBall x r)) :
+    s =ᵐ[mu] closedBall c r :=
+  ae_eq_of_subset_of_measure_ge hc
+    (by rw [mu.addHaar_closedBall_center c, ← mu.addHaar_closedBall_center x, h]) hsm
+    measure_closedBall_lt_top.ne
 
 /-- In a nontrivial finite-dimensional space, comparing the measures of two concentric balls is
 comparing their radii, as long as the first radius is nonnegative. -/
