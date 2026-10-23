@@ -63,6 +63,7 @@ theorem ringKrullDim_localization_comap_constantCoeff [IsLocalRing R] :
       ((IsLocalRing.maximalIdeal R).comap (constantCoeff : MvPolynomial σ R →+* R)),
     Ideal.height_comap_mvPolynomial_constantCoeff, WithBot.coe_add,
     IsLocalRing.maximalIdeal_height_eq_ringKrullDim]
+  -- The two natural-number casts into `WithBot ℕ∞` are definitionally equal.
   rfl
 
 end MvPolynomial
