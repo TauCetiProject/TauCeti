@@ -376,10 +376,12 @@ theorem mem_baseChange_evenOdd_zero_iff {y : A ⊗[R] CliffordAlgebra Q} :
     y ∈ (evenOdd Q 0).baseChange A ↔
       TensorProduct.map LinearMap.id involute.toLinearMap y = y := by
   refine ⟨?_, fun hy => ?_⟩
-  · rintro ⟨t, rfl⟩
+  · intro hy
+    obtain ⟨t, rfl⟩ := Submodule.toBaseChange_surjective' A _ hy
+    clear hy
     induction t using TensorProduct.inductionOn with
     | tmul a c => simp [involute_eq_of_mem_even c.2]
-    | add s t hs ht => simp only [map_add, hs, ht]
+    | add s t hs ht => simp only [map_add, Submodule.coe_add, hs, ht]
   · simpa [hy, ← two_smul R y, smul_smul] using (invOf_two_smul_add_sub_map_involute_mem y).1
 
 /-- **The odd part of the tensor carrier is the `-1`-eigenspace of the grade involution**: an
@@ -389,10 +391,12 @@ theorem mem_baseChange_evenOdd_one_iff {y : A ⊗[R] CliffordAlgebra Q} :
     y ∈ (evenOdd Q 1).baseChange A ↔
       TensorProduct.map LinearMap.id involute.toLinearMap y = -y := by
   refine ⟨?_, fun hy => ?_⟩
-  · rintro ⟨t, rfl⟩
+  · intro hy
+    obtain ⟨t, rfl⟩ := Submodule.toBaseChange_surjective' A _ hy
+    clear hy
     induction t using TensorProduct.inductionOn with
     | tmul a c => simp [involute_eq_of_mem_odd c.2, TensorProduct.tmul_neg]
-    | add s t hs ht => simp only [map_add, hs, ht, neg_add]
+    | add s t hs ht => simp only [map_add, Submodule.coe_add, hs, ht, neg_add]
   · simpa [hy, ← two_smul R y, smul_smul] using (invOf_two_smul_add_sub_map_involute_mem y).2
 
 /-- **The `ℤ/2`-grading is compatible with extension of scalars**: an element of `Cℓ(A ⊗ M, Q_A)`
