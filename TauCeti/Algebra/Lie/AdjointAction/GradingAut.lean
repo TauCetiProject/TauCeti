@@ -35,19 +35,12 @@ contracting action on a Slodowy slice (`TauCeti.Algebra.Lie.Sl2.SlodowySlice`).
 
 ## Main results
 
-* `LieAlgebra.ad_eq_toEnd`: the adjoint action is the action `toEnd R L L` of `L` on itself.
 * `TauCeti.gradingAut_apply_of_mem`: the characterizing property of `TauCeti.gradingAut`.
 * `TauCeti.gradingAut_mul_apply`, `TauCeti.gradingAut_one_apply` and `TauCeti.gradingAut_symm`:
   `s ↦ gradingAut hh s` is a group homomorphism from `Rˣ` to the automorphisms of `L`.
 -/
 
 public section
-
-/-- The adjoint action `ad R L` is by definition the action `LieModule.toEnd R L L` of `L` on
-itself. Rewriting with this lemma moves results about Lie modules to the adjoint action. -/
-theorem LieAlgebra.ad_eq_toEnd (R L : Type*) [CommRing R] [LieRing L] [LieAlgebra R L] :
-    LieAlgebra.ad R L = LieModule.toEnd R L L :=
-  rfl
 
 namespace TauCeti
 
