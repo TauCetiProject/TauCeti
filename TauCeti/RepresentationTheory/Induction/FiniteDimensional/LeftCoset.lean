@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.GroupTheory.Coset.Basic
 public import TauCeti.RepresentationTheory.Induction.FiniteDimensional.Basic
 public import TauCeti.RepresentationTheory.FiniteIndex
 
@@ -72,16 +73,13 @@ theorem indLeftCosetCoinvariantEquiv_ρ_apply (A : Rep.{max w u} k S) (g : G)
   rw [indLeftCosetCoinvariantEquiv_apply, indSubtypeEquivPi_ρ_apply,
     indLeftCosetCoinvariantEquiv_apply]
   let e := QuotientGroup.quotientRightRelEquivQuotientLeftRel S
-  have hq : q = (Quotient.mk'' (e.symm q).out⁻¹ : G ⧸ S) := by
-    conv_lhs => rw [← e.apply_symm_apply q, ← Quotient.out_eq' (e.symm q)]
-    rfl
+  have hq : q = (((e.symm q).out⁻¹ : G) : G ⧸ S) := by
+    rw [← QuotientGroup.quotientRightRelEquivQuotientLeftRel_mk, Quotient.out_eq',
+      e.apply_symm_apply]
   have hcos : e (Quotient.mk'' ((e.symm q).out * g)) = g⁻¹ • q := by
-    calc
-      _ = (Quotient.mk'' (g⁻¹ * (e.symm q).out⁻¹) : G ⧸ S) := by
-        simp [e, QuotientGroup.quotientRightRelEquivQuotientLeftRel, mul_inv_rev]
-      _ = g⁻¹ • q := by
-        conv_rhs => rw [hq]
-        rfl
+    conv_rhs => rw [hq]
+    rw [QuotientGroup.quotientRightRelEquivQuotientLeftRel_mk, MulAction.Quotient.smul_coe,
+      smul_eq_mul, mul_inv_rev]
   congr 2
   apply congrArg (indSubtypeEquivPi A x)
   simpa using congrArg e.symm hcos

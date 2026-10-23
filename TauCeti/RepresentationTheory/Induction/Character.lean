@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.GroupTheory.Coset.Basic
 public import TauCeti.LinearAlgebra.Trace.Pi
 public import TauCeti.RepresentationTheory.Induction.ClassFunction
 public import TauCeti.RepresentationTheory.Induction.FiniteDimensional.Basic
@@ -48,20 +49,6 @@ namespace Rep
 variable {k : Type u} {G : Type v} [Field k] [Group G] {S : Subgroup G}
 
 private abbrev RightCosets (S : Subgroup G) := Quotient (QuotientGroup.rightRel S)
-
-/-- The right-to-left-coset equivalence sends the right coset of `x` to the left coset of
-`x⁻¹`. Mathlib does not currently expose a computation lemma for this equivalence, so keep
-the necessary unfolding of its `Quotient.map'` implementation isolated here. -/
-private theorem quotientRightRelEquivQuotientLeftRel_mk (S : Subgroup G) (x : G) :
-    QuotientGroup.quotientRightRelEquivQuotientLeftRel S (Quotient.mk'' x) =
-      QuotientGroup.mk x⁻¹ := by
-  change @Quotient.map' G G (QuotientGroup.rightRel S) (QuotientGroup.leftRel S)
-    (fun y => y⁻¹) (fun a b => by
-      rw [QuotientGroup.leftRel_apply, QuotientGroup.rightRel_apply]
-      exact fun h => (congrArg (· ∈ S) (by simp)).mp (S.inv_mem h))
-      (@Quotient.mk'' G (QuotientGroup.rightRel S) x) =
-      @Quotient.mk'' G (QuotientGroup.leftRel S) x⁻¹
-  apply Quotient.map'_mk''
 
 /-- A character is a class function, so `Function.indTerm` applies to it. -/
 private theorem character_mem_classFunction {V : Type u} [AddCommGroup V] [Module k V]
@@ -202,7 +189,7 @@ theorem character_indFDRep_sum_quotient {k : Type u} {G : Type v} [Field k] [Gro
           e q = e (Quotient.mk'' q.out) :=
             congrArg e (Quotient.out_eq' q).symm
           _ = QuotientGroup.mk q.out⁻¹ :=
-            Rep.quotientRightRelEquivQuotientLeftRel_mk S q.out
+            QuotientGroup.quotientRightRelEquivQuotientLeftRel_mk q.out
       exact heq.symm.trans (Quotient.out_eq' (e q)).symm
     _ = _ := by
       apply Finset.sum_congr rfl
