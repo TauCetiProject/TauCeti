@@ -42,7 +42,7 @@ Bondal and Kapranov, which form the pretriangulated envelope of `C`.
 Every object `X` of `C` is a twisted object with zero twist, and `X ↦ (X, 0)` is a DG functor
 `TauCeti.DGTwistedObject.embedding` which is an isomorphism on Hom complexes.  A DG functor
 `F : C ⥤ D` preserves the Maurer–Cartan equation, so it induces a DG functor
-`TauCeti.DGTwistedObject.map F` sending `(X, δ)` to `(F X, F δ)`.
+`F.mapDGTwistedObject` sending `(X, δ)` to `(F X, F δ)`.
 
 ## Main definitions
 
@@ -53,7 +53,8 @@ Every object `X` of `C` is a twisted object with zero twist, and `X ↦ (X, 0)` 
 * `TauCeti.DGTwistedObject.dgHomEquiv`: degree-`n` morphisms of twisted objects are degree-`n`
   morphisms of the underlying objects.
 * `TauCeti.DGTwistedObject.embedding`: the DG functor `X ↦ (X, 0)`.
-* `TauCeti.DGTwistedObject.map`: the DG functor `(X, δ) ↦ (F X, F δ)` induced by a DG functor `F`.
+* `CategoryTheory.EnrichedFunctor.mapDGTwistedObject`: the DG functor `(X, δ) ↦ (F X, F δ)`
+  induced by a DG functor `F`.
 
 ## Main results
 
@@ -78,7 +79,7 @@ open CategoryTheory HomologicalComplex
 
 namespace TauCeti
 
-universe v u u₂
+universe v u
 
 /-- A **twisted object** of a differential graded category: an object `obj` with a degree-one
 endomorphism `twist` satisfying the Maurer–Cartan equation `d δ = dgComp δ δ`, which in Keller's
@@ -299,18 +300,26 @@ instance isIso_embedding_map (X Y : C) : IsIso ((embedding R).map X Y) :=
     (embeddingHomEquiv R X Y n).toModuleIso.isIso_hom
   HomologicalComplex.Hom.isIso_of_components _
 
+end DGTwistedObject
+
+end TauCeti
+
+namespace CategoryTheory.EnrichedFunctor
+
+open TauCeti DGTwistedObject
+
+universe v u u₂
+
 /-! ### Functoriality -/
 
-section Map
-
-variable {D : Type u₂} [DGCategory R D]
+variable {R : Type v} [CommRing R] {C : Type u} {D : Type u₂} [DGCategory R C] [DGCategory R D]
   (F : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C D)
 
 /-- The image `(F X, F δ)` of a twisted object under a DG functor: `F` preserves the
 Maurer–Cartan equation since it commutes with the differential and with composition. -/
--- This is reducible so that `(mapObj R F X).obj` is reducibly `F.obj X.obj`: the morphisms of the
--- image are then literally the morphisms of `D` between the images.
-noncomputable abbrev mapObj (X : DGTwistedObject R C) : DGTwistedObject R D where
+-- This is reducible so that `(F.mapDGTwistedObjectObj X).obj` is reducibly `F.obj X.obj`: the
+-- morphisms of the image are then literally the morphisms of `D` between the images.
+noncomputable abbrev mapDGTwistedObjectObj (X : DGTwistedObject R C) : DGTwistedObject R D where
   obj := F.obj X.obj
   twist := F.dgMap 1 X.twist
   dgDifferential_twist := by
@@ -318,47 +327,49 @@ noncomputable abbrev mapObj (X : DGTwistedObject R C) : DGTwistedObject R D wher
 
 /-- The action of a DG functor on morphisms of twisted objects of degree `n`: its action on the
 underlying morphisms. -/
-noncomputable def mapHom (X Y : DGTwistedObject R C) (n : ℤ) :
-    DGHom R n X Y →ₗ[R] DGHom R n (mapObj R F X) (mapObj R F Y) :=
+noncomputable def mapDGTwistedObjectHom (X Y : DGTwistedObject R C) (n : ℤ) :
+    DGHom R n X Y →ₗ[R] DGHom R n (F.mapDGTwistedObjectObj X) (F.mapDGTwistedObjectObj Y) :=
   (dgHomEquiv R _ _ n).symm.toLinearMap ∘ₗ F.dgMap n ∘ₗ (dgHomEquiv R X Y n).toLinearMap
 
 /-- The underlying morphism of the image of a morphism is the image of its underlying
 morphism. -/
 @[simp]
-theorem dgHomEquiv_mapHom {X Y : DGTwistedObject R C} {n : ℤ} (f : DGHom R n X Y) :
-    dgHomEquiv R _ _ n (mapHom R F X Y n f) = F.dgMap n (dgHomEquiv R X Y n f) := by
-  simp [mapHom]
+theorem dgHomEquiv_mapDGTwistedObjectHom {X Y : DGTwistedObject R C} {n : ℤ}
+    (f : DGHom R n X Y) :
+    dgHomEquiv R _ _ n (F.mapDGTwistedObjectHom X Y n f) = F.dgMap n (dgHomEquiv R X Y n f) := by
+  simp [mapDGTwistedObjectHom]
 
 /-- The DG functor between twisted objects induced by a DG functor `F`, sending `(X, δ)` to
 `(F X, F δ)` and acting by `F` on the underlying morphisms. -/
 -- This is reducible, with the object map given explicitly, so that the image of a twisted object
--- is reducibly `mapObj R F X`, whose underlying object is reducibly `F.obj X.obj`.
-noncomputable abbrev map :
+-- is reducibly `F.mapDGTwistedObjectObj X`, whose underlying object is reducibly `F.obj X.obj`.
+noncomputable abbrev mapDGTwistedObject :
     EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) (DGTwistedObject R C)
       (DGTwistedObject R D) :=
-  letI G := EnrichedFunctor.ofDGMap (mapObj R F) (fun {X Y} n ↦ mapHom R F X Y n)
+  letI G := EnrichedFunctor.ofDGMap F.mapDGTwistedObjectObj
+    (fun {X Y} n ↦ F.mapDGTwistedObjectHom X Y n)
     (fun n f ↦ (dgHomEquiv R _ _ (n + 1)).injective <| by
-      rw [dgHomEquiv_mapHom, dgHomEquiv_dgDifferential, dgHomEquiv_dgDifferential,
-        dgHomEquiv_mapHom, map_sub, map_add, map_zsmul_unit, EnrichedFunctor.dgMap_dgDifferential,
-        EnrichedFunctor.dgMap_dgComp, EnrichedFunctor.dgMap_dgComp])
+      rw [dgHomEquiv_mapDGTwistedObjectHom, dgHomEquiv_dgDifferential, dgHomEquiv_dgDifferential,
+        dgHomEquiv_mapDGTwistedObjectHom, map_sub, map_add, map_zsmul_unit,
+        EnrichedFunctor.dgMap_dgDifferential, EnrichedFunctor.dgMap_dgComp,
+        EnrichedFunctor.dgMap_dgComp])
     (fun X ↦ (dgHomEquiv R _ _ 0).injective <| by
-      rw [dgHomEquiv_mapHom, dgHomEquiv_dgId, dgHomEquiv_dgId, EnrichedFunctor.dgMap_dgId])
+      rw [dgHomEquiv_mapDGTwistedObjectHom, dgHomEquiv_dgId, dgHomEquiv_dgId,
+        EnrichedFunctor.dgMap_dgId])
     (fun f g h ↦ (dgHomEquiv R _ _ _).injective <| by
-      rw [dgHomEquiv_mapHom, dgHomEquiv_dgComp, dgHomEquiv_dgComp, dgHomEquiv_mapHom,
-        dgHomEquiv_mapHom, EnrichedFunctor.dgMap_dgComp])
-  { obj := mapObj R F
+      rw [dgHomEquiv_mapDGTwistedObjectHom, dgHomEquiv_dgComp, dgHomEquiv_dgComp,
+        dgHomEquiv_mapDGTwistedObjectHom, dgHomEquiv_mapDGTwistedObjectHom,
+        EnrichedFunctor.dgMap_dgComp])
+  { obj := F.mapDGTwistedObjectObj
     map := G.map
     map_id := G.map_id
     map_comp := G.map_comp }
 
-/-- The induced DG functor acts on morphisms by `TauCeti.DGTwistedObject.mapHom`. -/
+/-- The induced DG functor acts on morphisms by
+`CategoryTheory.EnrichedFunctor.mapDGTwistedObjectHom`. -/
 @[simp]
-theorem dgMap_map {X Y : DGTwistedObject R C} {n : ℤ} (f : DGHom R n X Y) :
-    (map R F).dgMap n f = mapHom R F X Y n f :=
+theorem dgMap_mapDGTwistedObject {X Y : DGTwistedObject R C} {n : ℤ} (f : DGHom R n X Y) :
+    F.mapDGTwistedObject.dgMap n f = F.mapDGTwistedObjectHom X Y n f :=
   (EnrichedFunctor.dgMap_apply _ f).trans rfl
 
-end Map
-
-end DGTwistedObject
-
-end TauCeti
+end CategoryTheory.EnrichedFunctor
