@@ -31,8 +31,8 @@ In particular the inclusion of the sphere into `V \ {p}` is a homotopy equivalen
 convex subset of `ℂ` this is the reduction of the fundamental group of a punctured convex domain
 to that of a circle.
 
-In real dimension greater than one, this also gives path connectedness of `V \ {p}` and of
-punctured balls of positive radius. For subsets of `ℂ`, the file records the direction map
+In real dimension greater than one, this also gives path connectedness of `V \ {p}`.
+For subsets of `ℂ`, the file records the direction map
 `z ↦ (z - p) / ‖z - p‖` to the unit circle and the loop going once around the puncture of a
 punctured ball.
 
@@ -54,7 +54,7 @@ not homotopy equivalent to a circle.
 * `StarConvex.pathConnectedSpace_diff_singleton`: in real dimension greater than one, a
   punctured star-convex set containing a sphere about the puncture is path connected.
   Punctured balls are handled by `TauCeti.isPathConnected_ball_sdiff_singleton` in
-  `Analysis.Normed.Module.Connected`.
+  `TauCeti.Analysis.Normed.Module.Connected`.
 * `Complex.loopAround`: the loop `t ↦ p + (z - p) e^{2πit}` going once around the puncture of
   `ball p R \ {p}`.
 
