@@ -157,7 +157,7 @@ theorem isLeast_form_self_checkerboardVectorClass [NeZero n] :
 coordinate has square at least `1 / 4`. -/
 theorem div_four_le_checkerboardLattice_form_self {x : Fin n → ℚ}
     (hx : ∀ i, ∃ z : ℤ, x i = z + 1 / 2) : (n : ℚ) / 4 ≤ (checkerboardLattice n).form x x := by
-  have hsum := Finset.sum_le_sum fun i (_ : i ∈ univ) ↦ by
+  have hsum : ∑ _i : Fin n, (1 / 4 : ℚ) ≤ ∑ i, x i * x i := Finset.sum_le_sum fun i _ ↦ by
     obtain ⟨z, hz⟩ := hx i
     simpa only [hz, sq] using Int.quarter_le_cast_add_half_sq (K := ℚ) z
   rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul] at hsum
