@@ -63,10 +63,19 @@ namespace Submodule
 
 variable {ι : Type*} [Fintype ι] (W : Submodule ℝ (EuclideanSpace ℝ ι))
 
+/-- The coordinates `x i` of a point `x` of `W`, as a linear map to `ι → ℝ`. -/
+private def coords : W →ₗ[ℝ] (ι → ℝ) :=
+  (WithLp.linearEquiv 2 ℝ (ι → ℝ)).toLinearMap ∘ₗ W.subtype
+
+omit [Fintype ι] in
+/-- `coords W x` is the coordinate function `WithLp.ofLp x` of `x`. -/
+@[simp]
+private theorem coords_apply (x : W) : coords W x = WithLp.ofLp (x : EuclideanSpace ℝ ι) := by
+  simp [coords, WithLp.coe_linearEquiv]
+
 /-- The central slice of the cube is the preimage of the closed unit ball of the sup norm. -/
 private theorem setOf_forall_abs_le_one_eq_preimage :
-    {x : W | ∀ i, |(x : EuclideanSpace ℝ ι) i| ≤ 1} =
-      (fun x : W ↦ WithLp.ofLp (x : EuclideanSpace ℝ ι)) ⁻¹' Metric.closedBall 0 1 := by
+    {x : W | ∀ i, |(x : EuclideanSpace ℝ ι) i| ≤ 1} = coords W ⁻¹' Metric.closedBall 0 1 := by
   ext x
   simp [pi_norm_le_iff_of_nonneg zero_le_one, Real.norm_eq_abs]
 
@@ -77,13 +86,13 @@ def cubeSlice : ConvexBody W where
   carrier := {x | ∀ i, |(x : EuclideanSpace ℝ ι) i| ≤ 1}
   convex' := by
     rw [setOf_forall_abs_le_one_eq_preimage]
-    exact (convex_closedBall _ _).linear_preimage
-      ((WithLp.linearEquiv 2 ℝ (ι → ℝ)).toLinearMap ∘ₗ W.subtype)
+    exact (convex_closedBall _ _).linear_preimage (coords W)
   isCompact' := by
     rw [setOf_forall_abs_le_one_eq_preimage]
-    exact ((PiLp.continuousLinearEquiv 2 ℝ fun _ : ι ↦ ℝ).toHomeomorph.isClosedEmbedding.comp
-      W.closed_of_finiteDimensional.isClosedEmbedding_subtypeVal).isCompact_preimage
+    refine (LinearMap.isClosedEmbedding_of_injective (f := coords W) ?_).isCompact_preimage
       (isCompact_closedBall _ _)
+    refine LinearMap.ker_eq_bot.2 fun x y h ↦ Subtype.ext ?_
+    simpa using congrArg (WithLp.toLp 2) h
   nonempty' := ⟨0, by simp⟩
 
 variable {W}
@@ -101,12 +110,6 @@ value. -/
 theorem mem_cubeSlice {x : W} : x ∈ W.cubeSlice ↔ ∀ i, |(x : EuclideanSpace ℝ ι) i| ≤ 1 :=
   Iff.rfl
 
-variable (W) in
-private theorem coe_cubeSlice_eq_preimage :
-    (W.cubeSlice : Set W) =
-      (fun x : W ↦ WithLp.ofLp (x : EuclideanSpace ℝ ι)) ⁻¹' Metric.closedBall 0 1 := by
-  rw [coe_cubeSlice, setOf_forall_abs_le_one_eq_preimage]
-
 /-- The cube slice is symmetric about `0`. -/
 theorem neg_mem_cubeSlice {x : W} : -x ∈ W.cubeSlice ↔ x ∈ W.cubeSlice := by
   simp
@@ -114,20 +117,16 @@ theorem neg_mem_cubeSlice {x : W} : -x ∈ W.cubeSlice ↔ x ∈ W.cubeSlice := 
 variable (W) in
 /-- The cube slice is a neighbourhood of `0` in `W`. -/
 theorem zero_mem_interior_cubeSlice : (0 : W) ∈ interior (W.cubeSlice : Set W) := by
-  rw [coe_cubeSlice_eq_preimage]
-  have hf : Continuous fun x : W ↦ WithLp.ofLp (x : EuclideanSpace ℝ ι) :=
-    (PiLp.continuous_ofLp 2 _).comp continuous_subtype_val
+  rw [coe_cubeSlice, setOf_forall_abs_le_one_eq_preimage]
   exact mem_interior_iff_mem_nhds.2 <| Filter.mem_of_superset
-    ((Metric.isOpen_ball.preimage hf).mem_nhds (by simp))
+    ((Metric.isOpen_ball.preimage (coords W).continuous_of_finiteDimensional).mem_nhds (by simp))
     (Set.preimage_mono Metric.ball_subset_closedBall)
 
 /-- The gauge of the cube slice is the sup norm `max_i |x i|` of the coordinates. -/
 theorem gauge_cubeSlice (x : W) :
     gauge (W.cubeSlice : Set W) x = ‖WithLp.ofLp (x : EuclideanSpace ℝ ι)‖ := by
-  rw [coe_cubeSlice_eq_preimage]
-  exact (gauge_preimage_linearMap
-    ((WithLp.linearEquiv 2 ℝ (ι → ℝ)).toLinearMap ∘ₗ W.subtype) _ x).trans
-    ((gauge_closedBall zero_le_one _).trans (div_one _))
+  rw [coe_cubeSlice, setOf_forall_abs_le_one_eq_preimage, gauge_preimage_linearMap,
+    gauge_closedBall zero_le_one, div_one, coords_apply]
 
 /-- For `0 < t`, the dilate `t • cubeSlice W` consists of the points of `W` all of whose
 coordinates are at most `t` in absolute value. -/
