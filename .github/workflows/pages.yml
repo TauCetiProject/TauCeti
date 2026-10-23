@@ -122,10 +122,10 @@ jobs:
       # that the rest of this change exists to keep fresh. Restoring the last published set
       # first makes "keep the previous one" true for the generated data too.
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@6fde7e5adb6a872b130b07e0841d854150781451
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+          tools-ref: 6fde7e5adb6a872b130b07e0841d854150781451
           project-directory: .
       - name: Restore the last published data assets
         uses: actions/cache/restore@v4
