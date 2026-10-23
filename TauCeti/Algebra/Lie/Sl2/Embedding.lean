@@ -44,7 +44,8 @@ conjugacy theorem says that two embeddings with the same value at `E` differ by 
   `φ` out of `sl (Fin 2) K` with `φ H ≠ 0` is the homomorphism of the image of the standard triple.
 * `IsSl2Triple.toLieHom_injective` and `LieHom.injective_iff_map_singleSubSingle_ne_zero`: over a
   domain of characteristic zero, into a torsion-free Lie algebra, a homomorphism out of
-  `sl (Fin 2) K` is injective if and only if it does not kill `H`.
+  `sl (Fin 2) K` is injective if and only if it does not kill `H`; by
+  `LieHom.map_singleSubSingle_ne_zero_of_map_single_ne_zero`, it suffices that it does not kill `E`.
 * `TauCeti.exists_injective_lieHom_slFinTwo_iff`: **Jacobson–Morozov for embeddings.** An element
   `e` is the image of `E` under an embedding `sl₂ ↪ L` if and only if `e ≠ 0` and `ad e` is
   nilpotent.
@@ -199,6 +200,17 @@ theorem injective_iff_map_singleSubSingle_ne_zero (φ : SpecialLinear.sl (Fin 2)
   · rw [φ.eq_toLieHom_map hφ]
     exact IsSl2Triple.toLieHom_injective K _
 
+/-- Over a domain of characteristic zero, a Lie algebra homomorphism out of `sl (Fin 2) K` into a
+torsion-free Lie algebra that does not kill the raising element `E = E₀₁` does not kill the Cartan
+element `H = E₀₀ - E₁₁` either, since `⁅H, E⁆ = 2 • E`. -/
+theorem map_singleSubSingle_ne_zero_of_map_single_ne_zero
+    (φ : SpecialLinear.sl (Fin 2) K →ₗ⁅K⁆ L)
+    (hφ : φ (SpecialLinear.single 0 1 zero_ne_one 1) ≠ 0) :
+    φ (SpecialLinear.singleSubSingle 0 1 1) ≠ 0 := fun h0 ↦ by
+  have h2 : (2 : K) • φ (SpecialLinear.single 0 1 zero_ne_one 1) = 0 := by
+    rw [← map_smul, ← lie_singleSubSingle_single, LieHom.map_lie, h0, zero_lie]
+  exact hφ ((smul_eq_zero.1 h2).resolve_left two_ne_zero)
+
 end Injective
 
 end LieHom
@@ -240,11 +252,8 @@ theorem exists_lieEquiv_comp_eq_of_apply_eq {φ φ' : SpecialLinear.sl (Fin 2) K
       ∧ (ψ : L →ₗ⁅K⁆ L).comp φ = φ' := by
   have t := (isSl2Triple_single (R := K) (zero_ne_one : (0 : Fin 2) ≠ 1)).map φ
     (φ.injective_iff_map_singleSubSingle_ne_zero.1 hφ)
-  have hφ' : φ' (SpecialLinear.singleSubSingle 0 1 1) ≠ 0 := fun h0 ↦ by
-    have h2 : (2 : K) • φ' (SpecialLinear.single 0 1 zero_ne_one 1) = 0 := by
-      rw [← map_smul, ← lie_singleSubSingle_single, LieHom.map_lie, h0, zero_lie]
-    exact (he ▸ t.e_ne_zero) ((smul_eq_zero.1 h2).resolve_left two_ne_zero)
-  have t' := (isSl2Triple_single (R := K) (zero_ne_one : (0 : Fin 2) ≠ 1)).map φ' hφ'
+  have t' := (isSl2Triple_single (R := K) (zero_ne_one : (0 : Fin 2) ≠ 1)).map φ'
+    (φ'.map_singleSubSingle_ne_zero_of_map_single_ne_zero (he ▸ t.e_ne_zero))
   rw [← he] at t'
   obtain ⟨ψ, hψ, -, -, hψf⟩ := t.exists_lieEquiv_apply_eq (K := K) t'
   refine ⟨ψ, hψ, ?_⟩
