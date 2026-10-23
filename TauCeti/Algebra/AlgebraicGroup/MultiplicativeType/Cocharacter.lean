@@ -209,18 +209,22 @@ private theorem geometricCharacterGroupSchemeMap_eq (T : MultiplicativeTypeCommH
           (geometricCharacterFG T)).symm ≫
           DiagonalizableGroup.characterGroupSchemeMap (geometricCharacterFG T)
             (geometricCharacterFGEquiv T x.toMul) := by
-  let hG := DiagonalizableGroup.groupScheme_def (AlgebraicClosure k)
-    (geometricCharacterFG T)
-  rw [DiagonalizableGroup.characterGroupSchemeMap_def,
-    DiagonalizableGroup.groupSchemeMap_def]
-  simp only [geometricCharacterGroupSchemeMap, geometricFiberGroupSchemeIso,
-    Functor.mapIso_hom, Iso.op_hom]
-  rw [← Category.assoc (eqToHom hG.symm) (eqToHom hG), eqToHom_trans,
-    eqToHom_refl, Category.id_comp]
-  rw [← Category.assoc, cancel_mono, ← Functor.map_comp]
-  apply congrArg (AlgebraicGeometry.hopfSpec
-    (CommRingCat.of (AlgebraicClosure k))).map
-  exact congrArg (fun q => q.hom.op) (coordinateMap_comp_geometricCoordinateIso T x).symm
+  -- Expand the reconstruction isomorphism and the diagonalizable character map into `hopfSpec` of
+  -- coordinate maps. Naming the character groups keeps the transports from `groupSchemeMap_def`
+  -- syntactically equal to the statement's, so they cancel cheaply.
+  rw [geometricFiberGroupSchemeIso, Functor.mapIso_hom, Iso.op_hom, Functor.mapIso_hom,
+    FiniteTypeCommHopfAlgCat.forget₂_commHopfAlgCat_map,
+    DiagonalizableGroup.characterGroupSchemeMap_def,
+    DiagonalizableGroup.groupSchemeMap_def (AlgebraicClosure k)
+      (G := DiagonalizableGroup.multiplicativeCharacterGroup) (H := geometricCharacterFG T),
+    eqToHom_trans_assoc, eqToHom_refl, Category.id_comp, ← Functor.map_comp_assoc]
+  -- Unfolded, the left side ends with the same transport; cancel it and compare coordinate maps.
+  conv_lhs => rw [geometricCharacterGroupSchemeMap]
+  rw [cancel_mono]
+  apply congrArg (AlgebraicGeometry.hopfSpec (CommRingCat.of (AlgebraicClosure k))).map
+  -- The coordinate maps agree by the reconstruction identity.
+  rw [← op_comp, ← ObjectProperty.FullSubcategory.comp_hom,
+    coordinateMap_comp_geometricCoordinateIso]
 
 /-- Character-group morphisms to the lifted integer group are integral linear functionals on
 the additive character group. -/
@@ -285,12 +289,12 @@ private theorem cocharacter_comp_geometricFiberGroupSchemeIso
         eqToHom (DiagonalizableGroup.groupScheme_def (AlgebraicClosure k)
           (geometricCharacterFG T)).symm =
       DiagonalizableGroup.groupSchemeMap (AlgebraicClosure k) (cocharacterFGMap T f) := by
-  -- Unfold the composite target isomorphism so full faithfulness can identify the reconstructed
-  -- character-group map.
-  change f ≫ (geometricFiberDiagonalizableIso T).hom = _
-  rw [← diagonalizableGroupSchemeHomEquiv_apply]
-  exact (diagonalizableGroupSchemeHomEquiv (k := k) (geometricCharacterFG T)
-    DiagonalizableGroup.multiplicativeCharacterGroup).apply_symm_apply _ |>.symm
+  -- Full faithfulness identifies the reconstructed character-group map: by definition,
+  -- `cocharacterFGMap T f` is the preimage of `f ≫ (geometricFiberDiagonalizableIso T).hom`.
+  rw [← diagonalizableGroupSchemeHomEquiv_apply, cocharacterFGMap, cocharacterLatticeEquivFG,
+    Equiv.trans_apply, Equiv.apply_symm_apply, Iso.homCongr_apply, Iso.refl_inv, Category.id_comp]
+  -- Unfold the composite target isomorphism: the coordinate reconstruction, then `eqToHom`.
+  rw [geometricFiberDiagonalizableIso, Iso.trans_hom, eqToIso.hom, Category.assoc]
 
 /-- The ordinary-integer-valued homomorphism underlying the lifted character-group map of a
 geometric cocharacter. -/
@@ -409,47 +413,17 @@ theorem cocharacter_comp_geometricCharacterGroupSchemeMap
     characterCocharacterPairing_apply, pairing_cocharacterMonoidHom]
 
 private theorem powEndGroupSchemeMap_injective :
-    Function.Injective
-      (DiagonalizableGroup.powEndGroupSchemeMap (R := AlgebraicClosure k)) := by
+    Function.Injective (DiagonalizableGroup.powEndGroupSchemeMap (R := AlgebraicClosure k)) := by
   intro m n h
-  let q (z : ℤ) : DiagonalizableGroup.multiplicativeCharacterGroup ⟶
-      DiagonalizableGroup.multiplicativeCharacterGroup :=
-    FGCommGrpCat.ofHom (DiagonalizableGroup.uliftZPowersMulEquiv
-      DiagonalizableGroup.multiplicativeCharacterGroup
-        (ULift.up (Multiplicative.ofAdd z)))
-  have hmap :
-      DiagonalizableGroup.groupSchemeMap (AlgebraicClosure k) (q m) =
-      DiagonalizableGroup.groupSchemeMap (AlgebraicClosure k) (q n) := by
-    rw [DiagonalizableGroup.powEndGroupSchemeMap_def,
-      DiagonalizableGroup.powEndGroupSchemeMap_def,
-      DiagonalizableGroup.characterGroupSchemeMap_def,
-      DiagonalizableGroup.characterGroupSchemeMap_def] at h
-    exact h
-  have hopmap :
-      (DiagonalizableGroup.schemeFunctor (AlgebraicClosure k)).map (q m).op =
-        (DiagonalizableGroup.schemeFunctor (AlgebraicClosure k)).map (q n).op := by
-    rw [DiagonalizableGroup.schemeFunctor_map, DiagonalizableGroup.schemeFunctor_map]
-    simp only [Quiver.Hom.unop_op]
-    rw [hmap]
-  have hop := (DiagonalizableGroup.schemeFunctor (AlgebraicClosure k)).map_injective hopmap
-  have hq : q m = q n := by
-    simpa using congrArg Quiver.Hom.unop hop
-  have heval := DFunLike.congr_fun
-    (congrArg FGCommGrpCat.toMonoidHom hq)
-      (ULift.up (Multiplicative.ofAdd (1 : ℤ)))
-  -- Expose the underlying lifted-power homomorphisms before evaluating them at the generator.
-  change (DiagonalizableGroup.uliftZPowersMulEquiv
-      DiagonalizableGroup.multiplicativeCharacterGroup
-        (ULift.up (Multiplicative.ofAdd m)))
-          (ULift.up (Multiplicative.ofAdd (1 : ℤ))) =
-    (DiagonalizableGroup.uliftZPowersMulEquiv
-      DiagonalizableGroup.multiplicativeCharacterGroup
-        (ULift.up (Multiplicative.ofAdd n)))
-          (ULift.up (Multiplicative.ofAdd (1 : ℤ))) at heval
-  rw [DiagonalizableGroup.uliftZPowersMulEquiv_apply,
-    DiagonalizableGroup.uliftZPowersMulEquiv_apply] at heval
-  have := congrArg (fun z : ULift.{u} (Multiplicative ℤ) => z.down.toAdd) heval
-  simpa using this
+  -- Full faithfulness (`diagonalizableGroupSchemeHomEquiv`) recovers the lifted power maps of the
+  -- character group that induce the power maps. Expose the underlying lifted-power homomorphisms;
+  -- each is determined by its value at the generator.
+  simp only [DiagonalizableGroup.powEndGroupSchemeMap_def,
+    DiagonalizableGroup.characterGroupSchemeMap_def, ← diagonalizableGroupSchemeHomEquiv_apply,
+    EmbeddingLike.apply_eq_iff_eq, FGCommGrpCat.hom_ext_iff, FGCommGrpCat.toMonoidHom_ofHom] at h
+  -- `simp` does not unfold the carrier of `multiplicativeCharacterGroup` to `ULift`, so the lifted
+  -- exponents are compared by rewriting.
+  rwa [ULift.up_inj, EmbeddingLike.apply_eq_iff_eq] at h
 
 /-- The pairing is the unique exponent whose power map is the composite of the corresponding
 geometric cocharacter and character. -/
