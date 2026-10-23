@@ -7,13 +7,9 @@ module
 
 public import TauCeti.Analysis.BoundedVariation.TotalVariation
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
-import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Analysis.BoundedVariation.Multiplication
+import TauCeti.Analysis.BoundedVariation.Translation
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
-import TauCeti.Analysis.Calculus.ParametricIntegral
-import TauCeti.Analysis.Distribution.TestFunction.NormDuality
-import TauCeti.Analysis.Distribution.TestFunction.Translation
-import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Function.Lp.FrechetKolmogorov
 
 /-!
@@ -35,7 +31,9 @@ come from two estimates of independent interest.
   `∫_V |u (x + h) - u x| dx ≤ ‖h‖ |Du|(Ω)`. By the duality `∫_V |w| = sup ∫ w g` over scalar test
   functions `|g| ≤ 1` on `V`, it suffices to bound `∫ (u (x + h) - u x) g x dx`. Translation
   invariance turns this into `∫ u (g (· - h) - g)`, and `g (y - h) - g y = div ψ y` for the test
-  vector field `ψ y = -(∫₀¹ g (y - t h) dt) h`, of norm at most `‖h‖`.
+  vector field `ψ y = -(∫₀¹ g (y - t h) dt) h`, of norm at most `‖h‖`
+  (`TauCeti.setLIntegral_enorm_comp_add_sub_le_mul_totalVariationOn`, in
+  `TauCeti.Analysis.BoundedVariation.Translation`).
 * **Multiplication by a smooth cutoff.** For smooth `χ` with `|χ| ≤ c`,
   `|D(χ u)|(Ω') ≤ c |Du|(Ω) + ∫_{Ω'} ‖Dχ‖ |u|` whenever `tsupport χ ∩ Ω' ⊆ Ω`
   (`TauCeti.totalVariationOn_mul_le`, in `TauCeti.Analysis.BoundedVariation.Multiplication`).
@@ -46,10 +44,6 @@ estimate and the Fréchet–Kolmogorov criterion apply.
 
 ## Main results
 
-* `TauCeti.setLIntegral_enorm_comp_add_sub_le_mul_totalVariationOn`: the local translation
-  estimate `∫_V |u (· + h) - u| ≤ ‖h‖ |Du|(Ω)`.
-* `TauCeti.lintegral_enorm_comp_add_sub_le_mul_totalVariationOn`: the translation estimate on the
-  whole space.
 * `TauCeti.totallyBounded_of_setLIntegral_le_of_totalVariationOn_le` and
   `TauCeti.isCompact_closure_of_setLIntegral_le_of_totalVariationOn_le`: a family bounded in
   `L¹(Ω)` and in variation on `Ω` is totally bounded, and relatively compact, in `L¹(K)` for every
@@ -76,131 +70,6 @@ open scoped ENNReal NNReal ContDiff Distributions Topology
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure] {Ω V : Opens E}
   {u : E → ℝ} {h : E}
-
-/-! ### The translation estimate -/
-
-omit [MeasurableSpace E] [BorelSpace E] in
-/-- A difference of translates of a scalar test function is a divergence: for `g ∈ 𝓓(V, ℝ)` with
-`|g| ≤ 1`, the vector field `ψ y = -(∫₀¹ g (y - t h) dt) h` is a test vector field on `Ω` of norm
-at most `‖h‖` with `div ψ y = g (y - h) - g y`, as soon as the segments `x + [0, 1] h` starting
-in `V` lie in `Ω`. -/
-private theorem exists_divergenceCLM_eq_sub
-    (hVΩ : ∀ t ∈ Icc (0 : ℝ) 1, MapsTo (· + t • h) V Ω) (g : 𝓓(V, ℝ)) (hg : ∀ x, ‖g x‖ ≤ 1) :
-    ∃ ψ : 𝓓(Ω, E), (∀ y, ‖ψ y‖ ≤ ‖h‖) ∧ ∀ y, divergenceCLM ψ y = g (y - h) - g y := by
-  set Φ : E → ℝ := fun y => ∫ t in (0 : ℝ)..1, g (y - t • h) with hΦ_def
-  have hΦs : ContDiff ℝ ∞ Φ := by
-    have hΦIcc : Φ = fun y => ∫ t in Icc (0 : ℝ) 1, g (y - t • h) := by
-      funext y
-      simp only [hΦ_def]
-      rw [intervalIntegral.integral_of_le zero_le_one, integral_Icc_eq_integral_Ioc]
-    rw [hΦIcc]
-    exact contDiff_integral_Icc_of_contDiff (⊤ : ℕ∞) (fun y t => g (y - t • h))
-      (g.contDiff.comp (contDiff_fst.sub (contDiff_snd.smul contDiff_const)))
-  -- `Φ` vanishes off the compact set `C ⊆ Ω` swept out by `tsupport g` along `[0, 1] h`.
-  set C : Set E := (fun p : E × ℝ => p.1 + p.2 • h) '' (tsupport g ×ˢ Icc 0 1)
-  have hCc : IsCompact C :=
-    (g.hasCompactSupport.isCompact.prod isCompact_Icc).image (by fun_prop)
-  have hCΩ : C ⊆ Ω := by
-    rintro _ ⟨⟨x, t⟩, ⟨hx, ht⟩, rfl⟩
-    exact hVΩ t ht (g.tsupport_subset hx)
-  have hΦC (y : E) (hy : y ∉ C) : Φ y = 0 := by
-    refine (intervalIntegral.integral_congr (g := fun _ => (0 : ℝ)) fun t ht => ?_).trans
-      (by simp)
-    rw [uIcc_of_le zero_le_one] at ht
-    exact image_eq_zero_of_notMem_tsupport fun hmem =>
-      hy ⟨(y - t • h, t), ⟨hmem, ht⟩, by simp⟩
-  have hsupp : support (fun y => Φ y • -h) ⊆ C := fun y hy => by
-    by_contra hyC
-    exact hy (by simp [hΦC y hyC])
-  let ψ : 𝓓(Ω, E) := ⟨fun y => Φ y • -h, hΦs.smul contDiff_const,
-    HasCompactSupport.intro hCc fun y hy => by simp [hΦC y hy],
-    (closure_minimal hsupp hCc.isClosed).trans hCΩ⟩
-  have hψ : (ψ : E → E) = fun y => Φ y • -h := rfl
-  refine ⟨ψ, fun y => ?_, fun y => ?_⟩
-  · -- `|Φ y| ≤ 1` since `|g| ≤ 1`.
-    have hΦ1 : ‖Φ y‖ ≤ 1 := by
-      simpa using intervalIntegral.norm_integral_le_of_norm_le_const
-        (f := fun t => g (y - t • h)) (a := 0) (b := 1) (C := 1) fun t _ => hg _
-    rw [hψ, norm_smul, norm_neg]
-    exact mul_le_of_le_one_left (norm_nonneg _) hΦ1
-  · -- `div (Φ • (-h)) = DΦ (-h)`, and `s ↦ Φ (y - s h)` differentiates by the fundamental theorem
-    -- of calculus, as `Φ (y - s h) = ∫ₛ^{s+1} g (y - t h) dt`.
-    rw [divergenceCLM_apply, hψ, fderiv_smul_const (hΦs.differentiable (by simp) y)]
-    -- The trace of the rank-one map `v ↦ DΦ v • (-h)` is `DΦ (-h)`.
-    rw [show ((fderiv ℝ Φ y).smulRight (-h) : E →ₗ[ℝ] E) =
-      (fderiv ℝ Φ y : E →ₗ[ℝ] ℝ).smulRight (-h) from rfl, LinearMap.trace_smulRight]
-    set f : ℝ → ℝ := fun t => g (y - t • h)
-    have hf : Continuous f := g.continuous.comp (by fun_prop)
-    have hline : (fun s : ℝ => Φ (y + s • -h)) =
-        fun s => (∫ t in (0 : ℝ)..s + 1, f t) - ∫ t in (0 : ℝ)..s, f t := by
-      funext s
-      rw [intervalIntegral.integral_interval_sub_left (hf.intervalIntegrable _ _)
-        (hf.intervalIntegrable _ _), hΦ_def]
-      have hshift := intervalIntegral.integral_comp_add_right f s (a := 0) (b := 1)
-      rw [zero_add, add_comm 1 s] at hshift
-      rw [← hshift]
-      refine intervalIntegral.integral_congr fun t _ => ?_
-      simp only [f, smul_neg, add_smul]
-      congr 1
-      abel
-    have hderiv : HasDerivAt (fun s : ℝ => Φ (y + s • -h)) (f 1 - f 0) 0 := by
-      rw [hline]
-      have h1 := (hf.integral_hasStrictDerivAt 0 (0 + 1)).hasDerivAt.comp_add_const 0 1
-      exact h1.sub (hf.integral_hasStrictDerivAt 0 0).hasDerivAt |>.congr_deriv (by simp)
-    have hlin : HasLineDerivAt ℝ Φ (f 1 - f 0) y (-h) := hderiv
-    rw [ContinuousLinearMap.coe_coe, ← (hΦs.differentiable (by simp) y).lineDeriv_eq_fderiv,
-      hlin.lineDeriv]
-    simp [f]
-
-/-- **The translation estimate for functions of bounded variation.** If the segments
-`x + [0, 1] h` starting at the points `x ∈ V` lie in `Ω`, then every `u` locally integrable on `Ω`
-satisfies `∫_V |u (x + h) - u x| dx ≤ ‖h‖ |Du|(Ω)`, finite or infinite. -/
-theorem setLIntegral_enorm_comp_add_sub_le_mul_totalVariationOn
-    (hu : LocallyIntegrableOn u Ω μ) (hVΩ : ∀ t ∈ Icc (0 : ℝ) 1, MapsTo (· + t • h) V Ω) :
-    ∫⁻ x in V, ‖u (x + h) - u x‖ₑ ∂μ ≤ ‖h‖ₑ * totalVariationOn μ Ω u := by
-  have hV0 : (V : Set E) ⊆ Ω := fun x hx => by simpa using hVΩ 0 (by simp) hx
-  have hV1 : MapsTo (· + h) V Ω := by simpa using hVΩ 1 (by simp)
-  -- By duality, `∫_V |w|` for `w = u (· + h) - u` is the supremum of the pairings of `w` with
-  -- scalar test functions on `V` bounded by one.
-  set w : E → ℝ := fun x => u (x + h) - u x
-  let L : ℝ →L[ℝ] ℝ →L[ℝ] ℝ := ContinuousLinearMap.lsmul ℝ ℝ
-  set G : E → ℝ →L[ℝ] ℝ := fun x => L (w x)
-  have hw : LocallyIntegrableOn w V μ := (hu.comp_add_right_of_mapsTo hV1).sub (hu.mono_set hV0)
-  have hG : LocallyIntegrableOn G V μ := L.locallyIntegrableOn_comp hw
-  calc ∫⁻ x in V, ‖w x‖ₑ ∂μ ≤ ∫⁻ x in V, ‖G x‖ₑ ∂μ := lintegral_mono fun x => by
-        simp [G, L]
-    _ = ⨆ (g : 𝓓(V, ℝ)) (_ : ∀ x, ‖g x‖ ≤ 1), ENNReal.ofReal (∫ x, G x (g x) ∂μ) :=
-        hG.iSup_ofReal_integral_apply_eq_setLIntegral_enorm.symm
-    _ ≤ ‖h‖ₑ * totalVariationOn μ Ω u := iSup₂_le fun g hg => ?_
-  -- Each pairing is `∫ div ψ * u` for the field `ψ` above, by translation invariance of `μ`.
-  obtain ⟨ψ, hψh, hψ⟩ := exists_divergenceCLM_eq_sub hVΩ g hg
-  have hg₀ : Integrable (fun x => g x * u x) μ := by
-    simpa using integrable_smul_of_locallyIntegrableOn (hu.mono_set hV0) g
-  have hgh : Integrable (fun y => g (y - h) * u y) μ := by
-    simpa using integrable_smul_of_locallyIntegrableOn hu (translateTestFunction hV1 g)
-  have hgh' : Integrable (fun x => g x * u (x + h)) μ := by
-    simpa using hgh.comp_add_right h
-  have htrans : ∫ x, g x * u (x + h) ∂μ = ∫ y, g (y - h) * u y ∂μ := by
-    simpa using integral_add_right_eq_self (μ := μ) (fun y => g (y - h) * u y) h
-  have hpair : ∫ x, G x (g x) ∂μ = ∫ y, divergenceCLM ψ y * u y ∂μ := by
-    simp only [G, w, L, ContinuousLinearMap.lsmul_apply, smul_eq_mul, hψ]
-    calc ∫ x, (u (x + h) - u x) * g x ∂μ = ∫ x, g x * u (x + h) ∂μ - ∫ x, g x * u x ∂μ := by
-          rw [← integral_sub hgh' hg₀]
-          congr 1 with x
-          ring
-      _ = ∫ y, (g (y - h) - g y) * u y ∂μ := by
-          rw [htrans, ← integral_sub hgh hg₀]
-          congr 1 with x
-          ring
-  rw [hpair, ← ofReal_norm]
-  exact ofReal_integral_le_mul_totalVariationOn ψ hψh
-
-/-- **The translation estimate on the whole space.** Every locally integrable `u` satisfies
-`∫ |u (x + h) - u x| dx ≤ ‖h‖ |Du|(E)`, finite or infinite. -/
-theorem lintegral_enorm_comp_add_sub_le_mul_totalVariationOn (hu : LocallyIntegrable u μ)
-    (h : E) : ∫⁻ x, ‖u (x + h) - u x‖ₑ ∂μ ≤ ‖h‖ₑ * totalVariationOn μ ⊤ u := by
-  simpa using setLIntegral_enorm_comp_add_sub_le_mul_totalVariationOn (V := ⊤)
-    (hu.locallyIntegrableOn _) fun _ _ => mapsTo_univ _ _
 
 /-! ### Compactness -/
 
