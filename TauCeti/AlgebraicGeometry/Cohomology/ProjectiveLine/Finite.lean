@@ -38,6 +38,12 @@ universe u
 
 namespace AlgebraicGeometry.Scheme.Modules
 
+private lemma exists_two_affine_opens_projectiveLine (R : Type u) [CommRing R] :
+    ∃ U V : (projectiveLine R).Opens, IsAffineOpen U ∧ IsAffineOpen V ∧ U ⊔ V = ⊤ :=
+  ⟨_, _, Proj.isAffineOpen_basicOpen _ _ (projectiveLine.coord_mem R 0) one_pos,
+    Proj.isAffineOpen_basicOpen _ _ (projectiveLine.coord_mem R 1) one_pos,
+    projectiveLine.basicOpen_coord_sup_eq_top R⟩
+
 variable (R : Type u) [CommRing R] [IsNoetherianRing R]
   {X : Scheme.{u}} [X.Over (Spec (.of R))]
   (f : X ⟶ projectiveLine R) [IsFinite f] [f.IsOver (Spec (.of R))]
@@ -51,13 +57,7 @@ theorem subsingleton_cohomology_of_two_le_of_isFinite_to_projectiveLine
     (M : X.Modules) [M.IsQuasicoherent] (n : ℕ) (hn : 2 ≤ n) :
     Subsingleton (Cohomology M n) := by
   have : IsLocallyNoetherian X := LocallyOfFiniteType.isLocallyNoetherian f
-  let U := Proj.basicOpen (SymmetricAlgebra.homogeneousSubmodule R (Fin 2 → R))
-    (projectiveLine.coord R 0)
-  let V := Proj.basicOpen (SymmetricAlgebra.homogeneousSubmodule R (Fin 2 → R))
-    (projectiveLine.coord R 1)
-  have hU : IsAffineOpen U := Proj.isAffineOpen_basicOpen _ _ (projectiveLine.coord_mem R 0) one_pos
-  have hV : IsAffineOpen V := Proj.isAffineOpen_basicOpen _ _ (projectiveLine.coord_mem R 1) one_pos
-  have hUV : U ⊔ V = ⊤ := projectiveLine.basicOpen_coord_sup_eq_top R
+  obtain ⟨U, V, hU, hV, hUV⟩ := exists_two_affine_opens_projectiveLine R
   exact subsingleton_cohomology_of_two_le_of_isAffineOpen M (hU.preimage f) (hV.preimage f)
     (by rw [← f.preimage_inf]; exact (hU.inf hV).preimage f)
     (by rw [← f.preimage_sup, hUV, f.preimage_top]) n hn
@@ -73,14 +73,13 @@ theorem finite_cohomology_of_isFinite_to_projectiveLine (M : X.Modules)
   have : N.IsFiniteType := inferInstance
   have := projectiveLine.finite_cohomology R N
   cases n with
-  | zero => exact f.finite_cohomology_zero_of_pushforward (R := R) M
+  | zero => exact (f.moduleFinite_cohomology_zero_pushforward_iff (R := R) M).mp inferInstance
   | succ n =>
     cases n with
     | zero =>
-      exact f.finite_cohomology_one_of_pushforward_of_two_affine_opens (R := R) M _ _
-        (Proj.isAffineOpen_basicOpen _ _ (projectiveLine.coord_mem R 0) one_pos)
-        (Proj.isAffineOpen_basicOpen _ _ (projectiveLine.coord_mem R 1) one_pos)
-        (projectiveLine.basicOpen_coord_sup_eq_top R)
+      obtain ⟨U, V, hU, hV, hUV⟩ := exists_two_affine_opens_projectiveLine R
+      exact (f.moduleFinite_cohomology_one_pushforward_iff_of_two_affine_opens (R := R)
+        M U V hU hV hUV).mp inferInstance
     | succ n =>
       have := subsingleton_cohomology_of_two_le_of_isFinite_to_projectiveLine R f M (n + 2)
         (by omega)
