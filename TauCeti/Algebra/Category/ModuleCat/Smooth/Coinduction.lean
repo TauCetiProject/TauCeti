@@ -37,8 +37,9 @@ with injective resolutions.
 
 ## Main definitions
 
-* `TauCeti.coinduction f hJ`: the functor `V ↦ Hom_cont,R(A, V)` from `R`-modules to smooth
-  `A`-modules.
+* `TauCeti.coinduction f hJ`: the functor from `R`-modules to smooth `A`-modules sending `V` to
+  the smooth part of its coextension of scalars `Hom_R(A, V)`; this is `Hom_cont,R(A, V)` when the
+  `J i` form a basis of neighborhoods of `0`.
 * `TauCeti.coinductionAdjunction f hJ`: the underlying `R`-module functor of smooth `A`-modules is
   left adjoint to the coinduction.
 
@@ -163,7 +164,8 @@ theorem coinduction_map_hom_apply (hJ : Directed (· ≥ ·) J) {V W : ModuleCat
 
 /-- The underlying `R`-module functor of smooth `A`-modules is left adjoint to the coinduction:
 `R`-linear maps from a smooth `A`-module `M` to `V` are the `A`-linear maps from `M` to the
-continuous `R`-linear maps `A → V`. -/
+smooth part of the coextension of scalars `Hom_R(A, V)`, which is the module of continuous
+`R`-linear maps `A → V` when the `J i` form a basis of neighborhoods of `0`. -/
 noncomputable def coinductionAdjunction (hJ : Directed (· ≥ ·) J) :
     (smoothModules.{max u w} J).ι ⋙ ModuleCat.restrictScalars.{max u w} f ⊣ coinduction f hJ :=
   (smoothPartAdjunction hJ).comp (ModuleCat.restrictCoextendScalarsAdj f)
