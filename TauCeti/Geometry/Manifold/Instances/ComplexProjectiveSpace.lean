@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Calculus.ContDiff.FinInsertNth
 public import TauCeti.Topology.ComplexProjectiveSpace.Charts
 public import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 
@@ -49,32 +50,15 @@ theorem mem_atlas_iff (e : OpenPartialHomeomorph (ComplexProjectiveSpace n) (Fin
     e ∈ atlas (Fin n → ℂ) (ComplexProjectiveSpace n) ↔ ∃ k, affineChart k = e :=
   Iff.rfl
 
-/-- Inserting the normalizing coordinate `1` at position `k`, the parametrization behind the
-homogeneous-ratio chart of `k`, is holomorphic. -/
-theorem contDiff_insertNth_one (k : Fin (n + 1)) (r : ℕ∞ω) :
-    ContDiff ℂ r (fun z : Fin n → ℂ ↦ Fin.insertNth (α := fun _ ↦ ℂ) k 1 z) := by
-  refine contDiff_pi.2 fun j ↦ ?_
-  induction j using k.succAboveCases with
-  | x => simpa only [Fin.insertNth_apply_same] using
-      (contDiff_const : ContDiff ℂ r (fun _ : Fin n → ℂ ↦ (1 : ℂ)))
-  | p j => simpa only [Fin.insertNth_apply_succAbove] using contDiff_apply ℂ (fun _ ↦ ℂ) j
-
 /-- Homogeneous-ratio transitions are holomorphic wherever the new denominator is nonzero. -/
 theorem contDiffOn_affineChart_transition (k l : Fin (n + 1)) (r : ℕ∞ω) :
     ContDiffOn ℂ r ((affineChart k).symm.trans (affineChart l))
       ((affineChart k).symm.trans (affineChart l)).source := by
-  have hcoord (j : Fin (n + 1)) :
-      ContDiff ℂ r (fun z : Fin n → ℂ ↦ Fin.insertNth (α := fun _ ↦ ℂ) k 1 z j) :=
-    contDiff_pi.1 (contDiff_insertNth_one k r) j
-  apply contDiffOn_pi.2
-  intro j
-  have hden (z) (hz : z ∈ ((affineChart k).symm.trans (affineChart l)).source) :
-      Fin.insertNth (α := fun _ ↦ ℂ) k 1 z l ≠ 0 := by
-    apply (affineParam_mem_affineOpen_iff k l z).1
-    simpa only [OpenPartialHomeomorph.symm_symm, Set.mem_preimage,
-      affineChart_symm_apply, affineChart_source] using hz.2
-  exact ((hcoord (l.succAbove j)).contDiffOn.div (hcoord l).contDiffOn hden).congr
-    (fun z _ ↦ affineChart_transition k l z j)
+  refine (contDiffOn_finInsertNth_one_div k l).mono (fun z hz ↦ ?_) |>.congr
+    fun z _ ↦ funext (affineChart_transition k l z)
+  apply (affineParam_mem_affineOpen_iff k l z).1
+  simpa only [OpenPartialHomeomorph.symm_symm, Set.mem_preimage,
+    affineChart_symm_apply, affineChart_source] using hz.2
 
 /-- Complex projective space with its standard homogeneous-coordinate atlas is a complex
 manifold, at every differentiability order. -/
