@@ -38,6 +38,8 @@ leaving `a`, and each arrow `b → τ` at least the total capacity entering `b`,
 * `TauCeti.auxTerminalCapacity cap cσ cτ`: the capacities `cap` on original arrows, `cσ a` on
   `σ → a` and `cτ b` on `b → τ`.
 * `TauCeti.auxTerminalRestrict g`: the restriction of an assignment to the original arrows.
+* `TauCeti.setFlowCapacity cap A B`: the auxiliary capacities whose new arrows carry the total
+  capacity leaving each `a ∈ A` and entering each `b ∈ B`.
 
 ## Main results
 
@@ -45,6 +47,9 @@ leaving `a`, and each arrow `b → τ` at least the total capacity entering `b`,
 * `TauCeti.TerminalCut.IsAdmissible.arrowSum_auxTerminalCapacity`: a vertex set containing `A`
   and avoiding `B`, together with `σ`, has the same cut capacity as in the original network.
 * `TauCeti.arrowSum_union_sdiff_le_arrowSum_auxTerminalCapacity`: the normalization lemma.
+* `TauCeti.TerminalCut.IsMinimum.isMinimum_union_sdiff` and
+  `TauCeti.TerminalCut.IsMinimum.arrowSum_union_sdiff`: normalizing a minimum `σ`–`τ` cut gives a
+  minimum cut between `A` and `B` of the same capacity.
 * `TauCeti.AuxTerminalHom.excessAt_inl` and `TauCeti.AuxTerminalHom.excessAt_inr_true`: the excess
   of an assignment at an original vertex and at the fresh sink.
 
@@ -366,7 +371,93 @@ theorem arrowSum_union_sdiff_le_arrowSum_auxTerminalCapacity [PartialOrder K]
         rw [arrowSum_auxTerminalCapacity cap cσ cτ hσ hτ]
         abel
 
+/-- **Normalization of minimum auxiliary cuts.** Under the hypotheses of the normalization lemma
+`TauCeti.arrowSum_union_sdiff_le_arrowSum_auxTerminalCapacity`, normalizing a minimum cut `S`
+between the fresh terminals to the vertex set `(S.toLeft ∪ A) \ B` preserves its capacity. -/
+theorem TerminalCut.IsMinimum.arrowSum_union_sdiff [PartialOrder K] [IsOrderedAddMonoid K]
+    (hAB : Disjoint A B) {cap : Assignment Q K} (hcap : 0 ≤ cap) {cσ cτ : V → K}
+    (hcσ : ∀ a ∈ A, ∑ w, ∑ e : Q a w, cap e ≤ cσ a)
+    (hcτ : ∀ b ∈ B, ∑ v, ∑ e : Q v b, cap e ≤ cτ b) {S : Finset (V ⊕ Bool)}
+    (hS : IsMinimum (fun S ↦ arrowSum (auxTerminalCapacity (A := A) (B := B) cap cσ cτ) S Sᶜ)
+      {inr false} {inr true} S) :
+    arrowSum cap ((S.toLeft ∪ A) \ B) ((S.toLeft ∪ A) \ B)ᶜ =
+      arrowSum (auxTerminalCapacity (A := A) (B := B) cap cσ cτ) S Sᶜ := by
+  have hσ : inr false ∈ S := hS.admissible.subset (mem_singleton_self _)
+  have hτ : inr true ∉ S := disjoint_right.1 hS.admissible.disjoint (mem_singleton_self _)
+  refine (arrowSum_union_sdiff_le_arrowSum_auxTerminalCapacity hAB hcap hcσ hcτ hσ hτ).antisymm ?_
+  rw [← (isAdmissible_union_sdiff hAB S.toLeft).arrowSum_auxTerminalCapacity cap cσ cτ]
+  exact hS.le (isAdmissible_iff.2 ⟨by simp, by simp⟩)
+
+/-- Under the hypotheses of the normalization lemma
+`TauCeti.arrowSum_union_sdiff_le_arrowSum_auxTerminalCapacity`, normalizing a minimum cut `S`
+between the fresh terminals gives a minimum cut `(S.toLeft ∪ A) \ B` between `A` and `B` in the
+original network. -/
+theorem TerminalCut.IsMinimum.isMinimum_union_sdiff [PartialOrder K] [IsOrderedAddMonoid K]
+    (hAB : Disjoint A B) {cap : Assignment Q K} (hcap : 0 ≤ cap) {cσ cτ : V → K}
+    (hcσ : ∀ a ∈ A, ∑ w, ∑ e : Q a w, cap e ≤ cσ a)
+    (hcτ : ∀ b ∈ B, ∑ v, ∑ e : Q v b, cap e ≤ cτ b) {S : Finset (V ⊕ Bool)}
+    (hS : IsMinimum (fun S ↦ arrowSum (auxTerminalCapacity (A := A) (B := B) cap cσ cτ) S Sᶜ)
+      {inr false} {inr true} S) :
+    IsMinimum (fun R ↦ arrowSum cap R Rᶜ) A B ((S.toLeft ∪ A) \ B) := by
+  refine isMinimum_iff.2 ⟨isAdmissible_union_sdiff hAB _, fun R hR ↦ ?_⟩
+  rw [hS.arrowSum_union_sdiff hAB hcap hcσ hcτ, ← hR.arrowSum_auxTerminalCapacity cap cσ cτ]
+  exact hS.le (isAdmissible_iff.2 ⟨by simp, by simp⟩)
+
 end Cut
+
+/-! ### Capacities for flows between vertex sets -/
+
+section SetFlowCapacity
+
+variable [AddCommMonoid K] [Fintype V] [∀ v w, Fintype (Q v w)]
+
+/-- The capacities of the auxiliary network for flows between the vertex sets `A` and `B`: `cap` on
+the original arrows, the total capacity leaving `a` on the arrow from the fresh source to `a ∈ A`,
+and the total capacity entering `b` on the arrow from `b ∈ B` to the fresh sink. These satisfy the
+hypotheses of the normalization lemmas with equality. -/
+def setFlowCapacity (cap : Assignment Q K) (A B : Finset V) :
+    Assignment (AuxTerminalHom Q A B) K :=
+  auxTerminalCapacity cap (fun a ↦ ∑ w, ∑ e : Q a w, cap e) fun b ↦ ∑ v, ∑ e : Q v b, cap e
+
+variable (cap : Assignment Q K)
+
+@[simp]
+theorem setFlowCapacity_original {v w : V} (e : Q v w) :
+    setFlowCapacity cap A B (AuxTerminalHom.original e) = cap e :=
+  auxTerminalCapacity_original ..
+
+@[simp]
+theorem setFlowCapacity_source {a : V} (ha : a ∈ A) :
+    setFlowCapacity cap A B (AuxTerminalHom.source ha) = ∑ w, ∑ e : Q a w, cap e :=
+  auxTerminalCapacity_source ..
+
+@[simp]
+theorem setFlowCapacity_sink {b : V} (hb : b ∈ B) :
+    setFlowCapacity cap A B (AuxTerminalHom.sink hb) = ∑ v, ∑ e : Q v b, cap e :=
+  auxTerminalCapacity_sink ..
+
+variable {cap}
+
+/-- The auxiliary capacities are nonnegative when the original capacities are. -/
+theorem setFlowCapacity_nonneg [PartialOrder K] [IsOrderedAddMonoid K] (hcap : 0 ≤ cap) :
+    0 ≤ setFlowCapacity cap A B :=
+  auxTerminalCapacity_nonneg hcap (fun _ _ ↦ sum_nonneg fun _ _ ↦ sum_nonneg fun e _ ↦ hcap _ _ e)
+    fun _ _ ↦ sum_nonneg fun _ _ ↦ sum_nonneg fun e _ ↦ hcap _ _ e
+
+/-- The auxiliary capacities lie in an additive submonoid containing the original capacities. -/
+theorem setFlowCapacity_mem {M : Type*} [SetLike M K] [AddSubmonoidClass M K] {H : M}
+    (hcap : ∀ ⦃v w⦄ (e : Q v w), cap e ∈ H) :
+    ∀ ⦃x y⦄ (e : AuxTerminalHom Q A B x y), setFlowCapacity cap A B e ∈ H := by
+  rintro (v | (_ | _)) (w | (_ | _)) e
+  all_goals try exact e.elim
+  · rw [← AuxTerminalHom.original_originalEquiv_symm e, setFlowCapacity_original]
+    exact hcap _
+  · rw [AuxTerminalHom.eq_sink e, setFlowCapacity_sink]
+    exact sum_mem fun _ _ ↦ sum_mem fun e _ ↦ hcap e
+  · rw [AuxTerminalHom.eq_source e, setFlowCapacity_source]
+    exact sum_mem fun _ _ ↦ sum_mem fun e _ ↦ hcap e
+
+end SetFlowCapacity
 
 section Excess
 

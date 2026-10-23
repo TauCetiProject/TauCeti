@@ -35,13 +35,14 @@ to each `a ∈ A` of capacity the total capacity leaving `a`, and a fresh sink w
 `b ∈ B` of capacity the total capacity entering `b` (`TauCeti.setFlowCapacity`). The `A`–`B` flows
 then correspond exactly to the ordinary flows between the fresh terminals, with the same values on
 the original arrows and the same value (`TauCeti.SetFlow.auxFlowEquiv`), and normalizing a minimum
-cut between the fresh terminals gives a minimum `A`–`B` cut of the same capacity.
+cut between the fresh terminals gives a minimum `A`–`B` cut of the same capacity
+(`TauCeti.TerminalCut.IsMinimum.isMinimum_union_sdiff`, in
+`TauCeti.Combinatorics.Network.AuxiliaryTerminals`).
 
 ## Main definitions
 
 * `TauCeti.SetFlow cap A B`: `A`–`B` flows for the capacities `cap`, with value `SetFlow.val`.
 * `TauCeti.SetFlow.IsMaximum`: an `A`–`B` flow of largest value.
-* `TauCeti.setFlowCapacity cap A B`: the capacities of the auxiliary network for `A`–`B` flows.
 * `TauCeti.SetFlow.auxFlowEquiv`: the correspondence between `A`–`B` flows and ordinary flows of
   the auxiliary network.
 
@@ -51,9 +52,8 @@ cut between the fresh terminals gives a minimum `A`–`B` cut of the same capaci
 * `TauCeti.SetFlow.val_le_arrowSum`: weak duality.
 * `TauCeti.SetFlow.tfae_isMaximum`: an `A`–`B` flow is maximum exactly when it has no augmenting
   walk, and exactly when its value is the capacity of some `A`–`B` cut.
-* `TauCeti.TerminalCut.IsMinimum.isMinimum_union_sdiff` and
-  `TauCeti.TerminalCut.IsMinimum.arrowSum_union_sdiff`: normalizing a minimum cut of the
-  auxiliary network gives a minimum `A`–`B` cut of the same capacity.
+* `TauCeti.TerminalCut.isAdmissible_filter_positiveReachable`: without augmenting walks, the
+  vertices positively reachable from `A` form an `A`–`B` cut.
 * `TauCeti.SetFlow.exists_isMaximum_mem`: integrality of maximum `A`–`B` flows.
 * `TauCeti.SetFlow.exists_val_eq_arrowSum`: the max-flow/min-cut theorem between vertex sets.
 
@@ -91,6 +91,19 @@ structure SetFlow [Preorder K] (cap : Assignment Q K) (A B : Finset V) where
   excessAt_nonpos : ∀ a ∈ A, excessAt toFun a ≤ 0
   /-- Every vertex of `B` is a demand vertex. -/
   excessAt_nonneg : ∀ b ∈ B, 0 ≤ excessAt toFun b
+
+omit [∀ v w, Fintype (Q v w)] [AddCommGroup K] in
+open Classical in
+/-- If no vertex of `B` is positively reachable from a vertex of `A` for the capacities `c`, then
+the vertices positively reachable from `A` form an `A`–`B` cut. -/
+theorem TerminalCut.isAdmissible_filter_positiveReachable [Zero K] [LT K] {c : Assignment Q K}
+    {A B : Finset V} (h : ∀ a ∈ A, ∀ b ∈ B, ¬PositiveReachable c a b) :
+    TerminalCut.IsAdmissible A B (univ.filter fun v ↦ ∃ a ∈ A, PositiveReachable c a v) := by
+  refine TerminalCut.isAdmissible_iff.2
+    ⟨fun a ha ↦ mem_filter.2 ⟨mem_univ a, a, ha, .refl _ a⟩, disjoint_left.2 ?_⟩
+  rintro b hb hbB
+  obtain ⟨a, ha, hab⟩ := (mem_filter.1 hb).2
+  exact h a ha b hbB hab
 
 namespace SetFlow
 
@@ -202,19 +215,6 @@ theorem isMaximum_of_val_eq_arrowSum [DecidableEq V] (f : SetFlow cap A B) {S : 
     (hS : TerminalCut.IsAdmissible A B S) (h : f.val = arrowSum cap S Sᶜ) : f.IsMaximum :=
   isMaximum_iff.2 fun g ↦ h ▸ g.val_le_arrowSum hS
 
-omit [∀ v w, Fintype (Q v w)] [IsOrderedAddMonoid K] in
-open Classical in
-/-- If no vertex of `B` is positively reachable from `A`, then the vertices positively reachable
-from `A` form an `A`–`B` cut. -/
-private theorem isAdmissible_filter_positiveReachable {c : Assignment Q K}
-    (h : ∀ a ∈ A, ∀ b ∈ B, ¬PositiveReachable c a b) :
-    TerminalCut.IsAdmissible A B (univ.filter fun v ↦ ∃ a ∈ A, PositiveReachable c a v) := by
-  refine TerminalCut.isAdmissible_iff.2
-    ⟨fun a ha ↦ mem_filter.2 ⟨mem_univ a, a, ha, .refl _ a⟩, disjoint_left.2 ?_⟩
-  rintro b hb hbB
-  obtain ⟨a, ha, hab⟩ := (mem_filter.1 hb).2
-  exact h a ha b hbB hab
-
 open Classical in
 /-- If no vertex of `B` is positively reachable from a vertex of `A` for the residual capacities
 of an `A`–`B` flow, then its value is the capacity of the set of vertices positively reachable
@@ -224,7 +224,7 @@ theorem val_eq_arrowSum_of_not_positiveReachable [DecidableEq V] (f : SetFlow ca
     f.val = arrowSum cap
       (univ.filter fun v ↦ ∃ a ∈ A, PositiveReachable (residualCapacity 0 cap f.toFun) a v)
       (univ.filter fun v ↦ ∃ a ∈ A, PositiveReachable (residualCapacity 0 cap f.toFun) a v)ᶜ := by
-  rw [f.val_eq_arrowSum_iff (isAdmissible_filter_positiveReachable h)]
+  rw [f.val_eq_arrowSum_iff (TerminalCut.isAdmissible_filter_positiveReachable h)]
   intro v hv w hw e
   simp only [mem_filter, mem_univ, true_and, not_exists, not_and] at hv hw
   obtain ⟨a, ha, hav⟩ := hv
@@ -299,7 +299,7 @@ theorem tfae_isMaximum [DecidableEq V] (hAB : Disjoint A B) (f : SetFlow cap A B
   tfae_have 1 → 2 := fun hf a ha b hb ↦ hf.not_positiveReachable hAB ha hb
   tfae_have 2 → 3 := fun h ↦ by
     classical
-    exact ⟨_, isAdmissible_filter_positiveReachable h,
+    exact ⟨_, TerminalCut.isAdmissible_filter_positiveReachable h,
       f.val_eq_arrowSum_of_not_positiveReachable h⟩
   tfae_have 3 → 1 := fun ⟨S, hS, h⟩ ↦ f.isMaximum_of_val_eq_arrowSum hS h
   tfae_finish
@@ -313,55 +313,6 @@ theorem IsMaximum.exists_val_eq_arrowSum [DecidableEq V] (hAB : Disjoint A B)
 end LinearOrder
 
 end SetFlow
-
-/-! ### The auxiliary network -/
-
-/-- The capacities of the auxiliary network for `A`–`B` flows: `cap` on the original arrows, the
-total capacity leaving `a` on the arrow from the fresh source to `a ∈ A`, and the total capacity
-entering `b` on the arrow from `b ∈ B` to the fresh sink. -/
-def setFlowCapacity (cap : Assignment Q K) (A B : Finset V) : Assignment (AuxTerminalHom Q A B) K :=
-  auxTerminalCapacity cap (fun a ↦ ∑ w, ∑ e : Q a w, cap e) fun b ↦ ∑ v, ∑ e : Q v b, cap e
-
-section setFlowCapacity
-
-variable (cap : Assignment Q K) {A B : Finset V}
-
-@[simp]
-theorem setFlowCapacity_original {v w : V} (e : Q v w) :
-    setFlowCapacity cap A B (AuxTerminalHom.original e) = cap e :=
-  auxTerminalCapacity_original ..
-
-@[simp]
-theorem setFlowCapacity_source {a : V} (ha : a ∈ A) :
-    setFlowCapacity cap A B (AuxTerminalHom.source ha) = ∑ w, ∑ e : Q a w, cap e :=
-  auxTerminalCapacity_source ..
-
-@[simp]
-theorem setFlowCapacity_sink {b : V} (hb : b ∈ B) :
-    setFlowCapacity cap A B (AuxTerminalHom.sink hb) = ∑ v, ∑ e : Q v b, cap e :=
-  auxTerminalCapacity_sink ..
-
-variable {cap}
-
-/-- The auxiliary capacities are nonnegative when the original capacities are. -/
-theorem setFlowCapacity_nonneg [PartialOrder K] [IsOrderedAddMonoid K] (hcap : 0 ≤ cap) :
-    0 ≤ setFlowCapacity cap A B :=
-  auxTerminalCapacity_nonneg hcap (fun _ _ ↦ sum_nonneg fun _ _ ↦ sum_nonneg fun e _ ↦ hcap _ _ e)
-    fun _ _ ↦ sum_nonneg fun _ _ ↦ sum_nonneg fun e _ ↦ hcap _ _ e
-
-/-- The auxiliary capacities lie in an additive subgroup containing the original capacities. -/
-theorem setFlowCapacity_mem {H : AddSubgroup K} (hcap : ∀ ⦃v w⦄ (e : Q v w), cap e ∈ H) :
-    ∀ ⦃x y⦄ (e : AuxTerminalHom Q A B x y), setFlowCapacity cap A B e ∈ H := by
-  rintro (v | (_ | _)) (w | (_ | _)) e
-  all_goals try exact e.elim
-  · rw [← AuxTerminalHom.original_originalEquiv_symm e, setFlowCapacity_original]
-    exact hcap _
-  · rw [AuxTerminalHom.eq_sink e, setFlowCapacity_sink]
-    exact sum_mem fun _ _ ↦ sum_mem fun e _ ↦ hcap e
-  · rw [AuxTerminalHom.eq_source e, setFlowCapacity_source]
-    exact sum_mem fun _ _ ↦ sum_mem fun e _ ↦ hcap e
-
-end setFlowCapacity
 
 variable [DecidableEq V]
 
@@ -400,14 +351,10 @@ def auxFlowEquiv (hAB : Disjoint A B) :
         · rw [← AuxTerminalHom.original_originalEquiv_symm e, auxTerminalCapacity_original,
             setFlowCapacity_original]
           exact f.le_cap _
-        · rw [AuxTerminalHom.eq_sink e, auxTerminalCapacity_sink, setFlowCapacity_sink,
-            excessAt_def]
-          exact (sub_le_self _ (sum_nonneg fun _ _ ↦ sum_nonneg fun e _ ↦ f.nonneg e)).trans
-            (sum_le_sum fun _ _ ↦ sum_le_sum fun e _ ↦ f.le_cap e)
-        · rw [AuxTerminalHom.eq_source e, auxTerminalCapacity_source, setFlowCapacity_source,
-            excessAt_def, neg_sub]
-          exact (sub_le_self _ (sum_nonneg fun _ _ ↦ sum_nonneg fun e _ ↦ f.nonneg e)).trans
-            (sum_le_sum fun _ _ ↦ sum_le_sum fun e _ ↦ f.le_cap e)
+        · rw [AuxTerminalHom.eq_sink e, auxTerminalCapacity_sink, setFlowCapacity_sink]
+          exact excessAt_le_of_mem_Icc f.mem_Icc _
+        · rw [AuxTerminalHom.eq_source e, auxTerminalCapacity_source, setFlowCapacity_source]
+          exact neg_excessAt_le_of_mem_Icc f.mem_Icc _
       conserve := by
         rintro (v | (_ | _)) hσ hτ
         · rw [AuxTerminalHom.excessAt_inl, auxTerminalRestrict_auxTerminalCapacity,
@@ -489,35 +436,6 @@ theorem isMaximum_auxFlowEquiv (hAB : Disjoint A B) {f : SetFlow cap A B} :
   simp
 
 end SetFlow
-
-/-- **Normalization of minimum auxiliary cuts.** For disjoint `A` and `B` and nonnegative
-capacities, normalizing a minimum cut `S` between the fresh terminals of the auxiliary network to
-the `A`–`B` cut `(S.toLeft ∪ A) \ B` preserves its capacity. -/
-theorem TerminalCut.IsMinimum.arrowSum_union_sdiff [PartialOrder K] [IsOrderedAddMonoid K]
-    {cap : Assignment Q K} {A B : Finset V} (hAB : Disjoint A B) (hcap : 0 ≤ cap)
-    {S : Finset (V ⊕ Bool)}
-    (hS : IsMinimum (fun S ↦ arrowSum (setFlowCapacity cap A B) S Sᶜ) {inr false} {inr true} S) :
-    arrowSum cap ((S.toLeft ∪ A) \ B) ((S.toLeft ∪ A) \ B)ᶜ =
-      arrowSum (setFlowCapacity cap A B) S Sᶜ := by
-  have hσ : inr false ∈ S := hS.admissible.subset (mem_singleton_self _)
-  have hτ : inr true ∉ S := disjoint_right.1 hS.admissible.disjoint (mem_singleton_self _)
-  refine (arrowSum_union_sdiff_le_arrowSum_auxTerminalCapacity hAB hcap (fun _ _ ↦ le_rfl)
-    (fun _ _ ↦ le_rfl) hσ hτ).antisymm ?_
-  rw [← (isAdmissible_union_sdiff hAB S.toLeft).arrowSum_auxTerminalCapacity cap
-    (fun a ↦ ∑ w, ∑ e : Q a w, cap e) fun b ↦ ∑ v, ∑ e : Q v b, cap e]
-  exact hS.le (isAdmissible_iff.2 ⟨by simp, by simp⟩)
-
-/-- For disjoint `A` and `B` and nonnegative capacities, normalizing a minimum cut `S` between the
-fresh terminals of the auxiliary network gives a minimum `A`–`B` cut `(S.toLeft ∪ A) \ B`. -/
-theorem TerminalCut.IsMinimum.isMinimum_union_sdiff [PartialOrder K] [IsOrderedAddMonoid K]
-    {cap : Assignment Q K} {A B : Finset V} (hAB : Disjoint A B) (hcap : 0 ≤ cap)
-    {S : Finset (V ⊕ Bool)}
-    (hS : IsMinimum (fun S ↦ arrowSum (setFlowCapacity cap A B) S Sᶜ) {inr false} {inr true} S) :
-    IsMinimum (fun R ↦ arrowSum cap R Rᶜ) A B ((S.toLeft ∪ A) \ B) := by
-  refine isMinimum_iff.2 ⟨isAdmissible_union_sdiff hAB _, fun R hR ↦ ?_⟩
-  rw [hS.arrowSum_union_sdiff hAB hcap, ← hR.arrowSum_auxTerminalCapacity cap
-    (fun a ↦ ∑ w, ∑ e : Q a w, cap e) fun b ↦ ∑ v, ∑ e : Q v b, cap e]
-  exact hS.le (isAdmissible_iff.2 ⟨by simp, by simp⟩)
 
 namespace SetFlow
 
