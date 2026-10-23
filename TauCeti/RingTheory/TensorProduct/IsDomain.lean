@@ -39,11 +39,7 @@ Over an algebraically closed field `K` there is no restriction at all: the tenso
 `K`-algebras that are domains is a domain (`TauCeti.isDomain_tensorProduct_of_isAlgClosed`). Thus
 the spectrum of a domain over `K` stays irreducible after any extension of scalars, which is why
 the irreducible components of a geometric fibre do not depend on the chosen algebraically closed
-field. The proof is the weak Nullstellensatz. Every pair of elements lies in the image of
-`A₀ ⊗[K] B` for a finitely generated subalgebra `A₀` of `A`, so let `A` be finitely generated.
-If `x` and `y` are nonzero, linear functionals on `B` give nonzero coefficients `a` and `c` of `x`
-and `y` in `A`. A `K`-point `φ` of `A` with `φ (a * c) ≠ 0` then specializes `x` and `y` to nonzero
-elements of the domain `B`, so `x * y ≠ 0`.
+field.
 
 ## Main results
 
@@ -106,6 +102,9 @@ private theorem eq_zero_or_eq_zero_of_mul_eq_zero_of_finiteType [IsAlgClosed K]
     {A B : Type*} [CommRing A] [IsDomain A] [Algebra K A] [Algebra.FiniteType K A]
     [CommRing B] [IsDomain B] [Algebra K B] {x y : A ⊗[K] B} (h : x * y = 0) :
     x = 0 ∨ y = 0 := by
+  -- The proof is the weak Nullstellensatz. If `x` and `y` are nonzero, linear functionals on `B`
+  -- give nonzero coefficients `a` and `c` of `x` and `y` in `A`. A `K`-point `φ` of `A` with
+  -- `φ (a * c) ≠ 0` then specializes `x` and `y` to nonzero elements of the domain `B`.
   -- The coefficient in `A` of a tensor along a linear functional `ℓ` on `B`.
   let c (ℓ : Module.Dual K B) : A ⊗[K] B →ₗ[K] A :=
     (TensorProduct.lid K A).toLinearMap ∘ₗ ℓ.rTensor A ∘ₗ (TensorProduct.comm K A B).toLinearMap

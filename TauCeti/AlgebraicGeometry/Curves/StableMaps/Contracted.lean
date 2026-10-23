@@ -42,10 +42,8 @@ prestable map over an algebraically closed field `K`, with target locally of fin
 curves. Since `Spec L ⟶ Spec K` is geometrically irreducible and open, the irreducible components
 of `C_L` are the preimages `p ⁻¹' E` of the irreducible components `E` of `C`, and `p` maps them
 back onto `E`. A component `E'` of `C_L` is contracted by `F_L` exactly when `p '' E'` is contracted
-by `F`. One direction holds because `F ∘ p` factors through `F_L`. For the other, `F` maps a
-contracted component to a closed point, which is a `K`-point of the target, and the fibre of the
-base-changed target over a `K`-point is a single point. So the contracted components of a geometric
-fibre do not depend on the chosen algebraically closed field.
+by `F`. So the contracted components of a geometric fibre do not depend on the chosen
+algebraically closed field.
 
 ## Main definitions
 
@@ -228,13 +226,16 @@ theorem isContractedComponent_pullback_iff {E : Set (F.pullback g).curve.total}
   have hpE : p ⁻¹' (p '' E) = E := congr($(e.symm_apply_apply ⟨E, hE⟩).1)
   refine (and_iff_right hE).trans (Iff.trans ?_ (and_iff_right (e ⟨E, hE⟩).2).symm)
   constructor
-  · -- `F` maps `p '' E` onto the image of `F_L '' E` in the target.
+  · -- `F ∘ p` factors through `F_L`, so `F` maps `p '' E` onto the image of `F_L '' E` in the
+    -- target.
     refine fun h ↦ (h.image (Limits.pullback.fst q g)).anti ?_
     rintro _ ⟨_, ⟨x, hx, rfl⟩, rfl⟩
     refine ⟨_, ⟨x, hx, rfl⟩, ?_⟩
     have := congrArg (fun φ : _ ⟶ V ↦ φ x) (F.pullback_map_fst g)
     exact (Scheme.Hom.comp_apply _ _ x).symm.trans (this.trans (Scheme.Hom.comp_apply _ _ x))
-  · intro h
+  · -- `F` maps the contracted component `p '' E` to a closed point, which is a `K`-point of the
+    -- target, and the fibre of the base-changed target over a `K`-point is a single point.
+    intro h
     rw [← hpE]
     exact F.map.subsingleton_image_preimage_of_subsingleton_image q g p (F.pullback g).map
       (F.pullback_map_fst g)
