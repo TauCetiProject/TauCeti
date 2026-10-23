@@ -24,8 +24,10 @@ respect to the cube slice by the covolume of `L`, with no constant:
 ```
 
 For the lattice `V ∩ ℤ^ι` of integral points of a subspace `V` of `ℚ^ι` the covolume is the
-absolute Euclidean height of `V`, and for the integral solutions of `A y = 0`, with `A` an integer
-matrix, it is `√det (A Aᵀ)` divided by the greatest common divisor of the maximal minors of `A`.
+absolute Euclidean height of `V`. For the integral solutions of `A y = 0`, with `A` an integer
+matrix, the covolume times the greatest common divisor `minorGcd A` of the maximal minors of `A` is
+`√det (A Aᵀ)`; when the rows of `A` are linearly independent, `minorGcd A` is positive and the
+covolume is the quotient `√det (A Aᵀ) / minorGcd A`.
 These bounds are the geometric half of Bombieri and Vaaler's version of Siegel's lemma. Since the
 gauge of the cube slice is the sup norm, they bound the sup norms of independent integral solutions
 attaining the minima (`ZLattice.exists_linearIndependent_gauge_eq_successiveMin`), and of a lattice
