@@ -158,6 +158,18 @@ section Ring
 
 variable [AddMonoid H] {N : H →+ ℝ} [Ring R] {C : ℝ} {a : NovikovSeries R H N}
 
+/-- The coefficientwise inclusion of the group ring has dense image in its Novikov completion. -/
+theorem denseRange_ofAddMonoidAlgebra :
+    DenseRange (ofAddMonoidAlgebra : AddMonoidAlgebra R H → NovikovSeries R H N) := by
+  apply DenseRange.of_comp (g := AddMonoidAlgebra.ofCoeff)
+  have h : (ofAddMonoidAlgebra : AddMonoidAlgebra R H → NovikovSeries R H N) ∘
+      AddMonoidAlgebra.ofCoeff = ofFinsupp := by
+    funext f
+    ext h
+    simp only [Function.comp_apply, coeff_ofAddMonoidAlgebra, coeff_ofFinsupp]
+  rw [h]
+  exact denseRange_ofFinsupp
+
 /-- The period topology is a nonarchimedean ring topology. -/
 instance : NonarchimedeanRing (NovikovSeries R H N) where
   is_nonarchimedean := NonarchimedeanAddGroup.is_nonarchimedean
