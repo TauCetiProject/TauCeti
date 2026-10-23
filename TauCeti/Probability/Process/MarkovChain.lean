@@ -32,7 +32,7 @@ that recursion unwinds to the familiar product formula
 which is the defining property of a Markov chain, and the form in which the finite path masses are
 consumed downstream.
 
-Started from a fixed state `x`, the chain has law `markovChainKernel κ x`. This path-law kernel
+Started from a fixed state `x`, the chain has law `κ.markovChainKernel x`. This path-law kernel
 depends measurably on `x`, its time-`n` marginals are the kernel powers `κ ^ n`, and integrating it
 against an arbitrary initial law `ν` gives `markovChainLaw ν κ`; in particular the time-`n` law of
 the chain is `(κ ^ n) ∘ₘ ν`.
@@ -41,16 +41,17 @@ the chain is `(κ ^ n) ∘ₘ ν`.
 
 * `TauCeti.Probability.markovChainLaw` — the path law of the homogeneous Markov chain with initial
   law `ν` and transition kernel `κ`.
-* `TauCeti.Probability.markovChainKernel` — the path-law kernel `x ↦ markovChainLaw (dirac x) κ`,
-  the law of the chain as a measurable function of its starting state.
+* `ProbabilityTheory.Kernel.markovChainKernel` — the path-law kernel
+  `x ↦ markovChainLaw (dirac x) κ`, the law of the chain as a measurable function of its starting
+  state.
 
 ## Main results
 
 * `TauCeti.Probability.markovChainLaw_map_eval_zero` — the chain starts from `ν`.
-* `TauCeti.Probability.markovChainLaw_eq_comp` — the path law with initial law `ν` is the path-law
+* `MeasureTheory.Measure.markovChainLaw_eq_comp` — the path law with initial law `ν` is the path-law
   kernel integrated against `ν`.
-* `TauCeti.Probability.markovChainLaw_map_eval` — the state at time `n` has law `(κ ^ n) ∘ₘ ν`;
-  `TauCeti.Probability.markovChainKernel_map_eval` is the kernel form.
+* `MeasureTheory.Measure.markovChainLaw_map_eval` — the state at time `n` has law `(κ ^ n) ∘ₘ ν`;
+  `ProbabilityTheory.Kernel.markovChainKernel_map_eval` is the kernel form.
 * `TauCeti.Probability.markovChainLaw_map_prefix_succ_eq_compProd` — the Markov property: the joint
   law of a prefix and of the next state is the prefix law extended by one `κ`-step from its last
   coordinate.
@@ -61,7 +62,7 @@ the chain is `(κ ^ n) ∘ₘ ν`.
   measurable singletons, the mass of a finite path is the initial weight times the product of the
   transition weights; `MeasureTheory.Measure.markovChainLaw_prefixLaw_singleton` is the same formula
   for the prefix laws of the coordinate process.
-* `TauCeti.Probability.eq_markovChainLaw` — the path law is the only measure on path space with
+* `MeasureTheory.Measure.eq_markovChainLaw` — the path law is the only measure on path space with
   initial law `ν` satisfying the Markov recursion for its prefix laws.
 
 ## References
@@ -146,37 +147,44 @@ variable (ν : Measure α) (κ : Kernel α α) [IsMarkovKernel κ]
 instance [IsProbabilityMeasure ν] : IsProbabilityMeasure (markovChainLaw ν κ) :=
   inferInstanceAs (IsProbabilityMeasure (Kernel.trajMeasure _ _))
 
+instance [IsFiniteMeasure ν] : IsFiniteMeasure (markovChainLaw ν κ) :=
+  inferInstanceAs (IsFiniteMeasure (Kernel.traj _ 0 ∘ₘ _))
+
+instance [SFinite ν] : SFinite (markovChainLaw ν κ) :=
+  inferInstanceAs (SFinite (Kernel.traj _ 0 ∘ₘ _))
+
 /-- **The path-law kernel of a homogeneous Markov chain**: the kernel sending a state `x` to the law
 `markovChainLaw (Measure.dirac x) κ` of the chain started at `x` (`markovChainKernel_apply`). Being
 a kernel, it records that this law depends measurably on the starting state, and every path law of
 the chain is its mixture over the initial law (`markovChainLaw_eq_comp`). -/
-def markovChainKernel : Kernel α (ℕ → α) :=
+def _root_.ProbabilityTheory.Kernel.markovChainKernel : Kernel α (ℕ → α) :=
   (Kernel.traj (markovStep κ) 0).comap (MeasurableEquiv.piUnique fun _ : ↥(Iic (0 : ℕ)) => α).symm
     (MeasurableEquiv.measurable _)
 
-instance : IsMarkovKernel (markovChainKernel κ) :=
+instance : IsMarkovKernel κ.markovChainKernel :=
   inferInstanceAs (IsMarkovKernel (Kernel.comap _ _ _))
 
 /-- **The path law is a mixture of the laws started at fixed states**: the path law with initial
 law `ν` is the path-law kernel integrated against `ν`. This holds for every initial measure `ν`. -/
-theorem markovChainLaw_eq_comp : markovChainLaw ν κ = markovChainKernel κ ∘ₘ ν := by
+theorem _root_.MeasureTheory.Measure.markovChainLaw_eq_comp :
+    markovChainLaw ν κ = κ.markovChainKernel ∘ₘ ν := by
   rw [markovChainLaw, Kernel.trajMeasure,
     Measure.bind_map (MeasurableEquiv.measurable _).aemeasurable (Kernel.aemeasurable _),
-    markovChainKernel, Kernel.coe_comap, Function.comp_def]
+    Kernel.markovChainKernel, Kernel.coe_comap, Function.comp_def]
 
 /-- The path-law kernel evaluated at a state `x` is the law of the chain started at `x`. -/
 @[simp]
-theorem markovChainKernel_apply (x : α) :
-    markovChainKernel κ x = markovChainLaw (Measure.dirac x) κ := by
-  rw [markovChainLaw_eq_comp, Measure.dirac_bind (Kernel.measurable _)]
+theorem _root_.ProbabilityTheory.Kernel.markovChainKernel_apply (x : α) :
+    κ.markovChainKernel x = markovChainLaw (Measure.dirac x) κ := by
+  rw [Measure.markovChainLaw_eq_comp, Measure.dirac_bind (Kernel.measurable _)]
 
 /-- **The law of the chain depends measurably on its starting state.** -/
-theorem measurable_markovChainLaw_dirac :
+theorem _root_.ProbabilityTheory.Kernel.measurable_markovChainLaw_dirac :
     Measurable fun x => markovChainLaw (Measure.dirac x) κ := by
-  have h : (fun x => markovChainLaw (Measure.dirac x) κ) = markovChainKernel κ :=
-    funext fun x => (markovChainKernel_apply κ x).symm
+  have h : (fun x => markovChainLaw (Measure.dirac x) κ) = κ.markovChainKernel :=
+    funext fun x => (κ.markovChainKernel_apply x).symm
   rw [h]
-  exact (markovChainKernel κ).measurable
+  exact κ.markovChainKernel.measurable
 
 /-- The trajectory of the chain restricted to time `0` is the initial law, transported along the
 canonical identification of `(_ : ↥(Iic 0)) → α` with `α`. -/
@@ -214,7 +222,7 @@ theorem markovChainLaw_map_eval_zero :
 `(X 0, …, X n)` and of the next state `X (n + 1)` is the prefix law extended by one `κ`-step out of
 the last coordinate of the prefix. Together with `markovChainLaw_map_eval_zero` this determines all
 the finite-dimensional laws of the chain. -/
-theorem markovChainLaw_map_prefix_succ_eq_compProd [IsProbabilityMeasure ν] (n : ℕ) :
+theorem markovChainLaw_map_prefix_succ_eq_compProd [SFinite ν] (n : ℕ) :
     (markovChainLaw ν κ).map (fun x => ((fun i : Fin (n + 1) => x i.1), x (n + 1)))
       = ((markovChainLaw ν κ).map fun x (i : Fin (n + 1)) => x i.1) ⊗ₘ
         κ.comap (fun w : Fin (n + 1) → α => w (Fin.last n))
@@ -228,8 +236,13 @@ theorem markovChainLaw_map_prefix_succ_eq_compProd [IsProbabilityMeasure ν] (n 
     ext u s _
     simp [markovStep, Kernel.comap_apply, iicEquivFin_apply]
   have key : ((markovChainLaw ν κ).map (frestrictLe n)) ⊗ₘ markovStep κ n
-      = (markovChainLaw ν κ).map (fun x => (frestrictLe n x, x (n + 1))) :=
-    Kernel.map_frestrictLe_trajMeasure_compProd_eq_map_trajMeasure
+      = (markovChainLaw ν κ).map (fun x => (frestrictLe n x, x (n + 1))) := by
+    rw [Measure.compProd_eq_comp_prod, markovChainLaw, Kernel.trajMeasure,
+      Measure.map_comp _ _ (measurable_frestrictLe n), Kernel.traj_map_frestrictLe,
+      Measure.comp_assoc, Measure.map_comp _ _ hpair]
+    congr with x₀ : 1
+    rw [Kernel.comp_apply, ← Measure.compProd_eq_comp_prod, Kernel.map_apply _ hpair,
+      Kernel.partialTraj_compProd_eq_map_traj zero_le]
   calc (markovChainLaw ν κ).map (fun x => ((fun i : Fin (n + 1) => x i.1), x (n + 1)))
       = ((markovChainLaw ν κ).map (fun x => (frestrictLe n x, x (n + 1)))).map
           (Prod.map (iicEquivFin α n) id) := by
@@ -292,10 +305,10 @@ theorem markovChainLaw_map_eval_succ [IsProbabilityMeasure ν] (n : ℕ) :
 /-- **The time-`n` marginals of the path-law kernel are the kernel powers**: started at `x`, the
 chain is at time `n` distributed as `(κ ^ n) x`. -/
 @[simp]
-theorem markovChainKernel_map_eval (n : ℕ) :
-    (markovChainKernel κ).map (fun w => w n) = κ ^ n := by
+theorem _root_.ProbabilityTheory.Kernel.markovChainKernel_map_eval (n : ℕ) :
+    κ.markovChainKernel.map (fun w => w n) = κ ^ n := by
   ext1 x
-  rw [Kernel.map_apply _ (measurable_pi_apply n), markovChainKernel_apply]
+  rw [Kernel.map_apply _ (measurable_pi_apply n), Kernel.markovChainKernel_apply]
   induction n with
   | zero =>
     rw [markovChainLaw_map_eval_zero, pow_zero]
@@ -307,10 +320,10 @@ theorem markovChainKernel_map_eval (n : ℕ) :
 /-- **The time-`n` marginal of the chain**: the state at time `n` has law `(κ ^ n) ∘ₘ ν`, the
 initial law propagated by the `n`-step transition kernel. This holds for every initial measure
 `ν`. -/
-theorem markovChainLaw_map_eval (n : ℕ) :
+theorem _root_.MeasureTheory.Measure.markovChainLaw_map_eval (n : ℕ) :
     (markovChainLaw ν κ).map (fun w => w n) = (κ ^ n) ∘ₘ ν := by
-  rw [markovChainLaw_eq_comp, Measure.map_comp _ _ (measurable_pi_apply n),
-    markovChainKernel_map_eval]
+  rw [Measure.markovChainLaw_eq_comp, Measure.map_comp _ _ (measurable_pi_apply n),
+    Kernel.markovChainKernel_map_eval]
 
 /-- **The finite path masses of the chain.** On a state space with measurable singletons the mass a
 homogeneous Markov chain gives to a finite path is the initial weight of its first state times the
@@ -390,7 +403,8 @@ theorem _root_.MeasureTheory.Measure.markovChainLaw_prefixLaw_singleton
 /-- **Uniqueness of the path law.** A measure on path space whose time-zero marginal is `ν` and
 whose prefix laws satisfy the Markov recursion of `markovChainLaw_map_prefix_succ_eq_compProd` is
 the path law `markovChainLaw ν κ`. -/
-theorem eq_markovChainLaw [IsProbabilityMeasure ν] {μ : Measure (ℕ → α)}
+theorem _root_.MeasureTheory.Measure.eq_markovChainLaw [IsFiniteMeasure ν]
+    {μ : Measure (ℕ → α)}
     (h₀ : μ.map (fun x => x 0) = ν)
     (hstep : ∀ n, μ.map (fun x => ((fun i : Fin (n + 1) => x i.1), x (n + 1)))
       = (μ.map fun x (i : Fin (n + 1)) => x i.1) ⊗ₘ
