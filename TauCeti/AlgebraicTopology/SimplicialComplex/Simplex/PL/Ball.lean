@@ -126,9 +126,24 @@ def simplexHalfSpacePLChart (n : ℕ) (v : Option (Option (Fin n))) :
   ext i
   exact realizationTopHomeomorphOptionCoordinateSimplex_apply n x i
 
+/-- The chart at the omitted vertex sends that vertex to the origin. -/
+theorem coe_simplexHalfSpacePLChart_none_eq_zero (n : ℕ)
+    (x : Realization (⊤ : AbstractSimplicialComplex (Fin (n + 2))))
+    (hx : (x.1 : Fin (n + 2) → ℝ) = Pi.single (Fin.last (n + 1)) 1) :
+    (simplexHalfSpacePLChart n none x).1 = 0 := by
+  rw [coe_simplexHalfSpacePLChart_apply, hx]
+  have hzero : simplexBoundaryCoordinateMap n (Pi.single (Fin.last (n + 1)) 1) = 0 := by
+    ext i
+    simp
+  rw [hzero]
+  have hz : orthantProjection ((fun _ : Fin n => (0 : ℝ)), (0 : ℝ)) = 0 := by
+    ext i
+    simp
+  simp [coordinateSimplexHalfSpaceMap_none, hz]
+
 /-- On a chart target, the ambient inverse flattening and affine missing-mass lift
 recover every barycentric coordinate of the inverse chart. -/
-theorem coe_simplexHalfSpacePLChart_symm (n : ℕ) (v : Option (Option (Fin n)))
+theorem coe_simplexHalfSpacePLChart_symm_apply (n : ℕ) (v : Option (Option (Fin n)))
     {q : {q : (Fin n → ℝ) × ℝ | 0 ≤ q.2}}
     (hq : q ∈ (simplexHalfSpacePLChart n v).target) :
     (((simplexHalfSpacePLChart n v).symm q).1 : Fin (n + 2) → ℝ) =

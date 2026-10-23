@@ -111,6 +111,32 @@ def simplexBoundaryCoordinateLift (n : ℕ) :
     simplexBoundaryCoordinateLift n y (Fin.last (n + 1)) = 1 - ∑ i, y i := by
   simp [simplexBoundaryCoordinateLift, sub_eq_add_neg, add_comm]
 
+/-- Discarding the restored missing-mass coordinate recovers the original coordinates. -/
+@[simp] theorem simplexBoundaryCoordinateMap_simplexBoundaryCoordinateLift (n : ℕ)
+    (y : Option (Fin n) → ℝ) :
+    simplexBoundaryCoordinateMap n (simplexBoundaryCoordinateLift n y) = y := by
+  ext i
+  simp only [simplexBoundaryCoordinateMap_apply, simplexBoundaryCoordinateLift_castSucc,
+    Equiv.apply_symm_apply]
+
+/-- Restoring the missing mass recovers a barycentric vector of total mass one. -/
+@[simp] theorem simplexBoundaryCoordinateLift_simplexBoundaryCoordinateMap (n : ℕ)
+    (x : Fin (n + 2) → ℝ) (hx : ∑ i, x i = 1) :
+    simplexBoundaryCoordinateLift n (simplexBoundaryCoordinateMap n x) = x := by
+  funext i
+  refine Fin.lastCases ?_ (fun j => ?_) i
+  · rw [simplexBoundaryCoordinateLift_last]
+    have hsum : (∑ j : Fin (n + 1), x j.castSucc) + x (Fin.last (n + 1)) = 1 := by
+      simpa only [Fin.sum_univ_castSucc] using hx
+    have hret : (∑ j, simplexBoundaryCoordinateMap n x j) =
+        ∑ j : Fin (n + 1), x j.castSucc := by
+      simp only [simplexBoundaryCoordinateMap_apply]
+      exact finSuccEquivLast.symm.sum_comp (fun j => x j.castSucc)
+    rw [hret]
+    linarith
+  · simp only [simplexBoundaryCoordinateLift_castSucc, simplexBoundaryCoordinateMap_apply,
+      Equiv.symm_apply_apply]
+
 private def topToCoordinateSimplex (n : ℕ)
     (x : Realization (⊤ : AbstractSimplicialComplex (Fin (n + 1)))) :
     coordinateSimplex (Fin n) := by

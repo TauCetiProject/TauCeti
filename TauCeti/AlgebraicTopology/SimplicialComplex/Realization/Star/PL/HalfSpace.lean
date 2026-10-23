@@ -120,27 +120,16 @@ theorem IsCombinatorialBall.exists_openPartialHomeomorph_openStar_isPL
       g y.1 = ((c.symm y).1 : ι → ℝ) := by
     rw [hci y hy]
     simp only [g, Function.comp_apply]
-    rw [← coe_simplexHalfSpacePLChart_symm n none hy]
+    rw [← coe_simplexHalfSpacePLChart_symm_apply n none hy]
     simpa only [φ.apply_symm_apply] using hGφ (φ.symm (a.symm y))
   refine ⟨c, hcs, hct, ?_, f, g, ?_, ?_, ?_, ?_⟩
   · have hv : vertex K v ∈ openStarRealization K v := by simp [vertex_val]
-    rw [hc ⟨vertex K v, hv⟩, coe_simplexHalfSpacePLChart_apply]
-    have hapex' :
-        ((φ ⟨vertex K v, K.openStarRealization_subset_closedStarRealization v hv⟩).1 :
-          Fin (n + 2) → ℝ) = Pi.single (Fin.last (n + 1)) 1 := by
-      have he : (⟨vertex K v, K.openStarRealization_subset_closedStarRealization v hv⟩ :
-          closedStarRealization K {v}) = starApex K v := Subtype.ext (starApex_val K v).symm
-      rw [he]
-      exact hapex
-    rw [hapex']
-    have hzero : P (Pi.single (Fin.last (n + 1)) 1) = 0 := by
-      ext i
-      simp [P]
-    rw [hzero]
-    have hz : orthantProjection ((fun _ : Fin n => (0 : ℝ)), (0 : ℝ)) = 0 := by
-      ext i
-      simp
-    simp [coordinateSimplexHalfSpaceMap_none, hz]
+    rw [hc ⟨vertex K v, hv⟩]
+    apply coe_simplexHalfSpacePLChart_none_eq_zero
+    have he : (⟨vertex K v, K.openStarRealization_subset_closedStarRealization v hv⟩ :
+        closedStarRealization K {v}) = starApex K v := Subtype.ext (starApex_val K v).symm
+    rw [he]
+    exact hapex
   · exact (isPiecewiseAffineOn_coordinateSimplexHalfSpaceMap none).isPLOn.comp
       ((isPLOn_continuousAffineMap P.toContinuousAffineMap univ).comp hF
         (mapsTo_univ _ _)) (mapsTo_univ _ _)
@@ -157,7 +146,7 @@ theorem IsCombinatorialBall.exists_openPartialHomeomorph_openStar_isPL
       refine ⟨a.symm y, ?_⟩
       simpa only [a, R, A, y, Function.comp_apply,
         coe_modelWithCornersHalfSpace_symm_apply _ hnonneg] using
-          coe_simplexHalfSpacePLChart_symm n none hy
+          coe_simplexHalfSpacePLChart_symm_apply n none hy
     exact hG.comp
       (((isPLOn_continuousAffineMap R univ).comp
         (isPiecewiseAffineOn_coordinateSimplexHalfSpaceMap_symm none).isPLOn
