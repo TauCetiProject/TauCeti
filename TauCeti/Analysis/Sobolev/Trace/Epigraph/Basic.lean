@@ -265,7 +265,8 @@ theorem W1p.opNorm_normalEpigraphTrace_le (hφ : LipschitzWith K φ) :
 theorem W1p.mem_w1p0Submodule_iff_normalEpigraphTrace_eq_zero (hφ : LipschitzWith K φ)
     (u : W1p volume (normalEpigraph φ) 2) :
     u ∈ w1p0Submodule volume (normalEpigraph φ) 2 ↔ W1p.normalEpigraphTrace hφ u = 0 := by
-  rw [W1p.normalEpigraphTrace_apply, ← W1p.mem_w1p0Submodule_iff_halfSpaceTrace_eq_zero,
+  rw [W1p.normalEpigraphTrace_apply,
+    ← W1p.mem_w1p0Submodule_iff_halfSpaceTrace_eq_zero (p := 2) ENNReal.ofNat_ne_top,
     W1p.normalEpigraphEquivL_mem_w1p0Submodule_iff (p := 2) ENNReal.ofNat_ne_top]
 
 /-- **The kernel of the trace on a graph domain is `H¹₀`.** On the region above the graph of a
