@@ -137,10 +137,9 @@ variable {F : TopCat.Presheaf C X} {U : Opens X} {a : ToType (F.obj (op U))}
 private lemma trans {s t u : Extension F a} (h₁ : s.Le t) (h₂ : t.Le u) : s.Le u where
   le_dom := h₁.le_dom.trans h₂.le_dom
   sec_le h :=
+    -- Inclusion proofs give definitionally equal restriction maps.
     calc F.map (homOfLE h).op u.sec
-        = F.map (homOfLE (h₁.le_dom.trans h₂.le_dom)).op u.sec :=
-          ConcreteCategory.congr_hom (TopCat.Presheaf.map_homOfLE_congr _ _) u.sec
-      _ = F.map (homOfLE h₁.le_dom).op (F.map (homOfLE h₂.le_dom).op u.sec) :=
+        = F.map (homOfLE h₁.le_dom).op (F.map (homOfLE h₂.le_dom).op u.sec) :=
             (TopCat.Presheaf.restrict_restrict h₁.le_dom h₂.le_dom u.sec).symm
       _ = F.map (homOfLE h₁.le_dom).op t.sec := by rw [h₂.sec_le h₂.le_dom]
       _ = s.sec := h₁.sec_le h₁.le_dom
@@ -163,8 +162,8 @@ private lemma exists_ub_of_isChain [HasLimitsOfSize.{u, u} C]
       intro s t
       by_cases hst : s = t
       · subst hst
-        exact ConcreteCategory.congr_hom
-          (TopCat.Presheaf.map_homOfLE_congr (F := F.1) _ _) (sf s)
+        -- Both maps use the same inclusion, differing only in its proof.
+        rfl
       · have hne' : s.1 ≠ t.1 := fun h => hst (Subtype.ext h)
         rcases hc s.2 t.2 hne' with h | h
         · have hsf : F.1.map (homOfLE h.le_dom).op (sf t) = sf s := h.sec_le h.le_dom
@@ -266,8 +265,7 @@ theorem surjective_map_of_isLocallyFlasque [HasLimitsOfSize.{u, u} C]
   calc F.1.map (homOfLE hUV).op (F.1.map (homOfLE hVle).op m.sec)
       = F.1.map (homOfLE (hUV.trans hVle)).op m.sec :=
         TopCat.Presheaf.restrict_restrict hUV hVle m.sec
-    _ = F.1.map (homOfLE m.le_dom).op m.sec :=
-      ConcreteCategory.congr_hom (TopCat.Presheaf.map_homOfLE_congr _ _) m.sec
+    -- The composite inclusion and `m.le_dom` differ only in their proofs.
     _ = a := m.sec_le
 
 /-- **Flasque locality**: a locally flasque sheaf is flasque. -/
