@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Category.ModuleCat.Presheaf.Flat
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free.Yoneda
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Closed
 import Mathlib.Algebra.Category.ModuleCat.Sheaf.Abelian
+import TauCeti.CategoryTheory.Monoidal.Closed.Abelian
 
 /-!
 # Flatness of free module sheaves on representables
@@ -22,7 +23,8 @@ and sheafification is exact. Hence if tensoring with a presheaf of modules `P` p
 monomorphisms, so does tensoring with its sheafification
 (`PresheafOfModules.preservesMonomorphisms_tensorLeft_sheafification_obj`). Tensoring with a sheaf
 of modules is right exact, since it has a right adjoint, so preserving monomorphisms already makes
-it exact (`SheafOfModules.preservesFiniteLimits_tensorLeft_of_preservesMonomorphisms`).
+it exact (`TauCeti.preservesFiniteLimits_tensorLeft_of_preservesMonomorphisms`, for any closed
+abelian monoidal category).
 Hence the sheafification of a sectionwise flat presheaf of modules is flat
 (`PresheafOfModulesOfCommRing.preservesFiniteLimits_tensorLeft_sheafification_obj_of_flat`).
 
@@ -82,18 +84,6 @@ lemma preservesMonomorphisms_tensorLeft_sheafification_obj
 
 end PresheafOfModules
 
-namespace SheafOfModules
-
-/-- A sheaf of modules `M` is flat as soon as tensoring with it preserves monomorphisms: tensoring
-is right exact, having a right adjoint, so preserving monomorphisms makes it exact. -/
-lemma preservesFiniteLimits_tensorLeft_of_preservesMonomorphisms
-    (M : SheafOfModules.{u} (ringCatSheaf R)) [(tensorLeft M).PreservesMonomorphisms] :
-    PreservesFiniteLimits (tensorLeft M) := by
-  have := Functor.preservesHomology_of_preservesMonos_and_cokernels (tensorLeft M)
-  exact Functor.preservesFiniteLimits_of_preservesHomology _
-
-end SheafOfModules
-
 namespace PresheafOfModulesOfCommRing
 
 /-- The sheafification of a presheaf of modules whose modules of sections are all flat is a flat
@@ -108,7 +98,7 @@ instance preservesFiniteLimits_tensorLeft_sheafification_obj_of_flat
   have : (tensorLeft (C := PresheafOfModules.{u} (ringCatSheaf R).obj) P).PreservesMonomorphisms :=
     inferInstanceAs (tensorLeft P).PreservesMonomorphisms
   have := PresheafOfModules.preservesMonomorphisms_tensorLeft_sheafification_obj (R := R) P
-  exact SheafOfModules.preservesFiniteLimits_tensorLeft_of_preservesMonomorphisms _
+  exact TauCeti.preservesFiniteLimits_tensorLeft_of_preservesMonomorphisms _
 
 end PresheafOfModulesOfCommRing
 
