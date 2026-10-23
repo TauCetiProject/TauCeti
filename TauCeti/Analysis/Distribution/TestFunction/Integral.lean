@@ -46,7 +46,6 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- The restriction of a test function on `Ω` to a compactly supported continuous function on the
 subspace `Ω`. -/
-@[expose]
 def toCompactlySupportedContinuousMap (φ : 𝓓^{n}(Ω, F)) : C_c(Ω, F) where
   toFun x := φ x
   continuous_toFun := by fun_prop
@@ -60,7 +59,24 @@ def toCompactlySupportedContinuousMap (φ : 𝓓^{n}(Ω, F)) : C_c(Ω, F) where
 @[simp]
 theorem toCompactlySupportedContinuousMap_apply (φ : 𝓓^{n}(Ω, F)) (x : Ω) :
     φ.toCompactlySupportedContinuousMap x = φ x :=
-  rfl
+  (rfl)
+
+@[simp]
+theorem toCompactlySupportedContinuousMap_zero :
+    (0 : 𝓓^{n}(Ω, F)).toCompactlySupportedContinuousMap = 0 :=
+  (rfl)
+
+@[simp]
+theorem toCompactlySupportedContinuousMap_add (φ ψ : 𝓓^{n}(Ω, F)) :
+    (φ + ψ).toCompactlySupportedContinuousMap =
+      φ.toCompactlySupportedContinuousMap + ψ.toCompactlySupportedContinuousMap :=
+  (rfl)
+
+@[simp]
+theorem toCompactlySupportedContinuousMap_smul {R : Type*} [Semiring R] [Module R F]
+    [SMulCommClass ℝ R F] [ContinuousConstSMul R F] (c : R) (φ : 𝓓^{n}(Ω, F)) :
+    (c • φ).toCompactlySupportedContinuousMap = c • φ.toCompactlySupportedContinuousMap :=
+  (rfl)
 
 variable [MeasurableSpace E]
 

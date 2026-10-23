@@ -93,7 +93,7 @@ private lemma zeroExt_toCompactlySupportedContinuousMap (φ : 𝓓(Ω, ℝ)) (x 
     zeroExt φ.toCompactlySupportedContinuousMap x = φ x := by
   rw [zeroExt_apply]
   split_ifs with h
-  · rfl
+  · exact TestFunction.toCompactlySupportedContinuousMap_apply φ ⟨x, h⟩
   · exact (φ.zero_on_compl h).symm
 
 /-- On a compact `K ⊆ Ω`, an order-zero bound can be taken with a nonnegative constant and tested
@@ -299,8 +299,9 @@ theorem forall_exists_abs_le_iff_exists_regular [MeasurableSpace E] [BorelSpace 
     obtain ⟨ν₁, ν₂, h₁, h₂, h⟩ :=
       (TauCeti.RealRMK.forall_bddAbove_image_Icc_iff_exists_regular (extendₗ hT)).1
         (bddAbove_extendₗ_image_Icc hT)
-    exact ⟨ν₁, ν₂, h₁, h₂, fun φ => (extendₗ_toCompactlySupportedContinuousMap hT φ).symm.trans
-      (h φ.toCompactlySupportedContinuousMap)⟩
+    refine ⟨ν₁, ν₂, h₁, h₂, fun φ => ?_⟩
+    simpa using (extendₗ_toCompactlySupportedContinuousMap hT φ).symm.trans
+      (h φ.toCompactlySupportedContinuousMap)
   · rintro ⟨ν₁, ν₂, h₁, h₂, h⟩ K hK hKΩ
     refine ⟨ν₁.real (((↑) : Ω → E) ⁻¹' K) + ν₂.real (((↑) : Ω → E) ⁻¹' K), fun φ hφ => ?_⟩
     rw [h, add_mul, ← Real.norm_eq_abs]
