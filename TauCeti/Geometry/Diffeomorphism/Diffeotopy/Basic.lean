@@ -306,6 +306,18 @@ theorem apply_symm_apply (p : I × M) :
 theorem final_symm : Φ.symm.final = Φ.final.symm := by
   simpa only [final_def] using Φ.timeSlice_symm 1
 
+/-- A point is fixed by the inverse diffeotopy at time `t` exactly when it is fixed by the
+diffeotopy at time `t`. -/
+theorem symm_apply_eq_self_iff {t : I} {x : M} : Φ.symm (t, x) = x ↔ Φ (t, x) = x := by
+  rw [← symm_timeSlice_apply, ← timeSlice_apply]
+  constructor
+  · intro h
+    conv_lhs => rw [← h]
+    exact (Φ.timeSlice t).apply_symm_apply x
+  · intro h
+    conv_lhs => rw [← h]
+    exact (Φ.timeSlice t).symm_apply_apply x
+
 /-- Forgetting smoothness turns a diffeotopy into a continuous ambient isotopy. -/
 def toAmbientIsotopy : AmbientIsotopy M where
   toContinuousMap := ⟨Φ, Φ.contMDiff.continuous⟩

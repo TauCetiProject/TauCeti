@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.Spectrum
+public import Mathlib.Analysis.InnerProductSpace.Positive
 
 /-!
 # The functional calculus of a symmetric operator in finite dimension
@@ -25,9 +25,9 @@ operators. In particular `f(T)` commutes with every endomorphism commuting with 
 No continuity of `f` is required, and the construction works uniformly over `RCLike` scalars by
 finite sums, without any `C⋆`-algebra structure. It agrees with Mathlib's continuous functional
 calculus of the corresponding bounded operator: see
-`LinearMap.IsSymmetric.toContinuousLinearMap_cfc`. For a positive operator, whose eigenvalues are
-nonnegative, `cfc_mul`, `cfc_congr` and `cfc_id` show that applying it to `Real.sqrt` gives a
-square root.
+`LinearMap.IsSymmetric.toContinuousLinearMap_cfc`. A function that is nonnegative at the
+eigenvalues of `T` gives a positive operator; applied to `Real.sqrt` on a positive operator, this
+yields the positive square root `LinearMap.IsPositive.sqrt`.
 
 The name follows `Matrix.IsHermitian.cfc`, Mathlib's eigenbasis construction of the functional
 calculus of a Hermitian matrix.
@@ -42,11 +42,15 @@ calculus of a Hermitian matrix.
 * `LinearMap.IsSymmetric.isSymmetric_cfc`, `LinearMap.IsSymmetric.cfc_congr`,
   `LinearMap.IsSymmetric.cfc_id`, `LinearMap.IsSymmetric.cfc_mul`,
   `LinearMap.IsSymmetric.cfc_comp`: the algebraic laws of the calculus.
+* `LinearMap.IsSymmetric.isPositive_cfc`: `f(T)` is positive when `f` is nonnegative at the
+  eigenvalues of `T`.
 * `LinearMap.IsSymmetric.comp_cfc_eq_cfc_comp` and `LinearMap.IsSymmetric.commute_cfc`:
   intertwiners of symmetric operators intertwine their functional calculi; in particular the
   commutant of `T` commutes with `f(T)`.
 * `LinearMap.IsSymmetric.norm_cfc_apply_le`: `‖f(T)x‖ ≤ c‖x‖` when `|f| ≤ c` on the eigenvalues
   of `T`.
+* `LinearMap.IsSymmetric.norm_cfc_apply_sq_add_norm_cfc_apply_sq`: `‖f(T)x‖² + ‖g(T)x‖² = ‖x‖²`
+  when `f² + g² = 1` on the eigenvalues of `T`.
 
 ## References
 
@@ -231,5 +235,29 @@ theorem norm_cfc_apply_le (hT : T.IsSymmetric) (f : ℝ → ℝ) {c : ℝ}
   rw [hcoord, mul_pow]
   gcongr
   exact hf _ (hT.hasEigenvalue_eigenvalues rfl i)
+
+/-- **Pythagorean splitting.** If `f(λ)² + g(λ)² = 1` at every eigenvalue `λ` of `T`, then
+`‖f(T)x‖² + ‖g(T)x‖² = ‖x‖²`. For instance `f = sin` and `g = cos`. -/
+theorem norm_cfc_apply_sq_add_norm_cfc_apply_sq (hT : T.IsSymmetric) {f g : ℝ → ℝ}
+    (hfg : ∀ μ : ℝ, HasEigenvalue T (μ : 𝕜) → f μ ^ 2 + g μ ^ 2 = 1) (x : E) :
+    ‖hT.cfc f x‖ ^ 2 + ‖hT.cfc g x‖ ^ 2 = ‖x‖ ^ 2 := by
+  have h1 : hT.cfc f * hT.cfc f + hT.cfc g * hT.cfc g = 1 := by
+    rw [← hT.cfc_mul, ← hT.cfc_mul, ← hT.cfc_add, ← hT.cfc_one]
+    exact hT.cfc_congr fun μ hμ ↦ by simpa [sq] using hfg μ hμ
+  have hsq (h : ℝ → ℝ) : ‖hT.cfc h x‖ ^ 2 = RCLike.re ⟪x, (hT.cfc h * hT.cfc h) x⟫_𝕜 := by
+    rw [@norm_sq_eq_re_inner 𝕜, Module.End.mul_apply, hT.isSymmetric_cfc h]
+  simp only [hsq, ← map_add, ← inner_add_right, ← LinearMap.add_apply, h1, Module.End.one_apply,
+    @norm_sq_eq_re_inner 𝕜 _ _ _ _ x]
+
+/-- **Positivity.** If `f` is nonnegative at every eigenvalue of `T`, then `f(T)` is positive. -/
+theorem isPositive_cfc (hT : T.IsSymmetric) {f : ℝ → ℝ}
+    (hf : ∀ μ : ℝ, HasEigenvalue T (μ : 𝕜) → 0 ≤ f μ) : (hT.cfc f).IsPositive := by
+  -- `f(T) = R * R` for the symmetric operator `R = (√f)(T)`.
+  have hR : hT.cfc f = hT.cfc (fun μ ↦ √(f μ)) * hT.cfc (fun μ ↦ √(f μ)) := by
+    rw [← cfc_mul]
+    exact hT.cfc_congr fun μ hμ ↦ (Real.mul_self_sqrt (hf μ hμ)).symm
+  refine ⟨hT.isSymmetric_cfc f, fun x ↦ ?_⟩
+  rw [hR, Module.End.mul_apply, hT.isSymmetric_cfc _ _ x]
+  exact inner_self_nonneg
 
 end LinearMap.IsSymmetric

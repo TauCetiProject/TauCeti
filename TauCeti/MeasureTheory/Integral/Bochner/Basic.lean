@@ -35,7 +35,8 @@ for set and probability integrals.
 * `sq_setIntegral_le_measureReal_mul_setIntegral_sq` is Cauchy--Schwarz for a real-valued set
   integral, in squared form.
 * `setIntegral_le_setIntegral_sq_mul_of_eqOn` compares an integral over a set with a weighted
-  integral over a larger set, for a `[0, 1]`-valued weight equal to one on the smaller set.
+  integral over a larger set, for a weight in `[0, 1]` almost everywhere on the larger set and
+  equal to one on the smaller set.
 * The set-integral inequality specializes to the second-moment lower bound for a real-valued
   function on a probability space.
 * `integral_max_sub_sq_le_mul_measureReal` bounds the integral of the squared truncation
@@ -182,16 +183,18 @@ theorem sq_setIntegral_le_measureReal_mul_setIntegral_sq {Ω : Type*} [Measurabl
     field_simp at hkey
     exact hkey
 
-/-- A weight `ψ` with values in `[0, 1]` that equals one on a measurable set `t ⊆ s` bounds the
-integral of a nonnegative function over `t` by the `ψ²`-weighted integral over `s`. -/
+/-- A weight `ψ` with values in `[0, 1]` almost everywhere on `s` that equals one on a measurable
+set `t ⊆ s` bounds the integral over `t` of a function nonnegative almost everywhere on `s` by
+its `ψ²`-weighted integral over `s`. -/
 theorem setIntegral_le_setIntegral_sq_mul_of_eqOn {X : Type*} [MeasurableSpace X]
-    {μ : Measure X} {s t : Set X} {f ψ : X → ℝ} (hf : IntegrableOn f s μ) (hf0 : ∀ x, 0 ≤ f x)
-    (hψ : AEStronglyMeasurable ψ (μ.restrict s)) (hψ01 : Set.range ψ ⊆ Set.Icc 0 1)
+    {μ : Measure X} {s t : Set X} {f ψ : X → ℝ} (hf : IntegrableOn f s μ)
+    (hf0 : 0 ≤ᵐ[μ.restrict s] f) (hψ : AEStronglyMeasurable ψ (μ.restrict s))
+    (hψ01 : ∀ᵐ x ∂μ.restrict s, ψ x ∈ Set.Icc 0 1)
     (ht : MeasurableSet t) (hψ1 : Set.EqOn ψ 1 t) (hts : t ⊆ s) :
     ∫ x in t, f x ∂μ ≤ ∫ x in s, ψ x ^ 2 * f x ∂μ := by
   have hint : IntegrableOn (fun x => ψ x ^ 2 * f x) s μ :=
-    hf.bdd_mul (hψ.pow 2) (c := 1) (Eventually.of_forall fun x => by
-      obtain ⟨h0, h1⟩ := hψ01 (Set.mem_range_self x)
+    hf.bdd_mul (hψ.pow 2) (c := 1) (by
+      filter_upwards [hψ01] with x ⟨h0, h1⟩
       rw [Real.norm_eq_abs, abs_pow, abs_of_nonneg h0]
       exact pow_le_one₀ h0 h1)
   calc
@@ -199,7 +202,7 @@ theorem setIntegral_le_setIntegral_sq_mul_of_eqOn {X : Type*} [MeasurableSpace X
       setIntegral_congr_fun ht fun x hx => by rw [hψ1 hx, Pi.one_apply, one_pow, one_mul]
     _ ≤ ∫ x in s, ψ x ^ 2 * f x ∂μ :=
       setIntegral_mono_set hint
-        (Eventually.of_forall fun x => mul_nonneg (sq_nonneg _) (hf0 x)) hts.eventuallyLE
+        (hf0.mono fun x hx => mul_nonneg (sq_nonneg _) hx) hts.eventuallyLE
 
 /-- On a finite measure space where `f ≤ M` almost everywhere, the integral of the squared
 truncation `((f - l)⁺)²` is at most `(M - l)²` times the measure of the upper level set

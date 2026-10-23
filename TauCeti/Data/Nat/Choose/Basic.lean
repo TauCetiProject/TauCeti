@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
 public import Mathlib.Data.Nat.Choose.Basic
+public import Mathlib.Order.Interval.Finset.Nat
 import Mathlib.Algebra.BigOperators.Intervals
+import Mathlib.Data.Nat.Choose.Sum
 import Mathlib.Data.Nat.Choose.Vandermonde
 import Mathlib.Tactic.NormNum
 import Mathlib.Tactic.Ring
@@ -17,7 +19,8 @@ import Mathlib.Tactic.Ring
 
 This file records arithmetic identities involving natural-number binomial coefficients.
 
-Besides three identities for the second binomial coefficient, it develops Vandermonde's convolution
+Besides three identities for the second binomial coefficient and the sum `2ⁿ - 2` of the
+inner binomial coefficients `C(n, i)`, `0 < i < n`, it develops Vandermonde's convolution
 `∑ i, C(A, i) * C(B, r - i) = C(A + B, r)` in the shape taken by factorial moments of a law
 supported on such a convolution: each summand is weighted by the falling factorial `(i)ₘ` of the
 summation index. The weighted sum is again a single binomial coefficient,
@@ -29,6 +32,8 @@ summation index. The weighted sum is again a single binomial coefficient,
   the triangular number is the corresponding square.
 * `Nat.add_choose_two`: the second binomial coefficient of a sum, with its cross term.
 * `Nat.pow_three_sub_self_eq_mul_choose_two`: `g³ - g = (2g + 2) · C(g, 2)`.
+* `Nat.sum_Icc_choose_eq_two_pow_sub_two`: the binomial coefficients `C(n, i)`, `0 < i < n`,
+  sum to `2ⁿ - 2`.
 * `Nat.descFactorial_mul_choose`: a falling factorial of the lower index lowers both indices,
   `(i)ₘ * C(A, i) = (A)ₘ * C(A - m, i - m)`.
 * `Nat.sum_range_descFactorial_mul_choose_mul_choose`: Vandermonde's convolution weighted by a
@@ -85,6 +90,18 @@ theorem pow_three_sub_self_eq_mul_choose_two (g : ℕ) :
       ring
     rw [h]
     exact Nat.sub_eq_of_eq_add (by ring)
+
+/-- The binomial coefficients `C(n, i)` with `0 < i < n` sum to `2ⁿ - 2`. -/
+theorem sum_Icc_choose_eq_two_pow_sub_two (n : ℕ) :
+    ∑ i ∈ Icc 1 (n - 1), n.choose i = 2 ^ n - 2 := by
+  rcases n with _ | n
+  · simp
+  have h := sum_range_choose (n + 1)
+  rw [sum_range_succ, sum_range_succ'] at h
+  rw [Nat.add_sub_cancel, ← Ico_add_one_right_eq_Icc, sum_Ico_eq_sum_range]
+  simp only [Nat.add_sub_cancel, Nat.add_comm 1]
+  simp at h
+  omega
 
 /-- **A falling factorial of the lower index lowers both indices of a binomial coefficient:**
 `(i)ₘ * C(A, i) = (A)ₘ * C(A - m, i - m)` for `m ≤ i`.

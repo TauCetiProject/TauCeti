@@ -339,7 +339,34 @@ namespace TauCeti
 
 open _root_.CliffordAlgebra Module
 
-universe u
+/-- The first matrix factor of a polarized six-dimensional Spin element is the matrix of its
+even half-spin action in the basis used by `Algebra.endAlgEquivMatrix`. -/
+theorem coe_evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix_spinGroupToEvenUnitary_apply
+    {K : Type u} [Field K] {V : Type v} [AddCommGroup V] [Module K V]
+    {Q : QuadraticForm K V} [Invertible (2 : K)] (P : SpinPolarizationData Q)
+    [FiniteDimensional K V] [FiniteDimensional K (spinPlus Q P)] (hline : P.line = ⊥)
+    (hW : P.W ≠ ⊥) (hplus : finrank K (spinPlus Q P) = 4) (hV : finrank K V = 6)
+    (b : Basis (Fin 4) K (spinPlus Q P))
+    (hb : b = Module.finBasisOfFinrankEq K (spinPlus Q P) hplus) (s : spinGroup Q) :
+    let e := P.evenCliffordEquivProdMatrix (l := 3) hW (by omega)
+    let u := e.evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix
+      (P.nondegenerate_of_line_eq_bot hline) hV
+    (u (spinGroupToEvenUnitary Q s) : Matrix (Fin 4) (Fin 4) K) =
+      LinearMap.toMatrix b b (spinPlusAction Q P hline (spinGroupToEven Q s)) := by
+  dsimp
+  calc
+    _ = (P.evenCliffordEquivProdMatrix (l := 3) hW (by omega)
+        (spinGroupToEven Q s)).1 := by
+      rw [AlgEquiv.coe_evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix_apply,
+        CliffordAlgebra.evenUnitaryGroupEvenPart_spinGroupToEvenUnitary_apply]
+    _ = (Algebra.endAlgEquivMatrix K (spinPlus Q P) hplus
+        (spinPlusAction Q P hline (spinGroupToEven Q s))) := by
+      simpa using congrArg Prod.fst
+        (P.evenCliffordEquivProdMatrix_apply (l := 3) hW (by omega)
+          (spinGroupToEven Q s))
+    _ = _ := by
+      rw [Algebra.endAlgEquivMatrix_apply K _ _]
+      rw [hb]
 
 variable (K : Type u) [Field K]
 

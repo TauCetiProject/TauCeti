@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Polynomial.AlgebraMap
 public import Mathlib.LinearAlgebra.GeneralLinearGroup.Basic
 public import Mathlib.LinearAlgebra.TensorProduct.Lift
+public import TauCeti.LinearAlgebra.TensorProduct.Tower
 
 /-!
 # Base change of endomorphisms of a scalar extension
@@ -34,7 +35,8 @@ morphism of value algebras; the two are compatible in
 
 ## Main declarations
 
-* `TauCeti.rTensor_algHom_smul`: the comparison map is semilinear over `f`.
+* `TauCeti.rTensor_lcoeff_one_X_smul`: extracting the coefficient of `X` inverts multiplying
+  the comparison map `A ⊗[R] M → A[X] ⊗[R] M` by `X`.
 * `Module.End.mapValue`: the transported endomorphism.
 * `Module.End.mapValue_comp_rTensor`: the defining transport square.
 * `Module.End.eq_mapValue`: the transport square characterizes the transport.
@@ -56,22 +58,16 @@ namespace TauCeti
 variable {R A B C M N : Type*} [CommSemiring R]
 variable [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
 
-section Semiring
-
-variable [Semiring A] [Algebra R A] [Semiring B] [Algebra R B]
-
-/-- The comparison `A ⊗[R] M → B ⊗[R] M` of scalar extensions induced by a morphism `f` of
-value algebras is semilinear over `f`. -/
-theorem rTensor_algHom_smul (f : A →ₐ[R] B) (a : A) (z : A ⊗[R] M) :
-    LinearMap.rTensor M f.toLinearMap (a • z) =
-      f a • LinearMap.rTensor M f.toLinearMap z := by
-  induction z using TensorProduct.inductionOn with
-  | tmul x m => simp [TensorProduct.smul_tmul', smul_eq_mul, map_mul]
-  | add x y hx hy => simp [smul_add, hx, hy]
-
-end Semiring
-
 variable [CommSemiring A] [Algebra R A] [CommSemiring B] [Algebra R B]
+
+open Polynomial in
+/-- The coefficient of `X` in `X • t`, for `t` in `A ⊗[R] M` viewed in `A[X] ⊗[R] M`, is `t`. -/
+theorem rTensor_lcoeff_one_X_smul (t : A ⊗[R] M) :
+    ((lcoeff A 1).restrictScalars R).rTensor M
+      ((X : A[X]) • (IsScalarTower.toAlgHom R A A[X]).toLinearMap.rTensor M t) = t := by
+  induction t using TensorProduct.inductionOn with
+  | tmul a m => simp [TensorProduct.smul_tmul']
+  | add x y hx hy => simp_all [smul_add]
 
 /-- On pure tensors, the comparison maps of scalar extensions intertwine the tensor comparisons
 `(A ⊗ M) ⊗[A] (A ⊗ N) ≃ A ⊗ (M ⊗ N)` for the two value algebras. -/
@@ -132,7 +128,7 @@ theorem mapValue_comp_rTensor (f : A →ₐ[R] B) (φ : Module.End A (A ⊗[R] M
     rw [← map_smul, TensorProduct.smul_tmul', smul_eq_mul, mul_one]
   simp only [LinearMap.coe_comp, Function.comp_apply, LinearMap.restrictScalars_apply,
     LinearMap.rTensor_tmul, AlgHom.toLinearMap_apply, mapValue_tmul, hsmul,
-    rTensor_algHom_smul]
+    AlgHom.rTensor_toLinearMap_apply_smul]
 
 /-- Evaluation form of the transport square. -/
 @[simp]

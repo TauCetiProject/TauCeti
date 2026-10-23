@@ -5,15 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.DifferentialForm.Smooth
-public import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
+public import TauCeti.Geometry.Manifold.DifferentialForm.MapCoeff
 
 /-!
 # Closed smooth differential forms
 
-Closedness is the vanishing of the generic manifold exterior derivative of a smooth form.  The
-degree-two specialization in `TwoForm.Closed` only supplies its constant-form convenience
-theorem; the predicate and its generic API live here so they can be reused at every degree.
+Closedness is the vanishing of the generic manifold exterior derivative of a smooth form. This
+module also characterizes it by vanishing of the exterior derivatives of the chart expressions.
+The degree-two specialization in `TwoForm.Closed` supplies a constant-form convenience theorem.
+The predicate and its generic API live here so they can be reused at every degree.
 -/
 
 public section
@@ -41,6 +41,24 @@ theorem isClosed_def (form : SmoothForm I M F k) :
     form.IsClosed ↔ mextDeriv form.1 = 0 :=
   Iff.rfl
 
+/-- Closedness is equivalent to vanishing of the exterior derivative of every chart expression
+within the model range, at every point of the chart target. -/
+theorem isClosed_iff_forall_extDerivWithin_inChartAt_eq_zero [IsManifold I 2 M]
+    (form : SmoothForm I M F k) :
+    form.IsClosed ↔ ∀ x₀ z, z ∈ (extChartAt I x₀).target →
+      extDerivWithin (form.1.inChartAt x₀) (Set.range I) z = 0 := by
+  have hform : IsSmoothForm I 1 form.1 := form.isSmoothForm.of_le (by norm_num)
+  constructor
+  · intro h x₀ z hz
+    rw [isClosed_def] at h
+    rw [← hform.inChartAt_mextDeriv_eq x₀ hz, h, RoughForm.inChartAt_zero]
+    simp
+  · intro h
+    rw [isClosed_def]
+    funext x
+    rw [mextDeriv_def]
+    exact h x (extChartAt I x x) (mem_extChartAt_target x)
+
 /-- Closedness can equivalently be checked pointwise on the exterior derivative. -/
 theorem isClosed_iff_forall_mextDeriv_apply_eq_zero (form : SmoothForm I M F k) :
     form.IsClosed ↔ ∀ x, mextDeriv form.1 x = 0 := by
@@ -64,10 +82,13 @@ theorem IsClosed.add {form' : SmoothForm I M F k} (h : form.IsClosed)
     ((hform'.contDiffWithinAt_inChartAt_self x).differentiableWithinAt (by simp)), h, h']
   simp
 
-/-- A real scalar multiple of a closed smooth form is closed. -/
-theorem IsClosed.smul (c : ℝ) (h : form.IsClosed) : (c • form).IsClosed := by
-  rw [isClosed_def, SmoothForm.smul_toRoughForm]
-  rw [mextDeriv_smul, h, smul_zero]
+/-- A scalar multiple of a closed smooth form is closed, for any scalars acting continuously on
+the coefficients and commuting with the real action (for instance `ℝ`, or `ℂ` on complex-valued
+forms). -/
+theorem IsClosed.smul {S : Type*} [Monoid S] [DistribMulAction S F] [ContinuousConstSMul S F]
+    [SMulCommClass ℝ S F] (c : S) (h : form.IsClosed) : (c • form).IsClosed := by
+  rw [isClosed_def, SmoothForm.smul_toRoughForm, RoughForm.smul_eq_mapCoeff,
+    mextDeriv_mapCoeff _ (form.isSmoothForm.of_le (by simp)), h, RoughForm.mapCoeff_zero]
 
 /-- The negative of a closed smooth form is closed. -/
 theorem IsClosed.neg (h : form.IsClosed) : (-form).IsClosed := by
@@ -95,9 +116,8 @@ theorem isClosed_const {V F : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
     simp [NormedSpace.fromTangentSpace, tangentSpaceCastModel]
     congr 1
   rw [SmoothForm.const_toRoughForm]
-  funext x
-  rw [mextDeriv_eq_extDeriv, hconst]
-  exact ContinuousAlternatingMap.extDeriv_const A x
+  rw [hconst]
+  exact mextDeriv_const A
 
 end SmoothForm
 

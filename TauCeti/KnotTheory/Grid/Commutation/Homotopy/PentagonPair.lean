@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Grid.Commutation.Homotopy.Decomposition
+public import TauCeti.KnotTheory.Grid.Differential.Square.SideOverlap
 import TauCeti.KnotTheory.Grid.Rectangle.Annulus.Empty
 import TauCeti.KnotTheory.Grid.Commutation.Homotopy.Diagonal
 import Mathlib.Algebra.CharP.Two
@@ -24,6 +25,9 @@ these empty returning pairs. Their weights are consequently one over any commuta
 semiring. Counting the two possible annuli gives an explicit diagonal coefficient formula
 for the round-trip commutation map. Combining this count with the four hexagon--rectangle
 indicators proves the diagonal coefficient of the homotopy equation in characteristic two.
+
+Off the diagonal as well, the replaced grid line is a common side of the two rectangles of
+every pentagon pair.
 
 ## References
 
@@ -489,6 +493,35 @@ theorem unblockedDifferential_commutationHomotopy_add_single_apply_self_eq_one_a
   apply CharTwo.eq_add_iff_add_eq.mpr
   convert hsum using 1
   ac_rfl
+
+/-- The diagonal commutation homotopy identity as sums of polygon-pair weights, over any
+commutative semiring of characteristic two. -/
+theorem sum_hexagonRectangleWeight_add_sum_rectangleHexagonWeight_self_eq_one_add
+    (R : Type*) [CommSemiring R] [CharP R 2] (x : GridState n) :
+    (∑ D ∈ G.hexagonRectangleDecompositions C x x, G.hexagonRectangleWeight C R D) +
+        ∑ D ∈ G.rectangleHexagonDecompositions C x x, G.rectangleHexagonWeight C R D =
+      1 + ∑ D ∈ G.pentagonPairDecompositions C x x, G.pentagonPairWeight C R D := by
+  simpa only [Finsupp.add_apply,
+    G.unblockedDifferential_commutationHomotopy_single_apply C R,
+    G.commutationHomotopy_unblockedDifferential_single_apply C R,
+    G.reverse_commutationMap_commutationMap_single_apply C R,
+    G.sum_commutationHexagonCoefficient_mul_unblockedCoefficient C R,
+    G.sum_unblockedCoefficient_mul_commutationHexagonCoefficient C R,
+    G.sum_rename_commutationPentagonCoefficient_mul_commutationPentagonCoefficient C R] using
+    G.unblockedDifferential_commutationHomotopy_add_single_apply_self_eq_one_add C R x
+
+/-! ### The replaced grid line as a common side -/
+
+/-- The replaced grid line is a common side of the two rectangles of a pentagon pair: the
+terminal side of a terminal-side pentagon and the initial side of an initial-side one. -/
+theorem finRotate_mem_commonSideColumns_of_pentagonPair {x z : GridState n}
+    (D : GridPentagonPairDecomposition a C.turnRow C.reverse.column C.reverse.turnRow x z) :
+    b ∈ D.toRectangleDecomposition.commonSideColumns := by
+  rcases D with ⟨m, P | P, Q | Q⟩
+  · simp [P.right_eq, Q.right_eq]
+  · simp [P.right_eq, Q.left_eq]
+  · simp [P.left_eq, Q.right_eq]
+  · simp [P.left_eq, Q.left_eq]
 
 end GridDiagram
 end TauCeti

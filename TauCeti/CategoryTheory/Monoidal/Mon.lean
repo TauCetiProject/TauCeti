@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.Monoidal.CommMon_
 public import Mathlib.CategoryTheory.Monoidal.Grp
 public import Mathlib.CategoryTheory.Monoidal.Mon
+public import TauCeti.CategoryTheory.Monoidal.Functor
 
 /-!
 # Monoid objects
@@ -32,6 +33,10 @@ commutativity.
   monoid homomorphism.
 * `CategoryTheory.MonObj.tensorHom_whisker_one_comp_mul`: a monoid homomorphism out of `M ⊗ N`
   is the product of its restrictions along `m ↦ m ⊗ 1` and `n ↦ 1 ⊗ n`.
+* `CategoryTheory.Adjunction.isMonHom_homEquiv_iff`: along a monoidal adjunction `F ⊣ G`, the
+  transpose `M ⟶ G N` of a morphism `F M ⟶ N` is a monoid homomorphism exactly when the
+  morphism is compatible with the unit and multiplication of `M` transported by the oplax
+  structure of `F`. This holds without the oplax structure of `F` being invertible.
 -/
 
 public section
@@ -168,3 +173,30 @@ theorem tensorHom_whisker_one_comp_mul [BraidedCategory C] [MonObj M] [MonObj N]
 end TensorHom
 
 end CategoryTheory.MonObj
+
+namespace CategoryTheory.Adjunction
+
+open MonoidalCategory Functor.LaxMonoidal Functor.OplaxMonoidal
+open scoped Obj
+
+universe v₁ v₂ u₁ u₂
+
+variable {C : Type u₁} [Category.{v₁} C] [MonoidalCategory C]
+variable {D : Type u₂} [Category.{v₂} D] [MonoidalCategory D]
+variable {F : C ⥤ D} {G : D ⥤ C} (adj : F ⊣ G) [F.OplaxMonoidal] [G.LaxMonoidal]
+  [adj.IsMonoidal]
+
+/-- Along a monoidal adjunction `F ⊣ G`, the transpose `M ⟶ G N` of a morphism `φ : F M ⟶ N`
+is a monoid homomorphism, for the monoid structure on `G N` induced by the lax monoidal functor
+`G`, exactly when `φ` carries the image under `F` of the unit and the multiplication of `M` to
+the unit and the multiplication of `N`, through the oplax comparisons of `F`. -/
+theorem isMonHom_homEquiv_iff {M : C} {N : D} [MonObj M] [MonObj N] (φ : F.obj M ⟶ N) :
+    IsMonHom (adj.homEquiv _ _ φ) ↔
+      F.map η[M] ≫ φ = Functor.OplaxMonoidal.η F ≫ η[N] ∧
+        F.map μ[M] ≫ φ = δ F M M ≫ (φ ⊗ₘ φ) ≫ μ[N] := by
+  rw [← (adj.homEquiv _ _).injective.eq_iff, ← (adj.homEquiv _ _).injective.eq_iff,
+    homEquiv_η_comp, homEquiv_δ_comp_tensorHom_comp, homEquiv_naturality_left,
+    homEquiv_naturality_left]
+  exact ⟨fun h ↦ ⟨h.one_hom, h.mul_hom⟩, fun h ↦ ⟨h.1, h.2⟩⟩
+
+end CategoryTheory.Adjunction

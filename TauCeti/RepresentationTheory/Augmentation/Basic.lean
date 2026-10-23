@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.PID
 public import TauCeti.Algebra.MonoidAlgebra.Basis
-public import TauCeti.RepresentationTheory.FDRep
+public import TauCeti.RepresentationTheory.FDRep.Basic
 public import TauCeti.RepresentationTheory.Subrepresentation
 public import TauCeti.RepresentationTheory.Rep.TensorShortExact
 
@@ -130,6 +130,17 @@ noncomputable def permutationAugmentation :
 theorem permutationAugmentation_apply (v : MonoidAlgebra k X) :
     (permutationAugmentation k G X).hom v = (MonoidAlgebra.basis X k).sumCoords v :=
   (rfl)
+
+/-- Read on coefficients, the permutation augmentation sums the coefficients. -/
+theorem forget₂_map_permutationAugmentation :
+    (forget₂ (Rep k G) (ModuleCat k)).map (permutationAugmentation k G X) =
+      (MonoidAlgebra.coeffLinearEquiv k).toModuleIso.hom ≫
+        ModuleCat.ofHom (Finsupp.linearCombination k fun _ ↦ (1 : k)) := by
+  refine ModuleCat.hom_ext ((MonoidAlgebra.basis X k).ext fun x ↦ ?_)
+  simp only [Rep.forget₂_moduleCat_map, ModuleCat.hom_ofHom, ModuleCat.hom_comp,
+    LinearMap.comp_apply, Representation.IntertwiningMap.toLinearMap_apply]
+  rw [permutationAugmentation_apply]
+  simp
 
 /-- For a nonempty permutation set, augmentation is surjective. -/
 instance permutationAugmentation_epi [Nonempty X] : Epi (permutationAugmentation k G X) :=

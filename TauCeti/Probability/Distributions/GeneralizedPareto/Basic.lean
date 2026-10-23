@@ -190,6 +190,18 @@ theorem image_generalizedParetoMap_Ioi {s : ℝ} (hs : 0 < s) (ξ : ℝ) :
             linarith)) hξ
       · exact generalizedParetoMap_log_div hs.ne' hξ hb
 
+/-- At nonzero scale and shape, the image of the whole line is the generalized Pareto domain
+where the affine support factor is positive. -/
+theorem image_generalizedParetoMap_univ {s ξ : ℝ} (hs : s ≠ 0) (hξ : ξ ≠ 0) :
+    generalizedParetoMap s ξ '' univ = {x | 0 < 1 + ξ * x / s} := by
+  ext x
+  constructor
+  · rintro ⟨e, -, rfl⟩
+    rw [Set.mem_ofPred_eq, one_add_mul_generalizedParetoMap_div hs]
+    exact Real.exp_pos _
+  · intro hx
+    exact ⟨_, mem_univ _, generalizedParetoMap_log_div hs hξ hx⟩
+
 /-- The generalized Pareto measure with scale `s` and shape `ξ`.
 
 For positive scale this is the pushforward of a rate-one exponential law by
@@ -238,6 +250,19 @@ theorem isProbabilityMeasure_generalizedParetoMeasure {s : ℝ} (hs : 0 < s) (ξ
   rw [generalizedParetoMeasure_of_pos hs]
   let _ : IsProbabilityMeasure (expMeasure 1) := isProbabilityMeasure_expMeasure one_pos
   infer_instance
+
+/-- A generalized Pareto variable lies almost surely in its open positive support.
+The statement includes the zero law at nonpositive scale. -/
+theorem ae_pos_and_one_add_mul_div_pos_generalizedParetoMeasure (s ξ : ℝ) :
+    ∀ᵐ x ∂generalizedParetoMeasure s ξ, 0 < x ∧ 0 < 1 + ξ * x / s := by
+  rcases le_or_gt s 0 with hs | hs
+  · simp [generalizedParetoMeasure_of_nonpos hs]
+  rw [generalizedParetoMeasure_of_pos hs,
+    ae_map_iff (measurable_generalizedParetoMap_right s ξ).aemeasurable (by measurability)]
+  filter_upwards [ae_pos_expMeasure 1] with e he
+  refine ⟨generalizedParetoMap_pos hs ξ he, ?_⟩
+  rw [one_add_mul_generalizedParetoMap_div hs.ne']
+  exact Real.exp_pos _
 
 /-- Every singleton has zero generalized Pareto measure at positive scale. -/
 theorem nullSingletonClass_generalizedParetoMeasure {s : ℝ} (hs : 0 < s) (ξ : ℝ) :

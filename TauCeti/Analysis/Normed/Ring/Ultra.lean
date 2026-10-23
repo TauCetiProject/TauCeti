@@ -17,6 +17,8 @@ are open additive subgroups. In an ultrametric seminormed ring with `‖1‖ = 1
 ball is an open subring. In an ultrametric normed ring, a finite product of elements each within
 `ε ≤ 1` of `1` is again within `ε` of `1`.
 
+Integer casts have norm at most `‖1‖`, without requiring the seminorm to be normalized.
+
 ## Main results
 
 * `IsUltrametricDist.nonarchimedeanRing`: an ultrametric seminormed ring is a nonarchimedean
@@ -30,6 +32,11 @@ ball is an open subring. In an ultrametric normed ring, a finite product of elem
 -/
 
 public section
+
+/-- Integer casts in an ultrametric seminormed ring have norm at most the norm of one. -/
+theorem IsUltrametricDist.norm_intCast_le_norm_one {R : Type*} [SeminormedRing R]
+    [IsUltrametricDist R] (z : ℤ) : ‖(z : R)‖ ≤ ‖(1 : R)‖ := by
+  simpa using IsUltrametricDist.norm_zsmul_le (1 : R) z
 
 /-- **An ultrametric seminormed ring is a nonarchimedean ring.** This is the ring form of
 Mathlib's `IsUltrametricDist.nonarchimedeanAddGroup`: every neighbourhood of zero contains an open

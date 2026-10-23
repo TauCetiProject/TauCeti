@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Module.LinearMap.Basic
 public import Mathlib.Algebra.MonoidAlgebra.Basic
 public import Mathlib.LinearAlgebra.Quotient.Basic
 public import Mathlib.LinearAlgebra.Dual.Defs
@@ -126,18 +125,17 @@ def LinearMap.contragredientDualMap (f : M →ₗ[MonoidAlgebra R G] N) :
   toFun ψ := ψ.comp (f.restrictScalars R)
   map_add' ψ χ := by ext m; simp
   map_smul' a ψ := by
-    rcases a with ⟨a⟩
     ext m
-    -- Both sides are precomposition by the action of `a`; expose this before using linearity.
-    change ψ.toFun (a • f m) = ψ.toFun (f (a • m))
-    rw [map_smul]
+    -- Expose the domain precomposition hidden by the opposite-action instance.
+    change ψ (MulOpposite.unop a • f m) = ψ (f (MulOpposite.unop a • m))
+    exact congrArg ψ (f.map_smul (MulOpposite.unop a) m).symm
 
 /-- Contragredient dual precomposition evaluates by applying the original map first. -/
 @[simp]
 theorem LinearMap.contragredientDualMap_apply (f : M →ₗ[MonoidAlgebra R G] N)
     (ψ : Module.Dual R N) (m : M) :
-    contragredientDualMap f ψ m = ψ (f m) := by
-  simp [contragredientDualMap]
+    contragredientDualMap f ψ m = ψ (f m) :=
+  (rfl)
 
 end ContragredientMap
 
@@ -205,8 +203,8 @@ section FiniteGroup
 
 section
 
-variable {R G M : Type*} [Semiring R] [Group G] [Finite G]
-  [AddCommMonoid M] [Module (MonoidAlgebra R G) M] [Module R M]
+variable {R G M : Type*} [Semiring R] [Inv G] [Finite G]
+  [AddCommMonoid M] [DistribSMul (MonoidAlgebra R G) M] [Module R M]
   [SMulCommClass (MonoidAlgebra R G) R M]
 
 private noncomputable def dualLift (ψ : Module.Dual R M) : M →ₗ[R] MonoidAlgebra R G :=
@@ -259,8 +257,7 @@ noncomputable def TauCeti.MonoidAlgebra.dualLinearEquiv :
     ext m
     -- At the identity, the explicit inverse recovers the original functional.
     change (dualLift ψ m).coeff 1 = ψ m
-    exact (dualLift_coeff (G := G) ψ m 1).trans (by
-      rw [inv_one, ← MonoidAlgebra.one_def, one_smul])
+    simp only [dualLift_coeff (G := G), inv_one, ← MonoidAlgebra.one_def, one_smul]
   map_add' := map_add dualLinearMap
   map_smul' := map_smul dualLinearMap
 

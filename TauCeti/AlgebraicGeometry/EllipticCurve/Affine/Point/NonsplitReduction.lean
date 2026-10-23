@@ -14,6 +14,8 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Index.Two
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.SingularReduction
 -- Proof-only: index two from the sums of points outside a subgroup.
 import TauCeti.GroupTheory.Index.Two
+-- Proof-only: membership in the principal maximal ideal.
+import TauCeti.RingTheory.LocalRing.MaximalIdeal.Generator
 
 /-!
 # Points with singular reduction at a nonsplit node of even order
@@ -80,6 +82,7 @@ residue field need not exist.
 public section
 
 open IsLocalRing
+open TauCeti.IsLocalRing (mem_maximalIdeal_iff_dvd)
 
 namespace WeierstrassCurve
 
@@ -150,8 +153,6 @@ theorem index_nonsingularReduction_eq_two_of_isTateTerminal_I_of_tangentQuadrati
         residue _ (integralModel v.valuationSubring W).a₂ ≠ 0) :
     (W.nonsingularReduction v).index = 2 := by
   set Wo := integralModel v.valuationSubring W
-  have key (a : v.valuationSubring) : a ∈ maximalIdeal v.valuationSubring ↔ ϖ ∣ a := by
-    rw [hϖ, Ideal.mem_span_singleton]
   obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hm
   -- `isTateTerminal_I_add_one` requires the index in successor form.
   rw [show 2 * (k + 1) = 2 * k + 1 + 1 by ring] at h
@@ -159,15 +160,16 @@ theorem index_nonsingularReduction_eq_two_of_isTateTerminal_I_of_tangentQuadrati
   -- `Δ = ϖ^(2k + 2) c` with `c` a unit, since `ϖ^(2k + 3) ∤ Δ`
   have hcu : IsUnit c := by
     by_contra hcu
-    obtain ⟨d, rfl⟩ := (key c).1 ((mem_maximalIdeal _).2 hcu)
+    obtain ⟨d, rfl⟩ := (mem_maximalIdeal_iff_dvd hϖ).1 ((mem_maximalIdeal _).2 hcu)
     exact hn ⟨d, by rw [hc]; ring⟩
   have : W.IsElliptic := ⟨isUnit_iff_ne_zero.2 fun h0 ↦ hn <| by
     rw [← integralModel_Δ_eq v.valuationSubring W,
       map_eq_zero_iff _ (IsFractionRing.injective v.valuationSubring F)] at h0
     rw [h0]
     exact dvd_zero _⟩
-  exact index_nonsingularReduction_eq_two_of_tangentQuadratic_no_roots v ((key _).2 h₃)
-    ((key _).2 h₄) ((key _).2 h₆) hroot (z := ϖ ^ (k + 1))
+  exact index_nonsingularReduction_eq_two_of_tangentQuadratic_no_roots v
+    ((mem_maximalIdeal_iff_dvd hϖ).2 h₃) ((mem_maximalIdeal_iff_dvd hϖ).2 h₄)
+    ((mem_maximalIdeal_iff_dvd hϖ).2 h₆) hroot (z := ϖ ^ (k + 1))
     ⟨hcu.unit, by rw [hcu.unit_spec, hc]; ring⟩
 
 end Affine

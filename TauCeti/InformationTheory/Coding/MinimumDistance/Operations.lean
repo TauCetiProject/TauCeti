@@ -392,26 +392,9 @@ theorem _root_.AddSubgroup.hammingMinDist_directSum_bot (C : AddSubgroup (ι →
 theorem _root_.AddSubgroup.hammingMinDist_bot_directSum (D : AddSubgroup (κ → A)) :
     Set.hammingMinDist ((⊥ : AddSubgroup (ι → A)).directSum D : Set (ι ⊕ κ → A)) =
       Set.hammingMinDist (D : Set (κ → A)) := by
-  have hset : (fun z : ι ⊕ κ → A ↦ z ∘ Equiv.sumComm κ ι) ''
-      ((⊥ : AddSubgroup (ι → A)).directSum D : Set (ι ⊕ κ → A)) =
-      (D.directSum (⊥ : AddSubgroup (ι → A)) : Set (κ ⊕ ι → A)) := by
-    ext z
-    constructor
-    · rintro ⟨w, hw, rfl⟩
-      simpa only [SetLike.mem_coe, mem_directSum_iff, Function.comp_def, Equiv.sumComm_apply,
-        Sum.swap_inl, Sum.swap_inr, and_comm] using hw
-    · intro hz
-      refine ⟨z ∘ Equiv.sumComm ι κ, ?_, ?_⟩
-      · simpa only [SetLike.mem_coe, mem_directSum_iff, Function.comp_def, Equiv.sumComm_apply,
-          Sum.swap_inl, Sum.swap_inr, and_comm] using hz
-      · funext i
-        cases i <;> rfl
-  have hdist := hammingMinDist_image
-    (C := ((⊥ : AddSubgroup (ι → A)).directSum D : Set (ι ⊕ κ → A)))
-    (fun z ↦ z ∘ Equiv.sumComm κ ι)
-    (fun x _ y _ _ ↦ (Equiv.sumComm κ ι).hammingDist_comp x y)
-  rw [hset, AddSubgroup.hammingMinDist_directSum_bot] at hdist
-  exact hdist.symm
+  rw [AdditiveCode.IsPermutationEquivalent.hammingMinDist_eq
+      (AdditiveCode.isPermutationEquivalent_directSum_comm (⊥ : AddSubgroup (ι → A)) D),
+    AddSubgroup.hammingMinDist_directSum_bot]
 
 end AdditiveDirectSum
 
