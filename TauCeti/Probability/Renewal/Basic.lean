@@ -226,20 +226,11 @@ lemma tendsto_arrival_atTop_iff {ω : Ω} :
 /-- If infinitely many increments are at least `a > 0`, the arrival times tend to infinity. -/
 lemma tendsto_arrival_atTop_of_frequently_le {ω : Ω} {a : ℝ≥0} (ha : 0 < a)
     (h : ∃ᶠ n in atTop, a ≤ T n ω) : Tendsto (fun n ↦ arrival T n ω) atTop atTop := by
-  have key : ∀ k : ℕ, ∃ n, k • a ≤ arrival T n ω := by
-    intro k
-    induction k with
-    | zero => exact ⟨0, by simp⟩
-    | succ k ih =>
-      obtain ⟨n, hn⟩ := ih
-      obtain ⟨m, hmn, hm⟩ := frequently_atTop.1 h n
-      refine ⟨m + 1, ?_⟩
-      rw [succ_nsmul, arrival_succ]
-      exact add_le_add (hn.trans (monotone_arrival T ω hmn)) hm
-  rw [tendsto_atTop_atTop_iff_of_monotone (monotone_arrival T ω)]
-  intro b
-  obtain ⟨k, hk⟩ := Archimedean.arch b ha
-  exact (key k).imp fun n hn ↦ hk.trans hn
+  simp only [arrival_def]
+  refine NNReal.not_summable_iff_tendsto_nat_atTop.1 fun hs ↦ ?_
+  have hsmall := (NNReal.tendsto_atTop_zero_of_summable hs).eventually (gt_mem_nhds ha)
+  obtain ⟨n, hlt, hle⟩ := (hsmall.and_frequently h).exists
+  exact hle.not_gt hlt
 
 /-! ### Nonexplosion for i.i.d. increments -/
 
