@@ -267,7 +267,7 @@ theorem IsOfExactOrder.comp_mulBy_eq_one {P : 𝟙_ (Over S) ⟶ Over.mk E.struc
 
 /-- **The points of exact order one**: an `S`-point of `E` has exact order one exactly when it is
 the zero section. The divisor `[0]` is the trivial subgroup scheme of `E`. -/
-@[simp]
+@[simp high]
 theorem isOfExactOrder_one_iff {P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap} :
     E.IsOfExactOrder P 1 ↔ P = 1 := by
   refine ⟨fun h ↦ by simpa using h.pow_eq_one, ?_⟩
