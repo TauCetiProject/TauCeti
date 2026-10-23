@@ -7,7 +7,6 @@ module
 
 public import TauCeti.RingTheory.PowerSeries.OpenDisc.Basic
 public import TauCeti.RingTheory.PowerSeries.TateAlgebra
-public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Radius
 public import Mathlib.Topology.Algebra.IsUniformGroup.Constructions
 
 /-!
@@ -59,7 +58,8 @@ noncomputable instance uniformSpace : UniformSpace (OnOpenDisc.subring R R₀) :
     (inferInstanceAs (UniformSpace
       (∀ r : Set.Ioo (0 : ℝ) R₀, IsRestricted.subring (R := R) (r : ℝ))))
 
-private theorem isUniformInducing_restrict :
+/-- The Gauss uniformity is induced by the family of closed-disc restrictions. -/
+theorem isUniformInducing_restrict :
     IsUniformInducing (fun f r ↦ restrict (R := R) (R₀ := R₀) r f) :=
   ⟨rfl⟩
 
@@ -76,33 +76,32 @@ theorem tendsto_iff {ι : Type*} {l : Filter ι}
   rw [isUniformInducing_restrict.isInducing.tendsto_nhds_iff, tendsto_pi_nhds]
   rfl
 
-/-- Convergence can be tested at any family of smaller radii tending to the boundary. In
-particular, every sequence tending to `R₀` from below gives the same topology. -/
-theorem tendsto_iff_of_tendsto_radius {ι κ : Type*} {l : Filter ι} [l.NeBot]
-    {ρ : ι → Set.Ioo (0 : ℝ) R₀} (hρ : Tendsto (fun i ↦ (ρ i : ℝ)) l (𝓝 R₀))
+/-- Convergence can be tested at any cofinal family of smaller positive radii. -/
+theorem tendsto_iff_of_cofinal_radius {ι κ : Type*}
+    {ρ : ι → Set.Ioo (0 : ℝ) R₀} (hρ : ∀ r : Set.Ioo (0 : ℝ) R₀, ∃ i, (r : ℝ) ≤ ρ i)
     {F : Filter κ} {f : κ → OnOpenDisc.subring R R₀} {g : OnOpenDisc.subring R R₀} :
     Tendsto f F (𝓝 g) ↔ ∀ i, Tendsto (fun j ↦ restrict (ρ i) (f j)) F (𝓝 (restrict (ρ i) g)) := by
   refine ⟨fun h i ↦ tendsto_iff.mp h (ρ i), fun h ↦ tendsto_iff.mpr fun r ↦ ?_⟩
-  obtain ⟨i, hi⟩ := (hρ.eventually (lt_mem_nhds r.2.2)).exists
-  let φ : IsRestricted.subring (R := R) (ρ i : ℝ) →+*
-      IsRestricted.subring (R := R) (r : ℝ) :=
-    TauCeti.MvPowerSeries.restrictedRadiusHom
-      (r := fun _ : Unit ↦ (r : ℝ)) (s := fun _ : Unit ↦ (ρ i : ℝ))
-      (fun _ ↦ r.2.1.le) (fun _ ↦ hi.le)
-  have hc : Continuous φ := TauCeti.MvPowerSeries.continuous_restrictedRadiusHom
-    (r := fun _ : Unit ↦ (r : ℝ)) (s := fun _ : Unit ↦ (ρ i : ℝ))
-    (fun _ ↦ r.2.1.le) (fun _ ↦ hi.le)
+  obtain ⟨i, hi⟩ := hρ r
+  let φ := TauCeti.PowerSeries.restrictedRadiusHom (R := R) r.2.1.le hi
+  have hc : Continuous φ := TauCeti.PowerSeries.continuous_restrictedRadiusHom r.2.1.le hi
   have heq (a : OnOpenDisc.subring R R₀) : φ (restrict (ρ i) a) = restrict r a := by
     apply Subtype.ext
-    exact (TauCeti.MvPowerSeries.coe_restrictedRadiusHom
-      (fun _ : Unit ↦ r.2.1.le) (fun _ ↦ hi.le) (restrict (ρ i) a)).trans
-        (coe_restrict (ρ i) a)
+    simp only [φ, TauCeti.PowerSeries.coe_restrictedRadiusHom, coe_restrict]
   simpa only [Function.comp_def, heq] using (hc.tendsto (restrict (ρ i) g)).comp (h i)
 
 /-- A map into the open-disc algebra is continuous exactly when each restriction is continuous. -/
 theorem continuous_iff {X : Type*} [TopologicalSpace X] {f : X → OnOpenDisc.subring R R₀} :
     Continuous f ↔ ∀ r : Set.Ioo (0 : ℝ) R₀, Continuous fun x ↦ restrict r (f x) := by
   rw [isUniformInducing_restrict.isInducing.continuous_iff, continuous_pi_iff]
+  rfl
+
+/-- A map into the open-disc algebra is uniformly continuous exactly when each restriction is. -/
+theorem uniformContinuous_iff {X : Type*} [UniformSpace X]
+    {f : X → OnOpenDisc.subring R R₀} :
+    UniformContinuous f ↔ ∀ r : Set.Ioo (0 : ℝ) R₀,
+      UniformContinuous fun x ↦ restrict r (f x) := by
+  rw [isUniformInducing_restrict.uniformContinuous_iff, uniformContinuous_pi]
   rfl
 
 instance : IsUniformAddGroup (OnOpenDisc.subring R R₀) :=
@@ -119,7 +118,7 @@ instance : IsTopologicalRing (OnOpenDisc.subring R R₀) where
 theorem tendsto_polynomialHom_trunc (f : OnOpenDisc.subring R R₀) :
     Tendsto (fun n ↦ polynomialHom (R₀ := R₀) ((f : R⟦X⟧).trunc n)) atTop (𝓝 f) := by
   refine tendsto_iff.mpr fun r ↦ ?_
-  convert PowerSeries.tendsto_trunc (restrict r f) using 1
+  convert TauCeti.PowerSeries.tendsto_trunc_atTop (restrict r f) using 1
   · ext n : 1
     apply Subtype.ext
     simp only [coe_restrict, coe_polynomialHom]
@@ -134,32 +133,38 @@ variable [Fact (0 < R₀)]
 private noncomputable def baseRadius : Set.Ioo (0 : ℝ) R₀ :=
   ⟨R₀ / 2, half_pos Fact.out, half_lt_self Fact.out⟩
 
-private theorem restrictFamily_injective :
+/-- The family of smaller-disc restrictions determines an open-disc series. -/
+theorem restrictFamily_injective :
     Function.Injective (fun f r ↦ restrict (R := R) (R₀ := R₀) r f) := by
   intro f g h
   exact Subtype.ext (congrArg (fun h ↦ (h baseRadius : R⟦X⟧)) h)
 
+/-- Closed-disc restrictions embed the open-disc algebra uniformly into their product. -/
+theorem isUniformEmbedding_restrict :
+    IsUniformEmbedding (fun f r ↦ restrict (R := R) (R₀ := R₀) r f) :=
+  ⟨isUniformInducing_restrict, restrictFamily_injective⟩
+
 instance : T2Space (OnOpenDisc.subring R R₀) :=
-  (IsUniformEmbedding.isEmbedding
-    ⟨isUniformInducing_restrict, restrictFamily_injective⟩).t2Space
+  isUniformEmbedding_restrict.isEmbedding.t2Space
 
 /-- Each coefficient is uniformly continuous for the open-disc Gauss uniformity. -/
 theorem uniformContinuous_coeff (n : ℕ) :
     UniformContinuous fun f : OnOpenDisc.subring R R₀ ↦ coeff n (f : R⟦X⟧) := by
-  have h := _root_.MvPowerSeries.uniformContinuous_coeff_isRestrictedSubring
-    (R := R) (c := fun _ : Unit ↦ (baseRadius (R₀ := R₀) : ℝ)) (Finsupp.single () n)
+  have h := TauCeti.PowerSeries.uniformContinuous_coeff
+    (R := R) (c := (baseRadius (R₀ := R₀) : ℝ)) n
   exact h.comp (uniformContinuous_restrict baseRadius)
 
-private theorem range_restrictFamily :
+/-- The restriction image consists exactly of families with radius-independent coefficients. -/
+theorem range_restrictFamily :
     Set.range (fun f r ↦ restrict (R := R) (R₀ := R₀) r f) =
-      {g | ∀ r : Set.Ioo (0 : ℝ) R₀, ∀ n : ℕ,
-        coeff n (g r : R⟦X⟧) = coeff n (g baseRadius : R⟦X⟧)} := by
+      {g | ∀ r s : Set.Ioo (0 : ℝ) R₀, ∀ n : ℕ,
+        coeff n (g r : R⟦X⟧) = coeff n (g s : R⟦X⟧)} := by
   ext g
   refine ⟨?_, fun hg ↦ ?_⟩
   · rintro ⟨f, rfl⟩
-    intro r n
+    intro r s n
     simp only [coe_restrict]
-  · have heq (r) : (g r : R⟦X⟧) = (g baseRadius : R⟦X⟧) := PowerSeries.ext (hg r)
+  · have heq (r) : (g r : R⟦X⟧) = (g baseRadius : R⟦X⟧) := PowerSeries.ext (hg r baseRadius)
     refine ⟨⟨(g baseRadius : R⟦X⟧),
       OnOpenDisc.mem_subring.mpr (onOpenDisc_iff.mpr (fun r hr hrR ↦ ?_))⟩, ?_⟩
     · rw [← heq ⟨r, hr, hrR⟩]
@@ -167,19 +172,17 @@ private theorem range_restrictFamily :
     · funext r
       exact Subtype.ext (heq r).symm
 
-private theorem isClosed_range_restrictFamily :
+/-- Coefficient-compatible families form a closed subset of the product of closed-disc algebras. -/
+theorem isClosed_range_restrictFamily :
     IsClosed (Set.range (fun f r ↦ restrict (R := R) (R₀ := R₀) r f)) := by
   rw [range_restrictFamily]
   simp only [Set.ofPred_forall]
-  refine isClosed_iInter fun r ↦ isClosed_iInter fun n ↦ ?_
+  refine isClosed_iInter fun r ↦ isClosed_iInter fun s ↦ isClosed_iInter fun n ↦ ?_
   have h (s : Set.Ioo (0 : ℝ) R₀) : Continuous fun g :
       (∀ r : Set.Ioo (0 : ℝ) R₀, IsRestricted.subring (R := R) (r : ℝ)) ↦
       coeff n (g s : R⟦X⟧) := by
-    have hc := _root_.MvPowerSeries.continuous_coeff_isRestrictedSubring
-      (R := R) (c := fun _ : Unit ↦ (s : ℝ)) (Finsupp.single () n)
-    -- The one-variable coefficient is the multivariate coefficient at this single exponent.
-    exact hc.comp (continuous_apply s)
-  exact isClosed_eq (h r) (h baseRadius)
+    exact (TauCeti.PowerSeries.uniformContinuous_coeff n).continuous.comp (continuous_apply s)
+  exact isClosed_eq (h r) (h s)
 
 /-- The open-disc algebra with all smaller-radius Gauss norms is complete over complete
 coefficients. -/
