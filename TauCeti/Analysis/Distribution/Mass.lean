@@ -132,14 +132,14 @@ theorem mass_smul [NormedSpace ℝ V] (a : ℝ) : mass (a • f) = ‖a‖ₑ * 
   simpa using localMass_smul (f := f) (U := univ) a
 
 @[simp]
-theorem localMass_neg [NormedSpace ℝ V] : localMass (-f) U = localMass f U := by
-  simpa using localMass_smul (f := f) (U := U) (-1)
+theorem localMass_neg : localMass (-f) U = localMass f U := by
+  simp only [localMass, Pi.neg_apply, enorm_neg]
 
 @[simp]
-theorem mass_neg [NormedSpace ℝ V] : mass (-f) = mass f := by
+theorem mass_neg : mass (-f) = mass f := by
   simpa using localMass_neg (f := f) (U := univ)
 
-theorem mass_sub_le [NormedSpace ℝ V] : mass (f - g) ≤ mass f + mass g := by
+theorem mass_sub_le : mass (f - g) ≤ mass f + mass g := by
   simpa [sub_eq_add_neg] using mass_add_le (f := f) (g := -g)
 
 end Basic
@@ -231,6 +231,12 @@ tests supported in each compact subset of `Ω`. -/
 def HasLocallyFiniteMass (f : 𝓓^{n}(Ω, F) → V) : Prop :=
   ∀ K : Set E, IsCompact K → K ⊆ Ω → ∃ C : ℝ, 0 ≤ C ∧
     ∀ φ : 𝓓^{n}(Ω, F), tsupport φ ⊆ K → ‖f φ‖ ≤ C * ‖(φ : E →ᵇ F)‖
+
+/-- Unfolding `HasLocallyFiniteMass` into its order-zero bounds on compact subsets of `Ω`. -/
+theorem hasLocallyFiniteMass_def :
+    HasLocallyFiniteMass f ↔ ∀ K : Set E, IsCompact K → K ⊆ Ω → ∃ C : ℝ, 0 ≤ C ∧
+      ∀ φ : 𝓓^{n}(Ω, F), tsupport φ ⊆ K → ‖f φ‖ ≤ C * ‖(φ : E →ᵇ F)‖ :=
+  Iff.rfl
 
 theorem hasLocallyFiniteMass_zero : HasLocallyFiniteMass (0 : 𝓓^{n}(Ω, F) → V) :=
   fun _ _ _ => ⟨0, le_rfl, fun φ _ => by simp⟩
