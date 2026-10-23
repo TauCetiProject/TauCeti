@@ -8,7 +8,6 @@ module
 public import TauCeti.NumberTheory.Chebotarev.PrimeCounting.VonMangoldt
 import TauCeti.Algebra.Group.Conj
 import TauCeti.Analysis.Asymptotics.Lemmas
-import TauCeti.NumberTheory.Chebotarev.AuxiliaryPrime
 import TauCeti.NumberTheory.Chebotarev.Crossing.CrossingConstant
 import TauCeti.NumberTheory.Chebotarev.PrimeCounting.Cyclotomic
 import TauCeti.NumberTheory.Chebotarev.PrimeCounting.FixedFieldContraction
@@ -73,22 +72,17 @@ namespace NumberField.Chebotarev
 variable {K L : Type*} [Field K] [NumberField K] [Field L] [NumberField L] [Algebra K L]
   [IsGalois K L]
 
--- **One auxiliary prime.** In an abelian extension, the Frobenius `ψ` of `σ` eventually exceeds
--- `δ x` for every `δ` below `(1 - 2 ^ (-r)) ^ #(orderOf σ).primeFactors / #G`, for every `r ≥ 1`.
-private theorem eventually_lt_frobeniusPsi_div_of_mul_comm
-    (hab : ∀ σ τ : L ≃ₐ[K] L, σ * τ = τ * σ) (σ : L ≃ₐ[K] L) {r : ℕ} (hr : 0 < r) {δ : ℝ}
-    (hδ : δ < (1 - (2 : ℝ) ^ (-(r : ℤ))) ^ (orderOf σ).primeFactors.card /
-      (Nat.card (L ≃ₐ[K] L) : ℝ)) :
+-- **One auxiliary prime.** In an abelian extension, for a prime `q` coprime to the discriminant
+-- of `L`, the Frobenius `ψ` of `σ` eventually exceeds `δ x` for every `δ` below the crossing
+-- constant of `(ZMod q)ˣ` at the order of `σ`.
+private theorem eventually_lt_frobeniusPsi_div_of_lt_crossingConstant
+    (hab : ∀ σ τ : L ≃ₐ[K] L, σ * τ = τ * σ) (σ : L ≃ₐ[K] L) {q : ℕ} [Fact q.Prime]
+    (hcop : (discr L).natAbs.Coprime q) {δ : ℝ}
+    (hδ : δ < crossingConstant K L (H := (ZMod q)ˣ) (orderOf σ)) :
     ∀ᶠ x in atTop, δ < frobeniusPsi K L (ConjClasses.mk σ) x / x := by
   classical
   set f := orderOf σ
-  -- Cross with `M = L(μ_q)` for a prime `q` with `f ^ r ∣ q - 1` and `|disc L| < q`; then
-  -- `Gal(M/K) ≃ Gal(L/K) × (ZMod q)ˣ`.
-  obtain ⟨q, hq, hqN, -, hfq, -, -, -⟩ := exists_auxiliaryPrime K L (f ^ r) (discr L).natAbs
-    (pow_ne_zero _ (orderOf_pos σ).ne')
-  have : Fact q.Prime := ⟨hq⟩
-  have hcop : (discr L).natAbs.Coprime q :=
-    (Nat.coprime_of_lt_prime (Int.natAbs_ne_zero.mpr (discr_ne_zero L)) hqN hq).symm
+  -- Cross with `M = L(μ_q)`, so that `Gal(M/K) ≃ Gal(L/K) × (ZMod q)ˣ`.
   let M := CyclotomicField q L
   have hζ := IsCyclotomicExtension.zeta_spec q L M
   have : IsGalois K M := IsCyclotomicExtension.isGalois_of_isGalois_of_isCyclotomicExtension K L M q
@@ -119,8 +113,6 @@ private theorem eventually_lt_frobeniusPsi_div_of_mul_comm
         (𝓝 (crossingConstant K L (H := (ZMod q)ˣ) f)) := by
     rw [crossingConstant_def, div_eq_mul_one_div, ← nsmul_eq_mul, ← Finset.sum_const]
     exact tendsto_finsetSum _ hψ
-  have hf : f ^ r ∣ Nat.card (ZMod q)ˣ := by
-    rwa [Nat.card_eq_fintype_card, ZMod.card_units_eq_totient, Nat.totient_prime hq]
   -- Distinct tags give distinct classes of `Gal(M/K)`, all over the class of `σ`.
   have hinj : Set.InjOn (fun τ : (ZMod q)ˣ ↦ ConjClasses.mk (e.symm (σ, τ)))
       (taggedElements (H := (ZMod q)ˣ) f : Set (ZMod q)ˣ) := fun τ _ υ _ h ↦ by
@@ -133,8 +125,7 @@ private theorem eventually_lt_frobeniusPsi_div_of_mul_comm
     rintro _ ⟨τ, -, rfl⟩
     rw [ConjClasses.map_mk, AlgEquiv.restrictNormalHom, MonoidHom.mk'_apply,
       IsCyclotomicExtension.restrictNormal_galEquivProd_symm]
-  filter_upwards [(tendsto_order.1 hsum).1 δ (hδ.trans_le (le_crossingConstant K L f r hr hf)),
-    eventually_gt_atTop 0] with x hx hx0
+  filter_upwards [(tendsto_order.1 hsum).1 δ hδ, eventually_gt_atTop 0] with x hx hx0
   refine hx.trans_le ?_
   rw [← Finset.sum_div, ← Finset.sum_image (f := fun D ↦ frobeniusPsi K M D x) hinj]
   gcongr
@@ -146,15 +137,8 @@ private theorem eventually_lt_frobeniusPsi_div_one_div_card_of_mul_comm
     (hab : ∀ σ τ : L ≃ₐ[K] L, σ * τ = τ * σ) (σ : L ≃ₐ[K] L) {δ : ℝ}
     (hδ : δ < 1 / (Nat.card (L ≃ₐ[K] L) : ℝ)) :
     ∀ᶠ x in atTop, δ < frobeniusPsi K L (ConjClasses.mk σ) x / x := by
-  -- The bound of one auxiliary prime tends to `1 / #G` as its level grows.
-  have h2 : Tendsto (fun r : ℕ ↦ (2 : ℝ) ^ (-(r : ℤ))) atTop (𝓝 0) := by
-    simpa [zpow_neg, zpow_natCast, inv_pow] using
-      tendsto_pow_atTop_nhds_zero_of_lt_one (r := (2 : ℝ)⁻¹) (by norm_num) (by norm_num)
-  have hlim := (((tendsto_const_nhds (x := (1 : ℝ))).sub h2).pow
-    (orderOf σ).primeFactors.card).div_const (Nat.card (L ≃ₐ[K] L) : ℝ)
-  rw [sub_zero, one_pow] at hlim
-  obtain ⟨r, hr, hδr⟩ := ((eventually_gt_atTop 0).and (hlim.eventually (lt_mem_nhds hδ))).exists
-  exact eventually_lt_frobeniusPsi_div_of_mul_comm hab σ hr hδr
+  obtain ⟨q, _, hcop, hδq⟩ := exists_prime_coprime_lt_crossingConstant K L (orderOf_pos σ).ne' hδ
+  exact eventually_lt_frobeniusPsi_div_of_lt_crossingConstant hab σ hcop hδq
 
 open scoped Classical in
 /-- In an abelian Galois group, summing over elements is summing over conjugacy classes. -/

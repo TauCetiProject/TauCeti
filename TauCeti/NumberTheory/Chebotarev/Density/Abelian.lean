@@ -7,7 +7,6 @@ module
 
 public import Mathlib.NumberTheory.NumberField.DirichletDensity
 public import TauCeti.NumberTheory.Chebotarev.FrobeniusPrimeSet
-import TauCeti.NumberTheory.Chebotarev.AuxiliaryPrime
 import TauCeti.NumberTheory.Chebotarev.Crossing.CrossingConstant
 import TauCeti.NumberTheory.Chebotarev.Crossing.TaggedFibres
 import TauCeti.NumberTheory.Chebotarev.Density.Cyclotomic
@@ -35,8 +34,8 @@ Let `L / K` be a finite Galois extension of number fields with abelian group `G`
   `projects/Chebotarev/CebotarevDensity/Abelian.lean`.
 -/
 
-open NumberField NumberField.Set Filter
-open scoped NumberField Topology
+open NumberField NumberField.Set
+open scoped NumberField
 open TauCeti.NumberField.Chebotarev
 
 namespace NumberField.Chebotarev
@@ -44,23 +43,16 @@ namespace NumberField.Chebotarev
 variable {K L : Type*} [Field K] [NumberField K] [Field L] [NumberField L] [Algebra K L]
   [IsGalois K L]
 
--- **One auxiliary prime.** In an abelian extension, the Frobenius fibre of `σ` has lower
--- Dirichlet density at least `(1 - 2 ^ (-r)) ^ #(orderOf σ).primeFactors / #G`, for every
--- `r ≥ 1`.
-private theorem isLowerDirichletDensityBound_abelianFrobenius
-    (hab : ∀ σ τ : L ≃ₐ[K] L, σ * τ = τ * σ) (σ : L ≃ₐ[K] L) {r : ℕ} (hr : 0 < r) :
+-- **One auxiliary prime.** In an abelian extension, for a prime `q` coprime to the discriminant
+-- of `L`, the Frobenius fibre of `σ` has lower Dirichlet density at least the crossing constant of
+-- `(ZMod q)ˣ` at the order of `σ`.
+private theorem isLowerDirichletDensityBound_crossingConstant_abelianFrobenius
+    (hab : ∀ σ τ : L ≃ₐ[K] L, σ * τ = τ * σ) (σ : L ≃ₐ[K] L) {q : ℕ} [Fact q.Prime]
+    (hcop : (discr L).natAbs.Coprime q) :
     IsLowerDirichletDensityBound (frobeniusPrimeSet K L (ConjClasses.mk σ))
-      ((1 - (2 : ℝ) ^ (-(r : ℤ))) ^ (orderOf σ).primeFactors.card /
-        (Nat.card (L ≃ₐ[K] L) : ℝ)) := by
+      (crossingConstant K L (H := (ZMod q)ˣ) (orderOf σ)) := by
   set f := orderOf σ
-  -- Cross with `M = L(μ_q)` for a prime `q` with `f ^ r ∣ q - 1` and `|disc L| < q`; then
-  -- `Gal(M/K) ≃ Gal(L/K) × (ZMod q)ˣ`.
-  obtain ⟨q, hq, hqN, -, hfq, -, -, -⟩ := exists_auxiliaryPrime K L (f ^ r) (discr L).natAbs
-    (pow_ne_zero _ (orderOf_pos σ).ne')
-  have : Fact q.Prime := ⟨hq⟩
-  -- `q` exceeds `|disc L|`, so it is coprime to it.
-  have hcop : (discr L).natAbs.Coprime q :=
-    (Nat.coprime_of_lt_prime (Int.natAbs_ne_zero.mpr (discr_ne_zero L)) hqN hq).symm
+  -- Cross with `M = L(μ_q)`, so that `Gal(M/K) ≃ Gal(L/K) × (ZMod q)ˣ`.
   let M := CyclotomicField q L
   have hζ := IsCyclotomicExtension.zeta_spec q L M
   have : IsGalois K M := IsCyclotomicExtension.isGalois_of_isGalois_of_isCyclotomicExtension K L M q
@@ -92,10 +84,8 @@ private theorem isLowerDirichletDensityBound_abelianFrobenius
       (ConjClasses.mk (e.symm (σ, τ)))
     rwa [ConjClasses.map_mk, AlgEquiv.restrictNormalHom, MonoidHom.mk'_apply,
       IsCyclotomicExtension.restrictNormal_galEquivProd_symm] at h
-  · -- Their total density is the crossing constant, bounded below uniformly in `q`.
-    have hf : f ^ r ∣ Nat.card (ZMod q)ˣ := by
-      rwa [Nat.card_eq_fintype_card, ZMod.card_units_eq_totient, Nat.totient_prime hq]
-    refine (le_crossingConstant K L f r hr hf).trans_eq ?_
+  · -- Their total density is the crossing constant.
+    refine le_of_eq ?_
     rw [crossingConstant_def, Finset.sum_const, nsmul_eq_mul, mul_one_div]
 
 -- Letting the level of the auxiliary prime grow, the Frobenius fibre of every element of an
@@ -103,16 +93,9 @@ private theorem isLowerDirichletDensityBound_abelianFrobenius
 private theorem isLowerDirichletDensityBound_one_div_card_abelianFrobenius
     (hab : ∀ σ τ : L ≃ₐ[K] L, σ * τ = τ * σ) (σ : L ≃ₐ[K] L) : IsLowerDirichletDensityBound
       (frobeniusPrimeSet K L (ConjClasses.mk σ)) (1 / (Nat.card (L ≃ₐ[K] L) : ℝ)) := by
-  -- The bound of one auxiliary prime tends to `1 / #G` as its level grows.
-  have h2 : Tendsto (fun r : ℕ ↦ (2 : ℝ) ^ (-(r : ℤ))) atTop (𝓝 0) := by
-    simpa [zpow_neg, zpow_natCast, inv_pow] using
-      tendsto_pow_atTop_nhds_zero_of_lt_one (r := (2 : ℝ)⁻¹) (by norm_num) (by norm_num)
-  have hlim := (((tendsto_const_nhds (x := (1 : ℝ))).sub h2).pow
-    (orderOf σ).primeFactors.card).div_const (Nat.card (L ≃ₐ[K] L) : ℝ)
-  rw [sub_zero, one_pow] at hlim
   refine isLowerDirichletDensityBound_of_forall_lt fun δ hδ ↦ ?_
-  obtain ⟨r, hr, hδr⟩ := ((eventually_gt_atTop 0).and (hlim.eventually (lt_mem_nhds hδ))).exists
-  exact (isLowerDirichletDensityBound_abelianFrobenius hab σ hr).mono hδr.le
+  obtain ⟨q, _, hcop, hδq⟩ := exists_prime_coprime_lt_crossingConstant K L (orderOf_pos σ).ne' hδ
+  exact (isLowerDirichletDensityBound_crossingConstant_abelianFrobenius hab σ hcop).mono hδq.le
 
 public section
 
