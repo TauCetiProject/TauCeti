@@ -192,7 +192,7 @@ private theorem exists_toContinuousMap_eq_comp_sum_single (hs : 1 / 2 < s) (S : 
     (fun x ↦ by simp only [ContinuousMap.coe_mk, Function.comp_apply, hPx])
     (fun z _ ↦ by simp only [Function.comp_apply, hper])
     (hG.comp hPd.differentiableOn fun z hz ↦ hmaps z hz) fun z hz ↦ hM _ (hmaps z hz)
-  exact ⟨w, fun x ↦ by rw [hw]; rfl, hwn⟩
+  exact ⟨w, fun x ↦ by rw [hw, ContinuousMap.coe_mk], hwn⟩
 
 /-! ### The Nemytskii map -/
 
@@ -286,20 +286,19 @@ private theorem exists_taylor_coeff {F : ℂ → ℂ} {U : Set ℂ} (hU : IsOpen
 
 /-- **Local expansion of the Nemytskii map.** Near every `u₀` with values in `U` there are a
 trigonometric polynomial `p`, a radius `ρ` with `‖u₀ - p‖ < ρ`, and elements `w k ∈ H^s` with
-`‖w k‖ ≤ k! B / (C ρ) ^ k`, `C` the constant of `norm_pow_le`, such that for `‖y‖ < ρ` the function
-`F ∘ (p + y)` is pointwise the sum of `(k!)⁻¹ (w k) y ^ k`. -/
+`‖w k‖ ≤ k! B / (mulConst s * ρ) ^ k` such that for `‖y‖ < ρ` the function `F ∘ (p + y)` is
+pointwise the sum of `(k!)⁻¹ (w k) y ^ k`. -/
 private theorem exists_local_expansion {F : ℂ → ℂ} {U : Set ℂ} (hU : IsOpen U)
     (hF : DifferentiableOn ℂ F U) {u₀ : CircleSobolev s ℂ}
     (hu₀ : ∀ x, toContinuousMap T hs.out u₀ x ∈ U) :
     ∃ (p : CircleSobolev s ℂ) (w : ℕ → CircleSobolev s ℂ) (ρ B : ℝ), 0 < ρ ∧ ‖u₀ - p‖ < ρ ∧
-      (∀ k, ‖w k‖ ≤
-        k.factorial * B / (max (2 ^ (s + 1) * √(∑' n, weight (-(2 * s)) n)) 1 * ρ) ^ k) ∧
+      (∀ k, ‖w k‖ ≤ k.factorial * B / (mulConst s * ρ) ^ k) ∧
       ∀ y : CircleSobolev s ℂ, ‖y‖ < ρ → ∀ x, toContinuousMap T hs.out (p + y) x ∈ U ∧
         HasSum (fun k ↦ (k.factorial : ℂ)⁻¹ * toContinuousMap T hs.out (w k) x *
           toContinuousMap T hs.out y x ^ k) (F (toContinuousMap T hs.out (p + y) x)) := by
-  set C := max (2 ^ (s + 1) * √(∑' n, weight (-(2 * s)) n)) 1 with hC
+  set C := mulConst s with hC
   set K := √(∑' n, weight (-(2 * s)) n) with hK
-  have hC1 : 1 ≤ C := le_max_right _ _
+  have hC1 : 1 ≤ C := one_le_mulConst
   have hK0 : 0 ≤ K := Real.sqrt_nonneg _
   have hsup (a : CircleSobolev s ℂ) (x : AddCircle T) :
       ‖toContinuousMap T hs.out a x‖ ≤ K * ‖a‖ :=
@@ -355,19 +354,18 @@ private theorem factorialInvSeries_apply_const (w : ℕ → CircleSobolev s ℂ)
   simp [factorialInvSeries, List.ofFn_const, List.prod_replicate, mul_def]
 
 omit hT in
-/-- The series `factorialInvSeries w` has radius at least `ρ` when `‖w k‖ ≤ k! B / (C ρ) ^ k`,
-`C` the constant of `norm_pow_le`. -/
+/-- The series `factorialInvSeries w` has radius at least `ρ` when
+`‖w k‖ ≤ k! B / (mulConst s * ρ) ^ k`. -/
 private theorem le_radius_factorialInvSeries {w : ℕ → CircleSobolev s ℂ} {ρ B : ℝ}
-    (hρ : 0 < ρ) (hw : ∀ k, ‖w k‖ ≤
-      k.factorial * B / (max (2 ^ (s + 1) * √(∑' n, weight (-(2 * s)) n)) 1 * ρ) ^ k) :
+    (hρ : 0 < ρ) (hw : ∀ k, ‖w k‖ ≤ k.factorial * B / (mulConst s * ρ) ^ k) :
     (ρ.toNNReal : ENNReal) ≤ (factorialInvSeries w).radius := by
-  set C := max (2 ^ (s + 1) * √(∑' n, weight (-(2 * s)) n)) 1 with hC
-  have hC0 : 0 < C := lt_of_lt_of_le one_pos (le_max_right _ _)
+  set C := mulConst s with hC
+  have hC0 : 0 < C := one_pos.trans_le one_le_mulConst
   have hB : 0 ≤ B := by simpa using (norm_nonneg _).trans (hw 0)
   refine FormalMultilinearSeries.le_radius_of_bound _ (C * B) fun k ↦ ?_
   have hL : ‖convolution hs.out (.mul ℂ ℂ) (w k)‖ ≤ C * ‖w k‖ :=
-    ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun b ↦ (norm_mul_le (w k) b).trans
-      (by gcongr; exact le_max_left _ _)
+    ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun b ↦ by
+      simpa only [mul_def] using norm_mul_le_mulConst (w k) b
   have hm : ‖ContinuousMultilinearMap.mkPiAlgebraFin ℂ k (CircleSobolev s ℂ)‖ ≤ C ^ k :=
     ContinuousMultilinearMap.opNorm_le_bound (by positivity) fun m ↦ by
       simpa [List.map_ofFn, List.prod_ofFn] using norm_list_prod_le (List.ofFn m)
@@ -387,10 +385,9 @@ private theorem le_radius_factorialInvSeries {w : ℕ → CircleSobolev s ℂ} {
 
 omit hT in
 /-- The series `∑ₖ (k!)⁻¹ (w k) y ^ k` converges absolutely in `H^s` when
-`‖w k‖ ≤ k! B / (C ρ) ^ k`, `C` the constant of `norm_pow_le`, and `‖y‖ < ρ`. -/
+`‖w k‖ ≤ k! B / (mulConst s * ρ) ^ k` and `‖y‖ < ρ`. -/
 private theorem summable_factorial_inv_smul_mul_pow {w : ℕ → CircleSobolev s ℂ} {ρ B : ℝ}
-    (hρ : 0 < ρ) (hw : ∀ k, ‖w k‖ ≤
-      k.factorial * B / (max (2 ^ (s + 1) * √(∑' n, weight (-(2 * s)) n)) 1 * ρ) ^ k)
+    (hρ : 0 < ρ) (hw : ∀ k, ‖w k‖ ≤ k.factorial * B / (mulConst s * ρ) ^ k)
     {y : CircleSobolev s ℂ} (hy : ‖y‖ < ρ) :
     Summable fun k ↦ (k.factorial : ℂ)⁻¹ • (w k * y ^ k) := by
   have hy' : y ∈ Metric.eball (0 : CircleSobolev s ℂ) (ρ.toNNReal : ENNReal) := by
@@ -406,8 +403,7 @@ private theorem exists_hasSum_nemytskii {F : ℂ → ℂ} {U : Set ℂ} (hU : Is
     (hF : DifferentiableOn ℂ F U) {u₀ : CircleSobolev s ℂ}
     (hu₀ : ∀ x, toContinuousMap T hs.out u₀ x ∈ U) :
     ∃ (p : CircleSobolev s ℂ) (w : ℕ → CircleSobolev s ℂ) (ρ B : ℝ), 0 < ρ ∧ ‖u₀ - p‖ < ρ ∧
-      (∀ k, ‖w k‖ ≤
-        k.factorial * B / (max (2 ^ (s + 1) * √(∑' n, weight (-(2 * s)) n)) 1 * ρ) ^ k) ∧
+      (∀ k, ‖w k‖ ≤ k.factorial * B / (mulConst s * ρ) ^ k) ∧
       ∀ y : CircleSobolev s ℂ, ‖y‖ < ρ →
         HasSum (fun k ↦ (k.factorial : ℂ)⁻¹ • (w k * y ^ k)) (nemytskii F (p + y)) ∧
         ∀ x, toContinuousMap T hs.out (nemytskii F (p + y)) x =

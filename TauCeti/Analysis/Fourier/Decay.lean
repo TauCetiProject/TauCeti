@@ -33,6 +33,9 @@ strip around the real axis has exponentially decaying Fourier coefficients, by C
   `‖v‖ ^ k * ‖𝓕 f v‖ ≤ C` for some `C > 0`.
 * `TauCeti.exists_abs_pow_mul_norm_fourierCoeff_le`: if `f : AddCircle T → ℂ` is `C^k` as a
   periodic function on `ℝ`, then `|n| ^ k * ‖fourierCoeff f n‖ ≤ C` for some `C`.
+* `TauCeti.integral_eq_integral_add_mul_I_of_differentiableOn_strip`: the integral over a period of
+  a periodic function holomorphic on a strip `|Im z| ≤ |y|` is unchanged by shifting the line of
+  integration to `Im z = y`.
 * `TauCeti.norm_fourierCoeff_le_of_differentiableOn_strip`: if `f : AddCircle T → ℂ` extends to a
   periodic function holomorphic and bounded by `M` on the strip `|Im z| ≤ δ`, then
   `‖fourierCoeff f n‖ ≤ M e^{-2π |n| δ / T}`.
@@ -98,6 +101,27 @@ theorem exists_abs_pow_mul_norm_fourierCoeff_le {f : AddCircle T → ℂ} {k : �
           field_simp
       _ ≤ T ^ k / (2 * π) ^ k * M := by gcongr
 
+omit hT in
+/-- **Shifting a period integral off the real axis.** If `h` is `T`-periodic and holomorphic on the
+closed strip `|Im z| ≤ |y|`, then its integral over a period of the real axis equals its integral
+over a period of the horizontal line `Im z = y`. The integrals over the two vertical sides of the
+rectangle with corners `0` and `T + y i` cancel by periodicity, so this is Cauchy's theorem for
+that rectangle. -/
+theorem integral_eq_integral_add_mul_I_of_differentiableOn_strip {h : ℂ → ℂ} {y : ℝ}
+    (hper : ∀ z : ℂ, |z.im| ≤ |y| → h (z + T) = h z)
+    (hh : DifferentiableOn ℂ h {z | |z.im| ≤ |y|}) :
+    ∫ x in (0 : ℝ)..T, h x = ∫ x in (0 : ℝ)..T, h (x + y * I) := by
+  have hmem {t : ℝ} (ht : t ∈ [[0, y]]) : |t| ≤ |y| := by
+    simpa using Set.abs_sub_left_of_mem_uIcc ht
+  have key := integral_boundary_rect_eq_zero_of_differentiableOn h 0 (T + y * I)
+    (hh.mono fun z hz ↦ hmem (by simpa using hz.2))
+  have hside : ∫ t in (0 : ℝ)..y, h (T + t * I) = ∫ t in (0 : ℝ)..y, h (t * I) :=
+    intervalIntegral.integral_congr fun t ht ↦ by
+      rw [add_comm]
+      exact hper _ (by simpa using hmem ht)
+  simp [hside] at key
+  linear_combination key
+
 /-- **Exponential decay of the Fourier coefficients of a function holomorphic in a strip.** If
 `f : AddCircle T → ℂ` is the restriction to `ℝ` of a function `g` which is `T`-periodic and
 holomorphic on the closed strip `|Im z| ≤ δ`, and bounded there by `M`, then
@@ -116,37 +140,14 @@ theorem norm_fourierCoeff_le_of_differentiableOn_strip {f : AddCircle T → ℂ}
     · exact ⟨-δ, by simp [abs_of_nonneg hδ], by rw [abs_of_nonneg hn]; ring⟩
     · exact ⟨δ, abs_of_nonneg hδ, by rw [abs_of_neg hn]; ring⟩
   set h : ℂ → ℂ := fun z ↦ cexp (-(2 * π * I * n * z / T)) * g z with hh
-  have hmem {t : ℝ} (ht : t ∈ [[0, y]]) : |t| ≤ δ := by
-    rw [← hyδ]
-    rcases Set.mem_uIcc.1 ht with ⟨h₁, h₂⟩ | ⟨h₁, h₂⟩
-    · exact abs_le_abs h₂ (by linarith)
-    · rw [abs_of_nonpos h₂, abs_of_nonpos (h₁.trans h₂)]; linarith
-  have hrect : DifferentiableOn ℂ h ([[(0 : ℂ).re, (T + y * I).re]] ×ℂ
-      [[(0 : ℂ).im, (T + y * I).im]]) := by
-    refine ((differentiable_exp.comp (by fun_prop)).differentiableOn.mul hg).mono fun z hz ↦ ?_
-    simp only [mem_reProdIm, zero_im, add_im, ofReal_im, mul_im, ofReal_re, I_im, mul_one, I_re,
-      mul_zero, add_zero, zero_add] at hz
-    exact hmem hz.2
-  -- The integrals of `h` over the two vertical sides of the rectangle agree, by periodicity.
-  have hside : ∫ t in (0 : ℝ)..y, h (T + t * I) = ∫ t in (0 : ℝ)..y, h (0 + t * I) := by
-    refine intervalIntegral.integral_congr fun t ht ↦ ?_
-    have hexp : cexp (-(2 * π * I * n * (T + t * I) / T)) =
-        cexp (-(2 * π * I * n * (t * I) / T)) := by
-      rw [show -(2 * π * I * n * (T + t * I) / T) =
-          -(2 * π * I * n * (t * I) / T) + ((-n : ℤ) : ℂ) * (2 * π * I) by
-        push_cast; field_simp; ring, exp_add, exp_int_mul_two_pi_mul_I, mul_one]
-    have hg' : g (T + t * I) = g (t * I) := by
-      rw [add_comm]
-      exact hper _ (by simpa using hmem ht)
-    simp only [hh, zero_add, hexp, hg']
-  -- Cauchy's theorem for the rectangle with corners `0` and `T + y i`.
   have hshift : ∫ x in (0 : ℝ)..T, h x = ∫ x in (0 : ℝ)..T, h (x + y * I) := by
-    have key := integral_boundary_rect_eq_zero_of_differentiableOn h 0 (T + y * I) hrect
-    simp only [zero_re, zero_im, add_re, ofReal_re, mul_re, I_re, I_im, ofReal_im, mul_zero,
-      sub_zero, mul_one, add_im, mul_im, zero_add, add_zero, ofReal_zero, zero_mul] at key
-    rw [hside] at key
-    simp only [zero_add] at key
-    linear_combination key
+    refine integral_eq_integral_add_mul_I_of_differentiableOn_strip (fun z hz ↦ ?_)
+      ((differentiable_exp.comp (by fun_prop)).differentiableOn.mul (hyδ ▸ hg))
+    have hexp : cexp (-(2 * π * I * n * (z + T) / T)) = cexp (-(2 * π * I * n * z / T)) := by
+      rw [show -(2 * π * I * n * (z + T) / T) =
+          -(2 * π * I * n * z / T) + ((-n : ℤ) : ℂ) * (2 * π * I) by
+        push_cast; field_simp; ring, exp_add, exp_int_mul_two_pi_mul_I, mul_one]
+    simp only [hh, hexp, hper z (hyδ ▸ hz)]
   -- On the shifted line, `|e^{-2πinz/T}| = e^{2πny/T} = e^{-2π|n|δ/T}`.
   have hbound (x : ℝ) : ‖h (x + y * I)‖ ≤ M * Real.exp (-(2 * π * |(n : ℝ)| * δ / T)) := by
     have hre : (-(2 * π * I * n * (x + y * I) / T)).re = -(2 * π * |(n : ℝ)| * δ / T) := by
