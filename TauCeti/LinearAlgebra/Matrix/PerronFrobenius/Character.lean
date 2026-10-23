@@ -20,9 +20,13 @@ its values on the basis are strictly positive. Its value at an element `x` with 
 coordinates is the spectral radius of the matrix of left multiplication by `x`.
 
 This is the character that defines the Frobenius–Perron dimension of a fusion category, whose
-Grothendieck ring is a transitive ℤ₊-ring with basis the classes of the simple objects. Taking the
-Perron root of each multiplication matrix separately would not do: such a matrix need not be
-irreducible (the matrix of the unit is the identity), so it does not determine a character.
+Grothendieck ring is a transitive ℤ₊-ring with basis the classes of the simple objects. The
+character cannot be defined from each multiplication matrix separately: such a matrix may be
+reducible (the matrix of the unit is the identity), so its nonnegative eigenvectors need not be
+proportional and do not single out a value for the character, and its spectral radius alone is
+not visibly additive or multiplicative. The character is instead constructed as below, and only
+afterwards is its value at an element with nonnegative coordinates identified with the spectral
+radius of the corresponding left-multiplication matrix.
 
 The construction follows Etingof–Gelaki–Nikshych–Ostrik. The matrix of right multiplication by
 `s` has strictly positive entries, so by the Perron–Frobenius theorem it has an eigenvector `v`
