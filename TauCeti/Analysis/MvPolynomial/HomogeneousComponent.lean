@@ -65,6 +65,10 @@ open MvPolynomial
 
 variable {σ R : Type*}
 
+/-- In finitely many variables there are finitely many exponent vectors of each degree. -/
+instance finite_degree_eq [Finite σ] (n : ℕ) : Finite {s : σ →₀ ℕ // s.degree = n} :=
+  (Finsupp.finite_of_degree_eq n).to_subtype
+
 section Topology
 
 variable [CommSemiring R] [TopologicalSpace R]
@@ -107,26 +111,31 @@ many variables is determined by its coefficients on the exponent vectors of degr
 identification is a homeomorphism for the module topology. -/
 noncomputable def homogeneousCoeffEquiv [Finite σ] (n : ℕ) :
     homogeneousSubmodule σ R n ≃L[R] ({s : σ →₀ ℕ // s.degree = n} → R) :=
-  have : Finite {s : σ →₀ ℕ // s.degree = n} := (Finsupp.finite_of_degree_eq n).to_subtype
   { (homogeneousMonomialBasis n).equivFun with
     continuous_toFun := IsModuleTopology.continuous_of_linearMap _
     continuous_invFun := IsModuleTopology.continuous_of_linearMap
       (homogeneousMonomialBasis n).equivFun.symm.toLinearMap }
 
+/-- The underlying linear equivalence of `homogeneousCoeffEquiv n` is the coordinate equivalence
+of the monomial basis. -/
+theorem homogeneousCoeffEquiv_toLinearEquiv [Finite σ] (n : ℕ) :
+    (homogeneousCoeffEquiv (σ := σ) (R := R) n).toLinearEquiv =
+      (homogeneousMonomialBasis n).equivFun :=
+  (rfl)
+
 @[simp]
 theorem homogeneousCoeffEquiv_apply [Finite σ] {n : ℕ} (p : homogeneousSubmodule σ R n)
     (s : {s : σ →₀ ℕ // s.degree = n}) :
     homogeneousCoeffEquiv n p s = (p : MvPolynomial σ R).coeff s := by
-  have : Finite {s : σ →₀ ℕ // s.degree = n} := (Finsupp.finite_of_degree_eq n).to_subtype
-  exact homogeneousMonomialBasis_repr_apply n p s
+  rw [← ContinuousLinearEquiv.coe_toLinearEquiv, homogeneousCoeffEquiv_toLinearEquiv,
+    Module.Basis.equivFun_apply, homogeneousMonomialBasis_repr_apply]
 
 @[simp]
 theorem coe_homogeneousCoeffEquiv_symm_apply [Finite σ] {n : ℕ}
     [Fintype {s : σ →₀ ℕ // s.degree = n}] (a : {s : σ →₀ ℕ // s.degree = n} → R) :
     ((homogeneousCoeffEquiv n).symm a : MvPolynomial σ R) = ∑ s, monomial s.1 (a s) := by
-  have : Finite {s : σ →₀ ℕ // s.degree = n} := (Finsupp.finite_of_degree_eq n).to_subtype
-  have h : (homogeneousCoeffEquiv n).symm a = (homogeneousMonomialBasis n).equivFun.symm a := rfl
-  simp [h, Module.Basis.equivFun_symm_apply, smul_monomial]
+  rw [← ContinuousLinearEquiv.coe_symm_toLinearEquiv, homogeneousCoeffEquiv_toLinearEquiv]
+  simp [Module.Basis.equivFun_symm_apply, smul_monomial]
 
 /-- Over a Hausdorff topological semiring, the coefficient space of homogeneous polynomials in
 finitely many variables is Hausdorff. -/
@@ -149,7 +158,6 @@ many variables: `(p, v) ↦ p(v)` is continuous in the coefficients and the poin
 theorem continuous_eval_homogeneousSubmodule [Finite σ] (n : ℕ) :
     Continuous fun q : homogeneousSubmodule σ R n × (σ → R) ↦
       eval q.2 (q.1 : MvPolynomial σ R) := by
-  have : Finite {s : σ →₀ ℕ // s.degree = n} := (Finsupp.finite_of_degree_eq n).to_subtype
   have := Fintype.ofFinite {s : σ →₀ ℕ // s.degree = n}
   simp only [eval_coe_homogeneousSubmodule_eq_sum]
   refine continuous_finsetSum _ fun s _ ↦ ?_
@@ -190,7 +198,6 @@ the inverse of the coefficient equivalence `homogeneousCoeffEquiv n`, the map
 theorem analyticAt_eval_homogeneousSubmodule_comp {n : ℕ}
     (Φ : F →L[𝕜] homogeneousSubmodule σ 𝕜 n) (z : F × (σ → 𝕜)) :
     AnalyticAt 𝕜 (fun q : F × (σ → 𝕜) ↦ eval q.2 (Φ q.1 : MvPolynomial σ 𝕜)) z := by
-  have : Finite {s : σ →₀ ℕ // s.degree = n} := (Finsupp.finite_of_degree_eq n).to_subtype
   have := Fintype.ofFinite {s : σ →₀ ℕ // s.degree = n}
   simp only [eval_coe_homogeneousSubmodule_eq_sum]
   refine Finset.analyticAt_fun_sum _ fun s _ ↦ ?_
