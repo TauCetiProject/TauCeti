@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.NovikovSeries.TopologicalRing
+public import TauCeti.RingTheory.MvPowerSeries.Substitution
 public import TauCeti.RingTheory.PowerSeries.Evaluation
 public import Mathlib.Analysis.Normed.Algebra.Exponential
 public import Mathlib.Analysis.Normed.Algebra.Logarithm
@@ -38,7 +39,7 @@ The formal identities `exp (log (1 + X)) = 1 + X` and `log (exp X) = X` are Math
 Novikov series by evaluating power series at a series `a` of the positive ideal: the nonnegative
 subring is a complete, linearly topologized `K`-algebra, so Mathlib's continuous evaluation
 `PowerSeries.aeval` applies, and it is compatible with substitution
-(`MvPowerSeries.eval₂_subst`). The coefficients in `K` carry the discrete topology for this
+(`PowerSeries.aeval_subst`). The coefficients in `K` carry the discrete topology for this
 evaluation. The functional equation `exp (a + b) = exp a * exp b` is the Cauchy product of the
 exponential series in the complete nonarchimedean ring, matched coefficientwise with Mathlib's
 `PowerSeries.exp_mul_exp_eq_exp_add`; its proof follows that of Mathlib's
@@ -85,7 +86,7 @@ private theorem hasEval_of_mem_posIdeal {a : nonnegSubring K N} (ha : a ∈ posI
     PowerSeries.HasEval a :=
   isTopologicallyNilpotent_of_mem_posIdeal' ha
 
-variable [UniformSpace K] [DiscreteUniformity K] {a b : nonnegSubring K N}
+variable [UniformSpace K] [DiscreteUniformity K] {a : nonnegSubring K N}
 
 /-- Evaluating a power series without constant term at a series of the positive ideal gives a
 series of the positive ideal. -/
@@ -99,18 +100,6 @@ private theorem aeval_mem_posIdeal (ha : a ∈ posIdeal K N) {f : K⟦X⟧}
   · rw [Algebra.smul_def]
     exact Ideal.mul_mem_left _ _ (Ideal.pow_mem_of_mem _ ha n hn)
 
-/-- Evaluation at a series of the positive ideal is compatible with substitution: evaluating `f`
-at the value `b` of `g` is evaluating `f.subst g`. -/
-private theorem aeval_eq_aeval_subst (ha : a ∈ posIdeal K N) (hb : b ∈ posIdeal K N) {g : K⟦X⟧}
-    (hg : constantCoeff g = 0)
-    (hgb : PowerSeries.aeval (R := K) (hasEval_of_mem_posIdeal ha) g = b) (f : K⟦X⟧) :
-    PowerSeries.aeval (R := K) (hasEval_of_mem_posIdeal hb) f =
-      PowerSeries.aeval (R := K) (hasEval_of_mem_posIdeal ha) (f.subst g) := by
-  subst hgb
-  simp only [coe_aeval]
-  exact (MvPowerSeries.eval₂_subst (HasSubst.of_constantCoeff_zero' hg).const
-    (hasEval (hasEval_of_mem_posIdeal ha)) f).symm
-
 end Evaluation
 
 variable [Algebra ℚ K]
@@ -119,23 +108,15 @@ section Evaluation
 
 variable [UniformSpace K] [DiscreteUniformity K] {a u : nonnegSubring K N}
 
-/-- A power series whose coefficients come from `ℚ` evaluates at a series of the positive ideal
-to the sum of the corresponding series of powers. -/
-private theorem hasSum_smul_pow_aeval (ha : a ∈ posIdeal K N) {f : K⟦X⟧} {c : ℕ → ℚ}
-    (hc : ∀ n, PowerSeries.coeff n f = algebraMap ℚ K (c n)) :
-    HasSum (fun n => c n • a ^ n) (PowerSeries.aeval (R := K) (hasEval_of_mem_posIdeal ha) f) := by
-  convert hasSum_aeval (hasEval_of_mem_posIdeal ha) f using 2 with n
-  rw [hc, algebraMap_smul]
-
 private theorem hasSum_exp_aeval (ha : a ∈ posIdeal K N) :
     HasSum (fun n : ℕ => (n ! : ℚ)⁻¹ • a ^ n)
       (PowerSeries.aeval (R := K) (hasEval_of_mem_posIdeal ha) (PowerSeries.exp K)) :=
-  hasSum_smul_pow_aeval ha fun n => by rw [coeff_exp, one_div]
+  hasSum_smul_pow_aeval (hasEval_of_mem_posIdeal ha) fun n => by rw [coeff_exp, one_div]
 
 private theorem hasSum_log_aeval (hu : u - 1 ∈ posIdeal K N) :
     HasSum (fun n : ℕ => ((-1) ^ (n + 1) / n : ℚ) • (u - 1) ^ n)
       (PowerSeries.aeval (R := K) (hasEval_of_mem_posIdeal hu) (PowerSeries.log K)) :=
-  hasSum_smul_pow_aeval hu fun n => by
+  hasSum_smul_pow_aeval (hasEval_of_mem_posIdeal hu) fun n => by
     rw [coeff_log]
     split_ifs with hn <;> simp [hn]
 
@@ -186,18 +167,25 @@ theorem log_mem_posIdeal (hu : u - 1 ∈ posIdeal K N) : NormedSpace.log u ∈ p
 ideal. -/
 theorem exp_log (hu : u - 1 ∈ posIdeal K N) : NormedSpace.exp (NormedSpace.log u) = u := by
   let : UniformSpace K := ⊥
-  rw [exp_eq_aeval (log_mem_posIdeal hu),
-    aeval_eq_aeval_subst hu (log_mem_posIdeal hu) constantCoeff_log (log_eq_aeval hu).symm,
+  rw [log_eq_aeval hu, exp_eq_aeval (aeval_mem_posIdeal hu constantCoeff_log),
+    ← PowerSeries.aeval_subst (HasSubst.of_constantCoeff_zero' constantCoeff_log)
+      (continuous_aeval (hasEval_of_mem_posIdeal hu)),
     subst_exp_log, map_add, map_one, PowerSeries.aeval_X (hasEval_of_mem_posIdeal hu),
     add_sub_cancel]
 
 /-- The logarithm of the exponential: `log (exp a) = a` when `a` lies in the positive ideal. -/
 theorem log_exp (ha : a ∈ posIdeal K N) : NormedSpace.log (NormedSpace.exp a) = a := by
   let : UniformSpace K := ⊥
-  rw [log_eq_aeval (exp_sub_one_mem_posIdeal ha),
-    aeval_eq_aeval_subst ha (exp_sub_one_mem_posIdeal ha) (g := PowerSeries.exp K - 1)
-      (by simp) (by rw [map_sub, map_one, exp_eq_aeval ha]),
-    subst_log_exp_sub_one, PowerSeries.aeval_X (hasEval_of_mem_posIdeal ha)]
+  have hg : PowerSeries.aeval (R := K) (hasEval_of_mem_posIdeal ha) (PowerSeries.exp K - 1) =
+      NormedSpace.exp a - 1 := by
+    rw [map_sub, map_one, exp_eq_aeval ha]
+  have h := PowerSeries.aeval_subst (HasSubst.of_constantCoeff_zero' (by simp))
+    (continuous_aeval (hasEval_of_mem_posIdeal ha))
+    (hg ▸ hasEval_of_mem_posIdeal (exp_sub_one_mem_posIdeal ha)) (PowerSeries.log K)
+  rw [subst_log_exp_sub_one, PowerSeries.aeval_X (hasEval_of_mem_posIdeal ha)] at h
+  rw [log_eq_aeval (exp_sub_one_mem_posIdeal ha)]
+  convert h.symm using 3
+  exact hg.symm
 
 /-- The exponential turns sums of series of the positive ideal into products. -/
 theorem exp_add (ha : a ∈ posIdeal K N) (hb : b ∈ posIdeal K N) :

@@ -12,8 +12,9 @@ public import Mathlib.RingTheory.PowerSeries.Evaluation
 
 Mathlib evaluates a power series over `R` at a topologically nilpotent point `a` of a complete,
 separated, linearly topologized `R`-algebra `S` through `PowerSeries.aeval`. This file records the
-values of that evaluation on the generators, `X ↦ a` and `C r ↦ algebraMap R S r`, and performs
-division by a linear factor over a ring `A` in which power series can be evaluated at `c`:
+values of that evaluation on the generators, `X ↦ a` and `C r ↦ algebraMap R S r`, expands it as
+the series `∑ c n • aⁿ` when the coefficients come from a scalar ring acting on `R` and `S`, and
+performs division by a linear factor over a ring `A` in which power series can be evaluated at `c`:
 
 ```text
 f = (X - C c) * divXSubC hc f + C (f(c)),
@@ -41,6 +42,8 @@ topologically nilpotent only in the zero ring.
 ## Main results
 
 * `PowerSeries.aeval_X`, `PowerSeries.aeval_C`: the values of evaluation on the generators.
+* `PowerSeries.hasSum_smul_pow_aeval`: the series expansion of the evaluation of a power series
+  whose coefficients come from a scalar ring.
 * `PowerSeries.divXSubC`: the quotient of a power series on division by `X - C c`, with its
   coefficients `PowerSeries.coeff_divXSubC` and their series expansion
   `PowerSeries.hasSum_coeff_divXSubC`.
@@ -73,6 +76,15 @@ theorem aeval_X (ha : HasEval a) : aeval ha (X : R⟦X⟧) = a := by
 @[simp]
 theorem aeval_C (ha : HasEval a) (r : R) : aeval ha (C r) = algebraMap R S r := by
   rw [← Polynomial.coe_C, aeval_coe, Polynomial.aeval_C]
+
+/-- A power series whose coefficients are the images `algebraMap A R (c n)` of scalars from a ring
+`A` acting compatibly on `R` and `S` evaluates at `a` to the sum of the series `∑ c n • aⁿ`. -/
+theorem hasSum_smul_pow_aeval {A : Type*} [CommSemiring A] [Algebra A R] [Module A S]
+    [IsScalarTower A R S] (ha : HasEval a) {f : R⟦X⟧} {c : ℕ → A}
+    (hc : ∀ n, coeff n f = algebraMap A R (c n)) :
+    HasSum (fun n ↦ c n • a ^ n) (aeval ha f) := by
+  convert hasSum_aeval ha f using 2 with n
+  rw [hc, algebraMap_smul]
 
 end Aeval
 
