@@ -63,10 +63,13 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 of the norm of covectors sends it to `1` along `S*M`. -/
 theorem isTransverseAlong_vectorBundleEulerField_cosphereBundle :
     IsTransverseAlong 𝓘(ℝ, Fin (finrank ℝ (E × (E →L[ℝ] ℝ)) - 1) → ℝ) (vectorBundleEulerField I)
-      (Subtype.val : cosphereBundle I M → CotangentBundle I M) :=
-  (isTransverseAlong_coe_scalarRegularLevel_iff _ _).2 fun z hz ↦ by
-    rw [mfderiv_norm_snd_vectorBundleEulerField (snd_ne_zero_of_mem_cosphereBundle hz)]
-    exact (show ‖z.2‖ ≠ (0 : ℝ) from hz ▸ one_ne_zero)
+      (Subtype.val : cosphereBundle I M → CotangentBundle I M) := by
+  refine isTransverseAlong_iff.2 fun z ↦ ?_
+  rw [range_mfderiv_coe_cosphereBundle, LinearMap.mem_ker, ContinuousLinearMap.coe_coe,
+    mfderiv_norm_snd_vectorBundleEulerField (snd_ne_zero_of_mem_cosphereBundle z.prop),
+    mem_cosphereBundle.1 z.prop]
+  -- The tangent spaces of `ℝ` are `ℝ` itself.
+  exact one_ne_zero (α := ℝ)
 
 /-- **The unit cosphere bundle is of restricted contact type.** For the canonical symplectic form
 `ω = -dλ` of the cotangent bundle of a Riemannian manifold, `S*M` is a hypersurface of restricted

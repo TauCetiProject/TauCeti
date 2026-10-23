@@ -174,6 +174,9 @@ theorem mfderiv_norm_snd_vectorBundleEulerField {z : CotangentBundle I M} (hz : 
   have hv : mfderiv 𝓘(ℝ) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) γ 1
       ((NormedSpace.fromTangentSpace (𝕜 := ℝ) (1 : ℝ)).symm 1) = vectorBundleEulerField I z := by
     rw [hγ.mfderiv]
+    -- `smulRight 1 v` applied to `t` is `t • v` by definition, and `NormedSpace.fromTangentSpace`
+    -- is the identity of `ℝ`, so the scalar is `1`. The lemma `smulRight_apply` cannot be used by
+    -- `rw` or `simp` here, since `v` lives in the tangent space at `z` rather than at `γ 1`.
     exact one_smul ℝ _
   have hd : mfderiv (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) 𝓘(ℝ) f (γ 1) (mfderiv 𝓘(ℝ) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ))
       γ 1 ((NormedSpace.fromTangentSpace (𝕜 := ℝ) (1 : ℝ)).symm 1)) = ‖z.2‖ := by
