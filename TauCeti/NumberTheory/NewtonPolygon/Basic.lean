@@ -7,10 +7,12 @@ module
 
 public import Mathlib.Algebra.Polynomial.Degree.TrailingDegree
 public import Mathlib.Algebra.Polynomial.Eval.Coeff
+public import Mathlib.Algebra.Polynomial.Reverse
 public import Mathlib.Order.Interval.Set.Nat
 public import Mathlib.RingTheory.PowerSeries.Order
 public import Mathlib.RingTheory.Valuation.Basic
 public import TauCeti.Analysis.Convex.Sequence.Envelope
+public import TauCeti.Analysis.Convex.Sequence.Reflect
 public import TauCeti.Analysis.Convex.Sequence.Supporting
 
 /-!
@@ -65,6 +67,9 @@ not have admissible heights; its `newtonPolygon` is then the all-infinite fallba
   coefficients compatible with the valuations preserves it. The corresponding polynomial
   statements are proved as well, with `Polynomial.newtonPolygon_comp_C_mul_X` for the
   substitution `X ↦ c X`.
+* `Polynomial.newtonPolygon_reflect` and `Polynomial.newtonPolygon_reverse`: reversing a
+  polynomial of degree `d`, or more generally reflecting its coefficients in any `N ≥ d`,
+  reflects the Newton polygon by `n ↦ N - n`.
 
 ## References
 
@@ -274,6 +279,28 @@ theorem newtonPolygon_X_pow_mul (k : ℕ) :
       fun n => if k ≤ n then f.newtonPolygon v (n - k) else ⊤ := by
   simp only [newtonPolygon_def, coeff_X_pow_mul', apply_ite v, AddValuation.map_zero]
   exact lowerConvexEnvelope_shift (fun n => v (f.coeff n)) k
+
+/-- Reflecting the coefficients in an index `N` at least the degree reflects the Newton polygon
+in `N`: its point at `n ≤ N` moves to `N - n`. -/
+theorem newtonPolygon_reflect {N : ℕ} (hN : f.natDegree ≤ N) :
+    (reflect N f).newtonPolygon v =
+      fun n => if n ≤ N then f.newtonPolygon v (N - n) else ⊤ := by
+  have hcoeff : (fun n => v ((reflect N f).coeff n)) =
+      fun n => if n ≤ N then v (f.coeff (N - n)) else ⊤ := by
+    funext n
+    split_ifs with hn
+    · rw [coeff_reflect, revAt_le hn]
+    · rw [coeff_reflect, revAt_eq_self_of_lt (not_le.mp hn),
+        coeff_eq_zero_of_natDegree_lt (hN.trans_lt (not_le.mp hn)), AddValuation.map_zero]
+  rw [newtonPolygon_def, hcoeff, newtonPolygon_def]
+  exact lowerConvexEnvelope_reflect (a := fun n => v (f.coeff n)) fun n hn => by
+    rw [coeff_eq_zero_of_natDegree_lt (hN.trans_lt hn), AddValuation.map_zero]
+
+/-- Reversing a polynomial of degree `d` reflects its Newton polygon by `n ↦ d - n`. -/
+theorem newtonPolygon_reverse :
+    f.reverse.newtonPolygon v =
+      fun n => if n ≤ f.natDegree then f.newtonPolygon v (f.natDegree - n) else ⊤ :=
+  f.newtonPolygon_reflect v le_rfl
 
 /-- Substituting `c X` for `X` shears the Newton polygon by the valuation of `c`, provided
 that valuation is finite. -/
