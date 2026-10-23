@@ -136,6 +136,26 @@ theorem f_comp_d_negSucc_zero {r' : E.CompleteResolution} (φ : r.complex ⟶ r'
     φ.f (Int.negSucc 0) ≫ r'.d (Int.negSucc 0) = r.d (Int.negSucc 0) ≫ φ.f 0 :=
   r.f_comp_d φ _
 
+/-- The `n`-th conflation as an injective presentation of the cycles `Zⁿ`. -/
+abbrev injectivePresentation (n : ℤ) : E.InjectivePresentation (r.Z n) where
+  I := r.X n
+  K := r.Z (n + 1)
+  i := r.ι n
+  p := r.π n
+  zero := r.ι_π n
+  conflation := r.conflation n
+  isInjective := r.isInjective_X n
+
+/-- The `n`-th conflation as a projective presentation of the cycles `Zⁿ⁺¹`. -/
+abbrev projectivePresentation (n : ℤ) : E.ProjectivePresentation (r.Z (n + 1)) where
+  K := r.Z n
+  P := r.X n
+  i := r.ι n
+  p := r.π n
+  zero := r.ι_π n
+  conflation := r.conflation n
+  isProjective := r.isProjective_X n
+
 /-- The morphism into the cycles `Zⁿ` induced by a morphism into `Xⁿ` killed by `Xⁿ ↠ Zⁿ⁺¹`. -/
 noncomputable def liftZ {A : C} (n : ℤ) (k : A ⟶ r.X n) (hk : k ≫ r.π n = 0) : A ⟶ r.Z n :=
   (E.isKernelCokernelPair _ (r.conflation n)).lift k hk

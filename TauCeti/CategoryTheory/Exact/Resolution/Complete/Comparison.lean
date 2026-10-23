@@ -53,13 +53,6 @@ injectivity of the terms of the two resolutions are all it uses.
   complete resolutions and their uniqueness up to homotopy.
 * Theo Bühler, *Exact categories*, Expositiones Mathematicae **28** (2010), 1--69, Section 12, for
   the comparison theorem for projective resolutions in an exact category.
-* `Mathlib/CategoryTheory/Abelian/Projective/Resolution.lean`, whose `lift`, `liftHomotopyZero`,
-  `liftHomotopy`, `liftIdHomotopy`, `liftCompHomotopy` and `homotopyEquiv` API for projective
-  resolutions in abelian categories is followed here, including the derivation of
-  `liftHomotopy` from `liftHomotopyZero` through `Homotopy.equivSubZero`.
-* `TauCeti/CategoryTheory/Exact/Resolution/Comparison.lean`, the comparison theorem for finite
-  projective resolutions in an exact category (`TauCeti.ExactStructure.FiniteResolution.lift`,
-  `liftHomotopy`, `homotopyEquiv`), of which this is the bi-infinite analogue.
 -/
 
 public section
@@ -82,60 +75,27 @@ section Lift
 
 /-! ### The lift
 
-The lift is assembled from two steps, each stated for an arbitrary degree `n`. Upwards, a map
-`g : Zⁿ ⟶ Z'ⁿ` extends across `Zⁿ ↪ Xⁿ` into the injective `X'ⁿ`, and the extension induces a map
-`Zⁿ⁺¹ ⟶ Z'ⁿ⁺¹` on cokernels. Downwards, a map `g : Zⁿ⁺¹ ⟶ Z'ⁿ⁺¹` lifts along `X'ⁿ ↠ Z'ⁿ⁺¹` out
-of the projective `Xⁿ`, and the lift induces a map `Zⁿ ⟶ Z'ⁿ` on kernels. -/
-
-/-- The upward step on terms: an extension of `g ≫ ι'ₙ` across the inflation `Zⁿ ↪ Xⁿ`. -/
-private noncomputable def liftUpX (n : ℤ) (g : r.Z n ⟶ r'.Z n) : r.X n ⟶ r'.X n :=
-  (r'.isInjective_X n).factorThru (r.isInflation_ι n) (g ≫ r'.ι n)
-
-@[reassoc]
-private theorem ι_liftUpX (n : ℤ) (g : r.Z n ⟶ r'.Z n) :
-    r.ι n ≫ liftUpX n g = g ≫ r'.ι n := by
-  simp [liftUpX]
-
-/-- The upward step on cycles: the map `Zⁿ⁺¹ ⟶ Z'ⁿ⁺¹` induced on cokernels by `liftUpX n g`. -/
-private noncomputable def liftUp (n : ℤ) (g : r.Z n ⟶ r'.Z n) : r.Z (n + 1) ⟶ r'.Z (n + 1) :=
-  r.descZ n (liftUpX n g ≫ r'.π n) (by simp [ι_liftUpX_assoc])
-
-@[reassoc]
-private theorem π_liftUp (n : ℤ) (g : r.Z n ⟶ r'.Z n) :
-    r.π n ≫ liftUp n g = liftUpX n g ≫ r'.π n := by
-  simp [liftUp]
-
-/-- The downward step on terms: a lift of `πₙ ≫ g` along the deflation `X'ⁿ ↠ Z'ⁿ⁺¹`. -/
-private noncomputable def liftDownX (n : ℤ) (g : r.Z (n + 1) ⟶ r'.Z (n + 1)) : r.X n ⟶ r'.X n :=
-  (r.isProjective_X n).factorThru (r'.isDeflation_π n) (r.π n ≫ g)
-
-@[reassoc]
-private theorem liftDownX_π (n : ℤ) (g : r.Z (n + 1) ⟶ r'.Z (n + 1)) :
-    liftDownX n g ≫ r'.π n = r.π n ≫ g := by
-  simp [liftDownX]
-
-/-- The downward step on cycles: the map `Zⁿ ⟶ Z'ⁿ` induced on kernels by `liftDownX n g`. -/
-private noncomputable def liftDown (n : ℤ) (g : r.Z (n + 1) ⟶ r'.Z (n + 1)) : r.Z n ⟶ r'.Z n :=
-  r'.liftZ n (r.ι n ≫ liftDownX n g) (by simp [liftDownX_π])
-
-@[reassoc]
-private theorem liftDown_ι (n : ℤ) (g : r.Z (n + 1) ⟶ r'.Z (n + 1)) :
-    liftDown n g ≫ r'.ι n = r.ι n ≫ liftDownX n g := by
-  simp [liftDown]
+The lift is assembled from the comparison maps of presentations. Each conflation
+`Zⁿ ↪ Xⁿ ↠ Zⁿ⁺¹` is an injective presentation of `Zⁿ` and a projective presentation of `Zⁿ⁺¹`.
+Upwards, a map `Zⁿ ⟶ Z'ⁿ` extends to the injective middle terms and induces a map `Zⁿ⁺¹ ⟶ Z'ⁿ⁺¹`
+on cokernels (`InjectivePresentation.middleMap` and `cokernelMap`). Downwards, a map
+`Zⁿ⁺¹ ⟶ Z'ⁿ⁺¹` lifts to the projective middle terms and induces a map `Zⁿ ⟶ Z'ⁿ` on kernels
+(`ProjectivePresentation.middleMap` and `kernelMap`). -/
 
 variable (r r')
 
 /-- The components on cycles of the lift in nonnegative degrees, by upward steps from `f`. -/
 private noncomputable def liftPos (f : r.Z 0 ⟶ r'.Z 0) : ∀ k : ℕ, r.Z k ⟶ r'.Z k
   | 0 => f
-  | k + 1 => liftUp k (liftPos f k)
+  | k + 1 => (r.injectivePresentation k).cokernelMap (r'.injectivePresentation k) (liftPos f k)
 
 /-- The components on cycles of the lift in nonpositive degrees, by downward steps from `f`;
 `liftNeg f k` is the component in degree `Int.negSucc k + 1`. -/
 private noncomputable def liftNeg (f : r.Z 0 ⟶ r'.Z 0) :
     ∀ k : ℕ, r.Z (Int.negSucc k + 1) ⟶ r'.Z (Int.negSucc k + 1)
   | 0 => f
-  | k + 1 => liftDown (Int.negSucc k) (liftNeg f k)
+  | k + 1 => (r.projectivePresentation (Int.negSucc k)).kernelMap
+      (r'.projectivePresentation (Int.negSucc k)) (liftNeg f k)
 
 /-- The components on cycles of the lift. -/
 private noncomputable def liftZ' (f : r.Z 0 ⟶ r'.Z 0) : ∀ n : ℤ, r.Z n ⟶ r'.Z n
@@ -144,8 +104,10 @@ private noncomputable def liftZ' (f : r.Z 0 ⟶ r'.Z 0) : ∀ n : ℤ, r.Z n ⟶
 
 /-- The components on terms of the lift. -/
 private noncomputable def liftX (f : r.Z 0 ⟶ r'.Z 0) : ∀ n : ℤ, r.X n ⟶ r'.X n
-  | Int.ofNat k => liftUpX (Int.ofNat k) (liftPos r r' f k)
-  | Int.negSucc k => liftDownX (Int.negSucc k) (liftNeg r r' f k)
+  | Int.ofNat k => (r.injectivePresentation (Int.ofNat k)).middleMap
+      (r'.injectivePresentation (Int.ofNat k)) (liftPos r r' f k)
+  | Int.negSucc k => (r.projectivePresentation (Int.negSucc k)).middleMap
+      (r'.projectivePresentation (Int.negSucc k)) (liftNeg r r' f k)
 
 /-! The equations of these recursions at the constructors of `ℤ`, and at their successors. The
 index `Int.negSucc (k + 1) + 1` reduces to `Int.negSucc k`, and `Int.ofNat k + 1` to
@@ -159,36 +121,48 @@ private theorem liftZ'_negSucc (f : r.Z 0 ⟶ r'.Z 0) (k : ℕ) :
     liftZ' r r' f (Int.negSucc k) = liftNeg r r' f (k + 1) := rfl
 
 private theorem liftZ'_ofNat_add_one (f : r.Z 0 ⟶ r'.Z 0) (k : ℕ) :
-    liftZ' r r' f (Int.ofNat k + 1) = liftUp (Int.ofNat k) (liftPos r r' f k) := rfl
+    liftZ' r r' f (Int.ofNat k + 1) = (r.injectivePresentation (Int.ofNat k)).cokernelMap
+      (r'.injectivePresentation (Int.ofNat k)) (liftPos r r' f k) := rfl
 
 private theorem liftZ'_negSucc_add_one (f : r.Z 0 ⟶ r'.Z 0) (k : ℕ) :
     liftZ' r r' f (Int.negSucc k + 1) = liftNeg r r' f k := by
   cases k <;> rfl
 
 private theorem liftNeg_succ (f : r.Z 0 ⟶ r'.Z 0) (k : ℕ) :
-    liftNeg r r' f (k + 1) = liftDown (Int.negSucc k) (liftNeg r r' f k) := rfl
+    liftNeg r r' f (k + 1) = (r.projectivePresentation (Int.negSucc k)).kernelMap
+      (r'.projectivePresentation (Int.negSucc k)) (liftNeg r r' f k) := rfl
 
 private theorem liftX_ofNat (f : r.Z 0 ⟶ r'.Z 0) (k : ℕ) :
-    liftX r r' f (Int.ofNat k) = liftUpX (Int.ofNat k) (liftPos r r' f k) := rfl
+    liftX r r' f (Int.ofNat k) = (r.injectivePresentation (Int.ofNat k)).middleMap
+      (r'.injectivePresentation (Int.ofNat k)) (liftPos r r' f k) := rfl
 
 private theorem liftX_negSucc (f : r.Z 0 ⟶ r'.Z 0) (k : ℕ) :
-    liftX r r' f (Int.negSucc k) = liftDownX (Int.negSucc k) (liftNeg r r' f k) := rfl
+    liftX r r' f (Int.negSucc k) = (r.projectivePresentation (Int.negSucc k)).middleMap
+      (r'.projectivePresentation (Int.negSucc k)) (liftNeg r r' f k) := rfl
 
 /-- The lift on terms extends the lift on cycles. -/
 @[reassoc]
 private theorem ι_liftX (f : r.Z 0 ⟶ r'.Z 0) (n : ℤ) :
     r.ι n ≫ liftX r r' f n = liftZ' r r' f n ≫ r'.ι n := by
   cases n with
-  | ofNat k => rw [liftX_ofNat, liftZ'_ofNat, ι_liftUpX]
-  | negSucc k => rw [liftX_negSucc, liftZ'_negSucc, liftNeg_succ, liftDown_ι]
+  | ofNat k =>
+      rw [liftX_ofNat, liftZ'_ofNat]
+      exact (r.injectivePresentation _).i_comp_middleMap _ _
+  | negSucc k =>
+      rw [liftX_negSucc, liftZ'_negSucc, liftNeg_succ]
+      exact ((r.projectivePresentation _).kernelMap_comp_i _ _).symm
 
 /-- The lift on terms induces the lift on cycles in the following degree. -/
 @[reassoc]
 private theorem liftX_π (f : r.Z 0 ⟶ r'.Z 0) (n : ℤ) :
     liftX r r' f n ≫ r'.π n = r.π n ≫ liftZ' r r' f (n + 1) := by
   cases n with
-  | ofNat k => rw [liftX_ofNat, liftZ'_ofNat_add_one, π_liftUp]
-  | negSucc k => rw [liftX_negSucc, liftZ'_negSucc_add_one, liftDownX_π]
+  | ofNat k =>
+      rw [liftX_ofNat, liftZ'_ofNat_add_one]
+      exact ((r.injectivePresentation _).p_comp_cokernelMap _ _).symm
+  | negSucc k =>
+      rw [liftX_negSucc, liftZ'_negSucc_add_one]
+      exact (r.projectivePresentation _).middleMap_comp_p _ _
 
 /-- **The comparison map.** The map of complexes lifting `f : r.Z 0 ⟶ r'.Z 0` between the
 complexes of two complete resolutions. -/
