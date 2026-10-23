@@ -91,6 +91,8 @@ private theorem IsMetricCompatible.covariantDerivative_inner_smul_sub_inner_smul
         ⟪cov A x (X x), B x⟫_ℝ + ⟪A x, cov B x (X x)⟫_ℝ :=
     hcov.mvfderiv_inner_eq X (hA.mdifferentiableAt (by simp)) (hB.mdifferentiableAt (by simp))
   have hcd := cov.isCovariantDerivativeOnUniv
+  -- The `sub` and `leibniz` rules are stated for `Pi` subtraction and scalar multiplication of
+  -- sections, so present the pointwise lambda as `f₁ • Y - f₂ • Z` (equal by definition).
   change cov (f₁ • Y - f₂ • Z) x (X x) = _
   rw [hcd.sub ((hf₁.smul_section hY).mdifferentiableAt (by simp))
       ((hf₂.smul_section hZ).mdifferentiableAt (by simp)),
