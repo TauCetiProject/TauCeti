@@ -151,15 +151,6 @@ theorem temperedVacuumAdjoint_apply_three :
 
 /-! ### Agreement with the vacuum operator on Schwartz fields -/
 
-/-- The `i`-th component of a real Schwartz field, as a complex Schwartz function. -/
-private abbrev component (i : Fin 4) : EuclideanSpace ℝ (Fin 4) →L[ℝ] ℂ :=
-  ofRealCLM ∘L EuclideanSpace.proj i
-
-private theorem lineDerivOp_coe_postcompCLM (x : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4))) (i : Fin 4)
-    (v : ℂ) :
-    ∂_{v} (x.postcompCLM (component i) : 𝓢'(ℂ, ℂ)) = ((∂_{v} x).postcompCLM (component i)) := by
-  rw [lineDerivOp_toTemperedDistributionCLM_eq, TauCeti.lineDerivOp_postcompCLM]
-
 /-- `temperedVacuumOperator` extends `vacuumOperator`: on the components of a real Schwartz
 field `x`, viewed as complex tempered distributions, it gives the components of
 `vacuumOperator x`. -/
@@ -172,7 +163,7 @@ theorem temperedVacuumOperator_toTemperedDistribution (x : 𝓢(ℂ, EuclideanSp
   · simp only [Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk, Fin.isValue,
       temperedVacuumOperator_apply_zero, temperedVacuumOperator_apply_one,
       temperedVacuumOperator_apply_two, temperedVacuumOperator_apply_three,
-      lineDerivOp_coe_postcompCLM]
+      lineDerivOp_toTemperedDistributionCLM_postcompCLM]
     simp only [← ContinuousLinearMap.map_smul_of_tower, ← map_add, ← map_sub]
     congr 1
     ext z
@@ -190,7 +181,7 @@ theorem temperedVacuumAdjoint_toTemperedDistribution (y : 𝓢(ℂ, EuclideanSpa
   · simp only [Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk, Fin.isValue,
       temperedVacuumAdjoint_apply_zero, temperedVacuumAdjoint_apply_one,
       temperedVacuumAdjoint_apply_two, temperedVacuumAdjoint_apply_three,
-      lineDerivOp_coe_postcompCLM]
+      lineDerivOp_toTemperedDistributionCLM_postcompCLM]
     simp only [← ContinuousLinearMap.map_smul_of_tower, ← map_neg, ← map_add, ← map_sub]
     congr 1
     ext z
@@ -343,17 +334,17 @@ theorem memSobolev_temperedVacuumAdjoint (hy : ∀ i, MemSobolev s 2 (y i)) (i :
 `H^{s+1}`. -/
 theorem memSobolev_temperedVacuumOperatorEquiv_symm (hy : ∀ i, MemSobolev s 2 (y i))
     (i : Fin 4) : MemSobolev (s + 1) 2 (temperedVacuumOperatorEquiv.symm y i) := by
-  have h := memSobolev_temperedVacuumAdjoint
+  rw [temperedVacuumOperatorEquiv_symm_apply, show s + 1 = s + 2 - 1 by ring]
+  exact memSobolev_temperedVacuumAdjoint
     (fun j ↦ (hy j).laplacianResolvent (c := 1 / 4) (by norm_num)) i
-  rwa [show s + 2 - 1 = s + 1 by ring] at h
 
 /-- The inverse of the adjoint of the vacuum operator gains one derivative: `(L₀*)⁻¹` maps `H^s`
 to `H^{s+1}`. -/
 theorem memSobolev_temperedVacuumAdjointEquiv_symm (hy : ∀ i, MemSobolev s 2 (y i))
     (i : Fin 4) : MemSobolev (s + 1) 2 (temperedVacuumAdjointEquiv.symm y i) := by
-  have h := memSobolev_temperedVacuumOperator
+  rw [temperedVacuumAdjointEquiv_symm_apply, show s + 1 = s + 2 - 1 by ring]
+  exact memSobolev_temperedVacuumOperator
     (fun j ↦ (hy j).laplacianResolvent (c := 1 / 4) (by norm_num)) i
-  rwa [show s + 2 - 1 = s + 1 by ring] at h
 
 /-- **The vacuum operator is an isomorphism `H^s ≃ H^{s-1}`**: a tempered field `x` lies in `H^s`
 if and only if `L₀ x` lies in `H^{s-1}`. Together with `temperedVacuumOperatorEquiv`, this says

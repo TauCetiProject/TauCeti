@@ -29,7 +29,8 @@ constant-coefficient first-order operator `L` satisfying a Weitzenböck identity
 * `TemperedDistribution.neg_laplacian_add_smul_eq_fourierMultiplierCLM`: `-Δ + c` is the Fourier
   multiplier with symbol `(2π)² ‖ξ‖² + c`.
 * `TemperedDistribution.laplacianResolvent c`: the Fourier multiplier with symbol
-  `((2π)² ‖ξ‖² + c)⁻¹`, characterized for `c > 0` as the two-sided inverse of `-Δ + c` by
+  `((2π)² ‖ξ‖² + c)⁻¹` (`TemperedDistribution.laplacianResolvent_eq_fourierMultiplierCLM`),
+  characterized for `c > 0` as the two-sided inverse of `-Δ + c` by
   `TemperedDistribution.laplacianResolvent_neg_laplacian_add_smul` and
   `TemperedDistribution.neg_laplacian_laplacianResolvent_add_smul`.
 * `TemperedDistribution.laplacianResolvent_toTemperedDistributionCLM_eq`: on Schwartz functions it
@@ -101,11 +102,18 @@ for `c ≤ 0` the value is not meaningful. -/
 def laplacianResolvent (c : ℝ) : 𝓢'(E, F) →L[ℂ] 𝓢'(E, F) :=
   fourierMultiplierCLM F (fun ξ : E ↦ ((((2 * π) ^ 2 * ‖ξ‖ ^ 2 + c)⁻¹ : ℝ) : ℂ))
 
+variable (F) in
+/-- The resolvent of the Laplacian is the Fourier multiplier with symbol `((2π)² ‖ξ‖² + c)⁻¹`. -/
+theorem laplacianResolvent_eq_fourierMultiplierCLM (c : ℝ) :
+    laplacianResolvent F c =
+      fourierMultiplierCLM F (fun ξ : E ↦ ((((2 * π) ^ 2 * ‖ξ‖ ^ 2 + c)⁻¹ : ℝ) : ℂ)) :=
+  (rfl)
+
 /-- The resolvent of the Laplacian is a left inverse of `-Δ + c`, for `c > 0`. -/
 @[simp]
 theorem laplacianResolvent_neg_laplacian_add_smul {c : ℝ} (hc : 0 < c) (f : 𝓢'(E, F)) :
     laplacianResolvent F c (-Δ f + c • f) = f := by
-  rw [neg_laplacian_add_smul_eq_fourierMultiplierCLM, laplacianResolvent,
+  rw [neg_laplacian_add_smul_eq_fourierMultiplierCLM, laplacianResolvent_eq_fourierMultiplierCLM,
     fourierMultiplierCLM_fourierMultiplierCLM_apply (by fun_prop)
       (hasTemperateGrowth_resolventSymbol hc), resolventSymbol_mul hc]
   simp
@@ -114,7 +122,7 @@ theorem laplacianResolvent_neg_laplacian_add_smul {c : ℝ} (hc : 0 < c) (f : �
 @[simp]
 theorem neg_laplacian_laplacianResolvent_add_smul {c : ℝ} (hc : 0 < c) (f : 𝓢'(E, F)) :
     -Δ (laplacianResolvent F c f) + c • laplacianResolvent F c f = f := by
-  rw [neg_laplacian_add_smul_eq_fourierMultiplierCLM, laplacianResolvent,
+  rw [neg_laplacian_add_smul_eq_fourierMultiplierCLM, laplacianResolvent_eq_fourierMultiplierCLM,
     fourierMultiplierCLM_fourierMultiplierCLM_apply (hasTemperateGrowth_resolventSymbol hc)
       (by fun_prop), mul_comm, resolventSymbol_mul hc]
   simp
@@ -161,7 +169,7 @@ theorem MemSobolev.laplacianResolvent {c s : ℝ} (hc : 0 < c) {f : 𝓢'(E, F)}
   have heq : TemperedDistribution.laplacianResolvent F c f =
       besselPotential E F (-2) (fourierMultiplierCLM F m f) := by
     rw [besselPotential, fourierMultiplierCLM_fourierMultiplierCLM_apply hm (by fun_prop),
-      TemperedDistribution.laplacianResolvent]
+      laplacianResolvent_eq_fourierMultiplierCLM]
     congr 2
     ext ξ
     have h₁ : (1 + ‖ξ‖ ^ 2 : ℝ) ≠ 0 := by positivity
