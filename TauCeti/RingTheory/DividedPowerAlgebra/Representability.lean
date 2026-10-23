@@ -297,14 +297,15 @@ private theorem polyMap_monomial (e : ℕ × M →₀ ℕ) :
 
 private theorem polyMap_monomial_mul_X (e : ℕ × M →₀ ℕ) (q : ℕ × M) :
     polyMap f (monomial e 1 * X q) = famMultiset f (q ::ₘ Finsupp.toMultiset e) := by
-  rw [X, monomial_mul_monomial, one_mul, polyMap_monomial, map_add, Finsupp.toMultiset_single,
-    one_nsmul, Multiset.add_comm, Multiset.singleton_add]
+  rw [← pow_one (X q), ← monomial_add_single, polyMap_monomial, map_add,
+    Finsupp.toMultiset_single, one_nsmul, Multiset.add_comm, Multiset.singleton_add]
 
 private theorem polyMap_monomial_mul_X_mul_X (e : ℕ × M →₀ ℕ) (q q' : ℕ × M) :
     polyMap f (monomial e 1 * (X q * X q')) =
       famMultiset f (q ::ₘ q' ::ₘ Finsupp.toMultiset e) := by
-  rw [mul_comm (X q), ← mul_assoc, X, monomial_mul_monomial, one_mul, polyMap_monomial_mul_X,
-    map_add, Finsupp.toMultiset_single, one_nsmul, Multiset.add_comm, Multiset.singleton_add]
+  rw [mul_comm (X q), ← mul_assoc, ← pow_one (X q'), ← monomial_add_single,
+    polyMap_monomial_mul_X, map_add, Finsupp.toMultiset_single, one_nsmul, Multiset.add_comm,
+    Multiset.singleton_add]
 
 /-- The coefficient map respects each defining relation of `Γ_R(M)`, after multiplication by
 any monomial. -/
