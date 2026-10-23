@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.Trace.Free
+public import TauCeti.LinearAlgebra.CliffordAlgebra.BivectorAction
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Chirality
 
 /-!
@@ -43,9 +44,6 @@ spinor.
 
 ## Main results
 
-* `TauCeti.SeibergWitten.adjoint_map_bivectorExterior`: two-forms act skew-adjointly,
-  `c₂(α)* = -c₂(α)`, and `TauCeti.SeibergWitten.trace_map_bivectorExterior`: trace freely on
-  every finite-dimensional Clifford module.
 * `TauCeti.SeibergWitten.isSelfAdjoint_cliffordRestriction`,
   `TauCeti.SeibergWitten.trace_cliffordRestriction`,
   `TauCeti.SeibergWitten.cliffordRestriction_mem_traceFreeSelfAdjoint`: `C(iα)` is self-adjoint and
@@ -75,49 +73,6 @@ namespace TauCeti.SeibergWitten
 
 open CliffordAlgebra Module
 open scoped RealInnerProductSpace InnerProductSpace
-
-/-! ### Two-forms on a Hermitian Clifford module -/
-
-section Bivector
-
-variable {M : Type*} [AddCommGroup M] [Module ℝ M] {Q : QuadraticForm ℝ M}
-  {W : Type*} [NormedAddCommGroup W] [InnerProductSpace ℂ W]
-  (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W)
-
-/-- Two-forms act trace-freely on every Clifford module: `tr c₂(α) = 0`. -/
-theorem trace_map_bivectorExterior (x : ⋀[ℝ]^2 M) :
-    LinearMap.trace ℂ W (ρ (bivectorExterior Q x)) = 0 := by
-  refine bivectorExterior_range_le_of_bivector_mem Q
-    (LinearMap.ker ((LinearMap.trace ℂ W).restrictScalars ℝ ∘ₗ ρ.toLinearMap)) (fun a b ↦ ?_)
-    ⟨x, rfl⟩
-  simp [bivector_def, LinearMap.trace_mul_comm ℂ (ρ (ι Q a))]
-
-variable [FiniteDimensional ℂ W] {ρ}
-
-/-- If the generators act skew-adjointly, `c(v)* = -c(v)`, then so do two-forms:
-`c₂(α)* = -c₂(α)`. -/
-theorem adjoint_map_bivectorExterior (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
-    (x : ⋀[ℝ]^2 M) :
-    LinearMap.adjoint (ρ (bivectorExterior Q x)) = -ρ (bivectorExterior Q x) := by
-  -- The elements acting skew-adjointly form a real subspace containing every bivector.
-  let P : Submodule ℝ (CliffordAlgebra Q) :=
-    { carrier := {a | LinearMap.adjoint (ρ a) = -ρ a}
-      add_mem' := fun {a b} ha hb ↦ by
-        simp only [Set.mem_ofPred_eq, map_add] at ha hb ⊢
-        rw [ha, hb, neg_add]
-      zero_mem' := by simp
-      smul_mem' := fun r a ha ↦ by
-        simp only [Set.mem_ofPred_eq, map_smul] at ha ⊢
-        rw [← Complex.coe_smul, map_smulₛₗ, ha, Complex.conj_ofReal, smul_neg, Complex.coe_smul] }
-  refine bivectorExterior_range_le_of_bivector_mem Q P (fun a b ↦ ?_) ⟨x, rfl⟩
-  simp only [P, Submodule.mem_mk, AddSubmonoid.mem_mk, AddSubsemigroup.mem_mk, Set.mem_ofPred_eq]
-  rw [bivector_def, map_smul, map_sub, map_mul, map_mul, ← Complex.coe_smul, map_smulₛₗ, map_sub,
-    Module.End.mul_eq_comp, Module.End.mul_eq_comp, LinearMap.adjoint_comp,
-    LinearMap.adjoint_comp, hρ, hρ]
-  simp only [LinearMap.neg_comp, LinearMap.comp_neg, neg_neg, Complex.conj_ofReal]
-  module
-
-end Bivector
 
 /-! ### The positive half-spinors and the Clifford map -/
 
@@ -248,8 +203,10 @@ private theorem trace_restrictBivector (hkl : 2 + 2 = finrank ℝ V) (x : ⋀[�
   simp [a, trace_map_bivectorExterior]
 
 /-- **`C(iα)` is trace free** on `W⁺`. -/
-theorem trace_cliffordRestriction (hkl : 2 + 2 = finrank ℝ V) (x : ⋀[ℝ]^2 V) :
+@[simp]
+theorem trace_cliffordRestriction (x : ⋀[ℝ]^2 V) :
     LinearMap.trace ℂ (positiveHalfSpinors o ρ) (cliffordRestriction o ρ hQ x) = 0 := by
+  have hkl : 2 + 2 = finrank ℝ V := (Fact.out : finrank ℝ V = 4).symm
   rw [coe_cliffordRestriction, map_smul, trace_restrictBivector o ρ hQ hkl, smul_zero]
 
 /-- The trace pairing of the Clifford map: `tr (C(iα) C(iβ)) = (⟪α, β⟫ + ⟪⋆α, β⟫) dim W⁺`. -/
@@ -321,11 +278,10 @@ theorem cliffordRestriction_eq_zero_iff_of_hodgeStar_eq_self [Nontrivial (positi
 variable {ρ} in
 /-- `C(iα)` is a trace-free self-adjoint endomorphism of `W⁺`. -/
 theorem cliffordRestriction_mem_traceFreeSelfAdjoint
-    (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v)) (hkl : 2 + 2 = finrank ℝ V)
-    (x : ⋀[ℝ]^2 V) :
+    (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v)) (x : ⋀[ℝ]^2 V) :
     cliffordRestriction o ρ hQ x ∈ traceFreeSelfAdjoint (positiveHalfSpinors o ρ) :=
   mem_traceFreeSelfAdjoint.2
-    ⟨isSelfAdjoint_cliffordRestriction o hQ hρ x, trace_cliffordRestriction o ρ hQ hkl x⟩
+    ⟨isSelfAdjoint_cliffordRestriction o hQ hρ x, trace_cliffordRestriction o ρ hQ x⟩
 
 variable {ρ} in
 /-- The Clifford map on self-dual two-forms, with values in the trace-free self-adjoint
@@ -335,7 +291,7 @@ private def cliffordSelfDual (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ
     Module.End.eigenspace (o.hodgeStar hkl : Module.End ℝ (⋀[ℝ]^2 V)) 1 →ₗ[ℝ]
       traceFreeSelfAdjoint (positiveHalfSpinors o ρ) :=
   ((cliffordRestriction o ρ hQ).domRestrict _).codRestrict _ fun x ↦
-    cliffordRestriction_mem_traceFreeSelfAdjoint o hQ hρ hkl x
+    cliffordRestriction_mem_traceFreeSelfAdjoint o hQ hρ x
 
 private theorem bijective_cliffordSelfDual (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
     (hkl : 2 + 2 = finrank ℝ V) (h₂ : finrank ℂ (positiveHalfSpinors o ρ) = 2) :
