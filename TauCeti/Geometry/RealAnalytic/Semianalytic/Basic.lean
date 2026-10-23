@@ -44,8 +44,9 @@ analytic on `U`, in the same way as `TauCeti.IsSemialgebraic` is defined from po
 * Finite Boolean operations: `TauCeti.isSetAlgebra_setOf_semianalyticAt` and
   `TauCeti.isSetAlgebra_setOf_isSemianalytic`, with the named consequences, and
   `LocallyFinite.isSemianalytic_iUnion` for locally finite unions.
-* `TauCeti.SemianalyticAt.preimage` and `TauCeti.IsSemianalytic.preimage`: preimages under analytic
-  maps; `TauCeti.isSemianalytic_image_equiv_iff`: invariance under analytic isomorphisms.
+* `TauCeti.SemianalyticAt.preimage_of_analyticOnNhd`, `TauCeti.SemianalyticAt.preimage` and
+  `TauCeti.IsSemianalytic.preimage`: preimages under analytic maps;
+  `TauCeti.isSemianalytic_image_equiv_iff`: invariance under analytic isomorphisms.
 * `TauCeti.IsSemialgebraic.isSemianalytic`: semialgebraic subsets of `σ → ℝ` are semianalytic.
 
 ## References
@@ -143,6 +144,38 @@ theorem inter (ht : IsAnalyticBooleanCombination U t) (ht' : IsAnalyticBooleanCo
     IsAnalyticBooleanCombination U (t ∩ t') :=
   (isSetAlgebra_setOf_isAnalyticBooleanCombination U).inter_mem ht ht'
 
+/-- The difference of two Boolean combinations of analytic sign conditions is one. -/
+theorem sdiff (ht : IsAnalyticBooleanCombination U t) (ht' : IsAnalyticBooleanCombination U t') :
+    IsAnalyticBooleanCombination U (t \ t') :=
+  (isSetAlgebra_setOf_isAnalyticBooleanCombination U).sdiff_mem ht ht'
+
+/-- A finite union of Boolean combinations of analytic sign conditions is one. -/
+protected theorem biUnion {ι : Type*} {I : Set ι} (hI : I.Finite) {t : ι → Set E}
+    (ht : ∀ i ∈ I, IsAnalyticBooleanCombination U (t i)) :
+    IsAnalyticBooleanCombination U (⋃ i ∈ I, t i) := by
+  simpa using (isSetAlgebra_setOf_isAnalyticBooleanCombination U).biUnion_mem hI.toFinset
+    fun i hi => ht i (hI.mem_toFinset.1 hi)
+
+/-- A finite intersection of Boolean combinations of analytic sign conditions is one. -/
+protected theorem biInter {ι : Type*} {I : Set ι} (hI : I.Finite) {t : ι → Set E}
+    (ht : ∀ i ∈ I, IsAnalyticBooleanCombination U (t i)) :
+    IsAnalyticBooleanCombination U (⋂ i ∈ I, t i) := by
+  simpa using (isSetAlgebra_setOf_isAnalyticBooleanCombination U).biInter_mem hI.toFinset
+    fun i hi => ht i (hI.mem_toFinset.1 hi)
+
+/-- The union of a finite family of Boolean combinations of analytic sign conditions is one. -/
+protected theorem iUnion {ι : Type*} [Finite ι] {t : ι → Set E}
+    (ht : ∀ i, IsAnalyticBooleanCombination U (t i)) :
+    IsAnalyticBooleanCombination U (⋃ i, t i) := by
+  simpa using IsAnalyticBooleanCombination.biUnion finite_univ fun i (_ : i ∈ univ) => ht i
+
+/-- The intersection of a finite family of Boolean combinations of analytic sign conditions is
+one. -/
+protected theorem iInter {ι : Type*} [Finite ι] {t : ι → Set E}
+    (ht : ∀ i, IsAnalyticBooleanCombination U (t i)) :
+    IsAnalyticBooleanCombination U (⋂ i, t i) := by
+  simpa using IsAnalyticBooleanCombination.biInter finite_univ fun i (_ : i ∈ univ) => ht i
+
 /-- A Boolean combination of sign conditions of functions analytic on `U` is also one for
 functions analytic on any smaller set `V ⊆ U`. -/
 theorem mono (ht : IsAnalyticBooleanCombination U t) (hVU : V ⊆ U) :
@@ -185,17 +218,9 @@ combination of analytic sign conditions on `U`. -/
 theorem isAnalyticBooleanCombination_setOf_sign {U : Set E} {ι : Type*} [Finite ι]
     {f : ι → E → ℝ} (hf : ∀ i, AnalyticOnNhd ℝ (f i) U) (Φ : (ι → SignType) → Prop) :
     IsAnalyticBooleanCombination U {x | Φ fun i => SignType.sign (f i x)} := by
-  have : {x | Φ fun i => SignType.sign (f i x)} =
-      ⋃ ε ∈ {ε | Φ ε}, ⋂ i, {x | SignType.sign (f i x) = ε i} := by
-    ext x
-    simp only [mem_ofPred_eq, mem_iUnion, mem_iInter, exists_prop]
-    exact ⟨fun h => ⟨_, h, fun _ => rfl⟩, fun ⟨ε, hε, h⟩ => (funext h).symm ▸ hε⟩
-  rw [this]
-  have := Fintype.ofFinite ι
-  have hset := isSetAlgebra_setOf_isAnalyticBooleanCombination U
-  simpa using hset.biUnion_mem (toFinite {ε : ι → SignType | Φ ε}).toFinset fun ε _ =>
-    by simpa using hset.biInter_mem Finset.univ fun i _ =>
-      isAnalyticBooleanCombination_setOf_sign_eq (hf i) (ε i)
+  rw [setOf_apply_eq_biUnion_iInter (fun i x => SignType.sign (f i x))]
+  exact .biUnion (toFinite _) fun ε _ =>
+    .iInter fun i => isAnalyticBooleanCombination_setOf_sign_eq (hf i) (ε i)
 
 /-- **Sign-condition normal form.** A Boolean combination of analytic sign conditions on `U` is
 described by a condition on the signs of finitely many functions analytic on `U`. -/
@@ -223,6 +248,12 @@ theorem IsAnalyticBooleanCombination.exists_eq_setOf_sign {U t : Set E}
 finite Boolean combination of zero sets and positivity sets of real functions analytic on `U`. -/
 def SemianalyticAt (s : Set E) (x : E) : Prop :=
   ∃ U ∈ 𝓝 x, ∃ t, IsAnalyticBooleanCombination U t ∧ s ∩ U = t ∩ U
+
+/-- A set is semianalytic at `x` if and only if on some neighbourhood `U` of `x` it agrees with a
+finite Boolean combination of zero sets and positivity sets of real functions analytic on `U`. -/
+theorem semianalyticAt_def {s : Set E} {x : E} :
+    SemianalyticAt s x ↔ ∃ U ∈ 𝓝 x, ∃ t, IsAnalyticBooleanCombination U t ∧ s ∩ U = t ∩ U :=
+  Iff.rfl
 
 /-- **Shrinking invariance.** If `s` is semianalytic at `x`, then it has a presentation on a
 neighbourhood of `x` inside any prescribed neighbourhood `V` of `x`. -/
@@ -316,7 +347,7 @@ theorem SemianalyticAt.inter (hs : SemianalyticAt s x) (hs' : SemianalyticAt s' 
   (isSetAlgebra_setOf_semianalyticAt x).inter_mem hs hs'
 
 /-- The difference of two sets semianalytic at `x` is semianalytic at `x`. -/
-theorem SemianalyticAt.diff (hs : SemianalyticAt s x) (hs' : SemianalyticAt s' x) :
+theorem SemianalyticAt.sdiff (hs : SemianalyticAt s x) (hs' : SemianalyticAt s' x) :
     SemianalyticAt (s \ s') x :=
   (isSetAlgebra_setOf_semianalyticAt x).sdiff_mem hs hs'
 
@@ -343,21 +374,43 @@ theorem SemianalyticAt.iInter {ι : Type*} [Finite ι] {s : ι → Set E}
   simpa using SemianalyticAt.biInter finite_univ fun i (_ : i ∈ univ) => hs i
 
 /-- **Analytic preimages.** The preimage of a set semianalytic at `g x` under a map `g` analytic
-at `x` is semianalytic at `x`. -/
-theorem SemianalyticAt.preimage [CompleteSpace F] {s : Set F} {g : E → F}
-    (hs : SemianalyticAt s (g x)) (hg : AnalyticAt ℝ g x) : SemianalyticAt (g ⁻¹' s) x := by
+on a neighbourhood `W` of `x` is semianalytic at `x`. -/
+theorem SemianalyticAt.preimage_of_analyticOnNhd {s : Set F} {g : E → F} {W : Set E}
+    (hs : SemianalyticAt s (g x)) (hW : W ∈ 𝓝 x) (hg : AnalyticOnNhd ℝ g W) :
+    SemianalyticAt (g ⁻¹' s) x := by
   obtain ⟨U, hU, t, ht, hst⟩ := hs
-  obtain ⟨W, hW, hgW⟩ := hg.exists_mem_nhds_analyticOnNhd
-  refine ⟨W ∩ g ⁻¹' U, inter_mem hW (hg.continuousAt.preimage_mem_nhds hU), g ⁻¹' t,
-    ht.preimage (hgW.mono inter_subset_left) fun _ hy => hy.2, ?_⟩
+  refine ⟨W ∩ g ⁻¹' U,
+    inter_mem hW ((hg x (mem_of_mem_nhds hW)).continuousAt.preimage_mem_nhds hU), g ⁻¹' t,
+    ht.preimage (hg.mono inter_subset_left) fun _ hy => hy.2, ?_⟩
   ext y
   have := Set.ext_iff.1 hst (g y)
   simp only [mem_inter_iff, mem_preimage] at this ⊢
   tauto
 
+/-- **Analytic preimages.** The preimage of a set semianalytic at `g x` under a map `g` analytic
+at `x` is semianalytic at `x`. -/
+theorem SemianalyticAt.preimage [CompleteSpace F] {s : Set F} {g : E → F}
+    (hs : SemianalyticAt s (g x)) (hg : AnalyticAt ℝ g x) : SemianalyticAt (g ⁻¹' s) x :=
+  let ⟨_, hW, hgW⟩ := hg.exists_mem_nhds_analyticOnNhd
+  hs.preimage_of_analyticOnNhd hW hgW
+
 end SemianalyticAt
 
 /-! ### Equivalence of presentations -/
+
+/-- Prescribed signs `ε` of the entries of `a` amount to a single equation, the vanishing of the sum
+of the squares of the `a i` with `ε i = 0`, together with the positivity of `ε i * a i` for the
+other `i`. -/
+theorem forall_sign_eq_iff_sum_sq_eq_zero_and_pos {ι R : Type*} [Fintype ι] [Ring R]
+    [LinearOrder R] [IsStrictOrderedRing R] (a : ι → R) (ε : ι → SignType) :
+    (∀ i, SignType.sign (a i) = ε i) ↔
+      ∑ i with ε i = 0, a i ^ 2 = 0 ∧ ∀ i, 0 < if ε i = 0 then 1 else (ε i : R) * a i := by
+  have (b : R) (δ : SignType) :
+      SignType.sign b = δ ↔ (δ = 0 → b = 0) ∧ 0 < if δ = 0 then 1 else (δ : R) * b := by
+    rcases δ with _ | _ | _ <;> simp [sign_eq_zero_iff, sign_eq_neg_one_iff, sign_eq_one_iff]
+  rw [Finset.sum_eq_zero_iff_of_nonneg fun i _ => sq_nonneg (a i)]
+  simp only [Finset.mem_filter, Finset.mem_univ, true_and, pow_eq_zero_iff two_ne_zero, this,
+    forall_and]
 
 /-- **Equivalence of presentations.** A set is semianalytic at `x` if and only if, on some
 neighbourhood `U` of `x`, it agrees with a finite union of sets
@@ -370,16 +423,6 @@ theorem semianalyticAt_iff_exists_iUnion {s : Set E} {x : E} :
   refine ⟨fun ⟨U, hU, t, ht, hst⟩ => ?_, fun ⟨U, hU, m, k, f, g, hf, hg, hst⟩ => ⟨U, hU, _,
     ?_, hst⟩⟩
   · obtain ⟨n, f, hf, Φ, rfl⟩ := ht.exists_eq_setOf_sign
-    -- Prescribed signs `ε` of `a` amount to one equation, the vanishing of the sum of the squares
-    -- of the `a i` with `ε i = 0`, and to the positivity of `ε i * a i` for the other `i`.
-    have key (a : Fin n → ℝ) (ε : Fin n → SignType) : (∀ i, SignType.sign (a i) = ε i) ↔
-        ∑ i with ε i = 0, a i ^ 2 = 0 ∧ ∀ i, 0 < if ε i = 0 then 1 else (ε i : ℝ) * a i := by
-      have (b : ℝ) (δ : SignType) :
-          SignType.sign b = δ ↔ (δ = 0 → b = 0) ∧ 0 < if δ = 0 then 1 else (δ : ℝ) * b := by
-        rcases δ with _ | _ | _ <;> simp [sign_eq_zero_iff, sign_eq_neg_one_iff, sign_eq_one_iff]
-      rw [Finset.sum_eq_zero_iff_of_nonneg fun i _ => sq_nonneg (a i)]
-      simp only [Finset.mem_filter, Finset.mem_univ, true_and, pow_eq_zero_iff two_ne_zero, this,
-        forall_and]
     let e := Finite.equivFin {ε : Fin n → SignType // Φ ε}
     refine ⟨U, hU, _, n, fun i y => ∑ j with (e.symm i).1 j = 0, f j y ^ 2,
       fun i j => if (e.symm i).1 j = 0 then fun _ => 1 else fun y => ((e.symm i).1 j : ℝ) * f j y,
@@ -393,16 +436,12 @@ theorem semianalyticAt_iff_exists_iUnion {s : Set E} {x : E} :
       simp only [mem_ofPred_eq, mem_iUnion, mem_inter_iff, mem_iInter]
       refine ⟨fun h => ⟨e ⟨_, h⟩, ?_⟩, fun ⟨i, h⟩ => ?_⟩
       · simpa [apply_ite (fun g : E → ℝ => g y)] using
-          (key (fun j => f j y) _).1 fun _ => rfl
-      · have hε := (key (fun j => f j y) (e.symm i).1).2
+          (forall_sign_eq_iff_sum_sq_eq_zero_and_pos (fun j => f j y) _).1 fun _ => rfl
+      · have hε := (forall_sign_eq_iff_sum_sq_eq_zero_and_pos (fun j => f j y) (e.symm i).1).2
           (by simpa [apply_ite (fun g : E → ℝ => g y)] using h)
         exact (funext hε : (fun j => SignType.sign (f j y)) = _) ▸ (e.symm i).2
-  · have hset := isSetAlgebra_setOf_isAnalyticBooleanCombination U
-    have hI (i : Fin m) : IsAnalyticBooleanCombination U (⋂ j, {y | 0 < g i j y}) := by
-      simpa using hset.biInter_mem Finset.univ fun j _ =>
-        isAnalyticBooleanCombination_setOf_pos (hg i j)
-    simpa using hset.biUnion_mem Finset.univ fun i _ =>
-      (isAnalyticBooleanCombination_setOf_eq_zero (hf i)).inter (hI i)
+  · exact .iUnion fun i => (isAnalyticBooleanCombination_setOf_eq_zero (hf i)).inter
+      (.iInter fun j => isAnalyticBooleanCombination_setOf_pos (hg i j))
 
 /-! ### Semianalytic sets -/
 
@@ -411,6 +450,15 @@ it agrees with a finite Boolean combination of zero sets and positivity sets of 
 functions defined near that point. -/
 def IsSemianalytic (s : Set E) : Prop :=
   ∀ x, SemianalyticAt s x
+
+/-- A set is semianalytic if and only if it is semianalytic at every point. -/
+theorem isSemianalytic_iff {s : Set E} : IsSemianalytic s ↔ ∀ x, SemianalyticAt s x :=
+  Iff.rfl
+
+/-- A semianalytic set is semianalytic at every point. -/
+theorem IsSemianalytic.semianalyticAt {s : Set E} (hs : IsSemianalytic s) (x : E) :
+    SemianalyticAt s x :=
+  hs x
 
 /-- The zero set of a real analytic function is semianalytic. -/
 theorem _root_.AnalyticOnNhd.isSemianalytic_setOf_eq_zero {f : E → ℝ}
@@ -458,9 +506,9 @@ protected theorem inter (hs : IsSemianalytic s) (hs' : IsSemianalytic s') :
   fun x => (hs x).inter (hs' x)
 
 /-- The difference of two semianalytic sets is semianalytic. -/
-protected theorem diff (hs : IsSemianalytic s) (hs' : IsSemianalytic s') :
+protected theorem sdiff (hs : IsSemianalytic s) (hs' : IsSemianalytic s') :
     IsSemianalytic (s \ s') :=
-  fun x => (hs x).diff (hs' x)
+  fun x => (hs x).sdiff (hs' x)
 
 /-- A finite union of semianalytic sets is semianalytic. -/
 protected theorem biUnion {ι : Type*} {I : Set ι} (hI : I.Finite) {s : ι → Set E}
@@ -484,9 +532,9 @@ protected theorem iInter {ι : Type*} [Finite ι] {s : ι → Set E}
 
 /-- **Analytic preimages.** The preimage of a semianalytic set under a real analytic map is
 semianalytic. -/
-protected theorem preimage [CompleteSpace F] {s : Set F} (hs : IsSemianalytic s) {g : E → F}
+protected theorem preimage {s : Set F} (hs : IsSemianalytic s) {g : E → F}
     (hg : AnalyticOnNhd ℝ g univ) : IsSemianalytic (g ⁻¹' s) :=
-  fun x => (hs (g x)).preimage (hg x (mem_univ x))
+  fun x => (hs (g x)).preimage_of_analyticOnNhd univ_mem hg
 
 end IsSemianalytic
 
@@ -518,13 +566,11 @@ theorem semianalyticAt_image_equiv_iff [CompleteSpace E] [CompleteSpace F] {s : 
 
 /-- **Analytic isomorphisms.** For a bijection `e` that is analytic with analytic inverse, the
 image `e '' s` is semianalytic if and only if `s` is semianalytic. -/
-theorem isSemianalytic_image_equiv_iff [CompleteSpace E] [CompleteSpace F] {s : Set E}
-    (e : E ≃ F) (he : AnalyticOnNhd ℝ e univ)
-    (he' : AnalyticOnNhd ℝ e.symm univ) : IsSemianalytic (e '' s) ↔ IsSemianalytic s :=
-  ⟨fun hs x => (semianalyticAt_image_equiv_iff e (he x (mem_univ x))
-    (he' (e x) (mem_univ _))).1 (hs (e x)), fun hs y => by
-    simpa using (semianalyticAt_image_equiv_iff e (he _ (mem_univ _))
-      (he' (e (e.symm y)) (mem_univ _))).2 (hs (e.symm y))⟩
+theorem isSemianalytic_image_equiv_iff {s : Set E} (e : E ≃ F) (he : AnalyticOnNhd ℝ e univ)
+    (he' : AnalyticOnNhd ℝ e.symm univ) : IsSemianalytic (e '' s) ↔ IsSemianalytic s := by
+  rw [e.image_eq_preimage_symm]
+  refine ⟨fun hs => ?_, fun hs => hs.preimage he'⟩
+  simpa [preimage_preimage] using hs.preimage he
 
 /-- A semialgebraic subset of `σ → ℝ`, for a finite type `σ`, is semianalytic: polynomial
 functions are analytic. -/
