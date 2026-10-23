@@ -121,25 +121,23 @@ theorem self_mem_weylWeightOrbit (x : M) : x ∈ weylWeightOrbit P x :=
 @[simp]
 theorem weylWeightOrbit_smul (w : P.weylGroup) (x : M) :
     weylWeightOrbit P (w • x) = weylWeightOrbit P x := by
-  ext y
-  simp only [mem_weylWeightOrbit]
-  refine ⟨fun ⟨v, hv⟩ ↦ ⟨v * w, by rw [mul_smul, hv]⟩, fun ⟨v, hv⟩ ↦ ⟨v * w⁻¹, ?_⟩⟩
-  rw [mul_smul, inv_smul_smul, hv]
+  exact Finset.coe_injective (by simp only [coe_weylWeightOrbit, MulAction.orbit_smul])
 
 /-- The Weyl orbit of a weight is the Weyl orbit of any of its members. -/
 theorem weylWeightOrbit_eq_of_mem {x y : M} (h : y ∈ weylWeightOrbit P x) :
     weylWeightOrbit P y = weylWeightOrbit P x := by
-  obtain ⟨w, rfl⟩ := mem_weylWeightOrbit.mp h
-  exact weylWeightOrbit_smul w x
+  apply Finset.coe_injective
+  rw [coe_weylWeightOrbit, coe_weylWeightOrbit]
+  exact MulAction.orbit_eq_iff.mpr (by
+    simpa only [← coe_weylWeightOrbit, Finset.mem_coe] using h)
 
 /-- A Weyl translate of `y` lies in the Weyl orbit of `x` exactly when `y` does. -/
 theorem smul_mem_weylWeightOrbit_iff {x y : M} (w : P.weylGroup) :
     w • y ∈ weylWeightOrbit P x ↔ y ∈ weylWeightOrbit P x := by
+  simp only [← Finset.mem_coe, coe_weylWeightOrbit]
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · rw [← weylWeightOrbit_eq_of_mem h, weylWeightOrbit_smul]
-    exact self_mem_weylWeightOrbit y
-  · rw [← weylWeightOrbit_eq_of_mem h]
-    exact smul_mem_weylWeightOrbit w y
+  · simpa only [inv_smul_smul] using MulAction.mem_orbit_of_mem_orbit w⁻¹ h
+  · exact MulAction.mem_orbit_of_mem_orbit w h
 
 /-- The Weyl orbit of the zero weight is `{0}`. -/
 @[simp]
