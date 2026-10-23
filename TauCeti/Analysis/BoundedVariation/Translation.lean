@@ -12,6 +12,7 @@ import Mathlib.MeasureTheory.Group.Integral
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Analysis.Calculus.ParametricIntegral
 import TauCeti.Analysis.Distribution.TestFunction.NormDuality
+import TauCeti.MeasureTheory.Constructions.UnitInterval
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
@@ -167,13 +168,13 @@ private theorem exists_divergenceCLM_eq_sub
     ∃ ψ : 𝓓(Ω, E), (∀ y, ‖ψ y‖ ≤ ‖h‖) ∧ ∀ y, divergenceCLM ψ y = g (y - h) - g y := by
   set Φ : E → ℝ := fun y => ∫ t in (0 : ℝ)..1, g (y - t • h) with hΦ_def
   have hΦs : ContDiff ℝ ∞ Φ := by
-    have hΦIcc : Φ = fun y => ∫ t in Icc (0 : ℝ) 1, g (y - t • h) := by
-      funext y
-      simp only [hΦ_def]
-      rw [intervalIntegral.integral_of_le zero_le_one, integral_Icc_eq_integral_Ioc]
-    rw [hΦIcc]
-    exact contDiff_integral_Icc_of_contDiff (⊤ : ℕ∞) (fun y t => g (y - t • h))
-      (g.contDiff.comp (contDiff_fst.sub (contDiff_snd.smul contDiff_const)))
+    rw [← contDiffOn_univ]
+    refine (contDiffOn_integral_smul_of_contDiffOn (n := (⊤ : ℕ∞))
+      (F := fun p : E × ℝ => g (p.1 - p.2 • h)) (μ := (volume : Measure unitInterval))
+      (integrable_const (1 : ℝ)) continuous_subtype_val isOpen_univ
+      (g.contDiff.comp (contDiff_fst.sub (contDiff_snd.smul contDiff_const))).contDiffOn
+      isOpen_univ fun _ _ _ => mem_univ _).congr fun y _ => ?_
+    simp [hΦ_def, intervalIntegral_eq_integral_unitInterval]
   -- `Φ` vanishes off the compact set `C ⊆ Ω` swept out by `tsupport g` along `[0, 1] h`.
   set C : Set E := (fun p : E × ℝ => p.1 + p.2 • h) '' (tsupport g ×ˢ Icc 0 1)
   have hCc : IsCompact C :=
