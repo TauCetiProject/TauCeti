@@ -130,7 +130,8 @@ theorem exists_regular_lineDeriv_ofFun_apply_eq [BorelSpace E]
     have hfin : ‖v‖ₑ * ‖(φ' : E →ᵇ ℝ)‖ₑ * totalVariationOn μ U u ≠ ∞ := by
       simp [ENNReal.mul_eq_top, hU]
     refine ((ENNReal.ofReal_le_iff_le_toReal hfin).1 h).trans_eq ?_
-    have hnorm : ‖(φ' : E →ᵇ ℝ)‖ = ‖(φ : E →ᵇ ℝ)‖ := rfl
+    have hnorm : ‖(φ' : E →ᵇ ℝ)‖ = ‖(φ : E →ᵇ ℝ)‖ :=
+      congrArg norm (BoundedContinuousFunction.ext fun x => by simp [φ'])
     simp only [ENNReal.toReal_mul, toReal_enorm, hnorm]
     ring
   · rw [Distribution.ofFun_eq_zero hli]
