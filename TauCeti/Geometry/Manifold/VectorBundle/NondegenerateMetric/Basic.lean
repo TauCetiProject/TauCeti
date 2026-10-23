@@ -30,6 +30,8 @@ Levi-Civita connection for an indefinite metric.
 
 * `TauCeti.Manifold.ContMDiffNondegenerateMetric`: a smooth symmetric nondegenerate tangent
   bilinear form.
+* `TauCeti.Manifold.ContMDiffNondegenerateMetric.inCoordinates`: the metric read in a
+  tangent-bundle trivialization, with its symmetry, nondegeneracy and smoothness on the base set.
 * `TauCeti.Manifold.ContMDiffNondegenerateMetric.flat`: its fibrewise flat musical equivalence,
   for a finite-dimensional model space.
 * `TauCeti.Manifold.ContMDiffNondegenerateMetric.sharp`: the inverse musical equivalence, for a
@@ -111,6 +113,74 @@ theorem ext {g h : ContMDiffNondegenerateMetric (I := I) (M := M)}
       intro x
       ext v w
       exact heq x v w
+
+/-! ### The metric read in a trivialization -/
+
+/-- The metric `g` at `x`, read in the trivialization of the tangent bundle at `a`: a continuous
+bilinear form on the model space. It is meaningful for `x` in the base set of that
+trivialization. -/
+def inCoordinates (g : ContMDiffNondegenerateMetric (I := I) (M := M)) (a x : M) :
+    E →L[ℝ] E →L[ℝ] ℝ :=
+  ContinuousLinearMap.inCoordinates E (fun y : M ↦ TangentSpace I y)
+    (E →L[ℝ] ℝ) (fun y : M ↦ TangentSpace I y →L[ℝ] ℝ) a x a x (g x)
+
+/-- On the base set of the trivialization at `a`, the metric read in that trivialization pairs two
+vectors of the model space as `g` pairs the tangent vectors with these coordinates. -/
+theorem inCoordinates_apply
+    (g : ContMDiffNondegenerateMetric (I := I) (M := M)) (a : M) {x : M}
+    (hx : x ∈ (trivializationAt E (fun y : M ↦ TangentSpace I y) a).baseSet) (v w : E) :
+    g.inCoordinates a x v w =
+      g x ((trivializationAt E (fun y : M ↦ TangentSpace I y) a).symm x v)
+        ((trivializationAt E (fun y : M ↦ TangentSpace I y) a).symm x w) := by
+  simpa only [inCoordinates, Trivial.fiberBundle_trivializationAt',
+    Trivial.linearMapAt_trivialization, LinearMap.id_coe, id_eq] using
+    (inCoordinates_apply_eq₂ (F₁ := E) (F₂ := E) (F₃ := ℝ)
+      (E₁ := fun y : M ↦ TangentSpace I y) (E₂ := fun y : M ↦ TangentSpace I y)
+      (E₃ := Bundle.Trivial M ℝ) (x₀ := a) (x := x)
+      (ϕ := g x) hx hx (by simp) (v := v) (w := w))
+
+/-- On the base set of the trivialization at `a`, the metric read in that trivialization is the
+congruence of the metric by the trivialization's linear equivalence. -/
+theorem inCoordinates_toBilinForm
+    (g : ContMDiffNondegenerateMetric (I := I) (M := M)) (a : M) {x : M}
+    (hx : x ∈ (trivializationAt E (fun y : M ↦ TangentSpace I y) a).baseSet) :
+    (g.inCoordinates a x).toBilinForm =
+      LinearMap.BilinForm.congr
+        ((trivializationAt E (fun y : M ↦ TangentSpace I y) a).continuousLinearEquivAt ℝ x hx
+          |>.toLinearEquiv) (g x).toBilinForm := by
+  ext v w
+  rw [ContinuousLinearMap.toBilinForm_apply, LinearMap.BilinForm.congr_apply,
+    inCoordinates_apply g a hx]
+  rfl
+
+/-- The metric read in a trivialization is symmetric on its base set. -/
+theorem isSymm_inCoordinates
+    (g : ContMDiffNondegenerateMetric (I := I) (M := M)) (a : M) {x : M}
+    (hx : x ∈ (trivializationAt E (fun y : M ↦ TangentSpace I y) a).baseSet) :
+    (g.inCoordinates a x).toBilinForm.IsSymm := by
+  constructor
+  intro v w
+  simp only [ContinuousLinearMap.toBilinForm_apply, inCoordinates_apply g a hx]
+  exact g.apply_comm x _ _
+
+/-- The metric read in a trivialization is nondegenerate on its base set. -/
+theorem nondegenerate_inCoordinates
+    (g : ContMDiffNondegenerateMetric (I := I) (M := M)) (a : M) {x : M}
+    (hx : x ∈ (trivializationAt E (fun y : M ↦ TangentSpace I y) a).baseSet) :
+    (g.inCoordinates a x).toBilinForm.Nondegenerate := by
+  rw [inCoordinates_toBilinForm g a hx]
+  exact (g.nondegenerate x).congr _
+
+/-- The metric read in the trivialization at `a` is smooth at every point of its base set. -/
+theorem contMDiffAt_inCoordinates
+    (g : ContMDiffNondegenerateMetric (I := I) (M := M)) (a : M) {x : M}
+    (hx : x ∈ (trivializationAt E (fun y : M ↦ TangentSpace I y) a).baseSet) :
+    ContMDiffAt I 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ) ∞ (g.inCoordinates a) x := by
+  have hsec := ((trivializationAt (E →L[ℝ] E →L[ℝ] ℝ)
+      (fun y : M ↦ TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] ℝ) a).contMDiffAt_section_iff
+      (IB := I) (n := ∞) (s := fun y ↦ g y) (by simpa using hx)).1 (g.contMDiff x)
+  simp only [hom_trivializationAt_apply] at hsec
+  exact hsec
 
 section FiniteDimensional
 

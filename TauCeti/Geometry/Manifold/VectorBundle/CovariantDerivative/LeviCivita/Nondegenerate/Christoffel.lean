@@ -33,9 +33,9 @@ holds for every connection compatible with `g`, torsion-free or not.
 
 In the namespace `TauCeti.Manifold.ContMDiffNondegenerateMetric`:
 
-* `chartMetric`: the metric read in the chart at `x₀`, with `chartMetric_extChartAt_apply`,
-  `isSymm_chartMetric`, `nondegenerate_chartMetric`, `contDiffOn_chartMetric` and
-  `contDiffAt_chartMetric`.
+* `chartMetric`: the metric read in the chart at `x₀`, with `chartMetric_apply`,
+  `chartMetric_extChartAt_apply`, `isSymm_chartMetric`, `nondegenerate_chartMetric`,
+  `contDiffOn_chartMetric` and `contDiffAt_chartMetric`.
 * `IsMetricCompatible.fderiv_chartMetric_apply`: metric compatibility in coordinates.
 * `IsLeviCivitaConnection.christoffelMap_apply_eq_christoffelSecondKind`: the Christoffel map of a
   Levi-Civita connection is given by the Christoffel symbols of the second kind of the chart
@@ -71,9 +71,16 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 on `E` obtained by reading `g` at `(extChartAt I x₀).symm z` in the trivialization of the tangent
 bundle at `x₀`. It is meaningful on the chart target `(extChartAt I x₀).target`. -/
 def chartMetric (x₀ : M) (z : E) : E →L[ℝ] E →L[ℝ] ℝ :=
-  ContinuousLinearMap.inCoordinates E (fun y : M ↦ TangentSpace I y) (E →L[ℝ] ℝ)
-    (fun y : M ↦ TangentSpace I y →L[ℝ] ℝ) x₀ ((extChartAt I x₀).symm z) x₀
-    ((extChartAt I x₀).symm z) (g ((extChartAt I x₀).symm z))
+  g.inCoordinates x₀ ((extChartAt I x₀).symm z)
+
+/-- At a point `z` of the chart target, the chart metric pairs two vectors of the model space as
+`g` pairs the tangent vectors at `(extChartAt I x₀).symm z` with these coordinates. -/
+theorem chartMetric_apply {z : E} (hz : z ∈ (extChartAt I x₀).target) (u w : E) :
+    g.chartMetric x₀ z u w =
+      g ((extChartAt I x₀).symm z)
+        ((trivializationAt E (TangentSpace I) x₀).symm ((extChartAt I x₀).symm z) u)
+        ((trivializationAt E (TangentSpace I) x₀).symm ((extChartAt I x₀).symm z) w) :=
+  g.inCoordinates_apply x₀ (by simpa using (extChartAt I x₀).map_target hz) u w
 
 /-- At the chart image of a point `y` of the chart domain, the chart metric pairs two vectors of
 the model space as `g` pairs the tangent vectors at `y` with these coordinates. -/
@@ -81,50 +88,27 @@ theorem chartMetric_extChartAt_apply (hy : y ∈ (extChartAt I x₀).source) (u 
     g.chartMetric x₀ (extChartAt I x₀ y) u w =
       g y ((trivializationAt E (TangentSpace I) x₀).symm y u)
         ((trivializationAt E (TangentSpace I) x₀).symm y w) := by
-  have hbase : y ∈ (trivializationAt E (TangentSpace I) x₀).baseSet := by simpa using hy
   rw [chartMetric, (extChartAt I x₀).left_inv hy]
-  simpa only [Trivial.fiberBundle_trivializationAt', Trivial.linearMapAt_trivialization,
-    LinearMap.id_coe, id_eq] using
-    (inCoordinates_apply_eq₂ (F₁ := E) (F₂ := E) (F₃ := ℝ)
-      (E₁ := fun y : M ↦ TangentSpace I y) (E₂ := fun y : M ↦ TangentSpace I y)
-      (E₃ := Bundle.Trivial M ℝ) (x₀ := x₀) (x := y)
-      (ϕ := g y) hbase hbase (by simp) (v := u) (w := w))
+  exact g.inCoordinates_apply x₀ (by simpa using hy) u w
 
-/-- The chart metric is symmetric at the chart image of every point of the chart domain. -/
-theorem isSymm_chartMetric (hy : y ∈ (extChartAt I x₀).source) :
-    LinearMap.IsSymm (g.chartMetric x₀ (extChartAt I x₀ y)).toBilinForm :=
-  ContinuousLinearMap.isSymm_toBilinForm_iff.2 fun u w ↦ by
-    simp only [g.chartMetric_extChartAt_apply hy]
-    exact g.apply_comm y _ _
+/-- The chart metric is symmetric at every point of the chart target. -/
+theorem isSymm_chartMetric {z : E} (hz : z ∈ (extChartAt I x₀).target) :
+    LinearMap.IsSymm (g.chartMetric x₀ z).toBilinForm :=
+  LinearMap.BilinForm.isSymm_iff.1 <|
+    g.isSymm_inCoordinates x₀ (by simpa using (extChartAt I x₀).map_target hz)
 
-/-- The chart metric is nondegenerate at the chart image of every point of the chart domain. -/
-theorem nondegenerate_chartMetric (hy : y ∈ (extChartAt I x₀).source) :
-    (g.chartMetric x₀ (extChartAt I x₀ y)).toBilinForm.Nondegenerate := by
-  have hbase : y ∈ (trivializationAt E (TangentSpace I) x₀).baseSet := by simpa using hy
-  let e := (trivializationAt E (TangentSpace I) x₀).continuousLinearEquivAt ℝ y hbase
-  have hcongr : (g.chartMetric x₀ (extChartAt I x₀ y)).toBilinForm =
-      LinearMap.BilinForm.congr e.toLinearEquiv (g y).toBilinForm := by
-    ext u w
-    rw [ContinuousLinearMap.toBilinForm_apply, LinearMap.BilinForm.congr_apply,
-      g.chartMetric_extChartAt_apply hy]
-    simp [e]
-  rw [hcongr]
-  exact (g.nondegenerate y).congr _
+/-- The chart metric is nondegenerate at every point of the chart target. -/
+theorem nondegenerate_chartMetric {z : E} (hz : z ∈ (extChartAt I x₀).target) :
+    (g.chartMetric x₀ z).toBilinForm.Nondegenerate :=
+  g.nondegenerate_inCoordinates x₀ (by simpa using (extChartAt I x₀).map_target hz)
 
 /-- The chart metric is smooth on the chart target. -/
 theorem contDiffOn_chartMetric (x₀ : M) :
     ContDiffOn ℝ ∞ (g.chartMetric x₀) (extChartAt I x₀).target := by
   rw [← contMDiffOn_iff_contDiffOn]
   intro z hz
-  have hy : (extChartAt I x₀).symm z ∈ (trivializationAt E (TangentSpace I) x₀).baseSet := by
-    simpa using (extChartAt I x₀).map_target hz
-  -- The metric read in the trivialization at `x₀` is smooth near `(extChartAt I x₀).symm z`.
-  have hsec := ((trivializationAt (E →L[ℝ] E →L[ℝ] ℝ)
-      (fun y : M ↦ TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] ℝ) x₀).contMDiffAt_section_iff
-      (IB := I) (n := ∞) (s := fun y ↦ g y) (by simpa using hy)).1
-    (g.contMDiff ((extChartAt I x₀).symm z))
-  simp only [hom_trivializationAt_apply] at hsec
-  exact hsec.comp_contMDiffWithinAt z (contMDiffOn_extChartAt_symm x₀ z hz)
+  exact (g.contMDiffAt_inCoordinates x₀ (by simpa using (extChartAt I x₀).map_target hz))
+    |>.comp_contMDiffWithinAt z (contMDiffOn_extChartAt_symm x₀ z hz)
 
 /-- The chart metric is smooth at the chart image of every point of the chart domain lying in the
 interior of the model. -/
@@ -214,8 +198,8 @@ theorem IsLeviCivitaConnection.christoffelMap_apply_eq_christoffelSecondKind
   have ht : cov.IsTorsionFree :=
     (CovariantDerivative.isTorsionFree_iff_torsion_eq_zero cov).2 h.torsion
   have hA := eq_christoffelSecondKind_of_fderiv_apply_eq (g := g.chartMetric x₀)
-    (x := extChartAt I x₀ y) (g.isSymm_chartMetric hy)
-    (g.nondegenerate_chartMetric hy)
+    (x := extChartAt I x₀ y) (g.isSymm_chartMetric ((extChartAt I x₀).map_source hy))
+    (g.nondegenerate_chartMetric ((extChartAt I x₀).map_source hy))
     (A := (christoffelMap b (cov.isCovariantDerivativeOn
       (s := (trivializationAt E (TangentSpace I) x₀).baseSet)) y).flip)
     (fun u v ↦ by simp only [ContinuousLinearMap.flip_apply, christoffelMap_comm ht b x₀ hy])
@@ -243,8 +227,9 @@ theorem IsLeviCivitaConnection.christoffelSymbol_eq [DecidableEq ι]
   have hbase : y ∈ (trivializationAt E (TangentSpace I) x₀).baseSet := by simpa using hy
   rw [← coord_christoffelMap_apply_basis b (cov.isCovariantDerivativeOn (s := _)) hbase i j k,
     h.christoffelMap_apply_eq_christoffelSecondKind b hy hint, Basis.coord_apply,
-    repr_christoffelSecondKind (g := g.chartMetric x₀) (g.isSymm_chartMetric hy)
-      (g.nondegenerate_chartMetric hy)]
+    repr_christoffelSecondKind (g := g.chartMetric x₀)
+      (g.isSymm_chartMetric ((extChartAt I x₀).map_source hy))
+      (g.nondegenerate_chartMetric ((extChartAt I x₀).map_source hy))]
 
 end Coordinates
 
