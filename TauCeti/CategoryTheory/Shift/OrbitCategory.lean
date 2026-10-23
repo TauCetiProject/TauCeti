@@ -36,6 +36,13 @@ which sends a homogeneous piece `f : X ⟶ Y⟦n * i⟧` to `G.map f` followed b
 projection and carries the periodicity isomorphism of the projection to `φ`, and every additive
 functor with these two properties is isomorphic to it.
 
+Descent is compatible with composition. Postcomposing `lift G φ` with an additive functor `H`
+gives the descent of `G ⋙ H`. An additive functor `F : D ⥤ D'` commuting with the shifts induces
+`map F : D/[n] ⥤ D'/[n]`, the descent of `F` followed by the projection; if `F ⋙ G' ≅ G`
+compatibly with periodicity isomorphisms, then `map F` followed by the descent of `G'` is the
+descent of `G`. This compares orbit functors defined on different categories, such as a homotopy
+category and its localization.
+
 The orbit category is constructed rather than axiomatized: its hom groups are the displayed
 direct sums, so additive maps out of them are determined by their values on homogeneous
 pieces (`DirectSum.addHom_ext`, with `TauCeti.OrbitCategory.homOf_def`). Keller and Stai use it
@@ -54,6 +61,10 @@ to compare bounded derived categories with periodic derived categories.
 * `TauCeti.OrbitCategory.projectionCompLift`: the descent restricts to the original functor.
 * `TauCeti.OrbitCategory.isoLift`: any additive functor restricting to `G` compatibly with the
   periodicity isomorphisms is isomorphic to the descent.
+* `TauCeti.OrbitCategory.liftCompIso`: `lift G φ ⋙ H` is the descent of `G ⋙ H`.
+* `TauCeti.OrbitCategory.map`: the functor `D/[n] ⥤ D'/[n]` induced by a functor commuting
+  with the shifts.
+* `TauCeti.OrbitCategory.mapCompLiftIso`: descent along the induced functor `map F`.
 
 ## Main results
 
@@ -61,6 +72,8 @@ to compare bounded derived categories with periodic derived categories.
 * `TauCeti.OrbitCategory.lift_map_homOf`: the descent on homogeneous pieces.
 * `TauCeti.OrbitCategory.lift_map_periodicity_hom_app`: the descent carries the periodicity
   isomorphism of the projection to `φ`.
+* `TauCeti.OrbitCategory.map_map_periodicity_hom_app`: the induced functor carries the
+  periodicity isomorphism of the projection to the shift comparison followed by periodicity.
 
 ## References
 
@@ -519,7 +532,128 @@ theorem isoLift_inv_app (he : ∀ X : D, F.map (periodicity.hom.app X) ≫ e.hom
 
 end Uniqueness
 
+section Comp
+
+variable {E' : Type*} [Category E'] [Preadditive E'] (H : E ⥤ E') [H.Additive]
+
+/-- Postcomposing the descent `lift G φ` with an additive functor `H` gives the descent of
+`G ⋙ H` along the image of `φ` under `H`. -/
+def liftCompIso :
+    lift G φ ⋙ H ≅ lift (G ⋙ H) ((Functor.associator _ _ _).symm ≪≫ Functor.isoWhiskerRight φ H) :=
+  isoLift (lift G φ ⋙ H)
+    (NatIso.ofComponents (fun X ↦ Iso.refl ((G ⋙ H).obj X)) fun f ↦ by
+      rw [Functor.comp_map, Functor.comp_map, lift_map_projection_map]
+      -- The identity components are typed at the objects of `G ⋙ H`, which are those of the
+      -- descent only after unfolding `lift`, so `simp` cannot cancel them.
+      exact (Category.comp_id _).trans (Category.id_comp _).symm)
+    fun X ↦ by
+      rw [Functor.comp_map, lift_map_periodicity_hom_app]
+      simp only [Iso.trans_hom, Iso.symm_hom, NatTrans.comp_app, Functor.associator_inv_app,
+        Functor.isoWhiskerRight_hom, Functor.whiskerRight_app, Category.id_comp]
+      exact (Category.comp_id _).trans (Category.id_comp _).symm
+
+@[simp]
+theorem liftCompIso_hom_app (X : D) : (liftCompIso G φ H).hom.app ⟨X⟩ = 𝟙 (H.obj (G.obj X)) := by
+  rfl
+
+@[simp]
+theorem liftCompIso_inv_app (X : D) : (liftCompIso G φ H).inv.app ⟨X⟩ = 𝟙 (H.obj (G.obj X)) := by
+  rfl
+
+end Comp
+
 end Lift
+
+section Map
+
+variable {D' : Type u'} [Category.{v'} D'] [Preadditive D'] [HasShift D' ℤ]
+  [∀ a : ℤ, (shiftFunctor D' a).Additive] (F : D ⥤ D') [F.Additive] [F.CommShift ℤ]
+
+/-- The periodicity isomorphism `[n] ⋙ F ⋙ π ≅ F ⋙ π` of a functor commuting with the shifts,
+followed by the projection to the orbit category: the shift comparison of `F` followed by the
+periodicity isomorphism of the projection. -/
+def mapPeriodicity :
+    shiftFunctor D n ⋙ F ⋙ projection (n := n) ≅ F ⋙ projection :=
+  (Functor.associator _ _ _).symm ≪≫ Functor.isoWhiskerRight (F.commShiftIso n) _ ≪≫
+    Functor.associator _ _ _ ≪≫ Functor.isoWhiskerLeft F periodicity
+
+/-- The functor `D/[n] ⥤ D'/[n]` induced on orbit categories by an additive functor commuting
+with the shifts: the descent of `F` followed by the projection. -/
+-- Exposed, like `lift`, so that `(map F).obj X` is visibly `⟨F.obj X.obj⟩`, which the
+-- statements comparing descents along `map F` need in order to typecheck.
+@[expose]
+def map : OrbitCategory D n ⥤ OrbitCategory D' n :=
+  lift (F ⋙ projection) (mapPeriodicity F)
+
+@[simp]
+theorem map_obj (X : OrbitCategory D n) : (map F).obj X = ⟨F.obj X.obj⟩ := by
+  rfl
+
+instance : (map (n := n) F).Additive := by
+  dsimp only [map]
+  infer_instance
+
+/-- The induced functor sends the projection of a morphism `f` to the projection of `F.map f`. -/
+theorem map_map_projection_map {X Y : D} (f : X ⟶ Y) :
+    (map (n := n) F).map (projection.map f) = projection.map (F.map f) :=
+  lift_map_projection_map _ _ f
+
+/-- The induced functor sends the periodicity isomorphism of the projection from `D` to the
+projected shift comparison of `F` followed by the periodicity isomorphism of the projection
+from `D'`. -/
+theorem map_map_periodicity_hom_app (X : D) :
+    (map (n := n) F).map (periodicity.hom.app X) =
+      projection.map ((F.commShiftIso n).hom.app X) ≫ periodicity.hom.app (F.obj X) := by
+  refine (lift_map_periodicity_hom_app _ _ X).trans ?_
+  simp [mapPeriodicity]
+  -- The two sides agree up to unfolding the objects of `lift (F ⋙ projection) _`.
+  rfl
+
+variable {E : Type*} [Category E] [Preadditive E] {G : D ⥤ E} [G.Additive]
+  {φ : shiftFunctor D n ⋙ G ≅ G} {G' : D' ⥤ E} [G'.Additive] {φ' : shiftFunctor D' n ⋙ G' ≅ G'}
+
+/-- Descent along the induced functor on orbit categories. If `e : F ⋙ G' ≅ G` carries the
+periodicity isomorphism `φ'` of `G'`, transported along the shift comparison of `F`, to the
+periodicity isomorphism `φ` of `G`, then the induced functor followed by the descent of `G'` is
+the descent of `G`, by `e` on components. -/
+def mapCompLiftIso (e : F ⋙ G' ≅ G)
+    (he : ∀ X : D, G'.map ((F.commShiftIso n).hom.app X) ≫ φ'.hom.app (F.obj X) ≫ e.hom.app X =
+      e.hom.app (X⟦n⟧) ≫ φ.hom.app X) :
+    map (n := n) F ⋙ lift G' φ' ≅ lift G φ :=
+  isoLift (map F ⋙ lift G' φ')
+    (NatIso.ofComponents (fun X ↦ e.app X) fun f ↦ by
+      rw [Functor.comp_map, Functor.comp_map, map_map_projection_map]
+      -- `projection.map (F.map f)` is typed at the objects of `map F` only after unfolding `map`,
+      -- so `lift_map_projection_map` is applied by unification rather than by rewriting.
+      exact (congrArg (· ≫ e.hom.app _) (lift_map_projection_map G' φ' (F.map f))).trans
+        (e.hom.naturality f))
+    fun X ↦ by
+      -- The morphisms below are typed at the objects of `map F` and of the descents, which are
+      -- those of `F ⋙ projection`, `F ⋙ G'` and `G` only after unfolding `map` and `lift`; the
+      -- identities are therefore chained by unification rather than by rewriting.
+      have h : (lift G' φ').map ((map F).map (periodicity.hom.app X)) =
+          G'.map ((F.commShiftIso n).hom.app X) ≫ φ'.hom.app (F.obj X) :=
+        (congrArg (lift G' φ').map (map_map_periodicity_hom_app F X)).trans
+          (((lift G' φ').map_comp (projection.map ((F.commShiftIso n).hom.app X))
+            (periodicity.hom.app (F.obj X))).trans
+              (by rw [lift_map_projection_map, lift_map_periodicity_hom_app]; rfl))
+      exact (congrArg (· ≫ e.hom.app X) h).trans ((Category.assoc _ _ _).trans (he X))
+
+@[simp]
+theorem mapCompLiftIso_hom_app (e : F ⋙ G' ≅ G)
+    (he : ∀ X : D, G'.map ((F.commShiftIso n).hom.app X) ≫ φ'.hom.app (F.obj X) ≫ e.hom.app X =
+      e.hom.app (X⟦n⟧) ≫ φ.hom.app X) (X : D) :
+    (mapCompLiftIso F e he).hom.app ⟨X⟩ = e.hom.app X := by
+  rfl
+
+@[simp]
+theorem mapCompLiftIso_inv_app (e : F ⋙ G' ≅ G)
+    (he : ∀ X : D, G'.map ((F.commShiftIso n).hom.app X) ≫ φ'.hom.app (F.obj X) ≫ e.hom.app X =
+      e.hom.app (X⟦n⟧) ≫ φ.hom.app X) (X : D) :
+    (mapCompLiftIso F e he).inv.app ⟨X⟩ = e.inv.app X := by
+  rfl
+
+end Map
 
 end OrbitCategory
 
