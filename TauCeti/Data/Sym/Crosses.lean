@@ -57,15 +57,19 @@ theorem Crosses.not_isDiag {p : Sym2 V} {S : Set V} (h : p.Crosses S) : ¬p.IsDi
       rintro rfl
       simp at h
 
-open Classical in
 /-- The contribution of one unordered pair to a weighted cut is submodular when its weight is
 nonnegative off the diagonal. Diagonal weights are unrestricted. -/
 theorem ite_crosses_union_add_ite_crosses_inter_le {K : Type*} [AddCommMonoid K] [Preorder K]
-    [IsOrderedAddMonoid K] (p : Sym2 V) (a : K) (ha : ¬p.IsDiag → 0 ≤ a) (S T : Set V) :
+    [IsOrderedAddMonoid K] (p : Sym2 V) [dec : DecidablePred p.Crosses] (a : K)
+    (ha : ¬p.IsDiag → 0 ≤ a) (S T : Set V) :
     (if p.Crosses (S ∪ T) then a else 0) + (if p.Crosses (S ∩ T) then a else 0) ≤
       (if p.Crosses S then a else 0) + (if p.Crosses T then a else 0) := by
+  -- The decision procedure depends on the pair, so quantify it before choosing representatives.
+  revert dec
   induction p using Sym2.inductionOn with
   | _ x y =>
+    intro dec
+    classical
     by_cases hxy : x = y
     · subst y
       simp only [not_crosses_diag, ↓reduceIte, add_zero, le_refl]
