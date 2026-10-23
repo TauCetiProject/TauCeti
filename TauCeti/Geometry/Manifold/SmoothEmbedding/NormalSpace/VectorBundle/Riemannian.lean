@@ -54,7 +54,7 @@ variable {E V P H G M N : Type*}
   {n : ℕ∞ω}
   [RiemannianBundle (fun y : N ↦ TangentSpace J y)]
 
-variable {m : ℕ∞ω} [IsManifold I 1 M] [IsManifold J 1 N]
+variable {m : ℕ∞ω} [IsManifold J 1 N]
   [IsContMDiffRiemannianBundle J m V (fun y : N ↦ TangentSpace J y)]
 
 /-- Orthogonal normal projection is `C^m` on the pulled-back ambient tangent bundle for a
@@ -67,6 +67,7 @@ theorem contMDiff_normalRepresentative_normalClass
       (fun p : TotalSpace V ((f : M → N) *ᵖ (TangentSpace J)) =>
         (⟨f p.proj, f.normalRepresentative p.proj hn (f.normalClass p.proj hn p.2)⟩ :
           TangentBundle J N)) := by
+  have : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
   let : CompleteSpace E := FiniteDimensional.complete ℝ E
   -- The induced metric identifies tangent vectors with covectors on the source.
   let g := ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle
@@ -127,10 +128,12 @@ theorem contMDiff_normalRepresentative
     [IsManifold I (m + 1) M] [IsManifold J (m + 1) N]
     (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) (hm : m + 1 ≤ n)
     (hdim : Module.finrank ℝ P = Module.finrank ℝ V - Module.finrank ℝ E) :
+    haveI : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
     letI := f.normalSpaceFiberBundle hn hdim
     ContMDiff (I.prod 𝓘(ℝ, P)) (J.prod 𝓘(ℝ, V)) m
       (fun p : TotalSpace P (fun x => f.NormalSpace x hn) =>
         (⟨f p.proj, f.normalRepresentative p.proj hn p.2⟩ : TangentBundle J N)) := by
+  have : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
   let := f.normalSpaceFiberBundle hn hdim
   rw [f.contMDiff_normalBundle_iff hn hm hdim]
   convert f.contMDiff_normalRepresentative_normalClass hn hm using 1
