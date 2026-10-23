@@ -49,9 +49,6 @@ and only if it kills the totalization of every short exact sequence, and it then
 * `TauCeti.CurvedDGRightModuleCat.AbsoluteDerivedCategory.isZero_Qh_obj_iff`: a curved module is
   zero in `D_abs` if and only if it is absolutely acyclic; the analogous statements for `D_co` and
   `D_ctr` involve retracts.
-* `TauCeti.CurvedDGRightModuleCat.absolutelyAcyclic_le_kernel_iff`: a triangle functor kills the
-  absolutely acyclic objects if and only if it kills every totalization of a short exact
-  sequence.
 * `TauCeti.CurvedDGRightModuleCat.AbsoluteDerivedCategory.trW_isInvertedBy_iff`: the universal
   property of `D_abs` among triangle functors.
 
@@ -72,27 +69,6 @@ universe u
 variable {R A : Type u} [CommRing R] [Ring A] [Algebra R A]
   {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜] {d : A →ₗ[R] A} {w : A}
   {h : IsCurvedDGAlgebra 𝒜 d w}
-
-/-! ### The universal property of the absolutely acyclic class -/
-
-section Kernel
-
-variable {E : Type*} [Category* E] [HasZeroObject E] [Preadditive E] [HasShift E ℤ]
-  [∀ n : ℤ, (shiftFunctor E n).Additive] [Pretriangulated E]
-  (F : DGHomotopyCategory R (CurvedDGRightModuleCat.{u, u, u} h) ⥤ E) [F.CommShift ℤ]
-  [F.IsTriangulated]
-
-/-- A triangle functor out of the curved homotopy category kills every absolutely acyclic curved
-module if and only if it kills the totalization of every short exact sequence of curved
-modules. -/
-theorem absolutelyAcyclic_le_kernel_iff :
-    absolutelyAcyclic R h ≤ F.kernel ↔
-      ∀ S : ShortComplex
-        (ForgetEnrichment (CochainComplex (ModuleCat R) ℤ) (CurvedDGRightModuleCat.{u, u, u} h)),
-        S.ShortExact → IsZero (F.obj (DGHomotopyCategory.of R (totalization S))) := by
-  simp only [absolutelyAcyclic_le_iff, totalizations_le_iff, ObjectProperty.prop_inverseImage_iff]
-
-end Kernel
 
 /-! ### The three derived categories of the second kind -/
 
@@ -146,7 +122,8 @@ theorem trW_isInvertedBy_iff {E : Type*} [Category* E] [HasZeroObject E] [Preadd
       ∀ S : ShortComplex
         (ForgetEnrichment (CochainComplex (ModuleCat R) ℤ) (CurvedDGRightModuleCat.{u, u, u} h)),
         S.ShortExact → IsZero (F.obj (DGHomotopyCategory.of R (totalization S))) := by
-  rw [ObjectProperty.trW_isInvertedBy_iff, absolutelyAcyclic_le_kernel_iff]
+  simp only [ObjectProperty.trW_isInvertedBy_iff, absolutelyAcyclic_le_iff, totalizations_le_iff,
+    ObjectProperty.prop_inverseImage_iff]
 
 end AbsoluteDerivedCategory
 

@@ -77,7 +77,7 @@ instance : ObjectProperty.IsTriangulated (IsZero (C := E)) where
   toIsTriangulatedClosed₂ := .mk' fun T hT h₁ h₃ ↦ Triangle.isZero₂_of_isZero₁₃ T hT h₁ h₃
 
 /-- The kernel of any functor to a category with zero morphisms is stable under retracts. -/
-instance {D : Type*} [Category* D] [HasZeroMorphisms D] (F : C ⥤ D) :
+instance {B D : Type*} [Category* B] [Category* D] [HasZeroMorphisms D] (F : B ⥤ D) :
     F.kernel.IsStableUnderRetracts where
   of_retract h hY := IsZero.of_mono (h.map F).i hY
 
