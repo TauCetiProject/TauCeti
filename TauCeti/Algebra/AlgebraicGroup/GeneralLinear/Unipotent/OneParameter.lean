@@ -35,6 +35,17 @@ public section
 open WithConv
 open scoped Polynomial
 
+/-- Entrywise change of coefficients preserves the nilpotent exponential curve. -/
+theorem Matrix.GeneralLinearGroup.map_expSMulHom
+    {ι R S : Type*} [Fintype ι] [DecidableEq ι]
+    [CommRing R] [Algebra ℚ R] [CommRing S] [Algebra ℚ S]
+    (f : R →+* S) {X : Matrix ι ι R} (hX : IsNilpotent X) (t : Multiplicative R) :
+    Matrix.GeneralLinearGroup.map f (TauCeti.expSMulHom R hX t) =
+      TauCeti.expSMulHom S (hX.map f.mapMatrix)
+        (Multiplicative.ofAdd (f (Multiplicative.toAdd t))) :=
+  TauCeti.map_expSMulHom R hX f.mapMatrix f
+    (fun r a ↦ Matrix.map_smul' _ r a (map_mul _)) t
+
 namespace TauCeti.GeneralLinear
 
 universe u v
@@ -79,15 +90,11 @@ theorem aeval_comp_nilpotentOneParameterCoordinateMap (hX : IsNilpotent X) (t : 
       (generalLinearToPoint n (expSMulHom R hX (Multiplicative.ofAdd t))).ofConv := by
   apply WithConv.toConv_injective
   rw [nilpotentOneParameterCoordinateMap, toConv_comp_generalLinearToPoint_ofConv,
-    Matrix.GeneralLinearGroup.map,
-    map_expSMulHom R[X] _ _ _ (fun r a ↦ Matrix.map_smul' _ r a (map_mul _))]
-  rw [toConv_ofConv]
-  apply congrArg (generalLinearToPoint n)
-  apply Units.ext
-  simp only [coe_expSMulHom, toAdd_ofAdd]
-  congr 1
-  ext i j
-  simp
+    Matrix.GeneralLinearGroup.map_expSMulHom, toConv_ofConv]
+  simp only [toAdd_ofAdd, RingHom.coe_coe,
+    Polynomial.aeval_X, RingHom.mapMatrix_apply, Matrix.map_map,
+    Function.comp_def, Polynomial.aeval_C, Algebra.algebraMap_self]
+  congr 2
 
 section ClosedSubgroup
 
@@ -132,8 +139,7 @@ theorem expSMulHom_log_mem_hopfIdealPointsSubgroup
   have h := map_mem_hopfIdealPointsSubgroup n I (Polynomial.aeval t)
     (expSMulHom_ofAdd_X_mem_hopfIdealPointsSubgroup n I (IsNilpotent.isNilpotent_log hg)
       (by simpa only [Units.nilpotentExpUnit_log g hg] using hI))
-  rw [Matrix.GeneralLinearGroup.map,
-    map_expSMulHom R[X] _ _ _ (fun r a ↦ Matrix.map_smul' _ r a (map_mul _))] at h
+  rw [Matrix.GeneralLinearGroup.map_expSMulHom] at h
   simpa only [toAdd_ofAdd, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
     Polynomial.aeval_X, RingHom.mapMatrix_apply, Matrix.map_map,
     Function.comp_def, Polynomial.aeval_C] using h
