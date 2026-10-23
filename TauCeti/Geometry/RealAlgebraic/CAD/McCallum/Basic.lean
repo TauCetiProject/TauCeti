@@ -16,7 +16,7 @@ import Mathlib.Algebra.MvPolynomial.Division
 # Order-invariant cylindrical algebraic decompositions by McCallum projection
 
 McCallum's projection replaces the Collins projection by the contents, coefficients,
-discriminants and pairwise resultants of an irreducible basis
+discriminants and pairwise resultants of a squarefree basis
 (`Finset.mcCallumProjection`). It is correct under a well-orientedness assumption, and it then
 produces a cylindrical algebraic decomposition whose cells are analytic submanifolds and on
 whose cells every input polynomial is *order-invariant*: its ambient order of vanishing
