@@ -291,12 +291,9 @@ ratio characters. -/
 private theorem prod_projectiveSpaceRatioMonomial_pow (a : {j : Option ι // j ≠ k} → ℕ) :
     ∏ j, projectiveSpaceRatioMonomial b hi le_rfl j.1 ^ a j =
       MonoidAlgebra.single (ofAdd ((projectiveSpaceDualSemigroupEquiv b hi k).symm a)) 1 := by
-  have h : (projectiveSpaceDualSemigroupEquiv b hi k).symm a =
-      ∑ j, a j • projectiveSpaceChartCharacter b hi k j := by
-    -- The general formula sums over `univ` built from classical decidable equality.
-    convert projectiveSpaceDualSemigroupEquiv_symm_apply b hi k a
-  rw [h, ofAdd_sum, ← MonoidAlgebra.of_apply, map_prod]
-  refine Finset.prod_congr rfl fun j _ ↦ ?_
+  rw [projectiveSpaceDualSemigroupEquiv_symm_apply, ofAdd_sum, ← MonoidAlgebra.of_apply, map_prod]
+  -- The general formula sums over `univ` built from classical decidable equality.
+  refine Finset.prod_congr (by congr!) fun j _ ↦ ?_
   rw [projectiveSpaceRatioMonomial_eq_single b hi k j.2, ofAdd_nsmul, map_pow,
     MonoidAlgebra.of_apply]
 
@@ -451,7 +448,9 @@ theorem projectiveSpaceChartToProj_preimage_basicOpen (k l : Option ι) :
     Proj.awayι_preimage_basicOpen 𝒜 (SymmetricAlgebra.ι_mem_homogeneousSubmodule ℂ _ _) one_pos
       (SymmetricAlgebra.ι_mem_homogeneousSubmodule ℂ _ _) one_pos,
     SpecMap_preimage_basicOpen]
-  simp
+  simp only [AlgHom.toRingHom_eq_coe, AlgEquiv.toAlgHom_toRingHom, ConcreteCategory.hom_ofHom,
+    RingHom.coe_coe, projectiveSpaceAwayEquiv_mk, pow_one,
+    projectiveSpaceHomogeneousCoordinates_coord]
   -- The two sides differ only in the ring structure of the coordinate ring seen through
   -- `CommRingCat.of`.
   rfl
@@ -583,11 +582,7 @@ private theorem projectiveSpaceToProj_surjective :
   intro p
   have hp : p ∈ (⊤ : (Proj 𝒜).Opens) := trivial
   rw [← SymmetricAlgebra.iSup_basicOpen_ι_eq_top ℂ (Option ι → ℂ) (fun j ↦ Pi.single j 1)
-    (by
-      rw [← (Pi.basisFun ℂ (Option ι)).span_eq]
-      congr
-      ext j : 1
-      exact (Pi.basisFun_apply ℂ (Option ι) j).symm)] at hp
+    (by rw [← funext (Pi.basisFun_apply ℂ (Option ι)), (Pi.basisFun ℂ (Option ι)).span_eq])] at hp
   obtain ⟨k, hk⟩ := TopologicalSpace.Opens.mem_iSup.1 hp
   rw [← opensRange_projectiveSpaceChartToProj (b := b) (hi := hi) k] at hk
   obtain ⟨y, rfl⟩ := hk

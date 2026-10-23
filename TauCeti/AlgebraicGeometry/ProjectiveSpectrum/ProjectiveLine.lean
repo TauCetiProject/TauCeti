@@ -229,10 +229,7 @@ theorem awayι_over (i : Fin 2) :
 /-- **The standard charts `D₊(Xᵢ)` cover the projective line.** -/
 theorem iSup_basicOpen_coord_eq_top : ⨆ i, Proj.basicOpen 𝒜 (coord R i) = ⊤ :=
   SymmetricAlgebra.iSup_basicOpen_ι_eq_top R (Fin 2 → R) (fun i ↦ Pi.single i 1) (by
-    rw [← (Pi.basisFun R (Fin 2)).span_eq]
-    congr
-    ext j : 1
-    exact (Pi.basisFun_apply R (Fin 2) j).symm)
+    rw [← funext (Pi.basisFun_apply R (Fin 2)), (Pi.basisFun R (Fin 2)).span_eq])
 
 /-- **The two standard charts cover the projective line.** -/
 theorem exists_eq_awayι (p : projectiveLine R) : ∃ i q, awayι R i q = p := by
