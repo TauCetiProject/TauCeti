@@ -51,6 +51,13 @@ def toEnd [AddZeroClass T] (A : T ≃+ T) : AddMonoid.End T :=
 @[simp]
 theorem coe_toEnd [AddZeroClass T] (A : T ≃+ T) : ⇑(toEnd A) = A := by rfl
 
+@[simp]
+theorem toEnd_refl [AddZeroClass T] : toEnd (AddEquiv.refl T) = 1 := (rfl)
+
+@[simp]
+theorem toEnd_trans [AddZeroClass T] (A B : T ≃+ T) :
+    toEnd (A.trans B) = toEnd B * toEnd A := (rfl)
+
 variable [AddCommGroup T]
 
 /-- An affine permutation with linear part `A` and translation part `t`. -/
@@ -60,6 +67,21 @@ def affinePerm (A : T ≃+ T) (t : T) : Equiv.Perm T :=
 @[simp]
 theorem affinePerm_apply (A : T ≃+ T) (t x : T) : affinePerm A t x = A x + t :=
   (rfl)
+
+/-- An affine permutation uniquely determines its linear and translation parts. -/
+@[simp]
+theorem affinePerm_inj (A B : T ≃+ T) (t s : T) :
+    affinePerm A t = affinePerm B s ↔ A = B ∧ t = s := by
+  constructor
+  · intro h
+    have ht : t = s := by
+      simpa using congrArg (fun e : Equiv.Perm T ↦ e 0) h
+    refine ⟨?_, ht⟩
+    ext x
+    have hx := congrArg (fun e : Equiv.Perm T ↦ e x) h
+    simpa only [affinePerm_apply, ht, add_left_inj] using hx
+  · rintro ⟨rfl, rfl⟩
+    rfl
 
 @[simp]
 theorem affinePerm_symm_apply (A : T ≃+ T) (t x : T) :
