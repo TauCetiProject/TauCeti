@@ -42,7 +42,7 @@ variable {p : StdSimplex ℝ≥0 ι} {r : ι → ℝ}
 /-- Regrouping components adds their weights. Rates need agree only on active components;
 neither surjectivity of the grouping map nor positivity of the rates is required.
 For an injective grouping map this inserts zero-weight components, with arbitrary rates. -/
-theorem hyperexponentialMeasure_map (f : ι → κ) {s : κ → ℝ}
+theorem hyperexponentialMeasure_stdSimplexMap (f : ι → κ) {s : κ → ℝ}
     (h : ∀ i, 0 < p.weights i → r i = s (f i)) :
     hyperexponentialMeasure (p.map f) s = hyperexponentialMeasure p r := by
   classical
@@ -71,7 +71,7 @@ theorem hyperexponentialMeasure_map (f : ι → κ) {s : κ → ℝ}
 @[simp]
 theorem hyperexponentialMeasure_reindex (p : StdSimplex ℝ≥0 ι) (r : ι → ℝ) (e : ι ≃ κ) :
     hyperexponentialMeasure (p.map e) (r ∘ e.symm) = hyperexponentialMeasure p r := by
-  exact hyperexponentialMeasure_map e (fun i _ ↦ by simp)
+  exact hyperexponentialMeasure_stdSimplexMap e (fun i _ ↦ by simp)
 
 /-- Multiplication by a positive constant divides every active rate by that constant.
 The identity also holds on the invalid zero-measure branch. -/
