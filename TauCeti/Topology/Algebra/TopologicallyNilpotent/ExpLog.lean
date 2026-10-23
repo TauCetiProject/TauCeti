@@ -139,8 +139,7 @@ theorem log (hu : IsTopologicallyNilpotent (u - 1)) :
   obtain ⟨c, hc⟩ := exists_log_eq_mul hu
   exact hc ▸ hu.mul_right c
 
-/-- `exp a - 1` lies in every ideal containing the topologically nilpotent `a`, so `exp a` lies
-in its principal unit group. -/
+/-- `exp a - 1` lies in every ideal containing the topologically nilpotent `a`. -/
 theorem exp_sub_one_mem (ha : IsTopologicallyNilpotent a) {I : Ideal S} (haI : a ∈ I) :
     NormedSpace.exp a - 1 ∈ I := by
   obtain ⟨c, hc⟩ := exists_exp_sub_one_eq_mul ha
