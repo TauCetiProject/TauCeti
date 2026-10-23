@@ -127,15 +127,11 @@ theorem finite (h : IsPseudoCoherentOver R M m) : Module.Finite R M := by
   exact .of_surjective ε hε
 
 /-- `0`-pseudocoherent means finitely generated. -/
+@[simp]
 theorem zero_iff : IsPseudoCoherentOver R M 0 ↔ Module.Finite R M := by
   refine ⟨finite, fun _ ↦ ?_⟩
   obtain ⟨k, ε, hε⟩ := Module.Finite.exists_fin' R M
   exact ⟨fun _ ↦ k, fun _ ↦ 0, ε, hε, fun h ↦ absurd h (by simp), fun i hi ↦ absurd hi (by simp)⟩
-
-private theorem natCast_add_one_le_add_one_iff {j : ℕ} :
-    ((j + 1 : ℕ) : ℕ∞) ≤ m + 1 ↔ (j : ℕ∞) ≤ m := by
-  rw [Nat.cast_add, Nat.cast_one]
-  exact ENat.add_le_add_iff_right ENat.one_ne_top
 
 /-- **Pseudocoherence one degree at a time.** `M` is `(m + 1)`-pseudocoherent exactly when there is
 a surjection onto `M` from a finite free module whose kernel is `m`-pseudocoherent. -/
@@ -150,17 +146,18 @@ theorem succ_iff :
     · rintro ⟨x, hx⟩
       obtain ⟨y, rfl⟩ := (hex x).mp hx
       exact ⟨y, rfl⟩
-    · exact fun x ↦ Subtype.ext_iff.trans
-        (hd 0 (natCast_add_one_le_add_one_iff.mpr (by simpa using h₁)) x)
-    · exact hd (i + 1) (natCast_add_one_le_add_one_iff.mpr hi)
+    · exact fun x ↦ Subtype.ext_iff.trans (hd 0 (by
+        rw [Nat.cast_add_one, ENat.add_le_add_iff_right ENat.one_ne_top]; simpa using h₁) x)
+    · exact hd (i + 1) (by rwa [Nat.cast_add_one, ENat.add_le_add_iff_right ENat.one_ne_top])
   · rintro ⟨k, f, hf, n, d, ε, hε, h₀, hd⟩
     have hf₀ := hε.comp_exact_iff_exact.mpr (exact_subtype_ker_map f)
     refine ⟨fun | 0 => k | i + 1 => n i, fun | 0 => (ker f).subtype ∘ₗ ε | i + 1 => d i, f, hf,
       fun _ ↦ hf₀, fun i hi ↦ ?_⟩
     rcases i with _ | i
-    · exact (Submodule.injective_subtype _).comp_exact_iff_exact.mpr
-        (h₀ (by simpa using natCast_add_one_le_add_one_iff.mp hi))
-    · exact hd i (natCast_add_one_le_add_one_iff.mp hi)
+    · rw [Nat.cast_add_one, ENat.add_le_add_iff_right ENat.one_ne_top] at hi
+      exact (Submodule.injective_subtype _).comp_exact_iff_exact.mpr (h₀ (by simpa using hi))
+    · rw [Nat.cast_add_one, ENat.add_le_add_iff_right ENat.one_ne_top] at hi
+      exact hd i hi
 
 /-- The kernel of `g ∘ e` for a linear equivalence `e` is equivalent to the kernel of `g`. -/
 private theorem ker_comp_equiv_iff {F F' : Type*} [AddCommGroup F] [Module R F] [AddCommGroup F']
@@ -202,6 +199,7 @@ theorem of_projective [Module.Finite R M] [Module.Projective R M] :
         using he.ker_eq_range_one_sub
 
 /-- `1`-pseudocoherent means finitely presented. -/
+@[simp]
 theorem one_iff : IsPseudoCoherentOver R M 1 ↔ Module.FinitePresentation R M := by
   rw [← zero_add (1 : ℕ∞), succ_iff]
   constructor
