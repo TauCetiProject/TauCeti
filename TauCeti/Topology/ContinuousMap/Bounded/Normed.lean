@@ -35,8 +35,8 @@ near `f₀` by `Θ f t = G (f t)`, with `G` uniformly continuous on a set contai
 range of `f₀`, is continuous at `f₀` (`BoundedContinuousFunction.apply_mem_of_mem_ball` and
 `BoundedContinuousFunction.ball_half_subset_of_mem_ball` are the facts about the tube).
 
-`Subalgebra.compContinuousₗᵢ` is precomposition with a homeomorphism, as a linear isometry
-equivalence of a subalgebra of `α →ᵇ 𝕜` that it preserves, and
+`BoundedContinuousFunction.compContinuousₗᵢ` is precomposition with a homeomorphism, as a linear
+isometry equivalence of a submodule of `α →ᵇ β` that it preserves, and
 `ContinuousLinearMap.compLeftContinuousBounded_compContinuous` says that postcomposition with a
 continuous linear map commutes with precomposition.
 -/
@@ -143,43 +143,49 @@ theorem ContinuousLinearMap.compLeftContinuousBounded_compContinuous {α δ 𝕜
       (g.compLeftContinuousBounded α f).compContinuous a :=
   (rfl)
 
+namespace BoundedContinuousFunction
+
+variable {α 𝕜 β S : Type*} [TopologicalSpace α] [NormedField 𝕜] [SeminormedAddCommGroup β]
+  [NormedSpace 𝕜 β] [SetLike S (α →ᵇ β)] [AddSubgroupClass S (α →ᵇ β)]
+  [SMulMemClass S 𝕜 (α →ᵇ β)]
+
 /-- Precomposition with a continuous map `a` of `α` that has a continuous inverse `b`, as a linear
-isometry equivalence of a subalgebra `S` of `α →ᵇ 𝕜` preserved by both `a` and `b`. -/
-def Subalgebra.compContinuousₗᵢ {α 𝕜 : Type*} [TopologicalSpace α] [NormedField 𝕜]
-    (S : Subalgebra 𝕜 (α →ᵇ 𝕜)) (a b : C(α, α)) (hab : ∀ x, a (b x) = x)
-    (hba : ∀ x, b (a x) = x) (ha : ∀ f ∈ S, f.compContinuous a ∈ S)
-    (hb : ∀ f ∈ S, f.compContinuous b ∈ S) : S ≃ₗᵢ[𝕜] S where
-  toFun f := ⟨(f : α →ᵇ 𝕜).compContinuous a, ha _ f.2⟩
-  invFun f := ⟨(f : α →ᵇ 𝕜).compContinuous b, hb _ f.2⟩
-  map_add' _ _ := Subtype.ext <| BoundedContinuousFunction.ext fun _ => by simp
-  map_smul' _ _ := Subtype.ext <| BoundedContinuousFunction.ext fun _ => by simp
-  left_inv f := Subtype.ext <| BoundedContinuousFunction.ext fun x =>
-    congrArg (f : α →ᵇ 𝕜) (hab x)
-  right_inv f := Subtype.ext <| BoundedContinuousFunction.ext fun x =>
-    congrArg (f : α →ᵇ 𝕜) (hba x)
+isometry equivalence of a submodule `s` of `α →ᵇ β`, such as a `Submodule` or a `Subalgebra`,
+preserved by both `a` and `b`. -/
+def compContinuousₗᵢ (s : S) (a b : C(α, α)) (hab : ∀ x, a (b x) = x) (hba : ∀ x, b (a x) = x)
+    (ha : ∀ f ∈ s, f.compContinuous a ∈ s) (hb : ∀ f ∈ s, f.compContinuous b ∈ s) :
+    s ≃ₗᵢ[𝕜] s where
+  toFun f := ⟨(f : α →ᵇ β).compContinuous a, ha _ f.2⟩
+  invFun f := ⟨(f : α →ᵇ β).compContinuous b, hb _ f.2⟩
+  map_add' _ _ := Subtype.ext <| ext fun _ => by simp
+  map_smul' _ _ := Subtype.ext <| ext fun _ => by simp
+  left_inv f := Subtype.ext <| ext fun x => congrArg (f : α →ᵇ β) (hab x)
+  right_inv f := Subtype.ext <| ext fun x => congrArg (f : α →ᵇ β) (hba x)
   norm_map' f := by
     rw [AddSubgroupClass.coe_norm, AddSubgroupClass.coe_norm]
-    refine le_antisymm ((f : α →ᵇ 𝕜).norm_compContinuous_le a) ?_
-    calc ‖(f : α →ᵇ 𝕜)‖ = ‖((f : α →ᵇ 𝕜).compContinuous a).compContinuous b‖ := by
+    refine le_antisymm ((f : α →ᵇ β).norm_compContinuous_le a) ?_
+    calc ‖(f : α →ᵇ β)‖ = ‖((f : α →ᵇ β).compContinuous a).compContinuous b‖ := by
           congr 1
           ext x
-          exact congrArg (f : α →ᵇ 𝕜) (hab x).symm
-      _ ≤ ‖(f : α →ᵇ 𝕜).compContinuous a‖ := BoundedContinuousFunction.norm_compContinuous_le _ _
+          exact congrArg (f : α →ᵇ β) (hab x).symm
+      _ ≤ ‖(f : α →ᵇ β).compContinuous a‖ := norm_compContinuous_le _ _
 
-/-- `S.compContinuousₗᵢ a b … f` is the precomposition of `f` with `a`. -/
+/-- `compContinuousₗᵢ s a b … f` is the precomposition of `f` with `a`. -/
 @[simp]
-theorem Subalgebra.compContinuousₗᵢ_apply {α 𝕜 : Type*} [TopologicalSpace α]
-    [NormedField 𝕜] (S : Subalgebra 𝕜 (α →ᵇ 𝕜)) (a b : C(α, α)) (hab : ∀ x, a (b x) = x)
-    (hba : ∀ x, b (a x) = x) (ha : ∀ f ∈ S, f.compContinuous a ∈ S)
-    (hb : ∀ f ∈ S, f.compContinuous b ∈ S) (f : S) :
-    (S.compContinuousₗᵢ a b hab hba ha hb f : α →ᵇ 𝕜) = (f : α →ᵇ 𝕜).compContinuous a :=
+theorem compContinuousₗᵢ_apply (s : S) (a b : C(α, α)) (hab : ∀ x, a (b x) = x)
+    (hba : ∀ x, b (a x) = x) (ha : ∀ f ∈ s, f.compContinuous a ∈ s)
+    (hb : ∀ f ∈ s, f.compContinuous b ∈ s) (f : s) :
+    (compContinuousₗᵢ (𝕜 := 𝕜) s a b hab hba ha hb f : α →ᵇ β) =
+      (f : α →ᵇ β).compContinuous a :=
   (rfl)
 
-/-- The inverse of `S.compContinuousₗᵢ a b …` is precomposition with `b`. -/
+/-- The inverse of `compContinuousₗᵢ s a b …` is precomposition with `b`. -/
 @[simp]
-theorem Subalgebra.compContinuousₗᵢ_symm_apply {α 𝕜 : Type*} [TopologicalSpace α]
-    [NormedField 𝕜] (S : Subalgebra 𝕜 (α →ᵇ 𝕜)) (a b : C(α, α)) (hab : ∀ x, a (b x) = x)
-    (hba : ∀ x, b (a x) = x) (ha : ∀ f ∈ S, f.compContinuous a ∈ S)
-    (hb : ∀ f ∈ S, f.compContinuous b ∈ S) (f : S) :
-    ((S.compContinuousₗᵢ a b hab hba ha hb).symm f : α →ᵇ 𝕜) = (f : α →ᵇ 𝕜).compContinuous b :=
+theorem compContinuousₗᵢ_symm_apply (s : S) (a b : C(α, α)) (hab : ∀ x, a (b x) = x)
+    (hba : ∀ x, b (a x) = x) (ha : ∀ f ∈ s, f.compContinuous a ∈ s)
+    (hb : ∀ f ∈ s, f.compContinuous b ∈ s) (f : s) :
+    ((compContinuousₗᵢ (𝕜 := 𝕜) s a b hab hba ha hb).symm f : α →ᵇ β) =
+      (f : α →ᵇ β).compContinuous b :=
   (rfl)
+
+end BoundedContinuousFunction

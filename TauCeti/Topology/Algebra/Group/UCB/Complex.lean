@@ -68,6 +68,7 @@ variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 variable (G) in
 /-- The complex bounded continuous functions `f` on `G` such that `f (u * x)` is uniformly close
 to `f x` for all `u` near `1`, as a subalgebra of `G →ᵇ ℂ`. -/
+@[expose]
 def complexUCB : Subalgebra ℂ (G →ᵇ ℂ) :=
   ucbSubalgebra ℂ G
 
@@ -76,35 +77,38 @@ variable (G) in
 under small left multiplication, with the supremum norm and algebra operations of `G →ᵇ ℂ`. -/
 abbrev ComplexUCB : Type _ := complexUCB G
 
+variable (G) in
+/-- `complexUCB G` is the case `𝕜 = ℂ` of `ucbSubalgebra 𝕜 G`. -/
+theorem complexUCB_eq_ucbSubalgebra : complexUCB G = ucbSubalgebra ℂ G :=
+  rfl
+
 /-- The defining condition of `complexUCB G`. -/
 theorem mem_complexUCB_iff {f : G →ᵇ ℂ} :
-    f ∈ complexUCB G ↔ ∀ ε > 0, ∀ᶠ u in 𝓝 (1 : G), ∀ x, ‖f (u * x) - f x‖ < ε :=
-  mem_ucbSubalgebra_iff
+    f ∈ complexUCB G ↔ ∀ ε > 0, ∀ᶠ u in 𝓝 (1 : G), ∀ x, ‖f (u * x) - f x‖ < ε := by
+  rw [complexUCB_eq_ucbSubalgebra, mem_ucbSubalgebra_iff]
 
 /-- Membership in `complexUCB G` says that `u ↦ f (u * ·)` tends to `f` in supremum norm as
 `u → 1`. -/
 theorem mem_complexUCB_iff_tendsto {f : G →ᵇ ℂ} :
     f ∈ complexUCB G ↔
-      Tendsto (fun u => f.compContinuous (ContinuousMap.mulLeft u)) (𝓝 1) (𝓝 f) :=
-  mem_ucbSubalgebra_iff_tendsto
+      Tendsto (fun u => f.compContinuous (ContinuousMap.mulLeft u)) (𝓝 1) (𝓝 f) := by
+  rw [complexUCB_eq_ucbSubalgebra, mem_ucbSubalgebra_iff_tendsto]
 
 /-- Postcomposing a function in `complexUCB G` with a real linear map `ℂ → ℝ`, such as the real or
 imaginary part, gives a function in `ucb G`. -/
 theorem compLeftContinuousBounded_mem_ucb (L : ℂ →L[ℝ] ℝ) {f : G →ᵇ ℂ}
-    (hf : f ∈ complexUCB G) : L.compLeftContinuousBounded G f ∈ ucb G :=
-  mem_ucb_iff_tendsto.2 <|
-    (((L.compLeftContinuousBounded G).continuous.tendsto f).comp
-      (mem_complexUCB_iff_tendsto.1 hf)).congr fun _ =>
-        L.compLeftContinuousBounded_compContinuous ..
+    (hf : f ∈ complexUCB G) : L.compLeftContinuousBounded G f ∈ ucb G := by
+  rw [complexUCB_eq_ucbSubalgebra] at hf
+  rw [ucb_eq_ucbSubalgebra]
+  exact compLeftContinuousBounded_mem_ucbSubalgebra L hf
 
 /-- Postcomposing a function in `ucb G` with a real linear map `ℝ → ℂ`, such as the inclusion
 `ℝ → ℂ`, gives a function in `complexUCB G`. -/
 theorem compLeftContinuousBounded_mem_complexUCB (L : ℝ →L[ℝ] ℂ) {f : G →ᵇ ℝ}
-    (hf : f ∈ ucb G) : L.compLeftContinuousBounded G f ∈ complexUCB G :=
-  mem_complexUCB_iff_tendsto.2 <|
-    (((L.compLeftContinuousBounded G).continuous.tendsto f).comp
-      (mem_ucb_iff_tendsto.1 hf)).congr fun _ =>
-        L.compLeftContinuousBounded_compContinuous ..
+    (hf : f ∈ ucb G) : L.compLeftContinuousBounded G f ∈ complexUCB G := by
+  rw [ucb_eq_ucbSubalgebra] at hf
+  rw [complexUCB_eq_ucbSubalgebra]
+  exact compLeftContinuousBounded_mem_ucbSubalgebra L hf
 
 /-- A complex function lies in `complexUCB G` exactly when its real and imaginary parts lie in
 `ucb G`. -/
@@ -121,11 +125,6 @@ theorem mem_complexUCB_iff_re_im {f : G →ᵇ ℂ} :
   rw [h]
   exact add_mem (compLeftContinuousBounded_mem_complexUCB _ hre)
     (Subalgebra.smul_mem _ (compLeftContinuousBounded_mem_complexUCB _ him) _)
-
-/-- A left translate `x ↦ f (g * x)` of a function in `complexUCB G` lies in `complexUCB G`. -/
-theorem compContinuous_mulLeft_mem_complexUCB {f : G →ᵇ ℂ} (hf : f ∈ complexUCB G) (g : G) :
-    f.compContinuous (ContinuousMap.mulLeft g) ∈ complexUCB G :=
-  compContinuous_mulLeft_mem_ucbSubalgebra hf g
 
 namespace ComplexUCB
 
@@ -233,23 +232,15 @@ theorem norm_ofReal (f : UCB G) : ‖ofReal f‖ = ‖f‖ := by
 /-! ### Left translation -/
 
 /-- Left translation `g ↦ L_g`, where `(L_g f)(x) = f (g⁻¹ * x)`, as a group homomorphism from `G`
-to the complex linear isometry equivalences of `ComplexUCB G`. -/
-def leftTranslation : G →* (ComplexUCB G ≃ₗᵢ[ℂ] ComplexUCB G) where
-  toFun g := (complexUCB G).compContinuousₗᵢ (ContinuousMap.mulLeft g⁻¹)
-    (ContinuousMap.mulLeft g) (by simp) (by simp)
-    (fun _ hf => compContinuous_mulLeft_mem_complexUCB hf _)
-    (fun _ hf => compContinuous_mulLeft_mem_complexUCB hf _)
-  map_one' := by
-    ext
-    simp
-  map_mul' g h := by
-    ext
-    simp [mul_assoc]
+to the complex linear isometry equivalences of `ComplexUCB G`; the case `𝕜 = ℂ` of
+`ucbSubalgebra.leftTranslation`. -/
+def leftTranslation : G →* (ComplexUCB G ≃ₗᵢ[ℂ] ComplexUCB G) :=
+  ucbSubalgebra.leftTranslation ℂ G
 
 @[simp]
 theorem leftTranslation_apply (g : G) (f : ComplexUCB G) (x : G) :
-    (leftTranslation g f : G →ᵇ ℂ) x = (f : G →ᵇ ℂ) (g⁻¹ * x) := by
-  simp [leftTranslation]
+    (leftTranslation g f : G →ᵇ ℂ) x = (f : G →ᵇ ℂ) (g⁻¹ * x) :=
+  ucbSubalgebra.leftTranslation_apply ..
 
 /-- The real part of `L_g f` is the left translate `L_g` of the real part of `f`. -/
 @[simp]
