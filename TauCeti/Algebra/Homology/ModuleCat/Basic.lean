@@ -39,9 +39,10 @@ satisfy the hypotheses of this construction (`HomologicalComplex.moduleCat_d_inv
 is exact, the image of the incoming differential, the term and the image of the outgoing
 differential form a short exact sequence (`HomologicalComplex.exact_subtype_rangeRestrict`).
 A chain map restricts to a map between the images of the differentials
-(`HomologicalComplex.Hom.boundaryMap`), injective where the chain map is; for a degreewise short
-exact sequence of complexes whose third term is exact, these maps form a sequence exact in the
-middle (`HomologicalComplex.Hom.exact_boundaryMap`).
+(`HomologicalComplex.Hom.boundaryMap`), functorially in the chain map
+(`HomologicalComplex.Hom.boundaryMap_comp`), and injective where the chain map is; for a
+degreewise short exact sequence of complexes whose third term is exact, these maps form a sequence
+exact in the middle (`HomologicalComplex.Hom.exact_boundaryMap`).
 -/
 
 public section
@@ -98,6 +99,18 @@ def Hom.boundaryMap (φ : K ⟶ L) (i j : ι) :
 theorem Hom.coe_boundaryMap (φ : K ⟶ L) (i j : ι) (x : LinearMap.range (K.d i j).hom) :
     (φ.boundaryMap i j x : L.X j) = (φ.f j).hom x :=
   (rfl)
+
+/-- The identity chain map induces the identity on boundaries. -/
+@[simp]
+theorem Hom.boundaryMap_id (i j : ι) : (𝟙 K : K ⟶ K).boundaryMap i j = LinearMap.id :=
+  LinearMap.ext fun _ ↦ Subtype.ext rfl
+
+/-- The map on boundaries induced by a composite of chain maps is the composite of the induced
+maps. -/
+@[simp]
+theorem Hom.boundaryMap_comp (φ : K ⟶ L) (ψ : L ⟶ M) (i j : ι) :
+    (φ ≫ ψ).boundaryMap i j = ψ.boundaryMap i j ∘ₗ φ.boundaryMap i j :=
+  LinearMap.ext fun _ ↦ Subtype.ext rfl
 
 /-- A chain map that is injective in degree `j` is injective on the boundaries of degree `j`. -/
 theorem Hom.boundaryMap_injective (φ : K ⟶ L) (i : ι) {j : ι}
