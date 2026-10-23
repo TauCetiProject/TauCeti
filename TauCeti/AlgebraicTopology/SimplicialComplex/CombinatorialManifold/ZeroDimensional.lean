@@ -115,6 +115,8 @@ theorem isCombinatorialManifold_zero_iff_eq_bot :
   · intro h
     apply bot_unique
     intro σ hσ
+    -- Membership in the bottom abstract complex unfolds to `∃ v, σ = {v}`; Mathlib has no
+    -- `mem_bot` lemma for abstract simplicial complexes.
     exact PreAbstractSimplicialComplex.dimension_le_zero_iff.mp h.dimension_le σ hσ
   · rintro rfl
     exact PreAbstractSimplicialComplex.isCombinatorialManifold_zero_iff.mpr fun v _ =>
