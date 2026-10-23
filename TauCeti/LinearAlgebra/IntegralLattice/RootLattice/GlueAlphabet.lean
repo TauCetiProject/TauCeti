@@ -145,18 +145,6 @@ private theorem isNondegenerate_rootLattice_E8 (ht : E8.IsSimplyLaced) :
 attribute [local instance] isNondegenerate_rootLattice_A isNondegenerate_rootLattice_E6
   isNondegenerate_rootLattice_E7 isNondegenerate_rootLattice_E8
 
-/-- The trivial glue alphabet of `E₈` is the discriminant quadratic module of the `E₈` root
-lattice, both groups being trivial. -/
-private noncomputable def typeE₈GlueIsometry (ht : E8.IsSimplyLaced) :
-    FiniteQuadraticModule.Isometry (E8.glueAlphabet ht)
-      (typeE₈RootLattice.discriminantQuadraticModule isEven_typeE₈RootLattice) :=
-  haveI : Subsingleton (typeE₈RootLattice.discriminantQuadraticModule isEven_typeE₈RootLattice) :=
-    inferInstanceAs (Subsingleton typeE₈RootLattice.DiscriminantGroup)
-  { toLinearEquiv := LinearEquiv.ofSubsingleton _ _
-    map_app' x := by
-      rw [Subsingleton.elim x 0, QuadraticMap.map_zero]
-      exact (congrArg _ (Subsingleton.elim _ 0)).trans (QuadraticMap.map_zero _) }
-
 /-- **The glue alphabet is the discriminant quadratic module of the root lattice.**  For a valid
 simply-laced Dynkin type `t`, this is the isometry from `t.glueAlphabet ht` to the discriminant
 form of `t.rootLattice ht` that carries the generator of `ℤ/(n+1)` for `Aₙ` to the class of the
@@ -189,7 +177,11 @@ noncomputable def glueAlphabetIsometry :
   | E7, _, ht => typeE₇DiscriminantQuadraticIsometry.trans
       ((Isometry.ofEq (rootLattice_E7 ht).symm).discriminantQuadraticIsometry
         isEven_typeE₇RootLattice)
-  | E8, _, ht => (typeE₈GlueIsometry ht).trans
+  | E8, _, ht =>
+    haveI : Subsingleton
+        (typeE₈RootLattice.discriminantQuadraticModule isEven_typeE₈RootLattice) :=
+      inferInstanceAs (Subsingleton typeE₈RootLattice.DiscriminantGroup)
+    FiniteQuadraticModule.Isometry.ofSubsingleton.trans
       ((Isometry.ofEq (rootLattice_E8 ht).symm).discriminantQuadraticIsometry
         isEven_typeE₈RootLattice)
   | B n, _, h => absurd h (not_isSimplyLaced_B n)

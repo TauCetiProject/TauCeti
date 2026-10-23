@@ -33,6 +33,8 @@ the polar pairing is therefore `B(x, y)` modulo `ℤ`.
 * `TauCeti.FiniteQuadraticModule.Isometry`: a quadratic-map isometric equivalence.
 * `TauCeti.FiniteQuadraticModule.Isometry.ofEq`: the identity isometry between equal finite
   quadratic modules.
+* `TauCeti.FiniteQuadraticModule.Isometry.ofSubsingleton`: the unique isometry between two trivial
+  finite quadratic modules.
 * `TauCeti.FiniteQuadraticModule.Hom.toIsometryOfNondegenerate`: a morphism from a
   nondegenerate source of the same finite cardinality, packaged as an isometry.
 * `TauCeti.FiniteQuadraticModule.IsIsotropic`: quadratic isotropy of an additive subgroup.
@@ -280,6 +282,11 @@ theorem ofEq_apply {A' : FiniteQuadraticModule.{u}} (h : A = A') (x : A) :
 @[simp]
 theorem ofEq_rfl : ofEq (rfl : A = A) = QuadraticMap.IsometryEquiv.refl A.quadratic :=
   (rfl)
+
+/-- The isometry between two finite quadratic modules with at most one element. -/
+def ofSubsingleton [Subsingleton A] [Subsingleton B] : Isometry A B where
+  toLinearEquiv := LinearEquiv.ofSubsingleton _ _
+  map_app' x := by simp [Subsingleton.elim x 0]
 
 /-- A quadratic isometry is, after forgetting bijectivity, a morphism. -/
 def toHom (f : Isometry A B) : Hom A B :=
