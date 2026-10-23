@@ -43,6 +43,9 @@ cut between the fresh terminals gives a minimum `A`–`B` cut of the same capaci
 
 * `TauCeti.SetFlow cap A B`: `A`–`B` flows for the capacities `cap`, with value `SetFlow.val`.
 * `TauCeti.SetFlow.IsMaximum`: an `A`–`B` flow of largest value.
+* `TauCeti.SetFlow.toAuxFlow` and `TauCeti.Flow.toSetFlow`: the ordinary flow of the auxiliary
+  network corresponding to an `A`–`B` flow, and the `A`–`B` flow corresponding to an ordinary flow
+  of the auxiliary network.
 * `TauCeti.SetFlow.auxFlowEquiv`: the correspondence between `A`–`B` flows and ordinary flows of
   the auxiliary network.
 
@@ -316,9 +319,11 @@ end SetFlow
 
 variable [DecidableEq V]
 
-namespace SetFlow
+section AuxFlow
 
 variable [PartialOrder K] {cap : Assignment Q K} {A B : Finset V}
+
+namespace SetFlow
 
 /-- The excess at an original vertex of the restriction of an ordinary flow of the auxiliary
 network is the value sent to the fresh sink minus the value arriving from the fresh source. -/
@@ -332,76 +337,106 @@ private theorem excessAt_auxTerminalRestrict
   rw [← sub_eq_zero, ← h]
   abel
 
+/-- The assignment of the auxiliary network corresponding to an `A`–`B` flow is conserved at every
+original vertex. -/
+theorem excessAt_auxTerminalCapacity_inl (f : SetFlow cap A B) (v : V) :
+    excessAt (auxTerminalCapacity (A := A) (B := B) f.toFun (fun a ↦ -excessAt f.toFun a)
+      fun b ↦ excessAt f.toFun b) (inl v) = 0 := by
+  rw [AuxTerminalHom.excessAt_inl, auxTerminalRestrict_auxTerminalCapacity,
+    sum_auxTerminalCapacity_source, sum_auxTerminalCapacity_sink]
+  by_cases hA : v ∈ A <;> by_cases hB : v ∈ B
+  · simp [hA, hB, f.excessAt_eq_zero_of_mem_of_mem hA hB]
+  · simp [hA, hB]
+  · simp [hA, hB]
+  · simp [hA, hB, f.conserve v hA hB]
+
 variable [IsOrderedAddMonoid K]
+
+omit [DecidableEq V] in
+/-- The assignment of the auxiliary network corresponding to an `A`–`B` flow lies below the
+auxiliary capacities `setFlowCapacity cap A B`. -/
+theorem auxTerminalCapacity_le_setFlowCapacity (f : SetFlow cap A B) :
+    auxTerminalCapacity f.toFun (fun a ↦ -excessAt f.toFun a) (fun b ↦ excessAt f.toFun b) ≤
+      setFlowCapacity cap A B :=
+  AuxTerminalHom.forall_iff.2 ⟨fun _ _ e ↦ by simpa using f.le_cap e,
+    fun a _ ↦ by simpa using neg_excessAt_le_of_mem_Icc f.mem_Icc a,
+    fun b _ ↦ by simpa using excessAt_le_of_mem_Icc f.mem_Icc b⟩
+
+/-- The ordinary flow from the fresh source to the fresh sink of the auxiliary network
+corresponding to an `A`–`B` flow. It keeps the values on the original arrows, and carries minus the
+excess at `a` on the arrow from the fresh source to `a ∈ A` and the excess at `b` on the arrow from
+`b ∈ B` to the fresh sink. -/
+def toAuxFlow (f : SetFlow cap A B) : Flow (setFlowCapacity cap A B) (inr false) (inr true) where
+  toFun := auxTerminalCapacity f.toFun (fun a ↦ -excessAt f.toFun a) fun b ↦ excessAt f.toFun b
+  mem_Icc := ⟨auxTerminalCapacity_nonneg f.mem_Icc.1
+    (fun a ha ↦ neg_nonneg.2 (f.excessAt_nonpos a ha)) f.excessAt_nonneg,
+    f.auxTerminalCapacity_le_setFlowCapacity⟩
+  conserve
+    | inl v, _, _ => f.excessAt_auxTerminalCapacity_inl v
+    | inr false, hσ, _ => (hσ rfl).elim
+    | inr true, _, hτ => (hτ rfl).elim
+  excessAt_sink_nonneg := by
+    rw [AuxTerminalHom.excessAt_inr_true]
+    simp only [sum_auxTerminalCapacity_sink, sum_ite_mem, univ_inter]
+    exact f.val_nonneg
+
+@[simp]
+theorem toAuxFlow_toFun (f : SetFlow cap A B) :
+    f.toAuxFlow.toFun =
+      auxTerminalCapacity f.toFun (fun a ↦ -excessAt f.toFun a) fun b ↦ excessAt f.toFun b :=
+  (rfl)
+
+end SetFlow
+
+variable [IsOrderedAddMonoid K]
+
+/-- The `A`–`B` flow corresponding to an ordinary flow from the fresh source to the fresh sink of
+the auxiliary network, for disjoint `A` and `B`: its restriction to the original arrows. -/
+def Flow.toSetFlow (g : Flow (setFlowCapacity cap A B) (inr false) (inr true))
+    (hAB : Disjoint A B) : SetFlow cap A B where
+  toFun := auxTerminalRestrict g.toFun
+  mem_Icc := ⟨fun _ _ e ↦ by simpa using g.nonneg (AuxTerminalHom.original e),
+    fun _ _ e ↦ by simpa using g.le_upper (AuxTerminalHom.original e)⟩
+  conserve v hA hB := by
+    rw [SetFlow.excessAt_auxTerminalRestrict, AuxTerminalHom.sum_sink_of_notMem hB,
+      AuxTerminalHom.sum_source_of_notMem hA, sub_zero]
+  excessAt_nonpos a ha := by
+    rw [SetFlow.excessAt_auxTerminalRestrict,
+      AuxTerminalHom.sum_sink_of_notMem (disjoint_left.1 hAB ha), zero_sub, neg_nonpos]
+    exact sum_nonneg fun e _ ↦ g.nonneg e
+  excessAt_nonneg b hb := by
+    rw [SetFlow.excessAt_auxTerminalRestrict,
+      AuxTerminalHom.sum_source_of_notMem (disjoint_right.1 hAB hb), sub_zero]
+    exact sum_nonneg fun e _ ↦ g.nonneg e
+
+@[simp]
+theorem Flow.toSetFlow_toFun (g : Flow (setFlowCapacity cap A B) (inr false) (inr true))
+    (hAB : Disjoint A B) : (g.toSetFlow hAB).toFun = auxTerminalRestrict g.toFun :=
+  (rfl)
+
+namespace SetFlow
 
 /-- **Reduction to single terminals.** For disjoint `A` and `B`, the `A`–`B` flows correspond to
 the ordinary flows from the fresh source to the fresh sink for the auxiliary capacities
-`setFlowCapacity cap A B`. An `A`–`B` flow keeps its values on the original arrows, and carries
-minus its excess at `a` on the arrow from the fresh source to `a ∈ A` and its excess at `b` on the
-arrow from `b ∈ B` to the fresh sink. -/
+`setFlowCapacity cap A B`, by `SetFlow.toAuxFlow` and `Flow.toSetFlow`. An `A`–`B` flow keeps its
+values on the original arrows, and carries minus its excess at `a` on the arrow from the fresh
+source to `a ∈ A` and its excess at `b` on the arrow from `b ∈ B` to the fresh sink. -/
 def auxFlowEquiv (hAB : Disjoint A B) :
     SetFlow cap A B ≃ Flow (setFlowCapacity cap A B) (inr false) (inr true) where
-  toFun f :=
-    { toFun := auxTerminalCapacity f.toFun (fun a ↦ -excessAt f.toFun a) fun b ↦ excessAt f.toFun b
-      mem_Icc := by
-        refine ⟨auxTerminalCapacity_nonneg f.mem_Icc.1 (fun a ha ↦
-          neg_nonneg.2 (f.excessAt_nonpos a ha)) f.excessAt_nonneg, ?_⟩
-        rintro (v | (_ | _)) (w | (_ | _)) e
-        all_goals try exact e.elim
-        · rw [← AuxTerminalHom.original_originalEquiv_symm e, auxTerminalCapacity_original,
-            setFlowCapacity_original]
-          exact f.le_cap _
-        · rw [AuxTerminalHom.eq_sink e, auxTerminalCapacity_sink, setFlowCapacity_sink]
-          exact excessAt_le_of_mem_Icc f.mem_Icc _
-        · rw [AuxTerminalHom.eq_source e, auxTerminalCapacity_source, setFlowCapacity_source]
-          exact neg_excessAt_le_of_mem_Icc f.mem_Icc _
-      conserve := by
-        rintro (v | (_ | _)) hσ hτ
-        · rw [AuxTerminalHom.excessAt_inl, auxTerminalRestrict_auxTerminalCapacity,
-            sum_auxTerminalCapacity_source, sum_auxTerminalCapacity_sink]
-          by_cases hA : v ∈ A <;> by_cases hB : v ∈ B
-          · simp [hA, hB, f.excessAt_eq_zero_of_mem_of_mem hA hB]
-          · simp [hA, hB]
-          · simp [hA, hB]
-          · simp [hA, hB, f.conserve v hA hB]
-        · exact (hσ rfl).elim
-        · exact (hτ rfl).elim
-      excessAt_sink_nonneg := by
-        rw [AuxTerminalHom.excessAt_inr_true]
-        simp only [sum_auxTerminalCapacity_sink, sum_ite_mem, univ_inter]
-        exact f.val_nonneg }
-  invFun g :=
-    { toFun := auxTerminalRestrict g.toFun
-      mem_Icc := ⟨fun _ _ e ↦ by simpa using g.nonneg (AuxTerminalHom.original e),
-        fun _ _ e ↦ by simpa using g.le_upper (AuxTerminalHom.original e)⟩
-      conserve v hA hB := by
-        rw [excessAt_auxTerminalRestrict, AuxTerminalHom.sum_sink_of_notMem hB,
-          AuxTerminalHom.sum_source_of_notMem hA, sub_zero]
-      excessAt_nonpos a ha := by
-        rw [excessAt_auxTerminalRestrict,
-          AuxTerminalHom.sum_sink_of_notMem (disjoint_left.1 hAB ha), zero_sub, neg_nonpos]
-        exact sum_nonneg fun e _ ↦ g.nonneg e
-      excessAt_nonneg b hb := by
-        rw [excessAt_auxTerminalRestrict,
-          AuxTerminalHom.sum_source_of_notMem (disjoint_right.1 hAB hb), sub_zero]
-        exact sum_nonneg fun e _ ↦ g.nonneg e }
+  toFun := toAuxFlow
+  invFun g := g.toSetFlow hAB
   left_inv f := SetFlow.ext (auxTerminalRestrict_auxTerminalCapacity _ _ _)
   right_inv g := by
-    refine Flow.ext ?_
-    dsimp only
-    funext x y e
-    rcases x with v | (_ | _) <;> rcases y with w | (_ | _)
-    all_goals try exact e.elim
-    · rw [← AuxTerminalHom.original_originalEquiv_symm e, auxTerminalCapacity_original,
-        auxTerminalRestrict_apply]
-    · have hv := AuxTerminalHom.mem_of_sink e
-      rw [AuxTerminalHom.eq_sink e, auxTerminalCapacity_sink, excessAt_auxTerminalRestrict,
-        AuxTerminalHom.sum_source_of_notMem (disjoint_right.1 hAB hv), AuxTerminalHom.sum_sink hv,
-        sub_zero]
-    · have hw := AuxTerminalHom.mem_of_source e
-      rw [AuxTerminalHom.eq_source e, auxTerminalCapacity_source, excessAt_auxTerminalRestrict,
-        AuxTerminalHom.sum_sink_of_notMem (disjoint_left.1 hAB hw), AuxTerminalHom.sum_source hw,
+    refine Flow.ext (funext₃ (AuxTerminalHom.forall_iff.2
+      ⟨fun _ _ e ↦ ?_, fun a ha ↦ ?_, fun b hb ↦ ?_⟩)) <;>
+      simp only [toAuxFlow_toFun, Flow.toSetFlow_toFun]
+    · rw [auxTerminalCapacity_original, auxTerminalRestrict_apply]
+    · rw [auxTerminalCapacity_source, excessAt_auxTerminalRestrict,
+        AuxTerminalHom.sum_sink_of_notMem (disjoint_left.1 hAB ha), AuxTerminalHom.sum_source ha,
         zero_sub, neg_neg]
+    · rw [auxTerminalCapacity_sink, excessAt_auxTerminalRestrict,
+        AuxTerminalHom.sum_source_of_notMem (disjoint_right.1 hAB hb), AuxTerminalHom.sum_sink hb,
+        sub_zero]
 
 @[simp]
 theorem auxFlowEquiv_apply_toFun (hAB : Disjoint A B) (f : SetFlow cap A B) :
@@ -436,6 +471,8 @@ theorem isMaximum_auxFlowEquiv (hAB : Disjoint A B) {f : SetFlow cap A B} :
   simp
 
 end SetFlow
+
+end AuxFlow
 
 namespace SetFlow
 

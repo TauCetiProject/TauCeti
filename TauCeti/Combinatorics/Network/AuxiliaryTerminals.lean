@@ -43,6 +43,8 @@ leaving `a`, and each arrow `b → τ` at least the total capacity entering `b`,
 
 ## Main results
 
+* `TauCeti.AuxTerminalHom.forall_iff`: a property of all arrows with auxiliary terminals reduces to
+  the original arrows, the arrows from `σ` and the arrows to `τ`.
 * `TauCeti.arrowSum_auxTerminalCapacity`: the capacity of a `σ`–`τ` cut.
 * `TauCeti.TerminalCut.IsAdmissible.arrowSum_auxTerminalCapacity`: a vertex set containing `A`
   and avoiding `B`, together with `σ`, has the same cut capacity as in the original network.
@@ -151,6 +153,16 @@ theorem eq_sink {b : V} (e : AuxTerminalHom Q A B (inl b) (inr true)) :
     e = sink (mem_of_sink e) :=
   (rfl)
 
+/-- A property holds for every arrow with auxiliary terminals exactly when it holds for every
+original arrow, every arrow from the fresh source and every arrow to the fresh sink. -/
+theorem forall_iff {P : ∀ ⦃x y⦄, AuxTerminalHom Q A B x y → Prop} :
+    (∀ ⦃x y⦄ (e : AuxTerminalHom Q A B x y), P e) ↔
+      (∀ ⦃v w⦄ (e : Q v w), P (original e)) ∧ (∀ ⦃a⦄ (ha : a ∈ A), P (source ha)) ∧
+        ∀ ⦃b⦄ (hb : b ∈ B), P (sink hb) := by
+  refine ⟨fun h ↦ ⟨fun _ _ _ ↦ h _, fun _ _ ↦ h _, fun _ _ ↦ h _⟩, ?_⟩
+  rintro ⟨horig, hsrc, hsink⟩ (v | (_ | _)) (w | (_ | _)) e
+  all_goals first | exact e.elim | exact horig e | exact hsrc e.2 | exact hsink e.2
+
 instance instSubsingletonSource (a : V) :
     Subsingleton (AuxTerminalHom Q A B (inr false) (inl a)) :=
   ⟨fun e e' ↦ (eq_source e).trans (eq_source e').symm⟩
@@ -226,9 +238,8 @@ theorem auxTerminalCapacity_sink {b : V} (hb : b ∈ B) :
 capacities of the new arrows are. -/
 theorem auxTerminalCapacity_nonneg [Zero K] [Preorder K] {cap : Assignment Q K} {cσ cτ : V → K}
     (hcap : 0 ≤ cap) (hσ : ∀ a ∈ A, 0 ≤ cσ a) (hτ : ∀ b ∈ B, 0 ≤ cτ b) :
-    0 ≤ auxTerminalCapacity (A := A) (B := B) cap cσ cτ := by
-  rintro (v | (_ | _)) (w | (_ | _)) e
-  all_goals first | exact hcap _ _ e | exact e.elim | exact hτ _ e.2 | exact hσ _ e.2
+    0 ≤ auxTerminalCapacity (A := A) (B := B) cap cσ cτ :=
+  AuxTerminalHom.forall_iff.2 ⟨fun _ _ e ↦ hcap _ _ e, fun _ ha ↦ hσ _ ha, fun _ hb ↦ hτ _ hb⟩
 
 end Capacity
 
@@ -421,6 +432,17 @@ def setFlowCapacity (cap : Assignment Q K) (A B : Finset V) :
 
 variable (cap : Assignment Q K)
 
+/-- The capacities `setFlowCapacity cap A B` are the auxiliary capacities `auxTerminalCapacity`
+with the total capacity leaving `a` and entering `b` on the new arrows. -/
+theorem setFlowCapacity_def :
+    setFlowCapacity cap A B =
+      auxTerminalCapacity cap (fun a ↦ ∑ w, ∑ e : Q a w, cap e) fun b ↦ ∑ v, ∑ e : Q v b, cap e :=
+  (rfl)
+
+@[simp]
+theorem auxTerminalRestrict_setFlowCapacity : auxTerminalRestrict (setFlowCapacity cap A B) = cap :=
+  (rfl)
+
 @[simp]
 theorem setFlowCapacity_original {v w : V} (e : Q v w) :
     setFlowCapacity cap A B (AuxTerminalHom.original e) = cap e :=
@@ -447,15 +469,10 @@ theorem setFlowCapacity_nonneg [PartialOrder K] [IsOrderedAddMonoid K] (hcap : 0
 /-- The auxiliary capacities lie in an additive submonoid containing the original capacities. -/
 theorem setFlowCapacity_mem {M : Type*} [SetLike M K] [AddSubmonoidClass M K] {H : M}
     (hcap : ∀ ⦃v w⦄ (e : Q v w), cap e ∈ H) :
-    ∀ ⦃x y⦄ (e : AuxTerminalHom Q A B x y), setFlowCapacity cap A B e ∈ H := by
-  rintro (v | (_ | _)) (w | (_ | _)) e
-  all_goals try exact e.elim
-  · rw [← AuxTerminalHom.original_originalEquiv_symm e, setFlowCapacity_original]
-    exact hcap _
-  · rw [AuxTerminalHom.eq_sink e, setFlowCapacity_sink]
-    exact sum_mem fun _ _ ↦ sum_mem fun e _ ↦ hcap e
-  · rw [AuxTerminalHom.eq_source e, setFlowCapacity_source]
-    exact sum_mem fun _ _ ↦ sum_mem fun e _ ↦ hcap e
+    ∀ ⦃x y⦄ (e : AuxTerminalHom Q A B x y), setFlowCapacity cap A B e ∈ H :=
+  AuxTerminalHom.forall_iff.2 ⟨fun _ _ e ↦ hcap e,
+    fun _ _ ↦ sum_mem fun _ _ ↦ sum_mem fun e _ ↦ hcap e,
+    fun _ _ ↦ sum_mem fun _ _ ↦ sum_mem fun e _ ↦ hcap e⟩
 
 end SetFlowCapacity
 
