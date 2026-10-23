@@ -323,6 +323,8 @@ private theorem span_toCotangent_generator :
   obtain ⟨⟨x, hx⟩, rfl⟩ := augmentationIdeal.toCotangent_surjective z
   have hI := augmentationIdeal_eq_span.ge
   have hx' := augmentationIdeal_eq_span.le hx
+  -- Restate the membership proof via `hx'` (by proof irrelevance), so that `span_induction`
+  -- on `hx'` generalises it.
   change augmentationIdeal.toCotangent ⟨x, hI hx'⟩ ∈ S
   clear hx
   induction hx' using Submodule.span_induction with
