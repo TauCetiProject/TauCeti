@@ -148,6 +148,7 @@ theorem weylWeightOrbit_zero : P.weylWeightOrbit (0 : M) = {0} := by
 
 /-- **The coefficients of an orbit sum**: `m_x` has coefficient `1` at every weight of the Weyl
 orbit of `x` and `0` at every other weight. -/
+@[simp]
 theorem coeff_weightOrbitSum [DecidableEq M] (x y : M) :
     (P.weightOrbitSum x).coeff y = if y ∈ P.weylWeightOrbit x then 1 else 0 := by
   simp [weightOrbitSum, AddMonoidAlgebra.coeff_sum, AddMonoidAlgebra.coeff_single,
