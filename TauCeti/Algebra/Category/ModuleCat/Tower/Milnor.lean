@@ -23,13 +23,15 @@ form a tower of modules `C.term i`, and the differentials form morphisms of towe
 `ModuleTower.lim` degreewise gives the *limit complex* `C.limComplex`, which with its projections is
 a limit of `C` (`ComplexTower.isLimitLimComplexCone`), and applying `ModuleTower.Product` gives the
 *product complex* `C.productComplex`. The shift maps `δ(x)ₙ = xₙ - φₙ(xₙ₊₁)` form a chain map of the
-product complex whose kernel is the limit complex. When every transition map `Cₙ₊₁ → Cₙ` is
-surjective in every degree, the shift is surjective, so
+product complex whose kernel is the limit complex. When the shift is surjective in every degree,
+equivalently `lim¹` of every tower of terms vanishes (for instance when every transition map
+`Cₙ₊₁ → Cₙ` is surjective, `ModuleTower.shift_surjective`, or every tower of terms is
+Mittag-Leffler, `ModuleTower.shift_surjective_of_isMittagLeffler`),
 
 `0 → lim C → ∏ₙ Cₙ → ∏ₙ Cₙ → 0`
 
-is a short exact sequence of complexes (`ComplexTower.shortExact`). Products of modules are exact,
-so the homology of the product complex is the product of the homologies
+is a short exact sequence of complexes (`ComplexTower.shortComplex_shortExact`). Products of
+modules are exact, so the homology of the product complex is the product of the homologies
 (`ComplexTower.productHomologyEquiv`), and the shift acts on it as the shift of the tower of
 homology modules `C.homology i`. The long exact homology sequence then splits into the
 **Milnor sequences**: for every pair of degrees `i, j` with `c.Rel i j`,
@@ -55,8 +57,8 @@ therefore bijective (`ComplexTower.homologyToLim_bijective`).
   complex, a limit of the tower.
 * `TauCeti.ComplexTower.productComplex`, `TauCeti.ComplexTower.productComplexShift`: the product
   complex and the shift chain map.
-* `TauCeti.ComplexTower.shortExact`: `0 → lim C → ∏ₙ Cₙ → ∏ₙ Cₙ → 0` is short exact for towers
-  with degreewise surjective transitions.
+* `TauCeti.ComplexTower.shortComplex_shortExact`: `0 → lim C → ∏ₙ Cₙ → ∏ₙ Cₙ → 0` is short
+  exact for towers whose shift is surjective in every degree.
 * `TauCeti.ComplexTower.productHomologyEquiv`: the homology of the product complex is the product
   of the homologies, compatibly with the shifts.
 * `TauCeti.ComplexTower.homologyToLim`, `TauCeti.ComplexTower.limOneToHomology`: the two maps of
@@ -274,11 +276,7 @@ section ShortExact
 def shortComplex : ShortComplex (HomologicalComplex (ModuleCat.{v} R) c) :=
   ShortComplex.mk C.limComplexι C.productComplexShift <| by
     ext i : 2
-    refine LinearMap.ext fun (x : (C.term i).lim) ↦ ?_
-    have hx : ((x : (C.term i).lim) : (C.term i).Product) ∈ LinearMap.ker (C.term i).shift := by
-      rw [← ModuleTower.lim_eq_ker]
-      exact x.2
-    exact LinearMap.mem_ker.1 hx
+    exact (ModuleTower.exact_lim_subtype_shift (C.term i)).linearMap_comp_eq_zero
 
 @[simp]
 theorem shortComplex_f : C.shortComplex.f = C.limComplexι :=
@@ -288,18 +286,19 @@ theorem shortComplex_f : C.shortComplex.f = C.limComplexι :=
 theorem shortComplex_g : C.shortComplex.g = C.productComplexShift :=
   (rfl)
 
-variable {C} (hC : ∀ i n, Function.Surjective ((C.term i).transition n))
+variable {C} (hC : ∀ i, Function.Surjective (C.term i).shift)
 
 include hC in
-/-- **The product-complex short exact sequence.** If every transition map of a tower of
-complexes is surjective in every degree, then `0 → lim C → ∏ₙ Cₙ → ∏ₙ Cₙ → 0`, formed by the
-inclusion and the shift, is a short exact sequence of complexes. -/
-theorem shortExact : C.shortComplex.ShortExact :=
+/-- **The product-complex short exact sequence.** If the shift of a tower of complexes is
+surjective in every degree, for instance if every transition map is surjective in every degree,
+then `0 → lim C → ∏ₙ Cₙ → ∏ₙ Cₙ → 0`, formed by the inclusion and the shift, is a short exact
+sequence of complexes. -/
+theorem shortComplex_shortExact : C.shortComplex.ShortExact :=
   HomologicalComplex.shortExact_of_degreewise_shortExact _ fun i ↦
     { exact := (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).2
         (ModuleTower.exact_lim_subtype_shift (C.term i))
       mono_f := (ModuleCat.mono_iff_injective _).2 (C.term i).lim.injective_subtype
-      epi_g := (ModuleCat.epi_iff_surjective _).2 ((C.term i).shift_surjective (hC i)) }
+      epi_g := (ModuleCat.epi_iff_surjective _).2 (hC i) }
 
 end ShortExact
 
@@ -311,10 +310,9 @@ def isLimitProductComplexFan :
   HomologicalComplex.isLimitOfEval _ _ fun i ↦
     (isLimitMapConeFanMkEquiv _ _ _).symm <|
       IsLimit.ofIsoLimit (ModuleCat.productConeIsLimit fun n ↦ (C.obj (op n)).X i)
-        (Cone.ext (Iso.refl _) fun _ ↦ by
+        (Cone.ext (Iso.refl _) fun _ ↦
           -- The two legs are the projection `LinearMap.proj n`, in the same carrier.
-          simp [ModuleCat.productCone]
-          rfl)
+          (rfl))
 
 /-- **Homology of the product complex.** The degree-`i` homology of the product complex is the
 product of the degree-`i` homology modules of the complexes `Cₙ`, through the maps induced by the
@@ -391,31 +389,31 @@ theorem coe_homologyToLim (j : ι) (x : C.limComplex.homology j) :
   funext fun n ↦ (C.coe_homologyToLim_apply j x n).trans
     (C.productHomologyEquiv_homologyMap_limComplexι j x n).symm
 
-variable {C} (hC : ∀ i n, Function.Surjective ((C.term i).transition n))
+variable {C} (hC : ∀ i, Function.Surjective (C.term i).shift)
 
 /-- The connecting map of the product-complex short exact sequence, as a linear map between the
 homology of the product complex and of the limit complex. -/
 private def connecting {i j : ι} (hij : c.Rel i j) :
     C.productComplex.homology i →ₗ[R] C.limComplex.homology j :=
-  ((C.shortExact hC).δ i j hij).hom
+  ((C.shortComplex_shortExact hC).δ i j hij).hom
 
 private theorem connecting_homologyMap_productComplexShift {i j : ι} (hij : c.Rel i j)
     (y : C.productComplex.homology i) :
     connecting hC hij (HomologicalComplex.homologyMap C.productComplexShift i y) = 0 :=
-  LinearMap.congr_fun (congrArg ModuleCat.Hom.hom ((C.shortExact hC).comp_δ i j hij)) y
+  LinearMap.congr_fun (congrArg ModuleCat.Hom.hom ((C.shortComplex_shortExact hC).comp_δ i j hij)) y
 
 /-- Exactness of the homology sequence at the source of the connecting map. -/
 private theorem exact_homologyMap_productComplexShift_connecting {i j : ι} (hij : c.Rel i j) :
     Function.Exact (HomologicalComplex.homologyMap C.productComplexShift i).hom
       (connecting hC hij) :=
   (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1
-    ((C.shortExact hC).homology_exact₃ i j hij)
+    ((C.shortComplex_shortExact hC).homology_exact₃ i j hij)
 
 /-- Exactness of the homology sequence at the homology of the limit complex. -/
 private theorem exact_connecting_homologyMap_limComplexι {i j : ι} (hij : c.Rel i j) :
     Function.Exact (connecting hC hij) (HomologicalComplex.homologyMap C.limComplexι j).hom :=
   (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1
-    ((C.shortExact hC).homology_exact₁ i j hij)
+    ((C.shortComplex_shortExact hC).homology_exact₁ i j hij)
 
 include hC in
 /-- Exactness of the homology sequence at the homology of the product complex. -/
@@ -423,7 +421,7 @@ private theorem exact_homologyMap_limComplexι_productComplexShift (j : ι) :
     Function.Exact (HomologicalComplex.homologyMap C.limComplexι j).hom
       (HomologicalComplex.homologyMap C.productComplexShift j).hom :=
   (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1
-    ((C.shortExact hC).homology_exact₂ j)
+    ((C.shortComplex_shortExact hC).homology_exact₂ j)
 
 /-- The image of the shift of the tower of homology modules is killed by the connecting map. -/
 private theorem range_shift_le_ker {i j : ι} (hij : c.Rel i j) :
@@ -449,7 +447,7 @@ homology class of the product complex. -/
 @[simp]
 theorem limOneToHomology_mk {i j : ι} (hij : c.Rel i j) (x : (C.homology i).Product) :
     C.limOneToHomology hC hij (Submodule.Quotient.mk x) =
-      (C.shortExact hC).δ i j hij ((C.productHomologyEquiv i).symm x) := by
+      (C.shortComplex_shortExact hC).δ i j hij ((C.productHomologyEquiv i).symm x) := by
   rw [limOneToHomology, Submodule.liftQ_apply]
   rfl
 
@@ -475,14 +473,12 @@ theorem exact_limOneToHomology_homologyToLim {i j : ι} (hij : c.Rel i j) :
     Function.Exact (C.limOneToHomology hC hij) (C.homologyToLim j) := by
   -- `homologyToLim` is the inclusion into the product complex followed by the isomorphism
   -- `productHomologyEquiv`, and `limOneToHomology` has the same image as the connecting map.
-  have hrange : LinearMap.range (C.limOneToHomology hC hij) =
-      LinearMap.range (connecting hC hij) := by
-    rw [limOneToHomology, Submodule.range_liftQ, LinearMap.range_comp,
-      LinearEquiv.range, Submodule.map_top]
+  have hrange : Set.range (C.limOneToHomology hC hij) = Set.range (connecting hC hij) := by
+    rw [← LinearMap.coe_range, ← LinearMap.coe_range, limOneToHomology, Submodule.range_liftQ,
+      LinearMap.range_comp, LinearEquiv.range, Submodule.map_top]
   intro x
-  rw [← Subtype.coe_inj, coe_homologyToLim, ZeroMemClass.coe_zero, LinearEquiv.map_eq_zero_iff,
-    ← LinearMap.coe_range, SetLike.mem_coe, hrange, ← SetLike.mem_coe, LinearMap.coe_range]
-  exact exact_connecting_homologyMap_limComplexι hC hij x
+  simpa [hrange, Subtype.ext_iff, coe_homologyToLim] using
+    exact_connecting_homologyMap_limComplexι hC hij x
 
 include hC in
 /-- **Exactness of the Milnor sequence at `lim Hⱼ(Cₙ)`.** The map `Hⱼ(lim C) → lim Hⱼ(Cₙ)` is
