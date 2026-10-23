@@ -91,19 +91,15 @@ theorem isLeftInvariant_iff_boundedContinuousFunction (m : Mean G) :
       (boundedContinuousFunctionEquiv G m).1
           (f.compContinuous (ContinuousMap.mulLeft g⁻¹)) =
         (boundedContinuousFunctionEquiv G m).1 f := by
-  have h (g : G) (f : G →ᵇ ℝ) :
-      (UCB.discreteAlgEquiv G).symm
-          (f.compContinuous (ContinuousMap.mulLeft g⁻¹)) =
-        UCB.leftTranslation g ((UCB.discreteAlgEquiv G).symm f) := by
-    apply (UCB.discreteAlgEquiv G).injective
-    simp [UCB.coe_leftTranslation]
   rw [isLeftInvariant_iff]
   constructor
   · intro hm g f
-    simpa only [boundedContinuousFunctionEquiv_apply, h] using
+    simpa only [boundedContinuousFunctionEquiv_apply,
+      UCB.discreteAlgEquiv_symm_compContinuous_mulLeft] using
       hm g ((UCB.discreteAlgEquiv G).symm f)
   · intro hm g f
-    simpa only [boundedContinuousFunctionEquiv_apply, h, AlgEquiv.symm_apply_apply] using
+    simpa only [boundedContinuousFunctionEquiv_apply,
+      UCB.discreteAlgEquiv_symm_compContinuous_mulLeft, AlgEquiv.symm_apply_apply] using
       hm g (UCB.discreteAlgEquiv G f)
 
 end Mean
@@ -134,13 +130,7 @@ theorem Amenable.of_discrete [IsTopologicalGroup G]
     (h : letI : TopologicalSpace G := ⊥;
       letI := discreteTopology_bot G; Amenable G) :
     Amenable G := by
-  -- The source and target share a carrier, so specify their different topologies explicitly.
-  let φ : @ContinuousMonoidHom G G _ _ ⊥ ‹TopologicalSpace G› :=
-    @ContinuousMonoidHom.mk G G _ _ ⊥ _ (MonoidHom.id G)
-      (@continuous_bot G G (MonoidHom.id G).toFun ‹TopologicalSpace G›)
-  have hd : @DiscreteTopology G ⊥ := discreteTopology_bot G
-  exact @Amenable.of_surjective G G _ ⊥
-    (@isTopologicalGroup_of_discreteTopology G ⊥ _ hd) _ _ _ h φ
-    (fun x => ⟨x, MonoidHom.id_apply G x⟩)
+  let : @DiscreteTopology G ⊥ := discreteTopology_bot G
+  exact Amenable.of_le (t₁ := ⊥) bot_le h
 
 end TauCeti
