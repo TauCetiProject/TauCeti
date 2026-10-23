@@ -45,6 +45,9 @@ determinant-one counterparts over an arbitrary commutative ring.
 * `Matrix.SpecialLinearGroup.commute_transvection` and
   `Matrix.SpecialLinearGroup.commutatorElement_transvection`: the type-A commutator relations for
   determinant-one transvections.
+* `Matrix.SpecialLinearGroup.exists_eq_mul_transvection_of_col_zero_eq`: two determinant-one
+  `2 × 2` matrices with the same first column differ by right multiplication by an upper
+  transvection.
 
 Ported from the AINTLIB `LeanModularForms` project
 ([`LeanModularForms/HeckeRIngs/GLn/SLnTransvection.lean`](https://github.com/CBirkbeck/AINTLIB),

@@ -31,8 +31,8 @@ one with the same first column differ by right multiplication by an element of `
 particular every section of the quotient over an affine scheme lifts to `SL₂` without passing to
 a cover.
 
-The punctured plane is quasi-affine but not affine. Its ring of global functions is `R[a, c]`, the
-ring of right `N⁺`-invariant functions on `SL₂`
+For nonzero `R` the punctured plane is quasi-affine but not affine. Its ring of global functions
+is `R[a, c]`, the ring of right `N⁺`-invariant functions on `SL₂`
 (`TauCeti.SpecialLinear.coinvariants_rootSubgroupHopfIdeal_two_eq_adjoin`), whose spectrum `𝔸²_R`
 is only the affinization of the quotient.
 

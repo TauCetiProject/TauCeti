@@ -18,9 +18,10 @@ the complement of the zero section. For finite `ι` it is quasi-affine, and for 
 two elements over a nonzero ring it is not affine: the punctured plane `𝔸²_R \ 0` is the
 standard example.
 
-The index type lives in `Type`, so that the coordinate ring `R[Xᵢ]` lies in the universe of `R`
-and punctured affine space is a scheme over `Spec R` in the universe of its test algebras; this
-covers `𝔸ⁿ_R \ 0`, indexed by `Fin n`.
+Following Mathlib's `AlgebraicGeometry.AffineSpace`, the index type lives in `Type v` and the base
+ring in `Type (max u v)`, so that the coordinate ring `R[Xᵢ]` lies in the universe of `R` and
+punctured affine space is a scheme over `Spec R` in the universe of its test algebras; this covers
+`𝔸ⁿ_R \ 0`, indexed by `Fin n`, over a ring in any universe.
 
 Its points with values in an `R`-algebra `A` are the unimodular vectors `v : ι → A`, those whose
 entries generate the unit ideal. This file constructs the scheme and the bijection between its
@@ -52,9 +53,9 @@ open CategoryTheory AlgebraicGeometry Opposite
 
 namespace TauCeti
 
-universe u
+universe u v
 
-variable (R : Type u) [CommRing R] (ι : Type)
+variable (R : Type (max u v)) [CommRing R] (ι : Type v)
 
 /-- The open subset of `𝔸^ι_R = Spec R[Xᵢ]` where the coordinates do not all vanish: the
 complement of the zero locus of the coordinates. -/
@@ -101,7 +102,7 @@ variable {R ι}
 /-- **Points of punctured affine space.** A morphism `Spec A ⟶ Spec R[Xᵢ]`, given by a ring map
 `φ : R[Xᵢ] → A`, factors through punctured affine space exactly when the images of the
 coordinates generate the unit ideal of `A`. -/
-theorem range_specMap_subset_iff {A : Type u} [CommRing A] (φ : MvPolynomial ι R →+* A) :
+theorem range_specMap_subset_iff {A : Type (max u v)} [CommRing A] (φ : MvPolynomial ι R →+* A) :
     Set.range (Spec.map (CommRingCat.ofHom φ)) ⊆ puncturedAffineSpaceOpens R ι ↔
       Ideal.span (Set.range (φ ∘ MvPolynomial.X)) = ⊤ := by
   rw [← PrimeSpectrum.zeroLocus_empty_iff_eq_top, PrimeSpectrum.zeroLocus_span, Set.range_comp,
@@ -115,7 +116,7 @@ theorem range_specMap_subset_iff {A : Type u} [CommRing A] (φ : MvPolynomial ι
 instance : Mono (toAffineSpace R ι) :=
   (Over.forget _).mono_of_mono_map (inferInstanceAs (Mono (puncturedAffineSpaceOpens R ι).ι))
 
-variable {A B : CommAlgCat.{u} R}
+variable {A B : CommAlgCat.{max u v} R}
 
 /-- The `R`-algebra map `R[Xᵢ] → A` corresponding to a point of punctured affine space, viewed as
 a point of affine space. -/
