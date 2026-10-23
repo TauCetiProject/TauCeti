@@ -9,6 +9,8 @@ public import TauCeti.Analysis.Calculus.BumpFunction.Average
 public import TauCeti.MeasureTheory.Function.Lp.Convolution
 public import TauCeti.MeasureTheory.Function.Lp.Translation
 
+import TauCeti.Analysis.Convolution
+
 /-!
 # Smooth approximate identities in `Lᵖ`
 
@@ -53,6 +55,8 @@ integrability or compact support assumption on the function.
   to the identity on `Lᵖ`.
 * `TauCeti.tendsto_eLpNorm_normed_convolution_sub`: the same convergence for the classical
   convolution of a function in `Lᵖ` with these bumps.
+* `TauCeti.tendsto_setLIntegral_enorm_normed_convolution_sub`: for a locally integrable function
+  these convolutions converge in `L¹(K)` on every compact set `K`.
 
 ## References
 
@@ -167,5 +171,36 @@ theorem tendsto_eLpNorm_normed_convolution_sub [CompleteSpace F] {I : Type*} {l 
   filter_upwards [normedBumpLp_ae_eq_convolution hp (phi i) hf, hf.coeFn_toLp]
     with x h₁ h₂
   rw [Pi.sub_apply, Pi.sub_apply, h₁, h₂]
+
+/-- **Mollification converges in `L¹_loc`.** For a locally integrable `f` and normalized smooth
+bumps `phi i` centred at zero whose outer radii tend to zero, the classical convolutions
+`(phi i).normed mu ⋆ f` converge to `f` in `L¹(K)` for every compact set `K`. -/
+theorem tendsto_setLIntegral_enorm_normed_convolution_sub [CompleteSpace F] {I : Type*}
+    {l : Filter I} {phi : I → ContDiffBump (0 : E)}
+    (hphi : Tendsto (fun i ↦ (phi i).rOut) l (nhds 0)) {f : E → F} (hf : LocallyIntegrable f mu)
+    {K : Set E} (hK : IsCompact K) :
+    Tendsto (fun i ↦ ∫⁻ x in K, ‖((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] f) x - f x‖ₑ ∂mu) l
+      (nhds 0) := by
+  -- On `K`, bumps of radius less than one only see `f` on the compact set `cthickening 1 K`,
+  -- where `f` is integrable, so the whole-space `L¹` convergence applies.
+  set s := cthickening 1 K
+  have hs : IsCompact s := hK.cthickening
+  have hfs : MemLp (s.indicator f) 1 mu := memLp_one_iff_integrable.2 <|
+    (hf.integrableOn_isCompact hs).integrable_indicator hs.measurableSet
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
+    (tendsto_eLpNorm_normed_convolution_sub ENNReal.one_ne_top hphi hfs)
+    (.of_forall fun _ ↦ zero_le) ?_
+  filter_upwards [hphi.eventually (gt_mem_nhds one_pos)] with i hi
+  have hKs (x : E) (hx : x ∈ K) :
+      ((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] f) x - f x =
+        ((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] s.indicator f) x - s.indicator f x := by
+    rw [indicator_of_mem (self_subset_cthickening K hx)]
+    refine congrArg (· - f x) (convolution_indicator_eq_of_forall_sub_mem _ fun t ht ↦ ?_).symm
+    rw [(phi i).support_normed_eq, mem_ball_zero_iff] at ht
+    refine mem_cthickening_of_dist_le _ x _ _ hx ?_
+    rw [dist_eq_norm, sub_sub_cancel_left, norm_neg]
+    exact ht.le.trans hi.le
+  rw [setLIntegral_congr_fun hK.measurableSet fun x hx ↦ by rw [hKs x hx]]
+  exact (setLIntegral_le_lintegral _ _).trans lintegral_enorm_le_eLpNorm_one
 
 end TauCeti

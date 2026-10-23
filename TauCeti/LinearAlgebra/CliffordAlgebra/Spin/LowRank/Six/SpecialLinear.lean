@@ -68,7 +68,7 @@ the basis above. These generate the special linear group.
 * `TauCeti.spinGroupEquivSpecialLinearGroupOfFinrankEqSix`: the Spin-to-`SL₄` equivalence for a
   polarized six-dimensional quadratic space.
 * `TauCeti.coe_spinGroupEquivSpecialLinearGroupOfFinrankEqSix_apply`: its matrix formula in the
-  basis `Module.finBasisOfFinrankEq` used by `Algebra.endAlgEquivMatrix`.
+  basis `TauCeti.spinPlusFinBasisOfFinrankEqSix` used by `Algebra.endAlgEquivMatrix`.
 
 ## References
 
@@ -912,123 +912,71 @@ theorem exists_spinPlusAction_spinGroupToEven_eq_of_det_eq_one (hW : finrank K P
   have : Module.Finite K P.W := Module.finite_of_finrank_pos (by omega)
   exists_spinPlusAction_spinGroupToEven_eq_of_basis P hline (finBasisOfFinrankEq K P.W hW) f hf
 
-private noncomputable def spinGroupToSpecialLinear
-    (P : SpinPolarizationData Q) [FiniteDimensional K (spinPlus Q P)]
-    [FiniteDimensional K V]
-    (hline : P.line = ⊥)
-    (hWfin : finrank K P.W = 3) (hW : P.W ≠ ⊥) (hplus : finrank K (spinPlus Q P) = 4)
-    (hV : finrank K V = 6) (b : Basis (Fin 4) K (spinPlus Q P))
-    (hb : b = Module.finBasisOfFinrankEq K (spinPlus Q P) hplus) :
-    spinGroup Q →* Matrix.SpecialLinearGroup (Fin 4) K := by
-  let e := P.evenCliffordEquivProdMatrix (l := 3) hW (by omega)
-  let u := e.evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix
-    (P.nondegenerate_of_line_eq_bot hline) hV
-  exact
-    { toFun := fun s ↦ ⟨u (spinGroupToEvenUnitary Q s), by
-          -- The `show` exposes the matrix coercion needed by `det_toMatrix`; the
-          -- application lemma unfolds the general-linear equivalence, not the Spin action.
-          rw [show (u (spinGroupToEvenUnitary Q s) : Matrix (Fin 4) (Fin 4) K) =
-              LinearMap.toMatrix b b
-                (spinPlusAction Q P hline (spinGroupToEven Q s)) by
-              exact
-                coe_evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix_spinGroupToEvenUnitary_apply
-                  P hline hW hplus hV b hb s,
-            LinearMap.det_toMatrix]
-          exact det_spinPlusAction_spinGroupToEven P hline hWfin s⟩
-      map_one' := Subtype.ext (by
-        -- `Subtype.ext` leaves the `MonoidHom` value under the matrix coercion;
-        -- this `change` unfolds only that coercion and the private `toFun` wrapper.
-        change (u (spinGroupToEvenUnitary Q 1) : Matrix (Fin 4) (Fin 4) K) = 1
-        rw [map_one, map_one, Units.val_one])
-      map_mul' := fun s t ↦ Subtype.ext (by
-        -- As above, expose the underlying matrix equality so `map_mul` and
-        -- `Units.val_mul` can be applied to the two equivalence wrappers.
-        change (u (spinGroupToEvenUnitary Q (s * t)) : Matrix (Fin 4) (Fin 4) K) =
-          (u (spinGroupToEvenUnitary Q s) : Matrix (Fin 4) (Fin 4) K) *
-            (u (spinGroupToEvenUnitary Q t) : Matrix (Fin 4) (Fin 4) K)
-        rw [map_mul, map_mul, Units.val_mul]) }
+private noncomputable def spinGroupToSpecialLinear (P : SpinPolarizationData Q)
+    (hV : finrank K V = 6) : spinGroup Q →* Matrix.SpecialLinearGroup (Fin 4) K :=
+  let hline := P.line_eq_bot_of_finrank_eq_six hV
+  {
+  toFun s := ⟨LinearMap.toMatrix (spinPlusFinBasisOfFinrankEqSix P hV)
+      (spinPlusFinBasisOfFinrankEqSix P hV) (spinPlusAction Q P hline (spinGroupToEven Q s)),
+    (LinearMap.det_toMatrix _ _).trans <|
+      det_spinPlusAction_spinGroupToEven P hline (P.finrank_W_eq_three_of_finrank_eq_six hV) s⟩
+  map_one' := Subtype.ext <| by simp
+  map_mul' s t := Subtype.ext <| by
+    -- Both sides are the product of the two half-spin matrices; on the right this is the
+    -- definition of multiplication in `SL₄`.
+    simp only [map_mul, LinearMap.toMatrix_mul]
+    rfl
+  }
 
-private theorem spinGroupToSpecialLinear_bijective
-    (P : SpinPolarizationData Q) [FiniteDimensional K (spinPlus Q P)]
-    [FiniteDimensional K V]
-    (hline : P.line = ⊥)
-    (hWfin : finrank K P.W = 3) (hW : P.W ≠ ⊥) (hplus : finrank K (spinPlus Q P) = 4)
-    (hV : finrank K V = 6) (b : Basis (Fin 4) K (spinPlus Q P))
-    (hb : b = Module.finBasisOfFinrankEq K (spinPlus Q P) hplus) :
-    Function.Bijective (spinGroupToSpecialLinear P hline hWfin hW hplus hV b hb) := by
-  let e := P.evenCliffordEquivProdMatrix (l := 3) hW (by omega)
-  let u := e.evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix
-    (P.nondegenerate_of_line_eq_bot hline) hV
-  constructor
-  · intro s t h
-    apply spinGroupToEvenUnitary_injective Q
-    apply u.injective
-    apply Units.ext
-    have hmat := congrArg
-      (fun z : Matrix.SpecialLinearGroup (Fin 4) K => (z : Matrix (Fin 4) (Fin 4) K)) h
-    -- The equality is between special-linear subtypes; expose their underlying
-    -- matrix values so injectivity of the unitary equivalence can consume it.
-    change (u (spinGroupToEvenUnitary Q s) : Matrix (Fin 4) (Fin 4) K) =
-      u (spinGroupToEvenUnitary Q t) at hmat
-    dsimp [u, e]
-    exact hmat
-  · intro A
-    let a : Module.End K (spinPlus Q P) :=
-      (LinearMap.toMatrix b b).symm (A : Matrix (Fin 4) (Fin 4) K)
-    have hdet : LinearMap.det a = 1 := by
-      rw [← LinearMap.det_toMatrix b, LinearEquiv.apply_symm_apply]
-      exact A.property
-    obtain ⟨s, hs⟩ :=
-      exists_spinPlusAction_spinGroupToEven_eq_of_det_eq_one P hline hWfin a hdet
-    refine ⟨s, Subtype.ext ?_⟩
-    -- Unfold the `MonoidHom` value only far enough to compare its matrix
-    -- projection with the target special-linear subtype.
-    change (spinGroupToSpecialLinear P hline hWfin hW hplus hV b hb s :
-      Matrix (Fin 4) (Fin 4) K) = A
-    have hmatrix :=
-      coe_evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix_spinGroupToEvenUnitary_apply
-        P hline hW hplus hV b hb s
-    -- The preceding application lemma identifies the same matrix after the
-    -- private `toFun` wrapper is unfolded; retain that projection explicitly.
-    change (u (spinGroupToEvenUnitary Q s) : Matrix (Fin 4) (Fin 4) K) = A
-    rw [hmatrix, hs]
-    exact LinearEquiv.apply_symm_apply (LinearMap.toMatrix b b)
-      (A : Matrix (Fin 4) (Fin 4) K)
+private theorem spinGroupToSpecialLinear_bijective (P : SpinPolarizationData Q)
+    (hV : finrank K V = 6) : Function.Bijective (spinGroupToSpecialLinear P hV) := by
+  let hline := P.line_eq_bot_of_finrank_eq_six hV
+  refine ⟨fun s t h ↦ ?_, fun A ↦ ?_⟩
+  · -- The half-spin matrix of a Spin element is the first factor of its image in the matrix model
+    -- of the even Clifford algebra, and that factor determines its even unitary image.
+    have : FiniteDimensional K V := .of_finrank_eq_succ hV
+    refine spinGroupToEvenUnitary_injective Q <| MulEquiv.injective
+      (AlgEquiv.evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix
+        (P.evenCliffordEquivProdMatrix (l := 3) (P.W_ne_bot_of_finrank_eq_six hV) hV)
+        (P.nondegenerate_of_line_eq_bot hline) hV) <| Units.ext ?_
+    rw [coe_evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix_spinGroupToEvenUnitary_apply,
+      coe_evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix_spinGroupToEvenUnitary_apply]
+    exact congrArg Subtype.val h
+  · -- A determinant-one matrix is the matrix of a determinant-one endomorphism of `S⁺`, which is
+    -- the action of a Spin element.
+    let b := spinPlusFinBasisOfFinrankEqSix P hV
+    obtain ⟨s, hs⟩ := exists_spinPlusAction_spinGroupToEven_eq_of_det_eq_one P hline
+      (P.finrank_W_eq_three_of_finrank_eq_six hV) (Matrix.toLin b b A)
+      ((LinearMap.det_toLin b _).trans A.det_coe)
+    exact ⟨s, Subtype.ext <| (LinearMap.toMatrix b b).eq_symm_apply.mp hs⟩
 
-/-- The first Clifford factor gives the Spin-to-special-linear equivalence associated to a
-polarization of a six-dimensional quadratic space, in the basis
-`Module.finBasisOfFinrankEq K (spinPlus Q P) hplus` used by `Algebra.endAlgEquivMatrix`. -/
-noncomputable def spinGroupEquivSpecialLinearGroupOfFinrankEqSix
-    (P : SpinPolarizationData Q) [FiniteDimensional K (spinPlus Q P)]
-    [FiniteDimensional K V]
-    (hline : P.line = ⊥)
-    (hWfin : finrank K P.W = 3) (hW : P.W ≠ ⊥) (hplus : finrank K (spinPlus Q P) = 4)
-    (hV : finrank K V = 6) (b : Basis (Fin 4) K (spinPlus Q P))
-    (hb : b = Module.finBasisOfFinrankEq K (spinPlus Q P) hplus) :
+/-- **The Spin group of a polarized six-dimensional quadratic space is `SL₄(K)`.** A Spin element
+goes to the matrix of its action on the even half-spin module `S⁺` in the basis
+`TauCeti.spinPlusFinBasisOfFinrankEqSix`; see
+`TauCeti.coe_spinGroupEquivSpecialLinearGroupOfFinrankEqSix_apply`. By
+`TauCeti.coe_evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix_spinGroupToEvenUnitary_apply`, this
+matrix is the first factor of the element's image in the matrix model of the even Clifford
+algebra, so on Spin the equivalence agrees with
+`AlgEquiv.evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix`. For three hyperbolic planes it is
+`TauCeti.hyperbolicSixSpinEquivSpecialLinear`. -/
+noncomputable def spinGroupEquivSpecialLinearGroupOfFinrankEqSix (P : SpinPolarizationData Q)
+    (hV : finrank K V = 6) :
     spinGroup Q ≃* Matrix.SpecialLinearGroup (Fin 4) K :=
-  MulEquiv.ofBijective (spinGroupToSpecialLinear P hline hWfin hW hplus hV b hb)
-    (spinGroupToSpecialLinear_bijective P hline hWfin hW hplus hV b hb)
+  MulEquiv.ofBijective (spinGroupToSpecialLinear P hV)
+    (spinGroupToSpecialLinear_bijective P hV)
 
-/-- The polarized Spin-to-special-linear equivalence is the matrix of the even half-spin action in
-the basis `Module.finBasisOfFinrankEq K (spinPlus Q P) hplus`; `b` is a name for that basis. -/
-theorem coe_spinGroupEquivSpecialLinearGroupOfFinrankEqSix_apply
-    (P : SpinPolarizationData Q) [FiniteDimensional K (spinPlus Q P)]
-    [FiniteDimensional K V]
-    (hline : P.line = ⊥)
-    (hWfin : finrank K P.W = 3) (hW : P.W ≠ ⊥) (hplus : finrank K (spinPlus Q P) = 4)
-    (hV : finrank K V = 6) (b : Basis (Fin 4) K (spinPlus Q P))
-    (hb : b = Module.finBasisOfFinrankEq K (spinPlus Q P) hplus) (s : spinGroup Q) :
-    (spinGroupEquivSpecialLinearGroupOfFinrankEqSix P hline hWfin hW hplus hV b hb s :
-      Matrix (Fin 4) (Fin 4) K) =
-      LinearMap.toMatrix b b (spinPlusAction Q P hline (spinGroupToEven Q s)) := by
-  rw [spinGroupEquivSpecialLinearGroupOfFinrankEqSix, MulEquiv.ofBijective_apply]
-  -- `MulEquiv.ofBijective_apply` leaves the special-linear subtype wrapper;
-  -- expose its matrix projection before applying the shared matrix formula.
-  change (spinGroupToSpecialLinear P hline hWfin hW hplus hV b hb s :
-    Matrix (Fin 4) (Fin 4) K) = _
-  rw [spinGroupToSpecialLinear]
-  exact coe_evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix_spinGroupToEvenUnitary_apply
-    P hline hW hplus hV b hb s
+/-- The polarized Spin-to-special-linear equivalence sends a Spin element to the matrix of its
+action on the even half-spin module in the basis `TauCeti.spinPlusFinBasisOfFinrankEqSix`. As a
+simp lemma it has low priority, so that specialized rules such as
+`TauCeti.coe_hyperbolicSixSpinEquivSpecialLinear_apply` apply first. -/
+@[simp low]
+theorem coe_spinGroupEquivSpecialLinearGroupOfFinrankEqSix_apply (P : SpinPolarizationData Q)
+    (hV : finrank K V = 6) (s : spinGroup Q) :
+    (spinGroupEquivSpecialLinearGroupOfFinrankEqSix P hV s : Matrix (Fin 4) (Fin 4) K) =
+      LinearMap.toMatrix (spinPlusFinBasisOfFinrankEqSix P hV) (spinPlusFinBasisOfFinrankEqSix P hV)
+        (spinPlusAction Q P (P.line_eq_bot_of_finrank_eq_six hV)
+          (spinGroupToEven Q s)) :=
+  (rfl)
 
 end Polarization
 
@@ -1039,19 +987,6 @@ section Hyperbolic
 variable (K) [NeZero (2 : K)]
 
 attribute [local instance] hyperbolicSixInvertibleTwo
-
-omit [NeZero (2 : K)] in
-/-- The even half-spin module of the split six-dimensional space has dimension four. -/
-theorem finrank_hyperbolicSixSpinPlus :
-    finrank K (spinPlus (splitEvenForm K 3) (splitEvenPolarization K 3)) = 4 := by
-  rw [finrank_spinPlus _ (splitEvenPolarization_W_ne_bot K (by norm_num)),
-    finrank_splitEvenPolarization_W K 3]
-  norm_num
-
-/-- The split six-dimensional even half-spin module is finite-dimensional. -/
-noncomputable instance hyperbolicSixSpinPlusFinite :
-    FiniteDimensional K (spinPlus (splitEvenForm K 3) (splitEvenPolarization K 3)) :=
-  Module.finite_of_finrank_pos (by rw [finrank_hyperbolicSixSpinPlus]; norm_num)
 
 private theorem det_hyperbolicSixEvenUnitaryEquivGeneralLinear
     (x : evenUnitaryGroup (splitEvenForm K 3)) :
@@ -1099,49 +1034,78 @@ theorem mem_range_spinGroupToEvenUnitary_iff_det_hyperbolicSixEvenUnitaryEquivGe
     exact MonoidHom.mem_range.mpr ⟨s, (hyperbolicSixEvenUnitaryEquivGeneralLinear K).injective
       (hyperbolicSixEvenUnitaryEquivGeneralLinear_eq_of_spinPlusAction_eq K hs)⟩
 
-/-- **The Spin group of three hyperbolic planes is `SL₄(K)`.** It is the determinant-one subgroup
-of the reverse-unitary group `U(C₀, σ) ≅ GL₄(K)` of the half-spin matrix-product model. Over `ℚ`
-this is the split rational six-dimensional form, with `U(C₀, σ) ≅ GL₄(ℚ)` and
+/-- **The Spin group of three hyperbolic planes is `SL₄(K)`.** This is
+`TauCeti.spinGroupEquivSpecialLinearGroupOfFinrankEqSix` for the canonical split polarization, so a
+Spin element goes to the matrix of its even half-spin action in
+`TauCeti.spinSixHalfSpinStandardBasis`. By `TauCeti.coe_hyperbolicSixSpinEquivSpecialLinear_apply`
+it is the restriction of `TauCeti.hyperbolicSixEvenUnitaryEquivGeneralLinear` to Spin, so `Spin(Q)`
+is the determinant-one subgroup of the reverse-unitary group `U(C₀, σ) ≅ GL₄(K)`. Over `ℚ`, three
+hyperbolic planes give the split rational six-dimensional form, with `U(C₀, σ) ≅ GL₄(ℚ)` and
 `Spin(Q) ≅ SL₄(ℚ)`. -/
 noncomputable abbrev hyperbolicSixSpinEquivSpecialLinear :
     spinGroup (splitEvenForm K 3) ≃* Matrix.SpecialLinearGroup (Fin 4) K :=
   spinGroupEquivSpecialLinearGroupOfFinrankEqSix (splitEvenPolarization K 3)
-    (splitEvenPolarization_line K 3) (by simp)
-    (splitEvenPolarization_W_ne_bot K (by norm_num)) (by
-      simpa using finrank_hyperbolicSixSpinPlus K) (finrank_splitEvenSpace K 3)
-    (Module.finBasisOfFinrankEq K _ (finrank_hyperbolicSixSpinPlus K)) rfl
+    (finrank_splitEvenSpace K 3)
 
 /-- The Spin equivalence is the general linear equivalence of the even unitary group, read on
-Spin elements. -/
+Spin elements: the matrix of a Spin element is the first factor of its image in the matrix-product
+model `TauCeti.hyperbolicSixEvenEquivMatrixProd`. Compare
+`TauCeti.coe_spinGroupEquivSpecialLinearGroupOfFinrankEqSix_apply`, which gives the same matrix as
+the matrix of the even half-spin action in `TauCeti.spinSixHalfSpinStandardBasis`. -/
 @[simp]
 theorem coe_hyperbolicSixSpinEquivSpecialLinear_apply (s : spinGroup (splitEvenForm K 3)) :
     (hyperbolicSixSpinEquivSpecialLinear K s : Matrix (Fin 4) (Fin 4) K) =
-      hyperbolicSixEvenUnitaryEquivGeneralLinear K (spinGroupToEvenUnitary _ s) :=
-  by
-    let P := splitEvenPolarization K 3
-    let hline := splitEvenPolarization_line K 3
-    let hW := splitEvenPolarization_W_ne_bot K (by norm_num : (3 : ℕ) ≠ 0)
-    let hWfin : finrank K P.W = 3 := by simp [P]
-    let hplus := finrank_hyperbolicSixSpinPlus K
-    let hV := finrank_splitEvenSpace K 3
-    let b := Module.finBasisOfFinrankEq K (spinPlus (splitEvenForm K 3) P) hplus
-    dsimp [hyperbolicSixSpinEquivSpecialLinear] at ⊢
-    rw [spinGroupEquivSpecialLinearGroupOfFinrankEqSix, MulEquiv.ofBijective_apply]
-    -- Unfold the split specialization's special-linear subtype so the shared
-    -- polarized matrix formula can be applied to its underlying value.
-    change (spinGroupToSpecialLinear P hline hWfin hW hplus hV b rfl s :
-      Matrix (Fin 4) (Fin 4) K) = _
-    rw [spinGroupToSpecialLinear]
-    let e := P.evenCliffordEquivProdMatrix (l := 3) hW hV
-    -- The general-linear equivalence is an `AlgEquiv`; expose its matrix
-    -- coercion before rewriting through the split product-model formulas.
-    change ((e.evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix
-      (P.nondegenerate_of_line_eq_bot hline) hV
-      (spinGroupToEvenUnitary (splitEvenForm K 3) s)) : Matrix (Fin 4) (Fin 4) K) = _
-    rw [AlgEquiv.coe_evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix_apply,
-      coe_hyperbolicSixEvenUnitaryEquivGeneralLinear_apply,
-      hyperbolicSixEvenEquivMatrixProd_apply,
-      evenUnitaryGroupEvenPart_spinGroupToEvenUnitary_apply]
+      hyperbolicSixEvenUnitaryEquivGeneralLinear K (spinGroupToEvenUnitary _ s) := by
+  rw [coe_spinGroupEquivSpecialLinearGroupOfFinrankEqSix_apply,
+    ← coe_evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix_spinGroupToEvenUnitary_apply,
+    AlgEquiv.coe_evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix_apply,
+    coe_hyperbolicSixEvenUnitaryEquivGeneralLinear_apply, hyperbolicSixEvenEquivMatrixProd_apply]
+
+/-- The even half-spin basis made from the canonical exterior monomials. -/
+noncomputable abbrev spinSixHalfSpinMonomialBasis :
+    Basis (Fin 4) K (spinPlus (splitEvenForm K 3) (splitEvenPolarization K 3)) :=
+  (splitEvenBasis K 3).spinSixEvenMonomialBasis (spinPlus_def _)
+
+/-- The basis `TauCeti.spinPlusFinBasisOfFinrankEqSix` of the even half-spin module of three
+hyperbolic planes: `TauCeti.hyperbolicSixSpinEquivSpecialLinear` sends a Spin element to the matrix
+of its half-spin action in this basis. Unlike `TauCeti.spinSixHalfSpinMonomialBasis` it is not
+explicit; `TauCeti.spinSixBasisChange_conjugate_spinPlusAction` relates matrices in the two. -/
+noncomputable abbrev spinSixHalfSpinStandardBasis :
+    Basis (Fin 4) K (spinPlus (splitEvenForm K 3) (splitEvenPolarization K 3)) :=
+  spinPlusFinBasisOfFinrankEqSix (splitEvenPolarization K 3) (finrank_splitEvenSpace K 3)
+
+/-- Conjugating the matrix of a Spin element under `TauCeti.hyperbolicSixSpinEquivSpecialLinear`
+by the change of basis between `TauCeti.spinSixHalfSpinStandardBasis` and
+`TauCeti.spinSixHalfSpinMonomialBasis` gives the matrix of its even half-spin action in the
+monomial basis `1, e₀e₁, e₀e₂, e₁e₂`, where explicit matrices can be computed, as in
+`TauCeti.spinSixBasisChange_transvection`. -/
+theorem spinSixBasisChange_conjugate_spinPlusAction (s : spinGroup (splitEvenForm K 3)) :
+    (spinSixHalfSpinMonomialBasis K).toMatrix (spinSixHalfSpinStandardBasis K) *
+        (hyperbolicSixSpinEquivSpecialLinear K s : Matrix (Fin 4) (Fin 4) K) *
+        (spinSixHalfSpinStandardBasis K).toMatrix (spinSixHalfSpinMonomialBasis K) =
+      LinearMap.toMatrix (spinSixHalfSpinMonomialBasis K) (spinSixHalfSpinMonomialBasis K)
+        (spinPlusAction (splitEvenForm K 3) (splitEvenPolarization K 3)
+          (splitEvenPolarization_line K 3) (spinGroupToEven _ s)) := by
+  -- `simp only` rather than `rw`: `rw` visits every subterm of the goal, and the instance
+  -- arguments around `LinearMap.toMatrix` on the right have tens of millions of nodes as a tree.
+  simp only [coe_spinGroupEquivSpecialLinearGroupOfFinrankEqSix_apply]
+  exact basis_toMatrix_mul_linearMap_toMatrix_mul_basis_toMatrix ..
+
+/-- The conjugated fixed-coordinate matrix of a canonical Spin lift is the elementary
+transvection it lifts. -/
+theorem spinSixBasisChange_transvection {i j : Fin 4} (hij : i ≠ j) (c : K) :
+    (spinSixHalfSpinMonomialBasis K).toMatrix (spinSixHalfSpinStandardBasis K) *
+        (hyperbolicSixSpinEquivSpecialLinear K
+          (spinSixTransvectionLift (splitEvenPolarization K 3)
+            (splitEvenPolarization_line K 3) (splitEvenBasis K 3) hij c) :
+          Matrix (Fin 4) (Fin 4) K) *
+        (spinSixHalfSpinStandardBasis K).toMatrix (spinSixHalfSpinMonomialBasis K) =
+      Matrix.transvection i j c := by
+  rw [spinSixBasisChange_conjugate_spinPlusAction]
+  exact toMatrix_spinPlusAction_spinSixTransvectionLift
+    (P := splitEvenPolarization K 3) (hline := splitEvenPolarization_line K 3)
+    (b := splitEvenBasis K 3) hij c
+
 
 /-- The inverse Spin equivalence is the inverse general linear equivalence on determinant-one
 matrices. -/

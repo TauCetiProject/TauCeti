@@ -27,6 +27,34 @@ endpoints are strict-implicit so that applying an assignment to an arrow infers 
 arrow. -/
 abbrev Assignment (Hom : V → V → Type v) (K : Type w) := ∀ ⦃x y : V⦄, Hom x y → K
 
+namespace Assignment
+
+variable {Hom : V → V → Type v} {K L M : Type*}
+
+/-- Change the coefficients of an assignment by applying `φ` to its value on every arrow.
+
+This definition is exposed so that flows whose bounds are mapped in different but definitionally
+equal ways, such as along `ψ ∘ φ` or along `φ` and then `ψ`, can be compared. -/
+@[expose]
+def map (f : Assignment Hom K) (φ : K → L) : Assignment Hom L :=
+  fun _ _ e ↦ φ (f e)
+
+@[simp]
+theorem map_apply (f : Assignment Hom K) (φ : K → L) {x y : V} (e : Hom x y) :
+    f.map φ e = φ (f e) :=
+  (rfl)
+
+@[simp]
+theorem map_id (f : Assignment Hom K) : f.map id = f :=
+  (rfl)
+
+@[simp]
+theorem map_map (f : Assignment Hom K) (φ : K → L) (ψ : L → M) :
+    (f.map φ).map ψ = f.map (ψ ∘ φ) :=
+  (rfl)
+
+end Assignment
+
 /-- A directed network with finite lower and upper bounds on every arrow.
 
 The arrow types may contain parallel arrows, arrows in both directions, and loops. Finiteness is

@@ -112,14 +112,6 @@ private theorem faithfullyFlatDescentHom_apply (f : WithConv (H →ₐ[R] A)) :
       AlgHom.mapValue (H := H) (IsScalarTower.toAlgHom R A B) f :=
   rfl
 
-@[simp]
-private theorem faithfullyFlatDescentHom_apply_apply (f : WithConv (H →ₐ[R] A)) (h : H) :
-    (faithfullyFlatDescentHom (R := R) (H := H) A B f :
-      descentSubgroup (R := R) (H := H) A B).1.ofConv h =
-        algebraMap A B (f.ofConv h) := by
-  rw [faithfullyFlatDescentHom_apply, AlgHom.mapValue_apply, toConv_ofConv, AlgHom.comp_apply,
-    IsScalarTower.coe_toAlgHom']
-
 end CommSemiring
 
 section CommRing
@@ -135,24 +127,15 @@ private theorem faithfullyFlatDescentHom_bijective :
       (FaithfulSMul.algebraMap_injective A B)
     simpa only [faithfullyFlatDescentHom_apply] using congr_arg Subtype.val hfg
   · intro f
-    let i := IsScalarTower.toAlgHom R A B
-    let e := AlgEquiv.ofInjective i (FaithfulSMul.algebraMap_injective A B)
-    let f' : H →ₐ[R] i.range := f.1.ofConv.codRestrict _ fun h => by
-      have hr : f.1.ofConv h ∈ Set.range (algebraMap A B) := by
-        rw [← Algebra.IsEffective.eqLocus_includeLeft_includeRight
-          (Algebra.IsEffective.of_faithfullyFlat A B)]
-        exact (mem_descentSubgroup_iff_apply (R := R) A B f.1).mp f.2 h
-      exact hr
-    refine ⟨toConv (e.symm.toAlgHom.comp f'), Subtype.ext ?_⟩
-    apply WithConv.ofConv_injective
-    ext h
-    rw [faithfullyFlatDescentHom_apply_apply, ofConv_toConv, AlgHom.comp_apply,
-      AlgEquiv.coe_toAlgHom]
-    calc
-      algebraMap A B (e.symm (f' h)) = (e (e.symm (f' h)) : B) :=
-        (AlgEquiv.ofInjective_apply i _ _).symm
-      _ = (f' h : B) := congr_arg Subtype.val (e.apply_symm_apply (f' h))
-      _ = f.1.ofConv h := AlgHom.coe_codRestrict _ _ _ _
+    obtain ⟨g, hg⟩ := (AlgHom.mem_mrange_mapValue_iff (H := H)
+      (φ := IsScalarTower.toAlgHom R A B) (FaithfulSMul.algebraMap_injective A B)).mpr fun h => by
+        have hr : f.1.ofConv h ∈ Set.range (algebraMap A B) := by
+          rw [← Algebra.IsEffective.eqLocus_includeLeft_includeRight
+            (Algebra.IsEffective.of_faithfullyFlat A B)]
+          exact (mem_descentSubgroup_iff_apply (R := R) A B f.1).mp f.2 h
+        obtain ⟨y, hy⟩ := hr
+        exact (AlgHom.mem_range _).mpr ⟨y, by rw [IsScalarTower.coe_toAlgHom', hy]⟩
+    exact ⟨g, Subtype.ext (by rw [faithfullyFlatDescentHom_apply, hg])⟩
 
 /-- **Faithfully flat descent for affine group-valued points.** If `B` is faithfully flat over
 `A`, base change identifies the convolution group of `A`-points of `H` with the subgroup of

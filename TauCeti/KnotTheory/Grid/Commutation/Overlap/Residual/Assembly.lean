@@ -35,7 +35,7 @@ public section
 
 namespace TauCeti.GridDiagram
 
-variable {n : ℕ} (G : GridDiagram n) (C : ColumnCommutationData G) {x z : GridState n}
+variable {n : ℕ} (G : GridDiagram n) (C : ColumnTurn n) {x z : GridState n}
 
 variable (R : Type*) [CommSemiring R] [CharP R 2]
 
@@ -52,7 +52,7 @@ theorem sum_pentagonRectangleWeight_overlap_eq_sum_partners (hzx : z ≠ x) :
             (∑ D ∈ G.rightLeftOverlapPartners C x z, G.pentagonRectangleWeight C R D) +
               ∑ D ∈ G.pentagonRectangleTurnCuts C x z,
                 G.pentagonRectangleWeight C R D := by
-  rw [G.sum_pentagonRectangle_overlap_eq_sameSide_add_mixedSide C
+  rw [sum_pentagonRectangle_overlap_eq_sameSide_add_mixedSide C
       (G.pentagonRectangleDecompositions C x z) (G.pentagonRectangleWeight C R) hzx,
     G.sum_pentagonRectangle_sameSide_eq_sum_partners_add_sum_selfSources C,
     G.sum_pentagonRectangle_mixedSide_eq_sum_partners_add_turnCuts_add_selfPairs C
@@ -105,14 +105,14 @@ theorem commutationMap_comp_unblockedDifferential_eq_iff_initialPentagon_overlap
     rw [add_assoc, add_assoc, add_left_cancel_iff]
     constructor <;> intro h <;> simpa only [add_comm] using h
   conv_lhs =>
-    rw [← G.sum_rectanglePentagon_overlap_eq_sameSide_add_mixedSide C
+    rw [← sum_rectanglePentagon_overlap_eq_sameSide_add_mixedSide C
         (G.rectanglePentagonDecompositions C x z) (G.rectanglePentagonWeight C R) hzx,
-      ← G.sum_rectangleInitialPentagon_overlap_eq_sameSide_add_mixedSide C
+      ← sum_rectangleInitialPentagon_overlap_eq_sameSide_add_mixedSide C
         (G.rectangleInitialPentagonDecompositions C x z)
           (G.rectangleInitialPentagonWeight C R) hzx,
-      ← G.sum_pentagonRectangle_overlap_eq_sameSide_add_mixedSide C
+      ← sum_pentagonRectangle_overlap_eq_sameSide_add_mixedSide C
         (G.pentagonRectangleDecompositions C x z) (G.pentagonRectangleWeight C R) hzx,
-      ← G.sum_initialPentagonRectangle_overlap_eq_sameSide_add_mixedSide C
+      ← sum_initialPentagonRectangle_overlap_eq_sameSide_add_mixedSide C
         (G.initialPentagonRectangleDecompositions C x z)
           (G.initialPentagonRectangleWeight C R) hzx,
       G.sum_rectanglePentagonWeight_overlap_eq_sum_partners C R hzx,

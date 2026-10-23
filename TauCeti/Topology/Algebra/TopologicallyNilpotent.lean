@@ -25,8 +25,12 @@ parity `n` has.
 * `IsTopologicallyNilpotent.neg` : the negation of a topologically nilpotent element is
   topologically nilpotent.
 * `isTopologicallyNilpotent_neg` : the same fact as a `simp` iff, mirroring `isPowerBounded_neg`.
+* `IsTopologicallyNilpotent.pow` : a positive power of a topologically nilpotent element is
+  topologically nilpotent.
 * `eventually_mul_pow_mem_of_isTopologicallyNilpotent`, and its `.exists` form: a topologically
   nilpotent element absorbs any fixed element into any open subring.
+* `Prod.isTopologicallyNilpotent_iff` : an element of a product is topologically nilpotent exactly
+  when both of its components are.
 
 ## Provenance
 
@@ -71,6 +75,19 @@ theorem isTopologicallyNilpotent_neg {a : R} :
     IsTopologicallyNilpotent (-a) ↔ IsTopologicallyNilpotent a :=
   ⟨fun h ↦ by simpa using h.neg, IsTopologicallyNilpotent.neg⟩
 
+section Pow
+
+variable {M : Type*} [MonoidWithZero M] [TopologicalSpace M]
+
+/-- **A positive power of a topologically nilpotent element is topologically nilpotent**: the
+powers of `a ^ n` are a subsequence of the powers of `a`. -/
+theorem IsTopologicallyNilpotent.pow {a : M} (ha : IsTopologicallyNilpotent a) {n : ℕ}
+    (hn : n ≠ 0) : IsTopologicallyNilpotent (a ^ n) := by
+  have h := ha.comp
+    (tendsto_atTop_mono (fun m ↦ Nat.le_mul_of_pos_left m (Nat.pos_of_ne_zero hn)) tendsto_id)
+  simpa only [IsTopologicallyNilpotent, Function.comp_def, id, pow_mul] using h
+
+end Pow
 
 section Absorb
 
@@ -97,5 +114,21 @@ theorem exists_mul_pow_mem_of_isTopologicallyNilpotent {s : A}
   (eventually_mul_pow_mem_of_isTopologicallyNilpotent hs hB a).exists
 
 end Absorb
+
+section Prod
+
+variable {M N : Type*} [MonoidWithZero M] [MonoidWithZero N] [TopologicalSpace M]
+  [TopologicalSpace N]
+
+/-- An element of a product of topological monoids with zero is topologically nilpotent exactly
+when both of its components are: the powers of `x` are taken componentwise, and a sequence in a
+product converges exactly when both of its component sequences do. -/
+@[simp]
+theorem Prod.isTopologicallyNilpotent_iff {x : M × N} :
+    IsTopologicallyNilpotent x ↔ IsTopologicallyNilpotent x.1 ∧ IsTopologicallyNilpotent x.2 := by
+  simp only [IsTopologicallyNilpotent, Prod.tendsto_iff, Prod.pow_fst, Prod.pow_snd, Prod.fst_zero,
+    Prod.snd_zero]
+
+end Prod
 
 end

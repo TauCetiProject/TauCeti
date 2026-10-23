@@ -39,15 +39,20 @@ variable {R R' : Type*} [CommRing R] [CommRing R'] [IsDedekindDomain R] [IsDedek
 Dedekind domains.  Use this to move a norm computation to whichever of two identified rings it is
 easier to carry out in. -/
 @[simp]
-theorem absNorm_comap_of_ringEquiv [Infinite R] [Infinite R'] (e : R ≃+* R') (I : Ideal R') :
+theorem absNorm_comap_of_ringEquiv (e : R ≃+* R') (I : Ideal R') :
     absNorm (Ideal.comap e I) = absNorm I := by
-  rw [absNorm_apply, absNorm_apply, Submodule.cardQuot_apply, Submodule.cardQuot_apply]
+  obtain rfl | hI := eq_or_ne I ⊥
+  · simp [Ideal.comap_bot_of_injective _ e.injective]
+  have hI' : Ideal.comap e I ≠ ⊥ :=
+    fun h ↦ hI (Ideal.eq_bot_of_comap_eq_bot' (f := e.toRingHom) e.surjective h)
+  rw [absNorm_of_ne_bot hI', absNorm_of_ne_bot hI,
+    Submodule.cardQuot_apply, Submodule.cardQuot_apply]
   exact Nat.card_congr (Ideal.quotientEquiv _ _ e (Ideal.map_comap_eq_self_of_equiv e I).symm)
 
 /-- The absolute norm is invariant under transporting an ideal forwards along an isomorphism of
 Dedekind domains.  This is the form to use when the ideal is given on the source side. -/
 @[simp]
-theorem absNorm_map_of_ringEquiv [Infinite R] [Infinite R'] (e : R ≃+* R') (I : Ideal R) :
+theorem absNorm_map_of_ringEquiv (e : R ≃+* R') (I : Ideal R) :
     absNorm (I.map e) = absNorm I := by
   rw [← Ideal.comap_symm]
   exact absNorm_comap_of_ringEquiv e.symm I
@@ -77,7 +82,7 @@ variable {S : Type*} [CommRing S] [Module.Free ℤ S] [Module.Finite ℤ S]
 /-- **Congruent elements with norms of nonnegative product generate ideals of congruent norms.**
 If `a ≡ b` modulo the ideal `(m)` of a Dedekind domain `S` that is free of finite rank over `ℤ`,
 and `N(a) N(b) ≥ 0`, then the absolute norms of `(a)` and `(b)` are congruent modulo `m`. -/
-theorem Ideal.natCast_absNorm_span_singleton_eq_of_sub_mem [IsDedekindDomain S] [Infinite S]
+theorem Ideal.natCast_absNorm_span_singleton_eq_of_sub_mem [IsDedekindDomain S]
     {m : ℕ}
     {a b : S} (hab : 0 ≤ Algebra.norm ℤ a * Algebra.norm ℤ b)
     (h : a - b ∈ Ideal.span {(m : S)}) :

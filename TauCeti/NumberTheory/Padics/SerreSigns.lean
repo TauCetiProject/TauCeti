@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.ZMod.IntUnitsPower
 public import Mathlib.NumberTheory.LegendreSymbol.ZModChar
 public import TauCeti.NumberTheory.Padics.PrincipalUnits
+import TauCeti.Algebra.Group.Units.Basic
 import TauCeti.NumberTheory.Padics.DyadicUnits
 
 /-!
@@ -50,7 +51,8 @@ for some unit `w`. Read in `ℚ_2`, a unit of `ℤ_2` is a square of `ℚ_2` exa
   `u ≡ 1 mod 8`.
 * `TauCeti.exists_eq_neg_one_pow_mul_five_pow_mul_sq`: `u = (-1) ^ ε(u) · 5 ^ ω(u) · w²`.
 * `TauCeti.isSquare_coe_iff_mem_unitsPrincipal_three`: a unit of `ℤ_2` is a square in `ℚ_2`
-  exactly when it lies in `U^(3) = 1 + 8ℤ_2`.
+  exactly when it lies in `U^(3) = 1 + 8ℤ_2`, and
+  `TauCeti.isSquare_iff_serreEps_eq_zero_and_serreOmega_eq_zero` exactly when `ε(u) = ω(u) = 0`.
 
 ## References
 
@@ -266,5 +268,11 @@ theorem isSquare_coe_iff_mem_unitsPrincipal_three (u : ℤ_[2]ˣ) :
     rw [unitsPrincipal_three_eq_range_powMonoidHom_two] at hu
     obtain ⟨w, rfl⟩ := hu
     exact ⟨w, by simp [pow_two]⟩
+
+/-- A unit `u` of `ℤ_2` is a square of `ℚ_2ˣ` exactly when `ε(u) = ω(u) = 0`. -/
+theorem isSquare_iff_serreEps_eq_zero_and_serreOmega_eq_zero {a : ℚ_[2]ˣ} {u : ℤ_[2]ˣ}
+    (ha : (a : ℚ_[2]) = u) : IsSquare a ↔ serreEps u = 0 ∧ serreOmega u = 0 := by
+  rw [← isSquare_units_val_iff, ha, isSquare_coe_iff_mem_unitsPrincipal_three,
+    serreEps_eq_zero_and_serreOmega_eq_zero_iff]
 
 end TauCeti

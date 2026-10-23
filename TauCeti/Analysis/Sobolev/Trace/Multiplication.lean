@@ -49,10 +49,10 @@ theorem W1p.hyperplaneTrace_contDiffSMul_ae (a : ℝ) (hψ : ContDiff ℝ ∞ ψ
     (hψM : ∀ x, |ψ x| ≤ M) (hgradM : ∀ x, ‖∇ ψ x‖ ≤ M)
     (u : W1p (volume : Measure (WithLp 2 (ℝ × E))) ⊤ 2) :
     ∀ᵐ y ∂(volume : Measure E),
-      W1p.hyperplaneTrace a
+      W1p.hyperplaneTrace ENNReal.ofNat_ne_top a
           (W1p.contDiffSMul ψ hψ ((abs_nonneg _).trans (hψM 0))
             (fun x _ => hψM x) (fun x _ => hgradM x) u) y =
-        ψ (WithLp.toLp 2 (a, y)) * W1p.hyperplaneTrace a u y := by
+        ψ (WithLp.toLp 2 (a, y)) * W1p.hyperplaneTrace ENNReal.ofNat_ne_top a u y := by
   have hM : 0 ≤ M := (abs_nonneg _).trans (hψM 0)
   let b : E → ℝ := fun y => ψ (WithLp.toLp 2 (a, y))
   have hb : MemLp b ∞ (volume : Measure E) :=
@@ -66,17 +66,17 @@ theorem W1p.hyperplaneTrace_contDiffSMul_ae (a : ℝ) (hψ : ContDiff ℝ ∞ ψ
       hb.coeFn_toLp] with y hy hby
     simpa only [T, ContinuousLinearMap.holderL_apply_apply, B, hby,
       ContinuousLinearMap.lsmul_apply, smul_eq_mul] using hy
-  have heq : W1p.hyperplaneTrace a
+  have heq : W1p.hyperplaneTrace ENNReal.ofNat_ne_top a
       (W1p.contDiffSMul ψ hψ hM (fun x _ => hψM x) (fun x _ => hgradM x) u) =
-      T (W1p.hyperplaneTrace a u) := by
+      T (W1p.hyperplaneTrace ENNReal.ofNat_ne_top a u) := by
     refine (W1p.denseRange_ofTestFunctionₗ_top
       (mu := (volume : Measure (WithLp 2 (ℝ × E)))) (p := 2) (by norm_num)).induction_on u
       (isClosed_eq ?_ ?_) ?_
     · simpa only [Function.comp_def, W1p.contDiffSMulL_apply] using
-        (W1p.hyperplaneTrace a).continuous.comp
+        (W1p.hyperplaneTrace (p := 2) ENNReal.ofNat_ne_top a).continuous.comp
           (W1p.contDiffSMulL ψ hψ hM (fun x _ => hψM x)
             (fun x _ => hgradM x)).continuous
-    · exact T.continuous.comp (W1p.hyperplaneTrace a).continuous
+    · exact T.continuous.comp (W1p.hyperplaneTrace (p := 2) ENNReal.ofNat_ne_top a).continuous
     · intro φ
       let Φ : 𝓓((⊤ : Opens (WithLp 2 (ℝ × E))), ℝ) :=
         ⟨ψ * (φ : WithLp 2 (ℝ × E) → ℝ), hψ.mul φ.contDiff,
@@ -84,9 +84,9 @@ theorem W1p.hyperplaneTrace_contDiffSMul_ae (a : ℝ) (hψ : ContDiff ℝ ∞ ψ
       rw [W1p.contDiffSMul_ofTestFunctionₗ hψ hM
         (fun x _ => hψM x) (fun x _ => hgradM x) φ Φ rfl]
       apply Lp.ext
-      filter_upwards [W1p.hyperplaneTrace_ofTestFunction_apply_ae a Φ,
-        W1p.hyperplaneTrace_ofTestFunction_apply_ae a φ,
-        hT (W1p.hyperplaneTrace a (W1p.ofTestFunctionₗ volume ⊤ 2 φ))]
+      filter_upwards [W1p.hyperplaneTrace_ofTestFunction_apply_ae (p := 2) (by norm_num) a Φ,
+        W1p.hyperplaneTrace_ofTestFunction_apply_ae (p := 2) (by norm_num) a φ,
+        hT (W1p.hyperplaneTrace ENNReal.ofNat_ne_top a (W1p.ofTestFunctionₗ volume ⊤ 2 φ))]
         with y hΦ hφ ht
       simp only [hΦ, ht, hφ, b]
       rfl
@@ -99,10 +99,10 @@ theorem W1p.halfSpaceTrace_contDiffSMul_ae (a : ℝ) (hψ : ContDiff ℝ ∞ ψ)
     (hψM : ∀ x, |ψ x| ≤ M) (hgradM : ∀ x, ‖∇ ψ x‖ ≤ M)
     (u : W1p (volume : Measure (WithLp 2 (ℝ × E))) (normalHalfSpace a) 2) :
     ∀ᵐ y ∂(volume : Measure E),
-      W1p.halfSpaceTrace a
+      W1p.halfSpaceTrace ENNReal.ofNat_ne_top a
           (W1p.contDiffSMul ψ hψ ((abs_nonneg _).trans (hψM 0))
             (fun x _ => hψM x) (fun x _ => hgradM x) u) y =
-        ψ (WithLp.toLp 2 (a, y)) * W1p.halfSpaceTrace a u y := by
+        ψ (WithLp.toLp 2 (a, y)) * W1p.halfSpaceTrace ENNReal.ofNat_ne_top a u y := by
   have hM : 0 ≤ M := (abs_nonneg _).trans (hψM 0)
   let w := W1p.extendByReflectionL a u
   have heq : W1p.restrictL (le_top : normalHalfSpace (E := E) a ≤ ⊤)
@@ -122,7 +122,7 @@ theorem W1p.halfSpaceTrace_contDiffSMul_ae (a : ℝ) (hψ : ContDiff ℝ ∞ ψ)
       W1p.value_contDiffSMul_ae hψ hM
         (fun x _ => hψM x) (fun x _ => hgradM x) u] with x hx hm hwx hu
     simp only [hx, hm, hwx, hu]
-  rw [← heq, W1p.halfSpaceTrace_restrictL, W1p.halfSpaceTrace_apply]
+  rw [← heq, W1p.halfSpaceTrace_restrictL (p := 2) (by norm_num), W1p.halfSpaceTrace_apply]
   exact W1p.hyperplaneTrace_contDiffSMul_ae a hψ hψM hgradM w
 
 /-- Half-space Sobolev functions agreeing almost everywhere wherever a smooth bounded multiplier
@@ -134,7 +134,8 @@ theorem W1p.halfSpaceTrace_ae_eq_on_of_value_ae_eq_on (a : ℝ) (hψ : ContDiff 
     (huv : ∀ᵐ x ∂volume.restrict (normalHalfSpace (E := E) a),
       ψ x ≠ 0 → W1p.value u x = W1p.value v x) :
     ∀ᵐ y ∂(volume : Measure E), ψ (WithLp.toLp 2 (a, y)) ≠ 0 →
-      W1p.halfSpaceTrace a u y = W1p.halfSpaceTrace a v y := by
+      W1p.halfSpaceTrace ENNReal.ofNat_ne_top a u y =
+        W1p.halfSpaceTrace ENNReal.ofNat_ne_top a v y := by
   have hM : 0 ≤ M := (abs_nonneg _).trans (hψM 0)
   have heq : W1p.contDiffSMul ψ hψ hM
       (fun x _ => hψM x) (fun x _ => hgradM x) u =
@@ -149,7 +150,7 @@ theorem W1p.halfSpaceTrace_ae_eq_on_of_value_ae_eq_on (a : ℝ) (hψ : ContDiff 
     by_cases h : ψ x = 0
     · simp [h]
     · rw [hx h]
-  have ht := congrArg (W1p.halfSpaceTrace a) heq
+  have ht := congrArg (W1p.halfSpaceTrace (p := 2) ENNReal.ofNat_ne_top a) heq
   filter_upwards [W1p.halfSpaceTrace_contDiffSMul_ae a hψ hψM hgradM u,
     W1p.halfSpaceTrace_contDiffSMul_ae a hψ hψM hgradM v] with y hu hv
   intro hy

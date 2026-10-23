@@ -28,6 +28,8 @@ sectionwise symmetric algebras) and sheafifying, exactly as the tensor product
   sheaves of `R`-modules;
 * `SheafOfModules.symmetricPowerIso` and `SheafOfModules.symmetricPower_map` are its
   defining identification with the sheafification of the sectionwise symmetric power;
+* `TauCeti.SheafOfModules.symmetricPower_hom_ext` checks equality of maps out of a symmetric
+  power on the sheafifications of sectionwise symmetric tensors;
 * `SheafOfModules.symmetricPowerZeroIso` identifies `Sym⁰ M` with the structure sheaf, with
   components computed by `symmetricPowerZeroIso_hom_app` and `symmetricPowerZeroIso_inv_app`;
 * `SheafOfModules.symmetricPowerOneIso` identifies `Sym¹ M` with `M`;
@@ -329,5 +331,32 @@ theorem overSymmetricPowerIso_hom_naturality (n : ℕ)
 end Pushforward
 
 end SheafOfModules
+
+namespace TauCeti.SheafOfModules
+
+open _root_.SheafOfModules
+
+variable {R}
+
+/-- Maps from a sheaf symmetric power are determined by their values on the sheafifications of
+sectionwise symmetric tensors. -/
+theorem symmetricPower_hom_ext (n : ℕ) (M : _root_.SheafOfModules.{u} (ringCatSheaf R))
+    {N : _root_.SheafOfModules.{u} (ringCatSheaf R)}
+    {f g : (symmetricPower R n).obj M ⟶ N}
+    (h : ∀ (U : Cᵒᵖ)
+      (x : (PresheafOfModulesOfCommRing.obj (R := R.obj) M.val U).symmetricPower n),
+      f.val.app U ((symmetricPowerIso n M).inv.val.app U
+        (((PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)).unit.app
+          ((PresheafOfModulesOfCommRing.symmetricPower n).obj M.val)).app U x)) =
+      g.val.app U ((symmetricPowerIso n M).inv.val.app U
+        (((PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)).unit.app
+          ((PresheafOfModulesOfCommRing.symmetricPower n).obj M.val)).app U x))) : f = g := by
+  rw [← cancel_epi (symmetricPowerIso n M).inv]
+  apply ((PresheafOfModules.sheafificationAdjunction
+    (𝟙 (ringCatSheaf R).obj)).homEquiv _ _).injective
+  ext U x
+  exact h U x
+
+end TauCeti.SheafOfModules
 
 end

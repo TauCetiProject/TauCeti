@@ -72,37 +72,11 @@ theorem mem_checkerboardPlusCarrier_iff (hn : Even n) (x : Fin n → ℚ) :
     x ∈ (checkerboardPlusCarrier n).1 ↔
       x ∈ (checkerboardLattice n).carrier ∨
         x - checkerboardSpinor n ∈ (checkerboardLattice n).carrier := by
-  rw [checkerboardPlusCarrier,
-    (checkerboardLattice n).mem_intermediateCarrierOfDiscriminantSubgroup_iff]
-  constructor
-  · rintro ⟨hxdual, hx⟩
-    rw [mem_checkerboardSpinorSubgroup_iff n hn] at hx
-    rcases hx with hx | hx
-    · left
-      exact ((checkerboardLattice n).discriminantGroup_mk_eq_zero_iff
-        ⟨x, hxdual⟩).mp hx
-    · right
-      rw [checkerboardSpinorClass_def] at hx
-      exact ((checkerboardLattice n).discriminantGroup_mk_eq_iff
-        ⟨x, hxdual⟩ ⟨checkerboardSpinor n, checkerboardSpinor_mem_dualCarrier⟩).mp hx
-  · rintro (hx | hx)
-    · have hxdual := (checkerboardLattice n).le_dualCarrier hx
-      refine ⟨hxdual, ?_⟩
-      rw [mem_checkerboardSpinorSubgroup_iff n hn]
-      left
-      exact ((checkerboardLattice n).discriminantGroup_mk_eq_zero_iff
-        ⟨x, hxdual⟩).mpr hx
-    · have hxdiff := (checkerboardLattice n).le_dualCarrier hx
-      have hxdual : x ∈ (checkerboardLattice n).dualCarrier := by
-        have hadd := (checkerboardLattice n).dualCarrier.add_mem hxdiff
-          checkerboardSpinor_mem_dualCarrier
-        simpa only [sub_add_cancel] using hadd
-      refine ⟨hxdual, ?_⟩
-      rw [mem_checkerboardSpinorSubgroup_iff n hn]
-      right
-      rw [checkerboardSpinorClass_def]
-      exact ((checkerboardLattice n).discriminantGroup_mk_eq_iff
-        ⟨x, hxdual⟩ ⟨checkerboardSpinor n, checkerboardSpinor_mem_dualCarrier⟩).mpr hx
+  rw [checkerboardPlusCarrier, checkerboardSpinorSubgroup, checkerboardSpinorClass_def]
+  refine (checkerboardLattice n).mem_intermediateCarrierOfDiscriminantSubgroup_zmultiples_iff
+    checkerboardSpinor_mem_dualCarrier ?_ x
+  rw [← checkerboardSpinorClass_def, two_nsmul, ← two_zsmul]
+  exact two_zsmul_checkerboardSpinorClass_of_even n hn
 
 /-- The subgroup recovered from the spinor enlargement is the spinor subgroup. -/
 @[simp]

@@ -11,7 +11,7 @@ import Mathlib.Topology.Instances.ENNReal.Lemmas
 import Mathlib.Topology.UniformSpace.UniformEmbedding
 
 /-!
-# Hölder functions: a `dist` criterion, extension from a dense set, and the Hölder seminorm
+# Hölder functions: a `dist` criterion, dense extension, finite sums, and the Hölder seminorm
 
 A Hölder bound stated with `dist` is equivalent to `HolderOnWith`, which Mathlib phrases with
 `edist`.
@@ -25,6 +25,8 @@ Hölder inequality passes from `s × s` to its closure because both of its sides
 
 This is how an almost-everywhere Hölder estimate becomes a Hölder continuous representative: a set
 of full measure for a measure that is positive on open sets is dense.
+
+Finite sums of Hölder functions are Hölder, with the sum of the constants.
 
 Mathlib defines the Hölder seminorm `eHolderNorm r f` as the infimum of the admissible Hölder
 constants. On an emetric space it is also the supremum of the difference quotients
@@ -41,6 +43,7 @@ when a seminorm on a product is compared with seminorms of the slices.
   constant `C` and exponent `r` stays within `C ρ^r` of its value at the centre.
 * `HolderOnWith.extend_of_dense`: a Hölder function on a dense set extends to a Hölder
   function on the whole space.
+* `HolderWith.sum`: a finite sum of Hölder functions is Hölder.
 * `eHolderNorm_eq_iSup_edist_div` and `MemHolder.nnHolderNorm_eq_iSup_dist_div`: the Hölder
   seminorm is the supremum of the difference quotients over distinct points.
 * `edist_le_eHolderNorm_mul_rpow`: the Hölder seminorm bounds every increment.
@@ -108,6 +111,22 @@ theorem HolderOnWith.dist_le_mul_rpow_of_mem_ball {X Y : Type*} [PseudoMetricSpa
   calc dist (f x) (f x₀) ≤ C * dist x x₀ ^ (r : ℝ) :=
         hf.dist_le hx (Metric.mem_ball_self (dist_nonneg.trans_lt hx'))
     _ ≤ C * ρ ^ (r : ℝ) := by gcongr
+
+/-- A finite sum of Hölder functions with a common exponent is Hölder, with the sum of the
+constants. -/
+theorem HolderWith.sum {ι X Y : Type*} [PseudoMetricSpace X] [SeminormedAddCommGroup Y]
+    {s : Finset ι} {C : ι → ℝ≥0} {r : ℝ≥0} {f : ι → X → Y}
+    (hf : ∀ i ∈ s, HolderWith (C i) r (f i)) :
+    HolderWith (∑ i ∈ s, C i) r (fun x => ∑ i ∈ s, f i x) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty =>
+    simp only [Finset.sum_empty]
+    exact HolderWith.const
+  | insert a s ha ih =>
+    simp_rw [Finset.sum_insert ha]
+    exact (hf a (Finset.mem_insert_self a s)).add
+      (ih fun i hi => hf i (Finset.mem_insert_of_mem hi)) (g := fun x => ∑ i ∈ s, f i x)
 
 section HolderNorm
 

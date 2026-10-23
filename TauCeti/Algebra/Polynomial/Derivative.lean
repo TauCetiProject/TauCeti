@@ -16,7 +16,12 @@ This file records auxiliary results relating Mathlib's polynomial derivative API
 iterated derivatives after a linear change of variables, and controlling degrees of derivatives
 under coefficient maps.
 
-The derivation `Polynomial.derivative'` has `Polynomial.derivative` as its underlying function.
+The derivation `Polynomial.derivative'` has `Polynomial.derivative` as its underlying function,
+and every scalar multiple of it is locally nilpotent.
+
+For a polynomial `p` with coefficients in an `R`-algebra `S`, possibly noncommutative, evaluating
+`p′` at the central element `algebraMap R S t` expands as a sum of the coefficients of `p`
+weighted by scalars depending on `t`.
 
 A coefficient map can lower the degree of a polynomial, and in positive characteristic it can
 lower the degree of a derivative even when it preserves the degree of the polynomial itself.
@@ -42,6 +47,15 @@ function. -/
 theorem _root_.Polynomial.coe_derivative' [CommSemiring R] :
     ⇑(derivative' : Derivation R R[X] R[X]) = derivative :=
   _root_.funext derivative'_apply
+
+/-- The scaled derivative `r • d / dX` is locally nilpotent: some iterate of it kills each
+polynomial. -/
+theorem _root_.Polynomial.exists_iterate_smul_derivative'_apply_eq_zero [CommSemiring R] (r : R)
+    (p : R[X]) : ∃ n, (r • derivative' : Derivation R R[X] R[X])^[n] p = 0 := by
+  refine ⟨p.natDegree + 1, ?_⟩
+  rw [← Derivation.coeFn_coe, ← Module.End.coe_pow, Derivation.coe_smul_linearMap, smul_pow,
+    LinearMap.smul_apply, Module.End.pow_apply, Derivation.coeFn_coe, coe_derivative',
+    iterate_derivative_eq_zero (Nat.lt_succ_self _), smul_zero]
 
 /-- The `k`-th derivative of `p (a X)` is `a ^ k p⁽ᵏ⁾ (a X)`. -/
 theorem _root_.Polynomial.iterate_derivative_comp_C_mul_X [CommSemiring R] (p : R[X]) (a : R)
@@ -78,6 +92,22 @@ theorem _root_.Polynomial.derivative_eval_one_of_reflect_eq [CommRing R] {p : R[
   · simp only [Finset.mem_range]
     omega
   · omega
+
+section AlgebraMap
+
+variable [CommSemiring R] [Semiring S] [Algebra R S]
+
+/-- Evaluating the derivative of a polynomial at the image of a scalar `t`, with the same range of
+coefficients as `Polynomial.eval_algebraMap_eq_sum_range`. -/
+theorem _root_.Polynomial.derivative_eval_algebraMap_eq_sum_range (p : S[X]) (t : R) :
+    p.derivative.eval (algebraMap R S t) =
+      ∑ i ∈ Finset.range (p.natDegree + 1), ((i : R) * t ^ (i - 1)) • p.coeff i := by
+  rw [derivative_eval, sum_over_range _ fun n ↦ by simp]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [Algebra.smul_def, Algebra.commutes]
+  simp [mul_assoc]
+
+end AlgebraMap
 
 variable [Semiring R] [Semiring S] [HasUniqueDiv S]
 
