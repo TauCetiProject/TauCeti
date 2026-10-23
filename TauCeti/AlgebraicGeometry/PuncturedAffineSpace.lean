@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.CommAlgCat.Fppf
+public import Mathlib.AlgebraicGeometry.Group.Affine
 public import Mathlib.AlgebraicGeometry.Restrict
 import TauCeti.AlgebraicGeometry.AffineGroupScheme.HopfSpec
 
