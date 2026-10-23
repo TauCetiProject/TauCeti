@@ -414,6 +414,13 @@ theorem contractLeft_eq_zero_of_mem_exteriorPower_zero (d : Module.Dual R M)
   obtain ⟨r, rfl⟩ := Submodule.mem_one.mp hx
   exact contractLeft_algebraMap (Q := (0 : QuadraticForm R M)) d r
 
+/-- Left multiplication by a vector raises the exterior degree by one: it carries the `n`-th
+exterior power into the `(n + 1)`-th. -/
+theorem ι_mul_mem_exteriorPower (m : M) {n : ℕ} {x : ExteriorAlgebra R M} (hx : x ∈ ⋀[R]^n M) :
+    ExteriorAlgebra.ι R m * x ∈ ⋀[R]^(n + 1) M := by
+  rw [_root_.ExteriorAlgebra.exteriorPower, pow_succ']
+  exact Submodule.mul_mem_mul (LinearMap.mem_range_self _ m) hx
+
 /-- **Contraction lowers the exterior degree by one**: it carries the `(n + 1)`-th exterior power
 into the `n`-th. -/
 theorem contractLeft_mem_exteriorPower (d : Module.Dual R M) {n : ℕ}
@@ -433,15 +440,7 @@ theorem contractLeft_mem_exteriorPower (d : Module.Dual R M) {n : ℕ}
     · rw [contractLeft_eq_zero_of_mem_exteriorPower_zero d hx, mul_zero]
       exact zero_mem _
     · rw [Nat.add_sub_cancel] at ih
-      rw [_root_.ExteriorAlgebra.exteriorPower, pow_succ']
-      exact Submodule.mul_mem_mul (LinearMap.mem_range_self _ v) ih
-
-/-- Left multiplication by a vector raises the exterior degree by one: it carries the `n`-th
-exterior power into the `(n + 1)`-th. -/
-theorem ι_mul_mem_exteriorPower (m : M) {n : ℕ} {x : ExteriorAlgebra R M} (hx : x ∈ ⋀[R]^n M) :
-    ExteriorAlgebra.ι R m * x ∈ ⋀[R]^(n + 1) M := by
-  rw [_root_.ExteriorAlgebra.exteriorPower, pow_succ']
-  exact Submodule.mul_mem_mul (LinearMap.mem_range_self _ m) hx
+      exact ι_mul_mem_exteriorPower v ih
 
 /-- Exterior multiplication `v ↦ m ∧ v` by a vector `m`, from the `n`-th exterior power to the
 `(n + 1)`-th. Mathlib's `exteriorPower.wedge R M 1 n` is the same product with values in degree
