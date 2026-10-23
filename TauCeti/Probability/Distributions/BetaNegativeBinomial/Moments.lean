@@ -224,27 +224,33 @@ theorem memLp_two_id_map_cast_betaNegativeBinomialMeasure_iff
   simp only [id_eq]
   exact integrable_pow_map_cast_betaNegativeBinomialMeasure_iff hr ha hb 2
 
-private theorem integral_sq_betaNegativeBinomialMeasure
-    (hr : 0 < r) (ha : 2 < a) (hb : 0 < b) :
-    ∫ k : ℕ, (k : ℝ) ^ 2 ∂betaNegativeBinomialMeasure r a b =
+/-- The second raw moment of the real cast beta-negative-binomial law, including shape zero. -/
+theorem integral_sq_id_map_cast_betaNegativeBinomialMeasure
+    (hr : 0 ≤ r) (ha : 0 < a) (hb : 0 < b) (hfinite : r = 0 ∨ 2 < a) :
+    ∫ x : ℝ, x ^ 2 ∂((betaNegativeBinomialMeasure r a b).map (Nat.cast : ℕ → ℝ)) =
       r * (r + 1) * (b * (b + 1) / ((a - 1) * (a - 2))) + r * b / (a - 1) := by
-  have ha0 : 0 < a := by linarith
+  rcases hr.eq_or_lt with rfl | hr
+  · rw [betaNegativeBinomialMeasure_zero ha hb,
+      Measure.map_dirac' (by fun_prop : Measurable (Nat.cast : ℕ → ℝ))]
+    simp
+  have ha2 := hfinite.resolve_left hr.ne'
   have ha1 : 1 < a := by linarith
-  have hfirst := (integrable_id_map_cast_betaNegativeBinomialMeasure_iff hr.le ha0 hb).mpr
+  have hfirst := (integrable_id_map_cast_betaNegativeBinomialMeasure_iff hr.le ha hb).mpr
     (Or.inr ha1)
   rw [MeasurableEmbedding.natCast.integrable_map_iff] at hfirst
   simp only [Function.comp_def, id_eq] at hfirst
-  have hdesc := (integrable_descFactorial_betaNegativeBinomialMeasure_iff hr.le ha0 hb 2).mpr
-    (Or.inr ha)
-  have h := integral_descFactorial_betaNegativeBinomialMeasure hr.le ha0 hb
-    (n := 2) (Or.inr (by simpa using ha))
+  have hdesc := (integrable_descFactorial_betaNegativeBinomialMeasure_iff hr.le ha hb 2).mpr
+    (Or.inr ha2)
+  have h := integral_descFactorial_betaNegativeBinomialMeasure hr.le ha hb
+    (n := 2) (Or.inr (by simpa using ha2))
   simp only [Finset.prod_range_succ, Finset.prod_range_zero, Nat.cast_zero, Nat.cast_one,
     Nat.cast_ofNat, add_zero, one_mul] at h
   have hbeta : beta (a - 2) (b + 2) / beta a b =
       b * (b + 1) / ((a - 1) * (a - 2)) := by
-    rw [beta_comm (a - 2) (b + 2), beta_comm a b, beta_add_two_sub_two_div hb ha]
-  have hmean := integral_id_map_cast_betaNegativeBinomialMeasure hr.le ha0 hb (Or.inr ha1)
+    rw [beta_comm (a - 2) (b + 2), beta_comm a b, beta_add_two_sub_two_div hb ha2]
+  have hmean := integral_id_map_cast_betaNegativeBinomialMeasure hr.le ha hb (Or.inr ha1)
   rw [MeasurableEmbedding.natCast.integral_map] at hmean
+  rw [MeasurableEmbedding.natCast.integral_map]
   simp_rw [← Nat.cast_pow, Nat.sq_eq_descFactorial_two_add, Nat.cast_add]
   rw [integral_add hdesc hfirst, hmean, h]
   rw [mul_div_assoc, mul_div_assoc, hbeta]
@@ -266,7 +272,7 @@ theorem variance_id_map_cast_betaNegativeBinomialMeasure
     (Or.inr ha2)
   rw [variance_eq_sub hmem]
   simp only [Pi.pow_apply, id_eq]
-  rw [MeasurableEmbedding.natCast.integral_map, integral_sq_betaNegativeBinomialMeasure hr ha2 hb,
+  rw [integral_sq_id_map_cast_betaNegativeBinomialMeasure hr.le ha hb (Or.inr ha2),
     integral_id_map_cast_betaNegativeBinomialMeasure hr.le ha hb (Or.inr ha1)]
   have h1 : a - 1 ≠ 0 := by linarith
   have h2 : a - 2 ≠ 0 := by linarith
@@ -289,12 +295,7 @@ theorem integrableExpSet_id_map_cast_betaNegativeBinomialMeasure
   have hnonneg : ∀ᵐ x ∂((betaNegativeBinomialMeasure r a b).map (Nat.cast : ℕ → ℝ)),
       (0 : ℝ) ≤ id x :=
     MeasurableEmbedding.natCast.ae_map_iff.2 (Eventually.of_forall fun k => Nat.cast_nonneg k)
-  ext t
-  simp only [integrableExpSet, mem_ofPred_eq, mem_Iic]
-  refine ⟨fun h => ?_, fun ht => integrable_exp_mul_of_ge t 0 ht aemeasurable_id hnonneg⟩
-  by_contra ht
-  push Not at ht
-  refine not_integrable_exp_mul_of_not_integrable_pow ⌈a⌉₊ aemeasurable_id hnonneg ?_ ht h
+  refine integrableExpSet_eq_Iic_of_not_integrable_pow aemeasurable_id hnonneg ⌈a⌉₊ ?_
   intro hi
   have h := (integrable_pow_map_cast_betaNegativeBinomialMeasure_iff hr.le ha hb ⌈a⌉₊).mp hi
   exact (Nat.le_ceil a).not_gt (h.resolve_left hr.ne')
