@@ -118,10 +118,13 @@ theorem hasProdLocallyUniformlyOn_siegelFunction (r : Fin 2 → ℝ) :
       (fun τ ↦ ∏' n : ℕ, (1 - cexp (2 * π * I * τ) ^ (n + 1) * cexp (2 * π * I * (r 0 * τ + r 1))) *
         (1 - cexp (2 * π * I * τ) ^ (n + 1) * cexp (-(2 * π * I * (r 0 * τ + r 1)))))
       upperHalfPlaneSet := by
-  have hw : Differentiable ℂ fun τ ↦ cexp (2 * π * I * (r 0 * τ + r 1)) := by fun_prop
-  have hw' : Differentiable ℂ fun τ ↦ cexp (-(2 * π * I * (r 0 * τ + r 1))) := by fun_prop
-  have h := (hasProdLocallyUniformlyOn_one_sub_pow_mul hw.continuous).mul₀
-    (hasProdLocallyUniformlyOn_one_sub_pow_mul hw'.continuous)
+  have hw : DifferentiableOn ℂ (fun τ ↦ cexp (2 * π * I * (r 0 * τ + r 1))) upperHalfPlaneSet := by
+    fun_prop
+  have hw' : DifferentiableOn ℂ (fun τ ↦ cexp (-(2 * π * I * (r 0 * τ + r 1))))
+      upperHalfPlaneSet := by
+    fun_prop
+  have h := (hasProdLocallyUniformlyOn_one_sub_pow_mul hw.continuousOn).mul₀
+    (hasProdLocallyUniformlyOn_one_sub_pow_mul hw'.continuousOn)
     (differentiableOn_tprod_one_sub_pow_mul hw).continuousOn
     (differentiableOn_tprod_one_sub_pow_mul hw').continuousOn
   refine (h.congr fun s τ _ ↦ ?_).congr_right fun τ hτ ↦ ?_
