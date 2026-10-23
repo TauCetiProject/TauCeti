@@ -28,8 +28,9 @@ For an ultrametric norm it satisfies `min (v_ϖ x) (v_ϖ y) ≤ v_ϖ (x + y)`. F
 norm it is additive on all products, so for a multiplicative ultrametric norm it is an additive
 valuation `PseudoUniformizer.addValuation`; for a merely submultiplicative norm it need not be.
 
-On a normed field the logarithmic gauge is the real additive valuation `-log ‖x‖ / log b` at the
-base `b = ‖ϖ‖⁻¹`, the normalisation taking the value one at `ϖ`. On `ℚ_[p]` with `‖ϖ‖ = p⁻¹` it is
+On a normed field the logarithmic gauge is `-log ‖x‖ / log b` at the base `b = ‖ϖ‖⁻¹`, the
+normalisation taking the value one at `ϖ`; on a non-archimedean normed field it is the real
+additive valuation at that base. On `ℚ_[p]` with `‖ϖ‖ = p⁻¹` it is
 Mathlib's `Padic.addValuation`, see `TauCeti.NumberTheory.Padics.LogGauge`.
 
 ## Main definitions
@@ -44,8 +45,7 @@ Mathlib's `Padic.addValuation`, see `TauCeti.NumberTheory.Padics.LogGauge`.
   `v_ϖ(x) = t ↔ ‖x‖ = ‖ϖ‖ ^ t`.
 * `TauCeti.NormedRing.PseudoUniformizer.logGauge_le_logGauge_iff`: the gauge reverses the order
   of the norm.
-* `TauCeti.NormedRing.PseudoUniformizer.logGauge_add_le_logGauge_mul`: superadditivity on
-  products.
+* `TauCeti.NormedRing.PseudoUniformizer.le_logGauge_mul`: superadditivity on products.
 * `TauCeti.NormedRing.PseudoUniformizer.logGauge_zpow_mul`: `v_ϖ(ϖ ^ n * x) = n + v_ϖ(x)`.
 * `TauCeti.NormedRing.PseudoUniformizer.min_le_logGauge_add`: the ultrametric inequality.
 * `TauCeti.NormedRing.PseudoUniformizer.logGauge_mul`: additivity for a multiplicative norm.
@@ -168,7 +168,7 @@ theorem logGauge_unit : ϖ.logGauge (ϖ.unit : R) = 1 := by
 
 /-- **Superadditivity on products**: since the norm is submultiplicative,
 `v_ϖ(x) + v_ϖ(y) ≤ v_ϖ(x * y)`. -/
-theorem logGauge_add_le_logGauge_mul (x y : R) :
+theorem le_logGauge_mul (x y : R) :
     ϖ.logGauge x + ϖ.logGauge y ≤ ϖ.logGauge (x * y) := by
   by_cases hxy : ‖x * y‖ = 0
   · simp [logGauge_of_norm_eq_zero hxy]
@@ -182,6 +182,7 @@ theorem logGauge_add_le_logGauge_mul (x y : R) :
   exact norm_mul_le x y
 
 /-- **Exact scaling**: multiplication by `ϖ ^ n` adds `n` to the logarithmic gauge. -/
+@[simp]
 theorem logGauge_zpow_mul (n : ℤ) (x : R) :
     ϖ.logGauge (((ϖ.unit ^ n : Rˣ) : R) * x) = ((n : ℝ) : WithTop ℝ) + ϖ.logGauge x := by
   have hnorm : ‖((ϖ.unit ^ n : Rˣ) : R) * x‖ = ‖(ϖ.unit : R)‖ ^ n * ‖x‖ := by
@@ -193,8 +194,19 @@ theorem logGauge_zpow_mul (n : ℤ) (x : R) :
     Real.rpow_logb ϖ.norm_pos ϖ.norm_lt_one.ne ((norm_nonneg x).lt_of_ne' hx)]
 
 /-- Multiplication by `ϖ` adds one to the logarithmic gauge. -/
+@[simp]
 theorem logGauge_unit_mul (x : R) : ϖ.logGauge ((ϖ.unit : R) * x) = 1 + ϖ.logGauge x := by
   simpa using ϖ.logGauge_zpow_mul 1 x
+
+/-- The logarithmic gauge of `ϖ ^ n` is `n`, for `n ∈ ℤ`. -/
+@[simp]
+theorem logGauge_zpow (n : ℤ) : ϖ.logGauge ((ϖ.unit ^ n : Rˣ) : R) = ((n : ℝ) : WithTop ℝ) := by
+  simpa using ϖ.logGauge_zpow_mul n 1
+
+/-- The logarithmic gauge of `ϖ ^ n` is `n`, for `n ∈ ℕ`. -/
+@[simp]
+theorem logGauge_unit_pow (n : ℕ) : ϖ.logGauge ((ϖ.unit : R) ^ n) = ((n : ℝ) : WithTop ℝ) := by
+  simpa using ϖ.logGauge_zpow n
 
 /-- **The ultrametric inequality** for the logarithmic gauge. -/
 theorem min_le_logGauge_add [IsUltrametricDist R] (x y : R) :
@@ -207,6 +219,7 @@ section NormMulClass
 variable [NormMulClass R]
 
 /-- For a multiplicative norm the logarithmic gauge is additive on products. -/
+@[simp]
 theorem logGauge_mul (x y : R) : ϖ.logGauge (x * y) = ϖ.logGauge x + ϖ.logGauge y := by
   by_cases hx : ‖x‖ = 0
   · rw [logGauge_of_norm_eq_zero hx, WithTop.top_add, logGauge_eq_top_iff, _root_.norm_mul, hx,
