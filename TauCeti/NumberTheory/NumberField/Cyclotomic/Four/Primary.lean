@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.Cyclotomic.Four.Basic
+public import TauCeti.NumberTheory.NumberField.Cyclotomic.Quadratic
 
 /-!
 # Primary Gaussian integers
@@ -27,7 +28,7 @@ The unit `1` is primary, so the reciprocity statements carry their nonunit hypot
   `a ≡ 1` and `b ≡ 0`, or `a ≡ 3` and `b ≡ 2`, modulo `4`.
 * `TauCeti.isPrimaryGaussian_intCast_iff`: a rational integer is primary exactly when it is `1`
   modulo `4`.
-* `TauCeti.IsPrimaryGaussian.mul`, `TauCeti.IsPrimaryGaussian.mul_left_iff`,
+* `TauCeti.IsPrimaryGaussian.mul`, `TauCeti.IsPrimaryGaussian.mul_right_iff`,
   `TauCeti.IsPrimaryGaussian.of_intCast_mul`: primary elements are closed under products, and
   under division by a primary factor, in particular by a rational integer `m ≡ 1 (mod 4)`.
 * `TauCeti.IsPrimaryGaussian.map`: the image of a primary element under a ring endomorphism of
@@ -62,45 +63,13 @@ primary, so the predicate is used together with a nonunit hypothesis. -/
 def IsPrimaryGaussian (x : 𝓞 K) : Prop :=
   (1 + (IsCyclotomicExtension.zeta_spec 4 ℚ K).toInteger) ^ 3 ∣ x - 1
 
-/-- In an integral domain, `(1 + y)³` and `(1 + x)³` are associated when `x` and `y` are square
-roots of `-1`: either `y = x`, or `y = -x` and `1 - x = -x (1 + x)` with `-x` a unit. -/
-private theorem one_add_pow_three_dvd_iff {R : Type*} [CommRing R] [IsDomain R] {x y t : R}
-    (hx : x ^ 2 = -1) (hy : y ^ 2 = -1) : (1 + y) ^ 3 ∣ t ↔ (1 + x) ^ 3 ∣ t := by
-  rcases sq_eq_sq_iff_eq_or_eq_neg.mp (hy.trans hx.symm) with rfl | rfl
-  · rfl
-  · have hu : IsUnit (-x) := IsUnit.of_mul_eq_one x (by linear_combination -hx)
-    refine Associated.dvd_iff_dvd_left (Associated.symm ⟨(hu.pow 3).unit, ?_⟩)
-    simp only [IsUnit.unit_spec]
-    linear_combination (-3 * (1 - x) ^ 2 + 3 * (1 - x) * (x ^ 2 + 1) - (x ^ 2 + 1) ^ 2) * hx
-
-/-- A square root `x` of `-1` satisfies `(1 + x)⁴ = -4`. -/
-private theorem one_add_pow_four {R : Type*} [CommRing R] {x : R} (hx : x ^ 2 = -1) :
-    (1 + x) ^ 4 = -4 := by
-  linear_combination (x ^ 2 + 4 * x + 5) * hx
-
-/-- `(1 + x)³ ∣ y` if and only if `4 ∣ y (1 + x)`, for a square root `x` of `-1` in a domain of
-characteristic zero. This trades divisibility by `(1 + i)³` for divisibility by a rational
-integer, which is read off from coordinates. -/
-private theorem one_add_pow_three_dvd_iff_four_dvd {R : Type*} [CommRing R] [IsDomain R]
-    [CharZero R] {x y : R} (hx : x ^ 2 = -1) : (1 + x) ^ 3 ∣ y ↔ (4 : R) ∣ y * (1 + x) := by
-  have hne : 1 + x ≠ 0 := by
-    intro h
-    have : x = -1 := by linear_combination h
-    rw [this] at hx
-    norm_num at hx
-  constructor
-  · rintro ⟨c, rfl⟩
-    exact ⟨-c, by linear_combination c * one_add_pow_four hx⟩
-  · rintro ⟨c, hc⟩
-    refine ⟨-c, mul_right_cancel₀ hne ?_⟩
-    linear_combination hc + c * one_add_pow_four hx
-
 /-- The defining congruence of `IsPrimaryGaussian`, computed with any primitive fourth root of
 unity `ζ`. -/
 theorem _root_.IsPrimitiveRoot.isPrimaryGaussian_iff {ζ : K} (hζ : IsPrimitiveRoot ζ 4)
     {x : 𝓞 K} : IsPrimaryGaussian x ↔ (1 + hζ.toInteger) ^ 3 ∣ x - 1 :=
-  one_add_pow_three_dvd_iff hζ.toInteger_isPrimitiveRoot.sq_eq_neg_one
+  (associated_one_add_of_sq_eq_neg_one
     (IsCyclotomicExtension.zeta_spec 4 ℚ K).toInteger_isPrimitiveRoot.sq_eq_neg_one
+    hζ.toInteger_isPrimitiveRoot.sq_eq_neg_one).pow_pow.dvd_iff_dvd_left
 
 /-- **The coordinate criterion for primary Gaussian integers.** For integers `a` and `b`, the
 element `a + b ζ` of `𝓞 K = ℤ[ζ]` is primary if and only if `a ≡ 1` and `b ≡ 0`, or `a ≡ 3` and
@@ -114,8 +83,8 @@ theorem _root_.IsPrimitiveRoot.isPrimaryGaussian_add_mul_iff {ζ : K} (hζ : IsP
       ((a - 1 - b : ℤ) : 𝓞 K) + ((a - 1 + b : ℤ) : 𝓞 K) * hζ.toInteger := by
     push_cast
     linear_combination (b : 𝓞 K) * hsq
-  rw [hζ.isPrimaryGaussian_iff, one_add_pow_three_dvd_iff_four_dvd hsq, h, ← Int.cast_ofNat,
-    hζ.intCast_dvd_intCast_add_intCast_mul_toInteger_iff_of_four]
+  rw [hζ.isPrimaryGaussian_iff, one_add_pow_three_dvd_iff_four_dvd_mul two_ne_zero hsq, h,
+    ← Int.cast_ofNat, hζ.intCast_dvd_intCast_add_intCast_mul_toInteger_iff (by decide)]
   simp only [Int.ModEq]
   omega
 
@@ -135,12 +104,21 @@ theorem IsPrimaryGaussian.mul (hx : IsPrimaryGaussian x) (hy : IsPrimaryGaussian
 
 /-- If `x` is primary, then `x * y` is primary exactly when `y` is: a primary element is
 congruent to `1` modulo `(1 + i)³`. -/
-theorem IsPrimaryGaussian.mul_left_iff (hx : IsPrimaryGaussian x) :
+theorem IsPrimaryGaussian.mul_right_iff (hx : IsPrimaryGaussian x) :
     IsPrimaryGaussian (x * y) ↔ IsPrimaryGaussian y := by
   refine ⟨fun hxy ↦ ?_, hx.mul⟩
   have h : y - 1 = (x * y - 1) - (x - 1) - (x - 1) * (y - 1) := by ring
   rw [IsPrimaryGaussian, h]
   exact dvd_sub (dvd_sub hxy hx) (dvd_mul_of_dvd_left hx _)
+
+/-- Absorbing a unit twist: if `u * p` and `v * (p * y)` are primary, then so is `(v * u⁻¹) * y`. -/
+private theorem IsPrimaryGaussian.unit_mul_inv_mul {u v : (𝓞 K)ˣ} {p : 𝓞 K}
+    (hu : IsPrimaryGaussian ((u : 𝓞 K) * p)) (hv : IsPrimaryGaussian ((v : 𝓞 K) * (p * y))) :
+    IsPrimaryGaussian (((v * u⁻¹ : (𝓞 K)ˣ) : 𝓞 K) * y) := by
+  refine hu.mul_right_iff.mp ?_
+  convert hv using 1
+  push_cast
+  linear_combination ((v : 𝓞 K) * p * y) * u.mul_inv
 
 /-- The image of a primary element under a ring endomorphism of `𝓞 K`, such as complex
 conjugation, is primary. -/
@@ -151,16 +129,15 @@ theorem IsPrimaryGaussian.map (hx : IsPrimaryGaussian x) (σ : 𝓞 K →+* 𝓞
   have hσ : σ hζ.toInteger ^ 2 = -1 := by rw [← map_pow, hsq, map_neg, map_one]
   have h := map_dvd σ hx
   rw [map_pow, map_add, map_one, map_sub, map_one] at h
-  exact (one_add_pow_three_dvd_iff hsq hσ).mp h
+  exact (associated_one_add_of_sq_eq_neg_one hsq hσ).pow_pow.dvd_iff_dvd_left.mpr h
 
 /-- A primary element has odd norm; in particular no element of even norm, such as `1 + i`, is
 primary. -/
 theorem IsPrimaryGaussian.odd_norm (hx : IsPrimaryGaussian x) : Odd (Algebra.norm ℤ x) := by
   have hζ := IsCyclotomicExtension.zeta_spec 4 ℚ K
-  obtain ⟨a, b, rfl⟩ := hζ.exists_intCast_add_intCast_mul_toInteger_eq_of_four x
+  obtain ⟨a, b, rfl⟩ := hζ.exists_intCast_add_intCast_mul_toInteger_eq (by decide) x
   rw [hζ.isPrimaryGaussian_add_mul_iff] at hx
-  rw [hζ.norm_intCast_add_intCast_mul_toInteger, Int.odd_add, Int.odd_pow' two_ne_zero,
-    Int.even_pow' two_ne_zero, Int.odd_iff, Int.even_iff]
+  rw [hζ.odd_norm_intCast_add_intCast_mul_toInteger_iff_of_four, Int.odd_iff]
   simp only [Int.ModEq] at hx
   omega
 
@@ -171,7 +148,7 @@ theorem IsPrimaryGaussian.norm_sub_one_div_four {ζ : K} {hζ : IsPrimitiveRoot 
     (hx : IsPrimaryGaussian ((a : 𝓞 K) + (b : 𝓞 K) * hζ.toInteger)) :
     (Algebra.norm ℤ ((a : 𝓞 K) + (b : 𝓞 K) * hζ.toInteger) - 1) / 4 ≡ (a - 1) / 2 [ZMOD 2] := by
   rw [hζ.isPrimaryGaussian_add_mul_iff] at hx
-  rw [hζ.norm_intCast_add_intCast_mul_toInteger]
+  rw [hζ.norm_intCast_add_intCast_mul_toInteger_of_four]
   simp only [Int.ModEq] at hx
   rcases hx with ⟨ha, hb⟩ | ⟨ha, hb⟩
   · obtain ⟨k, rfl⟩ : ∃ k, a = 4 * k + 1 := ⟨a / 4, by omega⟩
@@ -213,16 +190,16 @@ theorem isPrimaryGaussian_ofNat_iff {n : ℕ} [n.AtLeastTwo] :
 /-- If `m * x` is primary for a rational integer `m ≡ 1 (mod 4)`, then `x` is primary. -/
 theorem IsPrimaryGaussian.of_intCast_mul {m : ℤ} (hmx : IsPrimaryGaussian ((m : 𝓞 K) * x))
     (hm : m ≡ 1 [ZMOD 4]) : IsPrimaryGaussian x :=
-  (isPrimaryGaussian_intCast_iff.mpr hm).mul_left_iff.mp hmx
+  (isPrimaryGaussian_intCast_iff.mpr hm).mul_right_iff.mp hmx
 
 /-- The only primary unit of `𝓞 K = ℤ[i]` is `1`: of the units `±1, ±i`, only `1` is congruent
 to `1` modulo `(1 + i)³`. -/
 theorem IsPrimaryGaussian.eq_one_of_isUnit (hx : IsPrimaryGaussian x) (hu : IsUnit x) :
     x = 1 := by
   have hζ := IsCyclotomicExtension.zeta_spec 4 ℚ K
-  obtain ⟨a, b, rfl⟩ := hζ.exists_intCast_add_intCast_mul_toInteger_eq_of_four x
+  obtain ⟨a, b, rfl⟩ := hζ.exists_intCast_add_intCast_mul_toInteger_eq (by decide) x
   rw [hζ.isPrimaryGaussian_add_mul_iff] at hx
-  rw [hζ.isUnit_intCast_add_intCast_mul_toInteger_iff] at hu
+  rw [hζ.isUnit_intCast_add_intCast_mul_toInteger_iff_of_four] at hu
   have ha : -1 ≤ a ∧ a ≤ 1 := by constructor <;> nlinarith [sq_nonneg b]
   have hb : -1 ≤ b ∧ b ≤ 1 := by constructor <;> nlinarith [sq_nonneg a]
   simp only [Int.ModEq] at hx
@@ -235,12 +212,11 @@ theorem existsUnique_unit_mul_isPrimaryGaussian (hx : Odd (Algebra.norm ℤ x)) 
     ∃! u : (𝓞 K)ˣ, IsPrimaryGaussian ((u : 𝓞 K) * x) := by
   have hζ := IsCyclotomicExtension.zeta_spec 4 ℚ K
   obtain ⟨u, hu⟩ : ∃ u : (𝓞 K)ˣ, IsPrimaryGaussian ((u : 𝓞 K) * x) := by
-    obtain ⟨a, b, rfl⟩ := hζ.exists_intCast_add_intCast_mul_toInteger_eq_of_four x
-    rw [hζ.norm_intCast_add_intCast_mul_toInteger, Int.odd_add, Int.odd_pow' two_ne_zero,
-      Int.even_pow' two_ne_zero, Int.odd_iff, Int.even_iff] at hx
+    obtain ⟨a, b, rfl⟩ := hζ.exists_intCast_add_intCast_mul_toInteger_eq (by decide) x
+    rw [hζ.odd_norm_intCast_add_intCast_mul_toInteger_iff_of_four, Int.odd_iff] at hx
     set i := hζ.toInteger
     have hsq : i ^ 2 = -1 := hζ.toInteger_isPrimitiveRoot.sq_eq_neg_one
-    have hi : IsUnit i := IsUnit.of_mul_eq_one (-i) (by linear_combination -hsq)
+    have hi : IsUnit i := hζ.toInteger_isPrimitiveRoot.isUnit (by norm_num)
     -- A unit `u` with `u * (a + b i) = a' + b' i` for primary coordinates `a', b'` works.
     have key (u : (𝓞 K)ˣ) (a' b' : ℤ)
         (h : (u : 𝓞 K) * ((a : 𝓞 K) + (b : 𝓞 K) * i) = (a' : 𝓞 K) + (b' : 𝓞 K) * i)
@@ -259,11 +235,8 @@ theorem existsUnique_unit_mul_isPrimaryGaussian (hx : Odd (Algebra.norm ℤ x)) 
         (by push_cast [Units.val_neg, IsUnit.unit_spec]; linear_combination (-b : 𝓞 K) * hsq)
         (by omega)
   refine ⟨u, hu, fun v hv ↦ ?_⟩
-  have h : IsPrimaryGaussian ((v * u⁻¹ : (𝓞 K)ˣ) : 𝓞 K) := by
-    refine hu.mul_left_iff.mp ?_
-    convert hv using 1
-    push_cast
-    linear_combination ((v : 𝓞 K) * x) * u.mul_inv
+  have h := hu.unit_mul_inv_mul (y := 1) (by rwa [mul_one])
+  rw [mul_one] at h
   exact mul_inv_eq_one.mp (Units.val_eq_one.mp (h.eq_one_of_isUnit (v * u⁻¹).isUnit))
 
 /-- **Factorisation into primary primes.** A primary element of `𝓞 K = ℤ[i]` is a product of
@@ -292,12 +265,7 @@ theorem IsPrimaryGaussian.exists_multiset_prod_eq (hx : IsPrimaryGaussian x) :
       rw [map_mul, map_mul, Int.odd_mul, Int.odd_mul] at h
       exact h.2.1
     obtain ⟨u, hu, -⟩ := existsUnique_unit_mul_isPrimaryGaussian hodd
-    have h' : IsPrimaryGaussian (((v * u⁻¹ : (𝓞 K)ˣ) : 𝓞 K) * y) := by
-      refine hu.mul_left_iff.mp ?_
-      convert hv using 1
-      push_cast
-      linear_combination ((v : 𝓞 K) * p * y) * u.mul_inv
-    obtain ⟨s, hs, hprod⟩ := ih _ h'
+    obtain ⟨s, hs, hprod⟩ := ih _ (hu.unit_mul_inv_mul hv)
     refine ⟨(u * p) ::ₘ s, ?_, ?_⟩
     · intro q hq
       rcases Multiset.mem_cons.mp hq with rfl | hq
@@ -332,7 +300,7 @@ example : ¬ IsPrimaryGaussian (((1 : ℤ) : 𝓞 K) + ((1 : ℤ) : 𝓞 K) * h�
 
 /- The norm of `3 + 2i` is `13`, and `(13 - 1) / 4 = 3` has the parity of `(3 - 1) / 2 = 1`. -/
 example : Algebra.norm ℤ (((3 : ℤ) : 𝓞 K) + ((2 : ℤ) : 𝓞 K) * hζ.toInteger) = 13 := by
-  rw [hζ.norm_intCast_add_intCast_mul_toInteger]; norm_num
+  rw [hζ.norm_intCast_add_intCast_mul_toInteger_of_four]; norm_num
 
 end Examples
 

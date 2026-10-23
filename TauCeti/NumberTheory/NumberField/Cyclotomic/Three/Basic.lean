@@ -17,10 +17,6 @@ elementary facts about `ℤ[ζ]` complementing Mathlib's `Cyclotomic.Three`:
 * `TauCeti.finrank_ringOfIntegers_three`: `𝓞 K` has rank `2` over `ℤ`;
 * `IsPrimitiveRoot.toInteger_sub_one_sq_dvd_three`: the square of `ζ - 1`, the prime above `3`,
   divides `3`;
-* `IsPrimitiveRoot.exists_intCast_add_intCast_mul_toInteger_eq`: every element of `ℤ[ζ]` is
-  `a + b ζ` for integers `a` and `b`;
-* `IsPrimitiveRoot.intCast_dvd_intCast_add_intCast_mul_toInteger_iff`: an integer divides
-  `a + b ζ` exactly when it divides both `a` and `b`;
 * `Units.norm_eq_one_of_isCyclotomicExtension_three`: every unit of `ℤ[ζ]` has norm `1`.
 -/
 
@@ -46,44 +42,6 @@ variable {K : Type*} [Field K] {ζ : K} (hζ : IsPrimitiveRoot ζ 3)
 theorem toInteger_sub_one_sq_dvd_three : (hζ.toInteger - 1) ^ 2 ∣ (3 : 𝓞 K) := by
   obtain ⟨z, _, hz⟩ := hζ.toInteger_isPrimitiveRoot.self_sub_one_pow_dvd_order (k := 2) (by decide)
   exact ⟨z, by simpa only [Nat.cast_ofNat, mul_comm] using hz⟩
-
-open TauCeti
-
-variable [NumberField K] [IsCyclotomicExtension {3} ℚ K]
-
-/-- The integral basis `1, ζ` of `𝓞 K`, indexed by `Fin 2`. -/
-private noncomputable def basisThree : Module.Basis (Fin 2) ℤ (𝓞 K) :=
-  hζ.integralPowerBasis.basis.reindex (finCongr
-    (hζ.integralPowerBasis.finrank.symm.trans finrank_ringOfIntegers_three))
-
-private theorem basisThree_apply (i : Fin 2) : basisThree hζ i = hζ.toInteger ^ (i : ℕ) := by
-  simp [basisThree, PowerBasis.coe_basis]
-
-private theorem intCast_add_intCast_mul_eq (a b : ℤ) :
-    (a : 𝓞 K) + b * hζ.toInteger = a • basisThree hζ 0 + b • basisThree hζ 1 := by
-  simp [basisThree_apply]
-
-/-- Every element of `𝓞 K = ℤ[ζ]` is `a + b ζ` for integers `a` and `b`. -/
-theorem exists_intCast_add_intCast_mul_toInteger_eq (x : 𝓞 K) :
-    ∃ a b : ℤ, (a : 𝓞 K) + b * hζ.toInteger = x := by
-  refine ⟨(basisThree hζ).repr x 0, (basisThree hζ).repr x 1, ?_⟩
-  rw [intCast_add_intCast_mul_eq]
-  conv_rhs => rw [← (basisThree hζ).sum_repr x]
-  simp [Fin.sum_univ_two]
-
-/-- An integer `m` divides `a + b ζ` in `𝓞 K = ℤ[ζ]` exactly when it divides both coordinates. -/
-@[simp]
-theorem intCast_dvd_intCast_add_intCast_mul_toInteger_iff {m a b : ℤ} :
-    (m : 𝓞 K) ∣ a + b * hζ.toInteger ↔ m ∣ a ∧ m ∣ b := by
-  refine ⟨fun ⟨y, hy⟩ ↦ ?_, fun ⟨ha, hb⟩ ↦ ?_⟩
-  · have hy' : a • basisThree hζ 0 + b • basisThree hζ 1 = m • y := by
-      rw [← intCast_add_intCast_mul_eq, hy, zsmul_eq_mul]
-    have h0 := congrArg (fun z ↦ (basisThree hζ).repr z 0) hy'
-    have h1 := congrArg (fun z ↦ (basisThree hζ).repr z 1) hy'
-    simp only [map_add, map_zsmul, Module.Basis.repr_self, Finsupp.coe_add, Finsupp.coe_smul,
-      Pi.add_apply, Pi.smul_apply, Finsupp.single_apply, smul_eq_mul] at h0 h1
-    exact ⟨⟨_, by simpa using h0⟩, ⟨_, by simpa using h1⟩⟩
-  · exact dvd_add (Int.cast_dvd_cast _ _ ha) (dvd_mul_of_dvd_left (Int.cast_dvd_cast _ _ hb) _)
 
 end IsPrimitiveRoot
 

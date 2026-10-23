@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.NumberField.Cyclotomic.Quadratic
 public import TauCeti.NumberTheory.NumberField.Cyclotomic.Three.Basic
 
 /-!
@@ -119,15 +120,15 @@ theorem isPrimaryEisenstein_add_mul_iff {a b : ℤ} :
   have h : (a : 𝓞 K) + b * hζ.toInteger - 2 = ((a - 2 : ℤ) : 𝓞 K) + b * hζ.toInteger := by
     push_cast; ring
   rw [isPrimaryEisenstein_iff, h, ← Int.cast_ofNat,
-    intCast_dvd_intCast_add_intCast_mul_toInteger_iff, Int.modEq_comm, Int.modEq_iff_dvd,
-    Int.modEq_zero_iff_dvd]
+    hζ.intCast_dvd_intCast_add_intCast_mul_toInteger_iff (by decide), Int.modEq_comm,
+    Int.modEq_iff_dvd, Int.modEq_zero_iff_dvd]
 
 /-- Every element of `𝓞 K` not divisible by `ζ - 1` has a primary multiple by a unit. See Xu,
 *Reciprocity Laws*, Proposition 4.5. -/
 theorem exists_isPrimaryEisenstein_unit_mul {x : 𝓞 K} (hx : ¬ hζ.toInteger - 1 ∣ x) :
     ∃ u : (𝓞 K)ˣ, IsPrimaryEisenstein ((u : 𝓞 K) * x) := by
   -- The six-associate case analysis of Xu, Proposition 4.5.
-  obtain ⟨a, b, rfl⟩ := hζ.exists_intCast_add_intCast_mul_toInteger_eq x
+  obtain ⟨a, b, rfl⟩ := hζ.exists_intCast_add_intCast_mul_toInteger_eq (by decide) x
   set ω := hζ.toInteger
   have hab : ¬ (3 : ℤ) ∣ a + b := by
     rintro ⟨c, hc⟩
