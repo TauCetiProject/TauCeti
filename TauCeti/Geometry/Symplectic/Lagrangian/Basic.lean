@@ -7,9 +7,10 @@ module
 
 public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import TauCeti.Geometry.Symplectic.StandardCompatible
+public import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 
 /-!
-# Isotropic, coisotropic, and Lagrangian subspaces of a symplectic form
+# Isotropic, coisotropic, Lagrangian, and symplectic subspaces of a symplectic form
 
 A symplectic form `ω` on a real module gives every submodule `L` a *symplectic complement*
 `L^ω = {x | ∀ y ∈ L, ω(y, x) = 0}`, the orthogonal complement for the bilinear form `ω`. The three
@@ -18,6 +19,9 @@ standard size conditions on `L` relative to its complement organize the whole su
 * `L` is **isotropic** when `L ≤ L^ω`, equivalently `ω` vanishes on `L × L`;
 * `L` is **coisotropic** when `L^ω ≤ L`;
 * `L` is **Lagrangian** when `L^ω = L`, i.e. isotropic and coisotropic at once.
+
+The opposite extreme is a **symplectic** subspace, `L ∩ L^ω = 0`, on which `ω` restricts
+nondegenerately; in finite dimension it splits off, `V = L ⊕ L^ω`.
 
 Lagrangian subspaces are the linear model for the boundary conditions of Lagrangian Floer homology
 and for the totally real tori in `Sym^g(Σ)`. *Totally real* and *Lagrangian* are kept as separate
@@ -35,12 +39,23 @@ dimension count but no isotropic/Lagrangian vocabulary, which this file supplies
 ## Main declarations
 
 * `TauCeti.SymplecticForm.orthogonal`: the symplectic complement `L^ω`.
-* `TauCeti.SymplecticForm.IsIsotropic`, `IsCoisotropic`, `IsLagrangian`: the three size predicates.
+* `TauCeti.SymplecticForm.IsIsotropic`, `IsCoisotropic`, `IsLagrangian`, `IsSymplectic`: the four
+  predicates on subspaces.
 * `TauCeti.SymplecticForm.isIsotropic_iff`: isotropy is the vanishing of `ω` on `L × L`.
 * `TauCeti.SymplecticForm.isLagrangian_iff`: Lagrangian is isotropic and coisotropic.
+* `TauCeti.SymplecticForm.isLagrangian_iff_maximal_isIsotropic`: Lagrangian subspaces are exactly
+  the maximal isotropic subspaces, in any dimension.
+* `TauCeti.SymplecticForm.isSymplectic_iff_nondegenerate_restrict`: a subspace is symplectic exactly
+  when `ω` restricts to it nondegenerately, and in finite dimension
+  `isSymplectic_iff_isCompl` identifies this with the splitting `V = L ⊕ L^ω`.
+* `TauCeti.SymplecticForm.finrank_add_finrank_orthogonal`: `dim L + dim L^ω = dim V`.
 * `TauCeti.SymplecticForm.IsLagrangian.two_mul_finrank`: a Lagrangian subspace is half-dimensional,
-  `2 · dim L = dim V`, and `IsIsotropic.isLagrangian_of_finrank` is the converse for an isotropic
-  subspace of half the dimension.
+  `2 · dim L = dim V`, and `IsIsotropic.isLagrangian_of_finrank` and
+  `IsCoisotropic.isLagrangian_of_finrank` are the converses for an isotropic or coisotropic subspace
+  of half the dimension. Isotropic subspaces have at most and coisotropic subspaces at least half
+  the dimension (`IsIsotropic.two_mul_finrank_le`, `IsCoisotropic.finrank_le_two_mul_finrank`).
+* `TauCeti.SymplecticForm.isLagrangian_bot_iff` and `isLagrangian_top_iff`: the zero subspace, or
+  the whole space, is Lagrangian exactly when the ambient space is zero.
 * `TauCeti.SymplecticForm.isLagrangian_prod_top_bot` and `isLagrangian_prod_bot_top`: the two
   coordinate factors of the standard model `V × V` are Lagrangian.
 
@@ -153,6 +168,83 @@ lemma IsLagrangian.symplecticForm_apply_eq_zero (h : ω.IsLagrangian L) {v w : V
     (hv : v ∈ L) (hw : w ∈ L) : ω v w = 0 :=
   isIsotropic_iff.1 h.isIsotropic v hv w hw
 
+/-- The symplectic complement of the zero subspace is the whole space. -/
+@[simp]
+lemma orthogonal_bot : ω.orthogonal ⊥ = ⊤ :=
+  ω.toBilinForm.orthogonal_bot
+
+/-- The symplectic complement of the whole space is zero, by nondegeneracy of `ω`. -/
+@[simp]
+lemma orthogonal_top : ω.orthogonal ⊤ = ⊥ :=
+  ω.toBilinForm.orthogonal_top_eq_bot ω.nondegenerate
+
+/-- The zero subspace is Lagrangian exactly when the ambient space is zero. -/
+@[simp]
+lemma isLagrangian_bot_iff : ω.IsLagrangian ⊥ ↔ Subsingleton V := by
+  rw [IsLagrangian, orthogonal_bot, eq_comm, subsingleton_iff_bot_eq_top,
+    Submodule.subsingleton_iff]
+
+/-- The whole space is Lagrangian exactly when it is zero. -/
+@[simp]
+lemma isLagrangian_top_iff : ω.IsLagrangian ⊤ ↔ Subsingleton V := by
+  rw [IsLagrangian, orthogonal_top, subsingleton_iff_bot_eq_top, Submodule.subsingleton_iff]
+
+/-- Adjoining a vector of the symplectic complement to an isotropic subspace keeps it
+isotropic. -/
+lemma IsIsotropic.sup_span_singleton (h : ω.IsIsotropic L) {v : V} (hv : v ∈ ω.orthogonal L) :
+    ω.IsIsotropic (L ⊔ ℝ ∙ v) :=
+  ω.isAlt.sup_span_singleton_le_orthogonal h hv
+
+/-- An isotropic subspace contained in no strictly larger isotropic subspace is coisotropic. -/
+lemma isCoisotropic_of_maximal_isIsotropic (h : Maximal ω.IsIsotropic L) :
+    ω.IsCoisotropic L := fun v hv =>
+  h.2 (h.1.sup_span_singleton hv) le_sup_left <|
+    Submodule.mem_sup_right (Submodule.mem_span_singleton_self v)
+
+/-- A Lagrangian subspace is a maximal isotropic subspace. -/
+lemma IsLagrangian.maximal_isIsotropic (h : ω.IsLagrangian L) : Maximal ω.IsIsotropic L :=
+  ⟨h.isIsotropic, fun _ hL' hLL' => hL'.trans <| (orthogonal_le hLL').trans h.le⟩
+
+/-- Lagrangian subspaces are exactly the maximal isotropic subspaces, in any dimension. -/
+theorem isLagrangian_iff_maximal_isIsotropic : ω.IsLagrangian L ↔ Maximal ω.IsIsotropic L :=
+  ⟨IsLagrangian.maximal_isIsotropic, fun h =>
+    isLagrangian_iff.2 ⟨h.1, isCoisotropic_of_maximal_isIsotropic h⟩⟩
+
+/-- A submodule is **symplectic** if it meets its symplectic complement only in zero,
+equivalently (`isSymplectic_iff_nondegenerate_restrict`) `ω` restricts to it nondegenerately. -/
+def IsSymplectic (ω : SymplecticForm V) (L : Submodule ℝ V) : Prop :=
+  Disjoint L (ω.orthogonal L)
+
+/-- A symplectic subspace is one disjoint from its symplectic complement. -/
+lemma isSymplectic_iff_disjoint : ω.IsSymplectic L ↔ Disjoint L (ω.orthogonal L) :=
+  Iff.rfl
+
+/-- A subspace is symplectic exactly when `ω` restricts to it as a nondegenerate form, in any
+dimension. -/
+lemma isSymplectic_iff_nondegenerate_restrict :
+    ω.IsSymplectic L ↔ (ω.toBilinForm.restrict L).Nondegenerate :=
+  (LinearMap.BilinForm.restrict_nondegenerate_iff_disjoint_orthogonal ω.isRefl).symm
+
+/-- The restriction of `ω` to a symplectic subspace is nondegenerate, so `ω.restrict L` applies. -/
+lemma IsSymplectic.nondegenerate_restrict (h : ω.IsSymplectic L) :
+    (ω.toBilinForm.restrict L).Nondegenerate :=
+  isSymplectic_iff_nondegenerate_restrict.1 h
+
+/-- The zero subspace is symplectic. -/
+@[simp]
+lemma isSymplectic_bot : ω.IsSymplectic (⊥ : Submodule ℝ V) :=
+  disjoint_bot_left
+
+/-- The whole space is symplectic. -/
+@[simp]
+lemma isSymplectic_top : ω.IsSymplectic (⊤ : Submodule ℝ V) := by
+  rw [isSymplectic_iff_disjoint, orthogonal_top]
+  exact disjoint_bot_right
+
+/-- A subspace that is both isotropic and symplectic is zero. -/
+lemma IsIsotropic.eq_bot_of_isSymplectic (h : ω.IsIsotropic L) (hs : ω.IsSymplectic L) : L = ⊥ :=
+  disjoint_self.1 (hs.mono_right h)
+
 /-- A graph is Lagrangian exactly when its defining map is symmetric for a pairing whose
 associated product symplectic form is specified by the hypothesis. -/
 theorem isLagrangian_graph_iff_of_pairing
@@ -224,6 +316,44 @@ lemma IsIsotropic.isLagrangian_of_finrank (h : ω.IsIsotropic L)
   refine (Submodule.eq_of_le_of_finrank_eq h ?_).symm
   rw [finrank_orthogonal]
   omega
+
+/-- The symplectic complement has complementary dimension, in additive form:
+`dim L + dim L^ω = dim V`. -/
+lemma finrank_add_finrank_orthogonal (ω : SymplecticForm V) (L : Submodule ℝ V) :
+    finrank ℝ L + finrank ℝ (ω.orthogonal L) = finrank ℝ V := by
+  rw [finrank_orthogonal]
+  have := L.finrank_le
+  omega
+
+/-- A coisotropic subspace has at least half the dimension of the ambient space. -/
+lemma IsCoisotropic.finrank_le_two_mul_finrank (h : ω.IsCoisotropic L) :
+    finrank ℝ V ≤ 2 * finrank ℝ L :=
+  ω.toBilinForm.finrank_le_two_mul_finrank_of_orthogonal_le h
+
+/-- A coisotropic subspace of half the dimension of the ambient space is Lagrangian. -/
+lemma IsCoisotropic.isLagrangian_of_finrank (h : ω.IsCoisotropic L)
+    (hdim : 2 * finrank ℝ L = finrank ℝ V) : ω.IsLagrangian L := by
+  refine Submodule.eq_of_le_of_finrank_eq h ?_
+  rw [finrank_orthogonal]
+  omega
+
+/-- In finite dimension a subspace is symplectic exactly when it splits the space together with
+its symplectic complement, `V = L ⊕ L^ω`. -/
+lemma isSymplectic_iff_isCompl : ω.IsSymplectic L ↔ IsCompl L (ω.orthogonal L) :=
+  (LinearMap.BilinForm.isCompl_orthogonal_iff_disjoint ω.isRefl).symm
+
+/-- A symplectic subspace splits the space together with its symplectic complement. -/
+lemma IsSymplectic.isCompl (h : ω.IsSymplectic L) : IsCompl L (ω.orthogonal L) :=
+  isSymplectic_iff_isCompl.1 h
+
+/-- The symplectic complement of a subspace is symplectic exactly when the subspace is. -/
+@[simp]
+lemma isSymplectic_orthogonal_iff : ω.IsSymplectic (ω.orthogonal L) ↔ ω.IsSymplectic L := by
+  rw [isSymplectic_iff_disjoint, isSymplectic_iff_disjoint, orthogonal_orthogonal, disjoint_comm]
+
+/-- The symplectic complement of a symplectic subspace is symplectic. -/
+lemma IsSymplectic.orthogonal (h : ω.IsSymplectic L) : ω.IsSymplectic (ω.orthogonal L) :=
+  isSymplectic_orthogonal_iff.2 h
 
 end FiniteDimensional
 

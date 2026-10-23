@@ -5,472 +5,579 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Density
-public import TauCeti.Probability.Distributions.Gaussian.Cdf
 public import Mathlib.MeasureTheory.Measure.Support
-import TauCeti.MeasureTheory.Measure.WithDensity
+public import TauCeti.Probability.Distributions.Gaussian.Cdf
+public import TauCeti.Probability.Density
 import Mathlib.Analysis.SpecialFunctions.Sqrt
+import Mathlib.MeasureTheory.Integral.IntegralEqImproper
+import TauCeti.MeasureTheory.Measure.WithDensity
+import TauCeti.Probability.Distributions.Affine
 
 /-!
 # The inverse Gaussian distribution
 
-The inverse Gaussian law with mean `m > 0` and shape `lam > 0` has density
-`√(lam / (2 * π * x ^ 3)) * exp (-(lam * (x - m) ^ 2) / (2 * m ^ 2 * x))` on the positive
-half-line; the case `m = 1` is also called the Wald distribution. This file defines the law,
-proves that it is a probability measure exactly when both parameters are positive, and computes
-its cdf.
+For a mean `μ > 0` and a shape `lam > 0`, the inverse Gaussian law is the law on the
+positive half-line with density
 
-Invalid parameters give the zero density and hence the zero measure, so `inverseGaussianMeasure`
-is a total family, measurable in its two parameters.
+`√(lam / (2π x³)) * exp (-lam (x - μ)² / (2 μ² x))`.
 
-## Main definitions and results
+It is the law of the time at which a Brownian motion with positive drift first reaches a fixed
+positive level. This file defines it by its density, which vanishes at invalid parameters, and
+develops the density API, normalization, support, cumulative distribution function, parameter
+measurability, and positive scaling.
 
-* `inverseGaussianPDFReal`, `inverseGaussianPDF` and `inverseGaussianMeasure` define the density
-  and the law; `integrable_inverseGaussianMeasure_iff` and `integral_inverseGaussianMeasure_eq`
-  transfer integrability and integrals against the law to the density;
-* `isProbabilityMeasure_inverseGaussianMeasure_iff` characterizes the valid parameter range;
-* `hasPDF_of_hasLaw_inverseGaussianMeasure`,
-  `pdf_eq_inverseGaussianPDF_of_hasLaw_inverseGaussianMeasure` and
-  `rnDeriv_inverseGaussianMeasure` give the density interface;
-* `support_inverseGaussianMeasure` identifies the topological support as `Ici 0`;
-* `cdf_inverseGaussianMeasure_eq` gives the closed-form cdf
-  `Φ (√(lam / x) * (x / m - 1)) + exp (2 * lam / m) * Φ (-(√(lam / x) * (x / m + 1)))` for
-  `x > 0`, where `Φ` is the standard Gaussian cdf;
-* `measurable_inverseGaussianMeasure` makes the family available for kernel constructions.
+Normalization and the cumulative distribution function come from one explicit antiderivative of
+the density on `(0, ∞)`, the classical closed form
 
-## Implementation
+`F(x) = Φ(√(lam / x) (x / μ - 1)) + exp (2 lam / μ) Φ(-√(lam / x) (x / μ + 1))`,
 
-Normalization and the cdf come from one computation: the closed-form cdf is an antiderivative of
-the density on the positive half-line, with limit `0` at `0⁺` and `1` at infinity. Differentiating
-it produces two Gaussian density terms, and these combine because the squares of the two
-Gaussian arguments differ by exactly `4 * lam / m`, which the factor `exp (2 * lam / m)`
-compensates.
+where `Φ` is the standard Gaussian cdf. It tends to `0` at `0⁺` and to `1` at infinity, so the
+improper fundamental theorem of calculus gives total mass one and identifies `F` with the cdf.
+
+## Main definitions
+
+* `TauCeti.Probability.inverseGaussianMeasure` — the inverse Gaussian law;
+* `TauCeti.Probability.inverseGaussianPDFReal` and `TauCeti.Probability.inverseGaussianPDF` — its
+  densities.
+
+## Main results
+
+* `TauCeti.Probability.integral_inverseGaussianPDFReal` and
+  `TauCeti.Probability.isProbabilityMeasure_inverseGaussianMeasure_iff` — normalization, and
+  probability exactly at positive parameters;
+* `TauCeti.Probability.ae_pos_inverseGaussianMeasure` and
+  `TauCeti.Probability.support_inverseGaussianMeasure` — the almost-sure carrier `(0, ∞)` and the
+  topological support `[0, ∞)`;
+* `TauCeti.Probability.hasPDF_of_hasLaw_inverseGaussianMeasure` and
+  `TauCeti.Probability.rnDeriv_inverseGaussianMeasure` — the density interfaces;
+* `TauCeti.Probability.cdf_inverseGaussianMeasure_of_pos` — the closed-form cdf;
+* `TauCeti.Probability.measurable_inverseGaussianMeasure` — joint measurability in the parameters;
+* `TauCeti.Probability.inverseGaussianMeasure_map_const_mul` — multiplication by `b > 0` sends the
+  parameters `(μ, lam)` to `(b μ, b lam)`.
 
 ## References
 
-* R. S. Chhikara, J. L. Folks, *The Inverse Gaussian Distribution: Theory, Methodology, and
-  Applications*, Marcel Dekker (1989).
 * N. L. Johnson, S. Kotz, N. Balakrishnan, *Continuous Univariate Distributions*, vol. 1,
   2nd ed., Wiley (1994), chapter 15.
+* R. S. Chhikara, J. L. Folks, *The Inverse Gaussian Distribution: Theory, Methodology, and
+  Applications*, Marcel Dekker (1989).
 -/
 
 public section
 
 noncomputable section
 
-open Filter MeasureTheory ProbabilityTheory Real Set
+open MeasureTheory ProbabilityTheory Real Set Filter Topology
+open scoped ENNReal NNReal
 
-open scoped ENNReal NNReal Topology
+namespace TauCeti.Probability
 
-namespace TauCeti
+variable {μ lam x : ℝ}
 
-namespace Probability
+/-! ### Density -/
 
-variable {m lam x : ℝ}
-
-/-! ### Density and measure -/
-
-/-- The real-valued inverse Gaussian density with mean `m` and shape `lam`:
-`√(lam / (2 * π * x ^ 3)) * exp (-(lam * (x - m) ^ 2) / (2 * m ^ 2 * x))` on the positive
-half-line.
-
-It is defined to be zero unless `m`, `lam`, and the sample point are all positive. -/
-def inverseGaussianPDFReal (m lam x : ℝ) : ℝ :=
-  if 0 < m ∧ 0 < lam ∧ 0 < x then
-    √(lam / (2 * π * x ^ 3)) * exp (-(lam * (x - m) ^ 2) / (2 * m ^ 2 * x))
+/-- The real-valued inverse Gaussian density with mean `μ` and shape `lam`, equal to
+`√(lam / (2π x³)) * exp (-lam (x - μ)² / (2 μ² x))` on the positive half-line. It vanishes
+for `x ≤ 0` and unless both parameters are positive. -/
+def inverseGaussianPDFReal (μ lam x : ℝ) : ℝ :=
+  if 0 < μ ∧ 0 < lam ∧ 0 < x then
+    √(lam / (2 * π * x ^ 3)) * exp (-(lam * (x - μ) ^ 2) / (2 * μ ^ 2 * x))
   else 0
 
 /-- The inverse Gaussian density, valued in `ℝ≥0∞`. -/
-def inverseGaussianPDF (m lam x : ℝ) : ℝ≥0∞ :=
-  ENNReal.ofReal (inverseGaussianPDFReal m lam x)
+def inverseGaussianPDF (μ lam x : ℝ) : ℝ≥0∞ :=
+  ENNReal.ofReal (inverseGaussianPDFReal μ lam x)
 
-/-- The inverse Gaussian law with mean `m` and shape `lam`.
+/-- The `ℝ≥0∞`-valued inverse Gaussian density is the coercion of the real-valued one. -/
+theorem inverseGaussianPDF_eq_ofReal (μ lam x : ℝ) :
+    inverseGaussianPDF μ lam x = ENNReal.ofReal (inverseGaussianPDFReal μ lam x) := (rfl)
 
-For invalid parameters this is the zero measure; see `inverseGaussianMeasure_of_not_pos`. -/
-def inverseGaussianMeasure (m lam : ℝ) : Measure ℝ :=
-  volume.withDensity (inverseGaussianPDF m lam)
-
-/-- An inverse Gaussian measure is Lebesgue measure weighted by its density. -/
-theorem inverseGaussianMeasure_def (m lam : ℝ) :
-    inverseGaussianMeasure m lam = volume.withDensity (inverseGaussianPDF m lam) := by
-  rfl
-
-/-- The `ℝ≥0∞`-valued density is the nonnegative coercion of the real density. -/
-theorem inverseGaussianPDF_eq_ofReal (m lam x : ℝ) :
-    inverseGaussianPDF m lam x = ENNReal.ofReal (inverseGaussianPDFReal m lam x) := by
-  rw [inverseGaussianPDF]
-
-/-- The real density has its usual formula at valid parameters and a positive point. -/
+/-- At positive parameters and a positive point, the real inverse Gaussian density has its
+classical formula. -/
 @[simp]
-theorem inverseGaussianPDFReal_of_pos (hm : 0 < m) (hlam : 0 < lam) (hx : 0 < x) :
-    inverseGaussianPDFReal m lam x =
-      √(lam / (2 * π * x ^ 3)) * exp (-(lam * (x - m) ^ 2) / (2 * m ^ 2 * x)) := by
-  rw [inverseGaussianPDFReal, ite_eq_left ⟨hm, hlam, hx⟩]
+theorem inverseGaussianPDFReal_of_pos (hμ : 0 < μ) (hlam : 0 < lam) (hx : 0 < x) :
+    inverseGaussianPDFReal μ lam x =
+      √(lam / (2 * π * x ^ 3)) * exp (-(lam * (x - μ) ^ 2) / (2 * μ ^ 2 * x)) := by
+  rw [inverseGaussianPDFReal, ite_eq_left ⟨hμ, hlam, hx⟩]
 
-/-- The density vanishes on the nonpositive half-line. -/
+/-- The real inverse Gaussian density vanishes on the nonpositive half-line. -/
 @[simp]
-theorem inverseGaussianPDFReal_of_nonpos (hx : x ≤ 0) (m lam : ℝ) :
-    inverseGaussianPDFReal m lam x = 0 := by
-  rw [inverseGaussianPDFReal, ite_eq_right fun h => hx.not_gt h.2.2]
+theorem inverseGaussianPDFReal_of_nonpos (hx : x ≤ 0) (μ lam : ℝ) :
+    inverseGaussianPDFReal μ lam x = 0 :=
+  ite_eq_right fun h ↦ (not_lt.mpr hx) h.2.2
 
-/-- The density vanishes outside the valid parameter range. -/
+/-- The real inverse Gaussian density vanishes unless both parameters are positive. -/
 @[simp]
-theorem inverseGaussianPDFReal_of_not_pos (h : ¬ (0 < m ∧ 0 < lam)) (x : ℝ) :
-    inverseGaussianPDFReal m lam x = 0 := by
-  rw [inverseGaussianPDFReal, ite_eq_right fun h' => h ⟨h'.1, h'.2.1⟩]
+theorem inverseGaussianPDFReal_of_not_pos (h : ¬ (0 < μ ∧ 0 < lam)) (x : ℝ) :
+    inverseGaussianPDFReal μ lam x = 0 :=
+  ite_eq_right fun hx ↦ h ⟨hx.1, hx.2.1⟩
 
-/-- The `ℝ≥0∞`-valued density vanishes on the nonpositive half-line. -/
+/-- The real inverse Gaussian density is positive on the positive half-line at positive
+parameters. -/
+theorem inverseGaussianPDFReal_pos (hμ : 0 < μ) (hlam : 0 < lam) (hx : 0 < x) :
+    0 < inverseGaussianPDFReal μ lam x := by
+  rw [inverseGaussianPDFReal_of_pos hμ hlam hx]
+  exact mul_pos (sqrt_pos.mpr (by positivity)) (exp_pos _)
+
+/-- The real inverse Gaussian density is nonnegative. -/
+theorem inverseGaussianPDFReal_nonneg (μ lam x : ℝ) : 0 ≤ inverseGaussianPDFReal μ lam x := by
+  unfold inverseGaussianPDFReal
+  split_ifs
+  · positivity
+  · exact le_rfl
+
+/-- Converting the inverse Gaussian density back to `ℝ` recovers its real-valued version. -/
 @[simp]
-theorem inverseGaussianPDF_of_nonpos (hx : x ≤ 0) (m lam : ℝ) :
-    inverseGaussianPDF m lam x = 0 := by
+theorem toReal_inverseGaussianPDF (μ lam x : ℝ) :
+    (inverseGaussianPDF μ lam x).toReal = inverseGaussianPDFReal μ lam x :=
+  ENNReal.toReal_ofReal (inverseGaussianPDFReal_nonneg μ lam x)
+
+/-- At positive parameters and a positive point, the inverse Gaussian density has its classical
+formula. -/
+@[simp]
+theorem inverseGaussianPDF_of_pos (hμ : 0 < μ) (hlam : 0 < lam) (hx : 0 < x) :
+    inverseGaussianPDF μ lam x = ENNReal.ofReal
+      (√(lam / (2 * π * x ^ 3)) * exp (-(lam * (x - μ) ^ 2) / (2 * μ ^ 2 * x))) := by
+  rw [inverseGaussianPDF_eq_ofReal, inverseGaussianPDFReal_of_pos hμ hlam hx]
+
+/-- The inverse Gaussian density vanishes on the nonpositive half-line. -/
+@[simp]
+theorem inverseGaussianPDF_of_nonpos (hx : x ≤ 0) (μ lam : ℝ) :
+    inverseGaussianPDF μ lam x = 0 := by
   rw [inverseGaussianPDF_eq_ofReal, inverseGaussianPDFReal_of_nonpos hx, ENNReal.ofReal_zero]
 
-/-- The `ℝ≥0∞`-valued density vanishes outside the valid parameter range. -/
+/-- The inverse Gaussian density vanishes unless both parameters are positive. -/
 @[simp]
-theorem inverseGaussianPDF_of_not_pos (h : ¬ (0 < m ∧ 0 < lam)) (x : ℝ) :
-    inverseGaussianPDF m lam x = 0 := by
+theorem inverseGaussianPDF_of_not_pos (h : ¬ (0 < μ ∧ 0 < lam)) (x : ℝ) :
+    inverseGaussianPDF μ lam x = 0 := by
   rw [inverseGaussianPDF_eq_ofReal, inverseGaussianPDFReal_of_not_pos h, ENNReal.ofReal_zero]
 
-/-- At valid parameters the density is strictly positive on the positive half-line. -/
-theorem inverseGaussianPDFReal_pos (hm : 0 < m) (hlam : 0 < lam) (hx : 0 < x) :
-    0 < inverseGaussianPDFReal m lam x := by
-  rw [inverseGaussianPDFReal_of_pos hm hlam hx]
-  exact mul_pos (Real.sqrt_pos.2 (by positivity)) (exp_pos _)
-
-/-- The real-valued inverse Gaussian density is nonnegative at every parameter. -/
-theorem inverseGaussianPDFReal_nonneg (m lam x : ℝ) : 0 ≤ inverseGaussianPDFReal m lam x := by
-  by_cases h : 0 < m ∧ 0 < lam ∧ 0 < x
-  · exact (inverseGaussianPDFReal_pos h.1 h.2.1 h.2.2).le
-  · rw [inverseGaussianPDFReal, ite_eq_right h]
-
-/-- The two density representations agree under `ENNReal.toReal`. -/
-@[simp]
-theorem toReal_inverseGaussianPDF (m lam x : ℝ) :
-    (inverseGaussianPDF m lam x).toReal = inverseGaussianPDFReal m lam x :=
-  ENNReal.toReal_ofReal (inverseGaussianPDFReal_nonneg m lam x)
-
-/-- The real inverse Gaussian density is measurable in the sample point. -/
+/-- The real inverse Gaussian density is jointly measurable in its parameters and the sample
+point. -/
 @[fun_prop]
-theorem measurable_inverseGaussianPDFReal (m lam : ℝ) :
-    Measurable (inverseGaussianPDFReal m lam) := by
+theorem measurable_uncurry_inverseGaussianPDFReal :
+    Measurable fun q : (ℝ × ℝ) × ℝ ↦ inverseGaussianPDFReal q.1.1 q.1.2 q.2 := by
   unfold inverseGaussianPDFReal
-  exact Measurable.ite (by measurability) (by fun_prop) measurable_const
+  refine Measurable.ite ?_ (by fun_prop) measurable_const
+  have hzero : Measurable fun _ : (ℝ × ℝ) × ℝ ↦ (0 : ℝ) := measurable_const
+  exact (measurableSet_lt hzero measurable_fst.fst).inter
+    ((measurableSet_lt hzero measurable_fst.snd).inter (measurableSet_lt hzero measurable_snd))
 
-/-- The `ℝ≥0∞`-valued inverse Gaussian density is measurable in the sample point. -/
+/-- The `ℝ≥0∞`-valued inverse Gaussian density is jointly measurable in its parameters and the
+sample point. -/
 @[fun_prop]
-theorem measurable_inverseGaussianPDF (m lam : ℝ) : Measurable (inverseGaussianPDF m lam) :=
-  (measurable_inverseGaussianPDFReal m lam).ennreal_ofReal
+theorem measurable_uncurry_inverseGaussianPDF :
+    Measurable fun q : (ℝ × ℝ) × ℝ ↦ inverseGaussianPDF q.1.1 q.1.2 q.2 :=
+  measurable_uncurry_inverseGaussianPDFReal.ennreal_ofReal
 
-/-- If either parameter is invalid, the inverse Gaussian measure is zero. -/
-@[simp]
-theorem inverseGaussianMeasure_of_not_pos (h : ¬ (0 < m ∧ 0 < lam)) :
-    inverseGaussianMeasure m lam = 0 := by
-  rw [inverseGaussianMeasure_def, funext (inverseGaussianPDF_of_not_pos h)]
-  exact withDensity_zero
+/-- The real inverse Gaussian density is measurable in its sample point. -/
+@[fun_prop]
+theorem measurable_inverseGaussianPDFReal (μ lam : ℝ) :
+    Measurable (inverseGaussianPDFReal μ lam) :=
+  measurable_uncurry_inverseGaussianPDFReal.comp (measurable_prodMk_left (x := (μ, lam)))
 
-/-- An inverse Gaussian measure gives no mass to the nonpositive half-line. This also holds at
-invalid parameters, where the measure is zero. -/
-@[simp]
-theorem inverseGaussianMeasure_Iic_zero (m lam : ℝ) :
-    inverseGaussianMeasure m lam (Iic 0) = 0 := by
-  rw [inverseGaussianMeasure_def, withDensity_apply _ measurableSet_Iic]
-  refine lintegral_eq_zero_of_ae_eq_zero ?_
-  filter_upwards [ae_restrict_mem measurableSet_Iic] with y hy
-  exact inverseGaussianPDF_of_nonpos hy m lam
+/-- The inverse Gaussian density is measurable in its sample point. -/
+@[fun_prop]
+theorem measurable_inverseGaussianPDF (μ lam : ℝ) : Measurable (inverseGaussianPDF μ lam) :=
+  (measurable_inverseGaussianPDFReal μ lam).ennreal_ofReal
 
-/-- An inverse Gaussian random variable is almost surely positive, including vacuously at
-invalid parameters. -/
-theorem ae_pos_inverseGaussianMeasure (m lam : ℝ) :
-    ∀ᵐ y ∂inverseGaussianMeasure m lam, 0 < y := by
-  rw [ae_iff]
-  simpa only [not_lt, ← Iic_def] using inverseGaussianMeasure_Iic_zero m lam
+/-! ### An antiderivative of the density -/
 
-section Transfer
+/-- For `y > 0`, the Gaussian argument `√(lam / y) * (y / μ + c)` of the cdf, rewritten in
+terms of `√y`. -/
+private theorem sqrt_div_mul_eq (lam μ c : ℝ) {y : ℝ} (hy : 0 < y) :
+    √(lam / y) * (y / μ + c) = √lam * (√y / μ + c / √y) := by
+  rw [sqrt_div' lam hy.le]
+  field_simp
+  rw [sq_sqrt hy.le]
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+/-- The derivative of `y ↦ √(lam / y) * (y / μ + c)` on the positive half-line. -/
+private theorem hasDerivAt_sqrt_div_mul (hlam : 0 < lam) (μ c : ℝ) {y : ℝ} (hy : 0 < y) :
+    HasDerivAt (fun y ↦ √(lam / y) * (y / μ + c)) (√(lam / y) * (1 / μ - c / y) / 2) y := by
+  have hpos : 0 < lam / y := div_pos hlam hy
+  have hdiv : HasDerivAt (fun y ↦ lam / y) (-(lam / y ^ 2)) y := by
+    simpa [div_eq_mul_inv] using (hasDerivAt_inv hy.ne').const_mul lam
+  have hsq := hdiv.sqrt hpos.ne'
+  have hlin : HasDerivAt (fun y ↦ y / μ + c) (1 / μ) y := by
+    simpa using ((hasDerivAt_id y).div_const μ).add_const c
+  convert hsq.mul hlin using 1
+  have hsq' : √(lam / y) ^ 2 = lam / y := sq_sqrt hpos.le
+  field_simp
+  rw [hsq']
+  field_simp
+  ring
 
-/-- A function is integrable against an inverse Gaussian measure exactly when its
-density-weighted version is Lebesgue integrable. This holds at every parameter. -/
-theorem integrable_inverseGaussianMeasure_iff (m lam : ℝ) {g : ℝ → E} :
-    Integrable g (inverseGaussianMeasure m lam) ↔
-      Integrable (fun y ↦ inverseGaussianPDFReal m lam y • g y) := by
-  rw [inverseGaussianMeasure_def, funext (inverseGaussianPDF_eq_ofReal m lam)]
-  exact integrable_withDensity_ofReal_iff (measurable_inverseGaussianPDFReal m lam).aemeasurable
-    (ae_of_all _ (inverseGaussianPDFReal_nonneg m lam))
+/-- The closed-form inverse Gaussian cdf on the positive half-line. At `x ≤ 0` the expression is
+meaningless; see `cdfFormulaExt`. -/
+private def cdfFormula (μ lam x : ℝ) : ℝ :=
+  cdf (gaussianReal 0 1) (√(lam / x) * (x / μ - 1)) +
+    exp (2 * lam / μ) * cdf (gaussianReal 0 1) (-(√(lam / x) * (x / μ + 1)))
 
-/-- An integral against an inverse Gaussian measure is the density-weighted Lebesgue integral.
-This holds at every parameter. -/
-theorem integral_inverseGaussianMeasure_eq (m lam : ℝ) (g : ℝ → E) :
-    ∫ y, g y ∂inverseGaussianMeasure m lam = ∫ y, inverseGaussianPDFReal m lam y • g y := by
-  rw [inverseGaussianMeasure_def, funext (inverseGaussianPDF_eq_ofReal m lam)]
-  exact integral_withDensity_ofReal (measurable_inverseGaussianPDFReal m lam).aemeasurable
-    (ae_of_all _ (inverseGaussianPDFReal_nonneg m lam)) g
-
-end Transfer
-
-/-! ### The closed-form antiderivative -/
-
-/-- The closed-form inverse Gaussian cdf on the positive half-line, in terms of the standard
-Gaussian cdf. `cdf_inverseGaussianMeasure_eq` identifies it with the cdf. -/
-private def cdfFormula (m lam x : ℝ) : ℝ :=
-  cdf (gaussianReal 0 1) (√(lam / x) * (x / m - 1)) +
-    exp (2 * lam / m) * cdf (gaussianReal 0 1) (-(√(lam / x) * (x / m + 1)))
-
-/-- On the positive half-line the closed form is an antiderivative of the density. -/
-private lemma hasDerivAt_cdfFormula (hm : 0 < m) (hlam : 0 < lam) (hx : 0 < x) :
-    HasDerivAt (cdfFormula m lam) (inverseGaussianPDFReal m lam x) x := by
-  have hdiv : HasDerivAt (fun y => lam / y) (-(lam / x ^ 2)) x := by
-    simpa [div_eq_mul_inv, mul_neg] using (hasDerivAt_inv hx.ne').const_mul lam
-  have hsqrt := hdiv.sqrt (div_pos hlam hx).ne'
-  have hA := hsqrt.mul (((hasDerivAt_id x).div_const m).sub_const 1)
-  have hB := (hsqrt.mul (((hasDerivAt_id x).div_const m).add_const 1)).neg
-  have hΦA := (hasDerivAt_cdf_gaussianReal 0 one_ne_zero _).comp x hA
-  have hΦB := ((hasDerivAt_cdf_gaussianReal 0 one_ne_zero _).comp x hB).const_mul
-    (exp (2 * lam / m))
-  refine (hΦA.add hΦB).congr_deriv ?_
-  simp only [id_eq, gaussianPDFReal, NNReal.coe_one, mul_one, sub_zero, Pi.mul_apply,
-    Pi.neg_apply, inverseGaussianPDFReal_of_pos hm hlam hx]
-  set r := √(lam / x) with hr
-  have hr0 : 0 < r := Real.sqrt_pos.2 (div_pos hlam hx)
-  have hrx : r ^ 2 * x = lam := by
-    rw [hr, Real.sq_sqrt (div_pos hlam hx).le, div_mul_cancel₀ _ hx.ne']
-  -- The squares of the two Gaussian arguments differ by `4 * lam / m`, so the factor
-  -- `exp (2 * lam / m)` turns the second Gaussian density term into the first.
-  have hexpB : exp (2 * lam / m) * exp (-(-(r * (x / m + 1))) ^ 2 / 2) =
-      exp (-(r * (x / m - 1)) ^ 2 / 2) := by
-    rw [← exp_add]
-    congr 1
-    linear_combination (-2 / m) * hrx
-  have hexpA : exp (-(r * (x / m - 1)) ^ 2 / 2) =
-      exp (-(lam * (x - m) ^ 2) / (2 * m ^ 2 * x)) := by
-    congr 1
-    rw [← hrx]
+/-- On the positive half-line, the closed-form cdf has the density as its derivative. The two
+Gaussian arguments `w₁ = √(lam / x) (x / μ - 1)` and `w₂ = √(lam / x) (x / μ + 1)` satisfy
+`w₂ ^ 2 - w₁ ^ 2 = 4 lam / μ`, so the factor `exp (2 lam / μ)` turns `φ(w₂)` into `φ(w₁)` and the
+two chain-rule terms combine. -/
+private theorem hasDerivAt_cdfFormula (hμ : 0 < μ) (hlam : 0 < lam) (hx : 0 < x) :
+    HasDerivAt (cdfFormula μ lam) (inverseGaussianPDFReal μ lam x) x := by
+  set r := √(lam / x) with hr_def
+  have hr2 : r ^ 2 = lam / x := sq_sqrt (div_pos hlam hx).le
+  have h1 := (hasDerivAt_cdf_gaussianReal 0 one_ne_zero _).comp x
+    (hasDerivAt_sqrt_div_mul hlam μ (-1) hx)
+  have h2 := ((hasDerivAt_cdf_gaussianReal 0 one_ne_zero _).comp x
+    (hasDerivAt_sqrt_div_mul hlam μ 1 hx).neg).const_mul (exp (2 * lam / μ))
+  convert h1.add h2 using 1
+  · funext y
+    simp [cdfFormula, sub_eq_add_neg]
+  set A := exp (-(r * (x / μ + -1)) ^ 2 / 2) with hA
+  have hφ1 : gaussianPDFReal 0 1 (r * (x / μ + -1)) = (√(2 * π))⁻¹ * A := by
+    simp [gaussianPDFReal, hA]
+  have hφ2 : exp (2 * lam / μ) * gaussianPDFReal 0 1 (-(r * (x / μ + 1))) =
+      (√(2 * π))⁻¹ * A := by
+    simp only [gaussianPDFReal, NNReal.coe_one, mul_one, sub_zero, hA]
+    rw [mul_left_comm, ← exp_add]
+    congr 2
+    rw [neg_sq, mul_pow, mul_pow, hr2]
     field_simp
-  have hcoef : √(lam / (2 * π * x ^ 3)) = (√(2 * π))⁻¹ * (r / x) := by
-    rw [Real.sqrt_eq_iff_eq_sq (by positivity) (by positivity), mul_pow, inv_pow,
-      Real.sq_sqrt (by positivity), div_pow, ← hrx]
+    ring
+  -- Write the radicand as a quotient by a perfect square, so that the square root splits.
+  have hrad : lam / (2 * π * x ^ 3) = (lam / x) / (√(2 * π) * x) ^ 2 := by
+    rw [mul_pow, sq_sqrt (by positivity)]
     field_simp
-  calc _ = (√(2 * π))⁻¹ * exp (-(r * (x / m - 1)) ^ 2 / 2) *
-        ((-(lam / x ^ 2) / (2 * r) * (x / m - 1) + r * (1 / m)) +
-          -(-(lam / x ^ 2) / (2 * r) * (x / m + 1) + r * (1 / m))) := by
-        rw [← hexpB]
-        ring
-    _ = _ := by
-      rw [hexpA, hcoef, ← hrx]
-      field_simp
-      ring
+  have hS : √(lam / (2 * π * x ^ 3)) = r / (√(2 * π) * x) := by
+    rw [hrad, sqrt_div' _ (sq_nonneg _), sqrt_sq (by positivity)]
+  have hE : -(lam * (x - μ) ^ 2) / (2 * μ ^ 2 * x) = -(r * (x / μ + -1)) ^ 2 / 2 := by
+    rw [mul_pow, hr2]
+    field_simp
+    ring
+  rw [inverseGaussianPDFReal_of_pos hμ hlam hx, Pi.neg_apply, ← hr_def, hφ1,
+    ← mul_assoc (exp _), hφ2, hS, hE, ← hA]
+  field_simp
+  ring
 
-/-- The closed form tends to `0` at `0⁺`, where both of its Gaussian arguments tend to `-∞`. -/
-private lemma tendsto_cdfFormula_nhdsGT_zero (hlam : 0 < lam) :
-    Tendsto (cdfFormula m lam) (𝓝[>] 0) (𝓝 0) := by
-  have hsqrt : Tendsto (fun y : ℝ => √(lam / y)) (𝓝[>] 0) atTop := by
-    refine Real.tendsto_sqrt_atTop.comp ?_
-    exact (tendsto_inv_nhdsGT_zero.const_mul_atTop hlam).congr fun y =>
-      (div_eq_mul_inv lam y).symm
-  have hlin : ∀ c : ℝ, Tendsto (fun y : ℝ => y / m + c) (𝓝[>] 0) (𝓝 c) := fun c => by
-    have : Continuous fun y : ℝ => y / m + c := by fun_prop
-    simpa using (this.tendsto 0).mono_left nhdsWithin_le_nhds
-  have hA : Tendsto (fun y => √(lam / y) * (y / m - 1)) (𝓝[>] 0) atBot := by
-    simpa only [sub_eq_add_neg] using hsqrt.atTop_mul_neg neg_one_lt_zero (hlin (-1))
-  have hB : Tendsto (fun y => -(√(lam / y) * (y / m + 1))) (𝓝[>] 0) atBot :=
-    tendsto_neg_atTop_atBot.comp (hsqrt.atTop_mul_pos one_pos (hlin 1))
-  unfold cdfFormula
-  simpa using ((tendsto_cdf_atBot (μ := gaussianReal 0 1)).comp hA).add
-    (((tendsto_cdf_atBot (μ := gaussianReal 0 1)).comp hB).const_mul (exp (2 * lam / m)))
+/-- The closed-form cdf tends to `0` at `0` from the right: both Gaussian arguments tend to
+`-∞`. -/
+private theorem tendsto_cdfFormula_nhdsGT_zero (hlam : 0 < lam) (μ : ℝ) :
+    Tendsto (cdfFormula μ lam) (𝓝[>] 0) (𝓝 0) := by
+  have hr : Tendsto (fun y ↦ √(lam / y)) (𝓝[>] 0) atTop :=
+    tendsto_sqrt_atTop.comp ((tendsto_inv_nhdsGT_zero.const_mul_atTop hlam).congr
+      fun y ↦ (div_eq_mul_inv lam y).symm)
+  have hlin (c : ℝ) : Tendsto (fun y ↦ y / μ + c) (𝓝[>] 0) (𝓝 c) := by
+    have h : Tendsto (fun y : ℝ ↦ y / μ + c) (𝓝 0) (𝓝 (0 / μ + c)) :=
+      ((continuous_id.div_const μ).add continuous_const).tendsto 0
+    simpa using h.mono_left nhdsWithin_le_nhds
+  have hw₁ : Tendsto (fun y ↦ √(lam / y) * (y / μ - 1)) (𝓝[>] 0) atBot := by
+    simpa only [sub_eq_add_neg] using hr.atTop_mul_neg (neg_one_lt_zero) (hlin (-1))
+  have hw₂ : Tendsto (fun y ↦ -(√(lam / y) * (y / μ + 1))) (𝓝[>] 0) atBot :=
+    tendsto_neg_atTop_atBot.comp (hr.atTop_mul_pos one_pos (hlin 1))
+  have h := ((tendsto_cdf_atBot (gaussianReal 0 1)).comp hw₁).add
+    (((tendsto_cdf_atBot (gaussianReal 0 1)).comp hw₂).const_mul (exp (2 * lam / μ)))
+  rw [mul_zero, add_zero] at h
+  exact h
 
-/-- The closed form tends to `1` at infinity, where its first Gaussian argument tends to `∞`
-and its second to `-∞`. -/
-private lemma tendsto_cdfFormula_atTop (hm : 0 < m) (hlam : 0 < lam) :
-    Tendsto (cdfFormula m lam) atTop (𝓝 1) := by
-  -- For `y > 0`, `√(lam / y) * (y / m + c)` is `√lam * (√y / m + c * (√y)⁻¹)`, which tends
-  -- to infinity for every constant `c`.
-  have heq : ∀ c : ℝ, (fun y => √lam * (√y / m + c * (√y)⁻¹)) =ᶠ[atTop]
-      fun y => √(lam / y) * (y / m + c) := fun c => by
+/-- The closed-form cdf tends to `1` at infinity. -/
+private theorem tendsto_cdfFormula_atTop (hμ : 0 < μ) (hlam : 0 < lam) :
+    Tendsto (cdfFormula μ lam) atTop (𝓝 1) := by
+  have hs : Tendsto (fun y ↦ √y) atTop atTop := tendsto_sqrt_atTop
+  have hw₁ : Tendsto (fun y ↦ √(lam / y) * (y / μ - 1)) atTop atTop := by
+    have h : Tendsto (fun y ↦ √lam * (√y / μ + -1 / √y)) atTop atTop :=
+      ((hs.atTop_div_const hμ).atTop_add (tendsto_const_nhds.div_atTop hs)).const_mul_atTop
+        (sqrt_pos.mpr hlam)
+    refine h.congr' ?_
     filter_upwards [eventually_gt_atTop 0] with y hy
-    have hy' : 0 < √y := Real.sqrt_pos.2 hy
-    rw [Real.sqrt_div hlam.le]
-    field_simp
-    rw [Real.sq_sqrt hy.le]
-  have hsy : Tendsto (fun y : ℝ => √y) atTop atTop := Real.tendsto_sqrt_atTop
-  have hlim : ∀ c : ℝ, Tendsto (fun y => √(lam / y) * (y / m + c)) atTop atTop := fun c =>
-    (((hsy.atTop_div_const hm).atTop_add
-      ((tendsto_inv_atTop_zero.comp hsy).const_mul c)).const_mul_atTop
-        (Real.sqrt_pos.2 hlam)).congr' (heq c)
-  have hA : Tendsto (fun y => √(lam / y) * (y / m - 1)) atTop atTop := by
-    simpa only [sub_eq_add_neg] using hlim (-1)
-  have hB : Tendsto (fun y => -(√(lam / y) * (y / m + 1))) atTop atBot :=
-    tendsto_neg_atTop_atBot.comp (hlim 1)
-  unfold cdfFormula
-  simpa using ((tendsto_cdf_atTop (μ := gaussianReal 0 1)).comp hA).add
-    (((tendsto_cdf_atBot (μ := gaussianReal 0 1)).comp hB).const_mul (exp (2 * lam / m)))
+    rw [sub_eq_add_neg, sqrt_div_mul_eq lam μ (-1) hy]
+  have hw₂ : Tendsto (fun y ↦ -(√(lam / y) * (y / μ + 1))) atTop atBot := by
+    refine tendsto_neg_atTop_atBot.comp (tendsto_atTop_mono (fun y ↦ ?_) hw₁)
+    nlinarith [sqrt_nonneg (lam / y)]
+  have h := ((tendsto_cdf_atTop (gaussianReal 0 1)).comp hw₁).add
+    (((tendsto_cdf_atBot (gaussianReal 0 1)).comp hw₂).const_mul (exp (2 * lam / μ)))
+  rw [mul_zero, add_zero] at h
+  exact h
 
-/-- The density is integrable on the positive half-line with integral one. -/
-private lemma integrableOn_Ioi_zero_and_integral_eq (hm : 0 < m) (hlam : 0 < lam) :
-    IntegrableOn (inverseGaussianPDFReal m lam) (Ioi 0) ∧
-      ∫ y in Ioi 0, inverseGaussianPDFReal m lam y = 1 := by
-  -- Extended by zero to the nonpositive half-line, the closed form is an antiderivative of the
-  -- density that is continuous from the right at zero.
-  set G : ℝ → ℝ := fun y => if y ≤ 0 then 0 else cdfFormula m lam y with hG
-  have hG0 : G 0 = 0 := by simp [hG]
-  have hGpos : ∀ y, 0 < y → G y = cdfFormula m lam y := fun y hy => by
-    simp [hG, not_le.2 hy]
-  have hcont : ContinuousWithinAt G (Ici 0) 0 := by
-    rw [← continuousWithinAt_Ioi_iff_Ici, ContinuousWithinAt, hG0]
-    exact (tendsto_cdfFormula_nhdsGT_zero hlam).congr'
-      (eventually_nhdsWithin_of_forall fun y hy => (hGpos y hy).symm)
-  have hderiv : ∀ y ∈ Ioi 0, HasDerivAt G (inverseGaussianPDFReal m lam y) y := fun y hy =>
-    (hasDerivAt_cdfFormula hm hlam hy).congr_of_eventuallyEq
-      (eventually_of_mem (lt_mem_nhds hy) fun z hz => hGpos z hz)
-  have hlim : Tendsto G atTop (𝓝 1) :=
-    (tendsto_cdfFormula_atTop hm hlam).congr'
-      (eventually_of_mem (Ioi_mem_atTop 0) fun y hy => (hGpos y hy).symm)
-  have hnn : ∀ y ∈ Ioi (0 : ℝ), 0 ≤ inverseGaussianPDFReal m lam y := fun y _ =>
-    inverseGaussianPDFReal_nonneg m lam y
-  refine ⟨integrableOn_Ioi_deriv_of_nonneg hcont hderiv hnn hlim, ?_⟩
-  rw [integral_Ioi_of_hasDerivAt_of_nonneg hcont hderiv hnn hlim, hG0, sub_zero]
+/-- The density restricted to a half-line `(a, ∞)` inside the positive half-line integrates to
+one minus the closed-form cdf at `a`. -/
+private theorem integral_Ioi_inverseGaussianPDFReal_of_pos (hμ : 0 < μ) (hlam : 0 < lam)
+    {a : ℝ} (ha : 0 < a) :
+    ∫ x in Ioi a, inverseGaussianPDFReal μ lam x = 1 - cdfFormula μ lam a :=
+  integral_Ioi_of_hasDerivAt_of_nonneg'
+    (fun _ hx ↦ hasDerivAt_cdfFormula hμ hlam (ha.trans_le hx))
+    (fun x _ ↦ inverseGaussianPDFReal_nonneg μ lam x) (tendsto_cdfFormula_atTop hμ hlam)
 
-/-! ### Normalization -/
+/-- The closed-form cdf extended by zero to the nonpositive half-line, an antiderivative of the
+density on `(0, ∞)` that is right-continuous at `0`. -/
+private def cdfFormulaExt (μ lam : ℝ) : ℝ → ℝ := (Ioi 0).indicator (cdfFormula μ lam)
 
-/-- The real density is integrable at every parameter. -/
-theorem integrable_inverseGaussianPDFReal (m lam : ℝ) :
-    Integrable (inverseGaussianPDFReal m lam) := by
-  by_cases h : 0 < m ∧ 0 < lam
-  · refine (integrableOn_iff_integrable_of_support_subset fun y hy => ?_).1
-      (integrableOn_Ioi_zero_and_integral_eq h.1 h.2).1
-    by_contra hy'
-    exact hy (inverseGaussianPDFReal_of_nonpos (not_lt.1 hy') m lam)
-  · simp [funext (inverseGaussianPDFReal_of_not_pos h)]
+private theorem cdfFormulaExt_zero (μ lam : ℝ) : cdfFormulaExt μ lam 0 = 0 :=
+  indicator_of_notMem (by simp) _
 
-/-- The real inverse Gaussian density has total mass one at valid parameters. -/
-theorem integral_inverseGaussianPDFReal (hm : 0 < m) (hlam : 0 < lam) :
-    ∫ y, inverseGaussianPDFReal m lam y = 1 := by
+private theorem continuousWithinAt_cdfFormulaExt (hlam : 0 < lam) (μ : ℝ) :
+    ContinuousWithinAt (cdfFormulaExt μ lam) (Ici 0) 0 := by
+  rw [← continuousWithinAt_Ioi_iff_Ici, ContinuousWithinAt, cdfFormulaExt_zero]
+  exact (tendsto_cdfFormula_nhdsGT_zero hlam μ).congr'
+    (eventuallyEq_nhdsWithin_of_eqOn eqOn_indicator).symm
+
+private theorem hasDerivAt_cdfFormulaExt (hμ : 0 < μ) (hlam : 0 < lam) (hx : x ∈ Ioi 0) :
+    HasDerivAt (cdfFormulaExt μ lam) (inverseGaussianPDFReal μ lam x) x :=
+  (hasDerivAt_cdfFormula hμ hlam hx).congr_of_eventuallyEq
+    (eventuallyEq_of_mem (Ioi_mem_nhds hx) eqOn_indicator)
+
+private theorem tendsto_cdfFormulaExt_atTop (hμ : 0 < μ) (hlam : 0 < lam) :
+    Tendsto (cdfFormulaExt μ lam) atTop (𝓝 1) :=
+  (tendsto_cdfFormula_atTop hμ hlam).congr'
+    (eventuallyEq_of_mem (Ioi_mem_atTop 0) eqOn_indicator).symm
+
+private theorem integrableOn_Ioi_zero_inverseGaussianPDFReal (hμ : 0 < μ) (hlam : 0 < lam) :
+    IntegrableOn (inverseGaussianPDFReal μ lam) (Ioi 0) :=
+  integrableOn_Ioi_deriv_of_nonneg (continuousWithinAt_cdfFormulaExt hlam μ)
+    (fun _ ↦ hasDerivAt_cdfFormulaExt hμ hlam)
+    (fun x _ ↦ inverseGaussianPDFReal_nonneg μ lam x) (tendsto_cdfFormulaExt_atTop hμ hlam)
+
+private theorem integral_Ioi_zero_inverseGaussianPDFReal (hμ : 0 < μ) (hlam : 0 < lam) :
+    ∫ x in Ioi 0, inverseGaussianPDFReal μ lam x = 1 := by
+  rw [integral_Ioi_of_hasDerivAt_of_nonneg (continuousWithinAt_cdfFormulaExt hlam μ)
+    (fun _ ↦ hasDerivAt_cdfFormulaExt hμ hlam)
+    (fun x _ ↦ inverseGaussianPDFReal_nonneg μ lam x) (tendsto_cdfFormulaExt_atTop hμ hlam),
+    cdfFormulaExt_zero, sub_zero]
+
+/-- The real inverse Gaussian density is Lebesgue integrable. -/
+theorem integrable_inverseGaussianPDFReal (μ lam : ℝ) :
+    Integrable (inverseGaussianPDFReal μ lam) := by
+  by_cases h : 0 < μ ∧ 0 < lam
+  · rw [← integrableOn_univ, ← Iic_union_Ioi (a := (0 : ℝ))]
+    refine IntegrableOn.union ?_ (integrableOn_Ioi_zero_inverseGaussianPDFReal h.1 h.2)
+    exact integrableOn_zero.congr_fun
+      (fun x hx ↦ (inverseGaussianPDFReal_of_nonpos hx μ lam).symm) measurableSet_Iic
+  · rw [funext (inverseGaussianPDFReal_of_not_pos h)]
+    exact integrable_zero _ _ _
+
+/-- **Normalization of the inverse Gaussian density.** At positive parameters the real density
+integrates to one. -/
+theorem integral_inverseGaussianPDFReal (hμ : 0 < μ) (hlam : 0 < lam) :
+    ∫ x, inverseGaussianPDFReal μ lam x = 1 := by
   rw [← setIntegral_eq_integral_of_forall_compl_eq_zero (s := Ioi 0)
-    fun y hy => inverseGaussianPDFReal_of_nonpos (not_lt.1 hy) m lam]
-  exact (integrableOn_Ioi_zero_and_integral_eq hm hlam).2
+    fun x hx ↦ inverseGaussianPDFReal_of_nonpos (not_lt.mp hx) μ lam]
+  exact integral_Ioi_zero_inverseGaussianPDFReal hμ hlam
 
-/-- The `ℝ≥0∞`-valued inverse Gaussian density has total mass one at valid parameters. -/
-theorem lintegral_inverseGaussianPDF_eq_one (hm : 0 < m) (hlam : 0 < lam) :
-    ∫⁻ y, inverseGaussianPDF m lam y = 1 := by
+/-- At positive parameters the inverse Gaussian density has total mass one. -/
+theorem lintegral_inverseGaussianPDF (hμ : 0 < μ) (hlam : 0 < lam) :
+    ∫⁻ x, inverseGaussianPDF μ lam x = 1 := by
   simp_rw [inverseGaussianPDF_eq_ofReal]
-  rw [← ofReal_integral_eq_lintegral_ofReal (integrable_inverseGaussianPDFReal m lam)
-      (ae_of_all _ (inverseGaussianPDFReal_nonneg m lam)),
-    integral_inverseGaussianPDFReal hm hlam, ENNReal.ofReal_one]
+  rw [← ofReal_integral_eq_lintegral_ofReal (integrable_inverseGaussianPDFReal μ lam)
+    (ae_of_all _ (inverseGaussianPDFReal_nonneg μ lam)), integral_inverseGaussianPDFReal hμ hlam,
+    ENNReal.ofReal_one]
 
-/-- For positive mean and shape the inverse Gaussian law is a probability measure. -/
-theorem isProbabilityMeasure_inverseGaussianMeasure (hm : 0 < m) (hlam : 0 < lam) :
-    IsProbabilityMeasure (inverseGaussianMeasure m lam) := by
-  constructor
-  rw [inverseGaussianMeasure_def, withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ,
-    lintegral_inverseGaussianPDF_eq_one hm hlam]
+/-! ### The law -/
 
-/-- The inverse Gaussian law is a probability measure exactly for positive mean and shape. -/
+/-- The inverse Gaussian law with mean `μ` and shape `lam`: Lebesgue measure weighted by
+`inverseGaussianPDF μ lam`. It is the zero measure unless both parameters are positive. -/
+def inverseGaussianMeasure (μ lam : ℝ) : Measure ℝ :=
+  volume.withDensity (inverseGaussianPDF μ lam)
+
+/-- The inverse Gaussian law is Lebesgue measure weighted by its density. -/
+theorem inverseGaussianMeasure_eq_withDensity (μ lam : ℝ) :
+    inverseGaussianMeasure μ lam = volume.withDensity (inverseGaussianPDF μ lam) := (rfl)
+
+/-- At invalid parameters the inverse Gaussian law is the zero measure. -/
+@[simp]
+theorem inverseGaussianMeasure_of_not_pos (h : ¬ (0 < μ ∧ 0 < lam)) :
+    inverseGaussianMeasure μ lam = 0 := by
+  have hpdf : inverseGaussianPDF μ lam = 0 := funext (inverseGaussianPDF_of_not_pos h)
+  rw [inverseGaussianMeasure_eq_withDensity, hpdf, withDensity_zero]
+
+/-- An inverse Gaussian law with positive parameters is a probability measure. -/
+theorem isProbabilityMeasure_inverseGaussianMeasure (hμ : 0 < μ) (hlam : 0 < lam) :
+    IsProbabilityMeasure (inverseGaussianMeasure μ lam) :=
+  ⟨by rw [inverseGaussianMeasure_eq_withDensity, withDensity_apply _ MeasurableSet.univ,
+    Measure.restrict_univ, lintegral_inverseGaussianPDF hμ hlam]⟩
+
+/-- The inverse Gaussian law is a probability measure exactly at positive parameters. -/
 @[simp]
 theorem isProbabilityMeasure_inverseGaussianMeasure_iff :
-    IsProbabilityMeasure (inverseGaussianMeasure m lam) ↔ 0 < m ∧ 0 < lam := by
-  refine ⟨fun hp => ?_, fun h => isProbabilityMeasure_inverseGaussianMeasure h.1 h.2⟩
-  by_contra h
-  rw [inverseGaussianMeasure_of_not_pos h] at hp
+    IsProbabilityMeasure (inverseGaussianMeasure μ lam) ↔ 0 < μ ∧ 0 < lam := by
+  refine ⟨fun h ↦ ?_, fun h ↦ isProbabilityMeasure_inverseGaussianMeasure h.1 h.2⟩
+  by_contra hp
+  rw [inverseGaussianMeasure_of_not_pos hp] at h
   exact IsProbabilityMeasure.ne_zero (0 : Measure ℝ) rfl
 
 /-- Every inverse Gaussian measure is finite, including the zero measure at invalid
 parameters. -/
-instance : IsFiniteMeasure (inverseGaussianMeasure m lam) := by
-  by_cases h : 0 < m ∧ 0 < lam
+instance : IsFiniteMeasure (inverseGaussianMeasure μ lam) := by
+  by_cases h : 0 < μ ∧ 0 < lam
   · have := isProbabilityMeasure_inverseGaussianMeasure h.1 h.2
     infer_instance
   · rw [inverseGaussianMeasure_of_not_pos h]
     infer_instance
 
-/-! ### Density interface and support -/
+/-- The inverse Gaussian law gives no mass to the nonpositive half-line, at all parameters. -/
+@[simp]
+theorem inverseGaussianMeasure_Iic_zero (μ lam : ℝ) :
+    inverseGaussianMeasure μ lam (Iic 0) = 0 := by
+  rw [inverseGaussianMeasure_eq_withDensity, withDensity_apply _ measurableSet_Iic,
+    setLIntegral_congr_fun measurableSet_Iic fun x hx ↦ inverseGaussianPDF_of_nonpos hx μ lam,
+    lintegral_zero]
 
-section DensityInterface
+/-- An inverse Gaussian variable is almost surely positive, at all parameters. -/
+theorem ae_pos_inverseGaussianMeasure (μ lam : ℝ) :
+    ∀ᵐ x ∂inverseGaussianMeasure μ lam, 0 < x := by
+  rw [ae_iff]
+  simpa only [not_lt, ← Iic_def] using inverseGaussianMeasure_Iic_zero μ lam
+
+/-- At positive parameters, the topological support of the inverse Gaussian law is the closed
+half-line `[0, ∞)`. -/
+theorem support_inverseGaussianMeasure (hμ : 0 < μ) (hlam : 0 < lam) :
+    (inverseGaussianMeasure μ lam).support = Ici 0 := by
+  have hsupp : Function.support (inverseGaussianPDF μ lam) = Ioi 0 := by
+    ext x
+    rw [Function.mem_support, mem_Ioi]
+    refine ⟨fun hx ↦ not_le.mp fun h ↦ hx (inverseGaussianPDF_of_nonpos h μ lam),
+      fun hx ↦ ?_⟩
+    rw [inverseGaussianPDF_eq_ofReal, ENNReal.ofReal_ne_zero_iff]
+    exact inverseGaussianPDFReal_pos hμ hlam hx
+  rw [inverseGaussianMeasure_eq_withDensity,
+    Measure.support_withDensity_eq_closure (measurable_inverseGaussianPDF μ lam) isOpen_Ioi hsupp,
+    closure_Ioi]
+
+/-- The exact topological support is the closed positive half-line at valid parameters and is
+empty otherwise. -/
+@[simp]
+theorem support_inverseGaussianMeasure_eq_if (μ lam : ℝ) :
+    (inverseGaussianMeasure μ lam).support = if 0 < μ ∧ 0 < lam then Ici 0 else ∅ := by
+  by_cases h : 0 < μ ∧ 0 < lam
+  · rw [if_pos h, support_inverseGaussianMeasure h.1 h.2]
+  · rw [if_neg h, inverseGaussianMeasure_of_not_pos h, Measure.support_zero]
+
+section Transfer
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- **Integrability transfer.** A function is integrable against an inverse Gaussian law exactly
+when its density-weighted version is Lebesgue integrable, at every parameter. -/
+theorem integrable_inverseGaussianMeasure_iff (μ lam : ℝ) {g : ℝ → E} :
+    Integrable g (inverseGaussianMeasure μ lam) ↔
+      Integrable (fun x ↦ inverseGaussianPDFReal μ lam x • g x) := by
+  rw [inverseGaussianMeasure_eq_withDensity, funext (inverseGaussianPDF_eq_ofReal μ lam)]
+  exact integrable_withDensity_ofReal_iff (measurable_inverseGaussianPDFReal μ lam).aemeasurable
+    (ae_of_all _ (inverseGaussianPDFReal_nonneg μ lam))
+
+/-- **Integral transfer.** An integral against an inverse Gaussian law is the density-weighted
+Lebesgue integral, at every parameter. -/
+theorem integral_inverseGaussianMeasure_eq (μ lam : ℝ) (g : ℝ → E) :
+    ∫ x, g x ∂inverseGaussianMeasure μ lam = ∫ x, inverseGaussianPDFReal μ lam x • g x := by
+  rw [inverseGaussianMeasure_eq_withDensity, funext (inverseGaussianPDF_eq_ofReal μ lam)]
+  exact integral_withDensity_ofReal (measurable_inverseGaussianPDFReal μ lam).aemeasurable
+    (ae_of_all _ (inverseGaussianPDFReal_nonneg μ lam)) g
+
+end Transfer
+
+section RandomVariables
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ}
 
 /-- A random variable with an inverse Gaussian law has a Lebesgue density. -/
-theorem hasPDF_of_hasLaw_inverseGaussianMeasure (hX : HasLaw X (inverseGaussianMeasure m lam) P) :
-    HasPDF X P volume :=
-  hasPDF_of_hasLaw_withDensity (measurable_inverseGaussianPDF m lam).aemeasurable hX
+theorem hasPDF_of_hasLaw_inverseGaussianMeasure
+    (hX : HasLaw X (inverseGaussianMeasure μ lam) P) : HasPDF X P volume :=
+  hasPDF_of_hasLaw_withDensity (measurable_inverseGaussianPDF μ lam).aemeasurable hX
 
 /-- The density of a random variable with an inverse Gaussian law is `inverseGaussianPDF`. -/
 theorem pdf_eq_inverseGaussianPDF_of_hasLaw_inverseGaussianMeasure
-    (hX : HasLaw X (inverseGaussianMeasure m lam) P) :
-    pdf X P volume =ᵐ[volume] inverseGaussianPDF m lam :=
-  pdf_eq_of_hasLaw_withDensity (measurable_inverseGaussianPDF m lam).aemeasurable hX
+    (hX : HasLaw X (inverseGaussianMeasure μ lam) P) :
+    pdf X P volume =ᵐ[volume] inverseGaussianPDF μ lam :=
+  pdf_eq_of_hasLaw_withDensity (measurable_inverseGaussianPDF μ lam).aemeasurable hX
 
-end DensityInterface
+end RandomVariables
 
-/-- The Radon–Nikodym derivative of an inverse Gaussian law is its density. -/
-theorem rnDeriv_inverseGaussianMeasure (m lam : ℝ) :
-    (inverseGaussianMeasure m lam).rnDeriv volume =ᵐ[volume] inverseGaussianPDF m lam :=
-  Measure.rnDeriv_withDensity volume (measurable_inverseGaussianPDF m lam)
+/-- The Radon–Nikodym derivative of an inverse Gaussian law with respect to Lebesgue measure. -/
+theorem rnDeriv_inverseGaussianMeasure (μ lam : ℝ) :
+    (inverseGaussianMeasure μ lam).rnDeriv volume =ᵐ[volume] inverseGaussianPDF μ lam :=
+  Measure.rnDeriv_withDensity volume (measurable_inverseGaussianPDF μ lam)
 
-/-- The exact topological support is the closed positive half-line for valid parameters, and
-empty otherwise. -/
-@[simp]
-theorem support_inverseGaussianMeasure (m lam : ℝ) :
-    (inverseGaussianMeasure m lam).support = if 0 < m ∧ 0 < lam then Ici 0 else ∅ := by
-  split_ifs with h
-  · have hsupp : Function.support (inverseGaussianPDF m lam) = Ioi 0 := by
-      ext y
-      rw [Function.mem_support, mem_Ioi]
-      refine ⟨fun hy => not_le.1 fun hy' => hy (inverseGaussianPDF_of_nonpos hy' m lam),
-        fun hy => ?_⟩
-      rw [inverseGaussianPDF_eq_ofReal, ENNReal.ofReal_ne_zero_iff]
-      exact inverseGaussianPDFReal_pos h.1 h.2 hy
-    rw [inverseGaussianMeasure_def,
-      Measure.support_withDensity_eq_closure (measurable_inverseGaussianPDF m lam) isOpen_Ioi
-        hsupp, closure_Ioi]
-  · simp [inverseGaussianMeasure_of_not_pos h, Measure.support_zero]
-
-/-! ### Cumulative distribution function -/
-
-/-- Integrating the density computes the real mass of a measurable set. -/
-private lemma measureReal_inverseGaussianMeasure {s : Set ℝ} (hs : MeasurableSet s) :
-    (inverseGaussianMeasure m lam).real s = ∫ y in s, inverseGaussianPDFReal m lam y := by
-  rw [inverseGaussianMeasure_def, funext (inverseGaussianPDF_eq_ofReal m lam)]
-  exact measureReal_withDensity_ofReal (ae_of_all _ (inverseGaussianPDFReal_nonneg m lam)) hs
-    (integrable_inverseGaussianPDFReal m lam).integrableOn
-
-/-- The upper tail of a valid inverse Gaussian law is one minus the closed form. -/
-private lemma measureReal_Ioi_inverseGaussianMeasure (hm : 0 < m) (hlam : 0 < lam) (hx : 0 < x) :
-    (inverseGaussianMeasure m lam).real (Ioi x) = 1 - cdfFormula m lam x := by
-  rw [measureReal_inverseGaussianMeasure measurableSet_Ioi,
-    integral_Ioi_of_hasDerivAt_of_tendsto'
-      (fun y hy => hasDerivAt_cdfFormula hm hlam (hx.trans_le hy))
-      (integrable_inverseGaussianPDFReal m lam).integrableOn (tendsto_cdfFormula_atTop hm hlam)]
-
-/-- **The inverse Gaussian cdf.** It vanishes on the nonpositive half-line, and for `x > 0` it
-is `Φ (√(lam / x) * (x / m - 1)) + exp (2 * lam / m) * Φ (-(√(lam / x) * (x / m + 1)))`, where
-`Φ` is the standard Gaussian cdf. -/
-theorem cdf_inverseGaussianMeasure_eq (hm : 0 < m) (hlam : 0 < lam) (x : ℝ) :
-    cdf (inverseGaussianMeasure m lam) x =
-      if x ≤ 0 then 0 else
-        cdf (gaussianReal 0 1) (√(lam / x) * (x / m - 1)) +
-          exp (2 * lam / m) * cdf (gaussianReal 0 1) (-(√(lam / x) * (x / m + 1))) := by
-  have := isProbabilityMeasure_inverseGaussianMeasure hm hlam
-  rw [cdf_eq_real]
-  split_ifs with hx
-  · rw [measureReal_def, measure_mono_null (Iic_subset_Iic.2 hx)
-      (inverseGaussianMeasure_Iic_zero m lam), ENNReal.toReal_zero]
-  · rw [← compl_Ioi, measureReal_compl measurableSet_Ioi, probReal_univ,
-      measureReal_Ioi_inverseGaussianMeasure hm hlam (not_le.1 hx), sub_sub_cancel, cdfFormula]
-
-/-! ### Parameter measurability -/
-
-/-- The inverse Gaussian density is jointly measurable in mean, shape, and sample point. -/
-@[fun_prop]
-theorem measurable_uncurry_inverseGaussianPDF :
-    Measurable fun q : (ℝ × ℝ) × ℝ ↦ inverseGaussianPDF q.1.1 q.1.2 q.2 := by
-  unfold inverseGaussianPDF inverseGaussianPDFReal
-  exact (Measurable.ite (by measurability) (by fun_prop) measurable_const).ennreal_ofReal
-
-/-- The inverse Gaussian family is measurable in its mean and shape. -/
+/-- The totalized inverse Gaussian family is jointly measurable in its mean and shape. -/
 @[fun_prop]
 theorem measurable_inverseGaussianMeasure :
     Measurable fun p : ℝ × ℝ ↦ inverseGaussianMeasure p.1 p.2 :=
   measurable_withDensity (μ := volume) measurable_uncurry_inverseGaussianPDF
 
-end Probability
+/-! ### Cumulative distribution function -/
 
-end TauCeti
+/-- **The inverse Gaussian cdf.** At positive parameters and a positive point,
+`F(x) = Φ(√(lam / x) (x / μ - 1)) + exp (2 lam / μ) Φ(-√(lam / x) (x / μ + 1))`, where `Φ` is
+the standard Gaussian cdf. -/
+theorem cdf_inverseGaussianMeasure_of_pos (hμ : 0 < μ) (hlam : 0 < lam) (hx : 0 < x) :
+    cdf (inverseGaussianMeasure μ lam) x =
+      cdf (gaussianReal 0 1) (√(lam / x) * (x / μ - 1)) +
+        exp (2 * lam / μ) * cdf (gaussianReal 0 1) (-(√(lam / x) * (x / μ + 1))) := by
+  have := isProbabilityMeasure_inverseGaussianMeasure hμ hlam
+  have hint : IntegrableOn (inverseGaussianPDFReal μ lam) (Ioi x) :=
+    (integrable_inverseGaussianPDFReal μ lam).integrableOn
+  rw [cdf_eq_real, ← compl_Ioi, measureReal_compl measurableSet_Ioi, probReal_univ,
+    inverseGaussianMeasure_eq_withDensity, funext (inverseGaussianPDF_eq_ofReal μ lam),
+    measureReal_withDensity_ofReal (ae_of_all _ (inverseGaussianPDFReal_nonneg μ lam))
+      measurableSet_Ioi hint,
+    integral_Ioi_inverseGaussianPDFReal_of_pos hμ hlam hx, sub_sub_cancel, cdfFormula]
+
+/-- The inverse Gaussian cdf vanishes on the nonpositive half-line. -/
+theorem cdf_inverseGaussianMeasure_of_nonpos (hμ : 0 < μ) (hlam : 0 < lam) (hx : x ≤ 0) :
+    cdf (inverseGaussianMeasure μ lam) x = 0 := by
+  have := isProbabilityMeasure_inverseGaussianMeasure hμ hlam
+  rw [cdf_eq_real, measureReal_def,
+    measure_mono_null (Iic_subset_Iic.mpr hx) (inverseGaussianMeasure_Iic_zero μ lam),
+    ENNReal.toReal_zero]
+
+/-- **The inverse Gaussian cdf.** It vanishes on the nonpositive half-line and has the classical
+closed form on the positive half-line. -/
+theorem cdf_inverseGaussianMeasure_eq (hμ : 0 < μ) (hlam : 0 < lam) (x : ℝ) :
+    cdf (inverseGaussianMeasure μ lam) x =
+      if x ≤ 0 then 0 else
+        cdf (gaussianReal 0 1) (√(lam / x) * (x / μ - 1)) +
+          exp (2 * lam / μ) * cdf (gaussianReal 0 1) (-(√(lam / x) * (x / μ + 1))) := by
+  split_ifs with hx
+  · exact cdf_inverseGaussianMeasure_of_nonpos hμ hlam hx
+  · exact cdf_inverseGaussianMeasure_of_pos hμ hlam (not_le.mp hx)
+
+/-! ### Positive scaling -/
+
+/-- The inverse Gaussian density satisfies the scaling identity: for `b > 0`, the density with
+parameters `(b μ, b lam)` at `x` is `b⁻¹` times the density with parameters `(μ, lam)` at
+`x / b`. -/
+theorem inverseGaussianPDFReal_mul_mul {b : ℝ} (hb : 0 < b) (μ lam x : ℝ) :
+    inverseGaussianPDFReal (b * μ) (b * lam) x =
+      b⁻¹ * inverseGaussianPDFReal μ lam (x / b) := by
+  by_cases h : 0 < μ ∧ 0 < lam ∧ 0 < x
+  · obtain ⟨hμ, hlam, hx⟩ := h
+    rw [inverseGaussianPDFReal_of_pos (mul_pos hb hμ) (mul_pos hb hlam) hx,
+      inverseGaussianPDFReal_of_pos hμ hlam (div_pos hx hb)]
+    have hsq : lam / (2 * π * (x / b) ^ 3) = b ^ 2 * (b * lam / (2 * π * x ^ 3)) := by
+      field_simp
+    rw [hsq, sqrt_mul (sq_nonneg b), sqrt_sq hb.le]
+    have hexp : -(b * lam * (x - b * μ) ^ 2) / (2 * (b * μ) ^ 2 * x) =
+        -(lam * (x / b - μ) ^ 2) / (2 * μ ^ 2 * (x / b)) := by
+      field_simp
+    rw [hexp]
+    field_simp
+  · have h' : ¬ (0 < b * μ ∧ 0 < b * lam ∧ 0 < x) := by
+      rwa [mul_pos_iff_of_pos_left hb, mul_pos_iff_of_pos_left hb]
+    have h'' : ¬ (0 < μ ∧ 0 < lam ∧ 0 < x / b) := by rwa [div_pos_iff_of_pos_right hb]
+    rw [inverseGaussianPDFReal, ite_eq_right h', inverseGaussianPDFReal, ite_eq_right h'',
+      mul_zero]
+
+/-- **Positive scaling.** For `b > 0`, the law of `b X` for an inverse Gaussian variable `X` with
+parameters `(μ, lam)` is the inverse Gaussian law with parameters `(b μ, b lam)`. The identity
+also holds on the invalid zero branch. -/
+theorem inverseGaussianMeasure_map_const_mul {b : ℝ} (hb : 0 < b) (μ lam : ℝ) :
+    (inverseGaussianMeasure μ lam).map (fun x ↦ b * x) =
+      inverseGaussianMeasure (b * μ) (b * lam) := by
+  have hfun : (fun x : ℝ ↦ b * x) = fun x ↦ 0 + b * x := funext fun x ↦ (zero_add _).symm
+  rw [inverseGaussianMeasure_eq_withDensity, hfun, map_affine_withDensity_volume _ hb.ne',
+    inverseGaussianMeasure_eq_withDensity]
+  congr 1
+  funext x
+  rw [affineDensity_apply, inverseGaussianPDF_eq_ofReal, inverseGaussianPDF_eq_ofReal,
+    inverseGaussianPDFReal_mul_mul hb, sub_zero, abs_of_pos hb,
+    ENNReal.ofReal_mul (inv_nonneg.mpr hb.le)]
+
+/-- The random-variable form of positive scaling of the inverse Gaussian law. -/
+theorem hasLaw_inverseGaussianMeasure_const_mul {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    {X : Ω → ℝ} {b : ℝ} (hb : 0 < b) (hX : HasLaw X (inverseGaussianMeasure μ lam) P) :
+    HasLaw (fun ω ↦ b * X ω) (inverseGaussianMeasure (b * μ) (b * lam)) P :=
+  (HasLaw.mk (by fun_prop) (inverseGaussianMeasure_map_const_mul hb μ lam)).fun_comp hX
+
+end TauCeti.Probability

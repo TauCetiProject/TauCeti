@@ -133,12 +133,12 @@ theorem lintegral_mul_setLIntegral_eq [SFinite μ] [SFinite κ] {g : α → ℝ�
           by_cases htx : R t x <;> simp [htx, ht, w'])).symm hx.symm
 
 /-- An a.e. statement on the first factor transfers to the product measure. -/
-theorem ae_of_ae_fst [SFinite ν] {p : α → Prop} (hp : ∀ᵐ x ∂μ, p x) :
+theorem ae_of_ae_fst {p : α → Prop} (hp : ∀ᵐ x ∂μ, p x) :
     ∀ᵐ q : α × β ∂(μ.prod ν), p q.1 :=
   Measure.quasiMeasurePreserving_fst.tendsto_ae.eventually hp
 
 /-- An a.e. statement on the second factor transfers to the product measure. -/
-theorem ae_of_ae_snd [SFinite ν] {p : β → Prop} (hp : ∀ᵐ y ∂ν, p y) :
+theorem ae_of_ae_snd {p : β → Prop} (hp : ∀ᵐ y ∂ν, p y) :
     ∀ᵐ q : α × β ∂(μ.prod ν), p q.2 :=
   Measure.quasiMeasurePreserving_snd.tendsto_ae.eventually hp
 
@@ -159,16 +159,20 @@ theorem exists_ae_eq_const_of_ae_prod_eq [SFinite ν] {δ : Type*} {f : α → �
 /-- **A rectangle bound for an integral against a product of conditional laws.** If `f` is bounded
 by `b` on `s ×ˢ t`, then its lower Lebesgue integral against the product of the laws of `μ` and `ν`
 conditioned on `s` and on `t` is at most `b`: conditioning confines each coordinate to its own set
-almost surely, so the bound holds almost everywhere on the product. -/
-theorem lintegral_cond_prod_le {s : Set α} {t : Set β} (hs : MeasurableSet s)
-    (ht : MeasurableSet t) (hμ : μ s ≠ 0) (hμtop : μ s ≠ ∞) (hν : ν t ≠ 0) (hνtop : ν t ≠ ∞)
-    {f : α × β → ℝ≥0∞} {b : ℝ≥0∞} (hf : ∀ x ∈ s, ∀ y ∈ t, f (x, y) ≤ b) :
+almost surely, so the bound holds almost everywhere on the product. The sets need only be
+null-measurable, and their measures may be zero or infinite: either case makes the corresponding
+conditional measure zero. -/
+theorem lintegral_cond_prod_le {s : Set α} {t : Set β} (hs : NullMeasurableSet s μ)
+    (ht : NullMeasurableSet t ν) {f : α × β → ℝ≥0∞} {b : ℝ≥0∞}
+    (hf : ∀ x ∈ s, ∀ y ∈ t, f (x, y) ≤ b) :
     ∫⁻ z, f z ∂((μ[|s]).prod (ν[|t])) ≤ b := by
-  have := ProbabilityTheory.cond_isProbabilityMeasure_of_finite hμ hμtop
-  have := ProbabilityTheory.cond_isProbabilityMeasure_of_finite hν hνtop
+  rcases eq_zero_or_isProbabilityMeasure (μ := μ[|s]) with hμ | hμ
+  · simp [hμ]
+  rcases eq_zero_or_isProbabilityMeasure (μ := ν[|t]) with hν | hν
+  · simp [hν]
   refine lintegral_le_const ?_
-  filter_upwards [ae_of_ae_fst (ν := ν[|t]) (ProbabilityTheory.ae_cond_mem (μ := μ) hs),
-    ae_of_ae_snd (μ := μ[|s]) (ProbabilityTheory.ae_cond_mem (μ := ν) ht)] with ⟨x, y⟩ hx hy
+  filter_upwards [ae_of_ae_fst (ν := ν[|t]) (ProbabilityTheory.ae_cond_mem₀ hs),
+    ae_of_ae_snd (μ := μ[|s]) (ProbabilityTheory.ae_cond_mem₀ ht)] with ⟨x, y⟩ hx hy
   exact hf x hx y hy
 
 /-- **The Dynkin (π-λ) step for Bochner integrals on a product space.** A function whose integral

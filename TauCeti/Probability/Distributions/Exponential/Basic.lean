@@ -48,6 +48,7 @@ the `a = 1` cases of the Gamma results in `TauCeti.Probability.Distributions.Gam
   threshold `-1 < q` and formula `Gamma (1 + q) / r ^ q`, for `0 < r`;
 * `integral_id_expMeasure`, `integral_sq_expMeasure` — the mean and the second moment;
 * `variance_id_expMeasure` — the variance `(r ^ 2)⁻¹`;
+* `memLp_id_expMeasure` — the identity is square-integrable, for `0 < r`;
 * `memLp_log_expMeasure`, `integrable_log_expMeasure`, `integral_log_expMeasure` — finite moments,
   integrability, and the mean of the logarithm under a positive-rate exponential law;
 * `integrable_exp_mul_expMeasure_iff` — exact exponential integrability threshold `t < r`;
@@ -197,6 +198,11 @@ theorem integral_sq_expMeasure (hr : 0 < r) : ∫ x, x ^ 2 ∂(expMeasure r) = 2
 @[simp]
 theorem variance_id_expMeasure (hr : 0 < r) : Var[id; expMeasure r] = (r ^ 2)⁻¹ := by
   rw [expMeasure, variance_id_gammaMeasure one_pos hr, one_div]
+
+/-- The identity function belongs to `L²` of an exponential law with positive rate. -/
+theorem memLp_id_expMeasure (hr : 0 < r) : MemLp id 2 (expMeasure r) := by
+  rw [expMeasure]
+  exact memLp_id_gammaMeasure one_pos hr
 
 /-- The logarithm belongs to every finite `Lᵖ` space under a positive-rate exponential law. -/
 theorem memLp_log_expMeasure (hr : 0 < r) (p : ℝ≥0) : MemLp log p (expMeasure r) := by

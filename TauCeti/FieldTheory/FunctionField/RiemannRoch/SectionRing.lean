@@ -298,12 +298,12 @@ private theorem map_evalOne_sectionRingGrade (D : Divisor k F) (n : ℕ) :
       coeff_monomial_same]
 
 /-- **Sufficiently divisible section rings are generated in degree one.** If the section ring of
-`D` is finitely generated over `k`, then there is an `e > 0` such that for every positive multiple
+`D` is finitely generated over `k`, then there is an `e > 0` such that for every multiple
 `e'` of `e` and every `m > 0`, every section in `L(m e' D)` is a sum of products of `m` sections
 in `L(e' D)`. -/
 theorem exists_riemannRochSpace_mul_eq_pow (D : Divisor k F)
     [Algebra.FiniteType k (sectionRing D)] :
-    ∃ e, 0 < e ∧ ∀ ⦃e'⦄, e ∣ e' → 0 < e' → ∀ ⦃m⦄, m ≠ 0 →
+    ∃ e, 0 < e ∧ ∀ ⦃e'⦄, e ∣ e' → ∀ ⦃m⦄, m ≠ 0 →
       riemannRochSpace ((m * e') • D) = riemannRochSpace (e' • D) ^ m := by
   let _ : IsScalarTower k (sectionRingGrade D 0) (sectionRing D) :=
     ⟨fun r s a ↦ by
@@ -313,8 +313,8 @@ theorem exists_riemannRochSpace_mul_eq_pow (D : Divisor k F)
     Algebra.FiniteType.of_restrictScalars_finiteType k _ _
   obtain ⟨e, he, hgen⟩ :=
     TauCeti.GradedAlgebra.exists_grade_mul_eq_pow (sectionRingGrade D)
-  refine ⟨e, he, fun {e'} he' he'0 {m} hm ↦ ?_⟩
-  have hgrade := hgen (e' := e') he' he'0 (m := m) hm
+  refine ⟨e, he, fun {e'} he' {m} hm ↦ ?_⟩
+  have hgrade := hgen (e' := e') he' (m := m) hm
   have hmap := congrArg (Submodule.map (evalOne D).toLinearMap) hgrade
   rw [map_evalOne_sectionRingGrade, Submodule.map_pow, map_evalOne_sectionRingGrade] at hmap
   exact hmap

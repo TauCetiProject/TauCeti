@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Borel.Basic
-import Mathlib.RingTheory.Etale.Descent
 import TauCeti.Algebra.AlgebraicGroup.Connected.BaseChange
+import TauCeti.Algebra.AlgebraicGroup.Smooth.BaseChange
 import TauCeti.Algebra.AlgebraicGroup.Solvable.BaseChange
 
 /-!
@@ -20,8 +20,8 @@ algebraic closure is a maximal Borel candidate, is in particular a Borel candida
 field, and a Borel candidate over a field is one on every geometric fiber.
 
 Each of the three conditions descends by its own mechanism. Smoothness descends along the
-faithfully flat field extension `k → K`, using Mathlib's
-`Algebra.Smooth.of_smooth_tensorProduct_of_faithfullyFlat`. Geometric connectedness and geometric
+faithfully flat field extension `k → K`, by
+`TauCeti.smoothCommHopfAlgProperty_quotient_baseChange_iff`. Geometric connectedness and geometric
 solvability are stated in terms of geometric points, and are reflected by an arbitrary field
 extension. In all three cases the coordinate quotient of the base-changed ideal is identified with
 the base change of the coordinate quotient by `CommHopfAlgCat.quotientBaseChangeIso`.
@@ -65,10 +65,7 @@ theorem baseChange
       (CommHopfAlgCat.baseChangeHopfIdeal (K := K) I) := by
   let qIso := CommHopfAlgCat.quotientBaseChangeIso (K := K) I
   refine IsBorelCandidate.mk ?_ ?_ ?_
-  · apply (smoothCommHopfAlgProperty K).prop_of_iso qIso.symm
-    let _ : Algebra.Smooth k (CommHopfAlgCat.quotient H I) :=
-      (smoothCommHopfAlgProperty_iff _).mp hI.smooth
-    exact (smoothCommHopfAlgProperty_iff _).mpr inferInstance
+  · exact (smoothCommHopfAlgProperty_quotient_baseChange_iff I).mpr hI.smooth
   · apply (geometricallyConnectedCommHopfAlgProperty K).prop_of_iso qIso.symm
     exact geometricallyConnectedCommHopfAlgProperty.baseChange k K _ hI.geometricallyConnected
   · apply (geometricallySolvablePointsCommHopfAlgProperty K).prop_of_iso qIso.symm
@@ -86,14 +83,7 @@ theorem of_baseChange
     ⟨H, (finiteTypeCommHopfAlgProperty_iff H).2 inferInstance⟩
   let qIso := CommHopfAlgCat.quotientBaseChangeIso (K := K) I
   refine IsBorelCandidate.mk ?_ ?_ ?_
-  · rw [smoothCommHopfAlgProperty_iff]
-    -- Unwrap the finite-type quotient for Mathlib's faithfully-flat smoothness descent lemma.
-    change Algebra.Smooth k (CommHopfAlgCat.quotient H I)
-    have hsmooth := (smoothCommHopfAlgProperty K).prop_of_iso qIso hI.smooth
-    let _ : Algebra.Smooth K
-        (CommHopfAlgCat.baseChange (K := K) (CommHopfAlgCat.quotient H I)) :=
-      (smoothCommHopfAlgProperty_iff _).mp hsmooth
-    exact Algebra.Smooth.of_smooth_tensorProduct_of_faithfullyFlat K
+  · exact (smoothCommHopfAlgProperty_quotient_baseChange_iff I).mp hI.smooth
   · apply geometricallyConnectedCommHopfAlgProperty.of_baseChange k K
       (FiniteTypeCommHopfAlgCat.quotient H' I).obj
     exact (geometricallyConnectedCommHopfAlgProperty K).prop_of_iso

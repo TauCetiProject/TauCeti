@@ -100,7 +100,7 @@ private theorem hasWeakLineDerivOn_inner_gradient_sum_smul_basisFun
     simpa only [innerSL_apply_apply] using
       ((W1p.hasWeakFDerivOn U).hasWeakLineDerivOn z).locallyIntegrableOn_deriv
   have hfloc : LocallyIntegrableOn (f : EuclideanSpace ℝ ι → ℝ) Omega mu :=
-    locallyIntegrableOn_of_locallyIntegrable_restrict ((Lp.memLp f).locallyIntegrable (by norm_num))
+    Lp.locallyIntegrableOn f (by norm_num)
   refine hasWeakLineDerivOn_iff_testFunction.2 ⟨inferInstance, hloc _,
     locallyIntegrableOn_of_locallyIntegrable_restrict (((Lp.memLp f).add (memLp_finsetSum
       Finset.univ fun j _ => Lp.memLp (G j))).neg.locallyIntegrable (by norm_num)), fun φ => ?_⟩

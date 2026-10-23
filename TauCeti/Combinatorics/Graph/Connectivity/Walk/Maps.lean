@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Combinatorics.Graph.Subgraph
+public import Mathlib.Combinatorics.Graph.Delete
 public import TauCeti.Combinatorics.Graph.Connectivity.Walk.Basic
 
 /-!
@@ -14,10 +14,11 @@ public import TauCeti.Combinatorics.Graph.Connectivity.Walk.Basic
 This file transports an edge-labelled multigraph walk along a graph inclusion and restricts a
 walk to a subgraph containing all its traversed edges. Since the ambient vertex and edge types do
 not change, both operations preserve the support and edge list. In particular, they preserve
-paths, trails, cycles, and reachability.
+paths, trails, cycles, and reachability. In particular, reachability after deleting a set of edges
+is witnessed exactly by walks avoiding those edges.
 
-The interface follows Mathlib's `SimpleGraph.Walk.mapLe` and `SimpleGraph.Walk.transfer`, adapted
-to retain multigraph edge identities.
+The interface follows Mathlib's `SimpleGraph.Walk.mapLe`, `SimpleGraph.Walk.transfer`, and
+`SimpleGraph.reachable_deleteEdges_iff_exists_walk`, adapted to retain multigraph edge identities.
 -/
 
 public section
@@ -284,5 +285,23 @@ end Reachable
 theorem reachable_mono {α : Type u} {β : Type v} {G H : Graph α β} (hGH : G ≤ H) :
     G.Reachable ≤ H.Reachable :=
   fun _ _ ↦ Reachable.mono hGH
+
+/-- Two points are reachable after deleting a set of edges exactly when the first is an actual
+vertex and some walk between them traverses none of the deleted edges. -/
+theorem reachable_deleteEdges_iff_exists_walk {α : Type u} {β : Type v} {G : Graph α β}
+    {F : Set β} {x y : α} :
+    (G.deleteEdges F).Reachable x y ↔ x ∈ V(G) ∧ ∃ p : G.Walk x y, ∀ e ∈ p.edges, e ∉ F := by
+  constructor
+  · rintro h
+    obtain ⟨hx, ⟨p⟩⟩ := reachable_def.mp h
+    refine ⟨by simpa using hx, p.mapLe deleteEdges_le, fun e he ↦ ?_⟩
+    rw [Walk.edges_mapLe_eq_edges] at he
+    have he' := p.edges_subset_edgeSet he
+    rw [edgeSet_deleteEdges] at he'
+    exact he'.2
+  · rintro ⟨hx, p, hp⟩
+    refine (p.transfer deleteEdges_le fun e he ↦ ?_).reachable (by simpa using hx)
+    rw [edgeSet_deleteEdges]
+    exact ⟨p.edges_subset_edgeSet he, hp e he⟩
 
 end Graph

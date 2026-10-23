@@ -11,12 +11,16 @@ public import TauCeti.Algebra.HopfAlgebra.SymmetricAlgebra.Basic
 /-!
 # The additive group
 
-The affine scheme `Spec (SymmetricAlgebra R M)` is the **additive (vector) group** on `M`.
-Its functor of points is computed here: for a commutative `R`-algebra `A`, the
-convolution monoid of `R`-algebra maps `SymmetricAlgebra R M →ₐ[R] A` is the additive monoid
-of `R`-linear maps `M →ₗ[R] A`, with convolution corresponding to addition. Taking `M = R`
-recovers the one-dimensional additive group `𝔾ₐ = Spec R[X]`, whose `A`-valued points are
-`(A, +)`; the `R`-points are this construction specialized to `A = R`.
+The affine scheme `Spec (SymmetricAlgebra R M)` is the **additive (vector) group** on `M`, in
+the convention `V(M) = Spec (Sym M)` of EGA II, (1.7.8); in general it does not represent
+`A ↦ M ⊗[R] A`. Its functor of points is computed here: for a commutative `R`-algebra `A`, the
+convolution monoid of `R`-algebra maps `SymmetricAlgebra R M →ₐ[R] A` is the additive monoid of
+`R`-linear maps `M →ₗ[R] A`, with convolution corresponding to addition. Over a commutative
+semiring these points form only a monoid; over a commutative ring they form a group, in which
+the inverse of a point corresponds to the negative of its linear map. Taking `M = R` recovers the
+one-dimensional additive group `𝔾ₐ = Spec R[X]`, whose `A`-valued points are `(A, +)`; the
+`R`-points are this construction specialized to `A = R`.
+
 ## Main declarations
 
 * `TauCeti.AdditiveGroup.pointsMulEquiv`: the convolution monoid of points
@@ -32,6 +36,11 @@ recovers the one-dimensional additive group `𝔾ₐ = Spec R[X]`, whose `A`-val
 The symmetric-algebra Hopf structure is supplied by
 `TauCeti.Algebra.HopfAlgebra.SymmetricAlgebra.Basic`, on top of Mathlib's symmetric-algebra
 bialgebra and convolution monoid APIs.
+
+## References
+
+* A. Grothendieck, *Éléments de géométrie algébrique II*, Publ. Math. IHÉS 8 (1961), (1.7.8)
+  (the vector bundle `V(E)` defined by a quasi-coherent module `E`).
 -/
 
 public section
@@ -149,8 +158,8 @@ noncomputable def gaPointsMulEquiv :
   pointsMulEquiv.trans
     (AddEquiv.toMultiplicative (LinearMap.ringLmapEquivSelf R R A).toAddEquiv)
 
-/-- A point of `𝔾ₐ` is the additive group element obtained by evaluating it at the generator
-`ι 1`. -/
+/-- A point of `𝔾ₐ` corresponds to the element of the value algebra obtained by evaluating it at
+the generator `ι 1`. -/
 @[simp]
 theorem toAdd_gaPointsMulEquiv (F : WithConv (SymmetricAlgebra R R →ₐ[R] A)) :
     Multiplicative.toAdd (gaPointsMulEquiv F) = F.ofConv (ι R R 1) := by

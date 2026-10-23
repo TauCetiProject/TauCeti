@@ -12,10 +12,10 @@ import TauCeti.Algebra.AlgebraicGroup.MultiplicativeType.Normal
 import TauCeti.RingTheory.Smooth.GeometricallyReduced
 
 /-!
-# The radical of a reductive group in characteristic zero
+# The radical of a reductive group
 
-The solvable radical of a reductive affine group over a characteristic-zero field is a
-central torus. The torus need not split over the ground field, and centrality is
+The solvable radical of a reductive affine group over any field is a central torus, in every
+characteristic. The torus need not split over the ground field, and centrality is
 scheme-theoretic: it controls points over arbitrary commutative value algebras.
 
 The radical is a smooth geometrically connected normal subgroup, so
@@ -25,8 +25,8 @@ The classification of solvable reductive groups in
 Centrality then follows from
 `TauCeti.HopfIdeal.IsNormal.isCentral_of_multiplicativeType`.
 
-These results supply the central torus in the reduction of a characteristic-zero reductive
-group to its semisimple quotient.
+These results supply the central torus in the reduction of a reductive group to its semisimple
+quotient.
 
 ## References
 
@@ -40,10 +40,10 @@ namespace TauCeti.reductiveCommHopfAlgProperty
 
 universe u
 
-variable {k : Type u} [Field k] [CharZero k]
+variable {k : Type u} [Field k]
 variable {H : FiniteTypeCommHopfAlgCat.{u, u} k}
 
-/-- The solvable radical of a reductive affine group in characteristic zero is a torus,
+/-- The solvable radical of a reductive affine group is a torus, in every characteristic and
 including over fields over which the group does not split. -/
 theorem torus_solvableRadical (hH : reductiveCommHopfAlgProperty k H) :
     torusCommHopfAlgProperty k (FiniteTypeCommHopfAlgCat.solvableRadical H) := by
@@ -53,9 +53,8 @@ theorem torus_solvableRadical (hH : reductiveCommHopfAlgProperty k H) :
     hR.isNormal hR.smooth hR.geometricallyConnected
   exact hred.torus_of_geometricallySolvable hR.geometricallySolvable
 
-/-- The solvable radical of a reductive affine group in characteristic zero is contained in
-the scheme-theoretic center. The defining Hopf ideal represents the radical as a closed subgroup.
--/
+/-- The solvable radical of a reductive affine group is contained in the scheme-theoretic center,
+in every characteristic. The defining Hopf ideal represents the radical as a closed subgroup. -/
 theorem isCentral_solvableRadicalDefiningIdeal (hH : reductiveCommHopfAlgProperty k H) :
     (FiniteTypeCommHopfAlgCat.solvableRadicalDefiningIdeal H).IsCentral := by
   let _ : Algebra.Smooth k H := hH.smooth

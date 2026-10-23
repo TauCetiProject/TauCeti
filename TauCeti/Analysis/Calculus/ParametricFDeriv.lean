@@ -37,6 +37,8 @@ This supplies a prerequisite for Deliverable A, Layer 1 of
 * `TauCeti.hasDerivAt_comp_prodMk`: the chain rule along a curve `s ↦ F (s, γ s)`.
 * `ContDiffAt.deriv_parameterCurve_eventuallyEq_timeFDeriv`: near a point, the derivatives of the
   parameter curves are the parameter-velocity field.
+* `ContDiffAt.differentiableAt_timeFDeriv`: the parameter-velocity field of a jointly `C²` map is
+  differentiable.
 * `TauCeti.hasFDerivAt_spatialFDeriv`: mixed derivatives for a normed parameter space.
 * `hasDerivAt_spatialFDeriv`: the spatial Jacobian differentiates to the spatial derivative of the
   parameter velocity.
@@ -138,7 +140,7 @@ theorem hasFDerivAt_timeSlice {F : 𝕜 × E → F'} {t : 𝕜} {x : E}
 theorem fderiv_timeSlice {F : 𝕜 × E → F'} {t : 𝕜} {x : E}
     (hF : DifferentiableAt 𝕜 F (t, x)) :
     fderiv 𝕜 (fun y => F (t, y)) x = spatialFDeriv F x t :=
-  (hasFDerivAt_timeSlice hF).fderiv
+  TauCeti.fderiv_slice_right hF
 
 namespace TauCeti
 
@@ -198,6 +200,15 @@ theorem deriv_parameterCurve_eventuallyEq_timeFDeriv {F : 𝕜 × E → F'} {t :
     (continuous_const.prodMk continuous_id).continuousAt.eventually hdiff
   filter_upwards [hsnd] with y hy
   exact (hasDerivAt_parameterCurve hy).deriv
+
+/-- For a jointly `C²` parametric map, the parameter-velocity field is differentiable in the
+spatial variable. -/
+theorem differentiableAt_timeFDeriv {F : 𝕜 × E → F'} {t : 𝕜} {x : E}
+    (hF : ContDiffAt 𝕜 2 F (t, x)) : DifferentiableAt 𝕜 (timeFDeriv F t) x := by
+  rw [timeFDeriv_eq]
+  exact ((hF.fderiv_right (m := 1) (by norm_num)).differentiableAt one_ne_zero).comp x
+    (differentiableAt_const t |>.prodMk differentiableAt_id) |>.clm_apply
+      (differentiableAt_const (1, 0))
 
 end ContDiffAt
 

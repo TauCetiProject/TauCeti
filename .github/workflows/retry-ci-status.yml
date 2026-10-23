@@ -1,0 +1,130 @@
+name: Retry CI status publication
+
+# Recover only retained terminal reporting. This job never checks out a PR,
+# rebuilds, or runs a workflow/script from the original run's candidate revision.
+on:
+  workflow_run:
+    workflows: [pr-build]
+    types: [completed]
+
+permissions:
+  contents: read
+  actions: read
+  pull-requests: read
+  statuses: write
+
+jobs:
+  publish:
+    if: >-
+      github.event.workflow_run.conclusion == 'failure' &&
+      contains(fromJSON('["pull_request_target","repository_dispatch","merge_group","workflow_dispatch"]'), github.event.workflow_run.event) &&
+      (github.event.workflow_run.event != 'workflow_dispatch' || github.event.workflow_run.head_branch == github.event.repository.default_branch)
+    concurrency:
+      group: ci-status-retry-${{ github.event.workflow_run.id }}-${{ github.event.workflow_run.run_attempt }}
+      cancel-in-progress: false
+    runs-on:
+      - nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0
+      - namespace-features:github.run-id=${{ github.run_id }}
+    timeout-minutes: 75
+    env:
+      CI_STATUS_SOURCE_RUN_ID: ${{ github.event.workflow_run.id }}
+      CI_STATUS_SOURCE_ATTEMPT: ${{ github.event.workflow_run.run_attempt }}
+      CI_STATUS_MAX_WAIT: '3700'
+      TAUCETI_GITHUB_MAX_WAIT: '3700'
+    steps:
+      - name: Check out trusted default-branch reporting configuration
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.workflow_sha }}
+          sparse-checkout: tauceti.toml
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+
+      - name: Prepare pinned shared reporting tools
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@0f4096297f058bff8ccd873067aab7120202aecf
+        with:
+          tools-repository: TauCetiProject/TauCetiTools
+          tools-ref: 0f4096297f058bff8ccd873067aab7120202aecf
+          project-directory: .
+
+      - name: Discover retained intents from this exact original run
+        id: intents
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_READ_TOKEN: ${{ github.token }}
+          TAUCETI_GITHUB_READ_ROLE: workflow-read
+        run: |
+          set -euo pipefail
+          [[ "$CI_STATUS_SOURCE_RUN_ID" =~ ^[1-9][0-9]*$ ]]
+          [[ "$CI_STATUS_SOURCE_ATTEMPT" =~ ^[1-9][0-9]*$ ]]
+          python3 scripts/github_api.py "repos/$GITHUB_REPOSITORY/actions/runs/$CI_STATUS_SOURCE_RUN_ID/artifacts?per_page=100" > "$RUNNER_TEMP/source-status-artifacts.json"
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          data = json.loads((Path(os.environ['RUNNER_TEMP']) / 'source-status-artifacts.json').read_text())
+          if not isinstance(data, dict) or not isinstance(data.get('artifacts'), list) or data.get('total_count', 101) > 100:
+              raise SystemExit('Cannot safely identify the original run status artifacts')
+          attempt = os.environ['CI_STATUS_SOURCE_ATTEMPT']
+          names = {f'ci-status-intents-sandbox-{attempt}', f'ci-status-intents-finalizer-{attempt}'}
+          selected, seen = [], set()
+          for row in data['artifacts']:
+              if row.get('name') not in names:
+                  continue
+              if row['name'] in seen or row.get('expired') or not isinstance(row.get('id'), int) or row.get('size_in_bytes', 2**20 + 1) > 2**20:
+                  raise SystemExit('Original run has ambiguous, expired, or oversized status artifacts')
+              seen.add(row['name'])
+              selected.append(str(row['id']))
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+              output.write('present=' + ('true' if selected else 'false') + '\n')
+              output.write('ids=' + ','.join(selected) + '\n')
+          if not selected:
+              print('No retained publication intents; no credentials minted or statuses posted.')
+          PY
+
+      - name: Download only the selected original-run status artifacts
+        if: steps.intents.outputs.present == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          artifact-ids: ${{ steps.intents.outputs.ids }}
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ github.event.workflow_run.id }}
+          path: ${{ runner.temp }}/ci-status-retry
+          merge-multiple: false
+
+      # Mint only after an intent exists. A distinct CI status App protects the
+      # essential write pool; the review App intentionally has no statuses grant.
+      - name: Prepare scoped CI reporting credentials
+        if: steps.intents.outputs.present == 'true'
+        id: credentials
+        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@0f4096297f058bff8ccd873067aab7120202aecf
+        with:
+          workflow-token: ${{ github.token }}
+          owner: ${{ github.repository_owner }}
+          repository: ${{ github.event.repository.name }}
+          read-app-id: ${{ secrets.CI_READ_APP_ID }}
+          read-app-private-key: ${{ secrets.CI_READ_APP_PRIVATE_KEY }}
+          status-app-id: ${{ secrets.CI_STATUS_APP_ID }}
+          status-app-private-key: ${{ secrets.CI_STATUS_APP_PRIVATE_KEY }}
+
+      - name: Resume status publication without rebuilding
+        if: steps.intents.outputs.present == 'true'
+        env:
+          CI_STATUS_APP_ID: ${{ secrets.CI_STATUS_APP_ID }}
+          CI_STATUS_APP_PRIVATE_KEY: ${{ secrets.CI_STATUS_APP_PRIVATE_KEY }}
+          GH_READ_TOKEN: ${{ steps.credentials.outputs.read-token }}
+          GH_TOKEN: ${{ steps.credentials.outputs.status-token }}
+          TAUCETI_GITHUB_READ_ROLE: ${{ steps.credentials.outputs.read-role }}
+          TAUCETI_GITHUB_WRITE_ROLE: ${{ steps.credentials.outputs.status-role }}
+        run: |
+          set -uo pipefail
+          failed=0
+          directory="$RUNNER_TEMP/ci-status-retry/ci-status-intents-sandbox-$CI_STATUS_SOURCE_ATTEMPT"
+          if [ -d "$directory" ]; then
+            python3 scripts/ci_status.py resume "$directory" || failed=1
+          fi
+          intent="$RUNNER_TEMP/ci-status-retry/ci-status-intents-finalizer-$CI_STATUS_SOURCE_ATTEMPT/tauceti-status-intent.json"
+          if [ -f "$intent" ]; then
+            python3 scripts/finalize_batch.py --resume "$intent" || failed=1
+          fi
+          exit "$failed"

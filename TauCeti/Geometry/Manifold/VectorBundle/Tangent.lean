@@ -28,9 +28,10 @@ It then identifies the tangent spaces of an open submanifold with those of its a
 and shows that, near each point, the inverse tangent-bundle trivializations agree under that
 identification.
 
-Finally it identifies the tangent space of a product manifold with the product of the tangent
+It then identifies the tangent space of a product manifold with the product of the tangent
 spaces of the factors, and shows that under this identification tangent coordinate changes and
-inverse tangent-bundle trivializations act componentwise.
+inverse tangent-bundle trivializations act componentwise. Finally, the charts of a disjoint union
+are those of its summands, so its tangent coordinate changes are those of the summands.
 
 ## Main results
 
@@ -80,6 +81,12 @@ inverse tangent-bundle trivializations act componentwise.
   product of the tangent coordinate changes of the factors.
 * `TauCeti.Manifold.tangentSpaceProdEquiv_symmL_trivializationAt`: the inverse tangent-bundle
   trivialization of a product is the product of those of the factors.
+* `TauCeti.Manifold.tangentCoordChange_sumInl` and `TauCeti.Manifold.tangentCoordChange_sumInr`:
+  the tangent coordinate changes of a disjoint union between charts at points of one summand are
+  those of that summand.
+* `TauCeti.Manifold.symmL_trivializationAt_sumInl` and
+  `TauCeti.Manifold.symmL_trivializationAt_sumInr`: so are its inverse tangent-bundle
+  trivializations.
 -/
 
 public section
@@ -813,5 +820,56 @@ theorem tangentSpaceProdEquiv_symmL_trivializationAt [IsManifold I 1 M] [IsManif
   exact congrArg (fun L : E × F →L[𝕜] E × F ↦ L v) h
 
 end Prod
+
+section Sum
+
+variable {M' : Type*} [TopologicalSpace M'] [ChartedSpace H M'] [IsManifold I 1 M]
+  [IsManifold I 1 M']
+
+/-- The tangent coordinate changes of a disjoint union `M ⊕ M'` between charts at points of `M`
+are those of `M`. -/
+theorem tangentCoordChange_sumInl (x y z : M) :
+    tangentCoordChange I (Sum.inl x : M ⊕ M') (Sum.inl y) (Sum.inl z) =
+      tangentCoordChange I x y z := by
+  simp only [tangentCoordChange_def, extChartAt_inl_apply]
+  congr 1
+  have : Nonempty H := nonempty_of_chartedSpace x
+  ext w
+  simp [ChartedSpace.sum_chartAt_inl, Sum.inl_injective.extend_apply]
+
+/-- The tangent coordinate changes of a disjoint union `M ⊕ M'` between charts at points of `M'`
+are those of `M'`. -/
+theorem tangentCoordChange_sumInr (x y z : M') :
+    tangentCoordChange I (Sum.inr x : M ⊕ M') (Sum.inr y) (Sum.inr z) =
+      tangentCoordChange I x y z := by
+  simp only [tangentCoordChange_def, extChartAt_inr_apply]
+  congr 1
+  have : Nonempty H := nonempty_of_chartedSpace x
+  ext w
+  simp [ChartedSpace.sum_chartAt_inr, Sum.inr_injective.extend_apply]
+
+/-- Over the domain of the chart at `x`, the inverse of the canonical tangent-bundle trivialization
+of `M ⊕ M'` at a point `x` of `M` is the inverse trivialization of `M` at `x`. -/
+theorem symmL_trivializationAt_sumInl {x z : M} (hz : z ∈ (chartAt H x).source) :
+    (trivializationAt E (TangentSpace I : M ⊕ M' → Type _) (Sum.inl x)).symmL 𝕜 (Sum.inl z) =
+      (trivializationAt E (TangentSpace I : M → Type _) x).symmL 𝕜 z := by
+  have : Nonempty H := nonempty_of_chartedSpace x
+  rw [TangentBundle.symmL_trivializationAt_eq_core
+      (by simpa [ChartedSpace.sum_chartAt_inl] using hz),
+    TangentBundle.symmL_trivializationAt_eq_core hz]
+  exact tangentCoordChange_sumInl x z z
+
+/-- Over the domain of the chart at `y`, the inverse of the canonical tangent-bundle trivialization
+of `M ⊕ M'` at a point `y` of `M'` is the inverse trivialization of `M'` at `y`. -/
+theorem symmL_trivializationAt_sumInr {y z : M'} (hz : z ∈ (chartAt H y).source) :
+    (trivializationAt E (TangentSpace I : M ⊕ M' → Type _) (Sum.inr y)).symmL 𝕜 (Sum.inr z) =
+      (trivializationAt E (TangentSpace I : M' → Type _) y).symmL 𝕜 z := by
+  have : Nonempty H := nonempty_of_chartedSpace y
+  rw [TangentBundle.symmL_trivializationAt_eq_core
+      (by simpa [ChartedSpace.sum_chartAt_inr] using hz),
+    TangentBundle.symmL_trivializationAt_eq_core hz]
+  exact tangentCoordChange_sumInr y z z
+
+end Sum
 
 end TauCeti.Manifold
