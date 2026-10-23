@@ -85,7 +85,7 @@ theorem map_logPullback_genericMatrix :
   have hU := isUpperUnitriangular_genericMatrix R m
   simpa only [← AlgHom.mapMatrix_apply, map_sub, map_one, logPullback] using
     map_aeval_genericMatrix_sub_one R m (IsNilpotent.log (genericMatrix R m))
-      hU.isUpperTriangular_log hU.log_apply_diag
+      hU.isUpperTriangular.isUpperTriangular_log hU.log_apply_diag
 
 section Evaluation
 
@@ -130,7 +130,7 @@ end Evaluation
 theorem logPullback_comp_expPullback :
     (logPullback R m).comp (expPullback R m) = AlgHom.id R (CoordinateRing R m) := by
   rw [logPullback, aeval_comp_expPullback R m _
-      (isUpperUnitriangular_genericMatrix R m).isUpperTriangular_log
+      (isUpperUnitriangular_genericMatrix R m).isUpperTriangular.isUpperTriangular_log
       (isUpperUnitriangular_genericMatrix R m).log_apply_diag,
     IsNilpotent.exp_log (isUpperUnitriangular_genericMatrix R m).isNilpotent_sub_one]
   apply MvPolynomial.algHom_ext

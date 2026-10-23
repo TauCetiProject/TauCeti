@@ -50,15 +50,15 @@ theorem IsUpperUnitriangular.isUpperUnitriangular_exp_sub_one {M : Matrix m m R}
     (hM : M.IsUpperUnitriangular) : (IsNilpotent.exp (M - 1)).IsUpperUnitriangular :=
   hM.isUpperTriangular_sub_one.isUpperUnitriangular_exp hM.sub_one_apply_diag
 
-/-- The finite logarithm of an upper-unitriangular matrix is upper triangular. -/
-theorem IsUpperUnitriangular.isUpperTriangular_log {M : Matrix m m R}
-    (hM : M.IsUpperUnitriangular) : (IsNilpotent.log M).IsUpperTriangular := by
+/-- The finite logarithm of an upper-triangular matrix is upper triangular. -/
+theorem IsUpperTriangular.isUpperTriangular_log {M : Matrix m m R}
+    (hM : M.IsUpperTriangular) : (IsNilpotent.log M).IsUpperTriangular := by
   classical
   rw [IsNilpotent.log_def]
   intro i j hji
   simp only [sum_apply, smul_apply]
   exact sum_eq_zero fun k _ ↦ by
-    rw [(hM.isUpperTriangular_sub_one.pow k) hji, smul_zero]
+    rw [((hM.sub blockTriangular_one).pow k) hji, smul_zero]
 
 /-- The diagonal of the finite logarithm of an upper-unitriangular matrix vanishes. -/
 @[simp]
