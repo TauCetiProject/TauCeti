@@ -7,8 +7,11 @@ module
 
 public import Mathlib.RingTheory.FormalGroup.Basic
 public import TauCeti.RingTheory.FormalGroup.SymmetricCocycle.Classification
--- Proof-only: coefficients of substitutions into two-variable series, and substitution modulo
+-- Proof-only: symmetry of the coefficients of commutative formal group laws and of symmetric
+-- polynomials, coefficients of substitutions into two-variable series, and substitution modulo
 -- an ideal annihilated by the coefficients.
+import TauCeti.RingTheory.FormalGroup.Basic
+import TauCeti.RingTheory.MvPolynomial.Symmetric.Defs
 import TauCeti.RingTheory.MvPowerSeries.Substitution
 
 /-!
@@ -39,7 +42,6 @@ applies to them.
 
 ## Main results
 
-* `FormalGroup.coeff_comm`: the coefficients of a commutative formal group law are symmetric.
 * `FormalGroup.subst_add_subst_eq`: if the coefficients of `G = F - X - Y` pairwise multiply to
   zero, then `G` satisfies the additive 2-cocycle identity.
 * `FormalGroup.choose_mul_coeff_eq`: the cocycle identity at the coefficient of `XⁱYʲZᵏ` with
@@ -123,14 +125,6 @@ private theorem subst_subst_right {G : MvPowerSeries (Fin 2) A}
 end TauCeti
 
 namespace FormalGroup
-
-/-- The coefficients of a commutative formal group law are symmetric: the coefficient of `XⁱYʲ`
-equals that of `XʲYⁱ`. -/
-theorem coeff_comm (F : FormalGroup A) [F.IsComm] (i j : ℕ) :
-    coeff (single 0 i + single 1 j) F.toPowerSeries =
-      coeff (single 0 j + single 1 i) F.toPowerSeries := by
-  conv_lhs => rw [IsComm.comm (F := F)]
-  simp [coeff_subst_X_one_X_zero]
 
 /-- **The nonlinear part of a formal group law with square-zero coefficients is an additive
 2-cocycle.** If the coefficients of `G = F(X, Y) - X - Y` pairwise multiply to zero, then
