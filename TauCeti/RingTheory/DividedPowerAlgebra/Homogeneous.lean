@@ -90,6 +90,19 @@ theorem homogeneousSubmodule_induction {d : ℕ}
   | add x y _ _ hx hy => exact add x y _ _ hx hy
   | smul r x _ hx => exact smul r x _ hx
 
+/-- Linear maps from a homogeneous piece agree if they agree on every product of
+divided-power generators of the prescribed total degree. -/
+theorem homogeneousSubmodule_ext {d : ℕ}
+    {f g : homogeneousSubmodule (R := R) (M := M) d →ₗ[R] N}
+    (h : ∀ (l : List (ℕ × M)) (hl : (l.map Prod.fst).sum = d),
+      f ⟨(l.map fun nm ↦ dp R nm.1 nm.2).prod, hl ▸ prod_dp_mem_homogeneousSubmodule l⟩ =
+        g ⟨(l.map fun nm ↦ dp R nm.1 nm.2).prod, hl ▸ prod_dp_mem_homogeneousSubmodule l⟩) :
+    f = g := by
+  apply (Submodule.linearMap_eq_iff_of_eq_span f g
+    (S := homogeneousGenerators (R := R) (M := M) d) rfl).2
+  rintro ⟨_, l, hl, rfl⟩
+  exact h l hl
+
 /-- The generator `dp R d m` is homogeneous of degree `d`. -/
 theorem dp_mem_homogeneousSubmodule (d : ℕ) (m : M) :
     dp R d m ∈ homogeneousSubmodule (R := R) (M := M) d := by
