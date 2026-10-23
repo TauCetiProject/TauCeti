@@ -383,15 +383,6 @@ theorem coe_algebraMap_nonnegSubring (s : S) :
       algebraMap S (NovikovSeries R H N) s :=
   (rfl)
 
-instance : ContinuousConstSMul S (nonnegSubring R N) where
-  continuous_const_smul s := continuous_induced_rng.2 <| by
-    simpa [Function.comp_def] using (continuous_const_smul s).comp continuous_subtype_val
-
-/-- For discrete scalars, scalar multiplication on the nonnegative subring is jointly
-continuous. -/
-instance [TopologicalSpace S] [DiscreteTopology S] : ContinuousSMul S (nonnegSubring R N) :=
-  ⟨continuous_prod_of_discrete_left.2 fun s => continuous_const_smul s⟩
-
 end Algebra
 
 variable (R N) in

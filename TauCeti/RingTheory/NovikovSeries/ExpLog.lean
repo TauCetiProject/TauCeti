@@ -14,8 +14,6 @@ public import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 public import TauCeti.Topology.Algebra.IsUniformGroup.Subring
 public import TauCeti.Topology.Algebra.Nonarchimedean.Basic
 
-import Mathlib.Data.Nat.Choose.Cast
-
 /-!
 # Exponential and logarithm of Novikov series
 
@@ -41,7 +39,8 @@ subring is a complete, linearly topologized `K`-algebra, so Mathlib's continuous
 `PowerSeries.aeval` applies, and it is compatible with substitution
 (`MvPowerSeries.eval₂_subst`). The coefficients in `K` carry the discrete topology for this
 evaluation. The functional equation `exp (a + b) = exp a * exp b` is the Cauchy product of the
-exponential series in the complete nonarchimedean ring; its proof follows that of Mathlib's
+exponential series in the complete nonarchimedean ring, matched coefficientwise with Mathlib's
+`PowerSeries.exp_mul_exp_eq_exp_add`; its proof follows that of Mathlib's
 `NormedSpace.exp_add_of_commute_of_mem_ball`.
 
 ## Main definitions
@@ -73,6 +72,8 @@ namespace TauCeti
 namespace NovikovSeries
 
 variable {H K : Type*} [AddCommMonoid H] {N : H →+ ℝ} [CommRing K]
+
+attribute [local instance] DiscreteTopology.instContinuousSMul
 
 section Evaluation
 
@@ -211,12 +212,12 @@ theorem exp_add (ha : a ∈ posIdeal K N) (hb : b ∈ posIdeal K N) :
   rw [← (hasSum_exp ha).tsum_eq, ← (hasSum_exp hb).tsum_eq, ← (hasSum_exp (add_mem ha hb)).tsum_eq,
     cauchy _ _ (hasSum_exp ha).summable (hasSum_exp hb).summable]
   refine tsum_congr fun n => ?_
-  rw [(Commute.all a b).add_pow', Finset.smul_sum]
-  refine Finset.sum_congr rfl fun ⟨k, l⟩ hkl => ?_
-  obtain rfl : k + l = n := Finset.mem_antidiagonal.1 hkl
-  rw [← Nat.cast_smul_eq_nsmul ℚ, smul_smul, smul_mul_smul_comm, Nat.cast_add_choose]
-  congr 1
-  field_simp
+  -- Coefficientwise, this is the formal identity `e^{aX} * e^{bX} = e^{(a + b)X}`.
+  have h := congrArg (PowerSeries.coeff n) (PowerSeries.exp_mul_exp_eq_exp_add a b)
+  simp only [PowerSeries.coeff_mul, PowerSeries.coeff_rescale, PowerSeries.coeff_exp,
+    one_div] at h
+  simpa only [Algebra.smul_def, map_inv₀, map_natCast, mul_mul_mul_comm, mul_comm, eq_comm]
+    using h
 
 /-- The logarithm turns products into sums: `log (u * v) = log u + log v` when `u - 1` and
 `v - 1` lie in the positive ideal. -/
