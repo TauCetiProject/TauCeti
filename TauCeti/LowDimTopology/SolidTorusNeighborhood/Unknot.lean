@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Circle
+public import TauCeti.Analysis.Complex.EuclideanFour
 public import TauCeti.Analysis.Normed.Lp.ProdLp.Sphere
 public import TauCeti.Geometry.Sphere.LinearIsometry
 public import TauCeti.KnotTheory.SmoothCircle
@@ -26,9 +27,10 @@ On the common boundary torus this homeomorphism exchanges the two circle factors
 (`TauCeti.unknotExteriorHomeomorph_symm_boundaryInclusion`): the point `(a, b)` of the boundary
 torus of the exterior is the point `(b, a)` of the boundary torus of the neighbourhood. So the
 meridian `a ↦ (a, 1)` of the exterior solid torus is the longitude `a ↦ (1, a)` of the unknot,
-and the longitude of the exterior solid torus is the meridian of the unknot. In particular the
-longitude of `TauCeti.unknotSolidTorus` bounds a meridian disc of the exterior, which is the
-defining property of the preferred (`0`-) framing of a knot.
+and the longitude of the exterior solid torus is the meridian of the unknot. The preferred
+(`0`-) framing of a knot is the one whose longitude is null-homologous in the knot exterior. For
+the unknot more is true: the longitude of `TauCeti.unknotSolidTorus` bounds a meridian disc of
+the exterior, so in particular it is null-homologous there and is the preferred longitude.
 
 This is the geometric input to the surgery descriptions of the unknot: Dehn filling the exterior
 of the unknot along a slope glues a second solid torus to this one along their boundary tori,
@@ -37,8 +39,6 @@ slopes.
 
 ## Main definitions
 
-* `TauCeti.complexProdToEuclideanFour`: the linear isometry `ℂ² ≃ ℝ⁴`, extending
-  `TauCeti.complexToEuclideanFour` on the first factor.
 * `TauCeti.unknotSolidTorus`: the standard solid torus neighbourhood of the unknot.
 * `TauCeti.unknotExteriorHomeomorph`: the exterior of the unknot is a solid torus.
 
@@ -66,48 +66,7 @@ open Metric Set Topology
 
 namespace TauCeti
 
-/-! ### The real coordinates of `ℂ²` -/
-
-/-- The real-linear equivalence `ℂ² ≃ ℝ⁴`, `(z, w) ↦ (Re z, Im z, Re w, Im w)`, underlying
-`TauCeti.complexProdToEuclideanFour`. -/
-private def complexProdToEuclideanFourₗ : WithLp 2 (ℂ × ℂ) ≃ₗ[ℝ] EuclideanSpace ℝ (Fin 4) where
-  toFun x := WithLp.toLp 2 ![x.fst.re, x.fst.im, x.snd.re, x.snd.im]
-  invFun y := WithLp.toLp 2 (⟨y 0, y 1⟩, ⟨y 2, y 3⟩)
-  map_add' x y := by
-    ext i
-    fin_cases i <;> simp
-  map_smul' c x := by
-    ext i
-    fin_cases i <;> simp
-  left_inv x := (rfl)
-  right_inv y := by
-    ext i
-    fin_cases i <;> simp
-
-private theorem complexProdToEuclideanFourₗ_apply (x : WithLp 2 (ℂ × ℂ)) :
-    complexProdToEuclideanFourₗ x = WithLp.toLp 2 ![x.fst.re, x.fst.im, x.snd.re, x.snd.im] :=
-  (rfl)
-
-/-- The linear isometry `ℂ² ≃ ℝ⁴`, `(z, w) ↦ (Re z, Im z, Re w, Im w)`, from the `L²` product
-`WithLp 2 (ℂ × ℂ)` to Euclidean four-space. On the first factor it is
-`TauCeti.complexToEuclideanFour` (`TauCeti.complexProdToEuclideanFour_toLp_zero`). -/
-def complexProdToEuclideanFour : WithLp 2 (ℂ × ℂ) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin 4) :=
-  ⟨complexProdToEuclideanFourₗ, fun x ↦ by
-    rw [← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _), WithLp.prod_norm_sq_eq_of_L2,
-      EuclideanSpace.norm_sq_eq, Fin.sum_univ_four, complexProdToEuclideanFourₗ_apply,
-      Complex.sq_norm, Complex.sq_norm, Complex.normSq_apply, Complex.normSq_apply]
-    simp only [Matrix.cons_val, Real.norm_eq_abs, sq_abs]
-    ring⟩
-
-@[simp]
-theorem complexProdToEuclideanFour_apply (x : WithLp 2 (ℂ × ℂ)) :
-    complexProdToEuclideanFour x = WithLp.toLp 2 ![x.fst.re, x.fst.im, x.snd.re, x.snd.im] :=
-  (rfl)
-
-@[simp]
-theorem complexProdToEuclideanFour_symm_apply (y : EuclideanSpace ℝ (Fin 4)) :
-    complexProdToEuclideanFour.symm y = WithLp.toLp 2 (⟨y 0, y 1⟩, ⟨y 2, y 3⟩) :=
-  (rfl)
+/-! ### The unknot in the coordinates of `ℂ²` -/
 
 /-- On the first factor of `ℂ²`, `TauCeti.complexProdToEuclideanFour` is the inclusion
 `TauCeti.complexToEuclideanFour` of the first coordinate plane. -/
