@@ -30,8 +30,8 @@ through Mathlib's `MvPolynomial.zeroLocus` and `MvPolynomial.vanishingIdeal`.
 
 ## Main results
 
-* `Matrix.aeval_det_submatrix_pow_mvPolynomialX`: the minors of `Z ^ j` are polynomials in the
-  entries of `Z`.
+* `Matrix.aeval_det_submatrix_mvPolynomialX` and `Matrix.aeval_det_submatrix_pow_mvPolynomialX`:
+  the minors of a matrix `Z`, and of `Z ^ j`, are polynomials in the entries of `Z`.
 * `Matrix.rank_le_of_mem_zeroLocus_vanishingIdeal` and
   `Matrix.rank_pow_le_of_mem_zeroLocus_vanishingIdeal`: a bound on the rank of a matrix, or of its
   `j`-th power, holding on a set of matrices holds on its Zariski closure.
@@ -57,6 +57,19 @@ namespace Matrix
 
 variable {n : Type*} [Fintype n] [DecidableEq n]
 
+omit [Fintype n] [DecidableEq n] in
+/-- The minors of a matrix `Z` are the values at the entries of `Z` of the corresponding minors
+of the generic matrix `Matrix.mvPolynomialX`. -/
+theorem aeval_det_submatrix_mvPolynomialX {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
+    {m l : Type*} [Fintype l] [DecidableEq l] (Z : Matrix m n S) (r : l → m) (c : l → n) :
+    aeval (Function.uncurry Z) ((mvPolynomialX m n R).submatrix r c).det =
+      (Z.submatrix r c).det := by
+  rw [AlgHom.map_det, AlgHom.mapMatrix_apply, ← submatrix_map]
+  congr 2
+  ext i j
+  rw [map_apply, mvPolynomialX_apply, aeval_X]
+  exact Function.uncurry_apply_pair (f := Z) i j
+
 /-- The minors of the `j`-th power of a matrix `Z` are the values at the entries of `Z` of the
 corresponding minors of the `j`-th power of the generic matrix `Matrix.mvPolynomialX`. -/
 theorem aeval_det_submatrix_pow_mvPolynomialX {R S : Type*} [CommRing R] [CommRing S]
@@ -80,20 +93,14 @@ theorem rank_le_of_mem_zeroLocus_vanishingIdeal {m : Type*} [Finite m] {S : Set 
     {r : ℕ} (hS : ∀ Z ∈ S, Z.rank ≤ r) {Y : Matrix m n K}
     (hY : Function.uncurry Y ∈ zeroLocus K (vanishingIdeal k (Function.uncurry '' S))) :
     Y.rank ≤ r := by
-  -- The minors of a matrix `Z` are the values at `Z` of the minors of the generic matrix.
-  have key (Z : Matrix m n K) (a : Fin (r + 1) ↪ m) (b : Fin (r + 1) ↪ n) :
-      aeval (Function.uncurry Z) ((mvPolynomialX m n k).submatrix a b).det =
-        (Z.submatrix a b).det := by
-    rw [AlgHom.map_det, AlgHom.mapMatrix_apply, ← submatrix_map]
-    exact congrArg (fun A : Matrix m n K ↦ (A.submatrix a b).det)
-      (mvPolynomialX_map_eval₂ (algebraMap k K) Z)
   rw [rank_le_iff_forall_det_submatrix_eq_zero]
   intro a b
-  rw [← key]
+  -- The minor of `Y` at `(a, b)` is the value at `Y` of a polynomial vanishing on `S`.
+  rw [← aeval_det_submatrix_mvPolynomialX (R := k)]
   refine mem_zeroLocus_iff.1 hY _ (mem_vanishingIdeal_iff.2 ?_)
   -- The image under `Function.uncurry` sees `Z` as a function, so it is retyped as a matrix.
   rintro - ⟨Z, hZ, rfl⟩
-  exact (key (Z : Matrix m n K) a b).trans
+  exact (aeval_det_submatrix_mvPolynomialX (Z : Matrix m n K) a b).trans
     (rank_le_iff_forall_det_submatrix_eq_zero.1 (hS Z hZ) a b)
 
 /-- **Rank bounds are Zariski closed.** If `rank (Z ^ j) ≤ r` for every matrix `Z` of a set `S`,
