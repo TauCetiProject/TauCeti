@@ -38,42 +38,11 @@ theorem mem_orthogonalGroup_iff_toMatrix (Q : QuadraticForm R V) (b : Basis n R 
     g ∈ orthogonalGroup Q ↔
       (LinearMap.toMatrix b b g.toLinearMap)ᵀ * (QuadraticForm.toMatrix b Q) *
           LinearMap.toMatrix b b g.toLinearMap = QuadraticForm.toMatrix b Q := by
-  constructor
-  · intro hg
-    have hcomp : Q.comp g.toLinearMap = Q := by
-      exact QuadraticMap.ext fun x => mem_orthogonalGroup_iff.mp hg x
-    calc
-      (LinearMap.toMatrix b b g.toLinearMap)ᵀ * (QuadraticForm.toMatrix b Q) *
-          LinearMap.toMatrix b b g.toLinearMap =
-          QuadraticForm.toMatrix b (Q.comp g.toLinearMap) :=
-        (QuadraticForm.toMatrix_comp b b Q g.toLinearMap).symm
-      _ = QuadraticForm.toMatrix b Q := congrArg (fun q : QuadraticForm R V => q.toMatrix b) hcomp
-  · intro hmatrix
-    apply mem_orthogonalGroup_iff.mpr
-    intro x
-    have hmatrix' :
-        QuadraticForm.toMatrix b (Q.comp g.toLinearMap) = QuadraticForm.toMatrix b Q := by
-      calc
-        QuadraticForm.toMatrix b (Q.comp g.toLinearMap) =
-            (LinearMap.toMatrix b b g.toLinearMap)ᵀ * (QuadraticForm.toMatrix b Q) *
-              LinearMap.toMatrix b b g.toLinearMap :=
-          QuadraticForm.toMatrix_comp b b Q g.toLinearMap
-        _ = QuadraticForm.toMatrix b Q := hmatrix
-    have hassoc : (QuadraticMap.associatedHom R) (Q.comp g.toLinearMap) =
-        (QuadraticMap.associatedHom R) Q := by
-      apply (LinearMap.toMatrix₂ b b).injective
-      simpa only [QuadraticForm.toMatrix] using hmatrix'
-    have hcomp : Q.comp g.toLinearMap = Q := by
-      apply QuadraticMap.ext
-      intro x
-      calc
-        (Q.comp g.toLinearMap) x =
-            ((QuadraticMap.associatedHom R) (Q.comp g.toLinearMap)) x x :=
-          (QuadraticMap.associated_eq_self_apply R (Q.comp g.toLinearMap) x).symm
-        _ = ((QuadraticMap.associatedHom R) Q) x x :=
-          congrArg (fun B => B x x) hassoc
-        _ = Q x := QuadraticMap.associated_eq_self_apply R Q x
-    exact congrArg (fun q : QuadraticForm R V => q x) hcomp
+  have hinj : Function.Injective (fun Q' : QuadraticForm R V => Q'.toMatrix b) :=
+    (LinearMap.toMatrix₂ b b).injective.comp (QuadraticMap.associated_rightInverse R).injective
+  rw [mem_orthogonalGroup_iff]
+  change (∀ m, (Q.comp g.toLinearMap) m = Q m) ↔ _
+  rw [← QuadraticMap.ext_iff, hinj.eq_iff.symm, QuadraticForm.toMatrix_comp b b Q g.toLinearMap]
 
 /-- In a basis, a linear automorphism belongs to the special orthogonal group
 exactly when its Gram-matrix congruence and determinant equations both hold. -/
