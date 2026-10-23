@@ -157,8 +157,8 @@ noncomputable def transIso :
     ofDiscreteModule ℤ G (DiscreteCoind G U (DiscreteCoind U V A)) ≅
       ofDiscreteModule ℤ G (DiscreteCoind G W A) :=
   ofDiscreteModuleIso (transEquiv hW hsmul hU).toIntLinearEquiv fun g f ↦ by
-    -- A proof by `transEquiv_smul` alone has this type only up to unfolding the coercion of
-    -- `AddEquiv.toIntLinearEquiv`, which would break the `ofDiscreteModuleIso` rewrites below.
+    -- The goal is stated for the coercion of `AddEquiv.toIntLinearEquiv`; rewriting it to
+    -- `transEquiv` first makes `transEquiv_smul` apply syntactically.
     rw [AddEquiv.coe_toIntLinearEquiv, transEquiv_smul]
 
 /-- The transitivity isomorphism acts on underlying modules as `transEquiv`. -/
@@ -166,6 +166,8 @@ noncomputable def transIso :
 theorem transIso_hom_apply (f : DiscreteCoind G U (DiscreteCoind U V A)) :
     (transIso hW hsmul hU).hom f = transEquiv hW hsmul hU f := by
   simp [transIso]
+  -- `simp` leaves `transEquiv hW hsmul hU f` on both sides, typed on the left in the carrier of
+  -- `ofDiscreteModule ℤ G (DiscreteCoind G W A)`, which is that module by definition.
   rfl
 
 /-- The inverse of the transitivity isomorphism acts on underlying modules as
@@ -174,6 +176,9 @@ theorem transIso_hom_apply (f : DiscreteCoind G U (DiscreteCoind U V A)) :
 theorem transIso_inv_apply (φ : DiscreteCoind G W A) :
     (transIso hW hsmul hU).inv φ = (transEquiv hW hsmul hU).symm φ := by
   simp [transIso]
+  -- As in `transIso_hom_apply`: the two sides differ only in being typed in the carrier of
+  -- `ofDiscreteModule ℤ G (DiscreteCoind G U (DiscreteCoind U V A))`, which is that module by
+  -- definition.
   rfl
 
 /-! ### The trivial subgroup -/
