@@ -596,12 +596,7 @@ theorem kummerCoeffMap_smul (g : AbsoluteGaloisGroup L) (x : KummerCoeff K n) :
           AbsoluteGaloisGroup L →ₜ* ↥σ.fieldRange.fixingSubgroup) g • x) =
       g • kummerCoeffMap K n L σ x :=
   Additive.toMul.injective <| Subtype.ext <| Units.ext <| by
-    -- `simp only`: the full simp set is several times slower here, also trying lemmas such as
-    -- `map_smul` whose instance searches fail.
-    simp only [ContinuousMonoidHom.coe_coe, Subgroup.smul_def, toMul_kummerCoeffMap,
-      RingHom.toMonoidHom_eq_coe, RingEquiv.toRingHom_eq_coe, Additive.toMul_smul,
-      rootsOfUnity.coe_smul, AlgEquiv.smul_units_def, Units.coe_map, MonoidHom.coe_ofClass,
-      absoluteGaloisGroupEquivFixingSubgroup_apply, RingHom.coe_coe, RingEquiv.symm_apply_apply]
+    simp [Subgroup.smul_def, -map_smul]
 
 /-- **Restriction on the Kummer `H¹` along a `K`-embedding `σ : L →ₐ[K] Kˢ`**,
 `H¹(G_K, μₙ) → H¹(G_L, μₙ)`: restriction to the subgroup `Gal(Kˢ/σ(L)) ≤ G_K` fixing `σ(L)`,
