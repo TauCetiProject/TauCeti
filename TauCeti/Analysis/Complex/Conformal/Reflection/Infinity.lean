@@ -178,8 +178,8 @@ its diameter and upper half-plane valued above it.  Then the map `z ↦ f (x₀ 
 `x₀` to infinity, satisfies `z * F''(z) / F'(z) → -2` as `z` tends to infinity in the upper
 half-plane, for every `F` agreeing with it there. -/
 theorem tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_comp_sub_inv {f F : ℂ → ℂ} {x₀ : ℝ}
-    (hf : DifferentiableOn ℂ f upperHalfPlaneSet)
     (hF : EqOn F (fun z => f (x₀ - z⁻¹)) upperHalfPlaneSet) {q b : ℂ} {r : ℝ} (hr : 0 < r)
+    (hf : DifferentiableOn ℂ f (Metric.ball (x₀ : ℂ) r ∩ upperHalfPlaneSet))
     (hb : b ≠ 0) (hcont : ContinuousOn f (Metric.ball (x₀ : ℂ) r ∩ {z : ℂ | 0 ≤ z.im}))
     (hinj : InjOn f (Metric.ball (x₀ : ℂ) r ∩ {z : ℂ | 0 ≤ z.im}))
     (hreal : ∀ z ∈ Metric.ball (x₀ : ℂ) r, z.im = 0 → ((f z - q) / b).im = 0)
@@ -200,7 +200,8 @@ theorem tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_comp_sub_inv {f F :
   · exact ((hcont.comp (continuousOn_const.add continuousOn_id) hmaps).sub
       continuousOn_const).div_const b
   · exact ((hf.comp ((differentiableOn_const _).add differentiableOn_id)
-      fun w (hw : w ∈ Metric.ball 0 r ∩ upperHalfPlaneSet) => by simpa using hw.2).sub_const
+      fun w (hw : w ∈ Metric.ball 0 r ∩ upperHalfPlaneSet) =>
+        ⟨hball hw.1, by simpa using hw.2⟩).sub_const
       q).div_const b
   · simpa using hinj (hmaps hz) (hmaps hz') (by simpa [div_left_inj' hb] using h)
 

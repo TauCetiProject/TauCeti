@@ -156,8 +156,8 @@ private theorem exists_inverted_coordinate_of_polygonal_ends {ι κ : Type*} [Fi
     exact hfront (by simp) hx
   · -- the side point `q + (g x₀)⁻¹` at infinity gives the condition at infinity
     exact tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_comp_sub_inv
-      ((differentiableOn_const q).add (hgd.inv hgne))
-      (fun z (hz : 0 < z.im) => by simp [hg₁g z fun h => by simp [h] at hz]) hr₀ hn₀ hc₀ hi₀
+      (fun z (hz : 0 < z.im) => by simp [hg₁g z fun h => by simp [h] at hz]) hr₀
+      (((differentiableOn_const q).add (hgd.inv hgne)).mono inter_subset_right) hn₀ hc₀ hi₀
       hreal₀ hupper₀
   · have hg₁a : g₁ ((x₀ - a₀ i)⁻¹ : ℝ) = (v i - q)⁻¹ := by
       rw [hg₁g _ (ha0 i), ← (ha₀g i).1]
