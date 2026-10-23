@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.TubularNeighborhood.Riemannian
+public import TauCeti.Geometry.Manifold.TubularNeighborhood.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.VectorBundle.Riemannian
 
 /-!
