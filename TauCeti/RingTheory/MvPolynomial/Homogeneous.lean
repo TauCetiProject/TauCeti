@@ -27,7 +27,9 @@ multiplying on the right by a homogeneous polynomial of degree `d` shifts homoge
 by `d`.
 
 The file also records `MvPolynomial.isHomogeneous_coeff_prod_X_sub_C`: the coefficients of a
-product of linear factors `X - C Ψ` with homogeneous `Ψ` of degree `m` are homogeneous.
+product of linear factors `X - C Ψ` with homogeneous `Ψ` of degree `m` are homogeneous, and
+`TauCeti.sum_smul_X_pow_mem_homogeneousSubmodule`: the `n`-th power of a linear form is
+homogeneous of degree `n`.
 -/
 
 public section
@@ -193,3 +195,18 @@ theorem isHomogeneous_coeff_prod_X_sub_C {ι : Type*} (s : Finset ι)
         exact isHomogeneous_zero σ R _
 
 end MvPolynomial
+
+namespace TauCeti
+
+open MvPolynomial
+
+/-- The `n`-th power of a linear form is homogeneous of degree `n`. -/
+theorem sum_smul_X_pow_mem_homogeneousSubmodule {σ R : Type*} [Fintype σ] [CommSemiring R]
+    (x : σ → R) (n : ℕ) :
+    (∑ i, x i • X i : MvPolynomial σ R) ^ n ∈ homogeneousSubmodule σ R n := by
+  have h1 : (∑ i, x i • X i : MvPolynomial σ R) ∈ homogeneousSubmodule σ R 1 :=
+    Submodule.sum_mem _ fun i _ ↦
+      Submodule.smul_mem _ _ ((mem_homogeneousSubmodule 1 _).mpr (isHomogeneous_X R i))
+  simpa using ((mem_homogeneousSubmodule 1 _).mp h1).pow n
+
+end TauCeti

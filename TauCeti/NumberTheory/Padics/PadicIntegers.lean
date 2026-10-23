@@ -63,6 +63,7 @@ calculation for first continuous cohomology with trivial integer coefficients.
   `p`, is `n`.
 * `Padic.inv_natCast_le_norm_natCast`: the `p`-adic norm of a positive integer `m` is at least
   `1 / m`.
+* `Padic.norm_natCast_eq_zpow`: the `p`-adic norm of a positive integer `m` is `p ^ (-v_p(m))`.
 * `PadicInt.compactSpace_units`, `PadicInt.totallyDisconnectedSpace_units`: `ℤ_[p]ˣ` is a
   profinite group.
 -/
@@ -224,6 +225,11 @@ theorem inv_natCast_le_norm_natCast (m : ℕ) [NeZero m] : (m : ℝ)⁻¹ ≤ �
   gcongr
   · exact pow_pos (by exact_mod_cast (Fact.out : p.Prime).pos) _
   · exact_mod_cast Nat.le_of_dvd (Nat.pos_of_ne_zero (NeZero.ne m)) pow_padicValNat_dvd
+
+/-- The `p`-adic norm of a nonzero natural number `m` is `p ^ (-v_p(m))`. -/
+theorem norm_natCast_eq_zpow {m : ℕ} (hm : m ≠ 0) :
+    ‖(m : ℚ_[p])‖ = (p : ℝ) ^ (-(padicValNat p m : ℤ)) := by
+  rw [Padic.norm_eq_zpow_neg_valuation (by exact_mod_cast hm), Padic.valuation_natCast]
 
 end Padic
 

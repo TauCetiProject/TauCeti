@@ -19,7 +19,7 @@ Hochschild cochains. This file assembles them into Connes' cyclic cochain comple
 `cyclicCochainComplex R A M`, a cochain complex of `R`-modules indexed by `ℕ`, and defines the
 cyclic cohomology `HCⁿ(A; M)` of a unital algebra as its categorical cohomology. This is Connes'
 definition by cyclic cochains; over a ring containing `ℚ` it agrees with the cohomology of the
-cyclic bicomplex, which is not treated here.
+cyclic bicomplex (`TauCeti.RingTheory.CyclicCohomology.Bicomplex`).
 
 The cyclic cocycles and coboundaries are also described concretely, as submodules of the cyclic
 cochains, and `cyclicCohomology.mk` sends a cocycle to its class: it is surjective, and its kernel

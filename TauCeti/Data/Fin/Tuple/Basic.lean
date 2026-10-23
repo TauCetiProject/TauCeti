@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Fin.Tuple.Basic
+import Mathlib.Algebra.NeZero
 import Mathlib.Data.Set.Insert
 
 /-!
@@ -42,6 +43,7 @@ is obtained by inserting the first entry into the corresponding image for the ta
   is deleting entry `j + 1` and then overwriting entry `j` by the contraction.
 * `Fin.update_removeNth_succ_eq_removeNth_castSucc`: deleting entry `j + 1` and then overwriting
   entry `j` by the deleted entry is deleting entry `j`.
+* `Fin.insertNth_one_ne_zero`: inserting the entry `1` gives a nonzero tuple.
 -/
 
 public section
@@ -199,5 +201,10 @@ theorem image_cons_le_eq_insert {α : Type*} {n : ℕ} (x : α) (p : Fin m → �
       insert x (p '' {index | (index : ℕ) < n}) := by
   ext element
   simp [Set.mem_image, Fin.exists_fin_succ, eq_comm, Nat.add_one_le_iff]
+
+/-- Inserting the entry `1` into a tuple gives a tuple that does not vanish. -/
+theorem insertNth_one_ne_zero {α : Type*} [Zero α] [One α] [NeZero (1 : α)] {n : ℕ}
+    (i : Fin (n + 1)) (z : Fin n → α) : insertNth (α := fun _ ↦ α) i 1 z ≠ 0 :=
+  fun h ↦ one_ne_zero (α := α) (by simpa using congr_fun h i)
 
 end Fin

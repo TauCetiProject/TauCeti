@@ -40,6 +40,11 @@ The biproduct triangles are distinguished, so the class map is additive on bipro
   function on objects, and `TauCeti.TriangulatedK0.lift` the homomorphism it induces.
 * `TauCeti.TriangulatedK0.map` and `TauCeti.TriangulatedK0.mapEquiv`: functoriality for
   triangulated functors and invariance under triangulated equivalences.
+* `TauCeti.TriangulatedK0.BiadditiveInvariant C D G`: a function on pairs of objects which is
+  additive on distinguished triangles in each variable, and
+  `TauCeti.TriangulatedK0.BiadditiveInvariant.bilift` its descent to a biadditive map.
+* `TauCeti.TriangulatedK0.map₂`: the biadditive map induced by a bifunctor which is triangulated
+  in each variable.
 * `TauCeti.TriangulatedK0.fromSplit`: the canonical comparison from split `K₀`.
 
 ## Main results
@@ -54,6 +59,9 @@ The biproduct triangles are distinguished, so the class map is additive on bipro
   shift, `[X⟦1⟧] = -[X]` and `[X⟦n⟧] = (-1)ⁿ[X]`.
 * `TauCeti.TriangulatedK0.liftEquiv`: the universal property. Triangle-additive invariants with
   values in `G` correspond bijectively to homomorphisms `TriangulatedK0 C →+ G`.
+* `TauCeti.TriangulatedK0.BiadditiveInvariant.bilift_of_of` and
+  `TauCeti.TriangulatedK0.BiadditiveInvariant.bilift_unique`: the two-variable universal property,
+  and `TauCeti.TriangulatedK0.map₂_of_of`: a bifunctor sends `([X], [Y])` to `[F(X, Y)]`.
 * `TauCeti.TriangulatedK0.fromSplit_surjective` and
   `TauCeti.TriangulatedK0.map_comp_fromSplit`: triangulated `K₀` is a quotient of split `K₀`,
   naturally in a triangulated functor.
@@ -389,6 +397,93 @@ lemma mapEquiv_toAddMonoidHom :
   PresentedK0.mapEquiv_toAddMonoidHom e _ _
 
 end Equivalence
+
+section Biadditive
+
+variable (C D) in
+/-- A biadditive invariant for triangulated `K₀`: a function on pairs of objects which, in each
+variable separately, is additive on distinguished triangles. It is then constant on isomorphism
+classes in each variable, by `TauCeti.TriangulatedK0.AdditiveInvariant.map_iso`. These are exactly
+the data that descend to a biadditive map `TriangulatedK0 C →+ TriangulatedK0 D →+ G`; see
+`TauCeti.TriangulatedK0.BiadditiveInvariant.bilift` and
+`TauCeti.TriangulatedK0.BiadditiveInvariant.bilift_unique`. -/
+@[ext]
+structure BiadditiveInvariant (G : Type*) [AddCommGroup G] where
+  /-- The value of the invariant on a pair of objects. -/
+  obj : C → D → G
+  /-- The invariant is additive on distinguished triangles in the first variable. -/
+  map_distTriang₁ : ∀ ⦃T : Triangle C⦄, T ∈ distTriang C → ∀ Y : D,
+    obj T.obj₂ Y = obj T.obj₁ Y + obj T.obj₃ Y
+  /-- The invariant is additive on distinguished triangles in the second variable. -/
+  map_distTriang₂ : ∀ (X : C) ⦃T : Triangle D⦄, T ∈ distTriang D →
+    obj X T.obj₂ = obj X T.obj₁ + obj X T.obj₃
+
+namespace BiadditiveInvariant
+
+variable (a : BiadditiveInvariant C D G)
+
+/-- The invariant with its first argument fixed. -/
+private def rightInvariant (X : C) : AdditiveInvariant D G where
+  obj := a.obj X
+  map_distTriang _ hT := a.map_distTriang₂ X hT
+
+omit [EssentiallySmall.{w} C] [EssentiallySmall.{w'} D] in
+private lemma rightInvariant_obj (X : C) : (a.rightInvariant X).obj = a.obj X := (rfl)
+
+/-- The one-sided descents in the second variable, as a triangle-additive invariant of the first
+variable with values in the homomorphisms out of `TriangulatedK0 D`. -/
+private noncomputable def leftInvariant : AdditiveInvariant C (TriangulatedK0 D →+ G) where
+  obj X := lift (a.rightInvariant X)
+  map_distTriang _ hT := hom_ext fun Y => by
+    simpa only [AddMonoidHom.add_apply, lift_of, rightInvariant_obj] using a.map_distTriang₁ hT Y
+
+omit [EssentiallySmall.{w} C] in
+private lemma leftInvariant_obj (X : C) : a.leftInvariant.obj X = lift (a.rightInvariant X) :=
+  (rfl)
+
+/-- Descend a biadditive invariant through both triangulated Grothendieck groups. -/
+noncomputable def bilift : TriangulatedK0 C →+ TriangulatedK0 D →+ G :=
+  lift a.leftInvariant
+
+/-- The two-variable descent evaluates on object classes as the original invariant. -/
+@[simp]
+lemma bilift_of_of (X : C) (Y : D) : a.bilift (of X) (of Y) = a.obj X Y := by
+  rw [bilift, lift_of, leftInvariant_obj, lift_of, rightInvariant_obj]
+
+/-- The two-variable descent is the unique biadditive map with the prescribed values on pairs of
+object classes. -/
+theorem bilift_unique (b : TriangulatedK0 C →+ TriangulatedK0 D →+ G)
+    (hb : ∀ (X : C) (Y : D), b (of X) (of Y) = a.obj X Y) : b = a.bilift :=
+  hom_ext fun X => hom_ext fun Y => by rw [hb, bilift_of_of]
+
+end BiadditiveInvariant
+
+variable {K : Type u''} [Category.{v''} K] [Preadditive K] [HasZeroObject K] [HasShift K ℤ]
+  [∀ n : ℤ, (shiftFunctor K n).Additive] [Pretriangulated K] [EssentiallySmall.{w''} K]
+  (F : C ⥤ D ⥤ K) [∀ X, (F.obj X).CommShift ℤ] [∀ X, (F.obj X).IsTriangulated]
+  [∀ Y, (F.flip.obj Y).CommShift ℤ] [∀ Y, (F.flip.obj Y).IsTriangulated]
+
+/-- The class `[F(X, Y)]` of a bifunctor which is triangulated in each variable, as a biadditive
+invariant. -/
+private noncomputable def map₂Invariant : BiadditiveInvariant C D (TriangulatedK0 K) where
+  obj X Y := of ((F.obj X).obj Y)
+  map_distTriang₁ T hT Y := of_distTriang ((F.flip.obj Y).map_distinguished T hT)
+  map_distTriang₂ X T hT := of_distTriang ((F.obj X).map_distinguished T hT)
+
+/-- **Biadditivity of triangulated `K₀`**: a bifunctor which is triangulated in each variable
+separately induces a biadditive map of triangulated Grothendieck groups, sending the pair of
+classes `([X], [Y])` to `[F(X, Y)]`. No compatibility between the two commutations with the shift
+is needed. -/
+noncomputable def map₂ : TriangulatedK0 C →+ TriangulatedK0 D →+ TriangulatedK0 K :=
+  (map₂Invariant F).bilift
+
+/-- The biadditive map induced by a bifunctor sends a pair of object classes to the class of the
+image of the pair. -/
+@[simp]
+lemma map₂_of_of (X : C) (Y : D) : map₂ F (of X) (of Y) = of ((F.obj X).obj Y) :=
+  (map₂Invariant F).bilift_of_of X Y
+
+end Biadditive
 
 section FullSubcategory
 

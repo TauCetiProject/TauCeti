@@ -171,6 +171,11 @@ theorem swap_swap (f : BoundedFlow lo hi s t) : f.swap.swap = f :=
 theorem val_swap (f : BoundedFlow lo hi s t) : f.swap.val = -f.val := by
   rw [val_def, swap_toFun, excessAt_source]
 
+/-- A bounded assignment whose terminals coincide has value zero. -/
+theorem val_eq_zero_of_eq (hst : s = t) (f : BoundedFlow lo hi s t) : f.val = 0 := by
+  subst hst
+  rw [val_def, ← sum_excessAt f.toFun, Fintype.sum_eq_single s fun v hv ↦ f.conserve v hv hv]
+
 end Preorder
 
 section Ordered

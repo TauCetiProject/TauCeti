@@ -254,6 +254,12 @@ theorem GX.gHom_ext {φ ψ : GHom (inl : G →* GX G X) ι}
 
 variable {ι v}
 
+/-- A homomorphism out of `G[X]` that restricts to `ι` on the coefficients is evaluation at its
+values on the variables. -/
+theorem eval_eq_of_comp_inl {f : GX G X →* H} (hf : f.comp inl = ι) :
+    eval ι (fun x => f (inr (FreeGroup.of x))) = f :=
+  hf ▸ (eq_eval f).symm
+
 /-- Homomorphisms commute with evaluation: `f ∘ eval ι v = eval (f ∘ ι) (f ∘ v)`. -/
 theorem _root_.MonoidHom.comp_eval (f : H →* K) {ι : G →* H} {v : X → H} :
     f.comp (eval ι v) = eval (f.comp ι) (f ∘ v) :=

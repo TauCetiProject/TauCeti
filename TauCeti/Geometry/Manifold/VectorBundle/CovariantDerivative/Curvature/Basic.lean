@@ -202,17 +202,9 @@ theorem contMDiff_curvatureOperator
     CMDiff ∞ (T% (curvatureOperator cov X Y σ)) := by
   have hYσ := cov.contMDiff_apply hY hσ
   have hXσ := cov.contMDiff_apply hX hσ
-  let _ : IsManifold I (minSmoothness ℝ 2) M :=
-    IsManifold.of_le (m := minSmoothness ℝ 2) (n := ∞) (by simp)
-  let _ : IsManifold I ((∞ : ℕ∞ω) + 1) M :=
-    IsManifold.of_le (m := (∞ : ℕ∞ω) + 1) (n := ∞) (by simp)
-  have hXY : CMDiff ∞ (T% (mlieBracket I X Y)) :=
-    ContDiff.mlieBracket_vectorField (m := (⊤ : ℕ∞)) (n := (⊤ : ℕ∞)) hX hY (by
-      rw [minSmoothness_of_isRCLikeNormedField]
-      simp)
   exact ((cov.contMDiff_apply hX hYσ).sub_section
     (cov.contMDiff_apply hY hXσ)).sub_section
-      (cov.contMDiff_apply hXY hσ)
+      (cov.contMDiff_apply (contMDiff_mlieBracket hX hY) hσ)
 
 variable {cov}
   {X X' Y Y' : Π x : M, TangentSpace I x} {σ τ : Π x : M, V x} {f : M → ℝ}
