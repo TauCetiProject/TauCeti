@@ -16,7 +16,7 @@ public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.SymmetricBaseChange
 public import TauCeti.AlgebraicGeometry.Scheme.BaseAlgebra
 public import TauCeti.AlgebraicGeometry.Scheme.Regular.LocalRing
 public import TauCeti.RingTheory.GradedAlgebra.HomogeneousLocalization.Basic
-public import TauCeti.RingTheory.Localization.Away
+public import TauCeti.RingTheory.Localization.Away.Basic
 
 /-!
 # The projective line over a commutative ring

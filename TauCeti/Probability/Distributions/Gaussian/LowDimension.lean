@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.Matrix.PosSemidef
 public import TauCeti.Probability.Distributions.Gaussian.Conditional
 
+import TauCeti.MeasureTheory.Constructions.EuclideanSpace
+
 /-!
 # One-dimensional Gaussian laws and conditioning on one coordinate
 
@@ -80,21 +82,8 @@ theorem multivariateGaussian_eq_map_single [Unique ι] [DecidableEq ι]
     multivariateGaussian μ S =
       (gaussianReal (μ default) (S default default).toNNReal).map
         (EuclideanSpace.single default) := by
-  have hsingle : Measurable (EuclideanSpace.single (default : ι) : ℝ → EuclideanSpace ℝ ι) := by
-    exact ((EuclideanSpace.equiv ι ℝ).symm.continuous.comp
-      (ContinuousLinearMap.single ℝ (fun _ : ι => ℝ) default).continuous).measurable
-  have hcomp : (EuclideanSpace.single (default : ι)) ∘
-      (fun x : EuclideanSpace ℝ ι => x default) = id := by
-    funext x
-    ext i
-    simp [Unique.eq_default i]
   by_cases hS : S.PosSemidef
-  · calc multivariateGaussian μ S
-        = (multivariateGaussian μ S).map id := Measure.map_id.symm
-      _ = ((multivariateGaussian μ S).map fun x => x default).map
-            (EuclideanSpace.single default) := by
-          rw [Measure.map_map hsingle (by fun_prop), hcomp]
-      _ = _ := by rw [(measurePreserving_eval_multivariateGaussian hS).map_eq]
+  · rw [← (measurePreserving_eval_multivariateGaussian hS).map_eq, map_single_map_eval]
   · have hdiag : S default default ≤ 0 := by
       refine le_of_not_gt fun hpos => hS ?_
       have hS' : S = Matrix.diagonal fun _ : ι => S default default := by
@@ -104,7 +93,7 @@ theorem multivariateGaussian_eq_map_single [Unique ι] [DecidableEq ι]
       rw [hS', Matrix.posSemidef_diagonal_iff]
       simp [hpos.le]
     rw [multivariateGaussian_of_not_posSemidef _ hS, Real.toNNReal_of_nonpos hdiag,
-      gaussianReal_zero_var, Measure.map_dirac' hsingle]
+      gaussianReal_zero_var, Measure.map_dirac' (measurable_single default)]
     congr 1
     ext i
     simp [Unique.eq_default i]
