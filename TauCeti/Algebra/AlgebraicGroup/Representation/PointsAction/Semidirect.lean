@@ -85,9 +85,10 @@ section Universal
 For a commutative bialgebra `H`, the two tensor-factor inclusions `H → H ⊗[R] H` form the
 universal pair of points, whose convolution product is the comultiplication
 (`TauCeti.Bialgebra.comulPoint_eq_include_mul`). The values of a cochain at these points recover
-the two tensors appearing in the regular cocycle identity. -/
+the two tensors appearing in the regular cocycle identity. The left-point evaluation only
+requires an algebra, and the coaction formula only requires a coalgebra over that algebra. -/
 
-variable [CommSemiring H] [Bialgebra R H] [AddCommMonoid V] [Module R V]
+variable [CommSemiring H] [Algebra R H] [AddCommMonoid V] [Module R V]
 
 variable (V) in
 /-- The value of a cochain `b` at the left universal point is `b ⊗ 1`, read in
@@ -99,7 +100,7 @@ theorem pointCochain_includeLeft (b : V ⊗[R] H) :
   | add b₁ b₂ h₁ h₂ => simp only [map_add, TensorProduct.add_tmul, h₁, h₂]
   | tmul v y => simp
 
-variable [Comodule R H V]
+variable [Coalgebra R H] [Comodule R H V]
 
 /-- The left universal point acts on the value of a cochain `b` at the right universal point by
 the coaction on the `V`-factor of `b`. -/
