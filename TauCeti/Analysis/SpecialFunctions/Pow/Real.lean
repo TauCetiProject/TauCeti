@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 
 /-!
 # Real powers
@@ -28,6 +29,10 @@ bound with a real factor `δ` into a bound by an `r`-th power.
 A positive power `x ↦ x ^ a` maps the open unit interval onto itself, with inverse `y ↦ y ^ a⁻¹`.
 This is the image needed when a change of variables `y = x ^ a` is performed on `(0, 1)`.
 
+A real number whose natural powers grow at most polynomially, `r ^ n ≤ C * (1 + n) ^ s` for all
+`n`, is at most `1`. This is how a spectral radius bound is read off from polynomially growing
+norms, as for the monomials of a weighted Sobolev algebra.
+
 ## Main results
 
 * `Real.inv_sqrt_eq_rpow`: `(√x)⁻¹ = x ^ (-2⁻¹)` for every real `x`.
@@ -36,9 +41,12 @@ This is the image needed when a change of variables `y = x ^ a` is performed on 
 * `Real.sqrt_pow_eq_rpow`: `√(x ^ n) = x ^ (n / 2)` for `0 ≤ x`.
 * `Real.pow_le_rpow_pow_of_le_mul`: `b ^ n ≤ (b ^ δ) ^ r` when `1 ≤ b` and `n ≤ δ r`.
 * `Real.image_rpow_Ioo_zero_one`: a positive power maps the open unit interval onto itself.
+* `Real.le_one_of_forall_pow_le_mul_rpow`: `r ≤ 1` when `r ^ n ≤ C * (1 + n) ^ s` for all `n`.
 -/
 
 public section
+
+open Filter Topology
 
 namespace Real
 
@@ -75,5 +83,22 @@ theorem image_rpow_Ioo_zero_one {a : ℝ} (ha : 0 < a) :
     rpow_lt_one hy.1.le hy.2 (inv_pos.mpr ha)⟩, rpow_inv_rpow hy.1.le ha.ne'⟩⟩
   rintro ⟨x, hx, rfl⟩
   exact ⟨rpow_pos_of_pos hx.1 a, rpow_lt_one hx.1.le hx.2 ha⟩
+
+/-- A real number whose natural powers grow at most polynomially is at most `1`: otherwise
+`r ^ x = exp (log r * x)` with `log r > 0` outgrows every power of `1 + x`. -/
+theorem le_one_of_forall_pow_le_mul_rpow {r C s : ℝ}
+    (h : ∀ n : ℕ, r ^ n ≤ C * (1 + n) ^ s) : r ≤ 1 := by
+  by_contra! h1
+  have h0 : 0 < r := zero_lt_one.trans h1
+  have hlim : Tendsto (fun n : ℕ ↦ C * r * ((1 + n) ^ s / r ^ (1 + (n : ℝ)))) atTop (𝓝 0) := by
+    simpa [rpow_def_of_pos h0] using
+      (((isLittleO_rpow_exp_pos_mul_atTop s (log_pos h1)).comp_tendsto
+        (tendsto_atTop_add_const_left _ 1 tendsto_natCast_atTop_atTop)).tendsto_div_nhds_zero
+          ).const_mul (C * r)
+  obtain ⟨n, hn⟩ := (hlim.eventually (gt_mem_nhds one_pos)).exists
+  refine hn.not_ge ?_
+  rw [rpow_add h0, rpow_one, rpow_natCast, mul_div_assoc', le_div_iff₀ (by positivity), one_mul]
+  calc r * r ^ n ≤ r * (C * (1 + n) ^ s) := by gcongr; exact h n
+    _ = C * r * (1 + n) ^ s := by ring
 
 end Real
