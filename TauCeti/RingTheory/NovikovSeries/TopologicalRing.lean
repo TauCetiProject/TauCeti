@@ -45,7 +45,6 @@ The nonnegative subring is closed, hence complete, and the traces of the subgrou
 ideals of it, so it is linearly topologized. For an `S`-algebra of coefficients it is an
 `S`-algebra. These are the hypotheses of Mathlib's continuous evaluation of power series
 (`PowerSeries.aeval`) at its topologically nilpotent elements, such as those of the positive ideal.
-The units `u` with `u - 1` in the positive ideal form its principal unit group.
 
 ## Main definitions
 
@@ -54,8 +53,6 @@ The units `u` with `u - 1` in the positive ideal form its principal unit group.
   supported in periods `> 0`.
 * `TauCeti.NovikovSeries.unitsOneSub`: for `a` in the positive ideal, `1 - a` as a unit of the
   nonnegative subring, with inverse the geometric series `∑ aⁿ`.
-* `TauCeti.NovikovSeries.principalUnitGroup`: the units `u` of the nonnegative subring with
-  `u - 1` in the positive ideal.
 
 ## Main results
 
@@ -80,8 +77,6 @@ The units `u` with `u - 1` in the positive ideal form its principal unit group.
   `TauCeti.NovikovSeries.tsum_mul_one_sub_single`: the two inverse identities of the monomial
   geometric series `∑ₖ rᵏ e^(k • g)` for `N g > 0`.
 * The instances `CompleteSpace`, `IsLinearTopology` and `Algebra` on the nonnegative subring.
-* `TauCeti.NovikovSeries.isOpen_posIdeal` and `TauCeti.NovikovSeries.isClosed_posIdeal`: the
-  positive ideal is open and closed in the nonnegative subring.
 
 ## References
 
@@ -338,17 +333,6 @@ instance : IsLinearTopology (nonnegSubring R N) (nonnegSubring R N) :=
           mul_mem_periodFiltration (mem_periodFiltration.2 (mem_nonnegSubring.1 c.2)) ha })
     hasBasis_nhds_zero_nonnegSubring fun I r _ => I.smul_mem r
 
-/-- The positive ideal is open in the nonnegative subring: it contains the trace of `U_1`. -/
-theorem isOpen_posIdeal : IsOpen (posIdeal R N : Set (nonnegSubring R N)) :=
-  AddSubgroup.isOpen_mono (H₁ := (periodFiltration R N 1).comap
-      (nonnegSubring R N).subtype.toAddMonoidHom) (H₂ := (posIdeal R N).toAddSubgroup)
-    (fun _ ha => mem_posIdeal.2 (exists_pos_mem_periodFiltration_iff.1 ⟨1, one_pos, ha⟩))
-    ((isOpen_periodFiltration 1).preimage continuous_subtype_val)
-
-/-- The positive ideal is closed in the nonnegative subring, being an open subgroup. -/
-theorem isClosed_posIdeal : IsClosed (posIdeal R N : Set (nonnegSubring R N)) :=
-  AddSubgroup.isClosed_of_isOpen (posIdeal R N).toAddSubgroup isOpen_posIdeal
-
 /-- A series of the positive ideal is topologically nilpotent in the nonnegative subring. -/
 theorem isTopologicallyNilpotent_of_mem_posIdeal' {a : nonnegSubring R N}
     (ha : a ∈ posIdeal R N) : IsTopologicallyNilpotent a := by
@@ -384,31 +368,6 @@ theorem coe_algebraMap_nonnegSubring (s : S) :
   (rfl)
 
 end Algebra
-
-variable (R N) in
-/-- The principal unit group of the nonnegative subring: the units `u` with `u - 1` in the
-positive ideal. Every `1 - a` with `a` in the positive ideal is such a unit
-(`TauCeti.NovikovSeries.unitsOneSub`). -/
-def principalUnitGroup : Subgroup (nonnegSubring R N)ˣ where
-  carrier := {u | (u : nonnegSubring R N) - 1 ∈ posIdeal R N}
-  one_mem' := by simp
-  mul_mem' {u v} hu hv := by
-    have huv : ((u * v : (nonnegSubring R N)ˣ) : nonnegSubring R N) - 1 =
-        u * ((v : nonnegSubring R N) - 1) + ((u : nonnegSubring R N) - 1) := by
-      rw [Units.val_mul, mul_sub, mul_one, sub_add_sub_cancel]
-    rw [Set.mem_ofPred_eq, huv]
-    exact add_mem (Ideal.mul_mem_left _ _ hv) hu
-  inv_mem' {u} hu := by
-    have hu' : ((u⁻¹ : (nonnegSubring R N)ˣ) : nonnegSubring R N) - 1 =
-        -(↑u⁻¹ * ((u : nonnegSubring R N) - 1)) := by
-      rw [mul_sub, Units.inv_mul, mul_one, neg_sub]
-    rw [Set.mem_ofPred_eq, hu']
-    exact neg_mem (Ideal.mul_mem_left _ _ hu)
-
-@[simp]
-theorem mem_principalUnitGroup {u : (nonnegSubring R N)ˣ} :
-    u ∈ principalUnitGroup R N ↔ (u : nonnegSubring R N) - 1 ∈ posIdeal R N :=
-  Iff.rfl
 
 end Ring
 
