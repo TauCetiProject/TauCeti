@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.DirectSum.Internal
 public import TauCeti.Algebra.Lie.AdjointAction.GradingAut
 public import TauCeti.Algebra.Lie.Sl2.EigenspaceMap
 public import Mathlib.LinearAlgebra.AffineSpace.AffineSubspace.Defs
@@ -42,9 +41,6 @@ extends to `c = 0` with value `e`, so the action contracts `S` to `e`
 
 ## Main results
 
-* `IsSl2Triple.ker_toEnd_f_eq_iSup_inf_eigenspace`: in a finite-dimensional module over an
-  algebraically closed field, the kernel of `f` is spanned by the vectors it contains of weight
-  `-n`, `n : ℕ`.
 * `IsSl2Triple.contractingAction_apply_of_mem`: the contracting action has weight `2 - j` on
   `L(j)`. In particular it fixes `e` (`IsSl2Triple.contractingAction_apply_e`).
 * `IsSl2Triple.contractingAction_apply_of_mem_ker_inf`: its weight on `ker (ad f) ⊓ L(-n)` is
@@ -107,45 +103,6 @@ end TauCeti
 open TauCeti
 
 namespace IsSl2Triple
-
-/-! ### The weights of `h` on the lowest weight vectors -/
-
-section Weights
-
-variable {K L M : Type*} [Field K] [CharZero K] [IsAlgClosed K] [LieRing L] [LieAlgebra K L]
-  [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M] [FiniteDimensional K M]
-  {h e f : L}
-
-/-- **The kernel of the lowering operator is graded by `-ℕ`.** In a finite-dimensional module over
-an algebraically closed field of characteristic zero, the kernel of `f` is spanned by the vectors
-it contains of weight `-n` for `h`, `n : ℕ`.
-
-The integer eigenspaces of `h` span the module, and `f` lowers weights by `2`, so its kernel is
-spanned by its homogeneous parts. A nonzero vector killed by `f` has weight in `-ℕ`
-(`IsSl2Triple.disjoint_ker_toEnd_f_eigenspace`). -/
-theorem ker_toEnd_f_eq_iSup_inf_eigenspace (t : IsSl2Triple h e f) :
-    LinearMap.ker (toEnd K L M f) =
-      ⨆ n : ℕ, LinearMap.ker (toEnd K L M f) ⊓ (toEnd K L M h).eigenspace (-(n : K)) := by
-  have hsub : Function.Injective fun z : ℤ ↦ (z : K) - 2 := fun a b hab ↦ by
-    simpa using hab
-  refine (LinearMap.ker_eq_iSup_inf_of_map_le (toEnd K L M f)
-    (A := fun z : ℤ ↦ (toEnd K L M h).eigenspace (z : K))
-    (A' := fun z : ℤ ↦ (toEnd K L M h).eigenspace ((z : K) - 2))
-    (isInternal_eigenspace_toEnd_intCast t).submodule_iSup_eq_top
-    ((toEnd K L M h).eigenspaces_iSupIndep.comp hsub)
-    fun z ↦ Submodule.map_le_iff_le_comap.2 fun v hv ↦ by
-      rw [Submodule.mem_comap, toEnd_apply_apply]
-      exact lie_mem_eigenspace_sub_two t hv).trans ?_
-  refine le_antisymm (iSup_le fun z ↦ ?_) (iSup_le fun n ↦ le_iSup_of_le (-(n : ℤ)) (by simp))
-  by_cases hz : 0 < z
-  · have hne (n : ℕ) : (z : K) ≠ -(n : K) := by
-      exact_mod_cast (by omega : z ≠ -(n : ℤ))
-    rw [(t.disjoint_ker_toEnd_f_eigenspace hne).eq_bot]
-    exact bot_le
-  · obtain ⟨n, rfl⟩ := Int.exists_eq_neg_ofNat (not_lt.1 hz)
-    exact le_iSup_of_le n (by simp)
-
-end Weights
 
 /-! ### The contracting action on the slice -/
 

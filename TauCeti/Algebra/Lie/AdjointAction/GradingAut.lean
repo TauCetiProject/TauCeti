@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.DirectSum.Module
 public import Mathlib.Algebra.Lie.OfAssociative
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
+public import TauCeti.Algebra.DirectSum.Internal
 
 /-!
 # The grading automorphisms attached to an integral semisimple element
@@ -68,16 +69,6 @@ section Grading
 variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] {h : L}
   (hh : DirectSum.IsInternal fun j : ℤ ↦ (ad R L h).eigenspace (j : R))
 
-include hh in
-/-- Two linear maps out of `L` agreeing on every integer eigenspace of `ad h` agree. -/
-private theorem linearMap_ext {N : Type*} [AddCommGroup N] [Module R N] {φ ψ : L →ₗ[R] N}
-    (H : ∀ (j : ℤ) (x : L), x ∈ (ad R L h).eigenspace (j : R) → φ x = ψ x) : φ = ψ :=
-  LinearMap.ext_on (s := ⋃ j : ℤ, ((ad R L h).eigenspace (j : R) : Set L))
-    (by rw [← Submodule.iSup_eq_span, hh.submodule_iSup_eq_top])
-    fun x hx ↦ by
-      obtain ⟨j, hj⟩ := Set.mem_iUnion.1 hx
-      exact H j x hj
-
 /-- The linear endomorphism of `L` acting on the `j`-eigenspace of `ad h` by `s ^ j`: decompose,
 scale each component, and add the components back up. -/
 private noncomputable def gradingMap (s : Rˣ) : L →ₗ[R] L :=
@@ -96,24 +87,25 @@ private theorem gradingMap_apply_of_mem (s : Rˣ) {j : ℤ} {x : L}
 
 private theorem gradingMap_gradingMap (s r : Rˣ) (x : L) :
     gradingMap hh s (gradingMap hh r x) = gradingMap hh (s * r) x := by
-  refine LinearMap.congr_fun (linearMap_ext hh (φ := gradingMap hh s ∘ₗ gradingMap hh r)
-    fun j y hy ↦ ?_) x
+  refine LinearMap.congr_fun (LinearMap.ext_of_iSup_eq_top hh.submodule_iSup_eq_top
+    (f := gradingMap hh s ∘ₗ gradingMap hh r) fun j y hy ↦ ?_) x
   rw [LinearMap.comp_apply, gradingMap_apply_of_mem hh r hy, map_smul,
     gradingMap_apply_of_mem hh s hy, gradingMap_apply_of_mem hh (s * r) hy, smul_smul, mul_zpow,
     Units.val_mul, mul_comm]
 
 private theorem gradingMap_one (x : L) : gradingMap hh 1 x = x :=
-  LinearMap.congr_fun (linearMap_ext hh (φ := gradingMap hh 1) (ψ := LinearMap.id)
-    fun j y hy ↦ by rw [gradingMap_apply_of_mem hh 1 hy, one_zpow, Units.val_one, one_smul,
-      LinearMap.id_apply]) x
+  LinearMap.congr_fun (LinearMap.ext_of_iSup_eq_top hh.submodule_iSup_eq_top
+    (f := gradingMap hh 1) (g := LinearMap.id) fun j y hy ↦ by
+      rw [gradingMap_apply_of_mem hh 1 hy, one_zpow, Units.val_one, one_smul, LinearMap.id_apply]) x
 
 /-- `gradingMap hh s` preserves brackets with an eigenvector of `ad h`. -/
 private theorem gradingMap_lie_of_mem (s : Rˣ) {i : ℤ} {x : L}
     (hx : x ∈ (ad R L h).eigenspace (i : R)) (y : L) :
     gradingMap hh s ⁅x, y⁆ = ⁅gradingMap hh s x, gradingMap hh s y⁆ := by
   -- Both sides are linear in `y`, so it suffices to compare them on eigenvectors.
-  refine LinearMap.congr_fun (linearMap_ext hh (φ := gradingMap hh s ∘ₗ ad R L x)
-    (ψ := ad R L (gradingMap hh s x) ∘ₗ gradingMap hh s) fun j y hy ↦ ?_) y
+  refine LinearMap.congr_fun (LinearMap.ext_of_iSup_eq_top hh.submodule_iSup_eq_top
+    (f := gradingMap hh s ∘ₗ ad R L x) (g := ad R L (gradingMap hh s x) ∘ₗ gradingMap hh s)
+    fun j y hy ↦ ?_) y
   have hxy : ⁅x, y⁆ ∈ (ad R L h).eigenspace ((i + j : ℤ) : R) := by
     rw [Int.cast_add]
     exact lie_mem_eigenspace_toEnd_add hx hy
@@ -125,8 +117,9 @@ private theorem gradingMap_lie_of_mem (s : Rˣ) {i : ℤ} {x : L}
 private theorem gradingMap_lie (s : Rˣ) (x y : L) :
     gradingMap hh s ⁅x, y⁆ = ⁅gradingMap hh s x, gradingMap hh s y⁆ := by
   -- Both sides are linear in `y`; on an eigenvector `y` use antisymmetry and the previous lemma.
-  refine LinearMap.congr_fun (linearMap_ext hh (φ := gradingMap hh s ∘ₗ ad R L x)
-    (ψ := ad R L (gradingMap hh s x) ∘ₗ gradingMap hh s) fun j y hy ↦ ?_) y
+  refine LinearMap.congr_fun (LinearMap.ext_of_iSup_eq_top hh.submodule_iSup_eq_top
+    (f := gradingMap hh s ∘ₗ ad R L x) (g := ad R L (gradingMap hh s x) ∘ₗ gradingMap hh s)
+    fun j y hy ↦ ?_) y
   simp only [LinearMap.comp_apply, ad_apply]
   rw [← lie_skew, map_neg, gradingMap_lie_of_mem hh s hy, lie_skew]
 
@@ -158,7 +151,7 @@ grading automorphism at `s`. -/
 theorem eq_gradingAut {s : Rˣ} {φ : L →ₗ[R] L}
     (hφ : ∀ (j : ℤ) (x : L), x ∈ (ad R L h).eigenspace (j : R) → φ x = ((s ^ j : Rˣ) : R) • x) :
     φ = ((gradingAut hh s : L ≃ₗ[R] L) : L →ₗ[R] L) :=
-  linearMap_ext hh fun j x hx ↦ by
+  LinearMap.ext_of_iSup_eq_top hh.submodule_iSup_eq_top fun j x hx ↦ by
     rw [hφ j x hx, LinearEquiv.coe_coe, LieEquiv.coe_toLinearEquiv,
       gradingAut_apply_of_mem hh s hx]
 
