@@ -298,12 +298,13 @@ theorem isLeftGradedCoderivationOver_gradedCoderiv (G : InternalGrading R M)
     -- The left cofree part satisfies the left co-Leibniz law after deconcatenating the right
     -- word, because the left and right coactions commute; the term with the bar differential of
     -- `BB` passes the left coaction with the twist of the left word.
-    simp only [gradedCoderiv_def, LinearMap.comp_add, LinearMap.add_comp,
+    rw [gradedCoderiv_def, ← Comodule.cofreeCoact_def]
+    simp only [LinearMap.comp_add, LinearMap.add_comp,
       TensorProduct.map_add_right, ← LinearMap.comp_assoc, Comodule.leftCoactRTensor_comp_rTensor,
       leftCofreeCoact_comp_leftTaylor, LinearMap.rTensor_add]
     simp only [LinearMap.comp_assoc,
-      Comodule.assoc_comp_rTensor_map_counit_comp_assoc_symm_comp_lTensor_comul]
-    simp only [Comodule.assoc_comp_rTensor_comp_assoc_symm_comp_lTensor_comul,
+      Comodule.assoc_comp_rTensor_map_counit_comp_cofreeCoact]
+    simp only [Comodule.assoc_comp_rTensor_comp_cofreeCoact,
       Comodule.leftCoactRTensor_comp_lTensor_comp_rTensor_map (comul_comp_map_koszulTwist AA)]
     abel
   refine Comodule.isLeftGradedCoderivationOver_iff_coact_apply.2 fun x ↦ ?_

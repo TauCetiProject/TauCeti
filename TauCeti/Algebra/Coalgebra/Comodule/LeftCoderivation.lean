@@ -59,7 +59,7 @@ bar constructions.
 * `TauCeti.Comodule.leftCofreeCoact_comp_leftCofreeCoact` and
   `TauCeti.Comodule.leftCofreeCoact_comp_leftCoactRTensor_leftCofreeCoact`: the cofree left
   coaction, and its extension to the cofree bicomodule `(C ⊗ P) ⊗ N`, are coassociative.
-* `TauCeti.Comodule.assoc_comp_rTensor_comp_assoc_symm_comp_lTensor_comul`: the extended left
+* `TauCeti.Comodule.assoc_comp_rTensor_comp_cofreeCoact`: the extended left
   coaction commutes with the cofree right coaction of a second coalgebra.
 * `TauCeti.Comodule.leftCofreeCoact_comp_map` and `TauCeti.Comodule.leftCofreeCoact_comp_rTensor`:
   how the cofree left coaction passes maps compatible with comultiplication and coderivations of
@@ -152,14 +152,12 @@ variable {E : Type*} {Y' : Type*} {C' : Type*} [AddCommMonoid E] [Module R E] [C
 /-- The extended left coaction of `Y ⊗ E` commutes with the cofree right coaction
 `y ⊗ v ↦ ∑ (y ⊗ v₁) ⊗ v₂` of `E`: lifting `τ ⊗ g` along the cofree right coaction after the left
 coaction is lifting `g` along the cofree right coaction and then applying `τ ⊗ -`. -/
-theorem assoc_comp_rTensor_comp_assoc_symm_comp_lTensor_comul (δ : Y →ₗ[R] C ⊗[R] Y)
-    (τ : C →ₗ[R] C') (g : Y ⊗[R] E →ₗ[R] Y') :
+theorem assoc_comp_rTensor_comp_cofreeCoact (δ : Y →ₗ[R] C ⊗[R] Y) (τ : C →ₗ[R] C')
+    (g : Y ⊗[R] E →ₗ[R] Y') :
     (TensorProduct.assoc R C' Y' E).toLinearMap ∘ₗ
-        (TensorProduct.map τ g ∘ₗ leftCoactRTensor E δ).rTensor E ∘ₗ
-          (TensorProduct.assoc R Y E E).symm.toLinearMap ∘ₗ Coalgebra.comul.lTensor Y =
-      TensorProduct.map τ (g.rTensor E ∘ₗ (TensorProduct.assoc R Y E E).symm.toLinearMap ∘ₗ
-          Coalgebra.comul.lTensor Y) ∘ₗ
-        leftCoactRTensor E δ := by
+        (TensorProduct.map τ g ∘ₗ leftCoactRTensor E δ).rTensor E ∘ₗ cofreeCoact R E Y =
+      TensorProduct.map τ (g.rTensor E ∘ₗ cofreeCoact R E Y) ∘ₗ leftCoactRTensor E δ := by
+  rw [cofreeCoact_def]
   refine TensorProduct.ext' fun y v ↦ ?_
   -- Both sides are the following expression in `δ y` and the comultiplication of `v`.
   let Θ : (C ⊗[R] Y) ⊗[R] (E ⊗[R] E) →ₗ[R] C' ⊗[R] (Y' ⊗[R] E) :=
@@ -194,20 +192,15 @@ theorem assoc_comp_rTensor_comp_assoc_symm_comp_lTensor_comul (δ : Y →ₗ[R] 
 /-- The extended left coaction of `Y ⊗ E`, followed by `b` on the coalgebra factor and the counit
 of `E`, and lifted along the cofree right coaction of `E`, is `b` applied after the extended left
 coaction. -/
-theorem assoc_comp_rTensor_map_counit_comp_assoc_symm_comp_lTensor_comul (δ : Y →ₗ[R] C ⊗[R] Y)
+theorem assoc_comp_rTensor_map_counit_comp_cofreeCoact (δ : Y →ₗ[R] C ⊗[R] Y)
     (b : C →ₗ[R] C') :
     (TensorProduct.assoc R C' Y E).toLinearMap ∘ₗ
         (TensorProduct.map b ((TensorProduct.rid R Y).toLinearMap ∘ₗ
           (Coalgebra.counit (R := R) (A := E)).lTensor Y) ∘ₗ leftCoactRTensor E δ).rTensor E ∘ₗ
-          (TensorProduct.assoc R Y E E).symm.toLinearMap ∘ₗ Coalgebra.comul.lTensor Y =
+          cofreeCoact R E Y =
       b.rTensor (Y ⊗[R] E) ∘ₗ leftCoactRTensor E δ := by
-  rw [assoc_comp_rTensor_comp_assoc_symm_comp_lTensor_comul]
-  have hid : ((TensorProduct.rid R Y).toLinearMap ∘ₗ
-      (Coalgebra.counit (R := R) (A := E)).lTensor Y).rTensor E ∘ₗ
-        (TensorProduct.assoc R Y E E).symm.toLinearMap ∘ₗ Coalgebra.comul.lTensor Y =
-      LinearMap.id :=
-    rTensor_rid_comp_lTensor_counit_comp_cofreeCoact
-  rw [hid, ← LinearMap.rTensor_def]
+  rw [assoc_comp_rTensor_comp_cofreeCoact, rTensor_rid_comp_lTensor_counit_comp_cofreeCoact,
+    ← LinearMap.rTensor_def]
 
 end Bicomodule
 
@@ -289,6 +282,12 @@ theorem leftCofreeCoact_def :
       (TensorProduct.assoc R C C P).toLinearMap ∘ₗ Coalgebra.comul.rTensor P :=
   TensorProduct.ext' fun _ _ ↦ by simp
 
+/-- The cofree left coaction of `C ⊗ P` is the comultiplication of `C` extended by the right
+factor `P`. -/
+theorem leftCofreeCoact_eq_leftCoactRTensor :
+    leftCofreeCoact R C P = leftCoactRTensor P Coalgebra.comul := by
+  rw [leftCofreeCoact_def, leftCoactRTensor_def]
+
 /-- If `τ` is compatible with comultiplication, the cofree left coaction intertwines `τ ⊗ f` with
 `τ ⊗ (τ ⊗ f)`. -/
 theorem leftCofreeCoact_comp_map {τ : C →ₗ[R] C}
@@ -302,40 +301,6 @@ theorem leftCofreeCoact_comp_map {τ : C →ₗ[R] C}
   induction Coalgebra.comul (R := R) c using TensorProduct.inductionOn with
   | tmul a b => simp
   | add x x' hx hx' => simp only [TensorProduct.add_tmul, map_add, hx, hx']
-
-/-- The cofree left coaction of `C ⊗ P` is coassociative. -/
-theorem leftCofreeCoact_comp_leftCofreeCoact :
-    leftCofreeCoact R C (C ⊗[R] P) ∘ₗ leftCofreeCoact R C P =
-      (leftCofreeCoact R C P).lTensor C ∘ₗ leftCofreeCoact R C P := by
-  refine TensorProduct.ext' fun c p ↦ ?_
-  -- Both sides are `Φ` applied to the two sides of coassociativity, with `Φ` attaching `p`.
-  let Φ : C ⊗[R] (C ⊗[R] C) →ₗ[R] C ⊗[R] (C ⊗[R] (C ⊗[R] P)) :=
-    (((TensorProduct.mk R C P).flip p).lTensor C).lTensor C
-  have hl : ∀ t : C ⊗[R] C, leftCofreeCoact R C (C ⊗[R] P) (TensorProduct.assoc R C C P (t ⊗ₜ p)) =
-      Φ (TensorProduct.assoc R C C C (Coalgebra.comul.rTensor C t)) := by
-    intro t
-    induction t using TensorProduct.inductionOn with
-    | tmul a b =>
-      simp only [TensorProduct.assoc_tmul, leftCofreeCoact_tmul, LinearMap.rTensor_tmul]
-      induction Coalgebra.comul (R := R) a using TensorProduct.inductionOn with
-      | tmul x y => simp [Φ]
-      | add x x' hx hx' => simp only [TensorProduct.add_tmul, map_add, hx, hx']
-    | add x x' hx hx' => simp only [TensorProduct.add_tmul, map_add, hx, hx']
-  have hr : ∀ t : C ⊗[R] C,
-      (leftCofreeCoact R C P).lTensor C (TensorProduct.assoc R C C P (t ⊗ₜ p)) =
-      Φ (Coalgebra.comul.lTensor C t) := by
-    intro t
-    induction t using TensorProduct.inductionOn with
-    | tmul a b =>
-      simp only [TensorProduct.assoc_tmul, LinearMap.lTensor_tmul, leftCofreeCoact_tmul]
-      induction Coalgebra.comul (R := R) b using TensorProduct.inductionOn with
-      | tmul x y => simp [Φ]
-      | add x x' hx hx' =>
-        simp only [TensorProduct.add_tmul, TensorProduct.tmul_add, map_add, hx, hx']
-    | add x x' hx hx' => simp only [TensorProduct.add_tmul, map_add, hx, hx']
-  have h := LinearMap.congr_fun (Coalgebra.coassoc (R := R) (A := C)) c
-  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe] at h
-  simp only [LinearMap.comp_apply, leftCofreeCoact_tmul, hl, hr, h]
 
 /-- If `b` satisfies the co-Leibniz law `Δ ∘ b = (b ⊗ 1) ∘ Δ + (τ ⊗ b) ∘ Δ` on `C`, then `b ⊗ 1`
 satisfies the corresponding law for the cofree left coaction of `C ⊗ P`. -/
@@ -445,6 +410,14 @@ theorem leftCofreeCoact_comp_leftCoactRTensor {δ : Y →ₗ[R] C ⊗[R] Y}
   have h := LinearMap.congr_fun hδ y
   simp only [LinearMap.comp_apply] at h
   simp only [LinearMap.comp_apply, leftCoactRTensor_tmul, hl, hr, h]
+
+/-- The cofree left coaction of `C ⊗ P` is coassociative. -/
+theorem leftCofreeCoact_comp_leftCofreeCoact :
+    leftCofreeCoact R C (C ⊗[R] P) ∘ₗ leftCofreeCoact R C P =
+      (leftCofreeCoact R C P).lTensor C ∘ₗ leftCofreeCoact R C P := by
+  have h := leftCofreeCoact_comp_leftCoactRTensor (N := P) (δ := Coalgebra.comul (R := R) (A := C))
+    (by rw [leftCofreeCoact_def, LinearMap.comp_assoc, Coalgebra.coassoc])
+  rwa [← leftCofreeCoact_eq_leftCoactRTensor] at h
 
 /-- The extension of the cofree left coaction of `C ⊗ P` by a right factor is coassociative. -/
 theorem leftCofreeCoact_comp_leftCoactRTensor_leftCofreeCoact :
