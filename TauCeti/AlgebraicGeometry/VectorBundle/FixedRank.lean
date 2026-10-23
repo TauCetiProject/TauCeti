@@ -103,13 +103,10 @@ theorem free_obj :
 variable {X} {r}
 
 /-- Pullback of finite locally free sheaves of fixed rank. -/
--- Expose the lift so that its underlying sheaves and morphisms are those of the ordinary pullback,
--- and comparison isomorphisms can be stated without equality transports.
-@[expose]
 def pullback {Y : Scheme.{u}} (f : X ⟶ Y) : FixedRank Y r ⥤ FixedRank X r :=
   (isConstantRank X r).lift
     ((isConstantRank Y r).ι ⋙ FiniteLocallyFreeSheaf.pullback f)
-    fun E ↦ (isConstantRank_iff _ r).mpr fun x ↦ by simp
+    fun E x ↦ by simp
 
 /-- The underlying finite locally free sheaf of a fixed-rank pullback is the ordinary pullback. -/
 @[simp]

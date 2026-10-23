@@ -53,12 +53,9 @@ namespace FiniteLocallyFreeSheaf
 
 variable (X : Scheme.{u})
 
--- Expose the lift so that its underlying objects and morphisms are those of the exterior power,
--- and comparison isomorphisms such as pullback can be stated without equality transports.
 /-- The determinant of finite locally free sheaves of constant rank `r` on `X`: the top exterior
 power `E ↦ ⋀ʳ E` of the underlying `𝒪_X`-modules, which has rank `r.choose r = 1` everywhere and
 so is an invertible sheaf. -/
-@[expose]
 def determinant (r : ℕ) : FixedRank X r ⥤ InvertibleSheaf X :=
   (SheafOfModules.isInvertible X).lift
     (FixedRank.toFiniteLocallyFree X r ⋙ (Scheme.Modules.isFiniteLocallyFree X).ι ⋙

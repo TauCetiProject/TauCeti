@@ -8,6 +8,11 @@ module
 public import TauCeti.AlgebraicGeometry.LineBundle.Functoriality
 public import TauCeti.AlgebraicGeometry.Modules.ExteriorPower.Pullback.Quasicoherent
 public import TauCeti.AlgebraicGeometry.VectorBundle.Determinant.Basic
+-- Proof-only: the bodies of the full-subcategory lifts `determinant`, `FixedRank.pullback` and
+-- `FiniteLocallyFreeSheaf.pullback` are not exposed.
+import all TauCeti.AlgebraicGeometry.VectorBundle.Determinant.Basic
+import all TauCeti.AlgebraicGeometry.VectorBundle.FixedRank
+import all TauCeti.AlgebraicGeometry.VectorBundle.FiniteLocallyFree
 
 /-!
 # Pullback of the determinant of a vector bundle
@@ -74,16 +79,29 @@ exterior-power comparison `f^* (⋀ʳ E) ⟶ ⋀ʳ (f^* E)`. -/
 @[simp]
 theorem pullbackDeterminantIso_hom_app_hom (f : X ⟶ Y) {r : ℕ} (E : FixedRank Y r) :
     ((pullbackDeterminantIso f r).hom.app E).hom =
-      (Scheme.Modules.pullbackExteriorPowerComparison f r).app E.obj.obj :=
-  (rfl)
+      eqToHom (by
+          simp only [Functor.comp_obj, InvertibleSheaf.pullback_obj_obj, determinant_obj_obj]
+          rfl) ≫
+        (Scheme.Modules.pullbackExteriorPowerComparison f r).app E.obj.obj ≫
+        eqToHom (by
+          simp only [Functor.comp_obj, determinant_obj_obj, FixedRank.pullback_obj_obj,
+            FiniteLocallyFreeSheaf.pullback_obj_obj]; rfl) :=
+  -- Both `eqToHom`s are identities; they only record the object formulas of the lifts.
+  ((Category.id_comp _).trans (Category.comp_id _)).symm
 
 /-- On underlying sheaves, the inverse map of `pullbackDeterminantIso` is the inverse of the
 canonical exterior-power comparison `f^* (⋀ʳ E) ⟶ ⋀ʳ (f^* E)`. -/
 @[simp]
 theorem pullbackDeterminantIso_inv_app_hom (f : X ⟶ Y) {r : ℕ} (E : FixedRank Y r) :
     ((pullbackDeterminantIso f r).inv.app E).hom =
-      inv ((Scheme.Modules.pullbackExteriorPowerComparison f r).app E.obj.obj) :=
-  (rfl)
+      eqToHom (by
+          simp only [Functor.comp_obj, determinant_obj_obj, FixedRank.pullback_obj_obj,
+            FiniteLocallyFreeSheaf.pullback_obj_obj]; rfl) ≫
+        inv ((Scheme.Modules.pullbackExteriorPowerComparison f r).app E.obj.obj) ≫
+        eqToHom (by
+          simp only [Functor.comp_obj, InvertibleSheaf.pullback_obj_obj, determinant_obj_obj]
+          rfl) :=
+  ((Category.id_comp _).trans (Category.comp_id _)).symm
 
 /-- The determinant pullback comparison along the identity is induced by the identity
 isomorphisms of pullback of fixed-rank sheaves and of invertible sheaves. -/
@@ -97,8 +115,8 @@ theorem pullbackDeterminantIso_hom_app_id {r : ℕ} (E : FixedRank X r) :
     determinant_map_hom, FixedRank.pullbackId_hom_app_hom, InvertibleSheaf.pullbackId_hom_app_hom,
     FiniteLocallyFreeSheaf.pullbackId_app_hom_hom]
   -- On underlying sheaves this is `pullbackExteriorPowerComparison_id`: the remaining `eqToHom`s
-  -- transport along the defining equalities of the exposed lifts `determinant`,
-  -- `FixedRank.pullback` and `InvertibleSheaf.pullback`, so they are identities.
+  -- transport along the defining equalities of the lifts `determinant`, `FixedRank.pullback` and
+  -- `InvertibleSheaf.pullback`, whose bodies are imported above, so they are identities.
   exact pullbackExteriorPowerComparison_id r E.obj.obj
 
 /-- The determinant pullback comparison along a composite `f ≫ g` is the composite of the

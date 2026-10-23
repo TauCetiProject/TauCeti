@@ -153,9 +153,6 @@ variable {X} in
 /-- The pullback of finite locally free sheaves along a morphism of schemes `f : X ⟶ Y`: the
 pullback of a locally free and finitely presented `𝒪_Y`-module is a locally free and finitely
 presented `𝒪_X`-module. -/
--- Expose the lift so that its underlying sheaves and morphisms are those of the module pullback,
--- and comparison isomorphisms can be stated without equality transports.
-@[expose]
 def pullback {Y : Scheme.{u}} (f : X ⟶ Y) : FiniteLocallyFreeSheaf Y ⥤ FiniteLocallyFreeSheaf X :=
   (Scheme.Modules.isFiniteLocallyFree X).lift
     ((Scheme.Modules.isFiniteLocallyFree Y).ι ⋙ Scheme.Modules.pullback f)
