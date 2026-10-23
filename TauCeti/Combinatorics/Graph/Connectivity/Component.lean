@@ -482,14 +482,6 @@ theorem map_toSimpleGraphHomOfLE_connectedComponentMk_eq_iff (hHG : H ≤ G) {z 
   rw [SimpleGraph.ConnectedComponent.map_mk, toSimpleGraph_connectedComponentMk_eq_iff,
     coe_toSimpleGraphHomOfLE_apply]
 
-/-- Along a subgraph inclusion `H ≤ G`, the simple component in `H` of an actual vertex `z` of `H`
-maps to the simple component of `z` in `G`. -/
-theorem map_toSimpleGraphHomOfLE_connectedComponentMk (hHG : H ≤ G) {z : V(G)}
-    (hz : (z : α) ∈ V(H)) :
-    (H.toSimpleGraph.connectedComponentMk ⟨z, hz⟩).map (toSimpleGraphHomOfLE hHG) =
-      G.toSimpleGraph.connectedComponentMk z :=
-  (map_toSimpleGraphHomOfLE_connectedComponentMk_eq_iff hHG).mpr (Reachable.refl z.2)
-
 /-- Along a subgraph inclusion `H ≤ G`, the simple components in `H` of `z` and `w` have the same
 image exactly when `w` is reachable from `z` in `G`. -/
 theorem map_toSimpleGraphHomOfLE_connectedComponentMk_eq_map_iff (hHG : H ≤ G) {z w : V(H)} :
