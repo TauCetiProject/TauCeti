@@ -76,44 +76,30 @@ theorem IsCAD.exists_isCAD_lazardValuation_eq_of_lazardDelineation_reindex
       ∀ k E, E ∈ 𝓒 → ∀ x ∈ E, ∀ y ∈ E,
         (F k).lazardValuation (Fin.snoc (Fin.tail x ∘ e) (x 0)) =
           (F k).lazardValuation (Fin.snoc (Fin.tail y ∘ e) (y 0)) := by
-  classical
-  have hstack (C : Set (Fin n → ℝ)) :
-      ∃ (k : ℕ) (θ : Fin k → C → ℝ), C ∈ 𝓓 →
-        IsSemialgebraicStack C θ ∧
-          ∀ E ∈ stackCells C θ,
-            (∃ d, IsAnalyticSubmanifold d E) ∧
-            ∀ i, ∀ x ∈ E, ∀ y ∈ E,
-              (F i).lazardValuation (Fin.snoc (Fin.tail x ∘ e) (x 0)) =
-                (F i).lazardValuation (Fin.snoc (Fin.tail y ∘ e) (y 0)) := by
-    by_cases hC : C ∈ 𝓓
-    · obtain ⟨D⟩ := hD C hC
-      obtain ⟨d, hd⟩ := hanalytic C hC
-      -- Write `C` as the pullback along `e` of the reordered cell carrying the delineation.
-      generalize hS : (fun x ↦ x ∘ e.symm) ⁻¹' C = S at D
-      have hSd : IsAnalyticSubmanifold d S := hS ▸ hd.preimage_comp_equiv e.symm
-      have hSsemi : IsSemialgebraic S := hS ▸ (h𝓓.isSemialgebraic hC).preimage_comp e.symm
-      have hCS : C = (fun x ↦ x ∘ e) ⁻¹' S := by
-        ext x
-        simp [← hS, Function.comp_assoc]
-      subst hCS
-      obtain ⟨hθ, ha⟩ := (D.isSemialgebraicStack hSsemi).reindex e
-        fun E hE ↦ (D.exists_isAnalyticSubmanifold_of_mem_stackCells hSd hE).imp fun _ h ↦ h.2
-      refine ⟨D.count, fun i x ↦ D.root i ⟨x.1 ∘ e, x.2⟩, fun _ ↦ ⟨hθ, fun E hE ↦ ⟨ha E hE, ?_⟩⟩⟩
-      rw [stackCells_comp] at hE
-      obtain ⟨E, hE, rfl⟩ := hE
-      intro i x hx y hy
-      simpa only [Fin.tail_cons, Fin.cons_zero] using
-        D.lazardValuation_snoc_eq_of_mem_stackCells i hE hx hy
-    · exact ⟨0, Fin.elim0, fun h ↦ (hC h).elim⟩
-  choose k θ hθ using hstack
-  refine ⟨⋃ C ∈ 𝓓, stackCells C (θ C), IsCAD.succ k θ h𝓓 fun C hC ↦ (hθ C hC).1,
-    image_image_tail_iUnion_stackCells fun C hC ↦ (hθ C hC).1.strictMono, ?_, ?_⟩
-  · intro E hE
-    obtain ⟨C, hC, hEC⟩ := mem_iUnion₂.1 hE
-    exact ((hθ C hC).2 E hEC).1
-  · intro i E hE
-    obtain ⟨C, hC, hEC⟩ := mem_iUnion₂.1 hE
-    exact ((hθ C hC).2 E hEC).2 i
+  obtain ⟨𝓒, h𝓒, htail, hP⟩ := h𝓓.exists_succ_of_forall_exists_stack
+    (fun E ↦ (∃ d, IsAnalyticSubmanifold d E) ∧
+      ∀ i, ∀ x ∈ E, ∀ y ∈ E,
+        (F i).lazardValuation (Fin.snoc (Fin.tail x ∘ e) (x 0)) =
+          (F i).lazardValuation (Fin.snoc (Fin.tail y ∘ e) (y 0))) fun C hC ↦ by
+    obtain ⟨D⟩ := hD C hC
+    obtain ⟨d, hd⟩ := hanalytic C hC
+    -- Write `C` as the pullback along `e` of the reordered cell carrying the delineation.
+    generalize hS : (fun x ↦ x ∘ e.symm) ⁻¹' C = S at D
+    have hSd : IsAnalyticSubmanifold d S := hS ▸ hd.preimage_comp_equiv e.symm
+    have hSsemi : IsSemialgebraic S := hS ▸ (h𝓓.isSemialgebraic hC).preimage_comp e.symm
+    have hCS : C = (fun x ↦ x ∘ e) ⁻¹' S := by
+      ext x
+      simp [← hS, Function.comp_assoc]
+    subst hCS
+    obtain ⟨hθ, ha⟩ := (D.isSemialgebraicStack hSsemi).reindex e
+      fun E hE ↦ (D.exists_isAnalyticSubmanifold_of_mem_stackCells hSd hE).imp fun _ h ↦ h.2
+    refine ⟨D.count, fun i x ↦ D.root i ⟨x.1 ∘ e, x.2⟩, hθ, fun E hE ↦ ⟨ha E hE, ?_⟩⟩
+    rw [stackCells_comp] at hE
+    obtain ⟨E, hE, rfl⟩ := hE
+    intro i x hx y hy
+    simpa only [Fin.tail_cons, Fin.cons_zero] using
+      D.lazardValuation_snoc_eq_of_mem_stackCells i hE hx hy
+  exact ⟨𝓒, h𝓒, htail, fun E hE ↦ (hP E hE).1, fun i E hE ↦ (hP E hE).2 i⟩
 
 /-- **CAD lifting by Lazard delineations.** Suppose every cell of a cylindrical algebraic
 decomposition of `ℝ ^ n` is an analytic submanifold and carries a Lazard delineation of a
