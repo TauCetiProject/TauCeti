@@ -41,7 +41,8 @@ tests for divisibility by the denominator of `a`.
 ## Main results
 
 * `TauCeti.reflectionBond_eq_coroot'` and `TauCeti.reflectionBond_eq_neg_coroot'`: the bond in terms
-  of any positive root label.
+  of any positive root label, and `TauCeti.reflectionBond_self`: the bond of a weight with itself
+  is `0`.
 * `TauCeti.existsUnique_isPos_reflection_smul_eq_of_minimalCosetRepCovBy`: **a cover of `W / W_λ`
   has a unique positive root label**.
 * `TauCeti.reflectionBond_pos` and `TauCeti.reflectionBond_pos_of_minimalCosetRepCovBy`: **the bond
@@ -102,6 +103,17 @@ theorem reflectionBond_eq_neg_coroot' [P.IsReduced] {β : ι} (hβ : b.IsPos β)
 theorem reflectionBond_eq_zero_of_not_exists {x y : M}
     (h : ¬∃ β, b.IsPos β ∧ P.reflection β x = y) : reflectionBond P b x y = 0 :=
   dite_eq_right h
+
+/-- The bond of a weight with itself is `0`: a reflection fixing `x` has a coroot vanishing on
+`x`. -/
+@[simp]
+theorem reflectionBond_self [NoZeroDivisors R] (x : M) : reflectionBond P b x x = 0 := by
+  by_cases h : ∃ β, b.IsPos β ∧ P.reflection β x = x
+  · rw [reflectionBond, dite_eq_left h]
+    have hc := coroot'_reflection_self P h.choose x
+    rw [h.choose_spec.2] at hc
+    exact CharZero.eq_neg_self_iff.mp hc
+  · exact reflectionBond_eq_zero_of_not_exists h
 
 /-! ### Bonds of covers -/
 
