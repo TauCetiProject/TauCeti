@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.IntegralLattice.ConstructionB.Golay
 public import TauCeti.LinearAlgebra.IntegralLattice.Overlattice.Dual
 public import TauCeti.LinearAlgebra.IntegralLattice.Overlattice.Index
+import TauCeti.Algebra.Group.Subgroup.ZPowers
 
 /-!
 # The Leech lattice from Construction B and an odd shift
@@ -175,12 +176,8 @@ noncomputable def leechShiftSubgroup : AddSubgroup constructionBLattice.Discrimi
 /-- The Leech glue subgroup consists of zero and the class of the Leech shift. -/
 @[simp]
 theorem mem_leechShiftSubgroup_iff (x : constructionBLattice.DiscriminantGroup) :
-    x ∈ leechShiftSubgroup ↔ x = 0 ∨ x = leechShiftClass := by
-  classical
-  rw [leechShiftSubgroup,
-    (isOfFinAddOrder_of_finite _).mem_zmultiples_iff_mem_range_addOrderOf,
-    addOrderOf_leechShiftClass]
-  simp [Nat.le_one_iff_eq_zero_or_eq_one, or_and_right, exists_or, eq_comm]
+    x ∈ leechShiftSubgroup ↔ x = 0 ∨ x = leechShiftClass :=
+  AddSubgroup.mem_zmultiples_iff_of_two_nsmul_eq_zero two_nsmul_leechShiftClass
 
 /-- The Leech glue subgroup has order two. -/
 theorem natCard_leechShiftSubgroup : Nat.card leechShiftSubgroup = 2 := by
@@ -250,21 +247,11 @@ lattice. -/
 theorem mem_leechLattice_carrier_iff (x : Fin 24 → ℚ) :
     x ∈ leechLattice.carrier ↔
       x ∈ constructionBLattice.carrier ∨ x - leechShift ∈ constructionBLattice.carrier := by
-  rw [leechLattice_carrier, mem_intermediateCarrierOfDiscriminantSubgroup_iff]
-  constructor
-  · rintro ⟨hxdual, hx⟩
-    rcases (mem_leechShiftSubgroup_iff _).mp hx with hx | hx
-    · exact Or.inl ((constructionBLattice.discriminantGroup_mk_eq_zero_iff _).mp hx)
-    · exact Or.inr ((constructionBLattice.discriminantGroup_mk_eq_iff _ _).mp hx)
-  · rintro (hx | hx)
-    · have hxdual := constructionBLattice.le_dualCarrier hx
-      exact ⟨hxdual, (mem_leechShiftSubgroup_iff _).mpr
-        (Or.inl ((constructionBLattice.discriminantGroup_mk_eq_zero_iff ⟨x, hxdual⟩).mpr hx))⟩
-    · have hxdual : x ∈ constructionBLattice.dualCarrier := by
-        simpa only [sub_add_cancel] using constructionBLattice.dualCarrier.add_mem
-          (constructionBLattice.le_dualCarrier hx) leechShift_mem_constructionBLattice_dualCarrier
-      exact ⟨hxdual, (mem_leechShiftSubgroup_iff _).mpr
-        (Or.inr ((constructionBLattice.discriminantGroup_mk_eq_iff ⟨x, hxdual⟩ _).mpr hx))⟩
+  rw [leechLattice_carrier, leechShiftSubgroup, leechShiftClass_def]
+  refine constructionBLattice.mem_intermediateCarrierOfDiscriminantSubgroup_zmultiples_iff
+    leechShift_mem_constructionBLattice_dualCarrier ?_ x
+  rw [← leechShiftClass_def]
+  exact two_nsmul_leechShiftClass
 
 /-- The Golay Construction B lattice is a sublattice of the Leech lattice. -/
 theorem constructionBLattice_carrier_le_leechLattice_carrier :
