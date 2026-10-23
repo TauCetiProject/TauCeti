@@ -23,6 +23,10 @@ namespace TauCeti
 /-- The sup norm of an integer vector is the sup norm of its cast to a real vector. -/
 theorem pi_norm_intCast_real {ι : Type*} [Fintype ι] (z : ι → ℤ) :
     ‖fun i ↦ (z i : ℝ)‖ = ‖z‖ :=
-  rfl
+  le_antisymm
+    ((pi_norm_le_iff_of_nonneg (norm_nonneg z)).2 fun i ↦
+      (Int.norm_cast_real (z i)).trans_le (norm_le_pi_norm z i))
+    ((pi_norm_le_iff_of_nonneg (norm_nonneg _)).2 fun i ↦
+      (Int.norm_cast_real (z i)).symm.trans_le (norm_le_pi_norm (fun i ↦ (z i : ℝ)) i))
 
 end TauCeti
