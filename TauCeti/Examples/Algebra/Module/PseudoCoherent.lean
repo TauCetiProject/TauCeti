@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.Algebra.Module.PseudoCoherent
+import TauCeti.Algebra.Module.PseudoCoherent.Basic
 
 /-!
 # Tests for pseudocoherent modules
