@@ -67,45 +67,6 @@ variable {n : ℕ} (G : GridDiagram n) (C : ColumnCommutationData G)
 local notation "a" => C.column
 local notation "b" => finRotate n C.column
 
-/-! ### Cyclic order of rows -/
-
-section Rows
-
-variable {B T M s s' r r' : Fin n}
-
-/-- A point of the closed arc from `s'` to `s` misses the open arc from `s` to `T`, and a point of
-the closed arc from `s` to `s'` misses the arc from `B` to `s`, when `s` but not `s'` lies in the
-arc from `B` to `T`. -/
-private theorem rows_pentagon (hs : s ∈ Grid.cIco B T) (hs' : s' ∉ Grid.cIco B T)
-    (hr : r ∈ insert s (Grid.cIco s' s)) (hr' : r' ∈ insert s' (Grid.cIco s s')) :
-    r ∉ Grid.cIoo s T ∧ r' ∉ Grid.cIco B s := by
-  simp only [Grid.mem_cIco, Grid.mem_cIoo, Finset.mem_insert, ne_eq, ← Fin.val_inj] at *
-  split_ifs at * <;> omega
-
-/-- A point of the closed arc between two points of the arc from `B` to `T`, in that order,
-misses the arc after the second point and the arc before the first. -/
-private theorem rows_bigon (hs : s ∈ Grid.cIco B T) (hs' : s' ∈ Grid.cIoo s T)
-    (hr : r ∈ insert s' (Grid.cIco s s')) : r ∉ Grid.cIoo s' T ∧ r ∉ Grid.cIco B s := by
-  simp only [Grid.mem_cIco, Grid.mem_cIoo, Finset.mem_insert, ne_eq, ← Fin.val_inj] at *
-  split_ifs at * <;> omega
-
-/-- A point of the closed arc from `s` to `s'` misses the arc from `B` to `s` when `s'` precedes
-`s` in the arc from `B` to `T`, and the point misses an arc from `B` containing `s'`. -/
-private theorem rows_notMem_cIco (hs' : s' ∈ Grid.cIco B T) (hs : s ∈ Grid.cIoo s' T)
-    (hM : s' ∈ Grid.cIco B M) (hr : r ∈ insert s' (Grid.cIco s s')) (hrM : r ∉ Grid.cIco B M) :
-    r ∉ Grid.cIco B s := by
-  simp only [Grid.mem_cIco, Grid.mem_cIoo, Finset.mem_insert, ne_eq, ← Fin.val_inj] at *
-  split_ifs at * <;> omega
-
-/-- A point of the closed arc from `s'` to `s` misses the open arc from `s` to `T` when `s'`
-follows `s` in that arc, and the point misses an arc ending at `T` containing `s'`. -/
-private theorem rows_notMem_cIoo (hs' : s' ∈ Grid.cIoo s T) (hM : s' ∈ Grid.cIco M T)
-    (hr : r ∈ insert s (Grid.cIco s' s)) (hrM : r ∉ Grid.cIco M T) : r ∉ Grid.cIoo s T := by
-  simp only [Grid.mem_cIco, Grid.mem_cIoo, Finset.mem_insert, ne_eq, ← Fin.val_inj] at *
-  split_ifs at * <;> omega
-
-end Rows
-
 /-! ### Promoting rectangles to counted pentagons -/
 
 /-- The cut-away column of the replaced line lies in a rectangle with terminal side that line. -/
@@ -213,8 +174,12 @@ private theorem exists_terminalTerminal {x z : GridState n} (E : GridRectangleDe
     (hX1 : ∀ c, c ≠ a → c ≠ b → (c, G.X c) ∉ E.first.toGridRectangle.coveredSquares)
     (hX2 : ∀ c, c ≠ a → c ≠ b → (c, G.X c) ∉ E.second.toGridRectangle.coveredSquares) :
     ∃ D ∈ G.sameSidePentagonPairs C x z, D.toRectangleDecomposition = E := by
-  obtain ⟨hPa, hPb⟩ := rows_pentagon ht ht' C.X_column_below C.X_next_above
-  obtain ⟨hQb, hQa⟩ := rows_pentagon hs' hs C.X_next_above C.X_column_below
+  obtain ⟨hPa, hPb⟩ :=
+    Grid.notMem_cIoo_and_notMem_cIco_of_mem_insert_cIco_of_notMem_cIco ht ht'
+      C.X_column_below C.X_next_above
+  obtain ⟨hQb, hQa⟩ :=
+    Grid.notMem_cIoo_and_notMem_cIco_of_mem_insert_cIco_of_notMem_cIco hs' hs
+      C.X_next_above C.X_column_below
   obtain ⟨P, hPe, hP⟩ := G.exists_pentagon C _ h1 hr1 ht hX1 hPa hPb
   obtain ⟨Q, hQe, hQ⟩ := G.exists_reversePentagon C _ h2 hr2 hs' hX2 hQb hQa
   refine ⟨⟨E.middle, .inl P, .inl Q⟩, ?_, ?_⟩
@@ -234,8 +199,12 @@ private theorem exists_initialInitial {x z : GridState n} (E : GridRectangleDeco
     (hX1 : ∀ c, c ≠ a → c ≠ b → (c, G.X c) ∉ E.first.toGridRectangle.coveredSquares)
     (hX2 : ∀ c, c ≠ a → c ≠ b → (c, G.X c) ∉ E.second.toGridRectangle.coveredSquares) :
     ∃ D ∈ G.sameSidePentagonPairs C x z, D.toRectangleDecomposition = E := by
-  obtain ⟨hPa, hPb⟩ := rows_pentagon ht ht' C.X_column_below C.X_next_above
-  obtain ⟨hQb, hQa⟩ := rows_pentagon hs' hs C.X_next_above C.X_column_below
+  obtain ⟨hPa, hPb⟩ :=
+    Grid.notMem_cIoo_and_notMem_cIco_of_mem_insert_cIco_of_notMem_cIco ht ht'
+      C.X_column_below C.X_next_above
+  obtain ⟨hQb, hQa⟩ :=
+    Grid.notMem_cIoo_and_notMem_cIco_of_mem_insert_cIco_of_notMem_cIco hs' hs
+      C.X_next_above C.X_column_below
   obtain ⟨P, hPe, hP⟩ := G.exists_initialPentagon C _ h1 hl1 ht hX1 hPa hPb
   obtain ⟨Q, hQe, hQ⟩ := G.exists_reverseInitialPentagon C _ h2 hl2 hs' hX2 hQb hQa
   refine ⟨⟨E.middle, .inr P, .inr Q⟩, ?_, ?_⟩
@@ -382,12 +351,13 @@ private theorem exists_mixed_of_terminal_first
       (D.second.mem_toGridRectangle_coveredSquares.mpr ⟨G.next_mem_cIco C _ hl, h⟩))).symm
   rw [hbot] at hXb
   by_cases hs : C.oppositeTurnRow ∈ Grid.cIco D.first.bottom D.second.top
-  · obtain ⟨hPa, hQa⟩ := rows_bigon hlow hup C.X_column_below
+  · obtain ⟨hPa, hQa⟩ :=
+      Grid.notMem_cIoo_and_notMem_cIco_of_mem_insert_cIco_of_mem_cIoo hlow hup C.X_column_below
     exact G.exists_terminalInitial C D h1 h2 hr hl
       (Grid.insert_cIco_subset_cIco hlow hup (Finset.mem_insert_self _ _)) (by rwa [hbot])
       (fun c ha _ h => ha (hX c (Finset.mem_union_left _ h)))
       (fun c ha _ h => ha (hX c (Finset.mem_union_right _ h))) hPa
-      (rows_notMem_cIco hlow hup hs C.X_next_above hXb)
+      (Grid.notMem_cIco_of_mem_insert_cIco_of_notMem_cIco hlow hup hs C.X_next_above hXb)
       (fun h => hXb (Grid.cIoo_subset_cIco_of_mem_cIco hs h)) (by rwa [hbot])
   · rcases (D.isRecutOfRightEqLeft_recut hcommon hone h1 h2).recut_geometry hone with
       ⟨hrow, -, -, -, -, -, -, -, -⟩ | ⟨hrow, -, -, -, h2r, -, -, h2b, h2t⟩
@@ -416,7 +386,8 @@ private theorem exists_mixed_of_initial_second
       (D.first.mem_toGridRectangle_coveredSquares.mpr ⟨G.column_mem_cIco C _ hr, h⟩)))
   rw [hbot] at hlow
   by_cases hs : C.turnRow ∈ Grid.cIco D.first.bottom D.first.top
-  · obtain ⟨hQb, hPb⟩ := rows_bigon hlow hup C.X_next_above
+  · obtain ⟨hQb, hPb⟩ :=
+      Grid.notMem_cIoo_and_notMem_cIco_of_mem_insert_cIco_of_mem_cIoo hlow hup C.X_next_above
     refine G.exists_terminalInitial C D h1 h2 hr hl hs ?_
       (fun c _ hb h => hb (hX c (Finset.mem_union_left _ h)))
       (fun c _ hb h => hb (hX c (Finset.mem_union_right _ h)))
@@ -424,7 +395,7 @@ private theorem exists_mixed_of_initial_second
     · rw [hbot]
       exact Grid.insert_cIco_subset_cIco hlow hup (Finset.mem_insert_self _ _)
     · rw [hbot]
-      exact rows_notMem_cIco hlow hup hs C.X_column_below hXa
+      exact Grid.notMem_cIco_of_mem_insert_cIco_of_notMem_cIco hlow hup hs C.X_column_below hXa
   · rcases (D.isRecutOfRightEqLeft_recut hcommon hone h1 h2).recut_geometry hone with
       ⟨hrow, h1l, -, -, -, h1b, h1t, -, -⟩ | ⟨hrow, -, -, -, -, -, -, -, -⟩
     · refine (hfalse _ (D.isRecut_recut hone h1 h2)
@@ -452,11 +423,13 @@ private theorem exists_mixed_of_initial_first
       (D.second.mem_toGridRectangle_coveredSquares.mpr ⟨G.column_mem_cIco C _ hr, h⟩)))
   rw [htop] at hXa
   by_cases hs : C.oppositeTurnRow ∈ Grid.cIco D.second.bottom D.first.top
-  · obtain ⟨hQb, hPb⟩ := rows_bigon hlow hup C.X_next_above
+  · obtain ⟨hQb, hPb⟩ :=
+      Grid.notMem_cIoo_and_notMem_cIco_of_mem_insert_cIco_of_mem_cIoo hlow hup C.X_next_above
     exact G.exists_initialTerminal C D h1 h2 hl hr hlow (by rwa [htop])
       (fun c _ hb h => hb (hX c (Finset.mem_union_left _ h)))
       (fun c _ hb h => hb (hX c (Finset.mem_union_right _ h)))
-      (rows_notMem_cIoo hup hs C.X_column_below hXa) hPb (by rwa [htop])
+      (Grid.notMem_cIoo_of_mem_insert_cIco_of_notMem_cIco hup hs C.X_column_below hXa) hPb
+      (by rwa [htop])
       (fun h => hXa (Grid.cIco_subset_cIco_of_mem_cIco hs h))
   · rcases (D.isRecutOfLeftEqRight_recut hcommon hone h1 h2).recut_geometry hone with
       ⟨hrow, -, -, -, -, -, -, -, -⟩ | ⟨hrow, -, -, h2l, -, -, -, h2b, h2t⟩
@@ -489,7 +462,8 @@ private theorem exists_mixed_of_terminal_second
       (D.first.mem_toGridRectangle_coveredSquares.mpr ⟨G.next_mem_cIco C _ hl, h⟩))).symm
   rw [htop] at hlow hup
   by_cases hs : C.turnRow ∈ Grid.cIco D.first.bottom D.first.top
-  · obtain ⟨hPa, hQa⟩ := rows_bigon hlow hup C.X_column_below
+  · obtain ⟨hPa, hQa⟩ :=
+      Grid.notMem_cIoo_and_notMem_cIco_of_mem_insert_cIco_of_mem_cIoo hlow hup C.X_column_below
     refine G.exists_initialTerminal C D h1 h2 hl hr hs ?_
       (fun c ha _ h => ha (hX c (Finset.mem_union_left _ h)))
       (fun c ha _ h => ha (hX c (Finset.mem_union_right _ h))) hPa
@@ -497,7 +471,7 @@ private theorem exists_mixed_of_terminal_second
     · rw [htop]
       exact hlow
     · rw [htop]
-      exact rows_notMem_cIoo hup hs C.X_next_above hXb
+      exact Grid.notMem_cIoo_of_mem_insert_cIco_of_notMem_cIco hup hs C.X_next_above hXb
   · rcases (D.isRecutOfLeftEqRight_recut hcommon hone h1 h2).recut_geometry hone with
       ⟨hrow, -, h1r, -, -, h1b, h1t, -, -⟩ | ⟨hrow, -, -, -, -, -, -, -, -⟩
     · obtain ⟨hA, hB⟩ := Grid.mem_cIco_and_mem_cIoo_of_mem_cIoo_of_mem_cIco hlow hup

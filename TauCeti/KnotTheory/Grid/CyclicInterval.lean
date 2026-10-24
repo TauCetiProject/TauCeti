@@ -101,6 +101,11 @@ directions before taking products.
   `β`.
 * `TauCeti.Grid.notMem_cIco_of_cIco_union`: a point missing both halves of a half-open arc
   cut at an interior point misses the whole arc.
+* `TauCeti.Grid.notMem_cIoo_and_notMem_cIco_of_mem_insert_cIco_of_notMem_cIco`,
+  `TauCeti.Grid.notMem_cIoo_and_notMem_cIco_of_mem_insert_cIco_of_mem_cIoo`,
+  `TauCeti.Grid.notMem_cIco_of_mem_insert_cIco_of_notMem_cIco`,
+  `TauCeti.Grid.notMem_cIoo_of_mem_insert_cIco_of_notMem_cIco`: a point of the closed arc
+  between two points of an arc misses the pieces of that arc outside them.
 * `TauCeti.Grid.mem_cIco_of_mem_insert_cIco`, `TauCeti.Grid.notMem_cIoo_of_mem_insert_cIco`,
   `TauCeti.Grid.notMem_cIco_of_mem_insert_cIco`, `TauCeti.Grid.notMem_cIco_of_noninterleaving`:
   the cyclic order of points on the two closed arcs between `a` and `b`.
@@ -1116,6 +1121,39 @@ theorem mem_cIco_and_mem_cIoo_of_mem_cIoo_of_mem_cIco {a b c s s' : Fin n} (hs :
     (hs' : s' ∈ cIoo s c) (h : s' ∈ cIco a b) : s ∈ cIco a b ∧ s' ∈ cIoo s b := by
   simp only [mem_cIco, mem_cIoo, ne_eq, ← Fin.val_inj] at hs hs' h ⊢
   split_ifs at hs hs' h ⊢ <;> omega
+
+/-- A point of the closed arc from `s'` to `s` misses the open arc from `s` to `b`, and a point of
+the closed arc from `s` to `s'` misses the arc from `a` to `s`, when `s` but not `s'` lies in the
+arc from `a` to `b`. -/
+theorem notMem_cIoo_and_notMem_cIco_of_mem_insert_cIco_of_notMem_cIco {a b s s' r r' : Fin n}
+    (hs : s ∈ cIco a b) (hs' : s' ∉ cIco a b) (hr : r ∈ insert s (cIco s' s))
+    (hr' : r' ∈ insert s' (cIco s s')) : r ∉ cIoo s b ∧ r' ∉ cIco a s := by
+  simp only [mem_cIco, mem_cIoo, Finset.mem_insert, ne_eq, ← Fin.val_inj] at *
+  split_ifs at * <;> omega
+
+/-- A point of the closed arc between two points `s` and then `s'` of the arc from `a` to `b`
+misses the arc after the second point and the arc before the first. -/
+theorem notMem_cIoo_and_notMem_cIco_of_mem_insert_cIco_of_mem_cIoo {a b s s' r : Fin n}
+    (hs : s ∈ cIco a b) (hs' : s' ∈ cIoo s b) (hr : r ∈ insert s' (cIco s s')) :
+    r ∉ cIoo s' b ∧ r ∉ cIco a s := by
+  simp only [mem_cIco, mem_cIoo, Finset.mem_insert, ne_eq, ← Fin.val_inj] at *
+  split_ifs at * <;> omega
+
+/-- A point of the closed arc from `s` to `s'` misses the arc from `a` to `s` when `s'` precedes
+`s` in the arc from `a` to `b`, and the point misses an arc from `a` containing `s'`. -/
+theorem notMem_cIco_of_mem_insert_cIco_of_notMem_cIco {a b m s s' r : Fin n}
+    (hs' : s' ∈ cIco a b) (hs : s ∈ cIoo s' b) (hm : s' ∈ cIco a m)
+    (hr : r ∈ insert s' (cIco s s')) (hrm : r ∉ cIco a m) : r ∉ cIco a s := by
+  simp only [mem_cIco, mem_cIoo, Finset.mem_insert, ne_eq, ← Fin.val_inj] at *
+  split_ifs at * <;> omega
+
+/-- A point of the closed arc from `s'` to `s` misses the open arc from `s` to `b` when `s'`
+follows `s` in that arc, and the point misses an arc ending at `b` containing `s'`. -/
+theorem notMem_cIoo_of_mem_insert_cIco_of_notMem_cIco {b m s s' r : Fin n}
+    (hs' : s' ∈ cIoo s b) (hm : s' ∈ cIco m b) (hr : r ∈ insert s (cIco s' s))
+    (hrm : r ∉ cIco m b) : r ∉ cIoo s b := by
+  simp only [mem_cIco, mem_cIoo, Finset.mem_insert, ne_eq, ← Fin.val_inj] at *
+  split_ifs at * <;> omega
 
 /-- If `c` lies on the closed arc from `b` to `a` and `d` lies on the closed arc from `a` to `b`,
 with `c ≠ d`, then `a` lies on the half-open arc from `c` to `d` unless `a = d`. -/
