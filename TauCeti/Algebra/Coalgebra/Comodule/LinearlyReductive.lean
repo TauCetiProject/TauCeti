@@ -37,14 +37,12 @@ group, so this is the step that makes a linearly reductive unipotent group act t
 
 Linear reductivity only asks for complete reducibility of finite-dimensional comodules, but over
 a linearly reductive coalgebra **every** comodule is completely reducible, and is the sum of its
-simple subcomodules. The passage from finite to arbitrary comodules uses the usual Zorn argument
-for modules that are sums of semisimple submodules, as in Mathlib's
-`complementedLattice_of_sSup_atoms_eq_top`. That theorem needs a modular complete lattice, while
-subcomodules only form a complete join-semilattice here, so the argument is carried out directly:
-intersections with a subcomodule `F` are formed as inverse images along the inclusion of `F`, and
-disjointness is tested on underlying submodules. For a free coefficient coalgebra, and so over a
-field, every element lies in a finite subcomodule, so the finite subcomodules supply the required
-family of completely reducible subcomodules.
+simple subcomodules. The passage from finite to arbitrary comodules is the usual statement that a
+sum of semisimple modules is semisimple, following Mathlib's
+`complementedLattice_of_sSup_atoms_eq_top`, together with the fact that over a field every
+comodule is the sum of its finite-dimensional subcomodules. In particular this applies to the
+regular comodule of a linearly reductive coalgebra, which is therefore the sum of its simple right
+coideals; this is the starting point of the cosemisimple coefficient decomposition.
 
 For an abelian group `G`, `k[G]` is the coordinate Hopf algebra of the diagonalizable group `D(G)`.
 Thus every diagonalizable group, and in particular every split torus, is linearly reductive over an
@@ -78,8 +76,10 @@ arbitrary field.
   `TauCeti.Coalgebra.IsLinearlyReductive.of_forall_isCompletelyReducible`.
 * `TauCeti.Coalgebra.IsLinearlyReductive.isCompletelyReducible_sameUniverse`: use linear
   reductivity for a comodule in the carrier universe named by the hypothesis.
-* `TauCeti.Coalgebra.IsLinearlyReductive.isCompletelyReducible`: testing finite-dimensional
-  comodules in the base-field universe suffices for comodules in every universe.
+* `TauCeti.Coalgebra.IsLinearlyReductive.isCompletelyReducible`: **every comodule over a
+  linearly reductive coalgebra is completely reducible**, in every carrier universe and with no
+  finiteness assumption, and `TauCeti.Coalgebra.IsLinearlyReductive.sSup_atoms_eq_top`: it is
+  the sum of its simple subcomodules.
 * `TauCeti.Comodule.isCompletelyReducible_corestrict_iff_of_coalgEquiv`: complete reducibility
   is invariant under a coalgebra equivalence.
 * `TauCeti.Coalgebra.isLinearlyReductive_iff_of_coalgEquiv`: linear reductivity is invariant
@@ -93,10 +93,6 @@ arbitrary field.
   a comodule is completely reducible as soon as its finite subcomodules are.
 * `TauCeti.Comodule.isCompletelyReducible_iff_sSup_atoms_eq_top`: over a field, a comodule is
   completely reducible exactly when it is the sum of its simple subcomodules.
-* `TauCeti.Comodule.isCompletelyReducible_of_isLinearlyReductive`: **every comodule over a
-  linearly reductive coalgebra is completely reducible**, with no finiteness assumption, and
-  `TauCeti.Comodule.sSup_atoms_eq_top_of_isLinearlyReductive`: it is the sum of its simple
-  subcomodules.
 * `TauCeti.Coalgebra.isLinearlyReductive_monoidAlgebra`: monoid-algebra coalgebras are linearly
   reductive over a field.
 
@@ -365,8 +361,9 @@ theorem isCompletelyReducible_sameUniverse
 
 /-- If every finite-dimensional comodule whose carrier is in the base-field universe is
 completely reducible, then every finite-dimensional comodule is completely reducible, regardless
-of its carrier universe. -/
-theorem isCompletelyReducible
+of its carrier universe. The finiteness assumption is removed by
+`TauCeti.Coalgebra.IsLinearlyReductive.isCompletelyReducible`. -/
+private theorem isCompletelyReducible_of_finite
     (h : IsLinearlyReductive.{u, v, u} k C)
     {V : Type w} [AddCommMonoid V] [Module k V] [Comodule k C V] [Module.Finite k V] :
     Comodule.IsCompletelyReducible k C V := by
@@ -434,6 +431,10 @@ subcomodules, each completely reducible as a comodule in its own right, has supr
 comodule, then the comodule is completely reducible. -/
 theorem isCompletelyReducible_of_sSup_eq_top {S : Set (Subcomodule R C V)} (hS : sSup S = ⊤)
     (hcr : ∀ F ∈ S, IsCompletelyReducible R C F) : IsCompletelyReducible R C V := by
+  -- This is the argument of `complementedLattice_of_sSup_atoms_eq_top`. That theorem needs a
+  -- modular complete lattice, while subcomodules only form a complete join-semilattice here, so
+  -- intersections with a subcomodule `F` are formed as inverse images along the inclusion of `F`
+  -- (in `le_sup_of_maximal_disjoint`), and disjointness is tested on underlying submodules.
   refine IsCompletelyReducible.of_exists_isCompl fun W ↦ ?_
   -- A subcomodule maximal among those meeting `W` trivially is a complement of `W`.
   obtain ⟨Q, hQ⟩ :=
@@ -524,29 +525,37 @@ theorem isCompletelyReducible_iff_sSup_atoms_eq_top :
 
 end Group
 
-/-- **Every comodule over a linearly reductive coalgebra is completely reducible.** Linear
-reductivity only asks for complete reducibility of finite-dimensional comodules, as in
-`TauCeti.Coalgebra.IsLinearlyReductive.isCompletelyReducible`; this removes the finiteness
-assumption, so it applies for instance to the regular comodule. -/
-theorem isCompletelyReducible_of_isLinearlyReductive
-    {C : Type v} [AddCommMonoid C] [Module k C] [Coalgebra k C]
-    {V : Type w} [AddCommMonoid V] [Module k V] [Comodule k C V]
-    (hC : Coalgebra.IsLinearlyReductive.{u, v, u} k C) : IsCompletelyReducible k C V := by
-  let : AddCommGroup C := Module.addCommMonoidToAddCommGroup k
-  let : AddCommGroup V := Module.addCommMonoidToAddCommGroup k
-  exact isCompletelyReducible_of_forall_finite fun _ _ ↦ hC.isCompletelyReducible
-
-/-- Every comodule over a linearly reductive coalgebra is the sum of its simple subcomodules. -/
-theorem sSup_atoms_eq_top_of_isLinearlyReductive
-    {C : Type v} [AddCommGroup C] [Module k C] [Coalgebra k C]
-    {V : Type w} [AddCommGroup V] [Module k V] [Comodule k C V]
-    (hC : Coalgebra.IsLinearlyReductive.{u, v, u} k C) :
-    sSup {S : Subcomodule k C V | IsAtom S} = ⊤ :=
-  isCompletelyReducible_iff_sSup_atoms_eq_top.mp (isCompletelyReducible_of_isLinearlyReductive hC)
-
 end Field
 
 end Comodule
+
+namespace Coalgebra.IsLinearlyReductive
+
+variable {k : Type u} [Field k]
+
+/-- **Every comodule over a linearly reductive coalgebra is completely reducible.** Linear
+reductivity only asks for complete reducibility of finite-dimensional comodules whose carrier
+lies in the base-field universe; this conclusion holds for every comodule, in every carrier
+universe and with no finiteness assumption, so it applies for instance to the regular comodule. -/
+theorem isCompletelyReducible
+    {C : Type v} [AddCommMonoid C] [Module k C] [Coalgebra k C]
+    (hC : IsLinearlyReductive.{u, v, u} k C)
+    {V : Type w} [AddCommMonoid V] [Module k V] [Comodule k C V] :
+    Comodule.IsCompletelyReducible k C V := by
+  let : AddCommGroup C := Module.addCommMonoidToAddCommGroup k
+  let : AddCommGroup V := Module.addCommMonoidToAddCommGroup k
+  exact Comodule.isCompletelyReducible_of_forall_finite fun _ _ ↦
+    isCompletelyReducible_of_finite k hC
+
+/-- Every comodule over a linearly reductive coalgebra is the sum of its simple subcomodules. -/
+theorem sSup_atoms_eq_top
+    {C : Type v} [AddCommGroup C] [Module k C] [Coalgebra k C]
+    (hC : IsLinearlyReductive.{u, v, u} k C)
+    {V : Type w} [AddCommGroup V] [Module k V] [Comodule k C V] :
+    sSup {S : Subcomodule k C V | IsAtom S} = ⊤ :=
+  Comodule.isCompletelyReducible_iff_sSup_atoms_eq_top.mp hC.isCompletelyReducible
+
+end Coalgebra.IsLinearlyReductive
 
 namespace Comodule
 
