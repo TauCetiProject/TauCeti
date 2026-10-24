@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Convex.MongeAmpere.Section
-import TauCeti.Analysis.Convex.AffineNormalization
-import TauCeti.MeasureTheory.Measure.Lebesgue.EqHaar
 
 /-!
 # The engulfing property of sections of Monge–Ampère solutions
