@@ -7,7 +7,9 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.Kronecker
 public import TauCeti.Algebra.Algebra.CyclicQuotient
+public import TauCeti.Combinatorics.SimpleGraph.Copy
 public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.OfArrows
+public import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless.GraphGrading
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Signless
 
 /-!
@@ -46,8 +48,17 @@ A representation of a subgraph extends by zero along a copy, by
   `TauCeti.signlessMatrixRepresentation_ofArrow`: the values on vertex idempotents and arrows.
 * `TauCeti.signlessMatrixRepresentation_backtrackElem`: a backtrack `v → w → v` acts by the block
   `E_vv ⊗ (β w v * β v w)`.
-* `TauCeti.trace_signlessMatrixRepresentation_backtrackElem_mul_backtrackElem`: the trace of a
-  product of two backtracks at a common vertex.
+* `TauCeti.signlessMatrixRepresentation_list_prod_backtrackElem`: a nonempty product of
+  backtracks at a common vertex `v` acts by the block `E_vv ⊗ ∏ (β w v * β v w)`.
+* `TauCeti.trace_signlessMatrixRepresentation_list_prod_backtrackElem` and
+  `TauCeti.trace_signlessMatrixRepresentation_backtrackElem_mul_backtrackElem`: the trace of a
+  product of backtracks at a common vertex.
+* `TauCeti.exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_of_trace_ne_zero`: a
+  product of backtracks of a subgraph acting with nonzero trace gives a nonzero class in the
+  cyclic quotient of `Π⁺(G)`.
+* `TauCeti.exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_of_trace_eq_one`: the
+  same for an integer matrix family, whose product of backtracks has trace one, over every
+  nontrivial commutative ring.
 
 ## References
 
@@ -200,6 +211,32 @@ theorem signlessMatrixRepresentation_backtrackElem {v w : V} (h : G.Adj v w) :
   rw [signlessMatrixRepresentation, signlessPreprojectiveLift_signlessPreprojectiveMk,
     matrixPathAlgHom_backtrackElem]
 
+/-- The matrix representation sends a nonempty product of backtracks `v → w → v` at a common
+vertex `v` to the block `E_vv ⊗ ∏ (β w v * β v w)`, the blocks multiplied in the same order. -/
+theorem signlessMatrixRepresentation_list_prod_backtrackElem {v : V}
+    (l : List {w // G.Adj v w}) (hl : l ≠ []) :
+    signlessMatrixRepresentation k β hβ
+        (l.map fun w => signlessPreprojectiveMk k _ (backtrackElem G k w.2)).prod =
+      single v v 1 ⊗ₖ (l.map fun w => β w.1 v * β v w.1).prod := by
+  induction l with
+  | nil => exact absurd rfl hl
+  | cons w l ih =>
+    rcases eq_or_ne l [] with rfl | hl
+    · simp
+    · rw [List.map_cons, List.prod_cons, map_mul, ih hl,
+        signlessMatrixRepresentation_backtrackElem, ← mul_kronecker_mul, single_mul_single_same,
+        mul_one, List.map_cons, List.prod_cons]
+
+/-- The trace of the image of a nonempty product of backtracks `v → w → v` at a common vertex `v`
+is the trace of the product of their blocks at `v`. -/
+theorem trace_signlessMatrixRepresentation_list_prod_backtrackElem {v : V}
+    (l : List {w // G.Adj v w}) (hl : l ≠ []) :
+    trace (signlessMatrixRepresentation k β hβ
+        (l.map fun w => signlessPreprojectiveMk k _ (backtrackElem G k w.2)).prod) =
+      trace (l.map fun w => β w.1 v * β v w.1).prod := by
+  rw [signlessMatrixRepresentation_list_prod_backtrackElem β hβ l hl, trace_kronecker,
+    trace_single_eq_same, one_mul]
+
 /-- The trace of the image of a product of two backtracks `v → w₁ → v` and `v → w₂ → v` at a
 common vertex `v` is the trace of the product of their blocks at `v`. -/
 theorem trace_signlessMatrixRepresentation_backtrackElem_mul_backtrackElem {v w₁ w₂ : V}
@@ -207,10 +244,84 @@ theorem trace_signlessMatrixRepresentation_backtrackElem_mul_backtrackElem {v w�
     trace (signlessMatrixRepresentation k β hβ
         (signlessPreprojectiveMk k _ (backtrackElem G k h₁ * backtrackElem G k h₂))) =
       trace (β w₁ v * β v w₁ * (β w₂ v * β v w₂)) := by
-  rw [map_mul, map_mul, signlessMatrixRepresentation_backtrackElem,
-    signlessMatrixRepresentation_backtrackElem, ← mul_kronecker_mul, single_mul_single_same,
-    trace_kronecker, trace_single_eq_same, mul_one, one_mul]
+  simpa using trace_signlessMatrixRepresentation_list_prod_backtrackElem β hβ
+    [⟨w₁, h₁⟩, ⟨w₂, h₂⟩] (List.cons_ne_nil _ _)
 
 end Representation
+
+/-! ### Nonzero cyclic classes -/
+
+section CyclicClass
+
+variable [Fintype V] [DecidableRel G.Adj] [Fintype m] [DecidableEq m]
+  {W : Type*} [Fintype W] {H : SimpleGraph W} [DecidableRel H.Adj]
+
+/-- **Nonzero cyclic classes from a matrix representation of a subgraph.** Let `f` be a copy of a
+graph `H` in `G`, not necessarily induced, and let `β` be a family of matrices on `H` satisfying
+the signless relations. If a nonempty product of backtracks `c → a → c` at a vertex `c` of `H`
+acts at `c` by a matrix of nonzero trace, then the corresponding product of backtracks of `G` at
+`f c` is an element of path degree `2 * l.length` of `Π⁺(G)` which does not lie in the commutator
+submodule `[Π⁺(G), Π⁺(G)]`: its class in the cyclic quotient is nonzero. -/
+theorem exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_of_trace_ne_zero
+    (f : H.Copy G) (β : W → W → Matrix m m k)
+    (hβ : ∀ x, ∑ y ∈ H.neighborFinset x, β y x * β x y = 0) {c : W}
+    (l : List {a // H.Adj c a}) (hl : l ≠ [])
+    (htr : trace (l.map fun a => β a.1 c * β c a.1).prod ≠ 0) :
+    ∃ x ∈ signlessPreprojectiveGrade k (DoubledQuiver G) (2 * l.length),
+      x ∉ commutatorSubmodule k (signlessPreprojectiveAlgebra k (DoubledQuiver G)) := by
+  classical
+  -- The backtracks of `G` at `f c` along the image of the list.
+  let l' : List {w // G.Adj (f c) w} :=
+    l.map fun a : {a // H.Adj c a} => ⟨f a.1, f.toHom.map_adj a.2⟩
+  have hgrade :=
+    list_prod_signlessPreprojectiveMk_backtrackElem_mem_signlessPreprojectiveGrade (k := k) l'
+  rw [List.length_map] at hgrade
+  refine ⟨_, hgrade, fun hx => htr ?_⟩
+  have htrace := trace_map_eq_zero_of_mem_commutatorSubmodule
+    (signlessMatrixRepresentation k (f.extendByZero β) (f.sum_extendByZero_mul_extendByZero β hβ))
+    hx
+  rw [trace_signlessMatrixRepresentation_list_prod_backtrackElem _ _ l' (by simpa [l'] using hl)]
+    at htrace
+  have h₁ (a : {a // H.Adj c a}) : H.Adj c a := a.2
+  have h₂ (a : {a // H.Adj c a}) : H.Adj a c := a.2.symm
+  simpa [l', Function.comp_def, h₁, h₂] using htrace
+
+variable (k) in
+/-- An integer matrix family which vanishes off the edges of `H` and satisfies the signless
+relations, as sums over all vertices, satisfies them over every commutative ring. -/
+theorem sum_mapMatrix_intCast_mul_mapMatrix_intCast (β : W → W → Matrix m m ℤ)
+    (h₀ : ∀ v w, ¬H.Adj v w → β v w = 0) (h : ∀ v, ∑ w, β w v * β v w = 0) (v : W) :
+    ∑ w ∈ H.neighborFinset v,
+      (Int.castRingHom k).mapMatrix (β w v) * (Int.castRingHom k).mapMatrix (β v w) = 0 := by
+  rw [Finset.sum_subset (Finset.subset_univ _) fun w _ hw => by
+      rw [h₀ v w (by simpa using hw), map_zero, mul_zero]]
+  simp_rw [← map_mul, ← map_sum, h, map_zero]
+
+omit [DecidableRel H.Adj] in
+variable (k) in
+/-- **Nonzero cyclic classes from an integer matrix representation of a subgraph.** An integer
+matrix family on `H` which vanishes off the edges and satisfies the signless relations, together
+with a nonempty product of backtracks at a vertex `c` of `H` acting at `c` with trace one, gives
+an element of path degree `2 * l.length` of `Π⁺(G)` outside `[Π⁺(G), Π⁺(G)]` along any copy of
+`H` in `G`, over every nontrivial commutative ring. -/
+theorem exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_of_trace_eq_one
+    [Nontrivial k] (f : H.Copy G) (β : W → W → Matrix m m ℤ)
+    (h₀ : ∀ v w, ¬H.Adj v w → β v w = 0) (h : ∀ v, ∑ w, β w v * β v w = 0) {c : W}
+    (l : List {a // H.Adj c a}) (hl : l ≠ [])
+    (htr : trace (l.map fun a => β a.1 c * β c a.1).prod = 1) :
+    ∃ x ∈ signlessPreprojectiveGrade k (DoubledQuiver G) (2 * l.length),
+      x ∉ commutatorSubmodule k (signlessPreprojectiveAlgebra k (DoubledQuiver G)) := by
+  classical
+  refine exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_of_trace_ne_zero f
+    (fun i j => (Int.castRingHom k).mapMatrix (β i j))
+    (sum_mapMatrix_intCast_mul_mapMatrix_intCast k β h₀ h) l hl ?_
+  have hmap : (l.map fun a => (Int.castRingHom k).mapMatrix (β a.1 c) *
+      (Int.castRingHom k).mapMatrix (β c a.1)) =
+      (l.map fun a => β a.1 c * β c a.1).map (Int.castRingHom k).mapMatrix := by
+    simp only [List.map_map, Function.comp_def, map_mul]
+  rw [hmap, ← map_list_prod, RingHom.mapMatrix_apply, ← AddMonoidHom.map_trace, htr, map_one]
+  exact one_ne_zero
+
+end CyclicClass
 
 end TauCeti
