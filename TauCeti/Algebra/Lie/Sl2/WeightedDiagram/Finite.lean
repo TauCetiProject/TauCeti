@@ -113,7 +113,7 @@ theorem ncard_dominantNeutralElements_le :
   have hcard := Nat.card_le_card_of_injective _ (weightedDynkinDiagram_injective b)
   have hrank : Nat.card b.support = finrank K H := by
     simpa using (Module.finrank_eq_card_basis b.toWeightBasis).symm
-  rw [Nat.card_fun, Nat.card_fin, hrank] at hcard
+  rw [Nat.card_coe_set_eq, Nat.card_fun, Nat.card_fin, hrank] at hcard
   exact hcard
 
 end TauCeti
