@@ -7,8 +7,9 @@ module
 
 public import TauCeti.Analysis.Complex.PlaneSeparation.JordanCurve
 import Mathlib.Analysis.LocallyConvex.WithSeminorms
-import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Complex.PlaneSeparation.RiemannSphere
+import TauCeti.LinearAlgebra.Complex.Finrank
+import TauCeti.Topology.ConnectedComponents
 
 /-!
 # The Jordan curve theorem in the plane
@@ -34,6 +35,7 @@ single component for every bounded subset of the plane
 * `TauCeti.IsJordanCurve.isConnected_filledHull_sdiff`: the inside of a Jordan curve is
   connected.
 * `TauCeti.IsJordanCurve.frontier_filledHull_sdiff`: the frontier of the inside is the curve.
+* `TauCeti.IsJordanCurve.frontier_compl_filledHull`: the frontier of the outside is the curve.
 * `TauCeti.IsJordanCurve.connectedComponentIn_eq_filledHull_sdiff_or_eq_compl_filledHull`:
   every complementary component is the inside or the outside.
 * `TauCeti.IsJordanCurve.natCard_connectedComponents_compl_eq_two`: the complement of a Jordan
@@ -125,6 +127,15 @@ theorem IsJordanCurve.frontier_filledHull_sdiff {C : Set ℂ} (hC : IsJordanCurv
   rw [hC.filledHull_sdiff_eq_connectedComponentIn hx]
   exact hC.frontier_connectedComponentIn hx.2
 
+/-- **A Jordan curve bounds its outside**: the frontier of `(filledHull C)ᶜ` is `C`. -/
+theorem IsJordanCurve.frontier_compl_filledHull {C : Set ℂ} (hC : IsJordanCurve C) :
+    frontier (filledHull C)ᶜ = C := by
+  obtain ⟨x, hx⟩ := (isConnected_compl_filledHull Complex.one_lt_rank_real_complex
+    hC.isCompact.isBounded).nonempty
+  rw [← connectedComponentIn_compl_eq_compl_filledHull Complex.one_lt_rank_real_complex
+    hC.isCompact.isBounded hx]
+  exact hC.frontier_connectedComponentIn fun hxC => hx (subset_filledHull hxC)
+
 /-- **Every complementary component of a Jordan curve is its inside or its outside.** For
 `z ∉ C`, the component of `z` in `Cᶜ` is either `filledHull C \ C` or `(filledHull C)ᶜ`. -/
 theorem IsJordanCurve.connectedComponentIn_eq_filledHull_sdiff_or_eq_compl_filledHull
@@ -133,16 +144,12 @@ theorem IsJordanCurve.connectedComponentIn_eq_filledHull_sdiff_or_eq_compl_fille
       connectedComponentIn Cᶜ z = (filledHull C)ᶜ := by
   by_cases hzH : z ∈ filledHull C
   · exact .inl (hC.filledHull_sdiff_eq_connectedComponentIn ⟨hzH, hz⟩).symm
-  · refine .inr (connectedComponentIn_compl_eq_compl_filledHull ?_ hC.isCompact.isBounded hzH)
-    rw [Complex.rank_real_complex]
-    exact Cardinal.one_lt_two
+  · exact .inr (connectedComponentIn_compl_eq_compl_filledHull Complex.one_lt_rank_real_complex
+      hC.isCompact.isBounded hzH)
 
 /-- **A Jordan curve in the plane has exactly two complementary components.** -/
 theorem IsJordanCurve.natCard_connectedComponents_compl_eq_two {C : Set ℂ}
     (hC : IsJordanCurve C) : Nat.card (ConnectedComponents ↥Cᶜ) = 2 := by
-  have hrank : (1 : Cardinal) < Module.rank ℝ ℂ := by
-    rw [Complex.rank_real_complex]
-    exact Cardinal.one_lt_two
   -- the inside and the outside, as subsets of `Cᶜ`
   let I : Set ↥Cᶜ := (↑) ⁻¹' (filledHull C \ C)
   let O : Set ↥Cᶜ := (↑) ⁻¹' (filledHull C)ᶜ
@@ -156,25 +163,22 @@ theorem IsJordanCurve.natCard_connectedComponents_compl_eq_two {C : Set ℂ}
     intro S hS hSC
     exact hS.preimage_of_isOpenMap Subtype.val_injective
       hC.isClosed.isOpen_compl.isOpenMap_subtype_val (by simpa only [Subtype.range_val] using hSC)
-  let U : Fin 2 → Set ↥Cᶜ := ![I, O]
-  have hI : IsClopen I := ⟨by rw [← isOpen_compl_iff, hIO]; exact hOo, hIo⟩
-  have hO : IsClopen O := ⟨by rw [← isOpen_compl_iff, ← hIO, compl_compl]; exact hIo, hOo⟩
   have hdisj : Disjoint I O := hIO ▸ disjoint_compl_right
-  have e := ConnectedComponents.equivOfIsClopenOfIsConnected (U := U)
-    (Fin.forall_fin_two.mpr ⟨hI, hO⟩)
-    (fun i j hij => by
-      fin_cases i <;> fin_cases j
-      · exact absurd rfl hij
-      · exact hdisj
-      · exact hdisj.symm
-      · exact absurd rfl hij)
-    (iUnion_eq_univ_iff.mpr fun z => by
-      by_cases hz : z ∈ I
-      · exact ⟨0, hz⟩
-      · exact ⟨1, (hIO ▸ hz : z ∈ O)⟩)
+  rw [← Nat.card_fin 2]
+  refine natCard_connectedComponents_eq_of_iUnion_eq_univ (U := ![I, O])
+    (Fin.forall_fin_two.mpr ⟨show IsClosed I from isOpen_compl_iff.mp (hIO ▸ hOo),
+      show IsClosed O from hIO ▸ hIo.isClosed_compl⟩)
+    (fun i j hij => ?_) (iUnion_eq_univ_iff.mpr fun z => ?_)
     (Fin.forall_fin_two.mpr ⟨hconn hC.isConnected_filledHull_sdiff fun z hz => hz.2,
-      hconn (isConnected_compl_filledHull hrank hC.isCompact.isBounded)
-        fun z hz hzC => hz (subset_filledHull hzC)⟩)
-  rw [Nat.card_congr e, Nat.card_eq_fintype_card, Fintype.card_fin]
+      hconn (isConnected_compl_filledHull Complex.one_lt_rank_real_complex
+        hC.isCompact.isBounded) fun z hz hzC => hz (subset_filledHull hzC)⟩)
+  · fin_cases i <;> fin_cases j
+    · exact absurd rfl hij
+    · exact hdisj
+    · exact hdisj.symm
+    · exact absurd rfl hij
+  · by_cases hz : z ∈ I
+    · exact ⟨0, hz⟩
+    · exact ⟨1, (hIO ▸ hz : z ∈ O)⟩
 
 end TauCeti

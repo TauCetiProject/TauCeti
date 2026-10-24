@@ -7,9 +7,9 @@ module
 
 public import TauCeti.Analysis.Complex.PlaneSeparation.JordanCurve
 import Mathlib.Analysis.Complex.Convex
-import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Complex.PlaneSeparation.TwoComponents
 import TauCeti.Analysis.Contour.Winding.Separation
+import TauCeti.LinearAlgebra.Complex.Finrank
 
 /-!
 # Complementary components at a straight point of a Jordan curve
@@ -280,10 +280,7 @@ theorem IsJordanCurve.mem_filledHull_iff_notMem_filledHull_of_locally_eq_line {C
     have hbC : b ∉ C := fun h => hb'.ne ((hline b hb).mp h)
     rw [← hC.filledHull_sdiff_eq_connectedComponentIn ⟨haH, haC⟩]
     exact ⟨hbH, hbC⟩
-  · have hrank : (1 : Cardinal) < Module.rank ℝ ℂ := by
-      rw [Complex.rank_real_complex]
-      exact Cardinal.one_lt_two
-    exact (mem_filledHull_or_mem_filledHull_of_notMem_connectedComponentIn hrank
-      hC.isCompact.isBounded hab).resolve_right hbH
+  · exact (mem_filledHull_or_mem_filledHull_of_notMem_connectedComponentIn
+      Complex.one_lt_rank_real_complex hC.isCompact.isBounded hab).resolve_right hbH
 
 end TauCeti

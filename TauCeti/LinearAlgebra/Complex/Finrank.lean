@@ -8,11 +8,13 @@ module
 public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
 /-!
-# Real finrank of a compatible complex module
+# Real dimension of complex modules
 
 This file records the tower-law dimension formula for a complex module whose real scalar
 structure is the ambient one. It is the linear-algebra input for almost-complex even-dimensionality
-results, but has no symplectic hypotheses.
+results, but has no symplectic hypotheses. It also records that the plane `ℂ` has real rank greater
+than one, the hypothesis of the connectedness and separation results for real normed spaces of
+dimension at least two.
 -/
 
 public section
@@ -37,5 +39,10 @@ theorem finrank_real_eq_two_mul_finrank_complex [Module ℂ V] [IsScalarTower �
   have hV := finrank_real_of_complex (E := V)
   rw [h] at hV
   exact hV
+
+/-- The complex plane has real rank greater than one. -/
+theorem Complex.one_lt_rank_real_complex : 1 < Module.rank ℝ ℂ := by
+  rw [Complex.rank_real_complex]
+  exact Cardinal.one_lt_two
 
 end TauCeti

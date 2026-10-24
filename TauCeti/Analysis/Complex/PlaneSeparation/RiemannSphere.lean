@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Topology.Compactification.OnePoint.Basic
 public import TauCeti.Topology.JordanCurve.Basic
-import Mathlib.Geometry.Manifold.Instances.Sphere
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.Topology.Compactification.OnePoint.Sphere
 import TauCeti.AlgebraicTopology.Singular.JordanBrouwer
@@ -17,11 +16,9 @@ import TauCeti.AlgebraicTopology.Singular.JordanBrouwer
 
 A Jordan curve `J` in the Riemann sphere `OnePoint ℂ` separates it into exactly two connected
 components. This is the Jordan–Brouwer separation theorem for the two-sphere,
-`TauCeti.natCard_zerothHomotopy_sphere_compl_range_eq_two`, transported along Mathlib's
-stereographic homeomorphism `onePointEquivSphereOfFinrankEq`. Path components and connected
-components of `Jᶜ` agree because the sphere is a manifold, so `Jᶜ` is locally path connected. In
-particular `Jᶜ` is not preconnected, which is also the connected form
-`TauCeti.not_isPreconnected_compl_range_sphere`.
+`TauCeti.natCard_connectedComponents_sphere_compl_range_eq_two`, transported along Mathlib's
+stereographic homeomorphism `onePointEquivSphereOfFinrankEq`. In particular `Jᶜ` is not
+preconnected.
 
 The consequence used for unbounded Jordan domains is an exterior point. If `U ⊆ ℂ` is open and
 connected and its frontier, together with the point at infinity, is a Jordan curve of the Riemann
@@ -61,19 +58,12 @@ theorem IsJordanCurve.natCard_connectedComponents_compl_eq_two_onePoint
     onePointEquivSphereOfFinrankEq (by simp)
   let φ := sphereCircleHomeomorph (0 : ℂ) one_pos
   let h := Φ ∘ jordanParam e ∘ φ
-  have hc : Continuous h := Φ.continuous.comp ((continuous_jordanParam e).comp φ.continuous)
   have hrange : (range h)ᶜ = Φ '' Jᶜ := by
     rw [range_comp, range_comp, φ.range_coe, image_univ, range_jordanParam, ← Φ.image_compl]
-  have hcard := natCard_zerothHomotopy_sphere_compl_range_eq_two (by simp) hc
-    (Φ.injective.comp ((jordanParam_injective e).comp φ.injective))
-  -- the sphere is a manifold, so path components of the open set `(range h)ᶜ` are its components
-  have : Fact (Module.finrank ℝ (EuclideanSpace ℝ (Fin 3)) = 2 + 1) := ⟨by simp⟩
-  have := ChartedSpace.locallyPathConnectedSpace (EuclideanSpace ℝ (Fin 2))
-    (sphere (0 : EuclideanSpace ℝ (Fin 3)) 1)
-  have := (isCompact_range hc).isClosed.isOpen_compl.locallyPathConnectedSpace
-  rw [← Nat.card_congr connectedComponentsEquivZerothHomotopy] at hcard
   let ψ : ↥Jᶜ ≃ₜ ↥(range h)ᶜ := (Φ.image Jᶜ).trans (Homeomorph.setCongr hrange.symm)
-  rw [← hcard]
+  rw [← natCard_connectedComponents_sphere_compl_range_eq_two (h := h) (by simp)
+    (Φ.continuous.comp ((continuous_jordanParam e).comp φ.continuous))
+    (Φ.injective.comp ((jordanParam_injective e).comp φ.injective))]
   exact Nat.card_congr (ψ.isQuotientMap.isCoinducing.connectedComponentsHomeomorph
     fun y => by simpa using isConnected_singleton).toEquiv
 
@@ -82,16 +72,12 @@ theorem IsJordanCurve.natCard_connectedComponents_compl_eq_two_onePoint
 theorem IsJordanCurve.not_isPreconnected_compl_onePoint {J : Set (OnePoint ℂ)}
     (hJ : IsJordanCurve J) : ¬ IsPreconnected Jᶜ := by
   intro hconn
-  obtain ⟨e⟩ := isJordanCurve_iff.mp hJ
-  -- stereographic projection carries `J` to an embedded circle of the sphere
-  let Φ : OnePoint ℂ ≃ₜ sphere (0 : EuclideanSpace ℝ (Fin 3)) 1 :=
-    onePointEquivSphereOfFinrankEq (by simp)
-  let φ := sphereCircleHomeomorph (0 : ℂ) one_pos
-  refine not_isPreconnected_compl_range_sphere (h := Φ ∘ jordanParam e ∘ φ) (by simp)
-    (Φ.continuous.comp ((continuous_jordanParam e).comp φ.continuous))
-    (Φ.injective.comp ((jordanParam_injective e).comp φ.injective)) ?_
-  rw [range_comp, range_comp, φ.range_coe, image_univ, range_jordanParam, ← Φ.image_compl]
-  exact hconn.image _ Φ.continuous.continuousOn
+  have := isPreconnected_iff_preconnectedSpace.mp hconn
+  have hle : Nat.card (ConnectedComponents ↥Jᶜ) ≤ 1 := by
+    simpa using Nat.card_le_card_of_injective
+      (f := fun _ : ConnectedComponents ↥Jᶜ => ()) (fun _ _ _ => Subsingleton.elim _ _)
+  have := hJ.natCard_connectedComponents_compl_eq_two_onePoint
+  omega
 
 /-- **An unbounded Jordan domain has an exterior point.** If `U ⊆ ℂ` is open and preconnected and
 its frontier, together with the point at infinity, is a Jordan curve of the Riemann sphere, then
