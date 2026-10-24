@@ -26,6 +26,12 @@ the change-of-variables formula for coefficients, the fact that a law is determi
 coefficients, and the vanishing of the coefficients of a homogeneous law of degree `d` outside
 total degree `d`.
 
+The underlying `PolynomialLaw`s are the Mathlib formalization by Antoine Chambert-Loir and
+María Inés de Frutos-Fernández. The coefficient map `PolynomialLaw.coeff`, the evaluation formula
+`PolynomialLaw.toFun_sum_tmul_eq_coeff_sum`, the extensionality lemma and the vanishing of
+coefficients of homogeneous laws follow the coefficient API of their polynomial-law
+formalization in the DividedPowers project.
+
 ## Main declarations
 
 * `PolynomialLaw.coeff m`: the coefficients of a law at the generic combination of `m`, as an

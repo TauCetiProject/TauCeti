@@ -71,7 +71,8 @@ variable [AddCommMonoid N] [Module R N] [AddCommMonoid P] [Module R P]
 
 variable (R M N) in
 /-- Composition with the universal degree-`d` law, as a linear map into homogeneous laws.
-Injectivity is `homogeneousLawMap_injective`; surjectivity is not asserted here. -/
+It is a linear equivalence: injectivity is `homogeneousLawMap_injective`, surjectivity is
+`homogeneousLawMap_surjective`, bundled as `homogeneousLawEquiv`. -/
 def homogeneousLawMap (d : ℕ) :
     (homogeneousSubmodule (R := R) (M := M) d →ₗ[R] N) →ₗ[R]
       PolynomialLaw.homogeneousSubmodule R M N d where
