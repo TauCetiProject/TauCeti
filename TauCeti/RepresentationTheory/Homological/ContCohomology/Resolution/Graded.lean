@@ -771,6 +771,16 @@ theorem smoothGradedResolutionFunctor_obj (A : SmoothDiscreteTopRep.{u, v, max v
       ⟨A.obj.gradedResolutionTopRep, A.obj.isSmoothDiscrete_gradedResolutionTopRep A.property⟩ :=
   rfl
 
+/-- The action on the object of the smooth total-resolution functor is the action on the total
+shifted coinduced resolution. -/
+@[simp]
+theorem smoothGradedResolutionFunctor_obj_obj_ρ_apply
+    (A : SmoothDiscreteTopRep.{u, v, max v w} R G) (g : G)
+    (x : ((smoothGradedResolutionFunctor (R := R) (G := G)).obj A).obj.V) :
+    ((smoothGradedResolutionFunctor (R := R) (G := G)).obj A).obj.ρ g x =
+      A.obj.gradedResolutionTopRep.ρ g x :=
+  rfl
+
 /-- The smooth total-resolution functor acts on morphisms by the induced map of total
 resolutions. -/
 @[simp]

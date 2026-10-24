@@ -847,6 +847,13 @@ action. -/
 @[simp] lemma ofSmoothDiscrete_obj_smul (X : SmoothDiscreteTopRep.{u, v, w} R G) (g : G)
     (x : ((ofSmoothDiscrete R G).obj X).V) : g • x = X.obj.ρ g x := (rfl)
 
+/-- `ofSmoothDiscrete` keeps the action of a smooth discrete representation.
+
+This is not a simp lemma: simp already proves it from `ofSmoothDiscrete_obj_smul`. -/
+lemma ofSmoothDiscrete_obj_ρ_apply (X : SmoothDiscreteTopRep.{u, v, w} R G) (g : G)
+    (x : ((ofSmoothDiscrete R G).obj X).V) : ((ofSmoothDiscrete R G).obj X).ρ g x = X.obj.ρ g x :=
+  (rfl)
+
 /-- **The dictionary is an equivalence of categories** between the discrete `G`-modules with
 continuous `G`-action and the smooth discrete objects of `TopRep R G`. It is the identity on
 underlying modules in both directions, the action being read off by `TopRep.distribMulAction`, so

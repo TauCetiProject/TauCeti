@@ -208,9 +208,9 @@ theorem smoothTensorInducedGradedResolutionPiece_ρ_mem (n : ℤ) (g : G)
       TauCeti.LinearMap.IsHomogeneous (B.ρ u) A.obj.gradedResolutionPiece
         A.obj.gradedResolutionPiece 0 :=
     TauCeti.LinearMap.isHomogeneous_def.2 fun p y hy ↦
-      -- `B.ρ u` is the action of `U` on the total resolution, the object of the smooth
-      -- total-resolution functor by `smoothGradedResolutionFunctor_obj`.
-      (congrArg (B.ρ u y ∈ A.obj.gradedResolutionPiece ·) (add_zero p)).mpr
+      (congrArg₂ (· ∈ A.obj.gradedResolutionPiece ·)
+        ((ofSmoothDiscrete_obj_ρ_apply R U _ u y).trans
+          (smoothGradedResolutionFunctor_obj_obj_ρ_apply A u y)) (add_zero p)).mpr
         (A.obj.gradedResolutionTopRep_ρ_mem p u y hy)
   have h := (B.ρ.isHomogeneous_wreathTensor hB (U.monomialHom s g)).map_mem hx
   rw [add_zero] at h
@@ -500,9 +500,10 @@ theorem smoothTensorInducedGradedResolutionFunctor_obj_ρ_tprod_const
         (PiTensorProduct.tprod R (fun _ : G ⧸ U ↦ z)) =
       PiTensorProduct.tprod R (fun _ : G ⧸ U ↦ z) := by
   let B := (ofSmoothDiscrete R U).obj ((smoothGradedResolutionFunctor (R := R)).obj A)
-  -- `B.ρ u` is the action of `U` on the total resolution, the object of the smooth
-  -- total-resolution functor by `smoothGradedResolutionFunctor_obj`, so `z` is `B.ρ`-invariant.
-  have h := (B.ρ.tensorInducedDiagonal s ⟨z, hinv⟩).property g
+  have hB (u : U) : B.ρ u z = z :=
+    (ofSmoothDiscrete_obj_ρ_apply R U (smoothGradedResolutionFunctor.obj A) u z).trans
+      ((smoothGradedResolutionFunctor_obj_obj_ρ_apply A u z).trans (hinv u))
+  have h := (B.ρ.tensorInducedDiagonal s ⟨z, hB⟩).property g
   rw [Representation.coe_tensorInducedDiagonal] at h
   exact (smoothTensorInducedGradedResolutionFunctor_obj_ρ_apply U hU s A g _).trans h
 
