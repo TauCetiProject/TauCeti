@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.CStarAlgebra.Matrix
+public import TauCeti.Analysis.Matrix.EuclideanLin
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.NormNum
 
@@ -74,9 +74,10 @@ theorem norm_toEuclideanCLM :
 
 /-- The fourth coordinate vector is sent to the fourth column. Indices are zero-based. -/
 @[simp]
-theorem toEuclideanCLM_single_three :
-    Matrix.toEuclideanCLM (𝕜 := 𝕜) (matrix 𝕜) (EuclideanSpace.single 3 1) =
+theorem toEuclideanLin_single_three :
+    Matrix.toEuclideanLin (matrix 𝕜) (EuclideanSpace.single 3 1) =
       WithLp.toLp 2 ![-10, 0, 0, 15, -5] := by
+  rw [← Matrix.toEuclideanCLM_apply]
   apply WithLp.ofLp_injective 2
   simp only [Matrix.ofLp_toEuclideanCLM, EuclideanSpace.single, PiLp.ofLp_single,
     Matrix.mulVec_single_one]
@@ -87,7 +88,7 @@ theorem toEuclideanCLM_single_three :
 theorem norm_toEuclideanCLM_basisFun_three :
     ‖Matrix.toEuclideanCLM (𝕜 := 𝕜) (matrix 𝕜) (EuclideanSpace.basisFun (Fin 5) 𝕜 3)‖ =
       ‖Matrix.toEuclideanCLM (𝕜 := 𝕜) (matrix 𝕜)‖ := by
-  rw [norm_toEuclideanCLM, EuclideanSpace.basisFun_apply, toEuclideanCLM_single_three,
+  rw [norm_toEuclideanCLM, EuclideanSpace.basisFun_apply, Matrix.toEuclideanCLM_apply, toEuclideanLin_single_three,
     EuclideanSpace.norm_eq]
   congr 1
   norm_num [Fin.sum_univ_succ]
