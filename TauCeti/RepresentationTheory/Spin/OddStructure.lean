@@ -250,14 +250,8 @@ theorem evenSpinAction_surjective : Function.Surjective (evenSpinAction Q P) := 
   have hωodd : ω ∈ evenOdd Q 1 := prod_map_ι_mem_evenOdd_one_of_odd_length (hlen ▸ hodd)
   -- The image of the volume element is central, hence a scalar, hence already in the range.
   have hωrange : spinAction Q P ω ∈ (evenSpinAction Q P).range := by
-    have hcentre : spinAction Q P ω ∈
-        Subalgebra.center F (Module.End F (ExteriorAlgebra F P.W)) := by
-      rw [Subalgebra.mem_center_iff]
-      intro f
-      obtain ⟨x, rfl⟩ := spinAction_surjective P f
-      rw [← map_mul, ← map_mul, Subalgebra.mem_center_iff.1
-        (prod_map_ι_mem_center_of_odd_length hl (hlen ▸ hodd) hspan) x]
-    obtain ⟨a, ha⟩ := (Algebra.IsCentral.mem_center_iff F).1 hcentre
+    obtain ⟨a, ha⟩ := exists_spinAction_eq_algebraMap_of_mem_center P
+      (prod_map_ι_mem_center_of_odd_length hl (hlen ▸ hodd) hspan)
     exact ha ▸ Subalgebra.algebraMap_mem _ a
   -- Each generator is an even element times the volume element, up to the scalar `c`.
   have hgen : ∀ v : V, spinAction Q P (ι Q v) ∈ (evenSpinAction Q P).range := by
