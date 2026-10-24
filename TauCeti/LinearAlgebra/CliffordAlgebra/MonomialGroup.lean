@@ -141,13 +141,13 @@ theorem mem_monomialGroup_iff (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
       have hsq : Q (b a) * Q (b a) = 1 := by rcases hQ a with h | h <;> rw [h] <;> norm_num
       let : Invertible (Q (b a)) := ⟨Q (b a), hsq, hsq⟩
       let := invertibleιOfInvertible Q (b a)
-      let g : (CliffordAlgebra Q)ˣ :=
-        ⟨ι Q (b a), ⅟(ι Q (b a)), mul_invOf_self _, invOf_mul_self _⟩
+      let g := unitOfInvertible (ι Q (b a))
       have hg : g ∈ monomialGroup Q b := mem_monomialGroup_of_val_eq_ι b rfl
       have hgu : g⁻¹ * u ∈ monomialGroup Q b := by
         refine ih ?_
         rw [basis_insert_of_forall_lt hb ha] at hs
-        simp only [g, Units.inv_mk, Units.val_mul]
+        -- Mathlib's `unitOfInvertible` has value `ι Q (b a)` and inverse `⅟(ι Q (b a))`.
+        simp only [g, unitOfInvertible, Units.inv_mk, Units.val_mul]
         rcases hs with hs | hs
         · exact Or.inl (by rw [hs, invOf_mul_cancel_left])
         · exact Or.inr (by rw [hs, mul_neg, invOf_mul_cancel_left])

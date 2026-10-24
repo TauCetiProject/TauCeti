@@ -216,9 +216,7 @@ theorem ι_mul_basis (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (a : I) (t 
       calc
         ι Q (b a) * (ι Q (b c) * basis Q b t) =
             -(ι Q (b c) * (ι Q (b a) * basis Q b t)) := by
-          rw [← mul_assoc,
-            ι_mul_ι_comm_of_isOrtho (QuadraticMap.associated_isOrtho.mp (hb hac))]
-          simp only [neg_mul, mul_assoc]
+          exact ι_mul_ι_mul_of_isOrtho _ (QuadraticMap.associated_isOrtho.mp (hb hac))
         _ = -(((-1 : R) ^ (t.filter (· < a)).card * if a ∈ t then Q (b a) else 1) •
             basis Q b (insert c (t ∆ {a}))) := by
           rw [ih, mul_smul_comm, basis_insert_of_forall_lt hb hct']
