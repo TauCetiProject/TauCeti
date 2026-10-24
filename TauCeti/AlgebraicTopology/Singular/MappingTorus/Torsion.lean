@@ -59,6 +59,16 @@ namespace TauCeti.MappingTorus
 
 variable {k : Type w} [CommRing k] {F : Type w} [TopologicalSpace F] (φ : F ≃ₜ F)
 
+/-- The zeroth homology of the singular chain complex is free on path components.
+Mathlib's `singularHomologyFunctor` is the composite of the singular-chain functor with
+`HomologicalComplex.homologyFunctor`; evaluating that composite gives this chain-homology
+module by definitional equality. -/
+instance free_singularChainComplex_homology_zero :
+    Module.Free k ((((singularChainComplexFunctor (ModuleCat.{w} k)).obj
+      (ModuleCat.of k k)).obj (TopCat.of F)).homology 0) :=
+  inferInstanceAs (Module.Free k
+    (((singularHomologyFunctor (ModuleCat.{w} k) 0).obj (ModuleCat.of k k)).obj (TopCat.of F)))
+
 /-- If `Hₙ(F)` is torsion-free, every torsion class of `Hₙ₊₁(T_φ)` comes from the fibre: the Wang
 connecting morphism sends it to a torsion class of `Hₙ(F)`, hence to zero. -/
 theorem torsion_homology_le_range_homologyMap_fibreInclusionChainMap (n : ℕ)
@@ -144,10 +154,6 @@ theorem torsion_homology_one_eq_range_homologyMap_fibreInclusionChainMap
     Submodule.torsion k ((((singularChainComplexFunctor (ModuleCat.{w} k)).obj
         (ModuleCat.of k k)).obj (TopCat.of (MappingTorus φ))).homology 1) =
       LinearMap.range (homologyMap (fibreInclusionChainMap φ (ModuleCat.of k k)) 1).hom :=
-  have : Module.IsTorsionFree k ((((singularChainComplexFunctor (ModuleCat.{w} k)).obj
-      (ModuleCat.of k k)).obj (TopCat.of F)).homology 0) :=
-    inferInstanceAs (Module.IsTorsionFree k
-      (((singularHomologyFunctor (ModuleCat.{w} k) 0).obj (ModuleCat.of k k)).obj (TopCat.of F)))
   torsion_homology_eq_range_homologyMap_fibreInclusionChainMap φ 0 hdet
 
 /-- **The integral Wang torsion order.** If `H₁(F; ℤ)` is free of finite rank and
@@ -163,9 +169,7 @@ theorem card_torsion_homology_one_eq_natAbs_det {F : Type} [TopologicalSpace F]
     Nat.card (Submodule.torsion ℤ ((((singularChainComplexFunctor (ModuleCat.{0} ℤ)).obj
         (ModuleCat.of ℤ ℤ)).obj (TopCat.of (MappingTorus φ))).homology 1)) =
       (LinearMap.id - (homologyMap (monodromyChainMap φ (ModuleCat.of ℤ ℤ)) 1).hom).det.natAbs := by
-  rw [torsion_homology_one_eq_range_homologyMap_fibreInclusionChainMap φ hdet,
-    ← Nat.card_congr (wangCokernelEquiv φ 1).toEquiv,
-    LinearMap.card_quotient_range_eq_card_quotient_span_det hdet, ← Int.span_natAbs,
+  rw [card_torsion_homology_eq_card_quotient_span_det φ 0 hdet, ← Int.span_natAbs,
     Int.card_ideal_quot]
 
 end TauCeti.MappingTorus
