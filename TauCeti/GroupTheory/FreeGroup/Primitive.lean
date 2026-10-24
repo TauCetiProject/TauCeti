@@ -7,6 +7,7 @@ module
 
 public import TauCeti.GroupTheory.FreeGroup.Nielsen
 public import Mathlib.GroupTheory.Commutator.Basic
+import Mathlib.GroupTheory.FreeGroup.GeneratorEquiv
 import Mathlib.Tactic.NormNum
 public import TauCeti.GroupTheory.FreeGroup.ProperPower
 
@@ -79,6 +80,20 @@ theorem IsPrimitive.map_mulEquiv {H : Type u} [Group H]
   · intro hx
     simpa using hx.map_mulEquiv e.symm
   · exact IsPrimitive.map_mulEquiv e
+
+/-- An element of a free group is primitive exactly when it is the image of a canonical
+generator under an automorphism. -/
+theorem isPrimitive_iff_exists_mulEquiv_of {α : Type u} {x : FreeGroup α} :
+    IsPrimitive x ↔
+      ∃ (e : FreeGroup α ≃* FreeGroup α) (a : α), e (FreeGroup.of a) = x := by
+  constructor
+  · rintro ⟨ι, b, i, rfl⟩
+    let c : α ≃ ι := Equiv.ofFreeGroupEquiv b.repr
+    let e : FreeGroup α ≃* FreeGroup α := (FreeGroup.freeGroupCongr c).trans b.repr.symm
+    refine ⟨e, c.symm i, ?_⟩
+    simp [e]
+  · rintro ⟨e, a, rfl⟩
+    exact (IsPrimitive.of a).map_mulEquiv e
 
 /-- Conjugation preserves and reflects primitivity. -/
 @[simp] theorem isPrimitive_conj_iff (g x : G) :

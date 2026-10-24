@@ -33,6 +33,9 @@ the remaining half of (G2), are not treated here.
   epimorphism if and only if its underlying morphism of schemes is surjective.
 * The category `FiniteEtaleScheme S` is finitary extensive: finite coproducts are disjoint and
   stable under pullback.
+* The category `FiniteEtaleScheme S` is closed in `Over S` under binary products, so it inherits
+  the cartesian monoidal structure of `Over S` (Mathlib's
+  `CartesianMonoidalCategory.fullSubcategory`), with the fibre product over `S` as tensor product.
 
 The limit and colimit instances are deduced from Mathlib's closure results for
 `MorphismProperty.overObj` and from Mathlib's description of coproducts of schemes by disjoint
@@ -74,6 +77,26 @@ instance : (finiteEtaleSchemeProperty S).IsClosedUnderLimitsOfShape WalkingCospa
   exact @Over.closedUnderLimitsOfShape_pullback _ _ _ _ _
     MorphismProperty.IsMultiplicative.inf.toIsStableUnderComposition .inf _
 
+/-- A scheme over `S` isomorphic to a finite étale one is finite étale. -/
+instance : (finiteEtaleSchemeProperty S).IsClosedUnderIsomorphisms := by
+  have : (@IsFinite ⊓ @Etale : MorphismProperty Scheme.{u}).RespectsIso :=
+    @MorphismProperty.IsStableUnderBaseChange.respectsIso _ _ _ .inf
+  rw [finiteEtaleSchemeProperty_eq_overObj]
+  infer_instance
+
+/-- Binary products of finite étale schemes over `S` are finite étale: in `Over S` the product is
+the fibre product over the terminal object `S`. -/
+instance : (finiteEtaleSchemeProperty S).IsClosedUnderLimitsOfShape (Discrete WalkingPair) := by
+  refine .mk' ?_
+  rintro _ ⟨F, hF⟩
+  have ht : finiteEtaleSchemeProperty S (⊤_ Over S) :=
+    (finiteEtaleSchemeProperty S).prop_limit _ fun j ↦ j.as.elim
+  refine (finiteEtaleSchemeProperty S).prop_of_iso
+    ((HasLimit.isoOfNatIso (diagramIsoPair F)) ≪≫ prodIsoPullback _ _).symm
+    ((finiteEtaleSchemeProperty S).prop_limit _ ?_)
+  rintro (_ | ⟨_ | _⟩)
+  exacts [ht, hF _, hF _]
+
 /-- Finite étale schemes over `S` have all finite limits, computed in `Over S`: the terminal
 object is `S` itself and fibre products are fibre products of schemes. -/
 instance : HasFiniteLimits (FiniteEtaleScheme S) :=
@@ -110,6 +133,10 @@ instance : (finiteEtaleSchemeProperty S).IsClosedUnderFiniteCoproducts :=
 /-- The inclusion of finite étale schemes over `S` into `Over S` preserves finite limits. -/
 instance : PreservesFiniteLimits (finiteEtaleSchemeProperty S).ι :=
   preservesFiniteLimits_of_preservesTerminal_and_pullbacks _
+
+/-- The braiding of the cartesian monoidal structure on finite étale schemes over `S`, whose
+tensor product is the fibre product over `S`. -/
+noncomputable instance : BraidedCategory (FiniteEtaleScheme S) := .ofCartesianMonoidalCategory
 
 /-- The inclusion of finite étale schemes over `S` into `Over S` preserves finite coproducts. -/
 instance : PreservesFiniteCoproducts (finiteEtaleSchemeProperty S).ι :=

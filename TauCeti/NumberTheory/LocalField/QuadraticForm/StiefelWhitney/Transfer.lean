@@ -6,11 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.QuadraticForm.StiefelWhitney.QuadraticExtension
+public import TauCeti.NumberTheory.LocalField.QuadraticForm.Cup.Basic
 public import TauCeti.NumberTheory.LocalField.QuadraticForm.StiefelWhitney.LocalHasse
 
 import TauCeti.FieldTheory.QuadraticForm.StiefelWhitney.Evens.Kummer.Value
 import TauCeti.FieldTheory.Separable.Quadratic
-import TauCeti.NumberTheory.LocalField.QuadraticForm.Cup.Basic
 
 /-!
 # The relative Stiefel–Whitney formula over a local field
@@ -43,6 +43,19 @@ turns both sides of the relative formula into Hilbert-symbol computations, for e
 The degree-one formula `w₁(Tr_*⟨a⟩) = w₁(Tr_*⟨1⟩) + cor (a)` is already an identity of square
 classes over every field (`TauCeti.sw1Class_formClass_traceTransfer_smul_sq`).
 
+Fix `c, e ∈ Kˣ` with `(c, e)_K = -1`, so that `κ = (c) ∪ (e)` is a nonzero class. Every Kummer
+cup over `K` is a multiple of `κ` (`TauCeti.cup_kummerClass_eq_hilbertSymbol_smul`), so the Evens
+norm is known exactly and not only up to its vanishing:
+
+```text
+N^{Ev}((a)) = ε((Tr a, −d · N a)_K · (2, d)_K) • κ    if Tr a ≠ 0,
+N^{Ev}((a)) = ε((2, d)_K) • κ                        if Tr a = 0,
+```
+
+where `ε : {±1} → ZMod 2` sends `+1` to `0` and `-1` to `1`. Together with the Hilbert-symbol
+values of `w₂` above, both sides of the degree-two relative formula become multiples of `κ` with
+coefficients in `ZMod 2`.
+
 ## Main results
 
 * `TauCeti.localHasse_formClass_traceTransfer_sq_of_sq`: `s(Tr_*⟨1⟩) = (2, d)_K`.
@@ -54,6 +67,10 @@ classes over every field (`TauCeti.sw1Class_formClass_traceTransfer_smul_sq`).
   `s(Tr_*⟨a⟩) = s(Tr_*⟨1⟩)`.
 * `TauCeti.galoisEvens_kummerClass_eq_zero_iff_hilbertSymbol_eq`: for `Tr a ≠ 0`,
   `N^{Ev}((a)) = 0` if and only if `(Tr a, −d · N a)_K = (2, d)_K`.
+* `TauCeti.galoisEvens_kummerClass_eq_hilbertSymbol_smul`: for `Tr a ≠ 0` and
+  `κ = (c) ∪ (e)` with `(c, e)_K = -1`, `N^{Ev}((a)) = ε((Tr a, −d · N a)_K · (2, d)_K) • κ`.
+* `TauCeti.galoisEvens_kummerClass_eq_hilbertSymbol_smul_of_trace_eq_zero`: for `Tr a = 0` and
+  `κ` as above, `N^{Ev}((a)) = ε((2, d)_K) • κ`.
 
 ## References
 
@@ -140,5 +157,39 @@ theorem galoisEvens_kummerClass_eq_zero_iff_hilbertSymbol_eq (σ : L →ₐ[K] S
     neg_eq_of_add_eq_zero_right ((two_nsmul _).symm.trans (cohomF2.two_nsmul_eq_zero _ _ _))
   rw [galoisEvens2_kummerClass σ hfin d hx hx2 a t ht, hN, add_eq_zero_iff_eq_neg, hneg,
     cup_kummerClass_eq_cup_kummerClass_iff_hilbertSymbol_eq]
+
+/-- **The Evens norm of a Kummer class over a local field, as an element of `H²(G_K, 𝔽₂)`**: if
+`L` is generated over a local field `K` by a square root `x ∉ K` of `d`, and `a ∈ Lˣ` has nonzero
+trace `t`, then `N^{Ev}((a)) = ε((t, −d · N a)_K · (2, d)_K) • ((c) ∪ (e))` for all `c, e` with
+`(c, e)_K = -1`, where `ε` sends the signs `+1`, `-1` to `0`, `1`. -/
+theorem galoisEvens_kummerClass_eq_hilbertSymbol_smul (σ : L →ₐ[K] SeparableClosure K)
+    (hfin : Module.finrank K L = 2) {x : L} {d : Kˣ} (hx : x ∉ Set.range (algebraMap K L))
+    (hx2 : x ^ 2 = algebraMap K L (d : K)) (a : Lˣ) {t : Kˣ}
+    (ht : (t : K) = Algebra.trace K L a) {c e : Kˣ} (hce : hilbertSymbol c e = -1) :
+    galoisEvens K L σ hfin (kummerClass a) =
+      additiveIntUnitsAddEquiv (Additive.ofMul (hilbertSymbol t (-(d * Algebra.normUnits K a)) *
+        hilbertSymbol (unitOfInvertible (2 : K)) d)) •
+          (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1 (kummerClass c)
+            (kummerClass e) := by
+  have : Algebra.IsSeparable K L := Algebra.isSeparable_of_finrank_eq_two two_ne_zero hfin
+  have hN : Units.map (Algebra.norm K : L →* K) a = Algebra.normUnits K a := Units.ext (by simp)
+  rw [galoisEvens2_kummerClass σ hfin d hx hx2 a t ht, hN,
+    cup_kummerClass_eq_hilbertSymbol_smul hce t, cup_kummerClass_eq_hilbertSymbol_smul hce _ d,
+    ofMul_mul, map_add, add_smul]
+
+/-- **The Evens norm of a trace-zero Kummer class over a local field**: if `L` is generated over a
+local field `K` by a square root `x ∉ K` of `d`, and `a ∈ Lˣ` has trace zero, then
+`N^{Ev}((a)) = ε((2, d)_K) • ((c) ∪ (e))` for all `c, e` with `(c, e)_K = -1`, where `ε` sends the
+signs `+1`, `-1` to `0`, `1`. -/
+theorem galoisEvens_kummerClass_eq_hilbertSymbol_smul_of_trace_eq_zero
+    (σ : L →ₐ[K] SeparableClosure K) (hfin : Module.finrank K L = 2) {x : L} {d : Kˣ}
+    (hx : x ∉ Set.range (algebraMap K L)) (hx2 : x ^ 2 = algebraMap K L (d : K)) (a : Lˣ)
+    (htr : Algebra.trace K L a = 0) {c e : Kˣ} (hce : hilbertSymbol c e = -1) :
+    galoisEvens K L σ hfin (kummerClass a) =
+      additiveIntUnitsAddEquiv (Additive.ofMul (hilbertSymbol (unitOfInvertible (2 : K)) d)) •
+        (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1 (kummerClass c) (kummerClass e) := by
+  have : Algebra.IsSeparable K L := Algebra.isSeparable_of_finrank_eq_two two_ne_zero hfin
+  rw [galoisEvens2_kummerClass_of_trace_eq_zero σ hfin d hx hx2 a htr,
+    cup_kummerClass_eq_hilbertSymbol_smul hce _ d]
 
 end TauCeti

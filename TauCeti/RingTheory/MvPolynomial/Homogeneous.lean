@@ -24,7 +24,8 @@ degree `n`, `hp.constantCoeff_eq_zero` records that the constant coefficient van
 positive degree, `hp.natDegree_aeval_le` bounds by `n` the degree of a substitution of
 polynomials of degree at most one, and `hp.homogeneousComponent_mul_right` records that
 multiplying on the right by a homogeneous polynomial of degree `d` shifts homogeneous components
-by `d`.
+by `d`. `TauCeti.eval_coe_homogeneousSubmodule_eq_sum` restates the expansion of values for
+`eval` on elements of `homogeneousSubmodule`.
 
 The file also records `MvPolynomial.isHomogeneous_coeff_prod_X_sub_C`: the coefficients of a
 product of linear factors `X - C Ψ` with homogeneous `Ψ` of degree `m` are homogeneous, and
@@ -151,6 +152,22 @@ theorem aeval_eq_sum_finsuppAntidiag {σ R S : Type*} [Fintype σ] [DecidableEq 
   · rw [notMem_support_iff.mp hl, map_zero, zero_mul]
 
 end MvPolynomial.IsHomogeneous
+
+namespace TauCeti
+
+open MvPolynomial
+
+variable {σ R : Type*} [CommSemiring R]
+
+/-- A homogeneous polynomial of degree `n` in finitely many variables evaluates as the sum, over
+the exponent vectors `l` of degree `n`, of its coefficient at `l` times `∏ i, v i ^ l i`. -/
+theorem eval_coe_homogeneousSubmodule_eq_sum [Fintype σ] [DecidableEq σ] {n : ℕ}
+    (p : homogeneousSubmodule σ R n) (v : σ → R) :
+    eval v (p : MvPolynomial σ R) = ∑ l ∈ Finset.univ.finsuppAntidiag n,
+      (p : MvPolynomial σ R).coeff l * ∏ i, v i ^ l i := by
+  simpa using ((mem_homogeneousSubmodule n _).mp p.2).aeval_eq_sum_finsuppAntidiag v
+
+end TauCeti
 
 namespace MvPolynomial
 

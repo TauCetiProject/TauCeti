@@ -27,10 +27,10 @@ interior point as well. On a boundaryless source manifold the source condition i
 when either ambient model has boundary, yielding the usual global criterion from invertibility of
 every differential.
 
-The file also records that maximal-atlas charts are local diffeomorphisms, and that being a local
-diffeomorphism at a point is an open condition: the partial diffeomorphism witnessing it at one
-point witnesses it at every nearby point, and that a local diffeomorphism can be cancelled on the
-right of a composite local diffeomorphism.
+The file also records that maximal-atlas charts and their inverses are local diffeomorphisms, and
+that being a local diffeomorphism at a point is an open condition: the partial diffeomorphism
+witnessing it at one point witnesses it at every nearby point, and that a local diffeomorphism can
+be cancelled on the right of a composite local diffeomorphism.
 
 ## Main results
 
@@ -47,6 +47,8 @@ right of a composite local diffeomorphism.
   source is a local diffeomorphism there.
 * `OpenPartialHomeomorph.isLocalDiffeomorphAt_of_mem_maximalAtlas`: a maximal-atlas chart is a
   local diffeomorphism at every point of its source.
+* `OpenPartialHomeomorph.isLocalDiffeomorphAt_symm_of_mem_maximalAtlas`: its inverse is a local
+  diffeomorphism at every point of its target.
 * `IsLocalDiffeomorphAt.eventually`: being a local diffeomorphism at a point is an open
   condition.
 * `IsLocalDiffeomorphAt.of_comp_right`: a map whose composite with a local diffeomorphism is a local
@@ -207,6 +209,19 @@ theorem _root_.OpenPartialHomeomorph.isLocalDiffeomorphAt_of_mem_maximalAtlas
   apply isLocalDiffeomorphAt_of_eqOn (Φ := φ) hx
   intro y _
   simpa only [φ] using (congrFun e.coe_toPartialEquiv y).symm
+
+/-- The inverse of a chart in the `C^n` maximal atlas is a local diffeomorphism at every point of
+its target. -/
+theorem _root_.OpenPartialHomeomorph.isLocalDiffeomorphAt_symm_of_mem_maximalAtlas
+    (e : OpenPartialHomeomorph M H) (he : e ∈ IsManifold.maximalAtlas I n M) {y : H}
+    (hy : y ∈ e.target) : IsLocalDiffeomorphAt I I n e.symm y := by
+  let φ : PartialDiffeomorph I I M H n :=
+    { e.toPartialEquiv with
+      open_source := e.open_source
+      open_target := e.open_target
+      contMDiffOn_toFun := contMDiffOn_of_mem_maximalAtlas he
+      contMDiffOn_invFun := contMDiffOn_symm_of_mem_maximalAtlas he }
+  exact isLocalDiffeomorphAt_of_eqOn (Φ := φ.symm) hy fun _ _ => rfl
 
 /-- **Being a local diffeomorphism at a point is an open condition.** A `C^n` local diffeomorphism
 at `x` is a `C^n` local diffeomorphism at every nearby point. -/
