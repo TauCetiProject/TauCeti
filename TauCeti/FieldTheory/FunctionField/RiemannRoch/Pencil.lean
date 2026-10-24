@@ -41,11 +41,11 @@ what embeds a curve in projective space by the complete linear system of the div
 
 These statements use Riemann–Roch, so they need `k` to be the exact constant field of `F`. Over
 an arbitrary `k`, the multiples of a pole divisor have the same Riemann–Roch spaces over `k` and
-over the full constant field `k̃ = algebraicClosure k F`
-(`TauCeti.restrictScalars_riemannRochSpace_nsmul_poles`), and `k̃` is exact. So generation in
-every positive degree persists over `k`, for `e ≥ 2 g(F / k̃)`
+over the full constant field `K = algebraicClosure k F`
+(`TauCeti.restrictScalars_riemannRochSpace_nsmul_poles`), and `K` is exact. So generation in
+every positive degree persists over `k`, for `e ≥ 2 g(F / K)`
 (`TauCeti.riemannRochSpace_nsmul_poles_pow_le_pow_of_ne_zero`). Only degree zero is lost, where
-`L(0) = k̃` is larger than the constants `k` unless `k` is exact; projective embeddings do not see
+`L(0) = K` is larger than the constants `k` unless `k` is exact; projective embeddings do not see
 degree zero.
 
 The argument is the base-point-free pencil calculation: the intersection of
