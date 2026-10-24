@@ -223,9 +223,7 @@ theorem signlessMatrixRepresentation_list_prod_backtrackElem {v : V}
   | cons w l ih =>
     rcases eq_or_ne l [] with rfl | hl
     · simp
-    · rw [List.map_cons, List.prod_cons, map_mul, ih hl,
-        signlessMatrixRepresentation_backtrackElem, ← mul_kronecker_mul, single_mul_single_same,
-        mul_one, List.map_cons, List.prod_cons]
+    · simp [ih hl, ← mul_kronecker_mul]
 
 /-- The trace of the image of a nonempty product of backtracks `v → w → v` at a common vertex `v`
 is the trace of the product of their blocks at `v`. -/
