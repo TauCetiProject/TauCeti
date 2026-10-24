@@ -40,7 +40,7 @@ read in the abelianized Galois group by the decomposition map. -/
 theorem globalArtinMap_local (ι : L →ₐ[K] SeparableClosure K)
     (v : HeightOneSpectrum (𝓞 K)) (x : (v.adicCompletion K)ˣ) :
     globalArtinMap K L ι
-        (.ofMul (IdeleClassGroup.ofAdicCompletion (𝓞 K) K v x)) =
+        (.ofMul (IdeleGroup.ofAdicCompletion (𝓞 K) K v x : IdeleClassGroup (𝓞 K) K)) =
       .ofMul (localArtinAt K L v x) := by
   classical
   apply sub_eq_zero.mp
@@ -125,7 +125,6 @@ theorem globalArtinMap_local (ι : L →ₐ[K] SeparableClosure K)
       simp [a, HeightOneSpectrum.ideleFiniteCoord_ofAdicCompletion_of_ne w hw]
   rw [hsum, hground] at h
   simpa only [globalArtinMap_apply, globalArtinEquiv_mk, χ', AddMonoidHom.comp_apply,
-    AddEquiv.coe_toAddMonoidHom, a, V, ← IdeleClassGroup.ofAdicCompletion_apply,
-    χ₀, AddMonoidHom.coe_ofClass] using h
+    AddEquiv.coe_toAddMonoidHom, a, V, χ₀, AddMonoidHom.coe_ofClass] using h
 
 end TauCeti.ClassFieldTheory
