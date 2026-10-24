@@ -468,7 +468,8 @@ theorem siegelFunction_half_half_apply_add_one {τ : ℂ} (hτ : 0 < τ.im) :
   simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one] at h ⊢
   rw [h, he]
   push_cast
-  ring_nf
+  rw [show -((π : ℂ) * I * (0 * 0 - 1 * (1 / 2))) = π * I / 2 by ring]
+  ring
 
 end LevelTwo
 

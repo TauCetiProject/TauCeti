@@ -48,9 +48,8 @@ namespace TauCeti.ModularForm
 `η(τ) = e^{2π i τ / 24} ∏_{n ≥ 1} (1 - qⁿ)` with `q = e^{2π i τ}`. -/
 theorem eta_eq_exp_mul_tprod (τ : ℂ) :
     η τ = cexp (2 * π * I * τ / 24) * ∏' n : ℕ, (1 - cexp (2 * π * I * τ) ^ (n + 1)) := by
-  simp only [_root_.ModularForm.eta, _root_.ModularForm.eta_q_eq_pow, Function.Periodic.qParam]
-  push_cast
-  rfl
+  simp only [_root_.ModularForm.eta, _root_.ModularForm.eta_q_eq_pow, Function.Periodic.qParam,
+    ofReal_ofNat]
 
 /-- `η(2τ) = e^{π i τ / 12} η(τ) ∏_{n ≥ 1} (1 + qⁿ)` on the upper half-plane, where
 `q = e^{2π i τ}`. -/
