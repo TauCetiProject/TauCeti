@@ -180,11 +180,12 @@ theorem hasDerivWithinAt_volume_real_add_smul_closedBall_rpow_iff_exists_eq_clos
   · rintro ⟨v, r, hr, hvr⟩
     have hrK : r • (K : Set E) = -v +ᵥ closedBall (0 : E) 1 := eq_neg_vadd_iff.2 hvr.symm
     refine ⟨r⁻¹ • -v, r⁻¹, inv_pos.2 hr, ?_⟩
-    rw [← inv_smul_smul₀ hr.ne' (K : Set E), hrK, Metric.vadd_closedBall, vadd_eq_add, add_zero,
-      smul_closedBall _ _ zero_le_one, Real.norm_of_nonneg (inv_nonneg.2 hr.le), mul_one]
+    rw [← inv_smul_smul₀ hr.ne' (K : Set E), hrK, Metric.vadd_closedBall,
+      smul_closedBall _ _ zero_le_one]
+    simp [abs_of_pos hr]
   · rintro ⟨c, r, hr, hKc⟩
     refine ⟨-(r⁻¹ • c), r⁻¹, inv_pos.2 hr, ?_⟩
-    rw [hKc, smul_closedBall _ _ hr.le, Real.norm_of_nonneg (inv_nonneg.2 hr.le),
-      inv_mul_cancel₀ hr.ne', Metric.vadd_closedBall, vadd_eq_add, neg_add_cancel]
+    rw [hKc, smul_closedBall _ _ hr.le, Metric.vadd_closedBall]
+    simp [abs_of_pos hr, hr.ne']
 
 end ConvexBody
