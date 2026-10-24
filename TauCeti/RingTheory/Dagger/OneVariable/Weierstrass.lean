@@ -24,7 +24,7 @@ use a field.
 
 The algebra is `washnitzerAlgebra Unit K`, whose underlying formal series are `PowerSeries K`.
 No completeness of this algebra is asserted: completeness is used only for the coefficient
-ring when applying `TauCeti.PowerSeries.IsDistinguished.exists_mul_add_eq` and its
+ring when applying `TauCeti.PowerSeries.IsMulDistinguished.exists_mul_add_eq` and its
 preparation theorem. The ideal argument follows the least-distinguished-degree argument of
 `TauCeti.PowerSeries.IsDistinguished.span_singleton_eq_of_forall_le`.
 
@@ -59,7 +59,9 @@ theorem existsUnique_mul_add_eq_of_isDistinguished_one
   have hgr : PowerSeries.IsRestricted ρ (g : PowerSeries R) :=
     MvPowerSeries.isRestricted_of_le hgρ₀ (fun _ ↦ zero_le_one.trans hρ.le) fun _ ↦ hρρ₀
   obtain ⟨q, r, hq, hr, hqr⟩ :=
-    hfd.exists_mul_add_eq hu (zero_lt_one.trans hρ) hfr hgr
+    (isMulDistinguished_iff_isUnit.mpr ⟨hfd, hu⟩).exists_mul_add_eq
+      (zero_lt_one.trans hρ) hfr hgr
+  rw [mul_comm] at hqr
   let Q : washnitzerAlgebra Unit R := ⟨q, mem_washnitzerAlgebra.mpr ⟨ρ, hρ, hq⟩⟩
   let rW : washnitzerAlgebra Unit R :=
     ⟨r, mem_washnitzerAlgebra.mpr ⟨2, one_lt_two, isRestricted_of_forall_coeff_eq_zero hr⟩⟩
