@@ -91,7 +91,41 @@ private theorem schneider_siegel_bound_le {L D₁ D₂ : ℕ} {H : ℝ} (hL : 3 
     mul_le_mul_of_nonneg_right h₁ hlogH
   nlinarith
 
+/-- Siegel's exponent `n / (N - n)` is at most `1` when `2 n ≤ N`, so for a base `B ≥ 1` the
+bound `B ^ (n / (N - n))` of Siegel's lemma is at most `B`. -/
+private theorem rpow_div_sub_le_self {B n N : ℝ} (hB : 1 ≤ B) (hn : 0 ≤ n) (h : 2 * n ≤ N) :
+    B ^ (n / (N - n)) ≤ B :=
+  (Real.rpow_le_rpow_of_exponent_le hB (div_le_one_of_le₀ (by linarith) (by linarith))).trans_eq
+    (Real.rpow_one B)
+
 variable {K : Type*} [Field K] [NumberField K]
+
+/-- Bounds on the houses of two factors bound the house of their product. -/
+private theorem house_mul_le_of_le {x y : K} {X Y : ℝ} (hx : house x ≤ X) (hy : house y ≤ Y) :
+    house (x * y) ≤ X * Y :=
+  (house_mul_le x y).trans (mul_le_mul hx hy (house_nonneg y) ((house_nonneg x).trans hx))
+
+/-- A bound on the house of `x` bounds the house of its powers. -/
+private theorem house_pow_le_of_le {x : K} {X : ℝ} (hx : house x ≤ X) (n : ℕ) :
+    house (x ^ n) ≤ X ^ n := by
+  rw [house_pow]
+  exact pow_le_pow_left₀ (house_nonneg x) hx n
+
+/-- The house bound for an entry of Schneider's linear system: if `x`, `z`, `w` have house at
+most `H` and `y` has house at most `L H`, then for `i ≤ D` and `i + s + t ≤ n` the entry
+`x ^ (n - (i + s + t)) y ^ i z ^ s w ^ t` has house at most `L ^ D H ^ n`. -/
+private theorem house_schneider_entry_le {x y z w : K} {L H : ℝ} (hx : house x ≤ H)
+    (hy : house y ≤ L * H) (hz : house z ≤ H) (hw : house w ≤ H) (hL : 1 ≤ L) (hH : 0 ≤ H)
+    {i s t n D : ℕ} (hi : i ≤ D) (hn : i + s + t ≤ n) :
+    house (x ^ (n - (i + s + t)) * y ^ i * (z ^ s * w ^ t)) ≤ L ^ D * H ^ n := by
+  have h := house_mul_le_of_le (house_mul_le_of_le (house_pow_le_of_le hx (n - (i + s + t)))
+      (house_pow_le_of_le hy i)) (house_mul_le_of_le (house_pow_le_of_le hz s)
+      (house_pow_le_of_le hw t))
+  refine h.trans (le_of_eq_of_le ?_ (mul_le_mul_of_nonneg_right
+    (pow_le_pow_right₀ hL hi) (by positivity)))
+  obtain ⟨r, rfl⟩ := Nat.exists_eq_add_of_le hn
+  rw [Nat.add_sub_cancel_left, mul_pow]
+  ring
 
 /-- **Schneider's auxiliary function, algebraic form** (Evertse, Lemma 4.22). Let `K` be a number
 field of degree `d` and `α, β, γ ∈ K`. There is `c > 0` such that for all integers `L ≥ 3` and
@@ -174,23 +208,10 @@ theorem exists_schneider_auxiliary_algebraic (α β γ : K) :
   set A : ℝ := (L : ℝ) ^ D₁ * H ^ N
   have hA : 1 ≤ A := one_le_mul_of_one_le_of_one_le
     (one_le_pow₀ (by exact_mod_cast (by omega : 1 ≤ L))) (one_le_pow₀ hH)
-  have heA (p q) : house (e p q) ≤ A := by
-    have hmul {x y : K} {X Y : ℝ} (hx : house x ≤ X) (hy : house y ≤ Y) (hY : 0 ≤ Y) :
-        house (x * y) ≤ X * Y :=
-      (house_mul_le x y).trans (mul_le_mul hx hy (house_nonneg y) ((house_nonneg x).trans hx))
-    have hpow {x : K} {X : ℝ} (hx : house x ≤ X) (n : ℕ) : house (x ^ n) ≤ X ^ n := by
-      rw [house_pow]
-      exact pow_le_pow_left₀ (house_nonneg x) hx n
-    have hmH' : house (m : K) ≤ H := ((house_intCast m).trans Int.cast_abs).trans_le hmH
-    have h := hmul (hmul (hpow hmH' (N - k p q)) (hpow (hwH p) q.1) (by positivity))
-      (hmul (hpow hαH (((p.1 : ℕ) + 1) * q.2)) (hpow hγH (((p.2 : ℕ) + 1) * q.2)) (by positivity))
-      (by positivity)
-    refine h.trans (le_of_eq_of_le ?_ (mul_le_mul_of_nonneg_right
-      (pow_le_pow_right₀ (by exact_mod_cast (by omega : 1 ≤ L)) q.1.is_lt.le) (by positivity)))
-    obtain ⟨r, hNr, hr⟩ := hNk p q
-    rw [hNr, hr, mul_pow]
-    simp only [k]
-    ring
+  have hmH' : house (m : K) ≤ H := ((house_intCast m).trans Int.cast_abs).trans_le hmH
+  have heA (p q) : house (e p q) ≤ A :=
+    house_schneider_entry_le hmH' (hwH p) hαH hγH (by exact_mod_cast (by omega : 1 ≤ L)) hH₀
+      q.1.is_lt.le (hk p q)
   let a' : Matrix (Fin L × Fin L) (Fin D₁ × Fin D₂) (𝓞 K) := fun p q ↦ ⟨e p q, he p q⟩
   have hcard : finrank ℚ K * Fintype.card (Fin L × Fin L) < Fintype.card (Fin D₁ × Fin D₂) := by
     simp only [Fintype.card_prod, Fintype.card_fin]
@@ -204,17 +225,12 @@ theorem exists_schneider_auxiliary_algebraic (α β γ : K) :
     have hbase : 1 ≤ 3 * ((D₁ * D₂ : ℕ) : ℝ) * A := by
       have : (1 : ℝ) ≤ ((D₁ * D₂ : ℕ) : ℝ) := by exact_mod_cast hD₁D₂
       nlinarith
-    have hexp : ((finrank ℚ K * (L * L) : ℕ) : ℝ) / ((D₁ * D₂ : ℕ) - (finrank ℚ K * (L * L) : ℕ))
-        ≤ 1 := by
-      have h2 : (2 * (finrank ℚ K * (L * L) : ℕ) : ℝ) ≤ (D₁ * D₂ : ℕ) := by
-        exact_mod_cast (by nlinarith : 2 * (finrank ℚ K * (L * L)) ≤ D₁ * D₂)
-      have h0 : (0 : ℝ) ≤ (finrank ℚ K * (L * L) : ℕ) := Nat.cast_nonneg _
-      exact div_le_one_of_le₀ (by linarith) (by linarith)
-    push_cast at hexp hbase ⊢
-    calc _ ≤ (3 * ((D₁ : ℝ) * D₂) * A) ^ (1 : ℝ) :=
-          Real.rpow_le_rpow_of_exponent_le hbase hexp
-      _ = 3 * ((D₁ * D₂ : ℕ) : ℝ) * A := by push_cast; exact Real.rpow_one _
-      _ ≤ _ := schneider_siegel_bound_le hL hD₁ hD₂ hH
+    have h2 : (2 * (finrank ℚ K * (L * L) : ℕ) : ℝ) ≤ (D₁ * D₂ : ℕ) := by
+      exact_mod_cast (by nlinarith : 2 * (finrank ℚ K * (L * L)) ≤ D₁ * D₂)
+    push_cast at hbase h2 ⊢
+    have hbound := schneider_siegel_bound_le hL hD₁ hD₂ hH
+    push_cast at hbound
+    exact (rpow_div_sub_le_self hbase (by positivity) h2).trans hbound
   · -- The equation of the grid point `(u, v)`, divided by `m ^ N`.
     obtain ⟨u, rfl⟩ := Nat.exists_eq_add_of_le' hu₁
     obtain ⟨v, rfl⟩ := Nat.exists_eq_add_of_le' hv₁
