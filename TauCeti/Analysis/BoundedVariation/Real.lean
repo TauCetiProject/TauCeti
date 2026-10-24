@@ -117,6 +117,68 @@ private theorem sum_mul_smoothTransition_sub_eq_zero {m : ℕ} {x : Fin (m + 1) 
         _ ≤ c * (y - x j) := by gcongr; linarith [hx (Fin.le_last j)]
     simp [h]
 
+/-- **The smooth-step test function.** For monotone points `x₀ ≤ ⋯ ≤ xₘ` with
+`[x₀, xₘ + c⁻¹] ⊆ Ω` and coefficients `|εᵢ| ≤ 1`, the combination
+`∑ᵢ εᵢ (ψ (c (y - xᵢ)) - ψ (c (y - xᵢ₊₁)))` is a test function on `Ω` of sup norm at most one.
+Its derivative pairs with `u` to the corresponding combination of the kernel pairings
+`∫ c ψ'(c (y - xᵢ)) u y dy`, which is therefore at most `|Du|(Ω)`. -/
+private theorem ofReal_sum_mul_sub_le_totalVariationOn {Ω : Opens ℝ} {u : ℝ → ℝ} {m : ℕ}
+    {x : Fin (m + 1) → ℝ} (hx : Monotone x) {ε : Fin m → ℝ} (hε : ∀ i, |ε i| ≤ 1) {c : ℝ}
+    (hc : 0 < c) (hΩ : Icc (x 0) (x (Fin.last m) + c⁻¹) ⊆ Ω)
+    (hu : ∀ i, IntegrableOn u (closedBall (x i) c⁻¹)) :
+    ENNReal.ofReal (∑ i : Fin m, ε i *
+      ((∫ y, c * deriv Real.smoothTransition (c * (y - x i.castSucc)) * u y) -
+        ∫ y, c * deriv Real.smoothTransition (c * (y - x i.succ)) * u y)) ≤
+      totalVariationOn volume Ω u := by
+  have hkint (i) : Integrable fun y => c * deriv Real.smoothTransition (c * (y - x i)) * u y := by
+    simpa only [smul_eq_mul] using
+      Real.smoothTransition.integrable_mul_deriv_mul_sub_smul hc (hu i)
+  set I : ℝ → ℝ := fun p => ∫ y, c * deriv Real.smoothTransition (c * (y - p)) * u y
+  set g : ℝ → ℝ := fun y => ∑ i : Fin m, ε i * (Real.smoothTransition (c * (y - x i.castSucc)) -
+    Real.smoothTransition (c * (y - x i.succ)))
+  have hstep (p y : ℝ) : HasDerivAt (fun y => Real.smoothTransition (c * (y - p)))
+      (c * deriv Real.smoothTransition (c * (y - p))) y :=
+    (((hasDerivAt_id y).sub_const p).const_mul c).smoothTransition.congr_deriv
+      (by rw [id, mul_one, mul_comm])
+  have hgd (y) : HasDerivAt g (∑ i : Fin m, ε i *
+      (c * deriv Real.smoothTransition (c * (y - x i.castSucc)) -
+        c * deriv Real.smoothTransition (c * (y - x i.succ)))) y :=
+    HasDerivAt.fun_sum fun i _ => ((hstep _ y).sub (hstep _ y)).const_mul (ε i)
+  have hgsmooth : ContDiff ℝ (⊤ : ℕ∞) g := by
+    have hstep (p : ℝ) : ContDiff ℝ (⊤ : ℕ∞) fun y => Real.smoothTransition (c * (y - p)) :=
+      Real.smoothTransition.contDiff.comp (contDiff_const.mul (contDiff_id.sub contDiff_const))
+    exact ContDiff.sum fun i _ => contDiff_const.mul ((hstep _).sub (hstep _))
+  have hg0 (y) (hy : y ∉ Icc (x 0) (x (Fin.last m) + c⁻¹)) : g y = 0 :=
+    sum_mul_smoothTransition_sub_eq_zero hx ε hc hy
+  have hts : tsupport g ⊆ Ω :=
+    (isClosed_Icc.closure_subset_iff.2 (Function.support_subset_iff'.2 hg0)).trans hΩ
+  let T : 𝓓(Ω, ℝ) := ⟨g, hgsmooth, HasCompactSupport.intro isCompact_Icc hg0, hts⟩
+  -- Its derivative pairs with `u` to the combination of the kernel pairings.
+  have hpair : ∫ y, ∂_{(1 : ℝ)} T y * u y =
+      ∑ i : Fin m, ε i * (I (x i.castSucc) - I (x i.succ)) := by
+    have hT (y) : ∂_{(1 : ℝ)} T y = ∑ i : Fin m, ε i *
+        (c * deriv Real.smoothTransition (c * (y - x i.castSucc)) -
+          c * deriv Real.smoothTransition (c * (y - x i.succ))) := by
+      rw [lineDerivOp_apply, coe_mk, (hgd y).differentiableAt.lineDeriv_eq_fderiv,
+        fderiv_apply_one_eq_deriv, (hgd y).deriv]
+    simp_rw [hT, Finset.sum_mul, mul_assoc, sub_mul]
+    rw [integral_finsetSum _ fun i _ => ?_]
+    · refine Finset.sum_congr rfl fun i _ => ?_
+      rw [integral_const_mul, integral_sub (hkint _) (hkint _)]
+    · exact ((hkint _).sub (hkint _)).const_mul _
+  have hTnorm : ‖(T : ℝ →ᵇ ℝ)‖ₑ ≤ 1 := by
+    rw [← ofReal_norm]
+    exact ENNReal.ofReal_le_one.2 ((BoundedContinuousFunction.norm_le zero_le_one).2
+      (abs_sum_mul_smoothTransition_sub_le hx hε hc.le))
+  rw [← hpair]
+  calc ENNReal.ofReal (∫ y, ∂_{(1 : ℝ)} T y * u y)
+      ≤ ENNReal.ofReal |∫ y, ∂_{(1 : ℝ)} T y * u y| := ENNReal.ofReal_le_ofReal (le_abs_self _)
+    _ ≤ ‖(1 : ℝ)‖ₑ * ‖(T : ℝ →ᵇ ℝ)‖ₑ * totalVariationOn volume Ω u :=
+        ofReal_abs_integral_lineDeriv_mul_le_enorm_mul_enorm_mul_totalVariationOn T 1
+    _ ≤ totalVariationOn volume Ω u := by
+        rw [enorm_one, one_mul]
+        exact mul_le_of_le_one_left zero_le hTnorm
+
 /-- **The variation along Lebesgue points is bounded by the total variation.** Let
 `x₀ ≤ x₁ ≤ ⋯ ≤ xₘ` be points with `[x₀, xₘ] ⊆ Ω` at which `u` has Lebesgue values `vᵢ`, that
 is, the mean oscillation `⨍_{B(xᵢ, r)} |u - vᵢ|` tends to zero as `r → 0`. Then
@@ -140,74 +202,28 @@ theorem ofReal_sum_abs_sub_le_totalVariationOn {Ω : Opens ℝ} {u : ℝ → ℝ
   set I : ℝ → ℝ → ℝ := fun c p => ∫ y, c * deriv Real.smoothTransition (c * (y - p)) * u y
   have hlim : Tendsto (fun c => ∑ i : Fin m, ε i * (I c (x i.castSucc) - I c (x i.succ))) atTop
       (𝓝 (∑ i : Fin m, |v i.succ - v i.castSucc|)) := by
-    have hI (i) : Tendsto (fun c => I c (x i)) atTop (𝓝 (v i)) :=
-      Real.smoothTransition.tendsto_integral_mul_deriv_mul_sub_mul ⟨cthickening δ K,
-        mem_of_superset (closedBall_mem_nhds _ hδ) (closedBall_subset_cthickening (hxK i) δ),
-        huL⟩ (hv i)
+    have hI (i) : Tendsto (fun c => I c (x i)) atTop (𝓝 (v i)) := by
+      simpa only [smul_eq_mul] using
+        Real.smoothTransition.tendsto_integral_mul_deriv_mul_sub_smul ⟨cthickening δ K,
+          mem_of_superset (closedBall_mem_nhds _ hδ) (closedBall_subset_cthickening (hxK i) δ),
+          huL⟩ (hv i)
     refine tendsto_finsetSum _ fun i _ => ?_
     rw [abs_sub_comm, ← self_mul_sign, mul_comm]
     exact ((hI _).sub (hI _)).const_mul _
+  -- For large `c` each combination is bounded by the smooth-step test function.
   refine le_of_tendsto (ENNReal.tendsto_ofReal hlim) ?_
   filter_upwards [eventually_gt_atTop δ⁻¹] with c hc
   have hc0 : 0 < c := lt_trans (inv_pos.2 hδ) hc
   have hball (p) (hp : p ∈ K) : closedBall p c⁻¹ ⊆ cthickening δ K :=
     (closedBall_subset_closedBall (inv_lt_of_inv_lt₀ hδ hc).le).trans
       (closedBall_subset_cthickening hp δ)
-  have hkint (p) (hp : p ∈ K) :
-      Integrable fun y => c * deriv Real.smoothTransition (c * (y - p)) * u y :=
-    Real.smoothTransition.integrable_mul_deriv_mul_sub_mul hc0 (huL.mono_set (hball p hp))
-  -- The test function: a combination of smooth steps at the points `x i`.
-  set g : ℝ → ℝ := fun y => ∑ i : Fin m, ε i * (Real.smoothTransition (c * (y - x i.castSucc)) -
-    Real.smoothTransition (c * (y - x i.succ)))
-  have hstep (p y : ℝ) : HasDerivAt (fun y => Real.smoothTransition (c * (y - p)))
-      (c * deriv Real.smoothTransition (c * (y - p))) y :=
-    (((hasDerivAt_id y).sub_const p).const_mul c).smoothTransition.congr_deriv
-      (by rw [id, mul_one, mul_comm])
-  have hgd (y) : HasDerivAt g (∑ i : Fin m, ε i *
-      (c * deriv Real.smoothTransition (c * (y - x i.castSucc)) -
-        c * deriv Real.smoothTransition (c * (y - x i.succ)))) y :=
-    HasDerivAt.fun_sum fun i _ => ((hstep _ y).sub (hstep _ y)).const_mul (ε i)
-  have hgsmooth : ContDiff ℝ (⊤ : ℕ∞) g := by
-    have hstep (p : ℝ) : ContDiff ℝ (⊤ : ℕ∞) fun y => Real.smoothTransition (c * (y - p)) :=
-      Real.smoothTransition.contDiff.comp (contDiff_const.mul (contDiff_id.sub contDiff_const))
-    exact ContDiff.sum fun i _ => contDiff_const.mul ((hstep _).sub (hstep _))
-  have hg0 (y) (hy : y ∉ Icc (x 0) (x (Fin.last m) + c⁻¹)) : g y = 0 :=
-    sum_mul_smoothTransition_sub_eq_zero hx ε hc0 hy
-  have hsupp : Icc (x 0) (x (Fin.last m) + c⁻¹) ⊆ Ω := by
-    refine fun y hy => hδΩ ?_
-    rcases le_total y (x (Fin.last m)) with h | h
-    · exact self_subset_cthickening K ⟨hy.1, h⟩
-    · refine hball _ (hxK (Fin.last m)) ?_
-      rw [Real.closedBall_eq_Icc]
-      exact ⟨by linarith [inv_pos.2 hc0], hy.2⟩
-  have hts : tsupport g ⊆ Ω :=
-    (isClosed_Icc.closure_subset_iff.2 (Function.support_subset_iff'.2 hg0)).trans hsupp
-  let T : 𝓓(Ω, ℝ) := ⟨g, hgsmooth, HasCompactSupport.intro isCompact_Icc hg0, hts⟩
-  -- Its derivative pairs with `u` to the combination of the kernel pairings.
-  have hpair : ∫ y, ∂_{(1 : ℝ)} T y * u y =
-      ∑ i : Fin m, ε i * (I c (x i.castSucc) - I c (x i.succ)) := by
-    have hT (y) : ∂_{(1 : ℝ)} T y = ∑ i : Fin m, ε i *
-        (c * deriv Real.smoothTransition (c * (y - x i.castSucc)) -
-          c * deriv Real.smoothTransition (c * (y - x i.succ))) := by
-      rw [lineDerivOp_apply, coe_mk, (hgd y).differentiableAt.lineDeriv_eq_fderiv,
-        fderiv_apply_one_eq_deriv, (hgd y).deriv]
-    simp_rw [hT, Finset.sum_mul, mul_assoc, sub_mul]
-    rw [integral_finsetSum _ fun i _ => ?_]
-    · refine Finset.sum_congr rfl fun i _ => ?_
-      rw [integral_const_mul, integral_sub (hkint _ (hxK _)) (hkint _ (hxK _))]
-    · exact ((hkint _ (hxK _)).sub (hkint _ (hxK _))).const_mul _
-  have hTnorm : ‖(T : ℝ →ᵇ ℝ)‖ₑ ≤ 1 := by
-    rw [← ofReal_norm]
-    exact ENNReal.ofReal_le_one.2 ((BoundedContinuousFunction.norm_le zero_le_one).2
-      (abs_sum_mul_smoothTransition_sub_le hx hε hc0.le))
-  calc ENNReal.ofReal (∑ i : Fin m, ε i * (I c (x i.castSucc) - I c (x i.succ)))
-      ≤ ENNReal.ofReal |∫ y, ∂_{(1 : ℝ)} T y * u y| :=
-        ENNReal.ofReal_le_ofReal (hpair ▸ le_abs_self _)
-    _ ≤ ‖(1 : ℝ)‖ₑ * ‖(T : ℝ →ᵇ ℝ)‖ₑ * totalVariationOn volume Ω u :=
-        ofReal_abs_integral_lineDeriv_mul_le_enorm_mul_enorm_mul_totalVariationOn T 1
-    _ ≤ totalVariationOn volume Ω u := by
-        rw [enorm_one, one_mul]
-        exact mul_le_of_le_one_left zero_le hTnorm
+  refine ofReal_sum_mul_sub_le_totalVariationOn hx hε hc0 (fun y hy => hδΩ ?_)
+    fun i => huL.mono_set (hball _ (hxK i))
+  rcases le_total y (x (Fin.last m)) with h | h
+  · exact self_subset_cthickening K ⟨hy.1, h⟩
+  · refine hball _ (hxK (Fin.last m)) ?_
+    rw [Real.closedBall_eq_Icc]
+    exact ⟨by linarith [inv_pos.2 hc0], hy.2⟩
 
 /-- Monotone Lebesgue points of the indicator of a measurable set `s` bound its perimeter from
 below by the number of alternations between `s` and its complement. -/
@@ -234,21 +250,28 @@ private theorem exists_measurableSet_ae_eq {s : Set ℝ} (hs : NullMeasurableSet
     perimeter_congr_ae (ae_restrict_of_ae hs.toMeasurable_ae_eq.symm),
     (measure_toMeasurable s).symm⟩
 
+/-- A set `s ⊆ ℝ` of finite measure misses almost every point of each ray, so a property holding
+almost everywhere holds at some point outside `s` to the left of `b` and at some point outside `s`
+to the right of `b'`. -/
+private theorem exists_notMem_lt_and_gt {s : Set ℝ} (hfin : volume s ≠ ∞) {P : ℝ → Prop}
+    (hP : ∀ᵐ x, P x) (b b' : ℝ) : (∃ a < b, a ∉ s ∧ P a) ∧ ∃ c > b', c ∉ s ∧ P c := by
+  obtain ⟨a, ⟨hab, has⟩, ha⟩ := Measure.exists_mem_of_measure_ne_zero_of_ae (s := Iio b \ s)
+    (by rw [measure_sdiff_eq_top Real.volume_Iio hfin]; exact ENNReal.top_ne_zero)
+    (ae_restrict_of_ae hP)
+  obtain ⟨c, ⟨hb'c, hcs⟩, hc⟩ := Measure.exists_mem_of_measure_ne_zero_of_ae (s := Ioi b' \ s)
+    (by rw [measure_sdiff_eq_top Real.volume_Ioi hfin]; exact ENNReal.top_ne_zero)
+    (ae_restrict_of_ae hP)
+  exact ⟨⟨a, hab, has, ha⟩, c, hb'c, hcs, hc⟩
+
 private theorem two_le_perimeter_of_measurableSet {s : Set ℝ} (hs : MeasurableSet s)
     (h0 : volume s ≠ 0) (hfin : volume s ≠ ∞) : 2 ≤ perimeter volume ⊤ s := by
   have hae := IsUnifLocDoublingMeasure.ae_tendsto_average_closedBall_norm_sub volume
     (f := s.indicator (1 : ℝ → ℝ)) ((locallyIntegrable_const 1).indicator hs)
   -- A Lebesgue point of `s`, with Lebesgue points of the complement on either side.
   obtain ⟨b, hbs, hb⟩ := Measure.exists_mem_of_measure_ne_zero_of_ae h0 (ae_restrict_of_ae hae)
-  obtain ⟨a, ⟨hab, has⟩, ha⟩ := Measure.exists_mem_of_measure_ne_zero_of_ae (s := Iio b \ s)
-    (by rw [measure_sdiff_eq_top Real.volume_Iio hfin]; exact ENNReal.top_ne_zero)
-    (ae_restrict_of_ae hae)
-  obtain ⟨c, ⟨hbc, hcs⟩, hc⟩ := Measure.exists_mem_of_measure_ne_zero_of_ae (s := Ioi b \ s)
-    (by rw [measure_sdiff_eq_top Real.volume_Ioi hfin]; exact ENNReal.top_ne_zero)
-    (ae_restrict_of_ae hae)
+  obtain ⟨⟨a, hab, has, ha⟩, c, hbc, hcs, hc⟩ := exists_notMem_lt_and_gt hfin hae b b
   have h := ofReal_sum_le_perimeter hs (x := ![a, b, c])
-    (Fin.monotone_iff_le_succ.2 fun i => by
-      fin_cases i <;> simp [(mem_Iio.1 hab).le, (mem_Ioi.1 hbc).le])
+    (Fin.monotone_iff_le_succ.2 fun i => by fin_cases i <;> simp [hab.le, hbc.le])
     (fun i => by fin_cases i <;> assumption)
   simpa [Fin.sum_univ_succ, has, hbs, hcs, one_add_one_eq_two] using h
 
@@ -276,15 +299,10 @@ private theorem four_le_perimeter_of_measurableSet {s : Set ℝ} (hs : Measurabl
         (lt_of_le_of_ne hyb' (ne_of_mem_of_not_mem hb's hys).symm) hbs hb hys hy hb's hb'
     exact h I hI (ae_eq_set.2 ⟨measure_mono_null h₁ hnull, measure_mono_null h₂ hnull⟩)
   -- Lebesgue points of the complement on either side.
-  obtain ⟨a, ⟨hab, has⟩, ha⟩ := Measure.exists_mem_of_measure_ne_zero_of_ae (s := Iio b \ s)
-    (by rw [measure_sdiff_eq_top Real.volume_Iio hfin]; exact ENNReal.top_ne_zero)
-    (ae_restrict_of_ae hae)
-  obtain ⟨c, ⟨hb'c, hcs⟩, hc⟩ := Measure.exists_mem_of_measure_ne_zero_of_ae (s := Ioi b' \ s)
-    (by rw [measure_sdiff_eq_top Real.volume_Ioi hfin]; exact ENNReal.top_ne_zero)
-    (ae_restrict_of_ae hae)
+  obtain ⟨⟨a, hab, has, ha⟩, c, hb'c, hcs, hc⟩ := exists_notMem_lt_and_gt hfin hae b b'
   have h := ofReal_sum_le_perimeter hs (x := ![a, b, z, b', c])
     (Fin.monotone_iff_le_succ.2 fun i => by
-      fin_cases i <;> simp [(mem_Iio.1 hab).le, hbz.le, hzb'.le, (mem_Ioi.1 hb'c).le])
+      fin_cases i <;> simp [hab.le, hbz.le, hzb'.le, hb'c.le])
     (fun i => by fin_cases i <;> assumption)
   have h4 : (1 + (1 + (1 + 1)) : ℝ) = 4 := by norm_num
   simpa [Fin.sum_univ_succ, has, hbs, hzs, hb's, hcs, h4] using h

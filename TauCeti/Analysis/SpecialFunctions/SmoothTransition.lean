@@ -49,9 +49,9 @@ of chain rules for Sobolev functions.
 * `Real.smoothTransition.integral_deriv`: the derivative has integral one.
 * `Real.smoothTransition.lintegral_ofReal_mul_deriv`: `∫_ℝ c ψ'(c (a - t)) dt = 1` for `c > 0`.
 * `Real.smoothTransition.integral_mul_deriv_mul_sub`: `∫_ℝ c ψ'(c (y - a)) dy = 1` for `c > 0`.
-* `Real.smoothTransition.integrable_mul_deriv_mul_sub_mul`: its product with a function
+* `Real.smoothTransition.integrable_mul_deriv_mul_sub_smul`: its product with a function
   integrable on `closedBall a c⁻¹` is integrable.
-* `Real.smoothTransition.tendsto_integral_mul_deriv_mul_sub_mul`: at a Lebesgue point `a` of `u`
+* `Real.smoothTransition.tendsto_integral_mul_deriv_mul_sub_smul`: at a Lebesgue point `a` of `u`
   with value `v`, `∫ c ψ'(c (y - a)) u y dy → v` as `c → ∞`.
 * `HasFDerivAt.smoothTransition` and `HasDerivAt.smoothTransition`: the chain rule for `ψ ∘ f`.
 * `LocallyLipschitzOn.smoothTransition_mul_sub`: `ψ (c (u - t))` is locally Lipschitz on `s`
@@ -162,13 +162,13 @@ theorem deriv_mul_sub_eq_zero {a c y : ℝ} (hc : 0 < c) (hy : y ∉ Metric.clos
 
 /-- The product of the rescaled derivative `y ↦ c ψ'(c (y - a))` of the smooth transition
 function `ψ` with a function integrable on `closedBall a c⁻¹` is integrable. -/
-theorem integrable_mul_deriv_mul_sub_mul {u : ℝ → ℝ} {a c : ℝ} (hc : 0 < c)
-    (hu : IntegrableOn u (Metric.closedBall a c⁻¹)) :
-    Integrable fun y => c * deriv smoothTransition (c * (y - a)) * u y := by
+theorem integrable_mul_deriv_mul_sub_smul {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {u : ℝ → E} {a c : ℝ} (hc : 0 < c) (hu : IntegrableOn u (Metric.closedBall a c⁻¹)) :
+    Integrable fun y => (c * deriv smoothTransition (c * (y - a))) • u y := by
   refine (integrableOn_iff_integrable_of_support_subset (s := Metric.closedBall a c⁻¹) ?_).1 ?_
   · refine Function.support_subset_iff'.2 fun y hy => ?_
-    rw [deriv_mul_sub_eq_zero hc hy, mul_zero, zero_mul]
-  · exact hu.continuousOn_mul (continuous_const.mul
+    rw [deriv_mul_sub_eq_zero hc hy, mul_zero, zero_smul]
+  · exact hu.continuousOn_smul (continuous_const.mul
       (((smoothTransition.contDiff (n := 1)).continuous_deriv le_rfl).comp
       (continuous_const.mul (continuous_id.sub continuous_const)))).continuousOn
       (isCompact_closedBall a c⁻¹)
@@ -176,10 +176,12 @@ theorem integrable_mul_deriv_mul_sub_mul {u : ℝ → ℝ} {a c : ℝ} (hc : 0 <
 /-- **The rescaled derivatives of the smooth transition function are an approximate identity at
 Lebesgue points.** If `u` is integrable near `a` and its mean oscillation about `v` on
 `closedBall a r` tends to zero as `r → 0`, then `∫ c ψ'(c (y - a)) u y dy → v` as `c → ∞`. -/
-theorem tendsto_integral_mul_deriv_mul_sub_mul {u : ℝ → ℝ} {a v : ℝ}
+theorem tendsto_integral_mul_deriv_mul_sub_smul {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [CompleteSpace E] {u : ℝ → E} {a : ℝ} {v : E}
     (hu : IntegrableAtFilter u (𝓝 a))
     (hv : Tendsto (fun r => ⨍ y in Metric.closedBall a r, ‖u y - v‖) (𝓝[>] 0) (𝓝 0)) :
-    Tendsto (fun c => ∫ y, c * deriv smoothTransition (c * (y - a)) * u y) atTop (𝓝 v) := by
+    Tendsto (fun c => ∫ y, (c * deriv smoothTransition (c * (y - a))) • u y) atTop
+      (𝓝 v) := by
   obtain ⟨C, hC⟩ :=
     ((smoothTransition.contDiff (n := 1)).continuous_deriv le_rfl).bounded_above_of_compact_support
       hasCompactSupport_deriv
