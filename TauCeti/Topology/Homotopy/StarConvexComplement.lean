@@ -54,9 +54,9 @@ namespace StarConvex
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {K : Set E} {p : E} {r : ℝ}
 
-/-- A point `p + c • (z - p)` with `c > 0` and `z ∉ K` stays outside `K` when `c ≥ 1`, by
+/-- A point `p + c • (z - p)` with `z ∉ K` stays outside `K` when `c ≥ 1`, by
 star-convexity of `K` about `p`, or when `c ≥ r / ‖z - p‖`, since it then lies outside
-`ball p r ⊇ K`. -/
+`ball p r ⊇ K` provided `z ≠ p`. -/
 theorem add_smul_sub_mem_compl (hK : StarConvex ℝ p K) (hKr : K ⊆ ball p r) {z : E}
     (hz : z ∉ K) {c : ℝ} (hc : 1 ≤ c ∨ (r / ‖z - p‖ ≤ c ∧ z ≠ p)) : p + c • (z - p) ∉ K := by
   intro h
@@ -79,16 +79,16 @@ namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {K : Set E} {p : E} {r : ℝ}
 
-/-- Radial projection of `Kᶜ` onto the sphere `sphere p r`, for `p ∈ K ⊆ ball p r`: the
+/-- Radial projection from `Kᶜ` to the sphere `sphere p r`, for `p ∈ K` and `r > 0`: the
 restriction of `TauCeti.radialProjectionToSphere` along `Kᶜ ⊆ univ ∖ {p}`. -/
-def complRadialProjection (hp : p ∈ K) (hKr : K ⊆ ball p r) : C(↥Kᶜ, sphere p r) :=
-  (radialProjectionToSphere (V := univ) (by simpa using hKr hp)).comp
+def complRadialProjection (hp : p ∈ K) (hr : 0 < r) : C(↥Kᶜ, sphere p r) :=
+  (radialProjectionToSphere (V := univ) hr).comp
     (ContinuousMap.inclusion fun _ hz ↦ ⟨mem_univ _, fun h ↦ hz (mem_singleton_iff.1 h ▸ hp)⟩)
 
 /-- The radial projection onto `sphere p r` is `z ↦ p + (r / ‖z - p‖) • (z - p)`. -/
 @[simp]
-theorem coe_complRadialProjection_apply (hp : p ∈ K) (hKr : K ⊆ ball p r) (z : ↥Kᶜ) :
-    (complRadialProjection hp hKr z : E) = p + (r / ‖(z : E) - p‖) • ((z : E) - p) :=
+theorem coe_complRadialProjection_apply (hp : p ∈ K) (hr : 0 < r) (z : ↥Kᶜ) :
+    (complRadialProjection hp hr z : E) = p + (r / ‖(z : E) - p‖) • ((z : E) - p) :=
   coe_radialProjectionToSphere_apply _ _
 
 end TauCeti
@@ -99,18 +99,13 @@ open TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {K : Set E} {p : E} {r : ℝ}
 
-omit [NormedSpace ℝ E] in
-/-- The points of `Kᶜ` differ from `p` when `p ∈ K`. -/
-private theorem sub_ne_zero_of_mem_compl (hp : p ∈ K) {z : E} (hz : z ∈ Kᶜ) : z - p ≠ 0 :=
-  sub_ne_zero.mpr fun h ↦ hz (h ▸ hp)
-
 /-- The straight-line homotopy from the radial projection onto `sphere p r` to the identity of
 `Kᶜ`, for `K` star-convex about `p ∈ K` and contained in `ball p r`. -/
 def complRadialHomotopy (hK : StarConvex ℝ p K) (hp : p ∈ K) (hKr : K ⊆ ball p r) :
     ((ContinuousMap.inclusion (sphere_disjoint_ball.mono_right hKr).subset_compl_right).comp
-      (complRadialProjection hp hKr)).Homotopy (ContinuousMap.id ↥Kᶜ) where
+      (complRadialProjection hp (pos_of_mem_ball (hKr hp)))).Homotopy (ContinuousMap.id ↥Kᶜ) where
   toFun x := ⟨p + ((1 - (x.1 : ℝ)) * (r / ‖(x.2 : E) - p‖) + x.1) • ((x.2 : E) - p), by
-    have hzp : (x.2 : E) ≠ p := sub_ne_zero.mp (sub_ne_zero_of_mem_compl hp x.2.2)
+    have hzp : (x.2 : E) ≠ p := (ne_of_mem_of_not_mem hp x.2.2).symm
     have ht₀ : 0 ≤ (x.1 : ℝ) := x.1.2.1
     have ht₁ : (x.1 : ℝ) ≤ 1 := x.1.2.2
     refine hK.add_smul_sub_mem_compl hKr x.2.2 ?_
@@ -125,7 +120,7 @@ def complRadialHomotopy (hK : StarConvex ℝ p K) (hp : p ∈ K) (hKr : K ⊆ ba
       continuous_subtype_val.comp continuous_fst
     have hdiv : Continuous fun x : I × ↥Kᶜ ↦ r / ‖(x.2 : E) - p‖ :=
       continuous_const.div hsub.norm fun x ↦
-        norm_ne_zero_iff.mpr (sub_ne_zero_of_mem_compl hp x.2.2)
+        norm_ne_zero_iff.mpr (sub_ne_zero.mpr (ne_of_mem_of_not_mem hp x.2.2).symm)
     exact continuous_const.add ((((continuous_const.sub ht).mul hdiv).add ht).smul hsub)
   map_zero_left z := by
     ext
@@ -161,7 +156,7 @@ contains `p`, is star-convex about `p` and lies in `ball p r`, then the inclusio
 def complSphereHomotopyEquiv (hK : StarConvex ℝ p K) (hp : p ∈ K) (hKr : K ⊆ ball p r) :
     ContinuousMap.HomotopyEquiv (sphere p r) ↥Kᶜ where
   toFun := ContinuousMap.inclusion (sphere_disjoint_ball.mono_right hKr).subset_compl_right
-  invFun := complRadialProjection hp hKr
+  invFun := complRadialProjection hp (pos_of_mem_ball (hKr hp))
   left_inv := by
     -- The radial projection fixes the sphere pointwise.
     convert ContinuousMap.Homotopic.refl (ContinuousMap.id (sphere p r))
@@ -185,6 +180,6 @@ theorem coe_complSphereHomotopyEquiv_symm_apply (hK : StarConvex ℝ p K) (hp : 
     (hKr : K ⊆ ball p r) (z : ↥Kᶜ) :
     ((hK.complSphereHomotopyEquiv hp hKr).symm z : E) =
       p + (r / ‖(z : E) - p‖) • ((z : E) - p) :=
-  coe_complRadialProjection_apply hp hKr z
+  coe_complRadialProjection_apply hp (pos_of_mem_ball (hKr hp)) z
 
 end StarConvex
