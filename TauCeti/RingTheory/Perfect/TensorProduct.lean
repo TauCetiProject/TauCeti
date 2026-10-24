@@ -22,7 +22,7 @@ For a Frobenius-root ideal `J_f = √(f)` the statement only needs `C` to be red
 of `J_f ⊗[A] C` has the form `f ^ (1 / p ^ n) ⊗ c`, and if `f ^ (1 / p ^ n) c = 0` then this
 tensor vanishes after rewriting it through the next root `f ^ (1 / p ^ (n + 1))`. For the radical
 of a finitely generated ideal, write it as a finite sum of Frobenius-root ideals and use
-`Ideal.injective_rTensor_subtype_sup`: the needed identity `I C ∩ J C = (I ⊓ J) C` is
+`Ideal.sup_subtype_rTensor_injective`: the needed identity `I C ∩ J C = (I ⊓ J) C` is
 `Ideal.IsRadical.map_inf`. A general radical ideal is the directed union of such radicals.
 
 This is the `Tor₁` part of the Tor independence of perfect rings, which asserts
@@ -31,9 +31,9 @@ This is the `Tor₁` part of the Tor independence of perfect rings, which assert
 
 ## Main results
 
-* `TauCeti.injective_rTensor_frobeniusRootIdeal_subtype`: `J_f ⊗[A] C → A ⊗[A] C` is injective for
+* `TauCeti.frobeniusRootIdeal_subtype_rTensor_injective`: `J_f ⊗[A] C → A ⊗[A] C` is injective for
   every reduced `A`-algebra `C`.
-* `TauCeti.injective_rTensor_subtype_of_isRadical`: `I ⊗[A] C → A ⊗[A] C` is injective for every
+* `TauCeti.subtype_rTensor_injective_of_isRadical`: `I ⊗[A] C → A ⊗[A] C` is injective for every
   radical ideal `I` of `A` and every perfect `A`-algebra `C`.
 
 ## References
@@ -53,7 +53,7 @@ variable {A : Type*} [CommRing A] {p : ℕ} [ExpChar A p] [PerfectRing A p] [hp 
 
 /-- **`Tor₁` of `A ⧸ J_f`.** For a Frobenius-root ideal `J_f = √(f)` of a perfect ring `A` and a
 reduced `A`-algebra `C`, the map `J_f ⊗[A] C → A ⊗[A] C` is injective. -/
-theorem injective_rTensor_frobeniusRootIdeal_subtype [IsReduced C] (f : A) :
+theorem frobeniusRootIdeal_subtype_rTensor_injective [IsReduced C] (f : A) :
     Function.Injective ((frobeniusRootIdeal A p f).subtype.rTensor C) := by
   -- `ρ n` is the `p ^ n`-th root of `f`, as an element of `J_f`.
   let ρ (n : ℕ) : frobeniusRootIdeal A p f :=
@@ -84,22 +84,22 @@ theorem injective_rTensor_frobeniusRootIdeal_subtype [IsReduced C] (f : A) :
   have hρ (m : ℕ) : ((ρ m : frobeniusRootIdeal A p f) : A) = (iterateFrobeniusEquiv A p m).symm f :=
     rfl
   have hc : c * s = 0 := by
-    have h := congrArg (TensorProduct.lid A C) ht
-    rw [LinearMap.rTensor_tmul, lid_tmul, map_zero, Algebra.smul_def, Submodule.subtype_apply,
-      hρ, ← iterateFrobeniusEquiv_symm_succ_pow f n, map_pow, mul_comm] at h
-    exact mul_eq_zero_of_mul_pow_eq_zero h
+    refine mul_eq_zero_of_mul_pow_eq_zero (k := p) ?_
+    rw [← map_pow, iterateFrobeniusEquiv_symm_succ_pow, mul_comm, ← Algebra.smul_def]
+    simpa [ρ] using congrArg (TensorProduct.lid A C) ht
   -- Rewriting `ρ n = ρ (n + 1) ^ p` as `ρ (n + 1) * ρ (n + 1) ^ (p - 1)` kills the tensor.
   have hρ' : ((ρ n : frobeniusRootIdeal A p f) : A) = (iterateFrobeniusEquiv A p (n + 1)).symm f *
       (iterateFrobeniusEquiv A p (n + 1)).symm f ^ (p - 1) := by
     rw [← pow_succ', Nat.sub_add_cancel hp.out.one_lt.le, iterateFrobeniusEquiv_symm_succ_pow, hρ]
-  obtain ⟨k, hk⟩ := Nat.exists_eq_succ_of_ne_zero (Nat.sub_ne_zero_of_lt hp.out.one_lt)
-  rw [tmul_eq hρ', Algebra.smul_def, map_pow, hk, pow_succ, mul_assoc, mul_comm s c, hc, mul_zero,
-    tmul_zero]
+  have hsc : s ^ (p - 1) * c = 0 := by
+    rw [← Nat.succ_pred (Nat.sub_ne_zero_of_lt hp.out.one_lt), pow_succ, mul_assoc, mul_comm s c,
+      hc, mul_zero]
+  rw [tmul_eq hρ', Algebra.smul_def, map_pow, hsc, tmul_zero]
 
 /-- **`Tor₁` of radical quotients of perfect rings.** For a radical ideal `I` of a perfect ring `A`
 and a perfect `A`-algebra `C`, the map `I ⊗[A] C → A ⊗[A] C` is injective, that is,
 `Tor₁^A(A ⧸ I, C) = 0`. -/
-theorem injective_rTensor_subtype_of_isRadical [ExpChar C p] [PerfectRing C p] {I : Ideal A}
+theorem subtype_rTensor_injective_of_isRadical [ExpChar C p] [PerfectRing C p] {I : Ideal A}
     (hI : I.IsRadical) : Function.Injective (I.subtype.rTensor C) := by
   have := isReduced_of_perfectRing C p
   -- The radical of a finitely generated ideal is a finite sum of Frobenius-root ideals.
@@ -107,12 +107,12 @@ theorem injective_rTensor_subtype_of_isRadical [ExpChar C p] [PerfectRing C p] {
     induction N, hN using Submodule.fg_induction with
     | singleton f =>
       rw [← Ideal.span, ← frobeniusRootIdeal_eq_radical (p := p)]
-      exact injective_rTensor_frobeniusRootIdeal_subtype C f
+      exact frobeniusRootIdeal_subtype_rTensor_injective C f
     | sup N₁ N₂ _ _ h₁ h₂ =>
       have r₁ := Ideal.radical_isRadical N₁
       have r₂ := Ideal.radical_isRadical N₂
       rw [Ideal.radical_sup, (r₁.sup p r₂).radical]
-      refine Ideal.injective_rTensor_subtype_sup h₁ h₂ fun x hx ↦ ?_
+      refine Ideal.sup_subtype_rTensor_injective h₁ h₂ fun x hx ↦ ?_
       simpa [Ideal.smul_top_eq_map, r₁.map_inf p r₂] using hx
   -- A general radical ideal is the directed union of the radicals of its finitely generated
   -- subideals.
@@ -123,8 +123,7 @@ theorem injective_rTensor_subtype_of_isRadical [ExpChar C p] [PerfectRing C p] {
   have hle : K.radical ≤ I := hI.radical_le_iff.mpr (Submodule.map_subtype_le _ _)
   let g : N →ₗ[A] K.radical :=
     Submodule.inclusion Ideal.le_radical ∘ₗ I.subtype.submoduleMap N
-  -- Both sides send `x` to `⟨x, _⟩`.
-  have hg : N.subtype = Submodule.inclusion hle ∘ₗ g := rfl
+  have hg : N.subtype = Submodule.inclusion hle ∘ₗ g := LinearMap.ext fun _ ↦ Subtype.ext rfl
   rw [hg, LinearMap.rTensor_comp_apply] at hx ⊢
   rw [← LinearMap.rTensor_comp_apply, Submodule.subtype_comp_inclusion] at hx
   rw [fg (hN.map _) (hx.trans (map_zero _).symm), map_zero]
