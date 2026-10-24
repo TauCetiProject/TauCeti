@@ -15,16 +15,16 @@ public import Mathlib.RingTheory.Flat.TorsionFree
 # Parity shift and syzygy of matrix-factorization cokernels
 
 Let `X = (X₀ --d₀--> X₁ --d₁--> X₀)` be a finite-projective matrix factorization of a
-non-zero-divisor `w` of a Noetherian commutative ring `S`, and let `X̄` be its reduction modulo
+non-zero-divisor `w` of a Noetherian commutative ring `S`, and let `X'` be its reduction modulo
 `w`, a factorization of the zero potential over the hypersurface ring `S/(w)`. The reduced
 complex is exact in both parities (`exact_quotient_d₁_d₀`, `exact_quotient_d₀_d₁`): if
-`d₀ x = w y`, then `w x = d₁ d₀ x = w d₁ y`, so `x = d₁ y`. Exactness at `X̄₀` makes
+`d₀ x = w y`, then `w x = d₁ d₀ x = w d₁ y`, so `x = d₁ y`. Exactness at `X₀'` makes
 
-`0 ⟶ coker d̄₁ ⟶ X̄₁ ⟶ coker d̄₀ ⟶ 0`
+`0 ⟶ coker d₁' ⟶ X₁' ⟶ coker d₀' ⟶ 0`
 
-short exact, with first map induced by `-d̄₀` (`shortExact_cokernelDesc_parityShift`). Its
-middle term is projective, so it is a projective presentation of `coker d̄₀` whose kernel term is
-the cokernel of the parity shift `X̄[1]` (`cokernelPresentation`). Hence the syzygy `Ω` of the
+short exact, with first map induced by `-d₀'` (`shortExact_cokernelDesc_parityShift`). Its
+middle term is projective, so it is a projective presentation of `coker d₀'` whose kernel term is
+the cokernel of the parity shift `X'[1]` (`cokernelPresentation`). Hence the syzygy `Ω` of the
 stable module category of `S/(w)` sends the cokernel of `X` to the cokernel of `X[1]`.
 
 These identifications are natural, and they descend to the homotopy category `HMF(S,w)`: the
@@ -185,7 +185,7 @@ private theorem linearMap_comp_eq_smul {M N : FGModuleCat.{u} S} {f : M ⟶ N} {
     ModuleCat.hom_id] using congrArg (fun k ↦ k.hom.hom) h
 
 /-- The reduction modulo a non-zero-divisor potential `w` of a finite-projective matrix
-factorization is exact at its even component: the kernel of `d̄₀` is the image of `d̄₁`. -/
+factorization is exact at its even component: the kernel of `d₀'` is the image of `d₁'`. -/
 theorem exact_quotient_d₁_d₀ (hw : w ∈ nonZeroDivisors S) (X : MatrixFactorization S w) :
     Function.Exact
       ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).obj X).obj.d₁.hom.hom
@@ -196,7 +196,7 @@ theorem exact_quotient_d₁_d₀ (hw : w ∈ nonZeroDivisors S) (X : MatrixFacto
     (Module.Flat.isSMulRegular_of_nonZeroDivisors hw)
 
 /-- The reduction modulo a non-zero-divisor potential `w` of a finite-projective matrix
-factorization is exact at its odd component: the kernel of `d̄₁` is the image of `d̄₀`. -/
+factorization is exact at its odd component: the kernel of `d₁'` is the image of `d₀'`. -/
 theorem exact_quotient_d₀_d₁ (hw : w ∈ nonZeroDivisors S) (X : MatrixFactorization S w) :
     Function.Exact
       ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).obj X).obj.d₀.hom.hom
