@@ -44,7 +44,7 @@ biproduct there. Since the forgetful functor is additive, it preserves these bip
 * `CategoryTheory.Center.instMonoidalPreadditive` and `CategoryTheory.Center.instMonoidalLinear`:
   the centre is monoidal preadditive (resp. monoidal `R`-linear);
 * `CategoryTheory.HalfBraiding.biproduct`: the half-braiding on a finite biproduct of objects
-  with half-braidings, characterized by
+  with half-braidings, with components `CategoryTheory.HalfBraiding.biproductβ`, characterized by
   `CategoryTheory.HalfBraiding.biproduct_ι_comp_biproduct_β_hom` and
   `CategoryTheory.HalfBraiding.biproduct_β_hom_comp_biproduct_π`;
 * `CategoryTheory.Center.biproductBicone` and `CategoryTheory.Center.isBilimitBiproductBicone`:
@@ -69,23 +69,38 @@ namespace HalfBraiding
 variable {C : Type u} [Category.{v} C] [MonoidalCategory C] [Preadditive C] [MonoidalPreadditive C]
   [HasFiniteBiproducts C] {J : Type} [Finite J]
 
-/-- The half-braiding on a finite biproduct `⨁ f` of objects carrying half-braidings `b j`: its
-component at `U` distributes `(⨁ f) ⊗ U` over the summands, applies the half-braidings of the
-summands, and collects `U ⊗ ⨁ f` again. -/
+/-- The component at `U` of the half-braiding on a finite biproduct `⨁ f` of objects carrying
+half-braidings `b j`: it distributes `(⨁ f) ⊗ U` over the summands, applies the half-braidings of
+the summands, and collects `U ⊗ ⨁ f` again. -/
+noncomputable def biproductβ (f : J → C) (b : ∀ j, HalfBraiding (f j)) (U : C) :
+    (⨁ f) ⊗ U ≅ U ⊗ ⨁ f :=
+  rightDistributor f U ≪≫ biproduct.mapIso (fun j ↦ (b j).β U) ≪≫ (leftDistributor U f).symm
+
+/-- On the summand `f j`, the component `biproductβ f b U` is the half-braiding of `f j`. -/
+@[reassoc (attr := simp)]
+theorem biproduct_ι_comp_biproductβ_hom (f : J → C) (b : ∀ j, HalfBraiding (f j)) (U : C)
+    (j : J) :
+    biproduct.ι f j ▷ U ≫ (biproductβ f b U).hom = ((b j).β U).hom ≫ U ◁ biproduct.ι f j := by
+  simp [biproductβ]
+
+/-- Projected to the summand `f j`, the component `biproductβ f b U` is the half-braiding of
+`f j`. -/
+@[reassoc (attr := simp)]
+theorem biproductβ_hom_comp_biproduct_π (f : J → C) (b : ∀ j, HalfBraiding (f j)) (U : C)
+    (j : J) :
+    (biproductβ f b U).hom ≫ U ◁ biproduct.π f j = biproduct.π f j ▷ U ≫ ((b j).β U).hom := by
+  simp [biproductβ]
+
+/-- The half-braiding on a finite biproduct `⨁ f` of objects carrying half-braidings `b j`, with
+components `biproductβ f b`. -/
 noncomputable def biproduct (f : J → C) (b : ∀ j, HalfBraiding (f j)) :
     HalfBraiding (⨁ f) where
-  β U := rightDistributor f U ≪≫ biproduct.mapIso (fun j ↦ (b j).β U) ≪≫
-    (leftDistributor U f).symm
+  β := biproductβ f b
   monoidal U U' := by
     refine rightDistributor_ext_left fun j ↦ ?_
-    have key (V : C) : biproduct.ι f j ▷ V ≫ (rightDistributor f V ≪≫
-        biproduct.mapIso (fun j ↦ (b j).β V) ≪≫ (leftDistributor V f).symm).hom =
-          ((b j).β V).hom ≫ V ◁ biproduct.ι f j := by
-      simp
-    rw [key, (b j).monoidal, associator_inv_naturality_left_assoc, ← comp_whiskerRight_assoc,
-      key, comp_whiskerRight_assoc, associator_naturality_middle_assoc,
-      ← whiskerLeft_comp_assoc, key, whiskerLeft_comp_assoc, associator_inv_naturality_right]
-    simp only [Category.assoc]
+    rw [biproduct_ι_comp_biproductβ_hom]
+    simp [← comp_whiskerRight_assoc, -comp_whiskerRight]
+    simp [← whiskerLeft_comp_assoc, -whiskerLeft_comp]
   naturality g := by
     refine rightDistributor_ext_left fun j ↦ ?_
     rw [← whisker_exchange_assoc]
@@ -96,16 +111,16 @@ noncomputable def biproduct (f : J → C) (b : ∀ j, HalfBraiding (f j)) :
 theorem biproduct_ι_comp_biproduct_β_hom (f : J → C) (b : ∀ j, HalfBraiding (f j)) (U : C)
     (j : J) :
     biproduct.ι f j ▷ U ≫ ((HalfBraiding.biproduct f b).β U).hom =
-      ((b j).β U).hom ≫ U ◁ biproduct.ι f j := by
-  simp [HalfBraiding.biproduct]
+      ((b j).β U).hom ≫ U ◁ biproduct.ι f j :=
+  biproduct_ι_comp_biproductβ_hom f b U j
 
 /-- Projected to the summand `f j`, the half-braiding of `⨁ f` is that of `f j`. -/
 @[reassoc (attr := simp)]
 theorem biproduct_β_hom_comp_biproduct_π (f : J → C) (b : ∀ j, HalfBraiding (f j)) (U : C)
     (j : J) :
     ((HalfBraiding.biproduct f b).β U).hom ≫ U ◁ biproduct.π f j =
-      biproduct.π f j ▷ U ≫ ((b j).β U).hom := by
-  simp [HalfBraiding.biproduct]
+      biproduct.π f j ▷ U ≫ ((b j).β U).hom :=
+  biproductβ_hom_comp_biproduct_π f b U j
 
 end HalfBraiding
 
@@ -122,7 +137,39 @@ section Preadditive
 
 variable [Preadditive C] [MonoidalPreadditive C] {X Y : Center C}
 
+private theorem neg_whiskerRight {Y Z : C} (g : Y ⟶ Z) (U : C) : (-g) ▷ U = -(g ▷ U) :=
+  (tensorRight U).map_neg
+
+private theorem whiskerLeft_neg (U : C) {Y Z : C} (g : Y ⟶ Z) : U ◁ (-g) = -(U ◁ g) :=
+  (tensorLeft U).map_neg
+
+private theorem sub_whiskerRight {Y Z : C} (g h : Y ⟶ Z) (U : C) :
+    (g - h) ▷ U = g ▷ U - h ▷ U :=
+  (tensorRight U).map_sub
+
+private theorem whiskerLeft_sub (U : C) {Y Z : C} (g h : Y ⟶ Z) :
+    U ◁ (g - h) = U ◁ g - U ◁ h :=
+  (tensorLeft U).map_sub
+
+private theorem nsmul_whiskerRight (n : ℕ) {Y Z : C} (g : Y ⟶ Z) (U : C) :
+    (n • g) ▷ U = n • (g ▷ U) :=
+  (tensorRight U).map_nsmul
+
+private theorem whiskerLeft_nsmul (n : ℕ) (U : C) {Y Z : C} (g : Y ⟶ Z) :
+    U ◁ (n • g) = n • (U ◁ g) :=
+  (tensorLeft U).map_nsmul
+
+private theorem zsmul_whiskerRight (n : ℤ) {Y Z : C} (g : Y ⟶ Z) (U : C) :
+    (n • g) ▷ U = n • (g ▷ U) :=
+  (tensorRight U).map_zsmul
+
+private theorem whiskerLeft_zsmul (n : ℤ) (U : C) {Y Z : C} (g : Y ⟶ Z) :
+    U ◁ (n • g) = n • (U ◁ g) :=
+  (tensorLeft U).map_zsmul
+
 attribute [local simp] MonoidalPreadditive.whiskerLeft_add MonoidalPreadditive.add_whiskerRight
+  neg_whiskerRight whiskerLeft_neg sub_whiskerRight whiskerLeft_sub nsmul_whiskerRight
+  whiskerLeft_nsmul zsmul_whiskerRight whiskerLeft_zsmul
 
 instance instZeroHom : Zero (X ⟶ Y) where
   zero := { f := 0 }
@@ -131,36 +178,16 @@ instance instAddHom : Add (X ⟶ Y) where
   add f g := { f := f.f + g.f }
 
 instance instNegHom : Neg (X ⟶ Y) where
-  neg f :=
-    { f := -f.f
-      comm U := by
-        rw [show (-f.f) ▷ U = -(f.f ▷ U) from (tensorRight U).map_neg,
-          show U ◁ (-f.f) = -(U ◁ f.f) from (tensorLeft U).map_neg]
-        simp }
+  neg f := { f := -f.f }
 
 instance instSubHom : Sub (X ⟶ Y) where
-  sub f g :=
-    { f := f.f - g.f
-      comm U := by
-        rw [show (f.f - g.f) ▷ U = f.f ▷ U - g.f ▷ U from (tensorRight U).map_sub,
-          show U ◁ (f.f - g.f) = U ◁ f.f - U ◁ g.f from (tensorLeft U).map_sub]
-        simp }
+  sub f g := { f := f.f - g.f }
 
 instance instSMulNatHom : SMul ℕ (X ⟶ Y) where
-  smul n f :=
-    { f := n • f.f
-      comm U := by
-        rw [show (n • f.f) ▷ U = n • (f.f ▷ U) from (tensorRight U).map_nsmul,
-          show U ◁ (n • f.f) = n • (U ◁ f.f) from (tensorLeft U).map_nsmul]
-        simp }
+  smul n f := { f := n • f.f }
 
 instance instSMulIntHom : SMul ℤ (X ⟶ Y) where
-  smul n f :=
-    { f := n • f.f
-      comm U := by
-        rw [show (n • f.f) ▷ U = n • (f.f ▷ U) from (tensorRight U).map_zsmul,
-          show U ◁ (n • f.f) = n • (U ◁ f.f) from (tensorLeft U).map_zsmul]
-        simp }
+  smul n f := { f := n • f.f }
 
 @[simp] theorem zero_f : (0 : X ⟶ Y).f = 0 := rfl
 @[simp] theorem add_f (f g : X ⟶ Y) : (f + g).f = f.f + g.f := rfl
@@ -218,7 +245,8 @@ theorem smul_f {X Y : Center C} (r : R) (f : X ⟶ Y) : (r • f).f = r • f.f 
 instance instLinearForget : (forget C).Linear R where
 
 /-- The centre of a monoidal `R`-linear category is monoidal `R`-linear. -/
-instance instMonoidalLinear : MonoidalLinear R (Center C) where
+instance instMonoidalLinear : MonoidalLinear R (Center C) :=
+  MonoidalLinear.ofFaithful R (forget C)
 
 end Linear
 
@@ -251,6 +279,11 @@ noncomputable def biproductBicone : Bicone F where
 
 @[simp]
 theorem biproductBicone_pt_fst : (biproductBicone F).pt.1 = ⨁ fun j ↦ (F j).1 :=
+  (rfl)
+
+@[simp]
+theorem biproductBicone_pt_snd :
+    (biproductBicone F).pt.2 = HalfBraiding.biproduct _ fun j ↦ (F j).2 :=
   (rfl)
 
 @[simp]
