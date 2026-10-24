@@ -25,6 +25,23 @@ open scoped ContDiff Manifold Topology
 
 namespace FiberBundle
 
+variable {B F : Type*} {E : B → Type*} [TopologicalSpace B] [TopologicalSpace F]
+  [TopologicalSpace (TotalSpace F E)] [∀ x, TopologicalSpace (E x)]
+  [∀ x, Zero (E x)] [FiberBundle F E]
+
+/-- The preferred trivialization sends a fibre-bundle extension back to its prescribed coordinate.
+
+This is the coordinate identity underlying the local smoothness of `FiberBundle.extend`; it is
+useful whenever a fibre-bundle section is compared with the constant coordinate section in the
+trivialization centred at the prescribed value. -/
+theorem trivializationAt_extend_apply {x y : B}
+    (hy : y ∈ (trivializationAt F E x).baseSet) (v₀ : E x) :
+    ((trivializationAt F E x) ⟨y, FiberBundle.extend F v₀ y⟩).2 =
+      ((trivializationAt F E x) ⟨x, v₀⟩).2 := by
+  let t := trivializationAt F E x
+  simp only [FiberBundle.extend]
+  rwa [Trivialization.apply_mk_symm]
+
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] {H : Type*} [TopologicalSpace H]
   (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace M]

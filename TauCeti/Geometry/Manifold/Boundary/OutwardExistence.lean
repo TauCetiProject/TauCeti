@@ -6,14 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Boundary.Orientation
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 public import Mathlib.Geometry.Manifold.PartitionOfUnity
 
 /-!
 # Existence of outward-pointing fields
 
 A smooth finite-dimensional Hausdorff sigma-compact manifold with boundary admits a global
-tangent field that points outward at every boundary point. Such a field supplies the direction
-used to push boundary data into the manifold and is a standard input for collar and Stokes-type
+tangent field that points outward at every boundary point. Such a field supplies the outward
+direction at the boundary; its negative, or backward flow, gives the inward direction used to
+push boundary data into the manifold and is a standard input for collar and Stokes-type
 constructions. The existence statement is the smooth version of J. M. Lee, *Introduction to
 Smooth Manifolds*, 2nd ed., Springer GTM 218 (2013), Proposition 15.33.
 -/
@@ -32,21 +34,6 @@ variable {n : ℕ} {M : Type*} [TopologicalSpace M]
 
 local instance : ContMDiffVectorBundle ∞ (EuclideanSpace ℝ (Fin (n + 1)))
     (TangentSpace (𝓡∂ (n + 1)) : M → Type _) (𝓡∂ (n + 1)) := inferInstance
-
-omit [T2Space M] [SigmaCompactSpace M] in
-private theorem trivializationAt_extend_apply {x y : M}
-    (hy : y ∈ (trivializationAt (EuclideanSpace ℝ (Fin (n + 1)))
-      (TangentSpace (𝓡∂ (n + 1))) x).baseSet)
-    (v₀ : TangentSpace (𝓡∂ (n + 1)) x) :
-    ((trivializationAt (EuclideanSpace ℝ (Fin (n + 1)))
-      (TangentSpace (𝓡∂ (n + 1))) x) ⟨y,
-        FiberBundle.extend (EuclideanSpace ℝ (Fin (n + 1))) v₀ y⟩).2 =
-      ((trivializationAt (EuclideanSpace ℝ (Fin (n + 1)))
-        (TangentSpace (𝓡∂ (n + 1))) x) ⟨x, v₀⟩).2 := by
-  let t := trivializationAt (EuclideanSpace ℝ (Fin (n + 1)))
-    (TangentSpace (𝓡∂ (n + 1))) x
-  simp only [FiberBundle.extend]
-  rwa [Trivialization.apply_mk_symm]
 
 omit [T2Space M] [SigmaCompactSpace M] in
 private theorem local_extension_outward {x : (𝓡∂ (n + 1)).boundary M}
@@ -77,7 +64,7 @@ private theorem local_extension_outward {x : (𝓡∂ (n + 1)).boundary M}
     -- `TangentBundle.trivializationAt_apply` identifies this coordinate with
     -- `tangentCoordChange`; the change exposes that definitional identification.
     change (t (⟨y, g y⟩ : TangentBundle (𝓡∂ (n + 1)) M)).2 = v₀
-    exact (trivializationAt_extend_apply hybase v₀).trans hvalue
+    exact (FiberBundle.trivializationAt_extend_apply hybase v₀).trans hvalue
   rw [hext]
   simp [v₀]
 
