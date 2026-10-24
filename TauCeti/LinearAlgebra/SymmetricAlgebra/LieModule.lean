@@ -210,9 +210,7 @@ variable {N : Type w'} [AddCommGroup N] [Module R N] [LieRingModule L N] [LieMod
 theorem _root_.LieModuleEquiv.map_apply_lieModuleDerivation (e : M ≃ₗ⁅R,L⁆ N) (x : L) (p : S) :
     map R ((e : M ≃ₗ[R] N) : M →ₗ[R] N) (lieModuleDerivation R L M x p) =
       lieModuleDerivation R L N x (map R ((e : M ≃ₗ[R] N) : M →ₗ[R] N) p) :=
-  map_apply_derivationOfEnd R ((e : M ≃ₗ[R] N) : M →ₗ[R] N) (f := LieModule.toEnd R L M x)
-    (g := LieModule.toEnd R L N x)
-    (LinearMap.ext fun m ↦ by simpa [-LieModuleHom.map_lie] using (e : M →ₗ⁅R,L⁆ N).map_lie x m) p
+  (e : M →ₗ⁅R,L⁆ N).map_apply_lieModuleDerivation x p
 
 /-- An element is invariant exactly when its image under the symmetric-algebra map of a Lie module
 equivalence is. -/
