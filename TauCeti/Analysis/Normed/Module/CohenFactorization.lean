@@ -161,13 +161,10 @@ private lemma exists_step (L : A →L[𝕜] E →L[𝕜] E) (hL : ∀ a b z, L (
     congr 1
     ext
     · simp
-    · simp only [sub_eq_add_neg, snd_add, snd_neg, snd_mul, snd_one, snd_inl, snd_inr, fst_add,
-        fst_neg, fst_one, fst_inl, fst_inr, zero_add, add_zero, neg_neg, smul_mul_assoc]
+    · simp [smul_mul_assoc]
       module
   have hw : ‖w‖ ≤ 1 / 2 := by
-    simp only [w, unitization_norm_def, Unitization.fst_add, Unitization.fst_inl,
-      Unitization.fst_inr, add_zero, Unitization.snd_add, Unitization.snd_inl,
-      Unitization.snd_inr, zero_add, norm_neg, norm_smul]
+    simp [w, unitization_norm_def, norm_smul]
     nlinarith [norm_nonneg τ]
   have hd : ‖toLp 1 ((τ • (f - e * f) : A) : Unitization 𝕜 A)‖ * (2 * M) ≤ 1 / 2 := by
     rw [unitization_norm_inr, norm_smul]
@@ -183,7 +180,7 @@ private lemma exists_step (L : A →L[𝕜] E →L[𝕜] E) (hL : ∀ a b z, L (
     simp only [a', a, hι, ← map_sub]
     congr 1
     ext
-    · simp only [sub_eq_add_neg, fst_add, fst_neg, fst_smul, fst_one, fst_inl, fst_inr, smul_eq_mul]
+    · simp
       ring
     · simp
   have hincr : Φ (Ring.inverse a') x - y = Φ (Ring.inverse a') ((τ * s) • (y - L e y)) := by
@@ -201,6 +198,66 @@ private lemma exists_step (L : A →L[𝕜] E →L[𝕜] E) (hL : ∀ a b z, L (
     _ ≤ δ := by
         rw [one_mul, ← mul_div_assoc, div_le_iff₀ (by positivity)]
         nlinarith [mul_nonneg hK.le hM0]
+
+/-- The recursive part of the Cohen–Hewitt construction. Iterating `exists_step` with
+`s = (1 - τ) ^ n`, starting from `f 0 = 0`, produces `A`-parts `f n` whose increments are
+`τ (1 - τ) ^ n eₙ` with `‖eₙ‖ ≤ C`, such that `aₙ = (1 - τ) ^ n + f n` is a unit of the `ℓ¹`
+unitization and `y n = aₙ⁻¹ · x` moves by at most `ε / 2 / 2 / 2 ^ n` at each step. -/
+private lemma exists_seq (L : A →L[𝕜] E →L[𝕜] E) (hL : ∀ a b z, L (a * b) z = L a (L b z))
+    {l : Filter A} [l.NeBot] {C : ℝ} (hC : ∀ᶠ e in l, ‖e‖ ≤ C)
+    (hl : ∀ a, Tendsto (· * a) l (𝓝 a)) {x : E} (hlx : Tendsto (fun e ↦ L e x) l (𝓝 x))
+    {τ : 𝕜} (hτ : ‖τ‖ * (1 + C) ≤ 1 / 2) (hτ₁ : ∀ n : ℕ, ‖τ * (1 - τ) ^ n‖ ≤ 1) {ε : ℝ}
+    (hε : 0 < ε) :
+    ∃ (f : ℕ → A) (y : ℕ → E), f 0 = 0 ∧ y 0 = x ∧
+      (∀ n, dist (f n) (f (n + 1)) ≤ ‖τ * (1 - τ) ^ n‖ * C) ∧
+      (∀ n, dist (y n) (y (n + 1)) ≤ ε / 2 / 2 / 2 ^ n) ∧
+      (∀ n, (1 - τ) ^ n • y n + L (f n) (y n) = x) ∧
+      ∀ n, y n ∈ closure (Set.range fun b ↦ L b x) := by
+  set Φ := L.unitizationAction hL
+  /- `a n f = (1 - τ) ^ n + f` in the unitization, and `yy n f = (a n f)⁻¹ · x`. -/
+  let a : ℕ → A → WithLp 1 (Unitization 𝕜 A) := fun n f ↦
+    toLp 1 (inl ((1 - τ) ^ n) + (f : Unitization 𝕜 A))
+  let yy : ℕ → A → E := fun n f ↦ Φ (Ring.inverse (a n f)) x
+  /- Choose the next approximate-identity element for every `n` and `f`; the conclusion is only
+  needed when `a n f` is a unit with `‖(a n f)⁻¹‖ ≤ 4 ^ n`, which the recursion maintains. -/
+  have step : ∀ n f, ∃ e : A, ‖e‖ ≤ C ∧ (IsUnit (a n f) → ‖Ring.inverse (a n f)‖ ≤ 4 ^ n →
+      IsUnit (a (n + 1) (f + (τ * (1 - τ) ^ n) • e)) ∧
+      ‖Ring.inverse (a (n + 1) (f + (τ * (1 - τ) ^ n) • e))‖ ≤ 4 ^ (n + 1) ∧
+      dist (yy n f) (yy (n + 1) (f + (τ * (1 - τ) ^ n) • e)) ≤ ε / 2 / 2 / 2 ^ n) := by
+    intro n f
+    by_cases h : IsUnit (a n f) ∧ ‖Ring.inverse (a n f)‖ ≤ 4 ^ n
+    · obtain ⟨e, he, h₁, h₂, h₃⟩ := exists_step L hL hC hl hlx (M := 4 ^ n)
+        (δ := ε / 2 / 2 / 2 ^ n) hτ (hτ₁ n) (by positivity) h.1 h.2
+      /- `exists_step` states its conclusion with `(1 - τ) * (1 - τ) ^ n` and `4 * 4 ^ n`. -/
+      simp only [a, yy, pow_succ' (1 - τ), pow_succ' (4 : ℝ)]
+      exact ⟨e, he, fun _ _ ↦ ⟨h₁, h₂, h₃⟩⟩
+    · obtain ⟨e, he⟩ := hC.exists
+      exact ⟨e, he, fun h₁ h₂ ↦ absurd ⟨h₁, h₂⟩ h⟩
+  choose E' hE'C hE' using step
+  /- The recursive sequence of `A`-parts `f n = ∑_{k < n} τ (1 - τ) ^ k E' k (f k)`. -/
+  obtain ⟨f, hf0, hfs⟩ : ∃ f : ℕ → A, f 0 = 0 ∧
+      ∀ n, f (n + 1) = f n + (τ * (1 - τ) ^ n) • E' n (f n) :=
+    ⟨fun n ↦ Nat.rec 0 (fun k fk ↦ fk + (τ * (1 - τ) ^ k) • E' k fk) n, rfl, fun _ ↦ rfl⟩
+  have hinv : ∀ n, IsUnit (a n (f n)) ∧ ‖Ring.inverse (a n (f n))‖ ≤ 4 ^ n := by
+    intro n
+    induction n with
+    | zero => simp [hf0, a]
+    | succ n ih =>
+      obtain ⟨h₁, h₂, -⟩ := hE' n (f n) ih.1 ih.2
+      rw [hfs]
+      exact ⟨h₁, h₂⟩
+  refine ⟨f, fun n ↦ yy n (f n), hf0, by simp [yy, a, hf0], fun n ↦ ?_, fun n ↦ ?_, fun n ↦ ?_,
+    fun n ↦ L.unitizationAction_apply_mem_closure hL hlx _⟩
+  · rw [hfs, dist_self_add_right, norm_smul]
+    exact mul_le_mul_of_nonneg_left (hE'C n (f n)) (norm_nonneg _)
+  · dsimp only
+    rw [hfs]
+    exact (hE' n (f n) (hinv n).1 (hinv n).2).2.2
+  · /- Apply `Φ (a n (f n))` to `yy n (f n) = (a n (f n))⁻¹ · x`. -/
+    have : Φ (a n (f n)) (yy n (f n)) = x := by
+      simpa [yy, mul_apply_eq_comp] using congr(Φ $(Ring.mul_inverse_cancel _ (hinv n).1) x)
+    rw [ContinuousLinearMap.unitizationAction_apply] at this
+    simpa [a] using this
 
 omit [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A] in
 /-- The limit step of the Cohen–Hewitt construction. If `f n → a` in `A` and `y n → y₀` in `E`
@@ -247,7 +304,6 @@ theorem exists_apply_eq_of_mem_topologicalClosure_span (L : A →L[𝕜] E →L[
     {ε : ℝ} (hε : 0 < ε) :
     ∃ a y, ‖a‖ ≤ C ∧ y ∈ closure (Set.range fun b ↦ L b x) ∧ ‖y - x‖ < ε ∧ L a y = x := by
   have hlx := tendsto_apply_of_mem_topologicalClosure_span L hL hC hl hx
-  set Φ := unitizationAction L hL
   /- Fix `t` with `t * (1 + C) = 1 / 2`. -/
   have hC0 : 0 ≤ C := let ⟨e, he⟩ := hC.exists; (norm_nonneg e).trans he
   set t : ℝ := 1 / (2 * (1 + C)) with ht_def
@@ -265,53 +321,11 @@ theorem exists_apply_eq_of_mem_topologicalClosure_span (L : A →L[𝕜] E →L[
   have hc1 : ∀ n : ℕ, t * (1 - t) ^ n ≤ 1 := fun n ↦ by
     nlinarith [pow_le_one₀ (n := n) (by linarith : (0 : ℝ) ≤ 1 - t) (by linarith),
       pow_nonneg (by linarith : (0 : ℝ) ≤ 1 - t) n]
-  /- `a n f = (1 - τ) ^ n + f` in the unitization, and `yy n f = (a n f)⁻¹ · x`. -/
-  let a : ℕ → A → WithLp 1 (Unitization 𝕜 A) := fun n f ↦
-    toLp 1 (Unitization.inl ((1 - τ) ^ n) + (f : Unitization 𝕜 A))
-  let yy : ℕ → A → E := fun n f ↦ Φ (Ring.inverse (a n f)) x
-  have step : ∀ n f, ∃ e : A, ‖e‖ ≤ C ∧ (IsUnit (a n f) → ‖Ring.inverse (a n f)‖ ≤ 4 ^ n →
-      IsUnit (a (n + 1) (f + (τ * (1 - τ) ^ n) • e)) ∧
-      ‖Ring.inverse (a (n + 1) (f + (τ * (1 - τ) ^ n) • e))‖ ≤ 4 ^ (n + 1) ∧
-      dist (yy n f) (yy (n + 1) (f + (τ * (1 - τ) ^ n) • e)) ≤ ε / 2 / 2 / 2 ^ n) := by
-    intro n f
-    by_cases h : IsUnit (a n f) ∧ ‖Ring.inverse (a n f)‖ ≤ 4 ^ n
-    · obtain ⟨e, he, h₁, h₂, h₃⟩ := exists_step L hL hC hl hlx (M := 4 ^ n)
-        (δ := ε / 2 / 2 / 2 ^ n) (by rw [hτ, htC])
-        (by rw [hc]; exact hc1 n) (by positivity) h.1 h.2
-      refine ⟨e, he, fun _ _ ↦ ⟨?_, ?_, ?_⟩⟩ <;> simpa only [a, yy, pow_succ', ← mul_assoc]
-    · obtain ⟨e, he⟩ := hC.exists
-      exact ⟨e, he, fun h₁ h₂ ↦ absurd ⟨h₁, h₂⟩ h⟩
-  choose E' hE'C hE' using step
-  /- The recursive sequence of `A`-parts `f n = ∑_{k < n} τ (1 - τ) ^ k E' k (f k)`. -/
-  obtain ⟨f, hf0, hfs⟩ : ∃ f : ℕ → A, f 0 = 0 ∧
-      ∀ n, f (n + 1) = f n + (τ * (1 - τ) ^ n) • E' n (f n) :=
-    ⟨fun n ↦ Nat.rec 0 (fun k fk ↦ fk + (τ * (1 - τ) ^ k) • E' k fk) n, rfl, fun _ ↦ rfl⟩
-  have hinv : ∀ n, IsUnit (a n (f n)) ∧ ‖Ring.inverse (a n (f n))‖ ≤ 4 ^ n := by
-    intro n
-    induction n with
-    | zero => simp [hf0, a]
-    | succ n ih =>
-      obtain ⟨h₁, h₂, -⟩ := hE' n (f n) ih.1 ih.2
-      rw [hfs]
-      exact ⟨h₁, h₂⟩
-  have hy : ∀ n, dist (yy n (f n)) (yy (n + 1) (f (n + 1))) ≤ ε / 2 / 2 / 2 ^ n := fun n ↦ by
-    rw [hfs]
-    exact (hE' n (f n) (hinv n).1 (hinv n).2).2.2
-  have hf : ∀ n, dist (f n) (f (n + 1)) ≤ t * C * (1 - t) ^ n := fun n ↦ by
-    rw [hfs, dist_self_add_right, norm_smul, hc]
-    nlinarith [mul_le_mul_of_nonneg_left (hE'C n (f n))
-      (mul_nonneg ht0.le (pow_nonneg (by linarith : (0 : ℝ) ≤ 1 - t) n))]
-  /- Pass to the limit in `a n (f n) · yy n (f n) = x`. -/
-  have hfac : ∀ n, (1 - τ) ^ n • yy n (f n) + L (f n) (yy n (f n)) = x := fun n ↦ by
-    have : Φ (a n (f n)) (yy n (f n)) = x := by
-      simpa [yy, mul_apply_eq_comp] using congr(Φ $(Ring.mul_inverse_cancel _ (hinv n).1) x)
-    rw [unitizationAction_apply] at this
-    simpa [a] using this
-  have hyy0 : yy 0 (f 0) = x := by simp [yy, a, hf0]
+  obtain ⟨f, y, hf0, hy0, hf, hy, hfac, hyx⟩ :=
+    exists_seq L hL hC hl hlx (by rw [hτ, htC]) (fun n ↦ (hc n).trans_le (hc1 n)) hε
   obtain ⟨a₀, y₀, ha₀, hy₀, hdist, hfac₀⟩ := exists_apply_eq_of_tendsto L
-    (by rw [hτ']; linarith) ht0 hf0 hyy0 hf hy hfac
-  exact ⟨a₀, y₀, ha₀, isClosed_closure.mem_of_tendsto hy₀
-    (.of_forall fun n ↦ unitizationAction_apply_mem_closure L hL hlx _), by linarith, hfac₀⟩
+    (by rw [hτ']; linarith) ht0 hf0 hy0 (fun n ↦ (hf n).trans_eq (by rw [hc]; ring)) hy hfac
+  exact ⟨a₀, y₀, ha₀, isClosed_closure.mem_of_tendsto hy₀ (.of_forall hyx), by linarith, hfac₀⟩
 
 /-- Over a Banach algebra with a bounded left approximate identity, the set `A · E` of products
 is already a closed linear subspace of a Banach left module `E`: it equals the essential part
