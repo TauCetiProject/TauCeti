@@ -15,15 +15,15 @@ public import TauCeti.KnotTheory.Grid.Stabilization.FullyBlocked.Grading
 
 Let `G'` be the stabilization of a grid diagram `G` with an odd number of components that splits
 the `X`-marking of column `s`. The fully blocked stabilization comparison
-`TauCeti.GridDiagram.fullyBlockedHomologyStabilizeXEquivProd` identifies `GH̃(G')` with two
-copies of `GH̃(G)`. Its first component, the center part, raises the bidegree by `(1, 1)`, and its
+`TauCeti.GridDiagram.fullyBlockedHomologyStabilizeXEquivProd` identifies `GH~(G')` with two
+copies of `GH~(G)`. Its first component, the center part, raises the bidegree by `(1, 1)`, and its
 second component, the reduced off-center homotopy, preserves the bidegree. Hence it commutes with
 the homogeneous projections of fully blocked homology and restricts, in every bidegree `g`, to an
 equivalence
 
-`GH̃(G')_g ≃ GH̃(G)_{g + (1, 1)} × GH̃(G)_g`.
+`GH~(G')_g ≃ GH~(G)_{g + (1, 1)} × GH~(G)_g`.
 
-So `GH̃(G') ≅ GH̃(G) ⊗ W` as bigraded vector spaces, with `W` the two-dimensional space with
+So `GH~(G') ≅ GH~(G) ⊗ W` as bigraded vector spaces, with `W` the two-dimensional space with
 generators in bidegrees `(0, 0)` and `(-1, -1)`: the Poincaré series of fully blocked homology is
 multiplied by `TauCeti.Bigraded.W`. Its class modulo `⊗ W`-stabilization is therefore unchanged by
 this stabilization. Starting from the standard `2 × 2` grid, whose series is `W`, the resulting
@@ -33,7 +33,7 @@ size is visible in the bigrading.
 ## Main definitions
 
 * `TauCeti.OddComponentGridDiagram.fullyBlockedStabilizeXHomologyPieceEquiv`: the equivalence
-  `GH̃(G')_g ≃ GH̃(G)_{g + (1, 1)} × GH̃(G)_g`.
+  `GH~(G')_g ≃ GH~(G)_{g + (1, 1)} × GH~(G)_g`.
 
 ## Main results
 
@@ -41,7 +41,7 @@ size is visible in the bigrading.
   the stabilization comparison intertwines the homogeneous projections, with the shift `(1, 1)` on
   the center component.
 * `TauCeti.OddComponentGridDiagram.finrank_bigradedFullyBlockedHomologyPiece_stabilizeX`: the
-  dimension of a piece of `GH̃(G')` is the sum of the dimensions of two pieces of `GH̃(G)`.
+  dimension of a piece of `GH~(G')` is the sum of the dimensions of two pieces of `GH~(G)`.
 * `TauCeti.OddComponentGridDiagram.fullyBlockedHomologySeries_stabilizeX`: stabilization
   multiplies the Poincaré series by `W`.
 * `TauCeti.OddComponentGridDiagram.isStablyEquiv_fullyBlockedHomologySeries_stabilizeX`: the
@@ -50,7 +50,7 @@ size is visible in the bigrading.
 ## References
 
 * Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Section 5.2, for the bigraded
-  identification `GH̃(G') ≅ GH̃(G) ⊗ W`.
+  identification `GH~(G') ≅ GH~(G) ⊗ W`.
 * Manolescu--Ozsváth--Szabó--Thurston, *On combinatorial link Floer homology*, Section 3.2.
 -/
 
@@ -193,7 +193,7 @@ private theorem fullyBlockedStabilizeXHomologyPieceMap_bijective (g : ℤ × ℤ
 /-- **The bigraded stabilization factor.** The fully blocked stabilization comparison identifies
 the bidegree-`g` piece of the homology of the stabilized diagram with the product of the pieces of
 bidegrees `g + (1, 1)` and `g` of the homology of the original diagram. These are the two summands
-of `GH̃(G) ⊗ W` in bidegree `g`. -/
+of `GH~(G) ⊗ W` in bidegree `g`. -/
 noncomputable def fullyBlockedStabilizeXHomologyPieceEquiv (g : ℤ × ℤ) :
     (G.stabilizeX s).bigradedFullyBlockedHomologyPiece g ≃ₗ[F]
       G.bigradedFullyBlockedHomologyPiece (g + (1, 1)) × G.bigradedFullyBlockedHomologyPiece g :=

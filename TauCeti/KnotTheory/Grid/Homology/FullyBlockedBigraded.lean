@@ -17,10 +17,11 @@ public import TauCeti.KnotTheory.Grid.Homology.Basic
 For a grid diagram with an odd number of components, the fully blocked differential lowers the
 `(O-Maslov, Alexander)` bidegree of every state by `(1, 0)`. So taking the homogeneous part of
 bidegree `g` of a chain sends cycles to cycles and boundaries to boundaries, and descends to a
-projection of the fully blocked grid homology `GH̃` onto its bidegree-`g` piece. These pieces form
-an internal direct sum, so `GH̃` is a bigraded vector space over `ZMod 2`. Its Poincaré series,
-the dimension of each piece recorded as a `TauCeti.Bigraded.Series`, refines the dimension of
-`GH̃`: its total dimension is the dimension of `GH̃`.
+projection of the fully blocked grid homology `GH~` (written $\widetilde{GH}$ in the literature)
+onto its bidegree-`g` piece. These pieces form an internal direct sum, so `GH~` is a bigraded
+vector space over `ZMod 2`. Its Poincaré series, the dimension of each piece recorded as a
+`TauCeti.Bigraded.Series`, refines the dimension of `GH~`: its total dimension is the dimension
+of `GH~`.
 
 By Ozsváth--Stipsicz--Szabó, the fully blocked homology of a grid of size `n` presenting an
 `ℓ`-component link is the simply blocked homology of the link tensored with `n - ℓ` copies of the
@@ -30,21 +31,21 @@ two-dimensional bigraded space `W`. So the Poincaré series is the object on whi
 ## Main definitions
 
 * `TauCeti.OddComponentGridDiagram.bigradedFullyBlockedHomologyProjection`: the projection of
-  `GH̃` onto bidegree `g`.
+  `GH~` onto bidegree `g`.
 * `TauCeti.OddComponentGridDiagram.bigradedFullyBlockedHomologyPiece`: the bidegree-`g` piece of
-  `GH̃`.
+  `GH~`.
 * `TauCeti.OddComponentGridDiagram.bigradedFullyBlockedHomologyGrading`: the bundled internal
-  grading of `GH̃`.
-* `TauCeti.OddComponentGridDiagram.fullyBlockedHomologySeries`: the Poincaré series of `GH̃`.
+  grading of `GH~`.
+* `TauCeti.OddComponentGridDiagram.fullyBlockedHomologySeries`: the Poincaré series of `GH~`.
 
 ## Main results
 
 * `TauCeti.OddComponentGridDiagram.mem_bigradedFullyBlockedHomologyPiece_iff_exists`: a class is
   homogeneous of bidegree `g` exactly when it is the class of a cycle of bidegree `g`.
-* `TauCeti.OddComponentGridDiagram.isInternal_bigradedFullyBlockedHomologyPiece`: `GH̃` is the
+* `TauCeti.OddComponentGridDiagram.isInternal_bigradedFullyBlockedHomologyPiece`: `GH~` is the
   internal direct sum of its homogeneous pieces.
 * `TauCeti.OddComponentGridDiagram.totalDim_fullyBlockedHomologySeries`: the total dimension of
-  the Poincaré series is the dimension of `GH̃`.
+  the Poincaré series is the dimension of `GH~`.
 
 ## References
 
