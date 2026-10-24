@@ -529,27 +529,3 @@ theorem map_intCast_zmod_prod_surjective {d d' : ℕ} (hcop : d.Coprime d') :
       Int.coe_castRingHom] using congrArg Prod.snd (hpair i j)
 
 end Matrix.SpecialLinearGroup
-
-namespace Module.Basis
-
-/-- A determinant-one change of a two-element basis has nonzero first generator and
-still generates every element over the coefficient ring. -/
-theorem fin_two_basis_generators
-    {R M : Type*} [CommRing R] [Nontrivial R] [AddCommGroup M] [Module R M]
-    (b : Module.Basis (Fin 2) R M) (γ : SL(2, R)) :
-    (γ 0 0 • b 0 + γ 1 0 • b 1) ≠ 0 ∧
-      ∀ z : M, ∃ m n : R,
-        m • (γ 0 0 • b 0 + γ 1 0 • b 1) +
-          n • (γ 0 1 • b 0 + γ 1 1 • b 1) = z := by
-  let e := (Matrix.GeneralLinearGroup.toLin' b γ.toGL).toLinearEquiv
-  let c := b.map e
-  have hc (i : Fin 2) : c i = γ 0 i • b 0 + γ 1 i • b 1 := by
-    simp [c, e, Matrix.GeneralLinearGroup.toLin'_apply, Finsupp.single_eq_pi_single,
-      Fintype.linearCombination_apply, Fin.sum_univ_two]
-  constructor
-  · simpa only [hc] using c.ne_zero 0
-  · intro z
-    refine ⟨c.repr z 0, c.repr z 1, ?_⟩
-    simpa only [Fin.sum_univ_two, hc] using c.sum_repr z
-
-end Module.Basis
