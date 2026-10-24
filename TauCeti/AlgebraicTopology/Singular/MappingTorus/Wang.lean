@@ -11,7 +11,6 @@ public import TauCeti.AlgebraicTopology.Singular.MappingTorus.CyclicCover
 public import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
 public import Mathlib.Algebra.Homology.HomologySequence
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
-public import Mathlib.Algebra.Category.ModuleCat.Colimits
 
 /-!
 # The Wang sequence of a mapping torus
