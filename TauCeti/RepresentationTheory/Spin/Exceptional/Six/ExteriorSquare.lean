@@ -14,8 +14,9 @@ public import TauCeti.RepresentationTheory.ClassicalGroups.Volume
 
 The wedge product identifies two bivectors in a four-dimensional vector space with a top-degree
 exterior vector. The standard volume map therefore gives a symmetric perfect bilinear form on
-`⋀²(K⁴)`. Applying an endomorphism to both bivectors scales this form by its determinant,
-exterior-square standard action of `SL₄(K)` preserves it as the determinant-one specialization.
+`⋀²(K⁴)`. Applying the exterior square of an endomorphism of `K⁴` to both bivectors scales this
+form by the endomorphism's determinant, so the exterior-square standard action of `SL₄(K)`
+preserves it as the determinant-one specialization.
 
 This file bundles that action as a homomorphism from `SL₄(K)` to the isometry group of the wedge
 form. Over `ℂ`, it is the six-dimensional orthogonal representation underlying the exceptional
@@ -109,9 +110,9 @@ theorem spinSixWedgeForm_isSymm : (spinSixWedgeForm K).IsSymm := by
     norm_num
   rw [hsign, one_smul]
 
-/-- The exterior-square action scales the wedge form by the determinant. The theorem
-`spinSixWedgeForm_invariant` below is its determinant-one specialization; this form is the version
-needed when a coordinate change is not itself special linear. -/
+/-- The exterior square of an endomorphism `f` of `K⁴`, applied to both arguments, scales the
+wedge form by `det f`. The theorem `spinSixWedgeForm_invariant` below is its determinant-one
+specialization; this form is the version needed when a coordinate change is not special linear. -/
 theorem
     spinSixWedgeForm_comp_exteriorPower_map_eq_det_smul
     (f : (Fin 4 → K) →ₗ[K] (Fin 4 → K)) :
