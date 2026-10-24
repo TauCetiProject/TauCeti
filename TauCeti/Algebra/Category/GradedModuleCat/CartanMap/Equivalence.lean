@@ -83,7 +83,6 @@ variable {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
 /-- An equivalence of graded module categories commuting with the grading shifts is a graded
 exact equivalence for the canonical exact structures: an equivalence of abelian categories
 preserves all finite limits and colimits. -/
-@[expose]
 def gradedModuleExactEquiv
     (σ : (GradedModuleCat.shift 𝒜).functor ⋙ e.functor ≅
       e.functor ⋙ (GradedModuleCat.shift ℬ).functor) :
@@ -256,7 +255,7 @@ theorem gradedFiniteModules_inverseImage_restrictScalars :
       gradedFiniteModules ℬ := by
   ext M
   rw [prop_inverseImage_iff, gradedFiniteModules_iff, gradedFiniteModules_iff]
-  exact restrictScalars_finite_iff e he M
+  exact finite_restrictScalarsObj_iff e.toAlgHom (fun _ _ ha ↦ (he).2 ha) e.surjective M
 
 /-- Restriction of scalars along a graded algebra isomorphism pulls the finite graded
 `𝒜`-projectives back to the finite graded `ℬ`-projectives. -/
@@ -266,7 +265,9 @@ theorem gradedFiniteProjectiveModules_inverseImage_restrictScalars :
       gradedFiniteProjectiveModules ℬ := by
   ext M
   rw [prop_inverseImage_iff, gradedFiniteProjectiveModules_iff, gradedFiniteProjectiveModules_iff]
-  exact and_congr (restrictScalars_finite_iff e he M) (restrictScalars_projective_iff e he M)
+  exact and_congr
+    (finite_restrictScalarsObj_iff e.toAlgHom (fun _ _ ha ↦ (he).2 ha) e.surjective M)
+    (projective_restrictScalarsObj_iff e he M)
 
 include e he in
 /-- **Bijectivity of the graded Cartan map is a graded isomorphism invariant**: for a graded

@@ -19,8 +19,9 @@ composites keep the underlying module and shift its grading.
 
 When `e : A ≃ₐ[k] B` is an algebra isomorphism with `e a ∈ ℬᵢ ↔ a ∈ 𝒜ᵢ`, restricting along `e`
 and along `e.symm` are mutually inverse, giving an equivalence of graded module categories.
-Restriction of scalars along a graded isomorphism preserves and reflects finite generation and
-projectivity of the underlying module.
+Restriction of scalars along a surjective map preserves and reflects finite generation of the
+underlying module, and restriction along a graded isomorphism preserves and reflects
+projectivity.
 
 ## Main definitions
 
@@ -33,9 +34,9 @@ projectivity of the underlying module.
 
 ## Main results
 
-* `TauCeti.GradedModuleCat.restrictScalars_finite_iff`: along a graded isomorphism, the
+* `TauCeti.GradedModuleCat.finite_restrictScalarsObj_iff`: along a surjective map, the
   restricted module is finitely generated exactly when the original one is.
-* `TauCeti.GradedModuleCat.restrictScalars_projective_iff`: along a graded isomorphism, the
+* `TauCeti.GradedModuleCat.projective_restrictScalarsObj_iff`: along a graded isomorphism, the
   restricted module is projective exactly when the original one is.
 
 ## References
@@ -72,6 +73,7 @@ abbrev restrictScalarsObj (M : GradedModuleCat.{v} ℬ) : GradedModuleCat.{v} �
     gradedSMul := ⟨fun _ _ _ _ ha hm ↦ M.gradedSMul.smul_mem (hf ha) hm⟩ }
 
 /-- In the restricted module, `a : A` acts as `f a`. -/
+@[simp]
 theorem restrictScalarsObj_smul_def (M : GradedModuleCat.{v} ℬ) (a : A)
     (m : restrictScalarsObj f hf M) : a • m = (f a • (m : M) : M) :=
   rfl
@@ -122,6 +124,19 @@ theorem restrictScalarsShiftIso_inv_app_hom (M : GradedModuleCat.{v} ℬ) :
     ((restrictScalarsShiftIso f hf).inv.app M).hom = LinearMap.id :=
   (rfl)
 
+/-- Restriction of scalars along a surjective grading-preserving algebra map preserves and
+reflects finite generation of the underlying module: every scalar of `B` is the image of a scalar
+of `A`, so the two spans of a set agree. -/
+theorem finite_restrictScalarsObj_iff (hsurj : Function.Surjective f)
+    (M : GradedModuleCat.{v} ℬ) :
+    Module.Finite A (restrictScalarsObj f hf M) ↔ Module.Finite B M :=
+  haveI : RingHomSurjective f.toRingHom := ⟨hsurj⟩
+  -- The identity of `M` is an `f`-semilinear bijection from the restricted module.
+  LinearMap.finite_iff_of_bijective (σ := f.toRingHom)
+    { toFun := id
+      map_add' := fun _ _ ↦ rfl
+      map_smul' := restrictScalarsObj_smul_def f hf M } Function.bijective_id
+
 end RestrictScalars
 
 section AlgEquiv
@@ -165,21 +180,25 @@ theorem restrictScalarsEquivalenceOfAlgEquiv_inverse :
       restrictScalars e.symm.toAlgHom fun _ b hb ↦ (he).1 ((e.apply_symm_apply b).symm ▸ hb) :=
   rfl
 
-/-- Restriction of scalars along a graded algebra isomorphism preserves and reflects finite
-generation of the underlying module. -/
-theorem restrictScalars_finite_iff (M : GradedModuleCat.{v} ℬ) :
-    Module.Finite A (restrictScalarsObj e.toAlgHom (fun _ _ ha ↦ (he).2 ha) M) ↔
-      Module.Finite B M :=
-  -- The restricted module is `ModuleCat.restrictScalars` applied to the underlying module.
-  e.toRingEquiv.toRingHom.finite_restrictScalars_iff e.surjective (toModuleCat.obj M)
-
 /-- Restriction of scalars along a graded algebra isomorphism preserves and reflects projectivity
 of the underlying module. -/
-theorem restrictScalars_projective_iff (M : GradedModuleCat.{v} ℬ) :
+theorem projective_restrictScalarsObj_iff (M : GradedModuleCat.{v} ℬ) :
     Module.Projective A (restrictScalarsObj e.toAlgHom (fun _ _ ha ↦ (he).2 ha) M) ↔
-      Module.Projective B M :=
-  -- The restricted module is `ModuleCat.restrictScalars` applied to the underlying module.
-  e.toRingEquiv.projective_restrictScalars_iff (toModuleCat.obj M)
+      Module.Projective B M := by
+  have : RingHomInvPair e.toRingEquiv.toRingHom e.toRingEquiv.symm.toRingHom :=
+    RingHomInvPair.of_ringEquiv e.toRingEquiv
+  have : RingHomInvPair e.toRingEquiv.symm.toRingHom e.toRingEquiv.toRingHom :=
+    RingHomInvPair.of_ringEquiv_symm e.toRingEquiv
+  -- The identity of `M` is an `e`-semilinear equivalence from the restricted module.
+  let φ : restrictScalarsObj e.toAlgHom (fun _ _ ha ↦ (he).2 ha) M
+      ≃ₛₗ[e.toRingEquiv.toRingHom] M :=
+    { toFun := id
+      invFun := id
+      map_add' := fun _ _ ↦ rfl
+      map_smul' := restrictScalarsObj_smul_def e.toAlgHom _ M
+      left_inv := fun _ ↦ rfl
+      right_inv := fun _ ↦ rfl }
+  exact ⟨fun _ ↦ Module.Projective.of_equiv φ, fun _ ↦ Module.Projective.of_equiv φ.symm⟩
 
 end AlgEquiv
 
