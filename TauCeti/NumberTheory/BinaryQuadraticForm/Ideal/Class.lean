@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.BinaryQuadraticForm.Ideal.Change
 public import TauCeti.NumberTheory.NumberField.Global.Orders.Picard
 import TauCeti.Algebra.QuadraticAlgebra.Discriminant
+import Mathlib.RingTheory.Norm.Basic
 
 /-!
 # Picard classes of primitive binary quadratic forms
@@ -32,7 +33,13 @@ Consequently the proper equivalence classes of primitive positive definite forms
 `-n` inject into `Pic(O_{-n})` (`posDefProperClassToPic_injective`). This is the injective half
 of the form-ideal correspondence of Cox, Theorem 7.7.
 
+The basis comparison is also available under an explicit positive-norm scaling hypothesis,
+for the positive-discriminant narrow correspondence.
+
 ## Main definitions and results
+
+* `TauCeti.BinaryQuadraticForm.exists_smul_eq_of_fractionalIdeal_eq_of_norm_pos`:
+  positive-norm homotheties of positive-leading form ideals give proper equivalences.
 
 * `TauCeti.BinaryQuadraticForm.picClass`: the Picard class of a primitive form.
 * `TauCeti.BinaryQuadraticForm.picClass_smul`: it is invariant under proper equivalence.
@@ -110,14 +117,17 @@ private theorem exists_smul_eq_of_mul_eq {D : ℤ} {f g : BinaryQuadraticForm �
   simp only [zsmul_eq_mul]
   ring
 
-/-- **Homothetic form ideals of positive definite forms come from proper equivalence.** If two
-forms of negative discriminant `D` with positive leading coefficients have fractional ideals
-`I_g = μ I_f`, then `g = γ • f` for some `γ ∈ SL(2, ℤ)`. -/
-private theorem exists_smul_eq_of_fractionalIdeal_eq {D : ℤ} [Fact (¬ IsSquare D)]
-    (hneg : D < 0) {f g : BinaryQuadraticForm ℤ} (hfD : f.discrim = D) (hgD : g.discrim = D)
-    (hfa : 0 < f.a) (hga : 0 < g.a) {μ : QuadraticAlgebra ℚ (D : ℚ) 0} (hμ : μ ≠ 0)
+/-- Positive-leading forms with homothetic ideals are properly equivalent when the
+scaling factor has positive norm. This applies to either sign of nonsquare discriminant. -/
+theorem exists_smul_eq_of_fractionalIdeal_eq_of_norm_pos
+    (f g : BinaryQuadraticForm ℤ) (D : ℤ) [Fact (¬ IsSquare D)]
+    (hfD : f.discrim = D) (hgD : g.discrim = D) (hfa : 0 < f.a) (hga : 0 < g.a)
+    (μ : QuadraticAlgebra ℚ (D : ℚ) 0) (hμ : 0 < Algebra.norm ℚ μ)
     (hI : g.fractionalIdeal D hgD = spanSingleton _ μ * f.fractionalIdeal D hfD) :
     ∃ γ : SL(2, ℤ), γ • f = g := by
+  have hμ₀ : μ ≠ 0 := by
+    rintro rfl
+    simp at hμ
   -- `μ` maps the generators of `I_f` into `I_g`, with integral coefficients `x, y, z, w`.
   have hfg : ∀ u ∈ f.fractionalIdeal D hfD, μ * u ∈ g.fractionalIdeal D hgD := fun u hu ↦ by
     rw [hI]
@@ -137,10 +147,10 @@ private theorem exists_smul_eq_of_fractionalIdeal_eq {D : ℤ} [Fact (¬ IsSquar
   -- Both changes of basis scale the leading coefficients by a norm and a determinant.
   have h₁ := norm_mul_a_eq f g D μ x y z w hxy.symm hzw.symm
   have h₂ := norm_mul_a_eq g f D μ⁻¹ x' y' z' w'
-    (by rw [hua, ← mul_assoc, inv_mul_cancel₀ hμ, one_mul])
-    (by rw [hvβ, ← mul_assoc, inv_mul_cancel₀ hμ, one_mul])
+    (by rw [hua, ← mul_assoc, inv_mul_cancel₀ hμ₀, one_mul])
+    (by rw [hvβ, ← mul_assoc, inv_mul_cancel₀ hμ₀, one_mul])
   have hNinv : QuadraticAlgebra.norm μ * QuadraticAlgebra.norm μ⁻¹ = 1 := by
-    rw [← map_mul, mul_inv_cancel₀ hμ, map_one]
+    rw [← map_mul, mul_inv_cancel₀ hμ₀, map_one]
   have hfaQ : (0 : ℚ) < f.a := by exact_mod_cast hfa
   have hgaQ : (0 : ℚ) < g.a := by exact_mod_cast hga
   -- The determinants multiply to `1`.
@@ -149,12 +159,11 @@ private theorem exists_smul_eq_of_fractionalIdeal_eq {D : ℤ} [Fact (¬ IsSquar
       refine mul_right_cancel₀ (mul_pos hfaQ hgaQ).ne' ?_
       linear_combination -(congrArg₂ (· * ·) h₁ h₂) + (f.a : ℚ) * g.a * hNinv
     exact_mod_cast hprodQ
-  -- Since `D < 0`, norms are nonnegative, so the determinant is nonnegative, hence `1`.
+  -- Positive norm fixes the sign of the unimodular change of basis.
   refine Int.eq_one_of_mul_eq_one_right ?_ hprod
-  have hN : 0 ≤ QuadraticAlgebra.norm μ⁻¹ := norm_nonneg_of_discr_nonpos (by
-    rw [discr_def]
-    have hD : (D : ℚ) < 0 := by exact_mod_cast hneg
-    linarith) μ⁻¹
+  have hN : 0 ≤ QuadraticAlgebra.norm μ⁻¹ := by
+    rw [← Algebra.norm_quadraticAlgebra_apply, Algebra.norm_inv]
+    exact (inv_pos.mpr hμ).le
   have hdet : (0 : ℚ) ≤ ((x' * w' - y' * z' : ℤ) : ℚ) :=
     nonneg_of_mul_nonneg_left (h₂ ▸ mul_nonneg hN hgaQ.le) hfaQ
   exact_mod_cast hdet
@@ -207,7 +216,15 @@ theorem picClass_eq_picClass_iff_of_neg (hneg : D < 0) {f g : primitiveForms D}
       f.fractionalIdeal D hfD := by
     rw [← coe_invertibleFractionalIdeal f D hfD hfp, ← coe_invertibleFractionalIdeal g D hgD hgp,
       ← coe_toPrincipalIdeal, ← Units.val_mul, hμ, inv_mul_cancel_right]
-  obtain ⟨γ, hγ⟩ := exists_smul_eq_of_fractionalIdeal_eq hneg hfD hgD hf hg μ.ne_zero hI
+  have hnorm : 0 < Algebra.norm ℚ (μ : QuadraticAlgebra ℚ (D : ℚ) 0) := by
+    refine lt_of_le_of_ne ?_ (Algebra.norm_ne_zero_iff.mpr μ.ne_zero).symm
+    rw [Algebra.norm_quadraticAlgebra_apply]
+    apply norm_nonneg_of_discr_nonpos
+    rw [discr_def]
+    have hnegQ : (D : ℚ) < 0 := by exact_mod_cast hneg
+    linarith
+  obtain ⟨γ, hγ⟩ := exists_smul_eq_of_fractionalIdeal_eq_of_norm_pos
+    f g D hfD hgD hf hg μ hnorm hI
   exact ⟨γ, Subtype.ext (by rw [SubMulAction.val_smul]; exact hγ)⟩
 
 end NonSquare
