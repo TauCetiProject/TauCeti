@@ -25,6 +25,11 @@ Both signs are zero for the zero polynomial. Over any ordered field they agree
 with evaluation on sufficiently small open intervals on the appropriate side.
 No completeness or Archimedean assumption is needed.
 
+In characteristic zero, the one-sided signs of the derivative at `a` are those of the increment
+`p - p(a)` on the right and their negatives on the left. In particular, at a root the
+derivative has the sign of `p` immediately to the right of the root and the opposite sign
+immediately to the left.
+
 ## Main definitions
 
 * `Polynomial.derivSignRight p a`: the sign of the first nonzero derivative of `p` at `a`.
@@ -178,6 +183,48 @@ theorem derivSignLeft_neg (p : R[X]) (a : R) :
 
 end Neg
 
+section Derivative
+
+variable {R : Type*} [CommRing R] [LinearOrder R] [NoZeroDivisors R] [CharZero R]
+
+/-- At a root, the derivative has the right-hand sign of the polynomial. -/
+theorem derivSignRight_derivative_of_isRoot {p : R[X]} {a : R} (ha : p.IsRoot a) :
+    p.derivative.derivSignRight a = p.derivSignRight a := by
+  by_cases hp : p = 0
+  · simp [hp]
+  have hm : 0 < p.rootMultiplicity a := (rootMultiplicity_pos hp).mpr ha
+  rw [derivSignRight, derivSignRight, derivative_rootMultiplicity_of_root ha,
+    derivativeSign_derivative, Nat.sub_add_cancel hm]
+
+/-- At a root, the derivative has the opposite of the left-hand sign of the polynomial. -/
+theorem derivSignLeft_derivative_of_isRoot {p : R[X]} {a : R} (ha : p.IsRoot a) :
+    p.derivative.derivSignLeft a = -p.derivSignLeft a := by
+  by_cases hp : p = 0
+  · simp [hp]
+  have hm : 0 < p.rootMultiplicity a := (rootMultiplicity_pos hp).mpr ha
+  obtain ⟨k, hk⟩ := Nat.exists_eq_succ_of_ne_zero hm.ne'
+  rw [derivSignLeft_def, derivSignLeft_def, derivSignRight_derivative_of_isRoot ha,
+    derivative_rootMultiplicity_of_root ha, hk]
+  simp [pow_succ]
+
+/-- At any point `a`, the right-hand sign of the derivative equals the right-hand sign of the
+increment `p - C (p.eval a)`. Over an ordered field this is the sign of `p(x) - p(a)` just to the
+right of `a`; see `exists_sign_eval_derivative`. -/
+theorem derivSignRight_derivative (p : R[X]) (a : R) :
+    p.derivative.derivSignRight a = (p - C (p.eval a)).derivSignRight a := by
+  have h := derivSignRight_derivative_of_isRoot (p := p - C (p.eval a)) (a := a) (by simp)
+  rwa [derivative_sub, derivative_C, sub_zero] at h
+
+/-- At any point `a`, the left-hand sign of the derivative equals the negative of the left-hand
+sign of the increment `p - C (p.eval a)`. Over an ordered field this is the opposite of the sign
+of `p(x) - p(a)` just to the left of `a`; see `exists_sign_eval_derivative`. -/
+theorem derivSignLeft_derivative (p : R[X]) (a : R) :
+    p.derivative.derivSignLeft a = -(p - C (p.eval a)).derivSignLeft a := by
+  have h := derivSignLeft_derivative_of_isRoot (p := p - C (p.eval a)) (a := a) (by simp)
+  rwa [derivative_sub, derivative_C, sub_zero] at h
+
+end Derivative
+
 section OrderedRing
 
 variable {R : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
@@ -301,6 +348,21 @@ theorem exists_derivSignLeft_derivSignRight (p : R[X]) (a : R) :
   · intro x hx
     rw [hf, sign_pos (sub_pos.mpr hx.1), one_pow, one_mul,
       hlu ⟨hla.trans hx.1, hx.2⟩, hs]
+
+/-- Immediately to the right of a point `a`, the derivative has the sign of `p(x) - p(a)`, and
+immediately to the left it has the opposite sign. This includes points where `p - p(a)` has a
+multiple root, and constant polynomials. -/
+theorem exists_sign_eval_derivative (p : R[X]) (a : R) :
+    ∃ l u, l < a ∧ a < u ∧
+      (∀ x ∈ Ioo l a, sign (p.derivative.eval x) = -sign (p.eval x - p.eval a)) ∧
+      (∀ x ∈ Ioo a u, sign (p.derivative.eval x) = sign (p.eval x - p.eval a)) := by
+  obtain ⟨l₁, u₁, hl₁, hu₁, hL₁, hR₁⟩ := p.derivative.exists_derivSignLeft_derivSignRight a
+  obtain ⟨l₂, u₂, hl₂, hu₂, hL₂, hR₂⟩ := (p - C (p.eval a)).exists_derivSignLeft_derivSignRight a
+  refine ⟨max l₁ l₂, min u₁ u₂, max_lt hl₁ hl₂, lt_min hu₁ hu₂, fun x hx => ?_, fun x hx => ?_⟩
+  · rw [hL₁ x ⟨(le_max_left _ _).trans_lt hx.1, hx.2⟩, derivSignLeft_derivative,
+      ← hL₂ x ⟨(le_max_right _ _).trans_lt hx.1, hx.2⟩, eval_sub, eval_C]
+  · rw [hR₁ x ⟨hx.1, hx.2.trans_le (min_le_left _ _)⟩, derivSignRight_derivative,
+      ← hR₂ x ⟨hx.1, hx.2.trans_le (min_le_right _ _)⟩, eval_sub, eval_C]
 
 end OrderedField
 

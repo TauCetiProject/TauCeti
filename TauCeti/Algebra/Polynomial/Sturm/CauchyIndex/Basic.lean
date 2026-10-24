@@ -23,10 +23,12 @@ denominator, and hence the roots. With this convention the index of `p' / p` cou
 roots, and the index of `p' * q / p` on the whole line is the Tarski query `TaQ(q, p)`.
 
 The index depends only on the rational function `q / p`: cancelling a common factor does not
-change it, and neither does reducing `q` modulo `p`. Over a real closed field, if `a < b` and
-neither `a` nor `b` is a root of `p * q`, the indices of `q / p` and `p / q` on `(a, b)` sum to
-half the change of sign of `p * q` from `a` to `b`. With the reduction modulo `p` this gives the
-Euclidean recurrence for the index, under the same endpoint hypotheses.
+change it, and neither does reducing `q` modulo `p`. Jumps and indices are also unchanged when
+the polynomials and the points are mapped through a strictly monotone ring homomorphism. Over a
+real closed field, if `a < b` and neither `a` nor `b` is a root of `p * q`, the indices of
+`q / p` and `p / q` on `(a, b)` sum to half the change of sign of `p * q` from `a` to `b`. With
+the reduction modulo `p` this gives the Euclidean recurrence for the index, under the same
+endpoint hypotheses.
 
 ## Main declarations
 
@@ -34,6 +36,7 @@ Euclidean recurrence for the index, under the same endpoint hypotheses.
 * `Polynomial.cauchyIndex`: the sum of the jumps of `q / p` over a set.
 * `Polynomial.cauchyIndex_mul_right`: cancellation of a common factor.
 * `Polynomial.cauchyIndex_mod`: reduction of the numerator modulo the denominator.
+* `Polynomial.cauchyIndex_map_image`: transport along a strictly monotone ring homomorphism.
 * `Polynomial.cauchyIndex_derivative`: the index of `p' / p` counts distinct roots.
 * `Polynomial.cauchyIndex_derivative_mul_univ`: the whole-line index of `p' * q / p` is
   `tarskiQuery p q`.
@@ -125,6 +128,28 @@ theorem cauchyIndex_zero_right (p : R[X]) (s : Set R) : cauchyIndex p 0 s = 0 :=
 @[simp]
 theorem cauchyIndex_C (c : R) (q : R[X]) (s : Set R) : cauchyIndex (C c) q s = 0 := by
   simp [cauchyIndex_def]
+
+section Map
+
+variable {S : Type*} [CommRing S] [LinearOrder S] {f : R →+* S}
+
+/-- Jumps are preserved by mapping the polynomials and the point through a strictly monotone
+ring homomorphism. -/
+@[simp]
+theorem cauchyJump_map (hf : StrictMono f) (p q : R[X]) (a : R) :
+    cauchyJump (p.map f) (q.map f) (f a) = cauchyJump p q a := by
+  rw [cauchyJump_def, cauchyJump_def, ← eq_rootMultiplicity_map hf.injective,
+    ← eq_rootMultiplicity_map hf.injective, ← Polynomial.map_mul, derivSignRight_map _ f hf]
+
+/-- Cauchy indices are preserved by mapping the polynomials and the set through a strictly
+monotone ring homomorphism. -/
+@[simp]
+theorem cauchyIndex_map_image (hf : StrictMono f) (p q : R[X]) (s : Set R) :
+    cauchyIndex (p.map f) (q.map f) (f '' s) = cauchyIndex p q s := by
+  rw [cauchyIndex_def, cauchyIndex_def, finsum_mem_image hf.injective.injOn]
+  simp only [cauchyJump_map hf]
+
+end Map
 
 end Definitions
 
@@ -288,9 +313,6 @@ theorem cauchyJump_derivative_mul {p : R[X]} (hp : p ≠ 0) (q : R[X]) {a : R}
     have := (rootMultiplicity_pos hq0).mpr hq
     omega
   have hq0 : q ≠ 0 := fun h => hq (by simp [h])
-  have hsd : (derivative p).derivSignRight a = p.derivSignRight a := by
-    rw [derivSignRight_def, derivSignRight_def, derivative_rootMultiplicity_of_root ha,
-      ← Function.iterate_succ_apply, Nat.succ_eq_add_one, Nat.sub_add_cancel hm]
   have hsp : p.derivSignRight a * p.derivSignRight a = 1 := by
     have h0 : p.derivSignRight a ≠ 0 := by simpa using hp
     generalize p.derivSignRight a = u at *
@@ -302,7 +324,8 @@ theorem cauchyJump_derivative_mul {p : R[X]} (hp : p ≠ 0) (q : R[X]) {a : R}
   rw [cauchyJump_def, rootMultiplicity_mul (mul_ne_zero hd hq0),
     derivative_rootMultiplicity_of_root ha, rootMultiplicity_eq_zero hq, add_zero]
   simp only [hpole, and_self, ite_true]
-  rw [← mul_assoc, derivSignRight_mul, derivSignRight_mul, hsd, hsp, one_mul,
+  rw [← mul_assoc, derivSignRight_mul, derivSignRight_mul,
+    derivSignRight_derivative_of_isRoot ha, hsp, one_mul,
     derivSignRight_eq_sign_eval q hq]
 
 /-- The index of `p' * q / p` on `s` is the sum of the signs of `q` at the distinct roots of

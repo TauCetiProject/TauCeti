@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Normed.Ring.Basic
 public import Mathlib.Topology.MetricSpace.Ultra.Basic
 public import Mathlib.Topology.Algebra.InfiniteSum.Defs
 public import Mathlib.RingTheory.PowerSeries.Basic
-public import Mathlib.Algebra.Polynomial.AlgebraMap
 import TauCeti.Analysis.Normed.Ring.Ultra
 import TauCeti.Analysis.SpecificLimits.Normed
 import TauCeti.RingTheory.PowerSeries.EvalAt
@@ -37,31 +36,12 @@ multiplication by an evaluated integral formal unit preserves norms. These resul
 `NormOneClass` (`‖1‖ = 1`).
 
 Iterating these evaluations, `evalIntBivariateSeries` evaluates an integral power series in two
-variables at a pair of parameters in the open unit ball. Likewise an integral polynomial has value
-of norm at most one at every point of the closed unit ball (`Polynomial.norm_aeval_le_one`), so
-evaluating the coefficients of a series in `ℤ[X]⟦Y⟧` at such a point is a valid coefficient map
-for `RingHom.evalBoundedSeries`.
+variables at a pair of parameters in the open unit ball.
 -/
 
 public section
 
 open PowerSeries
-
-namespace Polynomial
-
-/-- An integral polynomial evaluated at a point of the closed unit ball of a non-archimedean
-normed ring with `‖1‖ = 1` has norm at most one. -/
-theorem norm_aeval_le_one {K : Type*} [NormedRing K] [NormOneClass K] [IsUltrametricDist K]
-    (p : ℤ[X]) {x : K} (hx : ‖x‖ ≤ 1) : ‖aeval x p‖ ≤ 1 := by
-  rw [aeval_eq_sum_range]
-  refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg zero_le_one fun i _ ↦ ?_
-  rw [zsmul_eq_mul]
-  calc ‖(p.coeff i : K) * x ^ i‖ ≤ ‖(p.coeff i : K)‖ * ‖x ^ i‖ := norm_mul_le _ _
-    _ ≤ 1 * 1 := mul_le_mul (IsUltrametricDist.norm_intCast_le_one K _)
-        ((norm_pow_le x i).trans (pow_le_one₀ (norm_nonneg _) hx)) (norm_nonneg _) zero_le_one
-    _ = 1 := one_mul 1
-
-end Polynomial
 
 namespace RingHom
 

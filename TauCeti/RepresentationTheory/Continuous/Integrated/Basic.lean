@@ -15,11 +15,12 @@ import Mathlib.MeasureTheory.Group.Integral
 import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.MeasureTheory.Function.StronglyMeasurable.Lp
 import TauCeti.MeasureTheory.Function.StronglyMeasurable.InnerRegular
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
 # The integrated form of a strongly continuous representation
 
-Let `π` be a representation of an additive topological group `G` (written multiplicatively, as a
+Let `π` be a representation of an additive monoid `G` (written multiplicatively, as a
 `ContRepresentation` of `Multiplicative G`) on a normed space `E`, which is **strongly continuous**
 (every orbit `g ↦ π g v` is continuous) and uniformly bounded, and let `μ` be a measure on `G`. An
 integrable weight `f` then acts on `E` by the **integrated form**
@@ -27,12 +28,14 @@ integrable weight `f` then acts on `E` by the **integrated form**
 `π(f) v = ∫ g, f g • π g v ∂μ`,
 
 a bounded operator with `‖π(f)‖ ≤ C * ‖f‖₁` when `‖π g‖ ≤ C`. This file builds the map
-`f ↦ π(f)` as a continuous linear map `L¹(G, μ) →L E →L E` and proves the identities that make it a
-representation of the convolution algebra `L¹(G)`: translating the weight composes with `π`,
-convolution of weights becomes composition of operators, and, for a unitary `π` and an
-inversion-invariant `μ`, adjoints correspond to the involution `f^*(g) = conj (f (-g))`.
-For abelian `G`, the integrated operators commute for any measure; they are also normal
-when `π` is unitary and `μ` is inversion-invariant.
+`f ↦ π(f)` as a continuous linear map `L¹(G, μ) →L E →L E` over any nontrivially normed field,
+with a commuting real normed-space structure on `E` for integration. For groups with a
+left-invariant measure, translating the weight composes with `π`. Over an `RCLike` field, on an
+abelian group with a right-invariant measure, convolution of weights becomes composition of
+operators. For a unitary `π` over an `RCLike` field and an inversion-invariant `μ`, adjoints
+correspond to the involution `f^*(g) = conj (f (-g))`.
+For commutative monoids `G`, the integrated operators commute for any measure; for abelian groups,
+they are also normal when `π` is unitary and `μ` is inversion-invariant.
 
 The integrated form is how a strongly continuous representation is handled by operator algebra:
 the operators `π g` themselves depend on `g` only strongly continuously, but the left translates
@@ -57,8 +60,8 @@ theorem (Folland, Chapter 4).
   operator norm.
 * `ContRepresentation.integratedOperatorL1_convolution`: `π(f₁ ⋆ f₂) = π(f₁) ∘L π(f₂)` on an
   abelian group with a right-invariant measure.
-* `ContRepresentation.integratedOperatorL1_commute`: integrated operators commute on an abelian
-  group with any measure.
+* `ContRepresentation.integratedOperatorL1_commute`: integrated operators commute on a commutative
+  monoid with any measure.
 * `ContRepresentation.inner_integratedOperatorL1_apply`: the matrix coefficients
   `⟪w, π(f) v⟫ = ∫ g, f g * ⟪w, π g v⟫ ∂μ`.
 * `ContRepresentation.adjoint_integratedOperatorL1`: `π(f)† = π(f^*)` for a unitary `π`.
@@ -103,8 +106,8 @@ namespace TauCeti
 
 section Normed
 
-variable {𝕜 G E : Type*} [RCLike 𝕜] [AddGroup G] [TopologicalSpace G] [MeasurableSpace G]
-  [R1Space G] [BorelSpace G]
+variable {𝕜 G E : Type*} [NontriviallyNormedField 𝕜] [AddMonoid G] [TopologicalSpace G]
+  [MeasurableSpace G] [R1Space G] [BorelSpace G]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedSpace ℝ E] [SMulCommClass ℝ 𝕜 E]
   {μ : Measure G} [μ.InnerRegularCompactLTTop] {π : ContRepresentation 𝕜 (Multiplicative G) E}
 
@@ -135,7 +138,7 @@ private theorem norm_integral_smul_apply_le {C : ℝ} (hC : ∀ g, ‖π g‖ �
 
 variable (π) in
 /-- The **integrated form** of a strongly continuous, uniformly bounded representation `π` of an
-additive group `G` (written multiplicatively as `Multiplicative G`): the bounded operator
+additive monoid `G` (written multiplicatively as `Multiplicative G`): the bounded operator
 `π(f) = ∫ g, f g • π g ∂μ` attached to an integrable weight `f`, defined pointwise by the Bochner
 integral `π(f) v = ∫ g, f g • π g v ∂μ` of the continuous orbit `g ↦ π g v`. -/
 noncomputable def _root_.ContRepresentation.integratedOperatorL1
@@ -193,6 +196,16 @@ theorem _root_.ContRepresentation.norm_integratedOperatorL1_le {C : ℝ} (hC : �
   simpa [ContRepresentation.integratedOperatorL1_apply, L1.norm_eq_integral_norm] using
     norm_integral_smul_apply_le hC (L1.integrable_coeFn f) v
 
+end Normed
+
+section Translate
+
+variable {𝕜 G E : Type*} [NontriviallyNormedField 𝕜] [AddGroup G] [TopologicalSpace G]
+  [MeasurableSpace G] [R1Space G] [BorelSpace G]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedSpace ℝ E] [SMulCommClass ℝ 𝕜 E]
+  {μ : Measure G} [μ.InnerRegularCompactLTTop] {π : ContRepresentation 𝕜 (Multiplicative G) E}
+  {hcont : ∀ v, Continuous fun g : G ↦ π (.ofAdd g) v} {hbdd : ∃ C, ∀ g, ‖π g‖ ≤ C}
+
 /-- Translating the weight on the left by `h` amounts to composing the integrated form with
 `π h`. -/
 theorem _root_.ContRepresentation.comp_integratedOperatorL1 [CompleteSpace E] [MeasurableAdd G]
@@ -202,9 +215,12 @@ theorem _root_.ContRepresentation.comp_integratedOperatorL1 [CompleteSpace E] [M
         (Lp.compMeasurePreserving (fun g ↦ -h + g) (measurePreserving_add_left μ (-h)) f) := by
   ext v
   rw [ContinuousLinearMap.comp_apply, ContRepresentation.integratedOperatorL1_apply,
-    ContRepresentation.integratedOperatorL1_apply,
-    ← (π _).integral_comp_comm
-      (integrable_smul_apply hcont hbdd.choose_spec (L1.integrable_coeFn f) v)]
+    ContRepresentation.integratedOperatorL1_apply]
+  have hint : ∫ g, π (.ofAdd h) (f g • π (.ofAdd g) v) ∂μ =
+      π (.ofAdd h) (∫ g, f g • π (.ofAdd g) v ∂μ) :=
+    AddMonoidHom.integral_comp_comm (π (.ofAdd h)).toAddMonoidHom (π (.ofAdd h)).continuous
+      (integrable_smul_apply hcont hbdd.choose_spec (L1.integrable_coeFn f) v)
+  rw [← hint]
   have hcomp : ∫ g, (Lp.compMeasurePreserving (fun g ↦ -h + g)
         (measurePreserving_add_left μ (-h)) f) g • π (.ofAdd g) v ∂μ =
       ∫ g, f (-h + g) • π (.ofAdd g) v ∂μ := by
@@ -228,18 +244,18 @@ theorem _root_.ContRepresentation.continuous_comp_integratedOperatorL1 [Complete
       (ContinuousMap.curry ⟨fun p : G × G ↦ -p.1 + p.2, by fun_prop⟩).continuous
       (fun h ↦ measurePreserving_add_left μ (-h)) ENNReal.one_ne_top)
 
-end Normed
+end Translate
 
 section Commute
 
-variable {𝕜 G E : Type*} [RCLike 𝕜] [AddCommGroup G] [TopologicalSpace G]
+variable {𝕜 G E : Type*} [NontriviallyNormedField 𝕜] [AddCommMonoid G] [TopologicalSpace G]
   [MeasurableSpace G] [R1Space G] [BorelSpace G]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedSpace ℝ E] [SMulCommClass ℝ 𝕜 E]
   [CompleteSpace E]
   {μ : Measure G} [μ.InnerRegularCompactLTTop] {π : ContRepresentation 𝕜 (Multiplicative G) E}
   {hcont : ∀ v, Continuous fun g : G ↦ π (.ofAdd g) v} {hbdd : ∃ C, ∀ g, ‖π g‖ ≤ C}
 
-/-- Every action operator of a representation of an abelian group commutes with its
+/-- Every action operator of a representation of a commutative monoid commutes with its
 integrated operators. No invariance hypothesis on the measure is needed. -/
 theorem _root_.ContRepresentation.commute_integratedOperatorL1
     (g : Multiplicative G) (f : G →₁[μ] 𝕜) :
@@ -247,8 +263,11 @@ theorem _root_.ContRepresentation.commute_integratedOperatorL1
   apply ContinuousLinearMap.ext
   intro v
   simp only [mul_apply_eq_comp, ContRepresentation.integratedOperatorL1_apply]
-  rw [← (π g).integral_comp_comm
-    (integrable_smul_apply hcont hbdd.choose_spec (L1.integrable_coeFn f) v)]
+  have hint : ∫ t, π g (f t • π (.ofAdd t) v) ∂μ =
+      π g (∫ t, f t • π (.ofAdd t) v ∂μ) :=
+    AddMonoidHom.integral_comp_comm (π g).toAddMonoidHom (π g).continuous
+      (integrable_smul_apply hcont hbdd.choose_spec (L1.integrable_coeFn f) v)
+  rw [← hint]
   apply integral_congr_ae
   filter_upwards [] with t
   rw [map_smul]
@@ -256,7 +275,7 @@ theorem _root_.ContRepresentation.commute_integratedOperatorL1
     (congrArg (fun T : E →L[𝕜] E => T v)
       ((Commute.all g (.ofAdd t)).map π.toMonoidHom).eq)
 
-/-- Integrated operators of an abelian-group representation commute for any measure. -/
+/-- Integrated operators of a commutative-monoid representation commute for any measure. -/
 theorem _root_.ContRepresentation.integratedOperatorL1_commute (f₁ f₂ : G →₁[μ] 𝕜) :
     Commute (π.integratedOperatorL1 hcont hbdd μ f₁)
       (π.integratedOperatorL1 hcont hbdd μ f₂) := by
@@ -264,8 +283,12 @@ theorem _root_.ContRepresentation.integratedOperatorL1_commute (f₁ f₂ : G �
   intro v
   simp only [mul_apply_eq_comp]
   rw [π.integratedOperatorL1_apply f₂ v]
-  rw [← (π.integratedOperatorL1 hcont hbdd μ f₁).integral_comp_comm
-    (integrable_smul_apply hcont hbdd.choose_spec (L1.integrable_coeFn f₂) v)]
+  have hint : ∫ t, π.integratedOperatorL1 hcont hbdd μ f₁ (f₂ t • π (.ofAdd t) v) ∂μ =
+      π.integratedOperatorL1 hcont hbdd μ f₁ (∫ t, f₂ t • π (.ofAdd t) v ∂μ) :=
+    AddMonoidHom.integral_comp_comm (π.integratedOperatorL1 hcont hbdd μ f₁).toAddMonoidHom
+      (π.integratedOperatorL1 hcont hbdd μ f₁).continuous
+      (integrable_smul_apply hcont hbdd.choose_spec (L1.integrable_coeFn f₂) v)
+  rw [← hint]
   rw [π.integratedOperatorL1_apply f₂]
   refine integral_congr_ae (.of_forall fun t ↦ ?_)
   dsimp only
@@ -329,7 +352,7 @@ end Convolution
 
 section InnerProduct
 
-variable {𝕜 G E : Type*} [RCLike 𝕜] [AddGroup G] [TopologicalSpace G] [MeasurableSpace G]
+variable {𝕜 G E : Type*} [RCLike 𝕜] [AddMonoid G] [TopologicalSpace G] [MeasurableSpace G]
   [R1Space G] [BorelSpace G]
   [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [NormedSpace ℝ E] [SMulCommClass ℝ 𝕜 E]
   [CompleteSpace E]
@@ -343,6 +366,17 @@ theorem _root_.ContRepresentation.inner_integratedOperatorL1_apply (f : G →₁
   rw [ContRepresentation.integratedOperatorL1_apply,
     ← integral_inner (integrable_smul_apply hcont hbdd.choose_spec (L1.integrable_coeFn f) v)]
   simp_rw [inner_smul_right]
+
+end InnerProduct
+
+section Adjoint
+
+variable {𝕜 G E : Type*} [RCLike 𝕜] [AddGroup G] [TopologicalSpace G] [MeasurableSpace G]
+  [R1Space G] [BorelSpace G]
+  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [NormedSpace ℝ E] [SMulCommClass ℝ 𝕜 E]
+  [CompleteSpace E]
+  {μ : Measure G} [μ.InnerRegularCompactLTTop] {π : ContRepresentation 𝕜 (Multiplicative G) E}
+  {hcont : ∀ v, Continuous fun g : G ↦ π (.ofAdd g) v} {hbdd : ∃ C, ∀ g, ‖π g‖ ≤ C}
 
 /-- The adjoint of the integrated form of a unitary representation is the integrated form of the
 involuted weight `g ↦ conj (f (-g))`. -/
@@ -362,7 +396,7 @@ theorem _root_.ContRepresentation.adjoint_integratedOperatorL1 [MeasurableNeg G]
   rw [hstar, Pi.star_apply, hcomp, Function.comp_apply, map_mul, RCLike.star_def,
     RCLike.conj_conj, inner_conj_symm, hπ.inner_map_left, ← ofAdd_neg]
 
-end InnerProduct
+end Adjoint
 
 section Unitary
 
@@ -389,7 +423,7 @@ end Unitary
 
 section ApproximateIdentity
 
-variable {𝕜 G E : Type*} [RCLike 𝕜] [AddGroup G] [TopologicalSpace G] [MeasurableSpace G]
+variable {𝕜 G E : Type*} [RCLike 𝕜] [AddMonoid G] [TopologicalSpace G] [MeasurableSpace G]
   [R1Space G] [BorelSpace G]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedSpace ℝ E] [SMulCommClass ℝ 𝕜 E]
   [CompleteSpace E]
