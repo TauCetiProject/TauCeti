@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 public import TauCeti.Analysis.Complex.ContinuousLog.Basic
 import TauCeti.Topology.ConnectedComponents
 import TauCeti.Topology.Connected.LocallyPathConnected
@@ -96,14 +95,10 @@ compact connected set `L` off `S ∪ T`. Then `Z_S ∪ L` misses the connected s
 their connected overlap `L`. The argument is the Mayer–Vietoris sequence for `Sᶜ` and `Tᶜ`, read in
 degree zero through continuous logarithms.
 
-## Filled hulls and simply connected sets
+## Filled hulls through logarithms
 
 Taking for `b` a point far to the left of a bounded closed set `K`, Borsuk's theorem says that
 `z ↦ z - a` has a continuous logarithm on `K` exactly when `a` lies outside the filled hull of `K`.
-On a simply connected open set `U` every zero-free continuous function has a continuous logarithm,
-by Mathlib's `Complex.exists_continuousOn_eqOn_exp_comp`; for `a` in a bounded component of `Uᶜ`
-that component is cut out by an open set whose frontier is a compact subset of `U` enclosing `a`,
-which is impossible. So a simply connected open set has no holes.
 
 ## Main results
 
@@ -121,7 +116,6 @@ which is impossible. So a simply connected open set has no holes.
   theorem**: two closed connected sets with bounded disconnected intersection separate the plane.
 * `TauCeti.hasContinuousLogOn_sub_iff_notMem_filledHull` — a point lies outside the filled hull of a
   bounded closed set exactly when the map to it has a continuous logarithm there.
-* `IsSimplyConnected.filledHull_subset` — a simply connected open subset of the plane has no holes.
 
 ## References
 
@@ -129,7 +123,6 @@ which is impossible. So a simply connected open set has no holes.
 * S. Janiszewski, *Sur les coupures du plan faites par les continus*, Prace Mat.-Fiz. **26** (1913).
 * R. B. Burckel, *An Introduction to Classical Complex Analysis I*, §4.
 * J. R. Munkres, *Topology*, §61–63.
-* W. Rudin, *Real and Complex Analysis*, 3rd ed., Theorem 13.11.
 -/
 
 public section
@@ -434,30 +427,5 @@ theorem hasContinuousLogOn_sub_iff_notMem_filledHull (hK : IsClosed K) (hKb : Is
       (mem_filledHull_or_mem_filledHull_of_not_hasContinuousLogOn hK hKb h).elim ha hb
     refine (hlogab.mul hlogb).congr fun z hz => ?_
     exact div_mul_cancel₀ _ (sub_ne_zero.mpr fun h => hbK (h ▸ hz))
-
-/-- **A simply connected open subset of the plane has no holes**: it contains its filled hull, that
-is, every connected component of its complement is unbounded. Consequently `filledHull K ⊆ U`
-for every `K ⊆ U`, by `TauCeti.filledHull_mono`. -/
-theorem _root_.IsSimplyConnected.filledHull_subset {U : Set ℂ} (hUc : IsSimplyConnected U)
-    (hUo : IsOpen U) : filledHull U ⊆ U := by
-  intro a ha
-  by_contra haU
-  -- `z ↦ z - a` has a continuous logarithm on the simply connected set `U`
-  obtain ⟨L, hLc, hL⟩ := Complex.exists_continuousOn_eqOn_exp_comp hUc hUo
-    (g := fun z => z - a) (by fun_prop) (by rintro ⟨z, hz, h0⟩; exact haU (sub_eq_zero.mp h0 ▸ hz))
-  -- the bounded component of `Uᶜ` through `a` is cut out by an open set `V` with frontier in `U`
-  obtain ⟨V, -, haV, hVc, hVU⟩ :=
-    hUo.isClosed_compl.exists_isOpen_isCompact_closure_disjoint_frontier
-      (isCompact_of_isClosed_isBounded hUo.isClosed_compl.connectedComponentIn
-        (mem_filledHull_iff.mp ha))
-  have hKU : frontier V ⊆ U := fun z hz => by
-    by_contra hzU
-    exact disjoint_left.mp hVU hz hzU
-  -- so `frontier V` encloses `a` while carrying a logarithm of `z ↦ z - a`
-  refine (hasContinuousLogOn_sub_iff_notMem_filledHull isClosed_frontier
-    (hVc.isBounded.subset frontier_subset_closure)).mp
-      (hasContinuousLogOn_iff.mpr ⟨L, hLc.mono hKU, fun z hz => hL (hKU hz)⟩) ?_
-  exact subset_filledHull_of_frontier_subset (hVc.isBounded.subset subset_closure) subset_rfl
-    (haV (mem_connectedComponentIn haU))
 
 end TauCeti

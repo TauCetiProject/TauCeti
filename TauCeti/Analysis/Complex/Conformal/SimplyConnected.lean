@@ -11,6 +11,8 @@ public import TauCeti.Topology.FilledHull
 import TauCeti.Analysis.Complex.Conformal.RiemannMapping.Existence
 import TauCeti.Analysis.Contour.Primitive
 import TauCeti.Analysis.Complex.PlaneSeparation.Basic
+import TauCeti.Topology.ConnectedComponents
+import Mathlib.Analysis.Complex.BranchLogRoot
 
 /-!
 # Plane domains are simply connected exactly when they have no holes
@@ -31,9 +33,15 @@ Together these are the implications (d) ⇒ (i) ⇒ (a) ⇒ (b) of Rudin's chara
 connected plane domains, where (d) is connectedness of the complement in the Riemann sphere and (i)
 the existence of holomorphic square roots. The topological input,
 that the complement of an open set with preconnected frontier is preconnected, is
-`TauCeti.isPreconnected_compl_of_isPreconnected_frontier`. The converse implication, that a simply
-connected open set has no holes, is `IsSimplyConnected.filledHull_subset`, so a connected open set
-is simply connected exactly when it has no holes.
+`TauCeti.isPreconnected_compl_of_isPreconnected_frontier`.
+
+Conversely, a simply connected open set has no holes. On a simply connected open set `U` every
+zero-free continuous function has a continuous logarithm, by Mathlib's
+`Complex.exists_continuousOn_eqOn_exp_comp`. For `a` in a bounded component of `Uᶜ`, that component
+is cut out by an open set whose frontier is a compact subset of `U` enclosing `a`, so `z ↦ z - a`
+would have a continuous logarithm on a compact set enclosing `a`, contradicting
+`TauCeti.hasContinuousLogOn_sub_iff_notMem_filledHull`. So a connected open set is simply connected
+exactly when it has no holes.
 
 ## Main results
 
@@ -41,6 +49,7 @@ is simply connected exactly when it has no holes.
   holomorphic square roots.
 * `TauCeti.isSimplyConnected_of_filledHull_subset` — a connected open set without holes is simply
   connected.
+* `IsSimplyConnected.filledHull_subset` — a simply connected open subset of the plane has no holes.
 * `TauCeti.isSimplyConnected_iff_filledHull_subset` — a connected open set is simply connected
   exactly when it has no holes.
 * `TauCeti.isSimplyConnected_of_isPreconnected_frontier` — a connected open set with preconnected
@@ -74,6 +83,31 @@ every connected component of `ℂ \ U` is unbounded, then `U` is simply connecte
 theorem isSimplyConnected_of_filledHull_subset (hUo : IsOpen U) (hUc : IsConnected U)
     (hUf : filledHull U ⊆ U) : IsSimplyConnected U :=
   (hasHolomorphicSquareRoots_of_filledHull_subset hUo hUf).isSimplyConnected hUo hUc
+
+/-- **A simply connected open subset of the plane has no holes**: it contains its filled hull, that
+is, every connected component of its complement is unbounded. Consequently `filledHull K ⊆ U`
+for every `K ⊆ U`, by `TauCeti.filledHull_mono`. -/
+theorem _root_.IsSimplyConnected.filledHull_subset (hUc : IsSimplyConnected U)
+    (hUo : IsOpen U) : filledHull U ⊆ U := by
+  intro a ha
+  by_contra haU
+  -- `z ↦ z - a` has a continuous logarithm on the simply connected set `U`
+  obtain ⟨L, hLc, hL⟩ := Complex.exists_continuousOn_eqOn_exp_comp hUc hUo
+    (g := fun z => z - a) (by fun_prop) (by rintro ⟨z, hz, h0⟩; exact haU (sub_eq_zero.mp h0 ▸ hz))
+  -- the bounded component of `Uᶜ` through `a` is cut out by an open set `V` with frontier in `U`
+  obtain ⟨V, -, haV, hVc, hVU⟩ :=
+    hUo.isClosed_compl.exists_isOpen_isCompact_closure_disjoint_frontier
+      (Metric.isCompact_of_isClosed_isBounded hUo.isClosed_compl.connectedComponentIn
+        (mem_filledHull_iff.mp ha))
+  have hKU : frontier V ⊆ U := fun z hz => by
+    by_contra hzU
+    exact disjoint_left.mp hVU hz hzU
+  -- so `frontier V` encloses `a` while carrying a logarithm of `z ↦ z - a`
+  refine (hasContinuousLogOn_sub_iff_notMem_filledHull isClosed_frontier
+    (hVc.isBounded.subset frontier_subset_closure)).mp
+      (hasContinuousLogOn_iff.mpr ⟨L, hLc.mono hKU, fun z hz => hL (hKU hz)⟩) ?_
+  exact subset_filledHull_of_frontier_subset (hVc.isBounded.subset subset_closure) subset_rfl
+    (haV (mem_connectedComponentIn haU))
 
 /-- **A plane domain is simply connected exactly when it has no holes**: a connected open set
 `U ⊆ ℂ` is simply connected if and only if every connected component of `ℂ \ U` is unbounded. -/
