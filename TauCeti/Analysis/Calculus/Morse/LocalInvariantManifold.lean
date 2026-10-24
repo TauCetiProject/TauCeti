@@ -213,13 +213,6 @@ private theorem exists_uniformContDiffOn_centered_remainder {n : ℕ}
     (closedBall_subset_ball (half_lt_self hr₀)) (isCompact_closedBall _ _)
     fun z hz ↦ (hball z hz).contDiffWithinAt⟩
 
-omit [FiniteDimensional ℝ E] in
-/-- A nondegenerate critical point is a point of `C^(1+1)` regularity, in the form the `C^n`
-statements below take for `n = 1`. -/
-private theorem contDiffAt_one_add_one (h : IsNondegenerateCriticalPoint f x) :
-    ContDiffAt ℝ ((1 : ℕ) + 1) f x := by
-  simpa [one_add_one_eq_two] using h.contDiffAt
-
 /-- **The Lyapunov--Perron data of a Morse critical point.** For every positive `C` there are
 exponential dichotomy constants `K`, `alpha` for the linearization `-hessianOperator f x` along
 the stable projection, and a radius `r` on which the nonlinear remainder of the centred
@@ -409,7 +402,7 @@ theorem exists_localStableSet_eq_lipschitzGraph
         MapsTo y (Ici 0) (closedBall 0 r) → Tendsto y atTop (𝓝 0)) := by
   obtain ⟨r, hr, rho, hrho, g, hg⟩ :=
     h.exists_localStableSet_eq_lipschitzGraph_of_contDiffAt
-      (contDiffAt_one_add_one h) C hC
+      (n := 1) h.contDiffAt C hC
   exact ⟨r, hr, rho, hrho, g, by simpa only [Nat.cast_one] using hg⟩
 
 /-- **Confined backward trajectories at a Morse critical point form a `C^n` Lipschitz graph.** For
@@ -527,7 +520,7 @@ theorem exists_localUnstableSet_eq_lipschitzGraph
         MapsTo y (Iic 0) (closedBall 0 r) → Tendsto y atBot (nhds 0)) := by
   obtain ⟨r, hr, rho, hrho, g, hg⟩ :=
     h.exists_localUnstableSet_eq_lipschitzGraph_of_contDiffAt
-      (contDiffAt_one_add_one h) C hC
+      (n := 1) h.contDiffAt C hC
   exact ⟨r, hr, rho, hrho, g, by simpa only [Nat.cast_one] using hg⟩
 
 /-- **The local stable set at a Morse critical point is a closed disk whose dimension is the
@@ -538,7 +531,7 @@ theorem exists_localStableSet_homeomorph_closedBall (h : IsNondegenerateCritical
     ∃ r > 0, ∃ rho > 0, Nonempty (h.localStableSet r rho ≃ₜ
       closedBall (0 : EuclideanSpace ℝ (Fin (Module.finrank ℝ E - morseIndex f x))) rho) := by
   obtain ⟨K, alpha, epsilon, r, hr, hs, hu, hN, hsmall, -⟩ :=
-    h.exists_lyapunovPerronData (contDiffAt_one_add_one h) 1 one_pos
+    h.exists_lyapunovPerronData (n := 1) h.contDiffAt 1 one_pos
   obtain ⟨rho, hrho, ⟨e⟩⟩ := ContinuousLinearMap.exists_localStableSetHomeomorph
     (-hessianOperator f x) h.stableProjection (fun z ↦ negativeGradientRemainder f x (x + z)) r
     hs hu hN hsmall h.negativeGradientRemainder_centered_zero
@@ -564,7 +557,7 @@ theorem exists_localUnstableSet_homeomorph_closedBall (h : IsNondegenerateCritic
     ∃ r > 0, ∃ rho > 0, Nonempty (h.localUnstableSet r rho ≃ₜ
       closedBall (0 : EuclideanSpace ℝ (Fin (morseIndex f x))) rho) := by
   obtain ⟨K, alpha, epsilon, r, hr, hs, hu, hN, hsmall, -⟩ :=
-    h.exists_lyapunovPerronData (contDiffAt_one_add_one h) 1 one_pos
+    h.exists_lyapunovPerronData (n := 1) h.contDiffAt 1 one_pos
   obtain ⟨rho, hrho, ⟨e⟩⟩ := ContinuousLinearMap.exists_localUnstableSetHomeomorph
     (-hessianOperator f x) h.stableProjection (fun z ↦ negativeGradientRemainder f x (x + z)) r
     hs hu hN hsmall h.negativeGradientRemainder_centered_zero
