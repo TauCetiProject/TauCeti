@@ -651,7 +651,7 @@ theorem hessian_eq_iteratedFDeriv_model_space
 
 private theorem fromTangentSpace_isometry_symm_apply
     {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
-    [FiniteDimensional ℝ F] (x : F)
+    (x : F)
     (e : TangentSpace (modelWithCornersSelf ℝ F) x ≃ₗᵢ[ℝ] F)
     (he : e.toLinearEquiv = (NormedSpace.fromTangentSpace x).toLinearEquiv) (u : F) :
     NormedSpace.fromTangentSpace x (e.symm u) = u := by
