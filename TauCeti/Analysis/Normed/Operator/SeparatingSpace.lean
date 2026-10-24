@@ -12,6 +12,7 @@ public import Mathlib.Analysis.SpecificLimits.Basic
 public import Mathlib.Order.Filter.EventuallyConst
 public import Mathlib.Topology.Algebra.InfiniteSum.Module
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Quotient
+public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Intertwining
 
 /-!
 # The separating space of a linear map
@@ -62,10 +63,6 @@ successive products stabilize.
 * `LinearMap.map_separatingSpace_le_of_continuous_sub`: a continuous linear map `U` with
   `U ∘ T - T' ∘ V` continuous for a continuous linear map `V` sends the separating space of
   `T` into that of `T'`.
-* `LinearMap.map_separatingSpace_le_self`: a continuous linear map intertwining `T` with a
-  continuous linear map up to a continuous error preserves the separating space of `T`.
-* `LinearMap.continuous_comp_sub_comp_of_continuous_sub`: products of maps intertwining `T`
-  up to continuous errors again intertwine `T` up to a continuous error.
 * `LinearMap.exists_norm_le_le_norm_mkQ_apply`: modulo a closed subspace not containing the
   separating space, `T` sends arbitrarily small vectors to arbitrarily large ones.
 * `TauCeti.antitone_separatingSpace`, `TauCeti.eventuallyConst_separatingSpace`: Sinclair's
@@ -219,21 +216,14 @@ theorem separatingSpace_eq_of_continuous_sub {T₁ T₂ : E →ₗ[R] F} (h : Co
   simpa using T₂.separatingSpace_add ⟨T₁ - T₂, h⟩
 
 /-- If `U ∘ T - T' ∘ V` is continuous for continuous linear maps `U` and `V`, then `U` maps the
-separating space of `T` into that of `T'`. -/
+separating space of `T` into that of `T'`. Taking `T' = T` and `U`, `V` the left or right
+actions of an algebra on `F` and `E`, this says that the separating space of a map whose
+commutators with the actions are continuous is a submodule. -/
 theorem map_separatingSpace_le_of_continuous_sub (T' : D →ₗ[R] G) (U : F →L[R] G)
     (V : E →L[R] D) (h : Continuous ((U : F →ₗ[R] G) ∘ₗ T - T' ∘ₗ (V : E →ₗ[R] D))) :
     T.separatingSpace.map (U : F →ₗ[R] G) ≤ T'.separatingSpace :=
   (T.map_separatingSpace_le U).trans
     ((separatingSpace_eq_of_continuous_sub h).trans_le (T'.separatingSpace_comp_le V))
-
-/-- If `U ∘ T - T ∘ V` is continuous for continuous linear maps `U` and `V`, then `U` maps the
-separating space of `T` into itself. Applied to the left or right actions of an algebra on `E`
-and `F`, this says that the separating space of a map whose commutators with the actions are
-continuous is a submodule. -/
-theorem map_separatingSpace_le_self (U : F →L[R] F) (V : E →L[R] E)
-    (h : Continuous ((U : F →ₗ[R] F) ∘ₗ T - T ∘ₗ (V : E →ₗ[R] E))) :
-    T.separatingSpace.map (U : F →ₗ[R] F) ≤ T.separatingSpace :=
-  T.map_separatingSpace_le_of_continuous_sub T U V h
 
 /-- The graph of `T` becomes closed after passing to the quotient by its separating space. -/
 theorem isClosed_graph_mkQ_comp :
@@ -246,45 +236,6 @@ theorem isClosed_graph_mkQ_comp :
   simp [mem_closure_graph_iff, Submodule.Quotient.eq]
 
 end Topological
-
-section Products
-
-variable {R E F : Type*} [Ring R] [AddCommGroup E] [Module R E] [TopologicalSpace E]
-  [AddCommGroup F] [Module R F] [TopologicalSpace F] [IsTopologicalAddGroup F]
-
-/-- If continuous linear maps `Q n` on `F` intertwine `T` with continuous linear maps `P n` on
-`E` up to continuous errors `Q n ∘ T - T ∘ P n`, then so do the products
-`V n = Q 0 ∘ ⋯ ∘ Q (n - 1)` and `U n = P 0 ∘ ⋯ ∘ P (n - 1)`. -/
-theorem continuous_comp_sub_comp_of_continuous_sub (T : E →ₗ[R] F) (P : ℕ → E →L[R] E)
-    (Q : ℕ → F →L[R] F)
-    (hPQ : ∀ n, Continuous ((Q n : F →ₗ[R] F) ∘ₗ T - T ∘ₗ (P n : E →ₗ[R] E)))
-    {U : ℕ → E →L[R] E} (hU0 : U 0 = ContinuousLinearMap.id R E)
-    (hU : ∀ n, U (n + 1) = (U n).comp (P n)) {V : ℕ → F →L[R] F}
-    (hV0 : V 0 = ContinuousLinearMap.id R F) (hV : ∀ n, V (n + 1) = (V n).comp (Q n)) (n : ℕ) :
-    Continuous ((V n : F →ₗ[R] F) ∘ₗ T - T ∘ₗ (U n : E →ₗ[R] E)) := by
-  induction n with
-  | zero =>
-    have : (V 0 : F →ₗ[R] F) ∘ₗ T - T ∘ₗ (U 0 : E →ₗ[R] E) = 0 := by
-      ext
-      simp [hV0, hU0]
-    rw [this]
-    exact continuous_zero
-  | succ n ih =>
-    have : (V (n + 1) : F →ₗ[R] F) ∘ₗ T - T ∘ₗ (U (n + 1) : E →ₗ[R] E) =
-        (V n : F →ₗ[R] F) ∘ₗ ((Q n : F →ₗ[R] F) ∘ₗ T - T ∘ₗ (P n : E →ₗ[R] E)) +
-          ((V n : F →ₗ[R] F) ∘ₗ T - T ∘ₗ (U n : E →ₗ[R] E)) ∘ₗ (P n : E →ₗ[R] E) := by
-      ext
-      simp [hV, hU]
-    have h₁ : Continuous ((V n : F →ₗ[R] F) ∘ₗ
-        ((Q n : F →ₗ[R] F) ∘ₗ T - T ∘ₗ (P n : E →ₗ[R] E))) :=
-      (V n).continuous.comp (hPQ n)
-    have h₂ : Continuous (((V n : F →ₗ[R] F) ∘ₗ T - T ∘ₗ (U n : E →ₗ[R] E)) ∘ₗ
-        (P n : E →ₗ[R] E)) :=
-      ih.comp (P n).continuous
-    rw [this]
-    exact h₁.add h₂
-
-end Products
 
 section Banach
 
