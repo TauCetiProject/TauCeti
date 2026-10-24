@@ -51,8 +51,8 @@ computed from its maximal minors (`Submodule.relativeSubspaceHeight`).
   2006, §1.6 and §2.8.
 
 The product bound is reduced to Mathlib's bound for linear maps,
-`Height.mulHeight_linearMap_apply_le`, and its height of a multiplication table,
-`Height.mulHeight_fun_mul_eq`.
+`Height.mulHeight_linearMap_apply_le`, and its bound for pointwise products,
+`Height.mulHeight_mul_le`.
 -/
 
 public section
@@ -162,35 +162,25 @@ and `B`. -/
 theorem mulHeight_mul_le [Fintype n] [Nonempty n] [Finite p] (A : Matrix m n K)
     (B : Matrix n p K) :
     (A * B).mulHeight ≤ Nat.card n ^ totalWeight K * A.mulHeight * B.mulHeight := by
-  set a : m × n → K := fun q ↦ A q.1 q.2
-  set b : n × p → K := fun q ↦ B q.1 q.2
   have hpos : 0 ≤ (Nat.card n : ℝ) ^ totalWeight K := by positivity
-  have hone : 1 ≤ (Nat.card n : ℝ) ^ totalWeight K :=
-    one_le_pow₀ (by exact_mod_cast Nat.card_pos)
-  -- If either factor vanishes, the product is zero and the bound is at least one.
-  rcases eq_or_ne a 0 with ha | ha
-  · have hA : A = 0 := by ext i j; exact congrFun ha (i, j)
-    simpa [hA] using
-      one_le_mul_of_one_le_of_one_le hone (one_le_mulHeight B)
-  rcases eq_or_ne b 0 with hb | hb
-  · have hB : B = 0 := by ext j k; exact congrFun hb (j, k)
-    simpa [hB] using
-      one_le_mul_of_one_le_of_one_le hone (one_le_mulHeight A)
   -- The entries of `A * B` are the values at the all-ones vector of the linear map with
-  -- coefficients `A i j * B j k`. These form a subtuple of the multiplication table of `a` and
-  -- `b`, whose height is the product of their heights.
-  let f : (m × p) × n → (m × n) × (n × p) := fun q ↦ ((q.1.1, q.2), (q.2, q.1.2))
-  let c : (m × p) × n → K := (fun r : (m × n) × (n × p) ↦ a r.1 * b r.2) ∘ f
-  have hc : Height.mulHeight c ≤ A.mulHeight * B.mulHeight :=
-    (mulHeight_comp_le f _).trans_eq (mulHeight_fun_mul_eq ha hb)
+  -- coefficients `A i j * B j k`, the pointwise product of two subtuples of the entries of `A`
+  -- and of `B`.
+  let x : (m × p) × n → K := fun q ↦ A q.1.1 q.2
+  let y : (m × p) × n → K := fun q ↦ B q.2 q.1.2
+  have hc : Height.mulHeight (x * y) ≤ A.mulHeight * B.mulHeight :=
+    (Height.mulHeight_mul_le x y).trans <| mul_le_mul
+      (mulHeight_comp_le (fun q : (m × p) × n ↦ (q.1.1, q.2)) fun q : m × n ↦ A q.1 q.2)
+      (mulHeight_comp_le (fun q : (m × p) × n ↦ (q.2, q.1.2)) fun q : n × p ↦ B q.1 q.2)
+      (Height.mulHeight_pos _).le A.mulHeight_pos.le
   have hAB : (fun q : m × p ↦ (A * B) q.1 q.2) =
-      fun q ↦ ∑ j, c (q, j) * (1 : n → K) j := by
+      fun q ↦ ∑ j, (x * y) (q, j) * (1 : n → K) j := by
     ext q
-    simp [c, f, a, b, mul_apply]
+    simp [x, y, mul_apply]
   calc (A * B).mulHeight
-      ≤ Nat.card n ^ totalWeight K * Height.mulHeight c * Height.mulHeight (1 : n → K) := by
+      ≤ Nat.card n ^ totalWeight K * Height.mulHeight (x * y) * Height.mulHeight (1 : n → K) := by
         rw [mulHeight_def, hAB]
-        exact mulHeight_linearMap_apply_le c 1
+        exact mulHeight_linearMap_apply_le (x * y) 1
     _ ≤ Nat.card n ^ totalWeight K * A.mulHeight * B.mulHeight := by
         rw [Height.mulHeight_one, mul_one, mul_assoc]
         exact mul_le_mul_of_nonneg_left hc hpos
