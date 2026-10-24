@@ -44,6 +44,8 @@ characteristic local facts behind the Koszul construction of that connection:
 
 * `TauCeti.Manifold.christoffelFirstKind`: the Christoffel symbols of the first kind.
 * `TauCeti.Manifold.christoffelSecondKind`: the Christoffel symbols of the second kind.
+* `TauCeti.Manifold.christoffelSecondKindOfJet`: the Christoffel formula on metric first jets.
+* `TauCeti.Manifold.contDiffAt_christoffelSecondKindOfJet`: smoothness at invertible metric values.
 * `TauCeti.Manifold.apply_christoffelSecondKind`: lowering the index of `Γ` gives `Γ₁`.
 * `TauCeti.Manifold.christoffelSecondKind_comm`: `Γ` is symmetric.
 * `TauCeti.Manifold.fderiv_apply_eq_christoffelSecondKind_add`: metric compatibility of `Γ`.
@@ -121,17 +123,79 @@ theorem christoffelFirstKind_add_christoffelFirstKind
 
 /-! ### The Christoffel symbols of the second kind -/
 
-/-- The **Christoffel symbols of the second kind** of a field of bilinear forms `g` at `x`: the
+/-- The Christoffel symbols determined by a metric value and its first derivative. The first
+component of the jet is the musical map, and the second is the derivative of the metric. -/
+def christoffelSecondKindOfJet
+    (j : (E →L[ℝ] E →L[ℝ] ℝ) × (E →L[ℝ] E →L[ℝ] E →L[ℝ] ℝ)) :
+    E →L[ℝ] E →L[ℝ] E :=
+  -- Compose each Koszul term with the inverse separately to avoid operations on trilinear forms.
+  (2⁻¹ : ℝ) • (compL ℝ E (E →L[ℝ] ℝ) E j.1.inverse ∘L j.2 +
+    compL ℝ E (E →L[ℝ] ℝ) E j.1.inverse ∘L j.2.flip -
+    (compL ℝ E (E →L[ℝ] ℝ) E j.1.inverse ∘L
+      (flipₗᵢ ℝ E E ℝ).toContinuousLinearEquiv.toContinuousLinearMap) ∘L j.2.flip)
+
+/-- Evaluation of the Christoffel formula on a metric first jet. -/
+@[simp]
+theorem christoffelSecondKindOfJet_apply
+    (j : (E →L[ℝ] E →L[ℝ] ℝ) × (E →L[ℝ] E →L[ℝ] E →L[ℝ] ℝ)) (u v : E) :
+    christoffelSecondKindOfJet j u v =
+      j.1.inverse ((2⁻¹ : ℝ) • (j.2 u v + j.2 v u - (j.2.flip u).flip v)) := by
+  simp [christoffelSecondKindOfJet]
+
+/-- **The Christoffel symbols of the second kind** of a field of bilinear forms `g` at `x`: the
 bilinear map `Γ` with `g(Γ(u, v), w) = Γ₁(u, v)(w)`, obtained from the Christoffel symbols of the
 first kind `Γ₁` by inverting the musical map `g x : E →L[ℝ] E →L[ℝ] ℝ`. When `g x` is not
 invertible this inverse, and hence `Γ`, is zero. -/
 def christoffelSecondKind (g : E → E →L[ℝ] E →L[ℝ] ℝ) (x : E) : E →L[ℝ] E →L[ℝ] E :=
-  -- Each of the three terms of `Γ₁` is composed with the inverse musical map separately, so
-  -- that no algebraic operation is taken in the space of trilinear forms.
-  (2⁻¹ : ℝ) • (compL ℝ E (E →L[ℝ] ℝ) E (g x).inverse ∘L fderiv ℝ g x +
-    compL ℝ E (E →L[ℝ] ℝ) E (g x).inverse ∘L (fderiv ℝ g x).flip -
-    (compL ℝ E (E →L[ℝ] ℝ) E (g x).inverse ∘L
-      (flipₗᵢ ℝ E E ℝ).toContinuousLinearEquiv.toContinuousLinearMap) ∘L (fderiv ℝ g x).flip)
+  christoffelSecondKindOfJet (g x, fderiv ℝ g x)
+
+/-- The Christoffel symbols at a point depend only on the metric value and its derivative. -/
+theorem christoffelSecondKind_eq_christoffelSecondKindOfJet
+    (g : E → E →L[ℝ] E →L[ℝ] ℝ) (x : E) :
+    christoffelSecondKind g x = christoffelSecondKindOfJet (g x, fderiv ℝ g x) := by
+  rfl
+
+section JetRegularity
+
+-- Cache the canonical bilinear-space instances locally: synthesizing the next operator-space
+-- layer directly fails, whereas synthesis succeeds once its target's instances are fixed.
+/-- The canonical normed additive group on metric bilinear forms, cached for jet regularity. -/
+local instance christoffelBilinearNormedAddCommGroup :
+    NormedAddCommGroup (E →L[ℝ] E →L[ℝ] ℝ) := inferInstance
+
+/-- The canonical real normed space on metric bilinear forms, cached for jet regularity. -/
+local instance christoffelBilinearNormedSpace :
+    NormedSpace ℝ (E →L[ℝ] E →L[ℝ] ℝ) := inferInstance
+
+/-- The Christoffel formula depends smoothly on the metric value and its first derivative
+wherever the musical map is invertible. -/
+theorem contDiffAt_christoffelSecondKindOfJet [CompleteSpace E] {n : WithTop ℕ∞}
+    {j : (E →L[ℝ] E →L[ℝ] ℝ) × (E →L[ℝ] E →L[ℝ] E →L[ℝ] ℝ)}
+    (hj : j.1.IsInvertible) : ContDiffAt ℝ n (christoffelSecondKindOfJet (E := E)) j := by
+  -- These canonical instances resolve the intermediate space of composition operators.
+  let : NormedAddCommGroup ((E →L[ℝ] E →L[ℝ] ℝ) →L[ℝ] E →L[ℝ] E) :=
+    ContinuousLinearMap.toNormedAddCommGroup (𝕜 := ℝ) (𝕜₂ := ℝ)
+      (E := E →L[ℝ] E →L[ℝ] ℝ) (F := E →L[ℝ] E) (σ₁₂ := RingHom.id ℝ)
+  let : NormedSpace ℝ ((E →L[ℝ] E →L[ℝ] ℝ) →L[ℝ] E →L[ℝ] E) :=
+    ContinuousLinearMap.toNormedSpace (𝕜 := ℝ) (𝕜₂ := ℝ)
+      (E := E →L[ℝ] E →L[ℝ] ℝ) (F := E →L[ℝ] E) (σ₁₂ := RingHom.id ℝ)
+  have hinv := (hj.contDiffAt_map_inverse (n := n)).comp j contDiffAt_fst
+  have hcomp := (compL ℝ E (E →L[ℝ] ℝ) E).contDiff.contDiffAt.comp j hinv
+  have hflip := (flipₗᵢ ℝ E E (E →L[ℝ] ℝ)).toContinuousLinearEquiv.toContinuousLinearMap
+    |>.contDiff.contDiffAt.comp j (contDiffAt_snd (n := n))
+  have hperm := ((compL ℝ (E →L[ℝ] E →L[ℝ] ℝ) (E →L[ℝ] E →L[ℝ] ℝ)
+    (E →L[ℝ] E)).flip
+      (flipₗᵢ ℝ E E ℝ).toContinuousLinearEquiv.toContinuousLinearMap).contDiff.contDiffAt.comp
+        j hcomp
+  have hfirst := hcomp.clm_comp (𝕜 := ℝ) (E := E)
+    (F := E →L[ℝ] E →L[ℝ] ℝ) (G := E →L[ℝ] E) contDiffAt_snd
+  have hsecond := hcomp.clm_comp (𝕜 := ℝ) (E := E)
+    (F := E →L[ℝ] E →L[ℝ] ℝ) (G := E →L[ℝ] E) hflip
+  have hlast := hperm.clm_comp (𝕜 := ℝ) (E := E)
+    (F := E →L[ℝ] E →L[ℝ] ℝ) (G := E →L[ℝ] E) hflip
+  exact ((hfirst.add hsecond).sub hlast).const_smul (2⁻¹ : ℝ)
+
+end JetRegularity
 
 /-- The Christoffel symbols of the second kind are the Christoffel symbols of the first kind
 with the index raised by the inverse musical map. -/
@@ -229,12 +293,14 @@ theorem contDiffOn_christoffelSecondKind {m n : WithTop ℕ∞} {U : Set E} (hU 
     (hg : ContDiffOn ℝ m g U) (hnm : n + 1 ≤ m)
     (hnd : ∀ y ∈ U, (g y).toBilinForm.Nondegenerate) :
     ContDiffOn ℝ n (christoffelSecondKind g) U := by
-  have hinv : ContDiffOn ℝ n (fun y ↦ (g y).inverse) U := fun y hy ↦
-    ((isInvertible_of_separatingLeft (hnd y hy).1).contDiffAt_map_inverse.comp y
-      ((hg.of_le (le_self_add.trans hnm)).contDiffAt (hU.mem_nhds hy))).contDiffWithinAt
-  refine contDiffOn_clm_apply.2 fun u ↦ contDiffOn_clm_apply.2 fun v ↦ ?_
-  simp only [christoffelSecondKind_apply]
-  exact hinv.clm_apply (contDiffOn_christoffelFirstKind hU hg hnm u v)
+  have hD := hg.fderiv_of_isOpen hU hnm
+  intro y hy
+  rw [funext (christoffelSecondKind_eq_christoffelSecondKindOfJet g)]
+  simpa only [Function.comp_def] using
+    ((contDiffAt_christoffelSecondKindOfJet (j := (g y, fderiv ℝ g y))
+      (isInvertible_of_separatingLeft (hnd y hy).1)).comp y
+      (((hg.of_le (le_self_add.trans hnm)).contDiffAt (hU.mem_nhds hy)).prodMk
+        (hD.contDiffAt (hU.mem_nhds hy)))).contDiffWithinAt
 
 /-! ### The index formula -/
 
