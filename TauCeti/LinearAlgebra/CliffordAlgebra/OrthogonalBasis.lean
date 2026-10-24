@@ -223,7 +223,7 @@ variable [LinearOrder R]
 omit [Invertible (2 : R)] [LinearOrder I] in
 /-- A summand `c * ((∏ i ∈ s, Q (b i)) * c)` of the coordinate formula for `τ (reverse x * x)` is
 nonnegative when `Q` is nonnegative on `b`. -/
-private lemma mul_prod_mul_self_nonneg [IsOrderedRing R] (hQ : ∀ i, 0 ≤ Q (b i)) (s : Finset I)
+lemma mul_prod_mul_self_nonneg [IsOrderedRing R] (hQ : ∀ i, 0 ≤ Q (b i)) (s : Finset I)
     (c : R) : 0 ≤ c * ((∏ i ∈ s, Q (b i)) * c) := by
   rw [mul_left_comm]
   exact mul_nonneg (Finset.prod_nonneg fun i _ ↦ hQ i) (mul_self_nonneg _)
