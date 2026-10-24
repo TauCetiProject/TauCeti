@@ -45,6 +45,7 @@ variable {k : Type u} [Field k] [IsAlgClosed k]
   (y : 𝟙_ (Over (Spec (.of k))) ⟶ Y)
   (f : X ⟶ Y) [IsModHom G f] (h : x ≫ f = y)
 
+omit [LocallyOfFiniteType Y.hom] [CompactSpace Y.left] in
 include h in
 private theorem toOrbit_orbitι_comp_left :
     toOrbit G x ≫ orbitι G x ≫ f.left = (orbitMap G y).left := by
@@ -57,7 +58,7 @@ private theorem existsUnique_orbitSchemeMap :
   refine (orbitι G y).existsUnique_lift_of_surjective_of_isSchemeTheoreticallyDominant
     (orbitι G x ≫ f.left) (toOrbit G x) (toOrbit G y) ?_
   rw [toOrbit_ι]
-  exact toOrbit_orbitι_comp_left G x y f h
+  exact (toOrbit_orbitι_comp_left G x y f h).symm
 
 /-- The restriction of an equivariant morphism to the orbit schemes of specified
 rational points that it carries to one another. -/
