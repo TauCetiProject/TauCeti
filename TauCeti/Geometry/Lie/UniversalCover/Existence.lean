@@ -51,32 +51,25 @@ theorem exists_universalCover [ConnectedSpace G] :
   let _ : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
   let _ : PathConnectedSpace G := PathConnectedSpace.of_locallyPathConnectedSpace
   let Gt := UniversalCover (1 : G)
-  let p : Gt →* G :=
-    (UniversalCover.projHom : UniversalCover (1 : G) →ₜ* G).toMonoidHom
+  let q : ContMDiffMonoidMorphism I I ∞ Gt G :=
+    ContinuousMonoidHom.toContMDiffMonoidMorphism I I
+      (UniversalCover.projHom : UniversalCover (1 : G) →ₜ* G)
+  let p : Gt →* G := q.toMonoidHom
   have hpc : (p : Gt → G) = (UniversalCover.projHom : Gt → G) := by
-    dsimp only [p, Gt]
-    change ((UniversalCover.projHom : UniversalCover (1 : G) →ₜ* G).toMonoidHom :
-      UniversalCover (1 : G) → G) = (UniversalCover.projHom : UniversalCover (1 : G) → G)
-    exact congrArg (fun f : UniversalCover (1 : G) →* G =>
-      (f : UniversalCover (1 : G) → G))
-      (ContinuousMonoidHom.coe_toMonoidHom
-        (UniversalCover.projHom : UniversalCover (1 : G) →ₜ* G))
+    dsimp only [p, q, Gt]
+    exact ContinuousMonoidHom.coe_toContMDiffMonoidMorphism
+      (UniversalCover.projHom : UniversalCover (1 : G) →ₜ* G)
   have hp : IsCoveringMap (p : Gt → G) := by
     rw [hpc]
     exact UniversalCover.isCoveringMap_projHom
   have hsmooth : ContMDiff I I ∞ (p : Gt → G) := by
-    rw [hpc, UniversalCover.coe_projHom]
-    exact UniversalCover.contMDiff_proj (x₀ := (1 : G))
+    exact q.contMDiff_toFun
   have hlie : Function.Bijective
-      (lieMap (ContinuousMonoidHom.toContMDiffMonoidMorphism I I
-        (UniversalCover.projHom : UniversalCover (1 : G) →ₜ* G))) :=
+      (lieMap q) :=
     UniversalCover.lieMap_projHom_bijective I G
   have hpm : (⟨p, hsmooth⟩ : ContMDiffMonoidMorphism I I ∞ Gt G) =
-      ContinuousMonoidHom.toContMDiffMonoidMorphism I I
-        (UniversalCover.projHom : UniversalCover (1 : G) →ₜ* G) := by
-    apply DFunLike.coe_injective
-    simp only [ContinuousMonoidHom.coe_toContMDiffMonoidMorphism]
-    exact hpc
+      q := by
+    rfl
   exact ⟨Gt, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance, p, hsmooth,
     UniversalCover.simplyConnectedSpace (1 : G), hp, by rw [hpm]; exact hlie⟩
 
