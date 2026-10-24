@@ -38,9 +38,9 @@ valid for every cost, `TauCeti.lintegral_le_of_ae_eq_comp`: if `T` is an optimal
 from `μ` to the law of `U` and `U = T ∘ s` with `s` of law `μ`, the pair `(s, U)` pushes `m` to
 the graph plan of `T`, so `s` minimises the transport cost of `(s', U)` among all maps `s'` of
 law `μ`; for the quadratic cost this is `TauCeti.integral_inner_le_of_ae_eq_comp`, maximality of
-the correlation. Uniqueness of the minimiser is uniqueness of the optimal quadratic plan out of an
-absolutely continuous source. Uniqueness of the monotone rearrangement is
-`TauCeti.gradient_ae_eq_gradient_of_hasLaw`.
+the correlation. Uniqueness of the minimiser is uniqueness of the optimal quadratic plan out of
+the absolutely continuous law of `U`, the quadratic cost being symmetric. Uniqueness of the
+monotone rearrangement is `TauCeti.gradient_ae_eq_gradient_of_hasLaw`.
 
 ## Main statements
 
@@ -141,12 +141,12 @@ theorem exists_hasLaw_and_ae_eq_gradient_comp [IsProbabilityMeasure m] [IsProbab
 /-- **The measure-preserving factor is the unique cost minimiser.** Let `u : E → EReal` be convex
 and never `⊥`, finite with differentiable real representative at `P`-almost every point, such
 that `∇u` is an optimal transport map for `‖x - y‖ ^ 2 / 2` from `P` to the law of `U : α → E`, at
-finite optimal cost, both laws being absolutely continuous with respect to an additive Haar
+finite optimal cost, the law of `U` being absolutely continuous with respect to an additive Haar
 measure. Let `s` have law `P` with `U = ∇u ∘ s` almost everywhere. If a map `s'` of law `P` is at
 most as far from `U` as `s`, in the sense that `∫ ‖s' - U‖ ^ 2 / 2 dm ≤ ∫ ‖s - U‖ ^ 2 / 2 dm`, then
 `s' = s` almost everywhere. -/
 theorem ae_eq_of_lintegral_norm_sub_sq_div_two_le [IsFiniteMeasure m] (hUρ : m.map U ≪ ρ)
-    (hP : P ≪ ρ) (hconv : Convex ℝ {p : E × ℝ | u p.1 ≤ p.2}) (hbot : ∀ x, u x ≠ ⊥)
+    (hconv : Convex ℝ {p : E × ℝ | u p.1 ≤ p.2}) (hbot : ∀ x, u x ≠ ⊥)
     (hdiff : ∀ᵐ x ∂P, u x ≠ ⊤ ∧ DifferentiableAt ℝ (fun x' => (u x').toReal) x)
     (hT : IsKantorovichOptimalTransportMap (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2))
       P (m.map U) (∇ fun x => (u x).toReal))
@@ -168,8 +168,20 @@ theorem ae_eq_of_lintegral_norm_sub_sq_div_two_le [IsFiniteMeasure m] (hUρ : m.
     refine ⟨hσ, le_antisymm ?_ (transportCost_le_lintegral hσ _)⟩
     rw [lintegral_map' hc.aemeasurable hpair, ← lintegral_eq_transportCost_of_ae_eq_comp hc hT hs h]
     exact hle
-  have hgraph := ((isKantorovichOptimalTransportMap_iff_isOptimalCoupling_graphPlan hT.toHasLaw
-    hc.aemeasurable).1 hT).unique hP hopt hfin
+  -- The quadratic cost is symmetric, so exchanging coordinates gives optimal plans out of the
+  -- absolutely continuous law of `U`, where the optimal plan is unique.
+  have hsymm : (fun z : E × E => ENNReal.ofReal (‖z.swap.1 - z.swap.2‖ ^ 2 / 2)) =
+      fun z => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2) := by
+    funext z
+    rw [Prod.fst_swap, Prod.snd_swap, norm_sub_rev]
+  have hfin' : transportCost (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) (m.map U) P
+      ≠ ∞ := by
+    rwa [← hsymm, transportCost_comp_swap hc]
+  have hgraph' := (hsymm ▸ (((isKantorovichOptimalTransportMap_iff_isOptimalCoupling_graphPlan
+    hT.toHasLaw hc.aemeasurable).1 hT).swap hc)).unique hUρ (hsymm ▸ hopt.swap hc) hfin'
+  have hgraph : graphPlan (∇ fun x => (u x).toReal) P = m.map fun ω => (s' ω, U ω) := by
+    simpa [Measure.map_map measurable_swap measurable_swap] using
+      congrArg (Measure.map Prod.swap) hgraph'
   -- So `U = ∇u ∘ s'` almost everywhere, and both `s` and `s'` are `∇u⋆ ∘ U`.
   have h' : U =ᵐ[m] (∇ fun x => (u x).toReal) ∘ s' := by
     have hae := ae_snd_eq_graphPlan (μ := P) hT'.aemeasurable
@@ -182,14 +194,14 @@ theorem ae_eq_of_lintegral_norm_sub_sq_div_two_le [IsFiniteMeasure m] (hUρ : m.
   rw [h₁, h₂]
 
 /-- **The measure-preserving factor is the unique correlation maximiser.** Let `P` and the law of
-`U : α → E` have finite second moments and be absolutely continuous with respect to an additive
-Haar measure. Let `u : E → EReal` be convex and never `⊥`, finite with differentiable real
-representative at `P`-almost every point, and let `s` have law `P` with `U = ∇u ∘ s` almost
-everywhere. By `TauCeti.integral_inner_le_of_ae_eq_comp`, `s` maximises the correlation
-`∫ ⟪s', U⟫ dm` among maps `s'` of law `P`; it is the unique maximiser: if `s'` has law `P` and
-`∫ ⟪s, U⟫ dm ≤ ∫ ⟪s', U⟫ dm`, then `s' = s` almost everywhere. -/
+`U : α → E` have finite second moments, the law of `U` being absolutely continuous with respect
+to an additive Haar measure. Let `u : E → EReal` be convex and never `⊥`, finite with
+differentiable real representative at `P`-almost every point, and let `s` have law `P` with
+`U = ∇u ∘ s` almost everywhere. By `TauCeti.integral_inner_le_of_ae_eq_comp`, `s` maximises the
+correlation `∫ ⟪s', U⟫ dm` among maps `s'` of law `P`; it is the unique maximiser: if `s'` has law
+`P` and `∫ ⟪s, U⟫ dm ≤ ∫ ⟪s', U⟫ dm`, then `s' = s` almost everywhere. -/
 theorem ae_eq_of_integral_inner_le [IsFiniteMeasure m] (hP2 : MemLp id 2 P)
-    (hν : MemLp id 2 (m.map U)) (hUρ : m.map U ≪ ρ) (hP : P ≪ ρ)
+    (hν : MemLp id 2 (m.map U)) (hUρ : m.map U ≪ ρ)
     (hconv : Convex ℝ {p : E × ℝ | u p.1 ≤ p.2}) (hbot : ∀ x, u x ≠ ⊥)
     (hdiff : ∀ᵐ x ∂P, u x ≠ ⊤ ∧ DifferentiableAt ℝ (fun x' => (u x').toReal) x)
     (hs : HasLaw s P m) (h : U =ᵐ[m] (∇ fun x => (u x).toReal) ∘ s) (hs' : HasLaw s' P m)
@@ -214,7 +226,7 @@ theorem ae_eq_of_integral_inner_le [IsFiniteMeasure m] (hP2 : MemLp id 2 P)
     dsimp only
     rw [h₁]
     exact ENNReal.ofReal_ne_top
-  refine ae_eq_of_lintegral_norm_sub_sq_div_two_le hUρ hP hconv hbot hdiff hT hfin hs h hs' ?_
+  refine ae_eq_of_lintegral_norm_sub_sq_div_two_le hUρ hconv hbot hdiff hT hfin hs h hs' ?_
   rw [h₁, h₂]
   exact ENNReal.ofReal_le_ofReal (by linarith)
 
