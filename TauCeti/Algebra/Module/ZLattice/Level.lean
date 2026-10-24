@@ -85,11 +85,11 @@ variable {L : Submodule ℤ E}
 /-- For `x` in the dual lattice, `level L * ‖x‖²` is an even integer. -/
 theorem exists_level_mul_norm_sq_eq {x : E} (hx : x ∈ dual L) :
     ∃ m : ℤ, (level L : ℝ) * ‖x‖ ^ 2 = 2 * m := by
-  set S := {N : ℕ | 0 < N ∧ ∀ x ∈ dual L, ∃ m : ℤ, (N : ℝ) * ‖x‖ ^ 2 = 2 * m}
-  rcases S.eq_empty_or_nonempty with hS | hS
-  · have h0 : level L = 0 := (congrArg sInf hS).trans Nat.sInf_empty
-    exact ⟨0, by simp [h0]⟩
-  · exact (Nat.sInf_mem hS).2 x hx
+  rcases (level L).eq_zero_or_pos with h | h
+  · exact ⟨0, by simp [h]⟩
+  -- A positive infimum is attained, so the level itself lies in the defining set.
+  rw [level] at h ⊢
+  exact (Nat.sInf_mem (Nat.nonempty_of_pos_sInf h)).2 x hx
 
 /-- The level generates the subgroup of integers `N` with `N ‖x‖² ∈ 2ℤ` for every `x ∈ L^∨`:
 `level L ∣ N` exactly when `N ‖x‖² / 2` is an integer for every `x` in the dual lattice. -/
@@ -103,20 +103,23 @@ theorem level_dvd_iff {N : ℕ} :
   · exact dvd_zero _
   -- The remainder of `N` modulo the level has the same property, and is smaller than the level.
   have hpos : 0 < level L := Nat.pos_of_ne_zero fun h ↦ by
-    rcases Nat.sInf_eq_zero.mp h with h | h
+    rw [level, Nat.sInf_eq_zero] at h
+    rcases h with h | h
     · exact lt_irrefl 0 h.1
     · exact Set.eq_empty_iff_forall_notMem.mp h N ⟨hN0, hN⟩
   refine Nat.dvd_of_mod_eq_zero (Nat.eq_zero_of_not_pos fun hr ↦ ?_)
-  refine (Nat.mod_lt N hpos).not_ge (Nat.sInf_le ⟨hr, fun x hx ↦ ?_⟩)
+  refine (Nat.mod_lt N hpos).not_ge ?_
+  conv_lhs => rw [level]
+  refine Nat.sInf_le ⟨hr, fun x hx ↦ ?_⟩
   obtain ⟨a, ha⟩ := hN x hx
   obtain ⟨b, hb⟩ := exists_level_mul_norm_sq_eq hx
-  rw [Nat.mod_eq_sub_mul_div]
-  have hq := Nat.mul_div_le N (level L)
-  generalize N / level L = q at hq ⊢
-  refine ⟨a - b * q, ?_⟩
-  rw [Nat.cast_sub hq]
-  push_cast
-  linear_combination ha - q * hb
+  -- `N % level L = N - level L * q` is an integer combination of `N` and the level.
+  have hmod : ((N % level L : ℕ) : ℝ) = N - level L * (N / level L : ℕ) := by
+    rw [eq_sub_iff_add_eq]
+    exact_mod_cast Nat.mod_add_div N (level L)
+  refine ⟨a - b * (N / level L : ℕ), ?_⟩
+  rw [hmod, Int.cast_sub, Int.cast_mul, Int.cast_natCast]
+  linear_combination ha - ((N / level L : ℕ) : ℝ) * hb
 
 /-- The level is invariant under linear isometry equivalences. -/
 @[simp]
