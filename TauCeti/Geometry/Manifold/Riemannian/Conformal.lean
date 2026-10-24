@@ -36,6 +36,9 @@ For the Yamabe problem, `f = u ^ (4 / (n - 2))` with `u` positive, so that
 * `TauCeti.WithMetric.inner_rescale`: the inner product of the rescaled metric.
 * `TauCeti.WithMetric.mfderiv_ofWithMetric_mgradient_rescale`: the gradient for the rescaled
   metric is `f⁻¹` times the gradient for `g`.
+* `Bundle.ContMDiffRiemannianMetric.mgradient_rescale`: the same gradient law with each metric
+  installed in turn as the `RiemannianBundle` instance of the tangent bundle of `M` itself, the
+  form used with the Levi-Civita connection law.
 * `TauCeti.WithMetric.inner_mgradient_rescale`: the corresponding identity for the pointwise
   Dirichlet energy density.
 * `TauCeti.WithMetric.chartVolumeDensity_rescale`: the volume density of the rescaled metric is
@@ -132,3 +135,34 @@ theorem chartVolumeDensity_rescale (α x : M) :
     Real.sqrt_pow_eq_rpow (hf_pos x).le]
 
 end TauCeti.WithMetric
+
+namespace Bundle.ContMDiffRiemannianMetric
+
+open TauCeti.Manifold
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] {n : ℕ∞ω}
+
+/-- **Gradient under conformal change.** The gradient of a function for the rescaled metric
+`f g` is `f⁻¹` times its gradient for `g`. -/
+theorem mgradient_rescale [IsManifold I 1 M]
+    (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x))
+    {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) n f) (hf_pos : ∀ x, 0 < f x) (u : M → ℝ) (x : M) :
+    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+        ⟨(g.rescale f hf hf_pos).toRiemannianMetric⟩;
+      mgradient I u x) =
+    (f x)⁻¹ • (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
+      mgradient I u x) := by
+  have hg (v : TangentSpace I x) :
+      g.inner x (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+        ⟨g.toRiemannianMetric⟩; mgradient I u x) v = mvfderiv I u x v := by
+    let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+    exact inner_mgradient v
+  let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+    ⟨(g.rescale f hf hf_pos).toRiemannianMetric⟩
+  refine (eq_mgradient_iff.2 fun v ↦ ?_).symm
+  rw [inner_riemannianBundle, rescale_inner, map_smul, smul_apply, hg, smul_eq_mul,
+    ← mul_assoc, mul_inv_cancel₀ (hf_pos x).ne', one_mul]
+
+end Bundle.ContMDiffRiemannianMetric
