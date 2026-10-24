@@ -25,6 +25,8 @@ Markov equivalence and satisfies the oriented HOMFLY skein relation
 
 The normalization is the unreduced one inherited from the Jimbo traces: the one-strand unknot has
 value `(a - a⁻¹) z⁻¹` (`TauCeti.KnotTheory.homflyUnknot`), the quantum dimension, rather than one.
+Every interpolating polynomial constructed here is divisible by this value; the quotient
+normalization is developed in `TauCeti.KnotTheory.Homfly.Reduced`.
 
 The existence proof is Jones's trace argument. Modulo the Hecke skein relation, every braid on
 `n + 2` strands is a combination of braids `ι b` and `ι b * σ * ι c`, where `ι` adds an uncrossed
@@ -118,6 +120,13 @@ theorem homflySpecialization_homflyUnknot (N : ℕ) :
   rw [homflyUnknot_def, map_mul, map_sub, hC, homflySpecialization_T_one,
     homflySpecialization_T_neg_one, ← jimboWeight_sum, hq, mul_comm, inv_mul_cancel_left₀ hz]
 
+/-- The unreduced unknot value is a nonzero Laurent polynomial, in every characteristic. -/
+@[simp]
+theorem homflyUnknot_ne_zero (K : Type*) [Field K] : homflyUnknot K ≠ 0 := by
+  intro h
+  have hspec := homflySpecialization_homflyUnknot (K := K) 1
+  simp [h, jimboWeight_def] at hspec
+
 /-! ### Interpolating the weighted traces -/
 
 variable (K) in
@@ -151,35 +160,40 @@ private theorem traceEval_heckeRelator (N n : ℕ) (b c : BraidGroup n) (i : Fin
 
 variable (K) in
 /-- The elements of the group algebra whose extended weighted traces are, for all `N`
-simultaneously, the specializations of one two-variable Laurent polynomial. -/
+simultaneously, the specializations of a two-variable Laurent polynomial divisible by the
+unknot value. -/
 private def realizable (n : ℕ) :
     Submodule (LaurentPolynomial (LaurentPolynomial K))
       (LaurentPolynomial (LaurentPolynomial K))[BraidGroup n] where
-  carrier := {x | ∃ P, ∀ N, homflySpecialization K N P = traceEval K N n x}
-  zero_mem' := ⟨0, by simp⟩
+  carrier := {x | ∃ P, homflyUnknot K ∣ P ∧
+    ∀ N, homflySpecialization K N P = traceEval K N n x}
+  zero_mem' := ⟨0, dvd_zero _, by simp⟩
   add_mem' := by
-    rintro x y ⟨P, hP⟩ ⟨Q, hQ⟩
-    exact ⟨P + Q, fun N ↦ by rw [map_add, map_add, hP, hQ]⟩
+    rintro x y ⟨P, hPd, hP⟩ ⟨Q, hQd, hQ⟩
+    exact ⟨P + Q, dvd_add hPd hQd, fun N ↦ by rw [map_add, map_add, hP, hQ]⟩
   smul_mem' := by
-    rintro c x ⟨P, hP⟩
-    exact ⟨c * P, fun N ↦ by rw [map_mul, hP, traceEval_smul]⟩
+    rintro c x ⟨P, hPd, hP⟩
+    exact ⟨c * P, dvd_mul_of_dvd_right hPd c,
+      fun N ↦ by rw [map_mul, hP, traceEval_smul]⟩
 
 private theorem single_mem_realizable_iff {n : ℕ} (b : BraidGroup n) :
-    single b 1 ∈ realizable K n ↔ ∃ P, ∀ N, homflySpecialization K N P =
+    single b 1 ∈ realizable K n ↔ ∃ P, homflyUnknot K ∣ P ∧
+      ∀ N, homflySpecialization K N P =
       jimboWeightedTrace (N := N) (Units.mk0 (RatFunc.X : RatFunc K) RatFunc.X_ne_zero) b := by
   simp [realizable, traceEval_single]
 
 /-- **The weighted Jimbo traces interpolate.** For every braid there is a two-variable Laurent
 polynomial whose specialization `a = q ^ N`, `z = q - q⁻¹` is the weighted trace of the braid in
-the Jimbo representation with `N` colours, for every `N`. -/
+the Jimbo representation with `N` colours, for every `N`. The polynomial is divisible by
+the unknot value, so dividing by that value still gives a Laurent polynomial. -/
 theorem exists_homflySpecialization_eq_jimboWeightedTrace {n : ℕ} (b : BraidGroup (n + 1)) :
-    ∃ P : LaurentPolynomial (LaurentPolynomial K), ∀ N,
-      homflySpecialization K N P =
+    ∃ P : LaurentPolynomial (LaurentPolynomial K), homflyUnknot K ∣ P ∧
+      ∀ N, homflySpecialization K N P =
         jimboWeightedTrace (N := N) (Units.mk0 (RatFunc.X : RatFunc K) RatFunc.X_ne_zero) b := by
   induction n with
   | zero =>
     have hb : b = 1 := BraidGroup.eq_one_of_le_one le_rfl b
-    refine ⟨homflyUnknot K, fun N ↦ ?_⟩
+    refine ⟨homflyUnknot K, dvd_rfl, fun N ↦ ?_⟩
     rw [hb, jimboWeightedTrace_one, pow_one, homflySpecialization_homflyUnknot]
   | succ m ih =>
     rw [← single_mem_realizable_iff]
@@ -190,18 +204,18 @@ theorem exists_homflySpecialization_eq_jimboWeightedTrace {n : ℕ} (b : BraidGr
     refine sup_le ?_ ?_
     · refine (BraidGroup.strandSpan_le_iff _).mpr ⟨fun d ↦ ?_, fun d e ↦ ?_⟩
       · -- An uncrossed strand contributes the quantum dimension.
-        obtain ⟨P, hP⟩ := ih d
-        refine ⟨P * homflyUnknot K, fun N ↦ ?_⟩
+        obtain ⟨P, -, hP⟩ := ih d
+        refine ⟨P * homflyUnknot K, dvd_mul_left _ _, fun N ↦ ?_⟩
         rw [traceEval_single, map_one, one_mul, jimboWeightedTrace_strandIncl, map_mul, hP,
           homflySpecialization_homflyUnknot]
       · -- A single crossing with the new strand contributes `a`, by conjugation and
         -- stabilization.
-        obtain ⟨P, hP⟩ := ih (e * d)
-        refine ⟨T 1 * P, fun N ↦ ?_⟩
+        obtain ⟨P, hPd, hP⟩ := ih (e * d)
+        refine ⟨T 1 * P, dvd_mul_of_dvd_right hPd _, fun N ↦ ?_⟩
         rw [traceEval_single, map_one, one_mul, jimboWeightedTrace_mul_comm, ← mul_assoc,
           ← map_mul, jimboWeightedTrace_stabilize, map_mul, hP, homflySpecialization_T_one]
     · refine BraidGroup.heckeSkein_le_iff _ _ |>.mpr fun b c i ↦ ?_
-      exact ⟨0, fun N ↦ by rw [map_zero, traceEval_heckeRelator]⟩
+      exact ⟨0, dvd_zero _, fun N ↦ by rw [map_zero, traceEval_heckeRelator]⟩
 
 end KnotTheory
 
@@ -222,13 +236,20 @@ def homfly (β : MarkovBraid) : LaurentPolynomial (LaurentPolynomial K) :=
   T (-Multiplicative.toAdd (ArtinGroup.exponentSum _ β.braid)) *
     (exists_homflySpecialization_eq_jimboWeightedTrace (K := K) β.braid).choose
 
+/-- The unreduced HOMFLY polynomial of every nonempty braid closure is divisible by its
+unknot value. -/
+theorem homflyUnknot_dvd_homfly (β : MarkovBraid) : homflyUnknot K ∣ β.homfly K := by
+  rw [homfly]
+  exact dvd_mul_of_dvd_right
+    (exists_homflySpecialization_eq_jimboWeightedTrace (K := K) β.braid).choose_spec.1 _
+
 /-- **The `sl_N` specializations of the HOMFLY polynomial** are the writhe-normalized Jimbo
 traces with `N` colours at `q = X`. -/
 @[simp]
 theorem homflySpecialization_homfly (β : MarkovBraid) (N : ℕ) :
     homflySpecialization K N (β.homfly K) =
       β.jimboTrace (N := N) (Units.mk0 (RatFunc.X : RatFunc K) RatFunc.X_ne_zero) := by
-  rw [homfly, map_mul, (exists_homflySpecialization_eq_jimboWeightedTrace β.braid).choose_spec,
+  rw [homfly, map_mul, (exists_homflySpecialization_eq_jimboWeightedTrace β.braid).choose_spec.2,
     jimboTrace_def, homflySpecialization_T]
   simp [← zpow_natCast, ← zpow_mul]
 
