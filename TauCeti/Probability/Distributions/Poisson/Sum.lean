@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.Poisson.Basic
 public import Mathlib.Topology.Algebra.Monoid.FunOnFinite
-import Mathlib.Probability.ProductMeasure
+import TauCeti.MeasureTheory.Constructions.Pi
 
 /-!
 # Finite sums of independent Poisson variables
@@ -76,31 +76,6 @@ theorem map_funOnFinite_map_pi_poissonMeasure {κ : Type*} [Fintype ι] [Fintype
     (Measure.pi fun i ↦ poissonMeasure (r i)).map (FunOnFinite.map (M := ℕ) f) =
       Measure.pi fun j ↦ poissonMeasure (∑ i with f i = j, r i) := by
   classical
-  -- Read the coordinates of the product along the fibre decomposition of `ι`.
-  have h₁ : MeasurePreserving
-      (fun (x : ι → ℕ) (p : (j : κ) × {i // f i = j}) ↦ x p.2)
-      (Measure.pi fun i ↦ poissonMeasure (r i))
-      (Measure.pi fun p : (j : κ) × {i // f i = j} ↦ poissonMeasure (r p.2)) := by
-    have h := (measurePreserving_piCongrLeft (fun i : ι ↦ poissonMeasure (r i))
-      (Equiv.sigmaFiberEquiv f)).symm
-      (MeasurableEquiv.piCongrLeft (fun _ : ι ↦ ℕ) (Equiv.sigmaFiberEquiv f))
-    have hfun : ⇑(MeasurableEquiv.piCongrLeft (fun _ : ι ↦ ℕ) (Equiv.sigmaFiberEquiv f)).symm =
-        fun (x : ι → ℕ) (p : (j : κ) × {i // f i = j}) ↦ x p.2 := by
-      funext x p
-      simp [MeasurableEquiv.piCongrLeft, Equiv.piCongrLeft_symm_apply, Equiv.sigmaFiberEquiv]
-    rw [hfun] at h
-    exact h
-  -- Group those coordinates by fibre.
-  have h₂ : MeasurePreserving
-      (Sigma.curry (γ := fun (j : κ) (_ : {i // f i = j}) ↦ ℕ))
-      (Measure.pi fun p : (j : κ) × {i // f i = j} ↦ poissonMeasure (r p.2))
-      (Measure.pi fun j ↦ Measure.pi fun i : {i // f i = j} ↦ poissonMeasure (r i)) := by
-    refine ⟨(MeasurableEquiv.piCurry fun (j : κ) (_ : {i // f i = j}) ↦ ℕ).measurable, ?_⟩
-    have h := Measure.infinitePi_map_piCurry
-      (X := fun (j : κ) (_ : {i // f i = j}) ↦ ℕ)
-      (μ := fun (j : κ) (i : {i // f i = j}) ↦ poissonMeasure (r i))
-    simpa only [Measure.infinitePi_eq_pi, MeasurableEquiv.coe_piCurry] using h
-  -- Add up the coordinates inside each fibre.
   have hfactor (j : κ) : MeasurePreserving (fun y : {i // f i = j} → ℕ ↦ ∑ i, y i)
       (Measure.pi fun i : {i // f i = j} ↦ poissonMeasure (r i))
       (poissonMeasure (∑ i with f i = j, r i)) := by
@@ -108,14 +83,13 @@ theorem map_funOnFinite_map_pi_poissonMeasure {κ : Type*} [Fintype ι] [Fintype
     rw [map_sum_pi_poissonMeasure]
     congr 1
     exact (Finset.sum_subtype _ (by simp) r).symm
-  have hcomp : ((fun (y : (j : κ) → {i // f i = j} → ℕ) (j : κ) ↦ ∑ i, y j i) ∘
-      Sigma.curry) ∘ (fun (x : ι → ℕ) (p : (j : κ) × {i // f i = j}) ↦ x p.2) =
-      FunOnFinite.map (M := ℕ) f := by
+  have h := measurePreserving_pi_fiberwise f (fun i => poissonMeasure (r i))
+    (fun j => poissonMeasure (∑ i with f i = j, r i)) hfactor
+  have hfun : (fun x j => ∑ i : {i // f i = j}, x i) = FunOnFinite.map (M := ℕ) f := by
     funext x j
-    simp only [Function.comp_apply, Sigma.curry, FunOnFinite.map_apply_apply]
+    simp only [FunOnFinite.map_apply_apply]
     exact (Finset.sum_subtype _ (by simp) x).symm
-  have hmp := ((measurePreserving_pi _ _ hfactor).comp h₂).comp h₁
-  rw [hcomp] at hmp
-  exact hmp.map_eq
+  rw [hfun] at h
+  exact h.map_eq
 
 end TauCeti.Probability
