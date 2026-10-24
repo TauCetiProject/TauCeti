@@ -13,10 +13,10 @@ public import TauCeti.GroupTheory.GroupAction.Orbit.CycleType
 # Regular permutation groups
 
 Cayley's theorem embeds a group `G` in `Equiv.Perm G` through its left-regular action
-`MulAction.toPermHom G G`. Numbering the elements of `G` by an equivalence `e : G ≃ Fin n`
-gives the existing `Equiv.permutationRepresentation e`, whose range is the *regular image* of
-`G` in `Equiv.Perm (Fin n)`. This file compares the regular images of two groups `G` and `G'`
-numbered by the same `Fin n`.
+`MulAction.toPermHom G G`. An equivalence `e : G ≃ α` transports this action to `α`; its
+image is the *regular image* of `G` in `Equiv.Perm α`. This file compares the regular images
+of two groups identified with the same type `α`. Cycle-type comparisons require `α` to be
+finite; conjugacy of the images is equivalent to isomorphism of the groups without finiteness.
 
 Left multiplication by an element of order `d` in a group of order `m` is a product of `m / d`
 disjoint `d`-cycles (`MulAction.fullCycleType_toPerm_self`), so the cycle type of an element of a
@@ -29,7 +29,6 @@ almost-conjugate subgroups of a symmetric group that are not conjugate, a Gassma
 ## Main results
 
 * `Equiv.fullCycleType_permutationRepresentation`: the full cycle type of the regular image of `g`.
-* `Equiv.natCard_permutationRepresentation_range`: the regular image of `G` has the order of `G`.
 * `Equiv.almostConjugate_permutationRepresentation_range_iff`: two regular images are almost
   conjugate exactly when there is an order-preserving bijection between the groups.
 * `Equiv.exists_map_conj_permutationRepresentation_range_eq_iff`: two regular images are conjugate
@@ -47,38 +46,28 @@ open MulAction
 
 namespace Equiv
 
-variable {G G' : Type*} [Group G] [Group G'] {n : ℕ}
+variable {G G' α : Type*} [Group G] [Group G']
 
-/-- The regular image of `g` in `Equiv.Perm (Fin n)`, for a numbering `e : G ≃ Fin n`,
-is a product of `n / d` disjoint `d`-cycles, where `d` is the order of `g`. -/
+/-- The regular image of `g` on a finite type `α` is a product of `card α / d` disjoint
+`d`-cycles, where `d` is the order of `g`. -/
 @[simp]
-theorem fullCycleType_permutationRepresentation (e : G ≃ Fin n) (g : G) :
+theorem fullCycleType_permutationRepresentation [Fintype α] [DecidableEq α]
+    (e : G ≃ α) (g : G) :
     (permutationRepresentation e g).fullCycleType =
-      Multiset.replicate (n / orderOf g) (orderOf g) := by
+      Multiset.replicate (Fintype.card α / orderOf g) (orderOf g) := by
   classical
-  let := Fintype.ofEquiv (Fin n) e.symm
+  let := Fintype.ofEquiv α e.symm
   have hperm : permutationRepresentation e g = e.permCongr (toPerm g) := by
     ext i
     simp only [permutationRepresentation_apply, Equiv.permCongr_apply, toPerm_apply]
-  rw [hperm, Perm.fullCycleType_permCongr, fullCycleType_toPerm_self,
-    Fintype.card_congr e, Fintype.card_fin]
+  rw [hperm, Perm.fullCycleType_permCongr, fullCycleType_toPerm_self, Fintype.card_congr e]
 
-/-- The regular image of `G` in `Equiv.Perm (Fin n)` has the order of `G`. -/
-@[simp]
-theorem natCard_permutationRepresentation_range (e : G ≃ Fin n) :
-    Nat.card {p : Perm (Fin n) // ∃ g : G, permutationRepresentation e g = p} =
-      Nat.card G := by
-  -- Explicit range membership matches the simplifier's normal form.
-  simpa only [MonoidHom.mem_range] using
-    (Nat.card_congr
-      (MonoidHom.ofInjective (permutationRepresentation_injective (G := G) e)).toEquiv).symm
-
-/-- **Almost-conjugacy of regular images.** Number two groups `G` and `G'` by `Fin n`. Their
-regular images in `Equiv.Perm (Fin n)` are almost conjugate exactly when there is a bijection
+/-- **Almost-conjugacy of regular images.** Identify two groups `G` and `G'` with a finite type
+`α`. Their regular images in `Equiv.Perm α` are almost conjugate exactly when there is a bijection
 `G ≃ G'` preserving the orders of elements, that is, when `G` and `G'` have the same number of
 elements of each order. -/
-theorem almostConjugate_permutationRepresentation_range_iff
-    (e : G ≃ Fin n) (e' : G' ≃ Fin n) :
+theorem almostConjugate_permutationRepresentation_range_iff [Fintype α]
+    (e : G ≃ α) (e' : G' ≃ α) :
     (permutationRepresentation (G := G) e).range.AlmostConjugate
         (permutationRepresentation (G := G') e').range ↔
       ∃ f : G ≃ G', ∀ g, orderOf (f g) = orderOf g := by
@@ -98,9 +87,9 @@ theorem almostConjugate_permutationRepresentation_range_iff
     obtain ⟨c, hc⟩ := hF (E g)
     have hψf : ψ ((E'.symm (F (E g)))) = F (E g) := by
       rw [← MonoidHom.ofInjective_apply hψ, MulEquiv.apply_symm_apply]
-    calc orderOf (E'.symm (F (E g))) = orderOf (F (E g) : Perm (Fin n)) := by
+    calc orderOf (E'.symm (F (E g))) = orderOf (F (E g) : Perm α) := by
           rw [← orderOf_injective ψ hψ, hψf]
-      _ = orderOf (E g : Perm (Fin n)) := (hc.orderOf_eq (c : Perm (Fin n))).symm
+      _ = orderOf (E g : Perm α) := (hc.orderOf_eq (c : Perm α)).symm
       _ = orderOf g := by rw [MonoidHom.ofInjective_apply, orderOf_injective φ hφ]
   · rintro ⟨f, hf⟩
     refine ⟨E.symm.toEquiv.trans (f.trans E'.toEquiv), fun h ↦ ?_⟩
@@ -111,12 +100,12 @@ theorem almostConjugate_permutationRepresentation_range_iff
       ← Perm.filter_fullCycleType_eq_cycleType]
     simp only [φ, ψ, fullCycleType_permutationRepresentation, hf]
 
-/-- **Conjugacy of regular images.** Number two groups `G` and `G'` by `Fin n`. Their regular
-images in `Equiv.Perm (Fin n)` are conjugate exactly when `G` and `G'` are isomorphic. -/
+/-- **Conjugacy of regular images.** Identify two groups `G` and `G'` with the same type `α`.
+Their regular images in `Equiv.Perm α` are conjugate exactly when `G` and `G'` are isomorphic. -/
 theorem exists_map_conj_permutationRepresentation_range_eq_iff
-    (e : G ≃ Fin n) (e' : G' ≃ Fin n) :
-    (∃ σ : Perm (Fin n), (permutationRepresentation (G := G) e).range.map
-        (MulAut.conj σ : Perm (Fin n) →* Perm (Fin n)) =
+    (e : G ≃ α) (e' : G' ≃ α) :
+    (∃ σ : Perm α, (permutationRepresentation (G := G) e).range.map
+        (MulAut.conj σ : Perm α →* Perm α) =
           (permutationRepresentation (G := G') e').range) ↔
       Nonempty (G ≃* G') := by
   have hφ := permutationRepresentation_injective (G := G) e
@@ -131,7 +120,7 @@ theorem exists_map_conj_permutationRepresentation_range_eq_iff
     -- multiplication by `i g`.
     refine ⟨e.symm.trans (i.toEquiv.trans e'), ?_⟩
     have hcomp :
-        (MulAut.conj (e.symm.trans (i.toEquiv.trans e')) : Perm (Fin n) →* Perm (Fin n)).comp
+        (MulAut.conj (e.symm.trans (i.toEquiv.trans e')) : Perm α →* Perm α).comp
           (permutationRepresentation (G := G) e) =
             (permutationRepresentation (G := G') e').comp i.toMonoidHom := by
       ext g x

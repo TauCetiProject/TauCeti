@@ -84,13 +84,11 @@ theorem exists_S16_gassmann_pair :
   · have hcard : Nat.card C4C4 = 16 := by
       rw [Nat.card_eq_fintype_card]
       decide
-    simpa only [MonoidHom.mem_range] using
-      (Equiv.natCard_permutationRepresentation_range eA).trans hcard
+    exact (Equiv.natCard_permutationRepresentation_range eA).trans hcard
   · have hcard : Nat.card Q8C2 = 16 := by
       rw [Nat.card_eq_fintype_card]
       decide
-    simpa only [MonoidHom.mem_range] using
-      (Equiv.natCard_permutationRepresentation_range eB).trans hcard
+    exact (Equiv.natCard_permutationRepresentation_range eB).trans hcard
   · rw [Equiv.exists_map_conj_permutationRepresentation_range_eq_iff]
     rintro ⟨i⟩
     have hB : ¬ ∀ x y : Q8C2, x * y = y * x := by decide
