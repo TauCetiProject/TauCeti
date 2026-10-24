@@ -20,7 +20,7 @@ set of encodings realized by roots.
 * `Polynomial.thomEncodings p` is the finite set of Thom encodings of the distinct roots of `p`.
   Its cardinality is the number of distinct roots (`Polynomial.card_thomEncodings`).
   Constant polynomials realize no encoding, and `-p`, `C c * p` with `c ≠ 0` and `p (a X + b)`
-  with `a ≠ 0` realize the correspondingly negated or rescaled encodings of `p`
+  with `a` a unit realize the correspondingly negated or rescaled encodings of `p`
   (`Polynomial.thomEncodings_neg`, `Polynomial.thomEncodings_C_mul`,
   `Polynomial.thomEncodings_comp_C_mul_X_add_C`).
 * `Polynomial.thomEncodingEquiv` identifies the distinct roots with their encodings, so that
