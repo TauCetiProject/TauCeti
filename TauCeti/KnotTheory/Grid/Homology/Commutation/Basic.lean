@@ -234,6 +234,15 @@ theorem isHomogeneous_unblockedHomologyCommutationLinearMap :
   refine LinearMap.isHomogeneous_def.mpr fun a y hy => ?_
   rw [mem_alexanderUnblockedHomologyGrading_piece_iff,
     ← OddComponentGridDiagram.mem_alexanderUnblockedHomologyGrading_piece_iff] at hy ⊢
+  -- The target grading belongs to `(hG.swapColumns ..).toOddComponentGridDiagram`, which is
+  -- `hG.toOddComponentGridDiagram.swapColumns C` by definition: both pair the grid
+  -- `G.swapColumns C.column (finRotate n C.column)` with a proof that its component count is odd
+  -- (equal by proof irrelevance), and `OddComponentGridDiagram.swapColumns` is an `abbrev` (see
+  -- `val_swapColumns`). A rewrite along `Subtype.ext` is not available here, since the type of
+  -- the homology class mentions that grid.
+  change G.unblockedHomologyCommutationMap R C y ∈
+    ((hG.toOddComponentGridDiagram.swapColumns C).alexanderUnblockedHomologyGrading R).piece
+      (a + (G.commutationBidegree C).2)
   exact unblockedHomologyCommutationMap_mem_alexanderUnblockedHomologyGrading_piece_add _ R C hy
 
 end GridDiagram.IsKnot
