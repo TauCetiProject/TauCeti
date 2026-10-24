@@ -9,7 +9,9 @@ public import Mathlib.Algebra.Polynomial.Roots
 public import Mathlib.Order.Filter.Basic
 
 /-!
-# Multiplicities of labelled roots
+# Root multiplicities
+
+The sum of root multiplicities over a finite set is bounded by the polynomial degree.
 
 If a finite family enumerates a polynomial's roots with multiplicity, the multiplicity
 at each label depends only on which labels coincide. Consequently an eventually constant
@@ -44,6 +46,19 @@ theorem eventually_rootMultiplicity_eq_of_roots_eq_map
     Multiset.count_map, Multiset.count_map]
   congr 1
   exact Multiset.filter_congr fun j hj ↦ hx i hi j (Finset.mem_val.mp hj)
+
+/-- Over an integral domain, the sum of the root multiplicities of a polynomial `p` over any
+finite set of points is at most `p.natDegree`. -/
+theorem sum_rootMultiplicity_le_natDegree [CommRing R] [IsDomain R] (p : R[X]) (s : Finset R) :
+    ∑ a ∈ s, p.rootMultiplicity a ≤ p.natDegree := by
+  classical
+  calc ∑ a ∈ s, p.rootMultiplicity a
+      = ∑ a ∈ s, p.roots.count a := Finset.sum_congr rfl fun a _ ↦ (count_roots p).symm
+    _ ≤ ∑ a ∈ p.roots.toFinset, p.roots.count a :=
+        Finset.sum_le_sum_of_ne_zero fun a _ ha ↦
+          Multiset.mem_toFinset.2 (Multiset.count_ne_zero.1 ha)
+    _ = p.roots.card := Multiset.toFinset_sum_count_eq p.roots
+    _ ≤ p.natDegree := card_roots' p
 
 end TauCeti
 

@@ -321,7 +321,7 @@ theorem weightedIndex_rename {τ : Type*} {f : σ → τ} (hf : Function.Injecti
   apply le_antisymm
   · refine le_iInf₂ fun d hd ↦ ?_
     have hd' : eval b (hasseDeriv (d.mapDomain f) (rename f P)) ≠ 0 := by
-      rwa [← coeff_taylor, taylor_rename, coeff_rename_mapDomain f hf, coeff_taylor]
+      rwa [TauCeti.eval_hasseDeriv_rename hf]
     exact (weightedIndex_le hd').trans_eq
       (Finsupp.linearCombination_mapDomain (v' := fun j ↦ (r j : ℝ≥0∞)⁻¹) (f := f) (l := d))
   · refine le_iInf₂ fun d hd ↦ ?_

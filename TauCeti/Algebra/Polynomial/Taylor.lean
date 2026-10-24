@@ -34,6 +34,11 @@ shift, which removes the subleading coefficient whenever `p.natDegree` is invert
   coefficient is `(p /ₘ (X - C r) ^ p.rootMultiplicity r).eval r`.
 * `Polynomial.eval_hasseDeriv_rootMultiplicity_ne_zero`: for `p ≠ 0`, the Hasse derivative of
   order `p.rootMultiplicity r` does not vanish at `r`.
+* `TauCeti.eval_hasseDeriv_eq_zero_of_lt_rootMultiplicity`,
+  `TauCeti.le_rootMultiplicity_of_eval_hasseDeriv_eq_zero`,
+  `TauCeti.le_rootMultiplicity_iff_eval_hasseDeriv_eq_zero`: for `p ≠ 0`, `r` has
+  multiplicity at least `n` as a root of `p` if and only if every Hasse derivative of `p` of
+  order less than `n` vanishes at `r`.
 * `Polynomial.pow_sub_dvd_hasseDeriv_of_pow_dvd`: if `(X - r) ^ n` divides `p`, then
   `(X - r) ^ (n - k)` divides the Hasse derivative of `p` of order `k`.
 * `Polynomial.eval_hasseDeriv_X_sub_C_pow`: the Hasse derivatives of `(X - r) ^ m` at `r`.
@@ -111,3 +116,34 @@ theorem eval_hasseDeriv_X_sub_C_pow (r : R) (i m : ℕ) :
   simp [taylor_pow, coeff_X_pow]
 
 end Polynomial
+
+namespace TauCeti
+
+open _root_.Polynomial
+
+variable {R : Type*} [CommRing R]
+
+/-- Every Hasse derivative of `p` of order less than `p.rootMultiplicity r` vanishes at `r`. -/
+theorem eval_hasseDeriv_eq_zero_of_lt_rootMultiplicity {p : R[X]} {r : R} {k : ℕ}
+    (hk : k < p.rootMultiplicity r) : (hasseDeriv k p).eval r = 0 := by
+  rw [← natTrailingDegree_taylor] at hk
+  rw [← taylor_coeff]
+  exact coeff_eq_zero_of_lt_natTrailingDegree hk
+
+/-- If `p ≠ 0` and every Hasse derivative of `p` of order less than `n` vanishes at `r`, then `r`
+has multiplicity at least `n` as a root of `p`. -/
+theorem le_rootMultiplicity_of_eval_hasseDeriv_eq_zero {p : R[X]} {r : R} {n : ℕ} (hp : p ≠ 0)
+    (h : ∀ k < n, (hasseDeriv k p).eval r = 0) : n ≤ p.rootMultiplicity r := by
+  rw [← natTrailingDegree_taylor]
+  refine le_natTrailingDegree ((taylor_eq_zero _ _).not.2 hp) fun k hk ↦ ?_
+  rw [taylor_coeff]
+  exact h k hk
+
+/-- For `p ≠ 0`, a point `r` has multiplicity at least `n` as a root of `p` if and only if every
+Hasse derivative of `p` of order less than `n` vanishes at `r`. -/
+theorem le_rootMultiplicity_iff_eval_hasseDeriv_eq_zero {p : R[X]} (hp : p ≠ 0) {r : R} {n : ℕ} :
+    n ≤ p.rootMultiplicity r ↔ ∀ k < n, (hasseDeriv k p).eval r = 0 :=
+  ⟨fun h _ hk ↦ eval_hasseDeriv_eq_zero_of_lt_rootMultiplicity (hk.trans_le h),
+    le_rootMultiplicity_of_eval_hasseDeriv_eq_zero hp⟩
+
+end TauCeti

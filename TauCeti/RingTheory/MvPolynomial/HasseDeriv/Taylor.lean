@@ -28,6 +28,10 @@ rule for Hasse derivatives.
 * `MvPolynomial.hasseDeriv_add_single_mul_toMvPolynomial`: the Leibniz rule for a product
   `f · p(Xᵢ)` in separated variables, `∂^(d + l eᵢ) (f · p(Xᵢ)) = ∂^d f · (Dˡ p)(Xᵢ)` when
   neither `f` nor `d` involves `Xᵢ`.
+* `TauCeti.eval_hasseDeriv_rename`: renaming along an injective map commutes with
+  evaluating Hasse derivatives.
+* `TauCeti.eval_hasseDeriv_eval_hasseDeriv_finSuccEquiv`: evaluating a Hasse derivative after
+  specializing `X₀` agrees with evaluating the combined derivative at the full point.
 
 ## References
 
@@ -112,3 +116,27 @@ theorem eval_add_eq_finsum_hasseDeriv (P : MvPolynomial σ R) (a y : σ → R) :
     exact left_ne_zero_of_mul hd
 
 end MvPolynomial
+
+namespace TauCeti
+
+open _root_.MvPolynomial
+
+variable {R σ : Type*} [CommSemiring R]
+
+/-- Renaming the variables along an injective map commutes with evaluating Hasse derivatives. -/
+theorem eval_hasseDeriv_rename {τ : Type*} {f : σ → τ} (hf : Function.Injective f) (b : τ → R)
+    (d : σ →₀ ℕ) (P : MvPolynomial σ R) :
+    eval b (hasseDeriv (d.mapDomain f) (rename f P)) = eval (b ∘ f) (hasseDeriv d P) := by
+  rw [← coeff_taylor, taylor_rename, coeff_rename_mapDomain f hf, coeff_taylor]
+
+/-- Evaluating the `i`-th Hasse derivative of the specialized `k`-th Hasse derivative in `X₀` at
+`a` at a point `x` in the remaining variables gives the value of `∂^(i.cons k) P` at
+`Fin.cons a x`. -/
+theorem eval_hasseDeriv_eval_hasseDeriv_finSuccEquiv {n : ℕ}
+    (P : MvPolynomial (Fin (n + 1)) R) (a : R) (x : Fin n → R) (k : ℕ) (i : Fin n →₀ ℕ) :
+    eval x (hasseDeriv i ((Polynomial.hasseDeriv k (finSuccEquiv R n P)).eval (C a))) =
+      eval (Fin.cons a x) (hasseDeriv (i.cons k) P) := by
+  rw [← coeff_taylor (Fin.cons a x), coeff_taylor_cons, Fin.cons_zero, Fin.tail_cons,
+    Polynomial.taylor_coeff, coeff_taylor]
+
+end TauCeti
