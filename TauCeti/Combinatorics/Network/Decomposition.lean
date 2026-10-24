@@ -487,7 +487,7 @@ theorem exists_pathCycleDecomposition (H : AddSubgroup K) (hf : 0 ≤ f)
     -- enters to a vertex no positive arrow leaves.
     simp only [not_exists] at hcyc
     have hfacyc : f.IsAcyclic := (Assignment.isAcyclic_iff_forall_not_transGen f).2 hcyc
-    obtain ⟨s, t, p, hp, hst, hpos, hin, hout⟩ := exists_isPath_of_acyclic hf hfacyc e he
+    obtain ⟨s, t, p, hp, hst, hpos, hin, hout⟩ := exists_isPath_of_isAcyclic hf hfacyc e he
     have hne : p.arrows ≠ [] := p.arrows_ne_nil hst
     obtain ⟨q, hq, hqH, hg, D, hP, hC, hlen⟩ := peel p hp.nodup_arrows hne hpos
     obtain ⟨hs, ht, hneg, hpos'⟩ := excessAt_sign_of_sub_walkAssignment hst hq hg hin hout

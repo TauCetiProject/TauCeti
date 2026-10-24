@@ -448,7 +448,7 @@ open Relation in
 /-- If no vertex reaches itself along positive arrows and some arrow is positive, there is a
 positive path between distinct vertices, with no positive arrow entering its initial vertex and no
 positive arrow leaving its final vertex. -/
-lemma exists_isPath_of_acyclic {K : Type w} [Zero K] [LinearOrder K] [Finite V]
+lemma exists_isPath_of_isAcyclic {K : Type w} [Zero K] [LinearOrder K] [Finite V]
     {f : Assignment Q K} (hf : 0 ≤ f) (hacyc : f.IsAcyclic) {x y : V} (e : Q x y)
     (he : 0 < f e) :
     ∃ (s t : V) (p : ArrowWalk Q s t), p.IsPath ∧ s ≠ t ∧ (∀ a ∈ p.arrows, 0 < f a.2.2) ∧

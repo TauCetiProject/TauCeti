@@ -199,8 +199,7 @@ theorem PathCycleDecomposition.cycles_eq_nil_of_isAcyclic (D : PathCycleDecompos
 theorem PathCycleDecomposition.pathAssignment_eq_of_isAcyclic (D : PathCycleDecomposition f)
     (hf : f.IsAcyclic) : D.pathAssignment = f := by
   conv_rhs => rw [← D.pathAssignment_add_cycleAssignment]
-  rw [D.cycleAssignment_def,
-    D.cycles_eq_nil_of_isAcyclic hf, List.map_nil, List.sum_nil, add_zero]
+  simp [D.cycleAssignment_def, D.cycles_eq_nil_of_isAcyclic hf]
 
 end Decomposition
 
@@ -217,8 +216,7 @@ theorem Flow.toFun_le_val_of_isAcyclic (f : Flow cap s t) (hf : f.toFun.IsAcycli
   simp only [Pi.list_sum_apply, List.map_map, Function.comp_def, WeightedWalk.assignment_def]
   refine List.sum_le_sum fun p hp ↦ ?_
   have hq := (D.weight_pos_of_mem_paths p hp).le
-  exact (walkAssignment_mem_Icc (D.isPath_walk p hp).nodup_arrows hq (cap := fun _ _ _ ↦ p.weight)
-    (fun _ _ _ ↦ hq) fun _ _ ↦ le_rfl).2 _ _ e
+  exact walkAssignment_le (D.isPath_walk p hp).nodup_arrows hq e
 
 end LinearOrder
 

@@ -158,6 +158,15 @@ theorem walkAssignment_nonneg {s t : V} (p : ArrowWalk Q s t) {q : K} (hq : 0 �
   rw [walkAssignment_apply]
   exact nsmul_nonneg hq _
 
+omit [IsOrderedAddMonoid K] in
+/-- A walk that traverses no arrow twice carries at most its nonnegative weight on every arrow. -/
+theorem walkAssignment_le {s t : V} {p : ArrowWalk Q s t} (hp : p.arrows.Nodup) {q : K}
+    (hq : 0 ≤ q) {x y : V} (e : Q x y) : walkAssignment p q e ≤ q := by
+  by_cases he : ⟨x, y, e⟩ ∈ p.arrows
+  · rw [walkAssignment_eq_of_mem hp q he]
+  · rw [walkAssignment_eq_zero_of_notMem p q he]
+    exact hq
+
 /-- **Feasibility of a walk.** A walk that traverses no arrow twice, weighted by `q ≥ 0`, lies
 between zero and any nonnegative capacities that are at least `q` on every arrow it traverses. -/
 theorem walkAssignment_mem_Icc {s t : V} {p : ArrowWalk Q s t} (hp : p.arrows.Nodup) {q : K}
