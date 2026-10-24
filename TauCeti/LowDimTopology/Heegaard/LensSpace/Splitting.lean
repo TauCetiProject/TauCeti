@@ -25,8 +25,8 @@ The three-dimensional lens space `L(m; ℓ₀, ℓ₁)` is the orbit space of th
 meeting along the image of the Clifford torus. Each image is again a solid torus. On
 `‖z‖ ≤ ‖w‖` the rotation acts on the coordinates `(u, v) = (z / ‖w‖, w / ‖w‖) ∈ D² × S¹` by
 `(u, v) ↦ (ζ ^ ℓ₀ u, ζ ^ ℓ₁ v)`, freely on the core circle; choosing `c` with `c ℓ₁ = ℓ₀` modulo
-`m`, the map `(u, v) ↦ (u v̄ ^ c, v ^ m)` is invariant, and its fibres are exactly the orbits, so
-it identifies the quotient with `D² × S¹`. This gives the genus-one Heegaard splitting
+`m`, the map `(u, v) ↦ (u conj(v) ^ c, v ^ m)` is invariant, and its fibres are exactly the orbits,
+so it identifies the quotient with `D² × S¹`. This gives the genus-one Heegaard splitting
 `TauCeti.LensSpace.heegaardSplitting` of `L(m; ℓ₀, ℓ₁)`.
 
 The splitting is obtained from a general descent principle: a Heegaard splitting whose two pieces
@@ -140,7 +140,8 @@ private theorem norm_lensRotation_apply (a : Multiplicative (ZMod m))
     (x : EuclideanSpace ℂ (Fin 2)) (k : Fin 2) : ‖lensRotation m ℓ a x k‖ = ‖x k‖ := by
   simp [lensRotation_apply]
 
-/-- The exponent `c = ℓᵢ ℓⱼ⁻¹` of the invariant `u v̄ ^ c` on the solid torus `‖x i‖ ≤ ‖x j‖`. -/
+/-- The exponent `c = ℓᵢ ℓⱼ⁻¹` of the invariant `u conj(v) ^ c` on the solid torus
+`‖x i‖ ≤ ‖x j‖`. -/
 private def twist (i j : Fin 2) : ℕ := ((ℓ i * (ℓ j)⁻¹ : (ZMod m)ˣ) : ZMod m).val
 
 /-- The twist exponent satisfies `c ℓⱼ = ℓᵢ` modulo `m`, so the `c`-th power of the rotation of the
@@ -197,7 +198,8 @@ private theorem norm_discCoord {i j : Fin 2} (hij : i ≠ j) (x : piece i j) :
   exact x.2
 
 /-- The quotient map of the solid torus `‖x i‖ ≤ ‖x j‖` onto `D² × S¹`:
-`x ↦ (u v̄ ^ c, v ^ m)` for the disc and core coordinates `u = x i / ‖x j‖`, `v = x j / ‖x j‖`. -/
+`x ↦ (u conj(v) ^ c, v ^ m)` for the disc and core coordinates `u = x i / ‖x j‖`,
+`v = x j / ‖x j‖`. -/
 private def pieceQuotient {i j : Fin 2} (hij : i ≠ j) (x : piece i j) : SolidTorus :=
   (⟨discCoord i j x * (starRingEnd ℂ (coreCoord j x)) ^ twist m ℓ i j, by
       rw [mem_closedBall_zero_iff, norm_mul, norm_pow, Complex.norm_conj, norm_coreCoord hij,
