@@ -19,19 +19,16 @@ lowering and raising operators `f_α = TauCeti.PLPath.lower f x` and
 `f_α π = π'` exactly when `e_α π' = π`. This is the partial-inverse axiom of a crystal; no
 integrality of the path is needed.
 
-Lowering with cap `c` reflects the pieces of a path along which the running height `H` is at most
-`c` and at most every later height (`TauCeti.PLPath.reflectRecords`): it subtracts
+Capped reflection `TauCeti.PLPath.reflectRecords f x c` reflects the pieces of a path along which
+the running height `H` is at most `c` and at most every later height: it subtracts
 `(min c (m t) - min c h) • x` at time `t`, where `m t` is the minimum of `H` on `[t, 1]` and `h`
-the minimal height. Since `e_α` is `f_α` conjugated by reversal, the key identity is that the
-inverse of this capped reflection is again a capped reflection, on the reversed lowered path,
-whose cap is `h` minus the final height of the lowered path
-(`TauCeti.PLPath.normalize_reflectRecords_reverse_reflectRecords`).
+the minimal height. Lowering is the case `c = h + 1`. Since `e_α` is `f_α` conjugated by
+reversal, the key identity is that the inverse of this capped reflection is again a capped
+reflection, on the reversed lowered path, whose cap is `h` minus the final height of the lowered
+path (`TauCeti.PLPath.normalize_reflectRecords_reverse_reflectRecords`).
 
 ## Main results
 
-* `TauCeti.PLPath.reflectRecords_append`: capped reflection of a concatenation.
-* `TauCeti.PLPath.reflectRecords_of_le_listMinHeight`: capped reflection is the identity when
-  the cap is at most the minimal height.
 * `TauCeti.PLPath.normalize_reflectRecords_reverse_reflectRecords`: capped reflection of a
   reversed path undoes capped reflection.
 * `TauCeti.PLPath.lower_eq_some_iff`, `TauCeti.PLPath.raise_eq_some_iff`: `f_α π = π'` exactly

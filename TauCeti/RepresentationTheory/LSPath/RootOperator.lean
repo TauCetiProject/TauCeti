@@ -60,6 +60,10 @@ string-length identities of Littelmann's path crystals are not proved here.
 * `TauCeti.PLPath.minHeight_ofSegments`, `TauCeti.PLPath.minHeight_mul`,
   `TauCeti.PLPath.minHeight_reverse`: the minimal height is independent of the presentation, and
   its behaviour under concatenation and reversal.
+* `TauCeti.PLPath.reflectRecords_append`: capped reflection `TauCeti.PLPath.reflectRecords` of a
+  concatenation.
+* `TauCeti.PLPath.reflectRecords_of_le_listMinHeight`: capped reflection is the identity when
+  the cap is at most the minimal height.
 * `TauCeti.PLPath.lower_ofSegments`: the lowering operator may be computed on any presentation.
 * `TauCeti.PLPath.lower_eq_none_iff`, `TauCeti.PLPath.raise_eq_none_iff`: `f_α π = 0` exactly when
   `f (π 1) - h < 1`, and `e_α π = 0` exactly when `-1 < h`.
