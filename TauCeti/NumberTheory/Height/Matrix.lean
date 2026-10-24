@@ -249,8 +249,10 @@ private theorem mulHeight_map_intCast_eq [Fintype m] [Fintype n] {A : Matrix m n
     (hA : Finset.univ.gcd (fun q : m × n ↦ A q.1 q.2) = 1) {M : ℤ} (hle : ∀ i j, |A i j| ≤ M)
     (i : m) (j : n) (hM : |A i j| = M) : (A.map ((↑) : ℤ → ℚ)).mulHeight = M := by
   have : Nonempty (m × n) := ⟨(i, j)⟩
-  change Height.mulHeight (((↑) : ℤ → ℚ) ∘ fun q : m × n ↦ A q.1 q.2) = M
-  rw [Rat.mulHeight_eq_max_abs_of_gcd_eq_one hA]
+  have hcomp : (fun q : m × n ↦ A.map ((↑) : ℤ → ℚ) q.1 q.2) =
+      ((↑) : ℤ → ℚ) ∘ fun q ↦ A q.1 q.2 :=
+    funext fun q ↦ map_apply ..
+  rw [mulHeight_def, hcomp, Rat.mulHeight_eq_max_abs_of_gcd_eq_one hA]
   exact_mod_cast le_antisymm (ciSup_le fun q ↦ hle q.1 q.2)
     (le_ciSup_of_le (Finite.bddAbove_range _) (i, j) hM.ge)
 
@@ -285,7 +287,7 @@ example : !![(1 : ℚ), 1].mulHeight = 1 ∧ !![(1 : ℚ), 0; 1, 1].mulHeight = 
         !![(1 : ℚ), 0; 1, 1].mulHeight := by
   have hA : !![(1 : ℚ), 1].mulHeight = 1 := by
     have h : (fun q : Fin 1 × Fin 2 ↦ !![(1 : ℚ), 1] q.1 q.2) = 1 := by
-      ext q; fin_cases q <;> rfl
+      ext q; fin_cases q <;> simp
     rw [mulHeight_def, h, Height.mulHeight_one]
   have hB : !![(1 : ℚ), 0; 1, 1].mulHeight = 1 := by
     have h : !![(1 : ℚ), 0; 1, 1] = !![(1 : ℤ), 0; 1, 1].map (↑) := by
