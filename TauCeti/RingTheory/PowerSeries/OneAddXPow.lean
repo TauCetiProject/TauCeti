@@ -12,6 +12,7 @@ import Mathlib.Algebra.CharP.Algebra
 import Mathlib.Algebra.CharP.Lemmas
 import Mathlib.RingTheory.Filtration
 import Mathlib.RingTheory.PowerSeries.Ideal
+import TauCeti.RingTheory.RegularLocalRing.PowerSeries
 
 /-!
 # The power series `(1 + X) ^ pⁿ - 1`
@@ -59,14 +60,12 @@ include hp
 constant coefficient `p`. -/
 theorem one_add_X_pow_sub_one_mem_maximalIdeal_pow (n : ℕ) :
     (1 + X : O⟦X⟧) ^ p ^ n - 1 ∈ maximalIdeal O⟦X⟧ ^ (n + 1) := by
-  have hmem (F : O⟦X⟧) (hF : constantCoeff F ∈ maximalIdeal O) : F ∈ maximalIdeal O⟦X⟧ := by
-    rw [mem_maximalIdeal, mem_nonunits_iff, isUnit_iff_constantCoeff]
-    exact hF
   induction n with
-  | zero => simpa using hmem X (by simp)
+  | zero => simpa using TauCeti.PowerSeries.X_mem_maximalIdeal
   | succ n ih =>
     rw [pow_succ p n, pow_mul, ← geom_sum_mul, pow_succ' (maximalIdeal O⟦X⟧)]
-    refine Ideal.mul_mem_mul (hmem _ ?_) ih
+    refine Ideal.mul_mem_mul ?_ ih
+    rw [TauCeti.PowerSeries.maximalIdeal_eq_comap_constantCoeff, Ideal.mem_comap]
     simpa using hp
 
 /-- **The ideals `(ω_n)` meet in zero.** Over a noetherian local ring `O` in which `p` is not a
