@@ -82,13 +82,26 @@ local notation "curvature" => cov.curvatureTensor (I := I) (M := M) (F := E)
   (V := TangentSpace I)
 
 /-- The covariant derivative `∇P` of the Schouten tensor `P` of a smooth connection, evaluated as
-`cov.derivSchoutenTensor x u v w = (∇_w P)(u, v)`. -/
+`cov.derivSchoutenTensor x u v w = (∇_w P)(u, v)`. This formula holds for a smooth metric
+(`IsContMDiffRiemannianBundle I ∞`, see `CovariantDerivative.derivSchoutenTensor_apply`); as for
+`CovariantDerivative.derivBilinearTensor`, the value is `0` when `P` does not pair differentiable
+vector fields to differentiable functions. -/
 def derivSchoutenTensor (x : M) :
     TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ :=
   cov.derivBilinearTensor (fun y ↦ (cov.schoutenTensor y).toContinuousBilinearMap) x
 
+/-- `∇P` is the covariant derivative of the Schouten tensor as a field of bilinear forms, so the
+`CovariantDerivative.derivBilinearTensor` API applies to it. -/
+theorem derivSchoutenTensor_def (x : M) :
+    cov.derivSchoutenTensor x =
+      cov.derivBilinearTensor (fun y ↦ (cov.schoutenTensor y).toContinuousBilinearMap) x :=
+  (rfl)
+
 /-- The Cotton tensor `C(u, v, w) = (∇_w P)(u, v) - (∇_v P)(u, w)` of a smooth connection, where
-`P` is the Schouten tensor. -/
+`P` is the Schouten tensor and `∇P` is `CovariantDerivative.derivSchoutenTensor`. The usual
+formula on vector fields holds for a smooth metric (see
+`CovariantDerivative.cottonTensor_apply_of_mdifferentiableAt`); otherwise `∇P`, and hence the
+Cotton tensor, may be `0`. -/
 def cottonTensor (x : M) :
     TangentSpace I x →ₗ[ℝ] TangentSpace I x →ₗ[ℝ] TangentSpace I x →ₗ[ℝ] ℝ :=
   LinearMap.mk₂ ℝ
@@ -181,26 +194,8 @@ theorem IsMetricCompatible.derivSchoutenTensor_eq_zero_of_schoutenTensor_eq_smul
     (hcov : CovariantDerivative.IsMetricCompatible
       (V := fun y : M ↦ TangentSpace I y) cov) (c : ℝ)
     (h : ∀ y, cov.schoutenTensor y = c • innerₗ (TangentSpace I y)) (x : M) :
-    cov.derivSchoutenTensor x = 0 := by
-  have hP (σ τ : Π x : M, TangentSpace I x) :
-      (fun y ↦ (cov.schoutenTensor y).toContinuousBilinearMap (σ y) (τ y)) =
-        fun y ↦ c * inner ℝ (σ y) (τ y) := by
-    funext y
-    simp [h y]
-  have hb : ∀ x ⦃σ τ : Π x : M, TangentSpace I x⦄, MDiffAt (T% σ) x → MDiffAt (T% τ) x →
-      MDiffAt (fun y ↦ (cov.schoutenTensor y).toContinuousBilinearMap (σ y) (τ y)) x :=
-    fun x σ τ hσ hτ ↦ hP σ τ ▸ mdifferentiableAt_const.mul
-      (TauCeti.Manifold.mdifferentiableAt_inner hσ hτ)
-  refine (cov.derivBilinearTensor_eq_zero_iff hb).2 (fun x σ τ hσ hτ v ↦ ?_) x
-  -- The product rule for `c g(σ, τ)` follows from metric compatibility.
-  have hg := hcov.mvfderiv_inner_eq (FiberBundle.extend E v) hσ hτ
-  simp only [FiberBundle.extend_apply_self] at hg
-  rw [hP, mvfderiv_fun_mul mdifferentiableAt_const
-    (TauCeti.Manifold.mdifferentiableAt_inner hσ hτ)]
-  simp only [mvfderiv_const, add_apply, smul_apply, smul_eq_mul, zero_apply, mul_zero, add_zero,
-    LinearMap.toContinuousBilinearMap_apply, h x, LinearMap.smul_apply, innerₗ_apply_apply]
-  rw [hg]
-  ring
+    cov.derivSchoutenTensor x = 0 :=
+  hcov.derivBilinearTensor_eq_zero_of_eq_mul_inner c (fun y v w ↦ by simp [h y]) x
 
 /-- For a metric-compatible connection whose Schouten tensor is a constant multiple `c g` of the
 metric, the Cotton tensor vanishes. -/
