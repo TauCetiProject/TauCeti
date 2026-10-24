@@ -22,9 +22,9 @@ be any homology cobordism.
 The cylinder is a smooth embedding `A : M × [0, 1] → W` of manifolds with boundary, the source
 modelled on `I'.prod (𝓡∂ 1)`, which is properly embedded: the preimage of the boundary of `W` is the
 boundary `M × {0, 1}` of the cylinder. Its bottom is `f₀` followed by the first end of `W` and its
-top is `f₁` followed by the second end (`TauCeti.IsHomologyConcordance`). The relation
-`TauCeti.HomologyConcordant R J n f₀ f₁` asks for some compact Hausdorff `W` modelled on `J` with
-such a cylinder.
+top is `f₁` followed by the second end (`TauCeti.SmoothEmbedding.IsHomologyConcordance`). The
+relation `TauCeti.SmoothEmbedding.HomologyConcordant R J n f₀ f₁` asks for some compact Hausdorff
+`W` modelled on `J` with such a cylinder.
 
 No orientations are imposed on the cobordism, the ends, or the cylinder. Between integral homology
 spheres this changes the relation only by mirroring and reversal: an integral homology cobordism
@@ -34,23 +34,24 @@ cost of reversing the orientation of `Y₁` or of `f₁`.
 
 Every embedding of a boundaryless manifold into a compact Hausdorff boundaryless manifold is
 homology concordant to itself through the cylinder over the target
-(`TauCeti.HomologyConcordant.refl`), so the relation is not vacuous.
+(`TauCeti.SmoothEmbedding.HomologyConcordant.refl`), so the relation is not vacuous.
 
 ## Main definitions
 
-* `TauCeti.IsHomologyConcordance R J n ι₀ ι₁ f₀ f₁ A`: the cylinder `A` is a homology concordance
-  from `f₀` to `f₁` in the homology cobordism with ends `ι₀` and `ι₁`.
-* `TauCeti.HomologyConcordant R J n f₀ f₁`: `f₀` and `f₁` are `R`-homology concordant.
+* `TauCeti.SmoothEmbedding.IsHomologyConcordance R J n ι₀ ι₁ f₀ f₁ A`: the cylinder `A` is a
+  homology concordance from `f₀` to `f₁` in the homology cobordism with ends `ι₀` and `ι₁`.
+* `TauCeti.SmoothEmbedding.HomologyConcordant R J n f₀ f₁`: `f₀` and `f₁` are `R`-homology
+  concordant.
 
 ## Main results
 
-* `TauCeti.isHomologyConcordance_cylinder`: the product cylinder `f × id` is a homology concordance
-  from `f` to itself in the cylinder over a compact boundaryless target.
-* `TauCeti.HomologyConcordant.refl`: every embedding of a boundaryless manifold into a compact
-  Hausdorff boundaryless manifold is homology concordant to itself.
-* `TauCeti.homologyConcordant_transDiffeomorph`: every embedding of a boundaryless manifold into a
-  compact Hausdorff boundaryless manifold is homology concordant to its transport along a
-  diffeomorphism of the target.
+* `TauCeti.SmoothEmbedding.isHomologyConcordance_cylinder`: the product cylinder `f × id` is a
+  homology concordance from `f` to itself in the cylinder over a compact boundaryless target.
+* `TauCeti.SmoothEmbedding.HomologyConcordant.refl`: every embedding of a boundaryless manifold
+  into a compact Hausdorff boundaryless manifold is homology concordant to itself.
+* `TauCeti.SmoothEmbedding.homologyConcordant_transDiffeomorph`: every embedding of a boundaryless
+  manifold into a compact Hausdorff boundaryless manifold is homology concordant to its transport
+  along a diffeomorphism of the target.
 
 ## References
 
@@ -70,6 +71,8 @@ open scoped Manifold ContDiff
 universe u
 
 namespace TauCeti
+
+namespace SmoothEmbedding
 
 variable (R : Type u) [Ring R]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {H : Type*} [TopologicalSpace H]
@@ -141,7 +144,7 @@ a compact boundaryless manifold, the product cylinder `f × id : M × [0, 1] →
 homology concordance from `f` to itself in the cylinder over `Y`. -/
 theorem isHomologyConcordance_cylinder (f : SmoothEmbedding I' I n M Y) :
     IsHomologyConcordance R (I.prod (𝓡∂ 1)) n (SmoothEmbedding.cylinderBot I n 0 1 Y)
-      (SmoothEmbedding.cylinderTop I n 0 1 Y) f f (Prod.map f id) where
+      (SmoothEmbedding.cylinderTop I n 0 1 Y) f f (Prod.map f _root_.id) where
   toIsHomologyCobordism := isHomologyCobordism_cylinder R
   isSmoothEmbedding := f.isSmoothEmbedding.prodMap .id
   preimage_boundary := by
@@ -167,7 +170,7 @@ theorem homologyConcordant_transDiffeomorph [T2Space Y] {Y' : Type u} [Topologic
     (e : Y ≃ₘ^n⟮I, I⟯ Y') :
     HomologyConcordant R (I.prod (𝓡∂ 1)) n f (f.transDiffeomorph e) := by
   have h := isHomologyConcordance_cylinder R f
-  refine IsHomologyConcordance.homologyConcordant (A := Prod.map f id)
+  refine IsHomologyConcordance.homologyConcordant (A := Prod.map f _root_.id)
     (ι₁ := (SmoothEmbedding.cylinderTop I n 0 1 Y).compDiffeomorph e.symm)
     { h with
       disjoint_range := by
@@ -190,5 +193,7 @@ theorem homologyConcordant_transDiffeomorph [T2Space Y] {Y' : Type u} [Topologic
   infer_instance
 
 end Cylinder
+
+end SmoothEmbedding
 
 end TauCeti

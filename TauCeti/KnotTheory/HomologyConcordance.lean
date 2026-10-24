@@ -15,8 +15,9 @@ public import TauCeti.KnotTheory.SmoothCircle
 Knots in integral homology `3`-spheres are compared by *homology concordance*: two knots
 `K₀ ⊆ Y₀` and `K₁ ⊆ Y₁` are homology concordant when they cobound a smoothly and properly embedded
 annulus in some smooth integral homology cobordism between `Y₀` and `Y₁`
-(`TauCeti.HomologyConcordant`, with the circle as source). Every knot in `S³` is homology concordant
-to a knot in `S³`, namely itself (`TauCeti.not_forall_not_homologyConcordant_sphere`).
+(`TauCeti.SmoothEmbedding.HomologyConcordant`, with the circle as source). Every knot in `S³` is
+homology concordant to a knot in `S³`, namely itself
+(`TauCeti.not_forall_not_homologyConcordant_sphere`).
 
 Matsumoto asked (Kirby's problem 1.31) whether the knots in homology spheres bounding acyclic
 `4`-manifolds are, up to homology concordance, just the knots in `S³`. Levine answered this
@@ -80,7 +81,7 @@ def LevineHomologyConcordanceTheorem : Prop :=
     (κ : SmoothEmbedding (𝓡 3) ((𝓡 3).prod (𝓡∂ 1)) ∞ Y X) (K : SmoothCircleEmbedding (𝓡 3) Y),
     range κ = ((𝓡 3).prod (𝓡∂ 1)).boundary X ∧
       ∀ K' : SmoothCircleEmbedding (𝓡 3) (sphere (0 : EuclideanSpace ℝ (Fin 4)) 1),
-        ¬ HomologyConcordant ℤ ((𝓡 3).prod (𝓡∂ 1)) ∞ K K'
+        ¬ SmoothEmbedding.HomologyConcordant ℤ ((𝓡 3).prod (𝓡∂ 1)) ∞ K K'
 
 /-- Levine's theorem spelled out. -/
 theorem levineHomologyConcordanceTheorem_iff :
@@ -95,7 +96,7 @@ theorem levineHomologyConcordanceTheorem_iff :
         (K : SmoothCircleEmbedding (𝓡 3) Y),
         range κ = ((𝓡 3).prod (𝓡∂ 1)).boundary X ∧
           ∀ K' : SmoothCircleEmbedding (𝓡 3) (sphere (0 : EuclideanSpace ℝ (Fin 4)) 1),
-            ¬ HomologyConcordant ℤ ((𝓡 3).prod (𝓡∂ 1)) ∞ K K' :=
+            ¬ SmoothEmbedding.HomologyConcordant ℤ ((𝓡 3).prod (𝓡∂ 1)) ∞ K K' :=
   Iff.rfl
 
 /-- Every knot in `S³` is homology concordant to a knot in `S³`, namely itself, through the
@@ -104,13 +105,13 @@ cylinder `S³ × [0, 1]`. So the conclusion of Levine's theorem fails for knots 
 theorem not_forall_not_homologyConcordant_sphere
     (K : SmoothCircleEmbedding (𝓡 3) (sphere (0 : EuclideanSpace ℝ (Fin 4)) 1)) :
     ¬ ∀ K' : SmoothCircleEmbedding (𝓡 3) (sphere (0 : EuclideanSpace ℝ (Fin 4)) 1),
-      ¬ HomologyConcordant ℤ ((𝓡 3).prod (𝓡∂ 1)) ∞ K K' :=
+      ¬ SmoothEmbedding.HomologyConcordant ℤ ((𝓡 3).prod (𝓡∂ 1)) ∞ K K' :=
   fun h ↦ h K (.refl ℤ K)
 
 /-- **Levine's theorem gives a boundary that is not `S³`.** Assuming Levine's theorem, some smooth
 compact contractible `4`-manifold `X` has as boundary a closed `3`-manifold `Y` not diffeomorphic to
 `S³`. A diffeomorphism `e : Y ≃ₘ S³` would make the knot `K` of Levine's theorem homology concordant
-to the knot `e ∘ K` in `S³` (`TauCeti.homologyConcordant_transDiffeomorph`). -/
+to the knot `e ∘ K` in `S³` (`TauCeti.SmoothEmbedding.homologyConcordant_transDiffeomorph`). -/
 theorem LevineHomologyConcordanceTheorem.exists_isEmpty_diffeomorph_sphere
     (h : LevineHomologyConcordanceTheorem) :
     ∃ (Y : Type) (_ : TopologicalSpace Y) (_ : T2Space Y) (_ : CompactSpace Y)
@@ -124,6 +125,6 @@ theorem LevineHomologyConcordanceTheorem.exists_isEmpty_diffeomorph_sphere
         IsEmpty (Y ≃ₘ⟮𝓡 3, 𝓡 3⟯ sphere (0 : EuclideanSpace ℝ (Fin 4)) 1) := by
   obtain ⟨Y, _, _, _, _, _, X, _, _, _, _, _, _, κ, K, hκ, hK⟩ := h
   exact ⟨Y, ‹_›, ‹_›, ‹_›, ‹_›, ‹_›, X, ‹_›, ‹_›, ‹_›, ‹_›, ‹_›, ‹_›, κ, hκ,
-    ⟨fun e ↦ hK _ (homologyConcordant_transDiffeomorph ℤ K e)⟩⟩
+    ⟨fun e ↦ hK _ (SmoothEmbedding.homologyConcordant_transDiffeomorph ℤ K e)⟩⟩
 
 end TauCeti

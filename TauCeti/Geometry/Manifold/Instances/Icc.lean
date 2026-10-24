@@ -23,8 +23,7 @@ The preferred interval charts also expose their actual affine coordinate formula
 within-range derivatives of the inclusion composed with their inverses. The derivative of the
 inclusion is invertible at every point, including both endpoints.
 
-Both preferred charts vanish at their endpoints, so the slices `x ↦ (x, a)` and `x ↦ (x, b)`
-of a cylinder `M × [a, b]` are smooth embeddings, of the form `u ↦ (u, 0)` in product charts.
+Both preferred charts send their endpoints to `0` (`extChartAt_Icc_bot`, `extChartAt_Icc_top`).
 -/
 
 public section
@@ -275,20 +274,5 @@ open Fact.Manifold in
 theorem extChartAt_Icc_top : extChartAt (𝓡∂ 1) (⊤ : Icc a b) ⊤ = 0 := by
   rw [extChartAt, Icc_chartedSpaceChartAt_of_top_le (by simp)]
   exact IccRightChart_extend_top
-
-open Manifold in
-/-- **Slices of a cylinder.** If the preferred chart of `[a, b]` at `t` sends `t` to `0`, as at
-both endpoints, then the slice `x ↦ (x, t)` of the cylinder `M × [a, b]` is a smooth embedding: in
-product charts it is `u ↦ (u, 0)`. -/
-theorem isSmoothEmbedding_prodMk_Icc_of_extChartAt_eq_zero [IsManifold I n M] {t : Icc a b}
-    (ht : extChartAt (𝓡∂ 1) t t = 0) :
-    IsSmoothEmbedding I (I.prod (𝓡∂ 1)) n (fun x : M ↦ (x, t)) := by
-  refine ⟨IsImmersionOfComplement.isImmersion (F := EuclideanSpace ℝ (Fin 1)) fun x ↦ ?_,
-    isEmbedding_prodMkLeft t⟩
-  refine IsImmersionAtOfComplement.mk_of_continuousAt_of_extChartAt (by fun_prop)
-    (ContinuousLinearEquiv.refl ℝ _) fun v hv ↦ ?_
-  simp only [Function.comp_apply, ContinuousLinearEquiv.refl_apply]
-  rw [extChartAt_prod, PartialEquiv.prod_coe]
-  simp only [ht, (extChartAt I x).right_inv hv]
 
 end TauCeti
