@@ -255,7 +255,7 @@ theorem gradedFiniteModules_inverseImage_restrictScalars :
       gradedFiniteModules ℬ := by
   ext M
   rw [prop_inverseImage_iff, gradedFiniteModules_iff, gradedFiniteModules_iff]
-  exact finite_restrictScalarsObj_iff e.toAlgHom (fun _ _ ha ↦ (he).2 ha) e.surjective M
+  exact finite_restrictScalarsObj_iff e.toAlgHom (map_mem_of_algEquiv he) e.surjective M
 
 /-- Restriction of scalars along a graded algebra isomorphism pulls the finite graded
 `𝒜`-projectives back to the finite graded `ℬ`-projectives. -/
@@ -266,7 +266,7 @@ theorem gradedFiniteProjectiveModules_inverseImage_restrictScalars :
   ext M
   rw [prop_inverseImage_iff, gradedFiniteProjectiveModules_iff, gradedFiniteProjectiveModules_iff]
   exact and_congr
-    (finite_restrictScalarsObj_iff e.toAlgHom (fun _ _ ha ↦ (he).2 ha) e.surjective M)
+    (finite_restrictScalarsObj_iff e.toAlgHom (map_mem_of_algEquiv he) e.surjective M)
     (projective_restrictScalarsObj_iff e he M)
 
 include e he in

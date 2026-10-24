@@ -130,16 +130,23 @@ of `A`, so the two spans of a set agree. -/
 theorem finite_restrictScalarsObj_iff (hsurj : Function.Surjective f)
     (M : GradedModuleCat.{v} ℬ) :
     Module.Finite A (restrictScalarsObj f hf M) ↔ Module.Finite B M :=
-  haveI : RingHomSurjective f.toRingHom := ⟨hsurj⟩
-  -- The identity of `M` is an `f`-semilinear bijection from the restricted module.
-  LinearMap.finite_iff_of_bijective (σ := f.toRingHom)
-    { toFun := id
-      map_add' := fun _ _ ↦ rfl
-      map_smul' := restrictScalarsObj_smul_def f hf M } Function.bijective_id
+  -- The restricted module is the ungraded restriction of scalars of `M`, by definition.
+  f.toRingHom.finite_restrictScalars_iff hsurj (ModuleCat.of B M)
 
 end RestrictScalars
 
 section AlgEquiv
+
+/-- An algebra isomorphism `e` with `e a ∈ ℬᵢ ↔ a ∈ 𝒜ᵢ` sends each `𝒜ᵢ` into `ℬᵢ`. -/
+theorem map_mem_of_algEquiv {e : A ≃ₐ[k] B} (he : ∀ ⦃i : ℤ⦄ ⦃a : A⦄, e a ∈ ℬ i ↔ a ∈ 𝒜 i)
+    ⦃i : ℤ⦄ ⦃a : A⦄ (ha : a ∈ 𝒜 i) : e.toAlgHom a ∈ ℬ i :=
+  he.2 ha
+
+/-- The inverse of an algebra isomorphism `e` with `e a ∈ ℬᵢ ↔ a ∈ 𝒜ᵢ` sends each `ℬᵢ` into
+`𝒜ᵢ`. -/
+theorem symm_map_mem_of_algEquiv {e : A ≃ₐ[k] B} (he : ∀ ⦃i : ℤ⦄ ⦃a : A⦄, e a ∈ ℬ i ↔ a ∈ 𝒜 i)
+    ⦃i : ℤ⦄ ⦃b : B⦄ (hb : b ∈ ℬ i) : e.symm.toAlgHom b ∈ 𝒜 i :=
+  he.1 ((e.apply_symm_apply b).symm ▸ hb)
 
 variable (e : A ≃ₐ[k] B) (he : ∀ ⦃i : ℤ⦄ ⦃a : A⦄, e a ∈ ℬ i ↔ a ∈ 𝒜 i)
 
@@ -148,8 +155,8 @@ variable (e : A ≃ₐ[k] B) (he : ∀ ⦃i : ℤ⦄ ⦃a : A⦄, e a ∈ ℬ i 
 restriction of scalars along `e.symm`. -/
 @[expose]
 def restrictScalarsEquivalenceOfAlgEquiv : GradedModuleCat.{v} ℬ ≌ GradedModuleCat.{v} 𝒜 where
-  functor := restrictScalars e.toAlgHom fun _ _ ha ↦ (he).2 ha
-  inverse := restrictScalars e.symm.toAlgHom fun _ b hb ↦ (he).1 ((e.apply_symm_apply b).symm ▸ hb)
+  functor := restrictScalars e.toAlgHom (map_mem_of_algEquiv he)
+  inverse := restrictScalars e.symm.toAlgHom (symm_map_mem_of_algEquiv he)
   unitIso := NatIso.ofComponents (fun _ ↦ isoMk
     { toFun := id
       invFun := id
@@ -170,35 +177,23 @@ def restrictScalarsEquivalenceOfAlgEquiv : GradedModuleCat.{v} ℬ ≌ GradedMod
 @[simp]
 theorem restrictScalarsEquivalenceOfAlgEquiv_functor :
     (restrictScalarsEquivalenceOfAlgEquiv.{v} e he).functor =
-      restrictScalars e.toAlgHom fun _ _ ha ↦ (he).2 ha :=
+      restrictScalars e.toAlgHom (map_mem_of_algEquiv he) :=
   rfl
 
 /-- The inverse of the equivalence is restriction of scalars along `e.symm`. -/
 @[simp]
 theorem restrictScalarsEquivalenceOfAlgEquiv_inverse :
     (restrictScalarsEquivalenceOfAlgEquiv.{v} e he).inverse =
-      restrictScalars e.symm.toAlgHom fun _ b hb ↦ (he).1 ((e.apply_symm_apply b).symm ▸ hb) :=
+      restrictScalars e.symm.toAlgHom (symm_map_mem_of_algEquiv he) :=
   rfl
 
 /-- Restriction of scalars along a graded algebra isomorphism preserves and reflects projectivity
 of the underlying module. -/
 theorem projective_restrictScalarsObj_iff (M : GradedModuleCat.{v} ℬ) :
-    Module.Projective A (restrictScalarsObj e.toAlgHom (fun _ _ ha ↦ (he).2 ha) M) ↔
-      Module.Projective B M := by
-  have : RingHomInvPair e.toRingEquiv.toRingHom e.toRingEquiv.symm.toRingHom :=
-    RingHomInvPair.of_ringEquiv e.toRingEquiv
-  have : RingHomInvPair e.toRingEquiv.symm.toRingHom e.toRingEquiv.toRingHom :=
-    RingHomInvPair.of_ringEquiv_symm e.toRingEquiv
-  -- The identity of `M` is an `e`-semilinear equivalence from the restricted module.
-  let φ : restrictScalarsObj e.toAlgHom (fun _ _ ha ↦ (he).2 ha) M
-      ≃ₛₗ[e.toRingEquiv.toRingHom] M :=
-    { toFun := id
-      invFun := id
-      map_add' := fun _ _ ↦ rfl
-      map_smul' := restrictScalarsObj_smul_def e.toAlgHom _ M
-      left_inv := fun _ ↦ rfl
-      right_inv := fun _ ↦ rfl }
-  exact ⟨fun _ ↦ Module.Projective.of_equiv φ, fun _ ↦ Module.Projective.of_equiv φ.symm⟩
+    Module.Projective A (restrictScalarsObj e.toAlgHom (map_mem_of_algEquiv he) M) ↔
+      Module.Projective B M :=
+  -- The restricted module is the ungraded restriction of scalars of `M`, by definition.
+  e.toRingEquiv.projective_restrictScalars_iff (ModuleCat.of B M)
 
 end AlgEquiv
 
