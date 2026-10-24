@@ -10,6 +10,7 @@ public import TauCeti.QuantumGroups.QuantumInteger.Laurent
 public import TauCeti.QuantumGroups.UqSl2.LadderModule
 
 import Mathlib.Tactic
+import TauCeti.Data.Nat.Choose.Cast
 
 /-!
 # The classical specialization of the positive ladder modules of `U_q(sl₂)`
@@ -561,20 +562,12 @@ private theorem scale_apply (v : ClassicalLadder K m) (j : Fin (m + 1)) :
     scale v j = ((m.choose j : ℕ) : K) * v j :=
   rfl
 
-/-- The binomial identity `(m choose i) (m - i) = (i + 1) (m choose (i + 1))` in `K`, for
-`i ≤ m`. -/
-private theorem choose_mul_sub {i : ℕ} (hi : i ≤ m) :
-    ((m.choose i : ℕ) : K) * ((m : K) - i) = ((i : K) + 1) * ((m.choose (i + 1) : ℕ) : K) := by
-  have hc := congrArg (Nat.cast : ℕ → K) (Nat.choose_succ_right_eq m i)
-  push_cast [Nat.cast_sub hi] at hc
-  linear_combination -hc
-
 private theorem scale_raise (v : ClassicalLadder K m) :
     scale (raise K m v) = Sl2Std.raise K m (scale v) := by
   funext i
   rw [scale_apply, raise_apply, Sl2Std.raise_apply]
   split_ifs with h
-  · rw [scale_apply, ← mul_assoc, ← mul_assoc, choose_mul_sub h.le]
+  · rw [scale_apply, ← mul_assoc, ← mul_assoc, Nat.cast_choose_mul_sub h.le]
   · rw [mul_zero]
 
 private theorem scale_lower (v : ClassicalLadder K m) :
@@ -585,7 +578,7 @@ private theorem scale_lower (v : ClassicalLadder K m) :
   · obtain ⟨k, hk⟩ : ∃ k, (i : ℕ) = k + 1 := ⟨(i : ℕ) - 1, by omega⟩
     rw [scale_apply, ← mul_assoc, ← mul_assoc]
     simp only [hk, Nat.add_sub_cancel]
-    rw [mul_comm _ ((k + 1 : ℕ) : K), Nat.cast_succ, ← choose_mul_sub (by omega)]
+    rw [mul_comm _ ((k + 1 : ℕ) : K), Nat.cast_succ, ← Nat.cast_choose_mul_sub (by omega)]
     ring
   · rw [mul_zero]
 
