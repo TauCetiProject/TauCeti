@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.DGLocalSystem.Basic
+public import TauCeti.AlgebraicTopology.DGLocalSystem.LoopAlgebra
 public import Mathlib.RepresentationTheory.Basic
 public import TauCeti.Algebra.Homology.DG.Module.Right.Cohomology
 
