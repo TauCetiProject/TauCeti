@@ -314,8 +314,7 @@ theorem holderOnWith_Icc_of_hasFDerivAt_of_hasDerivWithinAt {u : E → ℝ → F
   have hh : 0 < h := h_def ▸ Real.sqrt_pos.2 (abs_pos.2 (sub_ne_zero.2 hts))
   have hsq : h ^ 2 = |t - s| := h_def ▸ Real.sq_sqrt (abs_nonneg _)
   have hrpow : ∀ r : ℝ, |t - s| ^ (r / 2) = h ^ r := fun r => by
-    rw [h_def, Real.sqrt_eq_rpow, ← Real.rpow_mul (abs_nonneg _)]
-    ring_nf
+    simpa only [h_def] using Real.rpow_div_two_eq_sqrt r (abs_nonneg (t - s))
   -- At the times `t` and `s` the Hessians differ by at most `K = C₂ h^α` everywhere in space, so
   -- the difference of the gradients is `K`-Lipschitz in space.
   obtain ⟨K, hKcoe⟩ : ∃ K : ℝ≥0, (K : ℝ) = C₂ * h ^ (α : ℝ) :=
