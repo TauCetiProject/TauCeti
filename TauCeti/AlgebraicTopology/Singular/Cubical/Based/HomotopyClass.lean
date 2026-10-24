@@ -476,7 +476,7 @@ def basedClassHom (x : X) (n : ℕ) :
     (Finsupp.linearCombination ℤ fun c ↦ Additive.ofMul (basedClass x c)) <| by
       rw [CubicalChain.degenerate_def, Submodule.span_le]
       rintro _ ⟨c, hc, rfl⟩
-      simp [basedClass_of_isDegenerate hc]
+      simp [basedClass_of_isDegenerate hc, HomotopyGroup.ofMul_const]
 
 @[simp]
 theorem basedClassHom_ofCube {n : ℕ} (c : SingularCube X (n + 2)) :
