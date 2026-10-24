@@ -32,7 +32,8 @@ permutations transported along injections with disjoint ranges, a fiber-preservi
 carrying one finite family to another with the same equality pattern
 (`TauCeti.exists_perm_apply_eq_of_eq_iff`), the fact that a permutation
 is a single cycle on each of its own orbits, the transport of its cycles along an equivalence of
-types, and the factorization of an invariant function
+types, transport of cycle quotients along conjugating equivalences, and the factorization of an
+invariant function
 through a map on whose fibres the permutation is a single cycle, and a correction by a power of
 a cycle for a permutation commuting with it. It also identifies functions invariant under a
 permutation with functions on its cycle quotient (`TauCeti.invariantColouringEquiv`). Finally,
@@ -257,6 +258,43 @@ theorem isCycleOn_mulRight_univ_iff {G : Type*} [Group G] {a : G} :
 end Equiv
 
 namespace TauCeti
+
+section CycleQuotient
+
+open Equiv.Perm
+
+/-- An equivalence conjugating two permutations transports their cycle quotients. -/
+def sameCycleQuotientCongr {α β : Type*} (e : α ≃ β)
+    {σ : Equiv.Perm α} {τ : Equiv.Perm β} (h : τ = e.permCongr σ) :
+    Quotient (SameCycle.setoid σ) ≃ Quotient (SameCycle.setoid τ) :=
+  Quotient.congr e fun _ _ => by
+    rw [h]
+    exact (sameCycle_permCongr σ e).symm
+
+/-- Cycle-quotient transport sends a class to the class of its transported representative. -/
+@[simp] theorem sameCycleQuotientCongr_mk {α β : Type*} (e : α ≃ β)
+    {σ : Equiv.Perm α} {τ : Equiv.Perm β} (h : τ = e.permCongr σ) (x : α) :
+    sameCycleQuotientCongr e h (Quotient.mk _ x) = Quotient.mk _ (e x) := (rfl)
+
+/-- Identity conjugacy induces identity transport of cycle quotients. -/
+@[simp] theorem sameCycleQuotientCongr_refl {α : Type*} (σ : Equiv.Perm α) :
+    sameCycleQuotientCongr (Equiv.refl α) (σ := σ) (by ext x; simp) =
+      Equiv.refl _ := by
+  ext q
+  induction q using Quotient.inductionOn with
+  | _ x => rfl
+
+/-- Transport of cycle quotients respects composition of conjugating equivalences. -/
+theorem sameCycleQuotientCongr_trans {α β γ : Type*} (e : α ≃ β) (f : β ≃ γ)
+    {σ : Equiv.Perm α} {τ : Equiv.Perm β} {υ : Equiv.Perm γ}
+    (he : τ = e.permCongr σ) (hf : υ = f.permCongr τ) :
+    (sameCycleQuotientCongr e he).trans (sameCycleQuotientCongr f hf) =
+      sameCycleQuotientCongr (e.trans f) (by ext x; simp [hf, he]) := by
+  ext q
+  induction q using Quotient.inductionOn with
+  | _ x => rfl
+
+end CycleQuotient
 
 open Equiv Equiv.Perm
 
