@@ -42,6 +42,9 @@ comparing the proper mass of a genus with its mass.
 
 * `TauCeti.IntegralLattice.Isometry.isProper_iff_det_eq_one`: a self-isometry is proper exactly
   when it lies in `SO(L)`.
+* `TauCeti.IntegralLattice.Isometry.isProper_symm_iff` and
+  `TauCeti.IntegralLattice.Isometry.isProper_trans_iff`: the inverse of an isometry is proper
+  exactly when it is, and a composite is proper exactly when both or neither factor is.
 * `TauCeti.IntegralLattice.properIsometryClass_eq_properIsometryClass_iff`: two lattices have the
   same proper class exactly when they are properly isometric.
 * `TauCeti.IntegralLattice.ncard_preimage_toIsometryQuotient_mul_index`: in positive rank, the
@@ -70,24 +73,21 @@ namespace Isometry
 
 /-- The ambient determinant of a composite isometry is the product of the ambient
 determinants. -/
-private theorem det_trans_toLinearMap (e : Isometry L M) (f : Isometry M N) :
+theorem det_trans_toLinearMap (e : Isometry L M) (f : Isometry M N) :
     LinearMap.det (((e.trans f : Isometry L N) : V ≃ₗ[ℚ] V) : V →ₗ[ℚ] V) =
       LinearMap.det ((f : V ≃ₗ[ℚ] V) : V →ₗ[ℚ] V) *
         LinearMap.det ((e : V ≃ₗ[ℚ] V) : V →ₗ[ℚ] V) := by
-  rw [← LinearMap.det_comp]
-  congr 1
-  exact LinearMap.ext fun x ↦ trans_apply e f x
+  rw [toLinearEquiv_trans, LinearEquiv.coe_trans, LinearMap.det_comp]
 
 /-- The ambient determinant of the inverse isometry is the inverse of the ambient determinant. -/
-private theorem det_symm_toLinearMap (e : Isometry L M) :
+theorem det_symm_toLinearMap (e : Isometry L M) :
     LinearMap.det ((e.symm : V ≃ₗ[ℚ] V) : V →ₗ[ℚ] V) =
       (LinearMap.det ((e : V ≃ₗ[ℚ] V) : V →ₗ[ℚ] V))⁻¹ := by
-  have h : ((e.symm : V ≃ₗ[ℚ] V) : V →ₗ[ℚ] V) = ((e : V ≃ₗ[ℚ] V).symm : V →ₗ[ℚ] V) :=
-    LinearMap.ext fun x ↦ congrFun (coe_symm e) x
-  rw [h, ← LinearEquiv.coe_inv_det, Units.val_inv_eq_inv_val, LinearEquiv.coe_det]
+  rw [toLinearEquiv_symm, ← LinearEquiv.coe_inv_det, Units.val_inv_eq_inv_val,
+    LinearEquiv.coe_det]
 
 /-- An isometry has nonzero ambient determinant. -/
-private theorem det_toLinearMap_ne_zero (e : Isometry L M) :
+theorem det_toLinearMap_ne_zero (e : Isometry L M) :
     LinearMap.det ((e : V ≃ₗ[ℚ] V) : V →ₗ[ℚ] V) ≠ 0 :=
   (e : V ≃ₗ[ℚ] V).isUnit_det'.ne_zero
 
@@ -108,9 +108,7 @@ theorem not_isProper_iff (e : Isometry L M) :
 
 /-- The identity isometry is proper. -/
 theorem isProper_refl (L : IntegralLattice V) : (refl L).IsProper := by
-  have h : ((refl L : Isometry L L) : V ≃ₗ[ℚ] V) = LinearEquiv.refl ℚ V :=
-    LinearEquiv.ext fun x ↦ refl_apply L x
-  rw [isProper_def, h, LinearEquiv.refl_toLinearMap, LinearMap.det_id]
+  rw [isProper_def, toLinearEquiv_refl, LinearEquiv.refl_toLinearMap, LinearMap.det_id]
   exact one_pos
 
 /-- The inverse of a proper isometry is proper. -/
@@ -123,6 +121,24 @@ theorem IsProper.trans {e : Isometry L M} {f : Isometry M N} (he : e.IsProper)
     (hf : f.IsProper) : (e.trans f).IsProper := by
   rw [isProper_def, det_trans_toLinearMap]
   exact mul_pos hf he
+
+/-- An isometry is proper exactly when its inverse is. -/
+@[simp]
+theorem isProper_symm_iff {e : Isometry L M} : e.symm.IsProper ↔ e.IsProper :=
+  ⟨fun he ↦ e.symm_symm ▸ he.symm, IsProper.symm⟩
+
+/-- A composite of two isometries is proper exactly when both or neither of them are proper: a
+proper and an improper isometry compose to an improper one, and two improper isometries compose
+to a proper one. -/
+theorem isProper_trans_iff {e : Isometry L M} {f : Isometry M N} :
+    (e.trans f).IsProper ↔ (e.IsProper ↔ f.IsProper) := by
+  rw [isProper_def, det_trans_toLinearMap, isProper_def, isProper_def]
+  rcases (det_toLinearMap_ne_zero e).lt_or_gt with he | he <;>
+    rcases (det_toLinearMap_ne_zero f).lt_or_gt with hf | hf
+  · simp [mul_pos_of_neg_of_neg hf he, he.not_gt, hf.not_gt]
+  · simp [(mul_neg_of_pos_of_neg hf he).not_gt, he.not_gt, hf]
+  · simp [(mul_neg_of_neg_of_pos hf he).not_gt, he, hf.not_gt]
+  · simp [mul_pos hf he, he, hf]
 
 /-- A self-isometry is proper exactly when its determinant is `1`. -/
 theorem isProper_iff_det_eq_one (g : Isometry L L) : g.IsProper ↔ det L g = 1 := by
@@ -220,10 +236,7 @@ private theorem preimage_toIsometryQuotient_eq_pair {M' : IntegralLattice V} (t 
   refine ⟨fun ⟨e⟩ ↦ ?_, ?_⟩
   · by_cases he : e.IsProper
     · exact Or.inl ⟨e, he⟩
-    · refine Or.inr ⟨e.trans t, ?_⟩
-      rw [Isometry.not_isProper_iff] at he ht
-      rw [Isometry.isProper_def, Isometry.det_trans_toLinearMap]
-      exact mul_pos_of_neg_of_neg ht he
+    · exact Or.inr ⟨e.trans t, Isometry.isProper_trans_iff.mpr (iff_of_false he ht)⟩
   · rintro (⟨e, -⟩ | ⟨e, -⟩)
     · exact ⟨e⟩
     · exact ⟨e.trans t.symm⟩
@@ -234,25 +247,19 @@ private theorem properIsometryClass_eq_iff_exists_det_eq_neg_one {M' : IntegralL
     (t : Isometry M M') (ht : ¬ t.IsProper) :
     M.properIsometryClass = M'.properIsometryClass ↔
       ∃ g : Isometry M M, Isometry.det M g = -1 := by
-  rw [Isometry.not_isProper_iff] at ht
   rw [properIsometryClass_eq_properIsometryClass_iff]
   constructor
   · rintro ⟨e, he⟩
     refine ⟨e.trans t.symm, ?_⟩
     have hn : ¬ (e.trans t.symm).IsProper := by
-      rw [Isometry.not_isProper_iff, Isometry.det_trans_toLinearMap,
-        Isometry.det_symm_toLinearMap]
-      exact mul_neg_of_neg_of_pos (inv_lt_zero.mpr ht) he
+      rw [Isometry.isProper_trans_iff, Isometry.isProper_symm_iff]
+      exact fun h ↦ ht (h.mp he)
     rw [Isometry.isProper_iff_det_eq_one] at hn
     exact (Isometry.det_eq_one_or_neg_one _).resolve_left hn
   · rintro ⟨g, hg⟩
-    refine ⟨g.trans t, ?_⟩
-    have hg' : ¬ g.IsProper := by
-      rw [Isometry.isProper_iff_det_eq_one, hg]
-      decide
-    rw [Isometry.not_isProper_iff] at hg'
-    rw [Isometry.isProper_def, Isometry.det_trans_toLinearMap]
-    exact mul_pos_of_neg_of_neg ht hg'
+    refine ⟨g.trans t, Isometry.isProper_trans_iff.mpr (iff_of_false ?_ ht)⟩
+    rw [Isometry.isProper_iff_det_eq_one, hg]
+    decide
 
 /-- **Splitting of an isometry class into proper classes.** In positive rank, the number of proper
 classes of lattices isometric to `M`, times the index `[O(M) : SO(M)]`, is `2`: the class of `M` is
@@ -263,12 +270,11 @@ theorem ncard_preimage_toIsometryQuotient_mul_index (hV : 0 < finrank ℚ V)
       (specialOrthogonalGroup M).index = 2 := by
   have : FiniteDimensional ℚ V := Module.finite_of_finrank_pos hV
   obtain ⟨f, hf⟩ := LinearEquiv.exists_det_eq_neg_one hV
-  let t := M.transportIsometry f
-  have ht : ¬ t.IsProper := by
-    have h : ((t : V ≃ₗ[ℚ] V) : V →ₗ[ℚ] V) = (f : V →ₗ[ℚ] V) :=
-      LinearMap.ext fun x ↦ transportIsometry_apply M f x
-    rw [Isometry.not_isProper_iff, h, ← LinearEquiv.coe_det, hf, Units.val_neg, Units.val_one]
+  have ht : ¬ (M.transportIsometry f).IsProper := by
+    rw [Isometry.not_isProper_iff, toLinearEquiv_transportIsometry, ← LinearEquiv.coe_det, hf,
+      Units.val_neg, Units.val_one]
     exact neg_one_lt_zero
+  set t := M.transportIsometry f
   rw [preimage_toIsometryQuotient_eq_pair t ht]
   by_cases hg : ∃ g : Isometry M M, Isometry.det M g = -1
   · rw [(properIsometryClass_eq_iff_exists_det_eq_neg_one t ht).mpr hg, Set.pair_eq_singleton,
@@ -301,37 +307,28 @@ variable {W : Type*} [AddCommGroup W] [Module ℚ W]
 
 /-- Transport along `f : V ≃ W` sends a proper isometry `e : M ≅ N` to a proper isometry between
 the transports of `M` and `N`: its ambient automorphism is the conjugate `f ∘ e ∘ f⁻¹`. -/
-private theorem isProper_transport_conj (f : V ≃ₗ[ℚ] W) {M N : IntegralLattice V}
+theorem Isometry.IsProper.transport_conj (f : V ≃ₗ[ℚ] W) {M N : IntegralLattice V}
     {e : Isometry M N} (he : e.IsProper) :
     (((M.transportIsometry f).symm.trans e).trans (N.transportIsometry f)).IsProper := by
-  have h : (((((M.transportIsometry f).symm.trans e).trans (N.transportIsometry f) :
-      Isometry (M.transport f) (N.transport f)) : W ≃ₗ[ℚ] W) : W →ₗ[ℚ] W) =
-      (f : V →ₗ[ℚ] W) ∘ₗ ((e : V ≃ₗ[ℚ] V) : V →ₗ[ℚ] V) ∘ₗ (f.symm : W →ₗ[ℚ] V) := by
-    refine LinearMap.ext fun y ↦ ?_
-    have hy : (M.transportIsometry f).symm y = f.symm y := by
-      rw [← (M.transportIsometry f).symm_apply_apply (f.symm y), transportIsometry_apply,
-        LinearEquiv.apply_symm_apply]
-    simp [Isometry.trans_apply, hy]
-  rw [Isometry.isProper_def, h, LinearMap.det_conj]
+  rw [Isometry.isProper_def, Isometry.toLinearEquiv_trans, Isometry.toLinearEquiv_trans,
+    Isometry.toLinearEquiv_symm, toLinearEquiv_transportIsometry, toLinearEquiv_transportIsometry,
+    LinearEquiv.coe_trans, LinearEquiv.coe_trans, LinearMap.det_conj]
   exact he
 
 /-- The transport of `M` along `f` and back along `f⁻¹` is properly isometric to `M`. -/
 private theorem isProper_transportIsometry_trans_symm (f : V ≃ₗ[ℚ] W) (M : IntegralLattice V) :
     ((M.transportIsometry f).trans ((M.transport f).transportIsometry f.symm)).IsProper := by
-  have h : ((((M.transportIsometry f).trans ((M.transport f).transportIsometry f.symm) :
-      Isometry M ((M.transport f).transport f.symm)) : V ≃ₗ[ℚ] V) : V →ₗ[ℚ] V) =
-      LinearMap.id :=
-    LinearMap.ext fun x ↦ by simp [Isometry.trans_apply]
-  rw [Isometry.isProper_def, h, LinearMap.det_id]
+  rw [Isometry.isProper_def, Isometry.toLinearEquiv_trans, toLinearEquiv_transportIsometry,
+    toLinearEquiv_transportIsometry, LinearEquiv.self_trans_symm, LinearEquiv.refl_toLinearMap,
+    LinearMap.det_id]
   exact one_pos
 
 /-- Transport along a rational linear equivalence `V ≃ W` identifies the proper classes of
 integral lattices in `V` with those in `W`. -/
 noncomputable def properIsometryQuotientEquiv (f : V ≃ₗ[ℚ] W) :
     ProperIsometryQuotient V ≃ ProperIsometryQuotient W where
-  toFun := Quotient.map (·.transport f) fun _ _ ⟨_, he⟩ ↦ ⟨_, isProper_transport_conj f he⟩
-  invFun := Quotient.map (·.transport f.symm) fun _ _ ⟨_, he⟩ ↦
-    ⟨_, isProper_transport_conj f.symm he⟩
+  toFun := Quotient.map (·.transport f) fun _ _ ⟨_, he⟩ ↦ ⟨_, he.transport_conj f⟩
+  invFun := Quotient.map (·.transport f.symm) fun _ _ ⟨_, he⟩ ↦ ⟨_, he.transport_conj f.symm⟩
   left_inv c := by
     obtain ⟨M, rfl⟩ := properIsometryClass_surjective c
     exact (isProper_transportIsometry_trans_symm f M).properIsometryClass_eq.symm
@@ -356,6 +353,14 @@ theorem toIsometryQuotient_properIsometryQuotientEquiv (f : V ≃ₗ[ℚ] W)
   obtain ⟨M, rfl⟩ := properIsometryClass_surjective c
   rw [properIsometryQuotientEquiv_properIsometryClass, toIsometryQuotient_properIsometryClass,
     toIsometryQuotient_properIsometryClass, isometryQuotientEquiv_isometryClass]
+
+/-- The transport along `f` of the representative of a proper class is properly isometric to the
+representative of the transported proper class. -/
+theorem ProperIsometryQuotient.exists_isProper_transport_out (d : ProperIsometryQuotient V)
+    (f : V ≃ₗ[ℚ] W) :
+    ∃ e : Isometry (d.out.transport f) (properIsometryQuotientEquiv f d).out, e.IsProper := by
+  rw [← properIsometryClass_eq_properIsometryClass_iff, properIsometryClass_out,
+    ← properIsometryQuotientEquiv_properIsometryClass, properIsometryClass_out]
 
 end Transport
 

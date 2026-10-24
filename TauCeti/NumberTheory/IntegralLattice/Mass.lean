@@ -25,7 +25,10 @@ the sum over the proper classes of the lattices in the genus. Both are sums over
 the genus contains finitely many classes, which holds for definite lattices
 (`TauCeti.IntegralLattice.IsPosDef.finite_genusClasses`) and in rank at most one. They are defined
 for every lattice, through `finsum`, and the comparison theorems carry the finiteness of the genus
-as a hypothesis.
+as a hypothesis. A class with infinite isometry group contributes `0`, because `Nat.card` of an
+infinite type is `0` and `0⁻¹ = 0`; this happens for every indefinite or degenerate lattice of rank
+at least two. So the masses have their classical meaning only for definite lattices, where the
+isometry groups are finite.
 
 In positive rank the two masses are related by `m⁺ = 2m`
 (`TauCeti.IntegralLattice.properMass_eq_two_mul_mass`). A class `cls M` of the genus either is a
@@ -104,11 +107,6 @@ theorem image_toIsometryQuotient_properGenusClasses (L : IntegralLattice V) :
     ProperIsometryQuotient.toIsometryQuotient '' L.properGenusClasses = L.genusClasses :=
   Set.image_preimage_eq _ ProperIsometryQuotient.toIsometryQuotient_surjective
 
-/-- In rank zero the ambient space is trivial. -/
-private theorem subsingleton_of_finrank_eq_zero (h : finrank ℤ L = 0) : Subsingleton V := by
-  have := L.finiteDimensional
-  exact Module.finrank_zero_iff.mp (L.finrank_carrier ▸ h)
-
 /-- The genus of `L` contains finitely many proper classes exactly when it contains finitely many
 classes. -/
 theorem finite_properGenusClasses_iff : L.properGenusClasses.Finite ↔ L.genusClasses.Finite := by
@@ -120,12 +118,20 @@ end ProperGenusClasses
 section Mass
 
 /-- The **mass** of the genus of `L`: the sum of `1 / |O(M)|` over the classes `cls M` in the genus
-of `L`. It is a finite sum when the genus contains finitely many classes. -/
+of `L`. It is a finite sum when the genus contains finitely many classes.
+
+Since `Nat.card` of an infinite type is `0` and `0⁻¹ = 0`, a class whose isometry group is infinite
+contributes `0`, and `finsum` makes the mass of a genus with infinitely many classes `0`. The mass
+therefore has its classical meaning only for definite lattices, where `O(M)` is finite. -/
 noncomputable def mass (L : IntegralLattice V) : ℚ :=
   ∑ᶠ c ∈ L.genusClasses, ((Nat.card (Isometry c.out c.out) : ℚ))⁻¹
 
 /-- The **proper mass** of the genus of `L`: the sum of `1 / |SO(M)|` over the proper classes
-`cls⁺ M` of the lattices `M` in the genus of `L`. -/
+`cls⁺ M` of the lattices `M` in the genus of `L`.
+
+As for `TauCeti.IntegralLattice.mass`, a proper class whose special isometry group is infinite
+contributes `0`, and a genus with infinitely many proper classes has proper mass `0`, so the
+proper mass has its classical meaning only for definite lattices. -/
 noncomputable def properMass (L : IntegralLattice V) : ℚ :=
   ∑ᶠ c ∈ L.properGenusClasses, ((Nat.card (specialOrthogonalGroup c.out) : ℚ))⁻¹
 
@@ -146,9 +152,7 @@ theorem SameGenus.mass_eq {M : IntegralLattice W} (h : L.SameGenus M) : L.mass =
     ((Equiv.image_eq_iff_bijOn _).mp <| Set.ext fun c ↦ by
       rw [Set.mem_image_equiv, ← isometryQuotientEquiv_mem_genusClasses_iff f h,
         Equiv.apply_symm_apply]) fun c _ ↦ ?_
-  obtain ⟨e⟩ := isometryClass_eq_isometryClass_iff.mp <|
-    show (c.out.transport f).isometryClass = (isometryQuotientEquiv f c).out.isometryClass by
-      rw [isometryClass_out, ← isometryQuotientEquiv_isometryClass, isometryClass_out]
+  obtain ⟨e⟩ := c.nonempty_isometry_transport_out f
   rw [Nat.card_congr ((c.out.transportIsometry f).trans e).conjMulEquiv.toEquiv]
 
 /-- **The proper mass is an invariant of the genus.** Lattices of the same genus have the same
@@ -161,12 +165,7 @@ theorem SameGenus.properMass_eq {M : IntegralLattice W} (h : L.SameGenus M) :
   · rw [Set.mem_image_equiv, mem_properGenusClasses_iff, mem_properGenusClasses_iff,
       ← isometryQuotientEquiv_mem_genusClasses_iff f h,
       ← toIsometryQuotient_properIsometryQuotientEquiv, Equiv.apply_symm_apply]
-  · obtain ⟨e⟩ := isometryClass_eq_isometryClass_iff.mp <|
-      show (d.out.transport f).isometryClass =
-          (properIsometryQuotientEquiv f d).out.isometryClass by
-        rw [← toIsometryQuotient_properIsometryClass, ← toIsometryQuotient_properIsometryClass,
-          properIsometryClass_out, ← properIsometryQuotientEquiv_properIsometryClass,
-          properIsometryClass_out]
+  · obtain ⟨e, -⟩ := d.exists_isProper_transport_out f
     rw [((d.out.transportIsometry f).trans e).natCard_specialOrthogonalGroup_eq]
 
 /-- A class of the genus contributes `2 / |O(M)|` to the proper mass: it splits into

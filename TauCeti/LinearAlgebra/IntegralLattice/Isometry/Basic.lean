@@ -238,6 +238,25 @@ theorem coe_symm (e : Isometry L M) : ⇑e.symm = ⇑(e : V ≃ₗ[ℚ] W).symm 
   simp only [symm]
   rfl
 
+/-- The ambient linear equivalence of the identity isometry is the identity. -/
+@[simp]
+theorem toLinearEquiv_refl (L : IntegralLattice V) :
+    ((refl L : Isometry L L) : V ≃ₗ[ℚ] V) = LinearEquiv.refl ℚ V :=
+  LinearEquiv.ext fun _ ↦ rfl
+
+/-- The ambient linear equivalence of the inverse isometry is the inverse linear equivalence. -/
+@[simp]
+theorem toLinearEquiv_symm (e : Isometry L M) :
+    ((e.symm : Isometry M L) : W ≃ₗ[ℚ] V) = (e : V ≃ₗ[ℚ] W).symm :=
+  LinearEquiv.ext fun y ↦ congrFun (coe_symm e) y
+
+/-- The ambient linear equivalence of a composite isometry is the composite of the ambient linear
+equivalences. -/
+@[simp]
+theorem toLinearEquiv_trans (e : Isometry L M) (f : Isometry M N) :
+    ((e.trans f : Isometry L N) : V ≃ₗ[ℚ] U) = (e : V ≃ₗ[ℚ] W).trans (f : W ≃ₗ[ℚ] U) :=
+  LinearEquiv.ext fun _ ↦ rfl
+
 @[simp]
 theorem ambientEquiv_symm_apply (e : Isometry L M) (y : W) : e.ambientEquiv.symm y = e.symm y := by
   rw [coe_symm]
@@ -419,6 +438,18 @@ theorem transportIsometry_apply (L : IntegralLattice V) (e : V ≃ₗ[ℚ] W) (x
     L.transportIsometry e x = e x := by
   -- `isometryEquivOfCompLinearEquiv B f` has underlying equivalence `f.symm`.
   rfl
+
+/-- The ambient linear equivalence of `L.transportIsometry e` is `e`. -/
+@[simp]
+theorem toLinearEquiv_transportIsometry (L : IntegralLattice V) (e : V ≃ₗ[ℚ] W) :
+    ((L.transportIsometry e : Isometry L (L.transport e)) : V ≃ₗ[ℚ] W) = e :=
+  LinearEquiv.ext fun _ ↦ rfl
+
+/-- The inverse of `L.transportIsometry e` acts as `e.symm`. -/
+@[simp]
+theorem transportIsometry_symm_apply (L : IntegralLattice V) (e : V ≃ₗ[ℚ] W) (y : W) :
+    (L.transportIsometry e).symm y = e.symm y := by
+  rw [Isometry.coe_symm, toLinearEquiv_transportIsometry]
 
 @[simp]
 theorem transport_refl (L : IntegralLattice V) : L.transport (LinearEquiv.refl ℚ V) = L := by
