@@ -9,11 +9,8 @@ public import TauCeti.Algebra.Lie.HighestWeight.CentralCharacter.Linear
 public import TauCeti.Algebra.Lie.HighestWeight.FiniteDimensional
 public import TauCeti.Algebra.Lie.HighestWeight.OrbitSum
 public import TauCeti.Algebra.Lie.Weights.InvariantForm
-import Mathlib.Algebra.CharZero.Infinite
 import TauCeti.Algebra.Lie.HighestWeight.Weight.Density
 import TauCeti.LinearAlgebra.SymmetricAlgebra.Evaluation
-import TauCeti.LinearAlgebra.SymmetricAlgebra.Functoriality
-import TauCeti.LinearAlgebra.SymmetricAlgebra.Polarization
 
 /-!
 # Trace-power polynomials on a Cartan subalgebra
@@ -47,8 +44,8 @@ The proof combines three earlier results.
   the finitely many dominant weights below `λ` therefore writes the power sum of every Weyl orbit
   of a dominant integral weight as a combination of the elements above.
 * **Density.** The `m`-th powers of the vectors `t_λ`, for `λ` dominant integral, span the
-  degree-`m` component of `S(H)`; this is the polarization form of the polynomial density of the
-  dominant integral weights (`TauCeti.polynomial_eq_zero_of_dominantIntegral`).
+  degree-`m` component of `S(H)` (`TauCeti.span_pow_cartanEquivDual_symm_eq_homogeneousSubmodule`);
+  this is the polarization form of the polynomial density of the dominant integral weights.
 * **Averaging.** Averaging `t_λ ^ m` over the Weyl group gives the power sum of
   `∑_w e^{w λ}`, a Weyl-invariant element supported on the Weyl orbit of `λ` and hence a
   combination of orbit sums, and averaging fixes a Weyl invariant. Since the form `⟨·,·⟩` is
@@ -68,7 +65,6 @@ The proof combines three earlier results.
   `∑_μ f(μ) ⟨λ, μ⟩ ^ m`.
 * `TauCeti.weightPowerSum_mem_linearInvariants`: a Weyl-invariant element of `ℤ[H*]` is sent to a
   Weyl invariant.
-* `TauCeti.trace_toEnd_pow_eq_sum_finrank_nsmul`: `tr (ρ_M(h) ^ m) = ∑_μ dim M_μ · μ(h) ^ m`.
 * `TauCeti.lift_cartanEquivDual_tracePowerRestriction`: the value of
   `tracePowerRestriction K H M m` at the weight `κ(h, ·)` is `tr (ρ_M(h) ^ m)`, so it is the
   Killing transport of the restriction of `x ↦ tr (ρ_M(x) ^ m)` to `H`.
@@ -151,10 +147,11 @@ variable [CharZero K] (K H) (M : Type w) [AddCommGroup M] [Module K M] [LieRingM
 
 /-- **The trace-power polynomial of a module on the Cartan subalgebra**: the degree-`m` power sum
 `∑_μ dim M_μ · t_μ ^ m` of the weights of `M`, counted with multiplicity, as an element of `S(H)`.
-Its value at the weight `κ(h, ·)` is `tr (ρ_M(h) ^ m)`
+When `K` is algebraically closed, its value at the weight `κ(h, ·)` is `tr (ρ_M(h) ^ m)`
 (`TauCeti.lift_cartanEquivDual_tracePowerRestriction`), so it is the restriction to `H` of the
 invariant polynomial function `x ↦ tr (ρ_M(x) ^ m)` on `L`, transported along the Killing duality
-`H ≃ H*`. -/
+`H ≃ H*`. Without that hypothesis the formal character can miss the part of `M` on which `H` does
+not split, and the identification may fail. -/
 noncomputable def tracePowerRestriction (m : ℕ) : SymmetricAlgebra K H :=
   weightPowerSum H m (formalCharacter K H M)
 
@@ -171,34 +168,6 @@ theorem tracePowerRestriction_mem_homogeneousSubmodule (m : ℕ) :
   weightPowerSum_mem_homogeneousSubmodule m _
 
 variable [IsAlgClosed K]
-
-/-- **The trace of a power of a Cartan element**: `tr (ρ_M(h) ^ m) = ∑_μ dim M_μ · μ(h) ^ m`, the
-sum over the weights `μ` of `M`. -/
-theorem trace_toEnd_pow_eq_sum_finrank_nsmul (h : H) (m : ℕ) :
-    LinearMap.trace K M (toEnd K H M h ^ m) =
-      ∑ chi : Weight K H M, finrank K (genWeightSpace M chi) • chi h ^ m := by
-  classical
-  have hds := DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top
-    (LieSubmodule.iSupIndep_toSubmodule.mpr <| iSupIndep_genWeightSpace' K H M)
-    (LieSubmodule.iSup_toSubmodule_eq_top.mpr <| iSup_genWeightSpace_eq_top' K H M)
-  -- the weight space of `chi` is an honest eigenspace, on which `h` acts by the scalar `chi h`
-  have hact (chi : Weight K H M) (n : ℕ) (x : M) (hx : x ∈ genWeightSpace M chi) :
-      (toEnd K H M h ^ n) x = chi h ^ n • x := by
-    rw [genWeightSpace_eq_weightSpace, mem_weightSpace] at hx
-    induction n with
-    | zero => simp
-    | succ n ih =>
-      rw [pow_succ', Module.End.mul_apply, ih, map_smul, toEnd_apply_apply, hx, smul_smul,
-        pow_succ]
-  have hmaps (chi : Weight K H M) : Set.MapsTo (toEnd K H M h ^ m)
-      (genWeightSpace M chi) (genWeightSpace M chi) := fun x hx ↦ by
-    rw [SetLike.mem_coe, hact chi m x hx]
-    exact Submodule.smul_mem _ _ hx
-  rw [LinearMap.trace_eq_sum_trace_restrict hds hmaps]
-  refine Finset.sum_congr rfl fun chi _ ↦ ?_
-  have hres : (toEnd K H M h ^ m).restrict (hmaps chi) = chi h ^ m • LinearMap.id :=
-    LinearMap.ext fun x ↦ Subtype.ext (hact chi m x x.2)
-  rw [hres, map_smul, LinearMap.trace_id, smul_eq_mul, nsmul_eq_mul, mul_comm, finrank_toSubmodule]
 
 /-- **The trace-power polynomial restricts the trace powers.** The value of
 `tracePowerRestriction K H M m` at the weight `κ(h, ·)` represented by `h ∈ H` is
@@ -253,36 +222,6 @@ end Weyl
 section Span
 
 variable [CharZero K] [IsTriangularizable K H L] {b : (IsKilling.rootSystem H).Base}
-
-variable (b) in
-/-- **The powers `t_λ ^ m` of the dominant integral weights span `Sᵐ(H)`.** This is the
-polynomial density of the dominant integral weights, transported along the Killing duality
-`H ≃ H*`, in its polarization form. -/
-theorem span_pow_cartanEquivDual_symm_eq_homogeneousSubmodule (m : ℕ) :
-    Submodule.span K ((fun lam ↦ SymmetricAlgebra.ι K H ((IsKilling.cartanEquivDual H).symm lam) ^
-        m) '' {lam | IsDominantIntegral b lam}) =
-      SymmetricAlgebra.homogeneousSubmodule K H m := by
-  rw [← SymmetricAlgebra.span_pow_eq_homogeneous_of_polynomial_vanishing
-    ((IsKilling.cartanEquivDual H).symm '' {lam | IsDominantIntegral b lam}) (fun q hq ↦ ?_) m,
-    Set.image_image]
-  -- transport `q` from `S(H*)` to `S(H)` along the Killing duality
-  let e := SymmetricAlgebra.mapEquiv K (IsKilling.cartanEquivDual H).symm
-  have hlift (lam : Dual K H) : SymmetricAlgebra.lift lam (e q) =
-      SymmetricAlgebra.lift (Dual.eval K H ((IsKilling.cartanEquivDual H).symm lam)) q := by
-    rw [SymmetricAlgebra.mapEquiv_apply, ← AlgHom.comp_apply]
-    congr 1
-    refine SymmetricAlgebra.algHom_ext <| LinearMap.ext fun mu ↦ ?_
-    have hval := invForm_cartanEquivDual_right mu ((IsKilling.cartanEquivDual H).symm lam)
-    have hval' := invForm_cartanEquivDual_right lam ((IsKilling.cartanEquivDual H).symm mu)
-    rw [LinearEquiv.apply_symm_apply] at hval hval'
-    simp only [LinearMap.coe_comp, LinearMap.coe_ofClass, AlgHom.coe_comp, Function.comp_apply,
-      SymmetricAlgebra.map_apply_ι, LinearEquiv.coe_coe, SymmetricAlgebra.lift_ι_apply,
-      SymmetricAlgebra.lift_comp_ι, Dual.eval_apply]
-    rw [← hval, ← hval', (invForm_isSymm (H := H)).eq]
-  have hzero : e q = 0 := polynomial_eq_zero_of_dominantIntegral b fun lam hlam ↦ by
-    rw [hlift]
-    exact hq _ ⟨lam, hlam, rfl⟩
-  simpa using hzero
 
 variable [IsAlgClosed K]
 
