@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.DividedPowerAlgebra.UniversalLaw
 public import TauCeti.RingTheory.PolynomialLaw.Coeff
 import Mathlib.Data.Multiset.Fintype
+import TauCeti.Data.Finsupp.Multiset
 
 /-!
 # Roby representability
@@ -285,11 +286,6 @@ private theorem famMultiset_map_univ {ι : Type*} [Fintype ι] (p : ι → ℕ �
   funext x
   simp [U]
 
-private theorem toMultiset_sum_single_one {α ι : Type*} [Fintype ι] (p : ι → α) :
-    Finsupp.toMultiset (∑ i, Finsupp.single (p i) 1) = Finset.univ.val.map p := by
-  simpa [Finsupp.toMultiset_sum, Finset.sum_map_val] using
-    Multiset.sum_map_singleton (Finset.univ.val.map p)
-
 /-- The linear map on polynomials in the variables `X (n, m)` sending the monomial
 `∏ X (nᵢ, mᵢ)` to the coefficient of `f` attached to the pairs `(nᵢ, mᵢ)`. -/
 private def polyMap : MvPolynomial (ℕ × M) R →ₗ[R] N :=
@@ -300,19 +296,16 @@ private theorem polyMap_monomial (e : ℕ × M →₀ ℕ) :
   simpa [polyMap] using (basisMonomials (ℕ × M) R).constr_basis R
     (fun e ↦ famMultiset f (Finsupp.toMultiset e)) e
 
-private theorem toMultiset_add_single_one {α : Type*} (e : α →₀ ℕ) (q : α) :
-    Finsupp.toMultiset (e + Finsupp.single q 1) = q ::ₘ Finsupp.toMultiset e := by
-  simp [Finsupp.toMultiset_add, add_comm]
-
 private theorem polyMap_monomial_mul_X (e : ℕ × M →₀ ℕ) (q : ℕ × M) :
     polyMap f (monomial e 1 * X q) = famMultiset f (q ::ₘ Finsupp.toMultiset e) := by
-  rw [← pow_one (X q), ← monomial_add_single, polyMap_monomial, toMultiset_add_single_one]
+  rw [← pow_one (X q), ← monomial_add_single, polyMap_monomial,
+    Finsupp.toMultiset_add_single_one]
 
 private theorem polyMap_monomial_mul_X_mul_X (e : ℕ × M →₀ ℕ) (q q' : ℕ × M) :
     polyMap f (monomial e 1 * (X q * X q')) =
       famMultiset f (q ::ₘ q' ::ₘ Finsupp.toMultiset e) := by
   rw [mul_comm (X q), ← mul_assoc, ← pow_one (X q'), ← monomial_add_single,
-    polyMap_monomial_mul_X, toMultiset_add_single_one]
+    polyMap_monomial_mul_X, Finsupp.toMultiset_add_single_one]
 
 /-- The coefficient map respects each defining relation of `Γ_R(M)`, after multiplication by
 any monomial. -/
@@ -358,21 +351,37 @@ private theorem ringCon_le_polyCon : ringCon R M ≤ polyCon f := by
     rw [hc, smul_mul_assoc, smul_mul_assoc, map_smul, map_smul, polyMap_monomial_mul_of_rel f h]
   | add t t' ht ht' => rw [add_mul, add_mul, map_add, map_add, ht, ht']
 
+/-- The function `Γ_R(M) → N` through which `polyMap f` factors.
+
+`DividedPowerAlgebra R M` is the abbreviation `RingCon.Quotient (ringCon R M)`, which is defined
+as `Quotient (ringCon R M).toSetoid`, and the coercion from polynomials is `Quotient.mk''`. So
+`Quotient.lift` applies directly, and computes on coerced polynomials by `rfl`
+(`coeffLiftFun_mk`). -/
+private def coeffLiftFun : DividedPowerAlgebra R M → N :=
+  Quotient.lift (s := (ringCon R M).toSetoid) (polyMap f) fun _ _ h ↦ by
+    simpa using ringCon_le_polyCon f h 1
+
+private theorem coeffLiftFun_mk (P : MvPolynomial (ℕ × M) R) :
+    coeffLiftFun f (P : DividedPowerAlgebra R M) = polyMap f P :=
+  rfl
+
 /-- The linear map `Γ_R(M) → N` induced by the coefficients of `f`: it sends
 `∏ᵢ dp R nᵢ mᵢ` to the coefficient of `∏ᵢ Xᵢ ^ nᵢ` in `f (∑ᵢ Xᵢ ⊗ mᵢ)`. -/
 private def coeffLift : DividedPowerAlgebra R M →ₗ[R] N where
-  toFun := Quotient.lift (s := (ringCon R M).toSetoid) (polyMap f) fun a b h ↦ by
-    simpa using ringCon_le_polyCon f h 1
-  map_add' x y := Quotient.inductionOn₂' x y fun a b ↦
-    (congrArg (Quotient.lift (s := (ringCon R M).toSetoid) (polyMap f) _)
-      (RingCon.coe_add (c := ringCon R M) a b).symm).trans (map_add (polyMap f) a b)
-  map_smul' r x := Quotient.inductionOn' x fun a ↦
-    (congrArg (Quotient.lift (s := (ringCon R M).toSetoid) (polyMap f) _)
-      (RingCon.coe_smul (c := ringCon R M) r a).symm).trans (map_smul (polyMap f) r a)
+  toFun := coeffLiftFun f
+  map_add' x y := by
+    obtain ⟨a, rfl⟩ := RingCon.mk'_surjective _ x
+    obtain ⟨b, rfl⟩ := RingCon.mk'_surjective _ y
+    rw [RingCon.coe_mk', ← RingCon.coe_add, coeffLiftFun_mk, coeffLiftFun_mk, coeffLiftFun_mk,
+      map_add]
+  map_smul' r x := by
+    obtain ⟨a, rfl⟩ := RingCon.mk'_surjective _ x
+    rw [RingCon.coe_mk', ← RingCon.coe_smul, coeffLiftFun_mk, coeffLiftFun_mk, map_smul,
+      RingHom.id_apply]
 
 private theorem coeffLift_mk (P : MvPolynomial (ℕ × M) R) :
     coeffLift f (P : DividedPowerAlgebra R M) = polyMap f P :=
-  rfl
+  coeffLiftFun_mk f P
 
 private theorem coeffLift_prod_dp {ι : Type*} [Fintype ι] (p : ι → ℕ × M) :
     coeffLift f (∏ i, dp R (p i).1 (p i).2) = famCoeff f p := by
@@ -382,7 +391,8 @@ private theorem coeffLift_prod_dp {ι : Type*} [Fintype ι] (p : ι → ℕ × M
         DividedPowerAlgebra R M) := by
     simp only [dp_def, Prod.mk.eta, monomial_sum_one, ← X_pow_eq_monomial, pow_one,
       ← RingCon.mkₐ_apply R, map_prod]
-  rw [hdp, coeffLift_mk, polyMap_monomial, toMultiset_sum_single_one, famMultiset_map_univ]
+  rw [hdp, coeffLift_mk, polyMap_monomial, Finsupp.toMultiset_sum_single_one,
+    famMultiset_map_univ]
 
 end Multiset
 
