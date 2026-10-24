@@ -18,7 +18,8 @@ Rotating the circle `AddCircle T` by `θ` reparametrizes a function `u` as `x �
 Fourier coefficients this multiplies the `n`-th coefficient by `e^{2πinθ/T}`, so it acts on every
 Fourier-coefficient Sobolev space `H^s` of `TauCeti/Analysis/Sobolev/Circle/Basic.lean` as a linear
 isometry, for every real order `s`. Rotations are the reparametrizations of a boundary circle by
-the isometries of the circle, so this is the coordinate invariance of `H^s` under them.
+the orientation-preserving isometries of the circle, so this is the coordinate invariance of `H^s`
+under them.
 
 The action is strongly continuous: `θ ↦ rotate θ a` is continuous for every `a ∈ H^s`. The
 differentiability of an orbit map depends on the regularity of the vector: the orbit map

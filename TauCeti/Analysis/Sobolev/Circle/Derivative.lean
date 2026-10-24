@@ -20,9 +20,10 @@ multiplies the `n`-th coefficient by `2πin/T`. Since `|n| (1 + |n|) ^ s ≤ (1 
 is a bounded operator `H^t → H^s` as soon as `s + 1 ≤ t`: differentiation costs exactly one order
 of regularity, for every real order, including fractional and negative orders.
 
-For `s > 1/2` the elements of `H^s` are continuous functions, and this operator is the derivative
-of their continuous representatives in the classical sense. The loss of one order is what governs
-the differentiability of reparametrizations of boundary maps (see
+For `s > 1/2` the elements of `H^s` are continuous functions. If moreover `s + 1 ≤ t`, then the
+continuous representative of `a ∈ H^t` is differentiable in the classical sense, and its derivative
+is the continuous representative of the element of `H^s` given by this operator. The loss of one
+order is what governs the differentiability of reparametrizations of boundary maps (see
 `TauCeti/Analysis/Sobolev/Circle/Rotation.lean`).
 
 ## Main definitions
