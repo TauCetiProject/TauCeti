@@ -46,6 +46,9 @@ positive exponent equal to one; the source only needs a multiplication and ident
 
 * `IsOfFinOrder.dvd_orderOf_pow_iff`, and its additive counterpart: divisibility of the order of
   a power as non-divisibility of its exponent by a prime power at each prime of `f`.
+* `TauCeti.orderOf_eq_orderOf_of_forall_lt_pow_eq_one_iff`: two elements killed by a common
+  exponent `n > 0` have the same order when the same powers below `n` are trivial, and its
+  additive counterpart.
 * `TauCeti.natCast_natCard_sub_one_eq_neg_one`: in a finite additive group with one of
   cardinality `q`, the cast of `q - 1` is `-1`, a companion of Mathlib's `Nat.cast_card_eq_zero`.
 * `TauCeti.pow_pow_totient_eq_self`: `x ^ q ^ φ(n) = x` whenever `x ^ n = 1` and `q` is prime to
@@ -100,6 +103,20 @@ theorem dvd_orderOf_pow_iff {g : G} (hg : IsOfFinOrder g) {f : ℕ}
 end IsOfFinOrder
 
 namespace TauCeti
+
+/-- **Comparing orders below a common exponent.** If `x ^ n = 1` and `y ^ n = 1` with `n > 0`,
+and `x ^ k = 1 ↔ y ^ k = 1` for every `k < n`, then `x` and `y` have the same order: every power
+reduces modulo `n`. -/
+@[to_additive
+/-- **Comparing additive orders below a common exponent.** If `n • x = 0` and `n • y = 0` with
+`n > 0`, and `k • x = 0 ↔ k • y = 0` for every `k < n`, then `x` and `y` have the same additive
+order. -/]
+theorem orderOf_eq_orderOf_of_forall_lt_pow_eq_one_iff {M N : Type*} [Monoid M] [Monoid N]
+    {x : M} {y : N} {n : ℕ} (hn : 0 < n) (hx : x ^ n = 1) (hy : y ^ n = 1)
+    (h : ∀ k < n, x ^ k = 1 ↔ y ^ k = 1) : orderOf x = orderOf y :=
+  orderOf_eq_orderOf_iff.2 fun k ↦ by
+    rw [pow_eq_pow_mod k hx, pow_eq_pow_mod k hy]
+    exact h _ (Nat.mod_lt k hn)
 
 /-- In a finite additive group with one of cardinality `q`, the cast of `q - 1` is `-1`. -/
 theorem natCast_natCard_sub_one_eq_neg_one (R : Type*) [AddGroupWithOne R] [Finite R] :
