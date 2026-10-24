@@ -23,8 +23,7 @@ unit of `R` (`WittVector.isUnit_iff_isUnit_coeff_zero`); the inverse is Mathlib'
 `WittVector.mkUnit`. Mathlib states the criterion only over a field
 (`WittVector.isUnit_of_coeff_zero_ne_zero`). In characteristic `p` the Verschiebung of `F u` is
 `p u`, so a sum `[a] + p u` has Witt coordinates `a` in degree `0` and `u_n ^ p` in degree `n + 1`
-(`WittVector.teichmuller_add_p_mul_coeff_succ`), and over a perfect ring every Witt vector is
-`[x₀] + p u` (`WittVector.exists_eq_teichmuller_add_p_mul`).
+(`WittVector.teichmuller_add_p_mul_coeff_succ`).
 
 ## Main results
 
@@ -38,7 +37,6 @@ unit of `R` (`WittVector.isUnit_iff_isUnit_coeff_zero`); the inverse is Mathlib'
 * `WittVector.teichmuller_add_p_mul_coeff_zero`, `WittVector.teichmuller_add_p_mul_coeff_succ`:
   the Witt coordinates of `[a] + p u` in characteristic `p`.
 * `WittVector.isUnit_iff_isUnit_coeff_zero`: in characteristic `p`, `x` is a unit iff `x₀` is.
-* `WittVector.exists_eq_teichmuller_add_p_mul`: over a perfect ring, `x = [x₀] + p u`.
 
 ## References
 
@@ -137,16 +135,6 @@ Witt vector is a unit exactly when its zeroth Witt coordinate is a unit of `R`. 
 theorem isUnit_iff_isUnit_coeff_zero {x : 𝕎 R} : IsUnit x ↔ IsUnit (x.coeff 0) :=
   ⟨fun h ↦ by simpa using h.map (constantCoeff (p := p) (R := R)),
     fun ⟨_, ha⟩ ↦ (mkUnit ha.symm).isUnit⟩
-
-variable [PerfectRing R p]
-
-/-- Over a perfect ring of characteristic `p`, every Witt vector is `[x₀] + p u`. -/
-theorem exists_eq_teichmuller_add_p_mul (x : 𝕎 R) :
-    ∃ u : 𝕎 R, x = teichmuller p (x.coeff 0) + p * u := by
-  obtain ⟨u, hu⟩ := Ideal.mem_span_singleton.mp <|
-    (mem_span_p_iff_coeff_zero_eq_zero (x - teichmuller p (x.coeff 0))).mpr <| by
-      rw [sub_coeff_zero, teichmuller_coeff_zero, sub_self]
-  exact ⟨u, by rw [← hu, add_sub_cancel]⟩
 
 end CharP
 

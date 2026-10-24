@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RingTheory.WittVector.TeichmullerCoeff
 public import TauCeti.RingTheory.WittVector.Units
 public import TauCeti.Topology.Algebra.TopologicallyNilpotent.Basic
 
@@ -43,7 +44,7 @@ primitive element is moreover a unit multiple of some `p + [ϖ] α`.
 
 * `WittVector.isDistinguished_iff_exists_unit`, `WittVector.isPrimitive_iff_exists_unit`: the
   Teichmüller form `ξ = [ξ₀] + p u` with `u` a unit.
-* `WittVector.isPrimitive_natCast`: `p` is primitive, and
+* `WittVector.isPrimitive_p`: `p` is primitive, and
   `WittVector.not_isDistinguished_of_mem_span_p_sq`, `WittVector.not_isDistinguished_teichmuller`:
   over a nonzero ring no element of `(p ^ 2)` and no Teichmüller representative is.
 * `WittVector.IsPrimitive.map`, `WittVector.IsPrimitive.frobenius`: functoriality and Frobenius.
@@ -129,14 +130,14 @@ theorem isDistinguished_teichmuller_add_p_mul_iff (a : S) (u : 𝕎 S) :
 
 /-- In characteristic `p`, the Witt vector `p = (0, 1, 0, …)` is distinguished. -/
 @[simp]
-theorem isDistinguished_natCast : (p : 𝕎 S).IsDistinguished := by
+theorem isDistinguished_p : (p : 𝕎 S).IsDistinguished := by
   rw [isDistinguished_iff, coeff_p_one]
   exact isUnit_one
 
 /-- In characteristic `p`, the Witt vector `p = (0, 1, 0, …)` is primitive. -/
 @[simp]
-theorem isPrimitive_natCast [TopologicalSpace S] : (p : 𝕎 S).IsPrimitive :=
-  ⟨by rw [coeff_p_zero]; exact .zero, isDistinguished_natCast⟩
+theorem isPrimitive_p [TopologicalSpace S] : (p : 𝕎 S).IsPrimitive :=
+  ⟨by rw [coeff_p_zero]; exact .zero, isDistinguished_p⟩
 
 /-- Over a nonzero ring of characteristic `p`, no element of the ideal `(p ^ 2)` is distinguished:
 its first Witt coordinate vanishes. In particular neither `p ^ 2` nor `0` is distinguished, and
@@ -218,7 +219,8 @@ variable [PerfectRing S p]
 theorem isDistinguished_iff_exists_unit {ξ : 𝕎 S} :
     ξ.IsDistinguished ↔ ∃ u : (𝕎 S)ˣ, ξ = teichmuller p (ξ.coeff 0) + p * u := by
   refine ⟨fun h ↦ ?_, fun ⟨u, hu⟩ ↦ ?_⟩
-  · obtain ⟨u, hu⟩ := exists_eq_teichmuller_add_p_mul ξ
+  · obtain ⟨u, hu⟩ : ∃ u : 𝕎 S, ξ = teichmuller p (ξ.coeff 0) + p * u := by
+      simpa [teichmullerCoeff_zero] using exists_eq_sum_teichmullerCoeff_add_pow_mul ξ 1
     rw [hu, isDistinguished_teichmuller_add_p_mul_iff, ← isUnit_iff_isUnit_coeff_zero] at h
     exact ⟨h.unit, hu⟩
   · rw [hu, isDistinguished_teichmuller_add_p_mul_iff, ← isUnit_iff_isUnit_coeff_zero]
