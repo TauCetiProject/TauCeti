@@ -24,8 +24,6 @@ henselization of the pair `(R, 𝔪)` is the henselization of the local ring `R`
 
 ## Main results
 
-* `TauCeti.Henselization.isMaximal_extended`: the extension of a maximal ideal to the
-  henselization is maximal.
 * `TauCeti.Henselization.henselianLocalRing`: the henselization along a maximal ideal is a
   henselian local ring, with maximal ideal `extended I` (`maximalIdeal_eq_extended`).
 * `TauCeti.Henselization.isLocalHom_algebraMap`: for a local ring `R`, the structure map to the
@@ -51,20 +49,6 @@ universe u v
 namespace TauCeti.Henselization
 
 variable {R : Type u} [CommRing R] (I : Ideal R)
-
-/-- An element of `R` maps into the extended ideal of the henselization exactly when it lies
-in `I`. -/
-@[simp]
-theorem comap_extended : (extended I).comap (algebraMap R (algebra I)) = I :=
-  le_antisymm (fun _ hr ↦ mem_of_algebraMap_mem_map_of_reducedMap_injective I
-    (quotient_bijective I).1 hr) Ideal.le_comap_map
-
-/-- The extension of a maximal ideal to the henselization is a maximal ideal: the quotient by
-it is the residue field `R ⧸ I`. -/
-instance isMaximal_extended [I.IsMaximal] : (extended I).IsMaximal := by
-  rw [Ideal.Quotient.maximal_ideal_iff_isField_quotient]
-  exact (RingEquiv.ofBijective _ (quotient_bijective I)).symm.toMulEquiv.isField
-    ((Ideal.Quotient.maximal_ideal_iff_isField_quotient I).mp ‹_›)
 
 /-- The henselization along a maximal ideal is a local ring. -/
 instance isLocalRing [I.IsMaximal] : IsLocalRing (algebra I) :=
