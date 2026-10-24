@@ -64,8 +64,8 @@ the derivative of `N` does, and it is `C^n` near the equilibrium when `N` is uni
 * `ContinuousLinearMap.contDiffAt_localStableGraphMap_of_uniformContDiffOn` and
   `ContinuousLinearMap.contDiffAt_localUnstableGraphMap_of_uniformContDiffOn`: when the nonlinear
   remainder is uniformly `C^n` (`TauCeti.UniformContDiffOn`) on the ball of confinement, the local
-  stable and unstable graph maps are `C^n` at every parameter whose solution stays strictly inside
-  that ball.
+  stable and unstable graph maps are `C^n` at every parameter for which the Lyapunov--Perron
+  upper bound is strictly less than the confinement radius `r`.
 * `ContinuousLinearMap.contDiffAt_localStableGraphMap` and
   `ContinuousLinearMap.contDiffAt_localUnstableGraphMap`: the `C¹` case, when the
   nonlinear remainder is `C¹` on the ball of confinement, with uniformly continuous derivative.
