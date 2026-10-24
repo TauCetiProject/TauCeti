@@ -16,7 +16,8 @@ Let `ℋ` be a graded algebra, presented as a minimal `A∞` algebra without ope
 two, and let `𝒜` be a minimal `A∞` structure on the same graded module with the binary operation
 of `ℋ` and `m₃ = 0`.  Its first obstruction to formality is the operation `m₄`, a Hochschild
 cocycle of `ℋ` (`TauCeti.AInfinityAlgebra.hochschildDifferential_obstruction`) whose class lies in
-`HH^{4, -2}(H, H)`.  A gauge transformation by a Hochschild coboundary kills it
+`HH^{4, -2}(H, H)`.  When it is a Hochschild coboundary, the gauge transformation by a suitable
+primitive kills it
 (`TauCeti.AInfinityAlgebra.IsMinimal.taylor_gauge_apply_eq_of_hochschildDifferential`).  This file
 proves the converse when `2` is invertible: if `𝒜` is `A∞` isomorphic to `ℋ`, then `m₄` is a
 Hochschild coboundary (`IsMinimal.exists_hochschildDifferential_eq_obstruction_four_of_isIso`).
