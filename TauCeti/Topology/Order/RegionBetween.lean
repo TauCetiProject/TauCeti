@@ -68,6 +68,7 @@ theorem regionBetween_subset_closedRegionBetween (f g : α → ℝ) (s : Set α)
   fun _ hp ↦ ⟨hp.1, Ioo_subset_Icc_self hp.2⟩
 
 /-- The closed region between a function and itself is its graph. -/
+@[simp]
 theorem closedRegionBetween_self (f : α → ℝ) (s : Set α) :
     closedRegionBetween f f s = s.graphOn f := by
   ext ⟨x, t⟩
@@ -182,6 +183,7 @@ theorem regionBetweenMap_fst (p : X × ℝ) : (regionBetweenMap g φ φ' ψ ψ' 
 
 /-- Over a collapsed fibre `φ x = φ' x`, the band map is the graph map of the lower target
 endpoint. -/
+@[simp]
 theorem regionBetweenMap_of_eq {x : X} (h : φ x = φ' x) (r : ℝ) :
     regionBetweenMap g φ φ' ψ ψ' (x, r) = (g x, ψ (g x)) := by
   simp [regionBetweenMap_apply, h]
@@ -193,6 +195,7 @@ theorem regionBetweenMap_lower (x : X) :
 
 /-- The band map sends the upper source endpoint to the upper target endpoint, provided a
 collapsed source fibre lies over a collapsed target fibre. -/
+@[simp]
 theorem regionBetweenMap_upper {x : X} (h : φ x = φ' x → ψ (g x) = ψ' (g x)) :
     regionBetweenMap g φ φ' ψ ψ' (x, φ' x) = (g x, ψ' (g x)) := by
   by_cases hx : φ x = φ' x
