@@ -71,6 +71,10 @@ are those of its summands, so its tangent coordinate changes are those of the su
   instance `TauCeti.FiberBundle.t2Space_totalSpace`.
 * `TauCeti.Manifold.eventually_tangentSpaceOpenEquiv_symmL_trivializationAt_eq`: near a point, the
   inverse tangent-bundle trivializations agree through this equivalence.
+* `TauCeti.Manifold.restrictOpenTangentSpaceBilin`: the restriction of a field of bilinear maps on
+  the tangent spaces to an open submanifold, and
+  `TauCeti.Manifold.contMDiffAt_restrictOpenTangentSpaceBilin`: restriction preserves `C^n`
+  regularity.
 * `TauCeti.Manifold.tangentSpaceProdEquiv`: the canonical continuous linear equivalence between
   the tangent space of a product and the product of the tangent spaces.
 * `TauCeti.Manifold.mfderiv_prodMap_apply`: differentials of product maps act componentwise
@@ -702,6 +706,76 @@ theorem eventually_tangentSpaceOpenEquiv_symmL_trivializationAt_eq
   change (tangentBundleCore I U).coordChange (achart H x) (achart H y) y z =
     (tangentBundleCore I M).coordChange (achart H (x : M)) (achart H (y : M)) (y : M) z
   exact DFunLike.congr_fun hcoord z
+
+section RestrictOpenBilin
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- Restrict a field of continuous bilinear maps on the tangent spaces of `M` to an open
+submanifold `U`, through the canonical tangent-space identification. -/
+noncomputable def restrictOpenTangentSpaceBilin
+    (b : Π x : M, TangentSpace I x →L[𝕜] TangentSpace I x →L[𝕜] F) (U : Opens M) (x : U) :
+    TangentSpace I x →L[𝕜] TangentSpace I x →L[𝕜] F :=
+  let e := tangentSpaceOpenEquiv (I := I) x
+  e.symm.arrowCongr (e.symm.arrowCongr (ContinuousLinearEquiv.refl 𝕜 F)) (b x)
+
+/-- The restriction of a bilinear field to an open submanifold evaluates the ambient field through
+the canonical tangent-space identification. -/
+@[simp]
+theorem restrictOpenTangentSpaceBilin_apply
+    (b : Π x : M, TangentSpace I x →L[𝕜] TangentSpace I x →L[𝕜] F) (U : Opens M) (x : U)
+    (v w : TangentSpace I x) :
+    restrictOpenTangentSpaceBilin b U x v w =
+      b x (tangentSpaceOpenEquiv (I := I) x v) (tangentSpaceOpenEquiv (I := I) x w) :=
+  (rfl)
+
+/-- Restricting a bilinear field on the tangent bundle to an open submanifold preserves `C^n`
+regularity at a point. -/
+theorem contMDiffAt_restrictOpenTangentSpaceBilin [IsManifold I 1 M] {n : ℕ∞ω}
+    {b : Π x : M, TangentSpace I x →L[𝕜] TangentSpace I x →L[𝕜] F} {U : Opens M} {x : U}
+    (hb : ContMDiffAt I (I.prod 𝓘(𝕜, E →L[𝕜] E →L[𝕜] F)) n
+      (fun y ↦ TotalSpace.mk' (E →L[𝕜] E →L[𝕜] F) y (b y)) x) :
+    ContMDiffAt I (I.prod 𝓘(𝕜, E →L[𝕜] E →L[𝕜] F)) n
+      (fun y : U ↦ TotalSpace.mk' (E →L[𝕜] E →L[𝕜] F) y (restrictOpenTangentSpaceBilin b U y))
+      x := by
+  -- Pull ambient `C^n` regularity back along the inclusion and compare the inherited and ambient
+  -- tangent-bundle coordinates on a common neighbourhood of `x`.
+  rw [contMDiffAt_section]
+  have h := hb.comp x (contMDiff_subtype_val (I := I) (U := U)).contMDiffAt
+  rw [contMDiffAt_totalSpace] at h
+  apply h.2.congr_of_eventuallyEq
+  filter_upwards [
+    (trivializationAt E (TangentSpace I : U → Type _) x).open_baseSet.mem_nhds
+      (mem_baseSet_trivializationAt E (TangentSpace I : U → Type _) x),
+    continuousAt_subtype_val.eventually
+      ((trivializationAt E (TangentSpace I : M → Type _) x.1).open_baseSet.mem_nhds
+        (mem_baseSet_trivializationAt E (TangentSpace I : M → Type _) x.1)),
+    eventually_tangentSpaceOpenEquiv_symmL_trivializationAt_eq (I := I) x] with y hyU hyM hsymm
+  have hyU' : y ∈ (chartAt H x).source := by simpa using hyU
+  have hyM' : (y : M) ∈ (chartAt H (x : M)).source := hyM
+  have hyUhom : y ∈ (trivializationAt (E →L[𝕜] F)
+      (fun z : U ↦ TangentSpace I z →L[𝕜] F) x).baseSet := by
+    simpa using hyU'
+  have hyMhom : (y : M) ∈ (trivializationAt (E →L[𝕜] F)
+      (fun z : M ↦ TangentSpace I z →L[𝕜] F) (x : M)).baseSet := by
+    simpa using hyM'
+  ext v w
+  simp only [hom_trivializationAt_apply, ContinuousLinearMap.inCoordinates,
+    Trivialization.continuousLinearMapAt_apply, Trivialization.symmL_apply,
+    Trivialization.linearMapAt_apply,
+    hyU, hyUhom, hyMhom, ContinuousLinearMap.coe_comp, Function.comp_apply,
+    ite_true]
+  rw [restrictOpenTangentSpaceBilin_apply]
+  simp only [Trivial.fiberBundle_trivializationAt', Trivial.trivialization_baseSet,
+    Set.mem_univ, ite_true, Trivial.trivialization_apply]
+  have hsymm' (z : E) :
+      tangentSpaceOpenEquiv (I := I) y
+          ((trivializationAt E (TangentSpace I : U → Type _) x).symm y z) =
+        (trivializationAt E (TangentSpace I : M → Type _) (x : M)).symmL 𝕜 (y : M) z := by
+    simpa only [Trivialization.symmL_apply _ hyU] using hsymm z
+  rw [hsymm' v, hsymm' w, Trivialization.symmL_apply _ hyM, Trivialization.symmL_apply _ hyM]
+
+end RestrictOpenBilin
 
 section Prod
 
