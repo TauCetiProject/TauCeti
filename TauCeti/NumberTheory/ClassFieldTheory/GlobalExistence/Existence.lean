@@ -126,7 +126,11 @@ private theorem isOpenLevel_globalGroundOrderIso {N : Subgroup (IdeleClassGroup 
   have heq : (levelSubgroup hF (globalGroundOrderIso K N).toAddSubgroup :
       Set (IdeleClassGroup (𝓞 E) E)) = ideleClassNormMap K E ⁻¹' N := by
     ext c
-    simp [mem_levelSubgroup, key, mem_globalGroundOrderIso]
+    rw [mem_levelSubgroup, key]
+    -- The additive subgroup is the underlying carrier of the ground-level integer submodule.
+    change globalGroundEquiv K (.ofMul (ideleClassNormMap K E c)) ∈
+      globalGroundOrderIso K N ↔ ideleClassNormMap K E c ∈ N
+    rw [mem_globalGroundOrderIso, AddEquiv.symm_apply_apply, toMul_ofMul]
   rw [heq]
   exact hN.preimage (continuous_ideleClassNormMap K E)
 
