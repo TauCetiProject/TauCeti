@@ -288,7 +288,9 @@ theorem singularHomologyMap_comp {Y Z W : Type u} [TopologicalSpace Y] [Topologi
     [TopologicalSpace W] (g : C(Z, W)) (g' : C(Y, Z)) (x) :
     singularHomologyMap k n (g.comp g') x =
       singularHomologyMap k n g (singularHomologyMap k n g' x) := by
-  rw [singularHomologyMap, TopCat.ofHom_comp, Functor.map_comp,
-    HomologicalComplex.homologyMap_comp, ModuleCat.hom_comp, LinearMap.comp_apply]
+  simp only [singularHomologyMap, TopCat.ofHom_comp, Functor.map_comp,
+    HomologicalComplex.homologyMap_comp]
+  -- The composite of linear maps applied to `x` is the iterated application by definition.
+  rfl
 
 end ContinuousMap

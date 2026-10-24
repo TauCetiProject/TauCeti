@@ -10,6 +10,7 @@ public import TauCeti.LowDimTopology.DehnSurgery.Framing
 
 import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
 import TauCeti.AlgebraicTopology.Singular.MayerVietoris.Reduced
+import TauCeti.Topology.Homotopy.HomotopyEquiv
 import TauCeti.Topology.Homotopy.PuncturedStarConvex
 import TauCeti.Topology.JordanCurve.Basic
 
@@ -210,9 +211,10 @@ private theorem coe_torusHomotopyEquiv_apply (h : IsSolidTorusNeighborhood f Φ)
     (q : Circle × Circle) :
     (h.torusHomotopyEquiv q : X) = Φ (radialPoint (1 / 2) ⟨by norm_num, by norm_num⟩ q) := by
   simp only [torusHomotopyEquiv, ContinuousMap.HomotopyEquiv.trans_apply,
-    Homeomorph.coe_toHomotopyEquiv, coe_puncturedHomeomorph_apply, puncturedMap]
+    Homeomorph.coe_toHomotopyEquiv, coe_puncturedHomeomorph_apply, puncturedMap,
+    ContinuousMap.HomotopyEquiv.prodCongr_apply]
   refine congrArg Φ (Prod.ext (Subtype.ext ?_) rfl)
-  simp [ContinuousMap.HomotopyEquiv.prodCongr, radialPoint]
+  simp [StarConvex.coe_sphereHomotopyEquiv_apply, radialPoint]
 
 /-- The inclusion of the punctured open solid torus in the open solid torus. -/
 private abbrev puncturedToOpen (f : Circle → X) (Φ : SolidTorus → X) :
@@ -499,9 +501,9 @@ theorem complementHomologyEquiv_boundaryHomologyMap (h : IsSolidTorusNeighborhoo
         h.framingNumber h₁ h₂ * (h.framedBoundaryTorus.coord x).2 := by
   conv_lhs => rw [← h.framedBoundaryTorus.coord.symm_apply_apply x,
     FramedBoundaryTorus.coord_symm_apply]
-  rw [map_add, map_zsmul, map_zsmul, map_add, map_zsmul, map_zsmul,
-    complementHomologyEquiv_boundaryHomologyMap_basis_zero, ← framingNumber, smul_eq_mul,
-    smul_eq_mul, mul_one, mul_comm]
+  simp only [map_add, map_zsmul, complementHomologyEquiv_boundaryHomologyMap_basis_zero,
+    framingNumber, smul_eq_mul]
+  ring
 
 /-- A class of the boundary torus with `(μ, λ)`-coordinates `(p, q)` is null-homologous in the
 knot complement exactly when `p + n q = 0`, `n` the framing number. -/

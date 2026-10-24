@@ -204,6 +204,7 @@ end ContinuousMap
 namespace TauCeti
 
 /-- The class of the `(p, q)` curve has coordinates `(p, q)` in first homology. -/
+@[simp]
 theorem circleProdFirstHomologyEquiv_torusClass (p q : ℤ) :
     circleProdFirstHomologyEquiv (Homeomorph.refl (Circle × Circle)) (torusClass p q) = ![p, q] :=
   circleProdFirstHomologyEquiv_torusCurve (Homeomorph.refl _) p q
@@ -230,6 +231,7 @@ theorem exists_eq_torusClass
 
 /-- A torus curve has zero first integral homology class exactly when both winding numbers
 vanish. -/
+@[simp]
 theorem torusClass_eq_zero_iff (p q : ℤ) : torusClass p q = 0 ↔ p = 0 ∧ q = 0 := by
   rw [← (circleProdFirstHomologyEquiv (Homeomorph.refl (Circle × Circle))).map_eq_zero_iff,
     circleProdFirstHomologyEquiv_torusClass]

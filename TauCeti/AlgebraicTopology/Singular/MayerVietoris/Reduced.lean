@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicTopology.Singular.Contractible
 public import TauCeti.AlgebraicTopology.Singular.ModuleChains.Basic
 
 import Mathlib.Algebra.Category.ModuleCat.Biproducts
+import TauCeti.Algebra.Category.ModuleCat.Biproducts
 
 /-!
 # The reduced Mayer–Vietoris connecting morphism
@@ -361,28 +362,14 @@ theorem bijective_singularHomologyMap_inclusion_prod_neg {k : Type w} [Ring k] {
   -- coordinates.
   set P := M ≫ (ModuleCat.biprodIsoProd _ _).hom
   have hP : Bijective P.hom := ConcreteCategory.bijective_of_isIso P
-  have hfst : ∀ x, (P.hom x).1 = singularHomologyMap k (n + 1)
-      (ContinuousMap.inclusion (inter_subset_left (t := V))) x := fun x ↦ by
-    have hc : P ≫ (ModuleCat.biprodIsoProd _ _).inv ≫ biprod.fst = SSet.homologyMap
-        (TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.inclusion (inter_subset_left (t := V)))))
-        (ModuleCat.of k k) (n + 1) := by
-      simp only [P, M, Category.assoc, Iso.hom_inv_id_assoc, SSet.mayerVietorisToBiprod_fst]
-    rw [ModuleCat.biprodIsoProd_inv_comp_fst] at hc
-    exact congr($(hc).hom x)
-  have hsnd : ∀ x, (P.hom x).2 = -singularHomologyMap k (n + 1)
-      (ContinuousMap.inclusion (inter_subset_right (s := U))) x := fun x ↦ by
-    have hc : P ≫ (ModuleCat.biprodIsoProd _ _).inv ≫ biprod.snd = -SSet.homologyMap
-        (TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.inclusion (inter_subset_right (s := U)))))
-        (ModuleCat.of k k) (n + 1) := by
-      simp only [P, M, Category.assoc, Iso.hom_inv_id_assoc, SSet.mayerVietorisToBiprod_snd]
-    rw [ModuleCat.biprodIsoProd_inv_comp_snd] at hc
-    exact congr($(hc).hom x)
   have hP_eq : ⇑P.hom = fun x ↦
       (singularHomologyMap k (n + 1) (ContinuousMap.inclusion (inter_subset_left (t := V))) x,
         -singularHomologyMap k (n + 1)
           (ContinuousMap.inclusion (inter_subset_right (s := U))) x) := by
     funext x
-    exact Prod.ext (hfst x) (hsnd x)
+    rw [ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.biprodIsoProd_hom_apply]
+    exact Prod.ext (ConcreteCategory.congr_hom (SSet.mayerVietorisToBiprod_fst ..) x)
+      (ConcreteCategory.congr_hom (SSet.mayerVietorisToBiprod_snd ..) x)
   rwa [hP_eq] at hP
 
 end TauCeti
