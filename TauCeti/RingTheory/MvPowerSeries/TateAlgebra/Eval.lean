@@ -43,6 +43,7 @@ algebras, as in Kedlaya's Lemma 4.9 for the interval rings of the Fargues–Font
 * `MvPowerSeries.hasSum_restrictedEval₂`: `f(a)` is the sum of the monomial values `φ(fₜ) aᵗ`.
 * `MvPowerSeries.restrictedEval₂_monomial`, `MvPowerSeries.restrictedEval₂_algebraMap` and
   `MvPowerSeries.restrictedEval₂_X`: the values on monomials, constants and variables.
+* `MvPowerSeries.restrictedEval₂_coe`: on polynomials, evaluation is `MvPolynomial.eval₂`.
 * `MvPowerSeries.norm_restrictedEval₂_le`: evaluation does not increase the Gauss norm.
 * `MvPowerSeries.eq_restrictedEval₂`: a continuous ring homomorphism out of `R{X/c}` is determined
   by its values on constants and variables.
@@ -147,6 +148,28 @@ theorem restrictedEval₂_algebraMap (r : R) :
 theorem restrictedEval₂_X (i : Fin k) :
     restrictedEval₂ φ a hφ ha ⟨X i, isRestricted_monomial c (Finsupp.single i 1) 1⟩ = a i :=
   weightedEval_X φ a i
+
+/-- On polynomials, evaluation is polynomial evaluation: `p(a) = MvPolynomial.eval₂ φ a p`. -/
+@[simp]
+theorem restrictedEval₂_coe (p : MvPolynomial (Fin k) R) :
+    restrictedEval₂ φ a hφ ha ⟨p, MvPolynomial.isRestricted c p⟩ = p.eval₂ φ a := by
+  induction p using MvPolynomial.induction_on with
+  | C r =>
+    rw [MvPolynomial.eval₂_C, ← restrictedEval₂_algebraMap φ a hφ ha r]
+    exact congrArg _ (Subtype.ext (by simp [coe_algebraMap_isRestrictedSubring]))
+  | add p q hp hq =>
+    have h : (⟨(p + q : MvPolynomial (Fin k) R), MvPolynomial.isRestricted c _⟩ :
+        IsRestricted.subring (R := R) c) =
+        ⟨p, MvPolynomial.isRestricted c p⟩ + ⟨q, MvPolynomial.isRestricted c q⟩ :=
+      Subtype.ext (MvPolynomial.coe_add p q)
+    rw [h, map_add, hp, hq, MvPolynomial.eval₂_add]
+  | mul_X p i hp =>
+    have h : (⟨(p * MvPolynomial.X i : MvPolynomial (Fin k) R), MvPolynomial.isRestricted c _⟩ :
+        IsRestricted.subring (R := R) c) =
+        ⟨p, MvPolynomial.isRestricted c p⟩ *
+          ⟨X i, isRestricted_monomial c (Finsupp.single i 1) 1⟩ :=
+      Subtype.ext (by simp [MvPolynomial.coe_mul, MvPolynomial.coe_X])
+    rw [h, map_mul, hp, restrictedEval₂_X, MvPolynomial.eval₂_mul, MvPolynomial.eval₂_X]
 
 variable [∀ i, Fact (0 < c i)]
 
