@@ -294,7 +294,7 @@ theorem tendsto_cutoff_bubble_sobolev_quotient (hn : 2 < finrank ℝ E)
     apply (eq_div_iff (Real.rpow_pos_of_pos (roundSphereVolume_pos _) _).ne').2
     rw [hp]
     exact sphereYamabeConstant_mul_roundSphereVolume_rpow (by omega)
-  simpa only [← hc] using hlim
+  simpa only [Pi.div_apply, ← hc] using hlim
 
 /-- Every nonempty open set in dimension greater than two contains a nonnegative smooth
 compactly supported test function with positive critical mass and Sobolev quotient less than
