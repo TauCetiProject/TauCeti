@@ -38,8 +38,8 @@ with a polynomial ring.
 
 * `Representation.ringKrullDim_symmetricAlgebraInvariants`: the invariant subalgebra has the Krull
   dimension of `Sym M`.
-* `Representation.primesOver_under_irrelevant`: over a domain, `S₊` is the only prime of `Sym M`
-  lying over `A₊`.
+* `Representation.primesOver_under_irrelevant_eq_singleton`: over a domain, `S₊` is the only
+  prime of `Sym M` lying over `A₊`.
 * `Representation.height_under_symmetricAlgebraInvariants`: over a field, contraction to the
   invariants preserves the heights of primes.
 * `Representation.height_under_irrelevant` and
@@ -98,7 +98,7 @@ theorem eq_irrelevant_of_liesOver [IsDomain R] (P : Ideal (SymmetricAlgebra R M)
 
 /-- **The fibre over the vertex has a single point.** Over a domain, the irrelevant ideal `S₊` is
 the only prime of `Sym M` lying over the ideal `A₊` of invariants with zero constant term. -/
-theorem primesOver_under_irrelevant [IsDomain R] :
+theorem primesOver_under_irrelevant_eq_singleton [IsDomain R] :
     ((HomogeneousIdeal.irrelevant (homogeneousSubmodule R M)).toIdeal.under
         ρ.symmetricAlgebraInvariants).primesOver (SymmetricAlgebra R M) =
       {(HomogeneousIdeal.irrelevant (homogeneousSubmodule R M)).toIdeal} := by
