@@ -31,12 +31,14 @@ step of the trace filtration of the symplectic tensor powers, the symplectic cou
 
 An arc factors as an insertion after a contraction: `e i j` contracts the slots `i` and `j`
 against `ω` and then inserts the bivector of `-J` into them
-(`TauCeti.symplecticCupCapAt_eq_comp_contractTensorPair`). The insertion has a left inverse, the
-contraction of the same two slots against a coordinate form reading off one coefficient of `-J`
-equal to `1`, so the arc and the contraction have the same kernel for every `n` and over every
-commutative ring (`TauCeti.ker_symplecticCupCapAt`); no invertibility of the loop value `-2n` is
-needed. Contracting against `ω` itself instead closes a loop, which gives the loop rule
-`TauCeti.contractTensorPair_stdSymplecticBilinForm_comp_symplecticCupCapAt` for the contraction.
+(`TauCeti.symplecticCupCapAt_eq_comp_contractTensorPair`). For `n > 0` the insertion has a left
+inverse, the contraction of the same two slots against a coordinate form reading off one
+coefficient of `-J` equal to `1`; for `n = 0` the tensor power of the zero module in positive
+degree is itself zero. Either way the arc and the contraction have the same kernel for every `n`
+and over every commutative ring (`TauCeti.ker_symplecticCupCapAt`); no invertibility of the loop
+value `-2n` is needed. Contracting against `ω` itself instead closes a loop, which gives the loop
+rule `TauCeti.contractTensorPair_stdSymplecticBilinForm_comp_symplecticCupCapAt` for the
+contraction.
 
 The splitting itself is Hermitian rather than combinatorial, exactly as in the orthogonal case. In
 the monomial basis the coefficient of `e_w` in the image of `e_u` under an arc is
