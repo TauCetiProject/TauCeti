@@ -330,7 +330,7 @@ section LevelTwo
 With `s = e^{π i τ}`, so that `q = s²`, the three Siegel functions `g_r` with `r ∈ (½ ℤ)² \ ℤ²`
 modulo `ℤ²` are the products below. Multiplying them, Euler's identity
 `∏_{n ≥ 1} (1 + qⁿ) ∏_{n ≥ 0} (1 - q^{2n+1}) = 1` collapses every infinite product, leaving the
-root of unity `2 ζ₈`. -/
+constant `2 ζ₈`. -/
 
 /-- `g_{(0, 1/2)}(τ) = 2 i e^{π i τ / 6} (∏_{n ≥ 1} (1 + qⁿ))²` on the upper half-plane, where
 `q = e^{2π i τ}`. -/
