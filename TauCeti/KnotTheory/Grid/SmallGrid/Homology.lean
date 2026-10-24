@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Finsupp.VectorSpace
-public import TauCeti.KnotTheory.Grid.Homology.Basic
+public import TauCeti.Algebra.Bigraded.Stabilization
+public import TauCeti.KnotTheory.Grid.Homology.FullyBlockedBigraded
+public import TauCeti.KnotTheory.Grid.SmallGrid.Gradings
 
 /-!
 # An explicit basis for small-grid homology
@@ -27,7 +29,9 @@ At size two, the basis has the two states `GridState.twoByTwoId` and
 (`maslovOℤ_twoByTwo_twoByTwoId`, `alexander_twoByTwo_twoByTwoId`,
 `maslovOℤ_twoByTwo_twoByTwoSwap`, and `alexander_twoByTwo_twoByTwoSwap`). Thus the basis here
 turns the separate dimension and grading calculations into an explicit computation of the
-fully blocked homology.
+fully blocked homology. In bigraded form, each homogeneous piece of the homology has one
+dimension for each state of its bidegree, and the Poincaré series of the standard two-by-two
+diagram is the series `TauCeti.Bigraded.W` of the stabilization factor.
 
 ## Main definitions
 
@@ -47,6 +51,10 @@ fully blocked homology.
 * `TauCeti.GridDiagram.fullyBlockedHomologyClassOfLeTwo_ne_zero` and
   `TauCeti.GridDiagram.fullyBlockedHomologyClassOfLeTwo_injective`: the state classes are
   nonzero and pairwise distinct.
+* `TauCeti.OddComponentGridDiagram.finrank_bigradedFullyBlockedHomologyPiece_of_le_two`: each
+  homogeneous piece has dimension the number of states of its bidegree.
+* `TauCeti.OddComponentGridDiagram.fullyBlockedHomologySeries_twoByTwo`: the standard two-by-two
+  diagram has Poincaré series `W`.
 
 ## References
 
@@ -148,5 +156,54 @@ theorem fullyBlockedHomologyClassOfLeTwo_injective (hn : n ≤ 2) :
   exact (G.fullyBlockedHomologyBasisOfLeTwo hn).injective hxy
 
 end GridDiagram
+
+namespace OddComponentGridDiagram
+
+variable {n : ℕ} (G : OddComponentGridDiagram n)
+
+local notation "F" => ZMod 2
+
+/-- On grids of size at most two the differential vanishes, so the bidegree-`g` piece of fully
+blocked homology has one dimension for each grid state of bidegree `g`. -/
+theorem finrank_bigradedFullyBlockedHomologyPiece_of_le_two (hn : n ≤ 2) (g : ℤ × ℤ) :
+    Module.finrank F (G.bigradedFullyBlockedHomologyPiece g) =
+      (Finset.univ.filter fun x : GridState n => G.bidegree x = g).card := by
+  let e := G.1.fullyBlockedHomologyEquivChainOfLeTwo hn
+  have hmap : (G.bigradedFullyBlockedHomologyPiece g).map e.toLinearMap =
+      LinearMap.range (G.bigradedChainInclusion F g) := by
+    ext c
+    constructor
+    · rintro ⟨y, hy, rfl⟩
+      obtain ⟨z, ⟨d, hd⟩, rfl⟩ := (mem_bigradedFullyBlockedHomologyPiece_iff_exists G).mp hy
+      rw [LinearEquiv.coe_coe, GridDiagram.fullyBlockedHomologyEquivChainOfLeTwo_apply_mk]
+      exact ⟨d, hd⟩
+    · rintro ⟨d, rfl⟩
+      refine ⟨Submodule.Quotient.mk ⟨_, G.1.mem_fullyBlockedCycles_of_le_two hn
+        (G.bigradedChainInclusion F g d)⟩,
+        (mem_bigradedFullyBlockedHomologyPiece_iff_exists G).mpr ⟨_, ⟨d, rfl⟩, rfl⟩, ?_⟩
+      rw [LinearEquiv.coe_coe, GridDiagram.fullyBlockedHomologyEquivChainOfLeTwo_apply_mk]
+  rw [(e.submoduleMap _).finrank_eq, hmap,
+    LinearMap.finrank_range_of_inj (G.bigradedChainInclusion_injective F g),
+    finrank_bigradedChainPiece]
+
+/-- The standard two-by-two diagram has fully blocked Poincaré series `W`: its two states give
+one generator in bidegree `(-1, -1)` and one in bidegree `(0, 0)`. -/
+theorem fullyBlockedHomologySeries_twoByTwo : twoByTwo.fullyBlockedHomologySeries = Bigraded.W := by
+  have huniv : (Finset.univ : Finset (GridState 2)) =
+      {GridState.twoByTwoId, GridState.twoByTwoSwap} :=
+    (Finset.eq_univ_of_forall fun x => by
+      rcases GridState.eq_twoByTwoId_or_eq_twoByTwoSwap x with rfl | rfl <;> simp).symm
+  refine AddMonoidAlgebra.coeff_injective (Finsupp.ext fun g => ?_)
+  rw [coeff_fullyBlockedHomologySeries,
+    finrank_bigradedFullyBlockedHomologyPiece_of_le_two _ le_rfl, Finset.card_filter, huniv,
+    Finset.sum_pair GridState.twoByTwoId_ne_twoByTwoSwap, bidegree_twoByTwo_twoByTwoId,
+    bidegree_twoByTwo_twoByTwoSwap]
+  rw [← one_mul Bigraded.W, Bigraded.coeff_mul_W]
+  obtain ⟨a, b⟩ := g
+  simp only [AddMonoidAlgebra.one_def, AddMonoidAlgebra.coeff_single, Finsupp.single_apply,
+    Prod.mk_add_mk, Prod.ext_iff, Prod.fst_zero, Prod.snd_zero]
+  split_ifs <;> omega
+
+end OddComponentGridDiagram
 
 end TauCeti
