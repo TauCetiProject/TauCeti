@@ -100,8 +100,9 @@ theorem mongeAmpereMeasure_ite_mul_norm_sq_add {U : Set E} [DecidablePred (· �
   exact withDensity_const _
 
 /-- Transport of the Monge–Ampère measure of a function on `G` to the function `v ∘ T⁻¹` on
-`T '' G = T⁻¹ ⁻¹' G`. -/
-private theorem mongeAmpereMeasure_ite_comp_symm_apply (T : E ≃ᵃ[ℝ] E) (G : Set E)
+`T '' G = T⁻¹ ⁻¹' G`: the measure of `s` is `|det L|` times the Monge–Ampère measure of `v` on
+`G` of `T⁻¹ '' s`, where `L` is the linear part of `T⁻¹`. -/
+theorem mongeAmpereMeasure_ite_comp_symm_apply (T : E ≃ᵃ[ℝ] E) (G : Set E)
     [DecidablePred (· ∈ G)] [DecidablePred (· ∈ T.symm ⁻¹' G)] (v : E → ℝ) {s : Set E}
     (hs : MeasurableSet s) :
     mongeAmpereMeasure μ (fun y => if y ∈ T.symm ⁻¹' G then (v (T.symm y) : EReal) else ⊤) s =

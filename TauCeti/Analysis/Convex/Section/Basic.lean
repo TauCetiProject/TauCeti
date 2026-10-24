@@ -23,7 +23,10 @@ coordinates without choosing an inner product.
 
 These sets are the domains on which local Monge–Ampère estimates are normalized. We prove
 convexity, openness, height nesting, contraction about the center, and invariance under adding
-affine functions. Positive rescaling and linear coordinate changes give the exact unit-height
+affine functions. A continuous potential takes the boundary value of the section on its
+frontier, and a chord leaving a point of a section through a second point gives an inclusion
+into a section at that second point, which is the step behind the engulfing property of
+sections. Positive rescaling and linear coordinate changes give the exact unit-height
 normalization identity. A supporting slope is required for the nonpositive-height emptiness
 statement, but not for convexity or the normalization identities.
 
@@ -114,6 +117,28 @@ theorem smul_sub_add_mem_convexSection (hu : ConvexOn ℝ Ω u) (hx : x ∈ Ω)
   simp only [map_sub, map_add, map_smul, smul_eq_mul]
   nlinarith
 
+/-- **Engulfing along a chord.** Let `m` be a supporting slope at `y`, and let `y` lie above the
+plane through `x` with slope `ℓ`. If `z ∈ S(x, h)` and the chord from `z` through `y`, extended
+beyond `y` by `t > 0` times its length, ends in `S(x, k)`, then `z` lies in the section at `y`
+with slope `m` and height `h + k / t`. No convexity is needed: the supporting plane at `y` lies
+below the potential at the end of the chord. -/
+theorem mem_convexSection_of_add_smul_sub_mem {m : E →ₗ[ℝ] ℝ} {z : E} {t : ℝ}
+    (hℓy : u x + (ℓ y - ℓ x) ≤ u y) (hm : ∀ p ∈ Ω, u y + (m p - m y) ≤ u p)
+    (hz : z ∈ convexSection Ω u x ℓ h) (ht : 0 < t)
+    (hw : y + t • (y - z) ∈ convexSection Ω u x ℓ k) :
+    z ∈ convexSection Ω u y m (h + k / t) := by
+  have hmw := hm _ hw.1
+  have hwk := hw.2
+  have hzh := hz.2
+  simp only [map_add, map_sub, map_smul, smul_eq_mul] at hmw hwk hzh
+  -- The plane at `y` lies below `u` at the end of the chord, which bounds `m (y - z)`.
+  have key : (m y - m z) - (ℓ y - ℓ z) < k / t := by
+    rw [lt_div_iff₀ ht]
+    nlinarith
+  refine ⟨hz.1, ?_⟩
+  rw [map_sub]
+  linarith
+
 /-- Adding an affine function to the potential and its linear part to the slope preserves
 every section. -/
 @[simp]
@@ -183,6 +208,18 @@ theorem closure_convexSection_inter_subset (hu : ContinuousOn u Ω) (hℓ : Cont
     ContinuousWithinAt.closure_le hy (((hu.sub hℓ.continuousOn) y hyΩ).mono hsub)
       continuousWithinAt_const (fun _ hz ↦ hz.2.le)
   exact ⟨hyΩ, hbound.trans_lt (add_lt_add_right hhk _)⟩
+
+/-- If the closure of a section lies in the open domain of a continuous potential, then on the
+frontier of the section the potential equals the supporting plane raised by the height. -/
+theorem eq_of_mem_frontier_convexSection (hΩ : IsOpen Ω) (hu : ContinuousOn u Ω)
+    (hℓ : Continuous ℓ) (hS : closure (convexSection Ω u x ℓ h) ⊆ Ω)
+    (hy : y ∈ frontier (convexSection Ω u x ℓ h)) : u y = u x + ℓ (y - x) + h := by
+  have hyΩ : y ∈ Ω := hS (frontier_subset_closure hy)
+  rw [(isOpen_convexSection hΩ hu hℓ).frontier_eq] at hy
+  refine le_antisymm (le_of_forall_pos_lt_add fun ε hε => ?_)
+    (not_lt.1 fun hlt => hy.2 ⟨hyΩ, hlt⟩)
+  simpa only [add_assoc] using (mem_convexSection_iff.1
+    (closure_convexSection_inter_subset hu hℓ (lt_add_of_pos_right h hε) ⟨hy.1, hyΩ⟩)).2
 
 end Topology
 
