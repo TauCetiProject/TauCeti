@@ -14,6 +14,7 @@ public import Mathlib.RingTheory.QuotSMulTop
 public import TauCeti.LinearAlgebra.BilinearForm.Isometry
 public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Basic
 import TauCeti.Algebra.Module.Torsion.Int
+import TauCeti.LinearAlgebra.Determinant.Basic
 
 /-!
 # The isometry group of an integral lattice
@@ -32,7 +33,7 @@ self-isometries acting trivially on the finite quotient `L / d L` form the princ
 subgroup of level `d`, which has finite index for `d ≠ 0`. The determinant of a self-isometry is
 also the determinant of the rational automorphism of the ambient space that it extends, and
 conjugation by an isometry `L ≅ M` identifies `O(L)` with `O(M)`, preserving determinants. In
-rank one `SO(L)` is trivial and `O(L) = {±1}`.
+rank at most one `SO(L)` is trivial, and in rank one `O(L) = {±1}`.
 
 ## Main definitions
 
@@ -306,15 +307,16 @@ theorem toMatrix_injective (b : Module.Basis ι ℤ L) : Function.Injective (toM
 
 end specialOrthogonalGroup
 
-/-- In rank one `SO(L)` is trivial, since the special linear group of a free module of rank one
-is trivial. -/
-theorem specialOrthogonalGroup_eq_bot_of_finrank_eq_one (h : Module.finrank ℤ L = 1) :
+/-- In rank at most one `SO(L)` is trivial, since the determinant kernel of a free module of
+rank at most one is trivial. -/
+theorem specialOrthogonalGroup_eq_bot_of_finrank_le_one (h : Module.finrank ℤ L ≤ 1) :
     specialOrthogonalGroup L = ⊥ := by
-  have := _root_.SpecialLinearGroup.subsingleton_of_finrank_eq_one (R := ℤ) (V := L) h
-  refine (Subgroup.eq_bot_iff_forall _).mpr fun g hg ↦ ?_
-  have h₁ : (⟨g, hg⟩ : specialOrthogonalGroup L) = 1 :=
-    specialOrthogonalGroup.toSpecialLinearGroup_injective L (Subsingleton.elim _ _)
-  exact congrArg Subtype.val h₁
+  refine (Subgroup.eq_bot_iff_forall _).mpr fun g hg ↦ Isometry.carrierEquivHom_injective L ?_
+  have hk : g.carrierEquiv ∈ (LinearEquiv.det (R := ℤ) (M := L)).ker := by
+    rw [MonoidHom.mem_ker, ← Isometry.det_apply]
+    exact mem_specialOrthogonalGroup_iff.mp hg
+  rw [LinearEquiv.det_ker_eq_bot_of_finrank_le_one h, Subgroup.mem_bot] at hk
+  rw [map_one, Isometry.carrierEquivHom_apply, hk]
 
 /-- In rank one the isometry group is `{±1}`, of order two. -/
 theorem natCard_isometry_of_finrank_eq_one (h : Module.finrank ℤ L = 1) :
@@ -323,7 +325,7 @@ theorem natCard_isometry_of_finrank_eq_one (h : Module.finrank ℤ L = 1) :
     (index_specialOrthogonalGroup_eq_two_iff L).mpr ⟨Isometry.neg L, by
       rw [Isometry.det_neg, h, pow_one]⟩
   rw [← (specialOrthogonalGroup L).card_mul_index, hi,
-    specialOrthogonalGroup_eq_bot_of_finrank_eq_one h, Subgroup.card_bot, one_mul]
+    specialOrthogonalGroup_eq_bot_of_finrank_le_one h.le, Subgroup.card_bot, one_mul]
 
 namespace Isometry
 

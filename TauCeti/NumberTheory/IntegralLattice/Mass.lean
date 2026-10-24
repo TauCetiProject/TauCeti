@@ -71,7 +71,8 @@ namespace TauCeti.IntegralLattice
 
 universe u
 
-variable {V : Type u} [AddCommGroup V] [Module ℚ V] {L M : IntegralLattice V}
+variable {V : Type u} {W : Type*} [AddCommGroup V] [Module ℚ V] [AddCommGroup W] [Module ℚ W]
+  {L M : IntegralLattice V}
 
 section ProperGenusClasses
 
@@ -108,23 +109,11 @@ private theorem subsingleton_of_finrank_eq_zero (h : finrank ℤ L = 0) : Subsin
   have := L.finiteDimensional
   exact Module.finrank_zero_iff.mp (L.finrank_carrier ▸ h)
 
-/-- Each class is the image of finitely many proper classes. -/
-private theorem finite_preimage_toIsometryQuotient (L : IntegralLattice V)
-    (c : IsometryQuotient V) : (ProperIsometryQuotient.toIsometryQuotient ⁻¹' {c}).Finite := by
-  rcases (finrank ℤ L).eq_zero_or_pos with h | h
-  · have := subsingleton_of_finrank_eq_zero h
-    exact Set.toFinite _
-  · rw [← isometryClass_out c]
-    refine Set.finite_of_ncard_ne_zero fun h₀ ↦ ?_
-    have h₂ := ncard_preimage_toIsometryQuotient_mul_index (L.finrank_carrier ▸ h) c.out
-    rw [h₀, zero_mul] at h₂
-    omega
-
 /-- The genus of `L` contains finitely many proper classes exactly when it contains finitely many
 classes. -/
 theorem finite_properGenusClasses_iff : L.properGenusClasses.Finite ↔ L.genusClasses.Finite := by
   refine ⟨fun h ↦ L.image_toIsometryQuotient_properGenusClasses ▸ h.image _, fun h ↦ ?_⟩
-  exact h.preimage' fun c _ ↦ L.finite_preimage_toIsometryQuotient c
+  exact h.preimage' fun c _ ↦ finite_preimage_toIsometryQuotient c
 
 end ProperGenusClasses
 
@@ -149,19 +138,36 @@ theorem properMass_def (L : IntegralLattice V) :
       ∑ᶠ c ∈ L.properGenusClasses, ((Nat.card (specialOrthogonalGroup c.out) : ℚ))⁻¹ :=
   (rfl)
 
-/-- **The mass is an invariant of the genus.** -/
-theorem SameGenus.mass_eq (h : L.SameGenus M) : L.mass = M.mass := by
-  rw [mass_def, mass_def, h.genusClasses_eq]
+/-- **The mass is an invariant of the genus.** Lattices of the same genus have the same mass, even
+when they live in different ambient spaces. -/
+theorem SameGenus.mass_eq {M : IntegralLattice W} (h : L.SameGenus M) : L.mass = M.mass := by
+  obtain ⟨f⟩ := h.nonempty_linearEquiv
+  refine finsum_mem_eq_of_bijOn (isometryQuotientEquiv f)
+    ((Equiv.image_eq_iff_bijOn _).mp <| Set.ext fun c ↦ by
+      rw [Set.mem_image_equiv, ← isometryQuotientEquiv_mem_genusClasses_iff f h,
+        Equiv.apply_symm_apply]) fun c _ ↦ ?_
+  obtain ⟨e⟩ := isometryClass_eq_isometryClass_iff.mp <|
+    show (c.out.transport f).isometryClass = (isometryQuotientEquiv f c).out.isometryClass by
+      rw [isometryClass_out, ← isometryQuotientEquiv_isometryClass, isometryClass_out]
+  rw [Nat.card_congr ((c.out.transportIsometry f).trans e).conjMulEquiv.toEquiv]
 
-/-- **The proper mass is an invariant of the genus.** -/
-theorem SameGenus.properMass_eq (h : L.SameGenus M) : L.properMass = M.properMass := by
-  rw [properMass_def, properMass_def, h.properGenusClasses_eq]
-
-/-- The representative of a proper class is isometric to the representative of its class. -/
-private theorem nonempty_isometry_out (d : ProperIsometryQuotient V) :
-    Nonempty (Isometry d.out d.toIsometryQuotient.out) := by
-  rw [← isometryClass_eq_isometryClass_iff, isometryClass_out, ← properIsometryClass_out d,
-    toIsometryQuotient_properIsometryClass, properIsometryClass_out]
+/-- **The proper mass is an invariant of the genus.** Lattices of the same genus have the same
+proper mass, even when they live in different ambient spaces. -/
+theorem SameGenus.properMass_eq {M : IntegralLattice W} (h : L.SameGenus M) :
+    L.properMass = M.properMass := by
+  obtain ⟨f⟩ := h.nonempty_linearEquiv
+  refine finsum_mem_eq_of_bijOn (properIsometryQuotientEquiv f)
+    ((Equiv.image_eq_iff_bijOn _).mp <| Set.ext fun d ↦ ?_) fun d _ ↦ ?_
+  · rw [Set.mem_image_equiv, mem_properGenusClasses_iff, mem_properGenusClasses_iff,
+      ← isometryQuotientEquiv_mem_genusClasses_iff f h,
+      ← toIsometryQuotient_properIsometryQuotientEquiv, Equiv.apply_symm_apply]
+  · obtain ⟨e⟩ := isometryClass_eq_isometryClass_iff.mp <|
+      show (d.out.transport f).isometryClass =
+          (properIsometryQuotientEquiv f d).out.isometryClass by
+        rw [← toIsometryQuotient_properIsometryClass, ← toIsometryQuotient_properIsometryClass,
+          properIsometryClass_out, ← properIsometryQuotientEquiv_properIsometryClass,
+          properIsometryClass_out]
+    rw [((d.out.transportIsometry f).trans e).natCard_specialOrthogonalGroup_eq]
 
 /-- A class of the genus contributes `2 / |O(M)|` to the proper mass: it splits into
 `2 / [O(M) : SO(M)]` proper classes, each contributing `1 / |SO(M)|`. -/
@@ -197,7 +203,7 @@ theorem properMass_eq_two_mul_mass (hL : L.genusClasses.Finite) (hn : 0 < finran
       ((Nat.card (specialOrthogonalGroup d.out) : ℚ))⁻¹ =
         ((Nat.card (specialOrthogonalGroup c.out) : ℚ))⁻¹ := by
     intro d hd
-    obtain ⟨e⟩ := nonempty_isometry_out d
+    obtain ⟨e⟩ := d.nonempty_isometry_out
     rw [(Finset.mem_filter.mp hd).2] at e
     rw [e.natCard_specialOrthogonalGroup_eq]
   have hcard : (({d ∈ hP.toFinset | d.toIsometryQuotient = c} : Finset _) :
