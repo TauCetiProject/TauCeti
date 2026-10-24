@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.AInfinity.Bimodule.Basic
+public import TauCeti.Algebra.Homology.AInfinity.Bimodule.Suspension
 
 /-!
 # Operations of an A-infinity bimodule
@@ -118,14 +119,7 @@ suspension uses the input order of the left tuple, the module input, and the rig
 noncomputable def m (MM : AInfinityBimodule AA BB M) (i j : ℕ) :
     M →ₗ[R] MultilinearMap R (fun _ : Fin i ↦ A)
       (MultilinearMap R (fun _ : Fin j ↦ B) M) :=
-  let F := MM.b i j ∘ₗ TensorProduct.map
-    (TensorProduct.map
-      (PiTensorProduct.map fun k : Fin i ↦ AA.grading.koszulTwist ((i : ℤ) + j - k))
-      (MM.grading.koszulTwist j))
-    (PiTensorProduct.map fun k : Fin j ↦ BB.grading.koszulTwist ((j : ℤ) - 1 - k))
-  let H : (TensorPower R i A ⊗[R] M) →ₗ[R] MultilinearMap R (fun _ : Fin j ↦ B) M :=
-    PiTensorProduct.lift.symm.toLinearMap ∘ₗ TensorProduct.curry F
-  PiTensorProduct.lift.symm.toLinearMap ∘ₗ (TensorProduct.curry H).flip
+  unsuspend AA.grading MM.grading BB.grading i j (MM.b i j)
 
 /-- Unsuspension evaluates the suspended component on the input Koszul twists. -/
 theorem m_apply (MM : AInfinityBimodule AA BB M) (i j : ℕ) (x : M)
@@ -134,7 +128,7 @@ theorem m_apply (MM : AInfinityBimodule AA BB M) (i j : ℕ) (x : M)
       ((PiTensorProduct.tprod R (fun k ↦ AA.grading.koszulTwist ((i : ℤ) + j - k) (a k))
         ⊗ₜ MM.grading.koszulTwist j x) ⊗ₜ
           PiTensorProduct.tprod R (fun k ↦ BB.grading.koszulTwist ((j : ℤ) - 1 - k) (b k))) := by
-  simp [m]
+  exact unsuspend_apply AA.grading MM.grading BB.grading i j (MM.b i j) x a b
 
 /-- The suspended operation is recovered by the same original-grading twists. -/
 theorem b_tmul_tprod (MM : AInfinityBimodule AA BB M) (i j : ℕ) (x : M)
@@ -143,7 +137,7 @@ theorem b_tmul_tprod (MM : AInfinityBimodule AA BB M) (i j : ℕ) (x : M)
       MM.m i j (MM.grading.koszulTwist j x)
         (fun k ↦ AA.grading.koszulTwist ((i : ℤ) + j - k) (a k))
         (fun k ↦ BB.grading.koszulTwist ((j : ℤ) - 1 - k) (b k)) := by
-  simp only [m_apply, InternalGrading.koszulTwist_koszulTwist]
+  exact apply_tmul_tprod_eq_unsuspend AA.grading MM.grading BB.grading i j (MM.b i j) x a b
 
 /-- On fixed-length pure words, the Taylor map is recovered from the unsuspended operation. -/
 theorem taylor_tmul_of_tprod (MM : AInfinityBimodule AA BB M) (i j : ℕ) (x : M)
@@ -161,23 +155,11 @@ theorem m_mem_piece (MM : AInfinityBimodule AA BB M) (i j : ℕ)
     (a : Fin i → A) (d : Fin i → ℤ) (ha : ∀ k, a k ∈ AA.grading.piece (d k))
     (b : Fin j → B) (e : Fin j → ℤ) (hb : ∀ k, b k ∈ BB.grading.piece (e k)) :
     MM.m i j x a b ∈ MM.grading.piece ((∑ k, d k) + p + (∑ k, e k) + (1 - i - j)) := by
-  have ha' : ∀ k, AA.grading.koszulTwist ((i : ℤ) + j - k) (a k) ∈
-      (AA.grading.shift 1).piece (d k - 1) := by
-    intro k
-    rw [InternalGrading.shift_piece, sub_add_cancel]
-    exact AA.grading.koszulTwist_mem_piece (ha k) _
-  have hx' : MM.grading.koszulTwist j x ∈ (MM.grading.shift 1).piece (p - 1) := by
-    rw [InternalGrading.shift_piece, sub_add_cancel]
-    exact MM.grading.koszulTwist_mem_piece hx _
-  have hb' : ∀ k, BB.grading.koszulTwist ((j : ℤ) - 1 - k) (b k) ∈
-      (BB.grading.shift 1).piece (e k - 1) := by
-    intro k
-    rw [InternalGrading.shift_piece, sub_add_cancel]
-    exact BB.grading.koszulTwist_mem_piece (hb k) _
-  have h := MM.isHomogeneous_b_tmul_tprod i j _ _ ha' hx' _ _ hb'
-  rw [InternalGrading.shift_piece] at h
-  simp only [Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
-    nsmul_eq_mul, mul_one] at h
+  have h := unsuspend_mem_piece AA.grading MM.grading BB.grading
+    (GN := MM.grading.shift 1) i j (F := MM.b i j) 1
+    (fun hx a d ha b e hb ↦ MM.isHomogeneous_b_tmul_tprod i j a d ha hx b e hb)
+    hx a d ha b e hb
+  rw [unsuspend_apply, InternalGrading.shift_piece] at h
   rw [m_apply]
   convert h using 1; congr 1; ring
 
@@ -189,20 +171,8 @@ theorem b_tmul_tprod_of_mem (MM : AInfinityBimodule AA BB M) (i j : ℕ)
     MM.b i j ((PiTensorProduct.tprod R a ⊗ₜ x) ⊗ₜ PiTensorProduct.tprod R b) =
       negOnePowCast R ((∑ k, ((i : ℤ) + j - k) * d k) + j * p +
         ∑ k, ((j : ℤ) - 1 - k) * e k) • MM.m i j x a b := by
-  have ha' : (fun k : Fin i ↦ AA.grading.koszulTwist ((i : ℤ) + j - k) (a k)) =
-      fun k ↦ negOnePowCast R (((i : ℤ) + j - k) * d k) • a k := by
-    funext k
-    rw [AA.grading.koszulTwist_apply_of_mem (ha k), negOnePowCast_eq_intCast]
-  have hb' : (fun k : Fin j ↦ BB.grading.koszulTwist ((j : ℤ) - 1 - k) (b k)) =
-      fun k ↦ negOnePowCast R (((j : ℤ) - 1 - k) * e k) • b k := by
-    funext k
-    rw [BB.grading.koszulTwist_apply_of_mem (hb k), negOnePowCast_eq_intCast]
-  rw [b_tmul_tprod, ha', hb', MM.grading.koszulTwist_apply_of_mem hx,
-    ← negOnePowCast_eq_intCast, map_smul]
-  simp only [smul_apply, MultilinearMap.map_smul_univ, smul_smul,
-    negOnePowCast_sum, negOnePowCast_add]
-  congr 1
-  ring
+  exact apply_tmul_tprod_of_mem AA.grading MM.grading BB.grading i j (MM.b i j)
+    hx a d ha b e hb
 
 /-- Equal unsuspended operations give equal suspended components when the gradings agree. -/
 theorem b_eq_b_of_m_eq_m {MM NN : AInfinityBimodule AA BB M} (hG : MM.grading = NN.grading)
@@ -225,8 +195,9 @@ theorem ext_m {MM NN : AInfinityBimodule AA BB M} (hG : MM.grading = NN.grading)
 
 /-- The unary unsuspended operation is the Taylor map on the two empty words. -/
 @[simp]
-theorem m_zero_zero (MM : AInfinityBimodule AA BB M) (x : M) :
-    MM.m 0 0 x Fin.elim0 Fin.elim0 = MM.taylor ((1 ⊗ₜ x) ⊗ₜ 1) := by
+theorem m_zero_zero (MM : AInfinityBimodule AA BB M) (x : M)
+    (a : Fin 0 → A) (b : Fin 0 → B) :
+    MM.m 0 0 x a b = MM.taylor ((1 ⊗ₜ x) ⊗ₜ 1) := by
   rw [m_apply, ← taylor_tmul_of]
   simp only [Nat.cast_zero, InternalGrading.koszulTwist_zero, LinearMap.id_apply]
   congr 2
