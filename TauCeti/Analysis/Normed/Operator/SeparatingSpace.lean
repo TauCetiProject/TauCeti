@@ -353,28 +353,6 @@ private theorem tsum_toBase_eq (x : ∀ n, E n) (m : ℕ)
   rw [(toBase R m).map_tsum hxm, tsum_congr htail]
   exact (hx.sum_add_tsum_nat_add m).symm
 
-/-- Positive weights `ε j` making each `b j * ε j`, and each `(a n + 1) * c (n + 1) k` times the
-weight at `n + 1 + k`, at most the corresponding power of `1 / 2`. -/
-private theorem exists_weights (a b : ℕ → ℝ) (c : ℕ → ℕ → ℝ) (ha : ∀ n, 0 ≤ a n)
-    (hb : ∀ j, 0 ≤ b j) (hc : ∀ m k, 0 ≤ c m k) :
-    ∃ ε : ℕ → ℝ, (∀ j, 0 < ε j) ∧ (∀ j, b j * ε j ≤ (1 / 2) ^ j) ∧
-      ∀ n k, (a n + 1) * c (n + 1) k * ε (n + 1 + k) ≤ (1 / 2) ^ (n + 1 + k) := by
-  -- `B j` dominates every coefficient that meets the weight at `j`.
-  let B : ℕ → ℝ := fun j ↦ 1 + b j + ∑ m ∈ range j, (a m + 1) * c (m + 1) (j - (m + 1))
-  have hsum : ∀ j, 0 ≤ ∑ m ∈ range j, (a m + 1) * c (m + 1) (j - (m + 1)) := fun j ↦
-    sum_nonneg fun m _ ↦ mul_nonneg (by linarith [ha m]) (hc _ _)
-  have hB : ∀ j, 0 < B j := fun j ↦ by simp only [B]; linarith [hsum j, hb j]
-  have hε : ∀ j, 0 < (1 / 2) ^ j / B j := fun j ↦ div_pos (by positivity) (hB j)
-  have hle : ∀ j t, t ≤ B j → t * ((1 / 2) ^ j / B j) ≤ (1 / 2) ^ j := fun j t htB ↦
-    (mul_le_mul_of_nonneg_right htB (hε j).le).trans (mul_div_cancel₀ _ (hB j).ne').le
-  refine ⟨fun j ↦ (1 / 2) ^ j / B j, hε,
-    fun j ↦ hle j _ (by simp only [B]; linarith [hsum j]), fun n k ↦ hle _ _ ?_⟩
-  have h := single_le_sum (f := fun m ↦ (a m + 1) * c (m + 1) (n + 1 + k - (m + 1)))
-    (fun m _ ↦ mul_nonneg (by linarith [ha m]) (hc _ _))
-    (mem_range.2 (by omega : n < n + 1 + k))
-  simp only [Nat.add_sub_cancel_left] at h
-  simp only [B]; linarith [hb (n + 1 + k)]
-
 variable {R} in
 /-- **Sinclair's stability lemma.** Let `E n` and `F` be Banach spaces, let
 `R n : E (n + 1) → E n` be continuous linear maps, and let `T n : E n →ₗ F` be linear maps, not
@@ -390,10 +368,23 @@ theorem eventuallyConst_separatingSpace [CompleteSpace F] [∀ n, CompleteSpace 
   let K : ∀ n, E (n + 1) →L[𝕜] F ⧸ S (n + 1) := fun n ↦
     ⟨(S (n + 1)).mkQ ∘ₗ T (n + 1), (T (n + 1)).continuous_mkQ_comp⟩
   have hK : ∀ n w, K n w = (S (n + 1)).mkQ (T (n + 1) w) := fun _ _ ↦ rfl
-  -- The `j`-th summand is chosen of norm at most `ε j`, small against the composites used below.
-  obtain ⟨ε, hε, hεb, hεK⟩ := exists_weights (fun n ↦ ‖K n‖) (fun j ↦ ‖toBase R j‖)
-    (fun m k ↦ ‖descend R m k‖) (fun _ ↦ norm_nonneg _) (fun _ ↦ norm_nonneg _)
-    (fun _ _ ↦ norm_nonneg _)
+  -- The `j`-th summand is chosen of norm at most `ε j`, small against the composites used below:
+  -- `B j` dominates every coefficient that meets the weight at `j`.
+  let c : ℕ → ℕ → ℝ := fun m k ↦ ‖descend R m k‖
+  let B : ℕ → ℝ := fun j ↦ ‖toBase R j‖ + ∑ m ∈ range j, (‖K m‖ + 1) * c (m + 1) (j - (m + 1))
+  choose ε hε hεB using fun j ↦ exists_pos_mul_lt (pow_pos (one_half_pos (α := ℝ)) j) (B j)
+  have hcoef : ∀ m k, 0 ≤ (‖K m‖ + 1) * c (m + 1) k := fun m k ↦
+    mul_nonneg (by positivity) (norm_nonneg _)
+  have hεb : ∀ j, ‖toBase R j‖ * ε j ≤ (1 / 2) ^ j := fun j ↦
+    (mul_le_mul_of_nonneg_right (le_add_of_nonneg_right (sum_nonneg fun m _ ↦ hcoef m _))
+      (hε j).le).trans (hεB j).le
+  have hεK : ∀ n k, (‖K n‖ + 1) * c (n + 1) k * ε (n + 1 + k) ≤ (1 / 2) ^ (n + 1 + k) := by
+    intro n k
+    have h := single_le_sum (f := fun m ↦ (‖K m‖ + 1) * c (m + 1) (n + 1 + k - (m + 1)))
+      (fun m _ ↦ hcoef m _) (mem_range.2 (by omega : n < n + 1 + k))
+    simp only [Nat.add_sub_cancel_left] at h
+    refine (mul_le_mul_of_nonneg_right ?_ (hε _).le).trans (hεB _).le
+    exact h.trans (le_add_of_nonneg_left (norm_nonneg _))
   -- At a strict step `n`, a small vector of `E n` has a large image modulo `S (n + 1)`.
   have hchoice : ∀ n (s : E 0), ∃ v : E n, ‖v‖ ≤ ε n ∧ (S (n + 1) ≠ S n →
       n + 2 + ‖(S (n + 1)).mkQ (T 0 s)‖ ≤ ‖(S (n + 1)).mkQ (T n v)‖) := by
