@@ -49,6 +49,7 @@ The character need not be primitive: `(-12 / ·)` is induced from `(-3 / ·)`.
 * `TauCeti.kroneckerSym_mul_right`, `TauCeti.kroneckerSym_mul_right_of_ne_neg_one`:
   multiplicativity in the denominator, over nonzero factors, and without restriction when the
   numerator is not `-1`.
+* `TauCeti.kroneckerSym_mul_left`: multiplicativity in the numerator, over nonzero factors.
 * `TauCeti.kroneckerSym_eq_zero_iff`: `(a / b) = 0` exactly when `gcd (a, b) ≠ 1`.
 * `TauCeti.kroneckerSym_eq_jacobiSym_natAbs`: `(D / n) = J(n | |D|)` for `D ≡ 1 (mod 4)`.
 * `TauCeti.kroneckerSym_mod_right'`: for `D ≡ 0, 1 (mod 4)`, `(D / ·)` is periodic modulo `D`.
@@ -81,6 +82,7 @@ def kroneckerSym (a b : ℤ) : ℤ :=
     jacobiSym a (ordCompl[2] b.natAbs)
 
 /-- `(a / 0)` is `1` for `a = ±1` and `0` otherwise. It is not `jacobiSym a 0 = 1`. -/
+@[simp]
 theorem kroneckerSym_zero_right (a : ℤ) :
     kroneckerSym a 0 = if a = 1 ∨ a = -1 then 1 else 0 :=
   ite_eq_left rfl
@@ -92,7 +94,7 @@ theorem kroneckerSym_of_ne_zero (a : ℤ) {b : ℤ} (hb : b ≠ 0) :
   ite_eq_right hb
 
 /-- At an odd denominator `b`, of either sign, the Kronecker symbol is the Jacobi symbol at `|b|`,
-times the sign of `a` when `b < 0`. -/
+times `-1` when both `a < 0` and `b < 0`. -/
 theorem kroneckerSym_of_odd (a : ℤ) {b : ℤ} (hb : Odd b) :
     kroneckerSym a b = (if a < 0 ∧ b < 0 then -1 else 1) * jacobiSym a b.natAbs := by
   have h2 : ¬ 2 ∣ b.natAbs := Nat.two_dvd_ne_zero.mpr (Nat.odd_iff.mp (Int.natAbs_odd.mpr hb))
@@ -117,6 +119,7 @@ theorem kroneckerSym_one_right (a : ℤ) : kroneckerSym a 1 = 1 := by
   simpa using kroneckerSym_eq_jacobiSym a odd_one
 
 /-- `(a / -1)` is `-1` for `a < 0` and `1` otherwise. -/
+@[simp]
 theorem kroneckerSym_neg_one_right (a : ℤ) :
     kroneckerSym a (-1) = if a < 0 then -1 else 1 := by
   rw [kroneckerSym_of_odd a (by decide), Int.natAbs_neg, Int.natAbs_one, jacobiSym.one_right,
@@ -187,10 +190,6 @@ theorem kroneckerSym_pow_right (a b : ℤ) (k : ℕ) :
 
 /-! ### Vanishing and the values `0`, `1`, `-1` -/
 
-private theorem χ₈_intCast_eq_zero_iff (a : ℤ) : χ₈ a = 0 ↔ 2 ∣ a := by
-  rw [χ₈_int_eq_if_mod_eight, Int.dvd_iff_emod_eq_zero]
-  split_ifs <;> simp_all
-
 /-- The Kronecker symbol `(a / b)` vanishes exactly when `a` and `b` have a common factor, as for
 `jacobiSym.eq_zero_iff`. At `b = 0` this says that `(a / 0) ≠ 0` exactly for `a = ±1`. -/
 theorem kroneckerSym_eq_zero_iff {a b : ℤ} : kroneckerSym a b = 0 ↔ a.gcd b ≠ 1 := by
@@ -214,6 +213,14 @@ theorem kroneckerSym_eq_zero_iff {a b : ℤ} : kroneckerSym a b = 0 ↔ a.gcd b 
       Nat.not_odd_iff_even, even_iff_two_dvd, ← Int.ofNat_dvd_left, Nat.cast_ofNat]
     exact and_iff_left he
 
+/-- `(0 / b)` is `1` for `b = ±1` and `0` otherwise. -/
+@[simp]
+theorem kroneckerSym_zero_left (b : ℤ) : kroneckerSym 0 b = if b = 1 ∨ b = -1 then 1 else 0 := by
+  by_cases hb : b = 1 ∨ b = -1
+  · rcases hb with rfl | rfl <;> simp
+  · rw [ite_eq_right hb, kroneckerSym_eq_zero_iff, Int.gcd_zero_left]
+    omega
+
 /-- The Kronecker symbol takes only the values `0`, `1` and `-1`. -/
 theorem kroneckerSym_trichotomy (a b : ℤ) :
     kroneckerSym a b = 0 ∨ kroneckerSym a b = 1 ∨ kroneckerSym a b = -1 := by
@@ -231,7 +238,35 @@ theorem kroneckerSym_trichotomy (a b : ℤ) :
   rw [kroneckerSym_of_ne_zero a hb]
   exact hmul _ _ (hmul _ _ hs (by rw [abs_pow]; exact pow_le_one₀ (abs_nonneg _) h₈)) hJ
 
+/-! ### Multiplicativity in the numerator -/
+
+/-- Multiplicativity of the Kronecker symbol in the numerator, over nonzero factors, as in
+`jacobiSym.mul_left`. The hypotheses cannot be dropped: for `a = 0`, `a' = -1`, `b = -1` the left
+side is `(0 / -1) = 1` and the right side is `-1` (`kroneckerSym_neg_one_right`). -/
+theorem kroneckerSym_mul_left {a a' : ℤ} (ha : a ≠ 0) (ha' : a' ≠ 0) (b : ℤ) :
+    kroneckerSym (a * a') b = kroneckerSym a b * kroneckerSym a' b := by
+  rcases eq_or_ne b 0 with rfl | hb
+  · simp only [kroneckerSym_zero_right, ← Int.isUnit_iff, IsUnit.mul_iff]
+    split_ifs <;> simp_all
+  have hs : (if a * a' < 0 ∧ b < 0 then -1 else 1 : ℤ) =
+      (if a < 0 ∧ b < 0 then -1 else 1) * (if a' < 0 ∧ b < 0 then -1 else 1) := by
+    by_cases hb' : b < 0
+    · simp only [hb', and_true]
+      rcases ha.lt_or_gt with ha | ha <;> rcases ha'.lt_or_gt with ha' | ha' <;>
+        split_ifs <;> first | (norm_num; done) | nlinarith
+    · simp [hb']
+  rw [kroneckerSym_of_ne_zero _ hb, kroneckerSym_of_ne_zero a hb, kroneckerSym_of_ne_zero a' hb,
+    Int.cast_mul, map_mul, mul_pow, jacobiSym.mul_left, hs]
+  ring
+
 /-! ### The Kronecker symbol of a discriminant -/
+
+/-- A discriminant `D ≡ 0, 1 (mod 4)` is not `-1`, so `(D / ·)` is completely multiplicative
+(`kroneckerSym_mul_right_of_ne_neg_one`). -/
+private theorem ne_neg_one_of_modEq_four {D : ℤ} (hD : D ≡ 0 [ZMOD 4] ∨ D ≡ 1 [ZMOD 4]) :
+    D ≠ -1 := by
+  rintro rfl
+  rcases hD with h | h <;> revert h <;> decide
 
 /-- For `D ≡ 1 (mod 4)`, the Kronecker symbol `(D / n)` is the Jacobi symbol `J(n | |D|)`, for every
 integer `n`. At odd `n > 0` this is quadratic reciprocity, at `n = 2` the supplementary law
@@ -240,7 +275,7 @@ integer `n`. At odd `n > 0` this is quadratic reciprocity, at `n = 2` the supple
 theorem kroneckerSym_eq_jacobiSym_natAbs {D : ℤ} (hD : D ≡ 1 [ZMOD 4]) (n : ℤ) :
     kroneckerSym D n = jacobiSym n D.natAbs := by
   have hD4 : D % 4 = 1 := hD
-  have hD1 : D ≠ -1 := by rintro rfl; norm_num at hD4
+  have hD1 : D ≠ -1 := ne_neg_one_of_modEq_four (.inr hD)
   have hodd : Odd D.natAbs := Int.natAbs_odd.mpr (Int.odd_iff.mpr (by omega))
   have hnat (k : ℕ) : kroneckerSym D k = jacobiSym k D.natAbs := by
     rcases eq_or_ne k 0 with rfl | hk
@@ -354,11 +389,8 @@ def kroneckerChar (D : ℤ) (hD : D ≡ 0 [ZMOD 4] ∨ D ≡ 1 [ZMOD 4]) (hD₀ 
     map_one' := by
       rw [kroneckerSym_val hD Int.cast_one, kroneckerSym_one_right, Int.cast_one]
     map_mul' x y := by
-      have hD₁ : D ≠ -1 := by
-        rintro rfl
-        rcases hD with h | h <;> revert h <;> decide
       rw [kroneckerSym_val hD (a := x.val * y.val) (by push_cast; simp),
-        kroneckerSym_mul_right_of_ne_neg_one hD₁, Int.cast_mul]
+        kroneckerSym_mul_right_of_ne_neg_one (ne_neg_one_of_modEq_four hD), Int.cast_mul]
     map_nonunit' x hx := by
       rw [kroneckerSym_eq_zero_iff.mpr, Int.cast_zero]
       intro h
@@ -390,6 +422,7 @@ theorem kroneckerChar_isQuadratic : (kroneckerChar R D hD hD₀).IsQuadratic := 
 
 /-- The Kronecker character takes the value `sign D` at `-1`: it is even for `D > 0` and odd for
 `D < 0`. -/
+@[simp]
 theorem kroneckerChar_neg_one : kroneckerChar R D hD hD₀ (-1) = D.sign := by
   rw [← Int.cast_one (R := ZMod D.natAbs), ← Int.cast_neg, kroneckerChar_intCast,
     kroneckerSym_neg_one_right]

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.LegendreSymbol.JacobiSymbol
+public import TauCeti.NumberTheory.LegendreSymbol.ZModChar
 
 /-!
 # The Jacobi symbol under reflection of the denominator
@@ -20,9 +21,12 @@ periodic modulo `4 |a|` on all odd integers; this is the input that makes the Kr
 It also records the form of quadratic reciprocity for an integer numerator `a ≡ 1 (mod 4)`, of
 either sign: `J(a | b) = J(b | |a|)` for odd `b`.
 
+The proof of the reflection law for a natural numerator is adapted from the proof of Mathlib's
+`jacobiSym.mod_right'`: both split off the power of `2` and apply quadratic reciprocity to the odd
+part.
+
 ## Main statements
 
-* `TauCeti.χ₄_neg`, `TauCeti.χ₈_neg`: `χ₄` is odd and `χ₈` is even.
 * `TauCeti.jacobiSym_eq_sign_mul_of_dvd_add`: `J(a | b') = sign a * J(a | b)` when `b`, `b'` are
   odd and `4 |a| ∣ b + b'`.
 * `TauCeti.jacobiSym_eq_sign_mul_of_emod_four_eq_zero`,
@@ -42,33 +46,8 @@ open ZMod
 
 namespace TauCeti
 
-/-- The character `χ₄` is odd. -/
-theorem χ₄_neg (x : ZMod 4) : χ₄ (-x) = -χ₄ x := by
-  revert x
-  decide
-
-/-- The character `χ₈` is even. -/
-theorem χ₈_neg (x : ZMod 8) : χ₈ (-x) = χ₈ x := by
-  revert x
-  decide
-
-private theorem natCast_eq_neg_of_dvd_add {n b b' : ℕ} (h : n ∣ b + b') :
-    (b' : ZMod n) = -b := by
-  rw [eq_neg_iff_add_eq_zero, add_comm, ← Nat.cast_add, ZMod.natCast_eq_zero_iff]
-  exact h
-
-private theorem χ₈_neg_natCast_eq {b b' : ℕ} (h : 8 ∣ b + b') : χ₈ b' = χ₈ b := by
-  rw [natCast_eq_neg_of_dvd_add h, χ₈_neg]
-
-private theorem χ₄_neg_natCast_eq {b b' : ℕ} (h : 4 ∣ b + b') : χ₄ b' = -χ₄ b := by
-  rw [natCast_eq_neg_of_dvd_add h, χ₄_neg]
-
-private theorem χ₄_natCast_mul_self {a : ℕ} (ha : Odd a) : χ₄ a * χ₄ a = 1 := by
-  rcases Nat.odd_mod_four_iff.mp (Nat.odd_iff.mp ha) with h | h
-  · rw [χ₄_nat_one_mod_four h, one_mul]
-  · rw [χ₄_nat_three_mod_four h, neg_one_mul, neg_neg]
-
-/-- The reflection law for a natural numerator: the sign `sign a` is `1` here. -/
+/-- The reflection law for a natural numerator: the sign `sign a` is `1` here. The proof is
+adapted from the proof of Mathlib's `jacobiSym.mod_right'`. -/
 private theorem jacobiSym_natCast_eq_of_dvd_add (a : ℕ) {b b' : ℕ} (hb : Odd b) (hb' : Odd b')
     (h : 4 * a ∣ b + b') : jacobiSym a b' = jacobiSym a b := by
   rcases eq_or_ne a 0 with rfl | ha₀
@@ -84,11 +63,11 @@ private theorem jacobiSym_natCast_eq_of_dvd_add (a : ℕ) {b b' : ℕ} (hb : Odd
   have h₈ : χ₈ b' ^ e = χ₈ b ^ e := by
     rcases e with - | e
     · rw [pow_zero, pow_zero]
-    · refine congrArg (· ^ (e + 1)) (χ₈_neg_natCast_eq (dvd_trans ?_ h))
+    · refine congrArg (· ^ (e + 1)) (χ₈_natCast_eq_of_dvd_add (dvd_trans ?_ h))
       exact ⟨2 ^ e * a', by rw [pow_succ]; ring⟩
   -- The sign of reciprocity flips with `χ₄ b`, and so does `J(b | a')`; the flips cancel.
   have hqr : qrSign b' a' = χ₄ a' * qrSign b a' := by
-    rw [qrSign, qrSign, χ₄_neg_natCast_eq (dvd_trans (dvd_mul_right 4 _) h),
+    rw [qrSign, qrSign, χ₄_natCast_eq_neg_of_dvd_add (dvd_trans (dvd_mul_right 4 _) h),
       jacobiSym.neg _ ha₁]
   have hJ : jacobiSym b' a' = χ₄ a' * jacobiSym b a' := by
     rw [← jacobiSym.neg _ ha₁]
@@ -109,7 +88,8 @@ theorem jacobiSym_eq_sign_mul_of_dvd_add (a : ℤ) {b b' : ℕ} (hb : Odd b) (hb
   · obtain ⟨n, rfl⟩ : ∃ n : ℕ, a = -n := ⟨a.natAbs, by omega⟩
     rw [Int.natAbs_neg, Int.natAbs_natCast] at h
     rw [jacobiSym.neg _ hb, jacobiSym.neg _ hb', jacobiSym_natCast_eq_of_dvd_add n hb hb' h,
-      χ₄_neg_natCast_eq (dvd_trans (dvd_mul_right 4 _) h), Int.sign_eq_neg_one_of_neg ha]
+      χ₄_natCast_eq_neg_of_dvd_add (dvd_trans (dvd_mul_right 4 _) h),
+      Int.sign_eq_neg_one_of_neg ha]
     ring
   · rw [Int.natAbs_zero, mul_zero, zero_dvd_iff] at h
     exact absurd (Nat.eq_zero_of_add_eq_zero_right h) hb.pos.ne'
@@ -128,10 +108,11 @@ theorem jacobiSym_eq_jacobiSym_natAbs_of_emod_four_eq_one {a : ℤ} (ha : a % 4 
     exact jacobiSym.quadratic_reciprocity_one_mod_four (by omega) hb
   · have h3 : a.natAbs % 4 = 3 := by omega
     have hodd : Odd a.natAbs := Nat.odd_iff.mpr (by omega)
+    -- The sign of reciprocity is `(-1) ^ (b / 2) = χ₄ b`, as `a.natAbs / 2` is odd.
     rw [h, Int.natAbs_neg, Int.natAbs_natCast, jacobiSym.neg _ hb,
       jacobiSym.quadratic_reciprocity hodd hb, pow_mul,
       Odd.neg_one_pow (Nat.odd_iff.mpr (by omega)), χ₄_eq_neg_one_pow (Nat.odd_iff.mp hb),
-      ← mul_assoc, ← pow_two, ← pow_mul, pow_mul', neg_one_sq, one_pow, one_mul]
+      ← mul_assoc, ← mul_pow, neg_one_mul, neg_neg, one_pow, one_mul]
 
 /-- For `a ≡ 0 (mod 4)`, the Jacobi symbol `J(a | b)` at odd `b` depends only on `b` modulo `|a|`,
 not merely modulo `4 |a|` as in `jacobiSym.mod_right`: the factor `J(4 | b) = 1` may be dropped. -/
@@ -143,7 +124,7 @@ theorem jacobiSym_mod_natAbs_of_emod_four_eq_zero {a : ℤ} (ha : a % 4 = 0) {b 
   rw [← jacobiSym.div_four_left ha (Nat.odd_iff.mp hb),
     ← jacobiSym.div_four_left ha (Nat.odd_iff.mp hb'), Int.mul_ediv_cancel_left _ four_ne_zero,
     jacobiSym.mod_right c hb, Int.natAbs_mul]
-  rfl
+  simp only [Int.reduceAbs]
 
 /-- The reflection law `jacobiSym_eq_sign_mul_of_dvd_add` for `a ≡ 0 (mod 4)`, where it needs only
 `|a| ∣ b + b'`. -/
