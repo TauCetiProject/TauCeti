@@ -14,10 +14,13 @@ import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 /-!
 # Locally symmetric connections
 
-A connection `∇` on the tangent bundle is *locally symmetric* when its curvature tensor is
-parallel, `∇R = 0`, where `∇R` is `CovariantDerivative.derivCurvatureTensor` taken with `∇` itself.
-For the Levi-Civita connection this is the defining condition of a locally symmetric Riemannian
-manifold.
+In this file a connection `∇` on the tangent bundle is called *locally symmetric* when its
+curvature tensor is parallel, `∇R = 0`, where `∇R` is `CovariantDerivative.derivCurvatureTensor`
+taken with `∇` itself. No condition on the torsion is imposed. The classical notion of an affine
+locally symmetric connection also requires zero torsion (Kobayashi–Nomizu, Vol. II, Chapter XI),
+so for torsion-free connections the two notions agree. For the Levi-Civita connection, `∇R = 0` is
+equivalent to the Riemannian manifold being locally symmetric (Cartan's characterization); it is
+not the geodesic-symmetry definition itself.
 
 Flat connections are locally symmetric. For a metric-compatible connection whose curvature has the
 pointwise constant-curvature form `R(w, u)v = κ(y) (⟨u, v⟩ w - ⟨w, v⟩ u)`, the covariant derivative
@@ -43,7 +46,10 @@ connection of a round sphere or of hyperbolic space, is locally symmetric.
 * J. M. Lee, *Introduction to Riemannian Manifolds*, 2nd ed., Springer GTM 176 (2018), Chapter 7
   (locally symmetric spaces, as manifolds with parallel curvature tensor).
 * S. Kobayashi and K. Nomizu, *Foundations of Differential Geometry*, Vol. I, Interscience
-  (1963), Chapter V, Section 2.
+  (1963), Chapter V, Section 2 (sectional curvature and spaces of constant curvature).
+* S. Kobayashi and K. Nomizu, *Foundations of Differential Geometry*, Vol. II, Interscience
+  (1969), Chapter XI (affine locally symmetric spaces, as torsion-free connections with parallel
+  curvature tensor).
 -/
 
 public section
@@ -67,7 +73,9 @@ variable (cov : CovariantDerivative I E (TangentSpace I : M → Type _))
 
 /-- A smooth connection on the tangent bundle is **locally symmetric** when its curvature tensor is
 parallel: the covariant derivative `∇R`, taken with the connection itself, vanishes at every
-point. -/
+point. This is only the condition `∇R = 0`; the torsion is unrestricted, whereas classical affine
+local symmetry also requires zero torsion. For the Levi-Civita connection the condition is
+equivalent to local symmetry of the Riemannian manifold. -/
 def IsLocallySymmetric : Prop :=
   ∀ x : M, cov.derivCurvatureTensor cov x = 0
 
