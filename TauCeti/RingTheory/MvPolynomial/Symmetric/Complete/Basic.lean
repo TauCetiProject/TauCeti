@@ -149,17 +149,11 @@ each factor `h_{νᵢ}` being symmetric and homogeneous of degree `νᵢ`. -/
 theorem hsymmPart_mem_symmetricHomogeneousSubmodule {σ R : Type*} [Fintype σ] [DecidableEq σ]
     [CommSemiring R] {n : ℕ} (ν : n.Partition) :
     MvPolynomial.hsymmPart σ R ν ∈ symmetricHomogeneousSubmodule σ R n := by
-  have key (s : Multiset ℕ) : ((s.map (MvPolynomial.hsymm σ R)).prod).IsSymmetric ∧
-      ((s.map (MvPolynomial.hsymm σ R)).prod).IsHomogeneous s.sum := by
-    induction s using Multiset.induction_on with
-    | empty => exact ⟨MvPolynomial.IsSymmetric.one, MvPolynomial.isHomogeneous_one σ R⟩
-    | cons k s ih =>
-      rw [Multiset.map_cons, Multiset.prod_cons, Multiset.sum_cons]
-      exact ⟨(MvPolynomial.hsymm_isSymmetric σ R k).mul ih.1,
-        (MvPolynomial.isHomogeneous_hsymm k).mul ih.2⟩
-  have h := key ν.parts
-  rw [ν.parts_sum] at h
-  exact mem_symmetricHomogeneousSubmodule.mpr h
+  rw [MvPolynomial.hsymmPart]
+  simpa only [ν.parts_sum] using
+    prod_map_mem_symmetricHomogeneousSubmodule (MvPolynomial.hsymm σ R)
+      (fun k => mem_symmetricHomogeneousSubmodule.mpr
+        ⟨MvPolynomial.hsymm_isSymmetric σ R k, MvPolynomial.isHomogeneous_hsymm k⟩) ν.parts
 
 section hsymmInt
 
