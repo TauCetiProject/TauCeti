@@ -132,8 +132,8 @@ theorem IsQF.exists_realize_iff_sign {φ : (Language.ring.sum Language.order).Bo
 `p i` and a condition `Φ` on their signs there is a quantifier-free formula of ordered rings which,
 in every commutative ring with a compatible linear order, holds exactly when `Φ` holds of the signs
 of the values of the `p i`. -/
-theorem exists_isQF_realize_iff_sign {m : ℕ} (p : Fin m → MvPolynomial (α ⊕ Fin n) ℤ)
-    (Φ : (Fin m → SignType) → Prop) :
+theorem exists_isQF_realize_iff_sign {ι : Type*} [Finite ι]
+    (p : ι → MvPolynomial (α ⊕ Fin n) ℤ) (Φ : (ι → SignType) → Prop) :
     ∃ φ : (Language.ring.sum Language.order).BoundedFormula α n, φ.IsQF ∧
       ∀ (R : Type u) [CommRing R] [Ring.CompatibleRing R] [Language.order.Structure R]
         [LinearOrder R] [(Language.ring.sum Language.order).OrderedStructure R]

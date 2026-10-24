@@ -24,6 +24,8 @@ variable {L : Language} {α β : Type*} {n : ℕ}
 /-- A finite disjunction of quantifier-free formulas is quantifier-free. -/
 theorem iSup [Finite β] {f : β → L.BoundedFormula α n} (hf : ∀ b, (f b).IsQF) :
     (BoundedFormula.iSup f).IsQF := by
+  -- Mirror the Fintype.ofFinite instance chosen by BoundedFormula.iSup;
+  -- its finite-connective goal then reduces to the corresponding list fold.
   let _ := Fintype.ofFinite β
   suffices ∀ l : List β, (l.map f).foldr (· ⊔ ·) ⊥ |>.IsQF from this _
   intro l
@@ -34,6 +36,8 @@ theorem iSup [Finite β] {f : β → L.BoundedFormula α n} (hf : ∀ b, (f b).I
 /-- A finite conjunction of quantifier-free formulas is quantifier-free. -/
 theorem iInf [Finite β] {f : β → L.BoundedFormula α n} (hf : ∀ b, (f b).IsQF) :
     (BoundedFormula.iInf f).IsQF := by
+  -- Mirror the Fintype.ofFinite instance chosen by BoundedFormula.iInf;
+  -- its finite-connective goal then reduces to the corresponding list fold.
   let _ := Fintype.ofFinite β
   suffices ∀ l : List β, (l.map f).foldr (· ⊓ ·) ⊤ |>.IsQF from this _
   intro l
