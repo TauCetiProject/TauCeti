@@ -9,7 +9,6 @@ public import TauCeti.NumberTheory.ClassFieldTheory.GlobalExistence.UpwardClosur
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.Kummer.Index
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.Kummer.Layer
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.Kummer.Norm
-public import TauCeti.NumberTheory.ClassFieldTheory.KummerLayer
 import TauCeti.NumberTheory.ClassFieldTheory.Global.Reciprocity
 import TauCeti.NumberTheory.NumberField.Global.Ideles.Ray.OpenSubgroup
 import TauCeti.NumberTheory.NumberField.Kummer.Unramified
