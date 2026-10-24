@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Distribution.TestFunction.Postcomp
-public import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
+public import TauCeti.Analysis.Normed.Module.Alternating.TopDegree
 
 /-!
 # Top-degree test forms and scalar tests
@@ -63,7 +63,7 @@ theorem _root_.Module.Basis.tsupport_testTopFormEquiv_symm (b : Module.Basis ι 
   simp [Module.Basis.testTopFormEquiv]
 
 /-- The scalar coefficient changes by the signed change-of-basis determinant. -/
-theorem _root_.Module.Basis.testTopFormEquiv_changeBasis (b b' : Module.Basis ι ℝ E)
+theorem _root_.Module.Basis.testTopFormEquiv_eq_det_smul (b b' : Module.Basis ι ℝ E)
     (φ : 𝓓^{n}(Ω, E [⋀^ι]→L[ℝ] ℝ)) :
     b'.testTopFormEquiv φ = b.det b' • b.testTopFormEquiv φ := by
   ext x
