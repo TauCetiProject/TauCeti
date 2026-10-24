@@ -45,9 +45,7 @@ private theorem trivializationAt_extend_apply {x y : M}
         (TangentSpace (𝓡∂ (n + 1))) x) ⟨x, v₀⟩).2 := by
   let t := trivializationAt (EuclideanSpace ℝ (Fin (n + 1)))
     (TangentSpace (𝓡∂ (n + 1))) x
-  change (t ⟨y, FiberBundle.extend (EuclideanSpace ℝ (Fin (n + 1))) v₀ y⟩).2 =
-    (t ⟨x, v₀⟩).2
-  simp only [t, FiberBundle.extend]
+  simp only [FiberBundle.extend]
   rwa [Trivialization.apply_mk_symm]
 
 omit [T2Space M] [SigmaCompactSpace M] in
@@ -61,8 +59,6 @@ private theorem local_extension_outward {x : (𝓡∂ (n + 1)).boundary M}
   let g : (z : M) → TangentSpace (𝓡∂ (n + 1)) z :=
     FiberBundle.extend (EuclideanSpace ℝ (Fin (n + 1)))
       (E := TangentSpace (𝓡∂ (n + 1))) (x := (x : M)) v₀
-  -- The tangent-space fibre is definitionally the model space, but the section is dependent.
-  change IsOutwardPointing y (g y)
   have hxy : y ∈ (extChartAt (𝓡∂ (n + 1)) (x : M)).source := by
     simpa only [extChartAt_source] using hy
   rw [isOutwardPointing_iff_tangentCoordChange (x := y) (α := (x : M)) hby
@@ -78,30 +74,12 @@ private theorem local_extension_outward {x : (𝓡∂ (n + 1)).boundary M}
       -- Read the trivialization at its centre as the identity tangent coordinate change.
       change tangentCoordChange (𝓡∂ (n + 1)) (x : M) (x : M) (x : M) v₀ = v₀
       rw [tangentCoordChange_self (x := (x : M)) (mem_extChartAt_source (I := 𝓡∂ (n + 1)) (x : M))]
+    -- `TangentBundle.trivializationAt_apply` identifies this coordinate with
+    -- `tangentCoordChange`; the change exposes that definitional identification.
     change (t (⟨y, g y⟩ : TangentBundle (𝓡∂ (n + 1)) M)).2 = v₀
     exact (trivializationAt_extend_apply hybase v₀).trans hvalue
   rw [hext]
   simp [v₀]
-
-omit [T2Space M] [SigmaCompactSpace M] in
-private theorem local_extension_contMDiffOn {x : M}
-    (v₀ : TangentSpace (𝓡∂ (n + 1)) x) :
-    ContMDiffOn (𝓡∂ (n + 1)) (𝓡∂ (n + 1)).tangent ∞
-      (T% (FiberBundle.extend (EuclideanSpace ℝ (Fin (n + 1))) v₀))
-      (chartAt (EuclideanHalfSpace (n + 1)) x).source := by
-  let t := trivializationAt (EuclideanSpace ℝ (Fin (n + 1)))
-    (TangentSpace (𝓡∂ (n + 1))) x
-  let w : EuclideanSpace ℝ (Fin (n + 1)) := (t ⟨x, v₀⟩).2
-  suffices hcoord : CMDiff[t.baseSet] ∞
-      (fun y ↦ (t ⟨y, FiberBundle.extend (EuclideanSpace ℝ (Fin (n + 1))) v₀ y⟩).2) by
-    intro y hy
-    rw [t.contMDiffWithinAt_section _ hy]
-    exact hcoord y hy
-  have hw : CMDiff[t.baseSet] ∞ (fun _ : M ↦ w) := contMDiffOn_const
-  exact hw.congr fun y hy ↦ by
-    simpa [w, t] using trivializationAt_extend_apply (x := x) (y := y)
-      (by simpa [t] using hy) v₀
-
 
 /-- Every smooth finite-dimensional Hausdorff sigma-compact half-space manifold has a smooth field
 pointing outward along its boundary. -/
@@ -129,13 +107,17 @@ theorem exists_isOutwardPointing :
     by_cases hy₀ : y₀ ∈ B
     · let x₀ : (𝓡∂ (n + 1)).boundary M := ⟨y₀, hy₀⟩
       let U := (chartAt (EuclideanHalfSpace (n + 1)) (x₀ : M)).source
-      refine ⟨U, (chartAt _ (x₀ : M)).open_source.mem_nhds (mem_chart_source _ _),
+      obtain ⟨s, hs, hsm⟩ := FiberBundle.exists_contMDiffOn_extend
+        (M := M) (V := TangentSpace (𝓡∂ (n + 1))) (k := ∞) (x₀ := (x₀ : M))
+        (𝓡∂ (n + 1)) (EuclideanSpace ℝ (Fin (n + 1))) v₀
+      refine ⟨s ∩ U, Filter.inter_mem hs
+          ((chartAt _ (x₀ : M)).open_source.mem_nhds (mem_chart_source _ _)),
         FiberBundle.extend (EuclideanSpace ℝ (Fin (n + 1)))
           (E := TangentSpace (𝓡∂ (n + 1))) (x := (x₀ : M)) v₀,
         ?_, ?_⟩
-      · exact local_extension_contMDiffOn v₀
+      · exact hsm.mono inter_subset_left
       · intro y hy hby
-        exact local_extension_outward (x := x₀) hy hby
+        exact local_extension_outward (x := x₀) hy.2 hby
     · refine ⟨Bᶜ, hB.isOpen_compl.mem_nhds hy₀,
         (fun _ ↦ 0 : (y : M) → TangentSpace (𝓡∂ (n + 1)) y),
         ?_, ?_⟩
