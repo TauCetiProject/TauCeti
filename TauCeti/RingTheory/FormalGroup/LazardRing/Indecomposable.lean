@@ -157,8 +157,8 @@ theorem generator_mem_grading (n : ℕ+) : generator n ∈ grading (2 * n) := by
   refine sum_mem fun i hi ↦ Submodule.smul_of_tower_mem _ _ ?_
   rw [mem_Icc] at hi
   have h := coeff_formalGroup_mem_grading (single 0 i + single 1 ((n : ℕ) + 1 - i))
-  rwa [map_add, Finsupp.degree_single, Finsupp.degree_single,
-    show i + ((n : ℕ) + 1 - i) - 1 = n by omega] at h
+  have hdeg : i + ((n : ℕ) + 1 - i) - 1 = n := by omega
+  rwa [map_add, Finsupp.degree_single, Finsupp.degree_single, hdeg] at h
 
 /-- The generator `xₙ` lies in the augmentation ideal. -/
 theorem generator_mem_augmentationIdeal (n : ℕ+) : generator n ∈ augmentationIdeal := by
@@ -277,10 +277,13 @@ private theorem snd_cocycleHom_generator (n m : ℕ+) :
       coeff_lazardCocycle]
     by_cases hmn : m = n
     · subst hmn
-      simp [show i ≠ 0 by omega, show (m : ℕ) + 1 - i ≠ 0 by omega, show i + (m + 1 - i) = m + 1 by
-        omega, mul_comm]
+      have hi₀ : i ≠ 0 := by omega
+      have hj₀ : (m : ℕ) + 1 - i ≠ 0 := by omega
+      have hsum : i + (m + 1 - i) = m + 1 := by omega
+      simp [hi₀, hj₀, hsum, mul_comm]
     · have hmn' : (m : ℕ) ≠ n := fun h ↦ hmn (PNat.coe_injective h)
-      simp [hmn, show i + (m + 1 - i) ≠ n + 1 by omega]
+      have hsum : i + (m + 1 - i) ≠ n + 1 := by omega
+      simp [hmn, hsum]
   rw [sum_congr rfl h]
   split_ifs with hmn
   · subst hmn
@@ -337,7 +340,8 @@ private theorem span_toCotangent_generator :
     have hj := j.pos
     set n : ℕ+ := ⟨i + j - 1, by omega⟩
     have hmem := coeff_formalGroup_sub_nsmul_generator_mem_sq n hi (by simp [n]; omega)
-    rw [show (n : ℕ) + 1 - i = j by simp [n]; omega, coeff_formalGroup] at hmem
+    have hj' : (n : ℕ) + 1 - i = j := by simp [n]; omega
+    rw [hj', coeff_formalGroup] at hmem
     rw [(augmentationIdeal.toCotangent_eq (y := ((n + 1 : ℕ).choose i / lazardGcd (n + 1)) •
       ⟨generator n, generator_mem_augmentationIdeal n⟩)).2 hmem, map_nsmul]
     exact Submodule.smul_of_tower_mem _ _ (Submodule.subset_span ⟨n, rfl⟩)

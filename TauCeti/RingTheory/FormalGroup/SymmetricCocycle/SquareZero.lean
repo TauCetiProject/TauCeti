@@ -150,7 +150,9 @@ theorem isSymmetricCocycleCoeff_coeff (F : FormalGroup A) [F.IsComm]
       F.toPowerSeries where
   symm i hi := by rw [Nat.sub_sub_self hi, F.coeff_comm]
   rel i j k hi hj hk hn := by
-    rw [nsmul_eq_mul, nsmul_eq_mul, show n - (i + j) = k by omega, show n - i = j + k by omega]
+    have hk' : n - (i + j) = k := by omega
+    have hjk : n - i = j + k := by omega
+    rw [nsmul_eq_mul, nsmul_eq_mul, hk', hjk]
     exact F.choose_mul_coeff_eq hF hi.ne' hk.ne' j
 
 end FormalGroup

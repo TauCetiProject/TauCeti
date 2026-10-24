@@ -343,20 +343,15 @@ theorem coeff_subst_zero_X (f : MvPowerSeries (Fin 2) O) (n : ℕ) :
 theorem coeff_subst_X_one_X_zero (f : MvPowerSeries (Fin 2) O) (d : Fin 2 →₀ ℕ) :
     coeff d (f.subst ![X 1, X 0]) =
       coeff (Finsupp.single 0 (d 1) + Finsupp.single 1 (d 0)) f := by
-  have key (e : Fin 2 →₀ ℕ) : coeff d ((X 1 : MvPowerSeries (Fin 2) O) ^ e 0 * X 0 ^ e 1) =
-      if e = Finsupp.single 0 (d 1) + Finsupp.single 1 (d 0) then 1 else 0 := by
-    rw [X_pow_eq, X_pow_eq, monomial_mul_monomial, mul_one, coeff_monomial]
-    congr 1
-    simp only [Finsupp.ext_iff, Fin.forall_fin_two]
-    simp [eq_comm, and_comm]
-  rw [coeff_subst HasSubst.X_X,
-    finsum_eq_single _ (Finsupp.single 0 (d 1) + Finsupp.single 1 (d 0))]
-  · rw [smul_eq_mul, Finsupp.prod_fintype _ _ (by simp), Fin.prod_univ_two]
-    simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one]
-    rw [key]
-    simp
-  · intro e he
-    simp [Finsupp.prod_fintype, key, he]
+  -- Substituting `![X 1, X 0]` is renaming the variables along the swap of `0` and `1`.
+  have hX : ![(X 1 : MvPowerSeries (Fin 2) O), X 0] = X ∘ (Equiv.swap 0 1).toEmbedding := by
+    funext s
+    fin_cases s <;> rfl
+  have hd : (Finsupp.single (0 : Fin 2) (d 1) + Finsupp.single 1 (d 0)).embDomain
+      (Equiv.swap (0 : Fin 2) 1).toEmbedding = d := by
+    ext i
+    fin_cases i <;> simp
+  rw [hX, ← rename_eq_subst, ← coeff_embDomain_rename _ f, hd]
 
 end FinTwo
 
@@ -376,9 +371,9 @@ open Finsupp
 variable {O : Type*} [CommRing O]
 
 /-- Substituting two polynomials into a two-variable series, coefficientwise. -/
-theorem coeff_subst_coe_pair (g : MvPowerSeries (Fin 2) O) (u v : MvPolynomial (Fin 3) O)
-    (huv : HasSubst ![(u : MvPowerSeries (Fin 3) O), v]) (e : Fin 3 →₀ ℕ) :
-    coeff e (g.subst ![(u : MvPowerSeries (Fin 3) O), v]) =
+theorem coeff_subst_coe_pair (g : MvPowerSeries (Fin 2) O) (u v : MvPolynomial τ O)
+    (huv : HasSubst ![(u : MvPowerSeries τ O), v]) (e : τ →₀ ℕ) :
+    coeff e (g.subst ![(u : MvPowerSeries τ O), v]) =
       ∑ᶠ d : Fin 2 →₀ ℕ, coeff d g * (u ^ d 0 * v ^ d 1).coeff e := by
   rw [coeff_subst huv]
   refine finsum_congr fun d ↦ ?_
@@ -405,20 +400,26 @@ theorem coeff_subst_X_X_of_ne {a b c : Fin 3} (hab : a ≠ b) (hac : a ≠ c) (h
     (g : MvPowerSeries (Fin 2) O) (d : Fin 3 →₀ ℕ) :
     coeff d (g.subst ![(X a : MvPowerSeries (Fin 3) O), X c]) =
       if d b = 0 then coeff (single 0 (d a) + single 1 (d c)) g else 0 := by
-  simp only [← MvPolynomial.coe_X]
-  rw [coeff_subst_coe_pair _ _ _ (hasSubst_of_constantCoeff_zero fun s ↦ by
-    fin_cases s <;> simp)]
+  -- Substituting `![X a, X c]` is renaming the variables along the embedding `![a, c]`.
+  let e : Fin 2 ↪ Fin 3 :=
+    ⟨![a, c], fun i j h ↦ by fin_cases i <;> fin_cases j <;> simp_all [eq_comm]⟩
+  have hX : ![(X a : MvPowerSeries (Fin 3) O), X c] = X ∘ e := by
+    funext s
+    fin_cases s <;> rfl
+  have hb : b ∉ Set.range e := by
+    rintro ⟨i, hi⟩
+    fin_cases i
+    exacts [hab hi, hbc hi.symm]
+  rw [hX, ← rename_eq_subst]
   split_ifs with hd
-  · rw [finsum_eq_single _ (single 0 (d a) + single 1 (d c))]
-    · rw [MvPolynomial.coeff_X_pow_mul_X_pow_fin_three hab hac hbc]
-      simp [hd]
-    · intro e he
-      rw [MvPolynomial.coeff_X_pow_mul_X_pow_fin_three hab hac hbc, ite_eq_right, mul_zero]
-      rintro ⟨h₁, -, h₂⟩
-      exact he (by ext i; fin_cases i <;> simp [h₁, h₂])
-  · refine finsum_eq_zero_of_forall_eq_zero fun e ↦ ?_
-    rw [MvPolynomial.coeff_X_pow_mul_X_pow_fin_three hab hac hbc, ite_eq_right (by tauto),
-      mul_zero]
+  · have hd' : (single (0 : Fin 2) (d a) + single 1 (d c)).embDomain e = d := by
+      ext i
+      obtain rfl | rfl | rfl : i = a ∨ i = b ∨ i = c := by omega
+      · exact (embDomain_apply_self e _ 0).trans (by simp)
+      · rw [embDomain_of_notMem_range e _ _ hb, hd]
+      · exact (embDomain_apply_self e _ 1).trans (by simp)
+    rw [← coeff_embDomain_rename e g, hd']
+  · exact coeff_rename_eq_zero e g fun ⟨x, hx⟩ ↦ hd (hx ▸ mapDomain_of_notMem_range x b hb)
 
 /-- The coefficient of `XⁱYʲZᵏ` in `g(X + Y, Z)` is `(i + j).choose i` times that of `Xⁱ⁺ʲYᵏ`
 in `g`. -/
