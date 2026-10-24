@@ -85,6 +85,21 @@ theorem euclideanFinConsEquiv_apply_succ {k n : ℕ} (hk : k = n) (p : ℝ × (F
     (i : Fin n) : euclideanFinConsEquiv hk p i.succ = p.2 (Fin.cast hk.symm i) := by
   simp [euclideanFinConsEquiv]
 
+/-- The inverse of `TauCeti.euclideanFinConsEquiv` reads the normal coordinate from slot `0`. -/
+@[simp]
+theorem euclideanFinConsEquiv_symm_apply_fst {k n : ℕ} (hk : k = n)
+    (v : EuclideanSpace ℝ (Fin (n + 1))) : ((euclideanFinConsEquiv hk).symm v).1 = v 0 := by
+  simpa using (euclideanFinConsEquiv_apply_zero hk ((euclideanFinConsEquiv hk).symm v)).symm
+
+/-- The inverse of `TauCeti.euclideanFinConsEquiv` reads the tangential coordinates from slots
+`1, …, n`, reindexed along `k = n`. -/
+@[simp]
+theorem euclideanFinConsEquiv_symm_apply_snd {k n : ℕ} (hk : k = n)
+    (v : EuclideanSpace ℝ (Fin (n + 1))) (j : Fin k) :
+    ((euclideanFinConsEquiv hk).symm v).2 j = v (Fin.cast hk j).succ := by
+  simpa using
+    (euclideanFinConsEquiv_apply_succ hk ((euclideanFinConsEquiv hk).symm v) (Fin.cast hk j)).symm
+
 /-- The coordinate hyperplane which is the boundary of the `(n + 1)`-dimensional Euclidean
 half-space. -/
 def euclideanHalfSpaceBoundary (n : ℕ) :
