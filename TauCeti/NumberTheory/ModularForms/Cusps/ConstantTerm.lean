@@ -55,6 +55,8 @@ Eisenstein series through their constant terms.
 * `ModularForm.constantTermAt_mul_left`, `ModularForm.constantTermAt_mul_T_zpow`,
   `ModularForm.constantTermAt_neg`, `ModularForm.constantTermAt_mul_of_c_eq_zero`: the
   dependence of the constant term on the representative.
+* `ModularForm.constantTermAt_eq_zero_of_odd`: in odd weight the constant term vanishes at a cusp
+  whose stabilizer in `Γ` contains a conjugate of some `-Tʲ`, such as an irregular cusp.
 * `ModularForm.constantTermAt_diamondOp`: diamond operators act on constant terms by left
   multiplication of cusp representatives.
 * `ModularForm.nebentypusConstantTermSubspace`: functions on cusp representatives that
@@ -238,6 +240,20 @@ theorem constantTermAt_mul_of_c_eq_zero (γ : SL(2, ℤ)) {m : SL(2, ℤ)} (hm :
   · rw [mul_neg, constantTermAt_neg, constantTermAt_mul_T_zpow]
     simp [ModularGroup.coe_T_zpow]
 
+/-- **Constant terms vanish in odd weight at a cusp fixed by a negative translation.** If `Γ`
+contains `γ m γ⁻¹` for some `m` fixing `∞` with `m₀₀ = -1`, that is `m = -Tʲ`, then every modular
+form of odd weight on `Γ` has constant term zero at `γ`: the constant term equals its own
+negative. This covers the irregular cusps of `Γ` (`j` the width), and every cusp when `-1 ∈ Γ`
+(`j = 0`). -/
+theorem constantTermAt_eq_zero_of_odd {γ m : SL(2, ℤ)} (hm : mapGL ℝ (γ * m * γ⁻¹) ∈ Γ)
+    (hm₁₀ : m 1 0 = 0) (hm₀₀ : m 0 0 = -1) (hk : Odd k) (f : ModularForm Γ k) :
+    constantTermAt γ f = 0 := by
+  have h := constantTermAt_mul_of_c_eq_zero γ hm₁₀ f
+  have hγm : γ * m = γ * m * γ⁻¹ * γ := by group
+  rw [hγm, constantTermAt_mul_left hm, hm₀₀,
+    Int.cast_neg, Int.cast_one, hk.neg_one_zpow] at h
+  linear_combination h / 2
+
 /-- A modular form is cuspidal exactly when its constant term vanishes after every
 `SL₂(ℤ)`-translate. -/
 theorem mem_cuspFormSubmodule_iff_constantTermAt_eq_zero (f : ModularForm Γ k) :
@@ -367,9 +383,7 @@ theorem constantTermAt_eq_of_vecMul_inv_eq {N : ℕ} (hΓ : (Γ(N) : Subgroup (G
   have h10 : (m 1 0 : ZMod N) = 0 := by simpa using hm1 0
   have h11 : (m 1 1 : ZMod N) = 1 := by simpa using hm1 1
   have h00 : (m 0 0 : ZMod N) = 1 := by
-    have hdet := congrArg (Int.cast : ℤ → ZMod N) (Matrix.SpecialLinearGroup.det_coe m)
-    rw [Matrix.det_fin_two] at hdet
-    push_cast at hdet
+    have hdet := Matrix.SpecialLinearGroup.intCast_fin_two_mul_sub_mul_eq_one (R := ZMod N) m
     rw [h10, h11] at hdet
     simpa using hdet
   have hg : m * ModularGroup.T ^ (-m 0 1) ∈ Γ(N) := by

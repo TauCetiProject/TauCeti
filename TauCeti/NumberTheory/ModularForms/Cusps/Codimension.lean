@@ -24,12 +24,19 @@ embeds into the functions on the cusp orbits. Its dimension is therefore at most
 of the Eisenstein space: comparing it with the number of linearly independent Eisenstein series
 shows that those series span a complement of the cusp forms.
 
+Cusps at which every form of weight `k` has constant term zero can be left out of the count. In
+odd weight these are all cusps when `-1 ∈ Γ`, and the irregular cusps. This sharper bound is what
+the comparison needs at the levels without a cusp count, where the constant terms are read at
+explicit representatives.
+
 ## Main results
 
 * `TauCeti.ModularForm.exists_constantTermAt_eq_zpow_smul_of_cuspOrbitOfSL2Z_eq`: the constant
   terms at two representatives of the same cusp orbit agree up to a factor `(±1)ᵏ`.
 * `TauCeti.ModularForm.finrank_le_card_cuspOrbit_of_disjoint`: a subspace of `M_k(H)` with zero
   intersection with the cusp forms has dimension at most the number of cusps of `H`.
+* `TauCeti.ModularForm.finrank_le_natCard_of_disjoint`: the same bound by the number of any
+  family of cusp representatives that misses only cusps without constant terms in weight `k`.
 
 ## References
 
@@ -62,31 +69,46 @@ theorem exists_constantTermAt_eq_zpow_smul_of_cuspOrbitOfSL2Z_eq {γ γ' : SL(2,
   simp only [m, mul_assoc, mul_inv_cancel_left]
 
 variable (H k) in
-/-- **The cusp forms have codimension at most the number of cusps.** A subspace of `M_k(H)`
-whose intersection with the cusp forms is zero, such as a complement of the cusp forms, has
-dimension at most the number of cusps of `H`. -/
-theorem finrank_le_card_cuspOrbit_of_disjoint {V : Submodule ℂ (ModularForm (H.map (mapGL ℝ)) k)}
+/-- **Constant terms at enough cusps bound a complement of the cusp forms.** Let `r i` be
+finitely many cusp representatives such that every cusp either is equivalent to some `r i` or
+carries no constant term in weight `k` (for instance an irregular cusp in odd weight,
+`ModularForm.constantTermAt_eq_zero_of_odd`). Then a subspace of `M_k(H)` whose intersection with
+the cusp forms is zero has dimension at most the number of representatives. -/
+theorem finrank_le_natCard_of_disjoint {ι : Type*} [Finite ι] (r : ι → SL(2, ℤ))
+    (hr : ∀ γ : SL(2, ℤ), (∃ i, H.cuspOrbitOfSL2Z (r i) = H.cuspOrbitOfSL2Z γ) ∨
+      ∀ f, constantTermAt (Γ := H.map (mapGL ℝ)) (k := k) γ f = 0)
+    {V : Submodule ℂ (ModularForm (H.map (mapGL ℝ)) k)}
     (hV : Disjoint V (cuspFormSubmodule (H.map (mapGL ℝ)) k)) :
-    Module.finrank ℂ V ≤ Nat.card (H.map sl2zToPSL2R).CuspOrbit := by
-  -- Read the constant terms at one chosen representative of each cusp orbit.
-  let r := Function.surjInv H.cuspOrbitOfSL2Z_surjective
+    Module.finrank ℂ V ≤ Nat.card ι := by
+  -- Read the constant terms at the representatives `r i`.
   let L := (LinearMap.funLeft ℂ ℂ r).comp (constantTerms (Γ := H.map (mapGL ℝ)) (k := k))
   have hker (f : ModularForm (H.map (mapGL ℝ)) k) (hf : L f = 0) :
       f ∈ cuspFormSubmodule (H.map (mapGL ℝ)) k := by
     rw [mem_cuspFormSubmodule_iff_constantTermAt_eq_zero]
     intro γ
-    obtain ⟨u, hu⟩ := exists_constantTermAt_eq_zpow_smul_of_cuspOrbitOfSL2Z_eq (k := k)
-      (Function.surjInv_eq H.cuspOrbitOfSL2Z_surjective (H.cuspOrbitOfSL2Z γ))
-    have h0 := congrFun hf (H.cuspOrbitOfSL2Z γ)
-    rw [LinearMap.comp_apply, LinearMap.funLeft_apply, constantTerms_apply,
-      Pi.zero_apply] at h0
-    rw [hu, LinearMap.smul_apply, h0, smul_zero]
+    obtain ⟨i, hi⟩ | h0 := hr γ
+    · obtain ⟨u, hu⟩ := exists_constantTermAt_eq_zpow_smul_of_cuspOrbitOfSL2Z_eq (k := k) hi
+      have h0 := congrFun hf i
+      rw [LinearMap.comp_apply, LinearMap.funLeft_apply, constantTerms_apply,
+        Pi.zero_apply] at h0
+      rw [hu, LinearMap.smul_apply, h0, smul_zero]
+    · exact h0 f
   have hinj : Function.Injective (L.comp V.subtype) := by
     rw [← LinearMap.ker_eq_bot, Submodule.eq_bot_iff]
     intro f hf
     exact Subtype.ext <| (Submodule.disjoint_def.mp hV) _ f.2 (hker _ hf)
-  have := Fintype.ofFinite (H.map sl2zToPSL2R).CuspOrbit
+  have := Fintype.ofFinite ι
   simpa only [Module.finrank_fintype_fun_eq_card, Nat.card_eq_fintype_card] using
     LinearMap.finrank_le_finrank_of_injective hinj
+
+variable (H k) in
+/-- **The cusp forms have codimension at most the number of cusps.** A subspace of `M_k(H)`
+whose intersection with the cusp forms is zero, such as a complement of the cusp forms, has
+dimension at most the number of cusps of `H`. -/
+theorem finrank_le_card_cuspOrbit_of_disjoint {V : Submodule ℂ (ModularForm (H.map (mapGL ℝ)) k)}
+    (hV : Disjoint V (cuspFormSubmodule (H.map (mapGL ℝ)) k)) :
+    Module.finrank ℂ V ≤ Nat.card (H.map sl2zToPSL2R).CuspOrbit :=
+  finrank_le_natCard_of_disjoint H k (Function.surjInv H.cuspOrbitOfSL2Z_surjective)
+    (fun _ ↦ .inl ⟨_, Function.surjInv_eq H.cuspOrbitOfSL2Z_surjective _⟩) hV
 
 end TauCeti.ModularForm
