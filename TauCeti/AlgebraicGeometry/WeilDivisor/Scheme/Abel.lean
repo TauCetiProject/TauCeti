@@ -54,15 +54,11 @@ theorem exists_isEffective_toLineBundleClass_div_eq (B : SchemeWeilDivisor X)
     (hB : (finrank k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1) : ℤ) ≤
       relativeDegree (X ↘ Spec (.of k)) B)
     (a : LineBundleClass X) (ha : LineBundleClass.eulerDegree k a = 0) :
-    letI : IsNoetherian X :=
-      { toIsLocallyNoetherian := LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
-        toCompactSpace := compactSpace_of_universallyClosed (X ↘ Spec (.of k)) }
+    letI : IsNoetherian X := isNoetherian_of_finiteType (X ↘ Spec (.of k))
     ∃ E : SchemeWeilDivisor X, WeilDivisor.IsEffective E ∧
       relativeDegree (X ↘ Spec (.of k)) E = relativeDegree (X ↘ Spec (.of k)) B ∧
         toLineBundleClass hdim E / toLineBundleClass hdim B = a := by
-  have : IsNoetherian X :=
-    { toIsLocallyNoetherian := LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
-      toCompactSpace := compactSpace_of_universallyClosed (X ↘ Spec (.of k)) }
+  have : IsNoetherian X := isNoetherian_of_finiteType (X ↘ Spec (.of k))
   obtain ⟨L, hL⟩ := LineBundleClass.mk_surjective (a * toLineBundleClass hdim B)
   have hdegree : L.eulerDegree k = relativeDegree (X ↘ Spec (.of k)) B := by
     rw [← LineBundleClass.eulerDegree_mk, hL,
