@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Dimension.LinearMap
 public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import Mathlib.LinearAlgebra.Dimension.Constructions
+import TauCeti.Algebra.Module.Equiv.Basic
 
 /-!
 # Dimensions of submodules
@@ -20,7 +21,8 @@ nontrivially. Dually, the preimage of a subspace `W` under a linear map out of a
 
 The rank of a product `V.prod W` of free submodules is the sum of their ranks over any
 semiring satisfying the strong rank condition. Consequently, the rank of a product map
-`f.prodMap g` with free ranges is the sum of the ranks of `f` and `g`.
+`f.prodMap g` with free ranges is the sum of the ranks of `f` and `g`. Conjugating an
+endomorphism by a linear equivalence preserves the dimension of its kernel.
 -/
 
 public section
@@ -93,5 +95,15 @@ theorem rank_prodMap (f : M →ₗ[𝕜] M') (g : N →ₗ[𝕜] N')
   rw [LinearMap.rank, range_prodMap, Submodule.rank_prod]
 
 end LinearMap
+
+namespace LinearEquiv
+
+/-- Conjugate endomorphisms have kernels of the same dimension. -/
+theorem finrank_ker_conj {R M N : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+    [AddCommMonoid N] [Module R N] (e : M ≃ₗ[R] N) (f : Module.End R M) :
+    finrank R (LinearMap.ker (e.conj f)) = finrank R (LinearMap.ker f) := by
+  rw [ker_conj, finrank_map_eq]
+
+end LinearEquiv
 
 end

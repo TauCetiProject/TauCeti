@@ -23,6 +23,8 @@ Postcomposition with an isomorphism of targets also transports hom spaces over a
 scalars, even when the ring defining the linear maps is noncommutative.
 For coordinate transport, forgetting linearity gives the corresponding additive word
 equivalence, with the same direction on coordinates.
+Conjugating an endomorphism by a semilinear equivalence commutes with powers and moves its kernel
+by the equivalence.
 
 ## Main results
 
@@ -31,6 +33,8 @@ equivalence, with the same direction on coordinates.
 
 * `LinearEquiv.map_ker_of_intertwine` and `LinearEquiv.map_range_of_intertwine`: transport of
   kernels and ranges across an intertwining semilinear equivalence.
+* `LinearEquiv.conj_pow` and `LinearEquiv.ker_conj`: conjugation by a semilinear equivalence
+  commutes with powers and transports kernels.
 * `LinearEquiv.toPermHom_smul_coe`: the permutation of the module underlying a linear
   automorphism moves the set underlying a submodule to the set underlying its image.
 * `LinearEquiv.smulOfUnit_apply`: `LinearEquiv.smulOfUnit u` acts as multiplication by `u`.
@@ -125,6 +129,24 @@ theorem map_range_of_intertwine
     exact ⟨f (e.symm b), ⟨e.symm b, rfl⟩, by rw [← h, e.apply_symm_apply]⟩
 
 end Intertwining
+
+section Conj
+
+variable {R S M N : Type*} [CommSemiring R] [CommSemiring S] [AddCommMonoid M] [AddCommMonoid N]
+  [Module R M] [Module S N] {σ : R →+* S} {σ' : S →+* R} [RingHomInvPair σ σ']
+  [RingHomInvPair σ' σ]
+
+/-- Conjugation by a semilinear equivalence commutes with powers. -/
+theorem conj_pow (e : M ≃ₛₗ[σ] N) (f : Module.End R M) (k : ℕ) :
+    e.conj (f ^ k) = e.conj f ^ k :=
+  map_pow e.conjRingEquiv f k
+
+/-- Conjugation by a semilinear equivalence `e` carries the kernel of `f` to its image under `e`. -/
+theorem ker_conj (e : M ≃ₛₗ[σ] N) (f : Module.End R M) :
+    LinearMap.ker (e.conj f) = (LinearMap.ker f).map (e : M →ₛₗ[σ] N) :=
+  (map_ker_of_intertwine e f (e.conj f) fun d => by simp).symm
+
+end Conj
 
 section PermHom
 
