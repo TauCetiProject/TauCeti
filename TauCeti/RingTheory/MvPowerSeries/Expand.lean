@@ -7,7 +7,6 @@ module
 
 public import Mathlib.RingTheory.MvPowerSeries.Expand
 public import Mathlib.RingTheory.MvPowerSeries.Restricted
-public import TauCeti.Data.Finsupp.DivMod
 public import TauCeti.Data.Nat.ModEq
 
 /-!
@@ -62,11 +61,10 @@ theorem isRestricted_expand_iff {R : Type*} [NormedCommRing R] {r t : σ → ℝ
   -- the weighted coefficients of `f(X^p)` vanish away from the exponents `p • μ`
   have hfin : {μ | ‖coeff (p • μ) (expand p hp f)‖ * (p • μ).prod (r · ^ ·) ∉ U}.Finite := h hU
   refine (hfin.image (p • ·)).subset fun α hα ↦ ?_
-  by_cases hdvd : ∀ i, p ∣ α i
-  · have hμ := Finsupp.nsmul_mapRange_div p hdvd
-    exact ⟨_, by rwa [Set.mem_ofPred_eq, hμ], hμ⟩
-  · obtain ⟨i, hi⟩ := not_forall.mp hdvd
-    exact absurd (by simpa [coeff_expand_of_not_dvd p hp f hi] using mem_of_mem_nhds hU) hα
+  by_cases hα0 : coeff α (expand p hp f) = 0
+  · exact absurd (by simpa [hα0] using mem_of_mem_nhds hU) hα
+  · obtain ⟨μ, -, rfl⟩ := support_expand_subset p hp f (a := α) hα0
+    exact ⟨μ, hα, rfl⟩
 
 /-- The coefficient at `p • μ + ν` of a sum `∑ X^ν' g_ν'(X^p)` over the exponents `ν'` with
 `ν' i < p` is the coefficient at `μ` of `g_ν`. -/

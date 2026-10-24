@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Finiteness.Basic
+public import TauCeti.Data.Finsupp.DivMod
 public import TauCeti.RingTheory.MvPowerSeries.Expand
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Rescale
 
@@ -118,12 +119,11 @@ theorem norm_restrictedExpand (f : IsRestricted.subring (R := R) t) :
   refine le_antisymm ((norm_le_iff (norm_nonneg f)).2 fun α ↦ ?_)
     ((norm_le_iff (norm_nonneg _)).2 fun μ ↦ ?_)
   · rw [coe_restrictedExpand]
-    by_cases hdvd : ∀ i, p ∣ α i
-    · obtain ⟨μ, rfl⟩ : ∃ μ, p • μ = α := ⟨_, Finsupp.nsmul_mapRange_div p hdvd⟩
+    by_cases hα0 : coeff α (expand p hp (f : MvPowerSeries σ R)) = 0
+    · simp [hα0]
+    · obtain ⟨μ, -, rfl⟩ := support_expand_subset p hp _ (a := α) hα0
       rw [coeff_expand_smul, prod_pow_nsmul p ht]
       exact norm_coeff_mul_prod_le f μ
-    · obtain ⟨i, hi⟩ := not_forall.mp hdvd
-      simp [coeff_expand_of_not_dvd p hp _ hi]
   · simpa [prod_pow_nsmul p ht] using norm_coeff_mul_prod_le (restrictedExpand p hp ht f) (p • μ)
 
 /-- The expansion is an isometry for the Gauss norms. -/
