@@ -59,7 +59,9 @@ def vectorNormalizer : Subgroup (CliffordAlgebra Q)ˣ where
           (by simpa only [inv_inv] using hy.2) (by simpa only [inv_inv] using hx.2)
   inv_mem' := by
     intro x hx
-    simpa only [inv_inv] using And.intro hx.2 hx.1
+    constructor
+    · simpa only [inv_inv] using hx.2
+    · simpa only [inv_inv] using hx.1
 
 /-- Membership in the vector normalizer is twisted preservation by a unit and its inverse. -/
 theorem mem_vectorNormalizer_iff (x : (CliffordAlgebra Q)ˣ) :
