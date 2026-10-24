@@ -120,7 +120,7 @@ theorem killingSymmetricEquiv_lieModuleDerivation (x : L) (p : SymmetricAlgebra 
     killingSymmetricEquiv K L (lieModuleDerivation K L L x p) =
       lieModuleDerivation K L (Dual K L) x (killingSymmetricEquiv K L p) := by
   rw [killingSymmetricEquiv, mapEquiv_apply, mapEquiv_apply]
-  exact (killingDuality K L : L →ₗ⁅K,L⁆ Dual K L).map_apply_lieModuleDerivation x p
+  exact (killingDuality K L).map_apply_lieModuleDerivation x p
 
 /-- An element of `S(L)` is invariant exactly when its image in `S(L*)` under the Killing
 equivalence is an invariant polynomial function. -/

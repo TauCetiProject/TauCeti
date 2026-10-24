@@ -177,8 +177,9 @@ theorem mem_lieInvariants {p : S} :
 
 /-- The invariants of `S(M)` are the vectors of the Lie module `S(M)` killed by `L`. -/
 theorem mem_lieInvariants_iff_mem_maxTrivSubmodule {p : S} :
-    p ∈ lieInvariants R L M ↔ p ∈ LieModule.maxTrivSubmodule R L S :=
-  Iff.rfl
+    p ∈ lieInvariants R L M ↔ p ∈ LieModule.maxTrivSubmodule R L S := by
+  rw [mem_lieInvariants, LieModule.mem_maxTrivSubmodule]
+  simp only [lie_eq_lieModuleDerivation]
 
 /-- The generator `ι m` of a vector `m` killed by `L` is invariant. -/
 theorem ι_mem_lieInvariants {m : M} (hm : ∀ x : L, ⁅x, m⁆ = 0) :
@@ -205,19 +206,22 @@ section Equiv
 
 variable {N : Type w'} [AddCommGroup N] [Module R N] [LieRingModule L N] [LieModule R L N]
 
+/-- The symmetric-algebra map induced by a Lie module equivalence intertwines the actions. -/
+theorem _root_.LieModuleEquiv.map_apply_lieModuleDerivation (e : M ≃ₗ⁅R,L⁆ N) (x : L) (p : S) :
+    map R ((e : M ≃ₗ[R] N) : M →ₗ[R] N) (lieModuleDerivation R L M x p) =
+      lieModuleDerivation R L N x (map R ((e : M ≃ₗ[R] N) : M →ₗ[R] N) p) :=
+  map_apply_derivationOfEnd R ((e : M ≃ₗ[R] N) : M →ₗ[R] N) (f := LieModule.toEnd R L M x)
+    (g := LieModule.toEnd R L N x)
+    (LinearMap.ext fun m ↦ by simpa [-LieModuleHom.map_lie] using (e : M →ₗ⁅R,L⁆ N).map_lie x m) p
+
 /-- An element is invariant exactly when its image under the symmetric-algebra map of a Lie module
 equivalence is. -/
 @[simp]
 theorem _root_.LieModuleEquiv.map_mem_lieInvariants_iff (e : M ≃ₗ⁅R,L⁆ N) {p : S} :
     map R ((e : M ≃ₗ[R] N) : M →ₗ[R] N) p ∈ lieInvariants R L N ↔ p ∈ lieInvariants R L M := by
-  have hinj : Function.Injective (map R ((e : M ≃ₗ[R] N) : M →ₗ[R] N)) := fun a b h ↦
-    (mapEquiv R (e : M ≃ₗ[R] N)).injective (by simpa only [mapEquiv_apply] using h)
   rw [mem_lieInvariants, mem_lieInvariants]
   refine forall_congr' fun x ↦ ?_
-  have h : map R ((e : M ≃ₗ[R] N) : M →ₗ[R] N) (lieModuleDerivation R L M x p) =
-      lieModuleDerivation R L N x (map R ((e : M ≃ₗ[R] N) : M →ₗ[R] N) p) :=
-    (e : M →ₗ⁅R,L⁆ N).map_apply_lieModuleDerivation x p
-  rw [← h, ← map_zero (map R ((e : M ≃ₗ[R] N) : M →ₗ[R] N)), hinj.eq_iff]
+  rw [← e.map_apply_lieModuleDerivation, ← mapEquiv_apply, EmbeddingLike.map_eq_zero_iff]
 
 /-- **Transport of invariants**: the symmetric-algebra map of a Lie module equivalence carries the
 invariants onto the invariants. -/
