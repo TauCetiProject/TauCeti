@@ -8,7 +8,6 @@ module
 public import TauCeti.FieldTheory.FunctionField.Belyi.Basic
 public import TauCeti.FieldTheory.FunctionField.Place.RatFunc.XPowSubCX
 import TauCeti.FieldTheory.FunctionField.Different.Radical
-import TauCeti.FieldTheory.FunctionField.Radical.Basic
 import TauCeti.FieldTheory.FunctionField.Radical.Genus
 import TauCeti.FieldTheory.Kummer.Extension
 import TauCeti.FieldTheory.RatFunc.Transcendental

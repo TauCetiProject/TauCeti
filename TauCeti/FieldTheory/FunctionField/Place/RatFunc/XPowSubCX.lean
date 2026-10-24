@@ -9,7 +9,6 @@ public import Mathlib.FieldTheory.Separable
 public import Mathlib.RingTheory.AdjoinRoot
 public import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Order
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Eisenstein
-import Mathlib.FieldTheory.SeparableDegree
 import TauCeti.FieldTheory.FunctionField.Different.Radical
 import TauCeti.FieldTheory.Kummer.Extension
 
@@ -58,18 +57,14 @@ theorem finrank_adjoinRoot_X_pow_sub_C_X :
   rw [(AdjoinRoot.powerBasis (X_pow_sub_C_ne_zero (NeZero.pos n) _)).finrank,
     AdjoinRoot.powerBasis_dim, natDegree_X_pow_sub_C]
 
-open _root_.IntermediateField in
 /-- `k(t)[Y] / (Y ^ n - t)` is separable over `k(t)` when `n` is invertible in `k`. -/
 theorem isSeparable_adjoinRoot_X_pow_sub_C_X (hn : (n : k) ≠ 0) :
     Algebra.IsSeparable (RatFunc k) (AdjoinRoot (X ^ n - C (RatFunc.X : RatFunc k))) := by
   have hn' : (n : RatFunc k) ≠ 0 := by
     rwa [← map_natCast (algebraMap k (RatFunc k)), _root_.map_ne_zero]
-  have hsep : IsSeparable (RatFunc k) (AdjoinRoot.root (X ^ n - C (RatFunc.X : RatFunc k))) :=
-    (separable_X_pow_sub_C _ hn' RatFunc.X_ne_zero).of_dvd
-      (minpoly.dvd _ _ (by rw [AdjoinRoot.aeval_eq, AdjoinRoot.mk_self]))
-  have h := (isSeparable_adjoin_simple_iff_isSeparable (RatFunc k) _).2 hsep
-  rw [adjoin_root_eq_top] at h
-  exact (isSeparable_top (RatFunc k) _).mp h
+  exact isSeparable_of_pow_eq_of_adjoin_eq_top hn' RatFunc.X_ne_zero
+    (by simpa [AdjoinRoot.algebraMap_eq] using root_X_pow_sub_C_pow n (RatFunc.X : RatFunc k))
+    (IntermediateField.adjoin_root_eq_top _)
 
 /-- The root of `Y ^ n - t` is an `n`-th root of `t`, written in the form
 `y ^ n = c t ^ a (t - 1) ^ b` with `c = 1`, `a = 1` and `b = 0`. -/
@@ -77,9 +72,7 @@ private theorem root_pow_eq :
     AdjoinRoot.root (X ^ n - C (RatFunc.X : RatFunc k)) ^ n =
       algebraMap (RatFunc k) (AdjoinRoot (X ^ n - C (RatFunc.X : RatFunc k)))
         (algebraMap k (RatFunc k) 1 * RatFunc.X ^ (1 : ℤ) * (RatFunc.X - 1) ^ (0 : ℤ)) := by
-  have h := AdjoinRoot.aeval_eq (f := X ^ n - C (RatFunc.X : RatFunc k)) (X ^ n - C RatFunc.X)
-  rw [AdjoinRoot.mk_self, map_sub, aeval_X_pow, aeval_C, sub_eq_zero] at h
-  simpa using h
+  simpa [AdjoinRoot.algebraMap_eq] using root_X_pow_sub_C_pow n (RatFunc.X : RatFunc k)
 
 /-- **The power map is totally ramified over `0` and `∞`**: if `n` is invertible in `k`, every
 place of `k(t)[Y] / (Y ^ n - t)` over `t = 0` or `t = ∞` has ramification index `n`, so it is the
