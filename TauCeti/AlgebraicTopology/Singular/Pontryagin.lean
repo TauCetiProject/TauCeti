@@ -100,7 +100,7 @@ lemma pontryaginProduct_def :
 
 /-- The Pontryagin product of the classes of two singular cycles is the class of the image of
 their shuffle product under the chain maps induced by the two multiplications. -/
-@[reassoc]
+@[simp, reassoc]
 lemma homologyπ_tensorHom_pontryaginProduct :
     (((toSSet.obj G).chainComplex R).homologyπ p ⊗ₘ ((toSSet.obj G).chainComplex R).homologyπ q) ≫
         pontryaginProduct G R p q n h =

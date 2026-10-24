@@ -44,11 +44,11 @@ instance instMonObjOf : MonObj (TopCat.of M) where
 variable {M}
 
 @[simp]
-theorem mul_of_apply (x : ↑(TopCat.of M ⊗ TopCat.of M)) : μ[TopCat.of M] x = x.1 * x.2 :=
+theorem of_mul_apply (x : ↑(TopCat.of M ⊗ TopCat.of M)) : μ[TopCat.of M] x = x.1 * x.2 :=
   (rfl)
 
 @[simp]
-theorem one_of_apply (x : ↑(𝟙_ TopCat.{w})) : η[TopCat.of M] x = 1 :=
+theorem of_one_apply (x : ↑(𝟙_ TopCat.{w})) : η[TopCat.of M] x = 1 :=
   (rfl)
 
 /-- A commutative topological monoid is a commutative monoid object in `TopCat`. -/
