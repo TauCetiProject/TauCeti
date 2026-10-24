@@ -177,6 +177,7 @@ theorem gradient_norm_sq {E : Type*} [NormedAddCommGroup E] [InnerProductSpace �
 theorem differentiable_gradient_norm_sq {E : Type*} [NormedAddCommGroup E]
     [InnerProductSpace ℝ E] [CompleteSpace E] :
     Differentiable ℝ (∇ fun y : E => ‖y‖ ^ 2) := by
+  -- Rewrite the gradient pointwise to the radial vector field before applying `fun_prop`.
   rw [show (∇ fun y : E => ‖y‖ ^ 2) = fun y => (2 : ℝ) • y by
     funext y
     exact gradient_norm_sq y]
