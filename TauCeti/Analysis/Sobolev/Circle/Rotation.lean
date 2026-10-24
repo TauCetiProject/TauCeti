@@ -181,23 +181,9 @@ theorem continuous_rotate_apply (a : CircleSobolev s E) :
 
 /-- The rotation action `AddCircle T × H^s → H^s` is jointly continuous. -/
 theorem continuous_rotate :
-    Continuous fun p : AddCircle T × CircleSobolev s E ↦ rotate p.1 p.2 := by
-  refine continuous_iff_continuousAt.2 fun p₀ ↦ ?_
-  rw [ContinuousAt, tendsto_iff_norm_sub_tendsto_zero]
-  have h₁ : Tendsto (fun p : AddCircle T × CircleSobolev s E ↦ ‖p.2 - p₀.2‖) (𝓝 p₀) (𝓝 0) :=
-    tendsto_iff_norm_sub_tendsto_zero.1 (continuous_snd.tendsto p₀)
-  have h₂ : Tendsto (fun p : AddCircle T × CircleSobolev s E ↦ ‖rotate p.1 p₀.2 - rotate p₀.1 p₀.2‖)
-      (𝓝 p₀) (𝓝 0) :=
-    tendsto_iff_norm_sub_tendsto_zero.1
-      (((continuous_rotate_apply p₀.2).comp continuous_fst).tendsto p₀)
-  refine squeeze_zero (fun _ ↦ norm_nonneg _) (fun p ↦ ?_) (by simpa using h₁.add h₂)
-  calc ‖rotate p.1 p.2 - rotate p₀.1 p₀.2‖
-      = ‖rotate p.1 (p.2 - p₀.2) + (rotate p.1 p₀.2 - rotate p₀.1 p₀.2)‖ := by
-        rw [map_sub]
-        abel_nf
-    _ ≤ ‖p.2 - p₀.2‖ + ‖rotate p.1 p₀.2 - rotate p₀.1 p₀.2‖ := by
-        refine (norm_add_le _ _).trans_eq ?_
-        rw [LinearIsometryEquiv.norm_map]
+    Continuous fun p : AddCircle T × CircleSobolev s E ↦ rotate p.1 p.2 :=
+  continuous_prod_of_continuous_lipschitzWith' _ 1
+    (fun θ ↦ (rotate θ).isometry.lipschitzWith) continuous_rotate_apply
 
 /-! ### Differentiability of the orbit maps -/
 
