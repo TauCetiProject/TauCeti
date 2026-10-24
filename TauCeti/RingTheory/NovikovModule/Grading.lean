@@ -83,7 +83,26 @@ section Coordinates
 variable {H ι : Type*} [AddGroup H] [Finite ι] {P : ι → Type*}
   [∀ i, AddTorsor H (P i)] {N : H →+ ℝ} {F : (Σ i, P i) → ℝ}
   (hF : ∀ i h (p : P i), F ⟨i, h +ᵥ p⟩ = F ⟨i, p⟩ - N h)
-  [AddGroup D] (δ : H →+ D) {d : (Σ i, P i) → D}
+
+/-- The basis vector of a chosen lift has precisely the degree of that lift. -/
+theorem basis_mem_gradeBy {d : (Σ i, P i) → D} (r : ∀ i, P i) (i : ι) :
+    basis (R := R) hF r i ∈ gradeBy R F d (d ⟨i, r i⟩) := by
+  classical
+  rw [mem_gradeBy_iff]
+  intro ⟨j, p⟩ hp
+  have hc : (coordinates hF r (basis (R := R) hF r i) j).coeff (p -ᵥ r j) ≠ 0 := by
+    simpa only [coordinates_coeff, vsub_vadd] using hp
+  rw [coordinates_basis] at hc
+  by_cases hij : i = j
+  · subst j
+    have hpr : p = r i := by
+      by_contra hpr
+      simp [NovikovSeries.coeff_one, vsub_eq_zero_iff_eq, hpr] at hc
+    subst p
+    rfl
+  · simp [Pi.single_eq_of_ne (Ne.symm hij)] at hc
+
+variable [AddGroup D] (δ : H →+ D) {d : (Σ i, P i) → D}
   (hd : ∀ i h (p : P i), d ⟨i, h +ᵥ p⟩ = δ h + d ⟨i, p⟩)
 
 include hd
@@ -101,24 +120,12 @@ theorem mem_gradeBy_iff_coordinates (r : ∀ i, P i) {k : D} {a : NovikovModule 
     rw [hd] at hm
     exact eq_sub_iff_add_eq.mpr hm
   · intro ha ⟨i, p⟩ hp
-    have hm := ha i (NovikovSeries.mem_support.mpr (show
-      (coordinates hF r a i).coeff (p -ᵥ r i) ≠ 0 by simpa using hp))
+    have hc : (coordinates hF r a i).coeff (p -ᵥ r i) ≠ 0 := by
+      simpa only [coordinates_coeff, vsub_vadd] using hp
+    have hm := ha i (NovikovSeries.mem_support.mpr hc)
     have he := hd i (p -ᵥ r i) (r i)
     rw [vsub_vadd] at he
     exact he.trans (eq_sub_iff_add_eq.mp hm)
-
-/-- The basis vector of a chosen lift has precisely the degree of that lift. -/
-theorem basis_mem_gradeBy (r : ∀ i, P i) (i : ι) :
-    basis (R := R) hF r i ∈ gradeBy R F d (d ⟨i, r i⟩) := by
-  classical
-  rw [mem_gradeBy_iff_coordinates hF δ hd r]
-  intro j
-  rw [coordinates_basis]
-  by_cases hij : i = j
-  · subst j
-    simpa only [Pi.single_eq_same, sub_self, ← NovikovSeries.single_zero_one, map_zero] using
-      NovikovSeries.single_mem_gradeBy (N := N) δ (0 : H) (1 : R)
-  · simp [Pi.single_eq_of_ne (Ne.symm hij)]
 
 /-- A homogeneous Novikov scalar adds its degree to the total degree of a completed
 combination, for the lift-independent Novikov module structure. -/
