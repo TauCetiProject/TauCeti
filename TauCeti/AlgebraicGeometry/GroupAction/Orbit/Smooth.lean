@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.AlgebraicGeometry.GroupAction.Orbit.Scheme
+public import TauCeti.AlgebraicGeometry.GroupAction.Orbit.Translation
 public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Locus
 
 /-!
@@ -13,8 +14,8 @@ public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Locus
 
 For a reduced finite-type group scheme acting on a finite-type scheme over an
 algebraically closed field, every locally closed orbit has a smooth scheme model.
-The model is the open orbit subscheme of the scheme-theoretic image of the actual
-orbit morphism; for closed orbits the entire image is smooth. Reducedness descends
+The model is the locally closed scheme image of the actual orbit morphism;
+for closed orbits the entire scheme-theoretic image is smooth. Reducedness descends
 from the group to this image; the dense smooth locus of the orbit scheme spreads
 to the whole model by translations. The ambient scheme need not be
 reduced, irreducible or separated, and the group need not be connected.
