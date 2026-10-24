@@ -333,7 +333,9 @@ private theorem eq_zero_of_quotientStalkBranch {x y : X} (hxy : s x y) {N : Open
     (hfy : quotientStalkBranch I s _ y (Quotient.sound hxy).symm f = 0) : f = 0 := by
   obtain ⟨U, hzU, σ, rfl⟩ := (quotientSheaf I s).presheaf.exists_germ_eq f
   rw [quotientStalkBranch_germ] at hfx hfy
-  have hxU : x ∈ (Opens.map (TopCat.quotientMk s)).obj U := hzU
+  have hxU : x ∈ (Opens.map (TopCat.quotientMk s)).obj U := by
+    rw [Opens.mem_map, TopCat.quotientMk_apply]
+    exact hzU
   have hyU : y ∈ (Opens.map (TopCat.quotientMk s)).obj U := by
     rw [Opens.mem_map, TopCat.quotientMk_apply, ← Quotient.sound hxy]
     exact hzU
@@ -403,6 +405,15 @@ theorem quotientStalkToNode_injective {x y : X} (hxy : s x y)
   · simpa using congrArg (nodeLocalRing.fst I I x y) hf
   · simpa using congrArg (nodeLocalRing.snd I I x y) hf
 
+/-- Sections of a sheaf of rings on two disjoint opens glue to a section on their union. -/
+private theorem exists_section_sup_of_disjoint (F : TopCat.Sheaf CommRingCat (TopCat.of X))
+    {A B : Opens X} (hAB : Disjoint A B) (σ : F.obj.obj (op A)) (ρ : F.obj.obj (op B)) :
+    ∃ τ : F.obj.obj (op (A ⊔ B)),
+      F.obj.map (homOfLE le_sup_left).op τ = σ ∧ F.obj.map (homOfLE le_sup_right).op τ = ρ :=
+  ⟨_, TopCat.Sheaf.objSupIsoProdEqLocus_inv_fst F A B ⟨(σ, ρ),
+      (CommRingCat.subsingleton_of_isTerminal (F.isTerminalOfEqEmpty hAB.eq_bot)).elim _ _⟩,
+    TopCat.Sheaf.objSupIsoProdEqLocus_inv_snd F A B _⟩
+
 /-- At two distinct points of a Hausdorff normalization, identified with each other and with no
 other point, near which nothing else is identified, every pair of holomorphic branch germs with
 equal values comes from a germ on the quotient. -/
@@ -427,17 +438,10 @@ theorem quotientStalkToNode_surjective [T2Space X] {x y : X} (hxy : s x y) (hne 
       inf_le_right⟩
   have hxV : x ∈ A ⊔ B := Opens.mem_sup.mpr (Or.inl hxA)
   have hyV : y ∈ A ⊔ B := Opens.mem_sup.mpr (Or.inr hyB)
-  obtain ⟨τ, hτA, hτB⟩ : ∃ τ : (holomorphicStructureSheaf I X).obj.obj (op (A ⊔ B)),
-      (holomorphicStructureSheaf I X).obj.map (homOfLE le_sup_left).op τ =
-        (holomorphicStructureSheaf I X).obj.map (homOfLE hA₁).op σ ∧
-      (holomorphicStructureSheaf I X).obj.map (homOfLE le_sup_right).op τ =
-        (holomorphicStructureSheaf I X).obj.map (homOfLE hB₂).op ρ :=
-    ⟨_, TopCat.Sheaf.objSupIsoProdEqLocus_inv_fst (holomorphicStructureSheaf I X) A B
-      ⟨((holomorphicStructureSheaf I X).obj.map (homOfLE hA₁).op σ,
-        (holomorphicStructureSheaf I X).obj.map (homOfLE hB₂).op ρ), by
-        ext ⟨w, hwA, hwB⟩
-        exact (huv.ne_of_mem (hAu hwA) (hBv hwB) rfl).elim⟩,
-      TopCat.Sheaf.objSupIsoProdEqLocus_inv_snd (holomorphicStructureSheaf I X) A B _⟩
+  obtain ⟨τ, hτA, hτB⟩ := exists_section_sup_of_disjoint (holomorphicStructureSheaf I X)
+    (Opens.coe_disjoint.mp (huv.mono hAu hBv))
+    ((holomorphicStructureSheaf I X).obj.map (homOfLE hA₁).op σ)
+    ((holomorphicStructureSheaf I X).obj.map (homOfLE hB₂).op ρ)
   have hσρ : σ ⟨x, hx₁⟩ = ρ ⟨y, hy₂⟩ := by
     rw [← eval_germ, ← eval_germ, hσ, hρ, nodeLocalRing.eval_fst, nodeLocalRing.eval_snd]
   have h₁ := congrArg (fun t ↦ t ⟨x, hxA⟩) hτA
@@ -447,15 +451,9 @@ theorem quotientStalkToNode_surjective [T2Space X] {x y : X} (hxy : s x y) (hne 
     (sup_le hAN hBN) hxV hyV τ (h₁.trans (hσρ.trans h₂.symm))
   refine ⟨f, nodeLocalRing.ext ?_ ?_⟩
   · rw [fst_quotientStalkToNode, hfx, ← hσ]
-    calc _ = (holomorphicStructureSheaf I X).presheaf.germ A x hxA
-          ((holomorphicStructureSheaf I X).obj.map (homOfLE le_sup_left).op τ) :=
-          (TopCat.Presheaf.germ_res_apply _ _ _ _ _).symm
-      _ = _ := by rw [hτA]; exact TopCat.Presheaf.germ_res_apply _ _ _ _ _
+    exact TopCat.Presheaf.germ_ext _ A hxA _ _ hτA
   · rw [snd_quotientStalkToNode, hfy, ← hρ]
-    calc _ = (holomorphicStructureSheaf I X).presheaf.germ B y hyB
-          ((holomorphicStructureSheaf I X).obj.map (homOfLE le_sup_right).op τ) :=
-          (TopCat.Presheaf.germ_res_apply _ _ _ _ _).symm
-      _ = _ := by rw [hτB]; exact TopCat.Presheaf.germ_res_apply _ _ _ _ _
+    exact TopCat.Presheaf.germ_ext _ B hyB _ _ hτB
 
 /-- **Stalks at nodes.** Let `x ≠ y` be identified with each other and with no other point, and
 suppose no further identifications occur near `x` and `y`. Then the branch restrictions identify
