@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Curves.NodalGluing
+public import TauCeti.AlgebraicGeometry.Curves.NodalGluing.Basic
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Quotient
 public import TauCeti.Geometry.Manifold.Instances.Sigma
 
