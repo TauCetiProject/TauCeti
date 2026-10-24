@@ -358,34 +358,44 @@ theorem contMDiff_proj [T2Space M] [LocallyCompactSpace M] [IsManifold I n M] :
 
 /-! ### The suspension flow -/
 
+/-- The time-`s` map `[t, x] ↦ [t + s, x]` of the suspension flow, before it is bundled as a
+flow. -/
+private def translate (s : ℝ) : SmoothMappingTorus φ → SmoothMappingTorus φ :=
+  MulAction.orbitRelQuotientLift
+    (fun z ↦ mk φ (((ofProd φ).symm z).1 + s) ((ofProd φ).symm z).2) fun k z ↦ by
+      rw [ofProd_symm_smul, add_right_comm, mk_add_intCast]
+      simp
+
+/-- The time-`s` map sends `[t, x]` to `[t + s, x]`. -/
+private theorem translate_mk (s t : ℝ) (x : M) : translate φ s (mk φ t x) = mk φ (t + s) x := by
+  rw [translate, mk, MulAction.orbitRelQuotientLift_mk, Equiv.symm_apply_apply]
+
 /-- The suspension flow of `φ` on its mapping torus: the time-`s` map translates the real
 coordinate, `[t, x] ↦ [t + s, x]` (`TauCeti.SmoothMappingTorus.flow_mk`). It covers the rotation
 of the circle by `s` (`TauCeti.SmoothMappingTorus.proj_flow`), and its time-one map returns each
 fibre to itself by `φ` (`TauCeti.SmoothMappingTorus.flow_one_mk`). -/
 def flow : Flow ℝ (SmoothMappingTorus φ) where
-  toFun s := MulAction.orbitRelQuotientLift
-    (fun z ↦ mk φ (((ofProd φ).symm z).1 + s) ((ofProd φ).symm z).2) fun k z ↦ by
-      rw [ofProd_symm_smul, add_right_comm, mk_add_intCast]
-      simp
+  toFun := translate φ
   cont' := by
     -- `ℝ × Y_φ` is the open quotient of `ℝ × Cover φ`, where the flow is a translation.
     refine (IsOpenQuotientMap.id.prodMap (MulAction.isOpenQuotientMap_quotientMk
       (Γ := Multiplicative ℤ) (T := Cover φ))).continuous_comp_iff.1 ?_
-    exact ((continuous_uncurry_mk φ).comp
+    refine ((continuous_uncurry_mk φ).comp
       ((((continuous_ofProd_symm φ).fst.comp continuous_snd).add continuous_fst).prodMk
-        ((continuous_ofProd_symm φ).snd.comp continuous_snd))).congr
-      fun _ ↦ by simp [Function.uncurry_def]
+        ((continuous_ofProd_symm φ).snd.comp continuous_snd))).congr fun ⟨s, w⟩ ↦ ?_
+    obtain ⟨⟨t, x⟩, rfl⟩ := (ofProd φ).surjective w
+    exact (translate_mk φ s t x).symm
   map_add' s₁ s₂ z := by
     obtain ⟨⟨t, x⟩, rfl⟩ := uncurry_mk_surjective φ z
-    simp [mk, MulAction.orbitRelQuotientLift_mk, add_assoc, add_comm s₁]
+    simp only [Function.uncurry_apply_pair, translate_mk, add_assoc, add_comm s₂]
   map_zero' z := by
     obtain ⟨⟨t, x⟩, rfl⟩ := uncurry_mk_surjective φ z
-    simp [mk, MulAction.orbitRelQuotientLift_mk]
+    simp only [Function.uncurry_apply_pair, translate_mk, add_zero]
 
 /-- The suspension flow translates the real coordinate: `[t, x] ↦ [t + s, x]`. -/
 @[simp]
 theorem flow_mk (s t : ℝ) (x : M) : flow φ s (mk φ t x) = mk φ (t + s) x :=
-  MulAction.orbitRelQuotientLift_mk _
+  translate_mk φ s t x
 
 /-- The suspension flow covers the rotation of the circle: it moves the projection by `s`. -/
 @[simp]
