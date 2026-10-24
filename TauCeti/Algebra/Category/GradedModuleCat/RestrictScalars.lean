@@ -29,6 +29,8 @@ projectivity.
   algebra map.
 * `TauCeti.GradedModuleCat.restrictScalarsShiftIso`: restriction of scalars commutes with the
   grading shift.
+* `TauCeti.GradedModuleCat.restrictScalarsObjLinearEquiv`: a restricted graded module is, as an
+  ungraded module, the ungraded restriction of scalars of the original module.
 * `TauCeti.GradedModuleCat.restrictScalarsEquivalenceOfAlgEquiv`: the equivalence of graded module
   categories induced by a graded algebra isomorphism.
 
@@ -124,14 +126,41 @@ theorem restrictScalarsShiftIso_inv_app_hom (M : GradedModuleCat.{v} ℬ) :
     ((restrictScalarsShiftIso f hf).inv.app M).hom = LinearMap.id :=
   (rfl)
 
+/-- Forgetting the grading of a restricted graded module gives the ungraded restriction of
+scalars of the underlying module: the identity map is an `A`-linear equivalence between them. -/
+def restrictScalarsObjLinearEquiv (M : GradedModuleCat.{v} ℬ) :
+    restrictScalarsObj f hf M ≃ₗ[A] (ModuleCat.restrictScalars (f : A →+* B)).obj (ModuleCat.of B M)
+    where
+  toFun m := m
+  invFun m := m
+  map_add' _ _ := rfl
+  map_smul' a m := (restrictScalarsObj_smul_def f hf M a m).trans
+    (ModuleCat.restrictScalars.smul_def' (f : A →+* B) (M := ModuleCat.of B M) a m).symm
+  left_inv _ := rfl
+  right_inv _ := rfl
+
+/-- `TauCeti.GradedModuleCat.restrictScalarsObjLinearEquiv` is the identity on elements. -/
+@[simp]
+theorem restrictScalarsObjLinearEquiv_apply (M : GradedModuleCat.{v} ℬ)
+    (m : restrictScalarsObj f hf M) : (restrictScalarsObjLinearEquiv f hf M m : M) = m :=
+  (rfl)
+
+/-- The inverse of `TauCeti.GradedModuleCat.restrictScalarsObjLinearEquiv` is the identity on
+elements. -/
+@[simp]
+theorem restrictScalarsObjLinearEquiv_symm_apply (M : GradedModuleCat.{v} ℬ)
+    (m : (ModuleCat.restrictScalars (f : A →+* B)).obj (ModuleCat.of B M)) :
+    ((restrictScalarsObjLinearEquiv f hf M).symm m : M) = m :=
+  (rfl)
+
 /-- Restriction of scalars along a surjective grading-preserving algebra map preserves and
 reflects finite generation of the underlying module: every scalar of `B` is the image of a scalar
 of `A`, so the two spans of a set agree. -/
 theorem finite_restrictScalarsObj_iff (hsurj : Function.Surjective f)
     (M : GradedModuleCat.{v} ℬ) :
     Module.Finite A (restrictScalarsObj f hf M) ↔ Module.Finite B M :=
-  -- The restricted module is the ungraded restriction of scalars of `M`, by definition.
-  f.toRingHom.finite_restrictScalars_iff hsurj (ModuleCat.of B M)
+  (Module.Finite.equiv_iff (restrictScalarsObjLinearEquiv f hf M)).trans
+    (f.toRingHom.finite_restrictScalars_iff hsurj (ModuleCat.of B M))
 
 end RestrictScalars
 
@@ -192,8 +221,9 @@ of the underlying module. -/
 theorem projective_restrictScalarsObj_iff (M : GradedModuleCat.{v} ℬ) :
     Module.Projective A (restrictScalarsObj e.toAlgHom (map_mem_of_algEquiv he) M) ↔
       Module.Projective B M :=
-  -- The restricted module is the ungraded restriction of scalars of `M`, by definition.
-  e.toRingEquiv.projective_restrictScalars_iff (ModuleCat.of B M)
+  let φ := restrictScalarsObjLinearEquiv e.toAlgHom (map_mem_of_algEquiv he) M
+  Iff.trans ⟨fun _ ↦ Module.Projective.of_equiv φ, fun _ ↦ Module.Projective.of_equiv φ.symm⟩
+    (e.toRingEquiv.projective_restrictScalars_iff (ModuleCat.of B M))
 
 end AlgEquiv
 
