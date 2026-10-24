@@ -48,6 +48,8 @@ for a negative-gradient flow on a vector space. The intersection is read in the 
   the dimensions of the tangent spaces of the unstable and stable manifolds.
 * `TauCeti.IsAdaptedPseudoGradient.mem_mtangentConeAt_of_isInvariant`: the velocity of a trajectory
   is tangent to every invariant set containing it, such as `W^u(a) ∩ W^s(b)`.
+* `TauCeti.IsAdaptedPseudoGradient.mfderiv_ne_zero_of_mem_unstableSet_inter_stableSet`: a trajectory
+  joining distinct critical points meets no critical point.
 * `TauCeti.IsAdaptedPseudoGradient.exists_unstableSet_inter_stableSet_chart`: a transverse
   intersection of an unstable and a stable manifold is flattened by a chart of the maximal atlas
   onto the intersection of their tangent spaces.
@@ -110,6 +112,27 @@ theorem mem_mtangentConeAt_of_isInvariant {S : Set M} (hS : IsInvariant hX.flow 
   have h := ((hX.isMIntegralCurve_flow y).isMIntegralCurveAt 0).mem_mtangentConeAt (s := S)
     (Filter.Eventually.of_forall fun t ↦ hS t hy)
   rwa [Flow.map_zero_apply] at h
+
+/-- The velocity `X y` of the trajectory through a point `y` of `W^u(a) ∩ W^s(b)` is tangent to
+`W^u(a) ∩ W^s(b)`. -/
+theorem mem_span_mtangentConeAt_unstableSet_inter_stableSet
+    (hy : y ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b) :
+    X y ∈ Submodule.span ℝ
+      (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet a ∩ hX.flow.stableSet b) y) :=
+  Submodule.subset_span
+    (hX.mem_mtangentConeAt_of_isInvariant (hX.flow.isInvariant_unstableSet_inter_stableSet a b) hy)
+
+/-- **Connecting trajectories avoid the critical points.** A point `y` on a trajectory running from
+a critical point `a` to a different critical point `b` is not a critical point of `f`: a critical
+point is a rest point of the flow, and the constant orbit of `y` cannot have two different limits.
+-/
+theorem mfderiv_ne_zero_of_mem_unstableSet_inter_stableSet (hab : a ≠ b)
+    (hy : y ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b) :
+    mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y ≠ 0 := fun h0 ↦ by
+  have h01 : (0 : ℝ) = 1 :=
+    Flow.orbit_injective_of_ne_of_mem_unstableSet_inter_stableSet hab hy
+      (by simp [hX.flow_apply_of_mfderiv_eq_zero h0])
+  exact zero_ne_one h01
 
 /-- **Transverse unstable and stable manifolds meet in an embedded submanifold.** If the unstable
 manifold of a critical point `a` and the stable manifold of a critical point `b` meet transversally
@@ -182,17 +205,11 @@ theorem manifoldMorseIndex_lt_of_mem_unstableSet_inter_stableSet (hf : IsMorse �
   have hdim :=
     hX.finrank_span_mtangentConeAt_unstableSet_inter_stableSet_add_manifoldMorseIndex hf ha hb hy
       htr
-  -- The velocity `X y` is tangent to `W^u(a) ∩ W^s(b)`, and it is nonzero: otherwise `y` would be
-  -- a critical point, hence a rest point, and the orbit of `y` could not run from `a` to `b ≠ a`.
-  have hmem : X y ∈ Submodule.span ℝ
-      (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet a ∩ hX.flow.stableSet b) y) :=
-    Submodule.subset_span (hX.mem_mtangentConeAt_of_isInvariant (fun t _ hz ↦
-      ⟨Flow.isInvariant_unstableSet _ a t hz.1, Flow.isInvariant_stableSet _ b t hz.2⟩) hy)
-  have hX0 : X y ≠ 0 := fun h0 ↦ by
-    have hfix := hX.flow_apply_of_mfderiv_eq_zero (hX.eq_zero_iff.1 h0)
-    have h01 : (0 : ℝ) = 1 :=
-      Flow.orbit_injective_of_ne_of_mem_unstableSet_inter_stableSet hab hy (by simp [hfix])
-    exact zero_ne_one h01
+  -- The velocity `X y` is tangent to `W^u(a) ∩ W^s(b)`, and it is nonzero since `y` is not a
+  -- critical point.
+  have hmem := hX.mem_span_mtangentConeAt_unstableSet_inter_stableSet hy
+  have hX0 : X y ≠ 0 :=
+    hX.ne_zero_of_mfderiv_ne_zero (hX.mfderiv_ne_zero_of_mem_unstableSet_inter_stableSet hab hy)
   have hpos : 0 < Module.finrank ℝ (Submodule.span ℝ
       (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet a ∩ hX.flow.stableSet b) y)) := by
     refine Nat.pos_of_ne_zero fun h ↦ hX0 ?_
