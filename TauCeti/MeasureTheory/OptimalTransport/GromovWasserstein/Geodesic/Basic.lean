@@ -27,14 +27,10 @@ When `π` is an optimal coupling, `dis_p (π) = GW_p (X, Y)`, so on the quotient
 `GromovWassersteinSpace p Z` the classes of these kernels trace a constant-speed geodesic from the
 class of `(X, μ, ωX)` to the class of `(Y, ν, ωY)`; the triangle inequality turns the displacement
 bound into an equality. This needs a choice of geodesics in `Z` along which the interpolating
-kernels are almost-everywhere strongly measurable, and two regimes supply it:
-
-* a complete separable geodesic target, through the measurable choice of geodesics relative to the
-  law of the pair of kernel values
-  (`MeasureTheory.Measure.exists_measurable_ae_mem_geodesicPaths`), which depends on that law and
-  needs no global Borel choice of geodesics;
-* a geodesic bicombing that is continuous in its two endpoints at each time, on an arbitrary
-  metric target, for instance the affine segments of a real normed space, separable or not.
+kernels are almost-everywhere strongly measurable. On a complete separable geodesic target,
+`MeasureTheory.Measure.exists_measurable_ae_mem_geodesicPaths` chooses these geodesics relative
+to the law of the pair of kernel values, without requiring a global Borel choice.
+The companion module `Geodesic.Bicombing` treats supplied Borel or continuous bicombings.
 
 The exponent `1 ≤ p ≤ ∞` is arbitrary, including `p = ∞`.
 
@@ -47,11 +43,6 @@ The exponent `1 ≤ p ≤ ∞` is arbitrary, including `p = ∞`.
   at the first measured kernel and ends at the second.
 * `TauCeti.GromovWassersteinSpace.instIsGeodesicSpace`: over a complete separable geodesic target,
   `GromovWassersteinSpace p Z` is a geodesic space.
-* `TauCeti.GromovWassersteinSpace.isGeodesicSpace_of_continuous_bicombing`: over any metric target
-  with a geodesic bicombing continuous in the endpoints, `GromovWassersteinSpace p Z` is a geodesic
-  space.
-* `TauCeti.GromovWassersteinSpace.instIsGeodesicSpaceOfNormedSpace`: over a real normed space,
-  `GromovWassersteinSpace p E` is a geodesic space.
 
 ## References
 
@@ -189,7 +180,7 @@ variable {p : ℝ≥0∞} {Z : Type v} [MetricSpace Z] [Fact (1 ≤ p)]
 /-- The GW space is geodesic as soon as every coupling of two presentations carries an
 a.e. strongly measurable family of geodesic segments joining the paired kernel values: the classes
 of the interpolating kernels over an optimal coupling form a geodesic segment. -/
-private theorem isGeodesicSpace_of_forall_exists
+theorem isGeodesicSpace_of_ae_isGeodesicSegment
     (h : ∀ (K L : GromovWassersteinPresentation.{u} p Z) (π : Measure (K.Carrier × L.Carrier)),
       IsCoupling π K.measure L.measure →
       ∃ g : (K.Carrier × L.Carrier) × (K.Carrier × L.Carrier) → ℝ → Z,
@@ -236,7 +227,7 @@ coupling. -/
 instance instIsGeodesicSpace [CompleteSpace Z] [SecondCountableTopology Z] [IsGeodesicSpace Z] :
     IsGeodesicSpace (GromovWassersteinSpace.{u} p Z) := by
   borelize Z
-  refine isGeodesicSpace_of_forall_exists fun K L π hπ ↦ ?_
+  refine isGeodesicSpace_of_ae_isGeodesicSegment fun K L π hπ ↦ ?_
   have : IsFiniteMeasure π := hπ.isFiniteMeasure
   -- The pair of kernel values, whose law the geodesics are chosen relative to.
   let κ : (K.Carrier × L.Carrier) × (K.Carrier × L.Carrier) → Z × Z :=
@@ -252,31 +243,6 @@ instance instIsGeodesicSpace [CompleteSpace Z] [SecondCountableTopology Z] [IsGe
     rwa [h0, h1] at hseg
   · exact ((ContinuousMap.measurable_eval _).comp_aemeasurable
       (hG.comp_aemeasurable hκ)).aestronglyMeasurable
-
-/-- **Geodesics from a continuous bicombing.** If every two points `a, b` of the metric space `Z`
-are joined by a geodesic segment `β a b` whose point at each time `t ∈ [0, 1]` depends continuously
-on `(a, b)`, then `GromovWassersteinSpace p Z` is a geodesic space, for every `1 ≤ p ≤ ∞`. No
-separability or completeness of `Z` is needed. -/
-theorem isGeodesicSpace_of_continuous_bicombing (β : Z → Z → ℝ → Z)
-    (hβ : ∀ a b, IsGeodesicSegment (β a b) a b)
-    (hc : ∀ t ∈ Icc (0 : ℝ) 1, Continuous fun ab : Z × Z ↦ β ab.1 ab.2 t) :
-    IsGeodesicSpace (GromovWassersteinSpace.{u} p Z) :=
-  isGeodesicSpace_of_forall_exists fun K L π hπ ↦ by
-    have : IsFiniteMeasure π := hπ.isFiniteMeasure
-    exact ⟨fun q ↦ β (K.kernel (q.1.1, q.2.1)) (L.kernel (q.1.2, q.2.2)),
-      .of_forall fun q ↦ hβ _ _, fun t ht ↦ (hc t ht).comp_aestronglyMeasurable
-        (hπ.aestronglyMeasurable_kernel_prodMk K.aestronglyMeasurable_kernel
-          L.aestronglyMeasurable_kernel)⟩
-
-/-- **The Gromov–Wasserstein space over a real normed space is geodesic**, for every
-`1 ≤ p ≤ ∞` and without separability or completeness: the kernels are interpolated affinely,
-`(1 - t) • ωX (x, x') + t • ωY (y, y')`, over an optimal coupling. -/
-instance instIsGeodesicSpaceOfNormedSpace {E : Type v} [NormedAddCommGroup E] [NormedSpace ℝ E] :
-    IsGeodesicSpace (GromovWassersteinSpace.{u} p E) :=
-  isGeodesicSpace_of_continuous_bicombing (fun a b ↦ AffineMap.lineMap a b)
-    isGeodesicSegment_lineMap fun t _ ↦ by
-      simp_rw [AffineMap.lineMap_apply_module]
-      fun_prop
 
 end GromovWassersteinSpace
 
