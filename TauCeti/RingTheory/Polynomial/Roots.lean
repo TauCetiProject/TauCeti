@@ -68,8 +68,12 @@ the number of distinct roots.
 * `Polynomial.separable_comp_X_add_C_iff`: `f(X + t)` is separable exactly when `f` is.
 * `Polynomial.isRoot_iff_of_rootMultiplicity`: if every root of a nonzero polynomial is among
   the `θ i`, then its roots are the `θ i` in which it has positive multiplicity.
+* `Polynomial.roots_prod_X_sub_C_map`: the roots of a product of linear factors over a finite
+  family are the values of the family.
 * `Polynomial.roots_C_mul_prod_X_sub_C`: the roots of a nonzero constant times a product of
   linear factors over a finite family are the values of the family.
+* `Polynomial.roots_eq_map_of_eq_C_mul_prod_X_sub_C`: the same for a nonzero polynomial presented
+  as its leading coefficient times such a product.
 * `Polynomial.Monic.rel_roots_iff_exists_prod_X_sub_C`: for split monic polynomials, the root
   multisets are related by `Multiset.Rel r` exactly when the polynomials factor over enumerations
   of their roots with entries of equal index related by `r`.
@@ -234,12 +238,26 @@ section Rel
 
 variable [IsDomain F]
 
+/-- The roots of the product of the linear factors of a finite family are the values of the
+family, with multiplicity. -/
+@[simp]
+theorem _root_.Polynomial.roots_prod_X_sub_C_map {ι : Type*} (s : Finset ι) (x : ι → F) :
+    (∏ i ∈ s, (X - C (x i))).roots = s.val.map x := by
+  simp [roots_prod, X_sub_C_ne_zero, prod_ne_zero_iff]
+
 /-- The roots of a nonzero constant times the product of the linear factors of a finite family are
 the values of the family, with multiplicity. -/
 theorem _root_.Polynomial.roots_C_mul_prod_X_sub_C {ι : Type*} (s : Finset ι) (x : ι → F) {c : F}
     (hc : c ≠ 0) : (C c * ∏ i ∈ s, (X - C (x i))).roots = s.val.map x := by
-  rw [roots_C_mul _ hc]
-  simp [roots_prod, X_sub_C_ne_zero, prod_ne_zero_iff]
+  rw [roots_C_mul _ hc, roots_prod_X_sub_C_map]
+
+/-- The roots of a nonzero polynomial presented as its leading coefficient times the product of the
+linear factors of a finite family are the values of the family, with multiplicity. -/
+theorem _root_.Polynomial.roots_eq_map_of_eq_C_mul_prod_X_sub_C {ι : Type*} {s : Finset ι}
+    {x : ι → F} {p : F[X]} (hp : p ≠ 0) (hpx : p = C p.leadingCoeff * ∏ i ∈ s, (X - C (x i))) :
+    p.roots = s.val.map x := by
+  rw [hpx]
+  exact roots_C_mul_prod_X_sub_C s x (leadingCoeff_ne_zero.2 hp)
 
 /-- **Matching roots as a multiset relation.** For split monic polynomials `f` and `g`, the root
 multisets are related by `Multiset.Rel r` exactly when `f` and `g` are the products of the linear
@@ -255,10 +273,9 @@ theorem _root_.Polynomial.Monic.rel_roots_iff_exists_prod_X_sub_C {f g : F[X]} (
     exact ⟨a, b, eq_prod_X_sub_C_of_monic_of_roots_eq hf (by simp) hfa,
       eq_prod_X_sub_C_of_monic_of_roots_eq hg (by simp [hgs.natDegree_eq_card_roots, hgb]) hgb,
       hab⟩
-  · have hroots : ∀ c : Fin f.natDegree → F, (∏ i, (X - C (c i))).roots = univ.val.map c :=
-      fun c => by simpa using roots_C_mul_prod_X_sub_C univ c one_ne_zero
-    exact Multiset.rel_iff_exists_fin.2 ⟨_, a, b, (congrArg roots hfa).trans (hroots a),
-      (congrArg roots hgb).trans (hroots b), hab⟩
+  · exact Multiset.rel_iff_exists_fin.2 ⟨_, a, b,
+      (congrArg roots hfa).trans (roots_prod_X_sub_C_map _ a),
+      (congrArg roots hgb).trans (roots_prod_X_sub_C_map _ b), hab⟩
 
 end Rel
 

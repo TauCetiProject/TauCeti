@@ -107,9 +107,6 @@ theorem Monic.exists_prod_X_sub_C_norm_sub_lt_iff {f g : K[X]} (hf : f.Monic) (h
   -- Forward, a matched root of `g` lies in the disc of its partner and in no other disc. Backward,
   -- send each root of `g` to the centre of its disc, compare occurrence counts with an enumeration
   -- of the roots of `f`, and permute that enumeration to match.
-  have hroots : ∀ {p : K[X]} (a : Fin f.natDegree → K), p = ∏ i, (X - C (a i)) →
-      p.roots = Finset.univ.val.map a := fun a hp => by
-    rw [congrArg roots hp, ← Sym.toMonic_ofFn, Sym.roots_toMonic, Sym.coe_ofFn, Fin.univ_val_map]
   have hmem : ∀ (a : Fin f.natDegree → K) i, a i ∈ Finset.univ.val.map a := fun a i =>
     Multiset.mem_map_of_mem _ (Finset.mem_univ i)
   -- a point of `K` is within `ε` of at most one root of `f`
@@ -130,10 +127,12 @@ theorem Monic.exists_prod_X_sub_C_norm_sub_lt_iff {f g : K[X]} (hf : f.Monic) (h
       simpa [dist_eq_norm] using h i)
   constructor
   · rintro ⟨a, b, hfa, hgb, hab⟩
-    rw [hroots a hfa] at huniq ⊢
-    rw [hroots b hgb]
+    have hfr : f.roots = Finset.univ.val.map a :=
+      (congrArg roots hfa).trans (roots_prod_X_sub_C_map _ a)
+    rw [hfr] at huniq ⊢
+    rw [(congrArg roots hgb).trans (roots_prod_X_sub_C_map _ b)]
     refine ⟨fun z hz => ?_, ?_⟩
-    · rw [← count_roots, hroots a hfa, Multiset.count_map, ← hcard b a z fun i => ?_]
+    · rw [← count_roots, hfr, Multiset.count_map, ← hcard b a z fun i => ?_]
       · simp only [eq_comm (a := z), Finset.card_def, Finset.filter_val]
       · refine ⟨fun h => h ▸ by rw [norm_sub_rev]; exact hab i, fun h => ?_⟩
         exact huniq (b i) _ (hmem a i) z hz (by rw [norm_sub_rev]; exact hab i) h
@@ -145,8 +144,10 @@ theorem Monic.exists_prod_X_sub_C_norm_sub_lt_iff {f g : K[X]} (hf : f.Monic) (h
     obtain ⟨b, hb⟩ := Sym.ofFn_surjective ((Sym.coeffEquiv K _).symm fun i => g.coeff i)
     have hfa := (prod_X_sub_C_eq_of_ofFn_eq hf rfl ha).symm
     have hgb := (prod_X_sub_C_eq_of_ofFn_eq hg hdeg hb).symm
-    have hfr := hroots a hfa
-    have hgr := hroots b hgb
+    have hfr : f.roots = Finset.univ.val.map a :=
+      (congrArg roots hfa).trans (roots_prod_X_sub_C_map _ a)
+    have hgr : g.roots = Finset.univ.val.map b :=
+      (congrArg roots hgb).trans (roots_prod_X_sub_C_map _ b)
     -- send each root of `g` to the root of `f` whose disc contains it
     choose! φ hφ hφε using hin
     have hb_mem : ∀ i, b i ∈ g.roots := fun i => hgr ▸ hmem b i
@@ -309,17 +310,6 @@ theorem eventually_exists_C_mul_prod_X_sub_C_norm_sub_lt {B : Type*} [Topologica
   exact ⟨a, b, (C_mul_prod_X_sub_C_eq_of_ofFn_eq hdeg₀ ha).symm,
     (C_mul_prod_X_sub_C_eq_of_ofFn_eq hx hb).symm, hab⟩
 
-omit [IsAlgClosed K] [ProperSpace K] in
-/-- The roots of a polynomial of degree `d` presented as its leading coefficient times the product
-of the linear factors of `c : Fin d → K` are the values of `c`. -/
-private theorem roots_eq_map_of_eq_C_mul_prod_X_sub_C {d : ℕ} {p : K[X]} {c : Fin d → K}
-    (hp : p.degree = d) (hpc : p = C p.leadingCoeff * ∏ i, (X - C (c i))) :
-    p.roots = Finset.univ.val.map c := by
-  have hlc : p.leadingCoeff ≠ 0 := leadingCoeff_ne_zero.2 (ne_zero_of_degree_gt (n := ⊥)
-    (hp ▸ WithBot.bot_lt_coe d))
-  rw [hpc]
-  exact roots_C_mul_prod_X_sub_C _ c hlc
-
 /-- **Continuity of roots in a family, as multisets.** Let `F x` be polynomials of degree `d`, near
 `x₀`, whose coefficients of index at most `d` are continuous at `x₀`. Then for `x` near `x₀` the
 root multisets of `F x₀` and `F x` are related by `Multiset.Rel` for the relation
@@ -331,8 +321,8 @@ theorem eventually_rel_roots_norm_sub_lt {B : Type*} [TopologicalSpace B]
   filter_upwards [eventually_exists_C_mul_prod_X_sub_C_norm_sub_lt hF hdeg hε, hdeg]
     with x ⟨a, b, hfa, hgb, hab⟩ hx
   exact Multiset.rel_iff_exists_fin.2 ⟨d, a, b,
-    roots_eq_map_of_eq_C_mul_prod_X_sub_C hdeg.self_of_nhds hfa,
-    roots_eq_map_of_eq_C_mul_prod_X_sub_C hx hgb, hab⟩
+    roots_eq_map_of_eq_C_mul_prod_X_sub_C (ne_zero_of_coe_le_degree hdeg.self_of_nhds.ge) hfa,
+    roots_eq_map_of_eq_C_mul_prod_X_sub_C (ne_zero_of_coe_le_degree hx.ge) hgb, hab⟩
 
 open scoped Classical in
 /-- **Distinct roots in a family.** Let `F x` be polynomials of degree `d`, near `x₀`, whose
@@ -355,8 +345,8 @@ theorem eventually_exists_bijOn_roots_toFinset {B : Type*} [TopologicalSpace B]
   filter_upwards [eventually_exists_C_mul_prod_X_sub_C_norm_sub_lt hF hdeg (lt_min hε hr), hdeg,
     hcard] with x ⟨a, b, hfa, hgb, hab⟩ hx hxcard
   obtain ⟨e, he, hed⟩ := exists_bijOn_roots_toFinset_of_norm_sub_lt
-    (roots_eq_map_of_eq_C_mul_prod_X_sub_C hdeg.self_of_nhds hfa)
-    (roots_eq_map_of_eq_C_mul_prod_X_sub_C hx hgb) hab
+    (roots_eq_map_of_eq_C_mul_prod_X_sub_C (ne_zero_of_coe_le_degree hdeg.self_of_nhds.ge) hfa)
+    (roots_eq_map_of_eq_C_mul_prod_X_sub_C (ne_zero_of_coe_le_degree hx.ge) hgb) hab
     (fun z hz w hw hzw => by linarith [hsep z hz w hw hzw, min_le_right ε r]) hxcard
   exact ⟨e, he, fun z hz => ⟨(hed z hz).1.trans_le (min_le_left ε r), (hed z hz).2⟩⟩
 
