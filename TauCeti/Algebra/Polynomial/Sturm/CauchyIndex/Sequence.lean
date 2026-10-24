@@ -192,7 +192,6 @@ at `+∞`. -/
 theorem _root_.Polynomial.cauchyIndex_eq_sub_signVariations_Ioi (p q : R[X]) (a : R) :
     cauchyIndex p q (Ioi a) =
       (signVariationsRight (sturmSeq p q) a : ℤ) - signVariationsAtTop (sturmSeq p q) := by
-  classical
   by_cases hp : p = 0
   · simp [hp]
   obtain ⟨B, hB, hR⟩ := exists_atTop (sturmSeq p q) (fun _ hr => ne_zero_of_mem_sturmSeq hr)
@@ -200,12 +199,9 @@ theorem _root_.Polynomial.cauchyIndex_eq_sub_signVariations_Ioi (p q : R[X]) (a 
   have hab : a < b := (le_max_left _ _).trans_lt (lt_add_one _)
   have hBb : B < b := (le_max_right _ _).trans_lt (lt_add_one _)
   -- Every root of `p` lies below `b`, so only `(a, b)` contributes.
-  have hindex : cauchyIndex p q (Ioi a) = cauchyIndex p q (Ioo a b) := by
-    rw [cauchyIndex_eq_sum, cauchyIndex_eq_sum]
-    refine Finset.sum_congr (Finset.filter_congr fun r hr => ?_) fun _ _ => rfl
-    have hr := hR p (mem_sturmSeq_self hp) r (isRoot_of_mem_roots (Multiset.mem_toFinset.mp hr))
-    simp only [mem_Ioi, mem_Ioo]
-    exact ⟨fun h => ⟨h, hr.trans_lt hBb⟩, And.left⟩
+  have hindex : cauchyIndex p q (Ioi a) = cauchyIndex p q (Ioo a b) :=
+    cauchyIndex_congr_of_isRoot q fun r hr =>
+      ⟨fun h => ⟨h, (hR p (mem_sturmSeq_self hp) r hr).trans_lt hBb⟩, And.left⟩
   rw [hindex, cauchyIndex_eq_sub_signVariations_Ioo p q hab,
     signVariationsLeft_eq_signVariationsAt fun r hr hz => (hR r hr b hz).not_gt hBb, hB b hBb]
 
@@ -224,7 +220,6 @@ at `b`. -/
 theorem _root_.Polynomial.cauchyIndex_eq_sub_signVariations_Iio (p q : R[X]) (b : R) :
     cauchyIndex p q (Iio b) =
       (signVariationsAtBot (sturmSeq p q) : ℤ) - signVariationsLeft (sturmSeq p q) b := by
-  classical
   by_cases hp : p = 0
   · simp [hp]
   obtain ⟨A, hA, hR⟩ := exists_atBot (sturmSeq p q) (fun _ hr => ne_zero_of_mem_sturmSeq hr)
@@ -232,12 +227,9 @@ theorem _root_.Polynomial.cauchyIndex_eq_sub_signVariations_Iio (p q : R[X]) (b 
   have hab : a < b := (sub_one_lt _).trans_le (min_le_right _ _)
   have haA : a < A := (sub_one_lt _).trans_le (min_le_left _ _)
   -- Every root of `p` lies above `a`, so only `(a, b)` contributes.
-  have hindex : cauchyIndex p q (Iio b) = cauchyIndex p q (Ioo a b) := by
-    rw [cauchyIndex_eq_sum, cauchyIndex_eq_sum]
-    refine Finset.sum_congr (Finset.filter_congr fun r hr => ?_) fun _ _ => rfl
-    have hr := hR p (mem_sturmSeq_self hp) r (isRoot_of_mem_roots (Multiset.mem_toFinset.mp hr))
-    simp only [mem_Iio, mem_Ioo]
-    exact ⟨fun h => ⟨haA.trans_le hr, h⟩, And.right⟩
+  have hindex : cauchyIndex p q (Iio b) = cauchyIndex p q (Ioo a b) :=
+    cauchyIndex_congr_of_isRoot q fun r hr =>
+      ⟨fun h => ⟨haA.trans_le (hR p (mem_sturmSeq_self hp) r hr), h⟩, And.right⟩
   rw [hindex, cauchyIndex_eq_sub_signVariations_Ioo p q hab,
     signVariationsRight_eq_signVariationsAt fun r hr hz => (hR r hr a hz).not_gt haA, hA a haA]
 
