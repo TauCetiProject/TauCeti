@@ -10,7 +10,7 @@ public import TauCeti.CategoryTheory.Monoidal.Rigid.DualFunctor
 public import TauCeti.CategoryTheory.Monoidal.Rigid.LeftDualFunctor
 
 /-!
-# The mixed double duals are trivial
+# The mixed double duals are trivial, and the double duals are inverse
 
 In a rigid monoidal category `C`, composing the right dual functor with the left dual functor, in
 either order, gives a strong monoidal endofunctor of `C`:
@@ -40,6 +40,18 @@ which hold for the duals `CategoryTheory.hasLeftDualRightDual` and
 contrast with the double right dual functor `X ↦ Xᘁᘁ`, which need not be isomorphic to the identity:
 a trivialization of the double right dual is the extra datum of a pivotal structure.
 
+What does hold for the double duals is that they are inverse to each other. Composing the double
+right dual functor with the double left dual functor, in either order, and regrouping the four
+dual functors, the middle pair is a mixed composite read in `(Cᵒᵖ)ᴹᵒᵖ`; trivializing it reduces
+the composite to a mixed composite of `C`. This gives monoidal natural isomorphisms
+
+```text
+doubleRightDualFunctor C ⋙ doubleLeftDualFunctor C ≅ 𝟭 C,
+doubleLeftDualFunctor C ⋙ doubleRightDualFunctor C ≅ 𝟭 C,
+```
+
+so `X ↦ Xᘁᘁ` and `X ↦ ᘁᘁX` are mutually inverse monoidal autoequivalences of `C`.
+
 ## Main declarations
 
 * `TauCeti.leftDualRightDualFunctor` and its strong monoidal structure
@@ -53,7 +65,11 @@ a trivialization of the double right dual is the extra datum of a pivotal struct
   `TauCeti.rightDualLeftDualFunctor_ε` and `TauCeti.rightDualLeftDualFunctor_μ` written as
   right mates;
 * `TauCeti.rightDualLeftDualIso`: the natural isomorphism `(ᘁX)ᘁ ≅ X`, monoidal by
-  `TauCeti.rightDualLeftDualIso_isMonoidal`.
+  `TauCeti.rightDualLeftDualIso_isMonoidal`;
+* `TauCeti.doubleLeftDualDoubleRightDualIso` and `TauCeti.doubleRightDualDoubleLeftDualIso`: the
+  natural isomorphisms `ᘁᘁ(Xᘁᘁ) ≅ X` and `(ᘁᘁX)ᘁᘁ ≅ X`, monoidal by
+  `TauCeti.doubleLeftDualDoubleRightDualIso_isMonoidal` and
+  `TauCeti.doubleRightDualDoubleLeftDualIso_isMonoidal`.
 
 ## References
 
@@ -358,5 +374,291 @@ instance rightDualLeftDualIso_isMonoidal :
     exact rightMate_leftDualIso_hom _ _ _
 
 end RightDualLeftDual
+
+section DoubleDualInverse
+
+/-! ### The double left and double right duals are inverse
+
+Write `R` and `L` for the right and left dual functors `C ⥤ (Cᵒᵖ)ᴹᵒᵖ`, and `R̄, L̄ : (Cᵒᵖ)ᴹᵒᵖ ⥤ C`
+for the same functors applied through their opposite monoidal opposites and followed by the
+removal of the wrappers. Then the double right and double left dual functors are `R ⋙ R̄` and
+`L ⋙ L̄`, and the mixed composites of `C` are `R ⋙ L̄` and `L ⋙ R̄`. The functor `R̄ ⋙ L` of
+`(Cᵒᵖ)ᴹᵒᵖ` sends `Y` to `ᘁ(Yᘁ)`, and the opposite of the inverse of `leftDualRightDualIso C`
+trivializes it as a monoidal functor; likewise `L̄ ⋙ R` is trivialized by
+`rightDualLeftDualIso C`. Inserting these trivializations into
+
+```text
+(R ⋙ R̄) ⋙ (L ⋙ L̄) = R ⋙ (R̄ ⋙ L) ⋙ L̄,      (L ⋙ L̄) ⋙ (R ⋙ R̄) = L ⋙ (L̄ ⋙ R) ⋙ R̄
+```
+
+reduces the two composites of the double duals to the mixed composites, which are trivialized
+above. -/
+
+variable (C) in
+/-- The functor `Y ↦ ᘁ(Yᘁ)` of `(Cᵒᵖ)ᴹᵒᵖ` is trivialized by the inverses of the comparisons
+`ᘁ(Yᘁ) ≅ Y`, read in the opposite category. -/
+private noncomputable def opMopRightDualLeftDualIso :
+    ((rightDualFunctor C).op.opMop ⋙ (opMopOpMopEquivalence C).functor) ⋙ leftDualFunctor C ≅
+      𝟭 Cᵒᵖᴹᵒᵖ :=
+  NatIso.ofComponents
+    (fun Y => (mopFunctor Cᵒᵖ).mapIso ((leftDualRightDualIso C).app Y.unmop.unop).symm.op)
+    fun f => by
+      apply Quiver.Hom.unmop_inj
+      apply Quiver.Hom.unop_inj
+      exact ((leftDualRightDualIso C).inv.naturality f.unmop.unop).symm
+
+private theorem opMopRightDualLeftDualIso_hom_app (Y : Cᵒᵖᴹᵒᵖ) :
+    (opMopRightDualLeftDualIso C).hom.app Y =
+      ((leftDualRightDualIso C).inv.app Y.unmop.unop).op.mop :=
+  rfl
+
+omit [RigidCategory C] in
+/-- The unit condition for `opMopRightDualLeftDualIso`, read in `C` and written through explicit
+pairings: a composite of left mates of comparisons between duals of `𝟙_ C` is the identity. -/
+private theorem leftMate_unit_aux {R₁ L L₁ : C} (pr : ExactPairing (𝟙_ C) R₁)
+    (pc : ExactPairing L R₁) (pl : ExactPairing L₁ (𝟙_ C)) :
+    (leftDualIso pc pr).inv ≫ leftMate pl pc (rightDualIso pr exactPairingUnit).inv ≫
+      (leftDualIso pl exactPairingUnit).hom = 𝟙 _ := by
+  rw [leftDualIso_inv, leftDualIso_hom, rightDualIso_inv, ← rightDualIso_hom, ← comp_leftMate,
+    ← comp_leftMate, Category.id_comp, Category.comp_id, leftMate_rightDualIso_hom, leftMate_id]
+
+omit [RigidCategory C] in
+/-- The tensor condition for `opMopRightDualLeftDualIso`, read in `C` and written through explicit
+pairings. -/
+private theorem leftMate_tensor_aux {X Y Xr Yr YXr LX LY LYX LT : C} (pX : ExactPairing X Xr)
+    (pY : ExactPairing Y Yr) (pYX : ExactPairing (Y ⊗ X) YXr) (cX : ExactPairing LX Xr)
+    (cY : ExactPairing LY Yr) (cYX : ExactPairing LYX YXr) (cT : ExactPairing LT (Xr ⊗ Yr)) :
+    (leftDualIso cYX pYX).inv ≫
+        leftMate cT cYX (rightDualIso pYX (@tensor _ _ _ _ _ _ _ pY pX)).inv ≫
+        (leftDualIso cT (@tensor _ _ _ _ _ _ _ cY cX)).hom =
+      (leftDualIso cY pY).inv ⊗ₘ (leftDualIso cX pX).inv := by
+  -- Both sides are left mates of identities: the left side with respect to the tensor product
+  -- pairings once the comparison `(Y ⊗ X)ᘁ ≅ Xᘁ ⊗ Yᘁ` is absorbed, and the right side by
+  -- `leftMate_tensorHom`.
+  rw [leftDualIso_inv, leftDualIso_hom, leftDualIso_inv, leftDualIso_inv, rightDualIso_inv,
+    ← rightDualIso_hom, ← leftMate_tensorHom cX cY pX pY, tensorHom_id, id_whiskerRight,
+    ← comp_leftMate, ← comp_leftMate, Category.id_comp, Category.comp_id,
+    ← Category.id_comp (rightDualIso (@tensor _ _ _ _ _ _ _ pY pX) pYX).hom,
+    comp_leftMate _ (@tensor _ _ _ _ _ _ _ pY pX), leftMate_rightDualIso_hom, leftMate_id,
+    Category.id_comp]
+
+private theorem opMopRightDualLeftDualIso_isMonoidal :
+    NatTrans.IsMonoidal (opMopRightDualLeftDualIso C).hom where
+  -- After removing the wrappers, the structure morphisms of the composite functor are written
+  -- through those of the two dual functors; the conditions are then definitionally the
+  -- identities of `C` proved above, with the duals chosen by the rigid structure.
+  unit := by
+    apply Quiver.Hom.unmop_inj
+    apply Quiver.Hom.unop_inj
+    rw [comp_ε, comp_ε, Functor.opMop_ε, Functor.op_ε, rightDualFunctor_η, leftDualFunctor_ε,
+      opMopOpMopEquivalence_functor_ε, opMopRightDualLeftDualIso_hom_app,
+      leftDualRightDualIso_inv_app]
+    simp only [leftDualFunctor_map, leftAdjointMate_eq_leftMate, Functor.LaxMonoidal.id_ε,
+      unmop_id, unop_id]
+    -- The unit comparison of the wrapper removal is an identity, whose source is only
+    -- definitionally the unit of `C`.
+    erw [Category.id_comp]
+    exact leftMate_unit_aux (C := C) _ _ _
+  tensor X Y := by
+    apply Quiver.Hom.unmop_inj
+    apply Quiver.Hom.unop_inj
+    rw [comp_μ, comp_μ, Functor.opMop_μ, Functor.op_μ, rightDualFunctor_δ, leftDualFunctor_μ,
+      opMopOpMopEquivalence_functor_μ, opMopRightDualLeftDualIso_hom_app,
+      opMopRightDualLeftDualIso_hom_app, opMopRightDualLeftDualIso_hom_app,
+      leftDualRightDualIso_inv_app, leftDualRightDualIso_inv_app, leftDualRightDualIso_inv_app]
+    simp only [leftDualFunctor_map, leftAdjointMate_eq_leftMate, Functor.LaxMonoidal.id_μ,
+      unmop_comp, unop_comp, unmop_id, unop_id]
+    -- The tensor comparisons of the wrapper removal and of the identity functor are identities.
+    erw [Category.id_comp, Category.id_comp]
+    rw [leftDualTensorIso, rightDualTensorIso]
+    exact leftMate_tensor_aux (C := C) _ _ _ _ _ _ _
+
+variable (C) in
+/-- The functor `Y ↦ (ᘁY)ᘁ` of `(Cᵒᵖ)ᴹᵒᵖ` is trivialized by the inverses of the comparisons
+`(ᘁY)ᘁ ≅ Y`, read in the opposite category. -/
+private noncomputable def opMopLeftDualRightDualIso :
+    ((leftDualFunctor C).op.opMop ⋙ (opMopOpMopEquivalence C).functor) ⋙ rightDualFunctor C ≅
+      𝟭 Cᵒᵖᴹᵒᵖ :=
+  NatIso.ofComponents
+    (fun Y => (mopFunctor Cᵒᵖ).mapIso ((rightDualLeftDualIso C).app Y.unmop.unop).symm.op)
+    fun f => by
+      apply Quiver.Hom.unmop_inj
+      apply Quiver.Hom.unop_inj
+      exact ((rightDualLeftDualIso C).inv.naturality f.unmop.unop).symm
+
+private theorem opMopLeftDualRightDualIso_hom_app (Y : Cᵒᵖᴹᵒᵖ) :
+    (opMopLeftDualRightDualIso C).hom.app Y =
+      ((rightDualLeftDualIso C).inv.app Y.unmop.unop).op.mop :=
+  rfl
+
+omit [RigidCategory C] in
+/-- The unit condition for `opMopLeftDualRightDualIso`, the mirror of `leftMate_unit_aux`. -/
+private theorem rightMate_unit_aux {R₁ R L₁ : C} (pr : ExactPairing (𝟙_ C) R₁)
+    (cr : ExactPairing L₁ R) (pl : ExactPairing L₁ (𝟙_ C)) :
+    (rightDualIso cr pl).inv ≫ rightMate pr cr (leftDualIso pl exactPairingUnit).inv ≫
+      (rightDualIso pr exactPairingUnit).hom = 𝟙 _ := by
+  rw [rightDualIso_inv, rightDualIso_hom, leftDualIso_inv, ← leftDualIso_hom, ← comp_rightMate,
+    ← comp_rightMate, Category.id_comp, Category.comp_id, rightMate_leftDualIso_hom,
+    rightMate_id]
+
+omit [RigidCategory C] in
+/-- The tensor condition for `opMopLeftDualRightDualIso`, the mirror of `leftMate_tensor_aux`. -/
+private theorem rightMate_tensor_aux {X Y LX LY LYX RX RY RYX RT : C} (pX : ExactPairing LX X)
+    (pY : ExactPairing LY Y) (pYX : ExactPairing LYX (Y ⊗ X)) (cX : ExactPairing LX RX)
+    (cY : ExactPairing LY RY) (cYX : ExactPairing LYX RYX) (cT : ExactPairing (LX ⊗ LY) RT) :
+    (rightDualIso cYX pYX).inv ≫
+        rightMate cT cYX (leftDualIso pYX (@tensor _ _ _ _ _ _ _ pX pY)).inv ≫
+        (rightDualIso cT (@tensor _ _ _ _ _ _ _ cX cY)).hom =
+      (rightDualIso cY pY).inv ⊗ₘ (rightDualIso cX pX).inv := by
+  rw [rightDualIso_inv, rightDualIso_hom, rightDualIso_inv, rightDualIso_inv, leftDualIso_inv,
+    ← leftDualIso_hom, ← rightMate_tensorHom cX cY pX pY, tensorHom_id, id_whiskerRight,
+    ← comp_rightMate, ← comp_rightMate, Category.id_comp, Category.comp_id,
+    ← Category.id_comp (leftDualIso (@tensor _ _ _ _ _ _ _ pX pY) pYX).hom,
+    comp_rightMate _ (@tensor _ _ _ _ _ _ _ pX pY), rightMate_leftDualIso_hom, rightMate_id,
+    Category.id_comp]
+
+private theorem opMopLeftDualRightDualIso_isMonoidal :
+    NatTrans.IsMonoidal (opMopLeftDualRightDualIso C).hom where
+  -- The mirror of `opMopRightDualLeftDualIso_isMonoidal`, with right mates in place of left
+  -- mates.
+  unit := by
+    apply Quiver.Hom.unmop_inj
+    apply Quiver.Hom.unop_inj
+    rw [comp_ε, comp_ε, Functor.opMop_ε, Functor.op_ε, leftDualFunctor_η, rightDualFunctor_ε,
+      opMopOpMopEquivalence_functor_ε, opMopLeftDualRightDualIso_hom_app,
+      rightDualLeftDualIso_inv_app]
+    simp only [rightDualFunctor_map, rightAdjointMate_eq_rightMate, Functor.LaxMonoidal.id_ε,
+      unmop_id, unop_id]
+    erw [Category.id_comp]
+    exact rightMate_unit_aux (C := C) _ _ _
+  tensor X Y := by
+    apply Quiver.Hom.unmop_inj
+    apply Quiver.Hom.unop_inj
+    rw [comp_μ, comp_μ, Functor.opMop_μ, Functor.op_μ, leftDualFunctor_δ, rightDualFunctor_μ,
+      opMopOpMopEquivalence_functor_μ, opMopLeftDualRightDualIso_hom_app,
+      opMopLeftDualRightDualIso_hom_app, opMopLeftDualRightDualIso_hom_app,
+      rightDualLeftDualIso_inv_app, rightDualLeftDualIso_inv_app, rightDualLeftDualIso_inv_app]
+    simp only [rightDualFunctor_map, rightAdjointMate_eq_rightMate, Functor.LaxMonoidal.id_μ,
+      unmop_comp, unop_comp, unmop_id, unop_id]
+    erw [Category.id_comp, Category.id_comp]
+    rw [leftDualTensorIso, rightDualTensorIso]
+    exact rightMate_tensor_aux (C := C) _ _ _ _ _ _ _
+
+attribute [local instance] opMopRightDualLeftDualIso_isMonoidal
+  opMopLeftDualRightDualIso_isMonoidal
+
+variable (C) in
+/-- The composite `X ↦ ᘁᘁ(Xᘁᘁ)` of the double duals is isomorphic to `X ↦ ᘁ(Xᘁ)`, by trivializing
+the middle composite `Y ↦ ᘁ(Yᘁ)` of `(Cᵒᵖ)ᴹᵒᵖ`. -/
+private noncomputable def doubleLeftDualDoubleRightDualAux :
+    doubleRightDualFunctor C ⋙ doubleLeftDualFunctor C ≅ leftDualRightDualFunctor C :=
+  Functor.associator _ _ _ ≪≫
+    Functor.isoWhiskerLeft (rightDualFunctor C)
+      ((Functor.associator _ _ _).symm ≪≫
+        Functor.isoWhiskerRight (opMopRightDualLeftDualIso C) _ ≪≫ Functor.leftUnitor _)
+
+-- The source functor is unfolded so that the instances for associators, whiskerings and
+-- unitors apply.
+private instance : NatTrans.IsMonoidal (doubleLeftDualDoubleRightDualAux C).hom :=
+  inferInstanceAs <| NatTrans.IsMonoidal <|
+    (Functor.associator (rightDualFunctor C)
+        ((rightDualFunctor C).op.opMop ⋙ (opMopOpMopEquivalence C).functor)
+        (leftDualFunctor C ⋙ (leftDualFunctor C).op.opMop ⋙
+          (opMopOpMopEquivalence C).functor)).hom ≫
+      Functor.whiskerLeft (rightDualFunctor C)
+        ((Functor.associator _ _ _).inv ≫
+          Functor.whiskerRight (opMopRightDualLeftDualIso C).hom _ ≫ (Functor.leftUnitor _).hom)
+
+-- The associators and the unitor have identity components.
+private theorem doubleLeftDualDoubleRightDualAux_hom_app (X : C) :
+    (doubleLeftDualDoubleRightDualAux C).hom.app X =
+      ((leftDualFunctor C).op.opMop ⋙ (opMopOpMopEquivalence C).functor).map
+        ((opMopRightDualLeftDualIso C).hom.app ((rightDualFunctor C).obj X)) :=
+  (Category.id_comp _).trans ((Category.id_comp _).trans (Category.comp_id _))
+
+variable (C) in
+/-- In a rigid monoidal category, the double left dual functor is a left inverse of the double
+right dual functor: `ᘁᘁ(Xᘁᘁ)` is naturally isomorphic to `X`. The isomorphism is monoidal, by
+`TauCeti.doubleLeftDualDoubleRightDualIso_isMonoidal`. -/
+noncomputable def doubleLeftDualDoubleRightDualIso :
+    doubleRightDualFunctor C ⋙ doubleLeftDualFunctor C ≅ 𝟭 C :=
+  doubleLeftDualDoubleRightDualAux C ≪≫ leftDualRightDualIso C
+
+/-- The component `ᘁᘁ(Xᘁᘁ) ≅ X` of `doubleLeftDualDoubleRightDualIso C` is the left mate of the
+inverse comparison `Xᘁ ≅ ᘁ(Xᘁᘁ)` at `Xᘁ`, followed by the comparison `ᘁ(Xᘁ) ≅ X`. -/
+@[simp]
+theorem doubleLeftDualDoubleRightDualIso_hom_app (X : C) :
+    (doubleLeftDualDoubleRightDualIso C).hom.app X =
+      leftMate (LeftRigidCategory.leftDual Xᘁ).exact
+          (LeftRigidCategory.leftDual (LeftRigidCategory.leftDual Xᘁᘁ).leftDual).exact
+          ((leftDualRightDualIso C).inv.app Xᘁ) ≫
+        (leftDualRightDualIso C).hom.app X :=
+  (doubleLeftDualDoubleRightDualAux_hom_app X =≫ _).trans
+    (leftAdjointMate_eq_leftMate _ =≫ _)
+
+/-- The isomorphism `ᘁᘁ(Xᘁᘁ) ≅ X` is monoidal, so the double left dual functor is inverse to the
+double right dual functor on this side as a monoidal functor. -/
+instance doubleLeftDualDoubleRightDualIso_isMonoidal :
+    NatTrans.IsMonoidal (doubleLeftDualDoubleRightDualIso C).hom :=
+  inferInstanceAs <| NatTrans.IsMonoidal <|
+    (doubleLeftDualDoubleRightDualAux C).hom ≫ (leftDualRightDualIso C).hom
+
+variable (C) in
+/-- The composite `X ↦ (ᘁᘁX)ᘁᘁ` of the double duals is isomorphic to `X ↦ (ᘁX)ᘁ`, by trivializing
+the middle composite `Y ↦ (ᘁY)ᘁ` of `(Cᵒᵖ)ᴹᵒᵖ`. -/
+private noncomputable def doubleRightDualDoubleLeftDualAux :
+    doubleLeftDualFunctor C ⋙ doubleRightDualFunctor C ≅ rightDualLeftDualFunctor C :=
+  Functor.associator _ _ _ ≪≫
+    Functor.isoWhiskerLeft (leftDualFunctor C)
+      ((Functor.associator _ _ _).symm ≪≫
+        Functor.isoWhiskerRight (opMopLeftDualRightDualIso C) _ ≪≫ Functor.leftUnitor _)
+
+-- The source functor is unfolded so that the instances for associators, whiskerings and
+-- unitors apply.
+private instance : NatTrans.IsMonoidal (doubleRightDualDoubleLeftDualAux C).hom :=
+  inferInstanceAs <| NatTrans.IsMonoidal <|
+    (Functor.associator (leftDualFunctor C)
+        ((leftDualFunctor C).op.opMop ⋙ (opMopOpMopEquivalence C).functor)
+        (rightDualFunctor C ⋙ (rightDualFunctor C).op.opMop ⋙
+          (opMopOpMopEquivalence C).functor)).hom ≫
+      Functor.whiskerLeft (leftDualFunctor C)
+        ((Functor.associator _ _ _).inv ≫
+          Functor.whiskerRight (opMopLeftDualRightDualIso C).hom _ ≫ (Functor.leftUnitor _).hom)
+
+-- The associators and the unitor have identity components.
+private theorem doubleRightDualDoubleLeftDualAux_hom_app (X : C) :
+    (doubleRightDualDoubleLeftDualAux C).hom.app X =
+      ((rightDualFunctor C).op.opMop ⋙ (opMopOpMopEquivalence C).functor).map
+        ((opMopLeftDualRightDualIso C).hom.app ((leftDualFunctor C).obj X)) :=
+  (Category.id_comp _).trans ((Category.id_comp _).trans (Category.comp_id _))
+
+variable (C) in
+/-- In a rigid monoidal category, the double right dual functor is a left inverse of the double
+left dual functor: `(ᘁᘁX)ᘁᘁ` is naturally isomorphic to `X`. The isomorphism is monoidal, by
+`TauCeti.doubleRightDualDoubleLeftDualIso_isMonoidal`. -/
+noncomputable def doubleRightDualDoubleLeftDualIso :
+    doubleLeftDualFunctor C ⋙ doubleRightDualFunctor C ≅ 𝟭 C :=
+  doubleRightDualDoubleLeftDualAux C ≪≫ rightDualLeftDualIso C
+
+/-- The component `(ᘁᘁX)ᘁᘁ ≅ X` of `doubleRightDualDoubleLeftDualIso C` is the right mate of the
+inverse comparison `ᘁX ≅ (ᘁᘁX)ᘁ` at `ᘁX`, followed by the comparison `(ᘁX)ᘁ ≅ X`. -/
+@[simp]
+theorem doubleRightDualDoubleLeftDualIso_hom_app (X : C) :
+    (doubleRightDualDoubleLeftDualIso C).hom.app X =
+      rightMate (RightRigidCategory.rightDual (ᘁX)).exact
+          (RightRigidCategory.rightDual (RightRigidCategory.rightDual (ᘁᘁX)).rightDual).exact
+          ((rightDualLeftDualIso C).inv.app (ᘁX)) ≫
+        (rightDualLeftDualIso C).hom.app X :=
+  (doubleRightDualDoubleLeftDualAux_hom_app X =≫ _).trans
+    (rightAdjointMate_eq_rightMate _ =≫ _)
+
+/-- The isomorphism `(ᘁᘁX)ᘁᘁ ≅ X` is monoidal, so the double right dual functor is inverse to the
+double left dual functor on this side as a monoidal functor. -/
+instance doubleRightDualDoubleLeftDualIso_isMonoidal :
+    NatTrans.IsMonoidal (doubleRightDualDoubleLeftDualIso C).hom :=
+  inferInstanceAs <| NatTrans.IsMonoidal <|
+    (doubleRightDualDoubleLeftDualAux C).hom ≫ (rightDualLeftDualIso C).hom
+
+end DoubleDualInverse
 
 end TauCeti
