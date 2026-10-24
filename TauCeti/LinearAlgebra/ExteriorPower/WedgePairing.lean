@@ -50,19 +50,13 @@ theorem wedge_ιMulti (u : Fin k → M) (v : Fin l → M) :
 theorem wedge_map {N : Type*} [AddCommGroup N] [Module R N] (f : M →ₗ[R] N) :
     (wedge R N k l).compl₁₂ (exteriorPower.map k f) (exteriorPower.map l f) =
       (wedge R M k l).compr₂ (exteriorPower.map (k + l) f) := by
-  refine exteriorPower.linearMap_ext (R := R) (M := M)
-    (N := (⋀[R]^l M) →ₗ[R] ⋀[R]^(k + l) N) (n := k) ?_
-  apply AlternatingMap.ext
-  intro u
-  apply exteriorPower.linearMap_ext
-  apply AlternatingMap.ext
-  intro v
-  simp only [LinearMap.compAlternatingMap_apply, LinearMap.compl₁₂_apply,
-    LinearMap.compr₂_apply, exteriorPower.map_apply_ιMulti, exteriorPower.wedge_ιMulti]
-  congr 1
-  funext i
-  refine Fin.addCases ?_ ?_ i <;> intro j <;>
-    simp only [Fin.append_left, Fin.append_right, Function.comp_apply]
+  apply LinearMap.ext
+  intro x
+  apply LinearMap.ext
+  intro y
+  apply Subtype.ext
+  simp only [LinearMap.compl₁₂_apply, LinearMap.compr₂_apply, coe_wedge,
+    exteriorPower.coe_map, map_mul]
 
 /-- Pointwise form of `wedge_map` for rewriting evaluations of wedge products. -/
 theorem wedge_map_apply {N : Type*} [AddCommGroup N] [Module R N] (f : M →ₗ[R] N)
