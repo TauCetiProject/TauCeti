@@ -94,18 +94,11 @@ private theorem eq_not_decide_exists_iff (k : D.ResolvedCircle s → Bool)
       (∀ C, C ≠ .inl ⟦D.crossing c 0⟧ → C ≠ .inl ⟦D.crossing c 2⟧ →
         k C = l (D.saddleResolvedCircleMap hst ht' C)) ∧
       l (.inl ⟦D.crossing c 0⟧) = (k (.inl ⟦D.crossing c 0⟧) && k (.inl ⟦D.crossing c 2⟧)) := by
-  -- Away from the two circles through `c`, a label is recovered from its singleton fibre.
-  have hfib (m : D.ResolvedCircle s → Bool) (C : D.ResolvedCircle s)
-      (hp : C ≠ .inl ⟦D.crossing c 0⟧) (hq : C ≠ .inl ⟦D.crossing c 2⟧) :
-      decide (∃ C', D.saddleResolvedCircleMap hst ht' C' = D.saddleResolvedCircleMap hst ht' C ∧
-        m C' = true) = m C := by
-    simp only [D.saddleResolvedCircleMap_eq_iff, hp, hq, or_self, and_false, or_false,
-      exists_eq_left, Bool.decide_eq_true]
   constructor
   · rintro rfl
     refine ⟨fun C hp hq ↦ ?_, ?_⟩
     · dsimp only
-      rw [hfib _ C hp hq, Bool.not_not]
+      rw [D.decide_exists_saddleResolvedCircleMap_eq_of_ne hst ht' _ C hp hq, Bool.not_not]
     · dsimp only
       rw [decide_exists_saddleResolvedCircleMap_eq_crossing]
       simp
@@ -117,7 +110,8 @@ private theorem eq_not_decide_exists_iff (k : D.ResolvedCircle s → Bool)
         decide_exists_saddleResolvedCircleMap_eq_crossing, h₂]
       simp
     · rw [not_or] at hC
-      rw [hfib _ C hC.1 hC.2, h₁ C hC.1 hC.2, Bool.not_not]
+      rw [D.decide_exists_saddleResolvedCircleMap_eq_of_ne hst ht' _ C hC.1 hC.2, h₁ C hC.1 hC.2,
+        Bool.not_not]
 
 end Fibre
 
@@ -155,11 +149,6 @@ theorem resolutionSplitMap_circleBasis (l : D.ResolvedCircle s → Bool) :
     fun h ↦ (D.card_circlesAt_eq_two_iff t c).mp ht (Sum.inl.inj h)
   apply (Khovanov.circleBasis R _).ext_elem
   intro k
-  have hrepr (x : Khovanov.CircleTensor R (D.ResolvedCircle t)) :
-      (Khovanov.circleBasis R _).repr x k =
-        Khovanov.circleDuality R _ x (Khovanov.circleBasis R _ fun C ↦ !k C) := by
-    rw [Khovanov.circleDuality_apply_circleBasis]
-    simp only [Bool.not_not]
   -- A labelling of `t` is `k` exactly when it agrees with `k` at the circles through `c` and away
   -- from them.
   have hk (g : D.ResolvedCircle t → Bool) : g = k ↔
@@ -180,7 +169,8 @@ theorem resolutionSplitMap_circleBasis (l : D.ResolvedCircle s → Bool) :
         k C = l (D.saddleResolvedCircleMap hts hs C) :=
     forall_congr' fun C ↦ imp_congr_right fun h₀ ↦ imp_congr_right fun h₂ ↦ by
       rw [Function.update_of_ne (by rcases hr with rfl | rfl <;> assumption)]
-  rw [hrepr, circleDuality_resolutionSplitMap, resolutionMergeMap_circleBasis]
+  rw [resolutionSplitMap_def, Khovanov.circleBasis_repr_fiberwiseSplit_eq_circleDuality,
+    ← resolutionMergeMap_def D hts hc.symm ht R, resolutionMergeMap_circleBasis]
   split_ifs with hX hl hl
   all_goals simp only [map_zero, Khovanov.circleDuality_apply_circleBasis,
     Module.Basis.repr_self, map_add, Finsupp.add_apply, Finsupp.single_apply,
