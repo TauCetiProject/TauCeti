@@ -38,6 +38,8 @@ summation index. The weighted sum is again a single binomial coefficient,
   `(i)ₘ * C(A, i) = (A)ₘ * C(A - m, i - m)`.
 * `Nat.sum_range_descFactorial_mul_choose_mul_choose`: Vandermonde's convolution weighted by a
   falling factorial of the summation index.
+* `Nat.add_choose_mul_choose_mul_choose`: choosing `r` of `i` objects and `s` of `j` objects
+  factors through choosing `r + s` of all `i + j` objects.
 
 ## References
 
@@ -148,5 +150,19 @@ theorem sum_range_descFactorial_mul_choose_mul_choose {m r : ℕ} (hmr : m ≤ r
     rwa [hsub_add]
   · rw [Nat.descFactorial_eq_zero_iff_lt.2 hmA] at key ⊢
     simpa using key
+
+/-- **Choosing from two blocks at once.** Choosing an `i`-element block of `i + j` objects, then
+`r` elements of that block and `s` elements of its complement, amounts to choosing the `r + s`
+selected elements first, then which `r` of them lie in the block, and finally which `j - s` of the
+unselected elements lie in the complement:
+`C(i + j, i) * C(i, r) * C(j, s) = C(i + j, r + s) * C(r + s, r) * C(i + j - (r + s), j - s)`.
+
+In particular `C(i + j, r + s)` divides `C(i + j, i) * C(i, r) * C(j, s)`. -/
+theorem add_choose_mul_choose_mul_choose {i j r s : ℕ} (hr : r ≤ i) (hs : s ≤ j) :
+    (i + j).choose i * i.choose r * j.choose s =
+      (i + j).choose (r + s) * (r + s).choose r * (i + j - (r + s)).choose (j - s) := by
+  rw [choose_mul hr, choose_symm_of_eq_add (by omega : i + j - r = i - r + j), Nat.mul_assoc,
+    choose_mul hs, ← Nat.mul_assoc, choose_mul (Nat.le_add_right r s),
+    Nat.add_sub_cancel_left, Nat.sub_sub]
 
 end Nat
