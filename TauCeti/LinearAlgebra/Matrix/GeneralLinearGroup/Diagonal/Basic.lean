@@ -62,6 +62,8 @@ element (`TauCeti.diagGL_const`).
 
 * `TauCeti.isUnit_apply_of_isDiag`: the diagonal entries of an invertible diagonal matrix are
   units.
+* `TauCeti.coe_inv_of_coe_eq_diagonal`: over a division ring, the inverse of an invertible
+  diagonal matrix is the diagonal matrix of the inverse entries.
 * `TauCeti.exists_det_eq_one_mul_map_eq_map_mul_diagGL`: a matrix intertwining another matrix with
   a diagonal matrix can be normalized to have determinant one while preserving the equation.
 * `TauCeti.mem_diagonalTorus_iff`: membership in the torus is diagonality of the matrix.
@@ -345,6 +347,20 @@ theorem mem_centralizer_range_iff_isDiag_of_coe_eq_diagGL
 end FamilyCentralizer
 
 end CommSemiring
+
+section DivisionRing
+
+variable [DivisionRing k]
+
+/-- The inverse of an invertible matrix that is the diagonal matrix of a family of nonzero scalars
+is the diagonal matrix of their inverses. -/
+theorem coe_inv_of_coe_eq_diagonal {g : GL ι k} {d : ι → k} (hd : ∀ i, d i ≠ 0)
+    (hg : (g : Matrix ι ι k) = diagonal d) : ((g⁻¹ : GL ι k) : Matrix ι ι k) = diagonal d⁻¹ :=
+  Units.inv_eq_of_mul_eq_one_left <| by
+    rw [hg, diagonal_mul_diagonal, ← diagonal_one]
+    exact congrArg diagonal (funext fun i => inv_mul_cancel₀ (hd i))
+
+end DivisionRing
 
 variable [CommRing k]
 
