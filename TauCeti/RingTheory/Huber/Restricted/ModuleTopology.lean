@@ -38,6 +38,26 @@ open Filter Topology
 
 namespace TauCeti.Huber
 
+section Topological
+
+variable {k : ℕ} {A M : Type*} [Semiring A] [AddCommMonoid M] [TopologicalSpace M]
+  [ContinuousAdd M] [Module A M] [ContinuousConstSMul A M]
+
+/-- The coefficient map has precisely the cofinite-null functions as its range. -/
+theorem range_restrictedMvPowerSeriesSubmodule_coefficients :
+    Set.range (fun f : restrictedMvPowerSeriesSubmodule k A M ↦
+      UniformFun.ofFun (f.1 : (Fin k →₀ ℕ) → M)) =
+      {f : UniformFun (Fin k →₀ ℕ) M | Tendsto (UniformFun.toFun f) cofinite (𝓝 0)} := by
+  ext f
+  constructor
+  · rintro ⟨g, rfl⟩
+    exact isRestricted_iff.mp (mem_restrictedMvPowerSeriesSubmodule.mp g.2)
+  · intro hf
+    exact ⟨⟨UniformFun.toFun f, mem_restrictedMvPowerSeriesSubmodule.mpr
+      (isRestricted_iff.mpr hf)⟩, UniformFun.ofFun_toFun f⟩
+
+end Topological
+
 variable {k : ℕ} {A M : Type*} [Semiring A] [AddCommMonoid M] [UniformSpace M]
   [ContinuousAdd M] [Module A M] [ContinuousConstSMul A M]
 
@@ -89,19 +109,6 @@ theorem isEmbedding_restrictedMvPowerSeriesSubmodule_coefficients :
     IsEmbedding (fun f : restrictedMvPowerSeriesSubmodule k A M ↦
       UniformFun.ofFun (f.1 : (Fin k →₀ ℕ) → M)) :=
   isUniformEmbedding_restrictedMvPowerSeriesSubmodule_coefficients.isEmbedding
-
-/-- The coefficient map has precisely the cofinite-null functions as its range. -/
-theorem range_restrictedMvPowerSeriesSubmodule_coefficients :
-    Set.range (fun f : restrictedMvPowerSeriesSubmodule k A M ↦
-      UniformFun.ofFun (f.1 : (Fin k →₀ ℕ) → M)) =
-      {f : UniformFun (Fin k →₀ ℕ) M | Tendsto (UniformFun.toFun f) cofinite (𝓝 0)} := by
-  ext f
-  constructor
-  · rintro ⟨g, rfl⟩
-    exact isRestricted_iff.mp (mem_restrictedMvPowerSeriesSubmodule.mp g.2)
-  · intro hf
-    exact ⟨⟨UniformFun.toFun f, mem_restrictedMvPowerSeriesSubmodule.mpr
-      (isRestricted_iff.mpr hf)⟩, UniformFun.ofFun_toFun f⟩
 
 /-- The coefficient map is a closed embedding, without separation or completeness assumptions. -/
 theorem isClosedEmbedding_restrictedMvPowerSeriesSubmodule_coefficients :
@@ -161,9 +168,25 @@ theorem dense_finite_support_restrictedMvPowerSeriesSubmodule :
   -- Membership in the pulled-back entourage is exactly the coefficientwise approximation.
   exact ⟨q, hVU happrox, hg⟩
 
+/-- A basis of zero neighbourhoods: every coefficient lies in the same zero neighbourhood. -/
+theorem hasBasis_nhds_zero_restrictedMvPowerSeriesSubmodule :
+    letI := restrictedMvPowerSeriesSubmoduleUniformSpace k A M;
+    (𝓝 (0 : restrictedMvPowerSeriesSubmodule k A M)).HasBasis
+      (fun U : Set M ↦ U ∈ 𝓝 (0 : M))
+      (fun U ↦ {f | ∀ s, (f.1 : (Fin k →₀ ℕ) → M) s ∈ U}) := by
+  rw [isUniformInducing_restrictedMvPowerSeriesSubmodule_coefficients.isInducing.nhds_eq_comap]
+  refine ((UniformFun.hasBasis_nhds (Fin k →₀ ℕ) M
+    (UniformFun.ofFun (0 : (Fin k →₀ ℕ) → M))).comap _).to_hasBasis ?_ ?_
+  · intro V hV
+    exact ⟨{m | (0, m) ∈ V}, (nhds_basis_uniformity' (uniformity M).basis_sets).mem_of_mem hV,
+      fun _ hf s ↦ hf s⟩
+  · intro U hU
+    obtain ⟨V, hV, hVU⟩ := (nhds_basis_uniformity' (uniformity M).basis_sets).mem_iff.mp hU
+    exact ⟨V, hV, fun _ hf s ↦ hVU (hf s)⟩
+
 end Uniform
 
-section Group
+section RingGroup
 
 variable {k : ℕ} {A M : Type*} [Ring A] [AddCommGroup M] [UniformSpace M]
   [IsUniformAddGroup M] [Module A M] [ContinuousConstSMul A M]
@@ -179,14 +202,12 @@ theorem isUniformAddGroup_restrictedMvPowerSeriesSubmodule :
   exact IsUniformInducing.isUniformAddGroup c
     isUniformInducing_restrictedMvPowerSeriesSubmodule_coefficients
 
-/-- A basis of zero neighbourhoods: every coefficient lies in the same zero neighbourhood. -/
-theorem hasBasis_nhds_zero_restrictedMvPowerSeriesSubmodule :
-    letI := restrictedMvPowerSeriesSubmoduleUniformSpace k A M;
-    (𝓝 (0 : restrictedMvPowerSeriesSubmodule k A M)).HasBasis
-      (fun U : Set M ↦ U ∈ 𝓝 (0 : M))
-      (fun U ↦ {f | ∀ s, (f.1 : (Fin k →₀ ℕ) → M) s ∈ U}) := by
-  rw [isUniformInducing_restrictedMvPowerSeriesSubmodule_coefficients.isInducing.nhds_eq_comap]
-  exact UniformFun.hasBasis_nhds_zero.comap _
+end RingGroup
+
+section Group
+
+variable {k : ℕ} {A M : Type*} [Semiring A] [AddCommGroup M] [UniformSpace M]
+  [IsUniformAddGroup M] [Module A M] [ContinuousConstSMul A M]
 
 /-- Each fixed scalar acts uniformly continuously on the restricted module. -/
 theorem uniformContinuousConstSMul_restrictedMvPowerSeriesSubmodule :
