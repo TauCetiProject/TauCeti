@@ -42,8 +42,9 @@ is the identity, and it is formal (`TauCeti.isFormal_liuWangAffineD4AInfinityAlg
 conventions the displayed values therefore define the trivial `A∞` deformation.
 
 A single rotation is not a coboundary. The loop operation of the walk `β₄ α₁ β₁ α₄` alone, with
-coefficient one, is a Hochschild cocycle which is not a coboundary, since the centre has four
-distinct neighbours
+coefficient one, is a Hochschild cocycle
+(`TauCeti.hochschildDifferential_obstruction_zigzagLoopAInfinityAlgebra`) which is not a
+coboundary, since the centre has four distinct neighbours
 (`TauCeti.not_exists_hochschildDifferential_eq_obstruction_liuWangAffineD4Walk`); see
 `TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.HochschildClass`. In particular `HH^{4, -2}`
 of the affine `D₄` zigzag algebra is nonzero (`TauCeti.not_hochschildVanishesAt_four_affineD4`).
@@ -348,15 +349,22 @@ private def affineD4LeafDart : Fin 4 → (AffineDynkinType.D 4).graph.Dart :=
     ⟨(3, 1), (AffineDynkinType.graph_D_adj le_rfl).2 (by decide)⟩,
     ⟨(4, 1), (AffineDynkinType.graph_D_adj le_rfl).2 (by decide)⟩]
 
+/-- A single coefficient on Liu--Wang's walk is supported on closed walks, read in product
+order. -/
+theorem fst_eq_snd_of_mem_support_single_liuWangAffineD4Walk (r : k) :
+    ∀ w ∈ (Finsupp.single liuWangAffineD4Walk r).support, ∀ i, (w i).fst = (w (i + 1)).snd := by
+  intro w hw i
+  rw [Finset.mem_singleton.mp (Finsupp.support_single_subset hw)]
+  simpa using liuWangAffineD4Walk_sub_fst_eq_snd i 0
+
 /-- **The loop operation of Liu--Wang's walk alone is not a Hochschild coboundary.** With
 coefficient one on the single walk `β₄ α₁ β₁ α₄`, and zero on its other rotations, the quartic
-operation of the loop deformation is a Hochschild cocycle of the strict zigzag algebra which is not
-the Hochschild differential of any suspended cochain of degree zero. By contrast the sum of the four
+operation of the loop deformation is a Hochschild cocycle of the strict zigzag algebra
+(`TauCeti.hochschildDifferential_obstruction_zigzagLoopAInfinityAlgebra`), and it is not the
+Hochschild differential of any suspended cochain of degree zero. By contrast the sum of the four
 rotations with equal coefficients, Liu--Wang's operation, is a coboundary
 (`TauCeti.isFormal_liuWangAffineD4AInfinityAlgebra`). -/
-theorem not_exists_hochschildDifferential_eq_obstruction_liuWangAffineD4Walk [Nontrivial k]
-    (hc : ∀ w ∈ (Finsupp.single liuWangAffineD4Walk (1 : k)).support, ∀ i,
-      (w i).fst = (w (i + 1)).snd) :
+theorem not_exists_hochschildDifferential_eq_obstruction_liuWangAffineD4Walk [Nontrivial k] :
     ¬∃ φ : ReducedTensorWords k (nonisolatedZigzagQuotient k (AffineDynkinType.D 4).graph) →ₗ[k]
         nonisolatedZigzagQuotient k (AffineDynkinType.D 4).graph,
       LinearMap.IsHomogeneous φ (ReducedTensorWords.gradedPiece
@@ -368,7 +376,7 @@ theorem not_exists_hochschildDifferential_eq_obstruction_liuWangAffineD4Walk [No
             (AffineDynkinType.exists_adj_graph (t := .D 4) (by decide))).hochschildDifferential 0
             φ =
           (zigzagLoopAInfinityAlgebra (AffineDynkinType.exists_adj_graph (t := .D 4) (by decide))
-            _ hc).obstruction
+            _ (fst_eq_snd_of_mem_support_single_liuWangAffineD4Walk (1 : k))).obstruction
             (zigzagStrictAInfinityAlgebra k
               (AffineDynkinType.exists_adj_graph (t := .D 4) (by decide))) ⟨4, by norm_num⟩ := by
   -- Liu--Wang's walk is the rotated backtrack walk of the darts from the leaves `4` and `0`.
@@ -376,10 +384,11 @@ theorem not_exists_hochschildDifferential_eq_obstruction_liuWangAffineD4Walk [No
       zigzagBacktrackWalk _ (affineD4LeafDart 3).symm (affineD4LeafDart 0) (t + 1) := by
     rw [zigzagBacktrackWalk_def]
     decide
+  generalize fst_eq_snd_of_mem_support_single_liuWangAffineD4Walk (1 : k) = hc
   revert hc
   rw [hw]
-  exact fun hc ↦ not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_single
-    (by decide) (v := 1) (by decide) hc
+  exact fun _ ↦ not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_single
+    (by decide) (v := 1) (by decide)
 
 /-- **The quartic Hochschild cohomology `HH^{4, -2}` of the affine `D₄` zigzag algebra is
 nonzero**, over every nontrivial commutative ring: the centre has the four distinct neighbours

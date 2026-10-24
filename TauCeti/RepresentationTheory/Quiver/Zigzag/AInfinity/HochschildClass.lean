@@ -38,7 +38,7 @@ walk `TauCeti.zigzagBacktrackWalk G (δ j).symm (δ i)`, that is the darts
 
 evaluated on the words of the corresponding arrows (`TauCeti.zigzagBacktrackPairing`), vanishes on
 every Hochschild coboundary of degree zero
-(`TauCeti.zigzagBacktrackPairing_hochschildDifferential`).
+(`TauCeti.zigzagBacktrackPairing_hochschildDifferential_eq_zero`).
 On a word of four arrows the Hochschild differential of a suspended cochain `φ` is
 
 ```text
@@ -62,8 +62,9 @@ a = [ 0 -1  0  1]
 On the other hand `Λ` pairs the obstruction of the loop deformation
 `TauCeti.zigzagLoopAInfinityAlgebra` with coefficients `c`, its operation `m₄`, to
 `∑ i j, a i j (c (B' i j) - c (B i j))` (`TauCeti.zigzagBacktrackPairing_obstruction`). For the
-single walk `B' 0 3` with coefficient one this is `a 0 3 = 1`, so its loop operation is a
-Hochschild cocycle which is not a coboundary
+single walk `B' 0 3` with coefficient one this is `a 0 3 = 1`, so its loop operation, a
+Hochschild cocycle (`TauCeti.hochschildDifferential_obstruction_zigzagLoopAInfinityAlgebra`), is
+not a coboundary
 (`TauCeti.not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_single`),
 and `HH^{4, -2}(Z, Z) ≠ 0`
 (`TauCeti.not_hochschildVanishesAt_four_zigzagStrictAInfinityAlgebra`).
@@ -89,9 +90,11 @@ than a coboundary.
 
 * `TauCeti.zigzagStrictAInfinityAlgebra_hochschildDifferential_zero_of_tprod`: the Hochschild
   differential of a degree-zero suspended cochain on a word of four letters of path length one.
-* `TauCeti.zigzagBacktrackPairing_hochschildDifferential`: `Λ` vanishes on coboundaries.
+* `TauCeti.zigzagBacktrackPairing_hochschildDifferential_eq_zero`: `Λ` vanishes on coboundaries.
 * `TauCeti.zigzagBacktrackPairing_obstruction`: the value of `Λ` on the quartic operation of a loop
   deformation.
+* `TauCeti.hochschildDifferential_obstruction_zigzagLoopAInfinityAlgebra`: the quartic operation of
+  a loop deformation is a Hochschild cocycle.
 * `TauCeti.not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra` and
   `TauCeti.not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_single`:
   quartic loop operations which are not Hochschild coboundaries.
@@ -426,7 +429,7 @@ private theorem arrows_zigzagBacktrackWalk (d e : G.Dart) :
 darts with a common head, and let `a` be a symmetric matrix with zero diagonal whose rows sum to
 zero. Then the backtrack pairing vanishes on the Hochschild differential of every suspended cochain
 of degree zero. -/
-theorem zigzagBacktrackPairing_hochschildDifferential {δ : ι → G.Dart}
+theorem zigzagBacktrackPairing_hochschildDifferential_eq_zero {δ : ι → G.Dart}
     (hδ : Function.Injective δ) {v : V} (hv : ∀ i, (δ i).snd = v) {a : Matrix ι ι k}
     (ha : a.IsSymm) (ha₀ : ∀ i, a i i = 0) (ha₁ : ∀ i, ∑ j, a i j = 0)
     {φ : ReducedTensorWords k (nonisolatedZigzagQuotient k G) →ₗ[k] nonisolatedZigzagQuotient k G}
@@ -509,11 +512,34 @@ theorem zigzagBacktrackPairing_obstruction (δ : ι → G.Dart) (a : Matrix ι �
   rw [trace_obstruction_ofArrow c hc fun t ↦ zigzagBacktrackWalk G (δ j).symm (δ i) (t + 1),
     trace_obstruction_ofArrow c hc (zigzagBacktrackWalk G (δ j).symm (δ i))]
 
+omit [Fintype ι] in
+/-- **Quartic loop operations are Hochschild cocycles.** The obstruction of the loop deformation
+with coefficients `c`, that is its quartic operation, is a Hochschild cocycle of the strict zigzag
+algebra, since the two agree up to arity three. -/
+theorem hochschildDifferential_obstruction_zigzagLoopAInfinityAlgebra
+    (c : (Fin 4 → G.Dart) →₀ k) (hc : ∀ w ∈ c.support, ∀ i, (w i).fst = (w (i + 1)).snd) :
+    (𝒵).hochschildDifferential 1
+      ((zigzagLoopAInfinityAlgebra hns c hc).obstruction 𝒵 ⟨4, by norm_num⟩) = 0 := by
+  have hG :=
+    zigzagLoopAInfinityAlgebra_grading_eq_zigzagStrictAInfinityAlgebra_grading (hns := hns) c hc
+  -- The loop deformation agrees with the strict zigzag algebra up to arity three.
+  have hm : ∀ n, 0 < n → n ≤ 3 → (zigzagLoopAInfinityAlgebra hns c hc).m n = (𝒵).m n := by
+    intro n hn hn3
+    rcases eq_or_ne n 2 with rfl | h₂
+    · ext x
+      rw [zigzagLoopAInfinityAlgebra_m_two_apply, zigzagStrictAInfinityAlgebra_m_two_apply]
+    · rw [zigzagLoopAInfinityAlgebra_m_eq_zero _ _ h₂ (by omega),
+        zigzagStrictAInfinityAlgebra_m_eq_zero h₂]
+  exact AInfinityAlgebra.hochschildDifferential_obstruction isMinimal_zigzagStrictAInfinityAlgebra
+    (fun n hn ↦ zigzagStrictAInfinityAlgebra_m_eq_zero (by omega)) hG (n := 3) (by norm_num)
+    fun z hz ↦ AInfinityAlgebra.taylor_apply_eq_of_forall_m_eq hG hm hz
+
 /-- **Quartic loop operations which are not Hochschild coboundaries.** Let `δ i` be pairwise
 distinct darts with a common head and `a` a symmetric matrix with zero diagonal whose rows sum to
 zero. If the backtrack pairing of the coefficients `c` of a loop deformation is nonzero, its
-quartic operation is a Hochschild cocycle of the strict zigzag algebra which is not the
-Hochschild differential of any suspended cochain of degree zero. -/
+quartic operation, a Hochschild cocycle of the strict zigzag algebra by
+`TauCeti.hochschildDifferential_obstruction_zigzagLoopAInfinityAlgebra`, is not the Hochschild
+differential of any suspended cochain of degree zero. -/
 theorem not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra
     {δ : ι → G.Dart} (hδ : Function.Injective δ) {v : V} (hv : ∀ i, (δ i).snd = v)
     {a : Matrix ι ι k} (ha : a.IsSymm) (ha₀ : ∀ i, a i i = 0) (ha₁ : ∀ i, ∑ j, a i j = 0)
@@ -527,7 +553,8 @@ theorem not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlge
         (𝒵).hochschildDifferential 0 φ =
           (zigzagLoopAInfinityAlgebra hns c hc).obstruction 𝒵 ⟨4, by norm_num⟩ := by
   rintro ⟨φ, hφ, hφc⟩
-  have h0 := zigzagBacktrackPairing_hochschildDifferential (hns := hns) hδ hv ha ha₀ ha₁ hφ
+  have h0 :=
+    zigzagBacktrackPairing_hochschildDifferential_eq_zero (hns := hns) hδ hv ha ha₀ ha₁ hφ
   rw [hφc, zigzagBacktrackPairing_obstruction] at h0
   exact h h0
 
@@ -553,26 +580,38 @@ private theorem fourWeights_sum (i : Fin 4) :
     ∑ j, (fourWeights : Matrix (Fin 4) (Fin 4) k) i j = 0 := by
   fin_cases i <;> simp [fourWeights, Fin.sum_univ_four]
 
+omit [Finite V] in
+/-- The rotation by one step of the backtrack walk of `e.symm` and `d`, for darts `d` and `e` with
+a common head, is a closed walk: a single coefficient on it is supported on closed walks. -/
+theorem fst_eq_snd_of_mem_support_single_rotate_zigzagBacktrackWalk {d e : G.Dart}
+    (h : e.snd = d.snd) (r : k) :
+    ∀ w ∈ (Finsupp.single (fun t ↦ zigzagBacktrackWalk G e.symm d (t + 1)) r).support, ∀ i,
+      (w i).fst = (w (i + 1)).snd := by
+  intro w hw i
+  rw [Finset.mem_singleton.mp (Finsupp.support_single_subset hw)]
+  simpa [add_assoc] using zigzagBacktrackWalk_fst_eq_snd (by simpa using h) 1 i
+
 /-- **A quartic loop operation which is not a Hochschild coboundary.** Let `δ 0, …, δ 3` be four
 distinct darts with a common head `v`, for instance the darts into `v` from four distinct
 neighbours. The loop operation of the closed walk `(δ 3).symm, δ 0, (δ 0).symm, δ 3` (in product
 order), the rotation of the backtrack walk of `(δ 3).symm` and `δ 0`, is a Hochschild cocycle of
-the strict zigzag algebra which is not the Hochschild differential of any suspended cochain of
-degree zero. -/
+the strict zigzag algebra
+(`TauCeti.hochschildDifferential_obstruction_zigzagLoopAInfinityAlgebra`), and it is not the
+Hochschild differential of any suspended cochain of degree zero. -/
 theorem not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_single
     [Nontrivial k] {δ : Fin 4 → G.Dart} (hδ : Function.Injective δ) {v : V}
-    (hv : ∀ i, (δ i).snd = v)
-    (hc : ∀ w ∈ (Finsupp.single (fun t ↦ zigzagBacktrackWalk G (δ 3).symm (δ 0) (t + 1))
-      (1 : k)).support, ∀ i, (w i).fst = (w (i + 1)).snd) :
+    (hv : ∀ i, (δ i).snd = v) :
     ¬∃ φ : ReducedTensorWords k (nonisolatedZigzagQuotient k G) →ₗ[k]
         nonisolatedZigzagQuotient k G,
       LinearMap.IsHomogeneous φ (gradedPiece ((𝒵).grading.shift 1))
           ((𝒵).grading.shift 1).piece 0 ∧
         (𝒵).hochschildDifferential 0 φ =
-          (zigzagLoopAInfinityAlgebra hns _ hc).obstruction 𝒵 ⟨4, by norm_num⟩ := by
+          (zigzagLoopAInfinityAlgebra hns _
+            (fst_eq_snd_of_mem_support_single_rotate_zigzagBacktrackWalk
+              ((hv 3).trans (hv 0).symm) (1 : k))).obstruction 𝒵 ⟨4, by norm_num⟩ := by
   classical
   refine not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra hδ hv
-    fourWeights_isSymm fourWeights_diag fourWeights_sum _ hc ?_
+    fourWeights_isSymm fourWeights_diag fourWeights_sum _ _ ?_
   -- The rotated walk of `(i, j)` is that of `(0, 3)` only for `(i, j) = (0, 3)`, by comparing the
   -- second and fourth darts; no backtrack walk is, since its first dart has head `v`.
   have h₀ (i j : Fin 4) :
@@ -590,9 +629,10 @@ theorem not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlge
         (zigzagBacktrackWalk G (δ j).symm (δ i)) = 0 := by
     rw [Finsupp.single_apply, ite_eq_right_iff]
     intro h
-    have h0 := congrArg (fun d : G.Dart ↦ d.toProd.2) (congrFun h 0)
-    simp [zigzagBacktrackWalk_def, hv] at h0
-    exact absurd (h0.trans (hv 3).symm) (δ 3).adj.ne
+    have h0 : (δ 3).fst = v := by
+      simpa [zigzagBacktrackWalk_def, hv] using
+        congrArg (fun d : G.Dart ↦ d.toProd.2) (congrFun h 0)
+    exact ((δ 3).adj.ne (h0.trans (hv 3).symm)).elim
   simp [h₀, h₁, Fin.sum_univ_four, fourWeights]
 
 /-- **The quartic Hochschild cohomology `HH^{4, -2}` of a zigzag algebra is nonzero** when four
@@ -604,31 +644,15 @@ theorem not_hochschildVanishesAt_four_zigzagStrictAInfinityAlgebra [Nontrivial k
     {δ : Fin 4 → G.Dart} (hδ : Function.Injective δ) {v : V} (hv : ∀ i, (δ i).snd = v) :
     ¬(𝒵).HochschildVanishesAt ⟨4, by norm_num⟩ := by
   intro hvan
-  have hc : ∀ w ∈ (Finsupp.single (fun t ↦ zigzagBacktrackWalk G (δ 3).symm (δ 0) (t + 1))
-      (1 : k)).support, ∀ i, (w i).fst = (w (i + 1)).snd := by
-    intro w hw i
-    rw [Finset.mem_singleton.mp (Finsupp.support_single_subset hw)]
-    simpa [add_assoc] using zigzagBacktrackWalk_fst_eq_snd (by simp [hv]) 1 i
-  set 𝒜 := zigzagLoopAInfinityAlgebra hns _ hc
-  have hG : 𝒜.grading = (𝒵).grading :=
-    zigzagLoopAInfinityAlgebra_grading_eq_zigzagStrictAInfinityAlgebra_grading _ _
-  -- The loop deformation agrees with the strict zigzag algebra up to arity three.
-  have hm : ∀ n, 0 < n → n ≤ 3 → 𝒜.m n = (𝒵).m n := by
-    intro n hn hn3
-    rcases eq_or_ne n 2 with rfl | h₂
-    · ext x
-      rw [zigzagLoopAInfinityAlgebra_m_two_apply, zigzagStrictAInfinityAlgebra_m_two_apply]
-    · rw [zigzagLoopAInfinityAlgebra_m_eq_zero _ _ h₂ (by omega),
-        zigzagStrictAInfinityAlgebra_m_eq_zero h₂]
-  have hcocycle : (𝒵).hochschildDifferential 1 (𝒜.obstruction 𝒵 ⟨4, by norm_num⟩) = 0 :=
-    AInfinityAlgebra.hochschildDifferential_obstruction isMinimal_zigzagStrictAInfinityAlgebra
-      (fun n hn ↦ zigzagStrictAInfinityAlgebra_m_eq_zero (by omega)) hG (n := 3) (by norm_num)
-      fun z hz ↦ AInfinityAlgebra.taylor_apply_eq_of_forall_m_eq hG hm hz
+  have hc := fst_eq_snd_of_mem_support_single_rotate_zigzagBacktrackWalk
+    ((hv 3).trans (hv 0).symm) (1 : k)
   obtain ⟨φ, hφ, -, hφc⟩ := AInfinityAlgebra.hochschildVanishesAt_iff.mp hvan _
-    (AInfinityAlgebra.isHomogeneous_obstruction hG _)
-    (AInfinityAlgebra.obstruction_comp_lengthProj _ _ _) hcocycle
+    (AInfinityAlgebra.isHomogeneous_obstruction
+      (zigzagLoopAInfinityAlgebra_grading_eq_zigzagStrictAInfinityAlgebra_grading _ hc) _)
+    (AInfinityAlgebra.obstruction_comp_lengthProj _ _ _)
+    (hochschildDifferential_obstruction_zigzagLoopAInfinityAlgebra _ hc)
   exact not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_single hδ hv
-    hc ⟨φ, hφ, hφc⟩
+    ⟨φ, hφ, hφc⟩
 
 end Four
 
