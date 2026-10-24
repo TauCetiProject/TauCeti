@@ -5,13 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.Finiteness
 public import TauCeti.GroupTheory.GroupAlgGeom.AlgebraicSet
 import Mathlib.Algebra.EuclideanDomain.Int
 import Mathlib.Algebra.Group.Pi.Lemmas
 import Mathlib.GroupTheory.Commutator.Basic
 import Mathlib.RingTheory.Finiteness.Basic
-import Mathlib.RingTheory.Finiteness.Prod
 import Mathlib.RingTheory.Noetherian.Basic
 import Mathlib.RingTheory.PrincipalIdealDomain
 
@@ -28,9 +26,9 @@ it.
 
 The property passes to subgroups (more precisely, to the source of an injective homomorphism
 compatible with the coefficients) and survives restriction of the coefficients along any
-homomorphism `G' →* G`. Finite groups are equationally Noetherian, and so are finitely generated
-commutative groups such as `ℤ`, because a system over a commutative group is a system of linear
-equations whose coefficient vectors span a finitely generated `ℤ`-module. The property is not
+homomorphism `G' →* G`. Finite groups are equationally Noetherian, and so are commutative groups
+such as `ℤ`, because a system over a commutative group is a system of linear equations whose
+exponent vectors span a finitely generated submodule of `ℤⁿ`. The property is not
 automatic: in a direct product of infinitely many copies of a nonabelian group, the system
 `[x, aᵢ] = 1` asking `x` to commute with the copy `aᵢ` of a fixed element in every coordinate is
 equivalent to none of its finite subsystems.
@@ -50,10 +48,8 @@ equivalent to none of its finite subsystems.
 * `TauCeti.GroupAlgGeom.IsEquationallyNoetherian.comp`: restricting the coefficients preserves the
   property.
 * `TauCeti.GroupAlgGeom.isEquationallyNoetherian_of_finite`,
-  `TauCeti.GroupAlgGeom.isEquationallyNoetherian_of_commGroup_of_fg`: finite groups and finitely
-  generated commutative groups are equationally Noetherian.
-* `TauCeti.GroupAlgGeom.exists_subsingleton_V_eq`: with at most one point, for instance with no
-  variables, a single equation suffices.
+  `TauCeti.GroupAlgGeom.isEquationallyNoetherian_of_commGroup`: finite groups and commutative
+  groups are equationally Noetherian.
 * `TauCeti.GroupAlgGeom.not_isEquationallyNoetherian_pi`: an infinite direct power of a nonabelian
   group is not equationally Noetherian over itself.
 
@@ -70,7 +66,7 @@ namespace TauCeti.GroupAlgGeom
 open Monoid.Coprod
 open scoped commutatorElement
 
-variable {G G' H K X Y : Type*} [Group G] [Group G'] [Group H] [Group K]
+variable {G G' H K X : Type*} [Group G] [Group G'] [Group H] [Group K]
 
 /-- `H` is equationally Noetherian over the coefficients `ι : G →* H` when every system of
 equations `S ⊆ G[X]` in finitely many variables has a finite subsystem `S₀ ⊆ S` with the same
@@ -78,20 +74,6 @@ solutions in `H`. The variables are taken to be `Fin n`; see
 `IsEquationallyNoetherian.exists_finite` for an arbitrary finite type of variables. -/
 def IsEquationallyNoetherian (ι : G →* H) : Prop :=
   ∀ (n : ℕ) (S : Set (GX G (Fin n))), ∃ S₀ ⊆ S, S₀.Finite ∧ V ι S₀ = V ι S
-
-/-- A homomorphism `m : G[X] →* G'[Y]` together with a map of points `θ` compatible with
-evaluation carries finite subsystems of `m(S)` with the same solutions back to finite subsystems
-of `S` with the same solutions. -/
-private theorem exists_finite_V_eq_of_map {ι : G →* H} {ι' : G' →* H}
-    (m : GX G X →* GX G' Y) (θ : (X → H) → (Y → H))
-    (hθ : ∀ v s, eval ι' (θ v) (m s) = eval ι v s) {S : Set (GX G X)}
-    (h : ∃ T ⊆ m '' S, T.Finite ∧ V ι' T = V ι' (m '' S)) :
-    ∃ S₀ ⊆ S, S₀.Finite ∧ V ι S₀ = V ι S := by
-  obtain ⟨S₀, hS₀, hfin, hV⟩ := Set.exists_subset_image_finite_and.1 h
-  have key (T : Set (GX G X)) : V ι T = θ ⁻¹' V ι' (m '' T) := by
-    ext v
-    simp [hθ]
-  exact ⟨S₀, hS₀, hfin, by rw [key, key, hV]⟩
 
 namespace IsEquationallyNoetherian
 
@@ -144,99 +126,80 @@ theorem isEquationallyNoetherian_iff {ι : G →* H} :
     exists_finite_V_eq_of_map (Monoid.Coprod.map (.id G) (FreeGroup.map ULift.up))
       (· ∘ ULift.down) (fun _ _ => by simp [Function.comp_def]) (h (ULift (Fin n)) _)⟩
 
-/-! ### Finite groups and systems with few points -/
-
-/-- If there are only finitely many points `X → H`, every system is equivalent to a finite
-subsystem: one equation failing at each non-solution suffices. -/
-theorem exists_finite_V_eq_of_finite {ι : G →* H} [Finite (X → H)] (S : Set (GX G X)) :
-    ∃ S₀ ⊆ S, S₀.Finite ∧ V ι S₀ = V ι S := by
-  have hw (v : ↥(V ι S)ᶜ) : ∃ s ∈ S, eval ι v s ≠ 1 := by
-    have hv := v.2
-    simpa only [Set.mem_compl_iff, mem_V, not_forall, exists_prop] using hv
-  choose w hwS hw using hw
-  have hsub : Set.range w ⊆ S := Set.range_subset_iff.2 hwS
-  refine ⟨Set.range w, hsub, Set.finite_range w, (V_antitone ι hsub).antisymm' fun v hv => ?_⟩
-  by_contra hvS
-  exact hw ⟨v, hvS⟩ (mem_V.1 hv _ ⟨⟨v, hvS⟩, rfl⟩)
+/-! ### Finite groups -/
 
 /-- Finite groups are equationally Noetherian, over any coefficients. -/
 theorem isEquationallyNoetherian_of_finite [Finite H] (ι : G →* H) :
     IsEquationallyNoetherian ι := fun _ S =>
   exists_finite_V_eq_of_finite S
 
-/-- If there is at most one point `X → H`, for instance when there are no variables, a single
-equation suffices: a system with a solution is equivalent to the empty subsystem, and a system
-without one is equivalent to any of its equations that fails at the point. -/
-theorem exists_subsingleton_V_eq {ι : G →* H} [Subsingleton (X → H)] (S : Set (GX G X)) :
-    ∃ S₀ ⊆ S, S₀.Subsingleton ∧ V ι S₀ = V ι S := by
-  by_cases hS : ∃ s ∈ S, ∃ v, eval ι v s ≠ 1
-  · obtain ⟨s, hs, v, hv⟩ := hS
-    have hs₀ : V ι {s} = ∅ :=
-      Set.eq_empty_iff_forall_notMem.2 fun u hu => hv (Subsingleton.elim v u ▸ mem_V.1 hu s rfl)
-    refine ⟨{s}, Set.singleton_subset_iff.2 hs, Set.subsingleton_singleton, ?_⟩
-    rw [hs₀, eq_comm, ← Set.subset_empty_iff, ← hs₀]
-    exact V_antitone ι (Set.singleton_subset_iff.2 hs)
-  · refine ⟨∅, Set.empty_subset S, Set.subsingleton_empty, ?_⟩
-    simp only [not_exists, not_and, not_not] at hS
-    rw [V_empty]
-    exact (Set.eq_univ_of_forall fun v => mem_V.2 fun s hs => hS s hs v).symm
-
-/-! ### Finitely generated commutative groups -/
+/-! ### Commutative groups -/
 
 section CommGroup
 
 variable {H : Type*} [CommGroup H]
 
 /-- If equations over `G` are recorded in a Noetherian `ℤ`-module `M` through `ψ`, in such a way
-that each evaluation vanishes exactly on the kernel of an additive map out of `M`, then every
-system is equivalent to a finite subsystem: finitely many of the vectors `ψ s`, `s ∈ S`, span the
-same submodule as all of them. -/
+that any two evaluations agree exactly on the kernel of an additive map out of `M`, then every
+system `S` is equivalent to a finite subsystem. Finitely many of the vectors `ψ s`, `s ∈ S`, span
+the same submodule as all of them, so every equation of `S` is constant on the solutions of the
+corresponding equations; either it is `1` there, or adding one equation leaves no solutions. -/
 private theorem exists_finite_V_eq_of_isNoetherian {ι : G →* H} {M A : Type*} [AddCommGroup M]
     [IsNoetherian ℤ M] [AddGroup A] (ψ : GX G X → M)
-    (hψ : ∀ v : X → H, ∃ L : M →+ A, ∀ w, L (ψ w) = 0 ↔ eval ι v w = 1) (S : Set (GX G X)) :
+    (hψ : ∀ u v : X → H, ∃ L : M →+ A, ∀ w, L (ψ w) = 0 ↔ eval ι u w = eval ι v w)
+    (S : Set (GX G X)) :
     ∃ S₀ ⊆ S, S₀.Finite ∧ V ι S₀ = V ι S := by
   classical
   obtain ⟨T, hTS, hT⟩ := (Submodule.fg_span_iff_fg_span_finset_subset (ψ '' S)).1
     (IsNoetherian.noetherian (Submodule.span ℤ (ψ '' S)))
-  obtain ⟨S₀, hS₀, hfin, hspan⟩ := (Set.exists_subset_image_finite_and
+  obtain ⟨S₁, hS₁, hfin, hspan⟩ := (Set.exists_subset_image_finite_and
     (p := fun t => Submodule.span ℤ t = Submodule.span ℤ (ψ '' S))).1
       ⟨(T : Set M), hTS, T.finite_toSet, hT.symm⟩
-  refine ⟨S₀, hS₀, hfin, ?_⟩
-  ext v
-  obtain ⟨L, hL⟩ := hψ v
-  have key (T : Set (GX G X)) :
-      v ∈ V ι T ↔ Submodule.span ℤ (ψ '' T) ≤ L.ker.toIntSubmodule := by
-    rw [Submodule.span_le, Set.image_subset_iff]
-    simp [Set.subset_def, hL]
-  rw [key, key, hspan]
+  -- Every equation of `S` takes the same value at any two solutions of `S₁`.
+  have hconst {u v} (hu : u ∈ V ι S₁) (hv : v ∈ V ι S₁) {w} (hw : w ∈ S) :
+      eval ι u w = eval ι v w := by
+    obtain ⟨L, hL⟩ := hψ u v
+    have hle : Submodule.span ℤ (ψ '' S₁) ≤ L.ker.toIntSubmodule := by
+      rw [Submodule.span_le, Set.image_subset_iff]
+      intro s hs
+      simp [hL, mem_V.1 hu s hs, mem_V.1 hv s hs]
+    exact (hL w).1 (hle (hspan ▸ Submodule.subset_span (Set.mem_image_of_mem ψ hw)))
+  by_cases h : V ι S₁ ⊆ V ι S
+  · exact ⟨S₁, hS₁, hfin, h.antisymm (V_antitone ι hS₁)⟩
+  · obtain ⟨u, hu, huS⟩ := Set.not_subset.1 h
+    obtain ⟨w, hw, hwu⟩ : ∃ w ∈ S, eval ι u w ≠ 1 := by simpa using huS
+    have hsub : insert w S₁ ⊆ S := Set.insert_subset hw hS₁
+    refine ⟨insert w S₁, hsub, hfin.insert w, (V_antitone ι hsub).antisymm' fun v hv => ?_⟩
+    exact absurd ((hconst hu (V_antitone ι (Set.subset_insert w S₁) hv) hw).trans
+      (mem_V.1 hv w (Set.mem_insert w S₁))) hwu
 
-/-- Finitely generated commutative groups are equationally Noetherian, over any coefficients.
-At a point `v`, an equation `w` evaluates to `w(1) * ∏ₓ v x ^ nₓ(w)`, where `nₓ(w)` is the
-exponent sum of the variable `x` in `w`; so a system is a system of linear equations whose
-coefficient vectors `(w(1), n(w))` lie in the Noetherian `ℤ`-module `H × ℤⁿ`. -/
-theorem isEquationallyNoetherian_of_commGroup_of_fg [Group.FG H] (ι : G →* H) :
-    IsEquationallyNoetherian ι := by
+/-- Commutative groups are equationally Noetherian, over any coefficients. At a point `v`, an
+equation `w` evaluates to `w(1) * ∏ₓ v x ^ nₓ(w)`, where `nₓ(w)` is the exponent sum of the
+variable `x` in `w`; so two points give the same value on `w` exactly when the exponent vector
+`n(w)`, which lies in the Noetherian `ℤ`-module `ℤⁿ`, is in the kernel of an additive map. -/
+theorem isEquationallyNoetherian_of_commGroup (ι : G →* H) : IsEquationallyNoetherian ι := by
   classical
   intro n S
-  have : Module.Finite ℤ (Additive H) :=
-    Module.Finite.iff_addGroup_fg.2 (GroupFG.iff_add_fg.1 inferInstance)
   -- The exponent sum of the variable `x`.
   let e (x : Fin n) : GX G (Fin n) →* Multiplicative ℤ :=
     eval 1 fun y => if y = x then Multiplicative.ofAdd 1 else 1
-  refine exists_finite_V_eq_of_isNoetherian
-    (M := Additive H × (Fin n → ℤ)) (fun w => (Additive.ofMul (eval ι 1 w), fun x => (e x w).toAdd))
-    (fun v => ⟨AddMonoidHom.fst _ _ + ∑ x, (zmultiplesHom _ (Additive.ofMul (v x))).comp
-      ((Pi.evalAddMonoidHom (fun _ => ℤ) x).comp (AddMonoidHom.snd _ _)), fun w => ?_⟩) S
-  have heval : eval ι v = eval ι 1 * ∏ x, (zpowersHom H (v x)).comp (e x) :=
+  have heval (v : Fin n → H) : eval ι v = eval ι 1 * ∏ x, (zpowersHom H (v x)).comp (e x) :=
     hom_ext (MonoidHom.ext fun _ => by simp [e])
       (FreeGroup.ext_hom _ _ fun y => by simp [e, apply_ite (zpowersHom H _)])
-  rw [heval, ← ofMul_eq_zero]
-  simp [ofMul_mul, ofMul_prod, ofMul_zpow]
+  refine exists_finite_V_eq_of_isNoetherian (A := Additive H) (fun w x => (e x w).toAdd)
+    (fun u v => ⟨∑ x, (zmultiplesHom _ (Additive.ofMul (u x / v x))).comp
+      (Pi.evalAddMonoidHom (fun _ => ℤ) x), fun w => ?_⟩) S
+  calc _ ↔ ∏ x, (u x / v x) ^ (e x w).toAdd = 1 := by
+        rw [← ofMul_eq_zero]
+        simp [ofMul_prod, ofMul_zpow]
+    _ ↔ _ := by
+        rw [heval u, heval v]
+        simp [div_zpow, Finset.prod_div_distrib, div_eq_one]
 
 /-- The infinite cyclic group is equationally Noetherian over itself. -/
 theorem isEquationallyNoetherian_int :
     IsEquationallyNoetherian (MonoidHom.id (Multiplicative ℤ)) :=
-  isEquationallyNoetherian_of_commGroup_of_fg _
+  isEquationallyNoetherian_of_commGroup _
 
 end CommGroup
 
