@@ -39,8 +39,8 @@ continuous labelling of the roots; the matching is made separately for each near
   continuity of roots.
 * `Polynomial.Monic.exists_rel_roots_norm_sub_lt`: the multiset form of continuity of roots, the
   root multisets of `f` and `g` being related by `Multiset.Rel` for `‖z - w‖ < ε`.
-* `Polynomial.Monic.rel_roots_iff_countP_roots_mem_ball`: when the `ε`-discs around the distinct
-  roots of `f` are disjoint, the multiset form and the disc form are equivalent.
+* `Polynomial.rel_roots_iff_countP_roots_mem_ball`: when the `ε`-discs around the distinct roots of
+  `f` are disjoint, the multiset form and the disc form are equivalent.
 * `Polynomial.eventually_exists_C_mul_prod_X_sub_C_norm_sub_lt`: the matching for a family of
   polynomials of fixed degree with continuous coefficients, normalized by its nonvanishing leading
   coefficient.
@@ -168,20 +168,29 @@ theorem Monic.exists_prod_X_sub_C_norm_sub_lt_iff {f g : K[X]} (hf : f.Monic) (h
     rw [Function.comp_apply, hσi, norm_sub_rev]
     exact hφε _ (hb_mem i)
 
+omit [IsAlgClosed K] in
 open scoped Classical in
-/-- **The multiset and disc forms of a matching agree.** Let `f` and `g` be monic of the same
-degree, and suppose the `ε`-discs around the distinct roots of `f` are pairwise disjoint. Then the
-root multisets of `f` and `g` are related by `Multiset.Rel` for the relation `‖z - w‖ < ε` exactly
-when each disc around a root `z` of `f` contains `rootMultiplicity z f` roots of `g`, counted with
-multiplicity, and every root of `g` lies in one of these discs. -/
-theorem Monic.rel_roots_iff_countP_roots_mem_ball {f g : K[X]} (hf : f.Monic) (hg : g.Monic)
-    (hdeg : g.natDegree = f.natDegree) {ε : ℝ}
+/-- **The multiset and disc forms of a matching agree.** Suppose the `ε`-discs around the distinct
+roots of `f` are pairwise disjoint. Then the root multisets of `f` and `g` are related by
+`Multiset.Rel` for the relation `‖z - w‖ < ε` exactly when each disc around a root `z` of `f`
+contains `rootMultiplicity z f` roots of `g`, counted with multiplicity, and every root of `g` lies
+in one of these discs. -/
+theorem rel_roots_iff_countP_roots_mem_ball {f g : K[X]} {ε : ℝ}
     (hsep : ∀ z ∈ f.roots, ∀ w ∈ f.roots, z ≠ w → 2 * ε ≤ ‖z - w‖) :
     f.roots.Rel (fun z w => ‖z - w‖ < ε) g.roots ↔
       (∀ z ∈ f.roots, g.roots.countP (· ∈ ball z ε) = f.rootMultiplicity z) ∧
-        ∀ w ∈ g.roots, ∃ z ∈ f.roots, ‖w - z‖ < ε :=
-  (hf.rel_roots_iff_exists_prod_X_sub_C hg (IsAlgClosed.splits f) (IsAlgClosed.splits g)).trans
-    (hf.exists_prod_X_sub_C_norm_sub_lt_iff hg hdeg hsep)
+        ∀ w ∈ g.roots, ∃ z ∈ f.roots, ‖w - z‖ < ε := by
+  -- a point of `K` is within `ε` of at most one root of `f`
+  have huniq : ∀ w ∈ g.roots, ∀ z ∈ f.roots, ∀ z' ∈ f.roots, ‖z - w‖ < ε → ‖z' - w‖ < ε →
+      z = z' := by
+    intro w _ z hz z' hz' h h'
+    by_contra hne
+    have := hsep z hz z' hz' hne
+    have := norm_sub_le_norm_sub_add_norm_sub z w z'
+    have := norm_sub_rev z' w
+    linarith
+  rw [Multiset.rel_iff_forall_countP_eq_count huniq]
+  simp only [mem_ball, dist_eq_norm, norm_sub_rev _ (_ : K), count_roots]
 
 omit [IsAlgClosed K] in
 /-- **Distinct roots under a matching of roots.** Let `a` and `b` enumerate the roots of `f` and
