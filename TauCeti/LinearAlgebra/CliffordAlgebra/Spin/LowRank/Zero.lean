@@ -54,6 +54,7 @@ theorem vectorNormalizer_eq_top_of_subsingleton [Subsingleton V] :
     vectorNormalizer Q = ⊤ := by
   rw [eq_top_iff]
   intro x _
+  rw [mem_vectorNormalizer_iff]
   constructor <;> intro m <;> simp [Subsingleton.elim m 0]
 
 /-- The dimension-zero Clifford vector normalizer is the full scalar unit group. -/
