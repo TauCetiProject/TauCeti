@@ -82,6 +82,13 @@ theorem convex_convexSection (hu : ConvexOn ℝ Ω u) : Convex ℝ (convexSectio
   rw [convexSection_eq_sep_sub]
   exact (hu.sub (ℓ.concaveOn hu.1)).convex_lt _
 
+/-- On a section of a convex function, adding a linear function and a constant to the potential
+keeps it convex. With `L = -ℓ` this subtracts the plane of the section from the potential. -/
+theorem convexOn_convexSection_add_linearMap (hu : ConvexOn ℝ Ω u) (L : E →ₗ[ℝ] ℝ) (c : ℝ) :
+    ConvexOn ℝ (convexSection Ω u x ℓ h) fun y ↦ u y + L y + c :=
+  ((hu.subset convexSection_subset (convex_convexSection hu)).add
+    (L.convexOn (convex_convexSection hu))).add_const c
+
 /-- A supporting slope gives a nonempty section exactly at positive heights. -/
 theorem convexSection_nonempty_iff (hx : x ∈ Ω)
     (hℓ : ∀ y ∈ Ω, u x + (ℓ y - ℓ x) ≤ u y) :
@@ -209,8 +216,16 @@ theorem closure_convexSection_inter_subset (hu : ContinuousOn u Ω) (hℓ : Cont
       continuousWithinAt_const (fun _ hz ↦ hz.2.le)
   exact ⟨hyΩ, hbound.trans_lt (add_lt_add_right hhk _)⟩
 
+/-- If the closure of a section lies in the domain of a continuous potential, then adding a
+continuous linear function and a constant to the potential keeps it continuous on that closure. -/
+theorem continuousOn_closure_convexSection_add_linearMap (hu : ContinuousOn u Ω)
+    {L : E →ₗ[ℝ] ℝ} (hL : Continuous L) (hS : closure (convexSection Ω u x ℓ h) ⊆ Ω) (c : ℝ) :
+    ContinuousOn (fun y ↦ u y + L y + c) (closure (convexSection Ω u x ℓ h)) :=
+  ((hu.mono hS).add hL.continuousOn).add continuousOn_const
+
 /-- If the closure of a section lies in the open domain of a continuous potential, then on the
-frontier of the section the potential equals the supporting plane raised by the height. -/
+frontier of the section the potential equals the plane through `(x, u x)` with slope `ℓ`, raised
+by the height. -/
 theorem eq_of_mem_frontier_convexSection (hΩ : IsOpen Ω) (hu : ContinuousOn u Ω)
     (hℓ : Continuous ℓ) (hS : closure (convexSection Ω u x ℓ h) ⊆ Ω)
     (hy : y ∈ frontier (convexSection Ω u x ℓ h)) : u y = u x + ℓ (y - x) + h := by
