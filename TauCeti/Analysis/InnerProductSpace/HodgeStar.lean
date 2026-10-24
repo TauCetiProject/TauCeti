@@ -309,6 +309,7 @@ theorem two_mul_finrank_eigenspace_hodgeStar_neg_one {k : ℕ} (hk : Even k) (hk
   o.two_mul_finrank_eigenspace_hodgeStar hk hk₀ hkk (by norm_num)
 
 /-- A form in the `1`-eigenspace of the Hodge star is self-dual: `⋆x = x`. -/
+@[simp]
 theorem hodgeStar_coe_of_mem_eigenspace_one {k : ℕ} (hkk : k + k = finrank ℝ V)
     (x : Module.End.eigenspace (o.hodgeStar hkk : Module.End ℝ (⋀[ℝ]^k V)) 1) :
     o.hodgeStar hkk x = x := by

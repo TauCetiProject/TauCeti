@@ -275,10 +275,24 @@ theorem norm_quadraticTwoForm_sub_le (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v
   have := norm_nonneg (ψ - φ)
   nlinarith
 
+private theorem quadraticTwoForm_eq_comp :
+    quadraticTwoForm o ρ hQ hkl =
+      ((4 : ℝ)⁻¹ • cliffordRestrictionAdjoint o ρ hQ hkl) ∘ quadraticEnd := by
+  ext1 ψ
+  rw [quadraticTwoForm_def, Function.comp_apply, smul_apply]
+
+private theorem quadraticTwoFormPolar_eq_comp (ψ : positiveHalfSpinors o ρ) :
+    quadraticTwoFormPolar o ρ hQ hkl ψ =
+      ((4 : ℝ)⁻¹ • cliffordRestrictionAdjoint o ρ hQ hkl).comp (quadraticEndPolar ψ) := by
+  ext1 φ
+  rw [quadraticTwoFormPolar_apply, ContinuousLinearMap.comp_apply,
+    smul_apply]
+
 /-- The real Fréchet derivative of `q` at `ψ` is `q'(ψ, ·)`; this holds in the strict sense. -/
 theorem hasStrictFDerivAt_quadraticTwoForm (ψ : positiveHalfSpinors o ρ) :
-    HasStrictFDerivAt (quadraticTwoForm o ρ hQ hkl) (quadraticTwoFormPolar o ρ hQ hkl ψ) ψ :=
-  ((4 : ℝ)⁻¹ • cliffordRestrictionAdjoint o ρ hQ hkl).hasStrictFDerivAt.comp ψ
+    HasStrictFDerivAt (quadraticTwoForm o ρ hQ hkl) (quadraticTwoFormPolar o ρ hQ hkl ψ) ψ := by
+  rw [quadraticTwoForm_eq_comp, quadraticTwoFormPolar_eq_comp]
+  exact ((4 : ℝ)⁻¹ • cliffordRestrictionAdjoint o ρ hQ hkl).hasStrictFDerivAt.comp ψ
     (hasStrictFDerivAt_quadraticEnd ψ)
 
 /-- The real Fréchet derivative of `q` at `ψ` is `q'(ψ, ·)`. -/
@@ -293,7 +307,8 @@ theorem fderiv_quadraticTwoForm (ψ : positiveHalfSpinors o ρ) :
 
 /-- `q` is a smooth map of the underlying real vector space. -/
 theorem contDiff_quadraticTwoForm {n : WithTop ℕ∞} :
-    ContDiff ℝ n (quadraticTwoForm o ρ hQ hkl) :=
-  ((4 : ℝ)⁻¹ • cliffordRestrictionAdjoint o ρ hQ hkl).contDiff.comp contDiff_quadraticEnd
+    ContDiff ℝ n (quadraticTwoForm o ρ hQ hkl) := by
+  rw [quadraticTwoForm_eq_comp]
+  exact ((4 : ℝ)⁻¹ • cliffordRestrictionAdjoint o ρ hQ hkl).contDiff.comp contDiff_quadraticEnd
 
 end TauCeti.SeibergWitten
