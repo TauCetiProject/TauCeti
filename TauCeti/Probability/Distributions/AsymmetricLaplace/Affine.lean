@@ -93,6 +93,21 @@ theorem asymmetricLaplacePDFReal_neg (m l r x : ℝ) :
     · simp [asymmetricLaplacePDFReal_of_nonpos_left (le_of_not_gt hr),
         asymmetricLaplacePDFReal_of_nonpos_right (le_of_not_gt hr)]
 
+/-- Negating the location and argument exchanges the two rates in the `ℝ≥0∞`-valued
+asymmetric Laplace density. -/
+theorem asymmetricLaplacePDF_neg (m l r x : ℝ) :
+    asymmetricLaplacePDF (-m) r l x = asymmetricLaplacePDF m l r (-x) := by
+  simp only [asymmetricLaplacePDF_eq_ofReal, asymmetricLaplacePDFReal_neg]
+
+/-- A negative affine change of variables exchanges the asymmetric Laplace rates and divides
+them by the absolute slope. The real density identity holds for all rate parameters. -/
+theorem asymmetricLaplacePDFReal_affine_neg (m l r a x : ℝ) {b : ℝ} (hb : b < 0) :
+    asymmetricLaplacePDFReal (a + b * m) (r / |b|) (l / |b|) x =
+      |b|⁻¹ * asymmetricLaplacePDFReal m l r ((x - a) / b) := by
+  have h := asymmetricLaplacePDFReal_affine_pos (-m) r l a x (neg_pos.mpr hb)
+  rw [asymmetricLaplacePDFReal_neg] at h
+  simpa [abs_of_neg hb, div_neg] using h
+
 /-- The affine density of an asymmetric Laplace law at a positive slope is the named density
 with divided rates. -/
 -- Prefer the family density to the generic expansion by affineDensity_apply.
@@ -103,6 +118,17 @@ theorem affineDensity_asymmetricLaplacePDF_pos (m l r a x : ℝ) {b : ℝ} (hb :
   rw [affineDensity_apply, abs_of_pos hb, asymmetricLaplacePDF_eq_ofReal,
     asymmetricLaplacePDF_eq_ofReal, asymmetricLaplacePDFReal_affine_pos m l r a x hb,
     ENNReal.ofReal_mul (inv_nonneg.mpr hb.le)]
+
+/-- The affine density of an asymmetric Laplace law at a negative slope is the named density
+with exchanged rates divided by the absolute slope. -/
+-- Prefer the family density to the generic expansion by affineDensity_apply.
+@[simp 1100]
+theorem affineDensity_asymmetricLaplacePDF_neg (m l r a x : ℝ) {b : ℝ} (hb : b < 0) :
+    affineDensity a b (asymmetricLaplacePDF m l r) x =
+      asymmetricLaplacePDF (a + b * m) (r / |b|) (l / |b|) x := by
+  rw [affineDensity_apply, asymmetricLaplacePDF_eq_ofReal, asymmetricLaplacePDF_eq_ofReal,
+    asymmetricLaplacePDFReal_affine_neg m l r a x hb,
+    ENNReal.ofReal_mul (inv_nonneg.mpr (abs_nonneg b))]
 
 /-- Positive affine transport of asymmetric Laplace laws, including invalid-rate zero laws. -/
 @[simp]
@@ -127,8 +153,7 @@ theorem asymmetricLaplaceMeasure_map_neg (m l r : ℝ) :
     asymmetricLaplaceMeasure_eq_withDensity]
   congr 1
   ext x
-  simp [affineDensity_apply, asymmetricLaplacePDF_eq_ofReal, asymmetricLaplacePDFReal_neg,
-    div_neg]
+  simp
 
 /-- Negative affine transport exchanges the asymmetric Laplace rates and divides them by
 the absolute value of the slope. This includes invalid-rate zero laws. -/
