@@ -33,6 +33,8 @@ Harish-Chandra isomorphism by Chevalley's restriction theorem.
 ## Main results
 
 * `TauCeti.killingSymmetricEquiv_ι`: a generator `x` goes to the linear function `κ x`.
+* `TauCeti.killingSymmetricEquiv_symm_ι`: conversely, a linear function `f` goes back to the
+  generator `x` with `κ x = f`.
 * `TauCeti.killingSymmetricEquiv_lieModuleDerivation`: the equivalence intertwines the adjoint
   action on `S(L)` with the coadjoint action on `S(L*)`.
 * `TauCeti.map_killingSymmetricEquiv_lieInvariants`: it carries the invariants `S(L)^L` onto the
@@ -65,6 +67,13 @@ noncomputable def killingDuality : L ≃ₗ⁅K,L⁆ Dual K L :=
 theorem killingDuality_apply (x y : L) : killingDuality K L x y = killingForm K L x y :=
   LinearMap.BilinForm.lieModuleEquivDual_apply _ _ _ x y
 
+/-- The inverse of the Killing duality sends a linear form `f` to the element `x` with
+`κ(x, y) = f y` for all `y`. -/
+@[simp]
+theorem killingForm_killingDuality_symm_apply (f : Dual K L) (y : L) :
+    killingForm K L ((killingDuality K L).symm f) y = f y :=
+  LinearMap.BilinForm.lieModuleEquivDual_symm_apply _ _ _ f y
+
 /-- The linear map underlying the Killing duality is the Killing form, read as a linear map
 `L → L*`. -/
 theorem toLinearMap_killingDuality :
@@ -88,6 +97,22 @@ theorem killingSymmetricEquiv_apply (p : SymmetricAlgebra K L) :
 theorem killingSymmetricEquiv_ι (x : L) :
     killingSymmetricEquiv K L (ι K L x) = ι K (Dual K L) (killingForm K L x) := by
   rw [killingSymmetricEquiv_apply, map_apply_ι]
+
+/-- The inverse of the Killing equivalence `S(L) ≃ S(L*)` is the symmetric-algebra equivalence
+induced by the inverse of the Killing duality. -/
+theorem killingSymmetricEquiv_symm :
+    (killingSymmetricEquiv K L).symm =
+      mapEquiv K ((killingDuality K L).symm : Dual K L ≃ₗ[K] L) := by
+  rw [killingSymmetricEquiv, mapEquiv_symm]
+  rfl
+
+/-- The inverse of the Killing equivalence `S(L) ≃ S(L*)` sends a linear function `f` to the
+generator `x` with `κ x = f`. -/
+@[simp]
+theorem killingSymmetricEquiv_symm_ι (f : Dual K L) :
+    (killingSymmetricEquiv K L).symm (ι K (Dual K L) f) = ι K L ((killingDuality K L).symm f) := by
+  rw [killingSymmetricEquiv_symm, mapEquiv_ι]
+  rfl
 
 /-- **The Killing equivalence intertwines the adjoint and coadjoint actions**: it carries the
 adjoint derivation of `x` on `S(L)` to the coadjoint derivation of `x` on `S(L*)`. -/

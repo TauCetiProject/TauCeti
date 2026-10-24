@@ -151,6 +151,14 @@ theorem lieModuleEquivDual_apply (B : LinearMap.BilinForm K M) (hB : B.Nondegene
     (hBL : B.lieInvariant L) (m n : M) : B.lieModuleEquivDual hB hBL m n = B m n :=
   (rfl)
 
+/-- The inverse of the Lie module equivalence `M ≃ M*` of a nondegenerate invariant form `B` sends
+a linear form `f` to the element `m` with `B m n = f n` for all `n`. -/
+@[simp]
+theorem lieModuleEquivDual_symm_apply (B : LinearMap.BilinForm K M) (hB : B.Nondegenerate)
+    (hBL : B.lieInvariant L) (f : Dual K M) (n : M) :
+    B ((B.lieModuleEquivDual hB hBL).symm f) n = f n :=
+  B.apply_toDual_symm_apply (hB := hB) f n
+
 /-- The linear equivalence underlying `LinearMap.BilinForm.lieModuleEquivDual` is
 `LinearMap.BilinForm.toDual`. -/
 @[simp]
