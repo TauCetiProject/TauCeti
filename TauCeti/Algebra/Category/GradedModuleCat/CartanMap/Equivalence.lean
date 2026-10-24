@@ -130,9 +130,7 @@ theorem gradedFiniteModulesLaurentK0Equiv_of (M : (gradedFiniteModules 𝒜).Ful
         (LaurentK0.of.{uA} (gradedFiniteModulesExactStructure 𝒜) M) =
       LaurentK0.of.{uB} (gradedFiniteModulesExactStructure ℬ)
         ((e.congrFullSubcategory hfin).functor.obj M) :=
-  (LaurentK0.mapEquiv_of.{uA, uB} _ M).trans <|
-    congrArg (fun F ↦ LaurentK0.of.{uB} (gradedFiniteModulesExactStructure ℬ) (F.functor.obj M))
-      (GradedExactEquiv.congrFullSubcategory_equiv _ _ _ _ _ hfin)
+  LaurentK0.mapEquiv_congrFullSubcategory_of.{uA, uB} _ _ _ _ _ hfin M
 
 /-- The inverse isomorphism `G₀^gr(mod B) ≃ G₀^gr(mod A)` sends `[N]` to `[e.inverse.obj N]`. -/
 @[simp]
@@ -141,9 +139,7 @@ theorem gradedFiniteModulesLaurentK0Equiv_symm_of (M : (gradedFiniteModules ℬ)
         (LaurentK0.of.{uB} (gradedFiniteModulesExactStructure ℬ) M) =
       LaurentK0.of.{uA} (gradedFiniteModulesExactStructure 𝒜)
         ((e.congrFullSubcategory hfin).inverse.obj M) :=
-  (LaurentK0.mapEquiv_symm_of.{uA, uB} _ M).trans <|
-    congrArg (fun F ↦ LaurentK0.of.{uA} (gradedFiniteModulesExactStructure 𝒜) (F.inverse.obj M))
-      (GradedExactEquiv.congrFullSubcategory_equiv _ _ _ _ _ hfin)
+  LaurentK0.mapEquiv_congrFullSubcategory_symm_of.{uA, uB} _ _ _ _ _ hfin M
 
 end Finite
 
@@ -173,10 +169,7 @@ theorem gradedFiniteProjectiveModulesLaurentK0Equiv_of
         (LaurentK0.of.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜) P) =
       LaurentK0.of.{uB} (gradedFiniteProjectiveModulesExactStructure ℬ)
         ((e.congrFullSubcategory hproj).functor.obj P) :=
-  (LaurentK0.mapEquiv_of.{uA, uB} _ P).trans <|
-    congrArg
-      (fun F ↦ LaurentK0.of.{uB} (gradedFiniteProjectiveModulesExactStructure ℬ) (F.functor.obj P))
-      (GradedExactEquiv.congrFullSubcategory_equiv _ _ _ _ _ hproj)
+  LaurentK0.mapEquiv_congrFullSubcategory_of.{uA, uB} _ _ _ _ _ hproj P
 
 /-- The inverse isomorphism `K₀^gr(proj B) ≃ K₀^gr(proj A)` sends `[Q]` to `[e.inverse.obj Q]`. -/
 @[simp]
@@ -186,10 +179,7 @@ theorem gradedFiniteProjectiveModulesLaurentK0Equiv_symm_of
         (LaurentK0.of.{uB} (gradedFiniteProjectiveModulesExactStructure ℬ) P) =
       LaurentK0.of.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)
         ((e.congrFullSubcategory hproj).inverse.obj P) :=
-  (LaurentK0.mapEquiv_symm_of.{uA, uB} _ P).trans <|
-    congrArg
-      (fun F ↦ LaurentK0.of.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜) (F.inverse.obj P))
-      (GradedExactEquiv.congrFullSubcategory_equiv _ _ _ _ _ hproj)
+  LaurentK0.mapEquiv_congrFullSubcategory_symm_of.{uA, uB} _ _ _ _ _ hproj P
 
 end Projective
 
