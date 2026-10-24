@@ -37,6 +37,8 @@ Frobenius algebra acting on tensor products indexed by finite sets of circles.
   tensor is the pure tensor of the products over the fibres.
 * `PiTensorProduct.toLinearMap_fiberwiseMul_equiv`: along a bijection it is
   `PiTensorProduct.reindex`.
+* `PiTensorProduct.fiberwiseMul_fiberwiseMul_surjInv`: along a surjection it has a right inverse,
+  multiplication along a section.
 -/
 
 public section
@@ -133,6 +135,15 @@ theorem toLinearMap_fiberwiseMul_equiv (e : σ ≃ τ) :
   funext j
   rw [Finset.prod_eq_single (e.symm j) (fun i hij hi ↦ ?_) (by simp)]
   exact absurd (e.eq_symm_apply.mpr (Finset.mem_filter.mp hij).2) hi
+
+/-- For a constant family, multiplying along a section of a surjection `f` and then along `f` is
+the identity. In particular, multiplication along a surjection is surjective. -/
+theorem fiberwiseMul_fiberwiseMul_surjInv [Fintype τ] [DecidableEq σ] {f : σ → τ}
+    (hf : Function.Surjective f) (x : ⨂[R] _ : τ, B) :
+    fiberwiseMul (A := fun _ ↦ B) f (fiberwiseMul (A := fun _ ↦ B) (Function.surjInv hf) x) =
+      x := by
+  rw [← AlgHom.comp_apply, fiberwiseMul_comp, Function.comp_surjInv, fiberwiseMul_id,
+    AlgHom.id_apply]
 
 end Constant
 

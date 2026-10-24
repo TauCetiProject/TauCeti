@@ -38,7 +38,7 @@ needed for a saddle already known to split one circle into two.
 
 public section
 
-open Finset
+open Finset DualNumber
 
 namespace TauCeti.PDCode
 
@@ -112,6 +112,17 @@ theorem resolutionSplitMap_circleBasis (l : D.ResolvedCircle s → Bool) :
     (fun h ↦ (D.card_circlesAt_eq_two_iff t c).mp ht (Sum.inl.inj h))
     (D.saddleResolvedCircleMap_eq_iff hts hs),
     (D.saddleResolvedCircleMap_eq_crossing_iff hts hs _).mpr (Or.inl rfl)]
+
+/-- Splitting the unit gives `X ⊗ 1 + 1 ⊗ X` on the two circles through `c`, with `1` on
+every other circle. -/
+theorem resolutionSplitMap_one :
+    D.resolutionSplitMap hst hc ht R 1 =
+      PiTensorProduct.singleAlgHom (A := fun _ : D.ResolvedCircle t ↦ R[ε])
+          (.inl ⟦D.crossing c 0⟧) ε +
+        PiTensorProduct.singleAlgHom (A := fun _ : D.ResolvedCircle t ↦ R[ε])
+          (.inl ⟦D.crossing c 2⟧) ε := by
+  rw [← Khovanov.circleBasis_const_false, resolutionSplitMap_circleBasis]
+  simp only [Bool.false_eq_true, ↓reduceIte, Khovanov.circleBasis_update_const_false]
 
 end Basis
 
