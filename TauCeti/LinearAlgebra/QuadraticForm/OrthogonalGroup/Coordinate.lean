@@ -15,8 +15,7 @@ This file relates the intrinsic orthogonal group of a quadratic form to its matr
 model in a chosen basis.  If `D` is the Gram matrix of `Q` and `A` is the matrix
 of a linear automorphism, preservation of `Q` is exactly `Aᵀ * D * A = D`.
 The determinant-one version gives the corresponding coordinate description of the
-special orthogonal group, which is used when comparing Clifford actions with
-matrix orthogonal groups.
+special orthogonal group.
 -/
 
 open scoped Matrix
