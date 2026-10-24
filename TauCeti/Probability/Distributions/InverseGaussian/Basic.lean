@@ -34,7 +34,8 @@ the density on `(0, ∞)`, the classical closed form
 where `Φ` is the standard Gaussian cdf. It tends to `0` at `0⁺` and to `1` at infinity, so the
 improper fundamental theorem of calculus gives total mass one and identifies `F` with the cdf.
 
-The support argument for cdf strict increase follows
+The support argument for cdf strict increase is provided by
+`MeasureTheory.Measure.strictMonoOn_cdf_of_subset_support`, generalized from the original proof of
 `TauCeti.Probability.strictMonoOn_cdf_hyperexponentialMeasure`.
 
 ## Main definitions

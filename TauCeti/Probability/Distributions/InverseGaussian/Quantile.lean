@@ -16,8 +16,10 @@ unique positive solution of its explicit Gaussian-cdf equation. The quantile is 
 and strictly increasing in the level, with limits zero and positive infinity at the two
 endpoints. This characterizes the inverse cdf without introducing a separate inverse function.
 
-The quantile proofs follow the corresponding hyperexponential results in
-`TauCeti.Probability.Distributions.Hyperexponential.Quantile`, using the shared quantile API.
+The quantile proofs use the shared quantile API, in particular
+`MeasureTheory.Measure.tendsto_quantile_nhdsGT_zero_of_ae_le_of_cdf_pos` for the lower endpoint.
+They follow the original hyperexponential proof pattern in
+`TauCeti.Probability.Distributions.Hyperexponential.Quantile`.
 
 ## References
 
