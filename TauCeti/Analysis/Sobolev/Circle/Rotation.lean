@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Sobolev.Circle.Derivative
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 
 import Mathlib.Analysis.Calculus.FDeriv.Partial
-import Mathlib.Analysis.Calculus.MeanValue
+import TauCeti.Analysis.Fourier.Monomial
 
 /-!
 # Rotations of the circle acting on the Sobolev spaces `H^s`
@@ -20,13 +20,15 @@ Fourier-coefficient Sobolev space `H^s` of `TauCeti/Analysis/Sobolev/Circle/Basi
 isometry, for every real order `s`. Rotations are the reparametrizations of a boundary circle by
 the isometries of the circle, so this is the coordinate invariance of `H^s` under them.
 
-The action is strongly continuous: `θ ↦ rotate θ a` is continuous for every `a ∈ H^s`. It is not
-differentiable in `H^s` itself, however: the orbit map `θ ↦ rotate θ a` is differentiable in `H^s`
-exactly when `a` lies in `H^(s + 1)`, and its derivative is then the rotated derivative of `a`.
-In the jointly varying form, `(θ, a) ↦ rotate θ a` is continuously differentiable as a map
-`ℝ × H^t → H^s` for `s + 1 ≤ t`, and only with this loss of one order. This is the derivative
-offset of variable reparametrizations of boundary maps: a reparametrization depending on a
-parameter is differentiable only as a map into a space of lower regularity.
+The action is strongly continuous: `θ ↦ rotate θ a` is continuous for every `a ∈ H^s`. The
+differentiability of an orbit map depends on the regularity of the vector: the orbit map
+`θ ↦ rotate θ a` of `a ∈ H^s` is differentiable in `H^s` exactly when `a` lies in `H^(s + 1)`,
+and its derivative is then the rotated derivative of `a`. In the jointly varying form, a
+sufficient condition is one extra order of regularity: `(θ, a) ↦ rotate θ a` is continuously
+differentiable as a map `ℝ × H^t → H^s` whenever `s + 1 ≤ t`. This is the derivative offset of
+variable reparametrizations of boundary maps by rotations: differentiating the rotated map in the
+rotation parameter is controlled by one more order of regularity of the map than that of the
+target space.
 
 ## Main definitions
 
@@ -73,19 +75,10 @@ namespace CircleSobolev
 
 variable {s t : ℝ} {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {T : ℝ}
 
-/-- A Fourier monomial has modulus one at every point. -/
-private theorem norm_fourier_apply (n : ℤ) (θ : AddCircle T) : ‖fourier n θ‖ = 1 := by
-  rw [fourier_apply]
-  exact Circle.norm_coe _
-
-private theorem fourier_apply_add (n : ℤ) (θ φ : AddCircle T) :
-    fourier n (θ + φ) = fourier n θ * fourier n φ := by
-  simp [AddCircle.toCircle_add]
-
 /-- The rotated coefficient sequence, as an element of `H^s`. -/
 private def rotateFun (θ : AddCircle T) (a : CircleSobolev s E) : CircleSobolev s E :=
   ⟨fun n ↦ fourier n θ • a.coeff n, memℓp_of_forall_le (C := 1) fun n ↦ by
-    rw [norm_smul, norm_fourier_apply, one_mul, one_mul]⟩
+    rw [norm_smul, fourier_apply, Circle.norm_coe, one_mul, one_mul]⟩
 
 private theorem coeff_rotateFun (θ : AddCircle T) (a : CircleSobolev s E) (n : ℤ) :
     (rotateFun θ a).coeff n = fourier n θ • a.coeff n :=
@@ -176,7 +169,7 @@ theorem continuous_rotate_apply (a : CircleSobolev s E) :
     (Eventually.of_forall fun θ n ↦ ?_)
   have hle : ‖fourier n θ • a.coeff n - fourier n θ₀ • a.coeff n‖ ≤ 2 * ‖a.coeff n‖ := by
     refine (norm_sub_le _ _).trans_eq ?_
-    rw [norm_smul, norm_smul, norm_fourier_apply, norm_fourier_apply]
+    rw [norm_smul, norm_smul, fourier_apply, fourier_apply, Circle.norm_coe, Circle.norm_coe]
     ring
   rw [coeff_rotate, coeff_rotate]
   calc (weight s n * ‖fourier n θ • a.coeff n - fourier n θ₀ • a.coeff n‖) ^ 2
@@ -207,17 +200,6 @@ theorem continuous_rotate :
 
 /-! ### Differentiability of the orbit maps -/
 
-/-- The Fourier monomial `x ↦ e^{2πinx/T}` is Lipschitz with constant `|2πin/T|`. -/
-private theorem norm_fourier_sub_le (n : ℤ) (φ ψ : ℝ) :
-    ‖fourier n (φ : AddCircle T) - fourier n (ψ : AddCircle T)‖ ≤
-      ‖(2 * π * I * n / T : ℂ)‖ * |φ - ψ| := by
-  have h := convex_univ.norm_image_sub_le_of_norm_hasDerivWithin_le
-    (f := fun y : ℝ ↦ fourier n (y : AddCircle T)) (s := Set.univ)
-    (fun y _ ↦ (hasDerivAt_fourier T n y).hasDerivWithinAt)
-    (fun y _ ↦ by rw [norm_mul, norm_fourier_apply, mul_one]) (Set.mem_univ ψ)
-    (Set.mem_univ φ)
-  rwa [Real.norm_eq_abs] at h
-
 variable [hT : Fact (0 < T)]
 
 /-- The coefficients of the difference of two rotations are controlled by those of the
@@ -228,7 +210,7 @@ private theorem norm_coeff_rotate_sub_le (h : s + 1 ≤ t) (a : CircleSobolev t 
       |φ - ψ| * ‖(derivative T h a).coeff n‖ := by
   rw [← sub_smul, norm_smul, coeff_derivative, norm_smul]
   calc _ ≤ ‖(2 * π * I * n / T : ℂ)‖ * |φ - ψ| * ‖a.coeff n‖ :=
-        mul_le_mul_of_nonneg_right (norm_fourier_sub_le n φ ψ) (norm_nonneg _)
+        mul_le_mul_of_nonneg_right (norm_fourier_coe_sub_le n φ ψ) (norm_nonneg _)
     _ = _ := by ring
 
 /-- The orbit map of `a ∈ H^t` is Lipschitz as a map into `H^s` for `s + 1 ≤ t`:
@@ -279,8 +261,8 @@ theorem hasDerivAt_rotate (h : s + 1 ≤ t) (a : CircleSobolev t E) (θ : ℝ) :
     have hle : ‖τ⁻¹ • (fourier n ((θ + τ : ℝ) : AddCircle T) • a.coeff n -
         fourier n (θ : AddCircle T) • a.coeff n) - fourier n (θ : AddCircle T) • D.coeff n‖ ≤
         2 * ‖D.coeff n‖ := by
-      have hD := norm_smul (fourier n (θ : AddCircle T)) (D.coeff n)
-      rw [norm_fourier_apply, one_mul] at hD
+      have hD : ‖fourier n (θ : AddCircle T) • D.coeff n‖ = ‖D.coeff n‖ := by
+        rw [norm_smul, fourier_apply, Circle.norm_coe, one_mul]
       exact (norm_sub_le _ _).trans (by linarith)
     simp only [coeff_sub, coeff_real_smul, Pi.sub_apply, Pi.smul_apply, coeff_rotate,
       coeff_inclusion]
@@ -290,8 +272,8 @@ theorem hasDerivAt_rotate (h : s + 1 ≤ t) (a : CircleSobolev t E) (θ : ℝ) :
       _ = 4 * (weight s n * ‖D.coeff n‖) ^ 2 := by ring
 
 /-- The orbit map `θ ↦ rotate θ a` of `a ∈ H^s` is differentiable in `H^s` at a point exactly
-when `a` lies in `H^(s + 1)`. The rotation action is therefore not differentiable on `H^s` itself:
-differentiating a reparametrization costs one order of regularity. -/
+when `a` lies in `H^(s + 1)`: the orbit of `a` is differentiable in `H^s` precisely when `a` has
+one more order of regularity. -/
 theorem differentiableAt_rotate_iff (a : CircleSobolev s E) (θ : ℝ) :
     DifferentiableAt ℝ (fun φ : ℝ ↦ rotate (φ : AddCircle T) a) θ ↔
       ∃ b : CircleSobolev (s + 1) E, inclusion (by linarith) b = a := by

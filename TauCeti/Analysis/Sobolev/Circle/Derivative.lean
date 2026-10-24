@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.Circle.Basic
 
 import Mathlib.Analysis.Calculus.SmoothSeries
+import TauCeti.Analysis.Fourier.Monomial
 
 /-!
 # The derivative on the circle Sobolev spaces
@@ -57,13 +58,6 @@ namespace CircleSobolev
 variable {s t : ℝ} {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 variable (T : ℝ) [hT : Fact (0 < T)]
 
-/-- The norm of the derivative factor `2πin/T` of the frequency `n`. -/
-private theorem norm_derivFactor (n : ℤ) :
-    ‖(2 * π * I * n / T : ℂ)‖ = 2 * π / T * |(n : ℝ)| := by
-  simp only [norm_div, norm_mul, norm_I, Complex.norm_ofNat, Complex.norm_real,
-    Complex.norm_intCast, Real.norm_eq_abs, abs_of_pos hT.out, abs_of_pos Real.pi_pos]
-  ring
-
 /-- The derivative factor costs one order of regularity: for `s + 1 ≤ t`,
 `(1 + |n|) ^ s |2πin/T| ≤ 2π/T (1 + |n|) ^ t`. -/
 private theorem weight_mul_norm_derivFactor_le (h : s + 1 ≤ t) (n : ℤ) (x : E) :
@@ -74,7 +68,7 @@ private theorem weight_mul_norm_derivFactor_le (h : s + 1 ≤ t) (n : ℤ) (x : 
       _ = weight (s + 1) n := by rw [weight_add, weight_def 1, Real.rpow_one]
       _ ≤ weight t n := weight_le_weight h n
   have hc : 0 ≤ 2 * π / T := div_nonneg (by positivity) hT.out.le
-  rw [norm_smul, norm_derivFactor]
+  rw [norm_smul, norm_two_pi_I_mul_intCast_div hT.out]
   calc weight s n * (2 * π / T * |(n : ℝ)| * ‖x‖)
         = 2 * π / T * (weight s n * |(n : ℝ)| * ‖x‖) := by ring
     _ ≤ 2 * π / T * (weight t n * ‖x‖) :=
@@ -152,7 +146,8 @@ theorem exists_inclusion_eq_and_derivative_eq (a b : CircleSobolev s E)
   -- term is `T / 2π` times `(1 + |n|) ^ s ‖b_n‖`.
   have hle (n : ℤ) : weight (s + 1) n * ‖a.coeff n‖ ≤
       weight s n * ‖a.coeff n‖ + (2 * π / T)⁻¹ * (weight s n * ‖b.coeff n‖) := by
-    rw [hb, norm_smul, norm_derivFactor, weight_add, weight_def 1, Real.rpow_one]
+    rw [hb, norm_smul, norm_two_pi_I_mul_intCast_div hT.out, weight_add, weight_def 1,
+      Real.rpow_one]
     refine le_of_eq ?_
     field_simp [hT.out.ne']
   have hsum : Summable fun n ↦ (weight (s + 1) n * ‖a.coeff n‖) ^ 2 := by
