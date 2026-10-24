@@ -12,6 +12,7 @@ public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Comap
 import TauCeti.AlgebraicGeometry.AdicSpace.Cont.DominatingUnit
 import TauCeti.RingTheory.Huber.OpenIdeal
 import TauCeti.RingTheory.Huber.ZeroSequenceOfUnits
+import TauCeti.RingTheory.Valuation.Annulus
 
 /-!
 # The rational basis of the adic spectrum
@@ -53,6 +54,9 @@ the basis arguments uses it.
   rational subset `R(T/s)` with unit denominator belongs to the family for every finite `T`, which
   is Wedhorn Remark 7.30(4); `TauCeti.ValuationSpectrum.setOf_vle_one_mem_spaRationalFamily` is
   its case `R(f/1) = {v : v(f) ≤ 1}`.
+* `TauCeti.ValuationSpectrum.setOf_vle_or_vle_mem_spaRationalFamily`: for units `r, σ` with
+  `v(r) < v(σ)` on `Spa(A,A⁺)`, the complement `{v : v(f) ≤ v(r) or v(σ) ≤ v(f)}` of an open
+  annulus is the rational subset `R({σ f, f² - r σ} / (f² - r σ))`.
 * `TauCeti.ValuationSpectrum.inter_mem_spaRationalFamily`: the family is closed under binary
   intersections, which is Wedhorn Remark 7.30(5).
 * `TauCeti.ValuationSpectrum.biInter_mem_spaRationalFamily`: the family is closed under *finite*
@@ -192,6 +196,36 @@ theorem setOf_vle_one_mem_spaRationalFamily (Aplus : Subring A) (f : A) :
     ext v
     simp [v.1.toValuativeRel.not_vle_one_zero]
   exact h ▸ val_preimage_rationalSubset_mem_spaRationalFamily_of_isUnit Aplus {f} isUnit_one
+
+open scoped Classical in
+/-- **The complement of an open annulus is rational.** If `r` and `σ` are units with
+`v(r) < v(σ)` at every point of `Spa(A,A⁺)`, then the points with `v(f) ≤ v(r)` or `v(σ) ≤ v(f)`
+form the rational subset `R({σ f, f² - r σ} / (f² - r σ))`
+(`Valuation.le_or_le_iff_map_mul_le_map_mul_self_sub`), whose numerators generate the unit
+ideal. -/
+theorem setOf_vle_or_vle_mem_spaRationalFamily (Aplus : Subring A) (f : A) {r σ : A}
+    (hr : IsUnit r) (hσ : IsUnit σ) (hrσ : ∀ v ∈ spa Aplus, v.toValuativeRel.vlt r σ) :
+    {v : spa Aplus | v.1.toValuativeRel.vle f r ∨ v.1.toValuativeRel.vle σ f} ∈
+      spaRationalFamily Aplus := by
+  refine ⟨{σ * f, f * f - r * σ}, f * f - r * σ, ?_, ?_⟩
+  · -- `u w f · σ f - u (f² - r σ) = 1` for inverses `u` of `r σ` and `w` of `σ`
+    obtain ⟨u, hu⟩ := (hr.mul hσ).exists_left_inv
+    obtain ⟨w, hw⟩ := hσ.exists_left_inv
+    have hspan : Ideal.span (({σ * f, f * f - r * σ} : Finset A) : Set A) = ⊤ := by
+      have hone : (1 : A) = (u * w * f) * (σ * f) + (-u) * (f * f - r * σ) := by
+        linear_combination (-1 : A) * hu - u * f * f * hw
+      rw [Ideal.eq_top_iff_one, hone]
+      exact add_mem (Ideal.mul_mem_left _ _ (Ideal.subset_span (by simp)))
+        (Ideal.mul_mem_left _ _ (Ideal.subset_span (by simp)))
+    rw [hspan]
+    exact isOpen_univ
+  · ext v
+    have h := v.1.valuation.le_or_le_iff_map_mul_le_map_mul_self_sub (f := f)
+      (hr.map v.1.valuation).ne_zero ((valuation_lt_iff _ _ _).mpr (hrσ v.1 v.2))
+    simp only [mem_ofPred_eq, mem_preimage, mem_rationalSubset_iff, v.2, true_and,
+      Finset.mem_insert, Finset.mem_singleton, forall_eq_or_imp, forall_eq, ← valuation_le_iff,
+      le_refl, and_true, map_zero, le_zero_iff]
+    exact h
 
 section TopologicalRing
 
