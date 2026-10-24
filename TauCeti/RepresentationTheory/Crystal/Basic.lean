@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.RootSystem.Base
 public import TauCeti.Logic.Equiv.Option
+public import TauCeti.Logic.Option
 
 /-!
 # Normal crystals over a root datum
@@ -462,7 +463,7 @@ theorem congr_trans (e' : B' ≃ B'') :
 /-- Transport commutes with the dual crystal. -/
 @[simp]
 theorem congr_dual : (c.congr e).dual = c.dual.congr e := by
-  ext <;> simp [dual]
+  ext <;> simp
 
 end Congr
 
@@ -635,12 +636,8 @@ def restrict (s : Set B)
   φ i y := c.φ i y.1
   f_eq_some_iff := by
     intro i y z
-    rw [Option.pmap_eq_some_iff, Option.pmap_eq_some_iff]
-    constructor
-    · rintro ⟨a, _ha, hfa, rfl⟩
-      exact ⟨y.1, y.2, c.f_eq_some_iff.1 hfa, rfl⟩
-    · rintro ⟨a, _ha, hea, rfl⟩
-      exact ⟨z.1, z.2, c.f_eq_some_iff.2 hea, rfl⟩
+    rw [Option.pmap_subtype_mk_eq_some_iff, Option.pmap_subtype_mk_eq_some_iff]
+    exact c.f_eq_some_iff
   wt_of_e_eq_some := by
     intro i y z h
     rw [Option.pmap_eq_some_iff] at h
@@ -665,6 +662,20 @@ theorem restrict_wt {s : Set B}
     {hf : ∀ (i : b.support) (y : B), y ∈ s → ∀ z, c.f i y = some z → z ∈ s} (y : s) :
     (c.restrict s he hf).wt y = c.wt y.1 := (rfl)
 
+theorem restrict_e {s : Set B}
+    {he : ∀ (i : b.support) (y : B), y ∈ s → ∀ z, c.e i y = some z → z ∈ s}
+    {hf : ∀ (i : b.support) (y : B), y ∈ s → ∀ z, c.f i y = some z → z ∈ s}
+    (i : b.support) (y : s) :
+    (c.restrict s he hf).e i y
+      = (c.e i y.1).pmap Subtype.mk fun z hz => he i y.1 y.2 z hz := (rfl)
+
+theorem restrict_f {s : Set B}
+    {he : ∀ (i : b.support) (y : B), y ∈ s → ∀ z, c.e i y = some z → z ∈ s}
+    {hf : ∀ (i : b.support) (y : B), y ∈ s → ∀ z, c.f i y = some z → z ∈ s}
+    (i : b.support) (y : s) :
+    (c.restrict s he hf).f i y
+      = (c.f i y.1).pmap Subtype.mk fun z hz => hf i y.1 y.2 z hz := (rfl)
+
 @[simp]
 theorem restrict_ε {s : Set B}
     {he : ∀ (i : b.support) (y : B), y ∈ s → ∀ z, c.e i y = some z → z ∈ s}
@@ -685,12 +696,7 @@ theorem restrict_e_eq_some_iff {s : Set B}
     {hf : ∀ (i : b.support) (y : B), y ∈ s → ∀ z, c.f i y = some z → z ∈ s}
     {i : b.support} {y z : s} :
     (c.restrict s he hf).e i y = some z ↔ c.e i y.1 = some z.1 := by
-  simp only [restrict, Option.pmap_eq_some_iff]
-  constructor
-  · rintro ⟨a, _ha, ho, rfl⟩
-    exact ho
-  · intro ho
-    exact ⟨z.1, he i y.1 y.2 z.1 ho, ho, Subtype.ext rfl⟩
+  rw [restrict_e, Option.pmap_subtype_mk_eq_some_iff]
 
 @[simp]
 theorem restrict_f_eq_some_iff {s : Set B}
@@ -698,12 +704,7 @@ theorem restrict_f_eq_some_iff {s : Set B}
     {hf : ∀ (i : b.support) (y : B), y ∈ s → ∀ z, c.f i y = some z → z ∈ s}
     {i : b.support} {y z : s} :
     (c.restrict s he hf).f i y = some z ↔ c.f i y.1 = some z.1 := by
-  simp only [restrict, Option.pmap_eq_some_iff]
-  constructor
-  · rintro ⟨a, _ha, ho, rfl⟩
-    exact ho
-  · intro ho
-    exact ⟨z.1, hf i y.1 y.2 z.1 ho, ho, Subtype.ext rfl⟩
+  rw [restrict_f, Option.pmap_subtype_mk_eq_some_iff]
 
 @[simp]
 theorem restrict_e_eq_none_iff {s : Set B}
@@ -711,7 +712,7 @@ theorem restrict_e_eq_none_iff {s : Set B}
     {hf : ∀ (i : b.support) (y : B), y ∈ s → ∀ z, c.f i y = some z → z ∈ s}
     {i : b.support} {y : s} :
     (c.restrict s he hf).e i y = none ↔ c.e i y.1 = none := by
-  simp only [restrict, Option.pmap_eq_none_iff]
+  rw [restrict_e, Option.pmap_eq_none_iff]
 
 @[simp]
 theorem restrict_f_eq_none_iff {s : Set B}
@@ -719,7 +720,7 @@ theorem restrict_f_eq_none_iff {s : Set B}
     {hf : ∀ (i : b.support) (y : B), y ∈ s → ∀ z, c.f i y = some z → z ∈ s}
     {i : b.support} {y : s} :
     (c.restrict s he hf).f i y = none ↔ c.f i y.1 = none := by
-  simp only [restrict, Option.pmap_eq_none_iff]
+  rw [restrict_f, Option.pmap_eq_none_iff]
 
 /-- The inclusion of a subset closed under the root operators is a strict morphism. -/
 def StrictHom.restrictIncl (s : Set B)

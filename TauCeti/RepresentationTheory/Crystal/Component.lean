@@ -309,7 +309,8 @@ theorem componentSetoid_congr :
     (c.congr e).componentSetoid = c.componentSetoid.comap ⇑e.symm := by
   refine Setoid.ext fun x y => ?_
   rw [componentSetoid_iff_reachable, Setoid.comap_rel, componentSetoid_iff_reachable]
-  exact (SimpleGraph.Iso.reachable_iff (φ := (c.crystalGraphCongr e).symm) (u := x) (v := y)).symm
+  simpa only [crystalGraphCongr_symm_apply] using
+    (SimpleGraph.Iso.reachable_iff (φ := (c.crystalGraphCongr e).symm) (u := x) (v := y)).symm
 
 /-- Transport along a bijection carries the component of `x` to the component of `e x`. -/
 -- Not `@[simp]`: the membership lemma `mem_component_iff` rewrites the left-hand side, which
