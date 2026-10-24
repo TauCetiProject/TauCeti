@@ -132,17 +132,9 @@ theorem HasWeakFDerivOn.integral_divergenceCLM_smul_eq_neg_integral [OpensMeasur
   have hψ (i) : (ψ i : E → ℝ) = fun y => b.repr (φ y) i := by
     ext y
     simp [ψ]
-  have hdiv (x) : TestFunction.divergenceCLM φ x =
-      ∑ i, lineDeriv ℝ (ψ i : E → ℝ) x (b i) := by
-    rw [TestFunction.divergenceCLM_apply, LinearMap.trace_eq_matrix_trace ℝ b, Matrix.trace]
-    refine Finset.sum_congr rfl fun i _ => ?_
-    have hd := (LinearMap.toContinuousLinearMap (b.coord i)).hasFDerivAt.comp x
-      (φ.contDiff.differentiable (by simp) x).hasFDerivAt
-    simpa [hψ, LinearMap.toMatrix_apply, Function.comp_def] using
-      (hd.hasLineDerivAt (b i)).lineDeriv.symm
   calc ∫ x, TestFunction.divergenceCLM φ x • u x ∂μ
       = ∑ i, ∫ x, lineDeriv ℝ (ψ i : E → ℝ) x (b i) • u x ∂μ := by
-        simp_rw [hdiv, Finset.sum_smul]
+        simp_rw [TestFunction.divergenceCLM_apply_eq_sum b, ← hψ, Finset.sum_smul]
         exact integral_finsetSum _ fun i _ =>
           integrable_lineDeriv_smul_of_locallyIntegrableOn h.locallyIntegrableOn (ψ i) (b i)
     _ = ∑ i, -∫ x, (ψ i : E → ℝ) x • U x (b i) ∂μ := Finset.sum_congr rfl fun i _ =>
