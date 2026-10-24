@@ -430,13 +430,9 @@ theorem hasContinuousLogOn_sub_iff_notMem_filledHull (hK : IsClosed K) (hKb : Is
     rw [mem_filledHull_iff, ← connectedComponentIn_eq hab]
     exact mem_filledHull_iff.mp ha
   · -- `a` and `b` lie in the unbounded component of `Kᶜ`, so their Borsuk map has a logarithm
-    have hrank : (1 : Cardinal) < Module.rank ℝ ℂ := by
-      rw [Complex.rank_real_complex]; norm_num
-    have hab : b ∈ connectedComponentIn Kᶜ a := by
-      rw [connectedComponentIn_compl_eq_of_unbounded_component hrank hKb
-        (mt mem_filledHull_iff.mpr ha) (mt mem_filledHull_iff.mpr hb)]
-      exact mem_connectedComponentIn hbK
-    refine ((hasContinuousLogOn_sub_div_sub hK hab).mul hlogb).congr fun z hz => ?_
+    have hlogab : HasContinuousLogOn (fun z => (z - a) / (z - b)) K := by_contra fun h =>
+      (mem_filledHull_or_mem_filledHull_of_not_hasContinuousLogOn hK hKb h).elim ha hb
+    refine (hlogab.mul hlogb).congr fun z hz => ?_
     exact div_mul_cancel₀ _ (sub_ne_zero.mpr fun h => hbK (h ▸ hz))
 
 /-- **A simply connected open subset of the plane has no holes**: it contains its filled hull, that
