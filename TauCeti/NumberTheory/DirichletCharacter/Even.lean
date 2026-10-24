@@ -70,9 +70,7 @@ theorem exists_odd [IsDomain R] [HasEnoughRootsOfUnity R (Monoid.exponent (ZMod 
 
 /-- At the levels `1` and `2` every Dirichlet character is even, since `-1 = 1` there. -/
 theorem even_of_le_two [NeZero n] (hn : n ≤ 2) (χ : DirichletCharacter R n) : χ.Even := by
-  have h : (-1 : ZMod n) = 1 := by
-    obtain rfl | rfl : n = 1 ∨ n = 2 := by have := NeZero.ne n; omega
-    all_goals decide
+  have h : (-1 : ZMod n) = 1 := ZMod.neg_one_eq_one_iff.mpr (by have := NeZero.ne n; omega)
   rw [DirichletCharacter.Even, h, map_one]
 
 /-- If one of two levels exceeds `2`, exactly half of the pairs of Dirichlet characters at these
