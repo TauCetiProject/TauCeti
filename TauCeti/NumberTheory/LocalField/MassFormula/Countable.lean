@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LocalField.MassFormula.Eisenstein.Basic
 import TauCeti.FieldTheory.IntermediateField.Card
-import TauCeti.NumberTheory.LocalField.RootCount
+import TauCeti.NumberTheory.LocalField.Root.Count
 import TauCeti.RingTheory.Polynomial.Approximation
 
 /-!
