@@ -115,7 +115,7 @@ theorem vectorNormalizer_eq_top_of_subsingleton [Subsingleton M] :
 
 /-- The dimension-zero Clifford vector normalizer is the full scalar unit group. -/
 noncomputable def vectorNormalizerEquivUnitsOfSubsingleton [Subsingleton M] :
-    vectorNormalizer Q ≃* Kˣ :=
+    vectorNormalizer Q ≃* Rˣ :=
   ((MulEquiv.subgroupCongr (vectorNormalizer_eq_top_of_subsingleton Q)).trans
     Subgroup.topEquiv).trans (unitsEquivOfSubsingleton Q)
 
@@ -130,7 +130,7 @@ theorem vectorNormalizerEquivUnitsOfSubsingleton_apply [Subsingleton M]
 
 /-- The inverse dimension-zero normalizer equivalence sends a scalar unit to its Clifford unit. -/
 @[simp]
-theorem coe_vectorNormalizerEquivUnitsOfSubsingleton_symm_apply [Subsingleton M] (u : Kˣ) :
+theorem coe_vectorNormalizerEquivUnitsOfSubsingleton_symm_apply [Subsingleton M] (u : Rˣ) :
     ((vectorNormalizerEquivUnitsOfSubsingleton Q).symm u : (CliffordAlgebra Q)ˣ) =
       (unitsEquivOfSubsingleton Q).symm u := by
   apply (unitsEquivOfSubsingleton Q).injective
