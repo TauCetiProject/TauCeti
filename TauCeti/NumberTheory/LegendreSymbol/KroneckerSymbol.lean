@@ -222,10 +222,10 @@ theorem kroneckerSym_eq_zero_iff {a b : ℤ} : kroneckerSym a b = 0 ↔ a.gcd b 
     split_ifs <;> simp_all
   have hm : ordCompl[2] b.natAbs ≠ 0 := (Nat.ordCompl_pos 2 (Int.natAbs_ne_zero.mpr hb)).ne'
   have hs : (if a < 0 ∧ b < 0 then -1 else 1 : ℤ) ≠ 0 := by split_ifs <;> norm_num
-  rw [kroneckerSym_of_ne_zero a hb, mul_eq_zero, mul_eq_zero, or_iff_right hs, pow_eq_zero_iff',
-    χ₈_intCast_eq_zero_iff, jacobiSym.eq_zero_iff, and_iff_right hm, Int.gcd_eq_natAbs_gcd_natAbs,
-    Int.gcd_eq_natAbs_gcd_natAbs, Int.natAbs_natCast]
-  exact (natAbs_gcd_ne_one_iff a b.natAbs).symm
+  rw [kroneckerSym_of_ne_zero a hb, Int.gcd_eq_natAbs_gcd_natAbs, natAbs_gcd_ne_one_iff]
+  simp only [mul_eq_zero, hs, false_or, pow_eq_zero_iff', χ₈_intCast_eq_zero_iff,
+    jacobiSym.eq_zero_iff, Ne, hm, not_false_eq_true, true_and, Int.gcd_eq_natAbs_gcd_natAbs,
+    Int.natAbs_natCast]
 
 /-- `(0 / b)` is `1` for `b = ±1` and `0` otherwise. -/
 @[simp]
