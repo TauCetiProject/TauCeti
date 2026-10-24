@@ -460,7 +460,7 @@ theorem toNonarchimedeanRing [IsTopologicalRing A] (P : PairOfDefinition A) :
     exact ⟨P.openAddSubgroup n, hn⟩
 
 /-- Wedhorn Corollary 6.4: a ring of definition is bounded. -/
-theorem isBounded_ringOfDefinition [IsTopologicalRing A] (P : PairOfDefinition A) :
+theorem isBounded_ringOfDefinition (P : PairOfDefinition A) :
     IsBounded (P.ringOfDefinition : Set A) := by
   rw [isBounded_iff]
   intro U hU
