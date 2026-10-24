@@ -51,7 +51,10 @@ Dually, the last variable `Xₙ` can be moved into the coefficients instead, thr
 The coefficient of `Xᵘ` then has as its coefficient of `Xₙ ^ k` the coefficient of `f` at the
 exponent `Finsupp.snoc u k` (`MvPolynomial.optionEquivRight_rename_finSuccEquivLast_coeff_coeff`).
 This is the form used for Lazard evaluation, where the base variables are eliminated first and
-the last variable is kept.
+the last variable is kept. Specializing the base variables in this form gives the ordinary fibre
+`(optionEquivLeft R (Fin n) (rename finSuccEquivLast f)).map (eval α)`
+(`MvPolynomial.eval_optionEquivRight`), whose value at `β` is the value of `f` at `Fin.snoc α β`
+(`MvPolynomial.polynomial_eval_map_optionEquivLeft_rename_finSuccEquivLast`).
 
 -/
 
@@ -262,6 +265,14 @@ theorem map_constantCoeff_optionEquivRight_optionEquivLeft_symm {σ : Type*}
     · simp
   exact RingHom.congr_fun h p
 
+/-- Moving the variable `none` into the coefficients with `optionEquivRight` and specializing the
+other variables at `x` gives the same univariate polynomial as singling out `none` with
+`optionEquivLeft` and specializing the coefficients at `x`. -/
+theorem eval_optionEquivRight {σ : Type*} (x : σ → R) (g : MvPolynomial (Option σ) R) :
+    eval (Polynomial.C ∘ x) (optionEquivRight R σ g) = (optionEquivLeft R σ g).map (eval x) := by
+  have h := eval₂Hom_optionEquivRight_optionEquivLeft_symm (RingHom.id R) x (optionEquivLeft R σ g)
+  rwa [AlgEquiv.trans_apply, AlgEquiv.symm_apply_apply, Polynomial.mapRingHom_id] at h
+
 section Last
 
 open Finsupp
@@ -290,6 +301,17 @@ theorem optionEquivRight_rename_finSuccEquivLast_coeff_coeff (f : MvPolynomial (
   | add p q hp hq =>
     simp only [map_add, AddMonoidAlgebra.coeff_add, Finsupp.add_apply, Polynomial.coeff_add, hp,
       hq]
+
+/-- Singling out the last variable, specializing the variables `X₀, …, Xₙ₋₁` at `α` and then
+evaluating the polynomial variable at `β` is evaluating at the point `Fin.snoc α β`. -/
+theorem polynomial_eval_map_optionEquivLeft_rename_finSuccEquivLast (α : Fin n → R) (β : R)
+    (f : MvPolynomial (Fin (n + 1)) R) :
+    ((optionEquivLeft R (Fin n) (rename finSuccEquivLast f)).map (eval α)).eval β =
+      eval (Fin.snoc α β) f := by
+  rw [← optionEquivLeft_elim_eval, eval_rename]
+  congr 2
+  funext i
+  cases i using Fin.lastCases <;> simp
 
 end Last
 
