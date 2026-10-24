@@ -76,8 +76,13 @@ theorem Homotopic.reverse {a b : Γ.V} {p q : Γ.Path a b}
   | trans _ _ ih₁ ih₂ => exact ih₁.trans ih₂
   | cons h e ih => exact ih.comp_left Γ (Quiver.reverse e).toPath
   | backtrack p e =>
-    simpa [← Quiver.Path.comp_assoc, Quiver.Hom.toPath] using
-      (Homotopic.backtrack (Γ := Γ) Quiver.Path.nil e).comp_right Γ p.reverse
+    have hb : Homotopic Γ (e.toPath.comp (Quiver.reverse e).toPath) Quiver.Path.nil := by
+      rw [Quiver.Path.comp_toPath_eq_cons]
+      -- A single-edge path is definitionally `nil.cons e` in Mathlib.
+      exact Homotopic.backtrack Quiver.Path.nil e
+    rw [Quiver.Path.reverse, Quiver.Path.reverse, Quiver.reverse_reverse,
+      ← Quiver.Path.comp_assoc]
+    simpa only [Quiver.Path.nil_comp] using hb.comp_right Γ p.reverse
 
 private theorem endpoint_eq {b c d : Γ.V} (e : Quiver.Hom b c)
     (f : Quiver.Hom c d) (h : f.1 = Γ.rev e.1) : b = d := by
@@ -86,15 +91,22 @@ private theorem endpoint_eq {b c d : Γ.V} (e : Quiver.Hom b c)
     _ = Γ.tgt f.1 := congrArg Γ.tgt h.symm
     _ = d := f.2.2
 
+/-- Eliminate a cancelling dart, transporting its endpoint and its subtype witness once. -/
+private theorem reverse_rec {b c d : Γ.V} (e : Quiver.Hom b c) (f : Quiver.Hom c d)
+    (h : f.1 = Γ.rev e.1) {P : (d : Γ.V) → Quiver.Hom c d → Prop}
+    (hP : P b (Quiver.reverse e)) : P d f := by
+  have hd := endpoint_eq Γ e f h
+  subst d
+  have hf : f = Quiver.reverse e := Subtype.ext (by simpa only [reverse_val] using h)
+  subst f
+  exact hP
+
 open Classical in
 private noncomputable def push {a : Γ.V} : {b c : Γ.V} →
     Γ.Path a b → Quiver.Hom b c → Γ.Path a c
   | _, _, .nil, e => .cons .nil e
   | _, _, .cons p e, f =>
       if h : f.1 = Γ.rev e.1 then (endpoint_eq Γ e f h) ▸ p else (p.cons e).cons f
-
-private theorem push_nil {a b : Γ.V} (e : Quiver.Hom a b) :
-    push Γ Quiver.Path.nil e = e.toPath := rfl
 
 private theorem push_cancel {a b c : Γ.V} (p : Γ.Path a b) (e : Quiver.Hom b c) :
     push Γ (p.cons e) (Quiver.reverse e) = p := by
@@ -111,10 +123,8 @@ private theorem isReduced_push {a b c : Γ.V} (p : Γ.Path a b)
   | nil => exact isReduced_toPath Γ e
   | @cons b d p f =>
     by_cases h : e.1 = Γ.rev f.1
-    · have hd := endpoint_eq Γ f e h
-      subst c
-      have he : e = Quiver.reverse f := Subtype.ext (by simpa using h)
-      subst e
+    · refine reverse_rec Γ f e h
+        (P := fun _ e ↦ IsReduced Γ (push Γ (p.cons f) e)) ?_
       rw [push_cancel]
       cases p with
       | nil => exact isReduced_nil Γ a
@@ -136,10 +146,8 @@ private theorem push_reverse {a b c : Γ.V} (p : Γ.Path a b)
   | nil => exact push_cancel Γ Quiver.Path.nil e
   | @cons b d p f =>
     by_cases h : e.1 = Γ.rev f.1
-    · have hd := endpoint_eq Γ f e h
-      subst c
-      have he : e = Quiver.reverse f := Subtype.ext (by simpa using h)
-      subst e
+    · refine reverse_rec Γ f e h
+        (P := fun _ e ↦ push Γ (push Γ (p.cons f) e) (Quiver.reverse e) = p.cons f) ?_
       rw [push_cancel, Quiver.reverse_reverse]
       exact push_eq_cons Γ p f hp
     · rw [push_keep Γ p f e h, push_cancel]
@@ -150,10 +158,8 @@ private theorem homotopic_push {a b c : Γ.V} (p : Γ.Path a b)
   | nil => exact .refl _
   | @cons b d p f =>
     by_cases h : e.1 = Γ.rev f.1
-    · have hd := endpoint_eq Γ f e h
-      subst c
-      have he : e = Quiver.reverse f := Subtype.ext (by simpa using h)
-      subst e
+    · refine reverse_rec Γ f e h
+        (P := fun _ e ↦ Homotopic Γ ((p.cons f).cons e) (push Γ (p.cons f) e)) ?_
       rw [push_cancel]
       exact .backtrack p f
     · rw [push_keep Γ p f e h]
@@ -192,6 +198,18 @@ theorem IsReduced.reduce_eq {a b : Γ.V} {p : Γ.Path a b} (hp : IsReduced Γ p)
 @[simp] theorem reduce_reduce {a b : Γ.V} (p : Γ.Path a b) :
     reduce Γ (reduce Γ p) = reduce Γ p := (isReduced_reduce Γ p).reduce_eq
 
+/-- Reducing a final dart depends only on the reduced prefix. -/
+theorem reduce_cons {a b c : Γ.V} (p : Γ.Path a b) (e : Quiver.Hom b c) :
+    reduce Γ (p.cons e) = reduce Γ ((reduce Γ p).cons e) := by
+  simp only [reduce, reduce_reduce]
+
+/-- A final dart is kept when it does not backtrack against the reduced prefix. -/
+theorem reduce_cons_of_isReduced {a b c : Γ.V} (p : Γ.Path a b) (e : Quiver.Hom b c)
+    (h : IsReduced Γ ((reduce Γ p).cons e)) :
+    reduce Γ (p.cons e) = (reduce Γ p).cons e := by
+  rw [reduce_cons]
+  exact h.reduce_eq
+
 /-- A path and its reduction differ by insertion or deletion of backtracks. -/
 theorem homotopic_reduce {a b : Γ.V} (p : Γ.Path a b) :
     Homotopic Γ p (reduce Γ p) := by
@@ -222,7 +240,7 @@ theorem homotopic_iff_reduce_eq {a b : Γ.V} (p q : Γ.Path a b) :
   exact (homotopic_reduce Γ p).trans (h ▸ (homotopic_reduce Γ q).symm)
 
 /-- Reducing both paths before concatenation leaves the final reduced path unchanged. -/
-theorem reduce_comp {a b c : Γ.V} (p : Γ.Path a b) (q : Γ.Path b c) :
+theorem reduce_comp_reduce_reduce {a b c : Γ.V} (p : Γ.Path a b) (q : Γ.Path b c) :
     reduce Γ ((reduce Γ p).comp (reduce Γ q)) = reduce Γ (p.comp q) :=
   ((homotopic_reduce Γ p).comp Γ (homotopic_reduce Γ q)).reduce_eq.symm
 
@@ -239,7 +257,7 @@ theorem Homotopic.eq_of_isReduced {a b : Γ.V} {p q : Γ.Path a b}
   exact h.reduce_eq.trans hr.reduce_eq
 
 /-- Every homotopy class has exactly one reduced representative with the same endpoints. -/
-theorem existsUnique_reduced {a b : Γ.V} (p : Γ.Path a b) :
+theorem existsUnique_homotopic_isReduced {a b : Γ.V} (p : Γ.Path a b) :
     ∃! q : Γ.Path a b, Homotopic Γ p q ∧ IsReduced Γ q := by
   refine ⟨reduce Γ p, ⟨homotopic_reduce Γ p, isReduced_reduce Γ p⟩, ?_⟩
   intro q hq
