@@ -17,8 +17,9 @@ matrix `A` with finite row and column index types is the projective multiplicati
 `Height.mulHeight` of the tuple of its entries, indexed by pairs of a row and a column, and
 `Matrix.logHeight A` is its logarithm. Like every projective height, it is unchanged by nonzero
 scalar multiplication, and the zero matrix, in particular every matrix with an empty row or
-column index type, has entry height one. It is unchanged by transposition and by reindexing rows
-and columns, and it does not increase on passing to a submatrix. Over number fields it is
+column index type, has entry height one. So do the identity matrix and every matrix with at most
+one row and at most one column. The entry height is unchanged by transposition and by reindexing
+rows and columns, and it does not increase on passing to a submatrix. Over number fields it is
 relative: in an extension `L / K` the entry height of `A` is raised to the degree `[L : K]`.
 
 The entry height of a product is at most `(#n) ^ totalWeight K` times the product of the entry
@@ -118,6 +119,18 @@ theorem mulHeight_transpose (A : Matrix m n K) : Aᵀ.mulHeight = A.mulHeight :=
 theorem logHeight_transpose (A : Matrix m n K) : Aᵀ.logHeight = A.logHeight := by
   simp [logHeight_eq_log_mulHeight]
 
+/-- A matrix with at most one row and at most one column, such as a `1 × 1` matrix, has entry
+height one. -/
+@[simp]
+theorem mulHeight_eq_one_of_subsingleton [Subsingleton m] [Subsingleton n] (A : Matrix m n K) :
+    A.mulHeight = 1 :=
+  Height.mulHeight_eq_one_of_subsingleton _
+
+@[simp]
+theorem logHeight_eq_zero_of_subsingleton [Subsingleton m] [Subsingleton n]
+    (A : Matrix m n K) : A.logHeight = 0 :=
+  Height.logHeight_eq_zero_of_subsingleton _
+
 variable [Finite m] [Finite n]
 
 theorem one_le_mulHeight (A : Matrix m n K) : 1 ≤ A.mulHeight :=
@@ -142,6 +155,19 @@ theorem mulHeight_smul (A : Matrix m n K) {c : K} (hc : c ≠ 0) :
 theorem logHeight_smul (A : Matrix m n K) {c : K} (hc : c ≠ 0) :
     (c • A).logHeight = A.logHeight := by
   simp [logHeight_eq_log_mulHeight, hc]
+
+/-- The identity matrix has entry height one: its nonzero entries all equal `1`. -/
+@[simp]
+theorem mulHeight_one [DecidableEq n] : (1 : Matrix n n K).mulHeight = 1 := by
+  rw [mulHeight_def, Height.mulHeight_eq_mulHeight_restrict_support]
+  convert Height.mulHeight_one with q
+  obtain ⟨⟨i, j⟩, hq⟩ := q
+  simp only [Function.mem_support, one_apply] at hq
+  simpa [one_apply] using hq
+
+@[simp]
+theorem logHeight_one [DecidableEq n] : (1 : Matrix n n K).logHeight = 0 := by
+  simp [logHeight_eq_log_mulHeight]
 
 /-- The entry height of a submatrix is at most the entry height of the matrix. Rows and columns
 may be repeated or omitted. -/
