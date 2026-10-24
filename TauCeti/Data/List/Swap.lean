@@ -85,8 +85,7 @@ theorem getElem?_swap_append_cons_cons (u v : List α) (a b : α) (k : ℕ) :
     rcases j with _ | j
     · simp
     · rw [Equiv.swap_apply_of_ne_of_ne (by omega) (by omega)]
-      rw [getElem?_append_right (by omega), getElem?_append_right (by omega),
-        show u.length + 1 + (j + 1) - u.length = j + 2 by omega]
-      simp
+      rw [getElem?_append_right (by omega), getElem?_append_right (by omega)]
+      simp [Nat.add_assoc, Nat.add_comm 1]
 
 end List

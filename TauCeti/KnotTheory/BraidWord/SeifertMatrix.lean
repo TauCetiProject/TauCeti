@@ -424,7 +424,8 @@ theorem seifertMatrix_trefoil :
     ∃ e : Fin 2 ≃ seifertLoops (n := 2) [(0, 1), (0, 1), (0, 1)],
       (seifertMatrix (n := 2) [(0, 1), (0, 1), (0, 1)]).submatrix e e =
         trefoilSeifertMatrixᵀ := by
-  rw [show trefoilSeifertMatrix = !![-1, 1; 0, -1] from Matrix.ext trefoilSeifertMatrix_apply]
+  have htrefoil : trefoilSeifertMatrix = !![-1, 1; 0, -1] := Matrix.ext trefoilSeifertMatrix_apply
+  rw [htrefoil]
   exact ⟨Equiv.ofBijective ![⟨(0, 1), by decide⟩, ⟨(1, 2), by decide⟩] (by decide),
     by decide +kernel⟩
 
@@ -463,8 +464,9 @@ theorem alexander_seifertMatrix_figureEight :
   have hP : (!![1, 0; 0, -1] : Matrix (Fin 2) (Fin 2) ℤ).det ^ 2 = 1 := by decide
   have hcongr : !![1, 0; 0, -1] * !![1, -1; 0, -1] * (!![1, 0; 0, -1])ᵀ =
       figureEightSeifertMatrix := by
-    rw [show figureEightSeifertMatrix = !![1, 1; 0, -1] from
-      Matrix.ext figureEightSeifertMatrix_apply]
+    have hfigureEight : figureEightSeifertMatrix = !![1, 1; 0, -1] :=
+      Matrix.ext figureEightSeifertMatrix_apply
+    rw [hfigureEight]
     decide +kernel
   rw [← Matrix.alexander_submatrix_equiv_self _ e, he,
     ← alexander_congruence_of_det_sq_eq_one _ hP, hcongr, alexander_figureEightSeifertMatrix]
