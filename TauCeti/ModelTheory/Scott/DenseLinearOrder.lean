@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.ModelTheory.BackAndForth.Karp
+public import TauCeti.ModelTheory.Order
 public import TauCeti.ModelTheory.Scott.ExtensionPair
 public import TauCeti.ModelTheory.Scott.PotentialIso
 public import Mathlib.ModelTheory.Order
@@ -127,9 +128,6 @@ open Cardinal Order
 open scoped Ordinal
 
 attribute [local instance] orderStructure
-
--- Under `orderStructure`, the order symbol is interpreted as the order.
-local instance {M : Type*} [LE M] : Language.order.OrderedStructure M := ⟨fun _ => Iff.rfl⟩
 
 /-- The lexicographic product `ω₁ ×ₗ ℚ` is not isomorphic, as a structure in the language of
 orders, to its order dual: it has cofinality `ℵ₁`, while its order dual has cofinality `ℵ₀`. -/

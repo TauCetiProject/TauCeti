@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.FormalGroup.Basic
 public import Mathlib.RingTheory.PowerSeries.WellKnown
 public import TauCeti.RingTheory.PowerSeries.Substitution
+import TauCeti.RingTheory.MvPowerSeries.Substitution
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -39,6 +40,7 @@ a right inverse, is unique on either side, and is an involution, `i(i(X)) = X`.
 
 ## Main results
 
+* `FormalGroup.hasSubst_subst_pair`: `F(x, y)` is substitutable for substitutable `x, y`.
 * `FormalGroup.subst_addInvX_X_eq_zero`: `F(i(X), X) = 0`.
 * `FormalGroup.val_neg_tautologicalPoint`: `-X = i(X)` in `F.Point Unit`.
 * `FormalGroup.subst_X_addInvX_eq_zero`: `F(X, i(X)) = 0`.
@@ -164,6 +166,12 @@ theorem subst_addInvX_X_eq_zero :
   simp
 
 variable {σ : Type*}
+
+/-- The value `F(x, y)` of a formal group law at substitutable `x, y` is substitutable: it is the
+sum of the power-series points `x` and `y` of `F`. -/
+theorem hasSubst_subst_pair {x y : MvPowerSeries σ R} (hx : PowerSeries.HasSubst x)
+    (hy : PowerSeries.HasSubst y) : PowerSeries.HasSubst (F.toPowerSeries.subst ![x, y]) :=
+  IsNilpotent_subst (hasSubst_finTwo hx hy) (F.zero_constantCoeff ▸ IsNilpotent.zero)
 
 /-- Negation of power-series points of `F`: `-x = i(x)`, substituting `x` into the formal
 inverse. -/

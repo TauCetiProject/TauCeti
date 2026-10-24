@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.FormalGroup.NSMul.Basic
-public import TauCeti.RingTheory.FormalGroup.SymmetricCocycle
+public import TauCeti.RingTheory.FormalGroup.SymmetricCocycle.Basic
 import Mathlib.Algebra.CharP.Algebra
 import Mathlib.Data.Nat.Factorization.PrimePow
 import Mathlib.Data.Nat.Log

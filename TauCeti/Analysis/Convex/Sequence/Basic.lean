@@ -27,7 +27,8 @@ recovers heights from an anchor and consecutive increments, and characterises co
 differences. A sequence is admissible when it has a real affine lower bound,
 which is equivalent to having a convex minorant. Convexity and admissibility are
 invariant under adding a real affine function, that is, under height translation
-and shear, and under translating the indices. These results provide the discrete
+and shear, and under translating the indices. Reflecting the indices in `N` preserves
+convexity; it discards the heights beyond `N`. These results provide the discrete
 geometry used to construct lower convex envelopes without any coefficient data.
 
 The supporting-line and chord arguments are adapted from William Coram's
@@ -388,6 +389,36 @@ theorem coe_le_iff_exists_affine_minorant (n : ℕ) (r : ℝ) :
     refine le_trans (WithTop.coe_le_coe.mpr ?_) (hdm k)
     nlinarith [mul_nonneg hδ (sub_nonneg.mpr hnk')]
 
+/-- Raising an interior height preserves convexity provided the new height stays
+below the average of its finite neighbors. -/
+theorem update_of_le {n : ℕ} {y : ℝ}
+    (hn : h n ≠ ⊤) (hn₂ : h (n + 2) ≠ ⊤)
+    (hy : (h (n + 1)).untop₀ ≤ y)
+    (hbound : 2 * y ≤ (h n).untop₀ + (h (n + 2)).untop₀) :
+    IsConvexSeq (Function.update h (n + 1) (y : WithTop ℝ)) := by
+  have hn₁ : h (n + 1) ≠ ⊤ := hh.ne_top_of_le_of_le hn hn₂ (by omega) (by omega)
+  have hdom (k : ℕ) :
+      Function.update h (n + 1) (y : WithTop ℝ) k ≠ ⊤ ↔ h k ≠ ⊤ := by
+    by_cases hk : k = n + 1
+    · simp [hk, hn₁]
+    · simp [Function.update_of_ne hk]
+  have hraise (k : ℕ) :
+      (h k).untop₀ ≤ (Function.update h (n + 1) (y : WithTop ℝ) k).untop₀ := by
+    by_cases hk : k = n + 1
+    · simpa [hk] using hy
+    · simp [Function.update_of_ne hk]
+  refine isConvexSeq_iff_two_mul_le.mpr ⟨?_, fun k hk hk₂ => ?_⟩
+  · simpa only [hdom] using hh.ordConnected
+  · by_cases hkn : k = n
+    · subst k
+      simpa [Function.update_of_ne (by omega : n ≠ n + 1),
+        Function.update_of_ne (by omega : n + 2 ≠ n + 1)] using hbound
+    · have hmid := (isConvexSeq_iff_two_mul_le.mp hh).2 k
+        ((hdom k).mp hk) ((hdom (k + 2)).mp hk₂)
+      have hne : k + 1 ≠ n + 1 := by omega
+      rw [Function.update_of_ne hne]
+      exact hmid.trans (add_le_add (hraise k) (hraise (k + 2)))
+
 end IsConvexSeq
 
 /-- A height sequence admits a convex minorant exactly when it is admissible, that
@@ -540,5 +571,57 @@ moves every unit slope `k` places to the right. -/
 theorem unitSlope_shift (h : ℕ → WithTop ℝ) (k n : ℕ) :
     unitSlope (fun n => if k ≤ n then h (n - k) else ⊤) (n + k) = unitSlope h n := by
   simp [unitSlope_def, show k ≤ n + k + 1 by omega, show n + k + 1 - k = n + 1 by omega]
+
+/-! ### Reflection of indices -/
+
+/-- Reflecting heights in `N`, with infinite heights beyond `N`, preserves convexity. The heights
+of `h` beyond `N` are discarded. -/
+theorem IsConvexSeq.reflect {h : ℕ → WithTop ℝ} (hh : IsConvexSeq h) (N : ℕ) :
+    IsConvexSeq fun n => if n ≤ N then h (N - n) else ⊤ := by
+  have hmem {n : ℕ} : (if n ≤ N then h (N - n) else ⊤) ≠ ⊤ ↔ n ≤ N ∧ h (N - n) ≠ ⊤ := by
+    split_ifs with hn <;> simp [hn]
+  refine isConvexSeq_iff_two_mul_le.mpr ⟨⟨fun i hi j hj l hl => ?_⟩, fun n hn hn₂ => ?_⟩
+  · obtain ⟨-, hi⟩ := hmem.mp hi
+    obtain ⟨hjN, hj⟩ := hmem.mp hj
+    exact hmem.mpr ⟨hl.2.trans hjN,
+      hh.ne_top_of_le_of_le hj hi (by have := hl.2; omega) (by have := hl.1; omega)⟩
+  · obtain ⟨-, hn⟩ := hmem.mp hn
+    obtain ⟨hn₂N, hn₂⟩ := hmem.mp hn₂
+    have e₀ : N - n = N - (n + 2) + 2 := by omega
+    have e₁ : N - (n + 1) = N - (n + 2) + 1 := by omega
+    rw [e₀] at hn
+    have key := (isConvexSeq_iff_two_mul_le.mp hh).2 (N - (n + 2)) hn₂ hn
+    simp only [show n ≤ N by omega, show n + 1 ≤ N by omega, hn₂N, ite_true, e₀, e₁]
+    linarith
+
+/-- Reflecting heights in `N`, when they are infinite beyond `N`, reverses the finite unit
+edges: the edge `[m, m + 1]` moves to `[N - 1 - m, N - m]`. -/
+theorem finiteEdges_reflect {h : ℕ → WithTop ℝ} {N : ℕ} (hh : ∀ n, N < n → h n = ⊤) :
+    finiteEdges (fun n => if n ≤ N then h (N - n) else ⊤) = (N - 1 - ·) '' finiteEdges h := by
+  ext n
+  simp only [mem_finiteEdges, Set.mem_image]
+  constructor
+  · rintro ⟨h₀, h₁⟩
+    have hn : n + 1 ≤ N := by
+      by_contra hn
+      simp [hn] at h₁
+    refine ⟨N - 1 - n, ⟨?_, ?_⟩, by omega⟩
+    · simpa [hn, show N - (n + 1) = N - 1 - n by omega] using h₁
+    · simpa [show n ≤ N by omega, show N - 1 - n + 1 = N - n by omega] using h₀
+  · rintro ⟨m, ⟨h₀, h₁⟩, rfl⟩
+    have hm : m + 1 ≤ N := by
+      by_contra hm
+      exact h₁ (hh _ (by omega))
+    simp only [show N - 1 - m ≤ N by omega, show N - 1 - m + 1 ≤ N by omega, ite_true,
+      show N - (N - 1 - m) = m + 1 by omega, show N - (N - 1 - m + 1) = m by omega]
+    exact ⟨h₁, h₀⟩
+
+/-- Reflecting heights in `N` negates the unit slopes and reverses their order. -/
+@[simp]
+theorem unitSlope_reflect (h : ℕ → WithTop ℝ) {N n : ℕ} (hn : n < N) :
+    unitSlope (fun n => if n ≤ N then h (N - n) else ⊤) n = -unitSlope h (N - 1 - n) := by
+  simp only [unitSlope_def, show n + 1 ≤ N by omega, show n ≤ N by omega, ite_true,
+    show N - (n + 1) = N - 1 - n by omega, show N - n = N - 1 - n + 1 by omega]
+  ring
 
 end TauCeti

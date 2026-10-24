@@ -7,7 +7,8 @@ module
 
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.RepresentationTheory.FiniteIndex
-public import TauCeti.RepresentationTheory.FDRep
+public import TauCeti.CategoryTheory.Linear.Endomorphism
+public import TauCeti.RepresentationTheory.FDRep.Basic
 public import TauCeti.RepresentationTheory.Induction.Basic
 
 /-!
@@ -26,7 +27,8 @@ That functor is additive (`indFDRepMap_add`); the general fact it rests on, addi
 intertwiners along an arbitrary group homomorphism, is `Rep.indMap_add` of
 `TauCeti.RepresentationTheory.Induction.Basic`. Read through the functor, induction sends an
 isomorphism of representations to an isomorphism of the induced ones
-(`nonempty_iso_indFDRep`).
+(`nonempty_iso_indFDRep`). The induced map on native endomorphism algebras is
+`FDRep.indEndAlgHom`; it is injective for every finite-index subgroup.
 
 Over any commutative ring, the coset model also shows that induction from a finite-index subgroup
 preserves finiteness of the underlying module (`Rep.finite_ind`) and gives the cardinality formula
@@ -258,6 +260,24 @@ theorem _root_.Rep.indSubtypeEquivPi_indMap [S.FiniteIndex]
       Rep.hom_comp, Representation.IntertwiningMap.comp_apply] using hx
   exact hn.trans (Representation.coindMap_coe_apply_apply S.subtype V.ρ W.ρ f.hom _ q.out)
 
+/-- Induction from a finite-index subgroup is injective on intertwining spaces. -/
+theorem _root_.Rep.indMap_injective [S.FiniteIndex] {V W : Rep.{max w u} k S} :
+    Function.Injective (Rep.indMap S.subtype : (V ⟶ W) → _) := by
+  intro f g h
+  apply Rep.hom_ext
+  ext x
+  let q : Quotient (QuotientGroup.rightRel S) := Quotient.mk'' (1 : G)
+  have hx := congrArg (fun m : Rep.ind S.subtype V ⟶ Rep.ind S.subtype W ↦
+    indSubtypeEquivPi W (m.hom ((indSubtypeEquivPi V).symm (fun _ ↦ x))) q) h
+  simpa only [_root_.Rep.indSubtypeEquivPi_indMap f, _root_.Rep.indSubtypeEquivPi_indMap g,
+    LinearEquiv.apply_symm_apply, Representation.IntertwiningMap.toLinearMap_apply] using hx
+
+/-- Induction from a finite-index subgroup is a faithful functor, the functorial form of
+`Rep.indMap_injective`. -/
+instance _root_.Rep.indFunctor_faithful [S.FiniteIndex] :
+    (Rep.indFunctor k S.subtype : Rep.{max w u} k S ⥤ Rep k G).Faithful where
+  map_injective h := _root_.Rep.indMap_injective h
+
 /-- **Induction from a finite-index subgroup preserves finiteness** of the underlying module. -/
 instance finite_ind [S.FiniteIndex] (A : Rep.{max w u} k S) [Finite A] :
     Finite (Rep.ind S.subtype A) :=
@@ -433,8 +453,21 @@ theorem indFDRepMap_add {k : Type u} {G : Type v} [Field k] [Group G] {S : Subgr
     Representation.IntertwiningMap.toLinearMap_apply, Representation.IntertwiningMap.coe_add,
     Pi.add_apply, map_add]
 
+/-- Induction of finite-dimensional intertwiners commutes with scalar multiplication. -/
+@[simp]
+theorem indFDRepMap_smul {k : Type u} {G : Type v} [Field k] [Group G] {S : Subgroup G}
+    [S.FiniteIndex] {A B : FDRep k S} (r : k) (f : A ⟶ B) :
+    indFDRepMap (r • f) = r • indFDRepMap f := by
+  apply (forget₂ (FDRep k G) (Rep k G)).map_injective
+  apply Rep.hom_ext
+  ext x
+  simp only [Functor.map_smul, _root_.Rep.smul_hom, forget₂_map_indFDRepMap_apply,
+    _root_.Rep.indMap_smul, Representation.IntertwiningMap.toLinearMap_apply,
+    Representation.IntertwiningMap.smul_apply, map_smul]
+
 /-- Induction of intertwiners preserves identities. -/
-private theorem indFDRepMap_id {k : Type u} {G : Type v} [Field k] [Group G] {S : Subgroup G}
+@[simp]
+theorem indFDRepMap_id {k : Type u} {G : Type v} [Field k] [Group G] {S : Subgroup G}
     [S.FiniteIndex] (A : FDRep k S) : indFDRepMap (𝟙 A) = 𝟙 (indFDRep A) := by
   let A' := (forget₂ (FDRep k S) (Rep k S)).obj A
   have hInd : Rep.indMap S.subtype (𝟙 A') = 𝟙 (Rep.ind S.subtype A') := by
@@ -446,7 +479,8 @@ private theorem indFDRepMap_id {k : Type u} {G : Type v} [Field k] [Group G] {S 
   simp [A', hInd]
 
 /-- Induction of intertwiners preserves composition. -/
-private theorem indFDRepMap_comp {k : Type u} {G : Type v} [Field k] [Group G] {S : Subgroup G}
+@[simp]
+theorem indFDRepMap_comp {k : Type u} {G : Type v} [Field k] [Group G] {S : Subgroup G}
     [S.FiniteIndex] {A B C : FDRep k S} (f : A ⟶ B) (g : B ⟶ C) :
     indFDRepMap (f ≫ g) = indFDRepMap f ≫ indFDRepMap g := by
   let f' := (forget₂ (FDRep k S) (Rep k S)).map f
@@ -501,6 +535,68 @@ passed to the split Grothendieck group in
 instance indFDRepFunctor_additive {k : Type u} {G : Type v} [Field k] [Group G] {S : Subgroup G}
     [S.FiniteIndex] : (indFDRepFunctor (k := k) (S := S)).Additive where
   map_add {_ _} f g := indFDRepMap_add f g
+
+/-- Induction from a finite-index subgroup is linear over the coefficient field. -/
+instance indFDRepFunctor_linear {k : Type u} {G : Type v} [Field k] [Group G] {S : Subgroup G}
+    [S.FiniteIndex] : (indFDRepFunctor (k := k) (S := S)).Linear k where
+  map_smul f r := indFDRepMap_smul r f
+
+/-- Induction from a finite-index subgroup is faithful on finite-dimensional intertwiners. -/
+theorem indFDRepMap_injective {k : Type u} {G : Type v} [Field k] [Group G] {S : Subgroup G}
+    [S.FiniteIndex] {A B : FDRep k S} :
+    Function.Injective (indFDRepMap : (A ⟶ B) → _) := by
+  intro f g h
+  apply (forget₂ (FDRep k S) (Rep k S)).map_injective
+  -- The forgotten carrier lies in `u`, so `w := 0` specializes `max w u` to `u`.
+  apply _root_.Rep.indMap_injective.{u, v, 0} (S := S)
+  apply Rep.hom_ext
+  refine Representation.IntertwiningMap.ext (LinearMap.ext fun x ↦ ?_)
+  have hx := congrArg (fun m : indFDRep A ⟶ indFDRep B ↦ indFDRepForgetEquiv B
+    (((forget₂ (FDRep k G) (Rep k G)).map m).hom ((indFDRepForgetEquiv A).symm x))) h
+  simpa only [forget₂_map_indFDRepMap_apply, Representation.Equiv.apply_symm_apply,
+    Representation.IntertwiningMap.toLinearMap_apply] using hx
+
+/-- Induction from a finite-index subgroup is a faithful functor on finite-dimensional
+representations, the functorial form of `indFDRepMap_injective`. -/
+instance indFDRepFunctor_faithful {k : Type u} {G : Type v} [Field k] [Group G] {S : Subgroup G}
+    [S.FiniteIndex] : (indFDRepFunctor (k := k) (S := S)).Faithful where
+  map_injective h := indFDRepMap_injective h
+
+end TauCeti
+
+namespace FDRep
+
+universe u v
+
+open CategoryTheory TauCeti
+
+variable {k : Type u} {G : Type v} [Field k] [Group G] {H : Subgroup G}
+
+/-- The algebra homomorphism on endomorphisms given by induction from a finite-index subgroup.
+Multiplication on both native endomorphism algebras is reverse categorical composition. -/
+noncomputable def indEndAlgHom [H.FiniteIndex] (A : FDRep k H) :
+    CategoryTheory.End A →ₐ[k] CategoryTheory.End (indFDRep A) :=
+  indFDRepFunctor.mapEndAlgHom k A
+
+/-- The endomorphism algebra map acts by the native induction map on intertwiners. -/
+@[simp]
+theorem indEndAlgHom_asHom [H.FiniteIndex] (A : FDRep k H) (f : CategoryTheory.End A) :
+    (A.indEndAlgHom f).asHom = indFDRepMap f.asHom := by
+  -- The defining object and map fields of induction identify the functorial map with this model.
+  exact indFDRepFunctor.mapEndAlgHom_asHom k A f
+
+/-- Induction from a finite-index subgroup embeds the endomorphism algebra. -/
+theorem indEndAlgHom_injective [H.FiniteIndex] (A : FDRep k H) :
+    Function.Injective A.indEndAlgHom :=
+  indFDRepFunctor.mapEndAlgHom_injective k A
+
+end FDRep
+
+namespace TauCeti
+
+open CategoryTheory
+
+universe u v
 
 /-- Under the forgetful functor to `Rep k G`, `indFDRepFunctor` is naturally isomorphic to
 Mathlib's induction functor, componentwise by `indFDRepForgetIso`. -/

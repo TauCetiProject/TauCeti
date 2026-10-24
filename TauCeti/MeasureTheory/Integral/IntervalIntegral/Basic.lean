@@ -20,6 +20,8 @@ not belong to any particular application.
   `[a, b]`.
 * `MeasureTheory.IntegrableOn.intervalIntegrable_of_mem_Icc`: a function integrable on `(a, b)`
   for a measure without mass at points is interval integrable between any two points of `[a, b]`.
+* `ContinuousLinearEquiv.intervalIntegral_comp_comm`: a continuous linear equivalence commutes
+  with interval integrals, with no integrability assumption.
 -/
 
 public section
@@ -51,3 +53,12 @@ theorem MeasureTheory.IntegrableOn.intervalIntegrable_of_mem_Icc {E : Type*}
     IntervalIntegrable f μ s t :=
   ((integrableOn_Icc_iff_integrableOn_Ioo (f := f)).2 hf |>.mono_set
     (uIcc_subset_Icc hs ht)).intervalIntegrable
+
+/-- A continuous linear equivalence commutes with interval integrals of arbitrary functions;
+compare `ContinuousLinearMap.intervalIntegral_comp_comm`, which needs integrability. -/
+theorem ContinuousLinearEquiv.intervalIntegral_comp_comm {𝕜 E F : Type*} [RCLike 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedSpace ℝ E]
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedSpace ℝ F] {μ : Measure ℝ} {a b : ℝ}
+    (L : E ≃L[𝕜] F) (f : ℝ → E) :
+    ∫ x in a..b, L (f x) ∂μ = L (∫ x in a..b, f x ∂μ) := by
+  simp_rw [intervalIntegral, L.integral_comp_comm, map_sub]

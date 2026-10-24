@@ -226,12 +226,13 @@ private def principalPartsPresheafSectionsEquiv (D : SchemeWeilDivisor X) (U : X
       principalPartsSections D U :=
   principalPartsObjSectionsEquiv D U
 
-/-- Under `principalPartsPresheafSectionsEquiv`, restriction is
-`principalPartsRestrict`. -/
-private lemma principalPartsPresheafSectionsEquiv_map (D : SchemeWeilDivisor X)
-    {U V : X.Opens} (i : V ⟶ U) (s : (principalPartsPresheaf D).presheaf.obj (op U)) :
-    principalPartsPresheafSectionsEquiv D V ((principalPartsPresheaf D).presheaf.map i.op s) =
-      principalPartsRestrict D i (principalPartsPresheafSectionsEquiv D U s) :=
+/-- Under `principalPartsPresheafSectionsEquiv`, restriction forgets the points outside the smaller
+open subset. -/
+private lemma principalPartsPresheafSectionsEquiv_map_apply (D : SchemeWeilDivisor X)
+    {U V : X.Opens} (i : V ⟶ U) (s : (principalPartsPresheaf D).presheaf.obj (op U))
+    (y : {x : CodimensionOnePoint X // (x : X) ∈ V}) :
+    principalPartsPresheafSectionsEquiv D V ((principalPartsPresheaf D).presheaf.map i.op s) y =
+      principalPartsPresheafSectionsEquiv D U s ⟨y.1, i.le y.2⟩ :=
   (rfl)
 
 end LocallyNoetherian
@@ -240,67 +241,36 @@ section Noetherian
 
 variable [IsNoetherian X]
 
-/-- On a Noetherian scheme, principal parts form a sheaf: compatible finitely supported families
-glue pointwise, and the glued family is finitely supported because the union of the open subsets
-is quasi-compact. -/
+/-- On a Noetherian scheme, principal parts form a sheaf. -/
 private theorem isSheaf_principalPartsPresheaf (D : SchemeWeilDivisor X) :
     Presheaf.IsSheaf (Opens.grothendieckTopology X) (principalPartsPresheaf D).presheaf := by
-  refine (TopCat.Presheaf.isSheaf_iff_isSheafUniqueGluing _).mpr ?_
-  intro ι U sf hsf
-  let sf' : ∀ i, principalPartsSections D (U i) :=
-    fun i ↦ principalPartsPresheafSectionsEquiv D (U i) (sf i)
-  -- The restriction maps are `principalPartsRestrict`, so compatibility and gluing are
-  -- pointwise conditions. Two members of the family agree at every point of the intersection
-  -- of their domains.
-  have hagree : ∀ (i j : ι) (x : CodimensionOnePoint X) (hi : (x : X) ∈ U i)
-      (hj : (x : X) ∈ U j), sf' i ⟨x, hi⟩ = sf' j ⟨x, hj⟩ := by
-    intro i j x hi hj
-    have h := congrArg (principalPartsPresheafSectionsEquiv D (U i ⊓ U j)) (hsf i j)
-    exact congrArg (fun t : principalPartsSections D (U i ⊓ U j) ↦ t ⟨x, hi, hj⟩) h
-  have hmem : ∀ x : {x : CodimensionOnePoint X // (x : X) ∈ iSup U}, ∃ i, (x.1 : X) ∈ U i :=
-    fun x ↦ Opens.mem_iSup.mp x.2
-  let g : ∀ x : {x : CodimensionOnePoint X // (x : X) ∈ iSup U}, PrincipalPart D x.1 :=
-    fun x ↦ sf' (hmem x).choose ⟨x.1, (hmem x).choose_spec⟩
-  have hg : ∀ (x : {x : CodimensionOnePoint X // (x : X) ∈ iSup U}) (i : ι)
-      (hi : (x.1 : X) ∈ U i), g x = sf' i ⟨x.1, hi⟩ :=
-    fun x i hi ↦ hagree _ _ _ _ _
+  refine (TopCat.Presheaf.isSheaf_iff_isSheafUniqueGluing _).mpr fun ι U sf hsf ↦ ?_
+  -- The restriction maps forget points, so compatibility and gluing are pointwise conditions.
+  -- Compatible families therefore glue pointwise, using at each point a member defined there.
+  choose j hj using fun x : {x : CodimensionOnePoint X // (x : X) ∈ iSup U} ↦ Opens.mem_iSup.mp x.2
+  let g (x : {x : CodimensionOnePoint X // (x : X) ∈ iSup U}) : PrincipalPart D x.1 :=
+    principalPartsPresheafSectionsEquiv D (U (j x)) (sf (j x)) ⟨x.1, hj x⟩
+  -- Two members of the family agree on the intersection of their domains, so `g` agrees with each.
+  have hg (x : {x : CodimensionOnePoint X // (x : X) ∈ iSup U}) {i : ι} (hi : (x.1 : X) ∈ U i) :
+      g x = principalPartsPresheafSectionsEquiv D (U i) (sf i) ⟨x.1, hi⟩ := by
+    simpa only [principalPartsPresheafSectionsEquiv_map_apply] using congrArg
+      (principalPartsPresheafSectionsEquiv D (U (j x) ⊓ U i) · ⟨x.1, hj x, hi⟩) (hsf (j x) i)
+  -- The glued family is finitely supported because the union of the open subsets is quasi-compact.
   have hfin : {x | g x ≠ 0}.Finite := by
     obtain ⟨t, ht⟩ := (NoetherianSpace.isCompact ((iSup U : X.Opens) : Set X)).elim_finite_subcover
-      (fun i ↦ (U i : Set X)) (fun i ↦ (U i).isOpen) (by simp [Opens.coe_iSup])
-    refine (t.finite_toSet.biUnion fun i _ ↦
-      ((DFinsupp.finite_support (sf' i)).image
-        fun y ↦ (⟨y.1, Opens.mem_iSup.mpr ⟨i, y.2⟩⟩ :
-          {x : CodimensionOnePoint X // (x : X) ∈ iSup U}))).subset ?_
-    intro x hx
+      (fun i ↦ (U i : Set X)) (fun i ↦ (U i).isOpen) (Opens.coe_iSup U).subset
+    refine ((t.finite_toSet.biUnion fun i _ ↦
+      (DFinsupp.finite_support (principalPartsPresheafSectionsEquiv D (U i) (sf i))).image
+        Subtype.val).preimage Subtype.val_injective.injOn).subset fun x hx ↦ ?_
     obtain ⟨i, hit, hi⟩ := Set.mem_iUnion₂.mp (ht x.2)
-    refine Set.mem_biUnion hit ⟨⟨x.1, hi⟩, ?_, rfl⟩
-    rw [Set.mem_ofPred_eq, ← hg x i hi]
-    exact hx
-  refine ⟨(principalPartsPresheafSectionsEquiv D (iSup U)).symm
-    (dfinsuppOfFiniteSupport g hfin), ?_, ?_⟩
-  · intro i
-    apply (principalPartsPresheafSectionsEquiv D (U i)).injective
-    apply DFinsupp.ext
-    intro y
-    have hmap := principalPartsPresheafSectionsEquiv_map D (Opens.leSupr U i)
-      ((principalPartsPresheafSectionsEquiv D (iSup U)).symm
-        (dfinsuppOfFiniteSupport g hfin))
-    have hpoint := congrArg (fun t : principalPartsSections D (U i) ↦ t y) hmap
-    rw [AddEquiv.apply_symm_apply, principalPartsRestrict_apply,
-      dfinsuppOfFiniteSupport_apply] at hpoint
-    exact hpoint.trans (hg ⟨y.1, _⟩ i y.2)
-  · intro s hs
-    apply (principalPartsPresheafSectionsEquiv D (iSup U)).injective
-    apply DFinsupp.ext
-    intro x
-    obtain ⟨i, hi⟩ := hmem x
-    rw [AddEquiv.apply_symm_apply, dfinsuppOfFiniteSupport_apply]
-    have hsx := congrArg (principalPartsPresheafSectionsEquiv D (U i)) (hs i)
-    have hsx' := congrArg (fun t : principalPartsSections D (U i) ↦ t ⟨x.1, hi⟩) hsx
-    have hmap := principalPartsPresheafSectionsEquiv_map D (Opens.leSupr U i) s
-    have hpoint := congrArg (fun t : principalPartsSections D (U i) ↦ t ⟨x.1, hi⟩) hmap
-    rw [principalPartsRestrict_apply] at hpoint
-    exact hpoint.symm.trans (hsx'.trans (hg x i hi).symm)
+    exact Set.mem_biUnion hit ⟨⟨x.1, hi⟩, by rwa [Set.mem_ofPred_eq, ← hg x hi], rfl⟩
+  refine ⟨(principalPartsPresheafSectionsEquiv D (iSup U)).symm (dfinsuppOfFiniteSupport g hfin),
+    fun i ↦ (principalPartsPresheafSectionsEquiv D (U i)).injective (DFinsupp.ext fun y ↦ ?_),
+    fun s hs ↦ (principalPartsPresheafSectionsEquiv D (iSup U)).injective (DFinsupp.ext fun x ↦ ?_)⟩
+  · refine (principalPartsPresheafSectionsEquiv_map_apply D (Opens.leSupr U i) _ y).trans ?_
+    simpa only [AddEquiv.apply_symm_apply, dfinsuppOfFiniteSupport_apply] using hg ⟨y.1, _⟩ y.2
+  · simp only [AddEquiv.apply_symm_apply, dfinsuppOfFiniteSupport_apply, hg x (hj x), ← hs (j x),
+      principalPartsPresheafSectionsEquiv_map_apply]
 
 /-- The sheaf of `𝒪_X`-modules of principal parts of a Weil divisor `D` on a Noetherian integral
 scheme: its sections over `U` are the finitely supported families of principal parts
@@ -342,44 +312,21 @@ lemma principalParts_presheaf_map_apply (D : SchemeWeilDivisor X) {U V : X.Opens
       principalPartsSectionsEquiv D U s ⟨y.1, i.le y.2⟩ :=
   (rfl)
 
-/-- The sheaf of principal parts is flasque: a finitely supported family on a smaller open subset
-extends by zero. -/
+/-- The sheaf of principal parts is flasque: a finitely supported family of principal parts on an
+open subset extends to any larger open subset. -/
 instance (D : SchemeWeilDivisor X) : (principalParts D).presheaf.IsFlasque where
   epi {U V} i := by
     classical
-    rw [AddCommGrpCat.epi_iff_surjective]
-    intro t
-    let t' : principalPartsSections D V.unop := principalPartsSectionsEquiv D V.unop t
-    let g : ∀ x : {x : CodimensionOnePoint X // (x : X) ∈ U.unop}, PrincipalPart D x.1 :=
-      fun x ↦ if h : (x.1 : X) ∈ V.unop then t' ⟨x.1, h⟩ else 0
-    have hfin : {x | g x ≠ 0}.Finite := by
-      refine ((DFinsupp.finite_support t').image
-        fun y ↦ (⟨y.1, i.unop.le y.2⟩ : {x : CodimensionOnePoint X // (x : X) ∈ U.unop})).subset ?_
-      intro x hx
-      by_cases h : (x.1 : X) ∈ V.unop
-      · refine ⟨⟨x.1, h⟩, ?_, rfl⟩
-        simpa [g, h] using hx
-      · exact absurd (by simp [g, h]) hx
-    refine ⟨(principalPartsSectionsEquiv D U.unop).symm
-      (dfinsuppOfFiniteSupport g hfin), ?_⟩
-    -- The restriction map is `principalPartsRestrict`, evaluation at the points of `V`.
-    apply (principalPartsSectionsEquiv D V.unop).injective
-    apply DFinsupp.ext
-    intro y
-    have hmap := principalPartsSectionsEquiv_map D i.unop
-      ((principalPartsSectionsEquiv D U.unop).symm (dfinsuppOfFiniteSupport g hfin))
-    have hmap' : principalPartsSectionsEquiv D V.unop
-        ((principalParts D).presheaf.map i
-          ((principalPartsSectionsEquiv D U.unop).symm
-            (dfinsuppOfFiniteSupport g hfin))) =
-        principalPartsRestrict D i.unop
-          (principalPartsSectionsEquiv D U.unop
-            ((principalPartsSectionsEquiv D U.unop).symm
-              (dfinsuppOfFiniteSupport g hfin))) := by
-      simpa only [Quiver.Hom.op_unop] using hmap
-    rw [hmap', principalPartsRestrict_apply, AddEquiv.apply_symm_apply,
-      dfinsuppOfFiniteSupport_apply]
-    exact dite_eq_left y.2
+    refine (AddCommGrpCat.epi_iff_surjective _).mpr fun t ↦ ?_
+    let t' := principalPartsSectionsEquiv D V.unop t
+    -- Extend `t'` by zero to `U`; the restriction map forgets the points outside `V`.
+    refine ⟨(principalPartsSectionsEquiv D U.unop).symm (dfinsuppOfFiniteSupport
+        (fun x ↦ if h : (x.1 : X) ∈ V.unop then t' ⟨x.1, h⟩ else 0) ?_),
+      (principalPartsSectionsEquiv D V.unop).injective <| DFinsupp.ext fun y ↦ ?_⟩
+    · exact (t'.finite_support.image fun y ↦ ⟨y.1, i.unop.le y.2⟩).subset fun x hx ↦
+        (dite_ne_right_iff.mp hx).elim fun h ht ↦ ⟨⟨x.1, h⟩, ht, rfl⟩
+    · refine (principalParts_presheaf_map_apply D i.unop _ y).trans ?_
+      rw [AddEquiv.apply_symm_apply, dfinsuppOfFiniteSupport_apply, dite_eq_left y.2]
 
 /-- The principal part at a codimension-one point `x` of `U` of a section of `𝒦_X` over `U`. -/
 def principalPartAt (D : SchemeWeilDivisor X) {U : X.Opens} (s : Γ(Scheme.rationalFunctions X, U))
@@ -605,9 +552,7 @@ include hclosed
 
 /-- **Principal parts can be prescribed locally.** If the codimension-one points are closed, a
 finitely supported family of principal parts on `U` is, near any point `y` of `U`, the family of
-principal parts of a single rational function: take a rational function with the prescribed
-principal part at `y`, and delete the finitely many other points at which the family or that
-function has a nonzero principal part. -/
+principal parts of a single rational function: `toPrincipalParts D` is locally surjective. -/
 theorem exists_toPrincipalParts_app_eq (D : SchemeWeilDivisor X) {U : X.Opens}
     (t : Γ(principalParts D, U)) {y : X} (hy : y ∈ U) :
     ∃ (V : X.Opens) (i : V ⟶ U), y ∈ V ∧ ∃ s : Γ(Scheme.rationalFunctions X, V),
@@ -615,44 +560,30 @@ theorem exists_toPrincipalParts_app_eq (D : SchemeWeilDivisor X) {U : X.Opens}
   let t' := principalPartsSectionsEquiv D U t
   -- A rational function with the prescribed principal part at `y`, if `y` has codimension one.
   obtain ⟨f, hf⟩ : ∃ f : X.functionField, ∀ h : coheight y = 1,
-      Submodule.Quotient.mk f = t' ⟨⟨y, h⟩, hy⟩ := by
-    by_cases h : coheight y = 1
-    · obtain ⟨f, hf⟩ := Submodule.Quotient.mk_surjective _ (t' ⟨⟨y, h⟩, hy⟩)
-      exact ⟨f, fun _ ↦ hf⟩
-    · exact ⟨0, fun h' ↦ absurd h' h⟩
-  have hfy : ∀ (w : CodimensionOnePoint X) (_ : (w : X) = y) (hwU : (w : X) ∈ U),
-      Submodule.Quotient.mk f = t' ⟨w, hwU⟩ := by
-    rintro ⟨w, hwc⟩ rfl _
-    exact hf hwc
+      Submodule.Quotient.mk f = t' ⟨⟨y, h⟩, hy⟩ :=
+    if h : coheight y = 1 then
+      (Submodule.Quotient.mk_surjective _ (t' ⟨⟨y, h⟩, hy⟩)).imp fun _ hf _ ↦ hf
+    else ⟨0, fun h' ↦ absurd h' h⟩
   -- The codimension-one points other than `y` at which `t` or `f` has a nonzero principal part.
   let E : Set (CodimensionOnePoint X) := {x | (x : X) ≠ y ∧
     ((∃ hx : (x : X) ∈ U, t' ⟨x, hx⟩ ≠ 0) ∨ (Submodule.Quotient.mk f : PrincipalPart D x) ≠ 0)}
-  have hE : E.Finite := by
-    refine (((DFinsupp.finite_support t').image Subtype.val).union
-      (finite_setOf_mk_ne_zero D f)).subset ?_
-    rintro x ⟨-, ⟨hx, hxt⟩ | hxf⟩
-    · exact Or.inl ⟨⟨x, hx⟩, hxt, rfl⟩
-    · exact Or.inr hxf
-  have hZ : IsClosed (⋃ x ∈ E, ({(x : X)} : Set X)) := hE.isClosed_biUnion fun x _ ↦ hclosed x
-  let V : X.Opens := U ⊓ ⟨(⋃ x ∈ E, ({(x : X)} : Set X))ᶜ, hZ.isOpen_compl⟩
-  have hyV : y ∈ V := by
-    refine ⟨hy, fun h ↦ ?_⟩
-    obtain ⟨x, hx, hxy⟩ := Set.mem_iUnion₂.mp h
-    exact hx.1 (Set.mem_singleton_iff.mp hxy).symm
+  have hE : E.Finite := (((DFinsupp.finite_support t').image Subtype.val).union
+    (finite_setOf_mk_ne_zero D f)).subset fun x hx ↦ hx.2.imp_left fun h ↦ ⟨⟨x, h.1⟩, h.2, rfl⟩
+  let V : X.Opens := U ⊓ ⟨(⋃ x ∈ E, ({(x : X)} : Set X))ᶜ,
+    (hE.isClosed_biUnion fun x _ ↦ hclosed x).isOpen_compl⟩
+  have hyV : y ∈ V := ⟨hy, fun h ↦ (Set.mem_iUnion₂.mp h).elim fun _ ⟨hx, h'⟩ ↦ hx.1 (Eq.symm h')⟩
   have : Nonempty V := ⟨⟨y, hyV⟩⟩
-  refine ⟨V, homOfLE inf_le_left, hyV, (Scheme.rationalFunctionsEquiv V).symm f, ?_⟩
-  apply (principalPartsSectionsEquiv D V).injective
-  apply DFinsupp.ext
-  intro z
-  rw [toPrincipalParts_app_apply, principalPartAt_eq, LinearEquiv.apply_symm_apply,
+  refine ⟨V, homOfLE inf_le_left, hyV, (Scheme.rationalFunctionsEquiv V).symm f,
+    (principalPartsSectionsEquiv D V).injective <| DFinsupp.ext fun z ↦ ?_⟩
+  simp only [toPrincipalParts_app_apply, principalPartAt_eq, LinearEquiv.apply_symm_apply,
     principalParts_presheaf_map_apply]
   by_cases hz : (z.1 : X) = y
-  · exact hfy z.1 hz _
+  · obtain ⟨⟨w, hw⟩, _⟩ := z
+    obtain rfl : y = w := hz.symm
+    exact hf hw
   · -- `z` is not one of the deleted points, so both principal parts vanish there.
     have hzE : z.1 ∉ E := fun hzE ↦ (Opens.mem_inf.mp z.2).2 (Set.mem_biUnion hzE rfl)
-    simp only [E, Set.mem_ofPred_eq, not_and, not_or, not_exists, not_not] at hzE
-    obtain ⟨ht, hf'⟩ := hzE hz
-    rw [hf', ht (Opens.mem_inf.mp z.2).1]
+    rw [not_ne_iff.mp fun h ↦ hzE ⟨hz, .inr h⟩, not_ne_iff.mp fun h ↦ hzE ⟨hz, .inl ⟨_, h⟩⟩]
 
 /-- **`toPrincipalParts D` is an epimorphism** when the codimension-one points are closed. -/
 theorem epi_toPrincipalParts (D : SchemeWeilDivisor X) : Epi (toPrincipalParts D) := by
@@ -662,8 +593,6 @@ theorem epi_toPrincipalParts (D : SchemeWeilDivisor X) : Epi (toPrincipalParts D
     refine (TopCat.Presheaf.isLocallySurjective_iff _).mpr fun U t y hy ↦ ?_
     obtain ⟨V, i, hyV, s, hs⟩ := exists_toPrincipalParts_app_eq hclosed D t hy
     exact ⟨V, i.le, ⟨s, hs⟩, hyV⟩
-  have : (Scheme.Modules.toSheaf X).Faithful :=
-    inferInstanceAs (_root_.SheafOfModules.toSheaf X.ringCatSheaf).Faithful
   exact (Scheme.Modules.toSheaf X).epi_of_epi_map hepi
 
 /-- **The short exact sequence of principal parts** `0 ⟶ 𝒪_X(D) ⟶ 𝒦_X ⟶ principalParts D ⟶ 0`, on

@@ -11,6 +11,8 @@ import TauCeti.Algebra.Category.GradedModuleCat.Free
 import TauCeti.Algebra.Category.GradedModuleCat.Idempotent.Head
 import TauCeti.CategoryTheory.Preadditive.Indecomposable
 import TauCeti.CategoryTheory.ObjectProperty.Retract
+import TauCeti.RingTheory.GradedAlgebra.Basic
+import TauCeti.RingTheory.Idempotents.Hom
 import Mathlib.RingTheory.LocalRing.Basic
 
 /-!
@@ -34,7 +36,9 @@ degree-zero corner `eᵢ A eᵢ ∩ 𝒜 0 = k eᵢ`, so `A eᵢ` is indecomposa
 `A eᵢ ≅ (A eⱼ){d}` with `i ≠ j` would produce nonzero elements of `eᵢ A eⱼ` in degree `-d` and of
 `eⱼ A eᵢ` in degree `d`, while off-diagonal corners live in positive degrees. Hence the classes
 `[A eᵢ]` form a basis of `K₀^gr(proj A)` over `ℤ[q,q⁻¹]`, the projective counterpart of the basis
-of graded heads.
+of graded heads. The same corner computations show that, as ungraded modules, the `A eᵢ` are
+indecomposable and pairwise non-isomorphic: an idempotent of `A` without degree-zero component
+vanishes (`TauCeti.GradedAlgebra.eq_zero_of_isIdempotentElem_of_decompose_zero`).
 
 ## Main definitions
 
@@ -48,6 +52,12 @@ of graded heads.
   `TauCeti.pos_of_mem_cornerSubmodule_inf`: if the degree-zero piece of a nonnegatively graded
   algebra is spanned by orthogonal idempotents, its diagonal corners are `k eᵢ` in degree zero
   and its off-diagonal corners live in positive degrees.
+* `TauCeti.coe_decompose_mem_cornerSubmodule`: the homogeneous components of an element of a
+  corner `aAb` cut out by idempotents of degree zero lie in that corner.
+* `TauCeti.isPrimitiveIdempotent_of_gradeZero_le_span`: each `eᵢ` is a primitive idempotent of
+  `A`, so `A eᵢ` is indecomposable as an ungraded module.
+* `TauCeti.isEmpty_linearEquiv_span_singleton_of_gradeZero_le_span`: the ungraded modules `A eᵢ`
+  are pairwise nonisomorphic.
 * `TauCeti.indecomposable_ofIdeal_span_singleton`: each `A eᵢ` is indecomposable.
 * `TauCeti.isEmpty_iso_ofIdeal_span_singleton_shiftObj`: distinct `A eᵢ` are not isomorphic up
   to shift.
@@ -69,6 +79,25 @@ open CategoryTheory CategoryTheory.Limits
 open scoped _root_.DirectSum
 
 universe uk uA uI
+
+/-! ### Homogeneous components in corners -/
+
+section CornerComponents
+
+variable {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
+  {𝒜 : ℤ → Submodule k A} [GradedAlgebra 𝒜]
+
+/-- The homogeneous components of an element of the corner `aAb` cut out by two idempotents of
+degree zero lie in the same corner. -/
+theorem coe_decompose_mem_cornerSubmodule {a b x : A} (ha : IsIdempotentElem a)
+    (hb : IsIdempotentElem b) (ha₀ : a ∈ 𝒜 0) (hb₀ : b ∈ 𝒜 0)
+    (hx : x ∈ cornerSubmodule k a b) (p : ℤ) :
+    (DirectSum.decompose 𝒜 x p : A) ∈ cornerSubmodule k a b := by
+  rw [mem_cornerSubmodule_iff k ha hb] at hx ⊢
+  rw [← DirectSum.coe_decompose_mul_of_left_mem_zero 𝒜 ha₀,
+    ← DirectSum.coe_decompose_mul_of_right_mem_zero 𝒜 hb₀, hx]
+
+end CornerComponents
 
 variable {k : Type uk} [Field k] {A : Type uA} [Ring A] [Algebra k A]
   {𝒜 : ℤ → Submodule k A} [GradedAlgebra 𝒜]
@@ -191,6 +220,62 @@ theorem pos_of_mem_cornerSubmodule_inf {i j : I} (hij : i ≠ j) {p : ℤ} {x : 
     apply hx₀
     rw [← hc, mul_smul_comm, ho.ortho hij, smul_zero, zero_mul]
 
+omit [Fintype I] in
+include ho he₀ hneg hspan in
+open _root_.DirectSum in
+/-- **Each `eᵢ` is a primitive idempotent of `A`** when `A` is nonnegatively graded and its
+degree-zero piece is spanned by the orthogonal idempotents `eᵢ`. -/
+theorem isPrimitiveIdempotent_of_gradeZero_le_span (i : I) (hne : e i ≠ 0) :
+    IsPrimitiveIdempotent (e i) := by
+  have hei := ho.idem i
+  refine isPrimitiveIdempotent_of_eq_zero_or_eq hei hne fun f hf hef hfe => ?_
+  -- The degree-zero component of `f` is an idempotent of `eᵢ A eᵢ ∩ 𝒜 0 = k eᵢ`, hence `0` or
+  -- `eᵢ`; accordingly `f` or `eᵢ - f` is an idempotent without degree-zero component.
+  have hmem : (decompose 𝒜 f 0 : A) ∈ cornerSubmodule k (e i) (e i) ⊓ 𝒜 0 :=
+    ⟨coe_decompose_mem_cornerSubmodule hei hei (he₀ i) (he₀ i)
+      ((mem_cornerSubmodule_iff k hei hei).2 (by rw [hef, hfe])) 0, (decompose 𝒜 f 0).2⟩
+  rw [cornerSubmodule_inf_zero_eq_span_singleton he₀ ho hspan i,
+    Submodule.mem_span_singleton] at hmem
+  obtain ⟨c, hc⟩ := hmem
+  have hcc : c * c = c := by
+    have h := GradedAlgebra.coe_decompose_mul_zero_of_nonneg hneg f f
+    rw [hf.eq, ← hc, smul_mul_smul_comm, hei.eq] at h
+    exact smul_left_injective k hne h.symm
+  rcases IsIdempotentElem.iff_eq_zero_or_one.1 hcc with rfl | rfl
+  · exact .inl (GradedAlgebra.eq_zero_of_isIdempotentElem_of_decompose_zero hneg hf
+      (by rw [← hc, zero_smul]))
+  · refine .inr (sub_eq_zero.1 ?_).symm
+    refine GradedAlgebra.eq_zero_of_isIdempotentElem_of_decompose_zero hneg
+      (hf.sub hei hfe hef) ?_
+    rw [decompose_sub, DirectSum.sub_apply, Submodule.coe_sub, decompose_of_mem_same 𝒜 (he₀ i),
+      ← hc, one_smul, sub_self]
+
+omit [Fintype I] in
+include ho he₀ hneg hspan in
+open _root_.DirectSum in
+/-- **The ungraded modules `A eᵢ` are pairwise nonisomorphic** when `A` is nonnegatively graded
+and its degree-zero piece is spanned by the orthogonal idempotents `eᵢ`. -/
+theorem isEmpty_linearEquiv_span_singleton_of_gradeZero_le_span {i j : I} (hij : i ≠ j)
+    (hi : e i ≠ 0) :
+    IsEmpty ((Ideal.span {e i} : Ideal A) ≃ₗ[A] (Ideal.span {e j} : Ideal A)) := by
+  -- `φ` and its inverse send the generators to `x ∈ eᵢ A eⱼ` and `y ∈ eⱼ A eᵢ` with `eᵢ = x y`;
+  -- the degree-zero component of `x` lies in `eᵢ A eⱼ ∩ 𝒜 0 = 0`, so that of `x y` vanishes.
+  refine ⟨fun φ => hi ?_⟩
+  set x : A := (φ (spanSingletonGenerator (e i)) : A) with hxdef
+  have hx : x ∈ cornerSubmodule k (e i) (e j) :=
+    apply_generator_mem_cornerSubmodule (ho.idem i) (ho.idem j) φ.toLinearMap
+  have hxy : e i = x * (φ.symm (spanSingletonGenerator (e j)) : A) := by
+    have h := coe_apply_eq_mul_apply_generator (ho.idem j) φ.symm.toLinearMap
+      (φ (spanSingletonGenerator (e i)))
+    simpa using h
+  have hx₀ : (decompose 𝒜 x 0 : A) = 0 := by
+    by_contra h
+    exact lt_irrefl 0 (pos_of_mem_cornerSubmodule_inf ho hneg hspan hij
+      ⟨coe_decompose_mem_cornerSubmodule (ho.idem i) (ho.idem j) (he₀ i) (he₀ j) hx 0,
+        (decompose 𝒜 x 0).2⟩ h)
+  rw [← decompose_of_mem_same 𝒜 (he₀ i), hxy, GradedAlgebra.coe_decompose_mul_zero_of_nonneg hneg,
+    hx₀, zero_mul]
+
 end Corner
 
 variable [Module.Finite k A]
@@ -240,7 +325,7 @@ theorem isExhaustiveGradedIndecomposableProjectiveFamily_of_completeOrthogonalId
         simp only [Preadditive.comp_sum, Preadditive.sum_comp, Category.assoc]
       _ = 𝟙 M.obj := by
         rw [sum_freeIdempotentProjection_inclusion he he₀ hI d, Category.id_comp, hσ]
-  have : IsLocalRing (End M) := isLocalRing_end_of_indecomposable (k := k) hM
+  have : IsLocalRing (End M) := isLocalRing_end_of_indecomposable (R := k) hM
   -- A sum equal to the identity in the local endomorphism ring has an invertible summand.
   have hunit : IsUnit (∑ r : J, ∑ i : I, End.of (α r i ≫ β r i)) := by
     convert isUnit_one (M := End M)

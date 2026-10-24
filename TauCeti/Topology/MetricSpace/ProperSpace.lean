@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Order.Filter.AtTopBot.Archimedean
 public import Mathlib.Topology.MetricSpace.Bounded
+public import Mathlib.Topology.MetricSpace.HausdorffDistance
 
 /-!
 # Proper spaces and compact exhaustions with diverging distance
@@ -32,6 +33,8 @@ theorem.  It holds in every pseudometric space; the Riemannian structure plays n
   exhaustion by compact sets with the divergence condition, namely by the closed balls about `p`.
 * `TauCeti.properSpace_iff_exists_isCompact_monotone_iUnion_eq_univ_tendsto_dist`: the
   equivalence.
+* `IsOpen.exists_iUnion_isOpen_isCompact_closure`: in a proper space, every open set is the union
+  of an increasing sequence of open sets with compact closures inside it.
 
 ## References
 
@@ -42,6 +45,7 @@ theorem.  It holds in every pseudometric space; the Riemannian structure plays n
 public section
 
 open Filter Metric Set Topology
+open scoped ENNReal
 
 namespace TauCeti
 
@@ -94,5 +98,42 @@ theorem properSpace_iff_exists_isCompact_monotone_iUnion_eq_univ_tendsto_dist (p
       ∀ q : ℕ → α, (∀ n, q n ∉ K n) → Tendsto (fun n ↦ dist p (q n)) atTop atTop :=
   ⟨fun _ ↦ exists_isCompact_monotone_iUnion_eq_univ_tendsto_dist p,
     fun ⟨_, hKc, _, _, hK⟩ ↦ properSpace_of_isCompact_of_tendsto_dist hKc hK⟩
+
+/-- **Exhaustion of an open set.** In a proper pseudometric space, an open set `U` is the union of
+an increasing sequence of open sets `V n` whose closures are compact subsets of `U`. -/
+theorem _root_.IsOpen.exists_iUnion_isOpen_isCompact_closure [ProperSpace α] {U : Set α}
+    (hU : IsOpen U) :
+    ∃ V : ℕ → Set α, (∀ n, IsOpen (V n)) ∧ (∀ n, IsCompact (closure (V n))) ∧
+      (∀ n, closure (V n) ⊆ U) ∧ Monotone V ∧ ⋃ n, V n = U := by
+  rcases U.eq_empty_or_nonempty with rfl | ⟨p, -⟩
+  · exact ⟨fun _ ↦ ∅, fun _ ↦ isOpen_empty, fun _ ↦ by simp, fun _ ↦ by simp,
+      fun _ _ _ ↦ le_rfl, by simp⟩
+  -- `V n` consists of the points within `n` of `p` at distance more than `1 / (n + 1)` from `Uᶜ`.
+  let V : ℕ → Set α := fun n ↦ ball p n ∩ {x | ((n : ℝ≥0∞) + 1)⁻¹ < infEDist x Uᶜ}
+  have hclosure (n : ℕ) :
+      closure (V n) ⊆ closedBall p n ∩ {x | ((n : ℝ≥0∞) + 1)⁻¹ ≤ infEDist x Uᶜ} :=
+    closure_inter_subset.trans (inter_subset_inter closure_ball_subset_closedBall
+      (closure_lt_subset_le continuous_const continuous_infEDist))
+  refine ⟨V, fun n ↦ isOpen_ball.inter (isOpen_lt continuous_const continuous_infEDist),
+    fun n ↦ (isCompact_closedBall p n).of_isClosed_subset isClosed_closure
+      ((hclosure n).trans inter_subset_left), fun n x hx ↦ ?_, fun m n hmn x hx ↦ ?_, ?_⟩
+  · by_contra hxU
+    have h := (hclosure n hx).2
+    rw [mem_ofPred_eq, infEDist_zero_of_mem hxU] at h
+    simp at h
+  · exact ⟨ball_subset_ball (by exact_mod_cast hmn) hx.1,
+      lt_of_le_of_lt (ENNReal.inv_le_inv.2 (by gcongr)) hx.2⟩
+  · refine subset_antisymm (iUnion_subset fun n x hx ↦ ?_) fun x hx ↦ ?_
+    · by_contra hxU
+      have h := hx.2
+      rw [mem_ofPred_eq, infEDist_zero_of_mem hxU] at h
+      exact not_lt_zero h
+    have hpos : infEDist x Uᶜ ≠ 0 := fun h ↦
+      ((mem_iff_infEDist_zero_of_closed hU.isClosed_compl).2 h) hx
+    obtain ⟨k, hk⟩ := ENNReal.exists_inv_nat_lt hpos
+    obtain ⟨m, hm⟩ := exists_nat_gt (dist x p)
+    refine mem_iUnion.2 ⟨max k m, mem_ball.2 (hm.trans_le (by exact_mod_cast le_max_right k m)),
+      lt_of_le_of_lt (ENNReal.inv_le_inv.2 ?_) hk⟩
+    exact (Nat.cast_le.2 (le_max_left k m)).trans le_self_add
 
 end TauCeti

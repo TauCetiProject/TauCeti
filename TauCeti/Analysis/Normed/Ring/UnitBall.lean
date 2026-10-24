@@ -46,8 +46,8 @@ for Banach modules over nonarchimedean Banach rings.
   the unit ball, so the reduction map is a local homomorphism
   (`TauCeti.isLocalHom_quotientMk_unitBallIdeal`).
 * `TauCeti.isUnit_unitClosedBall_iff_norm_eq_one`, `TauCeti.isLocalRing_unitClosedBall` and
-  `TauCeti.maximalIdeal_unitClosedBall`: over an ultrametric normed field the unit ball is a
-  local ring whose maximal ideal is the open-ball ideal.
+  `TauCeti.maximalIdeal_unitClosedBall`: over an ultrametric normed division ring the unit ball
+  is a local ring, and over an ultrametric normed field its maximal ideal is the open-ball ideal.
 
 ## References
 
@@ -174,12 +174,12 @@ instance isLocalHom_quotientMk_unitBallIdeal :
 
 end Jacobson
 
-section Field
+section DivisionRing
 
-variable {K : Type*} [NormedField K] [IsUltrametricDist K]
+variable {K : Type*} [NormedDivisionRing K] [IsUltrametricDist K]
 
-/-- Over an ultrametric normed field, an element of the closed unit ball is a unit of the unit
-ball exactly when its norm is one. -/
+/-- Over an ultrametric normed division ring, an element of the closed unit ball is a unit of the
+unit ball exactly when its norm is one. -/
 theorem isUnit_unitClosedBall_iff_norm_eq_one {x : Subring.unitClosedBall K} :
     IsUnit x ↔ ‖(x : K)‖ = 1 := by
   have hx1 : ‖(x : K)‖ ≤ 1 := Subring.mem_unitClosedBall.mp x.2
@@ -196,8 +196,8 @@ theorem isUnit_unitClosedBall_iff_norm_eq_one {x : Subring.unitClosedBall K} :
     refine isUnit_iff_exists_inv.mpr ⟨⟨_, Subring.mem_unitClosedBall.mpr hinv⟩, Subtype.ext ?_⟩
     simp [hx0]
 
-/-- **The unit ball of an ultrametric normed field is a local ring.** For `x` in the unit ball,
-either `‖x‖ = 1` or `‖1 - x‖ = 1`, so `x` or `1 - x` is a unit. -/
+/-- **The unit ball of an ultrametric normed division ring is a local ring.** For `x` in the unit
+ball, either `‖x‖ = 1` or `‖1 - x‖ = 1`, so `x` or `1 - x` is a unit. -/
 instance isLocalRing_unitClosedBall : IsLocalRing (Subring.unitClosedBall K) := by
   refine IsLocalRing.of_isUnit_or_isUnit_one_sub_self fun x ↦ ?_
   simp only [isUnit_unitClosedBall_iff_norm_eq_one]
@@ -205,9 +205,13 @@ instance isLocalRing_unitClosedBall : IsLocalRing (Subring.unitClosedBall K) := 
   have hx1 : ‖(x : K)‖ ≤ 1 := Subring.mem_unitClosedBall.mp x.2
   rcases hx1.eq_or_lt with hx | hx
   · exact .inl hx
-  · refine .inr ?_
-    rw [IsUltrametricDist.norm_sub_eq_max_of_norm_sub_ne_norm_sub 1 0 _ (by simpa using hx.ne'),
-      sub_zero, zero_sub, norm_one, norm_neg, max_eq_left hx.le]
+  · exact .inr (norm_one_sub_of_norm_lt_one hx)
+
+end DivisionRing
+
+section Field
+
+variable {K : Type*} [NormedField K] [IsUltrametricDist K]
 
 /-- **The residue ring of an ultrametric normed field.** The maximal ideal of the unit ball is
 the open-ball ideal, so the reduction `K⁰ ⧸ K⁰⁰` is the residue field of `K⁰`. -/

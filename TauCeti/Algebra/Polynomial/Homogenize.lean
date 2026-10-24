@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Polynomial.Roots
 public import TauCeti.Algebra.Polynomial.Degree.Operations
 public import TauCeti.RingTheory.MvPolynomial.Homogeneous
 
+import Mathlib.RingTheory.MvPolynomial.Tower
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -48,6 +49,9 @@ at integer points.
 * `MvPolynomial.IsHomogeneous.exists_linear_factors`: a nonzero binary form of degree `d` with no
   squared linear factor, whose dehomogenization splits, is `a ∏_{ℓ ∈ T} (ℓ.1 X₀ + ℓ.2 X₁)` for `d`
   pairwise non-proportional linear forms.
+* `MvPolynomial.IsHomogeneous.mem_span_X_one_pow_of_aeval_eq_smul`: over a domain, a binary form
+  of degree `d` that is semi-invariant under the universal substitution `x ↦ x - t y` is a
+  multiple of `X₁ ^ d`.
 -/
 
 public section
@@ -220,5 +224,51 @@ theorem IsHomogeneous.exists_linear_factors {R : Type*} [CommRing R] [IsDomain R
     simp only [map_one, one_mul, map_zero, zero_mul, zero_add, map_neg, neg_mul,
       ← sub_eq_add_neg]
     ring
+
+
+open scoped Polynomial in
+/-- **Binary forms semi-invariant under `x ↦ x - t y` are multiples of `yᵈ`.** Over a domain, if a
+binary form `f` of degree `d` satisfies `f(x - t y, y) = c f(x, y)` in `R[t][x, y]` for some
+`c ∈ R[t]`, then `f` is a multiple of `X₁ ^ d`. -/
+theorem IsHomogeneous.mem_span_X_one_pow_of_aeval_eq_smul {R : Type*} [CommRing R] [IsDomain R]
+    {f : MvPolynomial (Fin 2) R} {d : ℕ} (hf : f.IsHomogeneous d) (c : R[X])
+    (h : MvPolynomial.aeval ![X 0 - C Polynomial.X * X 1, X 1] f = c • f.map (algebraMap R R[X])) :
+    f ∈ R ∙ (X 1 ^ d : MvPolynomial (Fin 2) R) := by
+  -- The dehomogenization `p = f(x, 1)` and the value `a = f(0, 1)`.
+  set p : R[X] := MvPolynomial.aeval ![(Polynomial.X : R[X]), 1] f with hp
+  set a : R := MvPolynomial.aeval ![(0 : R), 1] f with ha
+  -- Evaluating the semi-invariance at a point `(x, y)` gives `f(x - t y, y) = c f(x, y)`.
+  have ev (x y : R[X]) : MvPolynomial.aeval ![x - Polynomial.X * y, y] f =
+      c * MvPolynomial.aeval ![x, y] f := by
+    have e := congrArg (MvPolynomial.aeval ![x, y]) h
+    rw [map_smul, smul_eq_mul, aeval_map_algebraMap, ← AlgHom.coe_restrictScalars' (R := R),
+      comp_aeval_apply] at e
+    convert e using 3
+    ext i; fin_cases i <;> simp
+  have hC : MvPolynomial.aeval ![(0 : R[X]), 1] f = Polynomial.C a := by
+    rw [ha, ← Polynomial.algebraMap_eq, ← aeval_algebraMap_apply]
+    congr 1; ext i; fin_cases i <;> simp
+  -- Evaluate at `(x, y) = (t, 1)` and at `(x, y) = (0, 1)`.
+  have h1 : Polynomial.C a = c * p := by simpa [hC] using ev Polynomial.X 1
+  have h2 : Polynomial.aeval (-Polynomial.X) p = c * Polynomial.C a := by
+    rw [hp, comp_aeval_apply, ← hC, ← ev]
+    congr 1; ext i; fin_cases i <;> simp
+  have hdeg : p.natDegree = 0 := by
+    rcases eq_or_ne p 0 with hp0 | hp0
+    · rw [hp0, Polynomial.natDegree_zero]
+    rcases eq_or_ne c 0 with hc0 | hc0
+    · rw [hc0, zero_mul, ← Polynomial.comp_eq_aeval, Polynomial.comp_eq_zero_iff] at h2
+      rcases h2 with h2 | ⟨-, h2⟩
+      · exact absurd h2 hp0
+      · have := congrArg Polynomial.natDegree h2
+        simp at this
+    · have := congrArg Polynomial.natDegree h1
+      rw [Polynomial.natDegree_C, Polynomial.natDegree_mul hc0 hp0] at this
+      omega
+  -- `f` is the homogenization of its dehomogenization `p`, which is constant.
+  have hf' : f = C (p.coeff 0) * X 1 ^ d := by
+    rw [← Polynomial.homogenize_C, ← Polynomial.eq_C_of_natDegree_eq_zero hdeg,
+      Polynomial.homogenize_eq_of_isHomogeneous hf hp.symm]
+  exact Submodule.mem_span_singleton.mpr ⟨p.coeff 0, by rw [hf', smul_eq_C_mul]⟩
 
 end MvPolynomial
