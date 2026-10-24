@@ -41,9 +41,10 @@ the support of `M` imposes no condition.
 * `Module.satisfiesSerreS_one_iff`: a finite module satisfies `(S_1)` if and only if it has no
   embedded primes, that is, its associated primes are the minimal primes of its support (Stacks,
   Lemma 10.157.2 (031Q)).
-* `isReduced_iff_satisfiesSerreR_zero_and_satisfiesSerreS_one`: a Noetherian ring is reduced if and
-  only if it satisfies `(R_0)` and `(S_1)` (Stacks, Lemma 10.157.3 (031R)); the forward half of
-  `(R_0)` is `IsReduced.satisfiesSerreR_zero`, which needs no Noetherian hypothesis.
+* `TauCeti.isReduced_iff_satisfiesSerreR_zero_and_satisfiesSerreS_one`: a Noetherian ring is
+  reduced if and only if it satisfies `(R_0)` and `(S_1)` (Stacks, Lemma 10.157.3 (031R)); the
+  forward half of `(R_0)` is `IsReduced.satisfiesSerreR_zero`, which needs no Noetherian
+  hypothesis.
 
 The dimension input to `Module.satisfiesSerreS_one_iff` is
 `Module.supportDim_localizedModule_nonpos_iff`, in `TauCeti.RingTheory.KrullDimension.Module`:
@@ -191,6 +192,8 @@ theorem IsReduced.satisfiesSerreR_zero {R : Type u} [CommRing R] [IsReduced R] :
   have := hfield.isPrincipalIdealRing
   exact TauCeti.Excellence.mem_regularLocus.2 inferInstance
 
+namespace TauCeti
+
 /-- A Noetherian ring is reduced if and only if it satisfies `(R_0)` and `(S_1)`: its localizations
 at minimal primes are fields and it has no embedded primes. Stacks, Lemma 10.157.3 (031R). -/
 @[stacks 031R]
@@ -231,10 +234,12 @@ theorem isReduced_iff_satisfiesSerreR_zero_and_satisfiesSerreS_one {R : Type u} 
         (Localization.AtPrime P) hx
     exact hs (hxP (Submodule.mem_colon_singleton.2 (by simpa using hsx)))
 
+end TauCeti
+
 /-- A Noetherian domain, such as `ℤ` or a polynomial ring over a field, has no embedded primes. -/
 example {R : Type u} [CommRing R] [IsDomain R] [IsNoetherianRing R] :
     Module.SatisfiesSerreS 1 R R :=
-  (isReduced_iff_satisfiesSerreR_zero_and_satisfiesSerreS_one.1 inferInstance).2
+  (TauCeti.isReduced_iff_satisfiesSerreR_zero_and_satisfiesSerreS_one.1 inferInstance).2
 
 /-- A Dedekind domain is regular, so it satisfies `(R_n)` for every `n`. -/
 example {R : Type u} [CommRing R] [IsDedekindDomain R] (n : ℕ) : Ring.SatisfiesSerreR n R :=
