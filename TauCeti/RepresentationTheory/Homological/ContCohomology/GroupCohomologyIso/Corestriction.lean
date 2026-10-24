@@ -30,8 +30,9 @@ existing comparison between locally constant and algebraic coinduction, identifi
 maps through restriction and evaluation at the identity, and identifies the traces through
 inversion of cosets. No new cochain formula for corestriction is introduced.
 
-The coefficient ring is `ℤ`, and the group and coefficient carrier lie in `Type`, as in
-`explicitH2IsoGroupCohomology` at the pinned Mathlib version.
+The coefficient ring is `ℤ`, and the group and coefficient carrier lie in `Type`, because
+`explicitH2IsoGroupCohomology` compares with the group cohomology of
+`Rep.ofDistribMulAction ℤ G M` for `G M : Type`.
 
 ## Main results
 
@@ -56,7 +57,7 @@ namespace TauCeti
 
 variable (G M : Type) [Group G] [TopologicalSpace G] [DiscreteTopology G]
   [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
-  (U : Subgroup G) [Finite G] [DistribMulAction G M] [ContinuousSMul G M]
+  (U : Subgroup G) [U.FiniteIndex] [DistribMulAction G M] [ContinuousSMul G M]
 
 open Classical in
 /-- The algebraic coinduction–restriction counit agrees with the discrete trace after the
