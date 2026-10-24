@@ -6,8 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Lie.Subgroup.Commutative
+public import Mathlib.Analysis.Complex.Circle
 import TauCeti.Geometry.Lie.Adjoint.Exponential.Formula
 import Mathlib.GroupTheory.NoncommCoprod
+import TauCeti.Geometry.Lie.Exponential.CommutativeGroup
+import TauCeti.Geometry.Lie.Subgroup.Embedded
 
 /-!
 # Tori and maximal tori
@@ -20,6 +23,8 @@ finite-dimensional real Lie group `G`:
   connected commutative subgroup is (`image_lieExp_lieSubalgebraOfSubgroup_of_isConnected`); so
   a torus is determined by its Lie algebra, and a torus whose Lie algebra is maximal among those
   of the tori containing a given torus is a maximal torus: every torus lies in a maximal torus;
+* by the closed-subgroup theorem a torus is a compact connected commutative Lie group, hence a
+  product `(Circle)^r` of circles with `r` the dimension of its Lie algebra;
 * for a maximal torus `T` of a compact `G`, the centralizer of `T` has the same Lie algebra as `T`,
   and `Lie(T)` is a maximal abelian Lie subalgebra of `𝔤`: a derivation that brackets to zero with
   `Lie(T)` lies in `Lie(T)`.
@@ -37,6 +42,8 @@ finite-dimensional real Lie group `G`:
 * `TauCeti.Lie.IsTorus.le_of_lieSubalgebraOfSubgroup_le` and
   `TauCeti.Lie.IsTorus.eq_of_lieSubalgebraOfSubgroup_eq`: a torus lies in a closed subgroup whose
   Lie algebra contains its own; in particular a torus is determined by its Lie algebra.
+* `TauCeti.Lie.IsTorus.nonempty_continuousMulEquiv_pi_circle`: a torus is isomorphic to
+  `(Circle)^r` as a topological group, where `r` is the dimension of its Lie algebra.
 * `TauCeti.Lie.IsTorus.exists_isMaximalTorus_le` and `TauCeti.Lie.exists_isMaximalTorus`: every
   torus is contained in a maximal torus; in particular maximal tori exist.
 * `TauCeti.Lie.IsMaximalTorus.lieSubalgebraOfSubgroup_centralizer`: the centralizer of a maximal
@@ -151,6 +158,26 @@ theorem IsTorus.eq_of_lieSubalgebraOfSubgroup_eq {T T' : Subgroup G} (hT : IsTor
     (h : lieSubalgebraOfSubgroup (I := I) T = lieSubalgebraOfSubgroup (I := I) T') : T = T' :=
   le_antisymm (hT.le_of_lieSubalgebraOfSubgroup_le hT'.isClosed h.le)
     (hT'.le_of_lieSubalgebraOfSubgroup_le hT.isClosed h.ge)
+
+/-- **A torus is a product of circles**: a torus `T` whose Lie algebra has dimension `r` is
+isomorphic to `(Circle)^r` as a topological group. Through the closed-subgroup theorem `T` is a
+compact connected commutative Lie group modelled on its Lie algebra, so this is
+`TauCeti.nonempty_continuousMulEquiv_pi_circle`. -/
+theorem IsTorus.nonempty_continuousMulEquiv_pi_circle {T : Subgroup G} (hT : IsTorus T) :
+    Nonempty (T ≃ₜ* (Fin (Module.finrank ℝ (lieSubalgebraOfSubgroup (I := I) T)) → Circle)) := by
+  let _ : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
+  let _ : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
+    finiteDimensional_leftInvariantDerivation
+      (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G))
+  obtain ⟨d⟩ :=
+    nonempty_embeddedLieSubgroupData_lieSubalgebraOfSubgroup_of_isClosed (I := I) hT.isClosed
+  let F := (lieSubalgebraOfSubgroup (I := I) T).toSubmodule
+  let _ : ChartedSpace F T := d.chartedSpace
+  let _ : LieGroup 𝓘(ℝ, F) ∞ T := d.lieGroup
+  have _ : CompactSpace T := isCompact_iff_compactSpace.mp hT.isCompact
+  have _ : ConnectedSpace T := isConnected_iff_connectedSpace.mp hT.isConnected
+  have _ : IsMulCommutative T := hT.isMulCommutative
+  exact TauCeti.nonempty_continuousMulEquiv_pi_circle 𝓘(ℝ, F)
 
 section Existence
 
