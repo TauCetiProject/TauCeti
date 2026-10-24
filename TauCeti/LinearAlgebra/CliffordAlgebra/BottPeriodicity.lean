@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm.Basic
+public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm.OneOne
 public import TauCeti.LinearAlgebra.CliffordAlgebra.SignSwitch
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Prod
 public import Mathlib.RingTheory.MatrixAlgebra
@@ -115,15 +115,6 @@ private def hyperbolicRightInclusion :
 
 private abbrev HyperbolicAlgebra :=
   _root_.CliffordAlgebra (Q.prod (TauCeti.realCliffordForm 1 1))
-
-private theorem realCliffordOneOneEquivMatrix_e₀_mul_e₁ :
-    TauCeti.realCliffordOneOneEquivMatrix
-        (_root_.CliffordAlgebra.ι (TauCeti.realCliffordForm 1 1) (Pi.single 0 1) *
-          _root_.CliffordAlgebra.ι _ (Pi.single 1 1)) =
-      !![(0 : ℝ), 1; 1, 0] := by
-  ext i j
-  fin_cases i <;> fin_cases j <;>
-    simp [TauCeti.realCliffordOneOneEquivMatrix_ι, Matrix.mul_apply, Fin.sum_univ_two]
 
 private def hyperbolicE₀ : HyperbolicAlgebra Q :=
   _root_.CliffordAlgebra.ι _ (0, Pi.single 0 1)
