@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Orientation
 public import Mathlib.Analysis.Normed.Module.Alternating.Basic
-public import TauCeti.Analysis.Normed.Module.Alternating.TopDegree
+public import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 
 /-!
 # Continuous oriented volume forms
