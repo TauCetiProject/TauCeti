@@ -91,6 +91,20 @@ theorem fullyBlockedDifferential_bigradedChainInclusion_apply_eq_zero_of_ne (g :
     rw [hz, mul_zero]
   · simp [G.bigradedChainInclusion_apply, hx]
 
+/-- The fully blocked differential sends the homogeneous part of bidegree `g` of a chain to the
+part of bidegree `g - (1, 0)` of its differential. -/
+theorem fullyBlockedDifferential_bigradedChainInclusion_bigradedChainProjection (g : ℤ × ℤ)
+    (c : GridChain (ZMod 2) n) :
+    G.1.fullyBlockedDifferential
+        (G.bigradedChainInclusion (ZMod 2) g (G.bigradedChainProjection (ZMod 2) g c)) =
+      G.bigradedChainInclusion (ZMod 2) (g - (1, 0))
+        (G.bigradedChainProjection (ZMod 2) (g - (1, 0)) (G.1.fullyBlockedDifferential c)) := by
+  rw [sub_eq_add_neg]
+  refine G.map_bigradedChainInclusion_bigradedChainProjection G _ _ (fun x y hy => ?_) g c
+  by_contra h
+  rw [GridDiagram.fullyBlockedDifferential_single_apply] at h
+  exact hy ((G.bidegree_eq_sub_of_fullyBlockedRectangleCount_ne_zero h).trans (sub_eq_add_neg _ _))
+
 /-- The fully blocked differential from Maslov degree `m + 1` to `m` at Alexander degree `a`. -/
 noncomputable def gradedFullyBlockedDifferential (a m : ℤ) :
     G.BigradedChainPiece (ZMod 2) (m + 1, a) →ₗ[ZMod 2]

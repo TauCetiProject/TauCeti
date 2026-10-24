@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Polynomial.Sturm.CauchyIndex.Basic
+public import TauCeti.Algebra.Polynomial.Thom.Roots
 public import Mathlib.Algebra.Ring.IsFormallyReal
 import Mathlib.Algebra.QuadraticDiscriminant
 import Mathlib.RingTheory.Polynomial.SmallDegreeVieta
@@ -22,8 +23,8 @@ root-free in `S`. The formal reality of `S` is needed: `X ^ 2 + 1` over `ℝ` ac
 
 When `R` and `S` are ordered, `f` is automatically strictly monotone
 (`RingHom.strictMono_of_isRealClosed`). Consequently the root-based invariants of univariate
-real algebra are independent of the ambient ring: Tarski queries, sign counts at the roots, and
-Cauchy indices on any subset of `S` are computed in `R`.
+real algebra are independent of the ambient ring: Tarski queries, sign counts at the roots, the
+realized Thom encodings, and Cauchy indices on any subset of `S` are computed in `R`.
 
 ## Main results
 
@@ -31,6 +32,7 @@ Cauchy indices on any subset of `S` are computed in `R`.
 * `Polynomial.tarskiQuery_map_of_isRealClosed` and
   `Polynomial.signCount_roots_map_of_isRealClosed`: transport of Tarski queries and of sign
   counts at roots.
+* `Polynomial.thomEncodings_map_of_isRealClosed`: transport of the realized Thom encodings.
 * `Polynomial.cauchyIndex_map_of_isRealClosed`: the Cauchy index of the mapped quotient on a set
   is the Cauchy index of the original quotient on its preimage.
 
@@ -156,6 +158,16 @@ theorem signCount_roots_map_of_isRealClosed {J : Type*} (f : R →+* S) (p : R[X
       Finset.signCount p.roots.toFinset Q σ := by
   classical
   rw [roots_toFinset_map_of_isRealClosed, Finset.signCount_map_image f.strictMono_of_isRealClosed]
+
+/-- **Transport of realized Thom encodings.** The Thom encodings realized by the roots of a
+polynomial over a real closed field are unchanged by passing to any ordered ring containing it.
+The words have the same length, since `f` is injective and so preserves the degree. -/
+theorem thomEncodings_map_of_isRealClosed (f : R →+* S) (p : R[X]) :
+    (p.map f).thomEncodings =
+      p.thomEncodings.image fun σ ↦ σ ∘ Fin.cast (natDegree_map_eq_of_injective f.injective p) := by
+  rw [thomEncodings_def, thomEncodings_def, roots_toFinset_map_of_isRealClosed, Finset.image_image,
+    Finset.image_image]
+  exact Finset.image_congr fun x _ ↦ thomEncoding_map p f f.strictMono_of_isRealClosed x
 
 /-- **Transport of Cauchy indices.** The Cauchy index of the mapped quotient on a set `s` in an
 ordered ring containing a real closed field is the Cauchy index of the original quotient on
