@@ -27,6 +27,7 @@ jobs:
       - namespace-features:github.run-id=${{ github.run_id }}
     timeout-minutes: 75
     env:
+      CI_STATUS_MERGE_BACKEND: ${{ vars.MERGE_BACKEND || 'queue' }}
       CI_STATUS_SOURCE_RUN_ID: ${{ github.event.workflow_run.id }}
       CI_STATUS_SOURCE_ATTEMPT: ${{ github.event.workflow_run.run_attempt }}
       CI_STATUS_MAX_WAIT: '3700'

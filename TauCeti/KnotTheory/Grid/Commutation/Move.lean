@@ -276,6 +276,18 @@ theorem ofNoninterleaving_column (a : Fin n) (ha : a ≠ finRotate n a)
   unfold ofNoninterleaving
   split_ifs <;> rfl
 
+/-- The distinguished turn of the data built from a non-interleaving pair is not in the row of the
+`X`-marking of the successor column. -/
+theorem ofNoninterleaving_turnRow_ne {a : Fin n} (ha : a ≠ finRotate n a)
+    (hG : ColumnsNoninterleaving G a (finRotate n a)) :
+    (ofNoninterleaving a ha hG).turnRow ≠ G.X (finRotate n a) := by
+  unfold ofNoninterleaving
+  split_ifs with h
+  · have hb := ((columnsNoninterleaving_iff G _ _).mp hG).2
+    simp only [mem_columnArc] at hb
+    exact Ne.symm (Grid.ne_left_of_mem_cIoo (hb.mp h))
+  · exact fun h => ha (G.X.toPerm.injective h)
+
 end ColumnCommutationData
 
 /-- Every elementary column commutation is realised by validated column-commutation data. -/

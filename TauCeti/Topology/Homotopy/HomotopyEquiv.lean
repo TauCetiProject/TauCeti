@@ -9,7 +9,7 @@ public import Mathlib.Topology.Homotopy.Equiv
 public import Mathlib.Topology.Homotopy.Path
 
 /-!
-# Path connectedness is a homotopy invariant, and slices of a cylinder
+# Homotopy equivalences: path connectedness, products, and slices of a cylinder
 
 A homotopy equivalence `e : X ≃ₕ Y` is not surjective, so path connectedness of `Y` cannot be
 read off from the image of a path in `X`. What replaces surjectivity is the trace of the
@@ -19,9 +19,10 @@ homotopy `e.toFun ∘ e.invFun ≃ id`: evaluated at a point `y`, it is a path f
 
 This is the prerequisite for the base-point-free homotopy-group statements in
 `TauCeti.Topology.Homotopy.HomotopyGroup.HomotopyEquiv`, which need the target space to be path
-connected before base-point change is available there.
+connected before base-point change is available there. The file also records that the product
+`ContinuousMap.HomotopyEquiv.prodCongr` of two homotopy equivalences acts componentwise.
 
-The second part of the file records that a cylinder `X × [a, b]` is homotopy equivalent to `X`
+Finally, the file records that a cylinder `X × [a, b]` is homotopy equivalent to `X`
 through any of its slices `X × {t}`: the interval deforms linearly onto the point `t`. This is how
 the two ends of a cylinder are seen to induce isomorphisms on homology.
 
@@ -29,6 +30,8 @@ the two ends of a cylinder are seen to induce isomorphisms on homology.
 
 * `ContinuousMap.HomotopyEquiv.pathConnectedSpace`: a space homotopy equivalent to a path
   connected space is path connected.
+* `ContinuousMap.HomotopyEquiv.prodCongr_apply`: the product of two homotopy equivalences acts
+  componentwise.
 * `ContinuousMap.HomotopyEquiv.prodIcc`: the slice `x ↦ (x, t)` is a homotopy equivalence
   `X ≃ₕ X × [a, b]`, with homotopy inverse the projection.
 -/
@@ -39,7 +42,8 @@ namespace TauCeti
 
 open scoped ContinuousMap
 
-variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
+variable {X Y Z Z' : Type*} [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Z]
+  [TopologicalSpace Z']
 
 /-- **Path connectedness is a homotopy invariant.** A space homotopy equivalent to a path
 connected space is path connected. -/
@@ -54,6 +58,12 @@ theorem _root_.ContinuousMap.HomotopyEquiv.pathConnectedSpace [PathConnectedSpac
         (Joined.map ⟨PathConnectedSpace.somePath (e.invFun y₀) (e.invFun y₁)⟩
           e.toFun.continuous)).trans
       (trace y₁)
+
+/-- The product of two homotopy equivalences acts componentwise. -/
+@[simp]
+theorem _root_.ContinuousMap.HomotopyEquiv.prodCongr_apply (h₁ : X ≃ₕ Y) (h₂ : Z ≃ₕ Z')
+    (x : X × Z) : h₁.prodCongr h₂ x = (h₁ x.1, h₂ x.2) :=
+  (rfl)
 
 /-- **A cylinder deforms onto each of its slices.** For a point `t` of the interval `[a, b]`, the
 slice `x ↦ (x, t)` is a homotopy equivalence `X ≃ₕ X × [a, b]`, with homotopy inverse the
