@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Bounds
 public import Mathlib.Analysis.Distribution.TemperateGrowth
 public import TauCeti.Analysis.PDE.HeatKernel.Basic
+import TauCeti.Analysis.SpecialFunctions.Gaussian.Bounds
 
 /-!
 # Gaussian bounds for the heat kernel and its derivatives
@@ -113,28 +114,16 @@ theorem heatKernel_add_le {t : ℝ} (ht : 0 < t) (z h : E) :
 /-- **Polynomial weights.** For every `m`, `(1 + ‖x‖)^m K_t(x) ≤ C K_{2t}(x)` for some `C`. -/
 theorem exists_one_add_norm_pow_mul_heatKernel_le {t : ℝ} (ht : 0 < t) (m : ℕ) :
     ∃ C, ∀ x : E, (1 + ‖x‖) ^ m * heatKernel t x ≤ C * heatKernel (2 * t) x := by
-  refine ⟨2 ^ ((finrank ℝ E : ℝ) / 2) * (m ! * exp (1 + 2 * t)), fun x => ?_⟩
-  set r := ‖x‖
-  -- `(1 + r)^m ≤ m! exp(1 + r)` and `r - r² / (8t) ≤ 2t`.
-  have hpow : (1 + r) ^ m ≤ m ! * exp (1 + r) := by
-    have := pow_div_factorial_le_exp (1 + r) (by positivity) m
-    rwa [div_le_iff₀ (by positivity), mul_comm] at this
-  have hquad : 1 + r + -r ^ 2 / (8 * t) ≤ 1 + 2 * t := by
-    have : 1 + 2 * t - (1 + r + -r ^ 2 / (8 * t)) = (r - 4 * t) ^ 2 / (8 * t) := by
-      field_simp
-      ring
-    exact sub_nonneg.1 (this ▸ div_nonneg (sq_nonneg _) (by positivity))
+  refine ⟨2 ^ ((finrank ℝ E : ℝ) / 2) * (m ! * exp (1 + 1 / (4 * (8 * t)⁻¹))), fun x => ?_⟩
   have hK := (heatKernel_pos (E := E) (by positivity : 0 < 2 * t) x).le
-  rw [heatKernel_eq_mul_heatKernel_two_mul ht]
-  calc (1 + r) ^ m * (2 ^ ((finrank ℝ E : ℝ) / 2) * exp (-r ^ 2 / (8 * t)) * heatKernel (2 * t) x)
-      = 2 ^ ((finrank ℝ E : ℝ) / 2) * ((1 + r) ^ m * exp (-r ^ 2 / (8 * t))) *
+  have hGauss : -‖x‖ ^ 2 / (8 * t) = -(8 * t)⁻¹ * ‖x‖ ^ 2 := by ring
+  rw [heatKernel_eq_mul_heatKernel_two_mul ht, hGauss]
+  calc (1 + ‖x‖) ^ m *
+        (2 ^ ((finrank ℝ E : ℝ) / 2) * exp (-(8 * t)⁻¹ * ‖x‖ ^ 2) * heatKernel (2 * t) x)
+      = 2 ^ ((finrank ℝ E : ℝ) / 2) * ((1 + ‖x‖) ^ m * exp (-(8 * t)⁻¹ * ‖x‖ ^ 2)) *
           heatKernel (2 * t) x := by ring
-    _ ≤ 2 ^ ((finrank ℝ E : ℝ) / 2) * (m ! * exp (1 + 2 * t)) * heatKernel (2 * t) x := by
-        refine mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left ?_ (by positivity)) hK
-        calc (1 + r) ^ m * exp (-r ^ 2 / (8 * t)) ≤ m ! * exp (1 + r) * exp (-r ^ 2 / (8 * t)) := by
-              gcongr
-          _ = m ! * exp (1 + r + -r ^ 2 / (8 * t)) := by rw [exp_add (1 + r)]; ring
-          _ ≤ m ! * exp (1 + 2 * t) := by gcongr
+    _ ≤ _ := mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left
+        (one_add_pow_mul_exp_neg_mul_sq_le (by positivity) m (norm_nonneg x)) (by positivity)) hK
 
 /-- **Gaussian bounds on the derivatives of the heat kernel.** For every order `k` there is a
 constant `C` with `‖D^k K_t(x)‖ ≤ C K_{2t}(x)` for all `x`. -/
