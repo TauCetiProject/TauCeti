@@ -76,18 +76,17 @@ loop rule because those four relations are the whole multiplication table of `B�
 noncomputable def liftTwo (x y : A) (hx : x * x = 1) (hy : y * y = δ • y) (hxy : x * y = y)
     (hyx : y * x = y) : BrauerAlgebra R δ 2 →ₐ[R] A :=
   lift (fun D => if D = capCup 0 1 then y else if D = permToBrauer (Equiv.swap 0 1) then x else 1)
-    (by simp [permToBrauer_one_ne_capCup, permToBrauer_one_ne_permToBrauer_swap])
+    (by simp [permToBrauer_one_ne_permToBrauer_swap])
     (fun D₁ D₂ => by
       rcases D₁.eq_permToBrauer_one_or_eq_permToBrauer_swap_or_eq_capCup with rfl | rfl | rfl <;>
         rcases D₂.eq_permToBrauer_one_or_eq_permToBrauer_swap_or_eq_capCup with rfl | rfl | rfl <;>
-          simp [permToBrauer_one_ne_capCup, permToBrauer_swap_ne_capCup,
-            permToBrauer_one_ne_permToBrauer_swap, hx, hy, hxy, hyx])
+          simp [permToBrauer_one_ne_permToBrauer_swap, hx, hy, hxy, hyx])
 
 @[simp]
 theorem liftTwo_of_permToBrauer_swap (x y : A) (hx : x * x = 1) (hy : y * y = δ • y)
     (hxy : x * y = y) (hyx : y * x = y) :
     liftTwo (δ := δ) x y hx hy hxy hyx (of (permToBrauer (Equiv.swap 0 1))) = x :=
-  (lift_of _ _ _ _).trans (by simp [permToBrauer_swap_ne_capCup])
+  (lift_of _ _ _ _).trans (by simp)
 
 @[simp]
 theorem liftTwo_of_capCup (x y : A) (hx : x * x = 1) (hy : y * y = δ • y) (hxy : x * y = y)

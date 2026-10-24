@@ -39,8 +39,9 @@ loop closes up in the middle (`TauCeti.middleLoopCount_two`). So the relations o
 
 * `TauCeti.BrauerDiagram.eq_permToBrauer_one_of_le_one`: on at most one strand the identity
   diagram is the only diagram.
-* `TauCeti.permToBrauer_one_ne_capCup`, `TauCeti.permToBrauer_swap_ne_capCup` and
-  `TauCeti.permToBrauer_one_ne_permToBrauer_swap`: the three diagrams are pairwise distinct.
+* `TauCeti.permToBrauer_one_ne_permToBrauer_swap`: the identity diagram and the crossing are
+  different, which together with `TauCeti.permToBrauer_ne_capCup` makes the three diagrams
+  pairwise distinct.
 * `TauCeti.BrauerDiagram.univ_two` and
   `TauCeti.BrauerDiagram.eq_permToBrauer_one_or_eq_permToBrauer_swap_or_eq_capCup`: **the three
   Brauer diagrams on two strands**, as an enumeration of the whole type and as a case
@@ -81,16 +82,6 @@ end BrauerDiagram
 
 /-! ### Two strands -/
 
-/-- The identity diagram and the cap-cup diagram on two strands are different. -/
-theorem permToBrauer_one_ne_capCup :
-    permToBrauer (1 : Equiv.Perm (Fin 2)) ≠ capCup 0 1 :=
-  (capCup_ne_permToBrauer (by decide) 1).symm
-
-/-- The crossing and the cap-cup diagram on two strands are different. -/
-theorem permToBrauer_swap_ne_capCup :
-    permToBrauer (Equiv.swap (0 : Fin 2) 1) ≠ capCup 0 1 :=
-  (capCup_ne_permToBrauer (by decide) _).symm
-
 /-- The identity diagram and the crossing are different. -/
 theorem permToBrauer_one_ne_permToBrauer_swap :
     permToBrauer (1 : Equiv.Perm (Fin 2)) ≠ permToBrauer (Equiv.swap 0 1) := fun h =>
@@ -102,13 +93,16 @@ namespace BrauerDiagram
 and the cap-cup diagram, which are three in number as `TauCeti.card_brauerDiagram` asks. -/
 theorem univ_two : (Finset.univ : Finset (BrauerDiagram 2)) =
     {permToBrauer 1, permToBrauer (Equiv.swap 0 1), capCup 0 1} := by
+  have hswap : permToBrauer (Equiv.swap (0 : Fin 2) 1) ≠ capCup 0 1 :=
+    permToBrauer_ne_capCup (by decide) _
   have hmem : permToBrauer (1 : Equiv.Perm (Fin 2)) ∉
       ({permToBrauer (Equiv.swap 0 1), capCup 0 1} : Finset (BrauerDiagram 2)) := by
     simp only [Finset.mem_insert, Finset.mem_singleton]
-    exact fun h => h.elim permToBrauer_one_ne_permToBrauer_swap permToBrauer_one_ne_capCup
+    exact fun h => h.elim permToBrauer_one_ne_permToBrauer_swap
+      (permToBrauer_ne_capCup (by decide) 1)
   refine (Finset.eq_univ_of_card _ ?_).symm
-  rw [Finset.card_insert_of_notMem hmem,
-    Finset.card_pair_eq_two_iff.mpr permToBrauer_swap_ne_capCup, card_brauerDiagram]
+  rw [Finset.card_insert_of_notMem hmem, Finset.card_pair_eq_two_iff.mpr hswap,
+    card_brauerDiagram]
   decide
 
 /-- **The three Brauer diagrams on two strands**: the identity diagram, the crossing, and the
