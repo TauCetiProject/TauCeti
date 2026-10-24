@@ -88,7 +88,8 @@ theorem toEuclideanLin_single_three :
 theorem norm_toEuclideanCLM_basisFun_three :
     ‖Matrix.toEuclideanCLM (𝕜 := 𝕜) (matrix 𝕜) (EuclideanSpace.basisFun (Fin 5) 𝕜 3)‖ =
       ‖Matrix.toEuclideanCLM (𝕜 := 𝕜) (matrix 𝕜)‖ := by
-  rw [norm_toEuclideanCLM, EuclideanSpace.basisFun_apply, Matrix.toEuclideanCLM_apply, toEuclideanLin_single_three,
+  rw [norm_toEuclideanCLM, EuclideanSpace.basisFun_apply, Matrix.toEuclideanCLM_apply,
+    toEuclideanLin_single_three,
     EuclideanSpace.norm_eq]
   congr 1
   norm_num [Fin.sum_univ_succ]
