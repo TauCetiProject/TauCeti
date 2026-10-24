@@ -48,7 +48,7 @@ example (h : G.StrongRegular P Q ε F l₀) (hF : 0 < F #P.parts)
         (⊤ : SimpleGraph (Fin 3)).coarseInducedGraphEstimate3 G P| ≤
       (16 * F #P.parts + 3 * √ε) * (Fintype.card V : ℝ) ^ 3 +
         6 * m * (Fintype.card V : ℝ) ^ 2 :=
-  SimpleGraph.StrongRegular.inducedGraphCount3_estimate h ⊤ hF hm
+  inducedGraphCount3_estimate_of_strongRegular h ⊤ hF hm
 
 example (h : G.StrongRegular P Q ε F l₀) (hF : 0 < F #P.parts)
     (hm : ∀ A ∈ P.parts, #A ≤ m) :
@@ -56,6 +56,6 @@ example (h : G.StrongRegular P Q ε F l₀) (hF : 0 < F #P.parts)
         (⊥ : SimpleGraph (Fin 3)).coarseInducedGraphEstimate3 G P| ≤
       (16 * F #P.parts + 3 * √ε) * (Fintype.card V : ℝ) ^ 3 +
         6 * m * (Fintype.card V : ℝ) ^ 2 :=
-  SimpleGraph.StrongRegular.inducedGraphCount3_estimate h ⊥ hF hm
+  inducedGraphCount3_estimate_of_strongRegular h ⊥ hF hm
 
 end TauCeti

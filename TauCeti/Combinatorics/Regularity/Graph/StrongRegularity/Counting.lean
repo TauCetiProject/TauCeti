@@ -27,7 +27,7 @@ public section
 
 open Finset SimpleGraph
 
-namespace TauCeti.SimpleGraph
+namespace TauCeti
 
 variable {V : Type*} [Fintype V] [DecidableEq V] (G : SimpleGraph V) [DecidableRel G.Adj]
 
@@ -35,7 +35,7 @@ variable {G} in
 /-- **Strong regularity induced counting.** The densities on the coarse partition of a strong
 regularity witness predict every labelled induced three-vertex pattern. No automorphism factor
 is removed. The error includes irregular fine pairs, the energy gap, and repeated-cell triples. -/
-theorem StrongRegular.inducedGraphCount3_estimate
+theorem inducedGraphCount3_estimate_of_strongRegular
     {P Q : Finpartition (univ : Finset V)} {ε : ℝ} {F : ℕ → ℝ} {l₀ : ℕ}
     (h : G.StrongRegular P Q ε F l₀) (J : SimpleGraph (Fin 3)) [DecidableRel J.Adj]
     (hF : 0 < F #P.parts) {m : ℕ} (hm : ∀ A ∈ P.parts, #A ≤ m) :
@@ -61,4 +61,4 @@ theorem StrongRegular.inducedGraphCount3_estimate
   have hslack : 0 ≤ F #P.parts * (Fintype.card V : ℝ) ^ 3 := by positivity
   linarith
 
-end TauCeti.SimpleGraph
+end TauCeti

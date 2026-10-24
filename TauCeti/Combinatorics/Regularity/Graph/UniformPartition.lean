@@ -22,7 +22,7 @@ public section
 
 open Finset SimpleGraph
 
-namespace TauCeti.SimpleGraph
+namespace TauCeti
 
 variable {V : Type*} [Fintype V] [DecidableEq V] (G : SimpleGraph V) [DecidableRel G.Adj]
 
@@ -74,4 +74,4 @@ theorem sum_volume_nonUniform_pair_le {ι : Type*} [Fintype ι] [DecidableEq ι]
       _ = _ := by
         rw [mul_left_comm, mul_assoc, ← pow_add, Nat.sub_add_cancel hι, ← mul_assoc]
 
-end TauCeti.SimpleGraph
+end TauCeti

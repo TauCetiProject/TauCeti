@@ -28,7 +28,7 @@ public section
 
 open Finset Function SimpleGraph
 
-namespace TauCeti.SimpleGraph
+namespace TauCeti
 
 variable {V : Type*} [Fintype V] [DecidableEq V] (G : SimpleGraph V) [DecidableRel G.Adj]
 
@@ -156,4 +156,4 @@ theorem abs_inducedGraphCount3_sub_steppedInducedGraphCount3_le
       simp only [sum_add_distrib, ← mul_sum, hvol]
       linarith
 
-end TauCeti.SimpleGraph
+end TauCeti
