@@ -51,6 +51,7 @@ local models for the test functions of the Yamabe problem.
 * `TauCeti.Yamabe.bubble_rpow_criticalExponent`,
   `TauCeti.Yamabe.bubble_rpow_criticalExponent_eq_mul_rpow_neg_one_add_norm_sq`: the critical
   power of a bubble, and its form as a rescaled translate of a Japanese bracket power.
+* `TauCeti.Yamabe.bubble_sq`: the square of a bubble as a power of its profile.
 * `TauCeti.Yamabe.bubble_rpow_four_div_finrank_sub_two`: the conformal factor
   `U_{t,b} ^ (4 / (n - 2))` of a bubble.
 * `TauCeti.Yamabe.hasGradientAt_bubble`, `TauCeti.Yamabe.norm_fderiv_bubble_sq`: the gradient of
@@ -150,6 +151,15 @@ theorem bubble_rpow_criticalExponent (hn : finrank ℝ E ≠ 2) {t : ℝ} (ht : 
     ← Real.rpow_natCast _ (finrank ℝ E)]
   congr 1
   field_simp
+
+/-- In dimension `n ≥ 2`, the square of a bubble is a power of its profile:
+`U_{t,b} ^ 2 = (2 t / (t² + ‖x - b‖²)) ^ (n - 2)`. -/
+theorem bubble_sq (hn : 2 ≤ finrank ℝ E) {t : ℝ} (ht : 0 ≤ t) (b x : E) :
+    bubble t b x ^ 2 = (2 * t / (t ^ 2 + ‖x - b‖ ^ 2)) ^ (finrank ℝ E - 2) := by
+  rw [bubble_apply, ← Real.rpow_mul_natCast (by positivity), ← Real.rpow_natCast _ (_ - 2)]
+  congr 1
+  push_cast [Nat.cast_sub hn]
+  ring
 
 /-- In dimension `n ≠ 2`, the critical power of a bubble is a rescaled translate of a power of the
 Japanese bracket: `U_{t,b}(x) ^ pₙ = (2 / t) ^ n (1 + ‖t⁻¹ (x - b)‖²) ^ (-n)`. -/
