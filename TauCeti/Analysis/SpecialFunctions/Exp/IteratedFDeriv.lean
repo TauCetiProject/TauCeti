@@ -29,6 +29,7 @@ public section
 namespace Complex
 
 /-- Every real iterated Fréchet derivative of `exp : ℂ → ℂ` at `z` has norm `‖exp z‖`. -/
+@[simp]
 theorem norm_iteratedFDeriv_real_exp (n : ℕ) (z : ℂ) :
     ‖iteratedFDeriv ℝ n exp z‖ = ‖exp z‖ := by
   rw [← (contDiff_exp (𝕜 := ℂ) (n := n)).contDiffAt.restrictScalars_iteratedFDeriv (𝕜 := ℝ),

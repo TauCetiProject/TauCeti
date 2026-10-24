@@ -11,6 +11,7 @@ public import Mathlib.Analysis.SpecialFunctions.Gaussian.FourierTransform
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.SpecialFunctions.Exp.IteratedFDeriv
+import TauCeti.Analysis.SpecialFunctions.Gaussian.Bounds
 
 /-!
 # The Gaussian `exp (π i τ ‖x‖²)` as a Schwartz function
@@ -38,7 +39,11 @@ the translates `v + L`, are Schwartz functions by `SchwartzMap.compSubConstCLM`.
 The Schwartz bounds come from Faà di Bruno's estimate `norm_iteratedFDeriv_comp_le` for the
 composite of `exp` with the quadratic `x ↦ π i τ ‖x‖²`, whose derivatives grow at most
 polynomially; every real iterated derivative of `exp : ℂ → ℂ` at `z` has norm `‖exp z‖`
-(`Complex.norm_iteratedFDeriv_real_exp`). The Fourier transform is Mathlib's
+(`Complex.norm_iteratedFDeriv_real_exp`), and the polynomial weight is absorbed by the Gaussian
+through `Real.one_add_pow_mul_exp_neg_mul_sq_le`. This decay argument follows the heat-kernel
+bounds `TauCeti.exists_one_add_norm_pow_mul_heatKernel_le` and
+`TauCeti.exists_norm_iteratedFDeriv_heatKernel_le` in
+`TauCeti/Analysis/PDE/HeatKernel/Bounds.lean`. The Fourier transform is Mathlib's
 `fourier_gaussian_innerProductSpace` at `b = -π i τ`.
 
 ## Main definitions
@@ -48,8 +53,6 @@ polynomially; every real iterated derivative of `exp : ℂ → ℂ` at `z` has n
 ## Main statements
 
 * `SchwartzMap.gaussian_apply`, `SchwartzMap.norm_gaussian_apply`, `SchwartzMap.gaussian_neg`.
-* `Real.one_add_pow_mul_exp_neg_mul_sq_le`: the bound `(1 + r) ^ m exp (-a r²) ≤ m! e^{1 + 1/(4a)}`
-  that turns Gaussian decay into Schwartz decay.
 * `SchwartzMap.fourier_gaussian`: the Fourier transform of the Gaussian, in every dimension.
 * `SchwartzMap.fourier_gaussian_of_finrank_eq_two_mul`: the same in even dimension `2k`, with
   the factor `((-i) ^ k * τ ^ k)⁻¹`.
@@ -65,28 +68,6 @@ public section
 
 open Complex Module
 open scoped Nat Real UpperHalfPlane SchwartzMap FourierTransform
-
-namespace Real
-
-/-- A polynomial times a Gaussian is bounded: for `0 < a` and `0 ≤ r`,
-`(1 + r) ^ m * exp (-a r²) ≤ m! exp (1 + 1 / (4a))`. -/
-theorem one_add_pow_mul_exp_neg_mul_sq_le {a : ℝ} (ha : 0 < a) (m : ℕ) {r : ℝ}
-    (hr : 0 ≤ r) : (1 + r) ^ m * Real.exp (-a * r ^ 2) ≤ m ! * Real.exp (1 + 1 / (4 * a)) := by
-  -- `(1 + r) ^ m ≤ m! exp (1 + r)` and `r - a r² ≤ 1 / (4a)`.
-  have hpow : (1 + r) ^ m ≤ m ! * Real.exp (1 + r) := by
-    have := Real.pow_div_factorial_le_exp (1 + r) (by positivity) m
-    rwa [div_le_iff₀ (by positivity), mul_comm] at this
-  have hquad : 1 + r + -a * r ^ 2 ≤ 1 + 1 / (4 * a) := by
-    have : 1 + 1 / (4 * a) - (1 + r + -a * r ^ 2) = (2 * a * r - 1) ^ 2 / (4 * a) := by
-      field_simp
-      ring
-    exact sub_nonneg.1 (this ▸ div_nonneg (sq_nonneg _) (by positivity))
-  calc (1 + r) ^ m * Real.exp (-a * r ^ 2) ≤ m ! * Real.exp (1 + r) * Real.exp (-a * r ^ 2) := by
-        gcongr
-    _ = m ! * Real.exp (1 + r + -a * r ^ 2) := by rw [Real.exp_add (1 + r)]; ring
-    _ ≤ m ! * Real.exp (1 + 1 / (4 * a)) := by gcongr
-
-end Real
 
 namespace SchwartzMap
 
@@ -194,8 +175,8 @@ theorem fourier_gaussian_of_finrank_eq_two_mul {k : ℕ} (hk : finrank ℝ E = 2
       ((-I) ^ k * (τ : ℂ) ^ k)⁻¹ * cexp (π * I * (‖y‖ ^ 2 : ℝ) * (-1 / (τ : ℂ))) := by
   rw [fourier_gaussian, hk]
   congr 1
-  rw [show -((2 * k : ℕ) : ℂ) / 2 = -(k : ℂ) by push_cast; ring, cpow_neg, cpow_natCast,
-    div_I]
+  have hExponent : -((2 * k : ℕ) : ℂ) / 2 = -(k : ℂ) := by push_cast; ring
+  rw [hExponent, cpow_neg, cpow_natCast, div_I]
   ring
 
 end SchwartzMap
