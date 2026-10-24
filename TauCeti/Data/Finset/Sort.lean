@@ -52,7 +52,7 @@ theorem flatten_map_sort_filter_eq_sort (hf : MonotoneOn f s) :
     · obtain ⟨y, -, rfl⟩ := List.mem_map.1 hl
       exact (sortedLT_sort _).pairwise
     · rw [mem_sort, mem_filter] at hx hw
-      exact lt_of_not_ge fun h => hyz.not_ge (hx.2 ▸ hw.2 ▸ hf hw.1 hx.1 h)
+      exact hf.reflect_lt hx.1 hw.1 (hx.2 ▸ hw.2 ▸ hyz)
   · rw [mem_sort, List.mem_flatten]
     simp only [List.mem_map]
     constructor

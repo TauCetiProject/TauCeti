@@ -95,13 +95,7 @@ theorem partitionMoment_comap (φ : A → R) (a : α → A) (hf : MonotoneOn f s
     partitionMoment φ a (P.comap f) = partitionMoment φ (fiberProd a s f) P := by
   rw [partitionMoment_def, partitionMoment_def, Finpartition.prod_parts_comap]
   refine prod_congr rfl fun C hC => ?_
-  rw [prod_map_sort_filter_eq hf]
-  congr 4
-  ext y
-  simp only [mem_image, mem_filter]
-  refine ⟨fun ⟨x, ⟨_, hx⟩, hxy⟩ => hxy ▸ hx, fun hy => ?_⟩
-  obtain ⟨x, hx, rfl⟩ := mem_image.1 (P.le hC hy)
-  exact ⟨x, ⟨hx, hy⟩, rfl⟩
+  rw [prod_map_sort_filter_eq hf, Finpartition.image_filter_mem_of_mem_parts hC]
 
 end Moment
 

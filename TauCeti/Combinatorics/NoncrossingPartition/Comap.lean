@@ -61,12 +61,10 @@ theorem isNoncrossing_comap_iff (hf : MonotoneOn f s) :
     obtain ⟨x₂, hx₂, rfl⟩ := mem_image.1 (P.le hD hy₂)
     obtain ⟨x₃, hx₃, rfl⟩ := mem_image.1 (P.le hC hy₃)
     obtain ⟨x₄, hx₄, rfl⟩ := mem_image.1 (P.le hD hy₄)
-    have hlt {x y : α} (hx : x ∈ s) (hy : y ∈ s) (hxy : f x < f y) : x < y :=
-      lt_of_not_ge fun h => hxy.not_ge (hf hy hx h)
     rw [isNoncrossing_iff, parts_comap] at h
     have := h _ (mem_image_of_mem _ hC) _ (mem_image_of_mem _ hD) x₁ (mem_filter.2 ⟨hx₁, hy₁⟩) x₂
       (mem_filter.2 ⟨hx₂, hy₂⟩) x₃ (mem_filter.2 ⟨hx₃, hy₃⟩) x₄ (mem_filter.2 ⟨hx₄, hy₄⟩)
-      (hlt hx₁ hx₂ h₁₂) (hlt hx₂ hx₃ h₂₃) (hlt hx₃ hx₄ h₃₄)
+      (hf.reflect_lt hx₁ hx₂ h₁₂) (hf.reflect_lt hx₂ hx₃ h₂₃) (hf.reflect_lt hx₃ hx₄ h₃₄)
     have hx₁D : x₁ ∈ {x ∈ s | f x ∈ D} := this ▸ mem_filter.2 ⟨hx₁, hy₁⟩
     exact P.eq_of_mem_parts hC hD hy₁ (mem_filter.1 hx₁D).2
   · -- Points `x₁ < x₂ < x₃ < x₄` of `s` have images `f x₁ ≤ f x₂ ≤ f x₃ ≤ f x₄`; two equal
