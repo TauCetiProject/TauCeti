@@ -17,6 +17,12 @@ In a normed ring with summable geometric series, `Ring.inverse` is continuous at
 When the nonunits also form an open set, as in a complete discretely valued ring such as `ℤ_p`,
 there is no such boundary and `Ring.inverse` is continuous everywhere.
 
+The Neumann series also gives explicit bounds: `‖(1 - x)⁻¹‖ ≤ ‖1‖ - 1 + (1 - ‖x‖)⁻¹` when
+`‖x‖ < 1`, and, when `‖1‖ = 1`, `‖(u + t)⁻¹‖ ≤ ‖u⁻¹‖ / (1 - ‖u⁻¹‖ * ‖t‖)` for a unit `u` with
+`‖u⁻¹‖ * ‖t‖ < 1`. Mathlib records these inverses only through asymptotic `O`-bounds such as
+`NormedRing.inverse_add_norm`; the explicit constants are needed for inductive constructions
+that perturb a unit infinitely often, such as Cohen–Hewitt factorization.
+
 The Jacobson radical is closed, as an intersection of maximal left ideals, using
 Mathlib's `Ring.jacobson_eq_sInf_isMaximal` and `Ideal.IsMaximal.isClosed`.
 See Dales, *Banach Algebras and Automatic Continuity*, §§1.3–1.5.
@@ -39,6 +45,30 @@ theorem continuous_inverse_of_isOpen_nonunits (h : IsOpen (nonunits R)) :
   · have hx' : Ring.inverse =ᶠ[nhds x] fun _ ↦ (0 : R) :=
       Filter.mem_of_superset (h.mem_nhds hx) fun y hy ↦ Ring.inverse_non_unit y hy
     exact continuousAt_const.congr hx'.symm
+
+/-- The Neumann-series bound for the inverse of `1 - x` when `‖x‖ < 1`. The identity need not have
+norm one; when it does, the bound reads `‖(1 - x)⁻¹‖ ≤ (1 - ‖x‖)⁻¹`. -/
+theorem norm_inverse_one_sub_le {x : R} (hx : ‖x‖ < 1) :
+    ‖Ring.inverse (1 - x)‖ ≤ ‖(1 : R)‖ - 1 + (1 - ‖x‖)⁻¹ := by
+  rw [inverse_one_sub x hx]
+  exact tsum_geometric_le_of_norm_lt_one x hx
+
+/-- In a normed ring with `‖1‖ = 1` and summable geometric series, perturbing a unit `u` by `t`
+with `‖u⁻¹‖ * ‖t‖ < 1` gives an element whose inverse has norm at most
+`‖u⁻¹‖ / (1 - ‖u⁻¹‖ * ‖t‖)`. The perturbed element is a unit by `Units.add`. -/
+theorem norm_inverse_add_le [NormOneClass R] (u : Rˣ) {t : R}
+    (ht : ‖(↑u⁻¹ : R)‖ * ‖t‖ < 1) :
+    ‖Ring.inverse (↑u + t)‖ ≤ ‖(↑u⁻¹ : R)‖ / (1 - ‖(↑u⁻¹ : R)‖ * ‖t‖) := by
+  have hs : ‖-(↑u⁻¹ * t)‖ ≤ ‖(↑u⁻¹ : R)‖ * ‖t‖ := (norm_neg _).trans_le (norm_mul_le _ _)
+  have hs₁ : ‖-(↑u⁻¹ * t)‖ < 1 := hs.trans_lt ht
+  have hv : ‖Ring.inverse (1 - -(↑u⁻¹ * t))‖ ≤ (1 - ‖(↑u⁻¹ : R)‖ * ‖t‖)⁻¹ := by
+    refine (norm_inverse_one_sub_le hs₁).trans ?_
+    rw [norm_one, sub_self, zero_add]
+    gcongr
+  rw [inverse_one_sub _ hs₁] at hv
+  have key : (↑u + t : R) = ↑(u * Units.oneSub _ hs₁) := by simp [mul_add]
+  rw [key, Ring.inverse_unit, mul_inv_rev, Units.val_mul, div_eq_inv_mul]
+  exact (norm_mul_le _ _).trans (by gcongr)
 
 end NormedRing
 
