@@ -16,7 +16,7 @@ of one closed unit ball of `Fin n → ℝ` for each `n`-cell
 (`TauCeti.isQuotientMap_sumElim_base_map`). Closed balls of `Fin n → ℝ` are delta-generated
 (`TauCeti.instDeltaGeneratedSpaceClosedBall`), and disjoint unions and quotients of
 delta-generated spaces are delta-generated. So `C` is delta-generated as soon as its base is
-(`TauCeti.deltaGeneratedSpace_complex`), and every Hausdorff CW complex is delta-generated
+(`TauCeti.deltaGeneratedSpace_of_relCWComplex`), and every Hausdorff CW complex is delta-generated
 (`TauCeti.instDeltaGeneratedSpaceCWComplex`, and `TauCeti.instDeltaGeneratedSpaceOfCWComplexUniv`
 for a CW structure on the whole space).
 
@@ -28,8 +28,8 @@ semilocally simply connected space has a universal cover.
 
 ## Main results
 
-* `TauCeti.deltaGeneratedSpace_complex`: a Hausdorff relative CW complex over a delta-generated
-  base is delta-generated.
+* `TauCeti.deltaGeneratedSpace_of_relCWComplex`: a Hausdorff relative CW complex over a
+  delta-generated base is delta-generated.
 * `TauCeti.instDeltaGeneratedSpaceCWComplex`: a Hausdorff CW complex is delta-generated.
 * `TauCeti.instDeltaGeneratedSpaceOfCWComplexUniv`: a Hausdorff space with a CW structure on the
   whole space is delta-generated.
@@ -51,16 +51,15 @@ namespace TauCeti
 
 variable {X : Type u} [TopologicalSpace X] [T2Space X]
 
-/-- **A relative CW complex over a delta-generated base is delta-generated.** The complex is a
-quotient of the disjoint union of its base and of its closed cells, and closed balls are
-delta-generated. -/
-theorem deltaGeneratedSpace_complex {C D : Set X} [RelCWComplex C D] [DeltaGeneratedSpace D] :
-    DeltaGeneratedSpace C :=
+/-- **A relative CW complex over a delta-generated base is delta-generated.** For example, this
+applies to a CW complex, whose base is empty. -/
+theorem deltaGeneratedSpace_of_relCWComplex {C D : Set X} [RelCWComplex C D]
+    [DeltaGeneratedSpace D] : DeltaGeneratedSpace C :=
   isQuotientMap_sumElim_base_map.isGeneratedBy
 
 /-- **A Hausdorff CW complex is delta-generated**, so in particular locally path-connected. -/
 instance instDeltaGeneratedSpaceCWComplex {C : Set X} [CWComplex C] : DeltaGeneratedSpace C :=
-  deltaGeneratedSpace_complex (D := ∅)
+  deltaGeneratedSpace_of_relCWComplex (D := ∅)
 
 /-- **A Hausdorff space with a CW structure on the whole space is delta-generated**, so in
 particular locally path-connected. -/
