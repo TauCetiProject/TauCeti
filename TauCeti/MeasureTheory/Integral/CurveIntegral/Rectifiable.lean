@@ -10,6 +10,7 @@ public import TauCeti.MeasureTheory.Function.MetricDerivative.ConstantSpeed
 public import TauCeti.MeasureTheory.Integral.CurveIntegral.Convergence
 public import TauCeti.MeasureTheory.Integral.CurveIntegral.Reparam
 public import TauCeti.Topology.MetricSpace.Arclength.Basic
+import Mathlib.Analysis.Calculus.Deriv.Inverse
 import Mathlib.Analysis.Calculus.Deriv.Shift
 
 /-!
@@ -133,23 +134,53 @@ theorem rectifiableCurveIntegral_smul {𝕜 : Type*} [NormedField 𝕜] [NormedS
   simp only [rectifiableCurveIntegral_def, Pi.smul_apply, smul_apply,
     intervalIntegral.integral_smul]
 
+open Filter Topology in
 /-- The geometric integral only depends on the curve on `[a, b]`. -/
-theorem rectifiableCurveIntegral_congr {γ' : ℝ → E} (hcont : ContinuousOn γ (Icc a b))
-    (h : EqOn γ γ' (Icc a b)) :
+theorem rectifiableCurveIntegral_congr {γ' : ℝ → E} (h : EqOn γ γ' (Icc a b)) :
     rectifiableCurveIntegral ω γ' a b = rectifiableCurveIntegral ω γ a b := by
-  have hL : eVariationOn γ' (Icc a b) = eVariationOn γ (Icc a b) := eVariationOn.eq_of_eqOn h.symm
-  by_cases hγab : BoundedVariationOn γ (Icc a b) ∧ a ≤ b
-  swap
-  · simp only [rectifiableCurveIntegral_def, hL, toReal_eVariationOn_eq_zero_of_not hγab,
-      intervalIntegral.integral_same]
-  obtain ⟨hγ, hab⟩ := hγab
-  rw [rectifiableCurveIntegral_eq_of_eqOn_comp_variationOnFromTo (hcont.congr h.symm)
-    (g := naturalParameterization γ (Icc a b) a), hL, rectifiableCurveIntegral_def]
-  intro t ht
-  rw [Function.comp_apply, variationOnFromTo.eq_of_le _ _ ht.1,
-    eVariationOn.eq_of_eqOn (h.symm.mono inter_subset_left), ← variationOnFromTo.eq_of_le _ _ ht.1,
-    hγ.locallyBoundedVariationOn.naturalParameterization_variationOnFromTo (left_mem_Icc.2 hab) ht,
-    h ht]
+  have hvar : variationOnFromTo γ' (Icc a b) a = variationOnFromTo γ (Icc a b) a := by
+    funext t
+    unfold variationOnFromTo
+    split_ifs <;> rw [eVariationOn.eq_of_eqOn (h.symm.mono inter_subset_left)]
+  -- Both natural parameterizations are the curves composed with the same right inverse `ι` of
+  -- cumulative variation. They differ only where `ι` leaves `[a, b]`, where it is constant.
+  obtain ⟨ι, hη, hη', hι⟩ : ∃ ι : ℝ → ℝ, naturalParameterization γ (Icc a b) a = γ ∘ ι ∧
+      naturalParameterization γ' (Icc a b) a = γ' ∘ ι ∧
+      ∀ ⦃u v⦄, ι u ∉ Icc a b → ι v ∉ Icc a b → ι u = ι v := by
+    refine ⟨@Function.invFunOn _ _ ⟨a⟩ (variationOnFromTo γ (Icc a b) a) (Icc a b), rfl,
+      by rw [naturalParameterization, hvar], fun u v hu hv ↦ ?_⟩
+    rw [Function.invFunOn_neg fun hex ↦ hu (Function.invFunOn_mem hex),
+      Function.invFunOn_neg fun hex ↦ hv (Function.invFunOn_mem hex)]
+  set S := {u | γ' (ι u) ≠ γ (ι u)}
+  have hS : ∀ ⦃u⦄, u ∈ S → ι u ∉ Icc a b := fun u hu hmem ↦ hu (h hmem).symm
+  -- Off the countable set of points of `S` isolated in `S`, the integrands agree: near a point
+  -- outside the closure of `S` the parameterizations agree, and at an accumulation point of `S`
+  -- both derivatives vanish since both parameterizations are constant on `S`.
+  have hkey : ∀ u ∉ {u ∈ S | 𝓝[S ∩ Ioi u] u = ⊥},
+      ω ((γ' ∘ ι) u) (deriv (γ' ∘ ι) u) = ω ((γ ∘ ι) u) (deriv (γ ∘ ι) u) := by
+    intro u hu
+    by_cases hacc : AccPt u (𝓟 S)
+    · have hfreq := accPt_iff_frequently_nhdsNE.1 hacc
+      obtain ⟨v, hv⟩ := hfreq.exists
+      have hconst : ∃ᶠ y in 𝓝[≠] u, ι y = ι v := hfreq.mono fun y hy ↦ hι (hS hy) (hS hv)
+      rw [deriv_zero_of_frequently_const (c := γ' (ι v)) (hconst.mono fun y hy ↦ by
+          rw [Function.comp_apply, hy]),
+        deriv_zero_of_frequently_const (c := γ (ι v)) (hconst.mono fun y hy ↦ by
+          rw [Function.comp_apply, hy]), map_zero, map_zero]
+    · have hne : ∀ᶠ y in 𝓝[≠] u, y ∉ S := by
+        simpa only [accPt_iff_frequently_nhdsNE, not_frequently] using hacc
+      have hu' : u ∉ S := fun huS ↦ hu ⟨huS, le_bot_iff.1 <| by
+        rw [← not_neBot.1 hacc, ← nhdsWithin_inter', inter_comm]
+        exact nhdsWithin_mono _ (inter_subset_inter_left _ fun y hy ↦ ne_of_gt hy)⟩
+      have heq : γ' ∘ ι =ᶠ[𝓝 u] γ ∘ ι := (eventually_nhdsWithin_iff.1 hne).mono fun y hy ↦ by
+        by_cases hyu : y = u
+        · exact not_not.1 (hyu ▸ hu')
+        · exact not_not.1 (hy hyu)
+      rw [heq.deriv_eq, heq.eq_of_nhds]
+  rw [rectifiableCurveIntegral_def, rectifiableCurveIntegral_def, eVariationOn.eq_of_eqOn h.symm,
+    hη, hη']
+  exact intervalIntegral.integral_congr_ae <|
+    (countable_setOfPred_isolated_right_within.ae_notMem volume).mono fun u hu _ ↦ hkey u hu
 
 /-- The geometric integral is invariant under increasing continuous reparametrizations of
 `[c, d]` onto `[a, b]`. The reparametrization need not be absolutely continuous. -/
@@ -284,12 +315,10 @@ theorem rectifiableCurveIntegral_eq_of_eqOn_comp {η : ℝ → E} {ψ : ℝ → 
   have hcont : ContinuousOn η (Icc c d) := uIcc_of_le hcd ▸ hη.continuousOn
   have hcomp : rectifiableCurveIntegral ω (η ∘ ψ) a b = rectifiableCurveIntegral ω η c d :=
     rectifiableCurveIntegral_comp_of_monotoneOn hcont hab hψ hψm hψa hψb
-  have hcontψ : ContinuousOn (η ∘ ψ) (Icc a b) :=
-    hcont.comp hψ (himage ▸ mapsTo_image ψ (Icc a b))
   have htrace : η '' Icc c d = γ '' Icc a b := by
     rw [← himage, image_image]
     exact image_congr fun t ht ↦ h ht
-  rw [rectifiableCurveIntegral_congr hcontψ h, hcomp,
+  rw [rectifiableCurveIntegral_congr h, hcomp,
     hη.rectifiableCurveIntegral_eq_intervalIntegral_deriv hcd (htrace ▸ hω)]
 
 /-- Along a continuous rectifiable curve, the integrand of the geometric integral of a 1-form
