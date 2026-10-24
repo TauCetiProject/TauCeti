@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Analytic.Uniqueness
 public import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 public import TauCeti.Geometry.Manifold.ContMDiff.Defs
+public import TauCeti.Geometry.Manifold.ExtChartAt
 
 /-!
 # Analytic maps on manifolds, read in charts
@@ -23,8 +24,9 @@ complexification) can be applied to analytic functions on analytic manifolds cha
   (open) domain.
 * A map is `C^ω` at `x` if and only if it is continuous at `x` and its coordinate expression in
   any charts of the maximal atlases at `x` and `f x` is analytic at the coordinate of `x`; for a
-  function with values in a normed space, continuity is automatic. On an open subset of a chart
-  domain, being `C^ω` is analyticity of the coordinate expression on the image of that subset.
+  function with values in a normed space, continuity is automatic. Only the converse direction
+  needs a complete target. On an open subset of a chart domain, being `C^ω` is analyticity of the
+  coordinate expression on the image of that subset.
 * The identity theorem: two functions that are `C^ω` on a preconnected set and agree near one of
   its points agree on all of it.
 
@@ -33,12 +35,14 @@ The model is assumed boundaryless throughout, so that chart images of open sets 
 
 ## Main results
 
-* `ModelWithCorners.isOpen_extendCoordChange_source`,
-  `ModelWithCorners.analyticOnNhd_extendCoordChange`,
+* `ModelWithCorners.analyticOnNhd_extendCoordChange`,
   `ModelWithCorners.analyticAt_extendCoordChange` and `TauCeti.analyticOnNhd_ext_coord_change`:
   changes of coordinates in a `C^ω` atlas are analytic.
-* `TauCeti.contMDiffAt_omega_iff_of_mem_maximalAtlas` and `TauCeti.contMDiffAt_omega_iff`: `C^ω`
+* `ContMDiffAt.analyticAt_extend_comp_extend_symm`, `ContMDiffAt.analyticAt_writtenInExtChartAt`,
+  `TauCeti.contMDiffAt_omega_iff_of_mem_maximalAtlas` and `TauCeti.contMDiffAt_omega_iff`: `C^ω`
   maps between manifolds in arbitrary and in preferred charts.
+* `TauCeti.contMDiffAt_iff_contDiffAt_comp_extend_symm`: `C^n` functions with values in a normed
+  space are those with a `C^n` coordinate expression.
 * `ContMDiffAt.analyticAt_comp_extend_symm`,
   `TauCeti.contMDiffAt_omega_iff_analyticAt_of_mem_maximalAtlas` and
   `TauCeti.contMDiffAt_omega_iff_analyticAt`: `C^ω` functions with values in a normed space.
@@ -68,19 +72,12 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 
 namespace ModelWithCorners
 
-omit [ChartedSpace H M] in
-/-- For a boundaryless model, the domain of the change of coordinates between two charts is
-open. -/
-theorem isOpen_extendCoordChange_source : IsOpen (I.extendCoordChange e e').source :=
-  (e.continuousOn_extend_symm (I := I)).isOpen_inter_preimage e.isOpen_extend_target
-    e'.isOpen_extend_source
-
 /-- **Changes of coordinates are analytic.** For a boundaryless model, the change of coordinates
 between two charts of the maximal `C^ω` atlas is analytic on its domain. -/
 theorem analyticOnNhd_extendCoordChange (he : e ∈ maximalAtlas I ω M)
     (he' : e' ∈ maximalAtlas I ω M) :
     AnalyticOnNhd 𝕜 (I.extendCoordChange e e') (I.extendCoordChange e e').source :=
-  isOpen_extendCoordChange_source.analyticOn_iff_analyticOnNhd.1 <|
+  I.isOpen_extendCoordChange_source.analyticOn_iff_analyticOnNhd.1 <|
     (contDiffOn_omega_iff_analyticOn I.uniqueDiffOn_extendCoordChange_source).1 <|
       I.contDiffOn_extendCoordChange he he'
 
@@ -104,14 +101,37 @@ theorem TauCeti.analyticOnNhd_ext_coord_change [IsManifold I ω M] (x x' : M) :
 
 /-! ### `C^ω` maps in charts -/
 
+/-- For a boundaryless model, a function with values in a normed space is `C^n` at `x` if and only
+if its coordinate expression in a chart `e` at `x` of the maximal `C^n` atlas is `C^n` at the
+coordinate of `x`. -/
+theorem TauCeti.contMDiffAt_iff_contDiffAt_comp_extend_symm {n : ℕ∞ω} {f : M → F}
+    (he : e ∈ maximalAtlas I n M) (hx : x ∈ e.source) :
+    ContMDiffAt I 𝓘(𝕜, F) n f x ↔ ContDiffAt 𝕜 n (f ∘ (e.extend I).symm) (e.extend I x) := by
+  rw [ContMDiffAt, contMDiffWithinAt_iff_source_of_mem_maximalAtlas he hx]
+  simp [I.range_eq_univ, contMDiffWithinAt_univ, contMDiffAt_iff_contDiffAt]
+
 /-- A function with values in a normed space that is `C^ω` at `x` has an analytic coordinate
 expression at the coordinate of `x` in any chart at `x` of the maximal `C^ω` atlas. -/
 theorem ContMDiffAt.analyticAt_comp_extend_symm {f : M → F}
     (hf : ContMDiffAt I 𝓘(𝕜, F) ω f x) (he : e ∈ maximalAtlas I ω M) (hx : x ∈ e.source) :
-    AnalyticAt 𝕜 (f ∘ (e.extend I).symm) (e.extend I x) := by
-  rw [ContMDiffAt, contMDiffWithinAt_iff_source_of_mem_maximalAtlas he hx, preimage_univ,
-    univ_inter, I.range_eq_univ, contMDiffWithinAt_univ, contMDiffAt_iff_contDiffAt] at hf
-  exact hf.analyticAt
+    AnalyticAt 𝕜 (f ∘ (e.extend I).symm) (e.extend I x) :=
+  ((TauCeti.contMDiffAt_iff_contDiffAt_comp_extend_symm he hx).1 hf).analyticAt
+
+/-- A map that is `C^ω` at `x` has an analytic coordinate expression at the coordinate of `x` in
+any charts `e` at `x` and `e'` at `f x` of the maximal `C^ω` atlases. -/
+theorem ContMDiffAt.analyticAt_extend_comp_extend_symm {f : M → M'}
+    {e' : OpenPartialHomeomorph M' H'} (hf : ContMDiffAt I I' ω f x)
+    (he : e ∈ maximalAtlas I ω M) (he' : e' ∈ maximalAtlas I' ω M') (hx : x ∈ e.source)
+    (hy : f x ∈ e'.source) :
+    AnalyticAt 𝕜 (e'.extend I' ∘ f ∘ (e.extend I).symm) (e.extend I x) :=
+  (((contMDiffAt_iff_of_mem_maximalAtlas he he' hx hy).1 hf).2.contDiffAt <|
+    by simp [I.range_eq_univ]).analyticAt
+
+/-- A map that is `C^ω` at `x` has an analytic coordinate expression in the preferred charts at `x`
+and `f x`, at the coordinate of `x`. -/
+theorem ContMDiffAt.analyticAt_writtenInExtChartAt {f : M → M'} (hf : ContMDiffAt I I' ω f x) :
+    AnalyticAt 𝕜 (writtenInExtChartAt I I' x f) (extChartAt I x x) :=
+  ((contMDiffAt_iff.1 hf).2.contDiffAt <| by simp [I.range_eq_univ]).analyticAt
 
 namespace TauCeti
 
@@ -122,29 +142,28 @@ theorem contMDiffAt_omega_iff_of_mem_maximalAtlas [CompleteSpace E']
     {f : M → M'} {e' : OpenPartialHomeomorph M' H'} (he : e ∈ maximalAtlas I ω M)
     (he' : e' ∈ maximalAtlas I' ω M') (hx : x ∈ e.source) (hy : f x ∈ e'.source) :
     ContMDiffAt I I' ω f x ↔
-      ContinuousAt f x ∧ AnalyticAt 𝕜 (e'.extend I' ∘ f ∘ (e.extend I).symm) (e.extend I x) := by
-  rw [contMDiffAt_iff_of_mem_maximalAtlas he he' hx hy, I.range_eq_univ, contDiffWithinAt_univ]
-  exact and_congr_right fun _ ↦ ⟨ContDiffAt.analyticAt, AnalyticAt.contDiffAt⟩
+      ContinuousAt f x ∧ AnalyticAt 𝕜 (e'.extend I' ∘ f ∘ (e.extend I).symm) (e.extend I x) :=
+  ⟨fun hf ↦ ⟨hf.continuousAt, hf.analyticAt_extend_comp_extend_symm he he' hx hy⟩,
+    fun hf ↦ (contMDiffAt_iff_of_mem_maximalAtlas he he' hx hy).2
+      ⟨hf.1, hf.2.contDiffAt.contDiffWithinAt⟩⟩
 
 /-- **`C^ω` maps in charts.** For boundaryless models, a map is `C^ω` at `x` if and only if it is
 continuous at `x` and its coordinate expression in the preferred charts at `x` and `f x` is analytic
 at the coordinate of `x`. -/
 theorem contMDiffAt_omega_iff [CompleteSpace E'] {f : M → M'} :
     ContMDiffAt I I' ω f x ↔
-      ContinuousAt f x ∧ AnalyticAt 𝕜 (writtenInExtChartAt I I' x f) (extChartAt I x x) := by
-  rw [contMDiffAt_iff, I.range_eq_univ, contDiffWithinAt_univ]
-  exact and_congr_right fun _ ↦ ⟨ContDiffAt.analyticAt, AnalyticAt.contDiffAt⟩
+      ContinuousAt f x ∧ AnalyticAt 𝕜 (writtenInExtChartAt I I' x f) (extChartAt I x x) :=
+  ⟨fun hf ↦ ⟨hf.continuousAt, hf.analyticAt_writtenInExtChartAt⟩,
+    fun hf ↦ contMDiffAt_iff.2 ⟨hf.1, hf.2.contDiffAt.contDiffWithinAt⟩⟩
 
 /-- **Analytic functions in charts.** For a boundaryless model, a function with values in a
 complete normed space is `C^ω` at `x` if and only if its coordinate expression in a chart `e` at `x`
 of the maximal `C^ω` atlas is analytic at the coordinate of `x`. -/
 theorem contMDiffAt_omega_iff_analyticAt_of_mem_maximalAtlas [CompleteSpace F] {f : M → F}
     (he : e ∈ maximalAtlas I ω M) (hx : x ∈ e.source) :
-    ContMDiffAt I 𝓘(𝕜, F) ω f x ↔ AnalyticAt 𝕜 (f ∘ (e.extend I).symm) (e.extend I x) := by
-  refine ⟨fun hf ↦ hf.analyticAt_comp_extend_symm he hx, fun hf ↦ ?_⟩
-  rw [ContMDiffAt, contMDiffWithinAt_iff_source_of_mem_maximalAtlas he hx, preimage_univ,
-    univ_inter, I.range_eq_univ, contMDiffWithinAt_univ, contMDiffAt_iff_contDiffAt]
-  exact hf.contDiffAt
+    ContMDiffAt I 𝓘(𝕜, F) ω f x ↔ AnalyticAt 𝕜 (f ∘ (e.extend I).symm) (e.extend I x) :=
+  ⟨fun hf ↦ hf.analyticAt_comp_extend_symm he hx,
+    fun hf ↦ (contMDiffAt_iff_contDiffAt_comp_extend_symm he hx).2 hf.contDiffAt⟩
 
 /-- **Analytic functions in charts.** For a boundaryless model, a function with values in a
 complete normed space is `C^ω` at `x` if and only if its coordinate expression in the preferred
@@ -156,16 +175,20 @@ theorem contMDiffAt_omega_iff_analyticAt [CompleteSpace F] {f : M → F} :
   exact ⟨ContDiffAt.analyticAt, AnalyticAt.contDiffAt⟩
 
 /-- **Analytic functions on a chart domain.** For a boundaryless model and an open subset `U` of
-the domain of a chart `e` of the maximal `C^ω` atlas, a function with values in a complete normed
-space is `C^ω` on `U` if and only if its coordinate expression is analytic on the image of `U`. -/
-theorem contMDiffOn_omega_iff_analyticOnNhd_of_mem_maximalAtlas [CompleteSpace F] {f : M → F}
+the domain of a chart `e` of the maximal `C^ω` atlas, a function with values in a normed space is
+`C^ω` on `U` if and only if its coordinate expression is analytic on the image of `U`. -/
+theorem contMDiffOn_omega_iff_analyticOnNhd_of_mem_maximalAtlas {f : M → F}
     {U : Set M} (he : e ∈ maximalAtlas I ω M) (hU : IsOpen U) (hUe : U ⊆ e.source) :
     ContMDiffOn I 𝓘(𝕜, F) ω f U ↔ AnalyticOnNhd 𝕜 (f ∘ (e.extend I).symm) (e.extend I '' U) := by
+  have hmem {y : M} (hy : y ∈ U) : e.extend I '' U ∈ 𝓝 (e.extend I y) :=
+    e.extend_image_nhds_mem_nhds_of_boundaryless (hUe hy) (hU.mem_nhds hy)
+  -- The chart image of `U` is open, so analyticity on it gives `C^ω` coordinate expressions.
+  have hUo : IsOpen (e.extend I '' U) := isOpen_iff_mem_nhds.2 fun _ ⟨_, hy, h⟩ ↦ h ▸ hmem hy
   refine ⟨?_, fun hf y hy ↦ ?_⟩
   · rintro hf _ ⟨y, hy, rfl⟩
     exact (hf.contMDiffAt (hU.mem_nhds hy)).analyticAt_comp_extend_symm he (hUe hy)
-  · exact ((contMDiffAt_omega_iff_analyticAt_of_mem_maximalAtlas he (hUe hy)).2 <|
-      hf _ (mem_image_of_mem _ hy)).contMDiffWithinAt
+  · exact ((contMDiffAt_iff_contDiffAt_comp_extend_symm he (hUe hy)).2 <|
+      (hf.contDiffOn hUo.uniqueDiffOn).contDiffAt (hmem hy)).contMDiffWithinAt
 
 /-! ### The identity theorem -/
 
