@@ -156,6 +156,17 @@ theorem koszulTwist_grading (G : InternalGrading R M) (q : ℤ) :
   rw [InternalGrading.koszulTwist_apply_of_mem _ hx]
   exact (map_koszulTwist_apply_of_mem G (by simpa only [grading_piece] using hx) q).symm
 
+/-- Twisting every letter of a block twists exactly that block of the ambient tuple. -/
+theorem map_koszulTwist_subword (G : InternalGrading R M) (q : ℤ) {n : ℕ} (x : Fin n → M)
+    (a b : ℕ) :
+    map (G.koszulTwist q) (subword R x a b) = subword R (G.twistedTuple q x a b) a b := by
+  rw [map_subword]
+  by_cases h : a + b ≤ n
+  · refine subword_congr R _ _ h h fun i hi ↦ ?_
+    rw [InternalGrading.twistedTuple_apply,
+      ite_eq_left ⟨by dsimp only; omega, by dsimp only; omega⟩]
+  · rw [subword_eq_zero_of_lt_add R _ (by omega), subword_eq_zero_of_lt_add R _ (by omega)]
+
 /-- Deconcatenation preserves total cohomological degree: the degrees of the two cut halves
 add to the degree of the original word. -/
 theorem isHomogeneous_deconcatenation (G : InternalGrading R M) :

@@ -25,6 +25,12 @@ carries the bicomodule coderivation this Taylor map generates to the bar differe
 (`TauCeti.AInfinityAlgebra.concatLetter_comp_barDifferential_toBimodule`), so the bimodule
 square-zero law is the square-zero law of the algebra.
 
+This is the two-sided counterpart of the free right module
+`TauCeti.AInfinityAlgebra.toRightModule` (`TauCeti.Algebra.Homology.AInfinity.Module.Right.Free`):
+the construction adapts its argument, which reads the module Taylor map through concatenation and
+identifies the resulting coderivation with the bar differential of `A`, from one-sided to
+two-sided concatenation.
+
 ## Main definitions
 
 * `TauCeti.AInfinityAlgebra.toBimodule`: an `A∞` algebra as a bimodule over itself.
@@ -58,16 +64,6 @@ namespace AInfinityAlgebra
 open TensorWords InternalGrading Finset
 
 variable (AA : AInfinityAlgebra R A)
-
-/-- Twisting every letter of a block twists that block of the ambient tuple. -/
-private theorem map_koszulTwist_subword {N : ℕ} (z : Fin N → A) (a j : ℕ) :
-    TensorWords.map ((AA.grading.shift 1).koszulTwist 1) (subword R z a j) =
-      subword R ((AA.grading.shift 1).twistedTuple 1 z a j) a j := by
-  rw [map_subword]
-  by_cases h : a + j ≤ N
-  · refine subword_congr R _ _ h h fun i hi ↦ ?_
-    rw [twistedTuple_apply, ite_eq_left ⟨by dsimp only; omega, by dsimp only; omega⟩]
-  · rw [subword_eq_zero_of_lt_add R _ (by omega), subword_eq_zero_of_lt_add R _ (by omega)]
 
 /-- The left cofree part of a bimodule coderivation, on a block of an ambient tuple followed by a
 letter and a word. -/
