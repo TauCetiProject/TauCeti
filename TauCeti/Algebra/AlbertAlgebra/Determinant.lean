@@ -34,8 +34,9 @@ Together with the trace `T` and the quadratic **spur** `S`, the sum of the princ
 
 `spur A = a 0 * a 1 + a 1 * a 2 + a 2 * a 0 - N (x 0) - N (x 1) - N (x 2)`,
 
-the determinant is the constant term of the **generic minimal polynomial** of `H₃(𝕆)`: every
-element satisfies the cubic equation
+the determinant is, up to sign, the constant term of the **generic minimal polynomial**
+`t³ - T(A) t² + S(A) t - det A` of `H₃(𝕆)`, and the spur is its coefficient of `t`: every element
+satisfies the cubic equation
 
 `A ∘ (A ∘ A) = T(A) • (A ∘ A) - S(A) • A + det A • 1`
 
@@ -51,15 +52,13 @@ to be invertible as well.
 ## Main definitions
 
 * `TauCeti.AlbertAlgebra.det`: the determinant, the cubic norm form of `H₃(𝕆)`.
-* `TauCeti.AlbertAlgebra.spur`: the spur, the quadratic coefficient of the generic minimal
-  polynomial.
+* `TauCeti.AlbertAlgebra.spur`: the spur, a quadratic form in `A` and the coefficient of `t` in
+  the generic minimal polynomial.
 
 ## Main results
 
 * `TauCeti.AlbertAlgebra.det_smul` and `TauCeti.AlbertAlgebra.spur_smul`: the determinant is a
   cubic and the spur a quadratic form.
-* `TauCeti.AlbertAlgebra.mul_self_diag` and `TauCeti.AlbertAlgebra.mul_self_offDiag`: the entries
-  of the Jordan square.
 * `TauCeti.AlbertAlgebra.two_mul_spur` and `TauCeti.AlbertAlgebra.spur_eq_invOf_two_mul`: the
   spur is `(T(A)² - T(A ∘ A)) / 2`.
 * `TauCeti.AlbertAlgebra.mul_mul_self`: **the cubic equation** satisfied by every element.
@@ -138,10 +137,10 @@ theorem det_eq_rotate (A : AlbertAlgebra R) (i : Fin 3) :
   ring
 
 /-- **The spur** of a Hermitian octonion matrix, the sum of its three principal `2 × 2` minors:
-`a₀ a₁ + a₁ a₂ + a₂ a₀ - N(x₀) - N(x₁) - N(x₂)`. It is the quadratic coefficient of the generic
-minimal polynomial of the split Albert algebra (`TauCeti.AlbertAlgebra.mul_mul_self`), and equals
-`(T(A)² - T(A ∘ A)) / 2` when `2` is invertible (`TauCeti.AlbertAlgebra.spur_eq_invOf_two_mul`).
--/
+`a₀ a₁ + a₁ a₂ + a₂ a₀ - N(x₀) - N(x₁) - N(x₂)`. It is a quadratic form in `A` and the coefficient
+of `t` in the generic minimal polynomial of the split Albert algebra
+(`TauCeti.AlbertAlgebra.mul_mul_self`), and equals `(T(A)² - T(A ∘ A)) / 2` when `2` is invertible
+(`TauCeti.AlbertAlgebra.spur_eq_invOf_two_mul`). -/
 def spur (A : AlbertAlgebra R) : R :=
   A.diag 0 * A.diag 1 + A.diag 1 * A.diag 2 + A.diag 2 * A.diag 0
     - Octonion.norm (A.offDiag 0) - Octonion.norm (A.offDiag 1) - Octonion.norm (A.offDiag 2)
@@ -183,28 +182,6 @@ section Invertible
 
 variable [CommRing R] [Invertible (2 : R)]
 
-/-- **The diagonal of the Jordan square**: `(A ∘ A)ᵢᵢ = aᵢ² + N(xᵢ₊₁) + N(xᵢ₊₂)`. -/
-theorem mul_self_diag (A : AlbertAlgebra R) (i : Fin 3) :
-    (A * A).diag i = A.diag i ^ 2 + Octonion.norm (A.offDiag (i + 1))
-      + Octonion.norm (A.offDiag (i + 2)) := by
-  rw [mul_diag, sq, QuadraticMap.associated_eq_self_apply, QuadraticMap.associated_eq_self_apply,
-    Octonion.normQuadraticForm_apply, Octonion.normQuadraticForm_apply]
-
-/-- **The off-diagonal entries of the Jordan square**:
-`(A ∘ A)ᵢ = (aᵢ₊₁ + aᵢ₊₂) xᵢ + conj (xᵢ₊₁ xᵢ₊₂)`. -/
-theorem mul_self_offDiag (A : AlbertAlgebra R) (i : Fin 3) :
-    (A * A).offDiag i = (A.diag (i + 1) + A.diag (i + 2)) • A.offDiag i
-      + Octonion.conj (A.offDiag (i + 1) * A.offDiag (i + 2)) := by
-  rw [mul_offDiag, smul_add, invOf_two_smul_add_invOf_two_smul, smul_add,
-    invOf_two_smul_add_invOf_two_smul]
-
-/-- **The trace of the Jordan square** is the sum of the squares of the diagonal entries and twice
-the norms of the octonion entries. -/
-theorem trace_mul_self (A : AlbertAlgebra R) :
-    trace (A * A) = ∑ i, A.diag i ^ 2 + 2 * ∑ i, Octonion.norm (A.offDiag i) := by
-  simp only [trace_apply, mul_self_diag, Fin.sum_univ_three, Fin.reduceAdd]
-  ring
-
 /-- **Twice the spur** is `T(A)² - T(A ∘ A)`. -/
 theorem two_mul_spur (A : AlbertAlgebra R) : 2 * spur A = trace A ^ 2 - trace (A * A) := by
   rw [trace_mul_self, spur_def, trace_apply]
@@ -227,12 +204,6 @@ theorem mul_mul_self (A : AlbertAlgebra R) :
   -- is left in each entry is a polynomial identity in the entries and in the half `⅟2` of the
   -- Jordan product; `linear_combination` closes it from `⅟2 + ⅟2 = 1`, the coefficient of `h2`
   -- being the total weight of the halved terms.
-  have hl (y z : Octonion R) : y * Octonion.conj (z * y) = Octonion.norm y • Octonion.conj z := by
-    simpa only [Octonion.conj_conj, Octonion.norm_conj, Octonion.conj_mul] using
-      Octonion.conj_mul_mul (Octonion.conj y) (Octonion.conj z)
-  have hr (y z : Octonion R) : Octonion.conj (y * z) * y = Octonion.norm y • Octonion.conj z := by
-    simpa only [Octonion.conj_conj, Octonion.norm_conj, Octonion.conj_mul] using
-      Octonion.mul_mul_conj (Octonion.conj z) (Octonion.conj y)
   have h2 : (⅟2 : R) + ⅟2 = 1 := invOf_two_add_invOf_two
   refine AlbertAlgebra.ext (funext fun i => ?_) (funext fun i => ?_)
   · have ht₁ : Octonion.trace (A.offDiag (i + 1) * (A.offDiag (i + 2) * A.offDiag i)) =
@@ -254,9 +225,10 @@ theorem mul_mul_self (A : AlbertAlgebra R) :
   · rw [mul_offDiag, mul_self_diag, mul_self_diag, mul_self_offDiag, mul_self_offDiag,
       mul_self_offDiag]
     simp only [add_one_add_one_fin_three, add_one_add_two_fin_three, add_two_add_one_fin_three,
-      add_two_add_two_fin_three, mul_add, add_mul, smul_mul_assoc, mul_smul_comm, hl, hr,
-      map_add, map_smul, Octonion.conj_conj, add_offDiag, sub_offDiag, smul_offDiag, one_offDiag,
-      Pi.add_apply, Pi.sub_apply, Pi.smul_apply, Pi.zero_apply, smul_zero, add_zero,
+      add_two_add_two_fin_three, mul_add, add_mul, smul_mul_assoc, mul_smul_comm,
+      Octonion.mul_conj_mul_self, Octonion.conj_mul_mul_self, map_add, map_smul,
+      Octonion.conj_conj, add_offDiag, sub_offDiag, smul_offDiag, one_offDiag, Pi.add_apply,
+      Pi.sub_apply, Pi.smul_apply, Pi.zero_apply, smul_zero, add_zero,
       trace_apply, sum_fin_three_rotate _ i, mul_self_offDiag]
     rw [spur_eq_rotate A i]
     linear_combination (norm := module)
@@ -280,8 +252,9 @@ theorem six_mul_det (A : AlbertAlgebra R) :
 theorem det_eq_invOf_two_mul_invOf_three_mul [Invertible (3 : R)] (A : AlbertAlgebra R) :
     det A = ⅟2 * ⅟3 *
       (trace A ^ 3 - 3 * trace A * trace (A * A) + 2 * trace (A * (A * A))) := by
-  rw [← six_mul_det, ← mul_assoc, show (6 : R) = 2 * 3 by norm_num, mul_mul_mul_comm,
-    invOf_mul_self, invOf_mul_self, one_mul, one_mul]
+  rw [← six_mul_det]
+  linear_combination
+    (-(3 * ⅟3 * det A)) * mul_invOf_self (2 : R) - det A * mul_invOf_self (3 : R)
 
 end Invertible
 

@@ -76,8 +76,10 @@ nothing more.
 * `TauCeti.Octonion.left_alternative`, `TauCeti.Octonion.right_alternative` and
   `TauCeti.Octonion.flexible`: `𝕆` is **alternative** and **flexible**.
 * `TauCeti.Octonion.conj_mul_mul` and `TauCeti.Octonion.mul_mul_conj`: multiplication by
-  an octonion and its conjugate cancels to its norm, on either side. Their polarizations
-  reduce the corresponding mixed triple products to the polar form of the norm.
+  an octonion and its conjugate cancels to its norm, on either side, and so does multiplication
+  by the conjugate of a product with it (`TauCeti.Octonion.mul_conj_mul_self` and
+  `TauCeti.Octonion.conj_mul_mul_self`). Their polarizations reduce the corresponding mixed
+  triple products to the polar form of the norm.
 * `TauCeti.Octonion.moufang_left`, `TauCeti.Octonion.moufang_right` and
   `TauCeti.Octonion.moufang_middle`: the three **Moufang identities**.
 * `TauCeti.Octonion.mul_self`: every octonion satisfies its rank-two equation
@@ -693,6 +695,16 @@ by its norm. -/
 theorem mul_mul_conj (x y : Octonion R) : x * y * conj y = norm y • x := by
   have h := congrArg conj (conj_mul_mul (conj y) (conj x))
   simpa only [conj_mul, conj_conj, map_smul, norm_conj] using h
+
+/-- Conjugate cancellation through the conjugate of a product: `x * conj (y * x) = N x • conj y`.
+Not a `simp` lemma, since `TauCeti.Octonion.conj_mul` rewrites its left-hand side. -/
+theorem mul_conj_mul_self (x y : Octonion R) : x * conj (y * x) = norm x • conj y := by
+  simpa only [conj_conj, norm_conj, conj_mul] using conj_mul_mul (conj x) (conj y)
+
+/-- Conjugate cancellation through the conjugate of a product: `conj (x * y) * x = N x • conj y`.
+Not a `simp` lemma, since `TauCeti.Octonion.conj_mul` rewrites its left-hand side. -/
+theorem conj_mul_mul_self (x y : Octonion R) : conj (x * y) * x = norm x • conj y := by
+  simpa only [conj_conj, norm_conj, conj_mul] using mul_mul_conj (conj y) (conj x)
 
 /-- The mixed terms of left conjugate cancellation give the polar form of the norm,
 without dividing by `2`. -/
