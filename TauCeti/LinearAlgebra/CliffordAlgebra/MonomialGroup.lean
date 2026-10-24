@@ -41,7 +41,7 @@ is the Clifford algebra. That comparison is not made in this file.
 
 * `CliffordAlgebra.mem_monomialGroup_iff`: **the normal form**: a unit lies in the group exactly
   when its value is `e_s` or `-e_s` for some finite index set `s`.
-* `CliffordAlgebra.isConj_monomialGroup_val_eq_or_neg`: conjugation changes a signed monomial by
+* `CliffordAlgebra.monomialGroup_val_eq_or_neg_of_isConj`: conjugation changes a signed monomial by
   at most its central sign.
 * `CliffordAlgebra.neg_one_mem_center_monomialGroup`: `ε = -1` is central.
 * `CliffordAlgebra.natCard_monomialGroup`: **the order** is `2 ^ (n + 1)` over a nontrivial
@@ -245,7 +245,7 @@ private theorem monomial_mul_comm_or_neg
       | simpa [hcs, hut, mul_neg, neg_mul, neg_neg] using congrArg Neg.neg h
 
 /-- Every conjugate of a signed Clifford monomial is itself or its negative. -/
-theorem isConj_monomialGroup_val_eq_or_neg
+theorem monomialGroup_val_eq_or_neg_of_isConj
     (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
     (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1)
     {u v : monomialGroup Q b} (h : IsConj u v) :
