@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Subgroup.ZPowers.Basic
+public import Mathlib.Algebra.Order.Group.Basic
 public import TauCeti.Combinatorics.Network.Residual
 
 /-!
@@ -53,6 +55,8 @@ flows is assembled.
   add values, and connect any two bounded `s`–`t` assignments.
 * `TauCeti.Flow.exists_augment_eq`: every flow of at least the value of `f` is an augmentation of
   `f` by a flow of its residual network.
+* `TauCeti.Flow.exists_nsmul_eq_val`: a flow with arrow values in `zmultiples d` has value
+  `n • d` for a natural number `n`.
 
 ## References
 
@@ -166,6 +170,11 @@ theorem swap_swap (f : BoundedFlow lo hi s t) : f.swap.swap = f :=
 @[simp]
 theorem val_swap (f : BoundedFlow lo hi s t) : f.swap.val = -f.val := by
   rw [val_def, swap_toFun, excessAt_source]
+
+/-- A bounded assignment whose terminals coincide has value zero. -/
+theorem val_eq_zero_of_eq (hst : s = t) (f : BoundedFlow lo hi s t) : f.val = 0 := by
+  subst hst
+  rw [val_def, ← sum_excessAt f.toFun, Fintype.sum_eq_single s fun v hv ↦ f.conserve v hv hv]
 
 end Preorder
 
@@ -338,6 +347,17 @@ theorem Flow.exists_augment_eq [Lattice K] [IsOrderedAddMonoid K] {cap : Assignm
   refine ⟨⟨r, ?_⟩, Flow.ext (congrArg BoundedFlow.toFun hr)⟩
   rw [← BoundedFlow.val_def, hval]
   exact sub_nonneg.mpr hfg
+
+/-- For `0 < d`, an ordinary flow with arrow values in `zmultiples d` has value `n • d` for a
+natural number `n`. -/
+theorem Flow.exists_nsmul_eq_val [PartialOrder K] [IsOrderedAddMonoid K] {cap : Assignment Q K}
+    {s t : V} {d : K} (hd : 0 < d) {f : Flow cap s t}
+    (hf : ∀ ⦃v w⦄ (e : Q v w), f.toFun e ∈ AddSubgroup.zmultiples d) :
+    ∃ n : ℕ, n • d = f.val := by
+  obtain ⟨k, hk⟩ := AddSubgroup.mem_zmultiples_iff.1 (excessAt_mem hf t)
+  rw [← BoundedFlow.val_def] at hk
+  have hk₀ : 0 ≤ k := (zsmul_le_zsmul_iff_left hd).1 (by simpa [hk] using f.val_nonneg)
+  exact ⟨k.toNat, by rw [← natCast_zsmul, Int.toNat_of_nonneg hk₀, hk]⟩
 
 end BoundedFlow
 

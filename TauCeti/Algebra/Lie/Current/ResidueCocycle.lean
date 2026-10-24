@@ -82,6 +82,16 @@ theorem residuePairing_tmul (f g : R⸨X⸩) (x y : L) :
     residuePairing R L Φ (f ⊗ₜ x) (g ⊗ₜ y) = LaurentSeries.residuePairing R f g * Φ x y := by
   rw [residuePairing, LinearMap.BilinForm.tensorDistrib_tmul, smul_eq_mul, mul_comm]
 
+/-- The residue pairing of the zero form is zero. -/
+@[simp]
+theorem residuePairing_zero : residuePairing R L 0 = 0 := by
+  simp [residuePairing, LinearMap.BilinForm.tmul]
+
+/-- The residue pairing is linear in the form: rescaling the form rescales the pairing. -/
+@[simp]
+theorem residuePairing_smul (r : R) : residuePairing R L (r • Φ) = r • residuePairing R L Φ := by
+  simp [residuePairing, LinearMap.BilinForm.tmul]
+
 /-- The finite coefficient formula for the residue pairing: if `u` has order at least `M` and `v`
 has order at least `N`, then the pairing is `∑_{N ≤ n ≤ -M} n Φ(u₋ₙ, vₙ)`. -/
 theorem residuePairing_eq_sum {M N : ℤ} {u v : currentAlgebra R L}
@@ -251,6 +261,14 @@ theorem twoCocycleOfBilinear_coe (Φ : LinearMap.BilinForm R L) (hΦ : Φ.lieInv
     (twoCocycleOfBilinear R L Φ hΦ hΦs : twoCochain R (currentAlgebra R L)
       (TrivialLieModule R (currentAlgebra R L) R)) = twoCochainOfBilinear R L Φ hΦs :=
   (rfl)
+
+/-- Rescaling the form rescales the residue cocycle. -/
+theorem twoCocycleOfBilinear_smul (r : R) (Φ : LinearMap.BilinForm R L) (hΦ : Φ.lieInvariant L)
+    (hΦs : Φ.IsSymm) (hrΦ : (r • Φ).lieInvariant L) (hrΦs : (r • Φ).IsSymm) :
+    twoCocycleOfBilinear R L (r • Φ) hrΦ hrΦs = r • twoCocycleOfBilinear R L Φ hΦ hΦs := by
+  refine Subtype.ext <| Subtype.ext <| LinearMap.ext₂ fun u v ↦ ?_
+  simpa using map_smul (TrivialLieModule.equiv R (currentAlgebra R L) R).symm r
+    (residuePairing R L Φ u v)
 
 end Lie
 

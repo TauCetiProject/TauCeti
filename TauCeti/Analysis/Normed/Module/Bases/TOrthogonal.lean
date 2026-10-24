@@ -221,7 +221,86 @@ theorem IsOrthonormalBasis.isTOrthogonalBasis [NormedRing R] [Nontrivial R]
     exact one_ne_zero (norm_eq_zero.1 h1.symm)
   dense_span := he.dense_span
 
+/-- If `w` is `r`-orthogonal to a submodule `F` (that is, `r * ‖w‖ ≤ ‖w - z‖` for `z ∈ F`) with
+`r ≤ 1`, then in an ultrametric space `r * max ‖c • w‖ ‖z‖ ≤ ‖c • w + z‖` for every scalar `c` and
+every `z ∈ F`. -/
+theorem mul_max_nnnorm_le_nnnorm_smul_add [NormedField K] [NormedAddCommGroup M]
+    [NormedSpace K M] [IsUltrametricDist M] {F : Submodule K M} {w : M} {r : ℝ≥0} (hr : r ≤ 1)
+    (hw : ∀ z ∈ F, r * ‖w‖₊ ≤ ‖w - z‖₊) (c : K) {z : M} (hz : z ∈ F) :
+    r * max ‖c • w‖₊ ‖z‖₊ ≤ ‖c • w + z‖₊ := by
+  have h₁ : r * ‖c • w‖₊ ≤ ‖c • w + z‖₊ := by
+    rcases eq_or_ne c 0 with rfl | hc
+    · simp
+    have : c • w + z = c • (w - (-c⁻¹) • z) := by
+      rw [smul_sub, smul_smul, mul_neg, mul_inv_cancel₀ hc, neg_smul, one_smul, sub_neg_eq_add]
+    rw [this, nnnorm_smul, nnnorm_smul, mul_left_comm]
+    exact mul_le_mul_of_nonneg_left (hw _ (F.smul_mem _ hz)) zero_le
+  rw [mul_max_of_nonneg _ _ zero_le]
+  refine max_le h₁ ?_
+  rcases le_or_gt ‖z‖₊ ‖c • w‖₊ with h | h
+  · exact (mul_le_mul_of_nonneg_left h zero_le).trans h₁
+  · rw [IsUltrametricDist.nnnorm_add_eq_max_of_nnnorm_ne_nnnorm h.ne, max_eq_right h.le]
+    exact mul_le_of_le_one_left zero_le hr
+
+/-- If each `e N` is `T (N + 1) / T N`-orthogonal to the span of the previous vectors, for a
+non-increasing sequence `T` of positive constants at most one, then in an ultrametric space
+the vectors `e i` with `i < N` form a `T N`-orthogonal family. -/
+theorem isTOrthogonalFamily_Iio_of_mul_nnnorm_le_nnnorm_sub [NormedField K]
+    [NormedAddCommGroup M] [NormedSpace K M] [IsUltrametricDist M] {e : ℕ → M} {T : ℕ → ℝ≥0}
+    (hT : Antitone T) (hT' : ∀ n, 0 < T n ∧ T n ≤ 1)
+    (he : ∀ N, ∀ z ∈ Submodule.span K (e '' Set.Iio N), T (N + 1) / T N * ‖e N‖₊ ≤ ‖e N - z‖₊)
+    (N : ℕ) : IsTOrthogonalFamily K (T N) (fun i : Set.Iio N ↦ e i) := by
+  -- Reduce to finite combinations of the `e i`, `i < N`, indexed by finite sets of naturals.
+  suffices key : ∀ s : Finset ℕ, (∀ i ∈ s, i < N) → ∀ a : ℕ → K,
+      T N * s.sup (fun i ↦ ‖a i • e i‖₊) ≤ ‖∑ i ∈ s, a i • e i‖₊ by
+    intro s a
+    have hN (i : Set.Iio N) : (i : ℕ) < N := i.2
+    have h := key (s.map (Function.Embedding.subtype _)) (by simp +contextual)
+      fun i ↦ if h : i < N then a ⟨i, h⟩ else 0
+    simpa [Finset.sup_map, Finset.sum_map, Function.comp_def, hN] using h
+  induction N with
+  | zero =>
+    intro s hs a
+    rw [Finset.eq_empty_of_forall_notMem fun i hi ↦ Nat.not_lt_zero i (hs i hi)]
+    simp
+  | succ N ih =>
+    intro s hs a
+    have hs' (i : ℕ) (hi : i ∈ s) (hiN : i ≠ N) : i < N :=
+      lt_of_le_of_ne (Nat.lt_succ_iff.1 (hs i hi)) hiN
+    by_cases hN : N ∈ s
+    · -- Split off the last term `a N • e N`; the others lie in the span of the previous vectors.
+      rw [← Finset.insert_erase hN, Finset.sum_insert (Finset.notMem_erase N s),
+        Finset.sup_insert]
+      have hlt (i : ℕ) (hi : i ∈ s.erase N) : i < N :=
+        hs' i (Finset.mem_of_mem_erase hi) (Finset.ne_of_mem_erase hi)
+      have hz : ∑ i ∈ s.erase N, a i • e i ∈ Submodule.span K (e '' Set.Iio N) :=
+        Submodule.sum_mem _ fun i hi ↦
+          Submodule.smul_mem _ _ (Submodule.subset_span ⟨i, hlt i hi, rfl⟩)
+      have hTN : T (N + 1) = T (N + 1) / T N * T N := (div_mul_cancel₀ _ (hT' N).1.ne').symm
+      calc T (N + 1) * max ‖a N • e N‖₊ ((s.erase N).sup fun i ↦ ‖a i • e i‖₊)
+          = T (N + 1) / T N * max (T N * ‖a N • e N‖₊)
+              (T N * (s.erase N).sup fun i ↦ ‖a i • e i‖₊) := by
+            rw [← mul_max_of_nonneg _ _ zero_le, ← mul_assoc, ← hTN]
+        _ ≤ T (N + 1) / T N * max ‖a N • e N‖₊ ‖∑ i ∈ s.erase N, a i • e i‖₊ := by
+            gcongr
+            · exact mul_le_of_le_one_left zero_le (hT' N).2
+            · exact ih _ hlt a
+        _ ≤ ‖a N • e N + ∑ i ∈ s.erase N, a i • e i‖₊ :=
+            mul_max_nnnorm_le_nnnorm_smul_add
+              (div_le_one_of_le₀ (hT N.le_succ) zero_le) (he N) (a N) hz
+    · exact (mul_le_mul_of_nonneg_right (hT N.le_succ) zero_le).trans
+        (ih s (fun i hi ↦ hs' i hi fun h ↦ hN (h ▸ hi)) a)
+
 namespace IsTOrthogonalBasis
+
+/-- Reindexing a `t`-orthogonal basis along an equivalence gives a `t`-orthogonal basis. -/
+theorem comp_equiv [SeminormedRing R] [SeminormedAddCommGroup M] [Module R M] {t : ℝ≥0}
+    {e : I → M} (he : IsTOrthogonalBasis R t e) (σ : J ≃ I) : IsTOrthogonalBasis R t (e ∘ σ) where
+  isTOrthogonalFamily := he.isTOrthogonalFamily.comp σ.injective
+  ne_zero j := he.ne_zero (σ j)
+  dense_span := by
+    rw [σ.surjective.range_comp]
+    exact he.dense_span
 
 /-- **Uniqueness of expansions in a `t`-orthogonal basis**: for `t > 0`, over a ring acting
 without zero divisors, two unconditional expansions `∑ a i • e i` and `∑ b i • e i` of the same

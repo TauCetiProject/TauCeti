@@ -93,11 +93,10 @@ theorem spinSixWedgeForm_isSymm : (spinSixWedgeForm K).IsSymm := by
   apply AlternatingMap.ext
   intro v
   simp only [LinearMap.compAlternatingMap_apply, LinearMap.flip_apply, spinSixWedgeForm,
-    exteriorPower.wedgePairing, LinearMap.compr₂_apply, exteriorPower.wedge,
-    DirectSum.gMulLHom_apply_apply]
+    exteriorPower.wedgePairing, LinearMap.compr₂_apply]
   congr 1
   apply Subtype.ext
-  simp only [SetLike.coe_gMul, exteriorPower.ιMulti_apply_coe]
+  simp only [exteriorPower.coe_wedge, exteriorPower.ιMulti_apply_coe]
   rw [ExteriorAlgebra.ιMulti_mul_ιMulti_anticomm]
   have hsign : (-1 : ℤˣ) ^ 4 = 1 := by
     apply Units.ext
@@ -117,8 +116,7 @@ theorem spinSixWedgeForm_invariant (g : Matrix.SpecialLinearGroup (Fin 4) K) :
   simp only [LinearMap.compAlternatingMap_apply, LinearMap.BilinForm.comp_apply]
   rw [Representation.exteriorPower_apply_ιMulti,
     Representation.exteriorPower_apply_ιMulti]
-  simp only [spinSixWedgeForm, exteriorPower.wedgePairing, LinearMap.compr₂_apply,
-    exteriorPower.wedge, DirectSum.gMulLHom_apply_apply]
+  simp only [spinSixWedgeForm, exteriorPower.wedgePairing, LinearMap.compr₂_apply]
   have htop := congrArg (fun f : Module.End K (⋀[K]^4 (Fin 4 → K)) =>
       f (exteriorPower.ιMulti K 4 (Fin.append u v)))
     (stdSLRep_exteriorPower_self_apply K 4 g)
@@ -134,7 +132,7 @@ theorem spinSixWedgeForm_invariant (g : Matrix.SpecialLinearGroup (Fin 4) K) :
       rw [Function.comp_apply, Fin.append_right, Fin.append_right, Function.comp_apply]
   congr 1
   apply Subtype.ext
-  simpa only [SetLike.coe_gMul, exteriorPower.ιMulti_apply_coe,
+  simpa only [exteriorPower.coe_wedge, exteriorPower.ιMulti_apply_coe,
     ExteriorAlgebra.ιMulti_mul_ιMulti, happ] using congrArg Subtype.val htop
 
 /-- The exterior-square action of `SL₄(K)` lands in the isometry group of the wedge form. -/

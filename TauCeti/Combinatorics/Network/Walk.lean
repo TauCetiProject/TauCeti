@@ -273,12 +273,15 @@ theorem exists_mem_bottleneck_eq : ∃ a ∈ p.arrows, p.bottleneck c hne = c a.
   simpa [bottleneck, eq_comm] using List.min_mem (l := p.arrows.map fun a ↦ c a.2.2)
     (by simpa using hne)
 
-/-- A value is below the bottleneck exactly when it is below every capacity along the walk. -/
-theorem lt_bottleneck_iff {x : K} :
-    x < p.bottleneck c hne ↔ ∀ a ∈ p.arrows, x < c a.2.2 := by
-  refine ⟨fun h a ha ↦ h.trans_le (bottleneck_le ha), fun h ↦ ?_⟩
+/-- The bottleneck lies in every set that contains the capacities along the walk. -/
+theorem bottleneck_mem {A : Set K} (h : ∀ a ∈ p.arrows, c a.2.2 ∈ A) : p.bottleneck c hne ∈ A := by
   obtain ⟨a, ha, hb⟩ := exists_mem_bottleneck_eq (c := c) (hne := hne)
   exact hb ▸ h a ha
+
+/-- A value is below the bottleneck exactly when it is below every capacity along the walk. -/
+theorem lt_bottleneck_iff {x : K} :
+    x < p.bottleneck c hne ↔ ∀ a ∈ p.arrows, x < c a.2.2 :=
+  ⟨fun h _ ha ↦ h.trans_le (bottleneck_le ha), bottleneck_mem (A := {y | x < y})⟩
 
 end Bottleneck
 
@@ -333,6 +336,18 @@ theorem PositiveReachable.trans (h : PositiveReachable c s t) (h' : PositiveReac
   refine ⟨p.comp p', fun a ha ↦ ?_⟩
   rw [ArrowWalk.arrows_comp, List.mem_append] at ha
   exact ha.elim (hp a) (hp' a)
+
+/-- The target of every arrow on a walk from `s` along arrows of positive capacity is positively
+reachable from `s`. -/
+theorem positiveReachable_of_mem_arrows {p : ArrowWalk Q s t} (hp : ∀ a ∈ p.arrows, 0 < c a.2.2)
+    {a : Σ x y, Q x y} (ha : a ∈ p.arrows) : PositiveReachable c s a.2.1 := by
+  induction p with
+  | nil => simp at ha
+  | cons p e ih =>
+    simp only [ArrowWalk.arrows_cons, List.mem_append, List.mem_singleton] at hp ha
+    rcases ha with ha | rfl
+    · exact ih (fun a ha ↦ hp a (.inl ha)) ha
+    · exact positiveReachable_def.2 ⟨ArrowWalk.cons p e, fun a ha ↦ hp a (by simpa using ha)⟩
 
 /-- Positive reachability is witnessed by a path. -/
 theorem positiveReachable_iff_exists_isPath :

@@ -40,10 +40,12 @@ separated sum `φ ∘ Prod.fst + ψ ∘ Prod.snd` on a product is the block-diag
 second derivatives of the summands. Finally, the second derivative of a directional derivative
 `y ↦ Dg(y) v` is the third derivative of `g` evaluated at `v`, and differentiating the symmetry
 of the second derivative shows that the third derivative is symmetric in its last two
-directions. The file also gives the second-order product rule for scalar-valued maps, the
-second-order chain rule through a function of one variable, and the comparison of second
-derivatives over a field and over a larger field. No statement here mentions critical points as
-such, so all of them belong here rather than with the Morse theory that uses them.
+directions. The file also gives the second-order product rule for scalar-valued maps, together
+with a form valid at every point when both factors are `C²` on an open set containing the support
+of one of them (a cutoff), the second-order chain rule through a function of one variable, and
+the comparison of second derivatives over a field and over a larger field. No statement here
+mentions critical points as such, so all of them belong here rather than with the Morse theory
+that uses them.
 
 ## Main results
 
@@ -67,6 +69,8 @@ such, so all of them belong here rather than with the Morse theory that uses the
   symmetric in its last two directions.
 * `TauCeti.fderiv_fderiv_const_smul`: the second derivative of a constant multiple.
 * `TauCeti.fderiv_fderiv_mul_apply`: the second-order product rule.
+* `TauCeti.fderiv_fderiv_mul_apply_of_tsupport_subset`: the second-order product rule with a
+  cutoff, at every point.
 * `TauCeti.fderiv_fderiv_apply_eq_smul_iteratedDeriv`: in one variable the second derivative is
   the second iterated derivative.
 * `TauCeti.fderiv_fderiv_scalar_comp_apply`: the second-order chain rule through a function of
@@ -254,6 +258,25 @@ theorem fderiv_fderiv_mul_apply {f g : E → 𝕜} {x : E} (hf : ContDiffAt 𝕜
     (hgx.smul (hf.hasFDerivAt_fderiv le_rfl)))).congr_of_eventuallyEq hev).fderiv]
   simp
   ring
+
+/-- **The second-order product rule for a cutoff.** If `f` and `g` are `C²` on an open set `s`
+containing the topological support of `f`, then the second-order product rule
+`D²(f g)(v, w) = f D²g(v, w) + g D²f(v, w) + Df(v) Dg(w) + Dg(v) Df(w)` holds at every point:
+off `s` both sides vanish, whatever `f` and `g` are there. -/
+theorem fderiv_fderiv_mul_apply_of_tsupport_subset {f g : E → 𝕜} {s : Set E} (hs : IsOpen s)
+    (hf : ContDiffOn 𝕜 2 f s) (hfs : tsupport f ⊆ s) (hg : ContDiffOn 𝕜 2 g s) (x v w : E) :
+    fderiv 𝕜 (fderiv 𝕜 (f * g)) x v w =
+      f x * fderiv 𝕜 (fderiv 𝕜 g) x v w + g x * fderiv 𝕜 (fderiv 𝕜 f) x v w +
+        fderiv 𝕜 f x v * fderiv 𝕜 g x w + fderiv 𝕜 g x v * fderiv 𝕜 f x w := by
+  by_cases hx : x ∈ s
+  · exact fderiv_fderiv_mul_apply (hf.contDiffAt (hs.mem_nhds hx)) (hg.contDiffAt (hs.mem_nhds hx))
+      v w
+  · have hfx : x ∉ tsupport f := fun h => hx (hfs h)
+    have hfgx : x ∉ tsupport (fderiv 𝕜 (f * g)) := fun h =>
+      hfx ((tsupport_fderiv_subset 𝕜).trans tsupport_mul_subset_left h)
+    have hf'x : x ∉ tsupport (fderiv 𝕜 f) := fun h => hfx (tsupport_fderiv_subset 𝕜 h)
+    simp [image_eq_zero_of_notMem_tsupport hfx, fderiv_of_notMem_tsupport 𝕜 hfx,
+      fderiv_of_notMem_tsupport 𝕜 hfgx, fderiv_of_notMem_tsupport 𝕜 hf'x]
 
 /-- The second derivative of a function of one variable is its second iterated derivative:
 `D²φ(t)(a, b) = (a b) • φ''(t)`. -/

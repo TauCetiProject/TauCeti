@@ -7,11 +7,13 @@ module
 
 public import Mathlib.Algebra.Polynomial.Div
 public import Mathlib.Algebra.Polynomial.Reverse
+public import Mathlib.RingTheory.AdjoinRoot
 public import Mathlib.RingTheory.PowerSeries.Inverse
 public import Mathlib.RingTheory.PowerSeries.Trunc
 public import TauCeti.RingTheory.PowerSeries.Entire.Eval
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Tactic.LinearCombination
+import TauCeti.RingTheory.AdjoinRoot.Basic
 import TauCeti.RingTheory.PowerSeries.Inverse
 import TauCeti.RingTheory.PowerSeries.Trunc
 import TauCeti.RingTheory.PowerSeries.Weierstrass.Division
@@ -43,6 +45,9 @@ operators, whose Fredholm determinants are entire series.
 * `PowerSeries.divByMonic`: the quotient `q` above, given by the explicit coefficient formula.
 * `PowerSeries.modByMonic`: the remainder `f - p * q`, truncated to a polynomial of degree less
   than `d`.
+* `PowerSeries.IsEntire.mkAdjoinRoot`: over an ultrametric ring with `‖1‖ = 1`, reduction of entire
+  series modulo `p`, as a surjective ring homomorphism to `AdjoinRoot p` whose kernel consists of
+  the multiples of `p` by entire series.
 
 ## Main results
 
@@ -53,16 +58,22 @@ operators, whose Fredholm determinants are entire series.
 * `PowerSeries.IsEntire.add_divByMonic` and `PowerSeries.IsEntire.smul_divByMonic`, with their
   `modByMonic` companions: on entire series, quotient and remainder are additive and
   `R`-linear.
+* `PowerSeries.IsEntire.map_divByMonic` and `PowerSeries.IsEntire.map_modByMonic`: continuous
+  coefficient homomorphisms commute with quotient and remainder.
 * `PowerSeries.divByMonic_coe` and `PowerSeries.modByMonic_coe`: on polynomials, these are
   `Polynomial.divByMonic` and `Polynomial.modByMonic`.
-* `PowerSeries.divByMonic_modByMonic_unique`: over an ultrametric ring with `‖1‖ = 1`, a division
-  with entire quotient and remainder of degree less than `d` is this one.
-* `PowerSeries.IsEntire.coe_mul_divByMonic_cancel_left`: over an ultrametric ring with
-  `‖1‖ = 1`, dividing `p * q` by `p` returns `q` for entire `q`.
+* `PowerSeries.IsEntire.evalAt_eq_eval_modByMonic`: at a root of `p`, an entire series takes the
+  value of its remainder.
 * `PowerSeries.IsEntire.evalAt_eq_zero_iff`: the factor theorem; an entire series vanishes at
   `a` exactly when it is `X - a` times an entire series.
 * `PowerSeries.IsEntire.exists_eq_X_sub_C_pow_mul`: if the Hasse derivatives of order less than
   `h` of an entire series vanish at `a`, then it is `(X - a)ʰ` times an entire series.
+* `PowerSeries.divByMonic_modByMonic_unique`: over an ultrametric ring with `‖1‖ = 1`, a division
+  with entire quotient and remainder of degree less than `d` is this one.
+* `PowerSeries.IsEntire.coe_mul_divByMonic_cancel_left`: over an ultrametric ring with
+  `‖1‖ = 1`, dividing `p * q` by `p` returns `q` for entire `q`.
+* `PowerSeries.IsEntire.modByMonic_coe_add_coe_mul`: over an ultrametric ring with `‖1‖ = 1`,
+  the remainder of `g + p * q`, for a polynomial `g` and entire `q`, is `g %ₘ p`.
 * `PowerSeries.IsEntire.modByMonic_eq_zero_iff`: over an ultrametric ring with `‖1‖ = 1`, the
   remainder vanishes exactly when `p` divides `f` with entire quotient.
 
@@ -298,6 +309,37 @@ theorem IsEntire.smul_modByMonic (hf : f.IsEntire) (a : R) (p : Polynomial R) :
     (a • f).modByMonic p = a • f.modByMonic p := by
   rw [modByMonic, modByMonic, hf.smul_divByMonic, ← map_smul, mul_smul_comm, smul_sub]
 
+section Map
+
+variable {S : Type*} [CommRing S] [TopologicalSpace S] [T2Space S]
+
+/-- A continuous coefficient homomorphism commutes with the quotient of entire division by a
+monic polynomial. -/
+theorem IsEntire.map_divByMonic (hf : f.IsEntire) (hp : p.Monic) (φ : R →+* S)
+    (hφ : Continuous φ) :
+    (PowerSeries.map φ f).divByMonic (p.map φ) = PowerSeries.map φ (f.divByMonic p) := by
+  ext n
+  nontriviality S
+  -- The inverse of the reverse of `p.map φ` is the image of the inverse of the reverse of `p`.
+  have hinv : invOfUnit ((p.map φ).reverse : S⟦X⟧) 1 =
+      PowerSeries.map φ (invOfUnit (p.reverse : R⟦X⟧) 1) := by
+    rw [map_invOfUnit_ringHom, map_one, Polynomial.reverse, Polynomial.reverse, hp.natDegree_map,
+      Polynomial.reflect_map, Polynomial.polynomial_map_coe]
+  rw [coeff_divByMonic, coeff_map, hinv, hp.natDegree_map]
+  simp only [coeff_map]
+  simpa only [Function.comp_def, map_mul] using
+    ((hasSum_coeff_divByMonic hf p n).map φ hφ).tsum_eq
+
+/-- A continuous coefficient homomorphism commutes with the remainder of entire division by a
+monic polynomial. -/
+theorem IsEntire.map_modByMonic (hf : f.IsEntire) (hp : p.Monic) (φ : R →+* S)
+    (hφ : Continuous φ) : (PowerSeries.map φ f).modByMonic (p.map φ) = (f.modByMonic p).map φ := by
+  nontriviality S
+  rw [modByMonic, modByMonic, hf.map_divByMonic hp φ hφ, hp.natDegree_map,
+    Polynomial.polynomial_map_coe, ← map_mul, ← map_sub, trunc_map]
+
+end Map
+
 /-- On a polynomial, entire division is polynomial division: the quotient vanishes past the
 degree of the polynomial, so the division identity is one of polynomials. -/
 private theorem divByMonic_coe_and_modByMonic_coe (g : Polynomial R) (hp : p.Monic) :
@@ -341,6 +383,15 @@ theorem divByMonic_coe_of_degree_lt {g : Polynomial R} (hp : p.Monic)
 theorem modByMonic_coe_of_degree_lt {g : Polynomial R} (hp : p.Monic)
     (hg : g.degree < p.degree) : (g : R⟦X⟧).modByMonic p = g := by
   rw [modByMonic_coe g hp, (Polynomial.div_modByMonic_unique 0 g hp ⟨by simp, hg⟩).2]
+
+/-- At a root `a` of the monic polynomial `p`, an entire series takes the value of its remainder
+on division by `p`. -/
+theorem IsEntire.evalAt_eq_eval_modByMonic (hf : f.IsEntire) (hp : p.Monic) {a : R}
+    (ha : p.eval a = 0) : f.evalAt a = (f.modByMonic p).eval a := by
+  conv_lhs => rw [← hf.modByMonic_add_divByMonic hp]
+  rw [(isEntire_coe _).evalAt_add ((isEntire_coe _).mul (hf.divByMonic _)),
+    (isEntire_coe _).evalAt_mul (hf.divByMonic _), evalAt_coe, evalAt_coe]
+  simp [ha]
 
 /-- **Factor theorem for entire series.** An entire series vanishes at `a` exactly when it is
 `X - a` times an entire series. -/
@@ -430,6 +481,13 @@ theorem IsEntire.coe_mul_modByMonic {q : R⟦X⟧} (hq : q.IsEntire) (hp : p.Mon
     ((p : R⟦X⟧) * q).modByMonic p = 0 :=
   (hq.coe_mul_divByMonic_and_modByMonic hp).2
 
+/-- Over an ultrametric ring with `‖1‖ = 1`, adding `p * q` to a polynomial `g`, for entire `q`,
+does not change its remainder on division by the monic polynomial `p`. -/
+theorem IsEntire.modByMonic_coe_add_coe_mul {q : R⟦X⟧} (hq : q.IsEntire) (hp : p.Monic)
+    (g : Polynomial R) : ((g : R⟦X⟧) + p * q).modByMonic p = g %ₘ p := by
+  rw [(isEntire_coe g).add_modByMonic ((isEntire_coe p).mul hq), modByMonic_coe g hp,
+    hq.coe_mul_modByMonic hp, add_zero]
+
 /-- Over an ultrametric ring with `‖1‖ = 1`, an entire series leaves no remainder on division by
 a monic polynomial `p` exactly when it is `p` times an entire series. -/
 theorem IsEntire.modByMonic_eq_zero_iff (hf : f.IsEntire) (hp : p.Monic) :
@@ -438,6 +496,66 @@ theorem IsEntire.modByMonic_eq_zero_iff (hf : f.IsEntire) (hp : p.Monic) :
   · simpa [h] using (hf.modByMonic_add_divByMonic hp).symm
   · rw [hfq]
     exact hq.coe_mul_modByMonic hp
+
+/-- **Reduction of entire series modulo a monic polynomial.** Over a complete ultrametric ring
+with `‖1‖ = 1`, sending an entire series `F` to the class of its remainder `F.modByMonic p` in
+`AdjoinRoot p` is a ring homomorphism. It is surjective, with kernel the multiples of `p` by entire
+series. -/
+noncomputable def IsEntire.mkAdjoinRoot (hp : p.Monic) : IsEntire.subring R →+* AdjoinRoot p where
+  toFun F := AdjoinRoot.mk p ((F : R⟦X⟧).modByMonic p)
+  map_one' := by
+    rw [Subring.coe_one, ← Polynomial.coe_one, modByMonic_coe _ hp, AdjoinRoot.mk_modByMonic,
+      map_one]
+  map_mul' F G := by
+    have hF := IsEntire.mem_subring.mp F.2
+    have hG := IsEntire.mem_subring.mp G.2
+    -- Write `F = r + p * q` and `G = r' + p * q'`; then `F * G = r * r' + p * Q` with `Q` entire.
+    have hdivF := hF.modByMonic_add_divByMonic hp
+    have hdivG := hG.modByMonic_add_divByMonic hp
+    set r := (F : R⟦X⟧).modByMonic p
+    set r' := (G : R⟦X⟧).modByMonic p
+    set q := (F : R⟦X⟧).divByMonic p
+    set q' := (G : R⟦X⟧).divByMonic p
+    have hQ : (q * r' + r * q' + p * q * q' : R⟦X⟧).IsEntire :=
+      (((hF.divByMonic p).mul (isEntire_coe r')).add
+        ((isEntire_coe r).mul (hG.divByMonic p))).add
+        (((isEntire_coe p).mul (hF.divByMonic p)).mul (hG.divByMonic p))
+    have hFG : ((F * G : IsEntire.subring R) : R⟦X⟧) =
+        ((r * r' : Polynomial R) : R⟦X⟧) + p * (q * r' + r * q' + p * q * q') := by
+      rw [Subring.coe_mul, ← hdivF, ← hdivG, Polynomial.coe_mul]
+      ring
+    rw [hFG, hQ.modByMonic_coe_add_coe_mul hp, AdjoinRoot.mk_modByMonic, map_mul]
+  map_zero' := by simp
+  map_add' F G := by
+    rw [Subring.coe_add, (IsEntire.mem_subring.mp F.2).add_modByMonic
+      (IsEntire.mem_subring.mp G.2), map_add]
+
+/-- Reduction modulo `p` sends an entire series to the class of its remainder. -/
+@[simp]
+theorem IsEntire.mkAdjoinRoot_apply (hp : p.Monic) (F : IsEntire.subring R) :
+    IsEntire.mkAdjoinRoot hp F = AdjoinRoot.mk p ((F : R⟦X⟧).modByMonic p) :=
+  (rfl)
+
+/-- On polynomials, reduction modulo `p` is `AdjoinRoot.mk p`. -/
+theorem IsEntire.mkAdjoinRoot_coe (hp : p.Monic) (g : Polynomial R) :
+    IsEntire.mkAdjoinRoot hp ⟨g, IsEntire.mem_subring.mpr (isEntire_coe g)⟩ =
+      AdjoinRoot.mk p g := by
+  rw [IsEntire.mkAdjoinRoot_apply, modByMonic_coe _ hp, AdjoinRoot.mk_modByMonic]
+
+/-- Reduction of entire series modulo `p` is surjective: polynomials already reach every class. -/
+theorem IsEntire.mkAdjoinRoot_surjective (hp : p.Monic) :
+    Function.Surjective (IsEntire.mkAdjoinRoot hp) := fun a ↦ by
+  obtain ⟨g, rfl⟩ := AdjoinRoot.mk_surjective a
+  exact ⟨_, IsEntire.mkAdjoinRoot_coe hp g⟩
+
+/-- An entire series reduces to zero modulo `p` exactly when it is `p` times an entire series. -/
+theorem IsEntire.mkAdjoinRoot_eq_zero_iff (hp : p.Monic) {F : IsEntire.subring R} :
+    IsEntire.mkAdjoinRoot hp F = 0 ↔ ∃ q : R⟦X⟧, q.IsEntire ∧ (F : R⟦X⟧) = p * q := by
+  have : Nontrivial R := NormOneClass.nontrivial
+  rw [IsEntire.mkAdjoinRoot_apply, AdjoinRoot.mk_eq_zero,
+    ← Polynomial.modByMonic_eq_zero_iff_dvd hp,
+    (Polynomial.modByMonic_eq_self_iff hp).mpr (degree_modByMonic_lt _ hp.ne_zero),
+    (IsEntire.mem_subring.mp F.2).modByMonic_eq_zero_iff hp]
 
 end Ultrametric
 

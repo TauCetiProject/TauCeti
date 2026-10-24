@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.DirectSum.Decomposition
+public import Mathlib.Algebra.Module.ULift
 public import Mathlib.Algebra.Ring.NegOnePow
 public import Mathlib.RingTheory.Binomial
 public import Mathlib.RingTheory.Finiteness.Basic
@@ -243,6 +244,11 @@ degree. This is the special case of `mem_map_piece_iff` that `simp` already reac
 theorem apply_mem_map_piece_iff (G : InternalGrading R M ι) (e : M ≃ₗ[R] N) (p : ι) (x : M) :
     e x ∈ (G.map e).piece p ↔ x ∈ G.piece p := by
   simp
+
+/-- Membership in a grading transported to a universe lift is checked after lowering. -/
+theorem mem_map_ulift_piece_iff (G : InternalGrading R M ι) (p : ι) (x : ULift.{w} M) :
+    x ∈ (G.map (ULift.moduleEquiv : ULift.{w} M ≃ₗ[R] M).symm).piece p ↔ x.down ∈ G.piece p := by
+  rw [mem_map_piece_iff, LinearEquiv.symm_symm, ULift.moduleEquiv_apply]
 
 /-- The equivalence used to transport a grading is homogeneous of degree zero. -/
 theorem isHomogeneous_map [AddMonoid ι] (G : InternalGrading R M ι) (e : M ≃ₗ[R] N) :
