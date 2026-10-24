@@ -10,7 +10,6 @@ public import TauCeti.Algebra.Lie.HighestWeight.FiniteDimensional
 public import TauCeti.Algebra.Lie.HighestWeight.OrbitSum
 public import TauCeti.Algebra.Lie.Weights.InvariantForm
 import TauCeti.Algebra.Lie.HighestWeight.Weight.Density
-import TauCeti.LinearAlgebra.SymmetricAlgebra.Evaluation
 import TauCeti.RepresentationTheory.SymmetricAlgebra.Reynolds
 
 /-!
@@ -204,10 +203,7 @@ theorem weightPowerSum_mem_linearInvariants (m : ℕ) {f : AddMonoidAlgebra ℤ 
     (fun mu _ ↦ smul_inv_smul w mu) (fun mu _ ↦ inv_smul_smul w mu) (fun mu _ ↦ ?_)
   · rwa [Finsupp.mem_support_iff, hf.coeff_smul, ← Finsupp.mem_support_iff]
   · rwa [Finsupp.mem_support_iff, hf.coeff_smul, ← Finsupp.mem_support_iff]
-  · have hform := (rootInvariantForm (H := H)).apply_weylGroup_smul (IsKilling.rootSystem H) w lam
-      (w⁻¹ • mu)
-    rw [smul_inv_smul, rootInvariantForm_form] at hform
-    rw [hf.coeff_smul, hform]
+  · rw [hf.coeff_smul, invForm_weylGroup_smul_left]
 
 variable [IsAlgClosed K] {M : Type w} [AddCommGroup M] [Module K M] [LieRingModule L M]
   [LieModule K L M] [FiniteDimensional K M]
@@ -325,7 +321,7 @@ theorem weightPowerSum_sum_single_smul_mem_span [Fintype (IsKilling.rootSystem H
 every `m`, the trace-power polynomials `tracePowerRestriction K H L(λ) m` of the modules `L(λ)`,
 `λ` dominant integral, span the degree-`m` component of the Weyl invariants `S(H)^W`. -/
 theorem span_highestWeightTracePowerRestriction_eq_linearInvariants_inf_homogeneousSubmodule
-    (m : ℕ) :
+    (b : (IsKilling.rootSystem H).Base) (m : ℕ) :
     Submodule.span K {p | ∃ (lam : Dual K H) (hlam : IsDominantIntegral b lam),
         highestWeightTracePowerRestriction hlam m = p} =
       Subalgebra.toSubmodule (linearInvariants H) ⊓
@@ -345,17 +341,6 @@ theorem span_highestWeightTracePowerRestriction_eq_linearInvariants_inf_homogene
   let _ : Fintype (IsKilling.rootSystem H).weylGroup.op := Fintype.ofEquiv _ (Subgroup.equivOp _)
   have : Invertible (Fintype.card (IsKilling.rootSystem H).weylGroup.op : K) :=
     invertibleOfNonzero (Nat.cast_ne_zero.mpr Fintype.card_ne_zero)
-  -- `w`, acting on `H` through the opposite group, moves `t_λ` to `t_{w⁻¹ λ}` since the form is
-  -- invariant
-  have hsmul (w : (IsKilling.rootSystem H).weylGroup) (lam : Dual K H) :
-      ρW (Subgroup.equivOp _ w) ((IsKilling.cartanEquivDual H).symm lam) =
-        (IsKilling.cartanEquivDual H).symm (w⁻¹ • lam) := by
-    refine sub_eq_zero.mp <| (Module.forall_dual_apply_eq_zero_iff K (V := H) _).mp fun nu ↦ ?_
-    have hform := (rootInvariantForm (H := H)).apply_weylGroup_smul (IsKilling.rootSystem H) w nu
-      (w⁻¹ • lam)
-    rw [smul_inv_smul, rootInvariantForm_form] at hform
-    rw [map_sub, sub_eq_zero, ← invForm_apply_apply, ← hform, invForm_apply_apply]
-    exact (RootPairing.Equiv.toLinearMap_weightEquiv (w : (IsKilling.rootSystem H).Aut) nu _).symm
   -- the Reynolds operator sends each `t_λ ^ m` into `V`
   have havg : SymmetricAlgebra.homogeneousSubmodule K H m ≤
       V.comap ρW.symmetricAlgebra.averageMap := by
@@ -367,8 +352,9 @@ theorem span_highestWeightTracePowerRestriction_eq_linearInvariants_inf_homogene
       (weightPowerSum_sum_single_smul_mem_span m hlam) using 2
     rw [map_sum, ← (Subgroup.equivOp _).sum_comp, ← Equiv.sum_comp (Equiv.inv _)]
     refine Fintype.sum_congr _ _ fun w ↦ ?_
-    rw [Representation.symmetricAlgebra_apply, map_pow, SymmetricAlgebra.map_apply_ι, hsmul,
-      weightPowerSum_single, one_smul, Equiv.inv_apply, inv_inv]
+    rw [Representation.symmetricAlgebra_apply, map_pow, SymmetricAlgebra.map_apply_ι,
+      weylGroupCorootRep_cartanEquivDual_symm, weightPowerSum_single, one_smul, Equiv.inv_apply,
+      inv_inv]
   -- the Reynolds operator fixes the invariant `p`
   rw [linearInvariants_eq_symmetricAlgebraInvariants] at hinv
   have hfix := congrArg Subtype.val (ρW.symmetricAlgebraReynolds_coe ⟨p, hinv⟩)
