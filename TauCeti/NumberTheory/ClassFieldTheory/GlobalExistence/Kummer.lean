@@ -23,9 +23,10 @@ every open subgroup `N` of the idele class group `C_K` containing the `p`-th pow
 subgroup of a finite abelian extension of `K`
 (`exists_abelianLayer_globalNormSubgroup_eq_of_pow_mem`).
 
-The extension is the Kummer field `M = K(U_S^{1/p})` of the `S`-units, cut out by the Kummer layer
-`kummerLayer p (S.unit K)`, for a finite set `S` of finite places containing the places above `p`
-and generating the ideal class group. Write `E_S` for the Kummer idele subgroup
+The proof uses an auxiliary Kummer extension: the Kummer field `M = K(U_S^{1/p})` of the
+`S`-units, cut out by the Kummer layer `kummerLayer p (S.unit K)`, for a finite set `S` of finite
+places containing the places above `p` and generating the ideal class group. Its norm subgroup is
+contained in `N` but need not equal it. Write `E_S` for the Kummer idele subgroup
 `auxiliaryKummerIdeleSubgroup S ∅ p` of ideles that are `p`-th powers at `S` and at every infinite
 place and units elsewhere. Then:
 
@@ -129,23 +130,11 @@ theorem exists_abelianLayer_globalNormSubgroup_eq_of_pow_mem
   -- `N` contains a ray subgroup. Choose `S` containing the finite part of its modulus and the
   -- places above `p`, and generating the class group.
   obtain ⟨𝔪, h𝔪⟩ := exists_raySubgroup_le_of_isOpen N hN
-  obtain ⟨S₀, hS₀fin, hS₀⟩ :=
-    ClassGroup.exists_finite_closure_classGroupMk_image_eq_top (R := 𝓞 K)
-  have hp0 : Ideal.span ({(p : 𝓞 K)} : Set (𝓞 K)) ≠ ⊥ := by
-    rw [ne_eq, Ideal.span_singleton_eq_bot]
-    exact_mod_cast (Fact.out : p.Prime).ne_zero
-  let S : Finset (HeightOneSpectrum (𝓞 K)) :=
-    hS₀fin.toFinset ∪ (Ideal.finite_factors 𝔪.finitePart_ne_bot).toFinset ∪
-      (Ideal.finite_factors hp0).toFinset
-  have hcl : Subgroup.closure
-      (HeightOneSpectrum.classGroupMk '' (S : Set (HeightOneSpectrum (𝓞 K)))) = ⊤ :=
-    top_unique (hS₀ ▸ Subgroup.closure_mono (Set.image_mono fun v hv ↦
-      Finset.mem_union_left _ (Finset.mem_union_left _ (hS₀fin.mem_toFinset.2 hv))))
+  obtain ⟨S, hS₀S, hcl, hpS⟩ := ClassGroup.exists_finset_superset_closure_classGroupMk_image_eq_top
+    (Ideal.finite_factors 𝔪.finitePart_ne_bot).toFinset
+    (a := (p : 𝓞 K)) (by exact_mod_cast (Fact.out : p.Prime).ne_zero)
   have h𝔪S (v : HeightOneSpectrum (𝓞 K)) (hv : v.asIdeal ∣ 𝔪.finitePart) : v ∈ S :=
-    Finset.mem_union_left _ (Finset.mem_union_right _ (Set.Finite.mem_toFinset _ |>.2 hv))
-  have hpS (v : HeightOneSpectrum (𝓞 K)) (hv : (p : 𝓞 K) ∈ v.asIdeal) : v ∈ S :=
-    Finset.mem_union_right _ ((Ideal.finite_factors hp0).mem_toFinset.2
-      (Ideal.dvd_span_singleton.2 hv))
+    hS₀S ((Ideal.finite_factors 𝔪.finitePart_ne_bot).mem_toFinset.2 hv)
   -- `N` contains the norm subgroup of `K(U_S^{1/p})/K`, so upward closure applies.
   refine exists_abelianLayer_globalNormSubgroup_eq_of_le
     (V := kummerLayer p ((S : Set (HeightOneSpectrum (𝓞 K))).unit K)) ?_
