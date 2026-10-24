@@ -583,6 +583,40 @@ theorem IsPerfectMatching.two_mul_orbitCount [Finite α] {f : Equiv.Perm α}
 
 end Parity
 
+/-! ### Four endpoints -/
+
+/-- There are exactly three perfect matchings of four labelled points, determined by the
+partner of `0`. -/
+theorem isPerfectMatching_fin_four_iff (f : Equiv.Perm (Fin 4)) :
+    IsPerfectMatching f ↔
+      f = Equiv.swap 0 1 * Equiv.swap 2 3 ∨
+      f = Equiv.swap 0 2 * Equiv.swap 1 3 ∨
+      f = Equiv.swap 0 3 * Equiv.swap 1 2 := by
+  revert f
+  decide
+
+/-- The product of two distinct perfect matchings of four points is again a perfect matching.
+This fails for larger endpoint sets. -/
+theorem IsPerfectMatching.mul_of_ne_fin_four {f g : Equiv.Perm (Fin 4)}
+    (hf : IsPerfectMatching f) (hg : IsPerfectMatching g) (hne : f ≠ g) :
+    IsPerfectMatching (f * g) := by
+  rcases (isPerfectMatching_fin_four_iff f).mp hf with rfl | rfl | rfl <;>
+    rcases (isPerfectMatching_fin_four_iff _).mp hg with rfl | rfl | rfl <;>
+    first | exact False.elim (hne rfl) | decide
+
+/-- Closing a pairing of four points by another pairing gives four directed traversal cycles
+when the pairings agree, and two otherwise. Each undirected circle has two directions. -/
+theorem IsPerfectMatching.orbitCount_mul_fin_four {f g : Equiv.Perm (Fin 4)}
+    (hf : IsPerfectMatching f) (hg : IsPerfectMatching g) :
+    orbitCount (f * g) = if f = g then 4 else 2 := by
+  split_ifs with h
+  · subst g
+    have hsq : f * f = 1 := Equiv.ext hf.apply_apply
+    simp [hsq]
+  · have hcount := (hf.mul_of_ne_fin_four hg h).two_mul_orbitCount
+    simp only [Nat.card_eq_fintype_card, Fintype.card_fin] at hcount
+    omega
+
 section CycleReversal
 
 open Equiv Equiv.Perm

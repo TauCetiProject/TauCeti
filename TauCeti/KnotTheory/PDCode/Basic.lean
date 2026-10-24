@@ -180,6 +180,31 @@ theorem slotSmoothing_ne (b : Bool) (slot : Fin 4) : slotSmoothing b slot ≠ sl
   revert slot
   cases b <;> decide
 
+/-- The two local smoothings at a crossing are distinct. -/
+theorem slotSmoothing_ne_slotSmoothing_not (b : Bool) : slotSmoothing b ≠ slotSmoothing !b := by
+  cases b <;> simp only [Bool.not_false, Bool.not_true, slotSmoothing_false, slotSmoothing_true] <;>
+    decide
+
+/-- Each local smoothing is a perfect matching of the four crossing slots. -/
+theorem isPerfectMatching_slotSmoothing (b : Bool) : IsPerfectMatching (slotSmoothing b) :=
+  isPerfectMatching_iff.mpr ⟨slotSmoothing_apply_apply b, slotSmoothing_ne b⟩
+
+/-- A local smoothing never joins a slot to the opposite slot: the two arcs of a smoothing cut
+across the two local strands instead of following them, which is what distinguishes a smoothing
+from `TauCeti.PDCode.crossingTurn`. -/
+theorem slotSmoothing_ne_oppositeCrossingSlot (b : Bool) (slot : Fin 4) :
+    slotSmoothing b slot ≠ oppositeCrossingSlot slot := by
+  have key : ∀ (c : Bool) (t : Fin 4), (slotSmoothing c t).val ≠ (t + 2).val := by
+    intro c
+    cases c <;> simp only [slotSmoothing_false, slotSmoothing_true] <;> decide
+  intro h
+  exact key b slot (by rw [h, oppositeCrossingSlot_apply])
+
+/-- A local smoothing differs from the opposite-slot permutation. -/
+theorem slotSmoothing_ne_oppositeCrossingSlot_perm (b : Bool) :
+    slotSmoothing b ≠ oppositeCrossingSlot :=
+  fun h => slotSmoothing_ne_oppositeCrossingSlot b 0 (congrArg (fun f => f 0) h)
+
 end PDCode
 
 end TauCeti
@@ -194,6 +219,15 @@ theorem oppositeCrossingSlot_ne (slot : Fin 4) :
 end Fin
 
 namespace TauCeti
+
+namespace PDCode
+
+/-- Opposite slots form a perfect matching of the four crossing slots. -/
+theorem isPerfectMatching_oppositeCrossingSlot : IsPerfectMatching oppositeCrossingSlot :=
+  isPerfectMatching_iff.mpr
+    ⟨oppositeCrossingSlot_apply_oppositeCrossingSlot, Fin.oppositeCrossingSlot_ne⟩
+
+end PDCode
 
 /-- A finite unoriented PD-code with `n` crossings.
 
