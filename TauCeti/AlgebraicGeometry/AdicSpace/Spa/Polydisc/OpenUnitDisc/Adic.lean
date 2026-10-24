@@ -160,23 +160,24 @@ completed rational localisation `K⟨T⟩⟨T^(n+1)/c, c/c⟩` of the rational s
 `R({T^(n+1), c}/c)`. -/
 noncomputable def discExhaustionOpenIso {c : K} (hc : IsUnit c) (n : ℕ) :
     letI Q := P.weighted (T := fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight
-    letI hden := hasDenominatorPower_of_isOpen_span Q {X ^ (n + 1), C c} (C c)
+    letI hden := hasDenominatorPower_of_isOpen_span Q ({X ^ (n + 1), C c} : Finset 𝒯) (C c)
       (Localization.Away (C c)) (isOpen_span_discExhaustionNumerators hc n)
-    letI := locUniformSpace Q {X ^ (n + 1), C c} (C c) (Localization.Away (C c)) hden
-    letI := isUniformAddGroup_locUniformSpace Q {X ^ (n + 1), C c} (C c)
+    letI := locUniformSpace Q ({X ^ (n + 1), C c} : Finset 𝒯) (C c) (Localization.Away (C c)) hden
+    letI := isUniformAddGroup_locUniformSpace Q ({X ^ (n + 1), C c} : Finset 𝒯) (C c)
       (Localization.Away (C c)) hden
-    letI := isTopologicalRing_locUniformSpace Q {X ^ (n + 1), C c} (C c)
+    letI := isTopologicalRing_locUniformSpace Q ({X ^ (n + 1), C c} : Finset 𝒯) (C c)
       (Localization.Away (C c)) hden
     (closedPolydiscPreAdicSpace 1 P).restrict (discExhaustionOpen c P n).isOpenEmbedding ≅
       presentationLimitPreAdicSpace
-        (completionLocalization Q {X ^ (n + 1), C c} (C c) (Localization.Away (C c)) hden)
-        (completedPlusSubring Q (powerBoundedSubring 𝒯) {X ^ (n + 1), C c} (C c)
+        (completionLocalization Q ({X ^ (n + 1), C c} : Finset 𝒯) (C c)
+          (Localization.Away (C c)) hden)
+        (completedPlusSubring Q (powerBoundedSubring 𝒯) ({X ^ (n + 1), C c} : Finset 𝒯) (C c)
           (Localization.Away (C c)) hden)
         (isPowerBounded_of_mem_completedPlusSubring Q (powerBoundedSubring 𝒯)
-          (fun _ ha ↦ mem_powerBoundedSubring.mp ha) {X ^ (n + 1), C c} (C c)
+          (fun _ ha ↦ mem_powerBoundedSubring.mp ha) ({X ^ (n + 1), C c} : Finset 𝒯) (C c)
           (Localization.Away (C c)) hden)
         (completionLocalization_ringOfDefinition_le_completedPlusSubring Q
-          (powerBoundedSubring 𝒯) Q.le_powerBoundedSubring {X ^ (n + 1), C c} (C c)
+          (powerBoundedSubring 𝒯) Q.le_powerBoundedSubring ({X ^ (n + 1), C c} : Finset 𝒯) (C c)
           (Localization.Away (C c)) hden) :=
   closedPolydiscBasicOpenIso 1 P (isOpen_span_discExhaustionNumerators hc n)
 

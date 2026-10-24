@@ -16,7 +16,9 @@ public import TauCeti.Topology.Algebra.Group.OpenSubgroup.FiniteIndex
 
 Let `G` be a profinite group and `p` a prime. Restriction to an open subgroup `U` of index prime to
 `p` is injective on the cohomology of every discrete `p`-primary torsion `G`-module, in every
-positive degree: a class killed by restriction to `U` is killed by `[G : U]`
+degree. In degree zero this is the inclusion of invariants `X^G ⊆ X^U`
+(`TauCeti.ContinuousCohomology.res_zero_injective`); in positive degree a class killed by
+restriction to `U` is killed by `[G : U]`
 (`TauCeti.ContinuousCohomology.index_nsmul_eq_zero_of_res_eq_zero`), and it is also killed by a
 power of `p`, so it is zero. The same holds for a closed subgroup `H` all of whose open
 neighbourhoods `V ⊇ H` have index prime to `p`: a class restricting to zero on `H` already
@@ -38,7 +40,7 @@ cohomological dimension of a Sylow pro-`p` subgroup is where these results are u
 
 * `TauCeti.ContinuousCohomology.res_injective_of_not_dvd_index`: for a compact group `G`, an open
   subgroup `U` of index prime to `p` and a discrete `p`-primary torsion representation `X`,
-  restriction `Hⁿ⁺¹(G, X) → Hⁿ⁺¹(U, X)` is injective.
+  restriction `Hⁿ(G, X) → Hⁿ(U, X)` is injective in every degree `n`.
 * `TauCeti.ContinuousCohomology.res_injective_of_forall_not_dvd_index`: the same for a closed
   subgroup `H` of a profinite group all of whose open neighbourhoods have index prime to `p`, for
   smooth discrete `p`-primary torsion `X`.
@@ -74,10 +76,13 @@ variable {p : ℕ} {k : Type u} {G : Type v} [Ring k] [TopologicalSpace k] [Grou
   [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G] {X : TopRep k G}
 
 /-- **Restriction to an open subgroup of index prime to `p` is injective** on the cohomology of a
-discrete `p`-primary torsion representation `X` of a compact group `G`, in every positive degree. -/
+discrete `p`-primary torsion representation `X` of a compact group `G`, in every degree. -/
 theorem res_injective_of_not_dvd_index [DiscreteTopology X.V] (hp : p.Prime)
     (hX : IsPPrimaryTorsion p X.V) (U : OpenSubgroup G) (hU : ¬ p ∣ U.toSubgroup.index) (n : ℕ) :
-    Function.Injective (res U.toSubgroup X (n + 1)).hom := by
+    Function.Injective (res U.toSubgroup X n).hom := by
+  -- in degree zero restriction is the inclusion of invariants
+  rcases n with _ | n
+  · exact res_zero_injective U.toSubgroup X
   refine (injective_iff_map_eq_zero _).2 fun x hx ↦ ?_
   -- a class killed by restriction to `U` is killed by `[G : U]` and by a power of `p`
   obtain ⟨m, hm⟩ := isPPrimaryTorsion_iff.1 (isPPrimaryTorsion_continuousCohomology X hX (n + 1)) x
@@ -88,11 +93,11 @@ variable [TotallyDisconnectedSpace G]
 
 /-- **Restriction to a closed subgroup whose open neighbourhoods all have index prime to `p` is
 injective** on the cohomology of a smooth discrete `p`-primary torsion representation `X` of a
-profinite group `G`, in every positive degree. -/
+profinite group `G`, in every degree. -/
 theorem res_injective_of_forall_not_dvd_index (hp : p.Prime) (hX : IsSmoothDiscrete k X)
     (hX' : IsPPrimaryTorsion p X.V) {H : Subgroup G} (hH : IsClosed (H : Set G))
     (hind : ∀ V : OpenSubgroup G, H ≤ V → ¬ p ∣ V.toSubgroup.index) (n : ℕ) :
-    Function.Injective (res H X (n + 1)).hom := by
+    Function.Injective (res H X n).hom := by
   have := hX.discreteTopology
   refine (injective_iff_map_eq_zero _).2 fun x hx ↦ ?_
   -- a class restricting to zero on `H` restricts to zero on some open `V ⊇ H`
@@ -111,7 +116,7 @@ theorem CohomologicalDimensionLE.of_not_dvd_index (hp : p.Prime) (U : OpenSubgro
     (hU : ¬ p ∣ U.toSubgroup.index) {n : ℕ} (h : CohomologicalDimensionLE.{v} p U.toSubgroup n) :
     CohomologicalDimensionLE.{v} p G n :=
   h.of_forall_res_injective fun _ _ _ _ _ _ hM i ↦
-    ContinuousCohomology.res_injective_of_not_dvd_index hp hM U hU i
+    ContinuousCohomology.res_injective_of_not_dvd_index hp hM U hU (i + 1)
 
 /-- **`cd_p G ≤ cd_p U` for an open subgroup `U` of index prime to `p`** (Serre, *Galois
 Cohomology*, I §3.3, Prop. 14): for `U` open in a compact group `G` with `¬ p ∣ [G : U]`, the
@@ -120,7 +125,7 @@ theorem cohomologicalDimensionAt_le_of_not_dvd_index (hp : p.Prime) (U : OpenSub
     (hU : ¬ p ∣ U.toSubgroup.index) :
     cohomologicalDimensionAt.{v} p G ≤ cohomologicalDimensionAt.{v} p U.toSubgroup :=
   cohomologicalDimensionAt_le_of_forall_res_injective fun _ _ _ _ _ _ hM i ↦
-    ContinuousCohomology.res_injective_of_not_dvd_index hp hM U hU i
+    ContinuousCohomology.res_injective_of_not_dvd_index hp hM U hU (i + 1)
 
 variable [TotallyDisconnectedSpace G]
 
@@ -133,7 +138,7 @@ theorem CohomologicalDimensionLE.of_isClosed_of_forall_not_dvd_index (hp : p.Pri
     (h : CohomologicalDimensionLE.{v} p H n) : CohomologicalDimensionLE.{v} p G n :=
   h.of_forall_res_injective fun M _ _ _ _ _ hM i ↦
     ContinuousCohomology.res_injective_of_forall_not_dvd_index hp
-      (ofDiscreteModule_isSmoothDiscrete ℤ G M) hM hH hind i
+      (ofDiscreteModule_isSmoothDiscrete ℤ G M) hM hH hind (i + 1)
 
 /-- **`cd_p G ≤ cd_p H` for a closed subgroup `H` whose open neighbourhoods all have index prime to
 `p`** (Serre, *Galois Cohomology*, I §3.3, Cor. to Prop. 14): for `H` closed in a profinite group
@@ -145,7 +150,7 @@ theorem cohomologicalDimensionAt_le_of_isClosed_of_forall_not_dvd_index (hp : p.
     cohomologicalDimensionAt.{v} p G ≤ cohomologicalDimensionAt.{v} p H :=
   cohomologicalDimensionAt_le_of_forall_res_injective fun M _ _ _ _ _ hM i ↦
     ContinuousCohomology.res_injective_of_forall_not_dvd_index hp
-      (ofDiscreteModule_isSmoothDiscrete ℤ G M) hM hH hind i
+      (ofDiscreteModule_isSmoothDiscrete ℤ G M) hM hH hind (i + 1)
 
 /-- **`cd_p G = cd_p H` for a closed subgroup whose open neighbourhoods have index prime to
 `p`**. The equality is in

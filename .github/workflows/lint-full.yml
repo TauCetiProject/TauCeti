@@ -53,9 +53,17 @@ jobs:
           # Harmless (just a slightly deeper fetch) when the cache is off.
           fetch-depth: 100
 
+      - name: Prepare pinned shared tools
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@0f4096297f058bff8ccd873067aab7120202aecf
+        with:
+          tools-repository: TauCetiProject/TauCetiTools
+          tools-ref: 0f4096297f058bff8ccd873067aab7120202aecf
+          project-directory: .
       - name: Infrastructure policy unit tests
         run: |
+          python3 scripts/test_cancel_bors_candidate.py
           PYTHONPATH=scripts python3 scripts/test_ci_graphs.py
+          python3 -m unittest discover -s scripts -p test_ci_live_summary.py
           PYTHONPATH=scripts python3 scripts/test_loc_graph.py
           PYTHONPATH=scripts python3 scripts/test_roadmap_completion.py
           PYTHONPATH=scripts python3 scripts/test_loc_roadmap_graph.py
@@ -66,6 +74,7 @@ jobs:
           PYTHONPATH=scripts python3 scripts/test_pipeline_health.py
           python3 scripts/pr_status/test_stuck_alerts.py
           python3 scripts/test_roadmap_label.py
+          python3 scripts/test_roadmap_api.py
           PYTHONPATH=scripts python3 scripts/test_housekeeping.py
           python3 scripts/pr_status/test_pr_labels.py
           python3 scripts/pr_status/test_zulip.py
@@ -82,6 +91,7 @@ jobs:
           python3 scripts/test_ci_host_resources.py
           python3 scripts/test_web_pins.py
           python3 scripts/test_attest_pr_config.py
+          python3 scripts/test_prepare_pr_integration.py
           python3 scripts/test_profile_workflow.py
           python3 scripts/test_lake_cache_probe.py
           python3 scripts/test_lake_cache_get.py
@@ -103,10 +113,10 @@ jobs:
             exit 1
           fi
 
-      # Option overrides and heartbeat instrumentation are forbidden in library code.
+      # Option overrides, heartbeat instrumentation, and explicit metaprogramming are forbidden.
       # This cheap trusted scan ignores comments without double quotes, conservatively
       # includes strings and names, and needs no elaboration or sandbox access.
-      - name: Reject option overrides and heartbeat instrumentation
+      - name: Reject option overrides and metaprogramming (allow local macros)
         run: |
           python3 scripts/check_source_options.py TauCeti/ TauCeti.lean
 

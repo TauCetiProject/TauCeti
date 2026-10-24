@@ -10,7 +10,6 @@ public import Mathlib.CategoryTheory.Abelian.GrothendieckAxioms.Colim
 public import Mathlib.CategoryTheory.Functor.ReflectsIso.Exact
 public import Mathlib.Data.Set.Finite.Basic
 public import Mathlib.CategoryTheory.GradedObject.Monoidal
-public import Mathlib.CategoryTheory.Monoidal.Preadditive
 
 /-!
 # Exactness and reindexing for tensor products of graded objects
@@ -61,11 +60,12 @@ lemma mapMap_eq_colimMap {X Y : GradedObject I C} (φ : X ⟶ Y) (p : I → J) [
     Discrete.functor (X.mapObjFun p j) ⟶ Discrete.functor (Y.mapObjFun p j)) ⟨⟨i, hi⟩⟩).symm
 
 /-- A morphism of graded objects which is a monomorphism in each degree induces a monomorphism on
-the coproducts over the fibre of `p : I → J` over `j`, when coproducts of that shape are exact. -/
-lemma mono_mapMap [Abelian C] {X Y : GradedObject I C} (φ : X ⟶ Y) (p : I → J) [X.HasMap p]
+the coproducts over the fibre of `p : I → J` over `j`, when colimits of that shape preserve
+monomorphisms. -/
+lemma mono_mapMap {X Y : GradedObject I C} (φ : X ⟶ Y) (p : I → J) [X.HasMap p]
     [Y.HasMap p] (j : J) [HasColimitsOfShape (Discrete (p ⁻¹' {j})) C]
-    [HasExactColimitsOfShape (Discrete (p ⁻¹' {j})) C] [∀ i, Mono (φ i)] :
-    Mono (mapMap φ p j) := by
+    [(colim : (Discrete (p ⁻¹' {j}) ⥤ C) ⥤ C).PreservesMonomorphisms]
+    [hφ : ∀ i, Mono (φ i)] : Mono (mapMap φ p j) := by
   let α : Discrete.functor (X.mapObjFun p j) ⟶ Discrete.functor (Y.mapObjFun p j) :=
     Discrete.natTrans fun i ↦ φ i.as.1
   have : ∀ i, Mono (α.app i) := fun i ↦ inferInstanceAs (Mono (φ i.as.1))
@@ -76,14 +76,9 @@ lemma mono_mapMap [Abelian C] {X Y : GradedObject I C} (φ : X ⟶ Y) (p : I →
 /-- A morphism of graded objects which is an epimorphism in each degree induces an epimorphism on
 the coproducts over the fibre of `p : I → J` over `j`. -/
 lemma epi_mapMap {X Y : GradedObject I C} (φ : X ⟶ Y) (p : I → J) [X.HasMap p]
-    [Y.HasMap p] (j : J) [HasColimitsOfShape (Discrete (p ⁻¹' {j})) C] [∀ i, Epi (φ i)] :
-    Epi (mapMap φ p j) := by
-  let α : Discrete.functor (X.mapObjFun p j) ⟶ Discrete.functor (Y.mapObjFun p j) :=
-    Discrete.natTrans fun i ↦ φ i.as.1
-  have : ∀ i, Epi (α.app i) := fun i ↦ inferInstanceAs (Epi (φ i.as.1))
-  have : Epi α := NatTrans.epi_of_epi_app _
-  rw [mapMap_eq_colimMap, ← colim_map]
-  exact Functor.map_epi colim α
+    [Y.HasMap p] (j : J) [∀ i, Epi (φ i)] : Epi (mapMap φ p j) where
+  left_cancellation g₁ g₂ h := mapObj_ext _ _ _ _ fun i hi ↦ by
+    rw [← cancel_epi (φ i), ← ι_mapMap_assoc φ p i j hi, h, ι_mapMap_assoc]
 
 /-- A short complex of graded objects which is exact in each degree induces an exact sequence on
 the coproducts over the fibre of `p : I → J` over `j`, when coproducts of that shape are exact. -/
@@ -131,21 +126,21 @@ lemma shortExact_mapMap [Abelian C] (S : ShortComplex (GradedObject I C)) (p : I
 namespace Monoidal
 
 /-- In a degree `n` with finitely many pairs `i + j = n`, the tensor product of two morphisms of
-graded objects is a monomorphism as soon as each of its summands `f i ⊗ g j` is. -/
-lemma mono_tensorHom [AddMonoid I] [MonoidalCategory C] [Abelian C] {X₁ X₂ Y₁ Y₂ : GradedObject I C}
+graded objects is a monomorphism as soon as each of its summands `f i ⊗ g j` is, in a category
+with zero morphisms and finite biproducts. -/
+lemma mono_tensorHom [AddMonoid I] [MonoidalCategory C] [HasZeroMorphisms C]
+    [HasFiniteBiproducts C] {X₁ X₂ Y₁ Y₂ : GradedObject I C}
     (f : X₁ ⟶ X₂) (g : Y₁ ⟶ Y₂) [HasTensor X₁ Y₁] [HasTensor X₂ Y₂] (n : I)
     (hn : Set.Finite {x : I × I | x.1 + x.2 = n}) [∀ i j, Mono (f i ⊗ₘ g j)] :
     Mono (tensorHom f g n) := by
+  let : Finite ((fun (⟨i, j⟩ : I × I) ↦ i + j) ⁻¹' {n}) := hn.to_subtype
   unfold tensorHom mapBifunctorMapMap
-  -- the summands of degree `n` are indexed by a finite type, over which coproducts are exact
-  refine @mono_mapMap _ _ _ _ _ _ _ _ _ _ _ n
-    (@hasColimitsOfShape_discrete C _ _ _ (Set.Finite.to_subtype (hn.subset fun ⟨i, j⟩ h ↦ h)))
-    (@hasExactColimitsOfShape_discrete_finite C _ _ Abelian.hasFiniteBiproducts _
-      (Set.Finite.to_subtype (hn.subset fun ⟨i, j⟩ h ↦ h))) fun ⟨i, j⟩ ↦ ?_
-  have := (inferInstance : Mono (f i ⊗ₘ g j))
-  rw [MonoidalCategory.tensorHom_def] at this
-  -- the component of the map of coproducts at `(i, j)` is `f i ▷ Y₁ j ≫ X₂ i ◁ g j`
-  exact this
+  refine mono_mapMap _ _ n (hφ := fun ⟨i, j⟩ ↦ ?_)
+  -- Compute the component of the bifunctor map to identify it with the tensor product.
+  rw [Pi.comp_apply]
+  dsimp only [mapBifunctor, curriedTensor]
+  rw [← MonoidalCategory.tensorHom_def]
+  infer_instance
 
 /-- Tensoring a morphism of graded objects with the identity of `X` is, in each degree, the map of
 coproducts induced by the morphisms `X i ◁ g j`. -/
@@ -157,8 +152,9 @@ lemma id_tensorHom_eq_mapMap [AddMonoid I] [MonoidalCategory C] (X : GradedObjec
   simp only [Functor.map_id, NatTrans.id_app, Category.id_comp]
   rfl
 
-variable [Preadditive C] [MonoidalCategory C] [MonoidalPreadditive C] (X Y : GradedObject ℕ C)
-  (hY : IsZero (Y 0)) [HasTensor X Y] [HasTensor X (fun q ↦ Y (q + 1))] (m : ℕ)
+variable [HasZeroMorphisms C] [MonoidalCategory C] (X Y : GradedObject ℕ C)
+  [∀ p, (tensorLeft (X p)).PreservesZeroMorphisms] (hY : IsZero (Y 0))
+  [HasTensor X Y] [HasTensor X (fun q ↦ Y (q + 1))] (m : ℕ)
 
 /-- For graded objects indexed by `ℕ` with `Y 0 = 0`, the tensor product of `X` with `Y` shifted
 down by one in degree `m` is the tensor product of `X` and `Y` in degree `m + 1`: both are the

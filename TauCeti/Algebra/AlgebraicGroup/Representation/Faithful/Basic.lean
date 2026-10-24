@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Embedding
-public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction
+public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Dual
 import TauCeti.Algebra.Coalgebra.Comodule.PointSeparation
 
@@ -37,12 +37,16 @@ is equivalent to generation of the coordinate ring by matrix coefficients and th
 
 * `TauCeti.Comodule.coordinateBialgHom_range`: the exact range of the coordinate morphism.
 * `TauCeti.Comodule.IsFaithful`: the basis-independent predicate for a faithful comodule.
+* `TauCeti.Comodule.coordinateBialgHom_surjective_iff_isFaithful`: faithfulness is surjectivity
+  of the coordinate morphism for any basis.
 * `TauCeti.Comodule.isFaithful_iff_matrixCoefficientSubalgebra_sup_antipode_eq_top`: the
   matrix-coefficient criterion for faithfulness.
 * `TauCeti.Comodule.isFaithful_corestrict_of_surjective`: corestriction along a surjective
   bialgebra morphism preserves faithfulness.
 * `TauCeti.Comodule.pointsAction_injective_of_isFaithful`: a faithful comodule separates
   algebra-valued points.
+* `TauCeti.Comodule.eq_one_of_ofLinearEquiv_pointsAction_eq_one_of_isFaithful`: a point acting
+  trivially on a faithful comodule is the identity point.
 * `TauCeti.Comodule.isClosedImmersion_coordinateGroupSchemeHom_iff_of_bases`: faithfulness is
   independent of the chosen finite basis.
 
@@ -265,6 +269,14 @@ theorem isFaithful_iff_isClosedImmersion_coordinateGroupSchemeHom
   · intro hb
     exact ⟨d, b, hb⟩
 
+/-- A finite basis witnesses faithfulness exactly when its coordinate morphism
+`O(GL_d) ⟶ H` is surjective. -/
+theorem coordinateBialgHom_surjective_iff_isFaithful (b : Basis (Fin d) k V) :
+    Function.Surjective (coordinateBialgHom (H := H) b) ↔
+      IsFaithful (k := k) (H := H) (V := V) := by
+  rw [isFaithful_iff_isClosedImmersion_coordinateGroupSchemeHom b,
+    isClosedImmersion_coordinateGroupSchemeHom_iff]
+
 /-- Corestricting a faithful finite free comodule along a surjective bialgebra morphism gives a
 faithful comodule over the codomain. Geometrically, restricting a faithful representation to a
 closed subgroup remains faithful. -/
@@ -333,6 +345,19 @@ theorem pointsAction_injective_of_isFaithful
   exact WithConv.ofConv_injective
     (AlgHom.ext_on_codisjoint (codisjoint_iff.mpr hgenerate)
       hCoefficients hAntipodeCoefficients)
+
+/-- A point acting as the identity of the general linear group of a faithful comodule is the
+identity point. -/
+theorem eq_one_of_ofLinearEquiv_pointsAction_eq_one_of_isFaithful
+    {K : Type x} [CommRing K] [Algebra k K]
+    (hV : IsFaithful (k := k) (H := H) (V := V)) {g : WithConv (H →ₐ[k] K)}
+    (hg : LinearMap.GeneralLinearGroup.ofLinearEquiv (pointsAction V g) = 1) :
+    g = 1 := by
+  apply pointsAction_injective_of_isFaithful hV
+  rw [map_one]
+  refine LinearEquiv.ext fun x ↦ ?_
+  simpa only [LinearMap.GeneralLinearGroup.ofLinearEquiv_smul, one_smul, LinearEquiv.coe_one,
+    id_eq] using congrArg (· • x) hg
 
 section Dual
 

@@ -262,8 +262,7 @@ theorem map_cellToRelCWComplexEquiv_symm (i : c.ι) (x : closedBall (0 : Fin n �
 theorem skeletonLT_toRelCWComplex [T2Space Y] {m : ℕ} (hm : m ≤ n) :
     letI := c.toRelativeCWComplex.toRelCWComplex
     (RelCWComplex.skeletonLT (univ : Set Y) m : Set Y) = range f :=
-  letI := c.toRelativeCWComplex.toRelCWComplex
-  skeletonLT_eq_base_of_isEmpty_cell (univ : Set Y) m fun _ hk ↦
-    c.isEmpty_cell_toRelCWComplex (by omega)
+  c.toRelativeCWComplex.skeletonLT_toRelCWComplex_eq_range fun _ hk ↦
+    c.isEmpty_toRelativeCWComplex_attachCells_ι (by omega) _
 
 end HomotopicalAlgebra.AttachCells

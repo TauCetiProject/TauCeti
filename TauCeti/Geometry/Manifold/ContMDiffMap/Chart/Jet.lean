@@ -90,10 +90,7 @@ theorem chartIteratedFDeriv_zero_apply
     PartialEquiv.refl_coe]
   rfl
 
-section NormedSpace
-
-omit [IsManifold I n M]
-
+omit [IsManifold I n M] in
 /-- For the identity chart of a normed space, the chart derivative is the ordinary iterated
 derivative, evaluated on the subtype representing the whole chart target.
 
@@ -113,7 +110,5 @@ theorem chartIteratedFDeriv_self_apply
     PartialEquiv.refl_target, iteratedFDerivWithin_univ,
     ContMDiffMap.iteratedFDerivContinuousMap_apply]
   rw [writtenInExtChartAt_model_space]
-
-end NormedSpace
 
 end ContMDiffMap

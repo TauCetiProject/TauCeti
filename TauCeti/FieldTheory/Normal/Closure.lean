@@ -24,8 +24,13 @@ When `F⟮x⟯` is already all of `E`, this says that `E` itself is a splitting 
 
 For an arbitrary ambient field, the embedding images of an extension into its normal closure
 generate that whole normal closure. This allows properties preserved under composita to be
-proved by working with the embedding images. In particular, the normal closure of a separable
-extension is separable.
+proved by working with the embedding images.
+
+The normal closure of `F(S)` for a set `S` of separable elements whose minimal polynomials split in
+the ambient field is Galois. Hence a finite such set lies in a finite Galois subextension; in
+particular finitely many algebraic numbers lie in a finite Galois subfield of `ℂ / ℚ`, which is
+how statements about algebraic numbers are reduced to statements inside a finite Galois number
+field.
 -/
 
 /- The proof uses Mathlib's description of the normal closure as the supremum of the
@@ -36,15 +41,6 @@ public section
 namespace TauCeti
 
 open IntermediateField Polynomial
-
-/-- The normal closure of a separable extension in any ambient field is separable. -/
-instance isSeparable_normalClosure (K L Ω : Type*) [Field K] [Field L] [Field Ω]
-    [Algebra K L] [Algebra K Ω] [Algebra.IsSeparable K L] :
-    Algebra.IsSeparable K (normalClosure K L Ω) := by
-  have (f : L →ₐ[K] Ω) : Algebra.IsSeparable K f.fieldRange :=
-    AlgEquiv.Algebra.isSeparable f.equivFieldRange
-  rw [normalClosure_def]
-  infer_instance
 
 /-- The images of all `K`-embeddings of `L` into `normalClosure K L Ω` generate that field. -/
 theorem normalClosure_iSup_fieldRange_eq_top (K L Ω : Type*) [Field K] [Field L] [Field Ω]
@@ -90,16 +86,33 @@ theorem finiteDimensional_normalClosure_adjoin_simple {x : E} (hx : IsIntegral F
   let _ : FiniteDimensional F F⟮x⟯ := adjoin.finiteDimensional hx
   exact normalClosure.is_finiteDimensional F F⟮x⟯ E
 
+omit [Normal F E] in
+/-- The normal closure of `F(S)` in `E` is Galois over `F` when every element of `S` is
+separable over `F` with minimal polynomial splitting in `E`. The ambient field `E` need not be
+normal over `F`. -/
+theorem isGalois_normalClosure_adjoin {S : Set E}
+    (h : ∀ s ∈ S, IsSeparable F s ∧ ((minpoly F s).map (algebraMap F E)).Splits) :
+    IsGalois F (normalClosure F (adjoin F S) E) := by
+  have hint (s) (hs : s ∈ S) : IsIntegral F s := (h s hs).1.isIntegral
+  have : Algebra.IsSeparable F (adjoin F S) :=
+    (isSeparable_adjoin_iff_isSeparable F E).2 fun s hs ↦ (h s hs).1
+  -- Every minimal polynomial over `F(S)` splits in `E`, so the normal closure is normal.
+  have hsplit (x : adjoin F S) : ((minpoly F x).map (algebraMap F E)).Splits := by
+    rw [minpoly_eq]
+    exact splits_of_mem_adjoin F E (fun s hs ↦ ⟨hint s hs, (h s hs).2⟩) x.2
+  have := (Algebra.IsSeparable.isAlgebraic F (adjoin F S)).isNormalClosure_normalClosure
+    (L := E) hsplit
+  have : Normal F (normalClosure F (adjoin F S) E) := IsNormalClosure.normal (K := adjoin F S)
+  exact ⟨⟩
+
 /-- The normal closure of a simple extension is Galois if its minimal polynomial is
 separable. -/
 theorem isGalois_normalClosure_adjoin_simple (x : E)
     (hsep : (minpoly F x).Separable) :
-    IsGalois F (normalClosure F F⟮x⟯ E) := by
-  let _ : FiniteDimensional F (normalClosure F F⟮x⟯ E) :=
-    finiteDimensional_normalClosure_adjoin_simple (Algebra.IsIntegral.isIntegral x)
-  let _ : IsSplittingField F (normalClosure F F⟮x⟯ E) (minpoly F x) :=
-    isSplittingField_normalClosure_adjoin_simple x
-  exact IsGalois.of_separable_splitting_field hsep
+    IsGalois F (normalClosure F F⟮x⟯ E) :=
+  isGalois_normalClosure_adjoin fun _ hs ↦ by
+    rw [Set.mem_singleton_iff.1 hs]
+    exact ⟨hsep, Normal.splits' x⟩
 
 /-- A normal simple extension splits the minimal polynomial of its generator and is generated
 by its roots. -/
@@ -121,5 +134,29 @@ theorem natCard_gal_minpoly_eq_finrank [IsGalois F E] (x : E) (hgen : F⟮x⟯ =
   have := isSplittingField_minpoly_of_adjoin_simple_eq_top x hgen
   rw [Polynomial.Gal.card_of_separable (by exact IsGalois.separable F x)]
   exact (IsSplittingField.algEquiv E (minpoly F x)).toLinearEquiv.finrank_eq.symm
+
+omit [Normal F E] in
+/-- **A finite set lies in a finite Galois subextension.** A finite set `S` of elements of `E`,
+each separable over `F` with minimal polynomial splitting in `E`, is contained in an intermediate
+field of `E / F` that is finite and Galois over `F`, namely the normal closure of `F(S)`. -/
+theorem exists_isGalois_superset {S : Set E} (hS : S.Finite)
+    (h : ∀ s ∈ S, IsSeparable F s ∧ ((minpoly F s).map (algebraMap F E)).Splits) :
+    ∃ L : IntermediateField F E, FiniteDimensional F L ∧ IsGalois F L ∧ S ⊆ L := by
+  have := hS.to_subtype
+  have : FiniteDimensional F (adjoin F S) :=
+    finiteDimensional_adjoin fun s hs ↦ (h s hs).1.isIntegral
+  exact ⟨normalClosure F (adjoin F S) E, inferInstance, isGalois_normalClosure_adjoin h,
+    (subset_adjoin F S).trans (le_normalClosure (adjoin F S))⟩
+
+omit [Normal F E] in
+/-- **A finite set of algebraic elements lies in a finite Galois subextension** of an
+algebraically closed field over a perfect field; for instance, finitely many algebraic numbers lie
+in a finite Galois subfield of `ℂ / ℚ`. -/
+theorem exists_isGalois_superset_of_isAlgClosed [PerfectField F] [IsAlgClosed E] {S : Set E}
+    (hS : S.Finite) (h : ∀ s ∈ S, IsAlgebraic F s) :
+    ∃ L : IntermediateField F E, FiniteDimensional F L ∧ IsGalois F L ∧ S ⊆ L :=
+  exists_isGalois_superset hS fun s hs ↦
+    ⟨PerfectField.separable_of_irreducible (minpoly.irreducible (h s hs).isIntegral),
+      IsAlgClosed.splits _⟩
 
 end TauCeti

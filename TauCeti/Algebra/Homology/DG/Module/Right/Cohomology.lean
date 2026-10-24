@@ -35,6 +35,8 @@ This development adapts the left-module construction in
 * `TauCeti.IsDGRightModule.boundaries`: module boundaries inside the cycles.
 * `TauCeti.IsDGRightModule.Cohomology`: cycles modulo boundaries.
 * `TauCeti.IsDGRightModule.cyclesDeg`: the homogeneous cycles of a fixed degree.
+* `TauCeti.IsDGRightModule.cohomologyAction`: the action of `H(A)` on `H(M)`, as an algebra map to
+  the opposite of the endomorphism algebra.
 
 ## Main results
 
@@ -193,12 +195,10 @@ private theorem op_quotientMk_smul_eq_quotientMk_op_smul (hM : IsDGRightModule h
 
 /-- The action on module cohomology is computed by acting with a cycle representative: the
 cohomology class of `w.unop` acts as `w` does, through the opposite cycle algebra. -/
--- The scalar is taken in `(h.cycles)ᵐᵒᵖ` rather than written as `op z` for a cycle `z`. Both
--- state the same fact, but `op z • x` would put `MulOpposite.op` applied to a `SetLike` element
--- under a `•`, which sends `simp` through `IsCentralScalar.op_smul_eq_smul` and so on to the
--- nonexistent `SMul h.cycles hM.Cohomology`; refuting that costs more than the default instance
--- budget, because the carrier is a coercion and the search enumerates the algebraic hierarchy.
-@[simp]
+-- Not a simp lemma: the left-hand side is `op y • x` with `y : h.Cohomology`, so normalizing it
+-- applies the simp rule `IsCentralScalar.op_smul_eq_smul`, which rewrites it to `y • x` and thus
+-- requires the nonexistent instance `SMul h.Cohomology hM.Cohomology`; refuting that search
+-- exceeds the default instance budget. Use it by explicit `rw`.
 theorem op_quotientMk_smul (hM : IsDGRightModule h ℳ dM)
     (w : (h.cycles)ᵐᵒᵖ) (x : hM.Cohomology) :
     op (Ideal.Quotient.mk h.boundaries.asIdeal w.unop) • x = w • x := by
@@ -274,6 +274,39 @@ instance instGradedSMulCyclesDeg (hM : IsDGRightModule h ℳ dM) :
       (hM.mem_cyclesDeg.mp hx)
 
 end Grading
+
+section Action
+
+/-- The right action of the cycles of the algebra on module cohomology, as an algebra map to the
+opposite of the endomorphism algebra. -/
+private noncomputable def cyclesAction (hM : IsDGRightModule h ℳ dM) :
+    h.cycles →ₐ[R] (Module.End R hM.Cohomology)ᵐᵒᵖ :=
+  (AlgHom.op (Algebra.lsmul R R hM.Cohomology)).comp (AlgEquiv.opOp R h.cycles).toAlgHom
+
+private theorem cyclesAction_apply (hM : IsDGRightModule h ℳ dM) (z : h.cycles)
+    (x : hM.Cohomology) : (hM.cyclesAction z).unop x = op z • x :=
+  (rfl)
+
+/-- **The right action of the cohomology algebra on module cohomology**, as an algebra map to the
+opposite of the endomorphism algebra: the class of a cycle `z` acts by `x ↦ x · z`. This is the
+right `H(A)`-module structure `instModuleCohomology`, packaged so that it can be composed with
+algebra maps into `H(A)`. -/
+noncomputable def cohomologyAction (hM : IsDGRightModule h ℳ dM) :
+    h.Cohomology →ₐ[R] (Module.End R hM.Cohomology)ᵐᵒᵖ :=
+  Ideal.Quotient.liftₐ h.boundaries.asIdeal hM.cyclesAction fun z hz ↦ unop_injective <|
+    LinearMap.ext fun x ↦ by
+      rw [cyclesAction_apply, unop_zero, LinearMap.zero_apply]
+      exact hM.isTorsionBySet_boundaries (x := x)
+        (a := ⟨op z, TwoSidedIdeal.mem_asIdealOpposite.mpr (TwoSidedIdeal.mem_asIdeal.mp hz)⟩)
+
+/-- The class of a cycle `z` acts on module cohomology as `z` does. -/
+-- Not a simp lemma, for the reason given at `op_quotientMk_smul`: simp would rewrite the right-hand
+-- side `op z • x` by `IsCentralScalar.op_smul_eq_smul`, a search that exceeds the instance budget.
+theorem cohomologyAction_mk (hM : IsDGRightModule h ℳ dM) (z : h.cycles) (x : hM.Cohomology) :
+    (hM.cohomologyAction (Ideal.Quotient.mk h.boundaries.asIdeal z)).unop x = op z • x :=
+  (rfl)
+
+end Action
 
 end IsDGRightModule
 

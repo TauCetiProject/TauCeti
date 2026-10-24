@@ -195,8 +195,9 @@ definition of `R({1}/f) = {|f| ≥ 1}`, then `a` is power-bounded in `A`. Compar
 `isPowerBounded_of_mem_locSubring`, which concerns power-boundedness in a localisation `Aₛ`. -/
 theorem isPowerBounded_of_algebraMap_mem_locSubring_laurentCover (f : A) {S₁ S₂ : Type*}
     [CommRing S₁] [Algebra A S₁] [IsLocalization.Away (1 : A) S₁] [CommRing S₂] [Algebra A S₂]
-    [IsLocalization.Away f S₂] {a : A} (h₁ : algebraMap A S₁ a ∈ locSubring P {f, 1} 1 S₁)
-    (h₂ : algebraMap A S₂ a ∈ locSubring P {1} f S₂) : IsPowerBounded a := by
+    [IsLocalization.Away f S₂] {a : A}
+        (h₁ : algebraMap A S₁ a ∈ locSubring P ({f, 1} : Finset A) 1 S₁)
+    (h₂ : algebraMap A S₂ a ∈ locSubring P ({1} : Finset A) f S₂) : IsPowerBounded a := by
   have := P.toNonarchimedeanRing
   have hf : f ∈ monomialSpan P.ringOfDefinition f 1 := self_mem_monomialSpan_one
   have hone : (1 : A) ∈ monomialSpan P.ringOfDefinition f 1 :=
@@ -225,7 +226,7 @@ variable {A : Type*} [CommRing A] [TopologicalSpace A] (P : PairOfDefinition A) 
 
 -- The ring of definition `A₀[f², f, 1]/(1 · f)` of the overlap lies in `A₀[f, 1/f]`.
 private theorem mem_adjoin_of_mem_locSubring {d : S₁₂}
-    (hd : d ∈ locSubring P {f * f, f, 1} (1 * f) S₁₂) :
+    (hd : d ∈ locSubring P ({f * f, f, 1} : Finset A) (1 * f) S₁₂) :
     d ∈ Algebra.adjoin P.ringOfDefinition {algebraMap A S₁₂ f, (divBy 1 (1 * f) : S₁₂)} := by
   rw [locSubring_eq_adjoin, Subalgebra.mem_toSubring] at hd
   -- the generators `f²/(1 · f) = f`, `f/(1 · f) = 1` and `1/(1 · f)` all lie in `A₀[f, 1/f]`
@@ -235,7 +236,8 @@ omit [IsLocalization.Away (1 * f) S₁₂] in
 -- An element of `A₀[f]` in the overlap is the image of an element of `A₀[f] ⊆ A`.
 private theorem exists_algebraMap_eq_of_mem_adjoin {y : S₁₂}
     (hy : y ∈ Algebra.adjoin P.ringOfDefinition {algebraMap A S₁₂ f}) :
-    ∃ p : A, algebraMap A S₁ p ∈ locSubring P {f, 1} 1 S₁ ∧ algebraMap A S₁₂ p = y := by
+    ∃ p : A, algebraMap A S₁ p ∈ locSubring P ({f, 1} : Finset A) 1 S₁ ∧ algebraMap A S₁₂ p = y :=
+        by
   rw [← Set.image_singleton, Algebra.adjoin_algebraMap] at hy
   obtain ⟨p, hp, rfl⟩ := Subalgebra.mem_map.1 hy
   refine ⟨p, ?_, rfl⟩
@@ -248,7 +250,7 @@ private theorem exists_algebraMap_eq_of_mem_adjoin {y : S₁₂}
 -- An element of `A₀[1/f]` in the overlap is the image of an element of `A₀[1/f] ⊆ A_f`.
 private theorem exists_awayLift_eq_of_mem_adjoin {z : S₁₂}
     (hz : z ∈ Algebra.adjoin P.ringOfDefinition {(divBy 1 (1 * f) : S₁₂)}) :
-    ∃ q ∈ locSubring P {1} f S₂, IsLocalization.Away.lift f
+    ∃ q ∈ locSubring P ({1} : Finset A) f S₂, IsLocalization.Away.lift f
       (IsLocalization.Away.isUnit_of_dvd (1 * f) ⟨1, mul_comm 1 f⟩) q = z := by
   -- the image of `A₀[1/f]` is a subring, so it suffices that it contains `A₀` and `1/(1 · f)`
   refine Subring.mem_map.1 <| Subring.closure_le.2 ?_ (Algebra.mem_adjoin_iff.1 hz)
@@ -263,9 +265,10 @@ private theorem exists_awayLift_eq_of_mem_adjoin {z : S₁₂}
 -- `b ∈ Iⁿ`, the product `c · b` is the image of an element of `A` lying in `image(J₁ⁿ)` plus the
 -- image of an element of `image(J₂ⁿ)`. These products generate `image(J₁₂ⁿ)`.
 private theorem exists_mul_algebraMap_eq_add {c : S₁₂}
-    (hc : c ∈ locSubring P {f * f, f, 1} (1 * f) S₁₂) {n : ℕ} {b : P.ringOfDefinition}
+    (hc : c ∈ locSubring P ({f * f, f, 1} : Finset A) (1 * f) S₁₂) {n : ℕ} {b : P.ringOfDefinition}
     (hb : b ∈ P.idealOfDefinition ^ n) : ∃ p : A,
-      algebraMap A S₁ p ∈ locIdealImage P {f, 1} 1 S₁ n ∧ ∃ q ∈ locIdealImage P {1} f S₂ n,
+      algebraMap A S₁ p ∈ locIdealImage P ({f, 1} : Finset A) 1 S₁ n ∧ ∃ q ∈ locIdealImage P
+        ({1} : Finset A) f S₂ n,
         c * algebraMap A S₁₂ b = algebraMap A S₁₂ p + IsLocalization.Away.lift f
           (IsLocalization.Away.isUnit_of_dvd (1 * f) ⟨1, mul_comm 1 f⟩) q := by
   -- `f · (1/(1 · f)) = 1`, so `A₀[f, 1/f] = A₀[f] + A₀[1/f]` as `A₀`-modules
@@ -283,15 +286,16 @@ private theorem exists_mul_algebraMap_eq_add {c : S₁₂}
 
 -- The decomposition at each basic neighbourhood: `image(J₁₂ⁿ) = image(J₁ⁿ) + image(J₂ⁿ)`.
 private theorem exists_eq_add_of_mem_locIdealImage (n : ℕ) {e : S₁₂}
-    (he : e ∈ locIdealImage P {f * f, f, 1} (1 * f) S₁₂ n) :
-    ∃ p : A, algebraMap A S₁ p ∈ locIdealImage P {f, 1} 1 S₁ n ∧ ∃ q ∈ locIdealImage P {1} f S₂ n,
+    (he : e ∈ locIdealImage P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ n) :
+    ∃ p : A, algebraMap A S₁ p ∈ locIdealImage P ({f, 1} : Finset A) 1 S₁ n ∧ ∃ q ∈ locIdealImage P
+      ({1} : Finset A) f S₂ n,
       e = algebraMap A S₁₂ p + IsLocalization.Away.lift f
         (IsLocalization.Away.isUnit_of_dvd (1 * f) ⟨1, mul_comm 1 f⟩) q := by
   rw [mem_locIdealImage_iff, locIdeal_pow] at he
   obtain ⟨d, hd, rfl⟩ := he
   -- as an `A₀`-module `J₁₂ⁿ = Iⁿ • D₁₂`, so the scalars from `D₁₂` are absorbed into the
   -- generators `b • c` with `b ∈ Iⁿ` and `c ∈ D₁₂`
-  let _ := (toLocSubring P {f * f, f, 1} (1 * f) S₁₂).toAlgebra
+  let _ := (toLocSubring P ({f * f, f, 1} : Finset A) (1 * f) S₁₂).toAlgebra
   refine Submodule.smul_induction_on ((Ideal.smul_top_eq_map (P.idealOfDefinition ^ n)).ge hd)
     (fun b hb c _ ↦ ?_) fun x y ⟨p, hp, q, hq, e⟩ ⟨p', hp', q', hq', e'⟩ ↦ ?_
   · rw [Algebra.smul_def, Algebra.commutes, RingHom.algebraMap_toAlgebra, MulMemClass.coe_mul,
@@ -305,9 +309,9 @@ private theorem exists_eq_add_of_mem_locIdealImage (n : ℕ) {e : S₁₂}
 -- the image of some `p ∈ A` whose image in `A_1` lies in `image(J₁ⁿ)`.
 private theorem exists_sub_mem_locIdealImage (n : ℕ) {w : S₂}
     (hw : IsLocalization.Away.lift f (IsLocalization.Away.isUnit_of_dvd (1 * f) ⟨1, mul_comm 1 f⟩)
-      w ∈ locIdealImage P {f * f, f, 1} (1 * f) S₁₂ n) :
-    ∃ p : A, algebraMap A S₁ p ∈ locIdealImage P {f, 1} 1 S₁ n ∧
-      w - algebraMap A S₂ p ∈ locIdealImage P {1} f S₂ n := by
+      w ∈ locIdealImage P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ n) :
+    ∃ p : A, algebraMap A S₁ p ∈ locIdealImage P ({f, 1} : Finset A) 1 S₁ n ∧
+      w - algebraMap A S₂ p ∈ locIdealImage P ({1} : Finset A) f S₂ n := by
   obtain ⟨p, hp, q, hq, e⟩ := exists_eq_add_of_mem_locIdealImage P f S₁ S₂ S₁₂ n hw
   -- the comparison map `A_f → A_{1 · f}` is bijective: both are localisations away from `f`
   have : IsLocalization.Away f S₁₂ := .of_associated (.of_eq (one_mul f))
@@ -326,53 +330,60 @@ variable {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
   (P : PairOfDefinition A) (f : A)
   (S₁ : Type*) [CommRing S₁] [Algebra A S₁] [IsLocalization.Away (1 : A) S₁]
   (S₂ : Type*) [CommRing S₂] [Algebra A S₂] [IsLocalization.Away f S₂]
-  (hden₂ : HasDenominatorPower P {1} f S₂)
+  (hden₂ : HasDenominatorPower P ({1} : Finset A) f S₂)
   (S₁₂ : Type*) [CommRing S₁₂] [Algebra A S₁₂] [IsLocalization.Away (1 * f) S₁₂]
 
 -- If `a ∈ A` and `b ∈ A_f` approximate a pair agreeing on the overlap to within the `n`-th
 -- neighbourhoods, then `a - b` restricts into the `n`-th basic neighbourhood of the overlap.
 private theorem awayLift_sub_mem_locIdealImage :
-    letI hden₁ := hasDenominatorPower_denom_one P {f, 1} S₁
-    letI hden₁₂ := hasDenominatorPower_mul P {f, 1} {1} {f * f, f, 1} 1 f S₁ S₂ S₁₂
+    letI hden₁ := hasDenominatorPower_denom_one P ({f, 1} : Finset A) S₁
+    letI hden₁₂ := hasDenominatorPower_mul P ({f, 1} : Finset A) ({1} : Finset A)
+      ({f * f, f, 1} : Finset A) 1 f S₁ S₂ S₁₂
       (by simp) (by simp) hden₁ hden₂
-    letI := locUniformSpace P {f, 1} 1 S₁ hden₁
-    letI := isUniformAddGroup_locUniformSpace P {f, 1} 1 S₁ hden₁
-    letI := isTopologicalRing_locUniformSpace P {f, 1} 1 S₁ hden₁
-    letI := locUniformSpace P {1} f S₂ hden₂
-    letI := isUniformAddGroup_locUniformSpace P {1} f S₂ hden₂
-    letI := isTopologicalRing_locUniformSpace P {1} f S₂ hden₂
-    letI := locUniformSpace P {f * f, f, 1} (1 * f) S₁₂ hden₁₂
-    letI := isUniformAddGroup_locUniformSpace P {f * f, f, 1} (1 * f) S₁₂ hden₁₂
-    letI := isTopologicalRing_locUniformSpace P {f * f, f, 1} (1 * f) S₁₂ hden₁₂
+    letI := locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
+    letI := isUniformAddGroup_locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
+    letI := isTopologicalRing_locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
+    letI := locUniformSpace P ({1} : Finset A) f S₂ hden₂
+    letI := isUniformAddGroup_locUniformSpace P ({1} : Finset A) f S₂ hden₂
+    letI := isTopologicalRing_locUniformSpace P ({1} : Finset A) f S₂ hden₂
+    letI := locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
+    letI := isUniformAddGroup_locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
+    letI := isTopologicalRing_locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
     ∀ {x₁ : Completion S₁} {x₂ : Completion S₂} {n : ℕ} {a : A} {b : S₂},
-      restrictionRingHom P {f, 1} 1 S₁ hden₁ {f * f, f, 1} (1 * f) S₁₂ hden₁₂ f rfl (by simp) x₁ =
-        restrictionRingHom P {1} f S₂ hden₂ {f * f, f, 1} (1 * f) S₁₂ hden₁₂ 1 (mul_comm 1 f)
+      restrictionRingHom P ({f, 1} : Finset A) 1 S₁ hden₁ ({f * f, f, 1} : Finset A) (1 * f) S₁₂
+        hden₁₂ f rfl (by simp) x₁ =
+        restrictionRingHom P ({1} : Finset A) f S₂ hden₂ ({f * f, f, 1} : Finset A) (1 * f) S₁₂
+          hden₁₂ 1 (mul_comm 1 f)
           (by simp) x₂ →
       ((algebraMap A S₁ a : S₁) : Completion S₁) - x₁ ∈
-        (localizationUniform P {f, 1} 1 S₁ hden₁).completionIdealImage n →
-      (b : Completion S₂) - x₂ ∈ (localizationUniform P {1} f S₂ hden₂).completionIdealImage n →
+        (localizationUniform P ({f, 1} : Finset A) 1 S₁ hden₁).completionIdealImage n →
+      (b : Completion S₂) - x₂ ∈
+          (localizationUniform P ({1} : Finset A) f S₂ hden₂).completionIdealImage n →
       IsLocalization.Away.lift f (IsLocalization.Away.isUnit_of_dvd (1 * f) ⟨1, mul_comm 1 f⟩)
-        (algebraMap A S₂ a - b) ∈ locIdealImage P {f * f, f, 1} (1 * f) S₁₂ n := by
-  let hden₁ := hasDenominatorPower_denom_one P {f, 1} S₁
-  let hden₁₂ := hasDenominatorPower_mul P {f, 1} {1} {f * f, f, 1} 1 f S₁ S₂ S₁₂
+        (algebraMap A S₂ a - b) ∈ locIdealImage P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ n := by
+  let hden₁ := hasDenominatorPower_denom_one P ({f, 1} : Finset A) S₁
+  let hden₁₂ := hasDenominatorPower_mul P ({f, 1} : Finset A) ({1} : Finset A)
+    ({f * f, f, 1} : Finset A) 1 f S₁ S₂ S₁₂
     (by simp) (by simp) hden₁ hden₂
-  let _ := locUniformSpace P {f, 1} 1 S₁ hden₁
-  have _ := isUniformAddGroup_locUniformSpace P {f, 1} 1 S₁ hden₁
-  have _ := isTopologicalRing_locUniformSpace P {f, 1} 1 S₁ hden₁
-  let _ := locUniformSpace P {1} f S₂ hden₂
-  have _ := isUniformAddGroup_locUniformSpace P {1} f S₂ hden₂
-  have _ := isTopologicalRing_locUniformSpace P {1} f S₂ hden₂
-  let _ := locUniformSpace P {f * f, f, 1} (1 * f) S₁₂ hden₁₂
-  have _ := isUniformAddGroup_locUniformSpace P {f * f, f, 1} (1 * f) S₁₂ hden₁₂
-  have _ := isTopologicalRing_locUniformSpace P {f * f, f, 1} (1 * f) S₁₂ hden₁₂
+  let _ := locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
+  have _ := isUniformAddGroup_locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
+  have _ := isTopologicalRing_locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
+  let _ := locUniformSpace P ({1} : Finset A) f S₂ hden₂
+  have _ := isUniformAddGroup_locUniformSpace P ({1} : Finset A) f S₂ hden₂
+  have _ := isTopologicalRing_locUniformSpace P ({1} : Finset A) f S₂ hden₂
+  let _ := locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
+  have _ := isUniformAddGroup_locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
+  have _ := isTopologicalRing_locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
   intro x₁ x₂ n a b h ha hb
-  rw [← localizationUniform_idealImage P {f * f, f, 1} (1 * f) S₁₂ hden₁₂,
+  rw [← localizationUniform_idealImage P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂,
     ← coe_mem_completionIdealImage_iff]
   -- restricted to the overlap, `a - b` is `(a - x₁)|U₁∩U₂ - (b - x₂)|U₁∩U₂`
   convert sub_mem
-    (restrictionRingHom_mem_completionIdealImage P {f, 1} 1 S₁ hden₁ {f * f, f, 1} (1 * f) S₁₂
+    (restrictionRingHom_mem_completionIdealImage P ({f, 1} : Finset A) 1 S₁ hden₁
+      ({f * f, f, 1} : Finset A) (1 * f) S₁₂
       hden₁₂ f rfl (by simp) n _ ha)
-    (restrictionRingHom_mem_completionIdealImage P {1} f S₂ hden₂ {f * f, f, 1} (1 * f) S₁₂
+    (restrictionRingHom_mem_completionIdealImage P ({1} : Finset A) f S₂ hden₂
+      ({f * f, f, 1} : Finset A) (1 * f) S₁₂
       hden₁₂ 1 (mul_comm 1 f) (by simp) n _ hb) using 1
   -- the `x₁`, `x₂` terms cancel by `h`, and both sides restrict `a` to the overlap
   simp [h, UniformSpace.Completion.coe_sub]
@@ -380,54 +391,62 @@ private theorem awayLift_sub_mem_locIdealImage :
 -- Pairs agreeing on the overlap lie in the closure of the image of `A`: approximate them from
 -- `A` and `A_f`, and remove the error on the overlap by the strictness of the difference map.
 private theorem mem_closure_range_laurentCover :
-    letI hden₁ := hasDenominatorPower_denom_one P {f, 1} S₁
-    letI hden₁₂ := hasDenominatorPower_mul P {f, 1} {1} {f * f, f, 1} 1 f S₁ S₂ S₁₂
+    letI hden₁ := hasDenominatorPower_denom_one P ({f, 1} : Finset A) S₁
+    letI hden₁₂ := hasDenominatorPower_mul P ({f, 1} : Finset A) ({1} : Finset A)
+      ({f * f, f, 1} : Finset A) 1 f S₁ S₂ S₁₂
       (by simp) (by simp) hden₁ hden₂
-    letI := locUniformSpace P {f, 1} 1 S₁ hden₁
-    letI := isUniformAddGroup_locUniformSpace P {f, 1} 1 S₁ hden₁
-    letI := isTopologicalRing_locUniformSpace P {f, 1} 1 S₁ hden₁
-    letI := locUniformSpace P {1} f S₂ hden₂
-    letI := isUniformAddGroup_locUniformSpace P {1} f S₂ hden₂
-    letI := isTopologicalRing_locUniformSpace P {1} f S₂ hden₂
-    letI := locUniformSpace P {f * f, f, 1} (1 * f) S₁₂ hden₁₂
-    letI := isUniformAddGroup_locUniformSpace P {f * f, f, 1} (1 * f) S₁₂ hden₁₂
-    letI := isTopologicalRing_locUniformSpace P {f * f, f, 1} (1 * f) S₁₂ hden₁₂
+    letI := locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
+    letI := isUniformAddGroup_locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
+    letI := isTopologicalRing_locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
+    letI := locUniformSpace P ({1} : Finset A) f S₂ hden₂
+    letI := isUniformAddGroup_locUniformSpace P ({1} : Finset A) f S₂ hden₂
+    letI := isTopologicalRing_locUniformSpace P ({1} : Finset A) f S₂ hden₂
+    letI := locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
+    letI := isUniformAddGroup_locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
+    letI := isTopologicalRing_locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
     ∀ {x₁ : Completion S₁} {x₂ : Completion S₂},
-      restrictionRingHom P {f, 1} 1 S₁ hden₁ {f * f, f, 1} (1 * f) S₁₂ hden₁₂ f rfl (by simp) x₁ =
-        restrictionRingHom P {1} f S₂ hden₂ {f * f, f, 1} (1 * f) S₁₂ hden₁₂ 1 (mul_comm 1 f)
+      restrictionRingHom P ({f, 1} : Finset A) 1 S₁ hden₁ ({f * f, f, 1} : Finset A) (1 * f) S₁₂
+        hden₁₂ f rfl (by simp) x₁ =
+        restrictionRingHom P ({1} : Finset A) f S₂ hden₂ ({f * f, f, 1} : Finset A) (1 * f) S₁₂
+          hden₁₂ 1 (mul_comm 1 f)
           (by simp) x₂ →
-      (x₁, x₂) ∈ closure (Set.range (RingHom.prod (toCompletionLoc P {f, 1} 1 S₁ hden₁)
-        (toCompletionLoc P {1} f S₂ hden₂))) := by
-  let hden₁ := hasDenominatorPower_denom_one P {f, 1} S₁
-  let _ := locUniformSpace P {f, 1} 1 S₁ hden₁
-  have _ := isUniformAddGroup_locUniformSpace P {f, 1} 1 S₁ hden₁
-  have _ := isTopologicalRing_locUniformSpace P {f, 1} 1 S₁ hden₁
-  let _ := locUniformSpace P {1} f S₂ hden₂
-  have _ := isUniformAddGroup_locUniformSpace P {1} f S₂ hden₂
-  have _ := isTopologicalRing_locUniformSpace P {1} f S₂ hden₂
+      (x₁, x₂) ∈ closure (Set.range (RingHom.prod (toCompletionLoc P ({f, 1} : Finset A) 1 S₁ hden₁)
+        (toCompletionLoc P ({1} : Finset A) f S₂ hden₂))) := by
+  let hden₁ := hasDenominatorPower_denom_one P ({f, 1} : Finset A) S₁
+  let _ := locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
+  have _ := isUniformAddGroup_locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
+  have _ := isTopologicalRing_locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
+  let _ := locUniformSpace P ({1} : Finset A) f S₂ hden₂
+  have _ := isUniformAddGroup_locUniformSpace P ({1} : Finset A) f S₂ hden₂
+  have _ := isTopologicalRing_locUniformSpace P ({1} : Finset A) f S₂ hden₂
   intro x₁ x₂ h
   refine mem_closure_iff_nhds.2 fun t ht ↦ ?_
   obtain ⟨u, hu, v, hv, huv⟩ := mem_nhds_prod_iff.1 ht
-  obtain ⟨n₁, hn₁⟩ := (localizationUniform P {f, 1} 1 S₁ hden₁).mem_nhds_completion_iff.1 hu
-  obtain ⟨n₂, hn₂⟩ := (localizationUniform P {1} f S₂ hden₂).mem_nhds_completion_iff.1 hv
+  obtain ⟨n₁, hn₁⟩ :=
+      (localizationUniform P ({f, 1} : Finset A) 1 S₁ hden₁).mem_nhds_completion_iff.1 hu
+  obtain ⟨n₂, hn₂⟩ := (localizationUniform P ({1} : Finset A) f S₂ hden₂).mem_nhds_completion_iff.1
+      hv
   -- approximate `x₁` by `a ∈ A` and `x₂` by `b ∈ A_f`, then correct `a` by `p`
   obtain ⟨y, hy⟩ :=
-    (localizationUniform P {f, 1} 1 S₁ hden₁).exists_coe_sub_mem_completionIdealImage (max n₁ n₂) x₁
+    (localizationUniform P ({f, 1} : Finset A) 1 S₁ hden₁).exists_coe_sub_mem_completionIdealImage
+        (max n₁ n₂) x₁
   -- every element of `A_1` comes from `A`
   obtain ⟨a, rfl⟩ := IsLocalization.Away.algebraMap_surjective_of_isIdempotentElem (1 : A) .one y
   obtain ⟨b, hb⟩ :=
-    (localizationUniform P {1} f S₂ hden₂).exists_coe_sub_mem_completionIdealImage (max n₁ n₂) x₂
+    (localizationUniform P ({1} : Finset A) f S₂ hden₂).exists_coe_sub_mem_completionIdealImage
+        (max n₁ n₂) x₂
   obtain ⟨p, hp, hq⟩ := exists_sub_mem_locIdealImage P f S₁ S₂ S₁₂ (max n₁ n₂)
     (awayLift_sub_mem_locIdealImage P f S₁ S₂ hden₂ S₁₂ h hy hb)
   refine ⟨_, huv ⟨?_, ?_⟩, a - p, rfl⟩
   -- `a - p = x₁ + (a - p - x₁)`, where `a - p - x₁ ∈ K_{max n₁ n₂} ⊆ K_{n₁}`; likewise at `x₂`
   · simpa only [RingHom.prod_apply, add_sub_cancel] using
       hn₁ _ (completionIdealImage_anti _ (le_max_left n₁ n₂)
-        (toCompletionLoc_sub_mem_completionIdealImage P {f, 1} 1 S₁ hden₁ (a := a - p) hy
+        (toCompletionLoc_sub_mem_completionIdealImage P ({f, 1} : Finset A) 1 S₁ hden₁ (a := a - p)
+          hy
           (by simpa using hp)))
   · simpa only [RingHom.prod_apply, add_sub_cancel] using
       hn₂ _ (completionIdealImage_anti _ (le_max_right n₁ n₂)
-        (toCompletionLoc_sub_mem_completionIdealImage P {1} f S₂ hden₂ (a := a - p) hb
+        (toCompletionLoc_sub_mem_completionIdealImage P ({1} : Finset A) f S₂ hden₂ (a := a - p) hb
           (by rwa [map_sub, sub_right_comm])))
 
 end Approximation
@@ -441,41 +460,45 @@ variable {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopo
   (P : PairOfDefinition A) (f : A)
   (S₁ : Type*) [CommRing S₁] [Algebra A S₁] [IsLocalization.Away (1 : A) S₁]
   (S₂ : Type*) [CommRing S₂] [Algebra A S₂] [IsLocalization.Away f S₂]
-  (hden₂ : HasDenominatorPower P {1} f S₂)
+  (hden₂ : HasDenominatorPower P ({1} : Finset A) f S₂)
 
 omit [IsUniformAddGroup A] in
 -- Every neighbourhood of zero in `A` contains the preimage of a neighbourhood of zero of
 -- `A⟨U₁⟩ × A⟨U₂⟩`.
 private theorem comap_laurentCover_nhds_zero_le :
-    letI hden₁ := hasDenominatorPower_denom_one P {f, 1} S₁
-    letI := locUniformSpace P {f, 1} 1 S₁ hden₁
-    letI := isUniformAddGroup_locUniformSpace P {f, 1} 1 S₁ hden₁
-    letI := isTopologicalRing_locUniformSpace P {f, 1} 1 S₁ hden₁
-    letI := locUniformSpace P {1} f S₂ hden₂
-    letI := isUniformAddGroup_locUniformSpace P {1} f S₂ hden₂
-    letI := isTopologicalRing_locUniformSpace P {1} f S₂ hden₂
-    Filter.comap (RingHom.prod (toCompletionLoc P {f, 1} 1 S₁ hden₁)
-      (toCompletionLoc P {1} f S₂ hden₂)) (𝓝 0) ≤ 𝓝 0 := by
-  let hden₁ := hasDenominatorPower_denom_one P {f, 1} S₁
-  let _ := locUniformSpace P {f, 1} 1 S₁ hden₁
-  have _ := isUniformAddGroup_locUniformSpace P {f, 1} 1 S₁ hden₁
-  have _ := isTopologicalRing_locUniformSpace P {f, 1} 1 S₁ hden₁
-  let _ := locUniformSpace P {1} f S₂ hden₂
-  have _ := isUniformAddGroup_locUniformSpace P {1} f S₂ hden₂
-  have _ := isTopologicalRing_locUniformSpace P {1} f S₂ hden₂
+    letI hden₁ := hasDenominatorPower_denom_one P ({f, 1} : Finset A) S₁
+    letI := locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
+    letI := isUniformAddGroup_locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
+    letI := isTopologicalRing_locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
+    letI := locUniformSpace P ({1} : Finset A) f S₂ hden₂
+    letI := isUniformAddGroup_locUniformSpace P ({1} : Finset A) f S₂ hden₂
+    letI := isTopologicalRing_locUniformSpace P ({1} : Finset A) f S₂ hden₂
+    Filter.comap (RingHom.prod (toCompletionLoc P ({f, 1} : Finset A) 1 S₁ hden₁)
+      (toCompletionLoc P ({1} : Finset A) f S₂ hden₂)) (𝓝 0) ≤ 𝓝 0 := by
+  let hden₁ := hasDenominatorPower_denom_one P ({f, 1} : Finset A) S₁
+  let _ := locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
+  have _ := isUniformAddGroup_locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
+  have _ := isTopologicalRing_locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
+  let _ := locUniformSpace P ({1} : Finset A) f S₂ hden₂
+  have _ := isUniformAddGroup_locUniformSpace P ({1} : Finset A) f S₂ hden₂
+  have _ := isTopologicalRing_locUniformSpace P ({1} : Finset A) f S₂ hden₂
   intro U hU
   -- choose `n` with `ϖⁿ A° ⊆ U`
   obtain ⟨ϖ, hϖ⟩ := IsTateRing.exists_isPseudoUniformizer (A := A)
   obtain ⟨n, hn⟩ := (IsUniform.isBounded_setOf_isPowerBounded (A := A)).exists_pow_mul_subset
     hϖ.isTopologicallyNilpotent hU
   obtain ⟨v, hv⟩ := hϖ.isUnit.pow n
-  set ρ := RingHom.prod (toCompletionLoc P {f, 1} 1 S₁ hden₁) (toCompletionLoc P {1} f S₂ hden₂)
+  set ρ := RingHom.prod (toCompletionLoc P ({f, 1} : Finset A) 1 S₁ hden₁)
+      (toCompletionLoc P ({1} : Finset A) f S₂ hden₂)
   -- take `V` to be where multiplication by `ϖ⁻ⁿ` lands in the closures of the rings of definition
-  have hV : (ρ ↑v⁻¹ * ·) ⁻¹' ((localizationUniform P {f, 1} 1 S₁ hden₁).completionIdealImage 0 ×ˢ
-      (localizationUniform P {1} f S₂ hden₂).completionIdealImage 0) ∈ 𝓝 0 :=
+  have hV : (ρ ↑v⁻¹ * ·) ⁻¹'
+      ((localizationUniform P ({f, 1} : Finset A) 1 S₁ hden₁).completionIdealImage 0 ×ˢ
+      (localizationUniform P ({1} : Finset A) f S₂ hden₂).completionIdealImage 0) ∈ 𝓝 0 :=
     (continuous_const_mul _).tendsto' 0 0 (mul_zero _) <| prod_mem_nhds
-      ((localizationUniform P {f, 1} 1 S₁ hden₁).hasBasis_nhds_zero_completion.mem_of_mem trivial)
-      ((localizationUniform P {1} f S₂ hden₂).hasBasis_nhds_zero_completion.mem_of_mem trivial)
+      ((localizationUniform P ({f, 1} : Finset A) 1 S₁
+          hden₁).hasBasis_nhds_zero_completion.mem_of_mem trivial)
+      ((localizationUniform P ({1} : Finset A) f S₂ hden₂).hasBasis_nhds_zero_completion.mem_of_mem
+          trivial)
   refine ⟨_, hV, fun a ha ↦ ?_⟩
   rw [Set.mem_preimage, Set.mem_preimage, ← map_mul, Set.mem_prod] at ha
   -- the images of `ϖ⁻ⁿ a` then lie in the two rings of definition themselves
@@ -495,25 +518,27 @@ it is injective, its image is closed, and the topology of `A` is the one induced
 product. This is `isClosedEmbedding_laurentCover` with uniformity in place of strong
 noetherianness. -/
 theorem isClosedEmbedding_laurentCover_of_isUniform :
-    letI hden₁ := hasDenominatorPower_denom_one P {f, 1} S₁
-    letI := locUniformSpace P {f, 1} 1 S₁ hden₁
-    letI := isUniformAddGroup_locUniformSpace P {f, 1} 1 S₁ hden₁
-    letI := isTopologicalRing_locUniformSpace P {f, 1} 1 S₁ hden₁
-    letI := locUniformSpace P {1} f S₂ hden₂
-    letI := isUniformAddGroup_locUniformSpace P {1} f S₂ hden₂
-    letI := isTopologicalRing_locUniformSpace P {1} f S₂ hden₂
+    letI hden₁ := hasDenominatorPower_denom_one P ({f, 1} : Finset A) S₁
+    letI := locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
+    letI := isUniformAddGroup_locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
+    letI := isTopologicalRing_locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
+    letI := locUniformSpace P ({1} : Finset A) f S₂ hden₂
+    letI := isUniformAddGroup_locUniformSpace P ({1} : Finset A) f S₂ hden₂
+    letI := isTopologicalRing_locUniformSpace P ({1} : Finset A) f S₂ hden₂
     IsClosedEmbedding
-      (RingHom.prod (toCompletionLoc P {f, 1} 1 S₁ hden₁) (toCompletionLoc P {1} f S₂ hden₂)) := by
-  let hden₁ := hasDenominatorPower_denom_one P {f, 1} S₁
-  let _ := locUniformSpace P {f, 1} 1 S₁ hden₁
-  have _ := isUniformAddGroup_locUniformSpace P {f, 1} 1 S₁ hden₁
-  have _ := isTopologicalRing_locUniformSpace P {f, 1} 1 S₁ hden₁
-  let _ := locUniformSpace P {1} f S₂ hden₂
-  have _ := isUniformAddGroup_locUniformSpace P {1} f S₂ hden₂
-  have _ := isTopologicalRing_locUniformSpace P {1} f S₂ hden₂
-  set ρ := RingHom.prod (toCompletionLoc P {f, 1} 1 S₁ hden₁) (toCompletionLoc P {1} f S₂ hden₂)
-  have hρ : Continuous ρ := (continuous_toCompletionLoc P {f, 1} 1 S₁ hden₁).prodMk
-    (continuous_toCompletionLoc P {1} f S₂ hden₂)
+      (RingHom.prod (toCompletionLoc P ({f, 1} : Finset A) 1 S₁ hden₁)
+          (toCompletionLoc P ({1} : Finset A) f S₂ hden₂)) := by
+  let hden₁ := hasDenominatorPower_denom_one P ({f, 1} : Finset A) S₁
+  let _ := locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
+  have _ := isUniformAddGroup_locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
+  have _ := isTopologicalRing_locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
+  let _ := locUniformSpace P ({1} : Finset A) f S₂ hden₂
+  have _ := isUniformAddGroup_locUniformSpace P ({1} : Finset A) f S₂ hden₂
+  have _ := isTopologicalRing_locUniformSpace P ({1} : Finset A) f S₂ hden₂
+  set ρ := RingHom.prod (toCompletionLoc P ({f, 1} : Finset A) 1 S₁ hden₁)
+      (toCompletionLoc P ({1} : Finset A) f S₂ hden₂)
+  have hρ : Continuous ρ := (continuous_toCompletionLoc P ({f, 1} : Finset A) 1 S₁ hden₁).prodMk
+    (continuous_toCompletionLoc P ({1} : Finset A) f S₂ hden₂)
   -- `A` has the topology induced from the product, and its image, being complete, is closed
   have hind : IsInducing ρ := IsTopologicalAddGroup.isInducing_iff_nhds_zero.2 <|
     le_antisymm (hρ.tendsto' 0 0 (map_zero ρ)).le_comap
@@ -538,29 +563,34 @@ one for `U₁` is automatic at the denominator `1`
 built from those two by `TauCeti.Huber.PairOfDefinition.hasDenominatorPower_mul`. This is
 `laurentCover_exact` with uniformity in place of strong noetherianness. -/
 theorem laurentCover_exact_of_isUniform :
-    letI hden₁ := hasDenominatorPower_denom_one P {f, 1} S₁
-    letI hden₁₂ := hasDenominatorPower_mul P {f, 1} {1} {f * f, f, 1} 1 f S₁ S₂ S₁₂
+    letI hden₁ := hasDenominatorPower_denom_one P ({f, 1} : Finset A) S₁
+    letI hden₁₂ := hasDenominatorPower_mul P ({f, 1} : Finset A) ({1} : Finset A)
+      ({f * f, f, 1} : Finset A) 1 f S₁ S₂ S₁₂
       (by simp) (by simp) hden₁ hden₂
-    letI := locUniformSpace P {f, 1} 1 S₁ hden₁
-    letI := isUniformAddGroup_locUniformSpace P {f, 1} 1 S₁ hden₁
-    letI := isTopologicalRing_locUniformSpace P {f, 1} 1 S₁ hden₁
-    letI := locUniformSpace P {1} f S₂ hden₂
-    letI := isUniformAddGroup_locUniformSpace P {1} f S₂ hden₂
-    letI := isTopologicalRing_locUniformSpace P {1} f S₂ hden₂
-    letI := locUniformSpace P {f * f, f, 1} (1 * f) S₁₂ hden₁₂
-    letI := isUniformAddGroup_locUniformSpace P {f * f, f, 1} (1 * f) S₁₂ hden₁₂
-    letI := isTopologicalRing_locUniformSpace P {f * f, f, 1} (1 * f) S₁₂ hden₁₂
+    letI := locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
+    letI := isUniformAddGroup_locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
+    letI := isTopologicalRing_locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
+    letI := locUniformSpace P ({1} : Finset A) f S₂ hden₂
+    letI := isUniformAddGroup_locUniformSpace P ({1} : Finset A) f S₂ hden₂
+    letI := isTopologicalRing_locUniformSpace P ({1} : Finset A) f S₂ hden₂
+    letI := locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
+    letI := isUniformAddGroup_locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
+    letI := isTopologicalRing_locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
     Function.Exact
-      (RingHom.prod (toCompletionLoc P {f, 1} 1 S₁ hden₁) (toCompletionLoc P {1} f S₂ hden₂))
-      ((restrictionRingHom P {f, 1} 1 S₁ hden₁ {f * f, f, 1} (1 * f) S₁₂ hden₁₂ f rfl
+      (RingHom.prod (toCompletionLoc P ({f, 1} : Finset A) 1 S₁ hden₁)
+          (toCompletionLoc P ({1} : Finset A) f S₂ hden₂))
+      ((restrictionRingHom P ({f, 1} : Finset A) 1 S₁ hden₁ ({f * f, f, 1} : Finset A) (1 * f) S₁₂
+          hden₁₂ f rfl
           (by simp)).toAddMonoidHom.comp
           (AddMonoidHom.fst (UniformSpace.Completion S₁) (UniformSpace.Completion S₂)) -
-        (restrictionRingHom P {1} f S₂ hden₂ {f * f, f, 1} (1 * f) S₁₂ hden₁₂ 1 (mul_comm 1 f)
+        (restrictionRingHom P ({1} : Finset A) f S₂ hden₂ ({f * f, f, 1} : Finset A) (1 * f) S₁₂
+          hden₁₂ 1 (mul_comm 1 f)
           (by simp)).toAddMonoidHom.comp
           (AddMonoidHom.snd (UniformSpace.Completion S₁) (UniformSpace.Completion S₂))) := by
-  have _ := isUniformAddGroup_locUniformSpace P {f * f, f, 1} (1 * f) S₁₂ <|
-    hasDenominatorPower_mul P {f, 1} {1} {f * f, f, 1} 1 f S₁ S₂ S₁₂ (by simp) (by simp)
-      (hasDenominatorPower_denom_one P {f, 1} S₁) hden₂
+  have _ := isUniformAddGroup_locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ <|
+    hasDenominatorPower_mul P ({f, 1} : Finset A) ({1} : Finset A) ({f * f, f, 1} : Finset A) 1 f S₁
+      S₂ S₁₂ (by simp) (by simp)
+      (hasDenominatorPower_denom_one P ({f, 1} : Finset A) S₁) hden₂
   rintro ⟨x₁, x₂⟩
   simp only [RingHom.toAddMonoidHom_eq_coe, AddMonoidHom.sub_apply, AddMonoidHom.comp_apply,
     AddMonoidHom.coe_fst, AddMonoidHom.coe_ofClass, AddMonoidHom.coe_snd, sub_eq_zero]

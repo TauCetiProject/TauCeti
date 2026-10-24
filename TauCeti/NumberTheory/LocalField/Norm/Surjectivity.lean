@@ -86,7 +86,7 @@ theorem map_normUnits_unitFiltration_after_break (hℓ : (Module.finrank K L).Pr
 
 /-- In a ramified Galois extension of prime degree, the last index `t` with `G_t ≠ 1` is a natural
 upper break, and it lies below every depth `v` with `G_{ψℕ(v)} = 1`. -/
-private theorem exists_lt_upperJump_of_finrank_prime (hℓ : (finrank K L).Prime) {v : ℕ}
+theorem exists_lt_upperJump_of_finrank_prime (hℓ : (finrank K L).Prime) {v : ℕ}
     (hv : lowerRamificationGroup K L (psiNat K L v) = ⊥)
     (h0 : lowerRamificationGroup K L 0 ≠ ⊥) :
     ∃ t < v, UpperJump K L ⟨t, Nat.cast_mem_ramificationIndexDomain t⟩ := by

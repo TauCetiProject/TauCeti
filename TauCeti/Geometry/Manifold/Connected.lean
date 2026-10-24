@@ -14,10 +14,11 @@ import TauCeti.Topology.ConnectedComponents
 /-!
 # Removing a discrete set from a connected manifold
 
-A connected topological manifold modelled on a real normed space `E` of dimension greater than
-one stays connected when a closed discrete set, in particular a finite set, is removed. For a
-compact Riemann surface this is the statement that the complement of finitely many points, such as
-the preimage of the branch values of a holomorphic map, is connected.
+A connected topological manifold modelled on a real seminormed space `E` of dimension greater than
+one stays connected when a closed discrete set is removed. When the model space is normed, this
+applies in particular to finite sets. For a compact Riemann surface this is the statement that the
+complement of finitely many points, such as the preimage of the branch values of a holomorphic map,
+is connected.
 
 The local input is that every point has arbitrarily small neighbourhoods whose punctured versions
 are connected: in a chart these are punctured balls of `E`
@@ -42,10 +43,13 @@ open Metric Set Topology
 
 namespace TauCeti
 
-variable {E X : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace X]
-  [ChartedSpace E X]
+variable {E X : Type*} [TopologicalSpace X]
 
-/-- In a manifold modelled on a real normed space of dimension greater than one, every point `x`
+section Seminormed
+
+variable [SeminormedAddCommGroup E] [NormedSpace ℝ E] [ChartedSpace E X]
+
+/-- In a manifold modelled on a real seminormed space of dimension greater than one, every point `x`
 has arbitrarily small neighbourhoods `V` with `V \ {x}` connected. -/
 theorem exists_mem_nhds_subset_isConnected_sdiff_singleton (h : 1 < Module.rank ℝ E) (x : X)
     {U : Set X} (hU : U ∈ 𝓝 x) : ∃ V ∈ 𝓝 x, V ⊆ U ∧ IsConnected (V \ {x}) :=
@@ -53,7 +57,7 @@ theorem exists_mem_nhds_subset_isConnected_sdiff_singleton (h : 1 < Module.rank 
     (mem_chart_source E x) hU
 
 /-- **Removing a closed discrete set from a preconnected manifold leaves it preconnected**, when
-the model is a real normed space of dimension greater than one. -/
+the model is a real seminormed space of dimension greater than one. -/
 theorem isPreconnected_compl_of_isDiscrete_of_one_lt_rank [PreconnectedSpace X]
     (h : 1 < Module.rank ℝ E) {s : Set X} (hs : IsClosed s) (hd : IsDiscrete s) :
     IsPreconnected sᶜ :=
@@ -61,7 +65,7 @@ theorem isPreconnected_compl_of_isDiscrete_of_one_lt_rank [PreconnectedSpace X]
     exists_mem_nhds_subset_isConnected_sdiff_singleton h x hU
 
 /-- **Removing a closed discrete set from a connected manifold leaves it connected**, when the
-model is a real normed space of dimension greater than one. -/
+model is a real seminormed space of dimension greater than one. -/
 theorem isConnected_compl_of_isDiscrete_of_one_lt_rank [ConnectedSpace X]
     (h : 1 < Module.rank ℝ E) {s : Set X} (hs : IsClosed s) (hd : IsDiscrete s) :
     IsConnected sᶜ := by
@@ -77,6 +81,10 @@ theorem isConnected_compl_of_isDiscrete_of_one_lt_rank [ConnectedSpace X]
     refine ⟨z, fun hzs ↦ hz.2 ?_⟩
     simpa [← hus] using And.intro (hVu hz.1) hzs
   · exact ⟨x, hx⟩
+
+end Seminormed
+
+variable [NormedAddCommGroup E] [NormedSpace ℝ E] [ChartedSpace E X]
 
 /-- **Removing a finite set from a connected manifold leaves it connected**, when the model is a
 real normed space of dimension greater than one. -/

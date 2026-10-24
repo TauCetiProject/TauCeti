@@ -42,6 +42,9 @@ two commutation maps; that matching is not part of this file.
 
 ## Main results
 
+* `TauCeti.GridDiagram.mem_unpairedHexagonComposites_of_toRectangleDecomposition_eq`: a counted
+  composite is unpaired as soon as the canonical recut of its underlying decomposition underlies
+  no counted composite.
 * `TauCeti.GridDiagram.sum_hexagonCompositeWeight_overlap_eq_sum_unpaired`: in characteristic two,
   the off-diagonal overlapping composites have the total weight of the unpaired ones.
 * `TauCeti.GridDiagram.unblockedDifferential_commutationHomotopy_add_eq_iff_unpaired`: the homotopy
@@ -112,6 +115,39 @@ theorem mem_unpairedHexagonComposites {x z : GridState n}
             ¬D.toRectangleDecomposition.IsRecut E.toRectangleDecomposition := by
   classical
   simp only [unpairedHexagonComposites, Finset.mem_filter]
+
+/-- A counted composite is unpaired when its underlying decomposition has exactly one common side
+and the recut of that decomposition underlies no counted composite. -/
+theorem mem_unpairedHexagonComposites_of_toRectangleDecomposition_eq {x z : GridState n}
+    {D : GridRectangleDecomposition x z} (hone : D.HasOneCommonSide) (hfirst : D.first.IsEmpty)
+    (hsecond : D.second.IsEmpty)
+    (hrecut : ∀ E ∈ G.hexagonCompositeDecompositions C x z,
+      E.toRectangleDecomposition ≠ D.recut hone hfirst hsecond)
+    {F : GridHexagonCompositeDecomposition C.column C.turnRow C.oppositeTurnRow x z}
+    (hF : F ∈ G.hexagonCompositeDecompositions C x z) (hFD : F.toRectangleDecomposition = D) :
+    F ∈ G.unpairedHexagonComposites C x z := by
+  refine (G.mem_unpairedHexagonComposites C F).mpr ⟨hF, ?_, fun E hE hrec => hrecut E hE ?_⟩
+  · rw [hFD]
+    exact D.not_hasDisjointSides_of_hasOneCommonSide hone
+  · rw [hFD] at hrec
+    exact (D.existsUnique_isRecut hone hfirst hsecond).unique hrec (D.isRecut_recut _ _ _)
+
+/-- A counted composite whose underlying decomposition has exactly one common side, and whose
+recut underlies no counted composite, is the only unpaired composite with this decomposition. -/
+theorem existsUnique_unpairedHexagonComposite_of_toRectangleDecomposition_eq
+    {x z : GridState n} {D : GridRectangleDecomposition x z} (hone : D.HasOneCommonSide)
+    (hfirst : D.first.IsEmpty) (hsecond : D.second.IsEmpty)
+    (hrecut : ∀ E ∈ G.hexagonCompositeDecompositions C x z,
+      E.toRectangleDecomposition ≠ D.recut hone hfirst hsecond)
+    {F : GridHexagonCompositeDecomposition C.column C.turnRow C.oppositeTurnRow x z}
+    (hF : F ∈ G.hexagonCompositeDecompositions C x z) (hFD : F.toRectangleDecomposition = D) :
+    ∃! F' : GridHexagonCompositeDecomposition C.column C.turnRow C.oppositeTurnRow x z,
+      F' ∈ G.unpairedHexagonComposites C x z ∧ F'.toRectangleDecomposition = D ∧
+        G.hexagonCompositeWeight C R F' = G.hexagonCompositeWeight C R F := by
+  refine ⟨F, ⟨G.mem_unpairedHexagonComposites_of_toRectangleDecomposition_eq C hone hfirst
+    hsecond hrecut hF hFD, hFD, rfl⟩, fun F' hF' => ?_⟩
+  exact G.injOn_toRectangleDecomposition_hexagonCompositeDecompositions C x z
+    ((G.mem_unpairedHexagonComposites C F').mp hF'.1).1 hF (hF'.2.1.trans hFD.symm)
 
 /-- Off the diagonal, a recut partner of a counted overlapping composite is again overlapping,
 has the original composite as its own recut partner, has the same weight, and is different from

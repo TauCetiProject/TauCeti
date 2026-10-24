@@ -7,10 +7,10 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Restriction
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.TwoDescent
+public import TauCeti.AlgebraicGeometry.EllipticCurve.MordellWeil.LocalCondition
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MordellWeil.XSubT
 public import TauCeti.RingTheory.AdjoinRoot.Factors
 import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.EmbeddingIndependence
-import TauCeti.AlgebraicGeometry.EllipticCurve.MordellWeil.LocalCondition
 import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Extension
 
 /-!
@@ -40,9 +40,19 @@ The cohomological descent map is injective. A class whose factorwise images vani
 by a cocycle `z` with `e₂(z(g), T)` trivial whenever `g` fixes `T ∈ E(Kˢ)[2]`, since the fixer of
 a point `(x, 0)` of order two is the absolute Galois group of the factor field embedded by
 `θ ↦ x`. Such a cocycle is a coboundary, because `E(Kˢ)[2]` is a Klein four-group on which two
-distinct nonzero points pair to `-1`. The explicit and cohomological `2`-Selmer groups are compared
-through this injective map; that comparison also needs the agreement of the local conditions,
-which is not proved in this file.
+distinct nonzero points pair to `-1`. Consequently a class lies in the image of the Kummer map
+exactly when its cohomological descent image lies in the image of the explicit `x - T` map.
+
+The cohomological descent map is natural under change of field. A root of the `2`-division cubic
+in any extension `M` of `K` is the image `g(θ)` of the universal root of a factor `p` under a
+`K`-embedding `g` of `K[X] ⧸ (p)` into `M`; reading a square class at that root means taking its
+component at `p` and applying `g`. Since the Kummer isomorphism and the Weil pairing commute with
+restriction, the cohomological descent class of `c` read at `g(θ)` is the restriction of `c` to
+`M` paired with `(g(θ), 0)`. For an extension `L / K`, every irreducible factor `q` of the cubic
+over `L` has a root lying over a factor `p` over `K`, and comparing the two readings at that root
+shows that restricting to `L` and then applying the descent map of `W⁄L` is the same as applying
+the descent map of `W` and then the base change of square classes. This is the compatibility that
+identifies the cohomological local conditions with the explicit local conditions of `2`-descent.
 
 ## Main definitions
 
@@ -70,6 +80,15 @@ which is not proved in this file.
 * `TauCeti.TwoDescent.eq_zero_of_forall_factorCohomologicalMap_eq_zero`: a class of
   `H¹(G_K, E[2])` whose factorwise images all vanish is zero.
 * `TauCeti.TwoDescent.cohomologicalMap_injective`: the cohomological descent map is injective.
+* `TauCeti.TwoDescent.cohomologicalMap_mem_range_μ_iff`: the cohomological descent image of a
+  class lies in the explicit descent image exactly when the class is a Kummer class.
+* `TauCeti.TwoDescent.kummerIso_powerClassMap_explicitFactor_cohomologicalMap`: the cohomological
+  descent class read at a root `g(θ)` of the `2`-division cubic in an extension `M` is the
+  restriction to `M` paired with `(g(θ), 0)`.
+* `TauCeti.TwoDescent.explicitFactor_localRes`: base change of square classes, read on the factor
+  fields.
+* `TauCeti.TwoDescent.cohomologicalMap_torsionRes`: the cohomological descent map commutes with
+  restriction to an extension field and base change of square classes.
 
 ## References
 
@@ -94,38 +113,14 @@ local notation:max "θ" p:max => AdjoinRoot.root (p : K[X])
 
 variable [W.IsElliptic] [W.toAffine.IsCharNeTwoNF]
 
-omit [DecidableEq K] [W.IsElliptic] in
-/-- The universal root of a factor of the `2`-division cubic lies on the base-changed curve. -/
-private theorem factorRoot_equation (p : W.toAffine.f.Factors) :
-    (W.baseChange (𝕃 p)).toAffine.Equation (θ p) 0 := by
-  let : (W.baseChange (𝕃 p)).toAffine.IsCharNeTwoNF :=
-    W.toAffine.isCharNeTwoNF_map (ι p)
-  rw [WeierstrassCurve.Affine.equation_iff_eval_f_eq_sq]
-  rw [zero_pow two_ne_zero, W.toAffine.baseChange_f]
-  rw [Polynomial.eval_map]
-  obtain ⟨q, hq⟩ := p.dvd
-  calc
-    _ = Polynomial.eval₂ (ι p) (θ p) ((p : K[X]) * q) := congrArg _ hq
-    _ = 0 := by
-      rw [Polynomial.eval₂_mul, AdjoinRoot.algebraMap_eq, AdjoinRoot.eval₂_root, zero_mul]
-
 omit [DecidableEq K] in
 /-- The universal root of a factor of the `2`-division cubic is a nonsingular point of the
 base-changed elliptic curve. -/
 theorem factorRoot_nonsingular (p : W.toAffine.f.Factors) :
     (W.baseChange (𝕃 p)).toAffine.Nonsingular (θ p) 0 :=
-  WeierstrassCurve.Affine.equation_iff_nonsingular.mp (factorRoot_equation W p)
-
-omit [DecidableEq K] [W.IsElliptic] in
-/-- In characteristic-`≠ 2` normal form, the universal root point `(θ, 0)` is killed by two. -/
-@[simp]
-theorem factorRoot_polynomialY (p : W.toAffine.f.Factors) :
-    (W.baseChange (𝕃 p)).toAffine.polynomialY.evalEval (θ p) 0 = 0 := by
-  let : (W.baseChange (𝕃 p)).toAffine.IsCharNeTwoNF :=
-    W.toAffine.isCharNeTwoNF_map (ι p)
-  rw [WeierstrassCurve.Affine.evalEval_polynomialY,
-    WeierstrassCurve.a₁_of_isCharNeTwoNF, WeierstrassCurve.a₃_of_isCharNeTwoNF]
-  ring
+  W.toAffine.nonsingular_baseChange_of_aeval_eq_zero <| by
+    rw [AdjoinRoot.aeval_eq, AdjoinRoot.mk_eq_zero]
+    exact p.dvd
 
 /-- The square classes of the étale algebra are the product of the square classes of its field
 factors. -/
@@ -204,7 +199,8 @@ private theorem explicitFactor_eq_twoDescentUnit (p : W.toAffine.f.Factors)
     AdjoinRoot.modPowEquivPiFactors W.toAffine.f_ne_zero W.toAffine.squarefree_f 2
         (W.toAffine.μ₀ P) p =
       QuotientGroup.mk ((W.baseChange (𝕃 p)).twoDescentUnit
-        (factorRoot_nonsingular W p) (factorRoot_polynomialY W p)
+        (factorRoot_nonsingular W p)
+        (WeierstrassCurve.Affine.evalEval_polynomialY_zero_eq_zero_of_isCharNeTwoNF _ _)
         (W.toAffine.pointMap (𝕃 p) P)) := by
   match P with
   | 0 =>
@@ -239,7 +235,8 @@ theorem explicitFactor_μ₀_eq_twoDescentUnit (p : W.toAffine.f.Factors)
     explicitFactor W p (W.toAffine.μ₀ P) =
       powerClassHom (𝕃 p)ˣ 2
         ((W.baseChange (𝕃 p)).twoDescentUnit
-          (factorRoot_nonsingular W p) (factorRoot_polynomialY W p)
+          (factorRoot_nonsingular W p)
+          (WeierstrassCurve.Affine.evalEval_polynomialY_zero_eq_zero_of_isCharNeTwoNF _ _)
           (W.toAffine.pointMap (𝕃 p) P)) := by
   rw [explicitFactor_apply, explicitFactor_eq_twoDescentUnit, powerClassHom_apply,
     QuotientGroup.quotientMulEquivOfEq_mk]
@@ -250,7 +247,8 @@ def factorTorsionCharacter (p : W.toAffine.f.Factors) (h2 : IsUnit ((2 : ℕ) : 
     (W.baseChange (𝕃 p)).TorsionCoeff 2 →+[AbsoluteGaloisGroup (𝕃 p)]
       KummerCoeff (𝕃 p) 2 :=
   (W.baseChange (𝕃 p)).twoTorsionCharacter
-    (factorRoot_nonsingular W p) (factorRoot_polynomialY W p)
+    (factorRoot_nonsingular W p)
+    (WeierstrassCurve.Affine.evalEval_polynomialY_zero_eq_zero_of_isCharNeTwoNF _ _)
     (by simpa only [map_natCast] using h2.map (ι p))
 
 omit [DecidableEq K] in
@@ -259,7 +257,8 @@ theorem factorTorsionCharacter_def (p : W.toAffine.f.Factors) (h2 : IsUnit ((2 :
     (h2p : IsUnit ((2 : ℕ) : 𝕃 p)) :
     factorTorsionCharacter W p h2 =
       (W.baseChange (𝕃 p)).twoTorsionCharacter
-        (factorRoot_nonsingular W p) (factorRoot_polynomialY W p) h2p :=
+        (factorRoot_nonsingular W p)
+        (WeierstrassCurve.Affine.evalEval_polynomialY_zero_eq_zero_of_isCharNeTwoNF _ _) h2p :=
   (rfl)
 
 /-- Restriction to a factor field followed by the Weil-pairing character of its universal root. -/
@@ -279,7 +278,8 @@ noncomputable def rootwiseKummerClass (p : W.toAffine.f.Factors)
   Multiplicative.toAdd
     (kummerMap (𝕃 p) 2 (by simpa only [map_natCast] using h2.map (ι p))
       ((W.baseChange (𝕃 p)).twoDescentUnit
-        (factorRoot_nonsingular W p) (factorRoot_polynomialY W p)
+        (factorRoot_nonsingular W p)
+        (WeierstrassCurve.Affine.evalEval_polynomialY_zero_eq_zero_of_isCharNeTwoNF _ _)
         (W.toAffine.pointMap (𝕃 p) P)))
 
 omit [DecidableEq K] in
@@ -290,7 +290,8 @@ theorem rootwiseKummerClass_def (p : W.toAffine.f.Factors) (h2 : IsUnit ((2 : �
       Multiplicative.toAdd
         (kummerMap (𝕃 p) 2 h2p
           ((W.baseChange (𝕃 p)).twoDescentUnit
-            (factorRoot_nonsingular W p) (factorRoot_polynomialY W p)
+            (factorRoot_nonsingular W p)
+            (WeierstrassCurve.Affine.evalEval_polynomialY_zero_eq_zero_of_isCharNeTwoNF _ _)
             (W.toAffine.pointMap (𝕃 p) P))) :=
   (rfl)
 
@@ -319,7 +320,8 @@ theorem factorCohomologicalMap_kummerMap (p : W.toAffine.f.Factors)
   rw [factorCohomologicalMap_apply, W.torsionRes_kummerMap τ h2 P]
   simpa only [factorTorsionCharacter_def W p h2 h2p, rootwiseKummerClass_def W p h2 h2p] using
     (W.baseChange (𝕃 p)).explicitCoeff1_twoTorsionCharacter_kummerMap
-      (factorRoot_nonsingular W p) (factorRoot_polynomialY W p) h2p
+      (factorRoot_nonsingular W p)
+      (WeierstrassCurve.Affine.evalEval_polynomialY_zero_eq_zero_of_isCharNeTwoNF _ _) h2p
       (W.toAffine.pointMap (𝕃 p) P)
 
 omit [DecidableEq K] in
@@ -625,6 +627,148 @@ theorem cohomologicalMap_injective (h2 : IsUnit ((2 : ℕ) : K)) :
   refine (injective_iff_map_eq_one _).2 fun c hc ↦ Multiplicative.toAdd.injective ?_
   exact eq_zero_of_forall_factorCohomologicalMap_eq_zero W h2 (fun _ ↦ IsSepClosed.lift)
     ((cohomologicalMap_eq_one_iff W _ h2 c.toAdd).1 hc)
+
+/-- **The cohomological and explicit local conditions agree.** The image of a cohomology class
+under the cohomological `2`-descent map lies in the image of the explicit `x - T` descent map if
+and only if the class itself lies in the image of the cohomological Kummer map. -/
+theorem cohomologicalMap_mem_range_μ_iff (h2 : IsUnit ((2 : ℕ) : K))
+    {c : H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff 2)} :
+    cohomologicalMap W h2 (.ofAdd c) ∈ (WeierstrassCurve.Affine.μ (W := W.toAffine)).range ↔
+      c ∈ (W.kummerMap 2 h2).range := by
+  rw [← cohomologicalMap_comp_kummerMap W h2, MonoidHom.range_comp,
+    Subgroup.mem_map_iff_mem (cohomologicalMap_injective W h2),
+    MonoidHom.coe_toMultiplicative_range, Multiplicative.mem_toSubgroup, toAdd_ofAdd]
+
+/-! ### Naturality under change of field -/
+
+section ChangeOfField
+
+/- The universal-root character at `(e, 0)` does not depend on the proofs that `(e, 0)` is a point
+of order two, and it is transported along an equality of curves. -/
+omit [DecidableEq K] [W.IsElliptic] [W.toAffine.IsCharNeTwoNF] in
+private theorem twoTorsionCharacter_congr {M : Type*} [Field M] [DecidableEq M]
+    {V : WeierstrassCurve M} [V.IsElliptic] {e e' : M} (he : e = e')
+    (hT : V.toAffine.Nonsingular e 0) (hψ : V.toAffine.polynomialY.evalEval e 0 = 0)
+    (hT' : V.toAffine.Nonsingular e' 0) (hψ' : V.toAffine.polynomialY.evalEval e' 0 = 0)
+    (h2 : IsUnit ((2 : ℕ) : M)) :
+    V.twoTorsionCharacter hT hψ h2 = V.twoTorsionCharacter hT' hψ' h2 := by
+  subst he
+  rfl
+
+omit [DecidableEq K] in
+/-- **The cohomological descent map at a root of the `2`-division cubic.** Let `g` embed the
+factor field `K[X] ⧸ (p)` into a field `M` over `K`, so that `g(θ)` is a root of the `2`-division
+cubic in `M`. Through the Kummer isomorphism over `M`, the image under `g` of the component at `p`
+of the cohomological descent class of `c` is the image of the restriction of `c` to `M` under the
+character `e₂(·, (g(θ), 0))`. For `g` the identity this is
+`TauCeti.TwoDescent.kummerIso_explicitFactor_cohomologicalMap`. -/
+theorem kummerIso_powerClassMap_explicitFactor_cohomologicalMap
+    {M : Type*} [Field M] [Algebra K M] [DecidableEq M] (p : W.toAffine.f.Factors)
+    (g : 𝕃 p →ₐ[K] M) (τ : SeparableClosure K →ₐ[K] SeparableClosure M)
+    (h2 : IsUnit ((2 : ℕ) : K)) (h2M : IsUnit ((2 : ℕ) : M))
+    (hT : (W.baseChange M).toAffine.Nonsingular (g (θ p)) 0)
+    (hψ : (W.baseChange M).toAffine.polynomialY.evalEval (g (θ p)) 0 = 0)
+    (c : H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff 2)) :
+    kummerIso M 2 h2M (powerClassMap 2 (Units.map (g : 𝕃 p →* M))
+        (explicitFactor W p (cohomologicalMap W h2 (.ofAdd c)))) =
+      .ofAdd (explicitCoeff1 _ _ ((W.baseChange M).twoTorsionCharacter hT hψ h2M)
+        continuous_of_discreteTopology (W.torsionRes τ 2 c)) := by
+  -- regard `M` as an extension of the factor field through `g`
+  let : Algebra (𝕃 p) M := g.toRingHom.toAlgebra
+  have : IsScalarTower K (𝕃 p) M := IsScalarTower.of_algebraMap_eq fun x ↦ (g.commutes x).symm
+  have h2p : IsUnit ((2 : ℕ) : 𝕃 p) := by simpa only [map_natCast] using h2.map (ι p)
+  exact W.kummerIso_powerClassMap_of_kummerIso_eq IsSepClosed.lift τ
+    (factorRoot_nonsingular W p)
+    (WeierstrassCurve.Affine.evalEval_polynomialY_zero_eq_zero_of_isCharNeTwoNF _ _) _ _ h2p h2M c
+    (kummerIso_explicitFactor_cohomologicalMap W p IsSepClosed.lift h2 h2p c)
+
+omit [DecidableEq K] in
+/-- **Base change of square classes, on the factor fields.** If a `K`-embedding
+`g : K[X] ⧸ (p) → L[X] ⧸ (q)` of the factor fields of the `2`-division cubic over `K` and over
+an extension `L` sends the universal root of `p` to that of `q`, then the component at `q` of the
+base change of a square class is the image under `g` of its component at `p`. -/
+theorem explicitFactor_localRes {L : Type*} [Field L] [Algebra K L]
+    [(W.baseChange L).toAffine.IsCharNeTwoNF] (p : W.toAffine.f.Factors)
+    (q : (W.baseChange L).toAffine.f.Factors) (g : 𝕃 p →ₐ[K] AdjoinRoot (q : L[X]))
+    (hg : g (θ p) = AdjoinRoot.root (q : L[X])) (m : W.toAffine.M) :
+    explicitFactor (W.baseChange L) q (W.toAffine.localRes L m) =
+      powerClassMap 2 (Units.map (g : 𝕃 p →* AdjoinRoot (q : L[X]))) (explicitFactor W p m) := by
+  -- on the étale algebra, both composites `K[X] ⧸ (f) → L[X] ⧸ (q)` evaluate at the root of `q`
+  have key (a : W.toAffine.A) :
+      AdjoinRoot.projFactor (W.baseChange L).toAffine.f_ne_zero
+          (W.baseChange L).toAffine.squarefree_f q (W.toAffine.mapA L a) =
+        g (AdjoinRoot.projFactor W.toAffine.f_ne_zero W.toAffine.squarefree_f p a) := by
+    induction a using AdjoinRoot.induction_on with
+    | ih h =>
+      rw [WeierstrassCurve.Affine.mapA_mk, AdjoinRoot.projFactor_mk, AdjoinRoot.projFactor_mk,
+        ← AdjoinRoot.aeval_eq, ← AdjoinRoot.aeval_eq, ← Polynomial.aeval_algHom_apply, hg,
+        Polynomial.aeval_map_algebraMap]
+  induction m using QuotientGroup.induction_on with
+  | H u =>
+    rw [WeierstrassCurve.Affine.localRes_mk, explicitFactor_apply, explicitFactor_apply,
+      AdjoinRoot.modPowEquivPiFactors_mk, AdjoinRoot.modPowEquivPiFactors_mk,
+      QuotientGroup.quotientMulEquivOfEq_mk, QuotientGroup.quotientMulEquivOfEq_mk,
+      powerClassMap_mk]
+    exact congrArg QuotientGroup.mk (Units.ext (key u))
+
+omit [DecidableEq K] in
+/-- **The cohomological descent map is natural under change of field** (Silverman X.1.4): for a
+field extension `L / K`, restricting a class of `H¹(G_K, E[2])` to `L` and applying the
+cohomological descent map of `W⁄L` is applying the cohomological descent map of `W` and then the
+base change `(K[X] ⧸ (f))ˣ ⧸ squares → (L[X] ⧸ (f))ˣ ⧸ squares` of square classes. -/
+theorem cohomologicalMap_torsionRes {L : Type*} [Field L] [Algebra K L]
+    (τ : SeparableClosure K →ₐ[K] SeparableClosure L) (h2 : IsUnit ((2 : ℕ) : K))
+    (c : H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff 2)) :
+    cohomologicalMap (W.baseChange L) (by simpa only [map_natCast] using h2.map (algebraMap K L))
+        (.ofAdd (W.torsionRes τ 2 c)) =
+      W.toAffine.localRes L (cohomologicalMap W h2 (.ofAdd c)) := by
+  have h2L : IsUnit ((2 : ℕ) : L) := by simpa only [map_natCast] using h2.map (algebraMap K L)
+  refine (explicitFactorEquiv (W.baseChange L)).injective (funext fun q ↦ ?_)
+  simp only [explicitFactorEquiv_apply]
+  -- The root of `q` is a root of `f` over `K`; its minimal polynomial is the factor `p` of `f`
+  -- below `q`, and `g : K[X] ⧸ (p) → L[X] ⧸ (q)` sends the root of `p` to the root of `q`.
+  have hθ : aeval (AdjoinRoot.root (q : L[X])) W.toAffine.f = 0 := by
+    rw [← aeval_map_algebraMap L, ← W.toAffine.baseChange_f L, AdjoinRoot.aeval_eq,
+      AdjoinRoot.mk_eq_zero.mpr q.dvd]
+  have hint : IsIntegral K (AdjoinRoot.root (q : L[X])) :=
+    IsAlgebraic.isIntegral ⟨_, W.toAffine.f_ne_zero, hθ⟩
+  let p : W.toAffine.f.Factors :=
+    ⟨minpoly K (AdjoinRoot.root (q : L[X])), minpoly.irreducible hint, minpoly.monic hint,
+      minpoly.dvd K _ hθ⟩
+  let g : 𝕃 p →ₐ[K] AdjoinRoot (q : L[X]) :=
+    AdjoinRoot.liftAlgHom _ (Algebra.ofId K _) _ (minpoly.aeval K (AdjoinRoot.root (q : L[X])))
+  have hg : g (θ p) = AdjoinRoot.root (q : L[X]) := AdjoinRoot.liftAlgHom_root _ _ _ _
+  have h2q : IsUnit ((2 : ℕ) : AdjoinRoot (q : L[X])) := by
+    simpa only [map_natCast] using h2L.map (algebraMap L (AdjoinRoot (q : L[X])))
+  apply (kummerIso (AdjoinRoot (q : L[X])) 2 h2q).injective
+  let τq : SeparableClosure L →ₐ[L] SeparableClosure (AdjoinRoot (q : L[X])) := IsSepClosed.lift
+  let τN : SeparableClosure K →ₐ[K] SeparableClosure (AdjoinRoot (q : L[X])) := IsSepClosed.lift
+  have hT := W.toAffine.nonsingular_baseChange_of_aeval_eq_zero hθ
+  have hψ := WeierstrassCurve.Affine.evalEval_polynomialY_zero_eq_zero_of_isCharNeTwoNF
+    (W.baseChange (AdjoinRoot (q : L[X]))).toAffine (AdjoinRoot.root (q : L[X]))
+  have hT0 := factorRoot_nonsingular (W.baseChange L) q
+  have hψ0 := WeierstrassCurve.Affine.evalEval_polynomialY_zero_eq_zero_of_isCharNeTwoNF
+    ((W.baseChange L).baseChange (AdjoinRoot (q : L[X]))).toAffine (AdjoinRoot.root (q : L[X]))
+  -- the component at `q` of the left side is computed over `L`, from the root of `q`
+  have hL : kummerIso (AdjoinRoot (q : L[X])) 2 h2q (explicitFactor (W.baseChange L) q
+      (cohomologicalMap (W.baseChange L) h2L (.ofAdd (W.torsionRes τ 2 c)))) =
+      .ofAdd (explicitCoeff1 _ _
+        (((W.baseChange L).baseChange (AdjoinRoot (q : L[X]))).twoTorsionCharacter hT0 hψ0 h2q)
+        continuous_of_discreteTopology ((W.baseChange L).torsionRes τq 2 (W.torsionRes τ 2 c))) :=
+    kummerIso_explicitFactor_cohomologicalMap (W.baseChange L) q τq h2L h2q _
+  -- the component at `q` of the right side is computed over `K`, through the factor field of `p`
+  have hR := (congrArg (kummerIso (AdjoinRoot (q : L[X])) 2 h2q)
+    (explicitFactor_localRes W p q g hg (cohomologicalMap W h2 (.ofAdd c)))).trans
+    (kummerIso_powerClassMap_explicitFactor_cohomologicalMap W p g τN h2 h2q (hg ▸ hT)
+      (hg ▸ hψ) c)
+  -- Both are the restriction to `L[X] ⧸ (q)` paired with `(θ_q, 0)`. Term-mode composition keeps
+  -- the elaborator from unfolding the factor fields, which `rw` does at great cost here.
+  refine hL.trans ((congrArg Multiplicative.ofAdd ?_).trans hR.symm)
+  exact (W.explicitCoeff1_twoTorsionCharacter_torsionRes_torsionRes τ τq τN hT0 hψ0 hT hψ h2q
+    c).trans (congrArg (fun χ ↦ explicitCoeff1 _ _ χ continuous_of_discreteTopology
+      (W.torsionRes τN 2 c)) (twoTorsionCharacter_congr hg.symm hT hψ _ _ h2q))
+
+end ChangeOfField
 
 end TwoDescent
 

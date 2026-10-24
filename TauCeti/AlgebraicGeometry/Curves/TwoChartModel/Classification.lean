@@ -26,7 +26,7 @@ morphism `Spec K ⟶ M` through the generic point extends uniquely to a `k`-morp
 the morphism `Spec K ⟶ X` through the generic point extends uniquely to a `k`-morphism `M ⟶ X`
 (`AlgebraicGeometry.Scheme.homOfFunctionField`). Both composites restrict to the identity at the
 generic point, and a morphism into a separated scheme is determined there, so they are inverse
-isomorphisms.
+isomorphisms (`AlgebraicGeometry.Scheme.isoOfFunctionFieldAlgEquiv`).
 
 Thus every regular proper curve over `k` is, up to a canonical isomorphism, the normalization of
 the projective line in its function field. This is the object half of the correspondence between
@@ -67,13 +67,6 @@ universe u
 variable {k : Type u} [Field k] (X : Scheme.{u}) [X.Over (Spec (.of k))] [X.IsCurveOver k]
   {x : X.functionField} (hx : x ≠ 0) (hxt : Transcendental k x)
 
-/-- The identification of the function field of the two-chart model of `k(X)` with `k(X)`, as an
-isomorphism of rings. -/
-private noncomputable def functionFieldIso :
-    (twoChartModel (IsCurveOver.isFunctionField (k := k) (X := X)) hx).functionField ≅
-      X.functionField :=
-  (twoChartModel.functionFieldEquiv hxt).toRingEquiv.toCommRingCatIso
-
 variable [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))]
 
 /-- **A regular proper curve is the two-chart model of its function field**: for a curve `X` over
@@ -86,43 +79,22 @@ noncomputable def isoTwoChartModel :
     X ≅ twoChartModel (IsCurveOver.isFunctionField (k := k) (X := X)) hx :=
   have := twoChartModel.isProper (hF := IsCurveOver.isFunctionField (k := k) (X := X)) (hx := hx)
     hxt
-  { hom := homOfFunctionField
-      (IsCurveOver.valuationRing_stalk k X) _
-      (specMap_comp_fromSpecStalk_genericPoint_comp_over k (functionFieldIso X hx hxt).hom
-        (twoChartModel.functionFieldEquiv hxt).commutes)
-    inv := homOfFunctionField (twoChartModel.valuationRing_stalk hxt) _
-      (specMap_comp_fromSpecStalk_genericPoint_comp_over k (functionFieldIso X hx hxt).inv
-        (twoChartModel.functionFieldEquiv hxt).symm.commutes)
-    hom_inv_id := by
-      refine ext_of_isDominant_of_isSeparated' (Spec (.of k))
-        (X.fromSpecStalk (genericPoint X)) ?_
-      simp [← Spec.map_comp_assoc, -Spec.map_comp]
-    inv_hom_id := by
-      refine ext_of_isDominant_of_isSeparated' (Spec (.of k))
-        ((twoChartModel _ hx).fromSpecStalk (genericPoint _)) ?_
-      simp [← Spec.map_comp_assoc, -Spec.map_comp] }
+  isoOfFunctionFieldAlgEquiv (IsCurveOver.valuationRing_stalk k X)
+    (twoChartModel.valuationRing_stalk hxt) (twoChartModel.functionFieldEquiv hxt)
 
 /-- The isomorphism `X ⟶ M` of `isoTwoChartModel` is a morphism over `k`. -/
 instance : (X.isoTwoChartModel hx hxt).hom.IsOver (Spec (.of k)) := by
   have := twoChartModel.isProper (hF := IsCurveOver.isFunctionField (k := k) (X := X)) (hx := hx)
     hxt
-  -- Instance search does not see through `isoTwoChartModel` to `Scheme.homOfFunctionField`, so the
-  -- instance is applied by name.
-  exact isOver_homOfFunctionField _ _ _
+  rw [isoTwoChartModel]
+  infer_instance
 
 /-- The isomorphism `M ⟶ X` of `isoTwoChartModel` is a morphism over `k`. -/
 instance : (X.isoTwoChartModel hx hxt).inv.IsOver (Spec (.of k)) := by
-  -- As for the forward morphism, the instance is applied by name.
-  exact isOver_homOfFunctionField _ _ _
-
-/-- On function fields, the isomorphism `X ⟶ M` of `isoTwoChartModel` pulls back along
-`functionFieldIso`. -/
-private theorem functionFieldMap_isoTwoChartModel_hom_eq :
-    (X.isoTwoChartModel hx hxt).hom.functionFieldMap = (functionFieldIso X hx hxt).hom := by
   have := twoChartModel.isProper (hF := IsCurveOver.isFunctionField (k := k) (X := X)) (hx := hx)
     hxt
-  refine ((Hom.eq_functionFieldMap_iff _ _).mpr ?_).symm
-  exact (fromSpecStalk_homOfFunctionField _ _ _).symm
+  rw [isoTwoChartModel]
+  infer_instance
 
 /-- **The pullback of rational functions along `X ≅ M` is the identification of function
 fields**: under the identification `k(M) ≃ₐ[k] k(X)` of the function field of the two-chart model
@@ -131,8 +103,9 @@ of `k(X)`, the pullback along the isomorphism `X ⟶ M` of `isoTwoChartModel` is
 theorem functionFieldMap_isoTwoChartModel_hom (z : X.functionField) :
     (X.isoTwoChartModel hx hxt).hom.functionFieldMap
       ((twoChartModel.functionFieldEquiv hxt).symm z) = z := by
-  rw [functionFieldMap_isoTwoChartModel_hom_eq]
-  exact (twoChartModel.functionFieldEquiv hxt).apply_symm_apply z
+  have := twoChartModel.isProper (hF := IsCurveOver.isFunctionField (k := k) (X := X)) (hx := hx)
+    hxt
+  simp [isoTwoChartModel]
 
 /-- The pullback of rational functions along the isomorphism `M ⟶ X` of `isoTwoChartModel` is the
 identification `k(X) ≃ₐ[k] k(M)` of `k(X)` with the function field of the two-chart model. -/
@@ -140,9 +113,9 @@ identification `k(X) ≃ₐ[k] k(M)` of `k(X)` with the function field of the tw
 theorem functionFieldMap_isoTwoChartModel_inv (z : X.functionField) :
     (X.isoTwoChartModel hx hxt).inv.functionFieldMap z =
       (twoChartModel.functionFieldEquiv hxt).symm z := by
-  conv_lhs => rw [← functionFieldMap_isoTwoChartModel_hom X hx hxt z]
-  rw [← CommRingCat.comp_apply, ← Hom.functionFieldMap_comp]
-  simp
+  have := twoChartModel.isProper (hF := IsCurveOver.isFunctionField (k := k) (X := X)) (hx := hx)
+    hxt
+  simp [isoTwoChartModel]
 
 /-- **A regular proper curve is the two-chart model of its function field in exactly one way**: a
 dominant `k`-morphism `f : X ⟶ M` to the two-chart model of `k(X)` is the isomorphism of

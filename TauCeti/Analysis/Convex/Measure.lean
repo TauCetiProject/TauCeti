@@ -14,8 +14,10 @@ import Mathlib.Analysis.Normed.Affine.AddTorsorBases
 
 The frontier of a convex set in a finite-dimensional real normed space is null for any additive
 Haar measure (`Convex.addHaar_frontier`). Consequently, almost every point of the set is in its
-interior (`Convex.ae_mem_interior`). A convex set has positive Haar measure exactly when its
-interior is nonempty, equivalently when its affine span is the whole space
+interior (`Convex.ae_mem_interior`), so the interior meets every set that the convex set meets in
+positive measure (`Convex.interior_inter_nonempty_of_addHaar_inter_ne_zero`). A convex set has
+positive Haar measure exactly when its interior is nonempty, equivalently when its affine span is
+the whole space
 (`Convex.addHaar_pos_iff_interior_nonempty`, `Convex.addHaar_pos_iff_affineSpan_eq_top`).
 
 A convex set containing a ball of radius `r > 0` and a point at distance `L` from its centre has
@@ -23,6 +25,16 @@ measure at least `2 ^ (-(n + 1)) * μ (ball 0 1) * L * r ^ (n - 1)`, which is th
 volume of the cone spanned by the ball and the point
 (`Convex.ofReal_dist_mul_pow_mul_addHaar_ball_le`). This is the volume estimate behind the
 Aleksandrov maximum principle for the Monge–Ampère equation.
+
+A convex set with nonempty interior in a finite-dimensional real normed space has finite
+Haar measure exactly when it is bounded. Consequently, a set of positive finite measure
+which agrees almost everywhere with a convex set has a compact convex representative
+with nonempty interior. No Borel measurability or closedness of the original set is needed.
+This permits geometric arguments on compact convex sets to apply to essentially convex sets.
+
+The boundedness argument uses `Convex.ofReal_dist_mul_pow_mul_addHaar_ball_le`, the
+ball-and-point volume estimate. The representative is the closure of the convex set;
+Mathlib's `Convex.addHaar_frontier` ensures that taking this closure changes only a null set.
 -/
 
 public section
@@ -36,6 +48,17 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 point, since the frontier of the set is null for every additive Haar measure. -/
 theorem Convex.ae_mem_interior (hs : Convex ℝ s) : ∀ᵐ x ∂μ, x ∈ s → x ∈ interior s :=
   (interior_ae_eq_of_null_frontier (hs.addHaar_frontier μ)).symm.le
+
+/-- If a convex set in a finite-dimensional real normed space meets a set `t` in positive additive
+Haar measure, then its interior meets `t`, since almost every point of the convex set is
+interior. -/
+theorem Convex.interior_inter_nonempty_of_addHaar_inter_ne_zero (hs : Convex ℝ s) {t : Set E}
+    (h : μ (s ∩ t) ≠ 0) : (interior s ∩ t).Nonempty := by
+  by_contra hne
+  have hnull : μ (s \ interior s) = 0 :=
+    measure_eq_zero_iff_ae_notMem.2 (hs.ae_mem_interior.mono fun x hx h ↦ h.2 (hx h.1))
+  exact h (measure_mono_null (fun x (hx : x ∈ s ∩ t) ↦
+    (⟨hx.1, fun hi ↦ hne ⟨x, hi, hx.2⟩⟩ : x ∈ s \ interior s)) hnull)
 
 /-- A convex set in a finite-dimensional real normed space has zero additive Haar measure exactly
 when its interior is empty. -/
@@ -140,3 +163,55 @@ theorem Convex.ofReal_dist_mul_pow_mul_addHaar_ball_le [Nontrivial E] (hs : Conv
     _ ≤ 2 ^ (n + 1) * μ s := by
         gcongr
         exact iUnion₂_subset hsub
+
+open Bornology
+open scoped ENNReal
+
+namespace MeasureTheory.Measure
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] (μ : Measure E) [IsAddHaarMeasure μ] {s : Set E}
+
+/-- A convex set with nonempty interior has finite Haar measure if and only if it is bounded.
+The interior hypothesis is essential: an unbounded proper subspace has zero ambient measure. -/
+theorem isBounded_iff_measure_ne_top_of_convex (hs : Convex ℝ s)
+    (hi : (interior s).Nonempty) : IsBounded s ↔ μ s ≠ ∞ := by
+  refine ⟨fun hb ↦ hb.measure_lt_top.ne, fun hfin ↦ ?_⟩
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · exact (Set.toFinite s).isBounded
+  obtain ⟨x, hx⟩ := hi
+  obtain ⟨r, hr, hball⟩ := Metric.mem_nhds_iff.1 (mem_interior_iff_mem_nhds.1 hx)
+  have hunit : 0 < (μ (ball (0 : E) 1)).toReal :=
+    ENNReal.toReal_pos (measure_ball_pos μ 0 zero_lt_one).ne' measure_ball_ne_top
+  have hcoeff : 0 < r ^ (finrank ℝ E - 1) * (μ (ball (0 : E) 1)).toReal :=
+    mul_pos (pow_pos hr _) hunit
+  refine (isBounded_iff_subset_closedBall x).2
+    ⟨(2 ^ (finrank ℝ E + 1) * (μ s).toReal) /
+      (r ^ (finrank ℝ E - 1) * (μ (ball (0 : E) 1)).toReal), fun y hy ↦ ?_⟩
+  rw [mem_closedBall, le_div_iff₀ hcoeff]
+  have h := ENNReal.toReal_mono (by finiteness :
+      (2 : ℝ≥0∞) ^ (finrank ℝ E + 1) * μ s ≠ ∞)
+    (hs.ofReal_dist_mul_pow_mul_addHaar_ball_le hr hball hy)
+  simpa [ENNReal.toReal_mul, ENNReal.toReal_pow, ENNReal.toReal_ofReal,
+    dist_nonneg, le_of_lt hr, mul_assoc] using h
+
+/-- Every positive finite-measure set that agrees almost everywhere with a convex set
+has a compact convex representative with nonempty interior. In particular, this applies
+to convex sets themselves. Equality is with respect to the given additive Haar measure. -/
+theorem exists_isCompact_convex_ae_eq (hpos : 0 < μ s) (hfin : μ s ≠ ∞)
+    (hc : ∃ C : Set E, Convex ℝ C ∧ s =ᵐ[μ] C) :
+    ∃ K : Set E, IsCompact K ∧ Convex ℝ K ∧ (interior K).Nonempty ∧ s =ᵐ[μ] K := by
+  obtain ⟨C, hC, heq⟩ := hc
+  have hvol : μ C = μ s := (measure_congr heq).symm
+  have hi : (interior C).Nonempty := by
+    by_contra hempty
+    have hz : μ C = 0 := by
+      rw [← measure_interior_of_null_frontier (hC.addHaar_frontier μ),
+        Set.not_nonempty_iff_eq_empty.1 hempty, measure_empty]
+    exact (hpos.ne' (hvol.symm.trans hz))
+  have hb := (isBounded_iff_measure_ne_top_of_convex μ hC hi).2 (hvol.trans_ne hfin)
+  exact ⟨closure C, isCompact_of_isClosed_isBounded isClosed_closure hb.closure, hC.closure,
+    hi.mono (interior_mono subset_closure),
+    heq.trans (closure_ae_eq_of_null_frontier (hC.addHaar_frontier μ)).symm⟩
+
+end MeasureTheory.Measure

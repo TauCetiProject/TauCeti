@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.Grp.Abelian
+public import Mathlib.CategoryTheory.Abelian.GrothendieckCategory.HasExt
 public import Mathlib.CategoryTheory.Limits.Lattice
+public import Mathlib.CategoryTheory.Sites.SheafCohomology.Basic
 public import Mathlib.Topology.Sheaves.Flasque
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Basic
 
@@ -19,7 +21,7 @@ import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.AddCommGrp
 import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Comparison
 
 /-!
-# Čech complexes of flasque sheaves
+# Čech complexes of flasque sheaves, and degree zero Čech cohomology
 
 Let `F` be a flasque sheaf of abelian groups on a topological space `X`. This file proves that
 for every finite open cover `U` of `X` the augmented Čech complex
@@ -40,6 +42,10 @@ and to `U a ∩ ⋃_{i ∈ s} U i` have a member containing everything; the rest
 `⋃_{i ∈ s} U i` is compared with the smaller cover by the `U i`, `i ∈ s`, which is acyclic by
 induction (`TauCeti.CategoryTheory.quasiIso_cechAugmentation_iff_of_quasiIso_prod`).
 
+For an arbitrary sheaf of abelian groups and any open cover of `X`, the sheaf condition alone
+identifies the degree `0` Čech cohomology with the global sections, and hence with the degree `0`
+sheaf cohomology `H⁰(X, F)`.
+
 ## Main results
 
 * `TopCat.Sheaf.quasiIso_cechAugmentation_prod_of_isFlasque`: for a flasque sheaf `F`, a
@@ -47,6 +53,11 @@ induction (`TauCeti.CategoryTheory.quasiIso_cechAugmentation_iff_of_quasiIso_pro
   complex of `V ↦ F(Y ∩ V)` for `U` is exact.
 * `TopCat.Sheaf.quasiIso_cechAugmentation_of_isFlasque`: a flasque sheaf has an exact
   augmented Čech complex for every finite open cover.
+* `TauCeti.Topology.quasiIsoAt_cechAugmentation_zero_of_iSup_eq_top`: for any sheaf and any
+  open cover of `X`, the augmentation of the Čech complex is a quasi-isomorphism in degree `0`.
+* `TauCeti.Topology.homologyZeroCechIso`: the degree `0` Čech cohomology of a sheaf for an open
+  cover of `X` is isomorphic to its degree `0` sheaf cohomology, naturally in the sheaf
+  (`TauCeti.Topology.homologyMap_comp_homologyZeroCechIso_hom`).
 
 ## References
 
@@ -175,3 +186,61 @@ theorem quasiIso_cechAugmentation_of_isFlasque {ι : Type u} [Finite ι] (U : ι
     (quasiIso_cechAugmentation_prod_of_isFlasque F U ⊤ hU.ge)
 
 end TopCat.Sheaf
+
+namespace TauCeti.Topology
+
+variable {X : TopCat.{u}} {ι : Type u} (U : ι → Opens X) (hU : ⨆ i, U i = ⊤)
+
+include hU
+
+/-- A sheaf on `X` satisfies the sheaf condition for a family of opens covering `X`, in the form
+used by the augmentation of the Čech complex. -/
+theorem isSheafFor_ofArrows_of_iSup_eq_top
+    (F : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u}) (E : AddCommGrpCat.{u}ᵒᵖ) :
+    (Presieve.ofArrows U fun i ↦ isTerminalTop.from (U i)).IsSheafFor
+      (F.obj ⋙ coyoneda.obj E) := by
+  rw [Presieve.isSheafFor_iff_generate]
+  refine F.property E.unop _ fun x _ ↦ ?_
+  obtain ⟨i, hi⟩ := Opens.mem_iSup.1 (show x ∈ ⨆ i, U i by rw [hU]; trivial)
+  exact ⟨U i, isTerminalTop.from _, Sieve.le_generate _ _ _ (Presieve.ofArrows.mk i), hi⟩
+
+/-- For a sheaf on `X` and a family of opens covering `X`, the augmentation of the Čech complex
+is a quasi-isomorphism in degree `0`: the degree `0` Čech cohomology is the group of global
+sections. -/
+theorem quasiIsoAt_cechAugmentation_zero_of_iSup_eq_top
+    (F : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u}) :
+    QuasiIsoAt (cechAugmentation U isTerminalTop F.obj) 0 :=
+  (quasiIsoAt_cechAugmentation_zero_iff U isTerminalTop F.obj).2
+    (isSheafFor_ofArrows_of_iSup_eq_top U hU F)
+
+/-- The degree `0` Čech cohomology of a sheaf for a cover of `X` is the group of global sections,
+which is also the degree `0` sheaf cohomology. -/
+def homologyZeroCechIso (F : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u}) :
+    ((cechComplexFunctor U).obj F.obj).homology 0 ≅
+      AddCommGrpCat.of (_root_.CategoryTheory.Sheaf.H.{u} F 0) :=
+  have := quasiIsoAt_cechAugmentation_zero_of_iSup_eq_top U hU F
+  (asIso (HomologicalComplex.homologyMap (cechAugmentation U isTerminalTop F.obj) 0)).symm ≪≫
+    HomologicalComplex.singleObjHomologySelfIso (ComplexShape.up ℕ) 0 _ ≪≫
+      ((_root_.CategoryTheory.Sheaf.H.equiv₀ F isTerminalTop).symm.toAddCommGrpIso)
+
+/-- The identification of degree `0` Čech cohomology with degree `0` sheaf cohomology is natural
+in the sheaf. -/
+@[reassoc (attr := simp)]
+theorem homologyMap_comp_homologyZeroCechIso_hom
+    {P Q : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u}} (g : P ⟶ Q) :
+    HomologicalComplex.homologyMap ((cechComplexFunctor U).map g.hom) 0 ≫
+        (homologyZeroCechIso U hU Q).hom =
+      (homologyZeroCechIso U hU P).hom ≫
+        AddCommGrpCat.ofHom (_root_.CategoryTheory.Sheaf.H.map g 0) := by
+  have := quasiIsoAt_cechAugmentation_zero_of_iSup_eq_top U hU P
+  have := quasiIsoAt_cechAugmentation_zero_of_iSup_eq_top U hU Q
+  rw [← cancel_epi (HomologicalComplex.homologyMap (cechAugmentation U isTerminalTop P.obj) 0)]
+  simp only [homologyZeroCechIso, Iso.trans_hom, Iso.symm_hom, asIso_inv,
+    ← HomologicalComplex.homologyMap_comp_assoc, cechAugmentation_naturality]
+  simp only [HomologicalComplex.homologyMap_comp, Category.assoc, IsIso.hom_inv_id_assoc,
+    HomologicalComplex.singleObjHomologySelfIso_hom_naturality_assoc]
+  congr 1
+  ext x
+  exact (_root_.CategoryTheory.Sheaf.H.equiv₀_symm_naturality isTerminalTop g x).symm
+
+end TauCeti.Topology

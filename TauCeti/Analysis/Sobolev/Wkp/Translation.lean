@@ -163,7 +163,7 @@ theorem translate_add (h₁ h₂ : E) (k : ℕ) (u : Wkp mu ⊤ p k) :
       value_translate (h₁ + h₂) k u
     _ = (mu.restrict ((⊤ : Opens E) : Set E)).translateLp p h₂
         ((mu.restrict ((⊤ : Opens E) : Set E)).translateLp p h₁ (value k u)) := by
-      rw [Measure.translateLp_add, LinearIsometryEquiv.trans_apply]
+      rw [add_comm h₁ h₂, Measure.translateLp_add, LinearIsometryEquiv.trans_apply]
     _ = value k (translate h₂ k (translate h₁ k u)) := by
       rw [value_translate, value_translate]
 

@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.RootsOfUnity.Basic
 public import Mathlib.SetTheory.Cardinal.Finite
 public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Basic
+import TauCeti.Data.ZMod.MonoidHomEquiv
 
 /-!
 # The roots-of-unity group scheme
@@ -74,21 +75,11 @@ variable {A : Type v} [CommMonoid A]
 corresponding to its value on the standard generator. -/
 noncomputable def characterMulEquivRootsOfUnity (n : ℕ) :
     (Multiplicative (ZMod n) →* Aˣ) ≃* rootsOfUnity n A :=
-  let hg : ∀ x : Multiplicative (ZMod n), x ∈ Subgroup.zpowers (generator n) := by
-    intro x
-    refine ⟨(Multiplicative.toAdd x).cast, ?_⟩
-    simp only [generator]
-    rw [← ofAdd_zsmul]
-    calc
-      Multiplicative.ofAdd ((Multiplicative.toAdd x).cast • (1 : ZMod n)) =
-          Multiplicative.ofAdd (((Multiplicative.toAdd x).cast : ℤ) : ZMod n) := by simp
-      _ =
-          Multiplicative.ofAdd (Multiplicative.toAdd x) := by rw [ZMod.intCast_zmod_cast]
-      _ = x := ofAdd_toAdd x
   let hcard : Nat.card (Multiplicative (ZMod n)) = n :=
     (Nat.card_congr (Multiplicative.ofAdd : ZMod n ≃ Multiplicative (ZMod n))).trans
       (Nat.card_zmod n)
-  ((IsCyclic.monoidHomMulEquivRootsOfUnityOfGenerator (g := generator n) hg Aˣ).trans
+  ((IsCyclic.monoidHomMulEquivRootsOfUnityOfGenerator (g := generator n)
+      Multiplicative.mem_zpowers_ofAdd_one Aˣ).trans
       (MulEquiv.subgroupCongr (by rw [hcard]))).trans
     (rootsOfUnityUnitsMulEquiv A n)
 

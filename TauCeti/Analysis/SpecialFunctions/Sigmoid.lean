@@ -42,6 +42,13 @@ theorem sigmoid_log_div_one_sub {u : ℝ} (h0 : 0 < u) (h1 : u < 1) :
   field_simp
   ring
 
+/-- The logit is a left inverse of the sigmoid. -/
+@[simp]
+theorem log_sigmoid_div_one_sub (x : ℝ) :
+    log (sigmoid x / (1 - sigmoid x)) = x := by
+  apply sigmoid_injective
+  exact sigmoid_log_div_one_sub (sigmoid_pos x) (sigmoid_lt_one x)
+
 /-- On the open unit interval, the logit of `u` lies below `y` exactly when `u` lies below the
 sigmoid of `y`. -/
 theorem log_div_one_sub_le_iff {u y : ℝ} (h0 : 0 < u) (h1 : u < 1) :

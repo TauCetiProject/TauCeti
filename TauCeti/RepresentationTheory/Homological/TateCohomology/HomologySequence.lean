@@ -57,8 +57,7 @@ namespace TauCeti.TateCohomology
 
 variable {k G : Type u} [CommRing k] [Group G] [Fintype G] {S : ShortComplex (Rep k G)}
   (hS : S.ShortExact)
-include hS
-
+include hS in
 /-- Exactness of `Ĥⁿ(G, X₁) ⟶ Ĥⁿ(G, X₂) ⟶ Ĥⁿ(G, X₃)`, the middle term of the long exact
 sequence in Tate cohomology of a short exact sequence of representations. -/
 theorem _root_.TateCohomology.exact₂ (n : ℤ) :
@@ -66,12 +65,14 @@ theorem _root_.TateCohomology.exact₂ (n : ℤ) :
       (by rw [← Functor.map_comp, S.zero, Functor.map_zero])).Exact :=
   (_root_.TateCohomology.map_tateComplexFunctor_shortExact hS).homology_exact₂ n
 
+include hS in
 /-- If `Ĥⁿ(G, X₃) = 0`, the map `Ĥⁿ(G, X₁) ⟶ Ĥⁿ(G, X₂)` induced by `X₁ ⟶ X₂` is surjective. -/
 theorem map_f_surjective_of_isZero_X₃ (n : ℤ) (h : IsZero (tateCohomology S.X₃ n)) :
     Function.Surjective ((tateCohomologyFunctor n).map S.f) := by
   rw [← ModuleCat.epi_iff_surjective]
   exact (_root_.TateCohomology.exact₂ hS n).epi_f (h.eq_zero_of_tgt _)
 
+include hS in
 /-- If `Ĥᵐ(G, X₃) = 0`, the map `Ĥⁿ(G, X₁) ⟶ Ĥⁿ(G, X₂)` induced by `X₁ ⟶ X₂` is injective in
 the next degree `n = m + 1`. -/
 theorem map_f_injective_of_isZero_X₃ (m n : ℤ) (hmn : m + 1 = n)
@@ -81,6 +82,7 @@ theorem map_f_injective_of_isZero_X₃ (m n : ℤ) (hmn : m + 1 = n)
   rw [← ModuleCat.mono_iff_injective]
   exact (_root_.TateCohomology.exact₁ hS m).mono_g (h.eq_zero_of_src _)
 
+include hS in
 /-- If the map induced by `X₁ ⟶ X₂` on Tate cohomology is surjective in degree `m` and injective
 in degree `n = m + 1`, then `Ĥᵐ(G, X₃) = 0`. -/
 theorem isZero_X₃_of_surjective_of_injective (m n : ℤ) (hmn : m + 1 = n)
@@ -95,6 +97,7 @@ theorem isZero_X₃_of_surjective_of_injective (m n : ℤ) (hmn : m + 1 = n)
   obtain rfl : m + 1 = j := hj
   exact (ModuleCat.mono_iff_injective _).2 hinj
 
+include hS in
 /-- If the map induced by `X₂ ⟶ X₃` on Tate cohomology is surjective in degree `m` and injective
 in degree `n = m + 1`, then `H-hat^n(G, X₁) = 0`. -/
 theorem isZero_X₁_of_surjective_of_injective (m n : ℤ) (hmn : m + 1 = n)
@@ -109,11 +112,13 @@ theorem isZero_X₁_of_surjective_of_injective (m n : ℤ) (hmn : m + 1 = n)
   obtain rfl : j = m := add_right_cancel hj
   exact (ModuleCat.epi_iff_surjective _).2 hsurj
 
+include hS in
 /-- If `Ĥⁿ(G, X₁) = 0` and `Ĥⁿ(G, X₃) = 0`, then `Ĥⁿ(G, X₂) = 0`. -/
 theorem isZero_X₂_of_isZero_X₁_of_isZero_X₃ (n : ℤ) (h₁ : IsZero (tateCohomology S.X₁ n))
     (h₃ : IsZero (tateCohomology S.X₃ n)) : IsZero (tateCohomology S.X₂ n) :=
   (_root_.TateCohomology.exact₂ hS n).isZero_of_both_isZero h₁ h₃
 
+include hS in
 /-- If `Ĥᵐ(G, X₂) = 0` and `Ĥⁿ(G, X₁) = 0` in the next degree `n = m + 1`, then
 `Ĥᵐ(G, X₃) = 0`. -/
 theorem isZero_X₃_of_isZero_X₂_of_isZero_X₁ (m n : ℤ) (hmn : m + 1 = n)
@@ -122,6 +127,7 @@ theorem isZero_X₃_of_isZero_X₂_of_isZero_X₁ (m n : ℤ) (hmn : m + 1 = n)
   subst hmn
   exact (_root_.TateCohomology.exact₃ hS m).isZero_of_both_isZero h₂ h₁
 
+include hS in
 /-- If `Ĥᵐ(G, X₃) = 0` and `Ĥⁿ(G, X₂) = 0` in the next degree `n = m + 1`, then
 `Ĥⁿ(G, X₁) = 0`. -/
 theorem isZero_X₁_of_isZero_X₃_of_isZero_X₂ (m n : ℤ) (hmn : m + 1 = n)
@@ -130,6 +136,7 @@ theorem isZero_X₁_of_isZero_X₃_of_isZero_X₂ (m n : ℤ) (hmn : m + 1 = n)
   subst hmn
   exact (_root_.TateCohomology.exact₁ hS m).isZero_of_both_isZero h₃ h₂
 
+include hS in
 /-- If `Ĥⁿ(G, X₂) = 0` and `Ĥⁿ⁺¹(G, X₂) = 0`, the connecting map
 `Ĥⁿ(G, X₃) ⟶ Ĥⁿ⁺¹(G, X₁)` is bijective. -/
 theorem δ_bijective_of_isZero_X₂ (n : ℤ) (h₀ : IsZero (tateCohomology S.X₂ n))
@@ -137,8 +144,6 @@ theorem δ_bijective_of_isZero_X₂ (n : ℤ) (h₀ : IsZero (tateCohomology S.X
     Function.Bijective (_root_.TateCohomology.δ hS n) :=
   ConcreteCategory.bijective_of_isIso
     ((_root_.TateCohomology.map_tateComplexFunctor_shortExact hS).δIso n (n + 1) rfl h₀ h₁).hom
-
-omit hS
 
 /-- **The connecting maps of a `3 × 3` diagram anticommute in Tate cohomology.** Let `D` be a
 `3 × 3` diagram of representations, presented as a short complex `D.X₁ ⟶ D.X₂ ⟶ D.X₃` of short

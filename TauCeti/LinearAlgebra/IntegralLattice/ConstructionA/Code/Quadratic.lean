@@ -43,15 +43,15 @@ public section
 
 namespace TauCeti.ConstructionA
 
-variable (m : ℕ+) (ι : Type*) [Fintype ι]
+variable (m : ℕ) [NeZero m] (ι : Type*) [Fintype ι]
 
 /-- A code transported into the zero lattice's discriminant group is quadratically isotropic
 exactly when the original code is quadratically isotropic in the standard coordinate alphabet. -/
 theorem isIsotropic_codeInZeroLatticeDiscriminantQuadraticModule_iff
-    (hm : Even (m : ℕ)) (C : AdditiveCode (ZMod m) ι) :
+    (hm : Even m) (C : AdditiveCode (ZMod m) ι) :
     ((zeroLattice m ι).discriminantQuadraticModule (isEven_zeroLattice m ι hm)).IsIsotropic
         (codeInZeroLatticeDiscriminantGroup m ι C) ↔
-      ((FiniteQuadraticModule.zmodStandard (m : ℕ) hm).coordinatePower ι).IsIsotropic C := by
+      ((FiniteQuadraticModule.zmodStandard m hm).coordinatePower ι).IsIsotropic C := by
   let e := discriminantQuadraticIsometry m ι hm
   have h := (FiniteQuadraticModule.Isometry.isIsotropic_map_iff _ e
     (C.comap e.toAddEquiv)).symm
@@ -69,7 +69,7 @@ theorem isIsotropic_codeInZeroLatticeDiscriminantQuadraticModule_iff
 /-- Quadratic isotropy of the transported discriminant subgroup is equivalent to evenness of
 the associated Construction A integral lattice. -/
 theorem isIsotropic_codeInZeroLatticeDiscriminantQuadraticModule_iff_isEven
-    (hm : Even (m : ℕ)) (C : AdditiveCode (ZMod m) ι)
+    (hm : Even m) (C : AdditiveCode (ZMod m) ι)
     (hC : AddSubgroup.toZModSubmodule m C ≤
       (AddSubgroup.toZModSubmodule m C).euclideanDual) :
     ((zeroLattice m ι).discriminantQuadraticModule (isEven_zeroLattice m ι hm)).IsIsotropic
@@ -94,16 +94,16 @@ theorem isIsotropic_codeInZeroLatticeDiscriminantQuadraticModule_two_iff_isDoubl
 code gives its Construction A integral lattice.  Both lattices have the literal Construction A
 carrier inside `ι → ℚ` and the same normalized dot-product form. -/
 theorem ofIsotropicSubgroup_codeInZeroLatticeDiscriminantGroup_eq_integralLattice
-    (hm : Even (m : ℕ)) (C : AdditiveCode (ZMod m) ι)
-    (hC : ((FiniteQuadraticModule.zmodStandard (m : ℕ) hm).coordinatePower ι).IsIsotropic C) :
+    (hm : Even m) (C : AdditiveCode (ZMod m) ι)
+    (hC : ((FiniteQuadraticModule.zmodStandard m hm).coordinatePower ι).IsIsotropic C) :
     (zeroLattice m ι).ofIsotropicSubgroup (isEven_zeroLattice m ι hm)
         (codeInZeroLatticeDiscriminantGroup m ι C)
         ((isIsotropic_codeInZeroLatticeDiscriminantQuadraticModule_iff m ι hm C).mpr hC) =
       integralLattice m C
-        ((isIsotropic_coordinatePower_zmodStandard_iff_le_euclideanDual (m : ℕ) C).mp
+        ((isIsotropic_coordinatePower_zmodStandard_iff_le_euclideanDual m C).mp
           hC.toFiniteBilinearModule) := by
   have h := toIntegralLattice_codeInZeroLatticeDiscriminantGroup_eq_integralLattice m ι C
-    ((isIsotropic_coordinatePower_zmodStandard_iff_le_euclideanDual (m : ℕ) C).mp
+    ((isIsotropic_coordinatePower_zmodStandard_iff_le_euclideanDual m C).mp
       hC.toFiniteBilinearModule)
   apply IntegralLattice.ext
   · simpa only [IntegralLattice.ofIsotropicSubgroup_carrier,
@@ -118,13 +118,13 @@ even modulus and a quadratically isotropic code `C`, the overlattice of the zero
 `m ℤ^ι` glued along the discriminant subgroup of `C` is unimodular exactly when `C` equals its
 orthogonal complement in the coordinate alphabet `(ℤ/m)^ι`. -/
 theorem isUnimodular_ofIsotropicSubgroup_codeInZeroLatticeDiscriminantGroup_iff
-    (hm : Even (m : ℕ)) (C : AdditiveCode (ZMod m) ι)
-    (hC : ((FiniteQuadraticModule.zmodStandard (m : ℕ) hm).coordinatePower ι).IsIsotropic C) :
+    (hm : Even m) (C : AdditiveCode (ZMod m) ι)
+    (hC : ((FiniteQuadraticModule.zmodStandard m hm).coordinatePower ι).IsIsotropic C) :
     ((zeroLattice m ι).ofIsotropicSubgroup (isEven_zeroLattice m ι hm)
         (codeInZeroLatticeDiscriminantGroup m ι C)
         ((isIsotropic_codeInZeroLatticeDiscriminantQuadraticModule_iff m ι hm C).mpr
           hC)).IsUnimodular ↔
-      ((FiniteBilinearModule.zmodStandard (m : ℕ)).coordinatePower ι).IsLagrangian C :=
+      ((FiniteBilinearModule.zmodStandard m).coordinatePower ι).IsLagrangian C :=
   ((zeroLattice m ι).isUnimodular_ofIsotropicSubgroup_iff_isLagrangian _ _ _).trans
     (isLagrangian_codeInZeroLatticeDiscriminantGroup_iff m ι C)
 

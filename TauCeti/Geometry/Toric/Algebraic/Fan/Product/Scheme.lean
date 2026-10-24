@@ -22,12 +22,19 @@ This is the local compatibility needed to identify the product-fan scheme with t
 globally: the product charts cover the source, while the corresponding fibre products of affine
 charts cover the target.
 
+The comparison is natural for toric maps: the toric map of a pairing of fan morphisms into a
+product fan corresponds to the pairing of their toric maps, and the toric map of a componentwise
+product of fan morphisms corresponds to the fibre product over `Spec ℂ` of their toric maps.
+
 ## Main declarations
 
 * `TauCeti.Toric.Fan.algebraicProdComparison`: the canonical morphism from the product-fan
   scheme to the fibre product of the factor schemes.
 * `TauCeti.Toric.Fan.affineToricChartι_comp_algebraicProdComparison`: the comparison's formula
   on every product affine chart.
+* `TauCeti.Toric.FanHom.algebraicMap_prod_comp_algebraicProdComparison` and
+  `TauCeti.Toric.FanHom.algebraicMap_prodMap_comp_algebraicProdComparison`: naturality of the
+  comparison for pairings and componentwise products of fan morphisms.
 
 ## References
 
@@ -99,9 +106,7 @@ noncomputable def algebraicProdComparison :
     (Phi.prod Psi).algebraicRealization ⟶
       pullback Phi.algebraicRealizationStructureMap Psi.algebraicRealizationStructureMap :=
   pullback.lift (FanHom.fst Phi Psi).algebraicMap (FanHom.snd Phi Psi).algebraicMap <| by
-    rw [← Phi.algebraicRealization_over, ← Psi.algebraicRealization_over]
-    exact (comp_over (FanHom.fst Phi Psi).algebraicMap (Spec (.of ℂ))).trans
-      (comp_over (FanHom.snd Phi Psi).algebraicMap (Spec (.of ℂ))).symm
+    simp only [FanHom.algebraicMap_comp_algebraicRealizationStructureMap]
 
 /-- The first projection of the product comparison is the toric map induced by the first fan
 projection. -/
@@ -245,5 +250,41 @@ theorem exists_affineToricChartι_prodCone_apply_eq (x : (Phi.prod Psi).algebrai
   exact ⟨σ, τ, y, hy⟩
 
 end Fan
+
+/-! ### Toric maps into and between product fans -/
+
+namespace FanHom
+
+variable {N₀ N₁ N₂ : Type} {V₀ V₁ V₂ : Type*} [AddCommGroup N₀] [AddCommGroup N₁]
+  [AddCommGroup N₂] [AddCommGroup V₀] [AddCommGroup V₁] [AddCommGroup V₂] [Module ℝ V₀]
+  [Module ℝ V₁] [Module ℝ V₂] {i₀ : N₀ →+ V₀} {i₁ : N₁ →+ V₁} {i₂ : N₂ →+ V₂}
+  {Phi : Fan i} {Psi : Fan i'} {Omega : Fan i₀} {Phi₁ : Fan i₁} {Psi₁ : Fan i₂}
+
+/-- The toric map of a pairing of fan morphisms into a product fan is, through the comparison
+with the fibre product, the pairing of the two toric maps. -/
+@[reassoc (attr := simp)]
+theorem algebraicMap_prod_comp_algebraicProdComparison (f : FanHom Omega Phi)
+    (g : FanHom Omega Psi) :
+    (f.prod g).algebraicMap ≫ Phi.algebraicProdComparison Psi =
+      pullback.lift f.algebraicMap g.algebraicMap (by simp) := by
+  apply pullback.hom_ext <;>
+    simp only [Category.assoc, Fan.algebraicProdComparison_fst, Fan.algebraicProdComparison_snd,
+      pullback.lift_fst, pullback.lift_snd, ← algebraicMap_comp, fst_comp_prod, snd_comp_prod]
+
+/-- The toric map of a componentwise product of fan morphisms is, through the comparisons with
+the fibre products, the fibre product of the two toric maps over `Spec ℂ`. -/
+@[reassoc (attr := simp)]
+theorem algebraicMap_prodMap_comp_algebraicProdComparison (f : FanHom Phi Phi₁)
+    (g : FanHom Psi Psi₁) :
+    (f.prodMap g).algebraicMap ≫ Phi₁.algebraicProdComparison Psi₁ =
+      Phi.algebraicProdComparison Psi ≫
+        pullback.map _ _ _ _ f.algebraicMap g.algebraicMap (𝟙 _) (by simp) (by simp) := by
+  apply pullback.hom_ext <;>
+    simp only [Category.assoc, Fan.algebraicProdComparison_fst, Fan.algebraicProdComparison_snd,
+      Fan.algebraicProdComparison_fst_assoc, Fan.algebraicProdComparison_snd_assoc,
+      pullback.lift_fst, pullback.lift_snd, ← algebraicMap_comp, fst_comp_prodMap,
+      snd_comp_prodMap]
+
+end FanHom
 
 end TauCeti.Toric

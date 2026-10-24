@@ -25,25 +25,19 @@ Mathlib works around the first by hand: `Topology/Algebra/Module/FiniteDimension
 * `Submodule.isUniformAddGroup`: `↥p` is a uniform additive group.
 * `Submodule.isCountablyGenerated_uniformity`: `↥p` inherits a countably generated uniformity.
 
-## The consumer: Layer 0.6's own unfinished half
+## Use
 
-`TauCetiRoadmap/AdicSpaces/README.md` §0.6 asks for "Wedhorn Theorem 6.16 **and Propositions
-6.17–6.18**". Theorem 6.16 has landed, as `TauCeti.Huber.IsTateRing.isOpenMap`; Propositions
-6.17–6.18 have not, and two module docstrings on `main` already record them as outstanding
-(`Huber/ZeroSequenceOfUnits.lean` and `Topology/Algebra/OpenMapping/Basic.lean`, both under
-References).
-
-Proposition 6.18(2) is "`u` is continuous and **open onto its image**", and that is a statement
-about the corestriction `u.rangeRestrict : M → ↥(LinearMap.range u)`. Its target is a *submodule*,
-so applying `IsTateRing.isOpenMap` there needs the four hypotheses that theorem puts on its target:
-`CompleteSpace` and `T0Space`, which come free from `IsClosed.completeSpace_coe` and the subspace
-topology, and `IsUniformAddGroup` and a countably generated uniformity, which are exactly these two
-instances and which nothing else supplies. Without them 6.18(2) cannot be stated in the form 6.16
-would discharge.
-
-Layer 4.1 is where 6.18(2) is eventually spent — its text says to "use Layer 0's open mapping
-theorem to show that the relevant images are closed" — but the target these instances unblock is
-Layer 0's own.
+The open mapping theorems over a ring with a zero sequence of units state metrisability of a module
+as a countably generated uniformity on a uniform additive group; for the target, completeness and
+these two properties are what make it a Baire space. These instances let the theorems be applied
+when one side is a submodule. A strict map is a map that is open onto its image, so strictness is
+a statement about the corestriction `f.rangeRestrict : M → ↥(LinearMap.range f)`, whose target is
+a submodule; this is how `TauCeti.HasZeroSequenceOfUnits.isStrictMap_of_isClosed_range` uses them.
+A closed submodule is complete by `IsClosed.completeSpace_coe`, and
+`TauCeti.Huber.isClosed_of_module_finite_topologicalClosure` works inside the topological closure
+of a submodule to show that a submodule with module-finite closure is closed, which gives the
+closedness of every submodule of a noetherian module over a complete Tate ring (Wedhorn, *Adic
+Spaces*, Proposition 6.17).
 -/
 
 public section

@@ -128,10 +128,8 @@ theorem finite_quotient_of_isMaximal {σ : Type*} [Finite σ] (m : Ideal (Tate �
     have hm : m = (m.comap r).map r := (Ideal.map_comap_of_surjective _ r.surjective m).symm
     exact Module.Finite.equiv (Ideal.quotientEquivAlg (m.comap r) m r hm).toLinearEquiv
   · -- Without variables every series is a constant, so the Tate algebra is `K`.
-    have hsurj : Function.Surjective (Algebra.linearMap K (Tate PEmpty)) := fun g ↦
-      let ⟨r, hr⟩ := C_surjective (σ := PEmpty) (g : MvPowerSeries PEmpty K)
-      ⟨r, Subtype.ext hr⟩
-    have := Module.Finite.of_surjective _ hsurj
+    have := Module.Finite.of_surjective (Algebra.linearMap K (Tate PEmpty))
+      algebraMap_isRestrictedSubring_surjective
     exact Module.Finite.of_surjective (Ideal.Quotient.mkₐ K m).toLinearMap
       (Ideal.Quotient.mkₐ_surjective K m)
 

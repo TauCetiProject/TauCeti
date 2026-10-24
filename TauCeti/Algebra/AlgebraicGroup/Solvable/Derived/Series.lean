@@ -35,7 +35,7 @@ reach the identity at the same index. -/
 @[simp] theorem derivedSeriesDefiningIdeal_eq_augmentation_iff_of_dense_points
     (h : HopfIdeal.vanishingIdeal (⊤ : Subgroup (WithConv (H →ₐ[k] k))) = ⊥) (n : ℕ) :
     derivedSeriesDefiningIdeal H n = HopfIdeal.augmentation k H ↔
-      derivedSeries (WithConv (H →ₐ[k] k)) n = ⊥ := by
+      Subgroup.derivedSeries (WithConv (H →ₐ[k] k)) n = ⊥ := by
   rw [derivedSeriesDefiningIdeal_eq_vanishingIdeal_derivedSeries_of_dense_points H h,
     HopfIdeal.vanishingIdeal_eq_augmentation_iff]
 
@@ -53,7 +53,7 @@ variable [IsAlgClosed k] [Algebra.FiniteType k H] [IsReduced H]
 /-- Scheme-theoretic and abstract derived series reach the identity at the same index. -/
 theorem derivedSeriesDefiningIdeal_eq_augmentation_iff (n : ℕ) :
     derivedSeriesDefiningIdeal H n = HopfIdeal.augmentation k H ↔
-      derivedSeries (WithConv (H →ₐ[k] k)) n = ⊥ :=
+      Subgroup.derivedSeries (WithConv (H →ₐ[k] k)) n = ⊥ :=
   H.derivedSeriesDefiningIdeal_eq_augmentation_iff_of_dense_points
     HopfIdeal.vanishingIdeal_top n
 

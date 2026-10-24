@@ -129,8 +129,7 @@ theorem HasGaloisLabel.isSquare_discr_iff_four (h : HasGaloisLabel f j) (hf : f.
   (h.isSquare_discr_iff hf hchar).trans (referenceSubgroup_four_le_alternatingGroup_iff j)
 
 variable (hchar : ringChar F ≠ 2) (hf : f.Monic)
-include hchar hf
-
+include hchar hf in
 /-- **A quartic with non-square discriminant and irreducible resolvent cubic has label `4T5`.**
 Away from characteristic `2`, a monic polynomial has label `4T5`, that is Galois group the full
 symmetric group on its four roots, exactly when it is an irreducible quartic whose discriminant is
@@ -163,6 +162,7 @@ theorem hasGaloisLabel_four_four_iff :
     subst k
     exact hk
 
+include hchar hf in
 /-- **A quartic with square discriminant and irreducible resolvent cubic has label `4T4`.**
 Away from characteristic `2`, a monic polynomial has label `4T4`, that is Galois group the
 alternating group on its four roots, exactly when it is an irreducible quartic whose
@@ -192,6 +192,7 @@ theorem hasGaloisLabel_four_three_iff :
     subst k
     exact hk
 
+include hchar hf in
 /-- **A quartic with square discriminant whose resolvent cubic has a root has label `4T2`.**
 Away from characteristic `2`, a monic polynomial has label `4T2`, that is Galois group the Klein
 four-group acting regularly on its four roots, exactly when it is an irreducible quartic
@@ -214,6 +215,7 @@ theorem hasGaloisLabel_four_one_iff :
   subst k
   exact hk
 
+include hchar hf in
 /-- **A quartic with non-square discriminant whose resolvent cubic has a root has label `4T1` or
 `4T3`.** Away from characteristic `2`, a monic polynomial has label `4T1` or `4T3`, that is Galois
 group cyclic of order four or dihedral of order eight, exactly when it is an irreducible quartic
@@ -246,6 +248,7 @@ theorem hasGaloisLabel_four_zero_or_two_iff :
     · obtain rfl : k = ⟨2, by simp⟩ := Fin.ext hk2
       exact Or.inr hk
 
+include hchar hf in
 /-- **The split-resolvent row for `4T2`.** Away from characteristic `2`, a monic polynomial
 has label `4T2` exactly when it is an irreducible quartic whose resolvent cubic splits completely
 over the base field. The square-discriminant condition follows from splitting. -/
@@ -271,6 +274,7 @@ theorem hasGaloisLabel_four_one_iff_splits_resolvent :
     apply (hasGaloisLabel_four_one_iff hchar hf).2
     exact ⟨hirr, hdeg, hsq, a, ha⟩
 
+include hchar hf in
 /-- **The unique-root row for `4T1` or `4T3`.** Away from characteristic `2`, a monic
 polynomial has label `4T1` or `4T3` exactly when it is an irreducible quartic whose resolvent
 cubic has exactly one root in the base field. The non-square-discriminant condition follows from
@@ -306,8 +310,6 @@ theorem hasGaloisLabel_four_zero_or_two_iff_existsUnique_isRoot_resolvent :
       exact hxa (huniq x hx)
     apply (hasGaloisLabel_four_zero_or_two_iff hchar hf).2
     exact ⟨hirr, hdeg, hsq, a, ha⟩
-
-omit hchar hf
 
 /-! ### Separating `4T1` from `4T3` over the discriminant field -/
 

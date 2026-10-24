@@ -19,7 +19,9 @@ the character is trivial precisely when the Galois image lies in the alternating
 No separability, irreducibility, monicity or characteristic assumption is needed. For an
 inseparable polynomial this is the parity of the action on its distinct roots, not an action on
 `p.natDegree` points. In particular, the integer-valued character remains meaningful in
-characteristic two, even though the discriminant test does not.
+characteristic two, even though the discriminant test does not. For a separable quadratic, for
+instance, the character is trivial exactly when the quadratic has a root in the base field, in
+every characteristic.
 
 The construction uses Mathlib's `Polynomial.Gal.galActionHom` and `Equiv.Perm.sign`; independence
 of the splitting extension uses `Polynomial.Gal.galActionHom_eq_permCongr`.
@@ -90,5 +92,49 @@ theorem _root_.Polynomial.Gal.sign_eq_one_iff_range_le_alternatingGroup :
     Gal.sign p = 1 ↔ (Gal.galActionHom p E).range ≤ alternatingGroup (p.rootSet E) := by
   rw [alternatingGroup_eq_sign_ker, MonoidHom.range_le_ker_iff,
     Gal.sign_comp_galActionHom]
+
+/-! ## Quadratics -/
+
+open scoped Classical in
+/-- **The Galois image of a separable quadratic is even exactly when the quadratic has a root in
+the base field.** The alternating group on two roots is trivial, so the image is even exactly
+when the Galois group is trivial, that is when the quadratic splits over the base field.
+
+This holds in every characteristic. Away from characteristic `2`, combined with the quadratic
+formula `Polynomial.isSquare_discr_iff_exists_isRoot_of_degree_eq_two`, it recovers the
+discriminant test `Polynomial.Monic.isSquare_discr_iff_range_le_alternatingGroup` for quadratics
+independently of the root-difference product. In characteristic `2` the separable quadratic
+`X ^ 2 + X + 1` over `ZMod 2` has no root, so its image is odd, while its discriminant is a square
+by `Polynomial.Monic.isSquare_discr_of_char_two`. -/
+theorem _root_.Polynomial.Gal.range_le_alternatingGroup_iff_exists_isRoot_of_natDegree_eq_two
+    (hsep : p.Separable) (hdeg : p.natDegree = 2) :
+    (Gal.galActionHom p E).range ≤ alternatingGroup (p.rootSet E) ↔ ∃ x, p.IsRoot x := by
+  rw [alternatingGroup.eq_bot_of_card_le_two (by
+      rw [Nat.card_eq_fintype_card, card_rootSet_eq_natDegree hsep Fact.out, hdeg]),
+    le_bot_iff, MonoidHom.range_eq_bot_iff]
+  constructor
+  · intro h
+    -- A trivial root action forces a trivial Galois group, hence a splitting field of degree one.
+    have : Subsingleton p.Gal :=
+      ⟨fun σ τ => Gal.galActionHom_injective p E (by simp [h])⟩
+    have hsplit : p.Splits := by
+      rw [IsSplittingField.splits_iff p.SplittingField p]
+      exact (Subalgebra.bot_eq_top_of_finrank_eq_one
+        ((Gal.card_of_separable hsep).symm.trans (Nat.card_of_subsingleton 1))).symm
+    exact hsplit.exists_eval_eq_zero (by rw [degree_eq_natDegree hsep.ne_zero, hdeg]; decide)
+  · rintro ⟨x, hx⟩
+    have := Gal.uniqueGalOfSplits p (Splits.of_natDegree_eq_two hdeg hx)
+    exact MonoidHom.ext fun σ => by simp [Subsingleton.elim σ 1]
+
+/-- **The parity character of a separable quadratic is trivial exactly when the quadratic has a
+root in the base field**, in every characteristic. This is
+`Polynomial.Gal.range_le_alternatingGroup_iff_exists_isRoot_of_natDegree_eq_two`
+read in the splitting field. -/
+theorem _root_.Polynomial.Gal.sign_eq_one_iff_exists_isRoot_of_natDegree_eq_two
+    (hsep : p.Separable) (hdeg : p.natDegree = 2) : Gal.sign p = 1 ↔ ∃ x, p.IsRoot x := by
+  let _ : Fact ((p.map (algebraMap F p.SplittingField)).Splits) := ⟨SplittingField.splits p⟩
+  rw [Gal.sign_eq_one_iff_range_le_alternatingGroup p p.SplittingField]
+  exact Gal.range_le_alternatingGroup_iff_exists_isRoot_of_natDegree_eq_two p p.SplittingField
+    hsep hdeg
 
 end TauCeti

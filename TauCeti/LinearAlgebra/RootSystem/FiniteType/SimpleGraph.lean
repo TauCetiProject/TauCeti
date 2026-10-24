@@ -33,9 +33,17 @@ simple graph has a positive definite form `2I - A` exactly when it is a Dynkin d
   Dynkin type whose Cartan matrix is simply laced is `2I - A` of its diagram.
 * `SimpleGraph.posDef_graphCartanMatrix_iff`: a connected graph has a positive definite `2I - A`
   exactly when it is isomorphic to the diagram of a valid simply-laced Dynkin type.
+* `TauCeti.DynkinType.exists_isSimplyLaced_diagramGraph_iso` and
+  `SimpleGraph.exists_valid_isSimplyLaced_dynkinType_iso_iff`: every standard Dynkin diagram is
+  isomorphic as a simple graph to the diagram of a simply-laced Dynkin type.
+* `TauCeti.DynkinType.isAcyclic_diagramGraph_cartanMatrix` and
+  `TauCeti.DynkinType.isBipartite_diagramGraph_cartanMatrix`: every standard Dynkin diagram is
+  acyclic and bipartite.
 * `SimpleGraph.exists_pos_two_mul_le_sum_of_not_exists_dynkinType_iso`: a connected graph which is
-  not a Dynkin diagram carries a positive weight `δ` with `2 δ i ≤ ∑_{j ∼ i} δ j` at every vertex.
-* `SimpleGraph.exists_adj_of_not_exists_dynkinType_iso`: such a graph has no isolated vertex.
+  not a Dynkin diagram carries a positive weight `δ` with `2 δ i ≤ ∑_{j ∼ i} δ j` at every vertex;
+  such a graph has no isolated vertex
+  (`SimpleGraph.exists_adj_of_pos_two_mul_le_sum`,
+  in `Combinatorics/SimpleGraph/AdditiveFunction.lean`).
 
 ## References
 
@@ -154,6 +162,77 @@ theorem posDef_graphCartanMatrix_iff (hG : G.Connected) :
     fun ⟨t, _, ht, ⟨φ⟩⟩ ↦ posDef_graphCartanMatrix_of_iso
       ((DynkinType.isSimplyLaced_cartanMatrix_iff t).mpr (.inl ht)) φ⟩
 
+/-- Every simply-laced standard Dynkin diagram is acyclic. -/
+theorem _root_.TauCeti.DynkinType.IsSimplyLaced.isAcyclic_diagramGraph_cartanMatrix {t : DynkinType}
+    (hs : t.IsSimplyLaced) : (diagramGraph t.cartanMatrix).IsAcyclic := by
+  have h := (isFiniteType_graphCartanMatrix_of_posDef
+    (posDef_graphCartanMatrix_of_iso
+      ((DynkinType.isSimplyLaced_cartanMatrix_iff t).mpr (.inl hs))
+      Iso.refl)).isAcyclic_diagramGraph
+  rwa [diagramGraph_graphCartanMatrix] at h
+
+/-- Every standard Dynkin diagram is isomorphic to the diagram of a simply-laced Dynkin type of the
+same rank (preserving validity), since the underlying simple graphs of `Bₙ`, `Cₙ`, `F₄`, and `G₂`
+are path graphs. -/
+theorem _root_.TauCeti.DynkinType.exists_isSimplyLaced_diagramGraph_iso (t : DynkinType) :
+    ∃ s : DynkinType, s.IsSimplyLaced ∧ (t.Valid → s.Valid) ∧
+      Nonempty (diagramGraph t.cartanMatrix ≃g diagramGraph s.cartanMatrix) := by
+  have hpath {n : ℕ} {G : SimpleGraph (Fin n)} (hG : G = pathGraph n) :
+      Nonempty (G ≃g diagramGraph (CartanMatrix.A n)) := by
+    rw [hG, DynkinType.diagramGraph_cartanMatrix_A]
+    exact ⟨Iso.refl⟩
+  cases t with
+  | A n | D n | E6 | E7 | E8 => exact ⟨_, by simp, id, ⟨Iso.refl⟩⟩
+  | B n =>
+    refine ⟨.A n, by simp, fun h => by have := DynkinType.valid_B.mp h; simp; omega, ?_⟩
+    simpa only [DynkinType.rank_B, DynkinType.cartanMatrix_B, DynkinType.rank_A,
+      DynkinType.cartanMatrix_A] using hpath (G := diagramGraph (CartanMatrix.B n)) <| by
+      ext i j
+      rw [diagramGraph_adj, pathGraph_adj]
+      simp [CartanMatrix.B, Fin.ext_iff]
+      omega
+  | C n =>
+    refine ⟨.A n, by simp, fun h => by have := DynkinType.valid_C.mp h; simp; omega, ?_⟩
+    simpa only [DynkinType.rank_C, DynkinType.cartanMatrix_C, DynkinType.rank_A,
+      DynkinType.cartanMatrix_A] using hpath (G := diagramGraph (CartanMatrix.C n)) <| by
+      ext i j
+      rw [diagramGraph_adj, pathGraph_adj]
+      simp [CartanMatrix.C, Fin.ext_iff]
+      omega
+  | F4 =>
+    refine ⟨.A 4, by simp, fun _ => by simp, ?_⟩
+    simpa only [DynkinType.rank_F4, DynkinType.cartanMatrix_F4, DynkinType.rank_A,
+      DynkinType.cartanMatrix_A] using hpath (G := diagramGraph CartanMatrix.F₄) <| by
+      ext i j
+      fin_cases i <;> fin_cases j <;> decide
+  | G2 =>
+    refine ⟨.A 2, by simp, fun _ => by simp, ?_⟩
+    simpa only [DynkinType.rank_G2, DynkinType.cartanMatrix_G2, DynkinType.rank_A,
+      DynkinType.cartanMatrix_A] using hpath (G := diagramGraph CartanMatrix.G₂.transpose) <| by
+      ext i j
+      fin_cases i <;> fin_cases j <;> decide
+
+/-- Every standard Dynkin diagram is acyclic. -/
+theorem _root_.TauCeti.DynkinType.isAcyclic_diagramGraph_cartanMatrix (t : DynkinType) :
+    (diagramGraph t.cartanMatrix).IsAcyclic := by
+  obtain ⟨s, hs, -, ⟨e⟩⟩ := t.exists_isSimplyLaced_diagramGraph_iso
+  exact e.isAcyclic_iff.mpr hs.isAcyclic_diagramGraph_cartanMatrix
+
+/-- Every standard Dynkin diagram is bipartite. -/
+theorem _root_.TauCeti.DynkinType.isBipartite_diagramGraph_cartanMatrix (t : DynkinType) :
+    (diagramGraph t.cartanMatrix).IsBipartite :=
+  t.isAcyclic_diagramGraph_cartanMatrix.isBipartite
+
+omit [DecidableEq V] [DecidableRel G.Adj] [Finite V] in
+/-- A simple graph is isomorphic to the diagram of a valid simply-laced Dynkin type if and only if
+it is isomorphic to the diagram of a valid Dynkin type. -/
+theorem exists_valid_isSimplyLaced_dynkinType_iso_iff (G : SimpleGraph V) :
+    (∃ t : DynkinType, t.Valid ∧ t.IsSimplyLaced ∧ Nonempty (G ≃g diagramGraph t.cartanMatrix)) ↔
+      ∃ t : DynkinType, t.Valid ∧ Nonempty (G ≃g diagramGraph t.cartanMatrix) :=
+  ⟨fun ⟨t, ht, _, h⟩ => ⟨t, ht, h⟩, fun ⟨t, ht, ⟨e⟩⟩ =>
+    let ⟨s, hs, hval, ⟨f⟩⟩ := t.exists_isSimplyLaced_diagramGraph_iso
+    ⟨s, hval ht, hs, ⟨e.trans f⟩⟩⟩
+
 /-! ### Superadditive weights on graphs of infinite type -/
 
 omit [Finite V] in
@@ -183,20 +262,6 @@ theorem exists_pos_two_mul_le_sum_of_not_exists_dynkinType_iso [Fintype V] (hG :
     obtain ⟨t, ht, -, hφ⟩ := exists_dynkinType_iso_of_isFiniteType_graphCartanMatrix hG
       (isFiniteType_graphCartanMatrix_of_posDef h)
     exact ⟨t, ht, hφ⟩
-  exact hG.exists_pos_two_mul_le_sum hδ0 hδ hδle
-
-omit [DecidableEq V] [DecidableRel G.Adj] in
-/-- **A connected non-Dynkin graph has no isolated vertex.** If a connected finite simple graph `G`
-is not isomorphic to the diagram of any valid Dynkin type, then every vertex has a neighbour. -/
-theorem exists_adj_of_not_exists_dynkinType_iso (hG : G.Connected)
-    (hD : ¬ ∃ t : DynkinType, t.Valid ∧ Nonempty (G ≃g diagramGraph t.cartanMatrix)) (i : V) :
-    ∃ j, G.Adj i j := by
-  classical
-  have := Fintype.ofFinite V
-  obtain ⟨δ, hδ, hδle⟩ := exists_pos_two_mul_le_sum_of_not_exists_dynkinType_iso hG hD
-  -- The weight at `i` is positive, so the sum of the weights of its neighbours is nonzero.
-  obtain ⟨j, hj, -⟩ :=
-    Finset.exists_ne_zero_of_sum_ne_zero ((mul_pos two_pos (hδ i)).trans_le (hδle i)).ne'
-  exact ⟨j, (G.mem_neighborFinset i j).1 hj⟩
+  exact hG.exists_pos_smul_le_sum (c := (2 : ℝ)) hδ0 hδ hδle
 
 end SimpleGraph

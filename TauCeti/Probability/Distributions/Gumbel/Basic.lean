@@ -29,15 +29,18 @@ the representation of a logistic variable as a difference of independent Gumbel 
 * `TauCeti.Probability.isProbabilityMeasure_gumbelMeasure` proves normalization for positive scale;
 * `TauCeti.Probability.hasLaw_gumbelMeasure_of_hasLaw_expMeasure` gives the random-variable
   construction;
+* `TauCeti.Probability.map_affine_gumbelMeasure` gives positive affine transport, with the
+  random-variable form `TauCeti.Probability.hasLaw_affine_gumbelMeasure`;
 * `TauCeti.Probability.measurable_gumbelMeasure` proves measurability in the parameters;
 * `TauCeti.Probability.cdf_gumbelMeasure_eq` computes the cdf;
+* `TauCeti.Probability.support_gumbelMeasure` identifies its topological support;
 * `TauCeti.Probability.quantile_gumbelMeasure` computes the quantile, and the two following
   theorems give its one-sided endpoint limits.
 
 ## References
 
-* N. L. Johnson, S. Kotz, N. Balakrishnan, *Continuous Univariate Distributions*, vol. 1, 2nd ed.,
-  Wiley (1994), ch. 21.
+* N. L. Johnson, S. Kotz, N. Balakrishnan, *Continuous Univariate Distributions*, vol. 2, 2nd ed.,
+  Wiley (1995), ch. 22.
 -/
 
 public section
@@ -87,6 +90,31 @@ theorem hasLaw_gumbelMeasure_of_hasLaw_expMeasure {Ω : Type*} [MeasurableSpace 
   exact (hasLaw_map
     (measurable_const.sub (measurable_const.mul Real.measurable_log)).aemeasurable).comp hE
 
+/-- A positive affine change of a Gumbel variable changes its location to `a + b * m` and its
+scale to `b * s`. The identity also respects the nonpositive-scale zero-measure branch. -/
+theorem map_affine_gumbelMeasure {b : ℝ} (hb : 0 < b) (a m s : ℝ) :
+    (gumbelMeasure m s).map (fun x => a + b * x) =
+      gumbelMeasure (a + b * m) (b * s) := by
+  by_cases hs : 0 < s
+  · rw [gumbelMeasure_of_pos hs, gumbelMeasure_of_pos (mul_pos hb hs),
+      Measure.map_map (by fun_prop) (by fun_prop)]
+    congr 1
+    funext e
+    simp only [Function.comp_apply]
+    ring
+  · rw [gumbelMeasure_of_nonpos (le_of_not_gt hs),
+      gumbelMeasure_of_nonpos (mul_nonpos_of_nonneg_of_nonpos hb.le (le_of_not_gt hs)),
+      Measure.map_zero]
+
+/-- The random-variable form of positive affine transport of the Gumbel law. -/
+theorem hasLaw_affine_gumbelMeasure {Ω : Type*} [MeasurableSpace Ω]
+    {P : Measure Ω} {X : Ω → ℝ} {b : ℝ} (hb : 0 < b) (a : ℝ)
+    (hX : HasLaw X (gumbelMeasure m s) P) :
+    HasLaw (fun ω => a + b * X ω) (gumbelMeasure (a + b * m) (b * s)) P := by
+  rw [← map_affine_gumbelMeasure hb]
+  exact (hasLaw_map
+    (measurable_const.add (measurable_const.mul measurable_id)).aemeasurable).comp hX
+
 /-- The Gumbel family is measurable in its location and scale parameters, including the
 nonpositive-scale zero-measure branch. -/
 @[fun_prop]
@@ -135,6 +163,18 @@ theorem strictMono_cdf_gumbelMeasure (hs : 0 < s) (m : ℝ) :
   apply neg_lt_neg
   apply Real.exp_lt_exp.mpr
   exact neg_lt_neg (div_lt_div_of_pos_right (sub_lt_sub_right hxy m) hs)
+
+/-- A positive-scale Gumbel law has full topological support. -/
+@[simp]
+theorem support_gumbelMeasure (hs : 0 < s) (m : ℝ) :
+    (gumbelMeasure m s).support = Set.univ := by
+  let _ := isProbabilityMeasure_gumbelMeasure hs m
+  exact Measure.support_eq_univ_of_strictMono_cdf _ (strictMono_cdf_gumbelMeasure hs m)
+
+/-- A nonpositive-scale Gumbel measure has empty topological support. -/
+theorem support_gumbelMeasure_of_nonpos (hs : s ≤ 0) (m : ℝ) :
+    (gumbelMeasure m s).support = ∅ := by
+  rw [gumbelMeasure_of_nonpos hs, Measure.support_zero]
 
 /-- The quantile of a positive-scale Gumbel law is `m - s * log (-log u)` for every interior
 level `u`. -/

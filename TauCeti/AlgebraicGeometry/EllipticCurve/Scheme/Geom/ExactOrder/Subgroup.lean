@@ -107,19 +107,10 @@ theorem IsOfExactOrder.subschemeι_comp_mulBy (h : E.IsOfExactOrder P N) :
   let := grp
   let := hi
   have : Mono i := Over.mono_of_mono_left i
-  let G : FiniteFlatCommGroupScheme S :=
-    { carrier := (E.multiplesDivisor P N).subscheme
-      structureMap := (E.multiplesDivisor P N).subschemeι ≫ E.structureMap
-      grp := grp
-      comm := isCommMonObj_of_mono i
-      finite := inferInstance
-      flat := inferInstance
-      locallyOfFinitePresentation := inferInstance }
-  have hid : (𝟙 G.toOver) ^ N = 1 :=
-    G.pow_eq_one_of_finrank (fun s ↦ congrFun (finrank_multiplesDivisor P N) s) _
   have hiN : i ≫ E.mulBy N = 1 := by
     rw [comp_mulBy, zpow_natCast]
-    simpa only [pow_comp, Category.id_comp, one_comp] using congrArg (fun x ↦ x ≫ i) hid
+    exact GroupScheme.pow_eq_one_of_finrank_of_mono i inferInstance inferInstance inferInstance
+      fun s ↦ congrFun (finrank_multiplesDivisor P N) s
   simpa only [Over.comp_left, hom_one_left, i, Over.homMk_left, Over.mk_hom, Category.assoc]
     using congrArg Over.Hom.left hiN
 

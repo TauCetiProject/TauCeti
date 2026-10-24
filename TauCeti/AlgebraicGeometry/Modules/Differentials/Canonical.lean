@@ -11,18 +11,22 @@ public import TauCeti.AlgebraicGeometry.LineBundle.SerreDuality
 /-!
 # The differential line bundle and canonical divisors
 
-On an integral curve over a perfect exact constant field, with invertible differential sheaf and
+On an integral curve over an exact constant field, with invertible differential sheaf and
 discrete valuation rings at its codimension-one points, the sheaf of relative differentials is the
 sheaf of a canonical divisor. A separating rational function `t` gives the rational basis
 `dt`; its Weil divisor `K` identifies a regular differential `f dt` with a section `f` of
 `𝒪_X(K)`. The isomorphism is characterized by this rational-coordinate formula. The
-codimension-one points need not be rational, so this applies over finite fields and over number
-fields as well as over algebraically closed fields.
+codimension-one points need not be rational, and the constant field need not be perfect: the
+local comparison only uses that the differentials of each codimension-one local ring are free of
+rank one, which follows from invertibility of the differential sheaf. In particular this applies
+to smooth curves over imperfect fields such as `𝔽_p(t)`.
 
 For a proper curve this identifies the differential line bundle with the canonical bundle
-constructed from Weil differentials. Consequently, for every line bundle `L`, the dual of
-`H¹(X, L)` is linearly equivalent to `H⁰(X, Ω_{X/k} ⊗ L⁻¹)`. This is only the existence of a
-noncanonical equivalence: the comparison does not provide a natural trace pairing.
+constructed from Weil differentials. A separating rational function exists because invertibility
+of the differential sheaf makes the differentials of the function field one-dimensional.
+Consequently, for every line bundle `L`, the dual of `H¹(X, L)` is linearly equivalent to
+`H⁰(X, Ω_{X/k} ⊗ L⁻¹)`. This is only the existence of a noncanonical equivalence: the comparison
+does not provide a natural trace pairing.
 
 The numerical invariants of `Ω_{X/k}` follow: it has `g` independent global sections,
 one-dimensional `H¹`, and degree `2g - 2`, and every line bundle `L` satisfies the Riemann–Roch
@@ -33,9 +37,10 @@ theorem `dim H⁰(X, L) - dim H⁰(X, Ω_{X/k} ⊗ L⁻¹) = deg L + 1 - g`.
 * R. Hartshorne, *Algebraic Geometry*, II, Section 8, and IV, Section 1.
 * H. Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., Sections I.5 and IV.3.
 
-The local comparison is `mem_range_rationalDifferential_iff_weilDifferentialOrder_nonneg`,
-and the rational basis and Weil divisor are those of `kaehlerBasisOfSeparating` and
-`weilDifferentialDivisor`.
+The local comparison is `mem_range_rationalDifferential_iff_weilDifferentialOrder_nonneg`, the
+separating function comes from `finrank_kaehlerDifferential_functionField_of_isInvertible` and
+`finrank_kaehlerDifferential_eq_one_iff`, and the rational basis and Weil divisor are those of
+`kaehlerBasisOfSeparating` and `weilDifferentialDivisor`.
 -/
 
 public section
@@ -115,7 +120,7 @@ private lemma differentialCoordinateHom_app_injective (U : X.Opens)
 
 section Comparison
 
-variable [PerfectField k] [IsLocallyNoetherian X]
+variable [IsLocallyNoetherian X]
   [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))]
   [SheafOfModules.isInvertible X (X.relativeDifferentials k)]
   (hF : IsFunctionField k X.functionField) (hk : IsIntegrallyClosedIn k X.functionField)
@@ -159,9 +164,9 @@ private lemma differentialCoordinateHom_mem (U : X.Opens)
   (range_differentialCoordinateHom_app ht hF hk hdim K hK U _).mp ⟨s, rfl⟩
 
 /-- Reading a differential in the rational basis `dt` identifies `Ω_{X/k}` with `𝒪_X(K)`,
-where `K` has the Weil orders of `dt` as its coefficients. The constant field is perfect and
-exact, and the differential sheaf is assumed invertible; the codimension-one places may have any
-degree. -/
+where `K` has the Weil orders of `dt` as its coefficients. The constant field is exact but need
+not be perfect, and the differential sheaf is assumed invertible; the codimension-one places may
+have any degree. -/
 def relativeDifferentialsIsoDivisorSheaf :
     X.relativeDifferentials k ≅ SchemeWeilDivisor.sheaf K := by
   let φ := SchemeWeilDivisor.sheafLift K (differentialCoordinateHom ht)
@@ -204,7 +209,7 @@ end Comparison
 
 section ProperCurve
 
-variable [PerfectField k] [IsNoetherian X] [X.IsSeparated]
+variable [IsNoetherian X] [X.IsSeparated]
   [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))]
   [SheafOfModules.isInvertible X (X.relativeDifferentials k)]
   (hF : IsFunctionField k X.functionField) (hk : IsIntegrallyClosedIn k X.functionField)
@@ -212,13 +217,17 @@ variable [PerfectField k] [IsNoetherian X] [X.IsSeparated]
   (hex : ValuativeCriterion.Existence (X ↘ Spec (.of k)))
 
 include hF hk hdim hex in
-/-- On a curve over a perfect exact constant field with all the places of its function field, the
+/-- On a curve over an exact constant field with all the places of its function field, the
 invertible sheaf of relative differentials is isomorphic to the Weil-differential canonical
-bundle. -/
+bundle. The constant field need not be perfect. -/
 theorem nonempty_iso_relativeDifferentials_canonicalBundle :
     Nonempty (X.relativeDifferentials k ≅
       (InvertibleSheaf.canonicalBundle hex hdim hF hk).obj) := by
-  obtain ⟨t, ht, hsep⟩ := hF.exists_transcendental_and_isSeparable_adjoin_of_perfectField
+  have := hF.essFiniteType
+  have : Algebra.Transcendental k X.functionField :=
+    Algebra.transcendental_def.mpr hF.exists_transcendental
+  obtain ⟨t, ht, hsep⟩ := finrank_kaehlerDifferential_eq_one_iff.mp
+    (finrank_kaehlerDifferential_functionField_of_isInvertible k (X := X))
   let := hsep
   let ω := weilDifferentialOfSeparating hF ht
   have hω : (ω : Module.Dual k (repartitionSpace k X.functionField)) ≠ 0 :=
@@ -236,7 +245,7 @@ theorem nonempty_iso_relativeDifferentials_canonicalBundle :
   exact ⟨relativeDifferentialsIsoDivisorSheaf ht hF hk hdim K hK ≪≫ e.symm⟩
 
 include hF hk hdim hex in
-/-- Over a perfect exact constant field, the dual of `H¹(X, L)` is linearly equivalent to
+/-- Over an exact constant field, the dual of `H¹(X, L)` is linearly equivalent to
 `H⁰(X, Ω_{X/k} ⊗ L⁻¹)`, by the identification of the differential line bundle with the canonical
 bundle. This asserts only the existence of a noncanonical linear equivalence, not a natural
 duality pairing. -/
@@ -252,8 +261,8 @@ theorem nonempty_cohomologyOneDualEquivCohomologyZero_differentials_tensor_dual
       ⟨X.relativeDifferentials k, inferInstance⟩ (LineBundleClass.mk_eq_mk_iff.mpr ⟨e⟩)
 
 include hF hk hdim hex in
-/-- **The global differentials form a space of dimension the genus.** Over a perfect exact
-constant field, `dim H⁰(X, Ω_{X/k}) = g`, where `g = dim H¹(X, 𝒪_X)`. -/
+/-- **The global differentials form a space of dimension the genus.** Over an exact constant
+field, `dim H⁰(X, Ω_{X/k}) = g`, where `g = dim H¹(X, 𝒪_X)`. -/
 theorem finrank_cohomology_zero_relativeDifferentials :
     haveI := (Scheme.Modules.finiteDimensional_cohomology_congr k
       (SchemeWeilDivisor.sheafZeroIsoTrivial hdim) 1).mp
@@ -264,7 +273,7 @@ theorem finrank_cohomology_zero_relativeDifferentials :
     ⟨X.relativeDifferentials k, inferInstance⟩ (LineBundleClass.mk_eq_mk_iff.mpr ⟨e⟩)
 
 include hF hk hdim hex in
-/-- Over a perfect exact constant field, `H¹(X, Ω_{X/k})` is one-dimensional. -/
+/-- Over an exact constant field, `H¹(X, Ω_{X/k})` is one-dimensional. -/
 theorem finrank_cohomology_one_relativeDifferentials :
     finrank k (Scheme.Modules.Cohomology (X.relativeDifferentials k) 1) = 1 := by
   obtain ⟨e⟩ := nonempty_iso_relativeDifferentials_canonicalBundle hF hk hdim hex
@@ -272,8 +281,8 @@ theorem finrank_cohomology_one_relativeDifferentials :
     ⟨X.relativeDifferentials k, inferInstance⟩ (LineBundleClass.mk_eq_mk_iff.mpr ⟨e⟩)
 
 include hF hk hdim hex in
-/-- **The Riemann–Roch theorem with the sheaf of differentials.** Over a perfect exact constant
-field, every line bundle `L` satisfies
+/-- **The Riemann–Roch theorem with the sheaf of differentials.** Over an exact constant field,
+every line bundle `L` satisfies
 
 `dim H⁰(X, L) - dim H⁰(X, Ω_{X/k} ⊗ L⁻¹) = deg L + 1 - g`,
 
@@ -294,8 +303,8 @@ theorem finrank_cohomology_zero_sub_finrank_cohomology_zero_differentials_tensor
       ⟨X.relativeDifferentials k, inferInstance⟩ (LineBundleClass.mk_eq_mk_iff.mpr ⟨e⟩)
 
 include hF hk hdim hex in
-/-- **The sheaf of differentials of a proper curve has degree `2g - 2`.** Over a perfect exact
-constant field, the Euler-characteristic degree of `Ω_{X/k}` is `2g - 2`, where
+/-- **The sheaf of differentials of a proper curve has degree `2g - 2`.** Over an exact constant
+field, the Euler-characteristic degree of `Ω_{X/k}` is `2g - 2`, where
 `g = dim H¹(X, 𝒪_X)`. -/
 theorem eulerDegree_relativeDifferentials [IsProper (X ↘ Spec (.of k))] :
     haveI := (Scheme.Modules.finiteDimensional_cohomology_congr k

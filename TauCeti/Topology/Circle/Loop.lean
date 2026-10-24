@@ -18,9 +18,13 @@ A loop `γ : Path x x` closes up, so it factors through the quotient `[0, 1] →
 Maps out of a wedge of circles are assembled from maps out of the circles, so this is how loops
 in a space give maps out of a wedge of circles.
 
+In the other direction, the `(p, q)` curve `t ↦ (exp (2πipt), exp (2πiqt))` is the standard loop
+on the torus `S¹ × S¹` winding `p` times around the first circle and `q` times around the second.
+
 ## Main definitions
 
 * `Path.toCircle`: a loop, read as a map from the unit circle.
+* `TauCeti.torusCurve p q`: the `(p, q)` curve on `S¹ × S¹`, a loop at `(1, 1)`.
 
 ## Main results
 
@@ -66,3 +70,22 @@ theorem toCircle_one (γ : Path x x) : γ.toCircle 1 = x := by
   simpa using γ.toCircle_exp 0
 
 end Path
+
+namespace TauCeti
+
+/-- The `(p, q)` curve `t ↦ (exp (2πipt), exp (2πiqt))` on the torus `S¹ × S¹`, a loop at
+`(1, 1)` winding `p` times around the first circle and `q` times around the second. -/
+def torusCurve (p q : ℤ) : Path ((1 : Circle), (1 : Circle)) (1, 1) where
+  toFun t := (Circle.exp (2 * Real.pi * (p * t)), Circle.exp (2 * Real.pi * (q * t)))
+  continuous_toFun := by fun_prop
+  source' := by simp
+  target' := by
+    simp only [Set.Icc.coe_one, mul_one]
+    exact Prod.ext (Circle.exp_two_pi_mul_int p) (Circle.exp_two_pi_mul_int q)
+
+@[simp]
+theorem torusCurve_apply (p q : ℤ) (t : unitInterval) :
+    torusCurve p q t = (Circle.exp (2 * Real.pi * (p * t)), Circle.exp (2 * Real.pi * (q * t))) :=
+  (rfl)
+
+end TauCeti

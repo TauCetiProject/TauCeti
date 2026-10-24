@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.Yamabe.Bubble.Basic
-public import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
+public import TauCeti.Analysis.PDE.Yamabe.Bubble.Moments
 import Mathlib.Analysis.SpecialFunctions.Gamma.Beta
 import Mathlib.MeasureTheory.Constructions.HaarToSphere
 import Mathlib.MeasureTheory.Function.L2Space
+import TauCeti.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 
 /-!
 # Gradient, integrability and energy of the Yamabe bubbles
@@ -39,7 +39,8 @@ The energy identity is proved in polar coordinates. Both integrands are radial a
 the radial integrals are related by integrating the derivative of
 `r ↦ r ^ n (t² + r²) (2 t / (t² + r²)) ^ n`, which vanishes at `0` and at infinity exactly
 because `n > 2`. This gives the energy identity directly, without a whole-space integration by
-parts. The value of `∫ U ^ pₙ` follows from the integral of the Japanese bracket and Legendre's
+parts. The integrability of `U ^ pₙ` and `‖dU‖²` and the value of `∫ U ^ pₙ` are the moments of
+order `0` of `TauCeti.Analysis.PDE.Yamabe.Bubble.Moments`; the value then follows from Legendre's
 duplication formula.
 
 ## Main declarations
@@ -73,48 +74,16 @@ integrable for every additive Haar measure. -/
 theorem integrable_bubble_rpow_criticalExponent (hn₀ : 0 < finrank ℝ E) (hn : finrank ℝ E ≠ 2)
     {t : ℝ} (ht : 0 < t) (b : E) :
     Integrable (fun x ↦ bubble t b x ^ criticalExponent (finrank ℝ E)) μ := by
-  have hr : (finrank ℝ E : ℝ) < 2 * finrank ℝ E := by
-    have : (0 : ℝ) < finrank ℝ E := by exact_mod_cast hn₀
-    linarith
-  have hint := ((integrable_rpow_neg_sq_add_norm_sq μ ht.ne' hr).const_mul
-    ((2 * t) ^ finrank ℝ E)).comp_sub_right b
-  refine hint.congr (.of_forall fun x ↦ ?_)
-  have hQ : 0 < t ^ 2 + ‖x - b‖ ^ 2 := by positivity
-  beta_reduce
-  rw [bubble_rpow_criticalExponent hn ht, show -(2 * (finrank ℝ E : ℝ)) / 2 =
-    -(finrank ℝ E : ℝ) by ring, Real.rpow_neg hQ.le, Real.rpow_natCast, div_pow, div_eq_mul_inv]
+  simpa using integrable_norm_sub_rpow_mul_bubble_rpow_criticalExponent μ hn le_rfl
+    (by exact_mod_cast hn₀) ht b
 
 /-- In dimension `n > 2`, the squared norm of the differential of a bubble is integrable for
 every additive Haar measure. -/
 theorem integrable_norm_fderiv_bubble_sq (hn : 2 < finrank ℝ E) {t : ℝ} (ht : 0 < t) (b : E) :
     Integrable (fun x ↦ ‖fderiv ℝ (bubble t b) x‖ ^ 2) μ := by
-  set n := finrank ℝ E with hn_def
-  have hr : (n : ℝ) < 2 * ((n : ℝ) - 1) := by
-    have : (2 : ℝ) < n := by exact_mod_cast hn
-    linarith
-  have hint := ((integrable_rpow_neg_sq_add_norm_sq μ ht.ne' hr).const_mul
-    ((((n : ℝ) - 2) / (2 * t)) ^ 2 * (2 * t) ^ n)).comp_sub_right b
-  refine hint.mono' ((((contDiff_bubble (m := 1) ht.ne' b).continuous_fderiv
-    one_ne_zero).norm.pow 2).aestronglyMeasurable) (.of_forall fun x ↦ ?_)
-  have hQ : 0 < t ^ 2 + ‖x - b‖ ^ 2 := by positivity
-  -- Bound `‖x - b‖²` by `t² + ‖x - b‖²`, which lowers the decay rate from `2 n` to `2 (n - 1)`.
-  have hpow : (t ^ 2 + ‖x - b‖ ^ 2) ^ (-(2 * ((n : ℝ) - 1)) / 2) =
-      (t ^ 2 + ‖x - b‖ ^ 2) / (t ^ 2 + ‖x - b‖ ^ 2) ^ n := by
-    rw [show -(2 * ((n : ℝ) - 1)) / 2 = 1 - n by ring, Real.rpow_sub hQ, Real.rpow_one,
-      Real.rpow_natCast]
-  have key : ‖x - b‖ ^ 2 * (2 * t / (t ^ 2 + ‖x - b‖ ^ 2)) ^ n ≤
-      (2 * t) ^ n * ((t ^ 2 + ‖x - b‖ ^ 2) / (t ^ 2 + ‖x - b‖ ^ 2) ^ n) := by
-    rw [div_pow, mul_div_assoc', mul_div_assoc']
-    gcongr ?_ / _
-    rw [mul_comm]
-    gcongr
-    linarith [sq_nonneg t]
-  rw [Real.norm_of_nonneg (by positivity), norm_fderiv_bubble_sq ht, ← hn_def, hpow]
-  calc _ = (((n : ℝ) - 2) / (2 * t)) ^ 2 *
-        (‖x - b‖ ^ 2 * (2 * t / (t ^ 2 + ‖x - b‖ ^ 2)) ^ n) := by ring
-    _ ≤ _ := by
-      rw [mul_assoc _ ((2 * t) ^ n)]
-      gcongr
+  have hn' : (2 : ℝ) < finrank ℝ E := by exact_mod_cast hn
+  simpa using integrable_norm_sub_rpow_mul_norm_fderiv_bubble_sq μ le_rfl
+    (by linarith) ht b
 
 /-- In dimension `n > 2`, a bubble lies in `L^{pₙ}` for every additive Haar measure. -/
 theorem memLp_bubble (hn : 2 < finrank ℝ E) {t : ℝ} (ht : 0 < t) (b : E) :
@@ -215,28 +184,13 @@ theorem integral_bubble_rpow_criticalExponent (hn₀ : 0 < finrank ℝ E) (hn : 
       2 * π ^ (((finrank ℝ E : ℝ) + 1) / 2) / Gamma (((finrank ℝ E : ℝ) + 1) / 2) := by
   set n := finrank ℝ E with hn_def
   have hn0 : (0 : ℝ) < n := by exact_mod_cast hn₀
-  set ψ : ℝ → ℝ := fun r ↦ (2 * t / (t ^ 2 + r ^ 2)) ^ n with hψ
-  have hpow : (fun x ↦ bubble t b x ^ criticalExponent n) = fun x ↦ ψ ‖x - b‖ := by
-    funext x
-    exact bubble_rpow_criticalExponent hn ht b x
-  -- Rescale: `ψ ‖y‖ = (2 / t) ^ n (1 + ‖t⁻¹ • y‖²) ^ (-n)`.
-  have hscale (y : E) : ψ ‖y‖ =
-      (2 / t) ^ n * (1 + ‖t⁻¹ • y‖ ^ 2) ^ (-(2 * (n : ℝ)) / 2) := by
-    have hQ : 0 < t ^ 2 + ‖y‖ ^ 2 := by positivity
-    simp only [hψ]
-    rw [show -(2 * (n : ℝ)) / 2 = -(n : ℝ) by ring, Real.rpow_neg (by positivity),
-      Real.rpow_natCast, norm_smul, norm_inv, Real.norm_of_nonneg ht.le, div_pow, div_pow,
-      mul_pow]
-    field_simp
-    rw [div_pow, ← pow_mul, ← pow_mul, mul_comm 2 n]
-    field_simp
-  have hψb := integral_sub_right_eq_self (μ := volume) (fun y ↦ ψ ‖y‖) b
-  have hr : (n : ℝ) < 2 * n := by linarith
-  rw [hpow, hψb, integral_congr_ae (.of_forall hscale), integral_const_mul,
-    Measure.integral_comp_inv_smul_of_nonneg volume
-      (fun z : E ↦ (1 + ‖z‖ ^ 2) ^ (-(2 * (n : ℝ)) / 2)) ht.le,
-    integral_rpow_neg_one_add_norm_sq hr,
-    show (2 * (n : ℝ) - n) / 2 = n / 2 by ring, show 2 * (n : ℝ) / 2 = n by ring, smul_eq_mul]
+  -- This is the moment of order `0`, a beta integral.
+  have hmoment := integral_norm_sub_rpow_mul_bubble_rpow_criticalExponent volume hn le_rfl hn0 ht b
+  simp only [Real.rpow_zero, one_mul, add_zero, sub_zero, mul_one] at hmoment
+  have : Nontrivial E := Module.nontrivial_of_finrank_pos (R := ℝ) hn₀
+  have hΓhalf := Gamma_pos_of_pos (half_pos hn0)
+  rw [hmoment, volume_real_unitBall, ProbabilityTheory.beta, ← hn_def, add_halves,
+    Gamma_add_one (half_pos hn0).ne']
   -- Legendre's duplication formula at `n / 2`.
   have hdup := Real.Gamma_mul_Gamma_add_half ((n : ℝ) / 2)
   rw [show 2 * ((n : ℝ) / 2) = n by ring, show (n : ℝ) / 2 + 1 / 2 = (n + 1) / 2 by ring] at hdup
@@ -249,10 +203,12 @@ theorem integral_bubble_rpow_criticalExponent (hn₀ : 0 < finrank ℝ E) (hn : 
     ring_nf
   have hΓn := Gamma_pos_of_pos hn0
   have hΓ := Gamma_pos_of_pos (show 0 < ((n : ℝ) + 1) / 2 by positivity)
-  rw [← hn_def]
-  calc (2 / t) ^ n * (t ^ n * (π ^ ((n : ℝ) / 2) * Gamma (n / 2) / Gamma n)) =
+  have htwo_pow : (2 : ℝ) ^ n = 2 * 2 ^ (n - 1) := by
+    rw [← pow_succ', Nat.sub_add_cancel hn₀]
+  calc (n : ℝ) * (π ^ ((n : ℝ) / 2) / ((n : ℝ) / 2 * Gamma (n / 2))) *
+        (2 ^ (n - 1) * (Gamma (n / 2) * Gamma (n / 2) / Gamma n)) =
       2 ^ n * π ^ ((n : ℝ) / 2) * Gamma (n / 2) / Gamma n := by
-        rw [div_pow]
+        rw [htwo_pow]
         field_simp
     _ = _ := by
       rw [div_eq_div_iff hΓn.ne' hΓ.ne']

@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Probability.Exchangeability.Arrays.ConditionalLaw
-public import TauCeti.Probability.Kernel.Randomization
+public import TauCeti.Probability.Process.Array.Tail.ConditionalLaw
 
 /-!
 # Uniform mixtures of jointly dissociated array laws
@@ -32,10 +32,10 @@ what dropping the global variable of a separate coding asks of them
 
 The construction samples an array from the original law using uniform noise, then takes its
 conditional law given the corner tail. Thus it only randomizes a standard Borel array space;
-no standard Borel instance for the Giry space of probability measures is needed. Nothing in it
-mentions a symmetry, so it is carried out once for an arbitrary property of the conditional laws
-(`exists_kernel_of_ae_condExpKernel_arrayTail`, `exists_coding_of_ae_condExpKernel_arrayTail`) and
-specialized afterwards.
+no standard Borel instance for the Giry space of probability measures is needed. The general,
+symmetry-free construction lives in
+`TauCeti.Probability.Process.Array.Tail.ConditionalLaw`; this file specializes it to the two
+exchangeability predicates.
 
 ## References
 
@@ -52,62 +52,7 @@ open MeasureTheory ProbabilityTheory
 namespace TauCeti.Probability
 
 variable {α : Type*} [MeasurableSpace α] [StandardBorelSpace α]
-  {ρ : Measure (ℕ × ℕ → α)} [IsProbabilityMeasure ρ] {P : Measure (ℕ × ℕ → α) → Prop}
-
-/-- **The corner-tail conditional laws of an array law, sampled by a uniform variable.** Drawing
-the conditioning variable through the canonical uniform coding presents those conditional laws as a
-Markov kernel from the unit interval whose composition with the uniform law is the original law.
-The supplied property `P`, when it holds for almost every conditional law, holds for almost every
-component of the kernel. -/
-theorem exists_kernel_of_ae_condExpKernel_arrayTail
-    (hP : ∀ᵐ x ∂ρ, P (condExpKernel ρ (arrayTail fun p (y : ℕ × ℕ → α) => y p) x)) :
-    ∃ κ : ProbabilityTheory.Kernel unitInterval (ℕ × ℕ → α), IsMarkovKernel κ ∧
-      (∀ᵐ u ∂(volume : Measure unitInterval), P (κ u)) ∧
-      κ ∘ₘ (volume : Measure unitInterval) = ρ := by
-  have : Nonempty (ℕ × ℕ → α) := nonempty_of_isProbabilityMeasure ρ
-  let Q : ProbabilityMeasure (ℕ × ℕ → α) := ⟨ρ, inferInstance⟩
-  let f := unitIntervalCoding (ℕ × ℕ → α) Q
-  have hf : Measurable f := measurable_unitIntervalCoding Q
-  have hpres : MeasurePreserving f (volume : Measure unitInterval) ρ :=
-    ⟨hf, map_volume_unitIntervalCoding Q⟩
-  have hm := arrayTail_le_ambient (X := fun p (x : ℕ × ℕ → α) => x p) 0
-    (fun p _ _ => measurable_pi_apply p)
-  let K := condExpKernel ρ (arrayTail (fun p (x : ℕ × ℕ → α) => x p))
-  let κ := K.comap f (hf.mono le_rfl hm)
-  refine ⟨κ, inferInstance, hpres.quasiMeasurePreserving.ae hP, ?_⟩
-  -- Integrating the conditional law uses the tail-trimmed measure; the coding map
-  -- samples the ambient law, so pass between them only for tail-measurable integrands.
-  rw [← condExpKernel_comp_trim (μ := ρ) hm]
-  ext s hs
-  rw [Measure.bind_apply hs κ.aemeasurable,
-    Measure.bind_apply hs K.aemeasurable]
-  simp only [κ, ProbabilityTheory.Kernel.comap_apply]
-  rw [lintegral_trim hm (K.measurable_coe hs)]
-  exact hpres.lintegral_comp ((K.measurable_coe hs).mono hm le_rfl)
-
-/-- **An array law is sampled by two independent uniform variables**, the first selecting a
-corner-tail conditional law and the second sampling from it. The coding is jointly measurable, and
-one almost-sure set of first variables works for the given property `P` of the conditional laws.
-Taking `P` to be a conjunction gives one set on which all conjuncts hold. -/
-theorem exists_coding_of_ae_condExpKernel_arrayTail
-    (hP : ∀ᵐ x ∂ρ, P (condExpKernel ρ (arrayTail fun p (y : ℕ × ℕ → α) => y p) x)) :
-    ∃ f : unitInterval → unitInterval → (ℕ × ℕ → α),
-      Measurable (Function.uncurry f) ∧
-      (∀ᵐ u ∂(volume : Measure unitInterval), P ((volume : Measure unitInterval).map (f u))) ∧
-      ((volume : Measure unitInterval).prod volume).map (Function.uncurry f) = ρ := by
-  have : Nonempty (ℕ × ℕ → α) := nonempty_of_isProbabilityMeasure ρ
-  obtain ⟨κ, hκ, hgood, hmix⟩ := exists_kernel_of_ae_condExpKernel_arrayTail hP
-  obtain ⟨f, hf, hmap⟩ := ProbabilityTheory.Kernel.exists_measurable_map_eq_unitInterval κ
-  refine ⟨f, hf, ?_, ?_⟩
-  · simpa only [hmap] using hgood
-  · have hjoint := κ.map_prod_eq_compProd_of_map
-      (μ := (volume : Measure unitInterval)) volume f hf hmap
-    have hsnd := congrArg Measure.snd hjoint
-    rw [Measure.snd_compProd, hmix] at hsnd
-    have hpair : Measurable (fun p : unitInterval × unitInterval => (p.1, f p.1 p.2)) :=
-      measurable_fst.prodMk hf
-    rw [Measure.snd, Measure.map_map measurable_snd hpair] at hsnd
-    exact hsnd
+  {ρ : Measure (ℕ × ℕ → α)} [IsProbabilityMeasure ρ]
 
 /-- A jointly exchangeable array law is a uniform mixture of jointly exchangeable, dissociated
 probability laws. The component laws form a measurable Markov kernel, so the same global

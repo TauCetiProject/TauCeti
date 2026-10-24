@@ -163,7 +163,7 @@ instance isClosedImmersion_rootSubgroup (k : Fin (n + 1) ⊕ Fin (n + 1)) :
 /-- Every numbered root-subgroup map into the type-`Bₙ₊₁` spin carrier is a monomorphism. -/
 theorem mono_rootSubgroup (k : Fin (n + 1) ⊕ Fin (n + 1)) :
     Mono (rootSubgroup n k) :=
-  mono_of_isClosedImmersion_underlying (rootSubgroup n k)
+  Grp.mono_of_mono_left (rootSubgroup n k)
 
 /-- A numbered type-`Bₙ₊₁` spin root subgroup, bundled as a closed subgroup scheme. -/
 noncomputable def rootSubgroupClosedSubgroup

@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Haar.OfBasis
+public import Mathlib.MeasureTheory.Group.IntegralConvolution
+public import Mathlib.MeasureTheory.Measure.Support
 public import Mathlib.MeasureTheory.Measure.Stieltjes
 public import Mathlib.Probability.CDF
 public import Mathlib.Topology.Order.LeftRightLim
@@ -14,7 +16,7 @@ public import Mathlib.Topology.Order.LeftRightLim
 # Cumulative distribution functions
 
 This file records basic properties of cumulative distribution functions. In particular, the cdf
-of an atomless real probability measure is continuous.
+of an atomless real probability measure is continuous, and convolution averages translated cdfs.
 
 A probability measure `μ` on `ℕ` becomes a real law by pushing it forward along the cast
 `ℕ → ℝ`. The resulting cumulative distribution function is determined by the cumulative masses of
@@ -24,6 +26,7 @@ nonnegative point `x` it is the mass `μ` gives to the initial segment below the
 
 ## Main results
 
+* `MeasureTheory.Measure.cdf_conv` computes the cdf of a convolution;
 * `MeasureTheory.Measure.continuous_cdf_of_noAtoms` proves continuity for atomless real laws;
 * `MeasureTheory.Measure.cdf_eq_zero_of_measure_Iio_eq_zero` shows that an atomless law with no
   mass below a point has cdf zero there;
@@ -32,6 +35,8 @@ nonnegative point `x` it is the mass `μ` gives to the initial segment below the
   at one for an atomless or absolutely continuous law carried by the nonnegative half-line;
 * `MeasureTheory.Measure.measure_Ioc_pos_iff_cdf_lt` characterizes positive interval mass by a
   strict increase of the cdf;
+* `MeasureTheory.Measure.support_eq_univ_of_strictMono_cdf` shows that a strictly increasing cdf
+  has full topological support;
 * `MeasureTheory.Measure.cdf_sublevel_measure` evaluates the measure of a CDF sublevel set for
   an atomless real law;
 * `MeasureTheory.Measure.measureReal_Iio_neg` relates the lower tail of a symmetric real law to
@@ -39,6 +44,8 @@ nonnegative point `x` it is the mass `μ` gives to the initial segment below the
 * `MeasureTheory.Measure.cdf_map_abs_of_nonneg` and `MeasureTheory.Measure.cdf_map_abs_of_neg`
   evaluate the cdf of the image of a real law under absolute value, and
   `MeasureTheory.Measure.cdf_map_abs_of_isNegInvariant` specializes it to symmetric laws;
+* `MeasureTheory.Measure.cdf_map_const_mul_sqrt` evaluates the cdf of the image of a real law
+  under a positive multiple of the square root;
 * `MeasureTheory.Measure.leftLim_cdf` identifies the left limit of the cdf at a point with the
   mass of the open ray to its left;
 * `Set.OrdConnected.mem_of_measureReal_Iio_le_of_le_cdf` shows that a cumulative-crossing point
@@ -71,6 +78,19 @@ public section
 open Filter Function MeasureTheory ProbabilityTheory Set Topology
 
 namespace MeasureTheory.Measure
+
+/-- The cdf of a convolution is the average of the translated cdfs of its second factor. -/
+theorem cdf_conv (μ ν : Measure ℝ) [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
+    (x : ℝ) : cdf (μ ∗ ν) x = ∫ y, cdf ν (x - y) ∂μ := by
+  rw [cdf_eq_real, ← integral_indicator_one measurableSet_Iic]
+  rw [integral_conv (f := (Iic x).indicator (1 : ℝ → ℝ))
+    ((integrable_const (1 : ℝ)).indicator measurableSet_Iic)]
+  apply integral_congr_ae
+  filter_upwards [] with y
+  rw [cdf_eq_real, ← integral_indicator_one measurableSet_Iic]
+  apply integral_congr_ae
+  filter_upwards [] with z
+  simp only [indicator_apply, Pi.one_apply, mem_Iic, le_sub_iff_add_le, add_comm y z]
 
 /-- Below the level `1` some point has cumulative mass at least the level, because the cumulative
 distribution function tends to `1` at `+∞`. -/
@@ -110,6 +130,23 @@ theorem cdf_map_abs_of_isNegInvariant (μ : Measure ℝ) [IsProbabilityMeasure �
     [μ.IsNegInvariant] {x : ℝ} (hx : 0 ≤ x) : cdf (μ.map (|·|)) x = 2 * cdf μ x - 1 := by
   rw [μ.cdf_map_abs_of_nonneg hx, μ.measureReal_Iio_neg x]
   ring
+
+/-- At positive scale `s`, the image of `μ` under `y ↦ s * √y` puts no mass on the negative
+half-line, and at `x ≥ 0` its cdf is the cdf of `μ` at `(x / s) ^ 2`. -/
+theorem cdf_map_const_mul_sqrt (μ : Measure ℝ) [IsProbabilityMeasure μ] {s : ℝ} (hs : 0 < s)
+    (x : ℝ) :
+    cdf (μ.map fun y ↦ s * √y) x = if x < 0 then 0 else cdf μ ((x / s) ^ 2) := by
+  rw [cdf_eq_real, map_measureReal_apply (by fun_prop) measurableSet_Iic]
+  by_cases hx : x < 0
+  · have hpre : (fun y ↦ s * √y) ⁻¹' Iic x = ∅ :=
+      eq_empty_of_forall_notMem fun y hy ↦
+        not_le.2 hx ((mul_nonneg hs.le (Real.sqrt_nonneg y)).trans hy)
+    rw [hpre, measureReal_empty, ite_eq_left hx]
+  · have hpre : (fun y ↦ s * √y) ⁻¹' Iic x = Iic ((x / s) ^ 2) := by
+      ext y
+      simp only [mem_preimage, mem_Iic, ← le_div_iff₀' hs, Real.sqrt_le_iff,
+        div_nonneg (le_of_not_gt hx) hs.le, true_and]
+    rw [hpre, ← cdf_eq_real, ite_eq_right hx]
 
 /-- The cdf of an integer-valued law cast to the reals is its cumulative mass through the integer
 floor of the argument. Unlike natural floor, integer floor also accounts for negative values. -/
@@ -189,6 +226,13 @@ theorem measureReal_Ioc_eq_cdf_sub (ν : Measure ℝ) [IsProbabilityMeasure ν] 
   rw [← Iic_sdiff_Iic, measureReal_sdiff (Iic_subset_Iic.2 hab) measurableSet_Iic, cdf_eq_real,
     cdf_eq_real]
 
+/-- A probability measure with no mass below `c` has cdf zero at every point strictly below `c`. -/
+theorem cdf_eq_zero_of_lt_of_measure_Iio_eq_zero (ν : Measure ℝ) [IsProbabilityMeasure ν]
+    {c x : ℝ}
+    (hc : ν (Iio c) = 0) (hx : x < c) : cdf ν x = 0 := by
+  rw [cdf_eq_real]
+  exact measureReal_mono_null (Iic_subset_Iio.mpr hx) (by simp [Measure.real, hc])
+
 /-- An atomless law that gives no mass to the open half-line below `c` has cdf zero at `c`. -/
 theorem cdf_eq_zero_of_measure_Iio_eq_zero (ν : Measure ℝ) [IsProbabilityMeasure ν]
     [NullSingletonClass ν] {c : ℝ} (hc : ν (Iio c) = 0) : cdf ν c = 0 := by
@@ -203,6 +247,17 @@ theorem measure_Ioc_pos_iff_cdf_lt (ν : Measure ℝ) [IsProbabilityMeasure ν] 
     0 < ν (Ioc a b) ↔ 0 < (cdf ν).measure (Ioc a b) := by rw [measure_cdf]
     _ ↔ cdf ν a < cdf ν b := by
       rw [StieltjesFunction.measure_Ioc, ENNReal.ofReal_pos, sub_pos]
+
+/-- A real probability law with a strictly increasing cdf has full topological support. -/
+theorem support_eq_univ_of_strictMono_cdf (ν : Measure ℝ) [IsProbabilityMeasure ν]
+    (hν : StrictMono (cdf ν)) : ν.support = Set.univ := by
+  rw [Set.eq_univ_iff_forall]
+  intro x
+  rw [mem_support_iff_forall]
+  intro U hU
+  obtain ⟨a, b, hx, hab⟩ := mem_nhds_iff_exists_Ioo_subset.mp hU
+  have hIoc : 0 < ν (Ioc a x) := (measure_Ioc_pos_iff_cdf_lt ν).mpr (hν hx.1)
+  exact hIoc.trans_le (measure_mono fun y hy ↦ hab ⟨hy.1, hy.2.trans_lt hx.2⟩)
 
 /-- The measure of the sublevel set `{x | cdf ν x ≤ y}` is `ENNReal.ofReal y` when
 `y < 1`. -/

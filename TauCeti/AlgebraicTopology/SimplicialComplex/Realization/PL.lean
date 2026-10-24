@@ -23,7 +23,7 @@ open Set TauCeti AbstractSimplicialComplex
 
 namespace PreAbstractSimplicialComplex
 
-variable {ι : Type*}
+variable {ι κ ν : Type*}
 
 /-- The ambient coordinate image of the weak polyhedron of `A`. -/
 abbrev realizedCoords (A : PreAbstractSimplicialComplex ι) : Set (ι → ℝ) :=
@@ -31,36 +31,40 @@ abbrev realizedCoords (A : PreAbstractSimplicialComplex ι) : Set (ι → ℝ) :
     (x.1.1 : ι → ℝ)
 
 /-- `A` and `B` have homeomorphic weak polyhedra via some `e` such that `e` and `e.symm` extend to
-maps on `ι → ℝ` that are piecewise linear on the respective coordinate images. -/
-def PLHomeomorphic (A B : PreAbstractSimplicialComplex ι) : Prop :=
+maps between their ambient coordinate spaces that are piecewise linear on the respective
+coordinate images. The complexes may have different vertex types. -/
+def PLHomeomorphic (A : PreAbstractSimplicialComplex ι)
+    (B : PreAbstractSimplicialComplex κ) : Prop :=
   ∃ e : {x : Realization (⊤ : AbstractSimplicialComplex ι) // x.1.support ∈ A} ≃ₜ
-      {x : Realization (⊤ : AbstractSimplicialComplex ι) // x.1.support ∈ B},
-    ∃ f g : (ι → ℝ) → (ι → ℝ),
+      {x : Realization (⊤ : AbstractSimplicialComplex κ) // x.1.support ∈ B},
+    ∃ f : (ι → ℝ) → (κ → ℝ), ∃ g : (κ → ℝ) → (ι → ℝ),
       IsPLOn f (realizedCoords A) ∧
       IsPLOn g (realizedCoords B) ∧
       (∀ x, f (x.1.1 : ι → ℝ) = (e x).1.1) ∧
-      (∀ y, g (y.1.1 : ι → ℝ) = (e.symm y).1.1)
+      (∀ y, g (y.1.1 : κ → ℝ) = (e.symm y).1.1)
 
 /-- The witness characterization of `PLHomeomorphic`. -/
-theorem plHomeomorphic_iff {A B : PreAbstractSimplicialComplex ι} :
+theorem plHomeomorphic_iff {A : PreAbstractSimplicialComplex ι}
+    {B : PreAbstractSimplicialComplex κ} :
     PLHomeomorphic A B ↔
       ∃ e : {x : Realization (⊤ : AbstractSimplicialComplex ι) // x.1.support ∈ A} ≃ₜ
-          {x : Realization (⊤ : AbstractSimplicialComplex ι) // x.1.support ∈ B},
-        ∃ f g : (ι → ℝ) → (ι → ℝ),
+          {x : Realization (⊤ : AbstractSimplicialComplex κ) // x.1.support ∈ B},
+        ∃ f : (ι → ℝ) → (κ → ℝ), ∃ g : (κ → ℝ) → (ι → ℝ),
           IsPLOn f (realizedCoords A) ∧
           IsPLOn g (realizedCoords B) ∧
           (∀ x, f (x.1.1 : ι → ℝ) = (e x).1.1) ∧
-          (∀ y, g (y.1.1 : ι → ℝ) = (e.symm y).1.1) := Iff.rfl
+          (∀ y, g (y.1.1 : κ → ℝ) = (e.symm y).1.1) := Iff.rfl
 
 /-- Construct a `PLHomeomorphic` witness from its homeomorphism and coordinate formulas. -/
-theorem PLHomeomorphic.intro {A B : PreAbstractSimplicialComplex ι}
+theorem PLHomeomorphic.intro {A : PreAbstractSimplicialComplex ι}
+    {B : PreAbstractSimplicialComplex κ}
     (e : {x : Realization (⊤ : AbstractSimplicialComplex ι) // x.1.support ∈ A} ≃ₜ
-      {x : Realization (⊤ : AbstractSimplicialComplex ι) // x.1.support ∈ B})
-    (f g : (ι → ℝ) → (ι → ℝ))
+      {x : Realization (⊤ : AbstractSimplicialComplex κ) // x.1.support ∈ B})
+    (f : (ι → ℝ) → (κ → ℝ)) (g : (κ → ℝ) → (ι → ℝ))
     (hf : IsPLOn f (realizedCoords A))
     (hg : IsPLOn g (realizedCoords B))
     (he : ∀ x, f (x.1.1 : ι → ℝ) = (e x).1.1)
-    (heinv : ∀ y, g (y.1.1 : ι → ℝ) = (e.symm y).1.1) :
+    (heinv : ∀ y, g (y.1.1 : κ → ℝ) = (e.symm y).1.1) :
     PLHomeomorphic A B :=
   plHomeomorphic_iff.mpr ⟨e, f, g, hf, hg, he, heinv⟩
 
@@ -71,13 +75,15 @@ theorem PLHomeomorphic.refl (A : PreAbstractSimplicialComplex ι) :
     (fun _ => rfl) (fun _ => rfl)
 
 /-- Symmetry of `PLHomeomorphic`. -/
-theorem PLHomeomorphic.symm {A B : PreAbstractSimplicialComplex ι}
+theorem PLHomeomorphic.symm {A : PreAbstractSimplicialComplex ι}
+    {B : PreAbstractSimplicialComplex κ}
     (h : PLHomeomorphic A B) : PLHomeomorphic B A := by
   rcases plHomeomorphic_iff.mp h with ⟨e, f, g, hf, hg, he, heinv⟩
   exact PLHomeomorphic.intro e.symm g f hg hf heinv he
 
 /-- Transitivity of `PLHomeomorphic`. -/
-theorem PLHomeomorphic.trans {A B C : PreAbstractSimplicialComplex ι}
+theorem PLHomeomorphic.trans {A : PreAbstractSimplicialComplex ι}
+    {B : PreAbstractSimplicialComplex κ} {C : PreAbstractSimplicialComplex ν}
     (hAB : PLHomeomorphic A B) (hBC : PLHomeomorphic B C) :
     PLHomeomorphic A C := by
   rcases plHomeomorphic_iff.mp hAB with ⟨e₁, f₁, g₁, hf₁, hg₁, he₁, he₁inv⟩

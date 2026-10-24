@@ -7,6 +7,12 @@ module
 
 public import Mathlib.Analysis.Calculus.FDeriv.CompCLM
 public import Mathlib.Analysis.Calculus.FDeriv.Add
+public import Mathlib.Analysis.Calculus.Deriv.Basic
+public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
+import Mathlib.Analysis.Normed.Module.FiniteDimension
+import Mathlib.Analysis.Calculus.FDeriv.Equiv
+import Mathlib.Analysis.Calculus.FDeriv.Pi
+import Mathlib.Analysis.Calculus.Deriv.Mul
 
 /-!
 # Derivatives of continuous-linear-map applications
@@ -15,7 +21,11 @@ This file records a zero-value rule for differentiating the pointwise applicatio
 continuous linear map. At a zero of the vector-valued argument, the variation of the operator
 contributes nothing to the derivative, so the operator-valued map need only be continuous. It also
 records the derivative of the application of a varying continuous linear map to a fixed vector,
-and the product rule for a varying bilinear map applied to two varying vectors.
+the product rule for a varying bilinear map applied to two varying vectors, and the fact that
+the derivative of a field of symmetric bilinear maps takes symmetric values. Finally, a family of
+continuous linear maps out of a finite-dimensional space is differentiable, or has a given
+derivative in a scalar variable, within a set or at a point, exactly when each of its evaluations
+does; this is how derivatives of families of linear and bilinear maps are tested on vectors.
 
 ## Main declarations
 
@@ -24,6 +34,16 @@ and the product rule for a varying bilinear map applied to two varying vectors.
 * `TauCeti.fderiv_clm_apply_const_apply`: the derivative of `y ↦ c y v` in the direction `w` is
   `Dc(w) v`.
 * `TauCeti.fderiv_bilin_apply`: the product rule for `y ↦ c y (A y) (B y)`.
+* `TauCeti.fderiv_apply_apply_comm`: the derivative of a field of bilinear maps that is symmetric
+  near a point takes symmetric values there.
+* `TauCeti.differentiableWithinAt_clm_apply`: a family of continuous linear maps out of a
+  finite-dimensional space is differentiable within a set exactly when each evaluation is;
+  `TauCeti.differentiableAt_clm_apply` is the pointwise form.
+* `TauCeti.hasDerivWithinAt_clm_apply`: such a family of a scalar variable has derivative `c'`
+  within a set, at a point of unique differentiability, exactly when each evaluation at `v` has
+  derivative `c' v`; `TauCeti.hasDerivAt_clm_apply` is the pointwise form.
+* `TauCeti.differentiableWithinAt_clm_apply₂`, `TauCeti.hasDerivWithinAt_clm_apply₂` and their
+  pointwise forms: the same criteria for families of bilinear maps, tested on pairs of vectors.
 -/
 
 public section
@@ -77,6 +97,97 @@ theorem fderiv_bilin_apply {c : E → F →L[𝕜] G →L[𝕜] F'} {A : E → F
   simp only [add_apply, ContinuousLinearMap.coe_comp, Function.comp_apply,
     ContinuousLinearMap.flip_apply]
   abel
+
+/-- If a field `c` of bilinear maps takes symmetric values near `x`, then so does each directional
+derivative of `c` at `x`. -/
+theorem fderiv_apply_apply_comm {c : E → F →L[𝕜] F →L[𝕜] G} {x : E}
+    (hc : ∀ᶠ y in 𝓝 x, ∀ v w, c y v w = c y w v) (u : E) (v w : F) :
+    fderiv 𝕜 c x u v w = fderiv 𝕜 c x u w v := by
+  by_cases hd : DifferentiableAt 𝕜 c x
+  · -- Both sides are derivatives of functions of `y` which agree near `x`.
+    have happ (a b : F) : fderiv 𝕜 (fun y ↦ c y a b) x u = fderiv 𝕜 c x u a b := by
+      rw [fderiv_clm_apply_const_apply (hd.clm_apply (differentiableAt_const a)),
+        fderiv_clm_apply_const_apply hd]
+    have heq : (fun y ↦ c y v w) =ᶠ[𝓝 x] fun y ↦ c y w v := hc.mono fun y hy ↦ hy v w
+    rw [← happ, ← happ, heq.fderiv_eq]
+  · simp [fderiv_zero_of_not_differentiableAt hd]
+
+/-- A family of continuous linear maps out of a finite-dimensional space is differentiable within
+a set exactly when its evaluation at each fixed vector is differentiable within that set. -/
+theorem differentiableWithinAt_clm_apply [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F]
+    {c : E → F →L[𝕜] G} {s : Set E} {x : E} :
+    DifferentiableWithinAt 𝕜 c s x ↔ ∀ v, DifferentiableWithinAt 𝕜 (fun y ↦ c y v) s x := by
+  refine ⟨fun h v ↦ h.clm_apply (differentiableWithinAt_const v), fun h ↦ ?_⟩
+  -- Read `c` through the evaluations at the vectors of a basis of `F`, as in the proof of
+  -- Mathlib's `contDiffWithinAt_clm_apply`.
+  let d := Module.finrank 𝕜 F
+  have hd : d = Module.finrank 𝕜 (Fin d → 𝕜) := (Module.finrank_fin_fun 𝕜).symm
+  let e₁ := ContinuousLinearEquiv.ofFinrankEq hd
+  let e₂ := (e₁.arrowCongr (1 : G ≃L[𝕜] G)).trans (ContinuousLinearEquiv.piRing (Fin d))
+  have he : DifferentiableWithinAt 𝕜 (fun y ↦ e₂ (c y)) s x :=
+    differentiableWithinAt_pi.mpr fun _ ↦ h _
+  simpa [Function.comp_def] using e₂.symm.differentiableAt.comp_differentiableWithinAt x he
+
+/-- A family of continuous linear maps out of a finite-dimensional space is differentiable
+exactly when its evaluation at each fixed vector is differentiable. -/
+theorem differentiableAt_clm_apply [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F]
+    {c : E → F →L[𝕜] G} {x : E} :
+    DifferentiableAt 𝕜 c x ↔ ∀ v, DifferentiableAt 𝕜 (fun y ↦ c y v) x := by
+  simpa only [differentiableWithinAt_univ] using
+    differentiableWithinAt_clm_apply (c := c) (s := univ) (x := x)
+
+/-- A family of continuous linear maps out of a finite-dimensional space, depending on a scalar,
+has derivative `c'` within a set at a point of unique differentiability exactly when its
+evaluation at each fixed vector `v` has derivative `c' v` within that set. -/
+theorem hasDerivWithinAt_clm_apply [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F]
+    {c : 𝕜 → F →L[𝕜] G} {c' : F →L[𝕜] G} {s : Set 𝕜} {t : 𝕜} (hs : UniqueDiffWithinAt 𝕜 s t) :
+    HasDerivWithinAt c c' s t ↔ ∀ v, HasDerivWithinAt (fun r ↦ c r v) (c' v) s t := by
+  refine ⟨fun h v ↦ by simpa using h.clm_apply (hasDerivWithinAt_const t s v), fun h ↦ ?_⟩
+  have hd := (differentiableWithinAt_clm_apply.mpr fun v ↦
+    (h v).differentiableWithinAt).hasDerivWithinAt
+  convert hd using 1
+  ext v
+  exact hs.eq_deriv s (h v) (by simpa using hd.clm_apply (hasDerivWithinAt_const t s v))
+
+/-- A family of continuous linear maps out of a finite-dimensional space, depending on a scalar,
+has derivative `c'` exactly when its evaluation at each fixed vector `v` has derivative `c' v`. -/
+theorem hasDerivAt_clm_apply [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F] {c : 𝕜 → F →L[𝕜] G}
+    {c' : F →L[𝕜] G} {t : 𝕜} :
+    HasDerivAt c c' t ↔ ∀ v, HasDerivAt (fun s ↦ c s v) (c' v) t := by
+  simpa only [hasDerivWithinAt_univ] using
+    hasDerivWithinAt_clm_apply (c := c) (c' := c') uniqueDiffWithinAt_univ
+
+/-- A family of continuous bilinear maps on finite-dimensional spaces is differentiable within a
+set exactly when its evaluation at each fixed pair of vectors is differentiable within that set. -/
+theorem differentiableWithinAt_clm_apply₂ [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F]
+    [FiniteDimensional 𝕜 F'] {c : E → F →L[𝕜] F' →L[𝕜] G} {s : Set E} {x : E} :
+    DifferentiableWithinAt 𝕜 c s x ↔ ∀ v w, DifferentiableWithinAt 𝕜 (fun y ↦ c y v w) s x :=
+  differentiableWithinAt_clm_apply.trans
+    (forall_congr' fun _ ↦ differentiableWithinAt_clm_apply)
+
+/-- A family of continuous bilinear maps on finite-dimensional spaces is differentiable exactly
+when its evaluation at each fixed pair of vectors is differentiable. -/
+theorem differentiableAt_clm_apply₂ [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F]
+    [FiniteDimensional 𝕜 F'] {c : E → F →L[𝕜] F' →L[𝕜] G} {x : E} :
+    DifferentiableAt 𝕜 c x ↔ ∀ v w, DifferentiableAt 𝕜 (fun y ↦ c y v w) x :=
+  differentiableAt_clm_apply.trans (forall_congr' fun _ ↦ differentiableAt_clm_apply)
+
+/-- A family of continuous bilinear maps on finite-dimensional spaces, depending on a scalar, has
+derivative `c'` within a set at a point of unique differentiability exactly when its evaluation
+at each fixed pair `(v, w)` has derivative `c' v w` within that set. -/
+theorem hasDerivWithinAt_clm_apply₂ [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F]
+    [FiniteDimensional 𝕜 F'] {c : 𝕜 → F →L[𝕜] F' →L[𝕜] G} {c' : F →L[𝕜] F' →L[𝕜] G}
+    {s : Set 𝕜} {t : 𝕜} (hs : UniqueDiffWithinAt 𝕜 s t) :
+    HasDerivWithinAt c c' s t ↔ ∀ v w, HasDerivWithinAt (fun r ↦ c r v w) (c' v w) s t :=
+  (hasDerivWithinAt_clm_apply hs).trans (forall_congr' fun _ ↦ hasDerivWithinAt_clm_apply hs)
+
+/-- A family of continuous bilinear maps on finite-dimensional spaces, depending on a scalar, has
+derivative `c'` exactly when its evaluation at each fixed pair `(v, w)` has derivative
+`c' v w`. -/
+theorem hasDerivAt_clm_apply₂ [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F]
+    [FiniteDimensional 𝕜 F'] {c : 𝕜 → F →L[𝕜] F' →L[𝕜] G} {c' : F →L[𝕜] F' →L[𝕜] G} {t : 𝕜} :
+    HasDerivAt c c' t ↔ ∀ v w, HasDerivAt (fun s ↦ c s v w) (c' v w) t :=
+  hasDerivAt_clm_apply.trans (forall_congr' fun _ ↦ hasDerivAt_clm_apply)
 
 end TauCeti
 

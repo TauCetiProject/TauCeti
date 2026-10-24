@@ -220,6 +220,29 @@ theorem relabelingHomeomorph_val
     (P.relabelingHomeomorph f hK hL x).1.1 = Finsupp.mapDomain f x.1.1 :=
   relabelingForward_val P f hL x
 
+/-- Changing the ambient complex leaves the barycentric coordinate vector unchanged. -/
+@[simp]
+theorem topRealizationHomeomorph_val
+    (P : PreAbstractSimplicialComplex α) {A : AbstractSimplicialComplex α}
+    (hA : P ≤ A.toPreAbstractSimplicialComplex)
+    (x : {x : Realization (⊤ : AbstractSimplicialComplex α) // x.1.support ∈ P}) :
+    ((P.topRealizationHomeomorph hA x).1.1 : α → ℝ) = (x.1.1 : α → ℝ) := by
+  classical
+  rw [topRealizationHomeomorph, Homeomorph.trans_apply, Homeomorph.setCongr_apply,
+    relabelingHomeomorph_val]
+  ext i
+  simp
+
+/-- The inverse change of ambient complex also preserves barycentric coordinates. -/
+@[simp]
+theorem topRealizationHomeomorph_symm_val
+    (P : PreAbstractSimplicialComplex α) {A : AbstractSimplicialComplex α}
+    (hA : P ≤ A.toPreAbstractSimplicialComplex)
+    (x : {x : Realization A // x.1.support ∈ P}) :
+    (((P.topRealizationHomeomorph hA).symm x).1.1 : α → ℝ) = (x.1.1 : α → ℝ) := by
+  rw [← P.topRealizationHomeomorph_val hA ((P.topRealizationHomeomorph hA).symm x),
+    (P.topRealizationHomeomorph hA).apply_symm_apply]
+
 /-- Inverse relabeling pulls back the barycentric coordinate vector. -/
 @[simp]
 theorem relabelingHomeomorph_symm_val

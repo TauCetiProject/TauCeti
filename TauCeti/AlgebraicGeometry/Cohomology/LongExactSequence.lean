@@ -35,7 +35,9 @@ varies the coefficients.
   starts, and `Scheme.Modules.cohomologyMap_surjective`, the surjectivity it gives when the next
   cohomology group of `M₁` vanishes;
 * `Scheme.Modules.subsingleton_cohomology_X₂`, `Scheme.Modules.subsingleton_cohomology_X₃` and
-  `Scheme.Modules.subsingleton_cohomology_X₁`, the vanishing consequences;
+  `Scheme.Modules.subsingleton_cohomology_X₁`, the vanishing consequences, and
+  `Scheme.Modules.cohomologyδ_surjective` and `Scheme.Modules.cohomologyδ_bijective`, the
+  connecting map is onto, or bijective, when the adjacent cohomology of `M₂` vanishes;
 * `Scheme.Modules.finiteDimensional_cohomology_X₂`: in a short exact sequence, `Hⁱ(X, M₂)` is
   finite-dimensional when `Hⁱ(X, M₁)` and `Hⁱ(X, M₃)` are, and
   `Scheme.Modules.finiteDimensional_cohomology_X₁`: `Hⁱ⁺¹(X, M₁)` is finite-dimensional when
@@ -156,6 +158,19 @@ theorem subsingleton_cohomology_X₁ (n₀ n₁ : ℕ) (h : n₀ + 1 = n₁)
     (h₃ : Subsingleton (Cohomology S.X₃ n₀)) (h₂ : Subsingleton (Cohomology S.X₂ n₁)) :
     Subsingleton (Cohomology S.X₁ n₁) :=
   CategoryTheory.Sheaf.H.subsingleton_X₁ (shortExact_map_toSheaf hS) n₀ n₁ h h₃ h₂
+
+/-- If `Hⁿ¹(X, M₂)` vanishes, then the connecting map `Hⁿ⁰(X, M₃) →+ Hⁿ¹(X, M₁)` is
+surjective. -/
+theorem cohomologyδ_surjective (n₀ n₁ : ℕ) (h : n₀ + 1 = n₁)
+    (h₂ : Subsingleton (Cohomology S.X₂ n₁)) : Function.Surjective (cohomologyδ hS n₀ n₁ h) :=
+  CategoryTheory.Sheaf.H.δ_surjective (shortExact_map_toSheaf hS) n₀ n₁ h h₂
+
+/-- If `Hⁿ⁰(X, M₂)` and `Hⁿ¹(X, M₂)` vanish, then the connecting map
+`Hⁿ⁰(X, M₃) →+ Hⁿ¹(X, M₁)` is bijective. -/
+theorem cohomologyδ_bijective (n₀ n₁ : ℕ) (h : n₀ + 1 = n₁)
+    (h₂₀ : Subsingleton (Cohomology S.X₂ n₀)) (h₂₁ : Subsingleton (Cohomology S.X₂ n₁)) :
+    Function.Bijective (cohomologyδ hS n₀ n₁ h) :=
+  CategoryTheory.Sheaf.H.δ_bijective (shortExact_map_toSheaf hS) n₀ n₁ h h₂₀ h₂₁
 
 /-- Global sections are left exact: the sections of `M₁` are exactly the sections of `M₂` that
 die in `M₃`. -/

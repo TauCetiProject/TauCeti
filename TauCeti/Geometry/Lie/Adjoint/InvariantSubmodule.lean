@@ -42,15 +42,15 @@ theorem forall_exp_smul_mul_mem_iff_forall_commutator_mem (x : R)
     (∀ (t : ℝ) (y : R), y ∈ S → exp (t • x) * y * exp (-(t • x)) ∈ S) ↔
       ∀ y : R, y ∈ S → x * y - y * x ∈ S := by
   have hscaled (t : ℝ) :
-      t • (continuousCommutator x) = continuousCommutator (t • x) :=
-    (map_smul continuousCommutator t x).symm
+      t • (continuousCommutator ℝ x) = continuousCommutator ℝ (t • x) :=
+    (map_smul (continuousCommutator ℝ) t x).symm
   have hflow :
       (∀ t : ℝ, S ∈ Module.End.invtSubmodule
         (ContinuousLinearMap.mulLeftRight ℝ R (exp (t • x))
           (exp (-(t • x)))).toLinearMap) ↔
-        S ∈ Module.End.invtSubmodule (continuousCommutator x).toLinearMap := by
+        S ∈ Module.End.invtSubmodule (continuousCommutator ℝ x).toLinearMap := by
     rw [← ContinuousLinearMap.forall_exp_smul_mem_invtSubmodule_iff
-      (continuousCommutator x) hS]
+      (continuousCommutator ℝ x) hS]
     apply forall_congr'
     intro t
     rw [hscaled, exp_continuousCommutator]

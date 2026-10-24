@@ -355,6 +355,21 @@ theorem map_geckWeylWordTorusAction {A : Type v} {B : Type v'}
       simp only [geckWeylWordTorusAction_cons, MonoidHom.comp_apply,
         map_geckSimpleReflectionTorusPoint, ih]
 
+/-- **Weyl-word conjugation in any group.** If each `n j` conjugates `T s` to the image under `T`
+of the pinned simple reflection at `j` applied to `s`, then the product of the `n j` along a word
+conjugates `T s` to the image of the word's torus action on `s`. -/
+theorem list_prod_conj_eq_geckWeylWordTorusAction {G : Type*} [Group G] {A : Type v}
+    [CommRing A] (T : (Fin t.rank → Aˣ) → G) (n : Fin t.rank → G)
+    (hn : ∀ j s, n j * T s * (n j)⁻¹ = T (t.geckSimpleReflectionTorusPoint ht j A s))
+    (l : List (Fin t.rank)) (s : Fin t.rank → Aˣ) :
+    (l.map n).prod * T s * (l.map n).prod⁻¹ = T (t.geckWeylWordTorusAction ht l A s) := by
+  induction l with
+  | nil => simp
+  | cons i l ih =>
+      rw [List.map_cons, List.prod_cons, geckWeylWordTorusAction_cons, MonoidHom.comp_apply,
+        ← hn, ← ih]
+      group
+
 /-- **Conjugation by a Weyl-word representative realizes the word's action on the represented
 weight torus.** -/
 @[simp]
@@ -362,30 +377,9 @@ theorem geckWeylWordPoint_conj_geckWeightTorusPoints (l : List (Fin t.rank))
     (A : Type v) [CommRing A] (s : Fin t.rank → Aˣ) :
     t.geckWeylWordPoint ht l A * t.geckWeightTorusPoints ht A s *
         (t.geckWeylWordPoint ht l A)⁻¹ =
-      t.geckWeightTorusPoints ht A (t.geckWeylWordTorusAction ht l A s) := by
-  induction l with
-  | nil => simp
-  | cons i l ih =>
-      rw [geckWeylWordPoint_cons]
-      calc
-        (t.geckSimpleWeylPoint ht i A * t.geckWeylWordPoint ht l A) *
-              t.geckWeightTorusPoints ht A s *
-              (t.geckSimpleWeylPoint ht i A * t.geckWeylWordPoint ht l A)⁻¹ =
-            t.geckSimpleWeylPoint ht i A *
-              (t.geckWeylWordPoint ht l A * t.geckWeightTorusPoints ht A s *
-                (t.geckWeylWordPoint ht l A)⁻¹) *
-              (t.geckSimpleWeylPoint ht i A)⁻¹ := by group
-        _ = t.geckSimpleWeylPoint ht i A *
-              t.geckWeightTorusPoints ht A (t.geckWeylWordTorusAction ht l A s) *
-              (t.geckSimpleWeylPoint ht i A)⁻¹ := by rw [ih]
-        _ = t.geckWeightTorusPoints ht A
-              (t.geckSimpleReflectionTorusPoint ht i A
-                (t.geckWeylWordTorusAction ht l A s)) :=
-          t.geckSimpleWeylPoint_conj_geckWeightTorusPoints ht i A _
-        _ = t.geckWeightTorusPoints ht A
-              (t.geckWeylWordTorusAction ht (i :: l) A s) := by
-          rw [geckWeylWordTorusAction_cons]
-          rfl
+      t.geckWeightTorusPoints ht A (t.geckWeylWordTorusAction ht l A s) :=
+  t.list_prod_conj_eq_geckWeylWordTorusAction ht _ _
+    (t.geckSimpleWeylPoint_conj_geckWeightTorusPoints ht · A) l s
 
 /-- **Every Weyl-word representative normalizes the represented weight torus.** -/
 theorem geckWeylWordPoint_mem_normalizer_geckWeightTorusPoints (l : List (Fin t.rank))

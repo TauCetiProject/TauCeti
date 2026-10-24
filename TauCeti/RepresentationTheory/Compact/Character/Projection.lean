@@ -95,8 +95,7 @@ private theorem star_character_conj (g h : G) :
     (star (character π hπ)) (h * g * h⁻¹) = (star (character π hπ)) g := by
   rw [ContinuousMap.star_apply, ContinuousMap.star_apply, character_conj π hπ g h]
 
-include hρ
-
+include hρ in
 omit [IsAlgClosed 𝕜] [NormedSpace ℝ V] [SMulCommClass ℝ 𝕜 V] [NormedSpace ℝ W]
   [SMulCommClass ℝ 𝕜 W] in
 /-- Pairing a representation's character with the conjugate of another one's is the `L²` inner
@@ -112,6 +111,7 @@ theorem integral_star_character_mul_character :
   beta_reduce
   rw [ContinuousMap.star_apply, RCLike.star_def, mul_comm]
 
+include hρ in
 omit [IsAlgClosed 𝕜] in
 /-- **The character projection kills an inequivalent representation.** If `π` is unitary and there
 is no nonzero continuous intertwiner `ρ → π`, the conjugate character of `π` acts as zero on `ρ`.
@@ -146,8 +146,6 @@ theorem integratedOperator_star_character_eq_zero (hunitary : IsUnitary π)
     beta_reduce
     rw [inner_smul_right, matrixCoeff_apply, inner_conj_symm]
   simpa using inner_self_eq_zero.mp (key _)
-
-omit hρ
 
 /-- **The conjugate character acts on its own representation by the inverse dimension.** For a
 finite-dimensional irreducible unitary representation of dimension `d`, the integrated operator of

@@ -211,7 +211,7 @@ One prerequisite is **strengthened rather than transcribed**, in
 `isEllipticNet_polyToField_ψ`, the source's `net_ψᵤ` (`:140`) rather than its
 `isEllSequence_ψᵤ` (`:139`). `smulY_add_sub_negY` needs the elliptic-net relation at the
 **nonzero** shift `s = m`, which an elliptic sequence — the `s = 0` case — does not give;
-`isEllipticNet_normEDS` was already available, so the change is two tokens, and
+`IsEllipticNet.normEDS` was already available, so the change is two tokens, and
 `smulX_sub_smulX`, the one existing call site, takes the `s = 0` instance.
 
 `eq_of_sub_negY_eq` is the first consumer of `(2 : Universal.Field) ≠ 0`. No instance is added for

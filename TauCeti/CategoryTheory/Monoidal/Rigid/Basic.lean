@@ -11,7 +11,9 @@ public import Mathlib.CategoryTheory.Monoidal.Rigid.Basic
 # Exact pairings in rigid monoidal categories
 
 This file records evaluation and coevaluation formulas for the self-pairing of the unit, for
-transported exact pairings, and for the adjunction associated to an exact pairing.
+transported exact pairings, and for the adjunction associated to an exact pairing. It also
+computes the loop obtained by closing up a tensor product `f ⊗ₘ g` of endomorphisms with the
+tensor product pairings: in string diagrams, the loop of `f` sits inside the loop of `g`.
 
 ## Main declarations
 
@@ -23,6 +25,9 @@ transported exact pairings, and for the adjunction associated to an exact pairin
   `TauCeti.exactPairingCongrRight_coevaluation`: transport in the right argument;
 * `TauCeti.exactPairingCongr_evaluation` and
   `TauCeti.exactPairingCongr_coevaluation`: simultaneous transport in both arguments;
+* `TauCeti.ExactPairing.coevaluation_whiskerLeft_tensorHom_evaluation` and
+  `TauCeti.ExactPairing.coevaluation_tensorHom_whiskerRight_evaluation`: closing up `f ⊗ₘ g`
+  with the tensor product pairings nests the loop of one factor inside the loop of the other;
 * `TauCeti.tensorLeftAdjunction_unit_app` and `TauCeti.tensorLeftAdjunction_counit_app`: the unit
   and counit of the adjunction associated to an exact pairing.
 -/
@@ -101,6 +106,50 @@ theorem exactPairingCongr_coevaluation {X X' Y Y' : C} [ExactPairing X' Y']
   rw [@exactPairingCongrLeft_coevaluation C _ _ X X' Y (exactPairingCongrRight j) i,
     exactPairingCongrRight_coevaluation]
   simp only [Category.assoc]
+
+namespace ExactPairing
+
+/-- Closing up `f ⊗ₘ g` between the coevaluation of the tensor product pairing of `(B, Y)` and
+`(A, X)` and the evaluation of the tensor product pairing of `(X, A)` and `(Y, B)`: the result is
+the loop of `g`, with the loop `η_ A X ≫ A ◁ f ≫ ε_ X A` of `f` acting on `Y` from the left,
+inside it. -/
+theorem coevaluation_whiskerLeft_tensorHom_evaluation {A B X Y : C}
+    [ExactPairing A X] [ExactPairing X A] [ExactPairing B Y] [ExactPairing Y B]
+    (f : X ⟶ X) (g : Y ⟶ Y) :
+    η_ (B ⊗ A) (X ⊗ Y) ≫ (B ⊗ A) ◁ (f ⊗ₘ g) ≫ ε_ (X ⊗ Y) (B ⊗ A) =
+      η_ B Y ≫ B ◁ ((λ_ Y).inv ≫ (η_ A X ≫ A ◁ f ≫ ε_ X A) ▷ Y ≫ (λ_ Y).hom ≫ g) ≫
+        ε_ Y B := by
+  calc _ = η_ B Y ⊗≫ B ◁ (η_ A X ▷ Y ≫ (A ◁ f) ▷ Y ≫ (A ⊗ X) ◁ g ≫ ε_ X A ▷ Y) ⊗≫
+          ε_ Y B := by
+        rw [CategoryTheory.ExactPairing.tensor_coevaluation,
+          CategoryTheory.ExactPairing.tensor_evaluation, tensorHom_def]
+        monoidal
+    -- The inner loop closes before `g` is applied.
+    _ = η_ B Y ⊗≫ B ◁ (η_ A X ▷ Y ≫ (A ◁ f) ▷ Y ≫ ε_ X A ▷ Y ≫ 𝟙_ C ◁ g) ⊗≫ ε_ Y B := by
+        rw [whisker_exchange]
+    _ = _ := by monoidal
+
+/-- Closing up `f ⊗ₘ g` between the coevaluation of the tensor product pairing of `(X, A)` and
+`(Y, B)` and the evaluation of the tensor product pairing of `(B, Y)` and `(A, X)`: the result is
+the loop of `f`, with the loop `η_ Y B ≫ g ▷ B ≫ ε_ B Y` of `g` acting on `X` from the right,
+inside it. -/
+theorem coevaluation_tensorHom_whiskerRight_evaluation {A B X Y : C}
+    [ExactPairing A X] [ExactPairing X A] [ExactPairing B Y] [ExactPairing Y B]
+    (f : X ⟶ X) (g : Y ⟶ Y) :
+    η_ (X ⊗ Y) (B ⊗ A) ≫ (f ⊗ₘ g) ▷ (B ⊗ A) ≫ ε_ (B ⊗ A) (X ⊗ Y) =
+      η_ X A ≫ (f ≫ (ρ_ X).inv ≫ X ◁ (η_ Y B ≫ g ▷ B ≫ ε_ B Y) ≫ (ρ_ X).hom) ▷ A ≫
+        ε_ A X := by
+  calc _ = η_ X A ⊗≫ (X ◁ η_ Y B ≫ f ▷ (Y ⊗ B) ≫ X ◁ g ▷ B ≫ X ◁ ε_ B Y) ▷ A ⊗≫
+          ε_ A X := by
+        rw [CategoryTheory.ExactPairing.tensor_coevaluation,
+          CategoryTheory.ExactPairing.tensor_evaluation, tensorHom_def]
+        monoidal
+    -- The inner loop opens after `f` is applied.
+    _ = η_ X A ⊗≫ (f ▷ 𝟙_ C ≫ X ◁ η_ Y B ≫ X ◁ g ▷ B ≫ X ◁ ε_ B Y) ▷ A ⊗≫ ε_ A X := by
+        rw [whisker_exchange_assoc]
+    _ = _ := by monoidal
+
+end ExactPairing
 
 variable (D Y : C) [ExactPairing D Y]
 

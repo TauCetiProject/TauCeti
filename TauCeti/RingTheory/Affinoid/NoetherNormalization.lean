@@ -109,12 +109,10 @@ private theorem exists_finite_injective_of_surjective {σ : Type v} [Finite σ]
     exact ih A (π.comp r.toAlgHom) (hπ.comp r.surjective)
   · apply exists_finite_injective_of_bijective π ⟨?_, hπ⟩
     intro a b hab
-    obtain ⟨x, hx⟩ := C_surjective (σ := PEmpty) (a : _root_.MvPowerSeries PEmpty K)
-    obtain ⟨y, hy⟩ := C_surjective (σ := PEmpty) (b : _root_.MvPowerSeries PEmpty K)
-    have ha : a = algebraMap K (Tate PEmpty) x := Subtype.ext hx.symm
-    have hb : b = algebraMap K (Tate PEmpty) y := Subtype.ext hy.symm
-    rw [ha, hb, π.commutes, π.commutes] at hab
-    rw [ha, hb, (FaithfulSMul.algebraMap_injective K A) hab]
+    obtain ⟨x, rfl⟩ := algebraMap_isRestrictedSubring_surjective (R := K) a
+    obtain ⟨y, rfl⟩ := algebraMap_isRestrictedSubring_surjective (R := K) b
+    rw [π.commutes, π.commutes] at hab
+    rw [(FaithfulSMul.algebraMap_injective K A) hab]
   · by_cases h : Function.Injective π
     · exact exists_finite_injective_of_bijective π ⟨h, hπ⟩
     · obtain ⟨γ, hγ⟩ := exists_finite_map_of_not_injective π hπ h

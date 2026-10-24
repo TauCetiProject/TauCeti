@@ -35,6 +35,10 @@ in Ralf Stephan's `ArithmeticHeights/SUnitTheorem.lean` in `rwst/Subspace-Theore
   its torsion and free parts.
 * `TauCeti.NumberField.SUnit.closure_fundSystem_sup_torsion_eq_top`: the fundamental system and
   torsion generate all S-units.
+* `TauCeti.NumberField.SUnit.IsFundSystem`: an arbitrary family of S-units is a fundamental
+  system: it has the right number of members and generates the S-units modulo torsion.
+* `TauCeti.NumberField.SUnit.isFundSystem_iff`: a family is a fundamental system exactly when its
+  classes form a basis of the S-units modulo torsion.
 
 ## References
 
@@ -121,6 +125,44 @@ theorem closure_fundSystem_sup_torsion_eq_top :
   obtain ⟨c, rfl, _⟩ := exist_unique_eq_mul_prod S x
   exact Subgroup.mul_mem_sup (SetLike.coe_mem c.1) <| Subgroup.prod_mem _
     fun i _ ↦ Subgroup.zpow_mem _ (Subgroup.subset_closure (Set.mem_range_self i)) _
+
+/-! ### Arbitrary fundamental systems -/
+
+/-- A family `ε` of S-units is a fundamental system if it is indexed by a finite type with
+`NumberField.Units.rank K + Nat.card S` elements and, together with the torsion subgroup,
+generates the group of S-units. -/
+structure IsFundSystem {ι : Type*} (ε : ι → S.unit K) : Prop where
+  /-- The family is finite. -/
+  finite : Finite ι
+  /-- The family has `NumberField.Units.rank K + Nat.card S` members. -/
+  card_eq : Nat.card ι = NumberField.Units.rank K + Nat.card S
+  /-- The family and the torsion subgroup generate the group of S-units. -/
+  closure_sup_torsion_eq_top : Subgroup.closure (Set.range ε) ⊔ CommGroup.torsion (S.unit K) = ⊤
+
+/-- The chosen family `TauCeti.NumberField.SUnit.fundSystem` is a fundamental system. -/
+theorem isFundSystem_fundSystem : IsFundSystem S (fundSystem S) :=
+  ⟨inferInstance, Nat.card_fin _, closure_fundSystem_sup_torsion_eq_top S⟩
+
+variable {S} in
+/-- A family of S-units is a fundamental system exactly when its classes modulo torsion form a
+basis of the S-units modulo torsion. -/
+theorem isFundSystem_iff {ι : Type*} (ε : ι → S.unit K) :
+    IsFundSystem S ε ↔
+      LinearIndependent ℤ (fun i ↦ (Submodule.Quotient.mk (Additive.ofMul (ε i)) :
+        Additive (S.unit K) ⧸ Submodule.torsion ℤ (Additive (S.unit K)))) ∧
+      Submodule.span ℤ (Set.range fun i ↦ (Submodule.Quotient.mk (Additive.ofMul (ε i)) :
+        Additive (S.unit K) ⧸ Submodule.torsion ℤ (Additive (S.unit K)))) = ⊤ := by
+  have hrank := (finrank_eq_nat_card_basis (basisModTorsion S)).trans (Nat.card_fin _)
+  rw [span_range_mk_ofMul_eq_top_iff]
+  constructor
+  · rintro ⟨hfin, hcard, htop⟩
+    have := Fintype.ofFinite ι
+    refine ⟨linearIndependent_of_top_le_span_of_card_eq_finrank
+      ((span_range_mk_ofMul_eq_top_iff ε).mpr htop).ge ?_, htop⟩
+    rw [hrank, ← hcard, Nat.card_eq_fintype_card]
+  · rintro ⟨hli, htop⟩
+    let b := Basis.mk hli ((span_range_mk_ofMul_eq_top_iff ε).mpr htop).ge
+    exact ⟨Module.Finite.finite_basis b, (finrank_eq_nat_card_basis b).symm.trans hrank, htop⟩
 
 end
 

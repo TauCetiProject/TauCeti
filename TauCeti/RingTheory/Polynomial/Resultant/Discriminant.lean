@@ -9,7 +9,9 @@ public import Mathlib.Algebra.CubicDiscriminant
 public import Mathlib.Algebra.Field.ZMod
 import Mathlib.Algebra.MvPolynomial.Basic
 public import Mathlib.Algebra.Order.BigOperators.Group.LocallyFinite
+public import Mathlib.Algebra.QuadraticDiscriminant
 import Mathlib.Data.Nat.Choose.Vandermonde
+import Mathlib.FieldTheory.Perfect
 import Mathlib.Tactic.NormDet
 import Mathlib.Tactic.NormNum.IsSquare
 public import Mathlib.FieldTheory.Separable
@@ -17,6 +19,7 @@ public import Mathlib.GroupTheory.Perm.Fin
 public import Mathlib.RingTheory.Discriminant
 public import Mathlib.RingTheory.Localization.FractionRing
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
+import TauCeti.RingTheory.Polynomial.GaussLemma
 import TauCeti.RingTheory.Polynomial.Resultant.Basic
 import TauCeti.RingTheory.Polynomial.Roots
 
@@ -72,11 +75,15 @@ depressed specialization of that formula is used to compare a quartic with its c
   discriminant is squarefree.
 * `Polynomial.discr_ne_zero_iff`: over a field, a nonzero polynomial that need not be monic is
   separable exactly when its discriminant is nonzero.
+* `Squarefree.discr_ne_zero`: a squarefree polynomial over a GCD domain of characteristic zero
+  has nonzero discriminant.
 * `Polynomial.separable_map_iff_map_discr_ne_zero`,
   `Polynomial.separable_map_zmod_iff_not_dvd_discr`,
   `Polynomial.Monic.separable_map_zmod_iff_not_dvd_discr`: the same criterion read along a ring
   homomorphism into a field, and its specialization to reduction of an integral polynomial modulo
   a prime not dividing the leading coefficient, in particular of a monic one.
+* `Polynomial.discr_eq_discrim_of_degree_eq_two`: the discriminant of a quadratic is Mathlib's
+  `discrim` of its coefficients, `b ^ 2 - 4ac`.
 * `Cubic.toPoly_discr`: the two discriminants of a cubic with nonzero leading coefficient agree,
   so that `Cubic.discr` and `Polynomial.discr` may be used interchangeably in degree three.
 * `Polynomial.Monic.discr_of_natDegree_eq_four`, `TauCeti.discr_depressedQuartic`: the
@@ -738,6 +745,16 @@ theorem separable_map_iff_map_discr_ne_zero {K : Type*} [Field K]
   rw [← discr_ne_zero_iff hn,
     discr_map_of_natDegree_eq φ (natDegree_map_of_leadingCoeff_ne_zero φ hlc)]
 
+/-- A squarefree polynomial over a GCD domain of characteristic zero has nonzero discriminant. -/
+theorem _root_.Squarefree.discr_ne_zero {D : Type*} [CommRing D] [IsDomain D]
+    [IsGCDMonoid D] [CharZero D] {p : D[X]} (hp : Squarefree p) : p.discr ≠ 0 := by
+  have hinj := IsFractionRing.injective D (FractionRing D)
+  have : CharZero (FractionRing D) := charZero_of_injective_algebraMap hinj
+  apply (map_ne_zero_iff (algebraMap D (FractionRing D)) hinj).mp
+  apply (p.separable_map_iff_map_discr_ne_zero _ ?_).mp
+  · exact PerfectField.separable_iff_squarefree.mpr hp.map_fraction_map
+  · exact (map_ne_zero_iff _ hinj).mpr (leadingCoeff_ne_zero.mpr hp.ne_zero)
+
 /-- An integral polynomial whose leading coefficient is not divisible by a prime `p` has separable
 reduction modulo `p` exactly when `p` does not divide its discriminant. -/
 theorem separable_map_zmod_iff_not_dvd_discr (f : ℤ[X]) (p : ℕ) [Fact p.Prime]
@@ -891,6 +908,21 @@ theorem not_separable_X_pow_two_sub_one : ¬ (X ^ 2 - 1 : ℤ[X]).Separable := b
   have := congrArg (eval 1) hab
   simp at this
   omega
+
+end Polynomial
+
+/-! ### Comparison with the discriminant of a quadratic -/
+
+namespace Polynomial
+
+variable {R : Type*} [CommRing R]
+
+/-- The discriminant of a quadratic `a X ^ 2 + b X + c` is `discrim a b c = b ^ 2 - 4ac`, with no
+normalization to monic and no sign. -/
+theorem discr_eq_discrim_of_degree_eq_two {f : R[X]} (hf : f.degree = 2) :
+    f.discr = discrim (f.coeff 2) (f.coeff 1) (f.coeff 0) := by
+  rw [discr_of_degree_eq_two hf, discrim]
+  ring
 
 end Polynomial
 

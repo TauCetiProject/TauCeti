@@ -37,6 +37,8 @@ that Mathlib does not provide directly, used across the multiquadratic developme
   square. Mathlib's `exists_sq_mul_squarefree` proves the underlying factorization in a unique
   factorization monoid; the integer statement here records a nonzero square factor and puts the
   factors in the orientation used by the rational square-class argument.
+* `Rat.eq_of_squarefree_of_intCast_mul_sq_eq`: the squarefree integer in such a representation of
+  a rational number is unique, sign included.
 * `TauCeti.Int.not_four_dvd_of_squarefree` and
   `TauCeti.Int.emod_four_eq_two_or_three_of_squarefree`: the modulo-four restrictions on
   squarefree integers.
@@ -136,6 +138,29 @@ theorem Rat.exists_squarefree_int_mul_sq {q : ℚ} (hq : q ≠ 0) :
   rw [hnum] at habQ
   field_simp
   linear_combination habQ
+
+/-- **Uniqueness of the squarefree part of a rational number.** A rational number has at most one
+representation as a squarefree *integer* times the square of a nonzero rational: if
+`d * c ^ 2 = d' * c' ^ 2` with `d` and `d'` squarefree and `c ≠ 0`, then `d = d'`. The sign is
+part of the square class, so `d` and `d'` agree exactly, not only up to sign. Together with the
+existence statement `Rat.exists_squarefree_int_mul_sq` this makes the squarefree part of a nonzero
+rational well defined. -/
+theorem Rat.eq_of_squarefree_of_intCast_mul_sq_eq {d d' : ℤ} {c c' : ℚ} (hd : Squarefree d)
+    (hd' : Squarefree d') (hc : c ≠ 0) (h : (d : ℚ) * c ^ 2 = d' * c' ^ 2) : d = d' := by
+  -- The product `d * d'` is the square of `d' * c' / c`, so `d` and `d'` are associated.
+  have hsq : IsSquare (d * d') := Rat.isSquare_intCast_iff.mp ⟨d' * c' / c, by
+    push_cast
+    field_simp
+    linear_combination (d' : ℚ) * h⟩
+  obtain ⟨u, hu⟩ := hd.associated_of_isSquare_mul hd' hsq
+  rcases Int.units_eq_one_or u with rfl | rfl
+  · simpa using hu
+  · -- If `d' = -d`, then `-d ^ 2` is a square, which forces `d = 0`.
+    obtain ⟨z, hz⟩ := hsq
+    rw [← hu] at hz
+    push_cast at hz
+    have hd0 : d * d = 0 := by nlinarith [mul_self_nonneg z, mul_self_nonneg d]
+    exact absurd (mul_self_eq_zero.mp hd0) hd.ne_zero
 
 namespace TauCeti.Int
 
