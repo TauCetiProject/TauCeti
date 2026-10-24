@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Singular.Twisted.Relative
+public import TauCeti.AlgebraicTopology.Singular.Twisted.Functoriality
 public import TauCeti.CategoryTheory.Abelian.DiagramLemmas.CokernelComp
 public import TauCeti.Topology.Category.TopTriple
 public import Mathlib.Algebra.Homology.HomologySequenceLemmas
@@ -47,84 +47,61 @@ namespace TauCeti.TopTriple
 variable {R : Type u} [Ring R] (T : TopTriple.{v})
   (L : LocalCoefficientSystem.{u, v, max v w} R T.fst)
 
--- This comparison is only used to identify the middle quotient in the triple sequence.
-private def compositeSystemIso :
-    (totalPair.obj T).subspaceSystem L ≅
-      (innerPair.obj T).subspaceSystem ((outerPair.obj T).subspaceSystem L) :=
-  eqToIso (congrArg (fun k : T.thd ⟶ T.fst ↦ (LocalCoefficientSystem.pullback k.hom).obj L)
-      T.innerMap_comp_outerMap.symm) ≪≫
-    (pullbackCompIso T.innerMap.hom T.outerMap.hom).app L
-
-private lemma twistedChainComplexMap_total :
-    twistedChainComplexMap T.totalMap L =
-      (twistedChainComplexCoefficientIso (T.compositeSystemIso L)).hom ≫
-        twistedChainComplexMap T.innerMap ((outerPair.obj T).subspaceSystem L) ≫
-          twistedChainComplexMap T.outerMap L := by
-  rw [twistedChainComplexMap_congr T.totalMap L T.innerMap_comp_outerMap.symm,
-    twistedChainComplexMap_comp]
-  simp only [compositeSystemIso, twistedChainComplexCoefficientIso_hom, Iso.trans_hom,
-    twistedChainComplexCoefficientMap_comp, Iso.app_hom, Category.assoc]
-
+-- The pair API uses pair projections and restricted systems; `erw` unfolds those wrappers
+-- when matching them with the triple's maps and iterated restrictions.
 private lemma composite_comp_twistedChainComplexπ :
     (twistedChainComplexMap T.innerMap ((outerPair.obj T).subspaceSystem L) ≫
         twistedChainComplexMap T.outerMap L) ≫
       (totalPair.obj T).twistedChainComplexπ L = 0 := by
-  rw [← cancel_epi (twistedChainComplexCoefficientIso (T.compositeSystemIso L)).hom,
-    ← Category.assoc, ← T.twistedChainComplexMap_total L, comp_zero]
-  exact (totalPair.obj T).twistedChainComplexMap_comp_twistedChainComplexπ L
-
-/-- The map `C(A,B;L|A) ⟶ C(X,B;L)` induced by inclusion of pairs. -/
-def twistedChainComplexInnerToTotal :
-    (innerPair.obj T).twistedChainComplex ((outerPair.obj T).subspaceSystem L) ⟶
-      (totalPair.obj T).twistedChainComplex L :=
-  (innerPair.obj T).twistedChainComplexDesc _
-    (twistedChainComplexMap T.outerMap L ≫ (totalPair.obj T).twistedChainComplexπ L)
-    (by simpa only [Category.assoc] using T.composite_comp_twistedChainComplexπ L)
-
--- Normalize the pair functor projections so the quotient rules also match in importing modules.
-/-- The quotient map to `(X,B)` commutes with the inclusion of `(A,B)`. -/
-@[reassoc (attr := simp)]
-lemma twistedChainComplexπ_comp_innerToTotal :
-    dsimp% ((innerPair.obj T).twistedChainComplexπ ((outerPair.obj T).subspaceSystem L) ≫
-        T.twistedChainComplexInnerToTotal L =
-      twistedChainComplexMap T.outerMap L ≫ (totalPair.obj T).twistedChainComplexπ L) :=
-  (innerPair.obj T).twistedChainComplexπ_comp_twistedChainComplexDesc _ _ _
+  erw [TopPair.twistedChainComplexMap_naturality_pair (innerToTotal.app T) L,
+    Category.assoc, TopPair.twistedChainComplexMap_comp_twistedChainComplexπ, comp_zero]
 
 private def isColimitCompositeCokernel :
     IsColimit (CokernelCofork.ofπ ((totalPair.obj T).twistedChainComplexπ L)
       (T.composite_comp_twistedChainComplexπ L)) := by
   have ht := (totalPair.obj T).isColimitCokernelCoforkTwistedChainComplex L
   rw [TopPair.cokernelCoforkTwistedChainComplex_def] at ht
+  have : IsIso (TopPair.twistedSubspaceChainComplexMap (innerToTotal.app T) L) := by
+    rw [TopPair.twistedSubspaceChainComplexMap_def]
+    have hid : IsIso (twistedChainComplexMap (𝟙 T.thd)
+        ((totalPair.obj T).subspaceSystem L)) := by
+      rw [twistedChainComplexMap_id]
+      infer_instance
+    exact IsIso.comp_isIso'
+      (inferInstanceAs (IsIso (twistedChainComplexCoefficientMap
+        (TopPair.subspaceSystemPullbackIso (innerToTotal.app T) L).hom))) hid
   exact isCokernelOfComp
-    (twistedChainComplexCoefficientIso (T.compositeSystemIso L)).hom
+    (inv (TopPair.twistedSubspaceChainComplexMap (innerToTotal.app T) L))
     (twistedChainComplexMap T.totalMap L) ht
-    (T.composite_comp_twistedChainComplexπ L)
-    (by simpa only [Category.assoc] using (T.twistedChainComplexMap_total L).symm)
+    (T.composite_comp_twistedChainComplexπ L) (by
+      erw [TopPair.twistedChainComplexMap_naturality_pair (innerToTotal.app T) L,
+        IsIso.inv_hom_id_assoc])
 
 /-- The quotient map `C(X,B;L) ⟶ C(X,A;L)` induced by the identity on ambient chains. -/
 def twistedChainComplexTotalToOuter :
     (totalPair.obj T).twistedChainComplex L ⟶ (outerPair.obj T).twistedChainComplex L :=
-  (totalPair.obj T).twistedChainComplexDesc L
-    ((outerPair.obj T).twistedChainComplexπ L) (by
-      rw [T.twistedChainComplexMap_total L]
-      have h := (outerPair.obj T).twistedChainComplexMap_comp_twistedChainComplexπ L
-      simp only [Category.assoc, h, comp_zero])
+  (totalPair.obj T).twistedChainComplexCoefficientMap ((pullbackIdIso T.fst).inv.app L) ≫
+    TopPair.twistedChainComplexMap (totalToOuter.app T) L
 
 /-- The quotient from `(X,B)` to `(X,A)` is induced by the identity of `C(X;L)`. -/
 @[reassoc (attr := simp)]
 lemma twistedChainComplexπ_comp_totalToOuter :
     dsimp% ((totalPair.obj T).twistedChainComplexπ L ≫ T.twistedChainComplexTotalToOuter L =
-      (outerPair.obj T).twistedChainComplexπ L) :=
-  (totalPair.obj T).twistedChainComplexπ_comp_twistedChainComplexDesc _ _ _
+      (outerPair.obj T).twistedChainComplexπ L) := by
+  dsimp only [twistedChainComplexTotalToOuter]
+  erw [TopPair.twistedChainComplexπ_comp_twistedChainComplexCoefficientMap_assoc,
+    TopPair.twistedChainComplexπ_comp_twistedChainComplexMap]
+  erw [twistedChainComplexMap_id, ← twistedChainComplexCoefficientMap_comp_assoc]
+  simp
 
 lemma twistedChainComplexInnerToTotal_comp_totalToOuter :
-    T.twistedChainComplexInnerToTotal L ≫ T.twistedChainComplexTotalToOuter L = 0 := by
+    TopPair.twistedChainComplexMap (innerToTotal.app T) L ≫
+      T.twistedChainComplexTotalToOuter L = 0 := by
   apply (cancel_epi ((innerPair.obj T).twistedChainComplexπ
     ((outerPair.obj T).subspaceSystem L))).1
-  rw [← Category.assoc, T.twistedChainComplexπ_comp_innerToTotal L, Category.assoc,
+  erw [← Category.assoc, TopPair.twistedChainComplexπ_comp_twistedChainComplexMap, Category.assoc,
     T.twistedChainComplexπ_comp_totalToOuter L, comp_zero]
-  simpa only [outerPair_obj_map] using
-    (outerPair.obj T).twistedChainComplexMap_comp_twistedChainComplexπ L
+  exact (outerPair.obj T).twistedChainComplexMap_comp_twistedChainComplexπ L
 
 /-- The relative twisted chain sequence of a triple. -/
 abbrev twistedChainComplexShortComplex :
@@ -143,27 +120,12 @@ lemma shortExact_twistedChainComplexShortComplex :
       have : Mono T.outerMap := (TopCat.mono_iff_injective _).2 T.isEmbedding_outerMap.injective
       infer_instance)
     hi (T.isColimitCompositeCokernel L) ho
-    (T.twistedChainComplexπ_comp_innerToTotal L)
+    (TopPair.twistedChainComplexπ_comp_twistedChainComplexMap (innerToTotal.app T) L)
     (T.twistedChainComplexπ_comp_totalToOuter L)
 
 section Coefficients
 
 variable {L} {K : LocalCoefficientSystem.{u, v, max v w} R T.fst} (η : L ⟶ K)
-
-/-- Inclusion of relative twisted chains commutes with change of the ambient local system. -/
-@[reassoc]
-lemma twistedChainComplexInnerToTotal_naturality :
-    T.twistedChainComplexInnerToTotal L ≫ (totalPair.obj T).twistedChainComplexCoefficientMap η =
-      (innerPair.obj T).twistedChainComplexCoefficientMap
-          ((LocalCoefficientSystem.pullback T.outerMap.hom).map η) ≫
-        T.twistedChainComplexInnerToTotal K := by
-  apply (cancel_epi ((innerPair.obj T).twistedChainComplexπ
-    ((outerPair.obj T).subspaceSystem L))).1
-  simp only [T.twistedChainComplexπ_comp_innerToTotal_assoc L,
-    TopPair.twistedChainComplexπ_comp_twistedChainComplexCoefficientMap,
-    TopPair.twistedChainComplexπ_comp_twistedChainComplexCoefficientMap_assoc,
-    T.twistedChainComplexπ_comp_innerToTotal K]
-  exact twistedChainComplexMap_naturality_assoc T.outerMap η _
 
 /-- The quotient between relative twisted chains commutes with coefficient morphisms. -/
 @[reassoc]
@@ -171,11 +133,13 @@ lemma twistedChainComplexTotalToOuter_naturality :
     T.twistedChainComplexTotalToOuter L ≫ (outerPair.obj T).twistedChainComplexCoefficientMap η =
       (totalPair.obj T).twistedChainComplexCoefficientMap η ≫
         T.twistedChainComplexTotalToOuter K := by
-  apply (cancel_epi ((totalPair.obj T).twistedChainComplexπ L)).1
-  simp only [T.twistedChainComplexπ_comp_totalToOuter_assoc L,
-    TopPair.twistedChainComplexπ_comp_twistedChainComplexCoefficientMap,
-    TopPair.twistedChainComplexπ_comp_twistedChainComplexCoefficientMap_assoc,
-    T.twistedChainComplexπ_comp_totalToOuter K]
+  dsimp only [twistedChainComplexTotalToOuter]
+  erw [Category.assoc, TopPair.twistedChainComplexMap_naturality,
+    ← TopPair.twistedChainComplexCoefficientMap_comp_assoc,
+    ← TopPair.twistedChainComplexCoefficientMap_comp_assoc]
+  congr 1
+  exact congrArg (fun φ ↦ (totalPair.obj T).twistedChainComplexCoefficientMap φ)
+    ((pullbackIdIso T.fst).inv.naturality η).symm
 
 /-- A coefficient morphism induces a morphism of the short exact triple sequences. -/
 def twistedChainComplexShortComplexCoefficientMap :
@@ -185,7 +149,7 @@ def twistedChainComplexShortComplexCoefficientMap :
       ((LocalCoefficientSystem.pullback T.outerMap.hom).map η))
     ((totalPair.obj T).twistedChainComplexCoefficientMap η)
     ((outerPair.obj T).twistedChainComplexCoefficientMap η)
-    (T.twistedChainComplexInnerToTotal_naturality η).symm
+    (TopPair.twistedChainComplexMap_naturality (innerToTotal.app T) L η).symm
     (T.twistedChainComplexTotalToOuter_naturality η).symm
 
 @[simp]
@@ -209,13 +173,23 @@ end Coefficients
 instance : Epi (T.twistedChainComplexTotalToOuter L) :=
   (T.shortExact_twistedChainComplexShortComplex L).epi_g
 
-/-- The map `Hₖ(A,B;L|A) ⟶ Hₖ(X,B;L)` induced by inclusion of pairs. -/
-abbrev twistedHomologyInnerToTotal (k : ℕ) :=
-  HomologicalComplex.homologyMap (T.twistedChainComplexInnerToTotal L) k
-
 /-- The quotient map `Hₖ(X,B;L) ⟶ Hₖ(X,A;L)`. -/
 abbrev twistedHomologyTotalToOuter (k : ℕ) :=
   HomologicalComplex.homologyMap (T.twistedChainComplexTotalToOuter L) k
+
+/-- The quotient on relative twisted homology commutes with change of coefficients.
+For the inner inclusion, use `TopPair.twistedHomologyMap_naturality`. -/
+@[reassoc]
+lemma twistedHomologyTotalToOuter_naturality_coefficient
+    {K : LocalCoefficientSystem.{u, v, max v w} R T.fst} (η : L ⟶ K) (k : ℕ) :
+    T.twistedHomologyTotalToOuter L k ≫
+        (outerPair.obj T).twistedHomologyCoefficientMap η k =
+      (totalPair.obj T).twistedHomologyCoefficientMap η k ≫
+        T.twistedHomologyTotalToOuter K k :=
+  ((HomologicalComplex.homologyMap_comp _ _ _).symm).trans
+    ((congrArg (fun φ ↦ HomologicalComplex.homologyMap φ k)
+      (T.twistedChainComplexTotalToOuter_naturality η)).trans
+      (HomologicalComplex.homologyMap_comp _ _ _))
 
 /-- The triple sequence ends with a surjection on degree-zero relative homology. -/
 instance : Epi (T.twistedHomologyTotalToOuter L 0) :=
@@ -234,13 +208,14 @@ lemma twistedHomologyδ_def (n m : ℕ) (h : m + 1 = n := by lia) :
 
 @[reassoc (attr := simp)]
 lemma twistedHomologyInnerToTotal_comp_totalToOuter (k : ℕ) :
-    T.twistedHomologyInnerToTotal L k ≫ T.twistedHomologyTotalToOuter L k = 0 := by
+    TopPair.twistedHomologyMap (innerToTotal.app T) L k ≫
+      T.twistedHomologyTotalToOuter L k = 0 := by
   rw [← HomologicalComplex.homologyMap_comp,
     T.twistedChainComplexInnerToTotal_comp_totalToOuter L, HomologicalComplex.homologyMap_zero]
 
-@[reassoc (attr := simp)]
+@[simp, reassoc]
 lemma twistedHomologyδ_comp (n m : ℕ) (h : m + 1 = n := by lia) :
-    T.twistedHomologyδ L n m h ≫ T.twistedHomologyInnerToTotal L m = 0 :=
+    T.twistedHomologyδ L n m h ≫ TopPair.twistedHomologyMap (innerToTotal.app T) L m = 0 :=
   (T.shortExact_twistedChainComplexShortComplex L).δ_comp n m (by simpa)
 
 @[reassoc (attr := simp)]
@@ -270,7 +245,7 @@ private def outerPairToTwistedShortComplexMap :
   ShortComplex.homMk
     ((innerPair.obj T).twistedChainComplexπ ((outerPair.obj T).subspaceSystem L))
     ((totalPair.obj T).twistedChainComplexπ L) (𝟙 _)
-    (T.twistedChainComplexπ_comp_innerToTotal L)
+    (TopPair.twistedChainComplexπ_comp_twistedChainComplexMap (innerToTotal.app T) L)
     (by simpa only [Category.comp_id] using T.twistedChainComplexπ_comp_totalToOuter L)
 
 /-- The triple boundary is the pair boundary followed by the quotient to `(A,B)`. -/
@@ -283,8 +258,9 @@ lemma twistedHomologyδ_eq_comp_twistedHomologyπ (n m : ℕ) (h : m + 1 = n := 
     (T.outerPairToTwistedShortComplexMap L)
     ((outerPair.obj T).shortExact_twistedChainComplexShortComplex L)
     (T.shortExact_twistedChainComplexShortComplex L) n m (by simpa)
-  simpa only [outerPairToTwistedShortComplexMap_τ₁, outerPairToTwistedShortComplexMap_τ₃,
-    HomologicalComplex.homologyMap_id, Category.id_comp, twistedHomologyδ_def] using key.symm
+  simp only [outerPairToTwistedShortComplexMap_τ₁, outerPairToTwistedShortComplexMap_τ₃,
+    HomologicalComplex.homologyMap_id, Category.id_comp] at key
+  exact key.symm
 
 /-- The triple connecting map is natural under morphisms of local coefficient systems. -/
 @[reassoc]
