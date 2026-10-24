@@ -42,8 +42,7 @@ variable {p : ℕ} [hp : Fact p.Prime]
 /-- The point `a.val + pʰ w` of the disc of `a` reduces to `a` modulo `pʰ`. -/
 theorem toZModPow_natCast_val_add_mul (h : ℕ) (a : ZMod (p ^ h)) (w : ℤ_[p]) :
     toZModPow h ((a.val : ℤ_[p]) + (p : ℤ_[p]) ^ h * w) = a := by
-  rw [map_add, map_mul, map_pow, map_natCast, map_natCast, ZMod.natCast_zmod_val, ← Nat.cast_pow,
-    ZMod.natCast_self, zero_mul, add_zero]
+  simp [← Nat.cast_pow]
 
 private theorem bijective_discMap (h : ℕ) :
     Function.Bijective fun y : ZMod (p ^ h) × ℤ_[p] ↦

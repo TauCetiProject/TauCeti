@@ -156,6 +156,13 @@ private theorem norm_discSeries_le (c : AnalyticStage p h E) : ‖discSeries c�
   IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg (norm_nonneg c) fun i ↦
     (norm_discTerm_le i (c i)).trans (c.norm_coe_le_norm i)
 
+omit [CompleteSpace E] in
+private theorem norm_discSeries_comp_le (c : AnalyticStage p h E) :
+    ‖(discSeries c).comp ((PadicInt.discHomeomorph p h).symm : C(ℤ_[p], ZMod (p ^ h) × ℤ_[p]))‖ ≤
+      ‖c‖ :=
+  (ContinuousMap.norm_le _ (norm_nonneg c)).mpr fun _ ↦
+    ((discSeries c).norm_coe_le_norm _).trans (norm_discSeries_le c)
+
 variable (S : Type*) [Semiring S] [Module S E] [ContinuousConstSMul S E] [SMulCommClass ℤ_[p] S E]
 
 /-- Evaluation of the analytic stage `LA_h(E)`: the coefficient vector `c` defines the continuous
@@ -180,8 +187,7 @@ noncomputable def eval : AnalyticStage p h E →L[S] C(ℤ_[p], E) :=
   { L with
     cont := AddMonoidHomClass.continuous_of_bound L 1 fun c ↦ by
       rw [one_mul]
-      refine (ContinuousMap.norm_le _ (norm_nonneg c)).mpr fun x ↦ ?_
-      exact ((discSeries c).norm_coe_le_norm _).trans (norm_discSeries_le c) }
+      exact norm_discSeries_comp_le c }
 
 private theorem eval_apply_eq_discSeries (c : AnalyticStage p h E) (x : ℤ_[p]) :
     eval S c x = discSeries c ((PadicInt.discHomeomorph p h).symm x) :=
@@ -195,6 +201,8 @@ theorem hasSum_eval_apply (c : AnalyticStage p h E) (x : ℤ_[p]) :
   simpa only [eval_apply_eq_discSeries, PadicInt.fst_discHomeomorph_symm] using
     hasSum_discSeries_apply c ((PadicInt.discHomeomorph p h).symm x)
 
+/-- The evaluation of `c` at `x` is the sum of the power series of the disc of `x` at the disc
+coordinate of `x`. -/
 theorem eval_apply (c : AnalyticStage p h E) (x : ℤ_[p]) :
     eval S c x = ∑' n, ((PadicInt.discHomeomorph p h).symm x).2 ^ n •
       c (PadicInt.toZModPow h x, n) :=
@@ -208,14 +216,14 @@ theorem hasSum_eval_natCast_val_add_mul (c : AnalyticStage p h E) (a : ZMod (p ^
   simpa only [eval_apply_eq_discSeries, PadicInt.discHomeomorph_symm_natCast_val_add_mul] using
     hasSum_discSeries_apply c (a, w)
 
+/-- On the disc of `a`, the evaluation of `c` at `a.val + pʰ w` is `∑' n, wⁿ • c(a, n)`. -/
 theorem eval_natCast_val_add_mul (c : AnalyticStage p h E) (a : ZMod (p ^ h)) (w : ℤ_[p]) :
     eval S c ((a.val : ℤ_[p]) + (p : ℤ_[p]) ^ h * w) = ∑' n, w ^ n • c (a, n) :=
   (hasSum_eval_natCast_val_add_mul S c a w).tsum_eq.symm
 
 /-- Evaluation does not increase norms. -/
 theorem norm_eval_le (c : AnalyticStage p h E) : ‖eval S c‖ ≤ ‖c‖ :=
-  (ContinuousMap.norm_le _ (norm_nonneg c)).mpr fun _ ↦
-    ((discSeries c).norm_coe_le_norm _).trans (norm_discSeries_le c)
+  norm_discSeries_comp_le c
 
 /-! ### Raising the level -/
 
@@ -238,12 +246,15 @@ private theorem add_mul_pow_eq_sum_transitionScalar (b v : ℤ_[p]) (k : ℕ) :
   rw [add_comm, add_pow]
   exact Finset.sum_congr rfl fun j _ ↦ by rw [transitionScalar]; ring
 
+private theorem tendsto_norm_p_pow_cofinite :
+    Tendsto (fun n : ℕ ↦ ‖(p : ℤ_[p])‖ ^ n) cofinite (𝓝 0) := by
+  rw [Nat.cofinite_eq_atTop]
+  exact tendsto_pow_atTop_nhds_zero_of_lt_one (norm_nonneg _) PadicInt.norm_p_lt_one
+
 private theorem tendsto_norm_pow_mul_cofinite {ι : Type*} [Finite ι] (C : ℝ) :
     Tendsto (fun i : ι × ℕ ↦ ‖(p : ℤ_[p])‖ ^ i.2 * C) cofinite (𝓝 0) := by
-  have hpow : Tendsto (fun n : ℕ ↦ ‖(p : ℤ_[p])‖ ^ n * C) atTop (𝓝 0) := by
-    simpa using (tendsto_pow_atTop_nhds_zero_of_lt_one (norm_nonneg _)
-      (PadicInt.norm_p_lt_one (p := p))).mul_const C
-  rw [← Nat.cofinite_eq_atTop] at hpow
+  have hpow : Tendsto (fun n : ℕ ↦ ‖(p : ℤ_[p])‖ ^ n * C) cofinite (𝓝 0) := by
+    simpa using (tendsto_norm_p_pow_cofinite (p := p)).mul_const C
   rw [← Filter.coprod_cofinite, Filter.coprod, Filter.cofinite_eq_bot, Filter.comap_bot,
     bot_sup_eq]
   exact hpow.comp tendsto_comap
@@ -265,6 +276,12 @@ private theorem norm_transitionCoeff_le (c : AnalyticStage p h E) (i : ZMod (p ^
   IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg (by positivity) fun k ↦
     (norm_smul_le _ _).trans <| mul_le_mul (norm_transitionScalar_le _ _ _)
       (c.norm_coe_le_norm _) (norm_nonneg _) (by positivity)
+
+omit [CompleteSpace E] in
+private theorem norm_transitionCoeff_le_norm (c : AnalyticStage p h E)
+    (i : ZMod (p ^ (h + 1)) × ℕ) : ‖transitionCoeff c i‖ ≤ ‖c‖ :=
+  (norm_transitionCoeff_le c i).trans <| mul_le_of_le_one_left (norm_nonneg c) <|
+    pow_le_one₀ (norm_nonneg _) PadicInt.norm_p_lt_one.le
 
 omit [CompleteSpace E] in
 private theorem tendsto_transitionCoeff (c : AnalyticStage p h E) :
@@ -297,8 +314,7 @@ noncomputable def transition : AnalyticStage p h E →L[S] AnalyticStage p (h + 
       rw [one_mul]
       refine (ZeroAtInftyContinuousMap.norm_le (norm_nonneg c)).mpr fun i ↦ ?_
       simp only [L, LinearMap.coe_mk, AddHom.coe_mk, ZeroAtInftyContinuousMap.coe_mkOfDiscrete]
-      refine (norm_transitionCoeff_le c i).trans (mul_le_of_le_one_left (norm_nonneg c) ?_)
-      exact pow_le_one₀ (norm_nonneg _) PadicInt.norm_p_lt_one.le }
+      exact norm_transitionCoeff_le_norm c i }
 
 private theorem coe_transition (c : AnalyticStage p h E) :
     ⇑(transition S c) = transitionCoeff c :=
@@ -321,12 +337,11 @@ theorem norm_transition_apply_le (c : AnalyticStage p h E) (a' : ZMod (p ^ (h + 
 /-- The transition does not increase norms. -/
 theorem norm_transition_le (c : AnalyticStage p h E) : ‖transition S c‖ ≤ ‖c‖ :=
   (ZeroAtInftyContinuousMap.norm_le (norm_nonneg c)).mpr fun i ↦
-    (coe_transition S c ▸ norm_transitionCoeff_le c i).trans <|
-      mul_le_of_le_one_left (norm_nonneg c) <|
-        pow_le_one₀ (norm_nonneg _) PadicInt.norm_p_lt_one.le
+    coe_transition S c ▸ norm_transitionCoeff_le_norm c i
 
 /-- The transition is compatible with evaluation: a coefficient vector and its re-expansion on
 the smaller discs define the same function. -/
+@[simp]
 theorem eval_transition (c : AnalyticStage p h E) : eval S (transition S c) = eval S c := by
   ext x
   obtain ⟨⟨a', v⟩, rfl⟩ := (PadicInt.discHomeomorph p (h + 1)).surjective x
@@ -353,11 +368,9 @@ theorem eval_transition (c : AnalyticStage p h E) : eval S (transition S c) = ev
         (pow_le_one₀ (norm_nonneg _) (PadicInt.norm_le_one _))).trans
           (norm_transitionScalar_le b _ _)
     · refine Filter.Tendsto.smul_cofinite_nhds_zero (f := fun j ↦ ‖(p : ℤ_[p])‖ ^ j)
-        (g := fun k ↦ ‖c (a, k)‖) ?_ ?_
-      · rw [Nat.cofinite_eq_atTop]
-        exact tendsto_pow_atTop_nhds_zero_of_lt_one (norm_nonneg _) PadicInt.norm_p_lt_one
-      · rw [Nat.cofinite_eq_atTop]
-        simpa using (tendsto_apply_mk_atTop c a).norm
+        (g := fun k ↦ ‖c (a, k)‖) tendsto_norm_p_pow_cofinite ?_
+      rw [Nat.cofinite_eq_atTop]
+      simpa using (tendsto_apply_mk_atTop c a).norm
   calc ∑' j, v ^ j • transition S c (a', j)
       = ∑' j, ∑' k, (v ^ j * transitionScalar b j k) • c (a, k) := by
         refine tsum_congr fun j ↦ ?_
