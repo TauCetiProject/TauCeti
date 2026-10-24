@@ -347,10 +347,8 @@ private theorem isSeifertLoop_stabilize_iff (p : ℕ × ℕ) :
   rw [length_stabilize] at h2
   have hp2 : p.2 = w.length := by omega
   have h1 : p.1 < w.length := by omega
-  rw [hp2, levelAt_stabilize_of_lt w ε h1, levelAt_of_lt _ h1, levelAt,
-    stabilize_def, List.getElem?_append_right (by simp)] at hl
-  simp only [length_strandIncl, Nat.sub_self, List.getElem?_cons_zero, Option.map_some,
-    Fin.val_last, Option.some_inj] at hl
+  rw [hp2, levelAt_stabilize_length, levelAt_stabilize_of_lt w ε h1, levelAt_of_lt _ h1,
+    Option.some_inj] at hl
   have := (w[p.1]'h1).1.isLt
   omega
 

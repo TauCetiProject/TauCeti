@@ -202,6 +202,16 @@ theorem signAt_of_lt {k : ℕ} (hk : k < w.length) : w.signAt k = (w[k].2 : ℤ)
 theorem signAt_of_le {k : ℕ} (hk : w.length ≤ k) : w.signAt k = 0 := by
   simp [signAt, hk]
 
+/-- The stabilizing letter of `w.stabilize ε` lies on the new top level `n`. -/
+theorem levelAt_stabilize_length (w : BraidWord (n + 1)) (ε : ℤˣ) :
+    (w.stabilize ε).levelAt w.length = some n := by
+  simp [levelAt, stabilize_def, length_strandIncl]
+
+/-- The stabilizing letter of `w.stabilize ε` has sign `ε`. -/
+theorem signAt_stabilize_length (w : BraidWord (n + 1)) (ε : ℤˣ) :
+    (w.stabilize ε).signAt w.length = ε := by
+  simp [signAt, stabilize_def, length_strandIncl]
+
 end Positions
 
 end BraidWord
