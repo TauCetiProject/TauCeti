@@ -23,10 +23,6 @@ approximate units, so pulling a positive functional back along it does not chang
 `PositiveContinuousLinearMap.opNorm_comp_ofClass_of_surjective`. In particular states pull back
 to states along quotient maps; without surjectivity the norm can drop, for instance to `0`.
 
-On a unital C⋆-algebra, Mathlib's `PositiveContinuousLinearMap.ofReal_opNorm_eq_map_one` reads the
-norm off the value at `1`; consequently a positive functional has norm `1` exactly when it sends
-`1` to `1`, `PositiveContinuousLinearMap.ofReal_opNorm_eq_one_iff_map_one`.
-
 ## Positive functionals in the weak-* dual
 
 For a functional `φ : WeakDual ℂ A` on a C⋆-algebra that is nonnegative on nonnegative elements,
@@ -61,17 +57,6 @@ theorem opNorm_comp_ofClass_of_surjective (ω : B →P[ℂ] ℂ) (f : F) (hf : F
   exact Complex.ofReal_injective <| tendsto_nhds_unique
     ((ω.comp (.ofClass f)).tendsto_nhds_opNorm hl)
     (Filter.tendsto_map'_iff.mp (ω.tendsto_nhds_opNorm (hl.map f hf)))
-
-section Unital
-
-variable {A : Type*} [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
-
-/-- A positive functional on a unital C⋆-algebra has norm `1` exactly when it maps `1` to `1`. -/
-theorem ofReal_opNorm_eq_one_iff_map_one (ω : A →P[ℂ] ℂ) :
-    (↑‖(ω : A →L[ℂ] ℂ)‖ : ℂ) = 1 ↔ ω 1 = 1 := by
-  rw [ofReal_opNorm_eq_map_one]
-
-end Unital
 
 end PositiveContinuousLinearMap
 

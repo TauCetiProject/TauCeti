@@ -20,16 +20,16 @@ For a square matrix `A` over `ℝ` or `ℂ` (any `RCLike` field),
 
 `det (exp A) = exp (trace A)`.
 
-The file also records the exponential identities that are specific to matrices: the reciprocal
-laws `exp A * exp (-A) = 1` and `exp (-A) * exp A = 1` for an arbitrary matrix over commutative
-entries, together with their forms against an arbitrary factor, invariance of the trace under
-conjugation by the two exponential weights in either order, the half-split identity
-`exp A = exp (A / 2) * exp (A / 2)`, and, for a Hermitian matrix `K`, the positivity of
-`Tr (exp K)` and of `x ↦ Tr (exp K * x)`.
-
 This is listed as a TODO in Mathlib's `Mathlib/Analysis/Normed/Algebra/MatrixExponential.lean`.
 No diagonalization is involved, so the identity holds for every matrix, including the real
 matrices that are not diagonalizable over `ℂ` either.
+
+The file also records the exponential identities that are specific to matrices: the reciprocal
+laws `exp A * exp (-A) = 1` and `exp (-A) * exp A = 1`, together with their forms against an
+arbitrary factor, for an arbitrary matrix over any complete normed entry ring; the invariance of
+the trace under conjugation by the two exponential weights in either order, which needs
+commutative entries; the half-split identity `exp A = exp (A / 2) * exp (A / 2)`; and, for a
+Hermitian matrix `K`, the positivity of `Tr (exp K)` and of `x ↦ Tr (exp K * x)`.
 
 ## The argument
 
