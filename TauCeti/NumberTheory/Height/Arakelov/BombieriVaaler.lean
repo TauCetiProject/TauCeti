@@ -123,25 +123,14 @@ theorem exists_linearIndependent_mulVec_eq_zero_prod_norm_le {A : Matrix (Fin p)
     ∃ x : Fin (Fintype.card ι - p) → ι → ℤ, LinearIndependent ℤ x ∧ (∀ l, A *ᵥ x l = 0) ∧
       (∀ l, Finset.univ.gcd (x l) = 1) ∧
       ∏ l, ‖x l‖ ≤ √((A * Aᵀ).det : ℝ) / (A.minorGcd : ℝ) := by
-  -- The solution space has dimension `n - p`, by rank–nullity.
-  have hfin : finrank ℚ (LinearMap.ker (A.map ((↑) : ℤ → ℚ)).mulVecLin) =
-      Fintype.card ι - p := by
-    have h := LinearMap.finrank_range_add_finrank_ker (A.map ((↑) : ℤ → ℚ)).mulVecLin
-    rw [← Matrix.rank, hA.rank_matrix, Fintype.card_fin, Module.finrank_fintype_fun_eq_card] at h
-    omega
   set V := LinearMap.ker (A.map ((↑) : ℤ → ℚ)).mulVecLin
-  -- Its height is `√det (A Aᵀ) / g`.
-  have hH : V.subspaceHeight = √((A * Aᵀ).det : ℝ) / (A.minorGcd : ℝ) :=
-    (Submodule.covolume_intLattice V).symm.trans (covolume_intLattice_ker_mulVecLin hA)
   obtain ⟨z, hz, hzV, hzg, hzle⟩ := V.exists_linearIndependent_intPoints_prod_norm_le
-  set e := finCongr hfin
+  set e := finCongr (finrank_ker_mulVecLin_map hA)
   refine ⟨fun l ↦ z (e.symm l), hz.comp _ e.symm.injective, fun l ↦ ?_, fun l ↦ hzg _, ?_⟩
   · have hx := hzV (e.symm l)
-    rw [Submodule.mem_intPoints, LinearMap.mem_ker, mulVecLin_apply] at hx
-    ext i
-    simpa using (RingHom.map_mulVec (Int.castRingHom ℚ) A (z (e.symm l)) i).trans
-      (congrFun hx i)
-  · rw [← hH, e.symm.prod_comp fun l ↦ ‖z l‖]
+    rw [intPoints_ker_mulVecLin, LinearMap.mem_ker, mulVecLin_apply] at hx
+    exact hx
+  · rw [← subspaceHeight_ker_mulVecLin hA, e.symm.prod_comp fun l ↦ ‖z l‖]
     exact hzle
 
 end Matrix
