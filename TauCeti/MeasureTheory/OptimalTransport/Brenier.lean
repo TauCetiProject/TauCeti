@@ -117,14 +117,6 @@ are those of `‖x - y‖ ^ 2`, whose transport cost is twice as large
   almost everywhere;
 * `TauCeti.transportCost_norm_sub_sq_div_two_ne_top` — laws with finite second moment have finite
   quadratic transport cost, so Brenier's theorem applies to them;
-* `TauCeti.IsCoupling.lintegral_norm_sub_sq_div_two` and
-  `TauCeti.IsCoupling.integral_inner_le` — for marginals with finite second moments, the quadratic
-  cost of a plan is a second-moment term minus its correlation, and the correlation is at most
-  that term; `ProbabilityTheory.HasLaw.lintegral_norm_sub_sq_div_two` is the identity for a pair
-  of random variables;
-* `TauCeti.integral_inner_le_of_ae_eq_comp` — if `U = T ∘ s` almost everywhere for an optimal
-  quadratic transport map `T` and a map `s` of law `μ`, then `s` maximises the correlation
-  `∫ ⟪s', U⟫` among maps `s'` of law `μ`;
 * `TauCeti.IsCoupling.isOptimalCoupling_of_isCyclicallyMonotone_norm_sub_sq_div_two` and
   `TauCeti.IsCoupling.isOptimalCoupling_of_ae_mem_subdifferential` — for marginals with finite
   second moments, a plan concentrated on a cyclically monotone set, or on the subdifferential graph
@@ -206,104 +198,6 @@ theorem ae_mem_subdifferential_fenchelConjugate_map_swap {u : E → EReal}
   filter_upwards [ae_of_ae_map measurable_swap.aemeasurable h] with z hz
   simpa only [flip_innerₗ, Prod.fst_swap, Prod.snd_swap] using
     mem_subdifferential_fenchelConjugate_of_mem_subdifferential (innerₗ E) hz
-
-/-- Against a coupling of two measures with finite second moments, the correlation
-`⟪x, y⟫` is integrable. -/
-theorem IsCoupling.integrable_inner (hσ : IsCoupling σ μ ν) (hμ : MemLp id 2 μ)
-    (hν : MemLp id 2 ν) : Integrable (fun z : E × E => ⟪z.1, z.2⟫) σ := by
-  have hμ2 : Integrable (fun x : E => ‖x‖ ^ 2) μ :=
-    (memLp_two_iff_integrable_sq_norm hμ.aestronglyMeasurable).1 hμ
-  have hν2 : Integrable (fun y : E => ‖y‖ ^ 2) ν :=
-    (memLp_two_iff_integrable_sq_norm hν.aestronglyMeasurable).1 hν
-  refine ((hσ.integrable_comp_fst hμ2).add (hσ.integrable_comp_snd hν2)).mono'
-    (continuous_fst.inner continuous_snd).aestronglyMeasurable (.of_forall fun z => ?_)
-  simp only [Pi.add_apply, Real.norm_eq_abs]
-  nlinarith [abs_real_inner_le_norm z.1 z.2, sq_nonneg (‖z.1‖ - ‖z.2‖)]
-
-/-- **The quadratic cost of a plan is a second-moment term minus the correlation.** For a
-coupling `σ` of two measures with finite second moments,
-`∫ ‖x - y‖ ^ 2 / 2 dσ = (∫ ‖x‖ ^ 2 dμ + ∫ ‖y‖ ^ 2 dν) / 2 - ∫ ⟪x, y⟫ dσ`, so minimising the
-quadratic cost over the couplings of `μ` and `ν` is maximising the correlation. -/
-theorem IsCoupling.lintegral_norm_sub_sq_div_two (hσ : IsCoupling σ μ ν) (hμ : MemLp id 2 μ)
-    (hν : MemLp id 2 ν) :
-    ∫⁻ z, ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2) ∂σ =
-      ENNReal.ofReal ((∫ x, ‖x‖ ^ 2 ∂μ + ∫ y, ‖y‖ ^ 2 ∂ν) / 2 - ∫ z, ⟪z.1, z.2⟫ ∂σ) := by
-  have hμ2 : Integrable (fun x : E => ‖x‖ ^ 2) μ :=
-    (memLp_two_iff_integrable_sq_norm hμ.aestronglyMeasurable).1 hμ
-  have hν2 : Integrable (fun y : E => ‖y‖ ^ 2) ν :=
-    (memLp_two_iff_integrable_sq_norm hν.aestronglyMeasurable).1 hν
-  have h₁ := hσ.integrable_comp_fst hμ2
-  have h₂ := hσ.integrable_comp_snd hν2
-  have h₃ := hσ.integrable_inner hμ hν
-  have heq : (fun z : E × E => ‖z.1 - z.2‖ ^ 2 / 2) =
-      fun z => (‖z.1‖ ^ 2 + ‖z.2‖ ^ 2) / 2 - ⟪z.1, z.2⟫ := by
-    rw [norm_sub_sq_div_two_eq_pairingCost_add_add]
-    ext z
-    rw [pairingCost_apply, innerₗ_apply_apply]
-    ring
-  have h₁₂ : Integrable (fun z : E × E => (‖z.1‖ ^ 2 + ‖z.2‖ ^ 2) / 2) σ :=
-    (h₁.add h₂).div_const 2
-  have hint : Integrable (fun z : E × E => ‖z.1 - z.2‖ ^ 2 / 2) σ := heq ▸ h₁₂.sub h₃
-  rw [← ofReal_integral_eq_lintegral_ofReal hint (.of_forall fun z => by positivity), heq,
-    integral_sub h₁₂ h₃, integral_div, integral_add h₁ h₂,
-    hσ.integral_comp_fst hμ2.aestronglyMeasurable, hσ.integral_comp_snd hν2.aestronglyMeasurable]
-
-/-- **The correlation of a plan is bounded by the second moments.** For a coupling `σ` of two
-measures with finite second moments, `∫ ⟪x, y⟫ dσ ≤ (∫ ‖x‖ ^ 2 dμ + ∫ ‖y‖ ^ 2 dν) / 2`. -/
-theorem IsCoupling.integral_inner_le (hσ : IsCoupling σ μ ν) (hμ : MemLp id 2 μ)
-    (hν : MemLp id 2 ν) :
-    ∫ z, ⟪z.1, z.2⟫ ∂σ ≤ (∫ x, ‖x‖ ^ 2 ∂μ + ∫ y, ‖y‖ ^ 2 ∂ν) / 2 := by
-  -- Integrate `⟪x, y⟫ ≤ (‖x‖ ^ 2 + ‖y‖ ^ 2) / 2` against `σ`.
-  have hμ2 : Integrable (fun x : E => ‖x‖ ^ 2) μ :=
-    (memLp_two_iff_integrable_sq_norm hμ.aestronglyMeasurable).1 hμ
-  have hν2 : Integrable (fun y : E => ‖y‖ ^ 2) ν :=
-    (memLp_two_iff_integrable_sq_norm hν.aestronglyMeasurable).1 hν
-  rw [← hσ.integral_comp_fst hμ2.aestronglyMeasurable,
-    ← hσ.integral_comp_snd hν2.aestronglyMeasurable,
-    ← integral_add (hσ.integrable_comp_fst hμ2) (hσ.integrable_comp_snd hν2), ← integral_div]
-  refine integral_mono (hσ.integrable_inner hμ hν)
-    (((hσ.integrable_comp_fst hμ2).add (hσ.integrable_comp_snd hν2)).div_const 2) fun z => ?_
-  nlinarith [real_inner_le_norm z.1 z.2, sq_nonneg (‖z.1‖ - ‖z.2‖)]
-
-/-- **The quadratic cost of a pair of random variables.** If `s` and `U` have laws `μ` and `ν`
-with finite second moments, then
-`∫ ‖s - U‖ ^ 2 / 2 dm = (∫ ‖x‖ ^ 2 dμ + ∫ ‖y‖ ^ 2 dν) / 2 - ∫ ⟪s, U⟫ dm`. -/
-theorem _root_.ProbabilityTheory.HasLaw.lintegral_norm_sub_sq_div_two {α : Type*}
-    [MeasurableSpace α] {m : Measure α} {s U : α → E} (hs : HasLaw s μ m) (hU : HasLaw U ν m)
-    (hμ : MemLp id 2 μ) (hν : MemLp id 2 ν) :
-    ∫⁻ ω, ENNReal.ofReal (‖s ω - U ω‖ ^ 2 / 2) ∂m =
-      ENNReal.ofReal ((∫ x, ‖x‖ ^ 2 ∂μ + ∫ y, ‖y‖ ^ 2 ∂ν) / 2 - ∫ ω, ⟪s ω, U ω⟫ ∂m) := by
-  have hpair := hs.aemeasurable.prodMk hU.aemeasurable
-  refine (lintegral_map' continuous_ofReal_norm_sub_sq_div_two.measurable.aemeasurable
-    hpair).symm.trans ?_
-  rw [(isCoupling_map_prodMk_of_aemeasurable hs.aemeasurable hU.aemeasurable hs.map_eq
-      hU.map_eq).lintegral_norm_sub_sq_div_two hμ hν,
-    integral_map hpair (continuous_fst.inner continuous_snd).aestronglyMeasurable]
-
-/-- **A factor through an optimal map maximises the correlation.** On a real inner product space,
-let `μ` and the law of `U : α → E` have finite second moments, and let `T` be an optimal transport
-map for the cost `‖x - y‖ ^ 2 / 2` from `μ` to the law of `U`. If `s` has law `μ` and `U = T ∘ s`
-almost everywhere, then among all maps `s'` of law `μ`, `s` maximises the correlation
-`∫ ⟪s', U⟫ dm`. -/
-theorem integral_inner_le_of_ae_eq_comp {α : Type*} [MeasurableSpace α] {m : Measure α}
-    {T : E → E} {U s s' : α → E} (hμ : MemLp id 2 μ) (hν : MemLp id 2 (m.map U))
-    (hT : IsKantorovichOptimalTransportMap (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2))
-      μ (m.map U) T)
-    (hs : HasLaw s μ m) (h : U =ᵐ[m] T ∘ s) (hs' : HasLaw s' μ m) :
-    ∫ ω, ⟪s' ω, U ω⟫ ∂m ≤ ∫ ω, ⟪s ω, U ω⟫ ∂m := by
-  have hUm : AEMeasurable U m := hs.aemeasurable_of_ae_eq_comp hT.aemeasurable h
-  have hle :=
-    lintegral_le_of_ae_eq_comp continuous_ofReal_norm_sub_sq_div_two.measurable hT hs h hs'
-  beta_reduce at hle
-  have hle' : ∫ ω, ⟪s' ω, U ω⟫ ∂m ≤ (∫ x, ‖x‖ ^ 2 ∂μ + ∫ y, ‖y‖ ^ 2 ∂m.map U) / 2 :=
-    (integral_map (hs'.aemeasurable.prodMk hUm)
-      (continuous_fst.inner continuous_snd).aestronglyMeasurable).symm.trans_le
-      ((isCoupling_map_prodMk_of_aemeasurable hs'.aemeasurable hUm hs'.map_eq rfl).integral_inner_le
-        hμ hν)
-  rw [hs.lintegral_norm_sub_sq_div_two (hasLaw_map hUm) hμ hν,
-    hs'.lintegral_norm_sub_sq_div_two (hasLaw_map hUm) hμ hν,
-    ENNReal.ofReal_le_ofReal_iff (sub_nonneg.2 hle')] at hle
-  linarith
 
 /-- A plan concentrated on the subdifferential graph of a function `u`, such that `u` and its
 Legendre–Fenchel conjugate are measurable, has the largest correlation among the couplings of its

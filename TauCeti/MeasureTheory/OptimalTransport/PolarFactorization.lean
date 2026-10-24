@@ -138,38 +138,26 @@ theorem exists_hasLaw_and_ae_eq_gradient_comp [IsProbabilityMeasure m] [IsProbab
   refine ⟨u, hconv, hlsc, hbot, hdiff, hT, hS.toHasLaw.comp (hasLaw_map hU), ?_⟩
   filter_upwards [ae_eq_comp hU hinv] with ω hω using hω.symm
 
-/-- **The measure-preserving factor is the unique cost minimiser.** Let `u : E → EReal` be convex
-and never `⊥`, finite with differentiable real representative at `P`-almost every point, such
-that `∇u` is an optimal transport map for `‖x - y‖ ^ 2 / 2` from `P` to the law of `U : α → E`, at
-finite optimal cost, the law of `U` being absolutely continuous with respect to an additive Haar
-measure. Let `s` have law `P` with `U = ∇u ∘ s` almost everywhere. If a map `s'` of law `P` is at
-most as far from `U` as `s`, in the sense that `∫ ‖s' - U‖ ^ 2 / 2 dm ≤ ∫ ‖s - U‖ ^ 2 / 2 dm`, then
-`s' = s` almost everywhere. -/
+/-- **The measure-preserving factor is the unique cost minimiser.** Let `T : E → E` be an optimal
+transport map for `‖x - y‖ ^ 2 / 2` from `P` to the law of `U : α → E`, at finite optimal cost,
+the law of `U` being absolutely continuous with respect to an additive Haar measure. Let `s` have
+law `P` with `U = T ∘ s` almost everywhere. If a map `s'` of law `P` is at most as far from `U` as
+`s`, in the sense that `∫ ‖s' - U‖ ^ 2 / 2 dm ≤ ∫ ‖s - U‖ ^ 2 / 2 dm`, then `s' = s` almost
+everywhere. For the polar factorization, `T` is the gradient `∇u`. -/
 theorem ae_eq_of_lintegral_norm_sub_sq_div_two_le [IsFiniteMeasure m] (hUρ : m.map U ≪ ρ)
-    (hconv : Convex ℝ {p : E × ℝ | u p.1 ≤ p.2}) (hbot : ∀ x, u x ≠ ⊥)
-    (hdiff : ∀ᵐ x ∂P, u x ≠ ⊤ ∧ DifferentiableAt ℝ (fun x' => (u x').toReal) x)
+    {T : E → E}
     (hT : IsKantorovichOptimalTransportMap (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2))
-      P (m.map U) (∇ fun x => (u x).toReal))
+      P (m.map U) T)
     (hfin : transportCost (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) P (m.map U) ≠ ∞)
-    (hs : HasLaw s P m) (h : U =ᵐ[m] (∇ fun x => (u x).toReal) ∘ s) (hs' : HasLaw s' P m)
+    (hs : HasLaw s P m) (h : U =ᵐ[m] T ∘ s) (hs' : HasLaw s' P m)
     (hle : ∫⁻ ω, ENNReal.ofReal (‖s' ω - U ω‖ ^ 2 / 2) ∂m ≤
       ∫⁻ ω, ENNReal.ofReal (‖s ω - U ω‖ ^ 2 / 2) ∂m) :
     s' =ᵐ[m] s := by
   have hc := (continuous_ofReal_norm_sub_sq_div_two (F := E)).measurable
-  have hT' := measurable_gradient fun x => (u x).toReal
-  have hU : AEMeasurable U m := hs.aemeasurable_of_ae_eq_comp hT'.aemeasurable h
+  have hU : AEMeasurable U m := hs.aemeasurable_of_ae_eq_comp hT.aemeasurable h
   have : IsFiniteMeasure P := hs.map_eq ▸ inferInstance
-  have hpair := hs'.aemeasurable.prodMk hU
-  -- The plan of `(s', U)` is optimal, so by uniqueness of the optimal plan out of an absolutely
-  -- continuous source it is the graph plan of `∇u`.
-  have hopt : IsOptimalCoupling (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2))
-      (m.map fun ω => (s' ω, U ω)) P (m.map U) := by
-    have hσ := isCoupling_map_prodMk_of_aemeasurable hs'.aemeasurable hU hs'.map_eq rfl
-    refine ⟨hσ, le_antisymm ?_ (transportCost_le_lintegral hσ _)⟩
-    rw [lintegral_map' hc.aemeasurable hpair, ← lintegral_eq_transportCost_of_ae_eq_comp hc hT hs h]
-    exact hle
-  -- The quadratic cost is symmetric, so exchanging coordinates gives optimal plans out of the
-  -- absolutely continuous law of `U`, where the optimal plan is unique.
+  -- The quadratic cost is symmetric, so exchanging coordinates turns plans out of `P` into plans
+  -- out of the absolutely continuous law of `U`, where the optimal plan is unique.
   have hsymm : (fun z : E × E => ENNReal.ofReal (‖z.swap.1 - z.swap.2‖ ^ 2 / 2)) =
       fun z => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2) := by
     funext z
@@ -177,20 +165,34 @@ theorem ae_eq_of_lintegral_norm_sub_sq_div_two_le [IsFiniteMeasure m] (hUρ : m.
   have hfin' : transportCost (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) (m.map U) P
       ≠ ∞ := by
     rwa [← hsymm, transportCost_comp_swap hc]
-  have hgraph' := (hsymm ▸ (((isKantorovichOptimalTransportMap_iff_isOptimalCoupling_graphPlan
-    hT.toHasLaw hc.aemeasurable).1 hT).swap hc)).unique hUρ (hsymm ▸ hopt.swap hc) hfin'
-  have hgraph : graphPlan (∇ fun x => (u x).toReal) P = m.map fun ω => (s' ω, U ω) := by
-    simpa [Measure.map_map measurable_swap measurable_swap] using
-      congrArg (Measure.map Prod.swap) hgraph'
-  -- So `U = ∇u ∘ s'` almost everywhere, and both `s` and `s'` are `∇u⋆ ∘ U`.
-  have h' : U =ᵐ[m] (∇ fun x => (u x).toReal) ∘ s' := by
-    have hae := ae_snd_eq_graphPlan (μ := P) hT'.aemeasurable
-    rw [hgraph] at hae
-    exact ae_of_ae_map hpair hae
-  filter_upwards [ae_eq_gradient_fenchelConjugate_comp_of_ae_eq_gradient_comp hUρ hconv hbot hdiff
-      hs' h',
-    ae_eq_gradient_fenchelConjugate_comp_of_ae_eq_gradient_comp hUρ hconv hbot hdiff hs h]
-    with ω h₁ h₂
+  -- The plan of `(t, U)` for a map `t` of law `P` at most as far from `U` as `s` is optimal, so
+  -- the plan of `(U, t)` is optimal out of the law of `U`.
+  have hopt : ∀ {t : α → E}, HasLaw t P m →
+      ∫⁻ ω, ENNReal.ofReal (‖t ω - U ω‖ ^ 2 / 2) ∂m ≤
+        ∫⁻ ω, ENNReal.ofReal (‖s ω - U ω‖ ^ 2 / 2) ∂m →
+      IsOptimalCoupling (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2))
+        ((m.map fun ω => (t ω, U ω)).map Prod.swap) (m.map U) P := by
+    intro t ht hle
+    have hσ := isCoupling_map_prodMk_of_aemeasurable ht.aemeasurable hU ht.map_eq rfl
+    have hopt : IsOptimalCoupling (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2))
+        (m.map fun ω => (t ω, U ω)) P (m.map U) := by
+      refine ⟨hσ, le_antisymm ?_ (transportCost_le_lintegral hσ _)⟩
+      rw [lintegral_map' hc.aemeasurable (ht.aemeasurable.prodMk hU),
+        ← lintegral_eq_transportCost_of_ae_eq_comp hc hT hs h]
+      exact hle
+    exact hsymm ▸ hopt.swap hc
+  -- That optimal plan is the graph plan of a gradient `∇v`, so `s` and `s'` are both `∇v ∘ U`.
+  obtain ⟨v, -, -, -, -, hgraph⟩ := (hopt hs le_rfl).exists_eq_graphPlan_gradient hUρ hfin'
+  have hS := measurable_gradient fun y => (v y).toReal
+  have hfactor : ∀ {t : α → E}, HasLaw t P m →
+      (m.map fun ω => (t ω, U ω)).map Prod.swap = graphPlan (∇ fun y => (v y).toReal) (m.map U) →
+      t =ᵐ[m] (∇ fun y => (v y).toReal) ∘ U := by
+    intro t ht heq
+    have hae := ae_snd_eq_graphPlan (μ := m.map U) hS.aemeasurable
+    rw [← heq] at hae
+    exact ae_of_ae_map (ht.aemeasurable.prodMk hU) (ae_of_ae_map measurable_swap.aemeasurable hae)
+  filter_upwards [hfactor hs' (((hopt hs le_rfl).unique hUρ (hopt hs' hle) hfin').symm.trans
+      hgraph), hfactor hs hgraph] with ω h₁ h₂
   rw [h₁, h₂]
 
 /-- **The measure-preserving factor is the unique correlation maximiser.** Let `P` and the law of
@@ -226,7 +228,7 @@ theorem ae_eq_of_integral_inner_le [IsFiniteMeasure m] (hP2 : MemLp id 2 P)
     dsimp only
     rw [h₁]
     exact ENNReal.ofReal_ne_top
-  refine ae_eq_of_lintegral_norm_sub_sq_div_two_le hUρ hconv hbot hdiff hT hfin hs h hs' ?_
+  refine ae_eq_of_lintegral_norm_sub_sq_div_two_le hUρ hT hfin hs h hs' ?_
   rw [h₁, h₂]
   exact ENNReal.ofReal_le_ofReal (by linarith)
 
