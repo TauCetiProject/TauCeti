@@ -77,6 +77,12 @@ theorem memLp_id_natCast_multivariateTMeasure_iff (hν : 0 < ν) (hS : S.PosSemi
     · simp
     · exact Or.inr hn
 
+/-- The identity is square-integrable under a multivariate t law when `ν > 2`. -/
+theorem memLp_two_id_multivariateTMeasure (hν : 2 < ν) (hS : S.PosSemidef) :
+    MemLp id 2 (multivariateTMeasure m S ν) :=
+  (memLp_id_natCast_multivariateTMeasure_iff (lt_trans zero_lt_two hν) hS 2).2
+    (Or.inr (by simpa using hν))
+
 /-- A natural norm moment of a multivariate t law exists exactly below its degrees of
 freedom, with every order allowed at zero scale. -/
 @[simp]
@@ -144,8 +150,7 @@ theorem covarianceBilin_multivariateTMeasure (hν : 2 < ν) (hS : S.PosSemidef)
       ν / (ν - 2) * ⟪x, S.toEuclideanLin y⟫ := by
   let _ := isProbabilityMeasure_multivariateTMeasure m (lt_trans zero_lt_two hν) hS
   have hμ : MemLp id 2 (multivariateTMeasure m S ν) :=
-    (memLp_id_natCast_multivariateTMeasure_iff (lt_trans zero_lt_two hν) hS 2).2
-      (Or.inr (by simpa using hν))
+    memLp_two_id_multivariateTMeasure hν hS
   have hself (z : EuclideanSpace ℝ ι) :
       covarianceBilin (multivariateTMeasure m S ν) z z =
         ν / (ν - 2) * ⟪z, S.toEuclideanLin z⟫ := by
@@ -165,8 +170,7 @@ theorem covMatrix_multivariateTMeasure (hν : 2 < ν) (hS : S.PosSemidef) :
     covMatrix (multivariateTMeasure m S ν) = (ν / (ν - 2)) • S := by
   let _ := isProbabilityMeasure_multivariateTMeasure m (lt_trans zero_lt_two hν) hS
   have hμ : MemLp id 2 (multivariateTMeasure m S ν) :=
-    (memLp_id_natCast_multivariateTMeasure_iff (lt_trans zero_lt_two hν) hS 2).2
-      (Or.inr (by simpa using hν))
+    memLp_two_id_multivariateTMeasure hν hS
   ext i j
   have h := covarianceBilin_multivariateTMeasure (m := m) hν hS
     (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)
@@ -198,8 +202,7 @@ theorem covariance_inner_of_hasLaw_multivariateTMeasure (hν : 2 < ν) (hS : S.P
       ν / (ν - 2) * ⟪x, S.toEuclideanLin y⟫ := by
   let _ := isProbabilityMeasure_multivariateTMeasure m (lt_trans zero_lt_two hν) hS
   have hμ : MemLp id 2 (multivariateTMeasure m S ν) :=
-    (memLp_id_natCast_multivariateTMeasure_iff (lt_trans zero_lt_two hν) hS 2).2
-      (Or.inr (by simpa using hν))
+    memLp_two_id_multivariateTMeasure hν hS
   rw [hX.covariance_fun_comp (by fun_prop) (by fun_prop),
     ← covarianceBilin_apply_eq_cov hμ, covarianceBilin_multivariateTMeasure hν hS]
 
