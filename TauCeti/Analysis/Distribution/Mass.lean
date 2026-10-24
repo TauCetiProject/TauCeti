@@ -19,10 +19,12 @@ normed space `E` to a real normed space `V`, the *mass* is the extended supremum
 `mass f = ⨆ { ‖f φ‖ₑ | φ ∈ 𝓓^{n}(Ω, F), ‖φ x‖ ≤ 1 for all x }`,
 
 and the *local mass* `localMass f U` takes the same supremum over the tests supported in `U`.
-With `F = E [⋀^Fin k]→L[ℝ] ℝ` and `V = ℝ`, a continuous linear `f` is a Euclidean `k`-current on
-`Ω`, the pointwise norm of a test form is the operator norm of the alternating map, and `mass f`
-is the extended mass of the current; it is often infinite. A current has *locally finite mass*
-when it satisfies an order-zero bound on the tests supported in each compact subset of `Ω`.
+With `F = E [⋀^Fin k]→L[ℝ] ℝ` and `V = ℝ`, a continuous linear `f` is a `k`-current on `Ω`, the
+pointwise norm of a test form is the `ContinuousAlternatingMap` operator norm, and `mass f` is the
+extended mass of the current with respect to this norm; it is often infinite. When `E` is an
+inner-product space the operator norm on forms is the comass, so `mass f` is then Federer's mass;
+this comparison is not proved in this file. A current has *locally finite mass* when it satisfies
+an order-zero bound on the tests supported in each compact subset of `Ω`.
 
 ## Main declarations
 
@@ -70,7 +72,9 @@ def localMass (f : 𝓓^{n}(Ω, F) → V) (U : Set E) : ℝ≥0∞ :=
   ⨆ (φ : 𝓓^{n}(Ω, F)) (_ : tsupport φ ⊆ U) (_ : ∀ x, ‖φ x‖ ≤ 1), ‖f φ‖ₑ
 
 /-- The (extended) mass of `f`: the supremum of `‖f φ‖ₑ` over the tests `φ` with `‖φ x‖ ≤ 1`
-everywhere. For a Euclidean current this is its mass; it may be infinite. -/
+everywhere. With `F` a space of alternating forms, this is the mass of the current with respect to
+the operator norm on forms (which is the comass when `E` is an inner-product space); it may be
+infinite. -/
 def mass (f : 𝓓^{n}(Ω, F) → V) : ℝ≥0∞ :=
   ⨆ (φ : 𝓓^{n}(Ω, F)) (_ : ∀ x, ‖φ x‖ ≤ 1), ‖f φ‖ₑ
 
