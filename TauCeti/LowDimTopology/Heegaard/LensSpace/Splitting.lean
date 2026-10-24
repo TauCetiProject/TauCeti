@@ -183,9 +183,11 @@ private theorem modelQuotient_eq_iff (i j : Fin 2) (p q : closedBall (0 : ℂ) 1
     refine Prod.ext (Subtype.ext ?_) (Circle.ext ?_)
     · rw [coe_modelQuotient_fst, coe_modelQuotient_fst, h2,
         mul_conj_pow_eq_iff hq (Circle.norm_coe _), h1, ← Circle.coe_pow, toCircle_pow_twist]
-    · rw [coe_modelQuotient_snd, coe_modelQuotient_snd, h2, mul_pow, ← Circle.coe_pow,
-        ← AddChar.map_nsmul_eq_pow, nsmul_eq_mul, ZMod.natCast_self, zero_mul,
-        AddChar.map_zero_eq_one, Circle.coe_one, one_mul]
+    · -- `ZMod.toCircle` takes values in the `m`-th roots of unity.
+      have hb : ZMod.toCircle ((ℓ j : ZMod m) * b) ^ m = 1 :=
+        (mem_rootsOfUnity' m _).1 (ZMod.rootsOfUnityAddChar m _).prop
+      rw [coe_modelQuotient_snd, coe_modelQuotient_snd, h2, mul_pow, ← Circle.coe_pow, hb,
+        Circle.coe_one, one_mul]
 
 /-! ### The two solid tori of a lens space -/
 
