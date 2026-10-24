@@ -8,7 +8,7 @@ module
 public import TauCeti.RingTheory.Perfectoid.Basic
 public import TauCeti.RingTheory.Perfectoid.PseudoUniformizerRoots.Basic
 import Mathlib.RingTheory.Teichmuller
-import TauCeti.RingTheory.Subring.SpanSingleton
+import TauCeti.RingTheory.Jacobson.Associated
 
 /-!
 # Existence of pseudouniformisers with compatible `p`-power roots
@@ -55,30 +55,8 @@ variable {p : ℕ} [Fact p.Prime] {R : Type*} [CommRing R] [UniformSpace R] [IsU
 
 section Uniform
 
-variable [T0Space R] [IsHuberRing R] [IsUniform R]
-
-/-- In a complete Hausdorff uniform Huber ring, `R°` is open and bounded, hence `a`-adically
-complete for every pseudouniformiser `a ∈ R°`. -/
-private theorem isAdicComplete_span (a : powerBoundedSubring R) (ha : IsPseudoUniformizer (a : R)) :
-    IsAdicComplete (Ideal.span {a}) (powerBoundedSubring R) := by
-  have hb := IsUniform.isBounded_powerBoundedSubring (A := R)
-  have ho := isOpen_powerBoundedSubring R
-  have h₁ := PairOfDefinition.ofIsPseudoUniformizer_ringOfDefinition _ ho hb ha a.2
-  have h₂ :=
-    (PairOfDefinition.ofIsPseudoUniformizer _ ho hb ha a.2).isAdicComplete_idealOfDefinition
-  have h₃ := fun x ↦
-    PairOfDefinition.mem_ofIsPseudoUniformizer_idealOfDefinition _ ho hb ha a.2 (x := x)
-  -- the pair of definition `(R°, a R°)` is only known through these lemmas, so forget it
-  obtain ⟨S, J, hS, hJc, hJ⟩ : ∃ (S : Subring R) (J : Ideal S), S = powerBoundedSubring R ∧
-      IsAdicComplete J S ∧ ∀ x : S, x ∈ J ↔ ∃ y ∈ powerBoundedSubring R, (a : R) * y = x :=
-    ⟨_, _, h₁, h₂, h₃⟩
-  subst hS
-  have hJa : J = Ideal.span {a} := Ideal.ext fun x ↦
-    (hJ x).trans ((powerBoundedSubring R).mem_span_singleton_iff a.2).symm
-  exact hJa ▸ hJc
-
-variable [Nontrivial R] (ϖ₁ : powerBoundedSubring R) (hϖ₁ : IsPseudoUniformizer (ϖ₁ : R))
-  (hdvd : ϖ₁ ^ p ∣ (p : powerBoundedSubring R))
+variable [T0Space R] [IsHuberRing R] [IsUniform R] [Nontrivial R] (ϖ₁ : powerBoundedSubring R)
+  (hϖ₁ : IsPseudoUniformizer (ϖ₁ : R)) (hdvd : ϖ₁ ^ p ∣ (p : powerBoundedSubring R))
   (hs : ∀ x : powerBoundedSubring R, ∃ y, ϖ₁ ^ p ∣ x - y ^ p)
 
 include hϖ₁ hdvd hs in
@@ -91,10 +69,11 @@ private theorem exists_coeffMonoidHom_zero_sub_dvd :
       ϖ₁ ^ p ∣ Perfection.coeffMonoidHom _ p 0 ψ - ϖ₁ := by
   have hp : p.Prime := Fact.out
   set I : Ideal (powerBoundedSubring R) := Ideal.span {ϖ₁ ^ p}
-  have : IsAdicComplete I (powerBoundedSubring R) := isAdicComplete_span _ <| by
-    rw [SubmonoidClass.coe_pow]
-    exact isPseudoUniformizer_iff.mpr
-      ⟨hϖ₁.isUnit.pow p, hϖ₁.isTopologicallyNilpotent.pow hp.ne_zero⟩
+  have : IsAdicComplete I (powerBoundedSubring R) :=
+    IsUniform.isAdicComplete_span_singleton _ <| by
+      rw [SubmonoidClass.coe_pow]
+      exact isPseudoUniformizer_iff.mpr
+        ⟨hϖ₁.isUnit.pow p, hϖ₁.isTopologicallyNilpotent.pow hp.ne_zero⟩
   -- `R° ⧸ (ϖ₁ ^ p)` is nonzero, as `ϖ₁ ^ p` lies in the Jacobson radical, and has
   -- characteristic `p`, as `ϖ₁ ^ p ∣ p`
   have hI : I ≠ ⊤ := fun h ↦ by
@@ -138,40 +117,26 @@ theorem exists_pow_dvd_rootPB_zero_sub_and_associated [T0Space R] [IsHuberRing R
     exact .zero
   obtain ⟨ψ, hψ⟩ := exists_coeffMonoidHom_zero_sub_dvd ϖ₁ hϖ₁ hdvd hs
   -- `ϖ₁` lies in the Jacobson radical of the complete ring `R°`, and `p ≥ 2`, so the zeroth term
-  -- `ϖ₁ + ϖ₁ ^ p c` of `ψ` is `ϖ₁ u` for the unit `u = 1 + ϖ₁ ^ (p - 1) c` of `R°`
+  -- `ϖ₁ + ϖ₁ ^ p c` of `ψ` is `ϖ₁ u` for a unit `u` of `R°`
+  have hp : p.Prime := Fact.out
   obtain ⟨u, hu⟩ : Associated ϖ₁ (Perfection.coeffMonoidHom _ p 0 ψ) := by
-    obtain ⟨c, hc⟩ := hψ
-    obtain ⟨k, hk⟩ := Nat.exists_eq_add_of_le' (Fact.out : p.Prime).two_le
-    have := isAdicComplete_span ϖ₁ hϖ₁
-    have hu : IsUnit (ϖ₁ * (ϖ₁ ^ k * c) + 1) := Ideal.mem_jacobson_bot.mp
-      (IsAdicComplete.le_jacobson_bot (Ideal.span {ϖ₁}) (Ideal.mem_span_singleton_self ϖ₁)) _
-    refine ⟨hu.unit, ?_⟩
-    have hpow : ϖ₁ ^ p = ϖ₁ ^ k * ϖ₁ ^ 2 := by rw [hk, pow_add]
-    rw [IsUnit.unit_spec]
-    linear_combination -hc - c * hpow
-  set roots := Perfection.mapMonoidHom p
-    ((powerBoundedSubring R).subtype : powerBoundedSubring R →* R) ψ
-  have hroots : Perfection.coeffMonoidHom R p 0 roots =
-      (Perfection.coeffMonoidHom (powerBoundedSubring R) p 0 ψ : R) :=
-    Perfection.coeffMonoidHom_mapMonoidHom p _ ψ 0
+    have := IsUniform.isAdicComplete_span_singleton ϖ₁ hϖ₁
+    have hj := IsAdicComplete.le_jacobson_bot _ (Ideal.mem_span_singleton_self ϖ₁)
+    refine associated_of_mul_dvd_sub_of_mem_jacobson
+      (Ideal.pow_mem_of_mem _ hj (p - 1) (Nat.sub_pos_of_lt hp.one_lt)) ?_
+    rwa [← pow_succ', Nat.sub_add_cancel hp.one_le]
   -- the zeroth term `ϖ₁ u` is a pseudouniformiser whose `p`-th power divides `p` in `R°`
-  have hpu : IsPseudoUniformizer (Perfection.coeffMonoidHom R p 0 roots) := by
-    rw [hroots, ← hu, Subring.coe_mul]
+  have hpu : IsPseudoUniformizer (Perfection.coeffMonoidHom (powerBoundedSubring R) p 0 ψ : R) := by
+    rw [← hu, Subring.coe_mul]
     refine isPseudoUniformizer_iff.mpr
       ⟨hϖ₁.isUnit.mul (u.isUnit.map (powerBoundedSubring R).subtype), ?_⟩
     rw [mul_comm]
     exact (mem_powerBoundedSubring.mp (u : powerBoundedSubring R).2).isTopologicallyNilpotent_mul
       hϖ₁.isTopologicallyNilpotent
-  have hx : (⟨Perfection.coeffMonoidHom R p 0 roots, mem_powerBoundedSubring.mpr <|
-      .of_isTopologicallyNilpotent hpu.isTopologicallyNilpotent⟩ : powerBoundedSubring R) =
-      Perfection.coeffMonoidHom _ p 0 ψ :=
-    Subtype.ext hroots
-  let ϖ : PseudoUniformizerRoots p R :=
-    ⟨roots, hpu, hx ▸ (Associated.pow_pow ⟨u, hu⟩).dvd_iff_dvd_left.mp hdvd⟩
-  have h0 : ϖ.rootPB 0 = Perfection.coeffMonoidHom _ p 0 ψ := Subtype.ext <| by
-    rw [coe_rootPB, ← coeffMonoidHom_roots]
-    exact hroots
-  exact ⟨ϖ, h0 ▸ hψ, h0 ▸ ⟨u, hu⟩⟩
+  refine ⟨ofPowerBounded ψ hpu ((Associated.pow_pow ⟨u, hu⟩).dvd_iff_dvd_left.mp hdvd), ?_, ?_⟩
+  · rwa [rootPB_ofPowerBounded]
+  · rw [rootPB_ofPowerBounded]
+    exact ⟨u, hu⟩
 
 /-- **Every perfectoid Tate ring has a pseudouniformiser with compatible `p`-power roots**
 (Scholze, *Étale cohomology of diamonds*, Lemma 3.10). -/
