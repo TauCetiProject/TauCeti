@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.Derivative
+public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.SpecialFunctions.Exp
 
 import Mathlib.Analysis.Calculus.Deriv.Polynomial
@@ -24,18 +25,14 @@ exponents are pairwise distinct and the `pₖ` are nonzero, then `f` has fewer t
 zero set is finite. Nonemptiness is needed: the empty sum vanishes everywhere.
 For a single term this is the bound on the number of roots of a polynomial.
 
-The proof is by induction on the number of terms. Multiplying `f` by `exp(-γ x)` for one of
-the exponents `γ`, with polynomial `p`, does not change the zeros and makes the exponent of `p`
-equal to `0`. Differentiating `deg p + 1` times removes this term, while every other term
-`q(x) exp(δ x)` with `δ ≠ 0` becomes `((d/dx + δ) ^ (deg p + 1) q)(x) exp(δ x)`, whose polynomial
-has the same degree as `q`. By Rolle's theorem each differentiation loses at most one zero.
-
 This zero estimate is used in Schneider's proof of the Gelfond–Schneider theorem for real
 numbers: an auxiliary function `∑ᵢⱼ aᵢⱼ zⁱ exp(j z log α)` cannot vanish at more real points
 than the number of its coefficients.
 
 ## Main results
 
+* `TauCeti.hasDerivAt_sum_eval_mul_exp`: the derivative of `∑ₖ pₖ(x) exp(γₖ x)` is again an
+  exponential polynomial, `∑ₖ (pₖ' + γₖ pₖ)(x) exp(γₖ x)`.
 * `TauCeti.card_lt_of_sum_eval_mul_exp_eq_zero`: for a nonempty finite index set, pairwise
   distinct exponents `γₖ` and nonzero `pₖ`, a finite set of zeros of `∑ₖ pₖ(x) exp(γₖ x)` has
   fewer than `∑ₖ (deg pₖ + 1)` points.
@@ -54,7 +51,7 @@ open Finset Polynomial
 namespace TauCeti
 
 /-- The derivative of `∑ₖ pₖ(x) exp(γₖ x)` is `∑ₖ (pₖ' + γₖ pₖ)(x) exp(γₖ x)`. -/
-private theorem hasDerivAt_sum_eval_mul_exp {ι : Type*} (s : Finset ι) (γ : ι → ℝ)
+theorem hasDerivAt_sum_eval_mul_exp {ι : Type*} (s : Finset ι) (γ : ι → ℝ)
     (p : ι → ℝ[X]) (x : ℝ) :
     HasDerivAt (fun x ↦ ∑ i ∈ s, (p i).eval x * Real.exp (γ i * x))
       (∑ i ∈ s, (derivative (p i) + C (γ i) * p i).eval x * Real.exp (γ i * x)) x := by
@@ -72,6 +69,11 @@ theorem card_lt_of_sum_eval_mul_exp_eq_zero {ι : Type*} {s : Finset ι} (hs : s
     (hZ : ∀ x ∈ Z, ∑ i ∈ s, (p i).eval x * Real.exp (γ i * x) = 0) :
     #Z < ∑ i ∈ s, ((p i).natDegree + 1) := by
   classical
+  -- Induction on the number of terms. Multiplying by `exp(-γₐ x)` does not change the zeros and
+  -- makes the exponent of `pₐ` equal to `0`. Differentiating `deg pₐ + 1` times removes this
+  -- term, while every other term `q(x) exp(δ x)` with `δ ≠ 0` becomes
+  -- `((d/dx + δ) ^ (deg pₐ + 1) q)(x) exp(δ x)`, whose polynomial has the same degree as `q`.
+  -- By Rolle's theorem each differentiation loses at most one zero.
   induction hs using Finset.Nonempty.cons_induction generalizing γ p Z with
   | singleton a =>
     -- A single term `p(x) exp(γ x)` vanishes exactly at the roots of `p`.

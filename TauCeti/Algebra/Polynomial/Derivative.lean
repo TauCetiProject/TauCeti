@@ -136,6 +136,7 @@ private theorem coeff_natDegree_derivative_add_C_mul_ne_zero (hδ : δ ≠ 0) (h
 
 /-- For `δ ≠ 0`, the operator `q ↦ q' + δ q` (the derivative of `x ↦ q(x) e^(δ x)`, divided by
 `e^(δ x)`) preserves the degree of a polynomial. -/
+@[simp]
 theorem _root_.Polynomial.natDegree_derivative_add_C_mul (hδ : δ ≠ 0) :
     (derivative q + C δ * q).natDegree = q.natDegree := by
   rcases eq_or_ne q 0 with rfl | hq
@@ -155,6 +156,7 @@ theorem _root_.Polynomial.derivative_add_C_mul_eq_zero_iff (hδ : δ ≠ 0) :
 
 /-- For `δ ≠ 0`, every iterate of the operator `q ↦ q' + δ q` preserves the degree of a
 polynomial. -/
+@[simp]
 theorem _root_.Polynomial.natDegree_iterate_derivative_add_C_mul (hδ : δ ≠ 0) (n : ℕ) :
     ((fun r ↦ derivative r + C δ * r)^[n] q).natDegree = q.natDegree := by
   induction n with
@@ -162,6 +164,7 @@ theorem _root_.Polynomial.natDegree_iterate_derivative_add_C_mul (hδ : δ ≠ 0
   | succ n ih => rw [Function.iterate_succ_apply', natDegree_derivative_add_C_mul hδ, ih]
 
 /-- For `δ ≠ 0`, every iterate of the operator `q ↦ q' + δ q` has trivial kernel. -/
+@[simp]
 theorem _root_.Polynomial.iterate_derivative_add_C_mul_eq_zero_iff (hδ : δ ≠ 0) (n : ℕ) :
     (fun r ↦ derivative r + C δ * r)^[n] q = 0 ↔ q = 0 := by
   induction n with
