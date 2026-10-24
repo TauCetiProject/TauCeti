@@ -11,7 +11,8 @@ import TauCeti.Analysis.Calculus.ContDiff.LocalInjectivity
 /-!
 # Local injectivity of maps with injective manifold derivative
 
-A map `f : M → N` between real manifolds that is `C¹` at `x`, where the model space of `M` is
+A map `f : M → N` between manifolds over `ℝ` or `ℂ` (more generally, over a field `𝕜` with
+`IsRCLikeNormedField 𝕜`) that is `C¹` at `x`, where the model space of `M` is
 finite-dimensional and the manifold derivative `mfderiv I J f x` is injective, is injective on a
 neighbourhood of `x` (`ContMDiffAt.exists_mem_nhds_injOn`).
 
@@ -33,18 +34,20 @@ public section
 open Function Set Filter
 open scoped Manifold Topology
 
-variable {E H M E' H' N : Type*}
-  [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [TopologicalSpace H]
-  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
-  [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
-  {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N]
+variable {𝕜 E H M E' H' N : Type*} [NontriviallyNormedField 𝕜] [IsRCLikeNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E] [TopologicalSpace H]
+  {I : ModelWithCorners 𝕜 E H} [TopologicalSpace M] [ChartedSpace H M]
+  [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [TopologicalSpace H']
+  {J : ModelWithCorners 𝕜 E' H'} [TopologicalSpace N] [ChartedSpace H' N]
   {f : M → N} {x : M}
 
-/-- A map between real manifolds, the source modelled on a finite-dimensional space, that is `C¹`
-at `x` and has injective manifold derivative at `x` is injective on a neighbourhood of `x`. The
-manifolds may have boundary or corners. -/
+/-- A map between real or complex manifolds, the source modelled on a finite-dimensional space,
+that is `C¹` at `x` and has injective manifold derivative at `x` is injective on a neighbourhood
+of `x`. The manifolds may have boundary or corners. -/
 theorem ContMDiffAt.exists_mem_nhds_injOn (hf : ContMDiffAt I J 1 f x)
     (hinj : Injective (mfderiv I J f x)) : ∃ t ∈ 𝓝 x, InjOn f t := by
+  let := IsRCLikeNormedField.rclike 𝕜
+  let := NormedSpace.restrictScalars ℝ 𝕜 E
   have hx : extChartAt I x x ∈ range I :=
     extChartAt_target_subset_range x (mem_extChartAt_target x)
   -- The manifold derivative is the derivative of the coordinate expression within `range I`,
