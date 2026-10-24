@@ -45,7 +45,9 @@ Writing `s σ` for the action of the permutation `σ` and `e i j` for the arc on
 * `e i l * e i j = e i l * s (j l)` for three distinct strands, both sides being the diagram with a
   cap on `i, j`, a cup on `i, l` and a through strand from `l` to `j`;
 * the mixed relations `s (i j) * e j l * e i j = s (j l) * e i j`,
-  `e i j * e j l * s (i j) = e i j * s (j l)` and `e i j * s (j l) * e i j = e i j` that follow.
+  `e i j * e j l * s (i j) = e i j * s (j l)` and `e i j * s (j l) * e i j = e i j` that follow;
+* `e i j * e j l * e i j = e i j`, the absorption of two arcs sharing the strand `j`, which these
+  give in a few rewrites.
 
 Together with `s` being a monoid homomorphism, which gives `s² = 1` and the braid relations, and
 with the relations among arcs alone of
@@ -79,6 +81,8 @@ the symplectic group.
   `TauCeti.symplecticCupCapAt_mul_symplecticCupCapAt_mul_symplecticPermTensorAction_swap` and
   `TauCeti.symplecticCupCapAt_mul_symplecticPermTensorAction_swap_mul_symplecticCupCapAt`: **the
   mixed relations**.
+* `TauCeti.symplecticCupCapAt_mul_mul_self`: **two arcs sharing a strand absorb**,
+  `e i j * e j l * e i j = e i j`.
 
 ## References
 
@@ -364,5 +368,23 @@ theorem symplecticCupCapAt_mul_symplecticPermTensorAction_swap_mul_symplecticCup
   rw [Equiv.swap_apply_of_ne_of_ne hij hil, Equiv.swap_apply_left] at h
   rw [mul_assoc, h, ← mul_assoc, symplecticCupCapAt_mul_symplecticCupCapAt hil hjl.symm hij,
     Equiv.swap_comm, mul_assoc, ← map_mul, Equiv.swap_mul_self, map_one, mul_one]
+
+/-! ### Two arcs sharing a strand absorb -/
+
+/-- **Two arcs sharing one strand**: `e i j * e j l * e i j = e i j`, the relation that makes two
+generators on overlapping pairs of strands absorb one another. Composing the two arcs on the right
+gives an arc after the crossing `s (i l)` by
+`TauCeti.symplecticCupCapAt_mul_symplecticCupCapAt`; the renaming relation moves that crossing
+past the arc `e j l`, and the mixed relation `e j i * s (i l) * e j i = e j i` closes it. -/
+theorem symplecticCupCapAt_mul_mul_self {i j l : Fin d} (hij : i ≠ j) (hjl : j ≠ l)
+    (hil : i ≠ l) :
+    symplecticCupCapAt k n d i j * symplecticCupCapAt k n d j l * symplecticCupCapAt k n d i j =
+      symplecticCupCapAt k n d i j := by
+  have h := symplecticPermTensorAction_mul_symplecticCupCapAt (k := k) (n := n)
+    (Equiv.swap i l) j i
+  rw [Equiv.swap_apply_of_ne_of_ne hij.symm hjl, Equiv.swap_apply_left] at h
+  rw [symplecticCupCapAt_comm i j, mul_assoc,
+    symplecticCupCapAt_mul_symplecticCupCapAt hij.symm hil hjl, ← h, ← mul_assoc,
+    symplecticCupCapAt_mul_symplecticPermTensorAction_swap_mul_symplecticCupCapAt hij.symm hil hjl]
 
 end TauCeti
