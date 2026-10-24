@@ -255,9 +255,9 @@ private theorem tendsto_norm_pow_mul_cofinite {ι : Type*} [Finite ι] (C : ℝ)
     Tendsto (fun i : ι × ℕ ↦ ‖(p : ℤ_[p])‖ ^ i.2 * C) cofinite (𝓝 0) := by
   have hpow : Tendsto (fun n : ℕ ↦ ‖(p : ℤ_[p])‖ ^ n * C) cofinite (𝓝 0) := by
     simpa using (tendsto_norm_p_pow_cofinite (p := p)).mul_const C
-  rw [← Filter.coprod_cofinite, Filter.coprod, Filter.cofinite_eq_bot, Filter.comap_bot,
-    bot_sup_eq]
-  exact hpow.comp tendsto_comap
+  refine hpow.comp <| Tendsto.cofinite_of_finite_preimage_singleton fun n ↦ ?_
+  rw [Set.preimage_snd_singleton_eq_range]
+  exact Set.finite_range _
 
 /-- The coefficients of the re-expansion of `c` on the discs of level `h + 1`: on the disc of
 `a' = a + pʰ b`, `0 ≤ b < p`, the coefficient of `vʲ` is
