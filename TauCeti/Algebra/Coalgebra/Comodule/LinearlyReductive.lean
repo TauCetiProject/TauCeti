@@ -42,9 +42,9 @@ for modules that are sums of semisimple submodules, as in Mathlib's
 `complementedLattice_of_sSup_atoms_eq_top`. That theorem needs a modular complete lattice, while
 subcomodules only form a complete join-semilattice here, so the argument is carried out directly:
 intersections with a subcomodule `F` are formed as inverse images along the inclusion of `F`, and
-disjointness is tested on underlying submodules. Over a field every element lies in a
-finite-dimensional subcomodule, so the finite-dimensional subcomodules supply the required family
-of completely reducible subcomodules.
+disjointness is tested on underlying submodules. For a free coefficient coalgebra, and so over a
+field, every element lies in a finite subcomodule, so the finite subcomodules supply the required
+family of completely reducible subcomodules.
 
 For an abelian group `G`, `k[G]` is the coordinate Hopf algebra of the diagonalizable group `D(G)`.
 Thus every diagonalizable group, and in particular every split torus, is linearly reductive over an
@@ -89,13 +89,13 @@ arbitrary field.
   reducible.
 * `TauCeti.Subcomodule.isCompletelyReducible_of_isAtom`: a simple subcomodule is completely
   reducible.
-* `TauCeti.Comodule.isCompletelyReducible_of_forall_finite`: over a field, a comodule is
-  completely reducible as soon as its finite-dimensional subcomodules are.
-* `TauCeti.Comodule.isCompletelyReducible_iff_sSup_isAtom_eq_top`: over a field, a comodule is
+* `TauCeti.Comodule.isCompletelyReducible_of_forall_finite`: for a free coefficient coalgebra,
+  a comodule is completely reducible as soon as its finite subcomodules are.
+* `TauCeti.Comodule.isCompletelyReducible_iff_sSup_atoms_eq_top`: over a field, a comodule is
   completely reducible exactly when it is the sum of its simple subcomodules.
 * `TauCeti.Comodule.isCompletelyReducible_of_isLinearlyReductive`: **every comodule over a
   linearly reductive coalgebra is completely reducible**, with no finiteness assumption, and
-  `TauCeti.Comodule.sSup_isAtom_eq_top_of_isLinearlyReductive`: it is the sum of its simple
+  `TauCeti.Comodule.sSup_atoms_eq_top_of_isLinearlyReductive`: it is the sum of its simple
   subcomodules.
 * `TauCeti.Coalgebra.isLinearlyReductive_monoidAlgebra`: monoid-algebra coalgebras are linearly
   reductive over a field.
@@ -450,6 +450,22 @@ theorem isCompletelyReducible_of_sSup_eq_top {S : Set (Subcomodule R C V)} (hS :
 
 end Ring
 
+section Free
+
+variable {R : Type u} [CommRing R]
+variable {C : Type v} [AddCommMonoid C] [Module R C] [Coalgebra R C] [Module.Free R C]
+variable {V : Type w} [AddCommGroup V] [Module R V] [Comodule R C V]
+
+/-- For a free coefficient coalgebra, a comodule whose finite subcomodules are completely
+reducible is completely reducible. -/
+theorem isCompletelyReducible_of_forall_finite
+    (h : ∀ F : Subcomodule R C V, Module.Finite R F → IsCompletelyReducible R C F) :
+    IsCompletelyReducible R C V :=
+  isCompletelyReducible_of_sSup_eq_top Subcomodule.sSup_finiteSubcomodules_eq_top
+    fun F hF ↦ h F (Subcomodule.mem_finiteSubcomodules.mp hF)
+
+end Free
+
 end Comodule
 
 namespace Subcomodule
@@ -490,17 +506,9 @@ section Group
 variable {C : Type v} [AddCommGroup C] [Module k C] [Coalgebra k C]
 variable {V : Type w} [AddCommGroup V] [Module k V] [Comodule k C V]
 
-/-- Over a field, a comodule whose finite-dimensional subcomodules are completely reducible is
-completely reducible. -/
-theorem isCompletelyReducible_of_forall_finite
-    (h : ∀ F : Subcomodule k C V, Module.Finite k F → IsCompletelyReducible k C F) :
-    IsCompletelyReducible k C V :=
-  isCompletelyReducible_of_sSup_eq_top Subcomodule.sSup_finiteSubcomodules_eq_top
-    fun F hF ↦ h F (Subcomodule.mem_finiteSubcomodules.mp hF)
-
 /-- **Complete reducibility as a sum of simple subcomodules.** Over a field, a comodule is
 completely reducible exactly when it is the supremum of its simple subcomodules. -/
-theorem isCompletelyReducible_iff_sSup_isAtom_eq_top :
+theorem isCompletelyReducible_iff_sSup_atoms_eq_top :
     IsCompletelyReducible k C V ↔ sSup {S : Subcomodule k C V | IsAtom S} = ⊤ := by
   refine ⟨fun hV ↦ ?_, fun h ↦ isCompletelyReducible_of_sSup_eq_top h
     fun _ hS ↦ Subcomodule.isCompletelyReducible_of_isAtom hS⟩
@@ -529,12 +537,12 @@ theorem isCompletelyReducible_of_isLinearlyReductive
   exact isCompletelyReducible_of_forall_finite fun _ _ ↦ hC.isCompletelyReducible
 
 /-- Every comodule over a linearly reductive coalgebra is the sum of its simple subcomodules. -/
-theorem sSup_isAtom_eq_top_of_isLinearlyReductive
+theorem sSup_atoms_eq_top_of_isLinearlyReductive
     {C : Type v} [AddCommGroup C] [Module k C] [Coalgebra k C]
     {V : Type w} [AddCommGroup V] [Module k V] [Comodule k C V]
     (hC : Coalgebra.IsLinearlyReductive.{u, v, u} k C) :
     sSup {S : Subcomodule k C V | IsAtom S} = ⊤ :=
-  isCompletelyReducible_iff_sSup_isAtom_eq_top.mp (isCompletelyReducible_of_isLinearlyReductive hC)
+  isCompletelyReducible_iff_sSup_atoms_eq_top.mp (isCompletelyReducible_of_isLinearlyReductive hC)
 
 end Field
 

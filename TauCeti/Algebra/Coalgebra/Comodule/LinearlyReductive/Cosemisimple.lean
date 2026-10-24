@@ -12,7 +12,7 @@ public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Regular
 # Linearly reductive coalgebras are cosemisimple
 
 Over a linearly reductive coalgebra every comodule is the sum of its simple subcomodules, by
-`TauCeti.Comodule.sSup_isAtom_eq_top_of_isLinearlyReductive`. Applied to the regular comodule,
+`TauCeti.Comodule.sSup_atoms_eq_top_of_isLinearlyReductive`. Applied to the regular comodule,
 this says that a linearly reductive coalgebra is cosemisimple: it is the sum of its simple right
 coideals, and hence it is spanned by the matrix coefficients of its simple comodules. For the
 coordinate Hopf algebra `O(G)` of a linearly reductive affine group, this is the spanning part of
@@ -48,7 +48,7 @@ theorem iSup_matrixCoefficientSubmodule_eq_top (hC : IsLinearlyReductive.{u, v, 
     ⨆ (S : Subcomodule k C C) (_ : IsAtom S),
       Comodule.matrixCoefficientSubmodule (R := k) (C := C) (M := S) = ⊤ := by
   rw [eq_top_iff, ← Subcomodule.top_toSubmodule (R := k) (C := C) (M := C),
-    ← Comodule.sSup_isAtom_eq_top_of_isLinearlyReductive hC, Subcomodule.sSup_toSubmodule]
+    ← Comodule.sSup_atoms_eq_top_of_isLinearlyReductive hC, Subcomodule.sSup_toSubmodule]
   exact iSup_le fun S ↦
     S.1.toSubmodule_le_matrixCoefficientSubmodule.trans (le_iSup₂_of_le S.1 S.2 le_rfl)
 

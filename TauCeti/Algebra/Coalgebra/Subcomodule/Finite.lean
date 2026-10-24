@@ -39,9 +39,10 @@ No flatness or noetherian hypothesis is needed.
   the finite subcomodules have supremum `⊤`.
 * `TauCeti.Subcomodule.exists_finite_le_of_mem`: every element of a subcomodule belongs to a
   finite subcomodule contained in it.
+* `TauCeti.Subcomodule.finite_of_isAtom`: for a free coefficient coalgebra, simple subcomodules
+  are finite.
 * `TauCeti.Subcomodule.instIsAtomic`: over a field every nonzero subcomodule contains a simple
-  subcomodule, and `TauCeti.Subcomodule.finite_of_isAtom`: simple subcomodules are
-  finite-dimensional.
+  subcomodule.
 
 ## References
 
@@ -312,6 +313,14 @@ theorem exists_finite_le_of_mem [Module.Free R C] {Q : Subcomodule R C M} {m : M
   exact ⟨N.map (subtype Q), map_le_iff.mpr fun n _ ↦ by simp, map_finite (subtype Q) N,
     by simpa using mem_map_of_mem (subtype Q) hmN⟩
 
+/-- If the coefficient coalgebra is free, a simple subcomodule is finite. -/
+theorem finite_of_isAtom [Module.Free R C] {S : Subcomodule R C M} (hS : IsAtom S) :
+    Module.Finite R S := by
+  obtain ⟨v, hvS, hv0⟩ := ne_bot_iff.mp hS.1
+  obtain ⟨F, hFS, hF, hvF⟩ := exists_finite_le_of_mem hvS
+  rw [← (hS.le_iff.mp hFS).resolve_left (ne_bot_iff.mpr ⟨v, hvF, hv0⟩)]
+  exact hF
+
 end General
 
 section Field
@@ -333,13 +342,6 @@ instance instIsAtomic : IsAtomic (Subcomodule k C M) := by
   have : Module.Finite k A.toSubmodule :=
     Submodule.finiteDimensional_of_le (toSubmodule_le_toSubmodule.mpr hAF)
   exact hmin B ⟨hBA.le.trans hAF, hB0⟩ (Submodule.finrank_lt_finrank_of_lt hBA)
-
-/-- A simple subcomodule over a field is finite-dimensional. -/
-theorem finite_of_isAtom {S : Subcomodule k C M} (hS : IsAtom S) : Module.Finite k S := by
-  obtain ⟨v, hvS, hv0⟩ := ne_bot_iff.mp hS.1
-  obtain ⟨F, hFS, hF, hvF⟩ := exists_finite_le_of_mem hvS
-  rw [← (hS.le_iff.mp hFS).resolve_left (ne_bot_iff.mpr ⟨v, hvF, hv0⟩)]
-  exact hF
 
 end Field
 
