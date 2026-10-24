@@ -7,11 +7,10 @@ module
 
 public import Mathlib.Analysis.Complex.CauchyIntegral
 public import Mathlib.Analysis.Normed.Module.DoubleDual
-import Mathlib.Analysis.Complex.Liouville
 import Mathlib.Analysis.LocallyConvex.SeparatingDual
 import TauCeti.Analysis.Complex.Conformal.NormalFamilies
 import TauCeti.Analysis.Normed.Module.WeakSpace.Bounded
-public import TauCeti.MeasureTheory.Integral.CircleIntegral
+public import TauCeti.MeasureTheory.Integral.Circle.Integral
 
 /-!
 # Weakly holomorphic functions are holomorphic
@@ -27,7 +26,8 @@ The proof has three steps.
   boundedness principle (`TauCeti.NormedSpace.isBounded_iff_forall_dual_isBounded`) bounds the
   norm of `f` there.
 * The scalar Cauchy estimate for the derivative of `z ↦ ℓ (f z)` and the mean value inequality
-  give a Lipschitz estimate for each `ℓ ∘ f` with constant proportional to `‖ℓ‖`. By Hahn–Banach
+  (`TauCeti.dist_le_of_forall_mem_closedBall_two_mul_norm_le`) give a Lipschitz estimate for each
+  `ℓ ∘ f` with constant proportional to `‖ℓ‖`. By Hahn–Banach
   (`NormedSpace.norm_le_dual_bound`) this is a Lipschitz estimate for `f` itself, so `f` is
   continuous on `U`.
 * Being continuous, `f` has a Banach-valued Cauchy integral over every small circle in `U`, and
@@ -63,27 +63,6 @@ namespace TauCeti
 
 variable {f : ℂ → E} {U : Set ℂ}
 
-/-- A weakly holomorphic function bounded by `M` on `closedBall c (2 * r)` is Lipschitz with
-constant `M / r` on `ball c r`. -/
-private theorem norm_sub_le_of_forall_dual {c : ℂ} {r M : ℝ} (hr : 0 < r)
-    (hf : ∀ ℓ : StrongDual ℂ E, DifferentiableOn ℂ (fun z ↦ ℓ (f z)) (closedBall c (2 * r)))
-    (hM : ∀ z ∈ closedBall c (2 * r), ‖f z‖ ≤ M) {z w : ℂ} (hz : z ∈ ball c r)
-    (hw : w ∈ ball c r) : ‖f z - f w‖ ≤ M / r * ‖z - w‖ := by
-  have hM0 : 0 ≤ M := (norm_nonneg _).trans (hM c (mem_closedBall_self (by positivity)))
-  have hball : ball c r ⊆ ball c (2 * r) := ball_subset_ball (by linarith)
-  refine NormedSpace.norm_le_dual_bound ℂ _ (by positivity) fun ℓ ↦ ?_
-  -- The Cauchy estimate on `ball x r ⊆ ball c (2 * r)` bounds the derivative of `ℓ ∘ f`.
-  have hderiv : ∀ x ∈ ball c r, ‖deriv (fun z ↦ ℓ (f z)) x‖ ≤ ‖ℓ‖ * M / r := fun x hx ↦
-    norm_deriv_le_of_forall_mem_closedBall_two_mul_norm_le (hf ℓ) hr Subset.rfl
-      (fun y hy ↦ (ℓ.le_opNorm _).trans (mul_le_mul_of_nonneg_left (hM y hy) (norm_nonneg ℓ))) hx
-  have hdiff : ∀ x ∈ ball c r, DifferentiableAt ℂ (fun z ↦ ℓ (f z)) x := fun x hx ↦
-    (hf ℓ).differentiableAt <|
-      Filter.mem_of_superset (isOpen_ball.mem_nhds (hball hx)) ball_subset_closedBall
-  have := (convex_ball c r).norm_image_sub_le_of_norm_deriv_le hdiff hderiv hw hz
-  rw [map_sub]
-  calc ‖ℓ (f z) - ℓ (f w)‖ ≤ ‖ℓ‖ * M / r * ‖z - w‖ := this
-    _ = M / r * ‖z - w‖ * ‖ℓ‖ := by ring
-
 /-- A weakly holomorphic function on an open set is continuous there. This needs no completeness
 of `E`. -/
 theorem continuousOn_of_forall_dual
@@ -102,10 +81,19 @@ theorem continuousOn_of_forall_dual
         ((hf ℓ).continuousOn.mono hsub)).isBounded
     obtain ⟨M, hM⟩ := isBounded_iff_forall_norm_le.1 hbdd
     exact ⟨M, fun z hz ↦ hM _ (mem_image_of_mem f hz)⟩
+  have hM0 : 0 ≤ M := (norm_nonneg _).trans (hM c (mem_closedBall_self (by positivity)))
+  -- Each `ℓ ∘ f` is bounded by `‖ℓ‖ * M`, hence Lipschitz with constant `‖ℓ‖ * M / (ε / 3)` on
+  -- `ball c (ε / 3)`; by Hahn–Banach this bounds `f` itself.
   have hLip : LipschitzOnWith (M / (ε / 3)).toNNReal f (ball c (ε / 3)) :=
     LipschitzOnWith.of_dist_le' fun z hz w hw ↦ by
-      simpa only [dist_eq_norm] using
-        norm_sub_le_of_forall_dual hr (fun ℓ ↦ (hf ℓ).mono hsub) hM hz hw
+      rw [dist_eq_norm, dist_eq_norm]
+      refine NormedSpace.norm_le_dual_bound ℂ _ (by positivity) fun ℓ ↦ ?_
+      have := dist_le_of_forall_mem_closedBall_two_mul_norm_le hU (hf ℓ) hr hsub
+        (fun y hy ↦ (ℓ.le_opNorm _).trans (mul_le_mul_of_nonneg_left (hM y hy) (norm_nonneg ℓ)))
+        hz hw
+      rw [dist_eq_norm, dist_eq_norm, ← map_sub] at this
+      calc ‖ℓ (f z - f w)‖ ≤ ‖ℓ‖ * M / (ε / 3) * ‖z - w‖ := this
+        _ = M / (ε / 3) * ‖z - w‖ * ‖ℓ‖ := by ring
   exact (hLip.continuousOn.continuousAt
     (isOpen_ball.mem_nhds (mem_ball_self hr))).continuousWithinAt
 
