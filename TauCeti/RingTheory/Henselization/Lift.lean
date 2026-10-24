@@ -30,6 +30,8 @@ property of the henselization assembles them.
 
 * `TauCeti.Henselization.algHom_ext_of_map_le_jacobson`: maps out of the henselization are
   unique once `IS` lies in the Jacobson radical of `S`.
+* `TauCeti.Henselization.ringHom_ext_of_map_le_jacobson`: ring maps out of the henselization of
+  `(R, I)` agreeing on `R` are equal once the image of `I` lies in the Jacobson radical.
 * `TauCeti.Henselization.lift`: the map from the henselization of `(R, I)` to a henselian pair
   `(S, J)` with `IS ⊆ J`.
 * `TauCeti.Henselization.existsUnique_lift`: the universal property of the henselization.
@@ -65,10 +67,20 @@ ideal of the target inside its Jacobson radical. In particular, maps of pairs fr
 henselization of `(R, I)` to a henselian pair are unique. -/
 theorem algHom_ext_of_map_le_jacobson {S : Type*} [CommRing S] [Algebra R S]
     (hI : I.map (algebraMap R S) ≤ Ideal.jacobson ⊥) {f g : algebra I →ₐ[R] S} : f = g := by
-  ext x
+  refine AlgHom.ext fun x => ?_
   obtain ⟨B, b, rfl⟩ := exists_stage_eq I x
   exact DFunLike.congr_fun (B.property.algHom_ext hI (f := f.comp (stage I B))
     (g := g.comp (stage I B))) b
+
+/-- Two ring maps out of the henselization of `(R, I)` which agree on `R` are equal as soon as
+`I` generates an ideal of the target inside its Jacobson radical. -/
+theorem ringHom_ext_of_map_le_jacobson {T : Type*} [CommRing T] {g₁ g₂ : algebra I →+* T}
+    (h : g₁.comp (algebraMap R (algebra I)) = g₂.comp (algebraMap R (algebra I)))
+    (hI : I.map (g₁.comp (algebraMap R (algebra I))) ≤ Ideal.jacobson ⊥) : g₁ = g₂ := by
+  let : Algebra R T := (g₁.comp (algebraMap R (algebra I))).toAlgebra
+  have hfg := algHom_ext_of_map_le_jacobson (I := I) hI (f := ⟨g₁, fun _ ↦ rfl⟩)
+    (g := ⟨g₂, fun r ↦ (DFunLike.congr_fun h r).symm⟩)
+  exact RingHom.ext fun x ↦ DFunLike.congr_fun hfg x
 
 section Lift
 

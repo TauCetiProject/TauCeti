@@ -31,6 +31,8 @@ set as soon as it is locally nilpotent on that set.
 * `Derivation.iterate_apply_mul`: the general Leibniz rule for iterates of a derivation.
 * `Derivation.exists_iterate_eq_zero_of_mem_adjoin`: local nilpotence propagates from a set to
   the subalgebra it generates.
+* `Derivation.iterate_smul_apply`: iterates of scalar multiples of a derivation.
+* `Derivation.exists_iterate_smul_eq_zero`: scalar multiples preserve local nilpotence.
 -/
 
 public section
@@ -99,5 +101,17 @@ theorem exists_iterate_eq_zero_of_mem_adjoin (D : Derivation R A A) {s : Set A}
     obtain ⟨m, hm⟩ := hx
     obtain ⟨n, hn⟩ := hy
     exact ⟨m + n, D.iterate_add_apply_mul_eq_zero hm hn⟩
+
+/-- Iterating a scalar multiple of a derivation scales its iterates by the corresponding power. -/
+theorem iterate_smul_apply (D : Derivation R A A) (r : R) (n : ℕ) (a : A) :
+    (r • D)^[n] a = r ^ n • D^[n] a := by
+  simpa [Module.End.pow_apply, coeFn_coe] using
+    LinearMap.congr_fun (smul_pow r D.toLinearMap n) a
+
+/-- Scalar multiples of a locally nilpotent derivation are locally nilpotent. -/
+theorem exists_iterate_smul_eq_zero (D : Derivation R A A)
+    (hD : ∀ a, ∃ n, D^[n] a = 0) (r : R) (a : A) : ∃ n, (r • D)^[n] a = 0 := by
+  obtain ⟨n, hn⟩ := hD a
+  exact ⟨n, by rw [iterate_smul_apply, hn, smul_zero]⟩
 
 end Derivation

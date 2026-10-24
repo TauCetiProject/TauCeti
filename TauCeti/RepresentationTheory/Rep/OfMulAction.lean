@@ -9,12 +9,17 @@ public import Mathlib.Algebra.Group.Action.Sum
 public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.LinearAlgebra.Finsupp.SumProd
 public import Mathlib.RepresentationTheory.Rep.Iso
+public import Mathlib.RepresentationTheory.Rep.Res
 public import TauCeti.GroupTheory.QuotientGroup.Basic
 public import TauCeti.RepresentationTheory.FreeOfBasis
 import TauCeti.GroupTheory.GroupAction.Free
 
 /-!
-# Equivalences of permutation representations
+# Maps and equivalences of permutation representations
+
+`MulActionHom.toRepRes` linearly extends a map equivariant along a monoid homomorphism
+to a morphism of permutation representations with restricted target action. It respects
+identity and composition. `Rep.ofMulAction_hom_ext` tests morphism equality on basis vectors.
 
 For a monoid `G`, equivariantly equivalent `G`-sets carry equivalent permutation
 representations, and the permutation representation on a disjoint union is the product of
@@ -56,6 +61,81 @@ elements. For the coset representations, these bases are indexed by `G ⧸ H`.
 -/
 
 public section
+
+open CategoryTheory
+
+namespace Rep
+
+/-- Morphisms out of a permutation representation are determined by their values on basis
+vectors with coefficient one. -/
+@[ext]
+theorem ofMulAction_hom_ext {k G X : Type*} [Ring k] [Monoid G] [MulAction G X]
+    {A : Rep k G} {f g : ofMulAction k G X ⟶ A}
+    (h : ∀ x, f.hom (MonoidAlgebra.single x 1) = g.hom (MonoidAlgebra.single x 1)) : f = g := by
+  apply Rep.hom_ext
+  apply Representation.IntertwiningMap.ext
+  exact MonoidAlgebra.lhom_ext' fun x => LinearMap.ext_ring (h x)
+
+end Rep
+
+namespace MulActionHom
+
+universe u v v' v'' w
+
+variable {k : Type u} [Ring k] {G : Type v} {H : Type v'} {K : Type v''}
+  [Monoid G] [Monoid H] [Monoid K]
+  {X Y Z : Type w} [MulAction G X] [MulAction H Y] [MulAction K Z]
+  {φ : G →* H} {ψ : H →* K}
+
+/-- Linear extension of a map equivariant along a monoid homomorphism, with the target
+representation restricted along that homomorphism. -/
+noncomputable def toRepRes (f : X →ₑ[φ] Y) :
+    Rep.ofMulAction k G X ⟶ Rep.res φ (Rep.ofMulAction k H Y) :=
+  Rep.ofHom
+    { toLinearMap := MonoidAlgebra.mapDomainLinearMap k k f.toFun
+      isIntertwining' g := by
+        refine MonoidAlgebra.lhom_ext' fun x => LinearMap.ext_ring ?_
+        simp [Representation.ofMulAction_single, f.map_smul'] }
+
+/-- The underlying linear map sends coefficients along the equivariant function. -/
+@[simp]
+theorem toRepRes_hom_toLinearMap (f : X →ₑ[φ] Y) :
+    (dsimp% only (f.toRepRes (k := k)).hom.toLinearMap) =
+      MonoidAlgebra.mapDomainLinearMap k k f.toFun :=
+  (rfl)
+
+-- Explicit toFun projections let simp evaluate bundled constructors without unfolding the
+-- FunLike instance across module boundaries.
+/-- Linear extension sends a basis vector to the basis vector indexed by its image. -/
+@[simp]
+theorem toRepRes_hom_single (f : X →ₑ[φ] Y) (x : X) (r : k) :
+    (dsimp% only ((f.toRepRes (k := k)).hom (MonoidAlgebra.single x r))) =
+      MonoidAlgebra.single (f.toFun x) r := by
+  simp [toRepRes]
+
+/-- Linear extension of the identity is the identity morphism. -/
+@[simp]
+theorem toRepRes_id :
+    (MulActionHom.id G (X := X)).toRepRes (k := k) (φ := MonoidHom.id G) =
+      𝟙 (Rep.ofMulAction k G X) := by
+  apply Rep.ofMulAction_hom_ext
+  intro x
+  simp [MulActionHom.id]
+
+/-- Linear extension respects composition, restricting the second morphism along the first
+homomorphism. -/
+@[simp]
+theorem toRepRes_comp (g : Y →ₑ[ψ] Z) (f : X →ₑ[φ] Y) :
+    (g.comp f (κ := ⟨rfl⟩)).toRepRes (k := k) (φ := ψ.comp φ) =
+      f.toRepRes ≫ (Rep.resFunctor φ).map g.toRepRes := by
+  apply Rep.ofMulAction_hom_ext
+  intro x
+  simp only [Rep.hom_comp, ← Representation.IntertwiningMap.toLinearMap_apply]
+  simp only [Representation.IntertwiningMap.comp_toLinearMap, Rep.resMap_hom_toLinearMap,
+    toRepRes_hom_toLinearMap, LinearMap.comp_apply, MonoidAlgebra.mapDomainLinearMap_single]
+  rfl
+
+end MulActionHom
 
 namespace TauCeti
 
