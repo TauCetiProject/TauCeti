@@ -17,6 +17,12 @@ minimal prime gives `dim (R ⧸ (x)) + 1 = dim R`. This is the ring form of Math
 two-dimensional Noetherian local ring, it says that dividing out a non-zero-divisor of `𝔪`
 leaves a curve, a ring of dimension one, and in a local domain, where the only minimal prime is
 `0`, that applies to every nonzero element of `𝔪`.
+
+Over a Noetherian local ring, each element of the maximal ideal lowers the dimension of the
+support of a finite module by at most one, so `dim M ≤ dim M ⧸ (r₁, …, rₙ) M + n` for
+`r₁, …, rₙ ∈ 𝔪` (`Module.supportDim_le_supportDim_quotient_add_length`). This is the inequality
+that the regular case `Module.supportDim_add_length_eq_supportDim_of_isRegular` turns into an
+equality.
 -/
 
 public section
@@ -61,3 +67,27 @@ theorem ringKrullDim_quotient_span_singleton_eq_one {R : Type*} [CommRing R] [Is
   exact hkey
 
 end TauCeti
+
+namespace Module
+
+open Ideal Pointwise _root_.IsLocalRing
+
+/-- Over a Noetherian local ring, dividing a finite module by `r₁, …, rₙ ∈ 𝔪` lowers the dimension
+of its support by at most `n`: `dim M ≤ dim M ⧸ (r₁, …, rₙ) M + n`. -/
+@[stacks 0B52 "the second inequality, iterated"]
+theorem supportDim_le_supportDim_quotient_add_length {R M : Type*} [CommRing R]
+    [IsNoetherianRing R] [IsLocalRing R] [AddCommGroup M] [Module R M] [Module.Finite R M]
+    (rs : List R) (hrs : ∀ r ∈ rs, r ∈ maximalIdeal R) :
+    supportDim R M ≤ supportDim R (M ⧸ ofList rs • (⊤ : Submodule R M)) + rs.length := by
+  induction rs generalizing M with
+  | nil =>
+    rw [ofList_nil, Submodule.bot_smul]
+    simpa using (supportDim_eq_of_equiv (Submodule.quotEquivOfEqBot ⊥ rfl)).ge
+  | cons x rs ih =>
+    rw [supportDim_eq_of_equiv (Submodule.quotOfListConsSMulTopEquivQuotSMulTopInner M x rs),
+      List.length_cons, Nat.cast_add_one, ← add_assoc]
+    refine (supportDim_le_supportDim_quotSMulTop_succ (hrs x List.mem_cons_self)).trans ?_
+    gcongr
+    exact ih fun r hr ↦ hrs r (List.mem_cons_of_mem x hr)
+
+end Module
