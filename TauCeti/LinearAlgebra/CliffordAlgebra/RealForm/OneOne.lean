@@ -88,7 +88,8 @@ theorem algebraMap_add_smul_realCliffordOneOneVolume_mul (a b c d : ℝ) :
       (algebraMap ℝ _ c + d • realCliffordOneOneVolume) =
         algebraMap ℝ _ (a * c + b * d) + (a * d + b * c) • realCliffordOneOneVolume := by
   simp only [Algebra.algebraMap_eq_smul_one, add_mul, mul_add, smul_mul_assoc,
-    mul_smul_comm, one_mul, mul_one, realCliffordOneOneVolume_mul_self, smul_smul, add_smul]
+    mul_smul_comm, one_mul, mul_one, realCliffordOneOneVolume_mul_self, smul_add,
+    smul_smul, add_smul, mul_comm]
   abel
 
 /-- `z` is even: the grade involution fixes it. -/

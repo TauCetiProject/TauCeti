@@ -111,7 +111,8 @@ def negOneRootsOfUnity : rootsOfUnity 2 R :=
 
 /-- The unit underlying the square root `-1` is the negative unit. -/
 @[simp]
-theorem coe_negOneRootsOfUnity : (negOneRootsOfUnity : Rˣ) = -1 :=
+theorem coe_negOneRootsOfUnity :
+    ((negOneRootsOfUnity : rootsOfUnity 2 R) : Rˣ) = -1 :=
   (rfl)
 
 /-- In a ring without zero divisors, every square root of unity is `1` or `-1`. -/
@@ -128,7 +129,7 @@ theorem negOneRootsOfUnity_ne_one (h2 : (2 : R) ≠ 0) :
     (negOneRootsOfUnity : rootsOfUnity 2 R) ≠ 1 := by
   intro h
   have h' : (-1 : R) = 1 := congrArg (fun ζ : rootsOfUnity 2 R ↦ ((ζ : Rˣ) : R)) h
-  exact h2 (by simpa using (congrArg (fun x : R ↦ x + 1) h').symm)
+  exact h2 (by simpa [one_add_one_eq_two] using (congrArg (fun x : R ↦ x + 1) h').symm)
 
 /-- In a domain, the number of `n`-th roots of unity divides `n`: they form a cyclic group, and its
 exponent divides `n`. -/
