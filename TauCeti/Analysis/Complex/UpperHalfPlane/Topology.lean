@@ -55,6 +55,7 @@ many points, such as the vertices of a tessellation, therefore keeps `ℍ` conne
 * `TauCeti.tendsto_zero_cobounded_of_tendsto_mul_upperHalfPlaneSet`.
 * `TauCeti.mem_frontier_image_upperHalfPlaneSet_of_im_eq_zero`.
 * `TauCeti.not_mem_image_upperHalfPlaneSet_of_im_eq_zero`.
+* `TauCeti.mem_frontier_image_upperHalfPlaneSet_of_mem_of_im_eq_zero`.
 * `TauCeti.im_neg_inv_nonneg`.
 * `TauCeti.bijOn_const_sub_inv_upperHalfPlaneSet`.
 * `TauCeti.tendsto_comp_neg_inv_cobounded`.
@@ -195,6 +196,17 @@ theorem not_mem_image_upperHalfPlaneSet_of_im_eq_zero {f : ℂ → ℂ}
   have hypos : 0 < y.im := by simpa only [upperHalfPlaneSet, Set.mem_ofPred_eq] using hy
   have hyz : y = z := hfi hypos.le hz.symm.le heq
   simp [upperHalfPlaneSet, hyz, hz] at hy
+
+/-- A real point of a set `T` containing the upper half-plane maps to the frontier of the image
+of the upper half-plane when the map is continuous at it within `T` and injective on `T`. -/
+theorem mem_frontier_image_upperHalfPlaneSet_of_mem_of_im_eq_zero {f : ℂ → ℂ} {T : Set ℂ}
+    (hHT : upperHalfPlaneSet ⊆ T) {z : ℂ} (hfc : ContinuousWithinAt f T z) (hfi : InjOn f T)
+    (hzT : z ∈ T) (hz : z.im = 0) : f z ∈ frontier (f '' upperHalfPlaneSet) := by
+  refine ⟨(hfc.mono hHT).mem_closure_image (by simp [upperHalfPlaneSet, hz]), fun h => ?_⟩
+  obtain ⟨y, hy, hyz⟩ := interior_subset h
+  have hy' : 0 < y.im := hy
+  rw [hfi (hHT hy) hzT hyz, hz] at hy'
+  exact lt_irrefl 0 hy'
 
 /-- The inversion `w ↦ -w⁻¹` sends `w` into the closed upper half-plane exactly when `w` lies in
 it. -/

@@ -50,6 +50,10 @@ unbounded side, that frontier lies on the bounding line or on the two bounding r
 
 ## Main results
 
+* `TauCeti.tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_tendsto_of_side` -- if a conformal
+  map onto `U` tends at infinity to a side of `U`, then `z * f''(z) / f'(z) → -2`.  Continuity and
+  injectivity are only required on a set containing the upper half-plane and the far part of the
+  closed upper half-plane.
 * `TauCeti.eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_domain` -- a conformal
   map of the upper half-plane onto a polygonal domain, continuous and injective up to the real
   axis and tending to a side at infinity, is an affine image of the Schwarz--Christoffel
@@ -121,14 +125,17 @@ private theorem exists_ball_abs_arg_div_of_image_eq (hfc : ContinuousOn f {z : �
       (hfU ▸ mem_frontier_image_upperHalfPlaneSet_of_im_eq_zero
         (hfc _ hz0.symm.le) hz0 (not_mem_image_upperHalfPlaneSet_of_im_eq_zero hfi hz0))
 
-/-- **Condition at infinity.**  If `f` tends at infinity to a point `p` on a side of `U` which is
-not a value of `f`, then in the coordinate `w ↦ -w⁻¹` at infinity, and after normalizing that side
-to the real axis, `f` extends continuously and injectively across `0`, with real boundary values
-and the upper half-plane mapped into the upper half-plane. -/
-private theorem exists_eqOn_neg_inv_of_tendsto (hfc : ContinuousOn f {z : ℂ | 0 ≤ z.im})
-    (hfi : InjOn f {z : ℂ | 0 ≤ z.im}) (hfU : f '' upperHalfPlaneSet = U) {p q b : ℂ} {ρ : ℝ}
-    (hp : Tendsto f (cobounded ℂ ⊓ 𝓟 {z : ℂ | 0 ≤ z.im}) (𝓝 p))
-    (hpf : p ∉ f '' {z : ℂ | 0 ≤ z.im}) (hpU : p ∈ frontier U) (hρ : 0 < ρ) (hb : b ≠ 0)
+/-- **Condition at infinity.**  Let `f` be continuous and injective on a set `T` which contains the
+upper half-plane and every point of the closed upper half-plane far enough out.  If `f` tends at
+infinity to a point `p` on a side of `U` which is not a value of `f` on `T`, then in the coordinate
+`w ↦ -w⁻¹` at infinity, and after normalizing that side to the real axis, `f` extends continuously
+and injectively across `0`, with real boundary values and the upper half-plane mapped into the
+upper half-plane. -/
+private theorem exists_eqOn_neg_inv_of_tendsto {T : Set ℂ} (hHT : upperHalfPlaneSet ⊆ T)
+    (hT : ∀ᶠ z in cobounded ℂ ⊓ 𝓟 {z : ℂ | 0 ≤ z.im}, z ∈ T)
+    (hfc : ContinuousOn f T) (hfi : InjOn f T) (hfU : f '' upperHalfPlaneSet = U) {p q b : ℂ}
+    {ρ : ℝ} (hp : Tendsto f (cobounded ℂ ⊓ 𝓟 {z : ℂ | 0 ≤ z.im}) (𝓝 p))
+    (hpf : p ∉ f '' T) (hpU : p ∈ frontier U) (hρ : 0 < ρ) (hb : b ≠ 0)
     (hU : ∀ z ∈ ball p ρ, (z ∈ U ↔ 0 < ((z - q) / b).im)) :
     ∃ r > 0, ∃ g : ℂ → ℂ,
       EqOn g (fun w => (f (-w⁻¹) - q) / b) (ball 0 r ∩ upperHalfPlaneSet) ∧
@@ -137,54 +144,92 @@ private theorem exists_eqOn_neg_inv_of_tendsto (hfc : ContinuousOn f {z : ℂ | 
       MapsTo g (ball 0 r ∩ upperHalfPlaneSet) upperHalfPlaneSet ∧
       InjOn g (ball 0 r ∩ {z : ℂ | 0 ≤ z.im}) := by
   -- `w ↦ -w⁻¹` carries the closed half-plane near `0` to the closed half-plane near infinity
-  have hT : Tendsto (fun w => f (-w⁻¹)) (𝓝[{w : ℂ | 0 ≤ w.im} \ {0}] 0) (𝓝 p) := by
-    refine hp.comp (tendsto_inf.mpr ⟨?_, tendsto_principal.mpr ?_⟩)
+  have hinvT : Tendsto (fun w : ℂ => -w⁻¹) (𝓝[{w : ℂ | 0 ≤ w.im} \ {0}] 0)
+      (cobounded ℂ ⊓ 𝓟 {z : ℂ | 0 ≤ z.im}) := by
+    refine tendsto_inf.mpr ⟨?_, tendsto_principal.mpr ?_⟩
     · exact (tendsto_neg_cobounded.comp tendsto_inv₀_nhdsNE_zero).mono_left
         (nhdsWithin_mono _ fun w hw => hw.2)
     · exact eventually_nhdsWithin_of_forall fun w hw => im_neg_inv_nonneg.mpr hw.1
+  have hT' : Tendsto (fun w => f (-w⁻¹)) (𝓝[{w : ℂ | 0 ≤ w.im} \ {0}] 0) (𝓝 p) :=
+    hp.comp hinvT
   obtain ⟨r, hr, hball⟩ : ∃ r > 0, ∀ w ∈ ball (0 : ℂ) r, 0 ≤ w.im → w ≠ 0 →
-      f (-w⁻¹) ∈ ball p ρ := by
-    obtain ⟨r, hr, h⟩ := Metric.mem_nhdsWithin_iff.mp (hT (ball_mem_nhds p hρ))
+      f (-w⁻¹) ∈ ball p ρ ∧ -w⁻¹ ∈ T := by
+    obtain ⟨r, hr, h⟩ := Metric.mem_nhdsWithin_iff.mp
+      ((hT'.eventually (ball_mem_nhds p hρ)).and (hinvT.eventually hT))
     exact ⟨r, hr, fun w hw hw0 hw1 => h ⟨hw, hw0, hw1⟩⟩
   have hne : ∀ w ∈ upperHalfPlaneSet, w ≠ 0 := fun w (hw : 0 < w.im) h => by
     simp [h] at hw
   have hmem : ∀ w ∈ upperHalfPlaneSet, -w⁻¹ ∈ upperHalfPlaneSet :=
     fun _ hw => im_neg_inv_pos.mpr hw
   -- the value `(p - q) / b` at `0` is not taken elsewhere
-  have hnotp : ∀ w : ℂ, 0 ≤ w.im → (p - q) / b ≠ (f (-w⁻¹) - q) / b := fun w hw h => by
-    rw [div_left_inj' hb, sub_left_inj] at h
-    exact hpf ⟨-w⁻¹, im_neg_inv_nonneg.mpr hw, h.symm⟩
+  have hnotp : ∀ w ∈ ball (0 : ℂ) r, 0 ≤ w.im → w ≠ 0 → (p - q) / b ≠ (f (-w⁻¹) - q) / b :=
+    fun w hw hw0 hw1 h => by
+      rw [div_left_inj' hb, sub_left_inj] at h
+      exact hpf ⟨-w⁻¹, (hball w hw hw0 hw1).2, h.symm⟩
   refine ⟨r, hr, update (fun w => (f (-w⁻¹) - q) / b) 0 ((p - q) / b),
     fun w hw => update_of_ne (hne w hw.2) _ _, ?_, fun w hw hw0 => ?_, fun w hw => ?_,
     fun w₁ hw₁ w₂ hw₂ h => ?_⟩
   · refine continuousOn_update_iff.mpr ⟨fun w hw => ?_, fun _ => ?_⟩
     · have hinv : ContinuousWithinAt (fun w : ℂ => -w⁻¹) ((ball 0 r ∩ {z | 0 ≤ z.im}) \ {0}) w :=
         (continuousAt_inv₀ hw.2).neg.continuousWithinAt
-      exact (((hfc _ (im_neg_inv_nonneg.mpr hw.1.2)).comp (f := fun w : ℂ => -w⁻¹) hinv
+      exact (((hfc _ (hball w hw.1.1 hw.1.2 hw.2).2).comp (f := fun w : ℂ => -w⁻¹) hinv
         fun y (hy : y ∈ (ball 0 r ∩ {z : ℂ | 0 ≤ z.im}) \ {0}) =>
-          im_neg_inv_nonneg.mpr hy.1.2).sub_const q).div_const b
-    · exact ((hT.mono_left (nhdsWithin_mono _
+          (hball y hy.1.1 hy.1.2 hy.2).2).sub_const q).div_const b
+    · exact ((hT'.mono_left (nhdsWithin_mono _
         (sdiff_subset_sdiff_left inter_subset_right))).sub_const q).div_const b
   · by_cases h0 : w = 0
     · subst h0
       rw [update_self]
       exact im_div_eq_zero_of_mem_frontier hU (mem_ball_self hρ) hpU
     · rw [update_of_ne h0]
-      exact im_div_eq_zero_of_mem_frontier hU (hball w hw hw0.symm.le h0)
-        (hfU ▸ mem_frontier_image_upperHalfPlaneSet_of_im_eq_zero
-          (hfc _ (by simp [hw0])) (by simp [hw0])
-          (not_mem_image_upperHalfPlaneSet_of_im_eq_zero hfi (by simp [hw0])))
+      have hw' := hball w hw hw0.symm.le h0
+      exact im_div_eq_zero_of_mem_frontier hU hw'.1
+        (hfU ▸ mem_frontier_image_upperHalfPlaneSet_of_mem_of_im_eq_zero hHT (hfc _ hw'.2) hfi
+          hw'.2 (by simp [hw0]))
   · rw [update_of_ne (hne w hw.2)]
-    exact (hU _ (hball w hw.1 hw.2.le (hne w hw.2))).mp
+    exact (hU _ (hball w hw.1 hw.2.le (hne w hw.2)).1).mp
       (hfU ▸ mem_image_of_mem f (hmem w hw.2))
   · by_cases h₁ : w₁ = 0 <;> by_cases h₂ : w₂ = 0
     · rw [h₁, h₂]
     · rw [h₁, update_self, update_of_ne h₂] at h
-      exact (hnotp w₂ hw₂.2 h).elim
+      exact (hnotp w₂ hw₂.1 hw₂.2 h₂ h).elim
     · rw [h₂, update_self, update_of_ne h₁] at h
-      exact (hnotp w₁ hw₁.2 h.symm).elim
+      exact (hnotp w₁ hw₁.1 hw₁.2 h₁ h.symm).elim
     · rw [update_of_ne h₁, update_of_ne h₂, div_left_inj' hb, sub_left_inj] at h
-      simpa using hfi (im_neg_inv_nonneg.mpr hw₁.2) (im_neg_inv_nonneg.mpr hw₂.2) h
+      simpa using hfi (hball w₁ hw₁.1 hw₁.2 h₁).2 (hball w₂ hw₂.1 hw₂.2 h₂).2 h
+
+/-- **Condition at infinity at a side.**  Let `f` be holomorphic on the upper half-plane, map it
+onto `U`, and be continuous and injective on a set `T` which contains the upper half-plane and
+every point of the closed upper half-plane far enough out.  Suppose that `f` tends at infinity,
+along the closed upper half-plane, to a point `p` which is not a value of `f` on `T` and is none of
+the points `v i`, and that `U` coincides with an open half-plane near each frontier point other
+than the `v i`.  Then `z * f''(z) / f'(z) → -2` as `z` tends to infinity in the upper half-plane.
+
+For a Carathéodory map `T` is the closed upper half-plane.  For a map onto a domain with several
+accesses to infinity, `T` is the part of the closed upper half-plane where the inverted coordinate
+does not vanish. -/
+theorem tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_tendsto_of_side {ι : Type*} {v : ι → ℂ}
+    {T : Set ℂ} {p : ℂ} (hf : DifferentiableOn ℂ f upperHalfPlaneSet)
+    (hHT : upperHalfPlaneSet ⊆ T) (hT : ∀ᶠ z in cobounded ℂ ⊓ 𝓟 {z : ℂ | 0 ≤ z.im}, z ∈ T)
+    (hfc : ContinuousOn f T) (hfi : InjOn f T) (hfU : f '' upperHalfPlaneSet = U)
+    (hp : Tendsto f (cobounded ℂ ⊓ 𝓟 {z : ℂ | 0 ≤ z.im}) (𝓝 p)) (hpf : p ∉ f '' T)
+    (hpv : ∀ i, p ≠ v i)
+    (hside : ∀ w ∈ frontier U, (∀ i, w ≠ v i) → ∃ ρ > 0, ∃ q b : ℂ, b ≠ 0 ∧
+      ∀ z ∈ ball w ρ, (z ∈ U ↔ 0 < ((z - q) / b).im)) :
+    Tendsto (fun z => z * logDeriv (deriv f) z) (cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet) (𝓝 (-2)) := by
+  have hH0 : upperHalfPlaneSet ⊆ {z : ℂ | 0 ≤ z.im} := ofPred_subset_ofPred.mpr fun _ => le_of_lt
+  have hpU : p ∈ frontier U := by
+    refine ⟨?_, fun h => hpf ?_⟩
+    · exact mem_closure_of_tendsto (hp.mono_left (inf_le_inf_left _ (principal_mono.mpr hH0)))
+        (eventually_inf_principal.mpr (Eventually.of_forall fun z hz =>
+          hfU ▸ mem_image_of_mem f hz))
+    · obtain ⟨y, hy, hyp⟩ := hfU.symm ▸ interior_subset h
+      exact ⟨y, hHT hy, hyp⟩
+  obtain ⟨ρ, hρ, q, b, hb, hU⟩ := hside p hpU hpv
+  obtain ⟨r, hr, g, hgf, hgcont, hgreal, hgupper, hginj⟩ :=
+    exists_eqOn_neg_inv_of_tendsto hHT hT hfc hfi hfU hp hpf hpU hρ hb hU
+  exact tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_neg_inv hr hb hgf hgcont
+    (differentiableOn_of_eqOn_neg_inv hf hgf) hgreal hgupper hginj
 
 /-- **Condition at infinity, from the global data.**  If `f` tends at infinity to a point `p`
 which is not a value of `f` on the closed upper half-plane, and hence not a vertex, then `p` lies on
@@ -197,21 +242,11 @@ private theorem tendsto_mul_logDeriv_deriv_of_tendsto_of_side {ι : Type*} {a : 
     (hpf : p ∉ f '' {z : ℂ | 0 ≤ z.im})
     (hside : ∀ w ∈ frontier U, (∀ i, w ≠ v i) → ∃ ρ > 0, ∃ q b : ℂ, b ≠ 0 ∧
       ∀ z ∈ ball w ρ, (z ∈ U ↔ 0 < ((z - q) / b).im)) :
-    Tendsto (fun z => z * logDeriv (deriv f) z) (cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet) (𝓝 (-2)) := by
-  have hH0 : upperHalfPlaneSet ⊆ {z : ℂ | 0 ≤ z.im} := ofPred_subset_ofPred.mpr fun _ => le_of_lt
-  have hpU : p ∈ frontier U := by
-    refine ⟨?_, fun h => hpf ?_⟩
-    · exact mem_closure_of_tendsto (hp.mono_left (inf_le_inf_left _ (principal_mono.mpr hH0)))
-        (eventually_inf_principal.mpr (Eventually.of_forall fun z hz =>
-          hfU ▸ mem_image_of_mem f hz))
-    · obtain ⟨y, hy, hyp⟩ := hfU.symm ▸ interior_subset h
-      exact ⟨y, hH0 hy, hyp⟩
-  obtain ⟨ρ, hρ, q, b, hb, hU⟩ :=
-    hside p hpU fun i h => hpf ⟨(a i : ℂ), by simp, (hfv i).trans h.symm⟩
-  obtain ⟨r, hr, g, hgf, hgcont, hgreal, hgupper, hginj⟩ :=
-    exists_eqOn_neg_inv_of_tendsto hfc hfi hfU hp hpf hpU hρ hb hU
-  exact tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_neg_inv hr hb hgf hgcont
-    (differentiableOn_of_eqOn_neg_inv hf hgf) hgreal hgupper hginj
+    Tendsto (fun z => z * logDeriv (deriv f) z) (cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet) (𝓝 (-2)) :=
+  tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_tendsto_of_side hf
+    (ofPred_subset_ofPred.mpr fun _ => le_of_lt) (eventually_inf_principal.mpr
+      (Eventually.of_forall fun _ hz => hz)) hfc hfi hfU hp hpf
+    (fun i h => hpf ⟨(a i : ℂ), by simp, (hfv i).trans h.symm⟩) hside
 
 /-- **Condition at a vertex at infinity.**  If `f` tends to infinity at infinity, and far from `c`
 the domain `U` coincides with the open sector `{|arg ((z - c) / b)| < β * π / 2}` of opening
