@@ -96,6 +96,8 @@ directions before taking products.
   its own cyclic successor.
 * `TauCeti.Grid.self_mem_cIco_finRotate`: a point always lies in a nondegenerate half-open arc
   ending at its own cyclic successor.
+* `TauCeti.Grid.mem_cIco_finRotate_iff_mem_insert_cIoo`: the half-open arc between cyclic
+  successors is the open arc with its terminal endpoint restored.
 * `TauCeti.Grid.ite_mem_cIco_finRotate_sub_ite_mem_cIco_finRotate`: moving from `p` to `q` enters
   the arc from `finRotate n α` to `finRotate n β` when passing `α` and leaves it when passing
   `β`.
@@ -802,6 +804,20 @@ theorem val_finRotate_cases {m : ℕ} (i : Fin (m + 1)) :
   split_ifs with h
   · exact Or.inl ⟨by simpa [Fin.ext_iff] using h, rfl⟩
   · exact Or.inr ⟨by rw [Fin.ext_iff, Fin.val_last] at h; omega, rfl⟩
+
+/-- Between distinct endpoints, the half-open cyclic interval between the cyclic successors of `a`
+and `b` is the open interval from `a` to `b` with its terminal endpoint `b` restored. On a grid,
+with `a` and `b` naming rows of squares, these are the lines `a + 1, …, b`. -/
+theorem mem_cIco_finRotate_iff_mem_insert_cIoo {a b x : Fin n} (h : a ≠ b) :
+    x ∈ cIco (finRotate n a) (finRotate n b) ↔ x ∈ insert b (cIoo a b) := by
+  cases n with
+  | zero => exact x.elim0
+  | succ m =>
+    have ha := val_finRotate_cases a
+    have hb := val_finRotate_cases b
+    have := x.isLt
+    simp only [Finset.mem_insert, mem_cIco, mem_cIoo, ne_eq, Fin.ext_iff] at h ⊢
+    split_ifs <;> omega
 
 /-- **Crossing count for a shifted arc.** For distinct `α` and `β`, going from `p` to `q` enters
 the half-open arc from `finRotate n α` to `finRotate n β` once if the arc from `p` to `q` passes
