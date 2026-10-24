@@ -33,8 +33,9 @@ namespace TauCeti.minpoly
 variable {R S : Type*} [CommRing R] [IsIntegrallyClosed R]
   [CommRing S] [Algebra R S]
 
-/-- Minimal polynomials over an integrally closed domain commute with an injection into an
-algebra over its fraction field. The target algebra need not be a domain or reduced. -/
+/-- The minimal polynomial over an integrally closed domain of an integral element commutes
+with an injection into an algebra over its fraction field. The target algebra need not be a
+domain or reduced. -/
 theorem isIntegrallyClosed_eq_field_fractions_of_injective
     (K : Type*) [Field K] [Algebra R K] [IsFractionRing R K]
     {L : Type*} [CommRing L] [Algebra K L] [Algebra R L] [IsScalarTower R K L]

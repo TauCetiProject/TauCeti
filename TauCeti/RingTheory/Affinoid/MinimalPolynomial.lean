@@ -34,10 +34,11 @@ coefficients `|aᵢ(x)| ^ (1 / (d - i))` of the reduction.
 
 When `A` is an integrally closed domain and `B` is a torsion-free algebra, the minimal polynomial
 of `f` over `A` satisfies these hypotheses. This applies to a finite injective map from a Tate
-algebra into an affinoid domain, as in a Noether normalisation, since Tate algebras are unique
-factorisation domains and hence integrally closed. The statement with a divisibility hypothesis
-also applies without torsion-freeness when an annihilating polynomial with the required
-divisibility property is supplied. Nilpotents in `B` are retained throughout.
+algebra into an affinoid algebra which is torsion-free over it, possibly with several components
+or nilpotents, since Tate algebras are unique factorisation domains and hence integrally closed.
+The statement with a divisibility hypothesis also applies without torsion-freeness when an
+annihilating polynomial with the required divisibility property is supplied. Nilpotents in `B`
+are retained throughout.
 
 ## Main results
 
