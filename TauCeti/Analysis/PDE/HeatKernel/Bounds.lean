@@ -34,6 +34,7 @@ The derivative bound comes from Mathlib's Faà di Bruno estimate
 * `TauCeti.heatKernel_add_le`: the translation bound.
 * `TauCeti.exists_one_add_norm_pow_mul_heatKernel_le`: polynomial weights.
 * `TauCeti.exists_norm_iteratedFDeriv_heatKernel_le`: Gaussian bounds on all derivatives.
+* `TauCeti.integrable_iteratedFDeriv_heatKernel`: every derivative of `K_t` is integrable.
 * `TauCeti.exists_integrable_norm_iteratedFDeriv_heatKernel_add_le`: integrable domination of the
   derivatives on unit translates.
 -/
@@ -174,6 +175,14 @@ theorem exists_norm_iteratedFDeriv_heatKernel_le {t : ℝ} (ht : 0 < t) (k : ℕ
     _ = k ! * (1 + C₀) ^ k * C₁ * heatKernel (2 * t) x := by ring
 
 variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+
+/-- Every derivative of the heat kernel is integrable at every positive time. -/
+theorem integrable_iteratedFDeriv_heatKernel {t : ℝ} (ht : 0 < t) (k : ℕ) :
+    Integrable (iteratedFDeriv ℝ k (heatKernel t : E → ℝ)) := by
+  obtain ⟨C, hC⟩ := exists_norm_iteratedFDeriv_heatKernel_le (E := E) ht k
+  exact ((integrable_heatKernel (by positivity : 0 < 2 * t)).const_mul C).mono'
+    ((contDiff_heatKernel (k := ⊤) t).continuous_iteratedFDeriv le_top).aestronglyMeasurable
+    (ae_of_all _ hC)
 
 /-- Every derivative of the heat kernel is dominated, uniformly on unit translates, by an
 integrable function (a multiple of `K_{4t}`). -/

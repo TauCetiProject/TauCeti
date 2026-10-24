@@ -36,8 +36,11 @@ a heat kernel assumes `0 < t`.
 * `TauCeti.heatKernel`: the heat kernel `K_t(x)`.
 * `TauCeti.heatKernel_pos`: `K_t > 0` for `t > 0`.
 * `TauCeti.heatKernel_le`: the pointwise bound by `(4πt)^(-n/2)`.
+* `TauCeti.inv_sqrt_pow_eq_rpow`: the parabolic scaling factor `(√t)⁻¹ ^ n = t ^ (-n/2)`.
 * `TauCeti.heatKernel_eq_mul_heatKernel_one_smul`: the parabolic scaling
   `K_t(x) = (√t)⁻¹ ^ n K_1((√t)⁻¹ • x)`.
+* `TauCeti.heatKernel_mul_eq_mul_heatKernel_smul`: the same scaling between two positive times,
+  `K_{ts}(x) = (√t)⁻¹ ^ n K_s((√t)⁻¹ • x)`.
 * `TauCeti.contDiff_heatKernel`: `K_t` is smooth.
 * `TauCeti.integral_heatKernel`: `∫ K_t = 1` for `t > 0`.
 * `TauCeti.eLpNorm_heatKernel_le`: an explicit `Lᵠ` bound for `1 ≤ q ≤ ∞`.
@@ -94,19 +97,29 @@ theorem heatKernel_le {t : ℝ} (ht : 0 < t) (x : E) :
 theorem heatKernel_neg (t : ℝ) (x : E) : heatKernel t (-x) = heatKernel t x := by
   simp [heatKernel_apply]
 
+/-- The parabolic scaling factor as a real power: `(√t)⁻¹ ^ n = t ^ (-n/2)` for `t ≥ 0`. -/
+theorem inv_sqrt_pow_eq_rpow {t : ℝ} (ht : 0 ≤ t) (n : ℕ) : (√t)⁻¹ ^ n = t ^ (-(n : ℝ) / 2) := by
+  rw [rpow_div_two_eq_sqrt _ ht, rpow_neg (sqrt_nonneg t), rpow_natCast, inv_pow]
+
 /-- **Parabolic scaling of the heat kernel.** For `t > 0`, `K_t` is the `L¹`-normalized dilation
 of `K_1` by the factor `(√t)⁻¹`: `K_t(x) = (√t)⁻¹ ^ n K_1((√t)⁻¹ • x)` with `n = dim E`. -/
 theorem heatKernel_eq_mul_heatKernel_one_smul {t : ℝ} (ht : 0 < t) (x : E) :
     heatKernel t x = (√t)⁻¹ ^ Module.finrank ℝ E * heatKernel 1 ((√t)⁻¹ • x) := by
   have hst : 0 < √t := sqrt_pos.2 ht
-  have hpow : (√t)⁻¹ ^ Module.finrank ℝ E = t ^ (-(Module.finrank ℝ E : ℝ) / 2) := by
-    rw [sqrt_eq_rpow, ← rpow_natCast, inv_rpow (by positivity), ← rpow_mul ht.le, ← rpow_neg ht.le]
-    ring_nf
   have hnorm : ‖(√t)⁻¹ • x‖ ^ 2 = ‖x‖ ^ 2 / t := by
     rw [norm_smul, norm_inv, norm_of_nonneg hst.le, mul_pow, inv_pow, sq_sqrt ht.le]
     ring
-  rw [heatKernel_apply, heatKernel_apply, hnorm, hpow, mul_one, mul_rpow (by positivity) ht.le]
+  rw [heatKernel_apply, heatKernel_apply, hnorm, inv_sqrt_pow_eq_rpow ht.le, mul_one,
+    mul_rpow (by positivity) ht.le]
   field_simp
+
+/-- **Parabolic scaling of the heat kernel between two times.** For `t, s > 0`,
+`K_{ts}(x) = (√t)⁻¹ ^ n K_s((√t)⁻¹ • x)` with `n = dim E`. -/
+theorem heatKernel_mul_eq_mul_heatKernel_smul {t s : ℝ} (ht : 0 < t) (hs : 0 < s) (x : E) :
+    heatKernel (t * s) x = (√t)⁻¹ ^ Module.finrank ℝ E * heatKernel s ((√t)⁻¹ • x) := by
+  rw [heatKernel_eq_mul_heatKernel_one_smul (mul_pos ht hs),
+    heatKernel_eq_mul_heatKernel_one_smul hs, smul_smul, sqrt_mul ht.le, mul_inv, mul_pow]
+  ring_nf
 
 /-- The heat kernel `K_t` is smooth in the space variable (for every `t`). -/
 theorem contDiff_heatKernel (t : ℝ) {k : WithTop ℕ∞} : ContDiff ℝ k (heatKernel t : E → ℝ) :=

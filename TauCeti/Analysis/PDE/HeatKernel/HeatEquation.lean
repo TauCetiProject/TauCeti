@@ -114,12 +114,7 @@ bounded, `Δ (K_t ⋆ g) = ΔK_t ⋆ g`. -/
 theorem laplacian_heatKernel_convolution [CompleteSpace F] (ht : 0 < t)
     (hg : AEStronglyMeasurable g) (hM : ∀ᵐ y, ‖g y‖ ≤ M) (x : E) :
     Δ (heatKernel t ⋆ g) x = (Δ (heatKernel t : E → ℝ) ⋆ g) x := by
-  obtain ⟨C, hC⟩ := exists_norm_iteratedFDeriv_heatKernel_le (E := E) ht 2
-  have hD₂ : Integrable (iteratedFDeriv ℝ 2 (heatKernel t : E → ℝ)) :=
-    ((integrable_heatKernel (by positivity)).const_mul C).mono'
-      ((contDiff_heatKernel t (k := ∞)).continuous_iteratedFDeriv (m := 2)
-        (by simp)).aestronglyMeasurable
-      (ae_of_all _ hC)
+  have hD₂ := integrable_iteratedFDeriv_heatKernel (E := E) ht 2
   -- The Laplacian is the continuous linear functional `Λ A = ∑ i, A (bᵢ, bᵢ)` of the Hessian.
   set Λ : ContinuousMultilinearMap ℝ (fun _ : Fin 2 => E) F →L[ℝ] F :=
     ∑ i, ContinuousMultilinearMap.apply ℝ (fun _ : Fin 2 => E) F
