@@ -28,7 +28,8 @@ transforms by an explicit root of unity under integral translations of `r` and u
 The phases are exact: no root of unity is lost to a choice of branch. Finally it computes the three
 Siegel functions of level two, `g₀ = g_{(0, 1/2)}`, `g₁ = g_{(1/2, 0)}` and `g₂ = g_{(1/2, 1/2)}`,
 as explicit products (up to constant factors they are the squares `𝔣₂²`, `𝔣₁²` and `𝔣²` of
-Weber's modular functions), and proves `g₀ g₁ g₂ = 2 ζ₈` with `ζ₈ = e^{2π i / 8}`.
+Weber's modular functions), proves `g₀ g₁ g₂ = 2 ζ₈` with `ζ₈ = e^{2π i / 8}`, and records how
+`τ ↦ τ + 1` permutes them up to roots of unity.
 
 ## Main definitions and results
 
@@ -51,6 +52,10 @@ Weber's modular functions), and proves `g₀ g₁ g₂ = 2 ζ₈` with `ζ₈ = 
   `TauCeti.ModularForm.siegelFunction_half_half`: the product expansions of `g₀`, `g₁` and `g₂`.
 * `TauCeti.ModularForm.siegelFunction_zero_half_mul_half_zero_mul_half_half`:
   `g₀ g₁ g₂ = 2 ζ₈` on the upper half-plane.
+* `TauCeti.ModularForm.siegelFunction_zero_half_apply_add_one`,
+  `TauCeti.ModularForm.siegelFunction_half_zero_apply_add_one`,
+  `TauCeti.ModularForm.siegelFunction_half_half_apply_add_one`: `τ ↦ τ + 1` sends `g₀, g₁, g₂` to
+  `e^{π i / 6} g₀`, `e^{π i / 6} g₂` and `e^{-π i / 3} g₁`.
 
 ## References
 
@@ -433,6 +438,37 @@ theorem siegelFunction_zero_half_mul_half_zero_mul_half_half {τ : ℂ} (hτ : 0
   -- Write the right-hand side as the prefactor times `(E O O⁺)² = 1`.
   conv_rhs => rw [← mul_one (2 * I * _ * _ * _ * _), ← (one_pow 2 : (1 : ℂ) ^ 2 = 1), ← heuler]
   ring
+
+/-- `g₀(τ + 1) = e^{π i / 6} g₀(τ)` for `g₀ = g_{(0, 1/2)}`. -/
+theorem siegelFunction_zero_half_apply_add_one (τ : ℂ) :
+    siegelFunction ![0, 1 / 2] (τ + 1) = cexp (π * I / 6) * siegelFunction ![0, 1 / 2] τ := by
+  rw [siegelFunction_apply_add_one]
+  simp
+
+/-- `g₁(τ + 1) = e^{π i / 6} g₂(τ)` for `g₁ = g_{(1/2, 0)}` and `g₂ = g_{(1/2, 1/2)}`. -/
+theorem siegelFunction_half_zero_apply_add_one (τ : ℂ) :
+    siegelFunction ![1 / 2, 0] (τ + 1) = cexp (π * I / 6) * siegelFunction ![1 / 2, 1 / 2] τ := by
+  rw [siegelFunction_apply_add_one]
+  simp
+
+/-- `g₂(τ + 1) = e^{-π i / 3} g₁(τ)` on the upper half-plane, for `g₁ = g_{(1/2, 0)}` and
+`g₂ = g_{(1/2, 1/2)}`. -/
+theorem siegelFunction_half_half_apply_add_one {τ : ℂ} (hτ : 0 < τ.im) :
+    siegelFunction ![1 / 2, 1 / 2] (τ + 1) =
+      cexp (-(π * I / 3)) * siegelFunction ![1 / 2, 0] τ := by
+  -- `g₂ T = g_{(1/2, 1)}`, the translate of `g₁` by `(0, 1)`.
+  have h := siegelFunction_add_intCast ![1 / 2, 0] ![0, 1] hτ
+  rw [show (![1 / 2, 0] + fun i ↦ ((![0, 1] i : ℤ) : ℝ)) = ![1 / 2, 1 / 2 + 1 / 2] by
+    ext i; fin_cases i <;> norm_num] at h
+  have he : cexp (-(π * I / 3)) = -cexp (π * I / 6) * cexp (π * I / 2) := by
+    rw [show -(π * I / 3) = π * I / 6 + π * I / 2 + -(π * I) by ring, Complex.exp_add,
+      Complex.exp_add, exp_neg_pi_mul_I]
+    ring
+  rw [siegelFunction_apply_add_one]
+  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one] at h ⊢
+  rw [h, he]
+  push_cast
+  ring_nf
 
 end LevelTwo
 
