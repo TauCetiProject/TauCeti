@@ -23,7 +23,7 @@ reduces comparison with a separately constructed action to natural isomorphisms 
 actual generator functors.
 
 The group isomorphism on autoequivalence classes preserves and reflects injectivity of
-the action. A Morita comparison supplies an equivalence on homotopy categories. The source
+the action. A graded Morita comparison supplies an equivalence on homotopy categories. The source
 here remains the homotopy category: derived descent and the derived-Koszul comparison need
 separate constructions. No faithfulness theorem is asserted.
 -/
