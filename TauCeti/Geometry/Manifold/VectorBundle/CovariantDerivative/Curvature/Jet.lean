@@ -14,6 +14,7 @@ import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import TauCeti.Geometry.Manifold.MFDeriv.Chart
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Topology.Algebra.Module.BilinearForm
+import TauCeti.Topology.Instances.Matrix
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Tensor
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Nondegenerate.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Regularity
@@ -178,12 +179,6 @@ open TauCeti.Manifold
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι] {X : Type*} [TopologicalSpace X]
   {g : X → Matrix ι ι ℝ} {dg : X → ι → ι → ι → ℝ} {ddg : X → ι → ι → ι → ι → ℝ} {x : X}
-
-/-- The entries of the inverse of a continuous matrix are continuous where it is invertible. -/
-private theorem ContinuousAt.matrix_inv_apply (hg : ContinuousAt g x) (hdet : (g x).det ≠ 0)
-    (k l : ι) : ContinuousAt (fun y ↦ (g y)⁻¹ k l) x :=
-  ((continuous_apply_apply k l).continuousAt.comp (continuousAt_matrix_inv _
-    (by rw [Ring.inverse_eq_inv']; exact continuousAt_inv₀ hdet))).comp hg
 
 /-- The Christoffel symbols of a coordinate jet depend continuously on the jet at every jet whose
 Gram matrix is invertible. -/
