@@ -49,16 +49,20 @@ variable {k : Type u} [Field k] [IsAlgClosed k]
 local instance : IsLocallyNoetherian X.left :=
   LocallyOfFiniteType.isLocallyNoetherian X.hom
 
+/-- The range of the orbit morphism is locally closed. -/
+theorem isLocallyClosed_range_orbitMap : IsLocallyClosed (Set.range (orbitMap G x).left) :=
+  orbit_def G x ▸ isLocallyClosed_orbit G x
+
 /-- The orbit scheme is the locally closed scheme image of the orbit morphism.
 For a reduced acting group it is the reduced orbit model. -/
 abbrev orbitScheme : Scheme.{u} :=
   (orbitMap G x).left.locallyClosedImage
-    (by simpa only [orbit_def] using isLocallyClosed_orbit G x)
+    (isLocallyClosed_range_orbitMap G x)
 
 /-- The locally closed inclusion of the orbit scheme into the acted-on scheme. -/
 def orbitι : orbitScheme G x ⟶ X.left :=
   (orbitMap G x).left.locallyClosedImageι
-    (by simpa only [orbit_def] using isLocallyClosed_orbit G x)
+    (isLocallyClosed_range_orbitMap G x)
 
 /-- The orbit scheme's structure morphism to the ground field. -/
 def orbitToBase : orbitScheme G x ⟶ Spec (.of k) := orbitι G x ≫ X.hom
@@ -66,7 +70,7 @@ def orbitToBase : orbitScheme G x ⟶ Spec (.of k) := orbitι G x ≫ X.hom
 /-- The orbit inclusion is the inclusion of the locally closed scheme image. -/
 theorem orbitι_def : orbitι G x =
     (orbitMap G x).left.locallyClosedImageι
-      (by simpa only [orbit_def] using isLocallyClosed_orbit G x) := (rfl)
+      (isLocallyClosed_range_orbitMap G x) := (rfl)
 
 /-- The orbit scheme inherits its structure morphism from the acted-on scheme. -/
 theorem orbitToBase_def : orbitToBase G x = orbitι G x ≫ X.hom := (rfl)
@@ -83,12 +87,12 @@ theorem range_orbitι : Set.range (orbitι G x) = orbit G x := by
 /-- The orbit morphism factors through its locally closed scheme image. -/
 def toOrbit : G.left ⟶ orbitScheme G x :=
   (orbitMap G x).left.toLocallyClosedImage
-    (by simpa only [orbit_def] using isLocallyClosed_orbit G x)
+    (isLocallyClosed_range_orbitMap G x)
 
 /-- The orbit factorization is the canonical map onto the locally closed scheme image. -/
 theorem toOrbit_def : toOrbit G x =
     (orbitMap G x).left.toLocallyClosedImage
-      (by simpa only [orbit_def] using isLocallyClosed_orbit G x) := (rfl)
+      (isLocallyClosed_range_orbitMap G x) := (rfl)
 
 /-- The orbit factorization recovers the original orbit morphism. -/
 @[reassoc (attr := simp)]
