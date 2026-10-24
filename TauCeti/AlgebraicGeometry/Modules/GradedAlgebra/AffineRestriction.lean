@@ -139,26 +139,18 @@ theorem _root_.CategoryTheory.CommMon.adjoin_gradedSectionsGrading_zero_union_on
   let T := (A.gradedSectionsGrading V 0 : Set (⨁ n, Γ(A.X n, V))) ∪ A.gradedSectionsGrading V 1
   -- Restriction maps the generators of degrees `0` and `1` over `U` into those over `V`, hence the
   -- whole graded ring over `U` into the subalgebra they generate over `V`.
-  have hmap (y : ⨁ n, Γ(A.X n, U)) :
-      A.restrictGradedSections (homOfLE hVU) y ∈ Algebra.adjoin Γ(X, V) T := by
-    have hy : y ∈ Algebra.adjoin Γ(X, U)
-        ((A.gradedSectionsGrading U 0 : Set (⨁ n, Γ(A.X n, U))) ∪ A.gradedSectionsGrading U 1) :=
-      h ▸ Algebra.mem_top
-    induction hy using Algebra.adjoin_induction with
-    | mem y hy =>
-      refine Algebra.subset_adjoin ?_
+  have hle : Algebra.adjoin Γ(X, U)
+      ((A.gradedSectionsGrading U 0 : Set (⨁ n, Γ(A.X n, U))) ∪ A.gradedSectionsGrading U 1) ≤
+      ((Algebra.adjoin Γ(X, V) T).restrictScalars Γ(X, U)).comap
+        (IsScalarTower.toAlgHom Γ(X, U) (⨁ n, Γ(A.X n, U)) (⨁ n, Γ(A.X n, V))) :=
+    Algebra.adjoin_le_iff.mpr fun y hy ↦ Algebra.subset_adjoin <| by
+      change A.restrictGradedSections (homOfLE hVU) y ∈ T
       rw [← CommMon.restrictGradedSectionsGradedHom_apply]
       exact hy.imp (A.restrictGradedSectionsGradedHom (homOfLE hVU)).map_mem
         (A.restrictGradedSectionsGradedHom (homOfLE hVU)).map_mem
-    | algebraMap r =>
-      rw [CommMon.restrictGradedSections_algebraMap]
-      exact Subalgebra.algebraMap_mem _ _
-    | add y z _ _ hy hz =>
-      rw [map_add]
-      exact add_mem hy hz
-    | mul y z _ _ hy hz =>
-      rw [map_mul]
-      exact mul_mem hy hz
+  have hmap (y : ⨁ n, Γ(A.X n, U)) :
+      A.restrictGradedSections (homOfLE hVU) y ∈ Algebra.adjoin Γ(X, V) T :=
+    hle (h ▸ Algebra.mem_top)
   -- The graded ring over `V` is spanned over `Γ(X, V)` by restrictions of sections over `U`.
   refine eq_top_iff.mpr fun x _ ↦ hpo.out.inductionOn x (fun y ↦ hmap y) (fun s z hz ↦ ?_)
     fun _ _ h₁ h₂ ↦ add_mem h₁ h₂

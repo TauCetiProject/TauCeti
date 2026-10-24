@@ -77,18 +77,6 @@ private theorem isBaseChange_sectionsRestriction_basicOpen [M.IsQuasicoherent]
   exact (isLocalizedModule_iff_isBaseChange (Submonoid.powers f) Γ(X, X.basicOpen f) _).mp
     (M.isLocalizedModule_basicOpenRestrict hU f)
 
-/-- The functions on an affine open `V ≤ U` that are restrictions of functions on `U` whose basic
-open lies in `V` generate the unit ideal of `Γ(X, V)`. -/
-private theorem span_restrict_basicOpen_le_eq_top (hU : IsAffineOpen U) (hV : IsAffineOpen V)
-    (hVU : V ≤ U) :
-    Ideal.span {g : Γ(X, V) | ∃ f : Γ(X, U), X.basicOpen f ≤ V ∧
-      X.presheaf.map (homOfLE hVU).op f = g} = ⊤ := by
-  refine (hV.self_le_iSup_basicOpen_iff).mp fun x hx ↦ ?_
-  obtain ⟨f, hfV, hxf⟩ := hU.exists_basicOpen_le ⟨x, hx⟩ (hVU hx)
-  refine TopologicalSpace.Opens.mem_iSup.mpr ⟨⟨_, f, hfV, rfl⟩, ?_⟩
-  rw [Scheme.basicOpen_res]
-  exact ⟨hx, hxf⟩
-
 variable [Algebra Γ(X, U) Γ(X, V)] [Module Γ(X, U) Γ(M, V)]
   [IsScalarTower Γ(X, U) Γ(X, V) Γ(M, V)]
 
@@ -163,7 +151,7 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.isBaseChange_sectionsRestriction
   have _ : ∀ g : s, IsLocalizedModule.Away g.1 (G g ∘ₗ F) := by
     rintro ⟨_, f, hfV, rfl⟩
     exact isLocalizedModule_basicOpenRestrict_comp_liftBaseChange M hU hV hVU hA ρ hρ hfV
-  refine bijective_of_isLocalized_span s (span_restrict_basicOpen_le_eq_top hU hV hVU)
+  refine bijective_of_isLocalized_span s (hU.span_restrict_basicOpen_le_eq_top hV hVU)
     (fun g ↦ Γ(M, X.basicOpen g.1)) (fun g ↦ G g ∘ₗ F) (fun g ↦ Γ(M, X.basicOpen g.1)) G F
     fun g ↦ ?_
   -- Both localizations of `F` at `g` land in `Γ(M, X.basicOpen g)`, where the localized map is
