@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Combinatorics.SimpleGraph.Acyclic
 import Mathlib.Tactic.FinCases
+import TauCeti.Data.Fin.Rev
 import Mathlib.Tactic.IntervalCases
 import Mathlib.Tactic.Linarith
 
@@ -144,6 +145,39 @@ lemma Adj.symm {v w : G.Vertex} (h : G.Adj v w) : G.Adj w v := by
 /-- Any two vertices are joined by a chain of adjacencies. -/
 lemma reflTransGen_adj (v w : G.Vertex) : Relation.ReflTransGen G.Adj v w :=
   G.connected v w
+
+/-- The unordered pair of endpoints of an edge: the components carrying the two branches of the
+node, without distinguishing the branches. -/
+def ends (e : G.Edge) : Sym2 G.Vertex :=
+  s(G.endpoint e 0, G.endpoint e 1)
+
+/-- The ends of an edge are its two endpoints. -/
+lemma ends_def (e : G.Edge) : G.ends e = s(G.endpoint e 0, G.endpoint e 1) :=
+  (rfl)
+
+variable {G} in
+/-- A vertex lies on an edge exactly when it carries one of its branches. -/
+@[simp]
+lemma mem_ends_iff {v : G.Vertex} {e : G.Edge} : v ∈ G.ends e ↔ ∃ i, G.endpoint e i = v := by
+  simp [ends, Sym2.mem_iff, Fin.exists_fin_two, eq_comm]
+
+variable {G} in
+/-- An edge avoids a vertex exactly when neither of its branches lies there. -/
+lemma forall_endpoint_ne_iff {v : G.Vertex} {e : G.Edge} :
+    (∀ i, G.endpoint e i ≠ v) ↔ v ∉ G.ends e := by
+  simp
+
+variable {G} in
+/-- An edge avoids `v` when neither of its branches lies there. -/
+lemma forall_endpoint_ne_of_ne_of_rev_ne {v : G.Vertex} {e : G.Edge} {i : Fin 2}
+    (h : G.endpoint e i ≠ v) (h' : G.endpoint e i.rev ≠ v) (j : Fin 2) : G.endpoint e j ≠ v := by
+  rcases Fin.fin_two_eq_or_eq_rev i j with rfl | rfl <;> assumption
+
+variable {G} in
+/-- A vertex carries no loop exactly when no edge has both of its ends there. -/
+lemma forall_endpoint_one_ne_iff {v : G.Vertex} :
+    (∀ e, G.endpoint e 0 = v → G.endpoint e 1 ≠ v) ↔ ∀ e, G.ends e ≠ s(v, v) := by
+  simp [ends]
 
 /-- The simple graph on the vertices joining two distinct vertices when some edge does. -/
 def toSimpleGraph : SimpleGraph G.Vertex :=
