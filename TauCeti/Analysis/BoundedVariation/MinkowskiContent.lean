@@ -220,31 +220,28 @@ theorem IsCompact.perimeter_le_of_hasDerivWithinAt {K : Set E} (hK : IsCompact K
   -- For `t > 0` the outer parallel set is the closed `t`-thickening of `K`.
   have hpar {t : ℝ} (ht : 0 ≤ t) : K + t • closedBall (0 : E) 1 = cthickening t K := by
     rw [smul_unitClosedBall_of_nonneg ht, hK.add_closedBall_zero ht]
-  have hslope : Tendsto (fun t : ℝ => ENNReal.ofReal (t⁻¹ * (μ.real (cthickening t K) -
-      μ.real K))) (𝓝[>] 0) (𝓝 (ENNReal.ofReal D)) := by
-    refine ENNReal.tendsto_ofReal (((hasDerivWithinAt_iff_tendsto_slope' (lt_irrefl 0)).1
-      hD).congr' ?_)
+  -- For `t > 0` the difference quotient of the parallel volume is the shell measure over `t`.
+  have hshell {t : ℝ} (ht : 0 < t) :
+      ENNReal.ofReal (slope (fun t : ℝ => μ.real (K + t • closedBall (0 : E) 1)) 0 t) =
+        μ (cthickening t K \ K) / ENNReal.ofReal t := by
+    have hfin : μ (cthickening t K) ≠ ∞ := (hK.cthickening (r := t)).measure_lt_top.ne
+    rw [slope_def_field, sub_zero, hpar ht.le, hpar le_rfl, cthickening_zero,
+      hK.isClosed.closure_eq, ENNReal.ofReal_div_of_pos ht,
+      ← measureReal_sdiff (self_subset_cthickening K) hK.measurableSet hfin,
+      ofReal_measureReal (measure_ne_top_of_subset sdiff_subset hfin)]
+  have hslope : Tendsto (fun t : ℝ => μ (cthickening t K \ K) / ENNReal.ofReal t) (𝓝[>] 0)
+      (𝓝 (ENNReal.ofReal D)) := by
+    refine (ENNReal.tendsto_ofReal ((hasDerivWithinAt_iff_tendsto_slope' (lt_irrefl 0)).1
+      hD)).congr' ?_
     filter_upwards [self_mem_nhdsWithin] with t ht
-    rw [slope_def_field, sub_zero, hpar (le_of_lt ht), hpar le_rfl, cthickening_zero,
-      hK.isClosed.closure_eq, div_eq_inv_mul]
+    exact hshell ht
   calc TauCeti.perimeter μ ⊤ K
       = TauCeti.perimeter μ ⊤ (closure K) := by rw [hK.isClosed.closure_eq]
     _ ≤ liminf (fun t => μ ((thickening t K \ closure K) ∩ (⊤ : Opens E)) / ENNReal.ofReal t)
         (𝓝[>] 0) := TauCeti.perimeter_closure_le_liminf_measure_thickening_sdiff_div ⊤ K
-    _ ≤ liminf (fun t : ℝ => ENNReal.ofReal (t⁻¹ * (μ.real (cthickening t K) - μ.real K)))
-        (𝓝[>] 0) := by
-        refine liminf_le_liminf ?_
-        filter_upwards [self_mem_nhdsWithin] with t ht
-        have hfin : μ (cthickening t K) ≠ ∞ := (hK.cthickening (r := t)).measure_lt_top.ne
-        have hKfin : μ K ≠ ∞ := measure_ne_top_of_subset (self_subset_cthickening K) hfin
-        have hshell : μ (cthickening t K \ K) = ENNReal.ofReal (μ.real (cthickening t K) -
-            μ.real K) := by
-          rw [ENNReal.ofReal_sub _ measureReal_nonneg, ofReal_measureReal hfin,
-            ofReal_measureReal hKfin, measure_sdiff (self_subset_cthickening K)
-            hK.measurableSet.nullMeasurableSet hKfin]
-        rw [hK.isClosed.closure_eq, Opens.coe_top, inter_univ, ENNReal.ofReal_mul
-          (inv_nonneg.2 (le_of_lt ht)), ← hshell, ENNReal.ofReal_inv_of_pos ht, mul_comm,
-          ← div_eq_mul_inv]
+    _ ≤ liminf (fun t : ℝ => μ (cthickening t K \ K) / ENNReal.ofReal t) (𝓝[>] 0) := by
+        refine liminf_le_liminf (.of_forall fun t => ?_)
+        rw [hK.isClosed.closure_eq, Opens.coe_top, inter_univ]
         gcongr
         exact thickening_subset_cthickening t K
     _ = ENNReal.ofReal D := hslope.liminf_eq

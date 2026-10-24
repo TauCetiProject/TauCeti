@@ -126,8 +126,9 @@ private theorem perimeter_ball_le (hr : 0 < r) :
       ← ofReal_measureReal (measure_ne_top_of_subset sdiff_subset measure_ball_lt_top.ne),
       measureReal_sdiff (closedBall_subset_ball (by linarith)) measurableSet_closedBall
         measure_ball_lt_top.ne, μ.addHaar_real_ball_of_pos c (by linarith),
-      μ.addHaar_real_closedBall c hr.le, ← ENNReal.ofReal_div_of_pos hε, add_comm ε r,
-      div_eq_inv_mul, sub_mul]
+      μ.addHaar_real_closedBall c hr.le, ← ENNReal.ofReal_div_of_pos hε]
+    congr 1
+    ring
   have hslope : Tendsto (fun ε : ℝ => ENNReal.ofReal (ε⁻¹ * (((r + ε) ^ n - r ^ n) * ω)))
       (𝓝[>] 0) (𝓝 (ENNReal.ofReal (n * r ^ (n - 1) * ω))) := by
     refine ENNReal.tendsto_ofReal ?_
