@@ -125,7 +125,6 @@ end ContMDiffNondegenerateMetric
 /-- A bilinear form `ϕ` on the tangent space at `x`, read in the trivialization of the tangent
 bundle at `a`: a continuous bilinear form on the model space. It is meaningful for `x` in the base
 set of that trivialization. -/
-@[expose]
 def tangentBilinFormInCoordinates (a x : M)
     (ϕ : TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) : E →L[ℝ] E →L[ℝ] ℝ :=
   ContinuousLinearMap.inCoordinates E (fun y : M ↦ TangentSpace I y)
@@ -180,6 +179,17 @@ theorem nondegenerate_tangentBilinFormInCoordinates (a : M) {x : M}
     (tangentBilinFormInCoordinates a x ϕ).toBilinForm.Nondegenerate := by
   rw [tangentBilinFormInCoordinates_toBilinForm a hx]
   exact hϕ.congr _
+
+/-- A family of tangent bilinear forms that is continuous at `y₀`, as a map into the total space
+of the tangent bilinear-form bundle, is continuous at `y₀` when read in the trivialization at its
+base point at `y₀`. -/
+theorem continuousAt_tangentBilinFormInCoordinates {X : Type*} [TopologicalSpace X]
+    {q : X → TotalSpace (E →L[ℝ] E →L[ℝ] ℝ)
+      fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ}
+    {y₀ : X} (hq : ContinuousAt q y₀) :
+    ContinuousAt (fun y ↦ tangentBilinFormInCoordinates (q y₀).proj (q y).proj (q y).snd) y₀ := by
+  simpa only [tangentBilinFormInCoordinates, hom_trivializationAt_apply] using
+    ((FiberBundle.continuousAt_totalSpace (E →L[ℝ] E →L[ℝ] ℝ) q).mp hq).2
 
 namespace ContMDiffNondegenerateMetric
 

@@ -223,6 +223,7 @@ theorem comp_id : g.comp (ContMDiffMap.id : C^∞⟮IP, P; IP, P⟯) = g := by
 
 /-- Restricting a family along two parameter maps in turn is restricting along their
 composite. -/
+@[simp]
 theorem comp_comp {EP'' : Type*} [NormedAddCommGroup EP''] [NormedSpace ℝ EP'']
     {HP'' : Type*} [TopologicalSpace HP''] {IP'' : ModelWithCorners ℝ EP'' HP''}
     {P'' : Type*} [TopologicalSpace P''] [ChartedSpace HP'' P'']

@@ -118,10 +118,7 @@ theorem isLocallyConstant_sigPos_sigNeg_of_continuous {X : Type*} [TopologicalSp
   have he : ∀ᶠ y in nhds y₀, (q y).proj ∈ e.baseSet :=
     (FiberBundle.continuous_proj _ _ |>.comp hq).continuousAt.preimage_mem_nhds
       (e.open_baseSet.mem_nhds ha)
-  have hV : ContinuousAt V y₀ := by
-    have hcoord := ((FiberBundle.continuousAt_totalSpace (E →L[ℝ] E →L[ℝ] ℝ) q).mp
-      (hq.continuousAt (x := y₀))).2
-    simpa only [V, tangentBilinFormInCoordinates, hom_trivializationAt_apply] using hcoord
+  have hV : ContinuousAt V y₀ := continuousAt_tangentBilinFormInCoordinates hq.continuousAt
   have hsymmV : ∀ᶠ y in nhds y₀, (V y).toBilinForm.IsSymm := by
     filter_upwards [he] with y hy
     exact isSymm_tangentBilinFormInCoordinates a hy (hsymm y)
