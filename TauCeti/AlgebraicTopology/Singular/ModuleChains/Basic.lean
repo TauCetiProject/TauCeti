@@ -29,7 +29,10 @@ and vanishing on boundaries.
 * `TauCeti.simplexChain σ a`: the chain of a singular simplex `σ` with coefficient `a`.
 * `TauCeti.chainsDesc f`: the linear map out of the singular `n`-chains with the given values on
   singular simplices.
+* `TauCeti.singularChainsLinearEquivFinsupp k X n`: the singular `n`-chains are the finitely
+  supported functions on singular `n`-simplices.
 * `TauCeti.singularAugment k X`: the augmentation of the simplicial singular chains.
+* `TauCeti.singularChainsAugmentation k X`: the augmentation, as a chain map to `k` in degree `0`.
 
 ## Main results
 
@@ -120,6 +123,33 @@ theorem chainsDesc_simplexChain_one {X : TopCat.{u}} {n : ℕ} {V : Type u} [Add
     chainsDesc f (simplexChain s (1 : k)) = f s := by
   rw [chainsDesc_simplexChain, one_smul]
 
+variable (k) in
+/-- **The singular `n`-chains are the formal combinations of singular `n`-simplices**: the linear
+equivalence with the finitely supported functions on singular `n`-simplices, sending the chain of
+a simplex with coefficient `a` to the function supported at that simplex with value `a`. -/
+def singularChainsLinearEquivFinsupp (X : TopCat.{u}) (n : ℕ) :
+    ((singularChains k).obj X).X n ≃ₗ[k] ((TopCat.toSSet.obj X) _⦋n⦌ →₀ k) :=
+  LinearEquiv.ofLinearMap (chainsDesc fun σ ↦ Finsupp.single σ 1)
+    (Finsupp.linearCombination k fun σ ↦ simplexChain σ 1)
+    (Finsupp.lhom_ext' fun σ ↦ LinearMap.ext_ring (by simp))
+    (singularChains_linearMap_ext fun σ ↦ by simp)
+
+/-- The chain of a simplex with coefficient `a` is the function supported at the simplex with
+value `a`. -/
+@[simp]
+theorem singularChainsLinearEquivFinsupp_simplexChain {X : TopCat.{u}} {n : ℕ}
+    (σ : (TopCat.toSSet.obj X) _⦋n⦌) (a : k) :
+    singularChainsLinearEquivFinsupp k X n (simplexChain σ a) = Finsupp.single σ a := by
+  simp [singularChainsLinearEquivFinsupp]
+
+/-- The function supported at a simplex with value `a` is the chain of the simplex with
+coefficient `a`. -/
+@[simp]
+theorem singularChainsLinearEquivFinsupp_symm_single {X : TopCat.{u}} {n : ℕ}
+    (σ : (TopCat.toSSet.obj X) _⦋n⦌) (a : k) :
+    (singularChainsLinearEquivFinsupp k X n).symm (Finsupp.single σ a) = simplexChain σ a := by
+  rw [LinearEquiv.symm_apply_eq, singularChainsLinearEquivFinsupp_simplexChain]
+
 end Singular
 
 /-- Additive maps out of the singular chains with integer coefficients agree when they agree on
@@ -183,6 +213,21 @@ theorem singularAugment_d (X : TopCat.{u}) (x : ((singularChains k).obj X).X 1) 
       rw [LinearMap.comp_apply, singularChains_d_simplexChain, map_sum]
       simp [Fin.sum_univ_succ, singularAugment_simplexChain]
   exact LinearMap.congr_fun this x
+
+variable (k) in
+/-- The augmentation of the simplicial singular chains, as a chain map to the coefficient ring
+placed in degree `0`. -/
+def singularChainsAugmentation (X : TopCat.{u}) :
+    (singularChains k).obj X ⟶ (ChainComplex.single₀ (ModuleCat.{u} k)).obj (ModuleCat.of k k) :=
+  (((singularChains k).obj X).toSingle₀Equiv _).symm
+    ⟨ModuleCat.ofHom (singularAugment k X), by ext x; exact singularAugment_d X x⟩
+
+variable (k) in
+/-- In degree `0` the augmentation chain map is the augmentation. -/
+@[simp]
+theorem singularChainsAugmentation_f_zero (X : TopCat.{u}) :
+    (singularChainsAugmentation k X).f 0 = ModuleCat.ofHom (singularAugment k X) :=
+  ChainComplex.toSingle₀Equiv_symm_apply_f_zero _ _
 
 section Paths
 

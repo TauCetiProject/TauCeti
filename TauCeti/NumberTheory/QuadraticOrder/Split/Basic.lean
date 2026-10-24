@@ -7,7 +7,7 @@ module
 public import TauCeti.NumberTheory.QuadraticOrder.Basic
 public import TauCeti.NumberTheory.QuadraticOrder.Product
 public import TauCeti.Algebra.QuadraticAlgebra.Split
-import Mathlib.Algebra.Ring.Int.Parity
+import TauCeti.Data.Int.MulPred
 
 /-!
 # Square-discriminant quadratic orders
@@ -29,10 +29,8 @@ open QuadraticAlgebra
 namespace TauCeti.QuadraticOrder
 
 private theorem two_mul_sq_sub_ediv_two (s : ℤ) :
-    2 * ((s ^ 2 - s) / 2) = s ^ 2 - s := by
-  have h : (2 : ℤ) ∣ s ^ 2 - s := by
-    simpa only [mul_sub, mul_one, ← pow_two] using (Int.even_mul_pred_self s).two_dvd
-  exact Int.mul_ediv_cancel' h
+    2 * ((s ^ 2 - s) / 2) = s ^ 2 - s :=
+  Int.mul_ediv_cancel' (Int.two_dvd_sq_sub_self s)
 
 private noncomputable def integralEquivProductModel (s : ℤ) :
     QuadraticAlgebra ℤ ((s ^ 2 - (s ^ 2) ^ 2) / 4) (s ^ 2) ≃ₐ[ℤ]

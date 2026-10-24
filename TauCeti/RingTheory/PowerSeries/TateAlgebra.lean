@@ -23,9 +23,10 @@ that the norm inherits the properties of the norm on `R` that the theory of Tate
 At the unit radius over a complete nonarchimedean field `K`, the result is the Tate algebra
 `K⟨X⟩` with its Gauss norm. Iterating the construction, the ring of series in one more variable
 restricted over `K⟨X₁, …, Xₙ₋₁⟩` is again complete, ultrametric and multiplicatively normed. This
-is the setting in which Bosch–Güntzer–Remmert apply Weierstrass division in `n` variables, and it
-is exactly the hypothesis set of
-`TauCeti.PowerSeries.IsDistinguished.existsUnique_mul_add_eq_subring`.
+is the setting in which Bosch–Güntzer–Remmert apply Weierstrass division in `n` variables.
+It satisfies the hypotheses of
+`TauCeti.PowerSeries.IsMulDistinguished.existsUnique_mul_add_eq_subring`: with a multiplicative
+coefficient norm, every unit coefficient is a multiplicative unit.
 
 The radius is supplied as an instance argument `[Fact (0 < c)]`; at the unit radius it is found
 automatically.
