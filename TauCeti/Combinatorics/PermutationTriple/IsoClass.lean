@@ -280,6 +280,21 @@ theorem mk_surjective (c : MarkedIsoClass n) :
     ∃ (t : ConnectedTriple n) (i : Fin n), mk t i = c :=
   Quotient.inductionOn' c fun ti => ⟨ti.1, ti.2, rfl⟩
 
+/-- A function on marked triples that is unchanged by simultaneous relabeling descends to
+marked isomorphism classes. -/
+def lift {α : Sort*} (f : ConnectedTriple n → Fin n → α)
+    (hf : ∀ (τ : Perm (Fin n)) t i, f (τ • t) (τ i) = f t i) : MarkedIsoClass n → α :=
+  Quotient.lift (fun ti => f ti.1 ti.2) fun _ _ ⟨τ, hτ⟩ => by
+    subst_vars
+    exact hf τ _ _
+
+/-- The descended function is evaluated on a marked triple by the original function. -/
+@[simp]
+theorem lift_mk {α : Sort*} (f : ConnectedTriple n → Fin n → α)
+    (hf : ∀ (τ : Perm (Fin n)) t i, f (τ • t) (τ i) = f t i)
+    (t : ConnectedTriple n) (i : Fin n) : lift f hf (mk t i) = f t i :=
+  (rfl)
+
 /-- Forgetting the marked label of a class. -/
 def forget : MarkedIsoClass n → ConnectedIsoClass n :=
   Quotient.map' Prod.fst fun _ _ ⟨τ, hτ⟩ => ⟨τ, congrArg Prod.fst hτ⟩
