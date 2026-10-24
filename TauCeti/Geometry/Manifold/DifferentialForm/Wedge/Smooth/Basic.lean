@@ -193,6 +193,14 @@ theorem wedge_apply (φ : SmoothForm I M ℝ k) (ψ : SmoothForm I M ℝ l)
             ψ.1 x (fun j ↦ v (σ (Fin.natAdd k j)))) := by
   rw [coe_wedge, RoughForm.wedge_apply]
 
+/-- Wedging a smooth real-valued form with a degree-zero form multiplies its value by the
+function value. -/
+@[simp]
+theorem wedge_apply_zero_right (φ : SmoothForm I M ℝ k) (ψ : SmoothForm I M ℝ 0)
+    (x : M) (v : Fin k → TangentSpace I x) :
+    (wedge φ ψ).1 x v = φ.1 x v * ψ.1 x 0 := by
+  rw [coe_wedge, RoughForm.wedge_apply_zero_right]
+
 /-- The smooth real-valued wedge of two one-forms evaluates as a determinant. -/
 theorem wedge_apply_one_one (φ : SmoothForm I M ℝ 1) (ψ : SmoothForm I M ℝ 1) (x : M)
     (v w : TangentSpace I x) :

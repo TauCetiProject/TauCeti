@@ -411,6 +411,15 @@ theorem wedge_apply (φ : RoughForm I M ℝ k) (ψ : RoughForm I M ℝ l)
   simpa [wedge, ContinuousLinearMap.mul_apply'] using
     (wedgeWith_apply (ContinuousLinearMap.mul ℝ ℝ) φ ψ x v)
 
+/-- Wedging a real-valued rough form with a degree-zero form multiplies its value by the
+function value. -/
+@[simp]
+theorem wedge_apply_zero_right (φ : RoughForm I M ℝ k) (ψ : RoughForm I M ℝ 0)
+    (x : M) (v : Fin k → TangentSpace I x) :
+    φ.wedge ψ x v = φ x v * ψ x 0 := by
+  simpa only [wedge_def, ContinuousLinearMap.mul_apply'] using
+    (wedgeWith_apply_zero_right (ContinuousLinearMap.mul ℝ ℝ) φ ψ x v)
+
 /-- The wedge of real-valued one-forms has the determinant normalization. -/
 @[simp]
 theorem wedge_apply_one_one (φ : RoughForm I M ℝ 1) (ψ : RoughForm I M ℝ 1)

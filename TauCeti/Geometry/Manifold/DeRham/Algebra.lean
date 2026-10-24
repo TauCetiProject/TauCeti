@@ -93,7 +93,7 @@ theorem wedge_const (a : deRhamCohomology I M k) (r : ℝ) :
   ext v
   simp only [Submodule.coe_smul, Pi.smul_apply,
     ContinuousAlternatingMap.smul_apply]
-  rw [SmoothForm.wedge_def, SmoothForm.wedgeWith_apply_zero_right]
+  rw [SmoothForm.wedge_apply_zero_right]
   simp [coe_closedFormsZeroEquiv_symm_apply, mul_comm]
 
 /-- Wedge with the class of a constant function on the left is scalar multiplication,
