@@ -47,10 +47,9 @@ theorem mem_map_weightedC_iff_of_isAdic (hI : IsAdic I) (hfg : I.FG)
   · intro hf
     let P := PairOfDefinition.adic I hI hfg
     let Q := P.weighted (k := k) isWeightFamily_one_weight
-    have htop : Q.ringOfDefinition = ⊤ := by
-      simpa only [Q, PairOfDefinition.weighted_ringOfDefinition] using
-        P.weightedRingOfDefinition_one_weight_eq_top
-          (PairOfDefinition.adic_ringOfDefinition I hI hfg)
+    have htop : Q.ringOfDefinition = ⊤ :=
+      P.weighted_ringOfDefinition_one_weight_eq_top
+        (PairOfDefinition.adic_ringOfDefinition I hI hfg)
     let g : Q.ringOfDefinition := ⟨f, htop ▸ Subring.mem_top f⟩
     have hg : g ∈ Q.idealOfDefinition := by
       rw [PairOfDefinition.mem_weighted_idealOfDefinition]
@@ -83,7 +82,9 @@ theorem coeff_restrictedReduction (J : Ideal A) (hJ : IsOpen (J : Set A))
   let : DiscreteTopology (A ⧸ J) := QuotientAddGroup.discreteTopology hJ
   dsimp only [restrictedReduction, RingHom.comp_apply, RingEquiv.toRingHom_eq_coe,
     RingEquiv.coe_toRingHom]
-  -- The discrete instance comes from the additive-group presentation of the ring quotient.
+  -- `QuotientAddGroup.discreteTopology hJ` has type `DiscreteTopology (A ⧸ J.toAddSubgroup)`,
+  -- while `weightedPolynomialEquiv` expects `DiscreteTopology (A ⧸ J)`. The additive and ring
+  -- quotient presentations agree only after unfolding, so `rw` cannot match the instance.
   erw [coeff_weightedPolynomialEquiv_symm]
   simp
 
@@ -120,7 +121,7 @@ theorem restrictedReduction_surjective (J : Ideal A) (hJ : IsOpen (J : Set A)) :
 /-- Reduction modulo a finitely generated ideal of definition has exactly the extended ideal
 as its kernel. -/
 theorem ker_restrictedReduction (hI : IsAdic I) (hfg : I.FG) :
-    RingHom.ker (restrictedReduction (k := k) I (IsAdic.isOpen_ideal hI)) =
+    RingHom.ker (restrictedReduction (k := k) I (by simpa only [pow_one] using hI.isOpen_pow 1)) =
       I.map (weightedC _ isWeightFamily_one_weight) := by
   ext f
   rw [RingHom.mem_ker, mem_map_weightedC_iff_of_isAdic hI hfg, MvPolynomial.ext_iff]
@@ -132,11 +133,11 @@ noncomputable def quotientRestrictedEquivMvPolynomialQuotient (hI : IsAdic I) (h
       I.map (weightedC _ isWeightFamily_one_weight)) ≃ₐ[A]
       MvPolynomial (Fin k) (A ⧸ I) := by
   let e := (Ideal.quotEquivOfEq (ker_restrictedReduction (k := k) hI hfg).symm).trans
-    ((restrictedReduction I (IsAdic.isOpen_ideal hI)).quotientKerEquivOfSurjective
-      (restrictedReduction_surjective I (IsAdic.isOpen_ideal hI)))
+    ((restrictedReduction I (by simpa using hI.isOpen_pow 1)).quotientKerEquivOfSurjective
+      (restrictedReduction_surjective I (by simpa only [pow_one] using hI.isOpen_pow 1)))
   refine AlgEquiv.ofRingEquiv (f := e) fun a ↦ ?_
   have he : e (algebraMap A _ a) =
-      restrictedReduction I (IsAdic.isOpen_ideal hI) (algebraMap A _ a) := by
+      restrictedReduction I (by simpa only [pow_one] using hI.isOpen_pow 1) (algebraMap A _ a) := by
     rw [← Ideal.Quotient.mk_algebraMap]
     simp only [e, RingEquiv.trans_apply, Ideal.quotEquivOfEq_mk,
       RingHom.quotientKerEquivOfSurjective_apply_mk]
@@ -149,7 +150,7 @@ theorem quotientRestrictedEquivMvPolynomialQuotient_mk (hI : IsAdic I) (hfg : I.
     (f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A))
       isWeightFamily_one_weight) :
     quotientRestrictedEquivMvPolynomialQuotient hI hfg (Ideal.Quotient.mk _ f) =
-      restrictedReduction I (IsAdic.isOpen_ideal hI) f := by
+      restrictedReduction I (by simpa only [pow_one] using hI.isOpen_pow 1) f := by
   simp [quotientRestrictedEquivMvPolynomialQuotient]
 
 /-- Reduction is compatible with passing to a larger open ideal. -/
@@ -188,7 +189,7 @@ restricted series coefficientwise. -/
 theorem quotientRestrictedCompletionEquivMvPolynomialQuotient_mk
     (hJ : IsAdic J) (hfg : J.FG) (x : restrictedMvPowerSeriesCompletion k R) :
     quotientRestrictedCompletionEquivMvPolynomialQuotient hJ hfg (Ideal.Quotient.mk _ x) =
-      restrictedReduction J (IsAdic.isOpen_ideal hJ)
+      restrictedReduction J (by simpa only [pow_one] using hJ.isOpen_pow 1)
         (restrictedMvPowerSeriesCompletionAlgEquiv k R x) := by
   simp [quotientRestrictedCompletionEquivMvPolynomialQuotient]
 
