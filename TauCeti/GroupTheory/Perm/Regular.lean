@@ -55,7 +55,7 @@ theorem fullCycleType_permutationRepresentation (e : G ≃ Fin n) (g : G) :
     (permutationRepresentation e g).fullCycleType =
       Multiset.replicate (n / orderOf g) (orderOf g) := by
   classical
-  letI := Fintype.ofEquiv (Fin n) e.symm
+  let := Fintype.ofEquiv (Fin n) e.symm
   have hperm : permutationRepresentation e g = e.permCongr (toPerm g) := by
     ext i
     simp only [permutationRepresentation_apply, Equiv.permCongr_apply, toPerm_apply]
