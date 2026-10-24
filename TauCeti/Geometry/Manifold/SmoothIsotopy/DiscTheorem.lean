@@ -89,8 +89,8 @@ theorem exists_smoothIsotopy_of_det_chartAt_mul_pos
       (g.contMDiff.continuous.continuousAt.preimage_mem_nhds (hcentre ▸ hU)))
   -- Step 1: shrink the source, so that both embeddings land in `U`.
   have ha : (0 : ℝ) ≤ δ⁻¹ ^ 2 := sq_nonneg _
-  set f₁ := f.compRadialContraction ha
-  set g₁ := g.compRadialContraction ha
+  set f₁ := f.compRadialContraction le_rfl ha
+  set g₁ := g.compRadialContraction le_rfl ha
   have hf₁U (x : E) : f₁ x ∈ U := by
     rw [compRadialContraction_apply]
     exact (hδU (radialContraction_mem_ball 0 x hδ)).1
@@ -110,8 +110,8 @@ theorem exists_smoothIsotopy_of_det_chartAt_mul_pos
     rw [hG₁, compRadialContraction_apply, radialContraction_self, ← hcentre]
   -- The shrinking has derivative the identity at `0`, so the orientations are unchanged.
   have hfderiv (k : SmoothEmbedding 𝓘(ℝ, E) 𝓘(ℝ, E) ∞ E M) (hk : k 0 = p)
-      (hkφ : range (k.compRadialContraction ha) ⊆ φ.source) :
-      fderiv ℝ ((k.compRadialContraction ha).transChart hφ hkφ) 0 = fderiv ℝ (φ ∘ k) 0 := by
+      (hkφ : range (k.compRadialContraction le_rfl ha) ⊆ φ.source) :
+      fderiv ℝ ((k.compRadialContraction le_rfl ha).transChart hφ hkφ) 0 = fderiv ℝ (φ ∘ k) 0 := by
     rw [coe_transChart, coe_compRadialContraction, ← Function.comp_assoc]
     refine fderiv_comp_radialContraction_self 0 _ ?_
     simpa only [hk] using
@@ -130,8 +130,8 @@ theorem exists_smoothIsotopy_of_det_chartAt_mul_pos
     (fun x => by simp [hG₁, φ.left_inv (hg₁U x).1])
   have hL' (q : unitInterval × E) : L' q = φ.symm (L q) := SmoothIsotopy.postcomp_apply ..
   -- Step 5: undo the shrinking of the sources.
-  refine ⟨((f.compRadialContractionIsotopy ha).trans L' le_rfl).trans
-    (g.compRadialContractionIsotopy ha).symm le_rfl, fun t => ?_⟩
+  refine ⟨((f.compRadialContractionIsotopy le_rfl ha).trans L' le_rfl).trans
+    (g.compRadialContractionIsotopy le_rfl ha).symm le_rfl, fun t => ?_⟩
   refine SmoothIsotopy.trans_apply_mem (s := {p}) _ _ _ (fun t => ?_) (fun t => ?_) t
   · refine SmoothIsotopy.trans_apply_mem (s := {p}) _ _ _ (fun t => ?_) (fun t => ?_) t
     · rw [mem_singleton_iff, compRadialContractionIsotopy_apply, radialContraction_self]

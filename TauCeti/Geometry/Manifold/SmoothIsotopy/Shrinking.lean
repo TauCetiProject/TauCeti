@@ -131,27 +131,29 @@ namespace TauCeti
 section RadialContraction
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {n : ℕ∞ω}
 
 /-- A radial contraction with nonnegative parameter is a local diffeomorphism. -/
-theorem isLocalDiffeomorph_radialContraction (c : E) {κ : ℝ} (hκ : 0 ≤ κ) :
-    IsLocalDiffeomorph 𝓘(ℝ, E) 𝓘(ℝ, E) ∞ (radialContraction c κ) := by
+theorem isLocalDiffeomorph_radialContraction (c : E) (hn : n ≤ ∞) {κ : ℝ} (hκ : 0 ≤ κ) :
+    IsLocalDiffeomorph 𝓘(ℝ, E) 𝓘(ℝ, E) n (radialContraction c κ) := by
   rcases hκ.eq_or_lt with rfl | hκ
   · have : radialContraction c 0 = id := funext (radialContraction_zero c)
     rw [this]
-    exact (Diffeomorph.refl 𝓘(ℝ, E) E ∞).isLocalDiffeomorph
+    exact (Diffeomorph.refl 𝓘(ℝ, E) E n).isLocalDiffeomorph
   obtain ⟨Θ, hsource, hΘ, hΘsymm, hΘeq⟩ := exists_radialContraction_eq_openPartialHomeomorph c hκ
   exact fun y => isLocalDiffeomorphAt_of_eqOn
-    (Φ := PartialDiffeomorph.ofOpenPartialHomeomorph Θ hΘ hΘsymm) (by simp [hsource])
+    (Φ := PartialDiffeomorph.ofOpenPartialHomeomorph Θ (hΘ.of_le hn) (hΘsymm.of_le hn))
+    (by simp [hsource])
     fun z _ => by simp [← hΘeq]
 
-/-- A smooth family of radial contractions with nonnegative parameters, applied to a smooth
-family of points, is smooth. -/
+/-- A `C^n` family of radial contractions with nonnegative parameters, applied to a `C^n`
+family of points, is `C^n` for `n ≤ ∞`. -/
 theorem contMDiff_radialContraction {E' H' X : Type*} [NormedAddCommGroup E']
     [NormedSpace ℝ E'] [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [TopologicalSpace X]
-    [ChartedSpace H' X] (c : E) {κ : X → ℝ} {y : X → E} (hκ : ContMDiff J 𝓘(ℝ) ∞ κ)
-    (hκ₀ : ∀ x, 0 ≤ κ x) (hy : ContMDiff J 𝓘(ℝ, E) ∞ y) :
-    ContMDiff J 𝓘(ℝ, E) ∞ fun x => radialContraction c (κ x) (y x) :=
-  (contDiffOn_radialContraction c).contMDiffOn.comp_contMDiff (hκ.prodMk_space hy)
+    [ChartedSpace H' X] (c : E) (hn : n ≤ ∞) {κ : X → ℝ} {y : X → E} (hκ : ContMDiff J 𝓘(ℝ) n κ)
+    (hκ₀ : ∀ x, 0 ≤ κ x) (hy : ContMDiff J 𝓘(ℝ, E) n y) :
+    ContMDiff J 𝓘(ℝ, E) n fun x => radialContraction c (κ x) (y x) :=
+  ((contDiffOn_radialContraction c).of_le hn).contMDiffOn.comp_contMDiff (hκ.prodMk_space hy)
     fun x => add_pos_of_pos_of_nonneg zero_lt_one (mul_nonneg (hκ₀ x) (sq_nonneg _))
 
 namespace SmoothEmbedding
@@ -162,83 +164,101 @@ variable {F H N : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [Topological
   {I : ModelWithCorners ℝ E₀ H₀} [TopologicalSpace M] [ChartedSpace H₀ M]
 
 /-- A smooth embedding of `E` precomposed with the radial contraction about `0` with parameter
-`κ ≥ 0`. -/
-def compRadialContraction (f : SmoothEmbedding 𝓘(ℝ, E) J ∞ E N) {κ : ℝ} (hκ : 0 ≤ κ) :
-    SmoothEmbedding 𝓘(ℝ, E) J ∞ E N :=
-  f.compLocalDiffeomorph (radialContraction 0 κ) (isLocalDiffeomorph_radialContraction 0 hκ)
+`κ ≥ 0`, preserving any regularity `n ≤ ∞`. -/
+def compRadialContraction (f : SmoothEmbedding 𝓘(ℝ, E) J n E N) (hn : n ≤ ∞)
+    {κ : ℝ}
+    (hκ : 0 ≤ κ) :
+    SmoothEmbedding 𝓘(ℝ, E) J n E N :=
+  f.compLocalDiffeomorph (radialContraction 0 κ) (isLocalDiffeomorph_radialContraction 0 hn hκ)
     (isEmbedding_radialContraction 0 hκ)
 
-theorem coe_compRadialContraction (f : SmoothEmbedding 𝓘(ℝ, E) J ∞ E N) {κ : ℝ} (hκ : 0 ≤ κ) :
-    ⇑(f.compRadialContraction hκ) = f ∘ radialContraction 0 κ := by
+theorem coe_compRadialContraction (f : SmoothEmbedding 𝓘(ℝ, E) J n E N) (hn : n ≤ ∞)
+    {κ : ℝ} (hκ : 0 ≤ κ) :
+    ⇑(f.compRadialContraction hn hκ) = f ∘ radialContraction 0 κ := by
   rw [compRadialContraction, coe_compLocalDiffeomorph]
 
 @[simp]
-theorem compRadialContraction_apply (f : SmoothEmbedding 𝓘(ℝ, E) J ∞ E N) {κ : ℝ} (hκ : 0 ≤ κ)
-    (x : E) : f.compRadialContraction hκ x = f (radialContraction 0 κ x) := by
+theorem compRadialContraction_apply (f : SmoothEmbedding 𝓘(ℝ, E) J n E N) (hn : n ≤ ∞)
+    {κ : ℝ} (hκ : 0 ≤ κ) (x : E) :
+    f.compRadialContraction hn hκ x = f (radialContraction 0 κ x) := by
   rw [coe_compRadialContraction, Function.comp_apply]
 
 /-- The source contraction `t ↦ f ∘ radialContraction 0 (t κ)`, a smooth isotopy from `f` to
-`f.compRadialContraction hκ` fixing the image of `0`. -/
-def compRadialContractionIsotopy (f : SmoothEmbedding 𝓘(ℝ, E) J ∞ E N) {κ : ℝ} (hκ : 0 ≤ κ) :
-    SmoothIsotopy f.toContMDiffMap (f.compRadialContraction hκ).toContMDiffMap where
+`f.compRadialContraction hn hκ` fixing the image of `0`, preserving regularity `n ≤ ∞`. -/
+def compRadialContractionIsotopy (f : SmoothEmbedding 𝓘(ℝ, E) J n E N) (hn : n ≤ ∞)
+    {κ : ℝ}
+    (hκ : 0 ≤ κ) :
+    SmoothIsotopy f.toContMDiffMap (f.compRadialContraction hn hκ).toContMDiffMap where
   toContMDiffMap := ⟨fun p => f (radialContraction 0 ((p.1 : ℝ) * κ) p.2),
-    f.contMDiff.comp (contMDiff_radialContraction 0
+    f.contMDiff.comp (contMDiff_radialContraction 0 hn
       ((contDiff_id.mul contDiff_const).contMDiff.comp
         (contMDiff_subtypeVal_Icc.comp contMDiff_fst))
       (fun p => mul_nonneg p.1.2.1 hκ) contMDiff_snd)⟩
   map_zero_left x := by simp
   map_one_left x := by simp
   isSmoothEmbedding t := by
-    have h := (f.compRadialContraction (mul_nonneg t.2.1 hκ)).isSmoothEmbedding
+    have h := (f.compRadialContraction hn (mul_nonneg t.2.1 hκ)).isSmoothEmbedding
     rwa [coe_compRadialContraction] at h
 
 @[simp]
-theorem compRadialContractionIsotopy_apply (f : SmoothEmbedding 𝓘(ℝ, E) J ∞ E N) {κ : ℝ}
+theorem compRadialContractionIsotopy_apply (f : SmoothEmbedding 𝓘(ℝ, E) J n E N) (hn : n ≤ ∞)
+    {κ : ℝ}
     (hκ : 0 ≤ κ) (p : unitInterval × E) :
-    f.compRadialContractionIsotopy hκ p = f (radialContraction 0 ((p.1 : ℝ) * κ) p.2) := (rfl)
+    f.compRadialContractionIsotopy hn hκ p = f (radialContraction 0 ((p.1 : ℝ) * κ) p.2) := (rfl)
 
 /-- A smooth embedding into `E` followed by the radial contraction about `c` with parameter
-`κ ≥ 0`. -/
-def transRadialContraction (f : SmoothEmbedding I 𝓘(ℝ, E) ∞ M E) (c : E) {κ : ℝ} (hκ : 0 ≤ κ) :
-    SmoothEmbedding I 𝓘(ℝ, E) ∞ M E :=
+`κ ≥ 0`, preserving any regularity `n ≤ ∞`. -/
+def transRadialContraction (f : SmoothEmbedding I 𝓘(ℝ, E) n M E)
+    (c : E) (hn : n ≤ ∞)
+    {κ : ℝ}
+    (hκ : 0 ≤ κ) :
+    SmoothEmbedding I 𝓘(ℝ, E) n M E :=
   f.transLocalDiffeomorph (radialContraction c κ) (s := univ)
-    (fun y _ => isLocalDiffeomorph_iff.1 (isLocalDiffeomorph_radialContraction c hκ) y)
+    (fun y _ => isLocalDiffeomorph_iff.1 (isLocalDiffeomorph_radialContraction c hn hκ) y)
     ((isEmbedding_radialContraction c hκ).comp IsEmbedding.subtypeVal) (subset_univ _)
 
-theorem coe_transRadialContraction (f : SmoothEmbedding I 𝓘(ℝ, E) ∞ M E) (c : E) {κ : ℝ}
-    (hκ : 0 ≤ κ) : ⇑(f.transRadialContraction c hκ) = radialContraction c κ ∘ f :=
+theorem coe_transRadialContraction (f : SmoothEmbedding I 𝓘(ℝ, E) n M E)
+    (c : E) (hn : n ≤ ∞)
+    {κ : ℝ}
+    (hκ : 0 ≤ κ) : ⇑(f.transRadialContraction c hn hκ) = radialContraction c κ ∘ f :=
   f.coe_transLocalDiffeomorph _ _ _ _
 
 @[simp]
-theorem transRadialContraction_apply (f : SmoothEmbedding I 𝓘(ℝ, E) ∞ M E) (c : E) {κ : ℝ}
-    (hκ : 0 ≤ κ) (x : M) : f.transRadialContraction c hκ x = radialContraction c κ (f x) := by
+theorem transRadialContraction_apply (f : SmoothEmbedding I 𝓘(ℝ, E) n M E)
+    (c : E) (hn : n ≤ ∞)
+    {κ : ℝ}
+    (hκ : 0 ≤ κ) (x : M) : f.transRadialContraction c hn hκ x = radialContraction c κ (f x) := by
   rw [coe_transRadialContraction, Function.comp_apply]
 
 /-- The target contraction `t ↦ radialContraction c (t κ) ∘ f`, a smooth isotopy from `f` to
-`f.transRadialContraction c hκ`. -/
-def transRadialContractionIsotopy (f : SmoothEmbedding I 𝓘(ℝ, E) ∞ M E) (c : E) {κ : ℝ}
+`f.transRadialContraction c hn hκ`, preserving regularity `n ≤ ∞`. -/
+def transRadialContractionIsotopy (f : SmoothEmbedding I 𝓘(ℝ, E) n M E)
+    (c : E) (hn : n ≤ ∞)
+    {κ : ℝ}
     (hκ : 0 ≤ κ) :
-    SmoothIsotopy f.toContMDiffMap (f.transRadialContraction c hκ).toContMDiffMap where
+    SmoothIsotopy f.toContMDiffMap (f.transRadialContraction c hn hκ).toContMDiffMap where
   toContMDiffMap := ⟨fun p => radialContraction c ((p.1 : ℝ) * κ) (f p.2),
-    contMDiff_radialContraction c ((contDiff_id.mul contDiff_const).contMDiff.comp
+    contMDiff_radialContraction c hn ((contDiff_id.mul contDiff_const).contMDiff.comp
         (contMDiff_subtypeVal_Icc.comp contMDiff_fst))
       (fun p => mul_nonneg p.1.2.1 hκ) (f.contMDiff.comp contMDiff_snd)⟩
   map_zero_left x := by simp
   map_one_left x := by simp
   isSmoothEmbedding t := by
-    have h := (f.transRadialContraction c (mul_nonneg t.2.1 hκ)).isSmoothEmbedding
+    have h := (f.transRadialContraction c hn (mul_nonneg t.2.1 hκ)).isSmoothEmbedding
     rwa [coe_transRadialContraction] at h
 
 @[simp]
-theorem transRadialContractionIsotopy_apply (f : SmoothEmbedding I 𝓘(ℝ, E) ∞ M E) (c : E)
+theorem transRadialContractionIsotopy_apply (f : SmoothEmbedding I 𝓘(ℝ, E) n M E)
+    (c : E) (hn : n ≤ ∞)
     {κ : ℝ} (hκ : 0 ≤ κ) (p : unitInterval × M) :
-    f.transRadialContractionIsotopy c hκ p = radialContraction c ((p.1 : ℝ) * κ) (f p.2) := (rfl)
+    f.transRadialContractionIsotopy c hn hκ p = radialContraction c ((p.1 : ℝ) * κ) (f p.2) := (rfl)
 
 /-- The target contraction never leaves a Euclidean ball about its centre containing the original
 image. -/
-theorem transRadialContractionIsotopy_mem_ball (f : SmoothEmbedding I 𝓘(ℝ, E) ∞ M E) {c : E}
+theorem transRadialContractionIsotopy_mem_ball (f : SmoothEmbedding I 𝓘(ℝ, E) n M E)
+    (hn : n ≤ ∞) {c : E}
     {r κ : ℝ} (hκ : 0 ≤ κ) (hf : ∀ x, f x ∈ Euclidean.ball c r) (p : unitInterval × M) :
-    f.transRadialContractionIsotopy c hκ p ∈ Euclidean.ball c r :=
+    f.transRadialContractionIsotopy c hn hκ p ∈ Euclidean.ball c r :=
   (euclideanDist_radialContraction_le c _ (mul_nonneg p.1.2.1 hκ)).trans_lt (hf p.2)
 
 end SmoothEmbedding

@@ -170,21 +170,22 @@ theorem exists_smoothIsotopy_mapsTo_ball {c : E} {r : ℝ} (hr : 0 < r)
   -- radial contractions, which keep the ball in place.
   have hκ : (0 : ℝ) ≤ r⁻¹ ^ 2 := sq_nonneg _
   let τK := K.postcomp (radialContraction c (r⁻¹ ^ 2)) (s := Set.univ) (fun _ => trivial)
-    (fun y _ => isLocalDiffeomorph_iff.1 (isLocalDiffeomorph_radialContraction c hκ) y)
+    (fun y _ => isLocalDiffeomorph_iff.1 (isLocalDiffeomorph_radialContraction c le_rfl hκ) y)
     ((isEmbedding_radialContraction c hκ).comp Topology.IsEmbedding.subtypeVal)
-    (f.transRadialContraction c hκ).toContMDiffMap (g.transRadialContraction c hκ).toContMDiffMap
+    (f.transRadialContraction c le_rfl hκ).toContMDiffMap
+    (g.transRadialContraction c le_rfl hκ).toContMDiffMap
     (fun x => by simp) (fun x => by simp)
   have hτK (q : unitInterval × E) : τK q = radialContraction c (r⁻¹ ^ 2) (K q) :=
     SmoothIsotopy.postcomp_apply ..
-  refine ⟨((f.transRadialContractionIsotopy c hκ).trans τK le_rfl).trans
-    (g.transRadialContractionIsotopy c hκ).symm le_rfl, fun q => ?_, fun t => ?_⟩
+  refine ⟨((f.transRadialContractionIsotopy c le_rfl hκ).trans τK le_rfl).trans
+    (g.transRadialContractionIsotopy c le_rfl hκ).symm le_rfl, fun q => ?_, fun t => ?_⟩
   · refine SmoothIsotopy.trans_apply_mem _ _ _ (fun t => ?_) (fun t => ?_) q.1
     · refine SmoothIsotopy.trans_apply_mem _ _ _
-        (fun t => f.transRadialContractionIsotopy_mem_ball hκ hf _) (fun t => ?_) t
+        (fun t => f.transRadialContractionIsotopy_mem_ball le_rfl hκ hf _) (fun t => ?_) t
       rw [hτK]
       exact radialContraction_mem_ball c _ hr
     · rw [SmoothIsotopy.symm_apply]
-      exact g.transRadialContractionIsotopy_mem_ball hκ hg _
+      exact g.transRadialContractionIsotopy_mem_ball le_rfl hκ hg _
   · refine SmoothIsotopy.trans_apply_mem (s := {c}) _ _ _ (fun t => ?_) (fun t => ?_) t
     · refine SmoothIsotopy.trans_apply_mem (s := {c}) _ _ _ (fun t => ?_) (fun t => ?_) t
       · rw [Set.mem_singleton_iff, transRadialContractionIsotopy_apply, hf0,

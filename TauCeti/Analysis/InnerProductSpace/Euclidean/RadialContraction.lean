@@ -112,6 +112,29 @@ theorem radialContraction_mem_ball (c y : E) {r : ℝ} (hr : 0 < r) :
     ← univBall_target (toEuclidean c) hr]
   exact (univBall (toEuclidean c) r).map_source (by simp)
 
+/-- For `κ = r⁻²`, the range of the radial contraction is the whole Euclidean ball. -/
+theorem range_radialContraction (c : E) {r : ℝ} (hr : 0 < r) :
+    range (radialContraction c (r⁻¹ ^ 2)) = Euclidean.ball c r := by
+  apply Subset.antisymm
+  · rintro _ ⟨y, rfl⟩
+    exact radialContraction_mem_ball c y hr
+  · intro z hz
+    have hz' : toEuclidean z ∈ (univBall (toEuclidean c) r).target := by
+      simpa only [univBall_target _ hr, Euclidean.ball_eq_preimage, mem_preimage] using hz
+    let w := (univBall (toEuclidean c) r).symm (toEuclidean z)
+    refine ⟨c + toEuclidean.symm (r • w), ?_⟩
+    apply toEuclidean.injective
+    rw [toEuclidean_radialContraction_eq_univBall c _ hr]
+    simpa only [add_sub_cancel_left, ContinuousLinearEquiv.apply_symm_apply, smul_smul,
+      inv_mul_cancel₀ hr.ne', one_smul] using
+      (univBall (toEuclidean c) r).right_inv hz'
+
+/-- Membership in the range of a positive radial contraction is membership in its ball. -/
+@[simp] theorem exists_radialContraction_eq_iff (c y : E) {r : ℝ} (hr : 0 < r) :
+    (∃ x, radialContraction c (r ^ 2)⁻¹ x = y) ↔ y ∈ Euclidean.ball c r := by
+  -- Use the normal form of range membership and inverse powers used by `simp`.
+  simpa only [mem_range, inv_pow] using Set.ext_iff.mp (range_radialContraction c hr) y
+
 /-- The radial contraction is jointly smooth in the parameter and the point, wherever
 `1 + κ d(y, c)²` is positive. -/
 theorem contDiffOn_radialContraction (c : E) :
@@ -150,14 +173,14 @@ theorem exists_radialContraction_eq_openPartialHomeomorph (c : E) {κ : ℝ} (h�
   let Θ := (A.transOpenPartialHomeomorph (univBall (e c) r)).transHomeomorph e.symm.toHomeomorph
   have hΘ : ⇑Θ = radialContraction c κ := by
     ext y
-    change e.symm (univBall (e c) r (A y)) = _
+    simp only [Θ, transHomeomorph_apply, Homeomorph.transOpenPartialHomeomorph_apply,
+      ContinuousLinearEquiv.coe_toHomeomorph, Function.comp_apply]
     rw [hA, ← toEuclidean_radialContraction_eq_univBall c y hr, inv_inv, Real.sq_sqrt hκ.le]
     exact e.symm_apply_apply _
   have hΘsymm : ⇑Θ.symm = fun z => A.symm ((univBall (e c) r).symm (e z)) := rfl
   have hΘtarget : Θ.target = e ⁻¹' ball (e c) r := by
-    change e.symm.toHomeomorph.symm ⁻¹' (A.transOpenPartialHomeomorph (univBall (e c) r)).target
-      = _
-    rw [Homeomorph.transOpenPartialHomeomorph_target, univBall_target (e c) hr]
+    rw [transHomeomorph_target, Homeomorph.transOpenPartialHomeomorph_target,
+      univBall_target (e c) hr]
     rfl
   refine ⟨Θ, by simp [Θ], ?_, ?_, hΘ⟩
   · rw [hΘ]
