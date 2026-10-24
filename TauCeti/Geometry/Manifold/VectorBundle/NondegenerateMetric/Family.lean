@@ -98,6 +98,12 @@ instance : CoeFun (ContMDiffNondegenerateMetricFamily I M IP P) fun _ ↦
 
 variable (g : ContMDiffNondegenerateMetricFamily I M IP P)
 
+/-- The underlying smooth section of a smooth nondegenerate metric family evaluates as the
+family. -/
+@[simp]
+theorem toContMDiffSection_apply (q : P × M) : g.toContMDiffSection q = g q :=
+  (rfl)
+
 /-- Evaluation of a smooth nondegenerate metric family is symmetric in its tangent arguments. -/
 theorem apply_comm (q : P × M) (v w : TangentSpace I q.2) : g q v w = g q w v :=
   (g.symm q).eq v w
