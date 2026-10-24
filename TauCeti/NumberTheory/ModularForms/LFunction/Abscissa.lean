@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.ModularForms.CongruenceSubgroups
+public import Mathlib.NumberTheory.ModularForms.CuspFormSubmodule
 public import Mathlib.NumberTheory.ModularForms.QExpansion
 public import Mathlib.NumberTheory.LSeries.Convergence
 import Mathlib.NumberTheory.ModularForms.Bounds
@@ -38,6 +39,8 @@ In weights one and two the estimate `aₙ = O(n^(k-1))` is false (the divisor su
 
 ## Main results
 
+* `TauCeti.isBigO_qExpansion_coeff_of_mem_cuspFormSubmodule`: cusp forms on `Γ₁(N)` of weight
+  `m ≥ 2` have coefficients `O(n^(m-1))`.
 * `TauCeti.ModularFormClass.qExpansion_isBigO_of_Gamma1_le`: the coefficient bound
   `aₙ = O(n^(k-1))`.
 * `TauCeti.ModularFormClass.abscissaOfAbsConv_qExpansion_coeff_le_of_Gamma1_le`: the abscissa
@@ -59,9 +62,11 @@ namespace TauCeti
 
 variable {N m : ℕ} [NeZero N]
 
-/-- Hecke's bound `O(n^(m/2))` for cusp forms on `Γ₁(N)` implies `O(n^(m-1))` in weight
-`m ≥ 2`. -/
-private lemma isBigO_qExpansion_coeff_of_mem_cuspFormSubmodule (hm : 2 ≤ m)
+/-- **Coefficient bound for cusp forms of weight at least two**: a modular form of weight
+`m ≥ 2` on `Γ₁(N)` lying in the cusp-form submodule has `q`-expansion coefficients
+`O(n^(m-1))`. This follows from Hecke's bound `O(n^(m/2))` (`CuspFormClass.qExpansion_isBigO`)
+and, unlike `ModularFormClass.qExpansion_isBigO_of_Gamma1_le`, already holds in weight two. -/
+theorem isBigO_qExpansion_coeff_of_mem_cuspFormSubmodule (hm : 2 ≤ m)
     {f : ModularForm ((Gamma1 N).map (mapGL ℝ)) m}
     (hf : f ∈ ModularForm.cuspFormSubmodule ((Gamma1 N).map (mapGL ℝ)) m) :
     (fun n ↦ (qExpansion 1 f).coeff n) =O[atTop] fun n : ℕ ↦ (n : ℝ) ^ (m - 1) := by
