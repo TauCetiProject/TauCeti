@@ -23,8 +23,10 @@ number of local boundary faces through a point, so it is the multiplicity with w
 the boundary is covered by the faces along which manifolds with corners are cut and glued.
 
 The depth is defined for every real model with corners `I`, without reference to coordinates. The
-*depth* `I.depthAt y` of a point `y` of the model vector space `E` is the codimension of the
-largest linear subspace contained in the positive tangent cone of `range I` at `y`. For the
+*depth* `I.depthAt y` of a point `y` of the model vector space `E` is, when `E` is
+finite-dimensional, the codimension of the largest linear subspace contained in the positive
+tangent cone of `range I` at `y`. If `E` is infinite-dimensional then `finrank ℝ E = 0` and the
+depth is identically `0`, so the results below assume finite dimensionality. For the
 quadrant model `𝓡c n` it is the number of vanishing coordinates of `y`
 (`ModelWithCorners.depthAt_modelWithCornersEuclideanQuadrant`), and for the half-space model
 `𝓡∂ n` it is `1` on the boundary hyperplane and `0` elsewhere
@@ -93,10 +95,12 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {H : Type*} [Top
 section Model
 
 open Classical in
-/-- The **depth** of a point `y` of the model vector space of a real model with corners `I`: the
-codimension of the largest linear subspace contained in the positive tangent cone of `range I` at
-`y` (see `ModelWithCorners.depthAt_eq_iff`). Interior points of `range I` have depth `0`, and a
-point of the quadrant `[0, ∞)ⁿ` has as depth its number of vanishing coordinates. -/
+/-- The **depth** of a point `y` of the model vector space of a real model with corners `I`: when
+the model vector space is finite-dimensional, the codimension of the largest linear subspace
+contained in the positive tangent cone of `range I` at `y` (see `ModelWithCorners.depthAt_eq_iff`).
+Interior points of `range I` have depth `0`, and a point of the quadrant `[0, ∞)ⁿ` has as depth its
+number of vanishing coordinates. In an infinite-dimensional model vector space `finrank ℝ E = 0`,
+so the depth is identically `0`. -/
 def depthAt (y : E) : ℕ :=
   finrank ℝ E - Nat.findGreatest
     (fun d ↦ ∃ V : Submodule ℝ E, (V : Set E) ⊆ posTangentConeAt (range I) y ∧ finrank ℝ V = d)
@@ -163,6 +167,7 @@ theorem depthAt_eq_iff (hy : y ∈ range I) {d : ℕ} :
     omega
 
 /-- A point of `range I` has depth zero exactly when it lies in the interior of `range I`. -/
+@[simp]
 theorem depthAt_eq_zero_iff (hy : y ∈ range I) : I.depthAt y = 0 ↔ y ∈ interior (range I) := by
   rw [depthAt_eq_iff hy]
   refine ⟨fun ⟨⟨V, hV, hVd⟩, _⟩ ↦ ?_, fun hint ↦ ⟨⟨⊤, fun v _ ↦ ?_, by simp⟩, fun V _ ↦ by
@@ -290,6 +295,7 @@ theorem depthAt_eq_natCard_of_range_eq (hJ : range J = {z | ∀ i ∈ S, 0 ≤ z
 
 /-- In the quadrant model `𝓡c n`, the depth of a point of the quadrant is its number of
 vanishing coordinates. -/
+@[simp]
 theorem depthAt_modelWithCornersEuclideanQuadrant {n : ℕ} {y : EuclideanSpace ℝ (Fin n)}
     (hy : y ∈ range (𝓡c n)) : (𝓡c n).depthAt y = Nat.card {i // y i = 0} := by
   rw [depthAt_eq_natCard_of_range_eq (S := univ) (by simp [range_modelWithCornersEuclideanQuadrant])
@@ -298,6 +304,7 @@ theorem depthAt_modelWithCornersEuclideanQuadrant {n : ℕ} {y : EuclideanSpace 
 
 /-- In the half-space model `𝓡∂ n`, a point of the half-space has depth `1` on the boundary
 hyperplane and depth `0` elsewhere. -/
+@[simp]
 theorem depthAt_modelWithCornersEuclideanHalfSpace {n : ℕ} [NeZero n]
     {y : EuclideanSpace ℝ (Fin n)} (hy : y ∈ range (𝓡∂ n)) :
     (𝓡∂ n).depthAt y = if y 0 = 0 then 1 else 0 := by
@@ -333,12 +340,14 @@ theorem depth_le_finrank (x : M) : I.depth x ≤ finrank ℝ E :=
 variable [FiniteDimensional ℝ E]
 
 /-- A point of a manifold has depth zero exactly when it is an interior point. -/
+@[simp]
 theorem depth_eq_zero_iff {x : M} : I.depth x = 0 ↔ I.IsInteriorPoint x := by
   rw [depth_def, depthAt_eq_zero_iff (extChartAt_target_subset_range x (mem_extChartAt_target x))]
   -- `IsInteriorPoint x` is defined as exactly this membership.
   exact Iff.rfl
 
 /-- A point of a manifold has positive depth exactly when it is a boundary point. -/
+@[simp]
 theorem depth_pos_iff {x : M} : 0 < I.depth x ↔ I.IsBoundaryPoint x := by
   rw [Nat.pos_iff_ne_zero, Ne, depth_eq_zero_iff, isBoundaryPoint_iff_not_isInteriorPoint]
 
@@ -425,6 +434,7 @@ theorem IsLocalDiffeomorphAt.depth_eq (hn : n ≠ 0) {f : M → N} {x : M}
   omega
 
 /-- A diffeomorphism preserves the depth. -/
+@[simp]
 theorem Diffeomorph.depth_apply (hn : n ≠ 0) (Φ : M ≃ₘ^n⟮I, I'⟯ N) (x : M) :
     I'.depth (Φ x) = I.depth x :=
   (Φ.isLocalDiffeomorph x).depth_eq hn
