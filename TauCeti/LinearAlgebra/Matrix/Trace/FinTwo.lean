@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.FinTwo
 public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
 public import Mathlib.LinearAlgebra.Matrix.Trace
 import TauCeti.LinearAlgebra.Matrix.Adjugate.FinTwo
+import TauCeti.LinearAlgebra.Matrix.Charpoly.FinTwo
 
 /-!
 # Trace identities for `2 × 2` matrices
@@ -21,6 +22,13 @@ ordered commutative ring this controls the powers of a hyperbolic matrix of dete
 every `n ≠ 0`; hence if `2 < |trace A|` then `2 < |trace (A ^ n)|` for every `n ≠ 0`. In particular
 no nonzero power of such a matrix is `± 1`. For determinant one, `2 < |trace A|` is equivalent to
 Mathlib's `Matrix.IsHyperbolic A`, whose discriminant is `trace A ^ 2 - 4`.
+
+Every power of `A` is a combination `a • A - b • 1`, whose discriminant is `a ^ 2` times that of
+`A`; so if `|trace A| ≤ 2` and `det A = 1` then `|trace (A ^ n)| ≤ 2` for every `n`. Since
+`det (1 - A ^ n) = 2 - trace (A ^ n)` for determinant one, this gives the sign of `det (1 - A ^ n)`,
+which decides whether `1` is an eigenvalue of `A ^ n`, for all iterates at once: it is negative for
+`2 < trace A`, alternates as `(-1) ^ (n + 1)` for `trace A < -2`, and is nonnegative for
+`|trace A| ≤ 2`.
 
 The **Fricke trace identity** expresses the trace of a commutator in `SL(2, R)` through the traces
 of the two matrices and of their product:
@@ -41,6 +49,15 @@ trace is `2 cos θ`, is in `TauCeti.Analysis.SpecialFunctions.Trigonometric.Matr
 * `Matrix.two_lt_trace_pow`, `Matrix.two_lt_abs_trace_pow`: the nonzero powers of a
   determinant-one matrix of trace (respectively absolute trace) greater than `2` again have that
   property.
+* `Matrix.exists_pow_eq_smul_sub_smul_one_fin_two`, `Matrix.discr_smul_sub_smul_one_fin_two`,
+  `Matrix.exists_discr_pow_eq_sq_mul_fin_two`: the powers of a `2 × 2` matrix are combinations of
+  the matrix and `1`, and their discriminants are square multiples of its discriminant.
+* `Matrix.abs_trace_pow_le_two`: the powers of a determinant-one matrix of trace at most `2` in
+  absolute value again have this property.
+* `Matrix.det_one_sub_pow_neg_of_two_lt_trace`, `Matrix.det_one_sub_pow_neg_of_trace_lt_neg_two`,
+  `Matrix.det_one_sub_pow_pos_of_trace_lt_neg_two`,
+  `Matrix.det_one_sub_pow_nonneg_of_abs_trace_le_two`: the sign of `det (1 - A ^ n)` for a
+  determinant-one matrix `A`, according to its trace.
 * `Matrix.isHyperbolic_iff_two_lt_abs_trace`: a determinant-one matrix is hyperbolic exactly when
   its trace has absolute value greater than `2`.
 * `Matrix.isElliptic_iff_abs_trace_lt_two`: a determinant-one matrix is elliptic exactly when its
@@ -83,6 +100,35 @@ theorem pow_add_two_fin_two (A : Matrix (Fin 2) (Fin 2) R) (n : ℕ) :
 theorem trace_pow_add_two_fin_two (A : Matrix (Fin 2) (Fin 2) R) (n : ℕ) :
     (A ^ (n + 2)).trace = A.trace * (A ^ (n + 1)).trace - A.det * (A ^ n).trace := by
   rw [pow_add_two_fin_two, trace_sub, trace_smul, trace_smul, smul_eq_mul, smul_eq_mul]
+
+/-- Every power of a `2 × 2` matrix `A` is a linear combination `a • A - b • 1` of `A` and `1`, by
+the Cayley–Hamilton identity in size two. -/
+theorem exists_pow_eq_smul_sub_smul_one_fin_two (A : Matrix (Fin 2) (Fin 2) R) (n : ℕ) :
+    ∃ a b : R, A ^ n = a • A - b • 1 := by
+  induction n with
+  | zero => exact ⟨0, -1, by simp⟩
+  | succ n ih =>
+    obtain ⟨a, b, h⟩ := ih
+    refine ⟨a * A.trace - b, a * A.det, ?_⟩
+    rw [pow_succ, h, sub_mul, smul_mul_assoc, ← sq, sq_eq_trace_smul_sub_det_smul_one_fin_two,
+      smul_mul_assoc, one_mul]
+    module
+
+/-- The discriminant of the `2 × 2` matrix `a • A - b • 1` is `a ^ 2` times that of `A`. -/
+theorem discr_smul_sub_smul_one_fin_two (A : Matrix (Fin 2) (Fin 2) R) (a b : R) :
+    (a • A - b • 1).discr = a ^ 2 * A.discr := by
+  rw [discr_fin_two, discr_fin_two, TauCeti.Matrix.det_smul_sub_smul_one_fin_two, trace_sub,
+    trace_smul, trace_smul, trace_one, Fintype.card_fin, smul_eq_mul, smul_eq_mul]
+  push_cast
+  ring
+
+/-- The discriminant of a power of a `2 × 2` matrix `A` is a square multiple of the discriminant
+of `A`. In particular a power of an elliptic matrix is not hyperbolic, and a power of a hyperbolic
+matrix is not elliptic. -/
+theorem exists_discr_pow_eq_sq_mul_fin_two (A : Matrix (Fin 2) (Fin 2) R) (n : ℕ) :
+    ∃ a : R, (A ^ n).discr = a ^ 2 * A.discr := by
+  obtain ⟨a, b, h⟩ := exists_pow_eq_smul_sub_smul_one_fin_two A n
+  exact ⟨a, by rw [h, discr_smul_sub_smul_one_fin_two]⟩
 
 end CommRing
 
@@ -132,6 +178,50 @@ theorem isElliptic_iff_abs_trace_lt_two {A : Matrix (Fin 2) (Fin 2) R} (hdet : A
     A.IsElliptic ↔ |A.trace| < 2 := by
   rw [IsElliptic, discr_fin_two, hdet, mul_one, sub_neg, show (4 : R) = 2 ^ 2 by norm_num,
     sq_lt_sq, abs_two]
+
+/-- If a `2 × 2` matrix of determinant one has trace of absolute value at most `2`, then so does
+every power of it. -/
+theorem abs_trace_pow_le_two {A : Matrix (Fin 2) (Fin 2) R} (hdet : A.det = 1)
+    (htr : |A.trace| ≤ 2) (n : ℕ) : |(A ^ n).trace| ≤ 2 := by
+  obtain ⟨a, ha⟩ := exists_discr_pow_eq_sq_mul_fin_two A n
+  rw [discr_fin_two, discr_fin_two, det_pow, hdet, one_pow] at ha
+  have hA : A.trace ^ 2 ≤ 2 ^ 2 := sq_le_sq.2 (by rwa [abs_two])
+  have hle : (A ^ n).trace ^ 2 ≤ 2 ^ 2 := by nlinarith [sq_nonneg a]
+  simpa using sq_le_sq.1 hle
+
+/-- If a `2 × 2` matrix `A` of determinant one has trace greater than `2`, then
+`det (1 - A ^ n) < 0` for every `n ≠ 0`. -/
+theorem det_one_sub_pow_neg_of_two_lt_trace {A : Matrix (Fin 2) (Fin 2) R} (hdet : A.det = 1)
+    (htr : 2 < A.trace) {n : ℕ} (hn : n ≠ 0) : (1 - A ^ n).det < 0 := by
+  rw [TauCeti.Matrix.det_one_sub_fin_two, det_pow, hdet, one_pow]
+  linarith [two_lt_trace_pow hdet htr hn]
+
+/-- If a `2 × 2` matrix `A` of determinant one has trace less than `-2`, then
+`det (1 - A ^ n) < 0` for every even `n ≠ 0`. -/
+theorem det_one_sub_pow_neg_of_trace_lt_neg_two {A : Matrix (Fin 2) (Fin 2) R}
+    (hdet : A.det = 1) (htr : A.trace < -2) {n : ℕ} (hn : Even n) (hn₀ : n ≠ 0) :
+    (1 - A ^ n).det < 0 := by
+  rw [← hn.neg_pow]
+  exact det_one_sub_pow_neg_of_two_lt_trace (by simp [det_neg, hdet])
+    (by rw [trace_neg]; linarith) hn₀
+
+/-- If a `2 × 2` matrix `A` of determinant one has trace less than `-2`, then
+`0 < det (1 - A ^ n)` for every odd `n`. -/
+theorem det_one_sub_pow_pos_of_trace_lt_neg_two {A : Matrix (Fin 2) (Fin 2) R}
+    (hdet : A.det = 1) (htr : A.trace < -2) {n : ℕ} (hn : Odd n) : 0 < (1 - A ^ n).det := by
+  -- `A ^ n = -(-A) ^ n`, and the trace of `(-A) ^ n` is greater than `2`.
+  have h := two_lt_trace_pow (A := -A) (by simp [det_neg, hdet]) (by rw [trace_neg]; linarith)
+    (n := n) (by rintro rfl; simp at hn)
+  rw [hn.neg_pow, trace_neg] at h
+  rw [TauCeti.Matrix.det_one_sub_fin_two, det_pow, hdet, one_pow]
+  linarith
+
+/-- If a `2 × 2` matrix `A` of determinant one has trace of absolute value at most `2`, then
+`0 ≤ det (1 - A ^ n)` for every `n`. -/
+theorem det_one_sub_pow_nonneg_of_abs_trace_le_two {A : Matrix (Fin 2) (Fin 2) R}
+    (hdet : A.det = 1) (htr : |A.trace| ≤ 2) (n : ℕ) : 0 ≤ (1 - A ^ n).det := by
+  rw [TauCeti.Matrix.det_one_sub_fin_two, det_pow, hdet, one_pow]
+  linarith [(abs_le.1 (abs_trace_pow_le_two hdet htr n)).2]
 
 end Ordered
 
