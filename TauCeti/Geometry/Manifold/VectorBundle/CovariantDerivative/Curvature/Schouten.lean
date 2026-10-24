@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar
+import TauCeti.Geometry.Manifold.IsManifold.Basic
 
 /-!
 # The Schouten tensor of a smooth connection
@@ -32,6 +33,8 @@ zero and returns `0`.
 * `CovariantDerivative.ricciTensor_eq_smul_schoutenTensor_add`: `Ric = (n - 2) P + (tr_g P) g`.
 * `CovariantDerivative.schoutenTensor_eq_of_curvatureTensor_eq_smul_inner_sub`: constant
   curvature `κ` gives `P = (κ / 2) g`.
+* `CovariantDerivative.mdifferentiableAt_schoutenTensor_apply`: for a smooth metric, `P` pairs
+  differentiable vector fields to differentiable functions.
 
 ## References
 
@@ -143,5 +146,17 @@ theorem schoutenTensor_eq_of_curvatureTensor_eq_smul_inner_sub (x : M) (k : ℝ)
   simp only [LinearMap.smul_apply, innerₗ_apply_apply, smul_eq_mul]
   field_simp
   ring
+
+/-- For a smooth metric, the Schouten tensor of a smooth connection pairs two vector fields
+differentiable at `x` to a function differentiable at `x`. -/
+theorem mdifferentiableAt_schoutenTensor_apply
+    [IsContMDiffRiemannianBundle I ∞ E (TangentSpace I : M → Type _)]
+    {σ τ : Π x : M, TangentSpace I x} {x : M} (hσ : MDiffAt (T% σ) x) (hτ : MDiffAt (T% τ) x) :
+    MDiffAt (fun y ↦ cov.schoutenTensor y (σ y) (τ y)) x := by
+  simp only [schoutenTensor_apply, TauCeti.finrank_tangentSpace, div_eq_mul_inv]
+  have hS : MDiffAt cov.scalarCurvature x :=
+    cov.contMDiff_scalarCurvature.mdifferentiableAt (by simp)
+  exact mdifferentiableAt_const.mul ((cov.mdifferentiableAt_ricciTensor_apply hσ hτ).sub
+    ((hS.mul mdifferentiableAt_const).mul (TauCeti.Manifold.mdifferentiableAt_inner hσ hτ)))
 
 end CovariantDerivative
