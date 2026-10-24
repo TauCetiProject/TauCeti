@@ -177,18 +177,21 @@ end SmoothingEquiv
 
 /-- Marks of a disjoint union decompose into the marks of the two summands. -/
 def disjointUnionMarkEquiv (D : PDCode n) (E : PDCode m) :
-    (D.disjointUnion E).Mark ≃ D.Mark ⊕ E.Mark :=
-  (((Quotient.congr (disjointUnionHalfEdgeEquiv n m).symm fun x y ↦ by
-    change (D.disjointUnion E).edgePair.val.SameCycle x y ↔
-      (Perm.sumCongr D.edgePair.val E.edgePair.val).SameCycle
-        ((disjointUnionHalfEdgeEquiv n m).symm x)
-        ((disjointUnionHalfEdgeEquiv n m).symm y)
-    rw [D.disjointUnion_edgePair_val E]
-    exact sameCycle_permCongr_iff (Perm.sumCongr D.edgePair.val E.edgePair.val)
-      (disjointUnionHalfEdgeEquiv n m))).trans
-      (sameCycleQuotientSumCongrEquiv D.edgePair.val E.edgePair.val)).sumCongr
-        ((finCongr (D.disjointUnion_crossinglessComponentCount E)).trans
-          finSumFinEquiv.symm)).trans (sumSumSumComm _ _ _ _)
+    (D.disjointUnion E).Mark ≃ D.Mark ⊕ E.Mark := by
+  -- Specify both orbit relations before composing with the quotient decomposition.
+  let arcs : Quotient (SameCycle.setoid (D.disjointUnion E).edgePair.val) ≃
+      Quotient (SameCycle.setoid (Perm.sumCongr D.edgePair.val E.edgePair.val)) :=
+    Quotient.congr (disjointUnionHalfEdgeEquiv n m).symm fun x y ↦ by
+      change (D.disjointUnion E).edgePair.val.SameCycle x y ↔
+        (Perm.sumCongr D.edgePair.val E.edgePair.val).SameCycle
+          ((disjointUnionHalfEdgeEquiv n m).symm x)
+          ((disjointUnionHalfEdgeEquiv n m).symm y)
+      rw [D.disjointUnion_edgePair_val E]
+      exact sameCycle_permCongr_iff (Perm.sumCongr D.edgePair.val E.edgePair.val)
+        (disjointUnionHalfEdgeEquiv n m)
+  exact ((arcs.trans (sameCycleQuotientSumCongrEquiv D.edgePair.val E.edgePair.val)).sumCongr
+    ((finCongr (D.disjointUnion_crossinglessComponentCount E)).trans finSumFinEquiv.symm)).trans
+    (sumSumSumComm _ _ _ _)
 
 namespace Mark
 
