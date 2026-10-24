@@ -78,6 +78,8 @@ locally flat embedded discs are the objects used to define topological sliceness
 * `TauCeti.IsSliceEmbedding.transHomeomorph`: invariance under a homeomorphic change of model
   space, and `TauCeti.IsLocallyFlat.transHomeomorph`, its form for the complementary model of a
   locally flat embedding.
+* `TauCeti.IsLocallyFlat.transIsOpenEmbedding`: an open embedding of the tangential model into
+  another space carries local flatness along.
 * `TauCeti.IsLocallyFlat.comp`: a composite of locally flat embeddings is locally flat, under an
   explicit hypothesis that their flattening charts can be chosen compatibly, and
   `TauCeti.IsLocallyFlat.of_compatible_isSliceChart`, the form of it that assumes only the
@@ -628,6 +630,23 @@ theorem transHomeomorph {F'' : Type*} [TopologicalSpace F''] [Zero F''] (h : IsL
     simp [he, eq_comm]
   have h' := IsSliceEmbedding.transHomeomorph h ((Homeomorph.refl F).prodCongr e)
   rwa [hS] at h'
+
+/-- Local flatness is preserved by an open embedding `e : F → G` of the tangential model into
+another space: the flattening charts, composed with `e × id`, take values in `G × F'` and still
+carry the image onto the standard slice. For instance a locally flat embedding modelled on `ℝⁿ` is
+one modelled on a half-space, which contains a copy of `ℝⁿ` as an open subset. -/
+theorem transIsOpenEmbedding {G : Type*} [TopologicalSpace G] (h : IsLocallyFlat F F' f)
+    {e : F → G} (he : IsOpenEmbedding e) : IsLocallyFlat G F' f := by
+  refine ⟨h.isEmbedding, fun x => ?_⟩
+  obtain ⟨φ, hφx, hφ⟩ := h.exists_isSliceChart x
+  have : Nonempty (F × F') := ⟨φ (f x)⟩
+  have he' : IsOpenEmbedding (Prod.map e (id : F' → F')) := he.prodMap .id
+  refine ⟨φ.trans (he'.toOpenPartialHomeomorph _), by simpa using hφx,
+    isSliceChart_iff.2 fun y hy => ?_⟩
+  rw [OpenPartialHomeomorph.trans_source] at hy
+  rw [OpenPartialHomeomorph.trans_apply, hφ.mem_iff hy.1,
+    IsOpenEmbedding.toOpenPartialHomeomorph_apply]
+  simp
 
 /-- The general form of `TauCeti.IsLocallyFlat.comp`: what makes a composite locally flat is a
 compatible pair of charts around each point of the domain, and nothing else. It asks for a chart
