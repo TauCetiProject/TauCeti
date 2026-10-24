@@ -23,7 +23,7 @@ have positive determinant sign, while the untwisted operator and the operator tw
 `γ` compare with `det (1 - P)` and `det (1 + P)`. The four-twist label `(σ, i)` of Taubes's
 weighted count that these signs prescribe has `σ` the sign of `det (1 - P)`, and `i` equal to `1`
 or `0` according as `det (1 + P)` is negative or not. Since `det (1 ∓ P) = 2 ∓ trace P`, a
-nondegenerate return map falls into one of three classes:
+return map all of whose iterates are nondegenerate falls into one of three classes:
 
 * positive hyperbolic (`2 < trace P`), with label `(-, 0)` and local series `1 - t`;
 * negative hyperbolic (`trace P < -2`), with label `(+, 1)` and local series `1 + t`;
@@ -93,9 +93,9 @@ theorem X_mul_derivative_torusWeightSeries_false_zero_of_two_lt_trace (hdet : P.
   have hX : (mk fun k ↦ if k = 0 then 0 else -1 : ℤ⟦X⟧) = -(X * mk 1) := by
     ext (_ | k) <;> simp [coeff_succ_X_mul]
   -- Both sides are `-X`, as `(1 - X) * mk 1 = 1`.
-  rw [hS, hX, torusWeightSeries_false_zero, map_sub, derivative_one, derivative_X, mul_neg,
-    mul_left_comm, mul_comm (1 - X), mk_one_mul_one_sub_eq_one]
-  ring
+  rw [hS, hX, torusWeightSeries_false_zero]
+  simp only [map_sub, derivative_one, derivative_X]
+  linear_combination X * mk_one_mul_one_sub_eq_one (S := ℤ)
 
 /-- For a negative hyperbolic `2 × 2` matrix `P` of determinant one (`trace P < -2`), the local
 series `f_(+, 1) = 1 + t` satisfies `t f' = f ∑_{k ≥ 1} sgn det (1 - P ^ k) t ^ k`: the sign of
@@ -115,14 +115,13 @@ theorem X_mul_derivative_torusWeightSeries_true_one_of_trace_lt_neg_two (hdet : 
         he.add_one.neg_one_pow]
     · simp [sign_pos (det_one_sub_pow_pos_of_trace_lt_neg_two hdet htr ho),
         ho.add_one.neg_one_pow]
-  -- Both sides are `X`: the coefficients of `(1 + X) * ∑ (-1) ^ (k + 1) X ^ k` cancel in pairs.
-  rw [hS, torusWeightSeries_true_one, map_add, derivative_one, derivative_X, zero_add, mul_one,
-    add_mul, one_mul]
-  ext (_ | _ | k)
-  · simp
-  · simp
-  · rw [map_add, coeff_succ_X_mul, coeff_mk, coeff_mk, coeff_X]
-    simp [pow_succ]
+  have hX : (mk fun k ↦ if k = 0 then 0 else (-1) ^ (k + 1) : ℤ⟦X⟧) =
+      X * mk fun k ↦ (-1) ^ k := by
+    ext (_ | k) <;> simp [coeff_succ_X_mul, pow_succ]
+  -- Both sides are `X`, as `(mk fun k ↦ (-1) ^ k) * (1 + X) = 1`.
+  rw [hS, hX, torusWeightSeries_true_one]
+  simp only [map_add, derivative_one, derivative_X]
+  linear_combination (-X) * mk_neg_one_pow_mul_one_add_eq_one (S := ℤ)
 
 /-- For a `2 × 2` matrix `P` of determinant one with `|trace P| ≤ 2`, all of whose iterates are
 nondegenerate (so that `P` is elliptic), the local series `f_(+, 0) = 1 / (1 - t)` satisfies

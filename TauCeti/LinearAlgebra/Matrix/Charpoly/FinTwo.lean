@@ -41,7 +41,9 @@ middle coefficient `-M.trace` and constant coefficient `1`, so its discriminant 
 ## Provenance
 
 Ported from the AINTLIB `HasseWeil` project (Apache-2.0), revision `513e83879e2f`, file
-`HasseWeil/WeilPairing/MatrixDet.lean`, declaration `det_smul_sub_smul_one_fin_two`.
+`HasseWeil/WeilPairing/MatrixDet.lean`, declarations `det_smul_sub_smul_one_fin_two` and
+`det_one_sub_fin_two` (here `Matrix.det_one_sub_fin_two`). Its `+` companion
+`Matrix.det_one_add_fin_two` is adapted from the same source.
 
 The source's `det_smul_sub_smul_one_fin_two_of`, which rewrites the identity under hypotheses
 `M.det = q` and `M.trace = t`, is deliberately not ported: it is a one-line consequence better

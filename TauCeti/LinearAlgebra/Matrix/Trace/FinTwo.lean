@@ -117,8 +117,8 @@ theorem exists_pow_eq_smul_sub_smul_one_fin_two (A : Matrix (Fin 2) (Fin 2) R) (
 /-- The discriminant of the `2 × 2` matrix `a • A - b • 1` is `a ^ 2` times that of `A`. -/
 theorem discr_smul_sub_smul_one_fin_two (A : Matrix (Fin 2) (Fin 2) R) (a b : R) :
     (a • A - b • 1).discr = a ^ 2 * A.discr := by
-  rw [discr_fin_two, discr_fin_two, TauCeti.Matrix.det_smul_sub_smul_one_fin_two, trace_sub,
-    trace_smul, trace_smul, trace_one, Fintype.card_fin, smul_eq_mul, smul_eq_mul]
+  simp only [discr_fin_two, TauCeti.Matrix.det_smul_sub_smul_one_fin_two, trace_sub, trace_smul,
+    trace_one, Fintype.card_fin, smul_eq_mul]
   push_cast
   ring
 
