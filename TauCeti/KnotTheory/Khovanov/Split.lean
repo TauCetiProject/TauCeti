@@ -203,6 +203,16 @@ section Square
 
 variable {ρ : Type*} [Fintype ρ] [DecidableEq σ]
 
+/-- **Splitting along a surjection is multiplication by the split of `1`.** By the projection
+formula, splitting `x` along a surjection `f` multiplies the split of `1` by `x`, transported to the
+split circles by merging along a section of `f`. -/
+theorem fiberwiseSplit_eq_fiberwiseMul_surjInv_mul [DecidableEq ρ] {f : ρ → σ}
+    (hf : Function.Surjective f) (x : CircleTensor R σ) :
+    fiberwiseSplit f x =
+      fiberwiseMul (A := fun _ ↦ R[ε]) (Function.surjInv hf) x * fiberwiseSplit f 1 := by
+  conv_lhs => rw [← fiberwiseMul_fiberwiseMul_surjInv hf x, ← mul_one (fiberwiseMul f _)]
+  exact fiberwiseSplit_fiberwiseMul_mul f _ 1
+
 /-- **Splitting and then merging along a factorization.** Split along a surjection `f` and then
 merge along `g = h ∘ f`, which merges every circle split off by `f` back together. The result is
 multiplication by the merge of the split of `1`, after merging along `h`. -/
@@ -212,10 +222,10 @@ theorem fiberwiseMul_fiberwiseSplit [DecidableEq υ] {f : ρ → σ} (hf : Funct
       fiberwiseMul (A := fun _ ↦ R[ε]) h x *
         fiberwiseMul (A := fun _ ↦ R[ε]) g (fiberwiseSplit f 1) := by
   classical
-  subst hgh
-  conv_lhs => rw [← fiberwiseMul_fiberwiseMul_surjInv hf x, ← mul_one (fiberwiseMul f _),
-    fiberwiseSplit_fiberwiseMul_mul, map_mul, ← AlgHom.comp_apply, fiberwiseMul_comp,
-    Function.comp_assoc, Function.comp_surjInv, Function.comp_id]
+  have hsec : g ∘ Function.surjInv hf = h := by
+    rw [← hgh, Function.comp_assoc, Function.comp_surjInv, Function.comp_id]
+  rw [fiberwiseSplit_eq_fiberwiseMul_surjInv_mul hf, map_mul, ← AlgHom.comp_apply,
+    fiberwiseMul_comp, hsec]
 
 /-- **The Frobenius relation for a commuting square of circle correspondences.** Let
 `f ∘ f' = g ∘ g'`, with `f'` surjective, and suppose that splitting `1` along `f'` and merging
@@ -232,12 +242,10 @@ theorem fiberwiseSplit_fiberwiseMul_of_comp_eq [Fintype υ] [DecidableEq υ] {f'
   have hf : f = g ∘ (g' ∘ Function.surjInv hf') := by
     rw [← Function.comp_assoc, ← hcomm, Function.comp_assoc, Function.comp_surjInv,
       Function.comp_id]
-  have hrhs : fiberwiseMul (A := fun _ ↦ R[ε]) g' (fiberwiseSplit f' x) =
-      fiberwiseMul (A := fun _ ↦ R[ε]) (g' ∘ Function.surjInv hf') x * fiberwiseSplit g 1 := by
-    conv_lhs => rw [← fiberwiseMul_fiberwiseMul_surjInv hf' x, ← mul_one (fiberwiseMul f' _),
-      fiberwiseSplit_fiberwiseMul_mul, map_mul, hone, ← AlgHom.comp_apply, fiberwiseMul_comp]
-  rw [hrhs, hf, ← fiberwiseMul_comp, AlgHom.comp_apply, ← mul_one (fiberwiseMul g _),
-    fiberwiseSplit_fiberwiseMul_mul]
+  rw [fiberwiseSplit_eq_fiberwiseMul_surjInv_mul hf', map_mul, hone, ← AlgHom.comp_apply,
+    fiberwiseMul_comp]
+  -- Merging along `f` factors through `g`, so the projection formula for `g` applies.
+  rw [hf, ← fiberwiseMul_comp, AlgHom.comp_apply, ← fiberwiseSplit_fiberwiseMul_mul, mul_one]
 
 end Square
 
