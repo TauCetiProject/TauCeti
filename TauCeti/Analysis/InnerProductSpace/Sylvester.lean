@@ -28,7 +28,10 @@ semidefinite form `‖X‖² ⟪·, ·⟫ - ⟪X ·, X ·⟫`
 to `‖X‖² re ⟪B v, v⟫`.
 
 When `A` is symmetric, the equation diagonalises on eigenvectors: if `A u = α u` and `B v = β v`
-with `α, β` real, then `⟪u, (A X - X B) v⟫ = (α - β) ⟪u, X v⟫`. In finite dimension, choosing
+with `α` real and `β : 𝕜`, then `⟪u, (A X - X B) v⟫ = (α - β) ⟪u, X v⟫`. Only `E` needs an
+inner product for this identity. Dually, when `B` is symmetric, the rank-one operator formed from
+eigenvectors of `A` and `B` has Sylvester eigenvalue `α - β`; here only `F` needs an inner product,
+and `α : 𝕜` may be arbitrary. In finite dimension, choosing
 orthonormal eigenbases `(uᵢ)` of `A` and `(vⱼ)` of `B` turns the equation into the scalar equations
 `(αᵢ - βⱼ) Xᵢⱼ = Cᵢⱼ` on the matrix coefficients `Xᵢⱼ = ⟪uᵢ, X vⱼ⟫`. If no eigenvalue of `A` is an
 eigenvalue of `B`, every `αᵢ - βⱼ` is nonzero, so the Sylvester operator is bijective and the
@@ -146,14 +149,14 @@ end Normed
 section Bounds
 
 variable {𝕜 E F : Type*} [RCLike 𝕜]
-  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+  [SeminormedAddCommGroup E] [InnerProductSpace 𝕜 E] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
   {A : E →L[𝕜] E} {B : F →L[𝕜] F}
 
 /-- **The coercivity bound for `A X + X B`.** If the real parts of the quadratic forms of `A` and
 `B` are bounded below by `α` and `β`, then `(α + β) ‖X‖ ≤ ‖A X + X B‖` for every bounded operator
 `X`. Neither symmetry of `A` and `B`, completeness, nor finite dimension is assumed, and `α`, `β`
-may have any sign. For `α = β = δ > 0` this is the Lyapunov bound: every solution of
-`A X + X B = Y` satisfies `‖X‖ ≤ ‖Y‖ / (2 δ)`. -/
+may have any sign. The codomain `E` may be seminormed. For `α = β = δ > 0` this is the Lyapunov
+bound: every solution of `A X + X B = Y` satisfies `‖X‖ ≤ ‖Y‖ / (2 δ)`. -/
 theorem add_mul_norm_le_norm_comp_add_comp {α β : ℝ}
     (hA : ∀ x, α * ‖x‖ ^ 2 ≤ RCLike.re ⟪A x, x⟫_𝕜) (hB : ∀ y, β * ‖y‖ ^ 2 ≤ RCLike.re ⟪B y, y⟫_𝕜)
     (X : F →L[𝕜] E) : (α + β) * ‖X‖ ≤ ‖A ∘L X + X ∘L B‖ := by
@@ -223,41 +226,51 @@ theorem mul_norm_le_norm_sylvester_apply_of_re_inner_le_of_le_re_inner {c g : �
     g * ‖X‖ ≤ ‖A.sylvester B X‖ := by
   have hA' (x : E) : -c * ‖x‖ ^ 2 ≤ RCLike.re ⟪(-A) x, x⟫_𝕜 := by
     simpa [inner_neg_left] using hA x
-  have := add_mul_norm_le_norm_comp_add_comp hA' hB X
-  rwa [neg_add_cancel_left, show (-A) ∘L X + X ∘L B = -A.sylvester B X by
-    rw [sylvester_apply, neg_comp]; abel, norm_neg] at this
+  calc
+    g * ‖X‖ ≤ ‖(-A) ∘L X + X ∘L B‖ := by
+      simpa only [neg_add_cancel_left] using add_mul_norm_le_norm_comp_add_comp hA' hB X
+    _ = ‖A.sylvester B X‖ := by
+      rw [sylvester_apply, neg_comp, neg_add_eq_sub, norm_sub_rev]
 
 end Bounds
 
-section InnerProduct
+section Eigenvectors
 
 variable {𝕜 E F : Type*} [RCLike 𝕜]
-  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
-  {A : E →L[𝕜] E} {B : F →L[𝕜] F}
+  [SeminormedAddCommGroup E] [SeminormedAddCommGroup F]
 
 /-- **The Sylvester equation on eigenvectors.** If `A` is symmetric, `A u = α u` and `B v = β v`
-with `α, β` real, then the coefficient of `A X - X B` between `v` and `u` is `α - β` times that of
-`X`. Only the eigenvector `u` of `A` uses symmetry. -/
-theorem inner_sylvester_apply_of_apply_eq_smul (hA : (A : E →ₗ[𝕜] E).IsSymmetric)
-    (X : F →L[𝕜] E) {α β : ℝ} {u : E} {v : F} (hu : A u = (α : 𝕜) • u)
-    (hv : B v = (β : 𝕜) • v) :
-    ⟪u, A.sylvester B X v⟫_𝕜 = ((α - β : ℝ) : 𝕜) * ⟪u, X v⟫_𝕜 := by
+with `α` real and `β : 𝕜`, then the coefficient of `A X - X B` between `v` and `u` is `α - β`
+times that of `X`. Only the space containing `u` needs an inner product. -/
+theorem inner_sylvester_apply_of_apply_eq_smul [InnerProductSpace 𝕜 E] [NormedSpace 𝕜 F]
+    {A : E →L[𝕜] E} {B : F →L[𝕜] F} (hA : (A : E →ₗ[𝕜] E).IsSymmetric)
+    (X : F →L[𝕜] E) {α : ℝ} {β : 𝕜} {u : E} {v : F} (hu : A u = (α : 𝕜) • u)
+    (hv : B v = β • v) :
+    ⟪u, A.sylvester B X v⟫_𝕜 = ((α : 𝕜) - β) * ⟪u, X v⟫_𝕜 := by
   have hAu : ⟪u, A (X v)⟫_𝕜 = (α : 𝕜) * ⟪u, X v⟫_𝕜 := by
-    rw [← coe_coe A, ← hA u (X v), coe_coe, hu, inner_smul_left, RCLike.conj_ofReal]
+    rw [← hA.apply_clm u (X v), hu, inner_smul_left, RCLike.conj_ofReal]
   simp [hAu, hv, inner_sub_right, inner_smul_right, sub_mul]
 
 /-- **The Sylvester operator on rank-one operators.** If `B` is symmetric, `A u = α u` and
-`B v = β v` with `α, β` real, then the Sylvester operator acts on `rankOne 𝕜 u v : x ↦ ⟪v, x⟫ u` as
-the scalar `α - β`. Only the eigenvector `v` of `B` uses symmetry. -/
-theorem sylvester_rankOne_of_apply_eq_smul (hB : (B : F →ₗ[𝕜] F).IsSymmetric) {α β : ℝ} {u : E}
-    {v : F} (hu : A u = (α : 𝕜) • u) (hv : B v = (β : 𝕜) • v) :
-    A.sylvester B (rankOne 𝕜 u v) = ((α - β : ℝ) : 𝕜) • rankOne 𝕜 u v := by
+`B v = β v` with `α : 𝕜` and `β` real, then the Sylvester operator acts on
+`rankOne 𝕜 u v : x ↦ ⟪v, x⟫ u` as the scalar `α - β`. Only the space containing `v` needs an
+inner product. -/
+theorem sylvester_rankOne_of_apply_eq_smul [NormedSpace 𝕜 E] [InnerProductSpace 𝕜 F]
+    {A : E →L[𝕜] E} {B : F →L[𝕜] F} (hB : (B : F →ₗ[𝕜] F).IsSymmetric) {α : 𝕜} {β : ℝ}
+    {u : E} {v : F} (hu : A u = α • u) (hv : B v = (β : 𝕜) • v) :
+    A.sylvester B (rankOne 𝕜 u v) = (α - (β : 𝕜)) • rankOne 𝕜 u v := by
   ext x
   have hBv : ⟪v, B x⟫_𝕜 = (β : 𝕜) * ⟪v, x⟫_𝕜 := by
-    rw [← coe_coe B, ← hB v x, coe_coe, hv, inner_smul_left, RCLike.conj_ofReal]
+    rw [← hB.apply_clm v x, hv, inner_smul_left, RCLike.conj_ofReal]
   simp [hu, hBv, smul_smul, sub_smul, mul_comm]
 
-variable [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 F] {n m : ℕ}
+end Eigenvectors
+
+section FiniteDimensional
+
+variable {𝕜 E F : Type*} [RCLike 𝕜]
+  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+  {A : E →L[𝕜] E} {B : F →L[𝕜] F} [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 F] {n m : ℕ}
 
 /-- **The Sylvester equation in eigenbases.** For symmetric `A` and `B` with ordered orthonormal
 eigenbases `(uᵢ)`, `(vⱼ)` and eigenvalues `(αᵢ)`, `(βⱼ)`, the matrix coefficients of
@@ -267,9 +280,10 @@ theorem inner_sylvester_apply_eigenvectorBasis (hA : (A : E →ₗ[𝕜] E).IsSy
     (X : F →L[𝕜] E) (i : Fin n) (j : Fin m) :
     ⟪hA.eigenvectorBasis hn i, A.sylvester B X (hB.eigenvectorBasis hm j)⟫_𝕜 =
       ((hA.eigenvalues hn i - hB.eigenvalues hm j : ℝ) : 𝕜) *
-        ⟪hA.eigenvectorBasis hn i, X (hB.eigenvectorBasis hm j)⟫_𝕜 :=
-  inner_sylvester_apply_of_apply_eq_smul hA X (hA.apply_eigenvectorBasis hn i)
-    (hB.apply_eigenvectorBasis hm j)
+        ⟪hA.eigenvectorBasis hn i, X (hB.eigenvectorBasis hm j)⟫_𝕜 := by
+  simpa only [RCLike.ofReal_sub] using
+    inner_sylvester_apply_of_apply_eq_smul hA X (hA.apply_eigenvectorBasis hn i)
+      (hB.apply_eigenvectorBasis hm j)
 
 /-- **Uniqueness for the Sylvester equation.** In finite dimension, if `A` and `B` are symmetric and
 no real eigenvalue of `A` is an eigenvalue of `B`, the Sylvester operator `X ↦ A X - X B` is
@@ -308,8 +322,8 @@ theorem sylvester_sum_eigenvectorBasis (hA : (A : E →ₗ[𝕜] E).IsSymmetric)
   refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
   have hij := sub_ne_zero.mpr (hA.eigenvalues_ne_eigenvalues_of_disjoint hB hn hm h i j)
   rw [sylvester_rankOne_of_apply_eq_smul hB (hA.apply_eigenvectorBasis hn i)
-    (hB.apply_eigenvectorBasis hm j), smul_smul, mul_right_comm, ← RCLike.ofReal_mul,
-    inv_mul_cancel₀ hij, RCLike.ofReal_one, one_mul]
+    (hB.apply_eigenvectorBasis hm j), ← RCLike.ofReal_sub, smul_smul, mul_right_comm,
+    ← RCLike.ofReal_mul, inv_mul_cancel₀ hij, RCLike.ofReal_one, one_mul]
 
 /-- **Bijectivity of the Sylvester operator.** In finite dimension, if `A` and `B` are symmetric
 and no real eigenvalue of `A` is an eigenvalue of `B`, then for every `C` the Sylvester equation
@@ -339,6 +353,6 @@ theorem sylvester_apply_eq_iff (hA : (A : E →ₗ[𝕜] E).IsSymmetric) (hB : (
   · rintro rfl
     exact sylvester_sum_eigenvectorBasis hA hB hn hm h C
 
-end InnerProduct
+end FiniteDimensional
 
 end ContinuousLinearMap
