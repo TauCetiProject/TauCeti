@@ -103,7 +103,7 @@ variable {R H : Type*} [CommRing R] [CommRing H] [HopfAlgebra R H]
 
 /-- Conjugation preserves local nilpotence of the invariant field of a tangent vector.
 The tangent vector is transported by the differential of the actual conjugation map. -/
-theorem exists_iterate_leftInvariantDerivation_pointConjugation
+theorem exists_iterate_leftInvariantDerivation_eq_zero_pointConjugation
     (g : WithConv (H →ₐ[R] R)) (d : Derivation R H (CounitAlgebra R H R))
     (hd : ∀ x, ∃ n, (leftInvariantDerivation d)^[n] x = 0) :
     ∀ x, ∃ n, (leftInvariantDerivation
@@ -119,7 +119,7 @@ theorem expPointAt_pointConjugation (g : WithConv (H →ₐ[R] R))
     (hd : ∀ x, ∃ n, (leftInvariantDerivation d)^[n] x = 0)
     {B : Type*} [CommRing B] [Algebra R B] (t : B) :
     expPointAt (derivationComp (pointConjugationBialgEquiv g).toBialgHom d)
-        (exists_iterate_leftInvariantDerivation_pointConjugation g d hd) t =
+        (exists_iterate_leftInvariantDerivation_eq_zero_pointConjugation g d hd) t =
       AlgHom.mapValue (Algebra.ofId R B) g * expPointAt d hd t *
         (AlgHom.mapValue (Algebra.ofId R B) g)⁻¹ := by
   rw [← BialgHom.mapDomain_expPointAt,
