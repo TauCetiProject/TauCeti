@@ -10,12 +10,12 @@ public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Transvection
 /-!
 # Two upper-unipotent charts of `SL₂`
 
-The first-column map has sections `sₐ = [[a, 0], [c, a⁻¹]]` when `a` is a unit and
-`s꜀ = [[a, -c⁻¹], [c, 0]]` when `c` is a unit. Right multiplication by
+The first-column map has sections `s_a = [[a, 0], [c, a⁻¹]]` when `a` is a unit and
+`s_c = [[a, -c⁻¹], [c, 0]]` when `c` is a unit. Right multiplication by
 `n(t) = [[1, t], [0, 1]]` gives mutually inverse parameterizations of the corresponding
 matrix charts, over every commutative ring. Their fiber coordinates are `a⁻¹b` and `c⁻¹d`.
 On the overlap the sections differ by `n(-a⁻¹c⁻¹)` and the fiber coordinates satisfy
-`u꜀ = uₐ + a⁻¹c⁻¹`.
+`u_c = u_a + a⁻¹c⁻¹`.
 
 The formulas commute with changes of rings and intertwine right upper-unipotent translation
 with addition in the fiber coordinate. These are the algebra-valued chart formulas for the
