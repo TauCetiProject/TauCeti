@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 public import TauCeti.Geometry.Manifold.Morse.NormalizedChart
 
@@ -29,14 +28,11 @@ of this can be done, the charts and the width `ε` have to be chosen compatibly:
 
 This file proves that such choices exist when the band `f⁻¹[c - δ, c + δ]` is compact, for every
 `0 < δ`. Each condition persists when `ε` decreases. The charts can moreover be placed inside
-prescribed neighbourhoods of their centres.
+prescribed neighbourhoods of their centres; the disjoint charts themselves come from
+`TauCeti.exists_pairwise_disjoint_normalized_morseCharts`.
 
 ## Main results
 
-* `TauCeti.IsManifoldNondegenerateCriticalPoint.exists_normalized_morseChart_subset`: a
-  normalized Morse chart with source inside a prescribed neighbourhood of the critical point.
-* `TauCeti.exists_pairwise_disjoint_normalized_morseCharts`: normalized Morse charts with pairwise
-  disjoint sources at finitely many nondegenerate critical points of a Hausdorff manifold.
 * `TauCeti.IsMorse.exists_admissible_morseCharts`: the compatible choice of the width `ε` and of
   disjoint normalized Morse charts at all critical points on the level `f⁻¹(c)`.
 
@@ -56,51 +52,6 @@ namespace TauCeti
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless] [TopologicalSpace M]
   [ChartedSpace H M] [IsManifold I ∞ M] {f : M → ℝ} {x : M}
-
-/-- **The normalized Morse lemma in a prescribed neighbourhood.** At a nondegenerate critical
-point `x` of a function `f` which is smooth near `x`, every neighbourhood `U` of `x` contains the
-source of a normalized Morse chart: a partial diffeomorphism `ψ` onto an open subset of
-`EuclideanSpace ℝ (Fin m)`, `m = dim M`, with `ψ x = 0` and
-
-`f y = f x - Σ_{i < λ} (ψ y)ᵢ² + Σ_{i ≥ λ} (ψ y)ᵢ²`
-
-on its whole source, where `λ` is the manifold Morse index of `f` at `x`. -/
-theorem IsManifoldNondegenerateCriticalPoint.exists_normalized_morseChart_subset
-    (hf : ∀ᶠ y in 𝓝 x, ContMDiffAt I 𝓘(ℝ) ∞ f y)
-    (h : IsManifoldNondegenerateCriticalPoint I f x) {U : Set M} (hU : U ∈ 𝓝 x) :
-    ∃ ψ : PartialDiffeomorph I 𝓘(ℝ, EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) M
-        (EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) ∞,
-      x ∈ ψ.source ∧ ψ.source ⊆ U ∧ ψ x = 0 ∧ ∀ y ∈ ψ.source,
-        f y = f x + ∑ i, (if i.val < manifoldMorseIndex I f x then -1 else 1) * ψ y i ^ 2 := by
-  obtain ⟨ψ, hxψ, hψx, hψ⟩ := h.exists_normalized_morseChart hf
-  refine ⟨ψ.restrOpen (interior U) isOpen_interior, ?_, ?_, ?_, fun y hy ↦ ?_⟩
-  · simpa using ⟨hxψ, mem_interior_iff_mem_nhds.2 hU⟩
-  · simpa using inter_subset_right.trans interior_subset
-  · simpa using hψx
-  · simp only [PartialDiffeomorph.restrOpen_source] at hy
-    simpa using hψ y hy.1
-
-/-- **Disjoint normalized Morse charts.** At finitely many nondegenerate critical points of a
-function on a Hausdorff manifold, smooth near each of them, there are normalized Morse charts with
-pairwise disjoint sources, each inside a prescribed neighbourhood of its centre. The charts are
-indexed by the points of the finite set `S`. -/
-theorem exists_pairwise_disjoint_normalized_morseCharts [T2Space M] {S : Set M} (hS : S.Finite)
-    (hf : ∀ x ∈ S, ∀ᶠ y in 𝓝 x, ContMDiffAt I 𝓘(ℝ) ∞ f y)
-    (h : ∀ x ∈ S, IsManifoldNondegenerateCriticalPoint I f x) {U : M → Set M}
-    (hU : ∀ x ∈ S, U x ∈ 𝓝 x) :
-    ∃ ψ : S → PartialDiffeomorph I 𝓘(ℝ, EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) M
-        (EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) ∞,
-      Pairwise (Disjoint on fun p ↦ (ψ p).source) ∧ ∀ p : S,
-        ↑p ∈ (ψ p).source ∧ (ψ p).source ⊆ U p ∧ ψ p p = 0 ∧ ∀ y ∈ (ψ p).source,
-          f y = f p + ∑ i, (if i.val < manifoldMorseIndex I f p then -1 else 1) * ψ p y i ^ 2 := by
-  -- Separate the points of `S` by open sets and choose each chart inside its separating set.
-  obtain ⟨V, hV, hdisj⟩ := hS.t2_separation
-  choose ψ hψ using fun p : S ↦ (h p p.2).exists_normalized_morseChart_subset (hf p p.2)
-    (inter_mem (hU p p.2) ((hV p).2.mem_nhds (hV p).1))
-  refine ⟨ψ, fun p q hpq ↦ ?_, fun p ↦ ⟨(hψ p).1, (hψ p).2.1.trans inter_subset_left,
-    (hψ p).2.2⟩⟩
-  exact (hdisj p.2 q.2 (Subtype.coe_injective.ne hpq)).mono
-    ((hψ p).2.1.trans inter_subset_right) ((hψ q).2.1.trans inter_subset_right)
 
 /-- **Admissible Morse charts at a critical level.** Let `f` be a Morse function on a Hausdorff
 manifold whose band `f⁻¹[c - δ, c + δ]` is compact, for some `0 < δ`. Then there are a width
