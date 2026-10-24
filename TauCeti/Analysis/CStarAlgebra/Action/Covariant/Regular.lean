@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Basic
-public import TauCeti.MeasureTheory.Function.Lp.OperatorMultiplication
+public import TauCeti.MeasureTheory.Function.Lp.Operator.Multiplication
 public import TauCeti.RepresentationTheory.Continuous.LeftRegular
 
 /-!
@@ -83,15 +83,16 @@ variable [IsTopologicalGroup G] [MeasurableSpace G] [BorelSpace G]
 omit [IsLocallyFiniteMeasure μ] in
 /-- Left translation intertwines multiplication by `r ↦ ρ (α_{r⁻¹}(a))` with multiplication by
 `r ↦ ρ (α_{r⁻¹}(α_g(a)))`; this is the covariance of the regular covariant representation. -/
-private theorem leftRegular_mulL2_regularSymbol (g : G) (a : A) (ξ : Lp H 2 μ) :
-    μ.leftRegular ℂ H 2 g ((regularSymbol α ρ a).mulL2 μ ξ) =
-      (regularSymbol α ρ (α g a)).mulL2 μ (μ.leftRegular ℂ H 2 g ξ) := by
-  refine (BoundedContinuousFunction.mulL2_eq_iff.2 ?_).symm
+private theorem leftRegular_mulLp_regularSymbol (g : G) (a : A) (ξ : Lp H 2 μ) :
+    μ.leftRegular ℂ H 2 g ((regularSymbol α ρ a).mulLp μ 2 ENNReal.ofNat_ne_top ξ) =
+      (regularSymbol α ρ (α g a)).mulLp μ 2 ENNReal.ofNat_ne_top (μ.leftRegular ℂ H 2 g ξ) := by
+  refine (BoundedContinuousFunction.mulLp_eq_iff.2 ?_).symm
   -- Both sides are `r ↦ ρ (α_{r⁻¹ g}(a)) (ξ (g⁻¹ r))` almost everywhere.
   have hcomp := (measurePreserving_mul_left μ g⁻¹).quasiMeasurePreserving.ae_eq_comp
-    ((regularSymbol α ρ a).coeFn_mulL2 (μ := μ) ξ)
+    ((regularSymbol α ρ a).coeFn_mulLp (μ := μ) ENNReal.ofNat_ne_top ξ)
   filter_upwards [μ.coeFn_leftRegular (𝕜 := ℂ) 2 g ξ, hcomp,
-    μ.coeFn_leftRegular (𝕜 := ℂ) 2 g ((regularSymbol α ρ a).mulL2 μ ξ)] with r hξ hcomp hL
+    μ.coeFn_leftRegular (𝕜 := ℂ) 2 g ((regularSymbol α ρ a).mulLp μ 2 ENNReal.ofNat_ne_top ξ)]
+    with r hξ hcomp hL
   rw [Function.comp_apply, Function.comp_apply] at hcomp
   rw [hξ, hL, hcomp, regularSymbol_apply, regularSymbol_apply, mul_inv_rev, inv_inv, mul_apply]
 
@@ -107,10 +108,10 @@ def regular : CovariantRepresentation α (Lp H 2 μ) where
   covariance g a ξ := by
     simp only [NonUnitalStarAlgHom.comp_apply, StarAlgHom.coe_toNonUnitalStarAlgHom,
       BoundedContinuousFunction.mulL2StarAlgHom_apply]
-    exact leftRegular_mulL2_regularSymbol α ρ μ g a ξ
+    exact leftRegular_mulLp_regularSymbol α ρ μ g a ξ
 
 private theorem regular_coefficient_apply (a : A) :
-    (regular α ρ μ).coefficient a = (regularSymbol α ρ a).mulL2 μ := by
+    (regular α ρ μ).coefficient a = (regularSymbol α ρ a).mulLp μ 2 ENNReal.ofNat_ne_top := by
   simp only [regular, NonUnitalStarAlgHom.comp_apply, StarAlgHom.coe_toNonUnitalStarAlgHom,
     BoundedContinuousFunction.mulL2StarAlgHom_apply]
 
@@ -125,7 +126,7 @@ theorem regular_group : (regular α ρ μ).group = μ.leftRegular ℂ H 2 :=
 theorem coeFn_regular_coefficient (a : A) (ξ : Lp H 2 μ) :
     (regular α ρ μ).coefficient a ξ =ᵐ[μ] fun r => ρ (α r⁻¹ a) (ξ r) := by
   rw [regular_coefficient_apply]
-  exact (regularSymbol α ρ a).coeFn_mulL2 ξ
+  exact (regularSymbol α ρ a).coeFn_mulLp ENNReal.ofNat_ne_top ξ
 
 variable {α ρ μ} in
 /-- The coefficient representation of the regular covariant representation is determined by its
@@ -134,7 +135,7 @@ pointwise formula: an `L²` class equal almost everywhere to `r ↦ ρ (α_{r⁻
 theorem regular_coefficient_eq_iff {a : A} {ξ η : Lp H 2 μ} :
     (regular α ρ μ).coefficient a ξ = η ↔ (fun r => ρ (α r⁻¹ a) (ξ r)) =ᵐ[μ] η := by
   rw [regular_coefficient_apply]
-  exact BoundedContinuousFunction.mulL2_eq_iff
+  exact BoundedContinuousFunction.mulLp_eq_iff
 
 end CovariantRepresentation
 
