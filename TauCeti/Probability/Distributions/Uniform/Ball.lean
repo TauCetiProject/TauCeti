@@ -12,6 +12,7 @@ import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.MeasureTheory.Integral.OddSymmetric
 import TauCeti.Probability.ConditionalProbability
 import TauCeti.Probability.Distributions.Beta.Cdf
+import TauCeti.Probability.Distributions.Uniform.Basic
 import TauCeti.Probability.Moments.Covariance
 
 /-!
@@ -27,13 +28,14 @@ positive dimension the volume of the ball is `r ^ d * √π ^ d / Γ (d / 2 + 1)
 gives the zero measure.
 
 The law is carried to a uniform law on a ball by translations, nonzero dilations and linear
-isometries. Its mean is the center. The normalized radius `‖X - c‖ / r` has the beta law with
-parameters `d` and `1`, whose cumulative distribution function is `t ^ d` on `[0, 1]`
-(`TauCeti.Probability.cdf_betaMeasure_one_right`) and whose quantile is `u ^ d⁻¹`
-(`TauCeti.Probability.quantile_betaMeasure_one_right`). The direction `(X - c) / ‖X - c‖` is
-uniform on the unit sphere and independent of the radius. Combining invariance under isometries
-with the second moment `E ‖X - c‖ ^ 2 = d r ^ 2 / (d + 2)` of the radius shows that the
-covariance is `r ^ 2 / (d + 2)` times the inner product.
+isometries. For `r ≥ 0` its mean is the center. For `r > 0` and `d ≥ 1` the normalized radius
+`‖X - c‖ / r` has the beta law with parameters `d` and `1`, whose cumulative distribution function
+is `t ^ d` on `[0, 1]` (`TauCeti.Probability.cdf_betaMeasure_one_right`) and whose quantile is
+`u ^ d⁻¹` (`TauCeti.Probability.quantile_betaMeasure_one_right`); under the same hypotheses the
+direction `(X - c) / ‖X - c‖` is uniform on the unit sphere and independent of the radius. For
+`r ≥ 0`, combining invariance under isometries with the second moment
+`E ‖X - c‖ ^ 2 = d r ^ 2 / (d + 2)` of the radius shows that the covariance is `r ^ 2 / (d + 2)`
+times the inner product.
 
 ## Main definitions
 
@@ -44,17 +46,18 @@ covariance is `r ^ 2 / (d + 2)` times the inner product.
 * `TauCeti.Probability.isProbabilityMeasure_uniformBallMeasure_iff`: it is a probability
   measure exactly for nonnegative radius.
 * `TauCeti.Probability.uniformBallMeasure_eq_withDensity`,
-  `TauCeti.Probability.rnDeriv_uniformBallMeasure`: its density against Lebesgue measure.
+  `TauCeti.Probability.rnDeriv_uniformBallMeasure`: for nonzero radius, its density against
+  Lebesgue measure.
 * `TauCeti.Probability.map_const_add_uniformBallMeasure`,
   `TauCeti.Probability.map_const_smul_uniformBallMeasure`,
   `LinearIsometryEquiv.map_uniformBallMeasure`: transport by translations, dilations and
   isometries.
-* `TauCeti.Probability.integral_id_uniformBallMeasure`: the mean is the center.
-* `TauCeti.Probability.map_norm_sub_div_uniformBallMeasure`: the normalized radius has the beta
-  law with parameters `d` and `1`.
-* `TauCeti.Probability.map_sphereDirection_prod_uniformBallMeasure`: direction and normalized
-  radius are independent, uniform on the sphere and beta distributed.
-* `TauCeti.Probability.covarianceBilin_uniformBallMeasure`: the covariance is
+* `TauCeti.Probability.integral_id_uniformBallMeasure`: for `r ≥ 0` the mean is the center.
+* `TauCeti.Probability.map_norm_sub_div_uniformBallMeasure`: for `r > 0` and `d ≥ 1` the
+  normalized radius has the beta law with parameters `d` and `1`.
+* `TauCeti.Probability.map_sphereDirection_prod_uniformBallMeasure`: for `r > 0` and `d ≥ 1`
+  direction and normalized radius are independent, uniform on the sphere and beta distributed.
+* `TauCeti.Probability.covarianceBilin_uniformBallMeasure`: for `r ≥ 0` the covariance is
   `r ^ 2 / (d + 2)` times the inner product.
 
 ## References
@@ -160,10 +163,6 @@ section Density
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {c : E} {r : ℝ}
 
-private lemma measurable_uniformPDF_ball (c : E) (r : ℝ) :
-    Measurable fun x ↦ pdf.uniformPDF (ball c r) x volume :=
-  (measurable_const.smul measurable_const).indicator measurableSet_ball
-
 /-- For nonzero radius the uniform law on a ball is Lebesgue measure weighted by Mathlib's uniform
 density on the ball. -/
 theorem uniformBallMeasure_eq_withDensity (hr : r ≠ 0) :
@@ -179,7 +178,7 @@ theorem rnDeriv_uniformBallMeasure (hr : r ≠ 0) :
     (uniformBallMeasure c r).rnDeriv volume
       =ᵐ[volume] fun x ↦ pdf.uniformPDF (ball c r) x volume := by
   rw [uniformBallMeasure_eq_withDensity hr]
-  exact Measure.rnDeriv_withDensity volume (measurable_uniformPDF_ball c r)
+  exact Measure.rnDeriv_withDensity volume (measurable_uniformPDF measurableSet_ball volume)
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → E}
 
@@ -192,7 +191,7 @@ theorem isUniform_of_hasLaw_uniformBallMeasure (hr : r ≠ 0)
 /-- For nonzero radius a random vector with the uniform law on a ball has a density. -/
 theorem hasPDF_of_hasLaw_uniformBallMeasure (hr : r ≠ 0)
     (hX : HasLaw X (uniformBallMeasure c r) P) : HasPDF X P :=
-  hasPDF_of_hasLaw_withDensity (measurable_uniformPDF_ball c r).aemeasurable
+  hasPDF_of_hasLaw_withDensity (measurable_uniformPDF measurableSet_ball volume).aemeasurable
     (by rwa [uniformBallMeasure_eq_withDensity hr] at hX)
 
 end Density
