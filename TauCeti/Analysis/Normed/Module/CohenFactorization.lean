@@ -161,7 +161,8 @@ private lemma exists_step (L : A →L[𝕜] E →L[𝕜] E) (hL : ∀ a b z, L (
     congr 1
     ext
     · simp
-    · simp [smul_sub, mul_smul, smul_mul_assoc]
+    · simp only [sub_eq_add_neg, snd_add, snd_neg, snd_mul, snd_one, snd_inl, snd_inr, fst_add,
+        fst_neg, fst_one, fst_inl, fst_inr, zero_add, add_zero, neg_neg, smul_mul_assoc]
       module
   have hw : ‖w‖ ≤ 1 / 2 := by
     simp only [w, unitization_norm_def, Unitization.fst_add, Unitization.fst_inl,
@@ -182,15 +183,14 @@ private lemma exists_step (L : A →L[𝕜] E →L[𝕜] E) (hL : ∀ a b z, L (
     simp only [a', a, hι, ← map_sub]
     congr 1
     ext
-    · simp
+    · simp only [sub_eq_add_neg, fst_add, fst_neg, fst_smul, fst_one, fst_inl, fst_inr, smul_eq_mul]
       ring
     · simp
   have hincr : Φ (Ring.inverse a') x - y = Φ (Ring.inverse a') ((τ * s) • (y - L e y)) := by
-    rw [← sub_apply, ← map_sub, hinv, map_mul, map_mul, mul_apply_eq_comp, mul_apply_eq_comp,
-      hdiff, ContinuousLinearMap.unitizationAction_apply L hL
-        (toLp 1 ((τ * s) • (1 - (e : Unitization 𝕜 A))))]
-    congr 1
-    simp [sub_eq_add_neg, y]
+    calc Φ (Ring.inverse a') x - y = Φ (Ring.inverse a' - Ring.inverse a) x := by simp [y]
+      _ = Φ (Ring.inverse a') (Φ (a - a') y) := by simp [hinv, y, mul_apply_eq_comp]
+      _ = Φ (Ring.inverse a') ((τ * s) • (y - L e y)) := by
+        simp [Φ, hdiff, sub_eq_add_neg]
   rw [dist_comm, dist_eq_norm, hincr]
   calc ‖Φ (Ring.inverse a') ((τ * s) • (y - L e y))‖
       ≤ (1 + ‖L‖) * ‖Ring.inverse a'‖ * ‖(τ * s) • (y - L e y)‖ :=
@@ -216,7 +216,7 @@ private lemma exists_apply_eq_of_tendsto [CompleteSpace E] (L : A →L[𝕜] E �
   obtain ⟨z, hz⟩ := cauchySeq_tendsto_of_complete (cauchySeq_of_le_geometric_two hy)
   refine ⟨a, z, ?_, hz, ?_, ?_⟩
   · have := dist_le_of_le_geometric_of_tendsto₀ _ _ (by linarith) hf ha
-    rwa [hf₀, dist_zero_left, sub_sub_cancel, mul_div_cancel_left₀ _ ht₀.ne'] at this
+    simpa [hf₀, ht₀.ne'] using this
   · have := dist_le_of_le_geometric_two_of_tendsto₀ hy hz
     rwa [hy₀, dist_comm, dist_eq_norm] at this
   · have hlim : Tendsto (fun n ↦ (1 - τ) ^ n • y n + L (f n) (y n)) atTop
@@ -298,14 +298,13 @@ theorem exists_apply_eq_of_mem_topologicalClosure_span (L : A →L[𝕜] E →L[
     rw [hfs]
     exact (hE' n (f n) (hinv n).1 (hinv n).2).2.2
   have hf : ∀ n, dist (f n) (f (n + 1)) ≤ t * C * (1 - t) ^ n := fun n ↦ by
-    rw [hfs, dist_eq_norm, sub_add_cancel_left, norm_neg, norm_smul, hc]
+    rw [hfs, dist_self_add_right, norm_smul, hc]
     nlinarith [mul_le_mul_of_nonneg_left (hE'C n (f n))
       (mul_nonneg ht0.le (pow_nonneg (by linarith : (0 : ℝ) ≤ 1 - t) n))]
   /- Pass to the limit in `a n (f n) · yy n (f n) = x`. -/
   have hfac : ∀ n, (1 - τ) ^ n • yy n (f n) + L (f n) (yy n (f n)) = x := fun n ↦ by
     have : Φ (a n (f n)) (yy n (f n)) = x := by
-      rw [← mul_apply_eq_comp, ← map_mul, Ring.mul_inverse_cancel _ (hinv n).1, map_one,
-        one_apply_eq_self]
+      simpa [yy, mul_apply_eq_comp] using congr(Φ $(Ring.mul_inverse_cancel _ (hinv n).1) x)
     rw [unitizationAction_apply] at this
     simpa [a] using this
   have hyy0 : yy 0 (f 0) = x := by simp [yy, a, hf0]
