@@ -137,8 +137,7 @@ private theorem exists_orbitTranslationHom (g : 𝟙_ (Over (Spec (.of k))) ⟶ 
   (orbitι G x).existsUnique_lift_of_surjective_of_isSchemeTheoreticallyDominant
     (orbitι G x ≫ (translation X g).hom.left) (toOrbit G x)
     ((leftTranslation g).hom.left ≫ toOrbit G x)
-    (by simpa only [Category.assoc, toOrbit_ι, toOrbit_ι_assoc, Over.comp_left] using
-      congrArg Over.Hom.left (leftTranslation_hom_orbitMap g x))
+    (by rw [toOrbit_ι_assoc, orbitMap_left_translation, Category.assoc, toOrbit_ι])
 
 /-- The unique lift of ambient translation to the locally closed orbit scheme. -/
 private def orbitTranslationHom (g : 𝟙_ (Over (Spec (.of k))) ⟶ G) :
@@ -152,78 +151,60 @@ private theorem orbitTranslationHom_ι (g : 𝟙_ (Over (Spec (.of k))) ⟶ G) :
 
 /-- Translation by a rational group point on the locally closed orbit scheme. -/
 def orbitTranslation (g : 𝟙_ (Over (Spec (.of k))) ⟶ G) :
-    orbitScheme G x ≅ orbitScheme G x where
-  hom := orbitTranslationHom G x g
-  inv := orbitTranslationHom G x g⁻¹
-  hom_inv_id := by
-    apply (cancel_mono (orbitι G x)).mp
-    simp only [Category.assoc, orbitTranslationHom_ι, orbitTranslationHom_ι_assoc,
-      translation_inv, Iso.symm_hom, ← Over.comp_left, Iso.hom_inv_id,
-      Over.id_left, Category.comp_id, Category.id_comp]
-  inv_hom_id := by
-    apply (cancel_mono (orbitι G x)).mp
-    simp only [Category.assoc, orbitTranslationHom_ι, orbitTranslationHom_ι_assoc,
-      translation_inv, Iso.symm_hom, ← Over.comp_left, Iso.inv_hom_id,
-      Over.id_left, Category.comp_id, Category.id_comp]
+    orbitScheme G x ≅ orbitScheme G x :=
+  liftTranslation (orbitι G x) (orbitTranslationHom G x) (orbitTranslationHom_ι G x) g
 
 /-- The orbit immersion intertwines orbit translations with ambient translations. -/
 @[reassoc (attr := simp)]
 theorem orbitTranslation_hom_ι (g : 𝟙_ (Over (Spec (.of k))) ⟶ G) :
     (orbitTranslation G x g).hom ≫ orbitι G x =
       orbitι G x ≫ (translation X g).hom.left :=
-  orbitTranslationHom_ι G x g
+  liftTranslation_hom_ι _ _ _ g
 
 /-- The orbit factorization intertwines left translation on the group and orbit translation. -/
 @[reassoc]
 theorem toOrbit_orbitTranslation_hom (g : 𝟙_ (Over (Spec (.of k))) ⟶ G) :
     toOrbit G x ≫ (orbitTranslation G x g).hom =
-      (leftTranslation g).hom.left ≫ toOrbit G x := by
-  apply (cancel_mono (orbitι G x)).mp
-  simp only [Category.assoc, orbitTranslation_hom_ι, toOrbit_ι, toOrbit_ι_assoc]
-  exact congrArg Over.Hom.left (leftTranslation_hom_orbitMap g x).symm
+      (leftTranslation g).hom.left ≫ toOrbit G x :=
+  comp_liftTranslation_hom _ _ _ x (toOrbit G x) (toOrbit_ι G x) g
 
 /-- Translation on the orbit scheme preserves its ground-field structure. -/
 @[reassoc (attr := simp)]
 theorem orbitTranslation_hom_toBase (g : 𝟙_ (Over (Spec (.of k))) ⟶ G) :
-    (orbitTranslation G x g).hom ≫ orbitToBase G x = orbitToBase G x := by
-  rw [orbitToBase_def, orbitTranslation_hom_ι_assoc, Over.w]
+    (orbitTranslation G x g).hom ≫ orbitToBase G x =
+      orbitToBase G x := by
+  rw [orbitToBase_def]
+  exact liftTranslation_hom_toBase _ _ _ g
 
 /-- Translation by the identity is the identity on the orbit scheme. -/
 @[simp]
-theorem orbitTranslation_one : orbitTranslation G x 1 = Iso.refl _ := by
-  apply Iso.ext
-  apply (cancel_mono (orbitι G x)).mp
-  simp
+theorem orbitTranslation_one :
+    orbitTranslation G x 1 = Iso.refl _ := liftTranslation_one _ _ _
 
 /-- Multiplication of group points composes translations in action order. -/
 @[simp]
 theorem orbitTranslation_mul (g h : 𝟙_ (Over (Spec (.of k))) ⟶ G) :
-    orbitTranslation G x (g * h) = orbitTranslation G x h ≪≫ orbitTranslation G x g := by
-  apply Iso.ext
-  apply (cancel_mono (orbitι G x)).mp
-  simp only [Iso.trans_hom, Category.assoc, orbitTranslation_hom_ι,
-    orbitTranslation_hom_ι_assoc, translation_mul, Over.comp_left]
+    orbitTranslation G x (g * h) =
+      orbitTranslation G x h ≪≫ orbitTranslation G x g := liftTranslation_mul _ _ _ g h
 
 /-- Inverse group points induce inverse orbit translations. -/
 @[simp]
 theorem orbitTranslation_inv_eq_symm (g : 𝟙_ (Over (Spec (.of k))) ⟶ G) :
-    orbitTranslation G x g⁻¹ = (orbitTranslation G x g).symm := by
-  apply Iso.ext
-  rfl
+    orbitTranslation G x g⁻¹ = (orbitTranslation G x g).symm := liftTranslation_inv_eq_symm _ _ _ g
 
 /-- Inverse orbit translation intertwines the immersions into the ambient scheme. -/
 @[reassoc (attr := simp)]
 theorem orbitTranslation_inv_ι (g : 𝟙_ (Over (Spec (.of k))) ⟶ G) :
     (orbitTranslation G x g).inv ≫ orbitι G x =
-      orbitι G x ≫ (translation X g).inv.left := by
-  rw [← Iso.symm_hom, ← orbitTranslation_inv_eq_symm, orbitTranslation_hom_ι,
-    translation_inv, Iso.symm_hom]
+      orbitι G x ≫ (translation X g).inv.left := liftTranslation_inv_ι _ _ _ g
 
 /-- Inverse orbit translation also preserves the ground-field structure. -/
 @[reassoc (attr := simp)]
 theorem orbitTranslation_inv_toBase (g : 𝟙_ (Over (Spec (.of k))) ⟶ G) :
-    (orbitTranslation G x g).inv ≫ orbitToBase G x = orbitToBase G x := by
-  rw [Iso.inv_comp_eq, orbitTranslation_hom_toBase]
+    (orbitTranslation G x g).inv ≫ orbitToBase G x =
+      orbitToBase G x := by
+  rw [orbitToBase_def]
+  exact liftTranslation_inv_toBase _ _ _ g
 
 /-- Rational group points act transitively on the closed points of the orbit scheme. -/
 theorem exists_orbitTranslation_eq {y z : orbitScheme G x}

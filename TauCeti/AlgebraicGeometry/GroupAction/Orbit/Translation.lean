@@ -50,8 +50,7 @@ private theorem ker_orbitClosureι_le_translation (g : 𝟙_ (Over S) ⟶ G) :
     rw [Scheme.Hom.ker_comp, Scheme.Hom.ker_eq_bot, Scheme.IdealSheafData.map_bot]
   have heq : toOrbitClosure G x ≫ orbitClosureι G x ≫ (translation X g).hom.left =
       (leftTranslation g).hom.left ≫ (orbitMap G x).left := by
-    simpa only [Over.comp_left, toOrbitClosure_ι_assoc] using
-      congrArg Over.Hom.left (leftTranslation_hom_orbitMap g x).symm
+    rw [toOrbitClosure_ι_assoc, orbitMap_left_translation]
   rw [← h (orbitClosureι G x ≫ (translation X g).hom.left), heq,
     Scheme.Hom.ker_comp_of_isIso, ← toOrbitClosure_ι, h]
 
@@ -70,83 +69,63 @@ private theorem orbitClosureTranslationHom_ι (g : 𝟙_ (Over S) ⟶ G) :
 
 /-- Translation on the full scheme-theoretic orbit closure induced by a group section. -/
 def orbitClosureTranslation (g : 𝟙_ (Over S) ⟶ G) :
-    orbitClosureScheme G x ≅ orbitClosureScheme G x where
-  hom := orbitClosureTranslationHom G x g
-  inv := orbitClosureTranslationHom G x g⁻¹
-  hom_inv_id := by
-    apply (cancel_mono (orbitClosureι G x)).mp
-    simp only [Category.assoc, orbitClosureTranslationHom_ι,
-      orbitClosureTranslationHom_ι_assoc, translation_inv, Iso.symm_hom,
-      ← Over.comp_left, Iso.hom_inv_id, Over.id_left, Category.comp_id, Category.id_comp]
-  inv_hom_id := by
-    apply (cancel_mono (orbitClosureι G x)).mp
-    simp only [Category.assoc, orbitClosureTranslationHom_ι,
-      orbitClosureTranslationHom_ι_assoc, translation_inv, Iso.symm_hom,
-      ← Over.comp_left, Iso.inv_hom_id, Over.id_left, Category.comp_id, Category.id_comp]
+    orbitClosureScheme G x ≅ orbitClosureScheme G x :=
+  liftTranslation (orbitClosureι G x) (orbitClosureTranslationHom G x)
+    (orbitClosureTranslationHom_ι G x) g
 
 /-- The inclusion of the orbit closure commutes with translation. -/
 @[reassoc (attr := simp)]
 theorem orbitClosureTranslation_hom_ι (g : 𝟙_ (Over S) ⟶ G) :
     (orbitClosureTranslation G x g).hom ≫ orbitClosureι G x =
       orbitClosureι G x ≫ (translation X g).hom.left :=
-  orbitClosureTranslationHom_ι G x g
+  liftTranslation_hom_ι _ _ _ g
 
 /-- The orbit factorization intertwines left translation and orbit-closure translation. -/
 @[reassoc]
 theorem toOrbitClosure_orbitClosureTranslation_hom (g : 𝟙_ (Over S) ⟶ G) :
     toOrbitClosure G x ≫ (orbitClosureTranslation G x g).hom =
-      (leftTranslation g).hom.left ≫ toOrbitClosure G x := by
-  apply (cancel_mono (orbitClosureι G x)).mp
-  simp only [Category.assoc, orbitClosureTranslation_hom_ι, toOrbitClosure_ι,
-    toOrbitClosure_ι_assoc]
-  exact congrArg Over.Hom.left (leftTranslation_hom_orbitMap g x).symm
+      (leftTranslation g).hom.left ≫ toOrbitClosure G x :=
+  comp_liftTranslation_hom _ _ _ x (toOrbitClosure G x) (toOrbitClosure_ι G x) g
 
 /-- Translation by the identity fixes the orbit closure scheme. -/
 @[simp]
 theorem orbitClosureTranslation_one :
-    orbitClosureTranslation G x 1 = Iso.refl _ := by
-  apply Iso.ext
-  apply (cancel_mono (orbitClosureι G x)).mp
-  simp
+    orbitClosureTranslation G x 1 = Iso.refl _ := liftTranslation_one _ _ _
 
 /-- Group multiplication composes orbit-closure translations in action order. -/
 @[simp]
 theorem orbitClosureTranslation_mul (g h : 𝟙_ (Over S) ⟶ G) :
     orbitClosureTranslation G x (g * h) =
-      orbitClosureTranslation G x h ≪≫ orbitClosureTranslation G x g := by
-  apply Iso.ext
-  apply (cancel_mono (orbitClosureι G x)).mp
-  simp only [Iso.trans_hom, Category.assoc, orbitClosureTranslation_hom_ι,
-    orbitClosureTranslation_hom_ι_assoc, translation_mul, Over.comp_left]
+      orbitClosureTranslation G x h ≪≫ orbitClosureTranslation G x g :=
+  liftTranslation_mul _ _ _ g h
 
 /-- Inverse group sections give inverse orbit-closure translations. -/
 @[simp]
 theorem orbitClosureTranslation_inv_eq_symm (g : 𝟙_ (Over S) ⟶ G) :
-    orbitClosureTranslation G x g⁻¹ = (orbitClosureTranslation G x g).symm := by
-  apply Iso.ext
-  rfl
+    orbitClosureTranslation G x g⁻¹ = (orbitClosureTranslation G x g).symm :=
+  liftTranslation_inv_eq_symm _ _ _ g
 
 /-- Inverse orbit-closure translation restricts inverse ambient translation. -/
 @[reassoc (attr := simp)]
 theorem orbitClosureTranslation_inv_ι (g : 𝟙_ (Over S) ⟶ G) :
     (orbitClosureTranslation G x g).inv ≫ orbitClosureι G x =
-      orbitClosureι G x ≫ (translation X g).inv.left := by
-  rw [Iso.inv_comp_eq, orbitClosureTranslation_hom_ι_assoc,
-    ← Over.comp_left, Iso.hom_inv_id, Over.id_left, Category.comp_id]
+      orbitClosureι G x ≫ (translation X g).inv.left := liftTranslation_inv_ι _ _ _ g
 
 /-- Orbit-closure translations preserve the original base morphism. -/
 @[reassoc (attr := simp)]
 theorem orbitClosureTranslation_hom_toBase (g : 𝟙_ (Over S) ⟶ G) :
     (orbitClosureTranslation G x g).hom ≫ orbitClosureToBase G x =
       orbitClosureToBase G x := by
-  rw [orbitClosureToBase_def, orbitClosureTranslation_hom_ι_assoc, Over.w]
+  rw [orbitClosureToBase_def]
+  exact liftTranslation_hom_toBase _ _ _ g
 
 /-- Inverse orbit-closure translations preserve the original base morphism. -/
 @[reassoc (attr := simp)]
 theorem orbitClosureTranslation_inv_toBase (g : 𝟙_ (Over S) ⟶ G) :
     (orbitClosureTranslation G x g).inv ≫ orbitClosureToBase G x =
       orbitClosureToBase G x := by
-  rw [Iso.inv_comp_eq, orbitClosureTranslation_hom_toBase]
+  rw [orbitClosureToBase_def]
+  exact liftTranslation_inv_toBase _ _ _ g
 
 section FiniteType
 
