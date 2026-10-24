@@ -121,7 +121,9 @@ noncomputable def gaussian (τ : ℍ) : 𝓢(E, ℂ) where
 theorem gaussian_apply (τ : ℍ) (x : E) : gaussian τ x = cexp (π * I * (‖x‖ ^ 2 : ℝ) * τ) :=
   (rfl)
 
-/-- The Gaussian has modulus `‖gaussian τ x‖ = exp (-π (im τ) ‖x‖²)`. -/
+/-- The Gaussian has modulus `‖gaussian τ x‖ = exp (-π (im τ) ‖x‖²)`. This is a pre-simp lemma
+(`simp↓`), so `simp` uses it before `gaussian_apply` unfolds the Gaussian inside the norm. -/
+@[simp↓]
 theorem norm_gaussian_apply (τ : ℍ) (x : E) :
     ‖gaussian τ x‖ = Real.exp (-(π * τ.im) * ‖x‖ ^ 2) := by
   rw [gaussian_apply, Complex.norm_exp]
