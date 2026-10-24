@@ -322,6 +322,18 @@ theorem mem_continuousCyclicCochains_iff {n : ℕ}
     φ ∈ continuousCyclicCochains R A M n ↔ φ.toMultilinearMap ∈ cyclicCochains R A M n :=
   Iff.rfl
 
+/-- Forgetting continuity on cyclic cochains. -/
+def continuousCyclicCochainsForget (n : ℕ) :
+    continuousCyclicCochains R A M n →ₗ[R] cyclicCochains R A M n :=
+  (ContinuousMultilinearMap.toMultilinearMapLinear.comp
+    (continuousCyclicCochains R A M n).subtype).codRestrict _ fun φ ↦
+      (mem_continuousCyclicCochains_iff R A M).1 φ.property
+
+/-- The forgetful map retains the underlying multilinear map. -/
+@[simp]
+theorem coe_continuousCyclicCochainsForget {n : ℕ} (φ : continuousCyclicCochains R A M n) :
+    (continuousCyclicCochainsForget R A M n φ).val = φ.val.toMultilinearMap := (rfl)
+
 /-- The cyclic norm of a continuous cochain is cyclic. -/
 theorem continuousCyclicNorm_mem_continuousCyclicCochains {n : ℕ}
     (φ : ContinuousMultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) :
@@ -357,6 +369,19 @@ theorem continuousConnesB_continuousConnesB {n : ℕ}
     (continuousConnesB_mem_continuousCyclicCochains R A M φ)
 
 end Cyclic
+
+section Ring
+
+variable (R A M : Type*) [Ring R] [AddCommGroup A] [Module R A]
+  [TopologicalSpace A] [AddCommGroup M] [Module R M] [SMulCommClass R R M]
+  [TopologicalSpace M] [IsTopologicalAddGroup M] [ContinuousConstSMul R M]
+
+/-- Continuous cyclic cochains inherit the additive group structure of continuous cochains.
+Registering it explicitly also makes the structure available on submodules of cyclic cochains. -/
+instance continuousCyclicCochainsAddCommGroup (n : ℕ) :
+    AddCommGroup (continuousCyclicCochains R A M n) := inferInstance
+
+end Ring
 
 section NonUnital
 
