@@ -70,6 +70,7 @@ env:
 jobs:
   # The existing picker applies class-specific preferences and shared build caps.
   # Merge groups and manual PR requests without an immutable head use cloud pools.
+  # Bors main can explicitly use GitHub via BORS_CI_RUNNER=github during a Namespace outage.
   pick-runner:
     uses: ./.github/workflows/pick-runner.yml
     with:
@@ -91,7 +92,8 @@ jobs:
     # Exact fleet labels bind placement to one machine and guest. A failed picker
     # or failed-jobs-only rerun queues on GitHub: stale picker output must never
     # send another attempt to an ephemeral guest that has already retired.
-    runs-on: ${{ fromJSON(needs.pick-runner.outputs.attempt == format('{0}', github.run_attempt) && needs.pick-runner.outputs.runner || '"ubuntu-24.04"') }}
+    # A trusted bors main dispatch can explicitly select GitHub regardless of the picker.
+    runs-on: ${{ fromJSON(github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' && github.event.client_payload.base_ref == 'main' && vars.BORS_CI_RUNNER == 'github' && '"ubuntu-24.04"' || needs.pick-runner.outputs.attempt == format('{0}', github.run_attempt) && needs.pick-runner.outputs.runner || '"ubuntu-24.04"') }}
     outputs:
       status-sha: ${{ steps.pr.outputs.status_sha }}
       build-state: ${{ steps.report.outputs.build-state }}
@@ -114,6 +116,12 @@ jobs:
       # sandbox then stages the fully audited root-package outputs for the isolated publisher.
       STAGE_LAKE_CACHE: ""
     steps:
+      - name: Report build runner selection
+        env:
+          RUNNER_ENVIRONMENT: ${{ runner.environment }}
+          BORS_GITHUB_FALLBACK: ${{ github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' && github.event.client_payload.base_ref == 'main' && vars.BORS_CI_RUNNER == 'github' }}
+        run: |
+          echo "::notice::Build runner environment: $RUNNER_ENVIRONMENT; bors GitHub fallback requested: $BORS_GITHUB_FALLBACK"
       # We expect the 262k default to be relevant at around 10m LOC, and this raised limit to be relevant at around 40m LOC.
       - name: Raise vm.max_map_count
         run: |
@@ -1440,7 +1448,7 @@ jobs:
           TESTED_TREE: ${{ steps.integration.outputs.tested_tree }}
           BORS_BATCH: ${{ github.event.client_payload.batch_id }}
           BORS_MEMBERS: ${{ toJSON(github.event.client_payload.members) }}
-          PICKED: ${{ needs.pick-runner.outputs.attempt == format('{0}', github.run_attempt) && needs.pick-runner.outputs.pool || 'github' }}
+          PICKED: ${{ github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' && github.event.client_payload.base_ref == 'main' && vars.BORS_CI_RUNNER == 'github' && 'github' || needs.pick-runner.outputs.attempt == format('{0}', github.run_attempt) && needs.pick-runner.outputs.pool || 'github' }}
           PICKER_BUSY: ${{ needs.pick-runner.outputs.busy }}
           PICKER_BUDGET: ${{ needs.pick-runner.outputs.budget }}
         run: |
