@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 public import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
+public import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import Mathlib.MeasureTheory.Measure.Prod
+import Mathlib.Topology.Order.Compact
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
@@ -16,7 +18,7 @@ import TauCeti.MeasureTheory.Integral.Bochner.Basic
 This file records integrability and evaluation of exponential integrands on a half-line or the
 whole real line: natural powers multiplied by an exponentially decaying factor, the exact rate at
 which a bare exponential is integrable on a right half-line, and integrability of the two-sided
-exponential.
+exponential. The latter also decays faster than every real power at both ends of the line.
 
 Mathlib supplies the *sufficient* direction of the right-half-line integrability criterion,
 `integrableOn_exp_mul_Ioi`, for a negative rate.  `integrableOn_exp_mul_Ioi_iff` adds the converse,
@@ -34,13 +36,15 @@ inclusion.
 * `TauCeti.integrableOn_exp_mul_Iic_iff`: `exp (a * ·)` is integrable on `(-∞, c]` exactly when
   `0 < a`.
 * `TauCeti.integrable_exp_neg_mul_abs`: `exp (-(a * |·|))` is integrable when `0 < a`.
+* `TauCeti.exp_neg_mul_abs_isLittleO_rpow_cocompact`: real two-sided exponential decay
+  faster than any real power at infinity.
 -/
 
 public section
 
 noncomputable section
 
-open MeasureTheory Set
+open MeasureTheory Set Filter Asymptotics
 open scoped ENNReal NNReal
 
 namespace TauCeti
@@ -116,6 +120,30 @@ theorem integrable_exp_neg_mul_abs {a : ℝ} (ha : 0 < a) :
   simpa only [neg_mul] using MeasureTheory.integrable_comp_abs
     (integrableOn_exp_mul_Ioi (a := -a) (by linarith) 0)
 
+
+/-- **Rapid decay of the two-sided real exponential.** For any positive real rate `a`,
+`exp (-(a * |x|))` is little-o of `|x| ^ s` at `cocompact ℝ`, for every real exponent `s`.
+
+Adapted from `ForTauCeti/Analysis/Fourier/ExponentialAbs.lean` in the AIQ/DKPS
+formalization (Apache-2.0; copyright 2026 Kitware, Inc.; authors Jon Crall and
+GPT 5.6 High). -/
+theorem exp_neg_mul_abs_isLittleO_rpow_cocompact {a : ℝ} (ha : 0 < a) (s : ℝ) :
+    (fun x : ℝ => Real.exp (-(a * |x|))) =o[cocompact ℝ]
+      (fun x : ℝ => |x| ^ s) := by
+  rw [cocompact_eq_atBot_atTop, isLittleO_sup]
+  constructor
+  · have h := (isLittleO_exp_neg_mul_rpow_atTop ha s).comp_tendsto
+      tendsto_neg_atBot_atTop
+    refine h.congr' ?_ ?_
+    · filter_upwards [eventually_lt_atBot 0] with x hx
+      simp [abs_of_neg hx]
+    · filter_upwards [eventually_lt_atBot 0] with x hx
+      simp [abs_of_neg hx]
+  · refine (isLittleO_exp_neg_mul_rpow_atTop ha s).congr' ?_ ?_
+    · filter_upwards [eventually_gt_atTop 0] with x hx
+      simp [abs_of_pos hx]
+    · filter_upwards [eventually_gt_atTop 0] with x hx
+      simp [abs_of_pos hx]
 
 /-- At a nonnegative rate the integrand is bounded below by a positive constant on `(c, ∞)`, a set
 of infinite measure, so it is not integrable there. -/
