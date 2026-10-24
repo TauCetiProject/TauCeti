@@ -67,6 +67,14 @@ theorem det_mul_det_submatrix_adjugate {n k : ℕ} (A : Matrix (Fin n) (Fin n) R
     ext (i | i) (j | j) <;> simp [B, C, mul_adjugate, one_apply]
   rw [← fromBlocks_toBlocks B, ← fromBlocks_toBlocks C, fromBlocks_multiply,
     fromBlocks_inj] at hBC
+  have hC : C.toBlocks₂₂ =
+      (adjugate A).submatrix (Jᶜ.orderEmbOfFin (k := n - k) hJ')
+        (Iᶜ.orderEmbOfFin (k := n - k) hI') := by
+    ext i j
+    simp [C, toBlocks₂₂, P, Q]
+  have hB₁₁ : B.toBlocks₁₁ = A.submatrix (I.orderEmbOfFin hI) (J.orderEmbOfFin hJ) := by
+    ext i j
+    simp [B, toBlocks₁₁, P, Q]
   -- Replace the first block column of `C` by `(1, 0)`: the upper-right block of `B * C` is zero
   -- and the lower-right block is `det A • 1`, so the product is block lower triangular.
   have hBM : B * fromBlocks 1 C.toBlocks₁₂ 0 C.toBlocks₂₂ =
@@ -81,8 +89,8 @@ theorem det_mul_det_submatrix_adjugate {n k : ℕ} (A : Matrix (Fin n) (Fin n) R
     -- Conjugate both shuffles by the standard shuffle `E`, so that the shuffle-sign lemma applies
     -- to each.
     rw [show Q.symm.trans P = (E.symm.trans Q).symm.trans (E.symm.trans P) by ext; simp,
-      Perm.sign_trans, Perm.sign_symm, Equiv.Perm.sign_finSumEquivOfFinset I hI hI' h,
-      Equiv.Perm.sign_finSumEquivOfFinset J hJ hJ' h, ← pow_add,
+      Perm.sign_trans, Perm.sign_symm, TauCeti.sign_finSumEquivOfFinset I hI,
+      TauCeti.sign_finSumEquivOfFinset J hJ, ← pow_add,
       -- The two shuffle signs contribute `∑ I + ∑ J + 2 * ∑ a`; the last term is even.
       show _ + _ + (_ + _) = ∑ i ∈ I, (i : ℕ) + ∑ j ∈ J, (j : ℕ) + 2 * ∑ a : Fin k, (a : ℕ) by
         ring,
@@ -94,8 +102,8 @@ theorem det_mul_det_submatrix_adjugate {n k : ℕ} (A : Matrix (Fin n) (Fin n) R
     Equiv.symm_symm, hsign] at hdet
   simp only [det_one, one_mul, mul_one, Fintype.card_fin] at hdet
   have hε : ε ^ 2 = 1 := by rw [← pow_mul, pow_mul', neg_one_sq, one_pow]
-  -- `C.toBlocks₂₂` is `adj A[Jᶜ, Iᶜ]` and `B.toBlocks₁₁` is `A[I, J]` by definition.
-  change A.det * C.toBlocks₂₂.det = ε * A.det ^ (n - k) * B.toBlocks₁₁.det
+  -- Rewrite the complementary minor and the original minor as the corresponding blocks.
+  rw [← hC, ← hB₁₁]
   -- Multiply `hdet` by `ε` and use `ε ^ 2 = 1`; this avoids dividing by `det A`.
   linear_combination ε * hdet - A.det * C.toBlocks₂₂.det * hε
 

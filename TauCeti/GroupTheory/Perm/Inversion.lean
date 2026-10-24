@@ -16,17 +16,16 @@ An *inversion* of `σ : Equiv.Perm (Fin n)` is a pair of indices `i < j` with `�
 sign of `σ` is `(-1)` raised to the number of inversions. Mathlib exposes the sign as the product
 `Equiv.Perm.sign_eq_prod_prod_Ioi`; this file turns that product into the cardinality of the
 finite set of inversions, which is the form met by combinatorial permutation counts. It also
-records the inversion-product form of the sign, the sign of a shuffle, and the sign of the
-shuffle that lists a finset followed by its complement. Finally, it uses the sign of a block swap
-to reindex signed sums over permutations when rotating index blocks.
+records the sign of a shuffle and the sign of the shuffle that lists a finset followed by its
+complement. Finally, it uses the sign of a block swap to reindex signed sums over permutations
+when rotating index blocks.
 
 ## Main results
 
 * `TauCeti.sign_eq_neg_one_pow_card_inversion`: the sign of a permutation of `Fin n` is
   `(-1)` to the number of its inversions.
-* `Equiv.Perm.sign_eq_prod_ite`: the sign of a permutation as a product over its inversions.
-* `Equiv.Perm.sign_shuffle`: the sign of a shuffle permutation is a power of `-1`.
-* `Equiv.Perm.sign_finSumEquivOfFinset`: the sign of the shuffle listing a finset followed by
+* `TauCeti.sign_shuffle`: the sign of a shuffle permutation is a power of `-1`.
+* `TauCeti.sign_finSumEquivOfFinset`: the sign of the shuffle listing a finset followed by
   its complement.
 * `TauCeti.sign_finAddFlip_trans_finCongr`: the block swap of `Fin (m + n)`, which exchanges the
   first `m` indices with the last `n`, has sign `(-1) ^ (m * n)`.
@@ -124,6 +123,71 @@ theorem sign_finAddFlip_trans_finCongr (m n : ℕ) :
     Equiv.Perm.sign (finAddFlip.trans (finCongr (add_comm n m))) = (-1) ^ (m * n) := by
   rw [sign_eq_neg_one_pow_card_inversion, card_inversion_finAddFlip_trans_finCongr]
 
+section
+
+open _root_.Finset
+
+variable {k : ℕ}
+
+/-- The sign of a permutation of `Fin n`, written as a product over its inversions. -/
+private theorem sign_eq_prod_ite (σ : Equiv.Perm (Fin n)) :
+    Equiv.Perm.sign σ = ∏ y, ∏ x, if x < y ∧ σ y < σ x then -1 else 1 := by
+  rw [σ.sign_eq_prod_prod_Iio]
+  refine prod_congr rfl fun y _ ↦ ?_
+  rw [← filter_gt_eq_Iio, prod_filter]
+  refine prod_congr rfl fun x _ ↦ ?_
+  split_ifs <;> grind [EmbeddingLike.apply_eq_iff_eq]
+
+/-- The sign of a shuffle permutation.  Let `e : Fin k ⊕ Fin m ≃ Fin n` be increasing on each
+summand, so that the images of `Sum.inl` form a `k`-element set `I` and the images of `Sum.inr`
+form its complement.  Then the sign of the shuffle, viewed as a permutation of `Fin n`, is
+`(-1)` raised to the sum of the elements of `I` plus the sum of the positions in the first
+summand. -/
+theorem sign_shuffle {m : ℕ} (h : k + m = n) (e : Fin k ⊕ Fin m ≃ Fin n)
+    (hl : StrictMono (e ∘ Sum.inl)) (hr : StrictMono (e ∘ Sum.inr)) :
+    Equiv.Perm.sign ((finSumFinEquiv.trans (finCongr h)).symm.trans e) =
+      (-1) ^ (∑ a, (e (.inl a) : ℕ) + ∑ a : Fin k, (a : ℕ)) := by
+  have hl' (a b) : e (.inl a) < e (.inl b) ↔ a < b := hl.lt_iff_lt
+  have hr' (a b) : e (.inr a) < e (.inr b) ↔ a < b := hr.lt_iff_lt
+  have h₁ (a b : Fin k) : Fin.castAdd m a < Fin.castAdd m b ↔ a < b := Iff.rfl
+  have h₂ (a : Fin k) (b : Fin m) : Fin.castAdd m a < Fin.natAdd k b := by
+    simp only [Fin.lt_def, Fin.val_castAdd, Fin.val_natAdd]
+    omega
+  have h₃ {α : Type} [Preorder α] (a b : α) : ¬(a < b ∧ b < a) := fun h ↦ lt_asymm h.1 h.2
+  -- The only inversions are pairs `(inl a, inr b)` with `e (inr b) < e (inl a)`.
+  -- For each `a`, the number of such `b` is the position of `e (inl a)` minus `a`.
+  have hcount (a : Fin k) : #{b | e (.inr b) < e (.inl a)} + a = (e (.inl a) : ℕ) := by
+    rw [← Fin.card_Iio, ← Fin.card_Iio (e _), ← filter_gt_eq_Iio, ← filter_gt_eq_Iio]
+    simp only [card_filter, ← e.sum_comp (fun x ↦ ite _ _ _), Fintype.sum_sum_type, hl']
+    ring
+  set E := finSumFinEquiv.trans (finCongr h)
+  rw [sign_eq_prod_ite, ← E.prod_comp]
+  simp_rw [← E.prod_comp (fun x ↦ ite _ _ _)]
+  have hprod :
+      (∏ x : Fin k ⊕ Fin m, ∏ i : Fin k ⊕ Fin m,
+          if E i < E x ∧ (E.symm.trans e) (E x) < (E.symm.trans e) (E i) then (-1 : ℤˣ) else 1) =
+        ∏ x : Fin m, ∏ y : Fin k,
+          if e (Sum.inr x) < e (Sum.inl y) then (-1 : ℤˣ) else 1 := by
+    simp [Fintype.prod_sum_type, E, hl', hr', h₁, h₂, (h₂ _ _).not_gt, h₃]
+  rw [hprod, prod_comm, ← sum_congr rfl fun a _ ↦ hcount a, sum_add_distrib, add_assoc,
+    ← two_mul, pow_add, pow_mul]
+  simp [prod_ite, prod_pow_eq_pow_sum]
+
+/-- The sign of the shuffle that lists `I` followed by its complement. -/
+theorem sign_finSumEquivOfFinset (I : Finset (Fin n)) (hI : #I = k)
+    (hI' : #Iᶜ = n - k := (card_compl I).trans (by rw [Fintype.card_fin, hI]))
+    (h : k + (n - k) = n :=
+      Nat.add_sub_of_le (hI ▸ (I.card_le_univ.trans (le_of_eq (Fintype.card_fin n))))) :
+    Equiv.Perm.sign ((finSumFinEquiv.trans (finCongr h)).symm.trans (finSumEquivOfFinset hI hI')) =
+      (-1) ^ (∑ i ∈ I, (i : ℕ) + ∑ a : Fin k, (a : ℕ)) := by
+  rw [sign_shuffle h (finSumEquivOfFinset hI hI') (I.orderEmbOfFin hI).strictMono
+    (Iᶜ.orderEmbOfFin hI').strictMono]
+  simp only [finSumEquivOfFinset_inl]
+  conv_rhs => rw [← I.map_orderEmbOfFin_univ hI, sum_map]
+  rfl
+
+end
+
 /-- Reindexing a signed sum over permutations by `τ ↦ c.permCongr τ * B` contributes the sign of
 `B`. -/
 theorem sum_sign_smul_permCongr_mul {a b : ℕ} {M : Type*} [AddCommGroup M]
@@ -194,65 +258,3 @@ theorem sum_sign_smul_rotate_blocks {γ M : Type*} [AddCommGroup M] {k l m : ℕ
     _ = _ := (sum_sign_smul_permCongr_mul c B f).trans (by rw [hB])
 
 end TauCeti
-
-namespace Equiv.Perm
-
-open _root_.Finset
-
-variable {n k : ℕ}
-
-/-- The sign of a permutation of `Fin n`, written as a product over its inversions. -/
-theorem sign_eq_prod_ite (σ : Perm (Fin n)) :
-    Perm.sign σ = ∏ y, ∏ x, if x < y ∧ σ y < σ x then -1 else 1 := by
-  rw [σ.sign_eq_prod_prod_Iio]
-  refine prod_congr rfl fun y _ ↦ ?_
-  rw [← filter_gt_eq_Iio, prod_filter]
-  refine prod_congr rfl fun x _ ↦ ?_
-  split_ifs <;> grind [EmbeddingLike.apply_eq_iff_eq]
-
-/-- The sign of a shuffle permutation.  Let `e : Fin k ⊕ Fin m ≃ Fin n` be increasing on each
-summand, so that the images of `Sum.inl` form a `k`-element set `I` and the images of `Sum.inr`
-form its complement.  Then the sign of the shuffle, viewed as a permutation of `Fin n`, is
-`(-1)` raised to the sum of the elements of `I` plus the sum of the positions in the first
-summand. -/
-theorem sign_shuffle {m : ℕ} (h : k + m = n) (e : Fin k ⊕ Fin m ≃ Fin n)
-    (hl : StrictMono (e ∘ Sum.inl)) (hr : StrictMono (e ∘ Sum.inr)) :
-    Perm.sign ((finSumFinEquiv.trans (finCongr h)).symm.trans e) =
-      (-1) ^ (∑ a, (e (.inl a) : ℕ) + ∑ a : Fin k, (a : ℕ)) := by
-  have hl' (a b) : e (.inl a) < e (.inl b) ↔ a < b := hl.lt_iff_lt
-  have hr' (a b) : e (.inr a) < e (.inr b) ↔ a < b := hr.lt_iff_lt
-  have h₁ (a b : Fin k) : Fin.castAdd m a < Fin.castAdd m b ↔ a < b := Iff.rfl
-  have h₂ (a : Fin k) (b : Fin m) : Fin.castAdd m a < Fin.natAdd k b := by
-    rw [Fin.lt_def]; simp; omega
-  have h₃ {α : Type} [Preorder α] (a b : α) : ¬(a < b ∧ b < a) := fun h ↦ lt_asymm h.1 h.2
-  -- The only inversions are pairs `(inl a, inr b)` with `e (inr b) < e (inl a)`.
-  -- For each `a`, the number of such `b` is the position of `e (inl a)` minus `a`.
-  have hcount (a : Fin k) : #{b | e (.inr b) < e (.inl a)} + a = (e (.inl a) : ℕ) := by
-    rw [← Fin.card_Iio, ← Fin.card_Iio (e _), ← filter_gt_eq_Iio, ← filter_gt_eq_Iio]
-    simp only [card_filter, ← e.sum_comp (fun x ↦ ite _ _ _), Fintype.sum_sum_type, hl']
-    ring
-  set E := finSumFinEquiv.trans (finCongr h)
-  rw [sign_eq_prod_ite, ← E.prod_comp]
-  simp_rw [← E.prod_comp (fun x ↦ ite _ _ _)]
-  have hprod :
-      (∏ x : Fin k ⊕ Fin m, ∏ i : Fin k ⊕ Fin m,
-          if E i < E x ∧ (E.symm.trans e) (E x) < (E.symm.trans e) (E i) then (-1 : ℤˣ) else 1) =
-        ∏ x : Fin m, ∏ y : Fin k,
-          if e (Sum.inr x) < e (Sum.inl y) then (-1 : ℤˣ) else 1 := by
-    simp [Fintype.prod_sum_type, E, hl', hr', h₁, h₂, (h₂ _ _).not_gt, h₃]
-  rw [hprod, prod_comm, ← sum_congr rfl fun a _ ↦ hcount a, sum_add_distrib, add_assoc,
-    ← two_mul, pow_add, pow_mul]
-  simp [prod_ite, prod_pow_eq_pow_sum]
-
-/-- The sign of the shuffle that lists `I` followed by its complement. -/
-theorem sign_finSumEquivOfFinset (I : Finset (Fin n)) (hI : #I = k)
-    (hI' : #Iᶜ = n - k) (h : k + (n - k) = n) :
-    Perm.sign ((finSumFinEquiv.trans (finCongr h)).symm.trans (finSumEquivOfFinset hI hI')) =
-      (-1) ^ (∑ i ∈ I, (i : ℕ) + ∑ a : Fin k, (a : ℕ)) := by
-  rw [sign_shuffle h (finSumEquivOfFinset hI hI') (I.orderEmbOfFin hI).strictMono
-    (Iᶜ.orderEmbOfFin hI').strictMono]
-  simp only [finSumEquivOfFinset_inl]
-  conv_rhs => rw [← I.map_orderEmbOfFin_univ hI, sum_map]
-  rfl
-
-end Equiv.Perm
