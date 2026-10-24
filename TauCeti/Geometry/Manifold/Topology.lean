@@ -28,17 +28,18 @@ universe u v
 
 namespace ModelWithCorners
 
-variable {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E]
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type u} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedSpace ℝ E]
   {H : Type v} [TopologicalSpace H]
 
-/-- The model space of a real model with corners is locally path-connected. -/
-theorem locallyPathConnectedSpace (I : ModelWithCorners ℝ E H) : LocallyPathConnectedSpace H := by
+/-- The model space of a model with corners is locally path-connected. -/
+theorem locallyPathConnectedSpace (I : ModelWithCorners 𝕜 E H) : LocallyPathConnectedSpace H := by
   let _ : LocallyPathConnectedSpace (Set.range I) := I.convex_range.locallyPathConnectedSpace
   exact I.isClosedEmbedding.isEmbedding.toHomeomorph.symm.locallyPathConnectedSpace
 
-/-- A charted space modelled on `H`, where `I : ModelWithCorners ℝ E H`, is semilocally
+/-- A charted space modelled on `H`, where `I : ModelWithCorners 𝕜 E H`, is semilocally
 simply connected. -/
-theorem semilocallySimplyConnectedSpace (I : ModelWithCorners ℝ E H) (M : Type*)
+theorem semilocallySimplyConnectedSpace (I : ModelWithCorners 𝕜 E H) (M : Type*)
     [TopologicalSpace M] [ChartedSpace H M] :
     TauCeti.SemilocallySimplyConnectedSpace M := by
   apply TauCeti.SemilocallySimplyConnectedSpace.of_forall_exists_mem_nhds_isSimplyConnected
@@ -54,9 +55,7 @@ theorem semilocallySimplyConnectedSpace (I : ModelWithCorners ℝ E H) (M : Type
     exact hu_sub ⟨hr_sub hz.1, hz.2⟩
   have hs_convex : Convex ℝ s := convex_ball _ _ |>.inter I.convex_range
   have hs_nonempty : s.Nonempty := ⟨c x, ⟨Metric.mem_ball_self hr, hy⟩⟩
-  have hs_sc : IsSimplyConnected s := by
-    let _ : ContractibleSpace s := hs_convex.contractibleSpace hs_nonempty
-    exact (SimplyConnectedSpace.ofContractible s : SimplyConnectedSpace s)
+  have hs_sc : IsSimplyConnected s := hs_convex.isSimplyConnected hs_nonempty
   let ce : PartialHomeomorph M E :=
     PartialHomeomorph.mk c (continuousOn_extChartAt x) (continuousOn_extChartAt_symm x)
   let d : Set M := ce.symm '' s
@@ -67,10 +66,14 @@ theorem semilocallySimplyConnectedSpace (I : ModelWithCorners ℝ E H) (M : Type
   have hd_image : ce '' d = s := ce.image_symm_image_of_subset_target hs_sub
   let he : d ≃ₜ s := ce.homeomorphOfImageSubsetSource hd_sub hd_image
   have hd_sc : IsSimplyConnected d := by
-    let _ : SimplyConnectedSpace s := hs_sc
-    let _ : SimplyConnectedSpace d :=
-      he.toHomotopyEquiv.simplyConnectedSpace_iff.mpr inferInstance
-    exact (inferInstance : SimplyConnectedSpace d)
+    have hs_univ : IsSimplyConnected (Set.univ : Set s) := by
+      apply (Homeomorph.Set.univ s).toHomotopyEquiv.simplyConnectedSpace_iff.mpr
+      exact hs_sc
+    have hd_univ : IsSimplyConnected (Set.univ : Set d) := by
+      apply he.isEmbedding.isSimplyConnected_image.mp
+      simpa using hs_univ
+    apply (Homeomorph.Set.univ d).toHomotopyEquiv.simplyConnectedSpace_iff.mp
+    exact hd_univ
   have hd_nhds : d ∈ 𝓝 x := by
     have hsource : ce.source ∈ 𝓝 x :=
       (isOpen_extChartAt_source x).mem_nhds (mem_extChartAt_source x)

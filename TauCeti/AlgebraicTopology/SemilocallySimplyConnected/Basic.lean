@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.InducedMaps
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
+public import Mathlib.Analysis.Convex.Contractible
 public import Mathlib.Topology.Homotopy.LocallyContractible
 public import Mathlib.Topology.Homotopy.Product
 -- Private: `Path.Homotopic.refl_of_forall_mem_of_nullhomotopic` is used only in a proof below,
@@ -68,6 +69,13 @@ open Topology
 namespace TauCeti
 
 variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
+
+/-- A nonempty convex subset of a real topological vector space is simply connected. -/
+theorem _root_.Convex.isSimplyConnected {E : Type*} [AddCommGroup E] [Module ℝ E]
+    [TopologicalSpace E] [ContinuousAdd E] [ContinuousSMul ℝ E] {s : Set E} (hs : Convex ℝ s)
+    (hne : s.Nonempty) : IsSimplyConnected s := by
+  let _ : ContractibleSpace s := hs.contractibleSpace hne
+  exact SimplyConnectedSpace.ofContractible s
 
 /-- A space is **semilocally simply connected at `x`** if `x` has a neighbourhood `U` such that
 every loop in `U` based at `x` is null-homotopic in the whole space. The null-homotopy is allowed

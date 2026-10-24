@@ -140,8 +140,7 @@ private theorem isSimplyConnected_preimage_coe {T : Set ℂ} (hT : Convex ℝ T)
     (hT01 : ∀ w ∈ T, 0 < w.re ∧ w.re < 1) :
     IsSimplyConnected (((↑) : ThricePuncturedSphere → ℂ) ⁻¹' T) := by
   rw [← isOpenEmbedding_coe.isEmbedding.isSimplyConnected_image, image_coe_preimage_coe hT01]
-  have := hT.contractibleSpace hne
-  exact SimplyConnectedSpace.ofContractible _
+  exact hT.isSimplyConnected hne
 
 /-- The segment `(0, 1)` is simply connected. -/
 theorem isSimplyConnected_unitSegment : IsSimplyConnected unitSegment :=

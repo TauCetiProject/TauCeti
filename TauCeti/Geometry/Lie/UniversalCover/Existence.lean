@@ -51,26 +51,20 @@ theorem exists_universalCover [ConnectedSpace G] :
   let _ : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
   let _ : PathConnectedSpace G := PathConnectedSpace.of_locallyPathConnectedSpace
   let Gt := UniversalCover (1 : G)
-  let p : Gt →* G := (UniversalCover.projHom : UniversalCover (1 : G) →ₜ* G)
+  let f : ContMDiffMonoidMorphism I I ∞ Gt G :=
+    (UniversalCover.projHom : UniversalCover (1 : G) →ₜ* G).toContMDiffMonoidMorphism I I
+  let p : Gt →* G := f.toMonoidHom
   have hpc : (p : Gt → G) = (UniversalCover.projHom : Gt → G) := by
-    rfl
+    dsimp only [p]
+    change (f : Gt → G) = (UniversalCover.projHom : Gt → G)
+    exact ContinuousMonoidHom.coe_toContMDiffMonoidMorphism _
   have hp : IsCoveringMap (p : Gt → G) := by
     rw [hpc]
     exact UniversalCover.isCoveringMap_projHom
-  have hsmooth : ContMDiff I I ∞ (p : Gt → G) := by
-    rw [hpc, UniversalCover.coe_projHom]
-    exact UniversalCover.contMDiff_proj (x₀ := (1 : G))
-  have hlie : Function.Bijective
-      (lieMap (ContinuousMonoidHom.toContMDiffMonoidMorphism I I
-        (UniversalCover.projHom : UniversalCover (1 : G) →ₜ* G))) :=
-    UniversalCover.lieMap_projHom_bijective I G
-  have hpm : (⟨p, hsmooth⟩ : ContMDiffMonoidMorphism I I ∞ Gt G) =
-      ContinuousMonoidHom.toContMDiffMonoidMorphism I I
-        (UniversalCover.projHom : UniversalCover (1 : G) →ₜ* G) := by
-    apply DFunLike.coe_injective
-    simp only [ContinuousMonoidHom.coe_toContMDiffMonoidMorphism]
-    exact hpc
+  have hsmooth : ContMDiff I I ∞ (p : Gt → G) := f.contMDiff_toFun
   exact ⟨Gt, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance, p, hsmooth,
-    UniversalCover.simplyConnectedSpace (1 : G), hp, by rw [hpm]; exact hlie⟩
+    UniversalCover.simplyConnectedSpace (1 : G), hp,
+    by simpa only [p, f, ContinuousMonoidHom.coe_toContMDiffMonoidMorphism,
+      ContinuousMonoidHom.coe_toMonoidHom] using UniversalCover.lieMap_projHom_bijective I G⟩
 
 end TauCeti.UniversalCover
