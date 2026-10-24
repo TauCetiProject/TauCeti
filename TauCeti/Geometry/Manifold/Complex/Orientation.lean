@@ -53,6 +53,14 @@ preferred charts only, characterizes it (`TauCeti.eq_complexManifoldOrientation_
 * `Diffeomorph.isOrientationPreservingAt_complexManifoldOrientation`: biholomorphisms preserve
   canonical orientations.
 
+## Implementation notes
+
+Tangent orientations are stated for the underlying real manifold structure
+`IsManifold 𝓘(ℝ, E) n M`, obtained from the complex one by `IsManifold.restrictScalars`. This
+file provides it as the scoped instance `TauCeti.ComplexManifold.isManifold_real`, so callers
+enable it with `open scoped TauCeti.ComplexManifold`. Since `IsManifold` is a `Prop`, any other
+proof of the real structure works as well.
+
 ## References
 
 * R. Bott and L. W. Tu, *Differential Forms in Algebraic Topology*, §1.
@@ -139,10 +147,18 @@ theorem isOrientedAtlas_maximalAtlas_complex (n : ℕ∞ω) [NeZero n] [IsManifo
   symm_trans_mem he he' := contDiffGroupoid_complex_le_orientationPreservingGroupoid n
     (IsManifold.compatible_of_mem_maximalAtlas he he')
 
-/-- The underlying real manifold of a complex manifold, used to state its tangent orientations. -/
-local instance {X : Type*} [TopologicalSpace X] [ChartedSpace E X] [IsManifold 𝓘(ℂ, E) 1 X] :
-    IsManifold 𝓘(ℝ, E) 1 X :=
-  (inferInstance : IsManifold 𝓘(ℂ, E) 1 X).restrictScalars ℝ
+namespace ComplexManifold
+
+/-- A complex `C^n` manifold is, with the same charts, a real `C^n` manifold modelled on
+`𝓘(ℝ, E)`. Tangent orientations of a complex manifold are stated for this real structure. It is
+a scoped instance, available after `open scoped TauCeti.ComplexManifold`. -/
+scoped instance isManifold_real {n : ℕ∞ω} {X : Type*} [TopologicalSpace X] [ChartedSpace E X]
+    [h : IsManifold 𝓘(ℂ, E) n X] : IsManifold 𝓘(ℝ, E) n X :=
+  h.restrictScalars ℝ
+
+end ComplexManifold
+
+open scoped ComplexManifold
 
 variable [IsManifold 𝓘(ℂ, E) 1 M]
 
@@ -214,9 +230,9 @@ theorem eq_complexManifoldOrientation_iff
   · intro h
     ext x
     obtain ⟨L, hL, hmap⟩ := h x
-    rw [orientationAt_complexManifoldOrientation 1 (IsManifold.chart_mem_maximalAtlas x)
-      (mem_chart_source E x) L hL, ← hmap, ContinuousLinearEquiv.toLinearEquiv_symm,
-      ← Orientation.map_symm, Equiv.symm_apply_apply]
+    exact (Orientation.map _ L.toLinearEquiv).injective (hmap.trans
+      (map_orientationAt_complexManifoldOrientation 1 (IsManifold.chart_mem_maximalAtlas x)
+        (mem_chart_source E x) L hL).symm)
 
 /-- A complex manifold is orientable as a real manifold. -/
 instance orientable_of_complex : Orientable 𝓘(ℝ, E) M :=
@@ -225,17 +241,18 @@ instance orientable_of_complex : Orientable 𝓘(ℝ, E) M :=
 variable {N : Type*} [TopologicalSpace N] [ChartedSpace E N] [IsManifold 𝓘(ℂ, E) 1 N]
 
 /-- Biholomorphisms preserve canonical orientations: at every point `x`, the derivative of a
-biholomorphism `Φ : M → N` carries the canonical orientation of `M` at `x` to that of `N` at
-`Φ x`. -/
-theorem _root_.Diffeomorph.isOrientationPreservingAt_complexManifoldOrientation
-    (Φ : M ≃ₘ^1⟮𝓘(ℂ, E), 𝓘(ℂ, E)⟯ N) (x : M) :
+`C^n` biholomorphism `Φ : M → N`, for `n ≠ 0`, carries the canonical orientation of `M` at `x` to
+that of `N` at `Φ x`. -/
+theorem _root_.Diffeomorph.isOrientationPreservingAt_complexManifoldOrientation (n : ℕ∞ω)
+    [NeZero n] [IsManifold 𝓘(ℂ, E) n M] [IsManifold 𝓘(ℂ, E) n N]
+    (Φ : M ≃ₘ^n⟮𝓘(ℂ, E), 𝓘(ℂ, E)⟯ N) (x : M) :
     Manifold.Orientation.IsOrientationPreservingAt (complexManifoldOrientation E M)
       (complexManifoldOrientation E N) Φ x := by
   -- Read both orientations through the holomorphic chart `e` of `N` at `Φ x` and its pullback
   -- `e ∘ Φ`, a holomorphic chart of `M` at `x` whose derivative is that of `e` after that of `Φ`.
   set e := chartAt E (Φ x)
   set e' := Φ.toHomeomorph.transOpenPartialHomeomorph e
-  have he' : e' ∈ IsManifold.maximalAtlas 𝓘(ℂ, E) 1 M :=
+  have he' : e' ∈ IsManifold.maximalAtlas 𝓘(ℂ, E) n M :=
     Φ.transOpenPartialHomeomorph_mem_maximalAtlas (IsManifold.chart_mem_maximalAtlas (Φ x))
   have hx : x ∈ e'.source := by
     simp only [e', Homeomorph.transOpenPartialHomeomorph_source, Set.mem_preimage,
@@ -243,20 +260,21 @@ theorem _root_.Diffeomorph.isOrientationPreservingAt_complexManifoldOrientation
     exact mem_chart_source E (Φ x)
   obtain ⟨L, hL, hmap⟩ :=
     (eq_complexManifoldOrientation_iff (complexManifoldOrientation E N)).1 rfl (Φ x)
-  have hΦ : IsLocalDiffeomorph 𝓘(ℝ, E) 𝓘(ℝ, E) 1 Φ := Φ.isLocalDiffeomorph.restrictScalars ℝ
-  let D := hΦ.mfderivToContinuousLinearEquiv one_ne_zero x
+  have hn : n ≠ 0 := NeZero.ne n
+  have hΦ : IsLocalDiffeomorph 𝓘(ℝ, E) 𝓘(ℝ, E) n Φ := Φ.isLocalDiffeomorph.restrictScalars ℝ
+  let D := hΦ.mfderivToContinuousLinearEquiv hn x
   have hD : (D : TangentSpace 𝓘(ℝ, E) x →L[ℝ] TangentSpace 𝓘(ℝ, E) (Φ x)) =
       mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) Φ x :=
-    hΦ.mfderivToContinuousLinearEquiv_coe one_ne_zero x
+    hΦ.mfderivToContinuousLinearEquiv_coe hn x
   have hDL : ((D.trans L : TangentSpace 𝓘(ℝ, E) x ≃L[ℝ] E) : TangentSpace 𝓘(ℝ, E) x →L[ℝ] E) =
       mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) e' x := by
     have hcomp : ⇑e' = e ∘ Φ := by
       rw [Homeomorph.transOpenPartialHomeomorph_apply, Diffeomorph.coe_toHomeomorph]
     rw [hcomp, mfderiv_comp x (mdifferentiableAt_atlas (chart_mem_atlas E (Φ x))
-      (mem_chart_source E (Φ x))) (hΦ.mdifferentiable one_ne_zero x), ← hL, ← hD]
-    exact ContinuousLinearEquiv.comp_coe D L
+      (mem_chart_source E (Φ x))) (hΦ.mdifferentiable hn x), ← hL, ← hD]
+    exact (ContinuousLinearEquiv.comp_coe D L).symm
   refine (Manifold.Orientation.isOrientationPreservingAt_iff_of_coe_eq _ _ _ _ D hD).2 ?_
-  have hM := map_orientationAt_complexManifoldOrientation 1 he' hx (D.trans L) hDL
+  have hM := map_orientationAt_complexManifoldOrientation n he' hx (D.trans L) hDL
   rw [ContinuousLinearEquiv.trans_toLinearEquiv, Orientation.map_trans] at hM
   exact (Orientation.map _ L.toLinearEquiv).injective (hM.trans hmap.symm)
 
