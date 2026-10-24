@@ -207,16 +207,17 @@ theorem derivSignLeft_derivative_of_isRoot {p : R[X]} {a : R} (ha : p.IsRoot a) 
     derivative_rootMultiplicity_of_root ha, hk]
   simp [pow_succ]
 
-/-- At any point `a`, the right-hand sign of the derivative is that of the increment `p - p(a)`:
-it is positive exactly when `p` lies above `p(a)` immediately to the right of `a`. -/
+/-- At any point `a`, the right-hand sign of the derivative equals the right-hand sign of the
+increment `p - C (p.eval a)`. Over an ordered field this is the sign of `p(x) - p(a)` just to the
+right of `a`; see `exists_sign_eval_derivative`. -/
 theorem derivSignRight_derivative (p : R[X]) (a : R) :
     p.derivative.derivSignRight a = (p - C (p.eval a)).derivSignRight a := by
   have h := derivSignRight_derivative_of_isRoot (p := p - C (p.eval a)) (a := a) (by simp)
   rwa [derivative_sub, derivative_C, sub_zero] at h
 
-/-- At any point `a`, the left-hand sign of the derivative is the negative of that of the
-increment `p - p(a)`: it is positive exactly when `p` lies below `p(a)` immediately to the left
-of `a`. -/
+/-- At any point `a`, the left-hand sign of the derivative equals the negative of the left-hand
+sign of the increment `p - C (p.eval a)`. Over an ordered field this is the opposite of the sign
+of `p(x) - p(a)` just to the left of `a`; see `exists_sign_eval_derivative`. -/
 theorem derivSignLeft_derivative (p : R[X]) (a : R) :
     p.derivative.derivSignLeft a = -(p - C (p.eval a)).derivSignLeft a := by
   have h := derivSignLeft_derivative_of_isRoot (p := p - C (p.eval a)) (a := a) (by simp)
