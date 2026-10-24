@@ -465,24 +465,29 @@ theorem finiteIndex_congruenceSubgroup (L : IntegralLattice V) {d : ℤ} (hd : d
 
 /-! ### The ambient determinant and conjugation -/
 
+/-- In the ambient basis `L.rationalBasis`, the matrix of a self-isometry of `L` is its integer
+matrix in the chosen `ℤ`-basis of `L`, with entries cast to `ℚ`. -/
+theorem toMatrix_rationalBasis (g : Isometry L L) :
+    LinearMap.toMatrix L.rationalBasis L.rationalBasis ((g : V ≃ₗ[ℚ] V) : V →ₗ[ℚ] V) =
+      (LinearMap.toMatrix (Module.Free.chooseBasis ℤ L) (Module.Free.chooseBasis ℤ L)
+        (g.carrierEquiv : L →ₗ[ℤ] L)).map (Int.cast : ℤ → ℚ) := by
+  set b := Module.Free.chooseBasis ℤ L
+  ext i j
+  have h : (g : V ≃ₗ[ℚ] V) (L.rationalBasis j) =
+      ∑ k, ((b.repr (g.carrierEquiv (b j)) k : ℤ) : ℚ) • L.rationalBasis k := by
+    rw [rationalBasis_apply, coe_toLinearEquiv, ← coe_carrierEquiv_apply]
+    conv_lhs => rw [← b.sum_repr (g.carrierEquiv (b j))]
+    simp only [Submodule.coe_sum, Submodule.coe_smul, rationalBasis_apply, Int.cast_smul_eq_zsmul]
+    rfl
+  rw [LinearMap.toMatrix_apply, LinearEquiv.coe_coe, h, L.rationalBasis.repr_sum_self,
+    Matrix.map_apply, LinearMap.toMatrix_apply, LinearEquiv.coe_coe]
+
 /-- The determinant of a self-isometry of `L` is the determinant of the rational linear
 automorphism of the ambient space that it extends. -/
 theorem det_toLinearMap (g : Isometry L L) :
     LinearMap.det ((g : V ≃ₗ[ℚ] V) : V →ₗ[ℚ] V) = ((det L g : ℤ) : ℚ) := by
-  classical
-  set b := Module.Free.chooseBasis ℤ L
-  have hg : ((g : V ≃ₗ[ℚ] V) : V →ₗ[ℚ] V) = Matrix.toLin L.rationalBasis L.rationalBasis
-      ((LinearMap.toMatrix b b (g.carrierEquiv : L →ₗ[ℤ] L)).map (Int.cast : ℤ → ℚ)) := by
-    refine L.rationalBasis.ext fun j ↦ ?_
-    have hj : (g : V ≃ₗ[ℚ] V) (L.rationalBasis j) = (g.carrierEquiv (b j) : V) := by
-      rw [rationalBasis_apply, coe_carrierEquiv_apply, coe_toLinearEquiv]
-    rw [Matrix.toLin_self, LinearEquiv.coe_coe, hj]
-    conv_lhs => rw [← b.sum_repr (g.carrierEquiv (b j))]
-    rw [Submodule.coe_sum]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [Submodule.coe_smul, Matrix.map_apply, LinearMap.toMatrix_apply, LinearEquiv.coe_coe,
-      rationalBasis_apply, Int.cast_smul_eq_zsmul]
-  rw [hg, LinearMap.det_toLin, coe_det, ← LinearMap.det_toMatrix b, Int.cast_det]
+  rw [← LinearMap.det_toMatrix L.rationalBasis, toMatrix_rationalBasis, ← Int.cast_det,
+    LinearMap.det_toMatrix, coe_det]
 
 variable {W : Type*} [AddCommGroup W] [Module ℚ W] {M : IntegralLattice W}
 
