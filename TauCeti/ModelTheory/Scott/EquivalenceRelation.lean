@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.Set.Finite.Range
 public import Mathlib.Order.Setoid.Partition
 public import TauCeti.Data.Set.Card
+public import TauCeti.Data.Setoid.Basic
 public import TauCeti.ModelTheory.BackAndForth.Graph
 public import TauCeti.ModelTheory.BackAndForth.Karp
 public import TauCeti.ModelTheory.Scott.ExtensionPair
@@ -247,15 +248,6 @@ theorem internalScottRank_fromRel_eq_one (hr : ∀ x : V, {x' | r x x'}.Infinite
   letI := (fromRel r).structure
   (isExtensionPair_fromRel hr le_rfl).internalScottRank_eq_one
 
-/-- Two elements have the same class exactly when they are related. -/
-private theorem setOf_rel_eq_iff {x y : V} : {x' | r x x'} = {y' | r y y'} ↔ r x y :=
-  ⟨fun h => (Set.ext_iff.mp h y).mpr (r.refl' y), fun h =>
-    Set.ext fun _ => ⟨fun hx => r.trans' (r.symm' h) hx, fun hy => r.trans' h hy⟩⟩
-
-/-- The class of an element is one of the classes of the relation. -/
-private theorem setOf_rel_mem_classes (x : V) : {x' | r x x'} ∈ r.classes :=
-  ⟨x, Set.ext fun _ => r.comm'⟩
-
 /-- Tuples with the same atomic type have equally many entries in the classes of matching
 entries. -/
 private theorem encard_setOf_rel_inter_range_eq {n : ℕ} {a : Fin n → V} {b : Fin n → W}
@@ -266,6 +258,14 @@ private theorem encard_setOf_rel_inter_range_eq {n : ℕ} {a : Fin n → V} {b :
   rw [← Set.image_preimage_eq_inter_range, ← Set.image_preimage_eq_inter_range,
     Set.encard_image_eq_encard_image_of_eq_iff heq]
   simp only [Set.preimage_ofPred_eq, hrel]
+
+/-- Extending a tuple by `w` removes `w` from the elements of the class of an old entry that are
+not entries of the tuple. -/
+private theorem setOf_rel_snoc_sdiff_range {α : Type*} {t : Setoid α} {n : ℕ} (c : Fin n → α)
+    (w : α) (i : Fin n) :
+    {z | t ((snoc c w : Fin (n + 1) → α) i.castSucc) z} \
+        Set.range (snoc c w : Fin (n + 1) → α) = ({z | t (c i) z} \ Set.range c) \ {w} := by
+  rw [snoc_castSucc, range_snoc, ← Set.union_singleton, ← Set.sdiff_sdiff]
 
 /-- A tuple back-and-forth system from `r` to `s` transfers every lower bound on the number of
 elements of the class of an entry that are not entries of the tuple. -/
@@ -291,10 +291,10 @@ private theorem le_encard_setOf_rel_sdiff_range {S : Set (Σ n, (Fin n → V) ×
       exact hxa ⟨j, by simpa using (heq j.castSucc (last n)).mpr (by simp)⟩
     have hsy : s (b i) y := by simpa using (hrel i.castSucc (last n)).mp (by simpa using hx)
     have h := ih hy i.castSucc (by
-      rw [snoc_castSucc, range_snoc, ← Set.union_singleton, ← Set.sdiff_sdiff,
-        ← ENat.add_le_add_iff_right ENat.one_ne_top, Set.encard_sdiff_singleton_add_one hxA]
+      rw [setOf_rel_snoc_sdiff_range, ← ENat.add_le_add_iff_right ENat.one_ne_top,
+        Set.encard_sdiff_singleton_add_one hxA]
       exact_mod_cast hm)
-    rw [snoc_castSucc, range_snoc, ← Set.union_singleton, ← Set.sdiff_sdiff] at h
+    rw [setOf_rel_snoc_sdiff_range] at h
     rw [← Set.encard_sdiff_singleton_add_one
       (⟨hsy, hyb⟩ : y ∈ {y | s (b i) y} \ Set.range b)]
     push_cast
@@ -410,9 +410,9 @@ private theorem exists_forall_not_rel_encard_eq
       {c ∈ r.classes | c.encard = {x' | r x x'}.encard}.encard := by
     rw [← Set.encard_image_eq_encard_image_of_eq_iff hfg]
     refine ((Set.toFinite I).image _).encard_lt_encard ((Set.ssubset_iff_of_subset ?_).mpr
-      ⟨_, ⟨setOf_rel_mem_classes x, rfl⟩, ?_⟩)
+      ⟨_, ⟨by simpa only [r.comm'] using r.mem_classes x, rfl⟩, ?_⟩)
     · rintro _ ⟨i, hi, rfl⟩
-      exact ⟨setOf_rel_mem_classes _, hi⟩
+      exact ⟨by simpa only [r.comm'] using r.mem_classes _, hi⟩
     · rintro ⟨i, -, hi⟩
       exact hx i (setOf_rel_eq_iff.mp hi)
   obtain ⟨_, ⟨⟨y, rfl⟩, hyκ⟩, hyI⟩ := Set.not_subset.mp fun hsub =>
@@ -499,7 +499,7 @@ private theorem encard_classes_le_of_isTupleBFSystem {S : Set (Σ n, (Fin n → 
     (g := fun i => {y | s (b i) y}) fun i j => by rw [setOf_rel_eq_iff, setOf_rel_eq_iff, hrel] ]
   refine Set.encard_le_encard ?_
   rintro _ ⟨i, -, rfl⟩
-  refine ⟨setOf_rel_mem_classes _, ?_⟩
+  refine ⟨by simpa only [s.comm'] using s.mem_classes (b i), ?_⟩
   rw [← encard_setOf_rel_eq_of_isTupleBFSystem hS hab i, ha]
   exact (ht (t.equivFin.symm i).2).2
 
@@ -557,7 +557,7 @@ end Setoid
 
 namespace TauCeti
 
-open Setoid
+open _root_.Setoid
 
 variable {ι : Type u''}
 
