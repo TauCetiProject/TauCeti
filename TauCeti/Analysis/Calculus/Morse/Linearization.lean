@@ -217,15 +217,14 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteS
 
 open TauCeti
 
-/-- The negative-gradient remainder is continuously differentiable at its base point when the
-function is twice continuously differentiable there. -/
-theorem contDiffAt_negativeGradientRemainder (hf : ContDiffAt ℝ 2 f x) :
-    ContDiffAt ℝ 1 (negativeGradientRemainder f x) x := by
-  have hgrad : ContDiffAt ℝ 1 (∇ f) x :=
-    (InnerProductSpace.toDual ℝ E).symm.contDiff.contDiffAt.comp x
-      (hf.fderiv_right (by norm_num))
-  exact hgrad.neg.add <|
-    (hessianOperator f x).contDiff.contDiffAt.comp x (contDiffAt_id.sub contDiffAt_const)
+/-- The negative-gradient remainder `negativeGradientRemainder f x` is `C^m` at any point `y` where
+`f` is `C^n`, provided `m + 1 ≤ n`. -/
+theorem contDiffAt_negativeGradientRemainder {m n : WithTop ℕ∞} {y : E}
+    (hf : ContDiffAt ℝ n f y) (hmn : m + 1 ≤ n) :
+    ContDiffAt ℝ m (negativeGradientRemainder f x) y := by
+  rw [funext (negativeGradientRemainder_apply f x)]
+  exact (hf.gradient_right hmn).neg.add <|
+    (hessianOperator f x).contDiff.contDiffAt.comp y (contDiffAt_id.sub contDiffAt_const)
 
 /-- At a twice continuously differentiable point, the derivative of the nonlinear
 negative-gradient remainder at its base point is zero. -/
@@ -246,7 +245,7 @@ strictly differentiable with zero derivative. This is the two-point estimate nee
 contraction argument for the local stable-manifold theorem. -/
 theorem hasStrictFDerivAt_negativeGradientRemainder (hf : ContDiffAt ℝ 2 f x) :
     HasStrictFDerivAt (negativeGradientRemainder f x) (0 : E →L[ℝ] E) x :=
-  hf.contDiffAt_negativeGradientRemainder.hasStrictFDerivAt'
+  (hf.contDiffAt_negativeGradientRemainder (m := 1) (by norm_num)).hasStrictFDerivAt'
     hf.hasFDerivAt_negativeGradientRemainder one_ne_zero
 
 /-- On a sufficiently small closed ball about a twice continuously differentiable point, the
