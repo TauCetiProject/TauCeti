@@ -40,6 +40,7 @@ This file supplies general constructions for Lie modules that are missing from M
   the Lie subalgebra it generates.
 * `TauCeti.mem_lieAnnihilator`: membership in `lieAnnihilator R L v` is equivalent to vanishing
   of the Lie action on `v`.
+* `LieAlgebra.ad_eq_toEnd`: the adjoint action is the action `toEnd R L L` of `L` on itself.
 * `LieHom.map_ad_pow`: a Lie homomorphism carries `(ad x) ^ n y` to `(ad (f x)) ^ n (f y)`.
 * `LieHom.isNilpotent_ad_of_surjective`: adjoint nilpotence descends along a surjective
   Lie homomorphism.
@@ -90,6 +91,12 @@ theorem isIrreducible_compLieHom_of_eq_bot_or_eq_top (f : L →ₗ⁅R⁆ Module
   · exact fun hbot => hN ((LieSubmodule.toSubmodule_eq_bot N).mp hbot)
 
 end LieModule
+
+/-- The adjoint action `ad R L` is by definition the action `LieModule.toEnd R L L` of `L` on
+itself. Rewriting with this lemma moves results about Lie modules to the adjoint action. -/
+theorem LieAlgebra.ad_eq_toEnd (R L : Type*) [CommRing R] [LieRing L] [LieAlgebra R L] :
+    LieAlgebra.ad R L = LieModule.toEnd R L L :=
+  rfl
 
 namespace TauCeti
 

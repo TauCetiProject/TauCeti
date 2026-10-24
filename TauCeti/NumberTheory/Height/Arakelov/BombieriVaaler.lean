@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.Height.Arakelov.IntMatrix
 -- Proof-only: Minkowski's second theorem against Vaaler's slice of the cube.
-import TauCeti.NumberTheory.GeometryOfNumbers.SupNorm
+import TauCeti.NumberTheory.GeometryOfNumbers.SupNormMinima
 
 /-!
 # Independent integral solutions of small sup norm, after Bombieri and Vaaler

@@ -341,6 +341,24 @@ theorem excessAt_nonneg_of_nonneg_of_forall_out_eq_zero [PartialOrder K] [IsOrde
   simp only [excessAt_def, h, sum_const_zero, sub_zero]
   exact sum_nonneg fun w _ ↦ sum_nonneg fun e _ ↦ hf _ _ e
 
+/-- An assignment between zero and `cap` has excess at `v` at most the total capacity of the arrows
+entering `v`. -/
+theorem excessAt_le_of_mem_Icc [PartialOrder K] [IsOrderedAddMonoid K] {f cap : Assignment Q K}
+    (hf : f ∈ Set.Icc 0 cap) (v : V) : excessAt f v ≤ ∑ w, ∑ e : Q w v, cap e :=
+  calc excessAt f v ≤ ∑ w, ∑ e : Q w v, f e :=
+        sub_le_self _ (sum_nonneg fun _ _ ↦ sum_nonneg fun e _ ↦ hf.1 _ _ e)
+    _ ≤ ∑ w, ∑ e : Q w v, cap e := sum_le_sum fun _ _ ↦ sum_le_sum fun e _ ↦ hf.2 _ _ e
+
+/-- An assignment between zero and `cap` has minus its excess at `v` at most the total capacity of
+the arrows leaving `v`. -/
+theorem neg_excessAt_le_of_mem_Icc [PartialOrder K] [IsOrderedAddMonoid K]
+    {f cap : Assignment Q K} (hf : f ∈ Set.Icc 0 cap) (v : V) :
+    -excessAt f v ≤ ∑ w, ∑ e : Q v w, cap e :=
+  calc -excessAt f v ≤ ∑ w, ∑ e : Q v w, f e := by
+        rw [excessAt_def, neg_sub]
+        exact sub_le_self _ (sum_nonneg fun _ _ ↦ sum_nonneg fun e _ ↦ hf.1 _ _ e)
+    _ ≤ ∑ w, ∑ e : Q v w, cap e := sum_le_sum fun _ _ ↦ sum_le_sum fun e _ ↦ hf.2 _ _ e
+
 /-- **Excess on a vertex set.** The total excess of `f` on `S` is the value on arrows entering `S`
 from its complement minus the value on arrows leaving `S` for its complement; arrows with both ends
 in `S` cancel. -/

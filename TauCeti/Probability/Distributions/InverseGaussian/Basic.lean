@@ -398,6 +398,15 @@ theorem isProbabilityMeasure_inverseGaussianMeasure_iff :
   rw [inverseGaussianMeasure_of_not_pos hp] at h
   exact IsProbabilityMeasure.ne_zero (0 : Measure ℝ) rfl
 
+/-- Every inverse Gaussian measure is finite, including the zero measure at invalid
+parameters. -/
+instance : IsFiniteMeasure (inverseGaussianMeasure μ lam) := by
+  by_cases h : 0 < μ ∧ 0 < lam
+  · have := isProbabilityMeasure_inverseGaussianMeasure h.1 h.2
+    infer_instance
+  · rw [inverseGaussianMeasure_of_not_pos h]
+    infer_instance
+
 /-- The inverse Gaussian law gives no mass to the nonpositive half-line, at all parameters. -/
 @[simp]
 theorem inverseGaussianMeasure_Iic_zero (μ lam : ℝ) :
@@ -426,6 +435,15 @@ theorem support_inverseGaussianMeasure (hμ : 0 < μ) (hlam : 0 < lam) :
   rw [inverseGaussianMeasure_eq_withDensity,
     Measure.support_withDensity_eq_closure (measurable_inverseGaussianPDF μ lam) isOpen_Ioi hsupp,
     closure_Ioi]
+
+/-- The exact topological support is the closed positive half-line at valid parameters and is
+empty otherwise. -/
+@[simp]
+theorem support_inverseGaussianMeasure_eq_if (μ lam : ℝ) :
+    (inverseGaussianMeasure μ lam).support = if 0 < μ ∧ 0 < lam then Ici 0 else ∅ := by
+  by_cases h : 0 < μ ∧ 0 < lam
+  · rw [ite_eq_left h, support_inverseGaussianMeasure h.1 h.2]
+  · rw [ite_eq_right h, inverseGaussianMeasure_of_not_pos h, Measure.support_zero]
 
 section Transfer
 
@@ -503,6 +521,17 @@ theorem cdf_inverseGaussianMeasure_of_nonpos (hμ : 0 < μ) (hlam : 0 < lam) (hx
   rw [cdf_eq_real, measureReal_def,
     measure_mono_null (Iic_subset_Iic.mpr hx) (inverseGaussianMeasure_Iic_zero μ lam),
     ENNReal.toReal_zero]
+
+/-- **The inverse Gaussian cdf.** It vanishes on the nonpositive half-line and has the classical
+closed form on the positive half-line. -/
+theorem cdf_inverseGaussianMeasure_eq (hμ : 0 < μ) (hlam : 0 < lam) (x : ℝ) :
+    cdf (inverseGaussianMeasure μ lam) x =
+      if x ≤ 0 then 0 else
+        cdf (gaussianReal 0 1) (√(lam / x) * (x / μ - 1)) +
+          exp (2 * lam / μ) * cdf (gaussianReal 0 1) (-(√(lam / x) * (x / μ + 1))) := by
+  split_ifs with hx
+  · exact cdf_inverseGaussianMeasure_of_nonpos hμ hlam hx
+  · exact cdf_inverseGaussianMeasure_of_pos hμ hlam (not_le.mp hx)
 
 /-! ### Positive scaling -/
 
