@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.BilinearForm.Prod
+public import TauCeti.LinearAlgebra.QuadraticForm.PosDef
 public import TauCeti.RingTheory.TensorProduct.IsBaseChange
 public import Mathlib.LinearAlgebra.TensorProduct.Prod
 public import Mathlib.LinearAlgebra.BilinearForm.IsometryEquiv
@@ -13,7 +14,6 @@ public import Mathlib.LinearAlgebra.BilinearForm.TensorProduct
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.RingTheory.TensorProduct.IsBaseChangePi
 public import Mathlib.Algebra.Order.Algebra
-public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 import Mathlib.Algebra.Ring.Hom.InjSurj
 import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
 
@@ -27,10 +27,11 @@ records how nondegeneracy behaves under base change.
 Nondegeneracy is not preserved by an arbitrary base change: a form can acquire a kernel when its
 discriminant becomes a zero divisor. On a finite free module it is exactly the nonvanishing of
 that discriminant, so any structure map between integral domains reflects it, and an injective one
-also preserves it. Those are `TauCeti.nondegenerate_of_nondegenerate_baseChange` and
-`TauCeti.nondegenerate_baseChange_iff`, and the computations behind them,
-`TauCeti.bilinForm_toMatrix_baseChange` and `TauCeti.bilinForm_det_toMatrix_baseChange`, say that
-base change acts entrywise on the Gram matrix of a basis and maps its determinant accordingly.
+also preserves it. The theorems
+`LinearMap.BilinForm.nondegenerate_of_nondegenerate_baseChange` and
+`LinearMap.BilinForm.nondegenerate_baseChange_iff`, and the computations behind them,
+`LinearMap.BilinForm.toMatrix_baseChange` and `LinearMap.BilinForm.det_toMatrix_baseChange`, say
+that base change acts entrywise on the Gram matrix of a basis and maps its determinant accordingly.
 
 When the scalar algebra is free over the original semiring, base change preserves left separation
 and nondegeneracy without any finiteness or freeness hypothesis on the module carrying the form.
@@ -38,9 +39,10 @@ In particular, this applies to arbitrary extensions of fields, even in infinite 
 Injective localizations also preserve separation and nondegeneracy without any condition on the
 module carrying the form.
 
-Over ordered fields, base change along an order-preserving structure map also preserves and
-reflects positive definiteness of a symmetric form on a finite-dimensional space; this is how a
-rational form is compared with its real extension.
+Over an ordered field, base change into a linearly ordered commutative ring along an
+order-preserving structure map also preserves and reflects positive definiteness of the quadratic
+map associated to a bilinear form on a finite-dimensional space; this is how a rational form is
+compared with its real extension.
 
 ## Main declarations
 
@@ -57,22 +59,26 @@ rational form is compared with its real extension.
 * `IsBaseChange.bilinForm_baseChange`: if a bilinear form restricts along a map to a
   second form, evaluating it through the associated base-change equivalence agrees with the
   canonical base change of the second form.
-* `TauCeti.bilinForm_toMatrix_baseChange`: the Gram matrix of a base-changed form, in the
+* `IsBaseChange.bilinFormIsometryEquiv`: in that situation the base-change equivalence is an
+  isometric equivalence from the canonical base change of the second form.
+* `LinearMap.BilinForm.baseChange_baseChange_baseChange`: base-changed maps preserving a bilinear
+  form preserve its base change.
+* `LinearMap.BilinForm.toMatrix_baseChange`: the Gram matrix of a base-changed form, in the
   base-changed basis, is the entrywise image of the original Gram matrix.
-* `TauCeti.bilinForm_det_toMatrix_baseChange`: the determinant of that Gram matrix is the image of
+* `LinearMap.BilinForm.det_toMatrix_baseChange`: the determinant of that Gram matrix is the image of
   the original determinant.
-* `TauCeti.nondegenerate_of_nondegenerate_baseChange`: a bilinear form on a finite free
+* `LinearMap.BilinForm.nondegenerate_of_nondegenerate_baseChange`: a bilinear form on a finite free
   module over an integral domain is nondegenerate as soon as its base change into a second integral
   domain is, with no hypothesis on the structure map.
-* `TauCeti.nondegenerate_baseChange_iff`: along an injective structure map between
+* `LinearMap.BilinForm.nondegenerate_baseChange_iff`: along an injective structure map between
   integral domains the implication is an equivalence.
 * `LinearMap.BilinForm.IsometryEquiv.baseChange`: an isometric equivalence of bilinear forms
   base-changes to an isometric equivalence of their base changes.
 * `TauCeti.bilinFormBaseChangeProdIsometry`: base change commutes with products of
   bilinear forms, via the canonical tensor-product equivalence.
-* `LinearMap.BilinForm.posDef_toQuadraticMap_baseChange_iff`: along an order-preserving extension
-  of ordered fields, base change preserves and reflects positive definiteness of a symmetric form
-  on a finite-dimensional space.
+* `LinearMap.BilinForm.posDef_toQuadraticMap_baseChange_iff`: along an order-preserving
+  structure map from an ordered field to a linearly ordered commutative ring, base change preserves
+  and reflects positive definiteness of the quadratic map of any finite-dimensional bilinear form.
 -/
 
 public section
@@ -329,7 +335,43 @@ theorem _root_.IsBaseChange.bilinForm_baseChange (h : IsBaseChange A f)
     simp [IsBaseChange.equiv_tmul]
   simpa only [hf, LinearEquiv.coe_coe] using B'.liftBaseChange B hB x y
 
+/-- If `B` restricts along a base-change map `f` to `B'`, the base-change equivalence
+`A ⊗[R] M ≃ N` is an isometric equivalence from the canonical base change of `B'` to `B`. -/
+noncomputable def _root_.IsBaseChange.bilinFormIsometryEquiv (h : IsBaseChange A f)
+    (B' : LinearMap.BilinForm R M) (B : LinearMap.BilinForm A N)
+    (hB : ∀ x y : M, B (f x) (f y) = algebraMap R A (B' x y)) :
+    (B'.baseChange A).IsometryEquiv B where
+  toLinearEquiv := h.equiv
+  map_app' := h.bilinForm_baseChange B' B hB
+
+/-- The isometric equivalence `IsBaseChange.bilinFormIsometryEquiv` is the base-change
+equivalence. -/
+@[simp]
+theorem _root_.IsBaseChange.bilinFormIsometryEquiv_apply (h : IsBaseChange A f)
+    (B' : LinearMap.BilinForm R M) (B : LinearMap.BilinForm A N)
+    (hB : ∀ x y : M, B (f x) (f y) = algebraMap R A (B' x y)) (x : A ⊗[R] M) :
+    h.bilinFormIsometryEquiv B' B hB x = h.equiv x :=
+  (rfl)
+
+/-- **Base-changed maps preserving a bilinear form preserve its base change**: if `g` carries `B`
+to `B'`, then `g.baseChange A` carries `B.baseChange A` to `B'.baseChange A`. -/
+theorem _root_.LinearMap.BilinForm.baseChange_baseChange_baseChange {M' : Type*}
+    [AddCommMonoid M'] [Module R M'] {B : LinearMap.BilinForm R M}
+    {B' : LinearMap.BilinForm R M'} {g : M →ₗ[R] M'} (hg : ∀ v w, B' (g v) (g w) = B v w)
+    (x y : A ⊗[R] M) :
+    B'.baseChange A (g.baseChange A x) (g.baseChange A y) = B.baseChange A x y := by
+  have hlift : (TensorProduct.mk R A M' 1 ∘ₗ g).liftBaseChange A = g.baseChange A := by
+    ext
+    simp
+  rw [← hlift]
+  exact B.liftBaseChange (B'.baseChange A)
+    (fun v w => by simp [hg, Algebra.algebraMap_eq_smul_one]) x y
+
 end
+
+end TauCeti
+
+namespace LinearMap.BilinForm
 
 section Semiring
 
@@ -340,7 +382,7 @@ variable [AddCommMonoid M] [Module R M]
 /-- Base change acts entrywise on the Gram matrix of a bilinear form: the matrix of `B.baseChange A`
 in the base-changed basis is the image of the matrix of `B` under the structure map. -/
 @[simp]
-theorem bilinForm_toMatrix_baseChange [Fintype ι] [DecidableEq ι]
+theorem toMatrix_baseChange [Fintype ι] [DecidableEq ι]
     (B : LinearMap.BilinForm R M) (b : Basis ι R M) :
     LinearMap.BilinForm.toMatrix (b.baseChange A) (B.baseChange A) =
       (LinearMap.BilinForm.toMatrix b B).map (algebraMap R A) := by
@@ -358,11 +400,11 @@ variable [AddCommGroup M] [Module R M]
 
 /-- The Gram determinant of a base-changed bilinear form is the image of the original Gram
 determinant under the structure map. -/
-theorem bilinForm_det_toMatrix_baseChange [Fintype ι] [DecidableEq ι]
+theorem det_toMatrix_baseChange [Fintype ι] [DecidableEq ι]
     (B : LinearMap.BilinForm R M) (b : Basis ι R M) :
     (LinearMap.BilinForm.toMatrix (b.baseChange A) (B.baseChange A)).det =
       algebraMap R A (LinearMap.BilinForm.toMatrix b B).det := by
-  rw [bilinForm_toMatrix_baseChange, ← RingHom.mapMatrix_apply, ← RingHom.map_det]
+  rw [toMatrix_baseChange, ← RingHom.mapMatrix_apply, ← RingHom.map_det]
 
 variable (A) in
 /-- **Nondegeneracy descends along any base change of integral domains.** On a finite free module,
@@ -376,7 +418,7 @@ theorem nondegenerate_of_nondegenerate_baseChange [Finite ι] [IsDomain R] [IsDo
   classical
   have : Fintype ι := Fintype.ofFinite ι
   rw [LinearMap.BilinForm.nondegenerate_iff_det_ne_zero (b.baseChange A),
-    bilinForm_det_toMatrix_baseChange] at h
+    det_toMatrix_baseChange] at h
   rw [LinearMap.BilinForm.nondegenerate_iff_det_ne_zero b]
   exact fun hdet ↦ h (by rw [hdet, map_zero])
 
@@ -392,11 +434,15 @@ theorem nondegenerate_baseChange_iff [Finite ι] [IsDomain A] [FaithfulSMul R A]
   have : Fintype ι := Fintype.ofFinite ι
   refine ⟨nondegenerate_of_nondegenerate_baseChange A B b, fun h ↦ ?_⟩
   rw [LinearMap.BilinForm.nondegenerate_iff_det_ne_zero (b.baseChange A),
-    bilinForm_det_toMatrix_baseChange]
+    det_toMatrix_baseChange]
   exact (map_ne_zero_iff _ (FaithfulSMul.algebraMap_injective R A)).mpr
     ((LinearMap.BilinForm.nondegenerate_iff_det_ne_zero b).mp h)
 
 end Nondegenerate
+
+end LinearMap.BilinForm
+
+namespace TauCeti
 
 section IsometryEquiv
 
@@ -411,14 +457,8 @@ linear equivalence is an isometric equivalence of the base-changed forms. -/
 def _root_.LinearMap.BilinForm.IsometryEquiv.baseChange (f : B₁.IsometryEquiv B₂) :
     (B₁.baseChange A).IsometryEquiv (B₂.baseChange A) where
   toLinearEquiv := (f : M₁ ≃ₗ[R] M₂).baseChange R A M₁ M₂
-  map_app' x y := by
-    simp only [AddHom.toFun_eq_coe, LinearMap.coe_toAddHom, LinearEquiv.coe_coe]
-    induction x using TensorProduct.inductionOn with
-    | add x₁ x₂ h₁ h₂ => simp only [map_add, LinearMap.add_apply, h₁, h₂]
-    | tmul a m =>
-      induction y using TensorProduct.inductionOn with
-      | add y₁ y₂ h₁ h₂ => simp only [map_add, h₁, h₂]
-      | tmul b n => simp
+  map_app' := LinearMap.BilinForm.baseChange_baseChange_baseChange (g := (f : M₁ →ₗ[R] M₂))
+    fun v w => f.map_app w v
 
 /-- On pure tensors, a base-changed isometric equivalence applies the original equivalence to the
 vector. -/
@@ -470,16 +510,26 @@ namespace LinearMap.BilinForm
 section PosDef
 
 variable {F K V : Type*} [Field F] [LinearOrder F] [IsStrictOrderedRing F]
-  [Field K] [LinearOrder K] [IsStrictOrderedRing K] [Algebra F K] [SMulPosStrictMono F K]
+  [CommRing K] [LinearOrder K] [IsStrictOrderedRing K] [Algebra F K] [SMulPosStrictMono F K]
   [AddCommGroup V] [Module F V] [FiniteDimensional F V]
 
-/-- **Positive definiteness is preserved and reflected by an ordered field extension.** For a
-symmetric bilinear form on a finite-dimensional space over an ordered field `F`, and an ordered
-field `K` whose structure map from `F` is strictly monotone, the base change of `B` to `K` is
-positive definite exactly when `B` is. In particular a rational symmetric form is positive
-definite exactly when its real extension is. -/
-theorem posDef_toQuadraticMap_baseChange_iff {B : LinearMap.BilinForm F V} (hB : B.IsSymm) :
+/-- **Positive definiteness is preserved and reflected by an ordered scalar extension.** For a
+bilinear form on a finite-dimensional space over an ordered field `F`, and a linearly ordered
+commutative ring `K` whose structure map from `F` is strictly monotone, the quadratic map of the
+base change of `B` to `K` is positive definite exactly when that of `B` is. No symmetry assumption
+is needed. In particular a rational form is positive definite exactly when its real extension is. -/
+theorem posDef_toQuadraticMap_baseChange_iff (B : LinearMap.BilinForm F V) :
     (B.baseChange K).toQuadraticMap.PosDef ↔ B.toQuadraticMap.PosDef := by
+  wlog hB : B.IsSymm generalizing B
+  · -- Symmetrization doubles every diagonal value, before and after base change.
+    have hsym : (B + B.flip).IsSymm := by
+      constructor
+      intro x y
+      simp [add_comm]
+    have hbase : (B + B.flip).baseChange K = B.baseChange K + (B.baseChange K).flip := by
+      ext
+      simp [add_smul]
+    simpa only [hbase, posDef_toQuadraticMap_add_flip_iff] using this (B + B.flip) hsym
   have hmap {a : F} : 0 < algebraMap F K a ↔ 0 < a := by
     simpa using (algebraMap_strictMono (α := F) K).lt_iff_lt (a := 0) (b := a)
   constructor

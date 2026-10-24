@@ -393,8 +393,8 @@ theorem coe_levelPowerBasis_gen_pow (K : Type*) [Field K] {e L : ℕ+} {k : ℕ}
     (h : (L : ℕ) = e * k) :
     ((levelPowerBasis K L).gen : TauCeti.puiseuxField K) ^ k = (levelPowerBasis K e).gen := by
   apply Subtype.ext
-  rw [SubmonoidClass.coe_pow, coe_levelPowerBasis_gen, coe_levelPowerBasis_gen, single_pow,
-    one_pow]
+  rw [SubmonoidClass.coe_pow, coe_levelPowerBasis_gen, coe_levelPowerBasis_gen,
+    HahnSeries.single_pow, one_pow]
   have hk : (k : ℚ) ≠ 0 := by
     have := L.ne_zero
     rw [h] at this

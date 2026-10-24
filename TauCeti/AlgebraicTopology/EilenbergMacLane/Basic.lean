@@ -131,6 +131,20 @@ theorem isEilenbergMacLaneSpaceOne_iff {G : Type u} [Group G]
       IsAspherical X x ∧ Nonempty (FundamentalGroup X x ≃* G) :=
   Iff.rfl
 
+/-- A based space is an Eilenberg--Mac Lane space of type `K(π₁(X, x), 1)` if and only if it is
+aspherical. -/
+@[simp]
+theorem isEilenbergMacLaneSpaceOne_fundamentalGroup_iff
+    {X : Type v} [TopologicalSpace X] {x : X} :
+    IsEilenbergMacLaneSpaceOne (FundamentalGroup X x) X x ↔ IsAspherical X x :=
+  and_iff_left ⟨MulEquiv.refl _⟩
+
+/-- An aspherical space is an Eilenberg--Mac Lane space of type `K(π₁(X, x), 1)`. -/
+theorem IsAspherical.isEilenbergMacLaneSpaceOne_fundamentalGroup
+    {X : Type v} [TopologicalSpace X] {x : X} (h : IsAspherical X x) :
+    IsEilenbergMacLaneSpaceOne (FundamentalGroup X x) X x :=
+  ⟨h, ⟨MulEquiv.refl _⟩⟩
+
 namespace IsEilenbergMacLaneSpaceOne
 
 variable {G : Type u} {H : Type v} [Group G] [Group H]

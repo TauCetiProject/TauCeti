@@ -57,6 +57,7 @@ is available for fields `K : Type`; the second class is defined in that generali
 * `TauCeti.sw1Class_eq_kummerSquareClassEquiv_discr`: `w₁(q) = (d(q))`.
 * `TauCeti.sw1Class_add` and `TauCeti.sw2Class_add`: `w₁(q ⊥ r) = w₁(q) + w₁(r)` and
   `w₂(q ⊥ r) = w₂(q) + w₂(r) + w₁(q) ∪ w₁(r)`.
+* `TauCeti.sw1Class_mk_rankOne_mul`: `w₁(⟨c⟩ ⊗ q) = n · (c) + w₁(q)` for `q` of rank `n`.
 * `TauCeti.sw1Class_formClass_congr` and `TauCeti.sw2Class_formClass_congr`: isometric regular
   forms have the same classes.
 * `TauCeti.sw1Class_zero`, `TauCeti.sw2Class_zero`, `TauCeti.sw1Class_one`,
@@ -153,6 +154,13 @@ theorem sw1ClassHom_apply (x : RegularFormClass K) : sw1ClassHom x = sw1Class x 
 theorem sw1Class_mk_rankOne (a : Kˣ) :
     sw1Class (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩) = kummerClass a := by
   rw [sw1Class_mk, sw1_fin_one]
+
+/-- **Scaling formula for `w₁`**: `w₁(⟨c⟩ ⊗ q) = n · (c) + w₁(q)` for `q` of rank `n`. -/
+theorem sw1Class_mk_rankOne_mul (c : Kˣ) (x : RegularFormClass K) :
+    sw1Class (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => c⟩ * x) =
+      x.rank • kummerClass c + sw1Class x := by
+  rw [sw1Class_eq_kummerSquareClassEquiv_discr, sw1Class_eq_kummerSquareClassEquiv_discr,
+    RegularFormClass.discr_mk_rankOne_mul, map_add, map_nsmul, kummerSquareClassEquiv_squareClass]
 
 /-- The unit class `⟨1⟩` has trivial `w₁`. -/
 @[simp]

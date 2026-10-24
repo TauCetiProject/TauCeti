@@ -265,7 +265,7 @@ end Restrict
 
 section Presentation
 
-open MvPowerSeries
+open _root_.MvPowerSeries
 
 variable (hv : v.Integers O) (hϖ : ϖ ≠ 0) (hϖ' : v (algebraMap O K ϖ) < 1) {ρ₁ ρ₂ ρ₁' : ℝ≥0}
   (hρ₁ : ρ₁ ∈ Set.Ioo 0 1) (hρ₂ : ρ₂ ∈ Set.Ioo 0 1) (hρ₁' : ρ₁' ∈ Set.Ioo 0 1)
