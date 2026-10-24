@@ -13,7 +13,8 @@ public import Mathlib.Algebra.Ring.Subring.Basic
 
 This file also records how scalar products that fix or annihilate a scalar control its
 pointwise image of the whole module. The image-membership result needs only a distributive
-monoid action.
+monoid action. Over a ring of scalars, negating the scalar does not change the pointwise image
+of a submodule, since a submodule is closed under negation.
 
 Let `S` be a subring of a commutative ring `A`, `M` an `A`-module and `M₀` an `S`-submodule of
 `M`. This file collects the elementary facts about the family `rⁿ • M₀`, for `r : S`, in
@@ -30,6 +31,7 @@ this file to restate both.
   `sⁿ : A` lands in `⟨s, _⟩ⁿ • M₀`, so a consumer speaking `A` needs no coercion plumbing.
 * `Submodule.pow_smul_antitone`: the family is antitone in the exponent.
 * `Submodule.pow_add_smul_mem`: `M₀` absorbs further powers of a scalar drawn from `S`.
+* `Submodule.neg_smul_eq_smul`: over a ring of scalars, `(-a) • N = a • N`.
 -/
 
 public section
@@ -92,6 +94,23 @@ theorem smul_mem_pow_smul {S : Subring A} (M₀ : Submodule S M) {s : A} (hs0 : 
     rw [← smul_assoc, ← smul_assoc, hscal]
   rw [he]
   exact Submodule.smul_mem_pointwise_smul _ _ _ hmem
+
+section Ring
+
+variable {α R M : Type*} [Ring α] [Ring R] [AddCommGroup M] [Module α M] [Module R M]
+  [SMulCommClass α R M]
+
+/-- **Negating the scalar does not change the image.** Over a ring of scalars,
+`(-a) • N = -(a • N)`, and a submodule is its own negation. -/
+@[simp]
+theorem neg_smul_eq_smul (a : α) (N : Submodule R M) : (-a) • N = a • N := by
+  ext x
+  simp only [mem_smul_pointwise_iff_exists]
+  constructor <;> rintro ⟨y, hy, rfl⟩
+  · exact ⟨-y, N.neg_mem hy, by rw [smul_neg, neg_smul]⟩
+  · exact ⟨-y, N.neg_mem hy, neg_smul_neg a y⟩
+
+end Ring
 
 end Submodule
 

@@ -40,6 +40,7 @@ whether or not they are assumed integral (`ZLattice.IsUnimodular.covolume_eq_one
 * `ZLattice.det_dual`: `det L^∨ = (det L)⁻¹`.
 * `ZLattice.IsIntegral.det_eq_card_discriminantGroup`: for integral `L`, `det L = |L^∨ ⧸ L|`.
 * `ZLattice.IsIntegral.finite_discriminantGroup`: for integral `L`, `L^∨ ⧸ L` is finite.
+* `ZLattice.IsIntegral.one_le_det`: for integral `L`, `1 ≤ det L`.
 * `ZLattice.IsIntegral.isUnimodular_iff_covolume_eq_one`,
   `ZLattice.IsIntegral.isUnimodular_iff_det_eq_one`,
   `ZLattice.IsIntegral.isUnimodular_iff_subsingleton_discriminantGroup`: the forms of
@@ -167,6 +168,13 @@ theorem IsIntegral.det_eq_card_discriminantGroup (h : IsIntegral L) :
 theorem IsIntegral.finite_discriminantGroup (h : IsIntegral L) : Finite (DiscriminantGroup L) :=
   Nat.finite_of_card_ne_zero <| by
     exact_mod_cast h.det_eq_card_discriminantGroup ▸ (det_pos L).ne'
+
+/-- The determinant of an integral lattice is at least one: it is the order of the discriminant
+group, a positive integer. -/
+theorem IsIntegral.one_le_det (h : IsIntegral L) : 1 ≤ det L := by
+  have := h.finite_discriminantGroup
+  rw [h.det_eq_card_discriminantGroup]
+  exact_mod_cast Nat.card_pos
 
 /-! ### Unimodular lattices -/
 
