@@ -147,6 +147,25 @@ theorem gradedResolutionRepresentation_lof [DecidableEq ℕ] (n : ℕ) (g : G)
   simp [gradedResolutionRepresentation, Representation.directSum,
     ContRepresentation.toMonoidHom_apply]
 
+/-- The degree-`n` component of `g • v` is `g` applied to the degree-`n` component of `v`. -/
+@[simp]
+theorem component_gradedResolutionRepresentation (n : ℕ) (g : G) (v : X.gradedResolutionModule) :
+    DirectSum.component R ℕ (fun n ↦ (resolutionX X (n + 1)).V) n
+        (X.gradedResolutionRepresentation g v) =
+      (resolutionX X (n + 1)).ρ g
+        (DirectSum.component R ℕ (fun n ↦ (resolutionX X (n + 1)).V) n v) := by
+  induction v using DirectSum.induction_on with
+  | zero => simp
+  | of i x =>
+    rw [← DirectSum.lof_eq_of R, gradedResolutionRepresentation_lof]
+    by_cases h : i = n
+    · subst h
+      rw [DirectSum.component.lof_self, DirectSum.component.lof_self]
+    · rw [DirectSum.component.of, DirectSum.component.of,
+        dite_eq_right_iff.2 (fun h' ↦ absurd h' h), dite_eq_right_iff.2 (fun h' ↦ absurd h' h),
+        map_zero]
+  | add x y hx hy => rw [map_add, map_add, hx, hy, map_add, map_add]
+
 /-- The total resolution differential is equivariant. -/
 theorem gradedResolutionDifferential_equivariant (g : G) (x : X.gradedResolutionModule) :
     X.gradedResolutionDifferential (X.gradedResolutionRepresentation g x) =
