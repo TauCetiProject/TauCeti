@@ -674,6 +674,16 @@ theorem laplaceBeltrami_eq_laplacian
 
 /-! ### The squared norm -/
 
+private theorem differentiable_gradient_norm_sq
+    {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+    [FiniteDimensional ℝ F] :
+    Differentiable ℝ (∇ fun y : F ↦ ‖y‖ ^ 2) := by
+  have hgrad : ∇ (fun y : F ↦ ‖y‖ ^ 2) = fun y ↦ (2 : ℝ) • y := by
+    funext y
+    simpa using TauCeti.gradient_mul_norm_sq_add (E := F) 2 0 y
+  rw [hgrad]
+  fun_prop
+
 /-- The flat Riemannian Hessian of the squared norm is twice the inner product. -/
 @[simp]
 theorem hessian_norm_sq_model_space
@@ -686,13 +696,8 @@ theorem hessian_norm_sq_model_space
     hessian (modelWithCornersSelf ℝ F) (fun y ↦ ‖y‖ ^ 2) x v w =
       2 * inner ℝ (NormedSpace.fromTangentSpace x v) (NormedSpace.fromTangentSpace x w) := by
   dsimp only
-  have hgrad : ∇ (fun y : F ↦ ‖y‖ ^ 2) = fun y ↦ 2 • y := by
-    funext y
-    rw [← mgradient_eq_gradient]
-    exact mgradient_norm_sq_model_space y
   have hgrad' : DifferentiableAt ℝ (∇ (fun y : F ↦ ‖y‖ ^ 2)) x := by
-    rw [hgrad]
-    fun_prop
+    exact (differentiable_gradient_norm_sq (F := F)).differentiableAt
   rw [hessian_eq_iteratedFDeriv_model_space hgrad' v w]
   rw [iteratedFDeriv_two_apply, TauCeti.fderiv_fderiv_norm_sq_apply]
   simp [Matrix.cons_val_zero, Matrix.cons_val_one]
@@ -705,7 +710,6 @@ theorem hessian_norm_sq_model_space
       2 * Module.finrank ℝ F := by
   rw [laplaceBeltrami_eq_laplacian]
   · exact TauCeti.laplacian_norm_sq x
-  · exact (((contDiff_norm_sq ℝ (E := F) (n := 2)).gradient_right (m := 1)
-      (by norm_num)).differentiable (by norm_num)) x
+  · exact (differentiable_gradient_norm_sq (F := F)).differentiableAt
 
 end TauCeti.Manifold
