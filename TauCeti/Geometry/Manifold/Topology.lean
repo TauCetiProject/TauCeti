@@ -72,14 +72,18 @@ theorem semilocallySimplyConnectedSpace (I : ModelWithCorners 𝕜 E H) (M : Typ
     have hpre : c ⁻¹' s ∈ 𝓝 x := by
       apply extChartAt_preimage_mem_nhds_of_mem_nhdsWithin
         (I := I) (x := x) (x' := x) (mem_extChartAt_source x)
-      change (Metric.ball (c x) r ∩ Set.range I) ∈ 𝓝[Set.range I] (c x)
+      simp only [s]
       rw [Set.inter_comm]
       exact inter_mem_nhdsWithin (Set.range I) (Metric.ball_mem_nhds (c x) hr)
     apply Filter.mem_of_superset (Filter.inter_mem hsource hpre)
     rintro z ⟨hzsource, hzc⟩
     dsimp only [d]
-    change ce z ∈ s at hzc
-    exact ⟨ce z, ⟨hzc, ce.left_inv hzsource⟩⟩
+    have hce : (ce : M → E) = c := by
+      exact PartialHomeomorph.coe_mk c _ _
+    have hzc' : ce z ∈ s := by
+      rw [hce]
+      exact hzc
+    exact ⟨ce z, ⟨hzc', ce.left_inv hzsource⟩⟩
   exact ⟨d, hd_nhds, hd_sc⟩
 
 end ModelWithCorners
