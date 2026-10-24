@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.RootSystem.Base
+public import TauCeti.Logic.Equiv.Option
+public import TauCeti.Data.Option.Basic
 
 /-!
 # Normal crystals over a root datum
@@ -32,6 +34,15 @@ The structure records `ε` and `φ` as data, but `TauCeti.NormalCrystal.ext` sho
 crystal is determined by its weight map and its raising operators: the lowering operators and the
 string lengths carry no further freedom.
 
+A bijection of the underlying types transports a normal crystal structure
+(`TauCeti.NormalCrystal.congr`): the weight and the string lengths are pulled back and the root
+operators are conjugated, and the bijection itself is a strict isomorphism.
+
+A normal crystal restricts to any subset closed under the root operators
+(`TauCeti.NormalCrystal.restrict`), and the inclusion of such a subset is a strict morphism. The
+components of the crystal graph are subsets of this kind, which is how
+`TauCeti.RepresentationTheory.Crystal.Component` gives them a crystal structure.
+
 ## Main definitions
 
 * `TauCeti.NormalCrystal`: a normal crystal over a root datum with a base.
@@ -40,6 +51,13 @@ string lengths carry no further freedom.
 * `TauCeti.NormalCrystal.eIter`, `TauCeti.NormalCrystal.fIter`: iterated root operators.
 * `TauCeti.NormalCrystal.StrictHom`: strict morphisms of normal crystals, with identities,
   composition and duals.
+* `TauCeti.NormalCrystal.congr`: transport of a normal crystal along a bijection of its
+  underlying type.
+* `TauCeti.NormalCrystal.StrictHom.congr`, `TauCeti.NormalCrystal.StrictHom.congrInv`: the strict
+  isomorphism implementing the transport and its inverse.
+* `TauCeti.NormalCrystal.restrict`: the restriction of a normal crystal to a subset closed under
+  the root operators, with the inclusion `TauCeti.NormalCrystal.StrictHom.restrictIncl` of a
+  closed subset as a strict morphism.
 
 ## Main results
 
@@ -51,6 +69,19 @@ string lengths carry no further freedom.
 * `TauCeti.NormalCrystal.StrictHom.ε_apply`, `TauCeti.NormalCrystal.StrictHom.φ_apply`,
   `TauCeti.NormalCrystal.StrictHom.f_apply`: a map preserving weights and commuting with the
   raising operators preserves the string lengths and commutes with the lowering operators.
+* `TauCeti.NormalCrystal.congr_refl`, `TauCeti.NormalCrystal.congr_trans`: functoriality of the
+  transport.
+* `TauCeti.NormalCrystal.congr_dual`: transport commutes with the dual crystal.
+* `TauCeti.NormalCrystal.congr_e_eq_some_iff`,
+  `TauCeti.NormalCrystal.congr_f_eq_some_iff`: transport at the level of the root operators.
+* `TauCeti.NormalCrystal.StrictHom.congrInv_comp_congr`,
+  `TauCeti.NormalCrystal.StrictHom.congr_comp_congrInv`: the two composites of the transport
+  isomorphism are identities.
+* `TauCeti.NormalCrystal.StrictHom.eq_congr_of_bijective`: a bijective strict morphism exhibits
+  its target as the transport of its source.
+* `TauCeti.NormalCrystal.restrict_e_eq_some_iff`,
+  `TauCeti.NormalCrystal.restrict_f_eq_some_iff`: the root operators of a restriction are those of
+  the ambient crystal, read through the subtype.
 
 ## References
 
@@ -351,6 +382,91 @@ theorem fIter_eq_some_iff : c.fIter i n x = some y ↔ c.eIter i n y = some x :=
 
 end Strings
 
+/-! ### Transport along a bijection -/
+
+section Congr
+
+variable (c : NormalCrystal P b B) (e : B ≃ B')
+
+/-- **Transport of a normal crystal along a bijection**: the weight and the string lengths are
+pulled back along `e` and the root operators are conjugated by `e`. -/
+def congr : NormalCrystal P b B' where
+  wt x := c.wt (e.symm x)
+  e i x := (c.e i (e.symm x)).map e
+  f i x := (c.f i (e.symm x)).map e
+  ε i x := c.ε i (e.symm x)
+  φ i x := c.φ i (e.symm x)
+  f_eq_some_iff := by
+    intro i x y
+    rw [Option.map_equiv_eq_some_iff, Option.map_equiv_eq_some_iff, c.f_eq_some_iff]
+  wt_of_e_eq_some := by
+    intro i x y h
+    exact c.wt_of_e_eq_some (Option.map_equiv_eq_some_iff.1 h)
+  ε_eq_zero_iff := by
+    intro i x
+    rw [Option.map_eq_none_iff]
+    exact c.ε_eq_zero_iff
+  ε_of_e_eq_some := by
+    intro i x y h
+    exact c.ε_of_e_eq_some (Option.map_equiv_eq_some_iff.1 h)
+  φ_eq_zero_iff := by
+    intro i x
+    rw [Option.map_eq_none_iff]
+    exact c.φ_eq_zero_iff
+  φ_sub_ε := fun i x => c.φ_sub_ε i (e.symm x)
+
+@[simp]
+theorem congr_wt (x : B') : (c.congr e).wt x = c.wt (e.symm x) := (rfl)
+
+@[simp]
+theorem congr_e (i : b.support) (x : B') :
+    (c.congr e).e i x = (c.e i (e.symm x)).map e := (rfl)
+
+@[simp]
+theorem congr_f (i : b.support) (x : B') :
+    (c.congr e).f i x = (c.f i (e.symm x)).map e := (rfl)
+
+@[simp]
+theorem congr_ε (i : b.support) (x : B') :
+    (c.congr e).ε i x = c.ε i (e.symm x) := (rfl)
+
+@[simp]
+theorem congr_φ (i : b.support) (x : B') :
+    (c.congr e).φ i x = c.φ i (e.symm x) := (rfl)
+
+/-- Transport along a bijection, at the level of the raising operators: the raising operator of the
+transport is the transported raising operator of the source. -/
+-- Not `@[simp]`: the projection lemma `congr_e` rewrites the left-hand side, which `simpNF`
+-- rejects.
+theorem congr_e_eq_some_iff (i : b.support) (x y : B') :
+    (c.congr e).e i x = some y ↔ c.e i (e.symm x) = some (e.symm y) := by
+  rw [congr_e, Option.map_equiv_eq_some_iff]
+
+/-- Transport along a bijection, at the level of the lowering operators. -/
+-- Not `@[simp]`: the projection lemma `congr_f` rewrites the left-hand side, which `simpNF`
+-- rejects.
+theorem congr_f_eq_some_iff (i : b.support) (x y : B') :
+    (c.congr e).f i x = some y ↔ c.f i (e.symm x) = some (e.symm y) := by
+  rw [congr_f, Option.map_equiv_eq_some_iff]
+
+/-- Transport along the identity bijection is the identity. -/
+@[simp]
+theorem congr_refl : c.congr (Equiv.refl B) = c :=
+  NormalCrystal.ext (funext fun x => by simp) (funext₂ fun i x => by simp)
+
+/-- Transport along a composite bijection is the composite of the transports. -/
+@[simp]
+theorem congr_trans (e' : B' ≃ B'') :
+    (c.congr e).congr e' = c.congr (e.trans e') :=
+  NormalCrystal.ext (funext fun x => by simp) (funext₂ fun i x => by simp)
+
+/-- Transport commutes with the dual crystal. -/
+@[simp]
+theorem congr_dual : (c.congr e).dual = c.dual.congr e := by
+  ext <;> simp
+
+end Congr
+
 /-! ### Strict morphisms -/
 
 /-- A **strict morphism** of normal crystals: a map of the underlying types preserving weights and
@@ -456,7 +572,180 @@ def dual : StrictHom c.dual d.dual where
 @[simp]
 theorem dual_apply : ψ.dual x = ψ x := (rfl)
 
+/-- The bijection underlying the transport is a strict morphism. -/
+def congr (c : NormalCrystal P b B) (e : B ≃ B') : StrictHom c (c.congr e) where
+  toFun := ⇑e
+  wt_toFun x := by simp
+  e_toFun i x := by simp
+
+/-- The inverse of the strict morphism underlying the transport. -/
+def congrInv (c : NormalCrystal P b B) (e : B ≃ B') : StrictHom (c.congr e) c where
+  toFun := ⇑e.symm
+  wt_toFun x := by simp
+  e_toFun i x := by simp [congr_e, Option.map_map]
+
+@[simp]
+theorem congr_apply (c : NormalCrystal P b B) (e : B ≃ B') (x : B) :
+    StrictHom.congr c e x = e x := (rfl)
+
+@[simp]
+theorem congrInv_apply (c : NormalCrystal P b B) (e : B ≃ B') (x : B') :
+    StrictHom.congrInv c e x = e.symm x := (rfl)
+
+@[simp]
+theorem congrInv_comp_congr (c : NormalCrystal P b B) (e : B ≃ B') :
+    (StrictHom.congrInv c e).comp (StrictHom.congr c e) = StrictHom.id c := by
+  ext x
+  simp
+
+@[simp]
+theorem congr_comp_congrInv (c : NormalCrystal P b B) (e : B ≃ B') :
+    (StrictHom.congr c e).comp (StrictHom.congrInv c e) = StrictHom.id (c.congr e) := by
+  ext x
+  simp
+
+/-- A bijective strict morphism exhibits its target as the transport of its source along the
+underlying equivalence. -/
+theorem eq_congr_of_bijective {c : NormalCrystal P b B} {d : NormalCrystal P b B'}
+    {ψ : StrictHom c d} (h : Function.Bijective ψ) :
+    d = c.congr (Equiv.ofBijective ψ h) := by
+  refine NormalCrystal.ext (funext fun x => ?_) (funext₂ fun i x => ?_)
+  · rw [congr_wt, ← ψ.wt_apply, Equiv.ofBijective_apply_symm_apply ψ h]
+  · rw [congr_e, Equiv.coe_ofBijective, ← ψ.e_apply i,
+      Equiv.ofBijective_apply_symm_apply ψ h]
+
 end StrictHom
+
+/-! ### Restriction to a closed subset -/
+
+section Restrict
+
+variable (c : NormalCrystal P b B)
+
+/-- The **restriction of a normal crystal** to a subset `s` closed under the root operators: the
+weight and the string lengths are those of `c`, and the root operators are those of `c`
+corestricted to `s`. -/
+def restrict (s : Set B)
+    (he : ∀ (i : b.support) (y : B), y ∈ s → ∀ z, c.e i y = some z → z ∈ s)
+    (hf : ∀ (i : b.support) (y : B), y ∈ s → ∀ z, c.f i y = some z → z ∈ s) :
+    NormalCrystal P b s where
+  wt y := c.wt y.1
+  e i y := (c.e i y.1).pmap Subtype.mk fun z hz => he i y.1 y.2 z hz
+  f i y := (c.f i y.1).pmap Subtype.mk fun z hz => hf i y.1 y.2 z hz
+  ε i y := c.ε i y.1
+  φ i y := c.φ i y.1
+  f_eq_some_iff := by
+    intro i y z
+    rw [Option.pmap_subtype_mk_eq_some_iff, Option.pmap_subtype_mk_eq_some_iff]
+    exact c.f_eq_some_iff
+  wt_of_e_eq_some := by
+    intro i y z h
+    rw [Option.pmap_eq_some_iff] at h
+    obtain ⟨a, _ha, ho, rfl⟩ := h
+    exact c.wt_of_e_eq_some ho
+  ε_eq_zero_iff := by
+    intro i y
+    rw [Option.pmap_eq_none_iff, c.ε_eq_zero_iff]
+  ε_of_e_eq_some := by
+    intro i y z h
+    rw [Option.pmap_eq_some_iff] at h
+    obtain ⟨a, _ha, ho, rfl⟩ := h
+    exact c.ε_of_e_eq_some ho
+  φ_eq_zero_iff := by
+    intro i y
+    rw [Option.pmap_eq_none_iff, c.φ_eq_zero_iff]
+  φ_sub_ε := fun i y => c.φ_sub_ε i y.1
+
+@[simp]
+theorem restrict_wt {s : Set B}
+    {he : ∀ (i : b.support) (y : B), y ∈ s → ∀ z, c.e i y = some z → z ∈ s}
+    {hf : ∀ (i : b.support) (y : B), y ∈ s → ∀ z, c.f i y = some z → z ∈ s} (y : s) :
+    (c.restrict s he hf).wt y = c.wt y.1 := (rfl)
+
+theorem restrict_e {s : Set B}
+    {he : ∀ (i : b.support) (y : B), y ∈ s → ∀ z, c.e i y = some z → z ∈ s}
+    {hf : ∀ (i : b.support) (y : B), y ∈ s → ∀ z, c.f i y = some z → z ∈ s}
+    (i : b.support) (y : s) :
+    (c.restrict s he hf).e i y
+      = (c.e i y.1).pmap Subtype.mk fun z hz => he i y.1 y.2 z hz := (rfl)
+
+theorem restrict_f {s : Set B}
+    {he : ∀ (i : b.support) (y : B), y ∈ s → ∀ z, c.e i y = some z → z ∈ s}
+    {hf : ∀ (i : b.support) (y : B), y ∈ s → ∀ z, c.f i y = some z → z ∈ s}
+    (i : b.support) (y : s) :
+    (c.restrict s he hf).f i y
+      = (c.f i y.1).pmap Subtype.mk fun z hz => hf i y.1 y.2 z hz := (rfl)
+
+@[simp]
+theorem restrict_ε {s : Set B}
+    {he : ∀ (i : b.support) (y : B), y ∈ s → ∀ z, c.e i y = some z → z ∈ s}
+    {hf : ∀ (i : b.support) (y : B), y ∈ s → ∀ z, c.f i y = some z → z ∈ s}
+    (i : b.support) (y : s) :
+    (c.restrict s he hf).ε i y = c.ε i y.1 := (rfl)
+
+@[simp]
+theorem restrict_φ {s : Set B}
+    {he : ∀ (i : b.support) (y : B), y ∈ s → ∀ z, c.e i y = some z → z ∈ s}
+    {hf : ∀ (i : b.support) (y : B), y ∈ s → ∀ z, c.f i y = some z → z ∈ s}
+    (i : b.support) (y : s) :
+    (c.restrict s he hf).φ i y = c.φ i y.1 := (rfl)
+
+@[simp]
+theorem restrict_e_eq_some_iff {s : Set B}
+    {he : ∀ (i : b.support) (y : B), y ∈ s → ∀ z, c.e i y = some z → z ∈ s}
+    {hf : ∀ (i : b.support) (y : B), y ∈ s → ∀ z, c.f i y = some z → z ∈ s}
+    {i : b.support} {y z : s} :
+    (c.restrict s he hf).e i y = some z ↔ c.e i y.1 = some z.1 := by
+  rw [restrict_e, Option.pmap_subtype_mk_eq_some_iff]
+
+@[simp]
+theorem restrict_f_eq_some_iff {s : Set B}
+    {he : ∀ (i : b.support) (y : B), y ∈ s → ∀ z, c.e i y = some z → z ∈ s}
+    {hf : ∀ (i : b.support) (y : B), y ∈ s → ∀ z, c.f i y = some z → z ∈ s}
+    {i : b.support} {y z : s} :
+    (c.restrict s he hf).f i y = some z ↔ c.f i y.1 = some z.1 := by
+  rw [restrict_f, Option.pmap_subtype_mk_eq_some_iff]
+
+@[simp]
+theorem restrict_e_eq_none_iff {s : Set B}
+    {he : ∀ (i : b.support) (y : B), y ∈ s → ∀ z, c.e i y = some z → z ∈ s}
+    {hf : ∀ (i : b.support) (y : B), y ∈ s → ∀ z, c.f i y = some z → z ∈ s}
+    {i : b.support} {y : s} :
+    (c.restrict s he hf).e i y = none ↔ c.e i y.1 = none := by
+  rw [restrict_e, Option.pmap_eq_none_iff]
+
+@[simp]
+theorem restrict_f_eq_none_iff {s : Set B}
+    {he : ∀ (i : b.support) (y : B), y ∈ s → ∀ z, c.e i y = some z → z ∈ s}
+    {hf : ∀ (i : b.support) (y : B), y ∈ s → ∀ z, c.f i y = some z → z ∈ s}
+    {i : b.support} {y : s} :
+    (c.restrict s he hf).f i y = none ↔ c.f i y.1 = none := by
+  rw [restrict_f, Option.pmap_eq_none_iff]
+
+/-- The inclusion of a subset closed under the root operators is a strict morphism. -/
+def StrictHom.restrictIncl (s : Set B)
+    (he : ∀ (i : b.support) (y : B), y ∈ s → ∀ z, c.e i y = some z → z ∈ s)
+    (hf : ∀ (i : b.support) (y : B), y ∈ s → ∀ z, c.f i y = some z → z ∈ s) :
+    StrictHom (c.restrict s he hf) c where
+  toFun y := y.1
+  wt_toFun _ := rfl
+  e_toFun i y := by
+    cases h : c.e i y.1 with
+    | none =>
+      have hz : (c.restrict s he hf).e i y = none := c.restrict_e_eq_none_iff.mpr h
+      rw [hz, Option.map_none]
+    | some z =>
+      have hz : (c.restrict s he hf).e i y = some ⟨z, he i y.1 y.2 z h⟩ :=
+        c.restrict_e_eq_some_iff.mpr h
+      rw [hz, Option.map_some]
+
+@[simp]
+theorem StrictHom.restrictIncl_apply (s : Set B)
+    (he : ∀ (i : b.support) (y : B), y ∈ s → ∀ z, c.e i y = some z → z ∈ s)
+    (hf : ∀ (i : b.support) (y : B), y ∈ s → ∀ z, c.f i y = some z → z ∈ s) (y : s) :
+    StrictHom.restrictIncl c s he hf y = y.1 := (rfl)
+
+end Restrict
 
 end NormalCrystal
 
