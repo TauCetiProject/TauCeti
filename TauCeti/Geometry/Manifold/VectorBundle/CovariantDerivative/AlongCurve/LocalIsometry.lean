@@ -123,7 +123,7 @@ theorem mfderiv_alongCurveWithin (hf : g.IsLocalIsometry g' f)
     (hf.contMDiff.mdifferentiableAt (by simp)).comp_mdifferentiableWithinAt t hγ
   have hfV : DifferentiableWithinAt ℝ
       (sectionCoord (F := F) (f ∘ γ) (fun r ↦ mfderiv I J f (γ r) (V r)) (f (γ t))) s t :=
-    differentiableWithinAt_sectionCoord_mfderiv hf.contMDiff.contMDiffAt (by simp) hγ hV
+    hf.contMDiff.contMDiffAt.differentiableWithinAt_sectionCoord_mfderiv (by simp) hγ hV
   -- Test both sides against differentiable vector fields `Y` on the target. The product rules
   -- on source and target differentiate the same pairing, of `V` with the pullback of `Y`.
   refine g'.injective_apply_mdifferentiableAt_vectorField (f (γ t)) ?_

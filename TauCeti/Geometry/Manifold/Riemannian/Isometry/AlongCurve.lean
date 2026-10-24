@@ -121,7 +121,7 @@ theorem mfderiv_alongCurveWithin (Φ : RiemannianIsometry I J M N)
       (sectionCoord (F := F) (Φ ∘ γ)
         (fun r ↦ mfderiv I J Φ (γ r) (V r)) (Φ (γ t))) s t := by
     simpa only [coe_toDiffeomorph] using
-      differentiableWithinAt_sectionCoord_mfderiv Φ.toDiffeomorph.contMDiff.contMDiffAt
+      Φ.toDiffeomorph.contMDiff.contMDiffAt.differentiableWithinAt_sectionCoord_mfderiv
         (by simp) hγ hV
   -- Test both sides against pullbacks of differentiable fields `Y` on the target: the
   -- metric-compatible product rules on source and target differentiate the same inner product.

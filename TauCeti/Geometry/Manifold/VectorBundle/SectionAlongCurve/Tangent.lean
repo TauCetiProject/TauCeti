@@ -10,11 +10,15 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Tangent
 public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 
 /-!
-# Coordinates of tangent fields along curves in two charts
+# Coordinates of tangent fields along curves
 
 For a tangent field along a curve, the coordinate readings `TauCeti.Manifold.sectionCoord` in the
 preferred tangent-bundle trivializations at two points differ by the tangent coordinate change
 between the two charts, wherever the curve lies in both base sets.
+
+Transporting a tangent field along `γ` by the differential of a map `f` which is `C^n` at the base
+point, with `2 ≤ n`, gives a tangent field along `f ∘ γ`, and differentiability in local
+coordinates is preserved.
 
 ## Main results
 
@@ -22,8 +26,10 @@ between the two charts, wherever the curve lies in both base sets.
   differ by the tangent coordinate change.
 * `TauCeti.Manifold.sectionCoord_eventuallyEq_coordChange`: the same relation near a parameter
   whose image lies in both base sets.
-* `TauCeti.Manifold.differentiableWithinAt_sectionCoord_mfderiv`: the differential of a `C²` map
-  preserves differentiability of tangent fields along curves in local coordinates.
+* `ContMDiffAt.differentiableWithinAt_sectionCoord_mfderiv`: the differential of a map `C^n`
+  (`2 ≤ n`) at `γ t` preserves differentiability of tangent fields along curves in local
+  coordinates.
+* `ContMDiffAt.differentiableAt_sectionCoord_mfderiv`: the unrestricted form.
 -/
 
 public section
@@ -82,7 +88,7 @@ variable {γ V}
 /-- The differential of a map which is `C^n` at `γ t`, with `2 ≤ n`, carries a tangent field
 along `γ` that is differentiable in local coordinates to a tangent field along `f ∘ γ` that is
 differentiable in local coordinates. -/
-theorem differentiableWithinAt_sectionCoord_mfderiv {s : Set 𝕜} {t : 𝕜}
+theorem _root_.ContMDiffAt.differentiableWithinAt_sectionCoord_mfderiv {s : Set 𝕜} {t : 𝕜}
     (hf : ContMDiffAt I J n f (γ t)) (hn : 2 ≤ n)
     (hγ : MDifferentiableWithinAt 𝓘(𝕜, 𝕜) I γ s t)
     (hV : DifferentiableWithinAt 𝕜 (sectionCoord (F := E) γ V (γ t)) s t) :
@@ -121,15 +127,15 @@ theorem differentiableWithinAt_sectionCoord_mfderiv {s : Set 𝕜} {t : 𝕜}
     (fun r ↦ mfderiv I J f (γ r) (V r)) htransport
     (FiberBundle.mem_baseSet_trivializationAt F (TangentSpace J) (f (γ t)))
 
-/-- The unrestricted form of `TauCeti.Manifold.differentiableWithinAt_sectionCoord_mfderiv`. -/
-theorem differentiableAt_sectionCoord_mfderiv {t : 𝕜}
+/-- The unrestricted form of `ContMDiffAt.differentiableWithinAt_sectionCoord_mfderiv`. -/
+theorem _root_.ContMDiffAt.differentiableAt_sectionCoord_mfderiv {t : 𝕜}
     (hf : ContMDiffAt I J n f (γ t)) (hn : 2 ≤ n)
     (hγ : MDifferentiableAt 𝓘(𝕜, 𝕜) I γ t)
     (hV : DifferentiableAt 𝕜 (sectionCoord (F := E) γ V (γ t)) t) :
     DifferentiableAt 𝕜
       (sectionCoord (F := F) (f ∘ γ) (fun r ↦ mfderiv I J f (γ r) (V r)) (f (γ t))) t := by
   rw [← differentiableWithinAt_univ]
-  exact differentiableWithinAt_sectionCoord_mfderiv hf hn hγ.mdifferentiableWithinAt
+  exact hf.differentiableWithinAt_sectionCoord_mfderiv hn hγ.mdifferentiableWithinAt
     hV.differentiableWithinAt
 
 end Map
