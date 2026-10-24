@@ -101,10 +101,6 @@ theorem affinePerm_refl (b : T) :
   ext x
   rfl
 
-theorem affinePerm_refl_zero : affinePerm (AddEquiv.refl T) (0 : T) = 1 := by
-  ext x
-  simp
-
 /-- Every affine power has translation part equal to its partial cyclic norm. -/
 theorem affinePerm_pow_apply (A : T ≃+ T) (t : T) (k : ℕ) (x : T) :
     (affinePerm A t ^ k) x = A^[k] x + (∑ i ∈ Finset.range k, (toEnd A) ^ i) t := by
@@ -172,14 +168,6 @@ theorem exists_affinePerm_pow_fixedPoint_iff (A : T ≃+ T) (t : T) (k : ℕ) :
       (∑ i ∈ Finset.range k, (toEnd A) ^ i) t ∈ (1 - (toEnd A) ^ k).range := by
   -- Range membership is definitionally existence of a preimage; transport that witness.
   exact exists_congr fun x ↦ affinePerm_pow_apply_eq_self_iff A t k x
-
-/-- No power `k` with `0 < k < m` has a fixed point iff, for each such `k`, the partial
-norm `N_k t` is not in the range of `1 - A^k`. -/
-theorem affinePerm_pow_fixedPoint_free_iff (A : T ≃+ T) (t : T) (m : ℕ) :
-    (∀ k, 0 < k → k < m → ∀ x, (affinePerm A t ^ k) x ≠ x) ↔
-      ∀ k, 0 < k → k < m →
-        (∑ i ∈ Finset.range k, (toEnd A) ^ i) t ∉ (1 - (toEnd A) ^ k).range := by
-  simp only [← exists_affinePerm_pow_fixedPoint_iff, not_exists]
 
 /-- Conjugating by the translation `x ↦ x + b` changes the twist by `(1 - A)b`. -/
 theorem affinePerm_conj_addRight (A : T ≃+ T) (t b : T) :
