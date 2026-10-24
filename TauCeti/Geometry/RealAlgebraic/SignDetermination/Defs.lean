@@ -9,6 +9,7 @@ public import TauCeti.Data.Fintype.Fiber
 public import Mathlib.Algebra.Polynomial.Roots
 public import Mathlib.Basic.Sign.Defs
 public import Mathlib.RingTheory.Polynomial.IntegralNormalization
+import TauCeti.Algebra.Polynomial.Eval.Sign
 
 /-! # Polynomial sign counts and Tarski queries
 
@@ -19,6 +20,8 @@ For nonzero `p` its cardinality characterization counts the actual zeros of `p`;
 for `p = 0` the value is zero and does not describe the infinite zero set.
 
 The definitions and their basic API are independent of matrix inversion.
+Sign counts and sign sums are unchanged when the points and polynomials are mapped through a
+strictly monotone ring homomorphism (`Finset.signCount_map_image`, `Finset.signSum_map_image`).
 Over a field, `Polynomial.tarskiQuery_integralNormalization` clears the leading coefficient of
 the root polynomial, so Tarski queries can always be computed at a monic root polynomial.
 
@@ -120,6 +123,31 @@ theorem signSum_eq_card_sub_card (Z : Finset R) (p : R[X]) :
   · have hneg : ¬ p.eval x < 0 := not_lt_of_ge hpos.le
     simp [hpos, hneg]
   · by_cases hneg : p.eval x < 0 <;> simp [sign_apply, hpos, hneg]
+
+section Map
+
+variable {S : Type*} [Semiring S] [LinearOrder S] [DecidableEq S] {f : R →+* S}
+
+/-- Sign counts are preserved by mapping the points and the polynomials through a strictly
+monotone ring homomorphism. -/
+@[simp]
+theorem signCount_map_image {J : Type*} (hf : StrictMono f) (Z : Finset R) (Q : J → R[X])
+    (σ : J → SignType) :
+    signCount (Z.image f) (fun j => (Q j).map f) σ = signCount Z Q σ := by
+  classical
+  rw [signCount_eq_card_filter, signCount_eq_card_filter, filter_image,
+    card_image_of_injective _ hf.injective]
+  simp only [sign_eval_map _ f hf]
+
+/-- Sign sums are preserved by mapping the points and the polynomial through a strictly
+monotone ring homomorphism. -/
+@[simp]
+theorem signSum_map_image (hf : StrictMono f) (Z : Finset R) (p : R[X]) :
+    signSum (Z.image f) (p.map f) = signSum Z p := by
+  rw [signSum_eq_sum, signSum_eq_sum, sum_image fun _ _ _ _ h => hf.injective h]
+  simp only [sign_eval_map _ f hf]
+
+end Map
 
 end Basic
 
