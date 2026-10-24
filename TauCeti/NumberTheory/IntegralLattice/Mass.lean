@@ -26,9 +26,11 @@ the genus contains finitely many classes, which holds for definite lattices
 (`TauCeti.IntegralLattice.IsPosDef.finite_genusClasses`) and in rank at most one. They are defined
 for every lattice, through `finsum`, and the comparison theorems carry the finiteness of the genus
 as a hypothesis. A class with infinite isometry group contributes `0`, because `Nat.card` of an
-infinite type is `0` and `0⁻¹ = 0`; this happens for every indefinite or degenerate lattice of rank
-at least two. So the masses have their classical meaning only for definite lattices, where the
-isometry groups are finite.
+infinite type is `0` and `0⁻¹ = 0`. This happens for every degenerate lattice of rank at least two,
+whose shears along the radical are isometries, and for many indefinite lattices, although some
+indefinite lattices (such as the hyperbolic plane `xy`, with four isometries) have finite isometry
+groups. So the masses have their classical meaning only for definite lattices, where the isometry
+groups are always finite.
 
 In positive rank the two masses are related by `m⁺ = 2m`
 (`TauCeti.IntegralLattice.properMass_eq_two_mul_mass`). A class `cls M` of the genus either is a
@@ -153,7 +155,7 @@ theorem SameGenus.mass_eq {M : IntegralLattice W} (h : L.SameGenus M) : L.mass =
       rw [Set.mem_image_equiv, ← isometryQuotientEquiv_mem_genusClasses_iff f h,
         Equiv.apply_symm_apply]) fun c _ ↦ ?_
   obtain ⟨e⟩ := c.nonempty_isometry_transport_out f
-  rw [Nat.card_congr ((c.out.transportIsometry f).trans e).conjMulEquiv.toEquiv]
+  rw [((c.out.transportIsometry f).trans e).natCard_isometry_eq]
 
 /-- **The proper mass is an invariant of the genus.** Lattices of the same genus have the same
 proper mass, even when they live in different ambient spaces. -/
@@ -182,8 +184,8 @@ private theorem ncard_mul_inv_natCard_specialOrthogonalGroup (hV : 0 < finrank �
   have h' : ((ProperIsometryQuotient.toIsometryQuotient ⁻¹' {c}).ncard : ℚ) *
       (specialOrthogonalGroup c.out).index = 2 := by
     exact_mod_cast h
-  rw [← (specialOrthogonalGroup c.out).card_mul_index, Nat.cast_mul, ← h', mul_inv,
-    mul_mul_mul_comm, mul_inv_cancel₀ hi, mul_one]
+  rw [← (specialOrthogonalGroup c.out).card_mul_index, Nat.cast_mul, ← h']
+  field_simp
 
 /-- **The proper mass is twice the mass** in positive rank, for a genus with finitely many
 classes. -/
@@ -239,7 +241,7 @@ theorem properMass_eq_one_of_finrank_eq_zero (h : finrank ℤ L = 0) : L.properM
 theorem mass_eq_inv_two_of_finrank_eq_one (h : finrank ℤ L = 1) : L.mass = 2⁻¹ := by
   obtain ⟨e⟩ := isometryClass_eq_isometryClass_iff.mp (isometryClass_out L.isometryClass)
   rw [mass_def, genusClasses_eq_singleton_of_finrank_le_one h.le, finsum_mem_singleton,
-    Nat.card_congr e.conjMulEquiv.toEquiv, natCard_isometry_of_finrank_eq_one h, Nat.cast_ofNat]
+    e.natCard_isometry_eq, natCard_isometry_of_finrank_eq_one h, Nat.cast_ofNat]
 
 /-- In rank one the proper mass is `1`. -/
 theorem properMass_eq_one_of_finrank_eq_one (h : finrank ℤ L = 1) : L.properMass = 1 := by

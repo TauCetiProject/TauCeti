@@ -74,6 +74,8 @@ rank at most one `SO(L)` is trivial, and in rank one `O(L) = {±1}`.
   a self-isometry exactly when it preserves membership in the carrier.
 * `TauCeti.IntegralLattice.Isometry.det_toLinearMap`: the determinant of a self-isometry is the
   determinant of its ambient rational automorphism.
+* `TauCeti.IntegralLattice.Isometry.natCard_isometry_eq`: isometric lattices have isometry groups
+  of the same order.
 * `TauCeti.IntegralLattice.Isometry.det_conjMulEquiv` and
   `TauCeti.IntegralLattice.Isometry.natCard_specialOrthogonalGroup_eq`: conjugation preserves the
   determinant, so isometric lattices have special isometry groups of the same order.
@@ -512,6 +514,11 @@ theorem det_conjMulEquiv (e : Isometry L M) (g : Isometry L L) :
     ext x
     simp [coe_carrierEquiv_apply, coe_carrierEquiv_symm_apply]
   rw [det_apply, det_apply, h, LinearEquiv.det_conj]
+
+/-- Isometric lattices have isometry groups of the same cardinality. -/
+theorem natCard_isometry_eq (e : Isometry L M) :
+    Nat.card (Isometry L L) = Nat.card (Isometry M M) :=
+  Nat.card_congr e.conjMulEquiv.toEquiv
 
 /-- Isometric lattices have special isometry groups of the same cardinality. -/
 theorem natCard_specialOrthogonalGroup_eq (e : Isometry L M) :
