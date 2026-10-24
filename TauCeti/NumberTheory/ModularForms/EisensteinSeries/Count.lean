@@ -184,23 +184,18 @@ theorem card_eq_card_cuspOrbit_Gamma1 (hN : 2 < N) (hN4 : N ≠ 4) :
 
 /-! ### The levels `1`, `2` and `4` -/
 
-/-- The product parity `(-1)^k` is trivial exactly in even weight. -/
-private theorem neg_one_zpow_eq_one_iff_even : (-1 : ℂ) ^ (k : ℤ) = 1 ↔ Even k := by
-  rw [zpow_natCast]
-  exact neg_one_pow_eq_one_iff_even (by norm_num)
-
 /-- There is one Eisenstein index at level `1` in even weight, and none in odd weight. -/
 theorem card_one : Nat.card (CharIndex 1 k) = if Even k then 1 else 0 := by
   rw [card_eq_sum, Nat.divisors_one, Finset.sum_singleton,
     card_apply_neg_one_mul_apply_neg_one_eq_of_le_two (by norm_num) (by norm_num)]
-  simp only [neg_one_zpow_eq_one_iff_even]
+  simp only [zpow_natCast, neg_one_pow_eq_one_iff_even (R := ℂ) (by norm_num)]
 
 /-- There are two Eisenstein indices at level `2` in even weight, and none in odd weight. -/
 theorem card_two : Nat.card (CharIndex 2 k) = if Even k then 2 else 0 := by
   rw [card_eq_sum, Nat.prime_two.divisors, Finset.sum_pair (by norm_num),
     card_apply_neg_one_mul_apply_neg_one_eq_of_le_two (by norm_num) (by norm_num),
     card_apply_neg_one_mul_apply_neg_one_eq_of_le_two (by norm_num) (by norm_num)]
-  simp only [neg_one_zpow_eq_one_iff_even]
+  simp only [zpow_natCast, neg_one_pow_eq_one_iff_even (R := ℂ) (by norm_num)]
   split_ifs <;> rfl
 
 /-- There are three Eisenstein indices at level `4` in even weight, and two in odd weight. -/
@@ -220,7 +215,7 @@ theorem card_four : Nat.card (CharIndex 4 k) = if Even k then 3 else 2 := by
   simp only [Nat.reduceDiv]
   rw [card_apply_neg_one_mul_apply_neg_one_eq_of_le_two (a := 2) (b := 2) (by norm_num)
     (by norm_num)]
-  simp only [neg_one_zpow_eq_one_iff_even]
+  simp only [zpow_natCast, neg_one_pow_eq_one_iff_even (R := ℂ) (by norm_num)] at h₁ h₄ ⊢
   split_ifs <;> omega
 
 end TauCeti.EisensteinSeries.CharIndex

@@ -383,9 +383,7 @@ theorem constantTermAt_eq_of_vecMul_inv_eq {N : ℕ} (hΓ : (Γ(N) : Subgroup (G
   have h10 : (m 1 0 : ZMod N) = 0 := by simpa using hm1 0
   have h11 : (m 1 1 : ZMod N) = 1 := by simpa using hm1 1
   have h00 : (m 0 0 : ZMod N) = 1 := by
-    have hdet := congrArg (Int.cast : ℤ → ZMod N) (Matrix.SpecialLinearGroup.det_coe m)
-    rw [Matrix.det_fin_two] at hdet
-    push_cast at hdet
+    have hdet := Matrix.SpecialLinearGroup.intCast_fin_two_mul_sub_mul_eq_one (R := ZMod N) m
     rw [h10, h11] at hdet
     simpa using hdet
   have hg : m * ModularGroup.T ^ (-m 0 1) ∈ Γ(N) := by
