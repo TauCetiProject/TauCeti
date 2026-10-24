@@ -218,7 +218,7 @@ private theorem chi_eight_mul_gaussFactor {p : ℕ} (hp : Odd p) :
     apply Complex.ext <;> norm_num [pow_succ]
 
 /-- A Legendre symbol `(θ/p) = ±1` is `e^{2πi · 2(1 - (θ/p))/8}`. -/
-private theorem legendreSym_eq_expCircle {p : ℕ} [Fact p.Prime] {θ : ℤ} (hθ : (θ : ZMod p) ≠ 0) :
+theorem legendreSym_eq_expCircle {p : ℕ} [Fact p.Prime] {θ : ℤ} (hθ : (θ : ZMod p) ≠ 0) :
     (legendreSym p θ : ℂ) =
       expCircle (ZMod.toRatAddCircle 8 ((2 * (1 - legendreSym p θ) : ℤ) : ZMod 8)) := by
   rcases legendreSym.eq_one_or_neg_one p hθ with h | h <;> rw [h]

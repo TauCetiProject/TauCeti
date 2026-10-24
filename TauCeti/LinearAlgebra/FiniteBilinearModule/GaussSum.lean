@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.SpecialFunctions.Complex.Circle
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Metabolic
+public import TauCeti.LinearAlgebra.FiniteBilinearModule.Pi
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.ZModStandard
 import Mathlib.NumberTheory.SumFourSquares
 import TauCeti.LinearAlgebra.QuadraticForm.FourSquares
@@ -28,7 +29,8 @@ This file proves the properties of `G(q)` that hold for every finite quadratic m
 classification is available:
 
 * it is an isometry invariant, it is multiplicative over orthogonal sums, and negating `q`
-  conjugates it;
+  conjugates it; the scaled Gauss sums `∑_{a ∈ A} e^{2πi n q(a)}` of the forms `n • q` are
+  isometry invariants too, and multiplicative over orthogonal sums of finite families;
 * restricting to the orthogonal complement of a quadratic-isotropic subgroup leaves `G(q)`
   unchanged;
 * quotienting by a subgroup `K` in the quadratic radical gives `G(q) = #K · G(q/K)`;
@@ -66,7 +68,12 @@ pairing vanishes, while its Gauss sum is `(1 + i)² = 2i ≠ 2`, so it is not me
 ## Main declarations
 
 * `TauCeti.FiniteQuadraticModule.gaussSum`: the Gauss sum `∑_{a ∈ A} e^{2πi q(a)}`.
-* `TauCeti.FiniteQuadraticModule.gaussSum_prod`: multiplicativity over orthogonal sums.
+* `TauCeti.FiniteQuadraticModule.gaussSum_prod` and `TauCeti.FiniteQuadraticModule.gaussSum_pi`:
+  multiplicativity over orthogonal sums.
+* `TauCeti.FiniteQuadraticModule.scaledGaussSum`: the Gauss sum `∑_{a ∈ A} e^{2πi n q(a)}` of the
+  scaled form `n • q`, with its isometry invariance
+  `TauCeti.FiniteQuadraticModule.Isometry.scaledGaussSum_eq` and multiplicativity
+  `TauCeti.FiniteQuadraticModule.scaledGaussSum_pi`.
 * `TauCeti.FiniteQuadraticModule.IsNondegenerate.gaussSum_mul_conj` and
   `TauCeti.FiniteQuadraticModule.IsNondegenerate.norm_gaussSum`: `|G(q)|² = #A`.
 * `TauCeti.FiniteQuadraticModule.gaussSum_eq_natCard_of_isLagrangian` and
@@ -131,6 +138,52 @@ theorem gaussSum_prod (B : FiniteQuadraticModule) :
   rw [gaussSum_eq_sum, gaussSum_eq_sum, gaussSum_eq_sum, Fintype.sum_prod_type,
     Finset.sum_mul_sum]
   simp only [QuadraticMap.prod_apply, AddChar.map_add_eq_mul]
+
+/-- **The scaled Gauss sum** `∑_{a ∈ A} e^{2πi n q(a)}`, the Gauss sum of the scaled quadratic
+form `n • q`. -/
+noncomputable def scaledGaussSum (n : ℕ) : ℂ :=
+  ∑ᶠ a : A, expCircle (n • A.quadratic a)
+
+/-- The scaled Gauss sum as a finite sum over the elements of the module. -/
+theorem scaledGaussSum_eq_sum [Fintype A] (n : ℕ) :
+    A.scaledGaussSum n = ∑ a, expCircle (n • A.quadratic a) :=
+  finsum_eq_sum_of_fintype _
+
+/-- Scaling by `1` gives the Gauss sum. -/
+@[simp]
+theorem scaledGaussSum_one : A.scaledGaussSum 1 = A.gaussSum := by
+  simp only [scaledGaussSum, gaussSum, one_nsmul]
+
+variable {A} in
+/-- The scaled Gauss sums are isometry invariants. -/
+theorem Isometry.scaledGaussSum_eq {B : FiniteQuadraticModule} (f : Isometry A B) (n : ℕ) :
+    A.scaledGaussSum n = B.scaledGaussSum n := by
+  obtain ⟨_⟩ := nonempty_fintype A
+  obtain ⟨_⟩ := nonempty_fintype B
+  rw [scaledGaussSum_eq_sum, scaledGaussSum_eq_sum]
+  exact Fintype.sum_equiv f.toLinearEquiv.toEquiv _ _ fun x ↦
+    congrArg (fun t ↦ expCircle (n • t)) (f.map_app x).symm
+
+/-- **The scaled Gauss sums are multiplicative** over orthogonal sums of finite families. -/
+@[simp]
+theorem scaledGaussSum_pi {ι : Type*} [Fintype ι] (B : ι → FiniteQuadraticModule) (n : ℕ) :
+    (pi B).scaledGaussSum n = ∏ i, (B i).scaledGaussSum n := by
+  classical
+  let _ : ∀ i, Fintype (B i) := fun i ↦ Fintype.ofFinite _
+  rw [scaledGaussSum_eq_sum]
+  simp_rw [scaledGaussSum_eq_sum]
+  rw [Fintype.prod_sum]
+  refine Finset.sum_congr rfl fun x _ ↦ ?_
+  have h := map_prod expCircle.toMonoidHom
+    (fun i ↦ Multiplicative.ofAdd (n • (B i).quadratic (x i))) Finset.univ
+  simp only [AddChar.toMonoidHom_apply, ← ofAdd_sum, toAdd_ofAdd] at h
+  rw [QuadraticMap.pi_apply, Finset.smul_sum, h]
+
+/-- **The Gauss sum is multiplicative** over orthogonal sums of finite families. -/
+@[simp]
+theorem gaussSum_pi {ι : Type*} [Fintype ι] (B : ι → FiniteQuadraticModule) :
+    (pi B).gaussSum = ∏ i, (B i).gaussSum := by
+  simpa only [scaledGaussSum_one] using scaledGaussSum_pi B 1
 
 /-- Negating the quadratic form conjugates the Gauss sum. -/
 @[simp]

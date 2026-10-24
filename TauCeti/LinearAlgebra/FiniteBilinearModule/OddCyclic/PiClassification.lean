@@ -13,7 +13,6 @@ import TauCeti.LinearAlgebra.FiniteBilinearModule.OddCyclic.Classification
 import TauCeti.LinearAlgebra.FiniteBilinearModule.OddCyclic.GaussSum
 import TauCeti.LinearAlgebra.FiniteBilinearModule.OddCyclic.Relations
 import TauCeti.LinearAlgebra.QuadraticForm.Prod
-import TauCeti.NumberTheory.LegendreSymbol.QuadraticCongruence
 
 /-!
 # Classification of orthogonal sums of odd cyclic generators
@@ -34,19 +33,19 @@ the Legendre symbols of the coefficients of each order `p^m`; summands of order 
 trivial and impose nothing.
 
 The invariance of the level products is a Gauss-sum computation. For `j ≥ 0` the scaled Gauss sum
-`∑_x e^{2πi p^j q(x)}` is an isometry invariant and is multiplicative over orthogonal sums. On
-`q_θ^{(p)}(p^k)` it is `(θ/p)^{k - j}` times its value at `θ = 1`, by Nikulin's values of the
-Gauss-sum invariant on the generators (`TauCeti.FiniteQuadraticModule.gaussSign_oddCyclic`), so an
-isometry gives `∏ᵢ ((θ_i/p)(η_i/p))^{k_i - j} = 1` for every `j`. Comparing `j = m - 1` with
-`j = m` isolates the product over the summands with `k_i ≥ m`, and hence over those with
-`k_i = m`.
+`∑_x e^{2πi p^j q(x)}` (`TauCeti.FiniteQuadraticModule.scaledGaussSum`) is an isometry invariant
+and is multiplicative over orthogonal sums. On `q_θ^{(p)}(p^k)` it is `(θ/p)^{k - j}` times its
+value at `θ = 1`, by Nikulin's values of the Gauss-sum invariant on the generators
+(`TauCeti.FiniteQuadraticModule.gaussSign_oddCyclic`), so an isometry gives
+`∏ᵢ ((θ_i/p)(η_i/p))^{k_i - j} = 1` for every `j`. Comparing `j = m - 1` with `j = m` isolates the
+product over the summands with `k_i ≥ m`, and hence over those with `k_i = m`.
 
 Conversely, two odd cyclic generators of the same order with the same Legendre symbol are
-isometric, and Nikulin's doubled relation `q_θ ⊕ q_θ ≅ q_η ⊕ q_η`
-(`TauCeti.FiniteQuadraticModule.oddCyclicProdSelfIsometry`) shows that `q_a ⊕ q_b ≅ q_c ⊕ q_d`
-whenever `(a/p)(b/p) = (c/p)(d/p)`. Equal level products therefore allow the coefficients to be
-matched one summand at a time, moving a mismatched Legendre symbol onto another summand of the
-same order.
+isometric (`TauCeti.FiniteQuadraticModule.nonempty_isometry_oddCyclic_of_legendreSym_eq`), and
+Nikulin's doubled relation `q_θ ⊕ q_θ ≅ q_η ⊕ q_η` shows that `q_a ⊕ q_b ≅ q_c ⊕ q_d` whenever
+`(a/p)(b/p) = (c/p)(d/p)` (`TauCeti.FiniteQuadraticModule.nonempty_isometry_oddCyclic_prod`).
+Equal level products therefore allow the coefficients to be matched one summand at a time, moving
+a mismatched Legendre symbol onto another summand of the same order.
 
 ## Main declarations
 
@@ -68,37 +67,12 @@ namespace TauCeti.FiniteQuadraticModule
 
 variable {p : ℕ}
 
-/-! ### Scaled Gauss sums -/
+/-! ### Scaled Gauss sums of the generators -/
 
-/-- The Gauss sum `∑_{a ∈ A} e^{2πi n q(a)}` of the scaled quadratic form `n • q`. -/
-private noncomputable def scaledGaussSum (A : FiniteQuadraticModule) (n : ℕ) : ℂ :=
-  ∑ᶠ a : A, expCircle (n • A.quadratic a)
-
-private theorem scaledGaussSum_eq_sum (A : FiniteQuadraticModule) [Fintype A] (n : ℕ) :
-    scaledGaussSum A n = ∑ a, expCircle (n • A.quadratic a) :=
-  finsum_eq_sum_of_fintype _
-
-private theorem Isometry.scaledGaussSum_eq {A B : FiniteQuadraticModule} (f : Isometry A B)
-    (n : ℕ) : scaledGaussSum A n = scaledGaussSum B n := by
-  obtain ⟨_⟩ := nonempty_fintype A
-  obtain ⟨_⟩ := nonempty_fintype B
-  rw [scaledGaussSum_eq_sum, scaledGaussSum_eq_sum]
-  exact Fintype.sum_equiv f.toLinearEquiv.toEquiv _ _ fun x ↦
-    congrArg (fun t ↦ expCircle (n • t)) (f.map_app x).symm
-
-private theorem scaledGaussSum_pi {ι : Type*} [Fintype ι] (A : ι → FiniteQuadraticModule)
-    (n : ℕ) : scaledGaussSum (pi A) n = ∏ i, scaledGaussSum (A i) n := by
-  classical
-  let _ : ∀ i, Fintype (A i) := fun i ↦ Fintype.ofFinite _
-  rw [scaledGaussSum_eq_sum]
-  simp_rw [scaledGaussSum_eq_sum]
-  rw [Fintype.prod_sum]
-  refine Finset.sum_congr rfl fun x _ ↦ ?_
-  have h := map_prod expCircle.toMonoidHom
-    (fun i ↦ Multiplicative.ofAdd (n • (A i).quadratic (x i))) Finset.univ
-  rw [← ofAdd_sum] at h
-  rw [QuadraticMap.pi_apply, Finset.smul_sum]
-  exact h
+/-- The order of `q_θ^{(m)}`: its carrier is `ZMod m` by definition. -/
+private theorem natCard_oddCyclic {m : ℕ} (hm : Odd m) (θ : ℤ) :
+    Nat.card (oddCyclic m hm θ) = m :=
+  Nat.card_zmod m
 
 /-- Scaling the form of `q_θ^{(p)}(p^{j+e})` by `p^j` is the form of `q_θ^{(p)}(p^e)` read
 through the reduction modulo `p^e`. -/
@@ -149,7 +123,7 @@ private theorem scaledGaussSum_oddCyclic_of_le (hp : Odd p) {k j : ℕ} (hkj : k
     scaledGaussSum (oddCyclic (p ^ k) hp.pow θ) (p ^ j) = p ^ k := by
   have : NeZero p := ⟨hp.pos.ne'⟩
   let _ : Fintype (oddCyclic (p ^ k) hp.pow θ) := inferInstanceAs (Fintype (ZMod _))
-  have hcard : Nat.card (oddCyclic (p ^ k) hp.pow θ) = p ^ k := Nat.card_zmod _
+  have hcard : Nat.card (oddCyclic (p ^ k) hp.pow θ) = p ^ k := natCard_oddCyclic _ θ
   have hzero (x : oddCyclic (p ^ k) hp.pow θ) :
       p ^ j • (oddCyclic (p ^ k) hp.pow θ).quadratic x = 0 := by
     obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le hkj
@@ -161,18 +135,6 @@ private theorem scaledGaussSum_oddCyclic_of_le (hp : Odd p) {k j : ℕ} (hkj : k
   simp only [hzero, AddChar.map_zero_eq_one, Finset.sum_const, Finset.card_univ, nsmul_eq_mul,
     mul_one, ← Nat.card_eq_fintype_card, hcard, Nat.cast_pow]
 
-/-- A Legendre symbol `(θ/p) = ±1` raised to the `e`-th power is `e^{2πi · 2e(1 - (θ/p))/8}`. -/
-private theorem expCircle_toRatAddCircle_eight_legendreSym [Fact p.Prime] (e : ℕ) {θ : ℤ}
-    (hθ : (θ : ZMod p) ≠ 0) :
-    expCircle (ZMod.toRatAddCircle 8 ((2 * e * (1 - legendreSym p θ) : ℤ) : ZMod 8)) =
-      (legendreSym p θ : ℂ) ^ e := by
-  rcases legendreSym.eq_one_or_neg_one p hθ with h | h <;> rw [h]
-  · simp
-  · rw [ZMod.toRatAddCircle_intCast,
-      show ((2 * e * (1 - -1) : ℤ) : ℚ) / ((8 : ℕ) : ℚ) = e • (1 / 2 : ℚ) by push_cast; ring,
-      AddCircle.coe_nsmul, AddChar.map_nsmul_eq_pow, expCircle_one_div_two]
-    simp
-
 /-- **The Gauss sum of `q_θ^{(p)}(p^e)`** is `(θ/p)^e` times that of `q_1^{(p)}(p^e)`: by
 Nikulin's values, the Gauss-sum invariants differ by `4eη`, where `(θ/p) = (-1)^η`. -/
 private theorem gaussSum_oddCyclic_eq_legendreSym_pow_mul [Fact p.Prime] (hp : Odd p) (e : ℕ)
@@ -183,12 +145,19 @@ private theorem gaussSum_oddCyclic_eq_legendreSym_pow_mul [Fact p.Prime] (hp : O
   have hnd (t : ℤ) (ht : IsCoprime (p : ℤ) t) : (oddCyclic (p ^ e) hp.pow t).IsNondegenerate := by
     rw [isNondegenerate_oddCyclic_iff]
     simpa only [Nat.cast_pow] using ht.pow_left
-  have hcard (t : ℤ) : Nat.card (oddCyclic (p ^ e) hp.pow t) = p ^ e := Nat.card_zmod _
-  rw [(hnd θ hθ).gaussSum_eq, (hnd 1 isCoprime_one_right).gaussSum_eq, hcard, hcard,
+  -- The `e`-th power of `(θ/p) = e^{2πi · 2(1 - (θ/p))/8}`.
+  have hpow : expCircle (ZMod.toRatAddCircle 8 ((2 * e * (1 - legendreSym p θ) : ℤ) : ZMod 8)) =
+      (legendreSym p θ : ℂ) ^ e := by
+    rw [legendreSym_eq_expCircle hθ0, ← AddChar.map_nsmul_eq_pow, ← map_nsmul, nsmul_eq_mul]
+    congr 2
+    push_cast
+    ring
+  rw [(hnd θ hθ).gaussSum_eq, (hnd 1 isCoprime_one_right).gaussSum_eq, natCard_oddCyclic,
+    natCard_oddCyclic,
     gaussSign_oddCyclic hp e hθ, gaussSign_oddCyclic hp e isCoprime_one_right, legendreSym.at_one,
     show (e : ℤ) ^ 2 * (1 - p) + 2 * e * (1 - legendreSym p θ) =
       (e ^ 2 * (1 - p) + 2 * e * (1 - 1)) + 2 * e * (1 - legendreSym p θ) by ring,
-    Int.cast_add, map_add, AddChar.map_add_eq_mul, expCircle_toRatAddCircle_eight_legendreSym e hθ0]
+    Int.cast_add, map_add, AddChar.map_add_eq_mul, hpow]
   push_cast
   ring
 
@@ -297,85 +266,6 @@ private theorem prod_legendreSym_eq_of_isometry_pi_oddCyclic (hp : Odd p) (k : �
     _ = ∏ i with k i = m, legendreSym p (η i) := by rw [← mul_assoc, h, one_mul]
 
 /-! ### Isometries from the relations -/
-
-omit [Fact p.Prime] in
-/-- Two odd cyclic generators of order `p^0 = 1` are isometric: both are trivial. -/
-private theorem nonempty_isometry_oddCyclic_of_eq_zero (hp : Odd p) {e : ℕ} (he : e = 0)
-    (a b : ℤ) : Nonempty (Isometry (oddCyclic (p ^ e) hp.pow a) (oddCyclic (p ^ e) hp.pow b)) := by
-  subst he
-  have : Subsingleton (ZMod (p ^ 0)) := by rw [pow_zero]; infer_instance
-  exact (nonempty_isometry_oddCyclic_iff _ _ a b).2 ⟨1, Subsingleton.elim _ _⟩
-
-/-- Odd cyclic generators `q_a^{(p)}(p^e)` and `q_b^{(p)}(p^e)` with the same Legendre symbol are
-isometric: `ab` is then a square modulo `p^e`. -/
-private theorem nonempty_isometry_oddCyclic_of_legendreSym_eq (hp : Odd p) (e : ℕ) {a b : ℤ}
-    (ha : IsCoprime (p : ℤ) a) (hb : IsCoprime (p : ℤ) b) (h : legendreSym p a = legendreSym p b) :
-    Nonempty (Isometry (oddCyclic (p ^ e) hp.pow a) (oddCyclic (p ^ e) hp.pow b)) := by
-  rcases Nat.eq_zero_or_pos e with rfl | he
-  · exact nonempty_isometry_oddCyclic_of_eq_zero hp rfl a b
-  have hp2 : p ≠ 2 := by rintro rfl; exact Nat.not_even_iff_odd.2 hp even_two
-  have hab0 : ((a * b : ℤ) : ZMod p) ≠ 0 :=
-    ((ZMod.coe_int_isUnit_iff_isCoprime _ p).2 (ha.mul_right hb)).ne_zero
-  -- `ab` has `1 + (ab/p) = 2` square roots modulo `p^e`.
-  have hcount := TauCeti.ZMod.natCard_sqrts_prime_pow_eq_legendreSym_add_one hp2 he.ne' hab0
-  rw [legendreSym.mul, h, ← sq,
-    legendreSym.sq_one p ((ZMod.coe_int_isUnit_iff_isCoprime b p).2 hb).ne_zero] at hcount
-  obtain ⟨⟨x, hx⟩⟩ := (Nat.card_pos_iff.1 (by omega : 0 < Nat.card
-    {x : ZMod (p ^ e) // x ^ 2 = ((a * b : ℤ) : ZMod (p ^ e))})).1
-  have hbu : IsUnit (b : ZMod (p ^ e)) :=
-    (ZMod.coe_int_isUnit_iff_isCoprime b (p ^ e)).2 (by simpa using hb.pow_left)
-  have hxu : IsUnit x := by
-    have hau : IsUnit (a : ZMod (p ^ e)) :=
-      (ZMod.coe_int_isUnit_iff_isCoprime a (p ^ e)).2 (by simpa using ha.pow_left)
-    have : IsUnit (x ^ 2) := by rw [hx]; push_cast; exact hau.mul hbu
-    exact isUnit_pow_iff two_ne_zero |>.1 this
-  refine (nonempty_isometry_oddCyclic_iff _ _ a b).2 ⟨hxu.unit * hbu.unit⁻¹, ?_⟩
-  have hinv : (b : ZMod (p ^ e)) * ↑hbu.unit⁻¹ = 1 := by
-    simpa only [IsUnit.unit_spec] using hbu.unit.mul_inv
-  push_cast at hx ⊢
-  rw [mul_pow, IsUnit.unit_spec, hx]
-  linear_combination (-(a : ZMod (p ^ e)) * (b * ↑hbu.unit⁻¹ + 1)) * hinv
-
-/-- **The binary relation at an odd prime.** Orthogonal sums `q_a ⊕ q_b` and `q_c ⊕ q_d` of odd
-cyclic generators of the same order `p^e` are isometric as soon as `(a/p)(b/p) = (c/p)(d/p)`.
-It follows from Nikulin's doubled relation `q_θ ⊕ q_θ ≅ q_η ⊕ q_η`. -/
-private theorem nonempty_isometry_oddCyclic_prod (hp : Odd p) (e : ℕ) {a b c d : ℤ}
-    (ha : IsCoprime (p : ℤ) a) (hb : IsCoprime (p : ℤ) b) (hc : IsCoprime (p : ℤ) c)
-    (hd : IsCoprime (p : ℤ) d) (h : legendreSym p a * legendreSym p b =
-      legendreSym p c * legendreSym p d) :
-    Nonempty (Isometry ((oddCyclic (p ^ e) hp.pow a).prod (oddCyclic (p ^ e) hp.pow b))
-      ((oddCyclic (p ^ e) hp.pow c).prod (oddCyclic (p ^ e) hp.pow d))) := by
-  have hχ (t : ℤ) (ht : IsCoprime (p : ℤ) t) : legendreSym p t = 1 ∨ legendreSym p t = -1 :=
-    legendreSym.eq_one_or_neg_one p ((ZMod.coe_int_isUnit_iff_isCoprime t p).2 ht).ne_zero
-  have hcyc := fun {s t : ℤ} (hs : IsCoprime (p : ℤ) s) (ht : IsCoprime (p : ℤ) t)
-    (hst : legendreSym p s = legendreSym p t) ↦
-      nonempty_isometry_oddCyclic_of_legendreSym_eq hp e hs ht hst
-  -- Every `q_s ⊕ q_t` is isometric to `q_1 ⊕ q_{st}`.
-  have key (s t : ℤ) (hs : IsCoprime (p : ℤ) s) (ht : IsCoprime (p : ℤ) t) :
-      Nonempty (Isometry ((oddCyclic (p ^ e) hp.pow s).prod (oddCyclic (p ^ e) hp.pow t))
-        ((oddCyclic (p ^ e) hp.pow 1).prod (oddCyclic (p ^ e) hp.pow (s * t)))) := by
-    have h1 : IsCoprime (p : ℤ) 1 := isCoprime_one_right
-    have hst : IsCoprime (p : ℤ) (s * t) := hs.mul_right ht
-    rcases hχ s hs with hs1 | hs1
-    · obtain ⟨f⟩ := hcyc hs h1 (by rw [hs1, legendreSym.at_one])
-      obtain ⟨g⟩ := hcyc ht hst (by rw [legendreSym.mul, hs1, one_mul])
-      exact ⟨f.prod g⟩
-    rcases hχ t ht with ht1 | ht1
-    · obtain ⟨f⟩ := hcyc ht h1 (by rw [ht1, legendreSym.at_one])
-      obtain ⟨g⟩ := hcyc hs hst (by rw [legendreSym.mul, ht1, mul_one])
-      exact ⟨(QuadraticMap.IsometryEquiv.prodComm _ _).trans (f.prod g)⟩
-    · obtain ⟨f⟩ := hcyc ht hs (by rw [hs1, ht1])
-      obtain ⟨g⟩ := hcyc h1 hst (by rw [legendreSym.mul, hs1, ht1, legendreSym.at_one]; norm_num)
-      have hpe (u : ℤ) (hu : IsCoprime (p : ℤ) u) : IsCoprime ((p ^ e : ℕ) : ℤ) u := by
-        simpa using hu.pow_left
-      exact ⟨((QuadraticMap.IsometryEquiv.refl _).prod f).trans
-        ((oddCyclicProdSelfIsometry p e hp (hpe s hs) (hpe 1 h1)).trans
-          ((QuadraticMap.IsometryEquiv.refl _).prod g))⟩
-  obtain ⟨f⟩ := key a b ha hb
-  obtain ⟨g⟩ := key c d hc hd
-  obtain ⟨u⟩ := hcyc (ha.mul_right hb) (hc.mul_right hd)
-    (by rw [legendreSym.mul, legendreSym.mul, h])
-  exact ⟨f.trans (((QuadraticMap.IsometryEquiv.refl _).prod u).trans g.symm)⟩
 
 omit [Fact p.Prime] in
 /-- An orthogonal sum indexed by `Fin (n + 1)` with coefficients `Fin.cons x θ` is the
