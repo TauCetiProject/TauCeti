@@ -34,7 +34,7 @@ zero ideal, which has no prime factors, is the trivial character.
   `Ideal.powerResidueSymbol`.
 * `Ideal.powerResidueSymbolIdeal_mul_right`: `(α / 𝔞 𝔟)_n = (α / 𝔞)_n (α / 𝔟)_n` for nonzero
   `𝔞` and `𝔟`.
-* `Ideal.powerResidueSymbolIdeal_pow_right`: `(α / 𝔞 ^ k)_n = ((α / 𝔞)_n) ^ k` for nonzero `𝔞`.
+* `Ideal.powerResidueSymbolIdeal_pow_right`: `(α / 𝔞 ^ k)_n = ((α / 𝔞)_n) ^ k`.
 * `Ideal.powerResidueSymbolIdeal_top`: `(α / 𝓞 K)_n = 1`.
 * `Ideal.powerResidueSymbolIdeal_bot`: the symbol at the zero ideal is the trivial character.
 * `Ideal.powerResidueSymbolIdeal_mk_eq_zero_iff`: `(α / 𝔞)_n = 0` exactly when `α` and `𝔞` are
@@ -150,13 +150,20 @@ theorem powerResidueSymbolIdeal_mul_right (h𝔞 : 𝔞 ≠ ⊥) (h𝔟 : 𝔟 �
     · rw [powerResidueSymbolIdeal_mk_eq_zero_iff.mpr h, zero_mul]
     · rw [powerResidueSymbolIdeal_mk_eq_zero_iff.mpr h, mul_zero]
 
-/-- `(α / 𝔞 ^ k)_n = ((α / 𝔞)_n) ^ k` for a nonzero ideal `𝔞`. -/
-theorem powerResidueSymbolIdeal_pow_right (h𝔞 : 𝔞 ≠ ⊥) (α : 𝓞 K) (k : ℕ) :
+/-- `(α / 𝔞 ^ k)_n = ((α / 𝔞)_n) ^ k`. -/
+theorem powerResidueSymbolIdeal_pow_right (𝔞 : Ideal (𝓞 K)) (α : 𝓞 K) (k : ℕ) :
     powerResidueSymbolIdeal (𝔞 ^ k) n (Quotient.mk (𝔞 ^ k) α) =
       powerResidueSymbolIdeal 𝔞 n (Quotient.mk 𝔞 α) ^ k := by
   induction k with
   | zero => rw [pow_zero, one_eq_top, powerResidueSymbolIdeal_top, pow_zero]
   | succ k ih =>
+    obtain rfl | h𝔞 := eq_or_ne 𝔞 ⊥
+    · -- At the zero ideal the trivial character takes only the values `0` and `1`.
+      rw [show (⊥ : Ideal (𝓞 K)) ^ (k + 1) = ⊥ by rw [← zero_eq_bot, zero_pow k.succ_ne_zero],
+        powerResidueSymbolIdeal_bot]
+      by_cases hα : IsUnit (Quotient.mk (⊥ : Ideal (𝓞 K)) α)
+      · rw [MulChar.one_apply hα, one_pow]
+      · rw [MulChar.map_nonunit _ hα, zero_pow k.succ_ne_zero]
     rw [pow_succ, powerResidueSymbolIdeal_mul_right (pow_ne_zero k h𝔞) h𝔞, ih, pow_succ]
 
 /-- On the units of `𝓞 K ⧸ 𝔞`, the symbol at `𝔞` is an `n`-th root of unity. -/
@@ -180,8 +187,6 @@ a square modulo `P ^ 2`: the value `1` does not detect residues at composite ide
 example (P : Ideal (𝓞 K)) [P.IsMaximal] [HasEnoughRootsOfUnity (𝓞 K) 2] {α : 𝓞 K}
     (hα : powerResidueSymbol P 2 (Quotient.mk P α) = -1) :
     powerResidueSymbolIdeal (P ^ 2) 2 (Quotient.mk (P ^ 2) α) = 1 := by
-  rw [powerResidueSymbolIdeal_pow_right
-      (Ring.ne_bot_of_isMaximal_of_not_isField ‹_› (RingOfIntegers.not_isField K)),
-    powerResidueSymbolIdeal_of_isMaximal, hα, neg_one_sq]
+  rw [powerResidueSymbolIdeal_pow_right, powerResidueSymbolIdeal_of_isMaximal, hα, neg_one_sq]
 
 end Ideal
