@@ -295,3 +295,34 @@ end Elementwise
 end Abelian
 
 end TauCeti.ChainComplex
+
+namespace TauCeti.ChainComplex
+
+variable {C : Type u} [Category.{v} C] [Abelian C]
+  (k : Type*) [Ring k] [Linear k C] (X Y : C)
+
+/-- Applying `Hom(-, Y)` to `X` in chain degree zero gives `Hom(X, Y)` in cochain degree zero.
+This is Mathlib's `HomologicalComplex.singleMapHomologicalComplex`, followed by unop. -/
+noncomputable def linearYonedaObjSingle₀Iso :
+    ((ChainComplex.single₀ C).obj X).linearYonedaObj k Y ≅
+      (CochainComplex.single₀ (ModuleCat.{v} k)).obj (ModuleCat.of k (X ⟶ Y)) :=
+  ((HomologicalComplex.unopFunctor _ _).mapIso
+    ((HomologicalComplex.singleMapHomologicalComplex
+      ((linearYoneda k C).obj Y).rightOp (ComplexShape.down ℕ) 0).app X).op).symm ≪≫
+    HomologicalComplex.Hom.isoOfComponents (fun
+      | 0 => Iso.refl _
+      | n + 1 =>
+        (HomologicalComplex.isZero_single_obj_X (ComplexShape.down ℕ) 0
+          (op (ModuleCat.of k (X ⟶ Y))) (n + 1) (by omega)).unop.isoZero ≪≫
+          (HomologicalComplex.isZero_single_obj_X _ _ _ _ (by omega)).isoZero.symm)
+      (by intros; simp)
+
+/-- In degree zero, the single-object Hom comparison is the identity on morphisms. -/
+@[simp]
+lemma linearYonedaObjSingle₀Iso_hom_f_zero_apply (f : X ⟶ Y) :
+    dsimp% (linearYonedaObjSingle₀Iso k X Y).hom.f 0 f = f := by
+  dsimp [linearYonedaObjSingle₀Iso, HomologicalComplex.singleMapHomologicalComplex,
+    HomologicalComplex.unopFunctor]
+  rfl
+
+end TauCeti.ChainComplex
