@@ -773,7 +773,24 @@ jobs:
             echo "::error::bubblewrap ${BWRAP_VER} downloaded but does not match BWRAP_DEB_SHA256. Ubuntu does not rewrite published packages, so either the pin is wrong or the download was tampered with. Re-derive the hashes rather than relaxing this check."
             exit 1
           fi
-          sudo dpkg -i bwrap.deb >/dev/null
+          # Runner image maintenance may briefly hold dpkg's frontend lock.
+          install_log=$(mktemp)
+          for attempt in {1..25}; do
+            if sudo env LC_ALL=C dpkg -i bwrap.deb >/dev/null 2>"$install_log"; then
+              rm -f "$install_log"
+              break
+            else
+              install_rc=$?
+            fi
+            cat "$install_log" >&2
+            if ! grep -Eq '^dpkg: error: dpkg (frontend|database) lock was locked by another process' \
+                "$install_log" || (( attempt == 25 )); then
+              rm -f "$install_log"
+              exit "$install_rc"
+            fi
+            echo "::notice::dpkg is busy; retrying in 5 seconds (attempt $attempt/25)"
+            sleep 5
+          done
           if ! echo "${BWRAP_SHA256}  /usr/bin/bwrap" | sha256sum -c -; then
             echo "::error::the installed /usr/bin/bwrap does not match BWRAP_SHA256, so the binary that would run is not the one that was vetted. Re-derive it with: sudo dpkg -i ${deb} && sha256sum /usr/bin/bwrap"
             exit 1
