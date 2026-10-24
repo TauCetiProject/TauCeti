@@ -76,7 +76,7 @@ theorem eq_and_eq_of_isUnit_isMonicOfDegree_mul_eq {g e e' : W} {s : ℕ}
 
 /-- The monic polynomial in an overconvergent Weierstrass preparation is a Weierstrass
 polynomial: its unit-radius Gauss norm is `1`. -/
-theorem gaussNorm_eq_one_of_isUnit_isMonicOfDegree_mul_eq [NormOneClass K] {g e : W} {s : ℕ}
+theorem gaussNorm_eq_one_of_isUnit_isMonicOfDegree_mul_eq {g e : W} {s : ℕ}
     (hg : PowerSeries.IsDistinguished 1 s
       (Huber.restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate))
     {ω : Polynomial W₀} (he : IsUnit e) (hm : ω.IsMonicOfDegree s)
@@ -84,6 +84,12 @@ theorem gaussNorm_eq_one_of_isUnit_isMonicOfDegree_mul_eq [NormOneClass K] {g e 
       (ω.map (toTate σ K).toRingHom : PowerSeries Tate) =
         Huber.restrictedOptionEquiv (toTate _ K g)) :
     (ω.map (toTate σ K).toRingHom : PowerSeries Tate).gaussNorm norm 1 = 1 := by
+  have hcoeff : ((PowerSeries.coeff s
+      (Huber.restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate) : Tate) :
+        MvPowerSeries σ K) ≠ 0 := fun h ↦ hg.coeff_ne_zero (Subtype.ext h)
+  obtain ⟨d, hd⟩ := (ne_zero_iff_exists_coeff_ne_zero _).mp hcoeff
+  have : Nontrivial K := nontrivial_of_ne _ _ hd
+  have : NormOneClass K := NormMulClass.toNormOneClass
   have hd := PowerSeries.IsDistinguished.of_isUnit_mul (heq ▸ hg) one_pos
     ((he.map (toTate _ K)).map Huber.restrictedOptionEquiv.toRingHom)
   rw [← hd.norm_coeff_mul_pow_eq]
@@ -145,10 +151,10 @@ private theorem lift_preparation {g : W} {s : ℕ} {ρ r : ℝ} [Fact (0 < ρ)]
     Huber.map_subtype_restrictedOptionEquiv (c := fun _ : Option σ ↦ 1), coe_toTate]
   exact heq
 
-/-- An overconvergent series distinguished in the separated variable is an overconvergent
-unit times a monic polynomial of the distinguished degree over the smaller overconvergent
-algebra. No characteristic, finiteness of the variable type, or nontriviality of the norm
-is required. -/
+/-- An overconvergent series distinguished of degree `s` at unit radius in the separated
+variable, with unit coefficient in degree `s`, is an overconvergent unit times a monic
+polynomial of degree `s` over the smaller overconvergent algebra. No characteristic,
+finiteness of the variable type, or nontriviality of the norm is required. -/
 theorem exists_isUnit_isMonicOfDegree_mul_eq [CompleteSpace K] {g : W} {s : ℕ}
     (hg : PowerSeries.IsDistinguished 1 s
       (Huber.restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate))
@@ -166,6 +172,7 @@ theorem exists_isUnit_isMonicOfDegree_mul_eq [CompleteSpace K] {g : W} {s : ℕ}
   let : ∀ i, Fact (0 < c i) := fun
     | none => ⟨zero_lt_one.trans hr⟩
     | some _ => ⟨zero_lt_one.trans hρ⟩
+  -- Shrink the common convergence radius `r` to `c`; flattening later shrinks `c` to `ρ`.
   let gflat : IsRestricted.subring (R := K) c := ⟨g, MvPowerSeries.isRestricted_of_le hgr
     (fun i ↦ (Fact.out (p := 0 < c i)).le) (by
       intro i
@@ -186,6 +193,8 @@ theorem exists_isUnit_isMonicOfDegree_mul_eq [CompleteSpace K] {g : W} {s : ℕ}
     (PowerSeries.map (IsRestricted.subring (R := K) (fun _ : σ ↦ ρ)).subtype) heq
 
 /-- Unique multivariable Weierstrass preparation in the Monsky–Washnitzer algebra.
+The series is distinguished of degree `s` at unit radius in the separated variable,
+with unit coefficient in degree `s`.
 Both the unit and every coefficient of the monic polynomial are overconvergent. -/
 theorem existsUnique_isUnit_isMonicOfDegree_mul_eq [CompleteSpace K] {g : W} {s : ℕ}
     (hg : PowerSeries.IsDistinguished 1 s
