@@ -48,6 +48,35 @@ theorem reflection_apply_of_map_eq (K : Submodule 𝕜 E) [K.HasOrthogonalProjec
   simp only [he, LinearIsometryEquiv.symm_apply_apply] at h
   exact h
 
+/-- A linear isometry equivalence fixing `K` pointwise commutes with reflection across `K`. -/
+theorem reflection_apply_of_eqOn (K : Submodule 𝕜 E) [K.HasOrthogonalProjection]
+    {e : E ≃ₗᵢ[𝕜] E} (he : Set.EqOn e id K) (x : E) :
+    K.reflection (e x) = e (K.reflection x) := by
+  refine reflection_apply_of_map_eq K ?_ x
+  ext v
+  constructor
+  · rintro ⟨w, hw, rfl⟩
+    change e w ∈ K
+    rw [he hw]
+    exact hw
+  · intro hv
+    exact ⟨v, hv, he hv⟩
+
+/-- A linear isometry equivalence fixing `K` pointwise commutes with reflection across `Kᗮ`. -/
+theorem reflection_orthogonal_apply_of_eqOn (K : Submodule 𝕜 E) [K.HasOrthogonalProjection]
+    {e : E ≃ₗᵢ[𝕜] E} (he : Set.EqOn e id K) (x : E) :
+    Kᗮ.reflection (e x) = e (Kᗮ.reflection x) := by
+  rw [reflection_orthogonal_apply, reflection_apply_of_eqOn K he,
+    reflection_orthogonal_apply, map_neg]
+
+/-- Reflection across `Kᗮ` negates the inner product with any vector in `K`. -/
+theorem inner_reflection_orthogonal_of_mem (K : Submodule 𝕜 E) [K.HasOrthogonalProjection]
+    (x : E) {v : E} (hv : v ∈ K) :
+    inner 𝕜 (Kᗮ.reflection x) v = -inner 𝕜 x v := by
+  conv_lhs => rw [← neg_neg v,
+    ← reflection_mem_subspace_orthogonal_precomplement_eq_neg hv, inner_neg_right,
+    LinearIsometryEquiv.inner_map_map]
+
 end Submodule
 
 namespace TauCeti

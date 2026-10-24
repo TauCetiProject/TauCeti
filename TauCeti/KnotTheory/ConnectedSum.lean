@@ -51,7 +51,7 @@ by the half-turn and rotating its parametrization by `-1`
 (`TauCeti.SmoothCircleEmbedding.greatCircle_connectedSum`). An isometry fixing the plane `ι ℂ`
 pointwise preserves connected-sum position and commutes with the connected sum; in particular the
 mirror image of a connected sum of knots in `S³ ⊆ ℝ⁴`, in position for the unknot, is the connected
-sum of the mirror images (`TauCeti.SmoothCircleEmbedding.connectedSum_mirror`).
+sum of the mirror images (`TauCeti.SmoothCircleEmbedding.mirror_connectedSum`).
 
 Not formalized here: that every knot is ambient isotopic to one in connected-sum position, and
 that the resulting operation on isotopy or concordance classes does not depend on the choices.
@@ -73,8 +73,8 @@ Those are the steps from this construction to the knot concordance group.
   the connected sum exactly at `ι (±1)` and separates the two summands.
 * `TauCeti.SmoothCircleEmbedding.connectedSum_greatCircle`,
   `TauCeti.SmoothCircleEmbedding.greatCircle_connectedSum`: the great circle is a unit.
-* `TauCeti.SmoothCircleEmbedding.connectedSum_transDiffeomorph`,
-  `TauCeti.SmoothCircleEmbedding.connectedSum_mirror`: compatibility with isometries fixing `ι ℂ`,
+* `TauCeti.SmoothCircleEmbedding.transDiffeomorph_connectedSum`,
+  `TauCeti.SmoothCircleEmbedding.mirror_connectedSum`: compatibility with isometries fixing `ι ℂ`,
   and with mirroring.
 
 ## References
@@ -104,31 +104,6 @@ section General
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
   [Fact (finrank ℝ E = n + 1)] {ι : ℂ →ₗᵢ[ℝ] E}
-
-/-! ### The half-turn in the plane of the great circle -/
-
-/-- The half-turn of `E` in the plane `ι ℂ`, the reflection in its orthogonal complement, negates
-the plane. -/
-private theorem reflection_apply_self (ι : ℂ →ₗᵢ[ℝ] E) (w : ℂ) :
-    (LinearMap.range ι.toLinearMap)ᗮ.reflection (ι w) = -ι w :=
-  Submodule.reflection_mem_subspace_orthogonal_precomplement_eq_neg (LinearMap.mem_range_self _ w)
-
-/-- The half-turn of `E` in the plane `ι ℂ` exchanges the two hemispheres `⟪x, ι i⟫ > 0` and
-`⟪x, ι i⟫ < 0`. -/
-private theorem inner_reflection_I (ι : ℂ →ₗᵢ[ℝ] E) (x : E) :
-    ⟪(LinearMap.range ι.toLinearMap)ᗮ.reflection x, ι Complex.I⟫ = -⟪x, ι Complex.I⟫ := by
-  conv_lhs => rw [← neg_neg (ι Complex.I), ← reflection_apply_self ι Complex.I, inner_neg_right,
-    LinearIsometryEquiv.inner_map_map]
-
-/-- An isometry fixing the plane `ι ℂ` pointwise commutes with the half-turn in that plane. -/
-private theorem reflection_map_eq (ι : ℂ →ₗᵢ[ℝ] E) {e : E ≃ₗᵢ[ℝ] E} (he : ∀ w, e (ι w) = ι w)
-    (x : E) :
-    (LinearMap.range ι.toLinearMap)ᗮ.reflection (e x) =
-      e ((LinearMap.range ι.toLinearMap)ᗮ.reflection x) := by
-  refine Submodule.reflection_apply_of_map_eq _ ?_ x
-  rw [Submodule.map_orthogonal_equiv, ← LinearMap.range_comp]
-  congr 2
-  exact LinearMap.ext he
 
 /-! ### Connected-sum position -/
 
@@ -197,6 +172,14 @@ private theorem coe_turnOver_apply (ι : ℂ →ₗᵢ[ℝ] E)
     (turnOver ι K z : E) = (LinearMap.range ι.toLinearMap)ᗮ.reflection (K (-z)) := by
   simp [turnOver]
 
+/-- The half-turn and the antipodal parametrization together fix the great circle. -/
+private theorem reflection_greatCircle_neg (z : Circle) :
+    (LinearMap.range ι.toLinearMap)ᗮ.reflection (greatCircle (n := n) ι (-z)) = ι z := by
+  rw [coe_greatCircle_apply, Circle.coe_neg, map_neg, map_neg,
+    Submodule.reflection_mem_subspace_orthogonal_precomplement_eq_neg
+      (K := LinearMap.range ι.toLinearMap) (v := ι (z : ℂ))
+      (LinearMap.mem_range_self _ (z : ℂ)), neg_neg]
+
 /-- Near the closed upper half of the circle, the turned-over knot is the great circle. -/
 private theorem IsConnectedSumPosition.eventuallyEq_turnOver (h : IsConnectedSumPosition ι K)
     {z : Circle} (hz : 0 ≤ (z : ℂ).im) : ⇑(turnOver ι K) =ᶠ[𝓝 z] ⇑(greatCircle (n := n) ι) := by
@@ -204,8 +187,7 @@ private theorem IsConnectedSumPosition.eventuallyEq_turnOver (h : IsConnectedSum
   filter_upwards [(continuous_neg.tendsto z).eventually (h.eventuallyEq_greatCircle hneg)]
     with w hw
   ext
-  rw [coe_turnOver_apply, hw, coe_greatCircle_apply, coe_greatCircle_apply, Circle.coe_neg,
-    map_neg, map_neg, reflection_apply_self, neg_neg]
+  rw [coe_turnOver_apply, hw, reflection_greatCircle_neg, coe_greatCircle_apply]
 
 /-! ### The connected sum -/
 
@@ -242,8 +224,10 @@ private theorem sign_inner_connectedSumFun (h₁ : IsConnectedSumPosition ι K�
   unfold connectedSumFun
   split_ifs with hz
   · exact h₁.sign_inner z
-  · rw [coe_turnOver_apply, inner_reflection_I, Left.sign_neg, h₂.sign_inner, Circle.coe_neg,
-      Complex.neg_im, Left.sign_neg, neg_neg]
+  · rw [coe_turnOver_apply,
+      Submodule.inner_reflection_orthogonal_of_mem (LinearMap.range ι.toLinearMap) _
+      (v := ι Complex.I) (LinearMap.mem_range_self _ Complex.I), Left.sign_neg,
+      h₂.sign_inner, Circle.coe_neg, Complex.neg_im, Left.sign_neg, neg_neg]
 
 private theorem injective_connectedSumFun (h₁ : IsConnectedSumPosition ι K₁)
     (h₂ : IsConnectedSumPosition ι K₂) : Function.Injective (connectedSumFun ι K₁ K₂) := by
@@ -313,8 +297,8 @@ theorem connectedSum_greatCircle (h₀ : IsConnectedSumPosition ι (greatCircle 
   rcases le_or_gt 0 (z : ℂ).im with hz | hz
   · rw [connectedSum_apply_of_im_nonneg _ _ hz]
   · ext
-    rw [coe_connectedSum_apply_of_im_neg _ _ hz, h₁.apply_eq hz.le, coe_greatCircle_apply,
-      coe_greatCircle_apply, Circle.coe_neg, map_neg, map_neg, reflection_apply_self, neg_neg]
+    rw [coe_connectedSum_apply_of_im_neg _ _ hz, h₁.apply_eq hz.le,
+      reflection_greatCircle_neg, coe_greatCircle_apply]
 
 /-- **The great circle is a left unit** for the connected sum, up to moving the knot by the
 half-turn `ρ` in the plane `ι ℂ` and rotating its parametrization by `-1`; as `ρ` is a rotation,
@@ -333,7 +317,7 @@ theorem greatCircle_connectedSum (h₀ : IsConnectedSumPosition ι (greatCircle 
 /-! ### Isometries fixing the plane of the great circle, and mirroring -/
 
 /-- An isometry of `E` fixing the plane `ι ℂ` pointwise commutes with the connected sum. -/
-theorem connectedSum_transDiffeomorph {e : E ≃ₗᵢ[ℝ] E} (he : ∀ w, e (ι w) = ι w) :
+theorem transDiffeomorph_connectedSum {e : E ≃ₗᵢ[ℝ] E} (he : ∀ w, e (ι w) = ι w) :
     (connectedSum K₁ K₂ h₁ h₂).transDiffeomorph (e.unitSphereDiffeomorph (n := n) (k := n) ∞) =
       connectedSum (K₁.transDiffeomorph (e.unitSphereDiffeomorph ∞))
         (K₂.transDiffeomorph (e.unitSphereDiffeomorph ∞)) (h₁.transDiffeomorph he)
@@ -346,7 +330,9 @@ theorem connectedSum_transDiffeomorph {e : E ≃ₗᵢ[ℝ] E} (he : ∀ w, e (�
     rw [coe_connectedSum_apply_of_im_neg _ _ hz, SmoothEmbedding.transDiffeomorph_apply,
       LinearIsometryEquiv.coe_unitSphereDiffeomorph_apply, coe_connectedSum_apply_of_im_neg _ _ hz,
       SmoothEmbedding.transDiffeomorph_apply, LinearIsometryEquiv.coe_unitSphereDiffeomorph_apply,
-      reflection_map_eq ι he]
+      Submodule.reflection_orthogonal_apply_of_eqOn _ (by
+        rintro _ ⟨w, rfl⟩
+        exact he w)]
 
 end General
 
@@ -358,14 +344,6 @@ attribute [local instance] finrank_euclideanSpace_fin_succ_fact
 
 variable {K K₁ K₂ : SmoothCircleEmbedding (𝓡 3) (sphere (0 : EuclideanSpace ℝ (Fin 4)) 1)}
 
-/-- The reflection defining the mirror image fixes the plane of the unknot pointwise. -/
-private theorem mirror_reflection_complexToEuclideanFour (w : ℂ) :
-    (ℝ ∙ EuclideanSpace.single (Fin.last 3) (1 : ℝ))ᗮ.reflection (complexToEuclideanFour w) =
-      complexToEuclideanFour w := by
-  refine Submodule.reflection_mem_subspace_eq_self ?_
-  rw [Submodule.mem_orthogonal_singleton_iff_inner_right]
-  simp [EuclideanSpace.inner_single_left]
-
 /-- The mirror image of a knot in `S³` in connected-sum position for the unknot is again in
 connected-sum position. -/
 theorem IsConnectedSumPosition.mirror (h : IsConnectedSumPosition complexToEuclideanFour K) :
@@ -376,10 +354,10 @@ theorem IsConnectedSumPosition.mirror (h : IsConnectedSumPosition complexToEucli
 /-- **The mirror image of a connected sum** of knots in `S³` is the connected sum of the mirror
 images. -/
 @[simp]
-theorem connectedSum_mirror (h₁ : IsConnectedSumPosition complexToEuclideanFour K₁)
+theorem mirror_connectedSum (h₁ : IsConnectedSumPosition complexToEuclideanFour K₁)
     (h₂ : IsConnectedSumPosition complexToEuclideanFour K₂) :
     (connectedSum K₁ K₂ h₁ h₂).mirror = connectedSum K₁.mirror K₂.mirror h₁.mirror h₂.mirror := by
-  convert connectedSum_transDiffeomorph h₁ h₂ mirror_reflection_complexToEuclideanFour using 2 <;>
+  convert transDiffeomorph_connectedSum h₁ h₂ mirror_reflection_complexToEuclideanFour using 2 <;>
     exact mirror_def _
 
 end Mirror
