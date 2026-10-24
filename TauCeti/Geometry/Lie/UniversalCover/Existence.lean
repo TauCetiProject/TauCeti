@@ -51,9 +51,16 @@ theorem exists_universalCover [ConnectedSpace G] :
   let _ : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
   let _ : PathConnectedSpace G := PathConnectedSpace.of_locallyPathConnectedSpace
   let Gt := UniversalCover (1 : G)
-  let p : Gt →* G := (UniversalCover.projHom : UniversalCover (1 : G) →ₜ* G)
+  let p : Gt →* G :=
+    (UniversalCover.projHom : UniversalCover (1 : G) →ₜ* G).toMonoidHom
   have hpc : (p : Gt → G) = (UniversalCover.projHom : Gt → G) := by
-    rfl
+    dsimp only [p, Gt]
+    change ((UniversalCover.projHom : UniversalCover (1 : G) →ₜ* G).toMonoidHom :
+      UniversalCover (1 : G) → G) = (UniversalCover.projHom : UniversalCover (1 : G) → G)
+    exact congrArg (fun f : UniversalCover (1 : G) →* G =>
+      (f : UniversalCover (1 : G) → G))
+      (ContinuousMonoidHom.coe_toMonoidHom
+        (UniversalCover.projHom : UniversalCover (1 : G) →ₜ* G))
   have hp : IsCoveringMap (p : Gt → G) := by
     rw [hpc]
     exact UniversalCover.isCoveringMap_projHom
