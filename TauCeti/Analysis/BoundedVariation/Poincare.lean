@@ -178,19 +178,6 @@ theorem setLIntegral_enorm_sub_setAverage_le_mul_totalVariationOn
     _ = (∫⁻ h in (Ω : Set E) - Ω, ‖h‖ₑ ∂μ) / μ S * totalVariationOn μ Ω u := by
         rw [div_eq_mul_inv, mul_right_comm]
 
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [μ.IsAddHaarMeasure] in
-/-- If every `h ∈ Ω - Ω` has `‖h‖ ≤ D` and `Ω - Ω ⊆ B`, then `∫_{Ω - Ω} ‖h‖ ≤ D μ(B)`. -/
-private theorem setLIntegral_enorm_sub_le {D : ℝ} {B : Set E}
-    (hD : ∀ h ∈ (Ω : Set E) - Ω, ‖h‖ ≤ D) (hB : (Ω : Set E) - Ω ⊆ B) :
-    ∫⁻ h in (Ω : Set E) - Ω, ‖h‖ₑ ∂μ ≤ ENNReal.ofReal D * μ B := by
-  calc ∫⁻ h in (Ω : Set E) - Ω, ‖h‖ₑ ∂μ ≤ ∫⁻ _ in (Ω : Set E) - Ω, ENNReal.ofReal D ∂μ :=
-        setLIntegral_mono' Ω.isOpen.sub_left.measurableSet fun h hh => by
-          rw [← ofReal_norm]
-          exact ENNReal.ofReal_le_ofReal (hD h hh)
-    _ ≤ ENNReal.ofReal D * μ B := by
-        rw [setLIntegral_const]
-        gcongr
-
 /-- **The Poincaré inequality for functions of bounded variation on a bounded convex set.** Let
 `u` be locally integrable on a bounded convex open set `Ω` of dimension `n`, and let `S ⊆ Ω` have
 positive measure. Then `u` deviates from its mean over `S` in `L¹(Ω)` by at most
@@ -215,7 +202,14 @@ theorem setLIntegral_enorm_sub_setAverage_le_mul_totalVariationOn_of_convex
   have hkernel : ∫⁻ h in (Ω : Set E) - Ω, ‖h‖ₑ ∂μ ≤
       ENNReal.ofReal d * (ENNReal.ofReal (d ^ finrank ℝ E) * μ (ball 0 1)) := by
     rw [← Measure.addHaar_closedBall μ 0 hd]
-    exact setLIntegral_enorm_sub_le hnorm fun h hh => mem_closedBall_zero_iff.2 (hnorm h hh)
+    calc ∫⁻ h in (Ω : Set E) - Ω, ‖h‖ₑ ∂μ ≤ ∫⁻ _ in (Ω : Set E) - Ω, ENNReal.ofReal d ∂μ :=
+          setLIntegral_mono' Ω.isOpen.sub_left.measurableSet fun h hh => by
+            rw [← ofReal_norm]
+            exact ENNReal.ofReal_le_ofReal (hnorm h hh)
+      _ ≤ ENNReal.ofReal d * μ (closedBall 0 d) := by
+          rw [setLIntegral_const]
+          gcongr
+          exact fun h hh => mem_closedBall_zero_iff.2 (hnorm h hh)
   have hS_pos : 0 < μ.real S := ENNReal.toReal_pos hS₀ hS_top
   rw [ENNReal.ofReal_div_of_pos hS_pos, ofReal_measureReal hS_top,
     ENNReal.ofReal_mul measureReal_nonneg, ofReal_measureReal measure_ball_lt_top.ne, pow_succ',
