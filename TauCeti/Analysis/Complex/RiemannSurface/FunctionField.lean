@@ -158,6 +158,12 @@ theorem coe_finitePart (h : f x ≠ ∞) : (f.finitePart x : OnePoint ℂ) = f x
 theorem continuousAt_finitePart (h : f x ≠ ∞) : ContinuousAt f.finitePart x :=
   (affineChart.continuousAt (by simpa using h)).comp f.continuous.continuousAt
 
+/-- Away from the poles, the finite part of a meromorphic function is holomorphic: it is the
+meromorphic function read in the affine chart of the sphere. -/
+theorem mdifferentiableAt_finitePart (h : f x ≠ ∞) :
+    MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f.finitePart x :=
+  (mdifferentiableAt_atlas (Or.inl rfl) (by simpa using h)).comp x (f.mdifferentiable x)
+
 /-- The value of a meromorphic function at `x` is the limit at `x`, along the punctured
 neighbourhoods of `x`, of any map to the sphere that agrees with it near `x`. -/
 theorem apply_eq_of_tendsto {φ : X → OnePoint ℂ} {c : OnePoint ℂ} (hφ : Tendsto φ (𝓝[≠] x) (𝓝 c))
@@ -629,6 +635,23 @@ values. -/
 theorem prod_apply {ι : Type*} {s : Finset ι} {f : ι → MeromorphicFunction X}
     (hf : ∀ i ∈ s, f i x ≠ ∞) : (∏ i ∈ s, f i) x = ↑(∏ i ∈ s, (f i).finitePart x) :=
   prod_apply_of_eq_coe fun i hi ↦ (coe_finitePart (hf i hi)).symm
+
+/-- If each `f i` takes the value `a i` at `x`, then the sum of the `f i` takes the sum of the
+`a i`. -/
+theorem sum_apply_of_eq_coe {ι : Type*} {s : Finset ι} {f : ι → MeromorphicFunction X}
+    {a : ι → ℂ} (hf : ∀ i ∈ s, f i x = a i) : (∑ i ∈ s, f i) x = ↑(∑ i ∈ s, a i) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert i s hi ih =>
+    rw [Finset.sum_insert hi, Finset.sum_insert hi,
+      add_apply_of_eq_coe (hf i (Finset.mem_insert_self i s))
+        (ih fun j hj ↦ hf j (Finset.mem_insert_of_mem hj))]
+
+/-- At a point where each `f i` is finite, the sum of the `f i` takes the sum of their values. -/
+theorem sum_apply {ι : Type*} {s : Finset ι} {f : ι → MeromorphicFunction X}
+    (hf : ∀ i ∈ s, f i x ≠ ∞) : (∑ i ∈ s, f i) x = ↑(∑ i ∈ s, (f i).finitePart x) :=
+  sum_apply_of_eq_coe fun i hi ↦ (coe_finitePart (hf i hi)).symm
 
 /-- **The inverse vanishes at the poles.** At a pole of `f`, the meromorphic function `f⁻¹`
 takes the value `0`. -/
