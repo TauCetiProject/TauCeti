@@ -98,6 +98,14 @@ theorem commute_multiplicationOperator_fourierLp_one_iff
     (AddMonoidHomClass.isometry_of_norm U
       (Lp.norm_multiplicationOperator_apply_of_ae_norm_eq_one
         (ae_norm_fourierLp_eq_one ∞ 1))).injective
+  -- `W` commutes with the shift `U`, which raises Fourier indices by one.
+  have hWU (f : Lp ℂ 2 (haarAddCircle (T := T))) : W (U f) = U (W f) :=
+    DFunLike.congr_fun hW.eq f
+  have hU_basis (n : ℤ) : U (fourierBasis n) = fourierBasis (n + 1) := by
+    rw [hU, fourierLp_smul_fourierBasis, add_comm]
+  have hU_smul (n : ℤ) (f : Lp ℂ 2 (haarAddCircle (T := T))) :
+      U (fourierLp (T := T) ∞ n • f) = fourierLp (T := T) ∞ (n + 1) • f := by
+    rw [hU, fourierLp_smul_fourierLp_smul, add_comm]
   -- Commuting with the shift, `W` sends each Fourier monomial `e_n` to `e_n b`.
   have hW_basis (n : ℤ) : W (fourierBasis n) = fourierLp (T := T) ∞ n • b := by
     induction n using Int.induction_on with
@@ -107,13 +115,13 @@ theorem commute_multiplicationOperator_fourierLp_one_iff
         coeFn_fourierLp (T := T) ∞ 0] with x h h₀
       rw [h, Pi.smul_apply', h₀, fourier_zero, one_smul]
     | succ n ih =>
-      rw [← add_comm 1, ← fourierLp_smul_fourierBasis, ← hU, ← mul_apply_eq_comp,
-        hW.eq, mul_apply_eq_comp, ih, hU, fourierLp_smul_fourierLp_smul]
+      calc W (fourierBasis (n + 1)) = U (W (fourierBasis n)) := by rw [← hU_basis, hWU]
+        _ = fourierLp (T := T) ∞ (n + 1) • b := by rw [ih, hU_smul]
     | pred n ih =>
       apply hU_inj
-      rw [← mul_apply_eq_comp, ← hW.eq, mul_apply_eq_comp, hU,
-        fourierLp_smul_fourierBasis, hU, fourierLp_smul_fourierLp_smul]
-      convert ih using 3 <;> ring
+      calc U (W (fourierBasis (-n - 1))) = W (fourierBasis (-n)) := by
+            rw [← hWU, hU_basis, sub_add_cancel]
+        _ = U (fourierLp (T := T) ∞ (-n - 1) • b) := by rw [ih, hU_smul, sub_add_cancel]
   -- By linearity, `W` multiplies every trigonometric polynomial by `b`.
   have hW_span : ∀ q ∈ span ℂ (range (fourier (T := T))),
       ⇑(W (ContinuousMap.toLp (E := ℂ) 2 haarAddCircle ℂ q)) =ᵐ[haarAddCircle] ⇑b * ⇑q := by
