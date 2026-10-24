@@ -24,7 +24,8 @@ norm of `K` is dense, for instance if its value group is all of `ℝ_{>0}`, the 
 ## Main results
 
 * `Valued.integer.mem_maximalIdeal_iff`: the maximal ideal of `𝒪[K]` is the open unit ball.
-* `Valued.integer.dvd_of_norm_le`: divisibility in `𝒪[K]` is comparison of norms.
+* `Valued.integer.smul_def`: on a `K`-module, `𝒪[K]` acts through the inclusion `𝒪[K] → K`.
+* `Valued.integer.dvd_iff_norm_le`: divisibility in `𝒪[K]` is comparison of norms.
 * `Valued.integer.submodule_mem_of_norm_le`: an `𝒪[K]`-submodule of `K` contains every element
   of norm at most that of one of its elements.
 * `Valued.integer.exists_eq_mul_of_linearMap_maximalIdeal`: every `𝒪[K]`-linear map
@@ -55,17 +56,24 @@ theorem Valued.integer.mem_maximalIdeal_iff {x : Valued.integer K} :
   rw [mem_maximalIdeal, mem_nonunits_iff, Valued.integer.isUnit_iff_norm_eq_one,
     (Valued.integer.norm_le_one x).lt_iff_ne]
 
-/-- In the valuation ring of a nonarchimedean field, `b` divides `a` as soon as `‖a‖ ≤ ‖b‖`. -/
-theorem Valued.integer.dvd_of_norm_le {a b : Valued.integer K} (h : ‖(a : K)‖ ≤ ‖(b : K)‖) :
-    b ∣ a :=
-  (Valuation.integer.integers _).dvd_of_le (by
-    simpa [NormedField.v_eq_valuation, Algebra.algebraMap_ofSubsemiring_apply,
-      ← NNReal.coe_le_coe] using h)
+/-- On a `K`-module `E` with a compatible `𝒪[K]`-module structure, `𝒪[K]` acts through the
+inclusion `𝒪[K] → K`. -/
+theorem Valued.integer.smul_def {E : Type*} [AddCommMonoid E] [Module K E]
+    [Module (Valued.integer K) E] [IsScalarTower (Valued.integer K) K E] (c : Valued.integer K)
+    (v : E) : c • v = (c : K) • v :=
+  (algebraMap_smul K c v).symm
+
+/-- In the valuation ring of a nonarchimedean field, `b` divides `a` exactly when
+`‖a‖ ≤ ‖b‖`. -/
+theorem Valued.integer.dvd_iff_norm_le {a b : Valued.integer K} :
+    b ∣ a ↔ ‖(a : K)‖ ≤ ‖(b : K)‖ := by
+  rw [(Valuation.integer.integers _).dvd_iff_le]
+  simp [NormedField.v_eq_valuation, Algebra.algebraMap_ofSubsemiring_apply, ← NNReal.coe_le_coe]
 
 /-- An `𝒪[K]`-submodule of `K` containing `y` contains every `x` with `‖x‖ ≤ ‖y‖`. -/
 theorem Valued.integer.submodule_mem_of_norm_le {M : Submodule (Valued.integer K) K} {x y : K}
     (hy : y ∈ M) (h : ‖x‖ ≤ ‖y‖) : x ∈ M :=
-  Valuation.leSubmodule_v_le_of_mem NormedField.valuation hy (show ‖x‖₊ ≤ ‖y‖₊ from h)
+  Valuation.leSubmodule_v_le_of_mem NormedField.valuation hy (NNReal.coe_le_coe.1 h)
 
 /-- Every `𝒪[K]`-linear map from the maximal ideal `𝓂[K]` to `K` is multiplication by an element
 of `K`. -/
@@ -79,10 +87,9 @@ theorem Valued.integer.exists_eq_mul_of_linearMap_maximalIdeal
   refine ⟨f ⟨a, ham⟩ / a, fun c ↦ ?_⟩
   -- `f` is linear, so `a * f c = f (a * c) = c * f a`.
   have h : (a : K) * f c = (c : K) * f ⟨a, ham⟩ := by
-    rw [← smul_eq_mul, ← Subring.smul_def, ← map_smul,
-      ← smul_eq_mul ((c : Valued.integer K) : K), ← Subring.smul_def, ← map_smul]
-    congr 1
-    exact Subtype.ext (mul_comm _ _)
+    have hac : a • c = (c : Valued.integer K) • (⟨a, ham⟩ : IsLocalRing.maximalIdeal _) :=
+      Subtype.ext (mul_comm _ _)
+    simpa only [map_smul, Valued.integer.smul_def, smul_eq_mul] using congrArg f hac
   field_simp [norm_pos_iff.1 ha0]
   linear_combination h
 

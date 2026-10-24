@@ -27,9 +27,11 @@ spherically complete. The field `ℂ_p` is complete but not spherically complete
 
 ## Main results
 
-* `TauCeti.exists_forall_mem_of_closedBall`: in a spherically complete ultrametric space, a
-  decreasing sequence of sets of families, each a union of closed polydiscs whose radii decrease,
-  has a common point.
+* `TauCeti.SphericallyCompleteSpace.exists_forall_mem_of_dist_le`: in a spherically complete
+  ultrametric space `X`, let `A n` be sets of families `ι → X` and `r` an antitone sequence of
+  nonnegative radii. Suppose that each `A n` contains the closed polydisc of radius `r n` about
+  each of its points, that every point of `A n` is within `r n` of a point of `A (n + 1)`, and
+  that `A 0` is nonempty. Then the sets `A n` have a common point.
 
 ## References
 
@@ -64,7 +66,7 @@ instance (priority := 100) SphericallyCompleteSpace.of_properSpace (α : Type*)
 that `A n` contains the closed polydisc of radius `r n` about each of its points, and every point
 of `A n` is within `r n` of some point of `A (n + 1)`. If the radii decrease and `A 0` is
 nonempty, the sets `A n` have a common point. -/
-theorem exists_forall_mem_of_closedBall {X ι : Type*} [PseudoMetricSpace X]
+theorem SphericallyCompleteSpace.exists_forall_mem_of_dist_le {X ι : Type*} [PseudoMetricSpace X]
     [IsUltrametricDist X] [SphericallyCompleteSpace X] {A : ℕ → Set (ι → X)} {r : ℕ → ℝ}
     (hr : Antitone r) (hr0 : ∀ n, 0 ≤ r n) (h0 : (A 0).Nonempty)
     (hstep : ∀ n, ∀ c ∈ A n, ∃ c' ∈ A (n + 1), ∀ i, dist (c' i) (c i) ≤ r n)
