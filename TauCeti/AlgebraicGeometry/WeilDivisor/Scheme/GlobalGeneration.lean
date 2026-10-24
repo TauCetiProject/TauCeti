@@ -74,7 +74,7 @@ theorem exists_section_mem_nonvanishingLocus_of_high_degree (D : SchemeWeilDivis
     intro h
     have := congrArg (Scheme.skyscraperResidueFieldEquiv (y : X) (Opens.mem_top (y : X))) h
     simp [a] at this
-  have hmem := mem_nonvanishingLocus_of_skyscraperResidueFieldHom_ne_zero
+  have hmem := mem_nonvanishingLocus_of_app_ne_zero
     (Opens.mem_top (y : X)) φ s hne
   have heq : E + WeilDivisor.ofPoint y = D := sub_add_cancel _ _
   let e : sheaf (E + WeilDivisor.ofPoint y) ≅ (toInvertibleSheaf hdim D).obj :=
