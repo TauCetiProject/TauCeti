@@ -143,9 +143,9 @@ theorem nodup_roots_of_not_sq_dvd_homogenize [IsDomain R] {p : R[X]} {n : ℕ}
   simp [s, sq]
 
 /-- The homogenization of degree `natDegree p` of a squarefree polynomial `p` over a domain has no
-squared linear factor `(a X₀ + b X₁) ^ 2` with `(a, b) ≠ (0, 0)`. -/
+squared linear factor `(a X₀ + b X₁) ^ 2`. -/
 theorem _root_.Squarefree.not_sq_dvd_homogenize_natDegree [IsDomain R] {p : R[X]}
-    (hp : Squarefree p) {a b : R} (hab : (a, b) ≠ (0, 0)) :
+    (hp : Squarefree p) {a b : R} :
     ¬(MvPolynomial.C a * MvPolynomial.X 0 + MvPolynomial.C b * MvPolynomial.X 1) ^ 2 ∣
       p.homogenize p.natDegree := by
   intro h
