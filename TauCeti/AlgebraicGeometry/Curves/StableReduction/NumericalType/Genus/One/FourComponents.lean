@@ -399,18 +399,19 @@ lemma IsGenusOneFourPathShape.exists_weight_and_multiplicity_dvd_and_le
   rcases isGenusOneFourPathShape_iff.mp h4 with ⟨hw1, hw2, hw3, hm1, hm2, hm3, -⟩ |
     ⟨hw1, hw2, hw3, hm1, hm2, hm3, -⟩ | ⟨hw1, hw2, hw3, hm1, hm2, hm3, -⟩
   case' inl =>
-    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int_on_finset
-      {x, y, z, t} huniv (nw := 4) (nm := 6) x t ?_ ?_
+    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) x t ?_ ?_
   case' inr.inl =>
-    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int_on_finset
-      {x, y, z, t} huniv (nw := 4) (nm := 6) x x ?_ ?_
+    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) x x ?_ ?_
   case' inr.inr =>
-    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int_on_finset
-      {x, y, z, t} huniv (nw := 4) (nm := 6) y x ?_ ?_
+    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) y x ?_ ?_
   all_goals
-    simp only [forall_mem_insert, mem_singleton, forall_eq, ← Nat.lt_succ_iff,
-      Nat.exists_lt_succ_right]
-    omega
+    intro i
+    have hi : i ∈ ({x, y, z, t} : Finset T.Component) := huniv ▸ mem_univ i
+    simp only [mem_insert, mem_singleton] at hi
+    rcases hi with rfl | rfl | rfl | rfl
+    all_goals
+      simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
+      omega
 
 /-- For a genus-one four-component star whose vertices exhaust all components, some component's
 weight divides every weight with quotient at most four, and some component's multiplicity
@@ -425,15 +426,17 @@ lemma IsGenusOneFourStarShape.exists_weight_and_multiplicity_dvd_and_le
   rcases isGenusOneFourStarShape_iff.mp hstar with ⟨hw1, hw2, hw3, hm1, hm2, hm3, -⟩ |
     ⟨hw1, hw2, hw3, hm1, hm2, hm3, -⟩
   case' inl =>
-    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int_on_finset
-      {c₀, x, y, z} huniv (nw := 4) (nm := 6) c₀ x ?_ ?_
+    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) c₀ x ?_ ?_
   case' inr =>
-    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int_on_finset
-      {c₀, x, y, z} huniv (nw := 4) (nm := 6) z x ?_ ?_
+    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) z x ?_ ?_
   all_goals
-    simp only [forall_mem_insert, mem_singleton, forall_eq, ← Nat.lt_succ_iff,
-      Nat.exists_lt_succ_right]
-    omega
+    intro i
+    have hi : i ∈ ({c₀, x, y, z} : Finset T.Component) := huniv ▸ mem_univ i
+    simp only [mem_insert, mem_singleton] at hi
+    rcases hi with rfl | rfl | rfl | rfl
+    all_goals
+      simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
+      omega
 
 end NumericalType
 

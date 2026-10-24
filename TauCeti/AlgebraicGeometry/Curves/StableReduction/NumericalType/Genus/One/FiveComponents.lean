@@ -393,23 +393,22 @@ lemma IsGenusOneFivePathShape.exists_weight_and_multiplicity_dvd_and_le
     ⟨hw0, hw1, hw2, hw3, hw4, hm0, hm1, hm2, hm3, hm4, -⟩⟩ :=
       isGenusOneFivePathShape_iff.mp h5
   case' inl =>
-    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int_on_finset
-      {x, y, z, t, u} huniv (nw := 4) (nm := 6) x x ?_ ?_
+    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) x x ?_ ?_
   case' inr.inl =>
-    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int_on_finset
-      {x, y, z, t, u} huniv (nw := 4) (nm := 6) t x ?_ ?_
+    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) t x ?_ ?_
   case' inr.inr.inl =>
-    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int_on_finset
-      {x, y, z, t, u} huniv (nw := 4) (nm := 6) x u ?_ ?_
+    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) x u ?_ ?_
   case' inr.inr.inr.inl =>
-    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int_on_finset
-      {x, y, z, t, u} huniv (nw := 4) (nm := 6) x x ?_ ?_
+    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) x x ?_ ?_
   case' inr.inr.inr.inr =>
-    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int_on_finset
-      {x, y, z, t, u} huniv (nw := 4) (nm := 6) y x ?_ ?_
+    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) y x ?_ ?_
   all_goals
-    simp only [forall_mem_insert, mem_singleton, forall_eq, ← Nat.lt_succ_iff,
-      Nat.exists_lt_succ_right]
-    omega
+    intro i
+    have hi : i ∈ ({x, y, z, t, u} : Finset T.Component) := huniv ▸ mem_univ i
+    simp only [mem_insert, mem_singleton] at hi
+    rcases hi with rfl | rfl | rfl | rfl | rfl
+    all_goals
+      simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
+      omega
 
 end TauCeti.NumericalType

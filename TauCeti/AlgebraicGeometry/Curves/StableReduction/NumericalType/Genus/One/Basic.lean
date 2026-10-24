@@ -698,57 +698,6 @@ theorem isMinimal_and_arithmeticGenus_eq_one_iff_of_card_eq_three
           rw [card_insert_of_notMem (by simp [hxj, hxz]), card_pair hjz, hcard])).symm
       exact fun l ↦ ⟨hg l, intersection_self_eq_of_card_eq_three hxj hxz hjz hu hxz₀ hpat l⟩
 
-/-- Integral weight and multiplicity ratios with arbitrary natural bounds give uniform
-natural-number divisibility bounds. -/
-lemma exists_weight_and_multiplicity_dvd_and_le_of_int (T : NumericalType)
-    (jw jm : T.Component) {nw nm : ℕ}
-    (hw : ∀ i, ∃ k ≤ nw, (T.weight i : ℤ) = (k : ℤ) * T.weight jw)
-    (hm : ∀ i, ∃ k ≤ nm, (T.multiplicity i : ℤ) = (k : ℤ) * T.multiplicity jm) :
-    (∃ j, ∀ i, (T.weight j : ℕ) ∣ T.weight i ∧ (T.weight i : ℕ) ≤ nw * T.weight j) ∧
-      (∃ j, ∀ i, (T.multiplicity j : ℕ) ∣ T.multiplicity i ∧
-        (T.multiplicity i : ℕ) ≤ nm * T.multiplicity j) := by
-  have bound (f : T.Component → ℕ+) (j : T.Component) (n : ℕ)
-      (h : ∀ i, ∃ k ≤ n, (f i : ℤ) = (k : ℤ) * f j) :
-      ∃ j, ∀ i, (f j : ℕ) ∣ f i ∧ (f i : ℕ) ≤ n * f j := by
-    refine ⟨j, fun i ↦ ?_⟩
-    obtain ⟨k, hk, hi⟩ := h i
-    have hiNat : (f i : ℕ) = k * f j := by exact_mod_cast hi
-    rw [hiNat]
-    exact ⟨Nat.dvd_mul_left _ _, Nat.mul_le_mul_right _ hk⟩
-  exact ⟨bound T.weight jw nw hw, bound T.multiplicity jm nm hm⟩
-
-/-- Bounded integral ratios on an index type equivalent to the components give uniform weight
-and multiplicity divisibility bounds. Finite shape proofs can check their coefficient vectors on
-the index type without transporting each component through the inverse equivalence. -/
-lemma exists_weight_and_multiplicity_dvd_and_le_of_int_of_equiv (T : NumericalType)
-    {ι : Type*} (e : ι ≃ T.Component) (jw jm : ι) {nw nm : ℕ}
-    (hw : ∀ i, ∃ k ≤ nw, (T.weight (e i) : ℤ) = (k : ℤ) * T.weight (e jw))
-    (hm : ∀ i, ∃ k ≤ nm, (T.multiplicity (e i) : ℤ) =
-      (k : ℤ) * T.multiplicity (e jm)) :
-    (∃ j, ∀ i, (T.weight j : ℕ) ∣ T.weight i ∧ (T.weight i : ℕ) ≤ nw * T.weight j) ∧
-      (∃ j, ∀ i, (T.multiplicity j : ℕ) ∣ T.multiplicity i ∧
-        (T.multiplicity i : ℕ) ≤ nm * T.multiplicity j) := by
-  apply T.exists_weight_and_multiplicity_dvd_and_le_of_int (e jw) (e jm)
-  · intro i
-    obtain ⟨k, rfl⟩ := e.surjective i
-    exact hw k
-  · intro i
-    obtain ⟨k, rfl⟩ := e.surjective i
-    exact hm k
-
-/-- Bounded integral ratios on a finite set exhausting the components give uniform weight and
-multiplicity divisibility bounds. This lets finite shape proofs check each listed component. -/
-lemma exists_weight_and_multiplicity_dvd_and_le_of_int_on_finset (T : NumericalType)
-    (s : Finset T.Component) (hs : s = univ) (jw jm : T.Component) {nw nm : ℕ}
-    (hw : ∀ i ∈ s, ∃ k ≤ nw, (T.weight i : ℤ) = (k : ℤ) * T.weight jw)
-    (hm : ∀ i ∈ s, ∃ k ≤ nm, (T.multiplicity i : ℤ) = (k : ℤ) * T.multiplicity jm) :
-    (∃ j, ∀ i, (T.weight j : ℕ) ∣ T.weight i ∧ (T.weight i : ℕ) ≤ nw * T.weight j) ∧
-      (∃ j, ∀ i, (T.multiplicity j : ℕ) ∣ T.multiplicity i ∧
-        (T.multiplicity i : ℕ) ≤ nm * T.multiplicity j) := by
-  apply T.exists_weight_and_multiplicity_dvd_and_le_of_int jw jm
-  · exact fun i ↦ hw i (hs ▸ mem_univ i)
-  · exact fun i ↦ hm i (hs ▸ mem_univ i)
-
 /-- For a genus-one pair of distinct components exhausting a two-component type, some component's
 weight divides every weight with quotient at most four, and some component's multiplicity
 divides every multiplicity with quotient at most six. -/
@@ -763,15 +712,17 @@ lemma IsGenusOnePairShape.exists_weight_and_multiplicity_dvd_and_le
     eq_univ_of_card _ (by rw [card_pair hxy, hcard])
   rcases isGenusOnePairShape_iff.mp h2 with ⟨hw, hm, -⟩ | ⟨hw, hm, -⟩
   case' inl =>
-    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int_on_finset
-      {x, y} hu (nw := 4) (nm := 6) x x ?_ ?_
+    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) x x ?_ ?_
   case' inr =>
-    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int_on_finset
-      {x, y} hu (nw := 4) (nm := 6) x y ?_ ?_
+    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) x y ?_ ?_
   all_goals
-    simp only [forall_mem_insert, mem_singleton, forall_eq, ← Nat.lt_succ_iff,
-      Nat.exists_lt_succ_right]
-    omega
+    intro i
+    have hi : i ∈ ({x, y} : Finset T.Component) := hu ▸ mem_univ i
+    simp only [mem_insert, mem_singleton] at hi
+    rcases hi with rfl | rfl
+    all_goals
+      simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
+      omega
 
 /-- For a genus-one chain of three distinct components exhausting a three-component type, some
 component's weight divides every weight with quotient at most four, and some component's
@@ -790,24 +741,23 @@ lemma IsGenusOneChainShape.exists_weight_and_multiplicity_dvd_and_le
     ⟨hw1, hw2, hm1, hm2, -⟩ | ⟨hw1, hw2, hm1, hm2, -⟩ |
     ⟨hw1, hw2, hm1, hm2, -⟩ | ⟨hw1, hw2, hm1, hm2, -⟩
   case' inl =>
-    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int_on_finset
-      {x, j, z} hu (nw := 4) (nm := 6) x x ?_ ?_
+    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) x x ?_ ?_
   case' inr.inl =>
-    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int_on_finset
-      {x, j, z} hu (nw := 4) (nm := 6) z x ?_ ?_
+    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) z x ?_ ?_
   case' inr.inr.inl =>
-    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int_on_finset
-      {x, j, z} hu (nw := 4) (nm := 6) x z ?_ ?_
+    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) x z ?_ ?_
   case' inr.inr.inr.inl =>
-    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int_on_finset
-      {x, j, z} hu (nw := 4) (nm := 6) x x ?_ ?_
+    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) x x ?_ ?_
   case' inr.inr.inr.inr =>
-    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int_on_finset
-      {x, j, z} hu (nw := 4) (nm := 6) j x ?_ ?_
+    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) j x ?_ ?_
   all_goals
-    simp only [forall_mem_insert, mem_singleton, forall_eq, ← Nat.lt_succ_iff,
-      Nat.exists_lt_succ_right]
-    omega
+    intro i
+    have hi : i ∈ ({x, j, z} : Finset T.Component) := hu ▸ mem_univ i
+    simp only [mem_insert, mem_singleton] at hi
+    rcases hi with rfl | rfl | rfl
+    all_goals
+      simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
+      omega
 
 /-- In the cycle shape, a component weight divides all weights with quotient at most four,
 and a component multiplicity divides all multiplicities with quotient at most six. -/
