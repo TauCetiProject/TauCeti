@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.Laurent
+public import TauCeti.RingTheory.LaurentSeries.Basic
 public import TauCeti.RingTheory.LaurentSeries.Convergence
 
 /-!
@@ -42,6 +43,7 @@ Laurent polynomials are dense in the Laurent-series field for its valuation topo
 * `LaurentSeries.trunc`: truncation of a Laurent series above a given integer exponent.
 * `LaurentSeries.tendsto_toLaurentSeries_trunc`: the truncations converge to the original series.
 * `LaurentPolynomial.denseRange_toLaurentSeries`: Laurent polynomials are dense in Laurent series.
+* `TauCeti.valuation_sub_toLaurentSeries_trunc_le`: the valuation bound on truncation errors.
 -/
 
 public section
@@ -196,20 +198,16 @@ variable {R : Type*} [Semiring R]
 exponents strictly less than `N`. The lower bound on a Laurent series makes this a finite sum. -/
 noncomputable def trunc (N : ℤ) : R⸨X⸩ →ₗ[R] R[T;T⁻¹] where
   toFun f := AddMonoidAlgebra.ofCoeff <| Finsupp.ofSupportFinite
-    (fun n ↦ if n < N then f.coeff n else 0) <| by
-      apply (Set.finite_Ico f.order N).subset
-      intro n hn
-      simp only [Function.mem_support] at hn
-      by_cases hN : n < N
-      · rw [ite_eq_left hN] at hn
-        exact ⟨HahnSeries.order_le_of_coeff_ne_zero hn, hN⟩
-      · simp [hN] at hn
+    (HahnSeries.truncLT N f).coeff (TauCeti.finite_support_truncLT N f)
   map_add' f g := by
     ext n
-    by_cases hn : n < N <;> simp [hn, HahnSeries.coeff_add]
+    change (HahnSeries.truncLT N (f + g)).coeff n =
+      (HahnSeries.truncLT N f).coeff n + (HahnSeries.truncLT N g).coeff n
+    rw [HahnSeries.truncLT_add, HahnSeries.coeff_add]
   map_smul' r f := by
     ext n
-    by_cases hn : n < N <;> simp [hn, HahnSeries.coeff_smul]
+    change (HahnSeries.truncLT N (r • f)).coeff n = r • (HahnSeries.truncLT N f).coeff n
+    rw [HahnSeries.truncLT_smul, HahnSeries.coeff_smul]
 
 /-- The coefficient of a truncation agrees with the original series below the cutoff and vanishes
 at and above it. -/
@@ -272,3 +270,17 @@ theorem denseRange_toLaurentSeries :
     Filter.Eventually.of_forall fun N ↦ Set.mem_range_self (LaurentSeries.trunc N f)
 
 end LaurentPolynomial
+
+namespace TauCeti
+
+variable {K : Type*} [Field K]
+
+/-- The truncation error has valuation at most `exp (-a)`. -/
+theorem valuation_sub_toLaurentSeries_trunc_le (a : ℤ) (f : K⸨X⸩) :
+    Valued.v (f - LaurentPolynomial.toLaurentSeries (_root_.LaurentSeries.trunc a f)) ≤
+      WithZero.exp (-a) := by
+  rw [_root_.LaurentSeries.valuation_le_iff_coeff_lt_eq_zero]
+  intro n hn
+  simp [hn]
+
+end TauCeti

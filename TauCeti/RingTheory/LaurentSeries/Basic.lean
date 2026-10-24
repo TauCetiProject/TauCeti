@@ -188,6 +188,14 @@ end TauCeti.LaurentSeries
 
 namespace TauCeti
 
+/-- Truncating a Laurent series below an integer cutoff gives finite support. -/
+theorem finite_support_truncLT {A : Type*} [Zero A] (a : ℤ) (f : A⸨X⸩) :
+    (HahnSeries.truncLT a f).support.Finite := by
+  apply (Set.finite_Ico f.order a).subset
+  intro n hn
+  rw [HahnSeries.support_truncLT] at hn
+  exact ⟨HahnSeries.order_le_of_coeff_ne_zero hn.1, hn.2⟩
+
 /-- Multiplication by a constant of the Laurent-series algebra structure agrees with the
 coefficientwise scalar action, for Laurent series with coefficients in any `R`-algebra. -/
 theorem laurentSeries_algebraMap_mul_eq_smul {R A : Type*} [CommSemiring R] [CommSemiring A]
