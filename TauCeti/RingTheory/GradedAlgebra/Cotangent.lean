@@ -82,7 +82,9 @@ theorem subalgebra_eq_top_of_irrelevant_le (B : Subalgebra R A) (hB : ∀ x ∈ 
       Ideal.span ((⋃ i > 0, (𝒜 i : Set A)) * ⋃ i > 0, (𝒜 i : Set A)) := by
     rw [sq, irrelevant_eq_span, Ideal.span_mul_span]
   rw [hsq, ← Ideal.span_union] at h
-  -- Every homogeneous element lies in `B`, by induction on its degree.
+  -- Every homogeneous element lies in `B`, by induction on its degree. The induction follows
+  -- `Subalgebra.fg_of_decompose_mem_of_comap_map_le` in
+  -- `TauCeti/RingTheory/GradedAlgebra/FiniteType.lean`.
   have key (d : ℕ) : ∀ x ∈ 𝒜 d, x ∈ B := by
     induction d using Nat.strong_induction_on with
     | _ d ih =>
