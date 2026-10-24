@@ -182,7 +182,7 @@ theorem isGloballyGenerated_iff_forall_isClosed [JacobsonSpace X] {L : Invertibl
   exact hxU (Opens.mem_iSup.mpr ⟨s, hs⟩)
 
 /-- The compatible family obtained by restricting a global section of a line bundle. -/
-def compatibleSection (L : InvertibleSheaf X) (s : Γ(L.obj, ⊤)) : L.obj.sections :=
+noncomputable def compatibleSection (L : InvertibleSheaf X) (s : Γ(L.obj, ⊤)) : L.obj.sections :=
   PresheafOfModules.sectionsMk (fun U ↦ L.obj.presheaf.map U.unop.leTop.op s)
     (fun {U _} f ↦
       (ConcreteCategory.congr_hom (L.obj.presheaf.map_comp U.unop.leTop.op f) s).symm)
@@ -191,7 +191,7 @@ def compatibleSection (L : InvertibleSheaf X) (s : Γ(L.obj, ⊤)) : L.obj.secti
 @[simp]
 theorem compatibleSection_val (L : InvertibleSheaf X) (s : Γ(L.obj, ⊤)) (U : X.Opens) :
     (compatibleSection L s).val (op U) = L.obj.presheaf.map U.leTop.op s :=
-  rfl
+  (rfl)
 
 /-- Morphisms out of a globally generated line bundle are determined by global sections. -/
 theorem IsGloballyGenerated.hom_ext {L : InvertibleSheaf X} (hL : L.IsGloballyGenerated)
@@ -230,7 +230,7 @@ theorem IsGloballyGenerated.nonempty_generatingSections {L : InvertibleSheaf X}
     (fun p ↦ SheafOfModules.sectionsMap p (SheafOfModules.freeSection s)) hfg
   simp only [SheafOfModules.sectionsMap_comp,
     SheafOfModules.sectionsMap_freeHomEquiv_symm_freeSection] at h
-  have htop := congrArg (fun t : N.sections ↦ t.val (op ⊤)) h
+  have htop := congrArg (fun t ↦ t.val (op ⊤)) h
   simpa only [SheafOfModules.sectionsMap, PresheafOfModules.sectionsMap_coe,
     compatibleSection_val, L.obj.presheaf.map_id] using htop
 
@@ -255,7 +255,9 @@ theorem isGloballyGenerated_iff_nonempty_generatingSections {L : InvertibleSheaf
   have hp (p : L.obj ⟶ Scheme.skyscraperResidueField x) :
       (Scheme.skyscraperResidueField x).freeHomEquiv (σ.π ≫ p) i =
         SheafOfModules.sectionsMap p (σ.s i) :=
-    by rw [SheafOfModules.freeHomEquiv_comp_apply, Equiv.apply_symm_apply]
+    (SheafOfModules.freeHomEquiv_comp_apply σ.π p i).trans
+      (congrArg (SheafOfModules.sectionsMap p)
+        (congrFun ((SheafOfModules.freeHomEquiv L.obj).apply_symm_apply σ.s) i))
   have heq : SheafOfModules.sectionsMap φ (σ.s i) =
       SheafOfModules.sectionsMap (0 : L.obj ⟶ Scheme.skyscraperResidueField x) (σ.s i) := by
     apply PresheafOfModules.sections_ext
