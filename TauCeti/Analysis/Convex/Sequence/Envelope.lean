@@ -47,6 +47,8 @@ input: geometric conclusions about `lowerConvexEnvelope a` assume `IsAdmissible 
   `lowerConvexEnvelope_add_nsmul` states the shear by a finite slope.
 * `lowerConvexEnvelope_shift`: shifting the sequence to the right, with infinite heights
   at the vacated indices, shifts the envelope in the same way.
+* `lowerConvexEnvelope_reflect`: reflecting points that are infinite beyond `N` in the index
+  `N` reflects their envelope in the same way.
 
 ## References
 
@@ -447,5 +449,38 @@ theorem lowerConvexEnvelope_shift (a : ℕ → WithTop ℝ) (k : ℕ) :
       (by rwa [isAdmissible_shift_iff])]
     funext n
     simp
+
+
+/-! ### Reflection of indices -/
+
+/-- Reflecting points in `N`, when they are infinite beyond `N`, reflects their lower convex
+envelope in the same way. The hypothesis is needed, since reflection discards the points beyond
+`N`, which may affect the envelope on `[0, N]`. -/
+theorem IsLowerConvexEnvelope.reflect (hh : IsLowerConvexEnvelope a h) {N : ℕ}
+    (ha : ∀ n, N < n → a n = ⊤) :
+    IsLowerConvexEnvelope (fun n => if n ≤ N then a (N - n) else ⊤)
+      (fun n => if n ≤ N then h (N - n) else ⊤) := by
+  refine ⟨hh.isConvexSeq.reflect N, fun n => ?_, fun g hg hga n => ?_⟩
+  · dsimp only
+    split_ifs
+    exacts [hh.le _, le_rfl]
+  · -- Reflecting `g` back gives a convex minorant of `a`.
+    have hle := hh.greatest (hg.reflect N) fun m => by
+      dsimp only
+      split_ifs with hm
+      · simpa [Nat.sub_sub_self hm] using hga (N - m)
+      · simp [ha m (by omega)]
+    dsimp only
+    split_ifs with hn
+    · simpa [Nat.sub_sub_self hn] using hle (N - n)
+    · exact le_top
+
+/-- Reflecting points in `N`, when they are infinite beyond `N`, reflects their lower convex
+envelope in the same way. -/
+theorem lowerConvexEnvelope_reflect {N : ℕ} (ha : ∀ n, N < n → a n = ⊤) :
+    lowerConvexEnvelope (fun n => if n ≤ N then a (N - n) else ⊤) =
+      fun n => if n ≤ N then lowerConvexEnvelope a (N - n) else ⊤ :=
+  ((isLowerConvexEnvelope_lowerConvexEnvelope (isAdmissible_of_forall_gt ha)).reflect ha
+    |>.eq_lowerConvexEnvelope).symm
 
 end TauCeti

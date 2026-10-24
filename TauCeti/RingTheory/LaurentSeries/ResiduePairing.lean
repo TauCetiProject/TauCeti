@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.LaurentSeries.Derivative
+public import TauCeti.RingTheory.LaurentSeries.Substitution
 
 /-!
 # The residue pairing on Laurent series
@@ -35,6 +35,8 @@ The convention agrees with `LieAlgebra.LoopAlgebra.residuePairing`: on monomials
 * `LaurentSeries.residuePairing_eq_sum`: its finite coefficient formula.
 * `LaurentSeries.residuePairing_coe_powerSeries`: vanishing on formal power series.
 * `LaurentSeries.continuous_residuePairing`: joint continuity over a field.
+* `LaurentSeries.residuePairing_substAlgHom`: substitution multiplies the pairing by the
+  order of the substituted parameter, so formal coordinate changes preserve it.
 -/
 
 public section
@@ -201,6 +203,24 @@ theorem residuePairing_coe_powerSeries (f g : R⟦X⟧) :
   rw [residuePairing_apply, ← PowerSeries.coe_derivative, ← PowerSeries.coe_mul,
     PowerSeries.coeff_coe]
   simp
+
+section Substitution
+
+variable {K : Type*} [Field K]
+
+/-- Substitution by a nonzero parameter of order `e` multiplies the residue pairing by `e`.
+This includes ramified substitutions and holds in every characteristic. -/
+@[simp]
+theorem residuePairing_substAlgHom {φ : K⟦X⟧}
+    (hφ : PowerSeries.constantCoeff φ = 0) (hφ₀ : φ ≠ 0) (f g : K⸨X⸩) :
+    residuePairing K (TauCeti.LaurentSeries.substAlgHom hφ hφ₀ f)
+        (TauCeti.LaurentSeries.substAlgHom hφ hφ₀ g) =
+      φ.order.toNat • residuePairing K f g := by
+  rw [residuePairing_apply, TauCeti.LaurentSeries.derivative_substAlgHom, ← mul_assoc,
+    ← map_mul, TauCeti.LaurentSeries.coeff_neg_one_substAlgHom_mul_derivative_eq_nsmul,
+    residuePairing_apply]
+
+end Substitution
 
 variable (K : Type*) [Field K] [UniformSpace K]
 

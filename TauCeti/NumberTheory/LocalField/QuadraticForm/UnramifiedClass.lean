@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.HilbertSymbol.Basic
+public import TauCeti.NumberTheory.LocalField.Squares
 public import TauCeti.NumberTheory.LocalField.Uniformizer
 
 import Mathlib.FieldTheory.Finite.GaloisField
@@ -53,6 +54,7 @@ With the Hilbert symbol this reads `(Δ, b)_K = (-1)^{v_K(b)}`.
 * `TauCeti.not_isSquare_of_unramified_class`: every class with this norm criterion is nonsquare.
 * `TauCeti.unramified_class_of_isSquare_mul`: the criterion is invariant under square classes.
 * `TauCeti.hilbertSymbol_unramified`: for such a `Δ`, `(Δ, b)_K = (-1)^{v_K(b)}`.
+* `TauCeti.hilbertSymbol_two_unramified`: for such a `Δ`, `(2, Δ)_K = (-1)^{v_K(2)}`.
 
 ## References
 
@@ -265,5 +267,24 @@ theorem hilbertSymbol_unramified {Δ : Kˣ}
   split_ifs with h
   · exact (hilbertSymbol_eq_one_iff Δ b).mpr ((hΔ b).mpr h)
   · exact (hilbertSymbol_eq_neg_one_iff Δ b).mpr (mt (hΔ b).mp h)
+
+/-- **The Hilbert symbol of `2` against the unramified class** is `(2, Δ)_K = (-1)^{v_K(2)}`,
+where `v_K(2)` is the dyadic level `TauCeti.dyadicLevel`. In odd residue characteristic it is
+`1`; over a finite extension of `ℚ₂` it is `-1` exactly when the absolute ramification index is
+odd. -/
+theorem hilbertSymbol_two_unramified [Invertible (2 : K)] {Δ : Kˣ}
+    (hΔ : ∀ b : Kˣ, (∃ x y : K, (b : K) = x ^ 2 - Δ * y ^ 2) ↔
+      Even (normalizedValuation K b).toAdd) :
+    hilbertSymbol (unitOfInvertible (2 : K)) Δ =
+      (-1) ^ dyadicLevel K (isUnit_of_invertible (2 : K)).ne_zero := by
+  have h2 : (2 : K) ≠ 0 := (isUnit_of_invertible (2 : K)).ne_zero
+  have hunit : unitOfInvertible (2 : K) = Units.mk0 ((2 : ℕ) : K) (by exact_mod_cast h2) :=
+    Units.ext (by simp)
+  rw [hilbertSymbol_comm, hilbertSymbol_unramified hΔ, hunit, normalizedValuation_natCast,
+    toAdd_ofAdd]
+  simp only [Int.even_coe_nat, dyadicLevel_def]
+  rcases Nat.even_or_odd (natCastValuation K 2 (by exact_mod_cast h2)) with h | h
+  · simp [h, h.neg_one_pow]
+  · simp [Nat.not_even_iff_odd.2 h, h.neg_one_pow]
 
 end TauCeti

@@ -27,6 +27,7 @@ subset on the parts, cardinality bounds for common refinements, a bound on the s
 part sizes, the refinement relations of `Finpartition.bind` and of a refining partition's parts,
 the monotonicity of `Finpartition.bind`, products over its parts, its parts through each point,
 and the fact that it is inverse to restricting a refinement to the parts of the coarser partition,
+the fact that restriction undoes `Finpartition.extend` and deletes a singleton part,
 the behavior of intersections of parts under refinement, the symmetry of lying in a common part,
 the determination of a partition by its parts through each point, the parts of a restriction, the
 monotonicity of `Finpartition.part` under refinement, the coarse parent
@@ -141,6 +142,17 @@ theorem prod_parts_bind {α M : Type*} [Lattice α] [OrderBot α] [IsModularLatt
   -- Mathlib only provides the additive `Finpartition.sum_combine`, so we transfer `sum_parts_bind`
   -- through `Additive M`, whose finite sums are by definition the finite products in `M`.
   sum_parts_bind (M := Additive M) P Q (Additive.ofMul ∘ g)
+
+/-- Restricting `P.extend`, the partition `P` of `a` with the extra part `b`, back to `a` recovers
+`P`. -/
+@[simp]
+theorem restrict_extend {α : Type*} [DistribLattice α] [OrderBot α] [DecidableEq α] {a b c : α}
+    (P : Finpartition a) (hb : b ≠ ⊥) (hab : Disjoint a b) (hc : a ⊔ b = c) (hac : a ≤ c) :
+    (P.extend hb hab hc).restrict hac = P := by
+  ext x
+  rw [parts_restrict, extend_parts, Finset.image_insert, inf_comm, hab.eq_bot,
+    Finset.image_congr (f := (· ⊓ a)) (g := id) fun y hy => inf_eq_left.2 (P.le hy),
+    Finset.image_id, Finset.erase_insert P.bot_notMem]
 
 /-- If `Q` refines `P`, then each part of `P` is the union of the parts of `Q` it contains. -/
 theorem biUnion_filter_subset_eq_of_le {ι : Type*} [DecidableEq ι] {s B : Finset ι}
@@ -432,6 +444,24 @@ theorem bind_restrict (h : Q ≤ P) : (P.bind fun _ hB => Q.restrict (P.le hB)) 
   ext_of_part fun a ha => by
     rw [part_bind (P.part_mem.2 ha) (P.mem_part_self.2 ha),
       part_restrict _ _ (P.mem_part_self.2 ha), inter_eq_left.2 (part_mono h a)]
+
+/-- Restricting a finite partition with the singleton part `{i}` to `s.erase i` deletes that
+part. -/
+theorem parts_restrict_erase_of_singleton_mem {i : α} (hi : {i} ∈ P.parts) :
+    (P.restrict (s.erase_subset i)).parts = P.parts.erase {i} := by
+  have hBi {B : Finset α} (hB : B ∈ P.parts) (hBi : B ≠ {i}) : B ∩ s.erase i = B :=
+    inter_eq_left.2 fun x hx => mem_erase.2
+      ⟨fun hxi => hBi (P.eq_of_mem_parts hB hi hx (hxi ▸ mem_singleton_self i)), P.le hB hx⟩
+  ext B
+  simp only [parts_restrict, inf_eq_inter, mem_erase, mem_image]
+  constructor
+  · rintro ⟨hB, C, hC, rfl⟩
+    obtain rfl | hCi := eq_or_ne C {i}
+    · exact absurd (by simp) hB
+    · rw [hBi hC hCi]
+      exact ⟨hCi, hC⟩
+  · rintro ⟨hBi', hB⟩
+    exact ⟨P.ne_bot hB, B, hB, hBi hB hBi'⟩
 
 end FinsetRefinement
 

@@ -36,10 +36,18 @@ series `∑ₙ X Yⁿ` is restricted, since every weight involving `X` vanishes,
   bounded weighted coefficient norms.
 * `MvPowerSeries.HasGaussNorm.hasseDeriv` and `MvPowerSeries.IsRestricted.hasseDeriv`: Hasse
   derivatives preserve bounded weighted coefficient norms and restrictedness.
+* `MvPowerSeries.IsRestricted.pderiv`: over a commutative ring, the partial derivative in `Xᵢ`
+  preserves restrictedness whenever `cᵢ ≠ 0`.
+* `MvPowerSeries.restrictedHasseDeriv`: the Hasse derivative on the ring of series restricted at
+  a positive polyradius `c`, with the Cauchy estimate
+  `MvPowerSeries.norm_restrictedHasseDeriv_le`, `‖∂^d f‖ ≤ (∏ᵢ cᵢ ^ dᵢ)⁻¹ ‖f‖`, its continuity,
+  and over a commutative ring its `R`-linearity `MvPowerSeries.restrictedHasseDeriv_smul`.
 
 ## References
 
 * Bosch, Güntzer, Remmert, *Non-Archimedean Analysis*, §5.1.
+* E. Grosse-Klönne, *Rigid analytic spaces with overconvergent structure sheaf*,
+  J. reine angew. Math. 519 (2000), §1.2.
 -/
 
 public section
@@ -115,6 +123,65 @@ theorem IsRestricted.hasseDeriv {d : σ →₀ ℕ} (hd : ∀ i ∈ d.support, c
   simpa using ((hf.comp (add_left_injective d).tendsto_cofinite).const_mul
     (d.prod (|c| · ^ ·))⁻¹)
 
+variable [∀ i, Fact (0 < c i)]
+
+/-- The `d`-th Hasse derivative on the ring of series restricted at a positive polyradius `c`. -/
+noncomputable def restrictedHasseDeriv (d : σ →₀ ℕ) :
+    IsRestricted.subring (R := R) c →+ IsRestricted.subring (R := R) c :=
+  AddMonoidHom.mk' (fun f ↦ ⟨hasseDeriv d (f : MvPowerSeries σ R),
+      f.2.hasseDeriv fun i _ ↦ (Fact.out : 0 < c i).ne'⟩)
+    fun f g ↦ Subtype.ext (map_add (hasseDeriv d) (f : MvPowerSeries σ R) g)
+
+/-- The Hasse derivative of a restricted series is its Hasse derivative as a formal series. -/
+@[simp]
+theorem coe_restrictedHasseDeriv (d : σ →₀ ℕ) (f : IsRestricted.subring (R := R) c) :
+    (restrictedHasseDeriv d f : MvPowerSeries σ R) = hasseDeriv d f :=
+  (rfl)
+
+/-- **The Cauchy estimate on the restricted-series ring.** At a positive polyradius `c`,
+`‖∂^d f‖ ≤ (∏ᵢ cᵢ ^ dᵢ)⁻¹ ‖f‖` for the Gauss norm. -/
+theorem norm_restrictedHasseDeriv_le (d : σ →₀ ℕ) (f : IsRestricted.subring (R := R) c) :
+    ‖restrictedHasseDeriv d f‖ ≤ (d.prod (c · ^ ·))⁻¹ * ‖f‖ := by
+  have hpos : 0 < d.prod (c · ^ ·) := Finset.prod_pos fun i _ ↦ pow_pos Fact.out _
+  rw [norm_eq_gaussNorm, norm_eq_gaussNorm, coe_restrictedHasseDeriv, le_inv_mul_iff₀ hpos]
+  exact prod_pow_mul_gaussNorm_hasseDeriv_le (fun i ↦ (Fact.out : 0 < c i).le) f.2.hasGaussNorm d
+
+/-- The Hasse derivative on the restricted-series ring is Lipschitz with constant
+`(∏ᵢ cᵢ ^ dᵢ)⁻¹`. -/
+theorem lipschitzWith_restrictedHasseDeriv (d : σ →₀ ℕ) :
+    LipschitzWith (d.prod (c · ^ ·))⁻¹.toNNReal (restrictedHasseDeriv (R := R) (c := c) d) :=
+  AddMonoidHomClass.lipschitz_of_bound _ _ (norm_restrictedHasseDeriv_le d)
+
+/-- The Hasse derivative on the restricted-series ring is continuous for the Gauss norm. -/
+@[continuity]
+theorem continuous_restrictedHasseDeriv (d : σ →₀ ℕ) :
+    Continuous (restrictedHasseDeriv (R := R) (c := c) d) :=
+  (lipschitzWith_restrictedHasseDeriv d).continuous
+
 end NormedRing
+
+section NormedCommRing
+
+variable {σ R : Type*} [NormedCommRing R] [IsUltrametricDist R] {c : σ → ℝ}
+
+/-- Over an ultrametric normed commutative ring, the partial derivative in `Xᵢ` preserves
+restrictedness at every polyradius with `cᵢ ≠ 0`. -/
+theorem IsRestricted.pderiv {i : σ} (hi : c i ≠ 0) {f : MvPowerSeries σ R}
+    (hf : IsRestricted c f) : IsRestricted c (pderiv i f) := by
+  have hd : ∀ j ∈ (Finsupp.single i 1).support, c j ≠ 0 := fun j hj ↦ by
+    rwa [Finset.mem_singleton.1 (Finsupp.support_single_subset hj)]
+  simpa using hf.hasseDeriv hd
+
+variable [∀ i, Fact (0 < c i)]
+
+/-- Over a commutative ring, the Hasse derivative on the restricted-series ring is `R`-linear. -/
+@[simp]
+theorem restrictedHasseDeriv_smul (d : σ →₀ ℕ) (r : R) (f : IsRestricted.subring (R := R) c) :
+    restrictedHasseDeriv d (r • f) = r • restrictedHasseDeriv d f :=
+  Subtype.ext (by
+    rw [TauCeti.MvPowerSeries.coe_smul_isRestrictedSubring, coe_restrictedHasseDeriv,
+      coe_restrictedHasseDeriv, TauCeti.MvPowerSeries.coe_smul_isRestrictedSubring, map_smul])
+
+end NormedCommRing
 
 end MvPowerSeries
