@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Completion.Homeomorph
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.BaseChange
 
 import TauCeti.Topology.Sheaves.Functors
+import TauCeti.RingTheory.Huber.LocalizationTopology.BaseChange
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.DenseRange
 
 /-!
@@ -363,42 +364,9 @@ private theorem Presentation.coeRingHom_comp_completionExtendTopHom (p : Present
   exact Subtype.ext <| RingHom.ext <|
     Completion.extensionHom_coe _ (continuous_toCompletionLoc P p.num p.den _ _)
 
-/-- **Descent of `Â⟨T/s⟩` to `A⟨T/s⟩`.** When the presentation `q` of `Â` is the image of the
-presentation `p` of `A`, the extension to `Â` of the structure map `A → A⟨p⟩` extends uniquely to a
-continuous map `Â⟨q⟩ → A⟨p⟩`. -/
-private theorem existsUnique_continuous_ringHom_completion_comp_eq (p : Presentation P)
-    (q : Presentation P') (hden : q.den = p.den)
-    (hnum : ∀ t ∈ q.num, ∃ t₀ ∈ p.num, (t₀ : Completion A) = t) :
-    letI := locUniformSpace P' q.num q.den _ q.hasDenominatorPower
-    letI := isUniformAddGroup_locUniformSpace P' q.num q.den _ q.hasDenominatorPower
-    letI := isTopologicalRing_locUniformSpace P' q.num q.den _ q.hasDenominatorPower
-    letI := locUniformSpace P p.num p.den _ p.hasDenominatorPower
-    letI := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
-    letI := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
-    ∃! g : Completion (Localization.Away q.den) →+* Completion (Localization.Away p.den),
-      Continuous g ∧ g.comp (toCompletionLoc P' q.num q.den _ q.hasDenominatorPower) =
-        Completion.extensionHom _ (continuous_toCompletionLoc P p.num p.den _ _) := by
-  let _ := locUniformSpace P' q.num q.den _ q.hasDenominatorPower
-  have _ := isUniformAddGroup_locUniformSpace P' q.num q.den _ q.hasDenominatorPower
-  have _ := isTopologicalRing_locUniformSpace P' q.num q.den _ q.hasDenominatorPower
-  let _ := locUniformSpace P p.num p.den _ p.hasDenominatorPower
-  have _ := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
-  have _ := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
-  have _ := isHuberRing_completion_locTopology P p.num p.den _ p.hasDenominatorPower
-  have hc := continuous_toCompletionLoc P p.num p.den _ p.hasDenominatorPower
-  have hu := isUnit_toCompletionLoc_of_dvd P p.num p.den _ p.hasDenominatorPower (dvd_refl p.den)
-  have hs : IsUnit (Completion.extensionHom _ hc q.den) := by
-    rwa [hden, Completion.extensionHom_coe]
-  have hunit : hs.unit = hu.unit :=
-    Units.ext (by rw [IsUnit.unit_spec, IsUnit.unit_spec, hden, Completion.extensionHom_coe])
-  refine existsUnique_continuous_ringHom_completion_locTopology P' q.num q.den _
-    q.hasDenominatorPower Completion.continuous_extension.continuousAt hs fun t ht ↦ ?_
-  obtain ⟨t₀, ht₀, rfl⟩ := hnum t ht
-  rw [hunit, Completion.extensionHom_coe]
-  exact isPowerBounded_toCompletionLoc_mul_unit_inv P p.num p.den _ _ (mul_one p.den).symm hu
-    ((mul_one t₀).symm ▸ ht₀)
-
-/-- The morphism `Â⟨q⟩ ⟶ A⟨p⟩` of `existsUnique_continuous_ringHom_completion_comp_eq`. -/
+/-- The morphism `Â⟨q⟩ ⟶ A⟨p⟩` of
+`existsUnique_continuous_ringHom_comp_toCompletionLoc_eq_extensionHom`, when the presentation `q`
+of `Â` is the image of the presentation `p` of `A`. -/
 private noncomputable def Presentation.completionHom (p : Presentation P) (q : Presentation P')
     (hden : q.den = p.den) (hnum : ∀ t ∈ q.num, ∃ t₀ ∈ p.num, (t₀ : Completion A) = t) :
     q.completionLocObj ⟶ p.completionLocObj := by
@@ -408,7 +376,8 @@ private noncomputable def Presentation.completionHom (p : Presentation P) (q : P
   let _ := locUniformSpace P p.num p.den _ p.hasDenominatorPower
   let _ := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
   let _ := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
-  have hg := existsUnique_continuous_ringHom_completion_comp_eq p q hden hnum
+  have hg := existsUnique_continuous_ringHom_comp_toCompletionLoc_eq_extensionHom P p.num p.den _
+    p.hasDenominatorPower P' q.num q.den _ q.hasDenominatorPower hden.symm hnum
   exact InducedCategory.homMk (eqToHom (completionLocObj_obj P' q.num q.den _ _) ≫
     (⟨hg.choose, hg.choose_spec.1.1⟩ :
       TopCommRingCat.of (Completion (Localization.Away q.den)) ⟶
@@ -434,7 +403,8 @@ private theorem Presentation.toCompletionLocTopHom_comp_completionHom (p : Prese
   simp only [← Category.assoc]
   apply eq_whisker
   exact Subtype.ext
-    (existsUnique_continuous_ringHom_completion_comp_eq p q hden hnum).choose_spec.1.2
+    (existsUnique_continuous_ringHom_comp_toCompletionLoc_eq_extensionHom P p.num p.den _
+      p.hasDenominatorPower P' q.num q.den _ q.hasDenominatorPower hden.symm hnum).choose_spec.1.2
 
 end TauCeti.Huber.PairOfDefinition
 
