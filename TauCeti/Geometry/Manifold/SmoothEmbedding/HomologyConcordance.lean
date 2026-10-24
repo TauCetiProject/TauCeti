@@ -11,15 +11,16 @@ public import TauCeti.Geometry.Manifold.SmoothEmbedding.Diffeomorph
 /-!
 # Homology concordance of smooth embeddings
 
-Let `f₀ : M → Y₀` and `f₁ : M → Y₁` be smooth embeddings of a boundaryless manifold `M` into two
-manifolds. They are `R`-*homology concordant* when there is an `R`-homology cobordism `W` between
-`Y₀` and `Y₁` (`TauCeti.IsHomologyCobordism`) containing a properly embedded copy of the cylinder
-`M × [0, 1]` whose two ends are `f₀` and `f₁`. For knots, `M` is the circle and the cylinder is an
-annulus; for `Y₀ = Y₁ = S³` and the product cobordism `S³ × [0, 1]` this is ordinary concordance,
-while for knots in homology spheres the cobordism may be any homology cobordism.
+Let `f₀ : M → Y₀` and `f₁ : M → Y₁` be smooth embeddings of a boundaryless manifold `M`, modelled
+on `I'`, into two manifolds modelled on `I`. They are `R`-*homology concordant* when there is an
+`R`-homology cobordism `W` between `Y₀` and `Y₁` (`TauCeti.IsHomologyCobordism`) containing a
+properly embedded copy of the cylinder `M × [0, 1]` whose two ends are `f₀` and `f₁`. For knots,
+`M` is the circle and the cylinder is an annulus; for `Y₀ = Y₁ = S³` and the product cobordism
+`S³ × [0, 1]` this is ordinary concordance, while for knots in homology spheres the cobordism may
+be any homology cobordism.
 
 The cylinder is a smooth embedding `A : M × [0, 1] → W` of manifolds with boundary, the source
-modelled on `I.prod (𝓡∂ 1)`, which is properly embedded: the preimage of the boundary of `W` is the
+modelled on `I'.prod (𝓡∂ 1)`, which is properly embedded: the preimage of the boundary of `W` is the
 boundary `M × {0, 1}` of the cylinder. Its bottom is `f₀` followed by the first end of `W` and its
 top is `f₁` followed by the second end (`TauCeti.IsHomologyConcordance`). The relation
 `TauCeti.HomologyConcordant R J n f₀ f₁` asks for some compact Hausdorff `W` modelled on `J` with
