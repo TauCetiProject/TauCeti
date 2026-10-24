@@ -21,6 +21,8 @@ count is at most the product of the sizes of the cells.
 
 ## Main results
 
+* `Equiv.embeddingMemEquivPi`: over a pairwise disjoint family of cells, the embeddings into the
+  cells are the families of embeddings, one for each cell, of the indices assigned to that cell.
 * `Nat.card_embedding_mem_eq_prod_descFactorial`: the count over a pairwise disjoint family
   of cells is the product of falling factorials of the cell sizes at the occurrence counts.
 * `Nat.card_embedding_mem_eq_prod_of_injective`: for distinct disjoint cells, the count is the
@@ -31,6 +33,59 @@ count is at most the product of the sizes of the cells.
 public section
 
 open Finset Function
+
+namespace Equiv
+
+variable {ι V : Type*} {c : ι → Finset V} {s : Finset (Finset V)}
+
+/-- The value of a family of cellwise embeddings at an index only depends on its cell. -/
+private theorem embeddingMemEquivPi_aux (hs : ∀ i, c i ∈ s)
+    (g : (A : s) → ({i // c i = A.1} ↪ A.1)) (A : s) (i : ι) (hi : c i = A.1) :
+    (g ⟨c i, hs i⟩ ⟨i, rfl⟩ : V) = g A ⟨i, hi⟩ := by
+  obtain ⟨A, hA⟩ := A
+  obtain rfl : c i = A := hi
+  rfl
+
+/-- Gluing a family of cellwise embeddings into disjoint cells gives an injective map. -/
+private theorem embeddingMemEquivPi_injective (hs : ∀ i, c i ∈ s)
+    (hdisj : (s : Set (Finset V)).PairwiseDisjoint id) (g : (A : s) → ({i // c i = A.1} ↪ A.1)) :
+    Injective fun i ↦ (g ⟨c i, hs i⟩ ⟨i, rfl⟩ : V) := by
+  intro i j hij
+  beta_reduce at hij
+  -- A common value forces a common cell, inside which `g` is injective.
+  have hc : c j = c i :=
+    hdisj.elim_finset (hs j) (hs i) _ (g ⟨c j, hs j⟩ ⟨j, rfl⟩).2 (hij ▸ (g ⟨c i, hs i⟩ ⟨i, rfl⟩).2)
+  have h := embeddingMemEquivPi_aux hs g ⟨c i, hs i⟩ j hc
+  rw [← hij] at h
+  exact congrArg Subtype.val (Subtype.ext_iff.2 h |> (g _).injective)
+
+variable (c) in
+/-- **Embeddings into disjoint cells, cell by cell.** If the cells `c i` lie in a pairwise
+disjoint family `s`, an embedding `f : ι ↪ V` with `f i ∈ c i` for all `i` is the same as a
+family, indexed by the cells `A ∈ s`, of embeddings of the indices assigned to `A` into `A`. -/
+def embeddingMemEquivPi (hs : ∀ i, c i ∈ s) (hdisj : (s : Set (Finset V)).PairwiseDisjoint id) :
+    {f : ι ↪ V // ∀ i, f i ∈ c i} ≃ ((A : s) → ({i // c i = A.1} ↪ A.1)) where
+  toFun f _ := ⟨fun x ↦ ⟨f.1 x.1, Eq.subst (motive := (f.1 x.1 ∈ ·)) x.2 (f.2 x.1)⟩,
+    fun _ _ h ↦ Subtype.ext (f.1.injective (congrArg Subtype.val h))⟩
+  invFun g := ⟨⟨fun i ↦ g ⟨c i, hs i⟩ ⟨i, rfl⟩, embeddingMemEquivPi_injective hs hdisj g⟩,
+    fun i ↦ (g ⟨c i, hs i⟩ ⟨i, rfl⟩).2⟩
+  left_inv _ := rfl
+  right_inv g := funext fun A ↦ Embedding.ext fun x ↦
+    Subtype.ext (embeddingMemEquivPi_aux hs g A x.1 x.2)
+
+@[simp]
+theorem embeddingMemEquivPi_apply_apply_coe (hs : ∀ i, c i ∈ s)
+    (hdisj : (s : Set (Finset V)).PairwiseDisjoint id) (f : {f : ι ↪ V // ∀ i, f i ∈ c i}) (A : s)
+    (x : {i // c i = A.1}) : (embeddingMemEquivPi c hs hdisj f A x : V) = f.1 x.1 :=
+  (rfl)
+
+@[simp]
+theorem embeddingMemEquivPi_symm_apply_coe_apply (hs : ∀ i, c i ∈ s)
+    (hdisj : (s : Set (Finset V)).PairwiseDisjoint id) (g : (A : s) → ({i // c i = A.1} ↪ A.1))
+    (i : ι) : ((embeddingMemEquivPi c hs hdisj).symm g).1 i = g ⟨c i, hs i⟩ ⟨i, rfl⟩ :=
+  (rfl)
+
+end Equiv
 
 namespace Nat
 
@@ -44,32 +99,8 @@ theorem card_embedding_mem_eq_prod_descFactorial [Finite ι] (c : ι → Finset 
     Nat.card {f : ι ↪ V // ∀ i, f i ∈ c i} = ∏ A ∈ s, (#A).descFactorial (occCount c A) := by
   classical
   have := Fintype.ofFinite ι
-  -- Evaluating a family of cellwise embeddings at the cell of each index.
-  let g' (g : (A : s) → ({i // c i = A.1} ↪ A.1)) (i : ι) : V := g ⟨c i, hs i⟩ ⟨i, rfl⟩
-  -- The value at an index only depends on its cell.
-  have hg' (g : (A : s) → ({i // c i = A.1} ↪ A.1)) (A : s) (x : {i // c i = A.1}) :
-      g' g x.1 = g A x := by
-    obtain ⟨A, hA⟩ := A
-    obtain ⟨i, hi⟩ := x
-    obtain rfl : c i = A := hi
-    rfl
-  have hg'_mem (g : (A : s) → ({i // c i = A.1} ↪ A.1)) (i : ι) : g' g i ∈ c i :=
-    (g ⟨c i, hs i⟩ ⟨i, rfl⟩).2
-  have hg'_inj (g : (A : s) → ({i // c i = A.1} ↪ A.1)) : Injective (g' g) := by
-    intro i j hij
-    -- A common value forces a common cell, inside which `g` is injective.
-    have hc : c j = c i :=
-      hdisj.elim_finset (hs j) (hs i) (g' g j) (hg'_mem g j) (hij ▸ hg'_mem g i)
-    have h := hg' g ⟨c i, hs i⟩ ⟨j, hc⟩
-    rw [← hij, hg' g ⟨c i, hs i⟩ ⟨i, rfl⟩] at h
-    exact congrArg Subtype.val (Subtype.ext_iff.2 h |> (g _).injective)
-  let e : {f : ι ↪ V // ∀ i, f i ∈ c i} ≃ ((A : s) → ({i // c i = A.1} ↪ A.1)) :=
-    { toFun f A := ⟨fun x ↦ ⟨f.1 x.1, Eq.subst (motive := (f.1 x.1 ∈ ·)) x.2 (f.2 x.1)⟩,
-          fun x y h ↦ Subtype.ext (f.1.injective (congrArg Subtype.val h))⟩
-      invFun g := ⟨⟨g' g, hg'_inj g⟩, hg'_mem g⟩
-      left_inv _ := rfl
-      right_inv g := funext fun A ↦ Embedding.ext fun x ↦ Subtype.ext (hg' g A x) }
-  rw [Nat.card_congr e, Nat.card_eq_fintype_card, Fintype.card_pi, ← prod_coe_sort s]
+  rw [Nat.card_congr (Equiv.embeddingMemEquivPi c hs hdisj), Nat.card_eq_fintype_card,
+    Fintype.card_pi, ← prod_coe_sort s]
   refine Finset.prod_congr rfl fun A _ ↦ ?_
   rw [Fintype.card_embedding_eq, Fintype.card_coe, occCount_def, Nat.card_eq_fintype_card]
 

@@ -277,16 +277,13 @@ private noncomputable def routeOf (hC : C.IsPolyadDecomposition) (f : Fin F.k �
     -- The polyad formed by the cells and colors of `f` is the polyad of the image triple.
     convert (C.isPolyadDecomposition_iff_ofTriple_mem.1 hC) ⟨f ∘ ![i, j, l], f.injective.comp hinj⟩
       using 1
-    refine Polyad3.ext_data ?_ ?_ ?_ ?_ ?_ ?_
-    · simp [placementOf]
-    · simp [placementOf]
-    · simp [placementOf]
-    · rw [Polyad3.ofData_color₀₁, Polyad3.ofTriple_color₀₁]
-      exact congrArg _ (Subtype.ext (by simp))
-    · rw [Polyad3.ofData_color₀₂, Polyad3.ofTriple_color₀₂]
-      exact congrArg _ (Subtype.ext (by simp))
-    · rw [Polyad3.ofData_color₁₂, Polyad3.ofTriple_color₁₂]
-      exact congrArg _ (Subtype.ext (by simp))
+    -- The cells agree by `simp`; each pair color is the color of the same image pair.
+    refine Polyad3.ext_data ?_ ?_ ?_ ?_ ?_ ?_ <;>
+      first
+      | simp only [Polyad3.ofData_color₀₁, Polyad3.ofTriple_color₀₁, Polyad3.ofData_color₀₂,
+          Polyad3.ofTriple_color₀₂, Polyad3.ofData_color₁₂, Polyad3.ofTriple_color₁₂]
+        exact congrArg _ (Subtype.ext (by simp))
+      | simp [placementOf]
 
 /-- **Placed counts decompose the induced count.** When the selected polyads of `C` decompose the
 injective triples, every induced copy of `F` in `H` realizes exactly one placement and route, so
