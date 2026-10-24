@@ -21,7 +21,8 @@ module is trivial. Together with `QuadraticMap.IsometryEquiv.prodComm` they are 
 orthogonal sum a commutative monoid operation on isometry classes of quadratic forms; the
 left-commutativity isometry `Q₁ ⊕ (Q₂ ⊕ Q₃) ≅ Q₂ ⊕ (Q₁ ⊕ Q₃)` is recorded as a composite of them.
 For an orthogonal sum `QuadraticMap.pi` indexed by `Fin (n + 1)`, splitting off the first summand
-is likewise isometric, which lets such a sum be assembled one summand at a time.
+is likewise isometric, which lets such a sum be assembled one summand at a time; and reindexing an
+orthogonal sum along an equivalence of its index types is isometric.
 
 For a quadratic form over a commutative ring, it also records the isometry associated to a
 direct-sum decomposition of the underlying module that is orthogonal for the polar form.
@@ -41,6 +42,7 @@ so the embedding restricts to the special orthogonal groups.
   `Q₁ ⊕ (Q₂ ⊕ Q₃)` is isometric.
 * `QuadraticMap.IsometryEquiv.uniqueProd`: `LinearEquiv.uniqueProd` is isometric.
 * `QuadraticMap.IsometryEquiv.consPi`: `Fin.consLinearEquiv` is isometric.
+* `QuadraticMap.IsometryEquiv.piCongrLeft`: `LinearEquiv.piCongrLeft` is isometric.
 * `QuadraticMap.IsometryEquiv.prodRestrictOrthogonal`: an orthogonal direct sum is isometric to
   the original form.
 * `QuadraticMap.orthogonalGroupProd`: the orthogonal sum `O(Q₁) × O(Q₂) →* O(Q₁.prod Q₂)`.
@@ -169,6 +171,26 @@ theorem IsometryEquiv.consPi_apply {n : ℕ} {M : Fin (n + 1) → Type*} [∀ i,
     [∀ i, Module R (M i)] (Q : ∀ i, QuadraticMap R (M i) P) (x : M 0) (y : ∀ i : Fin n, M i.succ) :
     IsometryEquiv.consPi Q (x, y) = Fin.cons x y :=
   (rfl)
+
+/-- `LinearEquiv.piCongrLeft` is isometric: reindexing an orthogonal sum along an equivalence of
+its finite index types does not change it. -/
+def IsometryEquiv.piCongrLeft {ι ι' : Type*} [Fintype ι] [Fintype ι'] {M : ι → Type*}
+    [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)] (Q : ∀ i, QuadraticMap R (M i) P)
+    (e : ι' ≃ ι) :
+    (QuadraticMap.pi fun i' ↦ Q (e i')).IsometryEquiv (QuadraticMap.pi Q) where
+  toLinearEquiv := LinearEquiv.piCongrLeft R M e
+  map_app' x := by
+    rw [pi_apply, pi_apply]
+    exact (Fintype.sum_equiv e (fun i' ↦ Q (e i') (x i')) _ fun i' ↦
+      congrArg (Q (e i')) (Equiv.piCongrLeft_apply_apply M e x i').symm).symm
+
+/-- The forward map of `QuadraticMap.IsometryEquiv.piCongrLeft` at a reindexed coordinate. -/
+@[simp]
+theorem IsometryEquiv.piCongrLeft_apply_apply {ι ι' : Type*} [Fintype ι] [Fintype ι']
+    {M : ι → Type*} [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)]
+    (Q : ∀ i, QuadraticMap R (M i) P) (e : ι' ≃ ι) (x : ∀ i', M (e i')) (i' : ι') :
+    IsometryEquiv.piCongrLeft Q e x (e i') = x i' :=
+  Equiv.piCongrLeft_apply_apply M e x i'
 
 section OrthogonalDecomposition
 
