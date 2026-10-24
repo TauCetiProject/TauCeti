@@ -19,9 +19,7 @@ eigenvalue. These statements apply over nonarchimedean fields without local comp
 spherical completeness.
 
 The native `ContinuousLinearMap.IsFredholm` conclusion includes strictness, closed range,
-finite-dimensional kernel and cokernel, and a continuous complement to the kernel. It follows
-by approximating `u` by a finite-rank `v` with `‖u - v‖ < 1`: Neumann inversion makes
-`1 - (u - v)` invertible, and finite-rank perturbation preserves Fredholmness and index.
+finite-dimensional kernel and cokernel, and a continuous complement to the kernel.
 
 ## References
 
@@ -39,6 +37,9 @@ variable {K E : Type*} [NontriviallyNormedField K]
   [NormedAddCommGroup E] [NormedSpace K E] [CompleteSpace E]
   {u : E →L[K] E}
 
+-- Approximate `u` by a finite-rank `v` with `‖u - v‖ < 1`. Neumann inversion makes
+-- `1 - (u - v)` invertible, so `1 - u` is an invertible operator plus a finite-rank map.
+-- The Fredholm and index conclusions below follow by finite-rank perturbation.
 private theorem exists_equiv_add_hasFiniteRange (hu : u.IsCompletelyContinuous) :
     ∃ (e : E ≃L[K] E) (w : E →L[K] E),
       LinearMap.HasFiniteRange (w : E →ₗ[K] E) ∧ (e : E →L[K] E) + w = 1 - u := by
