@@ -20,7 +20,9 @@ boundary of a manifold modeled on a Euclidean half-space, as prescribed by Layer
 GeometricTopology roadmap.  The parametrization and projection API below is intended to let
 boundary charts use this identification without unfolding its coordinate construction.  The file
 also splits the ambient Euclidean space into boundary and normal coordinates; the boundary
-inclusion and the standard product collar both use this one coordinate equivalence.  Finally,
+inclusion and the standard product collar both use this one coordinate equivalence, and
+`TauCeti.euclideanFinConsEquiv` is the same equivalence with the boundary coordinates given as a
+function on `Fin k`, reindexed along `k = n`.  Finally,
 `ContinuousLinearMap.exists_pos_eq_mul_apply_zero_of_eventually_nonneg` recognises a
 linear functional that is nonnegative near a boundary point within the half-space, and positive off
 the hyperplane, as a positive multiple of the boundary coordinate.
@@ -57,6 +59,31 @@ theorem euclideanHalfSpaceBoundaryNormalEquiv_apply_succ (n : ℕ)
     (x : EuclideanSpace ℝ (Fin n)) (r : ℝ) (i : Fin n) :
     euclideanHalfSpaceBoundaryNormalEquiv n (x, r) i.succ = x i := by
   simp [euclideanHalfSpaceBoundaryNormalEquiv]
+
+/-- The continuous linear equivalence `(t, v) ↦ (t, v ∘ Fin.cast hk.symm)` of `ℝ × (Fin k → ℝ)`
+with `ℝⁿ⁺¹`, for `k = n`: the scalar `t` is the normal coordinate in slot `0`, and `v`, reindexed
+along `k = n` by `LinearEquiv.funCongrLeft`, gives the coordinates in slots `1, …, n`. It is the
+boundary-normal identification `TauCeti.euclideanHalfSpaceBoundaryNormalEquiv n` after this
+reindexing. -/
+noncomputable def euclideanFinConsEquiv {k n : ℕ} (hk : k = n) :
+    (ℝ × (Fin k → ℝ)) ≃L[ℝ] EuclideanSpace ℝ (Fin (n + 1)) :=
+  (ContinuousLinearEquiv.prodComm ℝ ℝ (Fin k → ℝ)).trans <|
+    (((LinearEquiv.funCongrLeft ℝ ℝ (finCongr hk.symm)).toContinuousLinearEquiv.trans
+      (EuclideanSpace.equiv (Fin n) ℝ).symm).prodCongr (ContinuousLinearEquiv.refl ℝ ℝ)).trans
+    (euclideanHalfSpaceBoundaryNormalEquiv n)
+
+/-- The zeroth coordinate of `TauCeti.euclideanFinConsEquiv` is the normal coordinate. -/
+@[simp]
+theorem euclideanFinConsEquiv_apply_zero {k n : ℕ} (hk : k = n) (p : ℝ × (Fin k → ℝ)) :
+    euclideanFinConsEquiv hk p 0 = p.1 := by
+  simp [euclideanFinConsEquiv]
+
+/-- The coordinates of `TauCeti.euclideanFinConsEquiv` in slots `1, …, n` are the tangential
+coordinates, reindexed along `k = n`. -/
+@[simp]
+theorem euclideanFinConsEquiv_apply_succ {k n : ℕ} (hk : k = n) (p : ℝ × (Fin k → ℝ))
+    (i : Fin n) : euclideanFinConsEquiv hk p i.succ = p.2 (Fin.cast hk.symm i) := by
+  simp [euclideanFinConsEquiv]
 
 /-- The coordinate hyperplane which is the boundary of the `(n + 1)`-dimensional Euclidean
 half-space. -/
