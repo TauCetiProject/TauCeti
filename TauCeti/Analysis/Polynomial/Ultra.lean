@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Polynomial.AlgebraMap
 public import Mathlib.Algebra.Polynomial.Degree.SmallDegree
-public import Mathlib.Analysis.Normed.Ring.Ultra
+public import Mathlib.Analysis.Normed.Group.Ultra
 public import Mathlib.Analysis.Normed.Ring.Basic
 
 /-!
