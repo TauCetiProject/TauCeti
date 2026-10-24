@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.Polynomial.Cyclotomic.Eval
 public import Mathlib.RingTheory.Polynomial.Cyclotomic.Expand
 public import Mathlib.RingTheory.Polynomial.Eisenstein.Distinguished
 public import Mathlib.RingTheory.Polynomial.Eisenstein.IsIntegral
+public import TauCeti.RingTheory.Polynomial.Cyclotomic.Basic
 
 /-!
 # The shifted prime-power cyclotomic polynomials
@@ -31,7 +32,7 @@ commutative ring `R` unless stated otherwise. Each `ξ_n` is monic of degree `φ
 constant coefficient `p` for `n ≥ 1`. In characteristic `p` it is the monomial `X ^ φ(p ^ n)`.
 It is distinguished at every ideal containing `p`, so that Weierstrass division by `ξ_n` is
 available in `O⟦T⟧`. When `p` is a prime element of a domain `R` (for instance `R = ℤ_p`) every
-`ξ_n` is Eisenstein and hence irreducible.
+`ξ_n` is irreducible: `ξ_0 = X`, and for `n ≥ 1` the polynomial `ξ_n` is Eisenstein at `(p)`.
 
 ## Main results
 
@@ -57,19 +58,6 @@ namespace Polynomial
 open Finset
 
 variable {R : Type*} [CommRing R] (p : ℕ) [hp : Fact p.Prime]
-
-/-- `Φ_n(X + 1)` has degree `φ(n)`. -/
-@[simp]
-theorem natDegree_cyclotomic_comp_X_add_one [Nontrivial R] (n : ℕ) :
-    ((cyclotomic n R).comp (X + 1)).natDegree = n.totient := by
-  have h1 : (X + 1 : R[X]).leadingCoeff = 1 := by simpa using (monic_X_add_C (1 : R)).leadingCoeff
-  rw [natDegree_comp_eq_of_mul_ne_zero (by simp [(cyclotomic.monic n R).leadingCoeff, h1]),
-    natDegree_cyclotomic]
-  simp
-
-/-- `Φ_n(X + 1)` is monic. -/
-theorem monic_cyclotomic_comp_X_add_one (n : ℕ) : ((cyclotomic n R).comp (X + 1)).Monic := by
-  simpa using (cyclotomic.monic n R).comp_X_add_C 1
 
 /-- `ξ_{n+1} = Φ_{p ^ (n + 1)}(X + 1)` is the geometric sum `∑_{i < p} (1 + X) ^ (i p ^ n)`. -/
 theorem cyclotomic_prime_pow_comp_X_add_one_eq_sum (n : ℕ) :
@@ -113,8 +101,8 @@ theorem cyclotomic_prime_pow_comp_X_add_one_eq_X_pow [CharP R p] (n : ℕ) :
   simp [h, Nat.totient_prime_pow_succ hp.out, Nat.mul_sub_one, ← pow_succ]
 
 /-- **`ξ_n` is distinguished at every ideal containing `p`**: it is monic and its non-leading
-coefficients lie in `I`. Over `ℤ` this is the Eisenstein property of `Φ_{p ^ n}(X + 1)` at `p`,
-and the general case is its image. -/
+coefficients lie in `I`. For `n = 0` this is the statement for `ξ_0 = X`. For `n ≥ 1`, over `ℤ`
+it is the Eisenstein property of `Φ_{p ^ n}(X + 1)` at `p`, and the general case is its image. -/
 theorem cyclotomic_prime_pow_comp_X_add_one_isDistinguishedAt {I : Ideal R} (hI : (p : R) ∈ I)
     (n : ℕ) : ((cyclotomic (p ^ n) R).comp (X + 1)).IsDistinguishedAt I := by
   refine ⟨⟨fun {k} hk ↦ ?_⟩, monic_cyclotomic_comp_X_add_one _⟩
