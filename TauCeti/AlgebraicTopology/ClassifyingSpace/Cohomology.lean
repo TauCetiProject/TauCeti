@@ -24,7 +24,8 @@ quotient covering map of the free action of `G` on it, so its singular chains ar
 resolution of `k` over `k[G]` whose `G`-invariant `M`-valued cochains are the singular cochains of
 `classifyingSpace G` (`IsQuotientCoveringMap.singularCohomologyIsoGroupCohomology`). No hypothesis
 on `G` is needed. This is the cohomological counterpart of
-`TauCeti.classifyingSpaceSingularHomologyIsoGroupHomology`.
+`TauCeti.classifyingSpaceSingularHomologyIsoGroupHomology`. The comparison commutes with every
+coefficient morphism (`classifyingSpaceSingularCohomologyIsoGroupCohomology_hom_naturality`).
 
 ## Main definitions
 
@@ -40,6 +41,8 @@ on `G` is needed. This is the cohomological counterpart of
 public section
 
 noncomputable section
+
+open CategoryTheory
 
 namespace TauCeti
 
@@ -59,5 +62,22 @@ def classifyingSpaceSingularCohomologyIsoGroupCohomology (n : ℕ) :
   IsQuotientCoveringMap.singularCohomologyIsoGroupCohomology (E := TopCat.of (universalGSpace G))
     (p := TopCat.ofHom ⟨classifyingSpaceProj G, continuous_classifyingSpaceProj G⟩)
     (isQuotientCoveringMap_classifyingSpaceProj G) k M n
+
+variable {M} {N : Type u} [AddCommGroup N] [Module k N]
+
+/-- The singular-to-group cohomology comparison for Milnor's classifying space commutes
+with every coefficient morphism, where the coefficients carry the trivial group action. -/
+@[reassoc]
+theorem classifyingSpaceSingularCohomologyIsoGroupCohomology_hom_naturality
+    (f : ModuleCat.of k M ⟶ ModuleCat.of k N) (n : ℕ) :
+    HomologicalComplex.homologyMap
+        (((singularChains k).obj (TopCat.of (classifyingSpace G))).linearYonedaObjMap k f) n ≫
+        (classifyingSpaceSingularCohomologyIsoGroupCohomology k G N n).hom =
+      (classifyingSpaceSingularCohomologyIsoGroupCohomology k G M n).hom ≫
+        groupCohomology.map (MonoidHom.id G) ((Rep.trivialFunctor k G).map f) n :=
+  IsQuotientCoveringMap.singularCohomologyIsoGroupCohomology_hom_naturality
+    (E := TopCat.of (universalGSpace G))
+    (p := TopCat.ofHom ⟨classifyingSpaceProj G, continuous_classifyingSpaceProj G⟩)
+    (isQuotientCoveringMap_classifyingSpaceProj G) k f n
 
 end TauCeti
