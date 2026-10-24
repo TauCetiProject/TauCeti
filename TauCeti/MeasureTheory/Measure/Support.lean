@@ -63,17 +63,8 @@ variable {X Y : Type*} [TopologicalSpace X] [MeasurableSpace X] [BorelSpace X]
 the map's range. No injectivity, surjectivity, or properness hypothesis is needed. -/
 theorem support_map_eq_closure_range (μ : Measure X) {f : X → Y} (hμ : μ.support = Set.univ)
     (hf : Continuous f) : (μ.map f).support = closure (Set.range f) := by
-  apply Set.Subset.antisymm
-  · apply support_subset_of_isClosed isClosed_closure
-    exact (ae_map_iff hf.measurable.aemeasurable isClosed_closure.measurableSet).2 <|
-      ae_of_all _ fun x ↦ subset_closure (Set.mem_range_self x)
-  · rw [support_eq_forall_isOpen]
-    intro y hy U hyU hU
-    obtain ⟨z, hzx, ⟨x, rfl⟩⟩ := mem_closure_iff.mp hy U hU hyU
-    rw [Measure.map_apply hf.measurable hU.measurableSet]
-    have hx : x ∈ μ.support := by simp [hμ]
-    exact (mem_support_iff_forall x).mp hx (f ⁻¹' U)
-      ((hU.preimage hf).mem_nhds hzx)
+  rw [TauCeti.MeasureTheory.support_map_eq_closure_image (hμ ▸ Filter.univ_mem) hf,
+    hμ, Set.image_univ]
 
 /-- A homeomorphism carries the support of a measure onto the support of its pushforward. -/
 theorem support_map_homeomorph (μ : Measure X) (e : X ≃ₜ Y) :
