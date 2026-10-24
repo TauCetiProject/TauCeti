@@ -85,7 +85,7 @@ reconstruction from hom-space dimensions returns to the finite-dimensional `k`-a
   algebraically closed field, so it lives apart from the results above.
 * `TauCeti.range_isotypicEval`: **the range of evaluation is the isotypic component**, where
   `TauCeti.isotypicEval : S ⊗[k] (S →ₗ[A] M) →ₗ[A] M` is `s ⊗ f ↦ f s`.  Evaluation and its
-  naturality in the target (`TauCeti.isotypicEval_comp`) are stated over a commutative ring, no
+  naturality in the target (`TauCeti.isotypicEval_comp`) are stated over a commutative semiring, no
   finiteness and no field operations being involved.
 
 ## The isotypic component
@@ -101,7 +101,7 @@ multiplicity computation needs.
 
 The same fact says that evaluation `S ⊗[k] (S →ₗ[A] M) →ₗ[A] M` has the isotypic component as its
 range: a map out of `S` lands there, and every submodule isomorphic to `S` is the range of such a
-map.  This half of the uncounted decomposition needs no scalars beyond a commutative ring; that
+map. This half of the uncounted decomposition needs only a commutative semiring of scalars; that
 evaluation is moreover injective, and hence an isomorphism onto the component, is proved over an
 algebraically closed field in `TauCeti/RingTheory/Semisimple/IsotypicTensor.lean`.
 
@@ -638,18 +638,20 @@ end Isotypic
 
 section IsotypicComponent
 
-variable {k A M S : Type*} [Field k] [Ring A] [Algebra k A]
-variable [AddCommGroup M] [Module k M] [Module A M] [IsScalarTower k A M]
-variable [AddCommGroup S] [Module k S] [Module A S] [IsScalarTower k A S] [IsSimpleModule A S]
+variable {k A M S : Type*} [Ring A] [AddCommGroup M] [Module A M]
+variable [AddCommGroup S] [Module A S] [IsSimpleModule A S]
 
-omit [Module k S] [IsScalarTower k A S] in
-/-- **The multiplicity of `S` in `M` is its multiplicity in the `S`-isotypic component**, every
-map out of `S` landing there. -/
+/-- The `finrank` of a hom space out of `S` is unchanged by restricting the target to its
+`S`-isotypic component, because every map out of `S` lands there. The scalar semiring acts only
+on the target; no field or scalar action on `S` is needed. -/
 @[simp]
-theorem finrank_linearMap_isotypicComponent :
+theorem finrank_linearMap_isotypicComponent [CommSemiring k] [Algebra k A] [Module k M]
+    [IsScalarTower k A M] :
     Module.finrank k (S →ₗ[A] isotypicComponent A M S) = Module.finrank k (S →ₗ[A] M) :=
   (linearMapIsotypicComponentEquiv k).finrank_eq
 
+variable [Field k] [Algebra k A] [Module k M] [IsScalarTower k A M]
+variable [Module k S] [IsScalarTower k A S]
 variable [IsAlgClosed k] [FiniteDimensional k S] [FiniteDimensional k M]
 
 /-- **The isotypic component is the power of its type with exponent the multiplicity.**  Mathlib's
@@ -688,26 +690,16 @@ section Evaluation
 
 open TensorProduct
 
-variable (k : Type*) {A S M N : Type*} [CommRing k] [Ring A] [Algebra k A]
-variable [AddCommGroup S] [Module k S] [Module A S] [IsScalarTower k A S]
-variable [AddCommGroup M] [Module k M] [Module A M] [IsScalarTower k A M]
-variable [AddCommGroup N] [Module k N] [Module A N] [IsScalarTower k A N]
-
-/-- Evaluation of a multiplicity space at a vector, curried.  It is `A`-linear in the vector
-because an `A`-linear map commutes with the action of `A`, and `k`-linear in the map because the
-`k`-action on a hom space is pointwise. -/
-private def isotypicEvalAux : S →ₗ[A] (S →ₗ[A] M) →ₗ[k] M where
-  toFun s :=
-    { toFun := fun f ↦ f s
-      map_add' := fun _ _ ↦ rfl
-      map_smul' := fun _ _ ↦ rfl }
-  map_add' s t := by ext f; exact f.map_add s t
-  map_smul' a s := by ext f; exact f.map_smul a s
+variable (k : Type*) {A S M N : Type*} [CommSemiring k] [Semiring A] [Algebra k A]
+variable [AddCommMonoid S] [Module k S] [Module A S] [IsScalarTower k A S]
+variable [AddCommMonoid M] [Module k M] [Module A M] [IsScalarTower k A M]
+variable [AddCommMonoid N] [Module k N] [Module A N] [IsScalarTower k A N]
 
 /-- **Evaluation** `S ⊗[k] (S →ₗ[A] M) →ₗ[A] M`, `s ⊗ f ↦ f s`.  Only the left factor carries an
-`A`-action, so this is a map of `A`-modules for the `TensorProduct.leftModule` structure. -/
+`A`-action, so this is a map of `A`-modules for the `TensorProduct.leftModule` structure.
+The construction works over semirings and needs no additive inverses. -/
 def isotypicEval : S ⊗[k] (S →ₗ[A] M) →ₗ[A] M :=
-  AlgebraTensorModule.lift (isotypicEvalAux k)
+  AlgebraTensorModule.lift (LinearMap.id (R := k) (M := S →ₗ[A] M)).flip
 
 @[simp]
 theorem isotypicEval_tmul (s : S) (f : S →ₗ[A] M) : isotypicEval k (s ⊗ₜ f) = f s :=
@@ -734,11 +726,20 @@ theorem isotypicEval_map_apply (g : M →ₗ[A] N) (x : S ⊗[k] (S →ₗ[A] M)
           (LinearMap.compRight (M := S) k g) x) = g (isotypicEval k x) :=
   (LinearMap.congr_fun (isotypicEval_comp k g) x).symm
 
+end Evaluation
+
+section EvaluationRange
+
+open TensorProduct
+
+variable (k : Type*) {A S M : Type*} [CommSemiring k] [Ring A] [Algebra k A]
+variable [AddCommGroup S] [Module k S] [Module A S] [IsScalarTower k A S]
+variable [AddCommGroup M] [Module k M] [Module A M] [IsScalarTower k A M]
 variable [IsSimpleModule A S]
 
 /-- **The range of evaluation is the `S`-isotypic component of `M`.**  A map out of `S` lands in
 the component, and every submodule of `M` isomorphic to `S` is the range of such a map.  This
-needs no finiteness and no field hypothesis: a commutative ring of scalars suffices. -/
+needs no finiteness and no field hypothesis: a commutative semiring of scalars suffices. -/
 @[simp]
 theorem range_isotypicEval :
     LinearMap.range (isotypicEval k (S := S) (M := M)) = isotypicComponent A M S := by
@@ -753,7 +754,7 @@ theorem range_isotypicEval :
     refine ⟨e ⟨x, hx⟩ ⊗ₜ (m.subtype ∘ₗ (e.symm : S →ₗ[A] m)), ?_⟩
     simp
 
-end Evaluation
+end EvaluationRange
 
 /-! ### Positivity for an arbitrary nonzero submodule -/
 
