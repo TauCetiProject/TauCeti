@@ -32,7 +32,8 @@ trace formula makes the relationship between the Laplacian and the Hessian expli
 laws include the Leibniz rule and the chain rule `Δ (h ∘ f) = h'(f) Δ f + h''(f) |grad f|²` for a
 real function `h`, with its special case `Δ (log f) = Δ f / f - |grad f|² / f²`. On a
 finite-dimensional inner-product space, the operator agrees with Mathlib's
-flat Laplacian.
+flat Laplacian. The Hessian conventions follow Lee, *Introduction to Riemannian Manifolds*,
+Chapter 3.
 
 -/
 
@@ -155,7 +156,7 @@ direction. -/
 theorem hessian_apply_eq_mvfderiv_sub [IsManifold I 2 M]
     [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
     [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
-    {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f) (x : M)
+    {f : M → ℝ} (x : M) (hf : ContMDiffAt I 𝓘(ℝ) 2 f x)
     (V W : (y : M) → TangentSpace I y)
     (hW : MDiffAt (T% W) x) :
     hessian I f x (V x) (W x) =
@@ -163,9 +164,31 @@ theorem hessian_apply_eq_mvfderiv_sub [IsManifold I 2 M]
         mvfderiv I f x ((CovariantDerivative.leviCivitaConnection I M W) x (V x)) := by
   let _ : IsManifold I (1 + 1) M := by
     simpa only [one_add_one_eq_two] using (inferInstance : IsManifold I 2 M)
-  have hG : ContMDiff I I.tangent 1
-      (fun y ↦ (⟨y, mgradient I f y⟩ : TangentBundle I M)) :=
-    contMDiff_mgradient (I := I) (n := 1) hf
+  have hG : ContMDiffAt I I.tangent 1
+      (fun y ↦ (⟨y, mgradient I f y⟩ : TangentBundle I M)) x := by
+    rcases hf.contMDiffOn' (m := (2 : ℕ∞ω)) le_rfl (by simp) with
+      ⟨u, hu, hxu, hfu⟩
+    have hfu' : ContMDiffOn I 𝓘(ℝ) 2 f u := by simpa using hfu
+    have hopen : IsOpen (chartAt H x).source := (chartAt H x).open_source
+    have hG' : ContMDiffAt I (I.prod 𝓘(ℝ, E)) 1
+        (fun y : M ↦ TotalSpace.mk' E y
+          ((Riemannian.Tensor.rieszDual (I := I) y) (mvfderiv I f y))) x := by
+      refine Riemannian.Tensor.contMDiffAt_rieszDual (I := I) (E := E) (H := H) (M := M) x
+        (mem_chart_source H x) (n := (1 : ℕ∞ω)) (Φ := fun y ↦ mvfderiv I f y) ?_
+      intro j
+      let s := u ∩ (chartAt H x).source
+      have hs : IsOpen s := hu.inter hopen
+      have hfs : ContMDiffOn I 𝓘(ℝ) 2 f s := hfu'.mono Set.inter_subset_left
+      have hframe := Riemannian.Tensor.contMDiffOn_chartLocalFrame
+        (I := I) (n := (1 : ℕ∞ω)) x j
+      rw [TangentBundle.trivializationAt_baseSet] at hframe
+      have hframes : ContMDiffOn I (I.prod 𝓘(ℝ, E)) 1
+          (fun y : M ↦ TotalSpace.mk' E y
+            (Riemannian.Tensor.chartLocalFrame (I := I) x j y)) s :=
+        hframe.mono Set.inter_subset_right
+      exact (hfs.contMDiffOn_mvfderiv_apply hs hframes le_rfl).contMDiffAt
+        (hs.mem_nhds ⟨hxu, mem_chart_source H x⟩)
+    simpa only [mgradient_def] using hG'
   have hG' : MDiffAt (T% (mgradient I f)) x := hG.mdifferentiableAt (by simp)
   have hinner :=
     (CovariantDerivative.isMetricCompatible_leviCivitaConnection I).mvfderiv_inner_eq
@@ -192,20 +215,21 @@ Levi–Civita connection. -/
 theorem hessian_symm [IsManifold I 2 M]
     [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
     [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
-    {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f) (x : M) (v w : TangentSpace I x) :
+    {f : M → ℝ} (x : M) (hf : ContMDiffAt I 𝓘(ℝ) 2 f x)
+    (v w : TangentSpace I x) :
     hessian I f x v w = hessian I f x w v := by
   let V : (y : M) → TangentSpace I y := FiberBundle.extend E v
   let W : (y : M) → TangentSpace I y := FiberBundle.extend E w
   have hV : MDiffAt (T% V) x := FiberBundle.mdifferentiableAt_extend I E v
   have hW : MDiffAt (T% W) x := FiberBundle.mdifferentiableAt_extend I E w
-  have hessianVW := hessian_apply_eq_mvfderiv_sub hf x V W hW
-  have hessianWV := hessian_apply_eq_mvfderiv_sub hf x W V hV
+  have hessianVW := hessian_apply_eq_mvfderiv_sub x hf V W hW
+  have hessianWV := hessian_apply_eq_mvfderiv_sub x hf W V hV
   have hmin : minSmoothness ℝ 2 ≤ (2 : ℕ∞ω) := by simp
   let _ : IsManifold I (minSmoothness ℝ 2) M :=
     IsManifold.of_le (m := minSmoothness ℝ 2) (n := 2) hmin
   -- The mixed-derivative identity and torsion-freeness identify the remaining bracket term.
   have hbracket := mvfderiv_mlieBracket (I := I) (𝕜 := ℝ) (F := ℝ)
-    hf.contMDiffAt (by simp) hV hW
+    (n := (2 : ℕ∞ω)) hf (by simp) hV hW
   have hzero :
       (CovariantDerivative.leviCivitaConnection I M).torsion x (V x) (W x) = 0 := by
     rw [CovariantDerivative.torsion_leviCivitaConnection_eq_zero I]

@@ -277,8 +277,8 @@ private theorem leviCivitaConnection_conformalConnectionTensor_exp {φ : M → �
   -- The derivatives of `dφ(Y)` and `dφ(Z)` give the Hessian, and that of `g(Z, Y)` cancels by
   -- metric compatibility.
   have hφ2 : ContMDiff I 𝓘(ℝ) 2 φ := hφ.of_le (by simp)
-  have hHY := hessian_apply_eq_mvfderiv_sub hφ2 x X Y hYx
-  have hHZ := hessian_apply_eq_mvfderiv_sub hφ2 x X Z hZx
+  have hHY := hessian_apply_eq_mvfderiv_sub x hφ2.contMDiffAt X Y hYx
+  have hHZ := hessian_apply_eq_mvfderiv_sub x hφ2.contMDiffAt X Z hZx
   have hm := (CovariantDerivative.isMetricCompatible_leviCivitaConnection I).mvfderiv_inner_eq
       X hZx hYx
   simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply, mvfderiv_fun_neg,
@@ -340,7 +340,7 @@ theorem curvatureTensor_leviCivitaConnection_rescale
   have hXYZ := leviCivitaConnection_conformalConnectionTensor_exp hφ (X := X) hY hZ x
   have hYXZ := leviCivitaConnection_conformalConnectionTensor_exp hφ (X := Y) hX hZ x
   have hφ2 : ContMDiff I 𝓘(ℝ) 2 φ := hφ.of_le (by simp)
-  rw [hXYZ, hYXZ, hessian_symm hφ2 x (Y x) (X x)]
+  rw [hXYZ, hYXZ, hessian_symm x hφ2.contMDiffAt (Y x) (X x)]
   simp only [conformalConnectionTensor_exp_two_mul_apply hφx, map_add, map_sub, map_smul,
     add_apply, sub_apply, smul_apply, inner_mgradient, mvfderiv_apply_mgradient,
     real_inner_self_eq_norm_sq]
