@@ -74,14 +74,10 @@ theorem continuousOn_quantile_inverseGaussianMeasure (hμ : 0 < μ) (hlam : 0 < 
 theorem tendsto_quantile_inverseGaussianMeasure_nhdsGT_zero (hμ : 0 < μ) (hlam : 0 < lam) :
     Tendsto (fun u ↦ ((inverseGaussianMeasure μ lam).quantile u : EReal))
       (𝓝[>] 0) (𝓝 0) := by
-  apply EReal.tendsto_coe.2
-  refine tendsto_order.2 ⟨fun a ha ↦ ?_, fun b hb ↦ ?_⟩
-  · filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with u hu
-    exact ha.trans (quantile_inverseGaussianMeasure_pos hμ hlam hu)
-  · have hc := (cdf_inverseGaussianMeasure_pos_iff hμ hlam).2 (half_pos hb)
-    filter_upwards [Ioo_mem_nhdsGT hc] with u hu
-    exact ((Measure.quantile_le_iff _ hu.1 (hu.2.trans_le (cdf_le_one _ _))).2 hu.2.le).trans_lt
-      (half_lt_self hb)
+  let _ := isProbabilityMeasure_inverseGaussianMeasure hμ hlam
+  exact Measure.tendsto_quantile_nhdsGT_zero_of_ae_le_of_cdf_pos _
+    ((ae_pos_inverseGaussianMeasure μ lam).mono fun _ hx ↦ hx.le)
+    (fun _ hx ↦ (cdf_inverseGaussianMeasure_pos_iff hμ hlam).2 hx)
 
 /-- As the level increases to one, the inverse Gaussian quantile tends to positive infinity. -/
 theorem tendsto_quantile_inverseGaussianMeasure_nhdsLT_one (hμ : 0 < μ) (hlam : 0 < lam) :

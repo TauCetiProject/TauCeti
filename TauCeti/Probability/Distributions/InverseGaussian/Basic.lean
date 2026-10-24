@@ -546,15 +546,8 @@ theorem cdf_inverseGaussianMeasure_eq (hμ : 0 < μ) (hlam : 0 < lam) (x : ℝ) 
 theorem strictMonoOn_cdf_inverseGaussianMeasure (hμ : 0 < μ) (hlam : 0 < lam) :
     StrictMonoOn (cdf (inverseGaussianMeasure μ lam)) (Ici 0) := by
   let _ := isProbabilityMeasure_inverseGaussianMeasure hμ hlam
-  intro a ha b _ hab
-  rw [← Measure.measure_Ioc_pos_iff_cdf_lt]
-  have hsupport : (a + b) / 2 ∈ (inverseGaussianMeasure μ lam).support := by
-    rw [support_inverseGaussianMeasure hμ hlam]
-    simp only [mem_Ici] at ha ⊢
-    linarith
-  exact ((Measure.mem_support_iff_forall _).mp hsupport (Ioo a b)
-    (Ioo_mem_nhds (by linarith) (by linarith))).trans_le
-      (measure_mono Ioo_subset_Ioc_self)
+  exact Measure.strictMonoOn_cdf_of_subset_support _ ordConnected_Ici
+    (by rw [support_inverseGaussianMeasure hμ hlam])
 
 /-- The inverse Gaussian cdf is positive exactly at positive cutoffs. -/
 @[simp]
@@ -571,11 +564,8 @@ theorem cdf_inverseGaussianMeasure_pos_iff (hμ : 0 < μ) (hlam : 0 < lam) :
 
 /-- Every finite cutoff leaves positive inverse Gaussian upper-tail probability. -/
 theorem cdf_inverseGaussianMeasure_lt_one (hμ : 0 < μ) (hlam : 0 < lam) (x : ℝ) :
-    cdf (inverseGaussianMeasure μ lam) x < 1 := by
-  have hlt := strictMonoOn_cdf_inverseGaussianMeasure hμ hlam
-    (a := max x 0) (b := max x 0 + 1) (le_max_right _ _)
-    (add_nonneg (le_max_right _ _) zero_le_one) (by linarith)
-  exact ((monotone_cdf _ (le_max_left x 0)).trans_lt hlt).trans_le (cdf_le_one _ _)
+    cdf (inverseGaussianMeasure μ lam) x < 1 :=
+  Measure.cdf_lt_one_of_strictMonoOn_Ici _ (strictMonoOn_cdf_inverseGaussianMeasure hμ hlam) x
 
 /-! ### Positive scaling -/
 
