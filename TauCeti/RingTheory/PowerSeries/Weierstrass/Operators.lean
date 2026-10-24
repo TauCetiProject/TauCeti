@@ -103,111 +103,111 @@ private noncomputable def divisionLinearMap :
 
 /-- The continuous `R`-linear quotient operator for division by `f`.
 Its Gauss-norm bound is `‖f‖⁻¹`. -/
-noncomputable def weierstrassQuotient :
+noncomputable def weierstrassDiv :
     PowerSeries.IsRestricted.subring (R := R) c →L[R] PowerSeries.IsRestricted.subring (R := R) c :=
   ((LinearMap.fst R _ _).comp (divisionLinearMap hf)).mkContinuous ‖f‖⁻¹
     (norm_divisionPair_fst_le hf)
 
 /-- The continuous `R`-linear remainder operator for division by `f`.
 It is contractive and its coefficients vanish in degrees at least `s`. -/
-noncomputable def weierstrassRemainder :
+noncomputable def weierstrassMod :
     PowerSeries.IsRestricted.subring (R := R) c →L[R] PowerSeries.IsRestricted.subring (R := R) c :=
   ((LinearMap.snd R _ _).comp (divisionLinearMap hf)).mkContinuous 1
     (fun g ↦ by rw [one_mul]; exact norm_divisionPair_snd_le hf g)
 
-private theorem weierstrassQuotient_apply (g : PowerSeries.IsRestricted.subring (R := R) c) :
-    weierstrassQuotient hf g = (divisionPair hf g).1 := by
-  simp only [weierstrassQuotient, LinearMap.mkContinuous_apply, LinearMap.comp_apply,
+private theorem weierstrassDiv_apply (g : PowerSeries.IsRestricted.subring (R := R) c) :
+    weierstrassDiv hf g = (divisionPair hf g).1 := by
+  simp only [weierstrassDiv, LinearMap.mkContinuous_apply, LinearMap.comp_apply,
     LinearMap.fst_apply, divisionLinearMap, LinearMap.coe_mk, AddHom.coe_mk]
 
-private theorem weierstrassRemainder_apply (g : PowerSeries.IsRestricted.subring (R := R) c) :
-    weierstrassRemainder hf g = (divisionPair hf g).2 := by
-  simp only [weierstrassRemainder, LinearMap.mkContinuous_apply, LinearMap.comp_apply,
+private theorem weierstrassMod_apply (g : PowerSeries.IsRestricted.subring (R := R) c) :
+    weierstrassMod hf g = (divisionPair hf g).2 := by
+  simp only [weierstrassMod, LinearMap.mkContinuous_apply, LinearMap.comp_apply,
     LinearMap.snd_apply, divisionLinearMap, LinearMap.coe_mk, AddHom.coe_mk]
 
 /-- The remainder has degree strictly less than the distinguished degree of the divisor. -/
 @[simp]
-theorem coeff_weierstrassRemainder (g : PowerSeries.IsRestricted.subring (R := R) c)
+theorem coeff_weierstrassMod (g : PowerSeries.IsRestricted.subring (R := R) c)
     (n : ℕ) (hn : s ≤ n) :
-    (weierstrassRemainder hf g : PowerSeries R).coeff n = 0 := by
-  rw [weierstrassRemainder_apply]
+    (weierstrassMod hf g : PowerSeries R).coeff n = 0 := by
+  rw [weierstrassMod_apply]
   exact (divisionPair_spec hf g).1 n hn
 
 /-- The quotient and remainder reconstruct the dividend. -/
 @[simp]
-theorem weierstrassQuotient_mul_add_weierstrassRemainder
+theorem weierstrassDiv_mul_add_weierstrassMod
     (g : PowerSeries.IsRestricted.subring (R := R) c) :
-    weierstrassQuotient hf g * f + weierstrassRemainder hf g = g := by
-  rw [weierstrassQuotient_apply, weierstrassRemainder_apply]
+    weierstrassDiv hf g * f + weierstrassMod hf g = g := by
+  rw [weierstrassDiv_apply, weierstrassMod_apply]
   exact (divisionPair_spec hf g).2
 
 /-- The division operators are characterized by the decomposition and the remainder degree bound. -/
-theorem weierstrassQuotient_eq_and_weierstrassRemainder_eq
+theorem weierstrassDiv_eq_and_weierstrassMod_eq
     {g q r : PowerSeries.IsRestricted.subring (R := R) c}
     (hr : ∀ n, s ≤ n → (r : PowerSeries R).coeff n = 0) (h : q * f + r = g) :
-    weierstrassQuotient hf g = q ∧ weierstrassRemainder hf g = r := by
-  rw [weierstrassQuotient_apply, weierstrassRemainder_apply, divisionPair_eq hf hr h]
+    weierstrassDiv hf g = q ∧ weierstrassMod hf g = r := by
+  rw [weierstrassDiv_apply, weierstrassMod_apply, divisionPair_eq hf hr h]
   exact ⟨rfl, rfl⟩
 
 /-- No norm cancellation occurs between a multiple of the divisor and the remainder. -/
-theorem norm_eq_max_weierstrassQuotient_weierstrassRemainder
+theorem norm_eq_max_weierstrassDiv_weierstrassMod
     (g : PowerSeries.IsRestricted.subring (R := R) c) :
-    ‖g‖ = max (‖weierstrassQuotient hf g‖ * ‖f‖) ‖weierstrassRemainder hf g‖ := by
-  rw [weierstrassQuotient_apply, weierstrassRemainder_apply]
+    ‖g‖ = max (‖weierstrassDiv hf g‖ * ‖f‖) ‖weierstrassMod hf g‖ := by
+  rw [weierstrassDiv_apply, weierstrassMod_apply]
   exact norm_divisionPair hf g
 
 /-- The quotient is bounded by the norm of the dividend divided by that of the divisor. -/
-theorem norm_weierstrassQuotient_le (g : PowerSeries.IsRestricted.subring (R := R) c) :
-    ‖weierstrassQuotient hf g‖ ≤ ‖g‖ / ‖f‖ := by
-  rw [weierstrassQuotient_apply, div_eq_inv_mul]
+theorem norm_weierstrassDiv_le (g : PowerSeries.IsRestricted.subring (R := R) c) :
+    ‖weierstrassDiv hf g‖ ≤ ‖g‖ / ‖f‖ := by
+  rw [weierstrassDiv_apply, div_eq_inv_mul]
   exact norm_divisionPair_fst_le hf g
 
 /-- The remainder operator is contractive. -/
-theorem norm_weierstrassRemainder_le (g : PowerSeries.IsRestricted.subring (R := R) c) :
-    ‖weierstrassRemainder hf g‖ ≤ ‖g‖ := by
-  rw [weierstrassRemainder_apply]
+theorem norm_weierstrassMod_le (g : PowerSeries.IsRestricted.subring (R := R) c) :
+    ‖weierstrassMod hf g‖ ≤ ‖g‖ := by
+  rw [weierstrassMod_apply]
   exact norm_divisionPair_snd_le hf g
 
 /-- The remainder is the inclusion of its polynomial truncation. -/
-theorem polynomialToRestricted_trunc_weierstrassRemainder
+theorem polynomialToRestricted_trunc_weierstrassMod
     (g : PowerSeries.IsRestricted.subring (R := R) c) :
-    polynomialToRestricted c ((weierstrassRemainder hf g : PowerSeries R).trunc s) =
-      weierstrassRemainder hf g :=
-  polynomialToRestricted_trunc_eq_of_coeff_eq_zero _ (coeff_weierstrassRemainder hf g)
+    polynomialToRestricted c ((weierstrassMod hf g : PowerSeries R).trunc s) =
+      weierstrassMod hf g :=
+  polynomialToRestricted_trunc_eq_of_coeff_eq_zero _ (coeff_weierstrassMod hf g)
 
 /-- Dividing a multiple of the divisor recovers its multiplier. -/
 @[simp]
-theorem weierstrassQuotient_mul (q : PowerSeries.IsRestricted.subring (R := R) c) :
-    weierstrassQuotient hf (q * f) = q :=
-  (weierstrassQuotient_eq_and_weierstrassRemainder_eq hf
+theorem weierstrassDiv_mul (q : PowerSeries.IsRestricted.subring (R := R) c) :
+    weierstrassDiv hf (q * f) = q :=
+  (weierstrassDiv_eq_and_weierstrassMod_eq hf
     (r := 0) (by simp) (by simp)).1
 
 /-- A multiple of the divisor has zero remainder. -/
 @[simp]
-theorem weierstrassRemainder_mul (q : PowerSeries.IsRestricted.subring (R := R) c) :
-    weierstrassRemainder hf (q * f) = 0 :=
-  (weierstrassQuotient_eq_and_weierstrassRemainder_eq hf
+theorem weierstrassMod_mul (q : PowerSeries.IsRestricted.subring (R := R) c) :
+    weierstrassMod hf (q * f) = 0 :=
+  (weierstrassDiv_eq_and_weierstrassMod_eq hf
     (q := q) (r := 0) (by simp) (by simp)).2
 
 /-- A polynomial of degree less than the divisor has zero quotient. -/
-theorem weierstrassQuotient_eq_zero_of_coeff_eq_zero
+theorem weierstrassDiv_eq_zero_of_coeff_eq_zero
     {r : PowerSeries.IsRestricted.subring (R := R) c}
     (hr : ∀ n, s ≤ n → (r : PowerSeries R).coeff n = 0) :
-    weierstrassQuotient hf r = 0 :=
-  (weierstrassQuotient_eq_and_weierstrassRemainder_eq hf hr (by simp)).1
+    weierstrassDiv hf r = 0 :=
+  (weierstrassDiv_eq_and_weierstrassMod_eq hf hr (by simp)).1
 
 /-- The remainder operator fixes polynomials of degree less than the divisor. -/
-theorem weierstrassRemainder_eq_self_of_coeff_eq_zero
+theorem weierstrassMod_eq_self_of_coeff_eq_zero
     {r : PowerSeries.IsRestricted.subring (R := R) c}
     (hr : ∀ n, s ≤ n → (r : PowerSeries R).coeff n = 0) :
-    weierstrassRemainder hf r = r :=
-  (weierstrassQuotient_eq_and_weierstrassRemainder_eq hf (q := 0) hr (by simp)).2
+    weierstrassMod hf r = r :=
+  (weierstrassDiv_eq_and_weierstrassMod_eq hf (q := 0) hr (by simp)).2
 
 /-- Division in distinguished degree zero has zero remainder. -/
 @[simp]
-theorem weierstrassRemainder_eq_zero (hf : IsMulDistinguished c 0 (f : PowerSeries R))
+theorem weierstrassMod_eq_zero (hf : IsMulDistinguished c 0 (f : PowerSeries R))
     (g : PowerSeries.IsRestricted.subring (R := R) c) :
-    weierstrassRemainder hf g = 0 := by
+    weierstrassMod hf g = 0 := by
   apply Subtype.ext
   ext n
   simp
