@@ -262,8 +262,8 @@ theorem hallInner_psumPart_schurPolyBasis (ρ : n.Partition)
 letters, `⟨p_ρ, p_ρ'⟩ = z_ρ δ_{ρρ'}`, where `z_ρ = ∏ᵢ i^{mᵢ} mᵢ!` is the order of the centralizer
 of a permutation of cycle type `ρ` (`TauCeti.zPart`).  This holds over every commutative ring: by
 `TauCeti.hallInner_psumPart_schurPolyBasis` it is the column orthogonality of the character table
-of `Sₙ`.  With fewer letters the power sums of the partitions with too many parts become
-dependent, and the formula fails. -/
+of `Sₙ`.  With fewer letters the formula can fail: the family of the power sums of all partitions
+of `n` is then larger than the Schur basis, so it is linearly dependent over a nontrivial ring. -/
 @[simp]
 theorem hallInner_psumPart (h : n ≤ Fintype.card σ) (ρ ρ' : n.Partition) :
     hallInner σ R n ⟨psumPart σ R ρ, psumPart_mem_symmetricHomogeneousSubmodule R ρ⟩
