@@ -31,6 +31,8 @@ Koszul complex `K(x)` of the sequence, whose zeroth homology is `R ⧸ (x₁, �
   differential is `φ` itself.
 * `TauCeti.exact_koszulDifferential_of_retract`: exactness of a Koszul complex passes to a
   retract along linear maps compatible with the functionals.
+* `TauCeti.map_fst_koszulDifferential_coprod`: the coordinate formula for the differential
+  after adjoining one scalar to a linear functional.
 * `TauCeti.koszulComplex.exactAt_succ_iff`: `Hₖ₊₁(K(φ)) = 0` exactly when the Koszul
   differentials out of and into `⋀ᵏ⁺¹ M` are exact.
 * `TauCeti.koszulComplex.map`: the chain map `K(φ) → K(ψ)` induced by a linear map `g` with
@@ -145,6 +147,18 @@ theorem koszulDifferential_map {N : Type*} [AddCommGroup N] [Module R N]
       exteriorPower.map n g (koszulDifferential (ψ ∘ₗ g) n x) :=
   LinearMap.congr_fun (koszulDifferential_comp_map _ rfl n) x
 
+/-- The `⋀ M`-component of the Koszul differential of `K(φ, x)`: writing `z = a + e ∧ b`, it is
+`d a + x b`. -/
+theorem map_fst_koszulDifferential_coprod (x : R) (k : ℕ) (z : ⋀[R]^(k + 1) (M × R)) :
+    exteriorPower.map k (LinearMap.fst R M R)
+        (koszulDifferential (φ.coprod (LinearMap.toSpanSingleton R R x)) k z) =
+      koszulDifferential φ k (exteriorPower.map (k + 1) (LinearMap.fst R M R) z) +
+        x • exteriorPower.map k (LinearMap.fst R M R)
+          (koszulDifferential (LinearMap.snd R M R) k z) :=
+  Subtype.ext <| by
+    simp only [exteriorPower.coe_map, coe_koszulDifferential_apply, Submodule.coe_add,
+      Submodule.coe_smul, ExteriorAlgebra.map_fst_contractLeft_coprod]
+
 variable {φ} in
 /-- **Exactness passes to retracts.** If `g : M → N` has a retraction `h` and `ψ = φ ∘ h` (so
 that also `φ = ψ ∘ g`), then the Koszul complex `K(φ)` is a retract of `K(ψ)`, and exactness of
@@ -159,7 +173,8 @@ theorem exact_koszulDifferential_of_retract {N : Type*} [AddCommGroup N] [Module
   · obtain ⟨y, hy⟩ := (hex (exteriorPower.map (n + 1) g z)).1 (by
       rw [koszulDifferential_map, hφ, hz, map_zero])
     refine ⟨exteriorPower.map (n + 2) h y, ?_⟩
-    rw [koszulDifferential_map, hψ, hy, ← LinearMap.comp_apply, ← exteriorPower.map_comp, hhg,
+    rw [koszulDifferential_map, hψ, hy]
+    simp only [← LinearMap.comp_apply, ← exteriorPower.map_comp, hhg,
       exteriorPower.map_id, LinearMap.id_apply]
   · rintro ⟨y, rfl⟩
     exact koszulDifferential_koszulDifferential φ n y

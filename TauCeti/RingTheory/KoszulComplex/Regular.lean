@@ -60,18 +60,6 @@ section Adjoin
 
 variable (φ : Module.Dual R M) (x : R)
 
-/-- The `⋀ M`-component of the Koszul differential of `K(φ, x)`: writing `z = a + e ∧ b`, it is
-`d a + x b`. -/
-private theorem map_fst_koszulDifferential_coprod (k : ℕ) (z : ⋀[R]^(k + 1) (M × R)) :
-    exteriorPower.map k (LinearMap.fst R M R)
-        (koszulDifferential (φ.coprod (LinearMap.toSpanSingleton R R x)) k z) =
-      koszulDifferential φ k (exteriorPower.map (k + 1) (LinearMap.fst R M R) z) +
-        x • exteriorPower.map k (LinearMap.fst R M R)
-          (koszulDifferential (LinearMap.snd R M R) k z) :=
-  Subtype.ext <| by
-    simp only [exteriorPower.coe_map, coe_koszulDifferential_apply, Submodule.coe_add,
-      Submodule.coe_smul, ExteriorAlgebra.map_fst_contractLeft_coprod]
-
 /-- Writing a cycle `z` of `K(φ, x)` of degree `k + 1` as `a + e ∧ b`, if `b` is a boundary of
 `K(φ)` and `K(φ)` is exact at `⋀ᵏ⁺¹ M`, then `z` is a boundary. -/
 private theorem mem_range_koszulDifferential_coprod (k : ℕ)
