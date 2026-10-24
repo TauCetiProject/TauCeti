@@ -7,6 +7,8 @@ module
 
 public import TauCeti.RingTheory.Node.Flat
 public import Mathlib.Algebra.Exact.Basic
+public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
+public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.RingTheory.RingHom.Finite
 
 /-!
@@ -21,6 +23,11 @@ This is the local algebra calculation underlying the normalization exact sequenc
 node: a regular function on the two branches descends precisely when its values agree at the
 two points above the node. The calculation works over every commutative ring; it does not
 assert that the branch algebra is a normalization over a nonnormal base.
+
+The sequence is also linear over the node algebra itself, with the action on `R` given by
+`nodeValue`, evaluation at the singular section. `branchModuleSequence` records this stronger
+scalar compatibility, allowing the associated-sheaf functor on the node to produce its
+normalization sequence.
 
 ## References
 
@@ -180,5 +187,99 @@ theorem finite_branchMap : (branchMap R).toRingHom.Finite := by
   simp only [AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom] at hz
   rw [hz, (branchMap R).commutes]
   simp
+
+/-! ### Linearity over the node algebra -/
+
+open CategoryTheory
+
+/-- Evaluation of a function on the split node at its singular section. -/
+def nodeValue : NodeAlgebra R 0 →ₐ[R] R :=
+  lift 0 0 0 (by simp)
+
+@[simp]
+theorem nodeValue_coord_zero : nodeValue R (coord (0 : R) 0) = 0 :=
+  lift_coord_zero _ _ _ _
+
+@[simp]
+theorem nodeValue_coord_one : nodeValue R (coord (0 : R) 1) = 0 :=
+  lift_coord_one _ _ _ _
+
+/-- The value on the first branch at its origin is the value at the node. -/
+@[simp]
+theorem coeff_zero_branchMap_fst (z : NodeAlgebra R 0) :
+    (branchMap R z).1.coeff 0 = nodeValue R z := by
+  have h : ((aeval (0 : R)).comp ((AlgHom.fst R R[X] R[X]).comp (branchMap R))) =
+      nodeValue R := by ext <;> simp
+  simpa only [AlgHom.comp_apply, AlgHom.fst_apply, ← coeff_zero_eq_aeval_zero',
+    Algebra.algebraMap_self, RingHom.id_apply] using
+    AlgHom.congr_fun h z
+
+/-- The value on the second branch at its origin is the value at the node. -/
+@[simp]
+theorem coeff_zero_branchMap_snd (z : NodeAlgebra R 0) :
+    (branchMap R z).2.coeff 0 = nodeValue R z :=
+  ((mem_range_branchMap_iff R _).mp ⟨z, rfl⟩).symm.trans (coeff_zero_branchMap_fst R z)
+
+/-- The branch inclusion, linear over the node algebra via restriction of scalars. -/
+def branchInclusion : ModuleCat.of (NodeAlgebra R 0) (NodeAlgebra R 0) ⟶
+    (ModuleCat.restrictScalars (branchMap R : NodeAlgebra R 0 →+* R[X] × R[X])).obj
+      (ModuleCat.of (R[X] × R[X]) (R[X] × R[X])) :=
+  ModuleCat.ofHom (X := ModuleCat.of (NodeAlgebra R 0) (NodeAlgebra R 0))
+    (Y := (ModuleCat.restrictScalars (branchMap R : NodeAlgebra R 0 →+* R[X] × R[X])).obj
+      (ModuleCat.of (R[X] × R[X]) (R[X] × R[X])))
+    { toFun := branchMap R
+      map_add' := map_add _
+      map_smul' := fun a z ↦ map_mul (branchMap R) a z }
+
+@[simp]
+theorem branchInclusion_apply (z : NodeAlgebra R 0) :
+    branchInclusion R z = branchMap R z := (rfl)
+
+/-- The difference of branch values is linear over the node algebra, acting on `R`
+by evaluation at the node. -/
+def branchDifferenceHom :
+    (ModuleCat.restrictScalars (branchMap R : NodeAlgebra R 0 →+* R[X] × R[X])).obj
+        (ModuleCat.of (R[X] × R[X]) (R[X] × R[X])) ⟶
+      (ModuleCat.restrictScalars (nodeValue R : NodeAlgebra R 0 →+* R)).obj (ModuleCat.of R R) :=
+  ModuleCat.ofHom
+    (X := (ModuleCat.restrictScalars (branchMap R : NodeAlgebra R 0 →+* R[X] × R[X])).obj
+      (ModuleCat.of (R[X] × R[X]) (R[X] × R[X])))
+    (Y := (ModuleCat.restrictScalars (nodeValue R : NodeAlgebra R 0 →+* R)).obj (ModuleCat.of R R))
+    { toFun := branchDifference R
+      map_add' := map_add _
+      map_smul' := fun a p ↦ by
+        -- Reduce both the carrier of the restricted module and its scalar action;
+        -- reducing only the goal leaves mismatched bundled additive structures.
+        dsimp only [ModuleCat.restrictScalars, ModuleCat.RestrictScalars.obj'] at p ⊢
+        simp only [branchDifference_apply]
+        change ((branchMap R a).1 * p.1).coeff 0 -
+            ((branchMap R a).2 * p.2).coeff 0 =
+          nodeValue R a * (p.1.coeff 0 - p.2.coeff 0)
+        simp [mul_coeff_zero, mul_sub] }
+
+@[simp]
+theorem branchDifferenceHom_apply (p : R[X] × R[X]) :
+    branchDifferenceHom R p = p.1.coeff 0 - p.2.coeff 0 :=
+  branchDifference_apply R p
+
+/-- The branch sequence over the node algebra. Its last term is supported on the
+singular section, and its last arrow measures failure of branch functions to descend.
+The bundled objects and arrows remain transparent for applying exact functors. -/
+abbrev branchModuleSequence : ShortComplex (ModuleCat (NodeAlgebra R 0)) :=
+  ShortComplex.mk (branchInclusion R) (branchDifferenceHom R) (by
+    apply ModuleCat.hom_ext
+    apply LinearMap.ext
+    intro z
+    -- Reduce the short-complex arrows through their bundled module homomorphisms.
+    change branchDifference R (branchMap R z) = 0
+    simp [branchDifference_apply])
+
+/-- The normalization sequence of a split node is short exact as a sequence of
+modules over the node algebra, over every commutative base ring. -/
+theorem branchModuleSequence_shortExact : (branchModuleSequence R).ShortExact := by
+  apply ModuleCat.shortComplex_shortExact
+  · exact exact_branchMap_branchDifference R
+  · exact branchMap_injective R
+  · exact branchDifference_surjective R
 
 end TauCeti.NodeAlgebra
