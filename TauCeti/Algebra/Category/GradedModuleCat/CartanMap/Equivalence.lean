@@ -244,7 +244,8 @@ theorem gradedFiniteModules_inverseImage_restrictScalars :
     (gradedFiniteModules 𝒜).inverseImage (restrictScalarsEquivalenceOfAlgEquiv.{u} e he).functor =
       gradedFiniteModules ℬ := by
   ext M
-  rw [prop_inverseImage_iff, gradedFiniteModules_iff, gradedFiniteModules_iff]
+  rw [prop_inverseImage_iff, gradedFiniteModules_iff, gradedFiniteModules_iff,
+    restrictScalarsEquivalenceOfAlgEquiv_functor, restrictScalars_obj]
   exact finite_restrictScalarsObj_iff e.toAlgHom (map_mem_of_algEquiv he) e.surjective M
 
 /-- Restriction of scalars along a graded algebra isomorphism pulls the finite graded
@@ -254,7 +255,8 @@ theorem gradedFiniteProjectiveModules_inverseImage_restrictScalars :
         (restrictScalarsEquivalenceOfAlgEquiv.{u} e he).functor =
       gradedFiniteProjectiveModules ℬ := by
   ext M
-  rw [prop_inverseImage_iff, gradedFiniteProjectiveModules_iff, gradedFiniteProjectiveModules_iff]
+  rw [prop_inverseImage_iff, gradedFiniteProjectiveModules_iff, gradedFiniteProjectiveModules_iff,
+    restrictScalarsEquivalenceOfAlgEquiv_functor, restrictScalars_obj]
   exact and_congr
     (finite_restrictScalarsObj_iff e.toAlgHom (map_mem_of_algEquiv he) e.surjective M)
     (projective_restrictScalarsObj_iff e he M)
@@ -264,9 +266,11 @@ include e he in
 algebra isomorphism `e : A ≃ₐ[k] B`, the graded Cartan map of `A` is bijective if and only if that
 of `B` is. -/
 theorem gradedCartanMap_bijective_iff_of_algEquiv :
-    Function.Bijective (gradedCartanMap 𝒜) ↔ Function.Bijective (gradedCartanMap ℬ) :=
-  ((restrictScalarsEquivalenceOfAlgEquiv e he).gradedCartanMap_bijective_iff
-    (restrictScalarsShiftIso _ _) (gradedFiniteModules_inverseImage_restrictScalars e he)
+    Function.Bijective (gradedCartanMap 𝒜) ↔ Function.Bijective (gradedCartanMap ℬ) := by
+  have σ := restrictScalarsShiftIso.{u} e.toAlgHom (map_mem_of_algEquiv he)
+  rw [← restrictScalarsEquivalenceOfAlgEquiv_functor e he] at σ
+  exact ((restrictScalarsEquivalenceOfAlgEquiv e he).gradedCartanMap_bijective_iff σ
+    (gradedFiniteModules_inverseImage_restrictScalars e he)
     (gradedFiniteProjectiveModules_inverseImage_restrictScalars e he)).symm
 
 end TauCeti.GradedModuleCat

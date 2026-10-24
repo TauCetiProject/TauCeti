@@ -182,7 +182,6 @@ variable (e : A ≃ₐ[k] B) (he : ∀ ⦃i : ℤ⦄ ⦃a : A⦄, e a ∈ ℬ i 
 /-- **Restriction of scalars along a graded algebra isomorphism** `e : A ≃ₐ[k] B`, one with
 `e a ∈ ℬᵢ ↔ a ∈ 𝒜ᵢ`, is an equivalence of graded module categories, with inverse the
 restriction of scalars along `e.symm`. -/
-@[expose]
 def restrictScalarsEquivalenceOfAlgEquiv : GradedModuleCat.{v} ℬ ≌ GradedModuleCat.{v} 𝒜 where
   functor := restrictScalars e.toAlgHom (map_mem_of_algEquiv he)
   inverse := restrictScalars e.symm.toAlgHom (symm_map_mem_of_algEquiv he)
@@ -207,14 +206,14 @@ def restrictScalarsEquivalenceOfAlgEquiv : GradedModuleCat.{v} ℬ ≌ GradedMod
 theorem restrictScalarsEquivalenceOfAlgEquiv_functor :
     (restrictScalarsEquivalenceOfAlgEquiv.{v} e he).functor =
       restrictScalars e.toAlgHom (map_mem_of_algEquiv he) :=
-  rfl
+  (rfl)
 
 /-- The inverse of the equivalence is restriction of scalars along `e.symm`. -/
 @[simp]
 theorem restrictScalarsEquivalenceOfAlgEquiv_inverse :
     (restrictScalarsEquivalenceOfAlgEquiv.{v} e he).inverse =
       restrictScalars e.symm.toAlgHom (symm_map_mem_of_algEquiv he) :=
-  rfl
+  (rfl)
 
 /-- Restriction of scalars along a graded algebra isomorphism preserves and reflects projectivity
 of the underlying module. -/
