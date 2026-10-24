@@ -27,13 +27,20 @@ open scoped commutatorElement
 theorem isProperPower_of_sq (a : α) : Group.IsProperPower (of a ^ 2) :=
   Group.isProperPower_pow (of a) (by omega)
 
-/-- A free generator is not a proper power. -/
-@[simp] theorem not_isProperPower_of (a : α) : ¬ Group.IsProperPower (of a) := by
+/-- A coordinate homomorphism sending a chosen free generator to the generator of
+`Multiplicative ℤ`. -/
+theorem exists_monoidHom_apply_eq_ofAdd_one (a : α) :
+    ∃ f : FreeGroup α →* Multiplicative ℤ, f (of a) = Multiplicative.ofAdd 1 := by
   classical
   let f : FreeGroup α →* Multiplicative ℤ :=
     FreeGroup.lift (fun b => if b = a then Multiplicative.ofAdd 1 else 1)
+  exact ⟨f, by simp [f]⟩
+
+/-- A free generator is not a proper power. -/
+@[simp] theorem not_isProperPower_of (a : α) : ¬ Group.IsProperPower (of a) := by
+  obtain ⟨f, hf⟩ := exists_monoidHom_apply_eq_ofAdd_one a
   intro h
-  exact Group.not_isProperPower_ofAdd_one (by simpa [f] using Group.IsProperPower.map f h)
+  exact Group.not_isProperPower_ofAdd_one (by simpa [hf] using Group.IsProperPower.map f h)
 
 /-- If a generator of a free group is the `m`-th power of some element, then `m = ±1`. -/
 theorem natAbs_eq_one_of_of_eq_zpow {a : α} {r : FreeGroup α} {m : ℤ} (h : of a = r ^ m) :

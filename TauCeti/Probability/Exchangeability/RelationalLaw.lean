@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.GroupAction.FiniteSupportPerm
 public import TauCeti.ModelTheory.RelationalConfiguration
-public import Mathlib.MeasureTheory.Group.Arithmetic
 public import Mathlib.MeasureTheory.Group.Defs
 public import Mathlib.MeasureTheory.Measure.Prod
 public import Mathlib.MeasureTheory.Measure.Typeclasses.Probability
@@ -36,14 +34,13 @@ measure on configurations over `ℕ` is determined by its windows
 (`measure_ext_of_map_restrict_val`).
 
 The finitely supported permutations of `ℕ` act on configurations over `ℕ` by relabelling
-(`TauCeti.RelationalConfiguration.instMulActionFinitaryPerm`), and every exchangeable law on
+(`TauCeti.RelationalConfiguration.instMulActionFinitaryPerm`, in
+`TauCeti.ModelTheory.RelationalConfiguration`), and every exchangeable law on
 configurations over `ℕ` is invariant under this action. Ergodicity of the action on such a law,
 Mathlib's `ErgodicSMul`, is the relational counterpart of the ergodicity of exchangeable arrays.
 
 ## Main definitions
 
-* `TauCeti.RelationalConfiguration.instMulActionFinitaryPerm` — finitely supported permutations
-  of `ℕ` relabel configurations over `ℕ`;
 * `TauCeti.Probability.ExchangeableRelationalLaw` — a consistent family of finite relational laws;
 * `TauCeti.Probability.InfiniteExchangeableRelationalLaw` — a relabelling-invariant probability law
   on the configurations over `ℕ`;
@@ -84,39 +81,6 @@ open MeasureTheory
 open _root_.FirstOrder (Language)
 
 namespace TauCeti
-
-namespace RelationalConfiguration
-
-/-! ### Finitary relabelling of configurations over `ℕ` -/
-
-variable {L : Language}
-
-/-- Finitely supported permutations of `ℕ` relabel configurations over `ℕ`: `g` acts by
-restriction along `g⁻¹`, so that relabelling is a left action. -/
-instance instSMulFinitaryPerm : SMul FinitaryPerm (RelationalConfiguration L ℕ) :=
-  ⟨fun g c => c.restrict ⇑(FinitaryPerm.toPerm g)⁻¹⟩
-
-/-- Relabelling by `g` is restriction along `g⁻¹`. -/
-theorem finitaryPerm_smul_def (g : FinitaryPerm) (c : RelationalConfiguration L ℕ) :
-    g • c = c.restrict ⇑(FinitaryPerm.toPerm g)⁻¹ := (rfl)
-
-/-- Relabelling by `g` reads every atom at its relabelling along `g⁻¹`. -/
-@[simp]
-theorem eval_finitaryPerm_smul (g : FinitaryPerm) (c : RelationalConfiguration L ℕ)
-    (a : Atom L ℕ) : (g • c).eval a = c.eval (a.map ⇑(FinitaryPerm.toPerm g)⁻¹) := by
-  rw [finitaryPerm_smul_def, eval_restrict]
-
-/-- Finitary relabelling is a left action on configurations over `ℕ`. -/
-instance instMulActionFinitaryPerm : MulAction FinitaryPerm (RelationalConfiguration L ℕ) where
-  one_smul c := ext fun a => by simp [FinitaryPerm.toPerm_one, Atom.map_id]
-  mul_smul g h c := ext fun a => by simp [FinitaryPerm.toPerm_mul, mul_inv_rev, ← Atom.map_comp]
-
-/-- Each finitary relabelling of configurations over `ℕ` is measurable. -/
-instance instMeasurableConstSMulFinitaryPerm :
-    MeasurableConstSMul FinitaryPerm (RelationalConfiguration L ℕ) :=
-  ⟨fun _ => measurable_restrict _⟩
-
-end RelationalConfiguration
 
 namespace Probability
 
