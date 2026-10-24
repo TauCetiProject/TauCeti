@@ -9,6 +9,8 @@ public import TauCeti.NumberTheory.GeometryOfNumbers.MinkowskiSecond
 public import TauCeti.NumberTheory.Height.Arakelov.IntMatrix
 -- Proof-only: Vaaler's lower bound for the volume of a central slice of the cube.
 import TauCeti.MeasureTheory.Measure.Lebesgue.CubeSlice
+-- Proof-only: the cube slice as a convex body whose gauge is the sup norm.
+import TauCeti.NumberTheory.GeometryOfNumbers.CubeSlice
 
 /-!
 # Successive minima in the sup norm are bounded by the covolume
@@ -32,7 +34,15 @@ These bounds are the geometric half of Bombieri and Vaaler's version of Siegel's
 gauge of the cube slice is the sup norm, they bound the sup norms of independent integral solutions
 attaining the minima (`ZLattice.exists_linearIndependent_gauge_eq_successiveMin`), and of a lattice
 basis built from the minima, which loses at most a factor `k! / 2 ^ (k - 1)` against them
-(`ZLattice.exists_basis_mem_smul_successiveMin`).
+(`ZLattice.exists_basis_mem_smul_successiveMin`). The vectors attaining the minima are moreover
+primitive in `L`, so `L` contains `k` linearly independent primitive vectors `a i` with
+
+```text
+‖a 0‖_∞ ⋯ ‖a (k - 1)‖_∞ ≤ covolume L,
+```
+
+which is the sup-norm form of Bombieri and Vaaler's Theorem 2. These vectors need not form a
+`ℤ`-basis of `L`.
 
 The statements hold for every symmetric convex body containing the cube slice, since enlarging the
 body only lowers the minima; the cube slice itself is the case of interest.
@@ -41,6 +51,8 @@ body only lowers the minima; the cube slice itself is the case of interest.
 
 * `ZLattice.prod_successiveMin_le_covolume_of_setOf_forall_abs_le_one_subset`: the bound for a full
   lattice in a subspace of `ℝ^ι`.
+* `ZLattice.exists_linearIndependent_prod_norm_ofLp_le_covolume`: independent primitive lattice
+  vectors whose sup norms have product at most `covolume L`.
 * `Submodule.prod_successiveMin_intLattice_le_subspaceHeight`: for the integral points of a
   subspace `V` of `ℚ^ι`, the product of the minima is at most the height of `V`.
 * `Matrix.minorGcd_mul_prod_successiveMin_le_sqrt_det`: for the integral solutions of `A y = 0`,
@@ -48,7 +60,8 @@ body only lowers the minima; the cube slice itself is the case of interest.
 
 ## References
 
-* E. Bombieri and J. Vaaler, *On Siegel's lemma*, Invent. Math. **73** (1983), 11–32, §§2–3.
+* E. Bombieri and J. Vaaler, *On Siegel's lemma*, Invent. Math. **73** (1983), 11–32, §§2–3,
+  Theorem 2.
 * J. D. Vaaler, *A geometric inequality with applications to linear forms*, Pacific J. Math. **83**
   (1979), 543–553.
 * I. Aliev and M. Henk, *Minkowski's successive minima in convex and discrete geometry*,
@@ -82,6 +95,49 @@ theorem prod_successiveMin_le_covolume_of_setOf_forall_abs_le_one_subset (L : Su
       fun _ hx ↦ hK fun i ↦ (hx i).le
   exact prod_successiveMin_le_covolume_of_two_pow_finrank_le L volume h0 hKs
     ((W.two_pow_finrank_le_volume_setOf_forall_abs_le_one).trans (measure_mono hK))
+
+/-- **Independent lattice vectors of small sup norm** (Bombieri–Vaaler). A full lattice `L` in a
+subspace `W` of the Euclidean space `ℝ^ι` contains `finrank ℝ W` linearly independent vectors
+`a i`, each primitive in `L`, whose sup norms `‖a i‖_∞ = max_j |a i j|` have product at most the
+covolume of `L`. -/
+theorem exists_linearIndependent_prod_norm_ofLp_le_covolume (L : Submodule ℤ W)
+    [DiscreteTopology L] [IsZLattice ℝ L] :
+    ∃ a : Fin (finrank ℝ W) → W, LinearIndependent ℝ a ∧ (∀ i, a i ∈ L) ∧
+      (∀ i, ∀ y ∈ L, ∀ c : ℤ, c • y = a i → IsUnit c) ∧
+      ∏ i, ‖WithLp.ofLp (a i : EuclideanSpace ℝ ι)‖ ≤ covolume L := by
+  -- Take lattice vectors attaining the successive minima of `L` with respect to the cube slice,
+  -- whose gauge is the sup norm.
+  have hK := Submodule.zero_mem_interior_cubeSlice W
+  obtain ⟨a, ha, haL⟩ := exists_linearIndependent_gauge_eq_successiveMin L hK
+  have hnorm (i : Fin (finrank ℝ W)) :
+      ‖WithLp.ofLp (a i : EuclideanSpace ℝ ι)‖ = successiveMin L W.cubeSlice i := by
+    rw [← Submodule.gauge_cubeSlice, (haL i).2]
+  refine ⟨a, ha, fun i ↦ (haL i).1, fun i y hy c hcy ↦ ?_, ?_⟩
+  · -- If `a i = c • y` with `|c| > 1`, then `y` has sup norm below the `i`-th minimum, so it lies
+    -- in the span of the earlier `a j`, and so would `a i`.
+    by_contra hc
+    have hc0 : c ≠ 0 := by
+      rintro rfl
+      exact ha.ne_zero i (by rw [← hcy, zero_smul])
+    have hc1 : (1 : ℝ) < |(c : ℝ)| := by
+      rw [← Int.cast_abs, ← Int.cast_one, Int.cast_lt]
+      exact lt_of_le_of_ne (Int.one_le_abs hc0) fun h ↦ hc (Int.isUnit_iff_abs_eq.2 h.symm)
+    have hcy' : |(c : ℝ)| * gauge (W.cubeSlice : Set W) y = successiveMin L W.cubeSlice i := by
+      rw [← hnorm i, ← hcy, Submodule.gauge_cubeSlice, ← Int.cast_smul_eq_zsmul ℝ,
+        Submodule.coe_smul, WithLp.ofLp_smul, norm_smul, Real.norm_eq_abs]
+    have hy' : gauge (W.cubeSlice : Set W) y < successiveMin L W.cubeSlice i := by
+      have := successiveMin_pos L hK i
+      have := gauge_nonneg (s := (W.cubeSlice : Set W)) y
+      nlinarith
+    have hspan := mem_span_image_Iio_of_gauge_lt_successiveMin hK ha (fun i ↦ (haL i).1)
+      (fun i ↦ (haL i).2.le) hy hy'
+    refine ha.notMem_span_image (s := Set.Iio i) (x := i) (by simp) ?_
+    rw [← hcy, ← Int.cast_smul_eq_zsmul ℝ]
+    exact Submodule.smul_mem _ _ hspan
+  · -- Minkowski's second theorem against Vaaler's bound `2 ^ k ≤ vol (cubeSlice W)`.
+    rw [Finset.prod_congr rfl fun i _ ↦ hnorm i]
+    exact prod_successiveMin_le_covolume_of_setOf_forall_abs_le_one_subset L
+      Submodule.coe_cubeSlice.ge fun _ ↦ Submodule.neg_mem_cubeSlice.2
 
 end ZLattice
 

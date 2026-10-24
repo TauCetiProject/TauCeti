@@ -10,6 +10,7 @@ public import Mathlib.NumberTheory.NumberField.Units.DirichletTheorem
 import TauCeti.Algebra.Squarefree
 import TauCeti.Data.Nat.Totient
 import TauCeti.NumberTheory.EffectiveBounds.Regulator
+import TauCeti.NumberTheory.NumberField.Quadratic.RingOfIntegers
 import TauCeti.NumberTheory.NumberField.Units.Torsion
 import TauCeti.RingTheory.RootsOfUnity.FourthAndSixth
 import Mathlib.NumberTheory.NumberField.Cyclotomic.Basic
@@ -39,10 +40,16 @@ subgroups.
   has two, four or six roots of unity.
 * `TauCeti.NumberField.Units.torsionOrder_eq_of_minpoly_eq_X_sq_sub_C`: the torsion order of
   `ℚ(√d)` for squarefree `d` is `4` if `d = -1`, `6` if `d = -3`, and `2` otherwise.
+* `TauCeti.NumberField.Units.torsionOrder_eq_of_finrank_eq_two`: the torsion order of a quadratic
+  field of discriminant `D` is `4` if `D = -4`, `6` if `D = -3`, and `2` otherwise.
 * `TauCeti.NumberField.Units.torsion_eq_top_of_isTotallyComplex`: every unit of an imaginary
   quadratic field is a root of unity.
 * `TauCeti.NumberField.Units.card_units_of_isTotallyComplex`: the number of units of an
   imaginary quadratic field.
+* `TauCeti.NumberField.Units.card_units_of_isTotallyComplex_of_discr`: the number of units of an
+  imaginary quadratic field in terms of its discriminant.
+* `TauCeti.NumberField.Units.eq_one_or_neg_one_of_isTotallyComplex`: apart from discriminants
+  `-3` and `-4`, the only units of an imaginary quadratic field are `±1`.
 -/
 
 public section
@@ -131,6 +138,39 @@ theorem card_units_of_isTotallyComplex [IsTotallyComplex K] (hK : finrank ℚ K 
     Nat.card (𝓞 K)ˣ = if d = -1 then 4 else if d = -3 then 6 else 2 := by
   rw [← torsionOrder_eq_of_minpoly_eq_X_sq_sub_C hK hmin hd, torsionOrder,
     torsion_eq_top_of_isTotallyComplex hK, Subgroup.card_top]
+
+/-- **The roots of unity in a quadratic field from its discriminant.** The torsion subgroup of
+the units of a quadratic field of discriminant `D` has order `4` if `D = -4`, order `6` if
+`D = -3`, and order `2` otherwise. -/
+theorem torsionOrder_eq_of_finrank_eq_two (hK : finrank ℚ K = 2) :
+    torsionOrder K = if discr K = -4 then 4 else if discr K = -3 then 6 else 2 := by
+  obtain ⟨θ, d, hmin, hgen, hd⟩ := exists_minpoly_eq_X_sq_sub_C_and_adjoin_eq_top hK
+  rw [torsionOrder_eq_of_minpoly_eq_X_sq_sub_C hK hmin hd]
+  by_cases h4 : d % 4 = 1
+  · rw [discr_eq_of_squarefree_of_mod_four_eq_one hmin hgen hd h4]
+    have h1 : d ≠ -1 := by rintro rfl; norm_num at h4
+    have h4' : d ≠ -4 := by rintro rfl; norm_num at h4
+    simp [h1, h4']
+  · rw [discr_eq_four_mul_of_mod_four_ne_one hmin hgen hd h4]
+    have h3 : d ≠ -3 := by rintro rfl; norm_num at h4
+    have h3' : 4 * d ≠ -3 := by omega
+    simp [h3, h3', show 4 * d = -4 ↔ d = -1 by omega]
+
+/-- **The number of units of an imaginary quadratic field from its discriminant.** An imaginary
+quadratic field of discriminant `D` has four units if `D = -4`, six units if `D = -3`, and two
+units otherwise. -/
+theorem card_units_of_isTotallyComplex_of_discr [IsTotallyComplex K] (hK : finrank ℚ K = 2) :
+    Nat.card (𝓞 K)ˣ = if discr K = -4 then 4 else if discr K = -3 then 6 else 2 := by
+  rw [← torsionOrder_eq_of_finrank_eq_two hK, torsionOrder,
+    torsion_eq_top_of_isTotallyComplex hK, Subgroup.card_top]
+
+/-- **The units of an imaginary quadratic field are `±1`**, unless its discriminant is `-3` or
+`-4`. -/
+theorem eq_one_or_neg_one_of_isTotallyComplex [IsTotallyComplex K] (hK : finrank ℚ K = 2)
+    (h4 : discr K ≠ -4) (h3 : discr K ≠ -3) (u : (𝓞 K)ˣ) : u = 1 ∨ u = -1 :=
+  torsion_eq_one_or_neg_one_of_torsionOrder_eq_two
+    (by simpa [h4, h3] using torsionOrder_eq_of_finrank_eq_two hK)
+    ⟨u, torsion_eq_top_of_isTotallyComplex hK ▸ Subgroup.mem_top u⟩
 
 end Units
 

@@ -52,6 +52,10 @@ normal closure of `x ^ n` when `n ≠ 1`.
 * `TauCeti.GroupAlgGeom.V_normalClosure`, `TauCeti.GroupAlgGeom.normalClosure_le_Rad`: a system
   and its normal closure have the same solutions, so `ncl(S) ≤ Rad_H(S)`.
 * `TauCeti.GroupAlgGeom.V_I_V`: `V(I(V(S))) = V(S)`.
+* `TauCeti.GroupAlgGeom.exists_finite_V_eq_of_finite`,
+  `TauCeti.GroupAlgGeom.exists_subsingleton_V_eq`: with finitely many points, every system has a
+  finite subsystem with the same solutions; with at most one point, for instance with no
+  variables, a single equation suffices.
 * `TauCeti.GroupAlgGeom.I_singleton_comp`: the ideal of a point with coordinates `ι (g x)` is the
   normal closure of the equations `x (g x)⁻¹`, for injective `ι`.
 * `TauCeti.GroupAlgGeom.GX.quotientHomEquiv`: `G`-homomorphisms from `G[X] ⧸ N` to `H`
@@ -176,6 +180,52 @@ theorem V_normalClosure (S : Set (GX G X)) : V ι (normalClosure S : Set (GX G X
   refine (V_antitone ι subset_normalClosure).antisymm fun v hv => ?_
   have : normalClosure S ≤ (eval ι v).ker := normalClosure_le_normal fun s hs => mem_V.1 hv s hs
   exact mem_V.2 fun s hs => this hs
+
+/-! ### Finite subsystems -/
+
+/-- A homomorphism `m : G[X] →* G'[Y]` together with a map of points `θ` compatible with
+evaluation carries finite subsystems of `m(S)` with the same solutions back to finite subsystems
+of `S` with the same solutions. -/
+theorem exists_finite_V_eq_of_map {G' Y : Type*} [Group G'] {ι : G →* H} {ι' : G' →* H}
+    (m : GX G X →* GX G' Y) (θ : (X → H) → (Y → H))
+    (hθ : ∀ v s, eval ι' (θ v) (m s) = eval ι v s) {S : Set (GX G X)}
+    (h : ∃ T ⊆ m '' S, T.Finite ∧ V ι' T = V ι' (m '' S)) :
+    ∃ S₀ ⊆ S, S₀.Finite ∧ V ι S₀ = V ι S := by
+  obtain ⟨S₀, hS₀, hfin, hV⟩ := Set.exists_subset_image_finite_and.1 h
+  have key (T : Set (GX G X)) : V ι T = θ ⁻¹' V ι' (m '' T) := by
+    ext v
+    simp [hθ]
+  exact ⟨S₀, hS₀, hfin, by rw [key, key, hV]⟩
+
+/-- If there are only finitely many points `X → H`, every system is equivalent to a finite
+subsystem: one equation failing at each non-solution suffices. -/
+theorem exists_finite_V_eq_of_finite {ι : G →* H} [Finite (X → H)] (S : Set (GX G X)) :
+    ∃ S₀ ⊆ S, S₀.Finite ∧ V ι S₀ = V ι S := by
+  have hw (v : ↥(V ι S)ᶜ) : ∃ s ∈ S, eval ι v s ≠ 1 := by
+    have hv := v.2
+    simpa only [Set.mem_compl_iff, mem_V, not_forall, exists_prop] using hv
+  choose w hwS hw using hw
+  have hsub : Set.range w ⊆ S := Set.range_subset_iff.2 hwS
+  refine ⟨Set.range w, hsub, Set.finite_range w, (V_antitone ι hsub).antisymm' fun v hv => ?_⟩
+  by_contra hvS
+  exact hw ⟨v, hvS⟩ (mem_V.1 hv _ ⟨⟨v, hvS⟩, rfl⟩)
+
+/-- If there is at most one point `X → H`, for instance when there are no variables, a single
+equation suffices: a system with a solution is equivalent to the empty subsystem, and a system
+without one is equivalent to any of its equations that fails at the point. -/
+theorem exists_subsingleton_V_eq {ι : G →* H} [Subsingleton (X → H)] (S : Set (GX G X)) :
+    ∃ S₀ ⊆ S, S₀.Subsingleton ∧ V ι S₀ = V ι S := by
+  by_cases hS : ∃ s ∈ S, ∃ v, eval ι v s ≠ 1
+  · obtain ⟨s, hs, v, hv⟩ := hS
+    have hs₀ : V ι {s} = ∅ :=
+      Set.eq_empty_iff_forall_notMem.2 fun u hu => hv (Subsingleton.elim v u ▸ mem_V.1 hu s rfl)
+    refine ⟨{s}, Set.singleton_subset_iff.2 hs, Set.subsingleton_singleton, ?_⟩
+    rw [hs₀, eq_comm, ← Set.subset_empty_iff, ← hs₀]
+    exact V_antitone ι (Set.singleton_subset_iff.2 hs)
+  · refine ⟨∅, Set.empty_subset S, Set.subsingleton_empty, ?_⟩
+    simp only [not_exists, not_and, not_not] at hS
+    rw [V_empty]
+    exact (Set.eq_univ_of_forall fun v => mem_V.2 fun s hs => hS s hs v).symm
 
 /-! ### Radicals -/
 

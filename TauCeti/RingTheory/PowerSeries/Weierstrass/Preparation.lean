@@ -328,7 +328,9 @@ theorem isUnit_iff_isDistinguished_zero_and_isUnit_coeff_zero [CompleteSpace R] 
     exact (hx.map (PowerSeries.IsRestricted.subring (R := R) c).subtype).map _
   -- Dividing `1` by `x` leaves a remainder vanishing in every degree.
   obtain ⟨q, r, hq, hr, hqr⟩ :=
-    hx.exists_mul_add_eq hu hc x.2 (PowerSeries.isRestricted_one c)
+    (isMulDistinguished_iff_isUnit.mpr ⟨hx, hu⟩).exists_mul_add_eq hc x.2
+      (PowerSeries.isRestricted_one c)
+  rw [mul_comm] at hqr
   have hr0 : r = 0 := PowerSeries.ext fun m ↦ by rw [hr m (Nat.zero_le m), map_zero]
   rw [hr0, add_zero] at hqr
   refine IsUnit.of_mul_eq_one ⟨q, hq⟩ (Subtype.ext ?_)

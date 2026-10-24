@@ -52,6 +52,18 @@ theorem signVariationsAt_eq_atTop {cs : List (Polynomial R)} {x : R}
   simp only [List.map_map]
   exact List.map_congr_left h
 
+/-- Ordered coefficient embeddings preserve variations at positive infinity. -/
+@[simp]
+theorem signVariationsAtTop_map {S : Type*} [Semiring S] [LinearOrder S]
+    (cs : List R[X]) (f : R →+* S) (hf : StrictMono f) :
+    signVariationsAtTop (cs.map (Polynomial.map f)) = signVariationsAtTop cs := by
+  rw [signVariationsAtTop_def, signVariationsAtTop_def]
+  apply List.signVariations_congr
+  simp only [List.map_map, Function.comp_def]
+  exact List.map_congr_left fun p _ ↦ by
+    rw [leadingCoeff_map_of_injective hf.injective]
+    exact hf.sign_comp _
+
 end Semiring
 
 section Ring
@@ -84,6 +96,19 @@ theorem signVariationsAt_eq_atBot {cs : List (Polynomial R)} {x : R}
   apply List.signVariations_congr
   simp only [List.map_map]
   exact List.map_congr_left h
+
+/-- Ordered coefficient embeddings preserve variations at negative infinity. -/
+@[simp]
+theorem signVariationsAtBot_map {S : Type*} [Ring S] [LinearOrder S]
+    (cs : List R[X]) (f : R →+* S) (hf : StrictMono f) :
+    signVariationsAtBot (cs.map (Polynomial.map f)) = signVariationsAtBot cs := by
+  rw [signVariationsAtBot_def, signVariationsAtBot_def]
+  apply List.signVariations_congr
+  simp only [List.map_map, Function.comp_def]
+  exact List.map_congr_left fun p _ ↦ by
+    rw [leadingCoeff_map_of_injective hf.injective, natDegree_map_eq_of_injective hf.injective]
+    simpa only [map_mul, map_pow, map_neg, map_one] using
+      hf.sign_comp (p.leadingCoeff * (-1) ^ p.natDegree)
 
 end Ring
 

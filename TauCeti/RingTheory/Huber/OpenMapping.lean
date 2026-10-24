@@ -19,10 +19,10 @@ import Mathlib.Topology.Baire.CompleteMetrizable
 
 `TauCeti.HasZeroSequenceOfUnits.isOpenMap` is Henkel's theorem in the generality it is proved in:
 the scalars need only a zero sequence of units, the source is a complete first-countable
-nonarchimedean group, and the target need only be `T0Space` and Baire. This file records both
-halves of the roadmap's derived form over a Tate ring — a surjective linear map, continuous at
-zero, from a complete pseudometrisable module onto a complete metrisable one is open, and induces
-the quotient topology — by discharging Henkel's hypotheses from ones a consumer can check.
+nonarchimedean group, and the target need only be `T0Space` and Baire. This file records its two
+halves over a Tate ring — a surjective linear map, continuous at zero, from a complete
+pseudometrisable module onto a complete metrisable one is open, and induces the quotient topology —
+by discharging Henkel's hypotheses from ones a consumer can check.
 
 The asymmetry is real and not an oversight. Both modules are asked for completeness and a countably
 generated uniformity; only the *target* is asked to be `T0Space`, so only the target is metrisable.
@@ -74,13 +74,13 @@ equivalent to continuity everywhere (`continuous_of_continuousAt_zero`), so this
 hypothesis spelled at its weakest, and a consumer holding `Continuous f` supplies
 `‹Continuous f›.continuousAt`.
 
-Both halves of the roadmap's derived form are here, together with a strict-map form for a map
-that need not be surjective. `TauCeti.Huber.IsTateRing.isOpenMap` is the
-open-map half; `TauCeti.Huber.IsTateRing.isQuotientMap` is the other — that such a map induces the
-quotient topology — and it delegates to `TauCeti.HasZeroSequenceOfUnits.isQuotientMap` exactly as
-the open-map form delegates to `TauCeti.HasZeroSequenceOfUnits.isOpenMap`. It is the quotient form
-that the strict-morphism material will consume, since what matters there is not that images are
-open but that the target's topology is determined by the source's.
+Both halves are here, together with a strict-map form for a map that need not be surjective.
+`TauCeti.Huber.IsTateRing.isOpenMap` is the open-map half; `TauCeti.Huber.IsTateRing.isQuotientMap`
+is the other — that such a map induces the quotient topology — and it delegates to
+`TauCeti.HasZeroSequenceOfUnits.isQuotientMap` exactly as the open-map form delegates to
+`TauCeti.HasZeroSequenceOfUnits.isOpenMap`. It is the quotient form that determines topologies,
+since what matters there is not that images are open but that the target's topology is determined
+by the source's.
 
 That quotient form is also what pins down the topology of a *finitely generated* such module. A
 finite generating family presents it as a topological quotient of `Fin n → A`, and the module
@@ -96,10 +96,11 @@ for nothing beyond a topological module structure.
 * `TauCeti.Huber.IsTateRing.isOpenMap`: a surjective linear map, continuous at zero, from a
   complete pseudometrisable module onto a complete metrisable one over a Tate ring is open.
 * `TauCeti.Huber.IsTateRing.isQuotientMap`: the same map induces the quotient topology on its
-  target. This is the form the strict-morphism material will consume.
+  target. This is the form `TauCeti.Huber.IsTateRing.isModuleTopology` rests on.
 * `TauCeti.Huber.IsTateRing.isStrictMap_of_isClosed_range`: a linear map continuous at zero with
-  closed range is strict, i.e. open onto its image. An ingredient for Wedhorn 6.18(2), not that
-  proposition — see its docstring.
+  closed range is strict, i.e. open onto its image. Together with `isModuleTopology` below it
+  gives Wedhorn 6.18(2) as `LinearMap.isStrictMap_of_module_finite`, where the closed range is
+  supplied by `TauCeti.Huber.isClosed_of_isNoetherian`.
 * `TauCeti.Huber.IsTateRing.isOpenMap_linearCombination`: a finite spanning family presents the
   module as an **open** quotient of `ι → A`, which is the strict-presentation form the
   Banach-theorem arguments consume.
@@ -115,15 +116,15 @@ for nothing beyond a topological module structure.
 ## References
 
 * [Wedhorn, *Adic Spaces*][wedhorn_adic], Theorem 6.16 and Proposition 6.18(2). The proposition
-  is not proved here in full. It assumes `A` noetherian and both modules finitely generated with
-  the topology of 6.18(1), and concludes continuity as well as openness onto the image; what is
-  here is its two conjuncts separately, each under hypotheses of its own.
+  assumes `A` noetherian and both modules finitely generated with the topology of 6.18(1), and
+  concludes continuity as well as openness onto the image; what is here is its two conjuncts
+  separately, each under hypotheses of its own.
   `TauCeti.Huber.IsTateRing.isModuleTopology` yields the continuity conjunct, which needs neither
   the noetherian hypothesis nor a topology of 6.18(1) on the target.
   `TauCeti.Huber.IsTateRing.isStrictMap_of_isClosed_range` is the openness conjunct, and takes a
   closed range as a hypothesis in place of what the noetherian finitely generated setting supplies.
-  Assembling the two into 6.18(2) itself needs that missing input — closedness of a finitely
-  generated submodule — which is not in this file.
+  The proposition itself is `LinearMap.isStrictMap_of_module_finite`, which supplies the closed
+  range by `TauCeti.Huber.isClosed_of_isNoetherian`.
 * L. Henkel, *An Open Mapping Theorem for rings which have a zero sequence of units*,
   [arXiv:1407.5647](https://arxiv.org/abs/1407.5647).
 
@@ -170,7 +171,7 @@ Only the target carries `T0Space`, so only the target is metrisable rather than 
 the source is never asked to be separated because the proof does not use it.
 
 This is `TauCeti.HasZeroSequenceOfUnits.isOpenMap` with its hypotheses discharged: it is the
-general theorem that does the work, and this is the named instantiation the roadmap asks for.
+general theorem that does the work, and this is its instantiation over a Tate ring.
 Metrisability appears as a countably generated uniformity rather than as a metric, which is both
 the weaker hypothesis and the vocabulary Henkel's own statement is phrased in.
 
@@ -188,7 +189,8 @@ This is **not** Wedhorn Proposition 6.18(2), which assumes `A` noetherian and `M
 generated with the canonical topology of 6.18(1), and *concludes* both continuity and openness onto
 the image. Here continuity is a hypothesis and the closed-range hypothesis stands in for what the
 noetherian finitely generated setting would supply. It is the openness conjunct of 6.18(2) as a
-free-standing lemma, and an ingredient for it rather than the proposition.
+free-standing lemma; the proposition itself is `LinearMap.isStrictMap_of_module_finite`, which
+supplies the closed range by `TauCeti.Huber.isClosed_of_isNoetherian`.
 
 Closedness of the range is the weaker of the two natural hypotheses: an open submodule is closed,
 so a map with *open* range satisfies it too. Consumers recover the openness of `f.rangeRestrict`
@@ -207,8 +209,9 @@ theorem IsTateRing.isStrictMap_of_isClosed_range (f : M →ₗ[A] N)
 `TauCeti.Huber.IsTateRing.isOpenMap`, the map does not merely carry open sets to open sets: the
 topology of `N` is the one coinduced from `M`.
 
-This is the form Wedhorn's strict morphisms will use, where what matters is not that images are
-open but that the target's topology is determined by the source's. It delegates to
+This is the form that determines the topology of a finite module
+(`TauCeti.Huber.IsTateRing.isModuleTopology`), where what matters is not that images are open but
+that the target's topology is determined by the source's. It delegates to
 `TauCeti.HasZeroSequenceOfUnits.isQuotientMap`, which supplies the full continuity of `f` that the
 quotient conclusion needs from continuity at zero alone. -/
 theorem IsTateRing.isQuotientMap (f : M →ₗ[A] N) (hf : Function.Surjective f)
@@ -230,8 +233,8 @@ the action is, hence open by `TauCeti.Huber.IsTateRing.isOpenMap`.
 
 Openness is the content. It is what turns "every element of `N` is a combination of the `gᵢ`" into
 "every *small* element is a combination with *small* coefficients", and that quantitative form is
-what the Banach-theorem arguments over a Tate ring consume. This is an ingredient for the
-BGR §3.7.2/1 density argument on the route to Wedhorn 6.17/6.18, not that argument itself.
+what the Banach-theorem arguments over a Tate ring consume. It is the open presentation used by
+the BGR §3.7.2/1 density argument, `TauCeti.Huber.eq_top_of_dense_of_module_finite`.
 
 Nothing is asked of `g` beyond spanning; the hypotheses are `TauCeti.Huber.IsTateRing.isOpenMap`'s,
 with the source instantiated at `ι → A` — which is where `A`'s own completeness, countably
@@ -293,8 +296,8 @@ target is asked only to be a topological `A`-module — no completeness, no sepa
 generated uniformity, not even a uniform structure. Both are genuine weakenings, not oversights;
 the source carries the whole burden, as it must, since it is the source being finitely generated
 that makes the quotient presentation available. The openness conjunct of 6.18(2) is
-`TauCeti.Huber.IsTateRing.isStrictMap_of_isClosed_range`, which still takes as a hypothesis the
-closed range that the noetherian finitely generated setting would supply.
+`TauCeti.Huber.IsTateRing.isStrictMap_of_isClosed_range`, which takes the closed range as a
+hypothesis; `LinearMap.isStrictMap_of_module_finite` combines the two conjuncts into 6.18(2).
 
 Mathlib's `LinearMap.continuous_of_finiteDimensional` is the same phenomenon over a complete
 nontrivially normed field, where finite-dimensionality plays the role finite generation plays here;

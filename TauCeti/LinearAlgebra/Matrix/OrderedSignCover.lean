@@ -42,7 +42,7 @@ exactly that the diagram has no bonds, which is proved in
 The group structure, the inclusion of `ℤˣ`, the projection to `Multiplicative Q`, the exactness of
 `1 → ℤˣ → Q̂ → Q → 1`, the section `a ↦ (a, 1)` and the centrality of `ℤˣ` all come from the general
 factor-set construction `TauCeti.FactorSet.Extension` for the trivial action of `Q` on `ℤˣ`; this
-file supplies the sign cocycle and the two facts specific to it.
+file supplies the sign cocycle and the facts specific to it.
 
 ## Main definitions
 
@@ -61,6 +61,7 @@ file supplies the sign cocycle and the two facts specific to it.
   diagonal, `orderedSignForm B a b + orderedSignForm B b a` and `a ⬝ᵥ B *ᵥ b` have the same parity.
 * `Matrix.orderedSign_div_orderedSign_swap`: for symmetric `B` with even diagonal,
   `ε(a, b) / ε(b, a) = (-1) ^ (a ⬝ᵥ B *ᵥ b)`.
+* `Matrix.SignCover.inv_canonicalSection`: the inverse lift `⟨1, a⟩⁻¹ = ε(a, a) ⟨1, -a⟩`.
 * `Matrix.commutatorElement_signCover`: the commutator formula in `Q̂`.
 * `Matrix.forall_canonicalSection_signFactorSet_mul_iff`: the section `a ↦ (a, 1)` is a
   homomorphism exactly when all strictly lower entries of `B` are even.
@@ -204,6 +205,15 @@ theorem SignCover.tau_ne_one : SignCover.tau B ≠ 1 := by
 
 theorem SignCover.tau_mem_center : SignCover.tau B ∈ Subgroup.center (SignCover B) :=
   FactorSet.inl_range_le_center _ trivialMulDistribMulAction_smul ⟨-1, rfl⟩
+
+/-- **The inverse lift** in the ordered sign cover: the inverse of the section value `⟨1, a⟩` lies
+over `-a` with the sign `ε(a, a)`, that is, `⟨1, a⟩⁻¹ = ε(a, a) ⟨1, -a⟩`. -/
+theorem SignCover.inv_canonicalSection (a : Multiplicative (I → ℤ)) :
+    ((signFactorSet B).canonicalSection a)⁻¹ =
+      FactorSet.inl (signFactorSet B) (orderedSign B a a) *
+        (signFactorSet B).canonicalSection a⁻¹ := by
+  rw [FactorSet.inv_canonicalSection, trivialMulDistribMulAction_smul, signFactorSet_apply,
+    (orderedSign B a).map_inv, inv_inv]
 
 /-- **The commutator formula of the ordered sign cover.** For a symmetric matrix `B` with even
 diagonal, two elements of the cover lying over `a` and `b` commute up to the power
