@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.Birkhoff
+public import TauCeti.Data.Matrix.Permutation
 
 /-!
 # Total support of square matrices
@@ -80,22 +81,21 @@ theorem exists_perm_ne_zero_of_mem_doublyStochastic (hK : K ∈ doublyStochastic
     rw [hentry]
     exact lt_of_le_of_ne (nonneg_of_mem_doublyStochastic hK) (Ne.symm hij)
   obtain ⟨σ, -, hσ⟩ := Finset.sum_pos_iff_of_nonneg
-    (fun σ _ ↦ mul_nonneg (hw σ) (nonneg_of_mem_doublyStochastic
-      (permMatrix_mem_doublyStochastic (σ := σ)))) |>.1 hpos
+    (fun σ _ ↦ mul_nonneg (hw σ) (by
+      simp only [PEquiv.toMatrix_toPEquiv_apply]
+      exact (Pi.single_nonneg (α := fun _ : n ↦ R)).2 zero_le_one _)) |>.1 hpos
   have hσij : σ i = j := by
     by_contra hne
-    simp [PEquiv.toMatrix_apply, Equiv.toPEquiv_apply, hne] at hσ
+    simp only [PEquiv.toMatrix_toPEquiv_apply] at hσ
+    simp [hne] at hσ
   refine ⟨σ, hσij, fun k ↦ ne_of_gt ?_⟩
   have hwσ : 0 < w σ := by
-    simpa [PEquiv.toMatrix_apply, Equiv.toPEquiv_apply, hσij] using hσ
+    simpa [PEquiv.toMatrix_toPEquiv_apply, hσij] using hσ
   calc
     0 < w σ := hwσ
-    _ = w σ * σ.permMatrix R k (σ k) := by simp
-    _ ≤ ∑ τ, w τ * τ.permMatrix R k (σ k) :=
-      Finset.single_le_sum (fun τ _ ↦ mul_nonneg (hw τ)
-        (nonneg_of_mem_doublyStochastic (permMatrix_mem_doublyStochastic (σ := τ))))
-        (Finset.mem_univ σ)
-    _ = K k (σ k) := hentry _ _
+    _ ≤ (∑ τ, w τ • τ.permMatrix R) k (σ k) :=
+      weight_le_sum_permMatrix Finset.univ w (fun τ _ ↦ hw τ) (Finset.mem_univ σ) k
+    _ = K k (σ k) := congrArg (fun M : Matrix n n R ↦ M k (σ k)) hsum
 
 /-- A doubly stochastic matrix of positive order has total support. -/
 theorem hasTotalSupport_of_mem_doublyStochastic [Nonempty n]
@@ -131,13 +131,12 @@ theorem HasTotalSupport.exists_mem_doublyStochastic (hK : HasTotalSupport K) :
     by_contra hij
     obtain ⟨σ, hσij, hσ⟩ := hK.2 i j hij
     have hσmem : σ ∈ s := Finset.mem_filter.2 ⟨Finset.mem_univ _, hσ⟩
-    have hle : (s.card : R)⁻¹ * σ.permMatrix R i j ≤ P i j := by
-      rw [hentry]
-      exact Finset.single_le_sum (fun τ _ ↦ mul_nonneg (by positivity)
-        (nonneg_of_mem_doublyStochastic (permMatrix_mem_doublyStochastic (σ := τ)))) hσmem
+    have hle : (s.card : R)⁻¹ ≤ P i j := by
+      simpa only [hσij] using
+        weight_le_sum_permMatrix s (fun _ ↦ (s.card : R)⁻¹)
+          (fun _ _ ↦ by positivity) hσmem i
     have hpos : 0 < (s.card : R)⁻¹ := inv_pos.2 (by exact_mod_cast hs.card_pos)
-    have hposP : 0 < P i j := hpos.trans_le (by
-      simpa [PEquiv.toMatrix_apply, Equiv.toPEquiv_apply, hσij] using hle)
+    have hposP : 0 < P i j := hpos.trans_le hle
     exact hposP.ne' hzero
   · intro hij
     rw [hentry]
@@ -146,7 +145,8 @@ theorem HasTotalSupport.exists_mem_doublyStochastic (hK : HasTotalSupport K) :
     have hσij : σ i ≠ j := by
       intro heq
       exact (Finset.mem_filter.1 hσ).2 i (heq ▸ hij)
-    simp [PEquiv.toMatrix_apply, Equiv.toPEquiv_apply, hσij]
+    simp only [PEquiv.toMatrix_toPEquiv_apply]
+    simp [hσij]
 
 /-- Total support is equivalent to a doubly stochastic realization of the same zero pattern.
 The nonempty index type is necessary because the classical definition excludes the zero
