@@ -192,6 +192,7 @@ theorem pderiv_taylor (a : σ → R) (i : σ) (p : MvPolynomial σ R) :
 
 /-- The linear Taylor coefficients of `p` at `a` are the values of its partial derivatives:
 `[Yᵢ] p(a + Y) = (∂p/∂Xᵢ)(a)`. -/
+@[simp]
 theorem coeff_single_one_taylor (a : σ → R) (i : σ) (p : MvPolynomial σ R) :
     (taylor a p).coeff (Finsupp.single i 1) = eval a (pderiv i p) := by
   classical
@@ -202,7 +203,7 @@ theorem coeff_single_one_taylor (a : σ → R) (i : σ) (p : MvPolynomial σ R) 
 degree-one component of `p(a + Y)` is `∑ᵢ (∂p/∂Xᵢ)(a) Yᵢ`. -/
 theorem homogeneousComponent_one_taylor [Fintype σ] (a : σ → R) (p : MvPolynomial σ R) :
     homogeneousComponent 1 (taylor a p) = ∑ i, eval a (pderiv i p) • X i := by
-  simp [homogeneousComponent_one_eq_sum, coeff_single_one_taylor]
+  simp [homogeneousComponent_one_eq_sum]
 
 /-- The Taylor shift does not increase the degree in any variable. -/
 theorem degreeOf_taylor_le (a : σ → R) (i : σ) (p : MvPolynomial σ R) :
