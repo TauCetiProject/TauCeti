@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Compactification.OnePoint.Basic
 public import TauCeti.Topology.JordanCurve.Basic
+import Mathlib.Geometry.Manifold.Instances.Sphere
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.Topology.Compactification.OnePoint.Sphere
 import TauCeti.AlgebraicTopology.Singular.JordanBrouwer
@@ -14,11 +15,13 @@ import TauCeti.AlgebraicTopology.Singular.JordanBrouwer
 /-!
 # Jordan separation on the Riemann sphere
 
-A Jordan curve `J` in the Riemann sphere `OnePoint ℂ` separates it: `Jᶜ` is not preconnected. This
-is the Jordan–Brouwer separation theorem for the two-sphere,
+A Jordan curve `J` in the Riemann sphere `OnePoint ℂ` separates it into exactly two connected
+components. This is the Jordan–Brouwer separation theorem for the two-sphere,
 `TauCeti.natCard_zerothHomotopy_sphere_compl_range_eq_two`, transported along Mathlib's
-stereographic homeomorphism `onePointEquivSphereOfFinrankEq`, in the connected form
-`TauCeti.not_isPreconnected_compl_range_sphere` that holds because the sphere is a manifold.
+stereographic homeomorphism `onePointEquivSphereOfFinrankEq`. Path components and connected
+components of `Jᶜ` agree because the sphere is a manifold, so `Jᶜ` is locally path connected. In
+particular `Jᶜ` is not preconnected, which is also the connected form
+`TauCeti.not_isPreconnected_compl_range_sphere`.
 
 The consequence used for unbounded Jordan domains is an exterior point. If `U ⊆ ℂ` is open and
 connected and its frontier, together with the point at infinity, is a Jordan curve of the Riemann
@@ -28,6 +31,8 @@ such a point turns it into a bounded Jordan domain of the plane.
 
 ## Main results
 
+* `TauCeti.IsJordanCurve.natCard_connectedComponents_compl_eq_two_onePoint`: the complement of a
+  Jordan curve in the Riemann sphere has exactly two connected components.
 * `TauCeti.IsJordanCurve.not_isPreconnected_compl_onePoint` — a Jordan curve separates the Riemann
   sphere.
 * `TauCeti.exists_notMem_closure_of_isJordanCurve_insert_infty` — an open connected set whose
@@ -45,6 +50,32 @@ namespace TauCeti
 
 open Metric Set Topology
 open scoped OnePoint
+
+/-- **The Jordan curve theorem on the Riemann sphere.** The complement of a Jordan curve in
+`OnePoint ℂ` has exactly two connected components. -/
+theorem IsJordanCurve.natCard_connectedComponents_compl_eq_two_onePoint
+    {J : Set (OnePoint ℂ)} (hJ : IsJordanCurve J) : Nat.card (ConnectedComponents ↥Jᶜ) = 2 := by
+  obtain ⟨e⟩ := isJordanCurve_iff.mp hJ
+  -- stereographic projection carries `J` to an embedded circle of the sphere
+  let Φ : OnePoint ℂ ≃ₜ sphere (0 : EuclideanSpace ℝ (Fin 3)) 1 :=
+    onePointEquivSphereOfFinrankEq (by simp)
+  let φ := sphereCircleHomeomorph (0 : ℂ) one_pos
+  let h := Φ ∘ jordanParam e ∘ φ
+  have hc : Continuous h := Φ.continuous.comp ((continuous_jordanParam e).comp φ.continuous)
+  have hrange : (range h)ᶜ = Φ '' Jᶜ := by
+    rw [range_comp, range_comp, φ.range_coe, image_univ, range_jordanParam, ← Φ.image_compl]
+  have hcard := natCard_zerothHomotopy_sphere_compl_range_eq_two (by simp) hc
+    (Φ.injective.comp ((jordanParam_injective e).comp φ.injective))
+  -- the sphere is a manifold, so path components of the open set `(range h)ᶜ` are its components
+  have : Fact (Module.finrank ℝ (EuclideanSpace ℝ (Fin 3)) = 2 + 1) := ⟨by simp⟩
+  have := ChartedSpace.locallyPathConnectedSpace (EuclideanSpace ℝ (Fin 2))
+    (sphere (0 : EuclideanSpace ℝ (Fin 3)) 1)
+  have := (isCompact_range hc).isClosed.isOpen_compl.locallyPathConnectedSpace
+  rw [← Nat.card_congr connectedComponentsEquivZerothHomotopy] at hcard
+  let ψ : ↥Jᶜ ≃ₜ ↥(range h)ᶜ := (Φ.image Jᶜ).trans (Homeomorph.setCongr hrange.symm)
+  rw [← hcard]
+  exact Nat.card_congr (ψ.isQuotientMap.isCoinducing.connectedComponentsHomeomorph
+    fun y => by simpa using isConnected_singleton).toEquiv
 
 /-- **The Jordan separation theorem on the Riemann sphere.** The complement of a Jordan curve in
 `OnePoint ℂ` is not preconnected. -/

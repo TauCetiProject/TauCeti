@@ -56,6 +56,9 @@ regularity assumptions on `K`. The related frontier bound in
 * `TauCeti.mem_filledHull_or_mem_filledHull_of_notMem_connectedComponentIn` — of two points in
   different complementary components, at least one lies in the filled hull, in dimension at
   least two.
+* `TauCeti.connectedComponentIn_compl_eq_compl_filledHull` and
+  `TauCeti.isConnected_compl_filledHull`: the complement of the filled hull is that unbounded
+  component, in dimension at least two.
 -/
 
 public section
@@ -226,5 +229,28 @@ theorem mem_filledHull_or_mem_filledHull_of_notMem_connectedComponentIn (h : 1 <
     simp only [mem_filledHull_iff] at hcon
     exact hxy ((connectedComponentIn_compl_eq_of_unbounded_component h hK hcon.1 hcon.2).symm ▸
       mem_connectedComponentIn (mem_compl hy))
+
+/-- **Outside its filled hull, the complement of a bounded set is a single component.** In a real
+normed space of dimension at least two, the component of any point outside the filled hull of a
+bounded set `K` is the whole complement of the filled hull. -/
+theorem connectedComponentIn_compl_eq_compl_filledHull (h : 1 < Module.rank ℝ E)
+    (hK : IsBounded K) (hx : x ∉ filledHull K) :
+    connectedComponentIn Kᶜ x = (filledHull K)ᶜ := by
+  refine Subset.antisymm (fun y hy hyH => hx ?_) fun y hy => ?_
+  · rw [mem_filledHull_iff, connectedComponentIn_eq hy]
+    exact mem_filledHull_iff.mp hyH
+  · rw [connectedComponentIn_compl_eq_of_unbounded_component h hK (mt mem_filledHull_iff.mpr hx)
+      (mt mem_filledHull_iff.mpr hy)]
+    exact mem_connectedComponentIn fun hyK => hy (subset_filledHull hyK)
+
+/-- **The complement of the filled hull of a bounded set is connected** in a real normed space of
+dimension at least two: it is the unique unbounded component of the complement of the set. -/
+theorem isConnected_compl_filledHull (h : 1 < Module.rank ℝ E) (hK : IsBounded K) :
+    IsConnected (filledHull K)ᶜ := by
+  have : Nontrivial E := rank_pos_iff_nontrivial.mp (zero_lt_one.trans h)
+  obtain ⟨x, hx⟩ : ((filledHull K)ᶜ).Nonempty := nonempty_compl.mpr fun hH =>
+    NormedSpace.unbounded_univ ℝ E (hH ▸ isBounded_filledHull.mpr hK)
+  rw [← connectedComponentIn_compl_eq_compl_filledHull h hK hx]
+  exact isConnected_connectedComponentIn_iff.mpr fun hxK => hx (subset_filledHull hxK)
 
 end TauCeti
