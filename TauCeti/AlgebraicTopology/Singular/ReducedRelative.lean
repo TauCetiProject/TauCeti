@@ -17,7 +17,9 @@ connecting morphism is killed by the map to `H₀(X)`, which commutes with augme
 The resulting morphism `TopPair.reducedSingularHomologyδ` is natural in maps of pairs and is an
 isomorphism when the reduced homology of `X` vanishes in degrees `k` and `k + 1`.  Dually, the
 quotient map `Hₖ₊₁(X) ⟶ Hₖ₊₁(X, A)` is an isomorphism when the reduced homology of `A` vanishes in
-degrees `k` and `k + 1` (`TopPair.isIso_singularHomologyπ`).
+degrees `k` and `k + 1` (`TopPair.isIso_singularHomologyπ`). In degree zero, the class of a point
+of the subspace vanishes in relative homology
+(`TauCeti.singularHomology₀Section_comp_singularHomologyπ_of_mem`).
 
 Coefficients are an object of an abelian category with coproducts.
 
@@ -155,3 +157,22 @@ theorem isIso_singularHomologyπ {k : ℕ}
   exact isIso_of_mono_of_epi _
 
 end TopPair
+
+namespace TauCeti
+
+variable {A : Type u} [Category.{v} A] [HasCoproducts.{w} A] [Abelian A] (R : A)
+
+/-- **The class of a point of the subspace vanishes in relative homology**: for `y ∈ B`, the
+class of `y` in `H₀(Y)` maps to zero in `H₀(Y, B)`, since it comes from `H₀(B)`. -/
+@[simp, reassoc]
+lemma singularHomology₀Section_comp_singularHomologyπ_of_mem {Y : TopCat.{w}} {B : Set Y}
+    {y : Y} (hy : y ∈ B) :
+    singularHomology₀Section R y ≫ (TopPair.ofSubset B).singularHomologyπ R 0 = 0 := by
+  -- The class of `y` is the image of the class of `⟨y, hy⟩ : B`; the two presentations of the
+  -- ambient homology agree only up to unfolding, so the composites are reassociated by terms.
+  have h := singularHomology₀Section_naturality R (TopPair.ofSubset B).map ⟨y, hy⟩ =≫
+    (TopPair.ofSubset B).singularHomologyπ R 0
+  exact h.symm.trans ((Category.assoc _ _ _).trans ((singularHomology₀Section R _ ≫=
+    (TopPair.ofSubset B).homologyMap_comp_singularHomologyπ R 0).trans comp_zero))
+
+end TauCeti
