@@ -50,15 +50,18 @@ universe u
 
 variable {V : Type u} [AddCommGroup V] [Module ℝ V]
 
+/-- The complex-linear extension of an almost complex structure squares to minus the identity. -/
+theorem baseChange_comp_self (J : AlmostComplexStructure V) :
+    (J.toLinearMap.baseChange ℂ).comp (J.toLinearMap.baseChange ℂ) = -LinearMap.id := by
+  simpa only [LinearMap.baseChange_comp, LinearMap.baseChange_neg, LinearMap.baseChange_id]
+    using congrArg (LinearMap.baseChange ℂ) J.square_neg
+
 /-- The `i`- and `-i`-eigenspaces of the complexification of an almost complex structure are
 complementary. -/
 theorem isCompl_eigenspace_baseChange_I_neg_I (J : AlmostComplexStructure V) :
     IsCompl (Module.End.eigenspace (J.toLinearMap.baseChange ℂ) Complex.I)
-      (Module.End.eigenspace (J.toLinearMap.baseChange ℂ) (-Complex.I)) := by
-  apply Module.End.isCompl_eigenspace_I_neg_I_of_sq_eq_neg_id
-  have h := congrArg (LinearMap.baseChange ℂ) J.square_neg
-  simpa only [LinearMap.baseChange_comp, LinearMap.baseChange_neg,
-    LinearMap.baseChange_id] using h
+      (Module.End.eigenspace (J.toLinearMap.baseChange ℂ) (-Complex.I)) :=
+  Module.End.isCompl_eigenspace_I_neg_I_of_sq_eq_neg_id _ J.baseChange_comp_self
 
 /-! ## The `(1,0)` and `(0,1)` parts of a real vector -/
 
