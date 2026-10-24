@@ -921,6 +921,25 @@ theorem zmodFourAddEquivCheckerboardDiscriminantGroup_apply_one (hn : Odd n) :
   rw [zmodFourAddEquivCheckerboardDiscriminantGroup]
   exact zmodAddEquivOfGenerator_apply_one _ _
 
+/-- The odd-rank identification sends `2 ∈ ℤ/4` to the vector class. -/
+@[simp]
+theorem zmodFourAddEquivCheckerboardDiscriminantGroup_apply_two (hn : Odd n) :
+    letI : NeZero n := NeZero.of_pos hn.pos
+    zmodFourAddEquivCheckerboardDiscriminantGroup n hn 2 = checkerboardVectorClass n := by
+  rw [show (2 : ZMod 4) = 1 + 1 by decide, map_add,
+    zmodFourAddEquivCheckerboardDiscriminantGroup_apply_one, ← two_zsmul,
+    two_zsmul_checkerboardSpinorClass_of_odd n hn]
+
+/-- The odd-rank identification sends `3 ∈ ℤ/4` to the cospinor class. -/
+@[simp]
+theorem zmodFourAddEquivCheckerboardDiscriminantGroup_apply_three (hn : Odd n) :
+    letI : NeZero n := NeZero.of_pos hn.pos
+    zmodFourAddEquivCheckerboardDiscriminantGroup n hn 3 = checkerboardCospinorClass n := by
+  rw [show (3 : ZMod 4) = 2 + 1 by decide, map_add,
+    zmodFourAddEquivCheckerboardDiscriminantGroup_apply_one,
+    zmodFourAddEquivCheckerboardDiscriminantGroup_apply_two,
+    checkerboardVectorClass_add_checkerboardSpinorClass]
+
 variable {n} in
 /-- The homomorphism `ℤ/2 → A_L` determined by an element of order dividing two. -/
 private noncomputable def checkerboardZModTwoHom (x : (checkerboardLattice n).DiscriminantGroup)
