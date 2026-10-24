@@ -84,7 +84,8 @@ procyclic pro-`p` group (`TauCeti.completedGroupAlgebra.ker_proj_comp_aeval`).
   by reduction and form an inverse system.
 * `TauCeti.Iwasawa.levelCoordinate_transition`, `TauCeti.Iwasawa.levelTransition_levelCoordinate`:
   compatibility with `ℤ/pⁿ → ℤ/pᵐ` for `m ≤ n`.
-* `TauCeti.Iwasawa.levelCoordinate_zero`: at level zero the coordinate is the constant coefficient.
+* `TauCeti.Iwasawa.levelCoordinate_zero_eq_single_constantCoeff`: at level zero the coordinate is
+  the constant coefficient.
 * `TauCeti.Iwasawa.iwasawaCoordinate_injective`: over a noetherian `O`, `⋂ₙ (ω_n) = 0`
   (`PowerSeries.iInf_span_one_add_X_pow_sub_one_eq_bot`), so the product of the level maps is
   injective.
@@ -300,7 +301,7 @@ theorem levelTransition_levelCoordinate {m n : ℕ} (h : m ≤ n) (F : O⟦X⟧)
 
 /-- At level zero the coordinate is the constant coefficient, as an element of
 `O[ℤ/1] = O[1]`. -/
-theorem levelCoordinate_zero (F : O⟦X⟧) :
+theorem levelCoordinate_zero_eq_single_constantCoeff (F : O⟦X⟧) :
     levelCoordinate hp 0 F = MonoidAlgebra.single 1 (constantCoeff F) := by
   have : Subsingleton (ZMod (p ^ 0)) := by rw [pow_zero]; infer_instance
   have hX : levelCoordinate hp 0 X = 0 := by

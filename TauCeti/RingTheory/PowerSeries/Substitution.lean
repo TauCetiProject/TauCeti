@@ -9,9 +9,10 @@ public import Mathlib.RingTheory.PowerSeries.Binomial
 public import Mathlib.RingTheory.PowerSeries.Derivative
 public import Mathlib.RingTheory.PowerSeries.Substitution
 public import Mathlib.RingTheory.PowerSeries.Trunc
-public import TauCeti.RingTheory.PowerSeries.Evaluation
 -- Proof-only: lowest homogeneous components of powers.
 import TauCeti.RingTheory.MvPowerSeries.Order
+-- Proof-only: algebra maps out of `R⟦X⟧` agree with `aeval` on polynomials.
+import TauCeti.RingTheory.PowerSeries.Evaluation
 import Mathlib.RingTheory.PowerSeries.Inverse
 
 /-!
