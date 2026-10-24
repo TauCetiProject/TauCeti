@@ -32,6 +32,7 @@ instance orderedStructure_orderStructure (M : Type*) [LE M] :
 /-- Expanding a language by the order symbol preserves the interpretation of `≤`. -/
 instance orderedStructure_sum [L.Structure M] [LE M] [Language.order.Structure M]
     [Language.order.OrderedStructure M] : (L.sum Language.order).OrderedStructure M :=
-  ⟨fun x ↦ relMap_leSymb (L := Language.order) x⟩
+  -- The order symbol of `L.sum Language.order` is `Sum.inr leSymb`.
+  ⟨fun x ↦ (congrFun (relMap_sumInr (L₁ := L) leSymb) x).to_iff.trans (relMap_leSymb x)⟩
 
 end FirstOrder.Language
