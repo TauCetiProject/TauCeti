@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.Abelian
-public import TauCeti.LinearAlgebra.SymmetricAlgebra.AdjointAction
+public import TauCeti.LinearAlgebra.SymmetricAlgebra.Derivation.OfEnd
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Grading
 import TauCeti.Algebra.DirectSum.Internal
 
@@ -15,10 +15,11 @@ import TauCeti.Algebra.DirectSum.Internal
 
 Let `L` be a Lie algebra over a commutative ring `R` and `M` a Lie module. Each endomorphism
 `m ↦ ⁅x, m⁆` of `M` extends uniquely to a derivation of the symmetric algebra `S(M)`, and these
-derivations preserve brackets. For `M = L` this is the adjoint action of `L` on `S(L)`
-(`TauCeti.SymmetricAlgebra.adjointDerivation`); for the dual `M = L*`, with Mathlib's contragredient
-action `⁅x, φ⁆ = -φ ∘ ad x`, it is the coadjoint action on `S(L*)`, the algebra of polynomial
-functions on `L`.
+derivations preserve brackets, so `S(M)` is again a Lie module over `L` and the generic Lie-module
+API applies to it. For `M = L` this is the adjoint action of `L` on `S(L)`; for the dual `M = L*`,
+with Mathlib's contragredient action `⁅x, φ⁆ = -φ ∘ ad x`, it is the coadjoint action on `S(L*)`,
+the algebra of polynomial functions on `L`. The action is natural in `M`, and for the adjoint
+action also in `L`.
 
 The elements of `S(M)` killed by every derivation `⁅x, -⁆` form a subalgebra, the **Lie
 invariants** `S(M)^L`. The derivations preserve each homogeneous degree, so the homogeneous
@@ -34,14 +35,20 @@ functions `S(L*)^L` with the Weyl-invariant polynomial functions on a Cartan sub
 ## Main definitions
 
 * `TauCeti.SymmetricAlgebra.lieModuleDerivation`: the action of `L` on `S(M)` by derivations.
+* `TauCeti.SymmetricAlgebra.instLieRingModule`, `TauCeti.SymmetricAlgebra.instLieModule`: `S(M)`
+  is a Lie module over `L` through these derivations, with
+  `TauCeti.SymmetricAlgebra.lie_eq_lieModuleDerivation` identifying the bracket.
 * `TauCeti.SymmetricAlgebra.lieInvariants`: the subalgebra `S(M)^L` of Lie invariants.
 
 ## Main results
 
 * `TauCeti.SymmetricAlgebra.lieModuleDerivation_ι`: `x` sends a generator `ι m` to `ι ⁅x, m⁆`.
 * `LieModuleHom.map_apply_lieModuleDerivation`: naturality under Lie module maps.
-* `TauCeti.SymmetricAlgebra.mem_lieInvariants_self_iff`: for the adjoint action, the invariants
-  are the maximal trivial submodule of the Lie module `S(L)`.
+* `LieHom.map_apply_lieModuleDerivation`: naturality of the adjoint action under Lie algebra maps.
+* `TauCeti.SymmetricAlgebra.lieModuleDerivation_mem_homogeneousSubmodule`: the action preserves
+  each homogeneous degree.
+* `TauCeti.SymmetricAlgebra.mem_lieInvariants_iff_mem_maxTrivSubmodule`: the invariants are the
+  maximal trivial submodule of the Lie module `S(M)`.
 * `TauCeti.SymmetricAlgebra.decompose_mem_lieInvariants_iff`: an element is invariant exactly when
   all of its homogeneous components are.
 * `LieModuleEquiv.map_lieInvariants`: a Lie module equivalence carries the invariants
@@ -71,7 +78,8 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 /-! ### The action by derivations -/
 
 /-- The action of `L` on the symmetric algebra of a Lie module `M`, by derivations: `x` acts by the
-derivation extending the endomorphism `m ↦ ⁅x, m⁆` of `M`. -/
+derivation extending the endomorphism `m ↦ ⁅x, m⁆` of `M`. For `M = L` this is the adjoint action
+of `L` on `S(L)`, by the derivations extending `LieAlgebra.ad`. -/
 noncomputable def lieModuleDerivation : L →ₗ⁅R⁆ Derivation R S S :=
   (derivationOfEnd R M).comp (LieModule.toEnd R L M)
 
@@ -86,11 +94,20 @@ theorem lieModuleDerivation_ι (x : L) (m : M) :
     lieModuleDerivation R L M x (ι R M m) = ι R M ⁅x, m⁆ := by
   rw [lieModuleDerivation_apply, derivationOfEnd_ι, LieModule.toEnd_apply_apply]
 
-/-- For `L` acting on itself, the action on `S(L)` is the adjoint action. -/
-theorem lieModuleDerivation_self : lieModuleDerivation R L L = adjointDerivation R L :=
-  LieHom.ext fun x ↦ by
-    rw [lieModuleDerivation_apply, adjointDerivation_apply]
-    exact congrArg _ (LinearMap.ext fun y ↦ by simp)
+/-- The symmetric algebra of `M` is a Lie ring module over `L` through the derivations
+`lieModuleDerivation`. -/
+noncomputable instance instLieRingModule : LieRingModule L S :=
+  LieRingModule.compLieHom S (lieModuleDerivation R L M)
+
+/-- The symmetric algebra of `M` is a Lie module over `L` through the derivations
+`lieModuleDerivation`. -/
+noncomputable instance instLieModule : LieModule R L S :=
+  LieModule.compLieHom S (lieModuleDerivation R L M)
+
+/-- The bracket of `x : L` with `p ∈ S(M)` is the derivation by which `x` acts, applied to `p`. -/
+@[simp]
+theorem lie_eq_lieModuleDerivation (x : L) (p : S) : ⁅x, p⁆ = lieModuleDerivation R L M x p :=
+  (rfl)
 
 /-- The action of `L` preserves each homogeneous submodule of the symmetric algebra. -/
 theorem lieModuleDerivation_mem_homogeneousSubmodule (x : L) {n : ℕ} {p : S}
@@ -109,7 +126,11 @@ theorem lieModuleDerivation_decompose (x : L) (p : S) (n : ℕ) :
 
 section Naturality
 
-variable {R L M} {N : Type w'} [AddCommGroup N] [Module R N] [LieRingModule L N] [LieModule R L N]
+variable {R L M}
+
+section LieModuleHom
+
+variable {N : Type w'} [AddCommGroup N] [Module R N] [LieRingModule L N] [LieModule R L N]
 
 /-- The symmetric-algebra map induced by a morphism of Lie modules intertwines the actions. -/
 theorem _root_.LieModuleHom.map_apply_lieModuleDerivation (f : M →ₗ⁅R,L⁆ N) (x : L) (p : S) :
@@ -117,6 +138,23 @@ theorem _root_.LieModuleHom.map_apply_lieModuleDerivation (f : M →ₗ⁅R,L⁆
       lieModuleDerivation R L N x (map R (f : M →ₗ[R] N) p) :=
   map_apply_derivationOfEnd R (f : M →ₗ[R] N) (f := LieModule.toEnd R L M x)
     (g := LieModule.toEnd R L N x) (LinearMap.ext fun m ↦ by simp) p
+
+end LieModuleHom
+
+section LieHom
+
+variable {L' : Type w'} [LieRing L'] [LieAlgebra R L']
+
+/-- The symmetric-algebra map induced by a Lie algebra homomorphism intertwines the adjoint
+actions. -/
+theorem _root_.LieHom.map_apply_lieModuleDerivation (f : L →ₗ⁅R⁆ L') (x : L)
+    (p : SymmetricAlgebra R L) :
+    map R f.toLinearMap (lieModuleDerivation R L L x p) =
+      lieModuleDerivation R L' L' (f x) (map R f.toLinearMap p) :=
+  map_apply_derivationOfEnd R f.toLinearMap (f := LieModule.toEnd R L L x)
+    (g := LieModule.toEnd R L' L' (f x)) (LinearMap.ext fun y ↦ by simp) p
+
+end LieHom
 
 end Naturality
 
@@ -137,11 +175,10 @@ theorem mem_lieInvariants {p : S} :
     p ∈ lieInvariants R L M ↔ ∀ x : L, lieModuleDerivation R L M x p = 0 :=
   Iff.rfl
 
-/-- For `L` acting on itself, the invariants of `S(L)` are the vectors of the adjoint module `S(L)`
-killed by `L`. -/
-theorem mem_lieInvariants_self_iff {p : SymmetricAlgebra R L} :
-    p ∈ lieInvariants R L L ↔ p ∈ LieModule.maxTrivSubmodule R L (SymmetricAlgebra R L) := by
-  simp [mem_lieInvariants, LieModule.mem_maxTrivSubmodule, lieModuleDerivation_self]
+/-- The invariants of `S(M)` are the vectors of the Lie module `S(M)` killed by `L`. -/
+theorem mem_lieInvariants_iff_mem_maxTrivSubmodule {p : S} :
+    p ∈ lieInvariants R L M ↔ p ∈ LieModule.maxTrivSubmodule R L S :=
+  Iff.rfl
 
 /-- The generator `ι m` of a vector `m` killed by `L` is invariant. -/
 theorem ι_mem_lieInvariants {m : M} (hm : ∀ x : L, ⁅x, m⁆ = 0) :

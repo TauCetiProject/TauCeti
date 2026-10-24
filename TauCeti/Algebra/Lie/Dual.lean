@@ -10,12 +10,14 @@ public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import TauCeti.Algebra.Lie.Schur
 
 /-!
-# The dual of a finite-dimensional irreducible Lie module
+# The dual of a Lie module and invariant bilinear forms
 
 The dual `M* = Module.Dual R M` of a Lie module carries the contragredient action
-`⁅x, f⁆ m = - f ⁅x, m⁆` (Mathlib's `Module.Dual.instLieRingModule`). This file records the two
-facts about it that a self-duality statement needs. Nothing here mentions weights, so both are
-stated for an arbitrary Lie algebra acting on an arbitrary module.
+`⁅x, f⁆ m = - f ⁅x, m⁆` (Mathlib's `Module.Dual.instLieRingModule`). This file records three
+facts about it that self-duality statements need: irreducibility of the dual, the dictionary
+between invariant bilinear forms and morphisms `M → M*`, and the equivalence `M ≃ M*` induced by a
+nondegenerate invariant form. Nothing here mentions weights, so all three are stated for an
+arbitrary Lie algebra acting on an arbitrary module.
 
 The first is that irreducibility passes to the dual in finite dimensions. If `N ≤ M*` is stable
 under the action then so is the set of vectors every functional in `N` kills, because `⁅x, f⁆`
@@ -27,11 +29,14 @@ dictionary is already Mathlib's: a bilinear form on `M` *is* a linear map `M →
 `LinearMap.BilinForm` and `Module.Dual` being abbreviations; `LinearMap.BilinForm.lieInvariant_iff`
 says that invariance is exactly membership of the maximal trivial submodule; and
 `LieModule.maxTrivLinearMapEquivLieModuleHom` is the `R`-linear equivalence between that submodule
-and the morphism space. Only the consequence for nonvanishing is recorded here. For an irreducible
-`M` Schur's lemma then upgrades a nonzero morphism to an equivalence, so carrying a nonzero
-invariant form and being self-dual are the same condition. Without irreducibility, a
-nondegenerate invariant form on a finite-dimensional module is itself such an equivalence; for the
-Killing form of a semisimple Lie algebra this identifies the adjoint and coadjoint modules.
+and the morphism space. From this dictionary only the consequence for nonvanishing is recorded
+here. For an irreducible `M` Schur's lemma then upgrades a nonzero morphism to an equivalence, so
+carrying a nonzero invariant form and being self-dual are the same condition.
+
+The third is that, without irreducibility, a nondegenerate invariant form on a finite-dimensional
+module is itself such an equivalence: the linear equivalence `LinearMap.BilinForm.toDual` commutes
+with the actions. For the Killing form of a semisimple Lie algebra this identifies the adjoint and
+coadjoint modules.
 
 ## Main results
 

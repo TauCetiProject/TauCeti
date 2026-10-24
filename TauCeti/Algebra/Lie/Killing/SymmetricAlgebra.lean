@@ -33,8 +33,8 @@ Harish-Chandra isomorphism by Chevalley's restriction theorem.
 ## Main results
 
 * `TauCeti.killingSymmetricEquiv_ι`: a generator `x` goes to the linear function `κ x`.
-* `TauCeti.killingSymmetricEquiv_adjointDerivation`: the equivalence intertwines the adjoint action
-  on `S(L)` with the coadjoint action on `S(L*)`.
+* `TauCeti.killingSymmetricEquiv_lieModuleDerivation`: the equivalence intertwines the adjoint
+  action on `S(L)` with the coadjoint action on `S(L*)`.
 * `TauCeti.map_killingSymmetricEquiv_lieInvariants`: it carries the invariants `S(L)^L` onto the
   invariant polynomial functions `S(L*)^L`.
 
@@ -91,10 +91,10 @@ theorem killingSymmetricEquiv_ι (x : L) :
 
 /-- **The Killing equivalence intertwines the adjoint and coadjoint actions**: it carries the
 adjoint derivation of `x` on `S(L)` to the coadjoint derivation of `x` on `S(L*)`. -/
-theorem killingSymmetricEquiv_adjointDerivation (x : L) (p : SymmetricAlgebra K L) :
-    killingSymmetricEquiv K L (adjointDerivation K L x p) =
+theorem killingSymmetricEquiv_lieModuleDerivation (x : L) (p : SymmetricAlgebra K L) :
+    killingSymmetricEquiv K L (lieModuleDerivation K L L x p) =
       lieModuleDerivation K L (Dual K L) x (killingSymmetricEquiv K L p) := by
-  rw [← lieModuleDerivation_self, killingSymmetricEquiv, mapEquiv_apply, mapEquiv_apply]
+  rw [killingSymmetricEquiv, mapEquiv_apply, mapEquiv_apply]
   exact (killingDuality K L : L →ₗ⁅K,L⁆ Dual K L).map_apply_lieModuleDerivation x p
 
 /-- An element of `S(L)` is invariant exactly when its image in `S(L*)` under the Killing
@@ -111,8 +111,6 @@ theorem map_killingSymmetricEquiv_lieInvariants :
     (lieInvariants K L L).map
         (killingSymmetricEquiv K L : SymmetricAlgebra K L →ₐ[K] SymmetricAlgebra K (Dual K L)) =
       lieInvariants K L (Dual K L) := by
-  rw [← (killingDuality K L).map_lieInvariants]
-  congr 1
-  exact AlgHom.ext fun p ↦ mapEquiv_apply K _ p
+  rw [killingSymmetricEquiv, ← (killingDuality K L).map_lieInvariants, ← mapEquiv_toAlgHom]
 
 end TauCeti
