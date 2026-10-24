@@ -26,7 +26,8 @@ components of an invariant are again invariant. A Lie module equivalence `M ≃ 
 algebra equivalence `S(M) ≃ S(N)` intertwining the two actions, which therefore carries `S(M)^L`
 onto `S(N)^L`.
 
-For a semisimple Lie algebra, the invariants `S(L)^L` are the leading symbols of the centre of the
+For a finite-dimensional semisimple Lie algebra over an algebraically closed field of
+characteristic zero, the invariants `S(L)^L` are the leading symbols of the centre of the
 enveloping algebra, and Chevalley's restriction theorem identifies the invariant polynomial
 functions `S(L*)^L` with the Weyl-invariant polynomial functions on a Cartan subalgebra.
 
@@ -38,12 +39,12 @@ functions `S(L*)^L` with the Weyl-invariant polynomial functions on a Cartan sub
 ## Main results
 
 * `TauCeti.SymmetricAlgebra.lieModuleDerivation_ι`: `x` sends a generator `ι m` to `ι ⁅x, m⁆`.
-* `TauCeti.SymmetricAlgebra.map_apply_lieModuleDerivation`: naturality under Lie module maps.
+* `LieModuleHom.map_apply_lieModuleDerivation`: naturality under Lie module maps.
 * `TauCeti.SymmetricAlgebra.mem_lieInvariants_self_iff`: for the adjoint action, the invariants
   are the maximal trivial submodule of the Lie module `S(L)`.
 * `TauCeti.SymmetricAlgebra.decompose_mem_lieInvariants_iff`: an element is invariant exactly when
   all of its homogeneous components are.
-* `TauCeti.SymmetricAlgebra.map_lieInvariants`: a Lie module equivalence carries the invariants
+* `LieModuleEquiv.map_lieInvariants`: a Lie module equivalence carries the invariants
   onto the invariants.
 
 ## References
@@ -111,7 +112,7 @@ section Naturality
 variable {R L M} {N : Type w'} [AddCommGroup N] [Module R N] [LieRingModule L N] [LieModule R L N]
 
 /-- The symmetric-algebra map induced by a morphism of Lie modules intertwines the actions. -/
-theorem map_apply_lieModuleDerivation (f : M →ₗ⁅R,L⁆ N) (x : L) (p : S) :
+theorem _root_.LieModuleHom.map_apply_lieModuleDerivation (f : M →ₗ⁅R,L⁆ N) (x : L) (p : S) :
     map R (f : M →ₗ[R] N) (lieModuleDerivation R L M x p) =
       lieModuleDerivation R L N x (map R (f : M →ₗ[R] N) p) :=
   map_apply_derivationOfEnd R (f : M →ₗ[R] N) (f := LieModule.toEnd R L M x)
@@ -170,7 +171,7 @@ variable {N : Type w'} [AddCommGroup N] [Module R N] [LieRingModule L N] [LieMod
 /-- An element is invariant exactly when its image under the symmetric-algebra map of a Lie module
 equivalence is. -/
 @[simp]
-theorem map_mem_lieInvariants_iff (e : M ≃ₗ⁅R,L⁆ N) {p : S} :
+theorem _root_.LieModuleEquiv.map_mem_lieInvariants_iff (e : M ≃ₗ⁅R,L⁆ N) {p : S} :
     map R ((e : M ≃ₗ[R] N) : M →ₗ[R] N) p ∈ lieInvariants R L N ↔ p ∈ lieInvariants R L M := by
   have hinj : Function.Injective (map R ((e : M ≃ₗ[R] N) : M →ₗ[R] N)) := fun a b h ↦
     (mapEquiv R (e : M ≃ₗ[R] N)).injective (by simpa only [mapEquiv_apply] using h)
@@ -178,19 +179,19 @@ theorem map_mem_lieInvariants_iff (e : M ≃ₗ⁅R,L⁆ N) {p : S} :
   refine forall_congr' fun x ↦ ?_
   have h : map R ((e : M ≃ₗ[R] N) : M →ₗ[R] N) (lieModuleDerivation R L M x p) =
       lieModuleDerivation R L N x (map R ((e : M ≃ₗ[R] N) : M →ₗ[R] N) p) :=
-    map_apply_lieModuleDerivation (e : M →ₗ⁅R,L⁆ N) x p
+    (e : M →ₗ⁅R,L⁆ N).map_apply_lieModuleDerivation x p
   rw [← h, ← map_zero (map R ((e : M ≃ₗ[R] N) : M →ₗ[R] N)), hinj.eq_iff]
 
 /-- **Transport of invariants**: the symmetric-algebra map of a Lie module equivalence carries the
 invariants onto the invariants. -/
-theorem map_lieInvariants (e : M ≃ₗ⁅R,L⁆ N) :
+theorem _root_.LieModuleEquiv.map_lieInvariants (e : M ≃ₗ⁅R,L⁆ N) :
     (lieInvariants R L M).map (map R ((e : M ≃ₗ[R] N) : M →ₗ[R] N)) = lieInvariants R L N := by
   ext q
   rw [Subalgebra.mem_map]
-  refine ⟨fun ⟨p, hp, hpq⟩ ↦ hpq ▸ (map_mem_lieInvariants_iff e).mpr hp, fun hq ↦ ?_⟩
+  refine ⟨fun ⟨p, hp, hpq⟩ ↦ hpq ▸ e.map_mem_lieInvariants_iff.mpr hp, fun hq ↦ ?_⟩
   have hq' : map R ((e : M ≃ₗ[R] N) : M →ₗ[R] N) ((mapEquiv R (e : M ≃ₗ[R] N)).symm q) = q := by
     rw [← mapEquiv_apply, AlgEquiv.apply_symm_apply]
-  exact ⟨_, (map_mem_lieInvariants_iff e).mp (hq'.symm ▸ hq), hq'⟩
+  exact ⟨_, e.map_mem_lieInvariants_iff.mp (hq'.symm ▸ hq), hq'⟩
 
 end Equiv
 

@@ -95,7 +95,7 @@ theorem killingSymmetricEquiv_adjointDerivation (x : L) (p : SymmetricAlgebra K 
     killingSymmetricEquiv K L (adjointDerivation K L x p) =
       lieModuleDerivation K L (Dual K L) x (killingSymmetricEquiv K L p) := by
   rw [← lieModuleDerivation_self, killingSymmetricEquiv, mapEquiv_apply, mapEquiv_apply]
-  exact map_apply_lieModuleDerivation (killingDuality K L : L →ₗ⁅K,L⁆ Dual K L) x p
+  exact (killingDuality K L : L →ₗ⁅K,L⁆ Dual K L).map_apply_lieModuleDerivation x p
 
 /-- An element of `S(L)` is invariant exactly when its image in `S(L*)` under the Killing
 equivalence is an invariant polynomial function. -/
@@ -103,7 +103,7 @@ equivalence is an invariant polynomial function. -/
 theorem killingSymmetricEquiv_mem_lieInvariants_iff {p : SymmetricAlgebra K L} :
     killingSymmetricEquiv K L p ∈ lieInvariants K L (Dual K L) ↔ p ∈ lieInvariants K L L := by
   rw [killingSymmetricEquiv, mapEquiv_apply]
-  exact map_mem_lieInvariants_iff (killingDuality K L)
+  exact (killingDuality K L).map_mem_lieInvariants_iff
 
 /-- **The Killing equivalence identifies the invariants**: it carries `S(L)^L` onto the invariant
 polynomial functions `S(L*)^L`. -/
@@ -111,7 +111,7 @@ theorem map_killingSymmetricEquiv_lieInvariants :
     (lieInvariants K L L).map
         (killingSymmetricEquiv K L : SymmetricAlgebra K L →ₐ[K] SymmetricAlgebra K (Dual K L)) =
       lieInvariants K L (Dual K L) := by
-  rw [← map_lieInvariants (killingDuality K L)]
+  rw [← (killingDuality K L).map_lieInvariants]
   congr 1
   exact AlgHom.ext fun p ↦ mapEquiv_apply K _ p
 
