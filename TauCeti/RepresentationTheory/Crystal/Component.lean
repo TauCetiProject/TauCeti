@@ -64,9 +64,13 @@ component of its image (`TauCeti.NormalCrystal.component_congr`).
   `TauCeti.NormalCrystal.componentSetoid_apply`: the component equivalence relation is graph
   reachability, equivalently reachability in the adjacency relation.
 * `TauCeti.NormalCrystal.mem_component_iff`, `TauCeti.NormalCrystal.mem_component_self`:
-  membership in a component.
-* `TauCeti.NormalCrystal.component_eq_of_e_eq_some`,
-  `TauCeti.NormalCrystal.component_eq_of_f_eq_some`: the root operators stay inside a component.
+  membership in a component, and `TauCeti.NormalCrystal.component_eq_iff` its characteristic
+  equality criterion: two elements have the same component exactly when they are related by the
+  component equivalence relation.
+* `TauCeti.NormalCrystal.component_eq_of_adj`,
+  `TauCeti.NormalCrystal.component_eq_of_e_eq_some`,
+  `TauCeti.NormalCrystal.component_eq_of_f_eq_some`: adjacent elements, in particular the root
+  operators, stay inside a component.
 * `TauCeti.NormalCrystal.congr_adj`,
   `TauCeti.NormalCrystal.componentSetoid_congr`,
   `TauCeti.NormalCrystal.mem_component_congr_iff`,
@@ -146,10 +150,9 @@ theorem componentSetoid_iff_reachable {x y : B} :
 /-- The component equivalence relation is the reachability relation of the crystal graph. -/
 @[simp]
 theorem componentSetoid_apply {x y : B} :
-    c.componentSetoid x y ↔ Relation.ReflTransGen c.Adj x y :=
-  Iff.of_eq (congrFun (congrFun
-    (SimpleGraph.reachable_fromEdgeSet_fromRel_eq_reflTransGen (r := c.Adj)
-      (inferInstance : Std.Symm c.Adj)) x) y)
+    c.componentSetoid x y ↔ Relation.ReflTransGen c.Adj x y := by
+  rw [componentSetoid_iff_reachable, crystalGraph,
+    SimpleGraph.reachable_fromEdgeSet_fromRel_eq_reflTransGen]
 
 /-- The connected **component** of `x`: the vertex set of the connected component of `x` in the
 crystal graph, that is, the set of elements joined to `x` by a chain of arrows. -/
@@ -167,6 +170,17 @@ theorem mem_component_iff {x y : B} :
 /-- Every element lies in its own component. -/
 theorem mem_component_self (x : B) : x ∈ c.component x := by
   rw [mem_component_iff]
+
+/-- Two elements have the same component exactly when they are related by the component
+equivalence relation, that is, when they are joined by a chain of arrows. -/
+theorem component_eq_iff {x y : B} : c.component x = c.component y ↔ c.componentSetoid x y := by
+  rw [component, component, SimpleGraph.ConnectedComponent.supp_inj,
+    SimpleGraph.ConnectedComponent.eq, componentSetoid_iff_reachable]
+
+/-- Adjacent elements lie in the same component. -/
+theorem component_eq_of_adj {x y : B} (h : c.Adj x y) : c.component x = c.component y := by
+  rw [component_eq_iff, componentSetoid_apply]
+  exact Relation.ReflTransGen.single h
 
 /-- A component is closed under adjacency in the crystal graph. -/
 theorem mem_component_of_adj {x y z : B} (hx : y ∈ c.component x) (h : c.Adj y z) :
@@ -188,17 +202,13 @@ theorem mem_component_of_f_eq_some {i : b.support} {x y z : B} (hx : y ∈ c.com
 
 /-- Raising preserves the component. -/
 theorem component_eq_of_e_eq_some {i : b.support} {x y : B} (h : c.e i x = some y) :
-    c.component x = c.component y := by
-  have hy : y ∈ c.component x := c.mem_component_of_e_eq_some (c.mem_component_self x) h
-  rw [component, SimpleGraph.ConnectedComponent.mem_supp_iff] at hy
-  simp only [component, ← hy]
+    c.component x = c.component y :=
+  c.component_eq_of_adj ⟨i, Or.inl h⟩
 
 /-- Lowering preserves the component. -/
 theorem component_eq_of_f_eq_some {i : b.support} {x y : B} (h : c.f i x = some y) :
-    c.component x = c.component y := by
-  have hy : y ∈ c.component x := c.mem_component_of_f_eq_some (c.mem_component_self x) h
-  rw [component, SimpleGraph.ConnectedComponent.mem_supp_iff] at hy
-  simp only [component, ← hy]
+    c.component x = c.component y :=
+  c.component_eq_of_adj ⟨i, Or.inr h⟩
 
 end Component
 
@@ -418,6 +428,15 @@ def crystalGraphCongr : c.crystalGraph ≃g (c.congr e).crystalGraph where
     intro x y
     simp [crystalGraph_adj, congr_adj]
 
+/-- The graph isomorphism underlying the transport sends a vertex to its image. -/
+@[simp]
+theorem crystalGraphCongr_apply (x : B) : c.crystalGraphCongr e x = e x := (rfl)
+
+/-- The inverse of the graph isomorphism underlying the transport sends a vertex to its
+preimage. -/
+@[simp]
+theorem crystalGraphCongr_symm_apply (y : B') : (c.crystalGraphCongr e).symm y = e.symm y := (rfl)
+
 /-- Transport along a bijection conjugates the component equivalence relations. -/
 theorem componentSetoid_congr :
     (c.congr e).componentSetoid = c.componentSetoid.comap ⇑e.symm := by
@@ -425,7 +444,7 @@ theorem componentSetoid_congr :
   rw [componentSetoid_iff_reachable, Setoid.comap_rel, componentSetoid_iff_reachable]
   have h := SimpleGraph.Iso.reachable_iff (φ := c.crystalGraphCongr e) (u := e.symm x)
     (v := e.symm y)
-  simpa [crystalGraphCongr] using h
+  simpa using h
 
 /-- Transport along a bijection carries the component of `x` to the component of `e x`. -/
 theorem mem_component_congr_iff {x : B} {y : B'} :
