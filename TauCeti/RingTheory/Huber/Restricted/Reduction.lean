@@ -192,17 +192,6 @@ theorem quotientRestrictedCompletionEquivMvPolynomialQuotient_mk
         (restrictedMvPowerSeriesCompletionAlgEquiv k R x) := by
   simp [quotientRestrictedCompletionEquivMvPolynomialQuotient]
 
-/-- The completed quotient comparison sends the image of a restricted series to its
-coefficientwise polynomial reduction. -/
-@[simp]
-theorem quotientRestrictedCompletionEquivMvPolynomialQuotient_mk_coe (hJ : IsAdic J) (hfg : J.FG)
-    (f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set R))
-      isWeightFamily_one_weight) :
-    quotientRestrictedCompletionEquivMvPolynomialQuotient hJ hfg
-      (Ideal.Quotient.mk _ (f : restrictedMvPowerSeriesCompletion k R)) =
-      restrictedReduction J (IsAdic.isOpen_ideal hJ) f := by
-  simp
-
 end Completion
 
 end TauCeti.Huber
