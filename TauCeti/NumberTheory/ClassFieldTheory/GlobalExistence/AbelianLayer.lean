@@ -34,6 +34,10 @@ intersection of their norm subgroups as its norm subgroup (`globalNormSubgroup_i
 and the intersection of two finite Galois extensions has the product of their norm subgroups
 (`globalNormSubgroup_sup`; by norm limitation this needs no abelianity).
 
+The construction and the proofs follow the local counterpart
+`TauCeti/NumberTheory/ClassFieldTheory/LocalExistence/AbelianLayer.lean` declaration for
+declaration, with the global class formation in place of the local one.
+
 ## Main definitions
 
 * `TauCeti.ClassFieldTheory.globalAbelianArtinHom`: the Artin map `C_K →* Gal(L/K)` of an abelian
