@@ -137,9 +137,7 @@ theorem antiholomorphicPart_mem_eigenspace_baseChange_neg_I (v : V) :
 @[simp]
 theorem tmulConj_holomorphicPart (v : V) :
     tmulConj V (J.holomorphicPart v) = J.antiholomorphicPart v := by
-  rw [holomorphicPart_apply, antiholomorphicPart_apply, map_smulₛₗ, map_sub, map_smulₛₗ,
-    tmulConj_tmul, tmulConj_tmul, map_one, map_inv₀, map_ofNat, Complex.conj_I]
-  module
+  simp [holomorphicPart_apply, antiholomorphicPart_apply, Complex.conj_I, map_ofNat]
 
 /-- Conjugation of the complexification maps the `(0,1)`-part of a real vector to its
 `(1,0)`-part. -/

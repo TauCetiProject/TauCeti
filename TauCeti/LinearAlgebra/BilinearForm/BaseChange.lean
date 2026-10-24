@@ -457,14 +457,8 @@ linear equivalence is an isometric equivalence of the base-changed forms. -/
 def _root_.LinearMap.BilinForm.IsometryEquiv.baseChange (f : B₁.IsometryEquiv B₂) :
     (B₁.baseChange A).IsometryEquiv (B₂.baseChange A) where
   toLinearEquiv := (f : M₁ ≃ₗ[R] M₂).baseChange R A M₁ M₂
-  map_app' x y := by
-    simp only [AddHom.toFun_eq_coe, LinearMap.coe_toAddHom, LinearEquiv.coe_coe]
-    induction x using TensorProduct.inductionOn with
-    | add x₁ x₂ h₁ h₂ => simp only [map_add, LinearMap.add_apply, h₁, h₂]
-    | tmul a m =>
-      induction y using TensorProduct.inductionOn with
-      | add y₁ y₂ h₁ h₂ => simp only [map_add, h₁, h₂]
-      | tmul b n => simp
+  map_app' := LinearMap.BilinForm.baseChange_baseChange_baseChange (g := (f : M₁ →ₗ[R] M₂))
+    fun v w => f.map_app w v
 
 /-- On pure tensors, a base-changed isometric equivalence applies the original equivalence to the
 vector. -/

@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Symplectic.Hermitian
 public import TauCeti.LinearAlgebra.BilinearForm.Complexification
 
 import Mathlib.Tactic.LinearCombination
-import Mathlib.Tactic.Module
 
 /-!
 # The induced Hermitian form on the `(1,0)`- and `(0,1)`-parts

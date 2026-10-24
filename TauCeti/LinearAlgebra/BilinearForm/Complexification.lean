@@ -183,18 +183,11 @@ theorem sesqComplexification_self_pos (hB : B.IsSymm) (hpos : B.toQuadraticMap.P
     {x : ℂ ⊗[ℝ] V} (hx : x ≠ 0) : 0 < B.sesqComplexification x x := by
   obtain ⟨a, b, rfl, hxx⟩ := exists_sesqComplexification_self_eq hB x
   rw [hxx, Complex.zero_lt_real]
-  have ha := hpos.nonneg a
-  have hb := hpos.nonneg b
-  rw [BilinMap.toQuadraticMap_apply] at ha hb
-  by_cases ha0 : a = 0
-  · have hb0 : b ≠ 0 := by
-      rintro rfl
-      exact hx (by simp [ha0])
-    have := hpos b hb0
-    rw [BilinMap.toQuadraticMap_apply] at this
-    linarith
-  · have := hpos a ha0
-    rw [BilinMap.toQuadraticMap_apply] at this
-    linarith
+  have hnonneg (c : V) : 0 ≤ B c c := hpos.nonneg c
+  have hpos' {c : V} (hc : c ≠ 0) : 0 < B c c := hpos c hc
+  have hab : a ≠ 0 ∨ b ≠ 0 := by
+    contrapose! hx
+    simp [hx.1, hx.2]
+  rcases hab with h | h <;> linarith [hpos' h, hnonneg a, hnonneg b]
 
 end LinearMap.BilinForm
