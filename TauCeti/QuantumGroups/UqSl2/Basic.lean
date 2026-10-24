@@ -29,11 +29,11 @@ generators and closed under sums and products holds everywhere (`TauCeti.UqSl2.i
 complex-linear map between `UqSl2 q`-modules that commutes with `E`, `F` and `K` is therefore
 `UqSl2 q`-linear, and an element of `UqSl2 q` that commutes with `E`, `F` and `K` is central. We
 also package `K` as a unit and derive the commutation rules with `K⁻¹` and with `K` on the
-right; these are the basic presentation-level identities used when putting words into triangular
-order.  Establishing a PBW basis, and hence nontriviality of this
-presentation, requires additional Ore-extension arguments and is not part of the presentation
-API: `TauCeti.QuantumGroups.UqSl2.OreTower` identifies `UqSl2 q`, for nonzero `q`, with an
-iterated Ore extension of `ℂ[K, K⁻¹]`.
+right, together with the invariance `K F E K⁻¹ = F E`; these are the basic presentation-level
+identities used when putting words into triangular order.  Establishing a PBW basis, and hence
+nontriviality of this presentation, requires additional Ore-extension arguments and is not part
+of the presentation API: `TauCeti.QuantumGroups.UqSl2.OreTower` identifies `UqSl2 q`, for nonzero
+`q`, with an iterated Ore extension of `ℂ[K, K⁻¹]`.
 
 ## Main definitions
 
@@ -233,6 +233,17 @@ theorem f_mul_k : f q * k q = q ^ 2 • (k q * f q) := by
     _ = q ^ 2 • (k q * f q) := by
       rw [kInv_mul_f, mul_smul_comm, smul_mul_assoc]
       simp only [mul_assoc, kInv_mul_k, mul_one]
+
+/-- Conjugation by `K` fixes `F E`: `K F E K⁻¹ = F E`. -/
+theorem k_mul_f_mul_e_mul_kInv : k q * f q * (e q * kInv q) = f q * e q := by
+  rcases eq_or_ne q 0 with rfl | hq
+  · -- At `q = 0` the relation `K F = 0 • F K` forces `F = 0`.
+    have hkf : k (0 : ℂ) * f 0 = 0 := by simp [k_mul_f]
+    have hf : f (0 : ℂ) = 0 := by rw [← one_mul (f 0), ← kInv_mul_k, mul_assoc, hkf, mul_zero]
+    simp [hf]
+  · rw [k_mul_f, e_mul_kInv, smul_mul_smul_comm, mul_assoc, ← mul_assoc (k q), k_mul_kInv,
+      one_mul]
+    simp [hq]
 
 /-- A tuple in a complex algebra satisfying the defining relations of `UqSl2 q`. -/
 @[ext]

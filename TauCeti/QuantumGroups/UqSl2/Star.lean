@@ -111,17 +111,6 @@ private theorem ofConj_algebraMap (c : ℂ) :
 
 /-! ### The star structure -/
 
-/-- The weight generator `K` commutes with `F E`. -/
-private theorem k_mul_f_mul_e_mul_kInv : k q * f q * (e q * kInv q) = f q * e q := by
-  rcases eq_or_ne q 0 with rfl | hq
-  · -- At `q = 0` the relation `K F = 0 • F K` forces `F = 0`.
-    have hkf : k (0 : ℂ) * f 0 = 0 := by simp [k_mul_f]
-    have hf : f (0 : ℂ) = 0 := by rw [← one_mul (f 0), ← kInv_mul_k, mul_assoc, hkf, mul_zero]
-    simp [hf]
-  · rw [k_mul_f, e_mul_kInv, smul_mul_smul_comm, mul_assoc, ← mul_assoc (k q), k_mul_kInv,
-      one_mul]
-    simp [hq]
-
 variable [Fact (IsSelfAdjoint q)]
 
 private theorem star_q : star q = q := (Fact.out : IsSelfAdjoint q).star_eq
