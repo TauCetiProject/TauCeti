@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Isomorphism
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Basic
-public import TauCeti.Topology.Homotopy.HomotopyGroup.Basic
 
 /-!
 # The cubical Hurewicz equivalence in singular homology
@@ -25,11 +24,10 @@ its forward description; identifying it with the independently defined
 relative-fundamental-class map `HomotopyGroup.hurewiczHom` requires a separate orientation
 comparison for the cube generator.
 
-The inductive Hurewicz criteria
-`TauCeti.subsingleton_homotopyGroup_of_isZero_homology_normalizedCubicalChainComplex` and
-`TauCeti.subsingleton_homotopyGroup_of_isZero_homology_singularChains` show that a simply
-connected space with vanishing integral homology in degrees at least two has trivial homotopy
-groups in every degree.
+The inductive Hurewicz criterion
+`TauCeti.subsingleton_homotopyGroup_of_isZero_homology_singularChains` shows that a simply
+connected space with vanishing integral singular homology in degrees at least two has trivial
+homotopy groups in every degree.
 
 ## References
 
@@ -109,26 +107,6 @@ namespace TauCeti
 open HomotopyGroup
 
 variable {X : Type} [TopologicalSpace X]
-
-/-- **Inductive Hurewicz vanishing criterion (normalized cubical homology).** If `X` is path
-connected with trivial `π_ 1 X x` and its integral normalized cubical homology vanishes in every
-degree `n + 2`, then all homotopy groups `π_ k X x` are trivial. -/
-theorem subsingleton_homotopyGroup_of_isZero_homology_normalizedCubicalChainComplex (x : X)
-    [PathConnectedSpace X] [Subsingleton (π_ 1 X x)]
-    (hH : ∀ n : ℕ,
-      IsZero (((normalizedCubicalChainComplex ℤ).obj (TopCat.of X)).homology (n + 2)))
-    (k : ℕ) : Subsingleton (π_ k X x) := by
-  induction k using Nat.strong_induction_on with
-  | h k ih =>
-    match k with
-    | 0 => exact (pathConnectedSpace_iff_subsingleton_homotopyGroup_zero x).mp inferInstance
-    | 1 => exact inferInstance
-    | n + 2 =>
-      let hHomology : Subsingleton
-          (((normalizedCubicalChainComplex ℤ).obj (TopCat.of X)).homology (n + 2)) :=
-        ModuleCat.subsingleton_of_isZero (hH n)
-      exact (Additive.ofMul.trans (cubicalHurewiczAddEquiv ih).toEquiv).subsingleton_congr.mpr
-        hHomology
 
 /-- **Inductive Hurewicz vanishing criterion (singular homology).** If `X` is path connected with
 trivial `π_ 1 X x` and its integral singular homology vanishes in every degree `n + 2`, then all
