@@ -32,7 +32,7 @@ the commutator of two elements of `Q̂` lying over `a` and `b` is `τ ^ (a ⬝�
 central sign `τ = (0, -1)` (`Matrix.commutatorElement_signCover`). This is the sign input of the
 Frenkel--Kac construction of a simply laced Lie algebra over `ℤ`, whose root vectors are indexed by
 lifts of roots to `Q̂`. The bracket `Matrix.ShellLieAlgebra`, in
-`TauCeti.Algebra.Lie.NormTwoShell`, uses this cocycle on root vectors indexed by the section
+`TauCeti.Algebra.Lie.NormTwoShell.Basic`, uses this cocycle on root vectors indexed by the section
 `a ↦ (a, 1)` instead, so it is not the lifted-generator presentation. The section
 `a ↦ (a, 1)` is a homomorphism exactly when every strictly lower entry of `B` is even
 (`Matrix.forall_canonicalSection_signFactorSet_mul_iff`); for a simply laced diagram this means

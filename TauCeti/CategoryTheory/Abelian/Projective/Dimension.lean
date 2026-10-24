@@ -29,7 +29,18 @@ open CategoryTheory Limits
 
 namespace CategoryTheory
 
-variable (C : Type*) [Category* C] [Abelian C] [EnoughProjectives C]
+variable {C : Type*} [Category* C] [Abelian C]
+
+/-- A subobject of a projective object is projective if its quotient has projective dimension
+at most one. -/
+theorem projective_of_mono_of_hasProjectiveDimensionLE_one {X Y : C} (f : X ⟶ Y)
+    [Mono f] [Projective Y] [HasProjectiveDimensionLE (cokernel f) 1] : Projective X := by
+  have hS : (ShortComplex.mk f (cokernel.π f) (cokernel.condition f)).ShortExact :=
+    { exact := ShortComplex.exact_of_g_is_cokernel _ (cokernelIsCokernel f) }
+  exact projective_iff_hasProjectiveDimensionLT_one.mpr
+    (hS.hasProjectiveDimensionLT_X₁ 1 inferInstance inferInstance)
+
+variable (C) [EnoughProjectives C]
 
 /-- Every object has projective dimension at most one precisely when every monomorphism into a
 projective object has projective source. -/
@@ -38,10 +49,8 @@ theorem forall_hasProjectiveDimensionLE_one_iff_projective_of_mono :
       ∀ ⦃X Y : C⦄ (f : X ⟶ Y) [Mono f] [Projective Y], Projective X := by
   constructor
   · intro h X Y f _ _
-    have hS : (ShortComplex.mk f (cokernel.π f) (cokernel.condition f)).ShortExact :=
-      { exact := ShortComplex.exact_of_g_is_cokernel _ (cokernelIsCokernel f) }
-    exact projective_iff_hasProjectiveDimensionLT_one.mpr
-      (hS.hasProjectiveDimensionLT_X₁ 1 inferInstance (h _))
+    have := h (cokernel f)
+    exact projective_of_mono_of_hasProjectiveDimensionLE_one f
   · intro h X
     obtain ⟨P⟩ := EnoughProjectives.presentation X
     have : Projective P.p := P.projective

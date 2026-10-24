@@ -13,12 +13,12 @@ public import TauCeti.KnotTheory.Grid.Homology.Alexander
 /-!
 # The pentagon map on unblocked grid homology
 
-The pentagon-counting map of a validated column commutation intertwines the unblocked
+The pentagon-counting map of a column turn (`GridDiagram.ColumnTurn`) intertwines the unblocked
 differentials. It therefore induces a specified map on `GH⁻`, sending the class of a cycle
 to the class of its pentagon image. The map is semilinear along the transposition of the
-two coefficient variables. Over any commutative ring of characteristic two it preserves
-the Maslov--Alexander bigrading for diagrams with an odd number of link components.
-For knot grids it is linear over `R[U]`.
+two coefficient variables. For a column commutation, over any commutative ring of characteristic
+two it preserves the Maslov--Alexander bigrading for diagrams with an odd number of link
+components, and for knot grids it is linear over `R[U]`.
 
 The construction uses the concrete cycle quotient through `unblockedHomologyIso` and
 Mathlib's `Submodule.mapQ`. It supplies the homology map itself; invertibility requires
@@ -39,7 +39,7 @@ open MvPolynomial
 
 namespace GridDiagram
 
-variable {n : ℕ} (G : GridDiagram n) (R : Type*) (C : ColumnCommutationData G)
+variable {n : ℕ} (G : GridDiagram n) (R : Type*) (C : ColumnTurn n)
 
 local notation "G'" => G.swapColumns C.column (finRotate n C.column)
 
@@ -47,7 +47,7 @@ section Cycles
 
 variable [CommSemiring R] [CharP R 2]
 
-/-- The pentagon map of a column commutation sends cycles to cycles. -/
+/-- The pentagon map of a column turn sends cycles to cycles. -/
 theorem commutationMap_mem_ker_unblockedDifferential {z : GridChainMinus R n}
     (hz : z ∈ LinearMap.ker (G.unblockedDifferential R)) :
     G.commutationMap R C z ∈ LinearMap.ker ((G').unblockedDifferential R) := by
@@ -94,8 +94,9 @@ private noncomputable def commutationQuotientMap :
   intro z hz
   exact G.commutationCyclesMap_mem_boundariesInKer R C hz
 
-/-- The specified map on unblocked grid homology induced by a column commutation.
-It is semilinear along the renaming that exchanges the two commuted variables. -/
+/-- The specified map on unblocked grid homology induced by the pentagon map of a column turn,
+for instance that of a column commutation. It is semilinear along the renaming that exchanges the
+two variables of the exchanged columns. -/
 noncomputable def unblockedHomologyCommutationMap :
     G.unblockedHomology R →ₛₗ[((renameEquiv R
       (Equiv.swap C.column (finRotate n C.column))).toRingEquiv :

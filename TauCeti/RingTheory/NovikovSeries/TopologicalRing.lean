@@ -10,6 +10,7 @@ public import TauCeti.RingTheory.NovikovSeries.Topology
 public import Mathlib.RingTheory.Ideal.Defs
 public import Mathlib.Topology.Algebra.TopologicallyNilpotent
 public import TauCeti.Topology.Algebra.Nonarchimedean.GeometricSeries
+public import Mathlib.Topology.Algebra.LinearTopology
 
 /-!
 # Novikov series form a topological ring, and geometric series
@@ -27,8 +28,9 @@ coefficients form a `ℚ`-algebra.
 The same estimate makes products computable from finite truncations: below the cutoff `C`, the
 product of two series with periods bounded below by `A` and `B` only involves their coefficients of
 period `< C - B` and `< C - A`
-(`TauCeti.NovikovSeries.mul_sub_mul_trunc_mem_periodFiltration`). Multiplying by a monomial unit
-`u e^g` shifts the filtration by the period `N g`
+(`TauCeti.NovikovSeries.mul_sub_mul_trunc_mem_periodFiltration`). Multiplying by a monomial
+`u e^g` with unit coefficient shifts the filtration by the period `N g` when exponents satisfy
+left cancellation
 (`TauCeti.NovikovSeries.single_mul_mem_periodFiltration_iff`).
 
 The series supported in nonnegative periods form a subring, whose underlying set is the basic
@@ -39,6 +41,11 @@ two-sided inverse of `1 - a` in the nonnegative subring. For a monomial `e^g` wi
 is the expansion `(1 - e^g)⁻¹ = ∑ₖ e^(k • g)`. Such geometric series are the factors in the
 product formula for dynamical zeta functions, and they appear in the torsion of circle-valued
 Morse complexes.
+
+The nonnegative subring is closed, hence complete, and the traces of the subgroups `U_C` are
+ideals of it, so it is linearly topologized. For an `S`-algebra of coefficients it is an
+`S`-algebra. These are the hypotheses of Mathlib's continuous evaluation of power series
+(`PowerSeries.aeval`) at its topologically nilpotent elements, such as those of the positive ideal.
 
 ## Main definitions
 
@@ -54,8 +61,8 @@ Morse complexes.
 * `TauCeti.NovikovSeries.mul_sub_mul_mem_periodFiltration` and
   `TauCeti.NovikovSeries.mul_sub_mul_trunc_mem_periodFiltration`: cutoff compatibility of the
   convolution.
-* `TauCeti.NovikovSeries.single_mul_mem_periodFiltration_iff`: multiplication by a monomial unit
-  shifts the period filtration.
+* `TauCeti.NovikovSeries.single_mul_mem_periodFiltration_iff`: multiplication by a monomial with
+  unit coefficient shifts the period filtration for left-cancellative exponents.
 * The instances `IsTopologicalRing` and `NonarchimedeanRing`: the period topology is a
   nonarchimedean ring topology.
 * `TauCeti.NovikovSeries.pow_mem_periodFiltration` and
@@ -70,6 +77,7 @@ Morse complexes.
 * `TauCeti.NovikovSeries.one_sub_single_mul_tsum` and
   `TauCeti.NovikovSeries.tsum_mul_one_sub_single`: the two inverse identities of the monomial
   geometric series `∑ₖ rᵏ e^(k • g)` for `N g > 0`.
+* The instances `CompleteSpace`, `IsLinearTopology` and `Algebra` on the nonnegative subring.
 
 ## References
 
@@ -156,6 +164,18 @@ end NonUnitalNonAssocRing
 section Ring
 
 variable [AddMonoid H] {N : H →+ ℝ} [Ring R] {C : ℝ} {a : NovikovSeries R H N}
+
+/-- The coefficientwise inclusion of the group ring has dense image in its Novikov completion. -/
+theorem denseRange_ofAddMonoidAlgebra :
+    DenseRange (ofAddMonoidAlgebra : AddMonoidAlgebra R H → NovikovSeries R H N) := by
+  apply DenseRange.of_comp (g := AddMonoidAlgebra.ofCoeff)
+  have h : (ofAddMonoidAlgebra : AddMonoidAlgebra R H → NovikovSeries R H N) ∘
+      AddMonoidAlgebra.ofCoeff = ofFinsupp := by
+    funext f
+    ext h
+    simp only [Function.comp_apply, coeff_ofAddMonoidAlgebra, coeff_ofFinsupp]
+  rw [h]
+  exact denseRange_ofFinsupp
 
 /-- The period topology is a nonarchimedean ring topology. -/
 instance : NonarchimedeanRing (NovikovSeries R H N) where
@@ -297,24 +317,89 @@ theorem isUnit_one_sub_of_mem_posIdeal {a : nonnegSubring R N} (ha : a ∈ posId
     IsUnit (1 - a) :=
   (unitsOneSub ha).isUnit
 
+/-! ### The nonnegative subring as a complete linearly topologized algebra -/
+
+/-- The nonnegative subring is complete, being closed in the complete ring of Novikov series. -/
+instance : CompleteSpace (nonnegSubring R N) :=
+  isClosed_nonnegSubring.completeSpace_coe
+
+/-- In the nonnegative subring, the traces of the subgroups `U_C` form a basis of neighbourhoods
+of `0`. -/
+theorem hasBasis_nhds_zero_nonnegSubring :
+    (𝓝 (0 : nonnegSubring R N)).HasBasis (fun _ : ℝ => True)
+      fun C => {a | (a : NovikovSeries R H N) ∈ periodFiltration R N C} := by
+  rw [nhds_subtype]
+  exact hasBasis_nhds_zero.comap _
+
+/-- The nonnegative subring is linearly topologized: the traces of the subgroups `U_C` are
+ideals of it, since multiplying by a series of nonnegative periods does not lower periods. This
+is what makes power series evaluable at its topologically nilpotent elements
+(`PowerSeries.aeval`). -/
+instance : IsLinearTopology (nonnegSubring R N) (nonnegSubring R N) :=
+  .mk_of_hasBasis' (nonnegSubring R N) (S := Ideal (nonnegSubring R N))
+    (s := fun C => {
+      carrier := {a | (a : NovikovSeries R H N) ∈ periodFiltration R N C}
+      add_mem' := fun ha hb => add_mem ha hb
+      zero_mem' := zero_mem (periodFiltration R N C)
+      smul_mem' := fun c a ha => by
+        simpa using
+          mul_mem_periodFiltration (mem_periodFiltration.2 (mem_nonnegSubring.1 c.2)) ha })
+    hasBasis_nhds_zero_nonnegSubring fun I r _ => I.smul_mem r
+
+/-- A series of the positive ideal is topologically nilpotent in the nonnegative subring. -/
+theorem isTopologicallyNilpotent_of_mem_posIdeal' {a : nonnegSubring R N}
+    (ha : a ∈ posIdeal R N) : IsTopologicallyNilpotent a := by
+  unfold IsTopologicallyNilpotent
+  rw [Topology.IsInducing.subtypeVal.tendsto_nhds_iff]
+  simp only [Function.comp_def, SubmonoidClass.coe_pow, ZeroMemClass.coe_zero]
+  exact isTopologicallyNilpotent_of_mem_posIdeal ha
+
+section Algebra
+
+variable {S : Type*} [CommSemiring S] [Algebra S R]
+
+/-- For an `S`-algebra `R`, the nonnegative subring is an `S`-algebra, with coefficientwise
+scalar multiplication. -/
+instance : Algebra S (nonnegSubring R N) where
+  smul s a := ⟨s • (a : NovikovSeries R H N), mem_nonnegSubring.2 fun h hh => by
+    rw [coeff_smul, mem_nonnegSubring.1 a.2 h hh, smul_zero]⟩
+  algebraMap := (algebraMap S (NovikovSeries R H N)).codRestrict (nonnegSubring R N) fun s => by
+    rw [algebraMap_apply]
+    exact single_mem_nonnegSubring (map_zero N).ge _
+  commutes' s a := Subtype.ext (Algebra.commutes s (a : NovikovSeries R H N))
+  smul_def' s a := Subtype.ext (Algebra.smul_def s (a : NovikovSeries R H N))
+
+@[simp, norm_cast]
+theorem coe_smul_nonnegSubring (s : S) (a : nonnegSubring R N) :
+    ((s • a : nonnegSubring R N) : NovikovSeries R H N) = s • (a : NovikovSeries R H N) :=
+  (rfl)
+
+@[simp, norm_cast]
+theorem coe_algebraMap_nonnegSubring (s : S) :
+    ((algebraMap S (nonnegSubring R N) s : nonnegSubring R N) : NovikovSeries R H N) =
+      algebraMap S (NovikovSeries R H N) s :=
+  (rfl)
+
+end Algebra
+
 end Ring
 
-section Group
+section IsLeftCancelAdd
 
-variable [AddGroup H] {N : H →+ ℝ} [Ring R]
+variable [AddZeroClass H] [IsLeftCancelAdd H] {N : H →+ ℝ} [Ring R]
 
-/-- Multiplication by a monomial unit `u e^g` shifts the period filtration by `N g`: the
-coefficients of `single g u * a` vanish below `N g + C` exactly when those of `a` vanish
-below `C`. -/
+/-- Multiplication by a monomial `u e^g` with unit coefficient shifts the period filtration by
+`N g`: when exponents satisfy left cancellation, the coefficients of `single g u * a` vanish
+below `N g + C` exactly when those of `a` vanish below `C`. -/
 theorem single_mul_mem_periodFiltration_iff (g : H) (u : Rˣ) {C : ℝ}
     {a : NovikovSeries R H N} :
     single g (u : R) * a ∈ periodFiltration R N (N g + C) ↔ a ∈ periodFiltration R N C := by
   refine ⟨fun ha => ?_, mul_mem_periodFiltration (single_mem_periodFiltration g _)⟩
-  have h := mul_mem_periodFiltration (single_mem_periodFiltration (-g) (↑u⁻¹ : R)) ha
-  rw [← mul_assoc] at h
-  simpa [single_mul_single] using h
+  refine mem_periodFiltration.2 fun h hh => ?_
+  have hzero := mem_periodFiltration.1 ha (g + h) (by simpa using add_lt_add_left hh (N g))
+  simpa only [coeff_single_mul_add, Units.mul_right_eq_zero] using hzero
 
-end Group
+end IsLeftCancelAdd
 
 end NovikovSeries
 

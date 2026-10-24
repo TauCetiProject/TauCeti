@@ -35,6 +35,8 @@ nonunit, such an entry determines a perfect binary summand and an orthogonal dec
 * `LinearMap.BilinForm.IsSymm.exists_basis_orthogonal` splits off the span of a family with unit
   Gram determinant, with a basis of the complement and the resulting factorization of the Gram
   determinant.
+* `LinearMap.BilinForm.IsSymm.exists_basis_orthogonal_span_singleton_isUnit_det`: in particular,
+  the orthogonal complement of a vector with unit self-pairing in a unimodular form is unimodular.
 * `LinearMap.BilinForm.IsSymm.equivalent_of_equivalent_restrict_orthogonal` recombines two such
   splittings with the same Gram matrix into an isometry.
 -/
@@ -162,6 +164,26 @@ theorem IsSymm.exists_basis_orthogonal (hB : B.IsSymm) {m k : ℕ}
   let := c.invertibleToMatrix (b.reindex e.symm)
   refine ⟨(c.toMatrix (b.reindex e.symm)).det, Matrix.isUnit_det_of_invertible _, ?_⟩
   rw [← hb, det_toMatrix_eq_det_sq_mul_det c, hblock, Matrix.det_fromBlocks_zero₂₁]
+
+/-- The orthogonal complement of a vector `x` with unit self-pairing, for a symmetric form whose
+Gram determinant in a basis of size `n + 1` is a unit, has a basis of size `n` in which the Gram
+determinant of the restricted form is a unit. -/
+theorem IsSymm.exists_basis_orthogonal_span_singleton_isUnit_det (hB : B.IsSymm) {n : ℕ}
+    (b : Basis (Fin (n + 1)) R M) (hdet : IsUnit (B.toMatrix b).det) {x : M}
+    (hx : IsUnit (B x x)) :
+    ∃ t : Basis (Fin n) R (B.orthogonal (R ∙ x)),
+      IsUnit ((B.restrict (B.orthogonal (R ∙ x))).toMatrix t).det := by
+  let v : Fin 1 → M := fun _ ↦ x
+  let G : Matrix (Fin 1) (Fin 1) R := fun _ _ ↦ B x x
+  have hGdet : IsUnit G.det := by
+    rw [Matrix.det_fin_one]
+    exact hx
+  obtain ⟨_, t, _w, _hw, hdetT⟩ :=
+    hB.exists_basis_orthogonal (m := n) b (v := v) (fun _ _ ↦ rfl) hGdet
+  rw [hdetT] at hdet
+  have hTdet := isUnit_of_mul_isUnit_right (isUnit_of_mul_isUnit_right hdet)
+  have hvspan : Submodule.span R (Set.range v) = R ∙ x := by simp [v]
+  exact hvspan ▸ ⟨t, hTdet⟩
 
 end Blocks
 

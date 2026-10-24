@@ -37,6 +37,9 @@ structural step used when a Cartan--Dieudonne argument enlarges a fixed subspace
   which the form is right-separating are independent.
 * `LinearMap.BilinForm.apply_eq_zero_of_mem_biSup`: in a pairwise orthogonal family, the sums over
   disjoint sets of indices are orthogonal.
+* `LinearMap.BilinForm.iIsOrtho.apply_sum_sum`: the self-pairing of the sum of a finite
+  orthogonal family is the sum of the self-pairings.
+* `LinearMap.BilinForm.iIsOrtho.isSymm`: a form with an orthogonal basis is symmetric.
 * `LinearMap.BilinForm.equivalent_of_isInternal`: orthogonal internal direct sums of isometric
   forms are isometric.
 * `LinearMap.BilinForm.IsRefl.exists_orthogonal_basis_of_orthogonal_span_singleton`: an
@@ -118,6 +121,22 @@ theorem apply_eq_zero_of_mem_biSup (B : LinearMap.BilinForm K V) {ι : Type*}
         iSup₂_le fun j hj y hy ↦ hO i j (hst.ne_of_mem hi hj) x hx y hy
       simpa only [Submodule.mem_iInf, LinearMap.mem_ker, flip_apply] using fun y hy ↦ hker hy
   simpa using (Submodule.mem_iInf _).mp ((Submodule.mem_iInf _).mp (hle hx) y) hy
+
+/-- The self-pairing of the sum of a finite orthogonal family is the sum of the self-pairings. -/
+theorem iIsOrtho.apply_sum_sum {B : LinearMap.BilinForm K V} {ι : Type*} [Fintype ι]
+    {v : ι → V} (hv : B.iIsOrtho v) : B (∑ i, v i) (∑ i, v i) = ∑ i, B (v i) (v i) := by
+  classical
+  simp only [map_sum, LinearMap.sum_apply]
+  refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_eq_single i (fun j _ hji ↦ ?_) (by simp)
+  exact (iIsOrtho_def.mp hv) j i hji
+
+/-- A form admitting an orthogonal basis is symmetric. -/
+theorem iIsOrtho.isSymm {B : LinearMap.BilinForm K V} {ι : Type*} {b : Module.Basis ι K V}
+    (hb : B.iIsOrtho b) : B.IsSymm := by
+  refine (isSymm_iff_basis b).2 fun i j ↦ ?_
+  rcases eq_or_ne i j with rfl | hij
+  · rfl
+  · rw [iIsOrtho_def.mp hb i j hij, iIsOrtho_def.mp hb j i hij.symm]
 
 /-- **Orthogonal sums of isometric forms are isometric.** If two modules are internal direct sums
 of pairwise orthogonal families of submodules indexed by the same type, and the restrictions of the
@@ -476,6 +495,24 @@ theorem isCompl_span_singleton_orthogonal_of_isUnit
     (B : LinearMap.BilinForm R M) (x : M) (hx : IsUnit (B x x)) :
     IsCompl (R ∙ x) (B.orthogonal (R ∙ x)) :=
   B.isCompl_span_singleton_orthogonal_of_dvd hx.mem_nonZeroDivisors fun _ ↦ hx.dvd
+
+/-- Adjoining a vector `x` with unit self-pairing to an orthogonal basis `t` of its orthogonal
+complement with unit self-pairings gives an orthogonal basis of the whole module with unit
+self-pairings, for a reflexive form. Its diagonal is `B x x` followed by the diagonal of `t`. -/
+theorem IsRefl.exists_orthogonal_basis_isUnit_apply_self_eq_cons {B : LinearMap.BilinForm R M}
+    (hB : B.IsRefl) {x : M} (hx : IsUnit (B x x)) {d : ℕ}
+    {t : Basis (Fin d) R (B.orthogonal (R ∙ x))}
+    (ht : (B.restrict (B.orthogonal (R ∙ x))).iIsOrtho t) (htu : ∀ i, IsUnit (B (t i) (t i))) :
+    ∃ c : Basis (Fin (d + 1)) R M, B.iIsOrtho c ∧ (∀ i, IsUnit (B (c i) (c i))) ∧
+      ∀ i, B (c i) (c i) = (Fin.cons (B x x) fun j ↦ B (t j) (t j) : Fin (d + 1) → R) i := by
+  obtain ⟨c, hc, hc0, hcs⟩ := hB.exists_orthogonal_basis_of_orthogonal_span_singleton
+    hx.mem_nonZeroDivisors (fun _ ↦ hx.dvd) ht
+  have hcd (i : Fin (d + 1)) :
+      B (c i) (c i) = (Fin.cons (B x x) fun j ↦ B (t j) (t j) : Fin (d + 1) → R) i :=
+    Fin.cases (by rw [hc0, Fin.cons_zero]) (fun j ↦ by rw [hcs, Fin.cons_succ]) i
+  refine ⟨c, hc, fun i ↦ ?_, hcd⟩
+  rw [hcd]
+  exact Fin.cases hx htu i
 
 end LinearMap.BilinForm
 

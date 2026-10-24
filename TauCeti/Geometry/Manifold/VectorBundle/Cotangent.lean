@@ -166,7 +166,7 @@ variable {E' H' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [Topologi
   {J : ModelWithCorners 𝕜 E' H'} {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
   [IsManifold J 1 N]
   {EX HX X : Type*} [NormedAddCommGroup EX] [NormedSpace 𝕜 EX] [TopologicalSpace HX]
-  {IX : ModelWithCorners 𝕜 EX HX} [TopologicalSpace X] [ChartedSpace HX X] [IsManifold IX 1 X]
+  {IX : ModelWithCorners 𝕜 EX HX} [TopologicalSpace X] [ChartedSpace HX X]
   {m n : WithTop ℕ∞}
 
 /-- **Pulling covectors back along a map is smooth.** Let `Ψ z` be a covector at `f (g z)`,
@@ -184,7 +184,8 @@ theorem contMDiffAt_mk_comp_mfderiv {Ψ : X → CotangentBundle J N} {g : X → 
   refine ⟨hg, ?_⟩
   -- In bundle coordinates, the pulled-back covector is the coordinate expression of `Ψ z`
   -- composed with that of the differential of `f`.
-  have hd := ContMDiffAt.mfderiv (fun _ ↦ f) g (hf.comp (z₀, g z₀) contMDiffAt_snd) hg hmn
+  -- Differentiating `f` on its own source needs no `C¹` structure on the parameter space.
+  have hd := (hf.mfderiv_const hmn).comp z₀ hg
   refine (hΨ.2.clm_comp hd).congr_of_eventuallyEq ?_
   filter_upwards [(hf.continuousAt.comp hg.continuousAt).preimage_mem_nhds
       ((trivializationAt E' (TangentSpace J) (f (g z₀))).open_baseSet.mem_nhds
@@ -196,9 +197,9 @@ theorem contMDiffAt_mk_comp_mfderiv {Ψ : X → CotangentBundle J N} {g : X → 
   obtain ⟨y, p⟩ := w
   obtain rfl : y = f (g z) := hz'
   ext v
-  simp only [ContinuousLinearMap.inCoordinates, inTangentCoordinates,
+  simp only [ContinuousLinearMap.inCoordinates, Function.comp_apply, inTangentCoordinates,
     ContinuousLinearMap.comp_apply, Trivial.fiberBundle_trivializationAt',
-    Trivial.continuousLinearMapAt_trivialization, ContinuousLinearMap.id_apply]
+    Trivial.continuousLinearMapAt_trivialization, ContinuousLinearMap.id_apply, id_eq]
   rw [Trivialization.symmL_continuousLinearMapAt _ (b := f (g z)) hz]
 
 /-- **Pulling covectors back along a map is smooth.** The global version of

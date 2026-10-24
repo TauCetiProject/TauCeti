@@ -50,7 +50,9 @@ travel.
 
 * `TauCeti.PerfectMatching.ext_of_eqOn`: two perfect matchings agreeing on a set containing a
   partner of every point are equal.
-* `TauCeti.even_card_of_nonempty_perfectMatching`: a matched type has even cardinality.
+* `TauCeti.even_card_of_nonempty_perfectMatching`: a matched type has even cardinality, and so
+  has a finite set closed under a perfect matching
+  (`TauCeti.IsPerfectMatching.even_card_of_mapsTo`).
 * `TauCeti.card_perfectMatching`: a type of cardinality `2 * m` has `(2 * m - 1)‼` perfect
   matchings.
 * `TauCeti.IsPerfectMatching.sign_eq`: a perfect matching of a type of cardinality `2 * m` has
@@ -459,6 +461,15 @@ theorem even_card_of_nonempty_perfectMatching (α : Type u) [Fintype α]
 theorem isEmpty_perfectMatching_of_not_even {α : Type u} [Fintype α]
     (h : ¬Even (Fintype.card α)) : IsEmpty (PerfectMatching α) :=
   ⟨fun D => h (even_card_of_nonempty_perfectMatching α ⟨D⟩)⟩
+
+/-- **A finite set closed under a perfect matching has even cardinality**: the matching restricts
+to a perfect matching of the set. -/
+theorem IsPerfectMatching.even_card_of_mapsTo {f : Equiv.Perm α} (hf : IsPerfectMatching f)
+    {S : Finset α} (hS : ∀ x ∈ S, f x ∈ S) : Even S.card := by
+  have hiff (x : α) : f x ∈ S ↔ x ∈ S := ⟨fun hx => hf.1 x ▸ hS _ hx, hS x⟩
+  rw [← Fintype.card_coe]
+  exact even_card_of_nonempty_perfectMatching _ ⟨⟨f.subtypePerm hiff,
+    fun x => Subtype.ext (hf.1 x), fun x h => hf.2 x (congrArg Subtype.val h)⟩⟩
 
 /-- An empty type has exactly one perfect matching, the empty one. -/
 private theorem card_perfectMatching_of_isEmpty (α : Type u) [Fintype α] [DecidableEq α]

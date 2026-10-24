@@ -13,6 +13,7 @@ public import Mathlib.Algebra.Order.Archimedean.Real.Basic
 public import Mathlib.Algebra.Order.Floor.Semiring
 public import Mathlib.Basic.Finite.Prod
 public import Mathlib.Data.Finsupp.SMulWithZero
+public import Mathlib.Data.Int.Interval
 public import Mathlib.Data.Set.Finite.Lattice
 public import Mathlib.Data.Set.Finite.Lemmas
 
@@ -41,6 +42,8 @@ design of the additive API follows that of Mathlib's `HahnSeries` in
   series.
 * `TauCeti.NovikovSeries.single`: the monomial `r e^h`, with coefficient `r` at `h` and `0`
   elsewhere.
+* `TauCeti.NovikovSeries.order`: the least period of the support of a Novikov series, and `0` for
+  the zero series.
 * `TauCeti.NovikovSeries.trunc C a`: the finitely supported truncation of `a` below the period
   cutoff `C`.
 
@@ -51,6 +54,12 @@ design of the additive API follows that of Mathlib's `HahnSeries` in
 * `TauCeti.NovikovSeries.bddBelow_image_support` and
   `TauCeti.NovikovSeries.exists_isLeast_image_support`: the periods of the support are bounded
   below, and a nonzero series attains a least period on its support.
+* `TauCeti.NovikovSeries.isLeast_order`: the order of a nonzero series is the least period of its
+  support.
+* `TauCeti.NovikovSeries.min_order_le_order_add`: the order of a nonzero sum is at least the
+  smaller of the orders of the summands.
+* `TauCeti.NovikovSeries.forall_finite_lt_iff_bddBelow_support`: on `ℤ` with the period map
+  `k ↦ k`, the support condition says exactly that the support is bounded below.
 * `TauCeti.NovikovSeries.finite_setOf_period_add_lt`: for two Novikov series, the pairs of
   support exponents whose sum has period below a fixed cutoff form a finite set. In particular
   (`TauCeti.NovikovSeries.finite_setOf_add_eq`) each coefficient of the convolution is a finite
@@ -137,6 +146,27 @@ theorem exists_isLeast_image_support {a : NovikovSeries R H N} (ha : a.support.N
   rcases le_total (N g) (N h₀) with hgh₀ | hgh₀
   · exact hmin g ⟨hg, hgh₀⟩
   · exact hh.2.trans hgh₀
+
+/-- On the exponent group `ℤ` with the period map `k ↦ k`, a coefficient function has only
+finitely many nonzero coefficients below every real cutoff if and only if its support is bounded
+below. -/
+theorem forall_finite_lt_iff_bddBelow_support (f : ℤ → R) :
+    (∀ C : ℝ, {k : ℤ | f k ≠ 0 ∧ Int.castAddHom ℝ k < C}.Finite) ↔
+      BddBelow (Function.support f) := by
+  refine ⟨fun hf => ?_, fun ⟨m, hm⟩ C => ?_⟩
+  · obtain ⟨m, hm⟩ := (hf 0).bddBelow
+    refine ⟨min m 0, fun k hk => ?_⟩
+    rcases lt_or_ge k 0 with hk₀ | hk₀
+    · exact (min_le_left _ _).trans (hm ⟨hk, by simpa using hk₀⟩)
+    · exact (min_le_right _ _).trans hk₀
+  · refine (finite_Icc m ⌈C⌉).subset fun k hk => ⟨hm hk.1, ?_⟩
+    have hkC : (k : ℝ) < C := by simpa using hk.2
+    exact Int.cast_le.1 (hkC.le.trans (Int.le_ceil C))
+
+/-- The support of a Novikov series on `ℤ` for the period map `k ↦ k` is bounded below. -/
+theorem bddBelow_support_int (a : NovikovSeries R ℤ (Int.castAddHom ℝ)) :
+    BddBelow a.support :=
+  (forall_finite_lt_iff_bddBelow_support a.coeff).1 a.finite_lt |>.mono fun _ => mem_support.1
 
 /-- The zero Novikov series. -/
 instance : Zero (NovikovSeries R H N) :=
@@ -451,6 +481,10 @@ theorem single_injective (h : H) : Injective (single h : R → NovikovSeries R H
 theorem single_eq_zero_iff {h : H} {r : R} : (single h r : NovikovSeries R H N) = 0 ↔ r = 0 :=
   ⟨fun hr => single_injective h (hr.trans (single_zero h).symm), fun hr => hr ▸ single_zero h⟩
 
+instance [Nontrivial R] : Nontrivial (NovikovSeries R H N) := by
+  obtain ⟨r, hr⟩ := exists_ne (0 : R)
+  exact ⟨⟨single 0 r, 0, single_eq_zero_iff.not.2 hr⟩⟩
+
 end Zero
 
 @[simp]
@@ -489,6 +523,77 @@ theorem ofFinsupp_single [AddMonoid R] (h : H) (r : R) :
   rw [coeff_ofFinsupp, coeff_single, Finsupp.single_eq_pi_single]
 
 end Single
+
+section Order
+
+variable {R H : Type*} [AddZeroClass H] {N : H →+ ℝ} [Zero R] {a : NovikovSeries R H N} {h : H}
+  {C : ℝ}
+
+/-- The order of a Novikov series: the least period of its support, and `0` for the zero series.
+-/
+def order (a : NovikovSeries R H N) : ℝ :=
+  sInf (N '' a.support)
+
+@[simp]
+theorem order_zero : (0 : NovikovSeries R H N).order = 0 := by
+  simp [order]
+
+/-- The order of a nonzero Novikov series is the least period of its support. -/
+theorem isLeast_order (ha : a ≠ 0) : IsLeast (N '' a.support) a.order := by
+  obtain ⟨g, -, hg⟩ := exists_isLeast_image_support (support_nonempty_iff.2 ha)
+  rwa [order, hg.csInf_eq]
+
+/-- A Novikov series whose support has least period `C` has order `C`. -/
+theorem order_eq_of_isLeast (hC : IsLeast (N '' a.support) C) : a.order = C :=
+  hC.csInf_eq
+
+theorem order_le_of_coeff_ne_zero (hh : a.coeff h ≠ 0) : a.order ≤ N h :=
+  csInf_le a.bddBelow_image_support ⟨h, mem_support.2 hh, rfl⟩
+
+theorem coeff_eq_zero_of_lt_order (hh : N h < a.order) : a.coeff h = 0 := by
+  by_contra ha
+  exact (order_le_of_coeff_ne_zero ha).not_gt hh
+
+/-- A nonzero Novikov series has a nonzero coefficient at an exponent of period equal to its
+order. -/
+theorem exists_coeff_ne_zero_and_period_eq_order (ha : a ≠ 0) :
+    ∃ h, a.coeff h ≠ 0 ∧ N h = a.order := by
+  obtain ⟨h, hh, hN⟩ := (isLeast_order ha).1
+  exact ⟨h, mem_support.1 hh, hN⟩
+
+/-- A nonzero Novikov series vanishes below the period cutoff `C` exactly when `C` is at most its
+order. -/
+theorem le_order_iff (ha : a ≠ 0) : C ≤ a.order ↔ ∀ h, N h < C → a.coeff h = 0 := by
+  refine ⟨fun hC h hh => coeff_eq_zero_of_lt_order (hh.trans_le hC), fun hC => ?_⟩
+  obtain ⟨h, hh, hN⟩ := exists_coeff_ne_zero_and_period_eq_order ha
+  rw [← hN]
+  by_contra hlt
+  exact hh (hC h (not_le.1 hlt))
+
+@[simp]
+theorem order_single {r : R} (hr : r ≠ 0) : (single h r : NovikovSeries R H N).order = N h :=
+  order_eq_of_isLeast <| by simp [support_single_of_ne hr]
+
+end Order
+
+section OrderAdditive
+
+variable {R H : Type*} [AddZeroClass H] {N : H →+ ℝ}
+
+/-- The order of a nonzero sum is at least the smaller of the orders of the summands. -/
+theorem min_order_le_order_add [AddZeroClass R] {a b : NovikovSeries R H N} (hab : a + b ≠ 0) :
+    min a.order b.order ≤ (a + b).order := by
+  obtain ⟨h, hh, hN⟩ := exists_coeff_ne_zero_and_period_eq_order hab
+  rw [← hN]
+  rcases support_add_subset a b (mem_support.2 hh) with hh | hh
+  · exact min_le_of_left_le (order_le_of_coeff_ne_zero (mem_support.1 hh))
+  · exact min_le_of_right_le (order_le_of_coeff_ne_zero (mem_support.1 hh))
+
+@[simp]
+theorem order_neg [AddGroup R] (a : NovikovSeries R H N) : (-a).order = a.order := by
+  simp [order]
+
+end OrderAdditive
 
 section Truncation
 
