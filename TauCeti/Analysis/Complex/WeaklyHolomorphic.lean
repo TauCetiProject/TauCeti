@@ -9,7 +9,9 @@ public import Mathlib.Analysis.Complex.CauchyIntegral
 public import Mathlib.Analysis.Normed.Module.DoubleDual
 import Mathlib.Analysis.Complex.Liouville
 import Mathlib.Analysis.LocallyConvex.SeparatingDual
+import TauCeti.Analysis.Complex.Conformal.NormalFamilies
 import TauCeti.Analysis.Normed.Module.WeakSpace.Bounded
+public import TauCeti.MeasureTheory.Integral.CircleIntegral
 
 /-!
 # Weakly holomorphic functions are holomorphic
@@ -38,8 +40,8 @@ Completeness of `E` is used only in the last step, where the vector-valued integ
 
 ## Main results
 
-* `ContinuousLinearMap.circleIntegral_comp_comm`: continuous linear maps commute with circle
-  integrals.
+* `TauCeti.continuousOn_of_forall_dual`: weak holomorphy on an open set implies continuity, even
+  when `E` is not complete.
 * `TauCeti.differentiableOn_of_forall_dual`: weak holomorphy on an open set implies holomorphy.
 * `TauCeti.differentiableOn_iff_forall_dual`, `TauCeti.differentiable_iff_forall_dual`: the
   equivalence of holomorphy and weak holomorphy.
@@ -55,15 +57,7 @@ open Complex Metric Set
 
 open scoped Real NNReal
 
-variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
-  [NormedAddCommGroup F] [NormedSpace ℂ F]
-
-/-- Continuous linear maps commute with circle integrals. -/
-theorem ContinuousLinearMap.circleIntegral_comp_comm [CompleteSpace E] [CompleteSpace F]
-    (L : E →L[ℂ] F) {f : ℂ → E} {c : ℂ} {R : ℝ} (hf : CircleIntegrable f c R) :
-    ∮ z in C(c, R), L (f z) = L (∮ z in C(c, R), f z) := by
-  rw [circleIntegral, circleIntegral, ← L.intervalIntegral_comp_comm hf.out]
-  simp only [map_smul]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 
 namespace TauCeti
 
@@ -79,16 +73,9 @@ private theorem norm_sub_le_of_forall_dual {c : ℂ} {r M : ℝ} (hr : 0 < r)
   have hball : ball c r ⊆ ball c (2 * r) := ball_subset_ball (by linarith)
   refine NormedSpace.norm_le_dual_bound ℂ _ (by positivity) fun ℓ ↦ ?_
   -- The Cauchy estimate on `ball x r ⊆ ball c (2 * r)` bounds the derivative of `ℓ ∘ f`.
-  have hderiv : ∀ x ∈ ball c r, ‖deriv (fun z ↦ ℓ (f z)) x‖ ≤ ‖ℓ‖ * M / r := by
-    intro x hx
-    have hsub : closedBall x r ⊆ closedBall c (2 * r) := by
-      intro y hy
-      rw [mem_closedBall] at hy ⊢
-      linarith [dist_triangle y x c, mem_ball.1 hx]
-    refine Complex.norm_deriv_le_of_forall_mem_sphere_norm_le hr ?_ fun y hy ↦ ?_
-    · exact ((hf ℓ).mono (closure_ball x hr.ne' ▸ hsub)).diffContOnCl
-    · exact (ℓ.le_opNorm _).trans
-        (mul_le_mul_of_nonneg_left (hM y (hsub (sphere_subset_closedBall hy))) (norm_nonneg ℓ))
+  have hderiv : ∀ x ∈ ball c r, ‖deriv (fun z ↦ ℓ (f z)) x‖ ≤ ‖ℓ‖ * M / r := fun x hx ↦
+    norm_deriv_le_of_forall_mem_closedBall_two_mul_norm_le (hf ℓ) hr Subset.rfl
+      (fun y hy ↦ (ℓ.le_opNorm _).trans (mul_le_mul_of_nonneg_left (hM y hy) (norm_nonneg ℓ))) hx
   have hdiff : ∀ x ∈ ball c r, DifferentiableAt ℂ (fun z ↦ ℓ (f z)) x := fun x hx ↦
     (hf ℓ).differentiableAt <|
       Filter.mem_of_superset (isOpen_ball.mem_nhds (hball hx)) ball_subset_closedBall
@@ -97,8 +84,9 @@ private theorem norm_sub_le_of_forall_dual {c : ℂ} {r M : ℝ} (hr : 0 < r)
   calc ‖ℓ (f z) - ℓ (f w)‖ ≤ ‖ℓ‖ * M / r * ‖z - w‖ := this
     _ = M / r * ‖z - w‖ * ‖ℓ‖ := by ring
 
-/-- A weakly holomorphic function on an open set is continuous there. -/
-private theorem continuousOn_of_forall_dual
+/-- A weakly holomorphic function on an open set is continuous there. This needs no completeness
+of `E`. -/
+theorem continuousOn_of_forall_dual
     (hf : ∀ ℓ : StrongDual ℂ E, DifferentiableOn ℂ (fun z ↦ ℓ (f z)) U) (hU : IsOpen U) :
     ContinuousOn f U := by
   intro c hc
