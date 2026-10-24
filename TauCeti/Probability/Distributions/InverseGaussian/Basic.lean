@@ -34,10 +34,6 @@ the density on `(0, ∞)`, the classical closed form
 where `Φ` is the standard Gaussian cdf. It tends to `0` at `0⁺` and to `1` at infinity, so the
 improper fundamental theorem of calculus gives total mass one and identifies `F` with the cdf.
 
-The support argument for cdf strict increase is provided by
-`MeasureTheory.Measure.strictMonoOn_cdf_of_subset_support`, generalized from the original proof of
-`TauCeti.Probability.strictMonoOn_cdf_hyperexponentialMeasure`.
-
 ## Main definitions
 
 * `TauCeti.Probability.inverseGaussianMeasure` — the inverse Gaussian law;
@@ -62,6 +58,7 @@ The support argument for cdf strict increase is provided by
 
 ## References
 
+* Hyperexponential cdf API: `TauCeti.Probability.strictMonoOn_cdf_hyperexponentialMeasure`.
 * N. L. Johnson, S. Kotz, N. Balakrishnan, *Continuous Univariate Distributions*, vol. 1,
   2nd ed., Wiley (1994), chapter 15.
 * R. S. Chhikara, J. L. Folks, *The Inverse Gaussian Distribution: Theory, Methodology, and
