@@ -34,11 +34,6 @@ namespace TauCeti
 
 variable {F : Type*} [Field F] [CharZero F]
 
-/-- Mapping the primitive minimal polynomial to `ℂ` preserves its coefficient sup norm. -/
-private theorem supNorm_map_primitiveMinpoly (x : F) :
-    ((primitiveMinpoly x).map (Int.castRingHom ℂ)).supNorm = (primitiveMinpoly x).supNorm := by
-  simp only [supNorm_eq_iSup, coeff_map, eq_intCast, Complex.norm_intCast, Int.norm_eq_abs]
-
 /-- The rational minimal polynomial has the same degree as the primitive minimal polynomial
 mapped to `ℂ`. -/
 private theorem natDegree_map_primitiveMinpoly (x : F) :
@@ -50,7 +45,8 @@ private theorem natDegree_map_primitiveMinpoly (x : F) :
 theorem naiveHeight_le_choose_natDegree_div_two_mul_mahlerMeasure (x : F) :
     naiveHeight x ≤
       (minpoly ℚ x).natDegree.choose ((minpoly ℚ x).natDegree / 2) * mahlerMeasure x := by
-  rw [naiveHeight_def, mahlerMeasure_def, ← supNorm_map_primitiveMinpoly,
+  rw [naiveHeight_def, mahlerMeasure_def,
+    ← supNorm_map _ (Int.castRingHom ℂ) (fun n ↦ by simp [Int.norm_eq_abs]),
     ← natDegree_map_primitiveMinpoly x]
   exact supNorm_le_choose_natDegree_div_two_mul_mahlerMeasure _
 
@@ -68,7 +64,8 @@ theorem naiveHeight_le_two_pow_mul_mahlerMeasure (x : F) :
 times the square root of one plus the degree of its rational minimal polynomial. -/
 theorem mahlerMeasure_le_sqrt_natDegree_add_one_mul_naiveHeight (x : F) :
     mahlerMeasure x ≤ Real.sqrt ((minpoly ℚ x).natDegree + 1) * naiveHeight x := by
-  rw [naiveHeight_def, mahlerMeasure_def, ← supNorm_map_primitiveMinpoly,
+  rw [naiveHeight_def, mahlerMeasure_def,
+    ← supNorm_map _ (Int.castRingHom ℂ) (fun n ↦ by simp [Int.norm_eq_abs]),
     ← natDegree_map_primitiveMinpoly x]
   exact mahlerMeasure_le_sqrt_natDegree_add_one_mul_supNorm _
 
