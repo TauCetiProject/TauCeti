@@ -420,7 +420,11 @@ theorem bimoduleModuleTensor_map_app (f : M ⟶ M') :
         bimoduleModuleTensorMap Γ Δ f (𝟙 N) ≫
         eqToHom (bimoduleModuleTensor_obj_obj Γ Δ (M := M') (N := N)).symm := (rfl)
 
-instance : ((bimoduleModuleTensor Γ Δ).obj M).Additive where
+-- Grading projections may compute for concrete gradings, so do not index on them.
+instance : Functor.Additive
+    (C := GradedModuleCat.{vN} (no_index Δ.piece))
+    (D := GradedModuleCat.{max vM vN} (no_index Γ.piece))
+    ((bimoduleModuleTensor.{vM, vN} Γ Δ).obj M) where
   map_add := bimoduleModuleTensorMap_add_right Γ Δ (𝟙 M) _ _
 
 instance : ((bimoduleModuleTensor Γ Δ).flip.obj N).Additive where
