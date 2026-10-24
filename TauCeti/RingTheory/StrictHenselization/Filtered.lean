@@ -87,7 +87,8 @@ private theorem parallel_equalization {first second : Neighbourhood R Ω}
   have hunit : IsUnit (point (1 - diagonal idem)) := by
     rw [map_sub, map_one, hzero, sub_zero]
     exact isUnit_one
-  obtain ⟨target, refinement, hunit⟩ := Neighbourhood.exists_refinement_isUnit R Ω second (1 - diagonal idem) hunit
+  obtain ⟨target, refinement, hunit⟩ :=
+    Neighbourhood.exists_refinement_isUnit R Ω second (1 - diagonal idem) hunit
   refine ⟨target, refinement, ?_⟩
   apply ObjectProperty.hom_ext
   apply Over.OverMorphism.ext
