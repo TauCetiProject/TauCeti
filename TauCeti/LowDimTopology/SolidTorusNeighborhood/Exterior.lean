@@ -5,11 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Module.Ball.RadialEquiv
 public import Mathlib.Analysis.SpecialFunctions.Sigmoid
 public import TauCeti.Geometry.Manifold.Boundary.BicollarSide
 public import TauCeti.Geometry.Manifold.Instances.Torus
 public import TauCeti.LowDimTopology.SolidTorusNeighborhood.Basic
+import TauCeti.Analysis.Complex.Circle
+import TauCeti.Analysis.Normed.Module.Ball.Radial.Equiv
 
 /-!
 # Knot exteriors from solid-torus neighbourhoods
@@ -203,25 +204,15 @@ private theorem norm_sigmoidPolar (q : Circle × ℝ) : ‖sigmoidPolar q‖ = R
     Real.norm_of_nonneg (Real.sigmoid_pos _).le]
 
 private theorem isOpenEmbedding_sigmoidPolar : IsOpenEmbedding sigmoidPolar := by
-  let σ : ℝ → Ioi (0 : ℝ) := codRestrict Real.sigmoid (Ioi 0) fun t => Real.sigmoid_pos t
-  have hσ : IsOpenEmbedding σ := by
-    refine ⟨(IsEmbedding.subtypeVal.comp Topology.isEmbedding_sigmoid).codRestrict _ _, ?_⟩
-    have hσr : range σ = Subtype.val ⁻¹' range Real.sigmoid := range_codRestrict _
-    rw [hσr]
-    refine IsOpen.preimage continuous_subtype_val ?_
-    have : range Real.sigmoid = Ioo 0 1 := Real.range_sigmoid
-    exact this ▸ isOpen_Ioo
-  have hpolar : sigmoidPolar = Subtype.val ∘ (homeomorphUnitSphereProd ℂ).symm ∘
-      Prod.map (Homeomorph.refl Circle) σ := by
+  have hσ : IsOpenEmbedding Real.sigmoid :=
+    ⟨IsEmbedding.subtypeVal.comp Topology.isEmbedding_sigmoid, Real.range_sigmoid ▸ isOpen_Ioo⟩
+  have hpolar : sigmoidPolar = (fun q : sphere (0 : ℂ) 1 × ℝ => Real.sigmoid q.2 • (q.1 : ℂ)) ∘
+      Prod.map Circle.homeomorphSphere id := by
     funext q
-    -- `Circle` is the unit sphere of `ℂ` by definition, so the two sides agree on the nose once
-    -- the polar inverse is unfolded.
-    simp only [sigmoidPolar, Function.comp_apply, homeomorphUnitSphereProd_symm_apply_coe]
-    rfl
+    simp [sigmoidPolar]
   rw [hpolar]
-  exact isOpen_compl_singleton.isOpenEmbedding_subtypeVal.comp
-    ((homeomorphUnitSphereProd ℂ).symm.isOpenEmbedding.comp
-      ((Homeomorph.refl Circle).isOpenEmbedding.prodMap hσ))
+  exact (hσ.smul_coe_sphere Real.sigmoid_pos).comp
+    (Circle.homeomorphSphere.isOpenEmbedding.prodMap IsOpenEmbedding.id)
 
 /-- The bicollar of the boundary torus of the half-radius solid torus inside a solid torus
 neighbourhood `Φ`: `((u, z), t) ↦ Φ (σ(t) u, z)`, where `σ` is the logistic sigmoid. It meets

@@ -13,9 +13,9 @@ import Mathlib.Topology.Algebra.Module.Equiv.Pi
 # Analytic changes of ambient coordinates
 
 Analytic charts and analytic submanifolds pull back along an analytic homeomorphism whose
-inverse is analytic. In particular, permuting ambient coordinates preserves the dimension of
-an analytic submanifold. This permits analytic cells of cylindrical stacks to be transported
-when the base coordinates are reordered.
+inverse is analytic. In particular, permuting or reindexing ambient coordinates preserves the
+dimension of an analytic submanifold. This permits analytic cells of cylindrical stacks to be
+transported when the base coordinates are reordered.
 -/
 
 public section
@@ -65,11 +65,13 @@ theorem IsAnalyticSubmanifold.preimage (hS : IsAnalyticSubmanifold d S)
       Homeomorph.toOpenPartialHomeomorph_source, Homeomorph.toOpenPartialHomeomorph_apply,
       univ_inter, mem_preimage] using hxc
 
-/-- Permuting the ambient coordinates preserves analytic submanifolds and their dimension. -/
-theorem IsAnalyticSubmanifold.preimage_comp_equiv (hS : IsAnalyticSubmanifold d S)
-    (e : Fin n ≃ Fin n) : IsAnalyticSubmanifold d ((fun x ↦ x ∘ e) ⁻¹' S) :=
+/-- Reindexing the ambient coordinates along a bijection `Fin n ≃ Fin n'` preserves analytic
+submanifolds and their dimension. For `n' = n` this is a permutation of the coordinates. -/
+theorem IsAnalyticSubmanifold.preimage_comp_equiv {n' : ℕ} (hS : IsAnalyticSubmanifold d S)
+    (e : Fin n ≃ Fin n') : IsAnalyticSubmanifold d ((fun x : Fin n' → 𝕜 ↦ x ∘ e) ⁻¹' S) := by
+  obtain rfl : n = n' := by simpa using Fintype.card_congr e
   -- Precomposition with a permutation of coordinates is a continuous linear equivalence.
   let L := (ContinuousLinearEquiv.piCongrLeft 𝕜 (fun _ : Fin n ↦ 𝕜) e).symm
-  hS.preimage L.toHomeomorph (fun y _ ↦ L.analyticAt y) (fun y _ ↦ L.symm.analyticAt y)
+  exact hS.preimage L.toHomeomorph (fun y _ ↦ L.analyticAt y) (fun y _ ↦ L.symm.analyticAt y)
 
 end TauCeti

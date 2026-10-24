@@ -72,10 +72,11 @@ here is about the same sequence and has to name the same two coefficient maps.
 
 ## Main statements
 
-* `TauCeti.ContCohomology.DiscreteShortExact.compLeft_incl_injective`,
-  `C1_map_incl_eq_inf_ker` and `C1_map_proj_eq_C1`: exactness of
-  `0 → C¹(X, A) → C¹(X, B) → C¹(X, C) → 0` at its left, middle and right nodes, with
-  `C2_map_incl_eq_inf_ker` and `C2_map_proj_eq_C2` the degree-`2` instances of the last two.
+* `TauCeti.ContCohomology.DiscreteShortExact.C1_map_incl_eq_inf_ker` and `C1_map_proj_eq_C1`:
+  exactness of `0 → C¹(X, A) → C¹(X, B) → C¹(X, C) → 0` at its middle and right nodes, with
+  `C2_map_incl_eq_inf_ker` and `C2_map_proj_eq_C2` the degree-`2` instances. Exactness at the left
+  node is Mathlib's `Function.Injective.comp_left` applied to `incl_injective`: postcomposition with
+  `incl` is injective on all cochains `X → A`, hence on `C¹(X, A)` and on `C²(G, A)` at `X = G × G`.
 * `TauCeti.ContCohomology.DiscreteShortExact.explicitDelta0_apply` and
   `explicitDelta1_apply`: the two connecting maps evaluated on representatives, in the shape of
   Mathlib's discrete `groupCohomology.δ₀_apply` and `δ₁_apply`. They hold for an *arbitrary*
@@ -378,11 +379,11 @@ of internal homs with their conjugation actions. The extension hypothesis is the
 the exactness of `S`: injectivity on the left is `InternalHom.precomp_injective` and exactness in
 the middle is `InternalHom.exact_precomp`, for every `N`. It holds for every `N` when `B` is killed
 by a prime `p`, since `A` embeds in `B` and `Hom(-, N)` is exact on `𝔽_p`-vector spaces
-(`InternalHom.precomp_surjective`), and it holds when `B` is killed by `n` and `N` satisfies Baer's
-criterion over `ℤ/nℤ`, for instance `N = ℤ/nℤ` with any action when `n ≠ 0`
-(`InternalHom.precomp_surjective_of_baer`); `precomp_inclDistribMulActionHom_surjective` and
-`precomp_inclDistribMulActionHom_surjective_of_baer` state the two cases for the inclusion of `S`.
-Evaluation identifies the two maps: `evalPairing_dual_incl` and `evalPairing_dual_proj`. -/
+(`InternalHom.precomp_surjective` applied to `inclDistribMulActionHom_injective`), and it holds when
+`B` is killed by `n` and `N` satisfies Baer's criterion over `ℤ/nℤ`, for instance `N = ℤ/nℤ` with
+any action when `n ≠ 0` (`InternalHom.precomp_surjective_of_baer`, stated for the inclusion of `S`
+as `precomp_inclDistribMulActionHom_surjective_of_baer`). Evaluation identifies the two maps:
+`evalPairing_dual_incl` and `evalPairing_dual_proj`. -/
 def dual (hsurj : Function.Surjective (InternalHom.precomp G S.inclDistribMulActionHom (N := N))) :
     DiscreteShortExact G (InternalHom G C N) (InternalHom G B N) (InternalHom G A N) where
   incl := (InternalHom.precomp G S.projDistribMulActionHom).toAddMonoidHom
@@ -393,16 +394,6 @@ def dual (hsurj : Function.Surjective (InternalHom.precomp G S.inclDistribMulAct
   proj_surjective := hsurj
   exact := InternalHom.exact_precomp S.inclDistribMulActionHom S.projDistribMulActionHom
     S.proj_surjective S.exact
-
-variable (N : Type vN) [AddCommMonoid N] [DistribMulAction G N] in
-/-- **Extension across the inclusion of a sequence killed by a prime.** If `B` is killed by a
-prime `p`, precomposition with the inclusion of `S` is surjective on internal homs into any
-additive commutative monoid `N` with a distributive `G`-action. For additive group targets, this
-supplies the extension hypothesis of `dual`. -/
-theorem precomp_inclDistribMulActionHom_surjective {p : ℕ} [Fact p.Prime]
-    (hB : ∀ b : B, p • b = 0) :
-    Function.Surjective (InternalHom.precomp G S.inclDistribMulActionHom (N := N)) :=
-  InternalHom.precomp_surjective hB S.inclDistribMulActionHom_injective
 
 /-- **The extension hypothesis of `dual` for a sequence killed by `n` and a Baer target.** If `B` is
 killed by `n` and `N` satisfies Baer's criterion over `ℤ/nℤ`, precomposition with the inclusion of
@@ -493,14 +484,6 @@ variable {G : Type u} [Monoid G]
   {B : Type vB} [AddCommGroup B] [TopologicalSpace B] [DiscreteTopology B] [DistribMulAction G B]
   {C : Type vC} [AddCommGroup C] [TopologicalSpace C] [DiscreteTopology C] [DistribMulAction G C]
   (S : DiscreteShortExact G A B C) {X : Type w}
-
-variable (X) in
-/-- Exactness of `0 → C¹(X, A) → C¹(X, B)` at the left node: postcomposition with the inclusion is
-injective on all cochains, hence in particular on the continuous ones `C¹(X, A)`. The statement
-does not mention the cochain subgroups, so the degree-`2` node is this theorem at `X = G × G` and
-needs no separate `C²` form. -/
-theorem compLeft_incl_injective : Function.Injective (S.incl.compLeft X) :=
-  S.incl_injective.comp_left
 
 variable [TopologicalSpace X]
 

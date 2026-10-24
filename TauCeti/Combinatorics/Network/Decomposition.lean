@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Pi
 public import Mathlib.Algebra.Group.Submonoid.BigOperators
 public import TauCeti.Combinatorics.Network.Augmentation
 
@@ -52,6 +53,8 @@ of the flow; for a circulation there are no paths at all.
   `TauCeti.PathCycleDecomposition.target_eq_of_mem_paths` and
   `TauCeti.PathCycleDecomposition.sum_weight_paths_eq_val`: the decomposition of an ordinary
   `s`–`t` flow, whose paths run from `s` to `t` with total weight the value of the flow.
+* `TauCeti.PathCycleDecomposition.pathAssignment_apply_le_val`: the path components of a
+  decomposition of an ordinary flow carry at most its value on every arrow.
 
 ## Implementation notes
 
@@ -278,6 +281,14 @@ theorem assignment_le_of_mem_cycles {c : WeightedClosedWalk Q K} (hc : c ∈ D.c
   (List.single_le_sum (by simpa using fun c hc ↦ D.assignment_nonneg_of_mem_cycles hc) _
     (List.mem_map_of_mem hc)).trans D.cycleAssignment_le
 
+/-- Every arrow of a cycle component has positive value in the decomposed assignment. -/
+theorem pos_of_mem_arrows_of_mem_cycles {c : WeightedClosedWalk Q K} (hc : c ∈ D.cycles)
+    {a : Σ x y, Q x y} (ha : a ∈ c.walk.arrows) : 0 < f a.2.2 := by
+  have hle := D.assignment_le_of_mem_cycles hc a.1 a.2.1 a.2.2
+  rw [WeightedClosedWalk.assignment_def,
+    walkAssignment_eq_of_mem (D.isCycle_walk c hc).nodup_arrows _ ha] at hle
+  exact (D.weight_pos_of_mem_cycles c hc).trans_le hle
+
 /-- A decomposition has no components exactly when it decomposes the zero assignment. -/
 theorem paths_eq_nil_and_cycles_eq_nil_iff : D.paths = [] ∧ D.cycles = [] ↔ f = 0 := by
   constructor
@@ -287,11 +298,8 @@ theorem paths_eq_nil_and_cycles_eq_nil_iff : D.paths = [] ∧ D.cycles = [] ↔ 
   · rintro rfl
     refine ⟨D.paths_eq_nil isCirculation_zero, List.eq_nil_iff_forall_not_mem.2 fun c hc ↦ ?_⟩
     have hcyc := D.isCycle_walk c hc
-    obtain ⟨⟨x, y, e⟩, he⟩ := List.exists_mem_of_ne_nil c.walk.arrows fun h ↦
-      ((ArrowWalk.isCycle_def _).1 hcyc).1.ne' (ArrowWalk.arrows_eq_nil_iff.1 h)
-    have hle := D.assignment_le_of_mem_cycles hc x y e
-    rw [WeightedClosedWalk.assignment_def, walkAssignment_eq_of_mem hcyc.nodup_arrows _ he] at hle
-    exact (D.weight_pos_of_mem_cycles c hc).not_ge hle
+    obtain ⟨a, ha⟩ := List.exists_mem_of_ne_nil c.walk.arrows hcyc.arrows_ne_nil
+    simpa using D.pos_of_mem_arrows_of_mem_cycles hc ha
 
 end PartialOrder
 
@@ -333,6 +341,17 @@ theorem sum_weight_paths_eq_val [PartialOrder K] [IsOrderedAddMonoid K] {f : Flo
     List.filter_eq_self.2 fun p hp ↦ decide_eq_true (D.target_eq_of_mem_paths hp)
   rw [f.val_def]
   simpa [hs, ht] using (D.excessAt_eq_sum_sub_sum t).symm
+
+/-- The path components of a decomposition of an ordinary `s`–`t` flow carry at most the value of
+the flow on every arrow. -/
+theorem pathAssignment_apply_le_val [PartialOrder K] [IsOrderedAddMonoid K] {f : Flow cap s t}
+    (D : PathCycleDecomposition f.toFun) {x y : V} (e : Q x y) : D.pathAssignment e ≤ f.val := by
+  rw [← D.sum_weight_paths_eq_val, pathAssignment_def]
+  simp only [Pi.list_sum_apply, List.map_map, Function.comp_def, WeightedWalk.assignment_def]
+  refine List.sum_le_sum fun p hp ↦ ?_
+  have hq := (D.weight_pos_of_mem_paths p hp).le
+  exact (walkAssignment_mem_Icc (D.isPath_walk p hp).nodup_arrows hq (fun _ _ _ ↦ hq)
+    fun _ _ ↦ le_rfl).2 _ _ e
 
 end Flow
 
@@ -455,14 +474,10 @@ theorem exists_pathCycleDecomposition (H : AddSubgroup K) (hf : 0 ≤ f)
         ∃ D : PathCycleDecomposition (f - walkAssignment p q),
           (∀ p ∈ D.paths, p.weight ∈ H) ∧ (∀ c ∈ D.cycles, c.weight ∈ H) ∧
           D.paths.length + D.cycles.length + 1 ≤ #{a : Σ x y, Q x y | 0 < f a.2.2} := by
-    have hg := sub_nonneg.2 (walkAssignment_bottleneck_le hf hnd hne)
-    have hcard := card_filter_pos_sub_walkAssignment_bottleneck_lt hnd hne hpos
-    have hqH : p.bottleneck f hne ∈ H := by
-      obtain ⟨a, -, ha⟩ := ArrowWalk.exists_mem_bottleneck_eq (c := f) (hne := hne)
-      exact ha ▸ hH _
-    obtain ⟨D, hP, hC, hlen⟩ := ih _ hcard _ hg
-      (fun x y e ↦ H.sub_mem (hH e) (walkAssignment_mem p hqH e)) rfl
-    exact ⟨_, ArrowWalk.lt_bottleneck_iff.2 hpos, hqH, hg, D, hP, hC, by omega⟩
+    obtain ⟨hq, hqH, hg, hgH, hcard⟩ :=
+      sub_walkAssignment_bottleneck_spec H hf hH hnd hne hpos
+    obtain ⟨D, hP, hC, hlen⟩ := ih _ hcard _ hg hgH rfl
+    exact ⟨_, hq, hqH, hg, D, hP, hC, by omega⟩
   by_cases hz : ∀ ⦃x y : V⦄ (e : Q x y), f e ≤ 0
   · -- The zero assignment has the empty decomposition.
     have hf0 : f = 0 :=
@@ -476,8 +491,7 @@ theorem exists_pathCycleDecomposition (H : AddSubgroup K) (hf : 0 ≤ f)
   · -- Some cycle consists of positive arrows: peel it off.
     obtain ⟨v, hv⟩ := hcyc
     obtain ⟨c, hc, hpos⟩ := exists_isCycle_iff_transGen.2 hv
-    have hne : c.arrows ≠ [] := fun h ↦
-      ((ArrowWalk.isCycle_def c).1 hc).1.ne' (ArrowWalk.arrows_eq_nil_iff.1 h)
+    have hne : c.arrows ≠ [] := hc.arrows_ne_nil
     obtain ⟨q, hq, hqH, -, D, hP, hC, hlen⟩ := peel c hc.nodup_arrows hne hpos
     refine ⟨D.consCycle ⟨v, c, q⟩ hc hq (sub_add_cancel _ _).symm, hP,
       List.forall_mem_cons.2 ⟨hqH, hC⟩, ?_⟩
@@ -486,7 +500,8 @@ theorem exists_pathCycleDecomposition (H : AddSubgroup K) (hf : 0 ≤ f)
   · -- The positive arrows contain no cycle: peel off a path from a vertex no positive arrow
     -- enters to a vertex no positive arrow leaves.
     simp only [not_exists] at hcyc
-    obtain ⟨s, t, p, hp, hst, hpos, hin, hout⟩ := exists_isPath_of_acyclic hf hcyc e he
+    have hfacyc : f.IsAcyclic := (Assignment.isAcyclic_iff_forall_not_transGen f).2 hcyc
+    obtain ⟨s, t, p, hp, hst, hpos, hin, hout⟩ := exists_isPath_of_isAcyclic hf hfacyc e he
     have hne : p.arrows ≠ [] := p.arrows_ne_nil hst
     obtain ⟨q, hq, hqH, hg, D, hP, hC, hlen⟩ := peel p hp.nodup_arrows hne hpos
     obtain ⟨hs, ht, hneg, hpos'⟩ := excessAt_sign_of_sub_walkAssignment hst hq hg hin hout

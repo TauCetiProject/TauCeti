@@ -43,6 +43,8 @@ the number of distinct roots.
 
 ## Main results
 
+* `Polynomial.nodup_roots_of_forall_derivative_eval_ne_zero`: nonvanishing of the derivative at
+  every rational root suffices for the rational root multiset to have no repetitions.
 * `Polynomial.Separable.roots_map_eq_map_numbering`: for a separable polynomial, a numbering of
   its root set enumerates its full root multiset after base change.
 * `Polynomial.rootSet_mul`: the root set of a product of polynomials whose base changes to `E` are
@@ -75,6 +77,20 @@ namespace TauCeti
 open Finset Polynomial
 
 variable {F : Type*} [CommRing F] {E : Type*} [CommRing E] [IsDomain E] [Algebra F E] {f : F[X]}
+
+/-- If the derivative is nonzero at every rational root, the rational root multiset has no
+repetitions. Unlike separability, this imposes no condition on roots in larger fields. -/
+theorem _root_.Polynomial.nodup_roots_of_forall_derivative_eval_ne_zero [IsDomain F]
+    (h : ∀ x ∈ f.roots, f.derivative.eval x ≠ 0) : f.roots.Nodup := by
+  classical
+  refine Multiset.nodup_iff_count_le_one.mpr fun x ↦ ?_
+  by_cases hx : x ∈ f.roots
+  · have hd : f.derivative ≠ 0 := fun he ↦ h x hx (by simp [he])
+    have hm := rootMultiplicity_sub_one_le_derivative_rootMultiplicity_of_ne_zero f x hd
+    rw [rootMultiplicity_eq_zero (h x hx)] at hm
+    rw [count_roots]
+    omega
+  · simp [Multiset.count_eq_zero_of_notMem hx]
 
 /-- A numbering of the root set of a separable polynomial enumerates the whole root multiset:
 separability makes the roots simple, so the multiset is the image of the numbering. -/

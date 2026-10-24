@@ -9,6 +9,10 @@ public import Mathlib.RingTheory.PowerSeries.Binomial
 public import Mathlib.RingTheory.PowerSeries.Derivative
 public import Mathlib.RingTheory.PowerSeries.Substitution
 public import Mathlib.RingTheory.PowerSeries.Trunc
+-- Proof-only: lowest homogeneous components of powers.
+import TauCeti.RingTheory.MvPowerSeries.Order
+-- Proof-only: algebra maps out of `R⟦X⟧` agree with `aeval` on polynomials.
+import TauCeti.RingTheory.PowerSeries.Evaluation
 import Mathlib.RingTheory.PowerSeries.Inverse
 
 /-!
@@ -25,7 +29,9 @@ injective, which is what extends it to Laurent series by passing to fraction fie
 
 Substitution of series of zero constant coefficient is compatible with congruences modulo
 powers of `X`, in both the substituted series and the series substituted into. This makes
-truncation modulo `X ^ n` compatible with composition of formal coordinates. For a family of
+truncation modulo `X ^ n` compatible with composition of formal coordinates. Substituting a
+multivariate series `φ` of zero constant coefficient into `f = c Xⁿ + ⋯` gives
+`f (φ) = c φ₁ ^ n + ⋯` in lowest degree, where `φ₁` is the linear part of `φ`. For a family of
 series substituted into a multivariate series `G`, a perturbation `X ^ m * r` of the entry `a s`
 is invisible below degree `m` and acts in degree `m` through the coefficient of `Xₛ` alone;
 this drives degree-by-degree solutions of equations such as `G(f(X), X) = 0`.
@@ -62,6 +68,9 @@ of a completed group algebra attached to two topological generators.
 * `PowerSeries.X_pow_dvd_subst`: substitution preserves divisibility by `X ^ n`.
 * `PowerSeries.X_pow_dvd_subst_sub_subst`: substitution respects congruence modulo `X ^ n` of
   the substituted series.
+* `PowerSeries.homogeneousComponent_subst_of_le_order`: if `f` has order at least `n`, the
+  degree-`n` homogeneous component of `f (φ)` is `c φ₁ ^ n`, for `c` the coefficient of `Xⁿ` in
+  `f` and `φ₁` the linear part of `φ`.
 * `PowerSeries.coeff_subst_update_add_X_pow_mul`: perturbing one entry `a s` of a substituted
   family by `X ^ m * r` changes coefficients only from degree `m` on, and in degree `m` only
   through the linear term `Xₛ` of the multivariate series.
@@ -172,9 +181,8 @@ theorem coeff_one_subst {a : S⟦X⟧} (ha : constantCoeff a = 0) (f : R⟦X⟧)
 substitution `f ↦ f (σ X)`. No continuity hypothesis is needed. -/
 theorem algHom_eq_substAlgHom {σ : R⟦X⟧ →ₐ[R] S⟦X⟧} (hσ : HasSubst (σ X)) :
     σ = substAlgHom hσ := by
-  have hpoly : σ.comp (Polynomial.coeToPowerSeries.algHom R) =
-      (substAlgHom hσ).comp (Polynomial.coeToPowerSeries.algHom R) :=
-    Polynomial.algHom_ext (by simp [substAlgHom_X])
+  have hpoly (g : Polynomial R) : σ (g : R⟦X⟧) = substAlgHom hσ (g : R⟦X⟧) := by
+    rw [algHom_coe_eq_aeval, algHom_coe_eq_aeval, substAlgHom_X]
   refine AlgHom.ext fun f ↦ ext fun n ↦ ?_
   obtain ⟨m, hm⟩ := (hσ.eventually_coeff_pow_eq_zero n).exists_forall_of_atTop
   have key (g : S⟦X⟧) : coeff n (σ X ^ m * g) = 0 := by
@@ -186,7 +194,7 @@ theorem algHom_eq_substAlgHom {σ : R⟦X⟧ →ₐ[R] S⟦X⟧} (hσ : HasSubst
   -- zero coefficients through degree `n` after either map is applied.
   rw [eq_X_pow_mul_shift_add_trunc m f]
   simp only [map_add, map_mul, map_pow, substAlgHom_X, key, zero_add]
-  exact congr(coeff n ($hpoly (trunc m f)))
+  rw [hpoly]
 
 /-- The first-order Taylor formula: substituting a square-zero perturbation `X + h` of `X` gives
 `f (X + h) = f + h f'`. -/
@@ -234,6 +242,28 @@ theorem X_pow_dvd_subst_sub_subst {a b : S⟦X⟧} (ha : constantCoeff a = 0)
   rw [subst_coe ha', subst_coe hb', ← Polynomial.eval_map_algebraMap,
     ← Polynomial.eval_map_algebraMap]
   exact Polynomial.sub_dvd_eval_sub _ _ _
+
+/-- **The lowest homogeneous component of a substitution.** If `φ` is a multivariate power
+series of zero constant coefficient and `f` has order at least `n`, then the degree-`n` homogeneous
+component of `f (φ)` is `c φ₁ ^ n`, where `c` is the coefficient of `Xⁿ` in `f` and `φ₁` is the
+linear part of `φ`. -/
+theorem homogeneousComponent_subst_of_le_order {σ : Type*} {φ : MvPowerSeries σ S}
+    (hφ : MvPowerSeries.constantCoeff φ = 0) {f : R⟦X⟧} {n : ℕ} (hn : n ≤ f.order) :
+    MvPowerSeries.homogeneousComponent n (f.subst φ) =
+      MvPowerSeries.C (algebraMap R S (coeff n f)) *
+        MvPowerSeries.homogeneousComponent 1 φ ^ n := by
+  have hφ' : HasSubst φ := .of_constantCoeff_zero hφ
+  obtain ⟨g, rfl⟩ : X ^ n ∣ f :=
+    X_pow_dvd_iff.mpr fun m hm ↦ coeff_of_lt_order m ((Nat.cast_lt.mpr hm).trans_le hn)
+  -- `f (φ) = φ ^ n * g (φ)`, and the degree-zero component of `g (φ)` is its constant term
+  have hmul := MvPowerSeries.homogeneousComponent_mul_of_le_order (p := n) (q := 0)
+    (MvPowerSeries.le_order_pow_of_constantCoeff_eq_zero n hφ)
+    (zero_le (a := (g.subst φ : MvPowerSeries σ S).order))
+  have hpow := MvPowerSeries.homogeneousComponent_pow_of_le_order (p := 1)
+    (MvPowerSeries.one_le_order_iff_constCoeff_eq_zero.mpr hφ) n
+  simp only [add_zero, mul_one] at hmul hpow
+  rw [subst_mul hφ', subst_pow hφ', subst_X hφ', hmul, hpow]
+  simp [mul_comm, constantCoeff_subst_of_constantCoeff_zero hφ, coeff_mul_X_pow']
 
 end Algebra
 

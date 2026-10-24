@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.DirectSum.Internal
 public import TauCeti.Algebra.Lie.Sl2.RangeKer
 public import TauCeti.Algebra.Lie.Sl2.Spectrum
 public import TauCeti.LinearAlgebra.Eigenspace.Anticommute
@@ -23,8 +24,8 @@ as `μ` is not a natural number. Dually, the lowering operator `f` maps `M_μ` o
 
 In a decomposition of `M` into irreducible modules `V(n)`, with weights `n, n - 2, …, -n`, these are
 the familiar statements that `e` is injective below the middle of each string and surjective above
-it. The proofs here use no such decomposition and no algebraically closed field. Injectivity is
-Mathlib's theorem that a primitive vector has a natural-number weight
+it. The proofs of these statements use no such decomposition and no algebraically closed field.
+Injectivity is Mathlib's theorem that a primitive vector has a natural-number weight
 (`IsSl2Triple.HasPrimitiveVectorWith.exists_nat`). Surjectivity comes from the decomposition
 `M = e • M ⊕ ker f` (`IsSl2Triple.isCompl_range_toEnd_e_ker_toEnd_f`). Both summands are stable
 under `h`, so the component in `ker f` of a vector of `M_(μ + 2)` also has weight `μ + 2`, and it
@@ -38,6 +39,11 @@ For the adjoint action, `h` grades `L` by its eigenspaces `L(μ)`. The case `μ 
 openness of the orbit of `e` in `L(2)` under a group with Lie algebra `L(0)`: the differential at
 the identity of that orbit map is `x ↦ ⁅x, e⁆`.
 
+In a finite-dimensional module over an algebraically closed field of characteristic zero the
+eigenspaces of `h` at the integers span `M`, and `f` lowers weights by `2`, so the kernel of `f` is
+spanned by its homogeneous parts. By the injectivity of `f` these have weights `-n` with `n : ℕ`
+(`IsSl2Triple.ker_toEnd_f_eq_iSup_inf_eigenspace`).
+
 ## Main results
 
 * `IsSl2Triple.disjoint_ker_toEnd_e_eigenspace` and
@@ -45,6 +51,9 @@ the identity of that orbit map is `x ↦ ⁅x, e⁆`.
 * `IsSl2Triple.map_toEnd_e_eigenspace`: `e` maps `M_μ` onto `M_(μ + 2)` unless `μ + 2 = -n`.
 * `IsSl2Triple.map_toEnd_f_eigenspace`: `f` maps `M_μ` onto `M_(μ - 2)` unless `μ - 2 = n`.
 * `IsSl2Triple.map_ad_e_eigenspace_zero`: `⁅e, L(0)⁆ = L(2)` in the adjoint grading.
+* `IsSl2Triple.ker_toEnd_f_eq_iSup_inf_eigenspace`: in a finite-dimensional module over an
+  algebraically closed field of characteristic zero, the kernel of `f` is spanned by the vectors it
+  contains of weight `-n`, `n : ℕ`.
 
 ## References
 
@@ -184,5 +193,40 @@ theorem map_ad_e_eigenspace_zero (t : IsSl2Triple h e f) :
   exact this
 
 end Field
+
+/-! ### The weights of `h` on the kernel of the lowering operator -/
+
+section Weights
+
+variable {K L M : Type*} [Field K] [CharZero K] [IsAlgClosed K] [LieRing L] [LieAlgebra K L]
+  [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M] [FiniteDimensional K M]
+  {h e f : L}
+
+/-- **The kernel of the lowering operator is graded by `-ℕ`.** In a finite-dimensional module over
+an algebraically closed field of characteristic zero, the kernel of `f` is spanned by the vectors
+it contains of weight `-n` for `h`, `n : ℕ`. -/
+theorem ker_toEnd_f_eq_iSup_inf_eigenspace (t : IsSl2Triple h e f) :
+    LinearMap.ker (toEnd K L M f) =
+      ⨆ n : ℕ, LinearMap.ker (toEnd K L M f) ⊓ (toEnd K L M h).eigenspace (-(n : K)) := by
+  have hsub : Function.Injective fun z : ℤ ↦ (z : K) - 2 := fun a b hab ↦ by
+    simpa using hab
+  refine (LinearMap.ker_eq_iSup_inf_of_map_le (toEnd K L M f)
+    (A := fun z : ℤ ↦ (toEnd K L M h).eigenspace (z : K))
+    (A' := fun z : ℤ ↦ (toEnd K L M h).eigenspace ((z : K) - 2))
+    (TauCeti.isInternal_eigenspace_toEnd_intCast t).submodule_iSup_eq_top
+    ((toEnd K L M h).eigenspaces_iSupIndep.comp hsub)
+    fun z ↦ Submodule.map_le_iff_le_comap.2 fun v hv ↦ by
+      rw [Submodule.mem_comap, toEnd_apply_apply]
+      exact TauCeti.lie_mem_eigenspace_sub_two t hv).trans ?_
+  refine le_antisymm (iSup_le fun z ↦ ?_) (iSup_le fun n ↦ le_iSup_of_le (-(n : ℤ)) (by simp))
+  by_cases hz : 0 < z
+  · have hne (n : ℕ) : (z : K) ≠ -(n : K) := by
+      exact_mod_cast (by omega : z ≠ -(n : ℤ))
+    rw [(t.disjoint_ker_toEnd_f_eigenspace hne).eq_bot]
+    exact bot_le
+  · obtain ⟨n, rfl⟩ := Int.exists_eq_neg_ofNat (not_lt.1 hz)
+    exact le_iSup_of_le n (by simp)
+
+end Weights
 
 end IsSl2Triple
