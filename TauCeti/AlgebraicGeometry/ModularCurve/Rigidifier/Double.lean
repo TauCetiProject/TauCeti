@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.ModularCurve.Simultaneous.Projections
+import TauCeti.CategoryTheory.Aut.Representable
 
 /-!
 # The scheme of two rigidifications
@@ -51,9 +52,9 @@ theorem doubleRepresentableBy_homEquiv {X : EllObj B}
       ((R.homEquiv (f ≫ V.baseChangeFunctorHom (D.rep V))).1,
         ((R.homEquiv (f ≫ V.baseChangeFunctorHom (D.rep V))).2,
           Q.map f.op (D.universal V))) := by
-  dsimp only [doubleRepresentableBy, Functor.RepresentableBy.ofIso, Equiv.trans_apply]
-  rw [D.tensorRepresentableBy_homEquiv R]
-  rfl
+  rw [doubleRepresentableBy, homEquiv_ofIso, Iso.trans_hom, NatTrans.comp_app,
+    types_comp_apply, associator_hom_app_apply, braiding_hom_app_apply,
+    tensorRepresentableBy_homEquiv]
 
 /-- The second projection from the scheme of two rigidifications: forget the original
 `Q`-structure and retain the additional relative one. The first projection is the existing
@@ -83,10 +84,9 @@ triple. Together with `homEquiv_doubleSnd`, this identifies the two forgetful pr
 theorem homEquiv_baseChangeFunctorHom :
     R.homEquiv (V.baseChangeFunctorHom (D.rep V)) =
       (P ◁ fst Q Q).app _ ((D.doubleRepresentableBy R).homEquiv (𝟙 _)) := by
-  rw [doubleRepresentableBy_homEquiv]
-  rw [Category.id_comp]
-  -- Evaluating the cartesian projection on this explicit triple retains its first pair.
-  rfl
+  rw [whiskerLeft_app_apply, Functor.Monoidal.fst_app_apply,
+    doubleRepresentableBy_homEquiv, Category.id_comp]
+  exact Prod.mk.eta.symm
 
 /-- Both projections inherit properties of the rigidifying problem. In particular, if its
 relative representing morphisms are finite, étale, or surjective, so is the second projection.
@@ -98,7 +98,7 @@ theorem mem_doubleSnd_base {W : MorphismProperty Scheme.{u}} [W.RespectsIso]
 
 /-- If `P` is rigid, the two projections from the scheme of two rigidifications jointly define
 a monomorphism to the fibre product of the scheme of one rigidification with itself. -/
-theorem mono_double (hP : P.IsRigid) :
+theorem mono_pullback_lift_baseChangeFunctorHom_doubleSnd (hP : P.IsRigid) :
     Mono (pullback.lift (V.baseChangeFunctorHom (D.rep V)).base (D.doubleSnd R).base
       (by rw [EllObj.Hom.base_structureMap, EllObj.Hom.base_structureMap]) :
       (V.baseChangeFunctor.obj (D.rep V)).base ⟶ pullback V.structureMap V.structureMap) :=

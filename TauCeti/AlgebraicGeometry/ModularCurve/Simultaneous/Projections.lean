@@ -69,9 +69,7 @@ theorem mem_base_of_forget_snd {W : MorphismProperty Scheme.{u}} [W.RespectsIso]
     (a : V ⟶ U) (ha : R.homEquiv a = (S.homEquiv (𝟙 V)).1)
     (h : W (D.rep U).hom) : W a.base := by
   apply D.mem_base_of_forget_fst R (S.ofIso (β_ P Q)) a _ h
-  -- The cartesian braiding interchanges the two universal structures.
-  convert ha using 1
-  rfl
+  simpa only [homEquiv_ofIso, braiding_hom_app_apply] using ha
 
 end Swap
 
@@ -88,9 +86,8 @@ theorem mem_base_of_forget_right (D₂ : Q₂.RelRepData)
     (ha₁ : R₁.homEquiv a₁ = (P ◁ fst Q₁ Q₂).app (op V) (S.homEquiv (𝟙 V)))
     (h : W (D₂.rep V₁).hom) : W a₁.base := by
   apply D₂.mem_base_of_forget_snd R₁ (S.ofIso (α_ P Q₁ Q₂).symm) a₁ _ h
-  -- The associator regroups the universal triple as a pair and its last structure.
-  convert ha₁ using 1
-  rfl
+  simpa only [homEquiv_ofIso, Iso.symm_hom, associator_inv_app_apply,
+    whiskerLeft_app_apply, Functor.Monoidal.fst_app_apply] using ha₁
 
 /-- Forgetting the middle structure in a triple has the properties of its relative representing
 morphism over the universal family with the first and last structures. -/
@@ -100,9 +97,9 @@ theorem mem_base_of_forget_middle (D₁ : Q₁.RelRepData)
     (h : W (D₁.rep V₂).hom) : W a₂.base := by
   apply D₁.mem_base_of_forget_right
     (S.ofIso (whiskerLeftIso P (β_ Q₁ Q₂))) R₂ a₂ _ h
-  -- Interchanging the last two structures turns this into the last-factor projection.
-  convert ha₂ using 1
-  rfl
+  rw [whiskerLeft_app_apply, homEquiv_ofIso, whiskerLeftIso_hom,
+    whiskerLeft_app_apply, braiding_hom_app_apply, Functor.Monoidal.fst_app_apply]
+  simpa only [whiskerLeft_app_apply, Functor.Monoidal.snd_app_apply] using ha₂
 
 end Triple
 
