@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.Padics.Measure.CompletedGroupAlgebra
+public import TauCeti.NumberTheory.Padics.Measure.CompletedGroupAlgebra.Basic
 public import TauCeti.NumberTheory.Padics.PadicIntegers
 public import TauCeti.NumberTheory.Padics.QuotientTower
 
