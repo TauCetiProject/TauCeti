@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors, Wentao Li
 -/
 module
 
-public import TauCeti.Algebra.Category.GradedModuleCat.BimoduleTensor.Coproducts
 public import TauCeti.Algebra.Category.GradedModuleCat.BimoduleTensor.Module.Associator
 public import TauCeti.Algebra.Category.GradedModuleCat.BimoduleTensor.Module.Coproducts
 public import Mathlib.Algebra.Homology.BifunctorAssociator
