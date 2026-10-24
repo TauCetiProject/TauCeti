@@ -80,6 +80,13 @@ theorem regionBetween_congr {f f' g g' : α → ℝ} {s : Set α} (hf : EqOn f f
   ext ⟨x, t⟩
   exact and_congr_right fun hx ↦ by rw [hf hx, hg hx]
 
+/-- The closed region between two functions only depends on their values on the base set. -/
+theorem closedRegionBetween_congr {f f' g g' : α → ℝ} {s : Set α} (hf : EqOn f f' s)
+    (hg : EqOn g g' s) : closedRegionBetween f g s = closedRegionBetween f' g' s := by
+  ext ⟨x, t⟩
+  simp only [mem_closedRegionBetween]
+  exact and_congr_right fun hx ↦ by rw [hf hx, hg hx]
+
 /-- The closed region between two functions continuous on a closed set is closed. -/
 theorem isClosed_closedRegionBetween [TopologicalSpace α] {f g : α → ℝ} {s : Set α}
     (hs : IsClosed s) (hf : ContinuousOn f s) (hg : ContinuousOn g s) :
