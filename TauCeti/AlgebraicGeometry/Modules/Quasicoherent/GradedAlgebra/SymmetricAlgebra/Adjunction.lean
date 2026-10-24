@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Modules.GradedAlgebra.Sections
+public import TauCeti.AlgebraicGeometry.Modules.Sheaf
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.GradedAlgebra.SymmetricAlgebra.Basic
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.GradedMap
 
@@ -181,13 +182,6 @@ private lemma presheafLift_mul (φ : F ⟶ A.X 1) (i j : ℕ) :
     ModuleCat.symmetricPower.coe_mul_tmul, map_mul, hx, hy, DirectSum.of_mul_of]
   exact (DirectSum.of_eq_same (β := fun n ↦ Γ(A.X n, U.unop)) _ _).symm
 
-/-- A morphism of `𝒪_X`-modules acts on sections over `U` as its underlying morphism of presheaves
-of modules does. -/
-private lemma app_apply_eq_val_app_apply {M N : X.Modules} (ψ : M ⟶ N) (U : X.Opensᵒᵖ)
-    (x : Γ(M, U.unop)) :
-    ψ.app U.unop x = ψ.val.app U x :=
-  (rfl)
-
 /-- The extension is unital on sections. -/
 private lemma presheafLift_one (φ : F ⟶ A.X 1) :
     (PresheafOfModulesOfCommRing.symmetricPowerZeroIso X.presheaf).inv.app F.val ≫
@@ -203,7 +197,7 @@ private lemma presheafLift_one (φ : F ⟶ A.X 1) :
     (ModuleCat.symmetricPower.coe_iso₀_inv_apply _ 1)).trans ?_
   rw [map_one, map_one, DirectSum.one_def, DirectSum.of_eq_same, sections_gOne_def,
     Scheme.Modules.sectionsFunctor_ε]
-  exact app_apply_eq_val_app_apply A.toMon.one U _
+  exact Scheme.Modules.Hom.app_apply A.toMon.one U.unop _
 
 /-- In degree one, the extension restricts to `φ` along `Sym¹ F.val ≅ F.val`. -/
 private lemma presheafLift_degreeOne (φ : F ⟶ A.X 1) :
@@ -219,7 +213,7 @@ private lemma presheafLift_degreeOne (φ : F ⟶ A.X 1) :
       (PresheafOfModulesOfCommRing.obj (R := X.presheaf) F.val U) m)).trans ?_
   refine (congrArg (· 1) (sectionsLift_ι φ U.unop m)).trans ?_
   rw [DirectSum.of_eq_same]
-  exact app_apply_eq_val_app_apply φ U m
+  exact Scheme.Modules.Hom.app_apply φ U.unop m
 
 variable (F) in
 /-- The symmetric power `Symⁿ F`, typed as an `𝒪_X`-module so that the monoidal structure of
