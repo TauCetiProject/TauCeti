@@ -971,7 +971,28 @@ jobs:
 
       - name: Dot-notation namespace lint (Mathlib type namespaces stay at root)
         if: ${{ env.INFRA != '1' }}
+        env:
+          DOT_BASE: ${{ steps.pr.outputs.base_sha }}
+          DOT_HEAD: ${{ steps.integration.outputs.tested_sha }}
         run: |
+          set -euo pipefail
+          # Empty scoped lint needs no parser setup when the complete source tree is
+          # unchanged. The module list omits deletions: independently include those
+          # before skipping, since removing a type can change namespace ownership.
+          # Full lint, batches and pin changes never select DOT_ONLY_MODULES.
+          if [ -n "${DOT_ONLY_MODULES:-}" ] && [ -f "$DOT_ONLY_MODULES" ] \
+             && [ ! -s "$DOT_ONLY_MODULES" ]; then
+            if files=$(python3 gate/scripts/lint_scope_files.py pr "$DOT_BASE" "$DOT_HEAD" --policy); then
+              sources_changed=0
+              while IFS= read -r file; do
+                case "$file" in TauCeti/*|TauCeti.lean) sources_changed=1 ;; esac
+              done <<< "$files"
+              if [ "$sources_changed" = 0 ]; then
+                echo "lint-dot-notation: no source changes; skipping namespace and ownership scans"
+                exit 0
+              fi
+            fi
+          fi
           python3 gate/scripts/lint-dot-notation.py \
             --baseline gate/scripts/lint-dot-notation-baseline.txt \
             --mathlib-root pr/.lake/packages/mathlib/Mathlib \
