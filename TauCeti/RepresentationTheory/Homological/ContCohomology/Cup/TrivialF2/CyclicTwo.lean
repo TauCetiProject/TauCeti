@@ -63,6 +63,8 @@ theorem cyclicTwoCharacterClass_eq_homClass (hG : Nat.card G = 2) :
       continuous_of_discreteTopology := by
   rw [cyclicTwoCharacterClass, OpenSubgroup.indexTwoCharacterClass_def,
     ContCohomology.homClass_def]
+  -- The chosen open subgroup reduces to bottom; proof irrelevance identifies the
+  -- index and continuity witnesses in the two character-class constructions.
   rfl
 
 -- The additive map preserves the selected cohomology carriers. Flipping the integral
@@ -180,6 +182,15 @@ private theorem cyclicTwoPolynomialLinearEquiv_monomial (hG : Nat.card G = 2)
   simp [cyclicTwoPolynomialLinearEquiv, DirectSum.coe_congrLinearEquiv,
     DirectSum.lof_eq_of, Polynomial.toFinsuppIsoLinear, Polynomial.toFinsupp_monomial]
 
+private theorem cyclicTwoPolynomialLinearEquiv_apply_component (hG : Nat.card G = 2)
+    (p : (ZMod 2)[X]) (n : ℕ) :
+    (cyclicTwoPolynomialLinearEquiv G hG p) n =
+      cyclicTwoCohomLinearEquiv G hG n (p.coeff n) := by
+  simp only [cyclicTwoPolynomialLinearEquiv, LinearEquiv.trans_apply,
+    DirectSum.coe_congrLinearEquiv, DirectSum.lmap_apply, finsuppLEquivDirectSum_apply,
+    AddMonoidAlgebra.coeffLinearEquiv_apply, Polynomial.toFinsuppIsoLinear_apply,
+    Polynomial.toFinsupp_apply, LinearEquiv.coe_toLinearMap]
+
 private theorem cyclicTwoPolynomialLinearEquiv_eq_aeval (hG : Nat.card G = 2)
     (p : (ZMod 2)[X]) :
     cyclicTwoPolynomialLinearEquiv G hG p =
@@ -244,7 +255,7 @@ theorem cyclicTwoCohomPolynomialEquiv_apply_component (hG : Nat.card G = 2)
   -- `ofBijective` retains the evaluation homomorphism as its underlying function.
   change (aeval (DirectSum.of (cohomF2 G) 1 (cyclicTwoCharacterClass G hG)) p) n = _
   rw [← cyclicTwoPolynomialLinearEquiv_eq_aeval G hG]
-  rfl
+  exact cyclicTwoPolynomialLinearEquiv_apply_component G hG p n
 
 /-- The inverse polynomial has the coordinates supplied by the normalized degreewise
 equivalences. -/

@@ -100,6 +100,34 @@ private theorem eqToHom_cohomF2_one :
   congr 1
   exact eqToHom_ofDiscreteModule_trivialF2_symm_apply G _
 
+omit [CompactSpace G] [TotallyDisconnectedSpace G] in
+private theorem discreteTrivialF2_cup_one_right (n : ℕ)
+    (x : continuousCohomology n (ofDiscreteModule ℤ G (trivialF2 G).V)) :
+    (ofDiscreteModulePairing (trivialF2Pairing G) (trivialF2Pairing_smul_smul G)).cup n 0 x
+      ((eqToHom (congrArg (continuousCohomology 0)
+        (ofDiscreteModule_trivialF2 G).symm)).hom (cohomF2.one G)) = x := by
+  rw [eqToHom_cohomF2_one, explicitH0IsoContinuousCohomology_hom_eq_degreeZeroClass]
+  apply TopPairing.cup_one_right
+  intro a
+  have hright (b : (trivialF2 G).V) :
+      (ofDiscreteModulePairing (trivialF2Pairing G) (trivialF2Pairing_smul_smul G)).bil
+        b ((trivialF2Equiv G).symm 1) = b := by
+    rw [ofDiscreteModulePairing_bil_apply]
+    apply (trivialF2Equiv G).injective
+    simp only [trivialF2Pairing_apply, AddEquiv.apply_symm_apply, mul_one]
+  exact hright a
+
+omit [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
+  [TotallyDisconnectedSpace G] in
+private theorem discreteTrivialF2_pairing_transport (a b : (trivialF2 G).V) :
+    eqToHom (ofDiscreteModule_trivialF2 G)
+        ((ofDiscreteModulePairing (trivialF2Pairing G) (trivialF2Pairing_smul_smul G)).bil a b) =
+      (trivialF2TopPairing G).bil (eqToHom (ofDiscreteModule_trivialF2 G) a)
+        (eqToHom (ofDiscreteModule_trivialF2 G) b) := by
+  rw [ofDiscreteModulePairing_bil_apply, eqToHom_ofDiscreteModule_trivialF2_apply,
+    eqToHom_ofDiscreteModule_trivialF2_apply, eqToHom_ofDiscreteModule_trivialF2_apply,
+    trivialF2TopPairing_bil_apply, trivialF2Pairing_apply]
+
 end ContCohomology
 
 end TauCeti
@@ -133,6 +161,51 @@ theorem indexTwoDelta0_one (U : OpenSubgroup G) (hU : U.toSubgroup.index = 2) :
     indexTwoCharacterClass_def]
   simp
 
+omit [CompactSpace G] [TotallyDisconnectedSpace G] in
+private theorem indexTwoShortExact_pairing_incl (U : OpenSubgroup G)
+    [U.toSubgroup.FiniteIndex] (hU : U.toSubgroup.index = 2) :
+    let S := DiscreteCoind.indexTwoShortExact G U.toSubgroup (trivialF2 G).V hU U.isOpen'
+      (trivialF2_two_nsmul_eq_zero G)
+    let P := ofDiscreteModulePairing (trivialF2Pairing G) (trivialF2Pairing_smul_smul G)
+    let μ := DiscreteCoind.pairing U.toSubgroup U.isOpen' (trivialF2Pairing G)
+      (trivialF2Pairing_smul_smul G)
+    let Q := ofDiscreteModulePairing μ (DiscreteCoind.pairing_smul U.toSubgroup U.isOpen'
+      (trivialF2Pairing G) (trivialF2Pairing_smul_smul G))
+    ∀ a b : (trivialF2 G).V, S.incl (P.bil a b) = Q.bil a (S.incl b) := by
+  intro S P μ Q a b
+  simp only [S, Q, P, DiscreteCoind.indexTwoShortExact_incl,
+    ofDiscreteModulePairing_bil_apply]
+  -- Restricting to the underlying coefficient carriers identifies the bundled unit.
+  change DiscreteCoind.unit G U.toSubgroup _ (trivialF2Pairing G a b) =
+    DiscreteCoind.pairing U.toSubgroup U.isOpen' (trivialF2Pairing G)
+      (trivialF2Pairing_smul_smul G) a (DiscreteCoind.unit G U.toSubgroup _ b)
+  ext g
+  rw [DiscreteCoind.pairing_apply, DiscreteCoind.unit_apply, DiscreteCoind.unit_apply,
+    trivialF2Pairing_smul_smul]
+
+omit [CompactSpace G] [TotallyDisconnectedSpace G] in
+private theorem indexTwoShortExact_pairing_proj (U : OpenSubgroup G)
+    [U.toSubgroup.FiniteIndex] (hU : U.toSubgroup.index = 2) :
+    let S := DiscreteCoind.indexTwoShortExact G U.toSubgroup (trivialF2 G).V hU U.isOpen'
+      (trivialF2_two_nsmul_eq_zero G)
+    let P := ofDiscreteModulePairing (trivialF2Pairing G) (trivialF2Pairing_smul_smul G)
+    let μ := DiscreteCoind.pairing U.toSubgroup U.isOpen' (trivialF2Pairing G)
+      (trivialF2Pairing_smul_smul G)
+    let Q := ofDiscreteModulePairing μ (DiscreteCoind.pairing_smul U.toSubgroup U.isOpen'
+      (trivialF2Pairing G) (trivialF2Pairing_smul_smul G))
+    ∀ (a : (trivialF2 G).V) (b : DiscreteCoind G U.toSubgroup (trivialF2 G).V),
+      S.proj (Q.bil a b) = P.bil a (S.proj b) := by
+  intro S P μ Q a b
+  simp only [S, Q, P, DiscreteCoind.indexTwoShortExact_proj,
+    ofDiscreteModulePairing_bil_apply]
+  -- The short exact sequence records the underlying additive map of the trace.
+  change DiscreteCoind.trace G U.toSubgroup _
+    (DiscreteCoind.pairing U.toSubgroup U.isOpen' (trivialF2Pairing G)
+      (trivialF2Pairing_smul_smul G) a b) =
+    trivialF2Pairing G a (DiscreteCoind.trace G U.toSubgroup _ b)
+  exact DiscreteCoind.trace_pairing U.toSubgroup U.isOpen'
+    (trivialF2Pairing G) (trivialF2Pairing_smul_smul G) a b
+
 omit [TotallyDisconnectedSpace G] in
 /-- **The connecting map of the index-two coinduced sequence is cup product by the subgroup
 character in every degree.** The transports identify the discrete coefficient module with
@@ -151,62 +224,22 @@ theorem indexTwoDelta_eq_cup_character (U : OpenSubgroup G)
   let S := DiscreteCoind.indexTwoShortExact G U.toSubgroup (trivialF2 G).V hU U.isOpen'
     (trivialF2_two_nsmul_eq_zero G)
   let P := ofDiscreteModulePairing (trivialF2Pairing G) (trivialF2Pairing_smul_smul G)
-  -- State coefficient equations on the original carrier before using its discrete presentation.
-  have hbil (a b : (trivialF2 G).V) : P.bil a b = trivialF2Pairing G a b :=
-    ofDiscreteModulePairing_bil_apply (trivialF2Pairing G) (trivialF2Pairing_smul_smul G) a b
   let μ := DiscreteCoind.pairing U.toSubgroup U.isOpen' (trivialF2Pairing G)
     (trivialF2Pairing_smul_smul G)
   let Q := ofDiscreteModulePairing μ (DiscreteCoind.pairing_smul U.toSubgroup U.isOpen'
     (trivialF2Pairing G) (trivialF2Pairing_smul_smul G))
   let u := (eqToHom (congrArg (continuousCohomology 0)
     (ofDiscreteModule_trivialF2 G).symm)).hom (cohomF2.one G)
-  have hunit : P.cup n 0 x u = x := by
-    dsimp only [u]
-    rw [eqToHom_cohomF2_one, explicitH0IsoContinuousCohomology_hom_eq_degreeZeroClass]
-    apply P.cup_one_right
-    intro a
-    have hright (b : (trivialF2 G).V) : P.bil b ((trivialF2Equiv G).symm 1) = b := by
-      refine (hbil b _).trans ?_
-      apply (trivialF2Equiv G).injective
-      simp only [trivialF2Pairing_apply, AddEquiv.apply_symm_apply, mul_one]
-    exact hright a
   have hcup := S.delta_cup_right S Q P P
-    (fun a b => by
-      -- The short exact sequence exposes its unit through this defining equation.
-      simp only [S, Q, P, DiscreteCoind.indexTwoShortExact_incl,
-        ofDiscreteModulePairing_bil_apply]
-      -- Restricting to the underlying coefficient carriers identifies the bundled unit.
-      change DiscreteCoind.unit G U.toSubgroup _ (trivialF2Pairing G a b) =
-        DiscreteCoind.pairing U.toSubgroup U.isOpen' (trivialF2Pairing G)
-          (trivialF2Pairing_smul_smul G) a (DiscreteCoind.unit G U.toSubgroup _ b)
-      ext g
-      rw [DiscreteCoind.pairing_apply, DiscreteCoind.unit_apply, DiscreteCoind.unit_apply,
-        trivialF2Pairing_smul_smul])
-    (fun a b => by
-      simp only [S, Q, P, DiscreteCoind.indexTwoShortExact_proj,
-        ofDiscreteModulePairing_bil_apply]
-      -- The short exact sequence records the underlying additive map of the trace.
-      change DiscreteCoind.trace G U.toSubgroup _
-        (DiscreteCoind.pairing U.toSubgroup U.isOpen' (trivialF2Pairing G)
-          (trivialF2Pairing_smul_smul G) a b) =
-        trivialF2Pairing G a (DiscreteCoind.trace G U.toSubgroup _ b)
-      exact DiscreteCoind.trace_pairing U.toSubgroup U.isOpen'
-        (trivialF2Pairing G) (trivialF2Pairing_smul_smul G) a b)
+    (indexTwoShortExact_pairing_incl U hU) (indexTwoShortExact_pairing_proj U hU)
     n 0 x u
-  rw [hunit] at hcup
+  rw [discreteTrivialF2_cup_one_right] at hcup
   dsimp only [S] at hcup
   simp only [Nat.add_zero] at hcup
-  have hcompat (a b : (trivialF2 G).V) :
-      eqToHom (ofDiscreteModule_trivialF2 G) (P.bil a b) =
-        (trivialF2TopPairing G).bil (eqToHom (ofDiscreteModule_trivialF2 G) a)
-          (eqToHom (ofDiscreteModule_trivialF2 G) b) := by
-    rw [hbil, eqToHom_ofDiscreteModule_trivialF2_apply,
-      eqToHom_ofDiscreteModule_trivialF2_apply, eqToHom_ofDiscreteModule_trivialF2_apply,
-      trivialF2TopPairing_bil_apply, trivialF2Pairing_apply]
   have hnat := P.cup_coeffMap (trivialF2TopPairing G)
     (eqToHom (ofDiscreteModule_trivialF2 G)) (eqToHom (ofDiscreteModule_trivialF2 G))
     (eqToHom (ofDiscreteModule_trivialF2 G))
-    hcompat
+    discreteTrivialF2_pairing_transport
     n 1 x ((S.delta 0).hom u)
   rw [ContinuousCohomology.coeffMap_eqToHom, ContinuousCohomology.coeffMap_eqToHom,
     ContinuousCohomology.coeffMap_eqToHom] at hnat
@@ -289,6 +322,7 @@ theorem exact_cor_cup_of_index_two (U : OpenSubgroup G) (hU : U.toSubgroup.index
   convert h''' using 1
   · ext x
     simp only [trivialF2CorMap_def, ConcreteCategory.comp_apply]
+    -- The linear equivalences `e` and `eU.symm` apply the same coefficient transports.
     rfl
   · ext x
     have hx : (eqToHom (congrArg (continuousCohomology n)
