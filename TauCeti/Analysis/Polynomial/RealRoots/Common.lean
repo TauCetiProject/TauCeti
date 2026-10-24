@@ -182,23 +182,6 @@ theorem eventually_card_aroots_prod_eq {x₀ : B}
     aroots_prod_toFinset _ _ (hne fun k => (hdeg k).self_of_nhds)]
   exact (Finset.card_nbij e he.mapsTo he.injOn he.surjOn).symm
 
-/-- **Distinct complex roots from derivative gcd data.** If a real polynomial `f x` has degree `n`
-near `x₀`, and the degree of its gcd with its derivative is the same as at `x₀`, then near `x₀`
-it has as many distinct complex roots as `f x₀`. -/
-theorem eventually_card_aroots_toFinset_eq_of_natDegree_gcd_derivative {x₀ : B} {f : B → ℝ[X]}
-    {n : ℕ} (hdeg : ∀ᶠ x in 𝓝 x₀, (f x).degree = n)
-    (hgcd : ∀ᶠ x in 𝓝 x₀, (EuclideanDomain.gcd (f x) (f x).derivative).natDegree =
-      (EuclideanDomain.gcd (f x₀) (f x₀).derivative).natDegree) :
-    ∀ᶠ x in 𝓝 x₀, ((f x).aroots ℂ).toFinset.card = ((f x₀).aroots ℂ).toFinset.card := by
-  have hne {x : B} (hx : (f x).degree = n) : f x ≠ 0 := by
-    rintro h
-    simp [h] at hx
-  have hx₀ := hdeg.self_of_nhds
-  filter_upwards [hdeg, hgcd] with x hx hxg
-  rw [← natDegree_sub_natDegree_gcd_derivative_eq_card_aroots_toFinset (hne hx),
-    ← natDegree_sub_natDegree_gcd_derivative_eq_card_aroots_toFinset (hne hx₀), hxg,
-    natDegree_eq_of_degree_eq_some hx, natDegree_eq_of_degree_eq_some hx₀]
-
 /-- **Family matching lemma for real polynomials, gcd form.** Let `F k x` be real polynomials of
 degree `d k` near `x₀`, for `k` in a finite index type, whose coefficients of index at most `d k`
 are continuous at `x₀`. Suppose that near `x₀` the degree of the gcd of each member with its

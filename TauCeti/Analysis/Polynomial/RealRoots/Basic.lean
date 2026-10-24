@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Complex.Polynomial.Basic
 public import Mathlib.Analysis.RCLike.Lemmas
 public import TauCeti.Analysis.Polynomial.ContinuityOfRoots.Basic
 
+import TauCeti.RingTheory.Polynomial.Roots
 import TauCeti.Topology.MetricSpace.SeparatedBalls
 
 /-!
@@ -28,12 +29,18 @@ complex conjugation. The disc around a real root of `F x₀` contains a single d
 `F x`, and the conjugate of that root is a root in the same disc, so it is real. The discs around
 the non-real roots of `F x₀` are chosen to miss the real line, so they contain no real roots.
 
+The hypothesis on distinct complex roots follows from gcd data: the number of distinct complex
+roots of a nonzero real polynomial is its degree minus the degree of its gcd with its derivative,
+so it is locally constant when the degree and the degree of that gcd are.
+
 ## Main results
 
 * `Polynomial.eventually_exists_bijOn_roots_toFinset_of_card_aroots_le`: the distinct real roots
   of `F x` and `F x₀` correspond bijectively, nearby and with the same multiplicities.
 * `Polynomial.eventually_card_roots_toFinset_eq_of_card_aroots_le`: the number of distinct real
   roots is locally constant.
+* `Polynomial.eventually_card_aroots_toFinset_eq_of_natDegree_gcd_derivative`: the number of
+  distinct complex roots is locally constant when the degree of the derivative gcd is.
 
 ## References
 
@@ -163,5 +170,23 @@ theorem eventually_card_roots_toFinset_eq_of_card_aroots_le {B : Type*} [Topolog
   filter_upwards [eventually_exists_bijOn_roots_toFinset_of_card_aroots_le hF hdeg hcard
     one_pos] with x ⟨e, he, _⟩
   exact (Finset.card_nbij e he.mapsTo he.injOn he.surjOn).symm
+
+/-- **Distinct complex roots from derivative gcd data.** If a real polynomial `f x` has degree `n`
+near `x₀`, and the degree of its gcd with its derivative is the same as at `x₀`, then near `x₀`
+it has as many distinct complex roots as `f x₀`. -/
+theorem eventually_card_aroots_toFinset_eq_of_natDegree_gcd_derivative {B : Type*}
+    [TopologicalSpace B] {x₀ : B} {f : B → ℝ[X]} {n : ℕ}
+    (hdeg : ∀ᶠ x in 𝓝 x₀, (f x).degree = n)
+    (hgcd : ∀ᶠ x in 𝓝 x₀, (EuclideanDomain.gcd (f x) (f x).derivative).natDegree =
+      (EuclideanDomain.gcd (f x₀) (f x₀).derivative).natDegree) :
+    ∀ᶠ x in 𝓝 x₀, ((f x).aroots ℂ).toFinset.card = ((f x₀).aroots ℂ).toFinset.card := by
+  have hne {x : B} (hx : (f x).degree = n) : f x ≠ 0 := by
+    rintro h
+    simp [h] at hx
+  have hx₀ := hdeg.self_of_nhds
+  filter_upwards [hdeg, hgcd] with x hx hxg
+  rw [← natDegree_sub_natDegree_gcd_derivative_eq_card_aroots_toFinset (hne hx),
+    ← natDegree_sub_natDegree_gcd_derivative_eq_card_aroots_toFinset (hne hx₀), hxg,
+    natDegree_eq_of_degree_eq_some hx, natDegree_eq_of_degree_eq_some hx₀]
 
 end Polynomial
