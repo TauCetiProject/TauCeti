@@ -112,7 +112,8 @@ theorem degree_relativeFrobeniusIsogeny_map {K : Type*} [Field K]
 
 /-- **Relative Frobenius stays purely inseparable after any base change**: the separable degree
 of its base change is `1`, by the same identification as `degree_relativeFrobeniusIsogeny_map`. -/
-@[simp]
+-- Compute this separable degree before applying generic separability tests.
+@[simp 1100]
 theorem separableDegree_relativeFrobeniusIsogeny_map {K : Type*} [Field K]
     (W : WeierstrassCurve.Affine F) (f : F →+* K) :
     ((relativeFrobeniusIsogeny p W).map f).separableDegree = 1 := by

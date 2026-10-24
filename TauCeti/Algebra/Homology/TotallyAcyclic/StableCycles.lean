@@ -84,7 +84,8 @@ instance : (homotopyInclusion.{v} A).Faithful :=
   ((homotopyIdeal A).faithful_lift_iff (toHomotopyCategory A) le_rfl).mpr le_rfl
 
 /-- The ambient inclusion sends a homotopy class to the class of its underlying chain map. -/
-@[simp]
+-- Rewrite the lift before simplifying its quotient-map argument, avoiding generic limit search.
+@[simp↓ high]
 theorem homotopyInclusion_map_quotient_map {P Q : TotallyAcyclicComplex.{v} A} (f : P ⟶ Q) :
     (homotopyInclusion A).map ((quotient A).map f) =
       (_root_.HomotopyCategory.quotient _ _).map f.hom :=
@@ -184,7 +185,8 @@ theorem stableCyclesFunctor_obj_quotient_obj (n : ℤ) (P : TotallyAcyclicComple
         ((cyclesFunctor A n).obj P) := (rfl)
 
 /-- On a chain map, stable cycles are represented by its induced map on cycles. -/
-@[simp]
+-- Rewrite the lift before simplifying its quotient-map argument, avoiding generic limit search.
+@[simp↓ high]
 theorem stableCyclesFunctor_map_quotient_map (n : ℤ)
     {P Q : TotallyAcyclicComplex.{v} A} (f : P ⟶ Q) :
     (stableCyclesFunctor A n).map ((quotient A).map f) =

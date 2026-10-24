@@ -17,8 +17,8 @@ import TauCeti.LinearAlgebra.Matrix.Diagonal
 
 The diagonal unitary matrices form a subgroup `TauCeti.unitaryTorus n` of the unitary group
 `U(n) = Matrix.unitaryGroup n ℂ`. A diagonal matrix is unitary exactly when its diagonal entries
-have modulus one (`Matrix.diagonal_mem_unitaryGroup_iff`), so this subgroup is the image of the
-injective homomorphism `TauCeti.unitaryTorusHom n : (n → Circle) →* U(n)`,
+have modulus one (`Matrix.diagonal_mem_unitary`, `Pi.mem_unitary_iff`), so this subgroup is the
+image of the injective homomorphism `TauCeti.unitaryTorusHom n : (n → Circle) →* U(n)`,
 `z ↦ diag (z₁, …, zₙ)`: a product of `card n` circles.
 
 The main result is that **every element of `U(n)` is conjugate into this torus**
@@ -71,7 +71,7 @@ variable (n : Type*) [Fintype n] [DecidableEq n]
 entries `z i`. Its range is the diagonal torus `TauCeti.unitaryTorus n`. -/
 noncomputable def unitaryTorusHom : (n → Circle) →* unitaryGroup n ℂ where
   toFun z := ⟨diagonal fun i => (z i : ℂ),
-    diagonal_mem_unitaryGroup_iff.mpr fun i => (z i).coe_mem_unitary⟩
+    (diagonal_mem_unitary.trans Pi.mem_unitary_iff).mpr fun i => (z i).coe_mem_unitary⟩
   map_one' := Subtype.ext <| by simp
   map_mul' z w := Subtype.ext <| by simp [diagonal_mul_diagonal]
 
@@ -120,7 +120,7 @@ theorem mem_unitaryTorus_iff {g : unitaryGroup n ℂ} :
     g ∈ unitaryTorus n ↔ (g : Matrix n n ℂ).IsDiag := by
   refine ⟨fun ⟨z, hz⟩ => hz ▸ isDiag_diagonal _, fun hg => ?_⟩
   -- The diagonal entries of a diagonal unitary matrix are unitary, so lie on the circle.
-  have hunit := diagonal_mem_unitaryGroup_iff.mp (hg.diagonal_diag.symm ▸ g.2)
+  have hunit := (diagonal_mem_unitary.trans Pi.mem_unitary_iff).mp (hg.diagonal_diag.symm ▸ g.2)
   refine ⟨fun i => ⟨(g : Matrix n n ℂ) i i,
     mem_sphere_zero_iff_norm.mpr (CStarRing.norm_of_mem_unitary (hunit i))⟩, Subtype.ext ?_⟩
   exact hg.diagonal_diag

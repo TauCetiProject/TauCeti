@@ -143,8 +143,9 @@ theorem normSq_spinGroupEquivHamiltonUnitaryWeightedSumSquaresOne
     (s : spinGroup (weightedSumSquares K ![(1 : K), 1, 1])) :
     Quaternion.normSq
         (evenHamiltonEquivWeightedSumSquaresOne
-          (evenUnitaryGroupEvenPart _ (spinGroupToEvenUnitary _ s))) = 1 := by
-  rw [← coe_spinGroupEquivHamiltonUnitaryWeightedSumSquaresOne_apply]
+          (spinGroupToEven _ s)) = 1 := by
+  rw [← evenUnitaryGroupEvenPart_spinGroupToEvenUnitary_apply,
+    ← coe_spinGroupEquivHamiltonUnitaryWeightedSumSquaresOne_apply]
   exact Quaternion.normSq_coe_unitary_eq_one _
 
 end

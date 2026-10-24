@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Probability.Distributions.Poisson.Tail
 public import TauCeti.Probability.Quantile.Discrete
+import TauCeti.Probability.Distributions.Dirac
+import TauCeti.Probability.Distributions.Poisson.Basic
 public import Mathlib.Topology.Instances.EReal.Lemmas
 
 /-!
@@ -64,12 +66,6 @@ theorem quantile_map_cast_poissonMeasure_eq_zero_iff (r : ℝ≥0) (hu : u ∈ I
     Po(ℝ, r).quantile u = 0 ↔ u ≤ exp (-(r : ℝ)) := by
   simpa [IsLeast, lowerBounds] using quantile_map_cast_poissonMeasure_eq_iff r hu 0
 
-/-- The rate-zero Poisson law has zero quantile at every interior probability level. -/
-@[simp]
-theorem quantile_map_cast_poissonMeasure_zero (hu : u ∈ Ioo 0 1) :
-    Po(ℝ, 0).quantile u = 0 :=
-  (quantile_map_cast_poissonMeasure_eq_zero_iff 0 hu).2 (by simpa using hu.2.le)
-
 /-- Poisson quantiles tend to the lower support endpoint zero as the level tends to zero
 from above, for every nonnegative rate. -/
 theorem tendsto_quantile_map_cast_poissonMeasure_nhdsGT_zero (r : ℝ≥0) :
@@ -90,7 +86,7 @@ theorem tendsto_quantile_map_cast_poissonMeasure_nhdsLT_one (r : ℝ≥0) :
   · simp only [hr, ite_true]
     refine tendsto_const_nhds.congr' ?_
     filter_upwards [Ioo_mem_nhdsLT zero_lt_one] with u hu
-    simp [quantile_map_cast_poissonMeasure_zero hu]
+    simp [poissonMeasure_zero, Measure.quantile_dirac 0 hu.1 hu.2.le]
   · rw [ite_eq_right hr, EReal.tendsto_coe_nhds_top_iff]
     refine tendsto_atTop.2 fun b ↦ ?_
     have hb : cdf Po(ℝ, r) b < 1 := by

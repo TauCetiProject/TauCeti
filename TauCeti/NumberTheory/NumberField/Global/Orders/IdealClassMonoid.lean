@@ -193,11 +193,12 @@ end Lift
 variable {O}
 
 /-- The multiplier ring of an ideal class: the common multiplier ring of its representatives, which
-`NumberFieldOrder.multiplierRing_mul_spanSingleton` shows is unchanged by homothety. -/
+`NumberFieldOrder.multiplierRing_mul_isUnit` shows is unchanged by homothety. -/
 def multiplierRing (c : IdealClassMonoid O) : Subring K :=
   Con.liftOn c (fun I => O.multiplierRing I) fun I J h => by
     obtain ⟨x, hx⟩ := h
-    rw [← hx, mul_comm, O.multiplierRing_mul_spanSingleton _ x.ne_zero]
+    rw [← hx, mul_comm, O.multiplierRing_mul_isUnit _ _
+      (FractionalIdeal.isUnit_spanSingleton (isUnit_iff_ne_zero.mpr x.ne_zero))]
 
 /-- The multiplier ring of the class of a nonzero fractional ideal is its multiplier ring. -/
 @[simp]

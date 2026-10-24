@@ -220,7 +220,7 @@ ideal. -/
 instance instNormalRamificationGroup (G : Type*) [Group G] (S : Type*) [CommRing S]
     [IsLocalRing S] [MulSemiringAction G S] (i : ℤ) : (ramificationGroup G S i).Normal := by
   simp_rw [ramificationGroup_def, Subgroup.normal_iff_map_conj_eq, ← Ideal.inertia_smul]
-  exact fun σ ↦ congrArg (Ideal.inertia G) (smul_maximalIdeal_pow σ _)
+  exact fun σ ↦ congrArg (Ideal.inertia G) (by simp only [smul_pow', smul_maximalIdeal])
 
 end Normal
 

@@ -26,18 +26,13 @@ namespace TauCeti.Probability
 
 variable {Ω Ω' : Type*} {β : ℕ → Type*} [∀ k, MeasurableSpace (β k)]
 
-/-- Future σ-algebras commute with composition of a process with an arbitrary map. -/
-@[simp]
-theorem tailFamily_comp (X : (k : ℕ) → Ω → β k) (f : Ω' → Ω) (n : ℕ) :
-    tailFamily (fun k => X k ∘ f) n = MeasurableSpace.comap f (tailFamily X n) := by
-  simp only [tailFamily_eq_iSup_comap, MeasurableSpace.comap_iSup,
-    MeasurableSpace.comap_comp]
-
 /-- Tail σ-algebras commute with composition of a process with an arbitrary map. -/
 theorem tailProcess_comp (X : (k : ℕ) → Ω → β k) (f : Ω' → Ω) :
     tailProcess (fun k => X k ∘ f) = MeasurableSpace.comap f (tailProcess X) := by
-  simp only [tailProcess_eq_iInf_tailFamily, tailFamily_comp]
-  exact (TauCeti.MeasureTheory.comap_iInf_of_antitone f (tailFamily_antitone X)).symm
+  simp only [tailProcess_eq_iInf_tailFamily]
+  simpa only [tailFamily_eq_iSup_comap, MeasurableSpace.comap_iSup,
+    MeasurableSpace.comap_comp] using
+    (TauCeti.MeasureTheory.comap_iInf_of_antitone f (tailFamily_antitone X)).symm
 
 /-- The tail σ-algebra on a sample space is exactly the pullback of the path-space tail
 σ-algebra by the process path map. -/

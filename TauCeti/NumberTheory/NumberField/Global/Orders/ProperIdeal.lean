@@ -83,14 +83,6 @@ theorem multiplierRing_mul_isUnit
   have h := O.multiplierRing_le_multiplierRing_mul (I * J) J'
   simpa [mul_assoc, hJJ'] using h
 
-/-- Scaling a fractional ideal by a nonzero field element preserves its multiplier ring. -/
-@[simp]
-theorem multiplierRing_mul_spanSingleton
-    (I : FractionalIdeal (nonZeroDivisors O.toSubalgebra) K) {x : K} (hx : x ≠ 0) :
-    O.multiplierRing (I * FractionalIdeal.spanSingleton _ x) = O.multiplierRing I := by
-  exact O.multiplierRing_mul_isUnit I _
-    (FractionalIdeal.isUnit_spanSingleton (isUnit_iff_ne_zero.mpr hx))
-
 /-- A fractional ideal is proper when its multiplier ring equals the order. -/
 def IsProperFractionalIdeal (I : FractionalIdeal (nonZeroDivisors O.toSubalgebra) K) : Prop :=
   O.multiplierRing I = O.toSubalgebra.toSubring
@@ -138,14 +130,6 @@ theorem isProperFractionalIdeal_mul_isUnit
     (I J : FractionalIdeal (nonZeroDivisors O.toSubalgebra) K) (hJ : IsUnit J) :
     O.IsProperFractionalIdeal (I * J) ↔ O.IsProperFractionalIdeal I := by
   simp only [IsProperFractionalIdeal, O.multiplierRing_mul_isUnit I J hJ]
-
-/-- Properness is unchanged by nonzero principal scaling. -/
-@[simp]
-theorem isProperFractionalIdeal_mul_spanSingleton
-    (I : FractionalIdeal (nonZeroDivisors O.toSubalgebra) K) {x : K} (hx : x ≠ 0) :
-    O.IsProperFractionalIdeal (I * FractionalIdeal.spanSingleton _ x) ↔
-      O.IsProperFractionalIdeal I := by
-  simp only [IsProperFractionalIdeal, O.multiplierRing_mul_spanSingleton I hx]
 
 /-- The unit fractional ideal has precisely the order as its multiplier ring. -/
 @[simp]
