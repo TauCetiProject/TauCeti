@@ -536,6 +536,43 @@ def relabel (D : BasedOrientedGaussCode n) (e : Fin n ≃ Fin n) : BasedOriented
     D.relabel (Equiv.refl (Fin n)) = D := by
   apply ext <;> funext i <;> simp
 
+/-- Two Gauss codes differ only by a relabelling of their crossings when the same pairs of visits
+belong to a common crossing, and the codes have the same over/under data and the same signs of the
+crossings met at each visit. -/
+theorem exists_relabel_eq_of_visit_eq_visit_iff {D E : BasedOrientedGaussCode n}
+    (hvisit : ∀ i j, D.visit i = D.visit j ↔ E.visit i = E.visit j) (hover : D.over = E.over)
+    (hsign : ∀ i, D.sign (D.visit i) = E.sign (E.visit i)) : ∃ e, D.relabel e = E := by
+  -- Read the labels of `D` through those of `E`; this is injective, hence a permutation.
+  let f : Fin n → Fin n := fun c ↦ E.visit (Function.surjInv D.visit_surjective c)
+  have hf (i : Fin (2 * n)) : f (D.visit i) = E.visit i :=
+    (hvisit _ _).1 (Function.surjInv_eq D.visit_surjective _)
+  have hinj : Function.Injective f := fun c c' h ↦ by
+    obtain ⟨i, rfl⟩ := D.visit_surjective c
+    obtain ⟨j, rfl⟩ := D.visit_surjective c'
+    rw [hf, hf] at h
+    exact (hvisit i j).2 h
+  let e := Equiv.ofBijective f hinj.bijective_of_finite
+  refine ⟨e, ext (funext fun i ↦ hf i) hover (funext fun c ↦ ?_)⟩
+  obtain ⟨i, rfl⟩ := E.visit_surjective c
+  rw [sign_relabel, ← hsign, ← hf i]
+  exact congrArg D.sign (e.symm_apply_apply (D.visit i))
+
+/-- The form of `TauCeti.BasedOrientedGaussCode.exists_relabel_eq_of_visit_eq_visit_iff` for codes
+whose numbers of crossings are equal but not definitionally so: after identifying their visits by
+`Fin.cast`, the codes, paired with their numbers of crossings, differ only by a relabelling of the
+crossings. -/
+theorem exists_sigma_mk_eq_relabel_of_visit_eq_visit_iff {m : ℕ} (h : n = m)
+    {D : BasedOrientedGaussCode n} {E : BasedOrientedGaussCode m}
+    (hvisit : ∀ i j, D.visit i = D.visit j ↔
+      E.visit (Fin.cast (congrArg (2 * ·) h) i) = E.visit (Fin.cast (congrArg (2 * ·) h) j))
+    (hover : ∀ i, D.over i = E.over (Fin.cast (congrArg (2 * ·) h) i))
+    (hsign : ∀ i, D.sign (D.visit i) = E.sign (E.visit (Fin.cast (congrArg (2 * ·) h) i))) :
+    ∃ e, (⟨m, E⟩ : Σ n, BasedOrientedGaussCode n) = ⟨n, D.relabel e⟩ := by
+  subst h
+  simp only [Fin.cast_eq_self] at hvisit hover hsign
+  obtain ⟨e, he⟩ := exists_relabel_eq_of_visit_eq_visit_iff hvisit (funext hover) hsign
+  exact ⟨e, by rw [he]⟩
+
 /-- The crossing-free based oriented Gauss code, representing the unknot diagram. -/
 def empty : BasedOrientedGaussCode 0 where
   visit := Fin.elim0
