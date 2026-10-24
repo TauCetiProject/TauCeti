@@ -50,8 +50,7 @@ A representation of a subgraph extends by zero along a copy, by
   `E_vv ⊗ (β w v * β v w)`.
 * `TauCeti.signlessMatrixRepresentation_list_prod_backtrackElem`: a nonempty product of
   backtracks at a common vertex `v` acts by the block `E_vv ⊗ ∏ (β w v * β v w)`.
-* `TauCeti.trace_signlessMatrixRepresentation_list_prod_backtrackElem` and
-  `TauCeti.trace_signlessMatrixRepresentation_backtrackElem_mul_backtrackElem`: the trace of a
+* `TauCeti.trace_signlessMatrixRepresentation_list_prod_backtrackElem`: the trace of a nonempty
   product of backtracks at a common vertex.
 * `TauCeti.exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_of_trace_ne_zero`: a
   product of backtracks of a subgraph acting with nonzero trace gives a nonzero class in the
@@ -234,16 +233,6 @@ theorem trace_signlessMatrixRepresentation_list_prod_backtrackElem {v : V}
       trace (l.map fun w => β w.1 v * β v w.1).prod := by
   rw [signlessMatrixRepresentation_list_prod_backtrackElem β hβ l hl, trace_kronecker,
     trace_single_eq_same, one_mul]
-
-/-- The trace of the image of a product of two backtracks `v → w₁ → v` and `v → w₂ → v` at a
-common vertex `v` is the trace of the product of their blocks at `v`. -/
-theorem trace_signlessMatrixRepresentation_backtrackElem_mul_backtrackElem {v w₁ w₂ : V}
-    (h₁ : G.Adj v w₁) (h₂ : G.Adj v w₂) :
-    trace (signlessMatrixRepresentation k β hβ
-        (signlessPreprojectiveMk k _ (backtrackElem G k h₁ * backtrackElem G k h₂))) =
-      trace (β w₁ v * β v w₁ * (β w₂ v * β v w₂)) := by
-  simpa using trace_signlessMatrixRepresentation_list_prod_backtrackElem β hβ
-    [⟨w₁, h₁⟩, ⟨w₂, h₂⟩] (List.cons_ne_nil _ _)
 
 end Representation
 

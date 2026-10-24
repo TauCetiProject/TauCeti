@@ -48,7 +48,9 @@ node is `N P⁻¹` and the arrow back is `P E_{m-c}`, so that the backtrack at t
 trivalent node is `± N`, with signs alternating along the arm, and the arrow back is `E_{m-sc}`.
 At the `s`-th node of the arm both backtracks are `± N E_{m-sc} = ± E_{m-(s+1)c} N`, with
 opposite signs, and at the end of the arm the backtrack is `± N E_c = 0`. The representation over
-a general commutative ring is the image of the one over `ℤ`.
+a general commutative ring is the image of the one over `ℤ`. This is Crawley-Boevey's
+construction of representations of a star-shaped quiver from matrices in prescribed conjugacy
+classes with sum zero: each arm carries the flag of images of the powers of its `B`.
 
 A product of backtracks at the trivalent node acts there by the corresponding product of the
 `Bᵢ`. The product `B₁ B₁ B₂` for `E₆`, `B₂ B₂ B₂ B₃` for `E₇` and `B₁ B₂ B₃ B₃ B₃ B₂` for `E₈`
@@ -81,6 +83,9 @@ vanishing off the edges and the traces are checked by `decide` on the integer ma
 * W. Crawley-Boevey and M. P. Holland, *Noncommutative deformations of Kleinian singularities*,
   Duke Math. J. 92 (1998), for the preprojective algebra of an extended Dynkin quiver and the
   Kleinian singularities.
+* W. Crawley-Boevey, *On matrices in prescribed conjugacy classes with no common invariant
+  subspace and sum zero*, Duke Math. J. 118 (2003), for the representations of star-shaped
+  quivers built from arm flags of matrices with sum zero.
 -/
 
 public section
