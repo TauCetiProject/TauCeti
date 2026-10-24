@@ -118,14 +118,11 @@ theorem subtype_rTensor_injective_of_isRadical [ExpChar C p] [PerfectRing C p] {
   -- subideals.
   rw [injective_iff_map_eq_zero]
   intro x hx
-  obtain ⟨N, hN, y, rfl⟩ := Submodule.exists_fg_le_eq_rTensor_subtype x
-  let K : Ideal A := N.map I.subtype
-  have hle : K.radical ≤ I := hI.radical_le_iff.mpr (Submodule.map_subtype_le _ _)
-  let g : N →ₗ[A] K.radical :=
-    Submodule.inclusion Ideal.le_radical ∘ₗ I.subtype.submoduleMap N
-  have hg : N.subtype = Submodule.inclusion hle ∘ₗ g := LinearMap.ext fun _ ↦ Subtype.ext rfl
-  rw [hg, LinearMap.rTensor_comp_apply] at hx ⊢
+  obtain ⟨N, hN, hNI, y, rfl⟩ := Submodule.exists_fg_le_eq_rTensor_inclusion x
+  have hle : Ideal.radical N ≤ I := hI.radical_le_iff.mpr hNI
+  rw [← Submodule.inclusion_comp_inclusion Ideal.le_radical hle,
+    LinearMap.rTensor_comp_apply] at hx ⊢
   rw [← LinearMap.rTensor_comp_apply, Submodule.subtype_comp_inclusion] at hx
-  rw [fg (hN.map _) (hx.trans (map_zero _).symm), map_zero]
+  rw [fg hN (hx.trans (map_zero _).symm), map_zero]
 
 end TauCeti
