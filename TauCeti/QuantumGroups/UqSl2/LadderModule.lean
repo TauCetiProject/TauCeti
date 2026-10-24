@@ -129,6 +129,7 @@ theorem vec_eq_zero_of_lt {j : ℤ} (hj : (m : ℤ) < j) : vec q m ε j = 0 :=
 
 /-- The coordinates of a ladder vector in the ladder basis: `v_j` has coordinate `1` at `j` and
 `0` elsewhere, and all its coordinates vanish when `j` is out of range. -/
+@[simp]
 theorem basis_repr_vec (j : ℤ) (i : Fin (m + 1)) :
     (basis q m ε).repr (vec q m ε j) i = if (i : ℤ) = j then 1 else 0 := by
   by_cases hj : 0 ≤ j ∧ j ≤ m

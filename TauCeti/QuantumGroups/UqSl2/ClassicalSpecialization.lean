@@ -567,7 +567,7 @@ private theorem scale_raise (v : ClassicalLadder K m) :
   funext i
   rw [scale_apply, raise_apply, Sl2Std.raise_apply]
   split_ifs with h
-  · rw [scale_apply, ← mul_assoc, ← mul_assoc, Nat.cast_choose_mul_sub h.le]
+  · rw [scale_apply, ← mul_assoc, ← mul_assoc, Nat.cast_choose_mul_sub]
   · rw [mul_zero]
 
 private theorem scale_lower (v : ClassicalLadder K m) :
@@ -578,7 +578,7 @@ private theorem scale_lower (v : ClassicalLadder K m) :
   · obtain ⟨k, hk⟩ : ∃ k, (i : ℕ) = k + 1 := ⟨(i : ℕ) - 1, by omega⟩
     rw [scale_apply, ← mul_assoc, ← mul_assoc]
     simp only [hk, Nat.add_sub_cancel]
-    rw [mul_comm _ ((k + 1 : ℕ) : K), Nat.cast_succ, ← Nat.cast_choose_mul_sub (by omega)]
+    rw [mul_comm _ ((k + 1 : ℕ) : K), Nat.cast_succ, ← Nat.cast_choose_mul_sub]
     ring
   · rw [mul_zero]
 
@@ -611,6 +611,7 @@ noncomputable def toSl2Std :
     simp only [map_sum, map_smul, LinearMap.sum_apply, LinearMap.smul_apply, key]
 
 /-- The module map to `V(m)` in coordinates. -/
+@[simp]
 theorem toSl2Std_apply (v : ClassicalLadder K m) (j : Fin (m + 1)) :
     toSl2Std K m v j = ((m.choose j : ℕ) : K) * v j :=
   (rfl)

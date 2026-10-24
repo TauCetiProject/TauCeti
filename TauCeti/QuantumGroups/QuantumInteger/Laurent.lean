@@ -95,9 +95,9 @@ theorem laurentEval_one_laurentQuantumInteger {A : Type*} [Ring A] (r : ℤ) :
   rw [← AlgHom.coe_toRingHom, laurentQuantumInteger, Polynomial.hom_eval₂]
   simp [one_add_one_eq_two, S_eval_two]
 
-/-- The value of `[r]_v` at a unit `q` of a commutative ring satisfies
+/-- The value of `[r]_v` at a unit `q` of a ring satisfies
 `(q - q⁻¹) [r]_q = q^r - q^(-r)`. -/
-theorem sub_inv_mul_laurentEval_laurentQuantumInteger {S : Type*} [CommRing S] (u : Sˣ) (r : ℤ) :
+theorem sub_inv_mul_laurentEval_laurentQuantumInteger {S : Type*} [Ring S] (u : Sˣ) (r : ℤ) :
     ((u : S) - (u⁻¹ : Sˣ)) * laurentEval u (laurentQuantumInteger r) =
       ((u ^ r : Sˣ) : S) - ((u ^ (-r) : Sˣ) : S) := by
   have h := congrArg (laurentEval (R := ℤ) u) (T_sub_T_neg_mul_laurentQuantumInteger r)

@@ -23,12 +23,15 @@ public section
 
 namespace Nat
 
-/-- The binomial identity `(n choose k) (n - k) = (k + 1) (n choose (k + 1))` in a ring, for
-`k ≤ n`. -/
-theorem cast_choose_mul_sub {R : Type*} [Ring R] {n k : ℕ} (h : k ≤ n) :
+/-- The binomial identity `(n choose k) (n - k) = (k + 1) (n choose (k + 1))` in a ring. When
+`n < k` both sides vanish. -/
+theorem cast_choose_mul_sub {R : Type*} [Ring R] (n k : ℕ) :
     (n.choose k : R) * ((n : R) - k) = ((k : R) + 1) * (n.choose (k + 1) : R) := by
-  rw [← Nat.cast_sub h, ← Nat.cast_mul, ← Nat.choose_succ_right_eq, Nat.cast_mul, Nat.cast_succ]
-  exact (Nat.cast_commute _ _).eq
+  rcases le_or_gt k n with h | h
+  · rw [← Nat.cast_sub h, ← Nat.cast_mul, ← Nat.choose_succ_right_eq, Nat.cast_mul,
+      Nat.cast_succ]
+    exact (Nat.cast_commute _ _).eq
+  · simp [Nat.choose_eq_zero_of_lt h, Nat.choose_eq_zero_of_lt (h.trans (Nat.lt_succ_self k))]
 
 section DivisionSemiring
 
