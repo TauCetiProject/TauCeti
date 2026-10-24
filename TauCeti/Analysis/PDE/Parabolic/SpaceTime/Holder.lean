@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Parabolic.SpaceTime.Basic
-public import TauCeti.Topology.MetricSpace.Holder
+public import TauCeti.Analysis.Holder.Interpolation
 
 /-!
 # Parabolic Hölder seminorms on time slabs
@@ -27,6 +27,11 @@ in time, uniformly, with
 `max (spaceEHolderNorm α v) (timeEHolderNorm (α / 2) v) ≤ eHolderNorm α v`
 and `eHolderNorm α v ≤ spaceEHolderNorm α v + timeEHolderNorm (α / 2) v`.
 
+For a function `u` of the coordinates, twice differentiable in space and differentiable in time,
+the temporal `(1 + α) / 2` seminorm of the spatial gradient `D_x u` on a slab is at most the sum of
+the parabolic `α` seminorms of the Hessian `D_x² u` and of the time derivative `∂ₜ u`. Thus this
+seminorm, which enters the norm of `C^{2+α, 1+α/2}`, is controlled by the other top-order terms.
+
 ## Main declarations
 
 * `TauCeti.ParabolicSpaceTime.eHolderNorm_eq_iSup_dist_add_sqrt`: the parabolic seminorm is the
@@ -39,6 +44,9 @@ and `eHolderNorm α v ≤ spaceEHolderNorm α v + timeEHolderNorm (α / 2) v`.
   comparison of the parabolic seminorm with the separate ones.
 * `TauCeti.ParabolicSpaceTime.memHolder_slab_iff`: the corresponding characterisation of
   parabolic Hölder functions.
+* `TauCeti.ParabolicSpaceTime.timeEHolderNorm_le_timeEHolderNorm_add_spaceEHolderNorm`,
+  `TauCeti.ParabolicSpaceTime.timeEHolderNorm_le_eHolderNorm_add_eHolderNorm`: control of the
+  temporal seminorm of the spatial gradient.
 
 ## References
 
@@ -149,5 +157,63 @@ theorem memHolder_slab_iff {α : ℝ≥0} {v : slab (E := E) a b → F} :
     (timeEHolderNorm_div_two_le_eHolderNorm α v).trans_lt h⟩, fun h => ?_⟩
   exact (eHolderNorm_le_spaceEHolderNorm_add_timeEHolderNorm α v).trans_lt
     (ENNReal.add_lt_top.2 h)
+
+end TauCeti.ParabolicSpaceTime
+
+/-! ### The temporal seminorm of the spatial gradient -/
+
+namespace TauCeti.ParabolicSpaceTime
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] {a b : ℝ} {u : E → ℝ → F}
+  {u' : E → ℝ → E →L[ℝ] F} {u'' : E → ℝ → E →L[ℝ] E →L[ℝ] F} {uₜ : E → ℝ → F}
+
+/-- **The temporal seminorm of the spatial gradient is controlled.** Let `u (x, t)` be twice
+differentiable in `x ∈ E` and differentiable in `t` within `[a, b]`, with spatial derivatives
+`u'`, `u''` and time derivative `uₜ`. On the slab `E × [a, b]`, the temporal `(1 + α) / 2`
+seminorm of the gradient `u'` is at most the sum of the temporal `α / 2` seminorm of the Hessian
+`u''` and the spatial `α` seminorm of `uₜ`. -/
+theorem timeEHolderNorm_le_timeEHolderNorm_add_spaceEHolderNorm (α : ℝ≥0)
+    (hu' : ∀ t ∈ Icc a b, ∀ y, HasFDerivAt (u · t) (u' y t) y)
+    (hu'' : ∀ t ∈ Icc a b, ∀ y, HasFDerivAt (u' · t) (u'' y t) y)
+    (huₜ : ∀ y, ∀ t ∈ Icc a b, HasDerivWithinAt (u y) (uₜ y t) (Icc a b) t) :
+    timeEHolderNorm ((1 + α) / 2)
+        (fun p : slab (E := E) a b => u' (p : ParabolicSpaceTime E).space (slabTime p)) ≤
+      timeEHolderNorm (α / 2)
+          (fun p : slab (E := E) a b => u'' (p : ParabolicSpaceTime E).space (slabTime p)) +
+        spaceEHolderNorm α
+          (fun p : slab (E := E) a b => uₜ (p : ParabolicSpaceTime E).space (slabTime p)) := by
+  set C₂ := timeEHolderNorm (α / 2)
+    (fun p : slab (E := E) a b => u'' (p : ParabolicSpaceTime E).space (slabTime p))
+  set Cₜ := spaceEHolderNorm α
+    (fun p : slab (E := E) a b => uₜ (p : ParabolicSpaceTime E).space (slabTime p))
+  rcases eq_or_ne C₂ ∞ with h₂ | h₂
+  · simp [h₂]
+  rcases eq_or_ne Cₜ ∞ with hₜ | hₜ
+  · simp [hₜ]
+  have hC₂ : ∀ y, HolderOnWith C₂.toNNReal (α / 2) (u'' y) (Icc a b) := fun y t ht s hs => by
+    simpa [ENNReal.coe_toNNReal h₂] using timeEHolderNorm_le_iff.1 (le_refl C₂) y ⟨t, ht⟩ ⟨s, hs⟩
+  have hCₜ : ∀ t ∈ Icc a b, HolderWith Cₜ.toNNReal α (uₜ · t) := fun t ht y z => by
+    simpa [ENNReal.coe_toNNReal hₜ] using spaceEHolderNorm_le_iff.1 (le_refl Cₜ) ⟨t, ht⟩ y z
+  refine timeEHolderNorm_le_iff.2 fun x t s => ?_
+  have := holderOnWith_Icc_of_hasFDerivAt_of_hasDerivWithinAt hu' hu'' huₜ hC₂ hCₜ x t t.2 s s.2
+  simpa [ENNReal.coe_toNNReal h₂, ENNReal.coe_toNNReal hₜ, Subtype.edist_eq] using this
+
+/-- **The temporal seminorm of the spatial gradient is controlled by parabolic seminorms.** On
+the slab `E × [a, b]`, the temporal `(1 + α) / 2` seminorm of the spatial gradient of `u` is at
+most the sum of the parabolic `α` seminorms of its Hessian and of its time derivative. In
+particular it is finite whenever these are. -/
+theorem timeEHolderNorm_le_eHolderNorm_add_eHolderNorm (α : ℝ≥0)
+    (hu' : ∀ t ∈ Icc a b, ∀ y, HasFDerivAt (u · t) (u' y t) y)
+    (hu'' : ∀ t ∈ Icc a b, ∀ y, HasFDerivAt (u' · t) (u'' y t) y)
+    (huₜ : ∀ y, ∀ t ∈ Icc a b, HasDerivWithinAt (u y) (uₜ y t) (Icc a b) t) :
+    timeEHolderNorm ((1 + α) / 2)
+        (fun p : slab (E := E) a b => u' (p : ParabolicSpaceTime E).space (slabTime p)) ≤
+      eHolderNorm α
+          (fun p : slab (E := E) a b => u'' (p : ParabolicSpaceTime E).space (slabTime p)) +
+        eHolderNorm α
+          (fun p : slab (E := E) a b => uₜ (p : ParabolicSpaceTime E).space (slabTime p)) :=
+  (timeEHolderNorm_le_timeEHolderNorm_add_spaceEHolderNorm α hu' hu'' huₜ).trans
+    (add_le_add (timeEHolderNorm_div_two_le_eHolderNorm α _) (spaceEHolderNorm_le_eHolderNorm α _))
 
 end TauCeti.ParabolicSpaceTime

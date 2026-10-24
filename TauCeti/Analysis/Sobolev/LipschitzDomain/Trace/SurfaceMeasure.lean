@@ -76,11 +76,7 @@ theorem W1p.lipschitzChartTrace_comp_snd_ae_of_continuousOn (hp : p ≠ (∞ : �
       μHE[finrank ℝ E]
           ((fun y ↦ e.symm (normalGraphEmbedding phi y)) '' bad) = 0 :=
     (h.euclideanHausdorffMeasure_image_boundaryParametrization_eq_zero_iff bad).2 hparameter
-  have hpatch : MeasurableSet
-      (frontier (Omega : Set (WithLp 2 (ℝ × E))) ∩ e ⁻¹' normalCylinder a b) :=
-    isClosed_frontier.measurableSet.inter
-      ((isOpen_normalCylinder a b).preimage e.continuous).measurableSet
-  refine (ae_restrict_iff' hpatch).2 ?_
+  refine (ae_restrict_iff' (measurableSet_frontier_inter_preimage_normalCylinder _ e a b)).2 ?_
   rw [ae_iff]
   apply measure_mono_null ?_ hsurface
   intro x hx

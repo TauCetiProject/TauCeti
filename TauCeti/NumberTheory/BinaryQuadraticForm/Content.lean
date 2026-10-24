@@ -117,6 +117,16 @@ theorem content_dvd_b (f : BinaryQuadraticForm ℤ) : (f.content : ℤ) ∣ f.b 
 theorem content_dvd_c (f : BinaryQuadraticForm ℤ) : (f.content : ℤ) ∣ f.c :=
   ((f.dvd_content_iff f.content).mp dvd_rfl).2.2
 
+/-- An integral Bézout relation among the coefficients makes the form primitive. -/
+theorem isPrimitive_of_linearCombination_eq_one (f : BinaryQuadraticForm ℤ) (u v w : ℤ)
+    (h : u * f.a + v * f.b + w * f.c = 1) : f.IsPrimitive := by
+  rw [isPrimitive_iff]
+  apply Nat.dvd_one.mp
+  have hdiv := ((f.content_dvd_a).mul_left u).add
+    (((f.content_dvd_b).mul_left v).add ((f.content_dvd_c).mul_left w))
+  rw [← add_assoc, h] at hdiv
+  exact_mod_cast hdiv
+
 /-- Content zero occurs exactly for the form with all coefficients zero. -/
 @[simp] theorem content_eq_zero_iff (f : BinaryQuadraticForm ℤ) :
     f.content = 0 ↔ f = 0 := by

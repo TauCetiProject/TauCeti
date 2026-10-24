@@ -114,6 +114,17 @@ theorem IsMulDistinguished.isDistinguished_mul (hg : IsMulDistinguished c s g)
 
 end SeminormedRing
 
+section SeminormedCommRing
+
+variable {R : Type*} [SeminormedCommRing R] {c : ℝ} {s : ℕ} {g : PowerSeries R}
+
+/-- Right multiplication by the distinguished coefficient scales norms exactly. -/
+theorem IsMulDistinguished.norm_mul_coeff (hg : IsMulDistinguished c s g) (x : R) :
+    ‖x * g.coeff s‖ = ‖x‖ * ‖g.coeff s‖ := by
+  rw [mul_comm x, hg.isNormMulUnit_coeff.norm_mul, mul_comm]
+
+end SeminormedCommRing
+
 section NormedRing
 
 variable {R : Type*} [NormedRing R] {c : ℝ} {s : ℕ} {g q : PowerSeries R}
