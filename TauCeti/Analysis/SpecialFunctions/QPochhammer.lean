@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.Complex.LocallyUniformLimit
 public import Mathlib.Analysis.Normed.Module.MultipliableUniformlyOn
+public import TauCeti.Algebra.Ring.Parity
+public import TauCeti.Analysis.Normed.Ring.Basic
 
 /-!
 # The infinite q-Pochhammer products `∏_{n ≥ 1} (1 - qⁿ w)`
@@ -58,16 +60,6 @@ namespace TauCeti
 section NormedField
 
 variable {𝕜 : Type*} [NormedField 𝕜]
-
-/-- For `‖q‖ < 1` also `‖qⁿ‖ < 1` for every `n ≠ 0`. -/
-theorem norm_pow_lt_one {R : Type*} [SeminormedRing R] {q : R} (hq : ‖q‖ < 1) {n : ℕ}
-    (hn : n ≠ 0) : ‖q ^ n‖ < 1 :=
-  (norm_pow_le' q (Nat.pos_of_ne_zero hn)).trans_lt (pow_lt_one₀ (norm_nonneg q) hq hn)
-
-/-- `1 - (-x)^{2n+1} = 1 + x^{2n+1}`. -/
-theorem one_sub_neg_pow_odd {R : Type*} [Ring R] (x : R) (n : ℕ) :
-    1 - (-x) ^ (2 * n + 1) = 1 + x ^ (2 * n + 1) := by
-  rw [Odd.neg_pow (by simp), sub_neg_eq_add]
 
 /-- For `‖q‖ < 1` the norms `‖qⁿ⁺¹ w‖` are summable. -/
 theorem summable_norm_pow_succ_mul {q : 𝕜} (hq : ‖q‖ < 1) (w : 𝕜) :
