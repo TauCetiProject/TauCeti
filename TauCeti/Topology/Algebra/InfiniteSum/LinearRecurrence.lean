@@ -10,7 +10,12 @@ import Mathlib.Topology.Algebra.InfiniteSum.NatInt
 import Mathlib.Tactic.Abel
 
 /-!
-# The sum of a second-order linear recurrence
+# The sums of first- and second-order linear recurrences
+
+For a summable sequence `d` obeying the inhomogeneous first-order recurrence
+`d (r + 1) = D • d r + b (r + 1)` with `d 0 = b 0`, where `b` has sum `β`, its sum `σ` satisfies
+`σ - D • σ = β`. This evaluates the formal identity `(1 - D x) ∑ d r xʳ = ∑ b r xʳ` at `x = 1`,
+without assuming that `1 - D` is invertible.
 
 For a summable sequence `d` obeying `d (r + 2) = D • d (r + 1) - S • d r`, its sum `σ`
 satisfies the identity:
@@ -29,6 +34,7 @@ coefficients of a Dirichlet series.
 
 ## Main results
 
+* `HasSum.sub_smul_eq_of_linearRec₁`: the first-order identity.
 * `HasSum.sub_smul_add_smul_eq_of_linearRec₂`: the scalar-action identity.
 * `HasSum.one_sub_add_mul_eq_of_linearRec₂`: the ring identity.
 -/
@@ -38,6 +44,19 @@ public section
 variable {A M : Type*} [AddCommGroup M] [DistribSMul A M] [TopologicalSpace M]
   [IsTopologicalAddGroup M] [ContinuousConstSMul A M] [T2Space M]
   {D S : A} {σ : M} {d : ℕ → M}
+
+/-- **The sum of a first-order linear recurrence.** If `d` has sum `σ`, `b` has sum `β`,
+`d 0 = b 0` and `d (r + 1) = D • d r + b (r + 1)`, then `σ - D • σ = β`. -/
+theorem HasSum.sub_smul_eq_of_linearRec₁ {b : ℕ → M} {β : M} (h : HasSum d σ) (hb : HasSum b β)
+    (h0 : d 0 = b 0) (hd : ∀ r, d (r + 1) = D • d r + b (r + 1)) :
+    σ - D • σ = β := by
+  -- both sides are the sum `∑ d (r + 1) = σ - d 0`
+  have h₁ : HasSum (fun r ↦ d (r + 1)) (σ - d 0) := by
+    simpa using (hasSum_nat_add_iff' 1).mpr h
+  have h₂ : HasSum (fun r ↦ d (r + 1)) (D • σ + (β - b 0)) := by
+    simpa only [hd] using (h.const_smul D).add (by simpa using (hasSum_nat_add_iff' 1).mpr hb)
+  calc σ - D • σ = (σ - d 0) - D • σ + b 0 := by rw [h0]; abel
+    _ = β := by rw [h₁.unique h₂]; abel
 
 /-- **The sum of a second-order linear recurrence.** If `d` has sum `σ` and obeys
 `d (r + 2) = D • d (r + 1) - S • d r`, then

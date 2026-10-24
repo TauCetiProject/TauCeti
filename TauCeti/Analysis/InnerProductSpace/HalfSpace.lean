@@ -8,9 +8,10 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Basic
 
 /-!
-# Translations preserving an inner-product half-space
+# Inner-product half-spaces
 
-A translation orthogonal to the normal vector preserves a strict half-space.
+A translation orthogonal to the normal vector preserves a strict half-space. The ball of radius
+`r` about a unit vector `x` lies in the half-space `{z | 1 - r ≤ ⟪x, z⟫}`.
 -/
 
 public section
@@ -27,5 +28,12 @@ theorem mapsTo_add_smul_of_halfSpace {E : Type*} [SeminormedAddCommGroup E]
     Set.MapsTo (· + t • τ) s s := fun x hx => by
   have hx' := (hΩ x).1 hx
   exact (hΩ _).2 (by simpa [inner_add_left, real_inner_smul_left, hτ] using hx')
+
+/-- The inner product of a unit vector `x` with `z` is at least `1 - ‖z - x‖`. -/
+theorem one_sub_norm_sub_le_inner {E : Type*} [SeminormedAddCommGroup E] [InnerProductSpace ℝ E]
+    {x : E} (hx : ‖x‖ = 1) (z : E) : 1 - ‖z - x‖ ≤ ⟪x, z⟫_ℝ := by
+  have h := real_inner_le_norm x (x - z)
+  rw [inner_sub_right, real_inner_self_eq_norm_sq, hx, norm_sub_rev] at h
+  linarith
 
 end TauCeti

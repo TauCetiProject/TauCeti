@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Integral.Average
+import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 import Mathlib.Analysis.Convex.Integral
 
 /-!
@@ -38,8 +39,15 @@ such as an affine homothety of a finite-dimensional space with its Haar measure:
 equivalence `e` pushes `μ` forward to `a • ν` with `0 < a < ∞`, then the average of `f ∘ e` over
 `e ⁻¹' s` with respect to `μ` is the average of `f` over `s` with respect to `ν`.
 
+Hölder's inequality also bounds the average by the `Lᵖ` seminorm on the set, with the
+normalizing factor `μ s ^ (-1/p)`, and bounds its `q`-th power by `(μ s)⁻¹ ∫⁻_s ‖f‖ₑ ^ q`.
+These estimates hold for arbitrary sets, including zero or infinite measure, with only the
+exponent restrictions `1 ≤ p < ∞` or `1 ≤ q`.
+
 ## Main results
 
+* `TauCeti.enorm_setAverage_rpow_le`, `TauCeti.enorm_setAverage_le`: Hölder's bounds on an
+  average over an arbitrary set, in `∫⁻` and `Lᵖ` form.
 * `TauCeti.enorm_setAverage_le_setLAverage`: the extended norm of an average over a set is at most
   the average of the extended norm over the set.
 * `TauCeti.measure_mul_enorm_setAverage_le`: the measure of a set times the extended norm of the
@@ -101,6 +109,65 @@ theorem measure_mul_enorm_setAverage_le (μ : Measure α) (f : α → E) (s : Se
     exact enorm_setAverage_le_setLAverage μ f s
 
 end ENorm
+
+section Holder
+
+variable {α F : Type*} [MeasurableSpace α] {mu : Measure α} [NormedAddCommGroup F]
+  [NormedSpace ℝ F] {f : α → F} {p : ℝ≥0∞} {s : Set α}
+
+/-- **Hölder's bound on an average**, in `∫⁻` form: the `q`-th power of the average of `f` over a
+set `s` is at most `(μ s)⁻¹` times the integral of `‖f‖ ^ q` over `s`.
+The single factor `(μ s)⁻¹` is what survives after the `q`-th power of the normalization
+`(μ s)⁻¹` cancels against the `(μ s) ^ (q - 1)` of Hölder's inequality.
+No measurability or integrability hypothesis is needed, since a function not integrable on `s`
+has average zero. -/
+theorem enorm_setAverage_rpow_le {q : ℝ} (hq : 1 ≤ q) :
+    ‖⨍ y in s, f y ∂mu‖ₑ ^ q ≤ (mu s)⁻¹ * ∫⁻ y in s, ‖f y‖ₑ ^ q ∂mu := by
+  have hq0 : (0 : ℝ) < q := one_pos.trans_le hq
+  by_cases hs0 : mu s = 0
+  · simp [setAverage_eq, measureReal_def, hs0, ENNReal.zero_rpow_of_pos hq0]
+  by_cases hs : mu s = ∞
+  · simp [setAverage_eq, measureReal_def, hs, ENNReal.zero_rpow_of_pos hq0]
+  by_cases hf : IntegrableOn f s mu
+  swap
+  · simp [setAverage_eq, integral_undef hf, ENNReal.zero_rpow_of_pos hq0]
+  have h0 : ‖⨍ y in s, f y ∂mu‖ₑ ≤ (mu s)⁻¹ * ∫⁻ y in s, ‖f y‖ₑ ∂mu := by
+    simpa only [setLAverage_eq, ENNReal.div_eq_inv_mul] using
+      enorm_setAverage_le_setLAverage mu f s
+  have hholder : (∫⁻ y in s, ‖f y‖ₑ ∂mu) ^ q ≤ mu s ^ (q - 1) * ∫⁻ y in s, ‖f y‖ₑ ^ q ∂mu := by
+    have := rpow_lintegral_le_measure_univ_rpow_mul (μ := mu.restrict s)
+      (u := fun y => ‖f y‖ₑ) hf.aestronglyMeasurable.enorm hq
+    rwa [Measure.restrict_apply_univ] at this
+  have hexp : -q + (q - 1) = (-1 : ℝ) := by ring
+  calc ‖⨍ y in s, f y ∂mu‖ₑ ^ q
+      ≤ ((mu s)⁻¹ * ∫⁻ y in s, ‖f y‖ₑ ∂mu) ^ q := ENNReal.rpow_le_rpow h0 hq0.le
+    _ = (mu s)⁻¹ ^ q * (∫⁻ y in s, ‖f y‖ₑ ∂mu) ^ q := ENNReal.mul_rpow_of_nonneg _ _ hq0.le
+    _ ≤ (mu s)⁻¹ ^ q * (mu s ^ (q - 1) * ∫⁻ y in s, ‖f y‖ₑ ^ q ∂mu) := mul_le_mul' le_rfl hholder
+    _ = (mu s)⁻¹ * ∫⁻ y in s, ‖f y‖ₑ ^ q ∂mu := by
+        rw [← mul_assoc, ENNReal.inv_rpow, ← ENNReal.rpow_neg, ← ENNReal.rpow_add _ _ hs0 hs,
+          hexp, ENNReal.rpow_neg_one]
+
+/-- **Hölder's bound on an average**: the average of `f` over a set `s` is at most
+`μ s ^ (-1/p)` times the `Lᵖ` seminorm of `f` on `s`. At `p = 1` this is the
+bound by the average of `‖f‖`, and the volume factor sharpens as `p` grows because a larger
+exponent controls the mass of `s` more efficiently. No measurability or integrability hypothesis
+is needed, since a function not integrable on `s` has average zero. -/
+theorem enorm_setAverage_le (hp : 1 ≤ p) (hp' : p ≠ ∞) :
+    ‖⨍ y in s, f y ∂mu‖ₑ ≤ mu s ^ (-(p.toReal)⁻¹) * eLpNorm f p (mu.restrict s) := by
+  by_cases hf : IntegrableOn f s mu
+  swap
+  · simp [setAverage_eq, integral_undef hf]
+  have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp).ne'
+  have hq : 1 ≤ p.toReal := by simpa using ENNReal.toReal_mono hp' hp
+  have hq0 : (0 : ℝ) < p.toReal := one_pos.trans_le hq
+  have hroot := ENNReal.rpow_le_rpow
+    (enorm_setAverage_rpow_le (f := f) (mu := mu) (s := s) (q := p.toReal) hq) (inv_pos.mpr hq0).le
+  rw [← ENNReal.rpow_mul, mul_inv_cancel₀ hq0.ne', ENNReal.rpow_one] at hroot
+  refine hroot.trans_eq ?_
+  rw [ENNReal.mul_rpow_of_nonneg _ _ (by positivity), ENNReal.inv_rpow, ← ENNReal.rpow_neg,
+    eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp' hf.aestronglyMeasurable, one_div]
+
+end Holder
 
 section Oscillation
 

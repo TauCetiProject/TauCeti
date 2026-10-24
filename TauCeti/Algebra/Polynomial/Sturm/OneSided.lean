@@ -13,8 +13,8 @@ public import TauCeti.Algebra.Polynomial.Sturm.Tarski
 
 `TauCeti.Sturm.signVariationsRight cs a` and `TauCeti.Sturm.signVariationsLeft cs a` count the
 sign variations of a polynomial list immediately to the right and to the left of `a`. They are
-computed algebraically from the one-sided signs `Polynomial.signRight` and
-`Polynomial.signLeft`, and are realized by evaluation at every point of a small enough interval
+computed algebraically from the one-sided signs `Polynomial.derivSignRight` and
+`Polynomial.derivSignLeft`, and are realized by evaluation at every point of a small enough interval
 on the corresponding side of `a`.
 
 With these, Sturm–Tarski holds on every bounded interval, with no condition on the endpoints.
@@ -56,20 +56,20 @@ section Basic
 variable {R : Type*} [CommRing R] [LinearOrder R]
 
 /-- The sign variations of a polynomial list immediately to the right of `a`: the variations
-of the right-hand signs `Polynomial.signRight` of its entries at `a`. -/
+of the right-hand signs `Polynomial.derivSignRight` of its entries at `a`. -/
 noncomputable def signVariationsRight (cs : List R[X]) (a : R) : ℕ :=
-  List.signVariations (cs.map (·.signRight a))
+  List.signVariations (cs.map (·.derivSignRight a))
 
 /-- The sign variations of a polynomial list immediately to the left of `a`: the variations
-of the left-hand signs `Polynomial.signLeft` of its entries at `a`. -/
+of the left-hand signs `Polynomial.derivSignLeft` of its entries at `a`. -/
 noncomputable def signVariationsLeft (cs : List R[X]) (a : R) : ℕ :=
-  List.signVariations (cs.map (·.signLeft a))
+  List.signVariations (cs.map (·.derivSignLeft a))
 
 theorem signVariationsRight_def (cs : List R[X]) (a : R) :
-    signVariationsRight cs a = List.signVariations (cs.map (·.signRight a)) := (rfl)
+    signVariationsRight cs a = List.signVariations (cs.map (·.derivSignRight a)) := (rfl)
 
 theorem signVariationsLeft_def (cs : List R[X]) (a : R) :
-    signVariationsLeft cs a = List.signVariations (cs.map (·.signLeft a)) := (rfl)
+    signVariationsLeft cs a = List.signVariations (cs.map (·.derivSignLeft a)) := (rfl)
 
 @[simp, grind =]
 theorem signVariationsRight_nil (a : R) : signVariationsRight ([] : List R[X]) a = 0 := by
@@ -90,7 +90,7 @@ theorem signVariationsLeft_singleton (p : R[X]) (a : R) : signVariationsLeft [p]
 /-- Evaluation at a point where every entry has its right-hand sign at `a` realizes the
 right-hand variations at `a`. -/
 theorem signVariationsAt_eq_right {cs : List R[X]} {a x : R}
-    (h : ∀ p ∈ cs, sign (p.eval x) = p.signRight a) :
+    (h : ∀ p ∈ cs, sign (p.eval x) = p.derivSignRight a) :
     signVariationsAt cs x = signVariationsRight cs a := by
   rw [signVariationsAt_def, signVariationsRight_def,
     ← List.signVariations_map_sign (cs.map (eval x)), List.map_map]
@@ -99,7 +99,7 @@ theorem signVariationsAt_eq_right {cs : List R[X]} {a x : R}
 /-- Evaluation at a point where every entry has its left-hand sign at `a` realizes the
 left-hand variations at `a`. -/
 theorem signVariationsAt_eq_left {cs : List R[X]} {a x : R}
-    (h : ∀ p ∈ cs, sign (p.eval x) = p.signLeft a) :
+    (h : ∀ p ∈ cs, sign (p.eval x) = p.derivSignLeft a) :
     signVariationsAt cs x = signVariationsLeft cs a := by
   rw [signVariationsAt_def, signVariationsLeft_def,
     ← List.signVariations_map_sign (cs.map (eval x)), List.map_map]
@@ -108,12 +108,26 @@ theorem signVariationsAt_eq_left {cs : List R[X]} {a x : R}
 /-- If no entry vanishes at `a`, the right-hand variations are the variations at `a`. -/
 theorem signVariationsRight_eq_signVariationsAt {cs : List R[X]} {a : R}
     (h : ∀ p ∈ cs, p.eval a ≠ 0) : signVariationsRight cs a = signVariationsAt cs a :=
-  (signVariationsAt_eq_right fun p hp => (signRight_eq_sign_eval p (h p hp)).symm).symm
+  (signVariationsAt_eq_right fun p hp => (derivSignRight_eq_sign_eval p (h p hp)).symm).symm
 
 /-- If no entry vanishes at `a`, the left-hand variations are the variations at `a`. -/
 theorem signVariationsLeft_eq_signVariationsAt {cs : List R[X]} {a : R}
     (h : ∀ p ∈ cs, p.eval a ≠ 0) : signVariationsLeft cs a = signVariationsAt cs a :=
-  (signVariationsAt_eq_left fun p hp => (signLeft_eq_sign_eval p (h p hp)).symm).symm
+  (signVariationsAt_eq_left fun p hp => (derivSignLeft_eq_sign_eval p (h p hp)).symm).symm
+
+/-- Ordered coefficient embeddings preserve variations immediately to the right of a point. -/
+@[simp]
+theorem signVariationsRight_map {S : Type*} [CommRing S] [LinearOrder S]
+    (cs : List R[X]) (f : R →+* S) (hf : StrictMono f) (x : R) :
+    signVariationsRight (cs.map (Polynomial.map f)) (f x) = signVariationsRight cs x := by
+  simp only [signVariationsRight_def, List.map_map, Function.comp_def, derivSignRight_map _ f hf]
+
+/-- Ordered coefficient embeddings preserve variations immediately to the left of a point. -/
+@[simp]
+theorem signVariationsLeft_map {S : Type*} [CommRing S] [LinearOrder S]
+    (cs : List R[X]) (f : R →+* S) (hf : StrictMono f) (x : R) :
+    signVariationsLeft (cs.map (Polynomial.map f)) (f x) = signVariationsLeft cs x := by
+  simp only [signVariationsLeft_def, List.map_map, Function.comp_def, derivSignLeft_map _ f hf]
 
 end Basic
 
@@ -155,9 +169,9 @@ theorem sum_sign_Ioo (h : IsSignedRemainderSeq (p :: cs))
   obtain ⟨a', haa', ha'⟩ := exists_between (lt_min hau hab)
   obtain ⟨b', hb', hb'b⟩ := exists_between (max_lt hlb (ha'.trans_le (min_le_right _ _)))
   have hpu (x : R) (hx : x ∈ Ioo a u) : p.eval x ≠ 0 :=
-    eval_ne_zero_of_sign_eq_signRight hp (hu p (by simp) x hx)
+    eval_ne_zero_of_sign_eq_derivSignRight hp (hu p (by simp) x hx)
   have hpl (x : R) (hx : x ∈ Ioo l b) : p.eval x ≠ 0 :=
-    eval_ne_zero_of_sign_eq_signLeft hp (hl p (by simp) x hx)
+    eval_ne_zero_of_sign_eq_derivSignLeft hp (hl p (by simp) x hx)
   have ha'u : a' ∈ Ioo a u := ⟨haa', ha'.trans_le (min_le_left _ _)⟩
   have hb'l : b' ∈ Ioo l b := ⟨(le_max_left _ _).trans_lt hb', hb'b⟩
   have hfilter : p.roots.toFinset.filter (fun r => a < r ∧ r < b) =
@@ -185,9 +199,9 @@ theorem signVariationsLeft_sub_signVariationsRight (h : IsSignedRemainderSeq (p 
   obtain ⟨l', hll', hl'a⟩ := exists_between hla
   obtain ⟨u', hau', hu'u⟩ := exists_between hau
   have hpl (x : R) (hx : x ∈ Ioo l a) : p.eval x ≠ 0 :=
-    eval_ne_zero_of_sign_eq_signLeft hp (hl p (by simp) x hx)
+    eval_ne_zero_of_sign_eq_derivSignLeft hp (hl p (by simp) x hx)
   have hpu (x : R) (hx : x ∈ Ioo a u) : p.eval x ≠ 0 :=
-    eval_ne_zero_of_sign_eq_signRight hp (hu p (by simp) x hx)
+    eval_ne_zero_of_sign_eq_derivSignRight hp (hu p (by simp) x hx)
   have hfilter : p.roots.toFinset.filter (fun r => l' < r ∧ r < u') =
       p.roots.toFinset.filter (fun r => False ∨ r = a) := by
     refine Finset.filter_congr fun r hr => ?_

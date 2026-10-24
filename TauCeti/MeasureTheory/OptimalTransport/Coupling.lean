@@ -266,6 +266,23 @@ theorem measure_univ_prod (hπ : IsCoupling π μ ν) {t : Set Y} (ht : Measurab
     π (univ ×ˢ t) = ν t := by
   rw [univ_prod, ← Measure.snd_apply ht, hπ.snd_eq]
 
+/-- **Transport up to an exceptional set.** If a coupling `π` gives mass at most `δ` to the pairs
+of cost `c` at least `δ`, then it moves every measurable set `s` into the points at cost less than
+`δ` from `s`, up to mass `δ`. -/
+theorem measure_le_of_measure_setOf_le (hπ : IsCoupling π μ ν) {c : X → Y → ℝ≥0∞} {δ : ℝ≥0∞}
+    (h : π {z | δ ≤ c z.1 z.2} ≤ δ) {s : Set X} (hs : MeasurableSet s) :
+    μ s ≤ ν {y | ∃ x ∈ s, c x y < δ} + δ :=
+  calc μ s = π (s ×ˢ univ) := (hπ.measure_prod_univ hs).symm
+    _ ≤ π (Prod.snd ⁻¹' {y | ∃ x ∈ s, c x y < δ} ∪ {z | δ ≤ c z.1 z.2}) := by
+        refine measure_mono fun z hz ↦ ?_
+        rcases lt_or_ge (c z.1 z.2) δ with hlt | hge
+        · exact .inl ⟨z.1, hz.1, hlt⟩
+        · exact .inr hge
+    _ ≤ π (Prod.snd ⁻¹' {y | ∃ x ∈ s, c x y < δ}) + π {z | δ ≤ c z.1 z.2} := measure_union_le _ _
+    _ ≤ ν {y | ∃ x ∈ s, c x y < δ} + δ := by
+        rw [← hπ.snd_eq]
+        exact add_le_add (Measure.le_map_apply measurable_snd.aemeasurable _) h
+
 /-- The source measure of a coupling has the total mass of the coupling. -/
 theorem measure_univ_left (hπ : IsCoupling π μ ν) : μ univ = π univ := by
   rw [← hπ.fst_eq, Measure.fst_univ]

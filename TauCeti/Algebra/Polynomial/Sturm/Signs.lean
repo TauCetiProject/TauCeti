@@ -106,6 +106,16 @@ theorem signVariationsAt_cons (cs : List (Polynomial R)) {p : Polynomial R} {x :
   rw [signVariationsAt_def, List.map_cons, List.signVariations_cons,
     signVariationsAt_def]
 
+/-- Ordered coefficient embeddings preserve variations at the corresponding evaluation point. -/
+@[simp]
+theorem signVariationsAt_map {S : Type*} [Semiring S] [LinearOrder S]
+    (cs : List (Polynomial R)) (f : R →+* S) (hf : StrictMono f) (x : R) :
+    signVariationsAt (cs.map (Polynomial.map f)) (f x) = signVariationsAt cs x := by
+  rw [signVariationsAt_def, signVariationsAt_def]
+  apply List.signVariations_congr
+  simp only [List.map_map, Function.comp_def]
+  exact List.map_congr_left fun p _ ↦ p.sign_eval_map f hf x
+
 end Basic
 
 section OrderedCommRing

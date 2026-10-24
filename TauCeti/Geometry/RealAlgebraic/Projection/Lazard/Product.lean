@@ -13,7 +13,7 @@ public import TauCeti.RingTheory.MvPolynomial.Discriminant.Lazard
 
 Constant Lazard valuations on a projection set give constant valuations of the leading
 coefficient, trailing coefficient and discriminant of the product of any subfamily of an
-irreducible basis. Together with `Finset.IsIrreducibleBasis.discr_prod_ne_zero`, these are the
+irreducible basis. Together with `Finset.IsSquarefreeBasis.discr_prod_ne_zero`, these are the
 formal-polynomial conditions needed to apply a single-polynomial Lazard lifting theorem to
 the product, without requiring nonvanishing of its ordinary fibers.
 
