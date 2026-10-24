@@ -35,8 +35,9 @@ The three cases of interest are the following.
   when `L` is a full lattice, the level of `L` is such an `N` for every `γ ∈ L^∨`), in
   `q_N = exp (2 π i τ / N)`, `θ_{γ+L}(τ) = ∑_{m ≥ 0} r_{γ+L}(2m / N) q_N^m`. The coefficient
   of `q_N^m` vanishes unless `m ≡ N ‖γ‖² / 2 (mod N)`, because `‖γ + v‖² ≡ ‖γ‖² (mod 2)` for
-  `v ∈ L` (`ZLattice.IsEven.cosetShell_eq_empty`). This support condition is what boundedness
-  of coset theta series at the cusps is read off from.
+  `v ∈ L` (`ZLattice.IsEven.cosetShell_eq_empty`). This support condition describes the
+  expansion at the cusp `∞` only; the analysis at the other cusps also needs the theta
+  transformation formulas.
 
 ## Main statements
 
