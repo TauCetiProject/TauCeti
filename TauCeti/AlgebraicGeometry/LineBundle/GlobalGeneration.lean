@@ -225,7 +225,8 @@ morphism from the free sheaf is an epimorphism. -/
 theorem IsGloballyGenerated.nonempty_generatingSections {L : InvertibleSheaf X}
     (hL : L.IsGloballyGenerated) : Nonempty L.obj.GeneratingSections := by
   refine ⟨{ I := Γ(L.obj, ⊤), s := compatibleSection L, epi := ?_ }⟩
-  -- Keep the scheme-module category explicit when introducing the epimorphism test object.
+  -- Select the scheme-module category before introducing cancellation morphisms.
+  change @Epi X.Modules _ _ _ _
   refine ⟨fun {N : X.Modules} f g hfg ↦ hL.hom_ext f g fun s ↦ ?_⟩
   have h := congrArg
     (fun p ↦ SheafOfModules.sectionsMap p (SheafOfModules.freeSection s)) hfg
