@@ -121,8 +121,7 @@ theorem polynomialCoact_expand_mem (f : MvPolynomial ι R) :
       (TensorProduct.AlgebraTensorModule.map_eq _ _)
   -- The remaining carrier identification is `↥N = ↥N.toSubmodule`: both are the same subtype.
   refine ⟨ψ f, ?_⟩
-  rw [← hinc, AlgHom.toLinearMap_apply]
-  exact DFunLike.congr_fun h f
+  exact (DFunLike.congr_fun hinc (ψ f)).symm.trans (DFunLike.congr_fun h f)
 
 end Frobenius
 
