@@ -39,7 +39,13 @@ def complexProdToEuclideanFour : WithLp 2 (ℂ × ℂ) ≃ₗᵢ[ℝ] EuclideanS
 theorem complexProdToEuclideanFour_apply (x : WithLp 2 (ℂ × ℂ)) :
     complexProdToEuclideanFour x = WithLp.toLp 2 ![x.fst.re, x.fst.im, x.snd.re, x.snd.im] := by
   ext i
-  fin_cases i <;> rfl
+  -- Split `Fin 4` along `finSumFinEquiv`; `simp` does not rewrite with the `castAdd`/`natAdd`
+  -- lemmas here, so they are applied with `rw`.
+  refine Fin.addCases (m := 2) (n := 2) (fun j ↦ ?_) (fun j ↦ ?_) i <;>
+    simp only [complexProdToEuclideanFour, LinearIsometryEquiv.trans_apply,
+      LinearIsometryEquiv.piLpCongrLeft_apply, Equiv.piCongrLeft'_apply] <;>
+    [rw [finSumFinEquiv_symm_apply_castAdd]; rw [finSumFinEquiv_symm_apply_natAdd]] <;>
+    fin_cases j <;> simp [Complex.orthonormalBasisOneI_repr_apply]
 
 theorem complexProdToEuclideanFour_symm_apply (y : EuclideanSpace ℝ (Fin 4)) :
     complexProdToEuclideanFour.symm y = WithLp.toLp 2 (⟨y 0, y 1⟩, ⟨y 2, y 3⟩) := by
