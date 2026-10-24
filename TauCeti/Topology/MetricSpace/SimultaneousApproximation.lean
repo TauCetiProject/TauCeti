@@ -67,7 +67,8 @@ theorem exists_neBot_tendsto_iff_forall_finset_dist_lt :
     fun h ↦ ?_⟩
   obtain ⟨e, hep, heF⟩ := exists_net_tendsto_of_forall_finset_dist_lt h
   classical
-  exact ⟨map e atTop, atTop_neBot.map e, eventually_map.2 (.of_forall hep), heF⟩
+  exact ⟨map e atTop, atTop_neBot.map e, eventually_map.2 (.of_forall hep),
+    fun k ↦ tendsto_map'_iff.2 (heF k)⟩
 
 /-- A proper filter eventually satisfying `p` along which every `F k` tends to `x k` exists
 exactly when there is such a net indexed by `Finset κ × ℕ`, all of whose values satisfy `p`. -/
@@ -78,6 +79,7 @@ theorem exists_neBot_tendsto_iff_exists_net :
   refine ⟨fun h ↦ exists_net_tendsto_of_forall_finset_dist_lt
     (exists_neBot_tendsto_iff_forall_finset_dist_lt.1 h), fun ⟨e, hep, heF⟩ ↦ ?_⟩
   classical
-  exact ⟨map e atTop, atTop_neBot.map e, eventually_map.2 (.of_forall hep), heF⟩
+  exact ⟨map e atTop, atTop_neBot.map e, eventually_map.2 (.of_forall hep),
+    fun k ↦ tendsto_map'_iff.2 (heF k)⟩
 
 end TauCeti
