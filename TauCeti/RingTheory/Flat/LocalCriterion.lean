@@ -14,6 +14,7 @@ import Mathlib.RingTheory.Filtration
 import Mathlib.RingTheory.Flat.EquationalCriterion
 import Mathlib.RingTheory.Flat.Stability
 import Mathlib.RingTheory.Flat.Tensor
+import TauCeti.RingTheory.QuotSMulTop
 import TauCeti.RingTheory.TensorProduct.Finite
 import TauCeti.RingTheory.TensorProduct.IdealSMul
 
@@ -108,13 +109,6 @@ private noncomputable def mulColon (J : Ideal R) (x : R) : J.colon {x} →ₗ[R]
 private theorem coe_mulColon_apply (J : Ideal R) (x : R) (c : J.colon {x}) :
     (mulColon J x c : R) = x * c := rfl
 
-/-- The `R ⧸ (x)`-action on `M ⧸ x M` is induced by the `R`-action on `M`. -/
-@[simp]
-private theorem quotient_mk_smul_mk (r : R) (m : M) :
-    Ideal.Quotient.mk (Ideal.span {x}) r • (Submodule.Quotient.mk m : QuotSMulTop x M) =
-      Submodule.Quotient.mk (r • m) := by
-  rw [← Ideal.Quotient.algebraMap_eq, algebraMap_smul, Submodule.Quotient.mk_smul]
-
 /-- One step of the descent: an element of the kernel of `M ⊗[R] J → M` is `x` times an element
 of the kernel of `M ⊗[R] (J : x) → M`. -/
 private theorem exists_lTensor_mulColon_eq (reg : IsSMulRegular M x)
@@ -129,7 +123,7 @@ private theorem exists_lTensor_mulColon_eq (reg : IsSMulRegular M x)
   -- The relation `∑ jᵢ mᵢ = 0` holds modulo `x`; apply the equational criterion over `R ⧸ (x)`.
   have h1 : ∑ i : T, (Ideal.Quotient.mk (Ideal.span {x}) (i.1.2 : R)) •
       (Submodule.Quotient.mk i.1.1 : QuotSMulTop x M) = 0 := by
-    simp_rw [quotient_mk_smul_mk, ← Submodule.mkQ_apply, ← map_sum,
+    simp_rw [QuotSMulTop.mk_smul_mk, ← Submodule.mkQ_apply, ← map_sum,
       Finset.sum_coe_sort T (fun i ↦ (i.2 : R) • i.1), h0, map_zero]
   obtain ⟨k, a, z, hy, ha⟩ := Flat.isTrivialRelation_of_sum_smul_eq_zero h1
   -- Lift to `R` and `M`: `mᵢ = ∑ₖ aᵢₖ yₖ + x m'ᵢ` and `∑ᵢ aᵢₖ jᵢ = x cₖ`.
@@ -137,7 +131,7 @@ private theorem exists_lTensor_mulColon_eq (reg : IsSMulRegular M x)
   choose z' hz' using fun j ↦ Submodule.Quotient.mk_surjective _ (z j)
   have hm (i : T) : ∃ m', i.1.1 = ∑ j, a' i j • z' j + x • m' := by
     have hi := hy i
-    simp_rw [← ha', ← hz', quotient_mk_smul_mk, ← Submodule.mkQ_apply, ← map_sum,
+    simp_rw [← ha', ← hz', QuotSMulTop.mk_smul_mk, ← Submodule.mkQ_apply, ← map_sum,
       Submodule.mkQ_apply, Submodule.Quotient.eq] at hi
     obtain ⟨m', -, hm'⟩ := Submodule.mem_smul_pointwise_iff_exists _ _ _ |>.mp hi
     exact ⟨m', by rw [hm']; abel⟩
@@ -233,12 +227,7 @@ theorem Flat.of_flat_quotSMulTop [IsNoetherianRing R] {S : Type*} [CommRing S]
   set IS := I.map (algebraMap R S)
   have hle (n : ℕ) : (I ^ n • ⊤ : Submodule R (M ⊗[R] J)) ≤
       (IS ^ n • (⊤ : Submodule S (M ⊗[R] J))).restrictScalars R := by
-    refine Submodule.smul_le.mpr fun r hr y _ ↦ ?_
-    rw [Submodule.restrictScalars_mem, ← algebraMap_smul S r y]
-    have hr' : algebraMap R S r ∈ IS ^ n := by
-      rw [← Ideal.map_pow]
-      exact Ideal.mem_map_of_mem _ hr
-    exact Submodule.smul_mem_smul hr' Submodule.mem_top
+    rw [← Ideal.map_pow, Ideal.smul_restrictScalars, Submodule.restrictScalars_top]
   have hjac : IS ≤ (⊥ : Ideal S).jacobson := by
     simpa [IS, I, Ideal.map_span, Ideal.span_singleton_le_iff_mem] using hx
   have hbot := Ideal.iInf_pow_smul_eq_bot_of_le_jacobson IS hjac (M := M ⊗[R] J)
