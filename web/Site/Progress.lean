@@ -47,7 +47,10 @@ def howToRead : Html := {{
 Progress against Tau Ceti's existing roadmaps. Each segment is one layer of a roadmap, as its
 own `README.md` names them; its appearance shows what the latest report says about that layer,
 not a percentage of the work. Expand a roadmap for its report, its next milestones and its
-sources. Merged pull requests are shown separately, as activity.
+sources. Merged pull requests are shown separately, as activity. The
+[Tau Ceti Atlas](https://cbirkbeck.github.io/tauceti-explorer/tauceti/) maps the same layer states
+from this page's [progress.json](static/progress.json) and adds a headline percentage of layers
+reported done. The “Layers” note below explains why this board omits that percentage.
 
 :::blob progressBoard
 :::
