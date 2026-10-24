@@ -133,6 +133,8 @@ variable {D : PDCode n} {s : Fin n → Bool} {D' : PDCode m} {s' : Fin m → Boo
 bijection of crossing-free labels. -/
 def markCongr (e : D.SmoothingEquiv s D' s') : D.Mark ≃ D'.Mark :=
   (Quotient.congr e.halfEdgeEquiv fun x y ↦ by
+    -- Unfold the SameCycle setoid relations expected by Quotient.congr so the
+    -- permutation-conjugation equivalence applies to the underlying cycles.
     change D.edgePair.val.SameCycle x y ↔
       D'.edgePair.val.SameCycle (e.halfEdgeEquiv x) (e.halfEdgeEquiv y)
     rw [e.edgePair_val_eq_permCongr, sameCycle_permCongr]).sumCongr e.crossinglessEquiv
