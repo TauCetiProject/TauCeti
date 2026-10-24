@@ -34,6 +34,10 @@ the density on `(0, ∞)`, the classical closed form
 where `Φ` is the standard Gaussian cdf. It tends to `0` at `0⁺` and to `1` at infinity, so the
 improper fundamental theorem of calculus gives total mass one and identifies `F` with the cdf.
 
+The support argument for cdf strict increase is provided by
+`MeasureTheory.Measure.strictMonoOn_cdf_of_subset_support`, generalized from the original proof of
+`TauCeti.Probability.strictMonoOn_cdf_hyperexponentialMeasure`.
+
 ## Main definitions
 
 * `TauCeti.Probability.inverseGaussianMeasure` — the inverse Gaussian law;
@@ -51,6 +55,7 @@ improper fundamental theorem of calculus gives total mass one and identifies `F`
 * `TauCeti.Probability.hasPDF_of_hasLaw_inverseGaussianMeasure` and
   `TauCeti.Probability.rnDeriv_inverseGaussianMeasure` — the density interfaces;
 * `TauCeti.Probability.cdf_inverseGaussianMeasure_of_pos` — the closed-form cdf;
+* `TauCeti.Probability.strictMonoOn_cdf_inverseGaussianMeasure` — strict increase on `[0, ∞)`;
 * `TauCeti.Probability.measurable_inverseGaussianMeasure` — joint measurability in the parameters;
 * `TauCeti.Probability.inverseGaussianMeasure_map_const_mul` — multiplication by `b > 0` sends the
   parameters `(μ, lam)` to `(b μ, b lam)`.
@@ -376,6 +381,11 @@ def inverseGaussianMeasure (μ lam : ℝ) : Measure ℝ :=
 theorem inverseGaussianMeasure_eq_withDensity (μ lam : ℝ) :
     inverseGaussianMeasure μ lam = volume.withDensity (inverseGaussianPDF μ lam) := (rfl)
 
+/-- Inverse Gaussian measures have no atoms, including at invalid parameters. -/
+instance (μ lam : ℝ) : NullSingletonClass (inverseGaussianMeasure μ lam) := by
+  rw [inverseGaussianMeasure_eq_withDensity]
+  infer_instance
+
 /-- At invalid parameters the inverse Gaussian law is the zero measure. -/
 @[simp]
 theorem inverseGaussianMeasure_of_not_pos (h : ¬ (0 < μ ∧ 0 < lam)) :
@@ -532,6 +542,31 @@ theorem cdf_inverseGaussianMeasure_eq (hμ : 0 < μ) (hlam : 0 < lam) (x : ℝ) 
   split_ifs with hx
   · exact cdf_inverseGaussianMeasure_of_nonpos hμ hlam hx
   · exact cdf_inverseGaussianMeasure_of_pos hμ hlam (not_le.mp hx)
+
+/-- The inverse Gaussian cdf is strictly increasing on the nonnegative half-line. -/
+theorem strictMonoOn_cdf_inverseGaussianMeasure (hμ : 0 < μ) (hlam : 0 < lam) :
+    StrictMonoOn (cdf (inverseGaussianMeasure μ lam)) (Ici 0) := by
+  let _ := isProbabilityMeasure_inverseGaussianMeasure hμ hlam
+  exact Measure.strictMonoOn_cdf_of_subset_support _ ordConnected_Ici
+    (by rw [support_inverseGaussianMeasure hμ hlam])
+
+/-- The inverse Gaussian cdf is positive exactly at positive cutoffs. -/
+@[simp]
+theorem cdf_inverseGaussianMeasure_pos_iff (hμ : 0 < μ) (hlam : 0 < lam) :
+    0 < cdf (inverseGaussianMeasure μ lam) x ↔ 0 < x := by
+  constructor
+  · intro hx
+    by_contra h
+    rw [cdf_inverseGaussianMeasure_of_nonpos hμ hlam (not_lt.mp h)] at hx
+    exact lt_irrefl _ hx
+  · intro hx
+    exact (cdf_nonneg _ 0).trans_lt
+      (strictMonoOn_cdf_inverseGaussianMeasure hμ hlam (by simp) hx.le hx)
+
+/-- Every finite cutoff leaves positive inverse Gaussian upper-tail probability. -/
+theorem cdf_inverseGaussianMeasure_lt_one (hμ : 0 < μ) (hlam : 0 < lam) (x : ℝ) :
+    cdf (inverseGaussianMeasure μ lam) x < 1 :=
+  Measure.cdf_lt_one_of_strictMonoOn_Ici _ (strictMonoOn_cdf_inverseGaussianMeasure hμ hlam) x
 
 /-! ### Positive scaling -/
 

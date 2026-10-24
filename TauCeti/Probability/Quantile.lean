@@ -68,6 +68,8 @@ makes the monotone rearrangement of two real laws a transport plan between them.
 * `MeasureTheory.Measure.tendsto_quantile_nhdsGT_zero_of_cdf_pos` and
   `MeasureTheory.Measure.tendsto_quantile_nhdsLT_one_of_cdf_lt_one` — the infinite endpoint
   limits when the cdf is everywhere positive or everywhere less than one, respectively;
+* `MeasureTheory.Measure.tendsto_quantile_nhdsGT_zero_of_ae_le_of_cdf_pos` — the finite lower
+  endpoint limit for a law carried by a right half-line with positive cdf above its endpoint;
 * `MeasureTheory.Measure.quantile_map_abs` — the quantile of the image of a symmetric law under
   absolute value;
 * `MeasureTheory.Measure.le_upperQuantile_iff` and `MeasureTheory.Measure.upperQuantile_lt_iff`
@@ -536,6 +538,20 @@ theorem upperQuantile_mem {μ : Measure ℝ} {s : Set ℝ} {t : ℝ} [IsProbabil
 end Set.OrdConnected
 
 namespace MeasureTheory.Measure
+
+/-- For a law carried by `[c, ∞)` whose cdf is positive above `c`, quantiles tend to `c` as
+the level decreases to zero. An atom at `c` is allowed. -/
+theorem tendsto_quantile_nhdsGT_zero_of_ae_le_of_cdf_pos (μ : Measure ℝ)
+    [IsProbabilityMeasure μ] {c : ℝ} (hbound : ∀ᵐ x ∂μ, c ≤ x)
+    (hpos : ∀ x, c < x → 0 < cdf μ x) :
+    Tendsto (fun u ↦ (μ.quantile u : EReal)) (𝓝[>] 0) (𝓝 (c : EReal)) := by
+  apply EReal.tendsto_coe.2
+  refine tendsto_order.2 ⟨fun a ha ↦ ?_, fun b hb ↦ ?_⟩
+  · filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with u hu
+    exact ha.trans_le (ordConnected_Ici.quantile_mem hbound hu.1 hu.2)
+  · obtain ⟨x, hcx, hxb⟩ := exists_between hb
+    filter_upwards [Ioo_mem_nhdsGT (hpos x hcx)] with u hu
+    exact ((quantile_le_iff μ hu.1 (hu.2.trans_le (cdf_le_one μ x))).2 hu.2.le).trans_lt hxb
 
 /-- The cumulative distribution function at the upper quantile is exactly the level when the law
 has no atom at the upper quantile. -/
