@@ -253,7 +253,7 @@ entries. -/
 private theorem encard_setOf_rel_inter_range_eq {n : ℕ} {a : Fin n → V} {b : Fin n → W}
     (h : letI := (fromRel r).structure; letI := (fromRel s).structure
       SameAtomicType (L := Language.graph) a b) (i : Fin n) :
-    ({x | r (a i) x} ∩ Set.range a).encard = ({y | s (b i) y} ∩ Set.range b).encard := by
+    ({x | r x (a i)} ∩ Set.range a).encard = ({y | s y (b i)} ∩ Set.range b).encard := by
   obtain ⟨heq, hrel⟩ := (sameAtomicType_fromRel_iff r s a b).mp h
   rw [← Set.image_preimage_eq_inter_range, ← Set.image_preimage_eq_inter_range,
     Set.encard_image_eq_encard_image_of_eq_iff heq]
@@ -263,8 +263,8 @@ private theorem encard_setOf_rel_inter_range_eq {n : ℕ} {a : Fin n → V} {b :
 not entries of the tuple. -/
 private theorem setOf_rel_snoc_sdiff_range {α : Type*} {t : Setoid α} {n : ℕ} (c : Fin n → α)
     (w : α) (i : Fin n) :
-    {z | t ((snoc c w : Fin (n + 1) → α) i.castSucc) z} \
-        Set.range (snoc c w : Fin (n + 1) → α) = ({z | t (c i) z} \ Set.range c) \ {w} := by
+    {z | t z ((snoc c w : Fin (n + 1) → α) i.castSucc)} \
+        Set.range (snoc c w : Fin (n + 1) → α) = ({z | t z (c i)} \ Set.range c) \ {w} := by
   rw [snoc_castSucc, range_snoc, ← Set.union_singleton, ← Set.sdiff_sdiff]
 
 /-- A tuple back-and-forth system from `r` to `s` transfers every lower bound on the number of
@@ -272,8 +272,8 @@ elements of the class of an entry that are not entries of the tuple. -/
 private theorem le_encard_setOf_rel_sdiff_range {S : Set (Σ n, (Fin n → V) × (Fin n → W))}
     (hS : letI := (fromRel r).structure; letI := (fromRel s).structure
       IsTupleBFSystem (L := Language.graph) S) (m : ℕ) {n : ℕ} {a : Fin n → V} {b : Fin n → W}
-    (hab : ⟨n, a, b⟩ ∈ S) (i : Fin n) (hm : (m : ℕ∞) ≤ ({x | r (a i) x} \ Set.range a).encard) :
-    (m : ℕ∞) ≤ ({y | s (b i) y} \ Set.range b).encard := by
+    (hab : ⟨n, a, b⟩ ∈ S) (i : Fin n) (hm : (m : ℕ∞) ≤ ({x | r x (a i)} \ Set.range a).encard) :
+    (m : ℕ∞) ≤ ({y | s y (b i)} \ Set.range b).encard := by
   let := (fromRel r).structure
   let := (fromRel s).structure
   induction m generalizing n with
@@ -282,21 +282,21 @@ private theorem le_encard_setOf_rel_sdiff_range {S : Set (Σ n, (Fin n → V) ×
     -- Add an element `x` of the class that is not an entry of `a`; its partner `y` lies in the
     -- matching class without being an entry of `b`.
     obtain ⟨x, hxA⟩ := Set.nonempty_of_encard_ne_zero
-      (s := {x | r (a i) x} \ Set.range a) fun h => by simp [h] at hm
+      (s := {x | r x (a i)} \ Set.range a) fun h => by simp [h] at hm
     have ⟨hx, hxa⟩ := hxA
     obtain ⟨y, hy⟩ := hS.forth hab x
     obtain ⟨heq, hrel⟩ := (sameAtomicType_fromRel_iff r s _ _).mp (hS.sameAtomicType hy)
     have hyb : y ∉ Set.range b := by
       rintro ⟨j, rfl⟩
       exact hxa ⟨j, by simpa using (heq j.castSucc (last n)).mpr (by simp)⟩
-    have hsy : s (b i) y := by simpa using (hrel i.castSucc (last n)).mp (by simpa using hx)
+    have hsy : s y (b i) := by simpa using (hrel (last n) i.castSucc).mp (by simpa using hx)
     have h := ih hy i.castSucc (by
       rw [setOf_rel_snoc_sdiff_range, ← ENat.add_le_add_iff_right ENat.one_ne_top,
         Set.encard_sdiff_singleton_add_one hxA]
       exact_mod_cast hm)
     rw [setOf_rel_snoc_sdiff_range] at h
     rw [← Set.encard_sdiff_singleton_add_one
-      (⟨hsy, hyb⟩ : y ∈ {y | s (b i) y} \ Set.range b)]
+      (⟨hsy, hyb⟩ : y ∈ {y | s y (b i)} \ Set.range b)]
     push_cast
     gcongr
 
@@ -307,7 +307,7 @@ private theorem encard_setOf_rel_eq_of_isTupleBFSystem
     (hS : letI := (fromRel r).structure; letI := (fromRel s).structure
       IsTupleBFSystem (L := Language.graph) S) {n : ℕ} {a : Fin n → V} {b : Fin n → W}
     (hab : ⟨n, a, b⟩ ∈ S) (i : Fin n) :
-    {x | r (a i) x}.encard = {y | s (b i) y}.encard := by
+    {x | r x (a i)}.encard = {y | s y (b i)}.encard := by
   let := (fromRel r).structure
   let := (fromRel s).structure
   -- Split each class into the entries of the tuple it contains and the remaining elements.
@@ -321,27 +321,33 @@ private theorem encard_setOf_rel_eq_of_isTupleBFSystem
   · exact encard_setOf_rel_inter_range_eq (hS.sameAtomicType hab) i
 
 /-- A tuple back-and-forth system from `r` to `s` matches every finite family of classes of `r`
-with as many classes of `s`. -/
-private theorem enatCard_quotient_le_of_isTupleBFSystem
-    {S : Set (Σ n, (Fin n → V) × (Fin n → W))}
+with sizes in `K` with as many classes of `s` with sizes in `K`. -/
+private theorem encard_classes_le_of_isTupleBFSystem {S : Set (Σ n, (Fin n → V) × (Fin n → W))}
     (hS : letI := (fromRel r).structure; letI := (fromRel s).structure
-      IsTupleBFSystem (L := Language.graph) S) :
-    ENat.card (Quotient r) ≤ ENat.card (Quotient s) := by
+      IsTupleBFSystem (L := Language.graph) S) (K : Set ℕ∞) :
+    {c ∈ r.classes | c.encard ∈ K}.encard ≤ {c ∈ s.classes | c.encard ∈ K}.encard := by
   let := (fromRel r).structure
   let := (fromRel s).structure
   refine ENat.forall_natCast_le_iff_le.mp fun m hm => ?_
-  rw [← Set.encard_univ] at hm
-  obtain ⟨t, -, ht⟩ := Set.exists_subset_encard_eq hm
-  obtain ⟨t, rfl⟩ := (Set.finite_of_encard_eq_coe ht).exists_finset_coe
-  -- Pick one representative of each class in `t`, and match the tuple of representatives.
-  let a : Fin t.card → V := fun i => (t.equivFin.symm i : Quotient r).out
-  have ha : Set.range (Quotient.mk r ∘ a) = t := by
-    refine Set.ext fun q => ⟨?_, fun hq => ⟨t.equivFin ⟨q, hq⟩, by simp [a]⟩⟩
-    rintro ⟨i, rfl⟩
-    simp [a]
+  obtain ⟨t, ht, htm⟩ := Set.exists_subset_encard_eq hm
+  obtain ⟨t, rfl⟩ := (Set.finite_of_encard_eq_coe htm).exists_finset_coe
+  -- Pick one element of each class in `t`, and match the tuple of these elements.
+  choose x hx using fun c : t => (ht c.2).1
+  let a : Fin t.card → V := fun i => x (t.equivFin.symm i)
   obtain ⟨b, hab⟩ := hS.exists_snd_mem a
-  rw [← ht, ← ha, encard_range_mk_eq (hS.sameAtomicType hab)]
-  exact Set.encard_le_card
+  obtain ⟨-, hrel⟩ := (sameAtomicType_fromRel_iff r s a b).mp (hS.sameAtomicType hab)
+  have ha (i) : {z | r z (a i)} = t.equivFin.symm i := (hx _).symm
+  have hrange : (fun i => {z | r z (a i)}) '' Set.univ = t := by
+    refine Set.ext fun c => ⟨?_, fun hc => ⟨t.equivFin ⟨c, hc⟩, trivial, by simp [ha]⟩⟩
+    rintro ⟨i, -, rfl⟩
+    simp [ha]
+  rw [← htm, ← hrange, Set.encard_image_eq_encard_image_of_eq_iff
+    (g := fun i => {y | s y (b i)}) fun i j => by rw [setOf_rel_eq_iff, setOf_rel_eq_iff, hrel] ]
+  refine Set.encard_le_encard ?_
+  rintro _ ⟨i, -, rfl⟩
+  refine ⟨s.mem_classes (b i), ?_⟩
+  rw [← encard_setOf_rel_eq_of_isTupleBFSystem hS hab i, ha]
+  exact (ht (t.equivFin.symm i).2).2
 
 /-- Potentially isomorphic equivalence relations have equally many classes in `ℕ∞`, whatever
 their cardinalities. -/
@@ -352,9 +358,12 @@ theorem enatCard_quotient_eq_of_potentialIso
   let := (fromRel r).structure
   let := (fromRel s).structure
   obtain ⟨S, hS⟩ := h.exists_isTupleBFSystem
-  obtain ⟨S', hS'⟩ := h.symm.exists_isTupleBFSystem
-  exact (enatCard_quotient_le_of_isTupleBFSystem hS).antisymm
-    (enatCard_quotient_le_of_isTupleBFSystem hS')
+  -- Count the classes of every size.
+  have hcard := (encard_classes_le_of_isTupleBFSystem hS Set.univ).antisymm
+    (encard_classes_le_of_isTupleBFSystem (r := s) (s := r) hS.symm Set.univ)
+  simp only [Set.mem_univ, Set.sep_true] at hcard
+  exact (ENat.card_congr (quotientEquivClasses r)).trans
+    (hcard.trans (ENat.card_congr (quotientEquivClasses s)).symm)
 
 /-- Infiniteness of all classes passes from an equivalence relation to every equivalence relation
 potentially isomorphic to it, whatever its cardinality. -/
@@ -366,7 +375,8 @@ theorem infinite_of_potentialIso (hr : ∀ x : V, {x' | r x x'}.Infinite)
   let := (fromRel s).structure
   obtain ⟨S, hS⟩ := h.exists_isTupleBFSystem
   obtain ⟨a, hab⟩ := hS.exists_fst_mem ![y]
-  simpa [← Set.encard_eq_top_iff, encard_setOf_rel_eq_of_isTupleBFSystem hS hab 0] using hr (a 0)
+  simpa [← Set.encard_eq_top_iff, r.comm', s.comm', encard_setOf_rel_eq_of_isTupleBFSystem hS hab 0]
+    using hr (a 0)
 
 variable (s) in
 /-- The Scott sentence of a countable equivalence relation with infinite classes holds in an
@@ -398,30 +408,28 @@ private theorem exists_forall_not_rel_encard_eq
     {n : ℕ} {a : Fin n → V} {b : Fin n → W}
     (h : letI := (fromRel r).structure; letI := (fromRel s).structure
       SameAtomicType (L := Language.graph) a b)
-    (hsize : ∀ i, {x | r (a i) x}.encard = {y | s (b i) y}.encard) {x : V}
+    (hsize : ∀ i, {x | r x (a i)}.encard = {y | s y (b i)}.encard) {x : V}
     (hx : ∀ i, ¬r (a i) x) :
-    ∃ y : W, (∀ i, ¬s (b i) y) ∧ {x' | r x x'}.encard = {y' | s y y'}.encard := by
+    ∃ y : W, (∀ i, ¬s (b i) y) ∧ {x' | r x' x}.encard = {y' | s y' y}.encard := by
   obtain ⟨-, hrel⟩ := (sameAtomicType_fromRel_iff r s a b).mp h
-  let I := {i | {x' | r (a i) x'}.encard = {x' | r x x'}.encard}
-  have hfg (i j) : {x' | r (a i) x'} = {x' | r (a j) x'} ↔
-      {y' | s (b i) y'} = {y' | s (b j) y'} := by
+  let I := {i | {x' | r x' (a i)}.encard = {x' | r x' x}.encard}
+  have hfg (i j) : {x' | r x' (a i)} = {x' | r x' (a j)} ↔
+      {y' | s y' (b i)} = {y' | s y' (b j)} := by
     rw [setOf_rel_eq_iff, setOf_rel_eq_iff, hrel]
-  have hlt : ((fun i => {y' | s (b i) y'}) '' I).encard <
-      {c ∈ r.classes | c.encard = {x' | r x x'}.encard}.encard := by
+  have hlt : ((fun i => {y' | s y' (b i)}) '' I).encard <
+      {c ∈ r.classes | c.encard = {x' | r x' x}.encard}.encard := by
     rw [← Set.encard_image_eq_encard_image_of_eq_iff hfg]
     refine ((Set.toFinite I).image _).encard_lt_encard ((Set.ssubset_iff_of_subset ?_).mpr
-      ⟨_, ⟨by simpa only [r.comm'] using r.mem_classes x, rfl⟩, ?_⟩)
+      ⟨_, ⟨r.mem_classes x, rfl⟩, ?_⟩)
     · rintro _ ⟨i, hi, rfl⟩
-      exact ⟨by simpa only [r.comm'] using r.mem_classes _, hi⟩
+      exact ⟨r.mem_classes _, hi⟩
     · rintro ⟨i, -, hi⟩
       exact hx i (setOf_rel_eq_iff.mp hi)
   obtain ⟨_, ⟨⟨y, rfl⟩, hyκ⟩, hyI⟩ := Set.not_subset.mp fun hsub =>
     (hlt.trans_le (hcount _)).not_ge (Set.encard_le_encard hsub)
-  have hcy : {z | s z y} = {y' | s y y'} := Set.ext fun _ => s.comm'
-  refine ⟨y, fun i hi => hyI ⟨i, ?_, by simp only [setOf_rel_eq_iff.mpr hi, hcy]⟩,
-    by rw [← hcy, hyκ]⟩
+  refine ⟨y, fun i hi => hyI ⟨i, ?_, setOf_rel_eq_iff.mpr hi⟩, hyκ.symm⟩
   simp only [I, Set.mem_ofPred_eq]
-  rw [hsize i, setOf_rel_eq_iff.mpr hi, ← hcy, hyκ]
+  rw [hsize i, setOf_rel_eq_iff.mpr hi, hyκ]
 
 /-- If no size of class occurs more often in `r` than in `s`, tuples with the same atomic type
 whose matching entries lie in classes of equal sizes have matching one-point extensions on the `r`
@@ -432,14 +440,14 @@ private theorem exists_snoc_of_encard_classes_le
     {n : ℕ} {a : Fin n → V} {b : Fin n → W}
     (h : letI := (fromRel r).structure; letI := (fromRel s).structure
       SameAtomicType (L := Language.graph) a b)
-    (hsize : ∀ i, {x | r (a i) x}.encard = {y | s (b i) y}.encard) (x : V) :
+    (hsize : ∀ i, {x | r x (a i)}.encard = {y | s y (b i)}.encard) (x : V) :
     ∃ y : W, (letI := (fromRel r).structure; letI := (fromRel s).structure
       SameAtomicType (L := Language.graph) (snoc a x) (snoc b y)) ∧
-      ∀ i, {x' | r ((snoc a x : Fin (n + 1) → V) i) x'}.encard =
-        {y' | s ((snoc b y : Fin (n + 1) → W) i) y'}.encard := by
+      ∀ i, {x' | r x' ((snoc a x : Fin (n + 1) → V) i)}.encard =
+        {y' | s y' ((snoc b y : Fin (n + 1) → W) i)}.encard := by
   obtain ⟨heq, hrel⟩ := (sameAtomicType_fromRel_iff r s a b).mp h
   suffices ∃ y : W, (∀ i, a i = x ↔ b i = y) ∧ (∀ i, r (a i) x ↔ s (b i) y) ∧
-      {x' | r x x'}.encard = {y' | s y y'}.encard by
+      {x' | r x' x}.encard = {y' | s y' y}.encard by
     obtain ⟨y, hx, hr, hxy⟩ := this
     exact ⟨y, sameAtomicType_snoc h hx hr, fun i => by
       induction i using lastCases <;> simp [hsize, hxy]⟩
@@ -453,17 +461,17 @@ private theorem exists_snoc_of_encard_classes_le
     -- an entry of `b`: the entries of `a` do not exhaust the class of `x`, and the matching class
     -- has the same size and as many entries of `b`.
     obtain ⟨i, hi⟩ := hc
-    have hlt : ({y | s (b i) y} ∩ Set.range b).encard < {y | s (b i) y}.encard := by
+    have hlt : ({y | s y (b i)} ∩ Set.range b).encard < {y | s y (b i)}.encard := by
       rw [← encard_setOf_rel_inter_range_eq h, ← hsize i]
       exact ((Set.finite_range a).inter_of_right _).encard_lt_encard
         ((Set.ssubset_iff_of_subset Set.inter_subset_left).mpr
-          ⟨x, hi, fun ⟨_, j, hj⟩ => hx j hj⟩)
+          ⟨x, r.symm' hi, fun ⟨_, j, hj⟩ => hx j hj⟩)
     obtain ⟨y, hy, hyb⟩ := Set.not_subset.mp fun hsub =>
       hlt.ne (congrArg Set.encard (Set.inter_eq_left.mpr hsub))
     refine ⟨y, fun j => iff_of_false (hx j) fun hj => hyb ⟨j, hj⟩, fun j => ?_, ?_⟩
-    · exact ⟨fun h => s.trans' ((hrel j i).mp (r.trans' h (r.symm' hi))) hy,
-        fun h => r.trans' ((hrel j i).mpr (s.trans' h (s.symm' hy))) hi⟩
-    · rw [setOf_rel_eq_iff.mpr (r.symm' hi), setOf_rel_eq_iff.mpr (s.symm' hy)]
+    · exact ⟨fun h => s.trans' ((hrel j i).mp (r.trans' h (r.symm' hi))) (s.symm' hy),
+        fun h => r.trans' ((hrel j i).mpr (s.trans' h hy)) hi⟩
+    · rw [setOf_rel_eq_iff.mpr (r.symm' hi), setOf_rel_eq_iff.mpr hy]
       exact hsize i
   · -- An element of a new class is answered by an element of a class of the same size that `b`
     -- does not meet.
@@ -471,37 +479,6 @@ private theorem exists_snoc_of_encard_classes_le
     obtain ⟨y, hy, hxy⟩ := exists_forall_not_rel_encard_eq hcount h hsize hc
     exact ⟨y, fun i => iff_of_false (fun h => hc i (by subst h; exact r.refl' _))
       (fun h => hy i (by subst h; exact s.refl' _)), fun i => iff_of_false (hc i) (hy i), hxy⟩
-
-/-- A tuple back-and-forth system from `r` to `s` matches every finite family of classes of `r` of
-a given size with as many classes of `s` of that size. -/
-private theorem encard_classes_le_of_isTupleBFSystem {S : Set (Σ n, (Fin n → V) × (Fin n → W))}
-    (hS : letI := (fromRel r).structure; letI := (fromRel s).structure
-      IsTupleBFSystem (L := Language.graph) S) (κ : ℕ∞) :
-    {c ∈ r.classes | c.encard = κ}.encard ≤ {c ∈ s.classes | c.encard = κ}.encard := by
-  let := (fromRel r).structure
-  let := (fromRel s).structure
-  refine ENat.forall_natCast_le_iff_le.mp fun m hm => ?_
-  obtain ⟨t, ht, htm⟩ := Set.exists_subset_encard_eq hm
-  obtain ⟨t, rfl⟩ := (Set.finite_of_encard_eq_coe htm).exists_finset_coe
-  -- Pick one element of each class in `t`, and match the tuple of these elements.
-  choose x hx using fun c : t => (ht c.2).1
-  let a : Fin t.card → V := fun i => x (t.equivFin.symm i)
-  obtain ⟨b, hab⟩ := hS.exists_snd_mem a
-  obtain ⟨-, hrel⟩ := (sameAtomicType_fromRel_iff r s a b).mp (hS.sameAtomicType hab)
-  have ha (i) : {z | r (a i) z} = t.equivFin.symm i := by
-    rw [hx]
-    exact Set.ext fun _ => r.comm'
-  have hrange : (fun i => {z | r (a i) z}) '' Set.univ = t := by
-    refine Set.ext fun c => ⟨?_, fun hc => ⟨t.equivFin ⟨c, hc⟩, trivial, by simp [ha]⟩⟩
-    rintro ⟨i, -, rfl⟩
-    simp [ha]
-  rw [← htm, ← hrange, Set.encard_image_eq_encard_image_of_eq_iff
-    (g := fun i => {y | s (b i) y}) fun i j => by rw [setOf_rel_eq_iff, setOf_rel_eq_iff, hrel] ]
-  refine Set.encard_le_encard ?_
-  rintro _ ⟨i, -, rfl⟩
-  refine ⟨by simpa only [s.comm'] using s.mem_classes (b i), ?_⟩
-  rw [← encard_setOf_rel_eq_of_isTupleBFSystem hS hab i, ha]
-  exact (ht (t.equivFin.symm i).2).2
 
 /-- Two equivalence relations, of any cardinalities, are potentially isomorphic in the language of
 graphs exactly when, for every `κ : ℕ∞`, they have equally many classes with `κ` elements, counted
@@ -514,12 +491,12 @@ theorem potentialIso_fromRel_iff :
   let := (fromRel s).structure
   refine ⟨fun h κ => ?_, fun hcount => ?_⟩
   · obtain ⟨S, hS⟩ := h.exists_isTupleBFSystem
-    exact (encard_classes_le_of_isTupleBFSystem hS κ).antisymm
-      (encard_classes_le_of_isTupleBFSystem (r := s) (s := r) hS.symm κ)
+    exact (encard_classes_le_of_isTupleBFSystem hS {κ}).antisymm
+      (encard_classes_le_of_isTupleBFSystem (r := s) (s := r) hS.symm {κ})
   -- Pairs with the same atomic type whose matching entries lie in classes of equal sizes form a
   -- tuple back-and-forth system.
   refine IsTupleBFSystem.potentialIso (S := {p | SameAtomicType (L := Language.graph) p.2.1 p.2.2 ∧
-    ∀ i, {x | r (p.2.1 i) x}.encard = {y | s (p.2.2 i) y}.encard})
+    ∀ i, {x | r x (p.2.1 i)}.encard = {y | s y (p.2.2 i)}.encard})
     ⟨⟨(sameAtomicType_fromRel_iff r s _ _).mpr ⟨finZeroElim, finZeroElim⟩, finZeroElim⟩,
       And.left, ?_, ?_⟩
   · rintro n a b ⟨h, hsize⟩ x

@@ -41,8 +41,8 @@ namespace Setoid
 
 /-- Two elements have the same class exactly when they are related. -/
 theorem setOf_rel_eq_iff {α : Type*} {r : Setoid α} {x y : α} :
-    {x' | r x x'} = {y' | r y y'} ↔ r x y :=
-  ⟨fun h => (Set.ext_iff.mp h y).mpr (r.refl' y), fun h =>
-    Set.ext fun _ => ⟨fun hx => r.trans' (r.symm' h) hx, fun hy => r.trans' h hy⟩⟩
+    {z | r z x} = {z | r z y} ↔ r x y :=
+  ⟨fun h => (Set.ext_iff.mp h x).mp (r.refl' x), fun h =>
+    Set.ext fun _ => ⟨fun hx => r.trans' hx h, fun hy => r.trans' hy (r.symm' h)⟩⟩
 
 end Setoid
