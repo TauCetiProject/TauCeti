@@ -42,12 +42,15 @@ are only real-linear.
 * `quadraticTwoForm_smul`, `quadraticTwoForm_smul_of_norm_eq_one`: `q(c ψ) = |c|² q(ψ)`; in
   particular `q` is invariant under unit phases.
 * `norm_quadraticTwoForm`, `norm_quadraticTwoForm_sq`: `‖q(ψ)‖ = ‖ψ‖² / (2 √2)`, that is
-  `‖q(ψ)‖² = ‖ψ‖⁴ / 8`.
+  `‖q(ψ)‖² = ‖ψ‖⁴ / 8`; in particular `q(ψ) = 0` only for `ψ = 0`
+  (`quadraticTwoForm_eq_zero_iff`).
 * `cliffordRestriction_quadraticTwoFormPolar`: `C(i q'(ψ, φ)) = φψ* + ψφ* - Re⟪ψ, φ⟫ Id`.
 * `quadraticTwoForm_add`: `q(ψ + φ) = q(ψ) + q(φ) + q'(ψ, φ)`.
 * `quadraticTwoFormPolar_smul_self`: `q'(ψ, c ψ) = 2 Re(c) q(ψ)`, so the derivative of `q` kills
   the infinitesimal gauge directions `ξ ψ` with `ξ` imaginary.
 * `norm_quadraticTwoFormPolar_le`: `‖q'(ψ, φ)‖ ≤ ‖ψ‖ ‖φ‖ / √2`.
+* `norm_quadraticTwoForm_sub_le`: `q` is locally Lipschitz,
+  `‖q(ψ) - q(φ)‖ ≤ ‖ψ - φ‖ (‖ψ‖ + ‖φ‖) / (2 √2)`.
 * `hasFDerivAt_quadraticTwoForm`, `contDiff_quadraticTwoForm`: `q` is smooth, with real Fréchet
   derivative `q'(ψ, ·)` at `ψ`.
 
@@ -94,9 +97,7 @@ theorem quadraticTwoForm_def (ψ : positiveHalfSpinors o ρ) :
 theorem quadraticTwoForm_eq_rankOne (ψ : positiveHalfSpinors o ρ) :
     quadraticTwoForm o ρ hQ hkl ψ =
       (4 : ℝ)⁻¹ • cliffordRestrictionAdjoint o ρ hQ hkl (InnerProductSpace.rankOne ℂ ψ ψ) := by
-  rw [quadraticTwoForm_def, quadraticEnd_def, ← ContinuousLinearMap.one_def,
-    ← Complex.ofReal_pow, ← Complex.ofReal_ofNat, ← Complex.ofReal_div, Complex.coe_smul,
-    map_sub, map_smul, cliffordRestrictionAdjoint_one, smul_zero, sub_zero]
+  simp [quadraticTwoForm_def, quadraticEnd_def, map_sub, ← ContinuousLinearMap.one_def]
 
 variable {ρ} in
 /-- `C(i q(ψ)) = Q₀(ψ)`. -/
@@ -105,7 +106,7 @@ theorem cliffordRestriction_quadraticTwoForm
     (h₂ : finrank ℂ (positiveHalfSpinors o ρ) = 2) (ψ : positiveHalfSpinors o ρ) :
     cliffordRestriction o ρ hQ (quadraticTwoForm o ρ hQ hkl ψ) = quadraticEnd ψ := by
   rw [quadraticTwoForm_def, Submodule.coe_smul, map_smul,
-    cliffordRestriction_cliffordRestrictionAdjoint o hQ hρ hkl h₂
+    cliffordRestriction_cliffordRestrictionAdjoint_of_mem_traceFreeSelfAdjoint o hQ hρ hkl h₂
       (quadraticEnd_mem_traceFreeSelfAdjoint h₂ ψ), smul_smul]
   norm_num
 
@@ -156,11 +157,8 @@ theorem norm_quadraticTwoForm (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -�
     (h₂ : finrank ℂ (positiveHalfSpinors o ρ) = 2) (ψ : positiveHalfSpinors o ρ) :
     ‖quadraticTwoForm o ρ hQ hkl ψ‖ = ‖ψ‖ ^ 2 / (2 * √2) := by
   have : Nontrivial (positiveHalfSpinors o ρ) := Module.nontrivial_of_finrank_eq_succ h₂
-  have hself : o.hodgeStar hkl (quadraticTwoForm o ρ hQ hkl ψ) = quadraticTwoForm o ρ hQ hkl ψ := by
-    simpa using Module.End.mem_eigenspace_iff.1 (quadraticTwoForm o ρ hQ hkl ψ).2
-  have h := norm_cliffordRestriction_of_hodgeStar_eq_self o hQ hρ hkl hself
+  have h := norm_cliffordRestriction_coe o hQ hρ hkl (quadraticTwoForm o ρ hQ hkl ψ)
   rw [cliffordRestriction_quadraticTwoForm o hQ hkl hρ h₂, norm_quadraticEnd] at h
-  simp only [Submodule.norm_coe] at h
   rw [eq_div_iff (by positivity)]
   linarith
 
@@ -171,6 +169,14 @@ theorem norm_quadraticTwoForm_sq (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) =
     ‖quadraticTwoForm o ρ hQ hkl ψ‖ ^ 2 = ‖ψ‖ ^ 4 / 8 := by
   rw [norm_quadraticTwoForm o hQ hkl hρ h₂, div_pow, mul_pow, Real.sq_sqrt zero_le_two]
   ring
+
+variable {ρ} in
+/-- `q(ψ)` vanishes exactly when `ψ` does. -/
+theorem quadraticTwoForm_eq_zero_iff (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
+    (h₂ : finrank ℂ (positiveHalfSpinors o ρ) = 2) {ψ : positiveHalfSpinors o ρ} :
+    quadraticTwoForm o ρ hQ hkl ψ = 0 ↔ ψ = 0 := by
+  rw [← norm_eq_zero, norm_quadraticTwoForm o hQ hkl hρ h₂]
+  simp
 
 /-! ### Polarization and derivative -/
 
@@ -201,7 +207,7 @@ theorem cliffordRestriction_quadraticTwoFormPolar
     (h₂ : finrank ℂ (positiveHalfSpinors o ρ) = 2) (ψ φ : positiveHalfSpinors o ρ) :
     cliffordRestriction o ρ hQ (quadraticTwoFormPolar o ρ hQ hkl ψ φ) = quadraticEndPolar ψ φ := by
   rw [quadraticTwoFormPolar_apply, Submodule.coe_smul, map_smul,
-    cliffordRestriction_cliffordRestrictionAdjoint o hQ hρ hkl h₂
+    cliffordRestriction_cliffordRestrictionAdjoint_of_mem_traceFreeSelfAdjoint o hQ hρ hkl h₂
       (quadraticEndPolar_mem_traceFreeSelfAdjoint h₂ ψ φ), smul_smul]
   norm_num
 
@@ -243,13 +249,31 @@ theorem norm_quadraticTwoFormPolar_le (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q 
     (h₂ : finrank ℂ (positiveHalfSpinors o ρ) = 2) (ψ φ : positiveHalfSpinors o ρ) :
     ‖quadraticTwoFormPolar o ρ hQ hkl ψ φ‖ ≤ ‖ψ‖ * ‖φ‖ / √2 := by
   have : Nontrivial (positiveHalfSpinors o ρ) := Module.nontrivial_of_finrank_eq_succ h₂
-  set x := quadraticTwoFormPolar o ρ hQ hkl ψ φ
-  have hself : o.hodgeStar hkl x = x := by simpa using Module.End.mem_eigenspace_iff.1 x.2
-  have h := norm_cliffordRestriction_of_hodgeStar_eq_self o hQ hρ hkl hself
+  have h := norm_cliffordRestriction_coe o hQ hρ hkl (quadraticTwoFormPolar o ρ hQ hkl ψ φ)
   rw [cliffordRestriction_quadraticTwoFormPolar o hQ hkl hρ h₂] at h
-  simp only [Submodule.norm_coe] at h
   rw [le_div_iff₀ (by positivity), mul_comm, ← h]
   exact norm_quadraticEndPolar_le ψ φ
+
+/-- `q'(ψ - φ, ψ + φ) = 2 (q(ψ) - q(φ))`. -/
+theorem quadraticTwoFormPolar_sub_add (ψ φ : positiveHalfSpinors o ρ) :
+    quadraticTwoFormPolar o ρ hQ hkl (ψ - φ) (ψ + φ) =
+      (2 : ℝ) • (quadraticTwoForm o ρ hQ hkl ψ - quadraticTwoForm o ρ hQ hkl φ) := by
+  rw [map_sub, sub_apply, map_add, map_add, quadraticTwoFormPolar_self,
+    quadraticTwoFormPolar_self, quadraticTwoFormPolar_comm o ρ hQ hkl φ ψ]
+  module
+
+variable {ρ} in
+/-- `q` is locally Lipschitz: `‖q(ψ) - q(φ)‖ ≤ ‖ψ - φ‖ (‖ψ‖ + ‖φ‖) / (2 √2)`. -/
+theorem norm_quadraticTwoForm_sub_le (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
+    (h₂ : finrank ℂ (positiveHalfSpinors o ρ) = 2) (ψ φ : positiveHalfSpinors o ρ) :
+    ‖quadraticTwoForm o ρ hQ hkl ψ - quadraticTwoForm o ρ hQ hkl φ‖ ≤
+      ‖ψ - φ‖ * (‖ψ‖ + ‖φ‖) / (2 * √2) := by
+  have h := norm_quadraticTwoFormPolar_le o hQ hkl hρ h₂ (ψ - φ) (ψ + φ)
+  rw [quadraticTwoFormPolar_sub_add, norm_smul, Real.norm_two, le_div_iff₀ (by positivity)] at h
+  rw [le_div_iff₀ (by positivity)]
+  have := norm_add_le ψ φ
+  have := norm_nonneg (ψ - φ)
+  nlinarith
 
 /-- The real Fréchet derivative of `q` at `ψ` is `q'(ψ, ·)`; this holds in the strict sense. -/
 theorem hasStrictFDerivAt_quadraticTwoForm (ψ : positiveHalfSpinors o ρ) :
