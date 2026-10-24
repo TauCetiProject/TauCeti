@@ -149,7 +149,7 @@ theorem conformalLaplacian_eq_conformalCoefficient_mul_neg_laplacian {u : F → 
     (hu : DifferentiableAt ℝ (∇ u) x) :
     conformalLaplacian (modelWithCornersSelf ℝ F) u x =
       conformalCoefficient (finrank ℝ F) * -Δ u x := by
-  rw [conformalLaplacian_def, laplaceBeltrami_eq_laplacian_of_differentiable_gradient hu,
+  rw [conformalLaplacian_def, laplaceBeltrami_eq_laplacian_of_differentiableAt_gradient hu,
     scalarCurvature_leviCivitaConnection_model_space, zero_mul, add_zero]
 
 /-- **The bubbles solve the Yamabe equation of the sphere.** In dimension `n ≠ 2`, every bubble
