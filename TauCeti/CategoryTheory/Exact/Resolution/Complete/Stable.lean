@@ -108,7 +108,7 @@ theorem ι_liftMap_f_zero {X Y : C} (f : X ⟶ Y) :
 
 /-- The functor sending an object to the homotopy class of its complete resolution, and a
 morphism to the homotopy class of its lift. -/
-@[expose] noncomputable def completeResolutionFunctor :
+noncomputable def completeResolutionFunctor :
     C ⥤ HomotopyCategory C (ComplexShape.up ℤ) where
   obj X := (HomotopyCategory.quotient C _).obj (hE.completeResolution X).complex
   map f := (HomotopyCategory.quotient C _).map (hE.liftMap f)
@@ -127,14 +127,23 @@ theorem completeResolutionFunctor_obj (X : C) :
       (HomotopyCategory.quotient C _).obj (hE.completeResolution X).complex :=
   (rfl)
 
+/-- The functor on morphisms, transported along `completeResolutionFunctor_obj`. -/
 theorem completeResolutionFunctor_map {X Y : C} (f : X ⟶ Y) :
+    hE.completeResolutionFunctor.map f = eqToHom (hE.completeResolutionFunctor_obj X) ≫
+      (HomotopyCategory.quotient C _).map (hE.liftMap f) ≫
+        eqToHom (hE.completeResolutionFunctor_obj Y).symm :=
+  (conj_eqToHom_iff_heq _ _ (hE.completeResolutionFunctor_obj X)
+    (hE.completeResolutionFunctor_obj Y)).2 HEq.rfl
+
+/-- The functor on morphisms, without transport: private, since its statement unfolds the
+objects of the functor. -/
+private theorem map_eq {X Y : C} (f : X ⟶ Y) :
     hE.completeResolutionFunctor.map f = (HomotopyCategory.quotient C _).map (hE.liftMap f) :=
   (rfl)
 
 instance : hE.completeResolutionFunctor.Additive where
   map_add {X Y f g} := by
-    rw [completeResolutionFunctor_map, completeResolutionFunctor_map,
-      completeResolutionFunctor_map]
+    rw [map_eq, map_eq, map_eq]
     exact (HomotopyCategory.eq_of_homotopy _ _ (CompleteResolution.liftHomotopy
       ((hE.completeResolutionIso X).hom ≫ (f + g) ≫ (hE.completeResolutionIso Y).inv) _ _
       (by simp) (by simp [Preadditive.comp_add, Preadditive.add_comp]))).trans
@@ -150,7 +159,7 @@ theorem projectiveStableIdeal_le_kerIdeal :
       ((hE.completeResolutionIso X).hom ≫ f ≫ (hE.completeResolutionIso Y).inv) := by
     simpa only [Category.assoc] using
       (hf.comp_left (hE.completeResolutionIso X).hom).comp_right (hE.completeResolutionIso Y).inv
-  rw [Functor.mem_kerIdeal_hom, completeResolutionFunctor_map]
+  rw [Functor.mem_kerIdeal_hom, map_eq]
   exact (HomotopyCategory.quotient_map_eq_zero_iff _).2
     ⟨CompleteResolution.liftHomotopyZero _ (hE.ι_liftMap_f_zero f) hf'⟩
 
@@ -183,7 +192,7 @@ instance : hE.stableFunctor.Full where
     let f₀ := (hE.completeResolutionIso X.as).inv ≫ CompleteResolution.cyclesMap φ ≫
       (hE.completeResolutionIso Y.as).hom
     refine ⟨E.projectiveStableFunctor.map f₀, ObjectProperty.hom_ext _ ?_⟩
-    rw [stableFunctor_map_hom, completeResolutionFunctor_map, ← hφ]
+    rw [stableFunctor_map_hom, map_eq, ← hφ]
     exact HomotopyCategory.eq_of_homotopy _ _
       (CompleteResolution.liftHomotopy (CompleteResolution.cyclesMap φ) _ _
         (by simp [f₀]) (by simp))
@@ -194,7 +203,7 @@ instance : hE.stableFunctor.Faithful where
     obtain ⟨g₂, rfl⟩ := E.projectiveStableIdeal.quotientFunctor.map_surjective f₂
     have h' := E.completeResolutionComplex.ι.congr_map h
     rw [ObjectProperty.ι_map, ObjectProperty.ι_map, stableFunctor_map_hom, stableFunctor_map_hom,
-      completeResolutionFunctor_map, completeResolutionFunctor_map] at h'
+      map_eq, map_eq] at h'
     have H := Homotopy.equivSubZero (HomotopyCategory.homotopyOfEq _ _ h')
     have hfac := CompleteResolution.factorsThrough_of_homotopy
       (f := ((hE.completeResolutionIso X.as).hom ≫ (g₁ - g₂) ≫
