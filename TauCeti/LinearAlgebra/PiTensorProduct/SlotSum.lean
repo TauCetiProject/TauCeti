@@ -78,11 +78,13 @@ representing cocycle in the tensor-induced resolution.
 * `TauCeti.PiTensorProduct.slotSum_comp_slotSum`: if every element of `M` is its own additive
   inverse, the slot sum of a square-zero endomorphism squares to zero.
 * `TauCeti.PiTensorProduct.slotSum_comp_slotHomotopy_add`: if every element of `M` is its own
-  additive inverse, the slot homotopy contracts the tensor power, `D H + H D = 1 - e ⊗ ⋯ ⊗ e`.
+  additive inverse, the slot homotopy contracts the tensor power, `D H + H D = 1 - e ⊗ ⋯ ⊗ e`;
+  `TauCeti.PiTensorProduct.slotSum_slotHomotopy_add_apply` is its value at a vector.
 * `TauCeti.PiTensorProduct.slotSum_comp_map` and `TauCeti.PiTensorProduct.slotSum_comp_reindex`:
   the slot sum commutes with factorwise maps and with reindexing.
 * `TauCeti.PiTensorProduct.isHomogeneous_slotSum`, `TauCeti.PiTensorProduct.isHomogeneous_map`,
-  `TauCeti.PiTensorProduct.isHomogeneous_map_update` and
+  `TauCeti.PiTensorProduct.isHomogeneous_map_update`,
+  `TauCeti.PiTensorProduct.isHomogeneous_reindex` and
   `TauCeti.PiTensorProduct.isHomogeneous_slotHomotopy`: the degrees of these maps for the
   total-degree grading.
 * `TauCeti.PiTensorProduct.map_mem_totalDegreePiece_zero`,
@@ -240,6 +242,18 @@ theorem isHomogeneous_map {𝒩 : A → Submodule R N} {g : ι → N →ₗ[R] M
   rintro p m hm rfl
   rw [Submodule.mem_comap, PiTensorProduct.map_tprod, ← Finset.sum_add_distrib]
   exact tprod_mem_totalDegreePiece fun i ↦ (hg i).map_mem (hm i)
+
+/-- Reindexing the tensor factors along an equivalence preserves the total degree. -/
+theorem isHomogeneous_reindex [Fintype κ] (σ : ι ≃ κ) :
+    LinearMap.IsHomogeneous (PiTensorProduct.reindex R (fun _ ↦ M) σ).toLinearMap
+      (totalDegreePiece ι ℳ) (totalDegreePiece κ ℳ) 0 := by
+  rw [LinearMap.isHomogeneous_def]
+  intro n x hx
+  refine (totalDegreePiece_le_iff (P := (totalDegreePiece κ ℳ (n + 0)).comap _).2 ?_) hx
+  rintro p m hm rfl
+  rw [Submodule.mem_comap, LinearEquiv.coe_coe, PiTensorProduct.reindex_tprod, add_zero,
+    ← σ.symm.sum_comp p]
+  exact tprod_mem_totalDegreePiece fun k ↦ hm (σ.symm k)
 
 /-- A factorwise map of degree zero in every factor but one, where it has degree `a`, shifts the
 total degree by `a`. -/
@@ -428,6 +442,14 @@ theorem slotSum_comp_slotHomotopy_add (hM : ∀ m : M, m + m = 0) {d e h : Modul
   · simp [hj, hj.ne]
   · simp
   · simp [hj.ne, hj.ne', hj.not_gt]
+
+/-- The contraction identity `D H + H D = 1 - e ⊗ ⋯ ⊗ e` of
+`TauCeti.PiTensorProduct.slotSum_comp_slotHomotopy_add`, evaluated at a vector. -/
+theorem slotSum_slotHomotopy_add_apply (hM : ∀ m : M, m + m = 0) {d e h : Module.End R M}
+    (hde : d ∘ₗ e = e ∘ₗ d) (hdh : d ∘ₗ h + h ∘ₗ d = LinearMap.id - e) (v : ⨂[R] _ : ι, M) :
+    slotSum ι d (slotHomotopy ι e h v) + slotHomotopy ι e h (slotSum ι d v) =
+      v - PiTensorProduct.map (fun _ ↦ e) v := by
+  simpa using LinearMap.congr_fun (slotSum_comp_slotHomotopy_add hM hde hdh) v
 
 end Ring
 
