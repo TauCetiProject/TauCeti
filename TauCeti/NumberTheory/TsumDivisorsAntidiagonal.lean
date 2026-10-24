@@ -53,6 +53,22 @@ theorem HasSum.sum_divisorsAntidiagonal {f : ℕ → ℕ → α} {a : α}
 
 namespace TauCeti
 
+/-- A summable Lambert double series regroups into a power series with divisor-sum
+coefficients. -/
+theorem hasSum_sum_divisors_mul_pow_of_summable {K : Type*} [NormedRing K]
+    {g : ℕ → K} {r : K}
+    (hs : Summable (fun p : ℕ+ × ℕ+ ↦ g p.2 * r ^ ((p.1 : ℕ) * p.2))) :
+    HasSum (fun n : ℕ ↦ (∑ m ∈ n.divisors, g m) * r ^ n)
+      (∑' p : ℕ+ × ℕ+, g p.2 * r ^ ((p.1 : ℕ) * p.2)) := by
+  have h := hs.hasSum.sum_divisorsAntidiagonal (f := fun c m ↦ g m * r ^ (c * m))
+  rw [← hasSum_nat_add_iff' 1]
+  simp only [Finset.range_one, Finset.sum_singleton, Nat.divisors_zero, Finset.sum_empty,
+    zero_mul, sub_zero]
+  rw [← hasSum_pnat_iff_hasSum_succ (f := fun n ↦ (∑ m ∈ n.divisors, g m) * r ^ n)]
+  convert h using 2 with n
+  rw [Nat.sum_divisorsAntidiagonal' (f := fun c m ↦ g m * r ^ (c * m)), Finset.sum_mul]
+  exact Finset.sum_congr rfl fun m hm ↦ by rw [Nat.div_mul_cancel (Nat.dvd_of_mem_divisors hm)]
+
 /-- **Lambert-type series as power series.** For polynomially bounded `g` and `‖r‖ < 1` in a
 complete normed ring, the power series `∑_n (∑_{m ∣ n} g(m)) rⁿ` sums to the double series
 `∑_{c ≥ 1} ∑_{m ≥ 1} g(m) r^{c m}`. For instance `g(m) = m sᵐ` gives
@@ -75,17 +91,7 @@ theorem hasSum_sum_divisors_mul_pow {K : Type*} [NormedRing K] [CompleteSpace K]
       ∑' c : ℕ, ∑' m : ℕ, g (m + 1) * r ^ ((c + 1) * (m + 1)) := by
     rw [hs.tsum_prod, tsum_pnat_eq_tsum_succ (f := fun c ↦ ∑' m : ℕ+, g m * r ^ (c * m))]
     exact tsum_congr fun c ↦ tsum_pnat_eq_tsum_succ (f := fun m ↦ g m * r ^ ((c + 1) * m))
-  have h := hs.hasSum.sum_divisorsAntidiagonal (f := fun c m ↦ g m * r ^ (c * m))
-  rw [hv] at h
-  -- the term `n = 0` vanishes, so the series over `ℕ` is the series over `ℕ+`
-  rw [← hasSum_nat_add_iff' 1]
-  simp only [Finset.range_one, Finset.sum_singleton, Nat.divisors_zero, Finset.sum_empty,
-    zero_mul, sub_zero]
-  rw [← hasSum_pnat_iff_hasSum_succ (f := fun n ↦ (∑ m ∈ n.divisors, g m) * r ^ n)]
-  convert h using 2 with n
-  rw [Nat.sum_divisorsAntidiagonal' (f := fun c m ↦ g m * r ^ (c * m)), Finset.sum_mul]
-  refine Finset.sum_congr rfl fun m hm ↦ ?_
-  rw [Nat.div_mul_cancel (Nat.dvd_of_mem_divisors hm)]
+  simpa only [hv] using hasSum_sum_divisors_mul_pow_of_summable hs
 
 variable {K : Type*} [NormedCommRing K] [NormOneClass K] [CompleteSpace K]
 
@@ -135,20 +141,9 @@ theorem hasSum_sum_divisors_mul_pow_mul_of_norm_le_mul_pow (a : ℕ → K) {C : 
     HasSum (fun n : ℕ ↦ (∑ d ∈ n.divisors, a d * u ^ d) * q ^ n)
       (∑' n : ℕ+, ∑' d : ℕ, a (d + 1) * (q ^ (n : ℕ) * u) ^ (d + 1)) := by
   have hs := (summable_norm_mul_pow_mul_pow_prod_of_norm_le_mul_pow a ha hq hqu).of_norm
-  have h := HasSum.sum_divisorsAntidiagonal
-    (f := fun n d : ℕ ↦ a d * u ^ d * q ^ (n * d)) hs.hasSum
-  simp_rw [Nat.sum_divisorsAntidiagonal' (fun n d ↦ a d * u ^ d * q ^ (n * d))] at h
-  have he (n : ℕ+) : (∑ d ∈ (n : ℕ).divisors,
-      a d * u ^ d * q ^ ((n : ℕ) / d * d)) =
-        (∑ d ∈ (n : ℕ).divisors, a d * u ^ d) * q ^ (n : ℕ) := by
-    rw [Finset.sum_mul]
-    exact Finset.sum_congr rfl fun d hd ↦ by rw [Nat.div_mul_cancel (Nat.dvd_of_mem_divisors hd)]
-  simp_rw [he] at h
+  have h := hasSum_sum_divisors_mul_pow_of_summable (g := fun d ↦ a d * u ^ d) hs
   rw [hs.tsum_prod] at h
-  have hnat := (hasSum_pnat_iff (f := fun n : ℕ ↦
-    (∑ d ∈ n.divisors, a d * u ^ d) * q ^ n)).mp h
-  simp only [Nat.divisors_zero, Finset.sum_empty, zero_mul, add_zero] at hnat
-  convert hnat using 1
+  convert h using 1
   apply tsum_congr
   intro n
   rw [tsum_pnat_eq_tsum_succ (f := fun d : ℕ ↦ a d * u ^ d * q ^ ((n : ℕ) * d))]

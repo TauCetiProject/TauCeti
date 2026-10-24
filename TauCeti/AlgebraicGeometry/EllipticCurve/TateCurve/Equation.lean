@@ -11,8 +11,6 @@ import Mathlib.Analysis.Normed.Ring.Ultra
 import TauCeti.AlgebraicGeometry.EllipticCurve.TateCurve.FormalPoint
 import TauCeti.AlgebraicGeometry.EllipticCurve.TateCurve.QExpansion
 import TauCeti.Analysis.Polynomial.Ultra
-import TauCeti.Analysis.SpecificLimits.Normed
-import TauCeti.NumberTheory.TsumDivisorsAntidiagonal
 
 /-!
 # The Weierstrass equation of the Tate coordinates
@@ -196,12 +194,13 @@ private theorem circleEval_circleParam {q u : K} (hu : ‖u‖ ≤ 1) (hu₀ : u
   field_simp
 
 /-- `circleX` evaluated at `u` on the unit circle and `v = q / u` is `(1 - u)² X(u)`. -/
-private theorem circleEval_circleX {q u : Kˣ} (hq : ‖(q : K)‖ < 1) (hu : ‖(u : K)‖ = 1)
+private theorem circleEval_circleX {q u : Kˣ} (hu : ‖(u : K)‖ = 1)
     (hu₁ : (u : K) ≠ 1) (hw : ‖(q : K) / u‖ < 1) :
     circleEval (u : K) hu.le ((q : K) / u) hw circleX = (1 - u) ^ 2 * tateUniformizationX q u := by
-  have hqu : ‖(q : K) * (u : K)‖ < 1 := by rwa [norm_mul, hu, mul_one]
+  have hqu : ‖(q : K) * (u : K)‖ < 1 := by
+    simpa only [norm_mul, norm_div, hu, mul_one, div_one] using hw
   have hqui : ‖(q : K) * (u : K)⁻¹‖ < 1 := by
-    rwa [norm_mul, norm_inv, hu, inv_one, mul_one]
+    simpa only [div_eq_mul_inv] using hw
   have hP := (hasSum_tateUniformizationX_sub q u hqu hqui).congr_fun fun N ↦
     aeval_sum_divisors_X_mul_div_pow u.ne_zero N
   rw [circleX, map_add, map_mul, circleEval_C, circleEval_C, circleEval_mk, hP.tsum_eq]
@@ -211,12 +210,13 @@ private theorem circleEval_circleX {q u : Kˣ} (hq : ‖(q : K)‖ < 1) (hu : �
   ring
 
 /-- `circleY` evaluated at `u` on the unit circle and `v = q / u` is `(1 - u)³ Y(u)`. -/
-private theorem circleEval_circleY {q u : Kˣ} (hq : ‖(q : K)‖ < 1) (hu : ‖(u : K)‖ = 1)
+private theorem circleEval_circleY {q u : Kˣ} (hu : ‖(u : K)‖ = 1)
     (hu₁ : (u : K) ≠ 1) (hw : ‖(q : K) / u‖ < 1) :
     circleEval (u : K) hu.le ((q : K) / u) hw circleY = (1 - u) ^ 3 * tateUniformizationY q u := by
-  have hqu : ‖(q : K) * (u : K)‖ < 1 := by rwa [norm_mul, hu, mul_one]
+  have hqu : ‖(q : K) * (u : K)‖ < 1 := by
+    simpa only [norm_mul, norm_div, hu, mul_one, div_one] using hw
   have hqui : ‖(q : K) * (u : K)⁻¹‖ < 1 := by
-    rwa [norm_mul, norm_inv, hu, inv_one, mul_one]
+    simpa only [div_eq_mul_inv] using hw
   have hP := (hasSum_tateUniformizationY_sub q u hqu hqui).congr_fun fun N ↦
     aeval_sum_divisors_Y_mul_div_pow u.ne_zero N
   rw [circleY, map_add, map_mul, circleEval_C, circleEval_C, circleEval_mk, hP.tsum_eq]
@@ -234,8 +234,8 @@ theorem equation_tateUniformizationX_tateUniformizationY_of_norm_eq_one (q u : K
   have hu₁' : (u : K) ≠ 1 := fun h ↦ hu₁ (Units.val_eq_one.mp h)
   have hw : ‖(q : K) / u‖ < 1 := by rwa [norm_div, hu, div_one]
   have h := congrArg (circleEval (u : K) hu.le ((q : K) / u) hw) circle_equation
-  simp only [map_add, map_mul, map_pow, circleEval_C, circleEval_circleX hq hu hu₁' hw,
-    circleEval_circleY hq hu hu₁' hw, circleEval_circleParam hu.le u.ne_zero hq hw,
+  simp only [map_add, map_mul, map_pow, circleEval_C, circleEval_circleX hu hu₁' hw,
+    circleEval_circleY hu hu₁' hw, circleEval_circleParam hu.le u.ne_zero hq hw,
     map_sub, map_one, Polynomial.aeval_X] at h
   rw [WeierstrassCurve.Affine.equation_iff, tateCurveAt_def]
   simp only [WeierstrassCurve.map_a₁, WeierstrassCurve.map_a₂, WeierstrassCurve.map_a₃,
