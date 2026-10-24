@@ -100,17 +100,27 @@ theorem baseChangeFunctor_map_mem_nullHomotopic (f : S →+* T)
   obtain ⟨h₀, h₁, hh⟩ := (mem_nullHomotopic_iff g).1 hg
   let F := forget₂ (FGModuleCat.{u} T) (ModuleCat.{u} T)
   let G := forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S) ⋙ ModuleCat.extendScalars f
+  -- The scalar-extended homotopy components, typed between the base-changed objects.
+  let h₀' : ((baseChangeFunctor f).obj X).obj.X₀ ⟶ ((baseChangeFunctor f).obj Y).obj.X₁ :=
+    ObjectProperty.homMk (G.map h₀)
+  let h₁' : ((baseChangeFunctor f).obj X).obj.X₁ ⟶ ((baseChangeFunctor f).obj Y).obj.X₀ :=
+    ObjectProperty.homMk (G.map h₁)
+  -- Forgetting finite generation undoes `ObjectProperty.homMk`.
+  have hF₀ : F.map h₀' = G.map h₀ := rfl
+  have hF₁ : F.map h₁' = G.map h₁ := rfl
   rw [mem_nullHomotopic_iff]
-  refine ⟨ObjectProperty.homMk (G.map h₀), ObjectProperty.homMk (G.map h₁), ?_⟩
-  apply CurvedDuplex.hom_ext
-  · apply F.map_injective
-    have hEq₀ := congrArg G.map (congrArg CurvedDuplex.Hom.f₀ hh)
-    simp only [CurvedDuplex.nullHomotopicMap_f₀, Functor.map_add, Functor.map_comp] at hEq₀ ⊢
-    exact hEq₀
-  · apply F.map_injective
-    have hEq₁ := congrArg G.map (congrArg CurvedDuplex.Hom.f₁ hh)
-    simp only [CurvedDuplex.nullHomotopicMap_f₁, Functor.map_add, Functor.map_comp] at hEq₁ ⊢
-    exact hEq₁
+  refine ⟨h₀', h₁', ?_⟩
+  obtain ⟨hh₀, hh₁⟩ := CurvedDuplex.Hom.ext_iff.1 hh
+  replace hh₀ := congrArg G.map hh₀
+  replace hh₁ := congrArg G.map hh₁
+  apply CurvedDuplex.hom_ext <;> apply F.map_injective <;>
+    simp only [CurvedDuplex.nullHomotopicMap_f₀, CurvedDuplex.nullHomotopicMap_f₁,
+      Functor.map_add, Functor.map_comp, hF₀, hF₁, baseChangeFunctor_obj_d₀,
+      baseChangeFunctor_obj_d₁, baseChangeFunctor_map_f₀, baseChangeFunctor_map_f₁,
+      Functor.comp_map, F, G] at hh₀ hh₁ ⊢
+  -- Both sides now agree as morphisms; only the endpoint objects of the base change are
+  -- unfolded to their scalar extensions.
+  exacts [hh₀, hh₁]
 
 /-- Extension of scalars carries the null-homotopy ideal of factorizations of `w` into that of
 factorizations of `f w`. -/
