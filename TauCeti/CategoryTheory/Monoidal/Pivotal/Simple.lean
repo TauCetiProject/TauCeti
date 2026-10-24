@@ -97,8 +97,9 @@ theorem leftDim_comp_rightDim_eq :
   rw [leftDim_eq_leftTrace P Q, rightDim_eq_rightTrace P Q]
   -- Both dimensions for `P` are traces for `Q` of the automorphism `φ_X ≫ ψ_X⁻¹` of `X` and of
   -- its inverse, where `φ` and `ψ` are the pivotal isomorphisms of `P` and `Q`.
-  exact @leftTrace_inv_comp_rightTrace_hom k _ _ C _ _ _ Q _ _ _ _ _ X _ _
-    (@pivotalIsoApp C _ _ _ P X ≪≫ (@pivotalIsoApp C _ _ _ Q X).symm)
+  let _ := Q
+  simpa only [Iso.trans_hom, Iso.trans_inv, Iso.symm_hom, Iso.symm_inv] using
+    leftTrace_inv_comp_rightTrace_hom k (@pivotalIsoApp C _ _ _ P X ≪≫ (pivotalIsoApp X).symm)
 
 end ChangeOfPivotal
 
