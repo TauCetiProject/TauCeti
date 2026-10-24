@@ -80,12 +80,6 @@ theorem noncentralTMeasure_eq_map (hν : 0 < ν) (δ : ℝ) :
 theorem noncentralTMeasure_of_nonpos (hν : ν ≤ 0) (δ : ℝ) : noncentralTMeasure ν δ = 0 := by
   rw [noncentralTMeasure, ite_eq_right hν.not_gt]
 
-/-- The denominator `√(V / ν)` of the noncentral t ratio is positive almost surely when `V` is
-chi-squared with `ν > 0` degrees of freedom. -/
-theorem ae_pos_sqrt_div_chiSquaredMeasure (hν : 0 < ν) :
-    ∀ᵐ v ∂chiSquaredMeasure ν, 0 < √(v / ν) :=
-  (ae_pos_chiSquaredMeasure hν).mono fun _ hv ↦ sqrt_pos.2 (div_pos hv hν)
-
 /-- For positive degrees, the noncentral t law is the law of `Z / √(V / ν)` for a Gaussian `Z`
 with mean `δ` and unit variance and an independent `V` with law `chiSquaredMeasure ν`. -/
 theorem noncentralTMeasure_eq_map_gaussianReal (hν : 0 < ν) (δ : ℝ) :
