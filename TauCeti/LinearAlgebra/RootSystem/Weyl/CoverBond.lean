@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.RootSystem.ReflectionBond
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.ParabolicQuotient
 
 /-!
@@ -29,10 +30,10 @@ root system is reduced (`TauCeti.eq_of_isPos_of_reflection_eq`). Positivity is t
 on minimal coset representatives (`TauCeti.bruhatLE_and_ne_iff_coroot'_neg_of_isMinimalCosetRep`).
 
 The bond depends only on the two orbit weights, so it is the value of `RootPairing.reflectionBond`
-(defined in `TauCeti.LinearAlgebra.RootSystem.Positive` for any two weights `x` and `y = s_β x`
-related by a reflection in a positive root) on `x λ` and `y λ`. The bonds along a saturated chain of
-`W / W_λ` are the integers that the description of Lakshmibai–Seshadri paths by `a`-chains tests
-for divisibility by the denominator of `a`.
+(defined in `TauCeti.LinearAlgebra.RootSystem.ReflectionBond` for any two weights `x` and
+`y = s_β x` related by a reflection in a positive root) on `x λ` and `y λ`. The bonds along a
+saturated chain of `W / W_λ` are the integers that the description of Lakshmibai–Seshadri paths by
+`a`-chains tests for divisibility by the denominator of `a`.
 
 ## Main results
 
