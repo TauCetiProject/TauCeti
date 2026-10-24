@@ -11,6 +11,7 @@ public import Mathlib.Algebra.Ring.Parity
 public import Mathlib.Data.Fin.Tuple.Basic
 public import Mathlib.Data.Fin.VecNotation
 public import Mathlib.Logic.Equiv.Fin.Rotate
+public import Mathlib.Order.Interval.Finset.Fin
 public import Mathlib.Order.SuccPred.Fin
 public import Mathlib.Order.SuccPred.IntervalSucc
 
@@ -86,6 +87,8 @@ range, so the value is a `dite` rather than a plain application.
 * `Fin.insertNth_castAdd_comp_castAdd`, `Fin.insertNth_castAdd_apply_natAdd`,
   `Fin.insertNth_natAdd_apply_castAdd` and `Fin.insertNth_natAdd_comp_natAdd`: the entries of a
   tuple indexed by `Fin ((k + 1) + (l + 1))` after inserting an entry into one of the two blocks.
+* `Fin.Ioo_eq_empty_of_le_two` and `Fin.eq_empty_of_subset_Ioo_of_le_two`: open intervals in
+  `Fin n`, and hence finsets inside them, are empty when `n ≤ 2`.
 * `Fin.partialProd_last`: the final partial product is the product of all the entries.
 * `Fin.partialSum_last`: the final partial sum is the sum of all the entries.
 * `Fin.prod_contractNth_castSucc` and `Fin.sum_contractNth_castSucc`: multiplying (adding) two
@@ -550,6 +553,15 @@ theorem insertNth_natAdd_comp_natAdd {α : Type*} {k l : ℕ} (i : Fin (l + 1)) 
     simp only [Fin.val_natAdd, Fin.val_succAbove]
     split_ifs <;> omega
   simp only [Fin.removeNth, this, Fin.insertNth_apply_succAbove]
+
+/-- An open interval in `Fin n` with `n ≤ 2` is empty. -/
+theorem Ioo_eq_empty_of_le_two {n : ℕ} (hn : n ≤ 2) (a b : Fin n) : Finset.Ioo a b = ∅ :=
+  Finset.card_eq_zero.1 (by rw [Fin.card_Ioo]; omega)
+
+/-- A finset inside an open interval in `Fin n` with `n ≤ 2` is empty. -/
+theorem eq_empty_of_subset_Ioo_of_le_two {n : ℕ} (hn : n ≤ 2) {a b : Fin n}
+    {s : Finset (Fin n)} (hs : s ⊆ Finset.Ioo a b) : s = ∅ :=
+  Finset.subset_empty.1 (hs.trans (Ioo_eq_empty_of_le_two hn a b).subset)
 
 end Fin
 
