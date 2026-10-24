@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Perfection
+public import TauCeti.RingTheory.Perfection
 public import TauCeti.RingTheory.Huber.Basic
 import Mathlib.Algebra.CharP.Reduced
 import TauCeti.RingTheory.Perfect.Basic
@@ -163,10 +163,8 @@ theorem rootPB_pow (n : ℕ) : ϖ.rootPB n ^ p ^ n = ϖ.rootPB 0 :=
 
 /-- In `R°`, a deeper root divides a shallower one: `ϖ ^ (1 / p ^ n) ∣ ϖ ^ (1 / p ^ m)` for
 `m ≤ n`. -/
-theorem rootPB_dvd_rootPB {m n : ℕ} (h : m ≤ n) : ϖ.rootPB n ∣ ϖ.rootPB m := by
-  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le h
-  rw [← ϖ.rootPB_add_pow m k]
-  exact dvd_pow_self _ (pow_ne_zero k (NeZero.ne p))
+theorem rootPB_dvd_rootPB {m n : ℕ} (h : m ≤ n) : ϖ.rootPB n ∣ ϖ.rootPB m :=
+  dvd_of_compatible_roots (r := ϖ.rootPB) ϖ.rootPB_succ_pow h
 
 /-- **The `p`-th power of every root divides `p` in `R°`.** -/
 theorem rootPB_pow_dvd (n : ℕ) : ϖ.rootPB n ^ p ∣ (p : powerBoundedSubring R) :=
