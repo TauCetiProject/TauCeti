@@ -24,11 +24,13 @@ nonzero.  The presentation-level identities below hold for every `q`; when `q = 
 relations force `E = F = 0`.
 
 The quotient construction supplies a universal property for tuples satisfying these relations.
-Since the generators generate the algebra, a complex-linear map between `UqSl2 q`-modules that
-commutes with `E`, `F` and `K` is `UqSl2 q`-linear, and an element of `UqSl2 q` that commutes
-with `E`, `F` and `K` is central. We also package `K` as a unit and derive the
-commutation rules with `K⁻¹`; these are the basic presentation-level identities used when putting
-words into triangular order.  Establishing a PBW basis, and hence nontriviality of this
+Since the generators generate the algebra, a property of elements holding for the scalars and the
+generators and closed under sums and products holds everywhere (`TauCeti.UqSl2.induction`). A
+complex-linear map between `UqSl2 q`-modules that commutes with `E`, `F` and `K` is therefore
+`UqSl2 q`-linear, and an element of `UqSl2 q` that commutes with `E`, `F` and `K` is central. We
+also package `K` as a unit and derive the commutation rules with `K⁻¹` and with `K` on the
+right; these are the basic presentation-level identities used when putting words into triangular
+order.  Establishing a PBW basis, and hence nontriviality of this
 presentation, requires additional Ore-extension arguments and is not part of the presentation
 API: `TauCeti.QuantumGroups.UqSl2.OreTower` identifies `UqSl2 q`, for nonzero `q`, with an
 iterated Ore extension of `ℂ[K, K⁻¹]`.
@@ -218,6 +220,20 @@ theorem kInv_mul_f : kInv q * f q = q ^ 2 • (f q * kInv q) := by
   · rw [f_mul_kInv, smul_smul]
     simp [hq]
 
+/-- The relation `E K = q⁻² K E`, obtained by conjugating `K⁻¹ E = q⁻² E K⁻¹` by `K`. -/
+theorem e_mul_k : e q * k q = q⁻¹ ^ 2 • (k q * e q) := by
+  calc e q * k q = k q * (kInv q * e q) * k q := by rw [← mul_assoc, k_mul_kInv, one_mul]
+    _ = q⁻¹ ^ 2 • (k q * e q) := by
+      rw [kInv_mul_e, mul_smul_comm, smul_mul_assoc]
+      simp only [mul_assoc, kInv_mul_k, mul_one]
+
+/-- The relation `F K = q² K F`, obtained by conjugating `K⁻¹ F = q² F K⁻¹` by `K`. -/
+theorem f_mul_k : f q * k q = q ^ 2 • (k q * f q) := by
+  calc f q * k q = k q * (kInv q * f q) * k q := by rw [← mul_assoc, k_mul_kInv, one_mul]
+    _ = q ^ 2 • (k q * f q) := by
+      rw [kInv_mul_f, mul_smul_comm, smul_mul_assoc]
+      simp only [mul_assoc, kInv_mul_k, mul_one]
+
 /-- A tuple in a complex algebra satisfying the defining relations of `UqSl2 q`. -/
 @[ext]
 structure GeneratorTuple (q : ℂ) (A : Type*) [Ring A] [Algebra ℂ A] where
@@ -310,6 +326,23 @@ theorem adjoin_range_generator (q : ℂ) :
     simp
   rw [h, AlgHom.range_eq_top]
   exact RingQuot.mkAlgHom_surjective ℂ (Rel q)
+
+/-- An induction principle for `UqSl2 q`: a property of its elements that holds for the scalars
+and the four generators and is closed under products and sums holds everywhere. -/
+@[elab_as_elim]
+theorem induction {C : UqSl2 q → Prop} (algebraMap : ∀ c, C (algebraMap ℂ (UqSl2 q) c))
+    (generator : ∀ g, C (generator q g)) (mul : ∀ a b, C a → C b → C (a * b))
+    (add : ∀ a b, C a → C b → C (a + b)) (a : UqSl2 q) : C a := by
+  have ha : a ∈ Algebra.adjoin ℂ (Set.range (UqSl2.generator q)) := by
+    rw [adjoin_range_generator]
+    exact Algebra.mem_top
+  induction ha using Algebra.adjoin_induction with
+  | mem a ha =>
+    obtain ⟨g, rfl⟩ := ha
+    exact generator g
+  | algebraMap c => exact algebraMap c
+  | add a b _ _ ha hb => exact add a b ha hb
+  | mul a b _ _ ha hb => exact mul a b ha hb
 
 /-- A complex-linear map between `UqSl2 q`-modules that commutes with `E`, `F` and `K` commutes
 with every element of `UqSl2 q`; commuting with `K⁻¹` is automatic. -/
