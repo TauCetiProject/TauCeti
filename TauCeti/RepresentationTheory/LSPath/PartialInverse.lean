@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.LSPath.RootOperator
-import Mathlib.Algebra.Order.Group.MinMax
 import TauCeti.LinearAlgebra.Reflection
 
 /-!
@@ -25,12 +24,12 @@ the running height `H` is at most `c` and at most every later height: it subtrac
 the minimal height. Lowering is the case `c = h + 1`. Since `e_α` is `f_α` conjugated by
 reversal, the key identity is that the inverse of this capped reflection is again a capped
 reflection, on the reversed lowered path, whose cap is `h` minus the final height of the lowered
-path (`TauCeti.PLPath.normalize_reflectRecords_reverse_reflectRecords`).
+path (`TauCeti.PLPath.normalize_reflectRecords_reverse_map_neg_reflectRecords`).
 
 ## Main results
 
-* `TauCeti.PLPath.normalize_reflectRecords_reverse_reflectRecords`: capped reflection of a
-  reversed path undoes capped reflection.
+* `TauCeti.PLPath.normalize_reflectRecords_reverse_map_neg_reflectRecords`: capped reflection of
+  a reversed path undoes capped reflection.
 * `TauCeti.PLPath.lower_eq_some_iff`, `TauCeti.PLPath.raise_eq_some_iff`: `f_α π = π'` exactly
   when `e_α π' = π`.
 
@@ -64,8 +63,8 @@ private theorem apply_reflect_cut (hx : f x = 2) {v : V} (hv : f v ≠ 0) (r : �
 
 /-- Undoing the reflection of a single segment `v`, cut at height `r` with `0 < r ≤ f v`: on the
 reversed segments, the formerly reflected piece is reflected back. -/
-private theorem normalize_reflectRecords_reverse_cut (hx : f x = 2) {v : V} {r : 𝕜} (hr : 0 < r)
-    (hrv : r ≤ f v) :
+private theorem normalize_reflectRecords_reverse_map_neg_cut (hx : f x = 2) {v : V} {r : 𝕜}
+    (hr : 0 < r) (hrv : r ≤ f v) :
     normalize 𝕜 (reflectRecords f x (2 * r - f v)
         ([preReflection x f ((r / f v) • v), (1 - r / f v) • v].map Neg.neg).reverse) =
       normalize 𝕜 [-v] := by
@@ -102,7 +101,7 @@ private theorem normalize_reflectRecords_reverse_cut (hx : f x = 2) {v : V} {r :
 
 /-- Reflecting the records of a reversed concatenation `P ++ l` splits into the reflections of the
 two reversed pieces, as `TauCeti.PLPath.reflectRecords_append` dictates. -/
-private theorem normalize_reflectRecords_reverse_append {P l A B : List V} {k : 𝕜}
+private theorem normalize_reflectRecords_reverse_map_neg_append {P l A B : List V} {k : 𝕜}
     (hl : normalize 𝕜 (reflectRecords f x (min k (-f l.sum + listMinHeight f
         (P.map Neg.neg).reverse)) (l.map Neg.neg).reverse) = normalize 𝕜 B)
     (hP : normalize 𝕜 (reflectRecords f x (k + f l.sum) (P.map Neg.neg).reverse) =
@@ -124,7 +123,8 @@ private theorem normalize_reflectRecords_reverse_append {P l A B : List V} {k : 
 `c`: if `l'` is obtained from `l` by reflecting its records up to `c`, then reflecting the records
 of the reversal of `l'` up to the minimal height of `l` minus the final height of `l'` gives back
 the reversal of `l`, up to the elementary moves. -/
-theorem normalize_reflectRecords_reverse_reflectRecords (hx : f x = 2) (c : 𝕜) (l : List V) :
+theorem normalize_reflectRecords_reverse_map_neg_reflectRecords (hx : f x = 2) (c : 𝕜)
+    (l : List V) :
     normalize 𝕜 (reflectRecords f x (listMinHeight f l - f (reflectRecords f x c l).sum)
         ((reflectRecords f x c l).map Neg.neg).reverse) =
       normalize 𝕜 (l.map Neg.neg).reverse := by
@@ -177,7 +177,7 @@ theorem normalize_reflectRecords_reverse_reflectRecords (hx : f x = 2) (c : 𝕜
         simp only [List.sum_cons, map_add, hs, hb]
         ring
       rw [reflectRecords_cons_of_pos hr, ← hl', hm, hsum]
-      refine normalize_reflectRecords_reverse_append
+      refine normalize_reflectRecords_reverse_map_neg_append
         (P := [preReflection x f ((r / f v) • v), (1 - r / f v) • v]) ?_ ?_
       · rw [hPm, min_eq_right (by linarith)]
         refine htail _ (fun hc ↦ ?_) (fun hc ↦ ?_)
@@ -186,14 +186,14 @@ theorem normalize_reflectRecords_reverse_reflectRecords (hx : f x = 2) (c : 𝕜
         · rw [hl', reflectRecords_of_le_listMinHeight hc.le]
           linarith
       · rw [show 0 - (f v - 2 * r + f l'.sum) + f l'.sum = 2 * r - f v by ring]
-        exact normalize_reflectRecords_reverse_cut hx hr hrv
+        exact normalize_reflectRecords_reverse_map_neg_cut hx hr hrv
     · -- The first segment is kept.
       rw [not_lt] at hr
       have hPm : listMinHeight f ([v].map Neg.neg).reverse = min 0 (f v) - f v := by
         rw [listMinHeight_reverse_map_neg]
         simp
       rw [reflectRecords_cons_of_nonpos hr, ← hl', List.sum_cons, map_add, listMinHeight_cons]
-      refine normalize_reflectRecords_reverse_append (P := [v]) ?_ ?_
+      refine normalize_reflectRecords_reverse_map_neg_append (P := [v]) ?_ ?_
       · rw [hPm]
         refine htail _ (fun hc ↦ ?_) (fun hc ↦ ?_)
         · -- Here the cap on the tail is at least its minimal height, so the first segment ends
@@ -227,7 +227,7 @@ private theorem raise_eq_some_of_lower_eq_some (hx : f x = 2) {p q : PLPath 𝕜
   rw [listLower_def] at hl'
   split_ifs at hl' with hdef
   obtain rfl := Option.some.inj hl'
-  have hinv := normalize_reflectRecords_reverse_reflectRecords hx (listMinHeight f l + 1) l
+  have hinv := normalize_reflectRecords_reverse_map_neg_reflectRecords hx (listMinHeight f l + 1) l
   set l' := reflectRecords f x (listMinHeight f l + 1) l
   clear_value l'
   set k := listMinHeight f l - f l'.sum with hk
