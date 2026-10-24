@@ -164,12 +164,12 @@ private noncomputable def chartUnitC : (AddMonoidAlgebra R (ℕ × ℤ))ˣ :=
 /-- The section of the first-column torsor over the chart `D(a)`. -/
 private noncomputable def chartPointA :
     Matrix.SpecialLinearGroup (Fin 2) (AddMonoidAlgebra R (ℤ × ℕ)) :=
-  Matrix.SpecialLinearGroup.firstColumnSectionA chartUnitA (single (0, 1) 1)
+  Matrix.SpecialLinearGroup.upperLeftSection chartUnitA (single (0, 1) 1)
 
 /-- The section of the first-column torsor over the chart `D(c)`. -/
 private noncomputable def chartPointC :
     Matrix.SpecialLinearGroup (Fin 2) (AddMonoidAlgebra R (ℕ × ℤ)) :=
-  Matrix.SpecialLinearGroup.firstColumnSectionC (single (1, 0) 1) chartUnitC
+  Matrix.SpecialLinearGroup.lowerLeftSection (single (1, 0) 1) chartUnitC
 
 /-- Evaluation at the section over `D(a)`. -/
 private noncomputable def chartEvalA :
@@ -217,11 +217,11 @@ private theorem map_chartPointC :
       Matrix.SpecialLinearGroup.map (mapDomainAlgHom R R inclA).toRingHom chartPointA *
         Matrix.SpecialLinearGroup.transvection (zero_ne_one : (0 : Fin 2) ≠ 1)
           (single (-1, -1) (-1)) := by
-  have h := Matrix.SpecialLinearGroup.firstColumnSectionC_eq_firstColumnSectionA_mul_transvection
+  have h := Matrix.SpecialLinearGroup.lowerLeftSection_eq_upperLeftSection_mul_transvection
     (Units.map (mapDomainAlgHom R R inclA).toMonoidHom (chartUnitA (R := R)))
     (Units.map (mapDomainAlgHom R R inclC).toMonoidHom (chartUnitC (R := R)))
-  rw [chartPointA, chartPointC, Matrix.SpecialLinearGroup.map_firstColumnSectionA,
-    Matrix.SpecialLinearGroup.map_firstColumnSectionC]
+  rw [chartPointA, chartPointC, Matrix.SpecialLinearGroup.map_upperLeftSection,
+    Matrix.SpecialLinearGroup.map_lowerLeftSection]
   convert h using 2 <;>
     simp [chartUnitA, chartUnitC, inclA, inclC, single_mul_single]
 

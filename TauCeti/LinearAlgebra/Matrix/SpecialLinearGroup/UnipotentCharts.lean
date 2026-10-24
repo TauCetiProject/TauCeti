@@ -40,30 +40,30 @@ universe u v
 variable {R : Type u} [CommRing R]
 
 /-- The first-column section on the chart where the upper-left coordinate is a unit. -/
-def firstColumnSectionA (a : Rˣ) (c : R) : SL(2, R) :=
+def upperLeftSection (a : Rˣ) (c : R) : SL(2, R) :=
   ⟨!![(a : R), 0; c, (a⁻¹ : Rˣ)], by simp [Matrix.det_fin_two_of]⟩
 
 /-- The matrix of the first section. -/
 @[simp]
-theorem coe_firstColumnSectionA (a : Rˣ) (c : R) :
-    (firstColumnSectionA a c : Matrix (Fin 2) (Fin 2) R) =
+theorem coe_upperLeftSection (a : Rˣ) (c : R) :
+    (upperLeftSection a c : Matrix (Fin 2) (Fin 2) R) =
       !![(a : R), 0; c, (a⁻¹ : Rˣ)] :=
   (rfl)
 
 /-- The first-column section on the chart where the lower-left coordinate is a unit. -/
-def firstColumnSectionC (a : R) (c : Rˣ) : SL(2, R) :=
+def lowerLeftSection (a : R) (c : Rˣ) : SL(2, R) :=
   ⟨!![a, -(c⁻¹ : Rˣ); (c : R), 0], by simp [Matrix.det_fin_two_of]⟩
 
 /-- The matrix of the second section. -/
 @[simp]
-theorem coe_firstColumnSectionC (a : R) (c : Rˣ) :
-    (firstColumnSectionC a c : Matrix (Fin 2) (Fin 2) R) =
+theorem coe_lowerLeftSection (a : R) (c : Rˣ) :
+    (lowerLeftSection a c : Matrix (Fin 2) (Fin 2) R) =
       !![a, -(c⁻¹ : Rˣ); (c : R), 0] :=
   (rfl)
 
 /-- The first section followed by upper-unipotent translation. -/
-theorem coe_firstColumnSectionA_mul_transvection (a : Rˣ) (c t : R) :
-    ((firstColumnSectionA a c * transvection (zero_ne_one : (0 : Fin 2) ≠ 1) t :
+theorem coe_upperLeftSection_mul_transvection (a : Rˣ) (c t : R) :
+    ((upperLeftSection a c * transvection (zero_ne_one : (0 : Fin 2) ≠ 1) t :
       SL(2, R)) : Matrix (Fin 2) (Fin 2) R) =
       !![(a : R), t * a; c, (a⁻¹ : Rˣ) + t * c] := by
   ext i j
@@ -71,8 +71,8 @@ theorem coe_firstColumnSectionA_mul_transvection (a : Rˣ) (c t : R) :
     simp [coe_mul, transvection_coe, Matrix.mul_apply, Fin.sum_univ_two, mul_comm, add_comm]
 
 /-- The second section followed by upper-unipotent translation. -/
-theorem coe_firstColumnSectionC_mul_transvection (a : R) (c : Rˣ) (t : R) :
-    ((firstColumnSectionC a c * transvection (zero_ne_one : (0 : Fin 2) ≠ 1) t :
+theorem coe_lowerLeftSection_mul_transvection (a : R) (c : Rˣ) (t : R) :
+    ((lowerLeftSection a c * transvection (zero_ne_one : (0 : Fin 2) ≠ 1) t :
       SL(2, R)) : Matrix (Fin 2) (Fin 2) R) =
       !![a, -(c⁻¹ : Rˣ) + t * a; (c : R), t * c] := by
   ext i j
@@ -80,14 +80,14 @@ theorem coe_firstColumnSectionC_mul_transvection (a : R) (c : Rˣ) (t : R) :
     simp [coe_mul, transvection_coe, Matrix.mul_apply, Fin.sum_univ_two, mul_comm, add_comm]
 
 /-- Recover a matrix in the upper-left chart from its first column and fiber coordinate. -/
-theorem firstColumnSectionA_mul_transvection_eq (g : SL(2, R)) (a : Rˣ)
+theorem upperLeftSection_mul_transvection_eq (g : SL(2, R)) (a : Rˣ)
     (ha : g 0 0 = a) :
-    firstColumnSectionA a (g 1 0) * transvection (zero_ne_one : (0 : Fin 2) ≠ 1)
+    upperLeftSection a (g 1 0) * transvection (zero_ne_one : (0 : Fin 2) ≠ 1)
       ((a⁻¹ : Rˣ) * g 0 1) = g := by
   have hdet := g.2
   rw [Matrix.det_fin_two, ha] at hdet
   apply Subtype.ext
-  rw [coe_firstColumnSectionA_mul_transvection]
+  rw [coe_upperLeftSection_mul_transvection]
   ext i j
   fin_cases i <;> fin_cases j <;> simp only [Matrix.of_apply, Matrix.cons_val_zero,
     Matrix.cons_val_one, Fin.zero_eta, Fin.mk_one]
@@ -96,14 +96,14 @@ theorem firstColumnSectionA_mul_transvection_eq (g : SL(2, R)) (a : Rˣ)
   · linear_combination -(↑(a⁻¹) : R) * hdet + g 1 1 * a.inv_mul
 
 /-- Recover a matrix in the lower-left chart from its first column and fiber coordinate. -/
-theorem firstColumnSectionC_mul_transvection_eq (g : SL(2, R)) (c : Rˣ)
+theorem lowerLeftSection_mul_transvection_eq (g : SL(2, R)) (c : Rˣ)
     (hc : g 1 0 = c) :
-    firstColumnSectionC (g 0 0) c * transvection (zero_ne_one : (0 : Fin 2) ≠ 1)
+    lowerLeftSection (g 0 0) c * transvection (zero_ne_one : (0 : Fin 2) ≠ 1)
       ((c⁻¹ : Rˣ) * g 1 1) = g := by
   have hdet := g.2
   rw [Matrix.det_fin_two, hc] at hdet
   apply Subtype.ext
-  rw [coe_firstColumnSectionC_mul_transvection]
+  rw [coe_lowerLeftSection_mul_transvection]
   ext i j
   fin_cases i <;> fin_cases j <;> simp only [Matrix.of_apply, Matrix.cons_val_zero,
     Matrix.cons_val_one, Fin.zero_eta, Fin.mk_one]
@@ -116,14 +116,14 @@ The last coordinate is the additive fiber parameter. -/
 noncomputable def upperLeftChartEquiv :
     {g : SL(2, R) // IsUnit (g 0 0)} ≃ Rˣ × R × R where
   toFun g := (g.property.unit, g.val 1 0, (g.property.unit⁻¹ : Rˣ) * g.val 0 1)
-  invFun p := ⟨firstColumnSectionA p.1 p.2.1 * transvection zero_ne_one p.2.2, by
-    simpa only [coe_firstColumnSectionA_mul_transvection, Matrix.of_apply,
+  invFun p := ⟨upperLeftSection p.1 p.2.1 * transvection zero_ne_one p.2.2, by
+    simpa only [coe_upperLeftSection_mul_transvection, Matrix.of_apply,
       Matrix.cons_val_zero] using p.1.isUnit⟩
-  left_inv g := Subtype.ext (firstColumnSectionA_mul_transvection_eq g.val g.property.unit
+  left_inv g := Subtype.ext (upperLeftSection_mul_transvection_eq g.val g.property.unit
     g.property.unit_spec.symm)
   right_inv p := by
     rcases p with ⟨a, c, t⟩
-    simp only [coe_firstColumnSectionA_mul_transvection, Matrix.of_apply,
+    simp only [coe_upperLeftSection_mul_transvection, Matrix.of_apply,
       Matrix.cons_val_zero, Matrix.cons_val_one]
     congr 1
     · apply Units.val_injective
@@ -139,9 +139,9 @@ theorem upperLeftChartEquiv_apply (g : {g : SL(2, R) // IsUnit (g 0 0)}) :
 
 /-- The inverse upper-left chart is multiplication of its section by `n(t)`. -/
 @[simp]
-theorem upperLeftChartEquiv_symm_apply (a : Rˣ) (c t : R) :
+theorem coe_upperLeftChartEquiv_symm_apply (a : Rˣ) (c t : R) :
     ((upperLeftChartEquiv (R := R)).symm (a, c, t)).val =
-      firstColumnSectionA a c * transvection (zero_ne_one : (0 : Fin 2) ≠ 1) t :=
+      upperLeftSection a c * transvection (zero_ne_one : (0 : Fin 2) ≠ 1) t :=
   (rfl)
 
 /-- Coordinates on the matrix chart where the lower-left entry is a unit.
@@ -149,14 +149,14 @@ The last coordinate is the additive fiber parameter. -/
 noncomputable def lowerLeftChartEquiv :
     {g : SL(2, R) // IsUnit (g 1 0)} ≃ R × Rˣ × R where
   toFun g := (g.val 0 0, g.property.unit, (g.property.unit⁻¹ : Rˣ) * g.val 1 1)
-  invFun p := ⟨firstColumnSectionC p.1 p.2.1 * transvection zero_ne_one p.2.2, by
-    simpa only [coe_firstColumnSectionC_mul_transvection, Matrix.of_apply,
+  invFun p := ⟨lowerLeftSection p.1 p.2.1 * transvection zero_ne_one p.2.2, by
+    simpa only [coe_lowerLeftSection_mul_transvection, Matrix.of_apply,
       Matrix.cons_val_one, Matrix.cons_val_zero] using p.2.1.isUnit⟩
-  left_inv g := Subtype.ext (firstColumnSectionC_mul_transvection_eq g.val g.property.unit
+  left_inv g := Subtype.ext (lowerLeftSection_mul_transvection_eq g.val g.property.unit
     g.property.unit_spec.symm)
   right_inv p := by
     rcases p with ⟨a, c, t⟩
-    simp only [coe_firstColumnSectionC_mul_transvection, Matrix.of_apply,
+    simp only [coe_lowerLeftSection_mul_transvection, Matrix.of_apply,
       Matrix.cons_val_zero, Matrix.cons_val_one]
     simp [mul_comm t, ← mul_assoc]
 
@@ -168,32 +168,32 @@ theorem lowerLeftChartEquiv_apply (g : {g : SL(2, R) // IsUnit (g 1 0)}) :
 
 /-- The inverse lower-left chart is multiplication of its section by `n(t)`. -/
 @[simp]
-theorem lowerLeftChartEquiv_symm_apply (a : R) (c : Rˣ) (t : R) :
+theorem coe_lowerLeftChartEquiv_symm_apply (a : R) (c : Rˣ) (t : R) :
     ((lowerLeftChartEquiv (R := R)).symm (a, c, t)).val =
-      firstColumnSectionC a c * transvection (zero_ne_one : (0 : Fin 2) ≠ 1) t :=
+      lowerLeftSection a c * transvection (zero_ne_one : (0 : Fin 2) ≠ 1) t :=
   (rfl)
 
 /-- Right upper-unipotent translation adds to the upper-left fiber coordinate. -/
-theorem upperLeftChartEquiv_symm_add (a : Rˣ) (c t s : R) :
+theorem coe_upperLeftChartEquiv_symm_add_eq_mul_transvection (a : Rˣ) (c t s : R) :
     ((upperLeftChartEquiv (R := R)).symm (a, c, t + s)).val =
       ((upperLeftChartEquiv (R := R)).symm (a, c, t)).val *
         transvection (zero_ne_one : (0 : Fin 2) ≠ 1) s := by
-  simp only [upperLeftChartEquiv_symm_apply, transvection_add, mul_assoc]
+  simp only [coe_upperLeftChartEquiv_symm_apply, transvection_add, mul_assoc]
 
 /-- Right upper-unipotent translation adds to the lower-left fiber coordinate. -/
-theorem lowerLeftChartEquiv_symm_add (a : R) (c : Rˣ) (t s : R) :
+theorem coe_lowerLeftChartEquiv_symm_add_eq_mul_transvection (a : R) (c : Rˣ) (t s : R) :
     ((lowerLeftChartEquiv (R := R)).symm (a, c, t + s)).val =
       ((lowerLeftChartEquiv (R := R)).symm (a, c, t)).val *
         transvection (zero_ne_one : (0 : Fin 2) ≠ 1) s := by
-  simp only [lowerLeftChartEquiv_symm_apply, transvection_add, mul_assoc]
+  simp only [coe_lowerLeftChartEquiv_symm_apply, transvection_add, mul_assoc]
 
 /-- On the overlap, the lower-left section is the upper-left section translated by
 `-a⁻¹c⁻¹`. -/
-theorem firstColumnSectionC_eq_firstColumnSectionA_mul_transvection (a c : Rˣ) :
-    firstColumnSectionC (a : R) c = firstColumnSectionA a (c : R) *
+theorem lowerLeftSection_eq_upperLeftSection_mul_transvection (a c : Rˣ) :
+    lowerLeftSection (a : R) c = upperLeftSection a (c : R) *
       transvection (zero_ne_one : (0 : Fin 2) ≠ 1) (-((a⁻¹ : Rˣ) : R) * (c⁻¹ : Rˣ)) := by
   apply Subtype.ext
-  rw [coe_firstColumnSectionC, coe_firstColumnSectionA_mul_transvection]
+  rw [coe_lowerLeftSection, coe_upperLeftSection_mul_transvection]
   ext i j
   fin_cases i <;> fin_cases j <;>
     simp only [Matrix.of_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
@@ -214,15 +214,15 @@ variable {S : Type v} [CommRing S]
 
 /-- The upper-left section is natural under change of rings. -/
 @[simp]
-theorem map_firstColumnSectionA (f : R →+* S) (a : Rˣ) (c : R) :
-    map f (firstColumnSectionA a c) = firstColumnSectionA (Units.map f a) (f c) := by
+theorem map_upperLeftSection (f : R →+* S) (a : Rˣ) (c : R) :
+    map f (upperLeftSection a c) = upperLeftSection (Units.map f a) (f c) := by
   ext i j
   fin_cases i <;> fin_cases j <;> simp [map_apply_coe]
 
 /-- The lower-left section is natural under change of rings. -/
 @[simp]
-theorem map_firstColumnSectionC (f : R →+* S) (a : R) (c : Rˣ) :
-    map f (firstColumnSectionC a c) = firstColumnSectionC (f a) (Units.map f c) := by
+theorem map_lowerLeftSection (f : R →+* S) (a : R) (c : Rˣ) :
+    map f (lowerLeftSection a c) = lowerLeftSection (f a) (Units.map f c) := by
   ext i j
   fin_cases i <;> fin_cases j <;> simp [map_apply_coe]
 
