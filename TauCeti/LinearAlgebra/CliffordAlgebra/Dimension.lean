@@ -129,13 +129,15 @@ theorem basis_apply {I : Type w} [LinearOrder I] (b : Basis I R M) (s : Finset I
 variable {Q}
 
 /-- For every basis, the basis vector indexed by the empty set is `1`. -/
-@[simp]
+-- Reduce this index before the general `basis_apply` formula exposes the transported basis.
+@[simp high]
 theorem basis_empty {I : Type w} [LinearOrder I] (b : Basis I R M) : basis Q b ∅ = 1 := by
   rw [basis_apply, b.exteriorAlgebra_eq_prod_map_sort]
   simp
 
 /-- For every basis, the basis vector indexed by `{i}` is the generator `ι Q (b i)`. -/
-@[simp]
+-- Reduce this index before the general `basis_apply` formula exposes the transported basis.
+@[simp high]
 theorem basis_singleton {I : Type w} [LinearOrder I] (b : Basis I R M) (i : I) :
     basis Q b {i} = ι Q (b i) := by
   rw [basis_apply, b.exteriorAlgebra_eq_prod_map_sort]
