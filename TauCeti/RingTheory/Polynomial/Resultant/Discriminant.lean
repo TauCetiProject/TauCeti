@@ -21,6 +21,7 @@ public import Mathlib.RingTheory.Localization.FractionRing
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
 import TauCeti.RingTheory.Polynomial.GaussLemma
 import TauCeti.RingTheory.Polynomial.Resultant.Basic
+public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
 import TauCeti.RingTheory.Polynomial.Roots
 
 /-!
@@ -82,6 +83,9 @@ depressed specialization of that formula is used to compare a quartic with its c
   `Polynomial.Monic.separable_map_zmod_iff_not_dvd_discr`: the same criterion read along a ring
   homomorphism into a field, and its specialization to reduction of an integral polynomial modulo
   a prime not dividing the leading coefficient, in particular of a monic one.
+* `TauCeti.Polynomial.resultant_derivative_monicOfCoeff_eq_zero_iff`: over a field, the resultant
+  of the monic polynomial `monicOfCoeff a` and its derivative vanishes exactly when
+  `monicOfCoeff a` is not separable.
 * `Polynomial.discr_eq_discrim_of_degree_eq_two`: the discriminant of a quadratic is Mathlib's
   `discrim` of its coefficients, `b ^ 2 - 4ac`.
 * `Cubic.toPoly_discr`: the two discriminants of a cubic with nonzero leading coefficient agree,
@@ -816,6 +820,21 @@ theorem isSquare_discr_map_rat_iff {f : ℤ[X]} (hf : f.Monic) :
 end Monic
 
 end Polynomial
+
+namespace TauCeti.Polynomial
+
+/-- Over a field, the resultant of `monicOfCoeff a` and its derivative, taken with the formal
+degrees `n` and `n - 1`, vanishes exactly when `monicOfCoeff a` is not separable. -/
+theorem resultant_derivative_monicOfCoeff_eq_zero_iff {K : Type*} [Field K] {n : ℕ}
+    (a : Fin n → K) :
+    resultant (monicOfCoeff a) (derivative (monicOfCoeff a)) n (n - 1) = 0 ↔
+      ¬ (monicOfCoeff a).Separable := by
+  have h := (monic_monicOfCoeff a).resultant_deriv
+  rw [natDegree_monicOfCoeff] at h
+  rw [← (monic_monicOfCoeff a).discr_ne_zero_iff, not_not, h]
+  simp
+
+end TauCeti.Polynomial
 
 /-! ### The discriminant of a power basis -/
 

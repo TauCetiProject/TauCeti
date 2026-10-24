@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.Polynomial.Subresultant.FirstNonzero
 public import TauCeti.Analysis.Polynomial.ContinuityOfRoots.Basic
 import Mathlib.Topology.Instances.Matrix
+import TauCeti.Topology.Algebra.Polynomial.Basic
 
 /-!
 # Continuous monic gcds of polynomial families
@@ -73,6 +74,21 @@ theorem continuousAt_coeff_subresultant
   split_ifs
   · exact continuousAt_subresultantCoeff hF hG j k
   · exact continuousAt_const
+
+/-- The resultant of `monicOfCoeff a` and its derivative, taken with the formal degrees `n` and
+`n - 1`, is a continuous function of the coefficient tuple `a`. It is the subresultant coefficient
+of index `0 0`, a determinant of the Sylvester matrix. -/
+theorem Polynomial.continuous_resultant_derivative_monicOfCoeff :
+    Continuous fun a : Fin n → R ↦
+      resultant (Polynomial.monicOfCoeff a) (derivative (Polynomial.monicOfCoeff a)) n (n - 1) :=
+  continuous_iff_continuousAt.2 fun a ↦ by
+    simpa only [subresultantCoeff_self, psc_zero] using continuousAt_subresultantCoeff
+      (fun i _ ↦ (Polynomial.continuous_coeff_monicOfCoeff i).continuousAt)
+      (fun i _ ↦ by
+        simp only [coeff_derivative]
+        exact ((Polynomial.continuous_coeff_monicOfCoeff (i + 1)).mul
+          continuous_const).continuousAt)
+      (x₀ := a) (m := n) (n := n - 1) 0 0
 
 end Subresultant
 
