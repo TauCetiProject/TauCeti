@@ -29,7 +29,9 @@ half-squared cost to a minimizer of squared ground distance, as used by `W₂`.
 * `TauCeti.isCyclicallyMonotone_norm_sub_sq_div_two_iff` — `c`-cyclical monotonicity for the
   quadratic cost is cyclical monotonicity for the inner-product pairing, with
   `TauCeti.isCyclicallyMonotone_norm_sub_sq_div_two_iff_forall_sum_inner_le` its classical
-  sum form.
+  sum form;
+* `TauCeti.continuous_ofReal_norm_sub_sq_div_two` — the quadratic cost, as an extended
+  nonnegative cost, is continuous, hence measurable;
 * `TauCeti.edist_rpow_two_eq_two_mul_ofReal_norm_sub_sq_div_two`,
   `TauCeti.isOptimalCoupling_edist_rpow_two_of_norm_sub_sq_div_two` and
   `TauCeti.isOptimalCoupling_norm_sub_sq_div_two_of_edist_rpow_two` — convert between the
@@ -87,6 +89,13 @@ open MeasureTheory
 open scoped ENNReal
 
 variable {F : Type*} [NormedAddCommGroup F] [MeasurableSpace F]
+
+omit [MeasurableSpace F] in
+/-- The half-squared-displacement cost `‖x - y‖ ^ 2 / 2`, as an extended nonnegative cost, is
+continuous. -/
+theorem continuous_ofReal_norm_sub_sq_div_two :
+    Continuous fun z : F × F => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2) :=
+  ENNReal.continuous_ofReal.comp (((continuous_fst.sub continuous_snd).norm.pow 2).div_const 2)
 
 omit [MeasurableSpace F] in
 /-- Squared distance is twice the half-squared-displacement cost. This identity accounts for

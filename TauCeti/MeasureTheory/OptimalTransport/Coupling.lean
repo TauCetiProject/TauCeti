@@ -58,8 +58,10 @@ measures, and the probability case is packaged separately as a subtype of
 * `TauCeti.isCoupling_map_swap_iff` and `TauCeti.isCoupling_map_prodMap_iff` —
   invariance of the relation under the coordinate swap and under measurable equivalences of the
   two factors;
-* `TauCeti.isCoupling_map_prodMk_of_measurePreserving` — two measure-preserving maps out of a
-  common space induce a coupling of their targets;
+* `TauCeti.isCoupling_map_prodMk_of_aemeasurable` and
+  `TauCeti.isCoupling_map_prodMk_of_measurePreserving` — two almost everywhere measurable, in
+  particular two measure-preserving, maps out of a common space induce a coupling of their
+  targets;
 * `MeasureTheory.Measure.isCoupling_diagonalCoupling` — the diagonal coupling couples a measure
   with itself;
 * `TauCeti.isCoupling_toMeasure_iff` — the coupling condition on bundled probability measures,
@@ -464,13 +466,20 @@ theorem isCoupling_map_prodMap_iff (e : X ≃ᵐ X') (f : Y ≃ᵐ Y') :
     f.symm_comp_self, Prod.map_id, Measure.map_id, e.map_symm_map, f.map_symm_map] using
     h.map e.symm.measurable f.symm.measurable
 
+/-- Two almost everywhere measurable maps `f` and `g` out of a common space `(Ω, γ)`, pushing `γ`
+to `μ` and to `ν`, induce the coupling `(f, g)_# γ` of `μ` and `ν`. -/
+theorem isCoupling_map_prodMk_of_aemeasurable {Ω : Type*} [MeasurableSpace Ω]
+    {γ : Measure Ω} {f : Ω → X} {g : Ω → Y} (hf : AEMeasurable f γ) (hg : AEMeasurable g γ)
+    (hfμ : γ.map f = μ) (hgν : γ.map g = ν) : IsCoupling (γ.map fun w ↦ (f w, g w)) μ ν :=
+  ⟨(Measure.fst_map_prodMk₀ hf hg).trans hfμ, (Measure.snd_map_prodMk₀ hf hg).trans hgν⟩
+
 /-- Two measure-preserving maps `f` and `g` out of a common space `(Ω, γ)` induce the coupling
 `(f, g)_# γ` of their targets. -/
 theorem isCoupling_map_prodMk_of_measurePreserving {Ω : Type*} [MeasurableSpace Ω]
     {γ : Measure Ω} {f : Ω → X} {g : Ω → Y} (hf : MeasurePreserving f γ μ)
     (hg : MeasurePreserving g γ ν) : IsCoupling (γ.map fun w ↦ (f w, g w)) μ ν :=
-  ⟨(Measure.fst_map_prodMk hf.measurable hg.measurable).trans hf.map_eq,
-    (Measure.snd_map_prodMk hf.measurable hg.measurable).trans hg.map_eq⟩
+  isCoupling_map_prodMk_of_aemeasurable hf.measurable.aemeasurable hg.measurable.aemeasurable
+    hf.map_eq hg.map_eq
 
 /-- The zero measure couples the two zero measures. -/
 @[simp]
