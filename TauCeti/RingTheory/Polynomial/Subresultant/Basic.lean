@@ -32,6 +32,8 @@ the scalar data used by subresultant gcd criteria and projection operators.
 * `Polynomial.psc_zero`: the zeroth principal subresultant coefficient is the resultant.
 * `Polynomial.psc_map_map`: fixed-bound principal subresultant coefficients commute with coefficient
   maps.
+* `Polynomial.psc_map_of_natDegree_eq`: at the actual degrees, they commute with coefficient maps
+  that preserve both degrees.
 * `Polynomial.psc_comm`: swapping the polynomials multiplies by `(-1) ^ ((m - j) * (n - j))`.
 * `Polynomial.psc_left_bound`, `Polynomial.psc_right_bound`: at a formal degree bound, the
   determinant is a power of the coefficient at that bound.
@@ -184,6 +186,18 @@ theorem _root_.Polynomial.psc_map_map [CommRing R] [CommRing S] (f : R →+* S)
     (p q : R[X]) (m n j : ℕ) :
     psc (p.map f) (q.map f) m n j = f (psc p q m n j) := by
   simp [psc_def, RingHom.map_det]
+
+/-- At the actual degrees, principal subresultant coefficients commute with a coefficient map that
+preserves both degrees, for instance one that does not kill the leading coefficients
+(`Polynomial.natDegree_map_of_leadingCoeff_ne_zero`). When a degree drops, the specialized
+coefficients at the smaller actual degrees are given instead by the degree-drop formulas
+`Polynomial.map_psc_of_right_degree_drop` and `Polynomial.map_psc_of_left_degree_drop`. -/
+theorem _root_.Polynomial.psc_map_of_natDegree_eq [CommRing R] [CommRing S] (f : R →+* S)
+    {p q : R[X]} (hp : (p.map f).natDegree = p.natDegree) (hq : (q.map f).natDegree = q.natDegree)
+    (j : ℕ) :
+    psc (p.map f) (q.map f) (p.map f).natDegree (q.map f).natDegree j =
+      f (psc p q p.natDegree q.natDegree j) := by
+  rw [hp, hq, psc_map_map]
 
 /-- Swapping the polynomials and their bounds changes the principal subresultant coefficient by
 the sign `(-1) ^ ((m - j) * (n - j))`. -/
