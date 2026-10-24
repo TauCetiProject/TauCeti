@@ -11,6 +11,7 @@ public import TauCeti.RingTheory.DedekindDomain.SInteger.Basic
 public import TauCeti.RingTheory.DedekindDomain.SInteger.Unit
 
 import Mathlib.Algebra.FiniteSupport.Basic
+import TauCeti.NumberTheory.Height.NumberField
 
 /-!
 # Heights of S-integers
@@ -20,6 +21,7 @@ This file translates membership in Mathlib's S-integers and S-units into finite-
 absolute values, proves the resulting multiplicative and logarithmic height identities,
 and shows that the multiplicative identity characterizes S-integers.
 The set S may be arbitrary; finset versions give ordinary products and sums.
+At `S = ∅` the element `1 / 2` shows that the S-integer hypothesis cannot be dropped.
 
 Adapted from Ralf Stephan's `ArithmeticHeights/SUnit.lean` in `rwst/Subspace-Theorems`,
 commit `e443c2479e19f7665b31d8e94e2317c8ced1ca06` (Apache 2.0), using Mathlib's height API.
@@ -184,5 +186,24 @@ theorem mulHeight₁_eq_iff_mem_integer (S : Set (HeightOneSpectrum (𝓞 K))) {
   have key := mul_le_mul_of_nonneg_left hrest (le_trans zero_le_one (hone v))
   rw [mul_one, hsing] at key
   exact le_of_max_le_left key
+
+/-!
+### The `S`-integer hypothesis cannot be dropped
+
+At `S = ∅` the identity says that the height of an algebraic integer is carried by the infinite
+places. The element `1 / 2` is not an algebraic integer: its infinite factor is `1`, while its
+height is `2 ^ [K : ℚ]`, all of it carried by the finite places above `2`.
+-/
+
+-- `1 / 2` has absolute value `1 / 2` at every infinite place, so its infinite factor is `1`.
+example : ∏ w : InfinitePlace K, max (w (2⁻¹ : K)) 1 ^ w.mult = 1 := by
+  refine Finset.prod_eq_one fun w _ ↦ ?_
+  rw [map_inv₀, show w (2 : K) = 2 by simpa using w.map_natCast 2,
+    max_eq_right (by norm_num), one_pow]
+
+-- The height of `1 / 2` is that of `2`, which is `2 ^ [K : ℚ]`.
+example : mulHeight₁ (2⁻¹ : K) = 2 ^ Module.finrank ℚ K := by
+  rw [mulHeight₁_inv]
+  exact_mod_cast mulHeight₁_natCast (K := K) 2
 
 end NumberField

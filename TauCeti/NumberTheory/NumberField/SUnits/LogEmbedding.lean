@@ -9,6 +9,8 @@ public import Mathlib.NumberTheory.NumberField.Units.DirichletTheorem
 public import TauCeti.NumberTheory.NumberField.Global.Places.Basic
 public import TauCeti.RingTheory.DedekindDomain.SInteger.Unit.OfUnits
 
+import TauCeti.RingTheory.DedekindDomain.SInteger.Basic
+
 /-!
 # The logarithmic embedding of S-units
 
@@ -16,6 +18,9 @@ For a finite set `S` of finite places of a number field, the logarithmic embeddi
 `S`-unit to its weighted logarithms at all infinite places except Mathlib's distinguished place,
 together with its logarithms at the places in `S`. The product formula recovers the omitted
 infinite coordinate as minus the sum of these coordinates.
+
+The product formula needs the `S`-unit hypothesis: `2` is an `S`-integer for `S = ∅`, but its
+weighted logarithms at the infinite places sum to `[K : ℚ] * log 2`, so it is not an `∅`-unit.
 
 Ordinary units map to the usual Dirichlet logarithmic embedding in the infinite coordinates and
 to zero in the finite coordinates. These facts are the coordinate foundation for the
@@ -127,6 +132,28 @@ theorem sum_mult_mul_log_add_sum_log_finitePlace
     Real.log_one] at hlog
   simpa only [Real.log_pow, Nat.cast_ofNat, Finset.sum_const_zero, add_zero,
     mul_comm, add_comm] using hlog
+
+/-! ### The product formula needs the `S`-unit hypothesis -/
+
+-- `2` is an algebraic integer, hence an `S`-integer for `S = ∅`.
+example : (2 : K) ∈ (∅ : Set (HeightOneSpectrum (𝓞 K))).integer K :=
+  (Set.mem_integer_empty_iff K).2 ⟨2, map_ofNat _ 2⟩
+
+/-- The weighted logarithms of `2` at the infinite places sum to `[K : ℚ] * log 2`, not `0`. -/
+private theorem sum_mult_mul_log_two :
+    ∑ w : InfinitePlace K, w.mult * Real.log (w (2 : K)) = Module.finrank ℚ K * Real.log 2 := by
+  have h (w : InfinitePlace K) : w (2 : K) = 2 := by simpa using w.map_natCast 2
+  simp_rw [h, ← Finset.sum_mul, ← Nat.cast_sum, sum_mult_eq]
+
+-- So the product formula rules out `2` as an `∅`-unit.
+example : Units.mk0 (2 : K) two_ne_zero ∉ (∅ : Set (HeightOneSpectrum (𝓞 K))).unit K := by
+  intro h
+  have h0 := sum_mult_mul_log_add_sum_log_finitePlace ∅ ⟨_, by rwa [Finset.coe_empty]⟩
+  simp only [Units.val_mk0, sum_mult_mul_log_two, Finset.univ_eq_empty, Finset.sum_empty,
+    add_zero] at h0
+  have : 0 < Module.finrank ℚ K * Real.log 2 :=
+    mul_pos (Nat.cast_pos.2 Module.finrank_pos) (Real.log_pos one_lt_two)
+  exact this.ne' h0
 
 open Classical in
 /-- The sum of the `S`-logarithmic coordinates is the negative of the omitted infinite-place
