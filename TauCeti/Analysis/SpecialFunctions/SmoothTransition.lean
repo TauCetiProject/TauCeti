@@ -185,50 +185,22 @@ theorem tendsto_integral_mul_deriv_mul_sub_mul {u : ℝ → ℝ} {a v : ℝ}
       hasCompactSupport_deriv
   obtain ⟨s, hs, hus⟩ := hu
   obtain ⟨ε, hε, hεs⟩ := Metric.mem_nhds_iff.1 hs
-  -- The error is at most `2 C` times the mean oscillation of `u` on `closedBall a c⁻¹`.
-  have hbound : ∀ᶠ c in atTop, dist (∫ y, c * deriv smoothTransition (c * (y - a)) * u y) v ≤
-      2 * C * ⨍ y in Metric.closedBall a c⁻¹, ‖u y - v‖ := by
-    filter_upwards [eventually_gt_atTop ε⁻¹] with c hc
-    have hc0 : 0 < c := lt_trans (inv_pos.2 hε) hc
-    set B := Metric.closedBall a c⁻¹
-    have huB : IntegrableOn u B :=
-      hus.mono_set ((Metric.closedBall_subset_ball (inv_lt_of_inv_lt₀ hε hc)).trans hεs)
-    set k : ℝ → ℝ := fun y => c * deriv smoothTransition (c * (y - a)) with hk
-    have hkc : Continuous k :=
-      continuous_const.mul (((smoothTransition.contDiff (n := 1)).continuous_deriv le_rfl).comp
-        (continuous_const.mul (continuous_id.sub continuous_const)))
-    have hk0 (y) (hy : y ∉ B) : k y = 0 := by simp [hk, deriv_mul_sub_eq_zero hc0 hy]
-    have hkB : ∫ y in B, k y = 1 := by
-      rw [setIntegral_eq_integral_of_forall_compl_eq_zero hk0, integral_mul_deriv_mul_sub a hc0]
-    have hkuB : ∫ y, c * deriv smoothTransition (c * (y - a)) * u y = ∫ y in B, k y * u y :=
-      (setIntegral_eq_integral_of_forall_compl_eq_zero fun y hy => by
-        simp only [deriv_mul_sub_eq_zero hc0 hy, mul_zero, zero_mul]).symm
-    have hint : IntegrableOn (fun y => k y * u y) B :=
-      (integrable_mul_deriv_mul_sub_mul hc0 huB).integrableOn
-    have hint' : IntegrableOn (fun y => k y * v) B :=
-      (integrableOn_const measure_closedBall_lt_top.ne).continuousOn_mul hkc.continuousOn
-        (isCompact_closedBall a c⁻¹)
-    have hdiff : (∫ y in B, k y * u y) - v = ∫ y in B, k y * (u y - v) := by
-      simp_rw [mul_sub]
-      rw [integral_sub hint hint', integral_mul_const, hkB, one_mul]
-    have hosc : IntegrableOn (fun y => ‖u y - v‖) B :=
-      (huB.sub (integrableOn_const measure_closedBall_lt_top.ne)).norm
-    rw [Real.dist_eq, hkuB, hdiff, setAverage_eq, Real.volume_real_closedBall (inv_pos.2 hc0).le,
-      smul_eq_mul]
-    calc |∫ y in B, k y * (u y - v)| = ‖∫ y in B, k y * (u y - v)‖ := (Real.norm_eq_abs _).symm
-      _ ≤ ∫ y in B, c * C * ‖u y - v‖ := by
-          refine norm_integral_le_of_norm_le (hosc.const_mul _) (.of_forall fun y => ?_)
-          rw [norm_mul, Real.norm_eq_abs, hk, abs_mul, abs_of_pos hc0]
-          gcongr
-          exact hC _
-      _ = 2 * C * ((2 * c⁻¹)⁻¹ * ∫ y in B, ‖u y - v‖) := by
-          rw [integral_const_mul]
-          field_simp
-  have hlim : Tendsto (fun c : ℝ => 2 * C * ⨍ y in Metric.closedBall a c⁻¹, ‖u y - v‖) atTop
-      (𝓝 0) := by
-    simpa using (hv.comp tendsto_inv_atTop_nhdsGT_zero).const_mul (2 * C)
-  exact tendsto_iff_dist_tendsto_zero.2 (squeeze_zero' (.of_forall fun _ => dist_nonneg)
-    hbound hlim)
+  -- The kernel `c ψ'(c (y - a))` is supported in `closedBall a c⁻¹`, has integral one and is
+  -- bounded by `c C = 2 C / volume (closedBall a c⁻¹)`.
+  refine tendsto_integral_smul_of_tendsto_average_norm_sub (a := fun c => Metric.closedBall a c⁻¹)
+    (2 * C) (hv.comp tendsto_inv_atTop_nhdsGT_zero) ?_
+    (tendsto_const_nhds.congr' ?_) ?_ ?_
+  · filter_upwards [eventually_gt_atTop ε⁻¹] with c hc
+    exact hus.mono_set ((Metric.closedBall_subset_ball (inv_lt_of_inv_lt₀ hε hc)).trans hεs)
+  · filter_upwards [eventually_gt_atTop 0] with c hc
+    exact (integral_mul_deriv_mul_sub a hc).symm
+  · filter_upwards [eventually_gt_atTop 0] with c hc
+    exact Function.support_subset_iff'.2 fun y hy => by
+      rw [deriv_mul_sub_eq_zero hc hy, mul_zero]
+  · filter_upwards [eventually_gt_atTop 0] with c hc y
+    rw [Real.volume_real_closedBall (inv_pos.2 hc).le, abs_mul, abs_of_pos hc]
+    calc c * |deriv smoothTransition (c * (y - a))| ≤ c * C := by gcongr; exact hC _
+      _ = 2 * C / (2 * c⁻¹) := by field_simp
 
 end Real.smoothTransition
 

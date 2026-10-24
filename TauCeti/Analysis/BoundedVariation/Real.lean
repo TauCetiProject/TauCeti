@@ -8,9 +8,9 @@ module
 public import Mathlib.MeasureTheory.Integral.Average
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import TauCeti.Analysis.BoundedVariation.Perimeter
-import Mathlib.MeasureTheory.Covering.DensityTheorem
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+import TauCeti.MeasureTheory.Covering.DensityTheorem
 import TauCeti.MeasureTheory.Measure.Lebesgue.Basic
 import TauCeti.Algebra.BigOperators.Fin
 import TauCeti.Analysis.BoundedVariation.DerivativeMeasure
@@ -209,22 +209,6 @@ theorem ofReal_sum_abs_sub_le_totalVariationOn {Ω : Opens ℝ} {u : ℝ → ℝ
         rw [enorm_one, one_mul]
         exact mul_le_of_le_one_left zero_le hTnorm
 
-/-- Almost every point is a Lebesgue point of the indicator of a measurable set. -/
-private theorem ae_tendsto_average_indicator {s : Set ℝ} (hs : MeasurableSet s) :
-    ∀ᵐ x, Tendsto (fun r => ⨍ y in closedBall x r, ‖s.indicator 1 y - s.indicator (1 : ℝ → ℝ) x‖)
-      (𝓝[>] 0) (𝓝 0) := by
-  filter_upwards [IsUnifLocDoublingMeasure.ae_tendsto_average_norm_sub volume
-    ((locallyIntegrable_const (1 : ℝ)).indicator hs) 1] with x hx
-  exact hx (fun _ => x) id tendsto_id (eventually_mem_nhdsWithin.mono fun r hr =>
-    mem_closedBall_self (by simpa using (le_of_lt hr)))
-
-/-- A set of nonzero measure contains a Lebesgue point of the indicator of a measurable set. -/
-private theorem exists_mem_tendsto_average_indicator {s t : Set ℝ} (hs : MeasurableSet s)
-    (ht : volume t ≠ 0) : ∃ x ∈ t, Tendsto (fun r => ⨍ y in closedBall x r,
-      ‖s.indicator 1 y - s.indicator (1 : ℝ → ℝ) x‖) (𝓝[>] 0) (𝓝 0) := by
-  by_contra! h
-  exact ht (measure_mono_null (fun x hx => h x hx) (ae_iff.1 (ae_tendsto_average_indicator hs)))
-
 /-- Monotone Lebesgue points of the indicator of a measurable set `s` bound its perimeter from
 below by the number of alternations between `s` and its complement. -/
 private theorem ofReal_sum_le_perimeter {s : Set ℝ} (hs : MeasurableSet s) {m : ℕ}
@@ -252,12 +236,16 @@ private theorem exists_measurableSet_ae_eq {s : Set ℝ} (hs : NullMeasurableSet
 
 private theorem two_le_perimeter_of_measurableSet {s : Set ℝ} (hs : MeasurableSet s)
     (h0 : volume s ≠ 0) (hfin : volume s ≠ ∞) : 2 ≤ perimeter volume ⊤ s := by
+  have hae := IsUnifLocDoublingMeasure.ae_tendsto_average_closedBall_norm_sub volume
+    (f := s.indicator (1 : ℝ → ℝ)) ((locallyIntegrable_const 1).indicator hs)
   -- A Lebesgue point of `s`, with Lebesgue points of the complement on either side.
-  obtain ⟨b, hbs, hb⟩ := exists_mem_tendsto_average_indicator hs h0
-  obtain ⟨a, ⟨hab, has⟩, ha⟩ := exists_mem_tendsto_average_indicator hs (t := Iio b \ s)
+  obtain ⟨b, hbs, hb⟩ := Measure.exists_mem_of_measure_ne_zero_of_ae h0 (ae_restrict_of_ae hae)
+  obtain ⟨a, ⟨hab, has⟩, ha⟩ := Measure.exists_mem_of_measure_ne_zero_of_ae (s := Iio b \ s)
     (by rw [measure_sdiff_eq_top Real.volume_Iio hfin]; exact ENNReal.top_ne_zero)
-  obtain ⟨c, ⟨hbc, hcs⟩, hc⟩ := exists_mem_tendsto_average_indicator hs (t := Ioi b \ s)
+    (ae_restrict_of_ae hae)
+  obtain ⟨c, ⟨hbc, hcs⟩, hc⟩ := Measure.exists_mem_of_measure_ne_zero_of_ae (s := Ioi b \ s)
     (by rw [measure_sdiff_eq_top Real.volume_Ioi hfin]; exact ENNReal.top_ne_zero)
+    (ae_restrict_of_ae hae)
   have h := ofReal_sum_le_perimeter hs (x := ![a, b, c])
     (Fin.monotone_iff_le_succ.2 fun i => by
       fin_cases i <;> simp [(mem_Iio.1 hab).le, (mem_Ioi.1 hbc).le])
@@ -269,7 +257,9 @@ private theorem four_le_perimeter_of_measurableSet {s : Set ℝ} (hs : Measurabl
     4 ≤ perimeter volume ⊤ s := by
   set P : ℝ → Prop := fun x => Tendsto (fun r => ⨍ y in closedBall x r,
     ‖s.indicator 1 y - s.indicator (1 : ℝ → ℝ) x‖) (𝓝[>] 0) (𝓝 0)
-  have hnull : volume {x | ¬P x} = 0 := ae_iff.1 (ae_tendsto_average_indicator hs)
+  have hae := IsUnifLocDoublingMeasure.ae_tendsto_average_closedBall_norm_sub volume
+    (f := s.indicator (1 : ℝ → ℝ)) ((locallyIntegrable_const 1).indicator hs)
+  have hnull : volume {x | ¬P x} = 0 := ae_iff.1 hae
   -- Two Lebesgue points of `s` separated by a Lebesgue point of its complement.
   obtain ⟨b, z, b', hbz, hzb', hbs, hb, hzs, hz, hb's, hb'⟩ :
       ∃ b z b', b < z ∧ z < b' ∧ b ∈ s ∧ P b ∧ z ∉ s ∧ P z ∧ b' ∈ s ∧ P b' := by
@@ -286,10 +276,12 @@ private theorem four_le_perimeter_of_measurableSet {s : Set ℝ} (hs : Measurabl
         (lt_of_le_of_ne hyb' (ne_of_mem_of_not_mem hb's hys).symm) hbs hb hys hy hb's hb'
     exact h I hI (ae_eq_set.2 ⟨measure_mono_null h₁ hnull, measure_mono_null h₂ hnull⟩)
   -- Lebesgue points of the complement on either side.
-  obtain ⟨a, ⟨hab, has⟩, ha⟩ := exists_mem_tendsto_average_indicator hs (t := Iio b \ s)
+  obtain ⟨a, ⟨hab, has⟩, ha⟩ := Measure.exists_mem_of_measure_ne_zero_of_ae (s := Iio b \ s)
     (by rw [measure_sdiff_eq_top Real.volume_Iio hfin]; exact ENNReal.top_ne_zero)
-  obtain ⟨c, ⟨hb'c, hcs⟩, hc⟩ := exists_mem_tendsto_average_indicator hs (t := Ioi b' \ s)
+    (ae_restrict_of_ae hae)
+  obtain ⟨c, ⟨hb'c, hcs⟩, hc⟩ := Measure.exists_mem_of_measure_ne_zero_of_ae (s := Ioi b' \ s)
     (by rw [measure_sdiff_eq_top Real.volume_Ioi hfin]; exact ENNReal.top_ne_zero)
+    (ae_restrict_of_ae hae)
   have h := ofReal_sum_le_perimeter hs (x := ![a, b, z, b', c])
     (Fin.monotone_iff_le_succ.2 fun i => by
       fin_cases i <;> simp [(mem_Iio.1 hab).le, hbz.le, hzb'.le, (mem_Ioi.1 hb'c).le])
