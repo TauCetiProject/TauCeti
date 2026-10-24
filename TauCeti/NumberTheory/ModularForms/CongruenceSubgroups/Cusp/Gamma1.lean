@@ -65,6 +65,14 @@ variable {N : ℕ} [NeZero N]
 
 /-! ### Equivalence of cusps -/
 
+omit [NeZero N] in
+/-- The determinant of `γ ∈ SL(2, ℤ)`, read modulo `N`. -/
+private theorem intCast_det_eq_one (γ : SL(2, ℤ)) :
+    ((γ 0 0 : ℤ) : ZMod N) * γ 1 1 - γ 0 1 * γ 1 0 = 1 := by
+  have hdet := congrArg (Int.cast : ℤ → ZMod N) γ.det_coe
+  rw [det_fin_two] at hdet
+  exact_mod_cast hdet
+
 /-- **The criterion for equivalence of cusps of `Γ₁(N)`.** For `γ` and `γ'` with bottom rows
 `(c, d)` and `(c', d')`, the cusps `γ • ∞` and `γ' • ∞` are `Γ₁(N)`-equivalent exactly when
 `(c', d') ≡ ±(c, d + j c)` modulo `N` for some integer `j`. -/
@@ -79,9 +87,7 @@ theorem cuspOrbitOfSL2Z_Gamma1_eq_iff (γ γ' : SL(2, ℤ)) :
   have key (δ : SL(2, ℤ)) (j : ℤ) (hc : ((γ' 1 0 : ℤ) : ZMod N) = δ 1 0)
       (hd : ((γ' 1 1 : ℤ) : ZMod N) = δ 1 1 + j * δ 1 0) :
       (Gamma1 N).cuspOrbitOfSL2Z δ = (Gamma1 N).cuspOrbitOfSL2Z γ' := by
-    have hdet := congrArg (Int.cast : ℤ → ZMod N) γ'.det_coe
-    rw [det_fin_two] at hdet
-    push_cast at hdet
+    have hdet := intCast_det_eq_one (N := N) γ'
     refine (Subgroup.cuspOrbitOfSL2Z_eq_iff _ _ _).mpr
       ⟨δ * T ^ j * γ'⁻¹, mem_Gamma1_iff.mpr ⟨Gamma0_mem.mpr ?_, ?_⟩, ?_⟩
     · simp only [coe_mul, coe_inv, adjugate_fin_two, Matrix.mul_apply, Fin.sum_univ_two,
@@ -427,9 +433,7 @@ theorem cuspOrbitOfSL2Z_Gamma1_one (γ : SL(2, ℤ)) :
 theorem cuspOrbitOfSL2Z_Gamma1_two (γ : SL(2, ℤ)) :
     (Gamma1 2).cuspOrbitOfSL2Z 1 = (Gamma1 2).cuspOrbitOfSL2Z γ ∨
       (Gamma1 2).cuspOrbitOfSL2Z S = (Gamma1 2).cuspOrbitOfSL2Z γ := by
-  have hdet := congrArg (Int.cast : ℤ → ZMod 2) γ.det_coe
-  rw [det_fin_two] at hdet
-  push_cast at hdet
+  have hdet := intCast_det_eq_one (N := 2) γ
   simp only [cuspOrbitOfSL2Z_Gamma1_eq_iff_zmod, coe_S, of_apply, cons_val', cons_val_zero,
     cons_val_one, empty_val', cons_val_fin_one, Int.cast_zero, Int.cast_one]
   generalize ((γ 0 0 : ℤ) : ZMod 2) = a, ((γ 0 1 : ℤ) : ZMod 2) = b,
@@ -443,9 +447,7 @@ theorem cuspOrbitOfSL2Z_Gamma1_four (γ : SL(2, ℤ)) :
     (Gamma1 4).cuspOrbitOfSL2Z 1 = (Gamma1 4).cuspOrbitOfSL2Z γ ∨
       (Gamma1 4).cuspOrbitOfSL2Z S = (Gamma1 4).cuspOrbitOfSL2Z γ ∨
         ((γ 1 0 : ℤ) : ZMod 4) = 2 := by
-  have hdet := congrArg (Int.cast : ℤ → ZMod 4) γ.det_coe
-  rw [det_fin_two] at hdet
-  push_cast at hdet
+  have hdet := intCast_det_eq_one (N := 4) γ
   simp only [cuspOrbitOfSL2Z_Gamma1_eq_iff_zmod, coe_S, of_apply, cons_val', cons_val_zero,
     cons_val_one, empty_val', cons_val_fin_one, Int.cast_zero, Int.cast_one]
   generalize ((γ 0 0 : ℤ) : ZMod 4) = a, ((γ 0 1 : ℤ) : ZMod 4) = b,
@@ -457,10 +459,8 @@ theorem cuspOrbitOfSL2Z_Gamma1_four (γ : SL(2, ℤ)) :
 theorem cuspOrbitOfSL2Z_Gamma1_four_eq_of_intCast_eq_two {γ γ' : SL(2, ℤ)}
     (hγ : ((γ 1 0 : ℤ) : ZMod 4) = 2) (hγ' : ((γ' 1 0 : ℤ) : ZMod 4) = 2) :
     (Gamma1 4).cuspOrbitOfSL2Z γ = (Gamma1 4).cuspOrbitOfSL2Z γ' := by
-  have hdet := congrArg (Int.cast : ℤ → ZMod 4) γ.det_coe
-  have hdet' := congrArg (Int.cast : ℤ → ZMod 4) γ'.det_coe
-  rw [det_fin_two] at hdet hdet'
-  push_cast at hdet hdet'
+  have hdet := intCast_det_eq_one (N := 4) γ
+  have hdet' := intCast_det_eq_one (N := 4) γ'
   rw [cuspOrbitOfSL2Z_Gamma1_eq_iff_zmod]
   generalize ((γ 0 0 : ℤ) : ZMod 4) = a, ((γ 0 1 : ℤ) : ZMod 4) = b,
     ((γ 1 0 : ℤ) : ZMod 4) = c, ((γ 1 1 : ℤ) : ZMod 4) = d at hdet hγ ⊢
@@ -474,9 +474,7 @@ theorem cuspOrbitOfSL2Z_Gamma1_four_eq_of_intCast_eq_two {γ γ' : SL(2, ℤ)}
 is `2` modulo `4`, then `Γ₁(4)` contains the conjugate `γ (-T) γ⁻¹` of the negative translation. -/
 theorem mul_neg_T_mul_inv_mem_Gamma1_four {γ : SL(2, ℤ)} (hγ : ((γ 1 0 : ℤ) : ZMod 4) = 2) :
     γ * -T * γ⁻¹ ∈ Gamma1 4 := by
-  have hdet := congrArg (Int.cast : ℤ → ZMod 4) γ.det_coe
-  rw [det_fin_two] at hdet
-  push_cast at hdet
+  have hdet := intCast_det_eq_one (N := 4) γ
   refine mem_Gamma1_iff.mpr ⟨Gamma0_mem.mpr ?_, ?_⟩ <;>
   · simp only [coe_mul, coe_inv, coe_neg, coe_T, adjugate_fin_two, Matrix.mul_apply,
       Fin.sum_univ_two, neg_apply, of_apply, cons_val', cons_val_zero, cons_val_one, empty_val',

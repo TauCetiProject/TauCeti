@@ -34,9 +34,9 @@ terms embed it into the functions on the cusps
 (`TauCeti.ModularForm.finrank_le_card_cuspOrbit_of_disjoint`), and at `N ∉ {1, 2, 4}` the series
 are as many as the cusps (`TauCeti.EisensteinSeries.CharIndex.card_eq_card_cuspOrbit_Gamma1`).
 At the levels `1`, `2` and `4` the constant terms are read at explicit cusp representatives
-instead (`TauCeti.ModularForm.finrank_le_nat_card_of_disjoint`). In odd weight some cusps carry no
-constant term: all of them when `N ∣ 2`, since then `-1 ∈ Γ₁(N)`, and the irregular cusp `1/2`
-of `Γ₁(4)`. The remaining representatives are as many as the series
+instead (`TauCeti.ModularForm.finrank_le_natCard_of_disjoint`). In odd weight every form vanishes
+when `N ∣ 2`, since then `-1 ∈ Γ₁(N)`, and the irregular cusp `1/2` of `Γ₁(4)` carries no constant
+term. The remaining representatives are as many as the series
 (`TauCeti.EisensteinSeries.CharIndex.card_one`, `card_two`, `card_four`). For a fixed nebentypus,
 a form of nebentypus `χ` in the span of all the series lies in the span of those of nebentypus
 `χ`, because the character spaces `M_k(N, ψ)` are independent.
@@ -73,9 +73,8 @@ variable {N k : ℕ} [NeZero N]
 
 /-- The Eisenstein subspace of `M_k(Γ₁(N))` has dimension at most the number of Eisenstein
 indices. Away from the levels `1`, `2` and `4` the indices are as many as the cusps. At those
-levels the constant terms are read at explicit cusp representatives, leaving out the cusps that
-carry no constant term in odd weight: every cusp when `-1 ∈ Γ₁(N)`, and the irregular cusp of
-`Γ₁(4)`. -/
+levels the constant terms are read at explicit cusp representatives. In odd weight every form
+vanishes when `-1 ∈ Γ₁(N)`, and the irregular cusp of `Γ₁(4)` carries no constant term. -/
 private theorem finrank_congruenceEisensteinSubspace_le_card (hk : 3 ≤ (k : ℤ)) :
     Module.finrank ℂ (congruenceEisensteinSubspace (Gamma_le_Gamma1 N) hk) ≤
       Nat.card (CharIndex N k) := by
@@ -88,21 +87,20 @@ private theorem finrank_congruenceEisensteinSubspace_le_card (hk : 3 ≤ (k : �
       ModularForm.constantTermAt γ f = 0 :=
     ModularForm.constantTermAt_eq_zero_of_odd (Subgroup.mem_map_of_mem _ hm) hm₁₀ hm₀₀
       (by exact_mod_cast hodd) f
-  -- In odd weight at the levels `1` and `2`, `-1 ∈ Γ₁(N)` kills every constant term.
+  -- In odd weight at the levels `1` and `2`, `-1 ∈ Γ₁(N)` kills every form.
   have hneg (hN2 : N ∣ 2) (hodd : Odd k) :
       Module.finrank ℂ (congruenceEisensteinSubspace (Gamma_le_Gamma1 N) hk) ≤ 0 := by
-    simpa using ModularForm.finrank_le_nat_card_of_disjoint (Gamma1 N) k (Empty.elim : _ → SL(2, ℤ))
-      (fun γ ↦ .inr (hvanish (m := -1) (by simpa using neg_one_mem_Gamma1_iff.mpr hN2)
-        (by simp) (by simp) hodd)) hV
+    rw [nonpos_iff_eq_zero, Submodule.finrank_eq_zero, Submodule.eq_bot_iff]
+    exact fun f _ ↦ ModularForm.eq_zero_of_odd_of_dvd_two hN2 (by exact_mod_cast hodd) f
   obtain rfl | rfl | rfl : N = 1 ∨ N = 2 ∨ N = 4 := by have := NeZero.ne N; omega
   · rw [CharIndex.card_one]
     split_ifs with hk₂
-    · simpa using ModularForm.finrank_le_nat_card_of_disjoint (Gamma1 1) k (fun _ : Unit ↦ 1)
+    · simpa using ModularForm.finrank_le_natCard_of_disjoint (Gamma1 1) k (fun _ : Unit ↦ 1)
         (fun γ ↦ .inl ⟨(), cuspOrbitOfSL2Z_Gamma1_one γ⟩) hV
     · exact hneg (one_dvd 2) (Nat.not_even_iff_odd.mp hk₂)
   · rw [CharIndex.card_two]
     split_ifs with hk₂
-    · simpa using ModularForm.finrank_le_nat_card_of_disjoint (Gamma1 2) k ![1, ModularGroup.S]
+    · simpa using ModularForm.finrank_le_natCard_of_disjoint (Gamma1 2) k ![1, ModularGroup.S]
         (fun γ ↦ (cuspOrbitOfSL2Z_Gamma1_two γ).elim (fun h ↦ .inl ⟨0, h⟩)
           (fun h ↦ .inl ⟨1, h⟩)) hV
     · exact hneg dvd_rfl (Nat.not_even_iff_odd.mp hk₂)
@@ -111,12 +109,12 @@ private theorem finrank_congruenceEisensteinSubspace_le_card (hk : 3 ≤ (k : �
     · -- The cusp `1/2 = α • ∞` is the third representative.
       let α : SL(2, ℤ) := ⟨!![1, 0; 2, 1], by norm_num [Matrix.det_fin_two_of]⟩
       have hα : ((α 1 0 : ℤ) : ZMod 4) = 2 := rfl
-      simpa using ModularForm.finrank_le_nat_card_of_disjoint (Gamma1 4) k ![1, ModularGroup.S, α]
+      simpa using ModularForm.finrank_le_natCard_of_disjoint (Gamma1 4) k ![1, ModularGroup.S, α]
         (fun γ ↦ (cuspOrbitOfSL2Z_Gamma1_four γ).elim (fun h ↦ .inl ⟨0, h⟩) fun h ↦
           h.elim (fun h ↦ .inl ⟨1, h⟩)
             fun h ↦ .inl ⟨2, cuspOrbitOfSL2Z_Gamma1_four_eq_of_intCast_eq_two hα h⟩) hV
     · -- In odd weight the irregular cusp `1/2` carries no constant term.
-      simpa using ModularForm.finrank_le_nat_card_of_disjoint (Gamma1 4) k ![1, ModularGroup.S]
+      simpa using ModularForm.finrank_le_natCard_of_disjoint (Gamma1 4) k ![1, ModularGroup.S]
         (fun γ ↦ (cuspOrbitOfSL2Z_Gamma1_four γ).elim (fun h ↦ .inl ⟨0, h⟩) fun h ↦
           h.elim (fun h ↦ .inl ⟨1, h⟩) fun h ↦ .inr (hvanish
             (mul_neg_T_mul_inv_mem_Gamma1_four h) (by simp [ModularGroup.coe_T])

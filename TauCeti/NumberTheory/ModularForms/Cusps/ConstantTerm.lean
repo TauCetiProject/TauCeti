@@ -249,7 +249,8 @@ theorem constantTermAt_eq_zero_of_odd {γ m : SL(2, ℤ)} (hm : mapGL ℝ (γ * 
     (hm₁₀ : m 1 0 = 0) (hm₀₀ : m 0 0 = -1) (hk : Odd k) (f : ModularForm Γ k) :
     constantTermAt γ f = 0 := by
   have h := constantTermAt_mul_of_c_eq_zero γ hm₁₀ f
-  rw [show γ * m = γ * m * γ⁻¹ * γ by group, constantTermAt_mul_left hm, hm₀₀,
+  have hγm : γ * m = γ * m * γ⁻¹ * γ := by group
+  rw [hγm, constantTermAt_mul_left hm, hm₀₀,
     Int.cast_neg, Int.cast_one, hk.neg_one_zpow] at h
   linear_combination h / 2
 

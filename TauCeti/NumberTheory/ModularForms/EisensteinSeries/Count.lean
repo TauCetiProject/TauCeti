@@ -184,58 +184,43 @@ theorem card_eq_card_cuspOrbit_Gamma1 (hN : 2 < N) (hN4 : N ≠ 4) :
 
 /-! ### The levels `1`, `2` and `4` -/
 
-/-- Modulo `a ≤ 2` and `b ≤ 2` the only characters are trivial and even, so there is one pair of
-parity `(-1)^k` when `k` is even and none when `k` is odd. -/
-private theorem card_parity_of_le_two {a b : ℕ} [NeZero a] [NeZero b] (ha : a ≤ 2) (hb : b ≤ 2) :
-    Nat.card {q : DirichletCharacter ℂ a × DirichletCharacter ℂ b //
-      q.1 (-1) * q.2 (-1) = (-1) ^ (k : ℤ)} = if Even k then 1 else 0 := by
-  have hneg {n : ℕ} [NeZero n] (hn : n ≤ 2) (χ : DirichletCharacter ℂ n) : χ (-1) = 1 := by
-    obtain rfl | rfl : n = 1 ∨ n = 2 := by have := NeZero.ne n; omega
-    all_goals rw [show (-1 : ZMod _) = 1 by decide, map_one]
-  have hcard {n : ℕ} [NeZero n] (hn : n ≤ 2) : Nat.card (DirichletCharacter ℂ n) = 1 := by
-    rw [card_eq_totient_of_hasEnoughRootsOfUnity ℂ n]
-    obtain rfl | rfl : n = 1 ∨ n = 2 := by have := NeZero.ne n; omega
-    all_goals rfl
-  simp only [hneg ha, hneg hb, one_mul, zpow_natCast]
-  split_ifs with hk
-  · rw [hk.neg_one_pow, Nat.card_congr (Equiv.subtypeUnivEquiv fun _ ↦ rfl), Nat.card_prod,
-      hcard ha, hcard hb]
-  · rw [(Nat.not_even_iff_odd.mp hk).neg_one_pow]
-    have : IsEmpty {q : DirichletCharacter ℂ a × DirichletCharacter ℂ b // (1 : ℂ) = -1} :=
-      ⟨fun ⟨_, h⟩ ↦ by norm_num at h⟩
-    exact Nat.card_of_isEmpty
-
-/-- Of the two pairs of characters modulo `a` and `b`, with `{a, b} = {1, 4}`, exactly one has
-parity `(-1)^k`. -/
-private theorem card_parity_of_mul_eq_four {a b : ℕ} [NeZero a] [NeZero b]
-    (hab : a = 1 ∧ b = 4 ∨ a = 4 ∧ b = 1) :
-    Nat.card {q : DirichletCharacter ℂ a × DirichletCharacter ℂ b //
-      q.1 (-1) * q.2 (-1) = (-1) ^ (k : ℤ)} = 1 := by
-  have h := two_mul_card_apply_neg_one_mul_apply_neg_one_eq (R := ℂ) (a := a) (b := b)
-    (ε := (-1) ^ (k : ℤ)) (by omega) (by rw [zpow_natCast]; exact neg_one_pow_eq_or ℂ k)
-  obtain ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ := hab <;>
-  · rw [Nat.totient_one, show Nat.totient 4 = 2 by decide] at h
-    omega
+/-- The product parity `(-1)^k` is trivial exactly in even weight. -/
+private theorem neg_one_zpow_eq_one_iff_even : (-1 : ℂ) ^ (k : ℤ) = 1 ↔ Even k := by
+  rw [zpow_natCast]
+  exact neg_one_pow_eq_one_iff_even (by norm_num)
 
 /-- There is one Eisenstein index at level `1` in even weight, and none in odd weight. -/
 theorem card_one : Nat.card (CharIndex 1 k) = if Even k then 1 else 0 := by
-  rw [card_eq_sum, Nat.divisors_one, Finset.sum_singleton]
-  exact card_parity_of_le_two (by norm_num) (by norm_num)
+  rw [card_eq_sum, Nat.divisors_one, Finset.sum_singleton,
+    card_apply_neg_one_mul_apply_neg_one_eq_of_le_two (by norm_num) (by norm_num)]
+  simp only [neg_one_zpow_eq_one_iff_even]
 
 /-- There are two Eisenstein indices at level `2` in even weight, and none in odd weight. -/
 theorem card_two : Nat.card (CharIndex 2 k) = if Even k then 2 else 0 := by
   rw [card_eq_sum, Nat.prime_two.divisors, Finset.sum_pair (by norm_num),
-    card_parity_of_le_two (by norm_num) (by norm_num),
-    card_parity_of_le_two (by norm_num) (by norm_num)]
+    card_apply_neg_one_mul_apply_neg_one_eq_of_le_two (by norm_num) (by norm_num),
+    card_apply_neg_one_mul_apply_neg_one_eq_of_le_two (by norm_num) (by norm_num)]
+  simp only [neg_one_zpow_eq_one_iff_even]
   split_ifs <;> rfl
 
 /-- There are three Eisenstein indices at level `4` in even weight, and two in odd weight. -/
 theorem card_four : Nat.card (CharIndex 4 k) = if Even k then 3 else 2 := by
-  rw [card_eq_sum, show Nat.divisors 4 = {1, 2, 4} by decide, Finset.sum_insert (by decide),
-    Finset.sum_pair (by norm_num)]
+  have hε : (-1 : ℂ) ^ (k : ℤ) = 1 ∨ (-1 : ℂ) ^ (k : ℤ) = -1 := by
+    rw [zpow_natCast]
+    exact neg_one_pow_eq_or ℂ k
+  have htot : Nat.totient 4 = 2 := by decide
+  have hdiv : Nat.divisors 4 = {1, 2, 4} := by decide
+  -- Of the two pairs of characters modulo `1` and `4`, in either order, one has parity `(-1)^k`.
+  have h₁ := two_mul_card_apply_neg_one_mul_apply_neg_one_eq (R := ℂ) (a := 1) (b := 4)
+    (by norm_num) hε
+  have h₄ := two_mul_card_apply_neg_one_mul_apply_neg_one_eq (R := ℂ) (a := 4) (b := 1)
+    (by norm_num) hε
+  rw [Nat.totient_one, htot] at h₁ h₄
+  rw [card_eq_sum, hdiv, Finset.sum_insert (by decide), Finset.sum_pair (by norm_num)]
   simp only [Nat.reduceDiv]
-  rw [card_parity_of_mul_eq_four (.inl ⟨rfl, rfl⟩), card_parity_of_mul_eq_four (.inr ⟨rfl, rfl⟩),
-    card_parity_of_le_two (a := 2) (b := 2) (by norm_num) (by norm_num)]
-  split_ifs <;> rfl
+  rw [card_apply_neg_one_mul_apply_neg_one_eq_of_le_two (a := 2) (b := 2) (by norm_num)
+    (by norm_num)]
+  simp only [neg_one_zpow_eq_one_iff_even]
+  split_ifs <;> omega
 
 end TauCeti.EisensteinSeries.CharIndex

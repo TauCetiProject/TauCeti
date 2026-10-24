@@ -24,9 +24,10 @@ embeds into the functions on the cusp orbits. Its dimension is therefore at most
 of the Eisenstein space: comparing it with the number of linearly independent Eisenstein series
 shows that those series span a complement of the cusp forms.
 
-Cusps at which every form of weight `k` has constant term zero, such as the irregular cusps in
-odd weight, can be left out of the count. This sharper bound is what the comparison needs at the
-levels where the irregular cusps of `Γ₁(N)` lie.
+Cusps at which every form of weight `k` has constant term zero can be left out of the count. In
+odd weight these are all cusps when `-1 ∈ Γ`, and the irregular cusps. This sharper bound is what
+the comparison needs at the levels without a cusp count, where the constant terms are read at
+explicit representatives.
 
 ## Main results
 
@@ -34,7 +35,7 @@ levels where the irregular cusps of `Γ₁(N)` lie.
   terms at two representatives of the same cusp orbit agree up to a factor `(±1)ᵏ`.
 * `TauCeti.ModularForm.finrank_le_card_cuspOrbit_of_disjoint`: a subspace of `M_k(H)` with zero
   intersection with the cusp forms has dimension at most the number of cusps of `H`.
-* `TauCeti.ModularForm.finrank_le_nat_card_of_disjoint`: the same bound by the number of any
+* `TauCeti.ModularForm.finrank_le_natCard_of_disjoint`: the same bound by the number of any
   family of cusp representatives that misses only cusps without constant terms in weight `k`.
 
 ## References
@@ -73,7 +74,7 @@ finitely many cusp representatives such that every cusp either is equivalent to 
 carries no constant term in weight `k` (for instance an irregular cusp in odd weight,
 `ModularForm.constantTermAt_eq_zero_of_odd`). Then a subspace of `M_k(H)` whose intersection with
 the cusp forms is zero has dimension at most the number of representatives. -/
-theorem finrank_le_nat_card_of_disjoint {ι : Type*} [Finite ι] (r : ι → SL(2, ℤ))
+theorem finrank_le_natCard_of_disjoint {ι : Type*} [Finite ι] (r : ι → SL(2, ℤ))
     (hr : ∀ γ : SL(2, ℤ), (∃ i, H.cuspOrbitOfSL2Z (r i) = H.cuspOrbitOfSL2Z γ) ∨
       ∀ f, constantTermAt (Γ := H.map (mapGL ℝ)) (k := k) γ f = 0)
     {V : Submodule ℂ (ModularForm (H.map (mapGL ℝ)) k)}
@@ -107,7 +108,7 @@ dimension at most the number of cusps of `H`. -/
 theorem finrank_le_card_cuspOrbit_of_disjoint {V : Submodule ℂ (ModularForm (H.map (mapGL ℝ)) k)}
     (hV : Disjoint V (cuspFormSubmodule (H.map (mapGL ℝ)) k)) :
     Module.finrank ℂ V ≤ Nat.card (H.map sl2zToPSL2R).CuspOrbit :=
-  finrank_le_nat_card_of_disjoint H k (Function.surjInv H.cuspOrbitOfSL2Z_surjective)
+  finrank_le_natCard_of_disjoint H k (Function.surjInv H.cuspOrbitOfSL2Z_surjective)
     (fun _ ↦ .inl ⟨_, Function.surjInv_eq H.cuspOrbitOfSL2Z_surjective _⟩) hV
 
 end TauCeti.ModularForm
