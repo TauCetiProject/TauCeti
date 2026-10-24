@@ -119,10 +119,7 @@ theorem wittClass_eq_iff_rank_modEq_and_signedDiscr_eq_and_cliffordInvariant_eq
   rw [← wittClass_nsmul_hyperbolicClass_add k y]
   congr 1
   refine RegularFormClass.eq_of_rank_eq_of_signedDiscr_eq_of_cliffordInvariant_eq ?_ ?_ ?_
-  · have hkr : (k • hyperbolicClass K).rank = k * 2 := by
-      rw [← RegularFormClass.rankHom_apply, map_nsmul, RegularFormClass.rankHom_apply,
-        rank_hyperbolicClass, smul_eq_mul]
-    rw [RegularFormClass.rank_add, hkr]
+  · rw [RegularFormClass.rank_add, rank_nsmul_hyperbolicClass]
     omega
   · rw [RegularFormClass.signedDiscr_nsmul_hyperbolicClass_add, hd]
   · rw [RegularFormClass.cliffordInvariant_nsmul_hyperbolicClass_add, hc]
