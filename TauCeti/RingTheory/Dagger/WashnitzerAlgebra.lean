@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+public import TauCeti.RingTheory.PowerSeries.Restricted
 public import TauCeti.RingTheory.MvPowerSeries.Primitive.GaussNorm
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Coefficients
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Radius
@@ -33,7 +34,8 @@ the Tate algebra `T = R{X/1}` and carries the restricted Gauss norm.
 * `TauCeti.Dagger.washnitzerAlgebra σ R`: the subalgebra of series restricted at some constant
   radius `ρ > 1`.
 * `TauCeti.Dagger.washnitzerAlgebra.X`: the variables, and
-  `TauCeti.Dagger.washnitzerAlgebra.ofMvPolynomial`: the inclusion of the polynomials.
+  `TauCeti.Dagger.washnitzerAlgebra.ofMvPolynomial`: the inclusion of the polynomials, with
+  `TauCeti.Dagger.washnitzerAlgebra.ofPolynomial` for one variable.
 * `TauCeti.Dagger.washnitzerAlgebra.toTate`: the inclusion of `W` into the unit-radius Tate
   algebra.
 
@@ -189,6 +191,27 @@ noncomputable def ofMvPolynomial : MvPolynomial σ R →ₐ[R] washnitzerAlgebra
 theorem coe_ofMvPolynomial (p : MvPolynomial σ R) :
     (ofMvPolynomial σ R p : MvPowerSeries σ R) = p := by
   simp [ofMvPolynomial, MvPolynomial.coeToMvPowerSeries.algHom_apply]
+
+variable (R) in
+/-- The inclusion of one-variable polynomials into the Monsky–Washnitzer algebra. -/
+noncomputable def ofPolynomial : Polynomial R →ₐ[R] washnitzerAlgebra Unit R :=
+  (Polynomial.coeToPowerSeries.algHom R).codRestrict _ fun p ↦
+    mem_washnitzerAlgebra.mpr ⟨2, one_lt_two, PowerSeries.isRestricted_polynomial p⟩
+
+/-- A one-variable polynomial in the Monsky–Washnitzer algebra has its usual power series. -/
+@[simp]
+theorem coe_ofPolynomial (p : Polynomial R) :
+    (ofPolynomial R p : PowerSeries R) = p := by
+  simp [ofPolynomial, Polynomial.coeToPowerSeries.algHom_apply]
+
+/-- The one-variable polynomial inclusion sends `Polynomial.X` to the variable of `W`. -/
+@[simp]
+theorem ofPolynomial_X : ofPolynomial R Polynomial.X = X Unit R () :=
+  Subtype.ext (by simp [PowerSeries.X_apply])
+
+/-- Distinct one-variable polynomials are distinct overconvergent series. -/
+theorem ofPolynomial_injective : Function.Injective (ofPolynomial R) :=
+  fun p q h ↦ Polynomial.coe_injective R (by simpa using congrArg Subtype.val h)
 
 /-- The polynomial inclusion sends the polynomial variables to the variables of `W`. -/
 @[simp]
