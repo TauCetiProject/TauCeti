@@ -34,6 +34,8 @@ structures produced by `almostComplexStructureAt`. Manifold-valued `J`-holomorph
   structure on a tangent space.
 * `TauCeti.SmoothAlmostComplexStructure.contMDiff_apply`: applying the structure to a `C^n` vector
   field along a `C^n` map gives a `C^n` vector field along that map.
+* `TauCeti.SmoothAlmostComplexStructure.mdifferentiableAt_apply`: the pointwise differentiable
+  counterpart.
 * `TauCeti.SmoothAlmostComplexStructure.neg`: the negative of a smooth almost complex structure.
 * `TauCeti.SmoothAlmostComplexStructure.const`: a continuous endomorphism of a real normed space
   squaring to `-1` gives the constant smooth almost complex structure on that model manifold.
@@ -153,6 +155,15 @@ lemma contMDiff_apply {n : ℕ∞ω} [ENat.LEInfty n] (J : SmoothAlmostComplexSt
     (hV : ContMDiff I' I.tangent n (fun y ↦ TotalSpace.mk' E (b y) (V y))) :
     ContMDiff I' I.tangent n (fun y ↦ TotalSpace.mk' E (b y) (J (b y) (V y))) :=
   ((J.toEndomorphism.contMDiff.of_le ENat.LEInfty.out).comp hb).clm_bundle_apply hV
+
+/-- Applying a smooth almost complex structure along a map `b` differentiable at `y₀` to a vector
+field along `b` differentiable at `y₀` gives a vector field along `b` differentiable at `y₀`.
+Taking `b = id` this says that `J` preserves vector fields differentiable at a point. -/
+lemma mdifferentiableAt_apply (J : SmoothAlmostComplexStructure I M) {b : N → M} {y₀ : N}
+    (hb : MDifferentiableAt I' I b y₀) {V : ∀ y : N, TangentSpace I (b y)}
+    (hV : MDifferentiableAt I' I.tangent (fun y ↦ TotalSpace.mk' E (b y) (V y)) y₀) :
+    MDifferentiableAt I' I.tangent (fun y ↦ TotalSpace.mk' E (b y) (J (b y) (V y))) y₀ :=
+  ((J.toEndomorphism.contMDiff.mdifferentiableAt (by simp)).comp y₀ hb).clm_bundle_apply hV
 
 end ContMDiffApply
 
