@@ -7,7 +7,6 @@ module
 
 public import Mathlib.RingTheory.Perfection
 public import TauCeti.RingTheory.Huber.Basic
-public import TauCeti.Topology.Algebra.TopologicallyNilpotent.Basic
 import Mathlib.Algebra.CharP.Reduced
 import TauCeti.RingTheory.Perfect.Basic
 
@@ -247,11 +246,9 @@ theorem zpow_mem_powerBoundedSubring {m : ℤ} (hm : 0 ≤ m) (n : ℕ) :
 theorem isPseudoUniformizer_zpow {m : ℤ} (hm : 0 < m) (n : ℕ) :
     IsPseudoUniformizer (ϖ.zpow m n : R) := by
   lift m to ℕ using hm.le
-  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero (by omega : m ≠ 0)
-  have h := (ϖ.isPseudoUniformizer_root n).isTopologicallyNilpotent
   refine isPseudoUniformizer_iff.mpr ⟨Units.isUnit _, ?_⟩
-  rw [coe_zpow_natCast, pow_succ]
-  exact ((IsPowerBounded.of_isTopologicallyNilpotent h).pow k).isTopologicallyNilpotent_mul h
+  rw [coe_zpow_natCast]
+  exact (ϖ.isPseudoUniformizer_root n).isTopologicallyNilpotent.pow (by omega)
 
 end PseudoUniformizerRoots
 

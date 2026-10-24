@@ -7,7 +7,6 @@ module
 
 public import Mathlib.NumberTheory.Padics.Complex
 public import TauCeti.RingTheory.Perfectoid.IsAlgClosed
-public import TauCeti.RingTheory.Perfectoid.PseudoUniformizerRoots
 
 /-!
 # `ℂ_p` is perfectoid and `ℚ_p` is not
