@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.Monoidal.Center
 public import Mathlib.CategoryTheory.Monoidal.Linear
 public import Mathlib.CategoryTheory.Preadditive.Biproducts
+public import TauCeti.CategoryTheory.Monoidal.Preadditive
 
 /-!
 # The Drinfeld centre of a preadditive monoidal category
@@ -136,40 +137,6 @@ instance instFaithfulForget : (forget C).Faithful where
 section Preadditive
 
 variable [Preadditive C] [MonoidalPreadditive C] {X Y : Center C}
-
-private theorem neg_whiskerRight {Y Z : C} (g : Y ⟶ Z) (U : C) : (-g) ▷ U = -(g ▷ U) :=
-  (tensorRight U).map_neg
-
-private theorem whiskerLeft_neg (U : C) {Y Z : C} (g : Y ⟶ Z) : U ◁ (-g) = -(U ◁ g) :=
-  (tensorLeft U).map_neg
-
-private theorem sub_whiskerRight {Y Z : C} (g h : Y ⟶ Z) (U : C) :
-    (g - h) ▷ U = g ▷ U - h ▷ U :=
-  (tensorRight U).map_sub
-
-private theorem whiskerLeft_sub (U : C) {Y Z : C} (g h : Y ⟶ Z) :
-    U ◁ (g - h) = U ◁ g - U ◁ h :=
-  (tensorLeft U).map_sub
-
-private theorem nsmul_whiskerRight (n : ℕ) {Y Z : C} (g : Y ⟶ Z) (U : C) :
-    (n • g) ▷ U = n • (g ▷ U) :=
-  (tensorRight U).map_nsmul
-
-private theorem whiskerLeft_nsmul (n : ℕ) (U : C) {Y Z : C} (g : Y ⟶ Z) :
-    U ◁ (n • g) = n • (U ◁ g) :=
-  (tensorLeft U).map_nsmul
-
-private theorem zsmul_whiskerRight (n : ℤ) {Y Z : C} (g : Y ⟶ Z) (U : C) :
-    (n • g) ▷ U = n • (g ▷ U) :=
-  (tensorRight U).map_zsmul
-
-private theorem whiskerLeft_zsmul (n : ℤ) (U : C) {Y Z : C} (g : Y ⟶ Z) :
-    U ◁ (n • g) = n • (U ◁ g) :=
-  (tensorLeft U).map_zsmul
-
-attribute [local simp] MonoidalPreadditive.whiskerLeft_add MonoidalPreadditive.add_whiskerRight
-  neg_whiskerRight whiskerLeft_neg sub_whiskerRight whiskerLeft_sub nsmul_whiskerRight
-  whiskerLeft_nsmul zsmul_whiskerRight whiskerLeft_zsmul
 
 instance instZeroHom : Zero (X ⟶ Y) where
   zero := { f := 0 }
