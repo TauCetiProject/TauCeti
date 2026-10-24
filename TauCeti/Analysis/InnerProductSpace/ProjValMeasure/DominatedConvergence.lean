@@ -9,11 +9,11 @@ public import TauCeti.Analysis.InnerProductSpace.ProjValMeasure.Integral
 public import TauCeti.Analysis.InnerProductSpace.ProjValMeasure.Null
 
 /-!
-# Vector norms and dominated convergence for projection-valued integrals
+# Almost-everywhere invariance and dominated convergence for projection-valued integrals
 
 Let `P` be a projection-valued measure on `X` acting on a complex Hilbert space `H`, with
 diagonal measures `P.diag ξ`. The operator integral `P.integral f = ∫ f dP` of a bounded Borel
-symbol `f` satisfies the vector norm identity
+symbol `f` satisfies the vector norm identity `ProjValMeasure.norm_integral_apply_sq`,
 `‖(∫ f dP) ξ‖ ^ 2 = ∫ ‖f x‖ ^ 2 d(P.diag ξ)(x)`.
 It identifies the map `f ↦ (∫ f dP) ξ` as an isometry from the symbols, with the `L²` norm of
 `P.diag ξ`, into `H`, and transfers scalar integration theory to the operator integral:
@@ -29,7 +29,6 @@ measure that charges every such interval.
 
 ## Main declarations
 
-* `ProjValMeasure.norm_integral_apply_sq`: `‖(∫ f dP) ξ‖ ^ 2 = ∫ ‖f‖ ^ 2 d(P.diag ξ)`.
 * `ProjValMeasure.integral_eq_integral_iff`: `∫ f dP = ∫ g dP` iff `f = g` `P`-almost everywhere.
 * `ProjValMeasure.integral_congr_ae`: symbols equal `P`-almost everywhere have equal integrals.
 * `ProjValMeasure.tendsto_integral_apply_of_dominated_convergence`: bounded `P`-almost
@@ -52,32 +51,6 @@ namespace ProjValMeasure
 
 variable {X H : Type*} [MeasurableSpace X]
   [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
-
-/-- **Vector norm identity** for the integral against a projection-valued measure:
-`‖(∫ f dP) ξ‖ ^ 2 = ∫ ‖f x‖ ^ 2 d(P.diag ξ)(x)`. -/
-theorem norm_integral_apply_sq (P : ProjValMeasure X H) (f : BoundedBorelFunction X) (ξ : H) :
-    ‖P.integral f ξ‖ ^ 2 = ∫ x, ‖f x‖ ^ 2 ∂(P.diag ξ) := by
-  apply Complex.ofReal_injective
-  rw [← integral_complex_ofReal]
-  calc ((‖P.integral f ξ‖ ^ 2 : ℝ) : ℂ) = ⟪ξ, P.integral (star f * f) ξ⟫_ℂ := by
-        simp [map_star, ContinuousLinearMap.star_eq_adjoint,
-          ContinuousLinearMap.adjoint_inner_right, inner_self_eq_norm_sq_to_K]
-    _ = ∫ x, ((‖f x‖ ^ 2 : ℝ) : ℂ) ∂(P.diag ξ) := by
-        rw [← integral_diag_eq_inner_integral]
-        simp [Complex.conj_mul']
-
-/-- The integral of `f` vanishes on `ξ` exactly when `f` vanishes almost everywhere for the
-diagonal measure `P.diag ξ`. -/
-theorem integral_apply_eq_zero_iff (P : ProjValMeasure X H) (f : BoundedBorelFunction X)
-    (ξ : H) : P.integral f ξ = 0 ↔ ⇑f =ᵐ[P.diag ξ] 0 := by
-  have hint : Integrable (fun x => ‖f x‖ ^ 2) (P.diag ξ) :=
-    .of_bound (f.measurable.norm.pow_const 2).aestronglyMeasurable (‖f‖ ^ 2)
-      (Eventually.of_forall fun x => by
-        rw [Real.norm_of_nonneg (by positivity)]
-        exact pow_le_pow_left₀ (norm_nonneg _) (f.norm_coe_le_norm x) 2)
-  rw [← norm_eq_zero, ← pow_eq_zero_iff (n := 2) two_ne_zero, norm_integral_apply_sq,
-    integral_eq_zero_iff_of_nonneg (fun x => by positivity) hint]
-  simp [EventuallyEq]
 
 /-- The integral of `f` against `P` vanishes exactly when `f` vanishes `P`-almost everywhere. -/
 theorem integral_eq_zero_iff (P : ProjValMeasure X H) (f : BoundedBorelFunction X) :

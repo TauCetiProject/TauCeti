@@ -49,6 +49,10 @@ continuous extension `LinearMap.extendOfNorm`.
 * `ProjValMeasure.integral_diag_eq_inner_integral`: diagonal matrix elements of the integral are
   integrals against the diagonal measures.
 * `ProjValMeasure.norm_integral_le`: a pointwise bound on the symbol bounds the operator norm.
+* `ProjValMeasure.norm_integral_apply_sq`: the vector norm identity
+  `‖(∫ f dP) ξ‖ ^ 2 = ∫ ‖f x‖ ^ 2 d(P.diag ξ)(x)`.
+* `ProjValMeasure.integral_apply_eq_zero_iff`: `(∫ f dP) ξ = 0` iff `f = 0` almost everywhere
+  for `P.diag ξ`.
 
 ## References
 
@@ -297,6 +301,32 @@ theorem norm_integral_le (P : ProjValMeasure X H) {f : BoundedBorelFunction X} {
     (hM : 0 ≤ M) (hf : ∀ x, ‖f x‖ ≤ M) : ‖P.integral f‖ ≤ M :=
   (NonUnitalStarAlgHom.norm_apply_le P.integral f).trans
     ((BoundedBorelFunction.norm_le hM).2 hf)
+
+/-- **Vector norm identity** for the integral against a projection-valued measure:
+`‖(∫ f dP) ξ‖ ^ 2 = ∫ ‖f x‖ ^ 2 d(P.diag ξ)(x)`. -/
+theorem norm_integral_apply_sq (P : ProjValMeasure X H) (f : BoundedBorelFunction X) (ξ : H) :
+    ‖P.integral f ξ‖ ^ 2 = ∫ x, ‖f x‖ ^ 2 ∂(P.diag ξ) := by
+  apply Complex.ofReal_injective
+  rw [← integral_complex_ofReal]
+  calc ((‖P.integral f ξ‖ ^ 2 : ℝ) : ℂ) = ⟪ξ, P.integral (star f * f) ξ⟫_ℂ := by
+        simp [map_star, ContinuousLinearMap.star_eq_adjoint,
+          ContinuousLinearMap.adjoint_inner_right, inner_self_eq_norm_sq_to_K]
+    _ = ∫ x, ((‖f x‖ ^ 2 : ℝ) : ℂ) ∂(P.diag ξ) := by
+        rw [← integral_diag_eq_inner_integral]
+        simp [Complex.conj_mul']
+
+/-- The integral of `f` vanishes on `ξ` exactly when `f` vanishes almost everywhere for the
+diagonal measure `P.diag ξ`. -/
+theorem integral_apply_eq_zero_iff (P : ProjValMeasure X H) (f : BoundedBorelFunction X)
+    (ξ : H) : P.integral f ξ = 0 ↔ ⇑f =ᵐ[P.diag ξ] 0 := by
+  have hint : Integrable (fun x => ‖f x‖ ^ 2) (P.diag ξ) :=
+    .of_bound (f.measurable.norm.pow_const 2).aestronglyMeasurable (‖f‖ ^ 2)
+      (Eventually.of_forall fun x => by
+        rw [Real.norm_of_nonneg (by positivity)]
+        exact pow_le_pow_left₀ (norm_nonneg _) (f.norm_coe_le_norm x) 2)
+  rw [← norm_eq_zero, ← pow_eq_zero_iff (n := 2) two_ne_zero, norm_integral_apply_sq,
+    integral_eq_zero_iff_of_nonneg (fun x => by positivity) hint]
+  simp [EventuallyEq]
 
 end ProjValMeasure
 end TauCeti
