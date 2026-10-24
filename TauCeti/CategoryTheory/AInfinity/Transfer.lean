@@ -374,15 +374,13 @@ theorem isWordPathCompatible_taylor_transferInclusion :
     IsWordPathCompatible e (𝒞.toAInfinityAlgebra.transferInclusion c hh hincl hproj).taylor where
   mem_range_of_mem_composableWords {X Y} {w} hw := by
     have hi := hc.map_incl_mem_composableWords hw
-    rw [AInfinityHom.taylor_def, LinearMap.comp_apply, AInfinityAlgebra.barMap_transferInclusion,
-      LinearMap.sub_apply, LinearMap.comp_apply, LinearMap.comp_apply]
+    simp only [AInfinityAlgebra.taylor_transferInclusion, LinearMap.comp_apply, LinearMap.sub_apply]
     exact isWordPathCompatible_letter.mem_range_of_mem_composableWords <| Submodule.sub_mem _ hi <|
       𝒞.reducedTensorWordsHomotopy_mem e c hc (Or.inr ⟨_, _, rfl⟩) <|
         𝒞.perturbationSeries_mem e c hh hincl hproj hc (Or.inr ⟨_, _, rfl⟩) hi
   eq_zero_of_mem_nonComposableWords {w} hw := by
     have hi := hc.map_incl_mem_nonComposableWords hw
-    rw [AInfinityHom.taylor_def, LinearMap.comp_apply, AInfinityAlgebra.barMap_transferInclusion,
-      LinearMap.sub_apply, LinearMap.comp_apply, LinearMap.comp_apply]
+    simp only [AInfinityAlgebra.taylor_transferInclusion, LinearMap.comp_apply, LinearMap.sub_apply]
     exact isWordPathCompatible_letter.eq_zero_of_mem_nonComposableWords <| Submodule.sub_mem _ hi <|
       𝒞.reducedTensorWordsHomotopy_mem e c hc (Or.inl rfl) <|
         𝒞.perturbationSeries_mem e c hh hincl hproj hc (Or.inl rfl) hi
@@ -394,15 +392,15 @@ theorem isWordPathCompatible_taylor_transferProjection :
     IsWordPathCompatible e.symm
       (𝒞.toAInfinityAlgebra.transferProjection c hh hincl hproj).taylor where
   mem_range_of_mem_composableWords {U V} {w} hw := by
-    rw [AInfinityHom.taylor_def, LinearMap.comp_apply, AInfinityAlgebra.barMap_transferProjection,
-      LinearMap.sub_apply, LinearMap.comp_apply, LinearMap.comp_apply, ← map_sub]
+    simp only [AInfinityAlgebra.taylor_transferProjection, LinearMap.comp_apply,
+      LinearMap.sub_apply, ← map_sub]
     exact isWordPathCompatible_letter.mem_range_of_mem_composableWords <|
       hc.map_proj_mem_composableWords <| Submodule.sub_mem _ hw <|
         𝒞.perturbationSeries_mem e c hh hincl hproj hc (Or.inr ⟨_, _, rfl⟩) <|
           𝒞.reducedTensorWordsHomotopy_mem e c hc (Or.inr ⟨_, _, rfl⟩) hw
   eq_zero_of_mem_nonComposableWords {w} hw := by
-    rw [AInfinityHom.taylor_def, LinearMap.comp_apply, AInfinityAlgebra.barMap_transferProjection,
-      LinearMap.sub_apply, LinearMap.comp_apply, LinearMap.comp_apply, ← map_sub]
+    simp only [AInfinityAlgebra.taylor_transferProjection, LinearMap.comp_apply,
+      LinearMap.sub_apply, ← map_sub]
     exact isWordPathCompatible_letter.eq_zero_of_mem_nonComposableWords <|
       hc.map_proj_mem_nonComposableWords <| Submodule.sub_mem _ hw <|
         𝒞.perturbationSeries_mem e c hh hincl hproj hc (Or.inl rfl) <|
