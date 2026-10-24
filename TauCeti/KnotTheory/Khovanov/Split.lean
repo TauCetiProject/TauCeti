@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Dual.Basis
 public import Mathlib.Logic.Equiv.Bool
 public import TauCeti.KnotTheory.Khovanov.CircleTensor
+public import TauCeti.Logic.Basic
 
 /-!
 # Split maps on circle tensors
@@ -175,16 +176,6 @@ theorem fiberwiseSplit_const_circleBasis (b : Bool) :
   generalize l false = b₀, l true = b₁
   cases b <;> cases b₀ <;> cases b₁ <;>
     simp [Fintype.univ_bool, Finset.filter_insert, Finset.filter_singleton]
-
-/-- A statement holds everywhere exactly when it holds at two given points and away from them. -/
-private theorem forall_iff_forall_ne_ne_and {α : Sort*} {P : α → Prop} (p q : α) :
-    (∀ i, P i) ↔ (∀ i, i ≠ p → i ≠ q → P i) ∧ P p ∧ P q := by
-  refine ⟨fun h ↦ ⟨fun i _ _ ↦ h i, h p, h q⟩, fun ⟨h, hp, hq⟩ i ↦ ?_⟩
-  by_cases hip : i = p
-  · exact hip ▸ hp
-  by_cases hiq : i = q
-  · exact hiq ▸ hq
-  exact h i hip hiq
 
 /-- Splitting along a surjection whose only non-singleton fibre is `{p, q}` obeys
 `Δ X = X ⊗ X` and `Δ 1 = X ⊗ 1 + 1 ⊗ X` on the circles `p` and `q`; every other circle retains
