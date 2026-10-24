@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.LpSeminorm.ChebyshevMarkov
-public import Mathlib.MeasureTheory.Measure.LevyProkhorovMetric
 public import TauCeti.MeasureTheory.MeasurableSpace.Embedding
+public import TauCeti.MeasureTheory.Measure.LevyProkhorovMetric
 public import TauCeti.MeasureTheory.OptimalTransport.MetricMeasure.TransportationDistance
 
 /-!
@@ -190,27 +190,6 @@ section Embedding
 
 variable [OpensMeasurableSpace Z]
 
-omit [PseudoEMetricSpace X] [PseudoEMetricSpace Y] in
-/-- A Lévy–Prokhorov bound between images of `μ` and `ν` in a common space `Z` moves every set
-`A ⊆ X` into the points of `Y` whose image is close to the image of `A`. -/
-private theorem measure_le_of_levyProkhorovEDist_map_lt {T : X → Z} {S : Y → Z}
-    (hT : AEMeasurable T μ) (hS : AEMeasurable S ν)
-    (h : levyProkhorovEDist (μ.map T) (ν.map S) < δ) (hδ : δ ≠ ∞) (A : Set X) :
-    μ A ≤ ν {y | ∃ x ∈ A, edist (T x) (S y) < δ} + δ :=
-  calc μ A ≤ μ.map T (closure (T '' A)) :=
-        (Measure.le_map_apply_image hT A).trans (measure_mono subset_closure)
-    _ ≤ ν.map S (thickening δ.toReal (closure (T '' A))) + δ :=
-        left_measure_le_of_levyProkhorovEDist_lt h isClosed_closure.measurableSet
-    _ = ν (S ⁻¹' thickening δ.toReal (T '' A)) + δ := by
-        rw [thickening_closure, Measure.map_apply_of_aemeasurable hS
-          isOpen_thickening.measurableSet]
-    _ ≤ ν {y | ∃ x ∈ A, edist (T x) (S y) < δ} + δ := by
-        refine add_le_add_left (measure_mono fun y hy ↦ ?_) _
-        rw [mem_preimage, mem_thickening_iff_exists_edist_lt] at hy
-        obtain ⟨_, ⟨x, hx, rfl⟩, hxy⟩ := hy
-        rw [edist_comm, ENNReal.ofReal_toReal hδ] at hxy
-        exact ⟨x, hx, hxy⟩
-
 /-- **Common isometric embeddings.** The Gromov–Prokhorov distance is at most the Lévy–Prokhorov
 distance between the images of `μ` and `ν` under a.e.-measurable isometric embeddings into any
 common space whose open sets are measurable. -/
@@ -218,12 +197,10 @@ theorem gromovProkhorovEDist_le_levyProkhorovEDist_map {T : X → Z} {S : Y → 
     (hT : Isometry T) (hS : Isometry S) (hTm : AEMeasurable T μ) (hSm : AEMeasurable S ν) :
     gromovProkhorovEDist μ ν ≤ levyProkhorovEDist (μ.map T) (ν.map S) := by
   refine le_of_forall_gt_imp_ge_of_dense fun δ hδ ↦ ?_
-  rcases eq_or_ne δ ∞ with rfl | hδtop
-  · exact le_top
   refine gromovProkhorovEDist_le_of_isMetricCoupling (IsMetricCoupling.of_isometry hT hS)
-    (fun A _ ↦ measure_le_of_levyProkhorovEDist_map_lt hTm hSm hδ hδtop A) fun C _ ↦ ?_
+    (fun A _ ↦ measure_le_of_levyProkhorovEDist_map_lt hTm hSm hδ A) fun C _ ↦ ?_
   rw [levyProkhorovEDist_comm] at hδ
-  refine (measure_le_of_levyProkhorovEDist_map_lt hSm hTm hδ hδtop C).trans
+  refine (measure_le_of_levyProkhorovEDist_map_lt hSm hTm hδ C).trans
     (add_le_add_left (measure_mono ?_) _)
   rintro x ⟨y, hy, hxy⟩
   exact ⟨y, hy, edist_comm (S y) (T x) ▸ hxy⟩
