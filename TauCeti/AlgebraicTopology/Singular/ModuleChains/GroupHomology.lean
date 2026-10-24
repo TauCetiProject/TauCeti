@@ -75,7 +75,7 @@ private lemma singularChains_map_comp_smul (g : G) :
   exact ConcreteCategory.hom_ext _ _ fun e ↦ hG.map_smul g
 
 /-- Pushing chains forward to the base of a quotient covering forgets the action of `G`. -/
-private lemma singularChains_map_f_singularChainsRepresentation (n : ℕ) (g : G)
+lemma singularChains_map_f_singularChainsRepresentation (n : ℕ) (g : G)
     (c : ((singularChains k).obj E).X n) :
     haveI := hG.toContinuousConstSMul
     ((singularChains k).map p).f n (singularChainsRepresentation k E G n g c) =
