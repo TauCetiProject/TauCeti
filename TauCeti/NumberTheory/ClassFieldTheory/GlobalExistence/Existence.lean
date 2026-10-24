@@ -7,7 +7,6 @@ module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.GlobalExistence.NormSubgroup
 
-import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 import TauCeti.NumberTheory.ClassFieldTheory.Formation.ExistenceInduction
 import TauCeti.NumberTheory.ClassFieldTheory.Global.ClassFormation
 import TauCeti.NumberTheory.ClassFieldTheory.GlobalExistence.Kummer
@@ -32,7 +31,7 @@ open subgroup `W` with fixed field `F`, pass to the open subgroup `W'` fixing `E
 `ζ_p` is a primitive `p`-th root of unity in `Kˢ`. An open subgroup of `C_E` containing the
 `p`-th powers is the norm subgroup of an abelian extension `M/E`
 (`exists_abelianLayer_globalNormSubgroup_eq_of_pow_mem`, Milne VII, Lemma 9.3). Embedding `M` into
-`Kˢ` over `E` (`exists_intermediateField_range_ideleClassNormMap_le_of_pow_mem`), its norm group is
+`Kˢ` over `E` (`exists_intermediateField_range_ideleClassNormMap_eq_of_pow_mem`), its norm group is
 the image of the norm from the level of the open subgroup fixing the image of `M`.
 
 ## Main results
@@ -127,33 +126,11 @@ private theorem isOpenLevel_globalGroundOrderIso {N : Subgroup (IdeleClassGroup 
   have heq : (levelSubgroup hF (globalGroundOrderIso K N).toAddSubgroup :
       Set (IdeleClassGroup (𝓞 E) E)) = ideleClassNormMap K E ⁻¹' N := by
     ext c
-    rw [SetLike.mem_coe, mem_levelSubgroup, key, Submodule.mem_toAddSubgroup,
-      mem_globalGroundOrderIso, AddEquiv.symm_apply_apply, toMul_ofMul, Set.mem_preimage,
-      SetLike.mem_coe]
+    simp [mem_levelSubgroup, key, mem_globalGroundOrderIso]
   rw [heq]
   exact hN.preimage (continuous_ideleClassNormMap K E)
 
 /-! ### The Kummer case at every level -/
-
-/-- Below every open subgroup `W` of `G_K` lies an open subgroup whose fixed field contains the
-`p`-th roots of unity: the subgroup fixing `F(ζ_p)`, for `F` the fixed field of `W`. -/
-private theorem exists_le_hasEnoughRootsOfUnity (p : ℕ) [Fact p.Prime]
-    (W : OpenSubgroup (AbsoluteGaloisGroup K)) :
-    ∃ (W' : OpenSubgroup (AbsoluteGaloisGroup K)) (E : IntermediateField K (SeparableClosure K)),
-      W' ≤ W ∧ fixedField W'.toSubgroup = E ∧ FiniteDimensional K E ∧
-        HasEnoughRootsOfUnity E p := by
-  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot (SeparableClosure K) p
-  have : FiniteDimensional K K⟮ζ⟯ := adjoin.finiteDimensional (Algebra.IsIntegral.isIntegral ζ)
-  let E := fixedField W.toSubgroup ⊔ K⟮ζ⟯
-  refine ⟨⟨E.fixingSubgroup, E.fixingSubgroup_isOpen⟩, E, ?_,
-    InfiniteGalois.fixedField_fixingSubgroup E, inferInstance, ?_⟩
-  · exact OpenSubgroup.toSubgroup_le.1 <|
-      (IntermediateField.fixingSubgroup_antitone le_sup_left).trans
-        (toSubgroup_eq_fixingSubgroup_of_fixedField_eq rfl).ge
-  · have hζE : IsPrimitiveRoot
-        (⟨ζ, (le_sup_right : K⟮ζ⟯ ≤ E) (mem_adjoin_simple_self K ζ)⟩ : E) p :=
-      hζ.of_map_of_injective (f := E.val) Subtype.val_injective
-    exact .of_card_le hζE.card_rootsOfUnity.ge
 
 /-- **The Kummer case at a level.** If the fixed field `E` of an open subgroup `W` of `G_K`
 contains the `p`-th roots of unity, then every open subgroup of the level of `W` containing the
@@ -167,7 +144,7 @@ private theorem exists_range_levelNorm_le_of_pow_mem {W : OpenSubgroup (Absolute
     ∃ (W' : OpenSubgroup (AbsoluteGaloisGroup K)) (h : W' ≤ W),
       ((globalFormation K).levelNorm h).range ≤ N := by
   -- A finite extension `L/E` inside `Kˢ` whose norm group lies in the subgroup of `C_E`.
-  obtain ⟨L, _, hL⟩ := exists_intermediateField_range_ideleClassNormMap_le_of_pow_mem
+  obtain ⟨L, _, hL⟩ := exists_intermediateField_range_ideleClassNormMap_eq_of_pow_mem
     (Ω := SeparableClosure K) hN fun c ↦ by
       rw [mem_levelSubgroup, ofMul_pow, map_nsmul]
       exact hp _
@@ -203,7 +180,7 @@ private theorem exists_range_levelNorm_le_of_pow_mem {W : OpenSubgroup (Absolute
   obtain ⟨c, rfl⟩ := (ideleClassLevelEquiv hL').surjective a
   obtain ⟨c, rfl⟩ := Additive.ofMul.surjective c
   rw [levelNorm_ideleClassLevelEquiv hW' hE hL', ← mem_levelSubgroup]
-  exact hL ⟨c, rfl⟩
+  exact hL.le ⟨c, rfl⟩
 
 /-- **The Kummer hypothesis of the induction on the index.** For every prime `p`, below every open
 subgroup `W` of `G_K` lies an open subgroup `W'` over which every open subgroup of finite index of
@@ -230,13 +207,7 @@ theorem globalAbelianExistence {N : Subgroup (IdeleClassGroup (𝓞 K) K)}
     (hN : IsOpen (N : Set (IdeleClassGroup (𝓞 K) K))) [N.FiniteIndex] :
     ∃ V : OpenNormalSubgroup (AbsoluteGaloisGroup K),
       V.IsAbelianClassFieldLayer ∧ globalNormSubgroup K V = N := by
-  have hindex : (globalGroundOrderIso K N).toAddSubgroup.index = N.index := by
-    have : (globalGroundOrderIso K N).toAddSubgroup =
-        N.toAddSubgroup.comap (globalGroundEquiv K).symm.toAddMonoidHom := by
-      ext a
-      exact mem_globalGroundOrderIso
-    rw [this, ← Subgroup.index_toAddSubgroup]
-    exact AddSubgroup.index_comap_of_surjective _ (globalGroundEquiv K).symm.surjective
+  have hindex := index_globalGroundOrderIso K N
   have : (globalGroundOrderIso K N).toAddSubgroup.FiniteIndex :=
     ⟨hindex ▸ Subgroup.FiniteIndex.index_ne_zero⟩
   obtain ⟨V, hV, hVN⟩ :=

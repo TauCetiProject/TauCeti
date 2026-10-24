@@ -53,8 +53,9 @@ of the global existence theorem.
   `K(U_S^{1/p})/K` is the image of `E_S`.
 * `TauCeti.ClassFieldTheory.exists_abelianLayer_globalNormSubgroup_eq_of_pow_mem`: the Kummer case
   of global existence.
-* `TauCeti.ClassFieldTheory.exists_intermediateField_range_ideleClassNormMap_le_of_pow_mem`: the
-  same, read in a separably closed field over `K`.
+* `TauCeti.ClassFieldTheory.exists_intermediateField_range_ideleClassNormMap_eq_of_pow_mem`: the
+  realization of an open subgroup containing the `p`-th powers as the idele-class norm range
+  of a finite subextension of a separably closed field over `K`.
 
 ## References
 
@@ -142,21 +143,21 @@ theorem exists_abelianLayer_globalNormSubgroup_eq_of_pow_mem
 
 /-- **The Kummer case of global existence in a separably closed field.** Let `E` be a number field
 containing the `p`-th roots of unity for a prime `p`, and `Ω` a separably closed field over `E`.
-Every open subgroup of `C_E` containing the `p`-th powers contains the idele-class norm group of a
+Every open subgroup of `C_E` containing the `p`-th powers is the idele-class norm group of a
 finite subextension of `Ω/E`: the image of an `E`-embedding into `Ω` of the class field given by
 `exists_abelianLayer_globalNormSubgroup_eq_of_pow_mem`. -/
-theorem exists_intermediateField_range_ideleClassNormMap_le_of_pow_mem {E Ω : Type} [Field E]
+theorem exists_intermediateField_range_ideleClassNormMap_eq_of_pow_mem {E Ω : Type} [Field E]
     [NumberField E] [Field Ω] [Algebra E Ω] [IsSepClosed Ω] [HasEnoughRootsOfUnity E p]
     {N : Subgroup (IdeleClassGroup (𝓞 E) E)} (hN : IsOpen (N : Set (IdeleClassGroup (𝓞 E) E)))
     (hpow : ∀ c, c ^ p ∈ N) :
     ∃ (L : IntermediateField E Ω) (_ : NumberField L),
-      (ideleClassNormMap E L : IdeleClassGroup (𝓞 L) L →* IdeleClassGroup (𝓞 E) E).range ≤ N := by
+      (ideleClassNormMap E L : IdeleClassGroup (𝓞 L) L →* IdeleClassGroup (𝓞 E) E).range = N := by
   obtain ⟨V, -, rfl⟩ := exists_abelianLayer_globalNormSubgroup_eq_of_pow_mem hN hpow
   let τ : classField E V →ₐ[E] Ω := IsSepClosed.lift
   have : FiniteDimensional E τ.fieldRange := τ.toLinearMap.finiteDimensional_range
   have : NumberField τ.fieldRange := .of_module_finite E _
   refine ⟨τ.fieldRange, inferInstance, ?_⟩
   rw [globalNormSubgroup_eq_range_classField]
-  exact (range_ideleClassNormMap_eq_of_algEquiv τ.equivFieldRange).ge
+  exact (range_ideleClassNormMap_eq_of_algEquiv τ.equivFieldRange).symm
 
 end TauCeti.ClassFieldTheory
