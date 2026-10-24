@@ -15,8 +15,8 @@ The symmetric polynomials of `Mathlib.RingTheory.MvPolynomial.Symmetric.Defs` ar
 degree, each graded piece being the intersection of `MvPolynomial.symmetricSubalgebra` with the
 homogeneous polynomials `MvPolynomial.homogeneousSubmodule` of that degree.  This file names that
 intersection, `TauCeti.symmetricHomogeneousSubmodule`; it is the module the classical families of
-symmetric polynomials are bases of, one degree at a time: the monomial symmetric polynomials over any
-commutative semiring, and the Schur polynomials over a commutative ring.
+symmetric polynomials are bases of, one degree at a time: the monomial symmetric polynomials over
+any commutative semiring, and the Schur polynomials over a commutative ring.
 
 ## Main definitions
 
