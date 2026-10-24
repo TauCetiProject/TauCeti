@@ -155,6 +155,18 @@ theorem logHeight_submatrix_le [Finite m'] [Finite n'] (A : Matrix m n K) (f : m
 
 /-! ### Products -/
 
+omit [AdmissibleAbsValues K] [Finite m] [Finite n] in
+/-- The entries of `A * B` are the values at the all-ones vector of the linear map with
+coefficients `A i j * B j k`, the pointwise product of two subtuples of the entries of `A` and of
+`B`. -/
+private theorem mul_entries_eq_linearMap_apply [Fintype n] (A : Matrix m n K)
+    (B : Matrix n p K) :
+    (fun q : m × p ↦ (A * B) q.1 q.2) = fun q ↦ ∑ j,
+      ((fun q : (m × p) × n ↦ A q.1.1 q.2) * fun q : (m × p) × n ↦ B q.2 q.1.2) (q, j) *
+        (1 : n → K) j := by
+  ext q
+  simp [mul_apply]
+
 omit [Finite n] in
 /-- **The entry height of a matrix product.** For a nonempty inner index type `n`, the entry
 height of `A * B` is at most `(#n) ^ totalWeight K` times the product of the entry heights of `A`
@@ -163,9 +175,6 @@ theorem mulHeight_mul_le [Fintype n] [Nonempty n] [Finite p] (A : Matrix m n K)
     (B : Matrix n p K) :
     (A * B).mulHeight ≤ Nat.card n ^ totalWeight K * A.mulHeight * B.mulHeight := by
   have hpos : 0 ≤ (Nat.card n : ℝ) ^ totalWeight K := by positivity
-  -- The entries of `A * B` are the values at the all-ones vector of the linear map with
-  -- coefficients `A i j * B j k`, the pointwise product of two subtuples of the entries of `A`
-  -- and of `B`.
   let x : (m × p) × n → K := fun q ↦ A q.1.1 q.2
   let y : (m × p) × n → K := fun q ↦ B q.2 q.1.2
   have hc : Height.mulHeight (x * y) ≤ A.mulHeight * B.mulHeight :=
@@ -173,13 +182,9 @@ theorem mulHeight_mul_le [Fintype n] [Nonempty n] [Finite p] (A : Matrix m n K)
       (mulHeight_comp_le (fun q : (m × p) × n ↦ (q.1.1, q.2)) fun q : m × n ↦ A q.1 q.2)
       (mulHeight_comp_le (fun q : (m × p) × n ↦ (q.2, q.1.2)) fun q : n × p ↦ B q.1 q.2)
       (Height.mulHeight_pos _).le A.mulHeight_pos.le
-  have hAB : (fun q : m × p ↦ (A * B) q.1 q.2) =
-      fun q ↦ ∑ j, (x * y) (q, j) * (1 : n → K) j := by
-    ext q
-    simp [x, y, mul_apply]
   calc (A * B).mulHeight
       ≤ Nat.card n ^ totalWeight K * Height.mulHeight (x * y) * Height.mulHeight (1 : n → K) := by
-        rw [mulHeight_def, hAB]
+        rw [mulHeight_def, mul_entries_eq_linearMap_apply]
         exact mulHeight_linearMap_apply_le (x * y) 1
     _ ≤ Nat.card n ^ totalWeight K * A.mulHeight * B.mulHeight := by
         rw [Height.mulHeight_one, mul_one, mul_assoc]
@@ -190,16 +195,20 @@ omit [Finite n] in
 because `Real.log 0 = 0`. -/
 theorem logHeight_mul_le [Fintype n] [Finite p] (A : Matrix m n K) (B : Matrix n p K) :
     (A * B).logHeight ≤ totalWeight K * Real.log (Nat.card n) + A.logHeight + B.logHeight := by
-  rcases isEmpty_or_nonempty n with hn | hn
-  · have hAB : A * B = 0 := by ext i k; simp [mul_apply]
-    rw [hAB, logHeight_zero]
-    simpa using add_nonneg A.logHeight_nonneg B.logHeight_nonneg
-  simp only [logHeight_eq_log_mulHeight]
-  have hcard : (0 : ℝ) < Nat.card n := by exact_mod_cast Nat.card_pos
-  have hpow : (Nat.card n : ℝ) ^ totalWeight K ≠ 0 := (pow_pos hcard _).ne'
-  rw [← Real.log_pow, ← Real.log_mul hpow A.mulHeight_ne_zero,
-    ← Real.log_mul (mul_ne_zero hpow A.mulHeight_ne_zero) B.mulHeight_ne_zero]
-  exact Real.log_le_log (mulHeight_pos _) (mulHeight_mul_le A B)
+  let x : (m × p) × n → K := fun q ↦ A q.1.1 q.2
+  let y : (m × p) × n → K := fun q ↦ B q.2 q.1.2
+  have hc : Height.logHeight (x * y) ≤ A.logHeight + B.logHeight :=
+    (Height.logHeight_mul_le x y).trans <| add_le_add
+      (logHeight_comp_le (fun q : (m × p) × n ↦ (q.1.1, q.2)) fun q : m × n ↦ A q.1 q.2)
+      (logHeight_comp_le (fun q : (m × p) × n ↦ (q.2, q.1.2)) fun q : n × p ↦ B q.1 q.2)
+  calc (A * B).logHeight
+      ≤ totalWeight K * Real.log (Nat.card n) + Height.logHeight (x * y) +
+          Height.logHeight (1 : n → K) := by
+        rw [logHeight_def, mul_entries_eq_linearMap_apply]
+        exact logHeight_linearMap_apply_le (x * y) 1
+    _ ≤ totalWeight K * Real.log (Nat.card n) + A.logHeight + B.logHeight := by
+        rw [Height.logHeight_one, add_zero, add_assoc]
+        exact add_le_add le_rfl hc
 
 /-! ### Extensions of number fields -/
 
