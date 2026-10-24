@@ -199,11 +199,9 @@ theorem mextDeriv_wedgeWith [IsManifold I 2 M] (μ : F₁ →L[ℝ] F₂ →L[�
         (((SmoothForm.castDegree (show k + (l + 1) = k + l + 1 by omega)
           (SmoothForm.wedgeWith μ φ (mextDerivₗ I l ψ)) :
             SmoothForm I M F₃ (k + l + 1)) : RoughForm I M F₃ (k + l + 1)) x v)
-  rw [SmoothForm.castDegree_apply (show k + 1 + l = k + l + 1 by omega),
-    SmoothForm.castDegree_apply (show k + (l + 1) = k + l + 1 by omega)]
-  simp only [SmoothForm.coe_wedgeWith, mextDerivₗ_apply]
-  change mextDeriv (RoughForm.wedgeWith μ φ.1 ψ.1) x v = _
-  exact mextDeriv_wedgeWith_apply μ φ ψ x v
+  simp only [SmoothForm.castDegree_apply]
+  simpa only [SmoothForm.coe_wedgeWith, mextDerivₗ_apply] using
+    mextDeriv_wedgeWith_apply μ φ ψ x v
 
 /-- The bundled exterior derivative of the real wedge of smooth forms. -/
 theorem mextDeriv_wedge [IsManifold I 2 M] (φ : SmoothForm I M ℝ k)
@@ -225,11 +223,9 @@ theorem mextDeriv_wedge [IsManifold I 2 M] (φ : SmoothForm I M ℝ k)
         (((SmoothForm.castDegree (show k + (l + 1) = k + l + 1 by omega)
           (SmoothForm.wedge φ (mextDerivₗ I l ψ) : SmoothForm I M ℝ (k + l + 1)) :
             SmoothForm I M ℝ (k + l + 1)) : RoughForm I M ℝ (k + l + 1)) x v)
-  rw [SmoothForm.castDegree_apply (show k + 1 + l = k + l + 1 by omega),
-    SmoothForm.castDegree_apply (show k + (l + 1) = k + l + 1 by omega)]
-  simp only [SmoothForm.coe_wedge, mextDerivₗ_apply]
-  change mextDeriv (RoughForm.wedge φ.1 ψ.1) x v = _
-  exact mextDeriv_wedge_apply φ ψ x v
+  simp only [SmoothForm.castDegree_apply]
+  simpa only [SmoothForm.coe_wedge, mextDerivₗ_apply] using
+    mextDeriv_wedge_apply φ ψ x v
 
 end SmoothForm
 
