@@ -533,14 +533,14 @@ abbrev preferredFramedBoundaryTorus (h : IsSolidTorusNeighborhood f Φ) : Framed
 /-- The preferred framing keeps the meridian of `Φ`. -/
 theorem preferredFramedBoundaryTorus_basis_zero (h : IsSolidTorusNeighborhood f Φ) :
     (h.preferredFramedBoundaryTorus h₁ h₂).basis 0 = h.framedBoundaryTorus.basis 0 :=
-  FramedBoundaryTorus.shiftLongitude_basis_zero _ _
+  FramedBoundaryTorus.shiftLongitudeBasis_zero _ _
 
 /-- The preferred longitude is `λ - n · μ`, for the longitude `λ` and meridian `μ` of `Φ` and its
 framing number `n`. -/
 theorem preferredFramedBoundaryTorus_basis_one (h : IsSolidTorusNeighborhood f Φ) :
     (h.preferredFramedBoundaryTorus h₁ h₂).basis 1 =
       h.framedBoundaryTorus.basis 1 - h.framingNumber h₁ h₂ • h.framedBoundaryTorus.basis 0 := by
-  rw [FramedBoundaryTorus.shiftLongitude_basis_one, neg_zsmul, sub_eq_add_neg]
+  rw [FramedBoundaryTorus.shiftLongitudeBasis_one, neg_zsmul, sub_eq_add_neg]
 
 /-- **In the preferred framing a class goes to its meridian coordinate.** A class of the boundary
 torus is homologous in the knot complement to its `μ`-coordinate in the preferred framing times

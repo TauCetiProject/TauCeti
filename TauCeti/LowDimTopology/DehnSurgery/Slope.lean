@@ -483,15 +483,17 @@ theorem coord_shiftLongitude (n : ℤ) (x : T.H) :
 
 /-- The shifted framing keeps the meridian. -/
 @[simp]
-theorem shiftLongitude_basis_zero (n : ℤ) : (T.shiftLongitude n).basis 0 = T.basis 0 := by
+theorem shiftLongitudeBasis_zero (n : ℤ) : T.shiftLongitudeBasis n 0 = T.basis 0 := by
+  change (T.shiftLongitude n).basis 0 = _
   apply (T.shiftLongitude n).coord.injective
   rw [coord_basis_zero, coord_shiftLongitude, coord_basis_zero]
   simp
 
 /-- The longitude of the shifted framing is `λ + n · μ`. -/
 @[simp]
-theorem shiftLongitude_basis_one (n : ℤ) :
-    (T.shiftLongitude n).basis 1 = T.basis 1 + n • T.basis 0 := by
+theorem shiftLongitudeBasis_one (n : ℤ) :
+    T.shiftLongitudeBasis n 1 = T.basis 1 + n • T.basis 0 := by
+  change (T.shiftLongitude n).basis 1 = _
   apply (T.shiftLongitude n).coord.injective
   rw [coord_basis_one, coord_shiftLongitude, map_add, map_zsmul, coord_basis_one,
     coord_basis_zero]
