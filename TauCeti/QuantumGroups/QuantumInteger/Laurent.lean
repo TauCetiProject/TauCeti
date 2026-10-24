@@ -92,13 +92,8 @@ theorem T_sub_T_neg_mul_laurentQuantumInteger (r : ℤ) :
 theorem laurentEval_one_laurentQuantumInteger {A : Type*} [Ring A] (r : ℤ) :
     laurentEval (1 : Aˣ) (laurentQuantumInteger r) = r := by
   -- Evaluation at `v = 1` sends `v + v⁻¹` to `2`, and `S_n(2) = n + 1`.
-  set φ : ℤ[T;T⁻¹] →+* A := (laurentEval (R := ℤ) (1 : Aˣ)).toRingHom
-  have hC : φ.comp C = Int.castRingHom A := RingHom.ext_int _ _
-  have h2 : φ (T 1 + T (-1)) = Int.castRingHom A 2 := by
-    simp [φ, one_add_one_eq_two]
-  have hφ : laurentEval (1 : Aˣ) (laurentQuantumInteger r) = φ (laurentQuantumInteger r) := rfl
-  rw [hφ, laurentQuantumInteger, Polynomial.hom_eval₂, hC, h2,
-    Polynomial.eval₂_at_apply, S_eval_two, Int.cast_id, sub_add_cancel, eq_intCast]
+  rw [← AlgHom.coe_toRingHom, laurentQuantumInteger, Polynomial.hom_eval₂]
+  simp [one_add_one_eq_two, S_eval_two]
 
 /-- The value of `[r]_v` at a unit `q` of a commutative ring satisfies
 `(q - q⁻¹) [r]_q = q^r - q^(-r)`. -/

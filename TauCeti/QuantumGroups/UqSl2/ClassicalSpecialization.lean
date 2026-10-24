@@ -61,10 +61,13 @@ basis rather than identifying them.
   the integral ladder matrices evaluated at `v = q`.
 * `TauCeti.UqSl2.map_laurentEval_one_ladderMatrixE` and its companions: the integral ladder
   matrices at `v = 1`.
+* `TauCeti.UqSl2.ClassicalLadder.raise_basis`, `lower_basis`, `diag_basis`: the specialized
+  operators on the ladder basis.
 * `TauCeti.UqSl2.ClassicalLadder.isSl2Triple`: for `m ≠ 0` in `K`, the specialized matrices
   `(H, E, F)` form an `sl₂` triple.
 * `TauCeti.UqSl2.ClassicalLadder.toSl2Std_basis`: the module map sends `v_j` to
-  `(m choose j) w_j`.
+  `(m choose j) w_j`, and `equivSl2Std_symm_basis`: the inverse isomorphism sends `w_j` to
+  `(m choose j)⁻¹ v_j`.
 
 ## References
 
@@ -142,16 +145,6 @@ theorem ladderMatrixH_apply (i j : Fin (m + 1)) :
 namespace LadderModule
 
 variable {q : ℂ}
-
-/-- The coordinates of an integer-indexed ladder vector in the ladder basis. -/
-private theorem basis_repr_vec (j : ℤ) (i : Fin (m + 1)) :
-    (basis q m 1).repr (vec q m 1 j) i = if (i : ℤ) = j then 1 else 0 := by
-  by_cases hj : 0 ≤ j ∧ j ≤ m
-  · obtain ⟨k, rfl⟩ : ∃ k : Fin (m + 1), (k : ℤ) = j := ⟨⟨j.toNat, by omega⟩, by simp; omega⟩
-    rw [vec_coe, Basis.repr_self, Finsupp.single_apply]
-    exact if_congr (by rw [eq_comm, Fin.ext_iff]; omega) rfl rfl
-  · rw [vec_eq_zero_iff.mpr (by omega), map_zero, Finsupp.coe_zero, Pi.zero_apply,
-      ite_eq_right (by omega)]
 
 /-- The matrix of an operator acting on the ladder vectors as a weighted shift. -/
 private theorem toMatrix_eq_of_vec {T : Module.End ℂ (LadderModule q m 1)} {c : ℤ → ℂ} {s : ℤ}
@@ -300,7 +293,7 @@ noncomputable def lower : Module.End K (ClassicalLadder K m) :=
   Matrix.toLin (basis K m) (basis K m) ((ladderMatrixF m).map (laurentEval (1 : Kˣ)))
 
 /-- The Cartan operator: `ladderMatrixH m` evaluated at `v = 1`, so that `H v_j = (m - 2j) v_j`. -/
-noncomputable def cartan : Module.End K (ClassicalLadder K m) :=
+noncomputable def diag : Module.End K (ClassicalLadder K m) :=
   Matrix.toLin (basis K m) (basis K m) ((ladderMatrixH m).map (laurentEval (1 : Kˣ)))
 
 variable {K m}
@@ -319,6 +312,10 @@ theorem basis_repr_apply (v : ClassicalLadder K m) (i : Fin (m + 1)) :
 /-! The type synonym hides `Fin (m + 1) → K` from the `Pi` lemmas, so the pointwise operations
 used below are restated. -/
 
+/-- Addition on the classical specialization is coordinatewise. -/
+@[simp] theorem add_apply (v w : ClassicalLadder K m) (i : Fin (m + 1)) :
+    (v + w) i = v i + w i := rfl
+
 /-- Subtraction on the classical specialization is coordinatewise. -/
 @[simp] theorem sub_apply (v w : ClassicalLadder K m) (i : Fin (m + 1)) :
     (v - w) i = v i - w i := rfl
@@ -333,6 +330,14 @@ used below are restated. -/
 /-- The zero vector of the classical specialization has zero coordinates. -/
 @[simp] theorem zero_apply (i : Fin (m + 1)) : (0 : ClassicalLadder K m) i = 0 := rfl
 
+/-- Finite sums in the classical specialization are coordinatewise. -/
+@[simp] theorem sum_apply {ι : Type*} (s : Finset ι) (f : ι → ClassicalLadder K m)
+    (i : Fin (m + 1)) : (∑ k ∈ s, f k) i = ∑ k ∈ s, f k i := by
+  classical
+  refine Finset.induction_on s (by simp only [Finset.sum_empty, zero_apply]) ?_
+  intro a t ha ih
+  rw [Finset.sum_insert ha, add_apply, ih, Finset.sum_insert ha]
+
 /-- The matrix of the raising operator in the ladder basis is `ladderMatrixE m` at `v = 1`. -/
 theorem toMatrix_raise :
     LinearMap.toMatrix (basis K m) (basis K m) (raise K m) =
@@ -346,8 +351,8 @@ theorem toMatrix_lower :
   LinearMap.toMatrix_toLin ..
 
 /-- The matrix of the Cartan operator in the ladder basis is `ladderMatrixH m` at `v = 1`. -/
-theorem toMatrix_cartan :
-    LinearMap.toMatrix (basis K m) (basis K m) (cartan K m) =
+theorem toMatrix_diag :
+    LinearMap.toMatrix (basis K m) (basis K m) (diag K m) =
       (ladderMatrixH m).map (laurentEval (1 : Kˣ)) :=
   LinearMap.toMatrix_toLin ..
 
@@ -361,6 +366,7 @@ private theorem toLin_apply_apply (M : Matrix (Fin (m + 1)) (Fin (m + 1)) K)
 
 /-- The raising operator in coordinates: `(E v)_i = (m - i) v_(i + 1)`, and `0` at the last
 index. -/
+@[simp]
 theorem raise_apply (v : ClassicalLadder K m) (i : Fin (m + 1)) :
     raise K m v i =
       if h : (i : ℕ) < m then ((m : K) - (i : ℕ)) * v ⟨(i : ℕ) + 1, by omega⟩ else 0 := by
@@ -373,6 +379,7 @@ theorem raise_apply (v : ClassicalLadder K m) (i : Fin (m + 1)) :
   · exact Finset.sum_eq_zero fun j _ => ite_eq_right (by omega)
 
 /-- The lowering operator in coordinates: `(F v)_i = i v_(i - 1)`, and `0` at index `0`. -/
+@[simp]
 theorem lower_apply (v : ClassicalLadder K m) (i : Fin (m + 1)) :
     lower K m v i =
       if h : 0 < (i : ℕ) then ((i : ℕ) : K) * v ⟨(i : ℕ) - 1, by omega⟩ else 0 := by
@@ -385,9 +392,63 @@ theorem lower_apply (v : ClassicalLadder K m) (i : Fin (m + 1)) :
   · exact Finset.sum_eq_zero fun j _ => ite_eq_right (by omega)
 
 /-- The Cartan operator in coordinates: `(H v)_i = (m - 2i) v_i`. -/
-theorem cartan_apply (v : ClassicalLadder K m) (i : Fin (m + 1)) :
-    cartan K m v i = ((m : K) - 2 * (i : ℕ)) * v i := by
-  rw [cartan, toLin_apply_apply, map_laurentEval_one_ladderMatrixH, Matrix.mulVec_diagonal]
+@[simp]
+theorem diag_apply (v : ClassicalLadder K m) (i : Fin (m + 1)) :
+    diag K m v i = ((m : K) - 2 * (i : ℕ)) * v i := by
+  rw [diag, toLin_apply_apply, map_laurentEval_one_ladderMatrixH, Matrix.mulVec_diagonal]
+
+/-! ### The ladder operators on the ladder basis -/
+
+/-- The raising operator on the ladder basis: `E v_j = (m - j + 1) v_(j - 1)` for `0 < j`. -/
+theorem raise_basis (j : Fin (m + 1)) (h : 0 < (j : ℕ)) :
+    raise K m (basis K m j) = ((m : K) - (j : ℕ) + 1) • basis K m ⟨(j : ℕ) - 1, by omega⟩ := by
+  funext i
+  obtain ⟨k, hk⟩ : ∃ k, (j : ℕ) = k + 1 := ⟨(j : ℕ) - 1, by omega⟩
+  simp only [raise_apply, smul_apply, basis_apply, Fin.ext_iff, hk, Nat.add_sub_cancel,
+    Nat.add_right_cancel_iff]
+  by_cases hi : (i : ℕ) = k
+  · rw [dite_eq_left (by omega), ite_eq_left hi, hi]
+    push_cast
+    ring
+  · simp only [ite_eq_right hi, mul_zero, dite_eq_ite, ite_self]
+
+/-- The raising operator kills the highest vector `v₀`. -/
+@[simp]
+theorem raise_basis_zero : raise K m (basis K m 0) = 0 := by
+  funext i
+  rw [raise_apply, zero_apply, dite_eq_right_iff]
+  intro _
+  rw [basis_apply, ite_eq_right (by simp only [Fin.ext_iff, Fin.val_zero]; omega), mul_zero]
+
+/-- The lowering operator on the ladder basis: `F v_j = (j + 1) v_(j + 1)` for `j < m`. -/
+theorem lower_basis (j : Fin (m + 1)) (h : (j : ℕ) < m) :
+    lower K m (basis K m j) = (((j : ℕ) : K) + 1) • basis K m ⟨(j : ℕ) + 1, by omega⟩ := by
+  funext i
+  simp only [lower_apply, smul_apply, basis_apply, Fin.ext_iff]
+  by_cases hi : (i : ℕ) = j + 1
+  · rw [dite_eq_left (by omega), ite_eq_left (by omega), ite_eq_left hi, hi]
+    push_cast
+    ring
+  · rw [ite_eq_right hi, mul_zero, dite_eq_right_iff]
+    intro _
+    rw [ite_eq_right (by omega), mul_zero]
+
+/-- The lowering operator kills the lowest vector `v_m`. -/
+@[simp]
+theorem lower_basis_last : lower K m (basis K m (Fin.last m)) = 0 := by
+  funext i
+  rw [lower_apply, zero_apply, dite_eq_right_iff]
+  intro _
+  rw [basis_apply, ite_eq_right (by simp only [Fin.ext_iff, Fin.val_last]; omega), mul_zero]
+
+/-- The Cartan operator on the ladder basis: `H v_j = (m - 2j) v_j`. -/
+theorem diag_basis (j : Fin (m + 1)) :
+    diag K m (basis K m j) = ((m : K) - 2 * (j : ℕ)) • basis K m j := by
+  funext i
+  rw [diag_apply, smul_apply, basis_apply]
+  rcases eq_or_ne i j with rfl | hij
+  · rfl
+  · simp [hij]
 
 /-- Raising after lowering is diagonal, with eigenvalue `(m - i)(i + 1)` at index `i`. -/
 private theorem raise_lower_apply (v : ClassicalLadder K m) (i : Fin (m + 1)) :
@@ -414,44 +475,44 @@ private theorem lower_raise_apply (v : ClassicalLadder K m) (i : Fin (m + 1)) :
     ring
 
 /-- The relation `⁅E, F⁆ = H` of the specialized matrices. -/
-theorem lie_raise_lower : ⁅raise K m, lower K m⁆ = cartan K m := by
+theorem lie_raise_lower : ⁅raise K m, lower K m⁆ = diag K m := by
   refine LinearMap.ext fun v => funext fun i => ?_
   rw [Ring.lie_def, LinearMap.sub_apply, Module.End.mul_apply, Module.End.mul_apply, sub_apply,
-    raise_lower_apply, lower_raise_apply, cartan_apply]
+    raise_lower_apply, lower_raise_apply, diag_apply]
   ring
 
 /-- The relation `⁅H, E⁆ = 2 E` of the specialized matrices. -/
-theorem lie_cartan_raise : ⁅cartan K m, raise K m⁆ = (2 : K) • raise K m := by
+theorem lie_diag_raise : ⁅diag K m, raise K m⁆ = (2 : K) • raise K m := by
   refine LinearMap.ext fun v => funext fun i => ?_
   rw [Ring.lie_def, LinearMap.sub_apply, Module.End.mul_apply, Module.End.mul_apply,
-    LinearMap.smul_apply, sub_apply, smul_apply, cartan_apply, raise_apply, raise_apply]
+    LinearMap.smul_apply, sub_apply, smul_apply, diag_apply, raise_apply, raise_apply]
   split_ifs with h
-  · rw [cartan_apply]
+  · rw [diag_apply]
     push_cast
     ring
   · ring
 
 /-- The relation `⁅H, F⁆ = -2 F` of the specialized matrices. -/
-theorem lie_cartan_lower : ⁅cartan K m, lower K m⁆ = -((2 : K) • lower K m) := by
+theorem lie_diag_lower : ⁅diag K m, lower K m⁆ = -((2 : K) • lower K m) := by
   refine LinearMap.ext fun v => funext fun i => ?_
   rw [Ring.lie_def, LinearMap.sub_apply, Module.End.mul_apply, Module.End.mul_apply,
     LinearMap.neg_apply, LinearMap.smul_apply, sub_apply, neg_apply, smul_apply,
-    cartan_apply, lower_apply, lower_apply]
+    diag_apply, lower_apply, lower_apply]
   split_ifs with h
-  · rw [cartan_apply]
+  · rw [diag_apply]
     push_cast [Nat.cast_sub (show 1 ≤ (i : ℕ) by omega)]
     ring
   · ring
 
 /-- For `m ≠ 0` in `K`, the specialized matrices `(H, E, F)` form an `sl₂` triple. -/
-theorem isSl2Triple (hm : (m : K) ≠ 0) : IsSl2Triple (cartan K m) (raise K m) (lower K m) where
+theorem isSl2Triple (hm : (m : K) ≠ 0) : IsSl2Triple (diag K m) (raise K m) (lower K m) where
   h_ne_zero hc := by
-    have h0 : cartan K m (basis K m 0) 0 = 0 := by rw [hc, LinearMap.zero_apply, zero_apply]
-    rw [cartan_apply, basis_apply] at h0
+    have h0 : diag K m (basis K m 0) 0 = 0 := by rw [hc, LinearMap.zero_apply, zero_apply]
+    rw [diag_apply, basis_apply] at h0
     exact hm (by simpa using h0)
   lie_e_f := lie_raise_lower
-  lie_h_e_nsmul := by rw [lie_cartan_raise, two_smul, two_nsmul]
-  lie_h_f_nsmul := by rw [lie_cartan_lower, two_smul, two_nsmul]
+  lie_h_e_nsmul := by rw [lie_diag_raise, two_smul, two_nsmul]
+  lie_h_f_nsmul := by rw [lie_diag_lower, two_smul, two_nsmul]
 
 variable (K m)
 
@@ -461,7 +522,7 @@ obey the same relations. -/
 noncomputable def rep : SpecialLinear.sl (Fin 2) K →ₗ⁅K⁆ Module.End K (ClassicalLadder K m) :=
   lieHomOfSl2Basis (slFinTwoBasis K) (lie_slFinTwoBasis_zero_one K)
     (lie_slFinTwoBasis_two_zero K) (lie_slFinTwoBasis_two_one K) (raise K m) (lower K m)
-    (cartan K m) lie_raise_lower lie_cartan_raise lie_cartan_lower
+    (diag K m) lie_raise_lower lie_diag_raise lie_diag_lower
 
 /-- The classical specialization is a Lie ring module over `sl (Fin 2) K`, by transport along
 `TauCeti.UqSl2.ClassicalLadder.rep`. -/
@@ -484,7 +545,7 @@ theorem lie_eq_rep_apply (x : SpecialLinear.sl (Fin 2) K) (v : ClassicalLadder K
 /-- The representation sends the standard basis of `sl (Fin 2) K` to the specialized ladder
 matrices. -/
 theorem rep_apply_basis (i : Fin 3) :
-    rep K m (slFinTwoBasis K i) = ![raise K m, lower K m, cartan K m] i :=
+    rep K m (slFinTwoBasis K i) = ![raise K m, lower K m, diag K m] i :=
   lieHomOfSl2Basis_apply ..
 
 /-! ### Comparison with the standard module `V(m)` -/
@@ -528,10 +589,10 @@ private theorem scale_lower (v : ClassicalLadder K m) :
     ring
   · rw [mul_zero]
 
-private theorem scale_cartan (v : ClassicalLadder K m) :
-    scale (cartan K m v) = Sl2Std.diag K m (scale v) := by
+private theorem scale_diag (v : ClassicalLadder K m) :
+    scale (diag K m v) = Sl2Std.diag K m (scale v) := by
   funext i
-  rw [scale_apply, cartan_apply, Sl2Std.diag_apply, scale_apply]
+  rw [scale_apply, diag_apply, Sl2Std.diag_apply, scale_apply]
   ring
 
 variable (K m) in
@@ -550,7 +611,7 @@ noncomputable def toSl2Std :
       fin_cases i
       · exact scale_raise v
       · exact scale_lower v
-      · exact scale_cartan v
+      · exact scale_diag v
     simp only [AddHom.toFun_eq_coe, LinearMap.coe_toAddHom, lie_eq_rep_apply,
       Sl2Std.lie_eq_rep_apply]
     rw [← (slFinTwoBasis K).sum_repr x]
@@ -595,6 +656,30 @@ noncomputable def equivSl2Std :
 theorem equivSl2Std_basis (j : Fin (m + 1)) :
     equivSl2Std K m (basis K m j) = ((m.choose j : ℕ) : K) • Sl2Std.basis K m j :=
   toSl2Std_basis j
+
+variable {K m}
+
+/-- The isomorphism with `V(m)` in coordinates. -/
+@[simp]
+theorem equivSl2Std_apply (v : ClassicalLadder K m) (j : Fin (m + 1)) :
+    equivSl2Std K m v j = ((m.choose j : ℕ) : K) * v j :=
+  toSl2Std_apply v j
+
+/-- The inverse of the isomorphism with `V(m)` in coordinates: it divides by `m choose j`. -/
+@[simp]
+theorem equivSl2Std_symm_apply (w : Sl2Std K m) (j : Fin (m + 1)) :
+    (equivSl2Std K m).symm w j = w j / ((m.choose j : ℕ) : K) :=
+  (rfl)
+
+variable (K m) in
+/-- The inverse of the isomorphism with `V(m)` sends `w_j` to `(m choose j)⁻¹ v_j`. -/
+theorem equivSl2Std_symm_basis (j : Fin (m + 1)) :
+    (equivSl2Std K m).symm (Sl2Std.basis K m j) = ((m.choose j : ℕ) : K)⁻¹ • basis K m j := by
+  funext i
+  rw [equivSl2Std_symm_apply, smul_apply, Sl2Std.basis_apply, basis_apply]
+  rcases eq_or_ne i j with rfl | hij
+  · simp
+  · simp [hij]
 
 end ClassicalLadder
 
