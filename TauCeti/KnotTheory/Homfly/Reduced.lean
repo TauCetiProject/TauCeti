@@ -84,9 +84,11 @@ theorem reducedHomfly_eq_iff_specialization {β : MarkovBraid}
 dimension, is the writhe-normalized Jimbo trace. -/
 @[simp]
 theorem homflySpecialization_mul_reducedHomfly (β : MarkovBraid) (N : ℕ) :
-    homflySpecialization K N (homflyUnknot K) * homflySpecialization K N (β.reducedHomfly K) =
+    (∑ a : Fin N, jimboWeight (Units.mk0 (RatFunc.X : RatFunc K) RatFunc.X_ne_zero) a) *
+        homflySpecialization K N (β.reducedHomfly K) =
       β.jimboTrace (N := N) (Units.mk0 (RatFunc.X : RatFunc K) RatFunc.X_ne_zero) := by
-  rw [← map_mul, homflyUnknot_mul_reducedHomfly, homflySpecialization_homfly]
+  rw [← homflySpecialization_homflyUnknot, ← map_mul, homflyUnknot_mul_reducedHomfly,
+    homflySpecialization_homfly]
 
 /-- The reduced HOMFLY polynomial of the unlink on `n + 1` components. In particular, the
 one-strand unknot has value one. -/
@@ -112,10 +114,10 @@ theorem reducedHomfly_strandIncl {n : ℕ} (b : BraidGroup (n + 1)) :
   rw [reducedHomfly_eq_iff]
   apply (homfly_eq_of_homflySpecialization_eq K ?_).symm
   intro N
-  simp only [map_mul, homflySpecialization_mul_reducedHomfly]
+  simp only [map_mul, homflySpecialization_homflyUnknot,
+    homflySpecialization_mul_reducedHomfly]
   simp only [jimboTrace_def]
-  rw [BraidGroup.exponentSum_strandIncl, jimboWeightedTrace_strandIncl,
-    homflySpecialization_homflyUnknot]
+  rw [BraidGroup.exponentSum_strandIncl, jimboWeightedTrace_strandIncl]
   ring
 
 end MarkovBraid
