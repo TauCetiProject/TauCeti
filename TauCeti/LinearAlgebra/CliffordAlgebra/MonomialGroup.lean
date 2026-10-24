@@ -25,8 +25,8 @@ basis `e_i² = 1` of `ℂⁿ`. The subgroup `CliffordAlgebra.monomialGroup Q b` 
 where `e_s = ι Q (b i₁) * ⋯ * ι Q (b iₖ)` for `s = {i₁ < ⋯ < iₖ}` is the basis vector
 `CliffordAlgebra.basis Q b s`. Its multiplication is the sign rule
 `CliffordAlgebra.basis_mul_basis`: `e_s * e_t = ±e_{s ∆ t}`. Its element `ε = -1` is central, and
-when the index type is finite the group is finite. When the ring is nontrivial and the index type
-has `n` elements the group has order `2 ^ (n + 1)`.
+when the index type is finite the group is finite. When the ring is nontrivial, `2` is invertible,
+and the index type has `n` elements, the group has order `2 ^ (n + 1)`.
 
 For a finite index type the group is a finite model of the Clifford algebra: the `e_s` form a basis
 of `CliffordAlgebra Q` and multiply as the elements of `G` do, so its group algebra modulo `ε + 1`
@@ -43,7 +43,8 @@ is the Clifford algebra. That comparison is not made in this file.
   when its value is `e_s` or `-e_s` for some finite index set `s`.
 * `CliffordAlgebra.isUnit_basis`: each `e_s` is a unit.
 * `CliffordAlgebra.neg_one_mem_center_monomialGroup`: `ε = -1` is central.
-* `CliffordAlgebra.natCard_monomialGroup`: **the order** of the group is `2 ^ (n + 1)`.
+* `CliffordAlgebra.natCard_monomialGroup`: **the order** is `2 ^ (n + 1)` over a nontrivial
+  ring in which `2` is invertible.
 
 ## References
 
@@ -90,42 +91,6 @@ theorem neg_one_mem_center_monomialGroup :
 
 variable [Invertible (2 : R)] [LinearOrder I] {b : Module.Basis I R M}
 
-omit [Invertible (2 : R)] in
-/-- The coefficient in the multiplication rule `CliffordAlgebra.basis_mul_basis` is `±1` when every
-generator squares to `±1`. -/
-private theorem coeff_eq_one_or_neg_one (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1) (s t : Finset I) :
-    (-1 : R) ^ (∑ i ∈ s, (t.filter (· < i)).card) * ∏ i ∈ s ∩ t, Q (b i) = 1 ∨
-      (-1 : R) ^ (∑ i ∈ s, (t.filter (· < i)).card) * ∏ i ∈ s ∩ t, Q (b i) = -1 := by
-  have hprod : ∏ i ∈ s ∩ t, Q (b i) = 1 ∨ ∏ i ∈ s ∩ t, Q (b i) = -1 :=
-    Finset.prod_induction _ (fun x : R ↦ x = 1 ∨ x = -1)
-      (fun x y hx hy ↦ by rcases hx with rfl | rfl <;> rcases hy with rfl | rfl <;> simp)
-      (Or.inl rfl) fun i _ ↦ hQ i
-  rcases neg_one_pow_eq_or R (∑ i ∈ s, (t.filter (· < i)).card) with h | h <;> rw [h] <;>
-    rcases hprod with h' | h' <;> rw [h'] <;> simp
-
-/-- When every generator squares to `±1`, the product of two basis vectors is `±e_{s ∆ t}`. -/
-private theorem basis_mul_basis_eq_or (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
-    (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1) (s t : Finset I) :
-    basis Q b s * basis Q b t = basis Q b (s ∆ t) ∨
-      basis Q b s * basis Q b t = -basis Q b (s ∆ t) := by
-  rw [basis_mul_basis hb]
-  rcases coeff_eq_one_or_neg_one hQ s t with hc | hc <;> rw [hc] <;> simp
-
-/-- When every generator squares to `±1`, each basis vector `e_s` squares to `±1`. -/
-private theorem basis_mul_self_eq_or (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
-    (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1) (s : Finset I) :
-    basis Q b s * basis Q b s = 1 ∨ basis Q b s * basis Q b s = -1 := by
-  simpa only [symmDiff_self, Finset.bot_eq_empty, basis_empty] using
-    basis_mul_basis_eq_or hb hQ s s
-
-/-- **Each signed monomial `e_s` is a unit**, when the generators square to `±1`: its inverse is
-`±e_s`. -/
-theorem isUnit_basis (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
-    (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1) (s : Finset I) : IsUnit (basis Q b s) := by
-  rcases basis_mul_self_eq_or hb hQ s with h | h
-  · exact ⟨⟨_, _, h, h⟩, rfl⟩
-  · exact ⟨⟨_, -basis Q b s, by rw [mul_neg, h, neg_neg], by rw [neg_mul, h, neg_neg]⟩, rfl⟩
-
 /-- **The normal form of the group of signed monomials**: for an orthogonal basis whose generators
 square to `±1`, a unit lies in `CliffordAlgebra.monomialGroup Q b` exactly when its value is
 `e_s` or `-e_s` for a finite index set `s`. -/
@@ -159,8 +124,8 @@ theorem mem_monomialGroup_iff (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
       rcases huu with h | h
       · rw [Units.inv_eq_of_mul_eq_one_right h]
         exact hs
-      · rw [Units.inv_eq_of_mul_eq_one_right (show (u : CliffordAlgebra Q) * -u = 1 by
-          rw [mul_neg, h, neg_neg])]
+      · have hneg : (u : CliffordAlgebra Q) * -u = 1 := by rw [mul_neg, h, neg_neg]
+        rw [Units.inv_eq_of_mul_eq_one_right hneg]
         rcases hs with hs | hs <;> rw [hs] <;> simp
   · -- Peel off the generators one at a time, starting from the least index.
     rintro ⟨s, hs⟩
@@ -188,9 +153,9 @@ theorem mem_monomialGroup_iff (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
         · exact Or.inr (by rw [hs, mul_neg, invOf_mul_cancel_left])
       simpa using mul_mem hg hgu
 
-/-- **The order of the group of signed monomials**: for an orthogonal basis of a nontrivial ring,
-indexed by a type with `n` elements and whose generators square to `±1`, the group has `2 ^ (n + 1)`
-elements, the `±e_s` for the `2 ^ n` index sets `s`. -/
+/-- **The order of the group of signed monomials**: for an orthogonal basis over a nontrivial ring
+in which `2` is invertible, indexed by a type with `n` elements and whose generators square to `±1`,
+the group has `2 ^ (n + 1)` elements, the `±e_s` for the `2 ^ n` index sets `s`. -/
 theorem natCard_monomialGroup [Fintype I] [Nontrivial R]
     (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1) :
     Nat.card (monomialGroup Q b) = 2 ^ (Fintype.card I + 1) := by
@@ -226,7 +191,10 @@ theorem natCard_monomialGroup [Fintype I] [Nontrivial R]
       · exact ⟨1, s, by simp [f, hs]⟩
       · exact ⟨-1, s, by simp [f, hs]⟩
     · rintro ⟨ε, s, rfl⟩
-      obtain ⟨u, hu⟩ := isUnit_basis hb hQ s
+      have hunit : ∀ i ∈ s, IsUnit (Q (b i)) := by
+        intro i _
+        rcases hQ i with hi | hi <;> rw [hi] <;> simp
+      obtain ⟨u, hu⟩ := isUnit_basis hb s hunit
       rcases hsign ε with h | h
       · exact ⟨u, (mem_monomialGroup_iff hb hQ).mpr ⟨s, Or.inl hu⟩, by simp [f, h, hu]⟩
       · exact ⟨-u, (mem_monomialGroup_iff hb hQ).mpr ⟨s, Or.inr (by simp [hu])⟩,

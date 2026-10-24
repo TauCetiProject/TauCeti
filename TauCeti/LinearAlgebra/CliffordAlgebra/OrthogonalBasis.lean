@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
 public import TauCeti.LinearAlgebra.CliffordAlgebra.ScalarTrace.Basic
 -- Private: the product, reversal and exterior-basis lemmas below are used only inside proofs.
 import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
+import Mathlib.LinearAlgebra.CliffordAlgebra.Inversion
 import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement
 import TauCeti.LinearAlgebra.ExteriorAlgebra.AlgebraMapInv
@@ -43,8 +44,6 @@ of the pairing: if every `Q (b i)` is nonnegative then `τ (reverse x * x) ≥ 0
 
 * `CliffordAlgebra.basis_repr_empty`: for every basis, the coordinate at the empty index set is the
   scalar part.
-* `CliffordAlgebra.basis_empty` and `CliffordAlgebra.basis_singleton`: for every basis, the basis
-  vectors indexed by `∅` and by `{i}` are `1` and the generator `ι Q (b i)`.
 * `CliffordAlgebra.basis_eq_prod_map_sort`: for an orthogonal basis, the basis vector indexed by
   `s` is the product of the generators of `s` in increasing order.
 * `CliffordAlgebra.basis_mul_basis_of_disjoint`: for an orthogonal basis, basis vectors with
@@ -58,6 +57,9 @@ of the pairing: if every `Q (b i)` is nonnegative then `τ (reverse x * x) ≥ 0
   the product of a generator, respectively a basis vector `e_s`, with a basis vector `e_t` is
   `(-1) ^ N * (∏ i ∈ s ∩ t, Q (b i)) • e_{s ∆ t}`, where `N` counts the pairs of an index of `s`
   and a smaller index of `t`.
+* `CliffordAlgebra.basis_mul_basis_eq_or` and `CliffordAlgebra.basis_mul_self_eq_or`: signed
+  multiplication and square laws when the generators square to `±1`.
+* `CliffordAlgebra.isUnit_basis`: a basis monomial is a unit when its generator squares are units.
 * `CliffordAlgebra.scalarTrace_reverse_basis_mul_basis`: the pairing of two basis vectors.
 * `CliffordAlgebra.scalarTrace_reverse_basis_mul`: pairing against a basis vector extracts a
   coordinate, `τ (reverse e_s * x) = (∏ i ∈ s, Q (b i)) * xₛ`.
@@ -87,16 +89,6 @@ theorem basis_repr_empty (b : Module.Basis I R M) (x : CliffordAlgebra Q) :
     (basis Q b).repr x ∅ = scalarTrace Q x := by
   rw [basis, Module.Basis.map_repr, LinearEquiv.trans_apply, LinearEquiv.symm_symm,
     Module.Basis.exteriorAlgebra_repr_empty, scalarTrace_apply]
-
-/-- For every basis, the basis vector indexed by the empty set is `1`. -/
-theorem basis_empty (b : Module.Basis I R M) : basis Q b ∅ = 1 := by
-  rw [basis_apply, b.exteriorAlgebra_eq_prod_map_sort]
-  simp
-
-/-- For every basis, the basis vector indexed by `{i}` is the generator `ι Q (b i)`. -/
-theorem basis_singleton (b : Module.Basis I R M) (i : I) : basis Q b {i} = ι Q (b i) := by
-  rw [basis_apply, b.exteriorAlgebra_eq_prod_map_sort]
-  simp
 
 variable {b : Module.Basis I R M}
 
@@ -268,6 +260,44 @@ theorem basis_mul_basis (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (s t : F
       ring
     · rw [ite_eq_right hat, Finset.insert_inter_of_notMem hat]
       ring
+
+omit [Invertible (2 : R)] in
+/-- The coefficient in the multiplication rule `CliffordAlgebra.basis_mul_basis` is `±1` when every
+generator squares to `±1`. -/
+private theorem coeff_eq_one_or_neg_one (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1) (s t : Finset I) :
+    (-1 : R) ^ (∑ i ∈ s, (t.filter (· < i)).card) * ∏ i ∈ s ∩ t, Q (b i) = 1 ∨
+      (-1 : R) ^ (∑ i ∈ s, (t.filter (· < i)).card) * ∏ i ∈ s ∩ t, Q (b i) = -1 := by
+  have hprod : ∏ i ∈ s ∩ t, Q (b i) = 1 ∨ ∏ i ∈ s ∩ t, Q (b i) = -1 :=
+    Finset.prod_induction _ (fun x : R ↦ x = 1 ∨ x = -1)
+      (fun x y hx hy ↦ by rcases hx with rfl | rfl <;> rcases hy with rfl | rfl <;> simp)
+      (Or.inl rfl) fun i _ ↦ hQ i
+  rcases neg_one_pow_eq_or R (∑ i ∈ s, (t.filter (· < i)).card) with h | h <;> rw [h] <;>
+    rcases hprod with h' | h' <;> rw [h'] <;> simp
+
+/-- When every generator squares to `±1`, the product of two basis vectors is `±e_{s ∆ t}`. -/
+theorem basis_mul_basis_eq_or (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
+    (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1) (s t : Finset I) :
+    basis Q b s * basis Q b t = basis Q b (s ∆ t) ∨
+      basis Q b s * basis Q b t = -basis Q b (s ∆ t) := by
+  rw [basis_mul_basis hb]
+  rcases coeff_eq_one_or_neg_one hQ s t with hc | hc <;> rw [hc] <;> simp
+
+/-- When every generator squares to `±1`, each basis vector `e_s` squares to `±1`. -/
+theorem basis_mul_self_eq_or (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
+    (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1) (s : Finset I) :
+    basis Q b s * basis Q b s = 1 ∨ basis Q b s * basis Q b s = -1 := by
+  simpa only [symmDiff_self, Finset.bot_eq_empty, basis_empty] using
+    basis_mul_basis_eq_or hb hQ s s
+
+/-- An orthogonal basis vector is a unit whenever the squares of its generators are units. -/
+theorem isUnit_basis (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (s : Finset I)
+    (hQ : ∀ i ∈ s, IsUnit (Q (b i))) : IsUnit (basis Q b s) := by
+  rw [basis_eq_prod_map_sort hb]
+  refine List.prod_induction IsUnit (fun _ _ hx hy ↦ hx.mul hy) isUnit_one ?_
+  intro x hx
+  obtain ⟨m, hm, rfl⟩ := List.mem_map.mp hx
+  obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hm
+  exact isUnit_ι_of_isUnit Q (hQ i ((Finset.mem_sort _).mp hi))
 
 /-- The scalar part of a product of generators of an orthogonal basis vanishes as soon as one index
 occurs exactly once. -/
