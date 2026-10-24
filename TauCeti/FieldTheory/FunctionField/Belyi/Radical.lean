@@ -8,6 +8,7 @@ module
 public import TauCeti.FieldTheory.FunctionField.Belyi.Basic
 public import TauCeti.FieldTheory.FunctionField.Place.RatFunc.XPowSubCX
 import TauCeti.FieldTheory.FunctionField.Different.Radical
+import TauCeti.FieldTheory.FunctionField.Radical.Basic
 import TauCeti.FieldTheory.FunctionField.Radical.Genus
 import TauCeti.FieldTheory.Kummer.Extension
 import TauCeti.FieldTheory.RatFunc.Transcendental
@@ -30,7 +31,8 @@ The natural radicands are the functions `u = c t ^ a (t - 1) ^ b` with `c ∈ k`
 are `a`, `b` and `-(a + b)` (`TauCeti.Place.ord_algebraMap_mul_X_zpow_mul_X_sub_one_zpow` and its
 specializations). For these, `y ^ n = u` is a Belyi pair of degree `n` as soon as `n`
 is coprime to one of `a`, `b` and `a + b`
-(`TauCeti.IsAlgebraicBelyiPair.of_pow_eq_X_zpow_mul_X_sub_one_zpow`), and the formula above gives
+(`TauCeti.IsAlgebraicBelyiPair.of_pow_eq_X_zpow_mul_X_sub_one_zpow` and
+`TauCeti.finrank_eq_of_pow_eq_X_zpow_mul_X_sub_one_zpow`), and the formula above gives
 ramification index `n / gcd(n, a)` over `0`, `n / gcd(n, b)` over `1` and `n / gcd(n, a + b)` over
 `∞`. The family contains:
 
@@ -51,9 +53,8 @@ ramification index `n / gcd(n, a)` over `0`, `n / gcd(n, b)` over `1` and `n / g
 * `TauCeti.IsAlgebraicBelyiPair.of_pow_eq` and
   `TauCeti.IsAlgebraicBelyiPair.of_pow_eq_of_gcd_ord_eq_one`: radical extensions unramified outside
   `0`, `1` and `∞` are algebraic Belyi pairs.
-* `TauCeti.IsAlgebraicBelyiPair.of_pow_eq_X_zpow_mul_X_sub_one_zpow` and
-  `TauCeti.finrank_eq_of_pow_eq_X_zpow_mul_X_sub_one_zpow`: the Belyi pair
-  `y ^ n = c t ^ a (t - 1) ^ b` and its degree `n`.
+* `TauCeti.IsAlgebraicBelyiPair.of_pow_eq_X_zpow_mul_X_sub_one_zpow`: the Belyi pair
+  `y ^ n = c t ^ a (t - 1) ^ b`.
 * `TauCeti.isAlgebraicBelyiPair_adjoinRoot_X_pow_sub_C_X`: the power map is a Belyi pair.
 
 ## References
@@ -85,37 +86,6 @@ theorem ord_algebraMap_mul_X_zpow_mul_X_sub_one_zpow_of_notMem_zeroOneInfty
     mul_zero, mul_zero, add_zero]
 
 end Place
-
-section Degree
-
-variable {k F : Type*} [Field k] [Field F] [Algebra (RatFunc k) F]
-
-/-- If `n` is coprime to one of `a`, `b` and `a + b`, then it is coprime to the order of
-`c t ^ a (t - 1) ^ b` at one of the places `0`, `1` and `∞`. -/
-private theorem exists_gcd_ord_eq_one {n : ℕ} {c : k} (hc : c ≠ 0) {a b : ℤ}
-    (hcop : Int.gcd n a = 1 ∨ Int.gcd n b = 1 ∨ Int.gcd n (a + b) = 1) :
-    ∃ P : Place k (RatFunc k), Int.gcd n
-      (P.ord (algebraMap k (RatFunc k) c * RatFunc.X ^ a * (RatFunc.X - 1) ^ b)) = 1 := by
-  rcases hcop with h | h | h
-  · exact ⟨_, by rwa [Place.ord_adicOfIrreducible_X_algebraMap_mul_X_zpow_mul_X_sub_one_zpow hc]⟩
-  · exact ⟨_, by
-      rwa [Place.ord_adicOfIrreducible_X_sub_one_algebraMap_mul_X_zpow_mul_X_sub_one_zpow hc]⟩
-  · exact ⟨_, by rwa [Place.ord_infty_algebraMap_mul_X_zpow_mul_X_sub_one_zpow hc, Int.gcd_neg]⟩
-
-/-- **The degree of `y ^ n = c t ^ a (t - 1) ^ b`**: if `F = k(t)(y)` with
-`y ^ n = c t ^ a (t - 1) ^ b` for a nonzero `c ∈ k`, and `n ≠ 0` is coprime to one of `a`, `b` and
-`a + b`, then `[F : k(t)] = n`. -/
-theorem finrank_eq_of_pow_eq_X_zpow_mul_X_sub_one_zpow {y : F} {n : ℕ} {c : k} {a b : ℤ}
-    (hgen : (RatFunc k)⟮y⟯ = ⊤)
-    (hy : y ^ n = algebraMap (RatFunc k) F
-      (algebraMap k (RatFunc k) c * RatFunc.X ^ a * (RatFunc.X - 1) ^ b))
-    (hn : n ≠ 0) (hc : c ≠ 0) (hcop : Int.gcd n a = 1 ∨ Int.gcd n b = 1 ∨ Int.gcd n (a + b) = 1) :
-    Module.finrank (RatFunc k) F = n := by
-  obtain ⟨P, hP⟩ := exists_gcd_ord_eq_one hc hcop
-  exact P.valuation.finrank_eq_of_pow_eq_of_gcd_ord_eq_one hgen hy hn
-    (by rwa [Place.ord_valuation])
-
-end Degree
 
 variable {k F : Type*} [Field k] [CharZero k] [Field F] [Algebra k F] [Algebra (RatFunc k) F]
   [IsScalarTower k (RatFunc k) F] [FiniteDimensional (RatFunc k) F]
@@ -160,7 +130,7 @@ theorem of_pow_eq_X_zpow_mul_X_sub_one_zpow {y : F} {n : ℕ} {c : k} {a b : ℤ
       P.ord (algebraMap k (RatFunc k) c * RatFunc.X ^ a * (RatFunc.X - 1) ^ b) := fun P hP ↦ by
     rw [Place.ord_algebraMap_mul_X_zpow_mul_X_sub_one_zpow_of_notMem_zeroOneInfty hP hc]
     exact dvd_zero _
-  obtain ⟨P, hP⟩ := exists_gcd_ord_eq_one hc hcop
+  obtain ⟨P, hP⟩ := Place.exists_gcd_ord_algebraMap_mul_X_zpow_mul_X_sub_one_zpow_eq_one hc hcop
   exact of_pow_eq_of_gcd_ord_eq_one hgen hy hn
     (RatFunc.algebraMap_mul_X_zpow_mul_X_sub_one_zpow_ne_zero hc a b) hdvd P hP
 

@@ -38,7 +38,9 @@ rational function field.
   and `∞`.
 * `TauCeti.Place.ord_algebraMap_mul_X_zpow_mul_X_sub_one_zpow`: the order of
   `c X ^ a (X - 1) ^ b` at a place of `k(X)`, with its values `a`, `b` and `-(a + b)` at `0`, `1`
-  and `∞`.
+  and `∞`, so that
+  `TauCeti.Place.exists_gcd_ord_algebraMap_mul_X_zpow_mul_X_sub_one_zpow_eq_one` finds a place
+  where this order is coprime to `n` when `n` is coprime to one of `a`, `b` and `a + b`.
 * `TauCeti.Place.valuation_ofIrreducible_le_one_iff` and
   `TauCeti.Place.residue_adicOfIrreducible_eq_zero_iff`: regularity and vanishing in the residue
   field are detected by the denominator and numerator respectively.
@@ -229,6 +231,18 @@ theorem ord_infty_algebraMap_mul_X_zpow_mul_X_sub_one_zpow {c : k} (hc : c ≠ 0
   rw [ord_algebraMap_mul_X_zpow_mul_X_sub_one_zpow _ hc, ord_infty, ord_infty, RatFunc.intDegree_X,
     h1]
   ring
+
+/-- If `n` is coprime to one of `a`, `b` and `a + b`, then it is coprime to the order of
+`c X ^ a (X - 1) ^ b` at one of the places `0`, `1` and `∞`. -/
+theorem exists_gcd_ord_algebraMap_mul_X_zpow_mul_X_sub_one_zpow_eq_one {n : ℕ} {c : k}
+    (hc : c ≠ 0) {a b : ℤ} (hcop : Int.gcd n a = 1 ∨ Int.gcd n b = 1 ∨ Int.gcd n (a + b) = 1) :
+    ∃ P : Place k (RatFunc k), Int.gcd n
+      (P.ord (algebraMap k (RatFunc k) c * RatFunc.X ^ a * (RatFunc.X - 1) ^ b)) = 1 := by
+  rcases hcop with h | h | h
+  · exact ⟨_, by rwa [ord_adicOfIrreducible_X_algebraMap_mul_X_zpow_mul_X_sub_one_zpow hc]⟩
+  · exact ⟨_, by
+      rwa [ord_adicOfIrreducible_X_sub_one_algebraMap_mul_X_zpow_mul_X_sub_one_zpow hc]⟩
+  · exact ⟨_, by rwa [ord_infty_algebraMap_mul_X_zpow_mul_X_sub_one_zpow hc, Int.gcd_neg]⟩
 
 /-- The order of a nonzero rational function at the finite place associated to `q` is the
 multiplicity of `q` in its numerator minus its multiplicity in its denominator. -/
