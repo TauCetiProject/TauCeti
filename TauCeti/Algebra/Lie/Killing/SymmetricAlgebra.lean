@@ -72,7 +72,7 @@ theorem killingDuality_apply (x y : L) : killingDuality K L x y = killingForm K 
 @[simp]
 theorem killingForm_killingDuality_symm_apply (f : Dual K L) (y : L) :
     killingForm K L ((killingDuality K L).symm f) y = f y :=
-  LinearMap.BilinForm.lieModuleEquivDual_symm_apply _ _ _ f y
+  LinearMap.BilinForm.apply_lieModuleEquivDual_symm_apply _ _ _ f y
 
 /-- The linear map underlying the Killing duality is the Killing form, read as a linear map
 `L → L*`. -/
