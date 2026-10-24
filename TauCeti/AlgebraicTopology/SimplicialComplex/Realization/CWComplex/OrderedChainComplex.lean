@@ -30,20 +30,11 @@ homology of `|K|` (`TauCeti.orderedSimplicialHomologyIsoSingularHomology`).
 
 ## Main definitions
 
-* `TauCeti.realizationFaceIncidence`: the incidence coefficient `εₙ` of the `0`-th face of the
-  standard `(n + 1)`-simplex.
 * `TauCeti.realizationChainScale`: the units `sₙ`, with `s₀ = 1` and `sₙ₊₁ = εₙ * sₙ`.
 * `TauCeti.cellularChainComplexRealizationIso`: the cellular chain complex of `|K|` is the
   ordered simplicial chain complex of `K`.
 * `TauCeti.orderedSimplicialHomologyIsoSingularHomology`: ordered simplicial homology is
   singular homology of the realization.
-
-## Main results
-
-* `TauCeti.cellularIncidence_realization_face_eq_neg_one_pow_mul_realizationFaceIncidence`:
-  the incidence numbers of a simplicial realization are `(-1) ^ j * εₙ`, independently of the
-  complex and the cell.
-* `TauCeti.isUnit_realizationFaceIncidence`: `εₙ` is a unit.
 
 ## References
 
@@ -62,83 +53,6 @@ universe u
 namespace TauCeti
 
 open _root_.AbstractSimplicialComplex
-
-section Model
-
-variable {ι : Type u} [LinearOrder ι] {K : _root_.AbstractSimplicialComplex ι} {n : ℕ}
-
-/-- The cell spanned by all vertices of the full complex on `n + 1` vertices. -/
-private def modelCell (n : ℕ) :
-    RealizationCell (⊤ : _root_.AbstractSimplicialComplex (ULift.{u} (Fin (n + 1)))) n :=
-  ⟨⟨Finset.univ, Finset.univ_nonempty⟩, by simp⟩
-
-/-- The vertex map from the full complex on `n + 1` vertices onto the vertices of an `n`-cell,
-in increasing order. -/
-private def modelMap (c : RealizationCell K n) :
-    PreAbstractSimplicialComplex.SimplicialMap
-      (⊤ : _root_.AbstractSimplicialComplex
-        (ULift.{u} (Fin (n + 1)))).toPreAbstractSimplicialComplex
-      K.toPreAbstractSimplicialComplex where
-  toFun k := c.vertexEmbedding k.down
-  map_face' _ hσ := K.isRelLowerSet_faces.mem_of_le c.1.2
-    (Finset.image_subset_iff.2 fun _ _ ↦ c.vertexEmbedding_mem _) (Finset.image_nonempty.2 hσ)
-
-/-- The vertex map onto a cell is increasing on the model cell. -/
-private theorem strictMonoOn_modelMap (c : RealizationCell K n) :
-    StrictMonoOn (modelMap c) (↑(modelCell.{u} n).1.1 : Set (ULift.{u} (Fin (n + 1)))) :=
-  fun _ _ _ _ h ↦ c.strictMono_vertexEmbedding h
-
-/-- The increasing vertex map onto a cell carries the model cell onto that cell. -/
-private theorem modelCell_map (c : RealizationCell K n) :
-    (modelCell.{u} n).map (modelMap c) (strictMonoOn_modelMap c).injOn = c := by
-  apply Subtype.ext
-  apply Subtype.ext
-  rw [RealizationCell.map_face,
-    TauCeti.PreAbstractSimplicialComplex.SimplicialMap.coe_faceOrderHom_apply]
-  conv_rhs => rw [← c.image_vertexEmbedding]
-  ext v
-  simp [modelCell, modelMap, -RealizationCell.image_vertexEmbedding]
-
-end Model
-
-section Incidence
-
-variable (R : Type u) [Ring R] (n : ℕ)
-
-/-- The incidence coefficient `εₙ` of the `0`-th deleted-vertex face of the standard
-`(n + 1)`-simplex in its cellular boundary, the standard simplex being the full complex on the
-vertex set `ULift (Fin (n + 2))`. By
-`TauCeti.cellularIncidence_realization_face_eq_neg_one_pow_mul_realizationFaceIncidence`,
-the `j`-th face of any `(n + 1)`-cell of any simplicial realization has incidence coefficient
-`(-1) ^ j * εₙ`. -/
-def realizationFaceIncidence : R :=
-  letI := realizationCWComplex (⊤ : _root_.AbstractSimplicialComplex (ULift.{u} (Fin (n + 2))))
-  cellularIncidence
-    (univ : Set (Realization (⊤ : _root_.AbstractSimplicialComplex (ULift.{u} (Fin (n + 2))))))
-    R n ((realizationCellEquiv _ n).symm ((modelCell (n + 1)).face 0))
-    ((realizationCellEquiv _ (n + 1)).symm (modelCell (n + 1)))
-
-/-- `εₙ` is a unit of the coefficient ring. -/
-theorem isUnit_realizationFaceIncidence : IsUnit (realizationFaceIncidence R n) :=
-  isUnit_cellularIncidence_realization_face R _ 0
-
-variable {ι : Type u} [LinearOrder ι] {K : _root_.AbstractSimplicialComplex ι} {R n}
-
-/-- **The incidence numbers of a simplicial realization.** The incidence coefficient of the
-`j`-th deleted-vertex face of an `(n + 1)`-cell in its cellular boundary is `(-1) ^ j * εₙ`,
-where the unit `εₙ` depends only on `n` and the coefficient ring. -/
-theorem cellularIncidence_realization_face_eq_neg_one_pow_mul_realizationFaceIncidence
-    (c : RealizationCell K (n + 1)) (j : Fin (n + 2)) :
-    letI := realizationCWComplex K
-    cellularIncidence (univ : Set (Realization K)) R n
-        ((realizationCellEquiv K n).symm (c.face j)) ((realizationCellEquiv K (n + 1)).symm c) =
-      (-1) ^ (j : ℕ) * realizationFaceIncidence R n := by
-  have h := cellularIncidence_realization_map_face R (modelMap c) (modelCell (n + 1))
-    (strictMonoOn_modelMap c) 0
-  rw [modelCell_map] at h
-  rw [cellularIncidence_realization_face_eq_neg_one_pow_mul, h, realizationFaceIncidence]
-
-end Incidence
 
 section Scale
 
@@ -184,7 +98,9 @@ def cellularChainRealizationLinearEquiv (n : ℕ) :
 
 variable {K R}
 
-/-- The image of the cellular basis vector of a cell is the cell with coefficient `sₙ`. -/
+/-- The image of the cellular basis vector of a cell is the cell with coefficient `sₙ`.
+This is not a simp lemma: its left-hand side is not in simp normal form, since the simp lemma
+`TauCeti.cellularChainBasis_apply` unfolds the basis vector. -/
 theorem cellularChainRealizationLinearEquiv_cellularChainBasis {n : ℕ}
     (c : RealizationCell K n) :
     letI := realizationCWComplex K
@@ -194,6 +110,19 @@ theorem cellularChainRealizationLinearEquiv_cellularChainBasis {n : ℕ}
   simp only [cellularChainRealizationLinearEquiv, Module.Basis.equiv_apply, Equiv.apply_symm_apply,
     Module.Basis.unitsSMul_apply, Finsupp.coe_basisSingleOne, Units.smul_def, smul_single,
     smul_eq_mul, mul_one]
+
+/-- The cellular chain corresponding to the ordered simplicial chain `r • [c]` is
+`r * sₙ⁻¹` times the cellular basis vector of `c`. -/
+@[simp]
+theorem cellularChainRealizationLinearEquiv_symm_single {n : ℕ} (c : RealizationCell K n)
+    (r : R) :
+    letI := realizationCWComplex K
+    (cellularChainRealizationLinearEquiv K R n).symm (single c r) =
+      (r * ↑(realizationChainScale R n)⁻¹) • cellularChainBasis (univ : Set (Realization K)) R n
+        ((realizationCellEquiv K n).symm c) := by
+  rw [LinearEquiv.symm_apply_eq, map_smul,
+    cellularChainRealizationLinearEquiv_cellularChainBasis, smul_single, smul_eq_mul, mul_assoc,
+    Units.inv_mul, mul_one]
 
 variable (K R)
 
@@ -237,6 +166,16 @@ theorem cellularChainComplexRealizationIso_hom_f (n : ℕ) :
       eqToHom (cellularChainComplex_X _ _ n) ≫
         (cellularChainRealizationLinearEquiv K R n).toModuleIso.hom ≫
           eqToHom (orderedSimplicialChainComplex_X R n).symm :=
+  (rfl)
+
+/-- In degree `n`, the inverse of `TauCeti.cellularChainComplexRealizationIso` is the inverse of
+`TauCeti.cellularChainRealizationLinearEquiv`, up to the identifications of the chain groups. -/
+theorem cellularChainComplexRealizationIso_inv_f (n : ℕ) :
+    letI := realizationCWComplex K
+    (cellularChainComplexRealizationIso K R).inv.f n =
+      eqToHom (orderedSimplicialChainComplex_X R n) ≫
+        (cellularChainRealizationLinearEquiv K R n).toModuleIso.inv ≫
+          eqToHom (cellularChainComplex_X _ _ n).symm :=
   (rfl)
 
 /-- **Simplicial homology is singular homology.** The homology of the ordered simplicial chain
