@@ -9,6 +9,7 @@ public import Mathlib.NumberTheory.ModularForms.QExpansion
 public import TauCeti.NumberTheory.ModularForms.ThetaSeries.Translation
 import Mathlib.Analysis.Normed.Group.Tannery
 import TauCeti.Algebra.Module.ZLattice.Summable
+import TauCeti.Analysis.SpecialFunctions.Gaussian.Bounds
 
 /-!
 # Theta series at the cusp `∞`

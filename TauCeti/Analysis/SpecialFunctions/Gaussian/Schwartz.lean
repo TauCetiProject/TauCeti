@@ -19,20 +19,20 @@ import TauCeti.Analysis.SpecialFunctions.Gaussian.Bounds
 Let `E` be a finite-dimensional real inner product space of dimension `n` and `τ` a point of the
 upper half-plane `ℍ`. The Gaussian `x ↦ exp (π i τ ‖x‖²)` has modulus `exp (-π (im τ) ‖x‖²)`, so
 it decays rapidly, and so do all its derivatives: it is a Schwartz function
-(`SchwartzMap.gaussian τ`). Its Fourier transform is again a Gaussian, at the parameter `-1/τ`:
+(`TauCeti.gaussian τ`). Its Fourier transform is again a Gaussian, at the parameter `-1/τ`:
 
 `𝓕 (gaussian τ) y = (τ / i) ^ (-n/2) * exp (π i (-1/τ) ‖y‖²)`
 
-(`SchwartzMap.fourier_gaussian`), with Mathlib's `𝓕 f w = ∫ x, exp (-2πi ⟪x, w⟫) f x` and the
+(`TauCeti.fourier_gaussian`), with Mathlib's `𝓕 f w = ∫ x, exp (-2πi ⟪x, w⟫) f x` and the
 principal branch of the complex power; `τ / i` has positive real part, so the branch is never
 ambiguous. When `n = 2k` is even the power is the honest integer power
-`(τ / i) ^ (-k) = ((-i) ^ k * τ ^ k)⁻¹` (`SchwartzMap.fourier_gaussian_of_finrank_eq_two_mul`).
+`(τ / i) ^ (-k) = ((-i) ^ k * τ ^ k)⁻¹` (`TauCeti.fourier_gaussian_of_finrank_eq_two_mul`).
 
 These are the analytic inputs to the transformation law of a theta series under `τ ↦ -1/τ`: the
 theta series of a lattice `L` is the sum `∑_{v ∈ L} gaussian τ v`, and Poisson summation over `L`
 (`SchwartzMap.tsum_eq_tsum_dual_fourier`) turns it into a sum of `𝓕 (gaussian τ)` over the dual
 lattice, which by the formula above is a theta series at `-1/τ`. The Gaussian is even
-(`SchwartzMap.gaussian_neg`), so the sign convention of the phase in Poisson summation does not
+(`TauCeti.gaussian_neg`), so the sign convention of the phase in Poisson summation does not
 matter for it. Its translates `x ↦ gaussian τ (x + v)`, whose lattice sums are the theta series of
 the translates `v + L`, are Schwartz functions by `SchwartzMap.compSubConstCLM`.
 
@@ -48,13 +48,13 @@ bounds `TauCeti.exists_one_add_norm_pow_mul_heatKernel_le` and
 
 ## Main definitions
 
-* `SchwartzMap.gaussian τ`: the Schwartz function `x ↦ exp (π i τ ‖x‖²)` on `E`, for `τ : ℍ`.
+* `TauCeti.gaussian τ`: the Schwartz function `x ↦ exp (π i τ ‖x‖²)` on `E`, for `τ : ℍ`.
 
 ## Main statements
 
-* `SchwartzMap.gaussian_apply`, `SchwartzMap.norm_gaussian_apply`, `SchwartzMap.gaussian_neg`.
-* `SchwartzMap.fourier_gaussian`: the Fourier transform of the Gaussian, in every dimension.
-* `SchwartzMap.fourier_gaussian_of_finrank_eq_two_mul`: the same in even dimension `2k`, with
+* `TauCeti.gaussian_apply`, `TauCeti.norm_gaussian_apply`, `TauCeti.gaussian_neg`.
+* `TauCeti.fourier_gaussian`: the Fourier transform of the Gaussian, in every dimension.
+* `TauCeti.fourier_gaussian_of_finrank_eq_two_mul`: the same in even dimension `2k`, with
   the factor `((-i) ^ k * τ ^ k)⁻¹`.
 
 ## References
@@ -69,7 +69,7 @@ public section
 open Complex Module
 open scoped Nat Real UpperHalfPlane SchwartzMap FourierTransform
 
-namespace SchwartzMap
+namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
@@ -92,10 +92,8 @@ noncomputable def gaussian (τ : ℍ) : 𝓢(E, ℂ) where
     set q : E → ℂ := fun x ↦ π * I * (‖x‖ ^ 2 : ℝ) * τ
     have hq := hasTemperateGrowth_gaussianExponent (E := E) (τ : ℂ)
     have hnorm (x : E) : ‖cexp (q x)‖ = Real.exp (-a * ‖x‖ ^ 2) := by
-      rw [Complex.norm_exp]
+      rw [norm_exp_pi_mul_I_mul_ofReal_mul, UpperHalfPlane.coe_im]
       congr 1
-      simp only [q, a, mul_re, mul_im, ofReal_re, ofReal_im, I_re, I_im, UpperHalfPlane.coe_re,
-        UpperHalfPlane.coe_im]
       ring
     obtain ⟨j, C₀, hC₀, hj⟩ := hq.norm_iteratedFDeriv_le_uniform n
     refine ⟨n ! * (1 + C₀) ^ n * ((k + j * n) ! * Real.exp (1 + 1 / (4 * a))), fun x ↦ ?_⟩
@@ -126,10 +124,8 @@ theorem gaussian_apply (τ : ℍ) (x : E) : gaussian τ x = cexp (π * I * (‖x
 @[simp↓]
 theorem norm_gaussian_apply (τ : ℍ) (x : E) :
     ‖gaussian τ x‖ = Real.exp (-(π * τ.im) * ‖x‖ ^ 2) := by
-  rw [gaussian_apply, Complex.norm_exp]
+  rw [gaussian_apply, norm_exp_pi_mul_I_mul_ofReal_mul, UpperHalfPlane.coe_im]
   congr 1
-  simp only [mul_re, mul_im, ofReal_re, ofReal_im, I_re, I_im, UpperHalfPlane.coe_re,
-    UpperHalfPlane.coe_im]
   ring
 
 /-- The Gaussian is even. -/
@@ -157,8 +153,7 @@ theorem fourier_gaussian (τ : ℍ) (y : E) :
   have hπb : (π : ℂ) / b = ((τ : ℂ) / I)⁻¹ := by
     simp only [b]
     field_simp
-    ring_nf
-    simp
+    rw [I_sq]
   have harg : ((τ : ℂ) / I).arg ≠ π := by
     refine (arg_lt_pi_iff.2 (Or.inl ?_)).ne
     simpa [div_I] using τ.im_pos.le
@@ -166,8 +161,8 @@ theorem fourier_gaussian (τ : ℍ) (y : E) :
   congr 2
   simp only [b, ofReal_pow]
   field_simp
-  ring_nf
-  simp
+  rw [I_sq]
+  ring
 
 /-- The **Fourier transform of the Gaussian** in even dimension `2k`:
 `𝓕 (gaussian τ) y = ((-i) ^ k * τ ^ k)⁻¹ * exp (π i (-1/τ) ‖y‖²)`. -/
@@ -181,4 +176,4 @@ theorem fourier_gaussian_of_finrank_eq_two_mul {k : ℕ} (hk : finrank ℝ E = 2
   rw [hExponent, cpow_neg, cpow_natCast, div_I]
   ring
 
-end SchwartzMap
+end TauCeti

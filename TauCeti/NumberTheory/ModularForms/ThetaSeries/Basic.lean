@@ -10,6 +10,7 @@ public import Mathlib.Topology.Algebra.InfiniteSum.UniformOn
 import Mathlib.Analysis.Complex.LocallyUniformLimit
 import Mathlib.Topology.Algebra.InfiniteSum.TsumUniformlyOn
 import TauCeti.Algebra.Module.ZLattice.Summable
+import TauCeti.Analysis.SpecialFunctions.Gaussian.Bounds
 
 /-!
 # The theta series of a lattice
@@ -49,8 +50,9 @@ series `θ_{y+M}` over those classes.
 
 ## Main statements
 
-* `Complex.norm_exp_pi_mul_I_mul_ofReal_mul`: `‖exp (π i t z)‖ = exp (-π t im z)` for real `t`,
-  so the term of index `v` has norm `exp (-π ‖γ + v‖² im τ)`.
+* `Complex.norm_exp_pi_mul_I_mul_ofReal_mul_le`: by `Complex.norm_exp_pi_mul_I_mul_ofReal_mul`,
+  the term of index `v` has norm `exp (-π ‖γ + v‖² im τ)`, which is at most `exp (-π y ‖γ + v‖²)`
+  on the half-plane `{τ | y ≤ im τ}`.
 * `ZLattice.thetaCoset_eq_of_sub_mem`, `ZLattice.thetaCoset_neg`: `θ_{γ+L}` depends only on
   `γ` modulo `L`, and `θ_{-γ+L} = θ_{γ+L}`.
 * `ZLattice.summable_thetaCoset`: the series converge at every `τ : ℍ`.
@@ -76,15 +78,6 @@ open UpperHalfPlane (ofComplex ofComplex_apply_of_im_pos mdifferentiable_iff)
 open scoped Real Manifold UpperHalfPlane
 
 namespace Complex
-
-/-- For real `t`, `‖exp (π i t z)‖ = exp (-π t im z)`; with `t = ‖γ + v‖²` this is the norm of
-the term of index `v` of a theta series. -/
-theorem norm_exp_pi_mul_I_mul_ofReal_mul (t : ℝ) (z : ℂ) :
-    ‖cexp (π * I * t * z)‖ = Real.exp (-(π * t) * z.im) := by
-  rw [Complex.norm_exp]
-  congr 1
-  simp only [mul_re, mul_im, ofReal_re, ofReal_im, I_re, I_im]
-  ring
 
 /-- For `0 ≤ t`, on the half-plane `{z | y ≤ im z}` the function `exp (π i t z)` is bounded in
 norm by `exp (-π y t)`; this dominates the terms of a theta series by a Gaussian. -/

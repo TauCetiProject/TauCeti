@@ -5,22 +5,24 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Complex.Exponential
+public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.GCongr
 import Mathlib.Tactic.Positivity
 
 /-!
-# Polynomial weights against a real Gaussian
+# Bounds for Gaussians
 
 A Gaussian `exp (-a r²)` with `0 < a` absorbs every polynomial weight: `(1 + r) ^ m exp (-a r²)`
 is bounded for `0 ≤ r`. This is the scalar estimate behind Schwartz-type decay of Gaussians and
 of the heat kernel. The proof combines `(1 + r) ^ m ≤ m! exp (1 + r)` with the completed square
-`r - a r² ≤ 1 / (4a)`.
+`r - a r² ≤ 1 / (4a)`. The complex Gaussian `exp (π i t z)`, for real `t`, has modulus
+`exp (-π t im z)`, which is a real Gaussian in `t = ‖x‖²`.
 
 ## Main statements
 
 * `Real.one_add_pow_mul_exp_neg_mul_sq_le`: `(1 + r) ^ m exp (-a r²) ≤ m! exp (1 + 1 / (4a))`.
+* `Complex.norm_exp_pi_mul_I_mul_ofReal_mul`: `‖exp (π i t z)‖ = exp (-π t im z)` for real `t`.
 -/
 
 public section
@@ -48,3 +50,18 @@ theorem one_add_pow_mul_exp_neg_mul_sq_le {a : ℝ} (ha : 0 < a) (m : ℕ) {r : 
     _ ≤ m ! * Real.exp (1 + 1 / (4 * a)) := by gcongr
 
 end Real
+
+namespace Complex
+
+open Real
+
+/-- For real `t`, `‖exp (π i t z)‖ = exp (-π t im z)`; with `t = ‖x‖²` this is the modulus of a
+complex Gaussian, such as a term of a theta series. -/
+theorem norm_exp_pi_mul_I_mul_ofReal_mul (t : ℝ) (z : ℂ) :
+    ‖cexp (π * I * t * z)‖ = Real.exp (-(π * t) * z.im) := by
+  rw [Complex.norm_exp]
+  congr 1
+  simp only [mul_re, mul_im, ofReal_re, ofReal_im, I_re, I_im]
+  ring
+
+end Complex
