@@ -256,7 +256,7 @@ private theorem famMultiset_cons (q : ℕ × M) (s : Multiset (ℕ × M)) :
   rw [famMultiset, ← famCoeff_comp_equiv f (Multiset.consEquiv (v := q) (m := s)).symm]
   congr 1
   funext o
-  cases o <;> rfl
+  cases o <;> simp
 
 private theorem famMultiset_cons_cons (q q' : ℕ × M) (s : Multiset (ℕ × M)) :
     famMultiset f (q ::ₘ q' ::ₘ s) =
@@ -265,7 +265,7 @@ private theorem famMultiset_cons_cons (q q' : ℕ × M) (s : Multiset (ℕ × M)
     (Equiv.optionCongr (Multiset.consEquiv (v := q') (m := s)).symm)]
   congr 1
   funext o
-  rcases o with _ | _ | _ <;> rfl
+  rcases o with _ | _ | _ <;> simp [Equiv.optionCongr, Option.elim']
 
 private theorem famMultiset_map_univ {ι : Type*} [Fintype ι] (p : ι → ℕ × M) :
     famMultiset f (Finset.univ.val.map p) = famCoeff f p := by
@@ -285,6 +285,11 @@ private theorem famMultiset_map_univ {ι : Type*} [Fintype ι] (p : ι → ℕ �
   funext x
   simp [U]
 
+private theorem toMultiset_sum_single_one {α ι : Type*} [Fintype ι] (p : ι → α) :
+    Finsupp.toMultiset (∑ i, Finsupp.single (p i) 1) = Finset.univ.val.map p := by
+  simpa [Finsupp.toMultiset_sum, Finset.sum_map_val] using
+    Multiset.sum_map_singleton (Finset.univ.val.map p)
+
 /-- The linear map on polynomials in the variables `X (n, m)` sending the monomial
 `∏ X (nᵢ, mᵢ)` to the coefficient of `f` attached to the pairs `(nᵢ, mᵢ)`. -/
 private def polyMap : MvPolynomial (ℕ × M) R →ₗ[R] N :=
@@ -295,17 +300,19 @@ private theorem polyMap_monomial (e : ℕ × M →₀ ℕ) :
   simpa [polyMap] using (basisMonomials (ℕ × M) R).constr_basis R
     (fun e ↦ famMultiset f (Finsupp.toMultiset e)) e
 
+private theorem toMultiset_add_single_one {α : Type*} (e : α →₀ ℕ) (q : α) :
+    Finsupp.toMultiset (e + Finsupp.single q 1) = q ::ₘ Finsupp.toMultiset e := by
+  simp [Finsupp.toMultiset_add, add_comm]
+
 private theorem polyMap_monomial_mul_X (e : ℕ × M →₀ ℕ) (q : ℕ × M) :
     polyMap f (monomial e 1 * X q) = famMultiset f (q ::ₘ Finsupp.toMultiset e) := by
-  rw [← pow_one (X q), ← monomial_add_single, polyMap_monomial, map_add,
-    Finsupp.toMultiset_single, one_nsmul, Multiset.add_comm, Multiset.singleton_add]
+  rw [← pow_one (X q), ← monomial_add_single, polyMap_monomial, toMultiset_add_single_one]
 
 private theorem polyMap_monomial_mul_X_mul_X (e : ℕ × M →₀ ℕ) (q q' : ℕ × M) :
     polyMap f (monomial e 1 * (X q * X q')) =
       famMultiset f (q ::ₘ q' ::ₘ Finsupp.toMultiset e) := by
   rw [mul_comm (X q), ← mul_assoc, ← pow_one (X q'), ← monomial_add_single,
-    polyMap_monomial_mul_X, map_add, Finsupp.toMultiset_single, one_nsmul, Multiset.add_comm,
-    Multiset.singleton_add]
+    polyMap_monomial_mul_X, toMultiset_add_single_one]
 
 /-- The coefficient map respects each defining relation of `Γ_R(M)`, after multiplication by
 any monomial. -/
@@ -375,10 +382,7 @@ private theorem coeffLift_prod_dp {ι : Type*} [Fintype ι] (p : ι → ℕ × M
         DividedPowerAlgebra R M) := by
     simp only [dp_def, Prod.mk.eta, monomial_sum_one, ← X_pow_eq_monomial, pow_one,
       ← RingCon.mkₐ_apply R, map_prod]
-  rw [hdp, coeffLift_mk, polyMap_monomial, map_sum]
-  simp only [Finsupp.toMultiset_single, one_nsmul]
-  rw [← famMultiset_map_univ, ← Multiset.sum_map_singleton (Finset.univ.val.map p),
-    Multiset.map_map, Function.comp_def, Finset.sum_map_val]
+  rw [hdp, coeffLift_mk, polyMap_monomial, toMultiset_sum_single_one, famMultiset_map_univ]
 
 end Multiset
 
