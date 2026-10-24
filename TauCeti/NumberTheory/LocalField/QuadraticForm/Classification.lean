@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LocalField.QuadraticForm.Isotropy
 import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.WittChain
+import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Semiring
 import TauCeti.LinearAlgebra.QuadraticForm.Witt.Cancellation
 
 /-!
@@ -24,6 +25,9 @@ nonzero value: their difference is isotropic by the local isotropy bound. In dim
 least three, this allows a common line to be split off and the classification to be reduced
 inductively to the binary criterion. The diagonal-chain API aligns the represented value
 with the leading coefficient; the orthogonal-sum formulas recover the invariants of the tails.
+
+In particular, a class is the sum of `m` hyperbolic planes exactly when it has rank `2m`,
+discriminant `m · [-1]` and local Hasse invariant `(-1, -1)_K^{m(m-1)/2}`.
 
 Since the local Hasse invariant takes only the values `±1`, a rank and a discriminant leave at most
 two classes, with opposite Hasse invariants. Consequently, if `p ≠ p'` share their rank and
@@ -142,6 +146,15 @@ theorem eq_iff_rank_eq_and_signedDiscr_eq_and_localHasse_eq {x y : RegularFormCl
   -- cancelled through the injectivity of translation in the group.
   exact and_congr_left'
     (Equiv.addLeft ((rank y).choose 2 • squareClass (-1 : Kˣ))).injective.eq_iff.symm
+
+/-- **The local invariants of a hyperbolic space.** A class is the sum of `m` hyperbolic planes
+exactly when it has rank `2m`, discriminant `m · [-1]` and local Hasse invariant
+`(-1, -1)_K^{m(m-1)/2}`. -/
+theorem eq_nsmul_hyperbolicClass_iff {x : RegularFormClass K} {m : ℕ} :
+    x = m • hyperbolicClass K ↔ x.rank = 2 * m ∧ discr x = m • squareClass (-1 : Kˣ) ∧
+      localHasse x = hilbertSymbol (-1 : Kˣ) (-1) ^ m.choose 2 := by
+  rw [eq_iff_rank_eq_and_discr_eq_and_localHasse_eq, localHasse_nsmul_hyperbolicClass,
+    rank_nsmul, rank_hyperbolicClass, mul_comm m, discr_nsmul, discr_hyperbolicClass]
 
 /-- **At most two classes of each rank and discriminant.** Distinct classes with the same rank
 and plain discriminant have opposite local Hasse invariants. -/

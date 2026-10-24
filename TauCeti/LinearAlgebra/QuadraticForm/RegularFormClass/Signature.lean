@@ -147,6 +147,13 @@ noncomputable def signatureHom : RegularFormClass K →+* ℤ where
 @[simp]
 theorem signatureHom_apply (x : RegularFormClass K) : signatureHom x = signature x := (rfl)
 
+-- Not `@[simp]`: `nsmul_eq_mul` rewrites the left-hand side in the semiring
+-- `RegularFormClass K`, so this declaration would fail `simpNF`.
+/-- The signature of the orthogonal sum of `n` copies of a class is `n` times its signature. -/
+theorem signature_nsmul (n : ℕ) (x : RegularFormClass K) :
+    signature (n • x) = n • signature x :=
+  map_nsmul signatureHom n x
+
 variable [IsRealClosed K]
 
 /-- A positive line over a real closed field is isometric to the unit line. -/
