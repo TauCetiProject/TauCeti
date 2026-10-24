@@ -166,20 +166,6 @@ theorem traceDerivationPairCochain_swap :
   simp only [traceDerivationPairCochain_apply, neg_apply, ← map_neg, ← mul_neg,
     neg_sub]
 
-omit [IsScalarTower k A A] [SMulCommClass k A A] in
-/-- For a trace `τ` and a map `ω : A → A → A` with
-`ω(x y, z) - ω(x, y z) = x ω(y, z) - ω(x, y) z`, the cochain `τ(a₀ ω(a₁, a₂))` satisfies the
-Hochschild cocycle identity. -/
-private theorem trace_mul_hochschild_eq_zero {τ : A →ₗ[k] M} (hτ : ∀ x y, τ (x * y) = τ (y * x))
-    (ω : A → A → A) (hω : ∀ x y z, ω (x * y) z - ω x (y * z) = x * ω y z - ω x y * z)
-    (a₀ a₁ a₂ a₃ : A) :
-    τ (a₀ * a₁ * ω a₂ a₃) - τ (a₀ * ω (a₁ * a₂) a₃) + τ (a₀ * ω a₁ (a₂ * a₃)) -
-      τ (a₃ * a₀ * ω a₁ a₂) = 0 := by
-  have h := congrArg (fun x ↦ τ (a₀ * x)) (hω a₁ a₂ a₃)
-  simp only [mul_sub, map_sub, ← mul_assoc] at h
-  rw [mul_assoc a₃, hτ a₃]
-  linear_combination (norm := abel) -h
-
 /-- For a trace `τ`, the cochain `(a₀, a₁, a₂) ↦ τ(a₀ (δ₁(a₁) δ₂(a₂) - δ₂(a₁) δ₁(a₂)))` is a
 Hochschild cocycle. -/
 theorem hochschildCoboundary_traceDerivationPairCochain (hτ : ∀ x y, τ (x * y) = τ (y * x)) :
@@ -188,10 +174,9 @@ theorem hochschildCoboundary_traceDerivationPairCochain (hτ : ∀ x y, τ (x * 
   rw [hochschildCoboundary_two_apply]
   simp only [traceDerivationPairCochain_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
     Matrix.cons_val_two, Matrix.tail_cons, Matrix.head_cons, zero_apply]
-  refine trace_mul_hochschild_eq_zero hτ (fun x y ↦ (δ₁ : Module.End k A) x *
-    (δ₂ : Module.End k A) y - (δ₂ : Module.End k A) x * (δ₁ : Module.End k A) y)
-    (fun x y z ↦ ?_) _ _ _ _
-  simp only [derivationLieAlgebra.leibniz, add_mul, mul_add, sub_mul, mul_sub, mul_assoc]
+  rw [mul_assoc (a 3), hτ (a 3)]
+  simp only [derivationLieAlgebra.leibniz, mul_add, add_mul, mul_sub, sub_mul, map_add, map_sub,
+    ← mul_assoc]
   abel
 
 /-- For a trace `τ` invariant under two commuting derivations `δ₁` and `δ₂`, the cochain
