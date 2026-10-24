@@ -81,6 +81,16 @@ theorem realCliffordOneOneVolume_mul_self :
   ext i j
   fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_two]
 
+/-- Multiplication in the even plane `ℝ + ℝ z`, where `z² = 1`. -/
+theorem algebraMap_add_smul_realCliffordOneOneVolume_mul (a b c d : ℝ) :
+    (algebraMap ℝ (CliffordAlgebra (realCliffordForm 1 1)) a +
+        b • realCliffordOneOneVolume) *
+      (algebraMap ℝ _ c + d • realCliffordOneOneVolume) =
+        algebraMap ℝ _ (a * c + b * d) + (a * d + b * c) • realCliffordOneOneVolume := by
+  simp only [Algebra.algebraMap_eq_smul_one, add_mul, mul_add, smul_mul_assoc,
+    mul_smul_comm, one_mul, mul_one, realCliffordOneOneVolume_mul_self, smul_smul, add_smul]
+  abel
+
 /-- `z` is even: the grade involution fixes it. -/
 @[simp]
 theorem involute_realCliffordOneOneVolume :

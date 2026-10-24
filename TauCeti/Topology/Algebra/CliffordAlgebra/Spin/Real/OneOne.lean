@@ -92,22 +92,6 @@ private theorem continuous_coeffVol : Continuous coeffVol :=
   ((IsModuleTopology.continuous_of_linearMap realCliffordOneOneEquivMatrix.toLinearMap).comp
     continuous_subtype_val).matrix_elem 0 1
 
-/-- The square root of unity `-1`. -/
-private def negOneRootsOfUnity : rootsOfUnity 2 ℝ :=
-  ⟨-1, (mem_rootsOfUnity 2 _).mpr (by simp)⟩
-
-private theorem eq_one_or_eq_negOneRootsOfUnity (ζ : rootsOfUnity 2 ℝ) :
-    ζ = 1 ∨ ζ = negOneRootsOfUnity := by
-  have h : ((ζ : ℝˣ) : ℝ) ∈ ({1, -1} : Set ℝ) :=
-    Units.val_set_image_rootsOfUnity_two (R := ℝ) ▸ Set.mem_image_of_mem _ ζ.2
-  rcases h with h | h
-  · exact Or.inl (Subtype.ext (Units.ext h))
-  · exact Or.inr (Subtype.ext (Units.ext h))
-
-private theorem negOneRootsOfUnity_ne_one : negOneRootsOfUnity ≠ 1 := fun h ↦ by
-  have := congrArg (fun ζ : rootsOfUnity 2 ℝ ↦ ((ζ : ℝˣ) : ℝ)) h
-  norm_num [negOneRootsOfUnity] at this
-
 /-- The sign `ζ`, read off from the sign of `ζ cosh t`. -/
 private noncomputable def spinSign (x : realCliffordSpinGroup 1 1) : rootsOfUnity 2 ℝ :=
   if 0 < coeffOne x then 1 else negOneRootsOfUnity
@@ -132,6 +116,8 @@ private theorem spinInv_realCliffordSpinOneOneEquiv (p : rootsOfUnity 2 ℝ × M
     arsinh_sinh, ofAdd_toAdd]
 
 private theorem continuous_spinSign : Continuous spinSign := by
+  have hneg : (negOneRootsOfUnity : rootsOfUnity 2 ℝ) ≠ 1 :=
+    negOneRootsOfUnity_ne_one (by norm_num)
   -- `ζ cosh t` never vanishes, so both signs cut out open sets.
   have hne (x : realCliffordSpinGroup 1 1) : coeffOne x ≠ 0 := by
     obtain ⟨⟨ζ, t⟩, rfl⟩ := realCliffordSpinOneOneEquiv.surjective x
@@ -142,11 +128,11 @@ private theorem continuous_spinSign : Continuous spinSign := by
   rcases eq_one_or_eq_negOneRootsOfUnity ζ with rfl | rfl
   · convert isOpen_lt (continuous_const (y := (0 : ℝ))) continuous_coeffOne using 1
     ext x
-    by_cases hx : 0 < coeffOne x <;> simp [spinSign, hx, negOneRootsOfUnity_ne_one]
+    by_cases hx : 0 < coeffOne x <;> simp [spinSign, hx, hneg]
   · convert isOpen_lt continuous_coeffOne (continuous_const (y := (0 : ℝ))) using 1
     ext x
     by_cases hx : 0 < coeffOne x
-    · simp [spinSign, hx, negOneRootsOfUnity_ne_one.symm, hx.le]
+    · simp [spinSign, hx, hneg.symm, hx.le]
     · simp [spinSign, hx, lt_of_le_of_ne (not_lt.mp hx) (hne x)]
 
 /-- **`Spin(1, 1) ≅ μ₂(ℝ) × ℝ` as topological groups.** The isomorphism

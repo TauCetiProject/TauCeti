@@ -9,6 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Arsinh
 public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm.OneOne
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.RootsOfUnity
+import TauCeti.RingTheory.RootsOfUnity.Basic
 import Mathlib.GroupTheory.NoncommCoprod
 
 /-!
@@ -75,15 +76,13 @@ theorem mem_realCliffordSpinGroup_one_one_iff {x : CliffordAlgebra (realClifford
     obtain ⟨a, b, rfl⟩ :=
       exists_eq_algebraMap_add_smul_realCliffordOneOneVolume (spinGroup.mem_even hx)
     refine ⟨a, b, ?_, rfl⟩
-    have h := congrArg realCliffordOneOneEquivMatrix (spinGroup.star_mul_self_of_mem hx)
-    rw [map_mul, star_algebraMap_add_smul_realCliffordOneOneVolume,
-      realCliffordOneOneEquivMatrix_algebraMap_add_smul_realCliffordOneOneVolume,
-      realCliffordOneOneEquivMatrix_algebraMap_add_smul_realCliffordOneOneVolume, map_one] at h
-    have h00 := congrFun (congrFun h 0) 0
-    simp only [Matrix.mul_apply, Fin.sum_univ_two] at h00
-    simp only [Fin.isValue, Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_zero,
-      Matrix.cons_val_fin_one, Matrix.cons_val_one, Matrix.one_apply_eq] at h00
-    linear_combination h00
+    have h := spinGroup.star_mul_self_of_mem hx
+    rw [star_algebraMap_add_smul_realCliffordOneOneVolume,
+      algebraMap_add_smul_realCliffordOneOneVolume_mul] at h
+    have hcoeff := (algebraMap_add_smul_realCliffordOneOneVolume_inj
+      (a := a * a + -b * b) (b := a * b + -b * a) (a' := 1) (b' := 0)).mp
+        (by simpa using h)
+    linear_combination hcoeff.1
   · -- `a + b z = e₁ (a e₁ + b e₂)` is a product of two vectors of norm one.
     rintro ⟨a, b, hab, rfl⟩
     have h : ι (realCliffordForm 1 1) (Pi.single 0 1) * ι _ ![a, b] =
@@ -130,11 +129,9 @@ noncomputable def realCliffordSpinOneOneHyperbolicRotation :
   map_one' := Subtype.ext (by simp)
   map_mul' s t := by
     apply Subtype.ext
-    apply realCliffordOneOneEquivMatrix.injective
-    simp only [toAdd_mul, cosh_add, sinh_add, Submonoid.coe_mul, map_mul,
-      realCliffordOneOneEquivMatrix_algebraMap_add_smul_realCliffordOneOneVolume]
-    ext i j
-    fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_two] <;> ring
+    simp only [toAdd_mul, cosh_add, sinh_add, Submonoid.coe_mul,
+      algebraMap_add_smul_realCliffordOneOneVolume_mul]
+    congr 2 <;> ring
 
 @[simp]
 theorem coe_realCliffordSpinOneOneHyperbolicRotation_apply (t : Multiplicative ℝ) :
@@ -182,11 +179,11 @@ private theorem realCliffordSpinOneOneHom_injective :
   rw [coe_realCliffordSpinOneOneHom_apply, coe_realCliffordSpinOneOneHom_apply,
     algebraMap_add_smul_realCliffordOneOneVolume_inj] at h'
   obtain ⟨hc, hs⟩ := h'
-  have hpm (ξ : rootsOfUnity 2 ℝ) : ((ξ : ℝˣ) : ℝ) ∈ ({1, -1} : Set ℝ) :=
-    Units.val_set_image_rootsOfUnity_two (R := ℝ) ▸ Set.mem_image_of_mem _ ξ.2
   have hζη : ((ζ : ℝˣ) : ℝ) = ((η : ℝˣ) : ℝ) := by
-    rcases hpm ζ with hζ | hζ <;> rcases hpm η with hη | hη <;>
-      rw [hζ, hη] at hc ⊢ <;> nlinarith [cosh_pos s.toAdd, cosh_pos t.toAdd]
+    rcases eq_one_or_eq_negOneRootsOfUnity ζ with rfl | rfl <;>
+      rcases eq_one_or_eq_negOneRootsOfUnity η with rfl | rfl <;>
+      simp only [negOneRootsOfUnity, Units.val_neg, Units.val_one, one_mul, neg_one_mul] at hc ⊢ <;>
+      nlinarith [cosh_pos s.toAdd, cosh_pos t.toAdd]
   rw [← hζη] at hs
   exact Prod.ext (Subtype.ext (Units.ext hζη))
     (Multiplicative.toAdd.injective (sinh_injective (mul_left_cancel₀ (Units.ne_zero _) hs)))
@@ -197,8 +194,8 @@ private theorem realCliffordSpinOneOneHom_surjective :
   obtain ⟨t, rfl | rfl⟩ := mem_realCliffordSpinGroup_one_one_iff_exists_cosh_sinh.mp hx
   · exact ⟨(1, Multiplicative.ofAdd t), Subtype.ext (by
       simp [coe_realCliffordSpinOneOneHom_apply])⟩
-  · refine ⟨(⟨-1, by simp [mem_rootsOfUnity]⟩, Multiplicative.ofAdd t), Subtype.ext ?_⟩
-    simp only [coe_realCliffordSpinOneOneHom_apply, Units.val_neg, Units.val_one,
+  · refine ⟨(negOneRootsOfUnity, Multiplicative.ofAdd t), Subtype.ext ?_⟩
+    simp only [coe_realCliffordSpinOneOneHom_apply, negOneRootsOfUnity, Units.val_neg, Units.val_one,
       toAdd_ofAdd, neg_one_mul, map_neg, neg_smul, neg_add]
 
 private theorem realCliffordSpinOneOneHom_bijective :
@@ -237,6 +234,14 @@ theorem realCliffordSpinOneOneSign_realCliffordSpinOneOneEquiv
     (p : rootsOfUnity 2 ℝ × Multiplicative ℝ) :
     realCliffordSpinOneOneSign (realCliffordSpinOneOneEquiv p) = p.1 := by
   simp [realCliffordSpinOneOneSign]
+
+/-- Every hyperbolic rotation has positive sign. -/
+@[simp]
+theorem realCliffordSpinOneOneSign_realCliffordSpinOneOneHyperbolicRotation
+    (t : Multiplicative ℝ) :
+    realCliffordSpinOneOneSign (realCliffordSpinOneOneHyperbolicRotation t) = 1 := by
+  rw [← realCliffordSpinOneOneEquiv_one_mk,
+    realCliffordSpinOneOneSign_realCliffordSpinOneOneEquiv]
 
 /-- The kernel of the sign is the group of hyperbolic rotations. -/
 theorem ker_realCliffordSpinOneOneSign :

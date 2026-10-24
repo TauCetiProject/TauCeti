@@ -26,6 +26,8 @@ Finally, for `n ∣ m` it records the power map from the `m`-th to the `n`-th ro
 
 ## Main definitions
 
+* `TauCeti.negOneRootsOfUnity`: the square root of unity `-1` in a commutative ring.
+
 * `TauCeti.torsionByUnitsEquivRootsOfUnity`: the `n`-torsion of `Mˣ`, written additively, is
   `μₙ(M)`, written additively.
 * `TauCeti.rootsOfUnityPowOfDvd`: for `n ∣ m`, the power map `η ↦ η ^ (m / n)` from `μₘ(M)` to
@@ -102,6 +104,31 @@ elements. -/
 theorem card_rootsOfUnity_two [IsDomain R] (h2 : (2 : R) ≠ 0) :
     Nat.card (rootsOfUnity 2 R) = 2 :=
   (IsPrimitiveRoot.neg_one_of_two_ne_zero h2).card_rootsOfUnity
+
+/-- The square root of unity `-1` in a commutative ring. -/
+def negOneRootsOfUnity : rootsOfUnity 2 R :=
+  ⟨-1, (mem_rootsOfUnity 2 _).mpr (by simp)⟩
+
+/-- The unit underlying the square root `-1` is the negative unit. -/
+@[simp]
+theorem coe_negOneRootsOfUnity : (negOneRootsOfUnity : Rˣ) = -1 :=
+  (rfl)
+
+/-- In a ring without zero divisors, every square root of unity is `1` or `-1`. -/
+theorem eq_one_or_eq_negOneRootsOfUnity [NoZeroDivisors R] (ζ : rootsOfUnity 2 R) :
+    ζ = 1 ∨ ζ = negOneRootsOfUnity := by
+  have h : ((ζ : Rˣ) : R) ∈ ({1, -1} : Set R) :=
+    Units.val_set_image_rootsOfUnity_two (R := R) ▸ Set.mem_image_of_mem _ ζ.2
+  rcases h with h | h
+  · exact Or.inl (Subtype.ext (Units.ext h))
+  · exact Or.inr (Subtype.ext (Units.ext h))
+
+/-- The square roots `-1` and `1` are distinct when `2 ≠ 0`. -/
+theorem negOneRootsOfUnity_ne_one (h2 : (2 : R) ≠ 0) :
+    (negOneRootsOfUnity : rootsOfUnity 2 R) ≠ 1 := by
+  intro h
+  have h' : (-1 : R) = 1 := congrArg (fun ζ : rootsOfUnity 2 R ↦ ((ζ : Rˣ) : R)) h
+  exact h2 (by simpa using (congrArg (fun x : R ↦ x + 1) h').symm)
 
 /-- In a domain, the number of `n`-th roots of unity divides `n`: they form a cyclic group, and its
 exponent divides `n`. -/
