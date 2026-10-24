@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.DifferentialForm.LieDeriv
 public import TauCeti.Geometry.Manifold.DifferentialForm.Interior
+public import TauCeti.Geometry.Manifold.DifferentialForm.Closed
 public import TauCeti.Geometry.Manifold.DifferentialForm.Smooth
 public import TauCeti.Geometry.Manifold.DifferentialForm.VectorField
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
@@ -328,9 +329,10 @@ derivative of its contraction. -/
 theorem mlieDerivForm_eq_mextDeriv_interior {φ : SmoothForm I M F (k + 1)}
     {V : (x : M) → TangentSpace I x}
     (hV : MDifferentiable I I.tangent (fun y ↦ (V y : TangentBundle I M)))
-    (hdφ : mextDeriv φ.1 = 0) :
+    (hφ : φ.IsClosed) :
     mlieDerivForm V φ.1 = mextDeriv (φ.1.interior V) := by
-  exact TauCeti.mlieDerivForm_eq_mextDeriv_interior φ.mdifferentiable hV hdφ
+  exact TauCeti.mlieDerivForm_eq_mextDeriv_interior φ.mdifferentiable hV
+    ((SmoothForm.isClosed_def φ).mp hφ)
 
 end SmoothForm
 
