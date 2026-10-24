@@ -12,12 +12,12 @@ import TauCeti.Analysis.Calculus.ContDiff.LocalInjectivity
 # Local injectivity of maps with injective manifold derivative
 
 A map `f : M → N` between manifolds over `ℝ` or `ℂ` (more generally, over a field `𝕜` with
-`IsRCLikeNormedField 𝕜`) that is `C¹` at `x`, where the model space of `M` is
+`IsRCLikeNormedField 𝕜`) that is `C^n`, `n ≠ 0`, at `x`, where the model space of `M` is
 finite-dimensional and the manifold derivative `mfderiv I J f x` is injective, is injective on a
 neighbourhood of `x` (`ContMDiffAt.exists_mem_nhds_injOn`).
 
 No boundary or smoothness assumption is placed on `M` or `N`: in the extended charts at `x` and
-`f x`, the coordinate expression of `f` is `C¹` within the convex range of the model with corners,
+`f x`, the coordinate expression of `f` is `C^n` within the convex range of the model with corners,
 and its derivative within that range is `mfderiv I J f x`, so the relative local injectivity
 theorem `ContDiffWithinAt.exists_nhdsWithin_injOn` applies. In particular this covers boundary
 points, where the inverse function theorem is not available.
@@ -42,18 +42,18 @@ variable {𝕜 E H M E' H' N : Type*} [NontriviallyNormedField 𝕜] [IsRCLikeNo
   {f : M → N} {x : M}
 
 /-- A map between real or complex manifolds, the source modelled on a finite-dimensional space,
-that is `C¹` at `x` and has injective manifold derivative at `x` is injective on a neighbourhood
-of `x`. The manifolds may have boundary or corners. -/
-theorem ContMDiffAt.exists_mem_nhds_injOn (hf : ContMDiffAt I J 1 f x)
-    (hinj : Injective (mfderiv I J f x)) : ∃ t ∈ 𝓝 x, InjOn f t := by
+that is `C^n`, `n ≠ 0`, at `x` and has injective manifold derivative at `x` is injective on a
+neighbourhood of `x`. The manifolds may have boundary or corners. -/
+theorem ContMDiffAt.exists_mem_nhds_injOn {n : WithTop ℕ∞} (hf : ContMDiffAt I J n f x)
+    (hn : n ≠ 0) (hinj : Injective (mfderiv I J f x)) : ∃ t ∈ 𝓝 x, InjOn f t := by
   let := IsRCLikeNormedField.rclike 𝕜
   let := NormedSpace.restrictScalars ℝ 𝕜 E
   have hx : extChartAt I x x ∈ range I :=
     extChartAt_target_subset_range x (mem_extChartAt_target x)
   -- The manifold derivative is the derivative of the coordinate expression within `range I`,
   -- up to the identifications of the tangent spaces with the model spaces.
-  rw [(hf.mdifferentiableAt one_ne_zero).mfderiv] at hinj
-  obtain ⟨t, ht, hinjt⟩ := (contMDiffAt_iff.1 hf).2.exists_nhdsWithin_injOn I.convex_range hx
+  rw [(hf.mdifferentiableAt hn).mfderiv] at hinj
+  obtain ⟨t, ht, hinjt⟩ := (contMDiffAt_iff.1 hf).2.exists_nhdsWithin_injOn hn I.convex_range hx
     (I.uniqueDiffOn _ hx) (by
       simpa only [ContinuousLinearMap.coe_comp, ContinuousLinearEquiv.coe_coe,
         EquivLike.comp_injective, EquivLike.injective_comp, writtenInExtChartAt] using hinj)

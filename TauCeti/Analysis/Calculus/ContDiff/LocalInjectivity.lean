@@ -32,8 +32,8 @@ model with corners.
 * `Convex.exists_nhdsWithin_injOn_of_hasFDerivWithinAt`: a map with derivatives within a convex
   set `s` near `x`, continuous within `s` at `x` and injective at `x`, is injective on a
   neighbourhood of `x` within `s`.
-* `ContDiffWithinAt.exists_nhdsWithin_injOn`: the same for a map that is `C¹` within `s` at
-  `x ∈ s`, with injective derivative within `s` at `x`.
+* `ContDiffWithinAt.exists_nhdsWithin_injOn`: the same for a map that is `C^n`, `n ≠ 0`, within
+  `s` at `x ∈ s`, with injective derivative within `s` at `x`.
 
 ## References
 
@@ -72,13 +72,15 @@ theorem Convex.exists_nhdsWithin_injOn_of_hasFDerivWithinAt (hs : Convex ℝ s)
   exact ((hL.domRestrict t).add_sub_lipschitzWith (g := t.domRestrict f) hlip.to_restrict
     (by gcongr; exact lt_two_mul_self hK)).injective
 
-/-- A map that is `C¹` within a convex set `s` at a point `x ∈ s` where `s` has unique
-derivatives, and whose derivative within `s` at `x` is injective, is injective on a neighbourhood
-of `x` within `s`. -/
-theorem ContDiffWithinAt.exists_nhdsWithin_injOn (hf : ContDiffWithinAt 𝕜 1 f s x)
-    (hs : Convex ℝ s) (hx : x ∈ s) (hu : UniqueDiffWithinAt 𝕜 s x)
-    (hinj : Injective (fderivWithin 𝕜 f s x)) : ∃ t ∈ 𝓝[s] x, InjOn f t := by
-  rw [← zero_add (1 : WithTop ℕ∞)] at hf
+/-- A map that is `C^n`, `n ≠ 0`, within a convex set `s` at a point `x ∈ s` where `s` has
+unique derivatives, and whose derivative within `s` at `x` is injective, is injective on a
+neighbourhood of `x` within `s`. -/
+theorem ContDiffWithinAt.exists_nhdsWithin_injOn {n : WithTop ℕ∞}
+    (hf : ContDiffWithinAt 𝕜 n f s x) (hn : n ≠ 0) (hs : Convex ℝ s) (hx : x ∈ s)
+    (hu : UniqueDiffWithinAt 𝕜 s x) (hinj : Injective (fderivWithin 𝕜 f s x)) :
+    ∃ t ∈ 𝓝[s] x, InjOn f t := by
+  have hf : ContDiffWithinAt 𝕜 (0 + 1) f s x :=
+    hf.of_le (by simpa using ENat.one_le_iff_ne_zero_withTop.2 hn)
   obtain ⟨u, hu', -, -, f', hder, hcont⟩ :=
     (contDiffWithinAt_succ_iff_hasFDerivWithinAt' (by simp)).1 hf
   rw [insert_eq_of_mem hx] at hu'
