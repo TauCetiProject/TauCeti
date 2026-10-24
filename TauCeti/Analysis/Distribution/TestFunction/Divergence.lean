@@ -122,6 +122,15 @@ namespace TauCeti
 open Set TestFunction TopologicalSpace
 open scoped Distributions
 
+/-- On the real line, the divergence of a test vector field is its ordinary derivative. -/
+theorem _root_.TestFunction.divergenceCLM_apply_eq_deriv {Ω : Opens ℝ} (φ : 𝓓(Ω, ℝ)) (x : ℝ) :
+    divergenceCLM φ x = deriv φ x := by
+  rw [divergenceCLM_apply_eq_sum (OrthonormalBasis.singleton Unit ℝ)]
+  simp only [OrthonormalBasis.singleton_apply, RCLike.inner_apply, mul_one,
+    conj_trivial, Finset.univ_unique, Finset.sum_singleton]
+  rw [(φ.contDiff.differentiable (by simp) x).lineDeriv_eq_fderiv,
+    fderiv_apply_one_eq_deriv]
+
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {Ω V : Opens E} {h : E}
 
