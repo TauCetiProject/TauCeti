@@ -72,6 +72,10 @@ open TauCeti.EuclideanHalfSpace
 
 namespace TauCeti
 
+/-- A point of `[t - δ, t + δ]` lies within `δ` of `t`. -/
+private theorem abs_sub_le_of_mem_Icc {s t δ : ℝ} (hs : s ∈ Icc (t - δ) (t + δ)) : |s - t| ≤ δ :=
+  abs_sub_le_iff.2 ⟨by linarith [hs.2], by linarith [hs.1]⟩
+
 section Chart
 
 variable {M : Type*} [TopologicalSpace M] {e : OpenPartialHomeomorph M (EuclideanHalfSpace 1)}
@@ -189,6 +193,12 @@ theorem ModelWithCorners.mem_boundary_euclideanHalfSpace_one_iff
     frontier_range_modelWithCornersEuclideanHalfSpace, mem_ofPred_eq, extChartAt_coe,
     comp_apply, modelWithCornersEuclideanHalfSpace_toFun, eq_comm]
   exact ⟨coord_eq_zero_of_coord_eq_zero hy' hy, coord_eq_zero_of_coord_eq_zero hy hy'⟩
+
+/-- A point of a chart domain which is not a boundary point has positive coordinate. -/
+private theorem coord_pos_of_notMem_boundary {e : OpenPartialHomeomorph M (EuclideanHalfSpace 1)}
+    {y : M} (hy : y ∈ e.source) (h : y ∉ (𝓡∂ 1).boundary M) : 0 < (e y).1 0 :=
+  lt_of_le_of_ne (e y).2
+    (Ne.symm ((ModelWithCorners.mem_boundary_euclideanHalfSpace_one_iff hy).not.1 h))
 
 /-- A compact one-dimensional topological manifold has finitely many boundary points: each chart
 domain contains at most one, the point of coordinate zero. -/
@@ -346,8 +356,7 @@ private theorem forall_mem_coord_lt_of_isPreconnected [T2Space M]
     ∀ z ∈ K, z ∈ e.source ∧ |(e z).1 0 - t| < δ := by
   set W := e.source ∩ (fun z ↦ (e z).1 0) ⁻¹' {s | |s - t| < δ}
   set A := (fun s ↦ e.symm (normalRay s)) '' Icc (t - δ) (t + δ)
-  have hIcc : ∀ s ∈ Icc (t - δ) (t + δ), |s - t| ≤ δ := fun s hs ↦
-    abs_sub_le_iff.2 ⟨by linarith [hs.2], by linarith [hs.1]⟩
+  have hIcc : ∀ s ∈ Icc (t - δ) (t + δ), |s - t| ≤ δ := fun _ ↦ abs_sub_le_of_mem_Icc
   have hW : IsOpen W := continuousOn_coord.isOpen_inter_preimage e.open_source
     (isOpen_lt (by fun_prop) continuous_const)
   have hA : IsClosed A := (isCompact_Icc.image_of_continuousOn
@@ -420,7 +429,7 @@ private theorem exists_cutSet [CompactSpace M] [T2Space M] :
         absurd (mem_iUnion₂.2 ⟨x, hxS, hze, hzδ⟩ : z ∈ P) (connectedComponentIn_subset _ _ hz))
       (mem_connectedComponentIn hyP) hy hyδ
     refine ⟨e x, (e x x).1 0 - δ x, (e x x).1 0 + δ x, fun s hs ↦ hδt x s
-      (abs_sub_le_iff.2 ⟨by linarith [hs.2], by linarith [hs.1]⟩), fun z hz ↦ ⟨(hball z hz).1, ?_⟩⟩
+      (abs_sub_le_of_mem_Icc hs), fun z hz ↦ ⟨(hball z hz).1, ?_⟩⟩
     have := abs_sub_lt_iff.1 (hball z hz).2
     exact ⟨by linarith, by linarith⟩
 
@@ -447,8 +456,7 @@ private theorem exists_isSides [T1Space M] {P : Set M} (hP : P.Finite) {p : M}
   set e := chartAt (EuclideanHalfSpace 1) p
   have hpe : p ∈ e.source := mem_chart_source _ p
   set t := (e p).1 0
-  have ht : 0 < t := lt_of_le_of_ne (e p).2
-    (Ne.symm ((ModelWithCorners.mem_boundary_euclideanHalfSpace_one_iff hpe).not.1 hp))
+  have ht : 0 < t := coord_pos_of_notMem_boundary hpe hp
   obtain ⟨η, hη, hηt, hηV⟩ := exists_coord_nhds
     (e.open_source.inter (hP.subset sdiff_subset).isClosed.isOpen_compl) inter_subset_left
     ⟨hpe, fun h ↦ h.2 (mem_singleton p)⟩
@@ -457,7 +465,7 @@ private theorem exists_isSides [T1Space M] {P : Set M} (hP : P.Finite) {p : M}
   have hγ : ∀ s ∈ Icc (t - η) (t + η), normalRay s ∈ e.target ∧
       (e (e.symm (normalRay s))).1 0 = s ∧ (e.symm (normalRay s) ∈ P → s = t) := by
     intro s hs
-    obtain ⟨hst, hsV⟩ := hηV s (abs_sub_le_iff.2 ⟨by linarith [hs.2], by linarith [hs.1]⟩)
+    obtain ⟨hst, hsV⟩ := hηV s (abs_sub_le_of_mem_Icc hs)
     have hcoord := coord_symm_normalRay (by linarith [hs.1]) hst
     refine ⟨hst, hcoord, fun hsP ↦ ?_⟩
     by_contra hne
@@ -494,7 +502,8 @@ private theorem exists_isSides [T1Space M] {P : Set M} (hP : P.Finite) {p : M}
   · exact continuousOn_coord.isOpen_inter_preimage e.open_source isOpen_Ioo
   · rintro z ⟨⟨hze, hzI⟩, hzp⟩
     have hzs : e.symm (normalRay ((e z).1 0)) = z := symm_normalRay_coord hze
-    have hst : (e z).1 0 ≠ t := fun h ↦ hzp (by rw [← hzs, h, symm_normalRay_coord hpe]; rfl)
+    have hst : (e z).1 0 ≠ t := fun h ↦
+      hzp (by rw [mem_singleton_iff, ← hzs, h, symm_normalRay_coord hpe])
     rcases lt_or_gt_of_ne hst with h | h
     · exact Or.inr ⟨_, ⟨hzI.1.le, h⟩, hzs⟩
     · exact Or.inl ⟨_, ⟨h, hzI.2.le⟩, hzs⟩
@@ -556,9 +565,7 @@ private theorem CutData.not_subset_and_subset [T2Space M] (D : CutData M) {p : M
     False := by
   have hs := D.sides p hp
   obtain ⟨hpe, -, hpab⟩ := h.coord_of_mem_closure (closure_mono htrue (hs.mem_closure true)) hpK
-  have hp0 : 0 < (e p).1 0 := lt_of_le_of_ne (e p).2 (Ne.symm
-    ((ModelWithCorners.mem_boundary_euclideanHalfSpace_one_iff hpe).not.1
-      (disjoint_left.1 D.disjoint hp)))
+  have hp0 : 0 < (e p).1 0 := coord_pos_of_notMem_boundary hpe (disjoint_left.1 D.disjoint hp)
   obtain ⟨ε, hε, hεp, hεN⟩ :=
     exists_coord_nhds (hs.isOpen.inter e.open_source) inter_subset_right ⟨hs.mem_nhds, hpe⟩
   replace hεp := hεp hp0
