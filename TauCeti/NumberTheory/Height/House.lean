@@ -64,11 +64,17 @@ of bounded degree and bounded house.
   lies in the number field `ℚ(α)` of degree `deg α`, with the same house.
 * `NumberField.house_natCast_mul_pow_mul_pow_le`: the house of `c bⁿ αʲ` in a number field is
   at most `(2 b max(1, ⌈α⌉))ⁿ` when `c ≤ 2ⁿ` and `j ≤ n`.
+* `TauCeti.inv_norm_le_pow_mul_house_pow_of_mem_rootSet`,
+  `TauCeti.inv_norm_le_natDenominator_pow_mul_house_pow_of_mem_rootSet`,
+  `TauCeti.inv_norm_le_natDenominator_pow_mul_house_pow`: every complex conjugate `z` of a
+  nonzero algebraic number `x` of degree `d` satisfies `‖z‖ ≥ den(x)⁻ᵈ ⌈x⌉¹⁻ᵈ`, and more
+  generally `‖z‖ ≥ b⁻ᵈ ⌈x⌉¹⁻ᵈ` whenever `b x` is integral for some positive integer `b`.
 
 ## References
 
 * J.-H. Evertse, *Diophantine Approximation*, lecture notes (2019), ch. 3, §3.4 and
-  Exercises 3.5, 3.6; ch. 3, Lemma 3.6, p. 42, for the Galois conjugate of modulus at least `1`.
+  Exercises 3.5, 3.6; ch. 3, Lemma 3.6, p. 42, for the Galois conjugate of modulus at least `1`;
+  ch. 3, Exercise 3.7, p. 60, for the lower bound `‖z‖ ≥ den(z)⁻ᵈ ⌈z⌉¹⁻ᵈ`.
 * C. Smyth, *The Mahler measure of algebraic numbers: a survey* (2008), §3.
 -/
 
@@ -339,6 +345,62 @@ theorem exists_numberField_of_isIntegral_natCast_mul {α : F} {b : ℕ} (hb : b 
       (algebraMap ℚ⟮α⟯ F).injective]
     simpa [IntermediateField.AdjoinSimple.coe_gen] using hbα
   · rw [← house_coe, ← IntermediateField.algebraMap_apply, hα']
+
+/-- A Liouville-type lower bound for the conjugates of a nonzero algebraic number: if `b ≠ 0`
+and `b x` is integral over `ℤ`, then every complex conjugate `z` of `x` satisfies
+`‖z‖⁻¹ ≤ bᵈ ⌈x⌉ᵈ⁻¹`, that is, `‖z‖ ≥ b⁻ᵈ ⌈x⌉¹⁻ᵈ`, where `d` is the degree of `x`. For an
+algebraic integer `x` one may take `b = 1`. -/
+theorem inv_norm_le_pow_mul_house_pow_of_mem_rootSet {x : F} {b : ℕ} (hb : b ≠ 0)
+    (hbx : IsIntegral ℤ ((b : F) * x)) (h0 : x ≠ 0) {z : ℂ}
+    (hz : z ∈ (minpoly ℚ x).rootSet ℂ) :
+    ‖z‖⁻¹ ≤ (b : ℝ) ^ (minpoly ℚ x).natDegree * house x ^ ((minpoly ℚ x).natDegree - 1) := by
+  obtain ⟨K, _, α, rfl, hfin, hint, hhouse⟩ := exists_numberField_of_isIntegral_natCast_mul hb hbx
+  have hα0 : α ≠ 0 := by rintro rfl; simp at h0
+  have hmin : minpoly ℚ (algebraMap K F α) = minpoly ℚ α :=
+    minpoly.algHom_eq (IsScalarTower.toAlgHom ℚ K F) (algebraMap K F).injective α
+  rw [hmin] at hz
+  obtain ⟨σ, rfl⟩ : ∃ σ : K →+* ℂ, σ α = z := by
+    rwa [← NumberField.Embeddings.range_eval_eq_rootSet_minpoly] at hz
+  -- The norm of the nonzero algebraic integer `b α` is a nonzero integer `n`; it is the product
+  -- of `b z` with `d - 1` further conjugates of `b α`, each of modulus at most `b ⌈x⌉`.
+  obtain ⟨n, hn⟩ := IsIntegrallyClosed.isIntegral_iff.mp (Algebra.isIntegral_norm ℚ hint)
+  have hn0 : n ≠ 0 := by
+    rintro rfl
+    exact Algebra.norm_ne_zero_iff.mpr (mul_ne_zero (Nat.cast_ne_zero.mpr hb) hα0 : (b : K) * α ≠ 0)
+      (by rw [← hn, map_zero])
+  have hnorm := NumberField.norm_norm_le_norm_mul_house_pow ((b : K) * α) σ
+  rw [← hn, NumberField.house_nat_mul, hhouse, hfin, hmin] at hnorm
+  have hd : (minpoly ℚ α).natDegree = (minpoly ℚ α).natDegree - 1 + 1 :=
+    (Nat.sub_add_cancel (minpoly.natDegree_pos (Algebra.IsIntegral.isIntegral α))).symm
+  have hσ : 0 < ‖σ α‖ := norm_pos_iff.mpr ((map_ne_zero σ).mpr hα0)
+  rw [hmin, inv_le_iff_one_le_mul₀' hσ]
+  calc (1 : ℝ) ≤ |(n : ℝ)| := by exact_mod_cast Int.one_le_abs hn0
+    _ ≤ b * ‖σ α‖ * (b * house (algebraMap K F α)) ^ ((minpoly ℚ α).natDegree - 1) := by
+      simpa [Int.norm_eq_abs] using hnorm
+    _ = _ := by rw [hd, pow_succ, Nat.add_sub_cancel]; ring
+
+/-- The lower bound `‖z‖⁻¹ ≤ den(x)ᵈ ⌈x⌉ᵈ⁻¹` for every complex conjugate `z` of a nonzero
+algebraic number `x` of degree `d`, where `den(x)` is its natural-number denominator.
+Equivalently, `‖z‖ ≥ den(x)⁻ᵈ ⌈x⌉¹⁻ᵈ`. -/
+theorem inv_norm_le_natDenominator_pow_mul_house_pow_of_mem_rootSet {x : F} (h0 : x ≠ 0)
+    {z : ℂ} (hz : z ∈ (minpoly ℚ x).rootSet ℂ) :
+    ‖z‖⁻¹ ≤ (Algebra.natDenominator x : ℝ) ^ (minpoly ℚ x).natDegree *
+      house x ^ ((minpoly ℚ x).natDegree - 1) := by
+  have hx : IsAlgebraic ℚ x := by
+    by_contra hx
+    simp [minpoly.eq_zero (fun h ↦ hx h.isAlgebraic)] at hz
+  refine inv_norm_le_pow_mul_house_pow_of_mem_rootSet
+    (IsAlgebraic.natDenominator_ne_zero ((IsFractionRing.isAlgebraic_iff ℤ ℚ F).2 hx)) ?_ h0 hz
+  simpa [nsmul_eq_mul] using Algebra.isIntegral_natDenominator_smul x
+
+/-- A nonzero algebraic complex number `z` of degree `d` satisfies
+`‖z‖⁻¹ ≤ den(z)ᵈ ⌈z⌉ᵈ⁻¹`, that is, `‖z‖ ≥ den(z)⁻ᵈ ⌈z⌉¹⁻ᵈ`. -/
+theorem inv_norm_le_natDenominator_pow_mul_house_pow {z : ℂ} (hz : IsAlgebraic ℚ z)
+    (h0 : z ≠ 0) :
+    ‖z‖⁻¹ ≤ (Algebra.natDenominator z : ℝ) ^ (minpoly ℚ z).natDegree *
+      house z ^ ((minpoly ℚ z).natDegree - 1) :=
+  inv_norm_le_natDenominator_pow_mul_house_pow_of_mem_rootSet h0 <|
+    (mem_rootSet_of_ne (minpoly.ne_zero hz.isIntegral)).2 (minpoly.aeval ℚ z)
 
 /-- In a number field, the house of `c b ^ n α ^ j` is at most `(2 b max(1, ⌈α⌉)) ^ n` when
 `c ≤ 2 ^ n` and `j ≤ n`. -/
