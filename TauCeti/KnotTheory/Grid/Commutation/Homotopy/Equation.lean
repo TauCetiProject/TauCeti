@@ -718,7 +718,7 @@ theorem mem_sameSidePentagonPartners_or_mem_mixedSidePentagonPartners {x z : Gri
     have hX : ∀ c, (c, G.X c) ∈ H.toGridRectangle.coveredSquares ∪
         S.toGridRectangle.coveredSquares → c = a := fun c hc =>
       (Finset.mem_union.mp hc).elim (G.eq_of_mem_hexagon C hH.2)
-        fun h => (G.notMem_of_mem_unblockedRectangles hS c h).elim
+        fun h => (G.X_notMem_toGridRectangle_coveredSquares_of_mem_unblockedRectangles hS c h).elim
     rcases hside with hcommon | hcommon
     · exact Or.inl (G.exists_sameSide_of_terminal_first C _ hone h1 h2 hfalse
         (fun c ha _ hc => ha (hX c hc)) hcommon H.right_eq H.lower_mem H.upper_mem)
@@ -735,7 +735,7 @@ theorem mem_sameSidePentagonPartners_or_mem_mixedSidePentagonPartners {x z : Gri
     have hX : ∀ c, (c, G.X c) ∈ H.toGridRectangle.coveredSquares ∪
         S.toGridRectangle.coveredSquares → c = b := fun c hc =>
       (Finset.mem_union.mp hc).elim (G.eq_of_mem_initialHexagon C hH.2)
-        fun h => (G.notMem_of_mem_unblockedRectangles hS c h).elim
+        fun h => (G.X_notMem_toGridRectangle_coveredSquares_of_mem_unblockedRectangles hS c h).elim
     rcases hside with hcommon | hcommon
     · exact Or.inr (G.exists_mixed_of_initial_first C _ hone h1 h2 hfalse hcommon H.left_eq
         H.lower_mem H.upper_mem hX)
@@ -751,7 +751,8 @@ theorem mem_sameSidePentagonPartners_or_mem_mixedSidePentagonPartners {x z : Gri
       GridCommutationHexagonBetween.toGridRectangleBetween_inl] at hone hside h1 h2 hfalse ⊢
     have hX : ∀ c, (c, G.X c) ∈ S.toGridRectangle.coveredSquares ∪
         H.toGridRectangle.coveredSquares → c = a := fun c hc =>
-      (Finset.mem_union.mp hc).elim (fun h => (G.notMem_of_mem_unblockedRectangles hS c h).elim)
+      (Finset.mem_union.mp hc).elim
+        (absurd · (G.X_notMem_toGridRectangle_coveredSquares_of_mem_unblockedRectangles hS c))
         (G.eq_of_mem_hexagon C hH.2)
     rcases hside with hcommon | hcommon
     · exact Or.inr (G.exists_mixed_of_terminal_second C _ hone h1 h2 hfalse hcommon H.right_eq
@@ -768,7 +769,8 @@ theorem mem_sameSidePentagonPartners_or_mem_mixedSidePentagonPartners {x z : Gri
       GridCommutationHexagonBetween.toGridRectangleBetween_inr] at hone hside h1 h2 hfalse ⊢
     have hX : ∀ c, (c, G.X c) ∈ S.toGridRectangle.coveredSquares ∪
         H.toGridRectangle.coveredSquares → c = b := fun c hc =>
-      (Finset.mem_union.mp hc).elim (fun h => (G.notMem_of_mem_unblockedRectangles hS c h).elim)
+      (Finset.mem_union.mp hc).elim
+        (absurd · (G.X_notMem_toGridRectangle_coveredSquares_of_mem_unblockedRectangles hS c))
         (G.eq_of_mem_initialHexagon C hH.2)
     rcases hside with hcommon | hcommon
     · exact Or.inl (G.exists_sameSide_of_initial_second C _ hone h1 h2 hfalse
