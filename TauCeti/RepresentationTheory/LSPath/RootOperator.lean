@@ -387,6 +387,7 @@ theorem reflectRecords_append (c : 𝕜) (l₁ l₂ : List V) :
         hrest, List.cons_append]
 
 /-- Reflecting the records up to a cap that is at most the minimal height does nothing. -/
+@[simp]
 theorem reflectRecords_of_le_listMinHeight (h : c ≤ listMinHeight f l) :
     reflectRecords f x c l = l := by
   induction l generalizing c with

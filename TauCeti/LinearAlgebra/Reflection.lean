@@ -10,9 +10,10 @@ public import Mathlib.LinearAlgebra.Reflection
 import Mathlib.LinearAlgebra.Matrix.SchurComplement
 
 /-!
-# Determinant of a module reflection
+# Module reflections
 
-This file computes the determinant of Mathlib's `Module.reflection` on a finite free module.
+This file computes the determinant of Mathlib's `Module.reflection` on a finite free module, and
+records that a reflection negates the linear form defining it.
 -/
 
 public section
@@ -56,6 +57,12 @@ theorem det_reflection [Module.Free R M] [Module.Finite R M] :
       _ = f (∑ i, (b.repr x i) • b i) := by rw [map_sum]
       _ = f x := congrArg f (b.sum_repr x)
   rw [hsum, h]
+  ring
+
+include h in
+/-- The reflection `Module.preReflection x f` negates the linear form `f` defining it. -/
+theorem apply_preReflection (y : M) : f (preReflection x f y) = -f y := by
+  rw [preReflection_apply, map_sub, map_smul, smul_eq_mul, h]
   ring
 
 end Module

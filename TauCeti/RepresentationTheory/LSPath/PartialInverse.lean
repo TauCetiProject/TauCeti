@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.LSPath.RootOperator
 import Mathlib.Algebra.Order.Group.MinMax
+import TauCeti.LinearAlgebra.Reflection
 
 /-!
 # The root operators on piecewise-linear paths are partial inverses
@@ -18,15 +19,13 @@ lowering and raising operators `f_α = TauCeti.PLPath.lower f x` and
 `f_α π = π'` exactly when `e_α π' = π`. This is the partial-inverse axiom of a crystal; no
 integrality of the path is needed.
 
-The proof works with segment lists. Lowering with cap `c` reflects the pieces of a path along
-which the running height `H` is at most `c` and at most every later height
-(`TauCeti.PLPath.reflectRecords`): it subtracts `(min c (m t) - min c h) • x` at time `t`, where
-`m t` is the minimum of `H` on `[t, 1]` and `h` the minimal height. Since `e_α` is `f_α`
-conjugated by reversal, the inverse of this capped reflection is again a capped reflection, on
-the reversed lowered path, whose cap is `h` minus the final height of the lowered path. This is
-`TauCeti.PLPath.normalize_reflectRecords_reverse_reflectRecords`, proved by splitting off the
-first segment with `TauCeti.PLPath.reflectRecords_append`. The minimal height of the reversed
-lowered path, which decides whether raising is defined, is then read off from the endpoints.
+Lowering with cap `c` reflects the pieces of a path along which the running height `H` is at most
+`c` and at most every later height (`TauCeti.PLPath.reflectRecords`): it subtracts
+`(min c (m t) - min c h) • x` at time `t`, where `m t` is the minimum of `H` on `[t, 1]` and `h`
+the minimal height. Since `e_α` is `f_α` conjugated by reversal, the key identity is that the
+inverse of this capped reflection is again a capped reflection, on the reversed lowered path,
+whose cap is `h` minus the final height of the lowered path
+(`TauCeti.PLPath.normalize_reflectRecords_reverse_reflectRecords`).
 
 ## Main results
 
@@ -63,9 +62,7 @@ at height `r`: the reflected initial piece and the kept final piece. -/
 private theorem apply_reflect_cut (hx : f x = 2) {v : V} (hv : f v ≠ 0) (r : 𝕜) :
     f (preReflection x f ((r / f v) • v)) = -r ∧ f ((1 - r / f v) • v) = f v - r := by
   refine ⟨?_, ?_⟩
-  · rw [preReflection_apply, map_sub, map_smul, map_smul, smul_eq_mul, smul_eq_mul,
-      div_mul_cancel₀ _ hv, hx]
-    ring
+  · rw [apply_preReflection hx, map_smul, smul_eq_mul, div_mul_cancel₀ _ hv]
   · rw [map_smul, smul_eq_mul, sub_mul, one_mul, div_mul_cancel₀ _ hv]
 
 /-- Undoing the reflection of a single segment `v`, cut at height `r` with `0 < r ≤ f v`: on the
@@ -124,9 +121,10 @@ theorem normalize_reflectRecords_reverse_reflectRecords (hx : f x = 2) (c : 𝕜
     normalize 𝕜 (reflectRecords f x (listMinHeight f l - f (reflectRecords f x c l).sum)
         ((reflectRecords f x c l).map Neg.neg).reverse) =
       normalize 𝕜 (l.map Neg.neg).reverse := by
-  -- Induction on `l = v :: l₀`. The reversal of the reflected list is the reversed reflected tail
-  -- followed by the reversed pieces of `v`; the first is handled by the induction hypothesis, the
-  -- second by a direct computation.
+  -- Induction on `l = v :: l₀`, splitting off the first segment with
+  -- `TauCeti.PLPath.reflectRecords_append`. The reversal of the reflected list is the reversed
+  -- reflected tail followed by the reversed pieces of `v`; the first is handled by the induction
+  -- hypothesis, the second by a direct computation.
   induction l generalizing c with
   | nil => simp
   | cons v l ih =>
@@ -227,7 +225,8 @@ private theorem raise_eq_some_of_lower_eq_some (hx : f x = 2) {p q : PLPath 𝕜
   clear_value l'
   set k := listMinHeight f l - f l'.sum with hk
   have hl : listMinHeight f l ≤ 0 := listMinHeight_nonpos l
-  -- Compare endpoints to find the minimal height of the reversed lowered path.
+  -- Compare endpoints to find the minimal height of the reversed lowered path, which decides
+  -- whether raising is defined.
   have hmin : listMinHeight f (l'.map Neg.neg).reverse = k - 1 := by
     have hends : f (reflectRecords f x k (l'.map Neg.neg).reverse).sum =
         f (l.map Neg.neg).reverse.sum := by
