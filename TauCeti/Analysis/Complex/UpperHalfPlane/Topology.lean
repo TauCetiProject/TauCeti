@@ -34,6 +34,8 @@ given that limit at `0`, stays continuous there, and now tends at infinity to it
 A function on the upper half-plane, extended to `ℂ` by `ofComplex`, is periodic with a real
 period exactly when the original function is invariant under the corresponding translation.
 
+A closed rectangle `[a, b] × [c, d]` with `0 < c` lies in `ℍ` and is compact there.
+
 The real-part map `re : ℍ → ℝ` is continuous and open, so taking closures commutes with taking
 preimages under it. In particular the closure of the open half-plane `{z | a < z.re}` is the
 closed half-plane `{z | a ≤ z.re}`, and likewise for `{z | z.re < a}`; transported by the
@@ -62,6 +64,8 @@ many points, such as the vertices of a tessellation, therefore keeps `ℍ` conne
 * `TauCeti.UpperHalfPlane.periodic_comp_ofComplex_iff`.
 * `TauCeti.UpperHalfPlane.closure_preimage_re`, `closure_setOfPred_lt_re`,
   `closure_setOfPred_re_lt`.
+* `TauCeti.UpperHalfPlane.isCompact_setOf_re_mem_Icc_im_mem_Icc`: closed rectangles of positive
+  height are compact.
 * `Set.Countable.isPathConnected_compl_upperHalfPlane`,
   `Set.Countable.dense_compl_upperHalfPlane`: complements of countable sets.
 
@@ -364,6 +368,14 @@ theorem closure_setOfPred_re_lt (a : ℝ) : closure {z : ℍ | z.re < a} = {z : 
     closure_preimage_re, closure_Iio]
   -- `re ⁻¹' Set.Iic a` unfolds to `{z | z.re ≤ a}` for the same reason, in the other direction.
   rfl
+
+/-- A closed rectangle of positive height in the upper half-plane is compact. -/
+theorem isCompact_setOf_re_mem_Icc_im_mem_Icc {a b c d : ℝ} (hc : 0 < c) :
+    IsCompact {z : ℍ | z.re ∈ Icc a b ∧ z.im ∈ Icc c d} :=
+  (isOpenEmbedding_coe.isInducing.isCompact_preimage_iff fun w hw ↦ by
+    rw [range_coe]
+    exact hc.trans_le (Complex.mem_reProdIm.mp hw).2.1).mpr
+    (isCompact_Icc.reProdIm isCompact_Icc)
 
 /-- There is a continuous bijection from `ℂ` onto `ℍ`, namely `w ↦ re w + exp (im w) i`. -/
 theorem exists_continuous_bijective_complex :
