@@ -73,15 +73,25 @@ theorem RoughForm.interior_wedgeWith_apply
       (φ.interior X).wedgeWith μ ψ x
           (v ∘ Fin.cast (show k + (l + 1) = k + 1 + l by omega)) +
         (-1 : ℝ) ^ (k + 1) • φ.wedgeWith μ (ψ.interior X) x v := by
-  have hφ : φ.interior X x = bundleInterior X φ x := by
-    ext w
-    simp only [RoughForm.interior_apply, bundleInterior_apply]
-  have hψ : ψ.interior X x = bundleInterior X ψ x := by
-    ext w
-    simp only [RoughForm.interior_apply, bundleInterior_apply]
+  have hφ : φ.interior X x = bundleInterior X φ x :=
+    congrArg (fun η => η x) (RoughForm.interior_def X φ)
+  have hψ : ψ.interior X x = bundleInterior X ψ x :=
+    congrArg (fun η => η x) (RoughForm.interior_def X ψ)
   simpa only [RoughForm.interior_apply, RoughForm.wedgeWith_apply', bundleInterior_apply,
-    bundleWedgeWith_apply', ContinuousAlternatingMap.curryLeftTopological_apply_apply,
-    Pi.add_apply, Pi.smul_apply, Function.comp_apply, hφ, hψ] using
+    bundleWedgeWith_apply',
+    hφ, hψ] using
     (bundleInterior_wedgeWith_apply X (fun _ ↦ μ) (fun _ ↦ μ.continuous₂) φ ψ x v)
+
+/-- The real-valued wedge is an antiderivation for insertion into its first slot. -/
+theorem RoughForm.interior_wedge_apply
+    {k l : ℕ} (X : (x : M) → TangentSpace I x)
+    (φ : RoughForm I M ℝ (k + 1)) (ψ : RoughForm I M ℝ (l + 1))
+    (x : M) (v : Fin (k + 1 + l) → TangentSpace I x) :
+    (φ.wedge ψ).interior X x v =
+      (φ.interior X).wedge ψ x
+          (v ∘ Fin.cast (show k + (l + 1) = k + 1 + l by omega)) +
+        (-1 : ℝ) ^ (k + 1) • φ.wedge (ψ.interior X) x v := by
+  simpa only [RoughForm.wedge_def] using
+    RoughForm.interior_wedgeWith_apply X (ContinuousLinearMap.mul ℝ ℝ) φ ψ x v
 
 end TauCeti

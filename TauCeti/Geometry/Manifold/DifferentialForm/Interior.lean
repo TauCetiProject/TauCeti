@@ -194,6 +194,10 @@ def RoughForm.interior (X : (x : M) → TangentSpace I x)
     (ω : RoughForm I M F (k + 1)) : RoughForm I M F k :=
   bundleInterior X ω
 
+/-- The fixed-coefficient interior product is the corresponding bundle-valued insertion. -/
+theorem RoughForm.interior_def (X : (x : M) → TangentSpace I x)
+    (ω : RoughForm I M F (k + 1)) : ω.interior X = bundleInterior X ω := (rfl)
+
 /-- Evaluation of the interior product is insertion into the first slot. -/
 @[simp]
 theorem RoughForm.interior_apply (X : (x : M) → TangentSpace I x)
@@ -202,7 +206,7 @@ theorem RoughForm.interior_apply (X : (x : M) → TangentSpace I x)
 
 /-- At a point, insertion of a fixed-coefficient form is topological continuous currying. -/
 theorem RoughForm.interior_apply_eq_curryLeftTopological
-    {F : Type*} [SeminormedAddCommGroup F] [NormedSpace ℝ F]
+    [ContinuousAdd F] [ContinuousConstSMul ℝ F]
     (X : (x : M) → TangentSpace I x) (ω : RoughForm I M F (k + 1)) (x : M) :
     ω.interior X x = (ω x).curryLeftTopological (X x) :=
   bundleInterior_apply_eq_curryLeftTopological X ω x
