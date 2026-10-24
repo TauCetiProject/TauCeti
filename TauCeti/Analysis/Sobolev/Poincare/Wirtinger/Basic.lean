@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.Poincare.Potential
 import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 import TauCeti.MeasureTheory.Integral.NormRpow
+import TauCeti.MeasureTheory.Integral.RieszPotential
 import TauCeti.MeasureTheory.Integral.SchurTest
 
 /-!
@@ -32,10 +33,19 @@ in the closed ball of radius `diam Ω` about each of its points, the integral of
 not sharp; Gilbarg–Trudinger obtain `(μ(B(0, 1)) / μ(S)) ^ (1 - 1/n) (diam Ω) ^ n` from a finer
 bound on the Riesz potential.
 
+Integrating the pointwise estimate over a subset `A ⊆ Ω` instead, the integral of the kernel
+over `A` is at most its integral over a ball of the same measure as `A`
+(`TauCeti.setLIntegral_enorm_sub_rpow_le`), which gives a factor `μ(A) ^ (1/n)`. The resulting
+bound on `∫_A ‖u - ⨍ S u‖` is the dual form of the Sobolev–Poincaré inequality at the exponent
+`n / (n - 1)`, and it is invariant under rescaling `Ω`.
+
 ## Main declarations
 
 * `TauCeti.lintegral_enorm_sub_setAverage_rpow_le_of_convex`: the inequality in `∫⁻` form.
 * `TauCeti.eLpNorm_sub_setAverage_le_of_convex`: the inequality between `Lᵖ` seminorms.
+* `TauCeti.setLIntegral_enorm_sub_setAverage_le_mul_measure_rpow_mul_of_convex`: the `L¹`
+  deviation on a subset `A ⊆ Ω` is at most `μ(B(0, 1)) ^ (1 - 1/n) * (diam Ω) ^ n / μ(S)` times
+  `μ(A) ^ (1/n) ‖Du‖_{L¹(Ω)}`.
 
 ## References
 
@@ -136,6 +146,83 @@ theorem lintegral_enorm_sub_setAverage_rpow_le_of_convex (hΩ : IsOpen Ω) (hΩc
     _ = _ := by
       rw [← mul_assoc, ← ENNReal.mul_rpow_of_nonneg _ _ hp0, hcK,
         ENNReal.ofReal_rpow_of_nonneg (by positivity) hp0]
+
+/-- **The Poincaré–Wirtinger inequality on a convex domain, localized to a subset.** If `u` is
+`C¹` on a bounded convex open set `Ω` and `S ⊆ Ω` has positive measure, then for every `A ⊆ Ω` the
+integral over `A` of the deviation of `u` from its mean over `S` is at most
+`μ(B(0, 1)) ^ (1 - 1/n) * (diam Ω) ^ n / μ(S) * μ(A) ^ (1/n)` times the integral of `‖Du‖` over
+`Ω`, where `n` is the dimension of the space. The factor `μ(A) ^ (1/n)` makes this the dual form of
+the Sobolev–Poincaré inequality at the exponent `n / (n - 1)`. -/
+theorem setLIntegral_enorm_sub_setAverage_le_mul_measure_rpow_mul_of_convex (hΩ : IsOpen Ω)
+    (hΩc : Convex ℝ Ω) (hb : Bornology.IsBounded Ω) (hu : ContDiffOn ℝ 1 u Ω) (hS : S ⊆ Ω)
+    (hS₀ : μ S ≠ 0) {A : Set E} (hA : A ⊆ Ω) :
+    ∫⁻ x in A, ‖u x - ⨍ y in S, u y ∂μ‖ₑ ∂μ ≤
+      ENNReal.ofReal (μ.real (ball 0 1) ^ (1 - (finrank ℝ E : ℝ)⁻¹) * diam Ω ^ finrank ℝ E /
+        μ.real S) * μ A ^ (finrank ℝ E : ℝ)⁻¹ * ∫⁻ y in Ω, ‖fderiv ℝ u y‖ₑ ∂μ := by
+  set n := finrank ℝ E
+  set d := diam Ω
+  have hS_top : μ S ≠ ∞ := ((measure_mono hS).trans_lt hb.measure_lt_top).ne
+  -- It suffices to treat the measurable set `A' = toMeasurable μ A ∩ Ω ⊇ A`, of the same measure.
+  set A' := toMeasurable μ A ∩ Ω
+  have hAA' : A ⊆ A' := subset_inter (subset_toMeasurable μ A) hA
+  have hA'm : MeasurableSet A' := (measurableSet_toMeasurable μ A).inter hΩ.measurableSet
+  have hμA' : μ A' = μ A :=
+    le_antisymm ((measure_mono inter_subset_left).trans_eq (measure_toMeasurable A))
+      (measure_mono hAA')
+  refine (lintegral_mono_set hAA').trans ?_
+  rw [← hμA']
+  -- The Riesz kernel and the pointwise potential estimate, with its constant `c`.
+  set k : E → E → ℝ≥0∞ := fun x y => ‖x - y‖ₑ ^ (1 - (n : ℝ))
+  set c : ℝ≥0∞ := ENNReal.ofReal (d ^ n / n) / μ S with hc_def
+  have hpoint : ∀ x ∈ Ω, ‖u x - ⨍ y in S, u y ∂μ‖ₑ ≤
+      c * ∫⁻ y in Ω, ‖fderiv ℝ u y‖ₑ * k x y ∂μ := fun x hx =>
+    enorm_sub_setAverage_le_of_convex hΩ hΩc hb hu hx hS hS₀
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · -- In dimension zero the kernel vanishes, and so does the left-hand side.
+    have hk0 : ∀ x y : E, k x y = 0 := fun x y => by
+      simp [k, n, Subsingleton.elim x y, finrank_zero_of_subsingleton]
+    have hzero : ∀ x ∈ A', ‖u x - ⨍ y in S, u y ∂μ‖ₑ = 0 := fun x hx => by
+      simpa [hk0] using hpoint x hx.2
+    rw [setLIntegral_congr_fun hA'm hzero, lintegral_zero]
+    exact bot_le
+  have hn : (0 : ℝ) < n := Nat.cast_pos.2 finrank_pos
+  -- The kernel bound `∫_{A'} ‖x - y‖ ^ (1 - n) dx ≤ n ω ^ (1 - 1/n) μ(A') ^ (1/n)`.
+  set K : ℝ := n * μ.real (ball 0 1) ^ (1 - (n : ℝ)⁻¹)
+  have hkA (y : E) : ∫⁻ x in A', k x y ∂μ ≤ ENNReal.ofReal K * μ A' ^ (n : ℝ)⁻¹ := by
+    have h := setLIntegral_enorm_sub_rpow_le (μ := μ) (inv_pos.2 hn)
+      (inv_le_one_of_one_le₀ (Nat.one_le_cast.2 finrank_pos)) hA'm y
+    rw [inv_inv, mul_sub, mul_inv_cancel₀ hn.ne', mul_one] at h
+    simpa only [k, enorm_sub_rev _ y] using h
+  have hmeas : AEMeasurable (Function.uncurry fun x y => ‖fderiv ℝ u y‖ₑ * k x y)
+      ((μ.restrict A').prod (μ.restrict Ω)) :=
+    ((hu.continuousOn_fderiv_of_isOpen hΩ le_rfl).enorm.aemeasurable
+      hΩ.measurableSet).comp_snd.mul (by fun_prop)
+  have hc : c * ENNReal.ofReal K =
+      ENNReal.ofReal (μ.real (ball 0 1) ^ (1 - (n : ℝ)⁻¹) * d ^ n / μ.real S) := by
+    have hSpos : 0 < μ.real S := ENNReal.toReal_pos hS₀ hS_top
+    rw [hc_def, ENNReal.div_eq_inv_mul,
+      ← ofReal_measureReal hS_top, ← ENNReal.ofReal_inv_of_pos hSpos,
+      ← ENNReal.ofReal_mul (by positivity), ← ENNReal.ofReal_mul (by positivity)]
+    congr 1
+    simp only [K]
+    field_simp
+  calc ∫⁻ x in A', ‖u x - ⨍ y in S, u y ∂μ‖ₑ ∂μ
+      ≤ ∫⁻ x in A', c * ∫⁻ y in Ω, ‖fderiv ℝ u y‖ₑ * k x y ∂μ ∂μ :=
+        setLIntegral_mono' hA'm fun x hx => hpoint x hx.2
+    _ = c * ∫⁻ y in Ω, ‖fderiv ℝ u y‖ₑ * ∫⁻ x in A', k x y ∂μ ∂μ := by
+        rw [lintegral_const_mul' _ _ (ENNReal.div_ne_top ENNReal.ofReal_ne_top hS₀),
+          lintegral_lintegral_swap hmeas]
+        congr 1
+        exact lintegral_congr fun y => lintegral_const_mul _ (by fun_prop)
+    _ ≤ c * ∫⁻ y in Ω, ‖fderiv ℝ u y‖ₑ * (ENNReal.ofReal K * μ A' ^ (n : ℝ)⁻¹) ∂μ := by
+        gcongr with y
+        exact hkA y
+    _ = _ := by
+        have hA'fin : μ A' ≠ ∞ :=
+          ne_top_of_le_ne_top hb.measure_lt_top.ne (measure_mono inter_subset_right)
+        rw [lintegral_mul_const' _ _ (ENNReal.mul_ne_top ENNReal.ofReal_ne_top
+          (ENNReal.rpow_ne_top_of_nonneg (by positivity) hA'fin)), ← hc]
+        ring
 
 /-- **The Poincaré–Wirtinger inequality on a convex domain.** If `u` is `C¹` on a bounded convex
 open set `Ω` and `S ⊆ Ω` has positive measure, then for `1 ≤ p < ∞` the `Lᵖ(Ω)` seminorm of the
