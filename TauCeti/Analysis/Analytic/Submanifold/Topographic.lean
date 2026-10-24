@@ -8,11 +8,9 @@ module
 public import Mathlib.Topology.Algebra.Module.Equiv.Pi
 public import Mathlib.Topology.EMetricSpace.Lipschitz
 public import TauCeti.Analysis.Analytic.Submanifold.Basic
-import Mathlib.Analysis.Calculus.Deriv.Comp
-import Mathlib.Analysis.Calculus.Deriv.Mul
-import Mathlib.Analysis.Calculus.Deriv.Slope
 import Mathlib.Analysis.Calculus.FDeriv.Analytic
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+import TauCeti.Analysis.Calculus.FDeriv.NormComparison
 import TauCeti.Analysis.Analytic.Submanifold.Immersion
 import TauCeti.Analysis.Analytic.Submanifold.Transport
 
@@ -92,40 +90,6 @@ theorem exists_lipschitzOnWith_eq_graph
 
 /-! ### Topographic analytic submanifolds -/
 
-/-- Tangent vectors to a set `ψ` satisfying the height inequality satisfy it as well: if `φ` is
-differentiable at `u₀` and takes values in `ψ` near `u₀`, then every vector `w` in the range of
-its derivative satisfies `‖w 0‖ ≤ A * ‖Fin.tail w‖`. -/
-private theorem norm_fderiv_apply_zero_le
-    (h : ∀ v ∈ ψ, ∀ w ∈ ψ, dist (v 0) (w 0) ≤ A * dist (Fin.tail v) (Fin.tail w))
-    {φ : (Fin d → 𝕜) → Fin (n + 1) → 𝕜} {u₀ : Fin d → 𝕜} (hφ : DifferentiableAt 𝕜 φ u₀)
-    (hφψ : ∀ᶠ u in 𝓝 u₀, φ u ∈ ψ) (k : Fin d → 𝕜) :
-    ‖fderiv 𝕜 φ u₀ k 0‖ ≤ A * ‖Fin.tail (fderiv 𝕜 φ u₀ k)‖ := by
-  let τ : (Fin (n + 1) → 𝕜) →L[𝕜] Fin n → 𝕜 := Pi.compRightL 𝕜 (fun _ ↦ 𝕜) Fin.succ
-  have hτ (w : Fin (n + 1) → 𝕜) : τ w = Fin.tail w :=
-    funext fun i ↦ Pi.compRightL_apply 𝕜 (fun _ ↦ 𝕜) Fin.succ w i
-  -- Differentiate along the line `s ↦ φ (u₀ + s • k)` and pass to the limit in the slopes.
-  have hline : HasDerivAt (fun s : 𝕜 ↦ u₀ + s • k) k 0 := by
-    simpa using (HasDerivAt.smul_const (hasDerivAt_id (0 : 𝕜)) k).const_add u₀
-  have hγ : HasDerivAt (fun s : 𝕜 ↦ φ (u₀ + s • k)) (fderiv 𝕜 φ u₀ k) 0 := by
-    have : HasFDerivAt φ (fderiv 𝕜 φ u₀) (u₀ + (0 : 𝕜) • k) := by
-      simpa using hφ.hasFDerivAt
-    exact HasFDerivAt.comp_hasDerivAt (0 : 𝕜) this hline
-  have hslope := hasDerivAt_iff_tendsto_slope_zero.1 hγ
-  have hmem : ∀ᶠ s in 𝓝[≠] (0 : 𝕜), φ (u₀ + s • k) ∈ ψ :=
-    nhdsWithin_le_nhds (hline.continuousAt.tendsto.eventually (p := fun u ↦ φ u ∈ ψ)
-      (by simpa using hφψ))
-  rw [← hτ]
-  refine le_of_tendsto_of_tendsto
-    ((((continuous_apply 0).tendsto _).comp hslope).norm)
-    ((((τ.continuous.tendsto _).comp hslope).norm).const_mul (A : ℝ)) ?_
-  filter_upwards [hmem] with s hs
-  have := h _ hs _ hφψ.self_of_nhds
-  rw [dist_eq_norm, dist_eq_norm, ← hτ, ← hτ, ← map_sub] at this
-  simp only [zero_add, zero_smul, add_zero, Function.comp_apply, map_smul, Pi.smul_apply,
-    smul_eq_mul, norm_mul, norm_smul, Pi.sub_apply]
-  rw [mul_left_comm]
-  exact mul_le_mul_of_nonneg_left this (norm_nonneg _)
-
 section Analytic
 
 variable [CompleteSpace 𝕜]
@@ -180,8 +144,14 @@ private theorem exists_isAnalyticChart_image_tail (hψ : IsAnalyticSubmanifold d
     rw [hp'.fderiv]
     refine (injective_iff_map_eq_zero _).2 fun k hk ↦ hDφ ?_
     rw [ContinuousLinearMap.comp_apply, hτ] at hk
-    have h0 := norm_fderiv_apply_zero_le h hφ.differentiableAt (hφψ.mono fun _ hu ↦ hu.2) k
-    rw [hk, norm_zero, mul_zero, norm_le_zero_iff] at h0
+    -- Tangent vectors to `ψ` satisfy the height inequality as well.
+    have h0 : ‖fderiv 𝕜 φ u₀ k 0‖ ≤ A * ‖τ (fderiv 𝕜 φ u₀ k)‖ := by
+      refine hφ.differentiableAt.hasFDerivAt.norm_apply_le_mul_norm_apply
+        (L := ContinuousLinearMap.proj 0) ?_ k
+      filter_upwards [hφψ] with u hu
+      have := h _ hu.2 _ hφψ.self_of_nhds.2
+      rwa [dist_eq_norm, dist_eq_norm, ← hτ, ← hτ, ← map_sub] at this
+    rw [hτ, hk, norm_zero, mul_zero, norm_le_zero_iff] at h0
     rw [map_zero]
     funext i
     exact Fin.cases h0 (fun j ↦ congrFun hk j) i
