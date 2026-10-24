@@ -11,10 +11,14 @@ import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 /-!
 # Compactly supported Yamabe bubbles
 
-Multiplication by a fixed smooth compactly supported function which is one near the centre
-preserves the limiting critical mass and Dirichlet energy of a concentrating Euclidean Yamabe
-bubble in every dimension greater than two. Consequently the Sobolev quotients of these smooth
-compactly supported test functions converge to the Yamabe constant of the round sphere.
+A fixed continuous cutoff with values in `[0,1]` and equal to one near the centre preserves the
+limiting critical mass of a concentrating Euclidean Yamabe bubble. A compactly supported `C¹`
+cutoff also preserves its limiting Dirichlet energy, so its Sobolev quotient converges to the
+Yamabe constant of the round sphere, in every dimension greater than two.
+
+Every nonempty open set contains a nonnegative smooth compactly supported test function with
+positive critical mass and quotient below `Y(Sⁿ) + ε` for any `ε > 0`, as proved by
+`TauCeti.Yamabe.exists_contDiff_hasCompactSupport_sobolev_quotient_lt`.
 
 The argument uses the critical and energy moments from
 `TauCeti.Analysis.PDE.Yamabe.Bubble.Moments` and the exact sphere quotient from
@@ -95,22 +99,9 @@ theorem tendsto_integral_cutoff_bubble_rpow_criticalExponent (hn : 2 < finrank �
   have hm : Tendsto (fun t : ℝ ↦ r⁻¹ *
       ∫ x, ‖x - b‖ * bubble t b x ^ criticalExponent (finrank ℝ E))
       (𝓝[>] 0) (𝓝 0) := by
-    let C := r⁻¹ * (finrank ℝ E : ℝ) * volume.real (ball (0 : E) 1) *
-      2 ^ (finrank ℝ E - 1) *
-        ProbabilityTheory.beta (((finrank ℝ E : ℝ) + 1) / 2) (((finrank ℝ E : ℝ) - 1) / 2)
-    have ht : Tendsto (fun t : ℝ ↦ C * t) (𝓝[>] 0) (𝓝 0) := by
-      have hid : Tendsto (fun t : ℝ ↦ t) (𝓝[>] 0) (𝓝 0) :=
-        tendsto_nhdsWithin_of_tendsto_nhds tendsto_id
-      simpa using hid.const_mul C
-    apply ht.congr'
-    filter_upwards [self_mem_nhdsWithin] with t ht
-    simp only [mem_Ioi] at ht
-    have hmoment := integral_norm_sub_rpow_mul_bubble_rpow_criticalExponent volume hn.ne'
-      (by norm_num : (0 : ℝ) ≤ 1) (by linarith) ht b
-    simp only [Real.rpow_one] at hmoment
-    rw [hmoment]
-    dsimp only [C]
-    ring
+    simpa only [mul_zero, Real.rpow_one] using
+      (tendsto_integral_norm_sub_rpow_mul_bubble_rpow_criticalExponent volume hn.ne'
+        (p := 1) (by norm_num) (by linarith) b).const_mul r⁻¹
   apply tendsto_iff_norm_sub_tendsto_zero.mpr
   apply squeeze_zero' (.of_forall fun _ ↦ norm_nonneg _) _ hm
   filter_upwards [self_mem_nhdsWithin] with t ht
@@ -225,8 +216,8 @@ private lemma cutoff_bubble_energy_error_le (hn : 2 < finrank ℝ E) {χ : E →
         (sq_nonneg ‖fderiv ℝ (bubble t b) x‖))]
 
 /-- The conformal Dirichlet energy of a bubble multiplied by a fixed compactly supported `C¹`
-cutoff with values in `[0,1]` and equal to one near the centre converges to the round-sphere
-energy, in every dimension greater than two. -/
+cutoff with values in `[0,1]` and equal to one near the centre converges to
+`n (n - 1) |Sⁿ|`, the conformal energy of an uncut bubble, in dimension `n > 2`. -/
 theorem tendsto_conformalCoefficient_mul_integral_norm_fderiv_cutoff_bubble_sq
     (hn : 2 < finrank ℝ E) {χ : E → ℝ} (hχ : ContDiff ℝ 1 χ)
     (hχc : HasCompactSupport χ) (hχrange : ∀ x, χ x ∈ Icc (0 : ℝ) 1)
@@ -252,20 +243,9 @@ theorem tendsto_conformalCoefficient_mul_integral_norm_fderiv_cutoff_bubble_sq
   have hm : Tendsto (fun t : ℝ ↦ C *
       ∫ x, ‖x - b‖ ^ (1 / 2 : ℝ) * ‖fderiv ℝ (bubble t b) x‖ ^ 2)
       (𝓝[>] 0) (𝓝 0) := by
-    have ht : Tendsto (fun t : ℝ ↦ t ^ (1 / 2 : ℝ)) (𝓝[>] 0) (𝓝 0) := by
-      simpa using (Real.continuousAt_rpow_const 0 (1 / 2 : ℝ)
-        (Or.inr (by norm_num))).continuousWithinAt.tendsto (s := Ioi 0)
-    have hlim := ht.const_mul (C * (((finrank ℝ E : ℝ) - 2) ^ 2 *
-      (finrank ℝ E : ℝ) * volume.real (ball (0 : E) 1) *
-      (2 ^ (finrank ℝ E - 3) *
-        ProbabilityTheory.beta (((finrank ℝ E : ℝ) + 1 / 2 + 2) / 2)
-          (((finrank ℝ E : ℝ) - 1 / 2 - 2) / 2))))
-    simp only [mul_zero] at hlim
-    apply hlim.congr'
-    filter_upwards [self_mem_nhdsWithin] with t ht
-    rw [integral_norm_sub_rpow_mul_norm_fderiv_bubble_sq volume
-      (by norm_num : (0 : ℝ) ≤ 1 / 2) (by linarith) ht b]
-    ring
+    simpa only [mul_zero] using
+      (tendsto_integral_norm_sub_rpow_mul_norm_fderiv_bubble_sq volume
+        (p := 1 / 2) (by norm_num) (by linarith) b).const_mul C
   have hdiff : Tendsto (fun t : ℝ ↦
       (∫ x, ‖fderiv ℝ (fun y ↦ χ y * bubble t b y) x‖ ^ 2) -
         ∫ x, ‖fderiv ℝ (bubble t b) x‖ ^ 2) (𝓝[>] 0) (𝓝 0) := by
@@ -301,14 +281,20 @@ theorem tendsto_cutoff_bubble_sobolev_quotient (hn : 2 < finrank ℝ E)
   have henergy := tendsto_conformalCoefficient_mul_integral_norm_fderiv_cutoff_bubble_sq
     hn hχ hχc hχrange b hχone
   have hlim := henergy.div hden (Real.rpow_pos_of_pos (roundSphereVolume_pos _) _).ne'
-  convert hlim using 1
-  rw [← conformalCoefficient_mul_integral_norm_fderiv_bubble_sq_eq_roundSphereVolume
-      hn (show (0 : ℝ) < 1 by norm_num) b,
-    conformalCoefficient_mul_integral_norm_fderiv_bubble_sq_eq_sphereYamabeConstant
-      hn (show (0 : ℝ) < 1 by norm_num) b,
-    integral_bubble_rpow_criticalExponent_eq_roundSphereVolume (by omega) hn.ne'
-      (show (0 : ℝ) < 1 by norm_num) b,
-    mul_div_cancel_right₀ _ (Real.rpow_pos_of_pos (roundSphereVolume_pos _) _).ne']
+  have hp : 2 / criticalExponent (finrank ℝ E) =
+      ((finrank ℝ E : ℝ) - 2) / finrank ℝ E := by
+    have h₀ : (finrank ℝ E : ℝ) ≠ 0 := by exact_mod_cast (show finrank ℝ E ≠ 0 by omega)
+    have h₂ : (finrank ℝ E : ℝ) - 2 ≠ 0 :=
+      sub_ne_zero.mpr (by exact_mod_cast hn.ne')
+    rw [criticalExponent_def]
+    field_simp
+  have hc : sphereYamabeConstant (finrank ℝ E) =
+      ((finrank ℝ E : ℝ) * (finrank ℝ E - 1) * roundSphereVolume (finrank ℝ E)) /
+        roundSphereVolume (finrank ℝ E) ^ (2 / criticalExponent (finrank ℝ E)) := by
+    apply (eq_div_iff (Real.rpow_pos_of_pos (roundSphereVolume_pos _) _).ne').2
+    rw [hp]
+    exact sphereYamabeConstant_mul_roundSphereVolume_rpow (by omega)
+  simpa only [← hc] using hlim
 
 /-- Every nonempty open set in dimension greater than two contains a nonnegative smooth
 compactly supported test function with positive critical mass and Sobolev quotient less than
