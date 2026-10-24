@@ -88,10 +88,9 @@ theorem coeff_apply (m : ι → M) (f : M →ₚₗ[R] N) (k : ι →₀ ℕ) :
   -- The `basisMonomials` coordinate of `Xᵏ` agrees with `lcoeff R k` on every monomial.
   have hcoord : (basisMonomials ι R).coord k = lcoeff R k :=
     (basisMonomials ι R).ext fun s ↦ by
-      rw [Module.Basis.coord_apply, Module.Basis.repr_self, coe_basisMonomials, lcoeff_apply,
-        coeff_monomial, Finsupp.single_apply]
-  rw [coeff, LinearMap.coe_mk, AddHom.coe_mk, TensorProduct.equivFinsuppOfBasisLeft_apply,
-    hcoord]
+      rw [Module.Basis.coord_apply, Module.Basis.repr_self]
+      simp [coeff_monomial, Finsupp.single_apply]
+  simp [coeff, TensorProduct.equivFinsuppOfBasisLeft_apply, hcoord]
 
 /-- The value of `f` at the generic combination `∑ⱼ Xⱼ ⊗ mⱼ` is `∑ₖ Xᵏ ⊗ coeff m f k`. -/
 theorem toFun_sum_X_tmul (m : ι → M) (f : M →ₚₗ[R] N) :
@@ -101,7 +100,7 @@ theorem toFun_sum_X_tmul (m : ι → M) (f : M →ₚₗ[R] N) :
   have := (TensorProduct.equivFinsuppOfBasisLeft (basisMonomials ι R)).symm_apply_apply
     (f.toFun (MvPolynomial ι R) (∑ j, X j ⊗ₜ[R] m j))
   rw [TensorProduct.equivFinsuppOfBasisLeft_symm_apply] at this
-  simpa only [coeff, LinearMap.coe_mk, AddHom.coe_mk, coe_basisMonomials] using this.symm
+  simpa [coeff] using this.symm
 
 /-- The value of a polynomial law on a finite sum of pure tensors, in terms of its coefficients:
 `f (∑ⱼ sⱼ ⊗ mⱼ) = ∑ₖ (∏ⱼ sⱼ ^ kⱼ) ⊗ coeff m f k`, for a commutative `R`-algebra `S` in any
@@ -115,8 +114,7 @@ theorem toFun_sum_tmul_eq_coeff_sum (m : ι → M) (f : M →ₚₗ[R] N) {S : T
     simp
   rw [hs, ← isCompat_apply, toFun_sum_X_tmul, map_finsuppSum]
   refine Finsupp.sum_congr fun k _ ↦ ?_
-  rw [LinearMap.rTensor_tmul, AlgHom.toLinearMap_apply, aeval_monomial, map_one, one_mul,
-    Finsupp.prod_fintype _ _ fun _ ↦ pow_zero _]
+  simp [aeval_monomial, Finsupp.prod_fintype]
 
 /-- Change of variables for coefficients: if the generic combination of `m'` is obtained from
 `∑ⱼ sⱼ ⊗ mⱼ` for polynomials `sⱼ`, then each coefficient of `f` at `m'` is a combination of the
@@ -303,13 +301,11 @@ theorem IsHomogeneousOfDegree.coeff_eq_zero {d : ℕ} {f : M →ₚₗ[R] N}
     toFun_sum_tmul_eq_coeff_sum, Finsupp.smul_sum, map_finsuppSum] at hx
   have hL (a : ι →₀ ℕ) : ∏ j, (Polynomial.X * Polynomial.C (X j : MvPolynomial ι R)) ^ a j =
       Polynomial.C (∏ j, X j ^ a j) * Polynomial.X ^ ∑ j, a j := by
-    rw [Finset.prod_congr rfl fun j _ ↦ mul_pow _ _ (a j), Finset.prod_mul_distrib,
-      Finset.prod_pow_eq_pow_sum, mul_comm, map_prod]
-    simp only [map_pow]
+    simp only [mul_pow, Finset.prod_mul_distrib, Finset.prod_pow_eq_pow_sum, map_prod, map_pow,
+      mul_comm]
   have hR (a : ι →₀ ℕ) : Polynomial.X ^ d * ∏ j, Polynomial.C (X j : MvPolynomial ι R) ^ a j =
       Polynomial.C (∏ j, X j ^ a j) * Polynomial.X ^ d := by
-    rw [mul_comm, map_prod]
-    simp only [map_pow]
+    simp only [map_prod, map_pow, mul_comm]
   simp only [hL, hR, hΦ] at hx
   simp only [ite_and, hk, ite_false, ite_self] at hx
   simpa using hx
