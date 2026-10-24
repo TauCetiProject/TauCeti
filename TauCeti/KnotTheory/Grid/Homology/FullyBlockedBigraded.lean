@@ -61,9 +61,6 @@ variable {n : ℕ} (G : OddComponentGridDiagram n)
 
 local notation "F" => ZMod 2
 
-/-- The coefficient ring `ZMod 2` is a field, as needed for the dimension count. -/
-local instance : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
-
 /-! ### Homogeneous parts of cycles and boundaries -/
 
 /-- The homogeneous part of a fully blocked cycle is a cycle. -/
