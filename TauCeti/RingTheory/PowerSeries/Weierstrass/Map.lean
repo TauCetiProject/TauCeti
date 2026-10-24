@@ -8,7 +8,6 @@ module
 public import TauCeti.RingTheory.PowerSeries.Map
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.DivMod
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.Preparation
-public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Map
 
 /-!
 # Coefficient maps and Weierstrass theory
@@ -63,16 +62,7 @@ private theorem map_division (f : PowerSeries.IsRestricted.subring (R := R) c) :
   let Φ : PowerSeries.IsRestricted.subring (R := R) c →+*
       PowerSeries.IsRestricted.subring (R := S) c := restrictedMap φ hφ
   have hpoly (p : Polynomial R) : Φ (polynomialToRestricted c p) =
-      polynomialToRestricted c (p.map φ) := by
-    apply Subtype.ext
-    calc
-      (Φ (polynomialToRestricted c p) : PowerSeries S) =
-          PowerSeries.map φ (polynomialToRestricted c p : PowerSeries R) :=
-        coe_restrictedMap φ hφ _
-      _ = PowerSeries.map φ (p : PowerSeries R) := by rw [coe_polynomialToRestricted]
-      _ = (p.map φ : PowerSeries S) := Polynomial.polynomial_map_coe.symm
-      _ = (polynomialToRestricted c (p.map φ) : PowerSeries S) :=
-        (coe_polynomialToRestricted (c := c) _).symm
+      polynomialToRestricted c (p.map φ) := restrictedMap_polynomialToRestricted φ hφ p
   have h := congrArg Φ (hg.mul_weierstrassDiv_add_weierstrassMod hc f)
   simp only [map_add, map_mul, hpoly] at h
   exact h
@@ -105,7 +95,7 @@ variable {e : PowerSeries.IsRestricted.subring (R := R) c}
 /-- A prepared factorization over the target agrees with a mapped monic factorization
 whose restricted factor is a unit. Only the target polynomial needs to be distinguished;
 the coefficient map may be noninjective and need not preserve norms. -/
-theorem IsMulDistinguished.eq_map_of_mul_eq
+theorem IsMulDistinguished.eq_and_eq_map_of_mul_eq_map_mul
     (hω' : IsMulDistinguished c s (ω' : PowerSeries S)) (hc : 0 < c)
     (hωm' : ω'.IsMonicOfDegree s) (hωm : ω.IsMonicOfDegree s) (he : IsUnit e)
     (h : (e' : PowerSeries S) * (ω' : PowerSeries S) =
@@ -115,17 +105,16 @@ theorem IsMulDistinguished.eq_map_of_mul_eq
   have hm : (ω.map φ).IsMonicOfDegree s :=
     ⟨(hωm.monic.natDegree_map φ).trans hωm.natDegree_eq, hωm.monic.map φ⟩
   apply hω'.eq_and_eq_of_mul_eq_mul hc hωm' hm (he.map (restrictedMap φ hφ))
-  -- Specialize the coefficient-map formula to the native univariate carrier.
-  have hmap : (restrictedMap φ hφ e : PowerSeries S) = PowerSeries.map φ (e : PowerSeries R) :=
-    coe_restrictedMap φ hφ e
   exact h.trans ((map_mul (PowerSeries.map φ) _ _).trans
-    (congrArg₂ (· * ·) hmap.symm Polynomial.polynomial_map_coe.symm))
+    (congrArg₂ (· * ·) (coe_restrictedMap_powerSeries φ hφ e).symm
+      Polynomial.polynomial_map_coe.symm))
 
 /-- If the image series is multiplicatively distinguished of degree `s`, mapping any
 factorization into a restricted unit and a monic degree-`s` polynomial gives a prepared
 factorization: the mapped unit is multiplicative and the mapped polynomial has Gauss norm
 `c ^ s`. Completeness is required only of the target coefficient ring. -/
-theorem IsMulDistinguished.map_preparation [CompleteSpace S] [Fact (0 < c)]
+theorem IsMulDistinguished.isNormMulUnit_restrictedMap_and_gaussNorm_map_eq_of_mul_eq
+    [CompleteSpace S] [Fact (0 < c)]
     {g : PowerSeries R} (hg' : IsMulDistinguished c s (PowerSeries.map φ g))
     (he : IsUnit e) (hωm : ω.IsMonicOfDegree s)
     (h : (e : PowerSeries R) * (ω : PowerSeries R) = g) :
@@ -136,7 +125,7 @@ theorem IsMulDistinguished.map_preparation [CompleteSpace S] [Fact (0 < c)]
   obtain ⟨u, p, hu, hp, hn, hmul⟩ :=
     hg'.exists_isNormMulUnit_isMonicOfDegree_mul_eq (hgr.map φ hφ)
   have hp' := (isMulDistinguished_iff_gaussNorm_eq (Fact.out : 0 < c) hp).mpr hn
-  obtain ⟨rfl, rfl⟩ := hp'.eq_map_of_mul_eq φ hφ Fact.out hp hωm he (by rw [h, hmul])
+  obtain ⟨rfl, rfl⟩ := hp'.eq_and_eq_map_of_mul_eq_map_mul φ hφ Fact.out hp hωm he (by rw [h, hmul])
   exact ⟨hu, hn⟩
 
 end Preparation

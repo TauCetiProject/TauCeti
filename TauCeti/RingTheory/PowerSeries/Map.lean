@@ -5,59 +5,48 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.PowerSeries.MulDistinguished
-import TauCeti.Analysis.Normed.Ring.MulUnit
+public import TauCeti.RingTheory.PowerSeries.Restricted
+public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Map
 
 /-!
-# Distinguished series under norm-preserving coefficient maps
+# Coefficient maps on restricted power series
 
-A norm-preserving coefficient homomorphism preserves the distinguished degree of a power
-series, and also multiplicative distinguishedness. The latter uses the fact that a
-norm-preserving homomorphism preserves multiplicative units even when it is not surjective.
-These statements let Weierstrass division and preparation be compared after isometric
-coefficient extension without rechecking the distinguished-divisor hypotheses.
-
-## References
-
-* F. Martin, *Overconvergent subanalytic subsets in the framework of Berkovich spaces*,
-  J. Eur. Math. Soc. 18 (2016), Definitions 1.20 and 1.24.
+A bounded coefficient homomorphism acts on restricted power series through the multivariate
+`TauCeti.MvPowerSeries.restrictedMap`. Here we express its underlying univariate series and
+its compatibility with the polynomial inclusion. These formulas let polynomial factorizations
+and division identities be transported in the restricted-series ring.
 -/
 
 public section
 
 namespace TauCeti.PowerSeries
 
-section SeminormedRing
+open TauCeti.MvPowerSeries
 
-variable {R S : Type*} [SeminormedRing R] [SeminormedRing S]
-  {c : ℝ} {s : ℕ} {f : PowerSeries R}
+variable {R S : Type*} [NormedRing R] [IsUltrametricDist R]
+  [NormedRing S] [IsUltrametricDist S] {c : ℝ}
+  (φ : R →+* S) {C : ℝ} (hφ : ∀ a, ‖φ a‖ ≤ C * ‖a‖)
 
-/-- A norm-preserving coefficient homomorphism preserves distinguishedness, with the same
-radius and degree. Neither completeness nor surjectivity is required. -/
-theorem IsDistinguished.map (hf : IsDistinguished c s f) (φ : R →+* S)
-    (hφ : ∀ a, ‖φ a‖ = ‖a‖) : IsDistinguished c s (PowerSeries.map φ f) := by
-  have hn : (PowerSeries.map φ f).gaussNorm norm c = f.gaussNorm norm c := by
-    simp only [PowerSeries.gaussNorm_eq, PowerSeries.coeff_map, hφ]
-  exact ⟨by simpa only [PowerSeries.coeff_map, hφ, hn] using hf.norm_coeff_mul_pow_eq,
-    fun n hn' ↦ by simpa only [PowerSeries.coeff_map, hφ, hn] using
-      hf.norm_coeff_mul_pow_lt n hn'⟩
+/-- The bounded restricted map acts as the coefficient map on underlying univariate series. -/
+theorem coe_restrictedMap_powerSeries (f : PowerSeries.IsRestricted.subring (R := R) c) :
+    (restrictedMap φ hφ f : PowerSeries S) = PowerSeries.map φ f :=
+  -- PowerSeries.map is MvPowerSeries.map with variable type Unit.
+  coe_restrictedMap φ hφ f
 
-end SeminormedRing
+section CommRing
 
-section NormedRing
+variable {R S : Type*} [NormedCommRing R] [IsUltrametricDist R]
+  [NormedCommRing S] [IsUltrametricDist S]
+  (φ : R →+* S) {C : ℝ} (hφ : ∀ a, ‖φ a‖ ≤ C * ‖a‖)
 
-variable {R S : Type*} [NormedRing R] [SeminormedRing S]
-  {c : ℝ} {s : ℕ} {f : PowerSeries R}
+/-- Bounded coefficient maps commute with the inclusion of polynomials into restricted series. -/
+@[simp]
+theorem restrictedMap_polynomialToRestricted (p : Polynomial R) :
+    restrictedMap φ hφ (polynomialToRestricted c p) = polynomialToRestricted c (p.map φ) := by
+  apply Subtype.ext
+  simp only [coe_restrictedMap_powerSeries, coe_polynomialToRestricted,
+    Polynomial.polynomial_map_coe]
 
-/-- A norm-preserving coefficient homomorphism preserves multiplicative distinguishedness,
-even without a multiplicative coefficient norm or a surjectivity hypothesis. -/
-theorem IsMulDistinguished.map (hf : IsMulDistinguished c s f) (φ : R →+* S)
-    (hφ : ∀ a, ‖φ a‖ = ‖a‖) : IsMulDistinguished c s (PowerSeries.map φ f) := by
-  have : NormOneClass R := hf.normOneClass
-  refine ⟨hf.toIsDistinguished.map φ hφ, ?_⟩
-  rw [PowerSeries.coeff_map]
-  exact hf.isNormMulUnit_coeff.map φ.toMonoidHom hφ
-
-end NormedRing
+end CommRing
 
 end TauCeti.PowerSeries
