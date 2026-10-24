@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Group.Action.Pow
 public import TauCeti.LinearAlgebra.Eigenspace.Transport
 public import TauCeti.QuantumGroups.UqSl2.Basic
 public import TauCeti.QuantumGroups.QuantumInteger.Basic
@@ -246,19 +247,6 @@ theorem k_smul_eq_of_k_sq_smul_eq {ν ρ : ℂ} (h : -ρ ≠ ν) {v : V}
     module
   exact sub_eq_zero.mp (eq_zero_of_mem_weightSpace_of_mem_genWeightSpace h hw
     (sub_mem (k_smul_mem_genWeightSpace hv) (Submodule.smul_mem _ ρ hv)))
-
-omit [Module ℂ V] [IsScalarTower ℂ (UqSl2 q) V] in
-/-- If some power of `x` kills a nonzero vector `w`, then the string `w, x w, x² w, …` ends in a
-nonzero vector `xⁿ w` killed by `x`. -/
-theorem exists_pow_smul_ne_zero_and_smul_eq_zero {x : UqSl2 q} {w : V} (hw0 : w ≠ 0)
-    (h : ∃ n : ℕ, x ^ n • w = 0) : ∃ n : ℕ, x ^ n • w ≠ 0 ∧ x • x ^ n • w = 0 := by
-  classical
-  have hn : 0 < Nat.find h := by
-    by_contra! hn
-    exact hw0 (by simpa [Nat.eq_zero_of_le_zero hn] using Nat.find_spec h)
-  refine ⟨Nat.find h - 1, Nat.find_min h (by omega), ?_⟩
-  rw [← mul_smul, ← pow_succ', Nat.sub_add_cancel hn]
-  exact Nat.find_spec h
 
 /-- Some power of `K - μ` sends a nonzero generalized weight vector of weight `μ` to a nonzero
 weight vector of weight `μ`. -/
