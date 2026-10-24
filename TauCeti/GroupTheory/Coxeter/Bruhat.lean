@@ -521,15 +521,16 @@ theorem isMinimalCosetRep_iff_forall_bruhatLE_mul {J : Set B} {u : W} :
     (h _ (cs.simple_mem_parabolic hi)).length_le.not_gt (by rwa [IsRightDescent] at hdesc)⟩
 
 /-- **Projection to minimal coset representatives is monotone.** If a minimal coset representative
-`y` lies below an element `v * p` of the coset of the minimal representative `v`, then `y ≤ v`. -/
+`y` lies below an element `v * p` of the coset of `v`, then `y ≤ v`. -/
 theorem IsMinimalCosetRep.bruhatLE_of_bruhatLE_mul {J : Set B} {y v p : W}
-    (hy : cs.IsMinimalCosetRep J y) (hv : cs.IsMinimalCosetRep J v) (hp : p ∈ cs.parabolic J)
+    (hy : cs.IsMinimalCosetRep J y) (hp : p ∈ cs.parabolic J)
     (h : cs.BruhatLE y (v * p)) : cs.BruhatLE y v := by
   obtain ⟨n, hn⟩ : ∃ n, ℓ (v * p) = n := ⟨_, rfl⟩
   induction n using Nat.strong_induction_on generalizing p with
   | _ n ih =>
     by_cases hmin : cs.IsMinimalCosetRep J (v * p)
-    · rwa [hv.eq_of_inv_mul_mem cs hmin (by rwa [inv_mul_cancel_left])]
+    -- The minimal representative `v * p` lies below `v = (v * p) * p⁻¹`.
+    · exact h.trans (by simpa using hmin.bruhatLE_mul cs (inv_mem hp))
     -- Remove a right descent `s i` of `v * p` with `i ∈ J`; it is not a right descent of `y`.
     obtain ⟨i, hi, hdesc⟩ : ∃ i ∈ J, cs.IsRightDescent (v * p) i := by
       simpa using hmin
@@ -586,7 +587,7 @@ theorem MinimalCosetRepCovBy.exists_isReflection {J : Set B} {y x : W}
   -- Project `c` to the minimal representative `v = c * p` of its coset.
   obtain ⟨p, hp, hv⟩ := cs.exists_isMinimalCosetRep J c
   have hyv : cs.BruhatLE y (c * p) :=
-    h.isMinimalCosetRep_left.bruhatLE_of_bruhatLE_mul cs hv (inv_mem hp)
+    h.isMinimalCosetRep_left.bruhatLE_of_bruhatLE_mul cs (inv_mem hp)
       (by rwa [mul_inv_cancel_right])
   have hvc : cs.BruhatLE (c * p) c := by
     simpa using hv.bruhatLE_mul cs (inv_mem hp)
