@@ -946,10 +946,8 @@ private theorem kummerCor_factorCohomologicalMap (p : W.toAffine.f.Factors)
         (ContinuousMonoidHom.id (AbsoluteGaloisGroup (𝕃 p))
           (((absoluteGaloisGroupEquivFixingSubgroup K (𝕃 p) σ).symm :
             ↥σ.fieldRange.fixingSubgroup →ₜ* AbsoluteGaloisGroup (𝕃 p)) g)) = g := by
-      rw [ContinuousMonoidHom.coe_id, id_eq, absoluteGaloisGroupMap_separableClosureAlgEquiv,
-        ContinuousMonoidHom.comp_toFun, ContinuousMonoidHom.coe_coe,
-        ContinuousMonoidHom.subgroupSubtype_apply, ContinuousMonoidHom.coe_coe,
-        ContinuousMulEquiv.apply_symm_apply]
+      rw [absoluteGaloisGroupMap_separableClosureAlgEquiv]
+      simp
     rw [hg]
     refine (kummerCoeffMapSymm_factorTorsionCharacter W p σ h2 _).trans ?_
     dsimp only
