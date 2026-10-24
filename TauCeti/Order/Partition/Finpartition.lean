@@ -38,7 +38,8 @@ partitions other than the finest and the coarsest, the position of the parts of
 `Finpartition.atomise` relative to the sets it cuts along, and the pullback `Finpartition.comap`
 of a finite partition of the image `f '' s` to a finite partition of `s`, which is an order
 embedding whose image consists of the partitions coarser than the partition of `s` into the fibres
-of `f`, each of which is the pullback of its pushforward `Finpartition.pushforward`.
+of `f`, each of which is the pullback of its pushforward `Finpartition.pushforward`, a left inverse
+of the pullback.
 -/
 
 public section
@@ -641,6 +642,15 @@ theorem comap_pushforward {Q : Finpartition s} (h : (⊥ : Finpartition (s.image
   simp only [Function.comp_apply, mem_filter, mem_image, id]
   exact ⟨fun ⟨hx, y, hy, hyx⟩ => mem_of_comap_bot_le h hB hy hx hyx.symm,
     fun hx => ⟨Q.le hB hx, x, hx, rfl⟩⟩
+
+/-- Pushing forward the pullback of a finite partition `P` of `f '' s` recovers `P`. -/
+@[simp]
+theorem pushforward_comap (P : Finpartition (s.image f))
+    (h : (⊥ : Finpartition (s.image f)).comap f ≤ P.comap f) :
+    (P.comap f).pushforward f h = P := by
+  refine Finpartition.ext ?_
+  rw [parts_pushforward, parts_comap, image_image]
+  exact (image_congr fun C hC => image_filter_mem_of_mem_parts hC).trans image_id
 
 /-- A finite partition `Q` of `s` is a pullback along `f` exactly when it is coarser than the
 partition of `s` into the fibres of `f`; it is then the pullback of its pushforward
