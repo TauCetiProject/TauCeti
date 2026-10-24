@@ -291,16 +291,8 @@ theorem spinSixWedgeIsometryEquivPolarSplit_spinVectorAction
       ← (spinSixWedgeQuadraticIsometryEquivSplit K).spinGroupEquiv_symm,
       MulEquiv.apply_symm_apply]
   rw [hmap, (spinSixWedgeQuadraticIsometryEquivSplit K).symm.spinGroupEquiv_apply] at h
-  have heq (y : ⋀[K]^2 (Fin 4 → K)) :
-      (spinSixWedgeQuadraticIsometryEquivSplit K).toIsometry y =
-        spinSixWedgeIsometryEquivPolarSplit K y := by
-    -- The quadratic and bilinear comparisons share a linear equivalence; expose that
-    -- coercion so the named equality below rewrites the two action expressions.
-    change (spinSixWedgeQuadraticIsometryEquivSplit K).toLinearEquiv y =
-      (spinSixWedgeIsometryEquivPolarSplit K).toLinearEquiv y
-    rw [spinSixWedgeQuadraticIsometryEquivSplit_toLinearEquiv]
-  rw [heq] at h
-  simpa using h.symm
+  simpa only [QuadraticMap.IsometryEquiv.toIsometry_apply,
+    spinSixWedgeQuadraticIsometryEquivSplit_apply] using h.symm
 
 
 end TauCeti
