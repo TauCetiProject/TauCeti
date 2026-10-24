@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.ProjectiveSpectrum.Functor
 public import TauCeti.RingTheory.GradedAlgebra.Homogeneous.Maps
 public import TauCeti.RingTheory.GradedAlgebra.HomogeneousLocalization.Basic
+import TauCeti.AlgebraicGeometry.Scheme.Opens
 
 /-!
 # Points of `Proj` through standard charts, and compatibilities of `Proj.map`
@@ -26,7 +27,8 @@ isomorphism of schemes. It computes the locus where a function `g / fⁿ` on a s
 chart `D₊(f)` is invertible: it is `D₊(fg)`, so the restriction of sections from `D₊(f)` to
 `D₊(fg)` is a localization at `g / fⁿ`. Finally, it identifies the inverse image under
 `Proj A ⟶ Spec A₀` of the basic open of a degree-zero element `r` with the standard open `D₊(r)`,
-so that the structure map to `Spec A₀` can be studied through homogeneous prime ideals.
+so that the structure map to `Spec A₀` can be studied through homogeneous prime ideals, and shows
+that on `D₊(f)` the functions pulled back from `Spec A₀` are the fractions `a / 1`.
 
 ## Main definitions
 
@@ -44,6 +46,8 @@ so that the structure map to `Spec A₀` can be studied through homogeneous prim
   is invertible exactly on `D₊(fg)`.
 * `AlgebraicGeometry.Proj.toSpecZero_preimage_basicOpen`: the inverse image of the basic open
   `D(r)` of a degree-zero element under `Proj A ⟶ Spec A₀` is the standard open `D₊(r)`.
+* `AlgebraicGeometry.Proj.toSpecZero_appLE_basicOpen`: on `D₊(f)`, the functions pulled back
+  along `Proj A ⟶ Spec A₀` are the fractions `a / 1`.
 * `ProjectiveSpectrum.ext_of_mem_pos`: positive-degree homogeneous elements determine a
   projective point, allowing comparison through its positive-degree coordinate opens.
 -/
@@ -203,6 +207,34 @@ theorem toSpecZero_preimage_basicOpen (r : 𝒜 0) :
       ← awayι_preimage_basicOpen 𝒜 f_deg hi hrf hi]
     exact ⟨fun h ↦ (basicOpen_mul 𝒜 _ _).ge ⟨h, hzf⟩, fun h ↦ ((basicOpen_mul 𝒜 _ _).le h).1⟩
   exact h₁.trans h₂.symm
+
+variable (𝒜) in
+/-- **Constants on a standard chart.** On the chart `D₊(f)`, for `f` homogeneous of positive degree,
+the functions pulled back from `Spec A₀` along `Proj A ⟶ Spec A₀` are the fractions `a / 1` of
+degree-zero elements `a`. -/
+theorem toSpecZero_appLE_basicOpen {f : A} {m : ℕ} (f_deg : f ∈ 𝒜 m) (hm : 0 < m) :
+    (toSpecZero 𝒜).appLE ⊤ (basicOpen 𝒜 f) le_top =
+      (Scheme.ΓSpecIso _).hom ≫ CommRingCat.ofHom (fromZeroRingHom 𝒜 _) ≫ awayToSection 𝒜 f := by
+  -- compose with the isomorphism `Γ(Proj A, D₊(f)) ≅ Γ(D₊(f), ⊤)` given by the inclusion
+  rw [← cancel_mono ((basicOpen 𝒜 f).ι.appLE (basicOpen 𝒜 f) ⊤ (basicOpen 𝒜 f).ι_preimage_self.ge)]
+  refine (Scheme.Hom.appLE_comp_appLE _ _ _ _ _ _ _).trans ?_
+  -- on `D₊(f) ≅ Spec A_(f)`, the structure map is `Spec` of `A₀ → A_(f)`
+  have hι : (basicOpen 𝒜 f).ι ≫ toSpecZero 𝒜 = (basicOpenIsoSpec 𝒜 f f_deg hm).hom ≫
+      Spec.map (CommRingCat.ofHom (fromZeroRingHom 𝒜 _)) := by
+    rw [← awayι_toSpecZero 𝒜 f f_deg hm, ← basicOpenIsoSpec_inv_ι]
+    simp only [Category.assoc, Iso.hom_inv_id_assoc]
+  -- The proof of `⊤ ≤ ⊤` carried by the restriction map has type `⊤ ≤ f ⁻¹ᵁ ⊤` only up to
+  -- unfolding `Scheme.Hom.preimage`, so `Scheme.Hom.appLE_top_top` is applied by unification
+  -- rather than by `rw`.
+  refine (Scheme.Hom.appLE_top_top _ _).trans ?_
+  -- The `show` reads `basicOpenToSpec_app_top`, stated for `app ⊤`, through the abbreviation
+  -- `appTop`.
+  rw [hι, Scheme.Hom.comp_appTop, basicOpenIsoSpec_hom,
+    show (basicOpenToSpec 𝒜 f).appTop = _ from basicOpenToSpec_app_top 𝒜 f, ← Category.assoc,
+    Scheme.ΓSpecIso_naturality]
+  simp only [Category.assoc, Scheme.Opens.topIso_inv, Scheme.Opens.ι_appLE]
+  -- both sides restrict along the inclusion `D₊(f) ≤ ι '' ⊤`, and inclusions of opens are unique
+  rfl
 
 end AlgebraicGeometry.Proj
 
