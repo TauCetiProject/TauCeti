@@ -5,7 +5,7 @@ Authors: Claude
 -/
 module
 
-public import TauCeti.LinearAlgebra.Matrix.Rank.OrbitClosure
+public import TauCeti.LinearAlgebra.Matrix.Rank.Closed
 public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Basic
 
 /-!
