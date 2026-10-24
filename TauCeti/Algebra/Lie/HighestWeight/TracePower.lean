@@ -11,6 +11,7 @@ public import TauCeti.Algebra.Lie.HighestWeight.OrbitSum
 public import TauCeti.Algebra.Lie.Weights.InvariantForm
 import TauCeti.Algebra.Lie.HighestWeight.Weight.Density
 import TauCeti.LinearAlgebra.SymmetricAlgebra.Evaluation
+import TauCeti.RepresentationTheory.SymmetricAlgebra.Reynolds
 
 /-!
 # Trace-power polynomials on a Cartan subalgebra
@@ -46,10 +47,11 @@ The proof combines three earlier results.
 * **Density.** The `m`-th powers of the vectors `t_λ`, for `λ` dominant integral, span the
   degree-`m` component of `S(H)` (`TauCeti.span_pow_cartanEquivDual_symm_eq_homogeneousSubmodule`);
   this is the polarization form of the polynomial density of the dominant integral weights.
-* **Averaging.** Averaging `t_λ ^ m` over the Weyl group gives the power sum of
-  `∑_w e^{w λ}`, a Weyl-invariant element supported on the Weyl orbit of `λ` and hence a
-  combination of orbit sums, and averaging fixes a Weyl invariant. Since the form `⟨·,·⟩` is
-  Weyl-invariant, the averaging can be read off from values at weights alone.
+* **Averaging.** The Reynolds operator of the Weyl group acting on `H`
+  (`Representation.symmetricAlgebraReynolds`) sends `t_λ ^ m` to a multiple of the power sum of
+  `∑_w e^{w λ}`, because the form `⟨·,·⟩` is Weyl-invariant. That element is Weyl-invariant and
+  supported on the Weyl orbit of `λ`, hence a combination of orbit sums, and the Reynolds operator
+  fixes a Weyl invariant (`TauCeti.linearInvariants_eq_symmetricAlgebraInvariants`).
 
 ## Main definitions
 
@@ -120,7 +122,7 @@ a weight `λ`. -/
 theorem lift_ι_cartanEquivDual_symm (lam mu : Dual K H) :
     SymmetricAlgebra.lift lam (SymmetricAlgebra.ι K H ((IsKilling.cartanEquivDual H).symm mu)) =
       invForm lam mu := by
-  rw [SymmetricAlgebra.lift_ι_apply, ← invForm_cartanEquivDual_right, LinearEquiv.apply_symm_apply]
+  rw [SymmetricAlgebra.lift_ι_apply, invForm_apply_apply]
 
 /-- **The value of a power sum at a weight**: `weightPowerSum H m f` takes the value
 `∑_μ f(μ) ⟨λ, μ⟩ ^ m` at the weight `λ`. -/
@@ -179,7 +181,7 @@ theorem lift_cartanEquivDual_tracePowerRestriction (h : H) (m : ℕ) :
     formalCharacter_eq_sum_single, map_sum, map_sum]
   refine Finset.sum_congr rfl fun chi _ ↦ ?_
   rw [weightPowerSum_single, map_zsmul, map_pow, lift_ι_cartanEquivDual_symm,
-    (invForm_isSymm (H := H)).eq, invForm_cartanEquivDual_right]
+    invForm_cartanEquivDual_left]
   simp
 
 end TracePower
@@ -338,37 +340,41 @@ theorem span_highestWeightTracePowerRestriction_eq_linearInvariants_inf_homogene
     have := finiteDimensional_irreducibleQuotient_of_isDominantIntegral hlam
     exact ⟨tracePowerRestriction_mem_linearInvariants m,
       tracePowerRestriction_mem_homogeneousSubmodule m⟩
-  -- the values of a polynomial, and its Weyl average, at every weight
-  let ev : SymmetricAlgebra K H →ₗ[K] Dual K H → K :=
-    LinearMap.pi fun nu ↦ (SymmetricAlgebra.lift nu).toLinearMap
-  let avg : SymmetricAlgebra K H →ₗ[K] Dual K H → K :=
-    LinearMap.pi fun nu ↦ ∑ w : (IsKilling.rootSystem H).weylGroup,
-      (SymmetricAlgebra.lift (w⁻¹ • nu)).toLinearMap
-  -- every element of `Sᵐ(H)` has a Weyl average which is the value function of an element of `V`
-  have havg : SymmetricAlgebra.homogeneousSubmodule K H m ≤ (V.map ev).comap avg := by
+  -- average over the Weyl group acting on `H`, the coroot space
+  let ρW := (IsKilling.rootSystem H).weylGroupCorootRep
+  let _ : Fintype (IsKilling.rootSystem H).weylGroup.op := Fintype.ofEquiv _ (Subgroup.equivOp _)
+  have : Invertible (Fintype.card (IsKilling.rootSystem H).weylGroup.op : K) :=
+    invertibleOfNonzero (Nat.cast_ne_zero.mpr Fintype.card_ne_zero)
+  -- `w`, acting on `H` through the opposite group, moves `t_λ` to `t_{w⁻¹ λ}` since the form is
+  -- invariant
+  have hsmul (w : (IsKilling.rootSystem H).weylGroup) (lam : Dual K H) :
+      ρW (Subgroup.equivOp _ w) ((IsKilling.cartanEquivDual H).symm lam) =
+        (IsKilling.cartanEquivDual H).symm (w⁻¹ • lam) := by
+    refine sub_eq_zero.mp <| (Module.forall_dual_apply_eq_zero_iff K (V := H) _).mp fun nu ↦ ?_
+    have hform := (rootInvariantForm (H := H)).apply_weylGroup_smul (IsKilling.rootSystem H) w nu
+      (w⁻¹ • lam)
+    rw [smul_inv_smul, rootInvariantForm_form] at hform
+    rw [map_sub, sub_eq_zero, ← invForm_apply_apply, ← hform, invForm_apply_apply]
+    exact (RootPairing.Equiv.toLinearMap_weightEquiv (w : (IsKilling.rootSystem H).Aut) nu _).symm
+  -- the Reynolds operator sends each `t_λ ^ m` into `V`
+  have havg : SymmetricAlgebra.homogeneousSubmodule K H m ≤
+      V.comap ρW.symmetricAlgebra.averageMap := by
     rw [← span_pow_cartanEquivDual_symm_eq_homogeneousSubmodule b m, Submodule.span_le]
     rintro _ ⟨lam, hlam, rfl⟩
-    refine ⟨_, weightPowerSum_sum_single_smul_mem_span m hlam, funext fun nu ↦ ?_⟩
-    simp only [ev, avg, LinearMap.pi_apply, LinearMap.sum_apply, AlgHom.toLinearMap_apply, map_sum,
-      weightPowerSum_single, map_pow, lift_ι_cartanEquivDual_symm, one_smul]
-    refine Finset.sum_congr rfl fun w _ ↦ ?_
-    have hform := (rootInvariantForm (H := H)).apply_weylGroup_smul (IsKilling.rootSystem H) w
-      (w⁻¹ • nu) lam
-    rw [smul_inv_smul, rootInvariantForm_form] at hform
-    rw [hform]
-  obtain ⟨r, hr, hrp⟩ := havg hhom
-  -- for an invariant `p` the average is `|W|` times the value function, so `p = |W|⁻¹ r`
-  have hcard : (Fintype.card (IsKilling.rootSystem H).weylGroup : K) ≠ 0 :=
-    Nat.cast_ne_zero.mpr Fintype.card_ne_zero
-  have hp : p = (Fintype.card (IsKilling.rootSystem H).weylGroup : K)⁻¹ • r := by
-    refine SymmetricAlgebra.eq_of_forall_lift_apply_eq fun nu ↦ ?_
-    have hval := congrFun hrp nu
-    simp only [ev, avg, LinearMap.pi_apply, LinearMap.sum_apply, AlgHom.toLinearMap_apply,
-      (mem_linearInvariants_iff.mp hinv) _ nu, Finset.sum_const, Finset.card_univ,
-      nsmul_eq_mul] at hval
-    rw [map_smul, hval, smul_eq_mul, inv_mul_cancel_left₀ hcard]
-  rw [hp]
-  exact V.smul_mem _ hr
+    rw [SetLike.mem_coe, Submodule.mem_comap, ← Representation.coe_symmetricAlgebraReynolds,
+      Representation.coe_symmetricAlgebraReynolds_eq_sum]
+    convert V.smul_mem ⅟(Fintype.card (IsKilling.rootSystem H).weylGroup.op : K)
+      (weightPowerSum_sum_single_smul_mem_span m hlam) using 2
+    rw [map_sum, ← (Subgroup.equivOp _).sum_comp, ← Equiv.sum_comp (Equiv.inv _)]
+    refine Fintype.sum_congr _ _ fun w ↦ ?_
+    rw [Representation.symmetricAlgebra_apply, map_pow, SymmetricAlgebra.map_apply_ι, hsmul,
+      weightPowerSum_single, one_smul, Equiv.inv_apply, inv_inv]
+  -- the Reynolds operator fixes the invariant `p`
+  rw [linearInvariants_eq_symmetricAlgebraInvariants] at hinv
+  have hfix := congrArg Subtype.val (ρW.symmetricAlgebraReynolds_coe ⟨p, hinv⟩)
+  rw [Representation.coe_symmetricAlgebraReynolds] at hfix
+  have hp := havg hhom
+  rwa [Submodule.mem_comap, hfix] at hp
 
 end Span
 

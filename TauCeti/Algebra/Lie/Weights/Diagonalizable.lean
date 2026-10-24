@@ -256,9 +256,6 @@ theorem trace_toEnd_pow_eq_sum_finrank_nsmul (h : H) (m : ℕ) :
     LinearMap.trace K M (toEnd K H M h ^ m) =
       ∑ chi : Weight K H M, finrank K (genWeightSpace M chi) • chi h ^ m := by
   classical
-  have hds := DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top
-    (LieSubmodule.iSupIndep_toSubmodule.mpr <| iSupIndep_genWeightSpace' K H M)
-    (LieSubmodule.iSup_toSubmodule_eq_top.mpr <| iSup_genWeightSpace_eq_top' K H M)
   -- the weight space of `chi` is an honest eigenspace, on which `h` acts by the scalar `chi h`
   have hact (chi : Weight K H M) (n : ℕ) (x : M) (hx : x ∈ genWeightSpace M chi) :
       (toEnd K H M h ^ n) x = chi h ^ n • x := by
@@ -272,7 +269,7 @@ theorem trace_toEnd_pow_eq_sum_finrank_nsmul (h : H) (m : ℕ) :
       (genWeightSpace M chi) (genWeightSpace M chi) := fun x hx ↦ by
     rw [SetLike.mem_coe, hact chi m x hx]
     exact Submodule.smul_mem _ _ hx
-  rw [LinearMap.trace_eq_sum_trace_restrict hds hmaps]
+  rw [LinearMap.trace_eq_sum_trace_restrict (isInternal_genWeightSpace K H M) hmaps]
   refine Finset.sum_congr rfl fun chi _ ↦ ?_
   have hres : (toEnd K H M h ^ m).restrict (hmaps chi) = chi h ^ m • LinearMap.id :=
     LinearMap.ext fun x ↦ Subtype.ext (hact chi m x x.2)
