@@ -302,9 +302,7 @@ private theorem cohomologyMap_twist_groupAlgebraToLoopChainCohomology (γ : Moor
     ← Ideal.Quotient.mkₐ_eq_mk R, ← map_smul]
   congr 1
   apply Subtype.ext
-  rw [DGAlgHom.cyclesMap_apply_coe, twist_lof_ofCube, SingularCube.point_apply]
-  -- Scalar multiplication of cycles is computed on their underlying chains.
-  rfl
+  rw [DGAlgHom.cyclesMap_apply_coe, twist_lof_ofCube, SingularCube.point_apply, SetLike.val_smul]
 
 /-- The class of `Φ^L` applied to the point chain of `γ` acts as `ρ γ` times the point chain. -/
 private theorem cohomologyAction_cohomologyMap_twist

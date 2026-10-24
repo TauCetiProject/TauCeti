@@ -376,8 +376,9 @@ def groupAlgebraToLoopChainCohomology :
       rw [← loopZeroChainToGroupAlgebra_one, groupAlgebraToLoopChainCohomologyLinear_apply,
         zeroChainToCohomology_apply, ← map_one (Ideal.Quotient.mkₐ R _)]
       -- The unit of the chain algebra is the point chain of the unit loop in dimension zero.
-      exact congrArg (Ideal.Quotient.mkₐ R _)
-        (Subtype.ext (rfl : DirectSum.of _ 0 (NormalizedCubicalChain.one _ R) = 1)))
+      refine congrArg (Ideal.Quotient.mkₐ R _) (Subtype.ext ?_)
+      simp only [OneMemClass.coe_one, DirectSum.lof_eq_of, ← NormalizedCubicalChain.gOne_one]
+      exact DirectSum.of_zero_one _)
     (fun x y ↦ by
       obtain ⟨a, rfl⟩ := loopZeroChainToGroupAlgebra_surjective (R := R) (x := b) x
       obtain ⟨a', rfl⟩ := loopZeroChainToGroupAlgebra_surjective (R := R) (x := b) y

@@ -43,8 +43,6 @@ DG local system by a rank-one local system, is read off on cohomology.
 
 public section
 
-open MulOpposite
-
 namespace TauCeti
 
 universe uR uA uB uM
@@ -137,11 +135,8 @@ theorem restrictScalarsCohomologyEquiv_cohomologyAction (c : hA.Cohomology)
       ← Submodule.Quotient.mk_smul, restrictScalarsCohomologyEquiv_mk,
       restrictScalarsCohomologyEquiv_mk, ← Submodule.Quotient.mk_smul]
     refine congrArg Submodule.Quotient.mk (Subtype.ext ?_)
-    -- A cycle of the algebra acts on module cycles through its underlying element.
-    change (op (w : A) • (z : DGRightModule.RestrictScalars f M)).val =
-      op ((f.cyclesMap w : hB.cycles) : B) • (z : DGRightModule.RestrictScalars f M).val
-    rw [DGAlgHom.cyclesMap_apply_coe]
-    exact DGRightModule.RestrictScalars.val_op_smul f M (w : A) _
+    -- Cycles of the algebra act on module cycles through `Module.compHom` along the inclusion.
+    simp [MulAction.compHom_smul_def]
 
 end IsDGRightModule
 
