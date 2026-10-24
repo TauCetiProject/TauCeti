@@ -12,6 +12,7 @@ import Mathlib.Analysis.Convex.Between
 import TauCeti.Analysis.Convex.Combination
 import TauCeti.Analysis.Convex.Intrinsic
 import TauCeti.Analysis.Convex.Join
+import TauCeti.Analysis.Convex.Segment
 
 /-!
 # Cones of geometric simplicial complexes
@@ -35,8 +36,8 @@ triangulations.
 
 ## Main definitions
 
-* `Geometry.SimplicialComplex.IsConeApex`: `p` is outside `|K|` and each segment from `p` meets
-  `|K|` at most in its far endpoint.
+* `Geometry.SimplicialComplex.IsConeApex`: `p` is outside `|K|` and each segment from `p` to a
+  point of `|K|` meets `|K|` only at that endpoint.
 * `Geometry.SimplicialComplex.cone`: the cone on `K` with apex `p`.
 
 ## Main results
