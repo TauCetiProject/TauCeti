@@ -77,8 +77,11 @@ theorem _root_.TestFunction.postcompCLE_trans {H : Type*} [NormedAddCommGroup H]
 @[simp]
 theorem _root_.TestFunction.tsupport_postcompCLE (e : F ≃L[𝕜] G) (φ : 𝓓^{n}(Ω, F)) :
     tsupport (TestFunction.postcompCLE e φ) = tsupport φ := by
-  simpa only [Function.comp_def, TestFunction.postcompCLE_apply] using
-    (tsupport_comp_eq (g := e) (fun {_} ↦ e.map_eq_zero_iff) φ)
+  have hcoe : (TestFunction.postcompCLE e φ : E → G) = e ∘ φ := by
+    funext x
+    exact TestFunction.postcompCLE_apply e φ x
+  rw [hcoe]
+  exact tsupport_comp_eq (g := e) (fun {_} ↦ e.map_eq_zero_iff) φ
 
 /-- Coefficient changes commute with extension and lowering regularity, including the zero-map
 case of `monoCLM` when the domains or orders are incompatible. -/
