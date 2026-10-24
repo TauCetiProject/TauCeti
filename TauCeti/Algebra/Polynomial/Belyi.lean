@@ -104,6 +104,13 @@ theorem eval_one_belyiPolynomial (m : ℕ) {n : ℕ} (hn : n ≠ 0) :
 
 variable [CharZero K]
 
+/-- In characteristic zero, the normalizing constant `(m + n) ^ (m + n) / (m ^ m * n ^ n)` of the
+Belyi polynomial is nonzero. -/
+theorem belyiConstant_ne_zero (m n : ℕ) :
+    ((m : K) + n) ^ (m + n) / ((m : K) ^ m * (n : K) ^ n) ≠ 0 := by
+  -- `a ^ a` is nonzero for every natural number `a`, including `0 ^ 0 = 1`.
+  refine div_ne_zero ?_ (mul_ne_zero ?_ ?_) <;> exact_mod_cast Nat.pow_self_pos.ne'
+
 /-- In characteristic zero, the Belyi polynomial takes the value `1` at `m / (m + n)`. -/
 @[simp]
 theorem eval_div_belyiPolynomial (m n : ℕ) :
@@ -115,16 +122,15 @@ theorem eval_div_belyiPolynomial (m n : ℕ) :
   have hsub : 1 - (m : K) / (m + n) = n / (m + n) := by
     field_simp
     ring
+  have hc := belyiConstant_ne_zero (K := K) m n
+  rw [div_ne_zero_iff, mul_ne_zero_iff] at hc
+  obtain ⟨-, hm, hn⟩ := hc
   rw [eval_belyiPolynomial, hsub, div_pow, div_pow, pow_add]
-  -- `a ^ a` is nonzero for every natural number `a`, including `0 ^ 0 = 1`.
-  have : (m : K) ^ m ≠ 0 := by exact_mod_cast Nat.pow_self_pos.ne'
-  have : (n : K) ^ n ≠ 0 := by exact_mod_cast Nat.pow_self_pos.ne'
   field_simp
 
 /-- In characteristic zero, the Belyi polynomial `B_{m,n}` has degree `m + n`. -/
 theorem natDegree_belyiPolynomial (m n : ℕ) : (belyiPolynomial K m n).natDegree = m + n := by
-  have hc : ((m : K) + n) ^ (m + n) / ((m : K) ^ m * (n : K) ^ n) ≠ 0 := by
-    refine div_ne_zero ?_ (mul_ne_zero ?_ ?_) <;> exact_mod_cast Nat.pow_self_pos.ne'
+  have hc := belyiConstant_ne_zero (K := K) m n
   have h1 : (1 - X : K[X]).natDegree = 1 := by
     rw [← neg_sub, natDegree_neg, ← C_1, natDegree_X_sub_C]
   rw [belyiPolynomial, mul_assoc, natDegree_C_mul hc, natDegree_mul (pow_ne_zero _ X_ne_zero)
@@ -147,8 +153,7 @@ theorem rootSet_derivative_belyiPolynomial_subset (L : Type*) [Field L] [Algebra
   simp only [Set.mem_insert_iff, Set.mem_singleton_iff]
   by_contra! h
   obtain ⟨h0, h1, hr⟩ := h
-  have hc : c ≠ 0 := by
-    refine div_ne_zero ?_ (mul_ne_zero ?_ ?_) <;> exact_mod_cast Nat.pow_self_pos.ne'
+  have hc : c ≠ 0 := belyiConstant_ne_zero m n
   have e1 : (m : L) * x ^ (m - 1) * x = m * x ^ m := by
     cases m <;> simp [pow_succ, mul_assoc]
   have e2 : (n : L) * (1 - x) ^ (n - 1) * (1 - x) = n * (1 - x) ^ n := by

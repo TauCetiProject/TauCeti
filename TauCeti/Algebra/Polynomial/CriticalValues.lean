@@ -55,6 +55,12 @@ values of `p` regarded as a self-map of the projective line. -/
 noncomputable def criticalValues (p : R[X]) : Set S :=
   (fun x ↦ aeval x p) '' (derivative p).rootSet S
 
+variable (S) in
+/-- The critical values of `p` are the image of the roots of `p′` under `x ↦ p(x)`. -/
+theorem criticalValues_def (p : R[X]) :
+    p.criticalValues S = (fun x ↦ aeval x p) '' (derivative p).rootSet S :=
+  (rfl)
+
 @[simp]
 theorem mem_criticalValues {p : R[X]} {y : S} :
     y ∈ p.criticalValues S ↔ ∃ x ∈ (derivative p).rootSet S, aeval x p = y :=

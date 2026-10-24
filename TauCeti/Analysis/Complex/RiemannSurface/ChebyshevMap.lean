@@ -134,11 +134,14 @@ is `1/2`, with critical value `1`. -/
 theorem branchValues_spherePolynomial_four_mul_X_mul_one_sub_X :
     (FiniteHolomorphicMap.spherePolynomial natDegree_four_mul_X_mul_one_sub_X_pos).branchValues =
       {((1 : ℂ) : OnePoint ℂ), ∞} := by
-  have h : {z : ℂ | (derivative (C 4 * X * (1 - X) : ℂ[X])).IsRoot z} = {2⁻¹} :=
-    Set.ext fun _ ↦ isRoot_derivative_four_mul_X_mul_one_sub_X_iff
+  have hd : derivative (C 4 * X * (1 - X) : ℂ[X]) ≠ 0 :=
+    derivative_ne_zero.mpr natDegree_four_mul_X_mul_one_sub_X_pos.ne'
+  have h : (derivative (C 4 * X * (1 - X) : ℂ[X])).rootSet ℂ = {2⁻¹} :=
+    Set.ext fun _ ↦ (mem_rootSet_of_ne hd).trans (by
+      rw [coe_aeval_eq_eval]; exact isRoot_derivative_four_mul_X_mul_one_sub_X_iff)
   rw [FiniteHolomorphicMap.branchValues_spherePolynomial
-      (by rw [natDegree_four_mul_X_mul_one_sub_X]; exact one_lt_two), h, image_singleton,
-    pair_comm]
+      (by rw [natDegree_four_mul_X_mul_one_sub_X]; exact one_lt_two), criticalValues_def, h,
+    image_singleton, image_singleton, pair_comm]
   norm_num
 
 end TauCeti.RiemannSurface
