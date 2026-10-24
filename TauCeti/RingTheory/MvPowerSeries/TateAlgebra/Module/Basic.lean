@@ -77,6 +77,11 @@ the coefficient families of restricted power series with coefficients in `E`. -/
 def IsRestrictedFamily (c : σ → ℝ) (a : (σ →₀ ℕ) → E) : Prop :=
   Tendsto (fun t : σ →₀ ℕ ↦ ‖a t‖ * t.prod (c · ^ ·)) cofinite (𝓝 0)
 
+/-- Restrictedness is decay of the weighted coefficient norms along the cofinite filter. -/
+theorem isRestrictedFamily_iff {a : (σ →₀ ℕ) → E} :
+    IsRestrictedFamily c a ↔
+      Tendsto (fun t ↦ ‖a t‖ * t.prod (c · ^ ·)) cofinite (𝓝 0) := Iff.rfl
+
 /-- For coefficients in a normed ring, a family is restricted exactly when the power series with
 these coefficients is restricted in Mathlib's sense. -/
 theorem _root_.MvPowerSeries.isRestrictedFamily_coeff_iff [NormedRing R]
