@@ -65,6 +65,8 @@ by Reidemeister moves, are not proved here.
 * `Polygon.visitTime_cast_eq_of_strictMono` and `Polygon.gaussCode_partner_cast_eq_of_strictMono`:
   an increasing change of time between the traversals of two simple polygons with the same boundary
   matches their visits and partner visits.
+* `Polygon.gaussCode_partner_cast_eq_of_boundaryParam_eq`: visits of two simple polygons with the
+  same boundary that are at the same points have partner visits at the same points.
 
 ## References
 
@@ -487,6 +489,31 @@ theorem visitTime_cast_eq_of_strictMono (hb : poly'.boundary ℝ = poly.boundary
   exact congrFun ((hf.range_inj_of_wellFoundedLT (hφ.comp (strictMono_visitTime hs hπ))).1
     hrange) j
 
+/-- **Partners of visits at the same points.** Let `poly'` be a simple polygon with the same
+boundary as `poly`, and `σ` a permutation of the visits of `poly` such that the visit of `poly'`
+identified by `Fin.cast h` with `j` is at the same point as the `σ j`-th visit of `poly`. Then the
+partner visits correspond in the same way. -/
+theorem gaussCode_partner_cast_eq_of_boundaryParam_eq (hb : poly'.boundary ℝ = poly.boundary ℝ)
+    (h : 2 * ((poly.doublePoints ℝ (projAlong ℝ p₀ d)).ncard / 2) =
+      2 * ((poly'.doublePoints ℝ (projAlong ℝ p₀ d)).ncard / 2))
+    (σ : Equiv.Perm (Fin (2 * ((poly.doublePoints ℝ (projAlong ℝ p₀ d)).ncard / 2))))
+    (hbp : ∀ j, poly'.boundaryParam (visitTime hs' hπ' (Fin.cast h j)) =
+      poly.boundaryParam (visitTime hs hπ (σ j))) (j) :
+    (gaussCode hs' hπ' b).partner.val (Fin.cast h j) =
+      Fin.cast h (σ.symm ((gaussCode hs hπ b).partner.val (σ j))) := by
+  refine (strictMono_visitTime hs' hπ').injective (hs'.injOn_boundaryParam
+    (visitTime_mem_crossingTimes hs' hπ' _).1 (visitTime_mem_crossingTimes hs' hπ' _).1 ?_)
+  rw [boundaryParam_visitTime_partner, hbp, hbp, Equiv.apply_symm_apply,
+    boundaryParam_visitTime_partner]
+  have hx := (mem_crossingTimes.1 (visitTime_mem_crossingTimes hs hπ (σ j))).2
+  have hx' : poly.boundaryParam (visitTime hs hπ (σ j)) ∈
+      poly'.doublePoints ℝ (projAlong ℝ p₀ d) := by
+    rw [doublePoints_eq_of_boundary_eq hb]
+    exact hx
+  exact hπ.eq_doublePointPartner (doublePoints_subset_boundary hx)
+    (hb ▸ doublePointPartner_mem_boundary (doublePoints_subset_boundary hx'))
+    (doublePointPartner_ne hx') (apply_doublePointPartner _)
+
 /-- **Partners under a change of time.** Under the hypotheses of
 `Polygon.visitTime_cast_eq_of_strictMono`, the visits of the Gauss codes of `poly` and `poly'`
 identified by `Fin.cast h` have partner visits identified by `Fin.cast h`. -/
@@ -496,21 +523,10 @@ theorem gaussCode_partner_cast_eq_of_strictMono (hb : poly'.boundary ℝ = poly.
     (h : 2 * ((poly.doublePoints ℝ (projAlong ℝ p₀ d)).ncard / 2) =
       2 * ((poly'.doublePoints ℝ (projAlong ℝ p₀ d)).ncard / 2)) (j) :
     (gaussCode hs' hπ' b).partner.val (Fin.cast h j) =
-      Fin.cast h ((gaussCode hs hπ b).partner.val j) := by
-  have hbp (k) : poly'.boundaryParam (visitTime hs' hπ' (Fin.cast h k)) =
-      poly.boundaryParam (visitTime hs hπ k) := by
-    rw [visitTime_cast_eq_of_strictMono hs hπ hs' hπ' hb hφ hφt,
-      (hφt _ (visitTime_mem_crossingTimes hs hπ k).1).2]
-  refine (strictMono_visitTime hs' hπ').injective (hs'.injOn_boundaryParam
-    (visitTime_mem_crossingTimes hs' hπ' _).1 (visitTime_mem_crossingTimes hs' hπ' _).1 ?_)
-  rw [boundaryParam_visitTime_partner, hbp, hbp, boundaryParam_visitTime_partner]
-  have hx := (mem_crossingTimes.1 (visitTime_mem_crossingTimes hs hπ j)).2
-  have hx' : poly.boundaryParam (visitTime hs hπ j) ∈ poly'.doublePoints ℝ (projAlong ℝ p₀ d) := by
-    rw [doublePoints_eq_of_boundary_eq hb]
-    exact hx
-  exact hπ.eq_doublePointPartner (doublePoints_subset_boundary hx)
-    (hb ▸ doublePointPartner_mem_boundary (doublePoints_subset_boundary hx'))
-    (doublePointPartner_ne hx') (apply_doublePointPartner _)
+      Fin.cast h ((gaussCode hs hπ b).partner.val j) :=
+  gaussCode_partner_cast_eq_of_boundaryParam_eq b hs hπ hs' hπ' hb h (Equiv.refl _)
+    (fun k ↦ by rw [visitTime_cast_eq_of_strictMono hs hπ hs' hπ' hb hφ hφt,
+      (hφt _ (visitTime_mem_crossingTimes hs hπ k).1).2, Equiv.refl_apply]) j
 
 end ChangeOfTime
 
