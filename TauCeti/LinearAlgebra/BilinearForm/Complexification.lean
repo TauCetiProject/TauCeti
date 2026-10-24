@@ -159,30 +159,22 @@ theorem sesqComplexification_one_tmul_add_I_tmul_self (hB : B.IsSymm) (a b : V) 
     Complex.conj_I, hba, Complex.ofReal_add]
   linear_combination (-(B b b : ℂ)) * Complex.I_mul_I
 
-/-- The diagonal of the sesquilinear complexification of a symmetric form is the sum of the
-values of `B` on the real and imaginary parts. -/
-theorem exists_sesqComplexification_self_eq (hB : B.IsSymm) (x : ℂ ⊗[ℝ] V) :
-    ∃ a b : V, x = (1 : ℂ) ⊗ₜ a + Complex.I ⊗ₜ b ∧
-      B.sesqComplexification x x = ((B a a + B b b : ℝ) : ℂ) := by
-  obtain ⟨a, b, rfl⟩ := exists_one_tmul_add_I_tmul x
-  exact ⟨a, b, rfl, sesqComplexification_one_tmul_add_I_tmul_self hB a b⟩
-
 /-- **The sesquilinear complexification of a positive semidefinite form is positive
 semidefinite.** -/
 theorem IsPosSemidef.sesqComplexification (hB : B.IsPosSemidef) :
     B.sesqComplexification.IsPosSemidef where
   isSymm := hB.isSymm.sesqComplexification
   isNonneg := ⟨fun x => by
-    obtain ⟨a, b, -, hx⟩ := exists_sesqComplexification_self_eq hB.isSymm x
-    rw [hx]
+    obtain ⟨a, b, rfl⟩ := exists_one_tmul_add_I_tmul x
+    rw [sesqComplexification_one_tmul_add_I_tmul_self hB.isSymm a b]
     exact Complex.zero_le_real.mpr (add_nonneg (hB.isNonneg.nonneg a) (hB.isNonneg.nonneg b))⟩
 
 /-- **The sesquilinear complexification of a positive definite symmetric form is positive
 definite.** -/
 theorem sesqComplexification_self_pos (hB : B.IsSymm) (hpos : B.toQuadraticMap.PosDef)
     {x : ℂ ⊗[ℝ] V} (hx : x ≠ 0) : 0 < B.sesqComplexification x x := by
-  obtain ⟨a, b, rfl, hxx⟩ := exists_sesqComplexification_self_eq hB x
-  rw [hxx, Complex.zero_lt_real]
+  obtain ⟨a, b, rfl⟩ := exists_one_tmul_add_I_tmul x
+  rw [sesqComplexification_one_tmul_add_I_tmul_self hB a b, Complex.zero_lt_real]
   have hnonneg (c : V) : 0 ≤ B c c := hpos.nonneg c
   have hpos' {c : V} (hc : c ≠ 0) : 0 < B c c := hpos c hc
   have hab : a ≠ 0 ∨ b ≠ 0 := by
