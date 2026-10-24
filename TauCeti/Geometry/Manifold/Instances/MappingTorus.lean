@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Dynamics.Flow
-public import TauCeti.Geometry.Diffeomorphism.Group
+public import TauCeti.Geometry.Diffeomorphism.Action
 public import TauCeti.Geometry.Manifold.Instances.AddCircle
 public import TauCeti.Geometry.Manifold.Quotient.Descent
 public import TauCeti.Topology.MappingTorus.Basic
@@ -421,13 +421,7 @@ closed with least period `d`, and the orbit through a point that is not periodic
 theorem isFixedPt_flow_mk_iff_mem_zmultiples {s t : ℝ} {x : M} :
     Function.IsFixedPt (flow φ s) (mk φ t x) ↔
       s ∈ AddSubgroup.zmultiples (Function.minimalPeriod φ x : ℝ) := by
-  have h (k : ℤ) : Function.IsFixedPt (φ ^ k) x ↔ (Function.minimalPeriod φ x : ℤ) ∣ k := by
-    -- Read `φ ^ k` through the action of the permutation `φ` of `M`.
-    have hφ : (Diffeomorph.toPerm φ • · : M → M) = φ := by
-      funext y
-      simp [Equiv.Perm.smul_def]
-    rw [← hφ, ← MulAction.zpow_smul_eq_iff_minimalPeriod_dvd, ← map_zpow, Function.IsFixedPt]
-    simp [Equiv.Perm.smul_def]
+  have h := φ.isFixedPt_zpow_iff_minimalPeriod_dvd x
   rw [isFixedPt_flow_mk_iff, AddSubgroup.mem_zmultiples_iff]
   constructor
   · rintro ⟨k, rfl, hk⟩
