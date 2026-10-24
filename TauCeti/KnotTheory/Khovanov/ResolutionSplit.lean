@@ -81,40 +81,6 @@ theorem circleDuality_resolutionSplitMap
 
 end Semiring
 
-section Fibre
-
-variable {D} {hst} {ht' : #(D.circlesAt t c) = 1}
-
-/-- A target labelling is the complement of the fibrewise disjunction of a complemented source
-labelling exactly when the two agree away from the circles through `c`, and the label of the
-target circle through `c` is the conjunction of the two source labels there. -/
-private theorem eq_not_decide_exists_iff (k : D.ResolvedCircle s → Bool)
-    (l : D.ResolvedCircle t → Bool) :
-    (l = fun C ↦ !decide (∃ C', D.saddleResolvedCircleMap hst ht' C' = C ∧ (!k C') = true)) ↔
-      (∀ C, C ≠ .inl ⟦D.crossing c 0⟧ → C ≠ .inl ⟦D.crossing c 2⟧ →
-        k C = l (D.saddleResolvedCircleMap hst ht' C)) ∧
-      l (.inl ⟦D.crossing c 0⟧) = (k (.inl ⟦D.crossing c 0⟧) && k (.inl ⟦D.crossing c 2⟧)) := by
-  constructor
-  · rintro rfl
-    refine ⟨fun C hp hq ↦ ?_, ?_⟩
-    · dsimp only
-      rw [D.decide_exists_saddleResolvedCircleMap_eq_of_ne hst ht' _ C hp hq, Bool.not_not]
-    · dsimp only
-      rw [decide_exists_saddleResolvedCircleMap_eq_crossing]
-      simp
-  · rintro ⟨h₁, h₂⟩
-    funext C
-    obtain ⟨C, rfl⟩ := D.saddleResolvedCircleMap_surjective hst ht' C
-    by_cases hC : C = .inl ⟦D.crossing c 0⟧ ∨ C = .inl ⟦D.crossing c 2⟧
-    · rw [(D.saddleResolvedCircleMap_eq_crossing_iff hst ht' C).mpr hC,
-        decide_exists_saddleResolvedCircleMap_eq_crossing, h₂]
-      simp
-    · rw [not_or] at hC
-      rw [D.decide_exists_saddleResolvedCircleMap_eq_of_ne hst ht' _ C hC.1 hC.2, h₁ C hC.1 hC.2,
-        Bool.not_not]
-
-end Fibre
-
 section Basis
 
 variable {R : Type u} [CommSemiring R]
@@ -141,52 +107,11 @@ theorem resolutionSplitMap_circleBasis (l : D.ResolvedCircle s → Bool) :
             hc.symm ht) C)) (.inl ⟦D.crossing c 2⟧) true) := by
   have hts : ∀ j, j ≠ c → t j = s j := fun j hj ↦ (hst j hj).symm
   have hs := D.card_circlesAt_eq_one_of_card_circlesAt_eq_two hts hc.symm ht
-  have hfp : D.saddleResolvedCircleMap hts hs (.inl ⟦D.crossing c 0⟧) = .inl ⟦D.crossing c 0⟧ :=
-    (D.saddleResolvedCircleMap_eq_crossing_iff hts hs _).mpr (Or.inl rfl)
-  have hfq : D.saddleResolvedCircleMap hts hs (.inl ⟦D.crossing c 2⟧) = .inl ⟦D.crossing c 0⟧ :=
-    (D.saddleResolvedCircleMap_eq_crossing_iff hts hs _).mpr (Or.inr rfl)
-  have hpq : (.inl ⟦D.crossing c 0⟧ : D.ResolvedCircle t) ≠ .inl ⟦D.crossing c 2⟧ :=
-    fun h ↦ (D.card_circlesAt_eq_two_iff t c).mp ht (Sum.inl.inj h)
-  apply (Khovanov.circleBasis R _).ext_elem
-  intro k
-  -- A labelling of `t` is `k` exactly when it agrees with `k` at the circles through `c` and away
-  -- from them.
-  have hk (g : D.ResolvedCircle t → Bool) : g = k ↔
-      (∀ C, C ≠ .inl ⟦D.crossing c 0⟧ → C ≠ .inl ⟦D.crossing c 2⟧ → k C = g C) ∧
-        g (.inl ⟦D.crossing c 0⟧) = k (.inl ⟦D.crossing c 0⟧) ∧
-        g (.inl ⟦D.crossing c 2⟧) = k (.inl ⟦D.crossing c 2⟧) := by
-    refine ⟨by rintro rfl; simp, fun ⟨h, h₀, h₂⟩ ↦ funext fun C ↦ ?_⟩
-    by_cases hC₀ : C = .inl ⟦D.crossing c 0⟧
-    · rw [hC₀, h₀]
-    by_cases hC₂ : C = .inl ⟦D.crossing c 2⟧
-    · rw [hC₂, h₂]
-    exact (h C hC₀ hC₂).symm
-  -- Updating the labels of the circles through `c` does not change the agreement away from them.
-  have hA (r : D.ResolvedCircle t) (hr : r = .inl ⟦D.crossing c 0⟧ ∨ r = .inl ⟦D.crossing c 2⟧) :
-      (∀ C, C ≠ .inl ⟦D.crossing c 0⟧ → C ≠ .inl ⟦D.crossing c 2⟧ →
-        k C = Function.update (fun C ↦ l (D.saddleResolvedCircleMap hts hs C)) r true C) ↔
-      ∀ C, C ≠ .inl ⟦D.crossing c 0⟧ → C ≠ .inl ⟦D.crossing c 2⟧ →
-        k C = l (D.saddleResolvedCircleMap hts hs C) :=
-    forall_congr' fun C ↦ imp_congr_right fun h₀ ↦ imp_congr_right fun h₂ ↦ by
-      rw [Function.update_of_ne (by rcases hr with rfl | rfl <;> assumption)]
-  rw [resolutionSplitMap_def, Khovanov.circleBasis_repr_fiberwiseSplit_eq_circleDuality,
-    ← resolutionMergeMap_def D hts hc.symm ht R, resolutionMergeMap_circleBasis]
-  split_ifs with hX hl hl
-  all_goals simp only [map_zero, Khovanov.circleDuality_apply_circleBasis,
-    Module.Basis.repr_self, map_add, Finsupp.add_apply, Finsupp.single_apply,
-    eq_not_decide_exists_iff, hk, hA _ (.inl rfl), hA _ (.inr rfl), Function.update_self,
-    Function.update_of_ne hpq, Function.update_of_ne hpq.symm, hfp, hfq]
-  -- What remains is a case analysis on the agreement away from `c` and the three labels at `c`.
-  all_goals
-    by_cases hA : ∀ C, C ≠ .inl ⟦D.crossing c 0⟧ → C ≠ .inl ⟦D.crossing c 2⟧ →
-      k C = l (D.saddleResolvedCircleMap hts hs C)
-    · simp only [eq_true hA, true_and]
-      revert hX hl
-      generalize k (.inl ⟦D.crossing c 0⟧) = a
-      generalize k (.inl ⟦D.crossing c 2⟧) = b
-      generalize l (.inl ⟦D.crossing c 0⟧) = d
-      cases a <;> cases b <;> cases d <;> simp
-    · simp only [eq_false hA, false_and, ite_false, add_zero]
+  rw [resolutionSplitMap_def, Khovanov.fiberwiseSplit_circleBasis_of_eq_iff
+    (D.saddleResolvedCircleMap_surjective hts hs)
+    (fun h ↦ (D.card_circlesAt_eq_two_iff t c).mp ht (Sum.inl.inj h))
+    (D.saddleResolvedCircleMap_eq_iff hts hs),
+    (D.saddleResolvedCircleMap_eq_crossing_iff hts hs _).mpr (Or.inl rfl)]
 
 end Basis
 

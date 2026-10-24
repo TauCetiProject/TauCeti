@@ -151,25 +151,18 @@ theorem decide_exists_saddleResolvedCircleMap_eq_crossing (l : D.ResolvedCircle 
     exists_eq_left]
   simp
 
-/-- A circle other than the two through the changed crossing retains its Boolean label. This
-includes every crossing-free circle. -/
-theorem decide_exists_saddleResolvedCircleMap_eq_of_ne (l : D.ResolvedCircle s → Bool)
-    (C : D.ResolvedCircle s) (hC₀ : C ≠ .inl ⟦D.crossing c 0⟧)
-    (hC₂ : C ≠ .inl ⟦D.crossing c 2⟧) :
-    decide (∃ C', D.saddleResolvedCircleMap hst ht C' =
-      D.saddleResolvedCircleMap hst ht C ∧ l C' = true) = l C := by
-  simp only [D.saddleResolvedCircleMap_eq_iff hst ht, hC₀, hC₂, or_self, and_false, or_false]
-  simp
-
 /-- A crossing-bearing circle avoiding the changed crossing retains its Boolean label. -/
 @[simp↓]
 theorem decide_exists_saddleResolvedCircleMap_eq_of_notMem (l : D.ResolvedCircle s → Bool)
     (C : D.CrossingCircle s) (hC : C ∉ D.circlesAt s c) :
     decide (∃ C', D.saddleResolvedCircleMap hst ht C' =
-      D.saddleResolvedCircleMap hst ht (.inl C) ∧ l C' = true) = l (.inl C) :=
-  D.decide_exists_saddleResolvedCircleMap_eq_of_ne hst ht l _
-    (fun h ↦ hC (Sum.inl.inj h ▸ D.mk_crossing_mem_circlesAt s c 0))
-    (fun h ↦ hC (Sum.inl.inj h ▸ D.mk_crossing_mem_circlesAt s c 2))
+      D.saddleResolvedCircleMap hst ht (.inl C) ∧ l C' = true) = l (.inl C) := by
+  have hC₀ : (Sum.inl C : D.ResolvedCircle s) ≠ .inl ⟦D.crossing c 0⟧ :=
+    fun h ↦ hC (Sum.inl.inj h ▸ D.mk_crossing_mem_circlesAt s c 0)
+  have hC₂ : (Sum.inl C : D.ResolvedCircle s) ≠ .inl ⟦D.crossing c 2⟧ :=
+    fun h ↦ hC (Sum.inl.inj h ▸ D.mk_crossing_mem_circlesAt s c 2)
+  simp only [D.saddleResolvedCircleMap_eq_iff hst ht, hC₀, hC₂, or_self, and_false, or_false]
+  simp
 
 /-- Away from the merged target circle every fibre is a singleton. -/
 theorem existsUnique_saddleResolvedCircleMap_eq (C : D.ResolvedCircle t)

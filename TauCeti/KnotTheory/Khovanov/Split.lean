@@ -176,6 +176,63 @@ theorem fiberwiseSplit_const_circleBasis (b : Bool) :
   cases b <;> cases b₀ <;> cases b₁ <;>
     simp [Fintype.univ_bool, Finset.filter_insert, Finset.filter_singleton]
 
+/-- A statement holds everywhere exactly when it holds at two given points and away from them. -/
+private theorem forall_iff_forall_ne_ne_and {α : Sort*} {P : α → Prop} (p q : α) :
+    (∀ i, P i) ↔ (∀ i, i ≠ p → i ≠ q → P i) ∧ P p ∧ P q := by
+  refine ⟨fun h ↦ ⟨fun i _ _ ↦ h i, h p, h q⟩, fun ⟨h, hp, hq⟩ i ↦ ?_⟩
+  by_cases hip : i = p
+  · exact hip ▸ hp
+  by_cases hiq : i = q
+  · exact hiq ▸ hq
+  exact h i hip hiq
+
+/-- Splitting along a surjection whose only non-singleton fibre is `{p, q}` obeys
+`Δ X = X ⊗ X` and `Δ 1 = X ⊗ 1 + 1 ⊗ X` on the circles `p` and `q`; every other circle retains
+the label of its image. -/
+theorem fiberwiseSplit_circleBasis_of_eq_iff [DecidableEq σ] {f : σ → τ}
+    (hf : Function.Surjective f) {p q : σ} (hpq : p ≠ q)
+    (hfeq : ∀ a b, f a = f b ↔ a = b ∨ (a = p ∨ a = q) ∧ (b = p ∨ b = q)) (l : τ → Bool) :
+    fiberwiseSplit f (circleBasis R τ l) =
+      if l (f p) then circleBasis R σ fun i ↦ l (f i)
+      else circleBasis R σ (Function.update (fun i ↦ l (f i)) p true) +
+        circleBasis R σ (Function.update (fun i ↦ l (f i)) q true) := by
+  have hfq : f q = f p := (hfeq q p).mpr (Or.inr ⟨Or.inr rfl, Or.inl rfl⟩)
+  refine (circleBasis R σ).ext_elem fun k ↦ ?_
+  -- At most one of the two output circles carries `1`.
+  have hcount : (∀ j, #{i | f i = j ∧ (!k i) = true} ≤ 1) ↔ (k p || k q) = true := by
+    refine ⟨fun h ↦ ?_, fun h j ↦ card_le_one.mpr fun a ha b hb ↦ ?_⟩
+    · by_contra hk
+      simp only [Bool.or_eq_true, not_or, Bool.not_eq_true] at hk
+      exact hpq (card_le_one.mp (h (f p)) p (by simp [hk.1]) q (by simp [hfq, hk.2]))
+    · simp only [mem_filter, mem_univ, true_and] at ha hb
+      rcases (hfeq a b).mp (ha.1.trans hb.1.symm) with hab | ⟨rfl | rfl, rfl | rfl⟩ <;> simp_all
+  -- The input is `X` exactly when both outputs are, and every other circle keeps its label.
+  have hlabel : (l = fun j ↦ !decide (∃ i, f i = j ∧ (!k i) = true)) ↔
+      (∀ i, i ≠ p → i ≠ q → l (f i) = k i) ∧ l (f p) = (k p && k q) := by
+    rw [funext_iff, hf.forall, forall_iff_forall_ne_ne_and p q, hfq, and_self]
+    refine and_congr (forall_congr' fun i ↦ imp_congr_right fun hip ↦ imp_congr_right fun hiq ↦ ?_)
+      ?_
+    · simp [hfeq, hip, hiq]
+    · simp [hfeq, or_and_right, exists_or]
+  have hk (u : σ → Bool) : u = k ↔ (∀ i, i ≠ p → i ≠ q → u i = k i) ∧ u p = k p ∧ u q = k q := by
+    rw [funext_iff, forall_iff_forall_ne_ne_and p q]
+  have hupd (r : σ) (hr : r = p ∨ r = q) :
+      (∀ i, i ≠ p → i ≠ q → Function.update (fun i ↦ l (f i)) r true i = k i) ↔
+        ∀ i, i ≠ p → i ≠ q → l (f i) = k i :=
+    forall_congr' fun i ↦ imp_congr_right fun hip ↦ imp_congr_right fun hiq ↦ by
+      rw [Function.update_of_ne (by rcases hr with rfl | rfl <;> assumption)]
+  rw [circleBasis_repr_fiberwiseSplit]
+  simp only [hcount, Module.Basis.repr_self, Finsupp.single_apply, hlabel, hk, hupd p (.inl rfl),
+    hupd q (.inr rfl), apply_ite (circleBasis R σ).repr,
+    apply_ite (fun x : (σ → Bool) →₀ R ↦ x k), map_add, Finsupp.add_apply,
+    Function.update_self, Function.update_of_ne hpq, Function.update_of_ne hpq.symm, hfq]
+  -- What remains depends only on the agreement away from `p` and `q` and on three labels.
+  by_cases hagree : ∀ i, i ≠ p → i ≠ q → l (f i) = k i
+  · simp only [eq_true hagree, true_and]
+    generalize k p = a, k q = b, l (f p) = d
+    cases a <;> cases b <;> cases d <;> simp
+  · simp [eq_false hagree]
+
 end Semiring
 
 section Grading
