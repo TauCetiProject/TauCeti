@@ -28,7 +28,9 @@ open scoped Manifold ContDiff
 
 namespace TauCeti
 
-variable {𝕜 E H M G : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+section Regularity
+
+variable {𝕜 E H M G : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} [TopologicalSpace M] [ChartedSpace H M]
   [Group G] [MulAction G M]
 
@@ -38,6 +40,12 @@ theorem contMDiff_quotientKerToPermHom_smul {n : ℕ∞ω}
     (q : G ⧸ (toPermHom G M).ker) : ContMDiff I I n fun x : M ↦ q • x :=
   QuotientGroup.induction_on q fun g ↦ by
     simpa only [quotientKerToPermHom_mk_smul] using hsmooth g
+
+end Regularity
+
+variable {𝕜 E H M G : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} [TopologicalSpace M] [ChartedSpace H M]
+  [Group G] [MulAction G M]
 
 /-- The faithful quotient of a smooth torsion action on a preconnected Hausdorff boundaryless
 manifold is effective: no nonidentity quotient element acts trivially near any point. -/

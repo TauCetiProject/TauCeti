@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.GroupAction.Basic
-public import Mathlib.GroupTheory.QuotientGroup.Basic
+public import TauCeti.GroupTheory.GroupAction.Stabilizer
 
 /-!
 # The faithful quotient of a group action
@@ -62,7 +61,7 @@ theorem orbitRel_quotientKerToPermHom_iff (x y : X) :
 /-- The projection onto the faithful quotient restricts to a homomorphism of stabilizers. -/
 def effectiveStabilizerMap (x : X) :
     stabilizer G x →* stabilizer (G ⧸ (toPermHom G X).ker) x :=
-  ((QuotientGroup.mk' _).comp (stabilizer G x).subtype).codRestrict _ fun g ↦ g.2
+  stabilizerMap (QuotientGroup.mk' _) x (quotientKerToPermHom_mk_smul G X · x)
 
 @[simp]
 theorem effectiveStabilizerMap_apply (x : X) (g : stabilizer G x) :
@@ -70,17 +69,15 @@ theorem effectiveStabilizerMap_apply (x : X) (g : stabilizer G x) :
 
 /-- Every stabilizer element of the faithful quotient lifts to an original stabilizer element. -/
 theorem effectiveStabilizerMap_surjective (x : X) :
-    Function.Surjective (effectiveStabilizerMap G X x) := by
-  rintro ⟨q, hq⟩
-  obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective q
-  exact ⟨⟨g, hq⟩, rfl⟩
+    Function.Surjective (effectiveStabilizerMap G X x) :=
+  stabilizerMap_surjective (QuotientGroup.mk' _) (QuotientGroup.mk'_surjective _) x
+    (quotientKerToPermHom_mk_smul G X · x)
 
 /-- The stabilizer projection kills exactly the elements in the original action kernel. -/
 @[simp]
 theorem ker_effectiveStabilizerMap (x : X) :
     (effectiveStabilizerMap G X x).ker = (toPermHom G X).ker.subgroupOf (stabilizer G x) := by
-  ext g
-  exact Iff.trans (Subtype.ext_iff) (QuotientGroup.eq_one_iff (g : G))
+  simp only [effectiveStabilizerMap, ker_stabilizerMap, QuotientGroup.ker_mk']
 
 /-- Isotropy of the faithful quotient is the original stabilizer modulo the action kernel. -/
 noncomputable def effectiveStabilizerEquiv (x : X) :

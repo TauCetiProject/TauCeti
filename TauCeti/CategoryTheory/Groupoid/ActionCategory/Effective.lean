@@ -35,7 +35,8 @@ variable (G X : Type*) [Group G] [MulAction G X]
 def effectiveActionFunctor :
     ActionCategory G X ⥤ ActionCategory (G ⧸ (toPermHom G X).ker) X where
   obj a := ActionCategory.objEquiv _ X a.back
-  map f := Functor.Elements.homMk (QuotientGroup.mk f.hom) f.map_val
+  map f := Functor.Elements.homMk (QuotientGroup.mk f.hom)
+    ((quotientKerToPermHom_mk_smul G X f.hom _).trans f.map_val)
   map_id _ := rfl
   map_comp _ _ := rfl
 
@@ -48,6 +49,16 @@ theorem effectiveActionFunctor_obj (x : X) :
 theorem effectiveActionFunctor_map_hom {a b : ActionCategory G X} (f : a ⟶ b) :
     ((effectiveActionFunctor G X).map f).hom =
       (QuotientGroup.mk f.hom : G ⧸ (toPermHom G X).ker) := (rfl)
+
+/-- On isotropy groups, the effective action functor is the stabilizer projection. -/
+@[simp]
+theorem effectiveActionFunctor_mapAut_stabilizerMulEquivAut (x : X) (g : stabilizer G x) :
+    (effectiveActionFunctor G X).mapAut _ (ActionCategory.stabilizerMulEquivAut G x g) =
+      ActionCategory.stabilizerMulEquivAut (G ⧸ (toPermHom G X).ker) x
+        (effectiveStabilizerMap G X x g) := by
+  ext : 2
+  apply Functor.Elements.hom_ext
+  rfl
 
 /-- Every arrow of the faithful action groupoid lifts, with its source and target fixed. -/
 instance effectiveActionFunctor_full : (effectiveActionFunctor G X).Full where
@@ -67,7 +78,6 @@ theorem effectiveActionFunctor_faithful_iff [Nonempty X] :
     (effectiveActionFunctor G X).Faithful ↔ (toPermHom G X).ker = ⊥ := by
   constructor
   · intro hF
-    let := hF
     apply le_antisymm _ bot_le
     intro g hg
     obtain ⟨x⟩ := ‹Nonempty X›
@@ -77,10 +87,11 @@ theorem effectiveActionFunctor_faithful_iff [Nonempty X] :
     have hmap : (effectiveActionFunctor G X).map f =
         (effectiveActionFunctor G X).map (𝟙 (ActionCategory.objEquiv G X x)) := by
       apply Functor.Elements.hom_ext
-      exact (QuotientGroup.eq_one_iff g).mpr hg
-    have h := congrArg Functor.Elements.Hom.hom
-      ((effectiveActionFunctor G X).map_injective hmap)
-    exact h
+      simpa only [effectiveActionFunctor_map_hom, ActionCategory.id_hom,
+        QuotientGroup.mk_one] using (QuotientGroup.eq_one_iff g).mpr hg
+    exact Subgroup.mem_bot.mpr (by
+      simpa only [ActionCategory.id_hom] using
+        congrArg Functor.Elements.Hom.hom (hF.map_injective hmap))
   · intro hker
     have hinj : Function.Injective (QuotientGroup.mk' (toPermHom G X).ker) :=
       (MonoidHom.ker_eq_bot_iff _).mp ((QuotientGroup.ker_mk' _).trans hker)
