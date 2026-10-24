@@ -54,23 +54,24 @@ include he ht hδ hl in
 vanishing at infinity. -/
 theorem exists_zeroAtInfty_hasSum (x : E) :
     ∃ a : C₀(I, K), HasSum (fun i ↦ a i • e i) x := by
-  obtain ⟨a, ha⟩ := he.exists_hasSum ht x
+  let a := fun i ↦ (he.toUnconditionalSchauderBasis ht).coord i x
   have hdecay : Tendsto a cofinite (𝓝 0) := by
     apply tendsto_zero_iff_norm_tendsto_zero.2
     refine squeeze_zero (fun i ↦ norm_nonneg (a i))
-      (g := fun i ↦ δ⁻¹ * ‖a i • e i‖) (fun i ↦ ?_) ?_
+      (g := fun i ↦ δ⁻¹ * (‖a i‖ * ‖e i‖)) (fun i ↦ ?_) ?_
     · rw [← div_eq_inv_mul, le_div_iff₀ hδ]
-      exact (mul_le_mul_of_nonneg_left (hl i) (norm_nonneg _)).trans_eq (norm_smul _ _).symm
-    · simpa only [norm_zero, mul_zero] using
-        (ha.summable.tendsto_cofinite_zero.norm).const_mul δ⁻¹
-  exact ⟨mkOfDiscrete a hdecay, by simpa only [coe_mkOfDiscrete] using ha⟩
+      exact mul_le_mul_of_nonneg_left (hl i) (norm_nonneg _)
+    · simpa only [mul_zero] using (he.tendsto_norm_coord_mul_norm ht x).const_mul δ⁻¹
+  exact ⟨mkOfDiscrete a hdecay, by
+    simpa only [coe_mkOfDiscrete, coe_toUnconditionalSchauderBasis] using
+      (he.toUnconditionalSchauderBasis ht).expansion x⟩
 
 variable [CompleteSpace E]
 
 include he ht hδ hl in
 /-- The linear combination map of a bounded `t`-orthogonal basis bounded away from zero is
 bijective. -/
-theorem bijective_linearCombination : Function.Bijective (linearCombination K ⟨e, hb⟩) := by
+theorem linearCombination_bijective : Function.Bijective (linearCombination K ⟨e, hb⟩) := by
   constructor
   · refine (linearCombination K ⟨e, hb⟩).toLinearMap.ker_eq_bot.1 ?_
     rw [LinearMap.ker_eq_bot']
@@ -86,8 +87,8 @@ theorem bijective_linearCombination : Function.Bijective (linearCombination K �
 bounded away from zero. The inverse is summation against the specified basis. -/
 noncomputable def equivZeroAtInfty : E ≃L[K] C₀(I, K) :=
   (ContinuousLinearEquiv.ofBijective (linearCombination K ⟨e, hb⟩)
-    (LinearMap.ker_eq_bot.2 (he.bijective_linearCombination ht hb hδ hl).1)
-    (LinearMap.range_eq_top.2 (he.bijective_linearCombination ht hb hδ hl).2)).symm
+    (LinearMap.ker_eq_bot.2 (he.linearCombination_bijective ht hb hδ hl).1)
+    (LinearMap.range_eq_top.2 (he.linearCombination_bijective ht hb hδ hl).2)).symm
 
 /-- The inverse coordinate map is the linear combination map of the chosen basis. -/
 @[simp]
@@ -103,6 +104,11 @@ theorem hasSum_equivZeroAtInfty (x : E) :
     ContinuousLinearEquiv.symm_apply_apply] using
     (summable_smul (he.equivZeroAtInfty ht hb hδ hl x) ⟨e, hb⟩).hasSum
 
+/-- The model-space coordinates agree with those of the associated unconditional Schauder basis. -/
+theorem equivZeroAtInfty_apply (x : E) (i : I) :
+    he.equivZeroAtInfty ht hb hδ hl x i = (he.toUnconditionalSchauderBasis ht).coord i x :=
+  (he.coord_eq_of_hasSum ht (he.hasSum_equivZeroAtInfty ht hb hδ hl x) i).symm
+
 /-- The norm of the coordinate vector is controlled by the orthogonality constant and the
 uniform lower bound on the basis-vector norms. -/
 theorem norm_equivZeroAtInfty_apply_le (x : E) :
@@ -110,12 +116,13 @@ theorem norm_equivZeroAtInfty_apply_le (x : E) :
   have htd : 0 < (t : ℝ) * δ := mul_pos (by exact_mod_cast ht) hδ
   refine (norm_le (by positivity)).2 fun i ↦ ?_
   rw [← div_eq_inv_mul, le_div_iff₀ htd]
-  have h := he.isTOrthogonalFamily.mul_norm_smul_le_of_hasSum
-    (he.hasSum_equivZeroAtInfty ht hb hδ hl x) i
-  rw [norm_smul] at h
-  have hl' := mul_le_mul_of_nonneg_left (hl i)
-    (mul_nonneg t.coe_nonneg (norm_nonneg (he.equivZeroAtInfty ht hb hδ hl x i)))
-  nlinarith
+  rw [equivZeroAtInfty_apply]
+  calc
+    ‖(he.toUnconditionalSchauderBasis ht).coord i x‖ * ((t : ℝ) * δ) =
+        (t : ℝ) * ‖(he.toUnconditionalSchauderBasis ht).coord i x‖ * δ := by ring
+    _ ≤ (t : ℝ) * ‖(he.toUnconditionalSchauderBasis ht).coord i x‖ * ‖e i‖ :=
+      mul_le_mul_of_nonneg_left (hl i) (by positivity)
+    _ ≤ ‖x‖ := he.mul_norm_coord_mul_norm_le ht i x
 
 /-- The coordinate isomorphism sends each basis vector to the corresponding unit vector. -/
 @[simp]
@@ -129,8 +136,8 @@ theorem equivZeroAtInfty_apply_basis [DecidableEq I] (i : I) :
 /-- The coordinates are the coefficients of every unconditional expansion in the basis. -/
 theorem equivZeroAtInfty_apply_eq_of_hasSum {a : I → K} {x : E}
     (ha : HasSum (fun i ↦ a i • e i) x) (i : I) :
-    he.equivZeroAtInfty ht hb hδ hl x i = a i :=
-  congrFun (he.eq_of_hasSum ht (he.hasSum_equivZeroAtInfty ht hb hδ hl x) ha) i
+    he.equivZeroAtInfty ht hb hδ hl x i = a i := by
+  rw [equivZeroAtInfty_apply, he.coord_eq_of_hasSum ht ha]
 
 end Bounded
 
@@ -157,8 +164,9 @@ theorem nonempty_equivZeroAtInfty [CompleteSpace E] [TopologicalSpace I] [Discre
 
 end IsTOrthogonalBasis
 
-/-- An infinite-dimensional Banach space of countable type over a complete nontrivially normed
-field is continuously linearly equivalent to `C₀(ℕ, K)`. -/
+/-- An infinite-dimensional ultrametric Banach space of countable type (some sequence has dense
+span) over a complete nontrivially normed field is continuously linearly equivalent to
+`C₀(ℕ, K)`. -/
 theorem nonempty_continuousLinearEquiv_zeroAtInfty_nat_of_dense_span [CompleteSpace E]
     (hE : ¬FiniteDimensional K E) {v : ℕ → E}
     (hv : Dense (Submodule.span K (Set.range v) : Set E)) : Nonempty (E ≃L[K] C₀(ℕ, K)) := by
@@ -166,7 +174,7 @@ theorem nonempty_continuousLinearEquiv_zeroAtInfty_nat_of_dense_span [CompleteSp
     (t := (1 / 2 : ℝ≥0)) (by norm_num)
   exact he.nonempty_equivZeroAtInfty (by norm_num)
 
-/-- Every Banach space of countable type over a complete nontrivially normed field is
+/-- Every ultrametric Banach space of countable type over a complete nontrivially normed field is
 potentially orthonormalisable, including finite-dimensional and zero spaces. -/
 theorem isPotentiallyONable_of_dense_span [CompleteSpace E] {v : ℕ → E}
     (hv : Dense (Submodule.span K (Set.range v) : Set E)) : IsPotentiallyONable K E := by
