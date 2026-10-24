@@ -15,14 +15,16 @@ elements of `k(X)`, independently of the place theory of `k(X)`.
 
 ## Main results
 
-* `RatFunc.X_sub_C_ne_zero`: `X - a` is nonzero in `k(X)`.
-* `RatFunc.algebraMap_mul_X_zpow_mul_X_sub_one_zpow_ne_zero`: `c X ^ a (X - 1) ^ b` is nonzero
-  in `k(X)` for `c ≠ 0`.
+* `TauCeti.RatFunc.X_sub_C_ne_zero`: `X - a` is nonzero in `k(X)`.
+* `TauCeti.RatFunc.algebraMap_mul_X_zpow_mul_X_sub_one_zpow_ne_zero`: `c X ^ a (X - 1) ^ b` is
+  nonzero in `k(X)` for `c ≠ 0`.
 -/
 
 public section
 
-namespace RatFunc
+namespace TauCeti.RatFunc
+
+open _root_.RatFunc
 
 variable {k : Type*} [Field k]
 
@@ -38,4 +40,4 @@ theorem algebraMap_mul_X_zpow_mul_X_sub_one_zpow_ne_zero {c : k} (hc : c ≠ 0)
   mul_ne_zero (mul_ne_zero ((map_ne_zero _).mpr hc) (zpow_ne_zero a X_ne_zero))
     (zpow_ne_zero b (by simpa using X_sub_C_ne_zero (1 : k)))
 
-end RatFunc
+end TauCeti.RatFunc
