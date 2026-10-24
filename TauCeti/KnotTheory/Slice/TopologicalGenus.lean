@@ -171,7 +171,7 @@ unit disc: the disc is compact, connected and orientable. -/
 def IsTopologicalSliceDisc.toTopologicalSliceSurface
     {Φ : closedBall (0 : ℂ) 1 → closedBall (0 : E) 1} (h : IsTopologicalSliceDisc K Φ) :
     TopologicalSliceSurface K where
-  toSliceSurfaceData := .ofClosedBall Φ h.preimage_boundary h.image_range_inclusion
+  toSliceSurfaceData := .ofClosedBall Φ h.isEmbedding h.preimage_boundary h.image_range_inclusion
   isLocallyFlat := h.isLocallyFlat
 
 /-- A locally flat slice disc has genus `0`: the disc is contractible, so its first homology
@@ -180,7 +180,7 @@ vanishes. -/
 theorem IsTopologicalSliceDisc.genus_toTopologicalSliceSurface
     {Φ : closedBall (0 : ℂ) 1 → closedBall (0 : E) 1} (h : IsTopologicalSliceDisc K Φ) :
     h.toTopologicalSliceSurface.genus = 0 :=
-  SliceSurfaceData.genus_ofClosedBall _ h.preimage_boundary h.image_range_inclusion
+  SliceSurfaceData.genus_ofClosedBall _ h.isEmbedding h.preimage_boundary h.image_range_inclusion
 
 /-- The **topological slice genus** `g_s^top(K)` of a smooth circle embedding `K : S¹ → Sⁿ`: the
 least genus of a topological slice surface for `K`, or `⊤` if there is none. -/
