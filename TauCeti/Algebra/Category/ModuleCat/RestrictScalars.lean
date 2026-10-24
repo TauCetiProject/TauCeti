@@ -166,6 +166,10 @@ restricting the scalars of `M` along `algebraMap R S` gives back `M` as an `R`-m
 noncomputable def restrictScalarsAlgebraMapIso (M : Type v) [AddCommGroup M] [Module R M]
     [Module S M] [IsScalarTower R S M] :
     (restrictScalars.{v} (algebraMap R S)).obj (of S M) ≅ of R M where
+  -- Both carriers are `M` by definition, so each map is the identity function. The `show`s fix
+  -- which carrier an element is viewed in: as an element of `M` it has the `S`-module structure
+  -- needed by `algebraMap_smul`, while as an element of the restricted module it only has the
+  -- restricted `R`-action. Without them, instance synthesis and `rw` see the wrong carrier.
   hom := ConcreteCategory.ofHom
     { toFun := fun m ↦ (show M from m)
       map_add' := fun _ _ ↦ rfl
