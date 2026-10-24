@@ -309,12 +309,9 @@ theorem tarskiQuery_mul_left_of_isCoprime {p s : R[X]} (h : IsCoprime p s) (q : 
       (associated_one_iff_isUnit.mpr (isCoprime_zero_right.mp h)).roots_eq]
   refine tarskiQuery_mul_left_of_disjoint (mul_ne_zero hp hs)
     (Finset.disjoint_left.mpr fun x hxp hxs => ?_) q
-  obtain ⟨a, b, hab⟩ := h
-  have := congr_arg (eval x) hab
-  rw [eval_add, eval_mul, eval_mul,
-    (isRoot_of_mem_roots (Multiset.mem_toFinset.mp hxp)).eq_zero,
-    (isRoot_of_mem_roots (Multiset.mem_toFinset.mp hxs)).eq_zero, eval_one] at this
-  simp at this
+  simpa [coe_aeval_eq_eval, (isRoot_of_mem_roots (Multiset.mem_toFinset.mp hxp)).eq_zero,
+    (isRoot_of_mem_roots (Multiset.mem_toFinset.mp hxs)).eq_zero] using
+    aeval_ne_zero_of_isCoprime h x
 
 /-- Counts at the roots of a nonzero polynomial count exactly its realizing zeros. -/
 theorem signCount_roots_eq_natCard {J : Type*} {p : R[X]} (hp : p ≠ 0)
@@ -351,20 +348,23 @@ variable {R : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
 
 /-- Negating the queried polynomial negates the Tarski query. -/
 @[simp]
-theorem tarskiQuery_neg_right (p q : R[X]) : tarskiQuery p (-q) = -tarskiQuery p q :=
-  signSum_neg _ _
+theorem tarskiQuery_neg_right (p q : R[X]) : tarskiQuery p (-q) = -tarskiQuery p q := by
+  rw [tarskiQuery_eq_signSum, tarskiQuery_eq_signSum]
+  exact signSum_neg _ _
 
 /-- Scaling the queried polynomial by a constant multiplies the query by the sign of the
 constant. -/
 @[simp]
 theorem tarskiQuery_C_mul_right (c : R) (p q : R[X]) :
-    tarskiQuery p (C c * q) = sign c * tarskiQuery p q :=
-  signSum_C_mul _ _ _
+    tarskiQuery p (C c * q) = sign c * tarskiQuery p q := by
+  rw [tarskiQuery_eq_signSum, tarskiQuery_eq_signSum]
+  exact signSum_C_mul _ _ _
 
 /-- The query of a square counts the distinct roots of `p` at which `q` does not vanish. -/
 theorem tarskiQuery_sq_right (p q : R[X]) :
-    tarskiQuery p (q ^ 2) = (p.roots.toFinset.filter fun x => q.eval x ≠ 0).card :=
-  signSum_sq _ _
+    tarskiQuery p (q ^ 2) = (p.roots.toFinset.filter fun x => q.eval x ≠ 0).card := by
+  rw [tarskiQuery_eq_signSum]
+  exact signSum_sq _ _
 
 end OrderedRing
 
