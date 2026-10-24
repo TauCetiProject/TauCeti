@@ -286,11 +286,24 @@ theorem cauchyIndex_eq_sum (p q : R[X]) (s : Set R) [DecidablePred (· ∈ s)] :
   exact ⟨fun h => ⟨⟨support_cauchyJump_subset p q h.2, h.1⟩, h.2⟩,
     fun h => ⟨h.1.2, h.2⟩⟩
 
+/-- The Cauchy index on a set depends only on which roots of `p` the set contains. -/
+theorem cauchyIndex_congr_of_isRoot {p : R[X]} (q : R[X]) {s t : Set R}
+    (h : ∀ r, p.IsRoot r → (r ∈ s ↔ r ∈ t)) : cauchyIndex p q s = cauchyIndex p q t := by
+  classical
+  rw [cauchyIndex_eq_sum, cauchyIndex_eq_sum]
+  exact Finset.sum_congr (Finset.filter_congr fun r hr =>
+    h r (isRoot_of_mem_roots (Multiset.mem_toFinset.mp hr))) fun _ _ => rfl
+
 /-- The Cauchy index is additive over disjoint sets. -/
 theorem cauchyIndex_union (p q : R[X]) {s t : Set R} (h : Disjoint s t) :
     cauchyIndex p q (s ∪ t) = cauchyIndex p q s + cauchyIndex p q t :=
   finsum_mem_union' h ((finite_support_cauchyJump p q).inter_of_right s)
     ((finite_support_cauchyJump p q).inter_of_right t)
+
+/-- Adding a point to a set adds the jump at that point to the Cauchy index. -/
+theorem cauchyIndex_insert (p q : R[X]) {a : R} {s : Set R} (h : a ∉ s) :
+    cauchyIndex p q (insert a s) = cauchyJump p q a + cauchyIndex p q s :=
+  finsum_mem_insert' _ h ((finite_support_cauchyJump p q).inter_of_right s)
 
 /-- Splitting an open interval at an interior point adds the jump at that point. -/
 theorem cauchyIndex_Ioo_eq_add {p q : R[X]} {a b c : R} (hab : a < b) (hbc : b < c) :
@@ -299,8 +312,8 @@ theorem cauchyIndex_Ioo_eq_add {p q : R[X]} {a b c : R} (hab : a < b) (hbc : b <
   have hdisj : Disjoint (Ioc a b) (Ioo b c) :=
     disjoint_left.mpr fun _ hx hx' ↦ hx'.1.not_ge hx.2
   rw [← Ioc_union_Ioo_eq_Ioo hab.le hbc, cauchyIndex_union _ _ hdisj,
-    ← Ioo_insert_right hab, insert_eq, union_comm,
-    cauchyIndex_union _ _ (disjoint_singleton_right.mpr (by simp)), cauchyIndex_singleton]
+    ← Ioo_insert_right hab, cauchyIndex_insert _ _ (by simp)]
+  ring
 
 /-- Cancelling a common nonzero factor of `p` and `q` does not change the jumps of `q / p`. -/
 theorem cauchyJump_mul_right (p q : R[X]) {r : R[X]} (hr : r ≠ 0) (a : R) :
