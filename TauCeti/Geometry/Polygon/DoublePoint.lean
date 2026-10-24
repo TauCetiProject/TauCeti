@@ -39,6 +39,11 @@ transverse: at a double point and its partner, the directions of the two edges t
 (`Polygon.IsRegularProjection.linearIndependent_of_projAlong_eq`). This is what makes the sign of
 a crossing of the knot diagram well defined.
 
+Finally, inserting a vertex `c` after vertex `i` replaces edge `i` by two segments through `c`. If
+edge `i` carries no double point before and the two new segments carry none after, the double
+points are the same for both polygons (`Polygon.doublePoints_insertVertex_of_disjoint`). This is the
+situation of a Δ-move whose triangle has no crossing of the diagram on its sides.
+
 ## Main definitions
 
 * `Polygon.doublePoints R poly π`: the points of the polygon with the same image under `π` as
@@ -48,6 +53,8 @@ a crossing of the knot diagram well defined.
 
 ## Main results
 
+* `Polygon.doublePoints_insertVertex_of_disjoint`: inserting a vertex away from the double points
+  does not change them.
 * `Polygon.IsRegularProjection.eq_doublePointPartner`: for a regular projection, the partner is
   the only other point of the polygon with the same image.
 * `Polygon.IsRegularProjection.involutive_doublePointPartner`: for a regular projection, the
@@ -107,6 +114,41 @@ theorem doublePoints_eq_of_boundary_eq {m : ℕ} {poly' : Polygon P m}
 /-- Double points lie on the polygon. -/
 theorem doublePoints_subset_boundary : poly.doublePoints R π ⊆ poly.boundary R :=
   fun _ hx ↦ hx.1
+
+/-- **Inserting a vertex away from the double points.** Inserting a vertex `c` after vertex `i`
+replaces edge `i` by the segments from vertex `i` to `c` and from `c` to the next vertex. If edge
+`i` carries no double point of `π` before, and the two new segments carry none after, then the
+double points of `π` are the same for both polygons: they all lie on the edges the two polygons
+share. -/
+theorem doublePoints_insertVertex_of_disjoint {i : Fin n} {c : P}
+    (hu : Disjoint (poly.edgeSet R i) (poly.doublePoints R π))
+    (hvw : Disjoint (affineSegment R (poly i) c ∪ affineSegment R c (poly (finRotate n i)))
+      ((poly.insertVertex i c).doublePoints R π)) :
+    (poly.insertVertex i c).doublePoints R π = poly.doublePoints R π := by
+  -- The points of either polygon off the moved edges lie on the common edges `S`.
+  set S := ⋃ (k : Fin n) (_ : k ≠ i), poly.edgeSet R k
+  have hS : S ⊆ poly.boundary R := iUnion₂_subset fun k _ ↦ subset_iUnion (poly.edgeSet R) k
+  have hS' : S ⊆ (poly.insertVertex i c).boundary R := by
+    rw [boundary_insertVertex]
+    exact subset_union_left
+  have hmem {x : P} (hx : x ∈ poly.boundary R) (hxi : x ∉ poly.edgeSet R i) : x ∈ S := by
+    obtain ⟨k, hk⟩ := mem_iUnion.1 hx
+    exact mem_iUnion₂.2 ⟨k, fun h ↦ hxi (h ▸ hk), hk⟩
+  have hmem' {x : P} (hx : x ∈ (poly.insertVertex i c).boundary R)
+      (hxc : x ∉ affineSegment R (poly i) c ∪ affineSegment R c (poly (finRotate n i))) :
+      x ∈ S := by
+    rw [boundary_insertVertex] at hx
+    exact hx.resolve_right hxc
+  ext x
+  constructor
+  · rintro ⟨hx, y, hy, hne, hxy⟩
+    have hx' := fun h ↦ disjoint_left.1 hvw h ⟨hx, y, hy, hne, hxy⟩
+    have hy' := fun h ↦ disjoint_left.1 hvw h ⟨hy, x, hx, hne.symm, hxy.symm⟩
+    exact ⟨hS (hmem' hx hx'), y, hS (hmem' hy hy'), hne, hxy⟩
+  · rintro ⟨hx, y, hy, hne, hxy⟩
+    have hx' := fun h ↦ disjoint_left.1 hu h ⟨hx, y, hy, hne, hxy⟩
+    have hy' := fun h ↦ disjoint_left.1 hu h ⟨hy, x, hx, hne.symm, hxy.symm⟩
+    exact ⟨hS' (hmem hx hx'), y, hS' (hmem hy hy'), hne, hxy⟩
 
 open Classical in
 variable (R) in

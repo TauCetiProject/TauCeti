@@ -199,9 +199,8 @@ theorem exists_gaussCode_rotate_eq_relabel_rotateBasepoint_pow (hs : poly.IsSimp
   set π := projAlong ℝ p₀ d
   set D := gaussCode hs hπ b
   set D' := gaussCode hs' hπ' b
-  have hb : poly.rotate.boundary ℝ = poly.boundary ℝ := boundary_rotate poly
   have hDP : poly.rotate.doublePoints ℝ π = poly.doublePoints ℝ π :=
-    doublePoints_eq_of_boundary_eq hb
+    doublePoints_eq_of_boundary_eq (boundary_rotate poly)
   have hm : (poly.doublePoints ℝ π).ncard / 2 = (poly.rotate.doublePoints ℝ π).ncard / 2 := by
     rw [hDP]
   have h2 : 2 * ((poly.doublePoints ℝ π).ncard / 2) =
@@ -219,7 +218,7 @@ theorem exists_gaussCode_rotate_eq_relabel_rotateBasepoint_pow (hs : poly.IsSimp
     rw [hvt, finRotate_edgeIndexAt_rotateTime]
   -- Their partner visits correspond in the same way.
   have hpartner (j) : D'.partner.val (Fin.cast h2 j) = Fin.cast h2 (σ.symm (D.partner.val (σ j))) :=
-    gaussCode_partner_cast_eq_of_boundaryParam_eq b hs hπ hs' hπ' hb h2 σ hbp j
+    gaussCode_partner_cast_eq_of_boundaryParam_eq b hs hπ hs' hπ' hDP h2 σ hbp j
   have hvisit (i j) : D.visit (σ i) = D.visit (σ j) ↔
       D'.visit (Fin.cast h2 i) = D'.visit (Fin.cast h2 j) := by
     rw [gaussCode_visit_eq_visit_iff, gaussCode_visit_eq_visit_iff, hbp, hbp]

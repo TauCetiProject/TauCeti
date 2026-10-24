@@ -25,6 +25,9 @@ an edge differ by an increasing change of time
 polygon passes through the same points in the same order, and at each time it runs along an edge
 pointing in the same direction as the edge of the original polygon at the corresponding time. This
 is what keeps the diagram read off from a projection of a polygonal knot unchanged by subdivision.
+The same change of time works away from edge `i` when any vertex `c` is inserted after vertex `i`
+(`Polygon.exists_strictMono_boundaryParam_insertVertex`), as in a Δ-move: off the moved edge the two
+traversals pass through the same points, along edges with the same directions.
 
 ## Main results
 
@@ -35,6 +38,9 @@ is what keeps the diagram read off from a projection of a polygonal knot unchang
   double point.
 * `Polygon.exists_strictMono_boundaryParam_insertVertex_edgePath`: the boundary parametrizations
   before and after subdividing differ by an increasing change of time preserving edge directions.
+* `Polygon.exists_strictMono_boundaryParam_insertVertex`: inserting any vertex changes the boundary
+  parametrization away from the moved edge by an increasing change of time preserving edge
+  directions.
 
 ## References
 
@@ -137,6 +143,39 @@ private theorem strictMono_subdivisionTime (a : ℝ) (hs : s ∈ Ioo (0 : ℝ) 1
   nlinarith [mul_le_mul_of_nonneg_left k₁ h₁, mul_le_mul_of_nonneg_left k₂ h₂]
 
 omit [NeZero n] in
+/-- On each edge `j ≠ i` of `poly`, at parameter `u`, the change of time `subdivisionTime` lands on
+the same edge of the polygon with any vertex `c` inserted after vertex `i`, at the same parameter,
+so at the same point and with the same edge direction. -/
+private theorem exists_subdivisionTime_eq_of_ne (hs : s ∈ Ioo (0 : ℝ) 1) (c : P) {j : Fin n}
+    (hj : j ≠ i) {u : ℝ} (hu : u ∈ Ico (0 : ℝ) 1) :
+    ∃ j' : Fin (n + 1), subdivisionTime ((i : ℕ) : ℝ) s ((j : ℕ) + u) = (j' : ℕ) + u ∧
+      (poly.insertVertex i c).edgePath ℝ j' u = poly.edgePath ℝ j u ∧
+      poly.insertVertex i c (finRotate (n + 1) j') -ᵥ poly.insertVertex i c j' =
+        poly (finRotate n j) -ᵥ poly j := by
+  obtain ⟨hs0, hs1⟩ := hs
+  obtain ⟨hu0, hu1⟩ := hu
+  have hs1' : 0 < 1 - s := sub_pos.2 hs1
+  refine ⟨i.succ.succAbove j, ?_, by rw [edgePath_insertVertex_succAbove _ _ _ hj], ?_⟩
+  · rcases lt_or_gt_of_ne (fun h : (j : ℕ) = i ↦ hj (Fin.ext h)) with hji | hji
+    · -- Before the inserted vertex, nothing changes.
+      have hv : ((i.succ.succAbove j : Fin (n + 1)) : ℕ) = j := by
+        rw [Fin.succAbove_of_castSucc_lt _ _ (by simp [Fin.lt_def]; omega), Fin.val_castSucc]
+      have hji' : ((j : ℕ) : ℝ) + 1 ≤ (i : ℕ) := by exact_mod_cast hji
+      rw [hv, subdivisionTime, max_eq_right (by linarith), max_eq_right (by linarith),
+        min_eq_left hs0.le, min_eq_left hs1'.le]
+      ring
+    · -- After the inserted vertex, the time is shifted by `1`.
+      have hv : ((i.succ.succAbove j : Fin (n + 1)) : ℕ) = j + 1 := by
+        rw [Fin.succAbove_of_le_castSucc _ _ (by simp [Fin.le_def]; omega), Fin.val_succ]
+      have hij : ((i : ℕ) : ℝ) + 1 ≤ (j : ℕ) := by exact_mod_cast hji
+      rw [hv, Nat.cast_add_one, subdivisionTime, max_eq_left (by linarith),
+        min_eq_right (by linarith), max_eq_left (by linarith), min_eq_right (by linarith)]
+      field_simp
+      ring
+  · rw [Fin.finRotate_succ_succAbove_of_ne hj, insertVertex_apply_succAbove,
+      insertVertex_apply_succAbove]
+
+omit [NeZero n] in
 /-- On each edge `j` of `poly`, at parameter `u`, the change of time `subdivisionTime` lands on an
 edge `j'` of the subdivided polygon, at a parameter `u'`, at the same point and with the edge
 direction rescaled by a positive factor. -/
@@ -147,25 +186,13 @@ private theorem exists_subdivisionTime_eq (hs : s ∈ Ioo (0 : ℝ) 1) (j : Fin 
       (poly.insertVertex i (poly.edgePath ℝ i s)).edgePath ℝ j' u' = poly.edgePath ℝ j u ∧
       poly.insertVertex i (poly.edgePath ℝ i s) (finRotate (n + 1) j') -ᵥ
           poly.insertVertex i (poly.edgePath ℝ i s) j' = r • (poly (finRotate n j) -ᵥ poly j) := by
-  obtain ⟨hs0, hs1⟩ := hs
-  obtain ⟨hu0, hu1⟩ := hu
-  have hs1' : 0 < 1 - s := sub_pos.2 hs1
-  rcases lt_trichotomy (j : ℕ) i with hji | hji | hji
-  · -- Before the subdivided edge, nothing changes.
-    have hne : j ≠ i := fun h ↦ hji.ne (congrArg Fin.val h)
-    refine ⟨i.succ.succAbove j, u, ⟨hu0, hu1⟩, 1, one_pos, ?_, ?_, ?_⟩
-    · have hv : ((i.succ.succAbove j : Fin (n + 1)) : ℕ) = j := by
-        rw [Fin.succAbove_of_castSucc_lt _ _ (by simp [Fin.lt_def]; omega), Fin.val_castSucc]
-      have hji' : ((j : ℕ) : ℝ) + 1 ≤ (i : ℕ) := by exact_mod_cast hji
-      rw [hv, subdivisionTime, max_eq_right (by linarith), max_eq_right (by linarith),
-        min_eq_left hs0.le, min_eq_left hs1'.le]
-      ring
-    · rw [edgePath_insertVertex_succAbove _ _ _ hne]
-    · rw [Fin.finRotate_succ_succAbove_of_ne hne, insertVertex_apply_succAbove,
-        insertVertex_apply_succAbove, one_smul]
+  by_cases hji : j = i
   · -- On the subdivided edge, the time runs faster by the factor `1 / s` before the new vertex
     -- and `1 / (1 - s)` after it.
-    obtain rfl : j = i := Fin.ext hji
+    subst hji
+    obtain ⟨hs0, hs1⟩ := hs
+    obtain ⟨hu0, hu1⟩ := hu
+    have hs1' : 0 < 1 - s := sub_pos.2 hs1
     rcases lt_or_ge u s with hus | hus
     · refine ⟨j.castSucc, u / s, ⟨div_nonneg hu0 hs0.le, (div_lt_one hs0).2 hus⟩, s, hs0, ?_, ?_,
         ?_⟩
@@ -190,19 +217,15 @@ private theorem exists_subdivisionTime_eq (hs : s ∈ Ioo (0 : ℝ) 1) (j : Fin 
         ring
       · rw [insertVertex_apply_finRotate_succ_self, insertVertex_apply_succ_self, edgePath,
           right_vsub_lineMap]
-  · -- After the subdivided edge, the time is shifted by `1`.
-    have hne : j ≠ i := fun h ↦ hji.ne' (congrArg Fin.val h)
-    refine ⟨i.succ.succAbove j, u, ⟨hu0, hu1⟩, 1, one_pos, ?_, ?_, ?_⟩
-    · have hv : ((i.succ.succAbove j : Fin (n + 1)) : ℕ) = j + 1 := by
-        rw [Fin.succAbove_of_le_castSucc _ _ (by simp [Fin.le_def]; omega), Fin.val_succ]
-      have hij : ((i : ℕ) : ℝ) + 1 ≤ (j : ℕ) := by exact_mod_cast hji
-      rw [hv, Nat.cast_add_one, subdivisionTime, max_eq_left (by linarith),
-        min_eq_right (by linarith), max_eq_left (by linarith), min_eq_right (by linarith)]
-      field_simp
-      ring
-    · rw [edgePath_insertVertex_succAbove _ _ _ hne]
-    · rw [Fin.finRotate_succ_succAbove_of_ne hne, insertVertex_apply_succAbove,
-        insertVertex_apply_succAbove, one_smul]
+  · obtain ⟨j', hφ, hpath, hdir⟩ := exists_subdivisionTime_eq_of_ne poly i hs _ hji hu
+    exact ⟨j', u, hu, 1, one_pos, hφ, hpath, by rw [hdir, one_smul]⟩
+
+omit [NeZero n] in
+/-- A time in one period `[0, n)` is a time `u ∈ [0, 1)` along some edge `j`. -/
+private theorem exists_eq_natCast_add {t : ℝ} (ht : t ∈ Ico (0 : ℝ) n) :
+    ∃ j : Fin n, ∃ u ∈ Ico (0 : ℝ) 1, t = (j : ℕ) + u :=
+  ⟨⟨⌊t⌋₊, (Nat.floor_lt ht.1).2 ht.2⟩, t - ⌊t⌋₊,
+    ⟨sub_nonneg.2 (Nat.floor_le ht.1), by linarith [Nat.lt_floor_add_one t]⟩, by simp⟩
 
 /-- **Subdividing an edge reparametrizes the boundary.** Subdividing edge `i` of a polygon at an
 interior point changes its boundary parametrization by an increasing change of time `φ`, mapping
@@ -217,9 +240,7 @@ theorem exists_strictMono_boundaryParam_insertVertex_edgePath (hs : s ∈ Ioo (0
             poly.insertVertex i (poly.edgePath ℝ i s) (edgeIndexAt (n + 1) (φ t)) =
           r • (poly (finRotate n (edgeIndexAt n t)) -ᵥ poly (edgeIndexAt n t)) := by
   refine ⟨subdivisionTime ((i : ℕ) : ℝ) s, strictMono_subdivisionTime _ hs, fun t ht ↦ ?_⟩
-  obtain ⟨j, u, hu, rfl⟩ : ∃ j : Fin n, ∃ u ∈ Ico (0 : ℝ) 1, t = (j : ℕ) + u :=
-    ⟨⟨⌊t⌋₊, (Nat.floor_lt ht.1).2 ht.2⟩, t - ⌊t⌋₊,
-      ⟨sub_nonneg.2 (Nat.floor_le ht.1), by linarith [Nat.lt_floor_add_one t]⟩, by simp⟩
+  obtain ⟨j, u, hu, rfl⟩ := exists_eq_natCast_add ht
   obtain ⟨j', u', hu', r, hr, hφ, hpath, hdir⟩ := exists_subdivisionTime_eq poly i hs j hu
   rw [hφ, boundaryParam_natCast_add _ _ (Ico_subset_Icc_self hu'),
     poly.boundaryParam_natCast_add j (Ico_subset_Icc_self hu), hpath,
@@ -227,6 +248,29 @@ theorem exists_strictMono_boundaryParam_insertVertex_edgePath (hs : s ∈ Ioo (0
   refine ⟨⟨add_nonneg (Nat.cast_nonneg _) hu'.1, ?_⟩, rfl, r, hr, hdir⟩
   have hj' : ((j' : ℕ) : ℝ) + 1 ≤ ((n + 1 : ℕ) : ℝ) := by exact_mod_cast j'.isLt
   linarith [hu'.2]
+
+/-- **Inserting a vertex reparametrizes the boundary away from the moved edge.** Inserting any
+vertex `c` after vertex `i` of a polygon changes its boundary parametrization, away from edge `i`,
+by an increasing change of time `φ`. At each time `t ∈ [0, n)` at which `poly` does not run along
+edge `i`, the time `φ t` lies in `[0, n + 1)`, and the new polygon is at the same point at time
+`φ t`, running along an edge with the same direction. -/
+theorem exists_strictMono_boundaryParam_insertVertex (c : P) :
+    ∃ φ : ℝ → ℝ, StrictMono φ ∧ ∀ t ∈ Ico (0 : ℝ) n, edgeIndexAt n t ≠ i →
+      φ t ∈ Ico (0 : ℝ) (n + 1 : ℕ) ∧
+      (poly.insertVertex i c).boundaryParam (φ t) = poly.boundaryParam t ∧
+      poly.insertVertex i c (finRotate (n + 1) (edgeIndexAt (n + 1) (φ t))) -ᵥ
+          poly.insertVertex i c (edgeIndexAt (n + 1) (φ t)) =
+        poly (finRotate n (edgeIndexAt n t)) -ᵥ poly (edgeIndexAt n t) := by
+  have hs : (2⁻¹ : ℝ) ∈ Ioo (0 : ℝ) 1 := by norm_num
+  refine ⟨subdivisionTime ((i : ℕ) : ℝ) 2⁻¹, strictMono_subdivisionTime _ hs, fun t ht hti ↦ ?_⟩
+  obtain ⟨j, u, hu, rfl⟩ := exists_eq_natCast_add ht
+  rw [edgeIndexAt_natCast_add _ hu] at hti ⊢
+  obtain ⟨j', hφ, hpath, hdir⟩ := exists_subdivisionTime_eq_of_ne poly i hs c hti hu
+  rw [hφ, boundaryParam_natCast_add _ _ (Ico_subset_Icc_self hu),
+    poly.boundaryParam_natCast_add j (Ico_subset_Icc_self hu), hpath, edgeIndexAt_natCast_add _ hu]
+  refine ⟨⟨add_nonneg (Nat.cast_nonneg _) hu.1, ?_⟩, rfl, hdir⟩
+  have hj' : ((j' : ℕ) : ℝ) + 1 ≤ ((n + 1 : ℕ) : ℝ) := by exact_mod_cast j'.isLt
+  linarith [hu.2]
 
 end Param
 
