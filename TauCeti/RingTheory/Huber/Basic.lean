@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.AdicCompletion.Topology
 public import Mathlib.RingTheory.Finiteness.Ideal
-public import Mathlib.Topology.Algebra.Nonarchimedean.AdicTopology
+public import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology
 public import Mathlib.Topology.Algebra.Ring.Ideal
 public import TauCeti.RingTheory.Huber.PowerBounded
 import Mathlib.Topology.Algebra.IsUniformGroup.Basic
@@ -57,9 +57,6 @@ Huber ring is nonarchimedean, which is exactly the hypothesis under which
   adjacent powers of `I` agree, the closure of zero in the Huber ring is open.
 * `TauCeti.Huber.PairOfDefinition.exists_pow_idealOfDefinition_mul_mem`: some `Iⁿ`
   multiplies a given element into a given open subring.
-* `TauCeti.Huber.IsAdic.comap`: an adic topology transports along a ring equivalence that is an
-  inducing map. This is what lets a ring of definition carry an ideal of definition that natively
-  lives in a merely equivalent ring, which is what `TauCeti.Huber.PairOfDefinition` needs.
 * `TauCeti.Huber.IsTateRing.of_continuous`: a continuous homomorphism out of a Tate ring makes a
   Huber target Tate.
 * `TauCeti.Huber.IsHuberRing.toNonarchimedeanRing`: a Huber ring is nonarchimedean.
@@ -222,35 +219,6 @@ section Transport
 
 variable {A B : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
   [CommRing B] [TopologicalSpace B] [IsTopologicalRing B]
-
-omit [TopologicalSpace A] [IsTopologicalRing A] [TopologicalSpace B] [IsTopologicalRing B] in
-/-- The powers of a comapped ideal are the comapped powers, along a ring equivalence. -/
-private theorem comap_pow_of_equiv (e : B ≃+* A) (I : Ideal A) (n : ℕ) :
-    (I ^ n).comap e = I.comap e ^ n := by
-  rw [← Ideal.map_symm, ← Ideal.map_symm, Ideal.map_pow]
-
-/-- An adic topology transports along a ring equivalence that is also an inducing map.
-
-This is what lets a ring of definition carry an ideal of definition: `PairOfDefinition` asks for
-an `Ideal A₀` whose adic topology is the subspace topology, while the ideal at hand usually lives
-in a ring that is only equivalent to `A₀`. -/
-theorem IsAdic.comap (e : B ≃+* A) (he : IsInducing e) {I : Ideal A} (h : IsAdic I) :
-    IsAdic (I.comap e) := by
-  rw [isAdic_iff] at h ⊢
-  obtain ⟨hopen, hnhds⟩ := h
-  have hset : ∀ n : ℕ,
-      ((I.comap e ^ n : Ideal B) : Set B) = e ⁻¹' ((I ^ n : Ideal A) : Set A) := by
-    intro n
-    ext b
-    rw [← comap_pow_of_equiv e I n, SetLike.mem_coe, Ideal.mem_comap, Set.mem_preimage,
-      SetLike.mem_coe]
-  refine ⟨fun n ↦ ?_, fun s hs ↦ ?_⟩
-  · rw [hset n, he.isOpen_iff]
-    exact ⟨_, hopen n, rfl⟩
-  · rw [he.nhds_eq_comap (0 : B), map_zero, Filter.mem_comap] at hs
-    obtain ⟨t, ht, hts⟩ := hs
-    obtain ⟨n, hn⟩ := hnhds t ht
-    exact ⟨n, by rw [hset n]; exact fun b hb ↦ hts (hn hb)⟩
 
 /-- **A continuous homomorphism out of a Tate ring makes a Huber target Tate** (Wedhorn,
 *Adic Spaces*, Proposition 6.25): the image of a pseudouniformiser of `A` is a pseudouniformiser
@@ -635,8 +603,8 @@ private theorem coe_comapRingOfDefinitionEquiv_apply (P : PairOfDefinition A) {B
 contains the ring of definition: its ring of definition is `f⁻¹(A₀)`, which `f` identifies with
 `A₀` as a topological ring, and its ideal of definition is the preimage of `I` under that
 identification (`TauCeti.Huber.PairOfDefinition.mem_comap_idealOfDefinition`). -/
-noncomputable def comap [IsTopologicalRing A] {B : Type*} [CommRing B] [TopologicalSpace B]
-    [IsTopologicalRing B] (P : PairOfDefinition A) (f : B →+* A) (hf : IsEmbedding f)
+noncomputable def comap {B : Type*} [CommRing B] [TopologicalSpace B]
+    (P : PairOfDefinition A) (f : B →+* A) (hf : IsEmbedding f)
     (hP : P.ringOfDefinition ≤ f.range) : PairOfDefinition B :=
   let e := P.comapRingOfDefinitionEquiv f hf.injective hP
   have he : IsInducing e :=
@@ -647,13 +615,13 @@ noncomputable def comap [IsTopologicalRing A] {B : Type*} [CommRing B] [Topologi
     fg_idealOfDefinition := by
       rw [← Ideal.map_symm]
       exact P.fg_idealOfDefinition.map e.symm.toRingHom
-    isAdic_idealOfDefinition := IsAdic.comap e he P.isAdic_idealOfDefinition }
+    isAdic_idealOfDefinition := P.isAdic_idealOfDefinition.comap e he }
 
 /-- The ring of definition of the pullback pair of definition is the preimage of the original
 one. -/
 @[simp]
-theorem comap_ringOfDefinition [IsTopologicalRing A] {B : Type*} [CommRing B]
-    [TopologicalSpace B] [IsTopologicalRing B] (P : PairOfDefinition A) (f : B →+* A)
+theorem comap_ringOfDefinition {B : Type*} [CommRing B]
+    [TopologicalSpace B] (P : PairOfDefinition A) (f : B →+* A)
     (hf : IsEmbedding f) (hP : P.ringOfDefinition ≤ f.range) :
     (P.comap f hf hP).ringOfDefinition = P.ringOfDefinition.comap f :=
   (rfl)
@@ -661,8 +629,8 @@ theorem comap_ringOfDefinition [IsTopologicalRing A] {B : Type*} [CommRing B]
 /-- An element of the ring of definition of the pullback pair of definition lies in its ideal of
 definition exactly when its image lies in the original ideal of definition. -/
 @[simp]
-theorem mem_comap_idealOfDefinition [IsTopologicalRing A] {B : Type*} [CommRing B]
-    [TopologicalSpace B] [IsTopologicalRing B] (P : PairOfDefinition A) (f : B →+* A)
+theorem mem_comap_idealOfDefinition {B : Type*} [CommRing B]
+    [TopologicalSpace B] (P : PairOfDefinition A) (f : B →+* A)
     (hf : IsEmbedding f) (hP : P.ringOfDefinition ≤ f.range)
     {b : (P.comap f hf hP).ringOfDefinition} :
     b ∈ (P.comap f hf hP).idealOfDefinition ↔
@@ -675,8 +643,8 @@ theorem mem_comap_idealOfDefinition [IsTopologicalRing A] {B : Type*} [CommRing 
 image in `B` of the `n`-th power of the ideal of definition of `P.comap f hf hP` is the preimage
 of `P.idealImage n` under `f`. -/
 @[simp]
-theorem comap_idealImage [IsTopologicalRing A] {B : Type*} [CommRing B] [TopologicalSpace B]
-    [IsTopologicalRing B] (P : PairOfDefinition A) (f : B →+* A) (hf : IsEmbedding f)
+theorem comap_idealImage {B : Type*} [CommRing B] [TopologicalSpace B]
+    (P : PairOfDefinition A) (f : B →+* A) (hf : IsEmbedding f)
     (hP : P.ringOfDefinition ≤ f.range) (n : ℕ) :
     (P.comap f hf hP).idealImage n = (P.idealImage n).comap (f : B →+ A) := by
   let e : (P.comap f hf hP).ringOfDefinition ≃+* P.ringOfDefinition :=
@@ -685,7 +653,7 @@ theorem comap_idealImage [IsTopologicalRing A] {B : Type*} [CommRing B] [Topolog
   have hI : (P.comap f hf hP).idealOfDefinition = P.idealOfDefinition.comap e := rfl
   ext x
   simp only [mem_idealImage, AddSubgroup.mem_comap, AddMonoidHom.coe_ofClass]
-  rw [hI, ← comap_pow_of_equiv]
+  rw [hI, ← Ideal.map_symm, ← Ideal.map_pow, Ideal.map_symm]
   constructor
   · rintro ⟨y, hy, rfl⟩
     exact ⟨e y, hy, P.coe_comapRingOfDefinitionEquiv_apply f hf.injective hP y⟩

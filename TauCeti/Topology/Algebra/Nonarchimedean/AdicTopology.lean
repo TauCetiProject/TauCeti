@@ -26,6 +26,8 @@ series evaluated at arguments of `I ^ n` is confined to `I ^ n`, in
 
 ## Main results
 
+* `IsAdic.comap` : an adic topology transports along an inducing ring equivalence, without
+  separate assumptions that either ring has continuous operations.
 * `IsAdic.isOpen_pow` : in a ring whose topology is `I`-adic, every power of `I` is open.
 * `IsAdic.isClosed_pow` : in a ring whose topology is `I`-adic, every power of `I` is closed —
   an open additive subgroup of a topological group being closed.
@@ -74,6 +76,26 @@ variable {R : Type*} [CommRing R] [TopologicalSpace R] {I : Ideal R}
 theorem isOpen_pow (hI : IsAdic I) (n : ℕ) : IsOpen ((I ^ n : Ideal R) : Set R) :=
   letI := I.adicTopology
   hI ▸ (I.openAddSubgroup n).isOpen
+
+/-- An adic topology transports along a ring equivalence that is an inducing map.
+
+Neither ring needs an explicit topological-ring assumption: the adic topology makes the target
+of the equivalence a topological ring, and the inducing map transports continuity to its source. -/
+theorem comap {S : Type*} [CommRing S] [TopologicalSpace S] (hI : IsAdic I)
+    (e : S ≃+* R) (he : Topology.IsInducing e) : IsAdic (I.comap e) := by
+  have : IsTopologicalRing R := hI ▸ I.nonarchimedean.toIsTopologicalRing
+  have : IsTopologicalRing S := IsTopologicalSemiring.toIsTopologicalRing
+    { toContinuousAdd := he.continuousAdd e, toContinuousMul := he.continuousMul e }
+  have hset (n : ℕ) : ((I.comap e ^ n : Ideal S) : Set S) =
+      e ⁻¹' ((I ^ n : Ideal R) : Set R) := by
+    rw [← Ideal.map_symm, ← Ideal.map_pow, Ideal.map_symm, Ideal.coe_comap]
+  refine isAdic_iff.mpr ⟨fun n ↦ ?_, fun s hs ↦ ?_⟩
+  · rw [hset]
+    exact (hI.isOpen_pow n).preimage he.continuous
+  · rw [he.nhds_eq_comap (0 : S), map_zero, Filter.mem_comap] at hs
+    obtain ⟨t, ht, hts⟩ := hs
+    obtain ⟨n, -, hn⟩ := hI.hasBasis_nhds_zero.mem_iff.mp ht
+    exact ⟨n, by rw [hset]; exact fun b hb ↦ hts (hn hb)⟩
 
 /-- In a ring whose topology is the `I`-adic one, every power of `I` is closed: it is an open
 additive subgroup, and an open subgroup of a topological group is closed. -/
