@@ -53,6 +53,9 @@ This file records small generic additions to Mathlib's `MulAction.orbitRel.Quoti
   transitive.
 * `TauCeti.MulAction.normalizerQuotientOrbitRelQuotient_smul_eq_smul_iff`: if the original
   action is free, then the descended `N(H) / H` action on the `H`-orbit quotient is free.
+* `TauCeti.MulAction.instMulActionOrbitRelQuotientOfNormal` and
+  `TauCeti.MulAction.instMulActionQuotientOrbitRelQuotientOfNormal`: for a normal subgroup `H`,
+  the actions of `G` and of `G ⧸ H` on the quotient by `H`-orbits.
 * `TauCeti.MulAction.orbitRelQuotientCongr`: an equivalence carrying one action to another along
   a group isomorphism induces an equivalence of orbit spaces.
 * `TauCeti.MulAction.orbitRelQuotientLift`: a `G`-invariant map descends to the orbit space,
@@ -480,6 +483,42 @@ lemma MulAction.normalizerQuotientOrbitRelQuotient_smul_mk (H : Subgroup G)
         (Quotient.mk'' x : MulAction.orbitRel.Quotient H X) =
       Quotient.mk'' ((g : G) • x)
     exact MulAction.normalizerQuotientOrbitRelQuotientPermHom_mk_apply (X := X) H g x
+
+section Normal
+
+variable (H : Subgroup G) [H.Normal]
+
+/-- For a normal subgroup `H`, the group `G` permutes the `H`-orbits: `g` sends the orbit of `x`
+to the orbit of `g • x`. -/
+instance MulAction.instMulActionOrbitRelQuotientOfNormal :
+    MulAction G (MulAction.orbitRel.Quotient H X) where
+  smul g := MulAction.normalizerOrbitRelQuotientMap H ⟨g, by simp [H.normalizer_eq_top]⟩
+  one_smul q := congrFun (MulAction.normalizerOrbitRelQuotientMap_one H) q
+  mul_smul g g' q := congrFun (MulAction.normalizerOrbitRelQuotientMap_mul H
+    ⟨g, by simp [H.normalizer_eq_top]⟩ ⟨g', by simp [H.normalizer_eq_top]⟩) q
+
+/-- For a normal subgroup `H`, the group `G` sends the `H`-orbit of `x` to that of `g • x`. -/
+@[simp]
+lemma MulAction.smul_orbitRelQuotient_mk (g : G) (x : X) :
+    g • (⟦x⟧ : MulAction.orbitRel.Quotient H X) = ⟦g • x⟧ :=
+  MulAction.normalizerOrbitRelQuotientMap_apply H _ x
+
+/-- For a normal subgroup `H`, the action of `G` on the `H`-orbits descends to `G ⧸ H`, in the
+same way as Mathlib's action of `G ⧸ H` on the `H`-fixed points. -/
+instance MulAction.instMulActionQuotientOrbitRelQuotientOfNormal :
+    MulAction (G ⧸ H) (MulAction.orbitRel.Quotient H X) :=
+  MulAction.ofEndHom <| QuotientGroup.lift H MulAction.toEndHom fun h hh ↦ by
+    funext q
+    induction q using Quotient.inductionOn' with
+    | h x => exact Quotient.sound' ⟨⟨h, hh⟩, rfl⟩
+
+/-- The class of `g` in `G ⧸ H` acts on the `H`-orbits as `g` does. -/
+@[simp]
+lemma MulAction.coe_quotient_smul_orbitRelQuotient (g : G) (q : MulAction.orbitRel.Quotient H X) :
+    (g : G ⧸ H) • q = g • q :=
+  rfl
+
+end Normal
 
 /-- In a free transitive action, quotienting by a normal subgroup `H` identifies the
 `H`-orbit quotient with the normalizer quotient `N(H) / H`. The representative convention is

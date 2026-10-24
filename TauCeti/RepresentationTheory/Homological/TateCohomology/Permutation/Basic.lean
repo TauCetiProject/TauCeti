@@ -93,15 +93,10 @@ private theorem evalOut_apply (v : (Rep.ofMulAction R G X).ρ.invariants)
 private theorem evalOut_surjective [Finite X] : Function.Surjective (evalOut R G X) := by
   intro c
   choose r hr using fun ω ↦ Ideal.Quotient.mk_surjective (c ω)
-  have := Fintype.ofFinite X
-  -- the vector whose coefficient at `x` is the chosen lift at the orbit of `x`
-  let v : R[X] := ofCoeff (Finsupp.equivFunOnFinite.symm fun x ↦ r (Quotient.mk _ x))
-  refine ⟨⟨v, fun g ↦ ?_⟩, funext fun ω ↦ ?_⟩
-  · ext x
-    simp only [v, coeff_ofMulAction, Finsupp.coe_equivFunOnFinite_symm]
-    exact congrArg r (Quotient.sound (mem_orbit x g⁻¹))
-  · rw [evalOut_apply]
-    simp [v, hr]
+  -- the invariant vector whose coefficient at `x` is the chosen lift at the orbit of `x`
+  refine ⟨(invariantOrbitSumBasis R G X).equivFun.symm r, funext fun ω ↦ ?_⟩
+  rw [evalOut_apply, ← invariantOrbitSumBasis_repr_mk, Quotient.out_eq,
+    ← Module.Basis.equivFun_apply, LinearEquiv.apply_symm_apply, hr]
 
 variable [Fintype G]
 
