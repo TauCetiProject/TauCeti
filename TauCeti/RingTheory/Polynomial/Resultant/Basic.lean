@@ -22,9 +22,14 @@ discriminant formulas that use different bounds.
 That absence is the point. `C x - X` is `C (-1) * (X - C x)`, which contributes `(-1) ^ m`, and
 `resultant_X_sub_C_right` contributes another `(-1) ^ m`, so the two cancel.
 
+Bounded resultants are also multiplicative in the left argument when the degree bounds exceed the
+actual degrees, the bounds adding for the product.
+
 ## Main results
 
 * `Polynomial.resultant_C_sub_X_right`
+* `Polynomial.resultant_mul_left_of_natDegree_le`: multiplicativity of the resultant in its left
+  argument for arbitrary degree bounds, which add for the product.
 * `Polynomial.Monic.resultant_of_le`: for a monic left argument, the resultant is independent of
   the valid degree bound supplied for the right argument.
 
@@ -51,6 +56,20 @@ theorem resultant_C_sub_X_right (f : R[X]) (x : R) (m : ℕ) (hm : f.natDegree �
   have hneg : C x - X = C (-1 : R) * (X - C x) := by simp
   rw [hneg, resultant_C_mul_right, resultant_X_sub_C_right f m x hm, ← mul_assoc, ← pow_add,
     ← two_mul, pow_mul, neg_one_sq, one_pow, one_mul]
+
+/-- `Res(f₁ * f₂, g) = Res(f₁, g) * Res(f₂, g)` for arbitrary degree bounds `m₁` and `m₂` on
+`f₁` and `f₂`, which add for the product. Unlike `Polynomial.resultant_mul_left`, the bounds need
+not be the actual degrees. -/
+theorem resultant_mul_left_of_natDegree_le {f₁ f₂ g : R[X]} {m₁ m₂ n : ℕ}
+    (h₁ : f₁.natDegree ≤ m₁) (h₂ : f₂.natDegree ≤ m₂) (hg : g.natDegree ≤ n) :
+    resultant (f₁ * f₂) g (m₁ + m₂) n = resultant f₁ g m₁ n * resultant f₂ g m₂ n := by
+  obtain ⟨k₁, rfl⟩ := Nat.exists_eq_add_of_le h₁
+  obtain ⟨k₂, rfl⟩ := Nat.exists_eq_add_of_le h₂
+  -- Pad each bound from the actual degree, then use the exact-degree product law.
+  rw [add_add_add_comm, resultant_add_left_deg _ _ _ _ _ natDegree_mul_le,
+    resultant_mul_left _ _ _ _ hg, resultant_add_left_deg _ _ _ _ _ le_rfl,
+    resultant_add_left_deg _ _ _ _ _ le_rfl]
+  ring
 
 end Polynomial
 

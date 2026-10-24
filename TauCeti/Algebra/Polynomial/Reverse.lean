@@ -36,6 +36,8 @@ Evaluating the reversal of `p` at `0` gives the leading coefficient of `p`, whic
 when `p` is, and at a nonzero point `w` of a field it gives `w ^ d p(w⁻¹)`, where `d` is the
 degree of `p`: the reversal is `p` read in the reciprocal coordinate.
 
+Reflection at a bound on the degree stays within that bound.
+
 The file also records how reversal interacts with products of monic polynomials and with the
 binomials `X ^ n - C a`, which together compute the reverse of a characteristic polynomial that
 factors into such binomials.
@@ -120,6 +122,11 @@ theorem eval₂_inv_reverse_eq_zero_iff [Semiring R] [DivisionSemiring S] (p : R
     (f : R →+* S) {x : S} (hx : x ≠ 0) :
     p.reverse.eval₂ f x⁻¹ = 0 ↔ p.eval₂ f x = 0 :=
   p.eval₂_inv_reflect_eq_zero_iff f hx le_rfl
+
+/-- Reflection at a bound on the degree stays within that bound. -/
+theorem natDegree_reflect_le_of_le [Semiring R] {p : R[X]} {N : ℕ} (hN : p.natDegree ≤ N) :
+    (p.reflect N).natDegree ≤ N :=
+  natDegree_reflect_le.trans (max_le le_rfl hN)
 
 /-- Reflection of a power at the corresponding multiple of a degree bound is the power
 of the reflection. -/

@@ -25,7 +25,7 @@ variable {R : Type*} [CommRing R]
 
 -- The rank is the dimension: `D_(1,0)(1, 1) = 1 - T` but `D_(0,0)(1, 1) = 1`.
 example : colemanDBounded 1 0 (1 : ℤ[X]) 1 = 1 - X ∧ colemanDBounded 0 0 (1 : ℤ[X]) 1 = 1 := by
-  constructor <;> simp [colemanDBounded_one]
+  constructor <;> simp
 
 -- `diag(a, 0)` has determinant `1 - a T`, but its rank-two transform is
 -- `(1 - B(a) T) (1 - B(0) T)`.
