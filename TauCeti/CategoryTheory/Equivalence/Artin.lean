@@ -117,7 +117,7 @@ variable {C : Type u₁} [Category.{v₁} C] {D : Type u₂} [Category.{v₂} D]
 
 /-- Transport of an Artin action agrees with a target action precisely when the supplied
 equivalence naturally intertwines their generator representatives. -/
-theorem Equivalence.comp_autoequivalenceClassCongr_eq_iff
+theorem Equivalence.autoequivalenceClassCongr_comp_artin_eq_iff
     {B : Type*} {M : CoxeterMatrix B} (e : C ≌ D)
     (ρ₀ : ArtinGroup M →* AutoequivalenceClass C) (S : B → (C ≌ C))
     (hS : ∀ i, ρ₀ (ArtinGroup.gen M i) = (S i).toAutoequivalenceClass)

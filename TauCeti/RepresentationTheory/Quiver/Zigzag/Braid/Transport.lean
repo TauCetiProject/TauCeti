@@ -17,9 +17,8 @@ conjugates of the canonical braid autoequivalences. The existing generic transpo
 supplies the natural intertwining isomorphisms.
 
 The source is the cochain homotopy category of graded zigzag modules. The generic
-`Equivalence.comp_autoequivalenceClassCongr_eq_iff` compares the transported action with
-any supplied target action through natural intertwiners of generator functors. The
-isomorphism on autoequivalence classes preserves and reflects injectivity of the action.
+`Equivalence.autoequivalenceClassCongr_comp_artin_eq_iff` compares the transported action
+with any supplied target action through natural intertwiners of generator functors.
 -/
 
 public section

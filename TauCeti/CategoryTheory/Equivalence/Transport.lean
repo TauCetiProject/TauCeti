@@ -15,8 +15,7 @@ public import Mathlib.Algebra.Group.Equiv.Opposite
 An equivalence `e : C ≌ D` transports a self-equivalence `F` of `C` to
 `e.symm.trans (F.trans e)`. On natural-isomorphism classes this is a group
 isomorphism, with functional composition as multiplication. Consequently any group
-action by autoequivalence classes transports along a supplied equivalence, and its
-faithfulness is preserved and reflected.
+action by autoequivalence classes transports along a supplied equivalence.
 
 `Equivalence.autoequivalenceClassCongr_eq_iff` characterizes this transport by natural
 intertwining isomorphisms of the representing functors.
@@ -218,13 +217,5 @@ theorem Equivalence.autoequivalenceClassCongr_eq_iff (e : C ≌ D)
   · rintro ⟨h⟩
     exact ⟨(e.symm.congrLeft (E := D)).functor.preimageIso
       (e.transportedEndofunctorIso F.functor ≪≫ h.symm)⟩
-
-/-- Transport through a supplied equivalence preserves and reflects injectivity of any
-monoid action on autoequivalence classes. -/
-theorem Equivalence.autoequivalenceClassCongr_comp_injective_iff
-    (e : C ≌ D) {H : Type*} [Monoid H] (ρ : H →* AutoequivalenceClass C) :
-    Function.Injective (e.autoequivalenceClassCongr.toMonoidHom.comp ρ) ↔
-      Function.Injective ρ :=
-  e.autoequivalenceClassCongr.injective.of_comp_iff ρ
 
 end CategoryTheory
