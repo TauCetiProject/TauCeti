@@ -21,7 +21,8 @@ vertex `{p}`. It is a simplicial complex when `p` "sees" `|K|` injectively: `p �
 every segment from `p` to a point of `|K|` meets `|K|` only at that endpoint
 (`Geometry.SimplicialComplex.IsConeApex`). Under this condition the apex lies outside the affine
 span of every face of `K` (`IsConeApex.notMem_affineSpan`), the cone glues along common faces, it
-contains `K` as a subcomplex, and its underlying space is the convex join of `p` with `|K|`.
+contains `K` as a subcomplex, and its underlying space is the convex join of `p` with `|K|`
+together with `p` itself (the apex matters only when `K` is empty).
 
 The main application is coning a triangulated boundary of a convex body to an interior point. If
 `C` is convex and `K` triangulates its intrinsic frontier, every point of the intrinsic interior
@@ -310,8 +311,8 @@ variable {E : Type*} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E] [IsTop
   [ContinuousSMul ℝ E] [T2Space E] [DecidableEq E] {K : SimplicialComplex ℝ E} {C : Set E} {p : E}
 
 /-- Coning a triangulation of the intrinsic frontier of a compact convex set `C` to a point of the
-intrinsic interior of `C` triangulates `C`: every point of `C` lies on a segment from the apex to
-a point of the intrinsic frontier. -/
+intrinsic interior of `C` triangulates `C`: every point of `C` is either the apex or lies on a
+segment from the apex to a point of the intrinsic frontier. -/
 theorem space_cone_of_space_eq_intrinsicFrontier (hCc : IsCompact C) (hC : Convex ℝ C)
     (hK : K.space = intrinsicFrontier ℝ C) (hp : p ∈ intrinsicInterior ℝ C) :
     (K.cone p (.of_space_eq_intrinsicFrontier hC hK hp)).space = C := by
