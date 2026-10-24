@@ -6,9 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.StandardComodule
+public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Coaction
 public import TauCeti.Algebra.Polynomial.Homogenize
 public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.UpperTriangular.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.SymmetricAlgebra.Polynomial
+import Mathlib.Algebra.MvPolynomial.Coeff
+import TauCeti.Algebra.Coalgebra.Subcomodule.PointSeparation
+import TauCeti.Algebra.MvPolynomial.Fin.Two
+import TauCeti.RingTheory.TensorProduct.MvPolynomial
 
 /-!
 # Binary forms as rational representations of `SL₂`
@@ -28,12 +33,25 @@ sends `f(x, y)` to `f(x - t y, y)`; comparing the values at `(x, y) = (t, 1)` an
 that the dehomogenization `f(x, 1)` is constant. Over a finite field, invariance under the rational
 points of `B⁺` alone would not suffice.
 
+Subrepresentations are detected by the universal unitriangular points over `R[t]`: a
+subrepresentation containing `f` contains every `t`-coefficient of `f(x - t y, y)` and of
+`f(x, y - t x)`. On monomials these are the divided-power operators
+`xⁱ yʲ ↦ (i choose n) xⁱ⁻ⁿ yʲ⁺ⁿ` and `xⁱ yʲ ↦ (j choose n) xⁱ⁺ⁿ yʲ⁻ⁿ`, up to sign. Over a field,
+the top `t`-coefficient of `f(x - t y, y)` is a nonzero multiple of `yᵈ`, so `yᵈ` lies in every
+nonzero subrepresentation of the binary forms of degree `d`, in every characteristic. Hence the
+binary forms are indecomposable, and they are simple as soon as every `d choose n` is nonzero in
+the field, in particular in characteristic zero. In characteristic `p` this binomial condition
+holds exactly for `d = (a + 1) pᵐ - 1` with `0 ≤ a < p`, by Lucas' theorem; the converse, that the
+binary forms of any other degree have a proper nonzero subrepresentation, is not proved here.
+
 ## Main declarations
 
 * `TauCeti.SpecialLinear.polynomialComodule`: polynomial functions on the standard representation
   of `SLₙ`.
 * `TauCeti.SpecialLinear.algebraTensorAlgEquiv_endOfPoint_polynomialComodule`: points act by the
   inverse matrix on the coordinates.
+* `TauCeti.SpecialLinear.columnOrbitHom`: evaluation at the `j`-th column, as a comodule morphism
+  into the left regular comodule of `O(SLₙ)`.
 * `TauCeti.SpecialLinear.binaryForms`: the binary forms of degree `d`, as a subcomodule.
 * `TauCeti.SpecialLinear.algebraTensorAlgEquiv_endOfPoint_binaryForm`: the explicit action of
   `SL₂` on binary forms.
@@ -41,10 +59,22 @@ points of `B⁺` alone would not suffice.
 * `TauCeti.SpecialLinear.lTensor_coact_X_one_pow`: `yᵈ` spans a `B⁺`-stable line of weight `d`.
 * `TauCeti.SpecialLinear.exists_lTensor_coact_eq_tmul_iff_mem_span`: a binary form spans a
   `B⁺`-stable line iff it is a multiple of `yᵈ`.
+* `TauCeti.SpecialLinear.choose_smul_X_pow_sub_mul_X_pow_add_mem` and
+  `TauCeti.SpecialLinear.choose_smul_X_pow_add_mul_X_pow_sub_mem`: subrepresentations are stable
+  under the divided-power operators of the two root subgroups.
+* `TauCeti.SpecialLinear.X_one_pow_mem_of_ne_bot`: every nonzero subrepresentation of the binary
+  forms of degree `d` contains `yᵈ`.
+* `TauCeti.SpecialLinear.eq_bot_or_eq_bot_of_le_binaryForms_of_disjoint`: the binary forms are
+  indecomposable.
+* `TauCeti.SpecialLinear.isAtom_binaryForms` and
+  `TauCeti.SpecialLinear.isAtom_binaryForms_of_charZero`: the binary forms of degree `d` are simple
+  when every `d choose n` is nonzero, in particular in characteristic zero.
 
 ## References
 
 * J. C. Jantzen, *Representations of Algebraic Groups*, 2nd ed., II.2.16.
+* J. C. Jantzen, *Representations of Algebraic Groups*, 2nd ed., Part II, Chapter 3, for the
+  simple modules of `SL₂` in positive characteristic.
 * J. S. Milne, *Algebraic Groups* (2017), §4.a.
 -/
 
@@ -68,6 +98,52 @@ coordinates `X i` of the standard basis. Points act contragrediently, `(g • f)
 noncomputable def polynomialComodule :
     Comodule R (coordinateHopfAlgebra R n) (MvPolynomial (Fin n) R) :=
   Comodule.polynomial (coordinateHopfAlgebra R n) (Pi.basisFun R (Fin n))
+
+/-- The coaction on polynomial functions on the standard representation of `SLₙ` is the algebra
+homomorphism `Comodule.polynomialCoact` of the standard basis. -/
+theorem polynomialComodule_coact :
+    letI := polynomialComodule R n
+    Comodule.coact (R := R) (C := coordinateHopfAlgebra R n) (M := MvPolynomial (Fin n) R) =
+      (Comodule.polynomialCoact (coordinateHopfAlgebra R n) (Pi.basisFun R (Fin n))).toLinearMap :=
+  Comodule.polynomial_coact _
+
+section Column
+
+/-- **Evaluation at a column is equivariant.** Evaluating a polynomial function on the standard
+representation at the `j`-th column, `f ↦ f(x₀ⱼ, …, xₙ₋₁ⱼ)`, is a comodule morphism from the
+polynomial functions to the left regular comodule of `O(SLₙ)`. It is the pullback along the orbit
+map `g ↦ g eⱼ`, given by the orbit coordinates `Comodule.polynomialOrbitCoordinates`. -/
+noncomputable def columnOrbitHom (j : Fin n) :
+    letI := polynomialComodule R n
+    letI := Comodule.leftRegular R (coordinateHopfAlgebra R n)
+    Comodule.Hom R (coordinateHopfAlgebra R n) (MvPolynomial (Fin n) R)
+      (coordinateHopfAlgebra R n) :=
+  letI := polynomialComodule R n
+  letI := Comodule.leftRegular R (coordinateHopfAlgebra R n)
+  { toLinearMap := (Comodule.polynomialOrbitCoordinates (coordinateHopfAlgebra R n)
+      (Pi.basisFun R (Fin n)) (Pi.single j 1)).toLinearMap
+    map_coact := by
+      rw [polynomialComodule_coact, Comodule.leftRegular_coact]
+      exact Comodule.map_polynomialOrbitCoordinates_comp_polynomialCoact _ _ }
+
+variable {R n}
+
+/-- Evaluation at the `j`-th column substitutes the generic entry `xᵢⱼ` for `X i`. -/
+@[simp]
+theorem columnOrbitHom_apply (j : Fin n) (f : MvPolynomial (Fin n) R) :
+    letI := polynomialComodule R n
+    letI := Comodule.leftRegular R (coordinateHopfAlgebra R n)
+    columnOrbitHom R n j f =
+      MvPolynomial.aeval (fun i ↦ (GeneralLinear.genericMatrix R n).map (coordinateMap R n).hom i j)
+        f := by
+  let _ := polynomialComodule R n
+  let _ := Comodule.leftRegular R (coordinateHopfAlgebra R n)
+  rw [columnOrbitHom, Comodule.Hom.coe_mk, AlgHom.coe_toLinearMap]
+  refine DFunLike.congr_fun (MvPolynomial.algHom_ext fun i ↦ ?_) f
+  rw [Comodule.polynomialOrbitCoordinates_X, MvPolynomial.aeval_X, ← Pi.basisFun_apply R (Fin n) j,
+    ← Comodule.coefficientMatrix_apply, coefficientMatrix_basisFun]
+
+end Column
 
 variable {R n} {A : Type v} [CommRing A] [Algebra R A]
 
@@ -221,5 +297,240 @@ theorem exists_lTensor_coact_eq_tmul_iff_mem_span [IsDomain R] {d : ℕ} {f : Mv
     exact ⟨_, by rw [map_smul, map_smul, lTensor_coact_X_one_pow, TensorProduct.smul_tmul']⟩
 
 end Uniqueness
+
+/-! ### Subrepresentations -/
+
+section Subrepresentations
+
+open Polynomial
+
+attribute [local instance] polynomialComodule
+
+/-- The universal upper unitriangular point `[[1, t], [0, 1]]` over `R[t]`. -/
+private noncomputable def upperPoint : WithConv (coordinateHopfAlgebra R 2 →ₐ[R] R[X]) :=
+  (pointsMulEquiv (R := R) (A := R[X]) 2).symm (Matrix.SpecialLinearGroup.transvection
+    (zero_ne_one : (0 : Fin 2) ≠ 1) X)
+
+/-- The universal lower unitriangular point `[[1, 0], [t, 1]]` over `R[t]`. -/
+private noncomputable def lowerPoint : WithConv (coordinateHopfAlgebra R 2 →ₐ[R] R[X]) :=
+  (pointsMulEquiv (R := R) (A := R[X]) 2).symm (Matrix.SpecialLinearGroup.transvection
+    (one_ne_zero : (1 : Fin 2) ≠ 0) X)
+
+private theorem algebraTensorAlgEquiv_endOfPoint_upperPoint (f : MvPolynomial (Fin 2) R) :
+    MvPolynomial.algebraTensorAlgEquiv R R[X]
+        (Comodule.endOfPoint (MvPolynomial (Fin 2) R) (upperPoint (R := R)).ofConv (1 ⊗ₜ f)) =
+      MvPolynomial.aeval
+        ![MvPolynomial.X 0 - MvPolynomial.C X * MvPolynomial.X 1, MvPolynomial.X 1] f := by
+  rw [algebraTensorAlgEquiv_endOfPoint_binaryForm _ (a := 1) (b := X) (c := 0) (d := 1)
+    (by
+      rw [upperPoint, MulEquiv.apply_symm_apply, Matrix.SpecialLinearGroup.transvection_coe]
+      ext i j; fin_cases i <;> fin_cases j <;> simp)]
+  simp
+
+private theorem algebraTensorAlgEquiv_endOfPoint_lowerPoint (f : MvPolynomial (Fin 2) R) :
+    MvPolynomial.algebraTensorAlgEquiv R R[X]
+        (Comodule.endOfPoint (MvPolynomial (Fin 2) R) (lowerPoint (R := R)).ofConv (1 ⊗ₜ f)) =
+      MvPolynomial.aeval
+        ![MvPolynomial.X 0, MvPolynomial.X 1 - MvPolynomial.C X * MvPolynomial.X 0] f := by
+  rw [algebraTensorAlgEquiv_endOfPoint_binaryForm _ (a := 1) (b := 0) (c := X) (d := 1)
+    (by
+      rw [lowerPoint, MulEquiv.apply_symm_apply, Matrix.SpecialLinearGroup.transvection_coe]
+      ext i j; fin_cases i <;> fin_cases j <;> simp)]
+  simp
+
+/-- Contracting the action of a point over `R[t]` against the coefficient of `tⁿ`, as a linear
+map on polynomial functions. -/
+private noncomputable def coeffAction (g : WithConv (coordinateHopfAlgebra R 2 →ₐ[R] R[X]))
+    (n : ℕ) : MvPolynomial (Fin 2) R →ₗ[R] MvPolynomial (Fin 2) R :=
+  (TensorProduct.lid R _).toLinearMap ∘ₗ LinearMap.rTensor _ (lcoeff R n) ∘ₗ
+    (Comodule.endOfPoint (MvPolynomial (Fin 2) R) g.ofConv).restrictScalars R ∘ₗ
+      TensorProduct.mk R R[X] _ 1
+
+private theorem coeffAction_mem (W : Subcomodule R (coordinateHopfAlgebra R 2)
+    (MvPolynomial (Fin 2) R)) (g : WithConv (coordinateHopfAlgebra R 2 →ₐ[R] R[X])) (n : ℕ)
+    {f : MvPolynomial (Fin 2) R} (hf : f ∈ W) : coeffAction g n f ∈ W :=
+  W.lid_rTensor_endOfPoint_mem g.ofConv (lcoeff R n) hf
+
+/-- If a point over `R[t]` acts on `f` by `(u - t v) ^ i * w`, then the coefficient of `tⁿ` is
+`(-1)ⁿ (i choose n) uⁱ⁻ⁿ vⁿ w`. -/
+private theorem coeffAction_eq (g : WithConv (coordinateHopfAlgebra R 2 →ₐ[R] R[X]))
+    {f u v w : MvPolynomial (Fin 2) R} {i : ℕ}
+    (hf : MvPolynomial.algebraTensorAlgEquiv R R[X]
+        (Comodule.endOfPoint (MvPolynomial (Fin 2) R) g.ofConv (1 ⊗ₜ f)) =
+      (MvPolynomial.map (algebraMap R R[X]) u -
+          MvPolynomial.C X * MvPolynomial.map (algebraMap R R[X]) v) ^ i *
+        MvPolynomial.map (algebraMap R R[X]) w) (n : ℕ) :
+    coeffAction g n f = ((-1) ^ n * (i.choose n : R)) • (u ^ (i - n) * v ^ n * w) := by
+  have h : Comodule.endOfPoint (MvPolynomial (Fin 2) R) g.ofConv (1 ⊗ₜ f) =
+      ∑ l ∈ Finset.range (i + 1),
+        (((-1) ^ l * (i.choose l : R)) • X ^ l) ⊗ₜ[R] (u ^ (i - l) * v ^ l * w) := by
+    apply (MvPolynomial.algebraTensorAlgEquiv R R[X]).injective
+    rw [hf, ← MvPolynomial.algebraTensorAlgEquiv_sum_tmul_pow_mul_pow, map_sum, map_sum,
+      Finset.sum_mul]
+    simp only [MvPolynomial.algebraTensorAlgEquiv_tmul, map_mul, smul_mul_assoc]
+  simp only [coeffAction, LinearMap.coe_comp, Function.comp_apply, TensorProduct.mk_apply,
+    LinearMap.restrictScalars_apply, h, map_sum, LinearMap.rTensor_tmul, lcoeff_apply,
+    coeff_smul, coeff_X_pow, smul_eq_mul, mul_ite, mul_one, mul_zero, LinearEquiv.coe_coe,
+    TensorProduct.lid_tmul, ite_smul, zero_smul, Finset.sum_ite_eq, Finset.mem_range]
+  split_ifs with hn
+  · rfl
+  · rw [Nat.choose_eq_zero_of_lt (by omega), Nat.cast_zero, mul_zero, zero_smul]
+
+/-- The coefficient of `tⁿ` in `f(x - t y, y)` for a monomial `f = xⁱ yʲ`. -/
+private theorem coeffAction_upperPoint_X_pow_mul_X_pow (i j n : ℕ) :
+    coeffAction upperPoint n (MvPolynomial.X 0 ^ i * MvPolynomial.X 1 ^ j :
+        MvPolynomial (Fin 2) R) =
+      ((-1) ^ n * (i.choose n : R)) •
+        (MvPolynomial.X 0 ^ (i - n) * MvPolynomial.X 1 ^ n * MvPolynomial.X 1 ^ j) :=
+  coeffAction_eq upperPoint (w := MvPolynomial.X 1 ^ j)
+    (by rw [algebraTensorAlgEquiv_endOfPoint_upperPoint]; simp) n
+
+/-- The upper-point coefficient action on a coefficient-weighted monomial, using Mathlib's
+standard two-variable monomial formula. -/
+private theorem coeffAction_upperPoint_monomial (m : Fin 2 →₀ ℕ) (c : R) (n : ℕ) :
+    coeffAction upperPoint n (MvPolynomial.monomial m c) =
+      (c * ((-1) ^ n * ((m 0).choose n : R))) •
+        (MvPolynomial.X 0 ^ (m 0 - n) * MvPolynomial.X 1 ^ n * MvPolynomial.X 1 ^ m 1) := by
+  rw [MvPolynomial.monomial_fin_two, mul_assoc, ← MvPolynomial.smul_eq_C_mul, map_smul,
+    coeffAction_upperPoint_X_pow_mul_X_pow, smul_smul]
+
+/-- The coefficient at the top `x`-degree of a monomial is a signed multiple of `yᵈ`. -/
+private theorem coeffAction_upperPoint_monomial_top (m : Fin 2 →₀ ℕ) (c : R) {d : ℕ}
+    (hd : m 0 + m 1 = d) :
+    coeffAction upperPoint (m 0) (MvPolynomial.monomial m c) =
+      (c * (-1) ^ m 0) • MvPolynomial.X 1 ^ d := by
+  rw [coeffAction_upperPoint_monomial, Nat.choose_self, Nat.sub_self]
+  simp [← hd, pow_add]
+
+/-- The coefficient of `tⁿ` in `f(x, y - t x)` for a monomial `f = xⁱ yʲ`. -/
+private theorem coeffAction_lowerPoint_X_pow_mul_X_pow (i j n : ℕ) :
+    coeffAction lowerPoint n (MvPolynomial.X 0 ^ i * MvPolynomial.X 1 ^ j :
+        MvPolynomial (Fin 2) R) =
+      ((-1) ^ n * (j.choose n : R)) •
+        (MvPolynomial.X 1 ^ (j - n) * MvPolynomial.X 0 ^ n * MvPolynomial.X 0 ^ i) :=
+  coeffAction_eq lowerPoint (w := MvPolynomial.X 0 ^ i)
+    (by rw [algebraTensorAlgEquiv_endOfPoint_lowerPoint]; simp [mul_comm]) n
+
+/-- **Lowering the `x`-degree.** A subrepresentation of the polynomial functions containing
+`xⁱ yʲ` contains `(i choose n) xⁱ⁻ⁿ yʲ⁺ⁿ`, over every commutative ring. Up to sign this is the
+coefficient of `tⁿ` in the action `xⁱ yʲ ↦ (x - t y)ⁱ yʲ` of the upper unitriangular point
+`[[1, t], [0, 1]]`. -/
+theorem choose_smul_X_pow_sub_mul_X_pow_add_mem
+    (W : Subcomodule R (coordinateHopfAlgebra R 2) (MvPolynomial (Fin 2) R)) {i j : ℕ}
+    (h : (MvPolynomial.X 0 ^ i * MvPolynomial.X 1 ^ j : MvPolynomial (Fin 2) R) ∈ W) (n : ℕ) :
+    (i.choose n : R) • (MvPolynomial.X 0 ^ (i - n) * MvPolynomial.X 1 ^ (j + n) :
+      MvPolynomial (Fin 2) R) ∈ W := by
+  have hmem := SMulMemClass.smul_mem ((-1) ^ n : R) (coeffAction_mem W upperPoint n h)
+  rw [coeffAction_upperPoint_X_pow_mul_X_pow, smul_smul] at hmem
+  convert hmem using 2
+  · simp [← mul_assoc, ← mul_pow]
+  · ring
+
+/-- **Raising the `x`-degree.** A subrepresentation of the polynomial functions containing
+`xⁱ yʲ` contains `(j choose n) xⁱ⁺ⁿ yʲ⁻ⁿ`, over every commutative ring. Up to sign this is the
+coefficient of `tⁿ` in the action `xⁱ yʲ ↦ xⁱ (y - t x)ʲ` of the lower unitriangular point
+`[[1, 0], [t, 1]]`. -/
+theorem choose_smul_X_pow_add_mul_X_pow_sub_mem
+    (W : Subcomodule R (coordinateHopfAlgebra R 2) (MvPolynomial (Fin 2) R)) {i j : ℕ}
+    (h : (MvPolynomial.X 0 ^ i * MvPolynomial.X 1 ^ j : MvPolynomial (Fin 2) R) ∈ W) (n : ℕ) :
+    (j.choose n : R) • (MvPolynomial.X 0 ^ (i + n) * MvPolynomial.X 1 ^ (j - n) :
+      MvPolynomial (Fin 2) R) ∈ W := by
+  have hmem := SMulMemClass.smul_mem ((-1) ^ n : R) (coeffAction_mem W lowerPoint n h)
+  rw [coeffAction_lowerPoint_X_pow_mul_X_pow, smul_smul] at hmem
+  convert hmem using 2
+  · simp [← mul_assoc, ← mul_pow]
+  · ring
+
+section Field
+
+variable {k : Type u} [Field k] {d : ℕ}
+
+/-- **Every nonzero subrepresentation of the binary forms of degree `d` contains `yᵈ`**, over every
+field and in every characteristic. Hence every nonzero subrepresentation contains the
+subrepresentation generated by the highest line `k yᵈ`, which is therefore the simple socle. -/
+theorem X_one_pow_mem_of_ne_bot {W : Subcomodule k (coordinateHopfAlgebra k 2)
+      (MvPolynomial (Fin 2) k)} (hW : W ≤ binaryForms k d) (hW₀ : W ≠ ⊥) :
+    MvPolynomial.X 1 ^ d ∈ W := by
+  classical
+  obtain ⟨f, hfW, hf₀⟩ := Subcomodule.ne_bot_iff.mp hW₀
+  have hf := mem_binaryForms.mp (hW hfW)
+  -- The largest power of `x` occurring in `f`, and a monomial `m₀` of `f` realizing it.
+  have hne : (f.support.image (· 0)).Nonempty :=
+    (Finset.nonempty_iff_ne_empty.mpr (by simpa using hf₀)).image _
+  obtain ⟨m₀, hm₀, hm₀i⟩ := Finset.mem_image.mp ((f.support.image (· 0)).max'_mem hne)
+  set i₀ := (f.support.image (· 0)).max' hne
+  -- The coefficient of `t ^ i₀` in `f(x - t y, y)` only sees the monomial `m₀`.
+  have key : coeffAction upperPoint i₀ f = (f.coeff m₀ * (-1) ^ i₀) • MvPolynomial.X 1 ^ d := by
+    conv_lhs => rw [f.as_sum]
+    rw [map_sum, Finset.sum_eq_single m₀]
+    · simpa only [hm₀i] using
+        coeffAction_upperPoint_monomial_top m₀ (f.coeff m₀) (hf.add_eq_of_mem_support hm₀)
+    · -- Every other monomial has a smaller power of `x`, so its binomial coefficient vanishes.
+      intro m hm hne₀
+      have hle : m 0 ≤ i₀ := (f.support.image (· 0)).le_max' _ (Finset.mem_image_of_mem _ hm)
+      have hlt : m 0 < i₀ := by
+        refine hle.lt_of_ne fun heq ↦ hne₀ ?_
+        have h₁ := hf.add_eq_of_mem_support hm
+        have h₂ := hf.add_eq_of_mem_support hm₀
+        exact Finsupp.ext (Fin.forall_fin_two.mpr ⟨heq.trans hm₀i.symm, by omega⟩)
+      rw [coeffAction_upperPoint_monomial, Nat.choose_eq_zero_of_lt hlt]
+      simp
+    · intro h
+      exact absurd hm₀ h
+  have hmem := SMulMemClass.smul_mem (f.coeff m₀ * (-1) ^ i₀)⁻¹
+    (coeffAction_mem W upperPoint i₀ hfW)
+  rwa [key, smul_smul, inv_mul_cancel₀ (mul_ne_zero (MvPolynomial.mem_support_iff.mp hm₀)
+    (pow_ne_zero _ (neg_ne_zero.mpr one_ne_zero))), one_smul] at hmem
+
+/-- **The binary forms of degree `d` are indecomposable**, over every field and in every
+characteristic: two subrepresentations meeting trivially cannot both be nonzero. -/
+theorem eq_bot_or_eq_bot_of_le_binaryForms_of_disjoint
+    {W₁ W₂ : Subcomodule k (coordinateHopfAlgebra k 2) (MvPolynomial (Fin 2) k)}
+    (hW₁ : W₁ ≤ binaryForms k d) (hW₂ : W₂ ≤ binaryForms k d)
+    (h : Disjoint W₁.toSubmodule W₂.toSubmodule) : W₁ = ⊥ ∨ W₂ = ⊥ := by
+  by_contra! hne
+  exact pow_ne_zero d (MvPolynomial.X_ne_zero 1) <| (Submodule.disjoint_def.mp h) _
+    (X_one_pow_mem_of_ne_bot hW₁ hne.1) (X_one_pow_mem_of_ne_bot hW₂ hne.2)
+
+/-- If the binomial coefficients `d choose n` are nonzero in `k`, every nonzero subrepresentation
+of the binary forms of degree `d` is everything: starting from `yᵈ`, the lower unitriangular
+points produce every monomial of degree `d`. -/
+private theorem binaryForms_le_of_ne_bot (hd : ∀ n ≤ d, (d.choose n : k) ≠ 0)
+    {W : Subcomodule k (coordinateHopfAlgebra k 2) (MvPolynomial (Fin 2) k)}
+    (hW : W ≤ binaryForms k d) (hW₀ : W ≠ ⊥) : binaryForms k d ≤ W := by
+  intro f hf
+  have hy : (MvPolynomial.X 0 ^ 0 * MvPolynomial.X 1 ^ d : MvPolynomial (Fin 2) k) ∈ W := by
+    simpa using X_one_pow_mem_of_ne_bot hW hW₀
+  have hmon (n : ℕ) (hn : n ≤ d) :
+      (MvPolynomial.X 0 ^ n * MvPolynomial.X 1 ^ (d - n) : MvPolynomial (Fin 2) k) ∈ W := by
+    have hmem := SMulMemClass.smul_mem (d.choose n : k)⁻¹
+      (choose_smul_X_pow_add_mul_X_pow_sub_mem W hy n)
+    rwa [smul_smul, inv_mul_cancel₀ (hd n hn), one_smul, zero_add] at hmem
+  have hf' := mem_binaryForms.mp hf
+  rw [f.as_sum]
+  refine sum_mem fun m hm ↦ ?_
+  rw [MvPolynomial.monomial_fin_two, mul_assoc, ← MvPolynomial.smul_eq_C_mul]
+  refine SMulMemClass.smul_mem _ ?_
+  have hmd := hf'.add_eq_of_mem_support hm
+  simpa [← hmd] using hmon (m 0) (hmd ▸ Nat.le_add_right _ _)
+
+/-- **The binary forms of degree `d` are simple when the binomial coefficients `d choose n` are
+nonzero in `k`**: they form an atom of the lattice of subrepresentations of the polynomial
+functions, so each of their subrepresentations is zero or everything. -/
+theorem isAtom_binaryForms (hd : ∀ n ≤ d, (d.choose n : k) ≠ 0) : IsAtom (binaryForms k d) := by
+  refine ⟨fun h ↦ pow_ne_zero d (MvPolynomial.X_ne_zero (R := k) (1 : Fin 2)) ?_, fun W hW ↦ ?_⟩
+  · have hmem : (MvPolynomial.X 1 ^ d : MvPolynomial (Fin 2) k) ∈ binaryForms k d :=
+      mem_binaryForms.mpr (MvPolynomial.isHomogeneous_X_pow _ _)
+    rwa [h, Subcomodule.mem_bot] at hmem
+  · by_contra hW₀
+    exact hW.not_ge (binaryForms_le_of_ne_bot hd hW.le hW₀)
+
+/-- **In characteristic zero the binary forms of every degree form a simple representation.** -/
+theorem isAtom_binaryForms_of_charZero [CharZero k] : IsAtom (binaryForms k d) :=
+  isAtom_binaryForms fun _ hn ↦ Nat.cast_ne_zero.mpr (Nat.choose_pos hn).ne'
+
+end Field
+
+end Subrepresentations
 
 end TauCeti.SpecialLinear

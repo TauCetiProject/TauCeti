@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Polynomial.CriticalValues
 public import TauCeti.Algebra.Polynomial.Degree.Operations
 public import TauCeti.Algebra.Polynomial.Reverse
 public import TauCeti.Analysis.Complex.RiemannSurface.BranchValues
@@ -192,26 +193,28 @@ theorem coe_spherePolynomial (hp : 0 < p.natDegree) :
 /-- The branch values of the extension of a nonconstant polynomial `p` to the Riemann sphere lie
 in `{∞}` together with the critical values of `p`. -/
 theorem branchValues_spherePolynomial_subset (hp : 0 < p.natDegree) :
-    (spherePolynomial hp).branchValues ⊆
-      insert ∞ ((fun z ↦ ((p.eval z : ℂ) : OnePoint ℂ)) '' {z | p.derivative.IsRoot z}) := by
+    (spherePolynomial hp).branchValues ⊆ insert ∞ ((↑) '' p.criticalValues ℂ) := by
   intro y hy
   obtain ⟨x, rfl, hx⟩ := (mem_branchValues_iff _ _).1 hy
   induction x using OnePoint.rec with
   | infty => simp
   | coe z =>
     rw [coe_spherePolynomial, one_lt_localMultiplicity_onePointMap_eval_coe_iff hp] at hx
-    exact mem_insert_of_mem _ ⟨z, hx, by simp⟩
+    exact mem_insert_of_mem _
+      ⟨_, (mem_criticalValues_self_iff (derivative_ne_zero.mpr hp.ne')).2 ⟨z, hx, rfl⟩, by simp⟩
 
 /-- **The branch values of a polynomial map of the Riemann sphere.** For a polynomial `p` of
 degree at least `2`, the branch values of its extension to the Riemann sphere are exactly `∞`,
 where the local multiplicity is the degree, together with the critical values of `p`. -/
 theorem branchValues_spherePolynomial (hp : 1 < p.natDegree) :
     (spherePolynomial (zero_lt_one.trans hp)).branchValues =
-      insert ∞ ((fun z ↦ ((p.eval z : ℂ) : OnePoint ℂ)) '' {z | p.derivative.IsRoot z}) := by
+      insert ∞ ((↑) '' p.criticalValues ℂ) := by
   refine (branchValues_spherePolynomial_subset _).antisymm (insert_subset_iff.2 ⟨?_, ?_⟩)
   · refine (mem_branchValues_iff _ _).2 ⟨∞, by simp, ?_⟩
     rwa [coe_spherePolynomial, localMultiplicity_onePointMap_eval_infty (zero_lt_one.trans hp)]
-  · rintro _ ⟨z, hz, rfl⟩
+  · rintro _ ⟨_, hy, rfl⟩
+    obtain ⟨z, hz, rfl⟩ :=
+      (mem_criticalValues_self_iff (derivative_ne_zero.mpr (zero_lt_one.trans hp).ne')).1 hy
     refine (mem_branchValues_iff _ _).2 ⟨z, by simp, ?_⟩
     rwa [coe_spherePolynomial,
       one_lt_localMultiplicity_onePointMap_eval_coe_iff (zero_lt_one.trans hp)]

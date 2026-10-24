@@ -60,6 +60,10 @@ uniformities are shadowed, so the evaluation the statement is about is never re-
   without constant term preserves the constant coefficient.
 * `MvPowerSeries.hasSubst_finTwo` : two substitutable series form a substitution family `![x, y]`
   for the two variables indexed by `Fin 2`.
+* `MvPowerSeries.eval₂_subst_finTwo` : evaluating `G(x, y)` is evaluating `G` at the values of
+  `x` and `y`.
+* `MvPowerSeries.powerSeriesSubst_subst_finTwo_eq_add` : a series `g` with
+  `g(G(X, Y)) = g(X) + g(Y)` satisfies `g(G(x, y)) = g(x) + g(y)` for substitutable `x, y`.
 * `MvPowerSeries.finTwo_X_eq_X` : the pair `![X 0, X 1]` is the family of variables `X`.
 * `MvPowerSeries.coeff_subst_X_zero`, `MvPowerSeries.coeff_subst_zero_X` : the coefficients of
   `f(X, 0)` and `f(0, Y)` are the coefficients of the pure powers of `X` and of `Y` in `f(X, Y)`.
@@ -306,6 +310,20 @@ theorem hasSubst_finTwo {x y : MvPowerSeries σ O} (hx : PowerSeries.HasSubst x)
     (hy : PowerSeries.HasSubst y) : HasSubst ![x, y] :=
   hasSubst_of_constantCoeff_nilpotent fun s ↦ by fin_cases s <;> simpa
 
+/-- If a one-variable series `g` is additive along a two-variable series `G`, that is
+`g(G(X, Y)) = g(X) + g(Y)`, then `g(G(x, y)) = g(x) + g(y)` for any series `x, y` that can be
+substituted. -/
+theorem powerSeriesSubst_subst_finTwo_eq_add {G : MvPowerSeries (Fin 2) O}
+    (hG : PowerSeries.HasSubst G) {g : PowerSeries O}
+    (hg : PowerSeries.subst G g = PowerSeries.subst (X 0) g + PowerSeries.subst (X 1) g)
+    {x y : MvPowerSeries σ O} (hx : PowerSeries.HasSubst x) (hy : PowerSeries.HasSubst y) :
+    PowerSeries.subst (subst ![x, y] G) g = PowerSeries.subst x g + PowerSeries.subst y g := by
+  have hxy : HasSubst ![x, y] := hasSubst_finTwo hx hy
+  have := congrArg (subst ![x, y]) hg
+  rwa [subst_add hxy, subst_powerSeriesSubst hxy hG,
+    subst_powerSeriesSubst hxy (PowerSeries.HasSubst.X _),
+    subst_powerSeriesSubst hxy (PowerSeries.HasSubst.X _), subst_X hxy, subst_X hxy] at this
+
 /-- The pair of variables `![X 0, X 1]` is the family of variables `X` indexed by `Fin 2`, so
 substituting it is the identity (`subst_self`). -/
 theorem finTwo_X_eq_X {A : Type*} [Semiring A] : ![(X 0 : MvPowerSeries (Fin 2) A), X 1] = X := by
@@ -537,6 +555,26 @@ theorem subst_X_add_X_add_eq {G : MvPowerSeries (Fin 2) O}
     · simpa using hv e
 
 end CoeffMem
+
+section EvalFinTwo
+
+variable {O : Type*} [CommRing O] [UniformSpace O] [DiscreteUniformity O]
+variable {T : Type*} [CommRing T] [Algebra O T] [UniformSpace T] [IsUniformAddGroup T]
+    [IsTopologicalRing T] [IsLinearTopology T T] [T2Space T] [CompleteSpace T]
+
+/-- Evaluating a substitution `G(x, y)` at `b` is evaluating `G` at the values of `x` and `y` at
+`b`. This is `MvPowerSeries.eval₂_subst` for a substitution family `![x, y]`, as for evaluating a
+formal group law at a pair of points. -/
+theorem eval₂_subst_finTwo {x y : MvPowerSeries σ O} (hx : PowerSeries.HasSubst x)
+    (hy : PowerSeries.HasSubst y) {b : σ → T} (hb : HasEval b) (G : MvPowerSeries (Fin 2) O) :
+    eval₂ (algebraMap O T) b (subst ![x, y] G) =
+      eval₂ (algebraMap O T) ![eval₂ (algebraMap O T) b x, eval₂ (algebraMap O T) b y] G := by
+  rw [eval₂_subst (hasSubst_finTwo hx hy) hb]
+  congr 1
+  funext s
+  fin_cases s <;> rfl
+
+end EvalFinTwo
 
 end MvPowerSeries
 

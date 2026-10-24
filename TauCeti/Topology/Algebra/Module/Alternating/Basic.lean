@@ -8,11 +8,14 @@ module
 public import Mathlib.Topology.Algebra.Module.Alternating.Basic
 
 /-!
-# Underlying multilinear maps of alternating pullbacks
+# Alternating pullbacks and postcompositions
 
 The underlying continuous multilinear map of an alternating pullback is the
 multilinear pullback. This identity allows consumers to move between the two APIs
 without unfolding their implementations.
+
+Postcomposing a continuous alternating map with the identity continuous linear map
+leaves it unchanged.
 -/
 
 public section
@@ -30,3 +33,16 @@ namespace ContinuousAlternatingMap
       φ.toContinuousMultilinearMap.compContinuousLinearMap (fun _ ↦ f) := (rfl)
 
 end ContinuousAlternatingMap
+
+namespace ContinuousLinearMap
+
+/-- Postcomposing a continuous alternating map with the identity leaves it unchanged. -/
+@[simp] theorem id_compContinuousAlternatingMap
+    {R E F ι : Type*} [Semiring R]
+    [AddCommMonoid E] [Module R E] [TopologicalSpace E]
+    [AddCommMonoid F] [Module R F] [TopologicalSpace F]
+    (f : E [⋀^ι]→L[R] F) :
+    (ContinuousLinearMap.id R F).compContinuousAlternatingMap f = f := by
+  ext; simp
+
+end ContinuousLinearMap

@@ -166,7 +166,10 @@ theorem spinSixTransvectionSecondVector_apply (i j : Fin 4) (c : R) :
 @[simp]
 theorem spinSixTransvectionSecondVector_zero (i j : Fin 4) :
     spinSixTransvectionSecondVector P b i j 0 = 0 := by
-  fin_cases i <;> fin_cases j <;> simp [spinSixTransvectionSecondVector_apply]
+  -- Squeezed: a bare `simp` also tries `map_zero` and `map_one` on `b 0` and `b 1`, and those
+  -- failing instance searches make it several times slower.
+  simp only [spinSixTransvectionSecondVector, zero_smul, neg_zero, ZeroMemClass.coe_zero,
+    Matrix.vec_single_eq_const, Matrix.vecCons_const, Matrix.of_apply]
 
 end TransvectionVectors
 
@@ -736,90 +739,88 @@ private abbrev SpinSixLiftHasMatrix (i j : Fin 4) (hij : i ≠ j) (c : K) : Prop
         (spinPlusAction Q P hline (spinGroupToEven Q
           (spinSixTransvectionLift P hline b hij c))) = Matrix.transvection i j c
 
-local macro "prove_spinSixLiftHasMatrixW" : tactic => `(tactic|
-  (unfold SpinSixLiftHasMatrix
-   rw [spinSixTransvectionLift, toMatrix_spinTransvection]
-   ext k l
-   fin_cases k <;> fin_cases l <;>
-     simp [spinSixTransvectionFirstVector, spinSixTransvectionSecondVector,
-       creationPart_coe_W, annihilationPart_coe_W]))
-
-local macro "prove_spinSixLiftHasMatrixW'" : tactic => `(tactic|
-  (unfold SpinSixLiftHasMatrix
-   rw [spinSixTransvectionLift, toMatrix_spinTransvection]
-   ext k l
-   fin_cases k <;> fin_cases l <;>
-     simp [spinSixTransvectionFirstVector, spinSixTransvectionSecondVector,
-       creationPart_coe_W', annihilationPart_coe_W']))
-
-local macro "prove_spinSixLiftHasMatrixMixed" : tactic => `(tactic|
-  (unfold SpinSixLiftHasMatrix
-   rw [spinSixTransvectionLift, toMatrix_spinTransvection]
-   ext k l
-   fin_cases k <;> fin_cases l <;>
-     simp [spinSixTransvectionFirstVector, spinSixTransvectionSecondVector,
-       creationPart_coe_W, annihilationPart_coe_W, creationPart_coe_W',
-       annihilationPart_coe_W']))
+/- Proves `SpinSixLiftHasMatrix P hline b i j _ c` for explicit indices `i ≠ j`. The two `simp only`
+calls are for speed: `rw` would visit the large instance arguments of `LinearMap.toMatrix`, and the
+generic `map_zero` and `map_smul` need slow instance searches, hence their `LinearEquiv` versions.
+The second list serves all twelve index pairs, each of which uses only part of it. -/
+local macro "prove_spinSixLiftHasMatrix" : tactic => `(tactic|
+  (simp only [SpinSixLiftHasMatrix, spinSixTransvectionLift, toMatrix_spinTransvection]
+   -- compute the coordinates of the two vectors and the matrix product once, then compare entries
+   simp only [spinSixTransvectionFirstVector, spinSixTransvectionSecondVector, baseAfterMatrix,
+     baseBeforeMatrix, creationPart_coe_W, annihilationPart_coe_W, creationPart_coe_W',
+     annihilationPart_coe_W', creationPart_smul, annihilationPart_smul, creationPart_neg,
+     annihilationPart_neg, SpinPolarizationData.pairingEquiv_dualVector, Basis.coord_apply,
+     Basis.repr_self, LinearEquiv.map_zero, LinearEquiv.map_smul, Finsupp.single_eq_same,
+     Finsupp.single_eq_of_ne, Finsupp.smul_single, Finsupp.coe_zero, Pi.zero_apply,
+     LinearMap.zero_apply, LinearMap.smul_apply, LinearMap.neg_apply, SetLike.val_smul,
+     NegMemClass.coe_neg, Matrix.of_apply, Matrix.cons_val', Matrix.cons_val, Matrix.cons_val_zero,
+     Matrix.cons_val_one, Matrix.cons_val_fin_one, Matrix.head_cons, Matrix.tail_cons,
+     Matrix.cons_mul, Matrix.vecMul_cons, Matrix.empty_vecMul, Matrix.empty_mul, Matrix.smul_cons,
+     Matrix.smul_empty, Matrix.neg_cons, Matrix.neg_empty, Equiv.symm_apply_apply,
+     Matrix.transvection, add_right_inj, smul_eq_mul, mul_zero, mul_one, mul_neg, zero_smul,
+     smul_zero, neg_smul, neg_zero, neg_neg, add_zero, zero_add, ne_eq, one_ne_zero, zero_ne_one,
+     not_false_eq_true, Fin.isValue, Fin.reduceEq, Nat.succ_eq_add_one, Nat.reduceAdd]
+   simp [← Matrix.ext_iff, Fin.forall_fin_succ]))
 
 include hline in
 private theorem spinSixLiftHasMatrix_zero_one (c : K) :
     SpinSixLiftHasMatrix P hline b 0 1 (by decide) c := by
-  prove_spinSixLiftHasMatrixW'
+  prove_spinSixLiftHasMatrix
 
 include hline in
 private theorem spinSixLiftHasMatrix_zero_two (c : K) :
     SpinSixLiftHasMatrix P hline b 0 2 (by decide) c := by
-  prove_spinSixLiftHasMatrixW'
+  prove_spinSixLiftHasMatrix
 
 include hline in
 private theorem spinSixLiftHasMatrix_zero_three (c : K) :
     SpinSixLiftHasMatrix P hline b 0 3 (by decide) c := by
-  prove_spinSixLiftHasMatrixW'
+  prove_spinSixLiftHasMatrix
 
 include hline in
 private theorem spinSixLiftHasMatrix_one_zero (c : K) :
     SpinSixLiftHasMatrix P hline b 1 0 (by decide) c := by
-  prove_spinSixLiftHasMatrixW
+  prove_spinSixLiftHasMatrix
 
 include hline in
 private theorem spinSixLiftHasMatrix_one_two (c : K) :
     SpinSixLiftHasMatrix P hline b 1 2 (by decide) c := by
-  prove_spinSixLiftHasMatrixMixed
+  prove_spinSixLiftHasMatrix
 
 include hline in
 private theorem spinSixLiftHasMatrix_one_three (c : K) :
     SpinSixLiftHasMatrix P hline b 1 3 (by decide) c := by
-  prove_spinSixLiftHasMatrixMixed
+  prove_spinSixLiftHasMatrix
 
 include hline in
 private theorem spinSixLiftHasMatrix_two_zero (c : K) :
     SpinSixLiftHasMatrix P hline b 2 0 (by decide) c := by
-  prove_spinSixLiftHasMatrixW
+  prove_spinSixLiftHasMatrix
 
 include hline in
 private theorem spinSixLiftHasMatrix_two_one (c : K) :
     SpinSixLiftHasMatrix P hline b 2 1 (by decide) c := by
-  prove_spinSixLiftHasMatrixMixed
+  prove_spinSixLiftHasMatrix
 
 include hline in
 private theorem spinSixLiftHasMatrix_two_three (c : K) :
     SpinSixLiftHasMatrix P hline b 2 3 (by decide) c := by
-  prove_spinSixLiftHasMatrixMixed
+  prove_spinSixLiftHasMatrix
 
 include hline in
 private theorem spinSixLiftHasMatrix_three_zero (c : K) :
     SpinSixLiftHasMatrix P hline b 3 0 (by decide) c := by
-  prove_spinSixLiftHasMatrixW
+  prove_spinSixLiftHasMatrix
 
 include hline in
 private theorem spinSixLiftHasMatrix_three_one (c : K) :
     SpinSixLiftHasMatrix P hline b 3 1 (by decide) c := by
-  prove_spinSixLiftHasMatrixMixed
+  prove_spinSixLiftHasMatrix
 
 include hline in
 private theorem spinSixLiftHasMatrix_three_two (c : K) :
     SpinSixLiftHasMatrix P hline b 3 2 (by decide) c := by
-  prove_spinSixLiftHasMatrixMixed
+  prove_spinSixLiftHasMatrix
 
 include hline in
 /-- The half-spin matrix of the canonical lift is the elementary transvection it lifts. -/
@@ -990,15 +991,13 @@ attribute [local instance] hyperbolicSixInvertibleTwo
 
 private theorem det_hyperbolicSixEvenUnitaryEquivGeneralLinear
     (x : evenUnitaryGroup (splitEvenForm K 3)) :
-    (hyperbolicSixEvenUnitaryEquivGeneralLinear K x : Matrix (Fin 4) (Fin 4) K).det =
-      LinearMap.det (spinPlusAction _ _ (splitEvenPolarization_line K 3)
-        (evenUnitaryGroupEvenPart _ x)) := by
-  have : Module.Finite K (spinPlus (splitEvenForm K 3) (splitEvenPolarization K 3)) :=
-    Module.Finite.of_basis ((splitEvenBasis K 3).spinSixEvenMonomialBasis (spinPlus_def _))
-  have h := hyperbolicSixEvenEquivMatrixProd_apply K (evenUnitaryGroupEvenPart _ x)
-  rw [SpinPolarizationData.evenCliffordEquivProdMatrix_apply] at h
-  rw [coe_hyperbolicSixEvenUnitaryEquivGeneralLinear_apply]
-  simpa using congrArg (fun p ↦ Matrix.det p.1) h
+    (hyperbolicSixEvenUnitaryEquivGeneralLinear K x : Matrix (Fin 4) (Fin 4) K).det = LinearMap.det
+      (spinPlusAction _ _ (splitEvenPolarization_line K 3) (evenUnitaryGroupEvenPart _ x)) := by
+  -- `simp only`: `rw` is slow on this goal, and plain `simp` first rewrites the matrix size
+  -- `2 ^ (3 - 1)`, after which `evenCliffordEquivProdMatrix_apply` no longer applies.
+  simp only [coe_hyperbolicSixEvenUnitaryEquivGeneralLinear_apply,
+    hyperbolicSixEvenEquivMatrixProd_apply, SpinPolarizationData.evenCliffordEquivProdMatrix_apply,
+    Algebra.endAlgEquivMatrix_apply, LinearMap.det_toMatrix]
 
 private theorem hyperbolicSixEvenUnitaryEquivGeneralLinear_eq_of_spinPlusAction_eq
     {x y : evenUnitaryGroup (splitEvenForm K 3)}
@@ -1016,23 +1015,23 @@ private theorem hyperbolicSixEvenUnitaryEquivGeneralLinear_eq_of_spinPlusAction_
 
 /-- **Spin is the determinant-one part of the even unitary group of three hyperbolic planes.**
 Under the identification `U(C₀, σ) ≅ GL₄(K)` by the first half-spin factor, an even unitary
-element lies in `Spin(Q)` exactly when its matrix has determinant one. -/
+element lies in `Spin(Q)` exactly when its matrix has determinant one. For the isomorphism
+`Spin(Q) ≅ SL₄(K)` itself, see `TauCeti.hyperbolicSixSpinEquivSpecialLinear`. -/
 theorem mem_range_spinGroupToEvenUnitary_iff_det_hyperbolicSixEvenUnitaryEquivGeneralLinear
     (x : evenUnitaryGroup (splitEvenForm K 3)) :
     x ∈ (spinGroupToEvenUnitary (splitEvenForm K 3)).range ↔
       (hyperbolicSixEvenUnitaryEquivGeneralLinear K x : Matrix (Fin 4) (Fin 4) K).det = 1 := by
-  rw [det_hyperbolicSixEvenUnitaryEquivGeneralLinear]
+  simp only [MonoidHom.mem_range, det_hyperbolicSixEvenUnitaryEquivGeneralLinear]
   constructor
   · rintro ⟨s, rfl⟩
-    rw [evenUnitaryGroupEvenPart_spinGroupToEvenUnitary_apply]
-    exact det_spinPlusAction_spinGroupToEven_of_basis _ _ (splitEvenBasis K 3) s
+    simpa only [evenUnitaryGroupEvenPart_spinGroupToEvenUnitary_apply] using
+      det_spinPlusAction_spinGroupToEven_of_basis _ _ (splitEvenBasis K 3) s
   · intro h
     obtain ⟨s, hs⟩ := exists_spinPlusAction_spinGroupToEven_eq_of_basis _
       (splitEvenPolarization_line K 3) (splitEvenBasis K 3) _ h
-    replace hs := (congrArg (spinPlusAction _ _ (splitEvenPolarization_line K 3))
-      (evenUnitaryGroupEvenPart_spinGroupToEvenUnitary_apply _ s)).trans hs
-    exact MonoidHom.mem_range.mpr ⟨s, (hyperbolicSixEvenUnitaryEquivGeneralLinear K).injective
-      (hyperbolicSixEvenUnitaryEquivGeneralLinear_eq_of_spinPlusAction_eq K hs)⟩
+    refine ⟨s, (hyperbolicSixEvenUnitaryEquivGeneralLinear K).injective
+      (hyperbolicSixEvenUnitaryEquivGeneralLinear_eq_of_spinPlusAction_eq K ?_)⟩
+    simpa only [evenUnitaryGroupEvenPart_spinGroupToEvenUnitary_apply] using hs
 
 /-- **The Spin group of three hyperbolic planes is `SL₄(K)`.** This is
 `TauCeti.spinGroupEquivSpecialLinearGroupOfFinrankEqSix` for the canonical split polarization, so a

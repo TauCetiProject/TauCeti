@@ -151,9 +151,7 @@ theorem isNullChain_unitDiscRadialChain (hζ : ‖ζ‖ = 1) :
     have hw' := norm_sub_sq_le hζ hwb (inner_eq_of_mem_unitDiscChord hζ hw).ge
     have hzw : ‖z - w‖ < ε :=
       lt_of_pow_lt_pow_left₀ 2 hε.le (by linarith [norm_sub_sq_le_two_mul z w ζ])
-    refine lt_of_le_of_lt (div_le_self (norm_nonneg _) ?_) hzw
-    rw [Real.one_le_sqrt]
-    nlinarith [sq_nonneg ‖z‖, sq_nonneg ‖w‖]
+    exact (chordal_le_norm_sub z w).trans_lt hzw
 
 /-- The prime end of the unit disc at a point `ζ` of the unit circle, represented by the radial
 chain of chords perpendicular to `ζ`. -/
@@ -215,20 +213,11 @@ closed disc the chordal distance is at least half the Euclidean one. -/
 private lemma IsNullChain.eventually_norm_sub_lt (hC : IsNullChain (ball 0 1) C) {ε : ℝ}
     (hε : 0 < ε) : ∀ᶠ n in atTop, ∀ z ∈ C n, ∀ w ∈ C n, ‖z - w‖ < ε := by
   filter_upwards [hC.eventually_chordal_lt (ε / 2) (by positivity)] with n hn z hz w hw
-  have hsub : C n ⊆ closedBall 0 1 := by
-    obtain ⟨x, y, γ, hγ, hrange⟩ := hC.exists_isCrosscut n
-    rw [← hrange, ← closure_ball (0 : ℂ) one_ne_zero]
-    exact hγ.range_subset_closure
+  have hsub : C n ⊆ closedBall 0 1 := closure_ball (0 : ℂ) one_ne_zero ▸ hC.subset_closure n
   have hz1 : ‖z‖ ≤ 1 := by simpa using hsub hz
   have hw1 : ‖w‖ ≤ 1 := by simpa using hsub hw
-  have hpos : 0 < √((1 + ‖z‖ ^ 2) * (1 + ‖w‖ ^ 2)) := Real.sqrt_pos.mpr (by positivity)
-  have hle : √((1 + ‖z‖ ^ 2) * (1 + ‖w‖ ^ 2)) ≤ 2 := by
-    rw [Real.sqrt_le_left zero_le_two]
-    have hz2 : ‖z‖ ^ 2 ≤ 1 := pow_le_one₀ (norm_nonneg z) hz1
-    have hw2 : ‖w‖ ^ 2 ≤ 1 := pow_le_one₀ (norm_nonneg w) hw1
-    nlinarith [sq_nonneg ‖z‖, sq_nonneg ‖w‖]
-  have h := (div_lt_iff₀ hpos).mp (hn z hz w hw)
-  nlinarith
+  have h := norm_sub_le_mul_chordal hz1 hw1
+  nlinarith [hn z hz w hw]
 
 /-- **The domains of a null chain of the disc shrink to the circle.** Eventually the domain cut
 off by the `n`-th crosscut lies within `√(2δ)` of an endpoint `x` of that crosscut. -/
