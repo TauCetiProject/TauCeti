@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.Morphisms.Immersion
 public import TauCeti.AlgebraicGeometry.GroupAction.Orbit.Basic
 public import TauCeti.AlgebraicGeometry.RationalPoint.Image
 public import TauCeti.AlgebraicGeometry.Scheme.KrullDimension
@@ -126,6 +127,48 @@ theorem orbit_inter_closedPoints (x : 𝟙_ (Over (Spec (.of k))) ⟶ X) :
 
 end RationalPoints
 
+section Transitivity
+
+variable [GrpObj G] [ModObj G X] [LocallyOfFiniteType G.hom]
+  [LocallyOfFiniteType X.hom]
+
+/-- Rational group points relate any two closed points of a geometric orbit by translation. -/
+theorem exists_translation_eq_of_mem_orbit_inter_closedPoints
+    (x : 𝟙_ (Over (Spec (.of k))) ⟶ X) {p q : X.left}
+    (hp : p ∈ orbit G x ∩ closedPoints X.left)
+    (hq : q ∈ orbit G x ∩ closedPoints X.left) :
+    ∃ g : 𝟙_ (Over (Spec (.of k))) ⟶ G, (translation X g).hom.left p = q := by
+  let := translationMulAction G X
+  rw [orbit_inter_closedPoints] at hp hq
+  obtain ⟨g, a, rfl⟩ := Set.mem_iUnion.mp hp
+  obtain ⟨h, b, rfl⟩ := Set.mem_iUnion.mp hq
+  obtain rfl : b = a := Subsingleton.elim (α := Spec (.of k)) _ _
+  refine ⟨h * g⁻¹, ?_⟩
+  rw [← translationMulAction_smul, translationMulAction_smul_apply,
+    mul_smul, inv_smul_smul]
+
+/-- An immersed scheme lying in one orbit inherits transitivity on closed points from
+any family of automorphisms intertwining the ambient translations. -/
+theorem exists_eq_of_equivariant_of_range_subset_orbit
+    (x : 𝟙_ (Over (Spec (.of k))) ⟶ X) {Y : Scheme.{u}} (i : Y ⟶ X.left)
+    [IsImmersion i] (hrange : Set.range i ⊆ orbit G x)
+    (e : (𝟙_ (Over (Spec (.of k))) ⟶ G) → (Y ≅ Y))
+    (he : ∀ g, (e g).hom ≫ i = i ≫ (translation X g).hom.left)
+    {y z : Y} (hy : y ∈ closedPoints Y) (hz : z ∈ closedPoints Y) :
+    ∃ g, (e g).hom y = z := by
+  have : JacobsonSpace X.left := LocallyOfFiniteType.jacobsonSpace X.hom
+  have hp (p : Y) (hp : p ∈ closedPoints Y) :
+      i p ∈ orbit G x ∩ closedPoints X.left := by
+    have h : i p ∈ i '' closedPoints Y := ⟨p, hp, rfl⟩
+    rw [Scheme.Hom.image_closedPoints_eq_range_inter_closedPoints] at h
+    exact ⟨hrange h.1, h.2⟩
+  obtain ⟨g, hg⟩ := exists_translation_eq_of_mem_orbit_inter_closedPoints G x
+    (hp y hy) (hp z hz)
+  refine ⟨g, i.isEmbedding.injective ?_⟩
+  rw [← Scheme.Hom.comp_apply, he, Scheme.Hom.comp_apply, hg]
+
+end Transitivity
+
 variable [GrpObj G] [ModObj G X] [LocallyOfFiniteType G.hom] [CompactSpace G.left]
   [LocallyOfFiniteType X.hom] [CompactSpace X.left]
 
@@ -139,11 +182,9 @@ theorem isLocallyClosed_orbit (x : 𝟙_ (Over (Spec (.of k))) ⟶ X) :
   have := continuousConstSMul_translationMulAction (G := G) (X := X)
   refine isLocallyClosed_of_isConstructible_of_closedPoints_transitive
     (isConstructible_orbit G x) (preimage_smul_orbit · x) ?_
-  rw [orbit_inter_closedPoints]
-  simp only [Set.mem_iUnion, Set.mem_range]
-  rintro _ ⟨g, a, rfl⟩ _ ⟨h, b, rfl⟩
-  obtain rfl : b = a := Subsingleton.elim (α := Spec (.of k)) _ _
-  exact ⟨h * g⁻¹, by rw [translationMulAction_smul_apply, mul_smul, inv_smul_smul]⟩
+  intro p hp q hq
+  simpa only [translationMulAction_smul] using
+    exists_translation_eq_of_mem_orbit_inter_closedPoints G x hp hq
 
 /-- Over an algebraically closed field, the geometric orbit of a rational point is open in its
 closure. -/

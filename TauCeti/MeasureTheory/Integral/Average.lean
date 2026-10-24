@@ -39,6 +39,10 @@ such as an affine homothety of a finite-dimensional space with its Haar measure:
 equivalence `e` pushes `μ` forward to `a • ν` with `0 < a < ∞`, then the average of `f ∘ e` over
 `e ⁻¹' s` with respect to `μ` is the average of `f` over `s` with respect to `ν`.
 
+Along an increasing sequence of sets `V n` covering a set `s` of finite measure, the measures of
+the pieces `s ∩ V n` converge to that of `s`, and so do the averages of an integrable function, as
+used when an inequality proved on each set of an exhaustion is passed to the whole domain.
+
 Hölder's inequality also bounds the average by the `Lᵖ` seminorm on the set, with the
 normalizing factor `μ s ^ (-1/p)`, and bounds its `q`-th power by `(μ s)⁻¹ ∫⁻_s ‖f‖ₑ ^ q`.
 These estimates hold for arbitrary sets, including zero or infinite measure, with only the
@@ -73,6 +77,9 @@ exponent restrictions `1 ≤ p < ∞` or `1 ≤ q`.
   `TauCeti.setLAverage_comp_preimage_of_map_eq_smul`,
   `TauCeti.setAverage_comp_preimage_of_map_eq_smul`: integrals and averages under a measurable
   equivalence that rescales the measure by a constant.
+* `TauCeti.tendsto_measureReal_inter_of_monotone`, `TauCeti.tendsto_setAverage_inter_of_monotone`:
+  along an increasing sequence of sets covering `s`, the measures of and averages over the pieces
+  of `s` converge to those over `s`.
 -/
 
 public section
@@ -386,5 +393,38 @@ theorem setAverage_comp_preimage_of_map_eq_smul (he : μ.map e = a • ν) (ha :
     smul_smul, mul_inv_rev, inv_mul_cancel_right₀ (ENNReal.toReal_ne_zero.2 ⟨ha, ha'⟩)]
 
 end ChangeOfVariables
+
+section Exhaustion
+
+open Filter Topology
+
+variable {X F : Type*} [MeasurableSpace X] {μ : Measure X} [NormedAddCommGroup F]
+  [NormedSpace ℝ F] {f : X → F} {s : Set X} {V : ℕ → Set X}
+
+/-- Along an increasing sequence of sets `V n` whose union contains `s`, the measures of the
+pieces `s ∩ V n` converge to the measure of `s`, if it is finite. -/
+theorem tendsto_measureReal_inter_of_monotone (hV : Monotone V) (hsV : s ⊆ ⋃ n, V n)
+    (hs : μ s ≠ ⊤) : Tendsto (fun n ↦ μ.real (s ∩ V n)) atTop (𝓝 (μ.real s)) := by
+  have hunion : ⋃ n, s ∩ V n = s := by rw [← Set.inter_iUnion, Set.inter_eq_left.2 hsV]
+  refine (ENNReal.tendsto_toReal hs).comp ?_
+  simpa [hunion, Function.comp_def] using
+    tendsto_measure_iUnion_atTop (μ := μ) fun m n hmn ↦ Set.inter_subset_inter_right s (hV hmn)
+
+/-- Along an increasing sequence of sets `V n` whose union contains `s`, the averages of a
+function integrable on `s` over the pieces `s ∩ V n` converge to its average over `s`, if `s` has
+finite measure. -/
+theorem tendsto_setAverage_inter_of_monotone (hV : Monotone V) (hsV : s ⊆ ⋃ n, V n)
+    (hm : ∀ n, NullMeasurableSet (s ∩ V n) μ) (hs : μ s ≠ ⊤) (hf : IntegrableOn f s μ) :
+    Tendsto (fun n ↦ ⨍ x in s ∩ V n, f x ∂μ) atTop (𝓝 (⨍ x in s, f x ∂μ)) := by
+  rcases eq_or_ne (μ s) 0 with hs0 | hs0
+  · simp [setAverage_eq, measureReal_def, hs0, measure_mono_null Set.inter_subset_left hs0]
+  have hunion : ⋃ n, s ∩ V n = s := by rw [← Set.inter_iUnion, Set.inter_eq_left.2 hsV]
+  simp only [setAverage_eq]
+  refine ((tendsto_measureReal_inter_of_monotone hV hsV hs).inv₀
+    (ENNReal.toReal_pos hs0 hs).ne').smul ?_
+  simpa [hunion] using tendsto_setIntegral_of_monotone₀ hm
+    (fun m n hmn ↦ Set.inter_subset_inter_right s (hV hmn)) (by rwa [hunion])
+
+end Exhaustion
 
 end TauCeti
