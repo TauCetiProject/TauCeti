@@ -25,6 +25,8 @@ a weak derivative be tested against `g φ` when `g` is only smooth inside `Ω`.
 ## Main declarations
 
 * `TestFunction.lineDerivOp_apply`: `∂_{v} φ` is the classical directional derivative of `φ`.
+* `TestFunction.lineDerivCLM_postcompCLM`: directional derivatives commute with postcomposition
+  by a continuous linear map.
 * `TestFunction.lineDerivOp_comm` and `TestFunction.lineDeriv_lineDerivOp_comm`: directional
   derivatives of test functions commute.
 * `TestFunction.lineDerivOp_laplacianCLM`: the Laplacian of test functions commutes with
@@ -58,6 +60,25 @@ directional derivative. -/
 theorem coe_lineDerivCLM (φ : 𝓓(Ω, F)) (v : E) :
     ⇑(lineDerivCLM ℝ v φ : 𝓓(Ω, F)) = fun x ↦ lineDeriv ℝ (φ : E → F) x v :=
   funext fun _ ↦ lineDerivCLM_apply_of_le le_top
+
+/-- Directional derivatives of test functions commute with postcomposition by a continuous linear
+map, at every pair of orders. -/
+theorem lineDerivCLM_postcompCLM {𝕜 : Type*} [NontriviallyNormedField 𝕜] [Algebra ℝ 𝕜]
+    [NormedSpace 𝕜 F] [IsScalarTower ℝ 𝕜 F] {n k : ℕ∞} {F' : Type*} [NormedAddCommGroup F']
+    [NormedSpace ℝ F'] [NormedSpace 𝕜 F'] [IsScalarTower ℝ 𝕜 F'] (L : F →L[𝕜] F') (v : E)
+    (φ : 𝓓^{n}(Ω, F)) :
+    (lineDerivCLM 𝕜 v (postcompCLM L φ) : 𝓓^{k}(Ω, F')) = postcompCLM L (lineDerivCLM 𝕜 v φ) := by
+  ext x
+  simp only [lineDerivCLM_eq_fderivCLM, fderivCLM_apply, postcompCLM_apply, Function.comp_apply]
+  split_ifs with hk
+  · have hn : (n : WithTop ℕ∞) ≠ 0 := by
+      have : (0 : ℕ∞) < n := (add_pos_of_right zero_lt_one k).trans_le hk
+      exact_mod_cast this.ne'
+    have hφ : DifferentiableAt ℝ φ x := (φ.contDiff.differentiable hn).differentiableAt
+    have hL := ((L.restrictScalars ℝ).hasFDerivAt.comp x hφ.hasFDerivAt).fderiv
+    rw [ContinuousLinearMap.coe_restrictScalars'] at hL
+    rw [hL, ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_restrictScalars']
+  · simp
 
 /-- Iterated directional derivatives of a test function agree with its iterated Fréchet
 derivatives evaluated in those directions. -/

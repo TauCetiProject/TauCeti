@@ -26,7 +26,8 @@ derivative of the inverse of a preferred chart of the total space, it is the der
 inverse base chart applied to the first coordinate
 (`Bundle.mfderiv_proj_comp_mfderivWithin_extChartAt_symm`). This is how forms built from the
 derivative of the projection, such as the Liouville form of a cotangent bundle, are computed in
-charts.
+charts. A self-map of the total space covering the identity of the base commutes with the
+derivative of the projection (`Bundle.mfderiv_proj_comp_mfderiv_of_proj_eq`).
 
 No linear structure on the fibres is used, and the regularity order `n` is arbitrary.
 -/
@@ -112,5 +113,15 @@ theorem mfderiv_proj_comp_mfderivWithin_extChartAt_symm [IsManifold IB 1 B]
   · intro y' hy'
     rw [ModelWithCorners.range_prod] at hy'
     exact hy'.1
+
+/-- A self-map `g` of the total space covering the identity of the base commutes with the
+derivative of the projection: `dπ_{g z} ∘ dg_z = dπ_z`. -/
+theorem mfderiv_proj_comp_mfderiv_of_proj_eq {g : TotalSpace F V → TotalSpace F V}
+    {z : TotalSpace F V} (hg : MDifferentiableAt (IB.prod 𝓘(𝕜, F)) (IB.prod 𝓘(𝕜, F)) g z)
+    (hproj : ∀ p, (g p).proj = p.proj) :
+    mfderiv (IB.prod 𝓘(𝕜, F)) IB (π F V) (g z) ∘L mfderiv (IB.prod 𝓘(𝕜, F)) (IB.prod 𝓘(𝕜, F)) g z =
+      mfderiv (IB.prod 𝓘(𝕜, F)) IB (π F V) z := by
+  have hπg : π F V ∘ g = π F V := funext hproj
+  rw [← mfderiv_comp z ((contMDiff_proj V (g z)).mdifferentiableAt one_ne_zero) hg, hπg]
 
 end Bundle

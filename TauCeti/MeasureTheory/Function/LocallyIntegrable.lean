@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.LinearMap
 public import Mathlib.MeasureTheory.Function.LocallyIntegrable
 import Mathlib.MeasureTheory.Group.Measure
+import Mathlib.Tactic.Linarith
 import Mathlib.Topology.Separation.Regular
 
 /-!
@@ -37,6 +38,10 @@ integrable on that set.
 
 A function continuous on a compact set is bounded there, so for a measure finite on compact sets
 it lies in every `Lᵖ` on each measurable subset of that compact set.
+
+A real function with values in `[0, 1]` almost everywhere on a measurable set agrees almost
+everywhere there with a function that is locally integrable on the whole space and everywhere
+`[0, 1]`-valued: clamp it to `[0, 1]` and extend it by zero.
 
 ## Main declarations
 
@@ -116,6 +121,28 @@ theorem locallyIntegrableOn_iff_forall_isCompact_closure :
     exact hf.filter_mono nhdsWithin_le_nhds
 
 end RelativelyCompactSubdomains
+
+/-- A real function with values in `[0, 1]` almost everywhere on a measurable set `s` agrees almost
+everywhere on `s` with a function that is locally integrable on the whole space and everywhere
+`[0, 1]`-valued. -/
+theorem exists_locallyIntegrable_mem_Icc_ae_eq [IsLocallyFiniteMeasure μ] {u : X → ℝ}
+    {s : Set X} (hs : MeasurableSet s) (hu : AEStronglyMeasurable u (μ.restrict s))
+    (hu01 : ∀ᵐ x ∂μ.restrict s, u x ∈ Icc (0 : ℝ) 1) :
+    ∃ w : X → ℝ, LocallyIntegrable w μ ∧ (∀ x, w x ∈ Icc (0 : ℝ) 1) ∧ w =ᵐ[μ.restrict s] u := by
+  -- Clamp `u` to `[0, 1]` and extend by zero outside `s`.
+  let g : X → ℝ := fun x => max 0 (min (u x) 1)
+  have hg : g =ᵐ[μ.restrict s] u := hu01.mono fun x hx => by simp [g, hx.1, hx.2]
+  have hmem (x : X) : s.indicator g x ∈ Icc (0 : ℝ) 1 := by
+    by_cases hx : x ∈ s
+    · rw [indicator_of_mem hx]
+      exact ⟨le_max_left _ _, max_le zero_le_one (min_le_right _ _)⟩
+    · rw [indicator_of_notMem hx]
+      exact ⟨le_rfl, zero_le_one⟩
+  refine ⟨s.indicator g, (locallyIntegrable_const (1 : ℝ)).mono
+    ((aestronglyMeasurable_indicator_iff hs).2 (hu.congr hg.symm)) (ae_of_all _ fun x => ?_),
+    hmem, (indicator_ae_eq_restrict hs.nullMeasurableSet).trans hg⟩
+  rw [Real.norm_eq_abs, norm_one, abs_le]
+  exact ⟨by linarith [(hmem x).1], (hmem x).2⟩
 
 end TauCeti
 

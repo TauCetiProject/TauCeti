@@ -15,7 +15,9 @@ public import Mathlib.RingTheory.GradedAlgebra.RingHom
 A linear map from `M` into the degree-one part of a graded algebra `A` lifts to a
 degree-preserving map `Sym M → A`, which is surjective when the image generates `A`. This presents
 a graded algebra generated in degree one as a graded quotient of a symmetric algebra, the algebraic
-form of an embedding of its projective spectrum into a projective space.
+form of an embedding of its projective spectrum into a projective space. For an external graded
+algebra `⨁ n, 𝒜 n`, the lift into the degree-one summand is degree-preserving in the same sense
+(`SymmetricAlgebra.lift_lof_comp_apply_of_mem_homogeneousSubmodule`).
 
 In particular, a linear map `M → N` induces a degree-preserving map of symmetric algebras, the
 graded lift into the degree-one part of `Sym N`; its underlying map is `SymmetricAlgebra.map`. The
@@ -83,6 +85,29 @@ theorem gradedLift_gradedZeroRingHom_algebraMap (f : M →ₗ[R] 𝒜 1) (r : R)
   simp
 
 end GradedLift
+
+section DirectSum
+
+variable (𝒜 : ℕ → Type*) [∀ i, AddCommMonoid (𝒜 i)] [∀ i, Module R (𝒜 i)]
+  [DirectSum.GCommSemiring 𝒜] [DirectSum.GAlgebra R 𝒜]
+
+/-- The lift of a linear map into the degree-one summand of an external graded algebra
+`⨁ n, 𝒜 n` sends a homogeneous element of degree `n` into the summand `𝒜 n`. -/
+theorem lift_lof_comp_apply_of_mem_homogeneousSubmodule (f : M →ₗ[R] 𝒜 1) {n : ℕ}
+    {x : SymmetricAlgebra R M} (hx : x ∈ homogeneousSubmodule R M n) :
+    lift (DirectSum.lof R ℕ 𝒜 1 ∘ₗ f) x =
+      DirectSum.of 𝒜 n (lift (DirectSum.lof R ℕ 𝒜 1 ∘ₗ f) x n) := by
+  induction hx using Submodule.pow_induction_on_left' with
+  | algebraMap r => rw [AlgHom.commutes, DirectSum.algebraMap_apply, DirectSum.of_eq_same]
+  | add x y _ _ _ hx hy =>
+    rw [map_add, hx, hy, DirectSum.add_apply, DirectSum.of_eq_same, DirectSum.of_eq_same,
+      map_add]
+  | mem_mul m hm i x _ ih =>
+    obtain ⟨y, rfl⟩ := hm
+    rw [Nat.succ_eq_one_add i, map_mul, ih, lift_ι_apply, LinearMap.comp_apply,
+      DirectSum.lof_eq_of, DirectSum.of_mul_of, DirectSum.of_eq_same]
+
+end DirectSum
 
 /-- The degree-preserving ring map of symmetric algebras induced by a linear map: the graded lift
 of `f` followed by the inclusion of `N` as the degree-one part of `Sym N`. -/

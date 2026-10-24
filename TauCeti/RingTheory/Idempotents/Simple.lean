@@ -16,7 +16,9 @@ In a left Artinian ring `R`, an idempotent `e` is primitive exactly when the hea
 ideal `Re` is simple. The head is the quotient `Re / J Re`, where `J` is the Jacobson radical.
 Every surjection from `Re` onto a nonzero module is then a projective cover. If the target is
 semisimple, it is necessarily simple. Given a complete primitive orthogonal family, these ideals
-supply projective covers of every simple module.
+supply projective covers of every simple module. Since an indecomposable finitely generated
+projective module is the projective cover of its simple head, every such module is isomorphic to
+one of these ideals.
 
 This connects the decomposition of the regular module by primitive idempotents to the simple
 modules. It uses the general simple-head theorem for indecomposable projectives and the existing
@@ -95,5 +97,22 @@ theorem exists_isProjectiveCover_of_isSimpleModule (he : CompleteOrthogonalIdemp
   have := IsSimpleModule.nontrivial R S
   obtain ⟨i, f, hf⟩ := he.exists_surjective_of_isSimpleModule S
   exact ⟨i, f, (hprim i).isProjectiveCover_of_surjective hf⟩
+
+/-- **The ideals of a complete primitive orthogonal family exhaust the indecomposable finitely
+generated projectives.** -/
+theorem exists_nonempty_linearEquiv_span_singleton (he : CompleteOrthogonalIdempotents e)
+    (hprim : ∀ i, TauCeti.IsPrimitiveIdempotent (e i)) (P : Type*) [AddCommGroup P] [Module R P]
+    [Module.Finite R P] [Module.Projective R P] (hP : TauCeti.IsIndecomposableModule R P) :
+    ∃ i, Nonempty (P ≃ₗ[R] (Ideal.span {e i} : Ideal R)) := by
+  -- `P` is a projective cover of its simple head, as is one of the ideals `Reᵢ`, and projective
+  -- covers of the same module are isomorphic.
+  have := hP.isSimpleModule_quotient_jacobson_smul_top
+    (isFiniteLength_iff_isNoetherian_isArtinian.mpr ⟨inferInstance, inferInstance⟩)
+  have := IsSimpleModule.nontrivial R (P ⧸ Ring.jacobson R • (⊤ : Submodule R P))
+  obtain ⟨i, f, hf⟩ := he.exists_isProjectiveCover_of_isSimpleModule hprim
+    (P ⧸ Ring.jacobson R • (⊤ : Submodule R P))
+  obtain ⟨φ, -⟩ := (TauCeti.isProjectiveCover_of_isSimpleModule_quotient_jacobson_smul_top
+    (Submodule.mkQ_surjective _)).exists_linearEquiv hf
+  exact ⟨i, ⟨φ⟩⟩
 
 end CompleteOrthogonalIdempotents

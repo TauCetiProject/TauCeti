@@ -3,8 +3,8 @@ name: Auto-merge
 # Merge a PR automatically once it is genuinely ready, WITHOUT generating any reviews here (that is
 # expensive — it spends API budget — and is gated off in review.yml). Reviews are produced by people
 # running tauceti-review / tauceti locally and posting a head-pinned scoreboard comment. This workflow
-# reconciles the queue from the newest completed current-head scoreboard; a live marker delays initial
-# enqueue without ejecting an already-green PR. TauCetiData is a separate analytics archive.
+# reconciles the queue from the newest completed current-head scoreboard. Temporary review
+# coordination comments are ignored. TauCetiData is a separate analytics archive.
 #
 # It calls the lightweight TauCetiReview merge-only workflow, which mints no provider keys, runs no
 # reviewer, and merges only when the engine's own rule says so: build green on HEAD, every blocking
@@ -22,8 +22,7 @@ on:
   workflow_run:
     workflows: ["pr-build"]
     types: [completed]
-  # A scoreboard or live-review marker changed. Deletion matters: finishing a review removes its
-  # marker and should immediately make an otherwise-green head eligible again.
+  # A completed scoreboard changed.
   issue_comment:
     types: [created, edited, deleted]
 
@@ -48,9 +47,7 @@ jobs:
       || (github.event_name == 'issue_comment'
         && github.event.issue.pull_request != null
         && (contains(github.event.comment.body, 'tauceti-scoreboard')
-          || contains(github.event.comment.body, 'tauceti-review-in-progress')
-          || contains(github.event.changes.body.from, 'tauceti-scoreboard')
-          || contains(github.event.changes.body.from, 'tauceti-review-in-progress')))
+          || contains(github.event.changes.body.from, 'tauceti-scoreboard')))
     outputs:
       pr: ${{ steps.r.outputs.pr }}
     steps:
@@ -80,9 +77,12 @@ jobs:
     # secrets, so a floating @main would be a supply-chain risk.
     # Re-pin together with the other two callers and .github/actions/checkout-merge-policy
     # (scripts/test_workflow_pins.py checks they agree). The called workflow checks out its own
-    # commit, so no review_ref is passed.
-    uses: TauCetiProject/TauCetiReview/.github/workflows/merge-only.yml@dff64733b34e4e4e69d768242f198dd79411d9a8
+    # commit, supplied explicitly as review_ref.
+    uses: TauCetiProject/TauCetiReview/.github/workflows/merge-only.yml@14d5db7642210a3cec00059feb33ac33a45daa5d
     with:
+      review_ref: 14d5db7642210a3cec00059feb33ac33a45daa5d
+      tools_repository: TauCetiProject/TauCetiTools
+      tools_ref: 0f4096297f058bff8ccd873067aab7120202aecf
       pr: ${{ needs.resolve.outputs.pr }}
       merge_backend: ${{ vars.MERGE_BACKEND || 'queue' }}
     # Pass only the App credentials merge-only needs, not all of TauCeti's secrets.

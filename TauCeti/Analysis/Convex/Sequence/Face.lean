@@ -24,8 +24,9 @@ and nonempty it has unique absolute endpoints and consists of every integer betw
 The predicate `IsFiniteFace h σ l u` records these endpoints while leaving the supporting
 intercept implicit. The intercept is nevertheless unique, and equals the supporting value at
 `σ`. In particular, every nonempty convex height sequence with bounded finite domain has a
-finite face at every real slope. A finite edge whose slope is strictly greater than `σ`
-also guarantees a finite face of slope `σ`, with both endpoints at or before that edge.
+finite face at every real slope. Without convexity, a sequence with only finitely many finite
+heights still has no supporting value `⊥`. A finite edge whose slope is strictly greater than
+`σ` also guarantees a finite face of slope `σ`, with both endpoints at or before that edge.
 Thus unbounded finite edge slopes guarantee finite faces at every real slope, even on an
 unbounded domain. Finite unit slopes before a finite face are strictly less than its slope,
 on the face they equal its slope, and after it they are strictly greater. Consequently, on a
@@ -145,6 +146,15 @@ theorem exists_isSupportingLine_isLeast_supportingFace {h : ℕ → WithTop ℝ}
   · simp [hn]
   rw [← WithTop.coe_untop₀_of_ne_top hn, WithTop.coe_le_coe]
   linarith [hmin n (hfinite.mem_toFinset.mpr hn)]
+
+/-- A height sequence with only finitely many finite heights has no supporting value `⊥`. -/
+theorem supportingValue_ne_bot_of_finite {h : ℕ → WithTop ℝ} (hfin : {n | h n ≠ ⊤}.Finite)
+    (σ : ℝ) : supportingValue h σ ≠ ⊥ := by
+  rcases Set.eq_empty_or_nonempty {n | h n ≠ ⊤} with hemp | hne
+  · have htop : h = ⊤ := funext fun n => not_ne_iff.mp fun hn => by simpa using hemp.subset hn
+    simp [htop]
+  obtain ⟨c, -, hc, -⟩ := exists_isSupportingLine_isLeast_supportingFace hfin hne σ
+  exact ne_bot_of_le_ne_bot (EReal.coe_ne_bot c) (isSupportingLine_iff.mp hc)
 
 /-- The contact indices of a supporting line on a convex height sequence are order connected. -/
 theorem IsConvexSeq.ordConnected_supportingFace {h : ℕ → WithTop ℝ}

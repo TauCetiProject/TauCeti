@@ -63,10 +63,15 @@ it from there.
 * `MvPowerSeries.hasEval_of_finite_of_isTopologicallyNilpotent` : finitely many topologically
   nilpotent arguments are an
   admissible evaluation point.
+* `MvPowerSeries.hasEval_finTwo` : in particular, so is a pair of topologically nilpotent
+  arguments.
 * `MvPowerSeries.hasEval_of_mem` : a family of finitely many arguments drawn from `I` is an
   admissible evaluation point.
 * `MvPowerSeries.eval₂_sub_constantCoeff_mem` : the value and the image of the constant term
   differ by an element of `I`.
+* `MvPowerSeries.eval₂_zero` : evaluation sends `0` to `0`, with no hypothesis.
+* `MvPowerSeries.isTopologicallyNilpotent_eval₂_iff` : the value is topologically nilpotent
+  exactly when the image of the constant term is.
 
 ## Provenance
 
@@ -88,6 +93,14 @@ monomial estimates and the closed-ideal summation argument are the source's, as 
 public section
 
 namespace MvPowerSeries
+
+open scoped WithPiTopology
+
+/-- Evaluation sends `0` to `0`, at any family and with no hypothesis: `0` is a polynomial. -/
+@[simp]
+theorem eval₂_zero {σ R S : Type*} [CommRing R] [UniformSpace R] [CommRing S] [UniformSpace S]
+    (φ : R →+* S) (a : σ → S) : eval₂ φ a (0 : MvPowerSeries σ R) = 0 := by
+  simpa using eval₂_coe φ a 0
 
 section Eval
 
@@ -165,6 +178,24 @@ theorem eval₂_sub_constantCoeff_mem (hφ : Continuous φ) (ha : HasEval a)
     rw [← coe_eval₂Hom hφ ha, map_sub, coe_eval₂Hom hφ ha, eval₂_C]
   rwa [hsplit] at key
 
+/-- **A value is topologically nilpotent exactly when the image of the constant term is.** Every
+monomial of positive degree carries a topologically nilpotent argument, so the value differs from
+`φ (constantCoeff f)` by a topologically nilpotent element. In particular a series without
+constant term takes topologically nilpotent values. -/
+theorem isTopologicallyNilpotent_eval₂_iff (hφ : Continuous φ) (ha : HasEval a)
+    (f : MvPowerSeries σ R) :
+    IsTopologicallyNilpotent (eval₂ φ a f) ↔ IsTopologicallyNilpotent (φ (constantCoeff f)) := by
+  -- The part of `f` without constant term is topologically nilpotent for the product topology,
+  -- and evaluation is a continuous ring hom.
+  have hg : IsTopologicallyNilpotent (eval₂ φ a (f - C (constantCoeff f))) := by
+    rw [← coe_eval₂Hom hφ ha]
+    exact IsTopologicallyNilpotent.map (by rw [coe_eval₂Hom]; exact continuous_eval₂ hφ ha)
+      (WithPiTopology.isTopologicallyNilpotent_of_constantCoeff_zero (by simp))
+  have hsplit : eval₂ φ a f = φ (constantCoeff f) + eval₂ φ a (f - C (constantCoeff f)) := by
+    rw [← coe_eval₂Hom hφ ha, map_sub, coe_eval₂Hom hφ ha, eval₂_C, add_sub_cancel]
+  simp_rw [← IsTopologicallyNilpotent.mem_topologicalNilradical_iff] at hg ⊢
+  rw [hsplit, Ideal.add_mem_iff_left _ hg]
+
 end Eval
 
 section HasEval
@@ -180,6 +211,12 @@ theorem hasEval_of_finite_of_isTopologicallyNilpotent [Finite σ]
     (h : ∀ i, IsTopologicallyNilpotent (a i)) : HasEval a where
   hpow := h
   tendsto_zero := by simp [Filter.cofinite_eq_bot]
+
+/-- **Two topologically nilpotent arguments can be substituted into a power series in two
+variables.** -/
+theorem hasEval_finTwo {x y : S} (hx : IsTopologicallyNilpotent x)
+    (hy : IsTopologicallyNilpotent y) : HasEval ![x, y] :=
+  hasEval_of_finite_of_isTopologicallyNilpotent fun s ↦ by fin_cases s <;> assumption
 
 /-- **A family drawn from an adic ideal can be substituted into a power series.** For an index
 type with finitely many variables, lying in `I` is the only condition the arguments need: it

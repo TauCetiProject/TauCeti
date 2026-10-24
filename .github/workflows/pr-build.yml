@@ -1,5 +1,5 @@
 name: pr-build
-run-name: ${{ github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' && format('bors branch={0} batch={1} head={2} base={3}', github.event.client_payload.base_ref || 'unknown', github.event.client_payload.batch_id, github.event.client_payload.head_sha, github.event.client_payload.base_sha) || format('pr-build {0}', github.event.pull_request.number || inputs.pr || github.event.client_payload.pr || github.event.merge_group.head_sha || github.run_id) }}
+run-name: ${{ github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' && format('bors branch={0} batch={1} head={2} base={3}', github.event.client_payload.base_ref || 'unknown', github.event.client_payload.batch_id, github.event.client_payload.head_sha, github.event.client_payload.base_sha) || (github.event_name == 'pull_request_target' || github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-pr-approved') && format('pr-build pr={0} head={1}', github.event.pull_request.number || github.event.client_payload.pr, github.event.pull_request.head.sha || github.event.client_payload.head_sha) || format('pr-build {0}', github.event.pull_request.number || inputs.pr || github.event.client_payload.pr || github.event.merge_group.head_sha || github.run_id) }}
 
 # Builds a deterministic integration of immutable PR head H with main B captured once
 # by the existing dispatch. Scope, review and approval remain bound to raw H and its
@@ -68,48 +68,30 @@ env:
   MATHLIB_CACHE_DEBUG_USE_LEGACY: ${{ vars.MATHLIB_CACHE_DEBUG_USE_LEGACY }}
 
 jobs:
-  # Bors prefers the dedicated pool only when explicitly enabled and idle. Merge groups and
-  # all unavailable/retried bors placements retain Namespace, without waiting for a GitHub slot.
-  # Skipping the picker leaves its answer empty, which `sandboxed-build` reads as Namespace.
-  # Bors staging uses 16CPU/32GB, scheduling priority over PR overflow and a run-specific assignment.
-  # Other Namespace builds retain 8CPU/16GB; rollback is the staging shape expression below.
-  # https://namespace.so/docs/solutions/github-actions/runner-controls/job-ordering
+  # The existing picker applies class-specific preferences and shared build caps.
+  # Merge groups and manual PR requests without an immutable head use cloud pools.
   pick-runner:
-    if: github.event_name != 'merge_group' && (github.event_name != 'repository_dispatch' || github.event.action != 'tauceti-bors-staging' || vars.FLEET_CI_ENABLED == 'true')
     uses: ./.github/workflows/pick-runner.yml
     with:
       fleet-staging: ${{ github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' }}
+      fleet-pr: ${{ github.event_name == 'pull_request_target' || (github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-pr-approved') }}
+      pr-head: ${{ github.event.pull_request.head.sha || github.event.client_payload.head_sha || '' }}
     permissions:
       actions: read
       contents: read  # immutable fleet selector checkout
     secrets:
       FLEET_READ_TOKEN: ${{ secrets.FLEET_READ_TOKEN }}
-      APP_ID: ${{ secrets.APP_ID }}
-      APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
+      TAUCETI_GITHUB_STATE_TOKEN: ${{ secrets.TAUCETI_GITHUB_STATE_TOKEN }}
 
   # Name kept distinct from `build` on purpose — see the header note. The required merge check is the
   # `build` commit STATUS posted in the final step, not this job's auto-created check-run.
   sandboxed-build:
     needs: pick-runner
     if: ${{ !cancelled() }}
-    # `container.privileged` is required and documented by Namespace for this case: without it
-    # the job container's seccomp profile denies `pivot_root`, and bwrap cannot build its sandbox
-    # at all, for root as well as for the job user. The machine name uses `-with-features`;
-    # bors appends its documented `;job.priority=1` option to that machine label. Its run-ID
-    # assignment is a separate option on the feature label.
-    #
-    # Both the provisioning and the feature are per-organisation configuration. A job whose
-    # labels this organisation does not serve is not rejected: it sits queued with an empty
-    # runner name until it expires, taking the required builds with it. Before changing these
-    # labels, confirm them in the organisation that will run the job.
-    #
-    # Only explicit fleet/github answers select those pools. Missing/failed picker output
-    # retains Namespace. The fleet selector permits only the first bors run attempt.
-    runs-on: >-
-      ${{ github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' && needs.pick-runner.outputs.fleet == 'true' && fromJSON('{"group":"TauCetiFleet","labels":["self-hosted","linux","x64","tauceti-fleet"]}') || github.event_name != 'merge_group' && (github.event_name != 'repository_dispatch' || github.event.action != 'tauceti-bors-staging') && needs.pick-runner.outputs.github == 'true' && 'ubuntu-24.04' || fromJSON(format('[
-        "nscloud-ubuntu-24.04-amd64-{0}-with-features{1}",
-        "namespace-features:container.privileged=true{2}"
-      ]', github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' && '16x32' || '8x16', github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' && ';job.priority=1' || '', github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' && format(';github.run-id={0}', github.run_id) || '')) }}
+    # Exact fleet labels bind placement to one machine and guest. A failed picker
+    # or failed-jobs-only rerun queues on GitHub: stale picker output must never
+    # send another attempt to an ephemeral guest that has already retired.
+    runs-on: ${{ fromJSON(needs.pick-runner.outputs.attempt == format('{0}', github.run_attempt) && needs.pick-runner.outputs.runner || '"ubuntu-24.04"') }}
     outputs:
       status-sha: ${{ steps.pr.outputs.status_sha }}
       build-state: ${{ steps.report.outputs.build-state }}
@@ -156,14 +138,14 @@ jobs:
           fetch-depth: 1
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@6b468630edbf2eacb048466519c825b586fee84e
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@0f4096297f058bff8ccd873067aab7120202aecf
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 6b468630edbf2eacb048466519c825b586fee84e
+          tools-ref: 0f4096297f058bff8ccd873067aab7120202aecf
           project-directory: gate
       - name: Select CI API credentials
         id: ci-api
-        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@6b468630edbf2eacb048466519c825b586fee84e
+        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@0f4096297f058bff8ccd873067aab7120202aecf
         with:
           owner: ${{ github.repository_owner }}
           repository: ${{ github.event.repository.name }}
@@ -966,13 +948,12 @@ jobs:
           bash gate/scripts/lint-scope.sh "$out"
           echo "LINT_SCOPE_DIR=$out" >> "$GITHUB_ENV"
 
-      # The axiom audit and the dot-notation lint need see only what an ordinary PR changes: the
-      # library on main already passed both in full (every push to main runs them unscoped, as does
-      # every GitHub merge-queue or bors staging build here), and neither result for an unchanged file can change unless
-      # its dependencies or the Mathlib pin do. So they are scoped to the changed modules exactly
-      # when the environment lint is, and additionally only for a PR build (not a batch,
-      # which re-checks the whole library before anything lands), only when the Lake pins are
-      # unchanged, and only when every changed `.lean` file is a module the list can name.
+      # Ordinary PRs run a fast preflight on declarations in changed modules only.
+      # The axiom audit still follows their proof dependencies, but does not add importers.
+      # Every GitHub merge-queue or bors staging build, and every push to main, audits the
+      # whole library, including unchanged sources rebuilt against changed imports.
+      # Keep full-scope fallbacks for full lint, changed Lake pins, and changed Lean files
+      # that the module list cannot name.
       - name: Decide the audit scope
         if: ${{ env.INFRA != '1' }}
         run: |
@@ -1125,9 +1106,9 @@ jobs:
         run: |
           export PATH="$HOME/.elan/bin:$PATH"
           # The sandboxed build/audit/lint body comes from the separately mounted, workflow-pinned
-          # gate checkout; candidate scripts are never invoked. Keeping the bwrap bash payload
-          # a fixed, comment-free one-liner
-          # is deliberate: a comment's apostrophe once closed this single-quoted string
+          # gate checkout; candidate scripts are never invoked. Bulk extraction is a temporary
+          # workaround until the pinned toolchain includes leanprover/lean4#15868.
+          # Keeping the bwrap bash payload a fixed, comment-free one-liner is deliberate: a comment's apostrophe once closed this single-quoted string
           # early and reddened every PR build (#694). All prose now lives in the script.
           export TAUCETI_PROJECT_ROOT="$PWD/pr"
           export TAUCETI_TRUSTED_SCRIPTS="$PWD/gate/scripts"
@@ -1178,7 +1159,7 @@ jobs:
             --chdir "$PWD/pr" \
             --unshare-user --unshare-ipc --unshare-pid --unshare-net --unshare-uts \
             --unshare-cgroup --disable-userns --die-with-parent --new-session \
-            -- bash -euxo pipefail -c 'exec bash ../gate/scripts/sandbox-build.sh'
+            -- bash -euxo pipefail -c 'python3 ../gate/scripts/bulk-unpack-cache.py; exec bash ../gate/scripts/sandbox-build.sh'
 
       - name: Prepare merge-group cache artifact metadata
         id: cache_stage
@@ -1459,7 +1440,7 @@ jobs:
           TESTED_TREE: ${{ steps.integration.outputs.tested_tree }}
           BORS_BATCH: ${{ github.event.client_payload.batch_id }}
           BORS_MEMBERS: ${{ toJSON(github.event.client_payload.members) }}
-          PICKED: ${{ needs.pick-runner.outputs.fleet == 'true' && 'fleet' || needs.pick-runner.outputs.github == 'true' && 'github' || 'namespace' }}
+          PICKED: ${{ needs.pick-runner.outputs.attempt == format('{0}', github.run_attempt) && needs.pick-runner.outputs.pool || 'github' }}
           PICKER_BUSY: ${{ needs.pick-runner.outputs.busy }}
           PICKER_BUDGET: ${{ needs.pick-runner.outputs.budget }}
         run: |
@@ -1500,7 +1481,8 @@ jobs:
 
   publish-merge-group-cache:
     needs: sandboxed-build
-    if: ${{ always() && needs.sandboxed-build.result == 'success' && needs.sandboxed-build.outputs.publication-required == 'true' }}
+    # Successful audits can still publish when subsequent status delivery fails.
+    if: ${{ !cancelled() && needs.sandboxed-build.outputs.build-state == 'success' && needs.sandboxed-build.outputs.publication-required == 'true' }}
     permissions:
       contents: read
     uses: ./.github/workflows/publish-lake-cache.yml
@@ -1555,14 +1537,14 @@ jobs:
           persist-credentials: false
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@6b468630edbf2eacb048466519c825b586fee84e
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@0f4096297f058bff8ccd873067aab7120202aecf
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 6b468630edbf2eacb048466519c825b586fee84e
+          tools-ref: 0f4096297f058bff8ccd873067aab7120202aecf
           project-directory: .
       - name: Select CI API credentials
         id: ci-api
-        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@6b468630edbf2eacb048466519c825b586fee84e
+        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@0f4096297f058bff8ccd873067aab7120202aecf
         with:
           owner: ${{ github.repository_owner }}
           repository: ${{ github.event.repository.name }}

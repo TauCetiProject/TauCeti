@@ -10,6 +10,9 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.TateCurve.Parameter
 import Mathlib.Analysis.Normed.Ring.Ultra
 import TauCeti.AlgebraicGeometry.EllipticCurve.TateCurve.FormalPoint
 import TauCeti.AlgebraicGeometry.EllipticCurve.TateCurve.QExpansion
+import TauCeti.Analysis.Polynomial.Ultra
+import TauCeti.Analysis.SpecificLimits.Normed
+import TauCeti.NumberTheory.TsumDivisorsAntidiagonal
 
 /-!
 # The Weierstrass equation of the Tate coordinates
@@ -170,7 +173,7 @@ variable [CompleteSpace K] [IsUltrametricDist K]
 /-- Evaluation of `ℤ[u]⟦v⟧` at `u` in the closed unit disc and `v = w` in the open unit disc. -/
 private noncomputable def circleEval (u : K) (hu : ‖u‖ ≤ 1) (w : K) (hw : ‖w‖ < 1) :
     (Polynomial ℤ)⟦X⟧ →+* K :=
-  RingHom.evalBoundedSeries (Polynomial.aeval u).toRingHom (fun p ↦ p.norm_aeval_le_one hu) w hw
+  RingHom.evalBoundedSeries (Polynomial.aeval u).toRingHom ⟨1, fun p ↦ p.norm_aeval_le_one hu⟩ w hw
 
 private theorem circleEval_C (u : K) (hu : ‖u‖ ≤ 1) (w : K) (hw : ‖w‖ < 1) (p : Polynomial ℤ) :
     circleEval u hu w hw (C p) = Polynomial.aeval u p :=

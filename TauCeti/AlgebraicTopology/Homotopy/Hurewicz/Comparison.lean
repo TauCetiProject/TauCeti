@@ -27,17 +27,24 @@ description.  The independently defined relative-fundamental-class map
 (`HomotopyGroup.exists_hurewicz_eq_units_smul_cubicalHurewicz`), which gives the Hurewicz
 theorem for `hurewiczHom` (`HomotopyGroup.hurewiczAddEquiv`).
 
+The inductive Hurewicz criterion
+`TauCeti.subsingleton_homotopyGroup_of_isZero_homology_singularChains` shows that a simply
+connected space with vanishing integral singular homology in degrees at least two has trivial
+homotopy groups in every degree.
+
 ## References
 
 * S. Eilenberg, *Singular homology theory*, Ann. of Math. (2) 45 (1944), 407--447.
 * W. S. Massey, *Singular Homology Theory*, GTM 70, Springer, 1980, Chapters II and VII.
+* A. Hatcher, *Algebraic Topology*, Cambridge University Press, 2002, Theorem 4.32.
 -/
 
 public section
 
 noncomputable section
 
-open CategoryTheory AlgebraicTopology
+open CategoryTheory Limits AlgebraicTopology
+open scoped Topology Topology.Homotopy
 
 namespace HomotopyGroup
 
@@ -108,3 +115,21 @@ theorem cubicalHurewiczSingularHomologyAddEquiv_naturality
   exact singularCubicalHomologyIso_inv_cubicalHurewiczHom_naturality ℤ f hf a
 
 end HomotopyGroup
+
+namespace TauCeti
+
+open HomotopyGroup
+
+variable {X : Type} [TopologicalSpace X]
+
+/-- **Inductive Hurewicz vanishing criterion (singular homology).** If `X` is path connected with
+trivial `π_ 1 X x` and its integral singular homology vanishes in every degree `n + 2`, then all
+homotopy groups `π_ k X x` are trivial. -/
+theorem subsingleton_homotopyGroup_of_isZero_homology_singularChains (x : X)
+    [PathConnectedSpace X] [Subsingleton (π_ 1 X x)]
+    (hH : ∀ n : ℕ, IsZero (((singularChains ℤ).obj (TopCat.of X)).homology (n + 2)))
+    (k : ℕ) : Subsingleton (π_ k X x) :=
+  subsingleton_homotopyGroup_of_isZero_homology_normalizedCubicalChainComplex x
+    (fun n ↦ (hH n).of_iso (singularCubicalHomologyIso ℤ (TopCat.of X) (n + 2)).symm) k
+
+end TauCeti

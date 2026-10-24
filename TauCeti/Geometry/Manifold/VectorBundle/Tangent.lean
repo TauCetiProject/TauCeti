@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.MFDeriv.Atlas
+public import TauCeti.Geometry.Manifold.Instances.Icc
 public import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 
@@ -74,9 +75,13 @@ are those of its summands, so its tangent coordinate changes are those of the su
   the tangent space of a product and the product of the tangent spaces.
 * `TauCeti.Manifold.mfderiv_prodMap_apply`: differentials of product maps act componentwise
   under this equivalence.
+* `TauCeti.Manifold.isInvertible_mfderiv_prodMap`: the differential of a product map is invertible
+  where the differentials of both factors are.
 * `TauCeti.Manifold.tangentSpaceProdEquiv_mfderiv_prodMap_id` and
   `TauCeti.Manifold.isInvertible_mfderiv_prodMap_id`: the differential of `(x, t) ↦ (x, φ t)` on
   `M × 𝕜` multiplies the `𝕜`-component by `φ' t`, so it is invertible where `φ' t ≠ 0`.
+* `TauCeti.Manifold.isInvertible_mfderiv_prodMap_id_subtypeVal_Icc`: the differential of the
+  inclusion `M × [a, b] → M × ℝ` is invertible, also at the boundary.
 * `TauCeti.Manifold.tangentCoordChange_prod`: the tangent coordinate change of a product is the
   product of the tangent coordinate changes of the factors.
 * `TauCeti.Manifold.tangentSpaceProdEquiv_symmL_trivializationAt`: the inverse tangent-bundle
@@ -748,6 +753,24 @@ theorem mfderiv_prodMap_apply
   rw [mfderiv_prodMap hf hg]
   rfl
 
+/-- The differential of a product map is invertible at a point where the differentials of both
+factors are invertible. -/
+theorem isInvertible_mfderiv_prodMap
+    {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+    {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+    {M' : Type*} [TopologicalSpace M'] [ChartedSpace H' M']
+    {F' : Type*} [NormedAddCommGroup F'] [NormedSpace 𝕜 F']
+    {G' : Type*} [TopologicalSpace G'] {J' : ModelWithCorners 𝕜 F' G'}
+    {N' : Type*} [TopologicalSpace N'] [ChartedSpace G' N']
+    {f : M → M'} {g : N → N'} {p : M × N}
+    (hf : MDifferentiableAt I I' f p.1) (hg : MDifferentiableAt J J' g p.2)
+    (hf' : (mfderiv I I' f p.1).IsInvertible) (hg' : (mfderiv J J' g p.2).IsInvertible) :
+    (mfderiv (I.prod J) (I'.prod J') (Prod.map f g) p).IsInvertible := by
+  obtain ⟨e₁, he₁⟩ := hf'
+  obtain ⟨e₂, he₂⟩ := hg'
+  rw [mfderiv_prodMap hf hg, ← he₁, ← he₂]
+  exact ⟨e₁.prodCongr e₂, rfl⟩
+
 /-- The differential of `(x, t) ↦ (x, φ t)` on `M × 𝕜` fixes the `M`-component and multiplies the
 `𝕜`-component by `φ' t`. -/
 theorem tangentSpaceProdEquiv_mfderiv_prodMap_id {φ : 𝕜 → 𝕜} {p : M × 𝕜}
@@ -871,5 +894,23 @@ theorem symmL_trivializationAt_sumInr {y z : M'} (hz : z ∈ (chartAt H y).sourc
   exact tangentCoordChange_sumInr y z z
 
 end Sum
+
+end TauCeti.Manifold
+
+namespace TauCeti.Manifold
+
+variable
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] {a b : ℝ} [Fact (a < b)]
+
+/-- The differential of the inclusion `M × [a, b] → M × ℝ` is invertible, also at the boundary. -/
+theorem isInvertible_mfderiv_prodMap_id_subtypeVal_Icc (p : M × Icc a b) :
+    (mfderiv (I.prod (𝓡∂ 1)) (I.prod 𝓘(ℝ)) (Prod.map id Subtype.val : M × Icc a b → M × ℝ)
+      p).IsInvertible :=
+  isInvertible_mfderiv_prodMap mdifferentiableAt_id
+    ((contMDiff_subtypeVal_Icc (n := 1)).mdifferentiableAt one_ne_zero)
+    (by rw [mfderiv_id]; exact ⟨ContinuousLinearEquiv.refl ℝ _, rfl⟩)
+    (TauCeti.isInvertible_mfderiv_subtypeVal_Icc p.2)
 
 end TauCeti.Manifold

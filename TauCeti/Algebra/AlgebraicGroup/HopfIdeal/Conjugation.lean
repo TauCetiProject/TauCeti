@@ -11,6 +11,8 @@ public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Basic
 public import TauCeti.Algebra.Bialgebra.Quotient
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Comap
 
+import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Order
+
 /-!
 # Conjugation of closed subgroup schemes
 
@@ -40,6 +42,8 @@ characters of `N`.
   the subgroup, as a bialgebra endomorphism of its coordinate algebra.
 * `TauCeti.CommHopfAlgCat.mapDomain_pointConjugation_mem_conjugate_iff`: the pointwise
   interpretation of the conjugated ideal.
+* `TauCeti.HopfIdeal.eq_conjugate_of_forall_mem_iff`: recognizing a conjugated ideal by its
+  points.
 
 ## References
 
@@ -65,9 +69,7 @@ maps are contravariant, it is the inverse image of `I` under the coordinate auto
 `x ↦ gxg⁻¹`. -/
 noncomputable def conjugate (I : HopfIdeal R H) (g : WithConv (H →ₐ[R] R)) : HopfIdeal R H :=
   I.comapOfSurjective (HopfAlgebra.pointConjugationBialgEquiv g).toBialgHom
-    (by
-      simpa only [BialgEquiv.toBialgHom_eq_coe, BialgEquiv.coe_toBialgHom] using
-        EquivLike.surjective (HopfAlgebra.pointConjugationBialgEquiv g))
+    (HopfAlgebra.pointConjugationBialgEquiv_surjective g)
 
 /-- Conjugation is the inverse image under the bialgebra automorphism of point conjugation.
 
@@ -77,9 +79,7 @@ theorem conjugate_eq_comapOfSurjective (I : HopfIdeal R H)
     (g : WithConv (H →ₐ[R] R)) :
     I.conjugate g =
       I.comapOfSurjective (HopfAlgebra.pointConjugationBialgEquiv g).toBialgHom
-        (by
-          simpa only [BialgEquiv.toBialgHom_eq_coe, BialgEquiv.coe_toBialgHom] using
-            EquivLike.surjective (HopfAlgebra.pointConjugationBialgEquiv g)) := by
+        (HopfAlgebra.pointConjugationBialgEquiv_surjective g) := by
   rfl
 
 /-- Membership in a conjugated Hopf ideal is tested after applying the coordinate
@@ -292,12 +292,9 @@ theorem mapDomain_pointConjugation_mem_conjugate_iff
     BialgHom.mapDomain (A := A) (HopfAlgebra.pointConjugationBialgEquiv g).toBialgHom x ∈
         quotientPointsSubgroup (_root_.CommHopfAlgCat.of R H) (I.conjugate g) A ↔
       x ∈ quotientPointsSubgroup (_root_.CommHopfAlgCat.of R H) I A := by
-  have hsurj : Function.Surjective
-      (HopfAlgebra.pointConjugationBialgEquiv g).toBialgHom := by
-    simpa only [BialgEquiv.toBialgHom_eq_coe, BialgEquiv.coe_toBialgHom] using
-      EquivLike.surjective (HopfAlgebra.pointConjugationBialgEquiv g)
   rw [HopfIdeal.conjugate_eq_comapOfSurjective]
-  exact BialgHom.mapDomain_mem_quotientPointsSubgroup_comapOfSurjective_iff _ hsurj I A x
+  exact BialgHom.mapDomain_mem_quotientPointsSubgroup_comapOfSurjective_iff _
+    (HopfAlgebra.pointConjugationBialgEquiv_surjective g) I A x
 
 /-- In explicit pointwise terms, conjugating a point by `g` carries the points of `I` exactly
 onto the points of the conjugated ideal. -/
@@ -310,6 +307,23 @@ theorem pointConjugation_mem_conjugate_iff
       x ∈ quotientPointsSubgroup (_root_.CommHopfAlgCat.of R H) I A := by
   rw [← HopfAlgebra.mapDomain_pointConjugationBialgEquiv]
   exact mapDomain_pointConjugation_mem_conjugate_iff I g A x
+
+/-- A Hopf ideal whose points are the `g`-conjugates of the points of `I` is the conjugate of
+`I` by `g`. -/
+theorem _root_.TauCeti.HopfIdeal.eq_conjugate_of_forall_mem_iff {I J : HopfIdeal R H}
+    (g : WithConv (H →ₐ[R] R))
+    (h : ∀ (A : CommAlgCat.{v} R) (x : WithConv (H →ₐ[R] A)),
+      AlgHom.mapValue (H := H) (Algebra.ofId R A) g * x *
+          (AlgHom.mapValue (H := H) (Algebra.ofId R A) g)⁻¹ ∈
+        quotientPointsSubgroup (_root_.CommHopfAlgCat.of R H) J A ↔
+      x ∈ quotientPointsSubgroup (_root_.CommHopfAlgCat.of R H) I A) :
+    J = I.conjugate g := by
+  apply HopfIdeal.eq_of_forall_quotientPointsSubgroup_eq (H := _root_.CommHopfAlgCat.of R H)
+  intro A
+  ext x
+  -- Every point is the `g`-conjugate of some point.
+  obtain ⟨y, rfl⟩ := (MulAut.conj (AlgHom.mapValue (H := H) (Algebra.ofId R A) g)).surjective x
+  rw [MulAut.conj_apply, h, pointConjugation_mem_conjugate_iff]
 
 end CommHopfAlgCat
 

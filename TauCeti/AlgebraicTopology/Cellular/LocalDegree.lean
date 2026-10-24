@@ -644,10 +644,8 @@ theorem cellularIncidence_eq_zero_of_not_mem_cellFrontier {i : cell C n}
     cellularIncidence C R n i j = 0 := by
   let P := TopPair.ofSubset ({x}ᶜ : Set (skeletonObj C (n + 1)))
   have hfront (z : TopCat.diskBoundary.{w} (n + 1)) :
-      ((cellAttachingMap j z : skeletonObj C (n + 1)) : X) ∈ cellFrontier (n + 1) j := by
-    refine ⟨_, mem_sphere_zero_iff_norm.2 <|
-      (norm_diskHomeomorphClosedBall_eq_one_iff _).2 ⟨z, rfl⟩, ?_⟩
-    exact (coe_cellAttachingMap_apply j z).symm
+      ((cellAttachingMap j z : skeletonObj C (n + 1)) : X) ∈ cellFrontier (n + 1) j :=
+    (range_cellAttachingMap j).subset ⟨z, rfl⟩
   have hg (z : TopCat.diskBoundary.{w} (n + 1)) : cellAttachingMap j z ∈ ({x}ᶜ :
       Set (skeletonObj C (n + 1))) := by
     intro hz

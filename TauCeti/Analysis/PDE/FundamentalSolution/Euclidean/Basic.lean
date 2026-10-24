@@ -9,6 +9,7 @@ public import TauCeti.Analysis.InnerProductSpace.Harmonic.Isometry
 public import TauCeti.Analysis.InnerProductSpace.Euclidean.Space
 public import TauCeti.Analysis.InnerProductSpace.NormPow
 public import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # The Newtonian kernel in dimension at least three
@@ -154,7 +155,7 @@ theorem newtonianKernel_lt_newtonianKernel_of_norm_lt (n : ℕ) (hn : n ≠ 2)
     {x y : EuclideanSpace ℝ (Fin n)} (hx : x ≠ 0) (h : ‖x‖ < ‖y‖) :
     newtonianKernel n y < newtonianKernel n x := by
   rw [newtonianKernel_def, newtonianKernel_def,
-    norm_rpow_eq_norm_sq_rpow, norm_rpow_eq_norm_sq_rpow]
+    ← Real.sq_rpow_div_two (norm_nonneg y), ← Real.sq_rpow_div_two (norm_nonneg x)]
   exact newtonianKernel_rpow_sq_lt n hn (pos_of_ne_zero_euclideanSpace hx)
     (by positivity) (by nlinarith [norm_nonneg x, norm_nonneg y])
 

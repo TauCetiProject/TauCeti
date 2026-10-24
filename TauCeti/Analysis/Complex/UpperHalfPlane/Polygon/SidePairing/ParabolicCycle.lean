@@ -8,7 +8,7 @@ module
 public import Mathlib.Topology.LocallyFinite
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex.VertexSector
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.SidePairing.Ideal
-import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex.IdealVertexStabilizer
+import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex.IdealVertex.Stabilizer
 import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex.Sides
 import Mathlib.Algebra.Order.ToIntervalMod
 import Mathlib.Order.Interval.Set.Union
