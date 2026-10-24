@@ -157,7 +157,9 @@ private theorem norm_inner_smul_le_of_mem_span (a : Lp ℂ ∞ (AddCircle.haarAd
   have hinner : ⟪f, a • g⟫_ℂ = ⟪(⟨_, hfN⟩ : HardySpace), toeplitz a ⟨_, hgN⟩⟫_ℂ := by
     rw [inner_toeplitz_apply, Submodule.coe_mk, Submodule.coe_mk, ← hcomm]
     simp only [← Lp.multiplicationOperator_apply]
-    rw [Lp.inner_multiplicationOperator_apply_apply_of_ae_norm_eq_one hu]
+    exact ((LinearMap.norm_map_iff_inner_map_map
+      (Lp.multiplicationOperator (E := ℂ) (fourierLp (T := 1) ∞ N))).1
+        (Lp.norm_multiplicationOperator_apply_of_ae_norm_eq_one hu) f (a • g)).symm
   have hnorm (h : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1))) :
       ‖(fourierLp (T := 1) ∞ N • h : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1)))‖ = ‖h‖ := by
     rw [← Lp.multiplicationOperator_apply,

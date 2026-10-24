@@ -18,7 +18,7 @@ An essentially bounded complex function `a` acts on `L²` by pointwise multiplic
 bundles that action as `MeasureTheory.Lp.multiplicationOperator a` and records its algebraic,
 adjoint, and norm properties.  In particular, on a sigma-finite measure space the operator norm on
 `L²` with values in any nontrivial space is exactly the `L∞` norm of the symbol, and a symbol of
-modulus one almost everywhere acts isometrically, preserving `L²` inner products.
+modulus one almost everywhere preserves the `L²` norm.
 
 The construction is Mathlib's Hölder map for scalar multiplication with one exponent equal to
 infinity.  The resulting operator is the ambient multiplication operator compressed in the
@@ -147,23 +147,6 @@ theorem adjoint_multiplicationOperator (a : Lp ℂ ∞ μ) :
   simp [hf, hg, ha, inner_smul_left, inner_smul_right]
 
 end InnerProductSpace
-
-section Unimodular
-
-variable [NormedAddCommGroup E] [InnerProductSpace ℂ E]
-
-/-- Multiplication by a symbol of modulus one almost everywhere preserves `L²` inner products. -/
-theorem inner_multiplicationOperator_apply_apply_of_ae_norm_eq_one {u : Lp ℂ ∞ μ}
-    (hu : ∀ᵐ x ∂μ, ‖u x‖ = 1) (f g : Lp E 2 μ) :
-    ⟪multiplicationOperator u f, multiplicationOperator u g⟫ = ⟪f, g⟫ := by
-  rw [L2.inner_def, L2.inner_def]
-  refine integral_congr_ae ?_
-  filter_upwards [multiplicationOperator_ae u f, multiplicationOperator_ae u g, hu]
-    with x hf hg hux
-  rw [hf, hg, inner_smul_left, inner_smul_right, ← mul_assoc, RCLike.conj_mul, hux]
-  simp
-
-end Unimodular
 
 section FiniteMeasure
 
