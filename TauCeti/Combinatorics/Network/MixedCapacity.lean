@@ -88,20 +88,25 @@ to `t` survives the deletion of the vertices of `X` and the arrows of `F`. -/
 def IsMixedSeparator (X : Finset V) (F : Finset (Σ v w, Q v w)) (s t : V) : Prop :=
   s ∉ X ∧ t ∉ X ∧ ∀ p : ArrowWalk Q s t, (∃ v ∈ p.vertices, v ∈ X) ∨ ∃ a ∈ p.arrows, a ∈ F
 
+theorem isMixedSeparator_iff {X : Finset V} {F : Finset (Σ v w, Q v w)} {s t : V} :
+    IsMixedSeparator X F s t ↔
+      s ∉ X ∧ t ∉ X ∧ ∀ p : ArrowWalk Q s t, (∃ v ∈ p.vertices, v ∈ X) ∨ ∃ a ∈ p.arrows, a ∈ F :=
+  Iff.rfl
+
 namespace IsMixedSeparator
 
 variable {X X' : Finset V} {F F' : Finset (Σ v w, Q v w)} {s t : V}
 
 theorem source_notMem (h : IsMixedSeparator X F s t) : s ∉ X :=
-  h.1
+  (isMixedSeparator_iff.1 h).1
 
 theorem target_notMem (h : IsMixedSeparator X F s t) : t ∉ X :=
-  h.2.1
+  (isMixedSeparator_iff.1 h).2.1
 
 /-- Every walk from `s` to `t` meets a mixed separator. -/
 theorem exists_mem (h : IsMixedSeparator X F s t) (p : ArrowWalk Q s t) :
     (∃ v ∈ p.vertices, v ∈ X) ∨ ∃ a ∈ p.arrows, a ∈ F :=
-  h.2.2 p
+  (isMixedSeparator_iff.1 h).2.2 p
 
 /-- The terminals of a mixed separator are distinct, since the walk of length zero meets no
 vertex set avoiding its terminal and no arrow set. -/
@@ -116,7 +121,7 @@ theorem ne (h : IsMixedSeparator X F s t) : s ≠ t := by
 separator. -/
 theorem mono (h : IsMixedSeparator X F s t) (hX : X ⊆ X') (hF : F ⊆ F') (hs : s ∉ X')
     (ht : t ∉ X') : IsMixedSeparator X' F' s t :=
-  ⟨hs, ht, fun p ↦ (h.exists_mem p).imp (fun ⟨v, hv, hvX⟩ ↦ ⟨v, hv, hX hvX⟩)
+  isMixedSeparator_iff.2 ⟨hs, ht, fun p ↦ (h.exists_mem p).imp (fun ⟨v, hv, hvX⟩ ↦ ⟨v, hv, hX hvX⟩)
     fun ⟨a, ha, haF⟩ ↦ ⟨a, ha, hF haF⟩⟩
 
 end IsMixedSeparator
@@ -133,8 +138,8 @@ leave `S` and the original arrows leaving `S` form a mixed separator between `s`
 theorem SplitHom.isMixedSeparator_cutVertices_cutArrows (hst : s ≠ t) {S : Finset (V × Bool)}
     (hs : (s, true) ∈ S) (ht : (t, false) ∉ S) :
     IsMixedSeparator (cutVertices S) (cutArrows Q S) s t := by
-  refine ⟨fun h ↦ ((mem_cutVertices S).1 h).2 hs, fun h ↦ ht ((mem_cutVertices S).1 h).1,
-    fun p ↦ ?_⟩
+  refine isMixedSeparator_iff.2 ⟨fun h ↦ ((mem_cutVertices S).1 h).2 hs,
+    fun h ↦ ht ((mem_cutVertices S).1 h).1, fun p ↦ ?_⟩
   by_contra hp
   simp only [not_or, not_exists, not_and] at hp
   -- Along a walk from `s` avoiding the separator, the exit of every vertex reached lies in `S`,
@@ -258,10 +263,22 @@ value leaving `v`. -/
 def Flow.RespectsVertexCapacity (f : Flow cap s t) (c : V → K) : Prop :=
   ∀ v, v ≠ s → v ≠ t → arrowSum f.toFun univ {v} ≤ c v
 
+omit [IsOrderedAddMonoid K] in
+theorem Flow.respectsVertexCapacity_iff {f : Flow cap s t} :
+    f.RespectsVertexCapacity c ↔ ∀ v, v ≠ s → v ≠ t → arrowSum f.toFun univ {v} ≤ c v :=
+  Iff.rfl
+
+omit [IsOrderedAddMonoid K] in
+/-- A flow respecting the vertex capacities carries at most `c v` into each nonterminal vertex
+`v`. -/
+theorem Flow.RespectsVertexCapacity.le {f : Flow cap s t} (hf : f.RespectsVertexCapacity c)
+    {v : V} (hs : v ≠ s) (ht : v ≠ t) : arrowSum f.toFun univ {v} ≤ c v :=
+  Flow.respectsVertexCapacity_iff.1 hf v hs ht
+
 /-- Every flow respects the vertex capacities equal to the total capacity of all arrows. -/
 theorem Flow.respectsVertexCapacity_arrowSum (f : Flow cap s t) :
     f.RespectsVertexCapacity fun _ ↦ arrowSum cap univ univ :=
-  fun _ _ _ ↦ f.arrowSum_le_arrowSum_univ _ _
+  Flow.respectsVertexCapacity_iff.2 fun _ _ _ ↦ f.arrowSum_le_arrowSum_univ _ _
 
 variable [DecidableEq V]
 
@@ -283,7 +300,7 @@ private def toSplitFlow (f : Flow cap s t) (hf : f.RespectsVertexCapacity c) :
         split_ifs <;> exact f.arrowSum_le_arrowSum_univ _ _
       · rw [not_or] at hv
         rw [mixedSplitCapacity_of_ne hv.1 hv.2, splitValue_of_ne _ hv.2]
-        exact hf v hv.1 hv.2
+        exact hf.le hv.1 hv.2
   conserve := by
     rintro ⟨v, _ | _⟩ hs ht
     · have hv : v ≠ t := fun h ↦ ht (h ▸ rfl)
@@ -315,7 +332,7 @@ private def ofSplitFlow (hst : s ≠ t)
         rw [excessAt_originalAssignment, g.conserve (t, true) (by simpa using hst.symm) (by simp),
           add_zero]
         exact g.excessAt_sink_nonneg }
-  property v hs ht := by
+  property := Flow.respectsVertexCapacity_iff.2 fun v hs ht ↦ by
     refine arrowSum_originalAssignment_univ_singleton_le v ?_
       (g.conserve _ (by simp) (by simpa using ht))
     simpa [mixedSplitCapacity_of_ne hs ht] using g.le_upper (split v)
@@ -392,7 +409,7 @@ theorem Flow.RespectsVertexCapacity.val_le {f : Flow cap s t} (hf : f.RespectsVe
   -- The capacities in the weight are nonnegative, since `f` lies between zero and them.
   have hcX (v : V) (hv : v ∈ X) : 0 ≤ mixedSplitCapacity cap c s t v := by
     rw [mixedSplitCapacity_of_ne (hX hv).1 (hX hv).2]
-    exact (arrowSum_nonneg f.mem_Icc.1 _ _).trans (hf v (hX hv).1 (hX hv).2)
+    exact (arrowSum_nonneg f.mem_Icc.1 _ _).trans (hf.le (hX hv).1 (hX hv).2)
   obtain ⟨S, hs, ht, hS⟩ :=
     h.exists_arrowSum_le (fun a _ ↦ (f.mem_Icc.1 _ _ a.2.2).trans (f.mem_Icc.2 _ _ a.2.2)) hcX
   rw [sum_congr rfl fun v hv ↦ mixedSplitCapacity_of_ne (hX hv).1 (hX hv).2] at hS
