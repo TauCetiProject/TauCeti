@@ -323,7 +323,8 @@ theorem mlieDerivForm_eq_interior_mextDeriv_add {φ : SmoothForm I M F (k + 1)}
     mlieDerivForm V φ.1 = (mextDeriv φ.1).interior V + mextDeriv (φ.1.interior V) := by
   exact TauCeti.mlieDerivForm_eq_interior_mextDeriv_add φ.mdifferentiable hV
 
-/-- On a smooth closed form, the Lie derivative is the exterior derivative of its contraction. -/
+/-- On a smooth closed form, along a differentiable vector field, the Lie derivative is the exterior
+derivative of its contraction. -/
 theorem mlieDerivForm_eq_mextDeriv_interior {φ : SmoothForm I M F (k + 1)}
     {V : (x : M) → TangentSpace I x}
     (hV : MDifferentiable I I.tangent (fun y ↦ (V y : TangentBundle I M)))
