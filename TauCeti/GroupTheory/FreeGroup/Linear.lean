@@ -67,17 +67,8 @@ private lemma transvection_two_zpow_smul_subset {i j : Fin 2} (hij : i ≠ j) {n
   simp only [Set.mem_ofPred_eq] at hv ⊢
   -- The `n`-th power is the transvection with parameter `n * 2`, which adds `n * 2 * v j` to
   -- the `i`-th coordinate and leaves the `j`-th coordinate unchanged.
-  have hpow : transvection hij (2 : ℤ) ^ n = transvection hij (n * 2) := by
-    have h := map_zpow (transvectionHom hij) (Multiplicative.ofAdd (2 : ℤ)) n
-    rw [transvectionHom_apply, transvectionHom_apply, toAdd_zpow, toAdd_ofAdd, smul_eq_mul] at h
-    exact h.symm
-  have hi : (transvection hij (n * 2) • v) i = v i + n * 2 * v j := by
-    simp [SpecialLinearGroup.smul_def, transvection_coe, Matrix.add_mulVec,
-      Matrix.single_mulVec_eq, mul_assoc]
-  have hj : (transvection hij (n * 2) • v) j = v j := by
-    simp [SpecialLinearGroup.smul_def, transvection_coe, Matrix.add_mulVec,
-      Matrix.single_mulVec_eq, hij.symm]
-  rw [hpow, hi, hj]
+  rw [transvection_zpow, transvection_smul_apply_self, transvection_smul_apply_of_ne _ _ _ hij.symm,
+    smul_eq_mul]
   have h2 : 2 * |v j| ≤ |n * 2 * v j| := by
     rw [abs_mul, abs_mul, abs_two]
     nlinarith [Int.one_le_abs hn, abs_nonneg (v j)]
@@ -98,8 +89,8 @@ a free subgroup of rank two of `SL(2, ℤ)`. -/
 theorem injective_freeGroup_lift_transvection_two :
     Function.Injective (FreeGroup.lift ![transvection (zero_ne_one : (0 : Fin 2) ≠ 1) (2 : ℤ),
       transvection (one_ne_zero : (1 : Fin 2) ≠ 0) (2 : ℤ)]) :=
-  FreeGroup.injective_lift_of_ping_pong_pair ⟨![1, 0], by simp⟩ ⟨![0, 1], by simp⟩
-    disjoint_cones (fun _ hn => transvection_two_zpow_smul_subset _ hn)
+  FreeGroup.injective_lift_of_ping_pong_pair ⟨![1, 0], by simp⟩ disjoint_cones
+    (fun _ hn => transvection_two_zpow_smul_subset _ hn)
     (fun _ hn => transvection_two_zpow_smul_subset _ hn)
 
 /-- For distinct integers `k i`, the conjugates `Bᵏ⁽ⁱ⁾ A B⁻ᵏ⁽ⁱ⁾` of `A = [[1, 2], [0, 1]]` by
