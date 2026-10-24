@@ -129,6 +129,7 @@ theorem eq_zero_of_neg_laplacian_add_smul_eq_zero {c : ℝ} (hc : 0 < c) {f : �
 
 /-- The resolvent of the Laplacian on tempered distributions extends the resolvent
 `SchwartzMap.laplacianResolvent` on Schwartz space, for `c > 0`. -/
+@[simp]
 theorem laplacianResolvent_toTemperedDistributionCLM_eq [CompleteSpace F] {c : ℝ} (hc : 0 < c)
     (f : 𝓢(E, F)) :
     laplacianResolvent F c (f : 𝓢'(E, F)) = SchwartzMap.laplacianResolvent c f := by
