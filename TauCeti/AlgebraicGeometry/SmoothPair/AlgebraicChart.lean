@@ -83,7 +83,7 @@ variable {K} {R : Type*} [CommRing R] {σ : K →+* R} {I : Ideal R}
     (modelAlgebraicChart K n r hr).r = r := (rfl)
 
 /-- The model coordinate map fixes every polynomial. -/
-@[simp] theorem modelAlgebraicChart_coord (n r : ℕ) (hr : r ≤ n)
+@[simp] theorem modelAlgebraicChart_coord_apply (n r : ℕ) (hr : r ≤ n)
     (f : MvPolynomial (Fin n) K) : (modelAlgebraicChart K n r hr).coord f = f := (rfl)
 
 namespace AlgebraicChart
@@ -150,6 +150,7 @@ theorem isRadical (c : AlgebraicChart K σ I) : I.IsRadical := by
   have hquot : IsReduced (R ⧸ J.map (algebraMap A R)) :=
     isReduced_of_injective e e.injective
   have hmap : J.map (algebraMap A R) = I := by
+    rw [c.coord.algebraMap_toAlgebra]
     simp only [J, Ideal.map_span, Set.image_singleton]
     exact c.ideal_eq.symm
   rw [← hmap, Ideal.isRadical_iff_quotient_reduced]
@@ -164,7 +165,7 @@ theorem ideal_ne_bot [Nontrivial R] (c : AlgebraicChart K σ I) : I ≠ ⊥ := b
   exact one_ne_zero ((mem_nonZeroDivisors_iff_left.mp h) 1 (by simp [hz]))
 
 /-- The full boundary has no algebraic normal crossings chart on a nonzero ring. -/
-instance no_full_boundary [Nontrivial R] : IsEmpty (AlgebraicChart K σ (⊥ : Ideal R)) :=
+instance isEmpty_bot [Nontrivial R] : IsEmpty (AlgebraicChart K σ (⊥ : Ideal R)) :=
   ⟨fun c ↦ c.ideal_ne_bot rfl⟩
 
 end AlgebraicChart
