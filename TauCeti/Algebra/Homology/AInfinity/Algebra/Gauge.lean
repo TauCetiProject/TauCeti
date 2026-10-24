@@ -52,6 +52,8 @@ then the gauge transformation by `φ` keeps `m₃, …, mₙ₋₁` zero and kil
 
 * `TauCeti.AInfinityAlgebra.isIso_comapBarEquivHom` and `TauCeti.AInfinityAlgebra.isIso_gaugeHom`:
   both morphisms are `A∞` isomorphisms.
+* `TauCeti.AInfinityHom.taylor_eq_taylor_comp_coalgHom_sub_brace`: the morphism equation of an
+  `A∞` morphism with Taylor map `letter + ψ`, in the form `m_𝒜 = m_ℋ ∘ F - ψ{m_𝒜}`.
 * `TauCeti.AInfinityAlgebra.taylor_gauge`: the recursive formula `m' = m ∘ F - φ{m'}`.
 * `TauCeti.AInfinityAlgebra.hochschildDifferential_apply_eq_zero_of_mem_filtration`: the
   Hochschild differential of a cochain vanishing on the words of length at most `e` vanishes on
@@ -80,6 +82,29 @@ public section
 universe uR uA uB
 
 namespace TauCeti
+
+namespace AInfinityHom
+
+open ReducedTensorWords
+
+variable {R : Type uR} {A : Type uA} [CommRing R] [AddCommGroup A] [Module R A]
+  {𝒜 ℋ : AInfinityAlgebra R A}
+
+/-- **The morphism equation in gauge form.**  Let `f : 𝒜 ⟶ ℋ` be an `A∞` morphism between
+structures with the same grading, with Taylor map `letter + ψ`.  Then the Taylor map of `𝒜`
+satisfies `m_𝒜 = m_ℋ ∘ F - ψ{m_𝒜}`, for `F` the coalgebra map with Taylor components
+`letter + ψ`. -/
+theorem taylor_eq_taylor_comp_coalgHom_sub_brace (f : AInfinityHom 𝒜 ℋ)
+    (hG : 𝒜.grading = ℋ.grading) {ψ : ReducedTensorWords R A →ₗ[R] A}
+    (hf : f.taylor = letter R A + ψ) :
+    𝒜.taylor = ℋ.taylor ∘ₗ coalgHom R (letter R A + ψ) -
+      brace (ℋ.grading.shift 1) ψ 𝒜.taylor 1 := by
+  have h := f.taylor_comp_barMap
+  rw [f.barMap_eq_coalgHom, hf, LinearMap.add_comp, AInfinityAlgebra.letter_comp_barDifferential,
+    AInfinityAlgebra.barDifferential_def, hG] at h
+  rw [h, brace_def, add_sub_cancel_right]
+
+end AInfinityHom
 
 namespace AInfinityAlgebra
 
@@ -262,11 +287,9 @@ Taylor map of `𝒜` and `F` the coalgebra automorphism with Taylor components `
 theorem taylor_gauge :
     (𝒜.gauge φ hφ hφ₁).taylor =
       𝒜.taylor ∘ₗ coalgHom R (letter R A + φ) -
-        brace (𝒜.grading.shift 1) φ (𝒜.gauge φ hφ hφ₁).taylor 1 := by
-  have h := (𝒜.gaugeHom φ hφ hφ₁).taylor_comp_barMap
-  rw [taylor_gaugeHom, barMap_gaugeHom, LinearMap.add_comp, letter_comp_barDifferential,
-    barDifferential_def, gauge_grading] at h
-  rw [h, brace_def, add_sub_cancel_right]
+        brace (𝒜.grading.shift 1) φ (𝒜.gauge φ hφ hφ₁).taylor 1 :=
+  (𝒜.gaugeHom φ hφ hφ₁).taylor_eq_taylor_comp_coalgHom_sub_brace (gauge_grading 𝒜 φ hφ hφ₁)
+    (taylor_gaugeHom 𝒜 φ hφ hφ₁)
 
 /-! ### The gauge transformation on short words -/
 

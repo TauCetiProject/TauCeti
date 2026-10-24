@@ -20,8 +20,7 @@ cocycle of `ℋ` (`TauCeti.AInfinityAlgebra.hochschildDifferential_obstruction`)
 (`TauCeti.AInfinityAlgebra.IsMinimal.taylor_gauge_apply_eq_of_hochschildDifferential`).  This file
 proves the converse when `2` is invertible: if `𝒜` is `A∞` isomorphic to `ℋ`, then `m₄` is a
 Hochschild coboundary (`IsMinimal.exists_hochschildDifferential_eq_obstruction_four_of_isIso`).
-Consequently, over a field of characteristic different from two, a quartic obstruction which is
-not a coboundary makes `𝒜` non-formal
+Consequently, a quartic obstruction which is not a coboundary makes `𝒜` non-formal
 (`IsMinimal.not_isFormal_of_not_exists_hochschildDifferential_eq_obstruction_four`).
 
 The isomorphism may have a nonzero quadratic component `f₂`, so the obstruction need not be the
@@ -44,8 +43,8 @@ by `2`.
   when `2` is invertible, the quartic obstruction of a minimal `A∞` structure with `m₃ = 0` which
   is `A∞` isomorphic to the graded algebra `ℋ` is a Hochschild coboundary.
 * `IsMinimal.not_isFormal_of_not_exists_hochschildDifferential_eq_obstruction_four`:
-  over a field of characteristic different from two, a quartic obstruction which is not a
-  Hochschild coboundary obstructs formality.
+  when `2` is invertible, a quartic obstruction which is not a Hochschild coboundary obstructs
+  formality.
 
 ## References
 
@@ -170,11 +169,8 @@ private theorem exists_hochschildDifferential_eq_obstruction_four_of_linearPart_
       rw [LinearMap.comp_apply, hψdef, LinearMap.sub_apply, ← AInfinityHom.linearPart_apply, hf,
         LinearMap.id_apply, letter_ofLetter, sub_self, LinearMap.zero_apply]
   -- The morphism equation, written as for a gauge transformation: `m_𝒜 = m_ℋ ∘ F - ψ{m_𝒜}`.
-  have key : 𝒜.taylor = ℋ.taylor ∘ₗ coalgHom R (letter R A + ψ) - brace G ψ 𝒜.taylor 1 := by
-    have h₁ := f.taylor_comp_barMap
-    rw [f.barMap_eq_coalgHom, ht, LinearMap.add_comp, letter_comp_barDifferential,
-      barDifferential_def, hG] at h₁
-    rw [h₁, brace_def, add_sub_cancel_right]
+  have key : 𝒜.taylor = ℋ.taylor ∘ₗ coalgHom R (letter R A + ψ) - brace G ψ 𝒜.taylor 1 :=
+    f.taylor_eq_taylor_comp_coalgHom_sub_brace hG ht
   -- On the words of length at most four, `ψ{m_𝒜} = ψ{m_ℋ}`.
   have hb : ∀ z ∈ filtration R A 4, brace G ψ 𝒜.taylor 1 z = brace G ψ ℋ.taylor 1 z := by
     intro z hz
@@ -265,30 +261,18 @@ theorem IsMinimal.exists_hochschildDifferential_eq_obstruction_four_of_isIso
     rw [add_zero, LinearEquiv.coe_coe, LinearEquiv.ofBijective_apply]
     exact f.linearPart_mem (by rwa [hG])
   have hθm : ∀ a b, θ (ℋ.m 2 ![a, b]) = ℋ.m 2 ![θ a, θ b] := fun a b ↦ by
-    have hab := f.linearPart_m_two_sub_mem_boundaries (h𝒜.mem_cycles a) (h𝒜.mem_cycles b)
-    rwa [(isMinimal_iff_boundaries_eq_bot ℋ).1 hℋ, Submodule.mem_bot, sub_eq_zero, h₂] at hab
-  let s : AInfinityStrictHom ℋ ℋ :=
-    { toLinearMap := θ.symm.toLinearMap
-      map_mem' := fun ha ↦ by simpa only [add_zero] using hθ.linearEquiv_symm.map_mem ha
-      map_m' := fun n ↦ by
-        ext x
-        rw [LinearMap.compMultilinearMap_apply, MultilinearMap.compLinearMap_apply]
-        match n with
-        | 0 => simp
-        | 1 => simp [hℋ.m_one]
-        | 2 =>
-          obtain ⟨a, b, rfl⟩ : ∃ a b, x = ![a, b] :=
-            ⟨x 0, x 1, funext fun i ↦ by fin_cases i <;> rfl⟩
-          have hx : (fun i ↦ θ.symm.toLinearMap (![a, b] i)) = ![θ.symm a, θ.symm b] :=
-            funext fun i ↦ by fin_cases i <;> rfl
-          rw [hx]
-          apply θ.injective
-          rw [LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply, hθm,
-            LinearEquiv.apply_symm_apply, LinearEquiv.apply_symm_apply]
-        | n + 3 => simp [hm (n + 3) (by omega)] }
+    have hab := f.linearPart_m_two h𝒜 hℋ a b
+    rwa [h₂] at hab
+  let s : AInfinityStrictHom ℋ ℋ := .ofMapMTwo hℋ hℋ hm hm θ.symm.toLinearMap
+    (by simpa only [neg_zero] using hθ.linearEquiv_symm) fun a b ↦ θ.injective <| by
+      rw [LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply, hθm, LinearEquiv.apply_symm_apply,
+        LinearEquiv.apply_symm_apply]
   have hid : (s.toAInfinityHom.comp f).linearPart = LinearMap.id := by
     rw [AInfinityHom.linearPart_comp, AInfinityStrictHom.linearPart_toAInfinityHom]
-    exact LinearMap.ext fun a ↦ θ.symm_apply_apply a
+    exact LinearMap.ext fun a ↦ by
+      simp only [s, LinearMap.comp_apply, AInfinityStrictHom.coe_toLinearMap,
+        AInfinityStrictHom.coe_ofMapMTwo, LinearEquiv.coe_coe, LinearMap.id_apply]
+      exact θ.symm_apply_apply a
   -- On the words of length at most three, `𝒜` agrees with `ℋ`.
   have h : ∀ z ∈ filtration R A 3, 𝒜.taylor z = ℋ.taylor z := fun z hz ↦
     taylor_apply_eq_of_forall_m_eq hG (n := 3) (fun k hk hk₃ ↦ by
@@ -298,21 +282,20 @@ theorem IsMinimal.exists_hochschildDifferential_eq_obstruction_four_of_isIso
       · rw [h₃, hm 3 le_rfl]) hz
   exact exists_hochschildDifferential_eq_obstruction_four_of_linearPart_eq_id hℋ hm hG h _ hid
 
-/-- **A quartic obstruction which is not a coboundary obstructs formality.**  Over a field of
-characteristic different from two, let `ℋ` be a graded algebra, presented as a minimal `A∞`
-algebra without operations above arity two, and let `𝒜` be a minimal `A∞` structure with the
-grading and the binary operation of `ℋ` and with `m₃ = 0`.  If the obstruction `m₄` of `𝒜` is not
-the Hochschild differential of a degree-zero cochain, then `𝒜` is not formal. -/
+/-- **A quartic obstruction which is not a coboundary obstructs formality.**  Assume that `2` is
+invertible.  Let `ℋ` be a graded algebra, presented as a minimal `A∞` algebra without operations
+above arity two, and let `𝒜` be a minimal `A∞` structure with the grading and the binary operation
+of `ℋ` and with `m₃ = 0`.  If the obstruction `m₄` of `𝒜` is not the Hochschild differential of a
+degree-zero cochain, then `𝒜` is not formal.  Over a field of characteristic different from two,
+the instance is `invertibleOfNonzero`. -/
 theorem IsMinimal.not_isFormal_of_not_exists_hochschildDifferential_eq_obstruction_four
-    {K : Type*} [Field K] [Module K A] {𝒜 ℋ : AInfinityAlgebra K A} (h2 : (2 : K) ≠ 0)
-    (h𝒜 : 𝒜.IsMinimal) (hℋ : ℋ.IsMinimal) (hm : ∀ n, 3 ≤ n → ℋ.m n = 0)
+    [Invertible (2 : R)] (h𝒜 : 𝒜.IsMinimal) (hℋ : ℋ.IsMinimal) (hm : ∀ n, 3 ≤ n → ℋ.m n = 0)
     (hG : 𝒜.grading = ℋ.grading) (h₂ : 𝒜.m 2 = ℋ.m 2) (h₃ : 𝒜.m 3 = 0)
-    (hobs : ¬∃ φ : ReducedTensorWords K A →ₗ[K] A,
+    (hobs : ¬∃ φ : ReducedTensorWords R A →ₗ[R] A,
       LinearMap.IsHomogeneous φ (gradedPiece (ℋ.grading.shift 1))
         (ℋ.grading.shift 1).piece 0 ∧
       ℋ.hochschildDifferential 0 φ = 𝒜.obstruction ℋ ⟨4, by norm_num⟩) :
     ¬𝒜.IsFormal := by
-  let _ : Invertible (2 : K) := invertibleOfNonzero h2
   rw [h𝒜.isFormal_iff_exists_isIso hℋ hm hG h₂]
   rintro ⟨f, hf⟩
   obtain ⟨φ, hφ, -, hφo⟩ :=
