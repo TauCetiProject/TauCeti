@@ -8,6 +8,8 @@ module
 public import TauCeti.RingTheory.Huber.Restricted.GaussNorm
 public import TauCeti.RingTheory.Huber.WeightedEval.UniversalProperty
 
+import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PowerBounded
+
 /-!
 # The universal property of Gauss-normed Tate algebras at power-bounded arguments
 
@@ -31,6 +33,7 @@ is `TauCeti.Huber.IsPowerBounded` for the norm topology: the powers of `bᵢ` st
 
 ## Main results
 
+* `TauCeti.MvPowerSeries.isPowerBounded_X`: each variable `Xᵢ` is power-bounded.
 * `TauCeti.MvPowerSeries.isRestricted_subring_ringHom_ext_of_continuous`: continuous ring
   homomorphisms out of `R⟨X₁, …, Xₖ⟩` agreeing on constants and variables are equal.
 * `TauCeti.MvPowerSeries.restrictedLift_unique`: `restrictedLift` is the only such continuous
@@ -69,6 +72,15 @@ theorem isRestricted_subring_ringHom_ext_of_continuous {T : Type*} [Semiring T]
     (fun i ↦ by simp [e, hX])
   ext f
   simpa using congr($h (e.symm f))
+
+/-- Each variable `Xᵢ` of the Gauss-normed algebra `R⟨X₁, …, Xₖ⟩` is power-bounded. This is
+`TauCeti.Huber.isPowerBounded_weightedX_one_weight`, carried along the Gauss comparison. -/
+theorem isPowerBounded_X (i : Fin k) :
+    IsPowerBounded
+      (⟨X i, isRestricted_X _ i⟩ : IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1)) := by
+  rw [← restrictedMvPowerSeriesGaussEquiv_weightedX, isPowerBounded_ringEquiv_iff _
+    continuous_restrictedMvPowerSeriesGaussEquiv continuous_restrictedMvPowerSeriesGaussEquiv_symm]
+  exact isPowerBounded_weightedX_one_weight i
 
 variable {S : Type*} [NormedCommRing S] [IsUltrametricDist S] [CompleteSpace S] {φ : R →+* S}
   (hφ : Continuous φ) {b : Fin k → S} (hb : ∀ i, IsPowerBounded (b i))
