@@ -25,6 +25,11 @@ bijective only under a projective- or injective-object hypothesis.)
 * `TauCeti.extLinearEquivOfEquivalence`: its `R`-linear refinement for an `R`-linear equivalence
   of `R`-linear abelian categories.  `R`-linearity of `e` is genuinely needed for the linear
   statement: an additive isomorphism of `k`-vector spaces need not preserve dimension.
+
+## Main results
+
+* `CategoryTheory.Equivalence.mapExtAddHom_bijective`: the forward functor of an additive
+  equivalence is bijective on `Ext`.
 -/
 
 public section
@@ -33,10 +38,10 @@ namespace TauCeti
 
 open CategoryTheory CategoryTheory.Abelian CategoryTheory.Limits
 
-universe w v v' u u' t
+universe w w' v v' u u' t
 
 variable {C : Type u} [Category.{v} C] [Abelian C] {D : Type u'} [Category.{v'} D] [Abelian D]
-  [HasExt.{w} C] [HasExt.{w} D]
+  [HasExt.{w} C] [HasExt.{w'} D]
 
 /-- **`Ext` groups are invariant under an additive equivalence.**  The equivalence `e` carries
 `Extⁿ(X, Y)` isomorphically onto `Extⁿ(e X, e Y)`.  This is `CategoryTheory.Adjunction.extEquiv`
@@ -44,7 +49,7 @@ for the adjunction `e.functor ⊣ e.inverse`, with the target transported along 
 isomorphism. -/
 noncomputable def _root_.CategoryTheory.Equivalence.extAddEquiv
     (e : C ≌ D) [e.functor.Additive] (X Y : C) (n : ℕ) :
-    Ext.{w} X Y n ≃+ Ext.{w} (e.functor.obj X) (e.functor.obj Y) n :=
+    Ext.{w} X Y n ≃+ Ext.{w'} (e.functor.obj X) (e.functor.obj Y) n :=
   (extAddEquivOfIso (Iso.refl X) (e.unitIso.app Y) n).trans e.toAdjunction.extEquiv.symm
 
 @[simp]
@@ -55,12 +60,19 @@ theorem _root_.CategoryTheory.Equivalence.extAddEquiv_apply
   simp [Equivalence.extAddEquiv, Adjunction.extEquiv_symm_apply, Ext.mapExactFunctor_comp,
     Ext.mapExactFunctor_mk₀]
 
+/-- The forward functor of an additive equivalence is bijective on `Ext` groups, since
+`CategoryTheory.Equivalence.extAddEquiv` is `CategoryTheory.Abelian.Ext.mapExactFunctor`. -/
+theorem _root_.CategoryTheory.Equivalence.mapExtAddHom_bijective
+    (e : C ≌ D) [e.functor.Additive] (X Y : C) (n : ℕ) :
+    Function.Bijective (e.functor.mapExtAddHom.{w, w'} X Y n) :=
+  (funext e.extAddEquiv_apply).subst (motive := Function.Bijective) (e.extAddEquiv X Y n).bijective
+
 /-- **The `R`-linear refinement of `CategoryTheory.Equivalence.extAddEquiv`.**  For an `R`-linear
 equivalence of `R`-linear abelian categories, `Extⁿ(X, Y)` and `Extⁿ(e X, e Y)` are isomorphic as
 `R`-modules. -/
 noncomputable def extLinearEquivOfEquivalence (R : Type t) [Ring R] [Linear R C] [Linear R D]
     (e : C ≌ D) [e.functor.Additive] [e.functor.Linear R] (X Y : C) (n : ℕ) :
-    Ext.{w} X Y n ≃ₗ[R] Ext.{w} (e.functor.obj X) (e.functor.obj Y) n where
+    Ext.{w} X Y n ≃ₗ[R] Ext.{w'} (e.functor.obj X) (e.functor.obj Y) n where
   __ := e.extAddEquiv X Y n
   map_smul' r α := by simp
 

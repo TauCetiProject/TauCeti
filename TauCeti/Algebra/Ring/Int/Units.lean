@@ -8,16 +8,18 @@ module
 public import Mathlib.Data.Int.Order.Units
 
 /-!
-# Equality of signs
+# Equality and squares of signs
 
 The group `ℤˣ = {±1}` has exponent two, so two signs are equal exactly when their product is `1`.
 This is the form in which an equality of two products of Hilbert symbols is checked, by expanding
-both sides into one common product of symbols.
+both sides into one common product of symbols. For the same reason, the image of a sign in any
+ring squares to `1`.
 
 ## Main results
 
 * `Int.units_eq_iff_mul_eq_one`: `u = v ↔ u * v = 1` for signs `u v : ℤˣ`.
 * `Int.units_eq_iff_eq_of_mul_eq_mul`: if `u * v = u' * v'` then `u = v ↔ u' = v'`.
+* `Int.cast_units_sq`: the square of a sign, cast to any ring, is `1`.
 -/
 
 public section
@@ -33,5 +35,10 @@ theorem _root_.Int.units_eq_iff_mul_eq_one (u v : ℤˣ) : u = v ↔ u * v = 1 :
 theorem _root_.Int.units_eq_iff_eq_of_mul_eq_mul {u v u' v' : ℤˣ} (h : u * v = u' * v') :
     u = v ↔ u' = v' := by
   rw [Int.units_eq_iff_mul_eq_one u v, Int.units_eq_iff_mul_eq_one u' v', h]
+
+/-- The square of a sign `u : ℤˣ`, cast to any ring, is `1`. -/
+@[simp]
+theorem _root_.Int.cast_units_sq {R : Type*} [Ring R] (u : ℤˣ) : ((u : ℤ) : R) ^ 2 = 1 := by
+  rcases Int.units_eq_one_or u with rfl | rfl <;> simp
 
 end TauCeti

@@ -1012,6 +1012,13 @@ theorem insert_cIco_subset_cIco {A C s s' : Fin n} (hs : s ∈ cIco A C) (hs' : 
   simp only [mem_cIco, mem_cIoo, ne_eq, ← Fin.val_inj] at hs hs' hr' ⊢
   split_ifs at hs hs' hr' ⊢ <;> omega
 
+/-- A point strictly between `s` and an interior point `b` of `cIoo a c`, where `s` lies in the
+initial piece `cIco a b`, also lies strictly between `s` and `c`. -/
+theorem mem_cIoo_of_mem_cIco_of_mem_cIoo {a b c s s' : Fin n} (hb : b ∈ cIoo a c)
+    (hs : s ∈ cIco a b) (hs' : s' ∈ cIoo s b) : s' ∈ cIoo s c := by
+  simp only [mem_cIco, mem_cIoo, ne_eq, ← Fin.val_inj] at hb hs hs' ⊢
+  split_ifs at hb hs hs' ⊢ <;> omega
+
 /-- A point is never in the half-open cyclic interval starting at its own successor.
 Going clockwise from `c + 1`, the point `c` is the last point reached — only after a full
 cycle. The half-open arc `cIco (c + 1) r` stops before `r`, hence before completing the

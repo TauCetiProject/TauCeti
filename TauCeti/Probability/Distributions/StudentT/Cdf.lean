@@ -9,6 +9,7 @@ public import TauCeti.Analysis.SpecialFunctions.IncompleteBeta
 public import TauCeti.Probability.Distributions.StudentT.Basic
 public import TauCeti.Probability.Cdf
 import TauCeti.Analysis.Calculus.RealCharts
+import TauCeti.Probability.Cdf.Density
 import TauCeti.Probability.Distributions.StudentT.WeightedIntegral
 import Mathlib.MeasureTheory.Measure.Lebesgue.Integral
 
@@ -245,17 +246,9 @@ theorem cdf_studentTMeasure_eq (hν : 0 < ν) (x : ℝ) :
 theorem strictMono_cdf_studentTMeasure (hν : 0 < ν) :
     StrictMono (cdf (studentTMeasure ν)) := by
   let _ := isProbabilityMeasure_studentTMeasure hν
-  intro x y hxy
-  have hpos : 0 < ∫ z in Ioc x y, studentTPDFReal ν z := by
-    rw [setIntegral_pos_iff_support_of_nonneg_ae
-      (ae_of_all _ (studentTPDFReal_nonneg ν))
-      (integrable_studentTPDFReal ν).integrableOn]
-    have hs : Function.support (studentTPDFReal ν) = univ :=
-      eq_univ_iff_forall.2 fun z ↦ (studentTPDFReal_pos hν z).ne'
-    rw [hs, univ_inter, Real.volume_Ioc, ENNReal.ofReal_pos]
-    exact sub_pos.2 hxy
-  rwa [← measureReal_studentTMeasure measurableSet_Ioc,
-    Measure.measureReal_Ioc_eq_cdf_sub _ hxy.le, sub_pos] at hpos
+  exact strictMono_cdf_of_eq_withDensity
+    (by rw [studentTMeasure_def, funext (studentTPDF_eq_ofReal ν)])
+    (measurable_studentTPDFReal ν).aemeasurable (studentTPDFReal_pos hν)
 
 /-- A positive-degree Student t law has a continuous cdf. -/
 theorem continuous_cdf_studentTMeasure (hν : 0 < ν) :

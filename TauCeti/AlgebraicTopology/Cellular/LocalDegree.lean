@@ -419,30 +419,29 @@ private lemma isIso_singularHomologyMap_cellDiskHom (k : ℕ) :
         exact map_map_symm n hm
 
 /-- The radial deformation `TauCeti.radialPush r` of the disk, in sup-norm coordinates. -/
-private def diskRadialPush {r : ℝ} (hr : 0 < r) (hr1 : r ≤ 1) :
+private def diskRadialPush {r : ℝ} (hr : 0 ≤ r) :
     C(I × TopCat.disk.{w} n, TopCat.disk.{w} n) where
   toFun q := (diskHomeomorphClosedBall n).symm
     ⟨radialPush r q.1 (diskHomeomorphClosedBall n q.2 : Fin n → ℝ), mem_closedBall_zero_iff.2
-      (norm_radialPush_le_one hr hr1 q.1
+      (norm_radialPush_le_one hr q.1
         (mem_closedBall_zero_iff.1 (diskHomeomorphClosedBall n q.2).2))⟩
   continuous_toFun := (diskHomeomorphClosedBall n).symm.continuous.comp
-    (Continuous.subtype_mk ((continuous_radialPush hr.le).comp (continuous_fst.prodMk
+    (Continuous.subtype_mk ((continuous_radialPush hr).comp (continuous_fst.prodMk
       (continuous_subtype_val.comp ((diskHomeomorphClosedBall n).continuous.comp
         continuous_snd)))) _)
 
-private lemma coe_diskHomeomorphClosedBall_diskRadialPush {r : ℝ} (hr : 0 < r) (hr1 : r ≤ 1)
+private lemma coe_diskHomeomorphClosedBall_diskRadialPush {r : ℝ} (hr : 0 ≤ r)
     (q : I × TopCat.disk.{w} n) :
-    (diskHomeomorphClosedBall n (diskRadialPush hr hr1 q) : Fin n → ℝ) =
+    (diskHomeomorphClosedBall n (diskRadialPush hr q) : Fin n → ℝ) =
       radialPush r q.1 (diskHomeomorphClosedBall n q.2 : Fin n → ℝ) := by
   rw [diskRadialPush, ContinuousMap.coe_mk, Homeomorph.apply_symm_apply]
 
-/-- The radial deformation of the disk, from the identity to the map pushing the shell
-`r ≤ ‖y‖` onto the boundary sphere. -/
-private def diskRadialHomotopy {r : ℝ} (hr : 0 < r) (hr1 : r ≤ 1) :
-    (ContinuousMap.id (TopCat.disk.{w} n)).Homotopy ((diskRadialPush hr hr1).curry 1) where
-  toContinuousMap := diskRadialPush hr hr1
+/-- The radial deformation of the disk, from the identity to the rescaled radial retraction. -/
+private def diskRadialHomotopy {r : ℝ} (hr : 0 ≤ r) :
+    (ContinuousMap.id (TopCat.disk.{w} n)).Homotopy ((diskRadialPush hr).curry 1) where
+  toContinuousMap := diskRadialPush hr
   map_zero_left z := (diskHomeomorphClosedBall n).injective <| Subtype.ext <|
-    (coe_diskHomeomorphClosedBall_diskRadialPush hr hr1 (0, z)).trans (radialPush_zero _ _)
+    (coe_diskHomeomorphClosedBall_diskRadialPush hr (0, z)).trans (radialPush_zero _ _)
   map_one_left _ := rfl
 
 include hx in
@@ -454,20 +453,20 @@ private lemma isIso_singularHomologyMap_diskSphere (k : ℕ) :
   have hr : 0 < cellRadius C x i :=
     (norm_nonneg _).trans_lt (norm_map_symm_lt_cellRadius C x hx)
   have hr1 : cellRadius C x i ≤ 1 := (cellRadius_lt_one C x hx).le
-  let H := diskRadialHomotopy (n := n) hr hr1
+  let H := diskRadialHomotopy (n := n) hr.le
   have hH (t : I) (z : TopCat.disk.{w} n) :
       (diskHomeomorphClosedBall n (H (t, z)) : Fin n → ℝ) =
         radialPush (cellRadius C x i) t (diskHomeomorphClosedBall n z : Fin n → ℝ) :=
-    coe_diskHomeomorphClosedBall_diskRadialPush hr hr1 (t, z)
-  have hpush : MapsTo (TopCat.ofHom ((diskRadialPush hr hr1).curry 1)) (diskCore C x i)ᶜ
+    coe_diskHomeomorphClosedBall_diskRadialPush hr.le (t, z)
+  have hpush : MapsTo (TopCat.ofHom ((diskRadialPush hr.le).curry 1)) (diskCore C x i)ᶜ
       (diskSphere n) := fun z hz ↦ by
     have hz' : cellRadius C x i < ‖(diskHomeomorphClosedBall n z : Fin n → ℝ)‖ := not_le.1 hz
     have h := norm_radialPush_one hr hz'.le
     rwa [← hH 1 z] at h
-  have h₁ : MapsTo (𝟙 _ ≫ TopCat.ofHom ((diskRadialPush hr hr1).curry 1)) (diskSphere n)
+  have h₁ : MapsTo (𝟙 _ ≫ TopCat.ofHom ((diskRadialPush hr.le).curry 1)) (diskSphere n)
       (diskSphere n) :=
     fun z hz ↦ hpush (mapsTo_diskSphere_compl_diskCore C x hx hz)
-  have h₂ : MapsTo (TopCat.ofHom ((diskRadialPush hr hr1).curry 1) ≫ 𝟙 _) (diskCore C x i)ᶜ
+  have h₂ : MapsTo (TopCat.ofHom ((diskRadialPush hr.le).curry 1) ≫ 𝟙 _) (diskCore C x i)ᶜ
       (diskCore C x i)ᶜ :=
     fun z hz ↦ mapsTo_diskSphere_compl_diskCore C x hx (hpush hz)
   refine TopPair.isIso_singularHomologyMap _ (TopPair.ofSubsetMap _ hpush) ?_ ?_ R k
@@ -645,10 +644,8 @@ theorem cellularIncidence_eq_zero_of_not_mem_cellFrontier {i : cell C n}
     cellularIncidence C R n i j = 0 := by
   let P := TopPair.ofSubset ({x}ᶜ : Set (skeletonObj C (n + 1)))
   have hfront (z : TopCat.diskBoundary.{w} (n + 1)) :
-      ((cellAttachingMap j z : skeletonObj C (n + 1)) : X) ∈ cellFrontier (n + 1) j := by
-    refine ⟨_, mem_sphere_zero_iff_norm.2 <|
-      (norm_diskHomeomorphClosedBall_eq_one_iff _).2 ⟨z, rfl⟩, ?_⟩
-    exact (coe_cellAttachingMap_apply j z).symm
+      ((cellAttachingMap j z : skeletonObj C (n + 1)) : X) ∈ cellFrontier (n + 1) j :=
+    (range_cellAttachingMap j).subset ⟨z, rfl⟩
   have hg (z : TopCat.diskBoundary.{w} (n + 1)) : cellAttachingMap j z ∈ ({x}ᶜ :
       Set (skeletonObj C (n + 1))) := by
     intro hz

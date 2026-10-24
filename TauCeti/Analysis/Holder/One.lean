@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Calculus.UniformLimitsDeriv
 public import TauCeti.Analysis.Holder.Normed
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
-public import Mathlib.Analysis.Calculus.UniformLimitsDeriv
 
 /-!
 # Bounded `C^{1,α}` maps
@@ -25,8 +25,7 @@ therefore uniquely determined, and `C1HolderSpace.ext` only asks for equality of
 
 This is the first positive-order member of the bounded global `C^{k,α}` scale used in Schauder
 estimates.  It extends `TauCeti.HolderSpace`, which supplies the order-zero member and the complete
-space in which the derivative fields converge.  The file also proves the closed derivative-graph
-lemma shared by the higher-order constructions.
+space in which the derivative fields converge.
 
 ## Main declarations
 
@@ -34,8 +33,6 @@ lemma shared by the higher-order constructions.
 * `TauCeti.C1HolderSpace.valueL`: the continuous linear map forgetting the derivative.
 * `TauCeti.C1HolderSpace.fderivL`: the continuous linear map returning the Hölder derivative.
 * `TauCeti.C1HolderSpace.instCompleteSpace`: the Banach-space structure.
-* `TauCeti.isClosed_setOf_hasFDerivAt`: closedness of the bounded-continuous
-  derivative graph.
 
 ## References
 
@@ -57,26 +54,6 @@ universe u v
 variable (α : ℝ≥0) (E : Type u) (F : Type v)
   [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
-
-/-- The set of bounded continuous fields satisfying the Fréchet derivative identity is closed. -/
-theorem isClosed_setOf_hasFDerivAt {𝕜 : Type*} {E : Type u} {Y : Type v}
-    [NontriviallyNormedField 𝕜] [IsRCLikeNormedField 𝕜]
-    [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-    [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] :
-    IsClosed {J : (E →ᵇ Y) × (E →ᵇ (E →L[𝕜] Y)) |
-      ∀ x, HasFDerivAt (J.1 : E → Y) (J.2 x) x} := by
-  rw [← isSeqClosed_iff_isClosed]
-  intro J j hJ hjlim x
-  apply hasFDerivAt_of_tendstoUniformly
-      (f := fun n ↦ (J n).1) (f' := fun n y ↦ (J n).2 y)
-      (g := j.1) (g' := fun y ↦ j.2 y) (l := atTop)
-  · exact BoundedContinuousFunction.tendsto_iff_tendstoUniformly.mp
-      ((continuous_snd.tendsto j).comp hjlim)
-  · intro n y
-    exact hJ n y
-  · intro y
-    exact ((BoundedContinuousFunction.evalCLM 𝕜 y).continuous.tendsto j.1).comp
-      (continuous_fst.tendsto j |>.comp hjlim)
 
 namespace C1HolderSpace
 

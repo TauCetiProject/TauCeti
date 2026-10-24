@@ -161,3 +161,20 @@ theorem exists_arclength_homeomorph (hγ : BoundedVariationOn γ (Icc a b))
   rw [OrderIso.coe_toHomeomorph, StrictMono.coe_orderIsoOfSurjective]
 
 end BoundedVariationOn
+
+namespace MonotoneOn
+
+/-- If `γ = g ∘ s` on `[a, b]` with `s` monotone, then the values of `γ` on the intervals where
+`s` is constant form a countable set: each such interval contains a rational parameter. For
+example, the values a curve takes while its cumulative arclength pauses form a countable set. -/
+theorem countable_setOf_eq_comp {X : Type*} {γ g : ℝ → X} {s : ℝ → ℝ} {a b : ℝ}
+    (hm : MonotoneOn s (Icc a b)) (hfac : EqOn (g ∘ s) γ (Icc a b)) :
+    {y | ∃ t ∈ Icc a b, ∃ t' ∈ Icc a b, t < t' ∧ s t = s t' ∧ γ t = y}.Countable := by
+  refine (countable_range fun q : ℚ ↦ γ q).mono ?_
+  rintro _ ⟨t, ht, t', ht', htt', hst, rfl⟩
+  obtain ⟨q, hq, hq'⟩ := exists_rat_btwn htt'
+  have hqI : (q : ℝ) ∈ Icc a b := ⟨ht.1.trans hq.le, hq'.le.trans ht'.2⟩
+  have hsq : s q = s t := le_antisymm (hst ▸ hm hqI ht' hq'.le) (hm ht hqI hq.le)
+  exact ⟨q, (hfac hqI).symm.trans ((congrArg g hsq).trans (hfac ht))⟩
+
+end MonotoneOn

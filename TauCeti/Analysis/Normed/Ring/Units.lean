@@ -7,14 +7,19 @@ module
 
 public import Mathlib.Analysis.Normed.Ring.Units
 public import Mathlib.RingTheory.Ideal.Nonunits
+public import Mathlib.RingTheory.Jacobson.Radical
 
 /-!
-# Continuity of the ring inverse
+# Units and the Jacobson radical of normed rings
 
 In a normed ring with summable geometric series, `Ring.inverse` is continuous at every unit
 (`NormedRing.inverse_continuousAt`), but it jumps to `0` at the boundary of the open set of units.
 When the nonunits also form an open set, as in a complete discretely valued ring such as `ℤ_p`,
 there is no such boundary and `Ring.inverse` is continuous everywhere.
+
+The Jacobson radical is closed, as an intersection of maximal left ideals, using
+Mathlib's `Ring.jacobson_eq_sInf_isMaximal` and `Ideal.IsMaximal.isClosed`.
+See Dales, *Banach Algebras and Automatic Continuity*, §§1.3–1.5.
 -/
 
 public section
@@ -36,3 +41,15 @@ theorem continuous_inverse_of_isOpen_nonunits (h : IsOpen (nonunits R)) :
     exact continuousAt_const.congr hx'.symm
 
 end NormedRing
+
+namespace TauCeti.Ring
+
+/-- The Jacobson radical of a normed ring with summable geometric series is closed. -/
+theorem isClosed_jacobson (A : Type*) [NormedRing A] [HasSummableGeomSeries A] :
+    IsClosed (Ring.jacobson A : Set A) := by
+  rw [Ring.jacobson_eq_sInf_isMaximal, Submodule.coe_sInf]
+  exact isClosed_biInter fun I hI => by
+    have : Ideal.IsMaximal I := hI
+    exact Ideal.IsMaximal.isClosed
+
+end TauCeti.Ring

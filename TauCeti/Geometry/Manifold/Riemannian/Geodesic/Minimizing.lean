@@ -10,6 +10,7 @@ import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Corner
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Gauss.Distance
 import Mathlib.Analysis.Normed.Module.Ray
 import TauCeti.Geometry.Manifold.Riemannian.Basic
+import TauCeti.Topology.MetricSpace.Length
 
 /-!
 # Minimizing geodesics from an everywhere-defined exponential map
@@ -197,20 +198,14 @@ theorem dist_riemannianExp_smul_riemannianExp_smul {v : TangentSpace I p}
       dist (riemannianExp I M p (a • v)) (riemannianExp I M p (b • v)) ≤ ‖v‖ * |a - b| := by
     rw [riemannianExp_smul, riemannianExp_smul, ← Real.dist_eq]
     exact lipschitzOnWith_maximalGeodesic.dist_le_mul _ (hsub ha) _ (hsub hb)
-  -- Going from `p` to `exp_p v` through the two points cannot beat the distance `‖v‖`.
-  wlog hst : s ≤ t generalizing s t
-  · rw [dist_comm, abs_sub_comm]
-    exact this ht hs (le_of_not_ge hst)
-  refine le_antisymm ((hlip s t hs ht).trans_eq (mul_comm _ _)) ?_
-  have h0 : (0 : ℝ) ∈ Icc (0 : ℝ) 1 := left_mem_Icc.2 zero_le_one
-  have h1 : (1 : ℝ) ∈ Icc (0 : ℝ) 1 := right_mem_Icc.2 zero_le_one
-  have hps : dist p (riemannianExp I M p (s • v)) ≤ s * ‖v‖ := by
-    simpa [abs_of_nonneg hs.1, mul_comm] using hlip 0 s h0 hs
-  have htq : dist (riemannianExp I M p (t • v)) (riemannianExp I M p v) ≤ (1 - t) * ‖v‖ := by
-    simpa [abs_sub_comm t 1, abs_of_nonneg (sub_nonneg.2 ht.2), mul_comm] using hlip t 1 ht h1
-  rw [abs_sub_comm, abs_of_nonneg (sub_nonneg.2 hst)]
-  linarith [dist_triangle4 p (riemannianExp I M p (s • v)) (riemannianExp I M p (t • v))
-    (riemannianExp I M p v)]
+  -- The radial geodesic obeys the affine bound, so going from `p` to `exp_p v` it is a geodesic
+  -- segment.
+  have hnorm : dist p (riemannianExp I M p v) = ‖v‖ := (dist_riemannianExp_le p v).antisymm hmin
+  have hgeo : IsGeodesicSegment (fun t ↦ riemannianExp I M p (t • v)) p (riemannianExp I M p v) :=
+    isGeodesicSegment_of_dist_le (by simp) (by simp) fun a ha b hb hab ↦ by
+      rw [hnorm, mul_comm, ← abs_of_nonneg (sub_nonneg.2 hab), abs_sub_comm]
+      exact hlip a b ha hb
+  rw [hgeo.dist_eq s hs t ht, hnorm]
 
 /-- **An everywhere-defined exponential map yields minimizing geodesics.**  If the exponential map
 at `p` is defined on all of `T_p M`, then every point `q` is joined to `p` by a geodesic segment

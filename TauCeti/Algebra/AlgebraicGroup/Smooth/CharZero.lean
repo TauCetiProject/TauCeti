@@ -14,7 +14,7 @@ import TauCeti.Algebra.AlgebraicGroup.Tangent.FiniteType
 import TauCeti.Algebra.AlgebraicGroup.Tangent.InvariantDerivation
 import TauCeti.Algebra.AlgebraicGroup.Tangent.KrullDimension
 import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Reduction
-import TauCeti.AlgebraicGeometry.Scheme.RegularLocalRing
+import TauCeti.AlgebraicGeometry.Scheme.Regular.LocalRing
 import TauCeti.RingTheory.FiniteType.PointSeparation
 import TauCeti.RingTheory.FiniteType.Tensor.Product
 import TauCeti.RingTheory.KrullDimension.Quotient

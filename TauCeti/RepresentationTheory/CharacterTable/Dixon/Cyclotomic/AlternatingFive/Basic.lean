@@ -114,7 +114,7 @@ theorem alternatingGroupFiveGaloisEquiv_golden :
   rw [alternatingGroupFiveGaloisEquiv_apply, Cyclotomic.powRingHom_apply,
     ← Cyclotomic.evalRingHom_eq_evalCoeffs _ _
       (Cyclotomic.eval₂_cyclotomic_zeta_pow (by decide)), Cyclotomic.evalRingHom_ofCoeffList]
-  norm_num [TauCeti.Polynomial.ofCoeffList_cons]
+  norm_num [Polynomial.ofCoeffList_cons]
   decide
 
 /-- The Galois automorphism `ζ ↦ ζ²` sends the conjugate golden-ratio value back to the
@@ -126,7 +126,7 @@ theorem alternatingGroupFiveGaloisEquiv_galoisConjugate :
   rw [alternatingGroupFiveGaloisEquiv_apply, Cyclotomic.powRingHom_apply,
     ← Cyclotomic.evalRingHom_eq_evalCoeffs _ _
       (Cyclotomic.eval₂_cyclotomic_zeta_pow (by decide)), Cyclotomic.evalRingHom_ofCoeffList]
-  norm_num [TauCeti.Polynomial.ofCoeffList_cons]
+  norm_num [Polynomial.ofCoeffList_cons]
   decide
 
 /-- The two golden-ratio character values sum to one. -/

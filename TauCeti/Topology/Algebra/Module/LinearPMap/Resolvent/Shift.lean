@@ -36,7 +36,8 @@ noncomputable section
 namespace TauCeti.LinearPMap
 
 open _root_.LinearPMap (
-  IsResolventAt isResolventAt_resolvent mem_resolventSet_iff resolvent_eq_of_isResolventAt)
+  IsResolventAt isResolventAt_resolvent mem_resolventSet_iff resolvent_eq_of_isResolventAt
+  subScalar subScalar_apply)
 
 variable {𝕜 X : Type*} [CommRing 𝕜] [AddCommGroup X] [TopologicalSpace X] [Module 𝕜 X]
 
