@@ -21,7 +21,8 @@ when they remain reachable after deleting any set of fewer than `k` edges, and `
 `k`-edge-reachable. Deleted edges are counted as edge identities, so parallel edges count
 separately: two vertices joined by `n` parallel edges are `n`-edge-reachable. The thresholds are
 natural numbers, and `G.edgeReachability x y` and `G.edgeConnectivity` are the suprema in `ℕ∞` of
-the thresholds at which the predicates hold, following the analogous simple-graph invariants.
+the thresholds at which the predicates hold. These supremum definitions and the bounds by incident
+edge counts follow [mathlib4#42494](https://github.com/leanprover-community/mathlib4/pull/42494).
 
 The predicates follow Mathlib's `SimpleGraph.IsEdgeReachable` and `SimpleGraph.IsEdgeConnected`,
 and agree with them on `Graph.ofSimpleGraph`. Unlike a simple graph, a multigraph has actual
@@ -327,11 +328,9 @@ theorem edgeConnectivity_eq_top_iff [Finite E(G)] :
 `F` is nonempty. -/
 theorem reachable_banana_iff {u w : α} {F : Set β} (huw : u ≠ w) :
     (banana u w F).Reachable u w ↔ F.Nonempty := by
-  refine ⟨fun h ↦ ?_, fun ⟨f, hf⟩ ↦ IsLink.reachable (e := f) (by simp [hf])⟩
-  obtain ⟨-, ⟨p⟩⟩ := reachable_def.mp h
-  cases p with
-  | nil => exact absurd rfl huw
-  | cons f hf _ => exact ⟨f, by simpa using hf.edge_mem⟩
+  exact ⟨fun h ↦ edgeCut_banana_singleton huw F ▸
+    h.edgeCut_nonempty rfl (by simpa using huw.symm),
+    fun ⟨f, hf⟩ ↦ IsLink.reachable (e := f) (by simp [hf])⟩
 
 /-- Two distinct vertices joined by the parallel edges of `F` are `k`-edge-reachable exactly when
 there are at least `k` of these edges. -/
