@@ -145,10 +145,10 @@ theorem Matrix.IsHermitian.isKMSState_iff_eq_gibbsState (hK : K.IsHermitian) (β
   have hQρ : NormedSpace.exp ((β : ℂ) • K) * ρ = c • 1 := by
     rw [← hc, Matrix.scalar_apply, ← Matrix.smul_one_eq_diagonal]
   have hEρ : ρ = c • NormedSpace.exp (-((β : ℂ) • K)) := by
-    calc ρ = NormedSpace.exp (-((β : ℂ) • K)) * NormedSpace.exp ((β : ℂ) • K) * ρ := by
-          rw [Matrix.exp_neg_mul_exp, Matrix.one_mul]
+    calc ρ = NormedSpace.exp (-((β : ℂ) • K)) * (NormedSpace.exp ((β : ℂ) • K) * ρ) := by
+          rw [Matrix.exp_neg_mul_exp_mul]
       _ = c • NormedSpace.exp (-((β : ℂ) • K)) := by
-          rw [Matrix.mul_assoc, hQρ, Matrix.mul_smul, Matrix.mul_one]
+          rw [hQρ, Matrix.mul_smul, Matrix.mul_one]
   have hω1 : ω 1 = 1 := by
     have h1 := PositiveContinuousLinearMap.ofReal_opNorm_eq_map_one ω
     rw [hnorm] at h1
