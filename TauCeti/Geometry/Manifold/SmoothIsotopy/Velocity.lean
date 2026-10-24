@@ -8,7 +8,8 @@ module
 public import TauCeti.Geometry.Manifold.Immersion.Differential
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Extension
 public import TauCeti.Geometry.Manifold.SmoothIsotopy.Basic
-public import TauCeti.Topology.Homotopy.Isotopy.Track
+public import TauCeti.Topology.Maps.Proper.Basic
+public import TauCeti.Geometry.Manifold.MFDeriv.Curve
 public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 
 /-!
@@ -30,7 +31,7 @@ is therefore a smooth section of the tangent bundle of `ℝ × N` along an embed
 extends from the compact portion of the track over `[a - 1, b + 1]` to a compactly supported
 smooth section of that bundle. Its spatial part, cut off in time outside `(a - 1, b + 1)`, is the
 required field. A smooth isotopy on the unit interval is run over the real line by the smooth
-time change `Real.smoothTransition`, which is stationary near both ends of the interval.
+time change `Real.smoothTransition`, which is constant for `t ≤ 0` and for `t ≥ 1`.
 
 The field is stated in the form taken by time-dependent flows on manifolds: joint smoothness of
 `(t, y) ↦ X t y` as a map into the tangent bundle, and the curves `t ↦ G (t, x)` solving
@@ -58,26 +59,6 @@ open Set Function Topology Manifold Bundle
 open scoped Manifold ContDiff
 
 namespace TauCeti
-
-/-- The time derivative of a motion `G : ℝ × M → N` vanishes before a time `a` after which it is
-stationary. -/
-private theorem mfderiv_eq_zero_of_lt {E' H' M N : Type*} [NormedAddCommGroup E']
-    [NormedSpace ℝ E'] [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N]
-    [ChartedSpace H' N] {G : ℝ × M → N} {a t : ℝ}
-    (ha : ∀ s ≤ a, ∀ x, G (s, x) = G (a, x)) (ht : t < a) (x : M) :
-    mfderiv 𝓘(ℝ, ℝ) J (fun s => G (s, x)) t = 0 :=
-  ((hasMFDerivAt_const (I := 𝓘(ℝ, ℝ)) (I' := J) (G (a, x)) t).congr_of_eventuallyEq
-    (by filter_upwards [Iio_mem_nhds ht] with s hs using ha s hs.le x)).mfderiv
-
-/-- The time derivative of a motion `G : ℝ × M → N` vanishes after a time `b` from which on it is
-stationary. -/
-private theorem mfderiv_eq_zero_of_gt {E' H' M N : Type*} [NormedAddCommGroup E']
-    [NormedSpace ℝ E'] [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N]
-    [ChartedSpace H' N] {G : ℝ × M → N} {b t : ℝ}
-    (hb : ∀ s, b ≤ s → ∀ x, G (s, x) = G (b, x)) (ht : b < t) (x : M) :
-    mfderiv 𝓘(ℝ, ℝ) J (fun s => G (s, x)) t = 0 :=
-  ((hasMFDerivAt_const (I := 𝓘(ℝ, ℝ)) (I' := J) (G (b, x)) t).congr_of_eventuallyEq
-    (by filter_upwards [Ioi_mem_nhds ht] with s hs using hb s hs.le x)).mfderiv
 
 variable {E E' H H' M N : Type*}
   [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -204,7 +185,8 @@ theorem exists_ambientVelocityField {n m : ℕ∞} [IsManifold I n M] {G : ℝ �
       rw [hχ1]
       exact (one_smul ℝ _).symm
     · simp only [mem_Icc, not_and_or, not_le] at hab
-      rw [hab.elim (mfderiv_eq_zero_of_lt ha · x) (mfderiv_eq_zero_of_gt hb · x)]
+      rw [hab.elim (Manifold.mfderiv_eq_zero_of_eqOn_Iic (fun s hs => ha s hs x))
+        (Manifold.mfderiv_eq_zero_of_eqOn_Ici (fun s hs => hb s hs x))]
       exact (smul_zero _).symm
   · simp only [mem_Icc, not_and_or, not_le] at ht
     have hχ0 : χ t = 0 := by
@@ -213,8 +195,9 @@ theorem exists_ambientVelocityField {n m : ℕ∞} [IsManifold I n M] {G : ℝ �
           zero_mul]
       · simp only [χ, Real.smoothTransition.zero_of_nonpos (by linarith : b + 1 - t ≤ 0),
           mul_zero]
-    rw [hχ0, zero_smul, ht.elim (fun ht => mfderiv_eq_zero_of_lt ha (by linarith) x)
-      (fun ht => mfderiv_eq_zero_of_gt hb (by linarith) x)]
+    rw [hχ0, zero_smul,
+      ht.elim (fun ht => Manifold.mfderiv_eq_zero_of_eqOn_Iic (fun s hs => ha s hs x) (by linarith))
+        (fun ht => Manifold.mfderiv_eq_zero_of_eqOn_Ici (fun s hs => hb s hs x) (by linarith))]
     -- The zero map applied to `1`; `ContinuousLinearMap.zero_apply` does not fire through the
     -- tangent-space instances.
     rfl

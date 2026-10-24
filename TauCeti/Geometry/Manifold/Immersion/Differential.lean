@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Immersion.Basic
 public import TauCeti.Geometry.Manifold.MFDeriv.Prod
+public import TauCeti.Geometry.Manifold.ContMDiff.Atlas
 public import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 import Mathlib.Analysis.Normed.Module.FiniteDimension
@@ -159,40 +160,6 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   [TopologicalSpace M] [ChartedSpace H M] [TopologicalSpace N] [ChartedSpace G N]
   {n : ℕ∞ω} {f : M → N} {x : M}
 
-/-- A chart of the model vector space, read through the preferred chart at `x` of a manifold with
-a boundaryless model, is a chart of the manifold's maximal atlas. -/
-private theorem conj_chartAt_mem_maximalAtlas [I.Boundaryless] [IsManifold I n M] (x : M)
-    {c : OpenPartialHomeomorph E E} (hc : c ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n E) :
-    (((chartAt H x).transHomeomorph I.toHomeomorph).trans c).transHomeomorph
-      I.toHomeomorph.symm ∈ IsManifold.maximalAtlas I n M := by
-  -- As a map, the chart is `I.symm ∘ c ∘ extChartAt I x`, with inverse
-  -- `(extChartAt I x).symm ∘ c.symm ∘ I`.
-  apply OpenPartialHomeomorph.mem_maximalAtlas_of_contMDiffOn
-  · have h1 : ContMDiffOn I 𝓘(𝕜, E) n (extChartAt I x)
-        ((((chartAt H x).transHomeomorph I.toHomeomorph).trans c).transHomeomorph
-          I.toHomeomorph.symm).source :=
-      contMDiffOn_extChartAt.mono fun y hy => by
-        simp only [mfld_simps] at hy
-        exact hy.1
-    have h2 := (contMDiffOn_of_mem_maximalAtlas hc).comp h1 fun y hy => by
-      simp only [mfld_simps] at hy
-      simpa [extChartAt] using hy.2
-    refine (I.contMDiffOn_symm.comp h2 fun y _ => by simp [I.range_eq_univ]).congr ?_
-    intro y _
-    simp [extChartAt]
-  · have h2 := (contMDiffOn_symm_of_mem_maximalAtlas hc).comp I.contMDiff.contMDiffOn
-      (s := ((((chartAt H x).transHomeomorph I.toHomeomorph).trans c).transHomeomorph
-        I.toHomeomorph.symm).target) fun y hy => by
-      have hy' : I y ∈ c.target ∧ I.symm (c.symm (I y)) ∈ (chartAt H x).target := by
-        simpa using hy
-      exact hy'.1
-    refine ((contMDiffOn_extChartAt_symm x).comp h2 fun y hy => ?_).congr ?_
-    · have hy' : I y ∈ c.target ∧ I.symm (c.symm (I y)) ∈ (chartAt H x).target := by
-        simpa using hy
-      simpa [extChartAt, I.range_eq_univ] using hy'.2
-    · intro y _
-      simp [extChartAt]
-
 /-- An immersion normal form of a map between boundaryless manifolds, read in the preferred
 extended charts, is an immersion normal form of the map itself, with the same complement. -/
 theorem of_writtenInExtChartAt [I.Boundaryless] [J.Boundaryless]
@@ -210,8 +177,8 @@ theorem of_writtenInExtChartAt [I.Boundaryless] [J.Boundaryless]
   refine mk_of_continuousAt hf h.equiv φ ψ ?_ ?_ ?_ ?_ ?_
   · simpa [φ] using h.mem_domChart_source
   · simpa [ψ, writtenInExtChartAt] using h.mem_codChart_source
-  · exact conj_chartAt_mem_maximalAtlas x h.domChart_mem_maximalAtlas
-  · exact conj_chartAt_mem_maximalAtlas (f x) h.codChart_mem_maximalAtlas
+  · exact TauCeti.conj_chartAt_mem_maximalAtlas x h.domChart_mem_maximalAtlas
+  · exact TauCeti.conj_chartAt_mem_maximalAtlas (f x) h.codChart_mem_maximalAtlas
   · intro u hu
     have hI : ∀ u, I (I.symm u) = u := fun u => I.right_inv (by simp [I.range_eq_univ])
     have hJ : ∀ u, J (J.symm u) = u := fun u => J.right_inv (by simp [J.range_eq_univ])
