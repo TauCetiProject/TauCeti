@@ -125,9 +125,11 @@ theorem localMass_add_le : localMass (f + g) U ≤ localMass f U + localMass g U
 theorem mass_add_le : mass (f + g) ≤ mass f + mass g := by
   simpa using localMass_add_le (f := f) (g := g) (U := univ)
 
+@[simp]
 theorem localMass_smul [NormedSpace ℝ V] (a : ℝ) : localMass (a • f) U = ‖a‖ₑ * localMass f U := by
   simp only [localMass, ENNReal.mul_iSup, Pi.smul_apply, enorm_smul]
 
+@[simp]
 theorem mass_smul [NormedSpace ℝ V] (a : ℝ) : mass (a • f) = ‖a‖ₑ * mass f := by
   simpa using localMass_smul (f := f) (U := univ) a
 
