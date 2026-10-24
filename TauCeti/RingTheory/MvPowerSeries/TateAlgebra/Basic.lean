@@ -39,6 +39,8 @@ largest summand, so Mathlib's dominant-antidiagonal theorem applies.
 * `Finsupp.prod_pow_le_prod_pow_mul`: shrinking a polyradius from `c` to `c'` divides the
   monomial weight `∏ cⱼ ^ νⱼ` at least by `(cᵢ / c'ᵢ) ^ νᵢ`.
 * `MvPowerSeries.norm_le_iff`: a norm bound is equivalent to bounds on every weighted coefficient.
+* `TauCeti.MvPowerSeries.norm_le_mul_of_norm_coeff_le`: a coefficientwise norm bound gives
+  the same Gauss-norm bound, even across different coefficient rings.
 * `MvPowerSeries.norm_lt_iff`: since the norm is attained, the same holds for strict bounds.
 * `MvPowerSeries.norm_eq_norm_constantCoeff_of_norm_coeff_mul_prod_le`: a constant coefficient
   dominating every other weighted coefficient attains the Gauss norm.
@@ -652,5 +654,23 @@ noncomputable instance instNormedAlgebraIsRestrictedSubring :
       _ ≤ ‖r‖ * ‖f‖ := mul_le_mul_of_nonneg_left (norm_coeff_mul_prod_le f t) (norm_nonneg r)
 
 end NormedField
+
+/-- A coefficientwise norm bound gives the same Gauss-norm bound for restricted series over
+possibly different coefficient rings, at the same positive polyradii. -/
+theorem norm_le_mul_of_norm_coeff_le {σ R S : Type*}
+    [NormedRing R] [IsUltrametricDist R] [NormedRing S] [IsUltrametricDist S]
+    {c : σ → ℝ} [∀ i, Fact (0 < c i)]
+    {f : IsRestricted.subring (R := R) c} {g : IsRestricted.subring (R := S) c}
+    {K : ℝ} (hK : 0 ≤ K)
+    (h : ∀ t, ‖coeff t (f : MvPowerSeries σ R)‖ ≤ K * ‖coeff t (g : MvPowerSeries σ S)‖) :
+    ‖f‖ ≤ K * ‖g‖ := by
+  refine (norm_le_iff (mul_nonneg hK (norm_nonneg g))).mpr fun t ↦ ?_
+  calc
+    ‖coeff t (f : MvPowerSeries σ R)‖ * t.prod (c · ^ ·) ≤
+        K * ‖coeff t (g : MvPowerSeries σ S)‖ * t.prod (c · ^ ·) :=
+      mul_le_mul_of_nonneg_right (h t) (prod_pow_pos t).le
+    _ ≤ K * ‖g‖ := by
+      rw [mul_assoc]
+      exact mul_le_mul_of_nonneg_left (norm_coeff_mul_prod_le g t) hK
 
 end TauCeti.MvPowerSeries
