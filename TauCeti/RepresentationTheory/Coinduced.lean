@@ -58,6 +58,13 @@ instance {G : Type v} {H : Type w} [Monoid G] [Monoid H] (φ : H →* G) :
     (coindFunctor.{t} R φ).Additive where
   map_add := by intro X Y f g; ext x; rfl
 
+/-- The counit of restriction–coinduction along a monoid homomorphism evaluates at `1`. -/
+theorem resCoindAdjunction_counit_app_hom_apply
+    {k : Type u} {G : Type v} {H : Type w} [CommRing k] [Monoid G] [Monoid H]
+    (φ : G →* H) (A : Rep.{max w t} k G) (f : Rep.coind φ A) :
+    ((Rep.resCoindAdjunction.{t} k φ).counit.app A).hom f = f.1 1 :=
+  rfl
+
 variable {G : Type v} [Group G]
 
 /-- Subgroup coinduction preserves homology of short complexes of representations. -/
@@ -71,19 +78,6 @@ instance (H : Subgroup G) :
   (coindFunctor.{max v t} R H.subtype).preservesFiniteColimits_of_preservesHomology
 
 end Rep
-
-namespace TauCeti.Rep
-
-universe u v w t
-
-/-- The counit of restriction–coinduction along a monoid homomorphism evaluates at `1`. -/
-theorem resCoindAdjunction_counit_app_hom_apply
-    {k : Type u} {G : Type v} {H : Type w} [CommRing k] [Monoid G] [Monoid H]
-    (φ : G →* H) (A : Rep.{max w t} k G) (f : Rep.coind φ A) :
-    ((Rep.resCoindAdjunction.{t} k φ).counit.app A).hom f = f.1 1 :=
-  rfl
-
-end TauCeti.Rep
 
 namespace Representation
 

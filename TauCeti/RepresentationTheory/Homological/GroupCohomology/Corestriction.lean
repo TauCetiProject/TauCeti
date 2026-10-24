@@ -239,7 +239,7 @@ private theorem restrictCoind_hom_apply_coe (f : coindComp φ₁ φ₂ M) (b : B
       g.hom ((res φ₂ (coindComp φ₁ φ₂ M)).ρ b f))
     (res_map_restrictCoind_comp_counit φ₁ φ₂ M)
   rw [Rep.hom_comp, Representation.IntertwiningMap.comp_apply, Rep.resMap_hom_apply,
-    hom_comm_apply, TauCeti.Rep.resCoindAdjunction_counit_app_hom_apply,
+    hom_comm_apply, Rep.resCoindAdjunction_counit_app_hom_apply,
     evalOne_hom_apply] at h
   simpa only [res_obj_ρ, MonoidHom.coe_comp, Function.comp_apply, Rep.of_ρ,
     Representation.coind_apply_coe_apply, one_mul] using h
@@ -287,7 +287,7 @@ private theorem coindTrace_hom_apply_coe [φ₁.range.FiniteIndex] (f : coindCom
         res φ₂.range.subtype M => g.hom ((coindComp φ₁ φ₂ M).ρ c f))
     (res_map_coindTrace_comp_counit φ₁ φ₂ M)
   rw [Rep.hom_comp, Representation.IntertwiningMap.comp_apply, Rep.resMap_hom_apply,
-    hom_comm_apply, TauCeti.Rep.resCoindAdjunction_counit_app_hom_apply,
+    hom_comm_apply, Rep.resCoindAdjunction_counit_app_hom_apply,
     traceRestrictRange_hom_apply] at h
   have h' : ((coindTrace φ₁ φ₂ M).hom f).1 c =
       (traceRestrict φ₁ φ₂ M).hom ((coindComp φ₁ φ₂ M).ρ c f) := by
