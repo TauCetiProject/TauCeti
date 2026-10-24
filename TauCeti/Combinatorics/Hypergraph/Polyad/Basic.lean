@@ -313,11 +313,41 @@ noncomputable def ofTriple (x : {x : Fin 3 → V // Function.Injective x}) : Pol
 
 variable {S}
 
+/-- The role-zero cell of `ofTriple` is the cell containing the zeroth coordinate. -/
+@[simp]
+theorem ofTriple_c₀ (x : {x : Fin 3 → V // Function.Injective x}) :
+    (ofTriple S x).c₀ = S.vertexPart.part (x.1 0) := (rfl)
+
+/-- The role-one cell of `ofTriple` is the cell containing the first coordinate. -/
+@[simp]
+theorem ofTriple_c₁ (x : {x : Fin 3 → V // Function.Injective x}) :
+    (ofTriple S x).c₁ = S.vertexPart.part (x.1 1) := (rfl)
+
+/-- The role-two cell of `ofTriple` is the cell containing the second coordinate. -/
+@[simp]
+theorem ofTriple_c₂ (x : {x : Fin 3 → V // Function.Injective x}) :
+    (ofTriple S x).c₂ = S.vertexPart.part (x.1 2) := (rfl)
+
+/-- The color on roles zero and one of `ofTriple` is the color of the coordinate pair `(0, 1)`. -/
+@[simp]
+theorem ofTriple_color₀₁ (x : {x : Fin 3 → V // Function.Injective x}) :
+    (ofTriple S x).color₀₁ = S.pairColors.color (coordPair x 0 1 (by decide)) := (rfl)
+
+/-- The color on roles zero and two of `ofTriple` is the color of the coordinate pair `(0, 2)`. -/
+@[simp]
+theorem ofTriple_color₀₂ (x : {x : Fin 3 → V // Function.Injective x}) :
+    (ofTriple S x).color₀₂ = S.pairColors.color (coordPair x 0 2 (by decide)) := (rfl)
+
+/-- The color on roles one and two of `ofTriple` is the color of the coordinate pair `(1, 2)`. -/
+@[simp]
+theorem ofTriple_color₁₂ (x : {x : Fin 3 → V // Function.Injective x}) :
+    (ofTriple S x).color₁₂ = S.pairColors.color (coordPair x 1 2 (by decide)) := (rfl)
+
 /-- An injective triple lies in the support of its own polyad. -/
 theorem mem_support_ofTriple (x : {x : Fin 3 → V // Function.Injective x}) :
     x ∈ (ofTriple S x).support := by
-  simp only [ofTriple, mem_support, ofData_c₀, ofData_c₁, ofData_c₂, ofData_color₀₁,
-    ofData_color₀₂, ofData_color₁₂, Finpartition.mem_part_self, mem_univ, true_and]
+  simp only [mem_support, ofTriple_c₀, ofTriple_c₁, ofTriple_c₂, ofTriple_color₀₁,
+    ofTriple_color₀₂, ofTriple_color₁₂, Finpartition.mem_part_self, mem_univ, true_and]
   exact ⟨(S.pairColors.color_coordPair_eq_iff _).1 rfl,
     (S.pairColors.color_coordPair_eq_iff _).1 rfl, (S.pairColors.color_coordPair_eq_iff _).1 rfl⟩
 
