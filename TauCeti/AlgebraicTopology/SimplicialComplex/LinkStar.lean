@@ -50,6 +50,8 @@ simplex need not contain every vertex even when `K` does.
   link sits inside the deletion.
 * `PreAbstractSimplicialComplex.closedStar_empty` / `link_empty` / `deletion_empty`: the
   values at the empty simplex (`K`, `K`, and `⊥`), pinning the conventions.
+* `AbstractSimplicialComplex.link_bot_singleton`: every vertex link of the bottom abstract
+  complex is void.
 * `PreAbstractSimplicialComplex.isCone_closedStar` / `isCone_deletion`: the closed star of
   a face is a cone with apex any vertex of that face, and deleting a face missing the apex of a
   cone leaves a cone with the same apex.
@@ -334,3 +336,21 @@ theorem isCone_deletion (h : IsCone K v) (hσ : σ.Nonempty) (hv : v ∉ σ) :
 end IsCone
 
 end PreAbstractSimplicialComplex
+
+namespace AbstractSimplicialComplex
+
+open PreAbstractSimplicialComplex
+
+/-- Every vertex link of the bottom abstract complex is void: a face `σ ∪ {v}` of the bottom
+complex is a singleton, so a nonempty `σ` disjoint from `{v}` cannot occur. -/
+@[simp]
+theorem link_bot_singleton {ι : Type*} [DecidableEq ι] (v : ι) :
+    link (⊥ : AbstractSimplicialComplex ι).toPreAbstractSimplicialComplex {v} = ⊥ := by
+  refine bot_unique fun σ hσ => ?_
+  obtain ⟨⟨u, hu⟩, hdis, hσv⟩ := mem_link_nonempty.mp hσ
+  obtain ⟨w, hw⟩ := TauCeti.AbstractSimplicialComplex.mem_bot.mp hσv
+  simp only [Finset.disjoint_singleton_right, Finset.ext_iff, Finset.mem_union,
+    Finset.mem_singleton] at hdis hw
+  grind
+
+end AbstractSimplicialComplex

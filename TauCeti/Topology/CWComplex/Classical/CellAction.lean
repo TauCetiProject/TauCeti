@@ -22,6 +22,8 @@ open cells give a free action on cells.
 * `TauCeti.smul_openCell` and `TauCeti.smul_mem_openCell_smul`: compatibility with open cells.
 * `TauCeti.smul_closedCell`: compatibility with closed cells for continuous translations.
 * `TauCeti.isCancelSMul_cell`: freeness of the induced group action on cells.
+* `TauCeti.eq_one_of_mem_openCell_of_smul_mem`: only the identity carries a point of an open
+  cell into the same open cell under a free cellular action.
 
 ## References
 
@@ -115,5 +117,21 @@ theorem isCancelSMul_cell
   exact hfree g n i (by rw [smul_openCell hcell, hi])
 
 end FreeCellAction
+
+variable {C D : Set E} [RelCWComplex C D] [Monoid G] [MulAction G E]
+  (hcell : ∀ (g : G) (n : ℕ) (i : cell C n),
+    ∃ j : cell C n, g • openCell n i = openCell n j)
+  (hfree : ∀ (g : G) (n : ℕ) (i : cell C n),
+    g • openCell n i = openCell n i → g = 1)
+
+include hcell hfree in
+/-- Only the identity carries a point of an open cell into the same open cell. -/
+lemma eq_one_of_mem_openCell_of_smul_mem {n : ℕ} {i : cell C n} {g : G}
+    {z : E} (hz : z ∈ openCell n i) (hgz : g • z ∈ openCell n i) : g = 1 := by
+  obtain ⟨j, hj⟩ := hcell g n i
+  have hji : (⟨n, j⟩ : Σ m, cell C m) = ⟨n, i⟩ :=
+    eq_of_not_disjoint_openCell (not_disjoint_iff.2 ⟨g • z, hj ▸ smul_mem_smul_set hz, hgz⟩)
+  obtain rfl : j = i := eq_of_heq (Sigma.mk.inj_iff.1 hji).2
+  exact hfree g n j hj
 
 end TauCeti

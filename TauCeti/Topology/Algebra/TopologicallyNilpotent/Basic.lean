@@ -30,6 +30,8 @@ parity `n` has.
   topologically nilpotent.
 * `eventually_mul_pow_mem_of_isTopologicallyNilpotent`, and its `.exists` form: a topologically
   nilpotent element absorbs any fixed element into any open subring.
+* `IsTopologicallyNilpotent.of_pow` : an element with a topologically nilpotent positive power is
+  topologically nilpotent.
 * `Prod.isTopologicallyNilpotent_iff` : an element of a product is topologically nilpotent exactly
   when both of its components are.
 * `IsTopologicallyNilpotent.mem_jacobson_bot`, `topologicalNilradical_le_jacobson_bot` : if an
@@ -120,6 +122,29 @@ theorem exists_mul_pow_mem_of_isTopologicallyNilpotent {s : A}
   (eventually_mul_pow_mem_of_isTopologicallyNilpotent hs hB a).exists
 
 end Absorb
+
+section Pow
+
+variable {M : Type*} [MonoidWithZero M] [TopologicalSpace M] [SeparatelyContinuousMul M]
+
+/-- **An element with a topologically nilpotent positive power is topologically nilpotent.** -/
+theorem IsTopologicallyNilpotent.of_pow {a : M} {m : ℕ} (hm : m ≠ 0)
+    (h : IsTopologicallyNilpotent (a ^ m)) : IsTopologicallyNilpotent a := by
+  -- write `a ^ k = a ^ (k % m) * (a ^ m) ^ (k / m)`; the finitely many factors `a ^ r` with
+  -- `r < m` are absorbed by continuity of multiplication by a constant
+  intro U hU
+  -- eventually in `q`, every `a ^ r * (a ^ m) ^ q` with `r < m` lies in `U`
+  have hr : ∀ᶠ q : ℕ in atTop, ∀ r ∈ Set.Iio m, a ^ r * (a ^ m) ^ q ∈ U :=
+    (eventually_all_finite (Set.finite_Iio m)).mpr fun r _ ↦
+      h ((continuous_const_mul (a ^ r)).tendsto' 0 0 (mul_zero _) hU)
+  obtain ⟨N, hN⟩ := eventually_atTop.mp hr
+  rw [Filter.mem_map, mem_atTop_sets]
+  refine ⟨m * N, fun k hk ↦ ?_⟩
+  have hq : N ≤ k / m := (Nat.le_div_iff_mul_le (Nat.pos_of_ne_zero hm)).mpr (by rwa [mul_comm])
+  have hk' := hN (k / m) hq (k % m) (Nat.mod_lt k (Nat.pos_of_ne_zero hm))
+  rwa [← pow_mul, ← pow_add, Nat.mod_add_div] at hk'
+
+end Pow
 
 section Prod
 

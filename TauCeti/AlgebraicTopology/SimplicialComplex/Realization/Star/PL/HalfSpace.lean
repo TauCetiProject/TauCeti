@@ -5,20 +5,28 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Star.PL.Simplex
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Star.PL.Chart
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.PL.Ball
 
 /-!
-# PL half-space charts at vertices with ball links
+# PL half-space charts on open vertex stars
 
-A vertex with a combinatorial `n`-ball as link has a chart on its entire open star,
-modelled on the half-space in `(Fin n → ℝ) × ℝ`. Both directions have ambient PL
-coordinate formulas. The vertex maps to zero on the boundary of the half-space.
+A vertex whose link is a combinatorial `n`-ball or `n`-sphere has a chart on its entire
+open star, modelled on the half-space in `(Fin n → ℝ) × ℝ`. Both directions have ambient
+PL coordinate formulas, so charts of either kind can be checked for PL compatibility
+against each other.
 
-The closed-star simplex identification carries the vertex to the last simplex vertex.
-Restricting the standard simplex chart at that vertex therefore gives a chart on the
-open star, including all its boundary points. These are the boundary charts needed to
-pass from combinatorial manifolds to chart-based PL manifolds.
+For a ball link, the closed-star simplex identification carries the vertex to the last
+simplex vertex. Restricting the standard simplex chart at that vertex therefore gives a
+chart on the open star, including all its boundary points; the vertex maps to zero on the
+boundary of the half-space.
+
+For a sphere link, the Euclidean chart onto the interior of the coordinate simplex is
+read in the half-space by taking the last simplex coordinate as the height. Its target
+lies in the open half-space, so these are interior charts.
+
+Together these are the vertex charts needed to pass from combinatorial manifolds to
+chart-based PL manifolds with boundary.
 
 ## References
 
@@ -158,5 +166,62 @@ theorem IsCombinatorialBall.exists_openPartialHomeomorph_openStar_isPL
       (hFφ ⟨x, K.openStarRealization_subset_closedStarRealization v hx'⟩)
   · intro y hy
     exact hg_eq y (hct ▸ hy)
+
+/-- A combinatorial-sphere vertex link supplies a PL half-space chart on the entire open
+vertex star whose target lies in the open half-space. The last coordinate of the Euclidean
+sphere-link chart becomes the height. The forward formula is PL on the closed star, and the
+inverse formula is PL on the model coordinates of the chart target, in the same form as
+`IsCombinatorialBall.exists_openPartialHomeomorph_openStar_isPL`. -/
+theorem IsCombinatorialSphere.exists_openPartialHomeomorph_openStar_halfSpace_isPL
+    (h : IsCombinatorialSphere (link K.toPreAbstractSimplicialComplex {v}) n) :
+    ∃ c : OpenPartialHomeomorph (Realization K) {q : (Fin n → ℝ) × ℝ | 0 ≤ q.2},
+      c.source = openStarRealization K v ∧
+      (∀ y ∈ c.target, 0 < y.1.2) ∧
+      ∃ f : (ι → ℝ) → (Fin n → ℝ) × ℝ,
+      ∃ g : ((Fin n → ℝ) × ℝ) → (ι → ℝ),
+        IsPLOn f (range fun x : closedStarRealization K {v} => (x.1.1 : ι → ℝ)) ∧
+        IsPLOn g ((modelWithCornersHalfSpace (Fin n → ℝ)).symm ⁻¹' c.target ∩
+          range (modelWithCornersHalfSpace (Fin n → ℝ))) ∧
+        (∀ x ∈ c.source, f (x.1 : ι → ℝ) = (c x).1) ∧
+        ∀ y ∈ c.target, g y.1 = ((c.symm y).1 : ι → ℝ) := by
+  obtain ⟨c, hcs, hct, -, F, G, hF, hG, hFc, hGc⟩ := h.exists_openPartialHomeomorph_openStar_isPL
+  -- Split off the last coordinate as the height; `M` reassembles the coordinates.
+  let N : (Fin (n + 1) → ℝ) →L[ℝ] (Fin n → ℝ) × ℝ :=
+    (ContinuousLinearMap.pi fun i => ContinuousLinearMap.proj i.castSucc).prod
+      (ContinuousLinearMap.proj (Fin.last n))
+  let M : (Fin n → ℝ) × ℝ →L[ℝ] (Fin (n + 1) → ℝ) :=
+    ContinuousLinearMap.pi (Fin.lastCases (ContinuousLinearMap.snd ℝ _ ℝ)
+      fun i => (ContinuousLinearMap.proj i).comp (ContinuousLinearMap.fst ℝ _ ℝ))
+  have hMN (x : Fin (n + 1) → ℝ) : M (N x) = x := by
+    funext i
+    refine Fin.lastCases ?_ (fun j => ?_) i <;> simp [M, N]
+  have hNM (q : (Fin n → ℝ) × ℝ) : N (M q) = q := by
+    ext <;> simp [M, N]
+  let L := ContinuousLinearEquiv.equivOfInverse N M hMN hNM
+  -- The simplex interior has positive height, so it lies in the source of the interior chart.
+  have hpos (y : Fin (n + 1) → ℝ) (hy : y ∈ c.target) : 0 < (N y).2 := by
+    rw [hct, interior_coordinateSimplex] at hy
+    exact hy.1 _
+  let d := c.trans (L.toHomeomorph.toOpenPartialHomeomorph.trans
+    (halfSpaceInteriorChart (Fin n → ℝ)).symm)
+  have hds : d.source = c.source := by
+    ext x
+    simp only [d, L, mfld_simps]
+    exact ⟨And.left, fun hx => ⟨hx, hpos _ (c.map_source hx)⟩⟩
+  have hdt (y) (hy : y ∈ d.target) : 0 < y.1.2 ∧ M y.1 ∈ c.target := by
+    simpa [d, L] using hy
+  refine ⟨d, hds.trans hcs, fun y hy => (hdt y hy).1, N ∘ F, G ∘ M, ?_, ?_, ?_, ?_⟩
+  · exact (isPLOn_continuousAffineMap N.toContinuousAffineMap univ).comp hF
+      (mapsTo_univ _ _)
+  · refine hG.comp (isPLOn_continuousAffineMap M.toContinuousAffineMap _) ?_
+    rintro z ⟨hz, hzI⟩
+    have hnonneg : 0 ≤ z.2 := by simpa using hzI
+    simpa only [mem_preimage, coe_modelWithCornersHalfSpace_symm_apply _ hnonneg] using
+      (hdt _ hz).2
+  · intro x hx
+    rw [hds] at hx
+    simp [d, L, hFc x hx, coe_modelWithCornersHalfSpace_symm_apply _ (hpos _ (c.map_source hx)).le]
+  · intro y hy
+    simp [d, L, hGc _ (hdt y hy).2]
 
 end PreAbstractSimplicialComplex
