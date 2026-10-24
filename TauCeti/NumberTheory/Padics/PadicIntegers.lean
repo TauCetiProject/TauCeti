@@ -53,6 +53,7 @@ calculation for first continuous cohomology with trivial integer coefficients.
 * `PadicInt.not_isUnit_iff_dvd`: the nonunits of `ℤ_[p]` are the multiples of `p`; in
   particular an integer is a unit of `ℤ_[p]` exactly when `p` does not divide it
   (`PadicInt.isUnit_intCast_iff`), and `2` is not a unit of `ℤ_[2]` (`PadicInt.not_isUnit_two`).
+* `PadicInt.intCast_not_surjective`: not every `p`-adic integer is an integer.
 * `PadicInt.inv_eq_inverse`, `PadicInt.continuous_inverse`: Mathlib's `PadicInt.inv` is
   `Ring.inverse`, the inverse on units extended by `0`, and it is continuous because the nonunits
   `pℤ_p` form an open set.
@@ -138,6 +139,19 @@ theorem not_isUnit_iff_dvd {z : ℤ_[p]} : ¬IsUnit z ↔ (p : ℤ_[p]) ∣ z :=
 theorem isUnit_intCast_iff {z : ℤ} : IsUnit (z : ℤ_[p]) ↔ ¬(p : ℤ) ∣ z := by
   rw [← not_iff_not, not_not, not_isUnit_iff_dvd, ← pow_one (p : ℤ_[p]), pow_p_dvd_int_iff,
     pow_one]
+
+/-- Not every `p`-adic integer is an integer: the inverse in `ℤ_p` of the unit `1 + p` is not the
+image of an integer. -/
+theorem intCast_not_surjective : ¬Function.Surjective (Int.cast : ℤ → ℤ_[p]) := fun h ↦ by
+  have hp := (Fact.out : p.Prime).two_le
+  have hu : IsUnit ((1 + p : ℤ) : ℤ_[p]) := isUnit_intCast_iff.2 fun hdvd ↦ by
+    have : (p : ℤ) ∣ 1 := (dvd_add_left (dvd_refl _)).1 hdvd
+    have := Int.le_of_dvd one_pos this
+    omega
+  obtain ⟨m, hm⟩ := h ↑hu.unit⁻¹
+  have hmul : (1 + p : ℤ) * m = 1 :=
+    Int.cast_injective (α := ℤ_[p]) <| by rw [Int.cast_mul, hm, IsUnit.mul_val_inv, Int.cast_one]
+  rcases Int.eq_one_or_neg_one_of_mul_eq_one hmul with h1 | h1 <;> omega
 
 /-- `2` is not a unit in `ℤ_2`. -/
 theorem not_isUnit_two : ¬IsUnit (2 : ℤ_[2]) := by

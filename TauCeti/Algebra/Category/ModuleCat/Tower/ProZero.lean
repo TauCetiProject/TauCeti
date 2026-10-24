@@ -28,6 +28,9 @@ tower `ℤ ← ℤ ← ⋯` with transitions multiplication by `p` is not pro-ze
   `lim¹`; `TauCeti.ModuleTower.isMittagLeffler_of_isProZero`: they are Mittag-Leffler.
 * `TauCeti.ModuleTower.multiplicationTower`: the tower `R ← R ← ⋯` with transitions right
   multiplication by `a`.
+* `TauCeti.ModuleTower.multiplicationTowerProductEquiv`: the product of its terms is the module of
+  sequences `ℕ → R`, on which the shift is `δ(x)ₙ = xₙ - xₙ₊₁ * a`
+  (`TauCeti.ModuleTower.multiplicationTowerProductEquiv_shift`).
 * `TauCeti.ModuleTower.isProZero_multiplicationTower_iff`: it is pro-zero exactly when `a` is
   nilpotent; `TauCeti.ModuleTower.isProZero_multiplicationTower_iff_eq_zero` is the case of a
   reduced ring.
@@ -124,6 +127,32 @@ theorem multiplicationTower_transitionOfLE (a : R) {n k : ℕ} (h : n ≤ k) :
     rw [← transitionOfLE_comp_transitionOfLE _ h (Nat.le_succ k), ih, transitionOfLE_succ,
       multiplicationTower_transition]
     exact key
+
+/-- The terms of `multiplicationTower a` are `R` itself, so the product of its terms is the module
+of sequences `ℕ → R`. -/
+def multiplicationTowerProductEquiv (a : R) : (multiplicationTower a).Product ≃ₗ[R] (ℕ → R) :=
+  -- `(multiplicationTower a).obj (op n)` is `ModuleCat.of R R` by definition
+  LinearEquiv.refl R (ℕ → R)
+
+/-- The shift map of `multiplicationTower a`, as a map of sequences:
+`δ(x)ₙ = xₙ - xₙ₊₁ * a`. -/
+@[simp]
+theorem multiplicationTowerProductEquiv_shift (a : R) (x : (multiplicationTower a).Product)
+    (n : ℕ) :
+    multiplicationTowerProductEquiv a ((multiplicationTower a).shift x) n =
+      multiplicationTowerProductEquiv a x n - multiplicationTowerProductEquiv a x (n + 1) * a := by
+  rw [← smul_eq_mul, ← LinearMap.toSpanSingleton_apply, ← multiplicationTower_transition]
+  exact shift_apply _ x n
+
+/-- A sequence lies in `lim` of `multiplicationTower a` exactly when `xₙ₊₁ * a = xₙ` for all
+`n`. -/
+theorem mem_lim_multiplicationTower_iff {a : R} {x : (multiplicationTower a).Product} :
+    x ∈ (multiplicationTower a).lim ↔ ∀ n,
+      multiplicationTowerProductEquiv a x (n + 1) * a = multiplicationTowerProductEquiv a x n := by
+  rw [lim_eq_ker, LinearMap.mem_ker, ← (multiplicationTowerProductEquiv a).map_eq_zero_iff,
+    funext_iff]
+  simp only [multiplicationTowerProductEquiv_shift, Pi.zero_apply, sub_eq_zero]
+  exact forall_congr' fun n ↦ eq_comm
 
 /-- **The multiplication tower is pro-zero exactly for nilpotent elements.** -/
 theorem isProZero_multiplicationTower_iff (a : R) :
