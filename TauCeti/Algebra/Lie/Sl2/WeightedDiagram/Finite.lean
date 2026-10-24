@@ -71,7 +71,7 @@ noncomputable def weightedDynkinDiagram (h : dominantNeutralElements b)
 
 /-- A diagram label is the corresponding simple-root value, interpreted in the field. -/
 @[simp]
-theorem weightedDynkinDiagram_cast (h : dominantNeutralElements b) (i : b.support) :
+theorem natCast_weightedDynkinDiagram_apply (h : dominantNeutralElements b) (i : b.support) :
     ((weightedDynkinDiagram b h i : ℕ) : K) = (i : Weight K H L) h := by
   obtain ⟨⟨e, f, t⟩, hh⟩ := h.property
   rcases t.root_apply_eq_zero_or_eq_one_or_eq_two hh i.property with hi | hi | hi <;>
@@ -84,10 +84,10 @@ theorem weightedDynkinDiagram_apply_eq_iff (h : dominantNeutralElements b)
     weightedDynkinDiagram b h i = n ↔ (i : Weight K H L) h = (n : ℕ) := by
   constructor
   · intro hn
-    rw [← weightedDynkinDiagram_cast b h i, hn]
+    rw [← natCast_weightedDynkinDiagram_apply b h i, hn]
   · intro hn
     apply Fin.ext
-    exact Nat.cast_injective ((weightedDynkinDiagram_cast b h i).trans hn)
+    exact Nat.cast_injective ((natCast_weightedDynkinDiagram_apply b h i).trans hn)
 
 /-- Simple-root labels determine a dominant neutral element uniquely. -/
 theorem weightedDynkinDiagram_injective : Function.Injective (weightedDynkinDiagram b) := by
