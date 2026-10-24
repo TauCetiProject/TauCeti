@@ -62,21 +62,19 @@ namespace TauCeti
 
 variable {F : Type*} [Field F]
 
-/-- **The degree-reduction step.** Let `P` be a finite set of irreducible polynomials over a
-perfect field, and let `μ ∈ P` have the largest degree `d ≥ 2` in `P`. Then there is a finite set
-`P'` of irreducible polynomials of degree at most `d`, with fewer members of degree `d` than `P`,
-such that `μ` maps the roots of every member of `P`, and the roots of `μ′`, into the roots of
-members of `P'`. -/
-theorem exists_irreducible_finset_dvd_comp [PerfectField F] {P : Finset F[X]}
-    (hP : ∀ p ∈ P, Irreducible p) {μ : F[X]} (hμ : μ ∈ P)
+/-- **The degree-reduction step.** Let `P` be a finite set of irreducible polynomials, and let
+`μ ∈ P`, with `μ′ ≠ 0`, have the largest degree `d ≥ 2` in `P`. Then there is a finite set `P'`
+of irreducible polynomials of degree at most `d`, with fewer members of degree `d` than `P`, such
+that `μ` maps the roots of every member of `P`, and the roots of `μ′`, into the roots of members
+of `P'`. Over a perfect field the hypothesis `μ′ ≠ 0` holds for every irreducible `μ`. -/
+theorem exists_irreducible_finset_dvd_comp {P : Finset F[X]}
+    (hP : ∀ p ∈ P, Irreducible p) {μ : F[X]} (hμ : μ ∈ P) (hμ' : derivative μ ≠ 0)
     (hdeg : ∀ p ∈ P, p.natDegree ≤ μ.natDegree) (hμ2 : 2 ≤ μ.natDegree) :
     ∃ P' : Finset F[X], (∀ p ∈ P', Irreducible p) ∧ (∀ p ∈ P', p.natDegree ≤ μ.natDegree) ∧
       #{p ∈ P' | p.natDegree = μ.natDegree} < #{p ∈ P | p.natDegree = μ.natDegree} ∧
       (∀ p ∈ P, ∃ p' ∈ P', p ∣ p'.comp μ) ∧
       ∀ r, Irreducible r → r ∣ derivative μ → ∃ p' ∈ P', r ∣ p'.comp μ := by
   classical
-  have hμ' : derivative μ ≠ 0 := (separable_iff_derivative_ne_zero (hP μ hμ)).1
-    (PerfectField.separable_of_irreducible (hP μ hμ))
   -- The irreducible factors of `μ′` have degree less than `μ`.
   have hcrit : ∀ r ∈ normalizedFactors (derivative μ), r.natDegree < μ.natDegree := fun r hr ↦
     have := natDegree_derivative_le μ
@@ -117,14 +115,6 @@ theorem exists_irreducible_finset_dvd_comp [PerfectField F] {P : Finset F[X]}
     exact ⟨_, Finset.mem_image_of_mem _ (Finset.mem_union_right _ (Multiset.mem_toFinset.2 hr₀)),
       hassoc.dvd.trans (AdjoinRoot.dvd_minpoly_mk_comp r₀ μ)⟩
 
-/-- If `μ` maps the roots of `p` into the roots of `p'`, and `q` takes the value `c` at the
-roots of `p'`, then `q.comp μ` takes the value `c` at the roots of `p`. -/
-private theorem dvd_comp_sub_C {p p' μ q : F[X]} {c : F} (hp : p ∣ p'.comp μ)
-    (hp' : p' ∣ q - C c) : p ∣ q.comp μ - C c := by
-  have := map_dvd (compRingHom μ) hp'
-  rw [coe_compRingHom_apply, coe_compRingHom_apply, sub_comp, C_comp] at this
-  exact hp.trans this
-
 /-- If `μ` maps the roots of `P`, and the roots of `μ′`, into the roots of `P'`, and `q` is
 constant modulo every member of `P'` and every irreducible factor of `q′`, then `q.comp μ` is
 constant modulo every member of `P` and every irreducible factor of its derivative. -/
@@ -135,6 +125,11 @@ private theorem forall_dvd_sub_C_comp {P P' : Finset F[X]} {μ q : F[X]} (hμ' :
     (hqcrit : ∀ r, Irreducible r → r ∣ derivative q → ∃ c, r ∣ q - C c) :
     derivative (q.comp μ) ≠ 0 ∧ (∀ p ∈ P, ∃ c, p ∣ q.comp μ - C c) ∧
       ∀ r, Irreducible r → r ∣ derivative (q.comp μ) → ∃ c, r ∣ q.comp μ - C c := by
+  -- If `μ` maps the roots of `p` into the roots of `p'`, and `q` takes the value `c` at the roots
+  -- of `p'`, then `q.comp μ` takes the value `c` at the roots of `p`.
+  have dvd_comp_sub_C {p p' : F[X]} {c : F} (hp : p ∣ p'.comp μ) (hp' : p' ∣ q - C c) :
+      p ∣ q.comp μ - C c :=
+    hp.trans (by simpa using map_dvd (compRingHom μ) hp')
   refine ⟨?_, fun p hp ↦ ?_, fun r hr hdvd ↦ ?_⟩
   · rw [derivative_comp]
     refine mul_ne_zero hμ' fun h ↦ ?_
@@ -172,7 +167,7 @@ private theorem forall_dvd_sub_C_X {P : Finset F[X]} (hP : ∀ p ∈ P, Irreduci
 perfect field `F`, there is a polynomial `q ∈ F[X]` with `q′ ≠ 0` that is constant modulo every
 member of `P` and modulo every irreducible factor of `q′`: at the roots of each of these, in any
 field extension, `q` takes a value in `F`. -/
-theorem exists_forall_dvd_sub_C [PerfectField F] (P : Finset F[X])
+theorem exists_forall_dvd_sub_C [PerfectField F] {P : Finset F[X]}
     (hP : ∀ p ∈ P, Irreducible p) :
     ∃ q : F[X], derivative q ≠ 0 ∧ (∀ p ∈ P, ∃ c, p ∣ q - C c) ∧
       ∀ r, Irreducible r → r ∣ derivative q → ∃ c, r ∣ q - C c := by
@@ -204,23 +199,16 @@ theorem exists_forall_dvd_sub_C [PerfectField F] (P : Finset F[X])
       by_cases hex : ∃ μ ∈ P, μ.natDegree = d + 1
       · -- Apply the degree-reduction step to a member `μ` of degree `d + 1`, and compose.
         obtain ⟨μ, hμ, hμd⟩ := hex
+        have hμ' : derivative μ ≠ 0 := (separable_iff_derivative_ne_zero (hP μ hμ)).1
+          (PerfectField.separable_of_irreducible (hP μ hμ))
         obtain ⟨P', hP', hd', hlt, hPP', hcrit⟩ :=
-          exists_irreducible_finset_dvd_comp hP hμ (hμd ▸ hd) (by omega)
+          exists_irreducible_finset_dvd_comp hP hμ hμ' (hμd ▸ hd) (by omega)
         rw [hμd] at hd' hlt
         obtain ⟨q, hq', hqP', hqcrit⟩ := ihn P' hP' hd' (by omega)
-        exact ⟨q.comp μ, forall_dvd_sub_C_comp ((separable_iff_derivative_ne_zero (hP μ hμ)).1
-          (PerfectField.separable_of_irreducible (hP μ hμ))) hPP' hcrit hq' hqP' hqcrit⟩
+        exact ⟨q.comp μ, forall_dvd_sub_C_comp hμ' hPP' hcrit hq' hqP' hqcrit⟩
       · push Not at hex
         exact ihd _ P hP (fun p hp ↦ Nat.le_of_lt_succ (lt_of_le_of_ne (hd p hp) (hex p hp)))
           le_rfl
-
-/-- If the minimal polynomial of `x` divides `q - C c`, then `q` takes the value `c` at `x`. -/
-private theorem aeval_mem_range_of_minpoly_dvd {L : Type*} [Field L] [Algebra F L] {x : L}
-    {q : F[X]} {c : F} (h : minpoly F x ∣ q - C c) :
-    aeval x q ∈ Set.range (algebraMap F L) :=
-  ⟨c, by
-    have := aeval_eq_zero_of_dvd_aeval_eq_zero h (minpoly.aeval F x)
-    rwa [map_sub, aeval_C, sub_eq_zero, eq_comm] at this⟩
 
 universe w
 
@@ -229,18 +217,18 @@ universe w
 `q ∈ F[X]` with `q′ ≠ 0`, in particular nonconstant, whose critical values in every field
 extension of `F` also lie in `F`. -/
 theorem exists_polynomial_aeval_mem_range [PerfectField F] {K : Type*} [Field K] [Algebra F K]
-    (S : Finset K) (hS : ∀ s ∈ S, IsIntegral F s) :
+    {S : Finset K} (hS : ∀ s ∈ S, IsIntegral F s) :
     ∃ q : F[X], derivative q ≠ 0 ∧ (∀ s ∈ S, aeval s q ∈ Set.range (algebraMap F K)) ∧
       ∀ (L : Type w) [Field L] [Algebra F L] (x : L), aeval x (derivative q) = 0 →
         aeval x q ∈ Set.range (algebraMap F L) := by
   classical
-  obtain ⟨q, hq', hqS, hqcrit⟩ := exists_forall_dvd_sub_C (S.image (minpoly F))
+  obtain ⟨q, hq', hqS, hqcrit⟩ := exists_forall_dvd_sub_C (P := S.image (minpoly F))
     (by simpa using fun s hs ↦ minpoly.irreducible (hS s hs))
   refine ⟨q, hq', fun s hs ↦ ?_, fun L _ _ x hx ↦ ?_⟩
   · obtain ⟨c, hc⟩ := hqS _ (Finset.mem_image_of_mem _ hs)
-    exact aeval_mem_range_of_minpoly_dvd hc
+    exact ⟨c, by rw [eq_comm, ← sub_eq_zero]; simpa using minpoly.dvd_iff.1 hc⟩
   · have hint : IsIntegral F x := (IsAlgebraic.isIntegral ⟨_, hq', hx⟩)
     obtain ⟨c, hc⟩ := hqcrit _ (minpoly.irreducible hint) (minpoly.dvd F x hx)
-    exact aeval_mem_range_of_minpoly_dvd hc
+    exact ⟨c, by rw [eq_comm, ← sub_eq_zero]; simpa using minpoly.dvd_iff.1 hc⟩
 
 end TauCeti

@@ -14,9 +14,9 @@ public import Mathlib.RingTheory.AdjoinRoot
 
 For polynomials `f` and `g` over a field `K`, the class `AdjoinRoot.mk f g` is the value `g(α)` at
 the root `α` of `f`. Its minimal polynomial over `K` is the polynomial whose roots are the images
-under `g` of the roots of `f` when `f` is irreducible: it divides `p` exactly when `g` maps the
-roots of `f` into the roots of `p`, in the sense that `f ∣ p.comp g`. It is irreducible of degree
-at most `deg f`.
+under `g` of the roots of `f` when `f` is irreducible: it divides `p` exactly when
+`f ∣ p.comp g`, which for squarefree `f` says that `g` maps the roots of `f` into the roots of
+`p`. It is irreducible of degree at most `deg f`.
 
 ## Main results
 
@@ -34,8 +34,9 @@ namespace AdjoinRoot
 
 variable {K : Type*} [Field K]
 
-/-- The minimal polynomial of `g(α)`, for the root `α` of `f`, divides `p` exactly when `g` maps
-the roots of `f` into the roots of `p`. -/
+/-- The minimal polynomial of `g(α)`, for the root `α` of `f`, divides `p` exactly when
+`f ∣ p.comp g`, that is, when `p(g(α)) = 0` in `AdjoinRoot f`. For squarefree `f` this says that
+`g` maps the roots of `f` into the roots of `p`. -/
 theorem minpoly_mk_dvd_iff {f g p : K[X]} : minpoly K (mk f g) ∣ p ↔ f ∣ p.comp g := by
   rw [minpoly.dvd_iff, ← aeval_eq, ← aeval_comp, aeval_eq, mk_eq_zero]
 
