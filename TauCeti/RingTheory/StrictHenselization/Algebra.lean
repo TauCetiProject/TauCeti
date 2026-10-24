@@ -139,6 +139,11 @@ theorem exists_stage_eq (x : algebra R Ω) :
   simp only [stage_def]
   exact SmallFilteredAlgebraColimit.exists_stage_eq (algebraFunctor R Ω) x
 
+/-- Finitely many elements of the colimit come from a common pointed étale neighbourhood. -/
+theorem exists_stage_family {ι : Type*} [Finite ι] (x : ι → algebra R Ω) :
+    ∃ (B : Neighbourhood R Ω) (b : ι → B.obj.left), ∀ i, stage R Ω B (b i) = x i :=
+  SmallFilteredAlgebraColimit.exists_stage_family (algebraFunctor R Ω) x
+
 /-- Algebra maps out of the colimit agree if they agree on every stage. -/
 @[ext]
 theorem hom_ext {S : Type w} [Semiring S] [Algebra R S]
