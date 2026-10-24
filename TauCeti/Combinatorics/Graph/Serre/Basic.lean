@@ -16,6 +16,9 @@ still has two distinct directions, and parallel edges remain distinct. The quive
 a Serre graph keeps those directed edge identities, so its paths can be used for reduced paths,
 graph groups, and labelled-graph arguments.
 
+The geometric edges of a Serre graph are the reversal pairs `{e, rev e}`; data attached to an
+unoriented edge, such as the edge groups of a graph of groups, is indexed by them.
+
 The simple-graph construction takes its edge set from Mathlib's darts. It provides the familiar
 loopless example while retaining the reversal structure used for general graphs.
 
@@ -50,8 +53,9 @@ namespace SerreGraph
 
 variable (Γ : SerreGraph.{u, v})
 
-/-- Terminal vertex of a dart. -/
-def tgt (e : Γ.E) : Γ.V := Γ.src (Γ.rev e)
+/-- Terminal vertex of a dart. The body is exposed so that families indexed by vertices, such as
+the vertex groups of a graph of groups, can be evaluated at `Γ.tgt e` without a cast. -/
+@[expose] def tgt (e : Γ.E) : Γ.V := Γ.src (Γ.rev e)
 
 /-- A dart ends where its reverse starts. -/
 theorem tgt_def (e : Γ.E) : Γ.tgt e = Γ.src (Γ.rev e) := (rfl)
@@ -65,6 +69,50 @@ theorem tgt_def (e : Γ.E) : Γ.tgt e = Γ.src (Γ.rev e) := (rfl)
 theorem rev_injective : Function.Injective Γ.rev := by
   intro e f h
   simpa only [Γ.rev_rev] using congrArg Γ.rev h
+
+/-- The geometric edges of a Serre graph: the pairs `{e, rev e}` of mutually reverse darts. -/
+@[expose] def GeomEdge : Type v := Quot fun e f : Γ.E => f = Γ.rev e
+
+/-- The geometric edge underlying a dart. -/
+@[expose] def toGeomEdge (e : Γ.E) : Γ.GeomEdge := Quot.mk _ e
+
+/-- A dart and its reverse have the same underlying geometric edge. -/
+@[simp] theorem toGeomEdge_rev (e : Γ.E) : Γ.toGeomEdge (Γ.rev e) = Γ.toGeomEdge e :=
+  Quot.sound (Γ.rev_rev e).symm
+
+theorem toGeomEdge_surjective : Function.Surjective Γ.toGeomEdge :=
+  Quot.mk_surjective
+
+/-- Two darts have the same geometric edge exactly when they are equal or mutually reverse. -/
+theorem toGeomEdge_eq_toGeomEdge_iff {e f : Γ.E} :
+    Γ.toGeomEdge e = Γ.toGeomEdge f ↔ f = e ∨ f = Γ.rev e := by
+  refine ⟨fun h => ?_, ?_⟩
+  · have hequiv : Equivalence fun e f : Γ.E => f = e ∨ f = Γ.rev e :=
+      { refl := fun _ => Or.inl rfl
+        symm := by
+          rintro e f (rfl | rfl)
+          · exact Or.inl rfl
+          · exact Or.inr (Γ.rev_rev e).symm
+        trans := by
+          rintro e f g (rfl | rfl) (rfl | rfl)
+          · exact Or.inl rfl
+          · exact Or.inr rfl
+          · exact Or.inr rfl
+          · exact Or.inl (Γ.rev_rev e) }
+    exact hequiv.eqvGen_iff.mp ((Quot.eqvGen_exact h).mono fun _ _ => Or.inr)
+  · rintro (rfl | rfl)
+    · rfl
+    · exact (Γ.toGeomEdge_rev e).symm
+
+/-- A function on darts taking the same value on mutually reverse darts descends to geometric
+edges. -/
+@[expose] def GeomEdge.lift {β : Sort*} (f : Γ.E → β) (hf : ∀ e, f (Γ.rev e) = f e) :
+    Γ.GeomEdge → β :=
+  Quot.lift f fun e _ h => h ▸ (hf e).symm
+
+@[simp] theorem GeomEdge.lift_toGeomEdge {β : Sort*} (f : Γ.E → β)
+    (hf : ∀ e, f (Γ.rev e) = f e) (e : Γ.E) : GeomEdge.lift Γ f hf (Γ.toGeomEdge e) = f e :=
+  rfl
 
 /-- An orientation chooses one dart from each reverse pair. -/
 def IsOrientation (O : Set Γ.E) : Prop := ∀ e, e ∈ O ↔ Γ.rev e ∉ O
@@ -207,6 +255,22 @@ theorem rose_isOrientation (α : Type w) :
   -- The carrier `(rose α).E` reduces definitionally to `α × Bool` here.
   change (b = true) ↔ ¬(!b = true)
   cases b <;> decide
+
+/-- The segment: two vertices joined by a single pair of darts. The dart `b` runs from the
+vertex `b` to the vertex `!b`. -/
+@[expose] def segment : SerreGraph.{0, 0} where
+  V := Bool
+  E := Bool
+  src := id
+  rev := not
+  rev_rev := Bool.not_not
+  rev_ne := Bool.not_ne_self
+
+@[simp] theorem segment_src (b : Bool) : segment.src b = b := rfl
+
+@[simp] theorem segment_rev (b : Bool) : segment.rev b = !b := rfl
+
+@[simp] theorem segment_tgt (b : Bool) : segment.tgt b = !b := rfl
 
 end SerreGraph
 
