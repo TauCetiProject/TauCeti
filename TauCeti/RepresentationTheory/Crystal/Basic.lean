@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.RootSystem.Base
+public import TauCeti.Data.Option.Iterate
 
 /-!
 # Normal crystals over a root datum
@@ -237,14 +238,10 @@ section Strings
 variable (c : NormalCrystal P b B)
 
 /-- The `n`-fold raising operator `e i ^ n`, as a partial map. -/
-def eIter (i : b.support) : ℕ → B → Option B
-  | 0, x => some x
-  | n + 1, x => (c.e i x).bind (eIter i n)
+def eIter (i : b.support) : ℕ → B → Option B := Option.iterate (c.e i)
 
 /-- The `n`-fold lowering operator `f i ^ n`, as a partial map. -/
-def fIter (i : b.support) : ℕ → B → Option B
-  | 0, x => some x
-  | n + 1, x => (c.f i x).bind (fIter i n)
+def fIter (i : b.support) : ℕ → B → Option B := Option.iterate (c.f i)
 
 variable {i : b.support} {n : ℕ} {x y : B}
 
@@ -259,19 +256,15 @@ theorem fIter_zero (x : B) : c.fIter i 0 x = some x := (rfl)
 theorem fIter_succ (n : ℕ) (x : B) : c.fIter i (n + 1) x = (c.f i x).bind (c.fIter i n) := (rfl)
 
 @[simp]
-theorem eIter_one (x : B) : c.eIter i 1 x = c.e i x := by
-  simp [eIter_succ]
+theorem eIter_one (x : B) : c.eIter i 1 x = c.e i x :=
+  Option.iterate_one (c.e i) x
 
 @[simp]
-theorem fIter_one (x : B) : c.fIter i 1 x = c.f i x := by
-  simp [fIter_succ]
+theorem fIter_one (x : B) : c.fIter i 1 x = c.f i x :=
+  Option.iterate_one (c.f i) x
 
-theorem eIter_succ' (n : ℕ) (x : B) : c.eIter i (n + 1) x = (c.eIter i n x).bind (c.e i) := by
-  induction n generalizing x with
-  | zero => simp [eIter_succ]
-  | succ n ih =>
-    rw [eIter_succ, eIter_succ c n, Option.bind_assoc]
-    exact congrArg _ (funext ih)
+theorem eIter_succ' (n : ℕ) (x : B) : c.eIter i (n + 1) x = (c.eIter i n x).bind (c.e i) :=
+  Option.iterate_succ' (c.e i) n x
 
 @[simp]
 theorem dual_eIter : c.dual.eIter = c.fIter := by
