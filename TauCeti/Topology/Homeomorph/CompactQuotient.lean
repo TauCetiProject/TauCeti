@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.ContinuousMap.Basic
 public import Mathlib.Topology.Homeomorph.Lemmas
 public import Mathlib.Topology.Separation.Hausdorff
 
@@ -33,21 +34,19 @@ theorem nonempty_homeomorph_image_of_forall_eq_iff {X Y T : Type*} [TopologicalS
     (hsurj : Surjective f) (hfib : ∀ x y : S, f x = f y ↔ π x = π y) :
     Nonempty (π '' S ≃ₜ T) := by
   have : CompactSpace S := isCompact_iff_compactSpace.mp hS
-  let q : S → π '' S := fun x ↦ ⟨π x, x, x.2, rfl⟩
+  let q : C(S, π '' S) :=
+    ⟨fun x ↦ ⟨π x, x, x.2, rfl⟩, (hπ.comp continuous_subtype_val).subtype_mk _⟩
   have hqs : Surjective q := by
     rintro ⟨_, x, hx, rfl⟩
     exact ⟨⟨x, hx⟩, rfl⟩
   have hq : Topology.IsQuotientMap q :=
-    .of_surjective_continuous hqs ((hπ.comp continuous_subtype_val).subtype_mk _)
+    .of_surjective_continuous hqs q.continuous
   have : CompactSpace (π '' S) := isCompact_iff_compactSpace.mp (hS.image hπ)
   -- Descend `f` along the quotient map `q`; the result is a continuous bijection out of a compact
   -- space into a Hausdorff one.
-  let g : π '' S → T := fun y ↦ f (surjInv hqs y)
-  have hgq (x : S) : g (q x) = f x :=
-    (hfib _ _).2 (congrArg Subtype.val (surjInv_eq hqs (q x)))
-  have hg : Continuous g := hq.continuous_iff.2 (by
-    convert hf using 1
-    exact funext hgq)
+  have hfq : FactorsThrough f q := fun x y h ↦ (hfib x y).2 (congrArg Subtype.val h)
+  let g := hq.lift ⟨f, hf⟩ hfq
+  have hgq (x : S) : g (q x) = f x := DFunLike.congr_fun (hq.lift_comp ⟨f, hf⟩ hfq) x
   have hginj : Injective g := by
     intro y y' h
     obtain ⟨x, rfl⟩ := hqs y
@@ -57,6 +56,6 @@ theorem nonempty_homeomorph_image_of_forall_eq_iff {X Y T : Type*} [TopologicalS
   have hgs : Surjective g := fun t ↦
     let ⟨x, hx⟩ := hsurj t
     ⟨q x, (hgq x).trans hx⟩
-  exact ⟨Continuous.homeoOfEquivCompactToT2 (f := Equiv.ofBijective g ⟨hginj, hgs⟩) hg⟩
+  exact ⟨Continuous.homeoOfEquivCompactToT2 (f := Equiv.ofBijective g ⟨hginj, hgs⟩) g.continuous⟩
 
 end TauCeti
