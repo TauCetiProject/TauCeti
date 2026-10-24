@@ -102,11 +102,33 @@ variable (k : Type u) (n d : ℕ) [CommRing k]
 of the standard symplectic module `k^{2n}`: the general `PiTensorProduct.signReindexRepresentation`
 at `M = k^{2n}`. This is the action of the permutation diagrams in the symplectic Brauer action; on
 two strands the transposition acts by `TauCeti.symplecticCrossing`. -/
-noncomputable abbrev symplecticPermTensorAction :
+noncomputable def symplecticPermTensorAction :
     Representation k (Equiv.Perm (Fin d)) (⨂[k]^d ((Fin n ⊕ Fin n) → k)) :=
   PiTensorProduct.signReindexRepresentation k ((Fin n ⊕ Fin n) → k) (Fin d)
 
+/-- The symplectic permutation action is the sign-twisted reindexing representation on the
+standard symplectic module. -/
+theorem symplecticPermTensorAction_def :
+    symplecticPermTensorAction k n d =
+      PiTensorProduct.signReindexRepresentation k ((Fin n ⊕ Fin n) → k) (Fin d) :=
+  (rfl)
+
 variable {k n d}
+
+/-- A permutation reindexes a pure tensor and multiplies it by its sign. -/
+@[simp]
+theorem symplecticPermTensorAction_tprod (σ : Equiv.Perm (Fin d))
+    (v : Fin d → (Fin n ⊕ Fin n) → k) :
+    symplecticPermTensorAction k n d σ (PiTensorProduct.tprod k v) =
+      ((Equiv.Perm.sign σ : ℤ) : k) • PiTensorProduct.tprod k fun t => v (σ.symm t) := by
+  rw [symplecticPermTensorAction_def, PiTensorProduct.signReindexRepresentation_tprod]
+
+/-- A transposition of distinct strands exchanges their factors in a pure tensor and negates it. -/
+theorem symplecticPermTensorAction_swap_tprod {i j : Fin d} (hij : i ≠ j)
+    (v : Fin d → (Fin n ⊕ Fin n) → k) :
+    symplecticPermTensorAction k n d (Equiv.swap i j) (PiTensorProduct.tprod k v) =
+      -PiTensorProduct.tprod k fun t => v (Equiv.swap i j t) := by
+  rw [symplecticPermTensorAction_def, PiTensorProduct.signReindexRepresentation_swap_tprod hij]
 
 /-- **On two strands the transposition acts by the Brauer crossing** `TauCeti.symplecticCrossing`,
 minus the flip of the two tensor factors. -/
@@ -117,7 +139,7 @@ theorem symplecticPermTensorAction_swap_zero_one :
     funext t
     fin_cases t <;> simp
   rw [LinearMap.compMultilinearMap_apply, LinearMap.compMultilinearMap_apply,
-    PiTensorProduct.signReindexRepresentation_swap_tprod (by decide), symplecticCrossing_tprod, hv]
+    symplecticPermTensorAction_swap_tprod (by decide), symplecticCrossing_tprod, hv]
 
 /-! ### Commuting with the diagonal action -/
 
@@ -126,7 +148,7 @@ on the tensor power, so every permutation diagram acts by an intertwiner. -/
 theorem commute_symplecticPermTensorAction_tensorPower (σ : Equiv.Perm (Fin d))
     (g : Matrix.symplecticGroup (Fin n) k) :
     Commute (symplecticPermTensorAction k n d σ) ((stdSymplecticRep k n).tensorPower d g) := by
-  rw [Representation.tensorPower_apply]
+  rw [symplecticPermTensorAction_def, Representation.tensorPower_apply]
   exact PiTensorProduct.commute_signReindexRepresentation_map σ _
 
 /-! ### The crossing on an arc, and the renaming of an arc -/
@@ -139,14 +161,14 @@ theorem symplecticPermTensorAction_mul_symplecticCupCapAt (σ : Equiv.Perm (Fin 
       symplecticCupCapAt k n d (σ i) (σ j) * symplecticPermTensorAction k n d σ := by
   refine PiTensorProduct.ext (MultilinearMap.ext fun v => ?_)
   rw [LinearMap.compMultilinearMap_apply, LinearMap.compMultilinearMap_apply,
-    Module.End.mul_apply, Module.End.mul_apply, PiTensorProduct.signReindexRepresentation_tprod,
+    Module.End.mul_apply, Module.End.mul_apply, symplecticPermTensorAction_tprod,
     map_smul]
   -- only the evaluation of the arc differs between coincident and distinct strands
   rcases eq_or_ne i j with rfl | hij <;>
     [rw [symplecticCupCapAt_self_tprod, symplecticCupCapAt_self_tprod, Equiv.symm_apply_apply];
       rw [symplecticCupCapAt_tprod hij, symplecticCupCapAt_tprod (σ.injective.ne hij),
         Equiv.symm_apply_apply, Equiv.symm_apply_apply]] <;>
-  · simp only [map_smul, map_neg, map_sum, PiTensorProduct.signReindexRepresentation_tprod,
+  · simp only [map_smul, map_neg, map_sum, symplecticPermTensorAction_tprod,
       Function.update_apply_equiv_apply, Equiv.symm_symm, Function.comp_def]
     simp only [Finset.smul_sum, smul_neg, smul_comm ((Equiv.Perm.sign σ : ℤ) : k)]
 
@@ -175,7 +197,7 @@ theorem symplecticPermTensorAction_swap_mul_symplecticCupCapAt (i j : Fin d) :
   rw [LinearMap.compMultilinearMap_apply, LinearMap.compMultilinearMap_apply, Module.End.mul_apply,
     symplecticCupCapAt_tprod hij, map_smul, map_neg]
   refine congrArg _ (congrArg Neg.neg ?_)
-  simp only [map_sum, map_smul, PiTensorProduct.signReindexRepresentation_swap_tprod hij, hswap,
+  simp only [map_sum, map_smul, symplecticPermTensorAction_swap_tprod hij, hswap,
     smul_neg]
   rw [Finset.sum_comm]
   refine Finset.sum_congr rfl fun x _ => Finset.sum_congr rfl fun y _ => ?_
@@ -264,7 +286,7 @@ theorem symplecticCupCapAt_mul_symplecticCupCapAt {i j l : Fin d} (hij : i ≠ j
   rw [Equiv.swap_apply_of_ne_of_ne hij hil, Equiv.swap_apply_right] at hright
   simp only [hcross] at hright
   rw [hb, Module.End.mul_apply, Module.End.mul_apply, symplecticCupCapAt_tprod_single hij,
-    PiTensorProduct.signReindexRepresentation_swap_tprod hjl, map_neg, map_neg, hright, neg_neg]
+    symplecticPermTensorAction_swap_tprod hjl, map_neg, map_neg, hright, neg_neg]
   simp only [map_sum, map_smul, hstep, smul_neg, Finset.sum_neg_distrib, neg_neg, smul_smul]
   refine congrArg _ ?_
   -- the zigzag straightens: summing over the label of the middle cup leaves the label of `l`
