@@ -46,6 +46,8 @@ range, so the value is a `dite` rather than a plain application.
 * `Fin.coe_finRotate_pow`: a power of the rotation `finRotate n` adds its exponent modulo `n`;
   `Fin.coe_finRotate_of_add_one_lt` is the step away from the last index, where no wrapping occurs.
 * `Finset.sum_range_const_sub_succ`: the sum of a reversed initial segment of natural numbers.
+* `Finset.card_filter_castSucc_lt_succ`: counting the elements of a set of indices below `i.succ`
+  rather than `i.castSucc` adds `1` exactly when `i` belongs to it.
 * `Fin.sum_rev_castLE`: the sum of the values of a reversed embedded finite ordinal.
 * `Fin.castSucc_add_one_of_ne_last`, `Fin.castSucc_sub_one_of_ne_zero`: how `Fin.castSucc`
   interacts with the cyclic successor and predecessor.
@@ -137,6 +139,20 @@ theorem sum_range_const_sub_succ (N k : ℕ) (hk : k ≤ N) :
     _ = k.choose 2 + k * (N - k) := by
       rw [Finset.sum_range_id, Nat.choose_two_right]
       omega
+
+/-- Counting the elements of `S` below `i.succ` adds `1` to those below `i.castSucc` when
+`i ∈ S`. -/
+theorem card_filter_castSucc_lt_succ {n : ℕ} (S : Finset (Fin n)) (i : Fin n) :
+    #{s ∈ S | s.castSucc < i.succ} =
+      #{s ∈ S | s.castSucc < i.castSucc} + if i ∈ S then 1 else 0 := by
+  have h : ({s ∈ S | s.castSucc < i.succ} : Finset (Fin n)) =
+      {s ∈ S | s.castSucc < i.castSucc} ∪ {s ∈ S | s = i} := by
+    ext s
+    simp only [mem_filter, mem_union, Fin.castSucc_lt_succ_iff, Fin.castSucc_lt_castSucc_iff,
+      le_iff_lt_or_eq]
+    tauto
+  rw [h, card_union_of_disjoint (disjoint_filter.mpr fun s _ h h' ↦ by simp [h'] at h)]
+  split_ifs with hi <;> simp [filter_eq', hi]
 
 end Finset
 

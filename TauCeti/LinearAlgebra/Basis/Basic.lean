@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Basis.Basic
+import Mathlib.LinearAlgebra.StdBasis
 
 /-!
 # Basic lemmas about bases
@@ -29,6 +30,9 @@ linear-map composition.
   linear equivalence are the coordinates of the vector transported back.
 * `Module.Basis.linearIndependent_coe_basis`: the vectors of a basis of a submodule `U`, viewed in
   the ambient module, are linearly independent.
+* `Module.Basis.linearIndependent_of_repr_eq_single`: a family indexed by a finite set `S` of
+  indices, whose `s`-th member has the coordinates of `b s` at the indices in `S`, is linearly
+  independent.
 -/
 
 public section
@@ -76,6 +80,23 @@ theorem coord_map_apply {R M M' ι : Type*} [Semiring R] [AddCommMonoid M] [Modu
     [AddCommMonoid M'] [Module R M'] (b : Module.Basis ι R M) (f : M ≃ₗ[R] M') (i : ι) (x : M') :
     (b.map f).coord i x = b.coord i (f.symm x) := by
   simp only [coord_apply, map_repr, LinearEquiv.trans_apply]
+
+/-- A family of vectors indexed by a finite set `S` of indices, whose `s`-th member has the
+coordinates of `b s` at the indices in `S`, is linearly independent. -/
+theorem linearIndependent_of_repr_eq_single {b : Module.Basis ι K V} {S : Finset ι} {v : S → V}
+    (hv : ∀ s : S, ∀ t ∈ S, b.repr (v s) t = Finsupp.single (s : ι) 1 t) :
+    LinearIndependent K v := by
+  classical
+  let π : V →ₗ[K] (S → K) := LinearMap.pi fun t ↦ b.coord t
+  have hπ : π ∘ v = fun s ↦ Pi.single s 1 := by
+    funext s t
+    simp only [Function.comp_apply, π, LinearMap.pi_apply, coord_apply]
+    rw [hv s t t.2]
+    by_cases hst : t = s
+    · simp [hst]
+    · rw [Finsupp.single_eq_of_ne (fun h : (t : ι) = s ↦ hst (Subtype.ext h)),
+        Pi.single_eq_of_ne hst]
+  exact LinearIndependent.of_comp π (hπ ▸ Pi.linearIndependent_single_one S K)
 
 section Submodule
 
