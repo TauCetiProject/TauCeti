@@ -491,6 +491,18 @@ theorem isPowerBounded_of_isIntegral {x : A} (hx : IsIntegral (powerBoundedSubri
     · rw [h]; exact zero_mem _
     · exact Subring.subset_closure (Polynomial.coeff_mem_coeffs h)
 
+/-- An element with a power-bounded positive power is power-bounded: it is a root of the monic
+polynomial `X ^ n - x ^ n` over `A°`, so `isPowerBounded_of_isIntegral` applies. -/
+theorem IsPowerBounded.of_pow {x : A} {n : ℕ} (hn : n ≠ 0) (hx : IsPowerBounded (x ^ n)) :
+    IsPowerBounded x :=
+  isPowerBounded_of_isIntegral <| IsIntegral.of_pow (Nat.pos_of_ne_zero hn) <|
+    isIntegral_algebraMap (x := (⟨x ^ n, hx⟩ : powerBoundedSubring A))
+
+/-- A positive power of an element is power-bounded exactly when the element is. -/
+theorem isPowerBounded_pow_iff {x : A} {n : ℕ} (hn : n ≠ 0) :
+    IsPowerBounded (x ^ n) ↔ IsPowerBounded x :=
+  ⟨IsPowerBounded.of_pow hn, fun h ↦ h.pow n⟩
+
 /-- **Wedhorn Proposition 5.30(4), as an instance**: `A°` is integrally closed in `A`. This is the
 form Mathlib's generic integral-closure API consumes; `isPowerBounded_of_isIntegral` is the
 elementwise statement behind it. -/
