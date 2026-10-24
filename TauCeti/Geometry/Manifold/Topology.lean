@@ -65,15 +65,7 @@ theorem semilocallySimplyConnectedSpace (I : ModelWithCorners 𝕜 E H) (M : Typ
     exact ce.map_target (hs_sub hy)
   have hd_image : ce '' d = s := ce.image_symm_image_of_subset_target hs_sub
   let he : d ≃ₜ s := ce.homeomorphOfImageSubsetSource hd_sub hd_image
-  have hd_sc : IsSimplyConnected d := by
-    have hs_univ : IsSimplyConnected (Set.univ : Set s) := by
-      apply (Homeomorph.Set.univ s).toHomotopyEquiv.simplyConnectedSpace_iff.mpr
-      exact hs_sc
-    have hd_univ : IsSimplyConnected (Set.univ : Set d) := by
-      apply he.isEmbedding.isSimplyConnected_image.mp
-      simpa using hs_univ
-    apply (Homeomorph.Set.univ d).toHomotopyEquiv.simplyConnectedSpace_iff.mp
-    exact hd_univ
+  have hd_sc : IsSimplyConnected d := he.toHomotopyEquiv.simplyConnectedSpace_iff.mpr hs_sc
   have hd_nhds : d ∈ 𝓝 x := by
     have hsource : ce.source ∈ 𝓝 x :=
       (isOpen_extChartAt_source x).mem_nhds (mem_extChartAt_source x)
