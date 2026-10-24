@@ -281,6 +281,26 @@ theorem temperedVacuumAdjointEquiv_symm_apply :
       temperedVacuumOperator fun i ↦ laplacianResolvent ℂ (1 / 4) (y i) :=
   (rfl)
 
+@[simp]
+theorem temperedVacuumOperator_temperedVacuumOperatorEquiv_symm :
+    temperedVacuumOperator (temperedVacuumOperatorEquiv.symm y) = y :=
+  temperedVacuumOperatorEquiv.apply_symm_apply y
+
+@[simp]
+theorem temperedVacuumOperatorEquiv_symm_temperedVacuumOperator :
+    temperedVacuumOperatorEquiv.symm (temperedVacuumOperator x) = x :=
+  temperedVacuumOperatorEquiv.symm_apply_apply x
+
+@[simp]
+theorem temperedVacuumAdjoint_temperedVacuumAdjointEquiv_symm :
+    temperedVacuumAdjoint (temperedVacuumAdjointEquiv.symm y) = y :=
+  temperedVacuumAdjointEquiv.apply_symm_apply y
+
+@[simp]
+theorem temperedVacuumAdjointEquiv_symm_temperedVacuumAdjoint :
+    temperedVacuumAdjointEquiv.symm (temperedVacuumAdjoint x) = x :=
+  temperedVacuumAdjointEquiv.symm_apply_apply x
+
 /-! ### The Sobolev scale -/
 
 variable {s : ℝ} {x y}
@@ -328,8 +348,7 @@ real `s`. -/
 theorem memSobolev_temperedVacuumOperator_iff :
     (∀ i, MemSobolev (s - 1) 2 (temperedVacuumOperator x i)) ↔ ∀ i, MemSobolev s 2 (x i) := by
   refine ⟨fun h i ↦ ?_, memSobolev_temperedVacuumOperator⟩
-  simpa only [sub_add_cancel, ContinuousLinearEquiv.symm_apply_apply] using
-    memSobolev_temperedVacuumOperatorEquiv_symm (y := temperedVacuumOperatorEquiv x) h i
+  simpa using memSobolev_temperedVacuumOperatorEquiv_symm h i
 
 /-- The adjoint of the vacuum operator restricts to a bijection `H^s → H^{s-1}`: a tempered field
 `y` lies in `H^s` if and only if `L₀* y` lies in `H^{s-1}`. Since `L₀*` is bijective on tempered
@@ -338,7 +357,6 @@ every real `s`. -/
 theorem memSobolev_temperedVacuumAdjoint_iff :
     (∀ i, MemSobolev (s - 1) 2 (temperedVacuumAdjoint y i)) ↔ ∀ i, MemSobolev s 2 (y i) := by
   refine ⟨fun h i ↦ ?_, memSobolev_temperedVacuumAdjoint⟩
-  simpa only [sub_add_cancel, ContinuousLinearEquiv.symm_apply_apply] using
-    memSobolev_temperedVacuumAdjointEquiv_symm (y := temperedVacuumAdjointEquiv y) h i
+  simpa using memSobolev_temperedVacuumAdjointEquiv_symm h i
 
 end TauCeti.Vortex
