@@ -35,6 +35,8 @@ parity `n` has.
 * `IsTopologicallyNilpotent.mem_jacobson_bot`, `topologicalNilradical_le_jacobson_bot` : if an
   open ideal lies in the Jacobson radical (for instance, the ring is adically complete with respect
   to it), so does every topologically nilpotent element.
+* `IsTopologicallyNilpotent.isUnit_add_left` : when the topological nilradical lies in the
+  Jacobson radical, a unit plus a topologically nilpotent element is a unit.
 
 ## Provenance
 
@@ -154,6 +156,17 @@ theorem topologicalNilradical_le_jacobson_bot [IsLinearTopology R R] {I : Ideal 
     (hI : IsOpen (I : Set R)) (hIJ : I ≤ (⊥ : Ideal R).jacobson) :
     topologicalNilradical R ≤ (⊥ : Ideal R).jacobson := fun _ ha ↦
   (IsTopologicallyNilpotent.mem_topologicalNilradical_iff.mp ha).mem_jacobson_bot hI hIJ
+
+/-- When the topological nilradical lies in the Jacobson radical (for instance, by
+`topologicalNilradical_le_jacobson_bot`), a unit plus a topologically nilpotent element is a unit.
+Compare `IsNilpotent.isUnit_add_left_of_commute`. -/
+theorem IsTopologicallyNilpotent.isUnit_add_left [IsLinearTopology R R]
+    (hR : topologicalNilradical R ≤ (⊥ : Ideal R).jacobson) {t u : R}
+    (ht : IsTopologicallyNilpotent t) (hu : IsUnit u) : IsUnit (u + t) := by
+  obtain ⟨u, rfl⟩ := hu
+  have h := Ideal.mem_jacobson_bot.mp
+    (hR (IsTopologicallyNilpotent.mem_topologicalNilradical_iff.mpr ht)) ↑u⁻¹
+  simpa [mul_add, mul_left_comm (u : R) t, add_comm] using u.isUnit.mul h
 
 end Jacobson
 

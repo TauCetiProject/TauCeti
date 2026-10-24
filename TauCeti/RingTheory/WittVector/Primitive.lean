@@ -20,15 +20,18 @@ untilts of `R`; for instance `p` itself is primitive and corresponds to the unti
 
 Over a perfect ring of characteristic `p`, every Witt vector is `[ξ₀] + p u`, and `ξ₁ = u₀ ^ p`. So
 `ξ` is distinguished exactly when it is `[ξ₀] + p u` with `u` a unit
-(`WittVector.isDistinguished_iff_exists_unit`), the usual definition of a primitive element of
-degree one.
+(`WittVector.isDistinguished_iff_exists_unit`), and primitive exactly when moreover `ξ₀` is
+topologically nilpotent (`WittVector.isPrimitive_iff_exists_unit`); this is the usual definition
+of a primitive element of degree one.
 
-The remaining results assume that every topologically nilpotent element of `S` lies in the
-Jacobson radical (for instance, `S` is adically complete with respect to an open ideal, by
-`topologicalNilradical_le_jacobson_bot`), and that the topology of `S` is linear. Then
-`p + [ϖ] α` is primitive for every topologically nilpotent `ϖ` and every `α`, every primitive
-element is a unit multiple of one of these, primitivity is invariant under multiplication by units,
-and a multiple of a primitive element that is itself primitive is a unit multiple.
+The remaining results assume that `S` has characteristic `p`, that every topologically nilpotent
+element of `S` lies in the Jacobson radical (for instance, `S` is adically complete with respect to
+an open ideal, by `topologicalNilradical_le_jacobson_bot`), and that the topology of `S` is linear.
+In characteristic `p` the first Witt coordinate of a product is `(x y)₁ = x₀ ^ p y₁ + y₀ ^ p x₁`
+(`WittVector.mul_coeff_one`). Hence `p + [ϖ] α` is primitive for every topologically nilpotent `ϖ`
+and every `α`, primitivity is invariant under multiplication by units, and a multiple of a
+primitive element that is itself distinguished is a unit multiple. Over a perfect ring, every
+primitive element is moreover a unit multiple of some `p + [ϖ] α`.
 
 ## Main definitions
 
@@ -113,14 +116,6 @@ theorem not_isDistinguished_teichmuller [Nontrivial S] (a : S) :
   rw [isDistinguished_iff, teichmuller_coeff_pos p a 1 one_pos]
   exact not_isUnit_zero
 
-/-- The product of `[a] + p v` and `[b] + p w` is
-`[a b] + p ([a] w + [b] v + p v w)`. -/
-private theorem teichmuller_add_p_mul_mul_teichmuller_add_p_mul (a b : S) (v w : 𝕎 S) :
-    (teichmuller p a + p * v) * (teichmuller p b + p * w) =
-      teichmuller p (a * b) + p * (teichmuller p a * w + teichmuller p b * v + p * v * w) := by
-  rw [map_mul]
-  ring
-
 section CharP
 
 variable [CharP S p]
@@ -155,15 +150,56 @@ theorem IsPrimitive.frobenius [TopologicalSpace S] {ξ : 𝕎 S} (h : ξ.IsPrimi
   ⟨by rw [coeff_frobenius_charP]; exact h.1.pow hp.out.ne_zero, by
     rw [isDistinguished_iff, coeff_frobenius_charP]; exact h.2.pow p⟩
 
-/-- In characteristic `p`, `([a] + p v) ([b] + p w)` is distinguished exactly when `a w₀ + b v₀`
-is a unit. -/
-private theorem isDistinguished_teichmuller_add_p_mul_mul_iff (a b : S) (v w : 𝕎 S) :
-    ((teichmuller p a + p * v) * (teichmuller p b + p * w)).IsDistinguished ↔
-      IsUnit (a * w.coeff 0 + b * v.coeff 0) := by
-  rw [teichmuller_add_p_mul_mul_teichmuller_add_p_mul, isDistinguished_teichmuller_add_p_mul_iff,
-    ← constantCoeff_apply]
-  simp only [map_add, map_mul, map_natCast, CharP.cast_eq_zero, zero_mul, add_zero,
-    constantCoeff_apply, teichmuller_coeff_zero]
+section Jacobson
+
+variable [TopologicalSpace S] [IsLinearTopology S S]
+  (hS : topologicalNilradical S ≤ (⊥ : Ideal S).jacobson)
+include hS
+
+/-- **Elements of the form `p + [ϖ] α` are primitive.** If `ϖ` is topologically nilpotent, then
+`p + [ϖ] α` is primitive for every `α` (compare Scholze, *Étale cohomology of diamonds*,
+Definition 3.15). -/
+theorem isPrimitive_p_add_teichmuller_mul {ϖ : S} (hϖ : IsTopologicallyNilpotent ϖ)
+    (α : 𝕎 S) : ((p : 𝕎 S) + teichmuller p ϖ * α).IsPrimitive := by
+  obtain ⟨w, hw⟩ := exists_eq_teichmuller_add_verschiebung (teichmuller p ϖ * α)
+  have hw₀ : w.coeff 0 = (teichmuller p ϖ * α).coeff 1 := by
+    rw [hw, teichmuller_add_verschiebung_coeff_succ]
+  have h : (p : 𝕎 S) + teichmuller p ϖ * α =
+      teichmuller p ((teichmuller p ϖ * α).coeff 0) + verschiebung (1 + w) := by
+    rw [map_add, ← map_one (frobenius (p := p) (R := S)), verschiebung_frobenius]
+    linear_combination hw
+  rw [h]
+  refine ⟨?_, ?_⟩
+  · rw [teichmuller_add_verschiebung_coeff_zero, mul_coeff_zero, teichmuller_coeff_zero]
+    exact hϖ.mul_right _
+  · rw [isDistinguished_iff, teichmuller_add_verschiebung_coeff_succ, ← constantCoeff_apply,
+      map_add, map_one, constantCoeff_apply, hw₀, mul_coeff_one]
+    simp only [teichmuller_coeff_pos p ϖ 1 one_pos, mul_zero, zero_mul, add_zero]
+    exact ((hϖ.pow hp.out.ne_zero).mul_right _).isUnit_add_left hS isUnit_one
+
+/-- **Primitivity is invariant under multiplication by units.** -/
+theorem isPrimitive_units_mul (u : (𝕎 S)ˣ) {ξ : 𝕎 S} :
+    (u * ξ : 𝕎 S).IsPrimitive ↔ ξ.IsPrimitive := by
+  suffices H : ∀ (u : (𝕎 S)ˣ) {ξ : 𝕎 S}, ξ.IsPrimitive → (u * ξ : 𝕎 S).IsPrimitive from
+    ⟨fun h ↦ by simpa using H u⁻¹ h, H u⟩
+  intro u ξ h
+  refine ⟨by rw [mul_coeff_zero]; exact h.1.mul_left _, ?_⟩
+  rw [isDistinguished_iff, mul_coeff_one, CharP.cast_eq_zero, zero_mul, zero_mul, add_zero]
+  exact ((h.1.pow hp.out.ne_zero).mul_right _).isUnit_add_left hS
+    (((isUnit_iff_isUnit_coeff_zero.mp u.isUnit).pow p).mul h.2)
+
+/-- **The unit criterion.** If `ξ` is primitive and a multiple `ξ' = y ξ` is distinguished, then `y`
+is a unit (Kedlaya, *Sheaves, stacks, and shtukas*, Remark 2.3.5). -/
+theorem IsPrimitive.isUnit_of_eq_mul {ξ ξ' y : 𝕎 S} (hξ : ξ.IsPrimitive)
+    (hξ' : ξ'.IsDistinguished) (h : ξ' = y * ξ) : IsUnit y := by
+  rw [isDistinguished_iff, h, mul_coeff_one, CharP.cast_eq_zero, zero_mul, zero_mul,
+    add_zero] at hξ'
+  have hy := ((hξ.1.pow hp.out.ne_zero).mul_right (-y.coeff 1)).isUnit_add_left hS hξ'
+  rw [mul_neg, add_neg_cancel_right] at hy
+  exact isUnit_iff_isUnit_coeff_zero.mpr <|
+    (isUnit_pow_iff hp.out.ne_zero).mp (isUnit_of_mul_isUnit_left hy)
+
+end Jacobson
 
 variable [PerfectRing S p]
 
@@ -194,77 +230,16 @@ theorem IsPrimitive.exists_eq_unit_mul [TopologicalSpace S] {ξ : 𝕎 S} (h : �
       IsTopologicallyNilpotent ϖ ∧ ξ = u * ((p : 𝕎 S) + teichmuller p ϖ * α) := by
   obtain ⟨hξ, u, hu⟩ := isPrimitive_iff_exists_unit.mp h
   refine ⟨u, ξ.coeff 0, ↑u⁻¹, hξ, ?_⟩
-  rw [mul_add, mul_left_comm, Units.mul_inv, mul_one, add_comm, mul_comm]
-  exact hu
-
-section Jacobson
-
-variable [TopologicalSpace S] [IsLinearTopology S S]
-  (hS : topologicalNilradical S ≤ (⊥ : Ideal S).jacobson)
-include hS
-
-/-- A unit plus a topologically nilpotent element is a unit, when topologically nilpotent elements
-lie in the Jacobson radical. -/
-private theorem isUnit_add_of_isTopologicallyNilpotent {a t : S} (ha : IsUnit a)
-    (ht : IsTopologicallyNilpotent t) : IsUnit (a + t) := by
-  obtain ⟨u, rfl⟩ := ha
-  have h : (u : S) + t = u * (t * ↑u⁻¹ + 1) := by
-    rw [mul_add, mul_one, mul_left_comm, Units.mul_inv, mul_one, add_comm]
-  rw [h]
-  exact u.isUnit.mul <| Ideal.mem_jacobson_bot.mp
-    (hS (IsTopologicallyNilpotent.mem_topologicalNilradical_iff.mpr ht)) _
-
-/-- **Elements of the form `p + [ϖ] α` are primitive.** If `ϖ` is topologically nilpotent, then
-`p + [ϖ] α` is primitive for every `α` (compare Scholze, *Étale cohomology of diamonds*,
-Definition 3.15). -/
-theorem isPrimitive_p_add_teichmuller_mul {ϖ : S} (hϖ : IsTopologicallyNilpotent ϖ)
-    (α : 𝕎 S) : ((p : 𝕎 S) + teichmuller p ϖ * α).IsPrimitive := by
-  obtain ⟨v, hv⟩ := exists_eq_teichmuller_add_p_mul α
-  have h : (p : 𝕎 S) + teichmuller p ϖ * α =
-      teichmuller p (ϖ * α.coeff 0) + p * (1 + teichmuller p ϖ * v) := by
-    conv_lhs => rw [hv]
-    rw [map_mul]
-    ring
-  rw [h]
-  refine ⟨by rw [teichmuller_add_p_mul_coeff_zero]; exact hϖ.mul_right _, ?_⟩
-  rw [isDistinguished_teichmuller_add_p_mul_iff, ← constantCoeff_apply]
-  simp only [map_add, map_one, map_mul, constantCoeff_apply, teichmuller_coeff_zero]
-  exact isUnit_add_of_isTopologicallyNilpotent hS isUnit_one (hϖ.mul_right _)
-
-/-- **Primitivity is invariant under multiplication by units.** -/
-theorem isPrimitive_units_mul (u : (𝕎 S)ˣ) {ξ : 𝕎 S} :
-    (u * ξ : 𝕎 S).IsPrimitive ↔ ξ.IsPrimitive := by
-  suffices H : ∀ (u : (𝕎 S)ˣ) {ξ : 𝕎 S}, ξ.IsPrimitive → (u * ξ : 𝕎 S).IsPrimitive from
-    ⟨fun h ↦ by simpa using H u⁻¹ h, H u⟩
-  intro u ξ h
-  obtain ⟨w, hw⟩ := exists_eq_teichmuller_add_p_mul (u : 𝕎 S)
-  obtain ⟨hξ, v, hv⟩ := isPrimitive_iff_exists_unit.mp h
-  have hu := isUnit_iff_isUnit_coeff_zero.mp u.isUnit
-  have hv₀ := isUnit_iff_isUnit_coeff_zero.mp v.isUnit
-  refine ⟨by rw [mul_coeff_zero]; exact hξ.mul_left _, ?_⟩
-  rw [hw, hv, isDistinguished_teichmuller_add_p_mul_mul_iff]
-  exact isUnit_add_of_isTopologicallyNilpotent hS (hu.mul hv₀) (hξ.mul_right _)
+  linear_combination hu - teichmuller p (ξ.coeff 0) * u.mul_inv
 
 /-- **The primitive elements are the unit multiples of `p + [ϖ] α`**, for `ϖ` topologically
 nilpotent and `α` arbitrary (Kedlaya, *Sheaves, stacks, and shtukas*, Exercise 2.3.6). -/
-theorem isPrimitive_iff_exists_eq_unit_mul {ξ : 𝕎 S} :
+theorem isPrimitive_iff_exists_eq_unit_mul [TopologicalSpace S] [IsLinearTopology S S]
+    (hS : topologicalNilradical S ≤ (⊥ : Ideal S).jacobson) {ξ : 𝕎 S} :
     ξ.IsPrimitive ↔ ∃ (u : (𝕎 S)ˣ) (ϖ : S) (α : 𝕎 S),
       IsTopologicallyNilpotent ϖ ∧ ξ = u * ((p : 𝕎 S) + teichmuller p ϖ * α) :=
   ⟨IsPrimitive.exists_eq_unit_mul, fun ⟨u, _, α, hϖ, h⟩ ↦
     h ▸ (isPrimitive_units_mul hS u).mpr (isPrimitive_p_add_teichmuller_mul hS hϖ α)⟩
-
-/-- **The unit criterion.** If `ξ` is primitive and a multiple `ξ' = y ξ` is distinguished, then `y`
-is a unit (Kedlaya, *Sheaves, stacks, and shtukas*, Remark 2.3.5). -/
-theorem IsPrimitive.isUnit_of_eq_mul {ξ ξ' y : 𝕎 S} (hξ : ξ.IsPrimitive)
-    (hξ' : ξ'.IsDistinguished) (h : ξ' = y * ξ) : IsUnit y := by
-  obtain ⟨w, hw⟩ := exists_eq_teichmuller_add_p_mul y
-  obtain ⟨hξ₀, v, hv⟩ := isPrimitive_iff_exists_unit.mp hξ
-  rw [h, hw, hv, isDistinguished_teichmuller_add_p_mul_mul_iff] at hξ'
-  have hy : IsUnit (y.coeff 0 * (v : 𝕎 S).coeff 0) := by
-    simpa using isUnit_add_of_isTopologicallyNilpotent hS hξ' (hξ₀.mul_right (-w.coeff 0))
-  exact isUnit_iff_isUnit_coeff_zero.mpr (isUnit_of_mul_isUnit_left hy)
-
-end Jacobson
 
 end CharP
 
