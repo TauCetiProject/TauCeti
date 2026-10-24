@@ -6,11 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Grid.Differential.HalfTurn
+public import TauCeti.KnotTheory.Grid.Homology.Symmetry
 public import TauCeti.KnotTheory.Grid.Homology.Tau
 public import TauCeti.KnotTheory.Grid.Grading.HalfTurn
 
 /-!
-# The half-turn on unblocked grid homology
+# The half-turn on grid homology
 
 The half-turn of the torus carries a grid diagram `G` to `G.rotate` and its grid states to their
 images under `GridState.halfTurn`, and it intertwines the unblocked differentials once the
@@ -19,6 +20,10 @@ symmetry to unblocked grid homology: `GH⁻(G)` and `GH⁻(G.rotate)` are identi
 semilinear equivalence along the renaming of the variables. It preserves the Alexander
 grading, so it also preserves the knot invariant `τ`. On chains the half-turn preserves the
 full `O`-Maslov--Alexander bigrading, including the coefficient-variable degrees.
+
+For the fully blocked theory, `fullyBlockedHomologyRotateEquiv` is a linear equivalence over
+`ZMod 2`. It uses the coefficient-preserving half-turn on chains and the existing quotient
+intertwining construction. Both directions have computation rules on cycle representatives.
 
 ## Main definitions
 
@@ -79,6 +84,30 @@ theorem unblockedHomologyRotateEquiv_symm_unblockedHomologyClass
             (G.unblockedDifferential_halfTurnRenameEquiv R) w.2⟩ := by
   rw [LinearEquiv.symm_apply_eq, unblockedHomologyRotateEquiv_unblockedHomologyClass]
   exact congrArg _ (Subtype.ext (GridChain.halfTurnRenameEquiv_halfTurnRenameEquiv R _).symm)
+
+/-- The half-turn identifies the fully blocked homologies of a diagram and its rotation. -/
+noncomputable def fullyBlockedHomologyRotateEquiv :
+    G.fullyBlockedHomology ≃ₗ[ZMod 2] G.rotate.fullyBlockedHomology :=
+  G.fullyBlockedHomologyEquivOfIntertwining G.rotate (GridChain.halfTurnEquiv (ZMod 2))
+    G.fullyBlockedDifferential_rotate_halfTurnEquiv
+
+/-- The half-turn on fully blocked homology sends a cycle class to the rotated cycle class. -/
+@[simp]
+theorem fullyBlockedHomologyRotateEquiv_apply_mk (z : G.fullyBlockedCycles) :
+    G.fullyBlockedHomologyRotateEquiv (Submodule.Quotient.mk z) =
+      Submodule.Quotient.mk
+        (G.fullyBlockedCyclesEquivOfIntertwining G.rotate (GridChain.halfTurnEquiv (ZMod 2))
+          G.fullyBlockedDifferential_rotate_halfTurnEquiv z) :=
+  G.fullyBlockedHomologyEquivOfIntertwining_apply_mk _ _ _ z
+
+/-- The inverse half-turn on fully blocked homology takes the preimage of a cycle. -/
+@[simp]
+theorem fullyBlockedHomologyRotateEquiv_symm_apply_mk (z : G.rotate.fullyBlockedCycles) :
+    G.fullyBlockedHomologyRotateEquiv.symm (Submodule.Quotient.mk z) =
+      Submodule.Quotient.mk
+        ((G.fullyBlockedCyclesEquivOfIntertwining G.rotate (GridChain.halfTurnEquiv (ZMod 2))
+          G.fullyBlockedDifferential_rotate_halfTurnEquiv).symm z) :=
+  G.fullyBlockedHomologyEquivOfIntertwining_symm_apply_mk _ _ _ z
 
 end GridDiagram
 
