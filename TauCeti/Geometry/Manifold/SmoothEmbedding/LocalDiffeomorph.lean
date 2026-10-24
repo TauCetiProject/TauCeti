@@ -59,6 +59,7 @@ def compLocalDiffeomorph [IsManifold I n M'] (f : SmoothEmbedding I J n M N) (g 
     (hg : IsLocalDiffeomorph I I n g) (hge : IsEmbedding g) : SmoothEmbedding I J n M' N :=
   ofIsSmoothEmbedding (f ∘ g) (isSmoothEmbedding_comp_isLocalDiffeomorph hg hge f.isSmoothEmbedding)
 
+@[simp]
 theorem coe_compLocalDiffeomorph [IsManifold I n M'] (f : SmoothEmbedding I J n M N) (g : M' → M)
     (hg : IsLocalDiffeomorph I I n g) (hge : IsEmbedding g) :
     ⇑(f.compLocalDiffeomorph g hg hge) = f ∘ g := by
@@ -79,6 +80,7 @@ def transLocalDiffeomorph [IsManifold J n P] (f : SmoothEmbedding I J n M N) (k 
     (isSmoothEmbedding_isLocalDiffeomorphAt_comp (fun x => hk _ (hfs (mem_range_self x))) hfs hks
       f.isSmoothEmbedding)
 
+@[simp]
 theorem coe_transLocalDiffeomorph [IsManifold J n P] (f : SmoothEmbedding I J n M N) (k : N → P)
     {s : Set N} (hk : ∀ y ∈ s, IsLocalDiffeomorphAt J J n k y)
     (hks : IsEmbedding (s.domRestrict k)) (hfs : range f ⊆ s) :
@@ -100,6 +102,7 @@ def transChart [IsManifold J n G] (f : SmoothEmbedding I J n M N) {φ : OpenPart
   f.transLocalDiffeomorph φ (fun _ hy => φ.isLocalDiffeomorphAt_of_mem_maximalAtlas hφ hy)
     φ.isOpenEmbedding_restrict.isEmbedding hf
 
+@[simp]
 theorem coe_transChart [IsManifold J n G] (f : SmoothEmbedding I J n M N)
     {φ : OpenPartialHomeomorph N G} (hφ : φ ∈ IsManifold.maximalAtlas J n N)
     (hf : range f ⊆ φ.source) : ⇑(f.transChart hφ hf) = φ ∘ f := by

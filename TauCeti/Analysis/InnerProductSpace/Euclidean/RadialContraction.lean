@@ -15,7 +15,8 @@ public import Mathlib.Topology.OpenPartialHomeomorph.Constructions
 The radial contraction of `E` about `c` with parameter `κ ≥ 0` is
 `y ↦ c + (1 + κ d(y, c)²)^(-1/2) • (y - c)`, where `d = Euclidean.dist` is the distance of the
 inner product structure that `toEuclidean` transports to `E`. It is jointly smooth in `κ` and `y`,
-it is the identity for `κ = 0`, it moves no point away from `c` for `d`, and for `κ = r⁻²` it is
+it is the identity for `κ = 0`, and it moves no point away from `c` for `d` when `κ ≥ 0`.
+For `r > 0` and `κ = r⁻²` it is
 Mathlib's `OpenPartialHomeomorph.univBall` after an affine normalization, so it maps `E`
 homeomorphically, with a smooth inverse, onto the Euclidean ball `Euclidean.ball c r`. Its
 derivative at the centre is the identity.
@@ -34,9 +35,9 @@ Euclidean disc theorem.
 ## Main results
 
 * `TauCeti.euclideanDist_radialContraction_le`: a radial contraction moves no point away from
-  its centre.
-* `TauCeti.radialContraction_mem_ball`: for `κ = r⁻²` it takes values in the Euclidean ball of
-  radius `r`.
+  its centre when `κ ≥ 0`.
+* `TauCeti.radialContraction_mem_ball`: for `r > 0` and `κ = r⁻²` it takes values in the Euclidean
+  ball of radius `r`.
 * `TauCeti.contDiffOn_radialContraction`: joint smoothness in the parameter and the point.
 * `TauCeti.exists_radialContraction_eq_openPartialHomeomorph`: for a positive parameter it is an
   open partial homeomorphism defined on all of `E`, smooth in both directions.
@@ -59,9 +60,10 @@ namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
 
-/-- The radial contraction of `E` about `c` with parameter `κ`: the point `y` moves towards `c`
-by the factor `(1 + κ d(y, c)²)^(-1/2)`, for the Euclidean distance
-`d(y, c) = ‖toEuclidean (y - c)‖`. For `κ = 0` it is the identity, and for `κ = r⁻²` it is a
+/-- The radial contraction of `E` about `c` with parameter `κ`. For `κ ≥ 0`, the point `y` moves
+towards `c` by the factor `(1 + κ d(y, c)²)^(-1/2)`, for the Euclidean distance
+`d(y, c) = ‖toEuclidean (y - c)‖`. For `κ = 0` it is the identity. For `r > 0` and
+`κ = r⁻²` it is a
 diffeomorphism of `E` onto `Euclidean.ball c r`. -/
 def radialContraction (c : E) (κ : ℝ) (y : E) : E :=
   c + (√(1 + κ * ‖toEuclidean (y - c)‖ ^ 2))⁻¹ • (y - c)
@@ -79,7 +81,7 @@ theorem toEuclidean_radialContraction (c : E) (κ : ℝ) (y : E) :
       toEuclidean c + (√(1 + κ * ‖toEuclidean (y - c)‖ ^ 2))⁻¹ • toEuclidean (y - c) := by
   rw [radialContraction, map_add, map_smul]
 
-/-- A radial contraction moves no point away from the centre, for the Euclidean distance. -/
+/-- A radial contraction with `κ ≥ 0` moves no point away from the centre in Euclidean distance. -/
 theorem euclideanDist_radialContraction_le (c y : E) {κ : ℝ} (hκ : 0 ≤ κ) :
     Euclidean.dist (radialContraction c κ y) c ≤ Euclidean.dist y c := by
   have h1 : 1 ≤ √(1 + κ * ‖toEuclidean (y - c)‖ ^ 2) :=
@@ -104,15 +106,15 @@ theorem toEuclidean_radialContraction_eq_univBall (c y : E) {r : ℝ} (hr : 0 < 
   congr 2
   field_simp
 
-/-- For `κ = r⁻²` the radial contraction lands in the Euclidean ball of radius `r` about the
-centre. -/
+/-- For `r > 0` and `κ = r⁻²`, the radial contraction lands in the Euclidean ball of radius `r`
+about the centre. -/
 theorem radialContraction_mem_ball (c y : E) {r : ℝ} (hr : 0 < r) :
     radialContraction c (r⁻¹ ^ 2) y ∈ Euclidean.ball c r := by
   rw [Euclidean.ball_eq_preimage, mem_preimage, toEuclidean_radialContraction_eq_univBall c y hr,
     ← univBall_target (toEuclidean c) hr]
   exact (univBall (toEuclidean c) r).map_source (by simp)
 
-/-- For `κ = r⁻²`, the range of the radial contraction is the whole Euclidean ball. -/
+/-- For `r > 0` and `κ = r⁻²`, the range is the whole Euclidean ball of radius `r`. -/
 theorem range_radialContraction (c : E) {r : ℝ} (hr : 0 < r) :
     range (radialContraction c (r⁻¹ ^ 2)) = Euclidean.ball c r := by
   apply Subset.antisymm
