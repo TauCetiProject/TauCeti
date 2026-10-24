@@ -106,7 +106,7 @@ lemma freeι_naturality {n : ℕ} {K L : PointedSSet.{0}} (f : K ⟶ L) :
     (freeEvaluationAdjunction n).unit.naturality f
 
 /-- Extension from a free spectrum commutes with post-composition. -/
-@[reassoc (attr := simp)]
+@[simp, reassoc]
 lemma freeDesc_comp {n : ℕ} {K : PointedSSet.{0}} {E E' : SymmetricSpectrum}
     (f : K ⟶ (evaluation n).obj E) (g : E ⟶ E') :
     freeDesc E f ≫ g = freeDesc E' (f ≫ (evaluation n).map g) := by
@@ -114,7 +114,7 @@ lemma freeDesc_comp {n : ℕ} {K : PointedSSet.{0}} {E E' : SymmetricSpectrum}
     ((freeEvaluationAdjunction n).homEquiv_naturality_right_symm f g).symm
 
 /-- Extension from a free spectrum commutes with pre-composition on generators. -/
-@[reassoc (attr := simp)]
+@[simp, reassoc]
 lemma free_map_freeDesc {n : ℕ} {K L : PointedSSet.{0}} (E : SymmetricSpectrum)
     (f : K ⟶ L) (g : L ⟶ (evaluation n).obj E) :
     dsimp% (free n).map f ≫ freeDesc E g = freeDesc E (f ≫ g) := by

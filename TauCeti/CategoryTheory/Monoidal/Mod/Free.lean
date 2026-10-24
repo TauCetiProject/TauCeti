@@ -174,14 +174,14 @@ lemma freeModι_naturality {X Y : C} (f : X ⟶ Y) :
   simp only [leftUnitor_inv_naturality_assoc, Category.assoc, whisker_exchange]
 
 /-- Extending a map commutes with post-composition by a module map. -/
-@[reassoc (attr := simp)]
+@[simp, reassoc]
 lemma freeModDesc_comp {X : C} {M N : Mod C A} (f : X ⟶ M.X) (g : M ⟶ N) :
     freeModDesc A M f ≫ g = freeModDesc A N (f ≫ g.hom) := by
   apply freeMod_hom_ext
   rw [Mod.comp_hom', freeModι_desc, freeModι_desc_assoc]
 
 /-- Extending a map commutes with pre-composition on its generators. -/
-@[reassoc (attr := simp)]
+@[simp, reassoc]
 lemma freeMod_map_desc {X Y : C} (M : Mod C A) (f : X ⟶ Y) (g : Y ⟶ M.X) :
     dsimp% (freeMod A).map f ≫ freeModDesc A M g = freeModDesc A M (f ≫ g) := by
   apply freeMod_hom_ext
