@@ -15,6 +15,7 @@ import Mathlib.RingTheory.Flat.EquationalCriterion
 import Mathlib.RingTheory.Flat.Stability
 import Mathlib.RingTheory.Flat.Tensor
 import TauCeti.RingTheory.TensorProduct.Finite
+import TauCeti.RingTheory.TensorProduct.IdealSMul
 
 /-!
 # The local criterion for flatness along a regular element
@@ -107,6 +108,13 @@ private noncomputable def mulColon (J : Ideal R) (x : R) : J.colon {x} →ₗ[R]
 private theorem coe_mulColon_apply (J : Ideal R) (x : R) (c : J.colon {x}) :
     (mulColon J x c : R) = x * c := rfl
 
+/-- The `R ⧸ (x)`-action on `M ⧸ x M` is induced by the `R`-action on `M`. -/
+@[simp]
+private theorem quotient_mk_smul_mk (r : R) (m : M) :
+    Ideal.Quotient.mk (Ideal.span {x}) r • (Submodule.Quotient.mk m : QuotSMulTop x M) =
+      Submodule.Quotient.mk (r • m) := by
+  rw [← Ideal.Quotient.algebraMap_eq, algebraMap_smul, Submodule.Quotient.mk_smul]
+
 /-- One step of the descent: an element of the kernel of `M ⊗[R] J → M` is `x` times an element
 of the kernel of `M ⊗[R] (J : x) → M`. -/
 private theorem exists_lTensor_mulColon_eq (reg : IsSMulRegular M x)
@@ -121,18 +129,16 @@ private theorem exists_lTensor_mulColon_eq (reg : IsSMulRegular M x)
   -- The relation `∑ jᵢ mᵢ = 0` holds modulo `x`; apply the equational criterion over `R ⧸ (x)`.
   have h1 : ∑ i : T, (Ideal.Quotient.mk (Ideal.span {x}) (i.1.2 : R)) •
       (Submodule.Quotient.mk i.1.1 : QuotSMulTop x M) = 0 := by
-    simp_rw [← Ideal.Quotient.algebraMap_eq, algebraMap_smul, ← Submodule.Quotient.mk_smul,
-      ← Submodule.mkQ_apply, ← map_sum, Finset.sum_coe_sort T (fun i ↦ (i.2 : R) • i.1), h0,
-      map_zero]
+    simp_rw [quotient_mk_smul_mk, ← Submodule.mkQ_apply, ← map_sum,
+      Finset.sum_coe_sort T (fun i ↦ (i.2 : R) • i.1), h0, map_zero]
   obtain ⟨k, a, z, hy, ha⟩ := Flat.isTrivialRelation_of_sum_smul_eq_zero h1
   -- Lift to `R` and `M`: `mᵢ = ∑ₖ aᵢₖ yₖ + x m'ᵢ` and `∑ᵢ aᵢₖ jᵢ = x cₖ`.
   choose a' ha' using fun i j ↦ Ideal.Quotient.mk_surjective (a i j)
   choose z' hz' using fun j ↦ Submodule.Quotient.mk_surjective _ (z j)
   have hm (i : T) : ∃ m', i.1.1 = ∑ j, a' i j • z' j + x • m' := by
     have hi := hy i
-    simp_rw [← ha', ← hz', ← Ideal.Quotient.algebraMap_eq, algebraMap_smul,
-      ← Submodule.Quotient.mk_smul, ← Submodule.mkQ_apply, ← map_sum, Submodule.mkQ_apply,
-      Submodule.Quotient.eq] at hi
+    simp_rw [← ha', ← hz', quotient_mk_smul_mk, ← Submodule.mkQ_apply, ← map_sum,
+      Submodule.mkQ_apply, Submodule.Quotient.eq] at hi
     obtain ⟨m', -, hm'⟩ := Submodule.mem_smul_pointwise_iff_exists _ _ _ |>.mp hi
     exact ⟨m', by rw [hm']; abel⟩
   choose m' hm' using hm
@@ -195,23 +201,6 @@ private theorem mem_range_lTensor_inclusion (reg : IsSMulRegular M x)
     refine ⟨ψ.lTensor M u, ?_⟩
     rw [← lTensor_comp_apply, ← lTensor_comp_apply, hcomp]
 
-/-- If `r ∈ I • J`, then `m ⊗ r ∈ I • (M ⊗[R] J)`. -/
-private theorem tmul_mem_smul_top {I J : Ideal R} (m : M) {r : R} (hr : r ∈ I • J) :
-    m ⊗ₜ[R] (⟨r, Submodule.smul_le_right hr⟩ : J) ∈ (I • ⊤ : Submodule R (M ⊗[R] J)) := by
-  induction hr using Submodule.smul_induction_on' with
-  | smul a ha b hb =>
-    have : (⟨a • b, Submodule.smul_le_right (Submodule.smul_mem_smul ha hb)⟩ : J) =
-        a • ⟨b, hb⟩ := by
-      ext; simp
-    rw [this, tmul_smul]
-    exact Submodule.smul_mem_smul ha Submodule.mem_top
-  | add r hr r' hr' h h' =>
-    have : (⟨r + r', Submodule.smul_le_right (add_mem hr hr')⟩ : J) =
-        ⟨r, Submodule.smul_le_right hr⟩ + ⟨r', Submodule.smul_le_right hr'⟩ := by
-      ext; simp
-    rw [this, tmul_add]
-    exact add_mem h h'
-
 /-- **Local criterion for flatness** along a regular element (Stacks, Lemma 10.99.10 (00ML), for
 the ideal `(x)`). Let `R` and `S` be Noetherian, `M` a finite `S`-module and `x ∈ R` with image in
 the Jacobson radical of `S`. If `x` is `M`-regular and `M ⧸ x M` is flat over `R ⧸ (x)`, then `M`
@@ -238,7 +227,8 @@ theorem Flat.of_flat_quotSMulTop [IsNoetherianRing R] {S : Type*} [CommRing S]
           ⟨by simpa [smul_eq_mul, Ideal.mul_top] using c.2.2, c.2.1⟩
         rw [this] at hc'
         exact Submodule.smul_mono le_rfl inf_le_right hc'
-      exact tmul_mem_smul_top m hc
+      exact range_lTensor_inclusion_smul_le (I ^ n) J
+        ⟨m ⊗ₜ ⟨c, hc⟩, by simp [Submodule.inclusion_apply]⟩
   -- Krull's intersection theorem for the finite `S`-module `M ⊗[R] J`.
   set IS := I.map (algebraMap R S)
   have hle (n : ℕ) : (I ^ n • ⊤ : Submodule R (M ⊗[R] J)) ≤
