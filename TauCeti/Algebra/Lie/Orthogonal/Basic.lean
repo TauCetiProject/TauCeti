@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Lie.Classical
 public import Mathlib.Basic.Real.Star
+import Mathlib.Algebra.Group.Pi.Units
 
 /-!
 # Basic facts about the orthogonal Lie algebras
@@ -56,12 +57,7 @@ variable {p q R : Type*} [DecidableEq p] [DecidableEq q] [Fintype p] [Fintype q]
 open Matrix in
 /-- The Gram matrix `diag(1, …, 1, -1, …, -1)` of the indefinite form is invertible; it is its
 own inverse. -/
-theorem isUnit_indefiniteDiagonal : IsUnit (indefiniteDiagonal p q R) := by
-  have h : indefiniteDiagonal p q R * indefiniteDiagonal p q R = 1 := by
-    rw [indefiniteDiagonal, diagonal_mul_diagonal, ← diagonal_one]
-    congr 1
-    ext (i | i) <;> simp
-  let := invertibleOfRightInverse _ _ h
-  exact isUnit_of_invertible _
+theorem isUnit_indefiniteDiagonal : IsUnit (indefiniteDiagonal p q R) :=
+  isUnit_diagonal.mpr (Pi.isUnit_iff.mpr fun i ↦ by cases i <;> simp)
 
 end LieAlgebra.Orthogonal
