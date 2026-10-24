@@ -174,23 +174,30 @@ noncomputable def stableToCompleteResolutionHomotopyCategory :
   E.completeResolutionComplex.lift hE.stableToHomotopyCategory
     fun X ↦ E.completeResolutionComplex_quotient_obj (hE.completeResolution X.as)
 
-instance : hE.stableToCompleteResolutionHomotopyCategory.Additive := by
-  unfold stableToCompleteResolutionHomotopyCategory
-  infer_instance
-
 /-- The functor to `K_ac(P)` followed by the inclusion into `K(C)` is the functor to `K(C)`. -/
 noncomputable def stableToCompleteResolutionHomotopyCategoryCompιIso :
     hE.stableToCompleteResolutionHomotopyCategory ⋙ E.completeResolutionComplex.ι ≅
       hE.stableToHomotopyCategory :=
   ObjectProperty.liftCompιIso _ _ _
 
+/-- The functor to `K_ac(P)` is additive, since its composite with the faithful inclusion into
+`K(C)` is. -/
+instance : hE.stableToCompleteResolutionHomotopyCategory.Additive :=
+  have : (hE.stableToCompleteResolutionHomotopyCategory ⋙
+      E.completeResolutionComplex.ι).Additive :=
+    Functor.additive_of_iso hE.stableToCompleteResolutionHomotopyCategoryCompιIso.symm
+  Functor.additive_of_comp_faithful _ E.completeResolutionComplex.ι
+
 /-- On the image of a morphism of `C`, the functor to `K_ac(P)` is the homotopy class of its
 lift. -/
 private theorem stableToCompleteResolutionHomotopyCategory_map_hom {X Y : C} (f : X ⟶ Y) :
     (hE.stableToCompleteResolutionHomotopyCategory.map (E.projectiveStableFunctor.map f)).hom =
-      hE.completeResolutionFunctor.map f := by
-  rw [stableToCompleteResolutionHomotopyCategory, ObjectProperty.lift_map_hom]
-  exact CategoryTheory.Quotient.lift_map_functor_map _ _ _ f
+      hE.completeResolutionFunctor.map f :=
+  -- `rfl`: both lifts compute on the image of a morphism by definition. Mathlib states these
+  -- steps as `ObjectProperty.ι_obj_lift_map` and `Quotient.lift_map_functor_map`, both proved by
+  -- `rfl`, but rewriting with them here fails, since the membership proof inside
+  -- `stableToCompleteResolutionHomotopyCategory` does not fit their motive.
+  (rfl)
 
 instance : hE.stableToCompleteResolutionHomotopyCategory.Full where
   map_surjective {X Y} g := by
