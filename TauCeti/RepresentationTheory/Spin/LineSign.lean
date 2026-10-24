@@ -28,10 +28,13 @@ On an even element the grade involution does nothing, so `J` intertwines the two
 the even Clifford subalgebra, and in particular the two Spin representations: the choice of sign is
 invisible to `Spin(V)`.
 
-On the whole Clifford algebra it is visible in odd dimension. There the volume element `ω` of an
-orthogonal basis is central, odd, and squares to a nonzero scalar `c`, so it acts on `S` by a
-scalar `λ` with `λ² = c` under `c_P`, and by `-λ` under `c_{P⁻}`: the two Fock actions are the two
-characters of the centre `F ⊕ F ω`. Each of them alone kills one of the two central idempotents
+On the whole Clifford algebra it is visible in odd dimension. There the volume element `ω` of a
+spanning orthogonal list is central, odd, and squares to a scalar `c`, so whenever `W` is finite
+free it acts on `S` by a scalar `λ` with `λ² = c` under `c_P`, and by `-λ` under `c_{P⁻}`.
+
+Over a finite-dimensional field of characteristic not two, `c` is nonzero, so `λ ≠ -λ` and the two
+Fock actions are the two distinct characters of the centre `F ⊕ F ω`. Each of them alone kills one
+of the two central idempotents
 `(1 ± λ⁻¹ ω) / 2`, so neither is faithful, but together they are: the combined action
 `x ↦ (c_P(x), c_{P⁻}(x))` is an algebra isomorphism from the Clifford algebra onto
 `End S × End S`. This is the operator form of the odd structure theorem
@@ -44,8 +47,9 @@ labelled by the two signs of the line coordinate.
   negated.
 * `TauCeti.SpinPolarizationData.spinRepEquivNegLineCoordinate`: the parity operator, as an
   equivalence between the Spin representations of `P` and `P⁻`.
-* `TauCeti.SpinPolarizationData.cliffordEquivEndProd`: in odd dimension, the combined Fock action
-  of `P` and `P⁻`, as an algebra isomorphism `CliffordAlgebra Q ≃ₐ[F] End S × End S`.
+* `TauCeti.SpinPolarizationData.cliffordEquivEndProd`: in odd dimension over a finite-dimensional
+  field of characteristic not two, the combined Fock action of `P` and `P⁻`, as an algebra
+  isomorphism `CliffordAlgebra Q ≃ₐ[F] End S × End S`.
 
 ## Main results
 
@@ -54,11 +58,13 @@ labelled by the two signs of the line coordinate.
 * `TauCeti.SpinPolarizationData.spinAction_negLineCoordinate_apply_of_mem_even`: on even elements,
   `c_{P⁻}(x) = J c_P(x) J`.
 * `TauCeti.SpinPolarizationData.exists_spinAction_volume_eq_algebraMap`: the volume element acts
-  by opposite scalars `λ` and `-λ` under the two Fock actions, with `λ² = c`.
-* `TauCeti.SpinPolarizationData.spinAction_prod_bijective`: in odd dimension the combined Fock
-  action is bijective, so the direct sum of the two spinor modules is faithful.
-* `TauCeti.SpinPolarizationData.not_injective_spinAction_of_odd_finrank`: in odd dimension a single
-  Fock action is not faithful.
+  by opposite scalars `λ` and `-λ` under the two Fock actions, with `λ² = c`, when `W` is finite
+  free.
+* `TauCeti.SpinPolarizationData.spinAction_prod_bijective`: in odd dimension over a
+  finite-dimensional field of characteristic not two, the combined Fock action is bijective, so the
+  direct sum of the two spinor modules is faithful.
+* `TauCeti.SpinPolarizationData.not_injective_spinAction_of_odd_finrank`: under the same
+  hypotheses, a single Fock action is not faithful.
 
 ## References
 
@@ -112,16 +118,9 @@ theorem spinAction_negLineCoordinate_ι_apply (v : V) (s : ExteriorAlgebra K P.W
     spinAction Q P.negLineCoordinate (ι Q v) s =
       -involute (spinAction Q P (ι Q v) (involute s)) := by
   obtain ⟨⟨⟨x, y⟩, z⟩, rfl⟩ := P.decompositionEquiv.surjective v
-  have hz : spinAction Q P.negLineCoordinate (ι Q (z : V)) s =
-      -(P.lineCoordinate z • involute s) := by
-    rw [spinAction_ι_lineOperator P.negLineCoordinate z s, lineCoordinate_negLineCoordinate,
-      neg_smul]
-  rw [P.decompositionEquiv_apply, map_add, map_add, map_add, map_add, LinearMap.add_apply,
-    LinearMap.add_apply, spinAction_ι_wedge P.negLineCoordinate x s,
-    spinAction_ι_contract P.negLineCoordinate y s, hz]
-  simp only [map_add, LinearMap.add_apply, spinAction_ι_wedge, spinAction_ι_contract,
-    spinAction_ι_lineOperator, map_mul, map_smul, involute_ι, involute_involute,
-    involute_contractLeft, neg_mul, neg_add, neg_neg]
+  simp only [P.decompositionEquiv_apply, map_add, LinearMap.add_apply, spinAction_ι_wedge,
+    spinAction_ι_contract, spinAction_ι_lineOperator, LinearMap.neg_apply, neg_smul, map_mul,
+    map_smul, involute_ι, involute_involute, involute_contractLeft, neg_mul, neg_add, neg_neg]
 
 /-- **The two Fock actions differ by the parity operator.** For every Clifford element `x`,
 `c_{P⁻}(x) = J ∘ c_P(involute x) ∘ J`, where `J = involute` is the grade involution of `⋀·W`. -/
@@ -132,12 +131,12 @@ theorem spinAction_negLineCoordinate_apply (x : CliffordAlgebra Q) (s : Exterior
   | algebraMap r =>
     simp only [AlgHom.commutes, Module.algebraMap_end_apply, map_smul, involute_involute]
   | ι v =>
-    rw [spinAction_negLineCoordinate_ι_apply, involute_ι, map_neg, LinearMap.neg_apply, map_neg]
+    rw [spinAction_negLineCoordinate_ι_apply]
+    simp only [involute_ι, map_neg, LinearMap.neg_apply]
   | mul a b ha hb =>
-    rw [map_mul, Module.End.mul_apply, ha, hb, map_mul, map_mul, Module.End.mul_apply,
-      involute_involute]
+    simp only [map_mul, Module.End.mul_apply, ha, hb, involute_involute]
   | add a b ha hb =>
-    rw [map_add, LinearMap.add_apply, ha, hb, map_add, map_add, LinearMap.add_apply, map_add]
+    simp only [map_add, LinearMap.add_apply, ha, hb]
 
 /-- **On the even Clifford subalgebra the parity operator intertwines the two Fock actions**:
 `c_{P⁻}(x) = J ∘ c_P(x) ∘ J` for `x` even. -/
@@ -161,6 +160,30 @@ theorem spinRepEquivNegLineCoordinate_apply (s : ExteriorAlgebra K P.W) :
   -- `(rfl)`, not `rfl`: the body of `spinRepEquivNegLineCoordinate` is not `@[expose]`d.
   (rfl)
 
+/-- **The volume element acts by opposite scalars under the two signs.** For a spanning list of
+pairwise orthogonal vectors of odd length, the volume element `ω` is central with
+`ω² = c = (-1) ^ (n choose 2) ∏ Q vᵢ`. When `W` is finite free, the Fock action of `P` sends `ω`
+to a scalar `λ` with `λ² = c`, and since `ω` is odd the Fock action of `P⁻` sends it to `-λ`. -/
+theorem exists_spinAction_volume_eq_algebraMap [Module.Free K P.W] [Module.Finite K P.W]
+    {l : List V} (hl : l.Pairwise Q.IsOrtho) (hlen : Odd l.length)
+    (hspan : Submodule.span K {x : V | x ∈ l} = ⊤) :
+    ∃ a : K, a * a = (-1 : K) ^ l.length.choose 2 * (l.map Q).prod ∧
+      spinAction Q P (l.map (ι Q)).prod =
+        algebraMap K (Module.End K (ExteriorAlgebra K P.W)) a ∧
+      spinAction Q P.negLineCoordinate (l.map (ι Q)).prod =
+        algebraMap K (Module.End K (ExteriorAlgebra K P.W)) (-a) := by
+  obtain ⟨a, ha⟩ := exists_spinAction_eq_algebraMap_of_mem_center P
+    (prod_map_ι_mem_center_of_odd_length hl hlen hspan)
+  -- Scalars act faithfully on `⋀·W`, as seen on `1`.
+  have hinj : Function.Injective (algebraMap K (Module.End K (ExteriorAlgebra K P.W))) :=
+    fun b c h ↦ by simpa [← Algebra.algebraMap_eq_smul_one] using congr($h 1)
+  refine ⟨a, hinj ?_, ha, ?_⟩
+  · rw [map_mul, ← ha, ← map_mul, prod_map_ι_sq_scalar hl, AlgHom.commutes]
+  · refine LinearMap.ext fun s ↦ ?_
+    rw [spinAction_negLineCoordinate_apply,
+      involute_eq_of_mem_odd (prod_map_ι_mem_evenOdd_one_of_odd_length hlen), map_neg, ha]
+    simp
+
 end CommRing
 
 /-! ### The two signs in odd dimension -/
@@ -168,29 +191,7 @@ end CommRing
 section Field
 
 variable {F : Type u} [Field F] {V : Type v} [AddCommGroup V] [Module F V] [FiniteDimensional F V]
-  {Q : QuadraticForm F V} (P : SpinPolarizationData Q)
-
-/-- **The volume element acts by opposite scalars under the two signs.** For a spanning list of
-pairwise orthogonal vectors of odd length, the volume element `ω` is central with
-`ω² = c = (-1) ^ (n choose 2) ∏ Q vᵢ`, so the Fock action of `P` sends it to a scalar `λ` with
-`λ² = c`, and since `ω` is odd the Fock action of `P⁻` sends it to `-λ`. -/
-theorem exists_spinAction_volume_eq_algebraMap {l : List V} (hl : l.Pairwise Q.IsOrtho)
-    (hlen : Odd l.length) (hspan : Submodule.span F {x : V | x ∈ l} = ⊤) :
-    ∃ a : F, a * a = (-1 : F) ^ l.length.choose 2 * (l.map Q).prod ∧
-      spinAction Q P (l.map (ι Q)).prod =
-        algebraMap F (Module.End F (ExteriorAlgebra F P.W)) a ∧
-      spinAction Q P.negLineCoordinate (l.map (ι Q)).prod =
-        algebraMap F (Module.End F (ExteriorAlgebra F P.W)) (-a) := by
-  obtain ⟨a, ha⟩ := exists_spinAction_eq_algebraMap_of_mem_center P
-    (prod_map_ι_mem_center_of_odd_length hl hlen hspan)
-  refine ⟨a, (algebraMap F (Module.End F (ExteriorAlgebra F P.W))).injective ?_, ha, ?_⟩
-  · rw [map_mul, ← ha, ← map_mul, prod_map_ι_sq_scalar hl, AlgHom.commutes]
-  · refine LinearMap.ext fun s ↦ ?_
-    rw [spinAction_negLineCoordinate_apply,
-      involute_eq_of_mem_odd (prod_map_ι_mem_evenOdd_one_of_odd_length hlen), map_neg, ha]
-    simp
-
-variable [NeZero (2 : F)]
+  {Q : QuadraticForm F V} (P : SpinPolarizationData Q) [NeZero (2 : F)]
 
 /-- In odd dimension there is a Clifford element acting by `1` through `P` and by `0` through
 `P⁻`: the central idempotent `(1 + λ⁻¹ ω) / 2` attached to the volume element `ω`, which acts
@@ -206,10 +207,12 @@ private theorem exists_spinAction_eq_one_and_spinAction_negLineCoordinate_eq_zer
     rintro rfl
     exact neg_one_pow_choose_two_mul_prod_map_ne_zero hQl (by rw [← hsq, mul_zero])
   refine ⟨(⅟2 : F) • (1 + a⁻¹ • (l.map (ι Q)).prod), ?_, ?_⟩
-  · rw [map_smul, map_add, map_smul, hP, map_one, Algebra.algebraMap_eq_smul_one, smul_smul,
-      inv_mul_cancel₀ ha, one_smul, ← two_smul F, smul_smul, invOf_mul_self, one_smul]
-  · rw [map_smul, map_add, map_smul, hN, map_one, Algebra.algebraMap_eq_smul_one, smul_smul,
-      mul_neg, inv_mul_cancel₀ ha, neg_smul, one_smul, add_neg_cancel, smul_zero]
+  · simp only [map_smul, map_add, hP, map_one, Algebra.algebraMap_eq_smul_one, smul_smul]
+    match_scalars
+    simp [ha, ← two_mul]
+  · simp only [map_smul, map_add, hN, map_one, Algebra.algebraMap_eq_smul_one, smul_smul]
+    match_scalars
+    simp [ha]
 
 /-- **The combined Fock action of the two signs is onto** in odd dimension: given endomorphisms
 `f` and `g` of `⋀·W`, some Clifford element acts by `f` through `P` and by `g` through `P⁻`. -/
@@ -223,11 +226,11 @@ theorem spinAction_prod_surjective (hodd : Odd (finrank F V)) :
     simp [he₁, he₀]
 
 /-- **The direct sum of the two spinor modules is faithful** in odd dimension: the combined Fock
-action of `P` and `P⁻` is a bijection from the Clifford algebra onto `End S × End S`. It is onto
-by `TauCeti.SpinPolarizationData.spinAction_prod_surjective`, and in dimension `2l + 1` both sides
-have dimension `2 ^ (2l + 1) = 2 · (2 ^ l) ^ 2`. -/
+action of `P` and `P⁻` is a bijection from the Clifford algebra onto `End S × End S`. -/
 theorem spinAction_prod_bijective (hodd : Odd (finrank F V)) :
     Function.Bijective ((spinAction Q P).prod (spinAction Q P.negLineCoordinate)) := by
+  -- The combined action is onto, and in dimension `2l + 1` both sides have dimension
+  -- `2 ^ (2l + 1) = 2 · (2 ^ l) ^ 2`.
   have _ : Invertible (2 : F) := invertibleOfNonzero (NeZero.ne (2 : F))
   refine ⟨?_, spinAction_prod_surjective P hodd⟩
   obtain ⟨l, hV⟩ := hodd

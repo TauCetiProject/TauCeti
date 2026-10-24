@@ -68,8 +68,6 @@ only its even half is, the whole algebra being two copies of that half.
   subalgebra is a matrix algebra** `M_{2^l}(F)` in dimension `2 * l + 1`.
 * `CliffordAlgebra.nonempty_algEquiv_matrix_prod_of_finrank_eq_two_mul_add_one`: **the structure
   theorem in odd dimension**, `CliffordAlgebra Q ≃ₐ[F] M_{2^l}(F) × M_{2^l}(F)`.
-* `TauCeti.exists_spinAction_eq_algebraMap_of_mem_center`: the Fock action sends central Clifford
-  elements to scalars.
 * `TauCeti.evenSpinAction_surjective` and `TauCeti.SpinPolarizationData.evenCliffordEquivEnd`:
   **the odd structure theorem in operator form**, that the Fock action identifies `even Q` with
   `Module.End F (⋀·W)`, over any field of characteristic not two.
@@ -220,23 +218,6 @@ private theorem mul_mul_inv_smul_self_of_mul_self_eq {F : Type*} [Field F] {A : 
   calc x * ω * (c⁻¹ • ω) = c⁻¹ • (x * (ω * ω)) := by rw [mul_smul_comm, mul_assoc]
     _ = c⁻¹ • c • x := by rw [hsq, ← Algebra.commutes, ← Algebra.smul_def]
     _ = x := inv_smul_smul₀ hc x
-
-/-- **The Fock action sends central Clifford elements to scalars.** The Fock action is onto
-`Module.End F (⋀·W)` (`TauCeti.spinAction_surjective`), so the image of a central element commutes
-with every endomorphism of the spinor module, and is therefore a scalar. -/
-theorem exists_spinAction_eq_algebraMap_of_mem_center {F : Type u} [Field F] {V : Type v}
-    [AddCommGroup V] [Module F V] [FiniteDimensional F V] {Q : QuadraticForm F V}
-    (P : SpinPolarizationData Q) {x : CliffordAlgebra Q}
-    (hx : x ∈ Subalgebra.center F (CliffordAlgebra Q)) :
-    ∃ a : F, spinAction Q P x = algebraMap F (Module.End F (ExteriorAlgebra F P.W)) a := by
-  have hcentre : spinAction Q P x ∈
-      Subalgebra.center F (Module.End F (ExteriorAlgebra F P.W)) := by
-    rw [Subalgebra.mem_center_iff]
-    intro f
-    obtain ⟨y, rfl⟩ := spinAction_surjective P f
-    rw [← map_mul, ← map_mul, Subalgebra.mem_center_iff.1 hx y]
-  obtain ⟨a, ha⟩ := (Algebra.IsCentral.mem_center_iff F).1 hcentre
-  exact ⟨a, ha⟩
 
 variable {F : Type u} [Field F] [NeZero (2 : F)]
   {V : Type v} [AddCommGroup V] [Module F V] [FiniteDimensional F V] {Q : QuadraticForm F V}
