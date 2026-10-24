@@ -40,6 +40,7 @@ calculation for first continuous cohomology with trivial integer coefficients.
 
 ## Main results
 
+* `PadicInt.norm_p_lt_one`: the uniformizer `p` of `ℤ_p` has norm less than `1`.
 * `PadicInt.isUnit_one_add_of_dvd`: `1 + x` is a unit of `ℤ_[p]` whenever `p ∣ x`.
 * `PadicInt.isUnit_two`: `2` is a unit of `ℤ_[p]` for odd `p`.
 * `PadicInt.pow_p_dvd_natCast_iff`: `p ^ n` divides a natural number in `ℤ_[p]` exactly when it
@@ -75,6 +76,10 @@ public section
 namespace PadicInt
 
 variable {p : ℕ} [Fact p.Prime]
+
+/-- The uniformizer `p` of `ℤ_p` has norm less than `1`. -/
+theorem norm_p_lt_one : ‖(p : ℤ_[p])‖ < 1 :=
+  (norm_lt_one_iff_dvd _).mpr dvd_rfl
 
 /-- In `ℤ_p`, `1 + x` is a unit whenever `p ∣ x`. -/
 theorem isUnit_one_add_of_dvd {x : ℤ_[p]} (hx : (p : ℤ_[p]) ∣ x) : IsUnit (1 + x) :=

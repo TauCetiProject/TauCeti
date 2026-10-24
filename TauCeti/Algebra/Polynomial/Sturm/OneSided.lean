@@ -115,6 +115,20 @@ theorem signVariationsLeft_eq_signVariationsAt {cs : List R[X]} {a : R}
     (h : ∀ p ∈ cs, p.eval a ≠ 0) : signVariationsLeft cs a = signVariationsAt cs a :=
   (signVariationsAt_eq_left fun p hp => (derivSignLeft_eq_sign_eval p (h p hp)).symm).symm
 
+/-- Ordered coefficient embeddings preserve variations immediately to the right of a point. -/
+@[simp]
+theorem signVariationsRight_map {S : Type*} [CommRing S] [LinearOrder S]
+    (cs : List R[X]) (f : R →+* S) (hf : StrictMono f) (x : R) :
+    signVariationsRight (cs.map (Polynomial.map f)) (f x) = signVariationsRight cs x := by
+  simp only [signVariationsRight_def, List.map_map, Function.comp_def, derivSignRight_map _ f hf]
+
+/-- Ordered coefficient embeddings preserve variations immediately to the left of a point. -/
+@[simp]
+theorem signVariationsLeft_map {S : Type*} [CommRing S] [LinearOrder S]
+    (cs : List R[X]) (f : R →+* S) (hf : StrictMono f) (x : R) :
+    signVariationsLeft (cs.map (Polynomial.map f)) (f x) = signVariationsLeft cs x := by
+  simp only [signVariationsLeft_def, List.map_map, Function.comp_def, derivSignLeft_map _ f hf]
+
 end Basic
 
 variable {R : Type*} [Field R] [LinearOrder R] [IsStrictOrderedRing R]

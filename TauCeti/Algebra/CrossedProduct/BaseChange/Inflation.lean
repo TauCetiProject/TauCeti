@@ -85,7 +85,7 @@ theorem inflateClass_galoisResUnits :
       (absoluteGaloisGroupEquivFixingSubgroup K L σ)
   have hf : ∀ g m, unitsCoeffMap K L σ (φ g • m) = g • unitsCoeffMap K L σ m :=
     unitsCoeffMap_smul K L σ
-  rw [galoisResUnits_def, inflateClass_def, inflateClass_def]
+  rw [galoisResUnits_def, inflateClass_def, inflateClass_def, inflateH2_def, inflateH2_def]
   -- Apply the comparison equations as terms: this keeps the compatible-pair proof typed
   -- at its declared group map instead of unfolding subtype and linear-map coercions.
   refine (explicitH2AddEquivContinuousCohomology_map (AbsoluteGaloisGroup K) (UnitsCoeff K)

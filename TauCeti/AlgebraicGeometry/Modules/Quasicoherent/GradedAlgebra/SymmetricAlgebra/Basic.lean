@@ -43,6 +43,8 @@ tag 01M1).
 * `TauCeti.AlgebraicGeometry.epi_one_gradedSymmetricAlgebra` and
   `TauCeti.AlgebraicGeometry.epi_mul_gradedSymmetricAlgebra`: the unit and the multiplications of
   `Sym F` are epimorphisms;
+* `TauCeti.AlgebraicGeometry.gradedSymmetricAlgebra_hom_ext`: a graded algebra morphism out of
+  `Sym F` is determined by its degree-one component;
 * `TauCeti.AlgebraicGeometry.gradedSymmetricAlgebra_map_degreeOne`: a graded algebra morphism
   `Sym F ⟶ Sym G` is the graded symmetric algebra of its degree-one component, and
   `TauCeti.AlgebraicGeometry.gradedSymmetricAlgebra_preimage` computes its preimage accordingly;
@@ -277,26 +279,30 @@ instance epi_mul_gradedSymmetricAlgebra (F : QuasicoherentSheaf X) (i j : ℕ) :
   exact epi_comp' (h _) (epi_comp' (SheafOfModules.epi_symmetricPowerMul (R := X.sheaf) F.obj i j)
     (h _))
 
+/-- Morphisms of graded quasicoherent algebras out of the graded symmetric algebra `Sym F` are
+determined by their degree-one components. -/
+theorem gradedSymmetricAlgebra_hom_ext {F : QuasicoherentSheaf X}
+    {A : GradedQuasicoherentAlgebra X} {f g : (gradedSymmetricAlgebra X).obj F ⟶ A}
+    (h : degreeOne.map f = degreeOne.map g) :
+    f = g := by
+  refine hom_ext_of_epi_mul ?_
+  have h' := congrArg (fun f ↦ f.hom) h
+  simp only [degree_map_hom] at h'
+  -- The transports are cancelled as isomorphisms: typeclass search does not find their `Epi`
+  -- and `Mono` instances, as in `epi_one_gradedSymmetricAlgebra`.
+  exact (Iso.cancel_iso_hom_right _ _ (eqToIso (degree_obj_obj A 1).symm)).1
+    ((Iso.cancel_iso_hom_left (eqToIso (degree_obj_obj ((gradedSymmetricAlgebra X).obj F) 1))
+      _ _).1 h')
+
 /-- Since `Sym F` is generated in degree one, a morphism of graded algebras `φ : Sym F ⟶ Sym G` is
 the graded symmetric algebra of its degree-one component `F ⟶ G`. -/
 theorem gradedSymmetricAlgebra_map_degreeOne {F G : QuasicoherentSheaf X}
     (φ : (gradedSymmetricAlgebra X).obj F ⟶ (gradedSymmetricAlgebra X).obj G) :
     (gradedSymmetricAlgebra X).map ((gradedSymmetricAlgebraDegreeOneIso X).inv.app F ≫
       degreeOne.map φ ≫ (gradedSymmetricAlgebraDegreeOneIso X).hom.app G) = φ := by
-  refine hom_ext_of_epi_mul ?_
-  have h := NatIso.naturality_2 (gradedSymmetricAlgebraDegreeOneIso X)
-    ((gradedSymmetricAlgebraDegreeOneIso X).inv.app F ≫ degreeOne.map φ ≫
-      (gradedSymmetricAlgebraDegreeOneIso X).hom.app G)
-  simp only [Functor.id_obj, Functor.id_map, Iso.hom_inv_id_app_assoc, Category.assoc,
-    Iso.hom_inv_id_app, Functor.comp_map] at h
-  have h' := congrArg (fun f ↦ f.hom) ((Category.comp_id _).symm.trans h)
-  rw [degree_map_hom, degree_map_hom] at h'
-  -- The transports are cancelled as isomorphisms: typeclass search does not find their `Epi`
-  -- and `Mono` instances, as in `epi_one_gradedSymmetricAlgebra`.
-  exact ((Iso.cancel_iso_hom_right _ _
-    (eqToIso (degree_obj_obj ((gradedSymmetricAlgebra X).obj G) 1).symm)).1
-    ((Iso.cancel_iso_hom_left (eqToIso (degree_obj_obj ((gradedSymmetricAlgebra X).obj F) 1))
-      _ _).1 h')).symm
+  refine gradedSymmetricAlgebra_hom_ext ?_
+  rw [← cancel_mono ((gradedSymmetricAlgebraDegreeOneIso X).hom.app G)]
+  exact ((gradedSymmetricAlgebraDegreeOneIso X).hom.naturality _).trans (by simp)
 
 /-- The graded symmetric algebra functor is full: a morphism of graded algebras `Sym F ⟶ Sym G`
 is the graded symmetric algebra of its degree-one component

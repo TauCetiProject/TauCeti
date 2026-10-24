@@ -45,8 +45,8 @@ single ramified level. It is the input for the algebraic closedness of the Puise
 
 * `TauCeti.LaurentSeries.exists_isRoot_map_expand`: a nonconstant polynomial over `K⸨X⸩` has a
   root after a finite ramification `X ↦ X ^ n`.
-* `TauCeti.puiseuxField.exists_isRoot_levelEmbedding`: a nonconstant polynomial over `K⸨X⸩` has
-  a root in the Puiseux field lying in a single ramified level.
+* `TauCeti.puiseuxField.exists_isRoot_map_levelEmbedding`: a nonconstant polynomial over `K⸨X⸩`,
+  embedded at any level, has a root in the Puiseux field lying in a single ramified level.
 
 ## References
 
@@ -151,18 +151,22 @@ open _root_.LaurentSeries
 
 variable {K : Type*} [Field K] [IsAlgClosed K] [CharZero K]
 
-/-- Over an algebraically closed field `K` of characteristic zero, every nonconstant polynomial
-over `K⸨X⸩` has a root in the Puiseux field, lying in a single ramified level. -/
-theorem exists_isRoot_levelEmbedding {P : K⸨X⸩[X]} (hP : P.degree ≠ 0) :
-    ∃ (n : ℕ+) (y : K⸨X⸩),
-      (P.map (algebraMap K⸨X⸩ (puiseuxField K))).IsRoot (levelEmbedding K n y) := by
-  obtain ⟨n, y, hy⟩ := LaurentSeries.exists_isRoot_map_expand hP
-  refine ⟨n, y, ?_⟩
-  have hmap : P.map (algebraMap K⸨X⸩ (puiseuxField K)) =
-      (P.map (expand K n : K⸨X⸩ →+* K⸨X⸩)).map (levelEmbedding K n : K⸨X⸩ →+* puiseuxField K) := by
+/-- Over an algebraically closed field `K` of characteristic zero, the image of a nonconstant
+polynomial over `K⸨X⸩` under the level-`n` embedding `X ↦ t ^ (1 / n)` has a root in the Puiseux
+field lying in a single level `n * m`. For `n = 1` the image is the polynomial over the Puiseux
+field obtained through the `K⸨X⸩`-algebra structure. -/
+theorem exists_isRoot_map_levelEmbedding (n : ℕ+) {P : K⸨X⸩[X]} (hP : P.degree ≠ 0) :
+    ∃ (m : ℕ+) (y : K⸨X⸩),
+      (P.map (levelEmbedding K n : K⸨X⸩ →+* puiseuxField K)).IsRoot
+        (levelEmbedding K (n * m) y) := by
+  obtain ⟨m, y, hy⟩ := LaurentSeries.exists_isRoot_map_expand hP
+  refine ⟨m, y, ?_⟩
+  have hmap : P.map (levelEmbedding K n : K⸨X⸩ →+* puiseuxField K) =
+      (P.map (expand K m : K⸨X⸩ →+* K⸨X⸩)).map
+        (levelEmbedding K (n * m) : K⸨X⸩ →+* puiseuxField K) := by
     rw [Polynomial.map_map]
     congr 1
-    exact RingHom.ext fun f ↦ (levelEmbedding_expand_self n f).symm
+    exact RingHom.ext fun f ↦ (levelEmbedding_expand n m f).symm
   rw [hmap]
   exact hy.map _
 
