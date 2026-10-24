@@ -164,6 +164,7 @@ section OrderedRing
 
 variable {R : Type*} [Ring R] [LinearOrder R] [IsStrictOrderedRing R]
 
+/-- Negating a polynomial negates its sign sum over a finite set of points. -/
 @[simp]
 theorem signSum_neg (Z : Finset R) (p : R[X]) : signSum Z (-p) = -signSum Z p := by
   simp [signSum_eq_sum, Left.sign_neg]
@@ -245,6 +246,7 @@ theorem tarskiQuery_one_right [ZeroLEOneClass R] (p : R[X]) :
     tarskiQuery p 1 = p.roots.toFinset.card := by
   simp [tarskiQuery_eq_signSum]
 
+/-- A Tarski query with a constant root polynomial is zero, including when the constant is zero. -/
 @[simp, grind =]
 theorem tarskiQuery_C_left (c : R) (q : R[X]) : tarskiQuery (C c) q = 0 := by
   simp [tarskiQuery_eq_signSum]
@@ -268,11 +270,13 @@ theorem _root_.Associated.tarskiQuery_eq {p s : R[X]} (h : Associated p s) (q : 
     tarskiQuery p q = tarskiQuery s q := by
   rw [tarskiQuery_eq_signSum, tarskiQuery_eq_signSum, h.roots_eq]
 
+/-- Multiplying the root polynomial by a nonzero constant leaves its Tarski queries unchanged. -/
 @[simp]
 theorem tarskiQuery_C_mul_left {c : R} (hc : c ≠ 0) (p q : R[X]) :
     tarskiQuery (C c * p) q = tarskiQuery p q := by
   rw [tarskiQuery_eq_signSum, tarskiQuery_eq_signSum, roots_C_mul _ hc]
 
+/-- Negating the root polynomial leaves its Tarski queries unchanged. -/
 @[simp]
 theorem tarskiQuery_neg_left (p q : R[X]) : tarskiQuery (-p) q = tarskiQuery p q := by
   rw [tarskiQuery_eq_signSum, tarskiQuery_eq_signSum, roots_neg]
@@ -345,6 +349,7 @@ section OrderedRing
 
 variable {R : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
 
+/-- Negating the queried polynomial negates the Tarski query. -/
 @[simp]
 theorem tarskiQuery_neg_right (p q : R[X]) : tarskiQuery p (-q) = -tarskiQuery p q :=
   signSum_neg _ _
