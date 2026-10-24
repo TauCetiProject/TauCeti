@@ -6,12 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.MapCoeff
+public import TauCeti.Geometry.Manifold.DifferentialForm.Squared
 
 /-!
 # Closed smooth differential forms
 
 Closedness is the vanishing of the generic manifold exterior derivative of a smooth form. This
 module also characterizes it by vanishing of the exterior derivatives of the chart expressions.
+It also restates closedness through the bundled derivative `mextDerivₗ` and shows that
+exterior derivatives are closed.
 The degree-two specialization in `TwoForm.Closed` supplies a constant-form convenience theorem.
 The predicate and its generic API live here so they can be reused at every degree.
 -/
@@ -64,6 +67,16 @@ theorem isClosed_iff_forall_mextDeriv_apply_eq_zero (form : SmoothForm I M F k) 
     form.IsClosed ↔ ∀ x, mextDeriv form.1 x = 0 := by
   rw [isClosed_def, funext_iff]
   simp only [Pi.zero_apply]
+
+/-- Closedness is the vanishing of the bundled exterior derivative. -/
+theorem isClosed_iff_mextDerivₗ_eq_zero [IsManifold I 2 M] (form : SmoothForm I M F k) :
+    form.IsClosed ↔ mextDerivₗ I k form = 0 := by
+  rw [isClosed_def, ← mextDerivₗ_apply I k form, ZeroMemClass.coe_eq_zero]
+
+/-- The exterior derivative of a smooth form is closed. -/
+theorem isClosed_mextDerivₗ [IsManifold I 2 M] (form : SmoothForm I M F k) :
+    (mextDerivₗ I k form).IsClosed := by
+  rw [isClosed_def, mextDerivₗ_apply, SmoothForm.mextDeriv_mextDeriv]
 
 /-- The zero smooth form is closed. -/
 theorem isClosed_zero : (0 : SmoothForm I M F k).IsClosed := by

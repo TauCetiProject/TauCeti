@@ -85,7 +85,7 @@ theorem isIsotropicMap_section_iff (α : SmoothForm I M ℝ 1) :
       α.IsClosed := by
   rw [SmoothTwoForm.IsNondegenerate.isIsotropicMap_iff_mpullback_eq_zero
       (SmoothForm.degreeOneEquiv α).contMDiff, mpullback_symplecticForm, neg_eq_zero,
-    SmoothForm.isClosed_def, ← mextDerivₗ_apply I 1 α, ZeroMemClass.coe_eq_zero]
+    SmoothForm.isClosed_iff_mextDerivₗ_eq_zero]
 
 variable [FiniteDimensional ℝ E]
 
@@ -108,8 +108,8 @@ cotangent bundle is a Lagrangian map for the canonical symplectic form. -/
 theorem isLagrangianMap_zeroSection :
     (isSymplectic_symplecticForm (I := I) (M := M)).isNondegenerate.IsLagrangianMap I
       (zeroSection (E →L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ)) := by
-  have h := (isLagrangianMap_section_iff (0 : SmoothForm I M ℝ 1)).mpr <| by
-    rw [SmoothForm.isClosed_def, ← mextDerivₗ_apply I 1, map_zero, ZeroMemClass.coe_zero]
+  have h := (isLagrangianMap_section_iff (0 : SmoothForm I M ℝ 1)).mpr
+    SmoothForm.isClosed_zero
   -- The section of the zero one-form is the zero section.
   convert h using 2 with x
   simp [zeroSection]
@@ -120,8 +120,7 @@ map for the canonical symplectic form. -/
 theorem isLagrangianMap_section_mextDerivₗ (f : SmoothForm I M ℝ 0) :
     (isSymplectic_symplecticForm (I := I) (M := M)).isNondegenerate.IsLagrangianMap I
       (fun x ↦ TotalSpace.mk' (E →L[ℝ] ℝ) x (SmoothForm.degreeOneEquiv (mextDerivₗ I 0 f) x)) :=
-  (isLagrangianMap_section_iff _).mpr <| by
-    rw [SmoothForm.isClosed_def, mextDerivₗ_apply, SmoothForm.mextDeriv_mextDeriv]
+  (isLagrangianMap_section_iff _).mpr (SmoothForm.isClosed_mextDerivₗ f)
 
 end CotangentBundle
 
