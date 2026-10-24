@@ -205,7 +205,7 @@ theorem eventually_exists_bijOn_biUnion_aroots_toFinset_of_natDegree_gcd_derivat
         ∀ k, ((F k x).map (algebraMap ℝ ℂ)).rootMultiplicity (e z) =
           ((F k x₀).map (algebraMap ℝ ℂ)).rootMultiplicity z :=
   eventually_exists_bijOn_biUnion_aroots_toFinset hF hdeg
-    (fun k => (eventually_card_aroots_toFinset_eq_of_natDegree_gcd_derivative (hdeg k)
+    (fun k => (eventually_card_aroots_toFinset_eq_of_natDegree_gcd_derivative (K := ℂ) (hdeg k)
       (hder k)).mono fun _ hx => hx.le) hgcd hε
 
 omit [Fintype ι] in
@@ -281,7 +281,7 @@ theorem exists_continuous_ordered_common_roots_of_natDegree_gcd_derivative
       (∀ x t, (∃ k, (F k x).IsRoot t) ↔ ∃ i, r x i = t) ∧
       (∀ k i x y, (F k x).rootMultiplicity (r x i) = (F k y).rootMultiplicity (r y i)) :=
   exists_continuous_ordered_common_roots_of_preconnectedSpace hF hdeg
-    (fun k x₀ => (eventually_card_aroots_toFinset_eq_of_natDegree_gcd_derivative
+    (fun k x₀ => (eventually_card_aroots_toFinset_eq_of_natDegree_gcd_derivative (K := ℂ)
       (Eventually.of_forall (hdeg k)) (hder k x₀)).mono fun _ hx => hx.le) hgcd
 
 end Polynomial
