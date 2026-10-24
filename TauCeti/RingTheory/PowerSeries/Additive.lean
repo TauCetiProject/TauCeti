@@ -33,6 +33,9 @@ coefficients in degrees `2 ^ k`, with coefficient one in degree one.
 * `eq_linearizedSeries_of_subst_add`: the canonical linearized expansion of an additive series.
 * `subst_add_eq_iff_existsUnique_linearizedSeries`: the unique linearized expansion.
 
+These results are in the `TauCeti` namespace. For example,
+`TauCeti.subst_add_eq_iff_coeff_eq_zero f hp hR` gives the support criterion for `f`.
+
 ## References
 
 * M. Hazewinkel, *Formal Groups and Applications*, Chapter I, §1 (additive series).
