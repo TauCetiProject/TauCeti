@@ -280,6 +280,12 @@ theorem coe_innerDerivation (z : A) :
     (innerDerivation R z : Module.End R A) = LieAlgebra.ad R A z :=
   (rfl)
 
+/-- An inner derivation acts by the ring commutator. -/
+@[simp]
+theorem innerDerivation_apply (b a : A) :
+    (innerDerivation R b : Module.End R A) a = b * a - a * b := by
+  simp only [coe_innerDerivation, LieAlgebra.ad_apply, Ring.lie_def]
+
 end Associative
 
 section Congr

@@ -6,14 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Derivation.Basic
-public import Mathlib.Algebra.Lie.Quotient
-public import Mathlib.Topology.Algebra.Module.Basic
+public import TauCeti.Topology.Algebra.Lie.Quotient
 public import Mathlib.Topology.Algebra.Ring.Basic
 
 /-!
 # Continuous derivations and their outer quotient
 
-Continuous associative-algebra derivations form a Lie subalgebra of
+Continuous derivations of a possibly non-associative algebra form a Lie subalgebra of
 `TauCeti.derivationLieAlgebra`. We equip it with the topology of pointwise convergence,
 not a topology of uniform convergence on bounded sets. Inner derivations form a Lie ideal:
 `[D, ad b] = ad (D b)`. The quotient by this actual image is the continuous outer-derivation
@@ -48,7 +47,8 @@ variable (R : Type u) (A : Type v) [CommRing R] [NonUnitalNonAssocRing A] [Modul
   [SMulCommClass R A A] [IsScalarTower R A A] [TopologicalSpace A]
   [IsTopologicalAddGroup A] [ContinuousConstSMul R A]
 
-/-- The Lie subalgebra of continuous derivations, with the associative Leibniz equation. -/
+/-- The Lie subalgebra of continuous derivations, with the Leibniz rule
+`D (x * y) = D x * y + x * D y`. -/
 def continuousDerivationLieAlgebra : LieSubalgebra R (derivationLieAlgebra R A) where
   carrier := {D | Continuous (D : Module.End R A)}
   zero_mem' := continuous_const
@@ -115,12 +115,7 @@ variable (R : Type u) (A : Type v) [CommRing R] [Ring A] [Algebra R A]
 def continuousInnerDerivation : A →ₗ⁅R⁆ continuousDerivationLieAlgebra R A :=
   { (innerDerivation R).toLinearMap.codRestrict (continuousDerivationLieAlgebra R A).toSubmodule
       (fun b => (mem_continuousDerivationLieAlgebra (innerDerivation R b)).2 (by
-        have h : ((innerDerivation R b : Module.End R A) : A → A) =
-            fun a => b * a - a * b := by
-          ext a
-          simp [LieAlgebra.ad_apply, Ring.lie_def]
-        rw [h]
-        fun_prop)) with
+        exact (continuous_congr (innerDerivation_apply R b)).2 (by fun_prop))) with
     map_lie' := fun {a b} => Subtype.ext ((innerDerivation R).map_lie a b) }
 
 variable {A}
@@ -134,8 +129,7 @@ theorem coe_continuousInnerDerivation (b : A) :
 @[fun_prop]
 theorem continuous_continuousInnerDerivation : Continuous (continuousInnerDerivation R A) :=
   (continuousDerivationLieAlgebra.continuous_iff _).2 fun a => by
-    simp only [coe_continuousInnerDerivation, coe_innerDerivation, LieAlgebra.ad_apply,
-      Ring.lie_def]
+    simp only [coe_continuousInnerDerivation, innerDerivation_apply]
     fun_prop
 
 /-- Commuting a derivation with an inner derivation gives an actual inner derivation. -/
@@ -145,8 +139,8 @@ theorem lie_continuousInnerDerivation (D : continuousDerivationLieAlgebra R A) (
   apply continuousDerivationLieAlgebra.ext
   intro a
   simp only [LieSubalgebra.coe_bracket, coe_continuousInnerDerivation,
-    coe_innerDerivation, Ring.lie_def, LinearMap.sub_apply, Module.End.mul_apply,
-    LieAlgebra.ad_apply, map_sub, derivationLieAlgebra.leibniz]
+    Ring.lie_def, LinearMap.sub_apply, Module.End.mul_apply,
+    innerDerivation_apply, map_sub, derivationLieAlgebra.leibniz]
   abel
 
 /-- The image of the inner-derivation map is a Lie ideal, without taking its closure. -/
@@ -177,21 +171,28 @@ This quotient need not be separated. -/
 abbrev ContinuousOuterDerivation :=
   continuousDerivationLieAlgebra R A ⧸ continuousInnerDerivations R A
 
-/-- The quotient topology, without a separation assumption on the inner image. -/
-instance : TopologicalSpace (ContinuousOuterDerivation R A) :=
-  inferInstanceAs (TopologicalSpace (continuousDerivationLieAlgebra R A ⧸
-    (continuousInnerDerivations R A).toSubmodule))
-
-instance : IsTopologicalAddGroup (ContinuousOuterDerivation R A) :=
-  inferInstanceAs (IsTopologicalAddGroup (continuousDerivationLieAlgebra R A ⧸
-    (continuousInnerDerivations R A).toSubmodule))
-
 /-- The canonical Lie homomorphism to continuous outer derivations. -/
 def continuousOuterDerivationMk :
     continuousDerivationLieAlgebra R A →ₗ⁅R⁆ ContinuousOuterDerivation R A :=
   (continuousInnerDerivations R A).mkQ
 
 variable {R A}
+
+/-- The outer projection is the quotient map for the actual inner ideal. -/
+theorem continuousOuterDerivationMk_def :
+    continuousOuterDerivationMk R A = (continuousInnerDerivations R A).mkQ :=
+  (rfl)
+
+/-- Every outer derivation class has a continuous derivation representative. -/
+theorem continuousOuterDerivationMk_surjective :
+    Function.Surjective (continuousOuterDerivationMk R A) :=
+  (continuousInnerDerivations R A).surjective_mkQ
+
+/-- The kernel of the outer projection is exactly the actual inner ideal. -/
+@[simp]
+theorem ker_continuousOuterDerivationMk :
+    (continuousOuterDerivationMk R A).ker = continuousInnerDerivations R A :=
+  (continuousInnerDerivations R A).mkQ_ker
 
 /-- The topology on outer derivations is the quotient of pointwise convergence. -/
 theorem isQuotientMap_continuousOuterDerivationMk :
@@ -203,13 +204,6 @@ theorem isQuotientMap_continuousOuterDerivationMk :
 theorem continuous_continuousOuterDerivationMk :
     Continuous (continuousOuterDerivationMk R A) :=
   isQuotientMap_continuousOuterDerivationMk.continuous
-
-instance : ContinuousConstSMul R (ContinuousOuterDerivation R A) where
-  continuous_const_smul r :=
-    isQuotientMap_continuousOuterDerivationMk.continuous_iff.2 <| by
-      simpa only [Function.comp_def, map_smul] using
-        (continuous_continuousOuterDerivationMk (R := R) (A := A)).comp
-          (continuous_const_smul r)
 
 /-- An outer class vanishes exactly when it is implemented by an actual inner derivation. -/
 @[simp]
@@ -228,49 +222,27 @@ section Descent
 
 variable {L : Type w} [LieRing L] [LieAlgebra R L]
 
-/-- A Lie homomorphism killing all inner derivations descends to outer derivations. -/
-def continuousOuterDerivationLift
-    (f : continuousDerivationLieAlgebra R A →ₗ⁅R⁆ L)
-    (hf : ∀ b, f (continuousInnerDerivation R A b) = 0) :
-    ContinuousOuterDerivation R A →ₗ⁅R⁆ L :=
-  { (continuousInnerDerivations R A).toSubmodule.liftQ f.toLinearMap
-      (fun D hD => by
-        obtain ⟨b, rfl⟩ := (mem_continuousInnerDerivations D).1 hD
-        exact hf b) with
-    map_lie' := by
-      intro x y
-      induction x using Submodule.Quotient.induction_on with | _ D =>
-        induction y using Submodule.Quotient.induction_on with | _ E =>
-          exact f.map_lie D E }
+/-- Lie homomorphisms from outer derivations are determined by their pullbacks. -/
+@[ext]
+theorem continuousOuterDerivation_hom_ext
+    {g h : ContinuousOuterDerivation R A →ₗ⁅R⁆ L}
+    (H : g.comp (continuousOuterDerivationMk R A) =
+      h.comp (continuousOuterDerivationMk R A)) : g = h :=
+  (continuousInnerDerivations R A).lieHom_qext (LieHom.congr_fun H)
 
-@[simp]
-theorem continuousOuterDerivationLift_mk
-    (f : continuousDerivationLieAlgebra R A →ₗ⁅R⁆ L)
-    (hf : ∀ b, f (continuousInnerDerivation R A b) = 0)
-    (D : continuousDerivationLieAlgebra R A) :
-    continuousOuterDerivationLift f hf (continuousOuterDerivationMk R A D) = f D :=
-  (rfl)
-
-/-- The descended homomorphism is the unique one whose pullback is the given homomorphism. -/
-theorem continuousOuterDerivationLift_unique
-    (f : continuousDerivationLieAlgebra R A →ₗ⁅R⁆ L)
-    (hf : ∀ b, f (continuousInnerDerivation R A b) = 0)
-    (g : ContinuousOuterDerivation R A →ₗ⁅R⁆ L)
-    (hg : g.comp (continuousOuterDerivationMk R A) = f) :
-    g = continuousOuterDerivationLift f hf := by
-  apply LieHom.ext
-  intro x
-  obtain ⟨D, rfl⟩ := (continuousInnerDerivations R A).surjective_mkQ x
-  exact (LieHom.congr_fun hg D).trans (continuousOuterDerivationLift_mk f hf D).symm
-
-/-- Descent to the quotient preserves continuity; the target needs only a topology. -/
-@[fun_prop]
-theorem continuous_continuousOuterDerivationLift [TopologicalSpace L]
-    (f : continuousDerivationLieAlgebra R A →ₗ⁅R⁆ L)
-    (hf : ∀ b, f (continuousInnerDerivation R A b) = 0) (hcont : Continuous f) :
-    Continuous (continuousOuterDerivationLift f hf) :=
-  isQuotientMap_continuousOuterDerivationMk.continuous_iff.2 <| by
-    simpa only [Function.comp_def, continuousOuterDerivationLift_mk] using hcont
+/-- Killing the actual inner derivations is precisely the hypothesis for `LieIdeal.liftQ`.
+Its uniqueness and pullback equation are `LieIdeal.eq_liftQ` and `LieIdeal.liftQ_mkQ`;
+`TauCeti.LieIdeal.continuous_liftQ` supplies continuous descent. -/
+theorem continuousInnerDerivations_le_ker_iff
+    (f : continuousDerivationLieAlgebra R A →ₗ⁅R⁆ L) :
+    continuousInnerDerivations R A ≤ f.ker ↔
+      ∀ b, f (continuousInnerDerivation R A b) = 0 := by
+  constructor
+  · intro h b
+    exact h ((mem_continuousInnerDerivations _).2 ⟨b, rfl⟩)
+  · intro h D hD
+    obtain ⟨b, rfl⟩ := (mem_continuousInnerDerivations D).1 hD
+    exact h b
 
 end Descent
 
