@@ -219,4 +219,12 @@ theorem Equivalence.autoequivalenceClassCongr_eq_iff (e : C ≌ D)
     exact ⟨(e.symm.congrLeft (E := D)).functor.preimageIso
       (e.transportedEndofunctorIso F.functor ≪≫ h.symm)⟩
 
+/-- Transport through a supplied equivalence preserves and reflects injectivity of any
+monoid action on autoequivalence classes. -/
+theorem Equivalence.autoequivalenceClassCongr_comp_injective_iff
+    (e : C ≌ D) {H : Type*} [Monoid H] (ρ : H →* AutoequivalenceClass C) :
+    Function.Injective (e.autoequivalenceClassCongr.toMonoidHom.comp ρ) ↔
+      Function.Injective ρ :=
+  e.autoequivalenceClassCongr.injective.of_comp_iff ρ
+
 end CategoryTheory

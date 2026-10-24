@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors, Wentao Li
 -/
 module
 
-public import TauCeti.CategoryTheory.Equivalence.Transport
+public import TauCeti.CategoryTheory.Equivalence.Artin
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.Action
 
 /-!
@@ -16,16 +16,10 @@ transports `zigzagBraidArtinAction` to `D`. Its standard generators are represen
 conjugates of the canonical braid autoequivalences. The existing generic transport API
 supplies the natural intertwining isomorphisms.
 
-For a target Artin action whose generators have specified autoequivalence representatives,
-`zigzagBraidArtinActionOfEquivalence_eq_iff` identifies that action with the transported
-action exactly when the supplied equivalence intertwines the generator functors. This
-reduces comparison with a separately constructed action to natural isomorphisms of the
-actual generator functors.
-
-The group isomorphism on autoequivalence classes preserves and reflects injectivity of
-the action. A graded Morita comparison supplies an equivalence on homotopy categories. The source
-here remains the homotopy category: derived descent and the derived-Koszul comparison need
-separate constructions. No faithfulness theorem is asserted.
+The source is the cochain homotopy category of graded zigzag modules. The generic
+`Equivalence.comp_autoequivalenceClassCongr_eq_iff` compares the transported action with
+any supplied target action through natural intertwiners of generator functors. The
+isomorphism on autoequivalence classes preserves and reflects injectivity of the action.
 -/
 
 public section
@@ -50,44 +44,18 @@ def zigzagBraidArtinActionOfEquivalence :
     ArtinGroup G.coxeterMatrix →* AutoequivalenceClass D :=
   e.autoequivalenceClassCongr.toMonoidHom.comp (zigzagBraidArtinAction k G)
 
-/-- A standard generator acts by the conjugate of the canonical braid autoequivalence. -/
+/-- Every group element acts by transport of its original autoequivalence class. -/
 @[simp]
+theorem zigzagBraidArtinActionOfEquivalence_apply (g : ArtinGroup G.coxeterMatrix) :
+    zigzagBraidArtinActionOfEquivalence k G e g =
+      e.autoequivalenceClassCongr (zigzagBraidArtinAction k G g) :=
+  (rfl)
+
+/-- A standard generator acts by the conjugate of the canonical braid autoequivalence. -/
 theorem zigzagBraidArtinActionOfEquivalence_gen (i : V) :
     zigzagBraidArtinActionOfEquivalence k G e (ArtinGroup.gen G.coxeterMatrix i) =
       ((e.symm.trans (zigzagBraidAutoequivalence k G i)).trans e).toAutoequivalenceClass := by
-  change e.autoequivalenceClassCongr
-    (zigzagBraidArtinAction k G (ArtinGroup.gen G.coxeterMatrix i)) = _
-  rw [zigzagBraidArtinAction_gen,
+  rw [zigzagBraidArtinActionOfEquivalence_apply, zigzagBraidArtinAction_gen,
     Equivalence.autoequivalenceClassCongr_toAutoequivalenceClass]
-
-/-- A target action agrees with transport precisely when its generator representatives
-are naturally intertwined with the zigzag braid functors by the supplied equivalence. -/
-theorem zigzagBraidArtinActionOfEquivalence_eq_iff
-    (ρ : ArtinGroup G.coxeterMatrix →* AutoequivalenceClass D) (F : V → (D ≌ D))
-    (hF : ∀ i, ρ (ArtinGroup.gen G.coxeterMatrix i) = (F i).toAutoequivalenceClass) :
-    zigzagBraidArtinActionOfEquivalence k G e = ρ ↔
-      ∀ i, Nonempty (e.functor ⋙ (F i).functor ≅
-        (zigzagBraidAutoequivalence k G i).functor ⋙ e.functor) := by
-  constructor
-  · intro h i
-    apply (Equivalence.autoequivalenceClassCongr_eq_iff e _ _).1
-    rw [← zigzagBraidArtinAction_gen k G i]
-    change zigzagBraidArtinActionOfEquivalence k G e
-      (ArtinGroup.gen G.coxeterMatrix i) = _
-    rw [h, hF i]
-  · intro h
-    apply ArtinGroup.hom_ext
-    intro i
-    rw [hF i]
-    change e.autoequivalenceClassCongr
-      (zigzagBraidArtinAction k G (ArtinGroup.gen G.coxeterMatrix i)) = _
-    rw [zigzagBraidArtinAction_gen]
-    exact (Equivalence.autoequivalenceClassCongr_eq_iff e _ _).2 (h i)
-
-/-- Transport through an equivalence preserves and reflects faithfulness of the action. -/
-theorem zigzagBraidArtinActionOfEquivalence_injective_iff :
-    Function.Injective (zigzagBraidArtinActionOfEquivalence k G e) ↔
-      Function.Injective (zigzagBraidArtinAction k G) :=
-  e.autoequivalenceClassCongr.injective.of_comp_iff (zigzagBraidArtinAction k G)
 
 end TauCeti

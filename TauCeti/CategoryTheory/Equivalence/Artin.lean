@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Equivalence.Classes
+public import TauCeti.CategoryTheory.Equivalence.Transport
 public import TauCeti.GroupTheory.Coxeter.Graph
 
 /-!
@@ -20,6 +20,10 @@ Artin presentation supplies an honest group homomorphism.
 This is the categorical form in which braid complexes act on a homotopy or derived category:
 one first proves the generator functors are autoequivalences and constructs the two rank-two
 natural isomorphisms, then applies `SimpleGraph.artinAutoequivalenceAction`.
+
+For an arbitrary Coxeter matrix, two supplied Artin actions agree after transport through
+a category equivalence precisely when that equivalence naturally intertwines their
+specified generator functors.
 
 ## Main definitions
 
@@ -102,3 +106,34 @@ theorem artinAutoequivalenceAction_gen_inv (E : V → (C ≌ C)) (commute braid)
     Equivalence.toAutoequivalenceClass_symm]
 
 end SimpleGraph
+
+namespace CategoryTheory
+
+open TauCeti
+
+universe u₁ u₂ v₁ v₂
+
+variable {C : Type u₁} [Category.{v₁} C] {D : Type u₂} [Category.{v₂} D]
+
+/-- Transport of an Artin action agrees with a target action precisely when the supplied
+equivalence naturally intertwines their generator representatives. -/
+theorem Equivalence.comp_autoequivalenceClassCongr_eq_iff
+    {B : Type*} {M : CoxeterMatrix B} (e : C ≌ D)
+    (ρ₀ : ArtinGroup M →* AutoequivalenceClass C) (S : B → (C ≌ C))
+    (hS : ∀ i, ρ₀ (ArtinGroup.gen M i) = (S i).toAutoequivalenceClass)
+    (ρ : ArtinGroup M →* AutoequivalenceClass D) (F : B → (D ≌ D))
+    (hF : ∀ i, ρ (ArtinGroup.gen M i) = (F i).toAutoequivalenceClass) :
+    e.autoequivalenceClassCongr.toMonoidHom.comp ρ₀ = ρ ↔
+      ∀ i, Nonempty (e.functor ⋙ (F i).functor ≅ (S i).functor ⋙ e.functor) := by
+  constructor
+  · intro h i
+    apply (Equivalence.autoequivalenceClassCongr_eq_iff e _ _).1
+    simpa only [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, hS i, hF i] using
+      DFunLike.congr_fun h (ArtinGroup.gen M i)
+  · intro h
+    apply ArtinGroup.hom_ext
+    intro i
+    rw [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, hS i, hF i]
+    exact (Equivalence.autoequivalenceClassCongr_eq_iff e _ _).2 (h i)
+
+end CategoryTheory
