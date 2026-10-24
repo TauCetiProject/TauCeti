@@ -95,16 +95,14 @@ theorem exact_koszulDifferential_coprod_succ (k : ℕ)
     (h₀ : Function.Exact (koszulDifferential φ (k + 1)) (koszulDifferential φ k)) :
     Function.Exact (koszulDifferential (φ.coprod (LinearMap.toSpanSingleton R R x)) (k + 2))
       (koszulDifferential (φ.coprod (LinearMap.toSpanSingleton R R x)) (k + 1)) := by
-  refine fun z ↦ ⟨fun hz ↦ mem_range_koszulDifferential_coprod φ x (k + 1) h₁ z hz ((h₀ _).1 ?_),
-    ?_⟩
-  · have hz' := congrArg Subtype.val hz
-    simp only [coe_koszulDifferential_apply, ZeroMemClass.coe_zero] at hz'
-    refine Subtype.ext ?_
-    simp only [coe_koszulDifferential_apply, exteriorPower.coe_map,
-      ExteriorAlgebra.contractLeft_map_fst_contractLeft_snd φ x, hz', map_zero, neg_zero,
-      ZeroMemClass.coe_zero]
-  · rintro ⟨y, rfl⟩
-    exact koszulDifferential_koszulDifferential _ _ y
+  refine exact_koszulDifferential_of_ker_le _ (k + 1) fun z hz ↦
+    mem_range_koszulDifferential_coprod φ x (k + 1) h₁ z hz ((h₀ _).1 ?_)
+  have hz' := congrArg Subtype.val hz
+  simp only [coe_koszulDifferential_apply, ZeroMemClass.coe_zero] at hz'
+  refine Subtype.ext ?_
+  simp only [coe_koszulDifferential_apply, exteriorPower.coe_map,
+    ExteriorAlgebra.contractLeft_map_fst_contractLeft_snd φ x, hz', map_zero, neg_zero,
+    ZeroMemClass.coe_zero]
 
 /-- **Adjoining a nonzerodivisor preserves acyclicity in degree one.** If the Koszul complex
 `K(φ)` is exact at `⋀¹ M` and `x` is a nonzerodivisor on `R ⧸ φ(M) ≃ H₀(K(φ))`, then the Koszul
@@ -113,22 +111,21 @@ theorem exact_koszulDifferential_coprod_zero (hx : IsSMulRegular (R ⧸ LinearMa
     (h₀ : Function.Exact (koszulDifferential φ 1) (koszulDifferential φ 0)) :
     Function.Exact (koszulDifferential (φ.coprod (LinearMap.toSpanSingleton R R x)) 1)
       (koszulDifferential (φ.coprod (LinearMap.toSpanSingleton R R x)) 0) := by
-  refine fun z ↦ ⟨fun hz ↦ mem_range_koszulDifferential_coprod φ x 0 h₀ z hz ?_, ?_⟩
-  · set b := exteriorPower.map 0 (LinearMap.fst R M R)
-      (koszulDifferential (LinearMap.snd R M R) 0 z)
-    have hxb : x • b ∈ LinearMap.range (koszulDifferential φ 0) :=
-      ⟨-exteriorPower.map 1 (LinearMap.fst R M R) z, by
-        rw [map_neg, neg_eq_iff_add_eq_zero, ← map_fst_koszulDifferential_coprod, hz, map_zero]⟩
-    have hrange := map_zeroEquiv_range_koszulDifferential_zero φ
-    have h₁ : exteriorPower.zeroEquiv R M b ∈ LinearMap.range φ := by
-      refine (isSMulRegular_on_quot_iff_lsmul_comap_le _ _).1 hx ?_
-      rw [Submodule.mem_comap, LinearMap.lsmul_apply, ← map_smul, ← hrange]
-      exact Submodule.mem_map_of_mem hxb
-    rw [← hrange] at h₁
-    obtain ⟨y, hy, hyb⟩ := h₁
-    rwa [← (exteriorPower.zeroEquiv R M).injective hyb]
-  · rintro ⟨y, rfl⟩
-    exact koszulDifferential_koszulDifferential _ _ y
+  refine exact_koszulDifferential_of_ker_le _ 0 fun z hz ↦
+    mem_range_koszulDifferential_coprod φ x 0 h₀ z hz ?_
+  set b := exteriorPower.map 0 (LinearMap.fst R M R)
+    (koszulDifferential (LinearMap.snd R M R) 0 z)
+  have hxb : x • b ∈ LinearMap.range (koszulDifferential φ 0) :=
+    ⟨-exteriorPower.map 1 (LinearMap.fst R M R) z, by
+      rw [map_neg, neg_eq_iff_add_eq_zero, ← map_fst_koszulDifferential_coprod, hz, map_zero]⟩
+  have hrange := map_zeroEquiv_range_koszulDifferential_zero φ
+  have h₁ : exteriorPower.zeroEquiv R M b ∈ LinearMap.range φ := by
+    refine (isSMulRegular_on_quot_iff_lsmul_comap_le _ _).1 hx ?_
+    rw [Submodule.mem_comap, LinearMap.lsmul_apply, ← map_smul, ← hrange]
+    exact Submodule.mem_map_of_mem hxb
+  rw [← hrange] at h₁
+  obtain ⟨y, hy, hyb⟩ := h₁
+  rwa [← (exteriorPower.zeroEquiv R M).injective hyb]
 
 end Adjoin
 

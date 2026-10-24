@@ -631,6 +631,11 @@ theorem contractLeft_coprod_ι_inr_mul (φ : Module.Dual R M) (x : R)
   rw [contractLeft_ι_mul]
   simp
 
+/-- Projection onto the first factor retracts the induced map of exterior algebras. -/
+theorem leftInverse_map_fst_map_inl {N : Type*} [AddCommGroup N] [Module R N] :
+    Function.LeftInverse (map (LinearMap.fst R M N)) (map (LinearMap.inl R M N)) :=
+  leftInverse_map_iff.2 fun _ ↦ rfl
+
 /-- The `⋀ M`-component of the contraction by `φ + x · snd`: writing `z = a + e ∧ b` as in
 `map_inl_map_fst_add_ι_inr_mul_contractLeft_snd`, the `⋀ M`-component of `d z` is `d a + x b`. -/
 theorem map_fst_contractLeft_coprod (φ : Module.Dual R M) (x : R)
@@ -641,14 +646,12 @@ theorem map_fst_contractLeft_coprod (φ : Module.Dual R M) (x : R)
       contractLeft (Q := (0 : QuadraticForm R M)) φ (map (LinearMap.fst R M R) z) +
         x • map (LinearMap.fst R M R)
           (contractLeft (Q := (0 : QuadraticForm R (M × R))) (LinearMap.snd R M R) z) := by
-  have hFI : Function.LeftInverse (map (LinearMap.fst R M R)) (map (LinearMap.inl R M R)) :=
-    leftInverse_map_iff.2 fun _ ↦ rfl
   conv_lhs => rw [← map_inl_map_fst_add_ι_inr_mul_contractLeft_snd z]
   rw [map_add, contractLeft_coprod_map_inl, contractLeft_coprod_ι_inr_mul,
     contractLeft_coprod_map_inl]
   simp only [LinearMap.coe_inr, map_add, map_sub, map_smul, map_mul, map_apply_ι,
     LinearMap.fst_apply, map_zero, zero_mul, sub_zero]
-  rw [hFI, hFI]
+  rw [leftInverse_map_fst_map_inl, leftInverse_map_fst_map_inl]
 
 /-- The `e`-component of the contraction by `φ + x · snd`: writing `z = a + e ∧ b` as in
 `map_inl_map_fst_add_ι_inr_mul_contractLeft_snd`, the contraction `d b` is minus the
@@ -664,9 +667,8 @@ theorem contractLeft_map_fst_contractLeft_snd (φ : Module.Dual R M) (x : R)
   have hD := map_inl_map_fst_add_ι_inr_mul_contractLeft_snd
     (contractLeft (Q := (0 : QuadraticForm R (M × R))) (LinearMap.snd R M R) z)
   rw [contractLeft_contractLeft, map_zero, map_zero, mul_zero, add_zero] at hD
-  have hFI : Function.LeftInverse (map (LinearMap.fst R M R)) (map (LinearMap.inl R M R)) :=
-    leftInverse_map_iff.2 fun _ ↦ rfl
-  rw [← hFI (contractLeft _ _), ← contractLeft_coprod_map_inl φ (LinearMap.toSpanSingleton R R x),
+  rw [← leftInverse_map_fst_map_inl (R := R) (M := M) (N := R) (contractLeft _ _),
+    ← contractLeft_coprod_map_inl φ (LinearMap.toSpanSingleton R R x),
     hD, contractLeft_comm, map_neg]
 
 end ExteriorAlgebra
