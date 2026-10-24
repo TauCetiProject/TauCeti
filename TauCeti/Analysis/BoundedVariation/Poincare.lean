@@ -187,18 +187,12 @@ private theorem setLIntegral_enorm_sub_setAverage_le_of_measurableSet
   set a := ⨍ y in S, u y ∂μ
   set T := totalVariationOn μ Ω u
   -- The measures of, and the means over, `S ∩ V n` converge to those over `S`.
-  have hSVmono : Monotone fun n ↦ S ∩ V n := fun m n hmn ↦
-    inter_subset_inter_right _ (hVmono hmn)
-  have hSVunion : ⋃ n, S ∩ V n = S := by rw [← inter_iUnion, hVunion, inter_eq_left.2 hS]
-  have hmeas : Tendsto (fun n ↦ μ.real (S ∩ V n)) atTop (𝓝 (μ.real S)) := by
-    refine (ENNReal.tendsto_toReal hSfin).comp ?_
-    simpa [hSVunion, Function.comp_def] using tendsto_measure_iUnion_atTop (μ := μ) hSVmono
-  have havg : Tendsto (fun n ↦ ⨍ y in S ∩ V n, u y ∂μ) atTop (𝓝 a) := by
-    simp only [a, setAverage_eq, smul_eq_mul]
-    refine (hmeas.inv₀ hSpos.ne').mul ?_
-    simpa [hSVunion] using tendsto_setIntegral_of_monotone₀
-      (fun n ↦ (hSm.inter (hVopen n).measurableSet).nullMeasurableSet) hSVmono
-      (by rw [hSVunion]; exact hu.mono_set hS)
+  have hSV : S ⊆ ⋃ n, V n := hVunion ▸ hS
+  have hmeas : Tendsto (fun n ↦ μ.real (S ∩ V n)) atTop (𝓝 (μ.real S)) :=
+    tendsto_measureReal_inter_of_monotone hVmono hSV hSfin
+  have havg : Tendsto (fun n ↦ ⨍ y in S ∩ V n, u y ∂μ) atTop (𝓝 a) :=
+    tendsto_setAverage_inter_of_monotone hVmono hSV
+      (fun n ↦ (hSm.inter (hVopen n).measurableSet).nullMeasurableSet) hSfin (hu.mono_set hS)
   -- On `V n`, the deviation from `a` is the deviation from the mean over `S ∩ V n` up to an
   -- error `μ(Ω) |⨍_{S ∩ V n} u - a|`.
   have hpiece : ∀ᶠ n in atTop, ∫⁻ x in V n, ‖u x - a‖ₑ ∂μ ≤

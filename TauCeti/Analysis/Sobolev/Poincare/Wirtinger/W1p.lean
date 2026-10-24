@@ -13,6 +13,7 @@ import TauCeti.MeasureTheory.Function.LocallyAEConst
 import TauCeti.MeasureTheory.Function.Lp.Const
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.Lp.Restriction
+import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import Mathlib.MeasureTheory.Function.LpSpace.Complete
 
@@ -192,26 +193,18 @@ theorem W1p.eLpNorm_value_sub_setAverage_le_of_convex (hp : p ≠ ∞)
   have hSRpos : 0 < mu.real S := ENNReal.toReal_pos hS0 hSfin
   have hSR0 : mu.real S ≠ 0 := hSRpos.ne'
   -- The means over `S ∩ V n` converge to the mean over `S`.
-  have hSVmono : Monotone fun n ↦ S ∩ V n := fun m n hmn ↦
-    inter_subset_inter_right _ (hVmono hmn)
-  have hSVunion : ⋃ n, S ∩ V n = S := by
-    rw [← inter_iUnion, hVunion, inter_eq_left.2 hS]
-  have hSVmeas : ∀ n, NullMeasurableSet (S ∩ V n) mu := fun n ↦
-    hSm.inter (hVopen n).measurableSet.nullMeasurableSet
-  have hmeasR : Tendsto (fun n ↦ mu.real (S ∩ V n)) atTop (𝓝 (mu.real S)) := by
-    refine (ENNReal.tendsto_toReal hSfin).comp ?_
-    simpa [hSVunion, Function.comp_def] using tendsto_measure_iUnion_atTop (μ := mu) hSVmono
+  have hSV : S ⊆ ⋃ n, V n := hVunion ▸ hS
+  have hmeasR : Tendsto (fun n ↦ mu.real (S ∩ V n)) atTop (𝓝 (mu.real S)) :=
+    tendsto_measureReal_inter_of_monotone hVmono hSV hSfin
   have hint : IntegrableOn (W1p.value u) S mu := by
     have : IsFiniteMeasure (mu.restrict S) :=
       ⟨by rw [Measure.restrict_apply_univ]; exact hSfin.lt_top⟩
     exact ((Lp.memLp (W1p.value u)).mono_measure
       (Measure.restrict_mono hS le_rfl)).integrable Fact.out
   have ha : Tendsto (fun n ↦ ⨍ y in S ∩ V n, W1p.value u y ∂mu) atTop
-      (𝓝 (⨍ y in S, W1p.value u y ∂mu)) := by
-    simp only [setAverage_eq, smul_eq_mul]
-    refine (hmeasR.inv₀ hSR0).mul ?_
-    simpa [hSVunion] using
-      tendsto_setIntegral_of_monotone₀ hSVmeas hSVmono (by rwa [hSVunion])
+      (𝓝 (⨍ y in S, W1p.value u y ∂mu)) :=
+    tendsto_setAverage_inter_of_monotone hVmono hSV
+      (fun n ↦ hSm.inter (hVopen n).measurableSet.nullMeasurableSet) hSfin hint
   -- The inequality on each piece, with the constant of the whole domain in the numerator.
   set K : ℝ := mu.real (ball (0 : E) 1) * diam (Omega : Set E) ^ (finrank ℝ E + 1) with hKdef
   have hpiece : ∀ n, mu (S ∩ V n) ≠ 0 →
