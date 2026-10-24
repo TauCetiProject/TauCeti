@@ -14,7 +14,9 @@ public import Mathlib.Data.Matrix.Basic
 A `Polyad3` records three vertex cells of a lower skeleton and one pair color for each of the
 three canonically oriented role pairs. Its support is computed from this data: it consists of the
 role-ordered injective triples in the chosen cells whose coordinate pairs have the chosen colors.
-Thus a polyad carries no independently chosen support.
+Thus a polyad carries no independently chosen support. Conversely, an injective triple determines
+the unique polyad `Polyad3.ofTriple` whose support contains it, so the supports of distinct
+polyads are disjoint.
 
 The three pair supports expose the colored bigraphs whose arbitrary subgraphs form subpolyads.
 The `faceKey` convention translates colors indexed by role pairs to the omitted-coordinate
@@ -295,5 +297,52 @@ theorem Polyad3.mem_support_iff_coordPair_mem {S : PairSkeleton3 κ V} {P : Poly
   simp only [P.mem_pairSupport₀₁, P.mem_pairSupport₀₂, P.mem_pairSupport₁₂, coe_coordPair,
     S.pairColors.color_coordPair_eq_iff] at h₀₁ h₀₂ h₁₂
   exact (P.mem_support x).2 ⟨h₀₁.1, h₀₁.2.1, h₀₂.2.1, h₀₁.2.2, h₀₂.2.2, h₁₂.2.2⟩
+
+namespace Polyad3
+
+variable (S : PairSkeleton3 κ V)
+
+/-- The polyad of an injective triple: the vertex cells containing its three coordinates and the
+colors of its three canonically oriented coordinate pairs. -/
+noncomputable def ofTriple (x : {x : Fin 3 → V // Function.Injective x}) : Polyad3 S :=
+  ofData (S.vertexPart.part (x.1 0)) (S.vertexPart.part (x.1 1)) (S.vertexPart.part (x.1 2))
+    (S.vertexPart.part_mem.2 (mem_univ _)) (S.vertexPart.part_mem.2 (mem_univ _))
+    (S.vertexPart.part_mem.2 (mem_univ _)) (S.pairColors.color (coordPair x 0 1 (by decide)))
+    (S.pairColors.color (coordPair x 0 2 (by decide)))
+    (S.pairColors.color (coordPair x 1 2 (by decide)))
+
+variable {S}
+
+/-- An injective triple lies in the support of its own polyad. -/
+theorem mem_support_ofTriple (x : {x : Fin 3 → V // Function.Injective x}) :
+    x ∈ (ofTriple S x).support := by
+  simp only [ofTriple, mem_support, ofData_c₀, ofData_c₁, ofData_c₂, ofData_color₀₁,
+    ofData_color₀₂, ofData_color₁₂, Finpartition.mem_part_self, mem_univ, true_and]
+  exact ⟨(S.pairColors.color_coordPair_eq_iff _).1 rfl,
+    (S.pairColors.color_coordPair_eq_iff _).1 rfl, (S.pairColors.color_coordPair_eq_iff _).1 rfl⟩
+
+/-- **A triple determines its polyad.** An injective triple lies in the support of exactly one
+polyad over a given lower skeleton, namely `Polyad3.ofTriple`. -/
+theorem mem_support_iff_eq_ofTriple {P : Polyad3 S}
+    {x : {x : Fin 3 → V // Function.Injective x}} : x ∈ P.support ↔ P = ofTriple S x := by
+  refine ⟨fun hx ↦ ?_, fun h ↦ h ▸ mem_support_ofTriple x⟩
+  obtain ⟨h₀, h₁, h₂, -, -, -⟩ := (P.mem_support x).1 hx
+  obtain ⟨k₀₁, k₀₂, k₁₂⟩ := mem_support_iff_coordPair_mem.1 hx
+  rw [mem_pairSupport₀₁] at k₀₁
+  rw [mem_pairSupport₀₂] at k₀₂
+  rw [mem_pairSupport₁₂] at k₁₂
+  exact ext_data (S.vertexPart.part_eq_of_mem P.hc₀ h₀).symm
+    (S.vertexPart.part_eq_of_mem P.hc₁ h₁).symm (S.vertexPart.part_eq_of_mem P.hc₂ h₂).symm
+    k₀₁.2.2.symm k₀₂.2.2.symm k₁₂.2.2.symm
+
+open Function in
+/-- Distinct polyads over the same lower skeleton have disjoint supports. -/
+theorem pairwise_disjoint_support :
+    Pairwise (Disjoint on (support : Polyad3 S → Finset _)) := by
+  intro P Q hPQ
+  refine disjoint_left.2 fun x hP hQ ↦ hPQ ?_
+  rw [mem_support_iff_eq_ofTriple.1 hP, mem_support_iff_eq_ofTriple.1 hQ]
+
+end Polyad3
 
 end TauCeti
