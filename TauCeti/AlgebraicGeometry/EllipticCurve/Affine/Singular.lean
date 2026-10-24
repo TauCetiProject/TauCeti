@@ -43,6 +43,9 @@ equality. Every statement here holds in any characteristic, including two and th
   `(x₁, y₁)` has no constant or linear terms.
 * `WeierstrassCurve.Affine.equation_iff_of_isSingular_zero`: so the equation of a model singular at
   the origin is `y² + a₁ x y = x³ + a₂ x²`.
+* `WeierstrassCurve.Affine.equation_iff_mul_eq_cube_of_isSingular` and
+  `WeierstrassCurve.Affine.equation_iff_sq_eq_cube_of_isSingular`: factor the equation along the
+  tangents at a singular point, with a square when the tangent quadratic has a double root.
 * `WeierstrassCurve.Affine.c₄_eq_b₂_sq_of_isSingular_zero`: at such a model, `c₄ = b₂²`.
 * `WeierstrassCurve.Affine.isSingular_iff_variableChange`: singularity at a point is singularity at
   the origin of the model translated there.
@@ -157,6 +160,26 @@ theorem equation_iff_of_isSingular (h : W.IsSingular x₁ y₁) (x y : R) :
 theorem equation_iff_of_isSingular_zero (h : W.IsSingular 0 0) (x y : R) :
     W.Equation x y ↔ y ^ 2 + W.a₁ * x * y = x ^ 3 + W.a₂ * x ^ 2 := by
   simpa using equation_iff_of_isSingular h x y
+
+/-- If `α` is a root of the tangent quadratic at a singular point `(x₁, y₁)`, the equation
+factors as `u w = (x - x₁)³`, where `u` and `w` vanish along the two tangent lines. The roots need
+not be distinct, and the identity holds over any commutative ring. -/
+theorem equation_iff_mul_eq_cube_of_isSingular (h : W.IsSingular x₁ y₁) {α : R}
+    (hα : α ^ 2 + W.a₁ * α - (3 * x₁ + W.a₂) = 0) (x y : R) :
+    W.Equation x y ↔ (y - y₁ - α * (x - x₁)) *
+      (y - y₁ + (W.a₁ + α) * (x - x₁)) = (x - x₁) ^ 3 := by
+  rw [equation_iff_of_isSingular h]
+  constructor <;> intro hE
+  · linear_combination hE - (x - x₁) ^ 2 * hα
+  · linear_combination hE + (x - x₁) ^ 2 * hα
+
+/-- If `α` is a double root of the tangent quadratic at a singular point `(x₁, y₁)`, the equation
+reads `(y - y₁ - α (x - x₁))² = (x - x₁)³`. -/
+theorem equation_iff_sq_eq_cube_of_isSingular (h : W.IsSingular x₁ y₁) {α : R}
+    (hα : α ^ 2 + W.a₁ * α - (3 * x₁ + W.a₂) = 0) (hc : 2 * α + W.a₁ = 0) (x y : R) :
+    W.Equation x y ↔ (y - y₁ - α * (x - x₁)) ^ 2 = (x - x₁) ^ 3 := by
+  have hβ : W.a₁ + α = -α := by linear_combination hc
+  simpa [hβ, pow_two, sub_eq_add_neg] using equation_iff_mul_eq_cube_of_isSingular h hα x y
 
 
 /-- For a model singular at the origin, `c₄` is the square of `b₂`, the discriminant of the
