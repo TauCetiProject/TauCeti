@@ -129,11 +129,9 @@ private theorem IsEntirePreparation.exists_isUnit_isMonicOfDegree_mul_eq
     ⟨by rw [Polynomial.natDegree_smul_of_smul_regular P (IsSMulRegular.all _), h.natDegree_eq],
       Polynomial.monic_of_isUnit_leadingCoeff_inv_smul h.isUnit_leadingCoeff⟩, ?_, ?_⟩
   · rw [Subring.coe_mul, coe_algebraMap_isRestrictedSubring, hu, smul_eq_C_mul]
-  · refine Eq.trans ?_ h.eq_mul.symm
-    rw [Subring.coe_mul, coe_algebraMap_isRestrictedSubring, Units.smul_def, Polynomial.coe_smul,
-      smul_eq_C_mul]
-    have hC : C (u : R) * C ((u⁻¹ : Rˣ) : R) = 1 := by rw [← map_mul, u.mul_inv, map_one]
-    linear_combination (G * P) * hC
+  · rw [Subring.coe_mul, coe_algebraMap_isRestrictedSubring, ← smul_eq_C_mul, Units.smul_def,
+      Polynomial.coe_smul, smul_mul_smul_comm, u.mul_inv, one_smul, mul_comm]
+    exact h.eq_mul.symm
 
 /-- **The normalised preparation rescales every unit-times-monic factorization.** Let `F` be
 multiplicatively distinguished of degree `d` at a positive radius `c`, and let `F = e * ω` with
@@ -185,6 +183,17 @@ theorem IsEntirePreparation.mono (h : IsEntirePreparation c d F P G) (hc' : |c'|
     IsEntirePreparation c' d F P G :=
   { h with isUnit := h.isUnit.map (Subring.inclusion (isRestrictedSubring_le_of_abs_le hc')) }
 
+/-- Weierstrass preparation `F = e * ω` of a series restricted at `c > 0`, with the monic
+polynomial `ω` itself multiplicatively distinguished. -/
+private theorem IsMulDistinguished.exists_isUnit_isMonicOfDegree_isMulDistinguished_mul_eq
+    [CompleteSpace R] (hF : IsMulDistinguished c d F) (hc : 0 < c) (hFr : F.IsRestricted c) :
+    ∃ (e : IsRestricted.subring (R := R) c) (ω : Polynomial R), IsUnit e ∧
+      ω.IsMonicOfDegree d ∧ IsMulDistinguished c d (ω : R⟦X⟧) ∧ (e : R⟦X⟧) * ω = F := by
+  have : Fact (0 < c) := ⟨hc⟩
+  have : NormOneClass R := hF.normOneClass
+  obtain ⟨e, ω, he, hω, hn, heω⟩ := hF.exists_isNormMulUnit_isMonicOfDegree_mul_eq hFr
+  exact ⟨e, ω, he.isUnit, hω, (isMulDistinguished_iff_gaussNorm_eq hc hω).mpr hn, heω⟩
+
 /-- **Normalised preparation of entire series.** Over a complete ultrametric normed commutative
 ring, an entire series `F` with `F(0) = 1` which is multiplicatively distinguished of degree `d`
 at a positive radius `c` is `P * G`, with `P` a polynomial of degree `d` whose leading
@@ -193,11 +202,8 @@ coefficient is a unit, `G` entire and a unit of the ring of series restricted at
 theorem IsMulDistinguished.exists_isEntirePreparation [CompleteSpace R]
     (hF : IsMulDistinguished c d F) (hc : 0 < c) (hFe : F.IsEntire) (hF0 : constantCoeff F = 1) :
     ∃ (P : Polynomial R) (G : R⟦X⟧), IsEntirePreparation c d F P G := by
-  have : Fact (0 < c) := ⟨hc⟩
-  have : NormOneClass R := hF.normOneClass
-  obtain ⟨e, ω, he, hω, hn, heω⟩ :=
-    hF.exists_isNormMulUnit_isMonicOfDegree_mul_eq (hFe.isRestricted c)
-  have hωd := (isMulDistinguished_iff_gaussNorm_eq hc hω).mpr hn
+  obtain ⟨e, ω, he, hω, hωd, heω⟩ :=
+    hF.exists_isUnit_isMonicOfDegree_isMulDistinguished_mul_eq hc (hFe.isRestricted c)
   have heE : (e : R⟦X⟧).IsEntire :=
     hωd.isEntire_of_isEntire_coe_mul hc hω e.2 (by rw [mul_comm, heω]; exact hFe)
   -- `F(0) = e(0) * ω(0) = 1`, so `e(0)` is a unit with inverse `ω(0)`.
@@ -218,14 +224,12 @@ theorem IsMulDistinguished.exists_isEntirePreparation [CompleteSpace R]
         exact v.mul_inv
       isUnit := ?_
       eq_mul := ?_ }⟩
-  · convert ((v⁻¹).isUnit.map (algebraMap R (IsRestricted.subring (R := R) c))).mul he.isUnit
-      using 1
+  · convert ((v⁻¹).isUnit.map (algebraMap R (IsRestricted.subring (R := R) c))).mul he using 1
     refine Subtype.ext ?_
     rw [Subring.coe_mul, coe_algebraMap_isRestrictedSubring]
     exact smul_eq_C_mul _ _
-  · rw [Units.smul_def, Polynomial.coe_smul, smul_eq_C_mul, smul_eq_C_mul, ← heω]
-    have hC : C (v : R) * C ((v⁻¹ : Rˣ) : R) = 1 := by rw [← map_mul, v.mul_inv, map_one]
-    linear_combination -((ω : R⟦X⟧) * e) * hC
+  · rw [Units.smul_def, Polynomial.coe_smul, smul_mul_smul_comm, v.mul_inv, one_smul, mul_comm,
+      heω]
 
 /-- **Normalised preparation of entire series**, in its unique-existence form: over a complete
 ultrametric normed commutative ring, an entire series with constant coefficient `1` which is
@@ -247,17 +251,14 @@ theorem IsEntirePreparation.isCoprime [CompleteSpace R] (h : IsEntirePreparation
     (hF : IsMulDistinguished c d F) (hc : 0 < c) :
     IsCoprime (⟨P, IsEntire.mem_subring.mpr (isEntire_coe P)⟩ : IsEntire.subring R)
       ⟨G, IsEntire.mem_subring.mpr h.isEntire⟩ := by
-  have : Fact (0 < c) := ⟨hc⟩
-  have : NormOneClass R := hF.normOneClass
   have hFe : F.IsEntire := h.eq_mul ▸ (isEntire_coe P).mul h.isEntire
-  obtain ⟨e, ω, he, hω, hn, heω⟩ :=
-    hF.exists_isNormMulUnit_isMonicOfDegree_mul_eq (hFe.isRestricted c)
-  have hωd := (isMulDistinguished_iff_gaussNorm_eq hc hω).mpr hn
-  obtain ⟨hP, -⟩ := h.eq_smul_and_smul_eq hF hc he.isUnit hω heω
+  obtain ⟨e, ω, he, hω, hωd, heω⟩ :=
+    hF.exists_isUnit_isMonicOfDegree_isMulDistinguished_mul_eq hc (hFe.isRestricted c)
+  obtain ⟨hP, -⟩ := h.eq_smul_and_smul_eq hF hc he hω heω
   -- Divide the inverse `H` of `G` at `c` by `ω`: `H = ω * q + b`. Then `1 = ω * (G * q) + G * b`,
   -- so `ω * (G * q)` is entire, and hence so is `G * q`.
   obtain ⟨H, hGH⟩ := h.isUnit.exists_right_inv
-  have hGH' : G * (H : R⟦X⟧) = 1 := by simpa using congrArg (Subring.subtype _) hGH
+  have hGH' : G * (H : R⟦X⟧) = 1 := coe_mul_coe_eq_one hGH
   obtain ⟨q, b, hq, hb, hqb⟩ := hωd.exists_mul_add_eq hc (isRestricted_polynomial ω) H.2
   have hbE : b.IsEntire := isEntire_iff.mpr fun _ ↦ isRestricted_of_forall_coeff_eq_zero hb
   have hωGq : (ω : R⟦X⟧) * (G * q) = 1 - G * b := by linear_combination hGH' + G * hqb
@@ -267,9 +268,7 @@ theorem IsEntirePreparation.isCoprime [CompleteSpace R] (h : IsEntirePreparation
   refine ⟨⟨((u⁻¹ : Rˣ) : R) • (G * q), IsEntire.mem_subring.mpr (hGq.smul _)⟩,
     ⟨b, IsEntire.mem_subring.mpr hbE⟩, Subtype.ext ?_⟩
   simp only [Subring.coe_add, Subring.coe_mul, Subring.coe_one]
-  rw [hP, Polynomial.coe_smul, smul_eq_C_mul, smul_eq_C_mul]
-  have hC : C ((u⁻¹ : Rˣ) : R) * C P.leadingCoeff = 1 := by
-    rw [← map_mul, h.isUnit_leadingCoeff.val_inv_mul, map_one]
-  linear_combination (G * q * ω) * hC + hωGq
+  rw [hP, Polynomial.coe_smul, smul_mul_smul_comm, h.isUnit_leadingCoeff.val_inv_mul, one_smul]
+  linear_combination hωGq
 
 end TauCeti.PowerSeries

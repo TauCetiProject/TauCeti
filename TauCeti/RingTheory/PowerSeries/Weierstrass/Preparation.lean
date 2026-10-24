@@ -103,8 +103,7 @@ theorem isDistinguished_zero_of_isUnit [Nontrivial R] (hc : 0 < c)
     {x : PowerSeries.IsRestricted.subring (R := R) c} (hx : IsUnit x) :
     IsDistinguished c 0 (x : PowerSeries R) := by
   obtain ⟨y, hxy⟩ := hx.exists_right_inv
-  have hxy' : (x : PowerSeries R) * (y : PowerSeries R) = 1 := by
-    simpa using congrArg (Subring.subtype _) hxy
+  have hxy' : (x : PowerSeries R) * (y : PowerSeries R) = 1 := coe_mul_coe_eq_one hxy
   have hx0 : (x : PowerSeries R) ≠ 0 := by
     intro h
     rw [h, zero_mul] at hxy'
@@ -273,8 +272,7 @@ theorem IsMulDistinguished.eq_and_eq_of_mul_eq_mul {ω ω' : Polynomial R}
     (h : (e : PowerSeries R) * (ω : PowerSeries R) = (e' : PowerSeries R) * (ω' : PowerSeries R)) :
     e = e' ∧ ω = ω' := by
   obtain ⟨v, hv⟩ := he'.exists_right_inv
-  have hv' : (e' : PowerSeries R) * (v : PowerSeries R) = 1 := by
-    simpa using congrArg (Subring.subtype _) hv
+  have hv' : (e' : PowerSeries R) * (v : PowerSeries R) = 1 := coe_mul_coe_eq_one hv
   have hquot : (ω : PowerSeries R)
       * ((v * e : PowerSeries.IsRestricted.subring (R := R) c) : PowerSeries R)
       = (ω' : PowerSeries R) := by
@@ -316,8 +314,7 @@ theorem IsMulDistinguished.eq_and_eq_of_mul_eq_of_mul_eq (hg : IsMulDistinguishe
           ((Polynomial.X ^ s : Polynomial R) : PowerSeries R) := by
     intro e ω he hω h
     obtain ⟨v, hv⟩ := he.exists_right_inv
-    have hv' : (e : PowerSeries R) * (v : PowerSeries R) = 1 := by
-      simpa using congrArg (Subring.subtype _) hv
+    have hv' : (e : PowerSeries R) * (v : PowerSeries R) = 1 := coe_mul_coe_eq_one hv
     refine ⟨v, hv, fun m hm ↦ ?_, ?_⟩
     · rw [Polynomial.coeff_coe, Polynomial.coeff_sub,
         (Polynomial.isMonicOfDegree_X_pow R s).coeff_eq hω hm, sub_self]
