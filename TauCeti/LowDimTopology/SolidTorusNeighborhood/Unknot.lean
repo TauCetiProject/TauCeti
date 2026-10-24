@@ -165,7 +165,7 @@ theorem knotExterior_unknotSolidTorus :
           (x : EuclideanSpace ℝ (Fin 4)) 2 ^ 2 + (x : EuclideanSpace ℝ (Fin 4)) 3 ^ 2} := by
   ext x
   rw [mem_knotExterior_unknotSolidTorus_iff, ← sq_le_sq₀ (norm_nonneg _) (norm_nonneg _)]
-  simp [complexProdToEuclideanFour_symm_apply, Complex.norm_mul_self_eq_normSq, sq]
+  simp [Complex.norm_mul_self_eq_normSq, sq]
 
 /-- **The exterior of the unknot is a solid torus.** The exterior of the standard solid torus
 neighbourhood of the unknot, the solid torus `‖z‖ ≤ ‖w‖` in the coordinates `ℝ⁴ = ℂ²`, is
