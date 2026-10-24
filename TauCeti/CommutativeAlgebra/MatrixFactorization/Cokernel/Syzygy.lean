@@ -8,8 +8,6 @@ module
 public import TauCeti.CommutativeAlgebra.MatrixFactorization.Cokernel.Stable
 public import TauCeti.CommutativeAlgebra.MatrixFactorization.Shift
 public import TauCeti.CategoryTheory.Exact.Stable.Loop
-public import TauCeti.LinearAlgebra.TensorProduct.Quotient
-public import Mathlib.RingTheory.Flat.TorsionFree
 
 /-!
 # Parity shift and syzygy of matrix-factorization cokernels
@@ -17,8 +15,8 @@ public import Mathlib.RingTheory.Flat.TorsionFree
 Let `X = (X₀ --d₀--> X₁ --d₁--> X₀)` be a finite-projective matrix factorization of a
 non-zero-divisor `w` of a Noetherian commutative ring `S`, and let `X'` be its reduction modulo
 `w`, a factorization of the zero potential over the hypersurface ring `S/(w)`. The reduced
-complex is exact in both parities (`exact_quotient_d₁_d₀`, `exact_quotient_d₀_d₁`): if
-`d₀ x = w y`, then `w x = d₁ d₀ x = w d₁ y`, so `x = d₁ y`. Exactness at `X₀'` makes
+complex is exact in both parities (`exact_quotient_d₁_d₀`, `exact_quotient_d₀_d₁`). Exactness at
+`X₀'` makes
 
 `0 ⟶ coker d₁' ⟶ X₁' ⟶ coker d₀' ⟶ 0`
 
@@ -52,8 +50,6 @@ an equivalence onto their stable category; neither statement is made here.
 
 ## Main results
 
-* `TauCeti.MatrixFactorization.exact_quotient_d₁_d₀`: the reduction modulo a non-zero-divisor
-  potential is exact at the even component.
 * `TauCeti.MatrixFactorization.shortExact_cokernelDesc_parityShift`: the short exact sequence
   `0 ⟶ coker d₁ ⟶ X₁ ⟶ coker d₀ ⟶ 0` of a factorization of the zero potential exact at `X₀`.
 
@@ -86,14 +82,6 @@ section ZeroPotential
 
 variable {T : Type u} [CommRing T] {v : T}
 
-/-- For a zero potential, the descent through `coker d₁` of the odd differential `-d₀` of the
-parity shift restricts to `-d₀` along the cokernel projection. -/
-@[reassoc]
-theorem cokernelπ_cokernelDesc_parityShift (hv : v = 0) (X : MatrixFactorization T v) :
-    cokernelπ (parityShift.obj X) ≫ (cokernelDesc hv (parityShift.obj X)).hom =
-      -X.obj.d₀.hom :=
-  cokernelπ_cokernelDesc_hom hv (parityShift.obj X)
-
 variable [IsNoetherianRing T]
 
 /-- For a factorization of the zero potential that is exact at its even component, the sequence
@@ -105,11 +93,12 @@ theorem shortExact_cokernelDesc_parityShift (hv : v = 0) (X : MatrixFactorizatio
       (by
         apply ObjectProperty.hom_ext
         apply (cancel_epi (cokernelπ (parityShift.obj X))).1
-        simp [cokernelπ_cokernelDesc_parityShift_assoc hv X])).ShortExact := by
+        simp [cokernelπ_cokernelDesc_hom_assoc hv (parityShift.obj X)])).ShortExact := by
   -- The descent `i` of `-d₀` satisfies `i (π' y) = -d₀ y` for the projection `π'` from `X₀`.
   have hi (y : X.obj.X₀) : (cokernelDesc hv (parityShift.obj X)).hom
       (cokernelπ (parityShift.obj X) y) = -X.obj.d₀.hom y :=
-    ConcreteCategory.congr_hom (cokernelπ_cokernelDesc_parityShift hv X) y
+    (ConcreteCategory.congr_hom (cokernelπ_cokernelDesc_hom hv (parityShift.obj X)) y).trans
+      (by simp)
   refine ShortComplex.ShortExact.mk' ?_ ?_ ?_
   · rw [← ShortComplex.exact_map_iff_of_faithful _
         (forget₂ (FGModuleCat.{u} T) (ModuleCat.{u} T)),
@@ -163,11 +152,8 @@ theorem projectiveStableFunctor_map_cokernelPresentation_kernelMap (hv : v = 0)
     exact (cokernelπ_naturality g).symm
   · apply ObjectProperty.hom_ext
     apply (cancel_epi (cokernelπ (parityShift.obj X))).1
-    dsimp only [ObjectProperty.FullSubcategory.comp_hom]
-    rw [cokernelπ_naturality_assoc, cokernelπ_cokernelDesc_parityShift_assoc hv X,
-      cokernelπ_cokernelDesc_parityShift hv Y, Preadditive.comp_neg, Preadditive.neg_comp,
-      neg_inj]
-    exact congrArg (fun k ↦ k.hom) g.hom.comm₀
+    simpa [cokernelπ_naturality_assoc, cokernelπ_cokernelDesc_hom_assoc hv]
+      using congrArg (·.hom) g.hom.comm₀
 
 end ZeroPotential
 
@@ -176,35 +162,6 @@ end ZeroPotential
 section Hypersurface
 
 variable {S : Type u} [CommRing S] {w : S}
-
-/-- An equation `f ≫ g = w • 𝟙` of finitely generated modules, as an equation of linear maps. -/
-private theorem linearMap_comp_eq_smul {M N : FGModuleCat.{u} S} {f : M ⟶ N} {g : N ⟶ M}
-    (h : f ≫ g = w • 𝟙 M) : g.hom.hom ∘ₗ f.hom.hom = w • LinearMap.id := by
-  simpa only [ObjectProperty.FullSubcategory.comp_hom, ModuleCat.hom_comp,
-    ObjectProperty.smul_hom, ObjectProperty.FullSubcategory.id_hom, ModuleCat.hom_smul,
-    ModuleCat.hom_id] using congrArg (fun k ↦ k.hom.hom) h
-
-/-- The reduction modulo a non-zero-divisor potential `w` of a finite-projective matrix
-factorization is exact at its even component: the kernel of `d₀'` is the image of `d₁'`. -/
-theorem exact_quotient_d₁_d₀ (hw : w ∈ nonZeroDivisors S) (X : MatrixFactorization S w) :
-    Function.Exact
-      ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).obj X).obj.d₁.hom.hom
-      ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).obj X).obj.d₀.hom.hom :=
-  LinearMap.exact_lTensor_quotient_span_singleton X.obj.d₀.hom.hom X.obj.d₁.hom.hom
-    (linearMap_comp_eq_smul X.obj.d₁_comp_d₀)
-    (linearMap_comp_eq_smul X.obj.d₀_comp_d₁)
-    (Module.Flat.isSMulRegular_of_nonZeroDivisors hw)
-
-/-- The reduction modulo a non-zero-divisor potential `w` of a finite-projective matrix
-factorization is exact at its odd component: the kernel of `d₁'` is the image of `d₀'`. -/
-theorem exact_quotient_d₀_d₁ (hw : w ∈ nonZeroDivisors S) (X : MatrixFactorization S w) :
-    Function.Exact
-      ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).obj X).obj.d₀.hom.hom
-      ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).obj X).obj.d₁.hom.hom :=
-  LinearMap.exact_lTensor_quotient_span_singleton X.obj.d₁.hom.hom X.obj.d₀.hom.hom
-    (linearMap_comp_eq_smul X.obj.d₀_comp_d₁)
-    (linearMap_comp_eq_smul X.obj.d₁_comp_d₀)
-    (Module.Flat.isSMulRegular_of_nonZeroDivisors hw)
 
 variable [IsNoetherianRing S]
 
@@ -228,11 +185,15 @@ def quotientCokernelStableLoopIso (hw : w ∈ nonZeroDivisors S) :
     (fun {X Y} g ↦ by
       have h := (parityShiftCompBaseChangeFunctorIso (w := w)
         (Ideal.Quotient.mk (Ideal.span {w}))).inv.naturality g
-      rw [Functor.comp_map, Functor.comp_map] at h
+      simp only [Functor.comp_map] at h
       simp only [Functor.comp_map, Iso.trans_hom, Functor.mapIso_hom, Iso.symm_hom, Iso.app_inv]
+      -- `Ω` acts by the map between kernel terms, which is the cokernel of the parity shift of
+      -- `g`; the presentation of `X` is only determined by the right side, so `rw` places it.
       rw [ExactStructure.EnoughProjectives.stableLoop_map_comp_stableLoopObjIso_hom_assoc,
-        projectiveStableFunctor_map_cokernelPresentation_kernelMap, Category.assoc,
-        ← Functor.map_comp, ← Functor.map_comp, ← Functor.map_comp, ← Functor.map_comp, h])
+        projectiveStableFunctor_map_cokernelPresentation_kernelMap
+          (hX := exact_quotient_d₁_d₀ hw X)]
+      -- What remains is naturality of the comparison of base change with the parity shift.
+      simp only [Category.assoc, ← Functor.map_comp, h])
 
 /-- A component of `quotientCokernelStableLoopIso` is the comparison of the stable loop object
 with the kernel term of `cokernelPresentation`, followed by the cokernel of the comparison
@@ -269,6 +230,22 @@ def quotientCokernelStableLoopStableLoopIso (hw : w ∈ nonZeroDivisors S) :
       (baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w})) ⋙ cokernelFunctor ⋙
         (ExactStructure.abelian (FGModuleCat.{u} (S ⧸ Ideal.span {w}))).projectiveStableFunctor) ≪≫
     Functor.leftUnitor _
+
+/-- A component of `quotientCokernelStableLoopStableLoopIso` is `Ω` applied to the component of
+`quotientCokernelStableLoopIso` at `X`, followed by its component at `X[1]` and the cokernel of
+the identification of `X[1][1]` with `X`. -/
+@[simp]
+theorem quotientCokernelStableLoopStableLoopIso_hom_app (hw : w ∈ nonZeroDivisors S)
+    (X : MatrixFactorization S w) :
+    (quotientCokernelStableLoopStableLoopIso hw).hom.app X =
+      (ExactStructure.abelian_enoughProjectives
+          (A := FGModuleCat.{u} (S ⧸ Ideal.span {w}))).stableLoop.map
+          ((quotientCokernelStableLoopIso hw).hom.app X) ≫
+        (quotientCokernelStableLoopIso hw).hom.app (parityShift.obj X) ≫
+        (ExactStructure.abelian _).projectiveStableFunctor.map
+          (cokernelFunctor.map ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).map
+            (parityShiftCompParityShiftIso.hom.app X))) := by
+  simp [quotientCokernelStableLoopStableLoopIso]
 
 /-! ### Descent to the homotopy category -/
 
@@ -308,7 +285,7 @@ theorem quotientFunctor_comp_quotientStableCokernel_comp_stableLoop :
 
 /-- Precomposed with the quotient functor, the parity shift followed by the stable cokernel
 functor is the parity shift followed by base change, cokernel and the stable quotient. -/
-theorem quotientFunctor_comp_parityShift_comp_quotientStableCokernel :
+theorem quotientFunctor_comp_parityShiftEquivalence_functor_comp_quotientStableCokernel :
     (nullHomotopic (S := S) (w := w)).quotientFunctor ⋙
         (parityShiftEquivalence (S := S) (w := w)).functor ⋙ quotientStableCokernel =
       parityShift ⋙ baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w})) ⋙ cokernelFunctor ⋙
@@ -325,7 +302,8 @@ theorem quotientStableCokernelCompStableLoopIso_hom_app (hw : w ∈ nonZeroDivis
       eqToHom (Functor.congr_obj quotientFunctor_comp_quotientStableCokernel_comp_stableLoop X) ≫
         (quotientCokernelStableLoopIso hw).hom.app X ≫
         eqToHom (Functor.congr_obj
-          quotientFunctor_comp_parityShift_comp_quotientStableCokernel X).symm := by
+          quotientFunctor_comp_parityShiftEquivalence_functor_comp_quotientStableCokernel
+            X).symm := by
   simp [quotientStableCokernelCompStableLoopIso, eqToHom_map]
 
 /-- For a non-zero-divisor potential, the stable cokernel functor carries the shift by `1` of the
@@ -337,6 +315,24 @@ def shiftFunctorOneCompQuotientStableCokernelIso (hw : w ∈ nonZeroDivisors S) 
           (A := FGModuleCat.{u} (S ⧸ Ideal.span {w}))).stableLoop :=
   Functor.isoWhiskerRight (shiftFunctorOneIso S w) _ ≪≫
     (quotientStableCokernelCompStableLoopIso hw).symm
+
+/-- On a representative, `shiftFunctorOneCompQuotientStableCokernelIso` is the stable cokernel of
+`shiftFunctorOneIso` followed by the inverse of `quotientCokernelStableLoopIso`, up to the
+identifications of the functors on representatives. -/
+theorem shiftFunctorOneCompQuotientStableCokernelIso_hom_app (hw : w ∈ nonZeroDivisors S)
+    (X : MatrixFactorization S w) :
+    (shiftFunctorOneCompQuotientStableCokernelIso hw).hom.app
+        ((nullHomotopic (S := S) (w := w)).quotientFunctor.obj X) =
+      quotientStableCokernel.map
+          ((shiftFunctorOneIso S w).hom.app
+            ((nullHomotopic (S := S) (w := w)).quotientFunctor.obj X)) ≫
+        eqToHom (Functor.congr_obj
+          quotientFunctor_comp_parityShiftEquivalence_functor_comp_quotientStableCokernel X) ≫
+        (quotientCokernelStableLoopIso hw).inv.app X ≫
+        eqToHom (Functor.congr_obj quotientFunctor_comp_quotientStableCokernel_comp_stableLoop
+          X).symm := by
+  simp [shiftFunctorOneCompQuotientStableCokernelIso, quotientStableCokernelCompStableLoopIso,
+    eqToHom_map]
 
 /-- **Cokernels of matrix factorizations are `Ω`-periodic on `HMF(S,w)`.** For a non-zero-divisor
 potential, `Ω² ∘ coker ≅ coker` as functors on the homotopy category. -/
@@ -353,6 +349,22 @@ def quotientStableCokernelCompStableLoopCompStableLoopIso (hw : w ∈ nonZeroDiv
         (Functor.isoWhiskerRight (eqToIso quotientFunctor_comp_quotientStableCokernel) _) _ ≪≫
       quotientCokernelStableLoopStableLoopIso hw ≪≫
       eqToIso quotientFunctor_comp_quotientStableCokernel.symm)
+
+/-- On a representative, `quotientStableCokernelCompStableLoopCompStableLoopIso` is
+`quotientCokernelStableLoopStableLoopIso`, up to the identifications of the functors on
+representatives. -/
+theorem quotientStableCokernelCompStableLoopCompStableLoopIso_hom_app
+    (hw : w ∈ nonZeroDivisors S) (X : MatrixFactorization S w) :
+    (quotientStableCokernelCompStableLoopCompStableLoopIso hw).hom.app
+        ((nullHomotopic (S := S) (w := w)).quotientFunctor.obj X) =
+      eqToHom (congrArg (fun Z ↦ (ExactStructure.abelian_enoughProjectives
+          (A := FGModuleCat.{u} (S ⧸ Ideal.span {w}))).stableLoop.obj
+            ((ExactStructure.abelian_enoughProjectives
+              (A := FGModuleCat.{u} (S ⧸ Ideal.span {w}))).stableLoop.obj Z))
+          (Functor.congr_obj quotientFunctor_comp_quotientStableCokernel X)) ≫
+        (quotientCokernelStableLoopStableLoopIso hw).hom.app X ≫
+        eqToHom (Functor.congr_obj quotientFunctor_comp_quotientStableCokernel X).symm := by
+  simp [quotientStableCokernelCompStableLoopCompStableLoopIso, eqToHom_map]
 
 end HomotopyCategory
 

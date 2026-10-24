@@ -9,6 +9,9 @@ public import TauCeti.CommutativeAlgebra.MatrixFactorization.Basic
 public import TauCeti.Algebra.Homology.Periodic.Duplex.Basic
 public import TauCeti.Algebra.Category.ModuleCat.ChangeOfRings
 public import TauCeti.CategoryTheory.Linear.FullSubcategory
+public import TauCeti.Algebra.Category.FGModuleCat.Basic
+public import TauCeti.LinearAlgebra.TensorProduct.Quotient
+public import Mathlib.RingTheory.Flat.TorsionFree
 
 /-!
 # Reducing matrix factorizations to two-periodic complexes
@@ -23,6 +26,9 @@ and it commutes with the parity shift. When that image is zero, forgetting finit
 gives a square-zero duplex and a two-periodic complex. The reduction modulo the potential is the
 periodic complex used in Eisenbud, *Homological algebra on a complete intersection, with an
 application to group representations*, Trans. Amer. Math. Soc. **260** (1980), Section 5.
+When the potential is a non-zero-divisor, the reduction of a finite-projective factorization
+modulo the potential is exact in both parities (`exact_quotient_d₁_d₀`, `exact_quotient_d₀_d₁`):
+if `d₀ x = w y`, then `w x = d₁ d₀ x = w d₁ y`, so `x = d₁ y`.
 -/
 
 public section
@@ -410,5 +416,31 @@ instance quotientPeriodicComplex_additive :
     (quotientPeriodicComplex (S := S) (w := w)).Additive := by
   dsimp [quotientPeriodicComplex]
   infer_instance
+
+/-- The reduction modulo a non-zero-divisor potential `w` of a finite-projective matrix
+factorization is exact at its even component: the kernel of `d₀'` is the image of `d₁'`. -/
+theorem exact_quotient_d₁_d₀ (hw : w ∈ nonZeroDivisors S) (X : MatrixFactorization S w) :
+    Function.Exact
+      ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).obj X).obj.d₁.hom.hom
+      ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).obj X).obj.d₀.hom.hom :=
+  LinearMap.exact_lTensor_quotient_span_singleton X.obj.d₀.hom.hom X.obj.d₁.hom.hom
+    (by simpa only [FGModuleCat.hom_hom_comp, FGModuleCat.hom_hom_smul, FGModuleCat.hom_hom_id]
+      using congrArg (fun k ↦ k.hom.hom) X.obj.d₁_comp_d₀)
+    (by simpa only [FGModuleCat.hom_hom_comp, FGModuleCat.hom_hom_smul, FGModuleCat.hom_hom_id]
+      using congrArg (fun k ↦ k.hom.hom) X.obj.d₀_comp_d₁)
+    (Module.Flat.isSMulRegular_of_nonZeroDivisors hw)
+
+/-- The reduction modulo a non-zero-divisor potential `w` of a finite-projective matrix
+factorization is exact at its odd component: the kernel of `d₁'` is the image of `d₀'`. -/
+theorem exact_quotient_d₀_d₁ (hw : w ∈ nonZeroDivisors S) (X : MatrixFactorization S w) :
+    Function.Exact
+      ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).obj X).obj.d₀.hom.hom
+      ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).obj X).obj.d₁.hom.hom :=
+  LinearMap.exact_lTensor_quotient_span_singleton X.obj.d₁.hom.hom X.obj.d₀.hom.hom
+    (by simpa only [FGModuleCat.hom_hom_comp, FGModuleCat.hom_hom_smul, FGModuleCat.hom_hom_id]
+      using congrArg (fun k ↦ k.hom.hom) X.obj.d₀_comp_d₁)
+    (by simpa only [FGModuleCat.hom_hom_comp, FGModuleCat.hom_hom_smul, FGModuleCat.hom_hom_id]
+      using congrArg (fun k ↦ k.hom.hom) X.obj.d₁_comp_d₀)
+    (Module.Flat.isSMulRegular_of_nonZeroDivisors hw)
 
 end TauCeti.MatrixFactorization
