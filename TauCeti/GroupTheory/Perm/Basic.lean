@@ -43,7 +43,11 @@ permutations alternated over (`TauCeti.sum_sign_smul_sum_sign_smul_eq_card_nsmul
 sum over the permutations of `Fin (n + 1)` evaluated on a tuple `Fin.cons x w` expands along the
 slot that receives `x` (`TauCeti.sum_sign_smul_cons_comp_eq_sum_insertNth`), or along the entry
 moved to the front or to any other slot (`TauCeti.sum_sign_smul_comp_eq_sum_cons_removeNth`,
-`TauCeti.sum_sign_smul_comp_eq_sum_insertNth_removeNth`).
+`TauCeti.sum_sign_smul_comp_eq_sum_insertNth_removeNth`). Removing a pair `{a, σ a}` from an
+involution `σ` by left multiplication with `Equiv.swap a (σ a)` leaves an involution that agrees
+with `σ` off the pair (`Function.Involutive.swap_mul`,
+`Function.Involutive.swap_mul_apply_eq_self_or`), and multiplying back on the right recovers `σ`
+(`Function.Involutive.swap_mul_mul_swap`).
 -/
 
 public section
@@ -564,3 +568,46 @@ theorem sum_sign_smul_comp_eq_sum_insertNth_removeNth {α M : Type*} [AddCommGro
   simp
 
 end TauCeti
+
+/-! ### Removing a transposition from an involution -/
+
+namespace Function.Involutive
+
+open Equiv (Perm)
+
+variable {α : Type*} [DecidableEq α] {σ : Perm α}
+
+/-- Removing the pair `{a, σ a}` from an involution `σ` fixes its two points and keeps every other
+pair: `Equiv.swap a (σ a) * σ` agrees with `σ` away from `a` and `σ a`. -/
+theorem swap_mul_apply_eq_self_or (hσ : Function.Involutive σ) (a x : α) :
+    ((x = a ∨ x = σ a) ∧ (Equiv.swap a (σ a) * σ) x = x) ∨
+      (x ≠ a ∧ x ≠ σ a ∧ (Equiv.swap a (σ a) * σ) x = σ x) := by
+  by_cases hxa : x = a
+  · subst hxa
+    simp
+  by_cases hxc : x = σ a
+  · subst hxc
+    simp [hσ a]
+  refine Or.inr ⟨hxa, hxc, Equiv.swap_apply_of_ne_of_ne ?_ ?_⟩
+  · exact fun h => hxc (by rw [← h, hσ x])
+  · exact fun h => hxa (σ.injective h)
+
+/-- Removing a pair `{a, σ a}` from an involution `σ` leaves an involution. -/
+theorem swap_mul (hσ : Function.Involutive σ) (a : α) :
+    Function.Involutive (Equiv.swap a (σ a) * σ) := by
+  intro x
+  rcases hσ.swap_mul_apply_eq_self_or a x with ⟨-, hx⟩ | ⟨hxa, hxc, hx⟩
+  · rw [hx, hx]
+  rcases hσ.swap_mul_apply_eq_self_or a (σ x) with ⟨hy, -⟩ | ⟨-, -, hy⟩
+  · rcases hy with hy | hy
+    · exact (hxc (by rw [← hy, hσ x])).elim
+    · exact (hxa (σ.injective hy)).elim
+  · rw [hx, hy, hσ x]
+
+/-- Putting a removed pair back: `σ = (Equiv.swap a (σ a) * σ) * Equiv.swap a (σ a)` for an
+involution `σ`. -/
+theorem swap_mul_mul_swap (hσ : Function.Involutive σ) (a : α) :
+    Equiv.swap a (σ a) * σ * Equiv.swap a (σ a) = σ := by
+  rw [mul_assoc, Equiv.mul_swap_eq_swap_mul, hσ a, Equiv.swap_comm, Equiv.swap_mul_self_mul]
+
+end Function.Involutive

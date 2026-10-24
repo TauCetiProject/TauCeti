@@ -21,8 +21,8 @@ R{X/c, Y/d} ≅ R{Y/d}{X/c}
 ```
 
 as normed rings, with the Gauss norms on both sides. Unlike
-`TauCeti.Huber.restrictedOptionEquiv`, which separates a single variable at unit radius, both
-families of variables and their radii are arbitrary. Arbitrary radii are needed to present
+`TauCeti.Huber.restrictedOptionEquiv`, which separates a single variable into a univariate
+series, both families of variables are arbitrary. Arbitrary radii are needed to present
 restricted series over a quotient of a ring of restricted series, as in Kedlaya's proof that the
 interval rings of the Fargues–Fontaine curve are strongly noetherian.
 
@@ -30,7 +30,9 @@ interval rings of the Fargues–Fontaine curve are strongly noetherian.
 
 * `TauCeti.MvPowerSeries.isRestricted_coeff_sumAlgEquiv`: the coefficients in `σ` of a restricted
   series in `σ ⊕ τ` are restricted series in `τ`.
-* `TauCeti.MvPowerSeries.restrictedSumEquiv`: the ring isomorphism `R{X/c, Y/d} ≃+* R{Y/d}{X/c}`.
+* `TauCeti.MvPowerSeries.restrictedSumEquiv`: the ring isomorphism `R{X/c, Y/d} ≃+* R{Y/d}{X/c}`,
+  and `TauCeti.MvPowerSeries.restrictedSumAlgEquiv`: the same map as an algebra isomorphism over
+  every algebra `S` of coefficients.
 * `TauCeti.MvPowerSeries.coeff_coeff_restrictedSumEquiv` and
   `TauCeti.MvPowerSeries.coeff_restrictedSumEquiv_symm`: its coefficients.
 * `TauCeti.MvPowerSeries.norm_restrictedSumEquiv` and
@@ -196,6 +198,28 @@ theorem coeff_restrictedSumEquiv_symm (g : Iter) (a : σ →₀ ℕ) (b : τ →
     coeff (a.sumElim b) (restrictedSumEquiv.symm g : MvPowerSeries (σ ⊕ τ) R) =
       coeff b ((coeff a (g : MvPowerSeries σ Inner) : Inner) : MvPowerSeries τ R) := by
   rw [← coeff_coeff_restrictedSumEquiv, RingEquiv.apply_symm_apply]
+
+/-- `restrictedSumEquiv` sends constants to constants: the constant `r` in `σ ⊕ τ` goes to the
+constant series in `σ` whose value is the constant `r` in `τ`. -/
+@[simp]
+theorem restrictedSumEquiv_algebraMap {S : Type*} [CommSemiring S] [Algebra S R] (s : S) :
+    restrictedSumEquiv (algebraMap S Flat s) = algebraMap S Iter s := by
+  rw [restrictedSumEquiv, RingEquiv.symm_apply_eq, RingEquiv.ofBijective_apply]
+  refine Subtype.ext ((sumAlgEquiv R σ τ).injective ?_)
+  simpa [sumFlatten, coe_algebraMap_isRestrictedSubring_apply, algebraMap_apply,
+    -AlgEquiv.commutes] using (sumAlgEquiv R σ τ).commutes (algebraMap S R s)
+
+/-- **Iteration of restricted series as an algebra isomorphism**: over every algebra `S` of
+coefficients, `restrictedSumEquiv` is an `S`-algebra isomorphism `R{X/c, Y/d} ≃ₐ[S] R{Y/d}{X/c}`.
+-/
+noncomputable def restrictedSumAlgEquiv {S : Type*} [CommSemiring S] [Algebra S R] :
+    Flat ≃ₐ[S] Iter :=
+  AlgEquiv.ofRingEquiv restrictedSumEquiv_algebraMap
+
+/-- `restrictedSumAlgEquiv` has the same underlying map as `restrictedSumEquiv`. -/
+@[simp]
+theorem coe_restrictedSumAlgEquiv {S : Type*} [CommSemiring S] [Algebra S R] :
+    ⇑(restrictedSumAlgEquiv (S := S) (R := R) (c := c) (d := d)) = restrictedSumEquiv := (rfl)
 
 /-- `restrictedSumEquiv` preserves the Gauss norms. -/
 @[simp]

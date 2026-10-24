@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Homology.QuasiIso
 public import Mathlib.Analysis.Convex.Contractible
 public import Mathlib.Topology.Homotopy.TopCat.ToSSet
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homotopy
@@ -22,7 +23,9 @@ homotopic (`TopCat.Homotopy.twistedChainComplexHomotopy`), so that they agree on
 (`TopCat.Homotopy.twistedHomologyMap_eq_comp`).
 
 This is the homotopy axiom for homology with local coefficients. The cohomological form is in
-`TauCeti.AlgebraicTopology.Cohomology.Twisted.HomotopyInvariance`.
+`TauCeti.AlgebraicTopology.Cohomology.Twisted.HomotopyInvariance`. As a consequence, a homotopy
+equivalence `e : X ≃ₕ Y` induces isomorphisms `H_k(X; e⁎L) ≅ H_k(Y; L)` for every local
+coefficient system `L` on `Y` (`ContinuousMap.HomotopyEquiv.isIso_twistedHomologyMap`).
 
 ## Main declarations
 
@@ -30,6 +33,9 @@ This is the homotopy axiom for homology with local coefficients. The cohomologic
 * `TopCat.Homotopy.twistedChainComplexHomotopy`: the chain homotopy of twisted chain complexes.
 * `TopCat.Homotopy.twistedHomologyMap_eq_comp`: homotopic maps induce the same map on twisted
   homology, up to the identification of the two pullback systems.
+* `ContinuousMap.HomotopyEquiv.isIso_twistedHomologyMap`,
+  `ContinuousMap.HomotopyEquiv.quasiIso_twistedChainComplexMap`: a homotopy equivalence induces
+  isomorphisms on twisted homology.
 
 ## Implementation notes
 
@@ -313,3 +319,58 @@ lemma twistedHomologyMap_eq_comp (k : ℕ) :
     (HomologicalComplex.homologyMap_comp _ _ k)
 
 end TopCat.Homotopy
+
+namespace TopCat.Homotopy
+
+variable {R : Type u} [Ring R] {X Y : TopCat.{v}} {a : X ⟶ Y} {b : Y ⟶ X}
+
+/-- If `a ≫ b` is homotopic to the identity, then the composite of the maps induced by `a` and `b`
+on twisted homology, preceded by the identification of `(a ≫ b)⁎M` with `a⁎(b⁎M)`, is an
+isomorphism. -/
+private lemma isIso_twistedHomologyMap_comp (H : TopCat.Homotopy (a ≫ b) (𝟙 X))
+    (M : TauCeti.LocalCoefficientSystem.{u, v, max v w} R X) (k : ℕ) :
+    IsIso (twistedHomologyCoefficientMap ((pullbackCompIso a.hom b.hom).hom.app M) k ≫
+      twistedHomologyMap a ((pullback b.hom).obj M) k ≫ twistedHomologyMap b M k) := by
+  rw [← twistedHomologyMap_comp, H.twistedHomologyMap_eq_comp, twistedHomologyMap_id]
+  infer_instance
+
+end TopCat.Homotopy
+
+namespace ContinuousMap.HomotopyEquiv
+
+variable {R : Type u} [Ring R] {X Y : Type v} [TopologicalSpace X] [TopologicalSpace Y]
+
+/-- **A homotopy equivalence induces isomorphisms on singular homology with local
+coefficients**: for a homotopy equivalence `e : X ≃ₕ Y` and a local coefficient system `L` on `Y`,
+the map `H_k(X; e⁎L) ⟶ H_k(Y; L)` is an isomorphism. -/
+theorem isIso_twistedHomologyMap (e : X ≃ₕ Y)
+    (L : TauCeti.LocalCoefficientSystem.{u, v, max v w} R (TopCat.of Y)) (k : ℕ) :
+    IsIso (twistedHomologyMap (TopCat.ofHom e.toFun) L k) := by
+  let f := TopCat.ofHom e.toFun
+  let g := TopCat.ofHom e.invFun
+  -- `g ≫ f ≃ 𝟙` makes the map of `g` on `H_k(-; f⁎L)` a split monomorphism, and `f ≫ g ≃ 𝟙` makes
+  -- it a split epimorphism. So it is an isomorphism, and then so is the map of `f`.
+  have h₁ := TopCat.Homotopy.isIso_twistedHomologyMap_comp (a := g) (b := f) e.right_inv.some L k
+  have h₂ := TopCat.Homotopy.isIso_twistedHomologyMap_comp (a := f) (b := g) e.left_inv.some
+    ((pullback f.hom).obj L) k
+  rw [← Category.assoc] at h₁ h₂
+  have : Mono (twistedHomologyMap g ((pullback f.hom).obj L) k) :=
+    (mono_comp_iff_of_isIso
+      (twistedHomologyCoefficientMap ((pullbackCompIso g.hom f.hom).hom.app L) k) _).1
+        (mono_of_mono _ (twistedHomologyMap f L k))
+  -- The instance arguments are passed explicitly: searching for `Epi` and `IsIso` of these
+  -- composites from the local hypotheses runs out of time.
+  have : Epi (twistedHomologyMap g ((pullback f.hom).obj L) k) :=
+    @epi_of_epi _ _ _ _ _ _ _ (@IsIso.epi_of_iso _ _ _ _ _ h₂)
+  have := isIso_of_mono_of_epi (twistedHomologyMap g ((pullback f.hom).obj L) k)
+  exact @IsIso.of_isIso_comp_left _ _ _ _ _ _ (twistedHomologyMap f L k) (by infer_instance) h₁
+
+/-- **A homotopy equivalence induces a quasi-isomorphism of singular chains with local
+coefficients.** -/
+theorem quasiIso_twistedChainComplexMap (e : X ≃ₕ Y)
+    (L : TauCeti.LocalCoefficientSystem.{u, v, max v w} R (TopCat.of Y)) :
+    QuasiIso (twistedChainComplexMap (TopCat.ofHom e.toFun) L) :=
+  (quasiIso_iff _).2 fun k ↦
+    (quasiIsoAt_iff_isIso_homologyMap _ k).2 (e.isIso_twistedHomologyMap L k)
+
+end ContinuousMap.HomotopyEquiv
