@@ -163,7 +163,10 @@ theorem span_image_toCotangent_irrelevant_eq_top :
   refine Submodule.sum_mem _ fun n hn ↦ Submodule.subset_span ⟨_, ⟨n, ?_, SetLike.coe_mem _⟩, rfl⟩
   refine Nat.pos_of_ne_zero fun hn0 ↦ DFinsupp.mem_support_iff.1 hn ?_
   subst hn0
-  exact Subtype.ext ((mem_irrelevant_iff 𝒜 _).1 x.2)
+  -- Membership in `𝒜₊` says that the degree-zero projection vanishes.
+  have h0 := (mem_irrelevant_iff 𝒜 (x : A)).1 x.2
+  rw [GradedRing.proj_apply] at h0
+  exact Subtype.ext h0
 
 end CommRing
 
@@ -198,17 +201,12 @@ private theorem exists_homogeneous_span_toCotangent_eq_top :
         Submodule.span k (Set.range ((irrelevant 𝒜).toIdeal.toCotangent ∘ f)) = ⊤ := by
   set I := (irrelevant 𝒜).toIdeal
   set S := I.toCotangent '' {x | ∃ n, 0 < n ∧ (x : A) ∈ 𝒜 n}
-  obtain ⟨b, hbS, hspan, hli⟩ := exists_linearIndependent k S
-  rw [span_image_toCotangent_irrelevant_eq_top] at hspan
-  let e := (Module.Basis.mk hli (by rw [Subtype.range_coe, hspan])).indexEquiv
-    (Module.finBasis k I.Cotangent)
-  choose x hx hxb using fun c : b ↦ hbS c.2
-  refine ⟨fun i ↦ x (e.symm i), fun i ↦ hx _, ?_⟩
-  convert hspan using 2
-  ext c
-  refine ⟨?_, fun hc ↦ ⟨e ⟨c, hc⟩, by simp [hxb]⟩⟩
-  rintro ⟨i, rfl⟩
-  simp [hxb]
+  have hg := Submodule.exists_fun_fin_finrank_span_eq k S
+  rw [span_image_toCotangent_irrelevant_eq_top, finrank_top] at hg
+  obtain ⟨g, hgS, hspan, -⟩ := hg
+  choose x hx hxg using hgS
+  refine ⟨x, hx, ?_⟩
+  rwa [← funext hxg] at hspan
 
 /-- Over a field, the Krull dimension of a connected graded algebra is at most the dimension of
 the cotangent space `A₊ ⧸ A₊ ^ 2` of its irrelevant ideal, when the latter is finite. -/
