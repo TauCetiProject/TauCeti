@@ -35,8 +35,8 @@ full subcategory of a homotopy category; its compatibility with the triangulatio
   `K_ac(P)`.
 * `TauCeti.ExactStructure.IsFrobenius.completeResolutionFunctor`: the additive functor sending an
   object to the homotopy class of its complete resolution.
-* `TauCeti.ExactStructure.IsFrobenius.stableEquivalence`: the equivalence between the stable
-  category and `K_ac(P)`.
+* `TauCeti.ExactStructure.IsFrobenius.stableEquivCompleteResolutionHomotopyCategory`:
+  the equivalence between the stable category and `K_ac(P)`.
 
 ## References
 
@@ -169,41 +169,48 @@ noncomputable abbrev stableToHomotopyCategory :
   E.projectiveStableIdeal.lift hE.completeResolutionFunctor hE.projectiveStableIdeal_le_kerIdeal
 
 /-- The functor from the stable category to `K_ac(P)`. -/
-noncomputable def stableFunctor :
+noncomputable def stableToCompleteResolutionHomotopyCategory :
     E.ProjectiveStableCategory ⥤ E.CompleteResolutionHomotopyCategory :=
   E.completeResolutionComplex.lift hE.stableToHomotopyCategory
     fun X ↦ E.completeResolutionComplex_quotient_obj (hE.completeResolution X.as)
 
+instance : hE.stableToCompleteResolutionHomotopyCategory.Additive := by
+  unfold stableToCompleteResolutionHomotopyCategory
+  infer_instance
+
 /-- The functor to `K_ac(P)` followed by the inclusion into `K(C)` is the functor to `K(C)`. -/
-noncomputable def stableFunctorCompιIso :
-    hE.stableFunctor ⋙ E.completeResolutionComplex.ι ≅ hE.stableToHomotopyCategory :=
+noncomputable def stableToCompleteResolutionHomotopyCategoryCompιIso :
+    hE.stableToCompleteResolutionHomotopyCategory ⋙ E.completeResolutionComplex.ι ≅
+      hE.stableToHomotopyCategory :=
   ObjectProperty.liftCompιIso _ _ _
 
 /-- On the image of a morphism of `C`, the functor to `K_ac(P)` is the homotopy class of its
 lift. -/
-private theorem stableFunctor_map_hom {X Y : C} (f : X ⟶ Y) :
-    (hE.stableFunctor.map (E.projectiveStableFunctor.map f)).hom =
-      hE.completeResolutionFunctor.map f :=
-  (rfl)
+private theorem stableToCompleteResolutionHomotopyCategory_map_hom {X Y : C} (f : X ⟶ Y) :
+    (hE.stableToCompleteResolutionHomotopyCategory.map (E.projectiveStableFunctor.map f)).hom =
+      hE.completeResolutionFunctor.map f := by
+  rw [stableToCompleteResolutionHomotopyCategory, ObjectProperty.lift_map_hom]
+  exact CategoryTheory.Quotient.lift_map_functor_map _ _ _ f
 
-instance : hE.stableFunctor.Full where
+instance : hE.stableToCompleteResolutionHomotopyCategory.Full where
   map_surjective {X Y} g := by
     obtain ⟨φ, hφ⟩ := (HomotopyCategory.quotient C _).map_surjective g.hom
     let f₀ := (hE.completeResolutionIso X.as).inv ≫ CompleteResolution.cyclesMap φ ≫
       (hE.completeResolutionIso Y.as).hom
     refine ⟨E.projectiveStableFunctor.map f₀, ObjectProperty.hom_ext _ ?_⟩
-    rw [stableFunctor_map_hom, map_eq, ← hφ]
+    rw [stableToCompleteResolutionHomotopyCategory_map_hom, map_eq, ← hφ]
     exact HomotopyCategory.eq_of_homotopy _ _
       (CompleteResolution.liftHomotopy (CompleteResolution.cyclesMap φ) _ _
         (by simp [f₀]) (by simp))
 
-instance : hE.stableFunctor.Faithful where
+instance : hE.stableToCompleteResolutionHomotopyCategory.Faithful where
   map_injective {X Y} f₁ f₂ h := by
     obtain ⟨g₁, rfl⟩ := E.projectiveStableIdeal.quotientFunctor.map_surjective f₁
     obtain ⟨g₂, rfl⟩ := E.projectiveStableIdeal.quotientFunctor.map_surjective f₂
     have h' := E.completeResolutionComplex.ι.congr_map h
-    rw [ObjectProperty.ι_map, ObjectProperty.ι_map, stableFunctor_map_hom, stableFunctor_map_hom,
-      map_eq, map_eq] at h'
+    rw [ObjectProperty.ι_map, ObjectProperty.ι_map,
+      stableToCompleteResolutionHomotopyCategory_map_hom,
+      stableToCompleteResolutionHomotopyCategory_map_hom, map_eq, map_eq] at h'
     have H := Homotopy.equivSubZero (HomotopyCategory.homotopyOfEq _ _ h')
     have hfac := CompleteResolution.factorsThrough_of_homotopy
       (f := ((hE.completeResolutionIso X.as).hom ≫ (g₁ - g₂) ≫
@@ -214,21 +221,28 @@ instance : hE.stableFunctor.Faithful where
     simpa using (hfac.comp_left (hE.completeResolutionIso X.as).inv).comp_right
       (hE.completeResolutionIso Y.as).hom
 
-instance : hE.stableFunctor.EssSurj where
+instance : hE.stableToCompleteResolutionHomotopyCategory.EssSurj where
   mem_essImage K := by
     obtain ⟨r, ⟨e⟩⟩ := (E.completeResolutionComplex_iff _).mp K.property
     refine ⟨E.projectiveStableFunctor.obj (r.Z 0), ⟨ObjectProperty.isoMk _ ?_⟩⟩
     exact HomotopyCategory.isoOfHomotopyEquiv
       (CompleteResolution.homotopyEquiv _ _ (hE.completeResolutionIso (r.Z 0))) ≪≫ e.symm
 
-instance : hE.stableFunctor.IsEquivalence where
+instance : hE.stableToCompleteResolutionHomotopyCategory.IsEquivalence where
 
 /-- **The stable category of a Frobenius exact category is equivalent to the homotopy category of
 its complete resolutions**: the complexes homotopy equivalent to acyclic complexes (relative to
 `E`) of projective-injective objects. -/
-noncomputable def stableEquivalence :
+noncomputable def stableEquivCompleteResolutionHomotopyCategory :
     E.ProjectiveStableCategory ≌ E.CompleteResolutionHomotopyCategory :=
-  hE.stableFunctor.asEquivalence
+  hE.stableToCompleteResolutionHomotopyCategory.asEquivalence
+
+/-- The functor of the stable equivalence is the complete-resolution functor into `K_ac(P)`. -/
+@[simp]
+theorem stableEquivCompleteResolutionHomotopyCategory_functor :
+    hE.stableEquivCompleteResolutionHomotopyCategory.functor =
+      hE.stableToCompleteResolutionHomotopyCategory :=
+  (rfl)
 
 end IsFrobenius
 

@@ -179,8 +179,8 @@ variable {r} {r' r'' : E.CompleteResolution}
 complexes: the restriction of the degree-zero component to `Z⁰ ↪ X⁰`, which lands in `Z'⁰`. -/
 noncomputable def cyclesMap (φ : r.complex ⟶ r'.complex) : r.Z 0 ⟶ r'.Z 0 :=
   r'.liftZ 0 (r.ι 0 ≫ φ.f 0) (by
-    rw [← cancel_mono (r'.ι (0 + 1)), zero_comp, Category.assoc, Category.assoc, ← d_def,
-      f_comp_d, ι_d_assoc, zero_comp])
+    rw [← cancel_mono (r'.ι (0 + 1))]
+    simp [Category.assoc, ← d_def, f_comp_d_assoc])
 
 /-- The map of complexes extends the induced morphism of the objects of cycles. -/
 @[reassoc (attr := simp)]
