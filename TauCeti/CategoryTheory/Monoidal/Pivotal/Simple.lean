@@ -73,9 +73,13 @@ of `a` is the left dimension followed by the right dimension: the scalars of `a�
 cancel. -/
 theorem leftTrace_inv_comp_rightTrace_hom (a : X ≅ X) :
     leftTrace a.inv ≫ rightTrace a.hom = leftDim X ≫ rightDim X := by
-  rw [leftTrace_eq_smul_leftDim k, rightTrace_eq_smul_rightDim k, Linear.smul_comp,
-    Linear.comp_smul, smul_smul, ← map_mul, ← End.of_comp, Iso.hom_inv_id, End.of_id, map_one,
-    one_smul]
+  -- The scalars of `a` and `a⁻¹` are inverse to each other.
+  have h :
+      endAlgEquivOfSimple k X (End.of a.hom) * endAlgEquivOfSimple k X (End.of a.inv) = 1 := by
+    rw [← map_mul, ← End.of_comp]
+    simp
+  rw [leftTrace_eq_smul_leftDim k, rightTrace_eq_smul_rightDim k]
+  simp [smul_smul, h]
 
 section ChangeOfPivotal
 
