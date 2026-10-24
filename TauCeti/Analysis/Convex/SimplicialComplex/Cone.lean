@@ -98,11 +98,8 @@ theorem notMem_affineSpan (hs : s ∈ K.faces) : p ∉ affineSpan 𝕜 (s : Set 
   have hc : c ∈ K.space := convexHull_subset_space hs (s.centroid_mem_convexHull hne)
   have hcp : p ≠ c := fun hpc => h.notMem_space (hpc ▸ hc)
   -- the centroid lies on the segment from `p` to a point of the face beyond it
-  have hcq : c ∈ segment 𝕜 p (AffineMap.lineMap p c (1 + ε)) := by
-    rw [segment_eq_image_lineMap]
-    refine ⟨(1 + ε)⁻¹, ⟨(inv_pos.2 (by linarith)).le, inv_le_one_of_one_le₀ (by linarith)⟩, ?_⟩
-    rw [AffineMap.lineMap_lineMap_right, inv_mul_cancel₀ (by linarith),
-      AffineMap.lineMap_apply_one]
+  have hcq : c ∈ segment 𝕜 p (AffineMap.lineMap p c (1 + ε)) :=
+    mem_segment_lineMap_of_one_le (by linarith)
   have hcq' := h.eq_of_mem_segment hc (convexHull_subset_space hs hq) hcq
   rw [← AffineMap.lineMap_apply_one (k := 𝕜) p c] at hcq'
   have := AffineMap.lineMap_injective 𝕜 hcp hcq'
@@ -329,11 +326,7 @@ theorem space_cone_of_space_eq_intrinsicFrontier (hCc : IsCompact C) (hC : Conve
     exact mem_insert _ _
   refine .inr (mem_convexJoin.2 ⟨p, rfl, ?_⟩)
   obtain ⟨T, hT1, hfT⟩ := hCc.exists_lineMap_mem_intrinsicFrontier hpC hx hxp
-  refine ⟨_, hfT, ?_⟩
-  rw [segment_eq_image_lineMap]
-  refine ⟨T⁻¹, ⟨inv_nonneg.2 (by linarith), inv_le_one_of_one_le₀ hT1⟩, ?_⟩
-  rw [AffineMap.lineMap_lineMap_right, inv_mul_cancel₀ (by linarith : T ≠ 0),
-    AffineMap.lineMap_apply_one]
+  exact ⟨_, hfT, mem_segment_lineMap_of_one_le hT1⟩
 
 end Real
 

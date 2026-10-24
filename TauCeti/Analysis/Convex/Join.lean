@@ -14,6 +14,9 @@ Mathlib's `convexHull_insert` writes the convex hull of `insert a s` as the conv
 with the convex hull of `s`, provided `s` is nonempty. This file states the membership form with
 no nonemptiness hypothesis: a point of the convex hull of `insert a s` is either `a` itself or
 lies on a segment from `a` to a point of the convex hull of `s` (`TauCeti.mem_convexHull_insert`).
+
+It also records that a point `x` lies on the segment from `a` to any point `lineMap a x T` with
+`1 ≤ T` beyond `x` on the ray from `a` (`TauCeti.mem_segment_lineMap_of_one_le`).
 -/
 
 public section
@@ -37,5 +40,14 @@ theorem mem_convexHull_insert :
   · obtain ⟨y, hy⟩ := hs.convexHull (𝕜 := 𝕜)
     exact ⟨y, hy, left_mem_segment 𝕜 x y⟩
   · exact ⟨y, hy, hxy⟩
+
+/-- A point `x` lies on the segment from `a` to any point `lineMap a x T` with `1 ≤ T`, that is,
+to any point at or beyond `x` on the ray from `a` through `x`. -/
+theorem mem_segment_lineMap_of_one_le {T : 𝕜} (hT : 1 ≤ T) :
+    x ∈ segment 𝕜 a (AffineMap.lineMap a x T) := by
+  rw [segment_eq_image_lineMap]
+  refine ⟨T⁻¹, ⟨inv_nonneg.2 (zero_le_one.trans hT), inv_le_one_of_one_le₀ hT⟩, ?_⟩
+  rw [AffineMap.lineMap_lineMap_right, inv_mul_cancel₀ (zero_lt_one.trans_le hT).ne',
+    AffineMap.lineMap_apply_one]
 
 end TauCeti
