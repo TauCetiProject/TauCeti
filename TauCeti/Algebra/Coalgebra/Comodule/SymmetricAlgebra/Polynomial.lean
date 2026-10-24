@@ -8,6 +8,10 @@ module
 public import Mathlib.LinearAlgebra.SymmetricAlgebra.Basis
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 public import Mathlib.RingTheory.TensorProduct.MvPolynomial
+public import Mathlib.Algebra.MvPolynomial.Expand
+import Mathlib.Algebra.CharP.Lemmas
+import Mathlib.Algebra.CharP.Algebra
+import Mathlib.RingTheory.Flat.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.Dual
 public import TauCeti.Algebra.Coalgebra.Comodule.SymmetricAlgebra.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.Transport
@@ -26,7 +30,8 @@ Concretely, the coaction is the algebra homomorphism sending the coordinate `X i
 `∑ j, X j ⊗ S(c(b*ᵢ, b j))`, where `c(b*ᵢ, b j)` is a matrix coefficient of `V` and `S` is the
 antipode. On algebra-valued points this is the contragredient action `(g • f)(v) = f(g⁻¹ v)`: a
 point `g` substitutes `∑ j, g(S(c(b*ᵢ, b j))) X j` for `X i`. Every homogeneous component is a
-subcomodule.
+subcomodule. In prime characteristic, the polynomials in the pth powers of the variables
+also form a subcomodule, without a perfectness hypothesis on the coefficient ring.
 
 For the standard representation of `SL₂` these are the binary forms, the basic rational
 representations of `SL₂`.
@@ -37,6 +42,10 @@ representations of `SL₂`.
   of the basis `b`.
 * `TauCeti.Comodule.polynomial_coact_X`: the coaction of a coordinate function.
 * `TauCeti.Comodule.polynomialCoact`: the coaction as an algebra homomorphism.
+* `TauCeti.Comodule.polynomialCoact_expand_mem`: the coaction preserves polynomials in
+  pth powers of variables.
+* `TauCeti.Comodule.polynomialExpandSubcomodule`: polynomials in pth powers of variables, as a
+  subcomodule over any coefficient semiring of characteristic `p`.
 * `TauCeti.Comodule.polynomialHomogeneousSubcomodule`: the homogeneous polynomial functions of a
   fixed degree, as a subcomodule.
 * `TauCeti.Comodule.algebraTensorAlgEquiv_endOfPoint_polynomial`: a point acts on polynomial
@@ -78,6 +87,43 @@ theorem polynomialCoact_X (b : Basis ι R V) (i : ι) :
   MvPolynomial.aeval_X _ _
 
 end Coact
+
+section Frobenius
+
+variable (H) (b : Basis ι R V) (p : ℕ) [Fact p.Prime] [CharP R p]
+
+/-- The range of substitution `X i ↦ X i ^ p` is stable under the polynomial coaction.
+The coefficients are left unchanged, so this does not require a perfect base ring. -/
+theorem polynomialCoact_expand_mem (f : MvPolynomial ι R) :
+    polynomialCoact H b (MvPolynomial.expand p f) ∈
+      LinearMap.range (TensorProduct.map
+        (MvPolynomial.expand (σ := ι) (R := R) p).range.toSubmodule.subtype
+        (LinearMap.id : H →ₗ[R] H)) := by
+  classical
+  let : CharP (MvPolynomial ι R ⊗[R] H) p := charP_of_injective_ringHom
+    (Algebra.TensorProduct.includeLeft_injective (S := R)
+      (Bialgebra.algebraMap_injective (R := R) H)) p
+  let N := (MvPolynomial.expand (σ := ι) (R := R) p).range
+  let ψ : MvPolynomial ι R →ₐ[R] N ⊗[R] H := MvPolynomial.aeval fun i ↦
+    ∑ j, (⟨MvPolynomial.X j ^ p, ⟨MvPolynomial.X j, MvPolynomial.expand_X p j⟩⟩ : N) ⊗ₜ[R]
+      ((HopfAlgebra.antipode R (matrixCoefficient (C := H) (b.coord i) (b j))) ^ p)
+  let inc := Algebra.TensorProduct.map N.val (AlgHom.id R H)
+  have h : inc.comp ψ = (polynomialCoact H b).comp (MvPolynomial.expand p) := by
+    apply MvPolynomial.algHom_ext
+    intro i
+    simp only [AlgHom.comp_apply, MvPolynomial.aeval_X, MvPolynomial.expand_X,
+      map_pow, polynomialCoact_X, sum_pow_char p, map_sum, Algebra.TensorProduct.map_tmul,
+      AlgHom.id_apply, ψ, inc]
+    simp only [Subalgebra.val_apply, Algebra.TensorProduct.tmul_pow]
+  have hinc : inc.toLinearMap = TensorProduct.map N.toSubmodule.subtype
+      (LinearMap.id : H →ₗ[R] H) :=
+    (Algebra.TensorProduct.toLinearMap_map N.val (AlgHom.id R H)).trans
+      (TensorProduct.AlgebraTensorModule.map_eq _ _)
+  -- The remaining carrier identification is `↥N = ↥N.toSubmodule`: both are the same subtype.
+  refine ⟨ψ f, ?_⟩
+  exact (DFunLike.congr_fun hinc (ψ f)).symm.trans (DFunLike.congr_fun h f)
+
+end Frobenius
 
 variable [DecidableEq ι]
 
@@ -143,6 +189,27 @@ theorem polynomial_coact_apply (b : Basis ι R V) (f : MvPolynomial ι R) :
     letI := polynomial H b
     coact (R := R) (C := H) f = polynomialCoact H b f := by
   rw [polynomial_coact, AlgHom.toLinearMap_apply]
+
+variable (H) in
+/-- The polynomial functions in the pth powers of the coordinates form a subcomodule in
+characteristic `p`. The coefficients remain in the original semiring. -/
+noncomputable def polynomialExpandSubcomodule (b : Basis ι R V) (p : ℕ)
+    [Fact p.Prime] [CharP R p] :
+    letI := polynomial H b
+    Subcomodule R H (MvPolynomial ι R) :=
+  letI := polynomial H b
+  { carrier := (MvPolynomial.expand p).range.toSubmodule
+    coact_mem' := by
+      rintro _ ⟨f, rfl⟩
+      rw [polynomial_coact_apply]
+      exact polynomialCoact_expand_mem H b p f }
+
+/-- Membership in the polynomial Frobenius subcomodule means being an expansion by `p`. -/
+@[simp]
+theorem mem_polynomialExpandSubcomodule (b : Basis ι R V) (p : ℕ)
+    [Fact p.Prime] [CharP R p] {f : MvPolynomial ι R} :
+    f ∈ polynomialExpandSubcomodule H b p ↔ ∃ g, MvPolynomial.expand p g = f :=
+  Iff.rfl
 
 variable (H) in
 /-- The homogeneous polynomial functions of degree `d` on `V`, as a subcomodule of
