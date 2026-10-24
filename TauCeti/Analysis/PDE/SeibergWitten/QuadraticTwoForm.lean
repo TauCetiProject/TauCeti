@@ -29,8 +29,8 @@ are only real-linear.
 
 ## Main definitions
 
-* `TauCeti.SeibergWitten.quadraticTwoForm o ρ hQ hkl ψ`: the self-dual form `q(ψ) = τ(Q₀(ψ)) / 4`.
-* `TauCeti.SeibergWitten.quadraticTwoFormPolar o ρ hQ hkl`: its real polarization
+* `TauCeti.SeibergWitten.quadraticTwoForm o ρ hkl ψ`: the self-dual form `q(ψ) = τ(Q₀(ψ)) / 4`.
+* `TauCeti.SeibergWitten.quadraticTwoFormPolar o ρ hkl`: its real polarization
   `q'(ψ, φ) = τ(B(ψ, φ)) / 4`, as a continuous real-bilinear map.
 
 ## Main results
@@ -85,96 +85,104 @@ local instance : FiniteDimensional ℝ V := .of_fact_finrank_eq_succ 3
 real self-dual forms: `C(i q(ψ)) = Q₀(ψ)`. -/
 def quadraticTwoForm (ψ : positiveHalfSpinors o ρ) :
     Module.End.eigenspace (o.hodgeStar hkl : Module.End ℝ (⋀[ℝ]^2 V)) 1 :=
-  (4 : ℝ)⁻¹ • cliffordRestrictionAdjoint o ρ hQ hkl (quadraticEnd ψ)
+  (4 : ℝ)⁻¹ • cliffordRestrictionAdjoint o ρ hkl (quadraticEnd ψ)
 
 /-- Unfolding lemma for `quadraticTwoForm`. -/
 theorem quadraticTwoForm_def (ψ : positiveHalfSpinors o ρ) :
-    quadraticTwoForm o ρ hQ hkl ψ =
-      (4 : ℝ)⁻¹ • cliffordRestrictionAdjoint o ρ hQ hkl (quadraticEnd ψ) :=
+    quadraticTwoForm o ρ hkl ψ =
+      (4 : ℝ)⁻¹ • cliffordRestrictionAdjoint o ρ hkl (quadraticEnd ψ) :=
   (rfl)
 
+include hQ in
 /-- `q(ψ) = τ(ψψ*) / 4`. -/
 theorem quadraticTwoForm_eq_rankOne (ψ : positiveHalfSpinors o ρ) :
-    quadraticTwoForm o ρ hQ hkl ψ =
-      (4 : ℝ)⁻¹ • cliffordRestrictionAdjoint o ρ hQ hkl (InnerProductSpace.rankOne ℂ ψ ψ) := by
-  simp [quadraticTwoForm_def, quadraticEnd_def, map_sub, ← ContinuousLinearMap.one_def]
+    quadraticTwoForm o ρ hkl ψ =
+      (4 : ℝ)⁻¹ • cliffordRestrictionAdjoint o ρ hkl (InnerProductSpace.rankOne ℂ ψ ψ) := by
+  simp [quadraticTwoForm_def, quadraticEnd_def, map_sub, ← ContinuousLinearMap.one_def,
+    cliffordRestrictionAdjoint_smul_one o ρ hQ]
 
+include hQ in
 variable {ρ} in
 /-- `C(i q(ψ)) = Q₀(ψ)`. -/
 theorem cliffordRestriction_quadraticTwoForm
     (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
     (h₂ : finrank ℂ (positiveHalfSpinors o ρ) = 2) (ψ : positiveHalfSpinors o ρ) :
-    cliffordRestriction o ρ hQ (quadraticTwoForm o ρ hQ hkl ψ) = quadraticEnd ψ := by
+    cliffordRestriction o ρ (quadraticTwoForm o ρ hkl ψ) = quadraticEnd ψ := by
   rw [quadraticTwoForm_def, Submodule.coe_smul, map_smul,
     cliffordRestriction_cliffordRestrictionAdjoint_of_mem_traceFreeSelfAdjoint o hQ hρ hkl h₂
       (quadraticEnd_mem_traceFreeSelfAdjoint h₂ ψ), smul_smul]
   norm_num
 
+include hQ in
 variable {ρ} in
 /-- `q = C⁻¹ ∘ Q₀`: `q(ψ)` is the self-dual form that the Clifford isomorphism sends to `Q₀(ψ)`. -/
 theorem quadraticTwoForm_eq_symm_cliffordRestrictionEquiv
     (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
     (h₂ : finrank ℂ (positiveHalfSpinors o ρ) = 2) (ψ : positiveHalfSpinors o ρ) :
-    quadraticTwoForm o ρ hQ hkl ψ = (cliffordRestrictionEquiv o hQ hρ hkl h₂).symm
+    quadraticTwoForm o ρ hkl ψ = (cliffordRestrictionEquiv o hQ hρ hkl h₂).symm
       ⟨quadraticEnd ψ, quadraticEnd_mem_traceFreeSelfAdjoint h₂ ψ⟩ := by
   rw [LinearEquiv.eq_symm_apply]
   exact Subtype.ext ((coe_cliffordRestrictionEquiv_apply o ρ hQ hρ hkl h₂ _).trans
     (cliffordRestriction_quadraticTwoForm o hQ hkl hρ h₂ ψ))
 
+include hQ in
 variable {ρ} in
 /-- `C(i q(ψ)) ψ = (‖ψ‖² / 2) ψ`. -/
 theorem cliffordRestriction_quadraticTwoForm_apply_self
     (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
     (h₂ : finrank ℂ (positiveHalfSpinors o ρ) = 2) (ψ : positiveHalfSpinors o ρ) :
-    cliffordRestriction o ρ hQ (quadraticTwoForm o ρ hQ hkl ψ) ψ = ((‖ψ‖ : ℂ) ^ 2 / 2) • ψ := by
+    cliffordRestriction o ρ (quadraticTwoForm o ρ hkl ψ) ψ = ((‖ψ‖ : ℂ) ^ 2 / 2) • ψ := by
   rw [cliffordRestriction_quadraticTwoForm o hQ hkl hρ h₂, quadraticEnd_apply_self]
 
 /-- `q` is homogeneous of degree two for the real structure: `q(c ψ) = |c|² q(ψ)`. -/
 theorem quadraticTwoForm_smul (c : ℂ) (ψ : positiveHalfSpinors o ρ) :
-    quadraticTwoForm o ρ hQ hkl (c • ψ) = ‖c‖ ^ 2 • quadraticTwoForm o ρ hQ hkl ψ := by
+    quadraticTwoForm o ρ hkl (c • ψ) = ‖c‖ ^ 2 • quadraticTwoForm o ρ hkl ψ := by
   rw [quadraticTwoForm_def, quadraticTwoForm_def, quadraticEnd_smul, map_smul, smul_comm]
 
 /-- `q` is invariant under unit phases: `q(u ψ) = q(ψ)` when `|u| = 1`. -/
 theorem quadraticTwoForm_smul_of_norm_eq_one {u : ℂ} (hu : ‖u‖ = 1)
     (ψ : positiveHalfSpinors o ρ) :
-    quadraticTwoForm o ρ hQ hkl (u • ψ) = quadraticTwoForm o ρ hQ hkl ψ := by
+    quadraticTwoForm o ρ hkl (u • ψ) = quadraticTwoForm o ρ hkl ψ := by
   rw [quadraticTwoForm_smul, hu, one_pow, one_smul]
 
 /-- `q(0) = 0`. -/
 @[simp]
-theorem quadraticTwoForm_zero : quadraticTwoForm o ρ hQ hkl 0 = 0 := by
+theorem quadraticTwoForm_zero : quadraticTwoForm o ρ hkl 0 = 0 := by
   simp [quadraticTwoForm_def]
 
 /-- `q(-ψ) = q(ψ)`. -/
 @[simp]
 theorem quadraticTwoForm_neg (ψ : positiveHalfSpinors o ρ) :
-    quadraticTwoForm o ρ hQ hkl (-ψ) = quadraticTwoForm o ρ hQ hkl ψ := by
+    quadraticTwoForm o ρ hkl (-ψ) = quadraticTwoForm o ρ hkl ψ := by
   simp [quadraticTwoForm_def]
 
+include hQ in
 variable {ρ} in
 /-- The norm of the quadratic two-form: `‖q(ψ)‖ = ‖ψ‖² / (2 √2)`. -/
 theorem norm_quadraticTwoForm (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
     (h₂ : finrank ℂ (positiveHalfSpinors o ρ) = 2) (ψ : positiveHalfSpinors o ρ) :
-    ‖quadraticTwoForm o ρ hQ hkl ψ‖ = ‖ψ‖ ^ 2 / (2 * √2) := by
+    ‖quadraticTwoForm o ρ hkl ψ‖ = ‖ψ‖ ^ 2 / (2 * √2) := by
   have : Nontrivial (positiveHalfSpinors o ρ) := Module.nontrivial_of_finrank_eq_succ h₂
-  have h := norm_cliffordRestriction_coe o hQ hρ hkl (quadraticTwoForm o ρ hQ hkl ψ)
+  have h := norm_cliffordRestriction_coe o hQ hρ hkl (quadraticTwoForm o ρ hkl ψ)
   rw [cliffordRestriction_quadraticTwoForm o hQ hkl hρ h₂, norm_quadraticEnd] at h
   rw [eq_div_iff (by positivity)]
   linarith
 
+include hQ in
 variable {ρ} in
 /-- `‖q(ψ)‖² = ‖ψ‖⁴ / 8`. -/
 theorem norm_quadraticTwoForm_sq (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
     (h₂ : finrank ℂ (positiveHalfSpinors o ρ) = 2) (ψ : positiveHalfSpinors o ρ) :
-    ‖quadraticTwoForm o ρ hQ hkl ψ‖ ^ 2 = ‖ψ‖ ^ 4 / 8 := by
+    ‖quadraticTwoForm o ρ hkl ψ‖ ^ 2 = ‖ψ‖ ^ 4 / 8 := by
   rw [norm_quadraticTwoForm o hQ hkl hρ h₂, div_pow, mul_pow, Real.sq_sqrt zero_le_two]
   ring
 
+include hQ in
 variable {ρ} in
 /-- `q(ψ)` vanishes exactly when `ψ` does. -/
 theorem quadraticTwoForm_eq_zero_iff (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
     (h₂ : finrank ℂ (positiveHalfSpinors o ρ) = 2) {ψ : positiveHalfSpinors o ρ} :
-    quadraticTwoForm o ρ hQ hkl ψ = 0 ↔ ψ = 0 := by
+    quadraticTwoForm o ρ hkl ψ = 0 ↔ ψ = 0 := by
   rw [← norm_eq_zero, norm_quadraticTwoForm o hQ hkl hρ h₂]
   simp
 
@@ -192,20 +200,21 @@ private def postcompQuadraticEndPolar {E F : Type*} [NormedAddCommGroup E] [Inne
 def quadraticTwoFormPolar :
     positiveHalfSpinors o ρ →L[ℝ] positiveHalfSpinors o ρ →L[ℝ]
       Module.End.eigenspace (o.hodgeStar hkl : Module.End ℝ (⋀[ℝ]^2 V)) 1 :=
-  postcompQuadraticEndPolar ((4 : ℝ)⁻¹ • cliffordRestrictionAdjoint o ρ hQ hkl)
+  postcompQuadraticEndPolar ((4 : ℝ)⁻¹ • cliffordRestrictionAdjoint o ρ hkl)
 
 /-- Unfolding lemma for `quadraticTwoFormPolar`: `q'(ψ, φ) = τ(B(ψ, φ)) / 4`. -/
 theorem quadraticTwoFormPolar_apply (ψ φ : positiveHalfSpinors o ρ) :
-    quadraticTwoFormPolar o ρ hQ hkl ψ φ =
-      (4 : ℝ)⁻¹ • cliffordRestrictionAdjoint o ρ hQ hkl (quadraticEndPolar ψ φ) :=
+    quadraticTwoFormPolar o ρ hkl ψ φ =
+      (4 : ℝ)⁻¹ • cliffordRestrictionAdjoint o ρ hkl (quadraticEndPolar ψ φ) :=
   (rfl)
 
+include hQ in
 variable {ρ} in
 /-- `C(i q'(ψ, φ)) = B(ψ, φ) = φψ* + ψφ* - Re⟪ψ, φ⟫ Id`. -/
 theorem cliffordRestriction_quadraticTwoFormPolar
     (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
     (h₂ : finrank ℂ (positiveHalfSpinors o ρ) = 2) (ψ φ : positiveHalfSpinors o ρ) :
-    cliffordRestriction o ρ hQ (quadraticTwoFormPolar o ρ hQ hkl ψ φ) = quadraticEndPolar ψ φ := by
+    cliffordRestriction o ρ (quadraticTwoFormPolar o ρ hkl ψ φ) = quadraticEndPolar ψ φ := by
   rw [quadraticTwoFormPolar_apply, Submodule.coe_smul, map_smul,
     cliffordRestriction_cliffordRestrictionAdjoint_of_mem_traceFreeSelfAdjoint o hQ hρ hkl h₂
       (quadraticEndPolar_mem_traceFreeSelfAdjoint h₂ ψ φ), smul_smul]
@@ -213,102 +222,104 @@ theorem cliffordRestriction_quadraticTwoFormPolar
 
 /-- The polarization of `q` is symmetric. -/
 theorem quadraticTwoFormPolar_comm (ψ φ : positiveHalfSpinors o ρ) :
-    quadraticTwoFormPolar o ρ hQ hkl ψ φ = quadraticTwoFormPolar o ρ hQ hkl φ ψ := by
+    quadraticTwoFormPolar o ρ hkl ψ φ = quadraticTwoFormPolar o ρ hkl φ ψ := by
   rw [quadraticTwoFormPolar_apply, quadraticTwoFormPolar_apply, quadraticEndPolar_comm]
 
 /-- The polarization of `q` restricts on the diagonal to `2 q`. -/
 @[simp]
 theorem quadraticTwoFormPolar_self (ψ : positiveHalfSpinors o ρ) :
-    quadraticTwoFormPolar o ρ hQ hkl ψ ψ = (2 : ℝ) • quadraticTwoForm o ρ hQ hkl ψ := by
+    quadraticTwoFormPolar o ρ hkl ψ ψ = (2 : ℝ) • quadraticTwoForm o ρ hkl ψ := by
   rw [quadraticTwoFormPolar_apply, quadraticEndPolar_self, map_nsmul, quadraticTwoForm_def]
   module
 
 /-- Real polarization of `q`: `q(ψ + φ) = q(ψ) + q(φ) + q'(ψ, φ)`. -/
 theorem quadraticTwoForm_add (ψ φ : positiveHalfSpinors o ρ) :
-    quadraticTwoForm o ρ hQ hkl (ψ + φ) = quadraticTwoForm o ρ hQ hkl ψ +
-      quadraticTwoForm o ρ hQ hkl φ + quadraticTwoFormPolar o ρ hQ hkl ψ φ := by
+    quadraticTwoForm o ρ hkl (ψ + φ) = quadraticTwoForm o ρ hkl ψ +
+      quadraticTwoForm o ρ hkl φ + quadraticTwoFormPolar o ρ hkl ψ φ := by
   simp [quadraticTwoForm_def, quadraticTwoFormPolar_apply, quadraticEnd_add]
 
 /-- `q'(ψ, c ψ) = 2 Re(c) q(ψ)`. In particular the derivative of `q` vanishes along the
 infinitesimal gauge directions `ξ ψ` with `ξ` imaginary. -/
 theorem quadraticTwoFormPolar_smul_self (c : ℂ) (ψ : positiveHalfSpinors o ρ) :
-    quadraticTwoFormPolar o ρ hQ hkl ψ (c • ψ) = (2 * c.re) • quadraticTwoForm o ρ hQ hkl ψ := by
+    quadraticTwoFormPolar o ρ hkl ψ (c • ψ) = (2 * c.re) • quadraticTwoForm o ρ hkl ψ := by
   rw [quadraticTwoFormPolar_apply, quadraticEndPolar_smul_self, map_smul, quadraticTwoForm_def,
     smul_comm]
 
 /-- `q'(ψ, i ψ) = 0`: the derivative of `q` vanishes along the infinitesimal phase direction. -/
 @[simp]
 theorem quadraticTwoFormPolar_I_smul_self (ψ : positiveHalfSpinors o ρ) :
-    quadraticTwoFormPolar o ρ hQ hkl ψ (Complex.I • ψ) = 0 := by
+    quadraticTwoFormPolar o ρ hkl ψ (Complex.I • ψ) = 0 := by
   simp [quadraticTwoFormPolar_apply]
 
+include hQ in
 variable {ρ} in
 /-- The polarization of `q` satisfies `‖q'(ψ, φ)‖ ≤ ‖ψ‖ ‖φ‖ / √2`. -/
 theorem norm_quadraticTwoFormPolar_le (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
     (h₂ : finrank ℂ (positiveHalfSpinors o ρ) = 2) (ψ φ : positiveHalfSpinors o ρ) :
-    ‖quadraticTwoFormPolar o ρ hQ hkl ψ φ‖ ≤ ‖ψ‖ * ‖φ‖ / √2 := by
+    ‖quadraticTwoFormPolar o ρ hkl ψ φ‖ ≤ ‖ψ‖ * ‖φ‖ / √2 := by
   have : Nontrivial (positiveHalfSpinors o ρ) := Module.nontrivial_of_finrank_eq_succ h₂
-  have h := norm_cliffordRestriction_coe o hQ hρ hkl (quadraticTwoFormPolar o ρ hQ hkl ψ φ)
+  have h := norm_cliffordRestriction_coe o hQ hρ hkl (quadraticTwoFormPolar o ρ hkl ψ φ)
   rw [cliffordRestriction_quadraticTwoFormPolar o hQ hkl hρ h₂] at h
   rw [le_div_iff₀ (by positivity), mul_comm, ← h]
   exact norm_quadraticEndPolar_le ψ φ
 
 /-- `q'(ψ - φ, ψ + φ) = 2 (q(ψ) - q(φ))`. -/
 theorem quadraticTwoFormPolar_sub_add (ψ φ : positiveHalfSpinors o ρ) :
-    quadraticTwoFormPolar o ρ hQ hkl (ψ - φ) (ψ + φ) =
-      (2 : ℝ) • (quadraticTwoForm o ρ hQ hkl ψ - quadraticTwoForm o ρ hQ hkl φ) := by
+    quadraticTwoFormPolar o ρ hkl (ψ - φ) (ψ + φ) =
+      (2 : ℝ) • (quadraticTwoForm o ρ hkl ψ - quadraticTwoForm o ρ hkl φ) := by
   rw [quadraticTwoFormPolar_apply, quadraticEndPolar_sub_add, map_nsmul, map_sub,
     quadraticTwoForm_def, quadraticTwoForm_def]
   module
 
+include hQ in
 variable {ρ} in
 /-- `q` is locally Lipschitz: `‖q(ψ) - q(φ)‖ ≤ ‖ψ - φ‖ (‖ψ‖ + ‖φ‖) / (2 √2)`. -/
 theorem norm_quadraticTwoForm_sub_le (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
     (h₂ : finrank ℂ (positiveHalfSpinors o ρ) = 2) (ψ φ : positiveHalfSpinors o ρ) :
-    ‖quadraticTwoForm o ρ hQ hkl ψ - quadraticTwoForm o ρ hQ hkl φ‖ ≤
+    ‖quadraticTwoForm o ρ hkl ψ - quadraticTwoForm o ρ hkl φ‖ ≤
       ‖ψ - φ‖ * (‖ψ‖ + ‖φ‖) / (2 * √2) := by
   have : Nontrivial (positiveHalfSpinors o ρ) := Module.nontrivial_of_finrank_eq_succ h₂
   have h := norm_cliffordRestriction_coe o hQ hρ hkl
-    (quadraticTwoForm o ρ hQ hkl ψ - quadraticTwoForm o ρ hQ hkl φ)
+    (quadraticTwoForm o ρ hkl ψ - quadraticTwoForm o ρ hkl φ)
   rw [Submodule.coe_sub, map_sub, cliffordRestriction_quadraticTwoForm o hQ hkl hρ h₂,
     cliffordRestriction_quadraticTwoForm o hQ hkl hρ h₂] at h
   rw [le_div_iff₀' (by positivity), mul_assoc, ← h]
   exact (le_div_iff₀' two_pos).1 (norm_quadraticEnd_sub_le ψ φ)
 
 private theorem quadraticTwoForm_eq_comp :
-    quadraticTwoForm o ρ hQ hkl =
-      ((4 : ℝ)⁻¹ • cliffordRestrictionAdjoint o ρ hQ hkl) ∘ quadraticEnd := by
+    quadraticTwoForm o ρ hkl =
+      ((4 : ℝ)⁻¹ • cliffordRestrictionAdjoint o ρ hkl) ∘ quadraticEnd := by
   ext1 ψ
   rw [quadraticTwoForm_def, Function.comp_apply, smul_apply]
 
 private theorem quadraticTwoFormPolar_eq_comp (ψ : positiveHalfSpinors o ρ) :
-    quadraticTwoFormPolar o ρ hQ hkl ψ =
-      ((4 : ℝ)⁻¹ • cliffordRestrictionAdjoint o ρ hQ hkl).comp (quadraticEndPolar ψ) := by
+    quadraticTwoFormPolar o ρ hkl ψ =
+      ((4 : ℝ)⁻¹ • cliffordRestrictionAdjoint o ρ hkl).comp (quadraticEndPolar ψ) := by
   ext1 φ
   rw [quadraticTwoFormPolar_apply, ContinuousLinearMap.comp_apply,
     smul_apply]
 
 /-- The real Fréchet derivative of `q` at `ψ` is `q'(ψ, ·)`; this holds in the strict sense. -/
 theorem hasStrictFDerivAt_quadraticTwoForm (ψ : positiveHalfSpinors o ρ) :
-    HasStrictFDerivAt (quadraticTwoForm o ρ hQ hkl) (quadraticTwoFormPolar o ρ hQ hkl ψ) ψ := by
+    HasStrictFDerivAt (quadraticTwoForm o ρ hkl) (quadraticTwoFormPolar o ρ hkl ψ) ψ := by
   rw [quadraticTwoForm_eq_comp, quadraticTwoFormPolar_eq_comp]
-  exact ((4 : ℝ)⁻¹ • cliffordRestrictionAdjoint o ρ hQ hkl).hasStrictFDerivAt.comp ψ
+  exact ((4 : ℝ)⁻¹ • cliffordRestrictionAdjoint o ρ hkl).hasStrictFDerivAt.comp ψ
     (hasStrictFDerivAt_quadraticEnd ψ)
 
 /-- The real Fréchet derivative of `q` at `ψ` is `q'(ψ, ·)`. -/
 theorem hasFDerivAt_quadraticTwoForm (ψ : positiveHalfSpinors o ρ) :
-    HasFDerivAt (quadraticTwoForm o ρ hQ hkl) (quadraticTwoFormPolar o ρ hQ hkl ψ) ψ :=
-  (hasStrictFDerivAt_quadraticTwoForm o ρ hQ hkl ψ).hasFDerivAt
+    HasFDerivAt (quadraticTwoForm o ρ hkl) (quadraticTwoFormPolar o ρ hkl ψ) ψ :=
+  (hasStrictFDerivAt_quadraticTwoForm o ρ hkl ψ).hasFDerivAt
 
 /-- The real Fréchet derivative of `q` at `ψ` is `q'(ψ, ·)`. -/
 theorem fderiv_quadraticTwoForm (ψ : positiveHalfSpinors o ρ) :
-    fderiv ℝ (quadraticTwoForm o ρ hQ hkl) ψ = quadraticTwoFormPolar o ρ hQ hkl ψ :=
-  (hasFDerivAt_quadraticTwoForm o ρ hQ hkl ψ).fderiv
+    fderiv ℝ (quadraticTwoForm o ρ hkl) ψ = quadraticTwoFormPolar o ρ hkl ψ :=
+  (hasFDerivAt_quadraticTwoForm o ρ hkl ψ).fderiv
 
 /-- `q` is a smooth map of the underlying real vector space. -/
 theorem contDiff_quadraticTwoForm {n : WithTop ℕ∞} :
-    ContDiff ℝ n (quadraticTwoForm o ρ hQ hkl) := by
+    ContDiff ℝ n (quadraticTwoForm o ρ hkl) := by
   rw [quadraticTwoForm_eq_comp]
-  exact ((4 : ℝ)⁻¹ • cliffordRestrictionAdjoint o ρ hQ hkl).contDiff.comp contDiff_quadraticEnd
+  exact ((4 : ℝ)⁻¹ • cliffordRestrictionAdjoint o ρ hkl).contDiff.comp contDiff_quadraticEnd
 
 end TauCeti.SeibergWitten

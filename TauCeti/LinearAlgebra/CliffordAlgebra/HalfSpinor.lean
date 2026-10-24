@@ -90,13 +90,14 @@ section Module
 
 variable {W : Type*} [AddCommGroup W] [Module ℂ W] {ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W}
 
+omit hQ in
 /-- Clifford multiplication exchanges the eigenspaces of `Γ`: `c(v)` maps the `ε`-eigenspace into
 the `-ε`-eigenspace. In particular it maps `W⁺` to `W⁻` and `W⁻` to `W⁺`. -/
 theorem map_ι_apply_mem_eigenspace_chirality_neg {ε : ℂ} {ψ : W}
     (hψ : ψ ∈ eigenspace (ρ (chirality Q o)) ε) (v : V) :
     ρ (ι Q v) ψ ∈ eigenspace (ρ (chirality Q o)) (-ε) := by
   rw [mem_eigenspace_iff] at hψ ⊢
-  rw [← Module.End.mul_apply, ← map_mul, chirality_mul_ι o hQ, map_neg, map_mul,
+  rw [← Module.End.mul_apply, ← map_mul, chirality_mul_ι o, map_neg, map_mul,
     LinearMap.neg_apply, Module.End.mul_apply, hψ, map_smul, neg_smul]
 
 variable [FiniteDimensional ℂ W]
@@ -111,7 +112,7 @@ private theorem finrank_eigenspace_chirality_le_neg (ρ : CliffordAlgebra Q →�
   obtain ⟨v, hv⟩ := exists_ne (0 : V)
   have hinj := map_ι_injective ρ (v := v) (by simpa [hQ] using hv)
   exact LinearMap.finrank_le_finrank_of_injective
-    (f := (ρ (ι Q v)).restrict fun _ hξ ↦ map_ι_apply_mem_eigenspace_chirality_neg o hQ hξ v)
+    (f := (ρ (ι Q v)).restrict fun _ hξ ↦ map_ι_apply_mem_eigenspace_chirality_neg o hξ v)
     fun ψ φ h ↦ Subtype.ext (hinj (congrArg Subtype.val h))
 
 variable (ρ) in
@@ -131,7 +132,7 @@ def cliffordMulEquiv {ε : ℂ} {ψ : W} (hψ : ψ ∈ eigenspace (ρ (chirality
     (h₂ : finrank ℂ (eigenspace (ρ (chirality Q o)) ε) = 2) :
     V ≃ₗ[ℝ] eigenspace (ρ (chirality Q o)) (-ε) :=
   LinearMap.linearEquivOfInjective
-    { toFun v := ⟨ρ (ι Q v) ψ, map_ι_apply_mem_eigenspace_chirality_neg o hQ hψ v⟩
+    { toFun v := ⟨ρ (ι Q v) ψ, map_ι_apply_mem_eigenspace_chirality_neg o hψ v⟩
       map_add' v w := by ext; simp
       map_smul' r v := by ext; simp }
     (fun v w h ↦ map_ι_apply_left_injective ρ (fun v hv ↦ by simpa [hQ] using hv) hψ₀
