@@ -16,6 +16,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCiv
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
+import TauCeti.Analysis.InnerProductSpace.SquaredDistance
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import TauCeti.Geometry.Manifold.Riemannian.Gradient.ChainRule
 import TauCeti.Geometry.Manifold.Riemannian.Gradient.NormedSpace
@@ -651,28 +652,50 @@ theorem hessian_eq_iteratedFDeriv_model_space
         _ = _ := (iteratedFDeriv_two_apply f x
           ![NormedSpace.fromTangentSpace x v, NormedSpace.fromTangentSpace x w]).symm
 
+private def tangentSpaceStdOrthonormalBasis
+    {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+    [FiniteDimensional ℝ F] (x : F) :
+    OrthonormalBasis (Fin (Module.finrank ℝ F)) ℝ (TangentSpace (modelWithCornersSelf ℝ F) x) :=
+  (stdOrthonormalBasis ℝ F).map (tangentSpaceToModelIsometry x).symm
+
+private theorem fromTangentSpace_tangentSpaceStdOrthonormalBasis_apply
+    {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+    [FiniteDimensional ℝ F] (x : F) (i : Fin (Module.finrank ℝ F)) :
+    NormedSpace.fromTangentSpace x (tangentSpaceStdOrthonormalBasis x i) =
+      stdOrthonormalBasis ℝ F i := by
+  rw [tangentSpaceStdOrthonormalBasis, OrthonormalBasis.map_apply,
+    tangentSpaceToModelIsometry_symm_apply]
+  exact (NormedSpace.fromTangentSpace x).apply_symm_apply _
+
 /-- The Laplace–Beltrami operator of the standard Riemannian metric is Mathlib's flat Laplacian.
 This fixes the sign convention as `Δ = div ∘ grad`. -/
 theorem laplaceBeltrami_eq_laplacian
     {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
     {f : F → ℝ} {x : F} (hgrad : DifferentiableAt ℝ (∇ f) x) :
     laplaceBeltrami (modelWithCornersSelf ℝ F) f x = Δ f x := by
-  let e : TangentSpace (modelWithCornersSelf ℝ F) x ≃ₗᵢ[ℝ] F :=
-    (NormedSpace.fromTangentSpace x).toLinearEquiv.isometryOfInner
-      inner_tangentSpace_vectorSpace
-  let b := (stdOrthonormalBasis ℝ F).map e.symm
-  rw [laplaceBeltrami_eq_sum_hessian (modelWithCornersSelf ℝ F) f x b,
+  rw [laplaceBeltrami_eq_sum_hessian (modelWithCornersSelf ℝ F) f x
+      (tangentSpaceStdOrthonormalBasis x),
     InnerProductSpace.laplacian_eq_iteratedFDeriv_orthonormalBasis f (stdOrthonormalBasis ℝ F)]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  have he (u : F) : NormedSpace.fromTangentSpace x (e.symm u) = u := by
-    -- Expose the inverse `LinearEquiv` carried by the isometry equivalence.
-    change (NormedSpace.fromTangentSpace x) (e.toLinearEquiv.symm u) = u
-    rw [show e.toLinearEquiv = (NormedSpace.fromTangentSpace x).toLinearEquiv by
-      dsimp [e]
-      exact LinearEquiv.isometryOfInner_toLinearEquiv _ _]
-    exact (NormedSpace.fromTangentSpace x).apply_symm_apply u
-  simpa only [b, OrthonormalBasis.map_apply, he] using
-    hessian_eq_iteratedFDeriv_model_space hgrad (b i) (b i)
+  simpa only [fromTangentSpace_tangentSpaceStdOrthonormalBasis_apply] using
+    hessian_eq_iteratedFDeriv_model_space hgrad (tangentSpaceStdOrthonormalBasis x i)
+      (tangentSpaceStdOrthonormalBasis x i)
+
+/-! ### The squared norm -/
+
+/-- The flat Riemannian Hessian of the squared norm is twice the inner product. -/
+@[simp]
+theorem hessian_norm_sq_model_space
+    {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+    [FiniteDimensional ℝ F] (x : F)
+    (v w : TangentSpace (modelWithCornersSelf ℝ F) x) :
+    hessian (modelWithCornersSelf ℝ F) (fun y ↦ ‖y‖ ^ 2) x v w =
+      2 * inner ℝ (NormedSpace.fromTangentSpace x v) (NormedSpace.fromTangentSpace x w) := by
+  have hgrad' : DifferentiableAt ℝ (∇ (fun y : F ↦ ‖y‖ ^ 2)) x := by
+    exact (TauCeti.differentiable_gradient_norm_sq (E := F)).differentiableAt
+  rw [hessian_eq_iteratedFDeriv_model_space hgrad' v w]
+  rw [iteratedFDeriv_two_apply, TauCeti.fderiv_fderiv_norm_sq_apply]
+  simp [Matrix.cons_val_zero, Matrix.cons_val_one]
 
 /-- The squared norm has constant flat Laplace--Beltrami operator. -/
 @[simp] theorem laplaceBeltrami_norm_sq
