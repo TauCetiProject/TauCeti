@@ -178,14 +178,10 @@ def wedgeWith (μ : (y : M) → V₁ y →L[ℝ] V₂ y →L[ℝ] V₃ y)
   LinearMap.mk₂ ℝ (fun φ ψ ↦ ⟨bundleWedgeWith μ hμ φ.1 ψ.1,
       mem_smoothBundleForms.mpr <| IsSmoothBundleForm.bundleWedgeWith hμ hpair
         (mem_smoothBundleForms.mp φ.2) (mem_smoothBundleForms.mp ψ.2)⟩)
-    (fun φ φ' ψ ↦ SmoothBundleForm.ext fun x v ↦
-      congrArg (fun η ↦ η x v) (bundleWedgeWith_add_left μ hμ φ.1 φ'.1 ψ.1))
-    (fun c φ ψ ↦ SmoothBundleForm.ext fun x v ↦
-      congrArg (fun η ↦ η x v) (bundleWedgeWith_smul_left μ hμ c φ.1 ψ.1))
-    (fun φ ψ ψ' ↦ SmoothBundleForm.ext fun x v ↦
-      congrArg (fun η ↦ η x v) (bundleWedgeWith_add_right μ hμ φ.1 ψ.1 ψ'.1))
-    (fun c φ ψ ↦ SmoothBundleForm.ext fun x v ↦
-      congrArg (fun η ↦ η x v) (bundleWedgeWith_smul_right μ hμ c φ.1 ψ.1))
+    (fun φ φ' ψ ↦ Subtype.ext <| bundleWedgeWith_add_left μ hμ φ.1 φ'.1 ψ.1)
+    (fun c φ ψ ↦ Subtype.ext <| bundleWedgeWith_smul_left μ hμ c φ.1 ψ.1)
+    (fun φ ψ ψ' ↦ Subtype.ext <| bundleWedgeWith_add_right μ hμ φ.1 ψ.1 ψ'.1)
+    (fun c φ ψ ↦ Subtype.ext <| bundleWedgeWith_smul_right μ hμ c φ.1 ψ.1)
 
 /-- The smooth bundle wedge has the existing rough bundle wedge as its underlying form. -/
 @[simp]
