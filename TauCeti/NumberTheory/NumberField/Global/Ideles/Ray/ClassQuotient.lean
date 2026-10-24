@@ -5,13 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.NumberField.Global.Adeles.Away
 public import TauCeti.NumberTheory.NumberField.Global.Approximation.Weak
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.FiniteIdeal
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.Ray.Subgroup
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Basic
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Exact
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Finite
+public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Away
 
 /-!
 # The ray class group as a quotient of the idele class group
@@ -260,10 +260,10 @@ theorem rayClassQuotient_surjective (𝔪 : Modulus K) :
     split_ifs with hv
     · rw [Units.val_inv_eq_inv_val, map_inv₀, inv_eq_one, HeightOneSpectrum.coe_ideleFiniteCoord,
         ← IdeleGroup.coe_toFiniteIdele, hx_def, IdeleGroup.toFiniteIdele_ofFiniteIdele]
-      exact adicOrd_eq_zero_iff.mp ((mem_adicOrdAway_iff _ a).mp ha v hv)
+      exact adicOrd_eq_zero_iff.mp ((mem_finiteIdelesAway_iff _ a).mp ha v hv)
     · simp
   refine ⟨x * z, (rayClassQuotient_mk_of_mem hmem).trans (congrArg _ (Subtype.ext ?_))⟩
-  rw [Subgroup.coe_mk, toIdealsAway_apply, map_mul, map_mul, hz, mul_one, hx_def,
+  rw [Subgroup.coe_mk, coe_toIdealsAway, map_mul, map_mul, hz, mul_one, hx_def,
     IdeleGroup.toFiniteIdele_ofFiniteIdele]
 
 /-- The class of an idele congruent to one has trivial ray class exactly when it lies in the ray

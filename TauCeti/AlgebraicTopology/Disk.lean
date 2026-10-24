@@ -32,8 +32,10 @@ Mathlib's `TopCat.diskBoundary n` is the universe lift of the unit sphere of
 `EuclideanSpace ℝ (Fin n)`.  It is homeomorphic to the unit sphere of the Euclidean space
 `EuclideanSpace ℝ (ULift (Fin n))` of the same dimension in the lifted universe
 (`TauCeti.diskBoundaryHomeomorph`), which lets results about unit spheres of inner product spaces
-in that universe be applied to it.  In particular the boundary of the `0`-disk is empty.  The
-antipodal map of the boundary sphere is `TauCeti.diskBoundaryNeg`.
+in that universe be applied to it.  In particular the boundary of the `0`-disk is empty, and a
+point of the boundary `S⁰` of the `1`-disk is determined by its coordinate
+(`TauCeti.diskBoundary_one_ext`).  The antipodal map of the boundary sphere is
+`TauCeti.diskBoundaryNeg`.
 
 The disk is also homeomorphic to the closed unit ball of the sup norm on `Fin n → ℝ`, with its
 boundary going to the unit sphere (`TauCeti.diskHomeomorphClosedBall`); this is how the disk is
@@ -275,6 +277,15 @@ instance isEmpty_diskBoundary_zero : IsEmpty (TopCat.diskBoundary.{u} 0) :=
   have : IsEmpty (Metric.sphere (0 : EuclideanSpace ℝ (ULift.{u} (Fin 0))) 1) :=
     Set.isEmpty_coe_sort.mpr (Metric.sphere_eq_empty_of_subsingleton one_ne_zero)
   (diskBoundaryHomeomorph 0).toEquiv.isEmpty
+
+/-- A point of the boundary `S⁰` of the `1`-disk is determined by its coordinate. -/
+lemma diskBoundary_one_ext {p q : TopCat.diskBoundary.{u} 1}
+    (h : ((p : ULift.{u} (Metric.sphere (0 : EuclideanSpace ℝ (Fin 1)) 1)).down :
+        EuclideanSpace ℝ (Fin 1)) 0 =
+      ((q : ULift.{u} (Metric.sphere (0 : EuclideanSpace ℝ (Fin 1)) 1)).down :
+        EuclideanSpace ℝ (Fin 1)) 0) : p = q := by
+  refine ULift.ext (Subtype.ext (PiLp.ext fun i ↦ ?_))
+  rwa [Subsingleton.elim i 0]
 
 /-- The `n`-sphere is nonempty. -/
 instance nonempty_topCatSphere (n : ℕ) : Nonempty (TopCat.sphere.{u} n) :=
