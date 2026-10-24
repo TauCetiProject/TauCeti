@@ -104,15 +104,15 @@ theorem killingSymmetricEquiv_symm :
     (killingSymmetricEquiv K L).symm =
       mapEquiv K ((killingDuality K L).symm : Dual K L ≃ₗ[K] L) := by
   rw [killingSymmetricEquiv, mapEquiv_symm]
-  rfl
+  exact congrArg (mapEquiv K) <|
+    LinearEquiv.ext fun f ↦ (killingDuality K L : L ≃ₗ[K] Dual K L).injective (by simp)
 
 /-- The inverse of the Killing equivalence `S(L) ≃ S(L*)` sends a linear function `f` to the
 generator `x` with `κ x = f`. -/
 @[simp]
 theorem killingSymmetricEquiv_symm_ι (f : Dual K L) :
     (killingSymmetricEquiv K L).symm (ι K (Dual K L) f) = ι K L ((killingDuality K L).symm f) := by
-  rw [killingSymmetricEquiv_symm, mapEquiv_ι]
-  rfl
+  rw [killingSymmetricEquiv_symm, mapEquiv_ι, LieModuleEquiv.coe_toLinearEquiv]
 
 /-- **The Killing equivalence intertwines the adjoint and coadjoint actions**: it carries the
 adjoint derivation of `x` on `S(L)` to the coadjoint derivation of `x` on `S(L*)`. -/
