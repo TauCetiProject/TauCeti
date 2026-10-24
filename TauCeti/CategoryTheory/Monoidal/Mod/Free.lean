@@ -46,7 +46,7 @@ def freeModObj (X : C) : ModObj A (A ⊗ X) where
 
 /-- The free left `A`-module functor. Its underlying object on `X` is `A ⊗ X`. -/
 -- An abbreviation so that the underlying objects are tensor products without transports.
-abbrev freeModule : C ⥤ Mod C A where
+abbrev freeMod : C ⥤ Mod C A where
   obj X := letI := freeModObj A X; ⟨A ⊗ X⟩
   map {X Y} f := by
     letI := freeModObj A X
@@ -60,20 +60,20 @@ abbrev freeModule : C ⥤ Mod C A where
 
 /-- The free-module action is multiplication on its first tensor factor. -/
 @[simp]
-lemma freeModule_smul (X : C) :
-    ((freeModule A).obj X).mod.smul = (α_ A A X).inv ≫ μ[A] ▷ X := (rfl)
+lemma freeMod_smul (X : C) :
+    ((freeMod A).obj X).mod.smul = (α_ A A X).inv ≫ μ[A] ▷ X := (rfl)
 
 /-- The generators of a free module are obtained by inserting the monoid unit. -/
-def freeModuleι (X : C) : X ⟶ ((freeModule A).obj X).X :=
+def freeModι (X : C) : X ⟶ ((freeMod A).obj X).X :=
   (λ_ X).inv ≫ η[A] ▷ X
 
 /-- The inclusion of generators inserts the unit in the first tensor factor. -/
-lemma freeModuleι_eq (X : C) :
-    freeModuleι A X = (λ_ X).inv ≫ η[A] ▷ X := (rfl)
+lemma freeModι_def (X : C) :
+    freeModι A X = (λ_ X).inv ≫ η[A] ▷ X := (rfl)
 
 /-- Extending a map to a module by the module action. -/
-def freeModuleDesc {X : C} (M : Mod C A) (f : X ⟶ M.X) :
-    (freeModule A).obj X ⟶ M :=
+def freeModDesc {X : C} (M : Mod C A) (f : X ⟶ M.X) :
+    (freeMod A).obj X ⟶ M :=
   Mod.Hom.mk' (A := A) (A ◁ f ≫ γ[A, M.X]) (by
     dsimp only [ModObj.smul, freeModObj]
     simp only [selfLeftAction_actionHomRight, Category.assoc, whiskerLeft_comp]
@@ -82,73 +82,110 @@ def freeModuleDesc {X : C} (M : Mod C A) (f : X ⟶ M.X) :
 
 /-- The extension's underlying map applies the given map and then the action. -/
 @[simp]
-lemma freeModuleDesc_hom {X : C} (M : Mod C A) (f : X ⟶ M.X) :
-    (freeModuleDesc A M f).hom = A ◁ f ≫ γ[A, M.X] := (rfl)
+lemma freeModDesc_hom {X : C} (M : Mod C A) (f : X ⟶ M.X) :
+    (freeModDesc A M f).hom = A ◁ f ≫ γ[A, M.X] := (rfl)
 
 /-- An extension agrees with the given map on generators. -/
 -- Restrict to generators before expanding the underlying extension map.
 @[simp↓, reassoc (attr := simp↓)]
-lemma freeModuleι_desc {X : C} (M : Mod C A) (f : X ⟶ M.X) :
-    dsimp% freeModuleι A X ≫ (freeModuleDesc A M f).hom = f := by
-  simp [freeModuleι, ← whisker_exchange_assoc]
+lemma freeModι_desc {X : C} (M : Mod C A) (f : X ⟶ M.X) :
+    dsimp% freeModι A X ≫ (freeModDesc A M f).hom = f := by
+  simp [freeModι, ← whisker_exchange_assoc]
 
 /-- Restriction followed by extension recovers every free-module map. -/
 @[simp]
-lemma freeModuleDesc_ι {X : C} (M : Mod C A) (f : (freeModule A).obj X ⟶ M) :
-    freeModuleDesc A M (freeModuleι A X ≫ f.hom) = f := by
+lemma freeModDesc_ι {X : C} (M : Mod C A) (f : (freeMod A).obj X ⟶ M) :
+    freeModDesc A M (freeModι A X ≫ f.hom) = f := by
   ext
-  simp only [freeModuleDesc_hom, whiskerLeft_comp, Category.assoc]
+  simp only [freeModDesc_hom, whiskerLeft_comp, Category.assoc]
   have hf := f.isModHom.smul_hom
   simp only [selfLeftAction_actionHomRight] at hf
   rw [← hf]
-  simp only [freeModuleι, whiskerLeft_comp, Category.assoc, freeModule_smul]
+  simp only [freeModι, whiskerLeft_comp, Category.assoc, freeMod_smul]
   rw [associator_inv_naturality_middle_assoc, ← comp_whiskerRight_assoc]
   simp
 
 /-- The universal property of a free module. -/
-def freeModuleHomEquiv (X : C) (M : Mod C A) :
-    ((freeModule A).obj X ⟶ M) ≃ (X ⟶ M.X) where
-  toFun f := freeModuleι A X ≫ f.hom
-  invFun f := freeModuleDesc A M f
-  left_inv f := freeModuleDesc_ι A M f
-  right_inv f := freeModuleι_desc A M f
+def freeModHomEquiv (X : C) (M : Mod C A) :
+    ((freeMod A).obj X ⟶ M) ≃ (X ⟶ M.X) where
+  toFun f := freeModι A X ≫ f.hom
+  invFun f := freeModDesc A M f
+  left_inv f := freeModDesc_ι A M f
+  right_inv f := freeModι_desc A M f
 
 /-- The universal bijection restricts a module map to the generators. -/
 @[simp]
-lemma freeModuleHomEquiv_apply (X : C) (M : Mod C A) (f : (freeModule A).obj X ⟶ M) :
-    dsimp% freeModuleHomEquiv A X M f = freeModuleι A X ≫ f.hom := (rfl)
+lemma freeModHomEquiv_apply (X : C) (M : Mod C A) (f : (freeMod A).obj X ⟶ M) :
+    dsimp% freeModHomEquiv A X M f = freeModι A X ≫ f.hom := (rfl)
 
 /-- The inverse universal bijection extends by the action. -/
 @[simp]
-lemma freeModuleHomEquiv_symm_apply (X : C) (M : Mod C A) (f : X ⟶ M.X) :
-    dsimp% (freeModuleHomEquiv A X M).symm f = freeModuleDesc A M f := (rfl)
+lemma freeModHomEquiv_symm_apply (X : C) (M : Mod C A) (f : X ⟶ M.X) :
+    dsimp% (freeModHomEquiv A X M).symm f = freeModDesc A M f := (rfl)
+
+/-- Maps out of a free module are determined by their restrictions to generators. -/
+@[ext]
+lemma freeMod_hom_ext {X : C} {M : Mod C A} {f g : (freeMod A).obj X ⟶ M}
+    (h : freeModι A X ≫ f.hom = freeModι A X ≫ g.hom) : f = g := by
+  apply (freeModHomEquiv A X M).injective
+  simpa only [freeModHomEquiv_apply] using h
 
 /-- The free-module functor is left adjoint to the native forgetful functor. -/
-def freeModuleAdjunction : freeModule A ⊣ Mod.forget (D := C) A :=
+def freeModAdjunction : freeMod A ⊣ Mod.forget (D := C) A :=
   Adjunction.mkOfHomEquiv
-    { homEquiv := freeModuleHomEquiv A
+    { homEquiv := freeModHomEquiv A
       homEquiv_naturality_left_symm := by
         intros X Y M f g
-        ext
-        dsimp only [freeModuleHomEquiv, Equiv.symm, Equiv.coe_fn_mk]
-        exact whiskerLeft_comp_assoc A f g (γ[A, M.X])
+        change Y ⟶ M.X at g
+        apply Mod.hom_ext
+        change A ◁ (f ≫ g) ≫ γ[A, M.X] = A ◁ f ≫ (A ◁ g ≫ γ[A, M.X])
+        rw [whiskerLeft_comp, Category.assoc]
       homEquiv_naturality_right := by
         intros X M N f g
-        dsimp only [freeModuleHomEquiv, Equiv.coe_fn_mk]
-        exact (Category.assoc _ _ _).symm }
+        change freeModι A X ≫ (f.hom ≫ g.hom) = (freeModι A X ≫ f.hom) ≫ g.hom
+        simp only [Category.assoc] }
 
 /-- The adjunction uses restriction to the chosen generators as its hom-set bijection. -/
 @[simp]
-lemma freeModuleAdjunction_homEquiv (X : C) (M : Mod C A) :
-    (freeModuleAdjunction A).homEquiv X M = freeModuleHomEquiv A X M := by
-  rw [freeModuleAdjunction, Adjunction.mkOfHomEquiv_homEquiv]
+lemma freeModAdjunction_homEquiv (X : C) (M : Mod C A) :
+    (freeModAdjunction A).homEquiv X M = freeModHomEquiv A X M := by
+  rw [freeModAdjunction, Adjunction.mkOfHomEquiv_homEquiv]
 
 /-- The adjunction unit is the inclusion of generators. -/
 @[simp]
-lemma freeModuleAdjunction_unit_app (X : C) :
-    dsimp% (freeModuleAdjunction A).unit.app X = freeModuleι A X := by
-  dsimp only [freeModuleAdjunction, Adjunction.mkOfHomEquiv, freeModuleHomEquiv,
-    Equiv.coe_fn_mk]
-  exact Category.comp_id _
+lemma freeModAdjunction_unit_app (X : C) :
+    dsimp% (freeModAdjunction A).unit.app X = freeModι A X := by
+  rw [← Adjunction.homEquiv_id, freeModAdjunction_homEquiv]
+  change freeModι A X ≫ 𝟙 (A ⊗ X) = freeModι A X
+  simp
+
+/-- The adjunction counit extends the identity by the module action. -/
+@[simp]
+lemma freeModAdjunction_counit_app (M : Mod C A) :
+    dsimp% (freeModAdjunction A).counit.app M = freeModDesc A M (𝟙 M.X) := by
+  rw [← Adjunction.homEquiv_symm_id, freeModAdjunction_homEquiv]
+  exact freeModHomEquiv_symm_apply A M.X M (𝟙 M.X)
+
+/-- Inclusion of generators is natural in the generating object. -/
+@[reassoc (attr := simp)]
+lemma freeModι_naturality {X Y : C} (f : X ⟶ Y) :
+    dsimp% f ≫ freeModι A Y = freeModι A X ≫ ((freeMod A).map f).hom := by
+  change f ≫ ((λ_ Y).inv ≫ η[A] ▷ Y) = ((λ_ X).inv ≫ η[A] ▷ X) ≫ A ◁ f
+  simp only [leftUnitor_inv_naturality_assoc, Category.assoc, whisker_exchange]
+
+/-- Extending a map commutes with post-composition by a module map. -/
+@[reassoc (attr := simp)]
+lemma freeModDesc_comp {X : C} {M N : Mod C A} (f : X ⟶ M.X) (g : M ⟶ N) :
+    freeModDesc A M f ≫ g = freeModDesc A N (f ≫ g.hom) := by
+  apply freeMod_hom_ext
+  rw [Mod.comp_hom', freeModι_desc, freeModι_desc_assoc]
+
+/-- Extending a map commutes with pre-composition on its generators. -/
+@[reassoc (attr := simp)]
+lemma freeMod_map_desc {X Y : C} (M : Mod C A) (f : X ⟶ Y) (g : Y ⟶ M.X) :
+    dsimp% (freeMod A).map f ≫ freeModDesc A M g = freeModDesc A M (f ≫ g) := by
+  apply freeMod_hom_ext
+  rw [Mod.comp_hom', ← Category.assoc, ← freeModι_naturality, Category.assoc,
+    freeModι_desc, freeModι_desc]
 
 end TauCeti
