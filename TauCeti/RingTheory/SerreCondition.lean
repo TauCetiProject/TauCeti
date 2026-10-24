@@ -112,16 +112,10 @@ theorem forall_satisfiesSerreS_iff_forall_isCohenMacaulay [IsNoetherianRing R]
     rcases subsingleton_or_nontrivial (LocalizedModule p.primeCompl M) with _ | _
   · exact isCohenMacaulay_of_subsingleton
   · -- The support of `M_p` has finite dimension, bounded by that of the Noetherian local `R_p`.
-    obtain ⟨d, hd⟩ := WithBot.ne_bot_iff_exists.1
-      (supportDim_ne_bot_of_nontrivial (Localization.AtPrime p) (LocalizedModule p.primeCompl M))
-    have hd_top : d ≠ ⊤ := fun hd_top ↦ by
-      have := (supportDim_le_ringKrullDim _ (LocalizedModule p.primeCompl M)).trans_lt
-        (ringKrullDim_lt_top (R := Localization.AtPrime p))
-      rw [← hd, hd_top] at this
-      exact this.ne rfl
-    obtain ⟨k, rfl⟩ := ENat.ne_top_iff_exists.1 hd_top
-    rw [isCohenMacaulay_iff_supportDim_le_depth, ← hd]
-    simpa [← hd] using h k p
+    obtain ⟨k, hk⟩ := exists_supportDim_eq_natCast (R := Localization.AtPrime p)
+      (M := LocalizedModule p.primeCompl M)
+    rw [isCohenMacaulay_iff_supportDim_le_depth, hk]
+    simpa [hk] using h k p
   · rw [depth_eq_top_of_subsingleton]
     exact le_top
   · exact (min_le_right _ _).trans (h p).depth_eq.ge

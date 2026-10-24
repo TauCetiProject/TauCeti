@@ -29,6 +29,8 @@ embedded primes.
 
 ## Main results
 
+* `Module.exists_supportDim_eq_natCast`: a nonzero module over a ring of finite Krull dimension,
+  such as a Noetherian local ring, has support of finite dimension.
 * `Module.supportDim_localizedModule_nonpos_iff`: `M_p` has zero-dimensional support exactly when
   `p` is a minimal prime of the support of `M`.
 -/
@@ -40,6 +42,17 @@ open IsLocalRing
 namespace Module
 
 variable {R : Type*} [CommRing R] {M : Type*} [AddCommGroup M] [Module R M]
+
+/-- The support of a nonzero module over a ring of finite Krull dimension, such as a Noetherian
+local ring, has finite dimension: it is neither `⊥` nor `⊤`. -/
+theorem exists_supportDim_eq_natCast [FiniteRingKrullDim R] [Nontrivial M] :
+    ∃ k : ℕ, supportDim R M = k := by
+  obtain ⟨d, hd⟩ := WithBot.ne_bot_iff_exists.1 (supportDim_ne_bot_of_nontrivial R M)
+  have hd_top : d ≠ ⊤ := by
+    rintro rfl
+    exact (hd ▸ (supportDim_le_ringKrullDim R M).trans_lt ringKrullDim_lt_top).ne rfl
+  obtain ⟨k, rfl⟩ := ENat.ne_top_iff_exists.1 hd_top
+  exact ⟨k, hd.symm⟩
 
 /-- Let `M` be a finite module over a Noetherian ring and `p` a prime containing the annihilator
 of `M`. The support of `M_p` has dimension zero exactly when `p` is a minimal prime of the support
