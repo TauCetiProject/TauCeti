@@ -10,6 +10,7 @@ public import Mathlib.Data.Fintype.Perm
 public import Mathlib.SetTheory.Cardinal.Finite
 public import Mathlib.Tactic.Group
 public import TauCeti.GroupTheory.Perm.Centralizer
+import TauCeti.GroupTheory.Perm.Basic
 
 /-!
 # Permutation triples
@@ -383,14 +384,7 @@ theorem apply_eq_of_mem_monodromyGroup {β : Type*} {f : Fin n → β}
     (h0 : ∀ x, f (t.σ0 x) = f x) (h1 : ∀ x, f (t.σ1 x) = f x) {g : Perm (Fin n)}
     (hg : g ∈ t.monodromyGroup) (x : Fin n) : f (g x) = f x := by
   rw [← closure_pair_eq_monodromyGroup] at hg
-  induction hg using Subgroup.closure_induction generalizing x with
-  | mem g hg =>
-    rcases hg with rfl | rfl
-    · exact h0 x
-    · exact h1 x
-  | one => rfl
-  | mul g g' _ _ ih ih' => rw [Perm.mul_apply, ih, ih']
-  | inv g _ ih => rw [← ih (g⁻¹ x), Perm.inv_def, apply_symm_apply]
+  exact apply_eq_of_mem_closure (by rintro g (rfl | rfl) <;> assumption) hg x
 
 /-- The monodromy group of a triple built from the images of two group elements is the image
 of the subgroup they generate. -/
