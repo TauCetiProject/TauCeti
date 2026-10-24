@@ -34,7 +34,7 @@ gives the following consequences.
   graph of `g ∘ f` is obtained from the graphs of `f` and `g` by eliminating the intermediate
   coordinates.
 * Composing the pair of two semialgebraic functions with a polynomial map shows that pointwise
-  sums, products, negations, and differences of semialgebraic functions with finitely many output
+  sums, products, and differences of semialgebraic functions with finitely many output
   coordinates are semialgebraic, and that the loci where two of them agree, or are ordered, are
   semialgebraic.
 
@@ -58,7 +58,8 @@ All results assume projection closure, `[TauCeti.HasSemialgebraicProjections R]`
 * `TauCeti.IsSemialgebraicOn.eval_comp`: applying a polynomial map to the values;
   `TauCeti.isSemialgebraicOn_sumElim_iff`: a pair is semialgebraic exactly when its components
   are; `TauCeti.IsSemialgebraicOn.add`, `TauCeti.IsSemialgebraicOn.mul`,
-  `TauCeti.IsSemialgebraicOn.neg`, `TauCeti.IsSemialgebraicOn.sub`: pointwise arithmetic.
+  `TauCeti.IsSemialgebraicOn.sub`: pointwise arithmetic.  Negation needs no projection and is
+  proved in `TauCeti.Geometry.RealAlgebraic.Semialgebraic.Function`.
 * `TauCeti.IsSemialgebraicOn.isSemialgebraic_inter_setOf_eq`,
   `TauCeti.IsSemialgebraicOn.isSemialgebraic_inter_setOf_le`: the loci where two semialgebraic
   functions agree, or where one is bounded above by the other, are semialgebraic.
@@ -280,11 +281,6 @@ theorem IsSemialgebraicOn.mul (hf : IsSemialgebraicOn f s) (hg : IsSemialgebraic
   funext x i
   simp
 
-/-- Given projection closure, the pointwise negation of a semialgebraic function is
-semialgebraic. -/
-theorem IsSemialgebraicOn.neg (hf : IsSemialgebraicOn f s) : IsSemialgebraicOn (-f) s := by
-  simpa [Pi.neg_def] using hf.eval_comp fun i : τ => -X i
-
 /-- Given projection closure, the pointwise difference of semialgebraic functions is
 semialgebraic. -/
 theorem IsSemialgebraicOn.sub (hf : IsSemialgebraicOn f s) (hg : IsSemialgebraicOn g s) :
@@ -302,10 +298,6 @@ theorem IsSemialgebraicMap.add (hf : IsSemialgebraicMap f) (hg : IsSemialgebraic
 theorem IsSemialgebraicMap.mul (hf : IsSemialgebraicMap f) (hg : IsSemialgebraicMap g) :
     IsSemialgebraicMap (f * g) :=
   isSemialgebraicOn_univ.1 <| (isSemialgebraicOn_univ.2 hf).mul (isSemialgebraicOn_univ.2 hg)
-
-/-- Given projection closure, the pointwise negation of a semialgebraic map is semialgebraic. -/
-theorem IsSemialgebraicMap.neg (hf : IsSemialgebraicMap f) : IsSemialgebraicMap (-f) :=
-  isSemialgebraicOn_univ.1 (isSemialgebraicOn_univ.2 hf).neg
 
 /-- Given projection closure, the pointwise difference of semialgebraic maps is semialgebraic. -/
 theorem IsSemialgebraicMap.sub (hf : IsSemialgebraicMap f) (hg : IsSemialgebraicMap g) :

@@ -20,12 +20,13 @@ This file gives the graph predicate its basic API.  It proves restriction, congr
 piecewise-gluing laws and shows that polynomial maps are semialgebraic.  It also proves the
 operations whose graphs are inverse images of the given graphs, so that no coordinate has to be
 eliminated: pairing two functions on the same domain (`TauCeti.IsSemialgebraicOn.sumElim`),
-precomposition with a polynomial map (`TauCeti.IsSemialgebraicOn.comp_eval`), and bijective
-changes of the input or output coordinates (`TauCeti.isSemialgebraicOn_preimage_comp_equiv_iff`,
+precomposition with a polynomial map (`TauCeti.IsSemialgebraicOn.comp_eval`), pointwise
+negation (`TauCeti.IsSemialgebraicOn.neg`), and bijective changes of the input or output
+coordinates (`TauCeti.isSemialgebraicOn_preimage_comp_equiv_iff`,
 `TauCeti.isSemialgebraicOn_comp_equiv_iff`).  It deliberately does not assert closure under
 arbitrary composition, whose graph generally requires eliminating the intermediate coordinates;
-images, inverse images, composition, and pointwise arithmetic are derived from projection closure
-in `TauCeti.Geometry.RealAlgebraic.Semialgebraic.Image`.
+images, inverse images, composition, and pointwise sums, products, and differences are derived
+from projection closure in `TauCeti.Geometry.RealAlgebraic.Semialgebraic.Image`.
 
 ## References
 
@@ -263,6 +264,25 @@ theorem IsSemialgebraicOn.comp_eval {f : (σ → R) → (τ → R)} {s : Set (σ
 theorem IsSemialgebraicMap.comp_eval {f : (σ → R) → (τ → R)} (hf : IsSemialgebraicMap f)
     (p : σ → MvPolynomial σ' R) : IsSemialgebraicMap (f ∘ fun x i => eval x (p i)) := by
   simpa using (isSemialgebraicOn_univ.2 hf).comp_eval p
+
+/-- The pointwise negation of a semialgebraic function is semialgebraic.  No projection is needed:
+the new graph is the inverse image of the old one under negation of the output coordinates. -/
+theorem IsSemialgebraicOn.neg {f : (σ → R) → (τ → R)} {s : Set (σ → R)}
+    (hf : IsSemialgebraicOn f s) : IsSemialgebraicOn (-f) s := by
+  refine ⟨hf.isSemialgebraic, ?_⟩
+  convert hf.graph.preimage_eval (Sum.elim (fun i => X (Sum.inl i)) fun j => -X (Sum.inr j))
+    using 1
+  ext z
+  simp only [mem_preimage_sumArrowEquivProdArrow_graphOn,
+    mem_preimage (f := fun (x : σ ⊕ τ → R) (i : σ ⊕ τ) => eval x _), Function.comp_def,
+    Sum.elim_inl, Sum.elim_inr, eval_X, map_neg]
+  rw [Pi.neg_apply, neg_eq_iff_eq_neg]
+  rfl
+
+/-- The pointwise negation of a semialgebraic map is semialgebraic. -/
+theorem IsSemialgebraicMap.neg {f : (σ → R) → (τ → R)} (hf : IsSemialgebraicMap f) :
+    IsSemialgebraicMap (-f) :=
+  isSemialgebraicOn_univ.1 (isSemialgebraicOn_univ.2 hf).neg
 
 /-- Semialgebraicity of a function is invariant under a bijective change of input coordinates,
 such as a permutation, applied to both the function and its domain. -/
