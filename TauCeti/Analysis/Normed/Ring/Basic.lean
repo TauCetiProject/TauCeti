@@ -54,6 +54,11 @@ theorem norm_pow_pnat_mul_lt_one {K : Type*} [SeminormedRing K] [NormOneClass K]
     (mul_le_of_le_one_left (norm_nonneg _)
       ((norm_pow_le _ _).trans (pow_le_one₀ (norm_nonneg _) hq.le))) hqv
 
+/-- For `‖q‖ < 1` also `‖qⁿ‖ < 1` for every `n ≠ 0`. -/
+theorem norm_pow_lt_one {R : Type*} [SeminormedRing R] {q : R} (hq : ‖q‖ < 1) {n : ℕ}
+    (hn : n ≠ 0) : ‖q ^ n‖ < 1 :=
+  (norm_pow_le' q (Nat.pos_of_ne_zero hn)).trans_lt (pow_lt_one₀ (norm_nonneg q) hq hn)
+
 end TauCeti
 
 end

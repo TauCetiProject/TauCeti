@@ -51,6 +51,8 @@ polynomial in the Morse inequalities.
 * `TauCeti.IsMorse.finite_criticalPoints_inter` and
   `TauCeti.IsMorse.finite_criticalPoints_inter_preimage_Iic`: finiteness on compact sets and on
   sublevel sets of proper functions bounded below.
+* `TauCeti.IsMorse.exists_criticalPoints_inter_preimage_Icc_subset`: in a compact band around
+  `c`, a Morse function has no critical values close to `c` other than `c` itself.
 * `TauCeti.criticalCount` and `TauCeti.totalCriticalCount`: the extended counts of critical
   points, with `TauCeti.sum_criticalCount_eq_totalCriticalCount`,
   `TauCeti.IsMorse.totalCriticalCount_ne_top` and `TauCeti.IsMorse.criticalCount_neg`.
@@ -276,6 +278,27 @@ theorem IsMorse.finite_criticalPoints_inter_preimage_Iic (hf : IsMorse I f) (hp 
     simp [ha (mem_range_self y)]
   rw [hsub]
   exact hf.finite_criticalPoints_inter (hp.isCompact_preimage isCompact_Icc)
+
+/-- **Critical values are isolated in a compact band.** If the band `f⁻¹[c - δ, c + δ]` of a Morse
+function is compact, then for some `0 < ε ≤ δ` the only critical points in the band
+`f⁻¹[c - ε, c + ε]` are those on the level `f⁻¹(c)`. -/
+theorem IsMorse.exists_criticalPoints_inter_preimage_Icc_subset (hf : IsMorse I f) {c δ : ℝ}
+    (hδ : 0 < δ) (hcompact : IsCompact (f ⁻¹' Icc (c - δ) (c + δ))) :
+    ∃ ε, 0 < ε ∧ ε ≤ δ ∧ criticalPoints I f ∩ f ⁻¹' Icc (c - ε) (c + ε) ⊆ f ⁻¹' {c} := by
+  -- The band holds finitely many critical values; avoid those different from `c`.
+  set T := f '' (criticalPoints I f ∩ f ⁻¹' Icc (c - δ) (c + δ)) \ {c}
+  have hT : IsClosed T := (((hf.finite_criticalPoints_inter hcompact).image f).sdiff).isClosed
+  have hcT : Tᶜ ∈ 𝓝 c := hT.isOpen_compl.mem_nhds fun hc ↦ hc.2 rfl
+  obtain ⟨ε₀, hε₀, hball⟩ := Metric.nhds_basis_closedBall.mem_iff.1 hcT
+  refine ⟨min ε₀ δ, lt_min hε₀ hδ, min_le_right _ _, fun y ⟨hy, hyε⟩ ↦ ?_⟩
+  have h₀ := min_le_left ε₀ δ
+  have h₁ := min_le_right ε₀ δ
+  have hyδ : f y ∈ Icc (c - δ) (c + δ) := Icc_subset_Icc (by linarith) (by linarith) hyε
+  have hyball : f y ∈ Metric.closedBall c ε₀ := by
+    rw [Real.closedBall_eq_Icc]
+    exact Icc_subset_Icc (by linarith) (by linarith) hyε
+  by_contra hyc
+  exact hball hyball ⟨⟨y, ⟨hy, hyδ⟩, rfl⟩, hyc⟩
 
 end IsManifold
 

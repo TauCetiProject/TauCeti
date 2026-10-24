@@ -313,9 +313,6 @@ theorem cauchyJump_derivative_mul {p : R[X]} (hp : p ≠ 0) (q : R[X]) {a : R}
     have := (rootMultiplicity_pos hq0).mpr hq
     omega
   have hq0 : q ≠ 0 := fun h => hq (by simp [h])
-  have hsd : (derivative p).derivSignRight a = p.derivSignRight a := by
-    rw [derivSignRight_def, derivSignRight_def, derivative_rootMultiplicity_of_root ha,
-      ← Function.iterate_succ_apply, Nat.succ_eq_add_one, Nat.sub_add_cancel hm]
   have hsp : p.derivSignRight a * p.derivSignRight a = 1 := by
     have h0 : p.derivSignRight a ≠ 0 := by simpa using hp
     generalize p.derivSignRight a = u at *
@@ -327,7 +324,8 @@ theorem cauchyJump_derivative_mul {p : R[X]} (hp : p ≠ 0) (q : R[X]) {a : R}
   rw [cauchyJump_def, rootMultiplicity_mul (mul_ne_zero hd hq0),
     derivative_rootMultiplicity_of_root ha, rootMultiplicity_eq_zero hq, add_zero]
   simp only [hpole, and_self, ite_true]
-  rw [← mul_assoc, derivSignRight_mul, derivSignRight_mul, hsd, hsp, one_mul,
+  rw [← mul_assoc, derivSignRight_mul, derivSignRight_mul,
+    derivSignRight_derivative_of_isRoot ha, hsp, one_mul,
     derivSignRight_eq_sign_eval q hq]
 
 /-- The index of `p' * q / p` on `s` is the sum of the signs of `q` at the distinct roots of
