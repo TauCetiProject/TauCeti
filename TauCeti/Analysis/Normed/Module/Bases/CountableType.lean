@@ -35,15 +35,17 @@ has a `t`-orthogonal one. This file constructs these bases by an approximate Gra
   `infDist g W ≤ c * infDist g D` for every `g ∈ G`. The subspace `W` is cut out of `D` by lifts
   of a `t`-orthogonal basis of the image of `G` in `E ⧸ D`.
 * `Submodule.exists_dense_span_of_dense_span`: every subspace of a space of countable type, closed
-  or not, is of countable type. The finite-dimensional subspaces `W` attached to the initial spans
-  of a densely spanning sequence together span a dense subspace of `D`.
+  or not, is of countable type. The approximation theorem is applied to the closed subspace
+  `closure D`: the finite-dimensional subspaces `W ≤ closure D` attached to the initial spans of a
+  densely spanning sequence together span a dense subspace of `closure D`, and each of their
+  countably many spanning vectors is then replaced by a sequence in `D` converging to it.
 
 Neither a discrete valuation nor completeness of `E` is needed: only the finite-dimensional
 subspaces spanned by initial segments have to be closed, which holds over a complete field.
 The constant `c` in the approximation theorem does not depend on `G`; this uniformity is what
-lets the subspaces `W` attached to the increasing initial spans exhaust `D`. Quotients of spaces
-of countable type are of countable type by `DenseRange.dense_span_range_comp`, applied to the
-quotient map.
+lets the subspaces `W` attached to the increasing initial spans together span a dense subspace of
+the closure of `D`. Quotients of spaces of countable type are of countable type by
+`DenseRange.dense_span_range_comp`, applied to the quotient map.
 Together with `TauCeti.IsTOrthogonalBasis.toUnconditionalSchauderBasis`, these bases give the
 coordinates in which Banach spaces of countable type are compared with `C₀(ℕ, K)`.
 
@@ -184,8 +186,6 @@ theorem _root_.Submodule.exists_finiteDimensional_le_infDist_le (D G : Submodule
     (hD : IsClosed (D : Set E)) [FiniteDimensional K G] {c : ℝ} (hc : 1 < c) :
     ∃ W : Submodule K E, W ≤ D ∧ FiniteDimensional K W ∧
       ∀ g ∈ G, infDist g W ≤ c * infDist g D := by
-  -- As `D` is closed, the quotient `E ⧸ D` is a normed space.
-  have : IsClosed (D : Set E) := hD
   -- A `t`-orthogonal basis `b` of the image of `G` in the normed quotient `E ⧸ D`, for some
   -- `c⁻¹ < t < 1`.
   obtain ⟨t, hct, ht⟩ : ∃ t : ℝ≥0, (c⁻¹ : ℝ) < t ∧ t < 1 := by
@@ -210,21 +210,19 @@ theorem _root_.Submodule.exists_finiteDimensional_le_infDist_le (D G : Submodule
     exact Submodule.finiteDimensional_inf_right _ _
   -- Expand the class `x` of `g` in the basis `b`; subtracting the same combination of the lifts
   -- from `g` gives a point of `W = D ⊓ (G ⊔ span K (range y))`.
-  let x : G.map D.mkQ := ⟨D.mkQ g, mem_map_of_mem hg⟩
+  obtain ⟨x, hxg⟩ : ∃ x : G.map D.mkQ, (x : E ⧸ D) = D.mkQ g :=
+    ⟨⟨D.mkQ g, mem_map_of_mem hg⟩, rfl⟩
   set a := b.repr x
-  have hx : (x : E ⧸ D) = ∑ i, a i • (b i : E ⧸ D) := by
-    simp only [← Submodule.coe_smul, ← Submodule.coe_sum, a, b.sum_repr]
+  have hx : D.mkQ g = ∑ i, a i • (b i : E ⧸ D) := by
+    rw [← hxg, ← b.sum_repr x, Submodule.coe_sum]
+    simp only [Submodule.coe_smul, a]
   have hmem : g - ∑ i, a i • y i ∈ D ⊓ (G ⊔ span K (range y)) := by
     refine ⟨?_, sub_mem (mem_sup_left hg) (mem_sup_right
       (sum_mem fun i _ ↦ smul_mem _ _ (subset_span (mem_range_self i))))⟩
-    rw [SetLike.mem_coe, ← Submodule.Quotient.mk_eq_zero, Submodule.Quotient.mk_sub,
-      ← mkQ_apply, ← mkQ_apply, map_sum]
-    simp only [map_smul, hy]
-    rw [sub_eq_zero]
-    exact hx
-  have hnorm : ‖x‖ = infDist g D := by
-    rw [← norm_coe]
-    exact QuotientAddGroup.norm_mk (S := D.toAddSubgroup) g
+    rw [SetLike.mem_coe, ← Submodule.Quotient.mk_eq_zero, ← mkQ_apply, map_sub, map_sum]
+    simp only [map_smul, hy, hx, sub_self]
+  -- `E ⧸ D` is the quotient group by `D.toAddSubgroup`, carrying its quotient norm.
+  have hnorm : ‖D.mkQ g‖ = infDist g D := QuotientAddGroup.norm_mk (S := D.toAddSubgroup) g
   -- By the ultrametric inequality and `t`-orthogonality, the combination of the lifts has norm
   -- at most `c * ‖x‖`.
   calc infDist g (D ⊓ (G ⊔ span K (range y)) : Submodule K E)
@@ -239,7 +237,7 @@ theorem _root_.Submodule.exists_finiteDimensional_le_infDist_le (D G : Submodule
       calc ‖a i‖ * ‖y i‖ ≤ ‖a i‖ * (c * t * ‖b i‖) := by gcongr; exact hny i
         _ = c * (t * (‖a i‖ * ‖b i‖)) := by ring
         _ ≤ c * ‖x‖ := by gcongr
-    _ = c * infDist g D := by rw [hnorm]
+    _ = c * infDist g D := by rw [← norm_coe, hxg, hnorm]
 
 /-- A closed subspace of a space of countable type is the closure of the span of a countable
 subset of it. -/
