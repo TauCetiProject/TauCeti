@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Consequences.HighDegree
+import TauCeti.FieldTheory.FunctionField.RiemannRoch.Conorm
 import TauCeti.FieldTheory.FunctionField.RiemannRoch.SectionRing
 
 /-!
@@ -37,6 +38,15 @@ pole divisor `(zᵉ)∞ = e D` of every power `zᵉ` with `e ≥ 1` and `e ≥ 2
 the section ring of every pole divisor is generated in degree one
 (`TauCeti.riemannRochSpace_nsmul_poles_le_pow_of_genus_eq_zero`). Generation in degree one is
 what embeds a curve in projective space by the complete linear system of the divisor.
+
+These statements use Riemann–Roch, so they need `k` to be the exact constant field of `F`. Over
+an arbitrary `k`, the multiples of a pole divisor have the same Riemann–Roch spaces over `k` and
+over the full constant field `k̃ = algebraicClosure k F`
+(`TauCeti.restrictScalars_riemannRochSpace_nsmul_poles`), and `k̃` is exact. So generation in
+every positive degree persists over `k`, for `e ≥ 2 g(F / k̃)`
+(`TauCeti.riemannRochSpace_nsmul_poles_pow_le_pow_of_ne_zero`). Only degree zero is lost, where
+`L(0) = k̃` is larger than the constants `k` unless `k` is exact; projective embeddings do not see
+degree zero.
 
 The argument is the base-point-free pencil calculation: the intersection of
 `L(A)` and `z L(A)` is `L(A - Z)`, and Riemann–Roch computes the dimension of their
@@ -211,6 +221,26 @@ theorem riemannRochSpace_nsmul_poles_pow_le_pow (hF : IsFunctionField k F)
   have he₀' : (1 : ℤ) ≤ e := by exact_mod_cast he₀
   have := mul_nonneg (sub_nonneg.2 he₀') (sub_nonneg.2 hdeg)
   nlinarith
+
+/-- **High powers of a transcendental function have pole divisors whose section ring is generated
+in positive degrees, over any constant field**: if `z` is transcendental over `k`, `e ≥ 1` and
+`e ≥ 2g`, where `g` is the genus of `F` over its full constant field `algebraicClosure k F`, then
+for every `n ≠ 0`, every section of `n (zᵉ)∞` is a sum of products of `n` sections of `(zᵉ)∞`.
+Degree zero is excluded: `L(0)` is `algebraicClosure k F`, which is larger than the constants `k`
+unless `k` is the exact constant field. -/
+theorem riemannRochSpace_nsmul_poles_pow_le_pow_of_ne_zero (hF : IsFunctionField k F) {z : Fˣ}
+    (hz : Transcendental k (z : F)) {e : ℕ} (he₀ : 0 < e)
+    (he : 2 * genus (algebraicClosure k F) F ≤ e) {n : ℕ} (hn : n ≠ 0) :
+    riemannRochSpace (n • Divisor.poles hF (z ^ e)) ≤
+      riemannRochSpace (Divisor.poles hF (z ^ e)) ^ n := by
+  have hF' := hF.algebraicClosure
+  -- Generation over the exact constant field `algebraicClosure k F`, restricted to `k`.
+  have h := Submodule.restrictScalars_mono k
+    (riemannRochSpace_nsmul_poles_pow_le_pow hF' isIntegrallyClosedIn_algebraicClosure
+      (hz.extendScalars _) he₀ he n)
+  rwa [Submodule.restrictScalars_pow hn, restrictScalars_riemannRochSpace_nsmul_poles hF hF',
+    ← one_nsmul (Divisor.poles hF' _), restrictScalars_riemannRochSpace_nsmul_poles hF hF',
+    one_nsmul] at h
 
 /-- **In genus zero, the section ring of a pole divisor is generated in degree one**: over an
 exact constant field, every section of `n D`, for `D = (z)∞`, is a sum of products of `n`
