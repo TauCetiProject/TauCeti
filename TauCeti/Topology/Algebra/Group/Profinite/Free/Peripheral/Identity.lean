@@ -54,8 +54,8 @@ variable {p r : ℕ} [Fact p.Prime] {F : Type*} [Group F] [TopologicalSpace F]
   [IsTopologicalGroup F] [CompactSpace F] [TotallyDisconnectedSpace F]
 
 /-- **Solutions at every level.** For a unit `u`, every peripheral level of the basis
-`x = basis e` of a free pro-`p` group contains a pair of conjugators whose first conjugator is
-trivial in positive rank. -/
+`x = basis e` of a free pro-`p` group contains a pair of conjugators whose conjugator at the
+first basis element is trivial when the rank is positive. -/
 theorem exists_mem_level (hF : IsProP p F) (e : F ≃ₜ* freeProP p (Fin r)) (u : ℤ_[p]ˣ)
     (n : ℕ) :
     ∃ (c : Fin r → F) (d : F), (∀ h0 : 0 < r, c ⟨0, h0⟩ = 1) ∧
@@ -74,8 +74,8 @@ theorem exists_mem_level (hF : IsProP p F) (e : F ≃ₜ* freeProP p (Fin r)) (u
     exact ⟨_, _, fun h0 ↦ by rw [hc0 h0, hc'0 h0, mul_one], hlev⟩
 
 /-- **The compactness step.** If every peripheral level of a family `x` in a pro-`p` group
-contains a pair of conjugators whose first conjugator is trivial in positive rank, then some such
-pair has trivial defect. The exponent `u` need not be a unit. -/
+contains a pair of conjugators whose conjugator at the first basis element is trivial when the
+rank is positive, then some such pair has trivial defect. The exponent `u` need not be a unit. -/
 theorem exists_defect_eq_one_of_forall_exists_mem_level (hF : IsProP p F) (x : Fin r → F)
     (u : ℤ_[p])
     (h : ∀ n, ∃ (c : Fin r → F) (d : F), (∀ h0 : 0 < r, c ⟨0, h0⟩ = 1) ∧
