@@ -160,6 +160,16 @@ theorem rectifiableCurveIntegral_smul {𝕜 : Type*} [NormedField 𝕜] [NormedS
   simp only [rectifiableCurveIntegral_def, Pi.smul_apply, smul_apply,
     intervalIntegral.integral_smul]
 
+omit [NormedSpace ℝ E] in
+/-- Mathlib's natural parameterization unfolds to the curve composed with a right inverse of
+cumulative variation chosen by `Function.invFunOn`. The proof of
+`rectifiableCurveIntegral_congr` needs this explicit right inverse, since two curves agreeing on
+`[a, b]` have the same cumulative variation and hence share it. -/
+private theorem naturalParameterization_eq_comp_invFunOn (γ : ℝ → E) (s : Set ℝ) (a : ℝ) :
+    naturalParameterization γ s a =
+      γ ∘ @Function.invFunOn _ _ ⟨a⟩ (variationOnFromTo γ s a) s :=
+  rfl
+
 open Filter Topology in
 /-- The geometric integral only depends on the curve on `[a, b]`. -/
 theorem rectifiableCurveIntegral_congr {γ' : ℝ → E} (h : EqOn γ γ' (Icc a b)) :
@@ -174,8 +184,9 @@ theorem rectifiableCurveIntegral_congr {γ' : ℝ → E} (h : EqOn γ γ' (Icc a
   obtain ⟨ι, hη, hη', hι⟩ : ∃ ι : ℝ → ℝ, naturalParameterization γ (Icc a b) a = γ ∘ ι ∧
       naturalParameterization γ' (Icc a b) a = γ' ∘ ι ∧
       ∀ ⦃u v⦄, ι u ∉ Icc a b → ι v ∉ Icc a b → ι u = ι v := by
-    refine ⟨@Function.invFunOn _ _ ⟨a⟩ (variationOnFromTo γ (Icc a b) a) (Icc a b), rfl,
-      by rw [naturalParameterization, hvar], fun u v hu hv ↦ ?_⟩
+    refine ⟨@Function.invFunOn _ _ ⟨a⟩ (variationOnFromTo γ (Icc a b) a) (Icc a b),
+      naturalParameterization_eq_comp_invFunOn γ _ a,
+      by rw [naturalParameterization_eq_comp_invFunOn, hvar], fun u v hu hv ↦ ?_⟩
     rw [Function.invFunOn_neg fun hex ↦ hu (Function.invFunOn_mem hex),
       Function.invFunOn_neg fun hex ↦ hv (Function.invFunOn_mem hex)]
   set S := {u | γ' (ι u) ≠ γ (ι u)}
