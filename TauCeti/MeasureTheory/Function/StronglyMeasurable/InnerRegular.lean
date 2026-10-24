@@ -35,6 +35,9 @@ integrable `f` lives on a σ-finite set, and there the inner regular case applie
 * `MeasureTheory.AEFinStronglyMeasurable.aestronglyMeasurable_smul`: the product `f • g` of an
   a.e. finitely strongly measurable `f` (for instance an integrable one) and a continuous `g` is
   a.e. strongly measurable.
+* `MeasureTheory.AEFinStronglyMeasurable.aestronglyMeasurable_clm_apply`: a continuous family of
+  continuous linear maps `g` applied to an a.e. finitely strongly measurable `f`, for instance an
+  `Lᵖ` function with `p < ∞`, is a.e. strongly measurable.
 -/
 
 public section
@@ -88,5 +91,25 @@ theorem MeasureTheory.AEFinStronglyMeasurable.aestronglyMeasurable_smul {𝕜 : 
   refine ⟨(AEStronglyMeasurable.restrict ⟨hf.mk f, hf.finStronglyMeasurable_mk.stronglyMeasurable,
       hf.ae_eq_mk⟩).smul hg.aestronglyMeasurable_of_sigmaFinite,
     (aestronglyMeasurable_const (b := (0 : β))).congr ?_⟩
+  filter_upwards [hf.ae_eq_zero_compl] with x hx
+  simp [hx]
+
+/-- A continuous family `g` of continuous linear maps applied to an a.e. finitely strongly
+measurable function `f`, for instance an `Lᵖ` function with `p < ∞`, is a.e. strongly measurable,
+for a measure that is inner regular with respect to compact sets on sets of finite measure. As in
+`MeasureTheory.AEFinStronglyMeasurable.aestronglyMeasurable_smul`, no σ-finiteness of the measure
+and no second countability is needed. This gives the measurability of `x ↦ g x (f x)` for
+multiplication of `L²` functions by bounded continuous operator-valued functions. -/
+theorem MeasureTheory.AEFinStronglyMeasurable.aestronglyMeasurable_clm_apply {𝕜 E F : Type*}
+    [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F]
+    [NormedSpace 𝕜 F] {f : α → E} (hf : AEFinStronglyMeasurable f μ) {g : α → E →L[𝕜] F}
+    (hg : Continuous g) : AEStronglyMeasurable (fun x ↦ g x (f x)) μ := by
+  rw [← Measure.restrict_univ (μ := μ), ← union_compl_self hf.sigmaFiniteSet,
+    aestronglyMeasurable_union_iff]
+  refine ⟨(ContinuousLinearMap.id 𝕜 (E →L[𝕜] F)).aestronglyMeasurable_comp₂
+      hg.aestronglyMeasurable_of_sigmaFinite
+      (AEStronglyMeasurable.restrict ⟨hf.mk f, hf.finStronglyMeasurable_mk.stronglyMeasurable,
+        hf.ae_eq_mk⟩),
+    (aestronglyMeasurable_const (b := (0 : F))).congr ?_⟩
   filter_upwards [hf.ae_eq_zero_compl] with x hx
   simp [hx]
