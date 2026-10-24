@@ -29,7 +29,9 @@ says that invariance is exactly membership of the maximal trivial submodule; and
 `LieModule.maxTrivLinearMapEquivLieModuleHom` is the `R`-linear equivalence between that submodule
 and the morphism space. Only the consequence for nonvanishing is recorded here. For an irreducible
 `M` Schur's lemma then upgrades a nonzero morphism to an equivalence, so carrying a nonzero
-invariant form and being self-dual are the same condition.
+invariant form and being self-dual are the same condition. Without irreducibility, a
+nondegenerate invariant form on a finite-dimensional module is itself such an equivalence; for the
+Killing form of a semisimple Lie algebra this identifies the adjoint and coadjoint modules.
 
 ## Main results
 
@@ -39,6 +41,8 @@ invariant form and being self-dual are the same condition.
   invariant.
 * `TauCeti.LieModule.exists_ne_zero_lieInvariant_iff_exists_ne_zero_lieModuleHom`: a nonzero
   invariant bilinear form on `M` is a nonzero morphism `M → M*`, over any commutative ring.
+* `LinearMap.BilinForm.lieModuleEquivDual`: a nondegenerate invariant bilinear form on a
+  finite-dimensional Lie module `M` is an equivalence of Lie modules `M ≃ M*`.
 * `TauCeti.LieModule.isIrreducible_dual`: **the dual of a finite-dimensional irreducible Lie module
   is irreducible.**
 * `TauCeti.LieModule.exists_ne_zero_lieInvariant_iff_nonempty_lieModuleEquiv_dual`: **a
@@ -119,6 +123,37 @@ theorem lieInvariant_coe (f : M →ₗ⁅R,L⁆ Dual R M) :
   exact (LieModule.maxTrivLinearMapEquivLieModuleHom.symm f).2
 
 end LieModuleHom
+
+namespace LinearMap.BilinForm
+
+variable {K : Type u} {L : Type v} {M : Type w}
+variable [Field K] [LieRing L] [LieAlgebra K L]
+variable [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M] [FiniteDimensional K M]
+
+/-- **A nondegenerate invariant bilinear form identifies a Lie module with its dual.** For a
+nondegenerate bilinear form `B` on a finite-dimensional Lie module `M`, invariant under `L`, the
+linear equivalence `m ↦ B m` of `M` with `M*` (`LinearMap.BilinForm.toDual`) is an equivalence of
+Lie modules. -/
+noncomputable def lieModuleEquivDual (B : LinearMap.BilinForm K M) (hB : B.Nondegenerate)
+    (hBL : B.lieInvariant L) : M ≃ₗ⁅K,L⁆ Dual K M where
+  __ := B.toDual hB
+  map_lie' {x m} := LinearMap.ext fun n ↦ by simp [toDual_def, hBL x m n]
+
+/-- The Lie module equivalence `M ≃ M*` of a nondegenerate invariant form `B` sends `m` to the
+linear form `n ↦ B m n`. -/
+@[simp]
+theorem lieModuleEquivDual_apply (B : LinearMap.BilinForm K M) (hB : B.Nondegenerate)
+    (hBL : B.lieInvariant L) (m n : M) : B.lieModuleEquivDual hB hBL m n = B m n :=
+  (rfl)
+
+/-- The linear equivalence underlying `LinearMap.BilinForm.lieModuleEquivDual` is
+`LinearMap.BilinForm.toDual`. -/
+@[simp]
+theorem toLinearEquiv_lieModuleEquivDual (B : LinearMap.BilinForm K M) (hB : B.Nondegenerate)
+    (hBL : B.lieInvariant L) : (B.lieModuleEquivDual hB hBL : M ≃ₗ[K] Dual K M) = B.toDual hB :=
+  (rfl)
+
+end LinearMap.BilinForm
 
 namespace TauCeti.LieModule
 
