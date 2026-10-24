@@ -323,22 +323,25 @@ private noncomputable def toBase : ∀ n, E n →L[𝕜] E 0
   | 0 => ContinuousLinearMap.id 𝕜 (E 0)
   | n + 1 => (toBase n).comp (R n)
 
+private theorem descend_succ (m k : ℕ) :
+    descend R m (k + 1) = (descend R m k).comp (R (m + k)) := rfl
+
+private theorem toBase_succ (n : ℕ) : toBase R (n + 1) = (toBase R n).comp (R n) := rfl
+
 private theorem toBase_add (m : ℕ) : ∀ k, toBase R (m + k) = (toBase R m).comp (descend R m k)
   | 0 => (ContinuousLinearMap.comp_id _).symm
   | k + 1 => by
-    -- `m + (k + 1)` is definitionally `m + k + 1`, so both composites unfold by one factor.
-    change (toBase R (m + k)).comp (R (m + k)) =
-      (toBase R m).comp ((descend R m k).comp (R (m + k)))
-    rw [toBase_add m k, ContinuousLinearMap.comp_assoc]
+    rw [descend_succ, ← ContinuousLinearMap.comp_assoc, ← toBase_add m k]
+    -- `m + (k + 1)` is definitionally `m + k + 1`.
+    exact toBase_succ R (m + k)
 
 private theorem apply_toBase {T : ∀ n, E n →ₗ[𝕜] F}
     (hT : ∀ n, T (n + 1) = T n ∘ₗ (R n : E (n + 1) →ₗ[𝕜] E n)) :
     ∀ n (v : E n), T 0 (toBase R n v) = T n v
   | 0, _ => rfl
   | n + 1, v => by
-    rw [hT, LinearMap.comp_apply, ← apply_toBase hT n]
-    -- `toBase R (n + 1) v` unfolds to `toBase R n (R n v)`.
-    rfl
+    rw [hT, LinearMap.comp_apply, ← apply_toBase hT n, toBase_succ,
+      ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_coe]
 
 /-- Splitting off the first `m` terms of `∑ⱼ R 0 ⋯ R (j - 1) (x j)`: the tail lies in the image
 of `R 0 ⋯ R (m - 1)`. -/
@@ -352,6 +355,71 @@ private theorem tsum_toBase_eq (x : ∀ n, E n) (m : ℕ)
     rw [add_comm k m, ← ContinuousLinearMap.comp_apply, ← toBase_add]
   rw [(toBase R m).map_tsum hxm, tsum_congr htail]
   exact (hx.sum_add_tsum_nat_add m).symm
+
+/-- Positive weights `ε j` for the gliding hump: `ε j` is small against `toBase R j` and against
+every composite `descend R (n + 1) k` ending at index `j = n + 1 + k`, scaled by `a n ≥ 0`. -/
+private theorem exists_pos_weights_toBase_descend (a : ℕ → ℝ) (ha : ∀ n, 0 ≤ a n) :
+    ∃ ε : ℕ → ℝ, (∀ j, 0 < ε j) ∧ (∀ j, ‖toBase R j‖ * ε j ≤ (1 / 2) ^ j) ∧
+      ∀ n k, a n * ‖descend R (n + 1) k‖ * ε (n + 1 + k) ≤ (1 / 2) ^ (n + 1 + k) := by
+  -- `B j` dominates every coefficient that meets the weight at `j`.
+  let c : ℕ → ℕ → ℝ := fun m k ↦ a m * ‖descend R (m + 1) k‖
+  let B : ℕ → ℝ := fun j ↦ ‖toBase R j‖ + ∑ m ∈ range j, c m (j - (m + 1))
+  choose ε hε hεB using fun j ↦ exists_pos_mul_lt (pow_pos (one_half_pos (α := ℝ)) j) (B j)
+  have hcoef : ∀ m k, 0 ≤ c m k := fun m k ↦ mul_nonneg (ha m) (norm_nonneg _)
+  refine ⟨ε, hε, fun j ↦ ?_, fun n k ↦ ?_⟩
+  · exact (mul_le_mul_of_nonneg_right (le_add_of_nonneg_right (sum_nonneg fun m _ ↦ hcoef m _))
+      (hε j).le).trans (hεB j).le
+  · have h := single_le_sum (f := fun m ↦ c m (n + 1 + k - (m + 1)))
+      (fun m _ ↦ hcoef m _) (mem_range.2 (by omega : n < n + 1 + k))
+    simp only [Nat.add_sub_cancel_left] at h
+    refine (mul_le_mul_of_nonneg_right ?_ (hε _).le).trans (hεB _).le
+    exact h.trans (le_add_of_nonneg_left (norm_nonneg _))
+
+variable {R} in
+/-- The gliding-hump estimate at step `n`. Let `L` agree with `N.mkQ ∘ T (n + 1)`, and let the
+summands of `y = ∑ⱼ R 0 ⋯ R (j - 1) (x j)` beyond `n` be small against `‖L‖ + 1`. Then modulo `N`
+the image of the `n`-th summand is bounded by `‖T 0 y‖`, the partial sum before `n`, and `1`. -/
+private theorem norm_mkQ_apply_le [∀ n, CompleteSpace (E n)] {T : ∀ n, E n →ₗ[𝕜] F}
+    (hT : ∀ n, T (n + 1) = T n ∘ₗ (R n : E (n + 1) →ₗ[𝕜] E n)) {N : Submodule 𝕜 F} (n : ℕ)
+    (L : E (n + 1) →L[𝕜] F ⧸ N) (hL : ∀ w, L w = N.mkQ (T (n + 1) w))
+    {x : ∀ j, E j} {ε : ℕ → ℝ} (hx : ∀ j, ‖x j‖ ≤ ε j)
+    (hε : ∀ k, (‖L‖ + 1) * ‖descend R (n + 1) k‖ * ε (n + 1 + k) ≤ (1 / 2) ^ (n + 1 + k))
+    (hfs : Summable fun j ↦ toBase R j (x j)) :
+    ‖N.mkQ (T n (x n))‖ ≤ ‖T 0 (∑' j, toBase R j (x j))‖ +
+      ‖N.mkQ (T 0 (∑ j ∈ range n, toBase R j (x j)))‖ + 1 := by
+  set g : ℕ → E (n + 1) := fun k ↦ descend R (n + 1) k (x (n + 1 + k))
+  have hg : ∀ k, (‖L‖ + 1) * ‖g k‖ ≤ (1 / 2) ^ (k + 1) := by
+    intro k
+    calc (‖L‖ + 1) * ‖g k‖ ≤ (‖L‖ + 1) * (‖descend R (n + 1) k‖ * ε (n + 1 + k)) :=
+          mul_le_mul_of_nonneg_left (((descend R (n + 1) k).le_opNorm _).trans
+            (mul_le_mul_of_nonneg_left (hx _) (norm_nonneg _))) (by positivity)
+      _ = (‖L‖ + 1) * ‖descend R (n + 1) k‖ * ε (n + 1 + k) := by ring
+      _ ≤ (1 / 2) ^ (n + 1 + k) := hε k
+      _ ≤ (1 / 2) ^ (k + 1) := pow_le_pow_of_le_one (by norm_num) (by norm_num) (by omega)
+  have hgeom : HasSum (fun k : ℕ ↦ ((1 : ℝ) / 2) ^ (k + 1)) 1 := by
+    have := hasSum_geometric_two.mul_right (1 / 2)
+    norm_num [← pow_succ] at this
+    exact this
+  have hgle : ∀ k, ‖g k‖ ≤ (1 / 2) ^ (k + 1) := fun k ↦
+    (le_mul_of_one_le_left (norm_nonneg _) (by linarith [norm_nonneg L])).trans (hg k)
+  have hgs : Summable g := Summable.of_norm_bounded hgeom.summable hgle
+  have hLw : ‖L (∑' k, g k)‖ ≤ 1 :=
+    (hgs.hasSum.mapL L).norm_le_of_bounded hgeom fun k ↦ (L.le_opNorm _).trans <|
+      (mul_le_mul_of_nonneg_right (by linarith) (norm_nonneg _)).trans (hg k)
+  set y := ∑' j, toBase R j (x j) with hy
+  set s := ∑ j ∈ range n, toBase R j (x j) with hs
+  -- Split `y` into the summands before `n`, the `n`-th summand, and the tail through `R n`.
+  have hdec : T 0 y = T 0 s + T n (x n) + T (n + 1) (∑' k, g k) := by
+    rw [hy, tsum_toBase_eq R x (n + 1) hfs hgs, sum_range_succ, ← hs, map_add, map_add,
+      apply_toBase R hT, apply_toBase R hT]
+  set Q := N.mkQ
+  have hQ : Q (T n (x n)) = Q (T 0 y) - Q (T 0 s) - L (∑' k, g k) := by
+    rw [hdec, map_add, map_add, hL]
+    abel
+  have h1 : ‖Q (T 0 y)‖ ≤ ‖T 0 y‖ := Submodule.Quotient.norm_mk_le N (T 0 y)
+  rw [hQ]
+  linarith [norm_sub_le (Q (T 0 y) - Q (T 0 s)) (L (∑' k, g k)),
+    norm_sub_le (Q (T 0 y)) (Q (T 0 s))]
 
 variable {R} in
 /-- **Sinclair's stability lemma.** Let `E n` and `F` be Banach spaces, let
@@ -368,23 +436,9 @@ theorem eventuallyConst_separatingSpace [CompleteSpace F] [∀ n, CompleteSpace 
   let K : ∀ n, E (n + 1) →L[𝕜] F ⧸ S (n + 1) := fun n ↦
     ⟨(S (n + 1)).mkQ ∘ₗ T (n + 1), (T (n + 1)).continuous_mkQ_comp⟩
   have hK : ∀ n w, K n w = (S (n + 1)).mkQ (T (n + 1) w) := fun _ _ ↦ rfl
-  -- The `j`-th summand is chosen of norm at most `ε j`, small against the composites used below:
-  -- `B j` dominates every coefficient that meets the weight at `j`.
-  let c : ℕ → ℕ → ℝ := fun m k ↦ ‖descend R m k‖
-  let B : ℕ → ℝ := fun j ↦ ‖toBase R j‖ + ∑ m ∈ range j, (‖K m‖ + 1) * c (m + 1) (j - (m + 1))
-  choose ε hε hεB using fun j ↦ exists_pos_mul_lt (pow_pos (one_half_pos (α := ℝ)) j) (B j)
-  have hcoef : ∀ m k, 0 ≤ (‖K m‖ + 1) * c (m + 1) k := fun m k ↦
-    mul_nonneg (by positivity) (norm_nonneg _)
-  have hεb : ∀ j, ‖toBase R j‖ * ε j ≤ (1 / 2) ^ j := fun j ↦
-    (mul_le_mul_of_nonneg_right (le_add_of_nonneg_right (sum_nonneg fun m _ ↦ hcoef m _))
-      (hε j).le).trans (hεB j).le
-  have hεK : ∀ n k, (‖K n‖ + 1) * c (n + 1) k * ε (n + 1 + k) ≤ (1 / 2) ^ (n + 1 + k) := by
-    intro n k
-    have h := single_le_sum (f := fun m ↦ (‖K m‖ + 1) * c (m + 1) (n + 1 + k - (m + 1)))
-      (fun m _ ↦ hcoef m _) (mem_range.2 (by omega : n < n + 1 + k))
-    simp only [Nat.add_sub_cancel_left] at h
-    refine (mul_le_mul_of_nonneg_right ?_ (hε _).le).trans (hεB _).le
-    exact h.trans (le_add_of_nonneg_left (norm_nonneg _))
+  -- The `j`-th summand is chosen of norm at most `ε j`, small against the composites used below.
+  obtain ⟨ε, hε, hεb, hεK⟩ :=
+    exists_pos_weights_toBase_descend R (fun m ↦ ‖K m‖ + 1) fun m ↦ by positivity
   -- At a strict step `n`, a small vector of `E n` has a large image modulo `S (n + 1)`.
   have hchoice : ∀ n (s : E 0), ∃ v : E n, ‖v‖ ≤ ε n ∧ (S (n + 1) ≠ S n →
       n + 2 + ‖(S (n + 1)).mkQ (T 0 s)‖ ≤ ‖(S (n + 1)).mkQ (T n v)‖) := by
@@ -400,52 +454,24 @@ theorem eventuallyConst_separatingSpace [CompleteSpace F] [∀ n, CompleteSpace 
   let s : ℕ → E 0 := fun n ↦
     Nat.rec (motive := fun _ ↦ E 0) 0 (fun j acc ↦ acc + toBase R j (v j acc)) n
   let x : ∀ n, E n := fun n ↦ v n (s n)
+  -- The defining recursion of the partial sums `s`.
+  have hs_succ : ∀ n, s (n + 1) = s n + toBase R n (x n) := fun _ ↦ rfl
   have hs : ∀ n, s n = ∑ j ∈ range n, toBase R j (x j) := by
     intro n
     induction n with
     | zero => simp [s]
-    | succ n ih => rw [sum_range_succ, ← ih]
+    | succ n ih => rw [hs_succ, sum_range_succ, ih]
   have hx : ∀ j, ‖x j‖ ≤ ε j := fun j ↦ hv j (s j)
   have hfx : ∀ j, ‖toBase R j (x j)‖ ≤ (1 / 2) ^ j := fun j ↦
     ((toBase R j).le_opNorm _).trans <|
       (mul_le_mul_of_nonneg_left (hx j) (norm_nonneg _)).trans (hεb j)
   have hfs : Summable fun j ↦ toBase R j (x j) :=
     Summable.of_norm_bounded summable_geometric_two hfx
-  have hgeom : HasSum (fun k : ℕ ↦ ((1 : ℝ) / 2) ^ (k + 1)) 1 := by
-    have := hasSum_geometric_two.mul_right (1 / 2)
-    norm_num [← pow_succ] at this
-    exact this
   set y := ∑' j, toBase R j (x j) with hy
   -- Gliding hump: at every strict step `n`, the norm of `T 0 y` is at least `n + 1`.
-  have hkey : ∀ n, S (n + 1) ≠ S n → (n : ℝ) + 1 ≤ ‖T 0 y‖ := by
-    intro n hn
-    set g : ℕ → E (n + 1) := fun k ↦ descend R (n + 1) k (x (n + 1 + k))
-    have hg : ∀ k, (‖K n‖ + 1) * ‖g k‖ ≤ (1 / 2) ^ (k + 1) := by
-      intro k
-      calc (‖K n‖ + 1) * ‖g k‖ ≤ (‖K n‖ + 1) * (‖descend R (n + 1) k‖ * ε (n + 1 + k)) :=
-            mul_le_mul_of_nonneg_left (((descend R (n + 1) k).le_opNorm _).trans
-              (mul_le_mul_of_nonneg_left (hx _) (norm_nonneg _))) (by positivity)
-        _ = (‖K n‖ + 1) * ‖descend R (n + 1) k‖ * ε (n + 1 + k) := by ring
-        _ ≤ (1 / 2) ^ (n + 1 + k) := hεK n k
-        _ ≤ (1 / 2) ^ (k + 1) := pow_le_pow_of_le_one (by norm_num) (by norm_num) (by omega)
-    have hgle : ∀ k, ‖g k‖ ≤ (1 / 2) ^ (k + 1) := fun k ↦
-      (le_mul_of_one_le_left (norm_nonneg _) (by linarith [norm_nonneg (K n)])).trans (hg k)
-    have hgs : Summable g := Summable.of_norm_bounded hgeom.summable hgle
-    have hKw : ‖K n (∑' k, g k)‖ ≤ 1 :=
-      (hgs.hasSum.mapL (K n)).norm_le_of_bounded hgeom fun k ↦ ((K n).le_opNorm _).trans <|
-        (mul_le_mul_of_nonneg_right (by linarith) (norm_nonneg _)).trans (hg k)
-    have hdec : T 0 y = T 0 (s n) + T n (x n) + T (n + 1) (∑' k, g k) := by
-      rw [hy, tsum_toBase_eq R x (n + 1) hfs hgs, sum_range_succ, ← hs, map_add, map_add,
-        apply_toBase R hT, apply_toBase R hT]
-    set Q := (S (n + 1)).mkQ
-    have hQ : Q (T n (x n)) = Q (T 0 y) - Q (T 0 (s n)) - K n (∑' k, g k) := by
-      rw [hdec, map_add, map_add, hK]
-      abel
-    have h1 : ‖Q (T 0 y)‖ ≤ ‖T 0 y‖ := Submodule.Quotient.norm_mk_le (S (n + 1)) (T 0 y)
-    have h2 : ‖Q (T n (x n))‖ ≤ ‖Q (T 0 y)‖ + ‖Q (T 0 (s n))‖ + ‖K n (∑' k, g k)‖ := by
-      rw [hQ]
-      linarith [norm_sub_le (Q (T 0 y) - Q (T 0 (s n))) (K n (∑' k, g k)),
-        norm_sub_le (Q (T 0 y)) (Q (T 0 (s n)))]
+  have hkey : ∀ n, S (n + 1) ≠ S n → (n : ℝ) + 1 ≤ ‖T 0 y‖ := fun n hn ↦ by
+    have h := norm_mkQ_apply_le hT n (K n) (hK n) hx (hεK n) hfs
+    rw [← hs, ← hy] at h
     linarith [hv' n (s n) hn]
   -- Strict steps are unbounded unless the sequence stabilizes, contradicting `hkey`.
   rw [Filter.eventuallyConst_atTop_nat]
