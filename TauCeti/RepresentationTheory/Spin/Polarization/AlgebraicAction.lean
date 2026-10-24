@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.OfAssociative
+public import Mathlib.Algebra.Lie.OfAssociative
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector.Basic
 public import TauCeti.RepresentationTheory.Spin.Polarization.CliffordAction
 
@@ -17,7 +17,14 @@ This file records the resulting commutator formula for a normalized Clifford biv
 a vector generator. It is the coordinate-free bridge from the Clifford commutator calculation to
 the creation, contraction, and parity operators on the spinor module.
 
-The formula is independent of finite-dimensionality, nondegeneracy, and a choice of basis. -/
+The formula is independent of finite-dimensionality, nondegeneracy, and a choice of basis.
+
+## References
+
+* `CliffordAlgebra.bivector_lie_ι` in
+  `TauCeti/LinearAlgebra/CliffordAlgebra/Bivector/Basic.lean` supplies the Clifford commutator.
+* `AlgHom.toLieHom` and `LieHom.map_lie` from `Mathlib.Algebra.Lie.OfAssociative` transport that
+  identity through the algebra action. -/
 
 public section
 
