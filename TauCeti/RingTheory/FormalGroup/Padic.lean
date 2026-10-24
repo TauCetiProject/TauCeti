@@ -35,9 +35,8 @@ variable {p : ℕ} [Fact p.Prime] (F : FormalGroup ℤ_[p])
 variable {K : Type*} [NormedField K] [NormedAlgebra ℚ_[p] K] [Algebra ℚ K]
   [Algebra ℤ_[p] K] [IsScalarTower ℤ_[p] ℚ_[p] K]
 
-/-- Multiplying the positive-degree logarithm coefficient by its degree gives a `p`-adic
-integer's image in `K`, namely the corresponding coefficient of the integral invariant
-differential. -/
+/-- Multiplying the degree-`(n + 1)` logarithm coefficient by `n + 1` gives an element of norm
+at most one: the image in `K` of an integral invariant-differential coefficient. -/
 theorem norm_natCast_mul_coeff_log_le_one (n : ℕ) :
     ‖(n + 1 : K) *
       PowerSeries.coeff (n + 1) (F.map (algebraMap ℤ_[p] K)).log‖ ≤ 1 := by
