@@ -112,15 +112,6 @@ section SimpleUnit
 
 variable [Simple (𝟙_ C)] [FiniteDimensional k (𝟙_ C ⟶ 𝟙_ C)]
 
-omit [RigidCategory C] [PivotalCategory C] in
-include k in
-/-- If the tensor unit is simple with finite-dimensional endomorphisms over an algebraically
-closed field, a scalar acts on every object in the same way from the left and from the right. -/
-theorem leftUnitor_inv_scalar_whiskerRight_leftUnitor_hom_of_simple (a : 𝟙_ C ⟶ 𝟙_ C) (Y : C) :
-    (λ_ Y).inv ≫ a ▷ Y ≫ (λ_ Y).hom = (ρ_ Y).inv ≫ Y ◁ a ≫ (ρ_ Y).hom := by
-  obtain ⟨c, rfl⟩ := endomorphism_simple_eq_smul_id k a
-  simp
-
 include k in
 /-- If the tensor unit is simple with finite-dimensional endomorphisms over an algebraically
 closed field, the left trace is multiplicative. -/
