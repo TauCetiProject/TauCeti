@@ -232,6 +232,16 @@ lemma isNondegenerate_constSmooth (omegaForm : SymplecticForm V) :
   simpa only [SmoothForm.bilinFormAt_apply, fromTangentSpace_constSmooth_apply,
     ContinuousLinearEquiv.apply_symm_apply] using hw
 
+/-- On every tangent fiber, the symplectic form of a constant smooth symplectic form is the
+defining algebraic form. -/
+@[simp]
+lemma isNondegenerate_constSmooth_symplecticFormAt (omegaForm : SymplecticForm V) (x : V) :
+    (isNondegenerate_constSmooth omegaForm).symplecticFormAt x = omegaForm := by
+  apply SymplecticForm.toBilinForm_injective
+  ext v w
+  exact (SmoothTwoForm.IsNondegenerate.symplecticFormAt_apply _ x v w).trans
+    (constSmooth_apply omegaForm x v w)
+
 /-- A constant smooth symplectic form is closed. -/
 lemma isClosed_constSmooth (omegaForm : SymplecticForm V) : omegaForm.constSmooth.IsClosed :=
   SmoothTwoForm.isClosed_const _
