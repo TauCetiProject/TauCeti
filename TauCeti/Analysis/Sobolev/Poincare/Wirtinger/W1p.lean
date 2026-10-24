@@ -13,6 +13,7 @@ import TauCeti.MeasureTheory.Function.LocallyAEConst
 import TauCeti.MeasureTheory.Function.Lp.Const
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.Lp.Restriction
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import Mathlib.MeasureTheory.Function.LpSpace.Complete
 
 /-!
@@ -318,23 +319,8 @@ theorem W1p.eLpNorm_value_sub_setAverage_le_of_eq_ball {c : E} {R : ℝ}
     exact (measure_ball_pos mu c hR).ne'
   have hconst : mu.real (ball 0 1) * diam (Omega : Set E) ^ (finrank ℝ E + 1) /
       mu.real (Omega : Set E) ≤ 2 ^ (finrank ℝ E + 1) * R := by
-    rcases subsingleton_or_nontrivial E with _ | _
-    · -- In a zero-dimensional space every set has diameter `0`, so the left side vanishes.
-      rw [Metric.diam_subsingleton Set.subsingleton_of_subsingleton,
-        zero_pow (Nat.succ_ne_zero _), mul_zero, zero_div]
-      exact mul_nonneg (by positivity) hR.le
-    · have homega : 0 < mu.real (ball (0 : E) 1) :=
-        ENNReal.toReal_pos (measure_ball_pos mu 0 one_pos).ne' measure_ball_lt_top.ne
-      have hmeas : mu.real (Omega : Set E) = R ^ finrank ℝ E * mu.real (ball (0 : E) 1) := by
-        rw [hOmega, measureReal_def, measureReal_def, Measure.addHaar_ball mu c hR.le,
-          ENNReal.toReal_mul, ENNReal.toReal_ofReal (pow_nonneg hR.le _)]
-      rw [hmeas, div_le_iff₀ (by positivity)]
-      calc mu.real (ball (0 : E) 1) * diam (Omega : Set E) ^ (finrank ℝ E + 1)
-          ≤ mu.real (ball (0 : E) 1) * (2 * R) ^ (finrank ℝ E + 1) := by
-            gcongr
-            rw [hOmega]
-            exact Metric.diam_ball hR.le
-        _ = 2 ^ (finrank ℝ E + 1) * R * (R ^ finrank ℝ E * mu.real (ball (0 : E) 1)) := by ring
+    rw [hOmega]
+    exact mu.addHaar_real_ball_mul_diam_ball_pow_div_le c hR
   refine (W1p.eLpNorm_value_sub_setAverage_le_of_convex hp (hOmega ▸ convex_ball c R)
     (hOmega ▸ Metric.isBounded_ball (x := c) (r := R))
     Omega.isOpen.measurableSet.nullMeasurableSet subset_rfl hpos u).trans

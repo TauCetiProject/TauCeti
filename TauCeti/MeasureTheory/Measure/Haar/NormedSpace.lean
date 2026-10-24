@@ -31,6 +31,8 @@ closed unit ball under a linear endomorphism `f` with that of the closed ball of
 * `MeasureTheory.Measure.addHaar_real_ball_of_pos`: the real measure of a positive-radius ball.
 * `MeasureTheory.Measure.finrank_div_mul_addHaar_real_ball`:
   `(n / r) μ (ball x r) = n rⁿ⁻¹ μ (ball 0 1)` in dimension `n`.
+* `MeasureTheory.Measure.addHaar_real_ball_mul_diam_ball_pow_div_le`:
+  `μ (ball 0 1) (diam (ball x r))ⁿ⁺¹ / μ (ball x r) ≤ 2ⁿ⁺¹ r` in dimension `n`.
 * `MeasureTheory.Measure.addHaar_closedBall_ae_eq_ball`: closed and open balls agree up to a null
   set in a nontrivial space.
 * `MeasureTheory.Measure.addHaar_closedBall_ae_eq_ball_of_ne_zero`: the same agreement at nonzero
@@ -86,6 +88,25 @@ theorem _root_.MeasureTheory.Measure.finrank_div_mul_addHaar_real_ball
     simp only [Nat.cast_add, Nat.cast_one, add_tsub_cancel_right]
     field_simp
     ring
+
+/-- For a ball of radius `r > 0` in dimension `n`, the ratio
+`μ (ball 0 1) * (diam (ball x r)) ^ (n + 1) / μ (ball x r)` of real measures is at most
+`2 ^ (n + 1) * r`. This is the constant of the Poincaré–Wirtinger inequality on a convex domain,
+evaluated on a ball. -/
+theorem _root_.MeasureTheory.Measure.addHaar_real_ball_mul_diam_ball_pow_div_le
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (mu : Measure E) [mu.IsAddHaarMeasure]
+    (x : E) {r : ℝ} (hr : 0 < r) :
+    mu.real (ball 0 1) * diam (ball x r) ^ (finrank ℝ E + 1) / mu.real (ball x r) ≤
+      2 ^ (finrank ℝ E + 1) * r := by
+  have homega : 0 < mu.real (ball (0 : E) 1) :=
+    ENNReal.toReal_pos (measure_ball_pos mu 0 one_pos).ne' measure_ball_lt_top.ne
+  rw [mu.addHaar_real_ball_of_pos x hr, div_le_iff₀ (by positivity)]
+  calc mu.real (ball (0 : E) 1) * diam (ball x r) ^ (finrank ℝ E + 1)
+      ≤ mu.real (ball (0 : E) 1) * (2 * r) ^ (finrank ℝ E + 1) := by
+        gcongr
+        exact diam_ball hr.le
+    _ = 2 ^ (finrank ℝ E + 1) * r * (r ^ finrank ℝ E * mu.real (ball (0 : E) 1)) := by ring
 
 /-- Closed and open balls agree up to a null set in a nontrivial finite-dimensional space. -/
 theorem _root_.MeasureTheory.Measure.addHaar_closedBall_ae_eq_ball
