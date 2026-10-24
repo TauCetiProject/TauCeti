@@ -6,9 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Slice.Genus
-import Mathlib.Analysis.Convex.Contractible
-import TauCeti.AlgebraicTopology.Singular.Contractible
-import TauCeti.Geometry.Manifold.Orientation.ClosedBall
 
 /-!
 # The topological slice genus of a knot
@@ -37,9 +34,11 @@ triangulation theorem and the classification of surfaces), and the conditions on
 genus only see the topology of `S`. The same convention is used for locally flat slice discs
 (`TauCeti.IsTopologicalSliceDisc`), whose carrier is the smooth closed unit disc.
 
-The **genus** of a topological slice surface (`TauCeti.TopologicalSliceSurface.genus`) is half the
-dimension of its first rational homology, as for smooth slice surfaces, and the topological slice
-genus (`TauCeti.topologicalSliceGenus K`) is the infimum of these genera in `ℕ∞`.
+A topological slice surface extends the slice surface data `TauCeti.SliceSurfaceData K` shared
+with smooth slice surfaces by the local flatness condition. Its **genus**
+(`TauCeti.SliceSurfaceData.genus`) is thus half the dimension of its first rational homology, as for
+smooth slice surfaces, and the topological slice genus (`TauCeti.topologicalSliceGenus K`) is the
+infimum of these genera in `ℕ∞`.
 
 A smooth slice surface is a neat smooth embedding of manifolds with boundary, hence locally flat
 (`TauCeti.IsLocallyFlat.of_isSmoothEmbedding_of_preimage_boundary_of_sub_eq`), so it is a
@@ -53,7 +52,6 @@ surfaces and is not proved here.
 ## Main definitions
 
 * `TauCeti.TopologicalSliceSurface K`: a locally flat slice surface for `K`.
-* `TauCeti.TopologicalSliceSurface.genus`: the genus `dim H₁(S; ℚ) / 2` of such a surface.
 * `TauCeti.topologicalSliceGenus K`: the topological slice genus of `K`, in `ℕ∞`.
 * `TauCeti.SmoothSliceSurface.toTopologicalSliceSurface`: a smooth slice surface, read as a
   topological one.
@@ -104,68 +102,28 @@ of `E`: a compact, connected, orientable surface with boundary, together with a 
 embedding into the closed unit ball of `E`, with tangential model the half-plane and complementary
 model `ℝⁿ⁻¹`, which is properly embedded (the preimage of the boundary sphere is the boundary of the
 surface) and carries the boundary of the surface onto the image of `K`. The surface carries a smooth
-structure only to state its orientability; the embedding is merely locally flat. -/
-structure TopologicalSliceSurface (K : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)) where
-  /-- The underlying surface. -/
-  carrier : Type
-  /-- The topology of the surface. -/
-  [topologicalSpace : TopologicalSpace carrier]
-  /-- The charts of the surface, modelled on the half-plane. -/
-  [chartedSpace : ChartedSpace (EuclideanHalfSpace 2) carrier]
-  /-- The surface is a smooth manifold with boundary. -/
-  [isManifold : IsManifold (𝓡∂ 2) ∞ carrier]
-  /-- The surface is compact. -/
-  [compactSpace : CompactSpace carrier]
-  /-- The surface is connected. -/
-  [connectedSpace : ConnectedSpace carrier]
-  /-- The surface is orientable. -/
-  [orientable : Orientable (𝓡∂ 2) carrier]
-  /-- The embedding of the surface into the closed unit ball. -/
-  toFun : carrier → closedBall (0 : E) 1
+structure only to state its orientability; the embedding is merely locally flat. Its genus is the
+genus `TauCeti.SliceSurfaceData.genus` of the underlying slice surface data. -/
+structure TopologicalSliceSurface (K : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1))
+    extends SliceSurfaceData K where
   /-- The surface is locally flatly embedded, flat up to the boundary sphere. -/
   isLocallyFlat : IsLocallyFlat (EuclideanHalfSpace 2) (EuclideanSpace ℝ (Fin (n - 1))) toFun
-  /-- The surface is properly embedded: it meets the boundary sphere exactly along its boundary. -/
-  preimage_boundary :
-    toFun ⁻¹' (𝓡∂ (n + 1)).boundary (closedBall (0 : E) 1) = (𝓡∂ 2).boundary carrier
-  /-- The boundary of the surface is carried onto the image of `K`. -/
-  image_boundary : (Subtype.val ∘ toFun) '' (𝓡∂ 2).boundary carrier = Subtype.val '' range K
 
 namespace TopologicalSliceSurface
 
-attribute [instance] topologicalSpace chartedSpace isManifold compactSpace connectedSpace orientable
-
 variable {K K' : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)}
-
-/-- The first singular homology `H₁(S; ℚ)` of a topological slice surface, with rational
-coefficients. -/
-abbrev firstHomology (S : TopologicalSliceSurface K) : Type :=
-  ((singularHomologyFunctor (ModuleCat ℚ) 1).obj (ModuleCat.of ℚ ℚ)).obj (TopCat.of S.carrier)
-
-/-- The **genus** of a topological slice surface: half the dimension of its first rational
-homology. A compact, connected, orientable surface of genus `g` with one boundary circle has
-`H₁(S; ℚ) ≅ ℚ²ᵍ`. -/
-def genus (S : TopologicalSliceSurface K) : ℕ :=
-  finrank ℚ S.firstHomology / 2
-
-/-- The genus of a topological slice surface is half the dimension of its first rational
-homology. -/
-theorem genus_def (S : TopologicalSliceSurface K) : S.genus = finrank ℚ S.firstHomology / 2 :=
-  (rfl)
 
 /-- A topological slice surface for `K` is one for every knot `K'` with the same image. -/
 def congrRange (S : TopologicalSliceSurface K) (h : range K = range K') :
     TopologicalSliceSurface K' where
-  carrier := S.carrier
-  toFun := S.toFun
+  toSliceSurfaceData := S.toSliceSurfaceData.congrRange h
   isLocallyFlat := S.isLocallyFlat
-  preimage_boundary := S.preimage_boundary
-  image_boundary := h ▸ S.image_boundary
 
 /-- Transporting a topological slice surface to a knot with the same image keeps its genus. -/
 @[simp]
 theorem genus_congrRange (S : TopologicalSliceSurface K) (h : range K = range K') :
     (S.congrRange h).genus = S.genus :=
-  (rfl)
+  S.toSliceSurfaceData.genus_congrRange h
 
 /-- Transport of a topological slice surface for `K` along a linear isometry `e : E ≃ₗᵢ[ℝ] F` of
 the ambient spaces: the same surface, embedded by `e ∘ S.toFun`, is a topological slice surface for
@@ -173,23 +131,11 @@ the ambient spaces: the same surface, embedded by `e ∘ S.toFun`, is a topologi
 def mapLinearIsometryEquiv (S : TopologicalSliceSurface K) (e : E ≃ₗᵢ[ℝ] F)
     {K' : SmoothCircleEmbedding (𝓡 n) (sphere (0 : F) 1)} (hK' : ∀ z, (K' z : F) = e (K z)) :
     TopologicalSliceSurface K' where
-  carrier := S.carrier
-  toFun := e.toLinearIsometry.unitClosedBallMap ∘ S.toFun
+  toSliceSurfaceData := S.toSliceSurfaceData.mapLinearIsometryEquiv e hK'
   isLocallyFlat := by
     have := S.isLocallyFlat.homeomorph_comp
       (e.unitClosedBallDiffeomorph (m := n + 1) (n := n + 1) (k := ∞)).toHomeomorph
     rwa [Diffeomorph.coe_toHomeomorph, LinearIsometryEquiv.coe_unitClosedBallDiffeomorph] at this
-  preimage_boundary := by
-    rw [← S.preimage_boundary]
-    ext x
-    simp [boundary_closedBall]
-  image_boundary := by
-    have hcomp : Subtype.val ∘ (e.toLinearIsometry.unitClosedBallMap ∘ S.toFun) =
-        e ∘ (Subtype.val ∘ S.toFun) :=
-      funext fun x ↦ by simp
-    rw [hcomp, image_comp, S.image_boundary]
-    simp only [← range_comp]
-    exact congrArg range (funext fun z ↦ by simp [hK'])
 
 /-- Transporting a topological slice surface along a linear isometry of the ambient spaces keeps
 its genus. -/
@@ -197,7 +143,7 @@ its genus. -/
 theorem genus_mapLinearIsometryEquiv (S : TopologicalSliceSurface K) (e : E ≃ₗᵢ[ℝ] F)
     {K' : SmoothCircleEmbedding (𝓡 n) (sphere (0 : F) 1)} (hK' : ∀ z, (K' z : F) = e (K z)) :
     (S.mapLinearIsometryEquiv e hK').genus = S.genus :=
-  (rfl)
+  S.toSliceSurfaceData.genus_mapLinearIsometryEquiv e hK'
 
 end TopologicalSliceSurface
 
@@ -210,47 +156,31 @@ manifolds with boundary is locally flat with tangential model the half-plane and
 model `ℝⁿ⁻¹`. -/
 def SmoothSliceSurface.toTopologicalSliceSurface (S : SmoothSliceSurface K) :
     TopologicalSliceSurface K where
-  carrier := S.carrier
-  toFun := S.toFun
+  toSliceSurfaceData := S.toSliceSurfaceData
   isLocallyFlat := .of_isSmoothEmbedding_of_preimage_boundary_of_sub_eq (by simp)
     S.isSmoothEmbedding S.preimage_boundary (by omega)
-  preimage_boundary := S.preimage_boundary
-  image_boundary := S.image_boundary
 
-/-- A smooth slice surface has the same genus as a topological slice surface. -/
+/-- Reading a smooth slice surface as a topological slice surface keeps its genus. -/
 @[simp]
 theorem SmoothSliceSurface.genus_toTopologicalSliceSurface (S : SmoothSliceSurface K) :
-    S.toTopologicalSliceSurface.genus = S.genus := by
-  rw [TopologicalSliceSurface.genus_def, SmoothSliceSurface.genus_def]
-  rfl
+    S.toTopologicalSliceSurface.genus = S.genus :=
+  (rfl)
 
 /-- A locally flat slice disc for `K`, as a topological slice surface whose carrier is the closed
 unit disc: the disc is compact, connected and orientable. -/
 def IsTopologicalSliceDisc.toTopologicalSliceSurface
     {Φ : closedBall (0 : ℂ) 1 → closedBall (0 : E) 1} (h : IsTopologicalSliceDisc K Φ) :
     TopologicalSliceSurface K where
-  carrier := closedBall (0 : ℂ) 1
-  compactSpace := isCompact_iff_compactSpace.1 (isCompact_closedBall 0 1)
-  connectedSpace := isConnected_iff_connectedSpace.1
-    ((convex_closedBall 0 1).isConnected (nonempty_closedBall.2 zero_le_one))
-  orientable := orientable_closedBall
-  toFun := Φ
+  toSliceSurfaceData := .ofClosedBall Φ h.preimage_boundary h.image_range_inclusion
   isLocallyFlat := h.isLocallyFlat
-  preimage_boundary := h.preimage_boundary
-  image_boundary := by
-    rw [← h.image_range_inclusion, boundary_closedBall]
-    congr 1
-    exact (Set.range_inclusion _).symm
 
 /-- A locally flat slice disc has genus `0`: the disc is contractible, so its first homology
 vanishes. -/
 @[simp]
 theorem IsTopologicalSliceDisc.genus_toTopologicalSliceSurface
     {Φ : closedBall (0 : ℂ) 1 → closedBall (0 : E) 1} (h : IsTopologicalSliceDisc K Φ) :
-    h.toTopologicalSliceSurface.genus = 0 := by
-  have : ContractibleSpace h.toTopologicalSliceSurface.carrier :=
-    (convex_closedBall (0 : ℂ) 1).contractibleSpace (nonempty_closedBall.2 zero_le_one)
-  simp [genus_def]
+    h.toTopologicalSliceSurface.genus = 0 :=
+  SliceSurfaceData.genus_ofClosedBall _ h.preimage_boundary h.image_range_inclusion
 
 /-- The **topological slice genus** `g_s^top(K)` of a smooth circle embedding `K : S¹ → Sⁿ`: the
 least genus of a topological slice surface for `K`, or `⊤` if there is none. -/

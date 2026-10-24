@@ -52,9 +52,8 @@ two notions are kept separate on purpose: the gap between them is the content of
 that Alexander-polynomial-one knots are topologically slice, and of the existence of topologically
 but not smoothly slice knots. In the forward direction a smooth slice disc is a locally flat one
 (`TauCeti.IsSmoothSliceDisc.isTopologicalSliceDisc`): it is a neat smooth embedding of manifolds
-with boundary, hence locally flat by
-`TauCeti.IsLocallyFlat.of_isSmoothEmbedding_of_preimage_boundary`, and the complement of the
-immersion has dimension `n - 1`.
+with boundary, hence locally flat with complementary model `ℝⁿ⁻¹` by
+`TauCeti.IsLocallyFlat.of_isSmoothEmbedding_of_preimage_boundary_of_sub_eq`.
 
 The predicate is exercised on the great circles: a great circle
 `TauCeti.SmoothCircleEmbedding.greatCircle ι` bounds the flat disc `ι D²`, the restriction of the

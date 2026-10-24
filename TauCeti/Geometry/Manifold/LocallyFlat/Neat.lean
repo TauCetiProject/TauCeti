@@ -60,6 +60,9 @@ multiple of the boundary coordinate is supplied by
 * `TauCeti.IsLocallyFlat.of_isImmersionOfComplement_of_isEmbedding_of_preimage_boundary` and
   `TauCeti.IsLocallyFlat.of_isSmoothEmbedding_of_preimage_boundary`: a neat `C^n` embedding of
   half-space charted spaces, `n ≠ 0`, is locally flat with tangential model the half-space.
+* `TauCeti.IsLocallyFlat.of_isSmoothEmbedding_of_preimage_boundary_of_sub_eq`: a neat `C^n`
+  embedding of half-space charted spaces of dimensions `k` and `m` is locally flat with
+  complementary model `EuclideanSpace ℝ (Fin (m - k))`.
 
 ## References
 
