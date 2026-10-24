@@ -12,10 +12,11 @@ import TauCeti.Geometry.Manifold.MFDeriv.LocalInjectivity
 /-!
 # Fibres over regular values of equidimensional maps
 
-Let `f : M → N` be a `C¹` map between real manifolds modelled on finite-dimensional spaces of the
-same dimension. At a regular point the manifold derivative of `f` is bijective, so `f` is
-injective near that point. Hence the fibre of `f` over a regular value is a discrete subset of
-`M`, and it is finite when `M` is compact. These finite fibres are what the mapping degree of a
+Let `f : M → N` be a `C¹` map between manifolds over `ℝ` or `ℂ` (more generally, over a field `𝕜`
+with `IsRCLikeNormedField 𝕜`) modelled on finite-dimensional spaces of the same dimension. At a
+regular point the manifold derivative of `f` is bijective, so `f` is injective near that point.
+Hence the fibre of `f` over a regular value is a discrete subset of `M`, and it is finite when `M`
+is compact. These finite fibres are what the mapping degree of a
 map between compact oriented manifolds counts with signs.
 
 The manifolds may have boundary or corners: local injectivity at a regular point is proved in
@@ -44,16 +45,16 @@ open scoped Manifold Topology
 
 namespace TauCeti
 
-variable {E H M E' H' N : Type*}
-  [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [TopologicalSpace H]
-  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
-  [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E'] [TopologicalSpace H']
-  {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N]
+variable {𝕜 E H M E' H' N : Type*} [NontriviallyNormedField 𝕜] [IsRCLikeNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E] [TopologicalSpace H]
+  {I : ModelWithCorners 𝕜 E H} [TopologicalSpace M] [ChartedSpace H M]
+  [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [FiniteDimensional 𝕜 E'] [TopologicalSpace H']
+  {J : ModelWithCorners 𝕜 E' H'} [TopologicalSpace N] [ChartedSpace H' N]
   {f : M → N} {x : M} {y : N}
 
 /-- The fibre of a `C¹` map between manifolds modelled on finite-dimensional spaces of the same
 dimension over a regular value is a discrete subset. -/
-theorem IsRegularValue.isDiscrete_preimage (hdim : Module.finrank ℝ E = Module.finrank ℝ E')
+theorem IsRegularValue.isDiscrete_preimage (hdim : Module.finrank 𝕜 E = Module.finrank 𝕜 E')
     (hf : ContMDiff I J 1 f) (hy : IsRegularValue I J f y) : IsDiscrete (f ⁻¹' {y}) := by
   refine IsDiscrete.of_nhdsWithin fun x hx ↦ ?_
   obtain ⟨t, ht, hinj⟩ := (hf x).exists_mem_nhds_injOn
@@ -65,7 +66,7 @@ theorem IsRegularValue.isDiscrete_preimage (hdim : Module.finrank ℝ E = Module
 /-- The fibre of a `C¹` map from a compact manifold, between manifolds modelled on
 finite-dimensional spaces of the same dimension, over a regular value is finite. -/
 theorem IsRegularValue.finite_preimage [CompactSpace M] [T1Space N]
-    (hdim : Module.finrank ℝ E = Module.finrank ℝ E') (hf : ContMDiff I J 1 f)
+    (hdim : Module.finrank 𝕜 E = Module.finrank 𝕜 E') (hf : ContMDiff I J 1 f)
     (hy : IsRegularValue I J f y) : (f ⁻¹' {y}).Finite :=
   (isClosed_singleton.preimage hf.continuous).isCompact.finite (hy.isDiscrete_preimage hdim hf)
 
