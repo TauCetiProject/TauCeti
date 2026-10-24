@@ -27,8 +27,9 @@ The sign of the phase is fixed by this convention for `𝓕`. Reindexing the dua
 `m ↦ -m` reflects the transform as well as the phase, which gives the reflected form
 `∑' m : L^∨, 𝓕 f (-m) * exp (-2πi ⟪v, m⟫)` of the right-hand side for every `f`. The form
 `∑' m : L^∨, 𝓕 f m * exp (-2πi ⟪v, m⟫)` used in sources with the opposite sign convention for the
-Fourier transform holds only for even `f`, such as a Gaussian; for a general `f` it is the
-formula at `-v`.
+Fourier transform holds when `f` is even, such as a Gaussian. Evenness is sufficient, not
+necessary: the periodization can be even although `f` is not. For a general `f` the expression
+is the formula at `-v`, so it need not equal the periodization at `v`.
 
 The base case is the lattice `Λ = span ℤ (range o)` spanned by an orthonormal basis `o`, indexed
 by a finite type `ι`; for `E = EuclideanSpace ℝ ι` and the standard basis this is `ℤ^ι`. It is
@@ -365,8 +366,9 @@ theorem tsum_eq_tsum_dual_fourier_neg (v : E) :
 /-- Poisson's summation formula with the **phase `exp (-2πi ⟪v, m⟫)`**, for an even Schwartz
 function `f`:
 `∑' ℓ : L, f (v + ℓ) = (covolume L)⁻¹ * ∑' m : L^∨, 𝓕 f m * exp (-2πi ⟪v, m⟫)`.
-Evenness is needed: for a general `f` the right-hand side is `∑' ℓ : L, f (-v + ℓ)`, by
-`SchwartzMap.tsum_eq_tsum_dual_fourier` at `-v`. -/
+Evenness is a sufficient hypothesis. In general the right-hand side is
+`∑' ℓ : L, f (-v + ℓ)`, by `SchwartzMap.tsum_eq_tsum_dual_fourier` at `-v`, so equality
+holds whenever the periodization is even and need not hold for an arbitrary `f`. -/
 theorem tsum_eq_tsum_dual_fourier_of_even (hf : ∀ x, f (-x) = f x) (v : E) :
     ∑' ℓ : L, f (v + ℓ) = (ZLattice.covolume L : ℂ)⁻¹ *
       ∑' m : ZLattice.dual L, 𝓕 (f : E → ℂ) m * cexp (-(2 * π * I * ⟪v, (m : E)⟫)) := by
