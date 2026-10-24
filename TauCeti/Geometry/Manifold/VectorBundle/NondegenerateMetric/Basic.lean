@@ -7,9 +7,11 @@ module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
+public import Mathlib.Geometry.Manifold.VectorBundle.LocalFrame
 public import TauCeti.Geometry.Manifold.Riemannian.Basic
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import Mathlib.Topology.VectorBundle.FiniteDimensional
+import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 
 /-!
 # Smooth nondegenerate metrics on a manifold
@@ -214,6 +216,18 @@ theorem chartMetric_extChartAt_apply (hy : y ∈ (extChartAt I x₀).source) (u 
         ((trivializationAt E (TangentSpace I) x₀).symm y w) := by
   rw [chartMetric, (extChartAt I x₀).left_inv hy]
   exact g.inCoordinates_apply x₀ (by simpa using hy) u w
+
+/-- At the chart image of a point `y` of the chart domain, the chart metric pairs two vectors of a
+basis `b` of the model space as `g` pairs the corresponding vectors at `y` of the coordinate frame
+of `b`. -/
+theorem chartMetric_extChartAt_apply_basis {ι : Type*} (b : Module.Basis ι ℝ E)
+    (hy : y ∈ (extChartAt I x₀).source) (i j : ι) :
+    g.chartMetric x₀ (extChartAt I x₀ y) (b i) (b j) =
+      g y ((trivializationAt E (TangentSpace I) x₀).localFrame b i y)
+        ((trivializationAt E (TangentSpace I) x₀).localFrame b j y) := by
+  have hbase : y ∈ (trivializationAt E (TangentSpace I) x₀).baseSet := by simpa using hy
+  simp only [g.chartMetric_extChartAt_apply hy, ← symmL_basis_eq_localFrame b hbase,
+    Trivialization.symmL_apply _ hbase]
 
 /-- The chart metric is symmetric at every point of the chart target. -/
 theorem isSymm_chartMetric {z : E} (hz : z ∈ (extChartAt I x₀).target) :

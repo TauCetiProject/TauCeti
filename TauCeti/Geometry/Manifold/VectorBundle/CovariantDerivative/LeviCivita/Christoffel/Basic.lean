@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.FiniteDimension
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.LinearAlgebra.Matrix.SesquilinearForm
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
+import TauCeti.LinearAlgebra.Matrix.BilinearForm
 import TauCeti.Topology.Algebra.Module.BilinearForm
 
 /-!
@@ -35,8 +36,8 @@ characteristic local facts behind the Koszul construction of that connection:
 * `Dg(u)(v, w) = g(Γ(u, v), w) + g(v, Γ(u, w))`, which is metric compatibility in coordinates;
 * `Γ` is the only symmetric bilinear map with this compatibility property, using only
   nondegeneracy;
-* if `g` is `C^(n+1)` on an open set then `Γ` is `C^n` there, since inversion of the musical map
-  is smooth;
+* if `g` is `C^(n+1)` on an open set, or at a point where it is nondegenerate, then `Γ` is `C^n`
+  there, since inversion of the musical map is smooth;
 * in a basis, `Γ^k_ij = (1/2) Σ_l g^(kl) (∂_i g_jl + ∂_j g_il - ∂_l g_ij)` with `g^(kl)` the
   inverse of the Gram matrix of the metric.
 
@@ -49,7 +50,8 @@ characteristic local facts behind the Koszul construction of that connection:
 * `TauCeti.Manifold.fderiv_apply_eq_christoffelSecondKind_add`: metric compatibility of `Γ`.
 * `TauCeti.Manifold.eq_christoffelSecondKind_iff`: `Γ` is the unique symmetric compatible
   bilinear map.
-* `TauCeti.Manifold.contDiffOn_christoffelSecondKind`: smoothness of `Γ`.
+* `TauCeti.Manifold.contDiffOn_christoffelSecondKind` and
+  `TauCeti.Manifold.contDiffAt_christoffelSecondKind`: smoothness of `Γ`.
 * `TauCeti.Manifold.repr_christoffelSecondKind`: the classical index formula.
 
 ## References
@@ -236,6 +238,28 @@ theorem contDiffOn_christoffelSecondKind {m n : WithTop ℕ∞} {U : Set E} (hU 
   simp only [christoffelSecondKind_apply]
   exact hinv.clm_apply (contDiffOn_christoffelFirstKind hU hg hnm u v)
 
+/-- **Pointwise smoothness of the Christoffel symbols.** If a field of bilinear forms is `C^m` at
+`x` and nondegenerate at `x`, then its Christoffel symbols of the second kind are `C^n` at `x`, for
+`n + 1 ≤ m`. -/
+theorem contDiffAt_christoffelSecondKind {m n : WithTop ℕ∞} (hg : ContDiffAt ℝ m g x)
+    (hnm : n + 1 ≤ m) (hnd : (g x).toBilinForm.Nondegenerate) :
+    ContDiffAt ℝ n (christoffelSecondKind g) x := by
+  have hinv : ContDiffAt ℝ n (fun y ↦ (g y).inverse) x :=
+    (isInvertible_of_separatingLeft hnd.1).contDiffAt_map_inverse.comp x
+      (hg.of_le (le_self_add.trans hnm))
+  -- Each coefficient `y ↦ Dg_y(a)(b, c)` is `C^n` at `x`, since `Dg` is.
+  have hcoeff (a b c : E) : ContDiffAt ℝ n (fun y ↦ fderiv ℝ g y a b c) x :=
+    (((hg.fderiv_right hnm).clm_apply contDiffAt_const).clm_apply contDiffAt_const).clm_apply
+      contDiffAt_const
+  rw [← contDiffWithinAt_univ]
+  refine contDiffWithinAt_clm_apply.2 fun u ↦ contDiffWithinAt_clm_apply.2 fun v ↦ ?_
+  simp only [christoffelSecondKind_apply]
+  refine (hinv.clm_apply ?_).contDiffWithinAt
+  rw [← contDiffWithinAt_univ]
+  refine contDiffWithinAt_clm_apply.2 fun w ↦ ?_
+  simp only [christoffelFirstKind_apply]
+  exact ((((hcoeff u v w).add (hcoeff v u w)).sub (hcoeff w u v)).div_const 2).contDiffWithinAt
+
 /-! ### The index formula -/
 
 /-- **The index formula for the Christoffel symbols.** For a basis `b` of `E`, the `k`-th
@@ -249,29 +273,10 @@ theorem repr_christoffelSecondKind {ι : Type*} [Fintype ι] [DecidableEq ι]
       2⁻¹ * ∑ l, (LinearMap.toMatrix₂ b b (g x).toBilinForm)⁻¹ k l *
         (fderiv ℝ g x (b i) (b j) (b l) + fderiv ℝ g x (b j) (b i) (b l) -
           fderiv ℝ g x (b l) (b i) (b j)) := by
-  set G := LinearMap.toMatrix₂ b b (g x).toBilinForm
-  -- The coordinate vector `c` of `Γ(b i, b j)` satisfies `G c = r`, with `r` the lowered symbols.
-  set c : ι → ℝ := fun k ↦ b.repr (christoffelSecondKind g x (b i) (b j)) k
-  set r : ι → ℝ := fun l ↦ christoffelFirstKind g x (b i) (b j) (b l)
-  have hG : IsUnit G.det :=
-    isUnit_iff_ne_zero.2 ((LinearMap.nondegenerate_iff_det_ne_zero b).1 hnd)
-  have hGc : G *ᵥ c = r := by
-    ext l
-    have h := apply_christoffelSecondKind hnd (b i) (b j) (b l)
-    conv_lhs at h => rw [← b.sum_repr (christoffelSecondKind g x (b i) (b j))]
-    simp only [map_sum, map_smul, sum_apply, smul_apply, smul_eq_mul] at h
-    simp only [Matrix.mulVec, dotProduct, G, LinearMap.toMatrix₂_apply, toBilinForm_apply, r,
-      ← h, c]
-    refine Finset.sum_congr rfl fun p _ ↦ ?_
-    rw [mul_comm]
-    congr 1
-    exact isSymm_toBilinForm_iff.1 hsymm (b l) (b p)
-  have hc : c = G⁻¹ *ᵥ r := by
-    rw [← hGc, Matrix.mulVec_mulVec, Matrix.nonsing_inv_mul _ hG, Matrix.one_mulVec]
-  have := congrFun hc k
-  simp only [c, r, Matrix.mulVec, dotProduct, christoffelFirstKind_apply] at this
-  rw [this, Finset.mul_sum]
+  rw [LinearMap.BilinForm.Nondegenerate.repr_eq_sum_inv_toMatrix₂_mul_apply hnd, Finset.mul_sum]
   refine Finset.sum_congr rfl fun l _ ↦ ?_
+  rw [toBilinForm_apply, isSymm_toBilinForm_iff.1 hsymm, apply_christoffelSecondKind hnd,
+    christoffelFirstKind_apply]
   ring
 
 end FiniteDimensional
