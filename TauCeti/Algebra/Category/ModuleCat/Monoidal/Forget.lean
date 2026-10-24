@@ -33,20 +33,15 @@ noncomputable instance moduleCatForgetLaxMonoidal : (forget (ModuleCat.{u} R)).L
 @[simp]
 lemma moduleCatForget_ε (x : 𝟙_ (Type u)) :
     dsimp% Functor.LaxMonoidal.ε (forget (ModuleCat.{u} R)) x = (1 : R) := by
-  dsimp [moduleCatForgetLaxMonoidal, Adjunction.rightAdjointLaxMonoidal_ε]
-  rw [ModuleCat.adj_homEquiv]
   cases x
-  exact ModuleCat.free_η_freeMk R PUnit.unit
+  simp [Adjunction.rightAdjointLaxMonoidal_ε,
+    ModuleCat.adj_homEquiv, ModuleCat.freeHomEquiv]
 
 /-- The tensor comparison of the module forgetful functor forms a pure tensor. -/
 @[simp]
 lemma moduleCatForget_μ (M N : ModuleCat.{u} R) (x : M) (y : N) :
     dsimp% Functor.LaxMonoidal.μ (forget (ModuleCat.{u} R)) M N (x, y) = x ⊗ₜ[R] y := by
-  dsimp [moduleCatForgetLaxMonoidal, Adjunction.rightAdjointLaxMonoidal_μ]
-  rw [ModuleCat.adj_homEquiv]
-  dsimp [ModuleCat.freeHomEquiv]
-  rw [ModuleCat.free_δ_freeMk]
-  simp [← (ModuleCat.adj R).homEquiv_symm_id, ModuleCat.adj_homEquiv,
-    ModuleCat.freeHomEquiv]
+  simp [Adjunction.rightAdjointLaxMonoidal_μ, ← (ModuleCat.adj R).homEquiv_symm_id,
+    ModuleCat.adj_homEquiv, ModuleCat.freeHomEquiv]
 
 end TauCeti

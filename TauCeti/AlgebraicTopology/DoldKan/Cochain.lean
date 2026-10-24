@@ -53,6 +53,8 @@ theorem cochainToSSet_obj (K : CochainComplex (ModuleCat.{u} R) ℤ) :
         forget (ModuleCat.{u} R) :=
   (rfl)
 
+-- The map, unit, and tensor formulas below rewrite their expected Hom types using
+-- cochainToSSet_obj because the functor body is unexposed. Their proofs are definitional.
 /-- On morphisms, apply good truncation, Dold–Kan, and then forget the module structure. -/
 theorem cochainToSSet_map {K L : CochainComplex (ModuleCat.{u} R) ℤ} (f : K ⟶ L) :
     (cochainToSSet R).map f = (by

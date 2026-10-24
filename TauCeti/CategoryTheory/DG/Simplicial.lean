@@ -11,7 +11,7 @@ public import TauCeti.AlgebraicTopology.DoldKan.Cochain
 /-!
 # The simplicial enrichment of a differential graded category
 
-The mapping simplicial sets of `dgSimplicialCategory R C` are the underlying simplicial
+The mapping simplicial sets of `DGSimplicialCategory R C` are the underlying simplicial
 sets of `Γ(τ≥0 Hom_C(X,Y))`. They are Kan complexes. Composition comes from lax monoidal
 good truncation and the Alexander–Whitney Dold–Kan functor.
 
@@ -48,19 +48,22 @@ variable (R : Type v) [CommRing R] (C : Type u) [DGCategory R C]
 /-- The simplicial category associated to a DG category, with Lurie's order of composition.
 The two opposites change composition order while retaining the original Hom complexes. -/
 @[expose]
-def dgSimplicialCategory := (TransportEnrichment (cochainToSSet R) Cᵒᵖ)ᵒᵖ
+def DGSimplicialCategory := (TransportEnrichment (cochainToSSet R) Cᵒᵖ)ᵒᵖ
 
 variable {C}
 
 /-- An object of a DG category as an object of its associated simplicial category. -/
-def dgSimplicialCategory.of (X : C) : dgSimplicialCategory R C := op (op X)
+def DGSimplicialCategory.of (X : C) : DGSimplicialCategory R C := op (op X)
 
 /-- Recover the DG object from an object of the associated simplicial category. -/
 -- The inherited enrichment fields need the definitional identification with X.unop.unop.
 @[expose]
-def dgSimplicialCategory.underlying (X : dgSimplicialCategory R C) : C := X.unop.unop
+def DGSimplicialCategory.underlying (X : DGSimplicialCategory R C) : C := X.unop.unop
 
-instance : EnrichedCategory SSet.{v} (dgSimplicialCategory R C) :=
+-- The DG and simplicial opposites each reverse Hom, so the inherited Hom is definitionally
+-- the image of the original DG Hom complex.
+-- Spell out this field to make hom_eq hold by rfl, retaining the inherited unit and composition.
+instance : EnrichedCategory SSet.{v} (DGSimplicialCategory R C) :=
   { (inferInstance : EnrichedCategory SSet.{v}
       (TransportEnrichment (cochainToSSet R) Cᵒᵖ)ᵒᵖ) with
     Hom X Y := (cochainToSSet R).obj
@@ -68,49 +71,49 @@ instance : EnrichedCategory SSet.{v} (dgSimplicialCategory R C) :=
 
 omit [DGCategory R C] in
 @[simp]
-theorem dgSimplicialCategory.underlying_of (X : C) :
+theorem DGSimplicialCategory.underlying_of (X : C) :
     (of R X).underlying R = X :=
   (rfl)
 
 omit [DGCategory R C] in
 @[simp]
-theorem dgSimplicialCategory.of_underlying (X : dgSimplicialCategory R C) :
+theorem DGSimplicialCategory.of_underlying (X : DGSimplicialCategory R C) :
     of R (X.underlying R) = X :=
   (rfl)
 
 /-- The mapping simplicial set is Dold–Kan applied to the good truncation of the DG Hom. -/
-theorem dgSimplicialCategory.hom_eq (X Y : dgSimplicialCategory R C) :
+theorem DGSimplicialCategory.hom_eq (X Y : DGSimplicialCategory R C) :
     (X ⟶[SSet.{v}] Y) = (cochainToSSet R).obj
       (dgHomComplex R (X.underlying R) (Y.underlying R)) :=
   (rfl)
 
 /-- The associated simplicial category is locally Kan. -/
-instance (X Y : dgSimplicialCategory R C) : SSet.KanComplex (X ⟶[SSet.{v}] Y) := by
-  rw [dgSimplicialCategory.hom_eq]
+instance (X Y : DGSimplicialCategory R C) : SSet.KanComplex (X ⟶[SSet.{v}] Y) := by
+  rw [DGSimplicialCategory.hom_eq]
   infer_instance
 
 /-- The enriched unit is the image of the DG unit under the lax monoidal functor. -/
-theorem dgSimplicialCategory.eId_eq (X : dgSimplicialCategory R C) :
+theorem DGSimplicialCategory.eId_eq (X : DGSimplicialCategory R C) :
     eId SSet.{v} X = Functor.LaxMonoidal.ε (cochainToSSet R) ≫
       (cochainToSSet R).map
         (eId (CochainComplex (ModuleCat.{v} R) ℤ) (X.underlying R)) :=
   (rfl)
 
 /-- The vertex of the endomorphism space selected by the DG identity. -/
-def dgSimplicialCategory.idVertex (X : dgSimplicialCategory R C) :
+def DGSimplicialCategory.idVertex (X : DGSimplicialCategory R C) :
     (X ⟶[SSet.{v}] X).obj (op ⦋0⦌) :=
   (eId SSet.{v} X).app (op ⦋0⦌) PUnit.unit
 
 /-- The identity vertex is obtained by applying the lax functor to the DG unit. -/
-theorem dgSimplicialCategory.idVertex_def (X : dgSimplicialCategory R C) :
+theorem DGSimplicialCategory.idVertex_def (X : DGSimplicialCategory R C) :
     X.idVertex R = ((Functor.LaxMonoidal.ε (cochainToSSet R) ≫
       (cochainToSSet R).map
         (eId (CochainComplex (ModuleCat.{v} R) ℤ) (X.underlying R))).app (op ⦋0⦌)) PUnit.unit := by
-  rw [dgSimplicialCategory.idVertex, dgSimplicialCategory.eId_eq]
+  rw [DGSimplicialCategory.idVertex, DGSimplicialCategory.eId_eq]
 
 /-- The enriched unit is constant at the vertex selected by the DG identity, in every
 simplicial degree. -/
-theorem dgSimplicialCategory.eId_eq_const (X : dgSimplicialCategory R C) :
+theorem DGSimplicialCategory.eId_eq_const (X : DGSimplicialCategory R C) :
     eId SSet.{v} X = SSet.const (X.idVertex R) := by
   -- The tensor unit is the terminal simplicial set, with PUnit simplices in every degree.
   have h : SSet.const (X := 𝟙_ SSet.{v})
@@ -118,11 +121,11 @@ theorem dgSimplicialCategory.eId_eq_const (X : dgSimplicialCategory R C) :
     ext n x
     rfl
   rw [← Category.id_comp (eId SSet.{v} X), ← h, SSet.const_comp]
-  rfl
+  simp [DGSimplicialCategory.idVertex]
 
 /-- Composition in the earlier-arrow-first convention: swap the simplicial factors,
 apply the tensorator, then use the Koszul-swapped DG composition. -/
-theorem dgSimplicialCategory.eComp_eq (X Y Z : dgSimplicialCategory R C) :
+theorem DGSimplicialCategory.eComp_eq (X Y Z : DGSimplicialCategory R C) :
     eComp SSet.{v} X Y Z =
       (β_ (X ⟶[SSet.{v}] Y) (Y ⟶[SSet.{v}] Z)).hom ≫
         Functor.LaxMonoidal.μ (cochainToSSet R)
