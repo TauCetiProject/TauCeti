@@ -116,6 +116,18 @@ def pointCoeffBaseChange : W.PointCoeff →+ (W⁄L).PointCoeff :=
     (Affine.Point.map (W' := W.toAffine) τ).comp W.pointCoeffEquiv.symm.toAddMonoidHom
 
 open scoped Classical in
+/-- On points over the separable closures, coefficient base change is the coordinate map,
+with the canonical identification of the iterated base change. -/
+theorem pointCoeffEquiv_symm_pointCoeffBaseChange (P : W.PointCoeff) :
+    (W⁄L).pointCoeffEquiv.symm (W.pointCoeffBaseChange τ P) =
+      AddEquiv.cast (M := fun V : WeierstrassCurve (SeparableClosure L) ↦ V.toAffine.Point)
+        (show (W⁄L)⁄(SeparableClosure L) = W⁄(SeparableClosure L) from
+          W.map_baseChange (IsScalarTower.toAlgHom K L (SeparableClosure L))).symm
+        (Affine.Point.map τ (W.pointCoeffEquiv.symm P)) := by
+  simp only [pointCoeffBaseChange, AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom,
+    AddEquiv.symm_apply_apply]
+
+open scoped Classical in
 /-- `pointCoeffBaseChange τ` applies `τ` to both coordinates of an affine point. -/
 @[simp]
 theorem pointCoeffBaseChange_pointCoeffEquiv_some {x y : SeparableClosure K}

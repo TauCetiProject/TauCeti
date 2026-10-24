@@ -264,9 +264,8 @@ theorem pointMap_map (h : Hom W₁ W₂) (f : F →+* K) (P : W₁.Point) :
     rw [Valuation.comap_apply, _root_.map_sub, FunctionField.map_algebraMap] at h₁ h₂
     exact ⟨h₁, h₂⟩
 
--- A morphism transported along equalities of its source and target curves acts on the transported
--- points by transport.
-private theorem pointMap_cast {V₁ V₁' V₂ V₂' : WeierstrassCurve K} [V₁.IsElliptic]
+/-- Transporting a morphism and its input along equalities of curves transports its output. -/
+theorem pointMap_cast {V₁ V₁' V₂ V₂' : WeierstrassCurve K} [V₁.IsElliptic]
     [V₂.IsElliptic] [V₁'.IsElliptic] [V₂'.IsElliptic] (e₁ : V₁ = V₁') (e₂ : V₂ = V₂')
     {h : Hom V₁.toAffine V₂.toAffine} {h' : Hom V₁'.toAffine V₂'.toAffine} (hh : HEq h h')
     (P : V₁.toAffine.Point) :
