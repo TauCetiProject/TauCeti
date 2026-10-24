@@ -213,6 +213,98 @@ theorem sub_toContMDiffSection (φ ψ : SmoothBundleForm I F V k) :
 
 end SmoothBundleForm
 
+namespace SmoothBundleForm
+
+variable {I : ModelWithCorners ℝ E H} [IsManifold I 1 M]
+
+/-- Evaluation of a smooth bundle-valued two-form on an ordered pair of tangent vectors. -/
+def eval₂ (φ : SmoothBundleForm I F V 2) (x : M) (v w : TangentSpace I x) : V x :=
+  φ.1 x ![v, w]
+
+@[simp]
+theorem eval₂_apply (φ : SmoothBundleForm I F V 2) (x : M)
+    (v w : TangentSpace I x) :
+    φ.eval₂ x v w = φ.1 x ![v, w] :=
+  by simp [eval₂]
+
+/-- Evaluation on two equal tangent vectors vanishes by alternation. -/
+theorem eval₂_self (φ : SmoothBundleForm I F V 2) (x : M) (v : TangentSpace I x) :
+    φ.eval₂ x v v = 0 := by
+  simpa only [eval₂_apply] using (φ.1 x).map_eq_zero_of_eq ![v, v] (by simp) Fin.zero_ne_one
+
+/-- Swapping the inputs of a bundle-valued two-form negates its value. -/
+theorem eval₂_swap (φ : SmoothBundleForm I F V 2) (x : M)
+    (v w : TangentSpace I x) :
+    φ.eval₂ x v w = -φ.eval₂ x w v := by
+  have h := (φ.1 x).map_swap ![v, w] (i := 0) (j := 1) Fin.zero_ne_one
+  have htuple : ![v, w] ∘ Equiv.swap 0 1 = ![w, v] := by
+    funext i
+    fin_cases i <;> rfl
+  rw [htuple] at h
+  have h' : φ.eval₂ x w v = -φ.eval₂ x v w := by
+    simpa [eval₂] using h
+  calc
+    φ.eval₂ x v w = - -φ.eval₂ x v w := by simp
+    _ = -φ.eval₂ x w v := by rw [h']
+
+/-- A bundle-valued smooth two-form is determined by its values on ordered pairs. -/
+@[ext]
+theorem ext {φ ψ : SmoothBundleForm I F V 2}
+    (h : ∀ x v w, φ.eval₂ x v w = ψ.eval₂ x v w) :
+    φ = ψ := by
+  apply Subtype.ext
+  funext x
+  apply ContinuousAlternatingMap.ext
+  intro v
+  have hv : v = ![v 0, v 1] := (FinVec.etaExpand_eq v).symm
+  rw [hv]
+  simpa only [eval₂_apply] using h x (v 0) (v 1)
+
+section Evaluation
+
+variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+  {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N]
+
+/-- Evaluating a smooth bundle-valued two-form on two smooth tangent fields is smooth. -/
+theorem contMDiff_eval₂ {n : WithTop ℕ∞} [ENat.LEInfty n]
+    (φ : SmoothBundleForm I F V 2) {b : N → M}
+    {U W : ∀ y : N, TangentSpace I (b y)}
+    (hU : ContMDiff I' I.tangent n
+      (fun y ↦ TotalSpace.mk' E (b y) (U y)))
+    (hW : ContMDiff I' I.tangent n
+      (fun y ↦ TotalSpace.mk' E (b y) (W y))) :
+    ContMDiff I' (I.prod 𝓘(ℝ, F)) n
+      (fun y ↦ TotalSpace.mk' F (b y) (φ.eval₂ (b y) (U y) (W y))) := by
+  have hb : ContMDiff I' I n b := fun y ↦ by
+    have hy := hU y
+    rw [← contMDiffWithinAt_univ] at hy ⊢
+    exact (contMDiffWithinAt_totalSpace.mp hy).1
+  have hφ := (φ.toContMDiffSection.contMDiff.of_le ENat.LEInfty.out).comp hb
+  have hφ' : ContMDiff I' (I.prod 𝓘(ℝ, E [⋀^Fin 2]→L[ℝ] F)) n
+      (fun y ↦ TotalSpace.mk' (E [⋀^Fin 2]→L[ℝ] F)
+        (E := fun x ↦ TangentSpace I x [⋀^Fin 2]→L[ℝ] V x) (b y)
+        (φ.toContMDiffSection (b y))) := by
+    convert hφ using 1
+    funext y
+    rfl
+  have happly := ContMDiff.continuousAlternatingMap_bundle_apply
+    (b := b) (v := fun i ↦ ![U, W] i) hφ'
+    (fun i ↦ by
+      fin_cases i
+      · exact hU
+      · exact hW)
+  convert happly using 1
+  funext y
+  congr 1
+  simp only [eval₂, SmoothBundleForm.toContMDiffSection_apply]
+  congr 1
+  funext i
+  fin_cases i <;> rfl
+
+end Evaluation
+
+end SmoothBundleForm
+
 section FixedCoefficients
 
 /-- A fixed-coefficient rough form is `C^n` when it is a `C^n` section of the existing
@@ -481,12 +573,12 @@ theorem const_apply {V F : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 This ordered-pair view supplies the arguments for the algebraic bilinear-form conversion and
 the extensionality principle for degree-two forms. -/
 def eval₂ (φ : SmoothForm I M F 2) (x : M) (v w : TangentSpace I x) : F :=
-  φ.1 x ![v, w]
+  SmoothBundleForm.eval₂ φ x v w
 
 @[simp]
 theorem eval₂_apply (φ : SmoothForm I M F 2) (x : M) (v w : TangentSpace I x) :
     φ.eval₂ x v w = φ.1 x ![v, w] := by
-  simp [eval₂]
+  exact SmoothBundleForm.eval₂_apply φ x v w
 
 
 section Evaluation
@@ -613,35 +705,20 @@ theorem isAlt_bilinFormAt (φ : SmoothForm I M ℝ 2) (x : M) :
 /-- Evaluation on two equal tangent vectors vanishes by alternation. -/
 theorem eval₂_self (φ : SmoothForm I M F 2) (x : M) (v : TangentSpace I x) :
     φ.eval₂ x v v = 0 := by
-  simpa only [eval₂_apply] using (φ.1 x).map_eq_zero_of_eq ![v, v] (by simp) Fin.zero_ne_one
+  exact SmoothBundleForm.eval₂_self φ x v
 
 /-- Swapping the inputs of a degree-two smooth form negates its value. -/
 theorem eval₂_swap (φ : SmoothForm I M F 2) (x : M)
     (v w : TangentSpace I x) :
-  φ.eval₂ x v w = -φ.eval₂ x w v := by
-  have h := (φ.1 x).map_swap ![v, w] (i := 0) (j := 1) Fin.zero_ne_one
-  have htuple : ![v, w] ∘ Equiv.swap 0 1 = ![w, v] := by
-    funext i
-    fin_cases i <;> rfl
-  rw [htuple] at h
-  have h' : φ.eval₂ x w v = -φ.eval₂ x v w := by
-    simpa [eval₂] using h
-  calc
-    φ.eval₂ x v w = - -φ.eval₂ x v w := by simp
-    _ = -φ.eval₂ x w v := by rw [h']
+    φ.eval₂ x v w = -φ.eval₂ x w v :=
+  SmoothBundleForm.eval₂_swap φ x v w
 
 /-- A degree-two smooth form is determined by its values on ordered pairs. -/
 @[ext]
 theorem ext {φ ψ : SmoothForm I M F 2}
     (h : ∀ x v w, φ.eval₂ x v w = ψ.eval₂ x v w) :
-    φ = ψ := by
-  apply Subtype.ext
-  funext x
-  apply ContinuousAlternatingMap.ext
-  intro v
-  have hv : v = ![v 0, v 1] := (FinVec.etaExpand_eq v).symm
-  rw [hv]
-  simpa only [eval₂_apply] using h x (v 0) (v 1)
+    φ = ψ :=
+  SmoothBundleForm.ext h
 
 section SectionView
 
