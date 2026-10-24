@@ -217,12 +217,13 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteS
 
 open TauCeti
 
-/-- The negative-gradient remainder `negativeGradientRemainder f x` is `C^n` at any point `y` where
-`f` is `C^(n+1)`. -/
-theorem contDiffAt_negativeGradientRemainder {n : ℕ} {y : E} (hf : ContDiffAt ℝ (n + 1) f y) :
-    ContDiffAt ℝ n (negativeGradientRemainder f x) y := by
+/-- The negative-gradient remainder `negativeGradientRemainder f x` is `C^m` at any point `y` where
+`f` is `C^n`, provided `m + 1 ≤ n`. -/
+theorem contDiffAt_negativeGradientRemainder {m n : WithTop ℕ∞} {y : E}
+    (hf : ContDiffAt ℝ n f y) (hmn : m + 1 ≤ n) :
+    ContDiffAt ℝ m (negativeGradientRemainder f x) y := by
   rw [funext (negativeGradientRemainder_apply f x)]
-  exact (hf.gradient_right le_rfl).neg.add <|
+  exact (hf.gradient_right hmn).neg.add <|
     (hessianOperator f x).contDiff.contDiffAt.comp y (contDiffAt_id.sub contDiffAt_const)
 
 /-- At a twice continuously differentiable point, the derivative of the nonlinear
@@ -244,8 +245,8 @@ strictly differentiable with zero derivative. This is the two-point estimate nee
 contraction argument for the local stable-manifold theorem. -/
 theorem hasStrictFDerivAt_negativeGradientRemainder (hf : ContDiffAt ℝ 2 f x) :
     HasStrictFDerivAt (negativeGradientRemainder f x) (0 : E →L[ℝ] E) x :=
-  (contDiffAt_negativeGradientRemainder (n := 1) (by simpa [one_add_one_eq_two] using hf)
-    ).hasStrictFDerivAt' hf.hasFDerivAt_negativeGradientRemainder one_ne_zero
+  (hf.contDiffAt_negativeGradientRemainder (m := 1) (by norm_num)).hasStrictFDerivAt'
+    hf.hasFDerivAt_negativeGradientRemainder one_ne_zero
 
 /-- On a sufficiently small closed ball about a twice continuously differentiable point, the
 nonlinear negative-gradient remainder has any prescribed positive Lipschitz constant.

@@ -204,7 +204,7 @@ private theorem exists_uniformContDiffOn_centered_remainder {n : ℕ}
       (closedBall 0 r) := by
   have hy : ∀ᶠ y in 𝓝 x, ContDiffAt ℝ n (negativeGradientRemainder f x) y := by
     filter_upwards [hf.eventually (by simp)] with y hy
-    exact hy.contDiffAt_negativeGradientRemainder
+    exact hy.contDiffAt_negativeGradientRemainder le_rfl
   have hz : ∀ᶠ z in 𝓝 (0 : E), ContDiffAt ℝ n (fun z ↦ negativeGradientRemainder f x (x + z)) z :=
     ((continuous_const.add continuous_id).tendsto' (0 : E) x (by simp)).eventually hy
       |>.mono fun z hz ↦ hz.comp z (contDiffAt_const.add contDiffAt_id)
