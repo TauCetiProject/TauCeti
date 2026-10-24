@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.FunctorOfPoints
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Tangent
-public import TauCeti.Algebra.AlgebraicGroup.Tangent.Exponential
+public import TauCeti.Algebra.AlgebraicGroup.Tangent.Exponential.Basic
 public import TauCeti.RingTheory.Nilpotent.Exp
 import TauCeti.Algebra.Lie.Derivation.LocallyNilpotent
 import TauCeti.RingTheory.Derivation.Matrix
