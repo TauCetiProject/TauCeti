@@ -270,9 +270,9 @@ theorem spinSixWedgeQuadraticIsometryEquivSplit_symm_apply (x : SplitEvenSpace K
     (spinSixWedgeQuadraticIsometryEquivSplit K).symm x =
       (spinSixWedgeIsometryEquivPolarSplit K).symm x := (rfl)
 
-/-- The transported Spin action on the wedge model is the vector action on the split model.
-This is the action-transport boundary used when comparing the wedge representation with the
-exterior-square action of `SL₄`. -/
+/-- The isometry `spinSixWedgeIsometryEquivPolarSplit K` intertwines the Spin vector action on
+`⋀²(K⁴)`, transported along the induced Spin-group map, with the vector action of
+`splitEvenForm K 3`. -/
 @[simp]
 theorem spinSixWedgeIsometryEquivPolarSplit_spinVectorAction
     (s : spinGroup (splitEvenForm K 3)) (x : ⋀[K]^2 (Fin 4 → K)) :

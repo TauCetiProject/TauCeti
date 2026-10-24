@@ -279,16 +279,18 @@ variable {R : Type u} [CommRing R]
   {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂} {Q : QuadraticForm R N}
 
 /-- The vector action is natural for the Spin-group equivalence induced by an isometry. -/
+@[simp]
 theorem spinGroupEquiv_spinVectorAction [Invertible (2 : R)] (e : Q₁.IsometryEquiv Q₂)
     (s : spinGroup Q₂) (m : M₁) :
-    e.toIsometry (CliffordAlgebra.spinVectorAction Q₁ (e.symm.spinGroupEquiv s) m) =
-      CliffordAlgebra.spinVectorAction Q₂ s (e.toIsometry m) := by
+    e (CliffordAlgebra.spinVectorAction Q₁ (e.symm.toIsometry.spinGroupMap s) m) =
+      CliffordAlgebra.spinVectorAction Q₂ s (e m) := by
   have h := QuadraticMap.Isometry.spinGroupMap_spinVectorAction e.toIsometry
     (e.symm.spinGroupEquiv s) m
-  have hmap : e.toIsometry.spinGroupMap (e.symm.spinGroupEquiv s) = s := by
-    rw [← e.spinGroupEquiv_apply, ← e.spinGroupEquiv_symm, MulEquiv.apply_symm_apply]
-  rw [hmap, e.symm.spinGroupEquiv_apply] at h
-  exact h.symm
+  have hmap : e.toIsometry.spinGroupMap (e.symm.toIsometry.spinGroupMap s) = s := by
+    rw [← e.spinGroupEquiv_apply, ← e.symm.spinGroupEquiv_apply, ← e.spinGroupEquiv_symm,
+      MulEquiv.apply_symm_apply]
+  simpa only [QuadraticMap.IsometryEquiv.toIsometry_apply,
+    QuadraticMap.IsometryEquiv.spinGroupEquiv_apply, hmap] using h.symm
 
 /-- The homomorphism from the Spin group to the special orthogonal group is natural under
 isometric equivalences of quadratic forms. -/
