@@ -35,6 +35,7 @@ elementary order API, follow Peter Nelson and Jun Kwon's Mathlib proposal
   infinitely many; it is exact whenever there are finitely many components.
 * `Graph.toSimpleGraphHomOfLE` is the homomorphism of underlying simple graphs induced by a
   subgraph inclusion, along which simple components can be mapped.
+* `Graph.ConnectedComponent.mapOfLE` maps native components along a subgraph inclusion.
 
 Component membership is described by the walk-based `Graph.Reachable`, which agrees with
 reachability in the underlying simple graph.
@@ -490,6 +491,26 @@ theorem map_toSimpleGraphHomOfLE_connectedComponentMk_eq_map_iff (hHG : H ≤ G)
         G.Reachable z w := by
   rw [SimpleGraph.ConnectedComponent.map_mk _ w,
     map_toSimpleGraphHomOfLE_connectedComponentMk_eq_iff, coe_toSimpleGraphHomOfLE_apply]
+
+/-- A subgraph inclusion maps each native connected component to the ambient connected component
+containing it. -/
+def ConnectedComponent.mapOfLE (hHG : H ≤ G) : H.ConnectedComponent → G.ConnectedComponent :=
+  fun C ↦ ConnectedComponent.ofSimple
+    (SimpleGraph.ConnectedComponent.map (toSimpleGraphHomOfLE hHG) C.toSimple)
+
+/-- The component containing a vertex maps along an inclusion to the ambient component containing
+that vertex. -/
+@[simp]
+theorem ConnectedComponent.mapOfLE_connectedComponentOf (hHG : H ≤ G) {x : α}
+    (hx : x ∈ V(H)) :
+    ConnectedComponent.mapOfLE hHG (H.connectedComponentOf x hx) =
+      G.connectedComponentOf x (hHG.vertexSet_mono hx) := by
+  apply G.connectedComponentEquiv.injective
+  rw [ConnectedComponent.mapOfLE, connectedComponentEquiv_apply,
+    ConnectedComponent.toSimple_ofSimple, ConnectedComponent.toSimple_connectedComponentOf,
+    connectedComponentEquiv_apply, ConnectedComponent.toSimple_connectedComponentOf]
+  exact (map_toSimpleGraphHomOfLE_connectedComponentMk_eq_iff hHG).mpr
+    (Reachable.refl (hHG.vertexSet_mono hx))
 
 /-! ### Basic examples -/
 
