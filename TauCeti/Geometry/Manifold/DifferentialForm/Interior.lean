@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.ExtDeriv
+public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Basic
 public import Mathlib.Analysis.Normed.Module.Alternating.Curry
 public import Mathlib.Geometry.Manifold.VectorField.Pullback
 
@@ -18,6 +19,8 @@ Additivity in the field and the form requires `ContinuousAdd` on each fibre, sca
 `ContinuousConstSMul ℝ`, and anticommutation requires `IsTopologicalAddGroup`.
 Pullback commutes with insertion of related fields, also within arbitrary sets.
 These operations provide the algebraic input for Cartan's calculus and contraction of volume forms.
+The paired wedge is an antiderivation for insertion, with the degree-one sign and the necessary
+casts between the two parenthesizations of the degree sum.
 
 We use Mathlib's `AlternatingMap.curryLeft` and retain continuity of the remaining variables.
 This works for arbitrary topological coefficient fibres without choosing fibre norms. For fixed
@@ -125,6 +128,44 @@ theorem bundleInterior_swap [∀ x, IsTopologicalAddGroup (V x)]
     Matrix.cons_cons_comp_swap_zero_one, ContinuousAlternatingMap.coe_toAlternatingMap] using
     (ω x).map_swap (Matrix.vecCons (X x) (Matrix.vecCons (Y x) v)) Fin.zero_ne_one
 
+/-- Insertion is an antiderivation of degree `-1` for a fibrewise paired wedge.
+
+The first term has degree `k + (l + 1)`, while the result of inserting into the original wedge
+is indexed by `k + 1 + l`; the displayed `Fin.cast` records this definitional equality explicitly.
+The input fibres only need the continuity required by the topological currying theorem, while the
+output fibre has the additive and scalar continuity needed to form the paired wedge. -/
+theorem bundleInterior_wedgeWith_apply
+    {V₁ V₂ V₃ : M → Type*}
+    [∀ x, AddCommGroup (V₁ x)] [∀ x, Module ℝ (V₁ x)] [∀ x, TopologicalSpace (V₁ x)]
+    [∀ x, AddCommGroup (V₂ x)] [∀ x, Module ℝ (V₂ x)] [∀ x, TopologicalSpace (V₂ x)]
+    [∀ x, AddCommGroup (V₃ x)] [∀ x, Module ℝ (V₃ x)] [∀ x, TopologicalSpace (V₃ x)]
+    [∀ x, ContinuousAdd (V₁ x)] [∀ x, ContinuousConstSMul ℝ (V₁ x)]
+    [∀ x, ContinuousAdd (V₂ x)] [∀ x, ContinuousConstSMul ℝ (V₂ x)]
+    [∀ x, IsTopologicalAddGroup (V₃ x)] [∀ x, ContinuousConstSMul ℝ (V₃ x)]
+    {k l : ℕ} (X : (x : M) → TangentSpace I x)
+    (μ : (x : M) → V₁ x →L[ℝ] V₂ x →L[ℝ] V₃ x)
+    (hμ : ∀ x, Continuous (Function.uncurry fun a b ↦ μ x a b))
+    (φ : RoughBundleForm I M V₁ (k + 1)) (ψ : RoughBundleForm I M V₂ (l + 1))
+    (x : M) (v : Fin (k + 1 + l) → TangentSpace I x) :
+    bundleInterior (k := k + 1 + l) X
+        (bundleWedgeWith (k := k + 1) (l := l + 1) μ hμ φ ψ) x v =
+      bundleWedgeWith (k := k) (l := l + 1) μ hμ (bundleInterior (k := k) X φ) ψ x
+          (v ∘ Fin.cast (show k + (l + 1) = k + 1 + l by omega)) +
+        (-1 : ℝ) ^ (k + 1) •
+          bundleWedgeWith (k := k + 1) (l := l) μ hμ φ (bundleInterior (k := l) X ψ) x v := by
+  have hφ : bundleInterior X φ x = (φ x).curryLeftTopological (X x) := by
+    ext w
+    simp only [bundleInterior_apply, ContinuousAlternatingMap.curryLeftTopological_apply_apply]
+  have hψ : bundleInterior X ψ x = (ψ x).curryLeftTopological (X x) := by
+    ext w
+    simp only [bundleInterior_apply, ContinuousAlternatingMap.curryLeftTopological_apply_apply]
+  rw [bundleInterior_apply, bundleWedgeWith_apply', bundleWedgeWith_apply',
+    bundleWedgeWith_apply', hφ, hψ]
+  simpa only [ContinuousAlternatingMap.curryLeftTopological_apply_apply,
+    Pi.add_apply, Pi.smul_apply, Function.comp_apply] using
+    (ContinuousAlternatingMap.curryLeftTopological_pairedWedge (E := TangentSpace I x)
+      (μ x) (hμ x) (φ x) (ψ x) (X x) v)
+
 section Pullback
 
 variable {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
@@ -191,6 +232,33 @@ def RoughForm.interior (X : (x : M) → TangentSpace I x)
 theorem RoughForm.interior_apply (X : (x : M) → TangentSpace I x)
     (ω : RoughForm I M F (k + 1)) (x : M) (v : Fin k → TangentSpace I x) :
     ω.interior X x v = ω x (Matrix.vecCons (X x) v) := (rfl)
+
+/-- The fixed-coefficient paired wedge is an antiderivation for insertion into its first slot. -/
+theorem RoughForm.interior_wedgeWith_apply
+    {F₁ F₂ F₃ : Type*} [NormedAddCommGroup F₁] [NormedSpace ℝ F₁]
+    [NormedAddCommGroup F₂] [NormedSpace ℝ F₂]
+    [NormedAddCommGroup F₃] [NormedSpace ℝ F₃] {k l : ℕ}
+    (X : (x : M) → TangentSpace I x) (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+    (φ : RoughForm I M F₁ (k + 1)) (ψ : RoughForm I M F₂ (l + 1))
+    (x : M) (v : Fin (k + 1 + l) → TangentSpace I x) :
+    (φ.wedgeWith μ ψ).interior X x v =
+      (φ.interior X).wedgeWith μ ψ x
+          (v ∘ Fin.cast (show k + (l + 1) = k + 1 + l by omega)) +
+        (-1 : ℝ) ^ (k + 1) • φ.wedgeWith μ (ψ.interior X) x v := by
+  have hφ : φ.interior X x = (φ x).curryLeftTopological (X x) := by
+    ext w
+    simp only [RoughForm.interior_apply,
+      ContinuousAlternatingMap.curryLeftTopological_apply_apply]
+  have hψ : ψ.interior X x = (ψ x).curryLeftTopological (X x) := by
+    ext w
+    simp only [RoughForm.interior_apply,
+      ContinuousAlternatingMap.curryLeftTopological_apply_apply]
+  rw [RoughForm.interior_apply, RoughForm.wedgeWith_apply',
+    RoughForm.wedgeWith_apply', RoughForm.wedgeWith_apply', hφ, hψ]
+  simpa only [ContinuousAlternatingMap.curryLeftTopological_apply_apply,
+    Pi.add_apply, Pi.smul_apply, Function.comp_apply] using
+    (ContinuousAlternatingMap.curryLeftTopological_pairedWedge (E := TangentSpace I x)
+      μ μ.continuous₂ (φ x) (ψ x) (X x) v)
 
 /-- Insertion of the zero field vanishes. -/
 @[simp]
