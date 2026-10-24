@@ -101,11 +101,13 @@ private theorem enorm_radialCutoff_sub_indicator_le {ε : ℝ} (hε : 0 < ε) (x
 variable [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
   {μ : Measure E}
 
-/-- **Lower bound for the perimeter of a ball.** The test vector field
-`x ↦ θ x • (x - c) / (r + δ)`, where the bump `θ` is one on the ball of radius `r` and supported
-in the ball of radius `r + δ`, is admissible and has divergence `n / (r + δ)` on the ball. -/
+/-- **Lower bound for the perimeter of a ball.** For `r > 0` and `δ > 0`, in dimension `n` the
+ball of radius `r` has perimeter at least `(n / (r + δ)) * μ.real (ball c r)`. -/
 private theorem ofReal_le_perimeter_ball (hr : 0 < r) {δ : ℝ} (hδ : 0 < δ) :
     ENNReal.ofReal (finrank ℝ E / (r + δ) * μ.real (ball c r)) ≤ perimeter μ ⊤ (ball c r) := by
+  -- The test field is `x ↦ θ x • (x - c) / (r + δ)`, where the bump `θ` is one on the ball of
+  -- radius `r` and supported in the ball of radius `r + δ`; it is admissible and has divergence
+  -- `n / (r + δ)` on the ball.
   let θ : ContDiffBump c := ⟨r, r + δ, hr, by linarith⟩
   have hrδ : 0 < r + δ := by linarith
   let φ : 𝓓(⊤, E) :=
@@ -171,11 +173,12 @@ private theorem totalVariationOn_radialCutoff_le {ε : ℝ} (hε : 0 < ε) :
   rw [hloc.fderiv_eq, fderiv_const_apply, indicator_of_notMem hx]
   simp [enorm_eq_nnnorm]
 
-/-- **Upper bound for the perimeter of a ball**, by lower semicontinuity of the total variation
-along the radial cutoffs as `ε → 0`. -/
+/-- **Upper bound for the perimeter of a ball.** For `r > 0`, in dimension `n` the ball of
+radius `r` has perimeter at most `n * r ^ (n - 1) * μ.real (ball 0 1)`. -/
 private theorem perimeter_ball_le (hr : 0 < r) :
     perimeter μ ⊤ (ball c r) ≤ ENNReal.ofReal
       (finrank ℝ E * r ^ (finrank ℝ E - 1) * μ.real (ball 0 1)) := by
+  -- By lower semicontinuity of the total variation along the radial cutoffs as `ε → 0`.
   set n := finrank ℝ E
   set ω := μ.real (ball (0 : E) 1)
   have hann : ∀ᶠ ε in 𝓝[>] (0 : ℝ), μ (closedBall c (r + ε) \ ball c r) =
@@ -226,6 +229,8 @@ private theorem perimeter_ball_le (hr : 0 < r) :
         exact totalVariationOn_radialCutoff_le hε
     _ = ENNReal.ofReal (n * r ^ (n - 1) * ω) := hslope.liminf_eq
 
+/-- For `r > 0`, in dimension `n` the ball of radius `r` has perimeter
+`n * r ^ (n - 1) * μ.real (ball 0 1)`, as a real number cast to `ℝ≥0∞`. -/
 private theorem perimeter_ball_eq_ofReal (hr : 0 < r) :
     perimeter μ ⊤ (ball c r) =
       ENNReal.ofReal (finrank ℝ E * r ^ (finrank ℝ E - 1) * μ.real (ball 0 1)) := by
