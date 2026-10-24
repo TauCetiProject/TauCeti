@@ -43,7 +43,7 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 /-- A prescribed compact exhaustion admits a smooth proper real-valued function dominating
 its first-entry index. In particular, the function is nonnegative, and its sublevel at any
 natural height `n` lies in `K n`. -/
-theorem _root_.CompactExhaustion.exists_contMDiff_isProperMap (K : CompactExhaustion M)
+theorem _root_.CompactExhaustion.exists_contMDiffMap_isProperMap (K : CompactExhaustion M)
     (I : ModelWithCorners ℝ E H) [IsManifold I ∞ M] :
     ∃ f : C^∞⟮I, M; 𝓘(ℝ), ℝ⟯, IsProperMap f ∧ ∀ x, (K.find x : ℝ) ≤ f x := by
   have : SigmaCompactSpace M :=
@@ -68,11 +68,11 @@ theorem _root_.CompactExhaustion.exists_contMDiff_isProperMap (K : CompactExhaus
 /-- A finite-dimensional sigma-compact Hausdorff smooth manifold has a nonnegative smooth
 proper exhaustion function. This also applies to the empty manifold and to manifolds with
 boundary or corners. -/
-theorem exists_nonneg_contMDiff_isProperMap (I : ModelWithCorners ℝ E H) [IsManifold I ∞ M]
+theorem exists_contMDiffMap_isProperMap_nonneg (I : ModelWithCorners ℝ E H) [IsManifold I ∞ M]
     [SigmaCompactSpace M] :
     ∃ f : C^∞⟮I, M; 𝓘(ℝ), ℝ⟯, IsProperMap f ∧ ∀ x, 0 ≤ f x := by
   have : LocallyCompactSpace M := Manifold.locallyCompact_of_finiteDimensional I
-  obtain ⟨f, hp, hf⟩ := (CompactExhaustion.choice M).exists_contMDiff_isProperMap I
+  obtain ⟨f, hp, hf⟩ := (CompactExhaustion.choice M).exists_contMDiffMap_isProperMap I
   exact ⟨f, hp, fun x ↦ (Nat.cast_nonneg _).trans (hf x)⟩
 
 end TauCeti
