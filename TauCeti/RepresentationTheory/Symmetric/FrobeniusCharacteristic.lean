@@ -247,7 +247,8 @@ variable {σ : Type*} [Fintype σ] {R : Type*} [CommRing R]
 
 /-- **A power sum pairs with a Schur polynomial to a character value**: `⟨p_ρ, s_μ⟩ = χ^μ(ρ)` for
 the Hall inner product, over every commutative ring.  This is Frobenius's formula
-`p_ρ = ∑_λ χ^λ(ρ) s_λ` read in the Schur basis. -/
+`p_ρ = ∑_λ χ^λ(ρ) s_λ` read in the Schur basis.  It is not a `simp` lemma:
+`TauCeti.hallInner_schurPolyBasis_right` already reduces the left side to a Schur coordinate. -/
 theorem hallInner_psumPart_schurPolyBasis (ρ : n.Partition)
     (μ : {ν : n.Partition // ν.parts.card ≤ Fintype.card σ}) :
     hallInner σ R n ⟨psumPart σ R ρ, psumPart_mem_symmetricHomogeneousSubmodule R ρ⟩
@@ -263,6 +264,7 @@ of a permutation of cycle type `ρ` (`TauCeti.zPart`).  This holds over every co
 `TauCeti.hallInner_psumPart_schurPolyBasis` it is the column orthogonality of the character table
 of `Sₙ`.  With fewer letters the power sums of the partitions with too many parts become
 dependent, and the formula fails. -/
+@[simp]
 theorem hallInner_psumPart (h : n ≤ Fintype.card σ) (ρ ρ' : n.Partition) :
     hallInner σ R n ⟨psumPart σ R ρ, psumPart_mem_symmetricHomogeneousSubmodule R ρ⟩
         ⟨psumPart σ R ρ', psumPart_mem_symmetricHomogeneousSubmodule R ρ'⟩ =
@@ -281,6 +283,7 @@ theorem hallInner_psumPart (h : n ≤ Fintype.card σ) (ρ ρ' : n.Partition) :
 `⟨f, g⟩ = (1 / n!) ∑_π f(π) g(π⁻¹)` of class functions of `Sₙ` to the Hall inner product of
 symmetric polynomials.  Both forms make the bases matched by the Frobenius characteristic
 orthonormal: the characters of the Specht modules and the Schur polynomials. -/
+@[simp]
 theorem hallInner_frobeniusCharacteristic (d : ℕ) (h : n ≤ d)
     (f g : ClassFunction ℂ (Perm (Fin n))) :
     hallInner (Fin d) ℂ n (frobeniusCharacteristic n d h f) (frobeniusCharacteristic n d h g) =

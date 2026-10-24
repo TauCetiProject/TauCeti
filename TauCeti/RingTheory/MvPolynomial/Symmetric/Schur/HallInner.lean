@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import Mathlib.LinearAlgebra.Dual.Basis
+public import TauCeti.RingTheory.MvPolynomial.Symmetric.Complete.Basic
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Basis
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.HsymmPart
 
@@ -26,8 +27,11 @@ The form lives on `TauCeti.symmetricHomogeneousSubmodule σ R n` for a finite al
 commutative ring `R`, the module of which the Schur polynomials of the partitions of `n` with at
 most `Fintype.card σ` parts are a basis (`TauCeti.schurPolyBasis`).  When `σ` has at least `n`
 letters this module is the degree-`n` part of the ring of symmetric functions, and the form is the
-classical one; with fewer letters it is the form induced on the quotient in which the Schur
-functions of the longer partitions vanish.
+classical one.  With fewer letters the classical form does not descend to the quotient in which
+the Schur functions of the longer partitions vanish, those functions having norm `1`; instead it is
+the restriction of the classical form to the span of the surviving Schur functions, transported to
+the symmetric polynomials in `σ` along the isomorphism carrying each surviving Schur function to
+its specialization.
 
 The power-sum orthogonality `⟨p_ρ, p_ρ'⟩ = z_ρ δ_{ρρ'}` and the isometry of the Frobenius
 characteristic need the character table of the symmetric group, and are proved in
@@ -58,23 +62,6 @@ public section
 namespace TauCeti
 
 open MvPolynomial Finset
-
-/-! ### Products of complete homogeneous symmetric polynomials -/
-
-section CommSemiring
-
-variable {σ : Type*} [Fintype σ] [DecidableEq σ] {R : Type*} [CommSemiring R] {n : ℕ}
-
-/-- **A product of complete homogeneous symmetric polynomials is symmetric and homogeneous**: `h_ν`
-is homogeneous of degree `n` for a partition `ν` of `n`.  It is a combination of Schur
-polynomials of degree `n` (`TauCeti.hsymmPart_eq_sum_kostkaNumber_smul_schurPoly`). -/
-theorem hsymmPart_mem_symmetricHomogeneousSubmodule (ν : n.Partition) :
-    hsymmPart σ R ν ∈ symmetricHomogeneousSubmodule σ R n := by
-  rw [hsymmPart_eq_sum_kostkaNumber_smul_schurPoly]
-  exact Submodule.sum_mem _ fun μ _ =>
-    Submodule.smul_mem _ _ (schurPoly_mem_symmetricHomogeneousSubmodule μ)
-
-end CommSemiring
 
 /-! ### The Hall inner product -/
 
@@ -137,6 +124,7 @@ theorem nondegenerate_hallInner : (hallInner σ R n).Nondegenerate := by
 /-- **The Schur polynomials are orthonormal for the Hall inner product**, stated for partitions:
 `⟨s_λ, s_μ⟩ = δ_{λμ}` whenever `μ` has at most `Fintype.card σ` parts.  No bound on `λ` is needed:
 the Schur polynomial of a longer partition is `0`, and that partition differs from `μ`. -/
+@[simp]
 theorem hallInner_schurPoly (l μ : n.Partition) (hμ : μ.parts.card ≤ Fintype.card σ) :
     hallInner σ R n ⟨schurPoly σ R l, schurPoly_mem_symmetricHomogeneousSubmodule l⟩
         ⟨schurPoly σ R μ, schurPoly_mem_symmetricHomogeneousSubmodule μ⟩ =
@@ -160,6 +148,7 @@ is its coefficient at the sorted monomial `x^ν` recording the parts of `ν`, wh
 coordinate in the monomial basis (`TauCeti.msymmBasis_repr_apply`).  On a Schur polynomial `s_μ`
 both sides are the Kostka number `K_{μν}`: the left by the expansion of `h_ν` in Schur polynomials,
 the right by the monomial expansion of `s_μ`. -/
+@[simp]
 theorem hallInner_hsymmPart_left (ν : n.Partition) (hν : ν.parts.card ≤ Fintype.card σ)
     (p : symmetricHomogeneousSubmodule σ R n) :
     hallInner σ R n ⟨hsymmPart σ R ν, hsymmPart_mem_symmetricHomogeneousSubmodule ν⟩ p =
@@ -177,7 +166,8 @@ theorem hallInner_hsymmPart_left (ν : n.Partition) (hν : ν.parts.card ≤ Fin
 the Hall inner product**: `⟨h_μ, m_ν⟩ = δ_{μν}` for partitions `μ` and `ν` of `n`, `μ` having at
 most `Fintype.card σ` parts.  This is Macdonald's definition of the Hall inner product.  No bound on
 `ν` is needed: the monomial symmetric polynomial of a longer partition is `0`, and that partition
-differs from `μ`. -/
+differs from `μ`.  It is not a `simp` lemma: `TauCeti.hallInner_hsymmPart_left` and
+`TauCeti.coeff_msymm_partWeight` already prove it. -/
 theorem hallInner_hsymmPart_msymm (μ ν : n.Partition) (hμ : μ.parts.card ≤ Fintype.card σ) :
     hallInner σ R n ⟨hsymmPart σ R μ, hsymmPart_mem_symmetricHomogeneousSubmodule μ⟩
         ⟨msymm σ R ν, msymm_mem_symmetricHomogeneousSubmodule ν⟩ =
