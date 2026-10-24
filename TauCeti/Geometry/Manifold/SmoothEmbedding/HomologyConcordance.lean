@@ -31,8 +31,8 @@ spheres this changes the relation only by mirroring and reversal: an integral ho
 `W` and the cylinder may be oriented to induce the given orientations of `Y₀` and of `f₀`, at the
 cost of reversing the orientation of `Y₁` or of `f₁`.
 
-Every embedding of a boundaryless manifold into a compact boundaryless manifold is homology
-concordant to itself through the cylinder over the target
+Every embedding of a boundaryless manifold into a compact Hausdorff boundaryless manifold is
+homology concordant to itself through the cylinder over the target
 (`TauCeti.HomologyConcordant.refl`), so the relation is not vacuous.
 
 ## Main definitions
@@ -44,10 +44,12 @@ concordant to itself through the cylinder over the target
 ## Main results
 
 * `TauCeti.isHomologyConcordance_cylinder`: the product cylinder `f × id` is a homology concordance
-  from `f` to itself in the cylinder over the target.
-* `TauCeti.HomologyConcordant.refl`: every embedding is homology concordant to itself.
-* `TauCeti.homologyConcordant_transDiffeomorph`: every embedding is homology concordant to its
-  transport along a diffeomorphism of the target.
+  from `f` to itself in the cylinder over a compact boundaryless target.
+* `TauCeti.HomologyConcordant.refl`: every embedding of a boundaryless manifold into a compact
+  Hausdorff boundaryless manifold is homology concordant to itself.
+* `TauCeti.homologyConcordant_transDiffeomorph`: every embedding of a boundaryless manifold into a
+  compact Hausdorff boundaryless manifold is homology concordant to its transport along a
+  diffeomorphism of the target.
 
 ## References
 
