@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.Matrix.Cholesky.Topology
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Positive
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Unitary
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperUnitriangular.Basic
 
 import Mathlib.Algebra.Order.Star.Real
@@ -67,20 +68,6 @@ namespace TauCeti
 
 variable {n : ℕ}
 
-/-- An invertible real matrix lies in the unitary subgroup of `GL n ℝ` exactly when its transpose
-is a right inverse. -/
-private theorem mem_unitarySubgroup_GL_iff {g : GL (Fin n) ℝ} :
-    g ∈ unitarySubgroup (GL (Fin n) ℝ) ↔
-      (g : Matrix (Fin n) (Fin n) ℝ) * (g : Matrix (Fin n) (Fin n) ℝ)ᵀ = 1 := by
-  rw [_root_.mem_unitarySubgroup_iff, Units.unitary_eq, Submonoid.mem_comap, Units.coeHom_apply]
-  exact mem_orthogonalGroup_iff (Fin n) ℝ
-
-/-- The inverse of an element of the unitary subgroup of `GL n ℝ` is its transpose. -/
-private theorem coe_inv_of_mem_unitarySubgroup {g : GL (Fin n) ℝ}
-    (hg : g ∈ unitarySubgroup (GL (Fin n) ℝ)) :
-    ((g⁻¹ : GL (Fin n) ℝ) : Matrix (Fin n) (Fin n) ℝ) = (g : Matrix (Fin n) (Fin n) ℝ)ᵀ :=
-  (Units.eq_inv_of_mul_eq_one_left (mem_unitarySubgroup_GL_iff.1 hg)).symm
-
 /-- The Gram matrix `gᵀ g` of an invertible real matrix, as a positive-definite matrix. -/
 private def gramPosDefMatrix (g : GL (Fin n) ℝ) : PosDefMatrix n := by
   refine ⟨⟨(g : Matrix (Fin n) (Fin n) ℝ)ᵀ * g, ?_⟩, ?_⟩
@@ -125,14 +112,8 @@ private theorem continuous_gramCholesky : Continuous (gramCholesky (n := n)) := 
 private theorem gramCholesky_orthogonal (g : GL (Fin n) ℝ) :
     ((g⁻¹ : GL (Fin n) ℝ) : Matrix (Fin n) (Fin n) ℝ)ᵀ * gramCholesky g *
         ((gramCholesky g)ᵀ * ((g⁻¹ : GL (Fin n) ℝ) : Matrix (Fin n) (Fin n) ℝ)) = 1 := by
-  have h₁ : ((g⁻¹ : GL (Fin n) ℝ) : Matrix (Fin n) (Fin n) ℝ)ᵀ * (g : Matrix (Fin n) (Fin n) ℝ)ᵀ =
-      1 := by
-    rw [← transpose_mul, ← Units.val_mul, mul_inv_cancel, Units.val_one, transpose_one]
-  have h₂ : (g : Matrix (Fin n) (Fin n) ℝ) * ((g⁻¹ : GL (Fin n) ℝ) : Matrix (Fin n) (Fin n) ℝ) =
-      1 := by
-    rw [← Units.val_mul, mul_inv_cancel, Units.val_one]
-  rw [← Matrix.mul_assoc, Matrix.mul_assoc _ (gramCholesky g), gramCholesky_mul_transpose,
-    ← Matrix.mul_assoc _ _ (g : Matrix (Fin n) (Fin n) ℝ), h₁, Matrix.one_mul, h₂]
+  rw [Matrix.mul_assoc, ← Matrix.mul_assoc (gramCholesky g), gramCholesky_mul_transpose]
+  simp [← transpose_mul]
 
 /-- The orthogonal factor `(g⁻¹)ᵀ L` of the Iwasawa decomposition of `g`, as an element of
 `GL n ℝ` with inverse its transpose. -/
@@ -183,9 +164,8 @@ private def iwasawaUnitriangular (g : GL (Fin n) ℝ) : GL (Fin n) ℝ :=
 private theorem coe_iwasawaUnitriangular (g : GL (Fin n) ℝ) :
     (iwasawaUnitriangular g : Matrix (Fin n) (Fin n) ℝ) =
       (diagonal fun i => (gramCholesky g i i)⁻¹) * (gramCholesky g)ᵀ := by
-  rw [iwasawaUnitriangular, Units.val_mul, Units.val_mul, coe_inv_iwasawaOrthogonal,
-    coe_inv_iwasawaDiagonal, Matrix.mul_assoc, Matrix.mul_assoc, ← Units.val_mul, inv_mul_cancel,
-    Units.val_one, Matrix.mul_one]
+  simp only [iwasawaUnitriangular, Units.val_mul, coe_inv_iwasawaOrthogonal,
+    coe_inv_iwasawaDiagonal, Matrix.mul_assoc, Units.inv_mul, Matrix.mul_one]
 
 private theorem iwasawaUnitriangular_mem (g : GL (Fin n) ℝ) :
     iwasawaUnitriangular g ∈ upperUnitriangularGroup (Fin n) ℝ := by
@@ -193,12 +173,6 @@ private theorem iwasawaUnitriangular_mem (g : GL (Fin n) ℝ) :
   refine ⟨fun i j hji => ?_, fun i => ?_⟩
   · rw [diagonal_mul, transpose_apply, gramCholesky_isLowerTriangular g hji, mul_zero]
   · rw [diagonal_mul, transpose_apply, inv_mul_cancel₀ (gramCholesky_diag_pos g i).ne']
-
-/-- The transpose of an element of the unitary subgroup of `GL n ℝ` is a left inverse. -/
-private theorem transpose_mul_self_of_mem_unitarySubgroup {k : GL (Fin n) ℝ}
-    (hk : k ∈ unitarySubgroup (GL (Fin n) ℝ)) :
-    (k : Matrix (Fin n) (Fin n) ℝ)ᵀ * (k : Matrix (Fin n) (Fin n) ℝ) = 1 := by
-  rw [← coe_inv_of_mem_unitarySubgroup hk, ← Units.val_mul, inv_mul_cancel, Units.val_one]
 
 /-- The Gram matrix of `k a u` has Cholesky factor `(a u)ᵀ`: this is what makes the Iwasawa
 factors of `g` unique. -/
@@ -210,16 +184,16 @@ private theorem gramCholesky_mul_mul {k a u : GL (Fin n) ℝ}
   have hu' := UpperUnitriangularGroup.mem_iff.1 hu
   have hentry : ∀ i j, ((a * u : GL (Fin n) ℝ) : Matrix (Fin n) (Fin n) ℝ)ᵀ i j =
       d j * (u : Matrix (Fin n) (Fin n) ℝ) j i := fun i j => by
-    rw [transpose_apply, Units.val_mul, had, diagonal_mul]
+    simp [had, diagonal_mul]
   let L : PosDiagLowerTriangular n :=
     ⟨((a * u : GL (Fin n) ℝ) : Matrix (Fin n) (Fin n) ℝ)ᵀ,
       fun i j hij => by
         rw [hentry, hu'.isUpperTriangular (OrderDual.toDual_lt_toDual.1 hij), mul_zero],
       fun i => by rw [hentry, hu'.apply_diag, mul_one]; exact hd i⟩
   have hL : L.1 * L.1ᵀ = ((gramPosDefMatrix (k * a * u)).1 : Matrix (Fin n) (Fin n) ℝ) := by
-    rw [coe_gramPosDefMatrix, transpose_transpose, mul_assoc k, Units.val_mul k, transpose_mul,
-      Matrix.mul_assoc, ← Matrix.mul_assoc (k : Matrix (Fin n) (Fin n) ℝ)ᵀ,
-      transpose_mul_self_of_mem_unitarySubgroup hk, Matrix.one_mul]
+    simp [L, coe_gramPosDefMatrix, transpose_mul, Matrix.mul_assoc,
+      ← Matrix.mul_assoc (k : Matrix (Fin n) (Fin n) ℝ)ᵀ,
+      transpose_mul_self_of_mem_unitarySubgroup hk]
   exact congrArg Subtype.val (eq_cholesky_of_mul_transpose_self_eq _ L hL).symm
 
 private theorem iwasawaOrthogonal_mul_mul {k a u : GL (Fin n) ℝ}
@@ -228,20 +202,19 @@ private theorem iwasawaOrthogonal_mul_mul {k a u : GL (Fin n) ℝ}
     iwasawaOrthogonal (k * a * u) = k := by
   have hinv : a * u * (k * a * u)⁻¹ = k⁻¹ := by group
   refine Units.ext ?_
-  rw [coe_iwasawaOrthogonal, gramCholesky_mul_mul hk ha hu, ← transpose_mul, ← Units.val_mul, hinv,
-    coe_inv_of_mem_unitarySubgroup hk, transpose_transpose]
+  -- `(g⁻¹)ᵀ (a u)ᵀ = (a u g⁻¹)ᵀ = (k⁻¹)ᵀ`, the transpose of the transpose of `k`
+  rw [coe_iwasawaOrthogonal, gramCholesky_mul_mul hk ha hu, ← transpose_mul, ← Units.val_mul, hinv]
+  simp [coe_inv_eq_transpose_of_mem_unitarySubgroup hk]
 
 private theorem iwasawaDiagonal_mul_mul {k a u : GL (Fin n) ℝ}
     (hk : k ∈ unitarySubgroup (GL (Fin n) ℝ)) (ha : a ∈ posDiagonalSubgroup (Fin n) ℝ)
     (hu : u ∈ upperUnitriangularGroup (Fin n) ℝ) :
     iwasawaDiagonal (k * a * u) = a := by
-  refine Units.ext ?_
-  rw [coe_iwasawaDiagonal, coe_eq_diagonal_of_mem_posDiagonalSubgroup ha,
-    gramCholesky_mul_mul hk ha hu]
-  refine congrArg diagonal (funext fun i => ?_)
   obtain ⟨d, -, had⟩ := mem_posDiagonalSubgroup_iff.1 ha
-  rw [transpose_apply, Units.val_mul, had, diagonal_mul,
-    (UpperUnitriangularGroup.mem_iff.1 hu).apply_diag, mul_one, diagonal_apply_eq]
+  refine Units.ext ?_
+  rw [coe_iwasawaDiagonal, gramCholesky_mul_mul hk ha hu, had]
+  refine congrArg diagonal (funext fun i => ?_)
+  simp [had, diagonal_mul, (UpperUnitriangularGroup.mem_iff.1 hu).apply_diag]
 
 variable (n) in
 /-- **The Iwasawa decomposition of `GL n ℝ`.** Multiplication `(k, a, u) ↦ k a u` is a
