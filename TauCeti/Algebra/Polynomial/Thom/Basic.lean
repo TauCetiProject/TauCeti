@@ -259,7 +259,7 @@ section Neg
 variable {R : Type*} [Ring R] [LinearOrder R] [IsOrderedRing R]
 
 /-- Negating the polynomial negates every derivative sign. -/
-@[simp]
+@[simp, grind =]
 theorem derivativeSign_neg (p : R[X]) (x : R) (k : ℕ) :
     derivativeSign (-p) x k = -derivativeSign p x k := by
   rw [derivativeSign_def, derivativeSign_def, iterate_derivative_neg, eval_neg, Left.sign_neg]
@@ -277,7 +277,7 @@ section Scale
 variable {R : Type*} [Ring R] [LinearOrder R] [IsStrictOrderedRing R]
 
 /-- Scaling the polynomial by `c` multiplies every derivative sign by `sign c`. -/
-@[simp]
+@[simp, grind =]
 theorem derivativeSign_C_mul (c : R) (p : R[X]) (x : R) (k : ℕ) :
     derivativeSign (C c * p) x k = sign c * derivativeSign p x k := by
   rw [derivativeSign_def, derivativeSign_def, iterate_derivative_C_mul, eval_C_mul, sign_mul]
@@ -297,6 +297,7 @@ variable {R : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
 
 /-- **Affine change of variable.** The `k`th derivative sign of `p (a X + b)` at `x` is the `k`th
 derivative sign of `p` at `a x + b`, multiplied by `sign a ^ k`. -/
+@[simp, grind =]
 theorem derivativeSign_comp_C_mul_X_add_C (p : R[X]) (a b x : R) (k : ℕ) :
     derivativeSign (p.comp (C a * X + C b)) x k = sign a ^ k * derivativeSign p (a * x + b) k := by
   rw [derivativeSign_def, derivativeSign_def, iterate_derivative_comp_C_mul_X_add_C, eval_mul,
@@ -311,7 +312,7 @@ theorem thomEncoding_comp_C_mul_X_add_C {a : R} (ha : a ≠ 0) (b : R) (p : R[X]
       sign a ^ (i.val + 1) *
         thomEncoding p (a * x + b) (Fin.cast (natDegree_comp_C_mul_X_add_C ha b p) i) := by
   funext i
-  simp [derivativeSign_comp_C_mul_X_add_C]
+  simp
 
 end Affine
 

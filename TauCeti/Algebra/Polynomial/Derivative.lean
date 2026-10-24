@@ -60,17 +60,6 @@ theorem _root_.Polynomial.exists_iterate_smul_derivative'_apply_eq_zero [CommSem
     LinearMap.smul_apply, Module.End.pow_apply, Derivation.coeFn_coe, coe_derivative',
     iterate_derivative_eq_zero (Nat.lt_succ_self _), smul_zero]
 
-/-- The `k`-th derivative of `p (a X)` is `a ^ k p⁽ᵏ⁾ (a X)`. -/
-theorem _root_.Polynomial.iterate_derivative_comp_C_mul_X [CommSemiring R] (p : R[X]) (a : R)
-    (k : ℕ) :
-    derivative^[k] (p.comp (C a * X)) = C (a ^ k) * (derivative^[k] p).comp (C a * X) := by
-  induction k with
-  | zero => simp
-  | succ k ih =>
-    rw [Function.iterate_succ_apply', ih, derivative_C_mul, derivative_comp, derivative_C_mul_X,
-      Function.iterate_succ_apply', pow_succ, C_mul]
-    ring
-
 /-- The `k`-th derivative of `p (a X + b)` is `a ^ k p⁽ᵏ⁾ (a X + b)`. -/
 theorem _root_.Polynomial.iterate_derivative_comp_C_mul_X_add_C [CommSemiring R] (p : R[X])
     (a b : R) (k : ℕ) :
@@ -79,9 +68,14 @@ theorem _root_.Polynomial.iterate_derivative_comp_C_mul_X_add_C [CommSemiring R]
   induction k with
   | zero => simp
   | succ k ih =>
-    rw [Function.iterate_succ_apply', ih, derivative_C_mul, derivative_comp, derivative_add,
-      derivative_C_mul_X, derivative_C, add_zero, Function.iterate_succ_apply', pow_succ, C_mul]
+    simp [Function.iterate_succ_apply', ih, derivative_comp, derivative_pow, pow_succ, C_mul]
     ring
+
+/-- The `k`-th derivative of `p (a X)` is `a ^ k p⁽ᵏ⁾ (a X)`. -/
+theorem _root_.Polynomial.iterate_derivative_comp_C_mul_X [CommSemiring R] (p : R[X]) (a : R)
+    (k : ℕ) :
+    derivative^[k] (p.comp (C a * X)) = C (a ^ k) * (derivative^[k] p).comp (C a * X) := by
+  simpa using p.iterate_derivative_comp_C_mul_X_add_C a 0 k
 
 /-- **Reciprocal-polynomial identity.** A polynomial `p` of degree at most `2 g` which is its own
 reflection at `2 g`, that is `X ^ (2 g) p (1 / X) = p (X)`, satisfies `p' (1) = g p (1)`. -/

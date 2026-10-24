@@ -226,20 +226,20 @@ theorem thomEncodings_C_mul {R : Type*} [CommRing R] [LinearOrder R] [IsStrictOr
   rw [thomEncodings_def, thomEncodings_def, roots_C_mul p hc, Finset.image_image]
   exact Finset.image_congr fun x _ ↦ thomEncoding_C_mul hc p x
 
-/-- **Affine change of variable.** For `a ≠ 0`, the realized Thom encodings of `p (a X + b)` are
-those of `p` with coordinate `i` multiplied by `sign a ^ (i + 1)`. The root `a⁻¹ (x - b)` of
+/-- **Affine change of variable.** For a unit `a`, the realized Thom encodings of `p (a X + b)`
+are those of `p` with coordinate `i` multiplied by `sign a ^ (i + 1)`. The root `a⁻¹ (x - b)` of
 `p (a X + b)` corresponds to the root `x` of `p`. -/
-theorem thomEncodings_comp_C_mul_X_add_C {R : Type*} [Field R] [LinearOrder R]
-    [IsStrictOrderedRing R] {a : R} (ha : a ≠ 0) (b : R) (p : R[X]) :
+theorem thomEncodings_comp_C_mul_X_add_C {R : Type*} [CommRing R] [LinearOrder R]
+    [IsStrictOrderedRing R] {a : R} (ha : IsUnit a) (b : R) (p : R[X]) :
     (p.comp (C a * X + C b)).thomEncodings = p.thomEncodings.image fun σ i ↦
-      SignType.sign a ^ (i.val + 1) * σ (Fin.cast (natDegree_comp_C_mul_X_add_C ha b p) i) := by
+      SignType.sign a ^ (i.val + 1) *
+        σ (Fin.cast (natDegree_comp_C_mul_X_add_C ha.ne_zero b p) i) := by
   classical
-  rw [thomEncodings_def, thomEncodings_def,
-    roots_comp_C_mul_X_add_C p a b (isUnit_iff_ne_zero.2 ha),
+  rw [thomEncodings_def, thomEncodings_def, roots_comp_C_mul_X_add_C p a b ha,
     Multiset.toFinset_map, Finset.image_image, Finset.image_image]
   refine Finset.image_congr fun x _ ↦ ?_
-  simp only [Function.comp_apply, thomEncoding_comp_C_mul_X_add_C ha, Ring.inverse_eq_inv',
-    mul_inv_cancel_left₀ ha, sub_add_cancel]
+  simp only [Function.comp_apply, thomEncoding_comp_C_mul_X_add_C ha.ne_zero, ← mul_assoc,
+    Ring.mul_inverse_cancel a ha, one_mul, sub_add_cancel]
 
 variable {R : Type*} [Field R] [LinearOrder R] [IsStrictOrderedRing R]
 
