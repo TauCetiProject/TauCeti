@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
+public import Mathlib.MeasureTheory.Integral.Average
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import TauCeti.Topology.EMetricSpace.Lipschitz
@@ -23,7 +24,11 @@ function is locally constant, so that the derivative is compactly supported. Bei
 is then bounded, which bounds the gradients of cutoffs built from `Real.smoothTransition`. It is
 also integrable with integral one, so its rescalings `t ↦ c ψ'(c (a - t))` are approximate
 identities; together with the chain rule and local Lipschitz continuity of `ψ (c (u - t))`, this
-is what is needed to smooth the indicator of a superlevel set `{u > t}`.
+is what is needed to smooth the indicator of a superlevel set `{u > t}`. The one-sided rescalings
+`y ↦ c ψ'(c (y - a))`, supported in `[a, a + c⁻¹]`, converge at every Lebesgue point: if the mean
+oscillation of `u` about `v` on `closedBall a r` tends to zero, then
+`∫ c ψ'(c (y - a)) u y dy → v` as `c → ∞`. Pairing a function with the derivative of a smooth
+step `ψ (c (y - a))` therefore recovers its Lebesgue value at `a`.
 
 It also uses the smooth transition to cut a function off near zero. For `m > 0` and a function
 `g : ℝ → ℝ`, `TauCeti.positiveCutoff m g` is the product of `g` with a smooth transition from `0`
@@ -43,7 +48,12 @@ of chain rules for Sobolev functions.
 * `Real.smoothTransition.hasCompactSupport_deriv`: the derivative is compactly supported.
 * `Real.smoothTransition.integral_deriv`: the derivative has integral one.
 * `Real.smoothTransition.lintegral_ofReal_mul_deriv`: `∫_ℝ c ψ'(c (a - t)) dt = 1` for `c > 0`.
-* `HasFDerivAt.smoothTransition`: the chain rule for `ψ ∘ f`.
+* `Real.smoothTransition.integral_mul_deriv_mul_sub`: `∫_ℝ c ψ'(c (y - a)) dy = 1` for `c > 0`.
+* `Real.smoothTransition.integrable_mul_deriv_mul_sub_mul`: its product with a function
+  integrable on `closedBall a c⁻¹` is integrable.
+* `Real.smoothTransition.tendsto_integral_mul_deriv_mul_sub_mul`: at a Lebesgue point `a` of `u`
+  with value `v`, `∫ c ψ'(c (y - a)) u y dy → v` as `c → ∞`.
+* `HasFDerivAt.smoothTransition` and `HasDerivAt.smoothTransition`: the chain rule for `ψ ∘ f`.
 * `LocallyLipschitzOn.smoothTransition_mul_sub`: `ψ (c (u - t))` is locally Lipschitz on `s`
   when `u` is.
 * `TauCeti.positiveCutoff`: the cutoff of `g` near zero.
@@ -130,6 +140,96 @@ theorem lintegral_ofReal_mul_deriv (a : ℝ) {c : ℝ} (hc : 0 < c) :
   simp [integral_const_mul, integral_sub_left_eq_self (fun s => deriv smoothTransition (c * s)),
     Measure.integral_comp_mul_left, abs_of_pos hc, hc.ne']
 
+/-- The rescaled derivatives `y ↦ c ψ'(c (y - a))` of the smooth transition function `ψ` integrate
+to one: `∫_ℝ c ψ'(c (y - a)) dy = 1` for `c > 0`. -/
+@[simp]
+theorem integral_mul_deriv_mul_sub (a : ℝ) {c : ℝ} (hc : 0 < c) :
+    ∫ y, c * deriv smoothTransition (c * (y - a)) = 1 := by
+  rw [integral_const_mul, integral_sub_right_eq_self (fun z => deriv smoothTransition (c * z)),
+    Measure.integral_comp_mul_left, integral_deriv, abs_of_pos (inv_pos.2 hc)]
+  simp [hc.ne']
+
+/-- The rescaled derivative `y ↦ ψ'(c (y - a))` of the smooth transition function `ψ` vanishes
+outside `closedBall a c⁻¹`; it is supported in `[a, a + c⁻¹]`. -/
+theorem deriv_mul_sub_eq_zero {a c y : ℝ} (hc : 0 < c) (hy : y ∉ Metric.closedBall a c⁻¹) :
+    deriv smoothTransition (c * (y - a)) = 0 := by
+  rw [Real.closedBall_eq_Icc, mem_Icc, not_and_or, not_le, not_le] at hy
+  rcases hy with hy | hy
+  · exact deriv_of_neg (mul_neg_of_pos_of_neg hc (by linarith [inv_pos.2 hc]))
+  · refine deriv_of_one_lt ?_
+    calc (1 : ℝ) = c * c⁻¹ := (mul_inv_cancel₀ hc.ne').symm
+      _ < c * (y - a) := mul_lt_mul_of_pos_left (by linarith) hc
+
+/-- The product of the rescaled derivative `y ↦ c ψ'(c (y - a))` of the smooth transition
+function `ψ` with a function integrable on `closedBall a c⁻¹` is integrable. -/
+theorem integrable_mul_deriv_mul_sub_mul {u : ℝ → ℝ} {a c : ℝ} (hc : 0 < c)
+    (hu : IntegrableOn u (Metric.closedBall a c⁻¹)) :
+    Integrable fun y => c * deriv smoothTransition (c * (y - a)) * u y := by
+  refine (integrableOn_iff_integrable_of_support_subset (s := Metric.closedBall a c⁻¹) ?_).1 ?_
+  · refine Function.support_subset_iff'.2 fun y hy => ?_
+    rw [deriv_mul_sub_eq_zero hc hy, mul_zero, zero_mul]
+  · exact hu.continuousOn_mul (continuous_const.mul
+      (((smoothTransition.contDiff (n := 1)).continuous_deriv le_rfl).comp
+      (continuous_const.mul (continuous_id.sub continuous_const)))).continuousOn
+      (isCompact_closedBall a c⁻¹)
+
+/-- **The rescaled derivatives of the smooth transition function are an approximate identity at
+Lebesgue points.** If `u` is integrable near `a` and its mean oscillation about `v` on
+`closedBall a r` tends to zero as `r → 0`, then `∫ c ψ'(c (y - a)) u y dy → v` as `c → ∞`. -/
+theorem tendsto_integral_mul_deriv_mul_sub_mul {u : ℝ → ℝ} {a v : ℝ}
+    (hu : IntegrableAtFilter u (𝓝 a))
+    (hv : Tendsto (fun r => ⨍ y in Metric.closedBall a r, ‖u y - v‖) (𝓝[>] 0) (𝓝 0)) :
+    Tendsto (fun c => ∫ y, c * deriv smoothTransition (c * (y - a)) * u y) atTop (𝓝 v) := by
+  obtain ⟨C, hC⟩ :=
+    ((smoothTransition.contDiff (n := 1)).continuous_deriv le_rfl).bounded_above_of_compact_support
+      hasCompactSupport_deriv
+  obtain ⟨s, hs, hus⟩ := hu
+  obtain ⟨ε, hε, hεs⟩ := Metric.mem_nhds_iff.1 hs
+  -- The error is at most `2 C` times the mean oscillation of `u` on `closedBall a c⁻¹`.
+  have hbound : ∀ᶠ c in atTop, dist (∫ y, c * deriv smoothTransition (c * (y - a)) * u y) v ≤
+      2 * C * ⨍ y in Metric.closedBall a c⁻¹, ‖u y - v‖ := by
+    filter_upwards [eventually_gt_atTop ε⁻¹] with c hc
+    have hc0 : 0 < c := lt_trans (inv_pos.2 hε) hc
+    set B := Metric.closedBall a c⁻¹
+    have huB : IntegrableOn u B :=
+      hus.mono_set ((Metric.closedBall_subset_ball (inv_lt_of_inv_lt₀ hε hc)).trans hεs)
+    set k : ℝ → ℝ := fun y => c * deriv smoothTransition (c * (y - a)) with hk
+    have hkc : Continuous k :=
+      continuous_const.mul (((smoothTransition.contDiff (n := 1)).continuous_deriv le_rfl).comp
+        (continuous_const.mul (continuous_id.sub continuous_const)))
+    have hk0 (y) (hy : y ∉ B) : k y = 0 := by simp [hk, deriv_mul_sub_eq_zero hc0 hy]
+    have hkB : ∫ y in B, k y = 1 := by
+      rw [setIntegral_eq_integral_of_forall_compl_eq_zero hk0, integral_mul_deriv_mul_sub a hc0]
+    have hkuB : ∫ y, c * deriv smoothTransition (c * (y - a)) * u y = ∫ y in B, k y * u y :=
+      (setIntegral_eq_integral_of_forall_compl_eq_zero fun y hy => by
+        simp only [deriv_mul_sub_eq_zero hc0 hy, mul_zero, zero_mul]).symm
+    have hint : IntegrableOn (fun y => k y * u y) B :=
+      (integrable_mul_deriv_mul_sub_mul hc0 huB).integrableOn
+    have hint' : IntegrableOn (fun y => k y * v) B :=
+      (integrableOn_const measure_closedBall_lt_top.ne).continuousOn_mul hkc.continuousOn
+        (isCompact_closedBall a c⁻¹)
+    have hdiff : (∫ y in B, k y * u y) - v = ∫ y in B, k y * (u y - v) := by
+      simp_rw [mul_sub]
+      rw [integral_sub hint hint', integral_mul_const, hkB, one_mul]
+    have hosc : IntegrableOn (fun y => ‖u y - v‖) B :=
+      (huB.sub (integrableOn_const measure_closedBall_lt_top.ne)).norm
+    rw [Real.dist_eq, hkuB, hdiff, setAverage_eq, Real.volume_real_closedBall (inv_pos.2 hc0).le,
+      smul_eq_mul]
+    calc |∫ y in B, k y * (u y - v)| = ‖∫ y in B, k y * (u y - v)‖ := (Real.norm_eq_abs _).symm
+      _ ≤ ∫ y in B, c * C * ‖u y - v‖ := by
+          refine norm_integral_le_of_norm_le (hosc.const_mul _) (.of_forall fun y => ?_)
+          rw [norm_mul, Real.norm_eq_abs, hk, abs_mul, abs_of_pos hc0]
+          gcongr
+          exact hC _
+      _ = 2 * C * ((2 * c⁻¹)⁻¹ * ∫ y in B, ‖u y - v‖) := by
+          rw [integral_const_mul]
+          field_simp
+  have hlim : Tendsto (fun c : ℝ => 2 * C * ⨍ y in Metric.closedBall a c⁻¹, ‖u y - v‖) atTop
+      (𝓝 0) := by
+    simpa using (hv.comp tendsto_inv_atTop_nhdsGT_zero).const_mul (2 * C)
+  exact tendsto_iff_dist_tendsto_zero.2 (squeeze_zero' (.of_forall fun _ => dist_nonneg)
+    hbound hlim)
+
 end Real.smoothTransition
 
 /-- The chain rule for the smooth transition function `ψ`: if `f` has derivative `f'` at `x`,
@@ -140,6 +240,14 @@ theorem HasFDerivAt.smoothTransition {E : Type*} [NormedAddCommGroup E] [NormedS
       (deriv Real.smoothTransition (f x) • f') x :=
   (((Real.smoothTransition.contDiff (n := 1)).differentiable (by simp)
     (f x)).hasDerivAt).comp_hasFDerivAt x hf
+
+/-- The chain rule for the smooth transition function `ψ` in one variable: if `f` has derivative
+`f'` at `x`, then `ψ ∘ f` has derivative `ψ'(f x) * f'` there. -/
+theorem HasDerivAt.smoothTransition {f : ℝ → ℝ} {f' x : ℝ} (hf : HasDerivAt f f' x) :
+    HasDerivAt (fun y => Real.smoothTransition (f y))
+      (_root_.deriv Real.smoothTransition (f x) * f') x :=
+  (((Real.smoothTransition.contDiff (n := 1)).differentiable (by simp)
+    (f x)).hasDerivAt).comp x hf
 
 /-- If `u` is locally Lipschitz on `s`, then so is `ψ (c (u - t))` for the smooth transition
 function `ψ`. -/
