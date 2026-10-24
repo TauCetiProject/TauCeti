@@ -32,7 +32,7 @@ not generate the integral kernel. The basis statement combines Cassels' basis fr
 successive minima (`Submodule.exists_basis_intPoints_prod_norm_le_prod_successiveMin`)
 with the cube-slice bound from Minkowski's second theorem and Vaaler's volume estimate
 (`Submodule.prod_successiveMin_intLattice_le_subspaceHeight`). The arithmetic constant comes
-from `Matrix.covolume_intLattice_ker_mulVecLin`.
+from `TauCeti.subspaceHeight_ker_mulVecLin`.
 
 ## References
 
@@ -50,22 +50,6 @@ open Matrix Module
 namespace TauCeti
 
 variable {ι : Type*} [Fintype ι]
-
-/-- The integral points of the rational kernel of an integer matrix are precisely its
-integral kernel. -/
-@[simp]
-theorem intPoints_ker_mulVecLin {m : Type*} (A : Matrix m ι ℤ) :
-    (LinearMap.ker (A.map ((↑) : ℤ → ℚ)).mulVecLin).intPoints =
-      LinearMap.ker A.mulVecLin := by
-  ext z
-  simp only [Submodule.mem_intPoints, LinearMap.mem_ker, Matrix.mulVecLin_apply, funext_iff,
-    Pi.zero_apply]
-  exact forall_congr' fun i ↦ by
-    have hcast : ((A *ᵥ z) i : ℚ) =
-        (A.map ((↑) : ℤ → ℚ) *ᵥ (fun j ↦ (z j : ℚ))) i := by
-      simpa only [Int.coe_castRingHom, Function.comp_def] using
-        RingHom.map_mulVec (Int.castRingHom ℚ) A z i
-    rw [← hcast, Int.cast_eq_zero]
 
 variable [LinearOrder ι]
 
@@ -95,18 +79,10 @@ theorem exists_basis_ker_mulVecLin_prod_norm_le {p : ℕ} {A : Matrix (Fin p) ι
       ∏ l, ‖(b l : ι → ℤ)‖ ≤
         (Fintype.card ι - p).factorial / 2 ^ (Fintype.card ι - p - 1) *
           √((A * Aᵀ).det : ℝ) / (A.minorGcd : ℝ) := by
-  have hfin : finrank ℚ (LinearMap.ker (A.map ((↑) : ℤ → ℚ)).mulVecLin) =
-      Fintype.card ι - p := by
-    have h := (A.map ((↑) : ℤ → ℚ)).mulVecLin.finrank_range_add_finrank_ker
-    rw [← Matrix.rank, hA.rank_matrix, Fintype.card_fin,
-      Module.finrank_fintype_fun_eq_card] at h
-    omega
-  have hheight : (LinearMap.ker (A.map ((↑) : ℤ → ℚ)).mulVecLin).subspaceHeight =
-      √((A * Aᵀ).det : ℝ) / (A.minorGcd : ℝ) :=
-    (Submodule.covolume_intLattice _).symm.trans (Matrix.covolume_intLattice_ker_mulVecLin hA)
   have hresult := exists_basis_intPoints_prod_norm_le
     (LinearMap.ker (A.map ((↑) : ℤ → ℚ)).mulVecLin)
-  rw [intPoints_ker_mulVecLin, hfin, hheight] at hresult
+  rw [intPoints_ker_mulVecLin, finrank_ker_mulVecLin_map hA,
+    subspaceHeight_ker_mulVecLin hA] at hresult
   simpa only [mul_div_assoc] using hresult
 
 /-- For the row `(0, 0, 1)`, the bound is one and the basis spans the entire coordinate plane.
