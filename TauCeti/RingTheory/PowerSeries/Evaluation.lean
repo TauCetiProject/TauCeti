@@ -68,7 +68,7 @@ namespace PowerSeries
 
 section AlgHom
 
-variable {A B : Type*} [CommRing A] [Semiring B] [Algebra A B]
+variable {A B : Type*} [CommSemiring A] [Semiring B] [Algebra A B]
 
 /-- An `A`-algebra map out of `A⟦X⟧` restricts on polynomials to evaluation at the image of `X`.
 No continuity is assumed. -/
