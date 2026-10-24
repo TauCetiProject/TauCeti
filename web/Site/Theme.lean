@@ -1,6 +1,14 @@
 import VersoBlog
 open Verso Genre Blog Site Syntax
 
+/-- Front-page sections appear below the hero; its preamble supplies the maths carousel. -/
+private def splitFrontContent : Output.Html → Output.Html × Output.Html
+  | .seq items =>
+    let parts := items.map splitFrontContent
+    (.seq (parts.map Prod.fst), .seq (parts.map Prod.snd))
+  | node@(.tag "section" _ _) => (node, .empty)
+  | other => (.empty, other)
+
 open Output Html Template Theme in
 def theme : Theme := { Theme.default with
   primaryTemplate := do
@@ -31,6 +39,7 @@ def theme : Theme := { Theme.default with
                 <a href="progress">"Progress"</a>
                 <a href="ci">"CI"</a>
                 <a href="about">"About"</a>
+                <a href="team">"Team"</a>
                 <a href="https://github.com/TauCetiProject/TauCeti">"GitHub"</a>
               </nav>
             </div>
@@ -54,6 +63,7 @@ def theme : Theme := { Theme.default with
     }}
   }
   |>.override #[] ⟨do
+    let (introduction, examples) := splitFrontContent (← param "content")
     return {{
       <div class="frontpage">
         <section class="hero">
@@ -68,6 +78,10 @@ def theme : Theme := { Theme.default with
               <a class="cta secondary" href="docs/">"Read the docs →"</a>
             </div>
           </div>
+        </section>
+
+        <section class="band worker-start">
+          {{ introduction }}
         </section>
 
         <section class="pillars">
@@ -128,7 +142,7 @@ def theme : Theme := { Theme.default with
           <div class="carousel">
             <button class="carousel-arrow prev" type="button" aria-label="Previous example">"‹"</button>
             <div class="carousel-track">
-              {{← param "content" }}
+              {{ examples }}
             </div>
             <button class="carousel-arrow next" type="button" aria-label="Next example">"›"</button>
           </div>
