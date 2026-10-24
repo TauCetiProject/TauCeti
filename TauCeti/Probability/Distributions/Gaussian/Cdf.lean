@@ -33,6 +33,7 @@ over `Set.Iic x` is then the limit of those interval integrals, using
 * `TauCeti.Probability.integral_Iic_gaussianPDFReal` — the same over a left half-line.
 * `TauCeti.Probability.cdf_gaussianReal_eq` — the closed-form cdf for a nonzero variance.
 * `TauCeti.Probability.cdf_gaussianReal_zero_one` — the standard Gaussian cdf.
+* `TauCeti.Probability.cdf_gaussianReal_eq_cdf_zero_one` — standardization `Φ ((x - m) / √v)`.
 * `TauCeti.Probability.cdf_gaussianReal_zero` — the cdf at the singular boundary `v = 0`.
 * `TauCeti.Probability.cdf_gaussianReal_zero_one_neg` — the symmetry `Φ (-x) = 1 - Φ x` of the
   standard Gaussian cdf.
@@ -131,6 +132,13 @@ theorem cdf_gaussianReal_eq (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0) (x : ℝ) :
 theorem cdf_gaussianReal_zero_one (x : ℝ) :
     cdf (gaussianReal 0 1) x = (1 + Real.erf (x / √2)) / 2 := by
   simpa using cdf_gaussianReal_eq 0 one_ne_zero x
+
+/-- A Gaussian cumulative distribution function of nonzero variance is the standard one at the
+standardized argument: `P(X ≤ x) = Φ ((x - m) / √v)` for `X ∼ N(m, v)`. -/
+theorem cdf_gaussianReal_eq_cdf_zero_one (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0) (x : ℝ) :
+    cdf (gaussianReal m v) x = cdf (gaussianReal 0 1) ((x - m) / √(v : ℝ)) := by
+  rw [cdf_gaussianReal_eq m hv, cdf_gaussianReal_zero_one, div_div, Real.sqrt_mul zero_le_two,
+    mul_comm √2]
 
 /-- At the singular boundary `v = 0` the Gaussian law is a Dirac mass, and its cumulative
 distribution function is the corresponding step function. -/
