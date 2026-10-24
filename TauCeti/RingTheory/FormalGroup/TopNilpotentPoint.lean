@@ -69,10 +69,11 @@ namespace FormalGroup
 
 variable {R : Type*} [CommRing R] (F : FormalGroup R)
 
-/-- The **points of a formal group law `F` in `A`**: the topologically nilpotent elements of a
-topological `R`-algebra `A`, at which every power series over `R` can be evaluated. When `A` is
-complete, Hausdorff and linearly topologised they form a group under `x +_F y = F(x, y)`. This
-is the analogue for `A` of the power-series carrier `F.Point σ`.
+/-- The **points of a formal group law `F` in `A`**: the elements of a topological ring `A`
+satisfying `PowerSeries.HasEval`, that is, the topologically nilpotent elements. Evaluation of
+power series over `R` at these elements converges only when `A` is a complete, Hausdorff, linearly
+topologised `R`-algebra; under those assumptions they form a group under `x +_F y = F(x, y)`.
+This is the analogue for `A` of the power-series carrier `F.Point σ`.
 
 This is a structure rather than a subtype of `A` so that its group law, which depends on `F`, is
 not confused with the ring operations of `A`. -/
