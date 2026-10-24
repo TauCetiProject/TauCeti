@@ -26,7 +26,7 @@ parity character.
 
 The sign is where twisted conjugation enters: a Pin element acts on vectors by
 `v ↦ involute g * v * g⁻¹`, and `involute g = (-1) ^ p • g` for `g` of parity `p`
-(`CliffordAlgebra.involute_eq_of_mem_even`, `CliffordAlgebra.involute_eq_of_mem_odd`), while
+(`CliffordAlgebra.involute_eq_uzpow_smul_of_mem_evenOdd`), while
 `ρ(g) c(v) ρ(g⁻¹)` is the image under the algebra map `c` of the untwisted conjugate
 `g * v * g⁻¹`. The inverse of a Pin element is its Clifford conjugate `star g`
 (`pinGroup.star_eq_inv`). Every Pin element has a parity, by `pinGroup.exists_mem_evenOdd`, so the
@@ -69,11 +69,8 @@ theorem pinRep_mul_spinAction_ι {p : ZMod 2} (g : pinGroup Q)
   -- Both sides are images under the algebra map `spinAction Q P`; the inverse `star g` cancels on
   -- the right, leaving `g * v = (-1) ^ p • (involute g * v)`.
   rw [pinRep_apply, ι_pinToOrthogonal_apply, ← map_mul, ← map_mul, ← map_zsmul_unit, mul_assoc,
-    mul_assoc, hstar, mul_one]
-  congr 1
-  obtain rfl | rfl : p = 0 ∨ p = 1 := by clear hg; revert p; decide
-  · rw [involute_eq_of_mem_even hg, uzpow_zero, one_smul]
-  · rw [involute_eq_of_mem_odd hg, uzpow_one, Units.neg_smul, one_smul, neg_mul, neg_neg]
+    mul_assoc, hstar, mul_one, involute_eq_uzpow_smul_of_mem_evenOdd hg, smul_mul_assoc,
+    smul_smul, Int.units_mul_self, one_smul]
 
 /-- **Clifford multiplication is Pin-equivariant up to parity**: for a Pin element `g` of parity
 `p`, acting on the spinor module by `ρ = TauCeti.pinRep Q P` and on vectors by twisted
@@ -96,7 +93,8 @@ theorem spinRep_mul_spinAction_ι (g : spinGroup Q) (v : V) :
         spinRep Q P g := by
   have h := pinRep_mul_spinAction_ι P (spinToPin Q g) (p := 0)
     (by rw [coe_spinToPin_apply]; exact spinGroup.mem_even g.2) v
-  simpa using h
+  simpa only [pinRep_apply, spinRep_apply, coe_spinToPin_apply, pinToOrthogonal_spinToPin,
+    coe_spinToOrthogonal_apply, coe_spinToSpecialOrthogonal_apply, uzpow_zero, one_smul] using h
 
 /-- **Clifford multiplication is Spin-equivariant**: a Spin element `g` acting on the spinor module
 by `ρ = TauCeti.spinRep Q P` satisfies `ρ(g) c(v) ρ(g⁻¹) = c(g • v)`, where `g` acts on vectors

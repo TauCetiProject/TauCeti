@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Inversion
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Vectors
 public import Mathlib.LinearAlgebra.CliffordAlgebra.SpinGroup
+import TauCeti.RingTheory.GradedAlgebra.Basic
 
 /-!
 # Vector generators of the Lipschitz group
@@ -17,10 +18,9 @@ the corresponding generator membership and inverse coercion facts, together with
 of the Lipschitz group of the zero module.  The twisted-conjugation action itself is defined in
 `Lipschitz.Action`.
 
-Since the generators and their inverses are vectors, every element of the Lipschitz group, and
-hence of the Pin group, is homogeneous for the `ℤ/2`-grading `CliffordAlgebra.evenOdd` of the
-Clifford algebra. This is what assigns a parity to a Pin element, the sign with which it acts on
-vectors through the grade involution.
+Since the generators are vectors, and the inverse of a homogeneous unit is homogeneous, every
+element of the Lipschitz group is homogeneous for the `ℤ/2`-grading `CliffordAlgebra.evenOdd` of
+the Clifford algebra.
 
 ## Main definitions
 
@@ -29,8 +29,8 @@ vectors through the grade involution.
 * `CliffordAlgebra.coe_unitι_inv` computes its inverse as a vector.
 * `CliffordAlgebra.lipschitzGroup_eq_bot` records that the Lipschitz group of the zero module is
   trivial.
-* `lipschitzGroup.exists_mem_evenOdd` and `pinGroup.exists_mem_evenOdd`: when `2` is invertible,
-  every element of the Lipschitz group, and of the Pin group, is homogeneous of some parity.
+* `lipschitzGroup.exists_mem_evenOdd`: every element of the Lipschitz group is homogeneous of
+  some parity.
 -/
 
 public section
@@ -77,43 +77,26 @@ theorem lipschitzGroup_eq_bot [Subsingleton M] : lipschitzGroup Q = ⊥ := by
     rw [← x.mul_inv, ← hm, zero_mul])
   exact Subsingleton.elim x 1
 
-section Parity
-
-variable [Invertible (2 : R)]
-
 /-- **Elements of the Lipschitz group are homogeneous.** Every element of the Lipschitz group lies
 in one of the two pieces of the `ℤ/2`-grading of the Clifford algebra, being a product of vectors
-of invertible norm. -/
+and their inverses. -/
 theorem _root_.lipschitzGroup.exists_mem_evenOdd {x : (CliffordAlgebra Q)ˣ}
     (hx : x ∈ lipschitzGroup Q) : ∃ p : ZMod 2, (x : CliffordAlgebra Q) ∈ evenOdd Q p := by
-  -- Generators and their inverses are vectors; with `2` invertible, `Q m` is invertible as soon
-  -- as `ι Q m` is a unit, so the inverse of `ι Q m` is the vector `⅟(Q m) • m`.
   induction hx using Subgroup.closure_induction'' with
   | mem x hx =>
     obtain ⟨m, hm⟩ := hx
     exact ⟨1, hm ▸ ι_mem_evenOdd_one Q m⟩
   | inv_mem x hx =>
+    -- The inverse of the odd unit `x` is odd: cancel `x` from `x * x⁻¹ = 1 ∈ evenOdd Q (1 + 1)`.
     obtain ⟨m, hm⟩ := hx
-    let _ := x.invertible
-    let _ : Invertible (ι Q m) := by rw [hm]; infer_instance
-    let _ := invertibleOfInvertibleι Q m
-    have hxm : x = unitι Q m := Units.ext (by rw [coe_unitι, hm])
-    refine ⟨1, ?_⟩
-    rw [hxm, coe_unitι_inv]
-    exact ι_mem_evenOdd_one Q _
+    refine ⟨1, TauCeti.GradedAlgebra.mem_of_mul_mem_add_of_isLeftRegular (evenOdd Q)
+      (hm ▸ ι_mem_evenOdd_one Q m) x.isUnit.isRegular.left ?_⟩
+    rw [Units.mul_inv]
+    exact SetLike.one_mem_graded (evenOdd Q)
   | one => exact ⟨0, SetLike.GradedOne.one_mem⟩
   | mul x y _ _ hx hy =>
     obtain ⟨p, hp⟩ := hx
     obtain ⟨q, hq⟩ := hy
     exact ⟨p + q, SetLike.GradedMul.mul_mem hp hq⟩
-
-/-- **Elements of the Pin group are homogeneous**: every element of the Pin group is even or odd
-for the `ℤ/2`-grading of the Clifford algebra. -/
-theorem _root_.pinGroup.exists_mem_evenOdd {x : CliffordAlgebra Q} (hx : x ∈ pinGroup Q) :
-    ∃ p : ZMod 2, x ∈ evenOdd Q p := by
-  obtain ⟨u, hu, rfl⟩ := pinGroup.mem_lipschitzGroup hx
-  exact lipschitzGroup.exists_mem_evenOdd hu
-
-end Parity
 
 end CliffordAlgebra
