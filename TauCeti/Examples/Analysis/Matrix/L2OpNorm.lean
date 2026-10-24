@@ -81,7 +81,7 @@ theorem toEuclideanCLM_single_three :
   simp only [Matrix.ofLp_toEuclideanCLM, EuclideanSpace.single, PiLp.ofLp_single,
     Matrix.mulVec_single_one]
   ext i
-  fin_cases i <;> rfl
+  fin_cases i <;> simp [matrix_def, Matrix.col_apply]
 
 /-- The fourth unit coordinate vector attains the Euclidean operator norm. -/
 theorem norm_toEuclideanCLM_basisFun_three :
