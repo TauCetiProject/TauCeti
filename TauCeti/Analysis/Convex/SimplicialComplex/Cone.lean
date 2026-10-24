@@ -9,8 +9,9 @@ public import Mathlib.Analysis.Convex.Intrinsic
 public import Mathlib.Analysis.Convex.Join
 public import Mathlib.Analysis.Convex.SimplicialComplex.Basic
 import Mathlib.Analysis.Convex.Between
-import Mathlib.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Analysis.Convex.Combination
+import TauCeti.Analysis.Convex.Intrinsic
+import TauCeti.Analysis.Convex.Join
 
 /-!
 # Cones of geometric simplicial complexes
@@ -42,6 +43,8 @@ triangulations.
 
 * `Geometry.SimplicialComplex.IsConeApex.notMem_affineSpan`: a cone apex lies outside the affine
   span of every face.
+* `Geometry.SimplicialComplex.vertices_cone`: the vertices of the cone are the apex and the
+  vertices of `K`.
 * `Geometry.SimplicialComplex.space_cone`: `|pK| = {p} ∪ convexJoin {p} |K|`.
 * `Geometry.SimplicialComplex.le_cone` and `mem_cone_faces_iff_of_notMem`: the faces of the cone
   not containing the apex are exactly the faces of `K`.
@@ -57,7 +60,7 @@ triangulations.
 
 public section
 
-open Finset Set
+open Finset Set TauCeti
 
 namespace Geometry.SimplicialComplex
 
@@ -110,13 +113,10 @@ convex hull of that face. -/
 private theorem mem_convexHull_of_mem_convexHull_insert (ht : t = ∅ ∨ t ∈ K.faces)
     (hx : x ∈ convexHull 𝕜 (insert p (t : Set E))) (hxK : x ∈ K.space) :
     x ∈ convexHull 𝕜 (t : Set E) := by
+  rcases mem_convexHull_insert.1 hx with rfl | ⟨y, hy, hxy⟩
+  · exact (h.notMem_space hxK).elim
   rcases ht with rfl | ht
-  · simp only [coe_empty, insert_empty_eq, convexHull_singleton, mem_singleton_iff] at hx
-    exact (h.notMem_space (hx ▸ hxK)).elim
-  rw [convexHull_insert (coe_nonempty.2 (K.nonempty_of_mem_faces ht)), mem_convexJoin] at hx
-  obtain ⟨a, ha, y, hy, hxy⟩ := hx
-  rw [mem_singleton_iff] at ha
-  rw [ha] at hxy
+  · simp at hy
   rwa [h.eq_of_mem_segment hxK (convexHull_subset_space ht hy) hxy]
 
 /-- Two faces of the cone through the apex meet along the cone on the common face. -/
@@ -127,21 +127,14 @@ private theorem convexHull_insert_inter_subset (hs : s = ∅ ∨ s ∈ K.faces)
   have hp : p ∈ convexHull 𝕜 (insert p (s ∩ t : Set E)) :=
     subset_convexHull 𝕜 _ (mem_insert _ _)
   rintro x ⟨hxs, hxt⟩
-  rcases hs with rfl | hs
-  · simp only [coe_empty, insert_empty_eq, convexHull_singleton, mem_singleton_iff] at hxs
-    exact hxs ▸ hp
-  rcases ht with rfl | ht
-  · simp only [coe_empty, insert_empty_eq, convexHull_singleton, mem_singleton_iff] at hxt
-    exact hxt ▸ hp
-  rw [convexHull_insert (coe_nonempty.2 (K.nonempty_of_mem_faces hs)), mem_convexJoin] at hxs
-  rw [convexHull_insert (coe_nonempty.2 (K.nonempty_of_mem_faces ht)), mem_convexJoin] at hxt
-  obtain ⟨a, ha, y, hy, hxy⟩ := hxs
-  obtain ⟨b, hb, z, hz, hxz⟩ := hxt
-  rw [mem_singleton_iff] at ha hb
-  rw [ha] at hxy
-  rw [hb] at hxz
   rcases eq_or_ne x p with rfl | hxp
   · exact hp
+  obtain ⟨y, hy, hxy⟩ := (mem_convexHull_insert.1 hxs).resolve_left hxp
+  obtain ⟨z, hz, hxz⟩ := (mem_convexHull_insert.1 hxt).resolve_left hxp
+  rcases hs with rfl | hs
+  · simp at hy
+  rcases ht with rfl | ht
+  · simp at hz
   have hyK := convexHull_subset_space hs hy
   have hzK := convexHull_subset_space ht hz
   -- `y` and `z` lie on the same ray from `p`, so one of them lies on the segment to the other
@@ -262,10 +255,19 @@ theorem insert_mem_cone_faces (hs : s ∈ K.faces) : insert p s ∈ (K.cone p h)
   rw [mem_cone_faces, erase_insert (h.notMem_of_mem_faces hs)]
   exact ⟨insert_nonempty _ _, .inr hs⟩
 
+/-- The vertices of the cone are the apex together with the vertices of `K`. -/
+@[simp]
+theorem vertices_cone : (K.cone p h).vertices = insert p K.vertices := by
+  ext x
+  rw [mem_vertices, Set.mem_insert_iff, mem_vertices]
+  rcases eq_or_ne x p with rfl | hxp
+  · simp
+  rw [mem_cone_faces_iff_of_notMem h (Finset.notMem_singleton.2 hxp.symm)]
+  simp [hxp]
+
 /-- The apex is a vertex of the cone. -/
 theorem mem_vertices_cone : p ∈ (K.cone p h).vertices := by
-  rw [mem_vertices, mem_cone_faces, erase_singleton]
-  exact ⟨singleton_nonempty _, .inl rfl⟩
+  simp
 
 /-- The cone has finitely many faces exactly when `K` does. -/
 theorem finite_faces_cone_iff : (K.cone p h).faces.Finite ↔ K.faces.Finite := by
@@ -286,11 +288,11 @@ theorem space_cone : (K.cone p h).space = insert p (convexJoin 𝕜 {p} K.space)
   · obtain ⟨s, ⟨-, hs⟩, hxs⟩ := mem_space_iff.1 hx
     have hxs' : x ∈ convexHull 𝕜 (insert p (s.erase p : Set E)) :=
       convexHull_mono (by exact_mod_cast insert_erase_subset p s) hxs
+    rcases mem_convexHull_insert.1 hxs' with hxp | ⟨y, hy, hxy⟩
+    · exact .inl hxp
     rcases hs with hs | hs
-    · rw [hs, coe_empty, insert_empty_eq, convexHull_singleton] at hxs'
-      exact .inl hxs'
-    · rw [convexHull_insert (coe_nonempty.2 (K.nonempty_of_mem_faces hs))] at hxs'
-      exact .inr (convexJoin_mono_right (convexHull_subset_space hs) hxs')
+    · simp [hs] at hy
+    exact .inr (mem_convexJoin.2 ⟨p, rfl, y, convexHull_subset_space hs hy, hxy⟩)
   rcases hx with hx | hx
   · rw [hx]
     exact (K.cone p h).vertices_subset_space (mem_vertices_cone h)
@@ -326,40 +328,11 @@ theorem space_cone_of_space_eq_intrinsicFrontier (hCc : IsCompact C) (hC : Conve
   · rw [hxp]
     exact mem_insert _ _
   refine .inr (mem_convexJoin.2 ⟨p, rfl, ?_⟩)
-  -- follow the ray from `p` through `x` to the last point `f T` where it leaves `C`
-  set f : ℝ → E := ⇑(AffineMap.lineMap (k := ℝ) p x)
-  have hf : Topology.IsClosedEmbedding f := by
-    have : f = (· + p) ∘ fun t : ℝ => t • (x - p) := by
-      ext t
-      simp [f, AffineMap.lineMap_apply]
-    rw [this]
-    exact (Homeomorph.addRight p).isClosedEmbedding.comp
-      (isClosedEmbedding_smul_left (sub_ne_zero.2 hxp))
-  have hf1 : (1 : ℝ) ∈ f ⁻¹' C ∩ Ici 0 := ⟨by simpa [f] using hx, zero_le_one⟩
-  obtain ⟨T, ⟨hTC, hT0⟩, hTmax⟩ :=
-    ((hf.isCompact_preimage hCc).inter_right isClosed_Ici).exists_isGreatest ⟨1, hf1⟩
-  have hT1 : 1 ≤ T := hTmax hf1
-  have hfT : f T ∈ intrinsicFrontier ℝ C := by
-    rw [← intrinsicClosure_sdiff_intrinsicInterior]
-    refine ⟨subset_intrinsicClosure hTC, fun hTi => ?_⟩
-    obtain ⟨z, hz, hzT⟩ := mem_intrinsicInterior.1 hTi
-    let g : ℝ → affineSpan ℝ C := fun t => ⟨f t, AffineMap.lineMap_mem t
-      (subset_affineSpan ℝ C hpC) (subset_affineSpan ℝ C hx)⟩
-    have hgT : g T = z := Subtype.ext hzT.symm
-    have hnhds : g ⁻¹' interior ((↑) ⁻¹' C) ∈ nhds T :=
-      (isOpen_interior.preimage (hf.continuous.subtype_mk _)).mem_nhds
-        (Set.mem_preimage.2 (hgT.symm ▸ hz : g T ∈ _))
-    obtain ⟨u, hTu, hsub⟩ := exists_Ico_subset_of_mem_nhds hnhds ⟨T + 1, by linarith⟩
-    have hmemC : g ((T + u) / 2) ∈ ((↑) ⁻¹' C : Set (affineSpan ℝ C)) :=
-      interior_subset (hsub (Set.mem_Ico.2 ⟨by linarith, by linarith⟩))
-    have hmid : (T + u) / 2 ∈ f ⁻¹' C ∩ Ici 0 :=
-      ⟨hmemC,
-        Set.mem_Ici.2 (by linarith [Set.mem_Ici.1 hT0])⟩
-    linarith [hTmax hmid]
-  refine ⟨f T, hfT, ?_⟩
+  obtain ⟨T, hT1, hfT⟩ := hCc.exists_lineMap_mem_intrinsicFrontier hpC hx hxp
+  refine ⟨_, hfT, ?_⟩
   rw [segment_eq_image_lineMap]
-  refine ⟨T⁻¹, ⟨inv_nonneg.2 hT0, inv_le_one_of_one_le₀ hT1⟩, ?_⟩
-  simp only [f, AffineMap.lineMap_lineMap_right, inv_mul_cancel₀ (by linarith : T ≠ 0),
+  refine ⟨T⁻¹, ⟨inv_nonneg.2 (by linarith), inv_le_one_of_one_le₀ hT1⟩, ?_⟩
+  rw [AffineMap.lineMap_lineMap_right, inv_mul_cancel₀ (by linarith : T ≠ 0),
     AffineMap.lineMap_apply_one]
 
 end Real
