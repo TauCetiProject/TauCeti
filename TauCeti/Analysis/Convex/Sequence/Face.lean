@@ -271,6 +271,22 @@ theorem right_ne_top (hf : IsFiniteFace h σ l u) : h u ≠ ⊤ := by
   rw [hu]
   exact WithTop.coe_ne_top
 
+/-- The slope times the width of a finite face is the difference of its endpoint heights.
+This includes the zero-width singleton case. -/
+theorem mul_width_eq_sub (hf : IsFiniteFace h σ l u) :
+    σ * (u - l : ℕ) = (h u).untop₀ - (h l).untop₀ := by
+  obtain ⟨c, _, hface⟩ := hf.exists_intercept
+  have hl := mem_supportingFace.mp (hface.symm.subset ⟨le_rfl, hf.left_le_right⟩)
+  have hu := mem_supportingFace.mp (hface.symm.subset ⟨hf.left_le_right, le_rfl⟩)
+  rw [hl, hu, WithTop.untop₀_coe, WithTop.untop₀_coe, Nat.cast_sub hf.left_le_right]
+  ring
+
+/-- A finite face of positive width has slope equal to its rise divided by its width. -/
+theorem slope_eq_div (hf : IsFiniteFace h σ l u) (hlu : l < u) :
+    σ = ((h u).untop₀ - (h l).untop₀) / (u - l : ℕ) := by
+  exact (eq_div_iff (by exact_mod_cast (Nat.sub_pos_of_lt hlu).ne' :
+    ((u - l : ℕ) : ℝ) ≠ 0)).mpr hf.mul_width_eq_sub
+
 /-- A finite unit edge strictly before a finite face has slope strictly less than the
 face slope. -/
 theorem unitSlope_lt (hf : IsFiniteFace h σ l u) (hh : IsConvexSeq h)
