@@ -33,9 +33,11 @@ differentiable almost everywhere and is the integral of its derivative. In an
 infinite-dimensional space a Lipschitz curve can be nowhere differentiable (for instance
 `t ↦ fun x ↦ |t - x|` in `C([0, 1], ℝ)`), and the formula then gives a junk value. The
 comparison theorems below therefore assume `[FiniteDimensional ℝ E]`; the invariance theorems
-are identities of the formula and hold in every normed space. They also need no
-bounded-variation hypothesis: for a curve of infinite length on `[a, b]`, or for `b < a`, the
-length interval is `[0, 0]` and the integral is zero.
+are identities of the formula and hold in every normed space. The invariance and linearity
+theorems also need no bounded-variation hypothesis: for a curve of infinite length on `[a, b]`,
+or for `b < a`, the length interval is `[0, 0]` and the integral is zero
+(`TauCeti.rectifiableCurveIntegral_of_not_boundedVariationOn`,
+`TauCeti.rectifiableCurveIntegral_of_lt`).
 
 The main results are:
 
@@ -105,6 +107,30 @@ private theorem toReal_eVariationOn_eq_zero_of_not
   · rw [eVariationOn.subsingleton γ ((Icc_eq_empty hba).symm ▸ subsingleton_empty),
       ENNReal.toReal_zero]
 
+/-- The geometric integral along a curve of infinite length on `[a, b]` is zero. -/
+theorem rectifiableCurveIntegral_of_not_boundedVariationOn (h : ¬BoundedVariationOn γ (Icc a b)) :
+    rectifiableCurveIntegral ω γ a b = 0 := by
+  simp only [rectifiableCurveIntegral_def, toReal_eVariationOn_eq_zero_of_not fun h' ↦ h h'.1,
+    intervalIntegral.integral_same]
+
+/-- The geometric integral on `[a, b]` with `b < a` is zero. -/
+theorem rectifiableCurveIntegral_of_lt (h : b < a) : rectifiableCurveIntegral ω γ a b = 0 := by
+  simp only [rectifiableCurveIntegral_def,
+    toReal_eVariationOn_eq_zero_of_not fun h' ↦ h.not_ge h'.2, intervalIntegral.integral_same]
+
+/-- The geometric integral on a degenerate interval `[a, a]` is zero. -/
+@[simp]
+theorem rectifiableCurveIntegral_self : rectifiableCurveIntegral ω γ a a = 0 := by
+  rw [rectifiableCurveIntegral_def, Icc_self, eVariationOn.subsingleton γ subsingleton_singleton,
+    ENNReal.toReal_zero, intervalIntegral.integral_same]
+
+/-- The geometric integral of the zero 1-form is zero. -/
+@[simp]
+theorem rectifiableCurveIntegral_zero :
+    rectifiableCurveIntegral (0 : E → E →L[ℝ] F) γ a b = 0 := by
+  simp only [rectifiableCurveIntegral_def, Pi.zero_apply, zero_apply,
+    intervalIntegral.integral_zero]
+
 /-- The geometric integral along a continuous curve is the integral along any curve `g` through
 which the curve factors by cumulative variation. -/
 theorem rectifiableCurveIntegral_eq_of_eqOn_comp_variationOnFromTo
@@ -137,7 +163,8 @@ theorem rectifiableCurveIntegral_smul {𝕜 : Type*} [NormedField 𝕜] [NormedS
 open Filter Topology in
 /-- The geometric integral only depends on the curve on `[a, b]`. -/
 theorem rectifiableCurveIntegral_congr {γ' : ℝ → E} (h : EqOn γ γ' (Icc a b)) :
-    rectifiableCurveIntegral ω γ' a b = rectifiableCurveIntegral ω γ a b := by
+    rectifiableCurveIntegral ω γ a b = rectifiableCurveIntegral ω γ' a b := by
+  symm
   have hvar : variationOnFromTo γ' (Icc a b) a = variationOnFromTo γ (Icc a b) a := by
     funext t
     unfold variationOnFromTo
@@ -318,48 +345,45 @@ theorem rectifiableCurveIntegral_eq_of_eqOn_comp {η : ℝ → E} {ψ : ℝ → 
   have htrace : η '' Icc c d = γ '' Icc a b := by
     rw [← himage, image_image]
     exact image_congr fun t ht ↦ h ht
-  rw [rectifiableCurveIntegral_congr h, hcomp,
+  rw [← rectifiableCurveIntegral_congr h, hcomp,
     hη.rectifiableCurveIntegral_eq_intervalIntegral_deriv hcd (htrace ▸ hω)]
 
-/-- Along a continuous rectifiable curve, the integrand of the geometric integral of a 1-form
-continuous on the trace is integrable on the length interval. -/
+/-- Along a continuous curve, the integrand of the geometric integral of a 1-form continuous on
+the trace is integrable on the length interval. -/
 private theorem intervalIntegrable_oneForm_naturalParameterization
-    (hγ : BoundedVariationOn γ (Icc a b)) (hcont : ContinuousOn γ (Icc a b))
-    (hω : ContinuousOn ω (γ '' Icc a b)) :
+    (hcont : ContinuousOn γ (Icc a b)) (hω : ContinuousOn ω (γ '' Icc a b)) :
     IntervalIntegrable (fun u ↦ ω (naturalParameterization γ (Icc a b) a u)
       (deriv (naturalParameterization γ (Icc a b) a) u)) volume 0
       (eVariationOn γ (Icc a b)).toReal := by
-  rcases le_or_gt a b with hab | hba
-  · refine (hγ.absolutelyContinuousOnInterval_naturalParameterization hcont hab
+  by_cases h : BoundedVariationOn γ (Icc a b) ∧ a ≤ b
+  · obtain ⟨hγ, hab⟩ := h
+    refine (hγ.absolutelyContinuousOnInterval_naturalParameterization hcont hab
       ).intervalIntegrable_oneForm_of_continuousOn ?_
     rwa [uIcc_of_le ENNReal.toReal_nonneg, ← hγ.image_variationOnFromTo_Icc hcont hab,
       hγ.locallyBoundedVariationOn.image_naturalParameterization (left_mem_Icc.2 hab)]
-  · rw [eVariationOn.subsingleton γ ((Icc_eq_empty hba.not_ge).symm ▸ subsingleton_empty)]
-    exact IntervalIntegrable.refl
+  · rw [toReal_eVariationOn_eq_zero_of_not h]
 
-/-- The geometric integral along a continuous rectifiable curve is additive in 1-forms continuous
-on the trace. -/
-theorem rectifiableCurveIntegral_add {ω₁ ω₂ : E → E →L[ℝ] F} (hγ : BoundedVariationOn γ (Icc a b))
-    (hcont : ContinuousOn γ (Icc a b)) (hω₁ : ContinuousOn ω₁ (γ '' Icc a b))
-    (hω₂ : ContinuousOn ω₂ (γ '' Icc a b)) :
+/-- The geometric integral along a continuous curve is additive in 1-forms continuous on the
+trace. -/
+theorem rectifiableCurveIntegral_add {ω₁ ω₂ : E → E →L[ℝ] F} (hcont : ContinuousOn γ (Icc a b))
+    (hω₁ : ContinuousOn ω₁ (γ '' Icc a b)) (hω₂ : ContinuousOn ω₂ (γ '' Icc a b)) :
     rectifiableCurveIntegral (ω₁ + ω₂) γ a b =
       rectifiableCurveIntegral ω₁ γ a b + rectifiableCurveIntegral ω₂ γ a b := by
   simp only [rectifiableCurveIntegral_def, Pi.add_apply, add_apply]
   exact intervalIntegral.integral_add
-    (intervalIntegrable_oneForm_naturalParameterization hγ hcont hω₁)
-    (intervalIntegrable_oneForm_naturalParameterization hγ hcont hω₂)
+    (intervalIntegrable_oneForm_naturalParameterization hcont hω₁)
+    (intervalIntegrable_oneForm_naturalParameterization hcont hω₂)
 
-/-- The geometric integral along a continuous rectifiable curve of a difference of 1-forms
-continuous on the trace is the difference of the geometric integrals. -/
-theorem rectifiableCurveIntegral_sub {ω₁ ω₂ : E → E →L[ℝ] F} (hγ : BoundedVariationOn γ (Icc a b))
-    (hcont : ContinuousOn γ (Icc a b)) (hω₁ : ContinuousOn ω₁ (γ '' Icc a b))
-    (hω₂ : ContinuousOn ω₂ (γ '' Icc a b)) :
+/-- The geometric integral along a continuous curve of a difference of 1-forms continuous on the
+trace is the difference of the geometric integrals. -/
+theorem rectifiableCurveIntegral_sub {ω₁ ω₂ : E → E →L[ℝ] F} (hcont : ContinuousOn γ (Icc a b))
+    (hω₁ : ContinuousOn ω₁ (γ '' Icc a b)) (hω₂ : ContinuousOn ω₂ (γ '' Icc a b)) :
     rectifiableCurveIntegral (ω₁ - ω₂) γ a b =
       rectifiableCurveIntegral ω₁ γ a b - rectifiableCurveIntegral ω₂ γ a b := by
   simp only [rectifiableCurveIntegral_def, Pi.sub_apply, sub_apply]
   exact intervalIntegral.integral_sub
-    (intervalIntegrable_oneForm_naturalParameterization hγ hcont hω₁)
-    (intervalIntegrable_oneForm_naturalParameterization hγ hcont hω₂)
+    (intervalIntegrable_oneForm_naturalParameterization hcont hω₁)
+    (intervalIntegrable_oneForm_naturalParameterization hcont hω₂)
 
 /-- For a path whose extension is absolutely continuous on `[0, 1]` and a 1-form continuous on
 its range, the geometric integral is Mathlib's `curveIntegral`. -/
