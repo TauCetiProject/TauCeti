@@ -48,9 +48,7 @@ actual discriminant module of the orthogonal sum
 * V. V. Nikulin, *Integral symmetric bilinear forms and some of their applications*, §1.1.
 * J. H. Conway and N. J. A. Sloane, *Sphere Packings, Lattices and Groups*, Chapter 4, §3.
 * `TauCeti/LinearAlgebra/IntegralLattice/Discriminant/CoordinatePower.lean`: the coordinate-power
-  isometries `A_(L^ι) ≃ (A_L)^ι`. The dual-carrier, quotient and isometry constructions here are
-  adapted from the coordinate-power case, generalised from a constant family `L^ι` to arbitrary
-  families; that file obtains its isometries as their constant-family case.
+  isometries `A_(L^ι) ≃ (A_L)^ι`, obtained as the constant-family case of the isometries here.
 -/
 
 public section

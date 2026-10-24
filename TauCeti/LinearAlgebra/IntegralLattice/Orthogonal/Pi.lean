@@ -43,8 +43,7 @@ definite, exactly when every summand is.  Its rank is the sum of the ranks.
 * J. H. Conway and N. J. A. Sloane, *Sphere Packings, Lattices and Groups*, Chapter 4, §3.
 * W. Ebeling, *Lattices and Codes*, Chapter 1.
 * `TauCeti/LinearAlgebra/IntegralLattice/CoordinatePower.lean`: the coordinate power `L^ι`, the
-  constant-family case. The constructions and proofs here are adapted from those for `L^ι`,
-  generalised from a constant family to arbitrary families.
+  constant-family case `pi fun _ : ι ↦ L`.
 -/
 
 public section
