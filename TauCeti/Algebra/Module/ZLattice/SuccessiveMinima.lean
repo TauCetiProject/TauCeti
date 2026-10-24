@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Convex.Body
 public import TauCeti.Algebra.Module.ZLattice.GaugeBasis
+import TauCeti.Algebra.Order.BigOperators.Factorial
 import TauCeti.Analysis.Convex.Gauge
 import TauCeti.Topology.MetricSpace.DiscreteAddSubgroup
 
@@ -51,6 +52,8 @@ loss is the factor `∏ i < n, max 1 ((i + 1) / 2) = n! / 2 ^ (n - 1)`
   hypothesis of Minkowski's second theorem (`ZLattice.prod_mul_measure_le_two_pow_mul_covolume`).
 * `ZLattice.exists_basis_mem_smul_successiveMin`: a `ℤ`-basis of `L` whose `i`-th member lies in
   `(max 1 ((i + 1) / 2) * λ i) • K`.
+* `ZLattice.exists_basis_prod_gauge_le_prod_successiveMin`: a `ℤ`-basis of `L` the product of
+  whose gauges is at most `n! / 2 ^ (n - 1)` times the product of the minima.
 
 ## References
 
@@ -299,5 +302,20 @@ theorem exists_basis_mem_smul_successiveMin (L : Submodule ℤ E) [DiscreteTopol
     mul_pos (lt_max_of_lt_left one_pos) (successiveMin_pos L hK i)
   rw [← ConvexBody.gauge_le_iff_mem_smul hK hpos, ← (haL i).2]
   exact hb i
+
+/-- **A basis from the successive minima, product form.** For a discrete spanning lattice `L` and
+a symmetric convex body `K` with `0` in its interior, some `ℤ`-basis `b` of `L` has
+`∏ i, gauge K (b i) ≤ n! / 2 ^ (n - 1) * ∏ i, successiveMin L K i`, where `n = finrank ℝ E`. -/
+theorem exists_basis_prod_gauge_le_prod_successiveMin (L : Submodule ℤ E) [DiscreteTopology L]
+    [IsZLattice ℝ L] (hK : 0 ∈ interior (K : Set E)) (hsymm : ∀ x ∈ K, -x ∈ K) :
+    ∃ b : Basis (Fin (finrank ℝ E)) ℤ L,
+      ∏ i, gauge (K : Set E) (b i) ≤
+        (finrank ℝ E).factorial / 2 ^ (finrank ℝ E - 1) * ∏ i, successiveMin L K i := by
+  obtain ⟨b, hb⟩ := exists_basis_mem_smul_successiveMin L hK hsymm
+  refine ⟨b, ?_⟩
+  rw [← TauCeti.prod_max_one_add_one_div_two, ← Finset.prod_mul_distrib]
+  refine Finset.prod_le_prod₀ (fun i _ ↦ gauge_nonneg _) fun i _ ↦ ?_
+  exact (ConvexBody.gauge_le_iff_mem_smul hK
+    (mul_pos (lt_max_of_lt_left one_pos) (successiveMin_pos L hK i))).2 (hb i)
 
 end ZLattice

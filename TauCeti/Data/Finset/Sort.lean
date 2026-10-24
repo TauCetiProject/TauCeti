@@ -11,7 +11,8 @@ public import Mathlib.Data.Finset.Sort
 /-!
 # Sorting finsets
 
-Sorting the finset `{a, b}` of two distinct elements with `r a b` gives the list `[a, b]`.
+Sorting the finset `{a, b}` of two distinct elements with `r a b` gives the list `[a, b]`, and
+sorting `s.erase a` gives the sorted list of `s` with `a` erased.
 
 For a map `f` that is monotone on a finset `s` of a linear order, the points of `s` sorted in
 increasing order are the concatenation, over the values `y` of `f` on `s` in increasing order, of
@@ -30,6 +31,11 @@ variable {α : Type*} (r : α → α → Prop) [DecidableRel r] [IsTrans α r] [
 theorem sort_pair {a b : α} (hab : r a b) (hne : a ≠ b) : sort {a, b} r = [a, b] := by
   rw [sort_insert r (fun c hc => mem_singleton.1 hc ▸ hab) (notMem_singleton.2 hne),
     sort_singleton]
+
+/-- Sorting `s.erase a` erases `a` from the sorted list of `s`. -/
+theorem sort_erase (s : Finset α) (a : α) : sort (s.erase a) r = (sort s r).erase a :=
+  List.Perm.eq_of_pairwise' (pairwise_sort _ r) ((pairwise_sort s r).erase a) <|
+    Multiset.coe_eq_coe.1 <| by rw [sort_eq, erase_val, ← Multiset.coe_erase, sort_eq]
 
 section LinearOrder
 

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.ZLattice.Covolume
+public import Mathlib.Analysis.Convex.Measure
 public import Mathlib.Analysis.InnerProductSpace.GramMatrix
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import TauCeti.Algebra.Module.ZLattice.Dual
@@ -37,6 +38,10 @@ Lebesgue measure `μ s / covolume L μ` for every Haar measure `μ`
 (`ZLattice.volume_image_eq_measure_div_covolume`): the coordinates carry `μ` to `covolume L μ` times
 Lebesgue measure. This reduces volume estimates for `L` to estimates for `ℤⁿ ⊆ ℝⁿ`.
 
+Mathlib's asymptotic lattice-point count `ZLattice.covolume.tendsto_card_le_div''`, applied to the
+dilates of the unit ball, shows that a full lattice in a real normed space of dimension `n` has
+`O(R^n)` points in the ball of radius `R` (`ZLattice.ncard_closedBall_inter_isBigO`).
+
 ## Main results
 
 * `ZLattice.covolume_sq_eq_det_gram`: `covolume L ^ 2` is the determinant of the Gram matrix of
@@ -46,11 +51,13 @@ Lebesgue measure. This reduces volume estimates for `L` to estimates for `ℤⁿ
   continuous linear automorphism `A` is `|det A|⁻¹ * covolume L`.
 * `ZLattice.volume_image_eq_measure_div_covolume`: the image of `s` under the coordinates of a
   `ℤ`-basis of `L` has Lebesgue measure `μ s / covolume L μ`.
+* `ZLattice.ncard_closedBall_inter_isBigO`: a full lattice has `O(R^n)` points in the ball of
+  radius `R`.
 -/
 
 public section
 
-open Module MeasureTheory Submodule
+open Asymptotics Filter Metric Module MeasureTheory Submodule
 open LinearMap (BilinForm)
 
 namespace TauCeti
@@ -113,6 +120,57 @@ theorem _root_.ZLattice.volume_image_eq_measure_div_covolume (L : Submodule ℤ 
     (ENNReal.ofReal_pos.2 (ZLattice.covolume_pos L μ)).ne' ENNReal.ofReal_ne_top]
 
 end NormedSpace
+
+section Growth
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+
+/-- A full lattice in a real normed space of dimension `n` has `O(R^n)` points in the closed ball
+of radius `R` about the origin, as `R → ∞`. -/
+theorem _root_.ZLattice.ncard_closedBall_inter_isBigO (L : Submodule ℤ E) [DiscreteTopology L]
+    [IsZLattice ℝ L] :
+    (fun R : ℝ ↦ ((closedBall (0 : E) R ∩ L).ncard : ℝ)) =O[atTop]
+      fun R ↦ R ^ finrank ℝ E := by
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · refine IsBigO.of_bound 1 (Eventually.of_forall fun R ↦ ?_)
+    simp only [finrank_zero_of_subsingleton, pow_zero, norm_one, mul_one, Real.norm_natCast]
+    exact_mod_cast Set.ncard_le_one_of_subsingleton _
+  let : MeasurableSpace E := borel E
+  have : BorelSpace E := ⟨rfl⟩
+  set n := finrank ℝ E
+  have hn : n ≠ 0 := finrank_pos.ne'
+  -- The sublevel sets of `x ↦ ‖x‖ ^ n` are the closed balls.
+  have hball : ∀ R, 0 ≤ R → {x : E | ‖x‖ ^ n ≤ R ^ n} = closedBall 0 R := by
+    intro R hR
+    ext x
+    simp [pow_le_pow_iff_left₀ (norm_nonneg x) hR hn]
+  have h1 : {x : E | x ∈ Set.univ ∧ ‖x‖ ^ n ≤ 1} = closedBall 0 1 := by
+    simpa using hball 1 zero_le_one
+  -- Mathlib's asymptotic count of lattice points in the dilates of the unit ball, in the
+  -- coordinates of a `ℤ`-basis `b` of `L`.
+  let b := Free.chooseBasis ℤ L
+  have : Nonempty (Free.ChooseBasisIndex ℤ L) := by
+    have : Nontrivial L := nontrivial_of_finrank_pos <| (ZLattice.rank ℝ L).symm ▸ finrank_pos
+    infer_instance
+  have hcard : Fintype.card (Free.ChooseBasisIndex ℤ L) = n := by
+    rw [← finrank_eq_card_chooseBasisIndex, ZLattice.rank ℝ L]
+  -- The image of the unit ball in the coordinates of `b` is convex, so its frontier is null.
+  have hnull :
+      volume (frontier ((b.ofZLatticeBasis ℝ L).equivFun '' closedBall (0 : E) 1)) = 0 :=
+    ((convex_closedBall (0 : E) 1).linear_image
+      (b.ofZLatticeBasis ℝ L).equivFun.toLinearMap).addHaar_frontier volume
+  have key := ZLattice.covolume.tendsto_card_le_div'' b (X := Set.univ) (F := fun x ↦ ‖x‖ ^ n)
+    (fun _ _ _ _ ↦ Set.mem_univ _)
+    (fun x r hr ↦ by rw [hcard, norm_smul, Real.norm_of_nonneg hr, mul_pow])
+    (h1 ▸ isBounded_closedBall) (h1 ▸ measurableSet_closedBall) (h1 ▸ hnull)
+  have hO : (fun c : ℝ ↦ (Nat.card ({x : E | x ∈ Set.univ ∧ ‖x‖ ^ n ≤ c} ∩ L : Set E) : ℝ))
+      =O[atTop] fun c ↦ c :=
+    isBigO_of_div_tendsto_nhds ((eventually_gt_atTop 0).mono fun c hc h0 ↦ absurd h0 hc.ne') _ key
+  refine (hO.comp_tendsto (tendsto_pow_atTop hn)).congr' ?_ (Eventually.of_forall fun _ ↦ rfl)
+  filter_upwards [eventually_ge_atTop 0] with R hR
+  simp only [Function.comp_apply, Nat.card_coe_set_eq, Set.mem_univ, true_and, hball R hR]
+
+end Growth
 
 section InnerProductSpace
 
