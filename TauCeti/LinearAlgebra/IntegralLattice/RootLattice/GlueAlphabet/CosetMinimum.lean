@@ -209,8 +209,26 @@ theorem quadratic_glueAlphabet_eq_glueMinimum_div_two (t : DynkinType) (hv : t.V
   rw [← (t.glueAlphabetIsometry hv ht).map_app a, ← hx, discriminantQuadraticModule_quadratic,
     discriminantQuadraticMap_mk, hxa]
 
+/-- The zero label has shortest norm `0`. -/
+@[simp]
+theorem glueMinimum_zero (t : DynkinType) (ht : t.IsSimplyLaced) : t.glueMinimum ht 0 = 0 := by
+  cases t with
+  | A n => exact (glueMinimum_A n ht 0).trans (by simp)
+  | D n =>
+    rcases Nat.even_or_odd n with hn | hn
+    · exact (glueMinimum_D_of_even n ht hn 0 0 (map_zero _)).trans (by simp)
+    · exact (glueMinimum_D_of_odd n ht hn 0 0 (map_zero _)).trans (by simp)
+  | E6 => exact (glueMinimum_E6 ht 0).trans (by simp)
+  | E7 => exact (glueMinimum_E7 ht 0).trans (by simp)
+  | E8 => rfl
+  | B n => exact absurd ht (not_isSimplyLaced_B n)
+  | C n => exact absurd ht (not_isSimplyLaced_C n)
+  | F4 => exact absurd ht not_isSimplyLaced_F4
+  | G2 => exact absurd ht not_isSimplyLaced_G2
+
 /-- **Only the zero label has shortest norm zero**: the root lattice is positive definite, so the
 only dual vector of norm zero is `0`, which lies in the zero coset. -/
+@[simp]
 theorem glueMinimum_eq_zero_iff (t : DynkinType) (hv : t.Valid) (ht : t.IsSimplyLaced)
     {a : t.glueAlphabet ht} : t.glueMinimum ht a = 0 ↔ a = 0 := by
   constructor
@@ -224,8 +242,6 @@ theorem glueMinimum_eq_zero_iff (t : DynkinType) (hv : t.Valid) (ht : t.IsSimply
     rw [hx0, Submodule.Quotient.mk_zero] at hx
     exact (map_eq_zero_iff _ (EquivLike.injective _)).mp hx.symm
   · rintro rfl
-    refine (t.isLeast_glueMinimum hv ht 0).unique ?_
-    rw [map_zero]
-    exact (t.isPosDef_rootLattice ht).isPosSemidef.isLeast_form_self_zero
+    exact t.glueMinimum_zero ht
 
 end TauCeti.DynkinType
