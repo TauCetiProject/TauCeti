@@ -66,6 +66,7 @@ range, so the value is a `dite` rather than a plain application.
 * `Fin.predAbove_succ_succAbove`: `Fin.predAbove p` inverts `p.succ.succAbove`, the
   counterpart of Mathlib's `Fin.predAbove_succAbove` for `p.castSucc.succAbove`.
 * `Fin.val_succAbove`: the value of `p.succAbove i`, read off the comparison of `i` with `p`.
+* `Fin.castSucc_le_succAbove`: `p.succAbove i` lies weakly above `i.castSucc`.
 * `Fin.val_predAbove`: the value of `p.predAbove i`, read off the comparison of `i` with `p`.
 * `Fin.natAdd_succAbove_castAdd` and `Fin.natAdd_succAbove_natAdd`: skipping a point of the
   second block of `Fin (n + (m + 1))`, on either block.
@@ -254,6 +255,14 @@ theorem val_succAbove {n : ℕ} (p : Fin (n + 1)) (i : Fin n) :
     (p.succAbove i : ℕ) = if (i : ℕ) < p then (i : ℕ) else (i : ℕ) + 1 := by
   unfold succAbove
   split_ifs <;> simp_all [lt_def]
+
+/-- `p.succAbove i` lies weakly above `i.castSucc`. -/
+theorem castSucc_le_succAbove {n : ℕ} (p : Fin (n + 1)) (i : Fin n) :
+    i.castSucc ≤ p.succAbove i := by
+  rw [succAbove]
+  split_ifs
+  · exact le_rfl
+  · exact castSucc_le_succ i
 
 /-- The value of `p.predAbove i`: the value of `i` up to `p`, and one less above `p`. -/
 theorem val_predAbove {n : ℕ} (p : Fin n) (i : Fin (n + 1)) :

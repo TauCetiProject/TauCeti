@@ -58,10 +58,12 @@ power, needs no lemma of its own here.
 ## Implementation notes
 
 The other half of the leading-term argument — that the leading coset occurs in the monomial with
-coefficient `1` and every other coset of its support lies below it — is the triangular expansion,
-and is not proved here. At `n = 1, 2` Theorem 3.20 is `PolynomialRing/Injective.lean`, by direct
-computation with the leading coset `T(p ^ e 1, p ^ (e 0 + e 1))` written out; that computation is
-not rerouted through this vector.
+coefficient `1` and every other coset of its support lies below it — is the triangular expansion.
+For a product of two diagonal cosets its two parts are `GLn/LeadingCoefficient.lean` and
+`GLn/ProductSupport.lean`; their extension to monomials in the generators is not proved here.
+At `n = 1, 2` Theorem 3.20 is `PolynomialRing/Injective.lean`, by direct computation with the
+leading coset `T(p ^ e 1, p ^ (e 0 + e 1))` written out; that computation is not rerouted through
+this vector.
 
 This is original work filling the general-`n` gap the roadmap records: the AINTLIB source
 (`LeanModularForms/HeckeRIngs/GLn/PolynomialRing.lean`) proves Theorem 3.20 at `n = 1, 2` only and

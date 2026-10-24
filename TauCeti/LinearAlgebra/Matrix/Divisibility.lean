@@ -47,6 +47,13 @@ proves the uniqueness of the Smith normal form, from one diagonal factor to two.
 * `Matrix.forall_dvd_apply_iff_of_mul_eq_mul`: if `W * B = A * W`, then an element coprime to
   `det W` divides every entry of `A` exactly when it divides every entry of `B` — `A` and `B`
   are conjugate after inverting `det W`.
+* `Matrix.exists_diagonal_mul_eq_mul_diagonal_iff`: `diagonal a * W = v * diagonal a` for some
+  matrix `W` exactly when `a i ∣ v i j * a j` for all `i` and `j` (over a domain with every `a i`
+  nonzero, this says `diagonal a⁻¹ * v * diagonal a`, computed in the fraction field, is
+  integral); by `Matrix.isUnit_det_of_diagonal_mul_eq_mul_diagonal`, over a domain with every
+  `a i` nonzero, such a `W` has unit determinant when `v` does.
+* `Matrix.dvd_of_forall_dvd_vecMul`: a common divisor of the entries of `r ᵥ* τ`, with `det τ` a
+  unit, divides every entry of `r`.
 * `Matrix.det_mul_eq_sum_prod_mul_det_submatrix`: the expansion of `det (A * B)` for a
   rectangular middle factor, as a sum over maps into the middle index type.
 * `Matrix.dvd_det_submatrix_mul_mul`: a common divisor of the minors of `A` divides every
@@ -100,6 +107,42 @@ theorem forall_dvd_apply_iff_of_mul_eq_mul {R : Type*} [CommRing R] [Fintype n] 
     have hij := dvd_mul_mul_apply hB W W.adjugate i j
     rw [h, mul_assoc, mul_adjugate, Matrix.mul_smul, mul_one, smul_apply, smul_eq_mul] at hij
     exact he.dvd_of_dvd_mul_left hij
+
+/-- **Divisibility criterion for `diagonal a * W = v * diagonal a`.** Such a matrix `W` exists
+exactly when `a i ∣ v i j * a j` for all `i` and `j`, with `W i j` a witness of the divisibility.
+No hypothesis on `a` is needed. Over a domain with every `a i` nonzero, `W` is then
+`diagonal a⁻¹ * v * diagonal a` computed in the fraction field, so the criterion says that this
+conjugate is integral. -/
+theorem exists_diagonal_mul_eq_mul_diagonal_iff [Fintype m] [DecidableEq m] {a : m → S}
+    {v : Matrix m m S} :
+    (∃ W : Matrix m m S, diagonal a * W = v * diagonal a) ↔ ∀ i j, a i ∣ v i j * a j := by
+  refine ⟨fun ⟨W, h⟩ i j ↦ ⟨W i j, by simpa using (congrFun (congrFun h i) j).symm⟩, fun h ↦ ?_⟩
+  choose W hW using h
+  exact ⟨Matrix.of W, by ext i j; simp [hW]⟩
+
+/-- An integral conjugate `W` of a matrix `v` of unit determinant by a diagonal matrix with
+nonzero entries, `diagonal a * W = v * diagonal a`, also has unit determinant. -/
+theorem isUnit_det_of_diagonal_mul_eq_mul_diagonal {R : Type*} [CommRing R] [IsDomain R]
+    [Fintype n] [DecidableEq n] {a : n → R} (ha₀ : ∀ i, a i ≠ 0) {v W : Matrix n n R}
+    (hv : IsUnit v.det) (h : diagonal a * W = v * diagonal a) : IsUnit W.det := by
+  have hdet := congrArg det h
+  rw [det_mul, det_mul, mul_comm v.det] at hdet
+  have hne : (diagonal a).det ≠ 0 := by
+    rw [det_diagonal]
+    exact Finset.prod_ne_zero_iff.2 fun i _ ↦ ha₀ i
+  rwa [mul_left_cancel₀ hne hdet]
+
+/-- A common divisor of the entries of `r ᵥ* τ`, for `τ` of unit determinant, divides every
+entry of `r`: `r ᵥ* τ ᵥ* adjugate τ = det τ • r`. -/
+theorem dvd_of_forall_dvd_vecMul {R : Type*} [CommRing R] [Fintype n] [DecidableEq n]
+    {τ : Matrix n n R} (hτ : IsUnit τ.det) {c : R} {r : n → R} (h : ∀ j, c ∣ (r ᵥ* τ) j)
+    (k : n) : c ∣ r k := by
+  have hr : (r ᵥ* τ) ᵥ* τ.adjugate = τ.det • r := by
+    rw [vecMul_vecMul, mul_adjugate, vecMul_smul, vecMul_one]
+  have hk : c ∣ τ.det * r k := by
+    rw [← smul_eq_mul, ← Pi.smul_apply, ← hr]
+    exact Finset.dvd_sum fun j _ ↦ (h j).mul_right _
+  exact (hτ.dvd_mul_left).1 hk
 
 /-! ### Divisibility of minors
 
