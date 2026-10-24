@@ -116,7 +116,8 @@ theorem norm_add_sub_mul_le (e f : A) : ‖e + f - f * e‖ ≤ ‖e‖ + ‖f�
     (norm_mul_le f e).trans_eq (mul_comm _ _)
 
 /-- How far Dixon's combination `u = e + f - f * e` is from fixing `a` under left
-multiplication, controlled by `e` alone: `u * a - a = (e * a - a) - f * (e * a - a)`. -/
+multiplication: it is at most `1 + ‖f‖` times the left error `‖e * a - a‖`, since
+`u * a - a = (e * a - a) - f * (e * a - a)`. -/
 theorem norm_add_sub_mul_mul_sub_le (e f a : A) :
     ‖(e + f - f * e) * a - a‖ ≤ (1 + ‖f‖) * ‖e * a - a‖ := by
   have : (e + f - f * e) * a - a = (e * a - a) - f * (e * a - a) := by
@@ -126,7 +127,8 @@ theorem norm_add_sub_mul_mul_sub_le (e f a : A) :
   exact (norm_sub_le _ _).trans (by gcongr; exact norm_mul_le _ _)
 
 /-- How far Dixon's combination `u = e + f - f * e` is from fixing `a` under right
-multiplication, controlled by `f` alone: `a * u - a = (a * f - a) - (a * f - a) * e`. -/
+multiplication: it is at most `1 + ‖e‖` times the right error `‖a * f - a‖`, since
+`a * u - a = (a * f - a) - (a * f - a) * e`. -/
 theorem norm_mul_add_sub_mul_sub_le (e f a : A) :
     ‖a * (e + f - f * e) - a‖ ≤ (1 + ‖e‖) * ‖a * f - a‖ := by
   have : a * (e + f - f * e) - a = (a * f - a) - (a * f - a) * e := by
