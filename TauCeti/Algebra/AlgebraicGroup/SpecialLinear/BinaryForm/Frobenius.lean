@@ -17,7 +17,7 @@ subrepresentation is nonzero and proper: it contains `y^(p*m)` but misses
 `x * y^(p*m-1)`. Thus binary forms of positive degree divisible by the characteristic
 are not simple, over every field, including imperfect and finite fields.
 
-The construction uses `Comodule.polynomialCoact_expand_mem`, so stability is a statement
+The construction uses `Comodule.polynomialExpandSubcomodule`, so stability is a statement
 about the universal coaction, rather than just the action of rational points. Substitution
 `MvPolynomial.expand p` leaves coefficients unchanged; no extraction of pth roots in the
 coefficient field is needed. Degree zero is treated separately.
@@ -43,14 +43,9 @@ attribute [local instance] GeneralLinear.standardComodule standardComodule polyn
 subrepresentation. This construction retains the original coefficient field. -/
 noncomputable def frobeniusBinaryForms (m : ℕ) :
     Subcomodule k (coordinateHopfAlgebra k 2) (MvPolynomial (Fin 2) k) :=
-  let F : Subcomodule k (coordinateHopfAlgebra k 2) (MvPolynomial (Fin 2) k) :=
-    { carrier := (MvPolynomial.expand p).range.toSubmodule
-      coact_mem' := by
-        rintro _ ⟨f, rfl⟩
-        rw [polynomialComodule_coact, AlgHom.toLinearMap_apply]
-        exact Comodule.polynomialCoact_expand_mem (coordinateHopfAlgebra k 2)
-          (Pi.basisFun k (Fin 2)) p f }
-  (F.comap (binaryForms k (p * m)).subtype).map (binaryForms k (p * m)).subtype
+  ((Comodule.polynomialExpandSubcomodule (coordinateHopfAlgebra k 2)
+    (Pi.basisFun k (Fin 2)) p).comap (binaryForms k (p * m)).subtype).map
+      (binaryForms k (p * m)).subtype
 
 variable {k p} in
 /-- A Frobenius binary form is homogeneous of degree `p * m` and is a polynomial in the
@@ -60,7 +55,7 @@ theorem mem_frobeniusBinaryForms {m : ℕ} {f : MvPolynomial (Fin 2) k} :
     f ∈ frobeniusBinaryForms k p m ↔
       f.IsHomogeneous (p * m) ∧ ∃ g, MvPolynomial.expand p g = f := by
   simp only [frobeniusBinaryForms, Subcomodule.mem_map, Subcomodule.mem_comap,
-    Subcomodule.subtype_apply]
+    Subcomodule.subtype_apply, Comodule.mem_polynomialExpandSubcomodule]
   constructor
   · rintro ⟨⟨f, hf⟩, hg, rfl⟩
     exact ⟨mem_binaryForms.mp hf, hg⟩

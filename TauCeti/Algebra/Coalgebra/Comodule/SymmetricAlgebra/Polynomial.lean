@@ -44,6 +44,8 @@ representations of `SL₂`.
 * `TauCeti.Comodule.polynomialCoact`: the coaction as an algebra homomorphism.
 * `TauCeti.Comodule.polynomialCoact_expand_mem`: the coaction preserves polynomials in
   pth powers of variables.
+* `TauCeti.Comodule.polynomialExpandSubcomodule`: polynomials in pth powers of variables, as a
+  subcomodule over any coefficient semiring of characteristic `p`.
 * `TauCeti.Comodule.polynomialHomogeneousSubcomodule`: the homogeneous polynomial functions of a
   fixed degree, as a subcomodule.
 * `TauCeti.Comodule.algebraTensorAlgEquiv_endOfPoint_polynomial`: a point acts on polynomial
@@ -113,8 +115,13 @@ theorem polynomialCoact_expand_mem (f : MvPolynomial ι R) :
       map_pow, polynomialCoact_X, sum_pow_char p, map_sum, Algebra.TensorProduct.map_tmul,
       AlgHom.id_apply, ψ, inc]
     simp only [Subalgebra.val_apply, Algebra.TensorProduct.tmul_pow]
+  have hinc : inc.toLinearMap = TensorProduct.map N.toSubmodule.subtype
+      (LinearMap.id : H →ₗ[R] H) :=
+    (Algebra.TensorProduct.toLinearMap_map N.val (AlgHom.id R H)).trans
+      (TensorProduct.AlgebraTensorModule.map_eq _ _)
+  -- The remaining carrier identification is `↥N = ↥N.toSubmodule`: both are the same subtype.
   refine ⟨ψ f, ?_⟩
-  -- The linear tensor map is the underlying map of the algebra tensor map `inc`.
+  rw [← hinc, AlgHom.toLinearMap_apply]
   exact DFunLike.congr_fun h f
 
 end Frobenius
@@ -183,6 +190,27 @@ theorem polynomial_coact_apply (b : Basis ι R V) (f : MvPolynomial ι R) :
     letI := polynomial H b
     coact (R := R) (C := H) f = polynomialCoact H b f := by
   rw [polynomial_coact, AlgHom.toLinearMap_apply]
+
+variable (H) in
+/-- The polynomial functions in the pth powers of the coordinates form a subcomodule in
+characteristic `p`. The coefficients remain in the original semiring. -/
+noncomputable def polynomialExpandSubcomodule (b : Basis ι R V) (p : ℕ)
+    [Fact p.Prime] [CharP R p] :
+    letI := polynomial H b
+    Subcomodule R H (MvPolynomial ι R) :=
+  letI := polynomial H b
+  { carrier := (MvPolynomial.expand p).range.toSubmodule
+    coact_mem' := by
+      rintro _ ⟨f, rfl⟩
+      rw [polynomial_coact_apply]
+      exact polynomialCoact_expand_mem H b p f }
+
+/-- Membership in the polynomial Frobenius subcomodule means being an expansion by `p`. -/
+@[simp]
+theorem mem_polynomialExpandSubcomodule (b : Basis ι R V) (p : ℕ)
+    [Fact p.Prime] [CharP R p] {f : MvPolynomial ι R} :
+    f ∈ polynomialExpandSubcomodule H b p ↔ ∃ g, MvPolynomial.expand p g = f :=
+  Iff.rfl
 
 variable (H) in
 /-- The homogeneous polynomial functions of degree `d` on `V`, as a subcomodule of
