@@ -617,6 +617,7 @@ theorem finiteEdges_reflect {h : ℕ → WithTop ℝ} {N : ℕ} (hh : ∀ n, N <
     exact ⟨h₁, h₀⟩
 
 /-- Reflecting heights in `N` negates the unit slopes and reverses their order. -/
+@[simp]
 theorem unitSlope_reflect (h : ℕ → WithTop ℝ) {N n : ℕ} (hn : n < N) :
     unitSlope (fun n => if n ≤ N then h (N - n) else ⊤) n = -unitSlope h (N - 1 - n) := by
   simp only [unitSlope_def, show n + 1 ≤ N by omega, show n ≤ N by omega, ite_true,
