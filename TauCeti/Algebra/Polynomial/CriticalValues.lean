@@ -130,12 +130,9 @@ theorem criticalValues_comp {K L : Type*} [Field K] [CharZero K] [Field L] [IsAl
   rintro _ (⟨_, ⟨x, hx, rfl⟩, rfl⟩ | ⟨y, hy, rfl⟩)
   · exact key x (by rw [aeval_eq_zero_of_mem_rootSet hx, zero_mul])
   · -- Every value of `q` is attained over the algebraically closed field `L`.
-    have hdeg : 0 < (q.map (algebraMap K L)).degree := by
-      rw [degree_map]
-      exact natDegree_pos_iff_degree_pos.mp hq
-    obtain ⟨x, hx⟩ := IsAlgClosed.exists_root _ ((degree_sub_C (a := y) hdeg).symm ▸ hdeg.ne')
-    have hxy : aeval x q = y := by
-      rwa [IsRoot, eval_sub, eval_C, sub_eq_zero, eval_map_algebraMap] at hx
+    obtain ⟨x, hx⟩ := IsAlgClosed.eval_surjective (p := q.map (algebraMap K L))
+      (by rw [natDegree_map]; exact hq.ne') y
+    have hxy : aeval x q = y := by rwa [← eval_map_algebraMap]
     rw [← hxy]
     exact key x (by rw [hxy, aeval_eq_zero_of_mem_rootSet hy, mul_zero])
 
