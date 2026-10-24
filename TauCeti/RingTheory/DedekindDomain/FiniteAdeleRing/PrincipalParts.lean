@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.DirectSum.Module
+public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Completion
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Place
 
 /-!
@@ -38,8 +39,6 @@ fraction decomposition of a rational function modulo polynomials.
 
 ## Main definitions
 
-* `IsDedekindDomain.HeightOneSpectrum.adicCompletionIntegersSubmodule`: the local integers `𝒪_v`
-  as an `R`-submodule of the completion `K_v`.
 * `IsDedekindDomain.FiniteAdeleRing.principalParts`: the `R`-linear map
   `𝔸ᶠ → ⨁_v K_v / 𝒪_v` taking a finite adele to its principal parts.
 * `IsDedekindDomain.FiniteAdeleRing.quotientIntegralAdelesEquivDirectSum`: the isomorphism
@@ -72,27 +71,6 @@ open scoped DirectSum
 variable {R : Type*} [CommRing R] [IsDedekindDomain R] (K : Type*) [Field K] [Algebra R K]
   [IsFractionRing R K]
 
-namespace HeightOneSpectrum
-
-/-- The local integers `𝒪_v` as an `R`-submodule of the completion `K_v` at a finite place `v`.
-The quotient `K_v ⧸ 𝒪_v` is the module of principal parts at `v`. -/
-noncomputable def adicCompletionIntegersSubmodule (v : HeightOneSpectrum R) :
-    Submodule R (v.adicCompletion K) where
-  carrier := v.adicCompletionIntegers K
-  add_mem' := add_mem
-  zero_mem' := zero_mem _
-  smul_mem' r x hx := by
-    rw [Algebra.smul_def]
-    exact mul_mem (coe_mem_adicCompletionIntegers v r) hx
-
-/-- Membership in `adicCompletionIntegersSubmodule` is membership in the local integers. -/
-@[simp]
-theorem mem_adicCompletionIntegersSubmodule {v : HeightOneSpectrum R} {x : v.adicCompletion K} :
-    x ∈ v.adicCompletionIntegersSubmodule K ↔ x ∈ v.adicCompletionIntegers K :=
-  Iff.rfl
-
-end HeightOneSpectrum
-
 namespace FiniteAdeleRing
 
 variable (R) in
@@ -108,7 +86,8 @@ noncomputable def principalParts :
       support' := Trunc.mk ⟨(finite_valued_one_lt a).toFinset.val, fun v ↦ by
         rw [or_iff_not_imp_left, Finset.mem_val, Set.Finite.mem_toFinset, Set.mem_ofPred_eq,
           not_lt]
-        exact fun hv ↦ (Submodule.Quotient.mk_eq_zero _).mpr hv⟩ }
+        exact fun hv ↦
+          (Submodule.Quotient.mk_eq_zero _).mpr ((mem_adicCompletionIntegersSubmodule K).mpr hv)⟩ }
   map_add' a b := DirectSum.ext fun v ↦ by
     rw [DirectSum.add_apply]
     exact Submodule.Quotient.mk_add _
