@@ -79,6 +79,7 @@ theorem fullCycleType_toPerm_self {G : Type*} [Group G] [Fintype G] [DecidableEq
 /-- **The raw cycle type of the left-regular action.** In a finite group of order `m`, left
 multiplication by an element `g ≠ 1` of order `d` has no fixed points, so its cycle type is
 `d ^ (m / d)`. (Left multiplication by `1` is the identity, whose cycle type is empty.) -/
+@[simp]
 theorem cycleType_toPerm_self {G : Type*} [Group G] [Fintype G] [DecidableEq G] {g : G}
     (hg : g ≠ 1) :
     (toPerm g : Equiv.Perm G).cycleType =

@@ -51,6 +51,7 @@ variable {G G' : Type*} [Group G] [Group G'] {n : ℕ}
 
 /-- The regular image of `g` in `Equiv.Perm (Fin n)`, for a numbering `e : G ≃ Fin n`,
 is a product of `n / d` disjoint `d`-cycles, where `d` is the order of `g`. -/
+@[simp]
 theorem fullCycleType_permutationRepresentation (e : G ≃ Fin n) (g : G) :
     (permutationRepresentation e g).fullCycleType =
       Multiset.replicate (n / orderOf g) (orderOf g) := by
@@ -63,6 +64,7 @@ theorem fullCycleType_permutationRepresentation (e : G ≃ Fin n) (g : G) :
     Fintype.card_congr e, Fintype.card_fin]
 
 /-- The regular image of `G` in `Equiv.Perm (Fin n)` has the order of `G`. -/
+@[simp]
 theorem natCard_permutationRepresentation_range (e : G ≃ Fin n) :
     Nat.card (permutationRepresentation (G := G) e).range = Nat.card G :=
   (Nat.card_congr

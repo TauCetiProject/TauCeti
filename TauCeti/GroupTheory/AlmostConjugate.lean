@@ -171,10 +171,10 @@ theorem AlmostConjugate.of_equiv (f : H ≃ K) (hf : ∀ h : H, IsConj (h : G) (
     (f.subtypeEquiv fun h ↦ ⟨fun hg ↦ hg.trans (hf h), fun hg ↦ hg.trans (hf h).symm⟩).trans
       (isConjSubtypeEquiv g K).symm
 
-/-- **Almost-conjugacy is the existence of a class-preserving bijection.** Two subgroups `H` and `K`
-of a finite group `G` are almost conjugate exactly when there is a bijection `H ≃ K` sending every
+/-- **Almost-conjugacy is the existence of a class-preserving bijection.** Two finite subgroups `H` and `K`
+of a group `G` are almost conjugate exactly when there is a bijection `H ≃ K` sending every
 element to a conjugate of it in `G`. -/
-theorem almostConjugate_iff_exists_equiv_isConj [Finite G] :
+theorem almostConjugate_iff_exists_equiv_isConj [Finite H] [Finite K] :
     H.AlmostConjugate K ↔ ∃ f : H ≃ K, ∀ h : H, IsConj (h : G) (f h) := by
   refine ⟨fun hHK ↦ ?_, fun ⟨f, hf⟩ ↦ .of_equiv f hf⟩
   rw [almostConjugate_iff_forall_natCard_isConj] at hHK
