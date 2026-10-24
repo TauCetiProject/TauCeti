@@ -201,6 +201,12 @@ theorem reindex_complexOrientation_complex :
     Complex.orientation]
   congr 1
   refine Basis.eq_of_apply_eq fun j ↦ ?_
-  fin_cases j <;> simp [b, complexRealIndexEquiv, finProdFinEquiv, Fin.modNat]
+  obtain ⟨⟨i, k⟩, rfl⟩ :=
+    ((complexRealIndexEquiv (finrank ℂ ℂ)).trans (finCongr (by simp))).surjective j
+  have hi : (i : ℕ) = 0 := by simpa using i.isLt
+  have hk : finCongr (by simp) (complexRealIndexEquiv _ (i, k)) = k := Fin.ext (by simp [hi])
+  rw [Equiv.trans_apply, Basis.reindex_apply, Equiv.symm_apply_apply, Basis.reindex_apply,
+    Equiv.symm_apply_apply, hk]
+  simp [b]
 
 end TauCeti
