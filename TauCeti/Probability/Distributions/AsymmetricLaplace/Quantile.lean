@@ -44,15 +44,16 @@ theorem quantile_asymmetricLaplaceMeasure (hl : 0 < l) (hr : 0 < r) (hu : u ∈ 
     (asymmetricLaplaceMeasure m l r).quantile u =
       if u ≤ r / (l + r) then m + log (u / (r / (l + r))) / l
       else m - log ((1 - u) / (1 - r / (l + r))) / r := by
-  let w := r / (l + r)
+  set w := r / (l + r) with hw
   have hw0 : 0 < w := div_pos hr (add_pos hl hr)
   have hw1 : w < 1 := (div_lt_one (add_pos hl hr)).2 (by linarith)
   have hcomp : l / (l + r) = 1 - w := by
-    dsimp [w]
+    rw [hw]
     field_simp
     ring
-  have hinv (x : ℝ) := Measure.quantile_cdf (x := x) (asymmetricLaplaceMeasure m l r)
-    ((strictMono_cdf_asymmetricLaplaceMeasure hl hr).strictMonoOn _)
+  have hmono : StrictMonoOn (cdf (asymmetricLaplaceMeasure m l r))
+      (cdf (asymmetricLaplaceMeasure m l r) ⁻¹' Ioo 0 1) :=
+    (strictMono_cdf_asymmetricLaplaceMeasure hl hr).strictMonoOn _
   by_cases huw : u ≤ w
   · rw [ite_eq_left huw]
     have harg := div_pos hu.1 hw0
@@ -63,8 +64,7 @@ theorem quantile_asymmetricLaplaceMeasure (hl : 0 < l) (hr : 0 < r) (hu : u ∈ 
       have hexp : l * (m + log (u / w) / l - m) = log (u / w) := by field_simp; ring
       rw [cdf_asymmetricLaplaceMeasure_eq hl hr, ite_eq_left hloc, hexp, exp_log harg]
       exact mul_div_cancel₀ u hw0.ne'
-    exact (congrArg (asymmetricLaplaceMeasure m l r).quantile hroot).symm.trans
-      (hinv _ (by rw [hroot]; exact hu))
+    exact Measure.quantile_eq_of_cdf_eq _ hmono hroot hu
   · rw [ite_eq_right huw]
     have harg := div_pos (sub_pos.mpr hu.2) (sub_pos.mpr hw1)
     have hlog : log ((1 - u) / (1 - w)) < 0 :=
@@ -79,8 +79,7 @@ theorem quantile_asymmetricLaplaceMeasure (hl : 0 < l) (hr : 0 < r) (hu : u ∈ 
       rw [cdf_asymmetricLaplaceMeasure_eq hl hr, ite_eq_right hloc, hexp, exp_log harg,
         hcomp, mul_div_cancel₀ _ (sub_pos.mpr hw1).ne']
       ring
-    exact (congrArg (asymmetricLaplaceMeasure m l r).quantile hroot).symm.trans
-      (hinv _ (by rw [hroot]; exact hu))
+    exact Measure.quantile_eq_of_cdf_eq _ hmono hroot hu
 
 /-- The quantile at the mass to the left of the location is exactly the location. -/
 @[simp]

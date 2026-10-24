@@ -63,6 +63,8 @@ makes the monotone rearrangement of two real laws a transport plan between them.
   increasing where its values lie strictly between `0` and `1`; together they give
   `MeasureTheory.Measure.quantile_lt_iff`, `MeasureTheory.Measure.strictMonoOn_quantile` and
   `MeasureTheory.Measure.continuousOn_quantile`;
+* `MeasureTheory.Measure.quantile_eq_of_cdf_eq` — invert an interior cdf value under strict
+  monotonicity;
 * `MeasureTheory.Measure.quantile_eq_of_le_cdf_iff` — two quantiles agree when their defining cdf
   level sets agree;
 * `MeasureTheory.Measure.tendsto_quantile_nhdsGT_zero_of_cdf_pos` and
@@ -339,6 +341,13 @@ theorem quantile_cdf (μ : Measure ℝ) (hmono : StrictMonoOn (cdf μ) (cdf μ �
   have hq : cdf μ (μ.quantile (cdf μ x)) ∈ Ioo 0 1 :=
     ⟨hx.1.trans_le hle, (monotone_cdf μ h.le).trans_lt hx.2⟩
   exact (hmono hq hx h).not_ge hle
+
+/-- A point whose cumulative mass is an interior level is the quantile at that level, when
+its cumulative distribution function is strictly increasing on interior levels. -/
+theorem quantile_eq_of_cdf_eq (μ : Measure ℝ)
+    (hmono : StrictMonoOn (cdf μ) (cdf μ ⁻¹' Ioo 0 1))
+    (hx : cdf μ x = t) (ht : t ∈ Ioo 0 1) : μ.quantile t = x :=
+  (congrArg μ.quantile hx).symm.trans (quantile_cdf μ hmono (by rw [hx]; exact ht))
 
 /-- The strict form of `MeasureTheory.Measure.quantile_le_iff`, for a law whose cumulative
 distribution function is continuous, and strictly increasing where its values lie strictly between
