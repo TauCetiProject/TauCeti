@@ -36,10 +36,7 @@ multiplication by an evaluated integral formal unit preserves norms. These resul
 `NormOneClass` (`‖1‖ = 1`).
 
 Iterating these evaluations, `evalIntBivariateSeries` evaluates an integral power series in two
-variables at a pair of parameters in the open unit ball. Likewise an integral polynomial has value
-of norm at most one at every point of the closed unit ball (`Polynomial.norm_aeval_le_one`), so
-evaluating the coefficients of a series in `ℤ[X]⟦Y⟧` at such a point is a valid coefficient map
-for `RingHom.evalBoundedSeries`.
+variables at a pair of parameters in the open unit ball.
 -/
 
 public section
