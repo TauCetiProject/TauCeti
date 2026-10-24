@@ -258,9 +258,8 @@ theorem norm_quadraticTwoFormPolar_le (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q 
 theorem quadraticTwoFormPolar_sub_add (ψ φ : positiveHalfSpinors o ρ) :
     quadraticTwoFormPolar o ρ hQ hkl (ψ - φ) (ψ + φ) =
       (2 : ℝ) • (quadraticTwoForm o ρ hQ hkl ψ - quadraticTwoForm o ρ hQ hkl φ) := by
-  rw [map_sub, sub_apply, map_add, map_add, quadraticTwoFormPolar_self,
-    quadraticTwoFormPolar_self, quadraticTwoFormPolar_comm o ρ hQ hkl φ ψ]
-  module
+  rw [quadraticTwoFormPolar_apply, quadraticEndPolar_sub_add, two_nsmul, ← two_smul ℝ, map_smul,
+    map_sub, quadraticTwoForm_def, quadraticTwoForm_def, smul_comm, smul_sub]
 
 variable {ρ} in
 /-- `q` is locally Lipschitz: `‖q(ψ) - q(φ)‖ ≤ ‖ψ - φ‖ (‖ψ‖ + ‖φ‖) / (2 √2)`. -/
@@ -268,12 +267,13 @@ theorem norm_quadraticTwoForm_sub_le (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v
     (h₂ : finrank ℂ (positiveHalfSpinors o ρ) = 2) (ψ φ : positiveHalfSpinors o ρ) :
     ‖quadraticTwoForm o ρ hQ hkl ψ - quadraticTwoForm o ρ hQ hkl φ‖ ≤
       ‖ψ - φ‖ * (‖ψ‖ + ‖φ‖) / (2 * √2) := by
-  have h := norm_quadraticTwoFormPolar_le o hQ hkl hρ h₂ (ψ - φ) (ψ + φ)
-  rw [quadraticTwoFormPolar_sub_add, norm_smul, Real.norm_two, le_div_iff₀ (by positivity)] at h
-  rw [le_div_iff₀ (by positivity)]
-  have := norm_add_le ψ φ
-  have := norm_nonneg (ψ - φ)
-  nlinarith
+  have : Nontrivial (positiveHalfSpinors o ρ) := Module.nontrivial_of_finrank_eq_succ h₂
+  have h := norm_cliffordRestriction_coe o hQ hρ hkl
+    (quadraticTwoForm o ρ hQ hkl ψ - quadraticTwoForm o ρ hQ hkl φ)
+  rw [Submodule.coe_sub, map_sub, cliffordRestriction_quadraticTwoForm o hQ hkl hρ h₂,
+    cliffordRestriction_quadraticTwoForm o hQ hkl hρ h₂] at h
+  rw [le_div_iff₀' (by positivity), mul_assoc, ← h]
+  exact (le_div_iff₀' two_pos).1 (norm_quadraticEnd_sub_le ψ φ)
 
 private theorem quadraticTwoForm_eq_comp :
     quadraticTwoForm o ρ hQ hkl =

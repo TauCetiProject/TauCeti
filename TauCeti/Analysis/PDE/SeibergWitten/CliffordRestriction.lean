@@ -476,8 +476,8 @@ theorem cliffordRestrictionAdjoint_cliffordRestriction (hkl : 2 + 2 = finrank �
     cliffordRestrictionAdjoint o ρ hQ hkl (cliffordRestriction o ρ hQ α) = (4 : ℝ) • α :=
   ext_inner_right ℝ fun β ↦ by
     rw [inner_cliffordRestrictionAdjoint_left, trace_cliffordRestriction_mul o ρ hQ hkl,
-      o.hodgeStar_coe_of_mem_eigenspace_one hkl α, h₂]
-    simp [real_inner_smul_left]
+      o.hodgeStar_coe_of_mem_eigenspace_one hkl α, h₂, Complex.re_ofReal_mul, Complex.natCast_re,
+      Submodule.coe_inner, Submodule.coe_smul, real_inner_smul_left]
     ring
 
 variable {ρ} in
