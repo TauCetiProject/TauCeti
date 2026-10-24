@@ -14,6 +14,10 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Basic
 Insertion is an antiderivation of degree `-1` for a fibrewise paired wedge, with sign `(-1)`
 raised to the degree of the first factor. The displayed `Fin.cast` reindexes the first term
 along the arithmetic equality between the two parenthesizations of the degree sum.
+
+## References
+
+* John M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Lemma 14.13.
 -/
 
 public section
