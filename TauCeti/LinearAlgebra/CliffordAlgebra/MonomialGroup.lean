@@ -41,6 +41,8 @@ is the Clifford algebra. That comparison is not made in this file.
 
 * `CliffordAlgebra.mem_monomialGroup_iff`: **the normal form**: a unit lies in the group exactly
   when its value is `e_s` or `-e_s` for some finite index set `s`.
+* `CliffordAlgebra.isConj_monomialGroup_val_eq_or_neg`: conjugation changes a signed monomial by
+  at most its central sign.
 * `CliffordAlgebra.neg_one_mem_center_monomialGroup`: `ε = -1` is central.
 * `CliffordAlgebra.natCard_monomialGroup`: **the order** is `2 ^ (n + 1)` over a nontrivial
   ring in which `2` is invertible.
@@ -204,5 +206,62 @@ theorem natCard_monomialGroup [Fintype I] [Nontrivial R]
   rw [hcard]
   simp only [Nat.card_eq_fintype_card, Fintype.card_prod, Fintype.card_units_int,
     Fintype.card_finset, pow_succ, mul_comm]
+
+private theorem basis_mul_basis_comm_or_neg
+    (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
+    (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1) (s t : Finset I) :
+    basis Q b s * basis Q b t = basis Q b t * basis Q b s ∨
+      basis Q b s * basis Q b t = -(basis Q b t * basis Q b s) := by
+  rcases basis_mul_basis_eq_or hb hQ s t with hs | hs <;>
+    rcases basis_mul_basis_eq_or hb hQ t s with ht | ht
+  · left
+    rw [hs, ht, symmDiff_comm]
+  · right
+    rw [hs, ht, symmDiff_comm]
+    simp
+  · right
+    rw [hs, ht, symmDiff_comm]
+  · left
+    rw [hs, ht, symmDiff_comm]
+
+private theorem monomial_mul_comm_or_neg
+    (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
+    (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1)
+  (c u : monomialGroup Q b) :
+    (c : (CliffordAlgebra Q)ˣ) * u = (u : (CliffordAlgebra Q)ˣ) * c ∨
+      (c : (CliffordAlgebra Q)ˣ) * u = -(u : (CliffordAlgebra Q)ˣ) * c := by
+  obtain ⟨s, hcs⟩ := (mem_monomialGroup_iff hb hQ).mp c.property
+  obtain ⟨t, hut⟩ := (mem_monomialGroup_iff hb hQ).mp u.property
+  rcases hcs with hcs | hcs <;> rcases hut with hut | hut
+  all_goals
+    rcases basis_mul_basis_comm_or_neg hb hQ s t with h | h
+    · left
+      apply Units.ext
+      simpa [hcs, hut] using h
+    · right
+      apply Units.ext
+      first
+      | simpa [hcs, hut, mul_neg, neg_mul, neg_neg] using h
+      | simpa [hcs, hut, mul_neg, neg_mul, neg_neg] using congrArg Neg.neg h
+
+/-- Every conjugate of a signed Clifford monomial is itself or its negative. -/
+theorem isConj_monomialGroup_val_eq_or_neg
+    (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
+    (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1)
+    {u v : monomialGroup Q b} (h : IsConj u v) :
+    (v : (CliffordAlgebra Q)ˣ) = (u : (CliffordAlgebra Q)ˣ) ∨
+      (v : (CliffordAlgebra Q)ˣ) = -(u : (CliffordAlgebra Q)ˣ) := by
+  obtain ⟨c, hc⟩ := isConj_iff.mp h
+  rcases monomial_mul_comm_or_neg hb hQ c u with hcu | hcu
+  · left
+    have hmul := congrArg (fun z : monomialGroup Q b => (z : (CliffordAlgebra Q)ˣ) * c) hc
+    have hcancel : (u : (CliffordAlgebra Q)ˣ) * c = (v : (CliffordAlgebra Q)ˣ) * c := by
+      simpa [mul_assoc, hcu] using hmul
+    exact (mul_right_cancel_iff.mp hcancel).symm
+  · right
+    have hmul := congrArg (fun z : monomialGroup Q b => (z : (CliffordAlgebra Q)ˣ) * c) hc
+    have hcancel : (-(u : (CliffordAlgebra Q)ˣ)) * c = (v : (CliffordAlgebra Q)ˣ) * c := by
+      simpa [mul_assoc, hcu, mul_neg, neg_mul, neg_neg] using hmul
+    exact (mul_right_cancel_iff.mp hcancel).symm
 
 end CliffordAlgebra
