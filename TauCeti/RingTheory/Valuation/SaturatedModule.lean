@@ -30,8 +30,9 @@ is spherically complete with value group `ℝ_{>0}` (Lemma 6.14 and its proof). 
 * `TauCeti.isValuationSaturated_iff`: every `V`-linear map `m → M` is multiplication by a unique
   element of `M`.
 * `TauCeti.isValuationSaturated_congr`: saturation is invariant under linear equivalence.
-* `TauCeti.IsValuationSaturated.mem_of_forall_smul_mem`: a saturated submodule contains every
-  element `w` of the ambient module with `m • w` inside it.
+* `TauCeti.IsValuationSaturated.mem_of_forall_smul_mem`: if `m` contains an element acting
+  injectively on the ambient module, a saturated submodule contains every element `w` of the
+  ambient module with `m • w` inside it.
 * `TauCeti.IsValuationSaturated.of_le_of_forall_smul_mem`: a submodule of a saturated submodule
   which is closed under division by `m` is saturated.
 * `TauCeti.isValuationSaturated_top`, `TauCeti.isValuationSaturated_bot_iff`: for `m = ⊤` every

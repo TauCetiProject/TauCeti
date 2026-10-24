@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.MetricSpace.ProperSpace
+public import Mathlib.Topology.MetricSpace.Ultra.Basic
 
 /-!
 # Spherically complete spaces
@@ -23,6 +24,12 @@ spherically complete. The field `ℂ_p` is complete but not spherically complete
 
 * `TauCeti.SphericallyCompleteSpace α`: every decreasing sequence of closed balls in `α` with
   nonnegative radii has nonempty intersection.
+
+## Main results
+
+* `TauCeti.exists_forall_mem_of_closedBall`: in a spherically complete ultrametric space, a
+  decreasing sequence of sets of families, each a union of closed polydiscs whose radii decrease,
+  has a common point.
 
 ## References
 
@@ -52,5 +59,32 @@ instance (priority := 100) SphericallyCompleteSpace.of_properSpace (α : Type*)
     IsCompact.nonempty_iInter_of_sequence_nonempty_isCompact_isClosed _
       (fun n ↦ h (Nat.le_succ n)) (fun n ↦ nonempty_closedBall.2 (hr n))
       (isCompact_closedBall _ _) fun _ ↦ isClosed_closedBall
+
+/-- In a spherically complete ultrametric space `X`, let `A n` be sets of families `ι → X` such
+that `A n` contains the closed polydisc of radius `r n` about each of its points, and every point
+of `A n` is within `r n` of some point of `A (n + 1)`. If the radii decrease and `A 0` is
+nonempty, the sets `A n` have a common point. -/
+theorem exists_forall_mem_of_closedBall {X ι : Type*} [PseudoMetricSpace X]
+    [IsUltrametricDist X] [SphericallyCompleteSpace X] {A : ℕ → Set (ι → X)} {r : ℕ → ℝ}
+    (hr : Antitone r) (hr0 : ∀ n, 0 ≤ r n) (h0 : (A 0).Nonempty)
+    (hstep : ∀ n, ∀ c ∈ A n, ∃ c' ∈ A (n + 1), ∀ i, dist (c' i) (c i) ≤ r n)
+    (hball : ∀ n, ∀ c ∈ A n, ∀ t : ι → X, (∀ i, dist (t i) (c i) ≤ r n) → t ∈ A n) :
+    ∃ t : ι → X, ∀ n, t ∈ A n := by
+  choose! g hgA hg using hstep
+  obtain ⟨c₀, hc₀⟩ := h0
+  -- The centres `c n ∈ A n`, defined recursively by `c (n + 1) = g n (c n)`.
+  let c : ℕ → ι → X := fun n ↦ Nat.rec c₀ g n
+  have hcA (n : ℕ) : c n ∈ A n := by
+    induction n with
+    | zero => exact hc₀
+    | succ n ih => exact hgA n (c n) ih
+  have hball' (i : ι) : (⋂ n, closedBall (c n i) (r n)).Nonempty := by
+    refine SphericallyCompleteSpace.nonempty_iInter_closedBall hr0
+      (antitone_nat_of_succ_le fun n ↦ ?_)
+    have hmem : c (n + 1) i ∈ closedBall (c n i) (r n) := hg n (c n) (hcA n) i
+    rw [IsUltrametricDist.closedBall_eq_of_mem hmem]
+    exact closedBall_subset_closedBall (hr n.le_succ)
+  choose t ht using hball'
+  exact ⟨t, fun n ↦ hball n (c n) (hcA n) t fun i ↦ Set.mem_iInter.1 (ht i) n⟩
 
 end TauCeti

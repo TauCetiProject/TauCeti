@@ -113,22 +113,6 @@ private theorem integer_smul_eq {E : Type*} [AddCommGroup E] [Module K E] [Modul
     [IsScalarTower 𝒪K K E] (c : 𝒪K) (v : E) : c • v = (c : K) • v :=
   (algebraMap_smul K c v).symm
 
-/-- Every `𝒪[K]`-linear map from the maximal ideal `𝓂[K]` to `K` is multiplication by an element
-of `K`. -/
-private theorem exists_eq_mul_of_linearMap_maximalIdeal (f : maximalIdeal 𝒪K →ₗ[𝒪K] K) :
-    ∃ q : K, ∀ c : maximalIdeal 𝒪K, f c = ((c : 𝒪K) : K) * q := by
-  obtain ⟨a, ha0, ha1⟩ := Valued.integer.exists_norm_coe_lt_one (K := K)
-  have ham : a ∈ maximalIdeal 𝒪K := Valued.integer.mem_maximalIdeal_iff.2 ha1
-  refine ⟨f ⟨a, ham⟩ / a, fun c ↦ ?_⟩
-  -- `f` is linear, so `a * f c = f (a * c) = c * f a`.
-  have h : (a : K) * f c = (c : K) * f ⟨a, ham⟩ := by
-    rw [← smul_eq_mul, ← integer_smul_eq, ← map_smul, ← smul_eq_mul ((c : 𝒪K) : K),
-      ← integer_smul_eq, ← map_smul]
-    congr 1
-    exact Subtype.ext (mul_comm _ _)
-  field_simp [norm_pos_iff.1 ha0]
-  linear_combination h
-
 /-- **Bounded saturated lattices of rank one are principal.** Let `K` be a nonarchimedean field
 whose norm takes every positive real value. A bounded `𝒪[K]`-submodule of `K` which is
 `𝓂[K]`-saturated is a principal lattice `a • 𝒪[K]`, possibly with `a = 0`. -/
@@ -188,64 +172,9 @@ end Lattice
 
 section SphericallyComplete
 
-/-- In a spherically complete ultrametric space `X`, let `A n` be sets of families `ι → X` such
-that `A n` contains the closed polydisc of radius `r n` about each of its points, and every point
-of `A n` is within `r n` of some point of `A (n + 1)`. If the radii decrease and `A 0` is
-nonempty, the sets `A n` have a common point. -/
-private theorem exists_forall_mem_of_closedBall {X ι : Type*} [PseudoMetricSpace X]
-    [IsUltrametricDist X] [SphericallyCompleteSpace X] {A : ℕ → Set (ι → X)} {r : ℕ → ℝ}
-    (hr : Antitone r) (hr0 : ∀ n, 0 ≤ r n) (h0 : (A 0).Nonempty)
-    (hstep : ∀ n, ∀ c ∈ A n, ∃ c' ∈ A (n + 1), ∀ i, dist (c' i) (c i) ≤ r n)
-    (hball : ∀ n, ∀ c ∈ A n, ∀ t : ι → X, (∀ i, dist (t i) (c i) ≤ r n) → t ∈ A n) :
-    ∃ t : ι → X, ∀ n, t ∈ A n := by
-  choose! g hgA hg using hstep
-  obtain ⟨c₀, hc₀⟩ := h0
-  -- The centres `c n ∈ A n`, defined recursively by `c (n + 1) = g n (c n)`.
-  let c : ℕ → ι → X := fun n ↦ Nat.rec c₀ g n
-  have hcA (n : ℕ) : c n ∈ A n := by
-    induction n with
-    | zero => exact hc₀
-    | succ n ih => exact hgA n (c n) ih
-  have hball' (i : ι) : (⋂ n, closedBall (c n i) (r n)).Nonempty := by
-    refine SphericallyCompleteSpace.nonempty_iInter_closedBall hr0
-      (antitone_nat_of_succ_le fun n ↦ ?_)
-    have hmem : c (n + 1) i ∈ closedBall (c n i) (r n) := hg n (c n) (hcA n) i
-    rw [IsUltrametricDist.closedBall_eq_of_mem hmem]
-    exact closedBall_subset_closedBall (hr n.le_succ)
-  choose t ht using hball'
-  exact ⟨t, fun n ↦ hball n (c n) (hcA n) t fun i ↦ Set.mem_iInter.1 (ht i) n⟩
-
 variable {K : Type*} [DenselyNormedField K] [IsUltrametricDist K]
 
 local notation "𝒪K" => Valued.integer K
-
-/-- Over a densely normed field, the maximal ideal of `𝒪[K]` contains a sequence of nonzero
-elements of increasing norm which is cofinal for the norm. -/
-private theorem exists_seq_mem_maximalIdeal :
-    ∃ a : ℕ → 𝒪K, (∀ n, (a n : K) ≠ 0) ∧ (∀ n, a n ∈ maximalIdeal 𝒪K) ∧
-      Monotone (fun n ↦ ‖(a n : K)‖) ∧
-      ∀ b ∈ maximalIdeal 𝒪K, ∃ n, ‖(b : K)‖ ≤ ‖(a n : K)‖ := by
-  set S := (fun x : K ↦ ‖x‖) '' {x | 0 < ‖x‖ ∧ ‖x‖ < 1}
-  obtain ⟨x₀, hx₀⟩ := NormedField.exists_lt_norm_lt K le_rfl zero_lt_one
-  have hS1 : ∀ y ∈ S, y ≤ 1 := by
-    rintro _ ⟨x, hx, rfl⟩
-    exact hx.2.le
-  have hne : S.Nonempty := ⟨_, x₀, hx₀, rfl⟩
-  have hsup : sSup S = 1 := by
-    refine csSup_eq_of_forall_le_of_forall_lt_exists_gt hne hS1 fun w hw ↦ ?_
-    obtain ⟨x, hx1, hx2⟩ :=
-      NormedField.exists_lt_norm_lt K (le_max_right w 0) (max_lt hw zero_lt_one)
-    exact ⟨‖x‖, ⟨x, ⟨(le_max_right w 0).trans_lt hx1, hx2⟩, rfl⟩, (le_max_left w 0).trans_lt hx1⟩
-  obtain ⟨u, hu, hlim, huS⟩ := exists_seq_tendsto_sSup hne ⟨1, hS1⟩
-  choose x hx hxu using huS
-  simp only at hxu
-  refine ⟨fun n ↦ ⟨x n, Valued.integer.mem_iff.2 (hx n).2.le⟩, fun n ↦ norm_pos_iff.1 (hx n).1,
-    fun n ↦ Valued.integer.mem_maximalIdeal_iff.2 (hx n).2, fun m n hmn ↦ ?_, fun b hb ↦ ?_⟩
-  · simpa [hxu] using hu hmn
-  · rw [hsup] at hlim
-    obtain ⟨n, hn⟩ :=
-      ((tendsto_order.1 hlim).1 _ (Valued.integer.mem_maximalIdeal_iff.1 hb)).exists
-    exact ⟨n, hn.le.trans_eq (hxu n).symm⟩
 
 variable [SphericallyCompleteSpace K] {E : Type*} [AddCommGroup E] [Module K E]
   [Module (Valued.integer K) E] [IsScalarTower (Valued.integer K) K E]
@@ -265,7 +194,7 @@ theorem IsValuationSaturated.exists_add_sum_smul_mem {M : Submodule 𝒪K E}
   -- Choose `a n ∈ 𝓂[K]` with `‖a n‖` increasing to `1`. The coefficient families `t` with
   -- `a n • (z + ∑ i, t i • e i) ∈ M` form decreasing unions of polydiscs of radius `‖a n‖⁻¹`;
   -- spherical completeness gives a common `t`, and saturation puts `z + ∑ i, t i • e i` in `M`.
-  obtain ⟨a, ha0, ham, hmono, hcof⟩ := exists_seq_mem_maximalIdeal (K := K)
+  obtain ⟨a, ha0, ham, hmono, hcof⟩ := Valued.integer.exists_seq_mem_maximalIdeal (K := K)
   -- `A n` is the set of coefficient families `t` with `a n • (z + ∑ i, t i • e i) ∈ M`; it is a
   -- union of closed polydiscs of radius `‖a n‖⁻¹`, and the sets `A n` decrease.
   let A : ℕ → Set (ι → K) := fun n ↦ {t | a n • (z + ∑ i, t i • e i) ∈ M}
@@ -348,8 +277,8 @@ private theorem isValuationSaturated_map_proj {ι : Type*} {M : Submodule 𝒪K 
   · have h := congrArg Subtype.val (hx a ham)
     rw [Submodule.coe_smul, integer_smul_eq, smul_eq_mul, ZeroMemClass.coe_zero] at h
     exact Subtype.ext ((mul_eq_zero.1 h).resolve_left ha)
-  obtain ⟨q, hq⟩ :=
-    exists_eq_mul_of_linearMap_maximalIdeal ((M.map (LinearMap.proj i)).subtype ∘ₗ f)
+  obtain ⟨q, hq⟩ := Valued.integer.exists_eq_mul_of_linearMap_maximalIdeal
+    ((M.map (LinearMap.proj i)).subtype ∘ₗ f)
   simp only [LinearMap.comp_apply, Submodule.subtype_apply] at hq
   -- The basis vectors `e j` span the part of `M` on which the `i`-th coordinate vanishes.
   let e : Fin k → ι → K := fun j ↦ (b j : ι → K)

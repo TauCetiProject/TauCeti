@@ -27,6 +27,10 @@ norm of `K` is dense, for instance if its value group is all of `ℝ_{>0}`, the 
 * `Valued.integer.dvd_of_norm_le`: divisibility in `𝒪[K]` is comparison of norms.
 * `Valued.integer.submodule_mem_of_norm_le`: an `𝒪[K]`-submodule of `K` contains every element
   of norm at most that of one of its elements.
+* `Valued.integer.exists_eq_mul_of_linearMap_maximalIdeal`: every `𝒪[K]`-linear map
+  `𝓂[K] → K` is multiplication by an element of `K`.
+* `Valued.integer.exists_seq_mem_maximalIdeal`: for a densely normed field, `𝓂[K]` contains a
+  sequence of nonzero elements of increasing norm which is cofinal for the norm.
 * `LinearMap.continuous_of_integer`: an `𝒪[K]`-linear map from `ι → K`, `ι` finite, to a normed
   `K`-space is continuous.
 * `LinearEquiv.isBounded_image_iff_of_integer`: `𝒪[K]`-linear equivalences between finite
@@ -60,14 +64,27 @@ theorem Valued.integer.dvd_of_norm_le {a b : Valued.integer K} (h : ‖(a : K)�
 
 /-- An `𝒪[K]`-submodule of `K` containing `y` contains every `x` with `‖x‖ ≤ ‖y‖`. -/
 theorem Valued.integer.submodule_mem_of_norm_le {M : Submodule (Valued.integer K) K} {x y : K}
-    (hy : y ∈ M) (h : ‖x‖ ≤ ‖y‖) : x ∈ M := by
-  rcases eq_or_ne y 0 with rfl | hy0
-  · rw [norm_zero, norm_le_zero_iff] at h
-    exact h ▸ M.zero_mem
-  have hc : x / y ∈ Valued.integer K :=
-    Valued.integer.mem_iff.2 (by rw [norm_div]; exact div_le_one_of_le₀ h (norm_nonneg _))
-  have := M.smul_mem ⟨x / y, hc⟩ hy
-  rwa [Subring.smul_def, smul_eq_mul, div_mul_cancel₀ _ hy0] at this
+    (hy : y ∈ M) (h : ‖x‖ ≤ ‖y‖) : x ∈ M :=
+  Valuation.leSubmodule_v_le_of_mem NormedField.valuation hy (show ‖x‖₊ ≤ ‖y‖₊ from h)
+
+/-- Every `𝒪[K]`-linear map from the maximal ideal `𝓂[K]` to `K` is multiplication by an element
+of `K`. -/
+theorem Valued.integer.exists_eq_mul_of_linearMap_maximalIdeal
+    (f : IsLocalRing.maximalIdeal (Valued.integer K) →ₗ[Valued.integer K] K) :
+    ∃ q : K, ∀ c : IsLocalRing.maximalIdeal (Valued.integer K),
+      f c = ((c : Valued.integer K) : K) * q := by
+  obtain ⟨a, ha0, ha1⟩ := Valued.integer.exists_norm_coe_lt_one (K := K)
+  have ham : a ∈ IsLocalRing.maximalIdeal (Valued.integer K) :=
+    Valued.integer.mem_maximalIdeal_iff.2 ha1
+  refine ⟨f ⟨a, ham⟩ / a, fun c ↦ ?_⟩
+  -- `f` is linear, so `a * f c = f (a * c) = c * f a`.
+  have h : (a : K) * f c = (c : K) * f ⟨a, ham⟩ := by
+    rw [← smul_eq_mul, ← Subring.smul_def, ← map_smul,
+      ← smul_eq_mul ((c : Valued.integer K) : K), ← Subring.smul_def, ← map_smul]
+    congr 1
+    exact Subtype.ext (mul_comm _ _)
+  field_simp [norm_pos_iff.1 ha0]
+  linear_combination h
 
 variable {ι F : Type*} [NormedAddCommGroup F] [NormedSpace K F] [Module (Valued.integer K) F]
   [IsScalarTower (Valued.integer K) K F]
@@ -103,6 +120,40 @@ theorem LinearEquiv.isBounded_image_iff_of_integer [Finite ι] {ι' : Type*} [Fi
   · simpa using e.toLinearMap.isBounded_image_of_integer (F := ι' → K) h
 
 end Integer
+
+section DenselyNormed
+
+variable {K : Type*} [DenselyNormedField K] [IsUltrametricDist K]
+
+/-- Over a densely normed field, the maximal ideal of `𝒪[K]` contains a sequence of nonzero
+elements of increasing norm which is cofinal for the norm. -/
+theorem Valued.integer.exists_seq_mem_maximalIdeal :
+    ∃ a : ℕ → Valued.integer K, (∀ n, (a n : K) ≠ 0) ∧
+      (∀ n, a n ∈ IsLocalRing.maximalIdeal (Valued.integer K)) ∧ Monotone (fun n ↦ ‖(a n : K)‖) ∧
+      ∀ b ∈ IsLocalRing.maximalIdeal (Valued.integer K), ∃ n, ‖(b : K)‖ ≤ ‖(a n : K)‖ := by
+  set S := (fun x : K ↦ ‖x‖) '' {x | 0 < ‖x‖ ∧ ‖x‖ < 1}
+  obtain ⟨x₀, hx₀⟩ := NormedField.exists_lt_norm_lt K le_rfl zero_lt_one
+  have hS1 : ∀ y ∈ S, y ≤ 1 := by
+    rintro _ ⟨x, hx, rfl⟩
+    exact hx.2.le
+  have hne : S.Nonempty := ⟨_, x₀, hx₀, rfl⟩
+  have hsup : sSup S = 1 := by
+    refine csSup_eq_of_forall_le_of_forall_lt_exists_gt hne hS1 fun w hw ↦ ?_
+    obtain ⟨x, hx1, hx2⟩ :=
+      NormedField.exists_lt_norm_lt K (le_max_right w 0) (max_lt hw zero_lt_one)
+    exact ⟨‖x‖, ⟨x, ⟨(le_max_right w 0).trans_lt hx1, hx2⟩, rfl⟩, (le_max_left w 0).trans_lt hx1⟩
+  obtain ⟨u, hu, hlim, huS⟩ := exists_seq_tendsto_sSup hne ⟨1, hS1⟩
+  choose x hx hxu using huS
+  simp only at hxu
+  refine ⟨fun n ↦ ⟨x n, Valued.integer.mem_iff.2 (hx n).2.le⟩, fun n ↦ norm_pos_iff.1 (hx n).1,
+    fun n ↦ Valued.integer.mem_maximalIdeal_iff.2 (hx n).2, fun m n hmn ↦ ?_, fun b hb ↦ ?_⟩
+  · simpa [hxu] using hu hmn
+  · rw [hsup] at hlim
+    obtain ⟨n, hn⟩ :=
+      ((tendsto_order.1 hlim).1 _ (Valued.integer.mem_maximalIdeal_iff.1 hb)).exists
+    exact ⟨n, hn.le.trans_eq (hxu n).symm⟩
+
+end DenselyNormed
 
 namespace TauCeti
 
