@@ -203,11 +203,11 @@ theorem conj_inv_apply (g x : G) : (conj g)⁻¹ x = g⁻¹ * x * g :=
 theorem toMulAut_conj (g : G) : toMulAut (conj g) = MulAut.conj g :=
   (rfl)
 
-/-- Forgetting continuity of an inner automorphism gives abstract conjugation. -/
+/-- Forgetting continuity of an inner automorphism gives abstract conjugation. This form
+applies to the underlying equivalence without unfolding `toMulAut`. -/
 @[simp]
-theorem toMulEquiv_conj (g : G) : (conj g : G ≃* G) = MulAut.conj g := by
-  ext x
-  exact (conj_apply g x).trans (MulAut.conj_apply g x).symm
+theorem toMulEquiv_conj (g : G) : (conj g : G ≃* G) = MulAut.conj g :=
+  toMulAut_conj g
 
 /-- The kernel of the inner-automorphism homomorphism is the centre. -/
 theorem ker_conj : (conj : G →* ContinuousAut G).ker = Subgroup.center G := by
