@@ -41,7 +41,6 @@ theorem complexProdToEuclideanFour_apply (x : WithLp 2 (ℂ × ℂ)) :
   ext i
   fin_cases i <;> rfl
 
-@[simp]
 theorem complexProdToEuclideanFour_symm_apply (y : EuclideanSpace ℝ (Fin 4)) :
     complexProdToEuclideanFour.symm y = WithLp.toLp 2 (⟨y 0, y 1⟩, ⟨y 2, y 3⟩) := by
   rw [LinearIsometryEquiv.symm_apply_eq]

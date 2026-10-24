@@ -97,8 +97,8 @@ private theorem toComplexProd_unknotSolidTorus (p : SolidTorus) :
     toComplexProd (unknotSolidTorus p) =
       ((sphereProdSndLeHomeomorph ℂ ℂ).symm (solidTorusSwap p)).1 := by
   ext1
-  simp [unknotSolidTorus, toComplexProd, -complexProdToEuclideanFour_symm_apply,
-    -complexProdToEuclideanFour_apply]
+  -- Keep `complexProdToEuclideanFour` folded so that it cancels against its inverse.
+  simp [unknotSolidTorus, toComplexProd, -complexProdToEuclideanFour_apply]
 
 /-- The image of the open solid torus under `TauCeti.unknotSolidTorus` is the open solid torus
 `‖w‖ < ‖z‖`. -/
@@ -124,7 +124,7 @@ private theorem image_unknotSolidTorus :
     · have hfst : 0 < ‖(toComplexProd x : WithLp 2 (ℂ × ℂ)).fst‖ :=
         (norm_nonneg _).trans_lt hx
       simp only [mem_ofPred_eq]
-      simpa [norm_smul, -complexProdToEuclideanFour_symm_apply] using (inv_mul_lt_one₀ hfst).2 hx
+      simpa [norm_smul] using (inv_mul_lt_one₀ hfst).2 hx
     · apply toComplexProd.injective
       rw [toComplexProd_unknotSolidTorus, Homeomorph.apply_symm_apply, Homeomorph.symm_apply_apply]
 
@@ -165,7 +165,7 @@ theorem knotExterior_unknotSolidTorus :
           (x : EuclideanSpace ℝ (Fin 4)) 2 ^ 2 + (x : EuclideanSpace ℝ (Fin 4)) 3 ^ 2} := by
   ext x
   rw [mem_knotExterior_unknotSolidTorus_iff, ← sq_le_sq₀ (norm_nonneg _) (norm_nonneg _)]
-  simp [Complex.norm_mul_self_eq_normSq, sq]
+  simp [complexProdToEuclideanFour_symm_apply, Complex.norm_mul_self_eq_normSq, sq]
 
 /-- **The exterior of the unknot is a solid torus.** The exterior of the standard solid torus
 neighbourhood of the unknot, the solid torus `‖z‖ ≤ ‖w‖` in the coordinates `ℝ⁴ = ℂ²`, is
@@ -183,14 +183,14 @@ theorem coe_unknotExteriorHomeomorph_apply_fst (x : knotExterior (Φ := unknotSo
     ((unknotExteriorHomeomorph x).1 : ℂ) =
       ‖(complexProdToEuclideanFour.symm (x : EuclideanSpace ℝ (Fin 4))).snd‖⁻¹ •
         (complexProdToEuclideanFour.symm (x : EuclideanSpace ℝ (Fin 4))).fst := by
-  simp [unknotExteriorHomeomorph, -mem_ofPred_eq, -complexProdToEuclideanFour_symm_apply]
+  simp [unknotExteriorHomeomorph, -mem_ofPred_eq]
 
 @[simp]
 theorem coe_unknotExteriorHomeomorph_apply_snd (x : knotExterior (Φ := unknotSolidTorus)) :
     ((unknotExteriorHomeomorph x).2 : ℂ) =
       ‖(complexProdToEuclideanFour.symm (x : EuclideanSpace ℝ (Fin 4))).snd‖⁻¹ •
         (complexProdToEuclideanFour.symm (x : EuclideanSpace ℝ (Fin 4))).snd := by
-  simp [unknotExteriorHomeomorph, -mem_ofPred_eq, -complexProdToEuclideanFour_symm_apply]
+  simp [unknotExteriorHomeomorph, -mem_ofPred_eq]
 
 @[simp]
 theorem coe_unknotExteriorHomeomorph_symm_apply (p : SolidTorus) :
@@ -198,7 +198,7 @@ theorem coe_unknotExteriorHomeomorph_symm_apply (p : SolidTorus) :
         EuclideanSpace ℝ (Fin 4)) =
       complexProdToEuclideanFour (WithLp.toLp 2
         ((√(1 + ‖(p.1 : ℂ)‖ ^ 2))⁻¹ • (p.1 : ℂ), (√(1 + ‖(p.1 : ℂ)‖ ^ 2))⁻¹ • (p.2 : ℂ))) := by
-  simp [unknotExteriorHomeomorph, -mem_ofPred_eq, -complexProdToEuclideanFour_symm_apply]
+  simp [unknotExteriorHomeomorph, -mem_ofPred_eq]
 
 /-- **The exterior of the unknot exchanges meridian and longitude.** On the boundary torus, the
 identification `TauCeti.unknotExteriorHomeomorph` of the exterior of the unknot with `D² × S¹`
