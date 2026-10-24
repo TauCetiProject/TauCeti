@@ -127,6 +127,7 @@ theorem coeFn_regular_coefficient (a : A) (ξ : Lp H 2 μ) :
   rw [regular_coefficient_apply]
   exact (regularSymbol α ρ a).coeFn_mulL2 ξ
 
+variable {α ρ μ} in
 /-- The coefficient representation of the regular covariant representation is determined by its
 pointwise formula: an `L²` class equal almost everywhere to `r ↦ ρ (α_{r⁻¹}(a)) (ξ r)` is
 `ρ̃(a) ξ`. -/
