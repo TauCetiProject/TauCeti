@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.DotProduct
-public import Mathlib.LinearAlgebra.Matrix.Symmetric
 public import Mathlib.LinearAlgebra.Projectivization.Basic
-public import Mathlib.LinearAlgebra.Trace
+public import TauCeti.LinearAlgebra.Matrix.Symmetric
+public import TauCeti.LinearAlgebra.Trace.Idempotent
 
 /-!
 # The rank-one projector of a line
@@ -39,7 +39,7 @@ properties are in `TauCeti.Geometry.RealAlgebraic.ProjectorEmbedding`.
 * `TauCeti.rankOneProjector_mem_projectorLocus`: the projector of a vector with `xᵀ x ≠ 0` lies
   in the locus.
 * `TauCeti.rankOneProjector_row_eq_self`: a matrix in the locus is the projector of each of its
-  rows with nonzero diagonal entry. Its proof uses two matrix facts proved here:
+  rows with nonzero diagonal entry. Its proof uses two matrix facts:
   `Matrix.IsSymm.mulVec_row_of_isIdempotentElem` (a symmetric idempotent fixes its rows) and
   `Matrix.IsIdempotentElem.eq_zero_of_trace_eq_zero` (in characteristic zero an idempotent of
   trace zero vanishes).
@@ -58,33 +58,6 @@ public section
 
 open Matrix
 open scoped LinearAlgebra.Projectivization
-
-namespace Matrix
-
-variable {ι K : Type*} [Fintype ι]
-
-/-- A symmetric idempotent matrix fixes each of its rows, since the row `A i` is also the column
-`A *ᵥ Pi.single i 1`. -/
-theorem IsSymm.mulVec_row_of_isIdempotentElem [Semiring K] {A : Matrix ι ι K} (hS : A.IsSymm)
-    (hI : IsIdempotentElem A) (i : ι) : A *ᵥ A i = A i := by
-  classical
-  have hcol : A *ᵥ Pi.single i 1 = A i := by
-    ext j
-    rw [mulVec_single_one, col_apply, hS.apply]
-  rw [← hcol, mulVec_mulVec, hI.eq]
-
-/-- Over a field of characteristic zero, an idempotent matrix of trace zero is zero: the trace of
-an idempotent is the dimension of its range. This is the matrix form of
-`LinearMap.IsIdempotentElem.eq_zero_of_trace_eq_zero`. -/
-theorem IsIdempotentElem.eq_zero_of_trace_eq_zero [Field K] [CharZero K] {A : Matrix ι ι K}
-    (hA : IsIdempotentElem A) (htr : A.trace = 0) : A = 0 := by
-  classical
-  refine toLinAlgEquiv'.injective ?_
-  rw [map_zero]
-  exact LinearMap.IsIdempotentElem.eq_zero_of_trace_eq_zero (hA.map toLinAlgEquiv')
-    ((trace_toLin'_eq A).trans htr)
-
-end Matrix
 
 namespace TauCeti
 
