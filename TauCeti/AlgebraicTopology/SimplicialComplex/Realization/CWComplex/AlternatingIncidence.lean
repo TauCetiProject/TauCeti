@@ -26,25 +26,6 @@ unit depending only on the dimension of `c` (`TauCeti.cellularIncidence_realizat
 `TauCeti.isUnit_cellularIncidence_realization_face`). Thus the cellular boundary of a simplicial
 cell is the ordered simplicial boundary `∑ⱼ (-1) ^ j [c.face j]` up to one unit in each dimension.
 
-The argument does not compute a local degree in each dimension.
-
-* **Naturality.** A simplicial map which is strictly increasing on a cell carries the
-  characteristic map of the cell and of each of its faces onto the characteristic map of the
-  image cell and of its faces. It therefore sends their cellular basis vectors to cellular basis
-  vectors, so incidence numbers are preserved
-  (`TauCeti.cellularIncidence_realization_map_face`).
-* **Homogeneity.** In the full simplicial complex on the vertex type there is a simplicial map
-  carrying any cell increasingly onto any other cell of the same dimension. Comparing both cells
-  of `K` with their images there shows that the incidence of `c.face j` in `c` depends only on the
-  dimension and on `j`.
-* **Alternation.** In dimension one the two incidences are `±1` and opposite, by the endpoint
-  formula `TauCeti.cellularIncidence_zero`. In higher dimensions, the face of `c` with the
-  consecutive vertices `j` and `j + 1` deleted lies in exactly two faces of `c`, the faces
-  `c.face j` and `c.face (j + 1)`, and in both it is the `j`-th face. By homogeneity, the two
-  incidences of this face agree, and they are units
-  (`TauCeti.isUnit_cellularIncidence_realization_face`). The coefficient of this face in
-  `d² c = 0` then shows `[c : c.face (j + 1)] = -[c : c.face j]`.
-
 ## Main results
 
 * `TauCeti.cellularIncidence_realization_map_face`: incidence numbers are natural under
@@ -77,41 +58,6 @@ open _root_.AbstractSimplicialComplex
 
 variable {ι : Type u} [LinearOrder ι] {K : _root_.AbstractSimplicialComplex ι}
   (R : Type u) [Ring R] {n : ℕ}
-
-/-- **The cellular boundary of a simplicial cell** is the finite sum, over its deleted-vertex
-faces, of their incidence coefficients times their cellular basis vectors. -/
-theorem cellularDifferential_realization_cellularChainBasis (c : RealizationCell K (n + 1)) :
-    letI := realizationCWComplex K
-    cellularDifferential (univ : Set (Realization K)) (ModuleCat.of R R) n
-        (cellularChainBasis (univ : Set (Realization K)) R (n + 1)
-          ((realizationCellEquiv K (n + 1)).symm c)) =
-      ∑ j : Fin (n + 2),
-        (cellularIncidence (univ : Set (Realization K)) R n
-            ((realizationCellEquiv K n).symm (c.face j)) ((realizationCellEquiv K (n + 1)).symm c) :
-              R) •
-          (cellularChainBasis (univ : Set (Realization K)) R n
-            ((realizationCellEquiv K n).symm (c.face j)) :
-              (cellularChainGroup (univ : Set (Realization K)) (ModuleCat.of R R) n :
-                ModuleCat R)) := by
-  let := realizationCWComplex K
-  classical
-  have hsupp : (cellularBoundaryColumn (univ : Set (Realization K)) R n
-      ((realizationCellEquiv K (n + 1)).symm c)).support ⊆
-        Finset.univ.image fun j ↦ (realizationCellEquiv K n).symm (c.face j) := by
-    intro d hd
-    have hd' : realizationCellEquiv K n d ∈ ((cellularBoundaryColumn
-        (univ : Set (Realization K)) R n ((realizationCellEquiv K (n + 1)).symm c)).mapDomain
-          (realizationCellEquiv K n)).support := by
-      rw [Finsupp.mapDomain_support_of_injective (realizationCellEquiv K n).injective]
-      exact Finset.mem_image_of_mem _ hd
-    obtain ⟨j, -, hj⟩ := Finset.mem_image.1
-      (support_cellularBoundaryColumn_realization_subset_faces (R := R) c hd')
-    exact Finset.mem_image.2 ⟨j, Finset.mem_univ _, by rw [hj, Equiv.symm_apply_apply]⟩
-  rw [cellularDifferential_basis, Finsupp.sum_of_support_subset _ hsupp
-    (fun i a ↦ a • cellularChainBasis (univ : Set (Realization K)) R n i) (by simp)]
-  rw [Finset.sum_image fun j _ k _ h ↦
-    c.face_injective ((realizationCellEquiv K n).symm.injective h)]
-  simp only [cellularBoundaryColumn_apply]
 
 section Naturality
 
@@ -338,6 +284,11 @@ theorem cellularIncidence_realization_face_succ (c : RealizationCell K (n + 1))
         ((realizationCellEquiv K n).symm (c.face j.castSucc))
         ((realizationCellEquiv K (n + 1)).symm c) := by
   let := realizationCWComplex K
+  -- In dimension one this is the endpoint formula `TauCeti.cellularIncidence_zero`. In higher
+  -- dimensions, the face `k` of `c` with the consecutive vertices `j` and `j + 1` deleted lies in
+  -- exactly two deleted-vertex faces of `c`, namely `c.face j` and `c.face (j + 1)`, and is the
+  -- `j`-th face of both. By homogeneity its two incidences agree and are units, so the coefficient
+  -- of `k` in `d² c = 0` gives the sign flip.
   cases n with
   | zero =>
     obtain rfl : j = 0 := Fin.fin_one_eq_zero j
@@ -350,20 +301,8 @@ theorem cellularIncidence_realization_face_succ (c : RealizationCell K (n + 1))
       rw [hk, RealizationCell.face_face, Fin.succAbove_castSucc_self, Fin.predAbove_castSucc_self]
     have hsum := sum_cellularIncidence_mul (univ : Set (Realization K)) R n
       ((realizationCellEquiv K n).symm k) ((realizationCellEquiv K (n + 2)).symm c)
-    have hsupp : (cellularBoundaryColumn (univ : Set (Realization K)) R (n + 1)
-        ((realizationCellEquiv K (n + 2)).symm c)).support ⊆
-          Finset.univ.image fun i ↦ (realizationCellEquiv K (n + 1)).symm (c.face i) := by
-      intro d hd
-      have hd' : realizationCellEquiv K (n + 1) d ∈ ((cellularBoundaryColumn
-          (univ : Set (Realization K)) R (n + 1)
-            ((realizationCellEquiv K (n + 2)).symm c)).mapDomain
-              (realizationCellEquiv K (n + 1))).support := by
-        rw [Finsupp.mapDomain_support_of_injective (realizationCellEquiv K (n + 1)).injective]
-        exact Finset.mem_image_of_mem _ hd
-      obtain ⟨i, -, hi⟩ := Finset.mem_image.1
-        (support_cellularBoundaryColumn_realization_subset_faces (R := R) c hd')
-      exact Finset.mem_image.2 ⟨i, Finset.mem_univ _, by rw [hi, Equiv.symm_apply_apply]⟩
-    rw [Finset.sum_subset hsupp fun d _ hd ↦ by
+    rw [Finset.sum_subset (support_cellularBoundaryColumn_realization_subset_faces c)
+        fun d _ hd ↦ by
         rw [← cellularBoundaryColumn_apply, Finsupp.notMem_support_iff.1 hd, zero_mul],
       Finset.sum_image fun i _ i' _ h ↦
         c.face_injective ((realizationCellEquiv K (n + 1)).symm.injective h),

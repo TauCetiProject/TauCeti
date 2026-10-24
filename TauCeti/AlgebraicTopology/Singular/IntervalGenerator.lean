@@ -215,15 +215,6 @@ lemma sphereMinus_coord :
   rw [diskBoundaryHomeomorph_symm_apply_down_apply]
   simp
 
-/-- A point of `S⁰` is determined by its coordinate. -/
-private lemma diskBoundary_one_ext {p q : TopCat.diskBoundary.{w} 1}
-    (h : ((p : ULift.{w} (Metric.sphere (0 : EuclideanSpace ℝ (Fin 1)) 1)).down :
-        EuclideanSpace ℝ (Fin 1)) 0 =
-      ((q : ULift.{w} (Metric.sphere (0 : EuclideanSpace ℝ (Fin 1)) 1)).down :
-        EuclideanSpace ℝ (Fin 1)) 0) : p = q := by
-  refine ULift.ext (Subtype.ext (PiLp.ext fun i ↦ ?_))
-  rwa [Subsingleton.elim i 0]
-
 /-- **`S⁰` consists of the two points `-e₀` and `e₀`.** -/
 lemma eq_sphereMinus_or_eq_spherePlus (p : TopCat.diskBoundary.{w} 1) :
     p = sphereMinus ∨ p = spherePlus := by

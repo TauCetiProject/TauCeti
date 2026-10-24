@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.OpenPartialHomeomorph.Constructions
 public import TauCeti.AlgebraicTopology.Cellular.Incidence
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Basic
+public import TauCeti.AlgebraicTopology.Singular.ReducedRelative
 
 /-!
 # Cellular incidence numbers as local degrees of attaching maps
@@ -62,6 +63,9 @@ local homology is constant along convex sets in a chart
 * `TauCeti.singularHomologyπ_cellAttachingMap_eq_cellularIncidence_smul` and
   `TauCeti.cellularIncidence_eq_inv_cellLocalClass`: **the incidence numbers are local degrees of
   the attaching maps**.
+* `TauCeti.singularHomology₀Section_comp_singularHomologyπ_eq_cellLocalClass` and
+  `TauCeti.singularHomologyπ_singularHomology₀Section_apply_one`: for a `0`-cell, the local class
+  is the class of its point, and the class of any other point of the `0`-skeleton is zero.
 
 ## References
 
@@ -555,6 +559,47 @@ instance isIso_cellLocalClass : IsIso (cellLocalClass C R x hx) := by
 
 end Generation
 
+/-- **The local class of a `0`-cell is the class of its point**, read in the local homology
+`H₀(X⁰, X⁰ ∖ {x})` of the `0`-skeleton at the point `x` of the cell. -/
+lemma singularHomology₀Section_comp_singularHomologyπ_eq_cellLocalClass {i : cell C 0}
+    (x : skeletonObj C 1) (hx : (x : X) ∈ openCell 0 i) :
+    singularHomology₀Section R x ≫
+        (TopPair.ofSubset ({x}ᶜ : Set (skeletonObj C 1))).singularHomologyπ R 0 =
+      cellLocalClass C R x hx := by
+  let pt : TopCat.disk.{w} 0 := ULift.up ⟨0, by simp⟩
+  -- The identification `H₀(D⁰, ∅) ≅ R` sends the class of the point of `D⁰` to `1`.
+  have hinv : (singularHomologyDiskBoundaryPairIso R 0).inv =
+      singularHomology₀Section R pt ≫ (diskBoundaryPair.{w} 0).singularHomologyπ R 0 := by
+    refine ((Iso.comp_hom_eq_id _).1 ?_).symm
+    rw [singularHomologyDiskBoundaryPairIso_zero_hom]
+    -- The relative and absolute homology of `D⁰` agree only up to unfolding.
+    erw [Category.assoc, IsIso.hom_inv_id_assoc]
+    exact singularHomology₀Section_singularHomology₀ε R pt
+  set g := characteristicCellPairMap C i ≫
+    skeletonPairToComplSingleton C x (notMem_skeletonLT_of_mem_openCell 0 hx)
+  have hpt : TopPair.Hom.fst g pt = x := by
+    apply Subtype.ext
+    rw [openCell_zero_eq_singleton] at hx
+    rw [TopPair.Hom.fst_comp, skeletonPairToComplSingleton_fst]
+    -- The identity sits between the two presentations of the `0`-skeleton.
+    erw [Category.comp_id]
+    refine (coe_characteristicCellPairMap_fst_apply C i pt).trans ?_
+    rw [Set.mem_singleton_iff.mp hx]
+    exact congrArg (map 0 i) (Subsingleton.elim _ _)
+  rw [cellLocalClass_def, hinv]
+  have h₁ : SSet.homologyMap (TopCat.toSSet.map (TopPair.Hom.fst g)) R 0 ≫
+      (TopPair.ofSubset ({x}ᶜ : Set (skeletonObj C 1))).singularHomologyπ R 0 =
+        (diskBoundaryPair.{w} 0).singularHomologyπ R 0 ≫ TopPair.singularHomologyMap g R 0 :=
+    TopPair.singularHomologyπ_naturality (R := R) g 0
+  have h₂ : singularHomology₀Section R pt ≫
+      SSet.homologyMap (TopCat.toSSet.map (TopPair.Hom.fst g)) R 0 =
+        singularHomology₀Section R x :=
+    -- After rewriting the point, the two sides differ only in the presentation of the
+    -- `0`-skeleton as a `TopCat` object.
+    (singularHomology₀Section_naturality R (TopPair.Hom.fst g) pt).trans (by rw [hpt]; rfl)
+  exact ((h₂ =≫ _).symm.trans (Category.assoc _ _ _)).trans
+    ((_ ≫= h₁).trans (Category.assoc _ _ _).symm)
+
 end Coefficients
 
 section Ring
@@ -673,6 +718,31 @@ theorem cellularIncidence_eq_zero_of_not_mem_cellFrontier {i : cell C n}
   rw [cellularIncidence_eq_inv_cellLocalClass C R x hx j]
   erw [← ModuleCat.comp_apply, ← ModuleCat.comp_apply, ← Category.assoc, hzero, zero_comp]
   rfl
+
+open scoped Classical in
+/-- In the local homology at the point `x` of a `0`-cell `i`, the class of a point `y` of the
+`0`-skeleton is the local class of `i` if `y` is the point of `i`, and zero otherwise. -/
+lemma singularHomologyπ_singularHomology₀Section_apply_one {i : cell C 0}
+    (x : skeletonObj C 1) (hx : (x : X) ∈ openCell 0 i) (y : skeletonObj C 1) :
+    (TopPair.ofSubset ({x}ᶜ : Set (skeletonObj C 1))).singularHomologyπ (ModuleCat.of R R) 0
+        (singularHomology₀Section (ModuleCat.of R R) y (1 : R)) =
+      if (y : X) ∈ openCell 0 i then cellLocalClass C (ModuleCat.of R R) x hx 1 else 0 := by
+  have hx' := hx
+  rw [openCell_zero_eq_singleton, Set.mem_singleton_iff] at hx'
+  split_ifs with hy
+  · have hyx : y = x := by
+      rw [openCell_zero_eq_singleton, Set.mem_singleton_iff] at hy
+      exact Subtype.ext (hy.trans hx'.symm)
+    subst hyx
+    exact ConcreteCategory.congr_hom
+      (singularHomology₀Section_comp_singularHomologyπ_eq_cellLocalClass C (ModuleCat.of R R) y
+        hx) 1
+  · have hyx : y ∈ ({x}ᶜ : Set (skeletonObj C 1)) := fun h ↦ hy (h ▸ hx)
+    -- The composite is evaluated at `1` across the two presentations of the homology of the
+    -- `0`-skeleton, which `simp` cannot split as a composite.
+    exact (ConcreteCategory.congr_hom
+      (singularHomology₀Section_comp_singularHomologyπ_of_mem (ModuleCat.of R R) hyx) 1).trans
+        (by simp)
 
 end Ring
 
