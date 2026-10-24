@@ -21,8 +21,8 @@ interaction with the degree filtration.
 
 The degree filtration is the word filtration `TauCeti.Algebra.wordFiltration` of the generator map,
 whose step `n` is spanned by the products of at most `n` generators. A translation sends a
-generator to itself plus a scalar, so it preserves every step; and on an element homogeneous of
-degree `n` it changes nothing in degree `n`, the difference `translation f p - p` lying in degree
+generator to itself plus a scalar, so it preserves every step; and on an element of degree at
+most `n` it changes nothing in degree `n`, the difference `translation f p - p` lying in degree
 strictly less than `n` (`SymmetricAlgebra.translation_sub_self_mem_wordFiltrationPrevious`).
 That is, a translation is unipotent for the filtration, with identity associated graded map.
 
@@ -46,8 +46,8 @@ linear one.
   group of linear forms to the automorphisms.
 * `SymmetricAlgebra.translation_mem_wordFiltration_iff`: translation preserves every step
   of the degree filtration.
-* `SymmetricAlgebra.translation_sub_self_mem_wordFiltrationPrevious`: on a homogeneous
-  element of degree `n` it agrees with the identity up to degree strictly less than `n`.
+* `SymmetricAlgebra.translation_sub_self_mem_wordFiltrationPrevious`: on an element of
+  degree at most `n` it agrees with the identity up to degree strictly less than `n`.
 
 ## References
 
@@ -147,11 +147,10 @@ theorem translation_mem_wordFiltration_iff (f : M →ₗ[R] R) {n : ℕ} {p : Sy
   refine ⟨fun h ↦ ?_, hmem f⟩
   simpa using hmem (-f) h
 
-/-- **A translation is unipotent for the degree filtration**: on an element `p` homogeneous of
-degree `n`, `translation f p - p` has degree strictly less than `n`. In degree zero this says that
-a translation fixes the scalars. -/
-theorem translation_sub_self_mem_wordFiltrationPrevious (f : M →ₗ[R] R) {n : ℕ}
-    {p : SymmetricAlgebra R M} (hp : p ∈ homogeneousSubmodule R M n) :
+/-- The homogeneous case of `SymmetricAlgebra.translation_sub_self_mem_wordFiltrationPrevious`,
+by induction on products of generators. -/
+private theorem translation_sub_self_mem_wordFiltrationPrevious_of_mem_homogeneousSubmodule
+    (f : M →ₗ[R] R) {n : ℕ} {p : SymmetricAlgebra R M} (hp : p ∈ homogeneousSubmodule R M n) :
     translation f p - p ∈ wordFiltrationPrevious (ι R M) n := by
   induction hp using Submodule.pow_induction_on_left' with
   | algebraMap r => simp
@@ -172,5 +171,25 @@ theorem translation_sub_self_mem_wordFiltrationPrevious (f : M →ₗ[R] R) {n :
     have h := mul_mem_wordFiltrationPrevious_right (ι R M)
       (apply_mem_wordFiltration_one (ι R M) a) ih
     rwa [Nat.add_comm, wordFiltrationPrevious_succ] at h
+
+/-- **A translation is unipotent for the degree filtration**: on an element `p` of degree at most
+`n`, `translation f p - p` has degree strictly less than `n`. In degree zero this says that a
+translation fixes the scalars. -/
+theorem translation_sub_self_mem_wordFiltrationPrevious (f : M →ₗ[R] R) {n : ℕ}
+    {p : SymmetricAlgebra R M} (hp : p ∈ wordFiltration (ι R M) n) :
+    translation f p - p ∈ wordFiltrationPrevious (ι R M) n := by
+  rw [wordFiltration_eq_iSup_pow] at hp
+  refine Submodule.iSup_induction _ (motive := fun p ↦ translation f p - p ∈ _) hp ?_ (by simp) ?_
+  · rintro ⟨i, hi⟩ x hx
+    refine (?_ : wordFiltrationPrevious (ι R M) i ≤ _)
+      (translation_sub_self_mem_wordFiltrationPrevious_of_mem_homogeneousSubmodule f hx)
+    rcases i with _ | j
+    · simp
+    · obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le hi
+      rw [Nat.add_right_comm, wordFiltrationPrevious_succ, wordFiltrationPrevious_succ]
+      exact wordFiltration_mono _ (Nat.le_add_right j k)
+  · intro x y hx hy
+    rw [map_add, add_sub_add_comm]
+    exact add_mem hx hy
 
 end SymmetricAlgebra
