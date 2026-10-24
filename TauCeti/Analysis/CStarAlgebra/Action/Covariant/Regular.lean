@@ -17,12 +17,12 @@ C⋆-algebra `A`, let `ρ` be a representation of `A` on a Hilbert space `H`, an
 left-invariant measure on `G`, typically a left Haar measure. The *regular covariant
 representation* induced by `ρ` acts on `L²(G, H)` by
 
-`ρ̃(a) ξ (r) = ρ (α_{r⁻¹}(a)) (ξ r)` and `λ_s ξ (r) = ξ (s⁻¹ r)`.
+`π(a) ξ (r) = ρ (α_{r⁻¹}(a)) (ξ r)` and `λ_s ξ (r) = ξ (s⁻¹ r)`.
 
-The coefficient representation `ρ̃` is multiplication by the bounded continuous operator-valued
+The coefficient representation `π` is multiplication by the bounded continuous operator-valued
 function `r ↦ ρ (α_{r⁻¹}(a))`, so it is a ⋆-homomorphism; the group representation `λ` is the left
 regular representation, which is unitary and strongly continuous. The pair is covariant:
-`λ_s ρ̃(a) λ_s⁻¹ = ρ̃(α_s(a))`. Integrating it gives the regular representations of the convolution
+`λ_s π(a) λ_s⁻¹ = π(α_s(a))`. Integrating it gives the regular representations of the convolution
 algebra, whose norms define the reduced crossed product.
 
 The representation `ρ` need not be nondegenerate or faithful, and no separability, second
@@ -35,12 +35,12 @@ The conventions follow Dana Williams, *Crossed Products of C*-Algebras*, Chapter
 ## Main definitions
 
 * `TauCeti.CStarAction.CovariantRepresentation.regular`: the regular covariant representation
-  `(ρ̃, λ)` on `L²(G, H)` induced by `ρ`.
+  `(π, λ)` on `L²(G, H)` induced by `ρ`.
 
 ## Main statements
 
 * `TauCeti.CStarAction.CovariantRepresentation.coeFn_regular_coefficient`: the coefficient
-  representation is `ρ̃(a) ξ (r) = ρ (α_{r⁻¹}(a)) (ξ r)` almost everywhere.
+  representation is `π(a) ξ (r) = ρ (α_{r⁻¹}(a)) (ξ r)` almost everywhere.
 * `TauCeti.CStarAction.CovariantRepresentation.regular_group`: the group representation is the
   left regular representation `MeasureTheory.Measure.leftRegular`.
 -/
@@ -121,7 +121,7 @@ theorem regular_group : (regular α ρ μ).group = μ.leftRegular ℂ H 2 :=
   (rfl)
 
 /-- The coefficient representation of the regular covariant representation acts by
-`ρ̃(a) ξ (r) = ρ (α_{r⁻¹}(a)) (ξ r)` almost everywhere. -/
+`π(a) ξ (r) = ρ (α_{r⁻¹}(a)) (ξ r)` almost everywhere. -/
 theorem coeFn_regular_coefficient (a : A) (ξ : Lp H 2 μ) :
     (regular α ρ μ).coefficient a ξ =ᵐ[μ] fun r => ρ (α r⁻¹ a) (ξ r) := by
   rw [regular_coefficient_apply]
@@ -130,7 +130,7 @@ theorem coeFn_regular_coefficient (a : A) (ξ : Lp H 2 μ) :
 variable {α ρ μ} in
 /-- The coefficient representation of the regular covariant representation is determined by its
 pointwise formula: an `L²` class equal almost everywhere to `r ↦ ρ (α_{r⁻¹}(a)) (ξ r)` is
-`ρ̃(a) ξ`. -/
+`π(a) ξ`. -/
 theorem regular_coefficient_eq_iff {a : A} {ξ η : Lp H 2 μ} :
     (regular α ρ μ).coefficient a ξ = η ↔ (fun r => ρ (α r⁻¹ a) (ξ r)) =ᵐ[μ] η := by
   rw [regular_coefficient_apply]
