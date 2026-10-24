@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.AlgCat.FilteredColimits
 public import Mathlib.Algebra.Category.CommAlgCat.Basic
 public import Mathlib.Algebra.Category.Ring.FilteredColimits
 public import Mathlib.CategoryTheory.Limits.Preserves.Over
@@ -14,7 +15,9 @@ public import Mathlib.CategoryTheory.Limits.Preserves.Over
 
 The forgetful functor from commutative algebras over a base ring to types preserves small
 filtered colimits. This is deduced from the corresponding fact for commutative rings, using the
-equivalence between commutative algebras and commutative rings under the base.
+equivalence between commutative algebras and commutative rings under the base. Since the
+forgetful functor from algebras to types reflects filtered colimits, the forgetful functor from
+commutative algebras to algebras preserves them as well.
 -/
 
 public section
@@ -40,5 +43,19 @@ def forgetIsoUnderForget : forget (CommAlgCat.{u} Base) ≅
 noncomputable instance forget_preservesFilteredColimits :
     PreservesFilteredColimits (forget (CommAlgCat.{u} Base)) :=
   ⟨fun _ _ _ => preservesColimitsOfShape_of_natIso (forgetIsoUnderForget (Base := Base)).symm⟩
+
+/-- The forgetful functor from commutative algebras to algebras preserves small filtered
+colimits. -/
+noncomputable instance forget₂AlgCat_preservesFilteredColimits :
+    PreservesFilteredColimits (forget₂ (CommAlgCat.{u} Base) (AlgCat.{u} Base)) where
+  preserves_filtered_colimits J _ _ :=
+    have : PreservesColimitsOfShape J
+        (forget₂ (CommAlgCat.{u} Base) (AlgCat.{u} Base) ⋙ forget (AlgCat.{u} Base)) :=
+      preservesColimitsOfShape_of_natIso (NatIso.ofComponents fun _ => Iso.refl _ :
+        forget (CommAlgCat.{u} Base) ≅
+          forget₂ (CommAlgCat.{u} Base) (AlgCat.{u} Base) ⋙ forget (AlgCat.{u} Base))
+    have : ReflectsColimitsOfShape J (forget (AlgCat.{u} Base)) :=
+      reflectsColimitsOfShape_of_reflectsIsomorphisms
+    preservesColimitsOfShape_of_reflects_of_preserves _ (forget (AlgCat.{u} Base))
 
 end CommAlgCat
