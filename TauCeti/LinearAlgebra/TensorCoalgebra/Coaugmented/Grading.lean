@@ -163,8 +163,8 @@ theorem map_koszulTwist_subword (G : InternalGrading R M) (q : ℤ) {n : ℕ} (x
   rw [map_subword]
   by_cases h : a + b ≤ n
   · refine subword_congr R _ _ h h fun i hi ↦ ?_
-    rw [InternalGrading.twistedTuple_apply,
-      ite_eq_left ⟨by dsimp only; omega, by dsimp only; omega⟩]
+    rw [InternalGrading.twistedTuple_apply_of_mem_Ico _ _ _ _ _ _
+      ⟨by dsimp only; omega, by dsimp only; omega⟩]
   · rw [subword_eq_zero_of_lt_add R _ (by omega), subword_eq_zero_of_lt_add R _ (by omega)]
 
 /-- Deconcatenation preserves total cohomological degree: the degrees of the two cut halves
