@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.TateCurve.CoordinateEvalua
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateCurve.Parameter
 import Mathlib.Analysis.Normed.Ring.Ultra
 import TauCeti.AlgebraicGeometry.EllipticCurve.TateCurve.FormalPoint
+import TauCeti.AlgebraicGeometry.EllipticCurve.TateCurve.QExpansion
 import TauCeti.Analysis.Polynomial.Ultra
 import TauCeti.Analysis.SpecificLimits.Normed
 import TauCeti.NumberTheory.TsumDivisorsAntidiagonal
@@ -39,8 +40,9 @@ coefficient of `vᴺ` in `x` is `∑_{d ∣ N} d (uᴺ⁺ᵈ + uᴺ⁻ᵈ - 2u�
 unit disc (`Polynomial.norm_aeval_le_one`), so `ℤ[u]⟦v⟧` can be evaluated at `u` and `v = q / u`
 whenever `‖u‖ = 1`. With `v = q / u` the coefficient of `qᴺ` in `x` becomes
 `∑_{d ∣ N} d (uᵈ + u⁻ᵈ - 2)`, and these Lambert series regroup
-(`TauCeti.hasSum_sum_divisors_mul_pow`) into the bilateral series defining `X(u)`, and likewise for
-`Y(u)`. Dividing by `(1 - u)⁶ ≠ 0` gives the equation.
+(`TauCeti.hasSum_tateUniformizationX_sub`) into the bilateral series defining `X(u)`, and likewise
+for `Y(u)` using `TauCeti.hasSum_tateUniformizationY_sub`. Dividing by `(1 - u)⁶ ≠ 0` gives the
+equation.
 
 ## Main results
 
@@ -141,12 +143,8 @@ variable {K : Type*} [NormedField K]
 private theorem aeval_sum_divisors_X_mul_div_pow {q u : K} (hu₀ : u ≠ 0) (N : ℕ) :
     Polynomial.aeval u (∑ d ∈ N.divisors, (d : Polynomial ℤ) * (Polynomial.X ^ (N + d) +
         Polynomial.X ^ (N - d) - 2 * Polynomial.X ^ N)) * (q / u) ^ N =
-      (∑ d ∈ N.divisors, (d : K) * u ^ d) * q ^ N +
-        (∑ d ∈ N.divisors, (d : K) * u⁻¹ ^ d) * q ^ N - 2 * ((σ 1 N : K) * q ^ N) := by
-  rw [sigma_one_apply]
-  push_cast
-  rw [map_sum, Finset.sum_mul, Finset.sum_mul, Finset.sum_mul, Finset.sum_mul, Finset.mul_sum,
-    ← Finset.sum_add_distrib, ← Finset.sum_sub_distrib]
+      (∑ d ∈ N.divisors, (d : K) * (u ^ d + u⁻¹ ^ d - 2)) * q ^ N := by
+  rw [map_sum, Finset.sum_mul, Finset.sum_mul]
   refine Finset.sum_congr rfl fun d hd ↦ ?_
   obtain ⟨e, rfl⟩ := Nat.exists_eq_add_of_le (Nat.divisor_le hd)
   simp only [map_mul, map_add, map_sub, map_pow, map_natCast, map_ofNat, Polynomial.aeval_X,
@@ -160,12 +158,9 @@ private theorem aeval_sum_divisors_Y_mul_div_pow {q u : K} (hu₀ : u ≠ 0) (N 
     Polynomial.aeval u (∑ d ∈ N.divisors, ((d.choose 2 : Polynomial ℤ) * Polynomial.X ^ (N + d) -
         ((d + 1).choose 2 : Polynomial ℤ) * Polynomial.X ^ (N - d) +
           (d : Polynomial ℤ) * Polynomial.X ^ N)) * (q / u) ^ N =
-      (∑ d ∈ N.divisors, (d.choose 2 : K) * u ^ d) * q ^ N +
-        (∑ d ∈ N.divisors, -((d + 1).choose 2 : K) * u⁻¹ ^ d) * q ^ N + (σ 1 N : K) * q ^ N := by
-  rw [sigma_one_apply]
-  push_cast
-  rw [map_sum, Finset.sum_mul, Finset.sum_mul, Finset.sum_mul, Finset.sum_mul,
-    ← Finset.sum_add_distrib, ← Finset.sum_add_distrib]
+      (∑ d ∈ N.divisors, ((d.choose 2 : K) * u ^ d -
+        ((d + 1).choose 2 : K) * u⁻¹ ^ d + (d : K))) * q ^ N := by
+  rw [map_sum, Finset.sum_mul, Finset.sum_mul]
   refine Finset.sum_congr rfl fun d hd ↦ ?_
   obtain ⟨e, rfl⟩ := Nat.exists_eq_add_of_le (Nat.divisor_le hd)
   simp only [map_mul, map_add, map_sub, map_pow, map_natCast, Polynomial.aeval_X,
@@ -200,46 +195,17 @@ private theorem circleEval_circleParam {q u : K} (hu : ‖u‖ ≤ 1) (hu₀ : u
     eq_intCast, map_intCast, div_pow]
   field_simp
 
-/-- Regrouping `∑_N (∑_{d ∣ N} a(d) sᵈ) qᴺ` along `N = c d`, when the series `∑ a(m) rᵐ` has the
-closed form `F r` on the open unit ball. -/
-private theorem hasSum_sum_divisors_intCast_mul_pow (a : ℕ → ℤ) (F : K → K)
-    (hF : ∀ r : K, ‖r‖ < 1 → ∑' m : ℕ, (a (m + 1) : K) * r ^ (m + 1) = F r) {s : K}
-    (hs : ‖s‖ ≤ 1) {q : K} (hq : ‖q‖ < 1) :
-    HasSum (fun N : ℕ ↦ (∑ d ∈ N.divisors, (a d : K) * s ^ d) * q ^ N)
-      (∑' c : ℕ, F (q ^ (c + 1) * s)) := by
-  have hg (d : ℕ) : ‖(a d : K) * s ^ d‖ ≤ 1 := by
-    rw [norm_mul, norm_pow, ← one_mul 1]
-    exact mul_le_mul (IsUltrametricDist.norm_intCast_le_one K _) (pow_le_one₀ (norm_nonneg _) hs)
-      (by positivity) zero_le_one
-  convert hasSum_sum_divisors_mul_pow hg hq using 1
-  refine tsum_congr fun c ↦ ?_
-  have hr : ‖q ^ (c + 1) * s‖ < 1 := by
-    rw [norm_mul, norm_pow]
-    exact (mul_le_of_le_one_right (by positivity) hs).trans_lt
-      (pow_lt_one₀ (norm_nonneg _) hq (Nat.succ_ne_zero c))
-  rw [← hF _ hr]
-  refine tsum_congr fun m ↦ ?_
-  rw [mul_pow, pow_mul]
-  ring
-
 /-- `circleX` evaluated at `u` on the unit circle and `v = q / u` is `(1 - u)² X(u)`. -/
 private theorem circleEval_circleX {q u : Kˣ} (hq : ‖(q : K)‖ < 1) (hu : ‖(u : K)‖ = 1)
     (hu₁ : (u : K) ≠ 1) (hw : ‖(q : K) / u‖ < 1) :
     circleEval (u : K) hu.le ((q : K) / u) hw circleX = (1 - u) ^ 2 * tateUniformizationX q u := by
-  have hu₀ : (u : K) ≠ 0 := u.ne_zero
-  have hui : ‖(u : K)⁻¹‖ ≤ 1 := by rw [norm_inv, hu, inv_one]
-  have hF (r : K) (hr : ‖r‖ < 1) :
-      ∑' m : ℕ, (((m + 1 : ℕ) : ℤ) : K) * r ^ (m + 1) = r / (1 - r) ^ 2 := by
-    simpa only [Int.cast_natCast] using tsum_natCast_succ_mul_pow_succ r hr
-  have hA := hasSum_sum_divisors_intCast_mul_pow (fun d ↦ (d : ℤ)) _ hF hu.le hq
-  have hB := hasSum_sum_divisors_intCast_mul_pow (fun d ↦ (d : ℤ)) _ hF hui hq
-  have hS := (summable_divisorSumSeries 1 hq).hasSum
-  have hP := ((hA.add hB).sub (hS.mul_left 2)).congr_fun fun N ↦
-    (aeval_sum_divisors_X_mul_div_pow hu₀ N).trans (by push_cast; rfl)
-  rw [circleX, map_add, map_mul, circleEval_C, circleEval_C, circleEval_mk, hP.tsum_eq,
-    ← divisorSumAt_def]
+  have hqu : ‖(q : K) * (u : K)‖ < 1 := by rwa [norm_mul, hu, mul_one]
+  have hqui : ‖(q : K) * (u : K)⁻¹‖ < 1 := by
+    rwa [norm_mul, norm_inv, hu, inv_one, mul_one]
+  have hP := (hasSum_tateUniformizationX_sub q u hqu hqui).congr_fun fun N ↦
+    aeval_sum_divisors_X_mul_div_pow u.ne_zero N
+  rw [circleX, map_add, map_mul, circleEval_C, circleEval_C, circleEval_mk, hP.tsum_eq]
   have h₁ : (1 : K) - u ≠ 0 := sub_ne_zero.mpr (Ne.symm hu₁)
-  rw [tateUniformizationX_eq_tsum_nat q hq u]
   simp only [Polynomial.aeval_X, map_pow, map_sub, map_one]
   field_simp
   ring
@@ -248,23 +214,13 @@ private theorem circleEval_circleX {q u : Kˣ} (hq : ‖(q : K)‖ < 1) (hu : �
 private theorem circleEval_circleY {q u : Kˣ} (hq : ‖(q : K)‖ < 1) (hu : ‖(u : K)‖ = 1)
     (hu₁ : (u : K) ≠ 1) (hw : ‖(q : K) / u‖ < 1) :
     circleEval (u : K) hu.le ((q : K) / u) hw circleY = (1 - u) ^ 3 * tateUniformizationY q u := by
-  have hu₀ : (u : K) ≠ 0 := u.ne_zero
-  have hui : ‖(u : K)⁻¹‖ ≤ 1 := by rw [norm_inv, hu, inv_one]
-  have hF₁ (r : K) (hr : ‖r‖ < 1) :
-      ∑' m : ℕ, ((((m + 1).choose 2 : ℕ) : ℤ) : K) * r ^ (m + 1) = r ^ 2 / (1 - r) ^ 3 := by
-    simpa only [Int.cast_natCast] using tsum_choose_two_mul_pow_succ r hr
-  have hF₂ (r : K) (hr : ‖r‖ < 1) :
-      ∑' m : ℕ, ((-(m + 1 + 1).choose 2 : ℤ) : K) * r ^ (m + 1) = -r / (1 - r) ^ 3 := by
-    simpa only [Int.cast_neg, Int.cast_natCast] using tsum_neg_choose_two_mul_pow_succ r hr
-  have hA := hasSum_sum_divisors_intCast_mul_pow (fun d ↦ (d.choose 2 : ℤ)) _ hF₁ hu.le hq
-  have hB := hasSum_sum_divisors_intCast_mul_pow (fun d ↦ -((d + 1).choose 2 : ℤ)) _ hF₂ hui hq
-  have hS := (summable_divisorSumSeries 1 hq).hasSum
-  have hP := ((hA.add hB).add hS).congr_fun fun N ↦
-    (aeval_sum_divisors_Y_mul_div_pow hu₀ N).trans (by push_cast; rfl)
-  rw [circleY, map_add, map_mul, circleEval_C, circleEval_C, circleEval_mk, hP.tsum_eq,
-    ← divisorSumAt_def]
+  have hqu : ‖(q : K) * (u : K)‖ < 1 := by rwa [norm_mul, hu, mul_one]
+  have hqui : ‖(q : K) * (u : K)⁻¹‖ < 1 := by
+    rwa [norm_mul, norm_inv, hu, inv_one, mul_one]
+  have hP := (hasSum_tateUniformizationY_sub q u hqu hqui).congr_fun fun N ↦
+    aeval_sum_divisors_Y_mul_div_pow u.ne_zero N
+  rw [circleY, map_add, map_mul, circleEval_C, circleEval_C, circleEval_mk, hP.tsum_eq]
   have h₁ : (1 : K) - u ≠ 0 := sub_ne_zero.mpr (Ne.symm hu₁)
-  rw [tateUniformizationY_eq_tsum_nat q hq u]
   simp only [Polynomial.aeval_X, map_pow, map_sub, map_one]
   field_simp
   ring
