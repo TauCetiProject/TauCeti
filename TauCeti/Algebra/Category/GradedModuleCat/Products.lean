@@ -19,6 +19,10 @@ the finite degree support of a source element controls all of its images simulta
 
 These are the underlying graded products used for the small products of curved DG right
 modules in `StablePeriodicCurved`, Layer 6, opening paragraph, within intention 811.
+
+The finite direct-sum product fan in `GradedModuleCat.Abelian` also applies when the scalar
+pieces do not decompose the algebra. The degreewise fan here allows arbitrary index types
+and uses the graded-algebra decomposition to keep the total product stable under scalars.
 -/
 
 public section
@@ -37,14 +41,16 @@ variable {k : Type uk} {A : Type uA} [CommRing k] [Ring A] [Algebra k A]
 @[expose, implicit_reducible]
 noncomputable def product : GradedModuleCat.{v} 𝒜 := by
   let G := fun j ↦ (M j).grading
-  letI : SetLike.GradedSMul 𝒜 (InternalGrading.product G).piece :=
+  let P := InternalGrading.productScalarSubmodule G 𝒜
+  let H : InternalGrading k P := InternalGrading.product G
+  letI : SetLike.GradedSMul 𝒜 H.piece :=
     ⟨fun {_ _} a x ha hx ↦
       (InternalGrading.mem_product_piece_iff G _ _).mpr fun j ↦
         SetLike.GradedSMul.smul_mem (B := (M j).grading.piece) ha
           ((InternalGrading.mem_product_piece_iff G _ _).mp hx j)⟩
   exact
-    { carrier := InternalGrading.productScalarSubmodule G 𝒜
-      grading := InternalGrading.product G }
+    { carrier := P
+      grading := H }
 
 /-- The product grading is checked in every component. -/
 theorem mem_product_piece_iff (p : ℤ) (x : product M) :
@@ -75,8 +81,8 @@ noncomputable def productLift {N : GradedModuleCat.{v} 𝒜} (f : ∀ j, N ⟶ M
 /-- The lift has the prescribed components. -/
 @[simp]
 theorem productLift_apply {N : GradedModuleCat.{v} 𝒜} (f : ∀ j, N ⟶ M j)
-    (x : N) (j : J) : ((productLift M f).hom x).1 j = (f j).hom x :=
-  rfl
+    (x : N) (j : J) : ((productLift M f).hom x).1 j = (f j).hom x := by
+  simp only [productLift, hom_ofHom, InternalGrading.productLift_apply]
 
 /-- The lifted map followed by a projection is the prescribed map. -/
 @[reassoc (attr := simp)]
@@ -90,25 +96,26 @@ theorem productLift_π {N : GradedModuleCat.{v} 𝒜} (f : ∀ j, N ⟶ M j) (j 
 theorem product_hom_ext {N : GradedModuleCat.{v} 𝒜} {f g : N ⟶ product M}
     (hfg : ∀ j, f ≫ productπ M j = g ≫ productπ M j) : f = g := by
   apply hom_ext
-  ext x
+  apply LinearMap.ext
+  intro x
   apply Subtype.ext
   funext j
   simpa only [hom_comp, LinearMap.comp_apply, productπ_apply] using
     congrArg (fun t ↦ t.hom x) (hfg j)
 
 /-- The fan of graded product projections. -/
-noncomputable abbrev productFan : Fan M :=
+noncomputable abbrev degreewiseProductFan : Fan M :=
   Fan.mk (product M) (productπ M)
 
 /-- The degreewise product satisfies the categorical product universal property. -/
-noncomputable def productFanIsLimit : IsLimit (productFan M) :=
+noncomputable def degreewiseProductFanIsLimit : IsLimit (degreewiseProductFan M) :=
   Fan.IsLimit.mk _ (fun s ↦ productLift M s.proj)
     (fun s j ↦ productLift_π M s.proj j)
     (fun s _ hm ↦ product_hom_ext M fun j ↦
       (hm j).trans (productLift_π M s.proj j).symm)
 
 noncomputable instance (X : J → GradedModuleCat.{v} 𝒜) : HasProduct X :=
-  HasLimit.mk { cone := productFan X, isLimit := productFanIsLimit X }
+  HasLimit.mk { cone := degreewiseProductFan X, isLimit := degreewiseProductFanIsLimit X }
 
 instance : HasProducts.{v} (GradedModuleCat.{v} 𝒜) :=
   fun _ ↦ ⟨fun _ ↦ hasLimit_of_iso Discrete.natIsoFunctor⟩

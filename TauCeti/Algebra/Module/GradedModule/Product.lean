@@ -204,6 +204,7 @@ theorem productCarrier_smul_mem (a : S) {x : ∀ j, M j} (hx : x ∈ productCarr
         (DirectSum.decompose 𝒜 a q).2 ((mem_productPiece_iff G p y.1).mp y.2 j)
 
 /-- The same graded product as a submodule for the acting graded algebra. -/
+@[expose, implicit_reducible]
 def productScalarSubmodule : Submodule S (∀ j, M j) where
   carrier := productCarrier G
   zero_mem' := (productCarrier G).zero_mem
