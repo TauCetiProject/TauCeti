@@ -170,15 +170,6 @@ theorem ofContractEdge_matching (hα : Function.Involutive α) {x : X}
 
 end SpanningTreeContraction
 
-/-- A function constant along the vertices and the edges of a connected ribbon graph is
-constant. -/
-private theorem apply_eq_apply_of_isPretransitive {Y : Type*} {f : X → Y}
-    (hconn : IsPretransitive (Subgroup.closure {ρ, α}) X) (hρ : ∀ x, f (ρ x) = f x)
-    (hα : ∀ x, f (α x) = f x) (x y : X) : f x = f y := by
-  obtain ⟨g, rfl⟩ := hconn.exists_smul_eq x y
-  rw [Subgroup.smul_def, Perm.smul_def]
-  exact (apply_eq_of_mem_closure (by rintro g (rfl | rfl) <;> assumption) g.2 x).symm
-
 /-- **Contraction preserves connectedness.** Contracting an edge `{x, α x}` whose ends lie at
 different vertices of a connected ribbon graph leaves a connected ribbon graph. -/
 theorem isPretransitive_closure_swap_mul_swap_mul [DecidableEq X] [Finite X] {x : X}
@@ -209,22 +200,14 @@ theorem isPretransitive_closure_swap_mul_swap_mul [DecidableEq X] [Finite X] {x 
       (y : X) : (Quotient.mk (orbitRel H X) (swap x (α x) (g y)) : orbitRel.Quotient H X) =
         Quotient.mk _ y :=
     (hswap (g y)).trans (hmk g (hgen g hg) y)
+  have hinv (g : Perm X) (hg : g ∈ ({ρ, α} : Set (Perm X))) (y : X) :
+      (Quotient.mk (orbitRel H X) (g y) : orbitRel.Quotient H X) = Quotient.mk _ y := by
+    rcases hg with rfl | rfl
+    · simpa using hstep _ (Set.mem_insert _ _) y
+    · simpa using hstep _ (Set.mem_insert_of_mem _ rfl) y
   refine ⟨fun y z ↦ ?_⟩
-  have hyz := apply_eq_apply_of_isPretransitive (f := Quotient.mk (orbitRel H X)) hconn
-    (fun y ↦ by simpa using hstep _ (Set.mem_insert _ _) y)
-    (fun y ↦ by simpa using hstep _ (Set.mem_insert_of_mem _ rfl) y) z y
-  obtain ⟨g, hg⟩ := Quotient.exact hyz
+  obtain ⟨g, hg⟩ := Quotient.exact (apply_eq_apply_of_isPretransitive_closure hinv hconn z y)
   exact ⟨g, hg⟩
-
-/-- In a connected ribbon graph with more than one vertex, some edge joins two different
-vertices. -/
-private theorem exists_not_sameCycle_apply [Nonempty X]
-    (hconn : IsPretransitive (Subgroup.closure {ρ, α}) X) (hρ : orbitCount ρ ≠ 1) :
-    ∃ x, ¬ ρ.SameCycle x (α x) := by
-  by_contra! h
-  refine hρ (orbitCount_eq_one_of_forall_sameCycle fun x y ↦ Quotient.exact
-    (apply_eq_apply_of_isPretransitive (f := Quotient.mk (SameCycle.setoid ρ)) hconn
-      (fun z ↦ Quotient.sound ⟨-1, by simp⟩) (fun z ↦ (Quotient.sound (h z)).symm) x y))
 
 /-- **Spanning trees exist.** Every connected ribbon graph on a nonempty finite set of darts has
 a spanning-tree contraction: contract edges between distinct vertices, one at a time, until a
@@ -237,7 +220,7 @@ theorem nonempty_spanningTreeContraction [Finite X] [Nonempty X] (hα : Function
   | _ k ih =>
   by_cases hρ : orbitCount ρ = 1
   · exact ⟨.ofOrbitCountEqOne hα hρ⟩
-  obtain ⟨x, hx⟩ := exists_not_sameCycle_apply hconn hρ
+  obtain ⟨_, rfl, x, hx⟩ := exists_not_sameCycle_apply_of_isPretransitive_closure hconn hρ
   have hcount := orbitCount_swap_mul_add_one_of_not_sameCycle hx
   obtain ⟨c⟩ := ih _ (by omega) (hα.swap_mul x)
     (isPretransitive_closure_swap_mul_swap_mul hx hconn) rfl
