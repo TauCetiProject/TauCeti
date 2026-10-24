@@ -461,7 +461,8 @@ theorem congr_trans (e' : B' ≃ B'') :
 
 /-- Transport commutes with the dual crystal. -/
 @[simp]
-theorem congr_dual : (c.congr e).dual = c.dual.congr e := (rfl)
+theorem congr_dual : (c.congr e).dual = c.dual.congr e := by
+  ext <;> simp [dual]
 
 end Congr
 

@@ -27,8 +27,7 @@ namespace Option
 -- existential, which `simpNF` rejects.
 theorem map_equiv_eq_some_iff {α β : Type*} {e : α ≃ β} {o : Option α} {y : β} :
     o.map e = some y ↔ o = some (e.symm y) := by
-  rw [← Equiv.optionCongr_apply, ← Equiv.eq_symm_apply, ← Equiv.optionCongr_symm,
-    Equiv.optionCongr_apply, Option.map_some]
+  cases o <;> simp [Equiv.eq_symm_apply]
 
 end Option
 
