@@ -8,8 +8,6 @@ module
 public import Mathlib.NumberTheory.Padics.PadicIntegers
 public import Mathlib.Topology.Algebra.InfiniteSum.Defs
 public import TauCeti.Algebra.Category.ModuleCat.Tower.ProZero
-import Mathlib.Analysis.Normed.Group.InfiniteSum
-import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.NumberTheory.Padics.RingHoms
 import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.NumberTheory.Padics.RingHoms
@@ -18,24 +16,23 @@ import TauCeti.NumberTheory.Padics.RingHoms
 # `lim` and `lim¹` of the multiplication-by-`p` tower
 
 Let `p` be a prime and consider the tower of integers `ℤ ← ℤ ← ℤ ← ⋯` whose transition maps are
-multiplication by `p`, `ModuleTower.multiplicationTower (p : ℤ)`. Its limit vanishes, but its first
-derived limit is the nonzero group `ℤ_p ⧸ ℤ`: sending a family `(aₙ)` to the `p`-adically
-convergent sum `∑ₙ pⁿ aₙ` induces an isomorphism `lim¹ ≃ ℤ_[p] ⧸ ℤ`. Consequently the tower is not
-Mittag-Leffler, so the hypothesis of `ModuleTower.subsingleton_limOne_of_isMittagLeffler` cannot be
-dropped. The tower is the basic example of a nonvanishing `lim¹`: for instance the degree-zero
-homology of the tower of complexes `ℤ → ℤ/pⁿ⁺¹` is the multiplication-by-`p` tower (up to
-isomorphism), and its `lim¹` appears in the Milnor sequence of that tower.
+multiplication by `p`, `ModuleTower.multiplicationTower (p : ℤ)`. Its limit vanishes
+(`ModuleTower.lim_multiplicationTower_eq_bot`), but its first derived limit is the nonzero group
+`ℤ_p ⧸ ℤ`: sending a family `(aₙ)` to the `p`-adically convergent sum `∑ₙ pⁿ aₙ` induces an
+isomorphism `lim¹ ≃ ℤ_[p] ⧸ ℤ`. Consequently the tower is not Mittag-Leffler, so the hypothesis
+of `ModuleTower.subsingleton_limOne_of_isMittagLeffler` cannot be dropped. The tower is the basic
+example of a nonvanishing `lim¹`: for instance the degree-zero homology of the tower of complexes
+`ℤ → ℤ/pⁿ⁺¹` is the multiplication-by-`p` tower (up to isomorphism), and its `lim¹` appears in the
+Milnor sequence of that tower.
 
 ## Main declarations
 
-* `TauCeti.ModuleTower.lim_multiplicationTower_eq_bot`: for an integer `p` that is not a unit, the
-  multiplication-by-`p` tower has `lim = 0`.
 * `TauCeti.ModuleTower.padicSum`: the `p`-adic summation map `(aₙ) ↦ ∑ₙ pⁿ aₙ` on the product of the
   terms, with `TauCeti.ModuleTower.hasSum_padicSum`.
 * `TauCeti.ModuleTower.padicSum_shift`: the telescoping identity `∑ₙ pⁿ (xₙ - p xₙ₊₁) = x₀`.
 * `TauCeti.ModuleTower.padicSum_surjective`: every `p`-adic integer is such a sum.
-* `TauCeti.ModuleTower.range_shift_multiplicationTower`: the image of the shift map consists of
-  the families whose `p`-adic sum is an integer.
+* `TauCeti.ModuleTower.mem_range_shift_multiplicationTower_iff`: a family lies in the image of the
+  shift map iff its `p`-adic sum is an integer.
 * `TauCeti.ModuleTower.limOneMultiplicationTowerEquiv`: the isomorphism `lim¹ ≃ ℤ_[p] ⧸ ℤ`.
 * `TauCeti.ModuleTower.not_isMittagLeffler_multiplicationTower`: the tower is not Mittag-Leffler.
 
@@ -53,37 +50,7 @@ namespace TauCeti
 
 namespace ModuleTower
 
-/-- **The multiplication-by-`p` tower has vanishing limit** for every integer `p` that is not a
-unit: every term of a compatible family is divisible by every power of `p`. -/
-theorem lim_multiplicationTower_eq_bot {p : ℤ} (hp : ¬IsUnit p) :
-    (multiplicationTower p).lim = ⊥ := by
-  refine eq_bot_iff.2 fun x hx ↦ (Submodule.mem_bot ℤ).2 <|
-    (multiplicationTowerProductEquiv p).map_eq_zero_iff.1 (funext fun n ↦ ?_)
-  set e := multiplicationTowerProductEquiv p
-  have hx' := mem_lim_multiplicationTower_iff.1 hx
-  have key (k : ℕ) : e x n = e x (n + k) * p ^ k := by
-    induction k with
-    | zero => simp
-    | succ k ih => rw [ih, ← hx' (n + k), pow_succ', ← mul_assoc, add_assoc]
-  have hdvd (k : ℕ) : p ^ k ∣ e x n := ⟨e x (n + k), by rw [key k, mul_comm]⟩
-  rcases eq_or_ne p 0 with rfl | hp0
-  · simpa using hdvd 1
-  · have h1 : 1 < p.natAbs := by
-      have := Int.natAbs_pos.2 hp0
-      have := mt Int.isUnit_iff_natAbs_eq.2 hp
-      omega
-    refine Int.eq_zero_of_dvd_of_natAbs_lt_natAbs (hdvd (e x n).natAbs) ?_
-    rw [Int.natAbs_pow]
-    exact Nat.lt_pow_self h1
-
 variable (p : ℕ) [Fact p.Prime]
-
-private theorem summable_pow_mul_intCast (a : ℕ → ℤ) :
-    Summable fun n ↦ (p : ℤ_[p]) ^ n * (a n : ℤ_[p]) :=
-  .of_norm_bounded (summable_geometric_of_lt_one (norm_nonneg _) PadicInt.norm_p_lt_one)
-    fun n ↦ by
-      rw [norm_mul, norm_pow]
-      exact mul_le_of_le_one_right (by positivity) (PadicInt.norm_le_one _)
 
 /-- The `p`-adic summation map `(aₙ) ↦ ∑ₙ pⁿ aₙ` from the product of the terms of the
 multiplication-by-`p` tower of integers to `ℤ_[p]`. -/
@@ -91,7 +58,7 @@ def padicSum : (multiplicationTower (p : ℤ)).Product →+ ℤ_[p] :=
   AddMonoidHom.mk' (fun a ↦
     ∑' n, (p : ℤ_[p]) ^ n * (multiplicationTowerProductEquiv (p : ℤ) a n : ℤ_[p])) fun a b ↦ by
     simp only [map_add, Pi.add_apply, Int.cast_add, mul_add]
-    exact (summable_pow_mul_intCast p _).tsum_add (summable_pow_mul_intCast p _)
+    exact (PadicInt.summable_pow_mul _).tsum_add (PadicInt.summable_pow_mul _)
 
 theorem padicSum_apply (a : (multiplicationTower (p : ℤ)).Product) :
     padicSum p a =
@@ -102,7 +69,7 @@ theorem padicSum_apply (a : (multiplicationTower (p : ℤ)).Product) :
 theorem hasSum_padicSum (a : (multiplicationTower (p : ℤ)).Product) :
     HasSum (fun n ↦ (p : ℤ_[p]) ^ n * (multiplicationTowerProductEquiv (p : ℤ) a n : ℤ_[p]))
       (padicSum p a) :=
-  (summable_pow_mul_intCast p _).hasSum
+  (PadicInt.summable_pow_mul _).hasSum
 
 /-- **Telescoping**: the `p`-adic sum of the shift of a family `x` is its zeroth term,
 `∑ₙ pⁿ (xₙ - xₙ₊₁ p) = x₀`. -/
@@ -112,7 +79,7 @@ theorem padicSum_shift (x : (multiplicationTower (p : ℤ)).Product) :
       (multiplicationTowerProductEquiv (p : ℤ) x 0 : ℤ_[p]) := by
   set e := multiplicationTowerProductEquiv (p : ℤ)
   set f : ℕ → ℤ_[p] := fun n ↦ (p : ℤ_[p]) ^ n * (e x n : ℤ_[p])
-  have hf : Summable f := summable_pow_mul_intCast p _
+  have hf : Summable f := PadicInt.summable_pow_mul _
   have hf' : Summable fun n ↦ f (n + 1) := (summable_nat_add_iff 1).2 hf
   have hterm (n : ℕ) : (p : ℤ_[p]) ^ n * (e ((multiplicationTower (p : ℤ)).shift x) n : ℤ_[p]) =
       f n - f (n + 1) := by
@@ -135,10 +102,10 @@ theorem padicSum_surjective : Function.Surjective (padicSum p) := by
     induction N with
     | zero => simp [PadicInt.appr_zero_right]
     | succ N ih =>
-      rw [Finset.sum_range_succ, ih, LinearEquiv.apply_symm_apply, Int.cast_natCast,
-        ← Nat.cast_pow, ← Nat.cast_mul, Nat.mul_div_cancel' (hd N),
-        Nat.cast_sub (z.appr_mono N.le_succ), add_sub_cancel]
-  refine ⟨a, ((summable_pow_mul_intCast p _).hasSum_iff_tendsto_nat.2 ?_).tsum_eq⟩
+      rw [Finset.sum_range_succ, ih, LinearEquiv.apply_symm_apply, Int.cast_natCast]
+      norm_cast
+      rw [Nat.mul_div_cancel' (hd N), Nat.add_sub_cancel' (z.appr_mono N.le_succ)]
+  refine ⟨a, ((PadicInt.summable_pow_mul _).hasSum_iff_tendsto_nat.2 ?_).tsum_eq⟩
   simpa only [hpartial] using PadicInt.tendsto_appr z
 
 /-- **The image of the shift map of the multiplication-by-`p` tower** consists exactly of the
@@ -156,10 +123,10 @@ theorem mem_range_shift_multiplicationTower_iff {a : (multiplicationTower (p : �
     have hdvd (N : ℕ) : (p : ℤ) ^ N ∣ m - ∑ n ∈ Finset.range N, (p : ℤ) ^ n * e a n := by
       rw [← PadicInt.pow_p_dvd_int_iff]
       push_cast
-      rw [hm, padicSum_apply, ← (summable_pow_mul_intCast p _).sum_add_tsum_nat_add N,
+      rw [hm, padicSum_apply, ← (PadicInt.summable_pow_mul _).sum_add_tsum_nat_add N,
         add_sub_cancel_left]
       refine ⟨∑' n, (p : ℤ_[p]) ^ n * (e a (n + N) : ℤ_[p]), ?_⟩
-      rw [← (summable_pow_mul_intCast p fun n ↦ e a (n + N)).tsum_mul_left]
+      rw [← (PadicInt.summable_pow_mul fun n ↦ (e a (n + N) : ℤ_[p])).tsum_mul_left]
       exact tsum_congr fun n ↦ by ring
     choose x hx using hdvd
     refine ⟨e.symm x, e.injective (funext fun N ↦ ?_)⟩
@@ -173,11 +140,12 @@ theorem mem_range_shift_multiplicationTower_iff {a : (multiplicationTower (p : �
 by the `p`-adic summation map `(aₙ) ↦ ∑ₙ pⁿ aₙ` (`limOneMultiplicationTowerEquiv_mk`). -/
 def limOneMultiplicationTowerEquiv :
     (multiplicationTower (p : ℤ)).limOne ≃+ ℤ_[p] ⧸ (Int.castAddHom ℤ_[p]).range :=
+  -- The `Submodule` quotient `limOne` is by definition the `QuotientAddGroup` quotient by
+  -- `(LinearMap.range shift).toAddSubgroup`, which is the domain of `quotientAddEquivOfEq`.
   (QuotientAddGroup.quotientAddEquivOfEq (by
       ext a
-      rw [Submodule.mem_toAddSubgroup, mem_range_shift_multiplicationTower_iff,
-        AddMonoidHom.mem_ker, AddMonoidHom.comp_apply, QuotientAddGroup.mk'_apply,
-        QuotientAddGroup.eq_zero_iff, AddMonoidHom.mem_range, Int.coe_castAddHom])).trans
+      rw [Submodule.mem_toAddSubgroup, mem_range_shift_multiplicationTower_iff]
+      simp [QuotientAddGroup.eq_zero_iff])).trans
     (QuotientAddGroup.quotientKerEquivOfSurjective
       ((QuotientAddGroup.mk' (Int.castAddHom ℤ_[p]).range).comp (padicSum p))
       ((QuotientAddGroup.mk'_surjective _).comp (padicSum_surjective p)))
@@ -185,6 +153,7 @@ def limOneMultiplicationTowerEquiv :
 @[simp]
 theorem limOneMultiplicationTowerEquiv_mk (a : (multiplicationTower (p : ℤ)).Product) :
     limOneMultiplicationTowerEquiv p (Submodule.Quotient.mk a) = (padicSum p a : ℤ_[p] ⧸ _) :=
+  -- `Submodule.Quotient.mk a` is by definition `QuotientAddGroup.mk a`, as noted above
   (rfl)
 
 /-- `lim¹` of the multiplication-by-`p` tower is nonzero. -/

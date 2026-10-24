@@ -11,6 +11,8 @@ public import Mathlib.NumberTheory.Padics.ProperSpace
 public import Mathlib.Topology.MetricSpace.Ultra.TotallySeparated
 public import TauCeti.Analysis.Normed.Ring.Units
 public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
+import Mathlib.Analysis.Normed.Group.InfiniteSum
+import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Data.Finset.Max
 import Mathlib.Data.Int.Associated
 import Mathlib.Data.Nat.Factorization.Basic
@@ -40,7 +42,8 @@ calculation for first continuous cohomology with trivial integer coefficients.
 
 ## Main results
 
-* `PadicInt.norm_p_lt_one`: the uniformizer `p` of `ℤ_p` has norm less than `1`.
+* `PadicInt.norm_p_lt_one`: the uniformizer `p` of `ℤ_p` has norm less than `1`, so that every
+  series `∑ₙ pⁿ aₙ` converges in `ℤ_p` (`PadicInt.summable_pow_mul`).
 * `PadicInt.isUnit_one_add_of_dvd`: `1 + x` is a unit of `ℤ_[p]` whenever `p ∣ x`.
 * `PadicInt.isUnit_two`: `2` is a unit of `ℤ_[p]` for odd `p`.
 * `PadicInt.pow_p_dvd_natCast_iff`: `p ^ n` divides a natural number in `ℤ_[p]` exactly when it
@@ -81,6 +84,12 @@ variable {p : ℕ} [Fact p.Prime]
 /-- The uniformizer `p` of `ℤ_p` has norm less than `1`. -/
 theorem norm_p_lt_one : ‖(p : ℤ_[p])‖ < 1 :=
   (norm_lt_one_iff_dvd _).mpr dvd_rfl
+
+/-- Every series `∑ₙ pⁿ aₙ` of `p`-adic integers converges in `ℤ_p`. -/
+theorem summable_pow_mul (a : ℕ → ℤ_[p]) : Summable fun n ↦ (p : ℤ_[p]) ^ n * a n :=
+  .of_norm_bounded (summable_geometric_of_lt_one (norm_nonneg _) norm_p_lt_one) fun n ↦ by
+    rw [norm_mul, norm_pow]
+    exact mul_le_of_le_one_right (by positivity) (norm_le_one _)
 
 /-- In `ℤ_p`, `1 + x` is a unit whenever `p ∣ x`. -/
 theorem isUnit_one_add_of_dvd {x : ℤ_[p]} (hx : (p : ℤ_[p]) ∣ x) : IsUnit (1 + x) :=
