@@ -34,7 +34,8 @@ bounded mean oscillation. In square mean the comparison with a constant reads
 factor `4` drops to `1`, by the orthogonal splitting
 `∫_s ‖f - c‖² = ∫_s ‖f - f_s‖² + μ s ‖f_s - c‖²`.
 
-Averages are unchanged by a change of variables that rescales the measure by a constant factor,
+Averages are unchanged when the measure is multiplied by a positive finite scalar. They are also
+unchanged by a change of variables that rescales the measure by a constant factor,
 such as an affine homothety of a finite-dimensional space with its Haar measure: if a measurable
 equivalence `e` pushes `μ` forward to `a • ν` with `0 < a < ∞`, then the average of `f ∘ e` over
 `e ⁻¹' s` with respect to `μ` is the average of `f` over `s` with respect to `ν`.
@@ -75,6 +76,9 @@ exponent restrictions `1 ≤ p < ∞` or `1 ≤ q`.
   best constant, with no loss.
 * `TauCeti.sq_setAverage_norm_le_setAverage_norm_sq`: Jensen's inequality
   `(⨍_s ‖g‖)² ≤ ⨍_s ‖g‖²`, bounding the mean oscillation by the square mean oscillation.
+* `TauCeti.laverage_smul_measure`, `TauCeti.average_smul_measure`,
+  `TauCeti.setLAverage_smul_measure`, `TauCeti.setAverage_smul_measure`: averages are unchanged
+  when the measure is multiplied by a positive finite scalar.
 * `TauCeti.setLIntegral_comp_preimage_of_map_eq_smul`,
   `TauCeti.setIntegral_comp_preimage_of_map_eq_smul`,
   `TauCeti.setLAverage_comp_preimage_of_map_eq_smul`,
@@ -377,6 +381,42 @@ theorem setIntegral_norm_sub_setAverage_sq_le_setIntegral_norm_sub_sq (hs : μ s
   exact le_add_of_nonneg_right (by positivity)
 
 end InnerProduct
+
+section SMulMeasure
+
+variable {X F : Type*} [MeasurableSpace X] {μ : Measure X} {a : ℝ≥0∞}
+  [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-- The lower average is unchanged when the measure is multiplied by a positive finite
+scalar. -/
+@[simp]
+theorem laverage_smul_measure (ha : a ≠ 0) (ha' : a ≠ ∞) (g : X → ℝ≥0∞) :
+    ⨍⁻ x, g x ∂(a • μ) = ⨍⁻ x, g x ∂μ := by
+  simp only [laverage_eq, lintegral_smul_measure, Measure.smul_apply, smul_eq_mul]
+  exact ENNReal.mul_div_mul_left _ _ ha ha'
+
+/-- The lower average over a set is unchanged when the measure is multiplied by a positive finite
+scalar. -/
+theorem setLAverage_smul_measure (ha : a ≠ 0) (ha' : a ≠ ∞) (g : X → ℝ≥0∞) (s : Set X) :
+    ⨍⁻ x in s, g x ∂(a • μ) = ⨍⁻ x in s, g x ∂μ := by
+  simp only [Measure.restrict_smul, laverage_smul_measure ha ha']
+
+/-- The average is unchanged when the measure is multiplied by a positive finite
+scalar. -/
+@[simp]
+theorem average_smul_measure (ha : a ≠ 0) (ha' : a ≠ ∞) (f : X → F) :
+    ⨍ x, f x ∂(a • μ) = ⨍ x, f x ∂μ := by
+  rw [average_eq, average_eq, integral_smul_measure]
+  simp only [measureReal_def, Measure.smul_apply, smul_eq_mul, ENNReal.toReal_mul]
+  rw [smul_smul, mul_inv_rev, inv_mul_cancel_right₀ (ENNReal.toReal_ne_zero.2 ⟨ha, ha'⟩)]
+
+/-- The average over a set is unchanged when the measure is multiplied by a positive finite
+scalar. -/
+theorem setAverage_smul_measure (ha : a ≠ 0) (ha' : a ≠ ∞) (f : X → F) (s : Set X) :
+    ⨍ x in s, f x ∂(a • μ) = ⨍ x in s, f x ∂μ := by
+  simp only [Measure.restrict_smul, average_smul_measure ha ha']
+
+end SMulMeasure
 
 section ChangeOfVariables
 

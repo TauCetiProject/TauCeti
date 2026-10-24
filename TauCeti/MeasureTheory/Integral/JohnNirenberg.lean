@@ -619,25 +619,16 @@ theorem measure_lt_norm_sub_setAverage_closedBall_le [CompleteSpace E]
     μ {x ∈ closedBall c r | s < ‖f x - ⨍ y in closedBall c r, f y ∂μ‖} ≤
       ENNReal.ofReal (2 * Real.exp (-(Real.log 2 * s / (2 ^ (Fintype.card ι + 1) * M)))) *
         μ (closedBall c r) := by
-  let a := Measure.addHaarScalarFactor μ volume
-  have ha : (a : ℝ≥0∞) ≠ 0 := ENNReal.coe_ne_zero.2
+  have ha : (Measure.addHaarScalarFactor μ volume : ℝ≥0∞) ≠ 0 := ENNReal.coe_ne_zero.2
     (Measure.addHaarScalarFactor_pos_of_isAddHaarMeasure μ volume).ne'
-  have hμ : μ = (a : ℝ≥0∞) • volume := by
-    simpa only [Measure.coe_nnreal_smul] using Measure.isAddLeftInvariant_eq_smul μ volume
-  have he : μ.map (MeasurableEquiv.refl (ι → ℝ)) = (a : ℝ≥0∞) • volume := by
-    simpa [MeasurableEquiv.refl] using hμ
-  have havg (S : Set (ι → ℝ)) : ⨍ x in S, f x ∂μ = ⨍ x in S, f x ∂volume := by
-    simpa [MeasurableEquiv.refl] using
-      setAverage_comp_preimage_of_map_eq_smul he ha ENNReal.coe_ne_top f S
-  have hlavg (g : (ι → ℝ) → ℝ≥0∞) (S : Set (ι → ℝ)) :
-      ⨍⁻ x in S, g x ∂μ = ⨍⁻ x in S, g x ∂volume := by
-    simpa [MeasurableEquiv.refl] using
-      setLAverage_comp_preimage_of_map_eq_smul he ha ENNReal.coe_ne_top g S
-  simp_rw [havg, hlavg] at hM
-  simp_rw [havg]
-  rw [hμ, IntegrableOn, Measure.restrict_smul, integrable_smul_measure ha ENNReal.coe_ne_top] at hf
-  simpa only [hμ, Measure.smul_apply, smul_eq_mul, mul_left_comm] using
-    mul_le_mul_right (volume_lt_norm_sub_setAverage_closedBall_le hf hM s) (a : ℝ≥0∞)
+  rw [Measure.isAddLeftInvariant_eq_smul μ volume, ← Measure.coe_nnreal_smul] at hf hM ⊢
+  simp_rw [setAverage_smul_measure ha ENNReal.coe_ne_top,
+    setLAverage_smul_measure ha ENNReal.coe_ne_top] at hM
+  rw [setAverage_smul_measure ha ENNReal.coe_ne_top]
+  rw [IntegrableOn, Measure.restrict_smul, integrable_smul_measure ha ENNReal.coe_ne_top] at hf
+  simpa only [Measure.smul_apply, smul_eq_mul, mul_left_comm] using
+    mul_le_mul_right (volume_lt_norm_sub_setAverage_closedBall_le hf hM s)
+      (Measure.addHaarScalarFactor μ volume : ℝ≥0∞)
 
 /-- **Exponential integrability of functions of bounded mean oscillation** on a cube, for any
 additive Haar measure. Let `f` be integrable on the closed sup-norm ball `closedBall c r ⊆ ℝⁿ`,
@@ -656,27 +647,17 @@ theorem setLIntegral_exp_mul_norm_sub_setAverage_closedBall_le [CompleteSpace E]
         ENNReal.ofReal (Real.exp (σ * ‖f x - ⨍ y in closedBall c r, f y ∂μ‖)) ∂μ ≤
       ENNReal.ofReal (1 + 2 * Real.exp (σ * (2 ^ (Fintype.card ι + 1) * M)) /
         (2 - Real.exp (σ * (2 ^ (Fintype.card ι + 1) * M)))) * μ (closedBall c r) := by
-  let a := Measure.addHaarScalarFactor μ volume
-  have ha : (a : ℝ≥0∞) ≠ 0 := ENNReal.coe_ne_zero.2
+  have ha : (Measure.addHaarScalarFactor μ volume : ℝ≥0∞) ≠ 0 := ENNReal.coe_ne_zero.2
     (Measure.addHaarScalarFactor_pos_of_isAddHaarMeasure μ volume).ne'
-  have hμ : μ = (a : ℝ≥0∞) • volume := by
-    simpa only [Measure.coe_nnreal_smul] using Measure.isAddLeftInvariant_eq_smul μ volume
-  have he : μ.map (MeasurableEquiv.refl (ι → ℝ)) = (a : ℝ≥0∞) • volume := by
-    simpa [MeasurableEquiv.refl] using hμ
-  have havg (S : Set (ι → ℝ)) : ⨍ x in S, f x ∂μ = ⨍ x in S, f x ∂volume := by
-    simpa [MeasurableEquiv.refl] using
-      setAverage_comp_preimage_of_map_eq_smul he ha ENNReal.coe_ne_top f S
-  have hlavg (g : (ι → ℝ) → ℝ≥0∞) (S : Set (ι → ℝ)) :
-      ⨍⁻ x in S, g x ∂μ = ⨍⁻ x in S, g x ∂volume := by
-    simpa [MeasurableEquiv.refl] using
-      setLAverage_comp_preimage_of_map_eq_smul he ha ENNReal.coe_ne_top g S
-  simp_rw [havg, hlavg] at hM
-  simp_rw [havg]
-  rw [hμ, IntegrableOn, Measure.restrict_smul, integrable_smul_measure ha ENNReal.coe_ne_top] at hf
-  simpa only [hμ, Measure.restrict_smul, lintegral_smul_measure, Measure.smul_apply,
+  rw [Measure.isAddLeftInvariant_eq_smul μ volume, ← Measure.coe_nnreal_smul] at hf hM ⊢
+  simp_rw [setAverage_smul_measure ha ENNReal.coe_ne_top,
+    setLAverage_smul_measure ha ENNReal.coe_ne_top] at hM
+  rw [setAverage_smul_measure ha ENNReal.coe_ne_top]
+  rw [IntegrableOn, Measure.restrict_smul, integrable_smul_measure ha ENNReal.coe_ne_top] at hf
+  simpa only [Measure.restrict_smul, lintegral_smul_measure, Measure.smul_apply,
     smul_eq_mul, mul_left_comm] using
     mul_le_mul_right (setLIntegral_exp_mul_norm_sub_setAverage_closedBall_volume_le hf hM hρ)
-      (a : ℝ≥0∞)
+      (Measure.addHaarScalarFactor μ volume : ℝ≥0∞)
 
 end ClosedBall
 
