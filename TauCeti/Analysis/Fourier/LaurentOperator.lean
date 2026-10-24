@@ -25,7 +25,8 @@ coefficients of its symbol. This file characterizes Laurent operators in two way
   multiplication operator of an essentially bounded symbol.
 
 For the second statement, an operator `W` commuting with the bilateral shift sends `e_n` to
-`e_n b` with `b = W e_0`, hence sends every trigonometric polynomial `q` to `b q`. Since
+`e_n b` with `b = W e_0` (`TauCeti.apply_fourierBasis_of_commute`), hence sends every
+trigonometric polynomial `q` to `b q` (`TauCeti.coeFn_apply_toLp_of_commute`). Since
 `‖b q‖₂ ≤ ‖W‖ ‖q‖₂`, the multiplier criterion makes `b` essentially bounded, and `W` agrees
 with multiplication by `b` on the dense span of the Fourier basis.
 
@@ -69,29 +70,13 @@ theorem eLpNorm_top_le_of_forall_mem_span_fourier {p : ℝ≥0∞} [Fact (1 ≤ 
     eLpNorm_congr_ae (Filter.EventuallyEq.rfl.mul hae)]
   exact h q hq
 
-/-- Multiplying an `L²` function successively by the Fourier monomials `e_n` and `e_m` is
-multiplying it by `e_(m + n)`. -/
-private theorem fourierLp_smul_fourierLp_smul (m n : ℤ) (f : Lp ℂ 2 (haarAddCircle (T := T))) :
-    (fourierLp (T := T) ∞ m • (fourierLp (T := T) ∞ n • f) :
-        Lp ℂ 2 (haarAddCircle (T := T))) = fourierLp (T := T) ∞ (m + n) • f := by
-  apply Lp.ext
-  filter_upwards [Lp.coeFn_lpSMul (r := 2) (fourierLp (T := T) ∞ m) (fourierLp (T := T) ∞ n • f),
-    Lp.coeFn_lpSMul (r := 2) (fourierLp (T := T) ∞ n) f,
-    Lp.coeFn_lpSMul (r := 2) (fourierLp (T := T) ∞ (m + n)) f,
-    coeFn_fourierLp (T := T) ∞ m, coeFn_fourierLp (T := T) ∞ n,
-    coeFn_fourierLp (T := T) ∞ (m + n)] with x h₁ h₂ h₃ hm hn hmn
-  simp only [h₁, h₂, h₃, Pi.smul_apply', hm, hn, hmn, fourier_add, smul_eq_mul, mul_assoc]
-
-/-- **Commutant of the bilateral shift.** A bounded operator on circle `L²` commutes with the
-bilateral shift, multiplication by the Fourier monomial `e_1`, if and only if it is
-multiplication by an essentially bounded symbol. -/
-theorem commute_multiplicationOperator_fourierLp_one_iff
-    {W : Lp ℂ 2 (haarAddCircle (T := T)) →L[ℂ] Lp ℂ 2 (haarAddCircle (T := T))} :
-    Commute W (Lp.multiplicationOperator (fourierLp (T := T) ∞ 1)) ↔
-      ∃ a : Lp ℂ ∞ (haarAddCircle (T := T)), W = Lp.multiplicationOperator a := by
-  refine ⟨fun hW ↦ ?_, fun ⟨a, ha⟩ ↦ ha ▸ Lp.commute_multiplicationOperator a _⟩
+/-- An operator on circle `L²` commuting with the bilateral shift, multiplication by `e_1`, sends
+each Fourier mode `e_n` to `e_n b`, where `b = W e_0`. -/
+theorem apply_fourierBasis_of_commute
+    {W : Lp ℂ 2 (haarAddCircle (T := T)) →L[ℂ] Lp ℂ 2 (haarAddCircle (T := T))}
+    (hW : Commute W (Lp.multiplicationOperator (fourierLp (T := T) ∞ 1))) (n : ℤ) :
+    W (fourierBasis n) = fourierLp (T := T) ∞ n • W (fourierBasis 0) := by
   set U := Lp.multiplicationOperator (E := ℂ) (fourierLp (T := T) ∞ 1)
-  set b := W (fourierBasis 0)
   have hU (f : Lp ℂ 2 (haarAddCircle (T := T))) : U f = fourierLp (T := T) ∞ 1 • f :=
     Lp.multiplicationOperator_apply _ f
   have hU_inj : Function.Injective U :=
@@ -106,70 +91,82 @@ theorem commute_multiplicationOperator_fourierLp_one_iff
   have hU_smul (n : ℤ) (f : Lp ℂ 2 (haarAddCircle (T := T))) :
       U (fourierLp (T := T) ∞ n • f) = fourierLp (T := T) ∞ (n + 1) • f := by
     rw [hU, fourierLp_smul_fourierLp_smul, add_comm]
-  -- Commuting with the shift, `W` sends each Fourier monomial `e_n` to `e_n b`.
-  have hW_basis (n : ℤ) : W (fourierBasis n) = fourierLp (T := T) ∞ n • b := by
-    induction n using Int.induction_on with
-    | zero =>
-      apply Lp.ext
-      filter_upwards [Lp.coeFn_lpSMul (r := 2) (fourierLp (T := T) ∞ 0) b,
-        coeFn_fourierLp (T := T) ∞ 0] with x h h₀
-      rw [h, Pi.smul_apply', h₀, fourier_zero, one_smul]
-    | succ n ih =>
-      calc W (fourierBasis (n + 1)) = U (W (fourierBasis n)) := by rw [← hU_basis, hWU]
-        _ = fourierLp (T := T) ∞ (n + 1) • b := by rw [ih, hU_smul]
-    | pred n ih =>
-      apply hU_inj
-      calc U (W (fourierBasis (-n - 1))) = W (fourierBasis (-n)) := by
-            rw [← hWU, hU_basis, sub_add_cancel]
-        _ = U (fourierLp (T := T) ∞ (-n - 1) • b) := by rw [ih, hU_smul, sub_add_cancel]
-  -- By linearity, `W` multiplies every trigonometric polynomial by `b`.
-  have hW_span : ∀ q ∈ span ℂ (range (fourier (T := T))),
-      ⇑(W (ContinuousMap.toLp (E := ℂ) 2 haarAddCircle ℂ q)) =ᵐ[haarAddCircle] ⇑b * ⇑q := by
-    intro q hq
-    induction hq using span_induction with
-    | mem q hq =>
-      obtain ⟨n, rfl⟩ := hq
-      have hn : ContinuousMap.toLp (E := ℂ) 2 haarAddCircle ℂ (fourier (T := T) n) =
-          fourierBasis n := by
-        rw [coe_fourierBasis]
-      rw [hn, hW_basis]
-      filter_upwards [Lp.coeFn_lpSMul (r := 2) (fourierLp (T := T) ∞ n) b,
-        coeFn_fourierLp (T := T) ∞ n] with x h hx
-      rw [h, Pi.smul_apply', hx, smul_eq_mul, Pi.mul_apply, mul_comm]
-    | zero =>
-      rw [map_zero, map_zero]
-      filter_upwards [Lp.coeFn_zero ℂ 2 (haarAddCircle (T := T))] with x hx
-      rw [hx, Pi.zero_apply, Pi.mul_apply, ContinuousMap.zero_apply, mul_zero]
-    | add q r _ _ hq hr =>
-      rw [map_add, map_add]
-      filter_upwards [Lp.coeFn_add (W (ContinuousMap.toLp (E := ℂ) 2 haarAddCircle ℂ q))
-        (W (ContinuousMap.toLp (E := ℂ) 2 haarAddCircle ℂ r)), hq, hr] with x h hqx hrx
-      rw [h, Pi.add_apply, hqx, hrx]
-      simp only [Pi.mul_apply, ContinuousMap.add_apply, mul_add]
-    | smul c q _ hq =>
-      rw [map_smul, map_smul]
-      filter_upwards [Lp.coeFn_smul c (W (ContinuousMap.toLp (E := ℂ) 2 haarAddCircle ℂ q)),
-        hq] with x h hqx
-      rw [h, Pi.smul_apply, hqx]
-      simp only [Pi.mul_apply, ContinuousMap.smul_apply, smul_eq_mul, mul_left_comm]
+  induction n using Int.induction_on with
+  | zero =>
+    apply Lp.ext
+    filter_upwards [coeFn_fourierLp_smul 0 (W (fourierBasis 0))] with x h
+    rw [h, fourier_zero, one_mul]
+  | succ n ih =>
+    calc W (fourierBasis (n + 1)) = U (W (fourierBasis n)) := by rw [← hU_basis, hWU]
+      _ = fourierLp (T := T) ∞ (n + 1) • W (fourierBasis 0) := by rw [ih, hU_smul]
+  | pred n ih =>
+    apply hU_inj
+    calc U (W (fourierBasis (-n - 1))) = W (fourierBasis (-n)) := by
+          rw [← hWU, hU_basis, sub_add_cancel]
+      _ = U (fourierLp (T := T) ∞ (-n - 1) • W (fourierBasis 0)) := by
+          rw [ih, hU_smul, sub_add_cancel]
+
+/-- An operator on circle `L²` commuting with the bilateral shift, multiplication by `e_1`,
+multiplies every trigonometric polynomial `q` by `b = W e_0`. -/
+theorem coeFn_apply_toLp_of_commute
+    {W : Lp ℂ 2 (haarAddCircle (T := T)) →L[ℂ] Lp ℂ 2 (haarAddCircle (T := T))}
+    (hW : Commute W (Lp.multiplicationOperator (fourierLp (T := T) ∞ 1)))
+    {q : C(AddCircle T, ℂ)} (hq : q ∈ span ℂ (range (fourier (T := T)))) :
+    ⇑(W (ContinuousMap.toLp (E := ℂ) 2 haarAddCircle ℂ q)) =ᵐ[haarAddCircle]
+      ⇑(W (fourierBasis 0)) * ⇑q := by
+  induction hq using span_induction with
+  | mem q hq =>
+    obtain ⟨n, rfl⟩ := hq
+    have hn : ContinuousMap.toLp (E := ℂ) 2 haarAddCircle ℂ (fourier (T := T) n) =
+        fourierBasis n := by
+      rw [coe_fourierBasis]
+    rw [hn, apply_fourierBasis_of_commute hW]
+    filter_upwards [coeFn_fourierLp_smul n (W (fourierBasis 0))] with x h
+    rw [h, Pi.mul_apply, mul_comm]
+  | zero =>
+    rw [map_zero, map_zero]
+    filter_upwards [Lp.coeFn_zero ℂ 2 (haarAddCircle (T := T))] with x hx
+    rw [hx, Pi.zero_apply, Pi.mul_apply, ContinuousMap.zero_apply, mul_zero]
+  | add q r _ _ hq hr =>
+    rw [map_add, map_add]
+    filter_upwards [Lp.coeFn_add (W (ContinuousMap.toLp (E := ℂ) 2 haarAddCircle ℂ q))
+      (W (ContinuousMap.toLp (E := ℂ) 2 haarAddCircle ℂ r)), hq, hr] with x h hqx hrx
+    rw [h, Pi.add_apply, hqx, hrx]
+    simp only [Pi.mul_apply, ContinuousMap.add_apply, mul_add]
+  | smul c q _ hq =>
+    rw [map_smul, map_smul]
+    filter_upwards [Lp.coeFn_smul c (W (ContinuousMap.toLp (E := ℂ) 2 haarAddCircle ℂ q)),
+      hq] with x h hqx
+    rw [h, Pi.smul_apply, hqx]
+    simp only [Pi.mul_apply, ContinuousMap.smul_apply, smul_eq_mul, mul_left_comm]
+
+/-- **Commutant of the bilateral shift.** A bounded operator on circle `L²` commutes with the
+bilateral shift, multiplication by the Fourier monomial `e_1`, if and only if it is
+multiplication by an essentially bounded symbol. -/
+theorem commute_multiplicationOperator_fourierLp_one_iff
+    {W : Lp ℂ 2 (haarAddCircle (T := T)) →L[ℂ] Lp ℂ 2 (haarAddCircle (T := T))} :
+    Commute W (Lp.multiplicationOperator (fourierLp (T := T) ∞ 1)) ↔
+      ∃ a : Lp ℂ ∞ (haarAddCircle (T := T)), W = Lp.multiplicationOperator a := by
+  refine ⟨fun hW ↦ ?_, fun ⟨a, ha⟩ ↦ ha ▸ Lp.commute_multiplicationOperator a _⟩
+  set b := W (fourierBasis 0)
   -- The multiplier criterion makes `b` essentially bounded by `‖W‖`.
   have hb : eLpNorm (⇑b) ∞ haarAddCircle ≤ ‖W‖ₑ := by
     refine eLpNorm_top_le_of_forall_mem_span_fourier (p := 2) ENNReal.ofNat_ne_top
       (Lp.aestronglyMeasurable b) fun q hq ↦ ?_
-    rw [← eLpNorm_congr_ae (hW_span q hq), ← Lp.enorm_def,
+    rw [← eLpNorm_congr_ae (coeFn_apply_toLp_of_commute hW hq), ← Lp.enorm_def,
       ← eLpNorm_congr_ae (ContinuousMap.coeFn_toLp (E := ℂ) (p := 2) (𝕜 := ℂ) haarAddCircle q),
       ← Lp.enorm_def]
     exact W.le_opENorm _
   have hb_mem : MemLp (⇑b) ∞ haarAddCircle := memLp_iff.2 (hb.trans_lt enorm_lt_top)
+  -- `W` agrees with multiplication by `b` on the Fourier basis, whose span is dense.
   refine ⟨hb_mem.toLp b, ContinuousLinearMap.ext_on
     (dense_iff_topologicalClosure_eq_top.2 (fourierBasis (T := T)).dense_span) ?_⟩
   rintro _ ⟨n, rfl⟩
-  rw [hW_basis, Lp.multiplicationOperator_apply]
+  rw [apply_fourierBasis_of_commute hW, Lp.multiplicationOperator_apply]
   apply Lp.ext
-  filter_upwards [Lp.coeFn_lpSMul (r := 2) (fourierLp (T := T) ∞ n) b,
+  filter_upwards [coeFn_fourierLp_smul n b,
     Lp.coeFn_lpSMul (r := 2) (hb_mem.toLp b) (fourierBasis n), hb_mem.coeFn_toLp,
-    coeFn_fourierLp (T := T) ∞ n, coeFn_fourierLp (T := T) 2 n] with x h₁ h₂ hbx hinf h₂'
-  rw [h₁, h₂, Pi.smul_apply', Pi.smul_apply', hbx, coe_fourierBasis, hinf, h₂', smul_eq_mul,
-    smul_eq_mul, mul_comm]
+    coeFn_fourierLp (T := T) 2 n] with x h₁ h₂ hbx hn
+  rw [h₁, h₂, Pi.smul_apply', hbx, coe_fourierBasis, hn, smul_eq_mul, mul_comm]
 
 end TauCeti
