@@ -106,7 +106,7 @@ private theorem exists_orbitAction :
   simpa only [Over.comp_left] using congrArg Over.Hom.left h'
 
 /-- The restricted action morphism on the orbit scheme over the ground field. -/
-def orbitAction : G ⊗ orbitOver G x ⟶ orbitOver G x :=
+private def orbitAction : G ⊗ orbitOver G x ⟶ orbitOver G x :=
   Over.homMk (exists_orbitAction G x).exists.choose (by
     calc
       _ = (exists_orbitAction G x).exists.choose ≫ orbitι G x ≫ X.hom :=
@@ -118,12 +118,13 @@ def orbitAction : G ⊗ orbitOver G x ⟶ orbitOver G x :=
 
 /-- The restricted action followed by the orbit immersion is the ambient action. -/
 @[reassoc (attr := simp)]
-theorem orbitAction_inclusion :
+private theorem orbitAction_inclusion :
     orbitAction G x ≫ orbitInclusion G x = G ◁ orbitInclusion G x ≫ γ[G, X] := by
   ext
   exact (exists_orbitAction G x).exists.choose_spec
 
 /-- The ambient algebraic group action restricts to its locally closed orbit scheme. -/
+@[no_expose]
 instance orbitModObj : ModObj G (orbitOver G x) where
   smul := orbitAction G x
   one_smul := by
@@ -147,14 +148,13 @@ instance orbitModObj : ModObj G (orbitOver G x) where
 instance : IsModHom G (orbitInclusion G x) where
   smul_hom := orbitAction_inclusion G x
 
-/-- The displayed action morphism is the scalar multiplication of the orbit action. -/
-theorem orbitAction_eq_smul : orbitAction G x = γ[G, orbitOver G x] := (rfl)
-
 /-- The orbit immersion determines the restricted action morphism uniquely. -/
 theorem orbitAction_unique (a : G ⊗ orbitOver G x ⟶ orbitOver G x)
     (ha : a ≫ orbitInclusion G x = G ◁ orbitInclusion G x ≫ γ[G,X]) :
-    a = orbitAction G x :=
-  (cancel_mono (orbitInclusion G x)).mp (ha.trans (orbitAction_inclusion G x).symm)
+    a = γ[G, orbitOver G x] := by
+  apply (cancel_mono (orbitInclusion G x)).mp
+  simpa only [IsModHom.smul_hom,
+    MonoidalCategory.selfLeftAction_actionHomRight] using ha
 
 /-- The orbit factorization intertwines left multiplication with the restricted action. -/
 @[reassoc]
@@ -172,11 +172,12 @@ theorem mul_comp_orbitProjection {T : Over (Spec (.of k))} (g h : T ⟶ G) :
     ← lift_whiskerLeft_assoc]
 
 /-- The restricted algebraic action recovers the previously constructed orbit translations. -/
-theorem translation_orbitOver (g : 𝟙_ (Over (Spec (.of k))) ⟶ G) :
+theorem forget_mapIso_translation_orbitOver (g : 𝟙_ (Over (Spec (.of k))) ⟶ G) :
     (Over.forget _).mapIso (translation (orbitOver G x) g) = orbitTranslation G x g := by
   apply Iso.ext
   apply (cancel_mono (orbitι G x)).mp
   rw [orbitTranslation_hom_ι]
-  exact congrArg Over.Hom.left (translation_hom_comp g (orbitInclusion G x))
+  simpa only [Over.comp_left, orbitInclusion_left, Functor.mapIso_hom, Over.forget_map] using
+    congrArg Over.Hom.left (translation_hom_comp g (orbitInclusion G x))
 
 end TauCeti.SchemeAction
