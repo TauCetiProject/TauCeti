@@ -37,6 +37,8 @@ as those of noncrossing partitions, into sums over `Finset.range`.
 * `sum_range_eq_of_eq_zero_off_pair` and `sum_range_eq_of_eq_zero_off_triple`: convenient
   specializations to supports of size two and three.
 * `sum_range_add_add`: splitting a `range n` sum into a prefix, a block, and a suffix.
+* `sum_sum_range_split_blocks`: splitting a double sum over the blocks of a word at one position
+  into the blocks containing it, those before it, and those after it.
 * `sum_range_min_add_two`: the two-step recurrence satisfied by the sums
   `∑_{i ≤ min j r} c^i a (j + r − 2i)`.
 * `sum_range_min_zero`: the base case `j = 0` of that recurrence, which its `j + 1` cannot state.
@@ -270,6 +272,41 @@ theorem sum_range_add_add {N : Type*} [AddCommMonoid N] (g : ℕ → N) {p d n :
     refine key.trans ?_
     simp only [Nat.add_assoc]
   rw [s1, s2, ← add_assoc]
+
+/-- Splitting a double sum over the blocks `(p, d)` (start and length) of a word of length
+`l + 1 + n` at its position `l`.  When the summand vanishes on blocks running past the end of the
+word, the sum is the sum over the blocks containing position `l`, those ending before it, and
+those starting after it.  The blocks containing position `l` are indexed by their start `j ≤ l`
+and the number `k ≤ n` of their letters after position `l`. -/
+theorem sum_sum_range_split_blocks {N : Type*} [AddCommMonoid N] (l n : ℕ) (g : ℕ → ℕ → N)
+    (hg : ∀ p d, l + 1 + n < p + d → g p d = 0) :
+    ∑ p ∈ range (l + 1 + n), ∑ d ∈ range (l + 1 + n + 1), g p d =
+      (∑ k ∈ range (n + 1), ∑ j ∈ range (l + 1), g j (l - j + 1 + k) +
+        ∑ p ∈ range (l + 1), ∑ d ∈ range (l + 1 + 1), if p + d ≤ l then g p d else 0) +
+      ∑ p ∈ range n, ∑ d ∈ range (n + 1), g (l + 1 + p) d := by
+  rw [sum_range_add, sum_comm (s := range (n + 1)), ← sum_add_distrib]
+  congr 1
+  · refine sum_congr rfl fun p hp ↦ ?_
+    rw [mem_range] at hp
+    have h₁ : ∑ k ∈ range p, g p (l - p + 1 + (n + 1) + k) = 0 :=
+      sum_eq_zero fun k _ ↦ hg p _ (by omega)
+    have h₂ : ∑ k ∈ range (p + 1), (if p + (l - p + 1 + k) ≤ l then g p (l - p + 1 + k) else 0) =
+        0 := sum_eq_zero fun k _ ↦ ite_eq_right_iff.2 fun h ↦ absurd h (by omega)
+    have h₃ : ∑ d ∈ range (l - p + 1), (if p + d ≤ l then g p d else 0) =
+        ∑ d ∈ range (l - p + 1), g p d :=
+      sum_congr rfl fun d hd ↦ ite_eq_left (by rw [mem_range] at hd; omega)
+    rw [show l + 1 + n + 1 = (l - p + 1) + (n + 1) + p by omega,
+      sum_range_add (fun d ↦ g p d) (l - p + 1 + (n + 1)) p,
+      sum_range_add (fun d ↦ g p d) (l - p + 1) (n + 1),
+      show l + 1 + 1 = (l - p + 1) + (p + 1) by omega,
+      sum_range_add (fun d ↦ if p + d ≤ l then g p d else 0) (l - p + 1) (p + 1), h₁, h₂, h₃,
+      add_zero, add_zero, add_comm]
+  · refine sum_congr rfl fun p hp ↦ ?_
+    rw [mem_range] at hp
+    have h₁ : ∑ k ∈ range (l + 1), g (l + 1 + p) (n + 1 + k) = 0 :=
+      sum_eq_zero fun k _ ↦ hg _ _ (by omega)
+    rw [show l + 1 + n + 1 = (n + 1) + (l + 1) by omega,
+      sum_range_add (fun d ↦ g (l + 1 + p) d) (n + 1) (l + 1), h₁, add_zero]
 
 
 
