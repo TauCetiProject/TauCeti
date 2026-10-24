@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 public import Mathlib.LinearAlgebra.PiTensorProduct.Basic
 public import TauCeti.Algebra.BigOperators.Finset.OffDiagonal
 public import TauCeti.LinearAlgebra.Graded.LinearMap
+public import TauCeti.LinearAlgebra.PiTensorProduct.Basic
 public import TauCeti.LinearAlgebra.PiTensorProduct.Map
 import Mathlib.Data.ZMod.Defs
 
@@ -74,8 +75,6 @@ representing cocycle in the tensor-induced resolution.
 
 ## Main results
 
-* `TauCeti.PiTensorProduct.add_self_eq_zero`: if every element of `M` is its own additive inverse,
-  so is every element of a tensor power of `M` with at least one factor.
 * `TauCeti.PiTensorProduct.slotSum_comp_slotSum`: if every element of `M` is its own additive
   inverse, the slot sum of a square-zero endomorphism squares to zero.
 * `TauCeti.PiTensorProduct.slotSum_comp_slotHomotopy_add`: if every element of `M` is its own
@@ -116,20 +115,6 @@ variable {ι : Type uι} {κ : Type uκ} {R : Type uR} {A : Type uA} {M : Type u
 section Semiring
 
 variable [CommSemiring R] [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
-
-/-- If every element of `M` is its own additive inverse, then so is every element of a tensor
-power of `M` with at least one factor. With no factors the tensor power is `R`, about which the
-hypothesis on `M` says nothing. -/
-theorem add_self_eq_zero [Nonempty ι] (hM : ∀ m : M, m + m = 0) (x : ⨂[R] _ : ι, M) :
-    x + x = 0 := by
-  classical
-  induction x using PiTensorProduct.induction_on with
-  | smul_tprod r m =>
-    obtain ⟨i⟩ := ‹Nonempty ι›
-    have h := (PiTensorProduct.tprod R).map_update_add m i (m i) (m i)
-    rw [update_eq_self, hM, MultilinearMap.map_update_zero] at h
-    rw [← smul_add, ← h, smul_zero]
-  | add x y hx hy => rw [add_add_add_comm, hx, hy, add_zero]
 
 section SlotSum
 
