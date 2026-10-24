@@ -921,23 +921,14 @@ theorem zmodFourAddEquivCheckerboardDiscriminantGroup_apply_one (hn : Odd n) :
   rw [zmodFourAddEquivCheckerboardDiscriminantGroup]
   exact zmodAddEquivOfGenerator_apply_one _ _
 
-/-- The odd-rank identification sends `2 ∈ ℤ/4` to the vector class. -/
-@[simp]
-theorem zmodFourAddEquivCheckerboardDiscriminantGroup_apply_two (hn : Odd n) :
-    letI : NeZero n := NeZero.of_pos hn.pos
-    zmodFourAddEquivCheckerboardDiscriminantGroup n hn 2 = checkerboardVectorClass n := by
-  have h2 : (2 : ZMod 4) = 1 + 1 := by decide
-  rw [h2, map_add, zmodFourAddEquivCheckerboardDiscriminantGroup_apply_one, ← two_zsmul,
-    two_zsmul_checkerboardSpinorClass_of_odd n hn]
-
 /-- The odd-rank identification sends `3 ∈ ℤ/4` to the cospinor class. -/
 @[simp]
 theorem zmodFourAddEquivCheckerboardDiscriminantGroup_apply_three (hn : Odd n) :
     letI : NeZero n := NeZero.of_pos hn.pos
     zmodFourAddEquivCheckerboardDiscriminantGroup n hn 3 = checkerboardCospinorClass n := by
-  have h3 : (3 : ZMod 4) = 2 + 1 := by decide
-  rw [h3, map_add, zmodFourAddEquivCheckerboardDiscriminantGroup_apply_one,
-    zmodFourAddEquivCheckerboardDiscriminantGroup_apply_two,
+  have h3 : (3 : ZMod 4) = 1 + 1 + 1 := by decide
+  rw [h3, map_add, map_add, zmodFourAddEquivCheckerboardDiscriminantGroup_apply_one, ← two_zsmul,
+    two_zsmul_checkerboardSpinorClass_of_odd n hn,
     checkerboardVectorClass_add_checkerboardSpinorClass]
 
 variable {n} in
