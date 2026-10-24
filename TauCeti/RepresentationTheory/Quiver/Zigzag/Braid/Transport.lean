@@ -87,17 +87,7 @@ theorem zigzagBraidArtinActionOfEquivalence_eq_iff
 /-- Transport through an equivalence preserves and reflects faithfulness of the action. -/
 theorem zigzagBraidArtinActionOfEquivalence_injective_iff :
     Function.Injective (zigzagBraidArtinActionOfEquivalence k G e) ↔
-      Function.Injective (zigzagBraidArtinAction k G) := by
-  constructor
-  · intro h x y hxy
-    apply h
-    change e.autoequivalenceClassCongr (zigzagBraidArtinAction k G x) =
-      e.autoequivalenceClassCongr (zigzagBraidArtinAction k G y)
-    exact congrArg e.autoequivalenceClassCongr hxy
-  · intro h x y hxy
-    apply h
-    change e.autoequivalenceClassCongr (zigzagBraidArtinAction k G x) =
-      e.autoequivalenceClassCongr (zigzagBraidArtinAction k G y) at hxy
-    exact e.autoequivalenceClassCongr.injective hxy
+      Function.Injective (zigzagBraidArtinAction k G) :=
+  e.autoequivalenceClassCongr.injective.of_comp_iff (zigzagBraidArtinAction k G)
 
 end TauCeti
