@@ -180,7 +180,9 @@ complexes: the restriction of the degree-zero component to `Z⁰ ↪ X⁰`, whic
 noncomputable def cyclesMap (φ : r.complex ⟶ r'.complex) : r.Z 0 ⟶ r'.Z 0 :=
   r'.liftZ 0 (r.ι 0 ≫ φ.f 0) (by
     rw [← cancel_mono (r'.ι (0 + 1))]
-    simp [Category.assoc, ← d_def, f_comp_d_assoc])
+    -- Group the target differential before using chain-map commutativity.
+    simp only [Category.assoc, Category.zero_comp]
+    rw [← r'.d_def 0, f_comp_d φ 0, r.ι_d_assoc])
 
 /-- The map of complexes extends the induced morphism of the objects of cycles. -/
 @[reassoc (attr := simp)]
