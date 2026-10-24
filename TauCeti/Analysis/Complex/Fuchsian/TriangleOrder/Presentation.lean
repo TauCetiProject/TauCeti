@@ -116,25 +116,46 @@ private theorem double_cycle_power {j : Fin 4} {i : Fin 3} (t : TriangleOrder)
 variable (hp : P.interiorAngle 0 = p.angle) (hq : P.interiorAngle 1 = q.angle)
   (hr : P.interiorAngle 2 = r.angle)
 
-/-- Interpret the triangle generators as words in the doubled polygon's sides. -/
-private def triangleToDouble : TriangleGroup p.exponent q.exponent r.exponent →*
-    (P.doubleTriangleSidePairing h₀ h₁).RelatorQuotient := by
+include hp hq hr
+
+private theorem double_relatorQuotient_inv_of_zero_pow :
+    ((PresentedGroup.of 0)⁻¹ : (P.doubleTriangleSidePairing h₀ h₁).RelatorQuotient) ^
+      p.exponent = 1 := by
   have ho := congrFun
     (orderOf_doubleTriangleSidePairing_cycleMap (h₀ := h₀) (h₁ := h₁) hp hq hr)
   have hpow0 := double_cycle_power p (j := 0) (i := 0) (by simp) hp (ho 0)
+  simpa only [doubleTriangleSidePairing_cycleWord, Matrix.cons_val_zero,
+    TauCeti.PresentedGroup.mk_of, inv_pow, inv_eq_one] using hpow0
+
+private theorem double_relatorQuotient_inv_of_two_pow :
+    ((PresentedGroup.of 2)⁻¹ : (P.doubleTriangleSidePairing h₀ h₁).RelatorQuotient) ^
+      q.exponent = 1 := by
+  have ho := congrFun
+    (orderOf_doubleTriangleSidePairing_cycleMap (h₀ := h₀) (h₁ := h₁) hp hq hr)
   have hpow2 := double_cycle_power q (j := 2) (i := 1) (by simp) hq (ho 2)
+  simpa only [doubleTriangleSidePairing_cycleWord, Matrix.cons_val_two,
+    Matrix.head_cons, Matrix.tail_cons, TauCeti.PresentedGroup.mk_of,
+    inv_pow, inv_eq_one] using hpow2
+
+private theorem double_relatorQuotient_of_zero_mul_of_two_pow :
+    (PresentedGroup.of 0 * PresentedGroup.of 2 :
+      (P.doubleTriangleSidePairing h₀ h₁).RelatorQuotient) ^ r.exponent = 1 := by
+  have ho := congrFun
+    (orderOf_doubleTriangleSidePairing_cycleMap (h₀ := h₀) (h₁ := h₁) hp hq hr)
   have hpow3 := double_cycle_power r (j := 3) (i := 2) (by simp) hr (ho 3)
-  rw [doubleTriangleSidePairing_cycleWord] at hpow0 hpow2 hpow3
-  simp only [Matrix.cons_val_zero, Matrix.cons_val_two,
-    Matrix.cons_val_three, Matrix.head_cons, Matrix.tail_cons, map_mul] at hpow0 hpow2 hpow3
-  refine TriangleGroup.lift (PresentedGroup.of 0)⁻¹ (PresentedGroup.of 2)⁻¹
+  simpa only [doubleTriangleSidePairing_cycleWord, Matrix.cons_val_three,
+    Matrix.head_cons, Matrix.tail_cons, map_mul, TauCeti.PresentedGroup.mk_of,
+    double_relatorQuotient_of_one, double_relatorQuotient_of_three,
+    ← mul_inv_rev, inv_pow, inv_eq_one] using hpow3
+
+/-- Interpret the triangle generators as words in the doubled polygon's sides. -/
+private def triangleToDouble : TriangleGroup p.exponent q.exponent r.exponent →*
+    (P.doubleTriangleSidePairing h₀ h₁).RelatorQuotient :=
+  TriangleGroup.lift (PresentedGroup.of 0)⁻¹ (PresentedGroup.of 2)⁻¹
     (PresentedGroup.of 0 * PresentedGroup.of 2)
-    (by simpa only [inv_pow, inv_eq_one, PresentedGroup.of] using hpow0)
-    (by simpa only [inv_pow, inv_eq_one, PresentedGroup.of] using hpow2) ?_ (by group)
-  rw [← PresentedGroup.of, ← PresentedGroup.of] at hpow3
-  rw [double_relatorQuotient_of_one, double_relatorQuotient_of_three,
-    ← mul_inv_rev, inv_pow, inv_eq_one] at hpow3
-  exact hpow3
+    (double_relatorQuotient_inv_of_zero_pow hp hq hr)
+    (double_relatorQuotient_inv_of_two_pow hp hq hr)
+    (double_relatorQuotient_of_zero_mul_of_two_pow hp hq hr) (by group)
 
 /-- Eliminate inverse side generators in favour of the triangle generators. -/
 private def doubleToTriangle : (P.doubleTriangleSidePairing h₀ h₁).RelatorQuotient →*
