@@ -216,38 +216,19 @@ theorem exists_mem_signlessPreprojectiveGrade_four_notMem_commutatorSubmodule [N
     {n : ℕ} (hn : 4 ≤ n) (hG : (AffineDynkinType.D n).graph.IsContained G) :
     ∃ x ∈ signlessPreprojectiveGrade k (DoubledQuiver G) 4,
       x ∉ commutatorSubmodule k (signlessPreprojectiveAlgebra k (DoubledQuiver G)) := by
-  classical
   obtain ⟨f⟩ := hG
   have hnodes := AffineDynkinType.nodes_D n
   let c : Fin (AffineDynkinType.D n).nodes := ⟨1, by omega⟩
-  let l₁ : Fin (AffineDynkinType.D n).nodes := ⟨0, by omega⟩
-  let l₂ : Fin (AffineDynkinType.D n).nodes := ⟨n - 1, by omega⟩
-  have h₁ : (AffineDynkinType.D n).graph.Adj c l₁ :=
-    (AffineDynkinType.graph_D_adj hn (i := c) (j := l₁)).2
-      (Or.inr (Or.inl ⟨rfl, show 1 ≤ n - 2 by omega⟩))
-  have h₂ : (AffineDynkinType.D n).graph.Adj c l₂ :=
-    (AffineDynkinType.graph_D_adj hn (i := c) (j := l₂)).2 (Or.inr (Or.inr (Or.inl ⟨rfl, rfl⟩)))
-  let β : Fin (AffineDynkinType.D n).nodes → Fin (AffineDynkinType.D n).nodes →
-      Matrix (Fin 2) (Fin 2) k :=
-    fun i j => affineDMatrix k n i j
-  have hβ := f.sum_extendByZero_mul_extendByZero β
-    (sum_affineDMatrix_mul_affineDMatrix k hn)
-  refine ⟨signlessPreprojectiveMk k _
-    (backtrackElem G k (f.toHom.map_adj h₂) * backtrackElem G k (f.toHom.map_adj h₁)), ?_,
-    fun hx => ?_⟩
-  · have harrow {i j : DoubledQuiver G} (e : i ⟶ j) :=
-      signlessPreprojectiveMk_mem_grade k (DoubledQuiver G) (ofArrow_mem_grade_one (k := k) e)
-    simp only [← ofArrow_symm_mul_ofArrow, map_mul]
-    exact mul_mem_signlessPreprojectiveGrade k _ (m := 2) (n := 2)
-      (mul_mem_signlessPreprojectiveGrade k _ (harrow _) (harrow _))
-      (mul_mem_signlessPreprojectiveGrade k _ (harrow _) (harrow _))
-  · have htrace := trace_map_eq_zero_of_mem_commutatorSubmodule
-      (signlessMatrixRepresentation k (f.extendByZero β) hβ) hx
-    rw [trace_signlessMatrixRepresentation_backtrackElem_mul_backtrackElem] at htrace
-    simp only [SimpleGraph.Copy.toHom_apply, SimpleGraph.Copy.extendByZero_apply_apply_of_adj,
-      h₁, h₂, h₁.symm, h₂.symm, β, c, l₁, l₂] at htrace
-    simp (disch := omega) only [affineDMatrix_zero_one hn, affineDMatrix_one_zero hn,
-      affineDMatrix_last_one hn, affineDMatrix_one_last hn] at htrace
-    simp [Matrix.trace_fin_two] at htrace
+  have h₁ : (AffineDynkinType.D n).graph.Adj c ⟨0, by omega⟩ :=
+    (AffineDynkinType.graph_D_adj hn).2 (Or.inr (Or.inl ⟨rfl, show 1 ≤ n - 2 by omega⟩))
+  have h₂ : (AffineDynkinType.D n).graph.Adj c ⟨n - 1, by omega⟩ :=
+    (AffineDynkinType.graph_D_adj hn).2 (Or.inr (Or.inr (Or.inl ⟨rfl, rfl⟩)))
+  refine exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_of_trace_ne_zero f
+    (fun i j => affineDMatrix k n i j) (sum_affineDMatrix_mul_affineDMatrix k hn)
+    [⟨_, h₂⟩, ⟨_, h₁⟩] (by simp) ?_
+  simp (disch := omega) only [List.map_cons, List.map_nil, List.prod_cons, List.prod_nil,
+    mul_one, c, affineDMatrix_zero_one hn, affineDMatrix_one_zero hn, affineDMatrix_last_one hn,
+    affineDMatrix_one_last hn]
+  simp [Matrix.trace_fin_two]
 
 end TauCeti

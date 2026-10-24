@@ -92,6 +92,12 @@ theorem residuePairing_zero : residuePairing R L 0 = 0 := by
 theorem residuePairing_smul (r : R) : residuePairing R L (r • Φ) = r • residuePairing R L Φ := by
   simp [residuePairing, LinearMap.BilinForm.tmul]
 
+/-- The residue pairing is additive in the form. -/
+@[simp]
+theorem residuePairing_add (Ψ : LinearMap.BilinForm R L) :
+    residuePairing R L (Φ + Ψ) = residuePairing R L Φ + residuePairing R L Ψ := by
+  simp [residuePairing, LinearMap.BilinForm.tmul, TensorProduct.tmul_add]
+
 /-- The finite coefficient formula for the residue pairing: if `u` has order at least `M` and `v`
 has order at least `N`, then the pairing is `∑_{N ≤ n ≤ -M} n Φ(u₋ₙ, vₙ)`. -/
 theorem residuePairing_eq_sum {M N : ℤ} {u v : currentAlgebra R L}
