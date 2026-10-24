@@ -52,6 +52,8 @@ characteristic local facts behind the Koszul construction of that connection:
   bilinear map.
 * `TauCeti.Manifold.contDiffOn_christoffelSecondKind` and
   `TauCeti.Manifold.contDiffAt_christoffelSecondKind`: smoothness of `Γ`.
+* `TauCeti.Manifold.hasFDerivAt_repr_christoffelSecondKind`: differentiability of the coordinates
+  of `Γ` in a basis.
 * `TauCeti.Manifold.repr_christoffelSecondKind`: the classical index formula.
 
 ## References
@@ -205,38 +207,27 @@ theorem eq_christoffelSecondKind_iff (hsymm : ∀ᶠ y in 𝓝 x, (g y).toBilinF
 
 /-! ### Smoothness -/
 
+/-- **Pointwise smoothness of the Christoffel symbols of the first kind.** If a field of bilinear
+forms is `C^m` at `x`, then its Christoffel symbols of the first kind are `C^n` at `x`, for
+`n + 1 ≤ m`. -/
+theorem contDiffAt_christoffelFirstKind {m n : WithTop ℕ∞} (hg : ContDiffAt ℝ m g x)
+    (hnm : n + 1 ≤ m) (u v : E) :
+    ContDiffAt ℝ n (fun y ↦ christoffelFirstKind g y u v) x := by
+  -- Each coefficient `y ↦ Dg_y(a)(b, c)` is `C^n` at `x`, since `Dg` is.
+  have hcoeff (a b c : E) : ContDiffAt ℝ n (fun y ↦ fderiv ℝ g y a b c) x :=
+    (((hg.fderiv_right hnm).clm_apply contDiffAt_const).clm_apply contDiffAt_const).clm_apply
+      contDiffAt_const
+  rw [← contDiffWithinAt_univ]
+  refine contDiffWithinAt_clm_apply.2 fun w ↦ ?_
+  simp only [christoffelFirstKind_apply]
+  exact ((((hcoeff u v w).add (hcoeff v u w)).sub (hcoeff w u v)).div_const 2).contDiffWithinAt
+
 /-- The Christoffel symbols of the first kind of a `C^m` field of bilinear forms are `C^n` on
 an open set, for `n + 1 ≤ m`. -/
 theorem contDiffOn_christoffelFirstKind {m n : WithTop ℕ∞} {U : Set E} (hU : IsOpen U)
     (hg : ContDiffOn ℝ m g U) (hnm : n + 1 ≤ m) (u v : E) :
-    ContDiffOn ℝ n (fun y ↦ christoffelFirstKind g y u v) U := by
-  -- Each coefficient `y ↦ Dg_y(a)(b, c)` is the derivative of the `C^m` function `y ↦ g y b c`.
-  have hcoeff (a b c : E) : ContDiffOn ℝ n (fun y ↦ fderiv ℝ g y a b c) U := by
-    have h : ContDiffOn ℝ m (fun y ↦ g y b c) U :=
-      (hg.clm_apply contDiffOn_const).clm_apply contDiffOn_const
-    refine ((h.fderiv_of_isOpen hU hnm).clm_apply (contDiffOn_const (c := a))).congr
-      fun y hy ↦ ?_
-    have hd : DifferentiableAt ℝ g y :=
-      (hg.contDiffAt (hU.mem_nhds hy)).differentiableAt (fun h0 ↦ by simp [h0] at hnm)
-    rw [fderiv_clm_apply_const_apply (hd.clm_apply (differentiableAt_const b)),
-      fderiv_clm_apply_const_apply hd]
-  refine contDiffOn_clm_apply.2 fun w ↦ ?_
-  simp only [christoffelFirstKind_apply]
-  exact (((hcoeff u v w).add (hcoeff v u w)).sub (hcoeff w u v)).div_const 2
-
-/-- **Smoothness of the Christoffel symbols.** If a field of nondegenerate bilinear forms is
-`C^m` on an open set, then its Christoffel symbols of the second kind are `C^n` there, for
-`n + 1 ≤ m`. -/
-theorem contDiffOn_christoffelSecondKind {m n : WithTop ℕ∞} {U : Set E} (hU : IsOpen U)
-    (hg : ContDiffOn ℝ m g U) (hnm : n + 1 ≤ m)
-    (hnd : ∀ y ∈ U, (g y).toBilinForm.Nondegenerate) :
-    ContDiffOn ℝ n (christoffelSecondKind g) U := by
-  have hinv : ContDiffOn ℝ n (fun y ↦ (g y).inverse) U := fun y hy ↦
-    ((isInvertible_of_separatingLeft (hnd y hy).1).contDiffAt_map_inverse.comp y
-      ((hg.of_le (le_self_add.trans hnm)).contDiffAt (hU.mem_nhds hy))).contDiffWithinAt
-  refine contDiffOn_clm_apply.2 fun u ↦ contDiffOn_clm_apply.2 fun v ↦ ?_
-  simp only [christoffelSecondKind_apply]
-  exact hinv.clm_apply (contDiffOn_christoffelFirstKind hU hg hnm u v)
+    ContDiffOn ℝ n (fun y ↦ christoffelFirstKind g y u v) U := fun _ hy ↦
+  (contDiffAt_christoffelFirstKind (hg.contDiffAt (hU.mem_nhds hy)) hnm u v).contDiffWithinAt
 
 /-- **Pointwise smoothness of the Christoffel symbols.** If a field of bilinear forms is `C^m` at
 `x` and nondegenerate at `x`, then its Christoffel symbols of the second kind are `C^n` at `x`, for
@@ -247,18 +238,33 @@ theorem contDiffAt_christoffelSecondKind {m n : WithTop ℕ∞} (hg : ContDiffAt
   have hinv : ContDiffAt ℝ n (fun y ↦ (g y).inverse) x :=
     (isInvertible_of_separatingLeft hnd.1).contDiffAt_map_inverse.comp x
       (hg.of_le (le_self_add.trans hnm))
-  -- Each coefficient `y ↦ Dg_y(a)(b, c)` is `C^n` at `x`, since `Dg` is.
-  have hcoeff (a b c : E) : ContDiffAt ℝ n (fun y ↦ fderiv ℝ g y a b c) x :=
-    (((hg.fderiv_right hnm).clm_apply contDiffAt_const).clm_apply contDiffAt_const).clm_apply
-      contDiffAt_const
   rw [← contDiffWithinAt_univ]
   refine contDiffWithinAt_clm_apply.2 fun u ↦ contDiffWithinAt_clm_apply.2 fun v ↦ ?_
   simp only [christoffelSecondKind_apply]
-  refine (hinv.clm_apply ?_).contDiffWithinAt
-  rw [← contDiffWithinAt_univ]
-  refine contDiffWithinAt_clm_apply.2 fun w ↦ ?_
-  simp only [christoffelFirstKind_apply]
-  exact ((((hcoeff u v w).add (hcoeff v u w)).sub (hcoeff w u v)).div_const 2).contDiffWithinAt
+  exact (hinv.clm_apply (contDiffAt_christoffelFirstKind hg hnm u v)).contDiffWithinAt
+
+/-- **Smoothness of the Christoffel symbols.** If a field of nondegenerate bilinear forms is
+`C^m` on an open set, then its Christoffel symbols of the second kind are `C^n` there, for
+`n + 1 ≤ m`. -/
+theorem contDiffOn_christoffelSecondKind {m n : WithTop ℕ∞} {U : Set E} (hU : IsOpen U)
+    (hg : ContDiffOn ℝ m g U) (hnm : n + 1 ≤ m)
+    (hnd : ∀ y ∈ U, (g y).toBilinForm.Nondegenerate) :
+    ContDiffOn ℝ n (christoffelSecondKind g) U := fun y hy ↦
+  (contDiffAt_christoffelSecondKind (hg.contDiffAt (hU.mem_nhds hy)) hnm
+    (hnd y hy)).contDiffWithinAt
+
+/-- The coordinates of the Christoffel symbols of the second kind of a `C²` field `g` of bilinear
+forms, nondegenerate at `x`, are differentiable at `x`, with derivative the coordinates of the
+derivative of the Christoffel symbols. -/
+theorem hasFDerivAt_repr_christoffelSecondKind {ι : Type*} (b : Module.Basis ι ℝ E)
+    (hg : ContDiffAt ℝ 2 g x) (hnd : (g x).toBilinForm.Nondegenerate) (i j k : ι) :
+    HasFDerivAt (fun y ↦ b.repr (christoffelSecondKind g y (b i) (b j)) k)
+      ((b.coord k).toContinuousLinearMap.comp
+        (fderiv ℝ (fun y ↦ christoffelSecondKind g y (b i) (b j)) x)) x := by
+  have hΓ : DifferentiableAt ℝ (christoffelSecondKind g) x :=
+    (contDiffAt_christoffelSecondKind (n := 1) hg (by norm_num) hnd).differentiableAt one_ne_zero
+  exact (b.coord k).toContinuousLinearMap.hasFDerivAt.comp x
+    ((hΓ.clm_apply (differentiableAt_const _)).clm_apply (differentiableAt_const _)).hasFDerivAt
 
 /-! ### The index formula -/
 

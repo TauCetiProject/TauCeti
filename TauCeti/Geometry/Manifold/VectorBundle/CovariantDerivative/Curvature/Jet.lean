@@ -37,16 +37,16 @@ directions of `b`. From such a jet we define
 * the curvature coefficients `riemannOfJet`, the `l`-th coordinate of `R(∂ᵢ, ∂ⱼ)∂ₖ`;
 * the scalar curvature `scalarCurvatureOfJet`, the contraction `Σⱼₖ g^(jk) Σᵢ Rⁱᵢⱼₖ`.
 
-The scalar curvature of a jet depends continuously on the jet wherever its Gram matrix is
-invertible (`ContinuousAt.scalarCurvatureOfJet`). For the Levi-Civita connection of a smooth
-metric read in a chart, the Christoffel symbols, their derivatives along the coordinate frame and
-the curvature coefficients are those of the coordinate jet of the chart metric, for metrics of any
-signature; for a smooth Riemannian metric, so is the scalar curvature
+These functions, and in particular the scalar curvature of a jet, depend continuously on the jet
+wherever its Gram matrix is invertible (`ContinuousAt.scalarCurvatureOfJet`). For the Levi-Civita
+connection of a smooth metric read in a chart, the Christoffel symbols, their derivatives along the
+coordinate frame and the curvature coefficients are those of the coordinate jet of the chart
+metric, for metrics of any signature; for a smooth Riemannian metric, so is the scalar curvature
 (`Bundle.ContMDiffRiemannianMetric.scalarCurvature_eq_scalarCurvatureOfJet`). Thus scalar
 curvature is a continuous second-order differential expression in the metric. In particular, for
 a family of metrics whose chart coefficients and their first and second derivatives depend jointly
 continuously on a parameter, the scalar curvature is jointly continuous in the parameter and the
-point (`Bundle.ContMDiffRiemannianMetric.continuousAt_scalarCurvature_of_continuousAt_chartMetric`).
+point (`TauCeti.Manifold.continuousAt_scalarCurvature_of_continuousAt_chartMetric`).
 This is the input for the openness of positive scalar curvature under `C²` perturbations and for
 uniform scalar-curvature bounds over compact families of metrics.
 
@@ -66,8 +66,10 @@ J. M. Lee, *Introduction to Riemannian Manifolds*, 2nd ed., Springer GTM 176 (20
   `TauCeti.Manifold.riemannOfJet` and `TauCeti.Manifold.scalarCurvatureOfJet`: the Christoffel
   symbols, their derivatives, the curvature coefficients and the scalar curvature of a coordinate
   jet.
-* `ContinuousAt.scalarCurvatureOfJet`: the scalar curvature of a jet is continuous at jets with
-  invertible Gram matrix.
+* `ContinuousAt.christoffelOfJet`, `ContinuousAt.christoffelDerivOfJet`,
+  `ContinuousAt.riemannOfJet` and `ContinuousAt.scalarCurvatureOfJet`: the Christoffel symbols,
+  their derivatives, the curvature coefficients and the scalar curvature of a jet are continuous
+  at jets with invertible Gram matrix.
 * `TauCeti.Manifold.repr_fderiv_christoffelSecondKind_eq_christoffelDerivOfJet` and
   `TauCeti.Manifold.fderiv_repr_christoffelSecondKind_eq_christoffelDerivOfJet`: the derivatives
   of the Christoffel symbols of a field of symmetric nondegenerate bilinear forms on a vector space,
@@ -79,8 +81,8 @@ J. M. Lee, *Introduction to Riemannian Manifolds*, 2nd ed., Springer GTM 176 (20
   the curvature coefficients of a Levi-Civita connection in a chart.
 * `Bundle.ContMDiffRiemannianMetric.scalarCurvature_eq_scalarCurvatureOfJet`: the scalar curvature
   of a smooth Riemannian metric in a chart.
-* `Bundle.ContMDiffRiemannianMetric.continuousAt_scalarCurvature_of_continuousAt_chartMetric`:
-  joint continuity of scalar curvature along a `C²`-continuous family of metrics.
+* `TauCeti.Manifold.continuousAt_scalarCurvature_of_continuousAt_chartMetric`: joint continuity
+  of scalar curvature along a `C²`-continuous family of metrics.
 
 ## References
 
@@ -168,36 +170,64 @@ end Jet
 
 end TauCeti.Manifold
 
-open TauCeti.Manifold in
-/-- **Scalar curvature is continuous in the second-order jet of the metric.** The scalar curvature
-of a coordinate jet depends continuously on the jet at every jet whose Gram matrix is invertible. -/
-theorem ContinuousAt.scalarCurvatureOfJet {ι : Type*} [Fintype ι] [DecidableEq ι]
-    {X : Type*} [TopologicalSpace X] {g : X → Matrix ι ι ℝ} {dg : X → ι → ι → ι → ℝ}
-    {ddg : X → ι → ι → ι → ι → ℝ} {x : X} (hg : ContinuousAt g x) (hdet : (g x).det ≠ 0)
-    (hdg : ContinuousAt dg x) (hddg : ContinuousAt ddg x) :
-    ContinuousAt (fun y ↦ scalarCurvatureOfJet (g y) (dg y) (ddg y)) x := by
-  -- Every term is a finite sum of products of entries of `g⁻¹`, `dg` and `ddg`.
-  have hinv (k l : ι) : ContinuousAt (fun y ↦ (g y)⁻¹ k l) x :=
-    ((continuous_apply_apply k l).continuousAt.comp (continuousAt_matrix_inv _
-      (by rw [Ring.inverse_eq_inv']; exact continuousAt_inv₀ hdet))).comp hg
+/-! ### Continuity in the jet -/
+
+section Continuity
+
+open TauCeti.Manifold
+
+variable {ι : Type*} [Fintype ι] [DecidableEq ι] {X : Type*} [TopologicalSpace X]
+  {g : X → Matrix ι ι ℝ} {dg : X → ι → ι → ι → ℝ} {ddg : X → ι → ι → ι → ι → ℝ} {x : X}
+
+/-- The entries of the inverse of a continuous matrix are continuous where it is invertible. -/
+private theorem ContinuousAt.matrix_inv_apply (hg : ContinuousAt g x) (hdet : (g x).det ≠ 0)
+    (k l : ι) : ContinuousAt (fun y ↦ (g y)⁻¹ k l) x :=
+  ((continuous_apply_apply k l).continuousAt.comp (continuousAt_matrix_inv _
+    (by rw [Ring.inverse_eq_inv']; exact continuousAt_inv₀ hdet))).comp hg
+
+/-- The Christoffel symbols of a coordinate jet depend continuously on the jet at every jet whose
+Gram matrix is invertible. -/
+theorem ContinuousAt.christoffelOfJet (hg : ContinuousAt g x) (hdet : (g x).det ≠ 0)
+    (hdg : ContinuousAt dg x) (i j k : ι) :
+    ContinuousAt (fun y ↦ christoffelOfJet (g y) (dg y) i j k) x := by
+  have h₁ (i j k : ι) : ContinuousAt (fun y ↦ dg y i j k) x :=
+    (by fun_prop : Continuous fun f : ι → ι → ι → ℝ ↦ f i j k).continuousAt.comp hdg
+  exact continuousAt_const.mul (tendsto_finsetSum _ fun l _ ↦
+    (hg.matrix_inv_apply hdet k l).mul (((h₁ i j l).add (h₁ j i l)).sub (h₁ l i j)))
+
+/-- The derivatives of the Christoffel symbols of a coordinate jet depend continuously on the jet
+at every jet whose Gram matrix is invertible. -/
+theorem ContinuousAt.christoffelDerivOfJet (hg : ContinuousAt g x) (hdet : (g x).det ≠ 0)
+    (hdg : ContinuousAt dg x) (hddg : ContinuousAt ddg x) (m i j k : ι) :
+    ContinuousAt (fun y ↦ christoffelDerivOfJet (g y) (dg y) (ddg y) m i j k) x := by
   have h₁ (i j k : ι) : ContinuousAt (fun y ↦ dg y i j k) x :=
     (by fun_prop : Continuous fun f : ι → ι → ι → ℝ ↦ f i j k).continuousAt.comp hdg
   have h₂ (m i j k : ι) : ContinuousAt (fun y ↦ ddg y m i j k) x :=
     (by fun_prop : Continuous fun f : ι → ι → ι → ι → ℝ ↦ f m i j k).continuousAt.comp hddg
-  have hΓ (i j k : ι) : ContinuousAt (fun y ↦ christoffelOfJet (g y) (dg y) i j k) x :=
-    continuousAt_const.mul (tendsto_finsetSum _ fun l _ ↦
-      (hinv k l).mul (((h₁ i j l).add (h₁ j i l)).sub (h₁ l i j)))
-  have hDΓ (m i j k : ι) :
-      ContinuousAt (fun y ↦ christoffelDerivOfJet (g y) (dg y) (ddg y) m i j k) x :=
-    tendsto_finsetSum _ fun l _ ↦ (hinv k l).mul ((continuousAt_const.mul
-      (((h₂ m i j l).add (h₂ m j i l)).sub (h₂ m l i j))).sub
-        (tendsto_finsetSum _ fun q _ ↦ (h₁ m q l).mul (hΓ i j q)))
-  have hR (i j k l : ι) :
-      ContinuousAt (fun y ↦ riemannOfJet (g y) (dg y) (ddg y) i j k l) x :=
-    ((hDΓ i j k l).sub (hDΓ j i k l)).add (tendsto_finsetSum _ fun m _ ↦
-      ((hΓ j k m).mul (hΓ i m l)).sub ((hΓ i k m).mul (hΓ j m l)))
-  exact tendsto_finsetSum _ fun j _ ↦ tendsto_finsetSum _ fun k _ ↦
-    (hinv j k).mul (tendsto_finsetSum _ fun i _ ↦ hR i j k i)
+  exact tendsto_finsetSum _ fun l _ ↦ (hg.matrix_inv_apply hdet k l).mul ((continuousAt_const.mul
+    (((h₂ m i j l).add (h₂ m j i l)).sub (h₂ m l i j))).sub
+      (tendsto_finsetSum _ fun q _ ↦ (h₁ m q l).mul (hg.christoffelOfJet hdet hdg i j q)))
+
+/-- The curvature coefficients of a coordinate jet depend continuously on the jet at every jet
+whose Gram matrix is invertible. -/
+theorem ContinuousAt.riemannOfJet (hg : ContinuousAt g x) (hdet : (g x).det ≠ 0)
+    (hdg : ContinuousAt dg x) (hddg : ContinuousAt ddg x) (i j k l : ι) :
+    ContinuousAt (fun y ↦ riemannOfJet (g y) (dg y) (ddg y) i j k l) x := by
+  have hΓ := hg.christoffelOfJet hdet hdg
+  have hDΓ := hg.christoffelDerivOfJet hdet hdg hddg
+  exact ((hDΓ i j k l).sub (hDΓ j i k l)).add (tendsto_finsetSum _ fun m _ ↦
+    ((hΓ j k m).mul (hΓ i m l)).sub ((hΓ i k m).mul (hΓ j m l)))
+
+/-- **Scalar curvature is continuous in the second-order jet of the metric.** The scalar curvature
+of a coordinate jet depends continuously on the jet at every jet whose Gram matrix is invertible. -/
+theorem ContinuousAt.scalarCurvatureOfJet (hg : ContinuousAt g x) (hdet : (g x).det ≠ 0)
+    (hdg : ContinuousAt dg x) (hddg : ContinuousAt ddg x) :
+    ContinuousAt (fun y ↦ scalarCurvatureOfJet (g y) (dg y) (ddg y)) x :=
+  tendsto_finsetSum _ fun j _ ↦ tendsto_finsetSum _ fun k _ ↦
+    (hg.matrix_inv_apply hdet j k).mul
+      (tendsto_finsetSum _ fun i _ ↦ hg.riemannOfJet hdet hdg hddg i j k i)
+
+end Continuity
 
 namespace TauCeti.Manifold
 
@@ -283,20 +313,6 @@ theorem repr_fderiv_christoffelSecondKind_eq_christoffelDerivOfJet (b : Basis ι
       hnd.self_of_nhds, ← fderiv_clm_apply_const_apply₂ hGd]
   exact Finset.sum_congr rfl fun q _ ↦ mul_comm _ _
 
-omit [Fintype ι] [DecidableEq ι] in
-/-- The coordinates of the Christoffel symbols of the second kind of a `C²` field `G` of bilinear
-forms, nondegenerate at `z`, are differentiable at `z`, with derivative the coordinates of the
-derivative of the Christoffel symbols. -/
-theorem hasFDerivAt_repr_christoffelSecondKind (b : Basis ι ℝ E) (hG : ContDiffAt ℝ 2 G z)
-    (hnd : (G z).toBilinForm.Nondegenerate) (i j k : ι) :
-    HasFDerivAt (fun y ↦ b.repr (christoffelSecondKind G y (b i) (b j)) k)
-      ((b.coord k).toContinuousLinearMap.comp
-        (fderiv ℝ (fun y ↦ christoffelSecondKind G y (b i) (b j)) z)) z := by
-  have hΓ : DifferentiableAt ℝ (christoffelSecondKind G) z :=
-    (contDiffAt_christoffelSecondKind (n := 1) hG (by norm_num) hnd).differentiableAt one_ne_zero
-  exact (b.coord k).toContinuousLinearMap.hasFDerivAt.comp z
-    ((hΓ.clm_apply (differentiableAt_const _)).clm_apply (differentiableAt_const _)).hasFDerivAt
-
 /-- **The derivatives of the coordinates of the Christoffel symbols.** For a `C²` field `G` of
 symmetric nondegenerate bilinear forms near `z`, the derivative along `b m` of the `k`-th
 coordinate of `Γ(b i, b j)` is `christoffelDerivOfJet` of the coordinate jet `(g, ∂g, ∂²g)` of `G`
@@ -329,24 +345,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {g : ContMDiffNondegenerateMetric (I := I) (M := M)}
   {cov : CovariantDerivative I E (fun x : M ↦ TangentSpace I x)}
   {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Basis ι ℝ E) {x₀ y : M}
-
-omit [Fintype ι] [DecidableEq ι] in
-/-- Near a point of the chart domain at `x₀` whose chart image is interior, the Christoffel
-symbols of a Levi-Civita connection of `g`, in the frame of `b`, are the coordinates of the
-Christoffel symbols of the second kind of the chart metric. -/
-theorem IsLeviCivitaConnection.christoffelSymbol_eventuallyEq [Finite ι]
-    (h : g.IsLeviCivitaConnection cov) (hy : y ∈ (extChartAt I x₀).source)
-    (hint : extChartAt I x₀ y ∈ interior (range I)) (i j k : ι) :
-    christoffelSymbol I b (trivializationAt E (TangentSpace I) x₀) cov i j k =ᶠ[𝓝 y]
-      fun y' ↦ b.repr
-        (christoffelSecondKind (g.chartMetric x₀) (extChartAt I x₀ y') (b i) (b j)) k := by
-  filter_upwards [(isOpen_extChartAt_source x₀).mem_nhds hy,
-    (continuousAt_extChartAt' hy).preimage_mem_nhds (isOpen_interior.mem_nhds hint)]
-    with y' hy' hint'
-  have := Fintype.ofFinite ι
-  rw [← coord_christoffelMap_apply_basis b (cov.isCovariantDerivativeOn (s := _))
-    (by simpa using hy') i j k, h.christoffelMap_apply_eq_christoffelSecondKind b hy' hint',
-    Basis.coord_apply]
 
 /-- At a point `y` of the chart domain at `x₀` whose chart image `z` is interior, the Christoffel
 symbol `Γᵏᵢⱼ` of a Levi-Civita connection of `g`, in the frame of `b`, is `christoffelOfJet` of the
@@ -486,6 +484,8 @@ theorem scalarCurvature_eq_scalarCurvatureOfJet (hy : y ∈ (extChartAt I x₀).
     simp only [Matrix.gram_apply, LinearMap.toMatrix₂_apply, ContinuousLinearMap.toBilinForm_apply,
       ContMDiffNondegenerateMetric.chartMetric_extChartAt_apply_basis _ b hy, hB,
       toNondegenerateMetric_apply, inner_riemannianBundle]
+    -- The local `RiemannianBundle` instance is `⟨g.toRiemannianMetric⟩`, so its inner product on
+    -- `T_y M` is `g.toRiemannianMetric` applied to the two vectors, by definition.
     rfl
   rw [scalarCurvature_def, CovariantDerivative.scalarCurvature_apply,
     TauCeti.bilinFormTrace_eq_sum_inv_gram _ B, hgram, scalarCurvatureOfJet]
@@ -502,6 +502,17 @@ theorem scalarCurvature_eq_scalarCurvatureOfJet (hy : y ∈ (extChartAt I x₀).
     hbase (hframe i) (hframe j) (hframe k),
     ← e.localFrameCoeff_apply_of_mem_baseSet (I := I) b hbase,
     hlc.localFrameCoeff_curvatureOperator_eq_riemannOfJet b hy hint]
+
+end Bundle.ContMDiffRiemannianMetric
+
+/-! ### Continuity of scalar curvature along families of metrics -/
+
+namespace TauCeti.Manifold
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [T2Space M] [ChartedSpace H M] [IsManifold I ∞ M]
+  {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Basis ι ℝ E)
 
 /-- **Scalar curvature is continuous along `C²`-continuous families of metrics.** Let `g p` be a
 family of smooth Riemannian metrics indexed by a topological space `P`, and `y₀` a point whose
@@ -537,4 +548,4 @@ theorem continuousAt_scalarCurvature_of_continuousAt_chartMetric {P : Type*} [To
     hchart.preimage_mem_nhds (isOpen_interior.mem_nhds hint)] with q hq hq'
   exact ((g q.1).scalarCurvature_eq_scalarCurvatureOfJet b hq hq').symm
 
-end Bundle.ContMDiffRiemannianMetric
+end TauCeti.Manifold

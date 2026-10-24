@@ -27,11 +27,10 @@ curvature is perturbed, for instance when a path of such metrics is smoothed or 
 
 ## Main results
 
-* `Bundle.ContMDiffRiemannianMetric.exists_pos_le_scalarCurvature_of_isCompact`: a uniform
-  positive lower bound on a compact set of parameters and points where the scalar curvature is
-  positive.
-* `Bundle.ContMDiffRiemannianMetric.exists_pos_forall_le_scalarCurvature`: a compact family of
-  metrics of positive scalar curvature on a compact manifold has a common positive lower bound.
+* `TauCeti.Manifold.exists_pos_le_scalarCurvature_of_isCompact`: a uniform positive lower bound
+  on a compact set of parameters and points where the scalar curvature is positive.
+* `TauCeti.Manifold.exists_pos_forall_le_scalarCurvature`: a compact family of metrics of positive
+  scalar curvature on a compact manifold has a common positive lower bound.
 
 ## References
 
@@ -46,7 +45,7 @@ open scoped ContDiff Manifold
 
 noncomputable section
 
-namespace Bundle.ContMDiffRiemannianMetric
+namespace TauCeti.Manifold
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
@@ -94,7 +93,7 @@ theorem exists_pos_forall_le_scalarCurvature [CompactSpace P] [CompactSpace M]
     ∃ ε : ℝ, 0 < ε ∧ ∀ p x, ε ≤ (g p).scalarCurvature x := by
   obtain ⟨ε, hε, hle⟩ := exists_pos_le_scalarCurvature_of_isCompact g b isCompact_univ
     (fun q _ ↦ h₀ q.1 q.2) (fun q _ ↦ h₁ q.1 q.2) (fun q _ ↦ h₂ q.1 q.2)
-    fun q _ ↦ (hasPositiveScalarCurvature_iff _).1 (hpos q.1) q.2
+    fun q _ ↦ (g q.1).hasPositiveScalarCurvature_iff.1 (hpos q.1) q.2
   exact ⟨ε, hε, fun p x ↦ hle (p, x) (mem_univ _)⟩
 
-end Bundle.ContMDiffRiemannianMetric
+end TauCeti.Manifold
