@@ -6,6 +6,7 @@ Authors: Wentao Li
 module
 
 public import TauCeti.Algebra.Module.GradedModule.GradedObject
+public import Mathlib.Algebra.GradedMulAction
 public import Mathlib.RingTheory.GradedAlgebra.Basic
 
 /-!
@@ -59,7 +60,7 @@ def productCarrier : Submodule R (∀ j, M j) :=
 /-- Every homogeneous family belongs to the graded product. -/
 theorem productPiece_le_productCarrier (p : ℤ) : productPiece G p ≤ productCarrier G := by
   intro x hx
-  exact ⟨DirectSum.lof R ℤ (productPiece G) p ⟨x, hx⟩,
+  exact ⟨DirectSum.lof R ℤ (fun q ↦ productPiece G q) p ⟨x, hx⟩,
     DirectSum.coeLinearMap_lof (productPiece G) p ⟨x, hx⟩⟩
 
 private def productCoordinate (j : J) (p : ℤ) :
@@ -96,8 +97,9 @@ private theorem product_recompose_injective :
         LinearMap.congr_fun (productComponent_total G j) x
       _ = DirectSum.coeLinearMap (productPiece G) y j := congrFun hxy j
       _ = _ := (LinearMap.congr_fun (productComponent_total G j) y).symm
-  simpa only [productComponent, DirectSum.lmap_apply, productCoordinate] using
-    congrArg (fun t ↦ (t p).1) hj
+  have hp := congrArg (fun t ↦ (t p).1) hj
+  change (x p).1 j = (y p).1 j at hp
+  exact hp
 
 /-- The sum of the degreewise products is the total graded product. -/
 noncomputable def productEquiv :
@@ -111,7 +113,7 @@ theorem productEquiv_apply (x : ⨁ p, productPiece G p) :
     ((productEquiv G x : productCarrier G) : ∀ j, M j) =
       DirectSum.coeLinearMap (productPiece G) x := by
   rw [productEquiv]
-  exact LinearEquiv.ofInjective_apply _ _ _
+  exact LinearEquiv.ofInjective_apply _ _
 
 /-- The internal grading on the product, obtained from its degreewise product presentation. -/
 noncomputable def product : InternalGrading R (productCarrier G) :=
@@ -123,13 +125,13 @@ theorem mem_product_piece_iff (p : ℤ) (x : productCarrier G) :
   rw [product, map_piece, ofGradedObject_piece]
   constructor
   · rintro ⟨y, ⟨t, rfl⟩, rfl⟩
-    simpa only [productEquiv_apply, DirectSum.coeLinearMap_lof] using
+    simpa only [LinearEquiv.coe_coe, productEquiv_apply, DirectSum.coeLinearMap_lof] using
       (mem_productPiece_iff G p t.1).mp t.2
   · intro hx
     let t : productPiece G p := ⟨x.1, (mem_productPiece_iff G p x.1).mpr hx⟩
-    refine ⟨DirectSum.lof R ℤ (productPiece G) p t, ⟨t, rfl⟩, ?_⟩
+    refine ⟨DirectSum.lof R ℤ (fun q ↦ productPiece G q) p t, ⟨t, rfl⟩, ?_⟩
     apply Subtype.ext
-    simp only [productEquiv_apply, DirectSum.coeLinearMap_lof, t]
+    simp only [LinearEquiv.coe_coe, productEquiv_apply, DirectSum.coeLinearMap_lof, t]
 
 /-- Evaluation at one factor, as a linear map on the graded product. -/
 def productEval (j : J) : productCarrier G →ₗ[R] M j :=
@@ -138,7 +140,8 @@ def productEval (j : J) : productCarrier G →ₗ[R] M j :=
 /-- Evaluation is the corresponding coordinate of the underlying family. -/
 @[simp]
 theorem productEval_apply (j : J) (x : productCarrier G) : productEval G j x = x.1 j :=
-  rfl
+  by simp only [productEval, LinearMap.comp_apply, LinearMap.proj_apply,
+    Submodule.subtype_apply]
 
 section Lift
 
@@ -146,9 +149,11 @@ variable {N : Type z} [AddCommGroup N] [Module R N] (H : InternalGrading R N)
   (r : ℤ) (f : ∀ j, N →ₗ[R] M j)
   (hf : ∀ j, LinearMap.IsHomogeneous (f j) H.piece (G j).piece r)
 
+include H r hf in
 /-- A family of maps of one common degree has values in the total graded product: the finite
 degree support of the source element controls every component at once. -/
 theorem productLift_mem (x : N) : (fun j ↦ f j x) ∈ productCarrier G := by
+  classical
   change (LinearMap.pi f) x ∈ productCarrier G
   rw [← DirectSum.sum_support_decompose H.piece x, map_sum]
   apply (productCarrier G).sum_mem
@@ -164,8 +169,9 @@ noncomputable def productLiftLinear : N →ₗ[R] productCarrier G :=
 /-- The homogeneous lift has the prescribed components. -/
 @[simp]
 theorem productLiftLinear_apply (x : N) (j : J) :
-    (productLiftLinear G H r f hf x).1 j = f j x :=
-  rfl
+    (productLiftLinear G H r f hf x).1 j = f j x := by
+  change (LinearMap.pi f) x j = f j x
+  exact LinearMap.pi_apply f x j
 
 /-- The lift has the same common degree as its components. -/
 theorem productLiftLinear_isHomogeneous :
@@ -183,6 +189,8 @@ variable {S : Type*} [Ring S] [Algebra R S]
   (𝒜 : ℤ → Submodule R S) [GradedAlgebra 𝒜]
   [∀ j, SetLike.GradedSMul 𝒜 (G j).piece]
 
+include 𝒜 in
+omit [∀ j, IsScalarTower R S (M j)] in
 /-- The graded product is stable under the graded scalar action. A scalar also has finite
 homogeneous support, so multiplication preserves a common finite degree support. -/
 theorem productCarrier_smul_mem (a : S) {x : ∀ j, M j} (hx : x ∈ productCarrier G) :
@@ -208,7 +216,7 @@ theorem productCarrier_smul_mem (a : S) {x : ∀ j, M j} (hx : x ∈ productCarr
 def productScalarSubmodule : Submodule S (∀ j, M j) where
   carrier := productCarrier G
   zero_mem' := (productCarrier G).zero_mem
-  add_mem' := fun _ _ hx hy ↦ (productCarrier G).add_mem hx hy
+  add_mem' := fun hx hy ↦ (productCarrier G).add_mem hx hy
   smul_mem' := fun a _ hx ↦ productCarrier_smul_mem G 𝒜 a hx
 
 /-- Restricting scalars recovers the base-linear graded-product submodule. -/
@@ -229,8 +237,9 @@ noncomputable def productLift : N →ₗ[S] productScalarSubmodule G 𝒜 :=
 /-- The algebra-linear product lift is computed componentwise. -/
 @[simp]
 theorem productLift_apply (x : N) (j : J) :
-    (productLift G 𝒜 H r f hf x).1 j = f j x :=
-  rfl
+    (productLift G 𝒜 H r f hf x).1 j = f j x := by
+  change (LinearMap.pi f) x j = f j x
+  exact LinearMap.pi_apply f x j
 
 /-- The algebra-linear lift retains the common homogeneous degree. -/
 theorem productLift_isHomogeneous :

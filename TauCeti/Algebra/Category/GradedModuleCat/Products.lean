@@ -64,25 +64,37 @@ noncomputable def productπ (j : J) : product M ⟶ M j :=
     (by
       rw [LinearMap.isHomogeneous_def]
       intro p x hx
+      change x.1 j ∈ (M j).grading.piece (p + 0)
       simpa only [add_zero] using (mem_product_piece_iff M p x).mp hx j)
 
 /-- The projection is the corresponding coordinate of the family. -/
 @[simp]
-theorem productπ_apply (j : J) (x : product M) : (productπ M j).hom x = x.1 j :=
-  rfl
+theorem productπ_apply (j : J) (x : product M) : (productπ M j).hom x = x.1 j := by
+  change (LinearMap.proj (R := A) j) x.1 = x.1 j
+  exact LinearMap.proj_apply (R := A) j x.1
 
 /-- A family of degree-zero maps lifts into the degreewise product. -/
 noncomputable def productLift {N : GradedModuleCat.{v} 𝒜} (f : ∀ j, N ⟶ M j) :
     N ⟶ product M :=
   ofHom (InternalGrading.productLift (fun j ↦ (M j).grading) 𝒜 N.grading 0
-    (fun j ↦ (f j).hom) (fun j ↦ (f j).isHomogeneous))
-    (InternalGrading.productLift_isHomogeneous _ _ _ _ _ _)
+    (fun j ↦ (f j).hom) (fun j ↦ by
+      rw [LinearMap.isHomogeneous_def]
+      intro p x hx
+      simpa only [LinearMap.restrictScalars_apply] using (f j).isHomogeneous.map_mem hx))
+    (by
+      rw [LinearMap.isHomogeneous_def]
+      intro p x hx
+      apply (mem_product_piece_iff M (p + 0) _).mpr
+      intro j
+      rw [InternalGrading.productLift_apply]
+      exact (f j).isHomogeneous.map_mem hx)
 
 /-- The lift has the prescribed components. -/
 @[simp]
 theorem productLift_apply {N : GradedModuleCat.{v} 𝒜} (f : ∀ j, N ⟶ M j)
     (x : N) (j : J) : ((productLift M f).hom x).1 j = (f j).hom x := by
-  simp only [productLift, hom_ofHom, InternalGrading.productLift_apply]
+  dsimp only [productLift, hom_ofHom]
+  apply InternalGrading.productLift_apply
 
 /-- The lifted map followed by a projection is the prescribed map. -/
 @[reassoc (attr := simp)]
@@ -114,10 +126,10 @@ noncomputable def degreewiseProductFanIsLimit : IsLimit (degreewiseProductFan M)
     (fun s _ hm ↦ product_hom_ext M fun j ↦
       (hm j).trans (productLift_π M s.proj j).symm)
 
-noncomputable instance (X : J → GradedModuleCat.{v} 𝒜) : HasProduct X :=
+noncomputable instance hasProductDegreewise (X : J → GradedModuleCat.{v} 𝒜) : HasProduct X :=
   HasLimit.mk { cone := degreewiseProductFan X, isLimit := degreewiseProductFanIsLimit X }
 
 instance : HasProducts.{v} (GradedModuleCat.{v} 𝒜) :=
-  fun _ ↦ ⟨fun _ ↦ hasLimit_of_iso Discrete.natIsoFunctor⟩
+  fun _ ↦ ⟨fun _ ↦ hasLimit_of_iso Discrete.natIsoFunctor.symm⟩
 
 end TauCeti.GradedModuleCat

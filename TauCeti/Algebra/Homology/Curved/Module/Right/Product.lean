@@ -50,7 +50,12 @@ variable {R A : Type u} [CommRing R] [Ring A] [Algebra R A]
   {h : IsCurvedDGAlgebra 𝒜 d w} {J : Type u}
   (M : J → CurvedDGRightModuleCat.{u, u, u} h)
 
-private noncomputable def productDifferential :
+local instance : SetLike.GradedMonoid (InternalGrading.ofDecomposition 𝒜).piece := by
+  rw [InternalGrading.ofDecomposition_piece]
+  infer_instance
+
+/-- The componentwise differential on the underlying degreewise graded product. -/
+noncomputable def productDifferential :
     GradedModuleCat.product (fun j ↦ toGradedModuleCat (M j)) →ₗ[R]
       GradedModuleCat.product (fun j ↦ toGradedModuleCat (M j)) :=
   InternalGrading.productLiftLinear (fun j ↦ (toGradedModuleCat (M j)).grading)
@@ -63,15 +68,17 @@ private noncomputable def productDifferential :
       have hxj : x.1 j ∈ (M j).grading p := by
         simpa only [toGradedModuleCat_piece] using
           (GradedModuleCat.mem_product_piece_iff _ p x).mp hx j
-      simpa only [toGradedModuleCat_piece, LinearMap.comp_apply,
-        InternalGrading.productEval_apply] using
-        (M j).isCurvedDGRightModule.isHomogeneous.map_mem hxj)
+      rw [toGradedModuleCat_piece, LinearMap.comp_apply, InternalGrading.productEval_apply]
+      exact (M j).isCurvedDGRightModule.isHomogeneous.map_mem hxj)
 
-private theorem productDifferential_apply
+/-- The differential of the graded product is computed in each factor. -/
+@[simp]
+theorem productDifferential_apply
     (x : GradedModuleCat.product (fun j ↦ toGradedModuleCat (M j))) (j : J) :
     (productDifferential M x).1 j = (M j).differential (x.1 j) := by
-  simp only [productDifferential, InternalGrading.productLiftLinear_apply,
-    LinearMap.comp_apply, InternalGrading.productEval_apply]
+  dsimp only [productDifferential]
+  rw [InternalGrading.productLiftLinear_apply, LinearMap.comp_apply,
+    InternalGrading.productEval_apply]
 
 /-- The degreewise product with componentwise curved differential. -/
 @[expose, implicit_reducible]
@@ -89,8 +96,8 @@ noncomputable def product : CurvedDGRightModuleCat.{u, u, u} h := by
     have hxj : x.1 j ∈ (M j).grading p := by
       simpa only [toGradedModuleCat_piece] using
         (GradedModuleCat.mem_product_piece_iff _ p x).mp hx j
-    simpa only [toGradedModuleCat_piece, productDifferential_apply] using
-      (M j).isCurvedDGRightModule.isHomogeneous.map_mem hxj
+    rw [toGradedModuleCat_piece, productDifferential_apply]
+    exact (M j).isCurvedDGRightModule.isHomogeneous.map_mem hxj
   · intro p x hx a
     apply Subtype.ext
     funext j
@@ -110,14 +117,16 @@ noncomputable def product : CurvedDGRightModuleCat.{u, u, u} h := by
 /-- Product homogeneity is componentwise homogeneity of the family. -/
 theorem mem_product_grading_iff (p : ℤ) (x : product M) :
     x ∈ (product M).grading p ↔ ∀ j, x.1 j ∈ (M j).grading p := by
+  change x ∈ (GradedModuleCat.product (fun j ↦ toGradedModuleCat (M j))).grading.piece p ↔ _
   simpa only [toGradedModuleCat_piece] using
     (GradedModuleCat.mem_product_piece_iff (fun j ↦ toGradedModuleCat (M j)) p x)
 
 /-- The product differential is the differential in each factor. -/
 @[simp]
 theorem product_differential_apply (x : product M) (j : J) :
-    ((product M).differential x).1 j = (M j).differential (x.1 j) :=
-  productDifferential_apply M x j
+    ((product M).differential x).1 j = (M j).differential (x.1 j) := by
+  change (productDifferential M x).1 j = _
+  exact productDifferential_apply M x j
 
 /-- Forgetting the product differential gives the degreewise graded product. -/
 noncomputable def forgetDifferentialProductIso :
@@ -125,7 +134,8 @@ noncomputable def forgetDifferentialProductIso :
         (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (product M)) ≅
       GradedModuleCat.product (fun j ↦ toGradedModuleCat (M j)) :=
   GradedModuleCat.isoMk (LinearEquiv.refl Aᵐᵒᵖ _) fun p x ↦ by
-    change x ∈ (toGradedModuleCat (product M)).grading.piece p ↔ _
+    change x ∈ (toGradedModuleCat (product M)).grading.piece p ↔
+      x ∈ (GradedModuleCat.product (fun j ↦ toGradedModuleCat (M j))).grading.piece p
     rw [toGradedModuleCat_piece]
     exact (mem_product_grading_iff M p x).trans
       (by simpa only [toGradedModuleCat_piece] using
@@ -153,15 +163,19 @@ noncomputable def closedProductπ (j : J) :
   closedHomOf (GradedModuleCat.productπ (fun j ↦ toGradedModuleCat (M j)) j).hom
     (by
       intro p x hx
-      simpa only [GradedModuleCat.productπ_apply] using
-        (mem_product_grading_iff M p x).mp hx j)
-    (by intro x; simp only [GradedModuleCat.productπ_apply, product_differential_apply])
+      rw [GradedModuleCat.productπ_apply]
+      exact (mem_product_grading_iff M p x).mp hx j)
+    (by
+      intro x
+      rw [GradedModuleCat.productπ_apply, GradedModuleCat.productπ_apply,
+        product_differential_apply])
 
 /-- On elements the closed projection is coordinate evaluation. -/
 @[simp]
 theorem closedHom_closedProductπ_apply (j : J) (x : product M) :
     closedHom (closedProductπ M j) x = x.1 j := by
-  simp only [closedProductπ, closedHom_closedHomOf, GradedModuleCat.productπ_apply]
+  rw [closedProductπ, closedHom_closedHomOf]
+  exact GradedModuleCat.productπ_apply _ _ _
 
 /-- A family of closed maps lifts into the degreewise product. -/
 noncomputable def closedProductLift {N : CurvedDGRightModuleCat.{u, u, u} h}
@@ -175,14 +189,15 @@ noncomputable def closedProductLift {N : CurvedDGRightModuleCat.{u, u, u} h}
       intro p x hx
       apply (mem_product_grading_iff M p _).mpr
       intro j
-      simpa only [GradedModuleCat.productLift_apply, forgetDifferential_map_hom] using
-        closedHom_mem (f j) hx)
+      rw [GradedModuleCat.productLift_apply, forgetDifferential_map_hom]
+      exact closedHom_mem (f j) hx)
     (by
       intro x
       apply Subtype.ext
       funext j
-      simp only [product_differential_apply, GradedModuleCat.productLift_apply,
-        forgetDifferential_map_hom, differential_closedHom])
+      rw [product_differential_apply, GradedModuleCat.productLift_apply,
+        GradedModuleCat.productLift_apply, forgetDifferential_map_hom]
+      exact differential_closedHom (f j) x)
 
 /-- The lifted closed map has the prescribed components. -/
 @[simp]
@@ -190,7 +205,7 @@ theorem closedHom_closedProductLift_apply {N : CurvedDGRightModuleCat.{u, u, u} 
     (f : ∀ j, ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N ⟶
       ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (M j)) (x : N) (j : J) :
     (closedHom (closedProductLift M f) x).1 j = closedHom (f j) x := by
-  simp only [closedProductLift, closedHom_closedHomOf, GradedModuleCat.productLift_apply,
+  rw [closedProductLift, closedHom_closedHomOf, GradedModuleCat.productLift_apply,
     forgetDifferential_map_hom]
 
 /-- The lifted closed map followed by a projection is the prescribed component. -/
@@ -238,7 +253,7 @@ noncomputable instance
 
 instance : HasProducts.{u}
     (ForgetEnrichment (CochainComplex (ModuleCat R) ℤ) (CurvedDGRightModuleCat.{u, u, u} h)) :=
-  fun _ ↦ ⟨fun _ ↦ hasLimit_of_iso Discrete.natIsoFunctor⟩
+  fun _ ↦ ⟨fun _ ↦ hasLimit_of_iso Discrete.natIsoFunctor.symm⟩
 
 /-- Componentwise homotopies glue to a homotopy into the product. Their common degree of minus
 one gives a uniform finite degree support on each source element. -/
@@ -254,8 +269,11 @@ theorem dgClosedToHomotopy_map_product_ext {N : CurvedDGRightModuleCat.{u, u, u}
   have hhom (j : J) : LinearMap.IsHomogeneous ((k j).1.restrictScalars R)
       (InternalGrading.ofDecomposition N.grading).piece
       (toGradedModuleCat (M j)).grading.piece (-1) := by
-    simpa only [InternalGrading.ofDecomposition_piece, toGradedModuleCat_piece] using
-      dgRightModuleCochains.mem_iff.mp (k j).2
+    rw [LinearMap.isHomogeneous_def]
+    intro p x hx
+    rw [toGradedModuleCat_piece]
+    exact (dgRightModuleCochains.mem_iff.mp (k j).2).map_mem
+      (by simpa only [InternalGrading.ofDecomposition_piece] using hx)
   let K := InternalGrading.productLift
     (fun j ↦ (toGradedModuleCat (M j)).grading)
     (InternalGrading.ofDecomposition 𝒜).opposite.piece
@@ -263,16 +281,22 @@ theorem dgClosedToHomotopy_map_product_ext {N : CurvedDGRightModuleCat.{u, u, u}
     hhom
   apply (quotient_map_eq_iff_exists_homotopy f g).mpr
   refine ⟨⟨K, ?_⟩, fun x ↦ ?_⟩
-  · rw [dgRightModuleCochains.mem_iff]
-    simpa only [K, InternalGrading.ofDecomposition_piece] using
-      InternalGrading.productLift_isHomogeneous
-        (fun j ↦ (toGradedModuleCat (M j)).grading)
-        (InternalGrading.ofDecomposition 𝒜).opposite.piece
-        (InternalGrading.ofDecomposition N.grading) (-1) (fun j ↦ (k j).1) hhom
+  · rw [dgRightModuleCochains.mem_iff, LinearMap.isHomogeneous_def]
+    intro p x hx
+    apply (mem_product_grading_iff M (p + -1) _).mpr
+    intro j
+    dsimp only [K, LinearMap.restrictScalars_apply]
+    rw [InternalGrading.productLift_apply]
+    exact (dgRightModuleCochains.mem_iff.mp (k j).2).map_mem hx
   · apply Subtype.ext
     funext j
-    simpa only [closedHom_comp, LinearMap.comp_apply, closedHom_closedProductπ_apply,
-      product_differential_apply, InternalGrading.productLift_apply, K] using hk j x
+    change (closedHom f x).1 j - (closedHom g x).1 j =
+      ((product M).differential (K x)).1 j + (K (N.differential x)).1 j
+    rw [product_differential_apply]
+    dsimp only [K]
+    rw [InternalGrading.productLift_apply, InternalGrading.productLift_apply]
+    simpa only [closedHom_comp, LinearMap.comp_apply,
+      closedHom_closedProductπ_apply] using hk j x
 
 /-- The fan of homotopy classes of the product projections. -/
 noncomputable abbrev homotopyProductFan : Fan fun j ↦ DGHomotopyCategory.of R (M j) :=
@@ -318,6 +342,6 @@ noncomputable instance (X : J → DGHomotopyCategory R (CurvedDGRightModuleCat.{
       isLimit := homotopyProductFanIsLimit _ }
 
 instance : HasProducts.{u} (DGHomotopyCategory R (CurvedDGRightModuleCat.{u, u, u} h)) :=
-  fun _ ↦ ⟨fun _ ↦ hasLimit_of_iso Discrete.natIsoFunctor⟩
+  fun _ ↦ ⟨fun _ ↦ hasLimit_of_iso Discrete.natIsoFunctor.symm⟩
 
 end TauCeti.CurvedDGRightModuleCat
