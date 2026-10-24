@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.Huber.TensorProduct.UniversalProperty
 public import Mathlib.Topology.Algebra.UniformRing
+public import TauCeti.RingTheory.Huber.Pair
 import TauCeti.RingTheory.Huber.Completion.Basic
 
 import TauCeti.RingTheory.Huber.AdicHom.Completion
@@ -22,7 +23,10 @@ Its two coprojections represent compatible continuous ring maps into complete Ha
 nonarchimedean commutative rings, with no adicness condition on these outgoing maps.
 
 This module constructs the ring and its continuous universal property. Rings of integral
-elements are additional data and are not part of this ring-level construction.
+elements are additional data and are not part of this ring-level construction; the only
+statement about them here is that closures of images of rings of integral elements of
+`B ⊗[A] C` are rings of integral elements of the completion. The completed tensor product of
+Huber pairs is in `TauCeti.RingTheory.Huber.TensorProduct.Pair`.
 
 ## References
 
@@ -150,6 +154,13 @@ theorem ker_toCompletion : RingHom.ker (toCompletion A B C) = (⊥ : Ideal (B �
 /-- Algebraic tensors are dense in the separated completed tensor ring. -/
 theorem denseRange_toCompletion : DenseRange (toCompletion A B C) := Completion.denseRange_coe
 
+/-- The closure of the image of a ring of integral elements of `B ⊗[A] C`, for the tensor
+topology, is a ring of integral elements of the completed tensor ring (Wedhorn, Lemma 7.47). -/
+theorem isRingOfIntegralElements_topologicalClosure_map {P : Subring (B ⊗[A] C)}
+    (hP : IsRingOfIntegralElements P) :
+    IsRingOfIntegralElements (P.map (toCompletion A B C)).topologicalClosure :=
+  hP.completion
+
 variable {A B C}
 
 /-- Continuous maps out of the completed tensor ring are determined by the two factors. -/
@@ -231,6 +242,14 @@ theorem existsUnique_lift (φ : B →+* R) (ψ : C →+* R)
   refine ⟨lift φ ψ h hφ hψ, ⟨continuous_lift φ ψ h hφ hψ, by simp, by simp⟩, ?_⟩
   rintro f ⟨hf, hfB, hfC⟩
   exact hom_ext hf (continuous_lift φ ψ h hφ hψ) (by simpa) (by simpa)
+
+/-- The extension of an adic left map is adic. -/
+theorem isAdicHom_lift (φ : B →+* R) (ψ : C →+* R)
+    (h : φ.comp (algebraMap A B) = ψ.comp (algebraMap A C))
+    (hφ : Continuous φ) (hψ : Continuous ψ) (hφa : IsAdicHom φ) :
+    IsAdicHom (lift φ ψ h hφ hψ) :=
+  IsAdicHom.of_comp ((lift_comp_inl φ ψ h hφ hψ).symm ▸ hφa) (continuous_inl A B C)
+    (continuous_lift φ ψ h hφ hψ)
 
 end CompletedTensor
 

@@ -44,8 +44,9 @@ variable (D : TensorDatum A B C)
 variable {R : Type*} [Ring R] (f : B ⊗[A] C →+* R)
 
 /-- Splitting a base-ideal power between the two factors controls the image of an entire
-tensor neighbourhood by the images of pure tensors. -/
-private theorem map_idealImage_le (H : AddSubgroup R) (n m : ℕ)
+tensor neighbourhood by the images of pure tensors: if `f (b ⊗ c) ∈ H` whenever `b` lies in
+`(I B₀)ⁿ` and `c` in `(I C₀)ᵐ`, then `f` maps the image of `Jⁿ⁺ᵐ` into `H`. -/
+theorem map_idealImage_le (H : AddSubgroup R) (n m : ℕ)
     (h : ∀ b : D.left.ringOfDefinition, b ∈ D.left.idealOfDefinition ^ n →
       ∀ c : D.right.ringOfDefinition, c ∈ D.right.idealOfDefinition ^ m →
         f ((b : B) ⊗ₜ[A] (c : C)) ∈ H) :

@@ -100,6 +100,13 @@ theorem isBounded_image (hf : IsAdicHom f) {S : Set A} (hS : IsBounded S) :
   exact hS.image_of_isOpen_map_extendedIdealOfDefinition P Q hf.continuous.continuousAt
     (heq ▸ Q.isOpen_extendedIdealOfDefinition)
 
+/-- Adic homomorphisms preserve power-boundedness. -/
+theorem isPowerBounded_map (hf : IsAdicHom f) {a : A} (ha : IsPowerBounded a) :
+    IsPowerBounded (f a) := by
+  refine isPowerBounded_iff.mpr <| (hf.isBounded_image (isPowerBounded_iff.mp ha)).subset ?_
+  rintro _ ⟨n, rfl⟩
+  exact ⟨a ^ n, ⟨n, rfl⟩, map_pow f a n⟩
+
 end IsAdicHom
 
 namespace IsAdicHom
