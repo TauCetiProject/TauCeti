@@ -46,6 +46,14 @@ The comultiplication of the alternating face map complex therefore passes to the
 * `CategoryTheory.Idempotents.DoldKan.laxMonoidalΓ`: the induced lax monoidal structure on the
   Dold–Kan functor `Γ`, with unit `CategoryTheory.Idempotents.DoldKan.Γ_ε` and tensorator
   `CategoryTheory.Idempotents.DoldKan.Γ_μ`.
+* `CategoryTheory.Idempotents.DoldKan.equivalence_counit_app`: the counit `N (Γ K) ⟶ K` of the
+  Dold–Kan equivalence is the projection onto the nondegenerate summands.
+* `CategoryTheory.Idempotents.DoldKan.ΓObjZeroIso`: the degree-zero term of `Γ K` is `K₀`.
+* `CategoryTheory.Idempotents.DoldKan.Γ_ε_app_zero_comp_ΓObjZeroIso_hom` and
+  `CategoryTheory.Idempotents.DoldKan.Γ_μ_app_zero_comp_ΓObjZeroIso_hom`: in degree zero, the unit
+  of `Γ` is the identity of `𝟙_ C` and its tensorator is the inclusion of `K₀ ⊗ L₀` into
+  `(K ⊗ L)₀`.  These describe the vertices of the mapping simplicial sets of the simplicial
+  enrichment of a differential graded category.
 
 ## References
 
@@ -336,5 +344,159 @@ lemma Γ_μ (K L : ChainComplex C ℕ) :
     (equivalence.toAdjunction.homEquiv_unit _ _ _)
 
 end Monoidal
+
+/-! ### The Dold–Kan correspondence in degree zero -/
+
+/-- The counit `N (Γ K) ⟶ K` of the Dold–Kan equivalence is the inclusion of the normalized
+chains of `Γ K` into its alternating face map complex, followed by the projection onto the
+nondegenerate summands of the splitting of `Γ K`, which are the terms of `K`. -/
+lemma equivalence_counit_app (K : ChainComplex C ℕ) :
+    equivalence.counit.app K = inclusionN.app (Γ.obj K) ≫ (N₁Γ₀.hom.app K).f := by
+  -- `Equivalence.counit` is by definition the forward map of `Equivalence.counitIso`
+  change ((equivalence (C := C)).counitIso.hom.app K) = _
+  rw [equivalence_counitIso, inclusionN_app]
+  have hη : η.hom.app K = (toKaroubiEquivalence (ChainComplex C ℕ)).inverse.map
+      (N₁Γ₀.hom.app K) ≫ (toKaroubiEquivalence (ChainComplex C ℕ)).unitInv.app K := by
+    simp only [η, Compatibility.equivalenceCounitIso]
+    -- the remaining associator and whiskering isomorphisms are identities by definition
+    simp
+    rfl
+  have h : (toKaroubiEquivalence (ChainComplex C ℕ)).functor.map (η.hom.app K) =
+      (toKaroubiEquivalence (ChainComplex C ℕ)).counit.app (N₁.obj (Γ.obj K)) ≫
+        N₁Γ₀.hom.app K := by
+    have key : ∀ {Y : Karoubi (ChainComplex C ℕ)}
+        (φ : Y ⟶ (toKaroubiEquivalence (ChainComplex C ℕ)).functor.obj K),
+        (toKaroubiEquivalence (ChainComplex C ℕ)).functor.map
+          ((toKaroubiEquivalence (ChainComplex C ℕ)).inverse.map φ ≫
+            (toKaroubiEquivalence (ChainComplex C ℕ)).unitInv.app K) =
+        (toKaroubiEquivalence (ChainComplex C ℕ)).counit.app Y ≫ φ := by
+      intro Y φ
+      rw [Functor.map_comp, Equivalence.fun_inv_map, ← Equivalence.counit_app_functor]
+      simp
+    rw [hη]
+    exact key (N₁Γ₀.hom.app K)
+  exact congrArg Karoubi.Hom.f h
+
+/-- The degree-zero term of the simplicial object `Γ K` is the degree-zero term of `K`: it is
+the only summand of the splitting of `Γ K` in degree zero. -/
+def ΓObjZeroIso (K : ChainComplex C ℕ) : (Γ.obj K) _⦋0⦌ ≅ K.X 0 where
+  hom := (Γ₀.splitting K).πSummand (SimplicialObject.Splitting.IndexSet.id (op ⦋0⦌))
+  inv := ((Γ₀.splitting K).cofan _).inj (SimplicialObject.Splitting.IndexSet.id (op ⦋0⦌))
+  hom_inv_id := (Γ₀.splitting K).hom_ext' _ _ fun A ↦ by
+    obtain rfl : A = SimplicialObject.Splitting.IndexSet.id (op ⦋0⦌) :=
+      (SimplicialObject.Splitting.IndexSet.eqId_iff_len_le A).2 (Nat.zero_le _)
+    erw [(Γ₀.splitting K).cofan_inj_πSummand_eq_id_assoc, Category.comp_id]
+  inv_hom_id := (Γ₀.splitting K).cofan_inj_πSummand_eq_id _
+
+/-- The isomorphism `CategoryTheory.Idempotents.DoldKan.ΓObjZeroIso` is natural in `K`. -/
+@[reassoc]
+lemma ΓObjZeroIso_hom_naturality {K L : ChainComplex C ℕ} (f : K ⟶ L) :
+    (Γ.map f).app (op ⦋0⦌) ≫ (ΓObjZeroIso L).hom = (ΓObjZeroIso K).hom ≫ f.f 0 := by
+  rw [← cancel_epi (ΓObjZeroIso K).inv, Iso.inv_hom_id_assoc]
+  simp only [ΓObjZeroIso, Γ_map_app]
+  erw [(Γ₀.splitting K).ι_desc_assoc, Category.assoc,
+    (Γ₀.splitting L).cofan_inj_πSummand_eq_id]
+  exact Category.comp_id _
+
+/-- In degree zero the normalized chains are all chains, since `PInfty` is the identity there. -/
+instance (X : SimplicialObject C) : IsIso ((inclusionN.app X).f 0) :=
+  ⟨(PInftyToN.app X).f 0, by rw [← comp_f, inclusionN_app_comp_PInftyToN_app, id_f],
+    by rw [← comp_f, PInftyToN_app_comp_inclusionN_app, PInfty_f_0]; rfl⟩
+
+/-- The degree-`n` component of the counit `N (Γ K) ⟶ K` of the Dold–Kan equivalence: the
+inclusion of normalized chains followed by the projection onto the nondegenerate summand. -/
+lemma equivalence_counit_app_f (K : ChainComplex C ℕ) (n : ℕ) :
+    (equivalence.counit.app K).f n = (inclusionN.app (Γ.obj K)).f n ≫
+      (Γ₀.splitting K).πSummand (SimplicialObject.Splitting.IndexSet.id (op ⦋n⦌)) := by
+  exact (HomologicalComplex.congr_hom (equivalence_counit_app K) n).trans
+    (congrArg (fun t ↦ (inclusionN.app (Γ.obj K)).f n ≫ t) (N₁Γ₀_hom_app_f_f K n))
+
+/-- In degree zero, a morphism `g : X ⟶ Γ K` agrees with its transpose `N X ⟶ K` along the
+Dold–Kan equivalence. -/
+private lemma inclusionN_app_f_zero_comp_app_zero_comp_ΓObjZeroIso_hom {X : SimplicialObject C}
+    {K : ChainComplex C ℕ} (g : X ⟶ Γ.obj K) :
+    (inclusionN.app X).f 0 ≫ g.app (op ⦋0⦌) ≫ (ΓObjZeroIso K).hom =
+      (N.map g ≫ equivalence.counit.app K).f 0 := by
+  have h : (N.map g).f 0 ≫ (inclusionN.app (Γ.obj K)).f 0 =
+      (inclusionN.app X).f 0 ≫ g.app (op ⦋0⦌) :=
+    HomologicalComplex.congr_hom (inclusionN.naturality g) 0
+  erw [comp_f, equivalence_counit_app_f, reassoc_of% h]
+  rfl
+
+section MonoidalZero
+
+attribute [local instance] HasFiniteBiproducts.of_hasFiniteCoproducts
+
+variable [MonoidalCategory C] [MonoidalPreadditive C]
+
+omit [Preadditive C] [IsIdempotentComplete C] [HasFiniteCoproducts C] [MonoidalCategory C]
+  [MonoidalPreadditive C] in
+/-- An equivalence transposes a morphism `F X ⟶ Y` to `X ⟶ G Y` and back. -/
+private lemma functor_map_unit_app_comp_inverse_map_comp_counit_app {D : Type*} [Category* D]
+    (e : C ≌ D) {X : C} {Y : D} (f : e.functor.obj X ⟶ Y) :
+    e.functor.map (e.unit.app X ≫ e.inverse.map f) ≫ e.counit.app Y = f := by
+  simp
+
+/-- The transpose of the unit of `Γ` is the counit of `N`. -/
+private lemma N_map_Γ_ε_comp_counit_app :
+    N.map (Functor.LaxMonoidal.ε (Γ : ChainComplex C ℕ ⥤ _)) ≫
+        equivalence.counit.app (𝟙_ (ChainComplex C ℕ)) =
+      Functor.OplaxMonoidal.η (N : SimplicialObject C ⥤ _) := by
+  rw [Γ_ε]
+  exact functor_map_unit_app_comp_inverse_map_comp_counit_app equivalence _
+
+/-- The transpose of the tensorator of `Γ` is the comultiplication of `N` followed by the
+counits. -/
+private lemma N_map_Γ_μ_comp_counit_app (K L : ChainComplex C ℕ) :
+    N.map (Functor.LaxMonoidal.μ (Γ : ChainComplex C ℕ ⥤ _) K L) ≫
+        equivalence.counit.app (K ⊗ L) =
+      Functor.OplaxMonoidal.δ N (Γ.obj K) (Γ.obj L) ≫
+        (equivalence.counit.app K ⊗ₘ equivalence.counit.app L) := by
+  rw [Γ_μ]
+  exact functor_map_unit_app_comp_inverse_map_comp_counit_app equivalence _
+
+/-- In degree zero, the unit `𝟙_ ⟶ Γ 𝟙_` of the lax monoidal functor `Γ` is the identity of
+`𝟙_ C`, up to the canonical isomorphisms with the degree-zero terms. -/
+@[reassoc]
+lemma Γ_ε_app_zero_comp_ΓObjZeroIso_hom :
+    (Functor.LaxMonoidal.ε (Γ : ChainComplex C ℕ ⥤ _)).app (op ⦋0⦌) ≫
+        (ΓObjZeroIso (𝟙_ _)).hom =
+      (singleObjXSelf (ComplexShape.down ℕ) 0 (𝟙_ C)).inv := by
+  rw [← cancel_epi ((inclusionN.app (𝟙_ (SimplicialObject C))).f 0),
+    inclusionN_app_f_zero_comp_app_zero_comp_ΓObjZeroIso_hom, N_map_Γ_ε_comp_counit_app, N_η,
+    comp_f, SimplicialObject.alternatingFaceMapComplex_η_f_zero]
+
+omit [MonoidalCategory C] [MonoidalPreadditive C] in
+/-- In degree zero, the counit `N (Γ K) ⟶ K` restricted along the projection onto normalized
+chains is the isomorphism `CategoryTheory.Idempotents.DoldKan.ΓObjZeroIso`. -/
+private lemma PInftyToN_app_f_zero_comp_counit_app_f_zero (K : ChainComplex C ℕ) :
+    (PInftyToN.app (Γ.obj K)).f 0 ≫ (equivalence.counit.app K).f 0 = (ΓObjZeroIso K).hom := by
+  have h : (PInftyToN.app (Γ.obj K)).f 0 ≫ (inclusionN.app (Γ.obj K)).f 0 = 𝟙 _ := by
+    rw [← comp_f, PInftyToN_app_comp_inclusionN_app, PInfty_f_0]; rfl
+  rw [equivalence_counit_app_f]
+  erw [reassoc_of% h]
+  rfl
+
+/-- In degree zero, the tensorator `Γ K ⊗ Γ L ⟶ Γ (K ⊗ L)` of the lax monoidal functor `Γ` is
+the inclusion of `K₀ ⊗ L₀` into `(K ⊗ L)₀`, up to the canonical isomorphisms with the
+degree-zero terms: the Alexander–Whitney map is the identity on `0`-simplices. -/
+@[reassoc]
+lemma Γ_μ_app_zero_comp_ΓObjZeroIso_hom (K L : ChainComplex C ℕ) :
+    (Functor.LaxMonoidal.μ (Γ : ChainComplex C ℕ ⥤ _) K L).app (op ⦋0⦌) ≫
+        (ΓObjZeroIso (K ⊗ L)).hom =
+      ((ΓObjZeroIso K).hom ⊗ₘ (ΓObjZeroIso L).hom) ≫ ιTensorObj K L 0 0 0 rfl := by
+  refine (cancel_epi ((inclusionN.app (Γ.obj K ⊗ Γ.obj L)).f 0)).1 ?_
+  rw [inclusionN_app_f_zero_comp_app_zero_comp_ΓObjZeroIso_hom, N_map_Γ_μ_comp_counit_app, N_δ]
+  simp only [comp_f, Category.assoc, SimplicialObject.alexanderWhitney_f]
+  erw [Fin.sum_univ_one]
+  simp only [Fin.val_zero, Nat.sub_zero, TauCeti.SimplexCategory.subinterval_zero_eq_id,
+    op_id, Functor.map_id, id_tensorHom_id, Category.id_comp]
+  congr 1
+  erw [← comp_f, tensorHom_comp_tensorHom, ι_tensorHom, comp_f,
+    PInftyToN_app_f_zero_comp_counit_app_f_zero, comp_f,
+    PInftyToN_app_f_zero_comp_counit_app_f_zero]
+  rfl
+
+end MonoidalZero
 
 end CategoryTheory.Idempotents.DoldKan
