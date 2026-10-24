@@ -37,6 +37,11 @@ A bijection of the underlying types transports a normal crystal structure
 (`TauCeti.NormalCrystal.congr`): the weight and the string lengths are pulled back and the root
 operators are conjugated, and the bijection itself is a strict isomorphism.
 
+A normal crystal restricts to any subset closed under the root operators
+(`TauCeti.NormalCrystal.restrict`), and the inclusion of such a subset is a strict morphism. The
+components of the crystal graph are subsets of this kind, which is how
+`TauCeti.RepresentationTheory.Crystal.Component` gives them a crystal structure.
+
 ## Main definitions
 
 * `TauCeti.NormalCrystal`: a normal crystal over a root datum with a base.
@@ -49,6 +54,9 @@ operators are conjugated, and the bijection itself is a strict isomorphism.
   underlying type.
 * `TauCeti.NormalCrystal.StrictHom.congr`, `TauCeti.NormalCrystal.StrictHom.congrInv`: the strict
   isomorphism implementing the transport and its inverse.
+* `TauCeti.NormalCrystal.restrict`: the restriction of a normal crystal to a subset closed under
+  the root operators, with the inclusion `TauCeti.NormalCrystal.StrictHom.restrictIncl` of a
+  closed subset as a strict morphism.
 
 ## Main results
 
@@ -70,6 +78,9 @@ operators are conjugated, and the bijection itself is a strict isomorphism.
   isomorphism are identities.
 * `TauCeti.NormalCrystal.StrictHom.eq_congr_of_bijective`: a bijective strict morphism exhibits
   its target as the transport of its source.
+* `TauCeti.NormalCrystal.restrict_e_eq_some_iff`,
+  `TauCeti.NormalCrystal.restrict_f_eq_some_iff`: the root operators of a restriction are those of
+  the ambient crystal, read through the subtype.
 
 ## References
 
@@ -424,11 +435,15 @@ theorem congr_φ (i : b.support) (x : B') :
 
 /-- Transport along a bijection, at the level of the raising operators: the raising operator of the
 transport is the transported raising operator of the source. -/
+-- Not `@[simp]`: the projection lemma `congr_e` rewrites the left-hand side, which `simpNF`
+-- rejects.
 theorem congr_e_eq_some_iff (i : b.support) (x y : B') :
     (c.congr e).e i x = some y ↔ c.e i (e.symm x) = some (e.symm y) := by
   rw [congr_e, Option.map_equiv_eq_some_iff]
 
 /-- Transport along a bijection, at the level of the lowering operators. -/
+-- Not `@[simp]`: the projection lemma `congr_f` rewrites the left-hand side, which `simpNF`
+-- rejects.
 theorem congr_f_eq_some_iff (i : b.support) (x y : B') :
     (c.congr e).f i x = some y ↔ c.f i (e.symm x) = some (e.symm y) := by
   rw [congr_f, Option.map_equiv_eq_some_iff]
@@ -598,6 +613,137 @@ theorem eq_congr_of_bijective {c : NormalCrystal P b B} {d : NormalCrystal P b B
       Equiv.ofBijective_apply_symm_apply ψ h]
 
 end StrictHom
+
+/-! ### Restriction to a closed subset -/
+
+section Restrict
+
+variable (c : NormalCrystal P b B)
+
+/-- The **restriction of a normal crystal** to a subset `s` closed under the root operators: the
+weight and the string lengths are those of `c`, and the root operators are those of `c`
+corestricted to `s`. -/
+def restrict (s : Set B)
+    (he : ∀ (i : b.support) (y : B), y ∈ s → ∀ z, c.e i y = some z → z ∈ s)
+    (hf : ∀ (i : b.support) (y : B), y ∈ s → ∀ z, c.f i y = some z → z ∈ s) :
+    NormalCrystal P b s where
+  wt y := c.wt y.1
+  e i y := (c.e i y.1).pmap Subtype.mk fun z hz => he i y.1 y.2 z hz
+  f i y := (c.f i y.1).pmap Subtype.mk fun z hz => hf i y.1 y.2 z hz
+  ε i y := c.ε i y.1
+  φ i y := c.φ i y.1
+  f_eq_some_iff := by
+    intro i y z
+    rw [Option.pmap_eq_some_iff, Option.pmap_eq_some_iff]
+    constructor
+    · rintro ⟨a, _ha, hfa, rfl⟩
+      exact ⟨y.1, y.2, c.f_eq_some_iff.1 hfa, rfl⟩
+    · rintro ⟨a, _ha, hea, rfl⟩
+      exact ⟨z.1, z.2, c.f_eq_some_iff.2 hea, rfl⟩
+  wt_of_e_eq_some := by
+    intro i y z h
+    rw [Option.pmap_eq_some_iff] at h
+    obtain ⟨a, _ha, ho, rfl⟩ := h
+    exact c.wt_of_e_eq_some ho
+  ε_eq_zero_iff := by
+    intro i y
+    rw [Option.pmap_eq_none_iff, c.ε_eq_zero_iff]
+  ε_of_e_eq_some := by
+    intro i y z h
+    rw [Option.pmap_eq_some_iff] at h
+    obtain ⟨a, _ha, ho, rfl⟩ := h
+    exact c.ε_of_e_eq_some ho
+  φ_eq_zero_iff := by
+    intro i y
+    rw [Option.pmap_eq_none_iff, c.φ_eq_zero_iff]
+  φ_sub_ε := fun i y => c.φ_sub_ε i y.1
+
+@[simp]
+theorem restrict_wt {s : Set B}
+    {he : ∀ (i : b.support) (y : B), y ∈ s → ∀ z, c.e i y = some z → z ∈ s}
+    {hf : ∀ (i : b.support) (y : B), y ∈ s → ∀ z, c.f i y = some z → z ∈ s} (y : s) :
+    (c.restrict s he hf).wt y = c.wt y.1 := (rfl)
+
+@[simp]
+theorem restrict_ε {s : Set B}
+    {he : ∀ (i : b.support) (y : B), y ∈ s → ∀ z, c.e i y = some z → z ∈ s}
+    {hf : ∀ (i : b.support) (y : B), y ∈ s → ∀ z, c.f i y = some z → z ∈ s}
+    (i : b.support) (y : s) :
+    (c.restrict s he hf).ε i y = c.ε i y.1 := (rfl)
+
+@[simp]
+theorem restrict_φ {s : Set B}
+    {he : ∀ (i : b.support) (y : B), y ∈ s → ∀ z, c.e i y = some z → z ∈ s}
+    {hf : ∀ (i : b.support) (y : B), y ∈ s → ∀ z, c.f i y = some z → z ∈ s}
+    (i : b.support) (y : s) :
+    (c.restrict s he hf).φ i y = c.φ i y.1 := (rfl)
+
+@[simp]
+theorem restrict_e_eq_some_iff {s : Set B}
+    {he : ∀ (i : b.support) (y : B), y ∈ s → ∀ z, c.e i y = some z → z ∈ s}
+    {hf : ∀ (i : b.support) (y : B), y ∈ s → ∀ z, c.f i y = some z → z ∈ s}
+    {i : b.support} {y z : s} :
+    (c.restrict s he hf).e i y = some z ↔ c.e i y.1 = some z.1 := by
+  simp only [restrict, Option.pmap_eq_some_iff]
+  constructor
+  · rintro ⟨a, _ha, ho, rfl⟩
+    exact ho
+  · intro ho
+    exact ⟨z.1, he i y.1 y.2 z.1 ho, ho, Subtype.ext rfl⟩
+
+@[simp]
+theorem restrict_f_eq_some_iff {s : Set B}
+    {he : ∀ (i : b.support) (y : B), y ∈ s → ∀ z, c.e i y = some z → z ∈ s}
+    {hf : ∀ (i : b.support) (y : B), y ∈ s → ∀ z, c.f i y = some z → z ∈ s}
+    {i : b.support} {y z : s} :
+    (c.restrict s he hf).f i y = some z ↔ c.f i y.1 = some z.1 := by
+  simp only [restrict, Option.pmap_eq_some_iff]
+  constructor
+  · rintro ⟨a, _ha, ho, rfl⟩
+    exact ho
+  · intro ho
+    exact ⟨z.1, hf i y.1 y.2 z.1 ho, ho, Subtype.ext rfl⟩
+
+@[simp]
+theorem restrict_e_eq_none_iff {s : Set B}
+    {he : ∀ (i : b.support) (y : B), y ∈ s → ∀ z, c.e i y = some z → z ∈ s}
+    {hf : ∀ (i : b.support) (y : B), y ∈ s → ∀ z, c.f i y = some z → z ∈ s}
+    {i : b.support} {y : s} :
+    (c.restrict s he hf).e i y = none ↔ c.e i y.1 = none := by
+  simp only [restrict, Option.pmap_eq_none_iff]
+
+@[simp]
+theorem restrict_f_eq_none_iff {s : Set B}
+    {he : ∀ (i : b.support) (y : B), y ∈ s → ∀ z, c.e i y = some z → z ∈ s}
+    {hf : ∀ (i : b.support) (y : B), y ∈ s → ∀ z, c.f i y = some z → z ∈ s}
+    {i : b.support} {y : s} :
+    (c.restrict s he hf).f i y = none ↔ c.f i y.1 = none := by
+  simp only [restrict, Option.pmap_eq_none_iff]
+
+/-- The inclusion of a subset closed under the root operators is a strict morphism. -/
+def StrictHom.restrictIncl (s : Set B)
+    (he : ∀ (i : b.support) (y : B), y ∈ s → ∀ z, c.e i y = some z → z ∈ s)
+    (hf : ∀ (i : b.support) (y : B), y ∈ s → ∀ z, c.f i y = some z → z ∈ s) :
+    StrictHom (c.restrict s he hf) c where
+  toFun y := y.1
+  wt_toFun _ := rfl
+  e_toFun i y := by
+    cases h : c.e i y.1 with
+    | none =>
+      have hz : (c.restrict s he hf).e i y = none := c.restrict_e_eq_none_iff.mpr h
+      rw [hz, Option.map_none]
+    | some z =>
+      have hz : (c.restrict s he hf).e i y = some ⟨z, he i y.1 y.2 z h⟩ :=
+        c.restrict_e_eq_some_iff.mpr h
+      rw [hz, Option.map_some]
+
+@[simp]
+theorem StrictHom.restrictIncl_apply (s : Set B)
+    (he : ∀ (i : b.support) (y : B), y ∈ s → ∀ z, c.e i y = some z → z ∈ s)
+    (hf : ∀ (i : b.support) (y : B), y ∈ s → ∀ z, c.f i y = some z → z ∈ s) (y : s) :
+    StrictHom.restrictIncl c s he hf y = y.1 := (rfl)
+
+end Restrict
 
 end NormalCrystal
 

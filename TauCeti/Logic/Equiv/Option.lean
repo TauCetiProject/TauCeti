@@ -23,6 +23,8 @@ namespace Option
 
 /-- An option is mapped to `some y` by an equivalence exactly when it is `some` of the preimage of
 `y`. -/
+-- Not `@[simp]`: the simp lemma `Option.map_eq_some_iff` rewrites the left-hand side to an
+-- existential, which `simpNF` rejects.
 theorem map_equiv_eq_some_iff {α β : Type*} {e : α ≃ β} {o : Option α} {y : β} :
     o.map e = some y ↔ o = some (e.symm y) := by
   rw [← Equiv.optionCongr_apply, ← Equiv.eq_symm_apply, ← Equiv.optionCongr_symm,
