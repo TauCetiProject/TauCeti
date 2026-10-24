@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.KrullDimension.Zero
 public import Mathlib.RingTheory.LocalProperties.Reduced
 public import TauCeti.RingTheory.CohenMacaulay.Basic
 public import TauCeti.RingTheory.RegularLocalRing.Locus
+import TauCeti.RingTheory.Ideal.AssociatedPrime.Basic
 import TauCeti.RingTheory.KrullDimension.Module
 
 /-!
@@ -204,23 +205,9 @@ theorem isReduced_iff_satisfiesSerreR_zero_and_satisfiesSerreS_one {R : Type u} 
   rw [Module.satisfiesSerreS_one_iff, hann]
   constructor
   · intro _
-    refine ⟨IsReduced.satisfiesSerreR_zero, Set.Subset.antisymm (fun p hp ↦ ?_) (by simpa [hann]
-      using Module.associatedPrimes.minimalPrimes_annihilator_subset_associatedPrimes R R)⟩
-    -- An associated prime `p = ann x` lies in a minimal prime `q` not containing `x ≠ 0`.
-    obtain ⟨hp, x, rfl⟩ := isAssociatedPrime_iff.1 (AssociatedPrimes.mem_iff.1 hp)
-    have hx0 : x ≠ 0 := fun h ↦ hp.ne_top (by simp [h])
-    obtain ⟨q, hq, hxq⟩ : ∃ q ∈ minimalPrimes R, x ∉ q := by
-      by_contra! h
-      have hx : x ∈ nilradical R := by
-        rw [nilradical, ← Ideal.sInf_minimalPrimes]
-        exact Submodule.mem_sInf.2 h
-      simp [nilradical_eq_zero, hx0] at hx
-    have hle : (⊥ : Submodule R R).colon {x} ≤ q := fun r hr ↦ by
-      refine (hq.1.1.mem_or_mem ?_).resolve_right hxq
-      rw [← smul_eq_mul, (Submodule.mem_bot R).1 (Submodule.mem_colon_singleton.1 hr)]
-      exact q.zero_mem
-    rw [le_antisymm hle (hq.2 ⟨hp, bot_le⟩ hle)]
-    exact hq
+    refine ⟨IsReduced.satisfiesSerreR_zero, Set.Subset.antisymm
+      (fun _ hp ↦ IsAssociatedPrime.mem_minimalPrimes_of_isReduced hp) (by simpa [hann]
+        using Module.associatedPrimes.minimalPrimes_annihilator_subset_associatedPrimes R R)⟩
   · -- An associated prime `P ⊇ ann x` is minimal by `(S_1)`, so `R_P` is regular by `(R_0)` and
     -- the nilpotent `x` dies in `R_P`: some `s ∉ P` kills `x`, contradicting `ann x ⊆ P`.
     rintro ⟨hR, hS⟩
