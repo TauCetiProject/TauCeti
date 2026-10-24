@@ -217,11 +217,13 @@ private theorem map_chartPointC :
       Matrix.SpecialLinearGroup.map (mapDomainAlgHom R R inclA).toRingHom chartPointA *
         Matrix.SpecialLinearGroup.transvection (zero_ne_one : (0 : Fin 2) ≠ 1)
           (single (-1, -1) (-1)) := by
-  have h := Matrix.SpecialLinearGroup.firstColumnSectionC_eq_sectionA_mul_transvection
+  have h := Matrix.SpecialLinearGroup.firstColumnSectionC_eq_firstColumnSectionA_mul_transvection
     (Units.map (mapDomainAlgHom R R inclA).toMonoidHom (chartUnitA (R := R)))
     (Units.map (mapDomainAlgHom R R inclC).toMonoidHom (chartUnitC (R := R)))
-  simpa [chartPointA, chartPointC, chartUnitA, chartUnitC, inclA, inclC,
-    single_mul_single, ← single_neg] using h
+  rw [chartPointA, chartPointC, Matrix.SpecialLinearGroup.map_firstColumnSectionA,
+    Matrix.SpecialLinearGroup.map_firstColumnSectionC]
+  convert h using 2 <;>
+    simp [chartUnitA, chartUnitC, inclA, inclC, single_mul_single]
 
 /-- A right invariant takes the same value at the two sections, compared in `R[ℤ × ℤ]`. -/
 private theorem mapDomain_chartEvalC {h : coordinateHopfAlgebra R 2}

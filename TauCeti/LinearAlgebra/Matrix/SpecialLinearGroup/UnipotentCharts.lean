@@ -189,7 +189,7 @@ theorem lowerLeftChartEquiv_symm_add (a : R) (c : Rˣ) (t s : R) :
 
 /-- On the overlap, the lower-left section is the upper-left section translated by
 `-a⁻¹c⁻¹`. -/
-theorem firstColumnSectionC_eq_sectionA_mul_transvection (a c : Rˣ) :
+theorem firstColumnSectionC_eq_firstColumnSectionA_mul_transvection (a c : Rˣ) :
     firstColumnSectionC (a : R) c = firstColumnSectionA a (c : R) *
       transvection (zero_ne_one : (0 : Fin 2) ≠ 1) (-((a⁻¹ : Rˣ) : R) * (c⁻¹ : Rˣ)) := by
   apply Subtype.ext
@@ -202,7 +202,7 @@ theorem firstColumnSectionC_eq_sectionA_mul_transvection (a c : Rˣ) :
   · linear_combination (↑(a⁻¹) : R) * c.mul_inv
 
 /-- The additive fiber coordinates differ by `a⁻¹c⁻¹` on the overlap. -/
-theorem firstColumn_fiberCoordinate_transition (g : SL(2, R)) (a c : Rˣ)
+theorem inv_mul_apply_one_one_eq_inv_mul_apply_zero_one_add (g : SL(2, R)) (a c : Rˣ)
     (ha : g 0 0 = a) (hc : g 1 0 = c) :
     (c⁻¹ : Rˣ) * g 1 1 = (a⁻¹ : Rˣ) * g 0 1 + (a⁻¹ : Rˣ) * (c⁻¹ : Rˣ) := by
   have hdet := g.2
