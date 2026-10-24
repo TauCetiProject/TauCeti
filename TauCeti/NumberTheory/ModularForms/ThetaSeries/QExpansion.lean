@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Module.ZLattice.Shell
 public import TauCeti.NumberTheory.ModularForms.ThetaSeries.Cusp
-import TauCeti.Analysis.SpecialFunctions.Exp.Periodic
 import TauCeti.NumberTheory.ModularForms.QExpansion.Basic
 
 /-!
@@ -86,20 +85,6 @@ private theorem cexp_pi_mul_I_mul_eq_qParam_pow (hh : 0 < h) {v : E} {m : ℕ}
   push_cast
   field_simp
 
-/-- Under `h ‖γ + v‖² ∈ 2ℤ` for all `v ∈ L`, with `h > 0`, the theta series of `γ + L` has
-period `h`. -/
-private theorem thetaCoset_vadd_eq_self (hnorm : ∀ v ∈ L, ∃ m : ℤ, h * ‖γ + v‖ ^ 2 = 2 * m)
-    (τ : ℍ) : thetaCoset L γ (h +ᵥ τ) = thetaCoset L γ τ := by
-  obtain ⟨n, hn⟩ := hnorm 0 (zero_mem L)
-  rw [add_zero] at hn
-  rw [thetaCoset_vadd_eq_mul L γ (fun v hv ↦ ?_) τ]
-  · have h1 : cexp (π * I * (‖γ‖ ^ 2 : ℝ) * h) = 1 := by
-      simpa only [mul_zero, exp_zero, mul_assoc] using exp_pi_mul_I_mul_eq_of_sub_eq
-        (a := ((‖γ‖ ^ 2 : ℝ) : ℂ) * h) (b := 0) (by rw [sub_zero, mul_comm]; exact_mod_cast hn)
-    rw [h1, one_mul]
-  · obtain ⟨m, hm⟩ := hnorm v hv
-    exact ⟨m - n, by push_cast; linarith⟩
-
 /-- The squared norms of an even lattice satisfy the hypothesis of the expansion in
 `q = exp (2 π i τ)`. -/
 private theorem IsEven.one_mul_norm_zero_add_sq_eq (hL : IsEven L) {v : E} (hv : v ∈ L) :
@@ -157,7 +142,7 @@ theorem qExpansion_thetaCoset_coeff (hh : 0 < h)
     (qExpansion h (thetaCoset L γ)).coeff m = cosetRepresentationNumber L γ (2 * m / h) :=
   (TauCeti.UpperHalfPlane.qExpansion_coeff_unique hh
     (UpperHalfPlane.analyticAt_cuspFunction_zero hh
-      (UpperHalfPlane.periodic_comp_ofComplex (thetaCoset_vadd_eq_self hnorm))
+      (UpperHalfPlane.periodic_comp_ofComplex (thetaCoset_vadd_eq_self L γ hnorm))
       (mdifferentiable_thetaCoset L γ) (isBoundedAtImInfty_thetaCoset L γ))
     (hasSum_thetaCoset_qParam hh hnorm) m).symm
 

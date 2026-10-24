@@ -322,6 +322,8 @@ theorem IsEven.cosetShell_eq_empty (h : IsEven L) {γ : E} (hγ : γ ∈ dual L)
   obtain ⟨j, hj⟩ := h.exists_norm_add_sq_sub_norm_sq_eq hγ hv
   exact ⟨j, by rw [← hvt, ← hj]; ring⟩
 
+/-- For an even lattice `L` and `γ ∈ L^∨`, the representation number `r_{γ+L}(t)` vanishes unless
+`t ∈ ‖γ‖² + 2ℤ`. -/
 theorem IsEven.cosetRepresentationNumber_eq_zero (h : IsEven L) {γ : E} (hγ : γ ∈ dual L)
     (ht : ¬ ∃ j : ℤ, t = ‖γ‖ ^ 2 + 2 * j) : cosetRepresentationNumber L γ t = 0 := by
   rw [cosetRepresentationNumber_def, h.cosetShell_eq_empty hγ ht, Set.ncard_empty]
