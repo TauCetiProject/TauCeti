@@ -71,32 +71,16 @@ private noncomputable def mapStableConflationTriangleIso
         ((gradedSplitExact_isFrobenius (h := h)).stableConflationTriangle S hS) := by
   letI := (gradedSplitExact_isFrobenius (h := h)).stableHasShift
   letI := gradedSplitStableToHomotopyCommShift (h := h)
-  have key := congrArg ((gradedSplitStableToHomotopy (h := h)).map)
-    ((gradedSplitExact_isFrobenius (h := h)).projectiveStableFunctor_map_eq_connectingMap_comp
-      hS (coneIdentityInjectivePresentation (ForgetEnrichment.to _ S.X₁)) a δ ha hδ)
-  -- The represented endpoints occur in dependent hom types. Rewrite there before normalizing
-  -- the public object-transport equations of the stable-to-homotopy comparison.
-  erw [gradedSplitStableToHomotopy_map_projectiveStableFunctor_map (h := h) δ] at key
-  simp only [gradedSplitStableToHomotopy_map_projectiveStableFunctor_map, Functor.map_comp,
-    ExactStructure.IsFrobenius.projectiveStableIsoSuspensionObj_inv, Category.assoc,
-    eqToHom_trans_assoc, eqToHom_refl, Category.id_comp] at key
+  have h₃ := gradedSplitStableToHomotopy_map_connectingMap hS a δ ha hδ
   rw [ExactStructure.IsFrobenius.stableConflationTriangle_eq_mk]
   refine Triangle.isoMk _ _ (eqToIso (by simp)) (eqToIso (by simp)) (eqToIso (by simp))
     ?_ ?_ ?_
   · simp [gradedSplitStableToHomotopy_map_projectiveStableFunctor_map]
   · simp [gradedSplitStableToHomotopy_map_projectiveStableFunctor_map]
-  · simp only [Triangle.mk_obj₃, Functor.mapTriangle_obj, Triangle.mk_obj₁, Triangle.mk_mor₃,
-      eqToIso.hom, Category.assoc, Functor.map_comp,
-      gradedSplitStableToHomotopy_map_projectiveStableFunctor_map,
-      gradedSplitStableToHomotopyCommShift_iso_one, Iso.trans_hom,
-      Functor.isoWhiskerRight_hom, NatTrans.comp_app, Functor.comp_obj,
-      Functor.whiskerRight_app, stableSuspensionCompGradedSplitStableToHomotopyIso_hom_app,
-      gradedSplitStableSuspensionIsoShift_hom_app,
-      Iso.inv_hom_id_app_map_assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
-    rw [eqToHom_comp_iff, comp_eqToHom_iff] at key
-    simp only [key, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp, Category.assoc,
-      eqToHom_map]
-    simp only [dgClosedToHomotopy_commShiftIso_hom_app, eqToHom_trans]
+  · simp only [Triangle.mk_obj₃, Functor.mapTriangle_obj, Triangle.mk_mor₃,
+      Triangle.mk_obj₁, eqToIso.hom, Category.assoc]
+    conv_rhs => arg 2; rw [h₃]
+    simp only [eqToHom_map, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
 
 /-- A graded-split conflation gives a distinguished triangle whose third arrow is the class of
 the cokernel map induced by an extension to the first object's identity cone. The canonical
@@ -228,7 +212,7 @@ theorem mem_distTriang_iff_nonempty_iso_coneTriangle
   refine ⟨M, N, f,
     ⟨(isoTriangleOfIso₁₂ _ _ (coneTriangle_distinguished f) hT e₁ e₂ ?_).symm⟩⟩
   -- The triangle's first arrow is a quotient map, so fullness identifies this representative.
-  change Q.map f ≫ e₂.hom = e₁.hom ≫ T.mor₁
-  simp [f, Category.assoc]
+  rw [coneTriangle_mor₁]
+  exact (congrArg (· ≫ e₂.hom) (Q.map_preimage _)).trans (by simp [Category.assoc])
 
 end TauCeti.CurvedDGRightModuleCat

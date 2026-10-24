@@ -91,11 +91,8 @@ theorem coneTriangle_mor₁_comp_mor₂ : (coneTriangle f).mor₁ ≫ (coneTrian
 /-- The second and third arrows of the cone triangle compose to zero. -/
 @[reassoc (attr := simp↓), simp↓]
 theorem coneTriangle_mor₂_comp_mor₃ : (coneTriangle f).mor₂ ≫ (coneTriangle f).mor₃ = 0 := by
-  -- The third arrow has the sign fixed by the stable-suspension comparison.
-  change (dgClosedToHomotopy R).map (coneInclusion f) ≫
-    (-((dgClosedToHomotopy R).map (coneProjection f))) = 0
-  rw [Preadditive.comp_neg, ← Functor.map_comp, coneInclusion_comp_coneProjection,
-    Functor.map_zero, neg_zero]
+  rw [coneTriangle_mor₂, coneTriangle_mor₃, Preadditive.comp_neg, ← Functor.map_comp,
+    coneInclusion_comp_coneProjection, Functor.map_zero, neg_zero]
 
 /-- The third arrow followed by the shift of the first arrow composes to zero. -/
 @[reassoc (attr := simp↓), simp↓]
