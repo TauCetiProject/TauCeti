@@ -40,6 +40,8 @@ determinant-one counterparts over an arbitrary commutative ring.
 * `Matrix.SpecialLinearGroup.transvectionHom`, `transvection_injective`, and
   `map_transvection`: the one-parameter subgroup over a commutative ring, its injectivity, and
   its naturality under ring homomorphisms.
+* `Matrix.SpecialLinearGroup.transvection_zpow` and `transvection_smul_apply_self`: powers of a
+  determinant-one transvection, and its action on the coordinates of a vector.
 * `TauCeti.commute_transvection` and `TauCeti.transvection_mul_transvection_eq_mul_mul`: the
   type-A relations for bare transvection matrices.
 * `Matrix.SpecialLinearGroup.commute_transvection` and
@@ -642,6 +644,42 @@ theorem _root_.Matrix.SpecialLinearGroup.transvectionHom_apply (hij : i ≠ j)
       Matrix.SpecialLinearGroup.transvection hij (Multiplicative.toAdd c) := by
   unfold Matrix.SpecialLinearGroup.transvectionHom
   rfl
+
+/-- An integer power of a determinant-one transvection is the transvection of the corresponding
+multiple of the parameter. -/
+@[simp]
+theorem _root_.Matrix.SpecialLinearGroup.transvection_zpow (hij : i ≠ j) (c : A) (m : ℤ) :
+    Matrix.SpecialLinearGroup.transvection hij c ^ m =
+      Matrix.SpecialLinearGroup.transvection hij (m • c) := by
+  simpa using
+    (map_zpow (Matrix.SpecialLinearGroup.transvectionHom hij) (Multiplicative.ofAdd c) m).symm
+
+/-- A natural power of a determinant-one transvection is the transvection of the corresponding
+multiple of the parameter. -/
+@[simp]
+theorem _root_.Matrix.SpecialLinearGroup.transvection_pow (hij : i ≠ j) (c : A) (m : ℕ) :
+    Matrix.SpecialLinearGroup.transvection hij c ^ m =
+      Matrix.SpecialLinearGroup.transvection hij (m • c) := by
+  simpa using
+    (map_pow (Matrix.SpecialLinearGroup.transvectionHom hij) (Multiplicative.ofAdd c) m).symm
+
+/-- The determinant-one transvection `1 + c • E_{i,j}` adds `c * v j` to the `i`-th coordinate
+of a vector `v`. -/
+@[simp]
+theorem _root_.Matrix.SpecialLinearGroup.transvection_smul_apply_self (hij : i ≠ j) (c : A)
+    (v : n → A) :
+    (Matrix.SpecialLinearGroup.transvection hij c • v) i = v i + c * v j := by
+  simp [Matrix.SpecialLinearGroup.smul_def, Matrix.SpecialLinearGroup.transvection_coe,
+    Matrix.add_mulVec, Matrix.single_mulVec_eq]
+
+/-- The determinant-one transvection `1 + c • E_{i,j}` leaves every coordinate of a vector other
+than the `i`-th one unchanged. -/
+@[simp]
+theorem _root_.Matrix.SpecialLinearGroup.transvection_smul_apply_of_ne (hij : i ≠ j) (c : A)
+    (v : n → A) {k : n} (hki : k ≠ i) :
+    (Matrix.SpecialLinearGroup.transvection hij c • v) k = v k := by
+  simp [Matrix.SpecialLinearGroup.smul_def, Matrix.SpecialLinearGroup.transvection_coe,
+    Matrix.add_mulVec, Matrix.single_mulVec_eq, hki]
 
 /-- Distinct parameters give distinct determinant-one transvections. -/
 theorem _root_.Matrix.SpecialLinearGroup.transvection_injective (hij : i ≠ j) :
