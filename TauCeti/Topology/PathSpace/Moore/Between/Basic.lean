@@ -110,6 +110,15 @@ theorem continuous_trans :
   ((continuous_toMoorePath.comp continuous_fst).moorePath_trans
     (continuous_toMoorePath.comp continuous_snd) _).subtype_mk _
 
+/-- Concatenation with matching endpoints, as a continuous map. -/
+def transMap (a b c : X) :
+    C(MoorePathBetween X a b × MoorePathBetween X b c, MoorePathBetween X a c) :=
+  ⟨fun p ↦ p.1.trans p.2, continuous_trans⟩
+
+@[simp]
+theorem transMap_apply (p : MoorePathBetween X a b × MoorePathBetween X b c) :
+    transMap a b c p = p.1.trans p.2 := (rfl)
+
 /-- Moore loops are precisely the Moore paths with equal specified endpoints. -/
 def loopHomeomorph (x : X) : MooreLoopSpace X x ≃ₜ MoorePathBetween X x x where
   toFun ω := ⟨ω.toMoorePath, ω.source_eq, ω.target_eq⟩
