@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Group.Subgroup.ZPowers
-public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm.Basic
+public import TauCeti.LinearAlgebra.QuadraticForm.Real
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Action
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.ReverseNorm
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Pin.Action
@@ -84,18 +84,28 @@ def realCliffordSpinToFullCover (Q : QuadraticForm ℝ M) :
 
 /-- The underlying Lipschitz element of the Spin-to-full-cover inclusion. -/
 @[simp]
-theorem realCliffordSpinToFullCover_apply (Q : QuadraticForm ℝ M) (x : spinGroup Q) :
+theorem coe_realCliffordSpinToFullCover_apply (Q : QuadraticForm ℝ M) (x : spinGroup Q) :
     (realCliffordSpinToFullCover Q x : lipschitzGroup Q) =
       pinToLipschitz Q (spinToPin Q x) := by
   rfl
 
 /-- The restricted orthogonal action agrees with the usual Spin action on the included subgroup. -/
+@[simp]
 theorem realCliffordFullCoverToOrthogonal_comp_spinToFullCover
     (Q : QuadraticForm ℝ M) :
     (realCliffordFullCoverToOrthogonal Q).comp (realCliffordSpinToFullCover Q) =
       spinToOrthogonal Q := by
   apply MonoidHom.ext
   intro x
+  change lipschitzToOrthogonal Q (pinToLipschitz Q (spinToPin Q x)) = spinToOrthogonal Q x
+  rw [← pinToOrthogonal_eq_lipschitzToOrthogonal, pinToOrthogonal_spinToPin]
+
+/-- The Spin action is the restriction of the full-cover action pointwise. -/
+@[simp 1100]
+theorem realCliffordFullCoverToOrthogonal_spinToFullCover_apply
+    (Q : QuadraticForm ℝ M) (x : spinGroup Q) :
+    realCliffordFullCoverToOrthogonal Q (realCliffordSpinToFullCover Q x) =
+      spinToOrthogonal Q x := by
   change lipschitzToOrthogonal Q (pinToLipschitz Q (spinToPin Q x)) = spinToOrthogonal Q x
   rw [← pinToOrthogonal_eq_lipschitzToOrthogonal, pinToOrthogonal_spinToPin]
 
