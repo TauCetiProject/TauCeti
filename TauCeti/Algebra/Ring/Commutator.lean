@@ -14,9 +14,11 @@ import Mathlib.Tactic.NoncommRing
 import Mathlib.Tactic.Ring
 
 /-!
-# Commutators in associative semirings and rings
+# Commutators in semirings and rings
 
-This file records identities for moving elements past powers when the two elements almost commute.
+This file records identities for translating a commutator eigenvector relation and for moving
+elements past powers when the two elements almost commute. Integer translation needs only a
+nonassociative ring; the power and nilpotency identities use associativity.
 
 Over a semiring the hypothesis is written as a relation, `x * y = y * x + z`, since there is no
 subtraction to form a commutator with: the power identities need only that `z` commutes with the
@@ -26,6 +28,8 @@ divide by the multiplicity a power releases. Over a ring the same `z` is the com
 
 ## Main results
 
+* `TauCeti.add_intCast_mul_eq_mul_add_intCast`: translating the first argument of an
+  integer-eigenvector commutator relation preserves its eigenvalue.
 * `TauCeti.Associative.mul_pow_eq_pow_mul_add_zsmul`: moving an element past a power of an
   integer-eigenvector for its commutator.
 * `TauCeti.Associative.mul_pow_eq_pow_mul_add_intCast`: the same identity in shifted-factor form.
@@ -45,7 +49,18 @@ divide by the multiplicity a power releases. Over a ring the same `z` is the com
 
 public section
 
-namespace TauCeti.Associative
+namespace TauCeti
+
+/-- Translating by an integer preserves the eigenvalue of a commutator relation. -/
+theorem add_intCast_mul_eq_mul_add_intCast {A : Type*} [NonAssocRing A]
+    {x y : A} {c : ℤ} (hxy : x * y - y * x = c • y) (z : ℤ) :
+    (x + (z : A)) * y = y * (x + (z : A) + (c : A)) := by
+  have h : SemiconjBy y (x + (c : A)) x := by
+    simpa only [SemiconjBy, mul_add, zsmul_eq_mul'] using
+      ((sub_eq_iff_eq_add').mp hxy).symm
+  simpa only [add_right_comm] using (h.add_right (Int.cast_commute z y).symm).eq.symm
+
+namespace Associative
 
 section PowerCommutator
 
@@ -132,8 +147,7 @@ that element by the eigenvalue times the exponent. -/
 theorem mul_pow_eq_pow_mul_add_intCast (hxy : x * y - y * x = c • y) (n : ℕ) :
     x * y ^ n = y ^ n * (x + (c : A) * (n : A)) := by
   have h : x * y = y * (x + (c : A)) := by
-    rw [mul_add, ← zsmul_eq_mul', ← hxy]
-    abel
+    simpa only [Int.cast_zero, add_zero] using add_intCast_mul_eq_mul_add_intCast hxy 0
   simpa only [nsmul_eq_mul'] using
     mul_pow_eq_pow_mul_add_nsmul h (Int.cast_commute c y) n
 
@@ -198,4 +212,6 @@ theorem isNilpotent_of_commutator_eq_nsmul {n : ℕ} (hn : n ≠ 0)
 
 end CentralCommutator
 
-end TauCeti.Associative
+end Associative
+
+end TauCeti

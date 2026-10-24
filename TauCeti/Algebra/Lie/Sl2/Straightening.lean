@@ -69,16 +69,6 @@ private theorem straighteningSummand_zero_left (H E F : A) (n : ℕ) :
     straighteningSummand H E F 0 n 0 = dividedPower n F := by
   simp [straighteningSummand]
 
-private theorem shifted_cartan_mul_e {R : Type*} [NonAssocRing R] {H E : R}
-    (hhe : H * E - E * H = 2 • E) (a b : ℕ) :
-    (H - (a : R) + (b : R)) * E = E * (H - (a : R) + (b : R) + 2) := by
-  have h : SemiconjBy E (H + 2) H := by
-    simpa only [SemiconjBy, mul_add, nsmul_eq_mul', Nat.cast_ofNat] using
-      ((sub_eq_iff_eq_add').mp hhe).symm
-  simpa only [add_sub_right_comm, add_right_comm] using
-    ((h.sub_right (Nat.cast_commute a E).symm).add_right
-      (Nat.cast_commute b E).symm).eq.symm
-
 private noncomputable def raisedStraighteningSummand (H E F : A) (m n k : ℕ) : A :=
   dividedPower (n - (k + 1)) F *
     ((H - (m + 1 + n : ℕ) + (2 * (k + 1) : ℕ)) + (m - k : ℕ)) *
@@ -117,8 +107,10 @@ private theorem e_mul_straighteningSummand_of_lt {H E F : A}
     norm_num
   have hm : m + 1 - k = m - k + 1 := by omega
   have hmove := pow_mul_ringChoose k
-    (shifted_cartan_mul_e hhe (m + n) (2 * k)) (Nat.cast_commute 2 E) 1
-  simp only [pow_one, one_nsmul] at hmove
+    (add_intCast_mul_eq_mul_add_intCast (x := H) (y := E) (c := 2) (by simpa using hhe)
+      (-((m + n : ℕ) : ℤ) + (2 * k : ℕ))) (Int.cast_commute 2 E) 1
+  simp only [pow_one, one_nsmul, Int.cast_add, Int.cast_neg, Int.cast_natCast,
+    Int.cast_ofNat, ← add_assoc, ← sub_eq_add_neg] at hmove
   have hfirst :
       E * (Ring.choose (H - (m + n : ℕ) + (2 * k : ℕ)) k *
           dividedPower (m - k) E) =
@@ -156,8 +148,10 @@ private theorem e_mul_straighteningSummand_of_eq {H E F : A}
     noncomm_ring
   simp only [straighteningSummand, Nat.sub_self, dividedPower_zero, one_mul]
   have hmove := pow_mul_ringChoose k
-    (shifted_cartan_mul_e hhe (m + k) (2 * k)) (Nat.cast_commute 2 E) 1
-  simp only [pow_one, one_nsmul] at hmove
+    (add_intCast_mul_eq_mul_add_intCast (x := H) (y := E) (c := 2) (by simpa using hhe)
+      (-((m + k : ℕ) : ℤ) + (2 * k : ℕ))) (Int.cast_commute 2 E) 1
+  simp only [pow_one, one_nsmul, Int.cast_add, Int.cast_neg, Int.cast_natCast,
+    Int.cast_ofNat, ← add_assoc, ← sub_eq_add_neg] at hmove
   rw [← mul_assoc, hmove, harg, mul_assoc, self_mul_dividedPower]
   have hm : m + 1 - k = m - k + 1 := by omega
   simp only [keptStraighteningSummand, Nat.sub_self, dividedPower_zero, one_mul]
