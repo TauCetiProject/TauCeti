@@ -254,9 +254,9 @@ end FTC
 
 /-- Exact smooth `1`-forms integrate to zero around closed `C¹` curves. -/
 theorem pathIntegral_eq_zero_of_mem_exactForms [IsManifold I 2 M] {φ : SmoothForm I M ℝ 1}
-    (hφ : φ ∈ exactForms I M 1) {γ : ℝ → M} (hγ : ContMDiff 𝓘(ℝ, ℝ) I 1 γ) {a b : ℝ}
+    (hφ : φ ∈ exactForms I M ℝ 1) {γ : ℝ → M} (hγ : ContMDiff 𝓘(ℝ, ℝ) I 1 γ) {a b : ℝ}
     (hab : γ a = γ b) : pathIntegral (φ : RoughForm I M ℝ 1) γ a b = 0 := by
-  rw [exactForms_succ, LinearMap.mem_range] at hφ
+  rw [exactForms_succ, SmoothForm.mextDerivLinearMap_real, LinearMap.mem_range] at hφ
   obtain ⟨g, rfl⟩ := hφ
   have hg : IsSmoothForm I 1 g.1 :=
     g.isSmoothForm.of_le (by exact_mod_cast le_top)

@@ -90,7 +90,7 @@ theorem isSmoothForm_circleAngularForm : IsSmoothForm (𝓡 1) ∞ circleAngular
 
 /-- The angular form `dθ` as a smooth closed form on the circle. It is closed because the circle
 is `1`-dimensional. -/
-def circleAngularClosedForm : closedForms (𝓡 1) Circle 1 :=
+def circleAngularClosedForm : closedForms (𝓡 1) Circle ℝ 1 :=
   ⟨⟨circleAngularForm, isSmoothForm_circleAngularForm.mem_smoothForms⟩,
     mem_closedForms_of_finrank_le (𝓡 1) (by simp) _⟩
 
@@ -126,7 +126,7 @@ theorem pathIntegral_circleAngularForm_circleExp (a b : ℝ) :
 
 /-- The angular form is not exact: its period around the circle is `2π ≠ 0`. -/
 theorem circleAngularClosedForm_notMem_exactForms :
-    (circleAngularClosedForm : SmoothForm (𝓡 1) Circle ℝ 1) ∉ exactForms (𝓡 1) Circle 1 := by
+    (circleAngularClosedForm : SmoothForm (𝓡 1) Circle ℝ 1) ∉ exactForms (𝓡 1) Circle ℝ 1 := by
   intro h
   have h0 := pathIntegral_eq_zero_of_mem_exactForms h (contMDiff_circleExp (m := 1))
     (a := 0) (b := 2 * Real.pi) (by rw [Circle.exp_zero, Circle.exp_two_pi])
@@ -140,7 +140,7 @@ theorem deRhamCohomology.mk_circleAngularClosedForm_ne_zero :
   exact circleAngularClosedForm_notMem_exactForms
 
 /-- The first de Rham cohomology of the circle is nontrivial. -/
-instance nontrivial_deRhamCohomology_circle_one : Nontrivial (deRhamCohomology (𝓡 1) Circle 1) :=
+instance nontrivial_deRhamCohomology_circle_one : Nontrivial (deRhamCohomology (𝓡 1) Circle ℝ 1) :=
   ⟨⟨_, 0, deRhamCohomology.mk_circleAngularClosedForm_ne_zero⟩⟩
 
 end TauCeti

@@ -205,7 +205,7 @@ private theorem mpullback_cutoffLeft_sub_mpullback_cutoffRight
 
 /-- For a closed form `φ` on `U ⊓ V`, the restrictions to `U` and to `V` of the extension by zero
 of `d(ρ φ)` to `U ⊔ V` are the exterior derivatives of the two cut-off forms of `φ`. -/
-private theorem mpullback_extendByZero_mextDeriv_cutoff (φ : closedForms I (U ⊓ V : Opens M) k) :
+private theorem mpullback_extendByZero_mextDeriv_cutoff (φ : closedForms I (U ⊓ V : Opens M) ℝ k) :
     mpullback I I (Opens.inclusion le_sup_left) (RoughForm.extendByZero (U ⊔ V)
         (mextDeriv fun y : (U ⊓ V : Opens M) ↦ ρ (Opens.inclusion inf_le_sup y) • φ.1.1 y)) =
       (mextDerivₗ I k (cutoffLeft hρ hρV φ.1)).1 ∧
@@ -241,8 +241,8 @@ include hρ hρV hρU in
 /-- Let `ρ` be a smooth function on `U ⊔ V` supported in `V` such that `1 - ρ` is supported in `U`.
 For a closed form `φ` on `U ⊓ V`, the form `d(ρ φ)` on `U ⊓ V` extends by zero to a closed form on
 `U ⊔ V`. -/
-theorem exists_closedForms_coe_eq_extendByZero_mextDeriv (φ : closedForms I (U ⊓ V : Opens M) k) :
-    ∃ σ : closedForms I (U ⊔ V : Opens M) (k + 1),
+theorem exists_closedForms_coe_eq_extendByZero_mextDeriv (φ : closedForms I (U ⊓ V : Opens M) ℝ k) :
+    ∃ σ : closedForms I (U ⊔ V : Opens M) ℝ (k + 1),
       (σ.1 : RoughForm I (U ⊔ V : Opens M) ℝ (k + 1)) = RoughForm.extendByZero (U ⊔ V)
         (mextDeriv fun y : (U ⊓ V : Opens M) ↦ ρ (Opens.inclusion inf_le_sup y) • φ.1.1 y) := by
   obtain ⟨hU, hV⟩ := mpullback_extendByZero_mextDeriv_cutoff hρ hρV hρU φ
@@ -331,7 +331,7 @@ restrictions. -/
 
 /-- The first term of the Mayer–Vietoris short complex is the de Rham complex of `U ⊔ V`. -/
 theorem mayerVietorisShortComplex_X₁ (U V : Opens M) :
-    (mayerVietorisShortComplex I U V).X₁ = deRhamComplex I (U ⊔ V : Opens M) := (rfl)
+    (mayerVietorisShortComplex I U V).X₁ = deRhamComplex I (U ⊔ V : Opens M) ℝ := (rfl)
 
 /-- The first map of the Mayer–Vietoris short complex is the pair of restrictions to `U` and
 to `V`. -/
@@ -356,11 +356,11 @@ theorem mayerVietorisShortComplex_g (U V : Opens M) :
 /-- The middle term of the Mayer–Vietoris short complex is the biproduct of the de Rham complexes
 of `U` and `V`. -/
 theorem mayerVietorisShortComplex_X₂ (U V : Opens M) :
-    (mayerVietorisShortComplex I U V).X₂ = (deRhamComplex I U ⊞ deRhamComplex I V) := (rfl)
+    (mayerVietorisShortComplex I U V).X₂ = (deRhamComplex I U ℝ ⊞ deRhamComplex I V ℝ) := (rfl)
 
 /-- The last term of the Mayer–Vietoris short complex is the de Rham complex of `U ⊓ V`. -/
 theorem mayerVietorisShortComplex_X₃ (U V : Opens M) :
-    (mayerVietorisShortComplex I U V).X₃ = deRhamComplex I (U ⊓ V : Opens M) := (rfl)
+    (mayerVietorisShortComplex I U V).X₃ = deRhamComplex I (U ⊓ V : Opens M) ℝ := (rfl)
 
 /-- **The Mayer–Vietoris short exact sequence of de Rham complexes.** On a Hausdorff σ-compact
 manifold modelled on a finite-dimensional space, the Mayer–Vietoris short complex of two open
@@ -372,8 +372,8 @@ theorem mayerVietorisShortComplex_shortExact [FiniteDimensional ℝ E] [IsManifo
   -- identification of `(Ω^•(U) ⊞ Ω^•(V))^k` with the product module `Ωᵏ(U) × Ωᵏ(V)`.
   unfold mayerVietorisShortComplex
   exact HomologicalComplex.moduleCat_shortExact_biprod _
-    (fun k ↦ deRhamComplexXIso I k) (fun k ↦ deRhamComplexXIso I k)
-    (fun k ↦ deRhamComplexXIso I k) (fun k ↦ deRhamComplexXIso I k) _ _ _
+    (fun k ↦ deRhamComplexXIso (𝕜 := ℝ) I k) (fun k ↦ deRhamComplexXIso (𝕜 := ℝ) I k)
+    (fun k ↦ deRhamComplexXIso (𝕜 := ℝ) I k) (fun k ↦ deRhamComplexXIso (𝕜 := ℝ) I k) _ _ _
     (fun k ↦ -SmoothForm.mpullback (k := k) (Opens.inclusion (inf_le_right : U ⊓ V ≤ V))
       (contMDiff_inclusion _))
     (fun k ↦ deRhamComplex.map_f _ _ k) (fun k ↦ deRhamComplex.map_f _ _ k)
@@ -399,7 +399,7 @@ variable (I) in
 connecting map of the long exact cohomology sequence of the Mayer–Vietoris short exact sequence of
 de Rham complexes. -/
 def mayerVietorisδ (U V : Opens M) (k : ℕ) :
-    deRhamCohomology I (U ⊓ V : Opens M) k →ₗ[ℝ] deRhamCohomology I (U ⊔ V : Opens M) (k + 1) :=
+    deRhamCohomology I (U ⊓ V : Opens M) ℝ k →ₗ[ℝ] deRhamCohomology I (U ⊔ V : Opens M) ℝ (k + 1) :=
   ((mayerVietorisShortComplex_shortExact (I := I) U V).δ k (k + 1) rfl).hom
 
 /-- The Mayer–Vietoris connecting map is the connecting morphism of the homology sequence of the
@@ -413,27 +413,27 @@ theorem ofHom_mayerVietorisδ (U V : Opens M) (k : ℕ) :
 as the difference `α - β` of the restrictions of forms `α` on `U` and `β` on `V`. If `σ` is a
 closed form on `U ⊔ V` restricting to `dα` on `U` and to `dβ` on `V`, then the connecting map sends
 the class of `φ` to the class of `σ`. -/
-theorem mayerVietorisδ_mk (U V : Opens M) {k : ℕ} (φ : closedForms I (U ⊓ V : Opens M) k)
+theorem mayerVietorisδ_mk (U V : Opens M) {k : ℕ} (φ : closedForms I (U ⊓ V : Opens M) ℝ k)
     (α : SmoothForm I U ℝ k) (β : SmoothForm I V ℝ k)
     (hαβ : SmoothForm.mpullback (Opens.inclusion inf_le_left) (contMDiff_inclusion _) α -
       SmoothForm.mpullback (Opens.inclusion inf_le_right) (contMDiff_inclusion _) β = φ.1)
-    (σ : closedForms I (U ⊔ V : Opens M) (k + 1))
+    (σ : closedForms I (U ⊔ V : Opens M) ℝ (k + 1))
     (hσU : SmoothForm.mpullback (Opens.inclusion le_sup_left) (contMDiff_inclusion _) σ.1 =
       mextDerivₗ I k α)
     (hσV : SmoothForm.mpullback (Opens.inclusion le_sup_right) (contMDiff_inclusion _) σ.1 =
       mextDerivₗ I k β) :
     mayerVietorisδ I U V k (mk I k φ) = mk I (k + 1) σ := by
   -- The lift of `φ` to `Ω^•(U) ⊞ Ω^•(V)` is the pair `(α, β)`.
-  let x₂ : (deRhamComplex I U ⊞ deRhamComplex I V).X k :=
-    (biprod.inl : deRhamComplex I U ⟶ deRhamComplex I U ⊞ deRhamComplex I V).f k
-        ((deRhamComplexXIso I k).inv α) +
-      (biprod.inr : deRhamComplex I V ⟶ deRhamComplex I U ⊞ deRhamComplex I V).f k
-        ((deRhamComplexXIso I k).inv β)
+  let x₂ : (deRhamComplex I U ℝ ⊞ deRhamComplex I V ℝ).X k :=
+    (biprod.inl : deRhamComplex I U ℝ ⟶ deRhamComplex I U ℝ ⊞ deRhamComplex I V ℝ).f k
+        ((deRhamComplexXIso (𝕜 := ℝ) I k).inv α) +
+      (biprod.inr : deRhamComplex I V ℝ ⟶ deRhamComplex I U ℝ ⊞ deRhamComplex I V ℝ).f k
+        ((deRhamComplexXIso (𝕜 := ℝ) I k).inv β)
   have hx₂ : (biprod.desc
       (deRhamComplex.map (I := I) (I' := I) (Opens.inclusion (inf_le_left : U ⊓ V ≤ U))
         (contMDiff_inclusion _))
       (-deRhamComplex.map (I := I) (I' := I) (Opens.inclusion (inf_le_right : U ⊓ V ≤ V))
-        (contMDiff_inclusion _))).f k x₂ = (deRhamComplexXIso I k).inv φ.1 := by
+        (contMDiff_inclusion _))).f k x₂ = (deRhamComplexXIso (𝕜 := ℝ) I k).inv φ.1 := by
     rw [← hαβ, map_sub, ← deRhamComplex.map_f_inv_apply, ← deRhamComplex.map_f_inv_apply]
     simp [x₂, ← ModuleCat.comp_apply, sub_eq_add_neg]
   -- The image of `σ` in `Ω^•(U) ⊞ Ω^•(V)` is the differential of the lift.
@@ -441,8 +441,8 @@ theorem mayerVietorisδ_mk (U V : Opens M) {k : ℕ} (φ : closedForms I (U ⊓ 
       (deRhamComplex.map (I := I) (I' := I) (Opens.inclusion (le_sup_left : U ≤ U ⊔ V))
         (contMDiff_inclusion _))
       (deRhamComplex.map (I := I) (I' := I) (Opens.inclusion (le_sup_right : V ≤ U ⊔ V))
-        (contMDiff_inclusion _))).f (k + 1) ((deRhamComplexXIso I (k + 1)).inv σ.1) =
-      (deRhamComplex I U ⊞ deRhamComplex I V).d k (k + 1) x₂ := by
+        (contMDiff_inclusion _))).f (k + 1) ((deRhamComplexXIso (𝕜 := ℝ) I (k + 1)).inv σ.1) =
+      (deRhamComplex I U ℝ ⊞ deRhamComplex I V ℝ).d k (k + 1) x₂ := by
     simp [x₂, biprod.lift_eq, deRhamComplex.map_f_inv_apply _ _ (k + 1) σ.1, hσU, hσV,
       HomologicalComplex.Hom.comm_apply, deRhamComplex_d_apply]
   rw [mayerVietorisδ, mk_eq_moduleCatHomologyClass, mk_eq_moduleCatHomologyClass,
@@ -464,8 +464,8 @@ on `U ⊔ V` supported in `V` such that `1 - ρ` is supported in `U`, and let `�
 `U ⊓ V`. If `σ` is the closed form on `U ⊔ V` extending `d(ρ φ)` by zero
 (`TauCeti.exists_closedForms_coe_eq_extendByZero_mextDeriv`), then the connecting map sends the
 class of `φ` to the class of `σ`. -/
-theorem mayerVietorisδ_mk_eq_mk_extendByZero (φ : closedForms I (U ⊓ V : Opens M) k)
-    (σ : closedForms I (U ⊔ V : Opens M) (k + 1))
+theorem mayerVietorisδ_mk_eq_mk_extendByZero (φ : closedForms I (U ⊓ V : Opens M) ℝ k)
+    (σ : closedForms I (U ⊔ V : Opens M) ℝ (k + 1))
     (hσ : (σ.1 : RoughForm I (U ⊔ V : Opens M) ℝ (k + 1)) = RoughForm.extendByZero (U ⊔ V)
       (mextDeriv fun y : (U ⊓ V : Opens M) ↦ ρ (Opens.inclusion inf_le_sup y) • φ.1.1 y)) :
     mayerVietorisδ I U V k (mk I k φ) = mk I (k + 1) σ := by

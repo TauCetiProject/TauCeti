@@ -164,7 +164,7 @@ theorem compactlySupportedDeRhamComplex_d_apply (k : ℕ)
 /-- A closed compactly supported form, viewed in the compactly supported de Rham complex, is
 killed by the differential. -/
 theorem compactlySupportedDeRhamComplex_d_eq_zero_of_mem_closedForms (k : ℕ)
-    {φ : compactlySupportedForms I M k} (hφ : φ.1 ∈ closedForms I M k) :
+    {φ : compactlySupportedForms I M k} (hφ : φ.1 ∈ closedForms I M ℝ k) :
     (compactlySupportedDeRhamComplex I M).d k (k + 1)
       ((compactlySupportedDeRhamComplexXIso I k).inv φ) = 0 := by
   have h : compactlySupportedForms.mextDerivₗ I M k φ = 0 :=
@@ -182,12 +182,13 @@ namespace compactlySupportedDeRhamComplex
 
 variable (M) in
 /-- The inclusion of the compactly supported de Rham complex into the de Rham complex. -/
-def ι : compactlySupportedDeRhamComplex I M ⟶ deRhamComplex I M :=
+def ι : compactlySupportedDeRhamComplex I M ⟶ deRhamComplex I M ℝ :=
   CochainComplex.ofHom
     (fun k ↦ (compactlySupportedDeRhamComplexXIso I k).hom ≫
-      ModuleCat.ofHom (compactlySupportedForms I M k).subtype ≫ (deRhamComplexXIso I k).inv)
+      ModuleCat.ofHom (compactlySupportedForms I M k).subtype ≫
+        (deRhamComplexXIso (𝕜 := ℝ) I k).inv)
     fun k ↦ by
-      rw [← cancel_mono (deRhamComplexXIso I (M := M) (k + 1)).hom]
+      rw [← cancel_mono (deRhamComplexXIso (𝕜 := ℝ) I (M := M) (k + 1)).hom]
       simp only [Category.assoc, deRhamComplex_d, Iso.inv_hom_id_assoc, Iso.inv_hom_id,
         Category.comp_id, compactlySupportedDeRhamComplex_d_assoc]
       ext φ : 2
@@ -197,7 +198,7 @@ def ι : compactlySupportedDeRhamComplex I M ⟶ deRhamComplex I M :=
 compactly supported forms into smooth forms. -/
 @[reassoc]
 theorem ι_f (k : ℕ) :
-    (ι I M).f k ≫ (deRhamComplexXIso I (M := M) k).hom =
+    (ι I M).f k ≫ (deRhamComplexXIso (𝕜 := ℝ) I (M := M) k).hom =
       (compactlySupportedDeRhamComplexXIso I (M := M) k).hom ≫
         ModuleCat.ofHom (compactlySupportedForms I M k).subtype := by
   simp [ι]
@@ -222,14 +223,14 @@ end compactlySupportedDeRhamComplex
 variable (M) in
 /-- The submodule of compactly supported closed smooth forms. -/
 def compactlySupportedClosedForms (k : ℕ) : Submodule ℝ (SmoothForm I M ℝ k) :=
-  compactlySupportedForms I M k ⊓ closedForms I M k
+  compactlySupportedForms I M k ⊓ closedForms I M ℝ k
 
 /-- A smooth form is compactly supported and closed when it is both compactly supported and
 closed. -/
 @[simp]
 theorem mem_compactlySupportedClosedForms {k : ℕ} {φ : SmoothForm I M ℝ k} :
     φ ∈ compactlySupportedClosedForms I M k ↔
-      φ ∈ compactlySupportedForms I M k ∧ φ ∈ closedForms I M k :=
+      φ ∈ compactlySupportedForms I M k ∧ φ ∈ closedForms I M ℝ k :=
   Iff.rfl
 
 /-- A compactly supported closed form is compactly supported. -/
@@ -239,7 +240,7 @@ theorem compactlySupportedClosedForms_le_compactlySupportedForms (k : ℕ) :
 
 /-- A compactly supported closed form is closed. -/
 theorem compactlySupportedClosedForms_le_closedForms (k : ℕ) :
-    compactlySupportedClosedForms I M k ≤ closedForms I M k :=
+    compactlySupportedClosedForms I M k ≤ closedForms I M ℝ k :=
   inf_le_right
 
 variable (M) in
@@ -262,11 +263,12 @@ theorem exactCompactlySupportedForms_succ (k : ℕ) :
 
 /-- A compactly supported exact form is exact. -/
 theorem exactCompactlySupportedForms_le_exactForms (k : ℕ) :
-    exactCompactlySupportedForms I M k ≤ exactForms I M k := by
+    exactCompactlySupportedForms I M k ≤ exactForms I M ℝ k := by
   cases k with
   | zero => exact bot_le
   | succ k =>
-      rw [exactCompactlySupportedForms_succ, exactForms_succ]
+      rw [exactCompactlySupportedForms_succ, exactForms_succ,
+        SmoothForm.mextDerivLinearMap_real]
       exact LinearMap.map_le_range
 
 /-- A compactly supported exact form is compactly supported and closed. -/
@@ -367,7 +369,7 @@ variable (M) in
 /-- The comparison map from compactly supported to ordinary de Rham cohomology, induced on
 cohomology by the inclusion of complexes. -/
 def toDeRhamCohomology (k : ℕ) :
-    compactlySupportedDeRhamCohomology I M k →ₗ[ℝ] deRhamCohomology I M k :=
+    compactlySupportedDeRhamCohomology I M k →ₗ[ℝ] deRhamCohomology I M ℝ k :=
   (HomologicalComplex.homologyMap (compactlySupportedDeRhamComplex.ι I M) k).hom
 
 /-- The comparison map sends the class of a compactly supported closed form to the de Rham class
@@ -377,7 +379,7 @@ theorem toDeRhamCohomology_mk (k : ℕ) (φ : compactlySupportedClosedForms I M 
     toDeRhamCohomology I M k (mk I k φ) =
       deRhamCohomology.mk I k ⟨φ.1, compactlySupportedClosedForms_le_closedForms I k φ.2⟩ := by
   rw [toDeRhamCohomology, mk, deRhamCohomology.mk_eq_moduleCatHomologyClass]
-  refine HomologicalComplex.homologyMap_moduleCatHomologyClass (Z' := closedForms I M k) _ _ _
+  refine HomologicalComplex.homologyMap_moduleCatHomologyClass (Z' := closedForms I M ℝ k) _ _ _
     (compactlySupportedDeRhamComplex.ι I M) _ _
     (Submodule.inclusion (compactlySupportedClosedForms_le_closedForms I k)) (fun φ ↦ ?_) φ
   have h := ConcreteCategory.congr_hom

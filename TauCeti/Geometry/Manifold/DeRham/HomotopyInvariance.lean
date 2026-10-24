@@ -85,7 +85,8 @@ theorem map_prodMk_left_zero_eq_map_prodMk_left_one (k : ℕ) :
     -- `ι₁^* φ - ι₀^* φ` is the exterior derivative of the smooth form `h φ`. Smoothness of
     -- `h φ` is `IsSmoothForm.homotopyOperator` at `r = ⊤`, stated for a `C^(⊤ + 1)` manifold.
     have : IsManifold I ((⊤ : ℕ∞) + 1 : WithTop ℕ∞) M := IsManifold.of_le (n := ∞) (by simp)
-    rw [eq_comm, ← sub_eq_zero, ← map_sub, mk_eq_zero_iff, exactForms_succ]
+    rw [eq_comm, ← sub_eq_zero, ← map_sub, mk_eq_zero_iff, exactForms_succ,
+      SmoothForm.mextDerivLinearMap_real]
     refine ⟨⟨homotopyOperator φ.1.1,
       (IsSmoothForm.homotopyOperator φ.1.isSmoothForm).mem_smoothForms⟩, ?_⟩
     refine Subtype.ext (funext fun x ↦ ?_)
