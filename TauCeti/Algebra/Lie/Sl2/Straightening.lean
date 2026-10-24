@@ -9,8 +9,8 @@ public import TauCeti.Algebra.Lie.Sl2.Associative
 public import Mathlib.RingTheory.Binomial
 public import TauCeti.Algebra.Module.Rat
 import TauCeti.Algebra.BigOperators.Finset.Range
+import TauCeti.Algebra.Polynomial.Semiconj
 import TauCeti.RingTheory.Binomial
-import TauCeti.RingTheory.DividedPowers.Commutation
 import Mathlib.Tactic.NoncommRing
 
 /-!
@@ -69,24 +69,15 @@ private theorem straighteningSummand_zero_left (H E F : A) (n : ℕ) :
     straighteningSummand H E F 0 n 0 = dividedPower n F := by
   simp [straighteningSummand]
 
-private theorem e_mul_ringChoose_of_commutator {E a : A}
-    (ha : a * E = E * (a + 2)) (k : ℕ) :
-    E * Ring.choose a k = Ring.choose (a - 2) k * E := by
-  have h := Associative.dividedPower_mul_ringChoose k ha (Nat.cast_commute 2 E) 1
-  simpa using h
-
-omit [Algebra ℚ A] in
-private theorem shifted_cartan_mul_e {H E : A} (hhe : H * E - E * H = 2 • E)
-    (a b : ℕ) :
-    (H - (a : A) + (b : A)) * E = E * (H - (a : A) + (b : A) + 2) := by
-  have hH : H * E = E * H + 2 • E := by
-    simpa only [add_comm] using eq_add_of_sub_eq hhe
-  simp only [sub_mul, add_mul, mul_add, hH]
-  rw [(Nat.cast_commute a E).eq, (Nat.cast_commute b E).eq]
-  have htwo : E * (2 : A) = 2 • E := by simpa using (nsmul_eq_mul' E 2).symm
-  rw [htwo]
-  simp only [mul_sub]
-  abel
+private theorem shifted_cartan_mul_e {R : Type*} [NonAssocRing R] {H E : R}
+    (hhe : H * E - E * H = 2 • E) (a b : ℕ) :
+    (H - (a : R) + (b : R)) * E = E * (H - (a : R) + (b : R) + 2) := by
+  have h : SemiconjBy E (H + 2) H := by
+    simpa only [SemiconjBy, mul_add, nsmul_eq_mul', Nat.cast_ofNat] using
+      ((sub_eq_iff_eq_add').mp hhe).symm
+  simpa only [add_sub_right_comm, add_right_comm] using
+    ((h.sub_right (Nat.cast_commute a E).symm).add_right
+      (Nat.cast_commute b E).symm).eq.symm
 
 private noncomputable def raisedStraighteningSummand (H E F : A) (m n k : ℕ) : A :=
   dividedPower (n - (k + 1)) F *
@@ -125,8 +116,9 @@ private theorem e_mul_straighteningSummand_of_lt {H E F : A}
     noncomm_ring
     norm_num
   have hm : m + 1 - k = m - k + 1 := by omega
-  have hmove := e_mul_ringChoose_of_commutator
-    (shifted_cartan_mul_e hhe (m + n) (2 * k)) k
+  have hmove := pow_mul_ringChoose k
+    (shifted_cartan_mul_e hhe (m + n) (2 * k)) (Nat.cast_commute 2 E) 1
+  simp only [pow_one, one_nsmul] at hmove
   have hfirst :
       E * (Ring.choose (H - (m + n : ℕ) + (2 * k : ℕ)) k *
           dividedPower (m - k) E) =
@@ -163,8 +155,9 @@ private theorem e_mul_straighteningSummand_of_eq {H E F : A}
     simp only [htwo]
     noncomm_ring
   simp only [straighteningSummand, Nat.sub_self, dividedPower_zero, one_mul]
-  have hmove := e_mul_ringChoose_of_commutator
-    (shifted_cartan_mul_e hhe (m + k) (2 * k)) k
+  have hmove := pow_mul_ringChoose k
+    (shifted_cartan_mul_e hhe (m + k) (2 * k)) (Nat.cast_commute 2 E) 1
+  simp only [pow_one, one_nsmul] at hmove
   rw [← mul_assoc, hmove, harg, mul_assoc, self_mul_dividedPower]
   have hm : m + 1 - k = m - k + 1 := by omega
   simp only [keptStraighteningSummand, Nat.sub_self, dividedPower_zero, one_mul]
