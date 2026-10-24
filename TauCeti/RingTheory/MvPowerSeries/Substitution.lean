@@ -68,6 +68,10 @@ uniformities are shadowed, so the evaluation the statement is about is never re-
   `MvPowerSeries.coeff_subst_X_zero_X_one`, `MvPowerSeries.coeff_subst_X_one_X_two` : the
   coefficients of `g(X + Y, Z)`, `g(X, Y + Z)`, `g(X, Y)` and `g(Y, Z)` for a two-variable series
   `g`, the four terms of the additive 2-cocycle identity.
+* `MvPowerSeries.coeff_subst_coe_pair` : the coefficients of a two-variable series with two
+  polynomials substituted into it.
+* `MvPowerSeries.coeff_subst_X_add_X_X_of_ne`, `MvPowerSeries.coeff_subst_X_X_of_ne` : the
+  coefficients of `g(Xₐ + X_b, X_c)` and `g(Xₐ, X_c)` for distinct variables `a`, `b`, `c`.
 * `MvPowerSeries.subst_coe_eq_coe_aeval` : substituting polynomials into a polynomial is
   evaluating it.
 * `MvPowerSeries.subst_coe_pair_eq_coe_aeval` : the same for a two-variable polynomial and a
@@ -76,6 +80,9 @@ uniformities are shadowed, so the evaluation the statement is about is never re-
   by the coefficients of `f`.
 * `MvPowerSeries.subst_eq_subst_of_coeff_mem` : if the coefficients of `f` annihilate an ideal `J`,
   then `f(a) = f(b)` for families `a` and `b` that agree modulo `J`.
+* `MvPowerSeries.subst_X_add_X_add_eq` : if the coefficients of `G` pairwise multiply to zero, then
+  `(X + Y + G)(u', v') = u' + v' + G(u, v)` for pairs `(u', v')` and `(u, v)` that agree modulo
+  them.
 
 ## Separating multivariable parameters
 
@@ -369,7 +376,7 @@ open Finsupp
 variable {O : Type*} [CommRing O]
 
 /-- Substituting two polynomials into a two-variable series, coefficientwise. -/
-private theorem coeff_subst_coe_pair (g : MvPowerSeries (Fin 2) O) (u v : MvPolynomial (Fin 3) O)
+theorem coeff_subst_coe_pair (g : MvPowerSeries (Fin 2) O) (u v : MvPolynomial (Fin 3) O)
     (huv : HasSubst ![(u : MvPowerSeries (Fin 3) O), v]) (e : Fin 3 →₀ ℕ) :
     coeff e (g.subst ![(u : MvPowerSeries (Fin 3) O), v]) =
       ∑ᶠ d : Fin 2 →₀ ℕ, coeff d g * (u ^ d 0 * v ^ d 1).coeff e := by
@@ -379,7 +386,7 @@ private theorem coeff_subst_coe_pair (g : MvPowerSeries (Fin 2) O) (u v : MvPoly
     MvPolynomial.coeff_coe]
 
 /-- The coefficients of `g(Xₐ + X_b, X_c)`, for distinct variables `a`, `b`, `c`. -/
-private theorem coeff_subst_X_add_X_X_of_ne {a b c : Fin 3} (hab : a ≠ b) (hac : a ≠ c)
+theorem coeff_subst_X_add_X_X_of_ne {a b c : Fin 3} (hab : a ≠ b) (hac : a ≠ c)
     (hbc : b ≠ c) (g : MvPowerSeries (Fin 2) O) (d : Fin 3 →₀ ℕ) :
     coeff d (g.subst ![X a + X b, X c]) =
       (d a + d b).choose (d a) * coeff (single 0 (d a + d b) + single 1 (d c)) g := by
@@ -394,7 +401,7 @@ private theorem coeff_subst_X_add_X_X_of_ne {a b c : Fin 3} (hab : a ≠ b) (hac
     exact he (by ext i; fin_cases i <;> simp [h₁, h₂])
 
 /-- The coefficients of `g(Xₐ, X_c)`, for distinct variables `a`, `b`, `c`. -/
-private theorem coeff_subst_X_X_of_ne {a b c : Fin 3} (hab : a ≠ b) (hac : a ≠ c) (hbc : b ≠ c)
+theorem coeff_subst_X_X_of_ne {a b c : Fin 3} (hab : a ≠ b) (hac : a ≠ c) (hbc : b ≠ c)
     (g : MvPowerSeries (Fin 2) O) (d : Fin 3 →₀ ℕ) :
     coeff d (g.subst ![(X a : MvPowerSeries (Fin 3) O), X c]) =
       if d b = 0 then coeff (single 0 (d a) + single 1 (d c)) g else 0 := by
@@ -509,6 +516,24 @@ theorem subst_eq_subst_of_coeff_mem {a b : σ → MvPowerSeries τ O} (ha : HasS
     simp only [map_pow, hmap]
   rw [smul_eq_mul, smul_eq_mul, ← sub_eq_zero, ← mul_sub]
   exact hf d _ hd
+
+/-- For `F = X + Y + G` with the coefficients of `G` pairwise multiplying to zero, substituting
+into `F` a pair `(u', v')` that agrees with `(u, v)` modulo the coefficients of `G` gives
+`u' + v' + G(u, v)`. -/
+theorem subst_X_add_X_add_eq {G : MvPowerSeries (Fin 2) O}
+    (hG : ∀ d e, coeff d G * coeff e G = 0) {u v u' v' : MvPowerSeries τ O}
+    (h' : HasSubst ![u', v']) (h : HasSubst ![u, v])
+    (hu : ∀ e, coeff e (u' - u) ∈ Ideal.span (Set.range fun d ↦ coeff d G))
+    (hv : ∀ e, coeff e (v' - v) ∈ Ideal.span (Set.range fun d ↦ coeff d G)) :
+    (X 0 + X 1 + G).subst ![u', v'] = u' + v' + G.subst ![u, v] := by
+  rw [subst_add h', subst_add h', subst_X h', subst_X h', subst_eq_subst_of_coeff_mem
+    (J := Ideal.span (Set.range fun d ↦ coeff d G)) h' h ?_ fun d ↦ Submodule.mem_annihilator.1
+      ((Submodule.mem_annihilator_span _ _).2 fun ⟨_, e, rfl⟩ ↦ hG d e)]
+  · simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one]
+  · intro s e
+    fin_cases s
+    · simpa using hu e
+    · simpa using hv e
 
 end CoeffMem
 

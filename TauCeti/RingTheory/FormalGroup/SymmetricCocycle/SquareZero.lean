@@ -30,8 +30,8 @@ first-order deformation of the additive formal group law, which is commutative w
 symmetric.
 
 This is how the symmetric 2-cocycle lemma computes the indecomposables of the Lazard ring: modulo
-the square of its augmentation ideal, the universal formal group law has square-zero
-coefficients, so they satisfy the symmetric cocycle equations
+the square of its augmentation ideal, the nonlinear part of the universal formal group law has
+square-zero coefficients, so they satisfy the symmetric cocycle equations
 (`FormalGroup.isSymmetricCocycleCoeff_coeff`) and `TauCeti.IsSymmetricCocycleCoeff.exists_eq_nsmul`
 applies to them.
 
@@ -67,24 +67,6 @@ open MvPowerSeries Finsupp
 variable {A : Type*} [CommRing A]
 
 namespace TauCeti
-
-/-- For `F = X + Y + G` with the coefficients of `G` pairwise multiplying to zero, substituting
-into `F` a pair `(u', v')` that agrees with `(u, v)` modulo the coefficients of `G` gives
-`u' + v' + G(u, v)`. -/
-private theorem subst_X_add_X_add_eq {τ : Type*} {G : MvPowerSeries (Fin 2) A}
-    (hG : ∀ d e, coeff d G * coeff e G = 0) {u v u' v' : MvPowerSeries τ A}
-    (h' : HasSubst ![u', v']) (h : HasSubst ![u, v])
-    (hu : ∀ e, coeff e (u' - u) ∈ Ideal.span (Set.range fun d ↦ coeff d G))
-    (hv : ∀ e, coeff e (v' - v) ∈ Ideal.span (Set.range fun d ↦ coeff d G)) :
-    (X 0 + X 1 + G).subst ![u', v'] = u' + v' + G.subst ![u, v] := by
-  rw [subst_add h', subst_add h', subst_X h', subst_X h', subst_eq_subst_of_coeff_mem
-    (J := Ideal.span (Set.range fun d ↦ coeff d G)) h' h ?_ fun d ↦ Submodule.mem_annihilator.1
-      ((Submodule.mem_annihilator_span _ _).2 fun ⟨_, e, rfl⟩ ↦ hG d e)]
-  · simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one]
-  · intro s e
-    fin_cases s
-    · simpa using hu e
-    · simpa using hv e
 
 /-- For `F = X + Y + G` with the coefficients of `G` pairwise multiplying to zero,
 `F(F(X, Y), Z) = X + Y + Z + G(X, Y) + G(X + Y, Z)`. -/
