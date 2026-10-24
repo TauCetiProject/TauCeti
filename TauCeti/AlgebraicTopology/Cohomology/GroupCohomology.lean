@@ -55,7 +55,7 @@ public section
 
 noncomputable section
 
-open CategoryTheory Simplicial TauCeti
+open CategoryTheory MonoidalCategory Simplicial TauCeti
 
 universe u
 
@@ -65,69 +65,36 @@ variable {E B : TopCat.{u}} {p : E ⟶ B} {G : Type u} [Group G] [MulAction G E]
   (hG : IsQuotientCoveringMap p G) (k : Type u) [CommRing k] (M : Type u) [AddCommGroup M]
   [Module k M]
 
-/-- Pulling back an `M`-valued singular `n`-cochain `f` of the base along `p` gives the
-`G`-invariant cochain `f ∘ p_*` of the total space, a morphism to the trivial representation. -/
-private def singularCochainPullback (n : ℕ) :
-    haveI := hG.toContinuousConstSMul
-    (((singularChains k).obj B).X n ⟶ ModuleCat.of k M) →ₗ[k]
-      (Rep.of (singularChainsRepresentation k E G n) ⟶ Rep.trivial k G M) :=
-  haveI := hG.toContinuousConstSMul
-  { toFun f := Rep.ofHom
-      { toLinearMap := f.hom ∘ₗ (((singularChains k).map p).f n).hom
-        isIntertwining' g := LinearMap.ext fun c ↦
-          congrArg f.hom (singularChains_map_f_singularChainsRepresentation hG k n g c) }
-    map_add' _ _ := rfl
-    map_smul' _ _ := rfl }
-
-/-- The pulled-back cochain evaluates a chain of the total space on its image in the base. -/
-private lemma singularCochainPullback_hom_apply (n : ℕ)
-    (f : ((singularChains k).obj B).X n ⟶ ModuleCat.of k M) (c : ((singularChains k).obj E).X n) :
-    haveI := hG.toContinuousConstSMul
-    (singularCochainPullback hG k M n f).hom c = f (((singularChains k).map p).f n c) :=
-  (rfl)
-
-/-- A `G`-invariant `M`-valued singular `n`-cochain of the total space descends to the base: its
-value on a simplex of the base is its value on a chosen lift. -/
-private def singularCochainDescend (n : ℕ) :
-    haveI := hG.toContinuousConstSMul
-    (Rep.of (singularChainsRepresentation k E G n) ⟶ Rep.trivial k G M) →
-      (((singularChains k).obj B).X n ⟶ ModuleCat.of k M) :=
-  haveI := hG.toContinuousConstSMul
-  fun f ↦ ModuleCat.ofHom <| chainsDesc fun τ ↦
-    f.hom (simplexChain (hG.toSSet_map_app_surjective _ τ).choose 1)
-
-/-- The descended cochain takes a simplex of the base to the value on its chosen lift. -/
-private lemma singularCochainDescend_simplexChain (n : ℕ) (τ : (TopCat.toSSet.obj B) _⦋n⦌) :
-    haveI := hG.toContinuousConstSMul
-    ∀ f : Rep.of (singularChainsRepresentation k E G n) ⟶ Rep.trivial k G M,
-      singularCochainDescend hG k M n f (simplexChain τ 1) =
-        f.hom (simplexChain (hG.toSSet_map_app_surjective _ τ).choose 1) :=
-  fun _ ↦ chainsDesc_simplexChain_one _ τ
-
 /-- Pulling back along `p` identifies the `M`-valued singular `n`-cochains of the base with the
-`G`-invariant cochains of the total space. -/
+`G`-invariant cochains of the total space: by `singularChainsRepCoinvariantsTensorIso`, they are
+the `M`-valued maps on the coinvariants `(k ⊗ Cₙ(E))_G`, which are the morphisms
+`k ⊗ Cₙ(E) ⟶ M` of representations to the trivial representation (`Rep.coinvariantsAdjunction`). -/
 private def singularCochainLinearEquiv (n : ℕ) :
     haveI := hG.toContinuousConstSMul
     (((singularChains k).obj B).X n ⟶ ModuleCat.of k M) ≃ₗ[k]
       (Rep.of (singularChainsRepresentation k E G n) ⟶ Rep.trivial k G M) :=
   haveI := hG.toContinuousConstSMul
-  { singularCochainPullback hG k M n with
-    invFun := singularCochainDescend hG k M n
-    left_inv f := ModuleCat.hom_ext <| singularChains_linearMap_ext fun τ ↦ by
-      rw [singularCochainDescend_simplexChain, LinearMap.toFun_eq_coe,
-        singularCochainPullback_hom_apply, singularChains_map_f_simplexChain,
-        (hG.toSSet_map_app_surjective _ τ).choose_spec]
-    right_inv f := Rep.hom_ext <| Representation.IntertwiningMap.ext <|
-      singularChains_linearMap_ext fun σ ↦ by
-        -- The chosen lift of `p_* σ` is a translate `g • σ` of `σ`, on which the invariant
-        -- cochain `f` takes the same value as on `σ`.
-        obtain ⟨g, hg⟩ := (hG.toSSet_map_app_eq_iff _ σ).1
-          (hG.toSSet_map_app_surjective _ ((TopCat.toSSet.map p).app _ σ)).choose_spec
-        simp only [LinearMap.toFun_eq_coe, Representation.IntertwiningMap.toLinearMap_apply]
-        rw [singularCochainPullback_hom_apply, singularChains_map_f_simplexChain,
-          singularCochainDescend_simplexChain, ← hg,
-          ← singularChainsRepresentation_simplexChain]
-        exact (Rep.hom_comm_apply f g _).trans (Rep.trivial_ρ_apply g _) }
+  Linear.homCongr k
+      (HomologicalComplex.Hom.isoApp (hG.singularChainsRepCoinvariantsTensorIso k) n).symm
+      (Iso.refl _) ≪≫ₗ
+    { (Rep.coinvariantsAdjunction k G).homEquiv _ (ModuleCat.of k M) with
+      map_add' _ _ := by ext; simp; rfl
+      map_smul' _ _ := by ext; simp; rfl } ≪≫ₗ
+    Linear.homCongr k (λ_ _) (Iso.refl _)
+
+/-- The pulled-back cochain evaluates a chain of the total space on its image in the base. -/
+private lemma singularCochainLinearEquiv_apply_hom_apply (n : ℕ)
+    (f : ((singularChains k).obj B).X n ⟶ ModuleCat.of k M) (c : ((singularChains k).obj E).X n) :
+    haveI := hG.toContinuousConstSMul
+    (singularCochainLinearEquiv hG k M n f).hom c = f (((singularChains k).map p).f n c) := by
+  have := hG.toContinuousConstSMul
+  -- The equivalence sends `f` to the cochain `c ↦ f (φ (1 ⊗ c))`, where `φ` is the comparison
+  -- `(k ⊗ Cₙ(E))_G ≅ Cₙ(B)`, which sends the class of `1 ⊗ c` to `p_* c`.
+  change f ((HomologicalComplex.Hom.isoApp (hG.singularChainsRepCoinvariantsTensorIso k) n).hom
+    (Rep.coinvariantsTensorMk _ _ 1 c)) = _
+  exact congrArg f.hom
+    ((singularChainsRepCoinvariantsTensorIso_hom_f_coinvariantsTensorMk hG k n 1 c).trans
+      (one_smul _ _))
 
 /-- **The singular cochains of the base of a quotient covering are the invariant cochains of the
 total space**: for the quotient covering map `p : E ⟶ B` of an action of `G`, pulling back along
@@ -151,8 +118,16 @@ def singularCochainComplexIsoLinearYonedaObj :
         (ConcreteCategory.congr_hom (((singularChains k).map p).comm (i + 1) i) c).symm
       rw [ModuleCat.comp_apply, ModuleCat.comp_apply, TauCeti.ChainComplex.linearYonedaObj_d_apply,
         TauCeti.ChainComplex.linearYonedaObj_d_apply, singularChainsRep_d]
-      exact congrArg f.hom
-        ((congrArg _ (singularChainsRepDifferential_hom_apply k E G i c)).trans h)
+      -- Unfold the components of the comparison to the degreewise equivalences.
+      change (singularCochainLinearEquiv hG k M i f).hom
+          ((singularChainsRepDifferential k E G i).hom c) =
+        (singularCochainLinearEquiv hG k M (i + 1)
+          (((singularChains k).obj B).d (i + 1) i ≫ f)).hom c
+      have hd := congrArg (((singularChains k).map p).f i)
+        (singularChainsRepDifferential_hom_apply k E G i c)
+      exact (singularCochainLinearEquiv_apply_hom_apply hG k M i f _).trans <|
+        (congrArg f.hom (hd.trans h)).trans (singularCochainLinearEquiv_apply_hom_apply hG k M
+          (i + 1) (((singularChains k).obj B).d (i + 1) i ≫ f) c).symm
 
 /-- The comparison of cochains pulls an `M`-valued cochain `f` of the base back to the cochain
 `f ∘ p_*` of the total space. -/
@@ -162,7 +137,7 @@ lemma singularCochainComplexIsoLinearYonedaObj_hom_f_hom_apply (n : ℕ)
     haveI := hG.toContinuousConstSMul
     ((hG.singularCochainComplexIsoLinearYonedaObj k M).hom.f n f).hom c =
       f (((singularChains k).map p).f n c) :=
-  (rfl)
+  singularCochainLinearEquiv_apply_hom_apply hG k M n f c
 
 /-- The inverse comparison descends a `G`-invariant cochain `f` of the total space to the cochain
 of the base whose value on the image `p_* c` of a chain `c` is `f c`. -/
@@ -173,11 +148,11 @@ lemma singularCochainComplexIsoLinearYonedaObj_inv_f_hom_apply (n : ℕ)
       ModuleCat.Hom.hom (A := ((singularChains k).obj B).X n) (B := ModuleCat.of k M)
           ((hG.singularCochainComplexIsoLinearYonedaObj k M).inv.f n f)
           (((singularChains k).map p).f n c) = f.hom c := fun f ↦ by
-  have := hG.toContinuousConstSMul
-  refine (singularCochainComplexIsoLinearYonedaObj_hom_f_hom_apply hG k M n _ c).symm.trans ?_
   -- Pulling back the descended cochain recovers `f`, since the comparison is an isomorphism.
-  exact congrArg (fun φ ↦ Rep.Hom.hom φ c) (ConcreteCategory.congr_hom
-    (HomologicalComplex.congr_hom (hG.singularCochainComplexIsoLinearYonedaObj k M).inv_hom_id n) f)
+  have h := singularCochainLinearEquiv_apply_hom_apply hG k M n
+    ((singularCochainLinearEquiv hG k M n).symm f) c
+  rw [LinearEquiv.apply_symm_apply] at h
+  exact h.symm
 
 /-- **The singular cohomology of the base of a contractible free covering is group cohomology**:
 for the quotient covering map `p : E ⟶ B` of an action of `G` with contractible total space, the
