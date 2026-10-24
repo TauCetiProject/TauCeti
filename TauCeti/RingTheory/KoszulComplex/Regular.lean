@@ -95,7 +95,8 @@ theorem exact_koszulDifferential_coprod_succ (k : ℕ)
     (h₀ : Function.Exact (koszulDifferential φ (k + 1)) (koszulDifferential φ k)) :
     Function.Exact (koszulDifferential (φ.coprod (LinearMap.toSpanSingleton R R x)) (k + 2))
       (koszulDifferential (φ.coprod (LinearMap.toSpanSingleton R R x)) (k + 1)) := by
-  refine exact_koszulDifferential_of_ker_le _ (k + 1) fun z hz ↦
+  refine LinearMap.exact_of_comp_of_mem_range
+    (koszulDifferential_comp_koszulDifferential _ (k + 1)) fun z hz ↦
     mem_range_koszulDifferential_coprod φ x (k + 1) h₁ z hz ((h₀ _).1 ?_)
   have hz' := congrArg Subtype.val hz
   simp only [coe_koszulDifferential_apply, ZeroMemClass.coe_zero] at hz'
@@ -111,7 +112,8 @@ theorem exact_koszulDifferential_coprod_zero (hx : IsSMulRegular (R ⧸ LinearMa
     (h₀ : Function.Exact (koszulDifferential φ 1) (koszulDifferential φ 0)) :
     Function.Exact (koszulDifferential (φ.coprod (LinearMap.toSpanSingleton R R x)) 1)
       (koszulDifferential (φ.coprod (LinearMap.toSpanSingleton R R x)) 0) := by
-  refine exact_koszulDifferential_of_ker_le _ 0 fun z hz ↦
+  refine LinearMap.exact_of_comp_of_mem_range
+    (koszulDifferential_comp_koszulDifferential _ 0) fun z hz ↦
     mem_range_koszulDifferential_coprod φ x 0 h₀ z hz ?_
   set b := exteriorPower.map 0 (LinearMap.fst R M R)
     (koszulDifferential (LinearMap.snd R M R) 0 z)

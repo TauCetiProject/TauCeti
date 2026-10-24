@@ -108,16 +108,6 @@ theorem koszulDifferential_koszulDifferential (n : ℕ) (x : ⋀[R]^(n + 2) M) :
     koszulDifferential φ n (koszulDifferential φ (n + 1) x) = 0 :=
   LinearMap.congr_fun (koszulDifferential_comp_koszulDifferential φ n) x
 
-/-- The Koszul complex is exact whenever every cycle is a boundary; the other inclusion
-follows from the fact that its differential squares to zero. -/
-theorem exact_koszulDifferential_of_ker_le (n : ℕ)
-    (h : ∀ z, koszulDifferential φ n z = 0 →
-      z ∈ LinearMap.range (koszulDifferential φ (n + 1))) :
-    Function.Exact (koszulDifferential φ (n + 1)) (koszulDifferential φ n) := by
-  refine fun z ↦ ⟨h z, ?_⟩
-  rintro ⟨y, rfl⟩
-  exact koszulDifferential_koszulDifferential φ n y
-
 /-- **The first Koszul differential is `φ`**: under the identifications `⋀⁰ M ≅ R` and
 `⋀¹ M ≅ M`, the differential `⋀¹ M → ⋀⁰ M` is `φ`. -/
 theorem zeroEquiv_comp_koszulDifferential_zero :
@@ -179,7 +169,8 @@ theorem exact_koszulDifferential_of_retract {N : Type*} [AddCommGroup N] [Module
     (hex : Function.Exact (koszulDifferential ψ (n + 1)) (koszulDifferential ψ n)) :
     Function.Exact (koszulDifferential φ (n + 1)) (koszulDifferential φ n) := by
   have hφ : ψ ∘ₗ g = φ := by rw [← hψ, LinearMap.comp_assoc, hhg, LinearMap.comp_id]
-  refine exact_koszulDifferential_of_ker_le φ n fun z hz ↦ ?_
+  refine LinearMap.exact_of_comp_of_mem_range
+    (koszulDifferential_comp_koszulDifferential φ n) fun z hz ↦ ?_
   obtain ⟨y, hy⟩ := (hex (exteriorPower.map (n + 1) g z)).1 (by
     rw [koszulDifferential_map, hφ, hz, map_zero])
   refine ⟨exteriorPower.map (n + 2) h y, ?_⟩
