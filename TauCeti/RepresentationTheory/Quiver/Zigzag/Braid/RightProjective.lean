@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors, Wentao Li
 -/
 module
 
+public import TauCeti.Algebra.Category.GradedModuleCat.Projective
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.Factors
 public import TauCeti.RingTheory.Idempotents.Projective
 
@@ -53,6 +54,8 @@ private def rightFactorsLinearEquiv (i : V) :
   exact
     { (zigzagBraidBimoduleRightFactorsEquiv k G i).toAddEquiv with
       map_smul' := fun a m ↦ by
+        -- Remove the additive-equivalence function projection and the identity ring homomorphism
+        -- from the linear-equivalence structure field, retaining the same restricted action.
         change zigzagBraidBimoduleRightFactorsEquiv k G i (a • m) =
           a • zigzagBraidBimoduleRightFactorsEquiv k G i m
         simpa only [op_unop] using
@@ -65,70 +68,10 @@ theorem projective_zigzagGradedBraidBimodule_right (i : V) :
   let := TauCeti.Algebra.TensorProduct.moduleRight (k := k) (A := Z) (B := Zᵐᵒᵖ) (U i)
   have he := isIdempotentElem_zigzagAlgebraBasis_inl k G i
   let : Module.Projective k Z := Module.Projective.of_basis (zigzagAlgebraBasis k G)
-  let : Module.Projective k (L i) := by
-    apply Module.Projective.of_split ((L i).subtype.restrictScalars k)
-      ((LinearMap.toSpanSingleton Z (L i) (spanSingletonGenerator (e i))).restrictScalars k)
-    apply LinearMap.ext
-    intro x
-    exact smul_spanSingletonGenerator he x
-  let : Module.Projective Zᵐᵒᵖ (R i) :=
-    (show IsIdempotentElem (op (e i)) from by
-      rw [IsIdempotentElem, ← op_mul, he.eq]).projective_span_singleton
+  let : Module.Projective k (L i) := he.projective_span_singleton_restrictScalars
+  have heop : IsIdempotentElem (op (e i)) := congrArg op he.eq
+  let : Module.Projective Zᵐᵒᵖ (R i) := heop.projective_span_singleton
   exact Module.Projective.of_equiv' (rightFactorsLinearEquiv k G i).symm
-
-private def regularRightLinearEquiv :
-    letI := TauCeti.Algebra.TensorProduct.moduleRight
-      (k := k) (A := Z) (B := Zᵐᵒᵖ) (zigzagGradedBimodule k G)
-    zigzagGradedBimodule k G ≃ₗ[Zᵐᵒᵖ] Zᵐᵒᵖ := by
-  letI := TauCeti.Algebra.TensorProduct.moduleRight
-    (k := k) (A := Z) (B := Zᵐᵒᵖ) (zigzagGradedBimodule k G)
-  change Bimodule (AlgHom.id k Z) ≃ₗ[Zᵐᵒᵖ] Zᵐᵒᵖ
-  exact
-    { toFun := fun m ↦ op ((Bimodule.of (AlgHom.id k Z)).symm m)
-      invFun := fun a ↦ Bimodule.of (AlgHom.id k Z) (unop a)
-      left_inv := fun m ↦ by simp
-      right_inv := fun a ↦ by simp
-      map_add' := fun m n ↦ by simp only [map_add, MulOpposite.op_add]
-      map_smul' := fun a m ↦ by
-        change op ((Bimodule.of (AlgHom.id k Z)).symm (((1 : Z) ⊗ₜ[k] a) • m)) =
-          a * op ((Bimodule.of (AlgHom.id k Z)).symm m)
-        rw [Bimodule.symm_smul]
-        simp only [AlgHom.id_apply, one_mul, op_mul, op_unop] }
-
-private theorem regular_projective_right :
-    letI := TauCeti.Algebra.TensorProduct.moduleRight
-      (k := k) (A := Z) (B := Zᵐᵒᵖ) (zigzagGradedBimodule k G)
-    Module.Projective Zᵐᵒᵖ (zigzagGradedBimodule k G) := by
-  let := TauCeti.Algebra.TensorProduct.moduleRight
-    (k := k) (A := Z) (B := Zᵐᵒᵖ) (zigzagGradedBimodule k G)
-  exact Module.Projective.of_equiv' (regularRightLinearEquiv k G).symm
-
-private theorem projective_of_graded_iso
-    {M N : GradedModuleCat.{max u w} (zigzagEnvelopingGrading k G).piece} (f : M ≅ N)
-    (hN : letI := TauCeti.Algebra.TensorProduct.moduleRight (k := k) (A := Z) (B := Zᵐᵒᵖ) N
-      Module.Projective Zᵐᵒᵖ N) :
-    letI := TauCeti.Algebra.TensorProduct.moduleRight (k := k) (A := Z) (B := Zᵐᵒᵖ) M
-    Module.Projective Zᵐᵒᵖ M := by
-  let := TauCeti.Algebra.TensorProduct.moduleRight (k := k) (A := Z) (B := Zᵐᵒᵖ) M
-  let := TauCeti.Algebra.TensorProduct.moduleRight (k := k) (A := Z) (B := Zᵐᵒᵖ) N
-  let : Module.Projective Zᵐᵒᵖ N := hN
-  let g := (GradedModuleCat.toModuleCat.mapIso f).toLinearEquiv
-  let g' : M ≃ₗ[Zᵐᵒᵖ] N :=
-    { g.toAddEquiv with
-      map_smul' := fun a m ↦ by
-        change g (((1 : Z) ⊗ₜ[k] a) • m) = ((1 : Z) ⊗ₜ[k] a) • g m
-        exact g.map_smul _ _ }
-  exact Module.Projective.of_equiv' g'.symm
-
-private theorem projective_of_graded_isZero
-    (M : GradedModuleCat.{max u w} (zigzagEnvelopingGrading k G).piece)
-    (hM : Limits.IsZero M) :
-    letI := TauCeti.Algebra.TensorProduct.moduleRight (k := k) (A := Z) (B := Zᵐᵒᵖ) M
-    Module.Projective Zᵐᵒᵖ M := by
-  let := TauCeti.Algebra.TensorProduct.moduleRight (k := k) (A := Z) (B := Zᵐᵒᵖ) M
-  let : Subsingleton M :=
-    ModuleCat.subsingleton_of_isZero (GradedModuleCat.toModuleCat.map_isZero hM)
-  infer_instance
 
 /-- Every term of the braid complex is projective for the restricted right action. -/
 theorem projective_zigzagBraidComplex_X_right (i : V) (n : ℤ) :
@@ -137,13 +80,19 @@ theorem projective_zigzagBraidComplex_X_right (i : V) (n : ℤ) :
     Module.Projective Zᵐᵒᵖ ((zigzagBraidComplex k G i).X n) := by
   by_cases h₀ : n = -1
   · subst n
-    exact projective_of_graded_iso k G (zigzagBraidComplexXIso₀ k G i)
+    exact GradedModuleCat.projective_restrictScalars_of_iso
+      (Algebra.TensorProduct.includeRight : Zᵐᵒᵖ →ₐ[k] Z ⊗[k] Zᵐᵒᵖ).toRingHom
+      (zigzagBraidComplexXIso₀ k G i)
       (projective_zigzagGradedBraidBimodule_right k G i)
   by_cases h₁ : n = 0
   · subst n
-    exact projective_of_graded_iso k G (zigzagBraidComplexXIso₁ k G i)
-      (regular_projective_right k G)
-  exact projective_of_graded_isZero k G _
+    exact GradedModuleCat.projective_restrictScalars_of_iso
+      (Algebra.TensorProduct.includeRight : Zᵐᵒᵖ →ₐ[k] Z ⊗[k] Zᵐᵒᵖ).toRingHom
+      (zigzagBraidComplexXIso₁ k G i) (by
+        -- The regular graded term has Bimodule's carrier and canonical restricted right action.
+        exact inferInstanceAs (Module.Projective Zᵐᵒᵖ (Bimodule (AlgHom.id k Z))))
+  exact GradedModuleCat.projective_restrictScalars_of_isZero
+    (Algebra.TensorProduct.includeRight : Zᵐᵒᵖ →ₐ[k] Z ⊗[k] Zᵐᵒᵖ).toRingHom _
     (isZero_zigzagBraidComplex_X (k := k) (G := G) i h₀ h₁)
 
 /-- Every term of the inverse braid complex is projective for the restricted right action. -/
@@ -153,15 +102,21 @@ theorem projective_zigzagBraidInverseComplex_X_right (i : V) (n : ℤ) :
     Module.Projective Zᵐᵒᵖ ((zigzagBraidInverseComplex k G i).X n) := by
   by_cases h₀ : n = 0
   · subst n
-    exact projective_of_graded_iso k G (zigzagBraidInverseComplexXIso₀ k G i)
-      (regular_projective_right k G)
+    exact GradedModuleCat.projective_restrictScalars_of_iso
+      (Algebra.TensorProduct.includeRight : Zᵐᵒᵖ →ₐ[k] Z ⊗[k] Zᵐᵒᵖ).toRingHom
+      (zigzagBraidInverseComplexXIso₀ k G i) (by
+        -- The regular graded term has Bimodule's carrier and canonical restricted right action.
+        exact inferInstanceAs (Module.Projective Zᵐᵒᵖ (Bimodule (AlgHom.id k Z))))
   by_cases h₁ : n = 1
   · subst n
-    apply projective_of_graded_iso k G (zigzagBraidInverseComplexXIso₁ k G i)
+    apply GradedModuleCat.projective_restrictScalars_of_iso
+      (Algebra.TensorProduct.includeRight : Zᵐᵒᵖ →ₐ[k] Z ⊗[k] Zᵐᵒᵖ).toRingHom
+      (zigzagBraidInverseComplexXIso₁ k G i)
     -- An internal shift preserves the carrier and its restricted right action.
     simpa only [GradedModuleCat.shiftFunctor_obj] using
       projective_zigzagGradedBraidBimodule_right k G i
-  exact projective_of_graded_isZero k G _
+  exact GradedModuleCat.projective_restrictScalars_of_isZero
+    (Algebra.TensorProduct.includeRight : Zᵐᵒᵖ →ₐ[k] Z ⊗[k] Zᵐᵒᵖ).toRingHom _
     (isZero_zigzagBraidInverseComplex_X (k := k) (G := G) i h₀ h₁)
 
 end TauCeti
