@@ -207,12 +207,7 @@ private theorem cyclotomicConductor_rat_eq :
     cyclotomicConductor ℚ F m =
       rayClassConductor (⊥ : Subgroup (RayClassGroup (ratModulus m (NeZero.ne m)))) := by
   rw [cyclotomicConductor, (MonoidHom.ker_eq_bot_iff _).mpr (cyclotomicArtin_rat_injective F)]
-  have key : ∀ 𝔪 : Modulus ℚ, 𝔪 = ratModulus m (NeZero.ne m) →
-      rayClassConductor (⊥ : Subgroup (RayClassGroup 𝔪)) =
-        rayClassConductor (⊥ : Subgroup (RayClassGroup (ratModulus m (NeZero.ne m)))) := by
-    rintro _ rfl
-    rfl
-  exact key _ (cyclotomicModulus_rat m)
+  rw [cyclotomicModulus_rat]
 
 /-- **The conductor of `ℚ(ζ_m)/ℚ` for `m ≤ 2` is trivial**: then `ℚ(ζ_m) = ℚ`. -/
 @[simp] theorem cyclotomicConductor_rat_of_le_two (hm : m ≤ 2) :
