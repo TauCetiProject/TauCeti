@@ -68,7 +68,10 @@ variable {ι K : Type*} [Fintype ι]
 theorem IsSymm.mulVec_row_of_isIdempotentElem [Semiring K] {A : Matrix ι ι K} (hS : A.IsSymm)
     (hI : IsIdempotentElem A) (i : ι) : A *ᵥ A i = A i := by
   classical
-  rw [← row_apply' A i, ← col_transpose, hS.eq, ← mulVec_single_one, mulVec_mulVec, hI.eq]
+  have hcol : A *ᵥ Pi.single i 1 = A i := by
+    ext j
+    rw [mulVec_single_one, col_apply, hS.apply]
+  rw [← hcol, mulVec_mulVec, hI.eq]
 
 /-- Over a field of characteristic zero, an idempotent matrix of trace zero is zero: the trace of
 an idempotent is the dimension of its range. This is the matrix form of
@@ -143,8 +146,8 @@ theorem isIdempotentElem_rankOneProjector (x : ι → K) :
     IsIdempotentElem (rankOneProjector x) := by
   rcases eq_or_ne (x ⬝ᵥ x) 0 with hx | hx
   · simp [IsIdempotentElem, rankOneProjector, hx]
-  rw [IsIdempotentElem, rankOneProjector, smul_mul_smul_comm, vecMulVec_mul_vecMulVec,
-    vecMulVec_smul, smul_smul, mul_assoc, inv_mul_cancel₀ hx, mul_one]
+  simp [IsIdempotentElem, rankOneProjector, smul_mul_smul_comm, vecMulVec_mul_vecMulVec, smul_smul,
+    hx]
 
 theorem trace_rankOneProjector {x : ι → K} (hx : x ⬝ᵥ x ≠ 0) :
     (rankOneProjector x).trace = 1 := by
@@ -216,7 +219,7 @@ def projector (p : ℙ K (ι → K)) : Matrix ι ι K :=
 
 @[simp]
 theorem projector_mk (x : ι → K) (hx : x ≠ 0) : projector (mk K x hx) = rankOneProjector x :=
-  (rfl)
+  Projectivization.lift_mk _ _ x hx
 
 variable [LinearOrder K] [IsStrictOrderedRing K]
 
