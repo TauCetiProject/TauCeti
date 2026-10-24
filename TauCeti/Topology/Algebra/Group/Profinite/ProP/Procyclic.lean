@@ -54,6 +54,17 @@ namespace TauCeti.IsProP
 variable {p : ℕ} [Fact p.Prime] {P : Type*} [Group P] [TopologicalSpace P]
   [IsTopologicalGroup P] [CompactSpace P] [TotallyDisconnectedSpace P]
 
+/-- An element conjugating `a` to a unit `p`-adic power normalizes its closed procyclic
+subgroup. -/
+theorem mem_normalizer_closedZpowers_of_conj_eq_padicPow (hP : IsProP p P) {a g : P}
+    (u : ℤ_[p]ˣ) (h : g * a * g⁻¹ = hP.padicPow a u) :
+    g ∈ Subgroup.normalizer (closedZpowers a : Set P) := by
+  rw [Subgroup.mem_normalizer_iff_map_conj_eq, closedZpowers_def,
+    MonoidHom.map_topologicalClosure _ (IsTopologicalGroup.continuous_conj g) _
+      (by rw [← closedZpowers_def]; exact (isClosed_closedZpowers a).isCompact),
+    MonoidHom.map_zpowers, MonoidHom.coe_ofClass, MulAut.conj_apply, h]
+  simpa only [closedZpowers_def] using hP.closedZpowers_padicPow a u
+
 /-- **A `p`-adic power with exponent divisible by `p` lies in the pro-`p` Frattini subgroup.** -/
 theorem padicPow_mem_proPFrattini_of_dvd (hP : IsProP p P) {l : ℤ_[p]} (hl : (p : ℤ_[p]) ∣ l)
     (a : P) : hP.padicPow a l ∈ proPFrattini p P := by

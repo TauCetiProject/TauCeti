@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.Padics.CharacterLift
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.ZModFourLift
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.QInvariant
-public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.RankParity
+public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.Rank.Parity
 
 /-!
 # The cup squares of a Demushkin group at `p = 2` vanish exactly when `q ≠ 2`
