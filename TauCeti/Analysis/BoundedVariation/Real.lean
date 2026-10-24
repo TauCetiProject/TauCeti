@@ -329,15 +329,8 @@ theorem perimeter_Ioo {a b : ℝ} (hab : a < b) : perimeter volume ⊤ (Ioo a b)
   rw [perimeter_def, totalVariationOn_le_iff]
   intro φ hφ
   have hdiff : Differentiable ℝ φ := φ.contDiff.differentiable (by simp)
-  -- On the line a test vector field is a test function, whose divergence is its derivative.
-  have hd (x : ℝ) : divergenceCLM φ x = deriv φ x := by
-    have hφ : postcompCLM (ContinuousLinearMap.toSpanSingleton ℝ (1 : ℝ)) φ = φ := by
-      ext; simp
-    have h := congrFun (congrArg DFunLike.coe (divergenceCLM_postcompCLM_toSpanSingleton φ 1)) x
-    rw [hφ] at h
-    rw [h, lineDerivOp_one_apply_eq_deriv]
   have hint : ∫ x, divergenceCLM φ x * (Ioo a b).indicator 1 x = φ b - φ a := by
-    simp_rw [hd, ← indicator_mul_right, Pi.one_apply, mul_one]
+    simp_rw [divergenceCLM_apply_eq_deriv, ← indicator_mul_right, Pi.one_apply, mul_one]
     rw [integral_indicator measurableSet_Ioo, ← integral_Ioc_eq_integral_Ioo,
       ← intervalIntegral.integral_of_le hab.le, intervalIntegral.integral_deriv_eq_sub
         (fun x _ => hdiff x) ((φ.contDiff.continuous_deriv (by simp)).intervalIntegrable _ _)]
