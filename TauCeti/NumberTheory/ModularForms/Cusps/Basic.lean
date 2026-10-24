@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.ModularForms.Basic
 public import Mathlib.GroupTheory.GroupAction.Period
 public import Mathlib.NumberTheory.ModularForms.Cusps
 public import Mathlib.NumberTheory.ModularForms.SlashActions
@@ -17,6 +18,8 @@ shift matrices; a subgroup `𝒢` of finite relative index in `𝒮ℒ` contains
 power of `T`, and `Subgroup.integerCuspWidth 𝒢` is the least such exponent. The cosets of the
 first `Subgroup.integerCuspWidth 𝒢` powers of `T` are pairwise distinct in `𝒮ℒ ⧸ 𝒢 ⊓ 𝒮ℒ`, and
 the integer cusp width is a positive integer multiple of the strict width at `∞`.
+At an irregular cusp the negative shift by the projective width lies in the group;
+its slash action gives the weight-parity sign under translation.
 
 ## Main declarations
 
@@ -29,11 +32,16 @@ the integer cusp width is a positive integer multiple of the strict width at `�
 * `TauCeti.Subgroup.exists_pos_nat_integerCuspWidth_eq_mul_strictWidthInfty`: the integer cusp
   width is a positive integer multiple of the strict width at `∞`.
 * `TauCeti.ModularForm.slash_T_zpow_apply`: slashing by a power of `T` is an integer shift.
+* `TauCeti.Subgroup.neg_upperRightHom_widthInfty_mem_of_not_isRegularAtInfty`: the negative shift
+  belonging to the group at an irregular cusp.
+* `TauCeti.SlashInvariantForm.vadd_apply_of_neg_upperRightHom_mem`: a negative
+  shift in the group gives translation by the weight-parity sign.
 
 ## References
 
 * [Mathlib PR #39087](https://github.com/leanprover-community/mathlib4/pull/39087)
   (Chris Birkbeck).
+* F. Diamond and J. Shurman, *A First Course in Modular Forms*, §2.4.
 -/
 
 public noncomputable section
@@ -87,6 +95,20 @@ lemma ModularForm.slash_T_zpow_apply (k j : ℤ) (g : ℍ → ℂ) (τ : ℍ) :
   rw [_root_.ModularForm.SL_slash, Matrix.SpecialLinearGroup.coe_GL_eq_mapGL,
     ModularGroup.mapGL_T_zpow_eq_upperRightHom, ModularForm.slash_upperRightHom_apply]
 
+
+/-- A negative translation in the group gives the weight-parity transformation
+law under translation by `h`. -/
+theorem SlashInvariantForm.vadd_apply_of_neg_upperRightHom_mem
+    {F : Type*} [FunLike F ℍ ℂ] {Γ : Subgroup (GL (Fin 2) ℝ)} {k : ℤ} {h : ℝ}
+    [SlashInvariantFormClass F Γ k] (f : F)
+    (hΓ : -Matrix.GeneralLinearGroup.upperRightHom h ∈ Γ) (z : ℍ) :
+    f (h +ᵥ z) = (-1 : ℂ) ^ k * f z := by
+  have hs := congrFun (SlashInvariantFormClass.slash_action_eq f _ hΓ) z
+  rw [← mul_neg_one (Matrix.GeneralLinearGroup.upperRightHom h),
+    SlashAction.slash_mul, ModularForm.slash_neg_one] at hs
+  simp only [Pi.smul_apply, smul_eq_mul, TauCeti.ModularForm.slash_upperRightHom_apply] at hs
+  simpa only [← inv_zpow, inv_neg_one] using
+    (eq_inv_mul_iff_mul_eq₀ (zpow_ne_zero k (by norm_num : (-1 : ℂ) ≠ 0))).mpr hs
 
 section IntegerCuspWidth
 
@@ -236,6 +258,18 @@ lemma Subgroup.exists_pos_nat_integerCuspWidth_eq_mul_strictWidthInfty
   exact ⟨m.toNat, by lia, by rw [← hm, ← Int.cast_natCast, Int.toNat_of_nonneg hm_pos.le]⟩
 
 end IntegerCuspWidth
+
+/-- At an irregular cusp the negative translation by the projective width belongs
+to the group. -/
+theorem Subgroup.neg_upperRightHom_widthInfty_mem_of_not_isRegularAtInfty
+    (Γ : Subgroup (GL (Fin 2) ℝ)) [DiscreteTopology Γ.periods]
+    (hΓ : ¬Γ.IsRegularAtInfty) :
+    -Matrix.GeneralLinearGroup.upperRightHom Γ.widthInfty ∈ Γ := by
+  have hmem := Γ.widthInfty_mem_periods
+  simp only [Subgroup.periods, Subgroup.mem_strictPeriods_iff,
+    Subgroup.mem_adjoinNegOne_iff] at hmem
+  exact hmem.resolve_left fun h ↦ hΓ (Γ.isRegularAtInfty_iff.mpr
+    (Subgroup.mem_strictPeriods_iff.mpr h))
 
 /-! ### The strict period `1` of `Γ₀(N)` and `Γ₁(N)` -/
 
