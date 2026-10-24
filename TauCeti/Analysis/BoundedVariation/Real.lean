@@ -159,8 +159,7 @@ private theorem ofReal_sum_mul_sub_le_totalVariationOn {Ω : Opens ℝ} {u : ℝ
     have hT (y) : ∂_{(1 : ℝ)} T y = ∑ i : Fin m, ε i *
         (c * deriv Real.smoothTransition (c * (y - x i.castSucc)) -
           c * deriv Real.smoothTransition (c * (y - x i.succ))) := by
-      rw [lineDerivOp_apply, coe_mk, (hgd y).differentiableAt.lineDeriv_eq_fderiv,
-        fderiv_apply_one_eq_deriv, (hgd y).deriv]
+      rw [lineDerivOp_one_apply_eq_deriv, coe_mk, (hgd y).deriv]
     simp_rw [hT, Finset.sum_mul, mul_assoc, sub_mul]
     rw [integral_finsetSum _ fun i _ => ?_]
     · refine Finset.sum_congr rfl fun i _ => ?_
@@ -336,7 +335,7 @@ theorem perimeter_Ioo {a b : ℝ} (hab : a < b) : perimeter volume ⊤ (Ioo a b)
       ext; simp
     have h := congrFun (congrArg DFunLike.coe (divergenceCLM_postcompCLM_toSpanSingleton φ 1)) x
     rw [hφ] at h
-    rw [h, lineDerivOp_apply, (hdiff x).lineDeriv_eq_fderiv, fderiv_apply_one_eq_deriv]
+    rw [h, lineDerivOp_one_apply_eq_deriv]
   have hint : ∫ x, divergenceCLM φ x * (Ioo a b).indicator 1 x = φ b - φ a := by
     simp_rw [hd, ← indicator_mul_right, Pi.one_apply, mul_one]
     rw [integral_indicator measurableSet_Ioo, ← integral_Ioc_eq_integral_Ioo,
