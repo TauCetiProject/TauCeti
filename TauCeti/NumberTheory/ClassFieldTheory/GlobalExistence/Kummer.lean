@@ -1,0 +1,196 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.NumberTheory.ClassFieldTheory.GlobalExistence.UpwardClosure
+public import TauCeti.NumberTheory.ClassFieldTheory.Global.Kummer.Index
+public import TauCeti.NumberTheory.ClassFieldTheory.Global.Kummer.Layer
+public import TauCeti.NumberTheory.ClassFieldTheory.Global.Kummer.Norm
+public import TauCeti.NumberTheory.ClassFieldTheory.KummerLayer
+import TauCeti.NumberTheory.ClassFieldTheory.Global.Reciprocity
+import TauCeti.NumberTheory.NumberField.Global.Ideles.Ray.OpenSubgroup
+import TauCeti.NumberTheory.NumberField.Kummer.Unramified
+import TauCeti.RingTheory.ClassGroup.HeightOneSpectrum
+
+/-!
+# The Kummer case of global existence
+
+Let `K` be a number field containing the `p`-th roots of unity for a prime `p`. This file proves
+the **Kummer case** of the global existence theorem (Milne, *Class Field Theory*, VII, Lemma 9.3):
+every open subgroup `N` of the idele class group `C_K` containing the `p`-th powers is the norm
+subgroup of a finite abelian extension of `K`
+(`exists_abelianLayer_globalNormSubgroup_eq_of_pow_mem`).
+
+The extension is the Kummer field `M = K(U_S^{1/p})` of the `S`-units, cut out by the Kummer layer
+`kummerLayer p (S.unit K)`, for a finite set `S` of finite places containing the places above `p`
+and generating the ideal class group. Write `E_S` for the Kummer idele subgroup
+`auxiliaryKummerIdeleSubgroup S ∅ p` of ideles that are `p`-th powers at `S` and at every infinite
+place and units elsewhere. Then:
+
+* the norm subgroup of `M/K` is the image of `E_S` in `C_K`
+  (`globalNormSubgroup_kummerLayer_sUnits`). The image of `E_S` consists of norms, since `M/K` has
+  exponent `p` and is unramified outside `S`, and both subgroups have index `p ^ (#S + r₁ + r₂)`:
+  the image of `E_S` by the product formula and the `S`-unit theorem, and the norm subgroup by the
+  norm index theorem `[C_K : N_{M/K}(C_M)] = [M : K]` together with the Kummer degree of `M`;
+* an open subgroup `N` contains a ray subgroup, so once `S` also contains the finite part of its
+  modulus, every element of `E_S` is a `p`-th power times an idele of that ray subgroup, and
+  `N ⊇ C_Kᵖ` contains the image of `E_S`
+  (`auxiliaryKummerIdeleClassSubgroup_le_of_raySubgroup_le`).
+
+Hence `N` contains the norm subgroup of `M/K`, and upward closure of global norm subgroups
+(`exists_abelianLayer_globalNormSubgroup_eq_of_le`) realizes `N` itself as a norm subgroup.
+
+Together with descent along `K(ζ_p)/K` and the induction on the index of
+`ClassFormation.exists_abelianLayer_normSubgroup_eq_of_forall_prime`, this is the arithmetic input
+of the global existence theorem.
+
+## Main results
+
+* `TauCeti.ClassFieldTheory.auxiliaryKummerIdeleClassSubgroup_le_of_raySubgroup_le`: a subgroup of
+  `C_K` containing the `n`-th powers and the ray subgroup of a modulus supported in `S` contains
+  the image of `E_S`.
+* `TauCeti.ClassFieldTheory.globalNormSubgroup_kummerLayer_sUnits`: the norm subgroup of
+  `K(U_S^{1/p})/K` is the image of `E_S`.
+* `TauCeti.ClassFieldTheory.exists_abelianLayer_globalNormSubgroup_eq_of_pow_mem`: the Kummer case
+  of global existence.
+
+## References
+
+* J. S. Milne, *Class Field Theory*, v4.03, Chapter VII, §9, Lemma 9.3.
+* E. Artin and J. Tate, *Class Field Theory*, Chapter XIV, §6.
+-/
+
+public noncomputable section
+
+open IsDedekindDomain NumberField
+
+namespace TauCeti.ClassFieldTheory
+
+open GlobalNumberFields
+
+variable {K : Type} [Field K] [NumberField K]
+
+/-- **A subgroup containing the `n`-th powers and a ray subgroup contains a Kummer idele-class
+subgroup.** Let `N ≤ C_K` contain the `n`-th powers and the ray subgroup of a modulus `𝔪` whose
+finite part is supported in `S`. Then `N` contains the image in `C_K` of the Kummer idele subgroup
+`E_S` of ideles that are `n`-th powers at `S` and at every infinite place and units elsewhere. -/
+theorem auxiliaryKummerIdeleClassSubgroup_le_of_raySubgroup_le {n : ℕ}
+    {N : Subgroup (IdeleClassGroup (𝓞 K) K)} (hpow : ∀ c, c ^ n ∈ N) {𝔪 : Modulus K}
+    (h𝔪 : raySubgroup 𝔪 ≤ N) {S : Finset (HeightOneSpectrum (𝓞 K))}
+    (hS : ∀ v : HeightOneSpectrum (𝓞 K), v.asIdeal ∣ 𝔪.finitePart → v ∈ S) :
+    auxiliaryKummerIdeleClassSubgroup S ∅ n ≤ N := by
+  classical
+  intro c hc
+  obtain ⟨x, hx, rfl⟩ := (mem_auxiliaryKummerIdeleClassSubgroup_iff S ∅ n c).1 hc
+  obtain ⟨hxS, hxinf, hxunit⟩ := (mem_auxiliaryKummerIdeleSubgroup_iff S ∅ n x).1 hx
+  -- Write `x = z * yⁿ`, where `y` is supported on `S` and the infinite places and `z` is `1` there
+  -- and a unit elsewhere, hence congruent to one modulo `𝔪`. First choose the `n`-th roots of the
+  -- coordinates of `x` at `S` and at the infinite places.
+  choose yS hyS using hxS
+  choose yinf hyinf using hxinf
+  let y : IdeleGroup (𝓞 K) K := ideleOfUnits yinf (fun v ↦ if hv : v ∈ S then yS v hv else 1)
+    (Filter.eventually_cofinite.2 <| S.finite_toSet.subset fun v (hv : ¬ _) ↦
+      by_contra fun (hvS : v ∉ S) ↦ hv (by simp only [hvS, dite_false]; exact one_mem _))
+  -- The quotient `z = x / yⁿ` is `1` at `S` and at infinity, and agrees with `x` elsewhere.
+  set z := x * (y ^ n)⁻¹ with hz
+  have hzS (v : HeightOneSpectrum (𝓞 K)) (hv : v ∈ S) : v.ideleFiniteCoord z = 1 := by
+    simp [hz, y, hv, ← hyS v hv]
+  have hzS' (v : HeightOneSpectrum (𝓞 K)) (hv : v ∉ S) :
+      v.ideleFiniteCoord z = v.ideleFiniteCoord x := by
+    simp [hz, y, hv]
+  have hzinf (w : InfinitePlace K) : w.ideleInfiniteCoord z = 1 := by
+    simp [hz, y, ← hyinf w]
+  have hzmem : z ∈ ideleCongruenceSubgroup 𝔪 := by
+    refine mem_ideleCongruenceSubgroup_iff.2 ⟨fun v _ ↦ ?_, fun v hv ↦ ?_, fun w _ ↦ ?_⟩
+    · by_cases hv : v ∈ S
+      · simp [hzS v hv]
+      · rw [hzS' v hv]
+        exact hxunit v hv (Finset.notMem_empty v)
+    · simp [hzS v (hS v hv)]
+    · simp [hzinf]
+  -- Hence the class of `x = z * yⁿ` lies in `N`.
+  have hxz : x = z * y ^ n := by rw [hz, inv_mul_cancel_right]
+  rw [hxz, QuotientGroup.mk_mul, QuotientGroup.mk_pow]
+  exact N.mul_mem (h𝔪 (mem_raySubgroup_iff.2 ⟨z, hzmem, rfl⟩)) (hpow _)
+
+variable {p : ℕ} [Fact p.Prime] [HasEnoughRootsOfUnity K p]
+
+/-- **The norm subgroup of the Kummer field of the `S`-units** (Milne VII, Lemma 9.3). Let `K`
+contain the `p`-th roots of unity, and let `S` be a finite set of finite places containing the
+places above `p` and generating the ideal class group. Then the idele-class norm group of
+`K(U_S^{1/p})/K` is the image in `C_K` of the Kummer idele subgroup `E_S` of ideles that are
+`p`-th powers at `S` and at every infinite place and units elsewhere. -/
+theorem globalNormSubgroup_kummerLayer_sUnits {S : Finset (HeightOneSpectrum (𝓞 K))}
+    (hcl : Subgroup.closure
+      (HeightOneSpectrum.classGroupMk '' (S : Set (HeightOneSpectrum (𝓞 K)))) = ⊤)
+    (hpS : ∀ v : HeightOneSpectrum (𝓞 K), (p : 𝓞 K) ∈ v.asIdeal → v ∈ S) :
+    globalNormSubgroup K (kummerLayer p ((S : Set (HeightOneSpectrum (𝓞 K))).unit K)) =
+      auxiliaryKummerIdeleClassSubgroup S ∅ p := by
+  set V := kummerLayer p ((S : Set (HeightOneSpectrum (𝓞 K))).unit K)
+  -- Work with the Kummer field `M = K(U_S^{1/p})` cut out by `V`.
+  let M := kummerField (SeparableClosure K) p ((S : Set (HeightOneSpectrum (𝓞 K))).unit K)
+  have : NumberField M := .of_module_finite K M
+  have hVM : globalNormSubgroup K V =
+      (ideleClassNormMap K M : IdeleClassGroup (𝓞 M) M →* IdeleClassGroup (𝓞 K) K).range := by
+    rw [globalNormSubgroup_eq_range_classField]
+    exact range_ideleClassNormMap_eq_of_algEquiv
+      (IntermediateField.equivOfEq (classField_kummerLayer _ _))
+  -- The Kummer idele classes are norms from `M`, which has exponent `p` and is unramified
+  -- outside `S`.
+  have hle : auxiliaryKummerIdeleClassSubgroup S ∅ p ≤ globalNormSubgroup K V := by
+    rw [hVM]
+    exact auxiliaryKummerIdeleClassSubgroup_le_range_ideleClassNormMap_of_ramifiedSupport K M
+      exponent_algEquiv_kummerField_dvd S ∅ (by simp)
+      (TauCeti.NumberField.ramifiedSupport_kummerField_sUnits_subset S hpS)
+  -- Both subgroups have index `p ^ (#S + r₁ + r₂)`.
+  have hindex : (globalNormSubgroup K V).index =
+      (auxiliaryKummerIdeleClassSubgroup S ∅ p).index := by
+    have haux := index_auxiliaryKummerIdeleClassSubgroup_mul_pow_card (T := ∅) Fact.out
+      (by simp) hcl hpS fun b ↦ ⟨1, funext fun v ↦ absurd v.2 (by simp)⟩
+    rw [Finset.card_empty, pow_zero, mul_one] at haux
+    rw [haux, hVM, Subgroup.index_eq_card, card_ideleClassNormQuotient,
+      finrank_kummerField fun a _ ↦ IsSepClosed.exists_pow_nat_eq _ p,
+      relIndex_range_powMonoidHom_sUnits_numberField, Nat.card_coe_set_eq, Set.ncard_coe_finset,
+      add_comm]
+  have : (globalNormSubgroup K V).FiniteIndex := finiteIndex_globalNormSubgroup K V
+  exact (Subgroup.eq_of_index_dvd_index hle (hindex ▸ dvd_rfl)).symm
+
+/-- **The Kummer case of global existence** (Milne VII, Lemma 9.3). Let `K` be a number field
+containing the `p`-th roots of unity for a prime `p`. Every open subgroup of the idele class group
+`C_K` containing the `p`-th powers is the norm subgroup of a finite abelian extension of `K`. -/
+theorem exists_abelianLayer_globalNormSubgroup_eq_of_pow_mem
+    {N : Subgroup (IdeleClassGroup (𝓞 K) K)} (hN : IsOpen (N : Set (IdeleClassGroup (𝓞 K) K)))
+    (hpow : ∀ c, c ^ p ∈ N) :
+    ∃ V : OpenNormalSubgroup (AbsoluteGaloisGroup K),
+      V.IsAbelianClassFieldLayer ∧ globalNormSubgroup K V = N := by
+  classical
+  -- `N` contains a ray subgroup. Choose `S` containing the finite part of its modulus and the
+  -- places above `p`, and generating the class group.
+  obtain ⟨𝔪, h𝔪⟩ := exists_raySubgroup_le_of_isOpen N hN
+  obtain ⟨S₀, hS₀fin, hS₀⟩ :=
+    ClassGroup.exists_finite_closure_classGroupMk_image_eq_top (R := 𝓞 K)
+  have hp0 : Ideal.span ({(p : 𝓞 K)} : Set (𝓞 K)) ≠ ⊥ := by
+    rw [ne_eq, Ideal.span_singleton_eq_bot]
+    exact_mod_cast (Fact.out : p.Prime).ne_zero
+  let S : Finset (HeightOneSpectrum (𝓞 K)) :=
+    hS₀fin.toFinset ∪ (Ideal.finite_factors 𝔪.finitePart_ne_bot).toFinset ∪
+      (Ideal.finite_factors hp0).toFinset
+  have hcl : Subgroup.closure
+      (HeightOneSpectrum.classGroupMk '' (S : Set (HeightOneSpectrum (𝓞 K)))) = ⊤ :=
+    top_unique (hS₀ ▸ Subgroup.closure_mono (Set.image_mono fun v hv ↦
+      Finset.mem_union_left _ (Finset.mem_union_left _ (hS₀fin.mem_toFinset.2 hv))))
+  have h𝔪S (v : HeightOneSpectrum (𝓞 K)) (hv : v.asIdeal ∣ 𝔪.finitePart) : v ∈ S :=
+    Finset.mem_union_left _ (Finset.mem_union_right _ (Set.Finite.mem_toFinset _ |>.2 hv))
+  have hpS (v : HeightOneSpectrum (𝓞 K)) (hv : (p : 𝓞 K) ∈ v.asIdeal) : v ∈ S :=
+    Finset.mem_union_right _ ((Ideal.finite_factors hp0).mem_toFinset.2
+      (Ideal.dvd_span_singleton.2 hv))
+  -- `N` contains the norm subgroup of `K(U_S^{1/p})/K`, so upward closure applies.
+  refine exists_abelianLayer_globalNormSubgroup_eq_of_le
+    (V := kummerLayer p ((S : Set (HeightOneSpectrum (𝓞 K))).unit K)) ?_
+  rw [globalNormSubgroup_kummerLayer_sUnits hcl hpS]
+  exact auxiliaryKummerIdeleClassSubgroup_le_of_raySubgroup_le hpow h𝔪 h𝔪S
+
+end TauCeti.ClassFieldTheory
