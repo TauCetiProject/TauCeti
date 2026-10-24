@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Conjugation
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Action
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.ReverseNorm
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Pin.Basic
 
 /-!
@@ -44,14 +45,29 @@ open TauCeti
 variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
   (Q : QuadraticForm R M) [Invertible (2 : R)]
 
-private def spinToLipschitz : spinGroup Q →* lipschitzGroup Q :=
+/-- The canonical inclusion of the Spin group into the Lipschitz group. -/
+def spinToLipschitz : spinGroup Q →* lipschitzGroup Q :=
   (pinToLipschitz Q).comp (spinToPin Q)
 
 omit [Invertible (2 : R)] in
-private theorem coe_spinToLipschitz_apply (x : spinGroup Q) :
+/-- The canonical Spin-to-Lipschitz map applied to an element is the composite of the
+Pin and Spin inclusions. -/
+@[simp]
+theorem spinToLipschitz_apply (x : spinGroup Q) :
+    spinToLipschitz Q x = pinToLipschitz Q (spinToPin Q x) := by
+  rfl
+
+omit [Invertible (2 : R)] in
+/-- The canonical Spin-to-Lipschitz inclusion has the expected Clifford value. -/
+theorem coe_spinToLipschitz_apply (x : spinGroup Q) :
     (((spinToLipschitz Q x : lipschitzGroup Q) : (CliffordAlgebra Q)ˣ) :
         CliffordAlgebra Q) = (x : CliffordAlgebra Q) := by
   simp [spinToLipschitz]
+
+theorem cliffordNorm_spinToLipschitz (x : spinGroup Q) :
+    cliffordNorm Q (spinToLipschitz Q x) = 1 := by
+  rw [spinToLipschitz]
+  exact cliffordNorm_pinToLipschitz_spinToPin x
 
 /-- The action of a spin element on the generating vectors of its Clifford algebra, transported
 back to the underlying module. It is characterized by

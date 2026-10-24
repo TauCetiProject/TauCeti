@@ -68,37 +68,48 @@ theorem cliffordFullCoverToOrthogonal_apply (Q : QuadraticForm R M)
   simp [cliffordFullCoverToOrthogonal]
 
 /-- The Spin group embeds in the normalized full cover through its canonical Lipschitz lift. -/
-def cliffordSpinToFullCover (Q : QuadraticForm R M) :
+def spinToCliffordFullCover (Q : QuadraticForm R M) :
     spinGroup Q →* cliffordFullCover Q :=
-  ((pinToLipschitz Q).comp (spinToPin Q)).codRestrict _ fun x => by
+  (spinToLipschitz Q).codRestrict _ fun x => by
     rw [mem_cliffordFullCover_iff]
-    exact Or.inl (cliffordNorm_pinToLipschitz_spinToPin x)
+    exact Or.inl (cliffordNorm_spinToLipschitz Q x)
 
 /-- The underlying Lipschitz element of the Spin-to-full-cover inclusion. -/
 @[simp]
-theorem coe_cliffordSpinToFullCover_apply (Q : QuadraticForm R M) (x : spinGroup Q) :
-    (cliffordSpinToFullCover Q x : lipschitzGroup Q) =
-      pinToLipschitz Q (spinToPin Q x) := by
+theorem coe_spinToCliffordFullCover_apply (Q : QuadraticForm R M) (x : spinGroup Q) :
+    (spinToCliffordFullCover Q x : lipschitzGroup Q) = spinToLipschitz Q x := by
   rfl
+
+/-- The Spin-to-full-cover inclusion is injective. -/
+theorem spinToCliffordFullCover_injective (Q : QuadraticForm R M) :
+    Function.Injective (spinToCliffordFullCover Q) := by
+  intro x y h
+  apply Subtype.ext
+  have h' := congrArg (fun z : cliffordFullCover Q => (z : lipschitzGroup Q)) h
+  have h'' : spinToLipschitz Q x = spinToLipschitz Q y := by
+    simpa only [coe_spinToCliffordFullCover_apply] using h'
+  simpa only [coe_spinToLipschitz_apply] using congrArg
+    (fun z : lipschitzGroup Q => ((z : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q)) h''
 
 /-- The Spin action is the restriction of the full-cover action pointwise. -/
 @[simp 1100]
-theorem cliffordFullCoverToOrthogonal_spinToFullCover_apply
+theorem cliffordFullCoverToOrthogonal_spinToCliffordFullCover_apply
     (Q : QuadraticForm R M) (x : spinGroup Q) :
-    cliffordFullCoverToOrthogonal Q (cliffordSpinToFullCover Q x) =
+    cliffordFullCoverToOrthogonal Q (spinToCliffordFullCover Q x) =
       spinToOrthogonal Q x := by
-  rw [cliffordFullCoverToOrthogonal_apply, coe_cliffordSpinToFullCover_apply,
-    ← pinToOrthogonal_eq_lipschitzToOrthogonal, pinToOrthogonal_spinToPin]
+  rw [cliffordFullCoverToOrthogonal_apply, coe_spinToCliffordFullCover_apply]
+  rw [spinToLipschitz_apply]
+  rw [← pinToOrthogonal_eq_lipschitzToOrthogonal, pinToOrthogonal_spinToPin]
 
 /-- The restricted orthogonal action agrees with the usual Spin action on the included subgroup. -/
 @[simp]
-theorem cliffordFullCoverToOrthogonal_comp_spinToFullCover
+theorem cliffordFullCoverToOrthogonal_comp_spinToCliffordFullCover
     (Q : QuadraticForm R M) :
-    (cliffordFullCoverToOrthogonal Q).comp (cliffordSpinToFullCover Q) =
+    (cliffordFullCoverToOrthogonal Q).comp (spinToCliffordFullCover Q) =
       spinToOrthogonal Q := by
   apply MonoidHom.ext
   intro x
   simpa only [MonoidHom.comp_apply] using
-    cliffordFullCoverToOrthogonal_spinToFullCover_apply Q x
+    cliffordFullCoverToOrthogonal_spinToCliffordFullCover_apply Q x
 
 end CliffordAlgebra
