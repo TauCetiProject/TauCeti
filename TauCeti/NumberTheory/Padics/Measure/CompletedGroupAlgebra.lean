@@ -10,6 +10,7 @@ public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.CompletedGroupAlgebra.Basic
 import Mathlib.Analysis.Normed.Operator.ContinuousLinearMap
 import Mathlib.Analysis.Normed.Group.Ultra
+import Mathlib.NumberTheory.Padics.ProperSpace
 import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Extend
 import Mathlib.Topology.ContinuousMap.Compact
 import TauCeti.Topology.Algebra.Group.LocallyConstant
@@ -32,6 +33,13 @@ them. When `Γ` is profinite such cylinder functions are dense, and hence the co
 injective over every Hausdorff coefficient ring. For normed coefficients it is continuous from
 the weak topology on measures to the inverse-limit topology on the completed group algebra.
 
+For integral coefficients the comparison is moreover bijective, and a homeomorphism for these
+topologies. Continuity of the inverse rests on two facts: integrating a cylinder function against
+the measure represented by `x ∈ ℤ_p[[Γ]]` is a finite sum of coefficients of `x`, and the measure
+represented by any `x` integrates a test function `F` to an element of norm at most `‖F‖`, so that
+integrals against uniform approximations of `F` converge uniformly in `x`. Since `ℤ_p[[Γ]]` is
+compact, the integral measures are then weakly compact.
+
 ## Main definitions
 
 * `AbstractMeasure.toCompletedGroupAlgebra`: the `R`-algebra homomorphism
@@ -51,6 +59,11 @@ the weak topology on measures to the inverse-limit topology on the completed gro
   integral measures and the completed group algebra.
 * `AbstractMeasure.continuous_toCompletedGroupAlgebra`: for normed `R`, the comparison map is
   continuous for the weak topology on measures.
+* `AbstractMeasure.isHomeomorph_toCompletedGroupAlgebra`: for integral coefficients, the comparison
+  map is a homeomorphism from the weak topology to the inverse-limit topology, and in particular a
+  closed embedding (`AbstractMeasure.isClosedEmbedding_toCompletedGroupAlgebra`).
+* `AbstractMeasure.compactSpace_integralMeasures_weak`: integral measures on a profinite group are
+  weakly compact.
 
 ## References
 
@@ -416,6 +429,80 @@ noncomputable def completedGroupAlgebraEquiv :
 theorem completedGroupAlgebraEquiv_apply (μ : D(Γ, ℤ_[p])) :
     completedGroupAlgebraEquiv μ = toCompletedGroupAlgebra μ :=
   AlgEquiv.ofBijective_apply _ _ _
+
+/-- The integral measure built from an element of `ℤ_p[[Γ]]` integrates every test function to an
+element of norm at most the norm of the test function. -/
+private theorem norm_ofCompletedGroupAlgebra_apply_le (x : completedGroupAlgebra ℤ_[p] Γ)
+    (F : C(Γ, ℤ_[p])) : ‖ofCompletedGroupAlgebra x F‖ ≤ ‖F‖ := by
+  -- The bound is a closed condition on `F`, and holds on the dense locally constant tests.
+  refine isClosed_property (p := fun F ↦ ‖ofCompletedGroupAlgebra x F‖ ≤ ‖F‖)
+    dense_completedLocallyConstantTests
+    (isClosed_le (map_continuous (ofCompletedGroupAlgebra x)).norm continuous_norm) ?_ F
+  rintro ⟨_, φ, rfl⟩
+  simpa [ofCompletedGroupAlgebra_apply_locallyConstant] using
+    norm_completedLocallyConstantIntegral_le x φ
+
+private theorem completedGroupAlgebraEquiv_symm_eq (x : completedGroupAlgebra ℤ_[p] Γ) :
+    completedGroupAlgebraEquiv.symm x = ofCompletedGroupAlgebra x := by
+  rw [AlgEquiv.symm_apply_eq, completedGroupAlgebraEquiv_apply]
+  exact completedGroupAlgebra.ext fun U ↦
+    (proj_toCompletedGroupAlgebra_ofCompletedGroupAlgebra x U).symm
+
+/-- **Continuity of the inverse comparison.** The integral measure represented by an element of
+`ℤ_p[[Γ]]` depends continuously on it, for the inverse-limit topology on `ℤ_p[[Γ]]` and the weak
+topology on measures. -/
+theorem continuous_completedGroupAlgebraEquiv_symm :
+    @Continuous _ _ _ (WeakTopology (X := Γ) (R := ℤ_[p]) (E := ℤ_[p]))
+      (completedGroupAlgebraEquiv.symm : completedGroupAlgebra ℤ_[p] Γ → D(Γ, ℤ_[p])) := by
+  refine continuous_induced_rng.mpr <| continuous_pi fun F ↦ ?_
+  simp only [Function.comp_apply, completedGroupAlgebraEquiv_symm_eq]
+  refine continuous_of_uniform_approx_of_continuous fun u hu ↦ ?_
+  obtain ⟨ε, hε, hεu⟩ := Metric.mem_uniformity_dist.mp hu
+  -- Approximate `F` uniformly within `ε` by a function `G` factoring through some `Γ ⧸ U`.
+  obtain ⟨G, ⟨U, g, hG⟩, hFG⟩ := (dense_setOf_comp_quotientMk ℤ_[p]).exists_mem_open
+    Metric.isOpen_ball ⟨F, Metric.mem_ball_self hε⟩
+  let _ := Fintype.ofFinite (Γ ⧸ U.toSubgroup)
+  refine ⟨fun x ↦ ofCompletedGroupAlgebra x G, ?_, fun x ↦ hεu ?_⟩
+  · -- Integrating `G` is a finite sum of coefficients at level `U`.
+    have hsum : (fun x ↦ ofCompletedGroupAlgebra x G) =
+        fun x ↦ ∑ a, g a * (completedGroupAlgebra.proj ℤ_[p] Γ U x).coeff a := by
+      funext x
+      rw [apply_eq_sum_coeff_proj_toCompletedGroupAlgebra _ hG,
+        proj_toCompletedGroupAlgebra_ofCompletedGroupAlgebra]
+    rw [hsum]
+    exact continuous_finsetSum _ fun a _ ↦
+      continuous_const.mul (completedGroupAlgebra.continuous_coeff_proj ℤ_[p] Γ U a)
+  · rw [dist_eq_norm, ← map_sub]
+    exact (norm_ofCompletedGroupAlgebra_apply_le x (F - G)).trans_lt
+      (by rwa [← dist_eq_norm, dist_comm])
+
+/-- **Integral measures are the completed group algebra, topologically.** The comparison map is a
+homeomorphism from the weak topology on integral measures on a profinite group to the inverse-limit
+topology on `ℤ_p[[Γ]]`. -/
+theorem isHomeomorph_toCompletedGroupAlgebra :
+    @IsHomeomorph _ _ (WeakTopology (X := Γ) (R := ℤ_[p]) (E := ℤ_[p])) _
+      (toCompletedGroupAlgebra : D(Γ, ℤ_[p]) →ₐ[ℤ_[p]] completedGroupAlgebra ℤ_[p] Γ) := by
+  let : TopologicalSpace D(Γ, ℤ_[p]) := WeakTopology
+  let e : D(Γ, ℤ_[p]) ≃ₜ completedGroupAlgebra ℤ_[p] Γ :=
+    { completedGroupAlgebraEquiv.toEquiv with
+      continuous_toFun := continuous_toCompletedGroupAlgebra
+      continuous_invFun := continuous_completedGroupAlgebraEquiv_symm }
+  exact e.isHomeomorph
+
+/-- The comparison map is a closed embedding of integral measures, with the weak topology, into
+the completed group algebra with its inverse-limit topology. -/
+theorem isClosedEmbedding_toCompletedGroupAlgebra :
+    @Topology.IsClosedEmbedding _ _ (WeakTopology (X := Γ) (R := ℤ_[p]) (E := ℤ_[p])) _
+      (toCompletedGroupAlgebra : D(Γ, ℤ_[p]) →ₐ[ℤ_[p]] completedGroupAlgebra ℤ_[p] Γ) :=
+  let : TopologicalSpace D(Γ, ℤ_[p]) := WeakTopology
+  isHomeomorph_toCompletedGroupAlgebra.isClosedEmbedding
+
+/-- **Weak compactness of integral measures.** The integral measures on a profinite group are
+compact for the weak topology. -/
+theorem compactSpace_integralMeasures_weak :
+    @CompactSpace D(Γ, ℤ_[p]) (WeakTopology (X := Γ) (R := ℤ_[p]) (E := ℤ_[p])) :=
+  let : TopologicalSpace D(Γ, ℤ_[p]) := WeakTopology
+  isClosedEmbedding_toCompletedGroupAlgebra.compactSpace
 
 end PadicInt
 
