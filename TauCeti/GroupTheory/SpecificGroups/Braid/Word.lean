@@ -33,6 +33,10 @@ defines the words and the braid each word represents.
 * `TauCeti.BraidWord.toBraid_strandIncl` and `TauCeti.BraidWord.toBraid_stabilize`: these word
   operations represent `TauCeti.BraidGroup.strandIncl` and the stabilization of
   `TauCeti.IsMarkovMove`.
+* `TauCeti.BraidWord.levelAt_stabilize_of_lt` and `TauCeti.BraidWord.signAt_stabilize_of_lt`:
+  stabilization keeps the level and the sign of every letter of the original word, while
+  `TauCeti.BraidWord.levelAt_stabilize_length` and `TauCeti.BraidWord.signAt_stabilize_length`
+  describe the new stabilizing letter.
 
 ## References
 
@@ -152,6 +156,12 @@ theorem length_stabilize (w : BraidWord (n + 1)) (ε : ℤˣ) :
     List.length (α := Fin (n + 1) × ℤˣ) (w.stabilize ε) = w.length + 1 := by
   rw [stabilize_def, List.length_append, length_strandIncl, List.length_singleton]
 
+/-- Stabilization keeps every letter of the original word, now read on one strand more. -/
+theorem getElem?_stabilize_of_lt (w : BraidWord (n + 1)) (ε : ℤˣ) {k : ℕ} (hk : k < w.length) :
+    (w.stabilize ε)[k]? = w[k]?.map fun x ↦ ((x.1.castSucc : Fin (n + 1)), x.2) := by
+  rw [stabilize_def, List.getElem?_append_left (by simpa using hk), strandIncl_def,
+    List.getElem?_map]
+
 /-- A stabilized word represents the braid `strandIncl b * σ (Fin.last n) ^ ε`, the stabilization
 of the braid `b` of the word, as in `TauCeti.IsMarkovMove.stabilize` and
 `TauCeti.IsMarkovMove.stabilizeInv`. -/
@@ -201,6 +211,18 @@ theorem signAt_of_lt {k : ℕ} (hk : k < w.length) : w.signAt k = (w[k].2 : ℤ)
 @[simp]
 theorem signAt_of_le {k : ℕ} (hk : w.length ≤ k) : w.signAt k = 0 := by
   simp [signAt, hk]
+
+/-- Stabilization keeps the level of every letter of the original word. -/
+@[simp]
+theorem levelAt_stabilize_of_lt (w : BraidWord (n + 1)) (ε : ℤˣ) {k : ℕ} (hk : k < w.length) :
+    (w.stabilize ε).levelAt k = w.levelAt k := by
+  simp [levelAt, getElem?_stabilize_of_lt w ε hk, Option.map_map, Function.comp_def]
+
+/-- Stabilization keeps the sign of every letter of the original word. -/
+@[simp]
+theorem signAt_stabilize_of_lt (w : BraidWord (n + 1)) (ε : ℤˣ) {k : ℕ} (hk : k < w.length) :
+    (w.stabilize ε).signAt k = w.signAt k := by
+  simp [signAt, getElem?_stabilize_of_lt w ε hk, Option.map_map, Function.comp_def]
 
 /-- The stabilizing letter of `w.stabilize ε` lies on the new top level `n`. -/
 theorem levelAt_stabilize_length (w : BraidWord (n + 1)) (ε : ℤˣ) :

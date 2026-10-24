@@ -181,7 +181,7 @@ theorem seifertMatrix_apply_self (a : w.seifertLoops) :
   simp [seifertMatrix_apply]
 
 /-- A loop has linking number zero with the push-off of a loop on the level above it. -/
-theorem seifertMatrix_apply_eq_zero_of_levelAt_eq {a b : w.seifertLoops}
+theorem seifertMatrix_apply_eq_zero_of_levelAt_eq_map_succ {a b : w.seifertLoops}
     (h : w.levelAt b.1.1 = (w.levelAt a.1.1).map (· + 1)) : w.seifertMatrix a b = 0 := by
   have ha : w.levelAt a.1.1 ≠ none := (w.levelAt_ne_none_iff).2
     (((w.mem_seifertLoops).1 a.2).1.trans ((w.mem_seifertLoops).1 a.2).2.1)
@@ -307,19 +307,6 @@ end Commute
 section Stabilize
 
 variable (w : BraidWord (n + 1)) (ε : ℤˣ)
-
-private theorem getElem?_stabilize_of_lt {k : ℕ} (hk : k < w.length) :
-    (w.stabilize ε)[k]? = w[k]?.map fun x ↦ ((x.1.castSucc : Fin (n + 1)), x.2) := by
-  rw [stabilize_def, List.getElem?_append_left (by simpa using hk), strandIncl_def,
-    List.getElem?_map]
-
-private theorem levelAt_stabilize_of_lt {k : ℕ} (hk : k < w.length) :
-    (w.stabilize ε).levelAt k = w.levelAt k := by
-  simp [levelAt, getElem?_stabilize_of_lt w ε hk, Option.map_map, Function.comp_def]
-
-private theorem signAt_stabilize_of_lt {k : ℕ} (hk : k < w.length) :
-    (w.stabilize ε).signAt k = w.signAt k := by
-  simp [signAt, getElem?_stabilize_of_lt w ε hk, Option.map_map, Function.comp_def]
 
 private theorem isSeifertLoop_stabilize_iff (p : ℕ × ℕ) :
     (w.stabilize ε).IsSeifertLoop p ↔ w.IsSeifertLoop p := by
