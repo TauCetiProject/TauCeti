@@ -175,10 +175,6 @@ open Filter Topology in
 theorem rectifiableCurveIntegral_congr {γ' : ℝ → E} (h : EqOn γ γ' (Icc a b)) :
     rectifiableCurveIntegral ω γ a b = rectifiableCurveIntegral ω γ' a b := by
   symm
-  have hvar : variationOnFromTo γ' (Icc a b) a = variationOnFromTo γ (Icc a b) a := by
-    funext t
-    unfold variationOnFromTo
-    split_ifs <;> rw [eVariationOn.eq_of_eqOn (h.symm.mono inter_subset_left)]
   -- Both natural parameterizations are the curves composed with the same right inverse `ι` of
   -- cumulative variation. They differ only where `ι` leaves `[a, b]`, where it is constant.
   obtain ⟨ι, hη, hη', hι⟩ : ∃ ι : ℝ → ℝ, naturalParameterization γ (Icc a b) a = γ ∘ ι ∧
@@ -186,7 +182,8 @@ theorem rectifiableCurveIntegral_congr {γ' : ℝ → E} (h : EqOn γ γ' (Icc a
       ∀ ⦃u v⦄, ι u ∉ Icc a b → ι v ∉ Icc a b → ι u = ι v := by
     refine ⟨@Function.invFunOn _ _ ⟨a⟩ (variationOnFromTo γ (Icc a b) a) (Icc a b),
       naturalParameterization_eq_comp_invFunOn γ _ a,
-      by rw [naturalParameterization_eq_comp_invFunOn, hvar], fun u v hu hv ↦ ?_⟩
+      by rw [naturalParameterization_eq_comp_invFunOn, variationOnFromTo.eq_of_eqOn h.symm],
+      fun u v hu hv ↦ ?_⟩
     rw [Function.invFunOn_neg fun hex ↦ hu (Function.invFunOn_mem hex),
       Function.invFunOn_neg fun hex ↦ hv (Function.invFunOn_mem hex)]
   set S := {u | γ' (ι u) ≠ γ (ι u)}
@@ -273,21 +270,12 @@ theorem rectifiableCurveIntegral_comp_of_antitoneOn (hcont : ContinuousOn γ (Ic
       sub_zero]
   intro t ht
   have hφt : φ t ∈ Icc a b := himage ▸ mem_image_of_mem φ ht
-  have hsub : Icc (φ t) b ⊆ Icc a b := Icc_subset_Icc_left hφt.1
   -- Cumulative variation of `γ ∘ φ` up to `t` is the variation of `γ` on `[φ t, b]`.
   have hvar : variationOnFromTo (γ ∘ φ) (Icc c d) c t =
       L - variationOnFromTo γ (Icc a b) a (φ t) := by
-    have hct : Icc c d ∩ Icc c t = Icc c t := inter_eq_right.2 (Icc_subset_Icc_right ht.2)
-    have himage' : φ '' Icc c t = Icc (φ t) b := by
-      rw [(hφ.mono (Icc_subset_Icc_right ht.2)).image_Icc_of_antitoneOn ht.1
-        (hφm.mono (Icc_subset_Icc_right ht.2)), hφc]
-    have hLab : L = variationOnFromTo γ (Icc a b) a b := by
-      rw [variationOnFromTo.eq_of_le _ _ hab, inter_self]
-    rw [variationOnFromTo.eq_of_le _ _ ht.1, hct,
-      eVariationOn.comp_eq_of_antitoneOn _ _ (hφm.mono (Icc_subset_Icc_right ht.2)), himage', hLab,
-      variationOnFromTo.sub_right hγ.locallyBoundedVariationOn (left_mem_Icc.2 hab)
-        (right_mem_Icc.2 hab) hφt,
-      variationOnFromTo.eq_of_le _ _ hφt.2, inter_eq_right.2 hsub]
+    rw [variationOnFromTo.comp_eq_of_antitoneOn γ φ hφm (left_mem_Icc.2 hcd) ht, himage, hφc,
+      ← variationOnFromTo.sub_right hγ.locallyBoundedVariationOn (left_mem_Icc.2 hab)
+        (right_mem_Icc.2 hab) hφt, variationOnFromTo.eq_of_le _ _ hab, inter_self]
   rw [Function.comp_apply, hvar, sub_sub_cancel]
   exact
     hγ.locallyBoundedVariationOn.naturalParameterization_variationOnFromTo (left_mem_Icc.2 hab) hφt
