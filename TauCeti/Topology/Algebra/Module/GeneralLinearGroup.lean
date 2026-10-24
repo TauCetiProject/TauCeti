@@ -30,7 +30,9 @@ Over a field, the endomorphism algebra of a finite-dimensional space is itself f
 so its module topology is Hausdorff when the field is Hausdorff and locally compact when the field
 is locally compact. The unit topology inherits both properties, so the linear automorphisms of a
 finite-dimensional space over a Hausdorff locally compact field form a locally compact group. This
-is the local-compactness input for the orthogonal point group over `ℝ` and `ℚ_p`.
+is the local-compactness input for the orthogonal point group over `ℝ` and `ℚ_p`. Over a field
+with the indiscrete topology, on the other hand, both the endomorphism algebra and the linear
+automorphisms are indiscrete, so no proper nonempty subset of them is open or closed.
 
 Over a commutative topological ring the determinant is continuous on endomorphisms, being a
 polynomial in the matrix entries in any finite basis, and hence `LinearEquiv.det` is a continuous
@@ -206,6 +208,26 @@ instance instT2SpaceLinearEquiv [T2Space K] : T2Space (V ≃ₗ[K] V) :=
   (generalLinearContinuousMulEquiv (K := K) (V := V)).toHomeomorph.symm.isEmbedding.t2Space
 
 end FiniteDimensional
+
+section Indiscrete
+
+variable {K V : Type*} [CommSemiring K] [TopologicalSpace K] [IndiscreteTopology K]
+  [AddCommMonoid V] [Module K V]
+
+/-- The endomorphism algebra over a scalar ring with the indiscrete topology is indiscrete. -/
+instance instIndiscreteTopologyModuleEnd : IndiscreteTopology (Module.End K V) :=
+  have := IsModuleTopology.toContinuousSMul K (Module.End K V)
+  IndiscreteTopology.of_continuousSMul K (Module.End K V)
+
+/-- The linear automorphisms over a scalar ring with the indiscrete topology form an indiscrete
+space. -/
+instance instIndiscreteTopologyLinearEquiv : IndiscreteTopology (V ≃ₗ[K] V) := by
+  have : IndiscreteTopology (Module.End K V)ᵐᵒᵖ := MulOpposite.opHomeomorph.indiscreteTopology
+  have : IndiscreteTopology (LinearMap.GeneralLinearGroup K V) :=
+    Units.isInducing_embedProduct.indiscreteTopology
+  exact generalLinearContinuousMulEquiv.toHomeomorph.indiscreteTopology
+
+end Indiscrete
 
 section LocallyCompact
 

@@ -54,6 +54,15 @@ nothing; this is recorded as
   valid away from characteristic `2`.
 * `Polynomial.Monic.isSquare_discr_of_char_two`: in characteristic `2` the discriminant of every
   monic polynomial is a square, so the test is vacuous there.
+* `Polynomial.Monic.isSquare_discr_iff_sign_eq_one`: the discriminant test in terms of the parity
+  character `Polynomial.Gal.sign`, with no choice of splitting extension.
+
+For a quadratic, the Galois image is even exactly when the quadratic has a root in the base field,
+in every characteristic and without reference to the discriminant
+(`Polynomial.Gal.range_le_alternatingGroup_iff_exists_isRoot_of_natDegree_eq_two`,
+in `TauCeti.FieldTheory.GaloisGroups.Parity`). Away from characteristic `2`, together with the
+quadratic formula `Polynomial.isSquare_discr_iff_exists_isRoot_of_degree_eq_two` this is the
+discriminant test for quadratics.
 
 ## References
 
@@ -182,5 +191,19 @@ theorem _root_.Polynomial.Monic.isSquare_discr_of_char_two (hf : f.Monic)
     simp [hdiscr]
 
 end Galois
+
+open scoped Classical in
+/-- **The discriminant test, intrinsically.** For a monic separable polynomial over a field of
+characteristic other than `2`, the discriminant is a square exactly when the parity character of
+the Galois group is trivial. Unlike
+`Polynomial.Monic.isSquare_discr_iff_range_le_alternatingGroup`, this mentions no splitting
+extension; through `Polynomial.Gal.sign_eq_one_iff_range_le_alternatingGroup` it reads the parity
+of the Galois image in any extension in which `f` splits. -/
+theorem _root_.Polynomial.Monic.isSquare_discr_iff_sign_eq_one (hf : f.Monic) (hsep : f.Separable)
+    (hchar : ringChar F ≠ 2) : IsSquare f.discr ↔ Gal.sign f = 1 := by
+  have : IsGalois F f.SplittingField := IsGalois.of_separable_splitting_field hsep
+  let _ : Fact ((f.map (algebraMap F f.SplittingField)).Splits) := ⟨SplittingField.splits f⟩
+  rw [Gal.sign_eq_one_iff_range_le_alternatingGroup f f.SplittingField]
+  exact hf.isSquare_discr_iff_range_le_alternatingGroup hsep hchar
 
 end TauCeti

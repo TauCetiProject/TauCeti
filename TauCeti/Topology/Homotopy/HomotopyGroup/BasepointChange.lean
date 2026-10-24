@@ -46,7 +46,10 @@ product as the class of a concatenation `GenLoop.transAt i` in any cube directio
   along the reversed path, with `TauCeti.homotopyGroupEquivOfPath_apply`,
   `TauCeti.homotopyGroupEquivOfPath_symm_apply` and the same four functoriality laws
   `TauCeti.homotopyGroupEquivOfPath_refl`, `TauCeti.homotopyGroupEquivOfPath_trans`,
-  `TauCeti.homotopyGroupEquivOfPath_congr` and `TauCeti.homotopyGroupEquivOfPath_symm`.
+  `TauCeti.homotopyGroupEquivOfPath_congr` and `TauCeti.homotopyGroupEquivOfPath_symm`, and
+  its naturality `TauCeti.map_homotopyGroupEquivOfPath` in the space. In particular whether a map
+  induces bijections on homotopy groups does not depend on the base point within a path component
+  (`TauCeti.bijective_map_iff_of_path`).
 * `TauCeti.homotopyGroupMulEquivOfPath`: **a path from `x` to `y` induces a group isomorphism
   `HomotopyGroup N X x ≃* HomotopyGroup N X y`.**
 * `TauCeti.nonempty_homotopyGroupMulEquiv`: on a path-connected space, all the homotopy groups
@@ -416,6 +419,31 @@ theorem homotopyGroupEquivOfPath_symm (γ : Path x y) :
     (homotopyGroupEquivOfPath γ).symm = homotopyGroupEquivOfPath (N := N) γ.symm := by
   ext a
   rw [homotopyGroupEquivOfPath_symm_apply, homotopyGroupEquivOfPath_apply]
+
+/-- **Naturality of base-point change.** The map induced by a continuous map commutes with
+base-point change, along the image path. -/
+theorem map_homotopyGroupEquivOfPath {Y : Type*} [TopologicalSpace Y] (F : C(X, Y))
+    (γ : Path x y) (a : HomotopyGroup N X x) :
+    HomotopyGroup.map F rfl (homotopyGroupEquivOfPath γ a) =
+      homotopyGroupEquivOfPath (γ.map F.continuous) (HomotopyGroup.map F rfl a) := by
+  induction a using Quotient.inductionOn with
+  | h f =>
+  rw [homotopyGroupEquivOfPath_mk, HomotopyGroup.map_mk, HomotopyGroup.map_mk,
+    homotopyGroupEquivOfPath_mk, GenLoop.map_transport]
+
+omit [Fintype N] in
+/-- Whether a continuous map induces a bijection on homotopy groups does not depend on the base
+point within a path component. -/
+theorem bijective_map_iff_of_path [Finite N] {Y : Type*} [TopologicalSpace Y] (F : C(X, Y))
+    (γ : Path x y) :
+    Function.Bijective (HomotopyGroup.map (N := N) F (rfl : F x = F x)) ↔
+      Function.Bijective (HomotopyGroup.map (N := N) F (rfl : F y = F y)) := by
+  have : Fintype N := Fintype.ofFinite N
+  have h : HomotopyGroup.map (N := N) F (rfl : F y = F y) ∘ homotopyGroupEquivOfPath γ =
+      homotopyGroupEquivOfPath (γ.map F.continuous) ∘ HomotopyGroup.map F rfl :=
+    funext (map_homotopyGroupEquivOfPath F γ)
+  rw [← Function.Bijective.of_comp_iff _ (homotopyGroupEquivOfPath γ).bijective, h,
+    Function.Bijective.of_comp_iff' (homotopyGroupEquivOfPath _).bijective]
 
 /-- **Base-point change for higher homotopy groups.** A path from `x` to `y` induces a group
 isomorphism between the homotopy groups based at `x` and at `y`. -/

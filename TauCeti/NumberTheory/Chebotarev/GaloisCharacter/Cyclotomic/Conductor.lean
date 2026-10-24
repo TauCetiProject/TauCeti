@@ -20,7 +20,9 @@ Let `F = K(μ_m)` be an `m`-th cyclotomic extension of a number field `K`. Its A
 is the least modulus through which the Artin map factors: the conductor `rayClassConductor` of the
 kernel of `cyclotomicArtin K F m` in the sense of Global Number Fields. It divides
 `cyclotomicModulus K m`, and it is the least common multiple of the conductors of the ray class
-characters `χ ∘ cyclotomicArtin K F m` for the characters `χ` of `Gal(F/K)`.
+characters `χ ∘ cyclotomicArtin K F m` for the characters `χ` of `Gal(F/K)`. It depends only on
+the extension `F / K` and not on the level `m`: if `F` is also the `n`-th cyclotomic extension of
+`K`, the conductors of levels `m` and `n` agree.
 
 Over `ℚ` the Artin map is injective, and the conductor of `ℚ(ζ_m)/ℚ` is:
 
@@ -41,6 +43,9 @@ Over `ℚ` the Artin map is injective, and the conductor of `ℚ(ζ_m)/ℚ` is:
   conductor divides `𝔫` exactly when the Artin map factors through `RayClassGroup 𝔫`.
 * `NumberField.Chebotarev.cyclotomicConductor_dvd_iff_forall_conductor_dvd`: the conductor
   divides `𝔫` exactly when the conductor of every Galois character, read on ray classes, does.
+* `MonoidHom.conductor_comp_cyclotomicArtin_eq` and
+  `NumberField.Chebotarev.cyclotomicConductor_eq_cyclotomicConductor`: the conductors of the
+  Galois characters, and the conductor of `F / K`, do not depend on the level.
 * `NumberField.Chebotarev.cyclotomicConductor_rat_of_le_two`,
   `NumberField.Chebotarev.cyclotomicConductor_rat`, and
   `NumberField.Chebotarev.cyclotomicConductor_rat_of_mod_four_eq_two`: the conductor of
@@ -118,6 +123,48 @@ theorem conductor_comp_cyclotomicArtin_dvd (χ : (F ≃ₐ[K] F) →* ℂˣ) :
   cyclotomicConductor_dvd_iff_forall_conductor_dvd.mp (Modulus.dvd_refl _) χ
 
 end Conductor
+
+section Level
+
+/-! ### Independence of the level
+
+A field can be the `m`-th cyclotomic extension of `K` for several levels `m`: `ℚ(ζ₆) = ℚ(ζ₃)`.
+The cyclotomic moduli of two levels `m` and `n` both divide that of `m * n`, and on its ray class
+group the two Artin maps agree (`cyclotomicArtin_comp_classMap_eq`). So for each Galois character
+`χ`, the ray class characters `χ ∘ cyclotomicArtin K F m` and `χ ∘ cyclotomicArtin K F n` induce
+the same character of the modulus of level `m * n`, and hence have the same conductor. The
+conductor of `F / K` is therefore the same at both levels. -/
+
+variable {K : Type*} [Field K] [NumberField K] {F : Type*} [Field F] [NumberField F]
+  [Algebra K F] [IsGalois K F] {m n : ℕ} [NeZero m] [NeZero n]
+  [IsCyclotomicExtension {m} K F] [IsCyclotomicExtension {n} K F]
+
+/-- **The conductor of a Galois character does not depend on the level.** If `F` is both the
+`m`-th and the `n`-th cyclotomic extension of `K`, then for every character `χ` of `Gal(F/K)` the
+ray class characters `χ ∘ cyclotomicArtin K F m` and `χ ∘ cyclotomicArtin K F n` have the same
+conductor. -/
+theorem _root_.MonoidHom.conductor_comp_cyclotomicArtin_eq (χ : (F ≃ₐ[K] F) →* ℂˣ) :
+    RayClassCharacter.conductor (χ.comp (cyclotomicArtin K F m)) =
+      RayClassCharacter.conductor (χ.comp (cyclotomicArtin K F n)) := by
+  have hm := cyclotomicModulus_dvd_cyclotomicModulus (K := K) (dvd_mul_right m n)
+  have hn := cyclotomicModulus_dvd_cyclotomicModulus (K := K) (dvd_mul_left n m)
+  -- Both characters induce the same character of the modulus of level `m * n`.
+  refine RayClassCharacter.conductor_eq_of_induced_eq hm hn <| MonoidHom.ext fun c ↦ ?_
+  simp only [RayClassCharacter.induced_apply, MonoidHom.comp_apply]
+  exact congrArg χ (DFunLike.congr_fun (cyclotomicArtin_comp_classMap_eq hm hn) c)
+
+/-- **The conductor of a cyclotomic extension depends only on the extension.** If `F` is both the
+`m`-th and the `n`-th cyclotomic extension of `K`, the conductors of levels `m` and `n` agree. -/
+theorem cyclotomicConductor_eq_cyclotomicConductor :
+    cyclotomicConductor K F m = cyclotomicConductor K F n := by
+  refine Modulus.dvd_antisymm (cyclotomicConductor_dvd_iff_forall_conductor_dvd.mpr fun χ ↦ ?_)
+    (cyclotomicConductor_dvd_iff_forall_conductor_dvd.mpr fun χ ↦ ?_)
+  · rw [χ.conductor_comp_cyclotomicArtin_eq (n := n)]
+    exact conductor_comp_cyclotomicArtin_dvd χ
+  · rw [χ.conductor_comp_cyclotomicArtin_eq (n := m)]
+    exact conductor_comp_cyclotomicArtin_dvd χ
+
+end Level
 
 section Rat
 

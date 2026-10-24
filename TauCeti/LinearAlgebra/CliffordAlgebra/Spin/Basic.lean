@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Basic
+import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Generators
 
 /-!
 # Basic Spin-group carrier facts
@@ -13,8 +14,9 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Basic
 This file records the carrier-level criterion that a product of two Clifford vectors with
 unit product of norms belongs to the Spin group, identifies membership in the range of
 `spinGroup.toUnits` with membership of the underlying Clifford value, includes the Spin group in
-the even Clifford subalgebra, and proves that the Spin group of the zero module is trivial. The
-action and its orthogonal comparison are defined in `Spin.Action` and `Pin.Action`.
+the even Clifford subalgebra, writes every Spin element as a product of an even number of vectors
+of invertible norm when `2` is invertible, and proves that the Spin group of the zero module is
+trivial. The action and its orthogonal comparison are defined in `Spin.Action` and `Pin.Action`.
 -/
 
 public section
@@ -50,6 +52,12 @@ theorem coe_spinGroupToEven_apply (Q : QuadraticForm R M) (x : spinGroup Q) :
     (spinGroupToEven Q x : CliffordAlgebra Q) = x :=
   (rfl)
 
+/-- `spinGroupToEven` on an explicitly packaged Spin element. -/
+@[simp]
+theorem spinGroupToEven_mk (x : CliffordAlgebra Q) (hx : x ∈ spinGroup Q) :
+    spinGroupToEven Q ⟨x, hx⟩ = ⟨x, spinGroup.mem_even hx⟩ :=
+  Subtype.ext (coe_spinGroupToEven_apply Q _)
+
 /-- The product of two Clifford generators belongs to Spin when their norms multiply to one. -/
 theorem ι_mul_ι_mem_spinGroup_of_norm_mul_norm_eq_one (x y : M)
     (hxy : Q x * Q y = 1) :
@@ -74,6 +82,32 @@ theorem ι_mul_ι_mem_spinGroup_of_norm_mul_norm_eq_one (x y : M)
       _ = 1 := by rw [← map_mul, hxy, map_one]
   · rw [← Subalgebra.mem_toSubmodule, CliffordAlgebra.even_toSubmodule]
     exact ι_mul_ι_mem_evenOdd_zero Q x y
+
+/-- When `2` is invertible, every Spin element is a product of an even number of vectors of
+invertible norm. -/
+theorem exists_even_length_list_of_spinGroup [Invertible (2 : R)] (x : spinGroup Q) :
+    ∃ l : List M, (∀ v ∈ l, IsUnit (Q v)) ∧ Even l.length ∧
+      (x : CliffordAlgebra Q) = (l.map (ι Q)).prod := by
+  obtain ⟨l, hl, hx⟩ := mem_lipschitzGroup_iff_exists_list.mp
+    (spinGroup.units_mem_lipschitzGroup (x := spinGroup.toUnits x) x.2)
+  rw [spinGroup.val_toUnits_apply] at hx
+  by_cases heven : Even l.length
+  · exact ⟨l, hl, heven, hx⟩
+  -- An odd product of vectors is negated by the grade involution, while the even element `x` is
+  -- fixed by it. So the unit `x` vanishes, the Clifford algebra is trivial, and `[]` works.
+  have hinv := involute_prod_map_ι (Q := Q) l
+  rw [← hx, spinGroup.involute_eq x.2, (Nat.not_even_iff_odd.mp heven).neg_one_pow,
+    neg_one_smul] at hinv
+  have hzero : (x : CliffordAlgebra Q) = 0 := by
+    have h2 : (2 : R) • (x : CliffordAlgebra Q) = 0 := by
+      rw [two_smul]
+      nth_rewrite 1 [hinv]
+      exact neg_add_cancel _
+    simpa using congrArg ((⅟2 : R) • ·) h2
+  have h01 := spinGroup.coe_mul_star_self x
+  rw [hzero, zero_mul] at h01
+  have : Subsingleton (CliffordAlgebra Q) := subsingleton_of_zero_eq_one h01
+  exact ⟨[], by simp, by simp, Subsingleton.elim _ _⟩
 
 /-- The Spin group of a quadratic form on the zero module is trivial, because the Lipschitz group
 containing it is (`lipschitzGroup_eq_bot`). -/

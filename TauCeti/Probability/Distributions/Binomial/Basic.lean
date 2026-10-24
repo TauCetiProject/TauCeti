@@ -25,14 +25,14 @@ characterization of Mathlib's binomial measure.  The native law remains
 * `TauCeti.Probability.pgf_binomial` computes the probability-generating function on the native
   carrier;
 * `TauCeti.Probability.variance_id_map_cast_binomial` computes the variance of the cast law;
+* `TauCeti.Probability.integral_sq_id_map_cast_binomial` computes its second raw moment;
 * `TauCeti.Probability.mgf_id_map_cast_binomial` and
   `TauCeti.Probability.cgf_id_map_cast_binomial` compute its moment and cumulant generating
   functions;
 * `TauCeti.Probability.charFun_map_cast_binomial` computes its characteristic function;
 * `TauCeti.Probability.binomial_conv_binomial` proves additivity of the native binomial laws;
 * `TauCeti.Probability.iIndepFun.hasLaw_sum_bernoulli` identifies a finite sum of independent
-  Bernoulli variables with a binomial law, and `TauCeti.Probability.hasLaw_card_filter_mem_pi`
-  the number of coordinates of an independent sample that lie in a fixed set.
+  Bernoulli variables with a binomial law.
 
 ## References
 
@@ -175,25 +175,6 @@ theorem iIndepFun.hasLaw_sum_bernoulli {ι : Type*} [Fintype ι] {p : unitInterv
   rw [hcomp]
   exact hsumCast
 
-open Finset in
-/-- Under the product of copies of a probability measure `μ`, the number of coordinates lying in a
-measurable set `s` has the binomial law, with one trial per coordinate and success probability
-`μ s`. -/
-theorem hasLaw_card_filter_mem_pi {ι α : Type*} [Fintype ι] [MeasurableSpace α] {μ : Measure α}
-    [IsProbabilityMeasure μ] {s : Set α} [DecidablePred (· ∈ s)] (hs : MeasurableSet s) :
-    HasLaw (fun x : ι → α ↦ #{i | x i ∈ s}) Bin(Fintype.card ι, ⟨μ.real s, by simp⟩)
-      (Measure.pi fun _ : ι ↦ μ) := by
-  have hindep : iIndepFun (fun i (x : ι → α) ↦ s.indicator (1 : α → ℕ) (x i))
-      (Measure.pi fun _ : ι ↦ μ) :=
-    iIndepFun_pi (X := fun _ ↦ s.indicator (1 : α → ℕ)) fun _ ↦
-      (measurable_one.indicator hs).aemeasurable
-  have hlaw (i : ι) : HasLaw (fun x : ι → α ↦ s.indicator (1 : α → ℕ) (x i))
-      Ber((1 : ℕ), 0, ⟨μ.real s, by simp⟩) (Measure.pi fun _ : ι ↦ μ) :=
-    (hasLaw_indicator_one_bernoulliMeasure hs.nullMeasurableSet).comp
-      (measurePreserving_eval (fun _ : ι ↦ μ) i).hasLaw
-  refine (iIndepFun.hasLaw_sum_bernoulli hindep hlaw).congr (ae_of_all _ fun x ↦ ?_)
-  simp [Set.indicator_apply]
-
 /-! ### Variance -/
 
 /-- The variance of the real-valued binomial measure itself. -/
@@ -223,6 +204,19 @@ theorem variance_id_map_cast_binomial (n : ℕ) (p : unitInterval) :
 theorem variance_of_hasLaw_binomial {n : ℕ} {p : unitInterval} {X : Ω → ℝ}
     (hX : HasLaw X Bin(ℝ, n, p) P) : Var[X; P] = p * (1 - p) * n := by
   rw [hX.variance_eq, variance_id_map_cast_binomial]
+
+/-- The second raw moment of a real-valued binomial law. -/
+theorem integral_sq_id_map_cast_binomial (n : ℕ) (p : unitInterval) :
+    ∫ x : ℝ, x ^ 2 ∂Bin(ℝ, n, p) =
+      (p : ℝ) * (1 - p) * n + ((p : ℝ) * n) ^ 2 := by
+  have hmem : MemLp id 2 Bin(ℝ, n, p) :=
+    (memLp_two_iff_integrable_sq aestronglyMeasurable_id).2
+      (integrable_map_cast_binomial _)
+  have hvar := variance_eq_sub hmem
+  have hmean : ∫ x : ℝ, x ∂Bin(ℝ, n, p) = (p : ℝ) * n :=
+    integral_of_hasLaw_binomial (HasLaw.id (μ := Bin(ℝ, n, p)))
+  simp only [id_eq, Pi.pow_apply, variance_id_map_cast_binomial, hmean] at hvar
+  linarith
 
 end Probability
 

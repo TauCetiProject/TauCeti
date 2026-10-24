@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Algebra.Subalgebra.Nilpotent
 public import TauCeti.RepresentationTheory.Quiver.AdmissibleIdeal.Kernel
 public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.OfArrows
-public import TauCeti.RingTheory.Semisimple.BasicAlgebra
+public import TauCeti.RingTheory.Morita.BasicAlgebra
 import TauCeti.RingTheory.Idempotents.LinearIndependent
 
 /-!
@@ -38,6 +38,10 @@ corner of `J ⧸ J ^ 2`. This is Gabriel's theorem that such an algebra is a bou
 * `TauCeti.IsBasic.exists_surjective_pathAlgebra_isAdmissibleIdeal_ker`: **Gabriel's
   presentation theorem** for a finite-dimensional basic algebra over an algebraically closed
   field.
+* `TauCeti.exists_quiver_admissibleIdeal_morita`: **Gabriel's presentation theorem** for an
+  arbitrary finite-dimensional algebra over an algebraically closed field, which is Morita
+  equivalent to a bound quiver algebra `kQ ⧸ I`, through its basic corner
+  (`TauCeti.IsSemiperfectRing.exists_isIdempotentElem_full_isBasic_corner`).
 
 ## Implementation notes
 
@@ -50,7 +54,7 @@ stated here.
 ## References
 
 * I. Assem, D. Simson, A. Skowroński, *Elements of the Representation Theory of Associative
-  Algebras I*, Chapter II, §3, Theorem 3.7.
+  Algebras I*, Chapter II, §3, Theorem 3.7, and Section I.6 for the reduction to basic algebras.
 * P. Gabriel, *Indecomposable representations II*, Symposia Mathematica XI (1973), 81--104.
 -/
 
@@ -215,5 +219,24 @@ theorem IsBasic.exists_surjective_pathAlgebra_isAdmissibleIdeal_ker {k : Type w}
       (fun {i j} t => Ideal.mul_mem_right _ _ (Ideal.mul_mem_left _ _ (hxJ i j t))) fun i j => ?_
     rw [hbasis]
     exact (Module.finBasis k (W i j)).linearIndependent.map' _ (Submodule.ker_subtype _)
+
+/-- **Gabriel's presentation theorem.** Every finite-dimensional algebra `A` over an algebraically
+closed field `k` is Morita equivalent to a bound quiver algebra: there are a finite quiver `Q`
+and an admissible ideal `I` of the path algebra `kQ` such that `A` is Morita equivalent to
+`kQ ⧸ I`. The algebra `kQ ⧸ I` is isomorphic to the basic corner `eAe` of `A`
+(`TauCeti.IsSemiperfectRing.exists_isIdempotentElem_full_isBasic_corner`), presented by
+`TauCeti.IsBasic.exists_surjective_pathAlgebra_isAdmissibleIdeal_ker`. -/
+theorem exists_quiver_admissibleIdeal_morita (k A : Type u) [Field k] [IsAlgClosed k] [Ring A]
+    [Algebra k A] [FiniteDimensional k A] :
+    ∃ (Q : Type) (_ : Quiver.{0} Q) (_ : Finite Q) (_ : ∀ i j : Q, Finite (i ⟶ j))
+      (I : Ideal (pathAlgebra k Q)) (_ : I.IsTwoSided),
+      IsAdmissibleIdeal I ∧ IsMoritaEquivalent k A (pathAlgebra k Q ⧸ I) := by
+  have := isSemiperfectRing_of_finiteDimensional k A
+  obtain ⟨e, he, hfull, hB⟩ := IsSemiperfectRing.exists_isIdempotentElem_full_isBasic_corner A
+  obtain ⟨Q, hQ, hfin, harr, F, hF, hI⟩ :=
+    hB.exists_surjective_pathAlgebra_isAdmissibleIdeal_ker (k := k)
+  exact ⟨Q, hQ, hfin, harr, RingHom.ker F.toRingHom, inferInstance, hI,
+    IsMoritaEquivalent.trans k (he.isMoritaEquivalent_corner k hfull)
+      (IsMoritaEquivalent.of_algEquiv k (Ideal.quotientKerAlgEquivOfSurjective hF).symm)⟩
 
 end TauCeti

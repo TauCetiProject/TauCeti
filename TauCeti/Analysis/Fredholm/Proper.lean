@@ -98,9 +98,8 @@ theorem _root_.HasStrictFDerivAt.exists_mem_nhds_forall_isCompact_inter_preimage
   have key : ∀ x ∈ N, ∀ y ∈ N,
       ‖x - y‖ ≤ 2 * (C * ‖f x - f y‖) + 2 * ‖P x - P y‖ := by
     intro x hx y hy
-    have h := happN.one_sub_mul_norm_sub_le (P := P.toLinearMap.toAddMonoidHom) hC.le hest hx hy
+    have h := happN.one_sub_mul_norm_sub_le (P := P) hC.le (fun z _ ↦ hest z) hx hy
     rw [hCε] at h
-    simp only [LinearMap.toAddMonoidHom_coe, ContinuousLinearMap.coe_coe] at h
     linarith
   refine ⟨N, Metric.closedBall_mem_nhds a (by linarith), fun L hL => ?_⟩
   -- the compact box the projection lands in

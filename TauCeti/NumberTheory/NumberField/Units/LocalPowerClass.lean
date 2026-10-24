@@ -82,6 +82,22 @@ theorem unitLocalPowerClassMap_apply (n : ℕ) (u : S.unit K) (v : T) :
           (Set.unit_valuation_eq_one S K u fun hv ↦ Set.disjoint_left.mp hST hv v.2)⟩ :
         unitFiltration (v.1.adicCompletion K) 0) := (rfl)
 
+/-- If the `S`-units surject onto the local unit `n`-th power classes at `T`, then every family
+of local units at the places of `T` agrees with a single `S`-unit up to `n`-th powers. -/
+theorem exists_mem_unit_of_unitLocalPowerClassMap_surjective
+    {n : ℕ} (hsurj : Function.Surjective (unitLocalPowerClassMap S T hST n))
+    (y : (v : T) → (v.1.adicCompletion K)ˣ) (hy : ∀ v, Valued.v (y v : v.1.adicCompletion K) = 1) :
+    ∃ u ∈ S.unit K, ∀ v : T,
+      (Units.map (algebraMap K (v.1.adicCompletion K)).toMonoidHom u)⁻¹ * y v ∈
+        (powMonoidHom n).range := by
+  obtain ⟨u, hu⟩ := hsurj fun v ↦
+    QuotientGroup.mk
+      ⟨y v, (HeightOneSpectrum.mem_unitFiltration_zero_adicCompletion_iff v.1).2 (hy v)⟩
+  refine ⟨u, u.2, fun v ↦ ?_⟩
+  obtain ⟨b, hb⟩ := QuotientGroup.eq.1 ((unitLocalPowerClassMap_apply _ _ _ _ _ _).symm.trans
+    (congrFun hu v))
+  exact ⟨b, congrArg Subtype.val hb⟩
+
 /-- An `S`-unit has trivial local power classes exactly when it has an `n`-th root in
 every completion indexed by `T`. -/
 theorem unitLocalPowerClassMap_eq_one_iff {n : ℕ} (hn : n ≠ 0) (u : S.unit K) :

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
 public import TauCeti.Analysis.InnerProductSpace.Hemisphere
-public import TauCeti.LowDimTopology.Handlebody
+public import TauCeti.LowDimTopology.Handlebody.Basic
 
 /-!
 # Heegaard splittings and Heegaard genus
@@ -21,7 +21,8 @@ two subsets `left` and `right` of `M` covering it, each homeomorphic to the stan
 `TauCeti.handlebody genus`, whose intersection is the frontier of each. The definition makes sense
 for any topological space. When `M` is a `3`-manifold without boundary, invariance of domain
 identifies the frontier of each piece with the image of the manifold boundary of the handlebody,
-so the two pieces meet exactly in their common boundary surface. The standard handlebodies are
+so the two pieces meet exactly in their common boundary surface
+(`TauCeti.HeegaardSplitting.coe_mem_right_iff`). The standard handlebodies are
 orientable, so these are the splittings of orientable manifolds.
 
 The Heegaard genus `TauCeti.heegaardGenus M` is defined only under
@@ -210,9 +211,12 @@ def hemisphereHeegaardSplitting (p : sphere (0 : E) 1) : HeegaardSplitting (sphe
   union_eq_univ := by
     refine eq_univ_of_forall fun x ↦ ?_
     simpa [inner_neg_right] using le_total 0 ⟪(x : E), (p : E)⟫
-  inter_eq_frontier_left := by rw [frontier_setOf_inner_nonneg, range_equatorInclusion]
-  inter_eq_frontier_right := by rw [frontier_setOf_inner_nonneg, range_equatorInclusion, neg_neg,
-    inter_comm]
+  inter_eq_frontier_left := by
+    rw [frontier_setOf_inner_nonneg, range_equatorInclusion]
+    simp only [coe_neg_sphere]
+  inter_eq_frontier_right := by
+    rw [frontier_setOf_inner_nonneg, range_equatorInclusion]
+    simp only [coe_neg_sphere, neg_neg, inter_comm]
   nonempty_homeomorph_left := nonempty_homeomorph_hemisphere_handlebody_zero p
   nonempty_homeomorph_right := nonempty_homeomorph_hemisphere_handlebody_zero (-p)
 

@@ -20,7 +20,7 @@ The chart argument follows the pullback idiom used for the manifold bracket in
 `Mathlib/Geometry/Manifold/VectorField/LieBracket.lean`. The resulting lemma is a general manifold
 prerequisite for Deliverable A, Layer 1 of the Lie-groups roadmap.
 
-## Main result
+## Main results
 
 * `TauCeti.mlieBracket_eq_lieBracket`: on a normed space, the manifold Lie bracket is the Lie
   bracket of vector fields on that space.
@@ -32,6 +32,11 @@ prerequisite for Deliverable A, Layer 1 of the Lie-groups roadmap.
   this identity characterises the manifold bracket at that point.
 * `VectorField.lieBracketWithin_mpullbackWithin_extChartAt_symm`: at the chart centre, the flat
   bracket of the coordinate expressions of two fields is their manifold bracket.
+* `VectorField.lieBracketWithin_neg_right` and `VectorField.mlieBracket_neg_right`: the flat and
+  manifold brackets are odd in their second argument.
+* `VectorField.jacobi_identity_mlieBracket_apply`: the cyclic Jacobi identity for the manifold
+  bracket.
+* `VectorField.contMDiff_mlieBracket`: the bracket of two smooth vector fields is smooth.
 
 ## References
 
@@ -53,7 +58,10 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {n : ℕ∞ω}
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-  [IsManifold I (minSmoothness 𝕜 2) M]
+
+section
+
+variable [IsManifold I (minSmoothness 𝕜 2) M]
 
 namespace TauCeti
 
@@ -120,16 +128,6 @@ private theorem fderivWithin_chart_apply_mpullbackWithin
     ((isInvertible_mfderivWithin_extChartAt_symm hz).self_apply_inverse _)
 
 omit [CompleteSpace E] in
-private theorem eventually_mdifferentiableAt_of_contMDiffAt
-    {f : M → F} {x : M} (hf : CMDiffAt n f x) (hn : minSmoothness 𝕜 2 ≤ n) :
-    ∀ᶠ y in 𝓝 x, MDiffAt f y := by
-  have h2n : (2 : ℕ∞ω) ≤ n :=
-    (le_minSmoothness (𝕜 := 𝕜) (n := (2 : ℕ∞ω))).trans hn
-  filter_upwards [(contMDiffAt_iff_contMDiffAt_nhds (n := 2) (by norm_num)).1
-    (hf.of_le h2n)] with y hy
-  exact hy.mdifferentiableAt (by norm_num)
-
-omit [CompleteSpace E] in
 private theorem eventuallyEq_chart_directionalDerivative
     {f : M → F} {U : ∀ y : M, TangentSpace I y} {x : M}
     (hf : CMDiffAt n f x) (hn : minSmoothness 𝕜 2 ≤ n) :
@@ -137,7 +135,10 @@ private theorem eventuallyEq_chart_directionalDerivative
       (mpullbackWithin 𝓘(𝕜, E) I (extChartAt I x).symm U (Set.range I) z)) =ᶠ[
       𝓝[Set.range I] (extChartAt I x x)]
     (fun y ↦ mvfderiv I f y (U y)) ∘ (extChartAt I x).symm := by
-  have hf_eventually := eventually_mdifferentiableAt_of_contMDiffAt hf hn
+  have h2n : (2 : ℕ∞ω) ≤ n :=
+    (le_minSmoothness (𝕜 := 𝕜) (n := (2 : ℕ∞ω))).trans hn
+  have hf_eventually := ((contMDiffAt_iff_contMDiffAt_nhds (n := 2) (by norm_num)).1
+    (hf.of_le h2n)).mono fun _ hy ↦ hy.mdifferentiableAt (by norm_num)
   have hsymm_tendsto : Tendsto (extChartAt I x).symm
       (𝓝[Set.range I] (extChartAt I x x)) (𝓝 x) := by
     simpa only [extChartAt_to_inv] using
@@ -148,76 +149,6 @@ private theorem eventuallyEq_chart_directionalDerivative
     extChartAt_target_mem_nhdsWithin x
   filter_upwards [htarget, hsymm_tendsto hf_eventually] with z hz hfz
   exact fderivWithin_chart_apply_mpullbackWithin hz hfz
-
-omit [CompleteSpace E] in
-private theorem mdifferentiableAt_tangentMapWithin_apply
-    {f : M → F} {U : ∀ y : M, TangentSpace I y} {x : M} {t : Set M}
-    (ht_open : IsOpen t) (hft : ContMDiffOn I 𝓘(𝕜, F) 2 f t)
-    (hxt : x ∈ t) (hU : MDiffAt (fun y ↦ (U y : TangentBundle I M)) x) :
-    MDiffAt (fun y ↦ tangentMapWithin I 𝓘(𝕜, F) f t
-      (U y : TangentBundle I M)) x := by
-  let u : M → TangentBundle I M := fun y ↦ (U y : TangentBundle I M)
-  have hu_mem : u x ∈ π E (TangentSpace I) ⁻¹' t := hxt
-  have htangent := hft.contMDiffOn_tangentMapWithin
-    (I := I) (I' := 𝓘(𝕜, F)) (m := 1) (by norm_num) ht_open.uniqueMDiffOn
-  have hpre : π E (TangentSpace I) ⁻¹' t ∈ 𝓝 (u x) :=
-    (FiberBundle.continuous_proj E (TangentSpace I)).continuousAt
-      (ht_open.mem_nhds hxt)
-  have htangentAt : MDiffAt (tangentMapWithin I 𝓘(𝕜, F) f t) (u x) := by
-    rw [← mdifferentiableWithinAt_univ]
-    exact ((htangent (u x) hu_mem).mdifferentiableWithinAt (by norm_num)).mono_of_mem_nhdsWithin
-      (by simpa only [nhdsWithin_univ] using hpre)
-  exact htangentAt.comp x hU
-
-omit [CompleteSpace E] in
-private theorem exists_open_contMDiffOn_two
-    {f : M → F} {x : M} (hf : CMDiffAt n f x) (hn : minSmoothness 𝕜 2 ≤ n) :
-    ∃ t : Set M, IsOpen t ∧ t ∈ 𝓝 x ∧ ContMDiffOn I 𝓘(𝕜, F) 2 f t := by
-  have h2n : (2 : ℕ∞ω) ≤ n :=
-    (le_minSmoothness (𝕜 := 𝕜) (n := (2 : ℕ∞ω))).trans hn
-  rcases (contMDiffAt_iff_contMDiffOn_nhds (n := 2) (by norm_num)).1 (hf.of_le h2n) with
-    ⟨s, hs, hfs⟩
-  exact ⟨interior s, isOpen_interior,
-    isOpen_interior.mem_nhds (mem_interior_iff_mem_nhds.mpr hs), hfs.mono interior_subset⟩
-
-omit [CompleteSpace E] in
-private theorem eventuallyEq_tangentMapWithin_apply
-    {f : M → F} {U : ∀ y : M, TangentSpace I y} {x : M} {t : Set M}
-    (ht_open : IsOpen t) (ht : t ∈ 𝓝 x)
-    (hf : CMDiffAt n f x) (hn : minSmoothness 𝕜 2 ≤ n) :
-    (fun y ↦ tangentMapWithin I 𝓘(𝕜, F) f t (U y : TangentBundle I M)) =ᶠ[𝓝 x]
-      fun y ↦ tangentMap I 𝓘(𝕜, F) f (U y : TangentBundle I M) := by
-  filter_upwards [ht, eventually_mdifferentiableAt_of_contMDiffAt hf hn] with y hyt hfy
-  exact tangentMapWithin_eq_tangentMap (ht_open.uniqueMDiffWithinAt hyt) hfy
-
-omit [CompleteSpace E] in
-private theorem mdifferentiableAt_tangentMap_apply
-    {f : M → F} {U : ∀ y : M, TangentSpace I y} {x : M}
-    (hf : CMDiffAt n f x) (hn : minSmoothness 𝕜 2 ≤ n)
-    (hU : MDiffAt (fun y ↦ (U y : TangentBundle I M)) x) :
-    MDiffAt (fun y ↦ tangentMap I 𝓘(𝕜, F) f
-      (U y : TangentBundle I M)) x := by
-  rcases exists_open_contMDiffOn_two hf hn with ⟨t, ht_open, ht, hft⟩
-  have hx : x ∈ t := mem_of_mem_nhds ht
-  have htangentAt := mdifferentiableAt_tangentMapWithin_apply ht_open hft hx hU
-  exact htangentAt.congr_of_eventuallyEq
-    (eventuallyEq_tangentMapWithin_apply (U := U) ht_open ht hf hn).symm
-
-omit [CompleteSpace E] in
-private theorem mdifferentiableAt_mvfderiv_apply
-    {f : M → F} {U : ∀ y : M, TangentSpace I y} {x : M}
-    (hf : CMDiffAt n f x) (hn : minSmoothness 𝕜 2 ≤ n)
-    (hU : MDiffAt (fun y ↦ (U y : TangentBundle I M)) x) :
-    MDiffAt (fun y ↦ mvfderiv I f y (U y)) x := by
-  have htangent := mdifferentiableAt_tangentMap_apply hf hn hU
-  have hsnd : MDiffAt (fun p : TangentBundle 𝓘(𝕜, F) F ↦ @id F p.2)
-      (tangentMap I 𝓘(𝕜, F) f (U x : TangentBundle I M)) :=
-    (contMDiff_snd_tangentBundle_modelSpace F 𝓘(𝕜, F)
-      (n := 1)).mdifferentiable (by norm_num) |>.mdifferentiableAt
-  apply (hsnd.comp x htangent).congr_of_eventuallyEq
-  filter_upwards with y
-  rw [Function.comp_apply, tangentMap_snd, mvfderiv_apply_eq_mfderiv_apply]
-  rfl
 
 /-- Let `f` have enough derivatives for symmetry of its second derivative at `x`, and let `V` and
 `W` be differentiable vector fields there. Then the differential of `f` on the manifold bracket is
@@ -286,8 +217,8 @@ theorem mvfderiv_mlieBracket {f : M → F} {V W : ∀ x : M, TangentSpace I x} {
   -- Identify chart directional derivatives with their manifold counterparts.
   have hf_chart : MDiffAt f ((extChartAt I x).symm (extChartAt I x x)) := by
     simpa only [extChartAt_to_inv] using hf'
-  have hVf := mdifferentiableAt_mvfderiv_apply hf hn hV
-  have hWf := mdifferentiableAt_mvfderiv_apply hf hn hW
+  have hVf := TauCeti.mdifferentiableAt_mvfderiv_apply hf hn hV
+  have hWf := TauCeti.mdifferentiableAt_mvfderiv_apply hf hn hW
   have hcoordW := (eventuallyEq_chart_directionalDerivative
     (I := I) (U := W) hf hn).fderivWithin_eq
     (𝕜 := 𝕜) (by
@@ -342,9 +273,11 @@ theorem eq_mlieBracket_of_mvfderiv_extChartAt {V W : ∀ y : M, TangentSpace I y
 
 end TauCeti
 
+end
+
 namespace VectorField
 
-omit [CompleteSpace E] [IsManifold I (minSmoothness 𝕜 2) M] in
+omit [CompleteSpace E] in
 /-- At the centre of the preferred chart, the Lie bracket of the inverse-chart pullbacks of two
 vector fields is their manifold Lie bracket. -/
 theorem lieBracketWithin_mpullbackWithin_extChartAt_symm [IsManifold I 1 M]
@@ -360,5 +293,51 @@ theorem lieBracketWithin_mpullbackWithin_extChartAt_symm [IsManifold I 1 M]
       ContinuousLinearMap.inverse_id
   rw [mlieBracketWithin_apply]
   exact (congrArg (fun f : E →L[𝕜] E ↦ f (lieBracketWithin 𝕜 _ _ _ _)) hinverse).symm
+
+omit [CompleteSpace E] in
+/-- On a normed space, negating the second vector field negates the Lie bracket at any point where
+the set has unique derivatives. -/
+theorem lieBracketWithin_neg_right {V W : E → E} {s : Set E} {x : E}
+    (hs : UniqueDiffWithinAt 𝕜 s x) :
+    lieBracketWithin 𝕜 V (-W) s x = -lieBracketWithin 𝕜 V W s x := by
+  rw [lieBracketWithin, lieBracketWithin, fderivWithin_neg hs, Pi.neg_apply, map_neg, neg_apply]
+  abel
+
+omit [CompleteSpace E] in
+/-- Negating the second vector field negates the manifold Lie bracket. -/
+theorem mlieBracket_neg_right {V W : ∀ y : M, TangentSpace I y} {x : M} :
+    mlieBracket I V (-W) x = -mlieBracket I V W x := by
+  have hs : UniqueDiffWithinAt 𝕜 ((extChartAt I x).symm ⁻¹' Set.univ ∩ Set.range I)
+      (extChartAt I x x) := by
+    rw [Set.preimage_univ, Set.univ_inter]
+    exact I.uniqueDiffOn _ (Set.mem_range_self _)
+  rw [← mlieBracketWithin_univ, ← mlieBracketWithin_univ]
+  simp only [mlieBracketWithin_apply, mpullbackWithin_neg]
+  exact (congrArg _ (lieBracketWithin_neg_right hs)).trans (map_neg _ _)
+
+/-- The **Jacobi identity** for the manifold Lie bracket, in cyclic form:
+`[U, [V, W]] + [V, [W, U]] + [W, [U, V]] = 0`. This rearranges Mathlib's Leibniz form
+`leibniz_identity_mlieBracket_apply`. -/
+theorem jacobi_identity_mlieBracket_apply [IsManifold I (minSmoothness 𝕜 3) M]
+    {U V W : ∀ y : M, TangentSpace I y} {x : M}
+    (hU : CMDiffAt (minSmoothness 𝕜 2) (T% U) x)
+    (hV : CMDiffAt (minSmoothness 𝕜 2) (T% V) x)
+    (hW : CMDiffAt (minSmoothness 𝕜 2) (T% W) x) :
+    mlieBracket I U (mlieBracket I V W) x + mlieBracket I V (mlieBracket I W U) x +
+      mlieBracket I W (mlieBracket I U V) x = 0 := by
+  rw [leibniz_identity_mlieBracket_apply hU hV hW,
+    mlieBracket_swap_apply (V := mlieBracket I U V), mlieBracket_swap (V := U) (W := W),
+    mlieBracket_neg_right]
+  abel
+
+/-- The Lie bracket of two smooth vector fields is smooth. -/
+theorem contMDiff_mlieBracket [IsRCLikeNormedField 𝕜] [IsManifold I ∞ M]
+    {V W : ∀ y : M, TangentSpace I y} (hV : CMDiff ∞ (T% V)) (hW : CMDiff ∞ (T% W)) :
+    CMDiff ∞ (T% (mlieBracket I V W)) := by
+  let _ : IsManifold I (minSmoothness 𝕜 2) M :=
+    IsManifold.of_le (m := minSmoothness 𝕜 2) (n := ∞) (by simp)
+  let _ : IsManifold I ((∞ : ℕ∞ω) + 1) M :=
+    IsManifold.of_le (m := (∞ : ℕ∞ω) + 1) (n := ∞) (by simp)
+  exact ContDiff.mlieBracket_vectorField (m := (⊤ : ℕ∞)) (n := (⊤ : ℕ∞)) hV hW (by simp)
 
 end VectorField

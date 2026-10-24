@@ -41,7 +41,7 @@ variable (k : Type v) (K : Type max v w) [CommRing k] [CommRing K] [Algebra k K]
 
 /-- The coordinate Hopf algebras of the root subgroups and weight torus over `K` are the scalar
 extensions of the corresponding algebras over `k`. -/
-private noncomputable def generatorCoordinateAlgebraBaseChangeIso :
+noncomputable def generatorCoordinateAlgebraBaseChangeIso :
     ∀ j, CommHopfAlgCat.baseChange (K := K) (generatorCoordinateAlgebra k j) ≅
       generatorCoordinateAlgebra K j
   | .inl _ => AdditiveGroup.coordinateHopfAlgebraBaseChangeIso k K
@@ -100,6 +100,27 @@ theorem baseChangeMap_generatedCoordinateMap_comp_generatedCoordinateHopfAlgebra
         generatedCoordinateMap K :=
   CommHopfAlgCat.baseChangeMap_comp_baseChangeIsoOfEqQuotient_hom _ _ _ _ _ _ _ _
     (generatedCoordinateMap_comp_eqToIso_hom k) (generatedCoordinateMap_comp_eqToIso_hom K)
+
+/-- The full generated-carrier comparison intertwines each factored root or torus generator
+with its scalar extension. -/
+@[reassoc (attr := simp)]
+theorem baseChangeMap_generatedCoordinateLift_comp_generatorCoordinateAlgebraBaseChangeIso_hom
+    [Module.Free k K] (j : Sum (Fin 4 ⊕ Fin 4) Unit) :
+    CommHopfAlgCat.baseChangeMap (K := K) (generatedCoordinateLift k j) ≫
+        (generatorCoordinateAlgebraBaseChangeIso k K j).hom =
+      (generatedCoordinateHopfAlgebraBaseChangeIso k K).hom ≫ generatedCoordinateLift K j := by
+  let _ : Epi (CommHopfAlgCat.baseChangeMap (K := K) (generatedCoordinateMap k)) :=
+    ConcreteCategory.epi_of_surjective _ (CommHopfAlgCat.baseChangeMap_surjective
+      (generatedCoordinateMap k) (generatedCoordinateMap_surjective k))
+  apply (cancel_epi (CommHopfAlgCat.baseChangeMap (K := K) (generatedCoordinateMap k))).mp
+  rw [← Category.assoc, ← (CommHopfAlgCat.baseChangeFunctor (K := K)).map_comp,
+    generatedCoordinateMap_comp_generatedCoordinateLift]
+  rw [← Category.assoc,
+    baseChangeMap_generatedCoordinateMap_comp_generatedCoordinateHopfAlgebraBaseChangeIso_hom,
+    Category.assoc, generatedCoordinateMap_comp_generatedCoordinateLift]
+  apply (Iso.inv_comp_eq (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K 24)).mp
+  rw [← Category.assoc]
+  exact generatorCoordinateMap_baseChange k K j
 
 end BaseChange
 

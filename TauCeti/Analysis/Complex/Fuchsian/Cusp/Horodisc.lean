@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.Fuchsian.Cusp.Coordinate
 import TauCeti.Analysis.Complex.Fuchsian.Cusp.ChangeScaling
 import TauCeti.Analysis.Complex.Fuchsian.Shimizu
+import TauCeti.Analysis.Complex.UpperHalfPlane.Translation
 
 /-!
 # Precisely invariant horodiscs at a cusp
@@ -24,6 +25,11 @@ at least the width, nothing else does. An element of `Γ` moving a point of the 
 the horodisc lies in the cusp stabilizer, so two elements of `Γ` in different cosets of the
 stabilizer carry the horodisc to disjoint sets. This is the *precise invariance* that makes the
 horodisc descend to a punctured-disc neighbourhood of the cusp in the quotient.
+
+Horodiscs are also the thin part of the cusp stabilizer. The translation by `n * w` moves a point
+at height `y` a hyperbolic distance `d` with `sinh (d / 2) = |n| * w / (2 * y)`, so the points
+moved less than `ε` by some nonidentity element of the stabilizer form the horodisc of height
+`w / (2 * sinh (ε / 2))`.
 
 The same argument separates horodiscs at two different cusps. If `g ∈ Γ` does not carry the cusp
 of a second datum `D'` to the cusp of `D`, then the heights of `g • z` above the cusp of `D` and
@@ -44,6 +50,9 @@ All of these bounds are Shimizu's lemma
 
 * `TauCeti.Subgroup.CuspDatum.smul_horodisc_of_mem_stabilizer`: the cusp stabilizer preserves
   every horodisc.
+* `TauCeti.Subgroup.CuspDatum.mem_horodisc_iff_exists_dist_smul_lt`: the points moved less than
+  `ε` by a nonidentity element of the cusp stabilizer form the horodisc of height
+  `D.width / (2 * sinh (ε / 2))`.
 * `TauCeti.Subgroup.CuspDatum.im_scaling_smul_smul_mul_im_scaling_smul_le`: Shimizu's inequality
   comparing the heights above two cusps.
 * `TauCeti.Subgroup.CuspDatum.disjoint_smul_horodisc_horodisc`: an element of `Γ` not carrying one
@@ -109,6 +118,43 @@ theorem smul_horodisc_of_mem_stabilizer {g : Γ} (hg : g ∈ stabilizer Γ D.cus
   ext z
   rw [Set.mem_smul_set_iff_inv_smul_mem, mem_horodisc, mem_horodisc,
     im_scaling_smul_smul_of_mem_stabilizer D (inv_mem hg)]
+
+/-- A power of the selected generator moves `z` a hyperbolic distance `d` with
+`sinh (d / 2) = |n| * D.width / (2 * (D.scaling • z).im)`. -/
+theorem sinh_half_dist_generator_zpow_smul (n : ℤ) (z : ℍ) :
+    Real.sinh (dist (D.generator ^ n • z) z / 2) =
+      |(n : ℝ)| * D.width / (2 * (D.scaling • z).im) := by
+  rw [← dist_smul D.scaling, scaling_smul_generator_zpow, sinh_half_dist_vadd, abs_mul,
+    abs_of_pos D.width_pos]
+
+/-- **The thin part of a cusp stabilizer is a horodisc.** For `ε > 0`, a point lies in the
+horodisc of height `D.width / (2 * sinh (ε / 2))` exactly when some nonidentity element of the
+cusp stabilizer moves it a hyperbolic distance less than `ε`. -/
+theorem mem_horodisc_iff_exists_dist_smul_lt {ε : ℝ} (hε : 0 < ε) (z : ℍ) :
+    z ∈ horodisc D (D.width / (2 * Real.sinh (ε / 2))) ↔
+      ∃ g ∈ stabilizer Γ D.cusp, g ≠ 1 ∧ dist (g • z) z < ε := by
+  have hs : 0 < Real.sinh (ε / 2) := Real.sinh_pos_iff.mpr (by positivity)
+  have hz := (D.scaling • z).im_pos
+  have hlt (n : ℤ) : dist (D.generator ^ n • z) z < ε ↔
+      |(n : ℝ)| * D.width / (2 * (D.scaling • z).im) < Real.sinh (ε / 2) := by
+    rw [← sinh_half_dist_generator_zpow_smul, Real.sinh_lt_sinh,
+      div_lt_div_iff_of_pos_right two_pos]
+  rw [mem_horodisc, div_lt_iff₀ (by positivity)]
+  constructor
+  · intro h
+    refine ⟨D.generator, D.generator_mem_stabilizer, fun h1 ↦ ?_, ?_⟩
+    · simpa [h1] using D.orderOf_generator_eq_zero
+    · simpa using (hlt 1).mpr (by
+        rw [Int.cast_one, abs_one, one_mul, div_lt_iff₀ (by positivity)]
+        linarith)
+  · rintro ⟨g, hg, hg1, hgz⟩
+    obtain ⟨n, rfl⟩ := D.mem_stabilizer_iff.mp hg
+    have hn : (1 : ℝ) ≤ |(n : ℝ)| := by
+      have : n ≠ 0 := by rintro rfl; exact hg1 (zpow_zero _)
+      exact_mod_cast Int.one_le_abs this
+    have h := (hlt n).mp hgz
+    rw [div_lt_iff₀ (by positivity)] at h
+    nlinarith [D.width_pos]
 
 /-- A horodisc is open. -/
 theorem isOpen_horodisc (A : ℝ) : IsOpen (horodisc D A) :=

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Monoidal.Braided.Basic
 public import Mathlib.CategoryTheory.Monoidal.CoherenceLemmas
 
 /-!
@@ -14,7 +15,13 @@ A *scalar* in a monoidal category `C` is an endomorphism `a : 𝟙_ C ⟶ 𝟙_ 
 an object by a scalar is compatible with every morphism to or from the unit: a scalar acting on
 the unit factor of `Y ⊗ 𝟙_ C` can be moved past any morphism `Y ⊗ 𝟙_ C ⟶ 𝟙_ C`
 (`TauCeti.whiskerLeft_scalar_comp`), and dually a scalar acting on the unit factor of `𝟙_ C ⊗ Y`
-can be moved past any morphism `𝟙_ C ⟶ 𝟙_ C ⊗ Y` (`TauCeti.comp_scalar_whiskerRight`).
+can be moved past any morphism `𝟙_ C ⟶ 𝟙_ C ⊗ Y` (`TauCeti.comp_scalar_whiskerRight`). In
+particular scalars commute with each other (`TauCeti.scalar_comm`).
+
+A scalar `a` acts on every object `Y` in two ways, from the left as
+`(λ_ Y).inv ≫ a ▷ Y ≫ (λ_ Y).hom` and from the right as `(ρ_ Y).inv ≫ Y ◁ a ≫ (ρ_ Y).hom`. The two
+actions need not agree in a general monoidal category, but they do in a braided one
+(`TauCeti.leftUnitor_inv_scalar_whiskerRight_leftUnitor_hom`).
 -/
 
 public section
@@ -50,5 +57,19 @@ theorem comp_scalar_whiskerRight {Y : C} (a : 𝟙_ C ⟶ 𝟙_ C) (e : 𝟙_ C 
   conv_rhs => rw [ha, Category.assoc, Category.assoc, ← leftUnitor_naturality,
     ← whisker_exchange_assoc, ← leftUnitor_inv_naturality_assoc]
   simp
+
+/-- **Scalars commute**: the endomorphisms of the unit form a commutative monoid. -/
+theorem scalar_comm (a b : 𝟙_ C ⟶ 𝟙_ C) : a ≫ b = b ≫ a := by
+  rw [← cancel_epi (λ_ (𝟙_ C)).hom, ← leftUnitor_naturality_assoc, unitors_equal,
+    whiskerLeft_scalar_comp, Category.assoc]
+
+/-- In a braided monoidal category, a scalar acts on every object in the same way from the left
+and from the right. -/
+theorem leftUnitor_inv_scalar_whiskerRight_leftUnitor_hom [BraidedCategory C]
+    (a : 𝟙_ C ⟶ 𝟙_ C) (Y : C) :
+    (λ_ Y).inv ≫ a ▷ Y ≫ (λ_ Y).hom = (ρ_ Y).inv ≫ Y ◁ a ≫ (ρ_ Y).hom := by
+  -- The braiding `𝟙_ C ⊗ Y ≅ Y ⊗ 𝟙_ C` is natural and identifies the two unitors.
+  rw [← braiding_rightUnitor, BraidedCategory.braiding_naturality_left_assoc,
+    leftUnitor_inv_braiding_assoc]
 
 end TauCeti

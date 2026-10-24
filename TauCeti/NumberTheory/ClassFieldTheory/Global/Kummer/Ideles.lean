@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.FiniteIdeal
+public import TauCeti.NumberTheory.NumberField.Global.Ideles.Ray.Subgroup
 public import Mathlib.GroupTheory.Index
 
 /-!
@@ -19,8 +20,16 @@ the exponent-`n` subgroup in that group is the product of the local power-class 
 and the infinite places. No roots-of-unity hypothesis is needed for this identity.
 
 If the primes in `S ∪ T` generate the ideal class group, every idele class has an `(S ∪ T)`-idele
-representative. Consequently the index of the image of the auxiliary Kummer subgroup in the idele
-class group divides the same product.
+representative, unique up to the principal ideles of the `(S ∪ T)`-units. Consequently the index
+of the image of the auxiliary Kummer subgroup in the idele class group, multiplied by the index in
+the `(S ∪ T)`-units of those whose principal ideles lie in the auxiliary subgroup, is the same
+product (`index_auxiliaryKummerIdeleClassSubgroup_mul_relIndex`); in particular the index divides
+it.
+
+A subgroup of the idele class group containing the `n`-th powers and the ray subgroup of a modulus
+whose finite part is supported in `S` contains the image of the exponent-`n` subgroup for `T = ∅`
+(`auxiliaryKummerIdeleClassSubgroup_le_of_raySubgroup_le`): every such idele is an `n`-th power
+times an idele congruent to one modulo the modulus.
 
 ## References
 
@@ -63,6 +72,27 @@ theorem mem_auxiliaryKummerIdeleSubgroup_one_iff
     x ∈ auxiliaryKummerIdeleSubgroup S T 1 ↔
       ∀ v ∉ S, v ∉ T → Valued.v (v.ideleFiniteCoord x : v.adicCompletion K) = 1 := by
   simp
+
+/-- At exponent one, membership in the auxiliary Kummer subgroup is the unit condition outside
+the union `S ∪ T`. -/
+theorem mem_auxiliaryKummerIdeleSubgroup_one_iff_union
+    (S T : Finset (HeightOneSpectrum (𝓞 K))) (x : IdeleGroup (𝓞 K) K) :
+    x ∈ auxiliaryKummerIdeleSubgroup S T 1 ↔
+      ∀ v ∉ ((S : Set (HeightOneSpectrum (𝓞 K))) ∪ T),
+        Valued.v (v.ideleFiniteCoord x : v.adicCompletion K) = 1 := by
+  rw [mem_auxiliaryKummerIdeleSubgroup_one_iff]
+  constructor
+  · exact fun h v hv ↦ h v (fun hvS ↦ hv (Or.inl hvS)) fun hvT ↦ hv (Or.inr hvT)
+  · exact fun h v hvS hvT ↦ h v fun hv ↦ hv.elim hvS hvT
+
+/-- The principal idele of `a` lies in the exponent-one auxiliary Kummer subgroup exactly when
+`a` is an `(S ∪ T)`-unit. -/
+theorem unitEmbedding_mem_auxiliaryKummerIdeleSubgroup_one_iff
+    (S T : Finset (HeightOneSpectrum (𝓞 K))) (a : Kˣ) :
+    IdeleGroup.unitEmbedding (𝓞 K) K a ∈ auxiliaryKummerIdeleSubgroup S T 1 ↔
+      a ∈ ((S : Set (HeightOneSpectrum (𝓞 K))) ∪ T).unit K := by
+  rw [mem_auxiliaryKummerIdeleSubgroup_one_iff_union,
+    IdeleGroup.forall_valued_ideleFiniteCoord_unitEmbedding_eq_one_iff]
 
 /-- Every auxiliary Kummer idele is an `(S ∪ T)`-idele. -/
 theorem auxiliaryKummerIdeleSubgroup_le_one
@@ -170,6 +200,66 @@ theorem mem_auxiliaryKummerIdeleClassSubgroup_iff
         (x : IdeleClassGroup (𝓞 K) K) = c :=
   (Iff.rfl)
 
+/-- The principal ideles that are integral units outside `S ∪ T` are the principal ideles of the
+`(S ∪ T)`-units. -/
+private theorem principalSubgroup_inf_auxiliaryKummerIdeleSubgroup_one
+    (S T : Finset (HeightOneSpectrum (𝓞 K))) :
+    IdeleGroup.principalSubgroup (𝓞 K) K ⊓ auxiliaryKummerIdeleSubgroup S T 1 =
+      (((S : Set (HeightOneSpectrum (𝓞 K))) ∪ T).unit K).map
+        (IdeleGroup.unitEmbedding (𝓞 K) K) := by
+  ext x
+  rw [Subgroup.mem_inf, Subgroup.mem_map]
+  constructor
+  · rintro ⟨hP, hx⟩
+    exact (IdeleGroup.mem_principalSubgroup_iff_exists_mem_unit
+      ((mem_auxiliaryKummerIdeleSubgroup_one_iff_union S T x).mp hx)).1 hP
+  · rintro ⟨a, ha, rfl⟩
+    exact ⟨⟨a, rfl⟩, (unitEmbedding_mem_auxiliaryKummerIdeleSubgroup_one_iff S T a).2 ha⟩
+
+/-- **The index of the auxiliary Kummer idele classes.** If the classes of `S ∪ T` generate the
+ideal class group, then
+`[C_K : E_{S,T} Kˣ / Kˣ] · [U_{S∪T} : U_{S∪T} ∩ E_{S,T}] = [I_{S∪T} : E_{S,T}]`,
+where `I_{S∪T}` is the group of `(S ∪ T)`-ideles, `U_{S∪T}` is the group of `(S ∪ T)`-units, and
+an `(S ∪ T)`-unit lies in `E_{S,T}` when its principal idele does. -/
+theorem index_auxiliaryKummerIdeleClassSubgroup_mul_relIndex
+    (S T : Finset (HeightOneSpectrum (𝓞 K))) (n : ℕ)
+    (hST : Subgroup.closure (HeightOneSpectrum.classGroupMk (R := 𝓞 K) ''
+      ((S : Set (HeightOneSpectrum (𝓞 K))) ∪ (T : Set (HeightOneSpectrum (𝓞 K))))) = ⊤) :
+    (auxiliaryKummerIdeleClassSubgroup S T n).index *
+        ((auxiliaryKummerIdeleSubgroup S T n).comap (IdeleGroup.unitEmbedding (𝓞 K) K)).relIndex
+          (((S : Set (HeightOneSpectrum (𝓞 K))) ∪ T).unit K) =
+      (auxiliaryKummerIdeleSubgroup S T n).relIndex (auxiliaryKummerIdeleSubgroup S T 1) := by
+  set E := auxiliaryKummerIdeleSubgroup S T n
+  set I := auxiliaryKummerIdeleSubgroup S T 1
+  -- The class map on `(S ∪ T)`-ideles is onto, and its kernel is the principal `(S ∪ T)`-ideles.
+  let f : I →* IdeleClassGroup (𝓞 K) K :=
+    (QuotientGroup.mk' (IdeleGroup.principalSubgroup (𝓞 K) K)).comp I.subtype
+  have hf : Function.Surjective f := by
+    intro c
+    obtain ⟨x, hx, hc⟩ :=
+      IdeleClassGroup.exists_valued_ideleFiniteCoord_eq_one_and_mk_eq hST c
+    exact ⟨⟨x, (mem_auxiliaryKummerIdeleSubgroup_one_iff_union S T x).mpr hx⟩, hc⟩
+  have hmap : (E.subgroupOf I).map f = auxiliaryKummerIdeleClassSubgroup S T n := by
+    dsimp only [f]
+    rw [auxiliaryKummerIdeleClassSubgroup, ← Subgroup.map_map,
+      Subgroup.subgroupOf_map_subtype]
+    exact congrArg (Subgroup.map _) (inf_eq_left.mpr (auxiliaryKummerIdeleSubgroup_le_one S T n))
+  have hker : f.ker = (IdeleGroup.principalSubgroup (𝓞 K) K ⊓ I).subgroupOf I := by
+    rw [Subgroup.inf_subgroupOf_right, ← MonoidHom.comap_ker, QuotientGroup.ker_mk',
+      Subgroup.comap_subtype]
+  -- The first isomorphism theorem computes the index of the image from the kernel of `f`.
+  have himage : (auxiliaryKummerIdeleClassSubgroup S T n).index =
+      (E.subgroupOf I ⊔ f.ker).index := by
+    rw [← hmap, Subgroup.index_map, f.range_eq_top_of_surjective hf, Subgroup.index_top, mul_one]
+  -- Multiplicativity splits the index of `E` at the intermediate subgroup `E ⊔ ker f`.
+  have hmul : (E.subgroupOf I).relIndex f.ker * (E.subgroupOf I ⊔ f.ker).index =
+      (E.subgroupOf I).index := by
+    rw [← Subgroup.relIndex_sup_left]
+    exact Subgroup.relIndex_mul_index le_sup_left
+  rw [Subgroup.relIndex_comap, ← principalSubgroup_inf_auxiliaryKummerIdeleSubgroup_one,
+    ← Subgroup.relIndex_subgroupOf inf_le_right, ← hker, himage, mul_comm, hmul,
+    Subgroup.relIndex]
+
 /-- If the classes of `S ∪ T` generate the ideal class group, the index of the auxiliary Kummer
 idele-class subgroup divides the product of the local power-class counts. -/
 theorem index_auxiliaryKummerIdeleClassSubgroup_dvd
@@ -179,25 +269,52 @@ theorem index_auxiliaryKummerIdeleClassSubgroup_dvd
     (auxiliaryKummerIdeleClassSubgroup S T n).index ∣
       (∏ v ∈ S, Nat.card ((v.adicCompletion K)ˣ ⧸ (powMonoidHom n).range)) *
         ∏ w : InfinitePlace K, Nat.card (w.Completionˣ ⧸ (powMonoidHom n).range) := by
-  let f : auxiliaryKummerIdeleSubgroup S T 1 →* IdeleClassGroup (𝓞 K) K :=
-    (QuotientGroup.mk' (IdeleGroup.principalSubgroup (𝓞 K) K)).comp
-      (auxiliaryKummerIdeleSubgroup S T 1).subtype
-  have hf : Function.Surjective f := by
-    intro c
-    obtain ⟨x, hx, hc⟩ :=
-      IdeleClassGroup.exists_valued_ideleFiniteCoord_eq_one_and_mk_eq hST c
-    exact ⟨⟨x, (mem_auxiliaryKummerIdeleSubgroup_one_iff S T x).mpr
-      (fun v hvS hvT ↦ hx v (by simp [hvS, hvT]))⟩, hc⟩
-  have hmap :
-      ((auxiliaryKummerIdeleSubgroup S T n).subgroupOf
-          (auxiliaryKummerIdeleSubgroup S T 1)).map f =
-        auxiliaryKummerIdeleClassSubgroup S T n := by
-    dsimp only [f]
-    rw [auxiliaryKummerIdeleClassSubgroup, ← Subgroup.map_map,
-      Subgroup.subgroupOf_map_subtype]
-    exact congrArg (Subgroup.map _)
-      (inf_eq_left.mpr (auxiliaryKummerIdeleSubgroup_le_one S T n))
-  rw [← relIndex_auxiliaryKummerIdeleSubgroup, Subgroup.relIndex, ← hmap]
-  exact Subgroup.index_map_dvd _ hf
+  rw [← relIndex_auxiliaryKummerIdeleSubgroup,
+    ← index_auxiliaryKummerIdeleClassSubgroup_mul_relIndex S T n hST]
+  exact dvd_mul_right _ _
+
+open GlobalNumberFields in
+/-- **A subgroup containing the `n`-th powers and a ray subgroup contains a Kummer idele-class
+subgroup.** Let `N ≤ C_K` contain the `n`-th powers and the ray subgroup of a modulus `𝔪` whose
+finite part is supported in `S`. Then `N` contains the image in `C_K` of the Kummer idele subgroup
+`E_S` of ideles that are `n`-th powers at `S` and at every infinite place and units elsewhere. -/
+theorem auxiliaryKummerIdeleClassSubgroup_le_of_raySubgroup_le {n : ℕ}
+    {N : Subgroup (IdeleClassGroup (𝓞 K) K)} (hpow : ∀ c, c ^ n ∈ N) {𝔪 : Modulus K}
+    (h𝔪 : raySubgroup 𝔪 ≤ N) {S : Finset (HeightOneSpectrum (𝓞 K))}
+    (hS : 𝔪.support ⊆ S) :
+    auxiliaryKummerIdeleClassSubgroup S ∅ n ≤ N := by
+  classical
+  intro c hc
+  obtain ⟨x, hx, rfl⟩ := (mem_auxiliaryKummerIdeleClassSubgroup_iff S ∅ n c).1 hc
+  obtain ⟨hxS, hxinf, hxunit⟩ := (mem_auxiliaryKummerIdeleSubgroup_iff S ∅ n x).1 hx
+  -- Write `x = z * yⁿ`, where `y` is supported on `S` and the infinite places and `z` is `1` there
+  -- and a unit elsewhere, hence congruent to one modulo `𝔪`. First choose the `n`-th roots of the
+  -- coordinates of `x` at `S` and at the infinite places.
+  choose yS hyS using hxS
+  choose yinf hyinf using hxinf
+  let y : IdeleGroup (𝓞 K) K := ideleOfUnits yinf (fun v ↦ if hv : v ∈ S then yS v hv else 1)
+    (Filter.eventually_cofinite.2 <| S.finite_toSet.subset fun v (hv : ¬ _) ↦
+      by_contra fun (hvS : v ∉ S) ↦ hv (by simp only [hvS, dite_false]; exact one_mem _))
+  -- The quotient `z = x / yⁿ` is `1` at `S` and at infinity, and agrees with `x` elsewhere.
+  set z := x * (y ^ n)⁻¹ with hz
+  have hzS (v : HeightOneSpectrum (𝓞 K)) (hv : v ∈ S) : v.ideleFiniteCoord z = 1 := by
+    simp [hz, y, hv, ← hyS v hv]
+  have hzS' (v : HeightOneSpectrum (𝓞 K)) (hv : v ∉ S) :
+      v.ideleFiniteCoord z = v.ideleFiniteCoord x := by
+    simp [hz, y, hv]
+  have hzinf (w : InfinitePlace K) : w.ideleInfiniteCoord z = 1 := by
+    simp [hz, y, ← hyinf w]
+  have hzmem : z ∈ ideleCongruenceSubgroup 𝔪 := by
+    refine mem_ideleCongruenceSubgroup_iff.2 ⟨fun v _ ↦ ?_, fun v hv ↦ ?_, fun w _ ↦ ?_⟩
+    · by_cases hv : v ∈ S
+      · simp [hzS v hv]
+      · rw [hzS' v hv]
+        exact hxunit v hv (Finset.notMem_empty v)
+    · simp [hzS v (hS ((Modulus.mem_support_iff 𝔪 v).2 hv))]
+    · simp [hzinf]
+  -- Hence the class of `x = z * yⁿ` lies in `N`.
+  have hxz : x = z * y ^ n := by rw [hz, inv_mul_cancel_right]
+  rw [hxz, QuotientGroup.mk_mul, QuotientGroup.mk_pow]
+  exact N.mul_mem (h𝔪 (mem_raySubgroup_iff.2 ⟨z, hzmem, rfl⟩)) (hpow _)
 
 end TauCeti.ClassFieldTheory

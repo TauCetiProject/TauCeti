@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Representation.JordanDecomposition.Basic
-public import TauCeti.Algebra.AlgebraicGroup.Representation.SemisimplePoint
+public import TauCeti.Algebra.AlgebraicGroup.Representation.SemisimplePoint.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Representation.UnipotentPoint.Naturality
 
 /-!

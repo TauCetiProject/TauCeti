@@ -17,17 +17,26 @@ are open additive subgroups. In an ultrametric seminormed ring with `‖1‖ = 1
 ball is an open subring. In an ultrametric normed ring, a finite product of elements each within
 `ε ≤ 1` of `1` is again within `ε` of `1`.
 
+Integer casts have norm at most `‖1‖`, without requiring the seminorm to be normalized.
+
 ## Main results
 
 * `IsUltrametricDist.nonarchimedeanRing`: an ultrametric seminormed ring is a nonarchimedean
   ring.
 * `Subring.unitClosedBall`: the closed unit ball of an ultrametric seminormed ring with
   `‖1‖ = 1`, an open subring.
+* `TauCeti.norm_one_sub_of_norm_lt_one`: subtracting an element of norm less than one from one
+  leaves the norm equal to one.
 * `TauCeti.norm_mul_sub_one_lt` and `TauCeti.norm_prod_sub_one_lt`
 * `TauCeti.norm_prod_sub_prod_le`: a uniform perturbation bound for finite products.
 -/
 
 public section
+
+/-- Integer casts in an ultrametric seminormed ring have norm at most the norm of one. -/
+theorem IsUltrametricDist.norm_intCast_le_norm_one {R : Type*} [SeminormedRing R]
+    [IsUltrametricDist R] (z : ℤ) : ‖(z : R)‖ ≤ ‖(1 : R)‖ := by
+  simpa using IsUltrametricDist.norm_zsmul_le (1 : R) z
 
 /-- **An ultrametric seminormed ring is a nonarchimedean ring.** This is the ring form of
 Mathlib's `IsUltrametricDist.nonarchimedeanAddGroup`: every neighbourhood of zero contains an open
@@ -67,6 +76,14 @@ theorem Subring.isOpen_unitClosedBall : IsOpen (Subring.unitClosedBall R : Set R
 end UnitClosedBall
 
 namespace TauCeti
+
+/-- An element strictly smaller than one does not change the norm of one when subtracted. -/
+@[simp]
+theorem norm_one_sub_of_norm_lt_one {R : Type*} [SeminormedRing R] [NormOneClass R]
+    [IsUltrametricDist R] {x : R} (hx : ‖x‖ < 1) : ‖1 - x‖ = 1 := by
+  rw [sub_eq_add_neg, IsUltrametricDist.norm_add_eq_max_of_norm_ne_norm]
+  · simp [hx.le]
+  · exact ne_of_gt (by simpa using hx)
 
 /-- In an ultrametric normed ring, if `a` and `b` are both within `ε ≤ 1` of `1`, so is
 `a * b`. -/

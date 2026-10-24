@@ -157,9 +157,6 @@ theorem exists_mem_level_succ (hF : IsProP p F)
       let _ := hF.gradedPieceModule 0 0
       let _ := hF.gradedPieceModule 0 m
       let _ := hF.gradedPieceModule 0 (0 + m + 1)
-      let _ : CompactSpace (pLowerCentralSeries 0 F m) :=
-        isCompact_iff_compactSpace.mp (isClosed_pLowerCentralSeries m).isCompact
-      let _ : CompactSpace (gradedPiece 0 F m) := inferInstance
       let z : gradedPiece 0 F (0 + m + 1) :=
         gradedMk 0 F (0 + m + 1) ⟨defect hF (basis e) u c d, by simpa using hdef⟩
       obtain ⟨y, hy⟩ := exists_sum_gradedBracket_eq_of_range m

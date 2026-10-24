@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RepresentationTheory.Invariants
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Normal.Basic
-public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction
+public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Normal.SubgroupWeights
 
 /-!

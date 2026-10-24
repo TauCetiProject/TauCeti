@@ -260,4 +260,12 @@ instance : Orientable I H :=
   ⟨⟨Manifold.Orientation.model (I := I) (Module.finBasis ℝ E).orientation
     (Fintype.card_fin _)⟩⟩
 
+/-- A manifold is orientable exactly when its tangent bundle is orientable. -/
+theorem orientable_iff_nonempty_vectorBundleOrientation [IsManifold I 1 M] :
+    Orientable I M ↔ Nonempty
+      (VectorBundleOrientation E (TangentSpace I : M → Type _) (Fin (Module.finrank ℝ E))) :=
+  ⟨fun ⟨⟨o⟩⟩ ↦ ⟨o.toVectorBundleOrientation⟩, fun ⟨o⟩ ↦
+    ⟨⟨Manifold.Orientation.ofVectorBundleOrientation (Module.finBasis ℝ E).orientation
+      (Fintype.card_fin _) o⟩⟩⟩
+
 end TauCeti

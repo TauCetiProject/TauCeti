@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.PointPlace
 public import TauCeti.FieldTheory.FunctionField.Elliptic.Basic
--- Proof-only: `degreeLT` and its basis, for the private dimension count.
+-- Proof-only: `degreeLT` and its basis, for the dimension count.
 import Mathlib.RingTheory.Polynomial.DegreeLT
 -- Proof-only: `algebraMap_smul_eq_mul`, moving `F[X]`-scalars into the function field.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.GenericPoint.Basic
@@ -39,6 +39,7 @@ ramification computation is used.
 
 * `WeierstrassCurve.Affine.mem_riemannRochSpace_natCast_zsmul_ofPoint_infinity_iff`: the
   functions in `L(n · O)` are the `p + q y` with `2 deg p ≤ n` and `2 deg q + 3 ≤ n`.
+* `WeierstrassCurve.Affine.dim_natCast_zsmul_ofPoint_infinity`: `ℓ(n · O) = n` for `n ≥ 1`.
 * `WeierstrassCurve.Affine.isIntegrallyClosedIn_functionField`: `F` is the exact field of
   constants of `F(W)`.
 * `WeierstrassCurve.Affine.genus_functionField`: **`F(W)` has genus one.**
@@ -143,10 +144,6 @@ section RiemannRochSpace
 
 variable [W.IsElliptic]
 
-local instance : IsDedekindDomain W.CoordinateRing :=
-  have := isIntegrallyClosed_coordinateRing W
-  W.isDedekindDomain_coordinateRing_of_isIntegrallyClosed
-
 /-- **The Riemann–Roch spaces at infinity of an elliptic curve**: for `n : ℕ`, a function lies
 in `L(n · O)` exactly when it is `p + q y` for polynomials `p` and `q` with `2 deg p ≤ n` and
 `2 deg q + 3 ≤ n` (the latter read as vacuous when `q = 0`).  So `L(n · O)` is spanned by the
@@ -209,18 +206,28 @@ private theorem riemannRochSpace_eq_range_addMulMkY (n : ℕ) :
 
 /-- **`ℓ(n · O)` counted by monomials**: `n / 2 + 1` powers `xⁱ` and `(n - 1) / 2` products
 `xʲ y`.  This is `n` for `n ≥ 1` and `1` for `n = 0`. -/
-private theorem dim_natCast_zsmul_ofPoint_infinity (n : ℕ) :
+private theorem dim_natCast_zsmul_ofPoint_infinity_eq_add (n : ℕ) :
     Divisor.dim ((n : ℤ) • WeilDivisor.ofPoint (Place.infinity W)) = n / 2 + 1 + (n - 1) / 2 := by
   rw [Divisor.dim_def, riemannRochSpace_eq_range_addMulMkY,
     LinearMap.finrank_range_of_inj (addMulMkY_injective W _ _),
     Module.finrank_eq_card_basis (degreeLT.basisProd F _ _), Fintype.card_fin]
+
+/-- **The Riemann–Roch spaces at infinity of an elliptic curve have dimension `n`**:
+`ℓ(n · O) = n` for `n ≥ 1`.  This is the genus-one ladder
+`TauCeti.Divisor.dim_natCast_zsmul_ofPoint_of_genus_eq_one` at the rational place `O` of `F(W)`,
+but it does not depend on the genus: it is the input from which `genus_functionField` computes
+the genus. -/
+theorem dim_natCast_zsmul_ofPoint_infinity {n : ℕ} (hn : 1 ≤ n) :
+    Divisor.dim ((n : ℤ) • WeilDivisor.ofPoint (Place.infinity W)) = n := by
+  rw [dim_natCast_zsmul_ofPoint_infinity_eq_add]
+  omega
 
 /-- **`F` is the exact field of constants of the function field of an elliptic curve**: the
 functions without poles form the one-dimensional space `L(0)`, which is the field of constants. -/
 theorem isIntegrallyClosedIn_functionField : IsIntegrallyClosedIn F W.FunctionField := by
   rw [isIntegrallyClosedIn_iff_finrank_algebraicClosure_eq_one,
     ← Divisor.dim_zero W.isFunctionField]
-  simpa using dim_natCast_zsmul_ofPoint_infinity W 0
+  simpa using dim_natCast_zsmul_ofPoint_infinity_eq_add W 0
 
 /-- **The function field of an elliptic curve has genus one.**  Riemann's theorem gives
 `ℓ(D) = deg D + 1 - g` for every divisor of large degree, and at `D = n · O` the left side is `n`
@@ -231,8 +238,8 @@ theorem genus_functionField : genus F W.FunctionField = 1 := by
     (isIntegrallyClosedIn_functionField W)
   have h := hc (((max c 1).toNat : ℤ) • WeilDivisor.ofPoint (Place.infinity W))
     (by simp [Divisor.degree_zsmul])
-  rw [dim_natCast_zsmul_ofPoint_infinity, Divisor.degree_zsmul, Divisor.degree_ofPoint,
-    Place.degree_infinity] at h
+  rw [dim_natCast_zsmul_ofPoint_infinity W (by omega), Divisor.degree_zsmul,
+    Divisor.degree_ofPoint, Place.degree_infinity] at h
   omega
 
 /-- **The function field of an elliptic curve is an elliptic function field**: it has genus one,

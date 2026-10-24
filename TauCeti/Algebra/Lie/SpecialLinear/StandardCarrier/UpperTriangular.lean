@@ -245,7 +245,7 @@ private theorem isUpperTriangular_coe_kostantRootSubgroupMatrix_inl
     (q : WithConv (AdditiveGroup.coordinateHopfAlgebra ℤ →ₐ[ℤ] A)) :
     ((UniversalEnvelopingAlgebra.kostantRootSubgroupMatrix (rootGenerator r)
           (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-          (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv) (.inl i)
+          (rep_kostantForm_mem_lattice r) (.inl i)
           (isNilpotent_rep_rootGenerator r (.inl i)) (latticeBasis r) q :
         Matrix.GeneralLinearGroup (Fin (r + 1)) A) :
       Matrix (Fin (r + 1)) (Fin (r + 1)) A).IsUpperTriangular := by
@@ -320,7 +320,7 @@ private noncomputable abbrev rootCoordinateMap (k : Fin r ⊕ Fin r) :
     GeneralLinear.coordinateHopfAlgebra ℤ (r + 1) ⟶ AdditiveGroup.coordinateHopfAlgebra ℤ :=
   UniversalEnvelopingAlgebra.kostantRootSubgroupCoordinateMap (rootGenerator r)
     (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-    (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv) k
+    (rep_kostantForm_mem_lattice r) k
     (isNilpotent_rep_rootGenerator r k) (latticeBasis r)
 
 /-- The tautological matrix point of a positive root-subgroup coordinate map is the generic
@@ -341,18 +341,18 @@ private theorem isUpperTriangular_pointToGeneralLinear_rootCoordinateMap (i : Fi
       (toConv (q.ofConv.comp (rootCoordinateMap r (.inl i)).hom.toAlgHom)) =
       UniversalEnvelopingAlgebra.kostantRootSubgroupMatrix (rootGenerator r)
         (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-        (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv) (.inl i)
+        (rep_kostantForm_mem_lattice r) (.inl i)
         (isNilpotent_rep_rootGenerator r (.inl i)) (latticeBasis r) q :=
     UniversalEnvelopingAlgebra.pointsMulEquiv_kostantRootSubgroupCoordinateMap
       (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-      (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv) (.inl i)
+      (rep_kostantForm_mem_lattice r) (.inl i)
       (isNilpotent_rep_rootGenerator r (.inl i)) (latticeBasis r)
       (AdditiveGroup.coordinateHopfAlgebra ℤ) q
   have hpoint' : GeneralLinear.pointToGeneralLinear (r + 1)
       (toConv (rootCoordinateMap r (.inl i)).hom.toAlgHom) =
       UniversalEnvelopingAlgebra.kostantRootSubgroupMatrix (rootGenerator r)
         (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-        (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv) (.inl i)
+        (rep_kostantForm_mem_lattice r) (.inl i)
         (isNilpotent_rep_rootGenerator r (.inl i)) (latticeBasis r) q := by
     simpa only [hq, AlgHom.id_comp, WithConv.ofConv_toConv] using hpoint
   rw [hpoint']
@@ -366,7 +366,7 @@ private theorem upperTriangularDefiningIdeal_le_ker_rootCoordinateMap (i : Fin r
   rw [upperTriangularDefiningIdeal, HopfIdeal.sup_toIdeal]
   exact sup_le (UniversalEnvelopingAlgebra.kostantToralDefiningIdeal_toIdeal_le_root_ker
       (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-      (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
+      (rep_kostantForm_mem_lattice r)
       (isNilpotent_rep_rootGenerator r) (latticeBasis r) (weight r) (.inl i))
     (GeneralLinear.UpperTriangular.definingHopfIdeal_toIdeal_le_ker_of_isUpperTriangular
       ℤ (r + 1) _ (isUpperTriangular_pointToGeneralLinear_rootCoordinateMap r i))
@@ -380,7 +380,7 @@ private theorem upperTriangularDefiningIdeal_le_ker_weightTorusCoordinateMap :
   rw [upperTriangularDefiningIdeal, HopfIdeal.sup_toIdeal]
   refine sup_le (UniversalEnvelopingAlgebra.kostantToralDefiningIdeal_toIdeal_le_torus_ker
       (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-      (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
+      (rep_kostantForm_mem_lattice r)
       (isNilpotent_rep_rootGenerator r) (latticeBasis r) (weight r))
     (GeneralLinear.UpperTriangular.definingHopfIdeal_toIdeal_le_ker ℤ (r + 1) _
       fun a b hba => ?_)
@@ -422,7 +422,7 @@ theorem rootSubgroupUpperTriangular_comp_upperTriangularInclusion (i : Fin r) :
     (upperTriangularDefiningIdeal_le_ker_rootCoordinateMap r i) _
     (UniversalEnvelopingAlgebra.mkQuotient_comp_kostantRootSubgroupToralCoordinateMap
       (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-      (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
+      (rep_kostantForm_mem_lattice r)
       (isNilpotent_rep_rootGenerator r) (latticeBasis r) (weight r) (.inl i))
   rw [rootSubgroupUpperTriangular, upperTriangularInclusion,
     CommHopfAlgCat.quotientSpecMapOfLe_def, rootSubgroup_def,
@@ -441,7 +441,7 @@ theorem weightTorusUpperTriangular_comp_upperTriangularInclusion :
     (upperTriangularDefiningIdeal_le_ker_weightTorusCoordinateMap r) _
     (UniversalEnvelopingAlgebra.mkQuotient_comp_kostantWeightTorusToralCoordinateMap
       (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-      (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
+      (rep_kostantForm_mem_lattice r)
       (isNilpotent_rep_rootGenerator r) (latticeBasis r) (weight r))
   rw [weightTorusUpperTriangular, upperTriangularInclusion,
     CommHopfAlgCat.quotientSpecMapOfLe_def, weightTorus_def,

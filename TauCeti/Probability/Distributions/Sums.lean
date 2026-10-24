@@ -9,7 +9,7 @@ public import TauCeti.Probability.Distributions.Exponential.Basic
 public import TauCeti.Probability.Distributions.Gamma.Pi
 public import TauCeti.Probability.Distributions.Gamma.Sum
 public import TauCeti.Probability.Distributions.Geometric.Basic
-public import TauCeti.Probability.Distributions.Laplace
+public import TauCeti.Probability.Distributions.Laplace.Basic
 public import TauCeti.Probability.Distributions.NegativeBinomial.Basic
 import Mathlib.Probability.Independence.CharacteristicFunction
 

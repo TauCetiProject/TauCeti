@@ -9,7 +9,7 @@ public import Mathlib.RingTheory.HopfAlgebra.GroupLike
 public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Semisimple
 public import TauCeti.Algebra.AlgebraicGroup.Representation.JordanDecomposition.Commuting
 public import TauCeti.Algebra.AlgebraicGroup.Representation.JordanDecomposition.Naturality
-public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction
+public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction.Basic
 public import TauCeti.Algebra.Bialgebra.GroupLike.Evaluation
 import TauCeti.Algebra.AlgebraicGroup.FiniteType.Product
 import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Regular

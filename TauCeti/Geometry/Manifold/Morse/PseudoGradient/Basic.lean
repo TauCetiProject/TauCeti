@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.IntegralCurve.Basic
 public import TauCeti.Geometry.Manifold.Morse.Lemma
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
+import TauCeti.Geometry.Manifold.IntegralCurve.Monotone
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
 import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
@@ -117,8 +118,7 @@ differentiable. -/
 theorem antitone_comp (hX : IsAdaptedPseudoGradient f X)
     (hf : ∀ t, MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ) f (γ t)) (hγ : IsMIntegralCurve γ X) :
     Antitone (f ∘ γ) :=
-  antitone_of_hasDerivAt_nonpos (fun t ↦ Manifold.hasDerivAt_comp_curve (hf t) (hγ t))
-    fun t ↦ hX.mvfderiv_apply_nonpos (γ t)
+  hγ.antitone_comp hf fun t ↦ hX.mvfderiv_apply_nonpos (γ t)
 
 /-- **`f` is strictly antitone along an integral curve of an adapted pseudo-gradient** along which
 `f` is differentiable and that never meets a critical point. -/

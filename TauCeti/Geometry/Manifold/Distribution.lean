@@ -30,6 +30,7 @@ while its regularity and involutivity are predicates on that family.
   transported to the model vector space.
 * `TauCeti.IsDistributionFrameOn I n D X U`: the vector fields `X i` form a `C^n` local frame of
   `D` on `U`.
+* `TauCeti.IsDistributionFrameOn.basis`: the basis of a fibre of `D` given by a local frame.
 * `TauCeti.IsContMDiffDistribution I n k D`: `D` is a `C^n` distribution of rank `k`.
 * `TauCeti.IsInvolutiveDistribution I D`: `D` is involutive.
 * `TauCeti.IsInvolutiveDistributionOn I D s`: `D` is involutive on `s`.
@@ -157,6 +158,15 @@ theorem finrank_eq [Fintype ι] (hX : IsDistributionFrameOn I n D X U) {x : M} (
     finrank 𝕜 (D x) = Fintype.card ι := by
   rw [← hX.span_eq hx]
   exact finrank_span_eq_card (hX.linearIndependent hx)
+
+/-- At a point `y` of `U`, a local frame of `D` on `U` is a basis of the fibre `D y`. -/
+def basis (hX : IsDistributionFrameOn I n D X U) {y : M} (hy : y ∈ U) : Basis ι 𝕜 (D y) :=
+  (Basis.span (hX.linearIndependent hy)).map (LinearEquiv.ofEq _ _ (hX.span_eq hy))
+
+@[simp]
+theorem coe_basis (hX : IsDistributionFrameOn I n D X U) {y : M} (hy : y ∈ U) (i : ι) :
+    (hX.basis hy i : TangentSpace I y) = X i y := by
+  simp [basis]
 
 /-- A `C^n` local frame `X` of a distribution on a normed space `V`, on a set `U`, gives a
 `C^n` family of continuous linear maps `Φ p : (ι → 𝕜) →L[𝕜] V`, namely `c ↦ ∑ i, c i • X i p`,

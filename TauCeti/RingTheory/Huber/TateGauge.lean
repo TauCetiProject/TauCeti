@@ -327,8 +327,8 @@ private theorem mem_nhds_zero_of_hasBasis : (A₀ : Set A) ∈ 𝓝 (0 : A) := b
   simpa using hb.mem_of_mem (i := 0) trivial
 
 /-- If the sets `ϖ ^ n A₀`, `n ≥ 0`, form a neighbourhood basis of zero and multiplication is
-continuous, then every element of `A` is moved into `A₀` by some power of `ϖ`. -/
-theorem exists_zpow_mul_mem_of_hasBasis [ContinuousMul A] (x : A) :
+separately continuous, then every element of `A` is moved into `A₀` by some power of `ϖ`. -/
+theorem exists_zpow_mul_mem_of_hasBasis [SeparatelyContinuousMul A] (x : A) :
     ∃ n : ℤ, ((ϖ ^ n : Aˣ) : A) * x ∈ A₀ := by
   have h : (· * x) ⁻¹' (A₀ : Set A) ∈ 𝓝 (0 : A) :=
     (continuous_mul_const x).continuousAt.preimage_mem_nhds <| by
@@ -340,7 +340,7 @@ theorem exists_zpow_mul_mem_of_hasBasis [ContinuousMul A] (x : A) :
 
 /-- If the sets `ϖ ^ n A₀`, `n ≥ 0`, form a neighbourhood basis of zero, then so do the open
 balls about zero of the Tate gauge. -/
-theorem hasBasis_tateGauge [ContinuousMul A] (ha : 1 < a) (hϖ : (ϖ : A) ∈ A₀) :
+theorem hasBasis_tateGauge [SeparatelyContinuousMul A] (ha : 1 < a) (hϖ : (ϖ : A) ∈ A₀) :
     (𝓝 (0 : A)).HasBasis (fun ε : ℝ ↦ 0 < ε) (fun ε ↦ {x | tateGauge A₀ ϖ a x < ε}) := by
   refine hb.to_hasBasis (fun n _ ↦ ⟨a ^ (-(n : ℤ)), zpow_pos (zero_lt_one.trans ha) _,
     fun x hx ↦ (tateGauge_le_zpow_iff hϖ (exists_zpow_mul_mem_of_hasBasis hb x) ha).1
@@ -349,10 +349,10 @@ theorem hasBasis_tateGauge [ContinuousMul A] (ha : 1 < a) (hϖ : (ϖ : A) ∈ A�
   exact ⟨n, trivial, fun x hx ↦ (tateGauge_le_zpow (zero_le_one.trans ha.le) hx).trans_lt <|
     by simpa [zpow_neg] using hn⟩
 
-/-- A topological ring in which the sets `ϖ ^ n A₀`, `n ≥ 0`, form a neighbourhood basis of zero
-carries an ultrametric ring seminorm, equal to the Tate gauge, whose open balls about zero form
-a neighbourhood basis of zero. -/
-theorem exists_tateSeminorm [ContinuousMul A] (ha : 1 < a) (hϖ : (ϖ : A) ∈ A₀) :
+/-- A ring with separately continuous multiplication in which the sets `ϖ ^ n A₀`, `n ≥ 0`, form
+a neighbourhood basis of zero carries an ultrametric ring seminorm, equal to the Tate gauge, whose
+open balls about zero form a neighbourhood basis of zero. -/
+theorem exists_tateSeminorm [SeparatelyContinuousMul A] (ha : 1 < a) (hϖ : (ϖ : A) ∈ A₀) :
     ∃ α : RingSeminorm A, (∀ x, α x = tateGauge A₀ ϖ a x) ∧ IsNonarchimedean α ∧
       (𝓝 (0 : A)).HasBasis (fun ε : ℝ ↦ 0 < ε) (fun ε ↦ {x | α x < ε}) := by
   have hA := exists_zpow_mul_mem_of_hasBasis hb
@@ -360,7 +360,8 @@ theorem exists_tateSeminorm [ContinuousMul A] (ha : 1 < a) (hϖ : (ϖ : A) ∈ A
   · simpa using isNonarchimedean_tateGauge hϖ hA (zero_le_one.trans ha.le)
   · simpa using hasBasis_tateGauge hb ha hϖ
 
-private theorem exists_tateGauge_le_zpow_mul [ContinuousMul A] (ha : 0 < a) {B₀ : Subring A}
+private theorem exists_tateGauge_le_zpow_mul [SeparatelyContinuousMul A] (ha : 0 < a)
+    {B₀ : Subring A}
     (hbB : (𝓝 (0 : A)).HasBasis (fun _ : ℕ ↦ True)
       (fun n ↦ {x | ((ϖ ^ (-(n : ℤ)) : Aˣ) : A) * x ∈ B₀})) :
     ∃ k : ℕ, ∀ x, tateGauge A₀ ϖ a x ≤ a ^ (k : ℤ) * tateGauge B₀ ϖ a x := by
@@ -370,22 +371,24 @@ private theorem exists_tateGauge_le_zpow_mul [ContinuousMul A] (ha : 0 < a) {B�
   simpa [← mul_assoc, ← mul_pow] using hy
 
 /-- For two subrings `A₀` and `B₀` such that the sets `ϖ ^ n A₀` and the sets `ϖ ^ n B₀` both form
-neighbourhood bases of zero, the two Tate gauges are bounded by constant multiples of each
-other. -/
-theorem tateGauge_equiv [ContinuousMul A] (ha : 1 < a) {B₀ : Subring A}
+neighbourhood bases of zero, the two Tate gauges for any positive base are bounded by constant
+multiples of each other. -/
+theorem tateGauge_equiv [SeparatelyContinuousMul A] (ha : 0 < a) {B₀ : Subring A}
     (hbB : (𝓝 (0 : A)).HasBasis (fun _ : ℕ ↦ True)
       (fun n ↦ {x | ((ϖ ^ (-(n : ℤ)) : Aˣ) : A) * x ∈ B₀})) :
     ∃ C : ℝ, 0 < C ∧ ∀ x, tateGauge A₀ ϖ a x ≤ C * tateGauge B₀ ϖ a x ∧
       tateGauge B₀ ϖ a x ≤ C * tateGauge A₀ ϖ a x := by
-  have ha₀ : 0 < a := zero_lt_one.trans ha
-  obtain ⟨k, hk⟩ := exists_tateGauge_le_zpow_mul hb ha₀ hbB
-  obtain ⟨l, hl⟩ := exists_tateGauge_le_zpow_mul hbB ha₀ hb
-  refine ⟨a ^ (max k l : ℤ), zpow_pos ha₀ _, fun x ↦ ⟨(hk x).trans ?_, (hl x).trans ?_⟩⟩ <;>
-    gcongr <;> first | exact tateGauge_nonneg ha₀.le _ | exact ha.le | omega
+  obtain ⟨k, hk⟩ := exists_tateGauge_le_zpow_mul hb ha hbB
+  obtain ⟨l, hl⟩ := exists_tateGauge_le_zpow_mul hbB ha hb
+  refine ⟨max (a ^ (k : ℤ)) (a ^ (l : ℤ)), lt_max_of_lt_left (zpow_pos ha _), fun x ↦
+    ⟨(hk x).trans ?_, (hl x).trans ?_⟩⟩
+  · exact mul_le_mul_of_nonneg_right (le_max_left _ _) (tateGauge_nonneg ha.le _)
+  · exact mul_le_mul_of_nonneg_right (le_max_right _ _) (tateGauge_nonneg ha.le _)
 
 /-- If the sets `ϖ ^ n A₀`, `n ≥ 0`, form a neighbourhood basis of zero and `ϖ ∈ A₀`, then the
 zero set of the Tate gauge is the closure of zero. -/
-theorem tateGauge_eq_zero_iff [IsTopologicalRing A] (ha : 1 < a) (hϖ : (ϖ : A) ∈ A₀) {x : A} :
+theorem tateGauge_eq_zero_iff [SeparatelyContinuousMul A] [R0Space A] (ha : 1 < a)
+    (hϖ : (ϖ : A) ∈ A₀) {x : A} :
     tateGauge A₀ ϖ a x = 0 ↔ x ∈ closure ({0} : Set A) := by
   rw [tateGauge_eq_zero_iff_forall hϖ (exists_zpow_mul_mem_of_hasBasis hb x) ha,
     R0Space.closure_singleton, hb.ker]
@@ -393,15 +396,16 @@ theorem tateGauge_eq_zero_iff [IsTopologicalRing A] (ha : 1 < a) (hϖ : (ϖ : A)
 
 /-- If the sets `ϖ ^ n A₀`, `n ≥ 0`, form a neighbourhood basis of zero and `ϖ ∈ A₀`, then the
 Tate gauge separates points exactly when `A` is Hausdorff. -/
-theorem t2Space_iff_forall_tateGauge_eq_zero_iff [IsTopologicalRing A] (ha : 1 < a)
+theorem t2Space_iff_forall_tateGauge_eq_zero_iff [SeparatelyContinuousMul A]
+    [IsTopologicalAddGroup A] (ha : 1 < a)
     (hϖ : (ϖ : A) ∈ A₀) : T2Space A ↔ ∀ x, (tateGauge A₀ ϖ a x = 0 ↔ x = 0) := by
   simp_rw [tateGauge_eq_zero_iff hb ha hϖ, IsTopologicalAddGroup.t2Space_iff_zero_closed,
     ← closure_subset_iff_isClosed, Set.subset_def, Set.mem_singleton_iff]
   exact ⟨fun h x ↦ ⟨h x, fun hx ↦ hx ▸ subset_closure rfl⟩, fun h x ↦ (h x).1⟩
 
-/-- If the sets `ϖ ^ n A₀`, `n ≥ 0`, form a neighbourhood basis of zero in a nonzero Hausdorff
-topological ring and `ϖ ∈ A₀`, then the Tate gauge of one is one. -/
-theorem tateGauge_one [IsTopologicalRing A] [T2Space A] [Nontrivial A] (ha : 1 < a)
+/-- If the sets `ϖ ^ n A₀`, `n ≥ 0`, form a neighbourhood basis of zero in a nonzero T₁ ring
+with separately continuous multiplication and `ϖ ∈ A₀`, then the Tate gauge of one is one. -/
+theorem tateGauge_one [SeparatelyContinuousMul A] [T1Space A] [Nontrivial A] (ha : 1 < a)
     (hϖ : (ϖ : A) ∈ A₀) : tateGauge A₀ ϖ a 1 = 1 := by
   have hA := exists_zpow_mul_mem_of_hasBasis hb
   have ha₀ : 0 ≤ a := zero_le_one.trans ha.le
@@ -411,8 +415,7 @@ theorem tateGauge_one [IsTopologicalRing A] [T2Space A] [Nontrivial A] (ha : 1 <
   intro h
   have h1 : tateGauge A₀ ϖ a 1 = 0 := by
     simpa using RingSeminorm.eq_zero_iff.1 h 1
-  exact one_ne_zero <|
-    ((t2Space_iff_forall_tateGauge_eq_zero_iff hb ha hϖ).1 inferInstance 1).1 h1
+  simpa using (tateGauge_eq_zero_iff hb ha hϖ).1 h1
 
 end Topology
 

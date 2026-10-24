@@ -194,9 +194,6 @@ theorem inv_mul_basisModification_mem_pLowerCentralSeries
     g⁻¹ * basisModification w g ∈ pLowerCentralSeries p (freeProP p X) m := by
   -- The quotient by the closed subgroup `λ_m(F)` is Hausdorff, so two continuous homomorphisms
   -- into it agreeing on the generators are equal.
-  have : IsClosed ((pLowerCentralSeries p (freeProP p X) m : Subgroup (freeProP p X)) :
-      Set (freeProP p X)) :=
-    isClosed_pLowerCentralSeries m
   have h : (⟨QuotientGroup.mk' (pLowerCentralSeries p (freeProP p X) m),
         QuotientGroup.continuous_mk⟩ : freeProP p X →ₜ* _).comp (basisModification w) =
       ⟨QuotientGroup.mk' _, QuotientGroup.continuous_mk⟩ :=

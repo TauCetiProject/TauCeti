@@ -7,6 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Integral.CalderonZygmund.Decomposition
 public import TauCeti.MeasureTheory.Measure.Haar.EuclideanSpace
+import TauCeti.Analysis.Normed.Module.Ball
 
 /-!
 # The John–Nirenberg inequality
@@ -43,7 +44,7 @@ constant, so the inequalities also hold, including on the singleton closed ball 
 
 In `ℝⁿ = EuclideanSpace ℝ ι`, with any additive Haar measure, the inequality holds on Euclidean
 balls up to a loss in the radius: if `f` has mean oscillation at most `M` on every Euclidean ball
-inside `B(x₀, R)`, then `∫_{B'} exp (σ ‖f - f_{B'}‖) ≤ C |B'|` on `B' = B(x₀, R / (3√n))` whenever
+inside `B(x₀, R)`, then `∫_{B'} exp (σ ‖f - f_{B'}‖) ≤ C |B'|` on `B' = B(x₀, R / (2√n))` whenever
 `σ M ≤ A`, for constants `A > 0` and `C` depending only on `n`
 (`TauCeti.exists_setLIntegral_exp_mul_norm_sub_setAverage_ball_le`). This follows from the cube
 case, since a cube of half-side `ρ` and the Euclidean ball of radius `2√n ρ` about its centre have
@@ -611,9 +612,11 @@ section EuclideanBall
 
 In `ℝⁿ = EuclideanSpace ℝ ι`, with any additive Haar measure `μ`, suppose `f` has mean
 oscillation at most `M` on every Euclidean ball inside `B(x₀, R)`. Let `s = √n` and let `Q₀` be
-the cube of half-side `r₀ = R / (3s)` centred at `x₀`. A cube `Q ⊆ Q₀` of half-side `ρ` has
-`ρ ≤ r₀`, so it lies in the Euclidean ball `B` of radius `2sρ` about its centre, and `B` lies in
-`B(x₀, R)`. Since `B` lies in the cube of half-side `2sρ` about the same centre,
+the cube of half-side `r₀ = R / (2s)` centred at `x₀`. For a cube `Q ⊆ Q₀` of half-side `ρ`,
+its centre is at sup distance at most `r₀ - ρ` from `x₀`, hence at Euclidean distance at most
+`s(r₀ - ρ)`. Thus the Euclidean ball `B` of radius `2sρ` about that centre contains `Q` and lies
+in `B(x₀, R)`, since `2sρ + s(r₀ - ρ) ≤ 2sr₀ = R`. Since `B` lies in the cube of half-side
+`2sρ` about the same centre,
 `μ B ≤ (2s)ⁿ μ Q`, and comparing mean oscillations on `Q ⊆ B` shows that `f` has mean oscillation
 at most `2 (2s)ⁿ M` on every cube inside `Q₀`. The John–Nirenberg inequality on `Q₀`, read through
 the measurable equivalence `ofLp` between `EuclideanSpace ℝ ι` and `ι → ℝ` (which pushes `μ`
@@ -626,48 +629,42 @@ open Metric WithLp EuclideanSpace
 
 /-- **Mean oscillation on cubes from mean oscillation on Euclidean balls.** Let `f` have mean
 oscillation at most `M` on every Euclidean ball inside `B(x₀, R)`. Then on every cube `Q` of
-positive half-side inside the cube of half-side `R / (3√n)` centred at `x₀`, the mean oscillation
+positive half-side inside the cube of half-side `R / (2√n)` centred at `x₀`, the mean oscillation
 of `f` is at most `2 (2√n)ⁿ M`. -/
 private theorem setLAverage_preimage_closedBall_le [Nonempty ι] [CompleteSpace E]
-    {μ : Measure (EuclideanSpace ℝ ι)} [μ.IsAddHaarMeasure] {a : ℝ≥0∞} (ha : a ≠ 0)
+    {μ : Measure (EuclideanSpace ℝ ι)} [μ.IsAddHaarMeasure] {a : ℝ≥0∞}
     (he : μ.map (MeasurableEquiv.toLp 2 (ι → ℝ)).symm = a • volume)
     {f : EuclideanSpace ℝ ι → E} {x₀ : EuclideanSpace ℝ ι} {R : ℝ}
     (hf : IntegrableOn f (ball x₀ R) μ)
     (hM : ∀ y s, ball y s ⊆ ball x₀ R →
       ⨍⁻ x in ball y s, ‖f x - ⨍ z in ball y s, f z ∂μ‖ₑ ∂μ ≤ M)
     {y : ι → ℝ} {ρ : ℝ} (hρ : 0 < ρ)
-    (hy : closedBall y ρ ⊆ closedBall (ofLp x₀) (R / (3 * √(Fintype.card ι)))) :
+    (hy : closedBall y ρ ⊆ closedBall (ofLp x₀) (R / (2 * √(Fintype.card ι)))) :
     ⨍⁻ x in ofLp ⁻¹' closedBall y ρ, ‖f x - ⨍ z in ofLp ⁻¹' closedBall y ρ, f z ∂μ‖ₑ ∂μ ≤
       2 * ENNReal.ofReal ((2 * √(Fintype.card ι)) ^ Fintype.card ι) * M := by
   set n := Fintype.card ι
   set s := √(n : ℝ)
   have hs : 0 < s := sqrt_card_pos
-  set r₀ := R / (3 * s)
+  set r₀ := R / (2 * s)
   set Q := ofLp ⁻¹' closedBall y ρ
   set z : EuclideanSpace ℝ ι := toLp 2 y
   set B := ball z (2 * s * ρ)
-  -- `ρ ≤ r₀`, by comparing the volumes of the two cubes.
-  have hρr : ρ ≤ r₀ := by
-    have hr₀ : 0 ≤ r₀ := dist_nonneg.trans (mem_closedBall.1 (hy (mem_closedBall_self hρ.le)))
-    have h := measure_mono (μ := volume) hy
-    rw [Real.volume_pi_closedBall _ hρ.le, Real.volume_pi_closedBall _ hr₀,
-      ENNReal.ofReal_le_ofReal_iff (by positivity)] at h
-    have h' := (pow_le_pow_iff_left₀ (by positivity) (by positivity) Fintype.card_ne_zero).1 h
-    linarith
-  have hdist : dist z x₀ ≤ s * r₀ := (EuclideanSpace.dist_le_sqrt_card_mul_dist_ofLp z x₀).trans
-    (mul_le_mul_of_nonneg_left (mem_closedBall.1 (hy (mem_closedBall_self hρ.le))) hs.le)
-  have hQB : Q ⊆ B := (preimage_ofLp_closedBall_subset_closedBall z ρ).trans
+  -- Cube inclusion controls both the half-side and the distance between the centres.
+  have hdist : dist z x₀ + s * ρ ≤ s * r₀ := by
+    have hcenter := mul_le_mul_of_nonneg_left
+      ((closedBall_subset_closedBall_iff hρ.le).1 hy) hs.le
+    have hd : dist z x₀ ≤ s * dist y (ofLp x₀) :=
+      PiLp.dist_le_sqrt_card_mul_dist_ofLp z x₀
+    nlinarith
+  have hQB : Q ⊆ B := (PiLp.preimage_ofLp_closedBall_subset_closedBall z ρ).trans
     (closedBall_subset_ball (by nlinarith))
   have hBR : B ⊆ ball x₀ R := ball_subset_ball' <| by
-    have h3 : 3 * s * r₀ = R := by
+    have hscale : 2 * s * r₀ = R := by
       simp only [r₀]
       field_simp
-    nlinarith
+    nlinarith [dist_nonneg (x := z) (y := x₀)]
   have hBQ : B ⊆ ofLp ⁻¹' closedBall y (2 * s * ρ) :=
     ball_subset_closedBall.trans (PiLp.closedBall_subset_preimage_ofLp_closedBall z _)
-  have hQ0 : μ Q ≠ 0 := by
-    rw [measure_preimage_ofLp_closedBall he _ hρ.le]
-    exact mul_ne_zero ha (ENNReal.ofReal_pos.2 (by positivity)).ne'
   have hratio : μ B / μ Q ≤ ENNReal.ofReal ((2 * s) ^ n) := by
     refine ENNReal.div_le_of_le_mul ((measure_mono hBQ).trans_eq ?_)
     rw [measure_preimage_ofLp_closedBall he _ (by positivity),
@@ -686,7 +683,7 @@ private theorem setLAverage_preimage_closedBall_le [Nonempty ι] [CompleteSpace 
         exact hM _ _ hBR
     _ = _ := (mul_assoc _ _ _).symm
 
-/-- The John–Nirenberg inequality on the cube `Q₀` of half-side `R / (3√n)` centred at `x₀`, for
+/-- The John–Nirenberg inequality on the cube `Q₀` of half-side `R / (2√n)` centred at `x₀`, for
 a function of mean oscillation at most `M` on the Euclidean balls inside `B(x₀, R)`. -/
 private theorem setLIntegral_exp_preimage_closedBall_le [Nonempty ι] [CompleteSpace E]
     {μ : Measure (EuclideanSpace ℝ ι)} [μ.IsAddHaarMeasure] {a : ℝ≥0∞} (ha : a ≠ 0)
@@ -697,14 +694,14 @@ private theorem setLIntegral_exp_preimage_closedBall_le [Nonempty ι] [CompleteS
       ⨍⁻ x in ball y s, ‖f x - ⨍ z in ball y s, f z ∂μ‖ₑ ∂μ ≤ M)
     {M' : ℝ≥0} (hM' : 2 * ENNReal.ofReal ((2 * √(Fintype.card ι)) ^ Fintype.card ι) * M ≤ M')
     {σ : ℝ} (hρ : Real.exp (σ * (2 ^ (Fintype.card ι + 1) * M')) < 2) :
-    ∫⁻ x in ofLp ⁻¹' closedBall (ofLp x₀) (R / (3 * √(Fintype.card ι))),
+    ∫⁻ x in ofLp ⁻¹' closedBall (ofLp x₀) (R / (2 * √(Fintype.card ι))),
         ENNReal.ofReal (Real.exp (σ * ‖f x - ⨍ y in ofLp ⁻¹' closedBall (ofLp x₀)
-          (R / (3 * √(Fintype.card ι))), f y ∂μ‖)) ∂μ ≤
+          (R / (2 * √(Fintype.card ι))), f y ∂μ‖)) ∂μ ≤
       ENNReal.ofReal (1 + 2 * Real.exp (σ * (2 ^ (Fintype.card ι + 1) * M')) /
         (2 - Real.exp (σ * (2 ^ (Fintype.card ι + 1) * M')))) *
-        μ (ofLp ⁻¹' closedBall (ofLp x₀) (R / (3 * √(Fintype.card ι)))) := by
+        μ (ofLp ⁻¹' closedBall (ofLp x₀) (R / (2 * √(Fintype.card ι)))) := by
   set e := (MeasurableEquiv.toLp 2 (ι → ℝ)).symm
-  set r₀ := R / (3 * √(Fintype.card ι : ℝ))
+  set r₀ := R / (2 * √(Fintype.card ι : ℝ))
   have hs : 0 < √(Fintype.card ι : ℝ) := sqrt_card_pos
   have hr₀ : 0 < r₀ := by positivity
   -- `f` read in the coordinates `ι → ℝ`.
@@ -713,9 +710,9 @@ private theorem setLIntegral_exp_preimage_closedBall_le [Nonempty ι] [CompleteS
     simp only [hg_def, e, MeasurableEquiv.toLp_symm_apply, toLp_ofLp]
   have hpre (S : Set (ι → ℝ)) : e ⁻¹' S = ofLp ⁻¹' S := by
     rw [MeasurableEquiv.coe_toLp_symm]
-  -- The cube lies in `B(x₀, R)`, since its points are within `√n r₀ = R / 3` of `x₀`.
+  -- The cube lies in `B(x₀, R)`, since its points are within `√n r₀ = R / 2` of `x₀`.
   have hQR : ofLp ⁻¹' closedBall (ofLp x₀) r₀ ⊆ ball x₀ R :=
-    (preimage_ofLp_closedBall_subset_closedBall x₀ r₀).trans <| closedBall_subset_ball <| by
+    (PiLp.preimage_ofLp_closedBall_subset_closedBall x₀ r₀).trans <| closedBall_subset_ball <| by
       simp only [r₀]
       field_simp
       linarith
@@ -735,7 +732,7 @@ private theorem setLIntegral_exp_preimage_closedBall_le [Nonempty ι] [CompleteS
     rw [← setLAverage_comp_preimage_of_map_eq_smul he ha ha',
       ← setAverage_comp_preimage_of_map_eq_smul he ha ha', hpre]
     simp_rw [hge]
-    exact (setLAverage_preimage_closedBall_le ha he hf hM hρ0 hy).trans hM'
+    exact (setLAverage_preimage_closedBall_le he hf hM hρ0 hy).trans hM'
   have havg : ⨍ y in closedBall (ofLp x₀) r₀, g y ∂volume =
       ⨍ x in ofLp ⁻¹' closedBall (ofLp x₀) r₀, f x ∂μ := by
     rw [← setAverage_comp_preimage_of_map_eq_smul he ha ha' g, hpre]
@@ -756,24 +753,24 @@ private theorem setLIntegral_exp_preimage_closedBall_le [Nonempty ι] [CompleteS
           volume (closedBall (ofLp x₀) r₀)) := by gcongr
     _ = _ := by rw [mul_left_comm, ← measure_preimage_ofLp he]
 
-/-- The averages of `f` over the cube `Q` of half-side `r₀ = R / (3√n)` centred at `x₀` and over
+/-- The averages of `f` over the cube `Q` of half-side `r₀ = R / (2√n)` centred at `x₀` and over
 the Euclidean ball `B(x₀, r₀) ⊆ Q` differ by at most `√nⁿ M'`, where `M'` bounds the mean
 oscillation of `f` on cubes inside `Q`. -/
 private theorem norm_setAverage_preimage_closedBall_sub_setAverage_ball_le [Nonempty ι]
     [CompleteSpace E] {μ : Measure (EuclideanSpace ℝ ι)} [μ.IsAddHaarMeasure] {a : ℝ≥0∞}
-    (ha : a ≠ 0) (he : μ.map (MeasurableEquiv.toLp 2 (ι → ℝ)).symm = a • volume)
+    (he : μ.map (MeasurableEquiv.toLp 2 (ι → ℝ)).symm = a • volume)
     {f : EuclideanSpace ℝ ι → E} {x₀ : EuclideanSpace ℝ ι} {R : ℝ} (hR : 0 < R)
     (hf : IntegrableOn f (ball x₀ R) μ)
     (hM : ∀ y s, ball y s ⊆ ball x₀ R →
       ⨍⁻ x in ball y s, ‖f x - ⨍ z in ball y s, f z ∂μ‖ₑ ∂μ ≤ M)
     {M' : ℝ≥0} (hM' : 2 * ENNReal.ofReal ((2 * √(Fintype.card ι)) ^ Fintype.card ι) * M ≤ M') :
-    ‖(⨍ y in ofLp ⁻¹' closedBall (ofLp x₀) (R / (3 * √(Fintype.card ι))), f y ∂μ) -
-        ⨍ y in ball x₀ (R / (3 * √(Fintype.card ι))), f y ∂μ‖ ≤
+    ‖(⨍ y in ofLp ⁻¹' closedBall (ofLp x₀) (R / (2 * √(Fintype.card ι))), f y ∂μ) -
+        ⨍ y in ball x₀ (R / (2 * √(Fintype.card ι))), f y ∂μ‖ ≤
       √(Fintype.card ι) ^ Fintype.card ι * M' := by
   set n := Fintype.card ι
   set s := √(n : ℝ)
   have hs : 0 < s := sqrt_card_pos
-  set r₀ := R / (3 * s)
+  set r₀ := R / (2 * s)
   have hr₀ : 0 < r₀ := by positivity
   set Q := ofLp ⁻¹' closedBall (ofLp x₀) r₀
   set B := ball x₀ r₀
@@ -788,7 +785,7 @@ private theorem norm_setAverage_preimage_closedBall_sub_setAverage_ball_le [None
     nlinarith [Real.one_le_sqrt.2 (show (1 : ℝ) ≤ n by exact_mod_cast Fintype.card_pos)]
   have hB0 : μ B ≠ 0 := (measure_ball_pos μ x₀ hr₀).ne'
   have hosc : ⨍⁻ x in Q, ‖f x - ⨍ y in Q, f y ∂μ‖ₑ ∂μ ≤ M' :=
-    (setLAverage_preimage_closedBall_le ha he hf hM hr₀ subset_rfl).trans hM'
+    (setLAverage_preimage_closedBall_le he hf hM hr₀ subset_rfl).trans hM'
   have h : ‖(⨍ y in B, f y ∂μ) - ⨍ y in Q, f y ∂μ‖ₑ ≤ ENNReal.ofReal (s ^ n) * M' :=
     (enorm_setAverage_sub_le_of_subset hBQ hB0 hQtop (hf.mono_set hBR) _).trans <| by
       gcongr
@@ -798,7 +795,7 @@ private theorem norm_setAverage_preimage_closedBall_sub_setAverage_ball_le [None
   rw [norm_sub_rev]
   exact (ENNReal.ofReal_le_ofReal_iff (by positivity)).1 h
 
-/-- The John–Nirenberg inequality on the Euclidean ball `B(x₀, R / (3√n))`, with explicit constants,
+/-- The John–Nirenberg inequality on the Euclidean ball `B(x₀, R / (2√n))`, with explicit constants,
 for a function of mean oscillation at most `M` on the Euclidean balls inside `B(x₀, R)`. -/
 private theorem setLIntegral_exp_mul_norm_sub_setAverage_ball_le_of_nonneg [Nonempty ι]
     [CompleteSpace E] {μ : Measure (EuclideanSpace ℝ ι)} [μ.IsAddHaarMeasure]
@@ -808,14 +805,14 @@ private theorem setLIntegral_exp_mul_norm_sub_setAverage_ball_le_of_nonneg [None
       ⨍⁻ x in ball y s, ‖f x - ⨍ z in ball y s, f z ∂μ‖ₑ ∂μ ≤ M)
     {M' : ℝ≥0} (hM' : 2 * ENNReal.ofReal ((2 * √(Fintype.card ι)) ^ Fintype.card ι) * M ≤ M')
     {σ : ℝ} (hσ : 0 ≤ σ) (hρ : Real.exp (σ * (2 ^ (Fintype.card ι + 1) * M')) < 2) :
-    ∫⁻ x in ball x₀ (R / (3 * √(Fintype.card ι))),
-        ENNReal.ofReal (Real.exp (σ * ‖f x - ⨍ y in ball x₀ (R / (3 * √(Fintype.card ι))),
+    ∫⁻ x in ball x₀ (R / (2 * √(Fintype.card ι))),
+        ENNReal.ofReal (Real.exp (σ * ‖f x - ⨍ y in ball x₀ (R / (2 * √(Fintype.card ι))),
           f y ∂μ‖)) ∂μ ≤
       ENNReal.ofReal (√(Fintype.card ι) ^ Fintype.card ι *
         Real.exp (σ * (√(Fintype.card ι) ^ Fintype.card ι * M')) *
         (1 + 2 * Real.exp (σ * (2 ^ (Fintype.card ι + 1) * M')) /
           (2 - Real.exp (σ * (2 ^ (Fintype.card ι + 1) * M'))))) *
-        μ (ball x₀ (R / (3 * √(Fintype.card ι)))) := by
+        μ (ball x₀ (R / (2 * √(Fintype.card ι)))) := by
   obtain ⟨a, ha, ha', he⟩ := exists_map_toLp_symm_eq_smul μ
   have hs : 0 < √(Fintype.card ι : ℝ) := sqrt_card_pos
   rcases le_or_gt R 0 with hR | hR
@@ -824,7 +821,7 @@ private theorem setLIntegral_exp_mul_norm_sub_setAverage_ball_le_of_nonneg [None
     exact zero_le
   set n := Fintype.card ι
   set s := √(n : ℝ)
-  set r₀ := R / (3 * s)
+  set r₀ := R / (2 * s)
   have hr₀ : 0 < r₀ := by positivity
   set Q := ofLp ⁻¹' closedBall (ofLp x₀) r₀
   set B := ball x₀ r₀
@@ -835,7 +832,7 @@ private theorem setLIntegral_exp_mul_norm_sub_setAverage_ball_le_of_nonneg [None
   have hJN := setLIntegral_exp_preimage_closedBall_le ha ha' he hR hf hM hM' hρ
   -- The averages of `f` over `B` and over `Q` differ by at most `sⁿ M'`.
   have hd : ‖(⨍ y in Q, f y ∂μ) - ⨍ y in B, f y ∂μ‖ ≤ s ^ n * M' :=
-    norm_setAverage_preimage_closedBall_sub_setAverage_ball_le ha he hR hf hM hM'
+    norm_setAverage_preimage_closedBall_sub_setAverage_ball_le he hR hf hM hM'
   have hC₁ : 0 ≤ 1 + 2 * ρ / (2 - ρ) := by
     have : 0 < 2 - ρ := by linarith
     positivity
@@ -895,7 +892,7 @@ private theorem exp_mul_le_and_const_le {n : ℕ} {s K M σ : ℝ} (hs : 0 ≤ s
 depending only on the dimension `n`, such that the following holds for every additive Haar
 measure `μ` on `ℝⁿ = EuclideanSpace ℝ ι`. Let `f : ℝⁿ → E` be integrable on the ball `B(x₀, R)`,
 with mean oscillation `⨍_B ‖f - f_B‖ ≤ M` on every ball `B ⊆ B(x₀, R)`. If `σ M ≤ A`, then on the
-concentric ball `B' = B(x₀, R / (3√n))`,
+concentric ball `B' = B(x₀, R / (2√n))`,
 
 `∫_{B'} exp (σ ‖f - f_{B'}‖) ≤ C |B'|`. -/
 theorem exists_setLIntegral_exp_mul_norm_sub_setAverage_ball_le :
@@ -906,10 +903,10 @@ theorem exists_setLIntegral_exp_mul_norm_sub_setAverage_ball_le :
       (∀ y s, ball y s ⊆ ball x₀ R →
         ⨍⁻ x in ball y s, ‖f x - ⨍ z in ball y s, f z ∂μ‖ₑ ∂μ ≤ M) →
       σ * M ≤ A →
-      ∫⁻ x in ball x₀ (R / (3 * √(Fintype.card ι))),
-          ENNReal.ofReal (Real.exp (σ * ‖f x - ⨍ y in ball x₀ (R / (3 * √(Fintype.card ι))),
+      ∫⁻ x in ball x₀ (R / (2 * √(Fintype.card ι))),
+          ENNReal.ofReal (Real.exp (σ * ‖f x - ⨍ y in ball x₀ (R / (2 * √(Fintype.card ι))),
             f y ∂μ‖)) ∂μ ≤
-        C * μ (ball x₀ (R / (3 * √(Fintype.card ι)))) := by
+        C * μ (ball x₀ (R / (2 * √(Fintype.card ι)))) := by
   rcases isEmpty_or_nonempty ι with hι | hι
   · -- In dimension `0` the ball `B(x₀, R / 0) = B(x₀, 0)` is empty.
     refine ⟨1, one_pos, 0, fun {E} _ _ _ μ _ f x₀ R M σ _ _ _ => ?_⟩
@@ -928,7 +925,7 @@ theorem exists_setLIntegral_exp_mul_norm_sub_setAverage_ball_le :
     (one_le_pow₀ hs) (Real.one_le_exp (by positivity))) (by norm_num)
   refine ⟨A, hA, C, fun {E} _ _ _ μ _ f x₀ R M σ hf hM hσM => ?_⟩
   rw [← ENNReal.ofReal_coe_nnreal]
-  set B := ball x₀ (R / (3 * s))
+  set B := ball x₀ (R / (2 * s))
   rcases le_or_gt σ 0 with hσ | hσ
   · calc ∫⁻ x in B, ENNReal.ofReal (Real.exp (σ * ‖f x - ⨍ y in B, f y ∂μ‖)) ∂μ
         ≤ ∫⁻ _ in B, 1 ∂μ := lintegral_mono fun x => ENNReal.ofReal_le_one.2
@@ -955,7 +952,7 @@ theorem exists_setLIntegral_exp_mul_norm_sub_setAverage_ball_le :
 dimension `n`, such that the following holds for every additive Haar measure `μ` on
 `ℝⁿ = EuclideanSpace ℝ ι`. Let `f : ℝⁿ → ℝ` be integrable on the ball `B(x₀, R)`, with mean
 oscillation `⨍_B |f - f_B| ≤ M` on every ball `B ⊆ B(x₀, R)`. If `|σ| M ≤ A`, then on the
-concentric ball `B' = B(x₀, R / (3√n))`,
+concentric ball `B' = B(x₀, R / (2√n))`,
 
 `(∫_{B'} exp (σ f)) (∫_{B'} exp (-σ f)) ≤ C |B'|²`.
 
@@ -969,13 +966,13 @@ theorem exists_setLIntegral_exp_mul_mul_setLIntegral_exp_neg_mul_ball_le :
       (∀ y s, ball y s ⊆ ball x₀ R →
         ⨍⁻ x in ball y s, ‖f x - ⨍ z in ball y s, f z ∂μ‖ₑ ∂μ ≤ M) →
       |σ| * M ≤ A →
-      (∫⁻ x in ball x₀ (R / (3 * √(Fintype.card ι))), ENNReal.ofReal (Real.exp (σ * f x)) ∂μ) *
-          ∫⁻ x in ball x₀ (R / (3 * √(Fintype.card ι))),
+      (∫⁻ x in ball x₀ (R / (2 * √(Fintype.card ι))), ENNReal.ofReal (Real.exp (σ * f x)) ∂μ) *
+          ∫⁻ x in ball x₀ (R / (2 * √(Fintype.card ι))),
             ENNReal.ofReal (Real.exp (-(σ * f x))) ∂μ ≤
-        C * μ (ball x₀ (R / (3 * √(Fintype.card ι)))) ^ 2 := by
+        C * μ (ball x₀ (R / (2 * √(Fintype.card ι)))) ^ 2 := by
   obtain ⟨A, hA, C, h⟩ := exists_setLIntegral_exp_mul_norm_sub_setAverage_ball_le (ι := ι)
   refine ⟨A, hA, C ^ 2, fun {μ} _ f x₀ R M σ hf hM hσM => ?_⟩
-  set B := ball x₀ (R / (3 * √(Fintype.card ι)))
+  set B := ball x₀ (R / (2 * √(Fintype.card ι)))
   set c := ⨍ y in B, f y ∂μ
   set I := ∫⁻ x in B, ENNReal.ofReal (Real.exp (|σ| * ‖f x - c‖)) ∂μ
   have hI : I ≤ C * μ B := h hf hM hσM

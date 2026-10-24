@@ -96,6 +96,6 @@ normal closure of a finite set**: it is a closed normal subgroup with commutativ
 theorem exists_finite_topologicalClosure_normalClosure_eq_ker :
     ∃ S : Set G, S.Finite ∧ (Subgroup.normalClosure S).topologicalClosure = χ.ker :=
   hG.exists_finite_topologicalClosure_normalClosure_eq hfg
-    (χ.coe_ker ▸ isClosed_singleton.preimage hχ) (Abelianization.commutator_subset_ker χ)
+    (χ.coe_ker ▸ isClosed_singleton.preimage hχ) (Abelianization.commutator_le_ker χ)
 
 end TauCeti.IsProP

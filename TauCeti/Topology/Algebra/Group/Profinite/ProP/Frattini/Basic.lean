@@ -21,8 +21,9 @@ intersection of its open normal subgroups of index `p`. For a prime `p` and a *p
 is the smallest closed normal subgroup with elementary abelian quotient, so that
 `G ⧸ proPFrattini p G` is the largest elementary abelian quotient of `G` by a closed normal
 subgroup; and for a pro-`p` group it is the Frattini subgroup in the usual sense, the
-intersection of the maximal open subgroups. That last identification needs the finite `p`-group
-theory of maximal subgroups and is `TauCeti.IsProP.proPFrattini_eq_iInf_isCoatom`, in
+intersection of the maximal open subgroups `TauCeti.profiniteFrattini`. That last identification
+needs the finite `p`-group theory of maximal subgroups and is
+`TauCeti.IsProP.proPFrattini_eq_profiniteFrattini`, in
 `TauCeti.Topology.Algebra.Group.Profinite.ProP.MaximalSubgroup`.
 
 The main theorem is the **verbal description**
@@ -336,7 +337,7 @@ theorem proPFrattini_le_ker_of_exponent_dvd (hp : p.Prime) {A : Type*} [CommGrou
     proPFrattini p G ≤ f.ker := by
   rw [proPFrattini_eq_topologicalClosure hp]
   refine Subgroup.topologicalClosure_minimal _
-    (sup_le ((Subgroup.closure_le _).mpr ?_) (Abelianization.commutator_subset_ker f)) hf
+    (sup_le ((Subgroup.closure_le _).mpr ?_) (Abelianization.commutator_le_ker f)) hf
   rintro _ ⟨g, rfl⟩
   rw [SetLike.mem_coe, MonoidHom.mem_ker, map_pow]
   exact Monoid.exponent_dvd_iff_forall_pow_eq_one.mp hA _

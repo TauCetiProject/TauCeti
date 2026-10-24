@@ -38,7 +38,7 @@ No completeness of `R` is needed. The proof sorts points by their support, a pri
 hence `⊥` or `𝔪`. On a point with support `𝔪`, units have value `1` and nonunits value `0`
 (`TauCeti.ValuationSpectrum.eq_trivialSection_of_supp_eq`). On a point with support `⊥`, the
 nonunits are topologically nilpotent and so have value below `1`, which forces comparison by
-divisibility (`Valuation.le_iff_dvd`).
+divisibility (`MonoidWithZeroHom.le_iff_dvd`).
 
 ## Main results
 
@@ -133,8 +133,8 @@ theorem eq_ofValuation_intValuation_of_supp_eq_bot (hR : IsAdic (maximalIdeal R)
   refine ext' fun x y ↦ ?_
   rw [vle_ofValuation, intValuation_le_intValuation_iff_dvd,
     ← valuation_le_iff]
-  refine Valuation.le_iff_dvd _ (fun a ↦ valuation_le_one_of_mem_spa hv trivial)
-    (fun a ha ↦ ?_) (fun a ha ↦ ?_)
+  refine MonoidWithZeroHom.le_iff_dvd v.valuation.toMonoidWithZeroHom
+    (fun a ↦ valuation_le_one_of_mem_spa hv trivial) (fun a ha ↦ ?_) (fun a ha ↦ ?_)
   · exact ((isContinuous_def v).mp ((mem_spa_iff _ v).mp hv).1).lt_one_of_isTopologicallyNilpotent
       (hR.isTopologicallyNilpotent_of_mem ((mem_maximalIdeal a).mpr ha))
   · rw [← Ideal.mem_bot, ← hsupp, supp_eq_valuation_supp]

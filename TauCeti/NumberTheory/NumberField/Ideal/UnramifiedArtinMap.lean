@@ -73,12 +73,12 @@ theorem unramifiedArtinHom_apply (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
 finite prime is its multiplicity in the fractional ideal. -/
 theorem unramifiedArtinHom_apply_eq_finprod (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
     unramifiedArtinHom (L := L) hab hur I =
-      letI := isMulCommutative_galoisGroup_of_commute hab
+      letI := IsMulCommutative.of_comm fun σ τ ↦ (hab σ τ).eq
       ∏ᶠ v : HeightOneSpectrum (𝓞 K),
         artinElement hab v.asIdeal (hur v) ^
           FractionalIdeal.count K v (I : FractionalIdeal (𝓞 K)⁰ K) := by
   rw [unramifiedArtinHom_apply, artinHomAway_apply]
-  let _ := isMulCommutative_galoisGroup_of_commute hab
+  let _ := IsMulCommutative.of_comm fun σ τ ↦ (hab σ τ).eq
   rw [coe_idealsAwayEmptyEquiv_symm_apply]
   apply finprod_congr
   intro v

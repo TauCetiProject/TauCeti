@@ -54,9 +54,7 @@ def cubicalToSingularRelCompHomotopy (P : TopPair.{u}) :
   _root_.Homotopy.descCokernel (cubicalToSingularCompHomotopy k P.fst)
     ((normalizedCubicalChainComplex k).map P.map)
     (cokernel.π _) (cokernel.π _)
-    (fun n ↦ by
-      simpa only [HomologicalComplex.comp_f, HomologicalComplex.zero_f] using
-        congrArg (fun (φ : _ ⟶ P.cubicalChainComplex k) ↦ φ.f n) (cokernel.condition _))
+    (P.cubicalChainComplex_condition_f k)
     (fun n ↦ isColimitOfHasCokernelOfPreservesColimit
       (HomologicalComplex.eval (ModuleCat k) (ComplexShape.down ℕ) n) _)
     (fun i j ↦ by

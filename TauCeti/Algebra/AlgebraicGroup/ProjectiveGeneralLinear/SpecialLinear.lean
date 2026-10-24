@@ -44,7 +44,7 @@ of the represented center quotient of `SLₙ`. -/
 noncomputable def specialLinearCenterQuotientIso :
     coordinateHopfAlgebra n k ≅
       (SpecialLinear.semisimpleCommHopfAlgProperty_finiteTypeCoordinateHopfAlgebra
-        k n).centerQuotient.obj := by
+        k n).reductive.centerQuotient.obj := by
   let hSL := SpecialLinear.semisimpleCommHopfAlgProperty_finiteTypeCoordinateHopfAlgebra k n
   let e := eqToIso (SpecialLinear.finiteTypeCoordinateHopfAlgebra_obj k n).symm
   exact hSL.centerQuotientIsoOfIsCentralIsogeny
@@ -66,7 +66,7 @@ noncomputable def specialLinearCenterQuotientIso :
 theorem specialLinearCenterQuotientIso_hom_comp :
     (specialLinearCenterQuotientIso n k).hom ≫
         (SpecialLinear.semisimpleCommHopfAlgProperty_finiteTypeCoordinateHopfAlgebra
-          k n).centerQuotientι ≫
+          k n).reductive.centerQuotientι ≫
         eqToHom (SpecialLinear.finiteTypeCoordinateHopfAlgebra_obj k n) =
       SpecialLinear.conjugationMap n k := by
   simp [specialLinearCenterQuotientIso]
@@ -76,7 +76,8 @@ theorem specialLinearCenterQuotientIso_hom_comp :
 theorem specialLinearCenterQuotientIso_inv_comp :
     (specialLinearCenterQuotientIso n k).inv ≫ SpecialLinear.conjugationMap n k =
       (SpecialLinear.semisimpleCommHopfAlgProperty_finiteTypeCoordinateHopfAlgebra
-        k n).centerQuotientι ≫ eqToHom (SpecialLinear.finiteTypeCoordinateHopfAlgebra_obj k n) :=
+        k n).reductive.centerQuotientι ≫
+        eqToHom (SpecialLinear.finiteTypeCoordinateHopfAlgebra_obj k n) :=
   (specialLinearCenterQuotientIso n k).inv_comp_eq.mpr
     (specialLinearCenterQuotientIso_hom_comp n k).symm
 

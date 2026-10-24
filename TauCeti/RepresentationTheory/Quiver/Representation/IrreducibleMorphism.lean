@@ -51,8 +51,6 @@ represents, but it does not by itself certify irreducibility.
 * `TauCeti.QuiverRep.isIrreducibleMorphism_iff_not_isIso_and_notMem_jacobsonRadicalSq`: between
   pointwise finite-dimensional indecomposables, irreducible morphisms are the non-isomorphisms
   outside the square of the radical.
-* `TauCeti.QuiverRep.nontrivial_irreducibleMorphismSpace_iff`: between these indecomposables,
-  `rad / rad²` is nonzero exactly when an irreducible morphism exists.
 
 ## Implementation notes
 
@@ -145,17 +143,6 @@ theorem isIrreducibleMorphism_iff_not_isIso_and_notMem_jacobsonRadicalSq
   have : IsLocalRing (End N) := (indecomposable_iff_isLocalRing_end hNfin).mp hN
   rw [TauCeti.isIrreducibleMorphism_iff_mem_jacobsonRadical_and_notMem_jacobsonRadicalSq,
     mem_jacobsonRadical_iff_not_isIso]
-
-/-- The space `rad(M, N) / rad²(M, N)` between pointwise finite-dimensional indecomposable
-representations of a quiver with finitely many vertices is nonzero exactly when there is an
-irreducible morphism from `M` to `N`. -/
-theorem nontrivial_irreducibleMorphismSpace_iff
-    (hMfin : IsFinDim k Q M) (hNfin : IsFinDim k Q N)
-    (hM : Indecomposable M) (hN : Indecomposable N) :
-    Nontrivial (irreducibleMorphismSpace k M N) ↔ ∃ f : M ⟶ N, IsIrreducibleMorphism f := by
-  have : IsLocalRing (End M) := (indecomposable_iff_isLocalRing_end hMfin).mp hM
-  have : IsLocalRing (End N) := (indecomposable_iff_isLocalRing_end hNfin).mp hN
-  exact TauCeti.nontrivial_irreducibleMorphismSpace_iff
 
 end FiniteDimensional
 

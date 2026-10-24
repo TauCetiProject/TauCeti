@@ -447,10 +447,10 @@ theorem explicitDualityPairing02_explicitCoeff0_toInternalHom
 
 section Descent
 
-omit [Finite A]
 variable [ContinuousSMul U (InternalHom U A N)]
 include hU
 
+omit [Finite A] in
 /-- **Injectivity of Tate's duality map `α₂` descends to an open subgroup.** If
 `α₂ : H²(G, Coind_U^G A) → Hom(H⁰(G, Hom(Coind_U^G A, N)), H²(G, N))` is injective, then so is
 `α₂ : H²(U, A) → Hom(H⁰(U, Hom(A, N)), H²(U, N))`: a class of `H²(U, A)` killed by every invariant

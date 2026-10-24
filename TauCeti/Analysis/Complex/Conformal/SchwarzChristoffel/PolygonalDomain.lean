@@ -319,32 +319,6 @@ private theorem exists_ball_mem_halfStrip_of_tendsto_cobounded {ρ : ℝ} {c b :
       (hfU ▸ mem_frontier_image_upperHalfPlaneSet_of_im_eq_zero
         (hfc _ him.ge) him (not_mem_image_upperHalfPlaneSet_of_im_eq_zero hfi him))
 
-/-- If `f` tends to infinity at infinity and, near `0` in the coordinate `w ↦ -w⁻¹`, the
-normalized map `ζ w = (f (-w⁻¹) - c) / b` stays in the closed half-strip
-`{0 ≤ re ζ, 0 ≤ im ζ ≤ π}`, then `exp (π * I - ζ w)` tends to `0` as `w` tends to `0` there:
-`re ζ ≥ ‖ζ‖ - π` tends to infinity. -/
-private theorem tendsto_exp_pi_mul_I_sub_of_tendsto_cobounded {c b : ℂ} {r : ℝ} (hb : b ≠ 0)
-    (hp : Tendsto f (cobounded ℂ ⊓ 𝓟 {z : ℂ | 0 ≤ z.im}) (cobounded ℂ))
-    (hζ : ∀ w ∈ ball (0 : ℂ) r, 0 ≤ w.im → w ≠ 0 →
-      0 ≤ ((f (-w⁻¹) - c) / b).re ∧ ((f (-w⁻¹) - c) / b).im ∈ Icc 0 Real.pi) :
-    Tendsto (fun w => exp (Real.pi * Complex.I - (f (-w⁻¹) - c) / b))
-      (𝓝[(ball 0 r ∩ {z : ℂ | 0 ≤ z.im}) \ {0}] 0) (𝓝 0) := by
-  have hnorm : Tendsto (fun w => ‖f (-w⁻¹) - c‖ / ‖b‖ - Real.pi)
-      (𝓝[(ball 0 r ∩ {z : ℂ | 0 ≤ z.im}) \ {0}] 0) atTop :=
-    tendsto_atTop_add_const_right _ _ (Tendsto.atTop_div_const (norm_pos_iff.mpr hb)
-      (tendsto_norm_cobounded_atTop.comp ((tendsto_sub_const_cobounded c).comp
-        ((tendsto_comp_neg_inv_cobounded hp).mono_left (nhdsWithin_mono _
-          (sdiff_subset_sdiff_left (inter_subset_right (s := ball (0 : ℂ) r))))))))
-  have hre : Tendsto (fun w => ((f (-w⁻¹) - c) / b).re)
-      (𝓝[(ball 0 r ∩ {z : ℂ | 0 ≤ z.im}) \ {0}] 0) atTop := by
-    refine tendsto_atTop_mono' _ (eventually_nhdsWithin_of_forall fun w hw => ?_) hnorm
-    obtain ⟨hre, him₀, himπ⟩ := hζ w hw.1.1 hw.1.2 hw.2
-    have h := norm_le_abs_re_add_abs_im ((f (-w⁻¹) - c) / b)
-    rw [abs_of_nonneg hre, abs_of_nonneg him₀, norm_div] at h
-    linarith
-  refine tendsto_exp_comap_re_atBot.comp (tendsto_comap_iff.mpr ?_)
-  simpa [Function.comp_def] using tendsto_neg_atTop_atBot.comp hre
-
 /-- **Condition at a parallel-sided end at infinity.**  If `f` tends to infinity at infinity, and
 far from `c` the domain `U` coincides with the open half-strip
 `{0 < re ((z - c) / b), 0 < im ((z - c) / b) < π}`, then `z * f''(z) / f'(z) → -1` as `z` tends to
@@ -376,24 +350,24 @@ private theorem tendsto_mul_logDeriv_deriv_of_tendsto_cobounded_of_halfStrip {ρ
   have hgv : ∀ w, w ≠ 0 → g w = exp (Real.pi * Complex.I - ζ w) := fun w hw =>
     update_of_ne hw _ _
   have hgim : ∀ w, w ≠ 0 → (g w).im = Real.exp (-(ζ w).re) * Real.sin (ζ w).im := fun w hw => by
-    rw [hgv w hw, exp_im]
-    simp [Real.sin_pi_sub]
+    rw [hgv w hw, im_exp_pi_mul_I_sub]
   refine tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_exp_neg_inv (g := g)
     (c := c + Real.pi * Complex.I * b) hr (neg_ne_zero.mpr hb) hf hfn (fun w hw => ?_) hg0
     (continuousOn_update_iff.mpr ⟨fun w hw => ?_, fun _ => ?_⟩) (fun w hw hwim => ?_)
     (fun w hw => ?_) ?_
   · rw [hgv w (hH w hw.2)]
-    congr 1
-    simp only [ζ]
-    field_simp
-    ring
+    exact exp_pi_mul_I_sub_div hb
   · -- `g` is continuous away from `0` by continuity of `f` up to the axis
     have hinv : ContinuousWithinAt (fun w : ℂ => -w⁻¹) ((ball 0 r ∩ {z | 0 ≤ z.im}) \ {0}) w :=
       (continuousAt_inv₀ hw.2).neg.continuousWithinAt
     exact (continuousWithinAt_const.sub ((((hfc _ (im_neg_inv_nonneg.mpr hw.1.2)).comp
       (f := fun w : ℂ => -w⁻¹) hinv fun y (hy : y ∈ (ball 0 r ∩ {z : ℂ | 0 ≤ z.im}) \ {0}) =>
         im_neg_inv_nonneg.mpr hy.1.2).sub_const c).div_const b)).cexp
-  · exact tendsto_exp_pi_mul_I_sub_of_tendsto_cobounded hb hp hζ
+  · -- in the closed half-strip `exp (π * I - ζ)` tends to `0` as `ζ` tends to infinity
+    refine tendsto_exp_pi_mul_I_sub_of_tendsto_cobounded ?_
+      (eventually_nhdsWithin_of_forall fun w hw => hζ w hw.1.1 hw.1.2 hw.2)
+    exact tendsto_sub_div_of_tendsto_cobounded hb ((tendsto_comp_neg_inv_cobounded hp).mono_left
+      (nhdsWithin_mono _ (sdiff_subset_sdiff_left (inter_subset_right (s := ball (0 : ℂ) r)))))
   · -- the far parts of the real axis go to the two bounding rays, where `g` is real
     by_cases hw0 : w = 0
     · rw [hw0, hg0, zero_im]
@@ -412,12 +386,9 @@ private theorem tendsto_mul_logDeriv_deriv_of_tendsto_cobounded_of_halfStrip {ρ
       exact absurd h.symm (hne w₂ h₂)
     · rw [h₂, hg0] at h
       exact absurd h (hne w₁ h₁)
-    · have hlog (w : ℂ) (hw : w ∈ ball (0 : ℂ) r ∩ {z | 0 ≤ z.im}) (hw0 : w ≠ 0) :
-          log (g w) = Real.pi * Complex.I - ζ w := by
-        obtain ⟨-, him₀, himπ⟩ := hζ w hw.1 hw.2 hw0
-        rw [hgv w hw0, log_exp] <;> simp <;> linarith [Real.pi_pos]
-      have hζeq : ζ w₁ = ζ w₂ := by
-        simpa using (hlog w₁ hw₁ h₁).symm.trans ((congrArg log h).trans (hlog w₂ hw₂ h₂))
+    · rw [hgv w₁ h₁, hgv w₂ h₂] at h
+      have hζeq : ζ w₁ = ζ w₂ :=
+        injOn_exp_pi_mul_I_sub (hζ w₁ hw₁.1 hw₁.2 h₁).2 (hζ w₂ hw₂.1 hw₂.2 h₂).2 h
       simp only [ζ, div_left_inj' hb, sub_left_inj] at hζeq
       simpa using hfi (im_neg_inv_nonneg.mpr hw₁.2) (im_neg_inv_nonneg.mpr hw₂.2) hζeq
 

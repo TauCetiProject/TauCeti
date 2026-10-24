@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Representation.JordanDecomposition.Basic
-public import TauCeti.Algebra.AlgebraicGroup.Representation.SemisimplePoint
+public import TauCeti.Algebra.AlgebraicGroup.Representation.SemisimplePoint.Basic
 
 /-!
 # Naturality of Jordan decomposition for algebraic-group points

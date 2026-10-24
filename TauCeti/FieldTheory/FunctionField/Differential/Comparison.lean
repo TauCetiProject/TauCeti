@@ -35,7 +35,9 @@ It is the divisor of a cotrace, `Con (η) + Diff(F / k(x))`, where the normalize
 `k(x)` has divisor `-2 P_∞`, and the conorm of `P_∞ = (X)_∞` is the pole divisor of `x`.  In
 particular `-2 (x)_∞ + Diff(F / k(x))` is a canonical divisor of `F`.  At a place with separable
 residue field where `x` is a prime element, the place is unramified and tame over `k(x)`, so `dx`
-has order zero there.
+has order zero there. The same holds, for any residue field, at a place where `x` is regular and
+`d x` generates the Kähler differentials of the valuation ring: then the valuation ring is formally
+unramified over that of `k(x)`, so the different exponent vanishes.
 
 ## Main definitions
 
@@ -59,6 +61,8 @@ has order zero there.
   `-2 (x)_∞ + Diff(F / k(x))` represents the canonical class.
 * `TauCeti.weilDifferentialOrder_weilDifferentialOfSeparating_eq_zero`: `dx` has order zero at a
   place with separable residue field at which `x` is a prime element.
+* `TauCeti.weilDifferentialOrder_weilDifferentialOfSeparating_eq_zero_of_span_D_eq_top`:
+  `dx` has order zero at a place `P` at which `x` is regular and `d x` generates `Ω[𝒪_P⁄k]`.
 
 ## References
 
@@ -326,5 +330,33 @@ theorem weilDifferentialOrder_weilDifferentialOfSeparating_eq_zero (hF : IsFunct
     AlgebraicGeometry.WeilDivisor.coeff_add, AlgebraicGeometry.WeilDivisor.coeff_zsmul, hd,
     Divisor.coeff_poles]
   simp [htP]
+
+/-- **The differential of a local generator has order zero**: let `x` be a separating element of
+`F / k` with exact constant field, and `P` a place, of any degree and with any residue field, at
+which `x` is regular and `d x` generates the `𝒪_P`-module `Ω[𝒪_P⁄k]`. Then the Weil differential
+`dx` has order zero at `P`. -/
+theorem weilDifferentialOrder_weilDifferentialOfSeparating_eq_zero_of_span_D_eq_top
+    (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F) (hx : Transcendental k x)
+    [Algebra.IsSeparable k⟮x⟯ F] {P : Place k F} (hxP : x ∈ P.integers)
+    (hΩ : Submodule.span P.integers {D k P.integers ⟨x, hxP⟩} = ⊤) :
+    weilDifferentialOrder hF hex (weilDifferentialOfSeparating hF hx).2
+      (by simpa using weilDifferentialOfSeparating_ne_zero hF hx) P = 0 := by
+  let _ := ratFuncAlgebraOfTranscendental hx
+  let _ := isScalarTower_ratFuncAlgebraOfTranscendental hx
+  let _ := isFunctionField_iff_functionField.mp hF
+  let _ := isSeparable_ratFuncAlgebraOfTranscendental hx
+  -- `X` is regular at the place of `k(X)` below `P`, and its image `x` generates `Ω[𝒪_P⁄k]`, so
+  -- `P` is unramified over `k(X)`.
+  have hX : RatFunc.X ∈ (P.restrict k (RatFunc k)).integers := by
+    rwa [Place.mem_integers_restrict_iff, algebraMap_ratFuncAlgebraOfTranscendental_X]
+  have hXx : algebraMap (P.restrict k (RatFunc k)).integers P.integers ⟨RatFunc.X, hX⟩ =
+      ⟨x, hxP⟩ :=
+    Subtype.ext (by simp)
+  have hd : P.differentExponent k (RatFunc k) = 0 :=
+    Place.differentExponent_eq_zero_of_span_D_eq_top k (RatFunc k) P (by rwa [hXx])
+  rw [← coeff_weilDifferentialDivisor, weilDifferentialDivisor_weilDifferentialOfSeparating,
+    AlgebraicGeometry.WeilDivisor.coeff_add, AlgebraicGeometry.WeilDivisor.coeff_zsmul,
+    Divisor.coeff_different, hd, (Divisor.coeff_poles_eq_zero_iff hF _ P).mpr hxP]
+  simp
 
 end TauCeti

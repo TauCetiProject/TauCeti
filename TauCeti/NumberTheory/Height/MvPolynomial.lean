@@ -11,6 +11,7 @@ public import TauCeti.Algebra.MvPolynomial.Rename
 public import TauCeti.Algebra.MvPolynomial.Variables
 public import Mathlib.NumberTheory.Height.NumberField
 public import TauCeti.RingTheory.MvPolynomial.AbvCoeff
+public import TauCeti.Algebra.MvPolynomial.HasseDeriv.Basic
 import TauCeti.NumberTheory.Height.Basic
 
 /-!
@@ -33,7 +34,9 @@ so the height of a determinant of a matrix of polynomials is bounded place by pl
 entries have partial degrees at most `d j` and coefficients dominated by those of one polynomial
 `P`, up to a factor `C` at the archimedean absolute values:
 `h(det A) ≤ n h(P) + totalWeight K * (log n! + n (∑ j, d j * log 2 + log C))`.
-This applies to the generalized Wronskians of Hasse derivatives of `P` in Roth's lemma.
+This applies to the generalized Wronskians of Hasse derivatives of `P` in Roth's lemma:
+`MvPolynomial.logHeight_det_hasseDeriv_le` bounds the height of any `n × n` determinant of Hasse
+derivatives of `P` by `n h(P) + totalWeight K * (log n! + 2 n ∑ j, d j * log 2)`.
 
 Although the height of a product is not the product of the heights in general, it is when the
 two factors involve disjoint sets of variables: then the coefficients of the product are exactly
@@ -414,3 +417,41 @@ theorem logHeight_det_le (A : Matrix n n (MvPolynomial σ K)) {P : MvPolynomial 
   linarith
 
 end Matrix
+
+namespace MvPolynomial
+
+open Finset Height AdmissibleAbsValues
+open scoped Nat
+
+variable {K σ : Type*} [Field K] [AdmissibleAbsValues K] [Fintype σ]
+  {n : Type*} [Fintype n] [DecidableEq n]
+
+/-- **The height of a determinant of Hasse derivatives** (Pottmeyer, §3.4.6). If `P ≠ 0` has
+partial degrees at most `d j`, then any `n × n` determinant of Hasse derivatives `∂^(E k l) P`
+has height `h(det) ≤ n h(P) + totalWeight K * (log n! + 2 n ∑ j, d j * log 2)`. -/
+theorem logHeight_det_hasseDeriv_le {P : MvPolynomial σ K} (hP : P ≠ 0) {d : σ → ℕ}
+    (hd : ∀ j, P.degreeOf j ≤ d j) (E : n → n → σ →₀ ℕ) :
+    (Matrix.of fun k l ↦ hasseDeriv (E k l) P).det.logHeight ≤
+      Fintype.card n * P.logHeight + totalWeight K *
+        (Real.log (Fintype.card n)! + 2 * Fintype.card n * ∑ j, d j * Real.log 2) := by
+  -- Each coefficient `[X^a] ∂^e P` is a binomial multiple of `[X^(a + e)] P`.
+  have hcoeff (v : AbsoluteValue K ℝ) (e a : σ →₀ ℕ) :
+      v ((hasseDeriv e P).coeff a) ≤ 2 ^ (∑ j, d j) * v (P.coeff (a + e)) := by
+    by_cases ha : P.coeff (a + e) = 0
+    · simp [hasseDeriv_coeff, ha]
+    refine (abv_coeff_hasseDeriv_le v e a P).trans (mul_le_mul_of_nonneg_right ?_ (v.nonneg _))
+    rw [Finsupp.degree_eq_sum]
+    exact pow_le_pow_right₀ one_le_two (sum_le_sum fun j _ ↦
+      (monomial_le_degreeOf j (mem_support_iff.2 ha)).trans (hd j))
+  have h := Matrix.logHeight_det_le (Matrix.of fun k l ↦ hasseDeriv (E k l) P) hP (d := d)
+    (fun k l j ↦ (degreeOf_hasseDeriv_le _ _ _).trans ((Nat.sub_le _ _).trans (hd j)))
+    (C := 2 ^ (∑ j, d j)) (one_le_pow₀ one_le_two)
+    (fun v _ k l a ↦ ⟨a + E k l, hcoeff v _ _⟩)
+    (fun v hv k l a ↦ ⟨a + E k l, by
+      rw [Matrix.of_apply, hasseDeriv_coeff, v.map_mul]
+      exact mul_le_of_le_one_left (v.nonneg _)
+        ((isNonarchimedean v hv).apply_natCast_le_one (by simp) v.map_one)⟩)
+  rw [Real.log_pow, Nat.cast_sum, sum_mul] at h
+  linarith
+
+end MvPolynomial

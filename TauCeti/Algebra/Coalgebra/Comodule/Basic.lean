@@ -112,6 +112,15 @@ theorem coact_comp_tensorComponent (phi : C →ₗ[R] R) :
   refine TensorProduct.ext' fun m c => ?_
   simp
 
+/-- Taking a tensor component after coacting on the first factor is the coaction
+of that component. -/
+@[simp]
+theorem tensorComponent_rTensor_coact (phi : C →ₗ[R] R) (b : M ⊗[R] C) :
+    _root_.LinearMap.tensorComponent phi
+        ((coact (R := R) (C := C) (M := M)).rTensor C b) =
+      coact (_root_.LinearMap.tensorComponent phi b) :=
+  (LinearMap.congr_fun (coact_comp_tensorComponent phi) b).symm
+
 /-- The component of a coaction selected by a linear functional on the coalgebra. -/
 noncomputable def coactComponent (phi : C →ₗ[R] R) : M →ₗ[R] M :=
   _root_.LinearMap.tensorComponent (R := R) (M := M) phi ∘ₗ

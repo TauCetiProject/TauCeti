@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Algebra.BigOperators.Module
 
-import Mathlib.Tactic
+import Mathlib.Algebra.Order.BigOperators.Group.Finset
+import Mathlib.Algebra.Order.Ring.Int
+import Mathlib.Tactic.Ring
 
 /-!
 # A strict majorization criterion for staircase sequences

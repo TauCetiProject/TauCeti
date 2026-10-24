@@ -63,9 +63,9 @@ commutative ring.
 The denominator side reads `invarDenom (normEDS b c d) 1 m = W (m + 1) * W m * W (m - 1)`, and
 which of the three factors gives up `b = W 2` and `c = W 3` depends on `m` modulo `6` — hence the
 six-way split. Each branch reindexes one or two complements by `normEDS_mul_complEDS_div`
-(`Complement.lean`), `W k * complEDS b c d k (n / k) = W n`, which this development adds beside the
-identity it is derived from — `normEDS_mul_complEDS`, stated at `W (n * k)` — and which absorbs the
-`Int.ediv_mul_cancel` step on the divisibility that `m % 6 = r` supplies. The residues `0`, `1` and
+(`Complement.lean`), `W k * complEDS b c d k (n / k) = W n`, which reindexes Mathlib's
+`normEDS_mul_complEDS`, stated at `W (n * k)`, and which absorbs the `Int.ediv_mul_cancel` step on
+the divisibility that `m % 6 = r` supplies. The residues `0`, `1` and
 `5` go through the `6`-complement once each and rewrite `W 6` as `(W 5 - d ^ 2) * b * c`
 (`WeierstrassCurve.normEDS_six`, `Six.lean`); the residues `2`, `3` and `4` each split the work
 between a `2`-complement and a `3`-complement.
@@ -80,7 +80,7 @@ expressions, proved by `ring` from the complement recurrences rather than throug
 
 The other half of the reduced-invariant theory — `redInvar_normEDS ← invar₂_normEDS ←
 invar_normEDS ← net_normEDS`, written in the source's names — is complete: `net_normEDS` is
-`isEllipticNet_normEDS` (`NormEDS.lean`), `invar_normEDS` is `invarNum_mul_invarDenom`
+Mathlib's `IsEllipticNet.normEDS`, `invar_normEDS` is `invarNum_mul_invarDenom`
 (`Invariant/Basic.lean`), `invar₂_normEDS` is `invarNum_normEDS_one_mul_eq_invarDenom_mul`
 (`Invariant/NormEDS.lean`), and `redInvar_normEDS` is
 `reducedInvarNum_eq_reducedInvarDenom_mul` below.
@@ -124,9 +124,9 @@ proof below reaches each branch through the divisor-form identity `normEDS_mul_c
 The source's `invarDenom_eq_redInvarDenom_mul`, which identifies the denominator formula as the
 cancelled quotient, is ported here as
 `IsEllipticNet.invarDenom_normEDS_one_eq_reducedInvarDenom_mul`. Both links the source's proof
-uses are available in this repository: `normEDS_mul_complEDS_div` is ported by this development
-into `Complement.lean`, derived there from the unconditional `normEDS_mul_complEDS` together with
-`Int.ediv_mul_cancel` rather than proved afresh, and `normEDS_six_eq_mul` is
+uses are available: `normEDS_mul_complEDS_div` is ported into `Complement.lean`, derived there
+from Mathlib's unconditional `normEDS_mul_complEDS` together with `Int.ediv_mul_cancel` rather
+than proved afresh, and `normEDS_six_eq_mul` is
 `WeierstrassCurve.normEDS_six` (`Six.lean`).
 
 That file's header reads `Authors: David Kurniadi Angdinata`; following this
@@ -324,18 +324,19 @@ fires first, and because `reducedInvarDenom_def` is deliberately not `@[simp]` t
 folded at `reducedInvarDenom b c d m * (b * c)`. -/
 @[simp high]
 theorem invarDenom_normEDS_one_eq_reducedInvarDenom_mul :
-    invarDenom (normEDS b c d) 1 m = reducedInvarDenom b c d m * (b * c) := by
+    invarDenom (_root_.normEDS b c d) 1 m = reducedInvarDenom b c d m * (b * c) := by
   -- Split on `m % 6`. Each branch selects its `reducedInvarDenom` value, then releases `b * c`
   -- from the one index divisible by `6`, or from the pair divisible by `3` and by `2`.
   -- The index-splitting step the branches share: at an index divisible by `n`,
   -- `normEDS_mul_complEDS_div` peels off the `n`-complement and the value of `normEDS` at `n`
   -- comes out as a constant — `b * c` at `6`, `c` at `3`, `b` at `2`.
   have h6 : ∀ k : ℤ, (6 : ℤ) ∣ k →
-      normEDS b c d k = (normEDS b c d 5 - d ^ 2) * complEDS b c d 6 (k / 6) * (b * c) :=
+      _root_.normEDS b c d k =
+        (_root_.normEDS b c d 5 - d ^ 2) * complEDS b c d 6 (k / 6) * (b * c) :=
     fun k h ↦ by rw [← normEDS_mul_complEDS_div 6 k h, WeierstrassCurve.normEDS_six]; ring
-  have h3 : ∀ k : ℤ, (3 : ℤ) ∣ k → normEDS b c d k = complEDS b c d 3 (k / 3) * c :=
+  have h3 : ∀ k : ℤ, (3 : ℤ) ∣ k → _root_.normEDS b c d k = complEDS b c d 3 (k / 3) * c :=
     fun k h ↦ by rw [← normEDS_mul_complEDS_div 3 k h, normEDS_three]; ring
-  have h2 : ∀ k : ℤ, (2 : ℤ) ∣ k → normEDS b c d k = complEDS b c d 2 (k / 2) * b :=
+  have h2 : ∀ k : ℤ, (2 : ℤ) ∣ k → _root_.normEDS b c d k = complEDS b c d 2 (k / 2) * b :=
     fun k h ↦ by rw [← normEDS_mul_complEDS_div 2 k h, normEDS_two]; ring
   have hcase : m % 6 = 0 ∨ m % 6 = 1 ∨ m % 6 = 2 ∨ m % 6 = 3 ∨ m % 6 = 4 ∨ m % 6 = 5 := by omega
   rw [invarDenom_def]
@@ -370,7 +371,7 @@ unfolds; `reducedInvarNum_eq_reducedInvarDenom_mul` carries it one step further,
 normal form is `reducedInvarDenom b c d m * (d + b ^ 4) * b`. -/
 @[simp high]
 theorem invarNum_normEDS_one_eq_reducedInvarNum_mul :
-    invarNum (normEDS b c d) 1 m = reducedInvarNum b c d m * b := by
+    invarNum (_root_.normEDS b c d) 1 m = reducedInvarNum b c d m * b := by
   simp_rw [reducedInvarNum_def, right_distrib, complEDS₂_mul_b, mul_assoc 2 _ b,
     complEDS₂Aux_mul_b]
   simp [invarNum_def]

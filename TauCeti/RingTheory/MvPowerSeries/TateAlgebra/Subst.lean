@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Basic
+public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Coefficients
 public import TauCeti.RingTheory.MvPowerSeries.Basic
 public import Mathlib.RingTheory.MvPowerSeries.Substitution
 public import TauCeti.RingTheory.MvPolynomial.NormCoeff
@@ -39,6 +39,10 @@ here.
   substituted series at the exponents contributing to it, possibly after isolating one of them.
 * `MvPowerSeries.IsRestricted.subst`: substitution of unit-ball polynomials without constant
   term preserves unit-radius restrictedness.
+* `MvPowerSeries.IsRestricted.subst_of_totalDegree_le`: at constant radii, such a substitution
+  of polynomials of total degree at most `A` carries series restricted at `ρ` to series
+  restricted at any `ρ' ≥ 1` with `ρ' ^ A ≤ ρ`. This is what lets the substitution act on
+  overconvergent series.
 * `MvPowerSeries.restrictedSubst`: the resulting `R`-algebra homomorphism of Tate algebras, and
   `MvPowerSeries.norm_restrictedSubst_le`: it does not increase the Gauss norm.
 * `MvPowerSeries.restrictedSubstEquiv`: two mutually inverse substitutions give an
@@ -132,13 +136,51 @@ end SeminormedCommRing
 
 variable {σ τ R : Type*} [NormedCommRing R] [IsUltrametricDist R]
 
-omit [IsUltrametricDist R] in
-/-- Restrictedness at the unit radius is convergence of the coefficient norms to zero. -/
-theorem isRestricted_one_iff {f : MvPowerSeries σ R} :
-    IsRestricted (fun _ ↦ 1) f ↔ Tendsto (fun t ↦ ‖coeff t f‖) cofinite (𝓝 0) := by
-  simp [IsRestricted]
-
 variable [NormOneClass R]
+
+/-- **Substitution of unit-ball polynomials at constant radii.** Let finitely many polynomials
+without constant term have all coefficients of norm at most `1` and total degree at most `A`. If
+`1 ≤ ρ'` and `ρ' ^ A ≤ ρ`, then substituting them into a series restricted at the constant radius
+`ρ` gives a series restricted at the constant radius `ρ'`. -/
+theorem IsRestricted.subst_of_totalDegree_le [Finite σ] {a : σ → MvPolynomial τ R}
+    (ha₀ : ∀ s, (a s).constantCoeff = 0) (ha₁ : ∀ s t, ‖(a s).coeff t‖ ≤ 1) {A : ℕ}
+    (hA : ∀ s, (a s).totalDegree ≤ A) {ρ ρ' : ℝ} (hρ' : 1 ≤ ρ') (hρ : ρ' ^ A ≤ ρ)
+    {f : MvPowerSeries σ R} (hf : IsRestricted (fun _ ↦ ρ) f) :
+    IsRestricted (fun _ ↦ ρ') (f.subst fun s ↦ (a s : MvPowerSeries τ R)) := by
+  classical
+  rw [isRestricted_const_iff] at hf ⊢
+  have hρ'0 : 0 < ρ' := zero_lt_one.trans_le hρ'
+  -- An exponent `e` receives contributions only from exponents `d` with `|e| ≤ A |d|`.
+  have hdeg (d : σ →₀ ℕ) (e : τ →₀ ℕ) (he : (d.prod fun s n ↦ a s ^ n).coeff e ≠ 0) :
+      ρ' ^ e.degree ≤ ρ ^ d.degree := by
+    have hle : e.degree ≤ A * d.degree := by
+      refine (MvPolynomial.le_totalDegree (MvPolynomial.mem_support_iff.mpr he)).trans
+        ((MvPolynomial.totalDegree_finsetProd _ _).trans ?_)
+      rw [Finsupp.degree_apply, Finset.mul_sum]
+      exact Finset.sum_le_sum fun s _ ↦ (MvPolynomial.totalDegree_pow _ _).trans
+        (by rw [mul_comm]; exact Nat.mul_le_mul_right _ (hA s))
+    calc ρ' ^ e.degree ≤ ρ' ^ (A * d.degree) := pow_le_pow_right₀ hρ' hle
+      _ = (ρ' ^ A) ^ d.degree := pow_mul _ _ _
+      _ ≤ ρ ^ d.degree := pow_le_pow_left₀ (by positivity) hρ _
+  refine tendsto_order.mpr ⟨fun b hb ↦ .of_forall fun e ↦ hb.trans_le (by positivity),
+    fun ε hε ↦ ?_⟩
+  -- Only the finitely many large weighted coefficients of `f` can produce a large weighted
+  -- coefficient, and each of them contributes through a polynomial with finite support.
+  have hB : {d | ε / 2 ≤ ‖coeff d f‖ * ρ ^ d.degree}.Finite := by
+    simpa [eventually_cofinite, not_lt] using hf.eventually (gt_mem_nhds (half_pos hε))
+  have hE : (⋃ d ∈ {d | ε / 2 ≤ ‖coeff d f‖ * ρ ^ d.degree},
+      ((d.prod fun s n ↦ a s ^ n : MvPolynomial τ R).support : Set (τ →₀ ℕ))).Finite :=
+    hB.biUnion fun d _ ↦ Finset.finite_toSet _
+  filter_upwards [hE.compl_mem_cofinite] with e he
+  have hpos : 0 < ρ' ^ e.degree := pow_pos hρ'0 _
+  refine lt_of_le_of_lt ?_ (half_lt_self hε)
+  rw [← le_div_iff₀ hpos]
+  refine norm_coeff_subst_coe_le ha₀ ha₁ f e (by positivity) fun d hd ↦ ?_
+  have hsmall : ‖coeff d f‖ * ρ ^ d.degree < ε / 2 := by
+    by_contra hlt
+    exact he (Set.mem_iUnion₂.mpr ⟨d, le_of_not_gt hlt, MvPolynomial.mem_support_iff.mpr hd⟩)
+  rw [le_div_iff₀ hpos]
+  exact ((mul_le_mul_of_nonneg_left (hdeg d e hd) (norm_nonneg _))).trans hsmall.le
 
 /-- **Substitution of unit-ball polynomials preserves restrictedness.** If finitely many
 polynomials without constant term have all coefficients of norm at most `1`, then substituting
@@ -147,22 +189,8 @@ theorem IsRestricted.subst [Finite σ] {a : σ → MvPolynomial τ R}
     (ha₀ : ∀ s, (a s).constantCoeff = 0) (ha₁ : ∀ s t, ‖(a s).coeff t‖ ≤ 1)
     {f : MvPowerSeries σ R} (hf : IsRestricted (fun _ ↦ 1) f) :
     IsRestricted (fun _ ↦ 1) (f.subst fun s ↦ (a s : MvPowerSeries τ R)) := by
-  classical
-  rw [isRestricted_one_iff] at hf ⊢
-  refine tendsto_order.mpr ⟨fun b hb ↦ .of_forall fun e ↦ hb.trans_le (norm_nonneg _),
-    fun ε hε ↦ ?_⟩
-  -- Only the finitely many large coefficients of `f` can produce a large coefficient, and each
-  -- of them contributes through a polynomial with finite support.
-  have hB : {d | ε / 2 ≤ ‖coeff d f‖}.Finite := by
-    simpa [eventually_cofinite, not_lt] using hf.eventually (gt_mem_nhds (half_pos hε))
-  have hE : (⋃ d ∈ {d | ε / 2 ≤ ‖coeff d f‖},
-      ((d.prod fun s n ↦ a s ^ n : MvPolynomial τ R).support : Set (τ →₀ ℕ))).Finite :=
-    hB.biUnion fun d _ ↦ Finset.finite_toSet _
-  filter_upwards [hE.compl_mem_cofinite] with e he
-  refine (norm_coeff_subst_coe_le ha₀ ha₁ f e (half_pos hε).le fun d hd ↦ ?_).trans_lt
-    (half_lt_self hε)
-  by_contra hlt
-  exact he (Set.mem_iUnion₂.mpr ⟨d, le_of_not_ge hlt, MvPolynomial.mem_support_iff.mpr hd⟩)
+  obtain ⟨A, hA⟩ := (Set.finite_range fun s ↦ (a s).totalDegree).bddAbove
+  exact hf.subst_of_totalDegree_le ha₀ ha₁ (fun s ↦ hA ⟨s, rfl⟩) le_rfl (one_pow A).le
 
 variable [Finite σ] (a : σ → MvPolynomial τ R) (ha₀ : ∀ s, (a s).constantCoeff = 0)
   (ha₁ : ∀ s t, ‖(a s).coeff t‖ ≤ 1)

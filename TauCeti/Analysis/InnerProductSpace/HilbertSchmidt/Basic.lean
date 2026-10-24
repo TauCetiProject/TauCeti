@@ -9,6 +9,8 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.InnerProductSpace.Parseval
 public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Frobenius
 
+import TauCeti.Analysis.MeanInequalities
+
 /-!
 # Hilbert–Schmidt energy and the Hilbert–Schmidt norm
 
@@ -24,8 +26,10 @@ depend on the basis `b`. Its square root therefore defines a basis-free **Hilber
 `‖T‖_HS`, which is invariant under taking adjoints and homogeneous under scalar multiplication. For
 operators of finite energy it dominates the operator norm and satisfies the two-sided ideal
 inequality `‖A T B‖_HS ≤ ‖A‖ ‖T‖_HS ‖B‖`; an operator of infinite energy has `‖T‖_HS = 0`. The
-triangle inequality is not established here. On a finite-dimensional source the energy is the
-square of the Frobenius seminorm `TauCeti.UnitarilyInvariantSeminorm.frobenius`.
+square root of the energy satisfies the triangle inequality, by Minkowski's inequality for
+unconditional sums in `ℝ≥0∞`, so the Hilbert–Schmidt norm is subadditive on operators of finite
+energy. On a finite-dimensional source the energy is the square of the Frobenius seminorm
+`TauCeti.UnitarilyInvariantSeminorm.frobenius`.
 
 These are the norm estimates behind the Hilbert–Schmidt class of operators: its identification with
 `ℓ²` families of columns, and the compactness of Hilbert–Schmidt operators.
@@ -46,9 +50,13 @@ These are the norm estimates behind the Hilbert–Schmidt class of operators: it
 * `ContinuousLinearMap.hilbertSchmidtEnergy_comp_le_left` and
   `ContinuousLinearMap.hilbertSchmidtEnergy_comp_le_right`: one-sided ideal bounds for the energy.
 * `ContinuousLinearMap.hilbertSchmidtEnergy_comp_comp_le`: `E(A T B) ≤ ‖A‖ₑ² E(T) ‖B‖ₑ²`.
+* `ContinuousLinearMap.rpow_hilbertSchmidtEnergy_add_le`: the triangle inequality
+  `E_b(S + T)^(1/2) ≤ E_b(S)^(1/2) + E_b(T)^(1/2)`.
 * `ContinuousLinearMap.hilbertSchmidtEnergy_smul` and `ContinuousLinearMap.hilbertSchmidtNorm_smul`:
   homogeneity, `E_b(c • T) = ‖c‖ₑ² E_b(T)` and `‖c • T‖_HS = ‖c‖ ‖T‖_HS`.
 * `ContinuousLinearMap.hilbertSchmidtNorm_adjoint`: `‖T†‖_HS = ‖T‖_HS`, for every operator.
+* `ContinuousLinearMap.hilbertSchmidtNorm_add_le`: `‖S + T‖_HS ≤ ‖S‖_HS + ‖T‖_HS` for operators of
+  finite energy.
 * `ContinuousLinearMap.norm_le_hilbertSchmidtNorm` and
   `ContinuousLinearMap.hilbertSchmidtNorm_comp_comp_le`: domination of the operator norm and the
   two-sided ideal inequality for the Hilbert–Schmidt norm of a finite-energy operator.
@@ -111,6 +119,17 @@ theorem hilbertSchmidtEnergy_comp_le_left (A : F →L[𝕜] G) (T : E →L[𝕜]
   refine ENNReal.tsum_le_tsum fun i ↦ ?_
   rw [← mul_pow]
   exact pow_le_pow_left₀ zero_le (A.le_opENorm _) 2
+
+/-- **Triangle inequality for the Hilbert–Schmidt energy.** The square root of the energy is
+subadditive: `E_b(S + T)^(1/2) ≤ E_b(S)^(1/2) + E_b(T)^(1/2)`, with no finiteness assumption. -/
+theorem rpow_hilbertSchmidtEnergy_add_le (S T : E →L[𝕜] F) (b : HilbertBasis ι 𝕜 E) :
+    (S + T).hilbertSchmidtEnergy b ^ (1 / 2 : ℝ) ≤
+      S.hilbertSchmidtEnergy b ^ (1 / 2 : ℝ) + T.hilbertSchmidtEnergy b ^ (1 / 2 : ℝ) := by
+  have h := ENNReal.Lp_add_le_tsum (fun i ↦ ‖S (b i)‖ₑ) (fun i ↦ ‖T (b i)‖ₑ) one_le_two
+  simp only [ENNReal.rpow_two] at h
+  refine le_trans ?_ h
+  gcongr
+  exact ENNReal.tsum_le_tsum fun i ↦ by gcongr; exact enorm_add_le _ _
 
 section Complete
 
@@ -198,6 +217,12 @@ theorem hilbertSchmidtNorm_eq_sqrt (T : E →L[𝕜] F) (b : HilbertBasis ι �
     T.hilbertSchmidtNorm = √(T.hilbertSchmidtEnergy b).toReal := by
   rw [hilbertSchmidtNorm, hilbertSchmidtEnergy_indep T _ b]
 
+/-- The Hilbert–Schmidt norm is the real value of the square root `E_b(T)^(1/2)` of the energy,
+computed in any Hilbert basis of the source. -/
+theorem hilbertSchmidtNorm_eq_toReal_rpow (T : E →L[𝕜] F) (b : HilbertBasis ι 𝕜 E) :
+    T.hilbertSchmidtNorm = (T.hilbertSchmidtEnergy b ^ (1 / 2 : ℝ)).toReal := by
+  rw [T.hilbertSchmidtNorm_eq_sqrt b, ← ENNReal.toReal_rpow, Real.sqrt_eq_rpow]
+
 omit [CompleteSpace F] in
 theorem hilbertSchmidtNorm_nonneg (T : E →L[𝕜] F) : 0 ≤ T.hilbertSchmidtNorm :=
   Real.sqrt_nonneg _
@@ -225,6 +250,19 @@ omit [CompleteSpace F] in
 theorem hilbertSchmidtNorm_smul (c : 𝕜) (T : E →L[𝕜] F) :
     (c • T).hilbertSchmidtNorm = ‖c‖ * T.hilbertSchmidtNorm := by
   simp [hilbertSchmidtNorm, ENNReal.toReal_mul, ENNReal.toReal_pow]
+
+/-- **Triangle inequality for the Hilbert–Schmidt norm.** If `S` and `T` have finite energy, then
+`‖S + T‖_HS ≤ ‖S‖_HS + ‖T‖_HS`. -/
+theorem hilbertSchmidtNorm_add_le (S T : E →L[𝕜] F) (b : HilbertBasis ι 𝕜 E)
+    (hS : S.hilbertSchmidtEnergy b ≠ ∞) (hT : T.hilbertSchmidtEnergy b ≠ ∞) :
+    (S + T).hilbertSchmidtNorm ≤ S.hilbertSchmidtNorm + T.hilbertSchmidtNorm := by
+  have hfin (U : E →L[𝕜] F) (hU : U.hilbertSchmidtEnergy b ≠ ∞) :
+      U.hilbertSchmidtEnergy b ^ (1 / 2 : ℝ) ≠ ∞ :=
+    ENNReal.rpow_ne_top_of_nonneg (by positivity) hU
+  simp only [hilbertSchmidtNorm_eq_toReal_rpow _ b]
+  rw [← ENNReal.toReal_add (hfin S hS) (hfin T hT)]
+  exact ENNReal.toReal_mono (ENNReal.add_ne_top.2 ⟨hfin S hS, hfin T hT⟩)
+    (rpow_hilbertSchmidtEnergy_add_le S T b)
 
 /-- **Hilbert–Schmidt domination of the operator norm.** An operator of finite energy satisfies
 `‖T‖ ≤ ‖T‖_HS`. -/

@@ -21,7 +21,7 @@ open scoped ENNReal
 
 namespace TauCeti
 
-variable {X : Type*} [PseudoEMetricSpace X]
+variable {X : Type*} [TopologicalSpace X] [WeakPseudoEMetricSpace X]
 
 /-- **The split bound for a power of the distance.** For a nonnegative exponent `r`, the cost
 `edist x y ^ r` is bounded by `K * edist x₀ x ^ r + K * edist x₀ y ^ r` about any basepoint `x₀`,

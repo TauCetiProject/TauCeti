@@ -83,7 +83,7 @@ private theorem inverse_radius_eq (u : σ → Rˣ) (hu : ∀ i, IsNormMulUnit (u
     ‖(((u i)⁻¹ : Rˣ) : R)‖ * r i = s i := by
   have hne := norm_ne_zero_of_radius_eq u hrs i
   have hnorm : ‖(((u i)⁻¹ : Rˣ) : R)‖ = ‖(u i : R)‖⁻¹ :=
-    TauCeti.NormedRing.norm_units_inv_of_norm_mul (lt_of_le_of_ne (norm_nonneg _) (Ne.symm hne))
+    TauCeti.NormedRing.norm_units_inv_of_norm_mul hne
       (hu i).norm_mul
   rw [hnorm]
   calc
