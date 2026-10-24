@@ -66,7 +66,7 @@ assumption on the critical points of `f` away from the level are needed.
 public section
 
 open Function Metric Module Set
-open OpenPartialHomeomorph (contDiffOn_extendTrans_comp_symm contDiffOn_halfSpaceChart_trans_symm
+open OpenPartialHomeomorph (contDiffOn_extendTrans_comp_symm contDiffOn_halfSpaceChart_symm_trans
   coe_halfSpaceChart_apply coe_halfSpaceChart_symm_apply halfSpaceChart_source
   halfSpaceChart_target)
 open scoped ContDiff Manifold Topology
@@ -538,7 +538,7 @@ theorem isManifold_sublevel {m : ℕ∞ω} [IsManifold I m M] (hm : 1 ≤ m)
   obtain ⟨c₂, Ψ₂, he₂, hc₂, hΨ₂, -, h₂⟩ :=
     exists_sublevelChartAt_eq_halfSpaceChart hreg hn hm hfm x₂
   rw [h₁, h₂]
-  exact contDiffOn_halfSpaceChart_trans_symm he₁ he₂ x₁ x₂
+  exact contDiffOn_halfSpaceChart_symm_trans he₁ he₂ x₁ x₂
     (contDiffOn_extendTrans_comp_symm I hc₁ hc₂ hΨ₁ hΨ₂)
 
 /-- **The boundary of a sublevel at a regular value is the level.** If `f` is `C^m`, `m ≥ 1`, and

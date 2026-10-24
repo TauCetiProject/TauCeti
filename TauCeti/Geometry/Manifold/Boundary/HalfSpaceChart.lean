@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.IsManifold.ExtChartAt
-public import TauCeti.Geometry.Manifold.Boundary.Model
+public import Mathlib.Geometry.Manifold.Instances.Real
 public import TauCeti.Topology.OpenPartialHomeomorph.Constructions
 
 /-!
@@ -17,7 +17,7 @@ on the source of `e`, a point lies in `s` exactly when its zeroth coordinate is 
 `e` restricts to a chart `OpenPartialHomeomorph.halfSpaceChart` of `s`, modelled on the half-space
 `EuclideanHalfSpace (n + 1)`. The transition maps between such charts are the transition maps of
 the ambient charts, restricted to the half-space
-(`OpenPartialHomeomorph.contDiffOn_halfSpaceChart_trans_symm`), so smooth ambient transitions give
+(`OpenPartialHomeomorph.contDiffOn_halfSpaceChart_symm_trans`), so smooth ambient transitions give
 a smooth atlas on `s`. This is how regular domains, such as the sublevels of a function at a
 regular value, become manifolds with boundary.
 
@@ -27,15 +27,11 @@ model `I`, read in the model vector space and moved by a homeomorphism `Ψ`
 with smooth inverse, their transition maps are smooth
 (`OpenPartialHomeomorph.contDiffOn_extendTrans_comp_symm`).
 
-Finally, `TauCeti.euclideanFinConsEquiv` places a normal coordinate in slot `0` of `ℝⁿ⁺¹` and
-`k = n` tangential coordinates, reindexed along `k = n`, in slots `1, …, n`.
-
 ## Main declarations
 
 * `OpenPartialHomeomorph.extendTrans` and `OpenPartialHomeomorph.contDiffOn_extendTrans_comp_symm`.
 * `OpenPartialHomeomorph.halfSpaceChart`, with its source, target, apply and inverse laws, and
-  `OpenPartialHomeomorph.contDiffOn_halfSpaceChart_trans_symm`.
-* `TauCeti.euclideanFinConsEquiv`.
+  `OpenPartialHomeomorph.contDiffOn_halfSpaceChart_symm_trans`.
 
 ## References
 
@@ -172,7 +168,7 @@ theorem coe_halfSpaceChart_symm_apply (x : s) {z : EuclideanHalfSpace (n + 1)}
 
 /-- The transition maps between half-space charts are those of the ambient charts, restricted to
 the half-space. In particular they are `C^m` when the ambient transition maps are. -/
-theorem contDiffOn_halfSpaceChart_trans_symm {m : ℕ∞ω}
+theorem contDiffOn_halfSpaceChart_symm_trans {m : ℕ∞ω}
     {e₁ e₂ : OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin (n + 1)))}
     (he₁ : ∀ w ∈ e₁.source, w ∈ s ↔ 0 ≤ e₁ w 0) (he₂ : ∀ w ∈ e₂.source, w ∈ s ↔ 0 ≤ e₂ w 0)
     (x₁ x₂ : s) (h : ContDiffOn ℝ m (e₂ ∘ e₁.symm) (e₁.symm ≫ₕ e₂).source) :
@@ -202,32 +198,3 @@ theorem contDiffOn_halfSpaceChart_trans_symm {m : ℕ∞ω}
 end HalfSpaceChart
 
 end OpenPartialHomeomorph
-
-namespace TauCeti
-
-/-- The continuous linear equivalence `(t, v) ↦ (t, v ∘ Fin.cast hk.symm)` of `ℝ × (Fin k → ℝ)`
-with `ℝⁿ⁺¹`, for `k = n`: the scalar `t` is the normal coordinate in slot `0`, and `v`, reindexed
-along `k = n` by `LinearEquiv.funCongrLeft`, gives the coordinates in slots `1, …, n`. It is the
-boundary-normal identification `TauCeti.euclideanHalfSpaceBoundaryNormalEquiv n` after this
-reindexing. -/
-noncomputable def euclideanFinConsEquiv {k n : ℕ} (hk : k = n) :
-    (ℝ × (Fin k → ℝ)) ≃L[ℝ] EuclideanSpace ℝ (Fin (n + 1)) :=
-  (ContinuousLinearEquiv.prodComm ℝ ℝ (Fin k → ℝ)).trans <|
-    (((LinearEquiv.funCongrLeft ℝ ℝ (finCongr hk.symm)).toContinuousLinearEquiv.trans
-      (EuclideanSpace.equiv (Fin n) ℝ).symm).prodCongr (ContinuousLinearEquiv.refl ℝ ℝ)).trans
-    (euclideanHalfSpaceBoundaryNormalEquiv n)
-
-/-- The zeroth coordinate of `TauCeti.euclideanFinConsEquiv` is the normal coordinate. -/
-@[simp]
-theorem euclideanFinConsEquiv_apply_zero {k n : ℕ} (hk : k = n) (p : ℝ × (Fin k → ℝ)) :
-    euclideanFinConsEquiv hk p 0 = p.1 := by
-  simp [euclideanFinConsEquiv]
-
-/-- The coordinates of `TauCeti.euclideanFinConsEquiv` in slots `1, …, n` are the tangential
-coordinates, reindexed along `k = n`. -/
-@[simp]
-theorem euclideanFinConsEquiv_apply_succ {k n : ℕ} (hk : k = n) (p : ℝ × (Fin k → ℝ))
-    (i : Fin n) : euclideanFinConsEquiv hk p i.succ = p.2 (Fin.cast hk.symm i) := by
-  simp [euclideanFinConsEquiv]
-
-end TauCeti
