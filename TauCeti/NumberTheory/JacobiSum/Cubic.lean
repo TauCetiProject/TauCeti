@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.CharP.Quotient
 public import Mathlib.NumberTheory.JacobiSum.Basic
 public import Mathlib.NumberTheory.MulChar.Lemmas
 
@@ -17,16 +16,16 @@ values in an integral domain, and let `ψ` be a primitive additive character of 
 `χ (-1) = 1`, since `-1` has order dividing `2`
 (Mathlib's `MulChar.val_neg_one_eq_one_of_odd_order`), and Mathlib's
 `gaussSum_pow_eq_prod_jacobiSum` specialises to `g(χ, ψ) ^ 3 = q * J(χ, χ)`. This
-identity expresses the Jacobi sum `J(χ, χ)` through Gauss sums, and is the input both for the
-congruence of `J(χ, χ)` modulo `3` and for the identification of `J(χ, χ)` with a primary prime of
-`ℤ[ω]` used in cubic reciprocity.
+identity expresses the Jacobi sum `J(χ, χ)` through Gauss sums, and is an input for the
+identification of `J(χ, χ)` with a primary prime of `ℤ[ω]` used in cubic reciprocity. Independently
+of Gauss sums, `J(χ, χ)` is congruent to `-1` modulo `3`.
 
 ## Main results
 
 * `TauCeti.gaussSum_pow_three_eq_card_mul_jacobiSum`: `g(χ, ψ) ^ 3 = q * J(χ, χ)`.
-* `TauCeti.three_dvd_jacobiSum_add_one`: `J(χ, χ) ≡ -1 (mod 3)`. Modulo `3` cubing is additive,
-  so `g(χ, ψ) ^ 3 ≡ g(χ ^ 3, ψ ^ 3) = g(1, ψ ^ 3) = -1`; and `q ≡ 1 (mod 3)`, since the order
-  of `χ` divides `q - 1`.
+* `TauCeti.three_dvd_jacobiSum_add_one`: `J(χ, χ) ≡ -1 (mod 3)`. This is Mathlib's
+  `exists_jacobiSum_eq_neg_one_add` for `n = 3`, which gives `J(χ, χ) ≡ -1 (mod (μ - 1) ^ 2)`
+  for a primitive cube root of unity `μ`, here a value of `χ`; and `(μ - 1) ^ 2 = -3 μ`.
 
 ## References
 
@@ -55,45 +54,25 @@ theorem gaussSum_pow_three_eq_card_mul_jacobiSum {χ : MulChar F R} (hχ : order
   simpa [hχ, h₁] using h
 
 /-- **The Jacobi sum of a cubic character is `-1` modulo `3`.** If `χ` is a multiplicative
-character of order `3` on a finite field `F`, with values in an integral domain `R` that also
-carries a primitive additive character of `F`, then `J(χ, χ) ≡ -1 (mod 3)` in `R`. -/
-theorem three_dvd_jacobiSum_add_one {χ : MulChar F R} (hχ : orderOf χ = 3) {ψ : AddChar F R}
-    (hψ : ψ.IsPrimitive) : (3 : R) ∣ jacobiSum χ χ + 1 := by
-  have h33 : ((3 : ℕ) : R) = 3 := Nat.cast_ofNat
-  by_cases h3 : IsUnit ((3 : ℕ) : R)
-  · exact (h33 ▸ h3).dvd
+character of order `3` on a finite field `F`, with values in an integral domain `R`, then
+`J(χ, χ) ≡ -1 (mod 3)` in `R`. -/
+theorem three_dvd_jacobiSum_add_one {χ : MulChar F R} (hχ : orderOf χ = 3) :
+    (3 : R) ∣ jacobiSum χ χ + 1 := by
   have : Fact (Nat.Prime 3) := ⟨Nat.prime_three⟩
-  have := CharP.quotient R 3 h3
-  let mk := Ideal.Quotient.mk (Ideal.span {((3 : ℕ) : R)})
-  have h3Q : (3 : R ⧸ Ideal.span {((3 : ℕ) : R)}) = 0 := by
-    rw [← map_ofNat mk 3, Ideal.Quotient.eq_zero_iff_dvd, h33]
-  -- The order of `χ` divides `q - 1`, so `q ≡ 1 (mod 3)` and `3` is invertible in `F`.
-  have hq : 3 ∣ Fintype.card F - 1 := hχ ▸ χ.orderOf_dvd_card_sub_one
-  have hqmk : mk (Fintype.card F : R) = 1 := by
-    obtain ⟨k, hk⟩ := hq
-    rw [map_natCast, ← Nat.sub_add_cancel (Fintype.card_pos (α := F)), hk]
-    push_cast
-    rw [h3Q, zero_mul, zero_add]
-  have h3F : ((3 : ℕ) : F) ≠ 0 := by
-    intro h
-    obtain ⟨k, hk⟩ := hq
-    have hk' : ((Fintype.card F - 1 : ℕ) : F) = 0 := by
-      rw [hk, Nat.cast_mul, h, zero_mul]
-    rw [Nat.cast_sub Fintype.card_pos, FiniteField.cast_card_eq_zero, Nat.cast_one, zero_sub,
-      neg_eq_zero] at hk'
-    exact one_ne_zero hk'
-  have hψ3 : ψ ^ 3 ≠ 1 := by
-    rw [AddChar.pow_mulShift]
-    exact hψ h3F
-  -- Cubing is additive modulo `3`, so `q * J(χ, χ) = g(χ, ψ) ^ 3 ≡ g(χ ^ 3, ψ ^ 3) = -1`.
-  have hfrob : mk (gaussSum χ ψ ^ 3) = mk (gaussSum (χ ^ 3) (ψ ^ 3)) := by
-    rw [gaussSum, gaussSum, map_pow, map_sum, map_sum, sum_pow_char]
-    refine Finset.sum_congr rfl fun a _ ↦ ?_
-    rw [← map_pow, mul_pow, MulChar.pow_apply' χ three_ne_zero, AddChar.pow_apply]
   have hχ3 : χ ^ 3 = 1 := hχ ▸ pow_orderOf_eq_one χ
-  rw [hχ3, gaussSum_one_left hψ3,
-    gaussSum_pow_three_eq_card_mul_jacobiSum hχ hψ, map_mul, hqmk, one_mul, map_neg,
-    map_one] at hfrob
-  rw [← h33, ← Ideal.Quotient.eq_zero_iff_dvd, map_add, hfrob, map_one, neg_add_cancel]
+  -- A value `μ = χ a ≠ 1` of `χ` is a primitive cube root of unity.
+  have hχ1 : χ ≠ 1 := by
+    rintro rfl
+    simp at hχ
+  obtain ⟨a, ha⟩ := MulChar.ne_one_iff.mp hχ1
+  have hμ : IsPrimitiveRoot (χ a) 3 := by
+    refine IsPrimitiveRoot.iff_orderOf.mpr (orderOf_eq_prime ?_ ha)
+    rw [← MulChar.pow_apply' χ three_ne_zero, hχ3, MulChar.one_apply_coe]
+  obtain ⟨z, -, hz⟩ := exists_jacobiSum_eq_neg_one_add (by norm_num) hχ3 hχ3
+    (hχ ▸ χ.orderOf_dvd_card_sub_one) hμ
+  -- `μ ^ 2 + μ + 1 = 0`, so `J(χ, χ) + 1 = z * (μ - 1) ^ 2 = -3 * z * μ`.
+  have h := hμ.geom_sum_eq_zero (by norm_num)
+  simp only [Finset.sum_range_succ, Finset.sum_range_zero] at h
+  exact ⟨-z * χ a, by rw [hz]; linear_combination z * h⟩
 
 end TauCeti
