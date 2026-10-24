@@ -214,6 +214,31 @@ theorem metric_comp (c : C^∞⟮IP', P'; IP, P⟯) (p' : P') :
   ext x v w
   simp
 
+/-- Restricting a family along the identity parameter map gives the family back. -/
+@[simp]
+theorem comp_id : g.comp (ContMDiffMap.id : C^∞⟮IP, P; IP, P⟯) = g := by
+  ext q v w
+  rw [comp_apply]
+  simp [ContMDiffMap.id]
+
+/-- Restricting a family along two parameter maps in turn is restricting along their
+composite. -/
+theorem comp_comp {EP'' : Type*} [NormedAddCommGroup EP''] [NormedSpace ℝ EP'']
+    {HP'' : Type*} [TopologicalSpace HP''] {IP'' : ModelWithCorners ℝ EP'' HP''}
+    {P'' : Type*} [TopologicalSpace P''] [ChartedSpace HP'' P'']
+    (c : C^∞⟮IP', P'; IP, P⟯) (c' : C^∞⟮IP'', P''; IP', P'⟯) :
+    (g.comp c).comp c' = g.comp (c.comp c') := by
+  ext q v w
+  simp
+
+/-- Restricting a constant family along a parameter map gives the constant family. -/
+@[simp]
+theorem const_comp (g₀ : ContMDiffNondegenerateMetric (I := I) (M := M))
+    (c : C^∞⟮IP', P'; IP, P⟯) :
+    (const (IP := IP) (P := P) g₀).comp c = const g₀ := by
+  ext q v w
+  simp
+
 end Comp
 
 section Signature
