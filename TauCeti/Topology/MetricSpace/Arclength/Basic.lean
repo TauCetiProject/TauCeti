@@ -41,7 +41,7 @@ open scoped ENNReal
 /-- The natural parameterization of a curve of locally bounded variation on `s` recovers the
 curve at the cumulative variation of each point of `s`. -/
 theorem LocallyBoundedVariationOn.naturalParameterization_variationOnFromTo {α E : Type*}
-    [LinearOrder α] [EMetricSpace E] {f : α → E} {s : Set α}
+    [LinearOrder α] [TopologicalSpace E] [WeakEMetricSpace E] {f : α → E} {s : Set α}
     (hf : LocallyBoundedVariationOn f s) {a b : α} (ha : a ∈ s) (hb : b ∈ s) :
     naturalParameterization f s a (variationOnFromTo f s a b) = f b :=
   edist_eq_zero.mp (edist_naturalParameterization_eq_zero hf ha hb)
@@ -54,7 +54,7 @@ theorem LocallyBoundedVariationOn.image_naturalParameterization {α E : Type*}
     (hf : LocallyBoundedVariationOn f s) {a : α} (ha : a ∈ s) :
     naturalParameterization f s a '' (variationOnFromTo f s a '' s) = f '' s := by
   rw [image_image]
-  exact image_congr fun x hx ↦ edist_eq_zero.mp (edist_naturalParameterization_eq_zero hf ha hx)
+  exact image_congr fun x hx ↦ hf.naturalParameterization_variationOnFromTo ha hx
 
 namespace BoundedVariationOn
 

@@ -62,6 +62,8 @@ The main results are:
 
 The comparison with absolutely continuous curves uses the absolute continuity of cumulative
 variation and the reparametrization formula `AbsolutelyContinuousOnInterval.integral_oneForm_comp`.
+For a 1-form continuous on the trace, the integrand along the natural parameterization is
+integrable on the length interval (`TauCeti.intervalIntegrable_oneForm_naturalParameterization`).
 
 ## References
 
@@ -282,7 +284,7 @@ theorem rectifiableCurveIntegral_comp_of_antitoneOn (hcont : ContinuousOn γ (Ic
 
 /-- Along a continuous curve, the integrand of the geometric integral of a 1-form continuous on
 the trace is integrable on the length interval. -/
-private theorem intervalIntegrable_oneForm_naturalParameterization [FiniteDimensional ℝ E]
+theorem intervalIntegrable_oneForm_naturalParameterization [FiniteDimensional ℝ E]
     (hcont : ContinuousOn γ (Icc a b)) (hω : ContinuousOn ω (γ '' Icc a b)) :
     IntervalIntegrable (fun u ↦ ω (naturalParameterization γ (Icc a b) a u)
       (deriv (naturalParameterization γ (Icc a b) a) u)) volume 0
