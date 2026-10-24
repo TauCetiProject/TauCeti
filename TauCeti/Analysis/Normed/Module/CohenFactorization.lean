@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Normed.Algebra.UnitizationL1
 public import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
-public import Mathlib.Analysis.Normed.Ring.Units
 public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.Analysis.SpecificLimits.Normed
 public import TauCeti.Analysis.Normed.Ring.Units
@@ -261,9 +260,8 @@ private lemma exists_step (L : A →L[𝕜] E →L[𝕜] E) (hL : ∀ a b z, L (
       _ = 4 * M := by ring
   refine ⟨e, heC, ha', hM'', ?_⟩
   /- The increment `a'⁻¹ · x - a⁻¹ · x` is `a'⁻¹ · (τ s (y - e · y))`. -/
-  have hinv : Ring.inverse a' - Ring.inverse a = Ring.inverse a' * (a - a') * Ring.inverse a := by
-    rw [mul_sub, sub_mul, mul_assoc, Ring.mul_inverse_cancel _ hu, mul_one,
-      Ring.inverse_mul_cancel _ ha', one_mul]
+  have hinv : Ring.inverse a' - Ring.inverse a = Ring.inverse a' * (a - a') * Ring.inverse a :=
+    Ring.inverse_sub_inverse ⟨fun _ ↦ hu, fun _ ↦ ha'⟩
   have hdiff : a - a' = toLp 1 ((τ * s) • (1 - (e : Unitization 𝕜 A))) := by
     simp only [a', a, hι, ← map_sub]
     congr 1
@@ -342,8 +340,9 @@ theorem exists_apply_eq_of_mem_topologicalClosure_span (L : A →L[𝕜] E →L[
   set τ : 𝕜 := (t : 𝕜)
   have hτ : ‖τ‖ = t := by simp [τ, ht0.le]
   have hτ' : ‖1 - τ‖ = 1 - t := by
-    rw [show (1 : 𝕜) - τ = ((1 - t : ℝ) : 𝕜) by simp [τ], RCLike.norm_ofReal,
-      abs_of_pos (by linarith)]
+    simp only [τ]
+    norm_cast
+    exact abs_of_pos (by linarith)
   have hc : ∀ n : ℕ, ‖τ * (1 - τ) ^ n‖ = t * (1 - t) ^ n := fun n ↦ by
     rw [norm_mul, norm_pow, hτ, hτ']
   have hc1 : ∀ n : ℕ, t * (1 - t) ^ n ≤ 1 := fun n ↦ by
