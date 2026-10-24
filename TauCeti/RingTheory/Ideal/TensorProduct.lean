@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.TensorProduct.Quotient
+public import TauCeti.Algebra.Module.Submodule.LinearMap
 public import TauCeti.LinearAlgebra.TensorProduct.Kernel
 public import TauCeti.LinearAlgebra.TensorProduct.Submodule
 public import TauCeti.LinearAlgebra.TensorProduct.Torsion

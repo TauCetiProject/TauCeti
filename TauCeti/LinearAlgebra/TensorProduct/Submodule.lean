@@ -52,12 +52,6 @@ section Inclusion
 variable {R M N : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
   [AddCommMonoid N] [Module R N]
 
-/-- Composing two inclusions of submodules gives the inclusion along the composite inequality. -/
-@[simp]
-theorem inclusion_comp_inclusion {p q r : Submodule R N} (h : p ≤ q) (h' : q ≤ r) :
-    inclusion h' ∘ₗ inclusion h = inclusion (h.trans h') :=
-  LinearMap.ext fun _ ↦ Subtype.ext rfl
-
 /-- The images of `p ⊗[R] M` and `q ⊗[R] M` span `(p ⊔ q) ⊗[R] M`. -/
 theorem exists_eq_rTensor_inclusion_add (p q : Submodule R N) (t : ↥(p ⊔ q) ⊗[R] M) :
     ∃ a b, t = (inclusion le_sup_left).rTensor M a + (inclusion le_sup_right).rTensor M b := by
