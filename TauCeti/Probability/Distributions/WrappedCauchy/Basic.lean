@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Fourier.AddCircle
-public import TauCeti.Probability.Distributions.Cauchy.Continuity
+public import TauCeti.Probability.Distributions.Cauchy.Affine
 import TauCeti.MeasureTheory.Measure.Measurability
 import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Map
 
