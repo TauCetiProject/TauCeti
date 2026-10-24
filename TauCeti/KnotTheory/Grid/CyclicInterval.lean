@@ -105,8 +105,6 @@ directions before taking products.
   the complement of `α` and of the open arc from `β` to `α`.
 * `TauCeti.Grid.ite_mem_cIco_finRotate_sub_one_add_two_mul_eq`: the crossing count for a shifted
   arc after cutting a half-open arc at an interior point.
-* `TauCeti.Grid.notMem_cIoo_of_mem_insert_cIco`: `s` does not lie strictly between a point of the
-  closed arc from `s` to `t` and a point of the closed arc from `t` to `s`.
 * `TauCeti.Grid.notMem_cIco_of_cIco_union`: a point missing both halves of a half-open arc
   cut at an interior point misses the whole arc.
 * `TauCeti.Grid.mem_cIco_of_mem_insert_cIco`, `TauCeti.Grid.notMem_cIoo_of_mem_insert_cIco`,
@@ -907,17 +905,6 @@ theorem ite_mem_cIco_finRotate_sub_one_add_two_mul_eq {B T s α β : Fin n} (hs 
     split_ifs <;> omega
   rw [hT]
   omega
-
-/-- If `α` lies on the arc from `t` up to `s`, both ends included, and `β` lies on the arc from
-`s` up to `t`, both ends included, then going up from `s` first `β` is reached, at the latest at
-`t`, and then `α`, at the latest back at `s`. So `s` does not lie strictly between `β` and `α`. On
-a grid, these are square rows in the two bigons below and above the turn rows `s` and `t` of a
-column commutation. -/
-theorem notMem_cIoo_of_mem_insert_cIco {s t α β : Fin n}
-    (hα : α ∈ insert s (cIco t s)) (hβ : β ∈ insert t (cIco s t)) :
-    s ∉ cIoo β α := by
-  simp only [Finset.mem_insert, mem_cIco, mem_cIoo, ne_eq, ← Fin.val_inj] at hα hβ ⊢
-  split_ifs at hα hβ ⊢ <;> omega
 
 /-- On a cycle of length at least two, no point is fixed by the cyclic successor `finRotate n`. -/
 theorem finRotate_ne_self (hn : 1 < n) (a : Fin n) : finRotate n a ≠ a := by

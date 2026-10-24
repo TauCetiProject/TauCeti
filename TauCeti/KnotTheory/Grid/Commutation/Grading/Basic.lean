@@ -303,8 +303,12 @@ the bigon below the turn and those of the next column in the bigon above it. -/
 @[simp]
 theorem ColumnCommutationData.commutationBidegree_eq_zero (C : ColumnCommutationData G) :
     G.commutationBidegree C = 0 := by
-  have hO := Grid.notMem_cIoo_of_mem_insert_cIco C.O_column_below C.O_next_above
-  have hX := Grid.notMem_cIoo_of_mem_insert_cIco C.X_column_below C.X_next_above
+  have hO : C.turnRow ∉ Grid.cIoo (G.O (finRotate n C.column)) (G.O C.column) := fun h =>
+    Grid.notMem_cIoo_of_mem_insert_cIco C.O_column_below C.O_next_above
+      (Grid.mem_cIoo_cyclic_left h)
+  have hX : C.turnRow ∉ Grid.cIoo (G.X (finRotate n C.column)) (G.X C.column) := fun h =>
+    Grid.notMem_cIoo_of_mem_insert_cIco C.X_column_below C.X_next_above
+      (Grid.mem_cIoo_cyclic_left h)
   simp only [commutationBidegree, hO, hX, ite_false, add_zero]
 
 /-! ### The gradings across a pentagon -/
