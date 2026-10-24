@@ -169,15 +169,6 @@ private theorem IsIntegral.two_mul_norm_zero_add_sq_eq (hL : IsIntegral L) {v : 
   obtain ⟨m, hm⟩ := isIntegral_iff.mp hL v hv v hv
   exact ⟨m, by rw [zero_add, ← real_inner_self_eq_norm_sq, hm]⟩
 
-/-- For an even lattice `L`, `γ ∈ L^∨` and `N ‖γ‖² = 2 n`, the squared norms on the coset satisfy
-`N ‖γ + v‖² ∈ 2n + 2Nℤ`. -/
-private theorem IsEven.natCast_mul_norm_add_sq_eq (hL : IsEven L) (hγ : γ ∈ dual L) {N : ℕ}
-    (hNγ : ∃ n : ℤ, N * ‖γ‖ ^ 2 = 2 * n) {v : E} (hv : v ∈ L) :
-    ∃ m : ℤ, (N : ℝ) * ‖γ + v‖ ^ 2 = 2 * m := by
-  obtain ⟨n, hn⟩ := hNγ
-  obtain ⟨j, hj⟩ := hL.exists_norm_add_sq_sub_norm_sq_eq hγ hv
-  exact ⟨n + N * j, by push_cast; linear_combination (N : ℝ) * hj + hn⟩
-
 variable [FiniteDimensional ℝ E] [DiscreteTopology L]
 
 /-! ### Integral lattices -/

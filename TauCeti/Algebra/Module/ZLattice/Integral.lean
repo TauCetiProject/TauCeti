@@ -52,6 +52,8 @@ unimodular lattice has a theta series of level one.
   `ZLattice.IsIntegral.exists_norm_add_sq_sub_norm_sq_eq`: for `γ ∈ L^∨` and `v ∈ L`,
   `‖γ + v‖² - ‖γ‖²` lies in `2ℤ` when `L` is even and in `ℤ` when `L` is integral, so `‖γ‖² / 2`
   is well defined modulo `ℤ` on `L^∨ / L` in the first case.
+* `ZLattice.IsEven.natCast_mul_norm_add_sq_eq`: for even `L`, `γ ∈ L^∨` and `N ‖γ‖² ∈ 2ℤ`,
+  `N ‖γ + v‖² ∈ 2ℤ` for every `v ∈ L`.
 -/
 
 public section
@@ -164,6 +166,15 @@ theorem IsEven.exists_norm_add_sq_sub_norm_sq_eq {L : Submodule ℤ E} (hL : IsE
   refine ⟨a + b, ?_⟩
   push_cast
   linarith [norm_add_sq_real γ v]
+
+/-- For an even lattice `L`, `γ ∈ L^∨` and `N ‖γ‖² = 2 n`, the squared norms on the coset satisfy
+`N ‖γ + v‖² ∈ 2n + 2Nℤ`; in particular `N ‖γ + v‖² ∈ 2ℤ` for every `v ∈ L`. -/
+theorem IsEven.natCast_mul_norm_add_sq_eq {L : Submodule ℤ E} (hL : IsEven L) {γ : E}
+    (hγ : γ ∈ dual L) {N : ℕ} (hNγ : ∃ n : ℤ, N * ‖γ‖ ^ 2 = 2 * n) {v : E} (hv : v ∈ L) :
+    ∃ m : ℤ, (N : ℝ) * ‖γ + v‖ ^ 2 = 2 * m := by
+  obtain ⟨n, hn⟩ := hNγ
+  obtain ⟨j, hj⟩ := hL.exists_norm_add_sq_sub_norm_sq_eq hγ hv
+  exact ⟨n + N * j, by push_cast; linear_combination (N : ℝ) * hj + hn⟩
 
 /-! ### Unimodular lattices -/
 
