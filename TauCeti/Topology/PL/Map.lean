@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Convex.Between
 public import Mathlib.Topology.Algebra.Ring.Real
 public import Mathlib.Topology.ContinuousOn
 public import TauCeti.Analysis.Convex.Polyhedron.Basic
@@ -65,6 +66,8 @@ such a family of affine pieces.
   affine on every subset of its domain.
 * `TauCeti.IsPLOn.exists_eqOn_Icc`: a piecewise-linear map of the line is affine on each side of
   every point of the interior of its domain.
+* `TauCeti.IsPLOn.exists_image_Icc_eq_affineSegment`: near each point, an injective
+  piecewise-linear curve is two segments from the image of the point, meeting only there.
 * `TauCeti.isPLOn_abs` and `TauCeti.not_exists_continuousAffineMap_eq_abs`: the absolute value is
   piecewise linear and is not affine, so the predicate is strictly weaker than affineness.
 
@@ -307,8 +310,9 @@ theorem isPLOn_of_locallyFinite {ι : Type*} {C : ι → Set E} {A : ι → (E �
 The two-piece criterion on `ℝ`, its local converse, and the absolute value as a piecewise-linear
 map that is not affine. The criterion is what the concrete examples of the PL groupoid are built
 from; the converse, that a piecewise-linear map of the line has two affine pieces at each point, is
-the local picture of a piecewise-linear curve; and the absolute value pins down that
-`TauCeti.IsPLOn` is strictly weaker than affineness rather than a roundabout way of saying it. -/
+the local picture of a piecewise-linear curve, which for an injective curve is two segments meeting
+only at the point; and the absolute value pins down that `TauCeti.IsPLOn` is strictly weaker than
+affineness rather than a roundabout way of saying it. -/
 
 /-- A map of `ℝ` that agrees with a continuous affine map on each of the two closed half-lines is
 piecewise linear. -/
@@ -376,6 +380,51 @@ theorem IsPLOn.exists_eqOn_Icc {g : ℝ → F} {s : Set ℝ} {t : ℝ} (hg : IsP
   · refine (hcell htj hb).mono fun y hy => ?_
     rw [uIcc_of_le (le_of_lt htb)]
     exact ⟨hy.1, by linarith [hy.2, min_le_right (t - a) (b - t)]⟩
+
+/-- A map of `ℝ` that agrees with a continuous affine map on `[a, b]` sends `[a, b]` onto the
+segment between the images of its endpoints. -/
+theorem _root_.Set.EqOn.image_Icc_eq_segment {g : ℝ → F} {A : ℝ →ᴬ[ℝ] F} {a b : ℝ}
+    (hA : EqOn g A (Icc a b)) (hab : a ≤ b) : g '' Icc a b = segment ℝ (g a) (g b) := by
+  rw [hA.image_eq, ← segment_eq_Icc hab, hA ⟨le_rfl, hab⟩, hA ⟨hab, le_rfl⟩]
+  exact image_segment ℝ (A : ℝ →ᵃ[ℝ] F) _ _
+
+/-- **An injective piecewise-linear curve is two segments near each point.** If `g` is piecewise
+linear and injective near `t`, then for some `ε > 0` it maps `[t - ε, t]` and `[t, t + ε]` onto
+two nondegenerate segments from `g t` meeting only at `g t`. -/
+theorem IsPLOn.exists_image_Icc_eq_affineSegment {g : ℝ → F} {s D : Set ℝ} {t : ℝ}
+    (hg : IsPLOn g s) (hs : s ∈ 𝓝 t) (hD : D ∈ 𝓝 t) (hinj : InjOn g D) :
+    ∃ ε > 0, Icc (t - ε) (t + ε) ⊆ D ∧
+      g '' Icc (t - ε) t = affineSegment ℝ (g t) (g (t - ε)) ∧
+      g '' Icc t (t + ε) = affineSegment ℝ (g t) (g (t + ε)) ∧
+      g (t - ε) ≠ g t ∧ g (t + ε) ≠ g t ∧
+      affineSegment ℝ (g t) (g (t - ε)) ∩ affineSegment ℝ (g t) (g (t + ε)) = {g t} := by
+  obtain ⟨ε₁, hε₁, A, B, hA, hB⟩ := hg.exists_eqOn_Icc hs
+  obtain ⟨r, hr, hrD⟩ := Metric.mem_nhds_iff.1 hD
+  set ε := min ε₁ (r / 2)
+  have hε : 0 < ε := lt_min hε₁ (half_pos hr)
+  have hεε₁ : ε ≤ ε₁ := min_le_left _ _
+  have hεr : ε ≤ r / 2 := min_le_right _ _
+  have hmem {u : ℝ} (h₁ : t - ε ≤ u) (h₂ : u ≤ t + ε) : u ∈ D :=
+    hrD <| by rw [Real.ball_eq_Ioo]; exact ⟨by linarith, by linarith⟩
+  have himA : g '' Icc (t - ε) t = affineSegment ℝ (g t) (g (t - ε)) := by
+    rw [(hA.mono (Icc_subset_Icc (by linarith) le_rfl)).image_Icc_eq_segment (by linarith),
+      affineSegment_eq_segment, segment_symm]
+  have himB : g '' Icc t (t + ε) = affineSegment ℝ (g t) (g (t + ε)) := by
+    rw [(hB.mono (Icc_subset_Icc le_rfl (by linarith))).image_Icc_eq_segment (by linarith),
+      affineSegment_eq_segment]
+  refine ⟨ε, hε, fun u hu => hmem hu.1 hu.2, himA, himB,
+    hinj.ne (hmem le_rfl (by linarith)) (hmem (by linarith) (by linarith)) (by linarith),
+    hinj.ne (hmem (by linarith) le_rfl) (hmem (by linarith) (by linarith)) (by linarith),
+    Subset.antisymm ?_ (singleton_subset_iff.2 ⟨left_mem_affineSegment _ _ _,
+      left_mem_affineSegment _ _ _⟩)⟩
+  -- A common point is the image of a parameter on both sides of `t`, hence of `t` itself.
+  rintro y ⟨hy₁, hy₂⟩
+  rw [← himA] at hy₁
+  rw [← himB] at hy₂
+  obtain ⟨u, hu, rfl⟩ := hy₁
+  obtain ⟨v, hv, hvu⟩ := hy₂
+  have huv := hinj (hmem (by linarith [hv.1]) hv.2) (hmem hu.1 (by linarith [hu.2])) hvu
+  rw [mem_singleton_iff, ← huv, le_antisymm (huv ▸ hu.2) hv.1]
 
 /-- A map that fails to send a midpoint to the corresponding midpoint agrees with no continuous
 affine map. This is the certificate used below to show that a piecewise-linear map need not be

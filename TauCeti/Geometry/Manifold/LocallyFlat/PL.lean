@@ -22,11 +22,12 @@ embedding `f : N → M` of a manifold modelled on `ℝ` into one modelled on a r
 convex space `V ≃L[ℝ] ℝ × F'`, piecewise linear when read in charts, is locally flat with
 complementary model `F'`. Near a parameter `t` the chart reading `g` of `f` is affine on each side
 of `t` (`TauCeti.IsPLOn.exists_eqOn_Icc`), and injective, so near `g t` the image is two segments
-from `g t` meeting only there, which are flat at `g t`
-(`TauCeti.exists_isSliceChart_of_inter_eq_union_affineSegment`). Since `f` is an embedding, no
-other part of the curve comes near the point. For knots, with `N` the circle `AddCircle p` and `M`
-a piecewise-linear `3`-manifold such as `ℝ³`, this says that piecewise-linear knots are locally
-flat, generalizing the polygonal case `TauCeti.SimplePolygon.isLocallyFlat_realize`.
+from `g t` meeting only there (`TauCeti.IsPLOn.exists_image_Icc_eq_affineSegment`), which are flat
+at `g t` (`TauCeti.exists_isSliceChart_of_inter_eq_union_affineSegment`). Since `f` is an
+embedding, no other part of the curve comes near the point. For knots, with `N` the circle
+`AddCircle p` and `M` a piecewise-linear `3`-manifold such as `ℝ³`, this says that
+piecewise-linear knots are locally flat, generalizing the polygonal case
+`TauCeti.SimplePolygon.isLocallyFlat_realize`.
 
 The restriction to curves is essential. A piecewise-linear embedding of a manifold of dimension at
 least two need not be locally flat in codimension two: the cone on a knotted circle in `S³` is a
@@ -89,47 +90,6 @@ open Set Topology
 variable {N M V F' : Type*} [TopologicalSpace N] [ChartedSpace ℝ N]
   [AddCommGroup V] [Module ℝ V] [TopologicalSpace V]
   [TopologicalSpace M] [AddCommGroup F'] [Module ℝ F'] [TopologicalSpace F']
-
-/-- Near a parameter `t`, a curve `g` that is piecewise linear near `t` and injective near `t`
-maps `[t - ε, t]` and `[t, t + ε]` onto two segments from `g t` meeting only at `g t`. -/
-private theorem IsPLOn.exists_image_Icc_eq_affineSegment {g : ℝ → V} {s D : Set ℝ} {t : ℝ}
-    (hg : IsPLOn g s) (hs : s ∈ 𝓝 t) (hD : D ∈ 𝓝 t) (hinj : InjOn g D) :
-    ∃ ε > 0, Icc (t - ε) (t + ε) ⊆ D ∧
-      g '' Icc (t - ε) t = affineSegment ℝ (g t) (g (t - ε)) ∧
-      g '' Icc t (t + ε) = affineSegment ℝ (g t) (g (t + ε)) ∧
-      g (t - ε) ≠ g t ∧ g (t + ε) ≠ g t ∧
-      affineSegment ℝ (g t) (g (t - ε)) ∩ affineSegment ℝ (g t) (g (t + ε)) = {g t} := by
-  obtain ⟨ε₁, hε₁, A, B, hA, hB⟩ := hg.exists_eqOn_Icc hs
-  obtain ⟨r, hr, hrD⟩ := Metric.mem_nhds_iff.1 hD
-  set ε := min ε₁ (r / 2)
-  have hε : 0 < ε := lt_min hε₁ (half_pos hr)
-  have hεε₁ : ε ≤ ε₁ := min_le_left _ _
-  have hεr : ε ≤ r / 2 := min_le_right _ _
-  have hmem {u : ℝ} (h₁ : t - ε ≤ u) (h₂ : u ≤ t + ε) : u ∈ D :=
-    hrD <| by rw [Real.ball_eq_Ioo]; exact ⟨by linarith, by linarith⟩
-  have hA : EqOn g A (Icc (t - ε) t) := hA.mono (Icc_subset_Icc (by linarith) le_rfl)
-  have hB : EqOn g B (Icc t (t + ε)) := hB.mono (Icc_subset_Icc le_rfl (by linarith))
-  have himA : g '' Icc (t - ε) t = affineSegment ℝ (g t) (g (t - ε)) := by
-    rw [hA.image_eq, ← segment_eq_Icc (by linarith), affineSegment_eq_segment, segment_symm,
-      hA ⟨le_rfl, by linarith⟩, hA ⟨by linarith, le_rfl⟩]
-    exact image_segment ℝ (A : ℝ →ᵃ[ℝ] V) _ _
-  have himB : g '' Icc t (t + ε) = affineSegment ℝ (g t) (g (t + ε)) := by
-    rw [hB.image_eq, ← segment_eq_Icc (by linarith), affineSegment_eq_segment,
-      hB ⟨le_rfl, by linarith⟩, hB ⟨by linarith, le_rfl⟩]
-    exact image_segment ℝ (B : ℝ →ᵃ[ℝ] V) _ _
-  refine ⟨ε, hε, fun u hu => hmem hu.1 hu.2, himA, himB,
-    hinj.ne (hmem le_rfl (by linarith)) (hmem (by linarith) (by linarith)) (by linarith),
-    hinj.ne (hmem (by linarith) le_rfl) (hmem (by linarith) (by linarith)) (by linarith),
-    Subset.antisymm ?_ (singleton_subset_iff.2 ⟨left_mem_affineSegment _ _ _,
-      left_mem_affineSegment _ _ _⟩)⟩
-  -- A common point is the image of a parameter on both sides of `t`, hence of `t` itself.
-  rintro y ⟨hy₁, hy₂⟩
-  rw [← himA] at hy₁
-  rw [← himB] at hy₂
-  obtain ⟨u, hu, rfl⟩ := hy₁
-  obtain ⟨v, hv, hvu⟩ := hy₂
-  have huv := hinj (hmem (by linarith [hv.1]) hv.2) (hmem hu.1 (by linarith [hu.2])) hvu
-  rw [mem_singleton_iff, ← huv, le_antisymm (huv ▸ hu.2) hv.1]
 
 variable [IsTopologicalAddGroup V] [ContinuousSMul ℝ V] [LocallyConvexSpace ℝ V] [T2Space V]
   [ChartedSpace V M]
