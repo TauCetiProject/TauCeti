@@ -52,8 +52,8 @@ one; a nonzero constant of norm less than one is a unit of `T` but not of `T°`.
   reduction is a unit is a unit of `T°`.
 * `TauCeti.MvPowerSeries.isUnit_iff_norm_constantCoeff_eq_one_and_norm_coeff_lt_one`: the
   coefficient criterion for the units of `T°`.
-* `TauCeti.MvPowerSeries.isUnit_algebraMap_and_not_isUnit_of_norm_lt_one`: a nonzero constant
-  of norm less than one is a unit of `T` but not of `T°`.
+* `TauCeti.MvPowerSeries.not_isUnit_algebraMap_of_norm_lt_one`: a constant of norm less than
+  one is not a unit of `T°`, although a nonzero one is a unit of `T`.
 * `TauCeti.MvPowerSeries.powerBoundedSubring_eq_unitClosedBall`: the power-bounded elements of
   `T` form its Gauss unit ball.
 
@@ -309,13 +309,13 @@ end Reduction
 
 section Units
 
-/-- **A unit of `T` that is not a unit of `T°`.** A nonzero constant of norm less than one is a
-unit of the Tate algebra `T`, but not a unit of its Gauss unit ball `T°`. -/
-theorem isUnit_algebraMap_and_not_isUnit_of_norm_lt_one {a : K} (ha0 : a ≠ 0) (ha : ‖a‖ < 1)
-    (h : algebraMap K T a ∈ T°) :
-    IsUnit (algebraMap K T a) ∧ ¬IsUnit (⟨algebraMap K T a, h⟩ : T°) :=
-  ⟨(isUnit_iff_ne_zero.mpr ha0).map _, fun hu ↦ ha.ne <|
-    (norm_algebraMap_isRestrictedSubring a).symm.trans (isUnit_unitClosedBall_iff.mp hu).2⟩
+/-- **Small constants are not units of `T°`.** A constant of norm less than one is not a unit of
+the Gauss unit ball `T°`. When it is nonzero it is nevertheless a unit of the Tate algebra `T`,
+as the image of a unit of `K` under `algebraMap`. -/
+theorem not_isUnit_algebraMap_of_norm_lt_one {a : K} (ha : ‖a‖ < 1) :
+    ¬IsUnit (⟨algebraMap K T a, Subring.mem_unitClosedBall.mpr
+      ((norm_algebraMap_isRestrictedSubring a).trans_le ha.le)⟩ : T°) := fun hu ↦ ha.ne <|
+  (norm_algebraMap_isRestrictedSubring a).symm.trans (isUnit_unitClosedBall_iff.mp hu).2
 
 variable [CompleteSpace K]
 
@@ -342,7 +342,7 @@ coefficient has norm less than one, that is, when its reduction is a nonzero con
 series is in particular a unit of `T` of norm one; conversely, by
 `TauCeti.isUnit_unitClosedBall_iff`, a unit of `T` lies in the units of `T°` only if it has
 norm one, so a nonzero constant of norm less than one is a unit of `T` but not of `T°`
-(`isUnit_algebraMap_and_not_isUnit_of_norm_lt_one`). -/
+(`not_isUnit_algebraMap_of_norm_lt_one`). -/
 theorem isUnit_iff_norm_constantCoeff_eq_one_and_norm_coeff_lt_one {f : T°} :
     IsUnit f ↔ ‖constantCoeff ((f : T) : MvPowerSeries σ K)‖ = 1 ∧
       ∀ t ≠ 0, ‖coeff t ((f : T) : MvPowerSeries σ K)‖ < 1 := by
