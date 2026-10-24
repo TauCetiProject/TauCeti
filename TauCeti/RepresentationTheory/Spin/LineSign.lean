@@ -32,12 +32,11 @@ On the whole Clifford algebra it is visible in odd dimension. There the volume e
 spanning orthogonal list is central, odd, and squares to a scalar `c`, so whenever `W` is finite
 free it acts on `S` by a scalar `λ` with `λ² = c` under `c_P`, and by `-λ` under `c_{P⁻}`.
 
-Over a finite-dimensional field of characteristic not two, `c` is nonzero, so `λ ≠ -λ` and the two
-Fock actions are the two distinct characters of the centre `F ⊕ F ω`. Each of them alone kills one
-of the two central idempotents
-`(1 ± λ⁻¹ ω) / 2`, so neither is faithful, but together they are: the combined action
-`x ↦ (c_P(x), c_{P⁻}(x))` is an algebra isomorphism from the Clifford algebra onto
-`End S × End S`. This is the operator form of the odd structure theorem
+For finite-dimensional `V` over a field of characteristic not two, `c` is nonzero, so `λ ≠ -λ` and
+the two Fock actions are the two distinct characters of the centre `F ⊕ F ω`. Each of them alone
+kills one of the two central idempotents `(1 ± λ⁻¹ ω) / 2`, so neither is faithful, but together
+they are: the combined action `x ↦ (c_P(x), c_{P⁻}(x))` is an algebra isomorphism from the
+Clifford algebra onto `End S × End S`. This is the operator form of the odd structure theorem
 `CliffordAlgebra.nonempty_algEquiv_matrix_prod_of_finrank_eq_two_mul_add_one`, with the two blocks
 labelled by the two signs of the line coordinate.
 
@@ -47,8 +46,8 @@ labelled by the two signs of the line coordinate.
   negated.
 * `TauCeti.SpinPolarizationData.spinRepEquivNegLineCoordinate`: the parity operator, as an
   equivalence between the Spin representations of `P` and `P⁻`.
-* `TauCeti.SpinPolarizationData.cliffordEquivEndProd`: in odd dimension over a finite-dimensional
-  field of characteristic not two, the combined Fock action of `P` and `P⁻`, as an algebra
+* `TauCeti.SpinPolarizationData.cliffordEquivEndProd`: in odd dimension, for finite-dimensional `V`
+  over a field of characteristic not two, the combined Fock action of `P` and `P⁻`, as an algebra
   isomorphism `CliffordAlgebra Q ≃ₐ[F] End S × End S`.
 
 ## Main results
@@ -60,8 +59,8 @@ labelled by the two signs of the line coordinate.
 * `TauCeti.SpinPolarizationData.exists_spinAction_volume_eq_algebraMap`: the volume element acts
   by opposite scalars `λ` and `-λ` under the two Fock actions, with `λ² = c`, when `W` is finite
   free.
-* `TauCeti.SpinPolarizationData.spinAction_prod_bijective`: in odd dimension over a
-  finite-dimensional field of characteristic not two, the combined Fock action is bijective, so the
+* `TauCeti.SpinPolarizationData.spinAction_prod_bijective`: in odd dimension, for finite-dimensional
+  `V` over a field of characteristic not two, the combined Fock action is bijective, so the
   direct sum of the two spinor modules is faithful.
 * `TauCeti.SpinPolarizationData.not_injective_spinAction_of_odd_finrank`: under the same
   hypotheses, a single Fock action is not faithful.
@@ -111,9 +110,7 @@ theorem negLineCoordinate_negLineCoordinate : P.negLineCoordinate.negLineCoordin
   simp only [negLineCoordinate, neg_neg]
 
 /-- **The generators under the opposite line coordinate.** A vector acts through `P⁻` by minus the
-conjugate of its action through `P` by the parity operator `J = involute` of `⋀·W`: the parity
-operator anticommutes with creation and annihilation, which `P⁻` keeps, and commutes with itself,
-which `P⁻` negates. -/
+conjugate of its action through `P` by the parity operator `J = involute` of `⋀·W`. -/
 theorem spinAction_negLineCoordinate_ι_apply (v : V) (s : ExteriorAlgebra K P.W) :
     spinAction Q P.negLineCoordinate (ι Q v) s =
       -involute (spinAction Q P (ι Q v) (involute s)) := by
