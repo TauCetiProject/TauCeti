@@ -38,10 +38,18 @@ def matrix (𝕜 : Type*) [RCLike 𝕜] : Matrix (Fin 5) (Fin 5) 𝕜 :=
 
 variable {𝕜 : Type*} [RCLike 𝕜]
 
+/-- The entries of the five-dimensional example matrix. -/
+theorem matrix_def : matrix 𝕜 =
+    !![3, 8, 0, -10, 2;
+       -3, 4, 1, 0, -7;
+       3, -4, 1, 0, 7;
+       3, 4, 0, 15, -3;
+       3, -4, 0, -5, -13] := (rfl)
+
 /-- The squared column lengths are `45`, `128`, `2`, `350`, and `280`; distinct columns
 are orthogonal. -/
 @[simp]
-theorem conjTranspose_mul :
+theorem conjTranspose_mul_self :
     (matrix 𝕜)ᴴ * matrix 𝕜 = Matrix.diagonal ![45, 128, 2, 350, 280] := by
   ext i j
   fin_cases i <;> fin_cases j <;>
@@ -52,7 +60,7 @@ theorem conjTranspose_mul :
 theorem norm_toEuclideanCLM_sq :
     ‖Matrix.toEuclideanCLM (𝕜 := 𝕜) (matrix 𝕜)‖ ^ 2 = 350 := by
   rw [Matrix.l2_opNorm_toEuclideanCLM, pow_two,
-    ← Matrix.l2_opNorm_conjTranspose_mul_self, conjTranspose_mul, Matrix.l2_opNorm_diagonal]
+    ← Matrix.l2_opNorm_conjTranspose_mul_self, conjTranspose_mul_self, Matrix.l2_opNorm_diagonal]
   apply le_antisymm
   · refine (pi_norm_le_iff_of_nonneg (by norm_num)).2 fun i ↦ ?_
     fin_cases i <;> norm_num
@@ -66,20 +74,20 @@ theorem norm_toEuclideanCLM :
 
 /-- The fourth coordinate vector is sent to the fourth column. Indices are zero-based. -/
 @[simp]
-theorem toEuclideanLin_single_three :
-    Matrix.toEuclideanLin (matrix 𝕜) (EuclideanSpace.single 3 1) =
+theorem toEuclideanCLM_single_three :
+    Matrix.toEuclideanCLM (𝕜 := 𝕜) (matrix 𝕜) (EuclideanSpace.single 3 1) =
       WithLp.toLp 2 ![-10, 0, 0, 15, -5] := by
+  apply WithLp.ofLp_injective 2
+  simp only [Matrix.ofLp_toEuclideanCLM, EuclideanSpace.single, PiLp.ofLp_single,
+    Matrix.mulVec_single_one]
   ext i
-  change (matrix 𝕜 *ᵥ Pi.single 3 1) i = ![-10, 0, 0, 15, -5] i
-  fin_cases i <;>
-    norm_num [Matrix.mulVec, dotProduct, matrix, Fin.sum_univ_succ, Pi.single_apply]
+  fin_cases i <;> rfl
 
 /-- The fourth unit coordinate vector attains the Euclidean operator norm. -/
 theorem norm_toEuclideanCLM_basisFun_three :
     ‖Matrix.toEuclideanCLM (𝕜 := 𝕜) (matrix 𝕜) (EuclideanSpace.basisFun (Fin 5) 𝕜 3)‖ =
       ‖Matrix.toEuclideanCLM (𝕜 := 𝕜) (matrix 𝕜)‖ := by
-  change ‖Matrix.toEuclideanLin (matrix 𝕜) (EuclideanSpace.basisFun (Fin 5) 𝕜 3)‖ = _
-  rw [norm_toEuclideanCLM, EuclideanSpace.basisFun_apply, toEuclideanLin_single_three,
+  rw [norm_toEuclideanCLM, EuclideanSpace.basisFun_apply, toEuclideanCLM_single_three,
     EuclideanSpace.norm_eq]
   congr 1
   norm_num [Fin.sum_univ_succ]
