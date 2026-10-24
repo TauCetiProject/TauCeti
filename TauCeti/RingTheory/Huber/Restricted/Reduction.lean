@@ -10,6 +10,7 @@ public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PairOfDefinition
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Kernel
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Complete
 import TauCeti.Topology.Algebra.Nonarchimedean.Quotient
+import TauCeti.Topology.Algebra.Module.Quotient
 import Mathlib.RingTheory.Ideal.Quotient.Operations
 
 /-!
@@ -66,7 +67,7 @@ many coefficients survive. -/
 noncomputable def restrictedReduction (J : Ideal A) (hJ : IsOpen (J : Set A)) :
     weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight →+*
       MvPolynomial (Fin k) (A ⧸ J) := by
-  letI : DiscreteTopology (A ⧸ J) := QuotientAddGroup.discreteTopology hJ
+  letI : DiscreteTopology (A ⧸ J) := Submodule.Quotient.discreteTopology_of_isOpen J hJ
   exact (weightedPolynomialEquiv (fun _ : Fin k ↦ ({1} : Set (A ⧸ J)))
     isWeightFamily_one_weight).symm.toRingHom.comp
       (weightedMap (φ := Ideal.Quotient.mk J) (QuotientRing.isOpenQuotientMap_mk J).continuous
@@ -79,13 +80,10 @@ theorem coeff_restrictedReduction (J : Ideal A) (hJ : IsOpen (J : Set A))
       isWeightFamily_one_weight) (ν : Fin k →₀ ℕ) :
     (restrictedReduction J hJ f).coeff ν =
       Ideal.Quotient.mk J (MvPowerSeries.coeff ν (f : MvPowerSeries (Fin k) A)) := by
-  let : DiscreteTopology (A ⧸ J) := QuotientAddGroup.discreteTopology hJ
+  let : DiscreteTopology (A ⧸ J) := Submodule.Quotient.discreteTopology_of_isOpen J hJ
   dsimp only [restrictedReduction, RingHom.comp_apply, RingEquiv.toRingHom_eq_coe,
     RingEquiv.coe_toRingHom]
-  -- `QuotientAddGroup.discreteTopology hJ` has type `DiscreteTopology (A ⧸ J.toAddSubgroup)`,
-  -- while `weightedPolynomialEquiv` expects `DiscreteTopology (A ⧸ J)`. The additive and ring
-  -- quotient presentations agree only after unfolding, so `rw` cannot match the instance.
-  erw [coeff_weightedPolynomialEquiv_symm]
+  rw [coeff_weightedPolynomialEquiv_symm]
   simp
 
 /-- On polynomials, reduction of restricted series is the usual coefficient map. -/
