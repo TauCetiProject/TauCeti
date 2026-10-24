@@ -549,6 +549,30 @@ theorem rep_apply_basis (i : Fin 3) :
     rep K m (slFinTwoBasis K i) = ![raise K m, lower K m, diag K m] i :=
   lieHomOfSl2Basis_apply ..
 
+-- The next three are not `@[simp]`: `slFinTwoBasis_zero`, `slFinTwoBasis_one` and
+-- `slFinTwoBasis_two` are `@[simp]`, so these left hand sides are not in simp normal form.
+
+/-- The element `e` of the standard `sl₂` triple acts on the classical specialization as the
+specialized raising matrix. -/
+theorem lie_slFinTwoBasis_zero (v : ClassicalLadder K m) :
+    ⁅slFinTwoBasis K 0, v⁆ = raise K m v := by
+  rw [lie_eq_rep_apply, rep_apply_basis]
+  simp
+
+/-- The element `f` of the standard `sl₂` triple acts on the classical specialization as the
+specialized lowering matrix. -/
+theorem lie_slFinTwoBasis_one (v : ClassicalLadder K m) :
+    ⁅slFinTwoBasis K 1, v⁆ = lower K m v := by
+  rw [lie_eq_rep_apply, rep_apply_basis]
+  simp
+
+/-- The element `h` of the standard `sl₂` triple acts on the classical specialization as the
+specialized diagonal matrix. -/
+theorem lie_slFinTwoBasis_two (v : ClassicalLadder K m) :
+    ⁅slFinTwoBasis K 2, v⁆ = diag K m v := by
+  rw [lie_eq_rep_apply, rep_apply_basis]
+  simp
+
 /-! ### Comparison with the standard module `V(m)` -/
 
 /-- The coordinatewise rescaling `v ↦ ((m choose j) v_j)_j`, which turns the ladder normalization
