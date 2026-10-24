@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.Order
+public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import Mathlib.LinearAlgebra.SesquilinearForm.Basic
 public import TauCeti.LinearAlgebra.BilinearForm.BaseChange
 public import TauCeti.LinearAlgebra.Complex.Conjugation
@@ -41,6 +42,8 @@ definite, so is `h`. This is the positive Hermitian form that a Euclidean metric
   conjugate of `h (x, y)`.
 * `LinearMap.BilinForm.sesqComplexification_baseChange_baseChange`: complexified maps preserving
   `B` preserve `h`.
+* `LinearMap.BilinForm.sesqComplexification_eq_zero_of_mem_eigenspace`: eigenspaces of a
+  complexified map preserving `B` are `h`-orthogonal unless `conj z * w = 1`.
 * `LinearMap.BilinForm.IsSymm.sesqComplexification`: `h` is Hermitian when `B` is symmetric.
 * `LinearMap.BilinForm.sesqComplexification_one_tmul_add_I_tmul_self`: for symmetric `B`,
   `h (a + i b, a + i b) = B (a, a) + B (b, b)`.
@@ -110,14 +113,29 @@ theorem sesqComplexification_tmulConj_tmulConj (x y : ℂ ⊗[ℝ] V) :
     ← baseChange_tmulConj_tmulConj, tmulConj_tmulConj]
 
 /-- **Complexified maps preserving a real bilinear form preserve its sesquilinear
-complexification.** In particular the complexification of a real isometry is unitary for the
-induced Hermitian form. -/
+complexification**: if `f` carries `B` to `B'`, then `f.baseChange ℂ` carries the induced form
+of `B` to that of `B'`. -/
 theorem sesqComplexification_baseChange_baseChange {B' : BilinForm ℝ V'} {f : V →ₗ[ℝ] V'}
     (hf : ∀ v w, B' (f v) (f w) = B v w) (x y : ℂ ⊗[ℝ] V) :
     B'.sesqComplexification (f.baseChange ℂ x) (f.baseChange ℂ y) =
       B.sesqComplexification x y := by
   rw [sesqComplexification_apply, sesqComplexification_apply, tmulConj_baseChange,
     baseChange_baseChange_baseChange hf]
+
+/-- **Eigenspaces of a complexified map preserving a real bilinear form are orthogonal for its
+sesquilinear complexification** unless their eigenvalues satisfy `conj z * w = 1`: the
+complexification of `f` preserves `h`, and scales `h (x, y)` by `conj z * w` on eigenvectors. -/
+theorem sesqComplexification_eq_zero_of_mem_eigenspace {f : V →ₗ[ℝ] V}
+    (hf : ∀ v w, B (f v) (f w) = B v w) {z w : ℂ} (hzw : starRingEnd ℂ z * w ≠ 1)
+    {x y : ℂ ⊗[ℝ] V} (hx : x ∈ Module.End.eigenspace (f.baseChange ℂ) z)
+    (hy : y ∈ Module.End.eigenspace (f.baseChange ℂ) w) :
+    B.sesqComplexification x y = 0 := by
+  have h := B.sesqComplexification_baseChange_baseChange hf x y
+  rw [Module.End.mem_eigenspace_iff.mp hx, Module.End.mem_eigenspace_iff.mp hy] at h
+  simp only [map_smulₛₗ, LinearMap.smul_apply, smul_eq_mul, RingHom.id_apply] at h
+  have h' : (starRingEnd ℂ z * w - 1) * B.sesqComplexification x y = 0 := by
+    linear_combination h
+  exact (mul_eq_zero.mp h').resolve_left (sub_ne_zero.mpr hzw)
 
 /-! ### Hermitian symmetry and positivity -/
 
@@ -126,15 +144,9 @@ variable {B}
 /-- **The sesquilinear complexification of a symmetric form is Hermitian.** -/
 theorem IsSymm.sesqComplexification (hB : B.IsSymm) : B.sesqComplexification.IsSymm := by
   refine LinearMap.isSymm_def.mpr fun x y => ?_
-  induction x using TensorProduct.inductionOn with
-  | add x₁ x₂ h₁ h₂ => simp only [map_add, LinearMap.add_apply, h₁, h₂]
-  | tmul z v =>
-    induction y using TensorProduct.inductionOn with
-    | add y₁ y₂ h₁ h₂ => simp only [map_add, LinearMap.add_apply, h₁, h₂]
-    | tmul w u =>
-      simp only [sesqComplexification_tmul_tmul, map_mul, Complex.conj_conj, Complex.conj_ofReal,
-        hB.eq v u]
-      ring
+  rw [sesqComplexification_apply, sesqComplexification_apply, ← baseChange_tmulConj_tmulConj,
+    tmulConj_tmulConj]
+  exact (isSymm_iff.mpr (IsSymm.baseChange ℂ (isSymm_iff.mp hB))).eq x (tmulConj V y)
 
 /-- **The diagonal of the sesquilinear complexification of a symmetric form**: writing a vector
 of the complexification as `a + i b` with `a`, `b` real, `h (a + i b, a + i b)` is the real

@@ -22,9 +22,9 @@ is a Euclidean metric. This file computes `h` on the decomposition `1 ⊗ v = v^
 a real vector into its parts in the `i`- and `-i`-eigenspaces `W` and `W'` of the complexified
 complex structure:
 
-* conjugation exchanges the two parts, `conj v^(1,0) = v^(0,1)`;
-* `W` and `W'` are `h`-orthogonal, and more generally eigenspaces of the complexified `J` for
-  eigenvalues `z`, `w` with `conj z * w ≠ 1` are `h`-orthogonal;
+* `W` and `W'` are `h`-orthogonal, a case of the `h`-orthogonality of eigenspaces of any
+  complexified `g`-preserving map
+  (`LinearMap.BilinForm.sesqComplexification_eq_zero_of_mem_eigenspace`);
 * `h (v^(1,0), w^(1,0)) = (g (v, w) - i g (v, J w)) / 2`, so for symmetric `g`,
   `|v^(1,0)|² = h (v^(1,0), v^(1,0)) = g (v, v) / 2`.
 
@@ -39,10 +39,6 @@ is the Hermitian metric on `W` that induces a Hermitian metric on that model.
 
 ## Main results
 
-* `TauCeti.AlmostComplexStructure.tmulConj_holomorphicPart` and
-  `TauCeti.AlmostComplexStructure.tmulConj_antiholomorphicPart`: conjugation exchanges the parts.
-* `TauCeti.AlmostComplexStructure.sesqComplexification_eq_zero_of_mem_eigenspace`: eigenspaces of
-  the complexified `J` are `h`-orthogonal unless `conj z * w = 1`.
 * `TauCeti.AlmostComplexStructure.sesqComplexification_eq_zero_of_mem_eigenspace_I_of_mem_neg_I`:
   `W` and `W'` are `h`-orthogonal.
 * `TauCeti.AlmostComplexStructure.sesqComplexification_holomorphicPart_holomorphicPart`:
@@ -72,57 +68,7 @@ namespace TauCeti.AlmostComplexStructure
 variable {V : Type*} [AddCommGroup V] [Module ℝ V] (J : AlmostComplexStructure V)
   {g : BilinForm ℝ V}
 
-/-! ### `J`-invariant bilinear forms -/
-
-/-- A bilinear form preserved by `J` is antisymmetric under moving `J` across:
-`g (J v, w) = -g (v, J w)`. -/
-theorem bilinForm_apply_left_eq_neg_apply_right (hgJ : ∀ v w, g (J v) (J w) = g v w) (v w : V) :
-    g (J v) w = -g v (J w) := by
-  have h := hgJ v (J w)
-  rw [apply_apply, map_neg] at h
-  linear_combination -h
-
-/-- A symmetric bilinear form preserved by `J` pairs every vector `v` trivially with `J v`. -/
-theorem bilinForm_apply_apply_self_eq_zero (hg : g.IsSymm) (hgJ : ∀ v w, g (J v) (J w) = g v w)
-    (v : V) : g v (J v) = 0 := by
-  have h := J.bilinForm_apply_left_eq_neg_apply_right hgJ v v
-  rw [← hg.eq v (J v)] at h
-  linarith
-
-/-! ### Conjugation of the `(1,0)`- and `(0,1)`-parts -/
-
-/-- Conjugation of the complexification maps the `(1,0)`-part of a real vector to its
-`(0,1)`-part. -/
-@[simp]
-theorem tmulConj_holomorphicPart (v : V) :
-    tmulConj V (J.holomorphicPart v) = J.antiholomorphicPart v := by
-  rw [holomorphicPart_apply, antiholomorphicPart_apply, map_smulₛₗ, map_sub, map_smulₛₗ,
-    tmulConj_tmul, tmulConj_tmul, map_one, map_inv₀, map_ofNat, Complex.conj_I]
-  module
-
-/-- Conjugation of the complexification maps the `(0,1)`-part of a real vector to its
-`(1,0)`-part. -/
-@[simp]
-theorem tmulConj_antiholomorphicPart (v : V) :
-    tmulConj V (J.antiholomorphicPart v) = J.holomorphicPart v := by
-  rw [← tmulConj_holomorphicPart, tmulConj_tmulConj]
-
-/-! ### Orthogonality of the eigenspaces -/
-
-/-- **Eigenspaces of the complexified complex structure are orthogonal for the induced Hermitian
-form** unless their eigenvalues satisfy `conj z * w = 1`: the complexification of `J` preserves
-`h`, and scales `h (x, y)` by `conj z * w` on eigenvectors. -/
-theorem sesqComplexification_eq_zero_of_mem_eigenspace (hgJ : ∀ v w, g (J v) (J w) = g v w)
-    {z w : ℂ} (hzw : starRingEnd ℂ z * w ≠ 1) {x y : ℂ ⊗[ℝ] V}
-    (hx : x ∈ eigenspace (J.toLinearMap.baseChange ℂ) z)
-    (hy : y ∈ eigenspace (J.toLinearMap.baseChange ℂ) w) :
-    g.sesqComplexification x y = 0 := by
-  have h := g.sesqComplexification_baseChange_baseChange (f := J.toLinearMap) hgJ x y
-  rw [mem_eigenspace_iff.mp hx, mem_eigenspace_iff.mp hy] at h
-  simp only [map_smulₛₗ, LinearMap.smul_apply, smul_eq_mul, RingHom.id_apply] at h
-  have h' : (starRingEnd ℂ z * w - 1) * g.sesqComplexification x y = 0 := by
-    linear_combination h
-  exact (mul_eq_zero.mp h').resolve_left (sub_ne_zero.mpr hzw)
+/-! ### Orthogonality of the `(1,0)`- and `(0,1)`-parts -/
 
 /-- **The `i`- and `-i`-eigenspaces of the complexified complex structure are orthogonal for the
 induced Hermitian form.** -/
@@ -131,7 +77,7 @@ theorem sesqComplexification_eq_zero_of_mem_eigenspace_I_of_mem_neg_I
     (hx : x ∈ eigenspace (J.toLinearMap.baseChange ℂ) Complex.I)
     (hy : y ∈ eigenspace (J.toLinearMap.baseChange ℂ) (-Complex.I)) :
     g.sesqComplexification x y = 0 :=
-  J.sesqComplexification_eq_zero_of_mem_eigenspace hgJ
+  g.sesqComplexification_eq_zero_of_mem_eigenspace hgJ
     (by rw [Complex.conj_I, neg_mul_neg, Complex.I_mul_I]; norm_num) hx hy
 
 /-- The `(1,0)`-part of one real vector is orthogonal to the `(0,1)`-part of another for the
@@ -150,7 +96,7 @@ induced Hermitian form. -/
 theorem sesqComplexification_antiholomorphicPart_holomorphicPart
     (hgJ : ∀ v w, g (J v) (J w) = g v w) (v w : V) :
     g.sesqComplexification (J.antiholomorphicPart v) (J.holomorphicPart w) = 0 :=
-  J.sesqComplexification_eq_zero_of_mem_eigenspace hgJ
+  g.sesqComplexification_eq_zero_of_mem_eigenspace hgJ
     (by rw [map_neg, Complex.conj_I, neg_neg, Complex.I_mul_I]; norm_num)
     (J.antiholomorphicPart_mem_eigenspace_baseChange_neg_I v)
     (J.holomorphicPart_mem_eigenspace_baseChange_I w)
