@@ -117,13 +117,16 @@ theorem structureConstant_def (a b : I → ℤ) :
 theorem normalizationSign_of_nonneg {a : I → ℤ} (ha : 0 ≤ a) : normalizationSign B a = 1 := by
   rw [normalizationSign, ite_eq_left ha]
 
+@[simp]
 theorem normalizationSign_of_not_nonneg {a : I → ℤ} (ha : ¬0 ≤ a) :
     normalizationSign B a = (B.orderedSignForm a a).negOnePow := by
   rw [normalizationSign, ite_eq_right ha]
 
-/-- The normalization sign of the negative of a nonzero nonnegative vector `a` is `ε(a, a)`. -/
-theorem normalizationSign_neg_of_nonneg {a : I → ℤ} (ha : 0 ≤ a) (ha' : a ≠ 0) :
+/-- The normalization sign of the negative of a nonnegative vector `a` is `ε(a, a)`. -/
+theorem normalizationSign_neg_of_nonneg {a : I → ℤ} (ha : 0 ≤ a) :
     normalizationSign B (-a) = (B.orderedSignForm a a).negOnePow := by
+  rcases eq_or_ne a 0 with rfl | ha'
+  · simp
   have h : ¬0 ≤ -a := fun h ↦ ha' (le_antisymm (neg_nonneg.mp h) ha)
   rw [normalizationSign_of_not_nonneg h, LinearMap.map_neg₂, map_neg, neg_neg]
 
@@ -131,14 +134,13 @@ section Cover
 
 attribute [local instance] TauCeti.trivialMulDistribMulAction
 
-/-- **The normalization sign is the sign of the inverse lift**: for a nonzero nonnegative vector
-`a`, the inverse of the section value `⟨1, a⟩` in `Matrix.SignCover B` is `s(-a) ⟨1, -a⟩`. -/
-theorem inv_canonicalSection_eq_inl_normalizationSign_mul {a : I → ℤ} (ha : 0 ≤ a)
-    (ha' : a ≠ 0) :
+/-- **The normalization sign is the sign of the inverse lift**: for a nonnegative vector `a`, the
+inverse of the section value `⟨1, a⟩` in `Matrix.SignCover B` is `s(-a) ⟨1, -a⟩`. -/
+theorem inv_canonicalSection_eq_inl_normalizationSign_mul {a : I → ℤ} (ha : 0 ≤ a) :
     ((signFactorSet B).canonicalSection (Multiplicative.ofAdd a))⁻¹ =
       TauCeti.FactorSet.inl (signFactorSet B) (normalizationSign B (-a)) *
         (signFactorSet B).canonicalSection (Multiplicative.ofAdd (-a)) := by
-  rw [SignCover.inv_canonicalSection, normalizationSign_neg_of_nonneg ha ha', orderedSign_apply,
+  rw [SignCover.inv_canonicalSection, normalizationSign_neg_of_nonneg ha, orderedSign_apply,
     toAdd_ofAdd, ofAdd_neg]
 
 end Cover
@@ -151,7 +153,7 @@ theorem normalizationSign_mul_normalizationSign_neg (hB : B.PosDef) (hev : ∀ i
     normalizationSign B a * normalizationSign B (-a) = (B.orderedSignForm a a).negOnePow := by
   have hne := ne_zero_of_mem_normTwoShell ha
   rcases hB.nonneg_or_nonpos_of_mem_normTwoShell hev hoff ha with h | h
-  · rw [normalizationSign_of_nonneg h, normalizationSign_neg_of_nonneg h hne, one_mul]
+  · rw [normalizationSign_of_nonneg h, normalizationSign_neg_of_nonneg h, one_mul]
   · have h' : ¬0 ≤ a := fun h' ↦ hne (le_antisymm h h')
     rw [normalizationSign_of_not_nonneg h', normalizationSign_of_nonneg (neg_nonneg.mpr h),
       mul_one]
@@ -163,6 +165,7 @@ theorem normalizedRoot_of_nonneg {a : B.normTwoShell} (ha : 0 ≤ (a : I → ℤ
     normalizedRoot B a = root B a := by
   rw [normalizedRoot_def, normalizationSign_of_nonneg ha, one_smul]
 
+@[simp]
 theorem normalizedRoot_of_not_nonneg {a : B.normTwoShell} (ha : ¬0 ≤ (a : I → ℤ)) :
     normalizedRoot B a = (B.orderedSignForm a a).negOnePow • root B a := by
   rw [normalizedRoot_def, normalizationSign_of_not_nonneg ha]
@@ -192,8 +195,17 @@ theorem cartan_lie_normalizedRoot (h : I → ℤ) (a : B.normTwoShell) :
     ⁅cartan B h, normalizedRoot B a⁆ = (h ⬝ᵥ B *ᵥ (a : I → ℤ)) • normalizedRoot B a := by
   rw [normalizedRoot_def, ShellLieAlgebra.lie_units_smul, cartan_lie_root, smul_comm]
 
+/-- The bracket `⁅e_a, e_b⁆` of two normalized root vectors is the root bracket of `x_a` and `x_b`,
+rescaled by the product `s(a) s(b)` of their normalization signs. -/
+theorem normalizedRoot_lie_normalizedRoot (a b : B.normTwoShell) :
+    ⁅normalizedRoot B a, normalizedRoot B b⁆ =
+      (normalizationSign B a * normalizationSign B b) • rootBracket B a b := by
+  rw [normalizedRoot_def, normalizedRoot_def, ShellLieAlgebra.units_smul_lie,
+    ShellLieAlgebra.lie_units_smul, root_lie_root, smul_smul]
+
 /-- **Opposite normalized root vectors bracket to the coroot**: `⁅e_a, e_(-a)⁆ = H_a`, for a
 positive definite `B` with even diagonal and nonpositive off-diagonal entries. -/
+@[simp]
 theorem normalizedRoot_lie_normalizedRoot_of_add_eq_zero (hB : B.PosDef)
     (hev : ∀ i, Even (B i i)) (hoff : ∀ i j, i ≠ j → B i j ≤ 0) {a b : B.normTwoShell}
     (h : (a : I → ℤ) + b = 0) :
@@ -203,32 +215,29 @@ theorem normalizedRoot_lie_normalizedRoot_of_add_eq_zero (hB : B.PosDef)
       (B.orderedSignForm a (-a)).negOnePow = 1 := by
     rw [normalizationSign_mul_normalizationSign_neg hB hev hoff a.2, map_neg, Int.negOnePow_neg,
       Int.units_mul_self]
-  rw [normalizedRoot_def, normalizedRoot_def, ShellLieAlgebra.units_smul_lie,
-    ShellLieAlgebra.lie_units_smul, root_lie_root, rootBracket_of_add_eq_zero h, smul_smul,
-    smul_smul, hb, key, one_smul]
+  rw [normalizedRoot_lie_normalizedRoot, rootBracket_of_add_eq_zero h, smul_smul, hb, key,
+    one_smul]
 
 /-- **The structure constants of the normalized basis**: if `a + b` is a root, then
 `⁅e_a, e_b⁆ = N(a, b) e_(a + b)`. -/
+@[simp]
 theorem normalizedRoot_lie_normalizedRoot_of_mem {a b : B.normTwoShell}
     (h : (a : I → ℤ) + b ∈ B.normTwoShell) :
     ⁅normalizedRoot B a, normalizedRoot B b⁆ =
       structureConstant B a b • normalizedRoot B ⟨_, h⟩ := by
-  rw [normalizedRoot_def, normalizedRoot_def, normalizedRoot_def, ShellLieAlgebra.units_smul_lie,
-    ShellLieAlgebra.lie_units_smul, root_lie_root, rootBracket_of_mem h, smul_smul, smul_smul,
+  rw [normalizedRoot_lie_normalizedRoot, rootBracket_of_mem h, normalizedRoot_def, smul_smul,
     smul_smul, structureConstant_def]
   congr 1
   -- The sign `s(a + b)` occurs twice on the right and squares to `1`.
-  dsimp only
-  rw [mul_right_comm _ (B.orderedSignForm a b).negOnePow,
-    mul_assoc (normalizationSign B a * normalizationSign B b), Int.units_mul_self, mul_one]
+  simp only [mul_assoc, mul_left_comm _ (B.orderedSignForm _ _).negOnePow, Int.units_mul_self,
+    mul_one]
 
 /-- Two normalized root vectors whose roots sum to neither a root nor zero commute. -/
+@[simp]
 theorem normalizedRoot_lie_normalizedRoot_of_notMem_of_add_ne_zero {a b : B.normTwoShell}
     (h : (a : I → ℤ) + b ∉ B.normTwoShell) (h' : (a : I → ℤ) + b ≠ 0) :
     ⁅normalizedRoot B a, normalizedRoot B b⁆ = 0 := by
-  rw [normalizedRoot_def, normalizedRoot_def, ShellLieAlgebra.units_smul_lie,
-    ShellLieAlgebra.lie_units_smul, root_lie_root, rootBracket_of_notMem_of_add_ne_zero h h',
-    smul_zero, smul_zero]
+  rw [normalizedRoot_lie_normalizedRoot, rootBracket_of_notMem_of_add_ne_zero h h', smul_zero]
 
 /-- **The Chevalley sign rule** `N(-a, -b) = -N(a, b)`, for roots `a`, `b` with `a + b` a root, and
 a positive definite `B` with even diagonal and nonpositive off-diagonal entries. -/
@@ -250,9 +259,8 @@ theorem structureConstant_neg_neg (hB : B.PosDef) (hev : ∀ i, Even (B i i))
       simp only [mul_left_comm, mul_assoc]
     rw [e, normalizationSign_mul_normalizationSign_neg hB hev hoff ha,
       normalizationSign_mul_normalizationSign_neg hB hev hoff hb,
-      normalizationSign_mul_normalizationSign_neg hB hev hoff hab, ← Int.negOnePow_add,
-      ← Int.negOnePow_add, ← Int.negOnePow_add, ← Int.negOnePow_add,
-      Int.negOnePow_eq_neg_one_iff, Int.odd_iff]
+      normalizationSign_mul_normalizationSign_neg hB hev hoff hab]
+    simp only [← Int.negOnePow_add, Int.negOnePow_eq_neg_one_iff, Int.odd_iff]
     rw [Int.even_iff] at hpar
     simp only [map_add, map_neg, LinearMap.add_apply, LinearMap.neg_apply, neg_neg]
     omega
