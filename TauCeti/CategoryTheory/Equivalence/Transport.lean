@@ -18,6 +18,9 @@ isomorphism, with functional composition as multiplication. Consequently any gro
 action by autoequivalence classes transports along a supplied equivalence, and its
 faithfulness is preserved and reflected.
 
+`Equivalence.autoequivalenceClassCongr_eq_iff` characterizes this transport by natural
+intertwining isomorphisms of the representing functors.
+
 The construction uses Mathlib's `Equivalence.congrLeft`, `Equivalence.congrRight`
 and `Equivalence.skeletonEquiv` on endofunctors, then `Units.mapEquiv` on their
 invertible classes. It applies in particular to braid actions on equivalent
@@ -199,5 +202,21 @@ theorem Equivalence.transportedEndofunctorIso_inv_app
     (e.transportedEndofunctorIso F).inv.app X =
       e.functor.map (F.map (e.unitIso.hom.app X)) := by
   simp [Equivalence.transportedEndofunctorIso]
+
+/-- A self-equivalence represents the transported class precisely when the supplied
+equivalence intertwines its functor with the original functor. -/
+theorem Equivalence.autoequivalenceClassCongr_eq_iff (e : C ≌ D)
+    (F : C ≌ C) (F' : D ≌ D) :
+    e.autoequivalenceClassCongr F.toAutoequivalenceClass = F'.toAutoequivalenceClass ↔
+      Nonempty (e.functor ⋙ F'.functor ≅ F.functor ⋙ e.functor) := by
+  rw [Equivalence.autoequivalenceClassCongr_toAutoequivalenceClass,
+    Equivalence.toAutoequivalenceClass_eq_iff]
+  constructor
+  · rintro ⟨h⟩
+    exact ⟨(Functor.isoWhiskerLeft e.functor h).symm ≪≫
+      e.transportedEndofunctorIso F.functor⟩
+  · rintro ⟨h⟩
+    exact ⟨(e.symm.congrLeft (E := D)).functor.preimageIso
+      (e.transportedEndofunctorIso F.functor ≪≫ h.symm)⟩
 
 end CategoryTheory
