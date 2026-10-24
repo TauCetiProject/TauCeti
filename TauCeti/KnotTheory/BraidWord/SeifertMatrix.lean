@@ -292,10 +292,10 @@ theorem exists_seifertMatrix_append_cons_cons_comm
       (u ++ b :: a :: v).seifertMatrix = (u ++ a :: b :: v).seifertMatrix.submatrix ι ι := by
   have hget := List.getElem?_swap_append_cons_cons u v a b
   refine exists_seifertMatrix_eq_submatrix_of_equiv (Equiv.swap u.length (u.length + 1))
-    (fun k ↦ by rw [levelAt, levelAt, hget]) (fun j k hj hk hjk ↦ ?_)
-    (fun k ↦ by rw [signAt, signAt, hget])
-  have hA : (u ++ a :: b :: v).levelAt u.length = some (a.1 : ℕ) := by simp [levelAt]
-  have hB : (u ++ a :: b :: v).levelAt (u.length + 1) = some (b.1 : ℕ) := by simp [levelAt]
+    (fun k ↦ by rw [levelAt_def, levelAt_def, hget]) (fun j k hj hk hjk ↦ ?_)
+    (fun k ↦ by rw [signAt_def, signAt_def, hget])
+  have hA : (u ++ a :: b :: v).levelAt u.length = some (a.1 : ℕ) := by simp
+  have hB : (u ++ a :: b :: v).levelAt (u.length + 1) = some (b.1 : ℕ) := by simp
   have hjk' : ¬ (j = u.length ∧ k = u.length + 1) ∧ ¬ (j = u.length + 1 ∧ k = u.length) := by
     constructor <;> rintro ⟨rfl, rfl⟩ <;>
       simp only [hA, hB, Option.map_some, Option.some_inj] at hjk <;> omega

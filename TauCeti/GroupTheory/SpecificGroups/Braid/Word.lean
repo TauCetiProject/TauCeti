@@ -176,16 +176,28 @@ section Positions
 
 variable (w : BraidWord n)
 
+-- Exposed so that downstream modules can evaluate `seifertLoops` and `seifertMatrix` of concrete
+-- words by `decide`, as in `TauCeti.BraidWord.seifertMatrix_trefoil`; proofs use `levelAt_def`.
 /-- The level `i` of the letter `σ i ^ ε` at position `k` of a braid word, or `none` if the word
 has no position `k`. In the closure of the braid, the letters of level `i` are the crossings of
 the strand positions `i` and `i + 1`. -/
 @[expose] def levelAt (k : ℕ) : Option ℕ :=
   w[k]?.map fun x ↦ (x.1 : ℕ)
 
+-- Exposed so that downstream modules can evaluate `seifertLoops` and `seifertMatrix` of concrete
+-- words by `decide`, as in `TauCeti.BraidWord.seifertMatrix_trefoil`; proofs use `signAt_def`.
 /-- The sign `ε` of the letter `σ i ^ ε` at position `k` of a braid word, or `0` if the word has no
 position `k`. -/
 @[expose] def signAt (k : ℕ) : ℤ :=
   (w[k]?.map fun x ↦ (x.2 : ℤ)).getD 0
+
+/-- The defining equation of `TauCeti.BraidWord.levelAt`: the index of the letter, if any. -/
+theorem levelAt_def (k : ℕ) : w.levelAt k = w[k]?.map fun x ↦ (x.1 : ℕ) :=
+  (rfl)
+
+/-- The defining equation of `TauCeti.BraidWord.signAt`: the sign of the letter, or `0`. -/
+theorem signAt_def (k : ℕ) : w.signAt k = (w[k]?.map fun x ↦ (x.2 : ℤ)).getD 0 :=
+  (rfl)
 
 /-- The level of a letter of the word. -/
 @[simp]
