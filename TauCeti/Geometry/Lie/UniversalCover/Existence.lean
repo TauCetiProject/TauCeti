@@ -55,7 +55,8 @@ theorem exists_universalCover [ConnectedSpace G] :
     ContinuousMonoidHom.toContMDiffMonoidMorphism I I
       (UniversalCover.projHom : UniversalCover (1 : G) →ₜ* G)
   -- The existential stores the underlying monoid hom, while the covering theorem uses the
-  -- bundled morphism's function coercion; this records their canonical coercion equality.
+  -- bundled morphism's function coercion; this records their canonical coercion equality. No
+  -- rewrite lemma exists for this bundled coercion, so `change` exposes its `FunLike` field.
   have hq_coe : (q.toMonoidHom : Gt → G) = (UniversalCover.projHom : Gt → G) := by
     change (q : Gt → G) = (UniversalCover.projHom : Gt → G)
     simp only [q, Gt, ContinuousMonoidHom.coe_toContMDiffMonoidMorphism]

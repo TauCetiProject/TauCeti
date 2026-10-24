@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Convex.Contractible
 public import Mathlib.Geometry.Manifold.IsManifold.ExtChartAt
+public import TauCeti.Analysis.Convex.SimplyConnected
 public import TauCeti.AlgebraicTopology.SemilocallySimplyConnected.Basic
 
 /-!
@@ -69,16 +69,17 @@ theorem semilocallySimplyConnectedSpace (I : ModelWithCorners 𝕜 E H) (M : Typ
   have hd_nhds : d ∈ 𝓝 x := by
     have hsource : ce.source ∈ 𝓝 x :=
       (isOpen_extChartAt_source x).mem_nhds (mem_extChartAt_source x)
-    have hball : Metric.ball (c x) r ∈ 𝓝 (c x) :=
-      Metric.mem_nhds_iff.mpr ⟨r, hr, subset_rfl⟩
-    have hpre : c ⁻¹' Metric.ball (c x) r ∈ 𝓝 x :=
-      (continuousAt_extChartAt x).preimage_mem_nhds hball
+    have hpre : c ⁻¹' s ∈ 𝓝 x := by
+      apply extChartAt_preimage_mem_nhds_of_mem_nhdsWithin
+        (I := I) (x := x) (x' := x) (mem_extChartAt_source x)
+      change (Metric.ball (c x) r ∩ Set.range I) ∈ 𝓝[Set.range I] (c x)
+      rw [Set.inter_comm]
+      exact inter_mem_nhdsWithin (Set.range I) (Metric.ball_mem_nhds (c x) hr)
     apply Filter.mem_of_superset (Filter.inter_mem hsource hpre)
-    rintro z ⟨hzsource, hzb⟩
+    rintro z ⟨hzsource, hzc⟩
     dsimp only [d]
-    have hzrange : ce z ∈ Set.range I :=
-      extChartAt_target_subset_range x (ce.map_source hzsource)
-    exact ⟨ce z, ⟨⟨hzb, hzrange⟩, ce.left_inv hzsource⟩⟩
+    change ce z ∈ s at hzc
+    exact ⟨ce z, ⟨hzc, ce.left_inv hzsource⟩⟩
   exact ⟨d, hd_nhds, hd_sc⟩
 
 end ModelWithCorners

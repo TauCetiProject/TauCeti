@@ -7,8 +7,8 @@ module
 
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.PuncturedNeighborhoodComponents
 
-import Mathlib.Analysis.Convex.Contractible
 import Mathlib.Topology.Algebra.Module.LocallyConvex
+import TauCeti.Analysis.Convex.SimplyConnected
 import TauCeti.Analysis.Complex.OpenSegment
 import TauCeti.Topology.IsLocalHomeomorph
 
