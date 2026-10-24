@@ -62,8 +62,6 @@ form, a continuous linear map is a Lagrangian map exactly when its range is a La
   vanishing of the pulled-back form.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.isLagrangianMap_comp_diffeomorph_iff`: independence of
   the parametrization.
-* `TauCeti.SmoothTwoForm.IsNondegenerate.symplecticFormAt_transport`: the differential of a
-  symplectomorphism transports the tangent-space symplectic forms.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.isLagrangianMap_diffeomorph_comp_iff`: transport by
   symplectomorphisms.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.IsLagrangianMap.two_mul_finrank`: the dimension count.
@@ -123,6 +121,20 @@ def IsLagrangianMap (f : N → M) : Prop :=
   ∀ x, (hσ.symplecticFormAt (f x)).IsLagrangian (LinearMap.range (mfderiv J I f x).toLinearMap)
 
 variable {J hσ}
+
+/-- Coisotropy of a map is pointwise coisotropy of its tangent images. -/
+theorem isCoisotropicMap_iff :
+    hσ.IsCoisotropicMap J f ↔
+      ∀ x, (hσ.symplecticFormAt (f x)).IsCoisotropic
+        (LinearMap.range (mfderiv J I f x).toLinearMap) :=
+  Iff.rfl
+
+/-- The Lagrangian condition on a map is the pointwise condition on its tangent images. -/
+theorem isLagrangianMap_iff_forall :
+    hσ.IsLagrangianMap J f ↔
+      ∀ x, (hσ.symplecticFormAt (f x)).IsLagrangian
+        (LinearMap.range (mfderiv J I f x).toLinearMap) :=
+  Iff.rfl
 
 /-- Isotropy of a map is the vanishing of `σ` on pairs of pushed-forward tangent vectors. -/
 theorem isIsotropicMap_iff :
@@ -197,20 +209,6 @@ section Transport
 variable {E₂ H₂ : Type*} [NormedAddCommGroup E₂] [NormedSpace ℝ E₂] [TopologicalSpace H₂]
   {I₂ : ModelWithCorners ℝ E₂ H₂} {M₂ : Type*} [TopologicalSpace M₂] [ChartedSpace H₂ M₂]
   [IsManifold I₂ ∞ M₂] {σ₂ : SmoothTwoForm I₂ M₂} {hσ₂ : σ₂.IsNondegenerate}
-
-variable (hσ) in
-/-- At every point, the differential of a diffeomorphism pulling `σ₂` back to `σ` transports the
-tangent-space symplectic form of `σ` to that of `σ₂`. -/
-theorem symplecticFormAt_transport (ψ : M ≃ₘ⟮I, I₂⟯ M₂)
-    (hψ : SmoothForm.mpullback ψ ψ.contMDiff σ₂ = σ) (y : M) :
-    (hσ.symplecticFormAt y).transport
-        (ψ.mfderivToContinuousLinearEquiv (by simp) y).toLinearEquiv =
-      hσ₂.symplecticFormAt (ψ y) := by
-  rw [← SymplecticForm.isSymplectomorphism_iff_transport_eq, SymplecticForm.isSymplectomorphism_iff]
-  intro v w
-  rw [symplecticFormAt_apply, symplecticFormAt_apply, ← hψ, SmoothForm.eval₂_mpullback,
-    ContinuousLinearEquiv.coe_toLinearEquiv, ← ContinuousLinearEquiv.coe_coe,
-    Diffeomorph.mfderivToContinuousLinearEquiv_coe]
 
 /-- A symplectomorphism preserves isotropic maps: if `ψ` pulls `σ₂` back to `σ`, then `ψ ∘ f` is
 isotropic for `σ₂` exactly when `f` is isotropic for `σ`. -/
