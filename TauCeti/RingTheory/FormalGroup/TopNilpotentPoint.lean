@@ -23,7 +23,7 @@ complete local ring `A` with its `𝔪`-adic topology it is the maximal ideal `�
 
 The carrier `F.TopNilpotentPoint A` mirrors Mathlib's power-series carrier `F.Point σ` of series
 with nilpotent constant coefficient: a point is an element of `A` satisfying
-`PowerSeries.HasEval`, the condition under which evaluation converges. Mathlib's carrier is the
+`PowerSeries.HasEval`, the condition that makes evaluation converge. Mathlib's carrier is the
 special case `A = R⟦σ⟧` with the product topology over discrete `R`
 (`FormalGroup.pointEquivTopNilpotentPoint`). Evaluation uses the discrete topology on `R`, so no
 topology on the coefficient ring is assumed. Characterising lemmas are stated as convergent sums,
@@ -71,7 +71,7 @@ variable {R : Type*} [CommRing R] (F : FormalGroup R)
 
 /-- The **points of a formal group law `F` in `A`**: the elements of a topological ring `A`
 satisfying `PowerSeries.HasEval`, that is, the topologically nilpotent elements. Evaluation of
-power series over `R` at these elements converges only when `A` is a complete, Hausdorff, linearly
+power series over `R` at these elements converges when `A` is a complete, Hausdorff, linearly
 topologised `R`-algebra; under those assumptions they form a group under `x +_F y = F(x, y)`.
 This is the analogue for `A` of the power-series carrier `F.Point σ`.
 
