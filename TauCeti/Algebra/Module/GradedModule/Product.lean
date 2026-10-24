@@ -200,6 +200,8 @@ include H r hf in
 degree support of the source element controls every component at once. -/
 theorem productLift_mem (x : N) : (fun j ↦ f j x) ∈ productCarrier G := by
   classical
+  -- Bundle the family as a linear map so `map_sum` distributes it over the source's
+  -- finite homogeneous decomposition.
   rw [show (fun j ↦ f j x) = (LinearMap.pi f) x from
     funext fun j ↦ (LinearMap.pi_apply f x j).symm]
   rw [← DirectSum.sum_support_decompose H.piece x, map_sum]
