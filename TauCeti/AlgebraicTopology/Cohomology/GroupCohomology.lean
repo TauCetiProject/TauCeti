@@ -124,7 +124,13 @@ def singularCochainComplexIsoLinearYonedaObj :
         (ConcreteCategory.congr_hom (((singularChains k).map p).comm (i + 1) i) c).symm
       rw [ModuleCat.comp_apply, ModuleCat.comp_apply, TauCeti.ChainComplex.linearYonedaObj_d_apply,
         TauCeti.ChainComplex.linearYonedaObj_d_apply, singularChainsRep_d]
-      -- Unfold the components of the comparison to the degreewise equivalences.
+      -- Unfold the components of the comparison to the degreewise equivalences. This is a
+      -- `change` rather than a rewrite with `ModuleCat.ofHom_apply` and `Rep.hom_comp_toLinearMap`:
+      -- the goal composes `singularChainsRepDifferential`, between the representations
+      -- `Rep.of (singularChainsRepresentation k E G n)`, with maps out of the terms
+      -- `(singularChainsRep k E G).X n`. These agree only by definition, so, as in
+      -- `singularCochainLinearEquiv_apply_hom_apply`, the goal is not type-correct at reducible
+      -- transparency and those lemmas do not fire on it.
       change (singularCochainLinearEquiv hG k M i f).hom
           ((singularChainsRepDifferential k E G i).hom c) =
         (singularCochainLinearEquiv hG k M (i + 1)
