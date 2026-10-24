@@ -527,6 +527,13 @@ theorem disjoint_XSet_of_mem_unblockedRectangles {x y : GridState n}
     Disjoint r.toGridRectangle.coveredSquares G.XSet :=
   ((G.mem_unblockedRectangles r).mp hr).2
 
+/-- A rectangle the unblocked differential counts covers no `X`-marking square. -/
+theorem notMem_of_mem_unblockedRectangles {x y : GridState n}
+    {r : GridRectangleBetween x y} (hr : r ∈ G.unblockedRectangles x y) (c : Fin n) :
+    (c, G.X c) ∉ r.toGridRectangle.coveredSquares := fun h =>
+  Finset.disjoint_left.mp (G.disjoint_XSet_of_mem_unblockedRectangles hr) h
+    ((G.mk_mem_XSet _ _).mpr rfl)
+
 /-- The rectangles the unblocked differential counts are empty rectangles. -/
 theorem unblockedRectangles_subset_emptyRectangles (x y : GridState n) :
     G.unblockedRectangles x y ⊆ GridRectangleBetween.emptyRectangles x y := fun _ hr =>

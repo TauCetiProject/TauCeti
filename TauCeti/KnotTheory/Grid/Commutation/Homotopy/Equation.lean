@@ -689,12 +689,6 @@ private theorem eq_of_mem_initialHexagon {u v : GridState n}
   rw [G.XSet_inter_toGridRectangle_coveredSquares_of_disjoint_initialHexagon hP] at hmem
   exact (Prod.mk.inj (Finset.mem_singleton.mp hmem)).1
 
-/-- A counted rectangle covers no `X`-marking. -/
-private theorem notMem_of_mem_unblockedRectangles {u v : GridState n}
-    {S : GridRectangleBetween u v} (hS : S ∈ G.unblockedRectangles u v) (c : Fin n) :
-    (c, G.X c) ∉ S.toGridRectangle.coveredSquares := fun h =>
-  Finset.disjoint_left.mp ((G.mem_unblockedRectangles S).mp hS).2 h ((G.mk_mem_XSet _ _).mpr rfl)
-
 /-- Off the diagonal, every unpaired hexagon composite is a pentagon partner: the recut of a
 counted same-side pentagon pair, or the composite with the rectangles of a counted mixed-side
 pentagon pair. -/
