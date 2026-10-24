@@ -277,30 +277,33 @@ theorem derivSignLeft_eq_neg_derivSignRight_of_odd (p : R[X]) (a : R)
     (h : Odd (p.rootMultiplicity a)) : p.derivSignLeft a = -p.derivSignRight a := by
   rw [derivSignLeft_def, h.neg_one_pow, neg_one_mul]
 
+/-- A nonzero sign is not its own negative. -/
+private theorem signType_ne_neg {s : SignType} (hs : s ≠ 0) : s ≠ -s := by
+  revert hs
+  cases s <;> decide
+
 /-- The one-sided signs agree exactly when the root multiplicity is even. This includes the zero
 polynomial, whose one-sided signs are both zero. -/
+@[simp]
 theorem derivSignLeft_eq_derivSignRight_iff (p : R[X]) (a : R) :
     p.derivSignLeft a = p.derivSignRight a ↔ Even (p.rootMultiplicity a) := by
   rcases Nat.even_or_odd (p.rootMultiplicity a) with h | h
   · simp [derivSignLeft_eq_derivSignRight_of_even p a h, h]
   by_cases hp : p = 0
   · simp [hp] at h
-  have hs : p.derivSignRight a ≠ 0 := by simpa using hp
   rw [derivSignLeft_eq_neg_derivSignRight_of_odd p a h, iff_false_intro (Nat.not_even_iff_odd.2 h),
     iff_false]
-  generalize p.derivSignRight a = s at hs
-  cases s <;> simp_all
+  exact (signType_ne_neg (by simpa using hp)).symm
 
 /-- For a nonzero polynomial, the one-sided signs are opposite exactly when the root multiplicity
 is odd. -/
+@[simp]
 theorem derivSignLeft_eq_neg_derivSignRight_iff {p : R[X]} (hp : p ≠ 0) (a : R) :
     p.derivSignLeft a = -p.derivSignRight a ↔ Odd (p.rootMultiplicity a) := by
   rcases Nat.even_or_odd (p.rootMultiplicity a) with h | h
-  · have hs : p.derivSignRight a ≠ 0 := by simpa using hp
-    rw [derivSignLeft_eq_derivSignRight_of_even p a h,
+  · rw [derivSignLeft_eq_derivSignRight_of_even p a h,
       iff_false_intro (Nat.not_odd_iff_even.2 h), iff_false]
-    generalize p.derivSignRight a = s at hs
-    cases s <;> simp_all
+    exact signType_ne_neg (by simpa using hp)
   · simp [derivSignLeft_eq_neg_derivSignRight_of_odd p a h, h]
 
 /-- Multiplication multiplies right-hand signs, including when a factor is zero. -/
