@@ -26,7 +26,7 @@ are isometric. For exponents `k_i` and coefficients `θ_i`, `η_i` prime to `p`,
 
 ```text
 ⊕ᵢ q_{θ_i}^{(p)}(p^{k_i}) ≅ ⊕ᵢ q_{η_i}^{(p)}(p^{k_i})
-  ⟺  ∏_{k_i = m} (θ_i/p) = ∏_{k_i = m} (η_i/p)  for every m ≥ 1.
+  ↔  ∏_{k_i = m} (θ_i/p) = ∏_{k_i = m} (η_i/p)  for every m ≥ 1.
 ```
 
 So, once the exponents are fixed, the isometry class of the sum only depends on the product of
