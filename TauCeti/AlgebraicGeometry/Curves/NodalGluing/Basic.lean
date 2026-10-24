@@ -49,6 +49,8 @@ The model is the following.
 * A flag point belongs to a unique flag pair (`eq_of_flagPoint_mem`): two flag pairs never share
   a point of the disjoint union.  Consequently any chain of flag pairs reduces to equality or to a
   single generating step (`eq_of_flagRel_of_flagRel`).
+* `Marking d L` records marks on the curve labelled by `L`: pairwise distinct points of the
+  disjoint union, none of them a flag point.
 * `gluedRel` is the equivalence relation *generated* by the flag pairs: it is "the two points are
   equal, or they are the two points of one flag pair", which is `x = y ∨ flagRel d x y`.  It is
   symmetric and transitive (`gluedRel_symm`, `gluedRel_trans`), hence an equivalence relation
@@ -402,6 +404,17 @@ theorem flagRel_flagPoint_iff (d : FlagPairData ι Flag X) (p q : Flag × Bool) 
 /-- The flag points of `d` form a finite set. -/
 theorem flagPointSet_finite [Finite Flag] : (flagPointSet d).Finite :=
   Set.finite_range (flagPoint d)
+
+/-- **Marks** on a nodal curve presented by flag-pair data, labelled by `L`: pairwise distinct
+points of the normalization, none of which is a flag point.  These are the smooth marks of the
+curve: their images in the glued curve avoid the nodes. -/
+structure Marking (d : FlagPairData ι Flag X) (L : Type*) where
+  /-- The point of the normalization carrying a label. -/
+  point : L → Σ i, X i
+  /-- Distinct labels mark distinct points. -/
+  point_injective : Function.Injective point
+  /-- No mark is a flag point. -/
+  point_not_mem_flagPointSet (l : L) : point l ∉ flagPointSet d
 
 /-- The generated relation relates two points of the disjoint union only when they are equal or
 when both of them are flag points. -/

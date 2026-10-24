@@ -14,13 +14,14 @@ public import Mathlib.Logic.Equiv.Sum
 /-!
 # Marked nodal curves with unordered auxiliary marks
 
-A marked nodal curve carries finitely many marks: pairwise distinct points of its normalization,
-none of them a flag point.  Some of the marks are *distinguished* and keep their ordering, labelled
-by a type `N`; the others are *auxiliary*, labelled by a type `R`, and only the set of them
-matters.  An isomorphism of such curves is an isomorphism of nodal curves `f` together with a
-permutation `π` of the auxiliary labels, such that `f` fixes every distinguished label and carries
-the auxiliary mark `j` to the auxiliary mark `π j`.  These arrows form a groupoid, the finite
-label-permutation extension of the groupoid of isomorphisms preserving every label: the ordered
+A marked nodal curve carries marks (`NodalGluing.Marking`), labelled by an arbitrary type:
+pairwise distinct points of its normalization, none of them a flag point.  Some of the marks are
+*distinguished* and keep their ordering, labelled by a type `N`; the others are *auxiliary*,
+labelled by a type `R`, and only the set of them matters.  An isomorphism of such curves is an
+isomorphism of nodal curves `f` together with a permutation `π` of the auxiliary labels, such that
+`f` fixes every distinguished label and carries the auxiliary mark `j` to the auxiliary mark
+`π j`.  These arrows form a groupoid, the label-permutation extension of the groupoid of
+isomorphisms preserving every label (a finite extension when `R` is finite): the ordered
 isomorphisms are exactly the arrows with `π = 1`.
 
 Because the auxiliary marks are pairwise distinct, the permutation is determined by the map of
@@ -33,7 +34,9 @@ analytic theory, which this file does not prove.
 
 ## Main definitions
 
-* `NodalGluing.Marking d L`: marks on the nodal curve presented by `d`, labelled by `L`.
+The marks `NodalGluing.Marking d L` on the nodal curve presented by `d`, labelled by `L`, are
+defined in `TauCeti.AlgebraicGeometry.Curves.NodalGluing.Basic`.
+
 * `NodalGluing.AuxiliaryIso I n m m'`: the arrows `(π, f)` between curves with marks
   `m : Marking d (N ⊕ R)` and `m' : Marking d' (N ⊕ R)`, with identity `AuxiliaryIso.refl`,
   composite `AuxiliaryIso.trans` (`(ρ, h) ∘ (π, f) = (ρ ∘ π, h ∘ f)`) and inverse
@@ -74,19 +77,6 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E : Type*} [NormedAddCom
   {ι'' Flag'' : Type*} {X'' : ι'' → Type*} [∀ i, TopologicalSpace (X'' i)]
   [∀ i, ChartedSpace H (X'' i)]
   {d : FlagPairData ι Flag X} {d' : FlagPairData ι' Flag' X'} {d'' : FlagPairData ι'' Flag'' X''}
-
-/-! ### Marks -/
-
-/-- **Marks** on a nodal curve presented by flag-pair data, labelled by `L`: pairwise distinct
-points of the normalization, none of which is a flag point.  These are the smooth marks of the
-curve: their images in the glued curve avoid the nodes. -/
-structure Marking (d : FlagPairData ι Flag X) (L : Type*) where
-  /-- The point of the normalization carrying a label. -/
-  point : L → Σ i, X i
-  /-- Distinct labels mark distinct points. -/
-  point_injective : Function.Injective point
-  /-- No mark is a flag point. -/
-  point_not_mem_flagPointSet (l : L) : point l ∉ flagPointSet d
 
 /-! ### Arrows with unordered auxiliary marks -/
 
@@ -443,8 +433,8 @@ namespace AuxiliaryMarkedCurve
 
 /-- **The groupoid of curves with unordered auxiliary marks.**  Its arrows are the pairs `(π, f)`
 of `AuxiliaryIso`, composed by `(ρ, h) ∘ (π, f) = (ρ ∘ π, h ∘ f)`.  Its objects are the same as
-those of the groupoid of isomorphisms preserving every label, of which it is the finite
-label-permutation extension. -/
+those of the groupoid of isomorphisms preserving every label, of which it is the
+label-permutation extension, a finite extension when `R` is finite. -/
 instance unorderedAuxiliaryIsomorphismGroupoid :
     Groupoid (AuxiliaryMarkedCurve.{u, v, w} I n N R) where
   Hom C C' := AuxiliaryIso I n C.marking C'.marking
