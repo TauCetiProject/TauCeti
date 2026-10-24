@@ -138,19 +138,13 @@ theorem isGenusOneAffineDShape (hr : T.IsSelfIntersectionMinusTwoFork t c right)
     (hcard : Fintype.card T.Component = t + 2) (ht : 4 ≤ t) :
     T.IsGenusOneAffineDShape t c left right := by
   have hchainCard : t < Fintype.card T.Component := by omega
-  have hleft_ne (i : ℕ) (hi : i < t) : left ≠ c i := by
-    simpa only [show t - 1 - (t - 1 - i) = i by omega] using hl.branch_ne (t - 1 - i) (by omega)
+  have hleft_ne : ∀ i < t, left ≠ c i := fun _ hi ↦ hl.branch_ne_reverse hi
   have hl0 (i : ℕ) (hi : i < t) (hi1 : i ≠ 1) : T.intersection (c i) left = 0 := by
     simpa only [show t - 1 - (t - 1 - i) = i by omega] using
       hl.branch_intersection_eq_zero (i := t - 1 - i) (by omega) (by omega)
   have hr0 (i : ℕ) (hi : i < t) (hne : i ≠ t - 2) : T.intersection (c i) right = 0 :=
     hr.branch_intersection_eq_zero hi hne
-  have hleftRight : left ≠ right := by
-    rintro rfl
-    have hpos : 0 < T.intersection (c 1) left := by
-      simpa only [show t - 1 - (t - 2) = 1 by omega] using hl.branch_intersection_pos
-    rw [hr0 1 (by omega) (by omega)] at hpos
-    exact lt_irrefl 0 hpos
+  have hleftRight := hr.opposite_branch_ne hl (by omega)
   -- Deleting either extra leaf leaves a proper fork, which is simply laced.
   obtain ⟨w, hw, hwr, hedge, hredge⟩ := hr.exists_weight_intersection_eq (by omega)
   obtain ⟨w', hw', hwl, -, hledge⟩ := hl.exists_weight_intersection_eq (by omega)

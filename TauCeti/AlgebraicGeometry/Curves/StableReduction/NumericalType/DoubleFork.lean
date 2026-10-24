@@ -42,6 +42,26 @@ variable {T : NumericalType.{u}} {t : ℕ} {c : ℕ → T.Component}
 
 namespace IsSelfIntersectionMinusTwoFork
 
+/-- The leaf of a fork on the reversed chain is distinct from every original chain component. -/
+lemma branch_ne_reverse
+    (hl : T.IsSelfIntersectionMinusTwoFork t (fun i ↦ c (t - 1 - i)) left)
+    {i : ℕ} (hi : i < t) : left ≠ c i := by
+  have hreverse : t - 1 - (t - 1 - i) = i := by omega
+  simpa only [hreverse] using hl.branch_ne (t - 1 - i) (by omega)
+
+/-- The extra leaves of forks at opposite ends of a chain of length at least four are distinct. -/
+lemma opposite_branch_ne (hr : T.IsSelfIntersectionMinusTwoFork t c right)
+    (hl : T.IsSelfIntersectionMinusTwoFork t (fun i ↦ c (t - 1 - i)) left)
+    (ht : 3 < t) : left ≠ right := by
+  intro h
+  have hrightZero : T.intersection (c 1) right = 0 :=
+    hr.branch_intersection_eq_zero (by omega) (by omega)
+  have hleftPos : 0 < T.intersection (c 1) left := by
+    have hreverse : t - 1 - (t - 2) = 1 := by omega
+    simpa only [hreverse] using hl.branch_intersection_pos
+  rw [h, hrightZero] at hleftPos
+  exact lt_irrefl 0 hleftPos
+
 private def doubleForkEmbedding (t : ℕ) (c : ℕ → T.Component) (left right : T.Component) :
     DoubleForkIndex (t - 4) → T.Component
   | .inl i => if i = 0 then c 0 else left
@@ -254,18 +274,8 @@ theorem not_oppositeFork (hr : T.IsSelfIntersectionMinusTwoFork t c right)
   have hchainCard : t < Fintype.card T.Component := by omega
   have hrightCard : t + 1 < Fintype.card T.Component := by omega
   have hreversePenultimate : t - 1 - (t - 2) = 1 := by omega
-  have hleftRight : left ≠ right := by
-    intro h
-    have hrightZero : T.intersection (c 1) right = 0 :=
-      hr.branch_intersection_eq_zero (by omega) (by omega)
-    have hleftPos : 0 < T.intersection (c 1) left := by
-      simpa only [hreversePenultimate] using hl.branch_intersection_pos
-    rw [h] at hleftPos
-    omega
-  have hleft_ne_chain : ∀ i < t, left ≠ c i := by
-    intro i hi
-    have hreverse : t - 1 - (t - 1 - i) = i := by omega
-    simpa only [hreverse] using hl.branch_ne (t - 1 - i) (by omega)
+  have hleftRight := hr.opposite_branch_ne hl ht
+  have hleft_ne_chain : ∀ i < t, left ≠ c i := fun _ hi ↦ hl.branch_ne_reverse hi
   -- Classifying the two forks fixes one common weight, every chain edge, and the two leaf edges.
   obtain ⟨w, hw, hwright, hedge, hrightEdge⟩ := hr.exists_weight_intersection_eq hrightCard
   obtain ⟨w', hw', hwleft', -, hleftEdge'⟩ := hl.exists_weight_intersection_eq hrightCard
@@ -366,18 +376,8 @@ lemma IsSelfIntersectionMinusTwoFork.eq_or_eq_or_exists_lt_eq_of_card_eq {t : �
     (hcard : Fintype.card T.Component = t + 2) (v : T.Component) :
     v = left ∨ v = right ∨ ∃ i < t, c i = v := by
   classical
-  -- The reversed fork is indexed by `t - 1 - i`; normalize these indices to apply its lemmas
-  -- to the original chain and to the branching vertex at index `1`.
-  have hleft_ne (i : ℕ) (hi : i < t) : left ≠ c i := by
-    have hreverse : t - 1 - (t - 1 - i) = i := by omega
-    simpa only [hreverse] using hl.branch_ne (t - 1 - i) (by omega)
-  have hlr : left ≠ right := by
-    rintro rfl
-    have hpos : 0 < T.intersection (c 1) left := by
-      have hbranch : t - 1 - (t - 2) = 1 := by omega
-      simpa only [hbranch] using hl.branch_intersection_pos
-    rw [hr.branch_intersection_eq_zero (by omega) (by omega)] at hpos
-    exact lt_irrefl 0 hpos
+  have hleft_ne : ∀ i < t, left ≠ c i := fun _ hi ↦ hl.branch_ne_reverse hi
+  have hlr := hr.opposite_branch_ne hl (by omega)
   have hr_notMem : right ∉ (range t).image c := by
     simp only [mem_image, mem_range, not_exists, not_and]
     exact fun i hi h ↦ hr.branch_ne i hi h.symm

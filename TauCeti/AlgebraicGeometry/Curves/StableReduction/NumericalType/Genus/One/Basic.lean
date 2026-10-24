@@ -99,6 +99,22 @@ universe u
 
 variable {T : NumericalType.{u}}
 
+/-- A genus-one cycle has positive topological genus, constant weights and multiplicities,
+degree two at every vertex, and edge intersections equal to the common weight.
+Component genera are imposed separately in the minimal classification. -/
+def IsGenusOneCycleShape (T : NumericalType.{u}) : Prop :=
+  0 < T.topologicalGenus ∧
+  (∀ i j, T.weight i = T.weight j ∧ T.multiplicity i = T.multiplicity j) ∧
+  (∀ i, (T.intersectionGraph.neighborSet i).ncard = 2) ∧
+  ∀ i j, T.Adj i j → T.intersection i j = T.weight i
+
+/-- The complete numerical data recorded by `IsGenusOneCycleShape`. -/
+theorem isGenusOneCycleShape_iff : T.IsGenusOneCycleShape ↔
+  0 < T.topologicalGenus ∧
+  (∀ i j, T.weight i = T.weight j ∧ T.multiplicity i = T.multiplicity j) ∧
+  (∀ i, (T.intersectionGraph.neighborSet i).ncard = 2) ∧
+  ∀ i j, T.Adj i j → T.intersection i j = T.weight i := Iff.rfl
+
 /-! ### Genus one -/
 
 /-- A numerical type with a single component `i` has genus one exactly when `gᵢ = 1`. -/
@@ -701,6 +717,25 @@ lemma exists_weight_and_multiplicity_dvd_and_le_of_int (T : NumericalType)
     exact ⟨Nat.dvd_mul_left _ _, Nat.mul_le_mul_right _ hk⟩
   exact ⟨bound T.weight jw nw hw, bound T.multiplicity jm nm hm⟩
 
+/-- Bounded integral ratios on an index type equivalent to the components give uniform weight
+and multiplicity divisibility bounds. Finite shape proofs can check their coefficient vectors on
+the index type without transporting each component through the inverse equivalence. -/
+lemma exists_weight_and_multiplicity_dvd_and_le_of_int_of_equiv (T : NumericalType)
+    {ι : Type*} (e : ι ≃ T.Component) (jw jm : ι) {nw nm : ℕ}
+    (hw : ∀ i, ∃ k ≤ nw, (T.weight (e i) : ℤ) = (k : ℤ) * T.weight (e jw))
+    (hm : ∀ i, ∃ k ≤ nm, (T.multiplicity (e i) : ℤ) =
+      (k : ℤ) * T.multiplicity (e jm)) :
+    (∃ j, ∀ i, (T.weight j : ℕ) ∣ T.weight i ∧ (T.weight i : ℕ) ≤ nw * T.weight j) ∧
+      (∃ j, ∀ i, (T.multiplicity j : ℕ) ∣ T.multiplicity i ∧
+        (T.multiplicity i : ℕ) ≤ nm * T.multiplicity j) := by
+  apply T.exists_weight_and_multiplicity_dvd_and_le_of_int (e jw) (e jm)
+  · intro i
+    obtain ⟨k, rfl⟩ := e.surjective i
+    exact hw k
+  · intro i
+    obtain ⟨k, rfl⟩ := e.surjective i
+    exact hm k
+
 /-- Bounded integral ratios on a finite set exhausting the components give uniform weight and
 multiplicity divisibility bounds. This lets finite shape proofs check each listed component. -/
 lemma exists_weight_and_multiplicity_dvd_and_le_of_int_on_finset (T : NumericalType)
@@ -773,6 +808,20 @@ lemma IsGenusOneChainShape.exists_weight_and_multiplicity_dvd_and_le
     simp only [forall_mem_insert, mem_singleton, forall_eq, ← Nat.lt_succ_iff,
       Nat.exists_lt_succ_right]
     omega
+
+/-- In the cycle shape, a component weight divides all weights with quotient at most four,
+and a component multiplicity divides all multiplicities with quotient at most six. -/
+lemma IsGenusOneCycleShape.exists_weight_and_multiplicity_dvd_and_le
+    (hshape : T.IsGenusOneCycleShape) :
+    (∃ j, ∀ i, (T.weight j : ℕ) ∣ T.weight i ∧ (T.weight i : ℕ) ≤ 4 * T.weight j) ∧
+      (∃ j, ∀ i, (T.multiplicity j : ℕ) ∣ T.multiplicity i ∧
+        (T.multiplicity i : ℕ) ≤ 6 * T.multiplicity j) := by
+  classical
+  obtain ⟨j₀⟩ := T.componentNonempty
+  obtain ⟨-, hwm, -⟩ := isGenusOneCycleShape_iff.mp hshape
+  exact T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) j₀ j₀
+    (fun i ↦ ⟨1, by decide, by rw [(hwm i j₀).1]; simp⟩)
+    (fun i ↦ ⟨1, by decide, by rw [(hwm i j₀).2]; simp⟩)
 
 end NumericalType
 

@@ -43,7 +43,7 @@ public section
 
 namespace TauCeti.NumericalType
 
-open Finset _root_.Matrix
+open Finset
 
 universe u
 
@@ -77,10 +77,7 @@ variable {T : NumericalType.{u}}
 def IsGenusOneMinimalShape (T : NumericalType.{u}) : Prop :=
   (Fintype.card T.Component = 1 ∧ ∀ i, T.genus i = 1 ∧ T.intersection i i = 0) ∨
   ((∀ i, T.genus i = 0 ∧ T.intersection i i = -(2 * (T.weight i : ℤ))) ∧
-    ((0 < T.topologicalGenus ∧
-        (∀ i j, T.weight i = T.weight j ∧ T.multiplicity i = T.multiplicity j) ∧
-        (∀ i, (T.intersectionGraph.neighborSet i).ncard = 2) ∧
-        ∀ i j, T.Adj i j → T.intersection i j = T.weight i) ∨
+    (T.IsGenusOneCycleShape ∨
       (Fintype.card T.Component = 2 ∧ ∃ x y, x ≠ y ∧ T.IsGenusOnePairShape x y) ∨
       (Fintype.card T.Component = 3 ∧
         ∃ x j z, x ≠ j ∧ x ≠ z ∧ j ≠ z ∧ T.intersection x z = 0 ∧
@@ -95,31 +92,8 @@ def IsGenusOneMinimalShape (T : NumericalType.{u}) : Prop :=
       (Fintype.card T.Component = 5 ∧ ∃ c, T.IsSelfIntersectionMinusTwoChain 5 c ∧
         (∀ i < 5, ∀ j < 5, i ≠ j → i + 1 ≠ j → j + 1 ≠ i → T.intersection (c i) (c j) = 0) ∧
         T.IsGenusOneFivePathShape (c 0) (c 1) (c 2) (c 3) (c 4)) ∨
-      (∃ e : Option (Fin 4) ≃ T.Component,
-        (∀ v, T.weight (e v) = T.weight (e none)) ∧
-        (∀ v, (T.multiplicity (e v) : ℤ) =
-          if v = none then 2 * (T.multiplicity (e (some 0)) : ℤ)
-          else T.multiplicity (e (some 0))) ∧
-        (∀ v w, T.intersection (e v) (e w) =
-          if v = w then -(2 * (T.weight (e none) : ℤ))
-          else if v = none ∨ w = none then T.weight (e none) else 0)) ∨
-      (∃ e : Fin 5 ≃ T.Component, ∃ w m : ℕ+,
-        ((∀ i, (T.weight (e i) : ℤ) = ![2 * (w : ℤ), w, w, w, w] i) ∧
-          (∀ i, (T.multiplicity (e i) : ℤ) = ![(m : ℤ), 2 * m, 2 * m, m, m] i) ∧
-          (∀ i j, T.intersection (e i) (e j) =
-            !![-4 * (w : ℤ), 2 * w, 0, 0, 0;
-               2 * w, -2 * w, w, 0, 0;
-               0, w, -2 * w, w, w;
-               0, 0, w, -2 * w, 0;
-               0, 0, w, 0, -2 * w] i j)) ∨
-        ((∀ i, (T.weight (e i) : ℤ) = ![(w : ℤ), 2 * w, 2 * w, 2 * w, 2 * w] i) ∧
-          (∀ i, (T.multiplicity (e i) : ℤ) = ![2 * (m : ℤ), 2 * m, 2 * m, m, m] i) ∧
-          (∀ i j, T.intersection (e i) (e j) =
-            !![-2 * (w : ℤ), 2 * w, 0, 0, 0;
-               2 * w, -4 * w, 2 * w, 0, 0;
-               0, 2 * w, -4 * w, 2 * w, 2 * w;
-               0, 0, 2 * w, -4 * w, 0;
-               0, 0, 2 * w, 0, -4 * w] i j))) ∨
+      T.IsGenusOneFourLeafStarShape ∨
+      T.IsGenusOneFiveForkShape ∨
       (∃ n c, 6 ≤ n ∧ Fintype.card T.Component = n ∧ T.IsSelfIntersectionMinusTwoChain n c ∧
         (∀ i < n, ∀ j < n, i ≠ j → i + 1 ≠ j → j + 1 ≠ i → T.intersection (c i) (c j) = 0) ∧
         T.IsGenusOneLongPathShape n c) ∨
@@ -129,34 +103,16 @@ def IsGenusOneMinimalShape (T : NumericalType.{u}) : Prop :=
         T.IsSelfIntersectionMinusTwoFork t c right ∧
         T.IsSelfIntersectionMinusTwoFork t (fun i ↦ c (t - 1 - i)) left ∧
         T.IsGenusOneAffineDShape t c left right) ∨
-      (∃ e : Fin 7 ≃ T.Component,
-        (∀ i, T.weight (e i) = T.weight (e 0)) ∧
-        (∀ i, (T.multiplicity (e i) : ℤ) =
-          (T.multiplicity (e 2) : ℤ) * AffineDynkinType.E6.marks i) ∧
-        (∀ i j, T.intersection (e i) (e j) =
-          -(T.weight (e 0) : ℤ) * AffineDynkinType.E6.cartanMatrix i j)) ∨
-      (∃ e : Fin 8 ≃ T.Component,
-        (∀ i, T.weight (e i) = T.weight (e 0)) ∧
-        (∀ i, (T.multiplicity (e i) : ℤ) =
-          AffineDynkinType.E7.marks i * T.multiplicity (e 4)) ∧
-        (∀ i j, T.intersection (e i) (e j) =
-          -(T.weight (e 0) : ℤ) * AffineDynkinType.E7.cartanMatrix i j)) ∨
-      (∃ e : Fin 9 ≃ T.Component,
-        (∀ i, T.weight (e i) = T.weight (e 0)) ∧
-        (∀ i, (T.multiplicity (e i) : ℤ) =
-          AffineDynkinType.E8.marks i * T.multiplicity (e 8)) ∧
-        (∀ i j, T.intersection (e i) (e j) =
-          -(T.weight (e 0) : ℤ) * AffineDynkinType.E8.cartanMatrix i j))))
+      T.IsGenusOneAffineE6Shape ∨
+      T.IsGenusOneAffineE7Shape ∨
+      T.IsGenusOneAffineE8Shape))
 
 /-- A minimal genus-one shape is either a single genus-one component or one of the
 rational-component shape alternatives, with their complete numerical data. -/
 theorem isGenusOneMinimalShape_iff : T.IsGenusOneMinimalShape ↔
   (Fintype.card T.Component = 1 ∧ ∀ i, T.genus i = 1 ∧ T.intersection i i = 0) ∨
   ((∀ i, T.genus i = 0 ∧ T.intersection i i = -(2 * (T.weight i : ℤ))) ∧
-    ((0 < T.topologicalGenus ∧
-        (∀ i j, T.weight i = T.weight j ∧ T.multiplicity i = T.multiplicity j) ∧
-        (∀ i, (T.intersectionGraph.neighborSet i).ncard = 2) ∧
-        ∀ i j, T.Adj i j → T.intersection i j = T.weight i) ∨
+    (T.IsGenusOneCycleShape ∨
       (Fintype.card T.Component = 2 ∧ ∃ x y, x ≠ y ∧ T.IsGenusOnePairShape x y) ∨
       (Fintype.card T.Component = 3 ∧
         ∃ x j z, x ≠ j ∧ x ≠ z ∧ j ≠ z ∧ T.intersection x z = 0 ∧
@@ -171,31 +127,8 @@ theorem isGenusOneMinimalShape_iff : T.IsGenusOneMinimalShape ↔
       (Fintype.card T.Component = 5 ∧ ∃ c, T.IsSelfIntersectionMinusTwoChain 5 c ∧
         (∀ i < 5, ∀ j < 5, i ≠ j → i + 1 ≠ j → j + 1 ≠ i → T.intersection (c i) (c j) = 0) ∧
         T.IsGenusOneFivePathShape (c 0) (c 1) (c 2) (c 3) (c 4)) ∨
-      (∃ e : Option (Fin 4) ≃ T.Component,
-        (∀ v, T.weight (e v) = T.weight (e none)) ∧
-        (∀ v, (T.multiplicity (e v) : ℤ) =
-          if v = none then 2 * (T.multiplicity (e (some 0)) : ℤ)
-          else T.multiplicity (e (some 0))) ∧
-        (∀ v w, T.intersection (e v) (e w) =
-          if v = w then -(2 * (T.weight (e none) : ℤ))
-          else if v = none ∨ w = none then T.weight (e none) else 0)) ∨
-      (∃ e : Fin 5 ≃ T.Component, ∃ w m : ℕ+,
-        ((∀ i, (T.weight (e i) : ℤ) = ![2 * (w : ℤ), w, w, w, w] i) ∧
-          (∀ i, (T.multiplicity (e i) : ℤ) = ![(m : ℤ), 2 * m, 2 * m, m, m] i) ∧
-          (∀ i j, T.intersection (e i) (e j) =
-            !![-4 * (w : ℤ), 2 * w, 0, 0, 0;
-               2 * w, -2 * w, w, 0, 0;
-               0, w, -2 * w, w, w;
-               0, 0, w, -2 * w, 0;
-               0, 0, w, 0, -2 * w] i j)) ∨
-        ((∀ i, (T.weight (e i) : ℤ) = ![(w : ℤ), 2 * w, 2 * w, 2 * w, 2 * w] i) ∧
-          (∀ i, (T.multiplicity (e i) : ℤ) = ![2 * (m : ℤ), 2 * m, 2 * m, m, m] i) ∧
-          (∀ i j, T.intersection (e i) (e j) =
-            !![-2 * (w : ℤ), 2 * w, 0, 0, 0;
-               2 * w, -4 * w, 2 * w, 0, 0;
-               0, 2 * w, -4 * w, 2 * w, 2 * w;
-               0, 0, 2 * w, -4 * w, 0;
-               0, 0, 2 * w, 0, -4 * w] i j))) ∨
+      T.IsGenusOneFourLeafStarShape ∨
+      T.IsGenusOneFiveForkShape ∨
       (∃ n c, 6 ≤ n ∧ Fintype.card T.Component = n ∧ T.IsSelfIntersectionMinusTwoChain n c ∧
         (∀ i < n, ∀ j < n, i ≠ j → i + 1 ≠ j → j + 1 ≠ i → T.intersection (c i) (c j) = 0) ∧
         T.IsGenusOneLongPathShape n c) ∨
@@ -205,24 +138,9 @@ theorem isGenusOneMinimalShape_iff : T.IsGenusOneMinimalShape ↔
         T.IsSelfIntersectionMinusTwoFork t c right ∧
         T.IsSelfIntersectionMinusTwoFork t (fun i ↦ c (t - 1 - i)) left ∧
         T.IsGenusOneAffineDShape t c left right) ∨
-      (∃ e : Fin 7 ≃ T.Component,
-        (∀ i, T.weight (e i) = T.weight (e 0)) ∧
-        (∀ i, (T.multiplicity (e i) : ℤ) =
-          (T.multiplicity (e 2) : ℤ) * AffineDynkinType.E6.marks i) ∧
-        (∀ i j, T.intersection (e i) (e j) =
-          -(T.weight (e 0) : ℤ) * AffineDynkinType.E6.cartanMatrix i j)) ∨
-      (∃ e : Fin 8 ≃ T.Component,
-        (∀ i, T.weight (e i) = T.weight (e 0)) ∧
-        (∀ i, (T.multiplicity (e i) : ℤ) =
-          AffineDynkinType.E7.marks i * T.multiplicity (e 4)) ∧
-        (∀ i j, T.intersection (e i) (e j) =
-          -(T.weight (e 0) : ℤ) * AffineDynkinType.E7.cartanMatrix i j)) ∨
-      (∃ e : Fin 9 ≃ T.Component,
-        (∀ i, T.weight (e i) = T.weight (e 0)) ∧
-        (∀ i, (T.multiplicity (e i) : ℤ) =
-          AffineDynkinType.E8.marks i * T.multiplicity (e 8)) ∧
-        (∀ i j, T.intersection (e i) (e j) =
-          -(T.weight (e 0) : ℤ) * AffineDynkinType.E8.cartanMatrix i j)))) := Iff.rfl
+      T.IsGenusOneAffineE6Shape ∨
+      T.IsGenusOneAffineE7Shape ∨
+      T.IsGenusOneAffineE8Shape)) := Iff.rfl
 
 /-- Introduce the singleton family in the minimal genus-one classification. -/
 lemma IsGenusOneMinimalShape.of_singleton
@@ -234,10 +152,7 @@ lemma IsGenusOneMinimalShape.of_singleton
 /-- Introduce the cycle family in the minimal genus-one classification. -/
 lemma IsGenusOneMinimalShape.of_cycle
     (hindices : ∀ i, T.genus i = 0 ∧ T.intersection i i = -(2 * (T.weight i : ℤ)))
-    (hshape : 0 < T.topologicalGenus ∧
-        (∀ i j, T.weight i = T.weight j ∧ T.multiplicity i = T.multiplicity j) ∧
-        (∀ i, (T.intersectionGraph.neighborSet i).ncard = 2) ∧
-        ∀ i j, T.Adj i j → T.intersection i j = T.weight i) : T.IsGenusOneMinimalShape := by
+    (hshape : T.IsGenusOneCycleShape) : T.IsGenusOneMinimalShape := by
   rw [isGenusOneMinimalShape_iff]
   itauto
 
@@ -289,14 +204,7 @@ lemma IsGenusOneMinimalShape.of_fivePath
 /-- Introduce the four-leaf star family in the minimal genus-one classification. -/
 lemma IsGenusOneMinimalShape.of_fourLeafStar
     (hindices : ∀ i, T.genus i = 0 ∧ T.intersection i i = -(2 * (T.weight i : ℤ)))
-    (hshape : ∃ e : Option (Fin 4) ≃ T.Component,
-        (∀ v, T.weight (e v) = T.weight (e none)) ∧
-        (∀ v, (T.multiplicity (e v) : ℤ) =
-          if v = none then 2 * (T.multiplicity (e (some 0)) : ℤ)
-          else T.multiplicity (e (some 0))) ∧
-        (∀ v w, T.intersection (e v) (e w) =
-          if v = w then -(2 * (T.weight (e none) : ℤ))
-          else if v = none ∨ w = none then T.weight (e none) else 0)) :
+    (hshape : T.IsGenusOneFourLeafStarShape) :
     T.IsGenusOneMinimalShape := by
   rw [isGenusOneMinimalShape_iff]
   itauto
@@ -304,23 +212,7 @@ lemma IsGenusOneMinimalShape.of_fourLeafStar
 /-- Introduce the five-component fork family in the minimal genus-one classification. -/
 lemma IsGenusOneMinimalShape.of_fiveFork
     (hindices : ∀ i, T.genus i = 0 ∧ T.intersection i i = -(2 * (T.weight i : ℤ)))
-    (hshape : ∃ e : Fin 5 ≃ T.Component, ∃ w m : ℕ+,
-        ((∀ i, (T.weight (e i) : ℤ) = ![2 * (w : ℤ), w, w, w, w] i) ∧
-          (∀ i, (T.multiplicity (e i) : ℤ) = ![(m : ℤ), 2 * m, 2 * m, m, m] i) ∧
-          (∀ i j, T.intersection (e i) (e j) =
-            !![-4 * (w : ℤ), 2 * w, 0, 0, 0;
-               2 * w, -2 * w, w, 0, 0;
-               0, w, -2 * w, w, w;
-               0, 0, w, -2 * w, 0;
-               0, 0, w, 0, -2 * w] i j)) ∨
-        ((∀ i, (T.weight (e i) : ℤ) = ![(w : ℤ), 2 * w, 2 * w, 2 * w, 2 * w] i) ∧
-          (∀ i, (T.multiplicity (e i) : ℤ) = ![2 * (m : ℤ), 2 * m, 2 * m, m, m] i) ∧
-          (∀ i j, T.intersection (e i) (e j) =
-            !![-2 * (w : ℤ), 2 * w, 0, 0, 0;
-               2 * w, -4 * w, 2 * w, 0, 0;
-               0, 2 * w, -4 * w, 2 * w, 2 * w;
-               0, 0, 2 * w, -4 * w, 0;
-               0, 0, 2 * w, 0, -4 * w] i j))) : T.IsGenusOneMinimalShape := by
+    (hshape : T.IsGenusOneFiveForkShape) : T.IsGenusOneMinimalShape := by
   rw [isGenusOneMinimalShape_iff]
   itauto
 
@@ -355,12 +247,7 @@ lemma IsGenusOneMinimalShape.of_affineD
 /-- Introduce the affine E₆ family in the minimal genus-one classification. -/
 lemma IsGenusOneMinimalShape.of_affineE6
     (hindices : ∀ i, T.genus i = 0 ∧ T.intersection i i = -(2 * (T.weight i : ℤ)))
-    (hshape : ∃ e : Fin 7 ≃ T.Component,
-        (∀ i, T.weight (e i) = T.weight (e 0)) ∧
-        (∀ i, (T.multiplicity (e i) : ℤ) =
-          (T.multiplicity (e 2) : ℤ) * AffineDynkinType.E6.marks i) ∧
-        (∀ i j, T.intersection (e i) (e j) =
-          -(T.weight (e 0) : ℤ) * AffineDynkinType.E6.cartanMatrix i j)) :
+    (hshape : T.IsGenusOneAffineE6Shape) :
     T.IsGenusOneMinimalShape := by
   rw [isGenusOneMinimalShape_iff]
   itauto
@@ -368,12 +255,7 @@ lemma IsGenusOneMinimalShape.of_affineE6
 /-- Introduce the affine E₇ family in the minimal genus-one classification. -/
 lemma IsGenusOneMinimalShape.of_affineE7
     (hindices : ∀ i, T.genus i = 0 ∧ T.intersection i i = -(2 * (T.weight i : ℤ)))
-    (hshape : ∃ e : Fin 8 ≃ T.Component,
-        (∀ i, T.weight (e i) = T.weight (e 0)) ∧
-        (∀ i, (T.multiplicity (e i) : ℤ) =
-          AffineDynkinType.E7.marks i * T.multiplicity (e 4)) ∧
-        (∀ i j, T.intersection (e i) (e j) =
-          -(T.weight (e 0) : ℤ) * AffineDynkinType.E7.cartanMatrix i j)) :
+    (hshape : T.IsGenusOneAffineE7Shape) :
     T.IsGenusOneMinimalShape := by
   rw [isGenusOneMinimalShape_iff]
   itauto
@@ -381,15 +263,134 @@ lemma IsGenusOneMinimalShape.of_affineE7
 /-- Introduce the affine E₈ family in the minimal genus-one classification. -/
 lemma IsGenusOneMinimalShape.of_affineE8
     (hindices : ∀ i, T.genus i = 0 ∧ T.intersection i i = -(2 * (T.weight i : ℤ)))
-    (hshape : ∃ e : Fin 9 ≃ T.Component,
-        (∀ i, T.weight (e i) = T.weight (e 0)) ∧
-        (∀ i, (T.multiplicity (e i) : ℤ) =
-          AffineDynkinType.E8.marks i * T.multiplicity (e 8)) ∧
-        (∀ i j, T.intersection (e i) (e j) =
-          -(T.weight (e 0) : ℤ) * AffineDynkinType.E8.cartanMatrix i j)) :
+    (hshape : T.IsGenusOneAffineE8Shape) :
     T.IsGenusOneMinimalShape := by
   rw [isGenusOneMinimalShape_iff]
   itauto
+
+/-- An exhaustive chain of at least two components has one of the genus-one path shapes.
+The chain length selects the finite classifications up to five components and the long-path
+classification thereafter; reversing the chain preserves its nonconsecutive zero intersections. -/
+lemma IsGenusOneMinimalShape.of_exhaustive_chain {t : ℕ} {c : ℕ → T.Component}
+    (hindices : ∀ i, T.genus i = 0 ∧ T.intersection i i = -(2 * (T.weight i : ℤ)))
+    (ht2 : 2 ≤ t) (hcard : Fintype.card T.Component = t)
+    (hc : T.IsSelfIntersectionMinusTwoChain t c)
+    (hzero : ∀ i < t, ∀ j < t, i ≠ j → i + 1 ≠ j → j + 1 ≠ i →
+      T.intersection (c i) (c j) = 0) : T.IsGenusOneMinimalShape := by
+  have hself (i : T.Component) := (hindices i).2
+  rcases lt_or_ge t 6 with ht6 | ht6
+  · interval_cases t
+    · obtain ⟨x, y, hxy, hshape⟩ :=
+        T.exists_weight_multiplicity_intersection_eq_of_card_eq_two hcard
+          (hc.ne (i := 0) (j := 1) (by omega) (by omega) (by omega)) (hself _) (hself _)
+      refine IsGenusOneMinimalShape.of_pair hindices ⟨hcard, x, y, ?_, hshape⟩
+      rcases hxy with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
+      · exact hc.ne (by omega) (by omega) (by omega)
+      · exact hc.ne (by omega) (by omega) (by omega)
+    · obtain ⟨x, z, hxz, hshape⟩ :=
+        T.exists_weight_multiplicity_intersection_eq_of_card_eq_three hcard
+          (hc.ne (i := 0) (j := 1) (by omega) (by omega) (by omega))
+          (hc.ne (i := 0) (j := 2) (by omega) (by omega) (by omega))
+          (hc.ne (i := 1) (j := 2) (by omega) (by omega) (by omega))
+          (hself _) (hself _) (hself _)
+          (hzero 0 (by omega) 2 (by omega) (by omega) (by omega) (by omega))
+      refine IsGenusOneMinimalShape.of_chain hindices ⟨hcard, x, c 1, z, ?_⟩
+      rcases hxz with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
+      · exact ⟨hc.ne (by omega) (by omega) (by omega), hc.ne (by omega) (by omega) (by omega),
+          hc.ne (by omega) (by omega) (by omega),
+          hzero 0 (by omega) 2 (by omega) (by omega) (by omega) (by omega), hshape⟩
+      · refine ⟨hc.ne (by omega) (by omega) (by omega), hc.ne (by omega) (by omega) (by omega),
+          hc.ne (by omega) (by omega) (by omega), ?_, hshape⟩
+        rw [T.intersection_comm]
+        exact hzero 0 (by omega) 2 (by omega) (by omega) (by omega) (by omega)
+    · rcases T.isGenusOneFourPathShape_or_isGenusOneFourPathShape hcard
+          (hself _) (hself _) (hself _) (hself _)
+          (hzero 0 (by omega) 2 (by omega) (by omega) (by omega) (by omega))
+          (hzero 0 (by omega) 3 (by omega) (by omega) (by omega) (by omega))
+          (hzero 1 (by omega) 3 (by omega) (by omega) (by omega) (by omega))
+          (hc.intersection_succ_pos 0 (by omega)) (hc.intersection_succ_pos 1 (by omega))
+          (hc.intersection_succ_pos 2 (by omega)) with h4 | h4
+      · exact IsGenusOneMinimalShape.of_fourPath hindices ⟨hcard, c, hc, hzero, h4⟩
+      · exact IsGenusOneMinimalShape.of_fourPath hindices
+          ⟨hcard, fun i ↦ c (4 - 1 - i), hc.reverse,
+            intersection_reverse_eq_zero_of_nonconsecutive hzero, h4⟩
+    · rcases T.isGenusOneFivePathShape_or_isGenusOneFivePathShape hcard
+          (hself _) (hself _) (hself _) (hself _) (hself _)
+          (hzero 0 (by omega) 2 (by omega) (by omega) (by omega) (by omega))
+          (hzero 0 (by omega) 3 (by omega) (by omega) (by omega) (by omega))
+          (hzero 0 (by omega) 4 (by omega) (by omega) (by omega) (by omega))
+          (hzero 1 (by omega) 3 (by omega) (by omega) (by omega) (by omega))
+          (hzero 1 (by omega) 4 (by omega) (by omega) (by omega) (by omega))
+          (hzero 2 (by omega) 4 (by omega) (by omega) (by omega) (by omega))
+          (hc.intersection_succ_pos 0 (by omega)) (hc.intersection_succ_pos 1 (by omega))
+          (hc.intersection_succ_pos 2 (by omega)) (hc.intersection_succ_pos 3 (by omega))
+          with h5 | h5
+      · exact IsGenusOneMinimalShape.of_fivePath hindices ⟨hcard, c, hc, hzero, h5⟩
+      · exact IsGenusOneMinimalShape.of_fivePath hindices
+          ⟨hcard, fun i ↦ c (5 - 1 - i), hc.reverse,
+            intersection_reverse_eq_zero_of_nonconsecutive hzero, h5⟩
+  · rcases T.isGenusOneLongPathShape_or_isGenusOneLongPathShape hcard ht6 hc hzero with
+      hlong | hlong
+    · exact IsGenusOneMinimalShape.of_longPath hindices ⟨t, c, ht6, hcard, hc, hzero, hlong⟩
+    · exact IsGenusOneMinimalShape.of_longPath hindices
+        ⟨t, fun i ↦ c (t - 1 - i), ht6, hcard, hc.reverse,
+          intersection_reverse_eq_zero_of_nonconsecutive hzero, hlong⟩
+
+/-- An exhaustive fork has one of the genus-one fork shapes. Chain lengths three and four
+use the four-component star and five-component fork classifications; longer forks use the
+long-fork classification. The five-component equivalence is constructed only in its case. -/
+lemma IsGenusOneMinimalShape.of_exhaustive_fork {t : ℕ} {c : ℕ → T.Component}
+    {b : T.Component}
+    (hindices : ∀ i, T.genus i = 0 ∧ T.intersection i i = -(2 * (T.weight i : ℤ)))
+    (hcard : Fintype.card T.Component = t + 1)
+    (hf : T.IsSelfIntersectionMinusTwoFork t c b) : T.IsGenusOneMinimalShape := by
+  classical
+  have hself (i : T.Component) := (hindices i).2
+  have ht3 := hf.two_lt
+  rcases lt_or_ge t 5 with ht5 | ht5
+  · interval_cases t
+    · -- `t = 3`: three-leaf star on `4` components.
+      have hz02 := hf.intersection_eq_zero (by omega) (p := 0) (q := 2)
+        (by omega) (by omega) (by omega) (by omega) (by omega)
+      have hz0b := hf.branch_intersection_eq_zero (i := 0) (by omega) (by omega)
+      have hz2b := hf.branch_intersection_eq_zero (i := 2) (by omega) (by omega)
+      obtain ⟨x, y, z, -, huniv, -, -, -, hxy0, hxz0, hyz0, hstar⟩ :=
+        T.exists_isGenusOneFourStarShape hcard
+        (hself (c 1)) (hself (c 0)) (hself (c 2)) (hself b) hz02 hz0b hz2b
+        (by rw [T.intersection_comm]; exact hf.intersection_succ_pos 0 (by omega))
+        (hf.intersection_succ_pos 1 (by omega)) hf.branch_intersection_pos
+      exact IsGenusOneMinimalShape.of_fourStar hindices
+        ⟨hcard, c 1, x, y, z, huniv, hxy0, hxz0, hyz0, hstar⟩
+    · -- `t = 4`: five-component fork.
+      let e : Fin 5 ≃ T.Component := hf.equivFinOfCardEq hcard
+      have he0 : e 0 = c 0 := by simp [e, hf.equivFinOfCardEq_apply]
+      have he1 : e 1 = c 1 := by simp [e, hf.equivFinOfCardEq_apply]
+      have he2 : e 2 = c 2 := by simp [e, hf.equivFinOfCardEq_apply]
+      have he3 : e 3 = c 3 := by simp [e, hf.equivFinOfCardEq_apply]
+      have he4 : e 4 = b := by simp [e, hf.equivFinOfCardEq_apply]
+      have hz02 : T.intersection (e 0) (e 2) = 0 := by
+        rw [he0, he2]
+        exact hf.intersection_eq_zero (by omega) (p := 0) (q := 2)
+          (by omega) (by omega) (by omega) (by omega) (by omega)
+      have hz03 : T.intersection (e 0) (e 3) = 0 := by
+        rw [he0, he3]
+        exact hf.intersection_eq_zero (by omega) (p := 0) (q := 3)
+          (by omega) (by omega) (by omega) (by omega) (by omega)
+      have hz04 : T.intersection (e 0) (e 4) = 0 := by
+        rw [he0, he4]
+        exact hf.branch_intersection_eq_zero (i := 0) (by omega) (by omega)
+      obtain ⟨hT, hg⟩ := (T.isMinimal_and_arithmeticGenus_eq_one_iff (by omega)).mpr
+        (fun i ↦ T.isMinusTwoIndex_iff.mpr (hindices i))
+      obtain ⟨-, w, m, hfive⟩ := hT.exists_weight_multiplicity_intersection_eq_fiveFork hg e
+        (by rw [he0, he1]; exact hf.intersection_succ_pos 0 (by omega))
+        (by rw [he1, he2]; exact hf.intersection_succ_pos 1 (by omega))
+        (by rw [he2, he3]; exact hf.intersection_succ_pos 2 (by omega))
+        (by rw [he2, he4]; exact hf.branch_intersection_pos) hz02 hz03 hz04
+      exact IsGenusOneMinimalShape.of_fiveFork hindices
+        (isGenusOneFiveForkShape_iff.mpr ⟨e, w, m, hfive⟩)
+  · -- `t ≥ 5`: long fork.
+    exact IsGenusOneMinimalShape.of_longFork hindices
+      ⟨t, c, b, ht5, hcard, hf, hf.isGenusOneLongForkShape hcard (by omega)⟩
 
 /-- **Classification of minimal numerical types of genus one**
 ([Stacks, Lemma 55.6.2](https://stacks.math.columbia.edu/tag/0C8T)). Every minimal numerical type
@@ -417,132 +418,37 @@ theorem IsMinimal.isGenusOneMinimalShape (hT : T.IsMinimal) (hg : T.arithmeticGe
       ⟨c₀, l, hl, hadj⟩ | ⟨t, c, left, right, ht4, hcard, hr, hl⟩ |
       ⟨l, hl, hadj⟩ | ⟨l, hl, hadj⟩ | ⟨l, hl, hadj⟩
   · -- Cycle case.
-    exact IsGenusOneMinimalShape.of_cycle hindices ⟨htop,
+    exact IsGenusOneMinimalShape.of_cycle hindices (isGenusOneCycleShape_iff.mpr ⟨htop,
       fun i j ↦ ⟨T.weight_eq_of_topologicalGenus_pos hself_ge htop i j,
         T.multiplicity_eq_of_topologicalGenus_pos hself_ge htop i j⟩,
       T.ncard_neighborSet_eq_two_of_topologicalGenus_pos hself_ge htop,
-      fun i j hij ↦ T.intersection_eq_weight_of_topologicalGenus_pos hself_ge htop hij⟩
-  · -- Path cases (`t = 2`, `3`, `4`, `5`, or `t ≥ 6`).
-    rcases lt_or_ge t 6 with ht6 | ht6
-    · interval_cases t
-      · obtain ⟨x, y, hxy, hshape⟩ :=
-          T.exists_weight_multiplicity_intersection_eq_of_card_eq_two hcard
-            (hc.ne (i := 0) (j := 1) (by omega) (by omega) (by omega)) (hself _) (hself _)
-        refine IsGenusOneMinimalShape.of_pair hindices ⟨hcard, x, y, ?_, hshape⟩
-        rcases hxy with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
-        · exact hc.ne (by omega) (by omega) (by omega)
-        · exact hc.ne (by omega) (by omega) (by omega)
-      · obtain ⟨x, z, hxz, hshape⟩ :=
-          T.exists_weight_multiplicity_intersection_eq_of_card_eq_three hcard
-            (hc.ne (i := 0) (j := 1) (by omega) (by omega) (by omega))
-            (hc.ne (i := 0) (j := 2) (by omega) (by omega) (by omega))
-            (hc.ne (i := 1) (j := 2) (by omega) (by omega) (by omega))
-            (hself _) (hself _) (hself _)
-            (hzero 0 (by omega) 2 (by omega) (by omega) (by omega) (by omega))
-        refine IsGenusOneMinimalShape.of_chain hindices ⟨hcard, x, c 1, z, ?_⟩
-        rcases hxz with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
-        · exact ⟨hc.ne (by omega) (by omega) (by omega), hc.ne (by omega) (by omega) (by omega),
-            hc.ne (by omega) (by omega) (by omega),
-            hzero 0 (by omega) 2 (by omega) (by omega) (by omega) (by omega), hshape⟩
-        · refine ⟨hc.ne (by omega) (by omega) (by omega), hc.ne (by omega) (by omega) (by omega),
-            hc.ne (by omega) (by omega) (by omega), ?_, hshape⟩
-          rw [T.intersection_comm]
-          exact hzero 0 (by omega) 2 (by omega) (by omega) (by omega) (by omega)
-      · rcases T.isGenusOneFourPathShape_or_isGenusOneFourPathShape hcard
-            (hself _) (hself _) (hself _) (hself _)
-            (hzero 0 (by omega) 2 (by omega) (by omega) (by omega) (by omega))
-            (hzero 0 (by omega) 3 (by omega) (by omega) (by omega) (by omega))
-            (hzero 1 (by omega) 3 (by omega) (by omega) (by omega) (by omega))
-            (hc.intersection_succ_pos 0 (by omega)) (hc.intersection_succ_pos 1 (by omega))
-            (hc.intersection_succ_pos 2 (by omega)) with h4 | h4
-        · exact IsGenusOneMinimalShape.of_fourPath hindices ⟨hcard, c, hc, hzero, h4⟩
-        · exact IsGenusOneMinimalShape.of_fourPath hindices
-            ⟨hcard, fun i ↦ c (4 - 1 - i), hc.reverse,
-              intersection_reverse_eq_zero_of_nonconsecutive hzero, h4⟩
-      · rcases T.isGenusOneFivePathShape_or_isGenusOneFivePathShape hcard
-            (hself _) (hself _) (hself _) (hself _) (hself _)
-            (hzero 0 (by omega) 2 (by omega) (by omega) (by omega) (by omega))
-            (hzero 0 (by omega) 3 (by omega) (by omega) (by omega) (by omega))
-            (hzero 0 (by omega) 4 (by omega) (by omega) (by omega) (by omega))
-            (hzero 1 (by omega) 3 (by omega) (by omega) (by omega) (by omega))
-            (hzero 1 (by omega) 4 (by omega) (by omega) (by omega) (by omega))
-            (hzero 2 (by omega) 4 (by omega) (by omega) (by omega) (by omega))
-            (hc.intersection_succ_pos 0 (by omega)) (hc.intersection_succ_pos 1 (by omega))
-            (hc.intersection_succ_pos 2 (by omega)) (hc.intersection_succ_pos 3 (by omega))
-            with h5 | h5
-        · exact IsGenusOneMinimalShape.of_fivePath hindices ⟨hcard, c, hc, hzero, h5⟩
-        · exact IsGenusOneMinimalShape.of_fivePath hindices
-            ⟨hcard, fun i ↦ c (5 - 1 - i), hc.reverse,
-              intersection_reverse_eq_zero_of_nonconsecutive hzero, h5⟩
-    · rcases T.isGenusOneLongPathShape_or_isGenusOneLongPathShape hcard ht6 hc hzero with
-        hlong | hlong
-      · exact IsGenusOneMinimalShape.of_longPath hindices ⟨t, c, ht6, hcard, hc, hzero, hlong⟩
-      · exact IsGenusOneMinimalShape.of_longPath hindices
-          ⟨t, fun i ↦ c (t - 1 - i), ht6, hcard, hc.reverse,
-            intersection_reverse_eq_zero_of_nonconsecutive hzero, hlong⟩
-  · -- Fork cases (`t = 3`, `4`, or `t ≥ 5`).
-    have ht3 := hf.two_lt
-    rcases lt_or_ge t 5 with ht5 | ht5
-    · interval_cases t
-      · -- `t = 3`: three-leaf star on `4` components.
-        have hz02 := hf.intersection_eq_zero (by omega) (p := 0) (q := 2)
-          (by omega) (by omega) (by omega) (by omega) (by omega)
-        have hz0b := hf.branch_intersection_eq_zero (i := 0) (by omega) (by omega)
-        have hz2b := hf.branch_intersection_eq_zero (i := 2) (by omega) (by omega)
-        obtain ⟨x, y, z, -, huniv, -, -, -, hxy0, hxz0, hyz0, hstar⟩ :=
-          T.exists_isGenusOneFourStarShape hcard
-          (hself (c 1)) (hself (c 0)) (hself (c 2)) (hself b) hz02 hz0b hz2b
-          (by rw [T.intersection_comm]; exact hf.intersection_succ_pos 0 (by omega))
-          (hf.intersection_succ_pos 1 (by omega)) hf.branch_intersection_pos
-        exact IsGenusOneMinimalShape.of_fourStar hindices
-          ⟨hcard, c 1, x, y, z, huniv, hxy0, hxz0, hyz0, hstar⟩
-      · -- `t = 4`: five-component fork.
-        let e : Fin 5 ≃ T.Component := hf.equivFinOfCardEq hcard
-        have he0 : e 0 = c 0 := by simp [e, hf.equivFinOfCardEq_apply]
-        have he1 : e 1 = c 1 := by simp [e, hf.equivFinOfCardEq_apply]
-        have he2 : e 2 = c 2 := by simp [e, hf.equivFinOfCardEq_apply]
-        have he3 : e 3 = c 3 := by simp [e, hf.equivFinOfCardEq_apply]
-        have he4 : e 4 = b := by simp [e, hf.equivFinOfCardEq_apply]
-        have hz02 : T.intersection (e 0) (e 2) = 0 := by
-          rw [he0, he2]
-          exact hf.intersection_eq_zero (by omega) (p := 0) (q := 2)
-            (by omega) (by omega) (by omega) (by omega) (by omega)
-        have hz03 : T.intersection (e 0) (e 3) = 0 := by
-          rw [he0, he3]
-          exact hf.intersection_eq_zero (by omega) (p := 0) (q := 3)
-            (by omega) (by omega) (by omega) (by omega) (by omega)
-        have hz04 : T.intersection (e 0) (e 4) = 0 := by
-          rw [he0, he4]
-          exact hf.branch_intersection_eq_zero (i := 0) (by omega) (by omega)
-        obtain ⟨-, w, m, hfive⟩ := hT.exists_weight_multiplicity_intersection_eq_fiveFork hg e
-          (by rw [he0, he1]; exact hf.intersection_succ_pos 0 (by omega))
-          (by rw [he1, he2]; exact hf.intersection_succ_pos 1 (by omega))
-          (by rw [he2, he3]; exact hf.intersection_succ_pos 2 (by omega))
-          (by rw [he2, he4]; exact hf.branch_intersection_pos) hz02 hz03 hz04
-        exact IsGenusOneMinimalShape.of_fiveFork hindices ⟨e, w, m, hfive⟩
-    · -- `t ≥ 5`: long fork.
-      exact IsGenusOneMinimalShape.of_longFork hindices
-        ⟨t, c, b, ht5, hcard, hf, hf.isGenusOneLongForkShape hcard (by omega)⟩
+      fun i j hij ↦ T.intersection_eq_weight_of_topologicalGenus_pos hself_ge htop hij⟩)
+  · exact IsGenusOneMinimalShape.of_exhaustive_chain hindices ht2 hcard hc hzero
+  · exact IsGenusOneMinimalShape.of_exhaustive_fork hindices hcard hf
   · -- Four-leaf star (affine `D₄`).
     obtain ⟨e, he0, hel, hw, hm, ha⟩ :=
       T.exists_equiv_fourLeafStar c₀ l hl (hself c₀) (fun i ↦ hself (l i)) hadj
     exact IsGenusOneMinimalShape.of_fourLeafStar hindices
-      ⟨e, by simpa [he0] using hw, by simpa [hel 0] using hm, by simpa [he0] using ha⟩
+      (isGenusOneFourLeafStarShape_iff.mpr
+        ⟨e, by simpa [he0] using hw, by simpa [hel 0] using hm, by simpa [he0] using ha⟩)
   · -- Double fork (affine `Dₙ`, `n ≥ 5`).
     exact IsGenusOneMinimalShape.of_affineD hindices
       ⟨t, c, left, right, ht4, hcard, hr, hl, hr.isGenusOneAffineDShape hl hcard ht4⟩
   · -- Affine `E₆`.
     obtain ⟨e, he, hw, hm, ha⟩ := T.exists_equiv_affineE6 l hl (fun i ↦ hself (l i)) hadj
     exact IsGenusOneMinimalShape.of_affineE6 hindices
-      ⟨e, by simpa [he 0] using hw, by simpa [he 2] using hm, by simpa [he 0] using ha⟩
+      (isGenusOneAffineE6Shape_iff.mpr
+        ⟨e, by simpa [he 0] using hw, by simpa [he 2] using hm, by simpa [he 0] using ha⟩)
   · -- Affine `E₇`.
     obtain ⟨e, he, hw, hm, ha⟩ := T.exists_equiv_affineE7 l hl (fun i ↦ hself (l i)) hadj
     exact IsGenusOneMinimalShape.of_affineE7 hindices
-      ⟨e, by simpa [he 0] using hw, by simpa [he 4] using hm, by simpa [he 0] using ha⟩
+      ((isGenusOneAffineE7Shape_iff T).mpr
+        ⟨e, by simpa [he 0] using hw, by simpa [he 4] using hm, by simpa [he 0] using ha⟩)
   · -- Affine `E₈`.
     obtain ⟨e, he, hw, hm, ha⟩ := T.exists_equiv_affineE8 l hl (fun i ↦ hself (l i)) hadj
     exact IsGenusOneMinimalShape.of_affineE8 hindices
-      ⟨e, by simpa [he 0] using hw, by simpa [he 8] using hm, by simpa [he 0] using ha⟩
+      ((isGenusOneAffineE8Shape_iff T).mpr
+        ⟨e, by simpa [he 0] using hw, by simpa [he 8] using hm, by simpa [he 0] using ha⟩)
 
 /-- The displayed shape families characterize minimal numerical types of arithmetic genus one. -/
 theorem isGenusOneMinimalShape_iff_isMinimal_and_arithmeticGenus_eq_one :
@@ -570,25 +476,22 @@ private lemma exists_weight_and_multiplicity_dvd_and_le (h : T.IsGenusOneMinimal
         (T.multiplicity i : ℕ) ≤ 6 * T.multiplicity j) := by
   classical
   obtain ⟨j₀⟩ := (inferInstance : Nonempty T.Component)
-  rcases h with ⟨hcard1, -⟩ | ⟨-,
-    ⟨-, hwm, -⟩ |
+  rcases isGenusOneMinimalShape_iff.mp h with ⟨hcard1, -⟩ | ⟨-,
+    hcycle |
     ⟨hcard, x, y, hxy, h2⟩ |
     ⟨hcard, x, j, z, hxj, hxz, hjz, -, h3⟩ |
     ⟨hcard, c, hc, -, h4⟩ |
     ⟨-, c₀, x, y, z, huniv, -, -, -, hstar⟩ |
     ⟨hcard, c, hc, -, h5⟩ |
-    ⟨e, hw, hm, -⟩ |
-    ⟨e, w, m, ⟨hw, hm, -⟩ | ⟨hw, hm, -⟩⟩ |
+    hstar | hfive |
     ⟨n, c, hn, hcard, hc, -, hlong⟩ |
     ⟨t, c, b, ht, hcard, hf, hfork⟩ |
     ⟨t, c, left, right, ht, hcard, hr, hl, hD⟩ |
-    ⟨e, hw, hm, -⟩ | ⟨e, hw, hm, -⟩ | ⟨e, hw, hm, -⟩⟩
+    hE6 | hE7 | hE8⟩
   · exact T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) j₀ j₀
       (fun i ↦ ⟨1, by decide, by rw [Fintype.card_le_one_iff.mp hcard1.le i j₀]; simp⟩)
       (fun i ↦ ⟨1, by decide, by rw [Fintype.card_le_one_iff.mp hcard1.le i j₀]; simp⟩)
-  · exact T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) j₀ j₀
-      (fun i ↦ ⟨1, by decide, by rw [(hwm i j₀).1]; simp⟩)
-      (fun i ↦ ⟨1, by decide, by rw [(hwm i j₀).2]; simp⟩)
+  · exact hcycle.exists_weight_and_multiplicity_dvd_and_le
   · exact h2.exists_weight_and_multiplicity_dvd_and_le hcard hxy
   · exact h3.exists_weight_and_multiplicity_dvd_and_le hcard hxj hxz hjz
   · apply h4.exists_weight_and_multiplicity_dvd_and_le
@@ -602,47 +505,14 @@ private lemma exists_weight_and_multiplicity_dvd_and_le (h : T.IsGenusOneMinimal
     intro i
     obtain ⟨k, hk, rfl⟩ := hc.exists_lt_eq_of_card_eq hcard i
     interval_cases k <;> simp
-  · refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6)
-      (e none) (e (some 0))
-      (fun i ↦ ?_) (fun i ↦ ?_)
-    all_goals simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
-    · rw [← e.apply_symm_apply i, hw (e.symm i)]; omega
-    · have hv := hm (e.symm i); rw [e.apply_symm_apply] at hv; split_ifs at hv <;> omega
-  · refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6)
-      (e 1) (e 0) (fun i ↦ ?_) (fun i ↦ ?_)
-    all_goals simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
-    · rw [← e.apply_symm_apply i, hw (e.symm i), hw 1]
-      generalize e.symm i = k; fin_cases k <;> simp
-    · rw [← e.apply_symm_apply i, hm (e.symm i), hm 0]
-      generalize e.symm i = k; fin_cases k <;> simp
-  · refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6)
-      (e 0) (e 3) (fun i ↦ ?_) (fun i ↦ ?_)
-    all_goals simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
-    · rw [← e.apply_symm_apply i, hw (e.symm i), hw 0]
-      generalize e.symm i = k; fin_cases k <;> simp
-    · rw [← e.apply_symm_apply i, hm (e.symm i), hm 3]
-      generalize e.symm i = k; fin_cases k <;> simp
+  · exact hstar.exists_weight_and_multiplicity_dvd_and_le
+  · exact hfive.exists_weight_and_multiplicity_dvd_and_le
   · exact hlong.exists_weight_and_multiplicity_dvd_and_le (by omega) hcard hc
   · exact hfork.exists_weight_and_multiplicity_dvd_and_le hcard hf
   · exact hD.exists_weight_and_multiplicity_dvd_and_le ht hcard hr hl
-  · refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6)
-      (e 0) (e 2) (fun i ↦ ?_) (fun i ↦ ?_)
-    all_goals simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
-    · rw [← e.apply_symm_apply i, hw (e.symm i)]; omega
-    · rw [← e.apply_symm_apply i, hm (e.symm i)]
-      generalize e.symm i = k; fin_cases k <;> simp [mul_comm]
-  · refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6)
-      (e 0) (e 4) (fun i ↦ ?_) (fun i ↦ ?_)
-    all_goals simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
-    · rw [← e.apply_symm_apply i, hw (e.symm i)]; omega
-    · rw [← e.apply_symm_apply i, hm (e.symm i)]
-      generalize e.symm i = k; fin_cases k <;> simp
-  · refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6)
-      (e 0) (e 8) (fun i ↦ ?_) (fun i ↦ ?_)
-    all_goals simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
-    · rw [← e.apply_symm_apply i, hw (e.symm i)]; omega
-    · rw [← e.apply_symm_apply i, hm (e.symm i)]
-      generalize e.symm i = k; fin_cases k <;> simp
+  · exact hE6.exists_weight_and_multiplicity_dvd_and_le
+  · exact hE7.exists_weight_and_multiplicity_dvd_and_le
+  · exact hE8.exists_weight_and_multiplicity_dvd_and_le
 
 /-- In any numerical type satisfying `IsGenusOneMinimalShape`, there is a component whose weight
 divides every component's weight with quotient at most `4`. -/
