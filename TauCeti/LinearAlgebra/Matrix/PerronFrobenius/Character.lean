@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Matrix.Spectrum
+public import TauCeti.LinearAlgebra.Basis.Basic
 public import TauCeti.LinearAlgebra.Matrix.PerronFrobenius.Positive
 
 /-!
@@ -65,12 +66,6 @@ namespace Module.Basis
 
 variable {ι R : Type*} [Fintype ι] [Ring R] (b : Basis ι ℤ R)
 
-/-- A character is determined by its values on a `ℤ`-basis. -/
-private theorem ringHom_apply_eq_sum (ψ : R →+* ℝ) (y : R) :
-    ψ y = ∑ l, (b.repr y l : ℝ) * ψ (b l) := by
-  conv_lhs => rw [← b.sum_repr y]
-  simp [map_sum]
-
 section Matrices
 
 variable [DecidableEq ι]
@@ -117,12 +112,6 @@ private theorem rightMulSum_transpose_mulVec (ψ : R →+* ℝ) :
   simp [mulVec, dotProduct, rightMulSum_apply, mul_comm]
 
 end Matrices
-
-omit [Fintype ι] in
-/-- The values of a character on a `ℤ`-basis do not all vanish. -/
-private theorem ringHom_apply_ne_zero (ψ : R →+* ℝ) : (fun l ↦ ψ (b l)) ≠ 0 := fun h ↦ by
-  have : ψ.toAddMonoidHom.toIntLinearMap = 0 := b.ext fun l ↦ congrFun h l
-  simpa using LinearMap.congr_fun this 1
 
 section Transitive
 
