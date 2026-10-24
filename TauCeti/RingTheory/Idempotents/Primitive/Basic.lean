@@ -149,6 +149,17 @@ def spanSingletonGenerator (e : A) : (Ideal.span {e} : Ideal A) :=
 theorem coe_spanSingletonGenerator (e : A) :
     (spanSingletonGenerator e : A) = e := (rfl)
 
+/-- Every element of a principal left ideal is a scalar multiple of its generator. -/
+theorem exists_smul_spanSingletonGenerator (x : (Ideal.span {e} : Ideal A)) :
+    ∃ r : A, r • spanSingletonGenerator e = x := by
+  obtain ⟨r, hr⟩ := Ideal.mem_span_singleton'.mp x.2
+  exact ⟨r, Subtype.ext (by simpa using hr)⟩
+
+/-- A quasi-idempotent acts on the generator of its principal left ideal by its scalar. -/
+theorem smul_spanSingletonGenerator_self {k : Type*} [CommSemiring k] [Algebra k A] {κ : k}
+    (he : e * e = κ • e) : e • spanSingletonGenerator e = κ • spanSingletonGenerator e :=
+  Subtype.ext (by simpa using he)
+
 /-- Every element of `Ae` is the generator scaled by itself. -/
 @[simp]
 theorem smul_spanSingletonGenerator (he : IsIdempotentElem e)
