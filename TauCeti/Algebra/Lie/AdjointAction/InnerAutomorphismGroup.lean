@@ -41,7 +41,7 @@ restriction to the Cartan subalgebra.
 
 * `TauCeti.intLieAlgebra_le_iff`: the universal property of `TauCeti.intLieAlgebra`.
 * `TauCeti.map_lie_of_mem_intLieAlgebra`: elements of `Int L` preserve the bracket.
-* `TauCeti.map_conj_intLieAlgebra`: conjugation by an automorphism of `L` maps `Int L` onto
+* `LieEquiv.map_conj_intLieAlgebra`: conjugation by an automorphism of `L` maps `Int L` onto
   itself.
 * `TauCeti.ofLinearEquiv_weylAut_mem_intLieAlgebra`: Weyl automorphisms of `sl₂` triples lie in
   `Int L`.
@@ -136,7 +136,15 @@ theorem intLieAlgebraLieEquiv_inv (g : intLieAlgebra K L) :
     intLieAlgebraLieEquiv g⁻¹ = (intLieAlgebraLieEquiv g).symm :=
   LieEquiv.ext fun _ => rfl
 
+end TauCeti
+
 /-! ### Normality -/
+
+namespace LieEquiv
+
+open LieAlgebra LinearMap.GeneralLinearGroup TauCeti
+
+variable {K L : Type*} [CommRing K] [LieRing L] [LieAlgebra K L] [LieAlgebra ℚ L]
 
 /-- An automorphism `φ` of `L` intertwines the generator `exp (ad x)` with the generator
 `exp (ad (φ x))`. -/
@@ -177,6 +185,14 @@ theorem conj_mem_intLieAlgebra_iff (φ : L ≃ₗ⁅K⁆ L) {g : LinearMap.Gener
       g ∈ intLieAlgebra K L := by
   conv_lhs => rw [← map_conj_intLieAlgebra φ]
   exact Subgroup.mem_map_iff_mem (MulAut.conj _).injective
+
+end LieEquiv
+
+namespace TauCeti
+
+open LieAlgebra LinearMap.GeneralLinearGroup
+
+variable {K L : Type*} [CommRing K] [LieRing L] [LieAlgebra K L] [LieAlgebra ℚ L]
 
 /-! ### Weyl automorphisms and Kostant's subgroup -/
 
