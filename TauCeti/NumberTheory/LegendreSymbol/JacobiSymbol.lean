@@ -55,10 +55,11 @@ private theorem jacobiSym_natCast_eq_of_dvd_add (a : ℕ) {b b' : ℕ} (hb : Odd
     exact absurd (Nat.eq_zero_of_add_eq_zero_right h) hb.pos.ne'
   obtain ⟨e, a', ha₁', rfl⟩ := Nat.exists_eq_pow_mul_and_not_dvd ha₀ 2 (by decide)
   have ha₁ : Odd a' := Nat.odd_iff.mpr (Nat.two_dvd_ne_zero.mp ha₁')
-  rw [Nat.cast_mul, jacobiSym.mul_left, jacobiSym.mul_left,
-    jacobiSym.quadratic_reciprocity' ha₁ hb, jacobiSym.quadratic_reciprocity' ha₁ hb',
-    Nat.cast_pow, jacobiSym.pow_left, jacobiSym.pow_left, Nat.cast_two, jacobiSym.at_two hb,
-    jacobiSym.at_two hb']
+  -- Split `J(2 ^ e * a' | ·)` into `χ₈ ^ e` times `J(a' | ·)`, and apply reciprocity to the latter.
+  push_cast
+  simp only [jacobiSym.mul_left, jacobiSym.pow_left]
+  rw [jacobiSym.at_two hb, jacobiSym.at_two hb', jacobiSym.quadratic_reciprocity' ha₁ hb,
+    jacobiSym.quadratic_reciprocity' ha₁ hb']
   -- The factor `χ₈ b ^ e` only matters for `e ≥ 1`, when `8 ∣ b + b'` and `χ₈` is even.
   have h₈ : χ₈ b' ^ e = χ₈ b ^ e := by
     rcases e with - | e
@@ -73,8 +74,8 @@ private theorem jacobiSym_natCast_eq_of_dvd_add (a : ℕ) {b b' : ℕ} (hb : Odd
     rw [← jacobiSym.neg _ ha₁]
     have hdvd : (a' : ℤ) ∣ b + b' := by
       exact_mod_cast dvd_trans ⟨4 * 2 ^ e, by ring⟩ h
-    refine jacobiSym.mod_left' (Int.modEq_iff_dvd.mpr ?_)
-    rw [show -(b : ℤ) - b' = -(b + b') by ring]
+    refine jacobiSym.mod_left' (Int.modEq_iff_dvd.mpr ?_).eq
+    rw [← neg_add']
     exact hdvd.neg_right
   rw [h₈, hqr, hJ, mul_mul_mul_comm (χ₄ a' : ℤ), χ₄_natCast_mul_self ha₁, one_mul]
 

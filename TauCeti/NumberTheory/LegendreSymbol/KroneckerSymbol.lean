@@ -150,6 +150,14 @@ private theorem ite_and_mul_neg {p : Prop} [Decidable p] {x y : ℤ} (hx : x ≠
   rcases hx.lt_or_gt with hx | hx <;> rcases hy.lt_or_gt with hy | hy <;> by_cases hp : p <;>
     simp [hp, hx, hy, hx.not_gt, hy.not_gt, mul_neg_iff]
 
+/-- For `x ≠ 0`, the sign factor `if x < 0 then -1 else 1` is the sign of `x`. It serves both
+`kroneckerSym_eq_jacobiSym_emod` and `kroneckerChar_neg_one`. -/
+private theorem ite_lt_zero_eq_sign {x : ℤ} (hx : x ≠ 0) :
+    (if x < 0 then -1 else 1 : ℤ) = x.sign := by
+  rcases hx.lt_or_gt with h | h
+  · rw [Int.sign_eq_neg_one_of_neg h, ite_eq_left h]
+  · rw [Int.sign_eq_one_of_pos h, ite_eq_right h.not_gt]
+
 /-- Multiplicativity of the Kronecker symbol in the denominator, over nonzero factors, as in
 `jacobiSym.mul_right'`. The hypotheses cannot be dropped: for `a = -1`, `b = 0`, `c = 3` the left
 side is `(-1 / 0) = 1` and the right side is `-1` (`kroneckerSym_zero_right`). -/
@@ -158,10 +166,11 @@ theorem kroneckerSym_mul_right (a : ℤ) {b c : ℤ} (hb : b ≠ 0) (hc : c ≠ 
   have hb' : b.natAbs ≠ 0 := Int.natAbs_ne_zero.mpr hb
   have hc' : c.natAbs ≠ 0 := Int.natAbs_ne_zero.mpr hc
   rw [kroneckerSym_of_ne_zero a (mul_ne_zero hb hc), kroneckerSym_of_ne_zero a hb,
-    kroneckerSym_of_ne_zero a hc, Int.natAbs_mul, Nat.ordCompl_mul,
-    Nat.factorization_mul hb' hc', Finsupp.add_apply, pow_add,
-    jacobiSym.mul_right' a (Nat.ordCompl_pos 2 hb').ne' (Nat.ordCompl_pos 2 hc').ne',
-    ite_and_mul_neg hb hc]
+    kroneckerSym_of_ne_zero a hc, ite_and_mul_neg hb hc]
+  -- `|b c| = |b| |c|` splits both the power of `2` and the odd part, which `J(a | ·)` respects.
+  simp only [Int.natAbs_mul, Nat.ordCompl_mul,
+    jacobiSym.mul_right' a (Nat.ordCompl_pos 2 hb').ne' (Nat.ordCompl_pos 2 hc').ne']
+  simp only [Nat.factorization_mul hb' hc', Finsupp.add_apply, pow_add]
   ring
 
 /-- For a numerator other than `-1`, the Kronecker symbol is completely multiplicative in the
@@ -192,28 +201,31 @@ theorem kroneckerSym_pow_right (a b : ℤ) (k : ℕ) :
 
 /-! ### Vanishing and the values `0`, `1`, `-1` -/
 
+/-- The gcd bookkeeping behind `kroneckerSym_eq_zero_iff`: writing `n = 2 ^ e * m` with `m` odd,
+`a` and `n` have a common factor exactly when `a` is even and `e ≠ 0`, or `a` and `m` have one. -/
+private theorem natAbs_gcd_ne_one_iff (a : ℤ) (n : ℕ) :
+    a.natAbs.gcd n ≠ 1 ↔ (2 ∣ a ∧ n.factorization 2 ≠ 0) ∨ a.natAbs.gcd (ordCompl[2] n) ≠ 1 := by
+  conv_lhs => rw [← Nat.ordProj_mul_ordCompl_eq_self n 2]
+  simp only [Ne, ← Nat.coprime_iff_gcd_eq_one, Nat.coprime_mul_iff_right, not_and_or]
+  refine or_congr_left ?_
+  rcases eq_or_ne (n.factorization 2) 0 with he | he
+  · simp [he]
+  · rw [Nat.coprime_pow_right_iff (Nat.pos_of_ne_zero he), Nat.coprime_two_right,
+      Nat.not_odd_iff_even, even_iff_two_dvd, Int.natCast_dvd.symm, Nat.cast_ofNat]
+    exact (and_iff_left he).symm
+
 /-- The Kronecker symbol `(a / b)` vanishes exactly when `a` and `b` have a common factor, as for
 `jacobiSym.eq_zero_iff`. At `b = 0` this says that `(a / 0) ≠ 0` exactly for `a = ±1`. -/
 theorem kroneckerSym_eq_zero_iff {a b : ℤ} : kroneckerSym a b = 0 ↔ a.gcd b ≠ 1 := by
   rcases eq_or_ne b 0 with rfl | hb
   · rw [kroneckerSym_zero_right, Int.gcd_zero_right, Ne, Int.natAbs_eq_iff, Nat.cast_one]
     split_ifs <;> simp_all
-  have hb' : b.natAbs ≠ 0 := Int.natAbs_ne_zero.mpr hb
-  have hm : ordCompl[2] b.natAbs ≠ 0 := (Nat.ordCompl_pos 2 hb').ne'
+  have hm : ordCompl[2] b.natAbs ≠ 0 := (Nat.ordCompl_pos 2 (Int.natAbs_ne_zero.mpr hb)).ne'
   have hs : (if a < 0 ∧ b < 0 then -1 else 1 : ℤ) ≠ 0 := by split_ifs <;> norm_num
-  have hgcd : a.natAbs.gcd b.natAbs =
-      a.natAbs.gcd (2 ^ b.natAbs.factorization 2 * ordCompl[2] b.natAbs) := by
-    rw [Nat.ordProj_mul_ordCompl_eq_self]
   rw [kroneckerSym_of_ne_zero a hb, mul_eq_zero, mul_eq_zero, or_iff_right hs, pow_eq_zero_iff',
-    χ₈_intCast_eq_zero_iff, jacobiSym.eq_zero_iff, Int.gcd_eq_natAbs_gcd_natAbs,
-    Int.gcd_eq_natAbs_gcd_natAbs, Int.natAbs_natCast, hgcd, and_iff_right hm]
-  simp only [Ne, ← Nat.coprime_iff_gcd_eq_one, Nat.coprime_mul_iff_right, not_and_or]
-  refine or_congr_left ?_
-  rcases eq_or_ne (b.natAbs.factorization 2) 0 with he | he
-  · simp [he]
-  · rw [Nat.coprime_pow_right_iff (Nat.pos_of_ne_zero he), Nat.coprime_two_right,
-      Nat.not_odd_iff_even, even_iff_two_dvd, ← Int.ofNat_dvd_left, Nat.cast_ofNat]
-    exact and_iff_left he
+    χ₈_intCast_eq_zero_iff, jacobiSym.eq_zero_iff, and_iff_right hm, Int.gcd_eq_natAbs_gcd_natAbs,
+    Int.gcd_eq_natAbs_gcd_natAbs, Int.natAbs_natCast]
+  exact (natAbs_gcd_ne_one_iff a b.natAbs).symm
 
 /-- `(0 / b)` is `1` for `b = ±1` and `0` otherwise. -/
 @[simp]
@@ -272,7 +284,7 @@ integer `n`. At odd `n > 0` this is quadratic reciprocity, at `n = 2` the supple
 `(D / ·)` is periodic modulo `|D|`. -/
 theorem kroneckerSym_eq_jacobiSym_natAbs {D : ℤ} (hD : D ≡ 1 [ZMOD 4]) (n : ℤ) :
     kroneckerSym D n = jacobiSym n D.natAbs := by
-  have hD4 : D % 4 = 1 := hD
+  have hD4 : D % 4 = 1 := hD.eq.trans (by norm_num)
   have hD1 : D ≠ -1 := ne_neg_one_of_modEq_four (.inr hD)
   have hodd : Odd D.natAbs := Int.natAbs_odd.mpr (Int.odd_iff.mpr (by omega))
   have hnat (k : ℕ) : kroneckerSym D k = jacobiSym k D.natAbs := by
@@ -282,10 +294,12 @@ theorem kroneckerSym_eq_jacobiSym_natAbs {D : ℤ} (hD : D ≡ 1 [ZMOD 4]) (n : 
       · simp [h1]
       · rw [ite_eq_right (by omega), jacobiSym.zero_left (by omega)]
     obtain ⟨e, m, hm, rfl⟩ := Nat.exists_eq_two_pow_mul_odd hk
-    rw [Nat.cast_mul, Nat.cast_pow, Nat.cast_ofNat, kroneckerSym_mul_right_of_ne_neg_one hD1,
-      kroneckerSym_pow_right, kroneckerSym_two_right, kroneckerSym_eq_jacobiSym _ hm,
-      jacobiSym_eq_jacobiSym_natAbs_of_emod_four_eq_one hD4 hm, jacobiSym.mul_left,
-      jacobiSym.pow_left, jacobiSym.at_two hodd]
+    push_cast
+    -- Both sides split as the factor at `2 ^ e` times the factor at `m`; reciprocity matches the
+    -- factors at `m`, and the supplementary law `J(2 | |D|) = χ₈ |D|` those at `2 ^ e`.
+    rw [kroneckerSym_mul_right_of_ne_neg_one hD1, kroneckerSym_pow_right, kroneckerSym_two_right,
+      kroneckerSym_eq_jacobiSym _ hm, jacobiSym_eq_jacobiSym_natAbs_of_emod_four_eq_one hD4 hm]
+    simp only [jacobiSym.mul_left, jacobiSym.pow_left, jacobiSym.at_two hodd]
     congr 2
     have habs : ((D.natAbs : ℕ) : ZMod 8) = ((|D| : ℤ) : ZMod 8) := by
       rw [← Int.natCast_natAbs, Int.cast_natCast]
@@ -322,13 +336,10 @@ private theorem kroneckerSym_eq_jacobiSym_emod {D : ℤ} (hD : D % 4 = 0) (hD₀
       rw [← Int.natCast_dvd_natCast, Nat.cast_add, Int.toNat_of_nonneg hr₀, Int.natCast_natAbs,
         abs_dvd, Int.emod_def]
       exact ⟨-(-(k : ℤ) / D), by ring⟩
+    have hk₀ : -(k : ℤ) < 0 := by have := hk.pos; omega
     rw [kroneckerSym_of_odd D hm, Int.natAbs_neg, Int.natAbs_natCast,
       jacobiSym_eq_sign_mul_of_emod_four_eq_zero hD hk hr hdvd]
-    congr 1
-    have hk₀ : -(k : ℤ) < 0 := by have := hk.pos; omega
-    rcases hD₀.lt_or_gt with h | h
-    · rw [Int.sign_eq_neg_one_of_neg h, ite_eq_left ⟨h, hk₀⟩]
-    · rw [Int.sign_eq_one_of_pos h, ite_eq_right (fun h' ↦ h.not_gt h'.1)]
+    simp only [hk₀, and_true, ite_lt_zero_eq_sign hD₀]
 
 private theorem kroneckerSym_eq_zero_of_two_dvd {D m : ℤ} (hD : 2 ∣ D) (hm : 2 ∣ m) :
     kroneckerSym D m = 0 :=
@@ -341,12 +352,13 @@ private theorem kroneckerSym_eq_zero_of_two_dvd {D m : ℤ} (hD : 2 ∣ D) (hm :
 theorem kroneckerSym_mod_right' {D : ℤ} (hD : D ≡ 0 [ZMOD 4] ∨ D ≡ 1 [ZMOD 4]) {m n : ℤ}
     (h : m % D = n % D) : kroneckerSym D m = kroneckerSym D n := by
   rcases hD with hD | hD
-  · have hD4 : D % 4 = 0 := hD
+  · have hD4 : D % 4 = 0 := hD.eq.trans (Int.zero_emod 4)
     rcases eq_or_ne D 0 with rfl | hD₀
     · rw [Int.emod_zero, Int.emod_zero] at h
       rw [h]
     have h2 : (2 : ℤ) ∣ D := dvd_trans (by norm_num) (Int.dvd_of_emod_eq_zero hD4)
-    have hmn : m % 2 = n % 2 := Int.ModEq.of_dvd h2 h
+    have hmn : m % 2 = n % 2 := by
+      rw [← Int.emod_emod_of_dvd m h2, h, Int.emod_emod_of_dvd n h2]
     by_cases hm : Odd m
     · have hn : Odd n := Int.odd_iff.mpr (hmn ▸ Int.odd_iff.mp hm)
       rw [kroneckerSym_eq_jacobiSym_emod hD4 hD₀ hm, kroneckerSym_eq_jacobiSym_emod hD4 hD₀ hn, h]
@@ -430,10 +442,7 @@ theorem kroneckerChar_isQuadratic : (kroneckerChar R D hD hD₀).IsQuadratic := 
 @[simp]
 theorem kroneckerChar_neg_one : kroneckerChar R D hD hD₀ (-1) = D.sign := by
   rw [← Int.cast_one (R := ZMod D.natAbs), ← Int.cast_neg, kroneckerChar_intCast,
-    kroneckerSym_neg_one_right]
-  rcases hD₀.lt_or_gt with h | h
-  · rw [Int.sign_eq_neg_one_of_neg h, ite_eq_left h]
-  · rw [Int.sign_eq_one_of_pos h, ite_eq_right h.not_gt]
+    kroneckerSym_neg_one_right, ite_lt_zero_eq_sign hD₀]
 
 end KroneckerChar
 
