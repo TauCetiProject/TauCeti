@@ -43,10 +43,13 @@ ineffective. For `d ≥ 3` it is the analytic input to Thue's theorem on the equ
   linear forms satisfying such bounds is at least `c max(|x|, |y|) ^ (#T - κ)`.
 * `MvPolynomial.IsHomogeneous.exists_pos_mul_max_abs_rpow_le_abs_eval`: the Thue–Roth inequality
   for binary forms without squared linear factors.
+* `MvPolynomial.IsHomogeneous.finite_setOf_eval_eq`: Thue's theorem that `F(x, y) = m` with
+  `m ≠ 0` has finitely many integer solutions, for such forms of degree `d ≥ 3`.
 
 ## References
 
-* J.-H. Evertse, *Diophantine Approximation*, lecture notes (2019), ch. 6, Theorem 6.3.
+* J.-H. Evertse, *Diophantine Approximation*, lecture notes (2019), ch. 6, Theorem 6.3 and
+  Corollary 6.4.
 -/
 
 public section
@@ -223,5 +226,45 @@ theorem _root_.MvPolynomial.IsHomogeneous.exists_pos_mul_max_abs_rpow_le_abs_eva
     rw [← Complex.norm_intCast, hcast, norm_mul, norm_prod]
   rw [habs, mul_assoc, ← hTd]
   exact mul_le_mul_of_nonneg_left (h x y hne) (norm_nonneg a)
+
+/-- **Thue's theorem for square-free binary forms** (Evertse, Corollary 6.4, square-free case).
+Let `F ∈ ℤ[X₀, X₁]` be a binary form of degree `d ≥ 3` with no squared linear factor over `ℂ`,
+and let `m ≠ 0`. Then the Thue equation `F(x, y) = m` has only finitely many integer solutions.
+Like Roth's theorem, the proof is ineffective. -/
+theorem _root_.MvPolynomial.IsHomogeneous.finite_setOf_eval_eq
+    {F : MvPolynomial (Fin 2) ℤ} {d : ℕ} (hF : F.IsHomogeneous d)
+    (hsq : ∀ a b : ℂ, (a, b) ≠ (0, 0) →
+      ¬(MvPolynomial.C a * MvPolynomial.X 0 + MvPolynomial.C b * MvPolynomial.X 1) ^ 2 ∣
+        F.map (Int.castRingHom ℂ))
+    (hd : 3 ≤ d) {m : ℤ} (hm : m ≠ 0) :
+    {p : ℤ × ℤ | MvPolynomial.eval ![p.1, p.2] F = m}.Finite := by
+  -- The Thue–Roth inequality with `κ = 5/2 < d` bounds `max (|x|, |y|)` on the solutions.
+  obtain ⟨c, hc, h⟩ := hF.exists_pos_mul_max_abs_rpow_le_abs_eval hsq (κ := 5 / 2) (by norm_num)
+  have he : 0 < (d : ℝ) - 5 / 2 := by
+    have : (3 : ℝ) ≤ d := by exact_mod_cast hd
+    linarith
+  -- Every solution satisfies `max(|x|, |y|) ≤ B := (|m| / c) ^ (1 / (d - 5/2))`.
+  set B : ℝ := (|(m : ℝ)| / c) ^ ((d : ℝ) - 5 / 2)⁻¹
+  have hbound : ∀ p ∈ {p : ℤ × ℤ | MvPolynomial.eval ![p.1, p.2] F = m},
+      max |(p.1 : ℝ)| |(p.2 : ℝ)| ≤ B := by
+    rintro ⟨x, y⟩ hp
+    simp only [Set.mem_ofPred_eq] at hp
+    have hM : 0 ≤ max |(x : ℝ)| |(y : ℝ)| := le_max_of_le_left (abs_nonneg _)
+    have hle := h x y (by rw [hp]; exact hm)
+    rw [hp] at hle
+    have hpow : max |(x : ℝ)| |(y : ℝ)| ^ ((d : ℝ) - 5 / 2) ≤ |(m : ℝ)| / c := by
+      rw [le_div_iff₀ hc, mul_comm]
+      exact hle
+    calc max |(x : ℝ)| |(y : ℝ)|
+        = (max |(x : ℝ)| |(y : ℝ)| ^ ((d : ℝ) - 5 / 2)) ^ ((d : ℝ) - 5 / 2)⁻¹ :=
+          (rpow_rpow_inv hM he.ne').symm
+      _ ≤ B := rpow_le_rpow (rpow_nonneg hM _) hpow (inv_nonneg.2 he.le)
+  -- Hence the solutions lie in the square `[-N, N]²` with `N = ⌈B⌉`.
+  refine ((Set.finite_Icc (-⌈B⌉) ⌈B⌉).prod (Set.finite_Icc (-⌈B⌉) ⌈B⌉)).subset ?_
+  intro p hp
+  have hB := hbound p hp
+  have h1 : |(p.1 : ℝ)| ≤ ⌈B⌉ := (le_max_left _ _).trans (hB.trans (Int.le_ceil B))
+  have h2 : |(p.2 : ℝ)| ≤ ⌈B⌉ := (le_max_right _ _).trans (hB.trans (Int.le_ceil B))
+  exact ⟨abs_le.1 (by exact_mod_cast h1), abs_le.1 (by exact_mod_cast h2)⟩
 
 end TauCeti
