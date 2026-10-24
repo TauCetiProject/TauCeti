@@ -54,10 +54,7 @@ ramification index `n / gcd(n, a)` over `0`, `n / gcd(n, b)` over `1` and `n / g
 * `TauCeti.IsAlgebraicBelyiPair.of_pow_eq_X_zpow_mul_X_sub_one_zpow` and
   `TauCeti.finrank_eq_of_pow_eq_X_zpow_mul_X_sub_one_zpow`: the Belyi pair
   `y ^ n = c t ^ a (t - 1) ^ b` and its degree `n`.
-* `TauCeti.isAlgebraicBelyiPair_adjoinRoot_X_pow_sub_C_X`,
-  `TauCeti.isTotallyRamified_adjoinRoot_X_pow_sub_C_X` and
-  `TauCeti.ramificationIdx_adjoinRoot_X_pow_sub_C_X_eq_one`: the power map and its
-  ramification.
+* `TauCeti.isAlgebraicBelyiPair_adjoinRoot_X_pow_sub_C_X`: the power map is a Belyi pair.
 
 ## References
 
@@ -173,60 +170,14 @@ end IsAlgebraicBelyiPair
 
 section PowerMap
 
-variable (k : Type*) [Field k] (n : ℕ) [NeZero n]
-
-/-- The root of `Y ^ n - t` is an `n`-th root of `t`, written in the form
-`y ^ n = c t ^ a (t - 1) ^ b` with `c = 1`, `a = 1` and `b = 0`. -/
-private theorem root_pow_eq :
-    AdjoinRoot.root (X ^ n - C (RatFunc.X : RatFunc k)) ^ n =
-      algebraMap (RatFunc k) (AdjoinRoot (X ^ n - C (RatFunc.X : RatFunc k)))
-        (algebraMap k (RatFunc k) 1 * RatFunc.X ^ (1 : ℤ) * (RatFunc.X - 1) ^ (0 : ℤ)) := by
-  have h := AdjoinRoot.aeval_eq (f := X ^ n - C (RatFunc.X : RatFunc k)) (X ^ n - C RatFunc.X)
-  rw [AdjoinRoot.mk_self, map_sub, aeval_X_pow, aeval_C, sub_eq_zero] at h
-  simpa using h
-
-/-- **The power map is totally ramified over `0` and `∞`**: if `n` is invertible in `k`, every
-place of `k(t)[Y] / (Y ^ n - t)` over `t = 0` or `t = ∞` has ramification index `n`, so it is the
-only place over that point and has relative degree one. -/
-theorem isTotallyRamified_adjoinRoot_X_pow_sub_C_X (hn : (n : k) ≠ 0)
-    {P : Place k (AdjoinRoot (X ^ n - C (RatFunc.X : RatFunc k)))}
-    (hP : P.restrict k (RatFunc k) = Place.adicOfIrreducible (irreducible_X (R := k)) ∨
-      P.restrict k (RatFunc k) = Place.infty k) :
-    Place.IsTotallyRamified (RatFunc k) P := by
-  have := isSeparable_adjoinRoot_X_pow_sub_C_X k n hn
-  rw [Place.isTotallyRamified_iff, finrank_adjoinRoot_X_pow_sub_C_X,
-    Place.ramificationIdx_eq_of_pow_eq k (RatFunc k) (IntermediateField.adjoin_root_eq_top _)
-      (root_pow_eq k n) hn
-      (RatFunc.algebraMap_mul_X_zpow_mul_X_sub_one_zpow_ne_zero one_ne_zero 1 0)]
-  rcases hP with hP | hP <;> rw [hP]
-  · rw [Place.ord_adicOfIrreducible_X_algebraMap_mul_X_zpow_mul_X_sub_one_zpow one_ne_zero,
-      Int.gcd_one_right, Nat.div_one]
-  · rw [Place.ord_infty_algebraMap_mul_X_zpow_mul_X_sub_one_zpow one_ne_zero, add_zero,
-      Int.gcd_neg, Int.gcd_one_right, Nat.div_one]
-
-/-- **The power map is unramified away from `0` and `∞`**: if `n` is invertible in `k`, every
-place of `k(t)[Y] / (Y ^ n - t)` over a place of `k(t)` other than `t = 0` and `t = ∞`, in
-particular over `t = 1`, has ramification index `1`. -/
-theorem ramificationIdx_adjoinRoot_X_pow_sub_C_X_eq_one (hn : (n : k) ≠ 0)
-    {P : Place k (AdjoinRoot (X ^ n - C (RatFunc.X : RatFunc k)))}
-    (hP0 : P.restrict k (RatFunc k) ≠ Place.adicOfIrreducible (irreducible_X (R := k)))
-    (hPinf : P.restrict k (RatFunc k) ≠ Place.infty k) :
-    Place.ramificationIdx (RatFunc k) P = 1 := by
-  have := isSeparable_adjoinRoot_X_pow_sub_C_X k n hn
-  refine Place.ramificationIdx_eq_one_of_pow_eq_of_dvd_ord k (RatFunc k)
-    (IntermediateField.adjoin_root_eq_top _) (root_pow_eq k n) hn
-    (RatFunc.algebraMap_mul_X_zpow_mul_X_sub_one_zpow_ne_zero one_ne_zero 1 0) ?_
-  rw [Place.ord_algebraMap_mul_X_zpow_mul_X_sub_one_zpow _ one_ne_zero,
-    Place.ord_X_eq_zero_of_ne hP0 hPinf]
-  simp
-
-variable [CharZero k]
+variable (k : Type*) [Field k] [CharZero k] (n : ℕ) [NeZero n]
 
 /-- **The power map** `t ↦ u ^ n` is an algebraic Belyi pair: the function field
 `k(u) = k(t)[Y] / (Y ^ n - t)` of the source, over the function field `k(t)` of the target. -/
 theorem isAlgebraicBelyiPair_adjoinRoot_X_pow_sub_C_X :
     IsAlgebraicBelyiPair k (AdjoinRoot (X ^ n - C (RatFunc.X : RatFunc k))) :=
-  .of_pow_eq_X_zpow_mul_X_sub_one_zpow (IntermediateField.adjoin_root_eq_top _) (root_pow_eq k n)
+  .of_pow_eq_X_zpow_mul_X_sub_one_zpow (a := 1) (b := 0) (IntermediateField.adjoin_root_eq_top _)
+    (by simpa [AdjoinRoot.algebraMap_eq] using root_X_pow_sub_C_pow n (RatFunc.X : RatFunc k))
     (NeZero.ne n) one_ne_zero (Or.inl (Int.gcd_one_right n))
 
 end PowerMap
