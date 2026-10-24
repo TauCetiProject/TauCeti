@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Height.Arakelov.Comparison
-public import TauCeti.NumberTheory.Height.Subspace
+public import TauCeti.NumberTheory.Height.Subspace.Basic
 
 /-!
 # The Arakelov height of a subspace
