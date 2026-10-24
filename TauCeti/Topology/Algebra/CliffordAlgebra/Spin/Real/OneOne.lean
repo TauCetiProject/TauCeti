@@ -108,7 +108,7 @@ private theorem spinInv_realCliffordSpinOneOneEquiv (p : rootsOfUnity 2 ℝ × M
     rw [spinSign, coeffOne_realCliffordSpinOneOneEquiv]
     rcases eq_one_or_eq_negOneRootsOfUnity ζ with rfl | rfl
     · simp [cosh_pos]
-    · simp [negOneRootsOfUnity, (cosh_pos _).le]
+    · simp [coe_negOneRootsOfUnity, (cosh_pos _).le]
   have hζ : ((ζ : ℝˣ) : ℝ) * ((ζ : ℝˣ) : ℝ) = 1 := by
     rw [← sq]
     exact_mod_cast (mem_rootsOfUnity' 2 (ζ : ℝˣ)).mp ζ.2

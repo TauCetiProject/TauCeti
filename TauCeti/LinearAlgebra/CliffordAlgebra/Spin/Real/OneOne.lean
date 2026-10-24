@@ -131,7 +131,7 @@ noncomputable def realCliffordSpinOneOneHyperbolicRotation :
     apply Subtype.ext
     simp only [toAdd_mul, cosh_add, sinh_add, Submonoid.coe_mul,
       algebraMap_add_smul_realCliffordOneOneVolume_mul]
-    congr 2 <;> ring
+    congr 2; ring
 
 @[simp]
 theorem coe_realCliffordSpinOneOneHyperbolicRotation_apply (t : Multiplicative ℝ) :
@@ -182,7 +182,8 @@ private theorem realCliffordSpinOneOneHom_injective :
   have hζη : ((ζ : ℝˣ) : ℝ) = ((η : ℝˣ) : ℝ) := by
     rcases eq_one_or_eq_negOneRootsOfUnity ζ with rfl | rfl <;>
       rcases eq_one_or_eq_negOneRootsOfUnity η with rfl | rfl <;>
-      simp only [negOneRootsOfUnity, Units.val_neg, Units.val_one, one_mul, neg_one_mul] at hc ⊢ <;>
+      simp only [OneMemClass.coe_one, coe_negOneRootsOfUnity, Units.val_neg, Units.val_one,
+        one_mul, neg_one_mul] at hc ⊢ <;>
       nlinarith [cosh_pos s.toAdd, cosh_pos t.toAdd]
   rw [← hζη] at hs
   exact Prod.ext (Subtype.ext (Units.ext hζη))
@@ -195,7 +196,8 @@ private theorem realCliffordSpinOneOneHom_surjective :
   · exact ⟨(1, Multiplicative.ofAdd t), Subtype.ext (by
       simp [coe_realCliffordSpinOneOneHom_apply])⟩
   · refine ⟨(negOneRootsOfUnity, Multiplicative.ofAdd t), Subtype.ext ?_⟩
-    simp only [coe_realCliffordSpinOneOneHom_apply, negOneRootsOfUnity, Units.val_neg, Units.val_one,
+    simp only [coe_realCliffordSpinOneOneHom_apply, coe_negOneRootsOfUnity, Units.val_neg,
+      Units.val_one,
       toAdd_ofAdd, neg_one_mul, map_neg, neg_smul, neg_add]
 
 private theorem realCliffordSpinOneOneHom_bijective :
