@@ -314,14 +314,13 @@ private theorem taylor_gauge_sub_apply {e : ℕ} (hφe : ∀ z ∈ filtration R 
       𝒜.hochschildDifferential 0 φ z -
         brace (𝒜.grading.shift 1) φ ((𝒜.gauge φ hφ hφ₁).taylor - 𝒜.taylor) 1 z := by
   conv_lhs => rw [taylor_gauge]
-  rw [hochschildDifferential_eq_brace_sub, negOnePowCast_zero, one_smul]
+  rw [hochschildDifferential_zero_apply]
   have hb : brace (𝒜.grading.shift 1) φ (𝒜.gauge φ hφ hφ₁).taylor 1 =
       brace (𝒜.grading.shift 1) φ 𝒜.taylor 1 +
         brace (𝒜.grading.shift 1) φ ((𝒜.gauge φ hφ hφ₁).taylor - 𝒜.taylor) 1 := by
     rw [← brace_add_right, add_sub_cancel]
   simp only [LinearMap.sub_apply, LinearMap.comp_apply, hb, LinearMap.add_apply,
-    coalgHom_letter_add_apply_of_mem_filtration hφe hz, map_add, brace_def,
-    gradedCoderiv_zero]
+    coalgHom_letter_add_apply_of_mem_filtration hφe hz, map_add]
   abel
 
 /-- The Taylor maps of a gauge transformation and of the original structure agree on the words of

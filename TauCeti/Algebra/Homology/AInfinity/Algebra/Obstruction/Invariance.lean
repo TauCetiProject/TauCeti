@@ -68,28 +68,6 @@ open ReducedTensorWords
 variable {R : Type uR} {A : Type uA} [CommRing R] [AddCommGroup A] [Module R A]
   {𝒜 ℋ : AInfinityAlgebra R A}
 
-/-- The pre-Lie identity behind the quadratic term: for a cochain `ψ` of degree zero,
-`m{ψ}{ψ} - m{ψ{ψ}} = δψ{ψ} + ψ{δψ} - δ(ψ{ψ})`, where `δ` is the Hochschild differential of `ℋ`
-and `m` its Taylor map. -/
-private theorem brace_brace_sub_brace_brace_eq {ψ : ReducedTensorWords R A →ₗ[R] A}
-    (hψ : LinearMap.IsHomogeneous ψ (gradedPiece (ℋ.grading.shift 1))
-      (ℋ.grading.shift 1).piece 0) :
-    brace (ℋ.grading.shift 1) (brace (ℋ.grading.shift 1) ℋ.taylor ψ 0) ψ 0 -
-        brace (ℋ.grading.shift 1) ℋ.taylor (brace (ℋ.grading.shift 1) ψ ψ 0) 0 =
-      brace (ℋ.grading.shift 1) (ℋ.hochschildDifferential 0 ψ) ψ 0 +
-        brace (ℋ.grading.shift 1) ψ (ℋ.hochschildDifferential 0 ψ) 1 -
-        ℋ.hochschildDifferential 0 (brace (ℋ.grading.shift 1) ψ ψ 0) := by
-  have e₁ := ℋ.hochschildDifferential_eq_brace_sub 0 ψ
-  have e₂ := ℋ.hochschildDifferential_eq_brace_sub 0 (brace (ℋ.grading.shift 1) ψ ψ 0)
-  have e₃ := brace_brace_sub_smul_brace_brace ψ
-    (ℋ.taylor_isSuspension.isHomogeneous ℋ.m_degree) hψ
-  rw [negOnePowCast_zero, one_smul] at e₁ e₂
-  rw [mul_zero, negOnePowCast_zero, one_smul, add_zero, ← hochschildDifferential_def] at e₃
-  rw [eq_sub_iff_add_eq] at e₁ e₂
-  rw [sub_eq_iff_eq_add] at e₃
-  rw [← e₁, brace_add_left, e₃, ← e₂]
-  abel
-
 /-- If `𝒜` agrees with the graded algebra `ℋ` on the words of length at most three, and
 `m_𝒜 - m_ℋ` is the Hochschild differential of a cochain `χ` on the words of length at most four,
 then the obstruction `m₄` is the Hochschild differential of `χ` restricted to the words of length
@@ -144,6 +122,60 @@ private theorem hochschildDifferential_comp_lengthProj_three (hℋ : ℋ.IsMinim
     ← hδ₂, LinearMap.comp_apply, lengthProj_lengthProj_of_ne R A (by decide), map_zero,
     zero_add, zero_add]
 
+/-- On the words of length at most three, the morphism equation `m_𝒜 = m_ℋ ∘ F - ψ{m_𝒜}`, for
+`F` the coalgebra map with Taylor components `letter + ψ` and `ψ` vanishing on letters, gives
+`δψ = 0`, when `𝒜` agrees with `ℋ` there and `ψ{m_𝒜}` agrees with `ψ{m_ℋ}`. -/
+private theorem hochschildDifferential_apply_eq_zero_of_taylor_eq
+    {ψ : ReducedTensorWords R A →ₗ[R] A} (hψ₁ : ∀ z ∈ filtration R A 1, ψ z = 0)
+    (key : 𝒜.taylor = ℋ.taylor ∘ₗ coalgHom R (letter R A + ψ) -
+      brace (ℋ.grading.shift 1) ψ 𝒜.taylor 1)
+    (h : ∀ z ∈ filtration R A 3, 𝒜.taylor z = ℋ.taylor z)
+    (hb : ∀ z ∈ filtration R A 4,
+      brace (ℋ.grading.shift 1) ψ 𝒜.taylor 1 z = brace (ℋ.grading.shift 1) ψ ℋ.taylor 1 z)
+    {z : ReducedTensorWords R A} (hz : z ∈ filtration R A 3) :
+    ℋ.hochschildDifferential 0 ψ z = 0 := by
+  have h₁ := LinearMap.congr_fun key z
+  rw [LinearMap.sub_apply, LinearMap.comp_apply,
+    coalgHom_letter_add_apply_of_mem_filtration (e := 1) hψ₁ hz, map_add, h z hz,
+    hb z (filtration_monotone R A (by omega) hz)] at h₁
+  rw [hochschildDifferential_zero_apply]
+  linear_combination (norm := module) -h₁
+
+/-- The quadratic term of the morphism equation.  Let `ψ` be a cochain of degree zero vanishing
+on letters, with `m_𝒜 = m_ℋ ∘ F - ψ{m_𝒜}` for `F` the coalgebra map with Taylor components
+`letter + ψ`.  If `ψ{m_𝒜}` agrees with `ψ{m_ℋ}` on the words of length at most four and `δψ`
+vanishes on the words of length at most three, then `2 (m_𝒜 - m_ℋ) = 2 δψ - δ(ψ{ψ})` on the
+words of length at most four. -/
+private theorem two_smul_taylor_sub_taylor_apply_of_mem_filtration_four
+    {ψ : ReducedTensorWords R A →ₗ[R] A}
+    (hψ : LinearMap.IsHomogeneous ψ (gradedPiece (ℋ.grading.shift 1))
+      (ℋ.grading.shift 1).piece 0)
+    (hψ₁ : ∀ z ∈ filtration R A 1, ψ z = 0)
+    (key : 𝒜.taylor = ℋ.taylor ∘ₗ coalgHom R (letter R A + ψ) -
+      brace (ℋ.grading.shift 1) ψ 𝒜.taylor 1)
+    (hb : ∀ z ∈ filtration R A 4,
+      brace (ℋ.grading.shift 1) ψ 𝒜.taylor 1 z = brace (ℋ.grading.shift 1) ψ ℋ.taylor 1 z)
+    (hδψ : ∀ z ∈ filtration R A 3, ℋ.hochschildDifferential 0 ψ z = 0)
+    {z : ReducedTensorWords R A} (hz : z ∈ filtration R A 4) :
+    (2 : R) • (𝒜.taylor z - ℋ.taylor z) =
+      (2 : R) • ℋ.hochschildDifferential 0 ψ z -
+        ℋ.hochschildDifferential 0 (brace (ℋ.grading.shift 1) ψ ψ 0) z := by
+  have h₁ := LinearMap.congr_fun key z
+  rw [LinearMap.sub_apply, LinearMap.comp_apply, hb z hz] at h₁
+  have h₂ := congrArg ℋ.taylor (two_smul_coalgHom_letter_add_apply_sub_of_mem_filtration
+    (e := 1) hψ₁ (filtration_monotone R A (by omega) hz))
+  rw [map_smul, map_sub, map_sub, map_sub] at h₂
+  have e : brace (ℋ.grading.shift 1) ℋ.taylor (brace (ℋ.grading.shift 1) ψ ψ 0) 0 z =
+      ℋ.taylor (coderiv R (ψ ∘ₗ coderiv R ψ) z) := by
+    rw [brace_zero_apply, brace_def, gradedCoderiv_zero]
+  have h₃ := LinearMap.congr_fun (ℋ.brace_brace_sub_brace_brace_eq_hochschildDifferential hψ) z
+  rw [LinearMap.sub_apply, LinearMap.sub_apply, LinearMap.add_apply, e,
+    brace_apply_eq_zero_of_mem_filtration (ℋ.grading.shift 1) 0 (k := 3) (j := 1) hδψ hψ₁ hz,
+    brace_apply_eq_zero_of_mem_filtration (ℋ.grading.shift 1) 1 (k := 1) (j := 3) hψ₁ hδψ hz,
+    zero_add, brace_zero_apply, brace_zero_apply] at h₃
+  linear_combination (norm := module)
+    (2 : R) • h₁ + h₂ + h₃ - (2 : R) • ℋ.hochschildDifferential_zero_apply ψ z
+
 /-- The quartic obstruction is a coboundary for an `A∞` morphism with linear part the identity.
 Here `𝒜` agrees with the graded algebra `ℋ` on the words of length at most three, and the
 coboundary is that of `ψ - ½ ψ{ψ}` restricted to the words of length three, where `letter + ψ` is
@@ -157,7 +189,7 @@ private theorem exists_hochschildDifferential_eq_obstruction_four_of_linearPart_
         (ℋ.grading.shift 1).piece 0 ∧
       φ ∘ₗ lengthProj R A ⟨3, by norm_num⟩ = φ ∧
       ℋ.hochschildDifferential 0 φ = 𝒜.obstruction ℋ ⟨4, by norm_num⟩ := by
-  set G := ℋ.grading.shift 1 with hGdef
+  set G := ℋ.grading.shift 1
   set ψ := f.taylor - letter R A with hψdef
   have ht : f.taylor = letter R A + ψ := by rw [hψdef, add_sub_cancel]
   have hψ : LinearMap.IsHomogeneous ψ (gradedPiece G) G.piece 0 := by
@@ -180,41 +212,14 @@ private theorem exists_hochschildDifferential_eq_obstruction_four_of_linearPart_
         (g := 𝒜.taylor - ℋ.taylor) hψ₁
         (fun w hw ↦ by rw [LinearMap.sub_apply, h w hw, sub_self]) hz, add_zero]
   -- On the words of length at most three, `δψ = 0`.
-  have hδψ : ∀ z ∈ filtration R A 3, ℋ.hochschildDifferential 0 ψ z = 0 := by
-    intro z hz
-    have h₁ := LinearMap.congr_fun key z
-    rw [LinearMap.sub_apply, LinearMap.comp_apply,
-      coalgHom_letter_add_apply_of_mem_filtration (e := 1) hψ₁ hz, map_add, h z hz,
-      hb z (filtration_monotone R A (by omega) hz)] at h₁
-    rw [hochschildDifferential_eq_brace_sub, negOnePowCast_zero, one_smul, LinearMap.sub_apply,
-      brace_def, gradedCoderiv_zero, LinearMap.comp_apply, ← hGdef]
-    linear_combination (norm := module) -h₁
+  have hδψ : ∀ z ∈ filtration R A 3, ℋ.hochschildDifferential 0 ψ z = 0 := fun z hz ↦
+    hochschildDifferential_apply_eq_zero_of_taylor_eq hψ₁ key h hb hz
   -- On the words of length at most four, the quadratic part of `F` gives
   -- `2 (m_𝒜 - m_ℋ) = 2 δψ - δ(ψ{ψ})`.
   have hquad : ∀ z ∈ filtration R A 4, (2 : R) • (𝒜.taylor z - ℋ.taylor z) =
       (2 : R) • ℋ.hochschildDifferential 0 ψ z -
-        ℋ.hochschildDifferential 0 (brace G ψ ψ 0) z := by
-    intro z hz
-    have h₁ := LinearMap.congr_fun key z
-    rw [LinearMap.sub_apply, LinearMap.comp_apply, hb z hz] at h₁
-    have h₂ := congrArg ℋ.taylor (two_smul_coalgHom_letter_add_apply_sub_of_mem_filtration
-      (e := 1) hψ₁ (filtration_monotone R A (by omega) hz))
-    rw [map_smul, map_sub, map_sub, map_sub] at h₂
-    have h₃ := LinearMap.congr_fun (brace_brace_sub_brace_brace_eq hψ) z
-    rw [← hGdef] at h₃
-    have e₁ : brace G (brace G ℋ.taylor ψ 0) ψ 0 z =
-        ℋ.taylor (coderiv R ψ (coderiv R ψ z)) := by
-      simp only [brace_def, gradedCoderiv_zero, LinearMap.comp_apply]
-    have e₂ : brace G ℋ.taylor (brace G ψ ψ 0) 0 z =
-        ℋ.taylor (coderiv R (ψ ∘ₗ coderiv R ψ) z) := by
-      simp only [brace_def, gradedCoderiv_zero, LinearMap.comp_apply]
-    rw [LinearMap.sub_apply, LinearMap.sub_apply, LinearMap.add_apply, e₁, e₂,
-      brace_apply_eq_zero_of_mem_filtration G 0 (k := 3) (j := 1) hδψ hψ₁ hz,
-      brace_apply_eq_zero_of_mem_filtration G 1 (k := 1) (j := 3) hψ₁ hδψ hz, zero_add] at h₃
-    have h₄ := LinearMap.congr_fun (ℋ.hochschildDifferential_eq_brace_sub 0 ψ) z
-    rw [negOnePowCast_zero, one_smul, LinearMap.sub_apply, brace_def, gradedCoderiv_zero,
-      LinearMap.comp_apply, ← hGdef] at h₄
-    linear_combination (norm := module) (2 : R) • h₁ + h₂ + h₃ - (2 : R) • h₄
+        ℋ.hochschildDifferential 0 (brace G ψ ψ 0) z := fun z hz ↦
+    two_smul_taylor_sub_taylor_apply_of_mem_filtration_four hψ hψ₁ key hb hδψ hz
   -- Hence `m_𝒜 - m_ℋ = δχ` there, for `χ = ψ - ½ ψ{ψ}`.
   set χ := ψ + (-⅟2 : R) • brace G ψ ψ 0 with hχdef
   have hχ : ∀ z ∈ filtration R A 4,
