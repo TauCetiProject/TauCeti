@@ -90,9 +90,9 @@ private theorem injOn_coord : InjOn (fun y ↦ (e y).1 0) e.source := fun y hy z
   rw [← symm_normalRay_coord hy, ← symm_normalRay_coord hz]
   exact congrArg (fun s ↦ e.symm (normalRay s)) h
 
-private theorem continuousOn_coord : ContinuousOn (fun y ↦ (e y).1 0) e.source :=
-  (show Continuous fun t : EuclideanHalfSpace 1 ↦ t.1 0 by fun_prop).comp_continuousOn
-    e.continuousOn
+private theorem continuousOn_coord : ContinuousOn (fun y ↦ (e y).1 0) e.source := by
+  have h : Continuous fun t : EuclideanHalfSpace 1 ↦ t.1 0 := by fun_prop
+  exact h.comp_continuousOn e.continuousOn
 
 private theorem continuousOn_symm_normalRay {S : Set ℝ} (h : ∀ s ∈ S, normalRay s ∈ e.target) :
     ContinuousOn (fun s ↦ e.symm (normalRay s)) S :=
@@ -164,10 +164,11 @@ private theorem coord_eq_zero_of_coord_eq_zero {e' : OpenPartialHomeomorph M (Eu
   obtain ⟨s₂, hs₂, hg₂⟩ := hval (c + η) (by rw [add_sub_cancel_left, abs_of_pos hη])
     (by linarith)
   have hsub : uIcc s₁ s₂ ⊆ Ioo 0 ε := ordConnected_Ioo.uIcc_subset hs₁ hs₂
-  obtain ⟨s, hs, hgs⟩ := intermediate_value_uIcc (hcont.mono (hsub.trans Ioo_subset_Ico_self))
-    (show c ∈ uIcc (g s₁) (g s₂) by
-      rw [hg₁, hg₂, uIcc_of_le (by linarith)]
-      exact ⟨by linarith, by linarith⟩)
+  have hcg : c ∈ uIcc (g s₁) (g s₂) := by
+    rw [hg₁, hg₂, uIcc_of_le (by linarith)]
+    exact ⟨by linarith, by linarith⟩
+  obtain ⟨s, hs, hgs⟩ :=
+    intermediate_value_uIcc (hcont.mono (hsub.trans Ioo_subset_Ico_self)) hcg
   exact (hsub hs).1.ne' (hinj (Ioo_subset_Ico_self (hsub hs)) ⟨le_rfl, hε⟩ (hgs.trans hg0.symm))
 
 end Chart
@@ -325,8 +326,10 @@ private theorem IsArcIn.exists_mem_closure (h : IsArcIn e α β K) {c : ℝ}
     rcases hc with rfl | rfl
     exacts [csInf_mem_closure hne h.bddBelow, csSup_mem_closure hne h.bddAbove]
   have hcαβ : c ∈ Icc α β := closure_minimal h.image_subset_Icc isClosed_Icc hcl
-  have hc0 : 0 ≤ c :=
-    closure_minimal (show _ ⊆ Ici (0 : ℝ) by rintro _ ⟨z, -, rfl⟩; exact (e z).2) isClosed_Ici hcl
+  have hIci : (fun z ↦ (e z).1 0) '' K ⊆ Ici 0 := by
+    rintro _ ⟨z, -, rfl⟩
+    exact (e z).2
+  have hc0 : 0 ≤ c := closure_minimal hIci isClosed_Ici hcl
   have hzc := coord_symm_normalRay hc0 (h.target c hcαβ)
   refine ⟨_, ?_, fun hK ↦ hcI (hzc ▸ mem_image_of_mem _ hK), e.map_target (h.target c hcαβ), hzc⟩
   rw [← h.image_symm_normalRay]
@@ -350,7 +353,8 @@ private theorem forall_mem_coord_lt_of_isPreconnected [T2Space M]
   have hA : IsClosed A := (isCompact_Icc.image_of_continuousOn
     (continuousOn_symm_normalRay fun s hs ↦ htarget s (hIcc s hs))).isClosed
   have hWA : W ⊆ A := fun z hz ↦ by
-    have hzt := abs_sub_lt_iff.1 (show |(e z).1 0 - t| < δ from hz.2)
+    have hzδ : |(e z).1 0 - t| < δ := hz.2
+    have hzt := abs_sub_lt_iff.1 hzδ
     exact ⟨(e z).1 0, ⟨by linarith, by linarith⟩, symm_normalRay_coord hz.1⟩
   have hcover : K ⊆ W ∪ Aᶜ := by
     intro z hz
