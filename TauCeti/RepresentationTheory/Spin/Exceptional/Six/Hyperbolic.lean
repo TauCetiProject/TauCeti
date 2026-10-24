@@ -281,18 +281,11 @@ theorem spinSixWedgeIsometryEquivPolarSplit_spinVectorAction
           ((spinSixWedgeQuadraticIsometryEquivSplit K).symm.toIsometry.spinGroupMap s) x) =
       spinVectorAction (splitEvenForm K 3) s
         (spinSixWedgeIsometryEquivPolarSplit K x) := by
-  have h := QuadraticMap.Isometry.spinGroupMap_spinVectorAction
-    (spinSixWedgeQuadraticIsometryEquivSplit K).toIsometry
-    ((spinSixWedgeQuadraticIsometryEquivSplit K).symm.spinGroupEquiv s) x
-  have hmap :
-      (spinSixWedgeQuadraticIsometryEquivSplit K).toIsometry.spinGroupMap
-          ((spinSixWedgeQuadraticIsometryEquivSplit K).symm.spinGroupEquiv s) = s := by
-    rw [← (spinSixWedgeQuadraticIsometryEquivSplit K).spinGroupEquiv_apply,
-      ← (spinSixWedgeQuadraticIsometryEquivSplit K).spinGroupEquiv_symm,
-      MulEquiv.apply_symm_apply]
-  rw [hmap, (spinSixWedgeQuadraticIsometryEquivSplit K).symm.spinGroupEquiv_apply] at h
+  have h := QuadraticMap.IsometryEquiv.spinGroupEquiv_spinVectorAction
+    (spinSixWedgeQuadraticIsometryEquivSplit K) s x
   simpa only [QuadraticMap.IsometryEquiv.toIsometry_apply,
-    spinSixWedgeQuadraticIsometryEquivSplit_apply] using h.symm
+    QuadraticMap.IsometryEquiv.spinGroupEquiv_apply,
+    spinSixWedgeQuadraticIsometryEquivSplit_apply] using h
 
 
 end TauCeti
