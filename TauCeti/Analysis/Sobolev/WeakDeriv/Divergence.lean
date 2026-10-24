@@ -23,11 +23,11 @@ and this holds in the weak sense: for every test function `φ` on `Ω`,
 `∫ ⟪∇φ, g⟫ = -∫ φ • tr G`.
 
 Applied to the weak gradient `g` of a scalar function `u`, together with
-`TauCeti.HasWeakFDerivOn.integral_laplacian_smul_eq_neg_integral_inner`, this says that the
-distributional Laplacian of a twice weakly differentiable function is the trace of its weak
-Hessian: `∫ Δφ • u = ∫ φ • tr G`. This identity is what makes the weak formulation
-`∫ Δφ • u = ∫ φ • f` of Poisson's equation `Δu = f` agree with the strong one, `tr G = f` almost
-everywhere, for twice weakly differentiable `u`.
+`TauCeti.HasWeakFDerivOn.integral_laplacian_smul_eq_neg_integral_inner`, this gives the pairing
+`∫ Δφ • u = ∫ φ • tr G`. For an additive Haar measure, it says that the distributional Laplacian
+of a twice weakly differentiable function is the trace of its weak Hessian. This identity is what
+makes the weak formulation `∫ Δφ • u = ∫ φ • f` of Poisson's equation `Δu = f` agree with the
+strong one, `tr G = f` almost everywhere, for twice weakly differentiable `u`.
 
 Dually, a weakly differentiable function `u : E → F` with weak derivative `U` pairs with the
 divergence of a test vector field `φ` as `∫ div φ • u = -∫ U φ`. This identity only needs a
@@ -38,14 +38,15 @@ additive Haar measure, taking `u = 1` gives `∫ div φ = 0`.
 No boundedness or boundary regularity of `Ω` is used. Except for `∫ div φ = 0`, which needs an
 additive Haar measure, the measure need not be a Haar measure: the trace identity, the Laplacian
 identity and the pairing `∫ div φ • u = -∫ U φ` all come from the defining integration-by-parts
-identities of weak derivatives.
+identities of weak derivatives. For a general measure these are adjoint identities relative to
+`μ`; their usual distributional interpretation requires an additive Haar measure.
 
 ## Main declarations
 
 * `TauCeti.HasWeakFDerivOn.integral_inner_gradient_eq_neg_integral_smul_trace`: the weak
   divergence of a weakly differentiable vector field is the trace of its weak derivative.
-* `TauCeti.HasWeakFDerivOn.integral_laplacian_smul_eq_integral_smul_trace`: the distributional
-  Laplacian of a twice weakly differentiable function is the trace of its weak Hessian.
+* `TauCeti.HasWeakFDerivOn.integral_laplacian_smul_eq_integral_smul_trace`: the Laplacian
+  pairing of a twice weakly differentiable function is given by the trace of its weak Hessian.
 * `TauCeti.HasWeakFDerivOn.integral_divergenceCLM_smul_eq_neg_integral`: a weakly differentiable
   function pairs with the divergence of a test vector field through its weak derivative.
 * `TestFunction.integral_divergenceCLM_eq_zero`: the divergence of a test vector field has
@@ -101,9 +102,10 @@ theorem HasWeakFDerivOn.integral_inner_gradient_eq_neg_integral_smul_trace
         refine integral_congr_ae (ae_of_all _ fun x => ?_)
         simp [LinearMap.trace_eq_sum_inner _ b, Finset.mul_sum]
 
-/-- **The distributional Laplacian is the trace of the weak Hessian.** If `u` has weak gradient
-`g` on `Ω` and `g` has weak derivative `G` there, then for every test function `φ` on `Ω`,
-`∫ Δφ • u ∂μ = ∫ φ • tr G ∂μ`. -/
+/-- **The Laplacian pairing is given by the trace of the weak Hessian.** If `u` has weak
+gradient `g` on `Ω` and `g` has weak derivative `G` there, then for every test function `φ` on
+`Ω`, `∫ Δφ • u ∂μ = ∫ φ • tr G ∂μ`. For an additive Haar measure, this identifies the
+distributional Laplacian of `u` with the trace of its weak Hessian. -/
 theorem HasWeakFDerivOn.integral_laplacian_smul_eq_integral_smul_trace [OpensMeasurableSpace E]
     {u : E → ℝ} {g : E → E} {G : E → E →L[ℝ] E}
     (hu : HasWeakFDerivOn μ Ω u fun x => innerSL ℝ (g x)) (hg : HasWeakFDerivOn μ Ω g G)
