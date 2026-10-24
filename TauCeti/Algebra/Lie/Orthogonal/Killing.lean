@@ -9,7 +9,6 @@ public import Mathlib.Algebra.Lie.CartanCriterion
 public import Mathlib.Algebra.Lie.Classical
 public import Mathlib.Algebra.Lie.Matrix
 public import Mathlib.Algebra.Lie.Semisimple.Lemmas
-public import TauCeti.LinearAlgebra.Matrix.Alternating
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 import TauCeti.Algebra.Lie.BaseChange.Radical
 import TauCeti.Algebra.Lie.Orthogonal.Basic
