@@ -49,7 +49,7 @@ continuous extension `LinearMap.extendOfNorm`.
 * `ProjValMeasure.integral_diag_eq_inner_integral`: diagonal matrix elements of the integral are
   integrals against the diagonal measures.
 * `ProjValMeasure.norm_integral_le`: a pointwise bound on the symbol bounds the operator norm.
-* `ProjValMeasure.norm_integral_apply_sq`: the vector norm identity
+* `ProjValMeasure.norm_sq_integral_apply`: the vector norm identity
   `‖(∫ f dP) ξ‖ ^ 2 = ∫ ‖f x‖ ^ 2 d(P.diag ξ)(x)`.
 * `ProjValMeasure.integral_apply_eq_zero_iff`: `(∫ f dP) ξ = 0` iff `f = 0` almost everywhere
   for `P.diag ξ`.
@@ -304,7 +304,7 @@ theorem norm_integral_le (P : ProjValMeasure X H) {f : BoundedBorelFunction X} {
 
 /-- **Vector norm identity** for the integral against a projection-valued measure:
 `‖(∫ f dP) ξ‖ ^ 2 = ∫ ‖f x‖ ^ 2 d(P.diag ξ)(x)`. -/
-theorem norm_integral_apply_sq (P : ProjValMeasure X H) (f : BoundedBorelFunction X) (ξ : H) :
+theorem norm_sq_integral_apply (P : ProjValMeasure X H) (f : BoundedBorelFunction X) (ξ : H) :
     ‖P.integral f ξ‖ ^ 2 = ∫ x, ‖f x‖ ^ 2 ∂(P.diag ξ) := by
   apply Complex.ofReal_injective
   rw [← integral_complex_ofReal]
@@ -324,7 +324,7 @@ theorem integral_apply_eq_zero_iff (P : ProjValMeasure X H) (f : BoundedBorelFun
       (Eventually.of_forall fun x => by
         rw [Real.norm_of_nonneg (by positivity)]
         exact pow_le_pow_left₀ (norm_nonneg _) (f.norm_coe_le_norm x) 2)
-  rw [← norm_eq_zero, ← pow_eq_zero_iff (n := 2) two_ne_zero, norm_integral_apply_sq,
+  rw [← norm_eq_zero, ← pow_eq_zero_iff (n := 2) two_ne_zero, norm_sq_integral_apply,
     integral_eq_zero_iff_of_nonneg (fun x => by positivity) hint]
   simp [EventuallyEq]
 

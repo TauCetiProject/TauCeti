@@ -13,7 +13,7 @@ public import TauCeti.Analysis.InnerProductSpace.ProjValMeasure.Null
 
 Let `P` be a projection-valued measure on `X` acting on a complex Hilbert space `H`, with
 diagonal measures `P.diag ξ`. The operator integral `P.integral f = ∫ f dP` of a bounded Borel
-symbol `f` satisfies the vector norm identity `ProjValMeasure.norm_integral_apply_sq`,
+symbol `f` satisfies the vector norm identity `ProjValMeasure.norm_sq_integral_apply`,
 `‖(∫ f dP) ξ‖ ^ 2 = ∫ ‖f x‖ ^ 2 d(P.diag ξ)(x)`.
 It identifies the map `f ↦ (∫ f dP) ξ` as an isometry from the symbols, with the `L²` norm of
 `P.diag ξ`, into `H`, and transfers scalar integration theory to the operator integral:
@@ -31,7 +31,7 @@ measure that charges every such interval.
 
 * `ProjValMeasure.integral_eq_integral_iff`: `∫ f dP = ∫ g dP` iff `f = g` `P`-almost everywhere.
 * `ProjValMeasure.integral_congr_ae`: symbols equal `P`-almost everywhere have equal integrals.
-* `ProjValMeasure.tendsto_integral_apply_of_dominated_convergence`: bounded `P`-almost
+* `ProjValMeasure.tendsto_integral_apply_filter_of_dominated_convergence`: bounded `P`-almost
   everywhere convergence of symbols gives strong convergence of their integrals.
 
 ## References
@@ -74,8 +74,8 @@ theorem integral_congr_ae (P : ProjValMeasure X H) {f g : BoundedBorelFunction X
 Borel symbols `F n` are eventually bounded by a common constant `P`-almost everywhere and
 converge to `f` `P`-almost everywhere, then their integrals converge to the integral of `f`
 strongly, that is on every vector. -/
-theorem tendsto_integral_apply_of_dominated_convergence (P : ProjValMeasure X H) {ι : Type*}
-    {l : Filter ι} [l.IsCountablyGenerated] {F : ι → BoundedBorelFunction X}
+theorem tendsto_integral_apply_filter_of_dominated_convergence (P : ProjValMeasure X H)
+    {ι : Type*} {l : Filter ι} [l.IsCountablyGenerated] {F : ι → BoundedBorelFunction X}
     {f : BoundedBorelFunction X} {M : ℝ} (h_bound : ∀ᶠ n in l, ∀ᶠ x in P.ae, ‖F n x‖ ≤ M)
     (h_lim : ∀ᶠ x in P.ae, Tendsto (fun n => F n x) l (𝓝 (f x))) (ξ : H) :
     Tendsto (fun n => P.integral (F n) ξ) l (𝓝 (P.integral f ξ)) := by
@@ -83,7 +83,7 @@ theorem tendsto_integral_apply_of_dominated_convergence (P : ProjValMeasure X H)
   -- `‖(∫ F n dP - ∫ f dP) ξ‖ ^ 2 = ∫ ‖F n - f‖ ^ 2 d(P.diag ξ)`, which tends to `0` by scalar
   -- dominated convergence with the constant bound `(M + ‖f‖) ^ 2`.
   have hsq : Tendsto (fun n => ‖P.integral (F n) ξ - P.integral f ξ‖ ^ 2) l (𝓝 0) := by
-    simp_rw [← sub_apply, ← map_sub, norm_integral_apply_sq,
+    simp_rw [← sub_apply, ← map_sub, norm_sq_integral_apply,
       BoundedBorelFunction.sub_apply]
     simpa using tendsto_integral_filter_of_dominated_convergence (f := fun _ => (0 : ℝ))
       (fun _ => (M + ‖f‖) ^ 2)
