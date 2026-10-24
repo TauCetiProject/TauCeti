@@ -8,7 +8,10 @@ module
 public import TauCeti.RepresentationTheory.Symmetric.PermutationModule.PowerSum
 public import TauCeti.RepresentationTheory.Symmetric.PermutationModule.YoungRule
 public import TauCeti.RepresentationTheory.Symmetric.Specht.Basis
+public import TauCeti.RepresentationTheory.Symmetric.ClassSize
+public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.HallInner
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Monomial
+import TauCeti.RepresentationTheory.Symmetric.Specht.Orthogonality
 
 /-!
 # The finite-variable Frobenius characteristic and Frobenius's formula
@@ -55,12 +58,18 @@ inverse directly, without passing through the orthogonality relations.
 * `TauCeti.sum_spechtChar_smul_psumPart`: **its inverse**, `∑_π χ^μ(π) p_{ρ(π)} = n! s_μ`.
 * `TauCeti.frobeniusCharacteristic_eq_sum_psumPart`: **the cycle-type formula** for the
   Frobenius characteristic.
+* `TauCeti.hallInner_psumPart_schurPolyBasis`: for the Hall inner product `TauCeti.hallInner`,
+  `⟨p_ρ, s_μ⟩ = χ^μ(ρ)`.
+* `TauCeti.hallInner_psumPart`: **the power sums are orthogonal**, `⟨p_ρ, p_ρ'⟩ = z_ρ δ_{ρρ'}`.
+* `TauCeti.hallInner_frobeniusCharacteristic`: **the Frobenius characteristic is an isometry**
+  from the character pairing to the Hall inner product.
 
 ## References
 
 * I. G. Macdonald, *Symmetric Functions and Hall Polynomials*, 2nd ed., Chapter I, Section 7,
   where the power sums are expanded in the Schur functions with the characters of `Sₙ` as
-  coefficients.
+  coefficients and the characteristic map is shown to be an isometry; and Section 4 for the
+  orthogonality of the power sums.
 * W. Fulton and J. Harris, *Representation Theory: A First Course* (1991), Lecture 4, §4.1
   (Frobenius's formula) and Appendix A.
 -/
@@ -226,5 +235,67 @@ theorem frobeniusCharacteristic_eq_sum_psumPart (d : ℕ) (h : n ≤ d)
       character_spechtModuleℂ_intCast, Int.cast_smul_eq_zsmul, sum_spechtChar_smul_psumPart,
       ← Nat.cast_smul_eq_nsmul ℂ, smul_smul, inv_mul_cancel₀ hfac, one_smul]
   exact congr($hL f)
+
+
+/-! ### The Hall inner product -/
+
+section HallInner
+
+open Equiv MvPolynomial
+
+variable {σ : Type*} [Fintype σ] {R : Type*} [CommRing R]
+
+/-- **A power sum pairs with a Schur polynomial to a character value**: `⟨p_ρ, s_μ⟩ = χ^μ(ρ)` for
+the Hall inner product, over every commutative ring.  This is Frobenius's formula
+`p_ρ = ∑_λ χ^λ(ρ) s_λ` read in the Schur basis. -/
+theorem hallInner_psumPart_schurPolyBasis (ρ : n.Partition)
+    (μ : {ν : n.Partition // ν.parts.card ≤ Fintype.card σ}) :
+    hallInner σ R n ⟨psumPart σ R ρ, psumPart_mem_symmetricHomogeneousSubmodule R ρ⟩
+      (schurPolyBasis σ R n μ) = spechtCharValue μ.1 ρ := by
+  rw [hallInner_schurPolyBasis_right]
+  refine schurPolyBasis_repr_of_coe_eq_sum (c := fun l => (spechtCharValue l ρ : R)) ?_ μ
+  simp only [Int.cast_smul_eq_zsmul]
+  exact psumPart_eq_sum_spechtCharValue_smul_schurPoly R ρ
+
+/-- **The power sums are orthogonal for the Hall inner product**: in an alphabet of at least `n`
+letters, `⟨p_ρ, p_ρ'⟩ = z_ρ δ_{ρρ'}`, where `z_ρ = ∏ᵢ i^{mᵢ} mᵢ!` is the order of the centralizer
+of a permutation of cycle type `ρ` (`TauCeti.zPart`).  This holds over every commutative ring: by
+`TauCeti.hallInner_psumPart_schurPolyBasis` it is the column orthogonality of the character table
+of `Sₙ`.  With fewer letters the power sums of the partitions with too many parts become
+dependent, and the formula fails. -/
+theorem hallInner_psumPart (h : n ≤ Fintype.card σ) (ρ ρ' : n.Partition) :
+    hallInner σ R n ⟨psumPart σ R ρ, psumPart_mem_symmetricHomogeneousSubmodule R ρ⟩
+        ⟨psumPart σ R ρ', psumPart_mem_symmetricHomogeneousSubmodule R ρ'⟩ =
+      if ρ = ρ' then (zPart ρ : R) else 0 := by
+  have hcard (μ : n.Partition) : μ.parts.card ≤ Fintype.card σ := μ.card_parts_le.trans h
+  rw [hallInner_apply]
+  simp only [← hallInner_schurPolyBasis_right, hallInner_psumPart_schurPolyBasis]
+  rw [Fintype.sum_equiv (Equiv.subtypeUnivEquiv hcard)
+    (fun μ => (spechtCharValue μ.1 ρ : R) * spechtCharValue μ.1 ρ')
+    (fun μ => (spechtCharValue μ ρ : R) * spechtCharValue μ ρ') fun _ => rfl]
+  have hc := congrArg (Int.cast : ℤ → R) (symmetricCharacterTable_column_orthogonality ρ ρ')
+  push_cast [symmetricCharacterTable_apply] at hc
+  exact hc
+
+/-- **The Frobenius characteristic is an isometry**: it carries the character pairing
+`⟨f, g⟩ = (1 / n!) ∑_π f(π) g(π⁻¹)` of class functions of `Sₙ` to the Hall inner product of
+symmetric polynomials.  Both forms make the bases matched by the Frobenius characteristic
+orthonormal: the characters of the Specht modules and the Schur polynomials. -/
+theorem hallInner_frobeniusCharacteristic (d : ℕ) (h : n ≤ d)
+    (f g : ClassFunction ℂ (Perm (Fin n))) :
+    hallInner (Fin d) ℂ n (frobeniusCharacteristic n d h f) (frobeniusCharacteristic n d h g) =
+      ClassFunction.characterPairing f g := by
+  have key : (hallInner (Fin d) ℂ n).compl₁₂ (frobeniusCharacteristic n d h).toLinearMap
+      (frobeniusCharacteristic n d h).toLinearMap = ClassFunction.characterPairing := by
+    refine LinearMap.BilinForm.ext_basis (spechtCharacterBasis n) fun μ ν => ?_
+    have hν := spechtCharacterBasis_repr (spechtCharacterBasis n ν) μ
+    rw [← spechtCharacterBasis_apply, Module.Basis.repr_self] at hν
+    rw [← hν, LinearMap.compl₁₂_apply, LinearEquiv.coe_coe, frobeniusCharacteristic,
+      Module.Basis.equiv_apply, Module.Basis.equiv_apply, hallInner_schurPolyBasis,
+      Finsupp.single_apply]
+    exact if_congr ((partitionEquivSchurIndex n d h).injective.eq_iff.trans eq_comm) rfl rfl
+  exact congr($key f g)
+
+end HallInner
 
 end TauCeti

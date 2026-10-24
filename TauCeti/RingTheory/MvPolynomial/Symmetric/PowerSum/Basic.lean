@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 public import Mathlib.RingTheory.MvPolynomial.Symmetric.Defs
 public import TauCeti.GroupTheory.Perm.Basic
 public import TauCeti.GroupTheory.Perm.FiberSubgroup
+public import TauCeti.RingTheory.MvPolynomial.Symmetric.Homogeneous
 import TauCeti.Algebra.MvPolynomial.Monomial
 import TauCeti.RingTheory.MvPolynomial.Symmetric.Complete.Basic
 import TauCeti.GroupTheory.Perm.Partition
@@ -33,7 +34,8 @@ characters of the Young permutation modules.
 ## Main results
 
 * `TauCeti.psumPart_isSymmetric` and `TauCeti.isHomogeneous_psumPart`: a product of power sums
-  over a partition of `n` is symmetric and homogeneous of degree `n`.
+  over a partition of `n` is symmetric and homogeneous of degree `n`, that is, it lies in
+  `TauCeti.symmetricHomogeneousSubmodule` (`TauCeti.psumPart_mem_symmetricHomogeneousSubmodule`).
 * `TauCeti.psumPart_partition_eq_sum_prod_X`: **the power-sum product over the cycle type of `π`
   is the generating function of the `π`-invariant colourings.**
 * `TauCeti.coeff_psumPart_partition`: its coefficient at `x^d` counts the `π`-invariant colourings
@@ -80,6 +82,12 @@ theorem isHomogeneous_psumPart [Fintype σ] {n : ℕ} (μ : n.Partition) :
   rw [psumPart]
   have h := key μ.parts
   rwa [μ.parts_sum] at h
+
+/-- **A product of power sums is symmetric and homogeneous**, of degree the number its partition
+partitions. -/
+theorem psumPart_mem_symmetricHomogeneousSubmodule [Fintype σ] {n : ℕ} (μ : n.Partition) :
+    psumPart σ R μ ∈ symmetricHomogeneousSubmodule σ R n :=
+  mem_symmetricHomogeneousSubmodule.mpr ⟨psumPart_isSymmetric R μ, isHomogeneous_psumPart R μ⟩
 
 variable {α : Type*}
 
