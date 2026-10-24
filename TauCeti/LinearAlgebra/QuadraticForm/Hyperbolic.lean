@@ -224,6 +224,13 @@ theorem hyperbolicClass_def :
 theorem rank_hyperbolicClass : RegularFormClass.rank (hyperbolicClass K) = 2 := by
   rw [hyperbolicClass_def, RegularFormClass.rank_mk]
 
+/-- The sum of `m` hyperbolic classes has rank `2 * m`. -/
+theorem rank_nsmul_hyperbolicClass (m : ℕ) :
+    RegularFormClass.rank (m • hyperbolicClass K) = 2 * m := by
+  induction m with
+  | zero => rw [zero_nsmul, RegularFormClass.rank_zero, mul_zero]
+  | succ m ih => rw [succ_nsmul, RegularFormClass.rank_add, ih, rank_hyperbolicClass, mul_add_one]
+
 /-- The class of the hyperbolic plane, as a form, is the hyperbolic class. -/
 @[simp]
 theorem formClass_hyperbolicPlane :

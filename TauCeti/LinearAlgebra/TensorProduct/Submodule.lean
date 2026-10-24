@@ -21,6 +21,9 @@ For submodules `p` and `q`, every element of `(p ⊔ q) ⊗[R] M` is the sum of 
 (`Submodule.exists_eq_rTensor_inclusion_add`). For an ideal `I` and a submodule `J`, the image of
 `M ⊗[R] (I • J)` in `M ⊗[R] J` is contained in `I • (M ⊗[R] J)`
 (`LinearMap.range_lTensor_inclusion_smul_le`).
+
+Multiplication of tensor products of submodules is compatible with multiplication in each
+factor (`Submodule.map₂_tmul_mul_le`).
 -/
 
 public section
@@ -89,6 +92,31 @@ theorem _root_.LinearMap.range_lTensor_inclusion_smul_le (I : Ideal R) (J : Subm
     exact smul_mono le_rfl le_top this
 
 end Inclusion
+
+section Multiplication
+
+variable {R A B : Type*} [CommSemiring R] [Semiring A] [Semiring B]
+  [Algebra R A] [Algebra R B]
+
+/-- Products of tensor products of submodules lie in the tensor product of their products. -/
+theorem map₂_tmul_mul_le (P S : Submodule R A) (Q T : Submodule R B) :
+    map₂ (TensorProduct.mk R A B) P Q * map₂ (TensorProduct.mk R A B) S T ≤
+      map₂ (TensorProduct.mk R A B) (P * S) (Q * T) := by
+  apply mul_le.mpr
+  intro x hx y hy
+  rw [← TensorProduct.range_mapIncl] at hx hy
+  obtain ⟨a, rfl⟩ := hx
+  obtain ⟨b, rfl⟩ := hy
+  induction a with
+  | tmul p q =>
+    induction b with
+    | tmul s t =>
+      simpa using apply_mem_map₂ (TensorProduct.mk R A B)
+        (mul_mem_mul p.2 s.2) (mul_mem_mul q.2 t.2)
+    | add b c hb hc => simpa [mul_add] using Submodule.add_mem _ hb hc
+  | add a c ha hc => simpa [add_mul] using Submodule.add_mem _ ha hc
+
+end Multiplication
 
 variable {R A B : Type*} [CommSemiring R] [CommSemiring A] [Semiring B]
 variable [Algebra R A] [Algebra R B]
