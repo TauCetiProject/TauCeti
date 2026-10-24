@@ -151,20 +151,11 @@ theorem isIso_normalizationDesc_fromSpecStalk_genericPoint [IsIntegral T]
   by_cases hη : genericPoint T ∈ g ⁻¹ᵁ U
   · have : Nonempty (g ⁻¹ᵁ U) := ⟨⟨_, hη⟩⟩
     have hV := hU.preimage g
-    have htop : T.fromSpecStalk (genericPoint T) ⁻¹ᵁ g ⁻¹ᵁ U = ⊤ := by
-      have : Subsingleton (Spec T.functionField) :=
-        inferInstanceAs (Subsingleton (PrimeSpectrum T.functionField))
-      refine top_le_iff.mp fun x _ ↦ ?_
-      rw [Subsingleton.elim x (IsLocalRing.closedPoint _)]
-      exact (Scheme.Hom.mem_preimage _).mpr (by rwa [Scheme.fromSpecStalk_closedPoint])
     let ι := (Scheme.ΓSpecIso T.functionField).inv ≫
       (Spec T.functionField).presheaf.map (homOfLE (le_top :
         T.fromSpecStalk (genericPoint T) ⁻¹ᵁ g ⁻¹ᵁ U ≤ ⊤)).op
-    have hι : Function.Bijective ι.hom := by
-      have : homOfLE (le_top : T.fromSpecStalk (genericPoint T) ⁻¹ᵁ g ⁻¹ᵁ U ≤ ⊤) =
-        eqToHom htop := Subsingleton.elim _ _
-      simp only [ι, this, eqToHom_op, eqToHom_map]
-      exact ConcreteCategory.bijective_of_isIso _
+    have := Scheme.isIso_presheaf_map_fromSpecStalk_preimage_le_top hη
+    have hι : Function.Bijective ι.hom := ConcreteCategory.bijective_of_isIso _
     have key : (T.fromSpecStalk (genericPoint T)).appLE (g ⁻¹ᵁ U)
         ((T.fromSpecStalk (genericPoint T) ≫ g) ⁻¹ᵁ U)
         (by simp) = T.germToFunctionField (g ⁻¹ᵁ U) ≫ ι := by
@@ -188,10 +179,7 @@ theorem isIso_normalizationDesc_fromSpecStalk_genericPoint [IsIntegral T]
       obtain ⟨b, rfl⟩ := (IsIntegrallyClosed.isIntegral_iff (K := T.functionField)).mp ht
       -- The algebra structure of `Γ(T, V)` on `k(T)` is the germ map, so this is `key` at `b`.
       exact ⟨b, by rw [key]; rfl⟩
-  · have hV : g ⁻¹ᵁ U = ⊥ := by
-      ext x
-      exact ⟨fun hx ↦ hη ((genericPoint_specializes x).mem_open (g ⁻¹ᵁ U).isOpen hx),
-        fun hx ↦ hx.elim⟩
+  · have hV : g ⁻¹ᵁ U = ⊥ := Scheme.eq_bot_of_genericPoint_notMem hη
     have : Subsingleton Γ(T, g ⁻¹ᵁ U) := by
       rw [hV]
       infer_instance
@@ -223,9 +211,7 @@ theorem isIso_morphismRestrict_fromNormalization_of_isIntegrallyClosed [IsIntegr
     obtain ⟨a, rfl⟩ := IsIntegrallyClosed.isIntegral_iff.mp hx
     exact ⟨a, rfl⟩
   · -- Otherwise `U` is empty and all the rings involved are zero.
-    have hU : U = ⊥ := by
-      ext x
-      exact ⟨fun hx ↦ hη ((genericPoint_specializes x).mem_open U.isOpen hx), fun hx ↦ hx.elim⟩
+    have hU : U = ⊥ := Scheme.eq_bot_of_genericPoint_notMem hη
     have : Subsingleton Γ(Y, U) := by
       rw [hU]
       infer_instance

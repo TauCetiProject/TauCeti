@@ -39,6 +39,10 @@ in its function field is computed on affine opens.
 * `TauCeti.AlgebraicGeometry.Scheme.coheight_eq_one_iff_ne_genericPoint`: on an irreducible
   scheme of dimension at most one, the points of codimension one are exactly the points other
   than the generic point.
+* `TauCeti.AlgebraicGeometry.Scheme.eq_bot_of_genericPoint_notMem`: on an irreducible scheme, an
+  open missing the generic point is empty.
+* `TauCeti.AlgebraicGeometry.Scheme.fromSpecStalk_preimage_eq_top`: the preimage under
+  `Spec 𝒪_{X,x} ⟶ X` of an open containing `x` is everything.
 * `TauCeti.AlgebraicGeometry.Scheme.quasiCompact_fromSpecStalk_genericPoint`: the generic point
   `Spec k(X) ⟶ X` of an integral scheme is quasi-compact.
 * `TauCeti.AlgebraicGeometry.Scheme.isFractionRing_app_fromSpecStalk_genericPoint`: on an integral
@@ -83,6 +87,32 @@ theorem coheight_eq_one_iff_ne_genericPoint
   rw [← hle.ge_iff_eq, Order.one_le_iff_pos, Order.coheight_pos, not_iff_not,
     isMax_iff_eq_genericPoint]
 
+/-- On an irreducible scheme, an open which does not contain the generic point is empty: the
+generic point generizes every point, so it lies in every nonempty open. -/
+theorem eq_bot_of_genericPoint_notMem {U : X.Opens} (h : genericPoint X ∉ U) : U = ⊥ := by
+  ext x
+  exact ⟨fun hx ↦ h ((genericPoint_specializes x).mem_open U.isOpen hx), fun hx ↦ hx.elim⟩
+
+/-- The preimage under `Spec 𝒪_{X,x} ⟶ X` of an open containing `x` is all of `Spec 𝒪_{X,x}`: every
+point of `Spec 𝒪_{X,x}` specializes to the closed point, which lies over `x`. -/
+theorem fromSpecStalk_preimage_eq_top {X : Scheme.{u}} {x : X} {U : X.Opens} (hx : x ∈ U) :
+    X.fromSpecStalk x ⁻¹ᵁ U = ⊤ :=
+  top_le_iff.mp fun y _ ↦ (IsLocalRing.specializes_closedPoint y).mem_open
+    (X.fromSpecStalk x ⁻¹ᵁ U).isOpen
+    ((Scheme.Hom.mem_preimage _).mpr (by rwa [Scheme.fromSpecStalk_closedPoint]))
+
+open CategoryTheory in
+/-- For an open `U` containing `x`, the restriction from the global sections of `Spec 𝒪_{X,x}` to
+the preimage of `U` under `Spec 𝒪_{X,x} ⟶ X` is an isomorphism, since this preimage is everything.
+It is the last factor of `AlgebraicGeometry.Scheme.fromSpecStalk_app`. -/
+theorem isIso_presheaf_map_fromSpecStalk_preimage_le_top {X : Scheme.{u}} {x : X} {U : X.Opens}
+    (hx : x ∈ U) :
+    IsIso ((Spec (X.presheaf.stalk x)).presheaf.map
+      (homOfLE (le_top : X.fromSpecStalk x ⁻¹ᵁ U ≤ ⊤)).op) := by
+  rw [show homOfLE (le_top : X.fromSpecStalk x ⁻¹ᵁ U ≤ ⊤) =
+    eqToHom (fromSpecStalk_preimage_eq_top hx) from Subsingleton.elim _ _, eqToHom_op, eqToHom_map]
+  infer_instance
+
 /-- The generic point `Spec k(X) ⟶ X` of an integral scheme is quasi-compact, since `Spec k(X)` is
 a single point. -/
 instance quasiCompact_fromSpecStalk_genericPoint {X : Scheme.{u}} [IsIntegral X] :
@@ -102,16 +132,10 @@ theorem isFractionRing_app_fromSpecStalk_genericPoint {X : Scheme.{u}} [IsIntegr
   let := (f.app U).hom.toAlgebra
   have hη : genericPoint X ∈ U :=
     ((genericPoint_spec X).mem_open_set_iff U.isOpen).mpr (by simpa using ‹Nonempty U›)
-  -- Every point of `Spec k(X)` specializes to the closed point, which lies over `genericPoint X`.
-  have htop : f ⁻¹ᵁ U = ⊤ :=
-    top_le_iff.mp fun y _ ↦ (IsLocalRing.specializes_closedPoint y).mem_open (f ⁻¹ᵁ U).isOpen
-      ((Scheme.Hom.mem_preimage _).mpr (by rwa [Scheme.fromSpecStalk_closedPoint]))
   let ι := (Scheme.ΓSpecIso X.functionField).inv ≫
     (Spec X.functionField).presheaf.map (homOfLE (le_top : f ⁻¹ᵁ U ≤ ⊤)).op
-  have hι : Function.Bijective ι.hom := by
-    have : homOfLE (le_top : f ⁻¹ᵁ U ≤ ⊤) = eqToHom htop := Subsingleton.elim _ _
-    simp only [ι, this, eqToHom_op, eqToHom_map]
-    exact ConcreteCategory.bijective_of_isIso _
+  have := isIso_presheaf_map_fromSpecStalk_preimage_le_top hη
+  have hι : Function.Bijective ι.hom := ConcreteCategory.bijective_of_isIso _
   have key : f.app U = X.germToFunctionField U ≫ ι := Scheme.fromSpecStalk_app hη
   have := functionField_isFractionRing_of_isAffineOpen X U hU
   exact IsLocalization.isLocalization_of_algEquiv _ <|
