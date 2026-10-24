@@ -136,11 +136,6 @@ private theorem enorm_thickenedCutoff_sub_indicator_le (s : Set E) {ε : ℝ} (h
 
 end Cutoff
 
-private theorem measurableSet_thickening_sdiff_closure {E : Type*} [NormedAddCommGroup E]
-    [MeasurableSpace E] [OpensMeasurableSpace E] (s : Set E) (ε : ℝ) :
-    MeasurableSet (thickening ε s \ closure s) :=
-  isOpen_thickening.measurableSet.diff isClosed_closure.measurableSet
-
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
 
@@ -150,7 +145,8 @@ private theorem totalVariationOn_thickenedCutoff_le (Ω : Opens E) (s : Set E) {
     (hε : 0 < ε) :
     totalVariationOn μ Ω (thickenedCutoff s ε) ≤
       μ ((thickening ε s \ closure s) ∩ Ω) / ENNReal.ofReal ε := by
-  have hmeas := measurableSet_thickening_sdiff_closure s ε
+  have hmeas : MeasurableSet (thickening ε s \ closure s) :=
+    isOpen_thickening.measurableSet.diff isClosed_closure.measurableSet
   rw [(lipschitzWith_thickenedCutoff s hε).locallyLipschitz.locallyLipschitzOn
       |>.totalVariationOn_eq_setLIntegral_enorm_fderiv]
   calc ∫⁻ x in Ω, ‖fderiv ℝ (thickenedCutoff s ε) x‖ₑ ∂μ
@@ -167,6 +163,8 @@ No measurability, finite-measure or regularity hypothesis on `s` is needed. -/
 theorem perimeter_closure_le_liminf_measure_thickening_sdiff_div (Ω : Opens E) (s : Set E) :
     perimeter μ Ω (closure s) ≤
       liminf (fun ε => μ ((thickening ε s \ closure s) ∩ Ω) / ENNReal.ofReal ε) (𝓝[>] 0) := by
+  have hmeas (ε : ℝ) : MeasurableSet (thickening ε s \ closure s) :=
+    isOpen_thickening.measurableSet.diff isClosed_closure.measurableSet
   have hu : ∀ᶠ ε in 𝓝[>] (0 : ℝ), LocallyIntegrableOn (thickenedCutoff s ε) Ω μ := by
     filter_upwards [self_mem_nhdsWithin] with ε hε
     exact (lipschitzWith_thickenedCutoff s hε).continuous.locallyIntegrable.locallyIntegrableOn _
@@ -180,8 +178,7 @@ theorem perimeter_closure_le_liminf_measure_thickening_sdiff_div (Ω : Opens E) 
     have hshell : Tendsto (fun ε => μ ((thickening ε s \ closure s) ∩ K)) (𝓝[>] 0) (𝓝 0) := by
       have h := tendsto_measure_biInter_gt (μ := μ) (a := (0 : ℝ))
         (s := fun ε => (thickening ε s \ closure s) ∩ K)
-        (fun ε _ => ((measurableSet_thickening_sdiff_closure s ε).inter
-          hK.measurableSet).nullMeasurableSet)
+        (fun ε _ => ((hmeas ε).inter hK.measurableSet).nullMeasurableSet)
         (fun i j _ hij => inter_subset_inter_left _ (sdiff_subset_sdiff_left
           (thickening_mono hij s)))
         ⟨1, one_pos, measure_ne_top_of_subset inter_subset_right hK.measure_lt_top.ne⟩
@@ -199,8 +196,7 @@ theorem perimeter_closure_le_liminf_measure_thickening_sdiff_div (Ω : Opens E) 
         ≤ ∫⁻ x in K, (thickening ε s \ closure s).indicator 1 x ∂μ :=
           lintegral_mono (enorm_thickenedCutoff_sub_indicator_le s hε)
       _ = μ ((thickening ε s \ closure s) ∩ K) := by
-          rw [lintegral_indicator_one (measurableSet_thickening_sdiff_closure s ε),
-            Measure.restrict_apply (measurableSet_thickening_sdiff_closure s ε)]
+          rw [lintegral_indicator_one (hmeas ε), Measure.restrict_apply (hmeas ε)]
   calc perimeter μ Ω (closure s)
       ≤ liminf (fun ε => totalVariationOn μ Ω (thickenedCutoff s ε)) (𝓝[>] 0) := by
         rw [perimeter_def]
