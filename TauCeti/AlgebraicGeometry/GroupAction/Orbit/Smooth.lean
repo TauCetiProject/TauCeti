@@ -80,8 +80,8 @@ theorem smooth_orbitClosureToBase_of_isClosed [IsReduced G.left] (x : 𝟙_ (Ove
   have : IsReduced (orbitClosureScheme G x) := by
     exact IsSchemeTheoreticallyDominant.isReduced (toOrbitClosure G x)
   rw [orbitClosureToBase_def]
-  apply smooth_of_equivariant_of_range_subset_orbit G x (orbitClosureι G x)
-    (e := orbitClosureTranslation G x) _ (orbitClosureTranslation_hom_ι G x)
-  rw [range_orbitClosureι, orbitClosure_def, hc.closure_eq]
+  exact smooth_of_equivariant_of_range_subset_orbit G x (orbitClosureι G x)
+    (range_orbitClosureι_of_isClosed G x hc).le (orbitClosureTranslation G x)
+    (orbitClosureTranslation_hom_ι G x)
 
 end TauCeti.SchemeAction

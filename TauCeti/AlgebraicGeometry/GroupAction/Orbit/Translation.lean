@@ -161,9 +161,9 @@ theorem exists_orbitClosureTranslation_eq_of_isClosed (hc : IsClosed (orbit G x)
     {y z : orbitClosureScheme G x} (hy : y ∈ closedPoints _) (hz : z ∈ closedPoints _) :
     ∃ g : 𝟙_ (Over (Spec (.of k))) ⟶ G,
       (orbitClosureTranslation G x g).hom y = z := by
-  apply exists_eq_of_equivariant_of_range_subset_orbit G x (orbitClosureι G x)
-    (e := orbitClosureTranslation G x) _ (orbitClosureTranslation_hom_ι G x) hy hz
-  rw [range_orbitClosureι, orbitClosure_def, hc.closure_eq]
+  exact exists_eq_of_equivariant_of_range_subset_orbit G x (orbitClosureι G x)
+    (range_orbitClosureι_of_isClosed G x hc).le (orbitClosureTranslation G x)
+    (orbitClosureTranslation_hom_ι G x) hy hz
 
 end FiniteType
 
