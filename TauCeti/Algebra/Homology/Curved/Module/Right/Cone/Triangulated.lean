@@ -43,13 +43,31 @@ universe u
 
 -- The homotopy quotient retains the underlying curved modules as objects.
 attribute [local implicit_reducible] ForgetEnrichment dgClosedToHomotopy
-  DGHomotopyCategory.of DGHomotopyCategory.underlying
+  DGHomotopyCategory.of DGHomotopyCategory.underlying coneIdentityInjectivePresentation
+  EnrichedFunctor.ofDGMap EnrichedFunctor.mapDGHomotopyCategory
 
 variable {R A : Type u} [CommRing R] [Ring A] [Algebra R A]
   {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜] {d : A →ₗ[R] A} {w : A}
   {h : IsCurvedDGAlgebra 𝒜 d w}
   {S : ShortComplex (ForgetEnrichment (CochainComplex (ModuleCat R) ℤ)
     (CurvedDGRightModuleCat.{u, u, u} h))}
+
+/-- The induced quotient-shift comparison keeps the underlying shifted module. -/
+private theorem quotientCommShift_hom_app
+    (X : ForgetEnrichment (CochainComplex (ModuleCat R) ℤ)
+      (CurvedDGRightModuleCat.{u, u, u} h)) :
+    ((dgClosedToHomotopy R).commShiftIso (1 : ℤ)).hom.app X = eqToHom (by rfl) := by
+  simp only [Functor.commShiftIso_eq_ofInduced, Iso.symm_hom, Iso.symm_inv,
+    EnrichedFunctor.forgetCompDgClosedToHomotopyIso_hom_app]
+  rfl
+
+/-- Negating the third object changes the two adjacent arrows of a triangle. -/
+private noncomputable def negThirdTriangleIso
+    {X Y Z : DGHomotopyCategory R (CurvedDGRightModuleCat.{u, u, u} h)}
+    (a : X ⟶ Y) (b : Y ⟶ Z) (c : Z ⟶ X⟦(1 : ℤ)⟧) :
+    Triangle.mk a (-b) (-c) ≅ Triangle.mk a b c :=
+  Triangle.isoMk _ _ (Iso.refl _) (Iso.refl _) (-Iso.refl _)
+    (by simp) (by simp) (by simp)
 
 /-- The identity-cone connecting map gives the transported stable conflation triangle. -/
 private noncomputable def mapStableConflationTriangleIso
@@ -94,7 +112,7 @@ private noncomputable def mapStableConflationTriangleIso
     rw [eqToHom_comp_iff, comp_eqToHom_iff] at key
     simp only [key, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp, Category.assoc,
       eqToHom_map]
-    simp only [eqToHom_trans, Category.assoc]
+    simp only [quotientCommShift_hom_app, eqToHom_trans]
 
 /-- A graded-split conflation gives a distinguished triangle whose third arrow is the class of
 the cokernel map induced by an extension to the first object's identity cone. The canonical
@@ -109,10 +127,10 @@ theorem mk_distinguished_of_conflation
         ((dgClosedToHomotopy R).map δ ≫ eqToHom (by
           simp only [coneIdentityInjectivePresentation_K, dgClosedToHomotopy_obj,
             shiftFunctor_eq_homotopyShiftFunctor, homotopyShiftFunctor_obj_of,
-            ForgetEnrichment.to_of]))) ∈
+            ForgetEnrichment.to_of])) ∈
       distTriang (DGHomotopyCategory R (CurvedDGRightModuleCat.{u, u, u} h)) := by
-  letI := (gradedSplitExact_isFrobenius (h := h)).stableHasShift
-  letI := gradedSplitStableToHomotopyCommShift (h := h)
+  let := (gradedSplitExact_isFrobenius (h := h)).stableHasShift
+  let := gradedSplitStableToHomotopyCommShift (h := h)
   exact isomorphic_distinguished _ (map_stableConflationTriangle_mem_distTriang S hS) _
     (mapStableConflationTriangleIso hS a δ ha hδ)
 
@@ -145,23 +163,30 @@ theorem coneTriangle_distinguished {M N : CurvedDGRightModuleCat.{u, u, u} h}
     eqToHom (coneIdentityInjectivePresentation_K N).symm
   have ha : S.f ≫ a = (coneIdentityInjectivePresentation N).i := by
     apply (cancel_mono (eqToHom (coneIdentityInjectivePresentation_I N))).mp
-    simp [S, a, Category.assoc]
+    simp [S, a]
+    simpa only [coneIdentityInjectivePresentation_I, eqToHom_refl, Category.comp_id] using
+      (coneIdentityInjectivePresentation_i N).symm
   have hδ : S.g ≫ δ = a ≫ (coneIdentityInjectivePresentation N).p := by
     apply (cancel_mono (eqToHom (coneIdentityInjectivePresentation_K N))).mp
-    simp [S, a, δ, Category.assoc]
+    simp only [S, a, δ, eqToHom_refl, Category.comp_id]
+    change coneProjection f ≫ (closedShiftFunctor 1).map f =
+      coneMap f (𝟙 (ForgetEnrichment.of _ N)) f (𝟙 _) 0 _ ≫
+        coneProjection (𝟙 (ForgetEnrichment.of _ N))
+    exact (coneMap_comp_coneProjection f (𝟙 (ForgetEnrichment.of _ N)) f (𝟙 _) 0 _).symm
   have hT := mk_distinguished_of_conflation hS a δ ha hδ
   have hT' : Triangle.mk ((dgClosedToHomotopy R).map (coneInclusion f))
       ((dgClosedToHomotopy R).map (coneProjection f))
       ((dgClosedToHomotopy R).map ((closedShiftFunctor 1).map f)) ∈
         distTriang (DGHomotopyCategory R (CurvedDGRightModuleCat.{u, u, u} h)) := by
-    simpa only [S, δ, Functor.map_comp, eqToHom_map, Category.assoc, eqToHom_trans,
+    dsimp only [δ] at hT
+    erw [Functor.map_comp, eqToHom_map] at hT
+    simpa only [S, Category.assoc, eqToHom_trans,
       eqToHom_refl, Category.comp_id] using hT
   apply (rotate_distinguished_triangle (coneTriangle f)).mpr
   refine isomorphic_distinguished _ hT' _ ?_
   rw [coneTriangle_rotate]
   -- Negating the third object changes both the projection and the shifted connecting map.
-  exact Triangle.isoMk _ _ (Iso.refl _) (Iso.refl _) (-Iso.refl _)
-    (by simp) (by simp) (by simp)
+  exact negThirdTriangleIso _ _ _
 
 /-- Distinguished triangles are precisely those isomorphic to the concrete mapping-cone
 triangles of closed maps, with the negative cone projection as third arrow. -/

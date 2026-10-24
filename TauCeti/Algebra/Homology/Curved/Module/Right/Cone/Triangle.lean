@@ -84,25 +84,25 @@ theorem coneTriangle_rotate :
   rw [homotopyShiftFunctor_map_quotient]
 
 /-- The first and second arrows of the cone triangle compose to zero. -/
-@[reassoc (attr := simp), simp]
+@[reassoc]
 theorem coneTriangle_mor₁_comp_mor₂ : (coneTriangle f).mor₁ ≫ (coneTriangle f).mor₂ = 0 :=
   quotient_map_comp_coneInclusion f
 
 /-- The second and third arrows of the cone triangle compose to zero. -/
-@[reassoc (attr := simp), simp]
+@[reassoc]
 theorem coneTriangle_mor₂_comp_mor₃ : (coneTriangle f).mor₂ ≫ (coneTriangle f).mor₃ = 0 := by
   -- The third arrow has the sign fixed by the stable-suspension comparison.
   change (dgClosedToHomotopy R).map (coneInclusion f) ≫
-    -((dgClosedToHomotopy R).map (coneProjection f)) = 0
+    (-((dgClosedToHomotopy R).map (coneProjection f))) = 0
   rw [Preadditive.comp_neg, ← Functor.map_comp, coneInclusion_comp_coneProjection,
     Functor.map_zero, neg_zero]
 
 /-- The third arrow followed by the shift of the first arrow composes to zero. -/
-@[reassoc (attr := simp), simp]
+@[reassoc]
 theorem coneTriangle_mor₃_comp_shift_mor₁ :
     (coneTriangle f).mor₃ ≫ (coneTriangle f).mor₁⟦(1 : ℤ)⟧' = 0 := by
   -- Its shifted first arrow uses the existing homotopy shift, whose quotient formula applies.
-  change -((dgClosedToHomotopy R).map (coneProjection f)) ≫
+  change (-((dgClosedToHomotopy R).map (coneProjection f))) ≫
     (homotopyShiftFunctor 1).map ((dgClosedToHomotopy R).map f) = 0
   rw [Preadditive.neg_comp, homotopyShiftFunctor_map_quotient,
     quotient_map_coneProjection_comp_shift, neg_zero]
@@ -142,10 +142,10 @@ noncomputable def coneTriangleMap : coneTriangle f ⟶ coneTriangle g where
     rw [← Functor.map_comp, ← Functor.map_comp, coneInclusion_comp_coneMap]
   comm₃ := by
     -- The third square uses the concrete projection and the actual shifted quotient map.
-    change -((dgClosedToHomotopy R).map (coneProjection f)) ≫
+    change (-((dgClosedToHomotopy R).map (coneProjection f))) ≫
         (homotopyShiftFunctor 1).map ((dgClosedToHomotopy R).map a) =
       (dgClosedToHomotopy R).map (coneMap f g a b k hsq) ≫
-        -((dgClosedToHomotopy R).map (coneProjection g))
+        (-((dgClosedToHomotopy R).map (coneProjection g)))
     rw [Preadditive.neg_comp, Preadditive.comp_neg]
     congr 1
     rw [homotopyShiftFunctor_map_quotient, ← Functor.map_comp, ← Functor.map_comp,
