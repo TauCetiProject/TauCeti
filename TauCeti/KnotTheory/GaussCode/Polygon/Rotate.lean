@@ -83,27 +83,29 @@ private theorem strictMono_rotateTime_finRotate_pow {N k : ℕ} {τ : Fin N → 
   have hj := j.isLt
   have hj' := j'.isLt
   have hlt : (j : ℕ) < j' := hjj'
-  have hσ (j : Fin N) : ((finRotate N ^ k) j : ℕ) = (j + k) % N := Fin.coe_finRotate_pow k j
+  -- The index `(finRotate N ^ k) j` is `j + k` before wrapping around and `j + k - N` after.
+  have hσ₁ (j : Fin N) (h : (j : ℕ) + k < N) : ((finRotate N ^ k) j : ℕ) = j + k := by
+    rw [Fin.coe_finRotate_pow, Nat.mod_eq_of_lt h]
+  have hσ₂ (j : Fin N) (h : N ≤ (j : ℕ) + k) : ((finRotate N ^ k) j : ℕ) = j + k - N := by
+    have := j.isLt
+    rw [Fin.coe_finRotate_pow, Nat.mod_eq_sub_mod h, Nat.mod_eq_of_lt (by omega)]
   have h₀ := hτ₀ ((finRotate N ^ k) j)
   have hn := hτn ((finRotate N ^ k) j)
   simp only [rotateTime]
   by_cases h₁ : (j : ℕ) + k < N <;> by_cases h₂ : (j' : ℕ) + k < N
-  · have e₁ : ((finRotate N ^ k) j : ℕ) = j + k := by rw [hσ, Nat.mod_eq_of_lt h₁]
-    have e₂ : ((finRotate N ^ k) j' : ℕ) = j' + k := by rw [hσ, Nat.mod_eq_of_lt h₂]
+  · have e₁ := hσ₁ j h₁
+    have e₂ := hσ₁ j' h₂
     have hv : τ ((finRotate N ^ k) j) < τ ((finRotate N ^ k) j') := hτ (Fin.lt_def.2 (by omega))
     rw [ite_eq_right (by rw [hk]; omega), ite_eq_right (by rw [hk]; omega)]
     linarith
-  · have e₁ : ((finRotate N ^ k) j : ℕ) = j + k := by rw [hσ, Nat.mod_eq_of_lt h₁]
-    have e₂ : ((finRotate N ^ k) j' : ℕ) = j' + k - N := by
-      rw [hσ, Nat.mod_eq_sub_mod (by omega), Nat.mod_eq_of_lt (by omega)]
+  · have e₁ := hσ₁ j h₁
+    have e₂ := hσ₂ j' (by omega)
     have h₀' := hτ₀ ((finRotate N ^ k) j')
     rw [ite_eq_right (by rw [hk]; omega), ite_eq_left (by rw [hk]; omega)]
     linarith
   · omega
-  · have e₁ : ((finRotate N ^ k) j : ℕ) = j + k - N := by
-      rw [hσ, Nat.mod_eq_sub_mod (by omega), Nat.mod_eq_of_lt (by omega)]
-    have e₂ : ((finRotate N ^ k) j' : ℕ) = j' + k - N := by
-      rw [hσ, Nat.mod_eq_sub_mod (by omega), Nat.mod_eq_of_lt (by omega)]
+  · have e₁ := hσ₂ j (by omega)
+    have e₂ := hσ₂ j' (by omega)
     have hv : τ ((finRotate N ^ k) j) < τ ((finRotate N ^ k) j') := hτ (Fin.lt_def.2 (by omega))
     rw [ite_eq_left (by rw [hk]; omega), ite_eq_left (by rw [hk]; omega)]
     linarith

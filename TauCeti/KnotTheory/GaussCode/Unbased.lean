@@ -281,9 +281,9 @@ code. -/
 @[simp]
 theorem forgetBasepoint_rotateBasepoint_pow (D : BasedOrientedGaussCode n) (k : ℕ) :
     ((rotateBasepoint n ^ k) D).forgetBasepoint = D.forgetBasepoint := by
-  rw [forgetBasepoint_eq_iff]
-  exact ⟨-k, by rw [← zpow_natCast, ← Equiv.Perm.mul_apply, ← zpow_add, neg_add_cancel,
-    zpow_zero, Equiv.Perm.one_apply]⟩
+  induction k generalizing D with
+  | zero => simp
+  | succ k ih => simp [pow_succ, ih]
 
 /-- Moving the base point backward does not change the unbased oriented Gauss code. -/
 @[simp]
