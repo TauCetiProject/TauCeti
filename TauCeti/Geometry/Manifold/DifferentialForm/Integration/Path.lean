@@ -31,7 +31,8 @@ integral of the differential of a `C¹` function is its endpoint difference
 integrate to zero around closed curves (`TauCeti.pathIntegral_eq_zero_of_mem_exactForms`). The
 integral is invariant under `C¹` reparametrization (`TauCeti.pathIntegral_comp`), natural under
 pullback (`TauCeti.pathIntegral_mpullback`), and only depends on the values of the form along the
-curve (`TauCeti.pathIntegral_congr`).
+curve (`TauCeti.pathIntegral_congr`) and on the curve away from the endpoints
+(`TauCeti.pathIntegral_congr_of_eqOn_uIoo`).
 
 ## Main declarations
 
@@ -55,8 +56,8 @@ public section
 
 noncomputable section
 
-open Set MeasureTheory
-open scoped Manifold ContDiff
+open Set MeasureTheory Filter
+open scoped Manifold ContDiff Topology
 
 namespace TauCeti
 
@@ -90,6 +91,22 @@ theorem pathIntegral_congr {φ ψ : RoughForm I M F 1} {γ : ℝ → M} {a b : �
   simp only [pathIntegral_def]
   exact intervalIntegral.integral_congr fun t ht ↦ by simp only [h t ht]
 
+/-- Line integrals along two curves agree when the curves agree on the open interval between the
+endpoints: the velocities then agree there, and the endpoints are a null set. -/
+theorem pathIntegral_congr_of_eqOn_uIoo {φ : RoughForm I M F 1} {γ γ' : ℝ → M} {a b : ℝ}
+    (h : EqOn γ γ' (uIoo a b)) : pathIntegral φ γ a b = pathIntegral φ γ' a b := by
+  simp only [pathIntegral_def]
+  refine intervalIntegral.integral_congr_ae ?_
+  filter_upwards [(countable_singleton (a ⊔ b)).ae_notMem volume] with t hne ht
+  have hev : γ =ᶠ[𝓝 t] γ' :=
+    h.eventuallyEq_of_mem (isOpen_Ioo.mem_nhds ⟨ht.1, lt_of_le_of_ne ht.2 hne⟩)
+  simp only [Manifold.curveVelocity_apply, hev.mfderiv_eq]
+  -- `tangentSpaceCast` identifies two tangent spaces at the same point, both of which are `E`.
+  have key (p q : M) (hpq : p = q) (v : TangentSpace I q) :
+      φ p (fun _ ↦ tangentSpaceCast I q p v) = φ q fun _ ↦ v := by
+    subst hpq; rfl
+  exact key _ _ hev.eq_of_nhds _
+
 /-! ### The interval of integration -/
 
 /-- The line integral over a degenerate interval vanishes. -/
@@ -111,6 +128,14 @@ theorem pathIntegral_add_adjacent {φ : RoughForm I M F 1} {γ : ℝ → M} {a b
     (hbc : IntervalIntegrable (fun t ↦ φ (γ t) fun _ ↦ Manifold.curveVelocity I γ t) volume b c) :
     pathIntegral φ γ a b + pathIntegral φ γ b c = pathIntegral φ γ a c :=
   intervalIntegral.integral_add_adjacent_intervals hab hbc
+
+/-- The line integral along a constant curve vanishes. -/
+@[simp]
+theorem pathIntegral_const_curve (φ : RoughForm I M F 1) (x : M) (a b : ℝ) :
+    pathIntegral φ (fun _ ↦ x) a b = 0 := by
+  simp only [pathIntegral_def, Manifold.curveVelocity_const]
+  exact (intervalIntegral.integral_congr fun _ _ ↦ (φ x).map_zero).trans
+    intervalIntegral.integral_zero
 
 /-! ### Linearity in the form -/
 
