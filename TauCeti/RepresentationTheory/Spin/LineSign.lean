@@ -157,6 +157,12 @@ theorem spinRepEquivNegLineCoordinate_apply (s : ExteriorAlgebra K P.W) :
   -- `(rfl)`, not `rfl`: the body of `spinRepEquivNegLineCoordinate` is not `@[expose]`d.
   (rfl)
 
+/-- The inverse of the parity operator is again the grade involution of `⋀·W`. -/
+@[simp]
+theorem spinRepEquivNegLineCoordinate_symm_apply (s : ExteriorAlgebra K P.W) :
+    P.spinRepEquivNegLineCoordinate.symm s = involute s :=
+  (rfl)
+
 /-- **The volume element acts by opposite scalars under the two signs.** For a spanning list of
 pairwise orthogonal vectors of odd length, the volume element `ω` is central with
 `ω² = c = (-1) ^ (n choose 2) ∏ Q vᵢ`. When `W` is finite free, the Fock action of `P` sends `ω`
