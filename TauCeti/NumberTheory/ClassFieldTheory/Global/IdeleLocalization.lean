@@ -516,6 +516,17 @@ theorem toMul_ideleCoeffInfiniteComponent_ideleCoeffOfIntermediateField
   rw [NumberField.adeleExtension_fst]
   exact GlobalNumberFields.infiniteAdeleSemilocalHom_infiniteAdeleExtension (M := M) w b.1
 
+/-- An idele with trivial infinite component has zero additive coordinate at every infinite
+place of the separable closure. -/
+theorem ideleCoeffInfiniteComponent_eq_zero_of_fst_eq_one
+    (E : IntermediateField K (SeparableClosure K)) [NumberField E]
+    (a : IdeleGroup (𝓞 E) E) (ha : (a : AdeleRing (𝓞 E) E).1 = 1) :
+    ideleCoeffInfiniteComponent τ (ideleCoeffOfIntermediateField K E (.ofMul a)) = 0 := by
+  apply Additive.toMul.injective
+  apply Units.ext
+  simp only [toMul_ideleCoeffInfiniteComponent_ideleCoeffOfIntermediateField, ha, map_one,
+    toMul_zero, Units.val_one]
+
 open scoped NumberField.LiesOver in
 /-- The coordinate at an infinite place through a completion of a finite subextension.
 If `τ` agrees on `E` with an embedding `τ'` of `E_u`, the coordinate is the component at `u`
