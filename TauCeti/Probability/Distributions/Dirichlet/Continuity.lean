@@ -7,8 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.Dirichlet.Density
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
-import Mathlib.Analysis.SpecialFunctions.Gamma.Deriv
-import Mathlib.MeasureTheory.Integral.DominatedConvergence
+import TauCeti.Analysis.SpecialFunctions.Gamma
 
 /-!
 # Weak continuity of Dirichlet laws
@@ -38,17 +37,6 @@ namespace TauCeti.Probability
 
 variable {ι : Type*} [Fintype ι]
 
-private theorem continuous_dirichlet_normalizer [Nonempty ι] :
-    Continuous (fun a : ι → Ioi (0 : ℝ) ↦
-      Real.Gamma (∑ i, (a i : ℝ)) / ∏ i, Real.Gamma (a i)) := by
-  have hΓ := Real.differentiableOn_Gamma_Ioi.continuousOn
-  have hc (i : ι) : Continuous (fun a : ι → Ioi (0 : ℝ) ↦ (a i : ℝ)) := by
-    fun_prop
-  exact (hΓ.comp_continuous (by fun_prop)
-    (fun a ↦ Finset.sum_pos (fun i _ ↦ (a i).2) Finset.univ_nonempty)).div
-    (continuous_finsetProd _ fun i _ ↦ hΓ.comp_continuous (hc i) fun a ↦ (a i).2)
-    (fun a ↦ Finset.prod_ne_zero_iff.mpr fun i _ ↦ (Real.Gamma_pos_of_pos (a i).2).ne')
-
 /-- At each chart point the Dirichlet density is continuous in all positive shapes, even if
 the chart point lies on or outside the simplex boundary. -/
 @[fun_prop]
@@ -60,7 +48,7 @@ theorem continuous_dirichletChartPDFReal [DecidableEq ι] (i₀ : ι)
   by_cases hx : x ∈ dirichletChartRegion i₀
   · have hx' := mem_dirichletChartRegion_iff.mp hx
     simp only [dirichletChartPDFReal_of_mem _ hx]
-    refine (continuous_dirichlet_normalizer.mul
+    refine (continuous_Gamma_sum_div_prod.mul
       (continuous_finsetProd _ fun j _ ↦ ?_)).mul ?_
     · exact (Real.continuous_const_rpow (hx'.1 j).ne').comp (by fun_prop)
     · exact (Real.continuous_const_rpow (sub_pos.mpr hx'.2).ne').comp (by fun_prop)
@@ -81,7 +69,7 @@ private theorem eventually_dirichletChartPDFReal_le [DecidableEq ι] (i₀ : ι)
   have hhalf : 0 < N (fun i ↦ (a i : ℝ) / 2) := hN _ fun i ↦ half_pos (a i).2
   refine ⟨(N (fun i ↦ a i) + 1) / N (fun i ↦ (a i : ℝ) / 2), ?_⟩
   have hupper : ∀ᶠ b in 𝓝 a, N (fun i ↦ b i) < N (fun i ↦ a i) + 1 :=
-    continuous_dirichlet_normalizer.continuousAt (gt_mem_nhds (lt_add_one _))
+    continuous_Gamma_sum_div_prod.continuousAt (gt_mem_nhds (lt_add_one _))
   have hlower : ∀ᶠ b in 𝓝 a, ∀ i, (a i : ℝ) / 2 < (b i : ℝ) := by
     rw [eventually_all]
     intro i
