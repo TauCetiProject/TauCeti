@@ -55,6 +55,16 @@ theorem relDensityOn_def (H : Colored3Graph κ V) (c : κ)
       #{x ∈ supp | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c} / #supp :=
   (rfl)
 
+/-- Multiplying a relative density by the support size recovers the color count, including
+when the support is empty. -/
+theorem relDensityOn_mul_card (H : Colored3Graph κ V) (c : κ)
+    (supp : Finset {x : Fin 3 → V // Function.Injective x}) :
+    H.relDensityOn c supp * #supp =
+      (#{x ∈ supp | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c} : ℚ) := by
+  obtain rfl | hs := supp.eq_empty_or_nonempty
+  · simp
+  · rw [relDensityOn_def, div_mul_cancel₀ _ (by exact_mod_cast hs.card_pos.ne')]
+
 /-- Relative densities are nonnegative. -/
 theorem relDensityOn_nonneg (H : Colored3Graph κ V) (c : κ)
     (supp : Finset {x : Fin 3 → V // Function.Injective x}) : 0 ≤ H.relDensityOn c supp := by
