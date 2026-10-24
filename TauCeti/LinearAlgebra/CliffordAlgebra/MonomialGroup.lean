@@ -41,7 +41,7 @@ is the Clifford algebra. That comparison is not made in this file.
 
 * `CliffordAlgebra.mem_monomialGroup_iff`: **the normal form**: a unit lies in the group exactly
   when its value is `e_s` or `-e_s` for some finite index set `s`.
-* `CliffordAlgebra.isUnit_basis`: each `e_s` is a unit, of square `±1`.
+* `CliffordAlgebra.isUnit_basis`: each `e_s` is a unit.
 * `CliffordAlgebra.neg_one_mem_center_monomialGroup`: `ε = -1` is central.
 * `CliffordAlgebra.natCard_monomialGroup`: **the order** of the group is `2 ^ (n + 1)`.
 
@@ -198,20 +198,23 @@ theorem natCard_monomialGroup [Fintype I] [Nontrivial R]
   let f : ℤˣ × Finset I → CliffordAlgebra Q := fun p ↦ ((p.1 : ℤ) : R) • basis Q b p.2
   have hsign (ε : ℤˣ) : ((ε : ℤ) : R) = 1 ∨ ((ε : ℤ) : R) = -1 := by
     rcases Int.units_eq_one_or ε with rfl | rfl <;> simp
+  have hne : (1 : R) ≠ -1 := by
+    intro h
+    have h2 : (2 : R) = 0 := by linear_combination h
+    exact Invertible.ne_zero 2 h2
   -- The parametrization is injective: the basis vectors are independent and `1 ≠ -1`.
   have hf : Function.Injective f := by
     rintro ⟨ε, s⟩ ⟨ε', t⟩ h
-    have h2 : (2 : R) ≠ 0 := Invertible.ne_zero 2
     have h' := congrArg (basis Q b).repr h
     simp only [f, map_smul, Module.Basis.repr_self, Finsupp.smul_single, smul_eq_mul, mul_one,
       Finsupp.single_eq_single_iff] at h'
     rcases h' with ⟨rfl, hε⟩ | ⟨h0, -⟩
     · refine Prod.ext ?_ rfl
       rcases Int.units_eq_one_or ε with rfl | rfl <;> rcases Int.units_eq_one_or ε' with rfl | rfl
-      all_goals first
-        | rfl
-        | (exfalso; apply h2; simp only [Units.val_one, Units.val_neg, Int.cast_one, Int.cast_neg]
-            at hε; first | linear_combination hε | linear_combination -hε)
+      · rfl
+      · exact (hne (by simpa using hε)).elim
+      · exact (hne (by simpa using hε.symm)).elim
+      · rfl
     · rcases hsign ε with h | h <;> rw [h] at h0 <;> simp at h0
   -- Its image is the set of values of the group, by the normal form.
   have hrange : Units.val '' (monomialGroup Q b : Set (CliffordAlgebra Q)ˣ) = Set.range f := by
