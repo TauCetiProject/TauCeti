@@ -133,6 +133,8 @@ variable {D : PDCode n} {s : Fin n → Bool} {D' : PDCode m} {s' : Fin m → Boo
 bijection of crossing-free labels. -/
 def markCongr (e : D.SmoothingEquiv s D' s') : D.Mark ≃ D'.Mark :=
   (Quotient.congr e.halfEdgeEquiv fun x y ↦ by
+    change D.edgePair.val.SameCycle x y ↔
+      D'.edgePair.val.SameCycle (e.halfEdgeEquiv x) (e.halfEdgeEquiv y)
     rw [e.edgePair_val_eq_permCongr, sameCycle_permCongr]).sumCongr e.crossinglessEquiv
 
 /-- The transported arc mark is incident to the transported half-edge. -/
@@ -177,12 +179,13 @@ end SmoothingEquiv
 def disjointUnionMarkEquiv (D : PDCode n) (E : PDCode m) :
     (D.disjointUnion E).Mark ≃ D.Mark ⊕ E.Mark :=
   (((Quotient.congr (disjointUnionHalfEdgeEquiv n m).symm fun x y ↦ by
+    change (D.disjointUnion E).edgePair.val.SameCycle x y ↔
+      (Perm.sumCongr D.edgePair.val E.edgePair.val).SameCycle
+        ((disjointUnionHalfEdgeEquiv n m).symm x)
+        ((disjointUnionHalfEdgeEquiv n m).symm y)
     rw [D.disjointUnion_edgePair_val E]
-    simpa only [apply_symm_apply] using
-      (sameCycle_permCongr (Perm.sumCongr D.edgePair.val E.edgePair.val)
-        (disjointUnionHalfEdgeEquiv n m)
-        (x := (disjointUnionHalfEdgeEquiv n m).symm x)
-        (y := (disjointUnionHalfEdgeEquiv n m).symm y))).trans
+    exact sameCycle_permCongr_iff (Perm.sumCongr D.edgePair.val E.edgePair.val)
+      (disjointUnionHalfEdgeEquiv n m))).trans
       (sameCycleQuotientSumCongrEquiv D.edgePair.val E.edgePair.val)).sumCongr
         ((finCongr (D.disjointUnion_crossinglessComponentCount E)).trans
           finSumFinEquiv.symm)).trans (sumSumSumComm _ _ _ _)
@@ -294,13 +297,17 @@ theorem disjointUnionResolvedCircleEquiv_resolvedCircle (D : PDCode n) (E : PDCo
   · induction p using Mark.induction_on with
     | ha x => simp
     | hi i =>
+      simp only [apply_symm_apply, Sum.map_inl, resolvedCircle_inr]
       apply (D.disjointUnionResolvedCircleEquiv E s).symm.injective
-      simp
+      simp only [symm_apply_apply, disjointUnionMarkEquiv_symm_inl_inr,
+        resolvedCircle_inr, disjointUnionResolvedCircleEquiv_symm_inl_inr]
   · induction p using Mark.induction_on with
     | ha x => simp
     | hi i =>
+      simp only [apply_symm_apply, Sum.map_inr, resolvedCircle_inr]
       apply (D.disjointUnionResolvedCircleEquiv E s).symm.injective
-      simp
+      simp only [symm_apply_apply, disjointUnionMarkEquiv_symm_inr_inr,
+        resolvedCircle_inr, disjointUnionResolvedCircleEquiv_symm_inr_inr]
 
 end Mark
 
