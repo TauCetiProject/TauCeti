@@ -17,9 +17,6 @@ of the Cartesian product consisting of finite sums of homogeneous families, as c
 `InternalGrading.product`. A degree-zero family of maps has values in this submodule because
 the finite degree support of a source element controls all of its images simultaneously.
 
-These are the underlying graded products used for the small products of curved DG right
-modules in `StablePeriodicCurved`, Layer 6, opening paragraph, within intention 811.
-
 The finite direct-sum product fan in `GradedModuleCat.Abelian` also applies when the scalar
 pieces do not decompose the algebra. The degreewise fan here allows arbitrary index types
 and uses the graded-algebra decomposition to keep the total product stable under scalars.
@@ -53,25 +50,35 @@ noncomputable def product : GradedModuleCat.{v} 𝒜 := by
       grading := H }
 
 /-- The product grading is checked in every component. -/
+@[simp]
 theorem mem_product_piece_iff (p : ℤ) (x : product M) :
     x ∈ (product M).grading.piece p ↔ ∀ j, x.1 j ∈ (M j).grading.piece p :=
   InternalGrading.mem_product_piece_iff _ _ _
 
+-- Type the subtype comparison at the bundled product carrier, so projection rewrites do not
+-- have to infer its dependent module presentation from a raw submodule element.
+private theorem product_subtype_apply (x : product M) :
+    (Submodule.subtype
+      (InternalGrading.productScalarSubmodule (fun j ↦ (M j).grading) 𝒜)) x = x.1 :=
+  Submodule.subtype_apply x
+
 /-- The graded projection to one factor. -/
 noncomputable def productπ (j : J) : product M ⟶ M j :=
   ofHom ((LinearMap.proj j).comp
-    (InternalGrading.productScalarSubmodule (fun j ↦ (M j).grading) 𝒜).subtype)
+    (Submodule.subtype (InternalGrading.productScalarSubmodule (fun j ↦ (M j).grading) 𝒜)))
     (by
       rw [LinearMap.isHomogeneous_def]
       intro p x hx
-      change x.1 j ∈ (M j).grading.piece (p + 0)
+      rw [LinearMap.comp_apply, LinearMap.proj_apply,
+        congrFun (product_subtype_apply M x) j]
       simpa only [add_zero] using (mem_product_piece_iff M p x).mp hx j)
 
 /-- The projection is the corresponding coordinate of the family. -/
 @[simp]
 theorem productπ_apply (j : J) (x : product M) : (productπ M j).hom x = x.1 j := by
-  change (LinearMap.proj (R := A) j) x.1 = x.1 j
-  exact LinearMap.proj_apply (R := A) j x.1
+  dsimp only [productπ, hom_ofHom]
+  rw [LinearMap.comp_apply, LinearMap.proj_apply]
+  exact congrFun (product_subtype_apply M x) j
 
 /-- A family of degree-zero maps lifts into the degreewise product. -/
 noncomputable def productLift {N : GradedModuleCat.{v} 𝒜} (f : ∀ j, N ⟶ M j) :

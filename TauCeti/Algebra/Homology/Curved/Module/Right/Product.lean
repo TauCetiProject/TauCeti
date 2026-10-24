@@ -24,8 +24,7 @@ the finite degree support of a source element also controls the family of its ho
 Consequently the component homotopies lift into the graded product and prove uniqueness in the
 quotient. Existence uses fullness of the closed-to-homotopy quotient functor.
 
-This supplies the small products in the opening paragraph of `StablePeriodicCurved`, Layer 6,
-within intention 811. No centrality or zero-curvature hypothesis is imposed.
+No centrality or zero-curvature hypothesis is imposed.
 
 ## References
 
@@ -101,6 +100,9 @@ noncomputable def product : CurvedDGRightModuleCat.{u, u, u} h := by
   · intro p x hx a
     apply Subtype.ext
     funext j
+    -- The sum and scalar actions are still typed at the bundled `P.carrier`; the raw
+    -- `Submodule.coe_add`/`coe_smul` rules do not match their function-valued coercions.
+    -- Align only this carrier arithmetic at `j`, retaining the public differential API.
     change (productDifferential M (op a • x)).1 j =
       op a • (productDifferential M x).1 j + p.negOnePow • (op (d a) • x.1 j)
     rw [productDifferential_apply, productDifferential_apply]
@@ -110,14 +112,14 @@ noncomputable def product : CurvedDGRightModuleCat.{u, u, u} h := by
   · intro x
     apply Subtype.ext
     funext j
-    change (productDifferential M (productDifferential M x)).1 j = op w • x.1 j
     rw [productDifferential_apply, productDifferential_apply]
     exact (M j).isCurvedDGRightModule.sq_eq (x.1 j)
 
 /-- Product homogeneity is componentwise homogeneity of the family. -/
+@[simp]
 theorem mem_product_grading_iff (p : ℤ) (x : product M) :
     x ∈ (product M).grading p ↔ ∀ j, x.1 j ∈ (M j).grading p := by
-  change x ∈ (GradedModuleCat.product (fun j ↦ toGradedModuleCat (M j))).grading.piece p ↔ _
+  dsimp only [product]
   simpa only [toGradedModuleCat_piece] using
     (GradedModuleCat.mem_product_piece_iff (fun j ↦ toGradedModuleCat (M j)) p x)
 
@@ -125,7 +127,7 @@ theorem mem_product_grading_iff (p : ℤ) (x : product M) :
 @[simp]
 theorem product_differential_apply (x : product M) (j : J) :
     ((product M).differential x).1 j = (M j).differential (x.1 j) := by
-  change (productDifferential M x).1 j = _
+  dsimp only [product]
   exact productDifferential_apply M x j
 
 /-- Forgetting the product differential gives the degreewise graded product. -/
@@ -134,6 +136,9 @@ noncomputable def forgetDifferentialProductIso :
         (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (product M)) ≅
       GradedModuleCat.product (fun j ↦ toGradedModuleCat (M j)) :=
   GradedModuleCat.isoMk (LinearEquiv.refl Aᵐᵒᵖ _) fun p x ↦ by
+    -- `isoMk` fixes `x` in the forgetful object’s dependent carrier, so rewriting
+    -- `forgetDifferential_obj_of` would also have to transport `x` and cannot match here.
+    -- Align only the grading fields and reflexive equivalence, then use the public formulas.
     change x ∈ (toGradedModuleCat (product M)).grading.piece p ↔
       x ∈ (GradedModuleCat.product (fun j ↦ toGradedModuleCat (M j))).grading.piece p
     rw [toGradedModuleCat_piece]
@@ -290,6 +295,9 @@ theorem dgClosedToHomotopy_map_product_ext {N : CurvedDGRightModuleCat.{u, u, u}
     exact (dgRightModuleCochains.mem_iff.mp (k j).2).map_mem hx
   · apply Subtype.ext
     funext j
+    -- The closed maps land in the bundled product, while `K` lands in its scalar-submodule
+    -- presentation. The raw `Submodule.coe_sub`/`coe_add` rules do not match these dependent
+    -- function-valued coercions. Align just their pointwise arithmetic; keep the named maps.
     change (closedHom f x).1 j - (closedHom g x).1 j =
       ((product M).differential (K x)).1 j + (K (N.differential x)).1 j
     rw [product_differential_apply]
