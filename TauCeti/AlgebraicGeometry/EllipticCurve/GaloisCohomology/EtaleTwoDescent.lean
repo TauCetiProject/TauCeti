@@ -937,9 +937,12 @@ private theorem kummerCor_factorCohomologicalMap (p : W.toAffine.f.Factors)
     simp only [factorCohomologicalMap_apply, WeierstrassCurve.torsionRes_eq_explicitMap1,
       explicitMap1_mk, explicitCoeff1_mk, explicitRes1_mk, explicitCup10_mk]
     refine congrArg _ (Subtype.ext (funext fun g ↦ ?_))
-    refine ((cocyclesMap1_apply _ _ _ _ _ _ _ _ _ _).trans (congrArg _
-      ((cocyclesMap1_apply _ _ _ _ _ _ _ _ _ _).trans (congrArg _
-        (cocyclesMap1_apply _ _ _ _ _ _ _ _ _ _))))).trans ?_
+    -- unfold the three nested `cocyclesMap1` applications; `rw`/`simp only [cocyclesMap1_apply]`
+    -- cannot, as the compatibility proof of the inner application is `map_smul` of the underlying
+    -- `MulActionHom` of `factorTorsionCharacter`, which matches its expected type only after
+    -- unfolding `ContinuousMonoidHom.id`, so the rewrite motive is not type-correct
+    refine ((cocyclesMap1_apply ..).trans (congrArg _ ((cocyclesMap1_apply ..).trans
+      (congrArg _ (cocyclesMap1_apply ..))))).trans ?_
     -- the element of `G_{K[X] ⧸ (p)}` attached to `g` restricts to `g`
     have hg : absoluteGaloisGroupMap
         (separableClosureAlgEquiv K (𝕃 p) σ : SeparableClosure K →ₐ[K] SeparableClosure (𝕃 p))
@@ -964,6 +967,51 @@ private theorem smul_embeddingTorsionCoeff (g : AbsoluteGaloisGroup K) (p : W.to
       embeddingTorsionCoeff W p ((g : SeparableClosure K →ₐ[K] SeparableClosure K).comp σ) :=
   smul_rootTorsionCoeff W g _ _
 
+/-- The point `(σ θ, 0)` attached to an embedding `σ` of a factor field is nonzero. -/
+private theorem embeddingTorsionCoeff_ne_zero (p : W.toAffine.f.Factors)
+    (σ : 𝕃 p →ₐ[K] SeparableClosure K) : embeddingTorsionCoeff W p σ ≠ 0 := by
+  classical
+  intro h
+  have h' := congrArg (fun T : W.TorsionCoeff 2 ↦ (T : W.PointCoeff)) h
+  simp [embeddingTorsionCoeff, coe_rootTorsionCoeff] at h'
+
+/-- **The embeddings of the factor fields are the nonzero points of order two.** Sending an
+embedding `σ` of the factor field `K[X] ⧸ (p)` into `Kˢ` to the point `(σ θ, 0)` is a bijection
+from the embeddings of all the factor fields onto the nonzero points of `E(Kˢ)[2]`. -/
+private theorem bijective_embeddingTorsionCoeff (h2 : IsUnit ((2 : ℕ) : K)) :
+    Function.Bijective (fun i : Σ p : W.toAffine.f.Factors, 𝕃 p →ₐ[K] SeparableClosure K ↦
+      (⟨embeddingTorsionCoeff W i.1 i.2, embeddingTorsionCoeff_ne_zero W i.1 i.2⟩ :
+        {S : W.TorsionCoeff 2 // S ≠ 0})) := by
+  classical
+  have hroot (p : W.toAffine.f.Factors) (τ : 𝕃 p →ₐ[K] SeparableClosure K) :
+      aeval (τ (θ p)) (p : K[X]) = 0 := by
+    rw [aeval_algHom_apply, AdjoinRoot.aeval_eq, AdjoinRoot.mk_self, map_zero]
+  refine ⟨?_, ?_⟩
+  · rintro ⟨p, τ⟩ ⟨q, τ'⟩ h
+    have hx := rootTorsionCoeff_injective W (aeval_embedding_root_f W p τ)
+      (aeval_embedding_root_f W q τ') (congrArg Subtype.val h)
+    -- distinct factors are coprime, so they have no common root
+    obtain rfl : p = q := by
+      by_contra hpq
+      obtain ⟨a, b, hab⟩ := Polynomial.Factors.isCoprime hpq
+      have := congrArg (aeval (τ (θ p))) hab
+      rw [map_add, map_mul, map_mul, hroot, hx, hroot, map_one] at this
+      simp at this
+    exact Sigma.ext rfl (heq_of_eq (AdjoinRoot.algHom_ext hx))
+  · rintro ⟨S, hS⟩
+    obtain ⟨p, x, hx, h, hS'⟩ := exists_factor_of_ne_zero W h2 hS
+    refine ⟨⟨p, AdjoinRoot.liftAlgHom _ (Algebra.ofId K _) x hx⟩, Subtype.ext (Subtype.ext ?_)⟩
+    simp only [embeddingTorsionCoeff, coe_rootTorsionCoeff, hS']
+    congr 2
+    exact AdjoinRoot.liftAlgHom_root _ _ _ _
+
+/-- The embeddings of the factor fields, identified with the nonzero points of `E(Kˢ)[2]` by
+`σ ↦ (σ θ, 0)`. -/
+private def sigmaEmbeddingEquivNonzeroTorsion (h2 : IsUnit ((2 : ℕ) : K)) :
+    (Σ p : W.toAffine.f.Factors, 𝕃 p →ₐ[K] SeparableClosure K) ≃
+      {S : W.TorsionCoeff 2 // S ≠ 0} :=
+  Equiv.ofBijective _ (bijective_embeddingTorsionCoeff W h2)
+
 /-- **The conjugates of the points `(σ θ, 0)` are the three points of order two.** Over the
 irreducible factors `p` of the `2`-division cubic, with embeddings `σ p` of their factor fields
 into `Kˢ`, the translates `u • (σ p θ, 0)` by representatives `u` of the cosets of the absolute
@@ -985,40 +1033,10 @@ private theorem sum_sum_out_smul_embeddingTorsionCoeff [Fintype W.toAffine.f.Fac
     conv_rhs => rw [← QuotientGroup.out_eq' u, FieldTheory.fixingSubgroupQuotientEquivAlgHom_mk]
     exact smul_embeddingTorsionCoeff W _ p (σ p)
   simp only [hsum]
-  rw [← Fintype.sum_sigma' (fun p τ ↦ embeddingTorsionCoeff W p τ)]
-  -- the points `(τ θ, 0)` are the nonzero points of `E(Kˢ)[2]`, each once
-  have hroot (p : W.toAffine.f.Factors) (τ : 𝕃 p →ₐ[K] SeparableClosure K) :
-      aeval (τ (θ p)) (p : K[X]) = 0 := by
-    rw [aeval_algHom_apply, AdjoinRoot.aeval_eq, AdjoinRoot.mk_self, map_zero]
-  have hne (i : Σ p : W.toAffine.f.Factors, 𝕃 p →ₐ[K] SeparableClosure K) :
-      embeddingTorsionCoeff W i.1 i.2 ≠ 0 := by
-    intro h
-    have h' := congrArg (fun T : W.TorsionCoeff 2 ↦ (T : W.PointCoeff)) h
-    simp [embeddingTorsionCoeff, coe_rootTorsionCoeff] at h'
-  have hinj : Function.Injective
-      (fun i : Σ p : W.toAffine.f.Factors, 𝕃 p →ₐ[K] SeparableClosure K ↦
-        (⟨embeddingTorsionCoeff W i.1 i.2, hne i⟩ : {S : W.TorsionCoeff 2 // S ≠ 0})) := by
-    rintro ⟨p, τ⟩ ⟨q, τ'⟩ h
-    have hx := rootTorsionCoeff_injective W (aeval_embedding_root_f W p τ)
-      (aeval_embedding_root_f W q τ') (congrArg Subtype.val h)
-    obtain rfl : p = q := by
-      by_contra hpq
-      obtain ⟨a, b, hab⟩ := Polynomial.Factors.isCoprime hpq
-      have := congrArg (aeval (τ (θ p))) hab
-      rw [map_add, map_mul, map_mul, hroot, hx, hroot, map_one] at this
-      simp at this
-    exact Sigma.ext rfl (heq_of_eq (AdjoinRoot.algHom_ext hx))
-  have hsurj : Function.Surjective
-      (fun i : Σ p : W.toAffine.f.Factors, 𝕃 p →ₐ[K] SeparableClosure K ↦
-        (⟨embeddingTorsionCoeff W i.1 i.2, hne i⟩ : {S : W.TorsionCoeff 2 // S ≠ 0})) := by
-    rintro ⟨S, hS⟩
-    obtain ⟨p, x, hx, h, hS'⟩ := exists_factor_of_ne_zero W h2 hS
-    refine ⟨⟨p, AdjoinRoot.liftAlgHom _ (Algebra.ofId K _) x hx⟩, Subtype.ext (Subtype.ext ?_)⟩
-    simp only [embeddingTorsionCoeff, coe_rootTorsionCoeff, hS']
-    congr 2
-    exact AdjoinRoot.liftAlgHom_root _ _ _ _
-  rw [Fintype.sum_equiv (Equiv.ofBijective _ ⟨hinj, hsurj⟩)
-    (fun i ↦ embeddingTorsionCoeff W i.1 i.2) (fun S ↦ (S : W.TorsionCoeff 2)) (fun _ ↦ rfl),
+  rw [← Fintype.sum_sigma' (fun p τ ↦ embeddingTorsionCoeff W p τ),
+    Fintype.sum_equiv (sigmaEmbeddingEquivNonzeroTorsion W h2)
+      (fun i ↦ embeddingTorsionCoeff W i.1 i.2) (fun S ↦ (S : W.TorsionCoeff 2))
+      (fun _ ↦ rfl),
     ← Finset.sum_subtype {S | S ≠ 0} (fun _ ↦ by simp) (fun S ↦ S), Finset.sum_filter_ne_zero]
   exact IsAddKleinFour.sum_univ_eq_zero
 
