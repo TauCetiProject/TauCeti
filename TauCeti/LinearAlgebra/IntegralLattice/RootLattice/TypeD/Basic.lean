@@ -921,14 +921,23 @@ theorem zmodFourAddEquivCheckerboardDiscriminantGroup_apply_one (hn : Odd n) :
   rw [zmodFourAddEquivCheckerboardDiscriminantGroup]
   exact zmodAddEquivOfGenerator_apply_one _ _
 
+/-- The odd-rank identification sends `2 ∈ ℤ/4` to the vector class. -/
+@[simp]
+theorem zmodFourAddEquivCheckerboardDiscriminantGroup_apply_two (hn : Odd n) :
+    letI : NeZero n := NeZero.of_pos hn.pos
+    zmodFourAddEquivCheckerboardDiscriminantGroup n hn 2 = checkerboardVectorClass n := by
+  have h2 : (2 : ZMod 4) = 1 + 1 := by decide
+  rw [h2, map_add, zmodFourAddEquivCheckerboardDiscriminantGroup_apply_one, ← two_zsmul,
+    two_zsmul_checkerboardSpinorClass_of_odd n hn]
+
 /-- The odd-rank identification sends `3 ∈ ℤ/4` to the cospinor class. -/
 @[simp]
 theorem zmodFourAddEquivCheckerboardDiscriminantGroup_apply_three (hn : Odd n) :
     letI : NeZero n := NeZero.of_pos hn.pos
     zmodFourAddEquivCheckerboardDiscriminantGroup n hn 3 = checkerboardCospinorClass n := by
-  have h3 : (3 : ZMod 4) = 1 + 1 + 1 := by decide
-  rw [h3, map_add, map_add, zmodFourAddEquivCheckerboardDiscriminantGroup_apply_one, ← two_zsmul,
-    two_zsmul_checkerboardSpinorClass_of_odd n hn,
+  have h3 : (3 : ZMod 4) = 2 + 1 := by decide
+  rw [h3, map_add, zmodFourAddEquivCheckerboardDiscriminantGroup_apply_one,
+    zmodFourAddEquivCheckerboardDiscriminantGroup_apply_two,
     checkerboardVectorClass_add_checkerboardSpinorClass]
 
 variable {n} in
@@ -1231,13 +1240,8 @@ Together with `checkerboardCyclicQuadraticModule_quadratic_two` this reads the v
 theorem checkerboardCyclicQuadraticIsometry_two (hn : Odd n) :
     letI : NeZero n := NeZero.of_pos hn.pos
     checkerboardCyclicQuadraticIsometry n hn (2 : ZMod 4) = checkerboardVectorClass n := by
-  let _ : NeZero n := NeZero.of_pos hn.pos
-  have h2 : (2 : ℤ) • (1 : ZMod 4) = (2 : ZMod 4) := by
-    rw [zsmul_eq_mul, mul_one]
-    norm_num
-  rw [checkerboardCyclicQuadraticIsometry_apply, ← h2, map_zsmul,
-    zmodFourAddEquivCheckerboardDiscriminantGroup_apply_one,
-    two_zsmul_checkerboardSpinorClass_of_odd n hn]
+  rw [checkerboardCyclicQuadraticIsometry_apply,
+    zmodFourAddEquivCheckerboardDiscriminantGroup_apply_two]
 
 /-- **The cyclic `ℤ/4` model is nondegenerate**, since the discriminant form of a nondegenerate
 lattice is. -/

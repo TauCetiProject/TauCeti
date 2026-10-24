@@ -324,8 +324,8 @@ theorem isLeast_form_self_zmodFourAddEquivCheckerboardDiscriminantGroup (hn : Od
   · rw [ite_eq_right (by decide), ite_eq_right (by decide),
       zmodFourAddEquivCheckerboardDiscriminantGroup_apply_one]
     exact isLeast_form_self_checkerboardSpinorClass
-  · rw [ite_eq_right (by decide), ite_eq_left rfl, ← checkerboardCyclicQuadraticIsometry_apply,
-      checkerboardCyclicQuadraticIsometry_two]
+  · rw [ite_eq_right (by decide), ite_eq_left rfl,
+      zmodFourAddEquivCheckerboardDiscriminantGroup_apply_two]
     exact isLeast_form_self_checkerboardVectorClass
   · rw [ite_eq_right (by decide), ite_eq_right (by decide),
       zmodFourAddEquivCheckerboardDiscriminantGroup_apply_three]
