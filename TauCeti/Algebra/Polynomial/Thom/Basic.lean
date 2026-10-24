@@ -7,7 +7,10 @@ module
 
 public import TauCeti.Algebra.Polynomial.Eval.Sign
 public import TauCeti.Algebra.Polynomial.Rolle
+public import TauCeti.Algebra.Polynomial.Degree.Operations
+import TauCeti.Algebra.Polynomial.Derivative
 import Mathlib.Algebra.Polynomial.Roots
+import Mathlib.Basic.Sign.Basic
 import Mathlib.Algebra.Order.Field.Basic
 import Mathlib.Order.Interval.Set.Infinite
 public import Mathlib.Algebra.Polynomial.Degree.Lemmas
@@ -22,7 +25,9 @@ distinguish roots of a nonzero polynomial, including multiple roots. No
 squarefreeness assumption is needed.
 The finite Thom encoding records derivatives 1 through `natDegree`. The encoding of an
 iterated derivative is a restriction of the encoding of `p`, and strictly monotone ring
-embeddings preserve encodings. The last
+embeddings preserve encodings. Negating or scaling `p` negates or scales its derivative signs,
+and an affine substitution `X ↦ a X + b` multiplies the sign of the `k`th derivative by
+`sign a ^ k` and moves the point to `a x + b`. The last
 differing derivative sign and the next common sign determine the order of two points.
 The only extra premise on the ordered field is polynomial Rolle, supplied by
 `TauCeti.RealClosure.polynomialRolle_of_isRealClosed` over every real closed ordered field.
@@ -248,6 +253,68 @@ theorem thomEncoding_map (p : R[X]) (f : R →+* S) (hf : StrictMono f) (x : R) 
 end Map
 
 end Basic
+
+section Neg
+
+variable {R : Type*} [Ring R] [LinearOrder R] [IsOrderedRing R]
+
+/-- Negating the polynomial negates every derivative sign. -/
+@[simp, grind =]
+theorem derivativeSign_neg (p : R[X]) (x : R) (k : ℕ) :
+    derivativeSign (-p) x k = -derivativeSign p x k := by
+  rw [derivativeSign_def, derivativeSign_def, iterate_derivative_neg, eval_neg, Left.sign_neg]
+
+/-- Negating the polynomial negates its Thom encoding. -/
+theorem thomEncoding_neg (p : R[X]) (x : R) :
+    thomEncoding (-p) x = -(thomEncoding p x ∘ Fin.cast (natDegree_neg p)) := by
+  funext i
+  simp
+
+end Neg
+
+section Scale
+
+variable {R : Type*} [Ring R] [LinearOrder R] [IsStrictOrderedRing R]
+
+/-- Scaling the polynomial by `c` multiplies every derivative sign by `sign c`. -/
+@[simp, grind =]
+theorem derivativeSign_C_mul (c : R) (p : R[X]) (x : R) (k : ℕ) :
+    derivativeSign (C c * p) x k = sign c * derivativeSign p x k := by
+  rw [derivativeSign_def, derivativeSign_def, iterate_derivative_C_mul, eval_C_mul, sign_mul]
+
+/-- Scaling the polynomial by a nonzero `c` multiplies its Thom encoding by `sign c`. -/
+theorem thomEncoding_C_mul {c : R} (hc : c ≠ 0) (p : R[X]) (x : R) :
+    thomEncoding (C c * p) x =
+      fun i ↦ sign c * thomEncoding p x (Fin.cast (natDegree_C_mul hc) i) := by
+  funext i
+  simp
+
+end Scale
+
+section Affine
+
+variable {R : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
+
+/-- **Affine change of variable.** The `k`th derivative sign of `p (a X + b)` at `x` is the `k`th
+derivative sign of `p` at `a x + b`, multiplied by `sign a ^ k`. -/
+@[simp, grind =]
+theorem derivativeSign_comp_C_mul_X_add_C (p : R[X]) (a b x : R) (k : ℕ) :
+    derivativeSign (p.comp (C a * X + C b)) x k = sign a ^ k * derivativeSign p (a * x + b) k := by
+  rw [derivativeSign_def, derivativeSign_def, iterate_derivative_comp_C_mul_X_add_C, eval_mul,
+    eval_C, eval_comp, sign_mul, sign_pow]
+  simp
+
+/-- **Affine change of variable.** Coordinate `i` of the Thom encoding of `p (a X + b)` at `x`,
+for `a ≠ 0`, is coordinate `i` of the Thom encoding of `p` at `a x + b`, multiplied by
+`sign a ^ (i + 1)`. -/
+theorem thomEncoding_comp_C_mul_X_add_C {a : R} (ha : a ≠ 0) (b : R) (p : R[X]) (x : R) :
+    thomEncoding (p.comp (C a * X + C b)) x = fun i ↦
+      sign a ^ (i.val + 1) *
+        thomEncoding p (a * x + b) (Fin.cast (natDegree_comp_C_mul_X_add_C ha b p) i) := by
+  funext i
+  simp
+
+end Affine
 
 variable {R : Type*} [Field R] [LinearOrder R] [IsStrictOrderedRing R]
 
