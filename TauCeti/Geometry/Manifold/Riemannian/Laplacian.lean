@@ -152,20 +152,20 @@ variable {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [Charte
 /-- The Hessian applied to a vector field and a differentiable vector field is the directional
 derivative of the directional derivative of `f`, minus the derivative in the covariant derivative
 direction. -/
-theorem hessian_apply_eq_mvfderiv_sub [IsManifold I ∞ M]
+theorem hessian_apply_eq_mvfderiv_sub [IsManifold I 2 M]
     [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-    [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-    {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) ∞ f) (x : M)
+    [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+    {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f) (x : M)
     (V W : (y : M) → TangentSpace I y)
     (hW : MDiffAt (T% W) x) :
     hessian I f x (V x) (W x) =
       mvfderiv I (fun y ↦ mvfderiv I f y (W y)) x (V x) -
         mvfderiv I f x ((CovariantDerivative.leviCivitaConnection I M W) x (V x)) := by
-  let _ : IsManifold I (∞ + 1) M := by
-    simpa using (inferInstance : IsManifold I ∞ M)
-  have hG : ContMDiff I I.tangent ∞
+  let _ : IsManifold I (1 + 1) M := by
+    simpa only [one_add_one_eq_two] using (inferInstance : IsManifold I 2 M)
+  have hG : ContMDiff I I.tangent 1
       (fun y ↦ (⟨y, mgradient I f y⟩ : TangentBundle I M)) :=
-    contMDiff_mgradient hf
+    contMDiff_mgradient (I := I) (n := 1) hf
   have hG' : MDiffAt (T% (mgradient I f)) x := hG.mdifferentiableAt (by simp)
   have hinner :=
     (CovariantDerivative.isMetricCompatible_leviCivitaConnection I).mvfderiv_inner_eq
@@ -187,23 +187,22 @@ theorem hessian_apply_eq_mvfderiv_sub [IsManifold I ∞ M]
   rw [hessian_def]
   linarith
 
-/-- The Hessian of a smooth function is symmetric for the Levi–Civita connection. -/
-theorem hessian_symm [IsManifold I ∞ M]
+/-- The Hessian of a twice continuously differentiable function is symmetric for the
+Levi–Civita connection. -/
+theorem hessian_symm [IsManifold I 2 M]
     [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-    [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-    {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) ∞ f) (x : M) (v w : TangentSpace I x) :
+    [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+    {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f) (x : M) (v w : TangentSpace I x) :
     hessian I f x v w = hessian I f x w v := by
   let V : (y : M) → TangentSpace I y := FiberBundle.extend E v
   let W : (y : M) → TangentSpace I y := FiberBundle.extend E w
   have hV : MDiffAt (T% V) x := FiberBundle.mdifferentiableAt_extend I E v
   have hW : MDiffAt (T% W) x := FiberBundle.mdifferentiableAt_extend I E w
-  let _ : IsManifold I (∞ + 1) M := by
-    simpa using (inferInstance : IsManifold I ∞ M)
   have hessianVW := hessian_apply_eq_mvfderiv_sub hf x V W hW
   have hessianWV := hessian_apply_eq_mvfderiv_sub hf x W V hV
-  have hmin : minSmoothness ℝ 2 ≤ (∞ : ℕ∞ω) := by simp
+  have hmin : minSmoothness ℝ 2 ≤ (2 : ℕ∞ω) := by simp
   let _ : IsManifold I (minSmoothness ℝ 2) M :=
-    IsManifold.of_le (m := minSmoothness ℝ 2) (n := ∞) hmin
+    IsManifold.of_le (m := minSmoothness ℝ 2) (n := 2) hmin
   -- The mixed-derivative identity and torsion-freeness identify the remaining bracket term.
   have hbracket := mvfderiv_mlieBracket (I := I) (𝕜 := ℝ) (F := ℝ)
     hf.contMDiffAt (by simp) hV hW
