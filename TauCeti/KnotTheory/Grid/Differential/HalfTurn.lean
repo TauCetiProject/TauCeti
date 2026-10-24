@@ -5,11 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.KnotTheory.Grid.Chain.HalfTurn
 public import TauCeti.KnotTheory.Grid.Rectangle.Relabeling
 public import TauCeti.KnotTheory.Grid.Unblocked
 
 /-!
-# The unblocked grid differential under the half-turn
+# Grid differentials under the half-turn
 
 Rotating a planar grid diagram by a half-turn is an isotopy of the link it draws, and it
 preserves the convention that vertical segments cross over horizontal ones. On the torus the
@@ -26,7 +27,8 @@ The variables `V_c` of `GC⁻` are indexed by the columns of the `O`-markings, a
 moves the `O`-marking of column `c` to column `c.rev`. So the map on `GC⁻` that moves each grid
 state by `GridState.halfTurn` and renames the variables along `Fin.revPerm`
 (`GridChain.halfTurnRenameEquiv`) intertwines the unblocked differentials of `G` and of
-`G.rotate`.
+`G.rotate`. Taking constant coefficients gives the same intertwining for the fully blocked
+differential, using the coefficient-preserving `GridChain.halfTurnEquiv`.
 
 ## Main definitions
 
@@ -181,6 +183,34 @@ theorem unblockedDifferential_halfTurnRenameEquiv (c : GridChainMinus R n) :
     G.unblockedDifferential R (GridChain.halfTurnRenameEquiv R c) =
       GridChain.halfTurnRenameEquiv R (G.rotate.unblockedDifferential R c) := by
   simpa only [rotate_rotate] using G.rotate.unblockedDifferential_rotate_halfTurnRenameEquiv R c
+
+/-- The half-turn preserves the matrix coefficients of the fully blocked differential. -/
+@[simp]
+theorem fullyBlockedRectangleCount_rotate_halfTurn (x y : GridState n) :
+    G.rotate.fullyBlockedRectangleCount x.halfTurn y.halfTurn =
+      G.fullyBlockedRectangleCount x y := by
+  rw [fullyBlockedRectangleCount_eq_constantCoeff, fullyBlockedRectangleCount_eq_constantCoeff,
+    unblockedCoefficient_rotate_halfTurn, constantCoeff_rename]
+
+/-- The half-turn intertwines the fully blocked differentials. -/
+@[simp]
+theorem fullyBlockedDifferential_rotate_halfTurnEquiv (c : GridChain (ZMod 2) n) :
+    G.rotate.fullyBlockedDifferential (GridChain.halfTurnEquiv (ZMod 2) c) =
+      GridChain.halfTurnEquiv (ZMod 2) (G.fullyBlockedDifferential c) := by
+  have h : G.rotate.fullyBlockedDifferential ∘ₗ
+        (GridChain.halfTurnEquiv (ZMod 2)).toLinearMap =
+      (GridChain.halfTurnEquiv (ZMod 2)).toLinearMap ∘ₗ G.fullyBlockedDifferential := by
+    refine Finsupp.lhom_ext' fun x => LinearMap.ext_ring (Finsupp.ext fun y => ?_)
+    obtain ⟨y, rfl⟩ : ∃ y', y'.halfTurn = y :=
+      ⟨y.halfTurn, GridState.halfTurn_halfTurn y⟩
+    simp
+  exact LinearMap.congr_fun h c
+
+/-- In the reverse direction the half-turn also intertwines the fully blocked differentials. -/
+theorem fullyBlockedDifferential_halfTurnEquiv (c : GridChain (ZMod 2) n) :
+    G.fullyBlockedDifferential (GridChain.halfTurnEquiv (ZMod 2) c) =
+      GridChain.halfTurnEquiv (ZMod 2) (G.rotate.fullyBlockedDifferential c) := by
+  simpa only [rotate_rotate] using G.rotate.fullyBlockedDifferential_rotate_halfTurnEquiv c
 
 end GridDiagram
 
