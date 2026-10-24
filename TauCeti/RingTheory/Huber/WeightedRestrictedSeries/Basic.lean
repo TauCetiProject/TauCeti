@@ -1225,12 +1225,21 @@ noncomputable def weightedPolynomialEquiv [NonarchimedeanRing A] [DiscreteTopolo
         obtain ⟨p, hp⟩ := hmem
         exact ⟨p, hp⟩⟩
 
-/-- The forward map of `weightedPolynomialEquiv` is the coefficientwise inclusion
-`weightedPolynomialHom`, so its `coe_`/`_C`/`_X` lemmas apply. -/
+/-- The forward polynomial comparison is the coefficientwise inclusion `weightedPolynomialHom`. -/
 @[simp]
 theorem weightedPolynomialEquiv_apply [NonarchimedeanRing A] [DiscreteTopology A]
     {T : Fin k → Set A} {hT : IsWeightFamily T} (p : MvPolynomial (Fin k) A) :
     weightedPolynomialEquiv T hT p = weightedPolynomialHom T hT p := (rfl)
+
+/-- The inverse polynomial comparison preserves every coefficient. -/
+@[simp]
+theorem coeff_weightedPolynomialEquiv_symm [NonarchimedeanRing A] [DiscreteTopology A]
+    {T : Fin k → Set A} {hT : IsWeightFamily T} (f : weightedRestrictedSubring T hT)
+    (ν : Fin k →₀ ℕ) : ((weightedPolynomialEquiv T hT).symm f).coeff ν =
+      MvPowerSeries.coeff ν f.val := by
+  simpa only [weightedPolynomialEquiv_apply, coe_weightedPolynomialHom,
+    MvPolynomial.coeff_coe] using congrArg (fun g ↦ MvPowerSeries.coeff ν g.val)
+      ((weightedPolynomialEquiv T hT).apply_symm_apply f)
 
 /-! ### Zero variables
 
