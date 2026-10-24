@@ -344,6 +344,31 @@ theorem IsLocallyFlat.of_isSmoothEmbedding_of_preimage_boundary (hn : n ≠ 0)
   .of_isImmersionOfComplement_of_isEmbedding_of_preimage_boundary hn
     h.isImmersion.isImmersionOfComplement_complement h.isEmbedding hb
 
+/-- **A neat `C^n` embedding between half-space charted spaces is locally flat with Euclidean
+complement**, `n ≠ 0`: if `f` meets the boundary of `N` exactly in the boundary of `M` and
+`j = m - k`, it is locally flat with tangential model the half-space `EuclideanHalfSpace k` and
+complementary model `ℝʲ`. -/
+theorem IsLocallyFlat.of_isSmoothEmbedding_of_preimage_boundary_of_sub_eq (hn : n ≠ 0)
+    (h : IsSmoothEmbedding (𝓡∂ k) (𝓡∂ m) n f)
+    (hb : f ⁻¹' (𝓡∂ m).boundary N = (𝓡∂ k).boundary M) {j : ℕ} (hj : m - k = j) :
+    IsLocallyFlat (EuclideanHalfSpace k) (EuclideanSpace ℝ (Fin j)) f := by
+  rcases isEmpty_or_nonempty M with hM | ⟨⟨x⟩⟩
+  · exact isLocallyFlat_iff_isSliceEmbedding.2 ⟨h.isEmbedding, isEmptyElim⟩
+  -- The complement of the immersion has dimension `m - k = j`, read off its normal form at `x`.
+  let L := (h.isImmersion.isImmersionOfComplement_complement x).equiv
+  have : FiniteDimensional ℝ (EuclideanSpace ℝ (Fin k) × h.isImmersion.complement) :=
+    L.symm.toLinearEquiv.finiteDimensional
+  have : FiniteDimensional ℝ h.isImmersion.complement :=
+    Module.Finite.of_surjective (LinearMap.snd ℝ (EuclideanSpace ℝ (Fin k)) _) Prod.snd_surjective
+  have hrank : Module.finrank ℝ h.isImmersion.complement =
+      Module.finrank ℝ (EuclideanSpace ℝ (Fin j)) := by
+    have := L.toLinearEquiv.finrank_eq
+    rw [Module.finrank_prod, finrank_euclideanSpace_fin, finrank_euclideanSpace_fin] at this
+    rw [finrank_euclideanSpace_fin]
+    omega
+  exact (IsLocallyFlat.of_isSmoothEmbedding_of_preimage_boundary hn h hb).transHomeomorph
+    (ContinuousLinearEquiv.ofFinrankEq hrank).toHomeomorph (by simp)
+
 end HalfSpace
 
 end TauCeti

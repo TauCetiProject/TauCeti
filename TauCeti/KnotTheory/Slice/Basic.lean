@@ -318,6 +318,11 @@ slice disc in the closed unit ball `Dⁿ⁺¹`. -/
 def IsTopologicallySlice (K : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)) : Prop :=
   ∃ Φ : closedBall (0 : ℂ) 1 → closedBall (0 : E) 1, IsTopologicalSliceDisc K Φ
 
+/-- A topologically slice knot bounds a locally flat slice disc. -/
+theorem IsTopologicallySlice.elim (h : IsTopologicallySlice K) :
+    ∃ Φ : closedBall (0 : ℂ) 1 → closedBall (0 : E) 1, IsTopologicalSliceDisc K Φ :=
+  h
+
 namespace IsTopologicalSliceDisc
 
 variable {Φ : closedBall (0 : ℂ) 1 → closedBall (0 : E) 1}
@@ -389,28 +394,12 @@ end IsTopologicalSliceDisc
 
 /-- **A smooth slice disc is a locally flat slice disc.** A smooth slice disc is a neat smooth
 embedding of manifolds with boundary, so it is locally flat with tangential model the half-plane
-(`TauCeti.IsLocallyFlat.of_isSmoothEmbedding_of_preimage_boundary`); the complement of the immersion
-has dimension `n - 1`, so it may be replaced by `ℝⁿ⁻¹`. -/
+and complementary model `ℝⁿ⁻¹`
+(`TauCeti.IsLocallyFlat.of_isSmoothEmbedding_of_preimage_boundary_of_sub_eq`). -/
 theorem IsSmoothSliceDisc.isTopologicalSliceDisc {Φ : closedBall (0 : ℂ) 1 → closedBall (0 : E) 1}
     (h : IsSmoothSliceDisc K Φ) : IsTopologicalSliceDisc K Φ where
-  isLocallyFlat := by
-    have hlf := IsLocallyFlat.of_isSmoothEmbedding_of_preimage_boundary (by simp)
-      h.isSmoothEmbedding h.preimage_boundary
-    -- The complement is read off the immersion normal form at any point of the disc.
-    let C := h.isSmoothEmbedding.isImmersion.complement
-    let L := (h.isSmoothEmbedding.isImmersion.isImmersionOfComplement_complement
-      (⟨0, mem_closedBall_self zero_le_one⟩ : closedBall (0 : ℂ) 1)).equiv
-    have : FiniteDimensional ℝ (EuclideanSpace ℝ (Fin 2) × C) :=
-      L.symm.toLinearEquiv.finiteDimensional
-    have : FiniteDimensional ℝ C :=
-      Module.Finite.of_surjective (LinearMap.snd ℝ (EuclideanSpace ℝ (Fin 2)) C) Prod.snd_surjective
-    have hrank : finrank ℝ C = finrank ℝ (EuclideanSpace ℝ (Fin (n - 1))) := by
-      have hL : 2 + finrank ℝ C = n + 1 := by
-        have := L.toLinearEquiv.finrank_eq
-        rwa [Module.finrank_prod, finrank_euclideanSpace_fin, finrank_euclideanSpace_fin] at this
-      rw [finrank_euclideanSpace_fin]
-      omega
-    exact hlf.transHomeomorph (ContinuousLinearEquiv.ofFinrankEq hrank).toHomeomorph (by simp)
+  isLocallyFlat := .of_isSmoothEmbedding_of_preimage_boundary_of_sub_eq (by simp)
+    h.isSmoothEmbedding h.preimage_boundary (by omega)
   norm_eq_one_iff := h.norm_eq_one_iff
   apply_inclusion := h.apply_inclusion
 
