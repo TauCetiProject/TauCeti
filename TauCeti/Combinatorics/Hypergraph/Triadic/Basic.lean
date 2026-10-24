@@ -132,6 +132,7 @@ noncomputable def topFaces : Finset (Finset V) :=
     (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩).val
 
 /-- A top face is the underlying triple of a triple supported by a selected polyad. -/
+@[simp]
 theorem mem_topFaces {s : Finset V} :
     s ∈ C.topFaces ↔ ∃ P ∈ C.polyads, ∃ x ∈ P.support, univ.map ⟨x.1, x.2⟩ = s := by
   simp [topFaces]

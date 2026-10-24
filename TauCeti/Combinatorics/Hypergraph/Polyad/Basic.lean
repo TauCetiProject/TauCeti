@@ -343,7 +343,9 @@ theorem ofTriple_color₀₂ (x : {x : Fin 3 → V // Function.Injective x}) :
 theorem ofTriple_color₁₂ (x : {x : Fin 3 → V // Function.Injective x}) :
     (ofTriple S x).color₁₂ = S.pairColors.color (coordPair x 1 2 (by decide)) := (rfl)
 
-/-- An injective triple lies in the support of its own polyad. -/
+/-- An injective triple lies in the support of its own polyad. The high priority lets this
+lemma fire before the general `mem_support` unfolds the support into color conditions. -/
+@[simp high]
 theorem mem_support_ofTriple (x : {x : Fin 3 → V // Function.Injective x}) :
     x ∈ (ofTriple S x).support := by
   simp only [mem_support, ofTriple_c₀, ofTriple_c₁, ofTriple_c₂, ofTriple_color₀₁,
