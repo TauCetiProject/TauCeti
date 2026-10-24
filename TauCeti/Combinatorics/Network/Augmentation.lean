@@ -272,6 +272,23 @@ theorem card_filter_pos_sub_walkAssignment_bottleneck_lt {f : Assignment Q K} {s
   · simpa using hpos _ ha
   · simp [walkAssignment_eq_of_mem hp _ ha, hqa]
 
+/-- Subtracting a walk of positive arrows, weighted by its bottleneck, leaves a nonnegative
+assignment in the same additive subgroup and strictly decreases the number of positive arrows. -/
+theorem sub_walkAssignment_bottleneck_properties (H : AddSubgroup K) {f : Assignment Q K}
+    (hf : 0 ≤ f) (hH : ∀ ⦃x y : V⦄ (e : Q x y), f e ∈ H) {s t : V} {p : ArrowWalk Q s t}
+    (hp : p.arrows.Nodup) (hne : p.arrows ≠ []) (hpos : ∀ a ∈ p.arrows, 0 < f a.2.2) :
+    0 < p.bottleneck f hne ∧ p.bottleneck f hne ∈ H ∧
+      0 ≤ f - walkAssignment p (p.bottleneck f hne) ∧
+      (∀ ⦃x y : V⦄ (e : Q x y), (f - walkAssignment p (p.bottleneck f hne)) e ∈ H) ∧
+      #{a : Σ x y, Q x y | 0 < (f - walkAssignment p (p.bottleneck f hne)) a.2.2} <
+        #{a : Σ x y, Q x y | 0 < f a.2.2} := by
+  have hqH : p.bottleneck f hne ∈ H :=
+    ArrowWalk.bottleneck_mem fun a _ ↦ hH a.2.2
+  exact ⟨ArrowWalk.lt_bottleneck_iff.2 hpos, hqH,
+    sub_nonneg.2 (walkAssignment_bottleneck_le hf hp hne),
+    fun _ _ e ↦ H.sub_mem (hH e) (walkAssignment_mem p hqH e),
+    card_filter_pos_sub_walkAssignment_bottleneck_lt hp hne hpos⟩
+
 end LinearOrder
 
 section PartialOrder

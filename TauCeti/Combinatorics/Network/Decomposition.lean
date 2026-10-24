@@ -455,14 +455,10 @@ theorem exists_pathCycleDecomposition (H : AddSubgroup K) (hf : 0 ≤ f)
         ∃ D : PathCycleDecomposition (f - walkAssignment p q),
           (∀ p ∈ D.paths, p.weight ∈ H) ∧ (∀ c ∈ D.cycles, c.weight ∈ H) ∧
           D.paths.length + D.cycles.length + 1 ≤ #{a : Σ x y, Q x y | 0 < f a.2.2} := by
-    have hg := sub_nonneg.2 (walkAssignment_bottleneck_le hf hnd hne)
-    have hcard := card_filter_pos_sub_walkAssignment_bottleneck_lt hnd hne hpos
-    have hqH : p.bottleneck f hne ∈ H := by
-      obtain ⟨a, -, ha⟩ := ArrowWalk.exists_mem_bottleneck_eq (c := f) (hne := hne)
-      exact ha ▸ hH _
-    obtain ⟨D, hP, hC, hlen⟩ := ih _ hcard _ hg
-      (fun x y e ↦ H.sub_mem (hH e) (walkAssignment_mem p hqH e)) rfl
-    exact ⟨_, ArrowWalk.lt_bottleneck_iff.2 hpos, hqH, hg, D, hP, hC, by omega⟩
+    obtain ⟨hq, hqH, hg, hgH, hcard⟩ :=
+      sub_walkAssignment_bottleneck_properties H hf hH hnd hne hpos
+    obtain ⟨D, hP, hC, hlen⟩ := ih _ hcard _ hg hgH rfl
+    exact ⟨_, hq, hqH, hg, D, hP, hC, by omega⟩
   by_cases hz : ∀ ⦃x y : V⦄ (e : Q x y), f e ≤ 0
   · -- The zero assignment has the empty decomposition.
     have hf0 : f = 0 :=
@@ -476,8 +472,7 @@ theorem exists_pathCycleDecomposition (H : AddSubgroup K) (hf : 0 ≤ f)
   · -- Some cycle consists of positive arrows: peel it off.
     obtain ⟨v, hv⟩ := hcyc
     obtain ⟨c, hc, hpos⟩ := exists_isCycle_iff_transGen.2 hv
-    have hne : c.arrows ≠ [] := fun h ↦
-      ((ArrowWalk.isCycle_def c).1 hc).1.ne' (ArrowWalk.arrows_eq_nil_iff.1 h)
+    have hne : c.arrows ≠ [] := hc.arrows_ne_nil
     obtain ⟨q, hq, hqH, -, D, hP, hC, hlen⟩ := peel c hc.nodup_arrows hne hpos
     refine ⟨D.consCycle ⟨v, c, q⟩ hc hq (sub_add_cancel _ _).symm, hP,
       List.forall_mem_cons.2 ⟨hqH, hC⟩, ?_⟩

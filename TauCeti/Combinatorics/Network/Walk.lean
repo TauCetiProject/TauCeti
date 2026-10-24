@@ -190,6 +190,10 @@ theorem isCycle_loop {s : V} (e : Q s s) : ((nil s).cons e).IsCycle := by
 theorem IsCycle.nodup_arrows {s : V} {c : ArrowWalk Q s s} (hc : c.IsCycle) : c.arrows.Nodup :=
   nodup_arrows_of_nodup_tail hc.2
 
+/-- A cycle traverses at least one arrow. -/
+theorem IsCycle.arrows_ne_nil {s : V} {c : ArrowWalk Q s s} (hc : c.IsCycle) : c.arrows ≠ [] :=
+  fun h ↦ hc.1.ne' (arrows_eq_nil_iff.1 h)
+
 /-- An initial segment of a path is a path. -/
 theorem IsPath.of_comp_left {s t x : V} {p : ArrowWalk Q s t} {p' : ArrowWalk Q t x}
     (hp : (p.comp p').IsPath) : p.IsPath := by

@@ -141,16 +141,13 @@ theorem exists_isAcyclic_le (H : AddSubgroup K) {f : Assignment Q K} (hf : 0 ≤
     rw [Assignment.isAcyclic_def] at hacyc
     push Not at hacyc
     exact hacyc
-  have hne : c.arrows ≠ [] := fun h ↦
-    ((ArrowWalk.isCycle_def c).1 hc).1.ne' (ArrowWalk.arrows_eq_nil_iff.1 h)
-  have hqH : c.bottleneck f hne ∈ H :=
-    ArrowWalk.bottleneck_mem (A := (H : Set K)) fun a _ ↦ hH a.2.2
+  have hne : c.arrows ≠ [] := hc.arrows_ne_nil
+  obtain ⟨hq, -, hf'₀, hf'H, hcard⟩ :=
+    sub_walkAssignment_bottleneck_properties H hf hH hc.nodup_arrows hne hpos
   obtain ⟨g, hg, hg₀, hgf, hexc, hgH⟩ :=
-    ih _ (card_filter_pos_sub_walkAssignment_bottleneck_lt hc.nodup_arrows hne hpos) _
-      (sub_nonneg.2 (walkAssignment_bottleneck_le hf hc.nodup_arrows hne))
-      (fun x y e ↦ H.sub_mem (hH e) (walkAssignment_mem c hqH e)) rfl
+    ih _ hcard _ hf'₀ hf'H rfl
   refine ⟨g, hg, hg₀, hgf.trans <| sub_le_self _ <|
-    walkAssignment_nonneg c (ArrowWalk.lt_bottleneck_iff.2 hpos).le, fun v ↦ ?_, hgH⟩
+    walkAssignment_nonneg c hq.le, fun v ↦ ?_, hgH⟩
   rw [hexc, excessAt_sub, (isCirculation_iff _).1 (isCirculation_walkAssignment _ _), sub_zero]
 
 variable {cap : Assignment Q K} {s t : V}
