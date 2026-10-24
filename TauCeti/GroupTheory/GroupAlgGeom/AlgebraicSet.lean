@@ -52,6 +52,8 @@ normal closure of `x ^ n` when `n ≠ 1`.
 * `TauCeti.GroupAlgGeom.V_normalClosure`, `TauCeti.GroupAlgGeom.normalClosure_le_Rad`: a system
   and its normal closure have the same solutions, so `ncl(S) ≤ Rad_H(S)`.
 * `TauCeti.GroupAlgGeom.V_I_V`: `V(I(V(S))) = V(S)`.
+* `TauCeti.GroupAlgGeom.wordMap_preimage_V`: inverse images of algebraic sets under word maps
+  are algebraic.
 * `TauCeti.GroupAlgGeom.exists_finite_V_eq_of_finite`,
   `TauCeti.GroupAlgGeom.exists_subsingleton_V_eq`: with finitely many points, every system has a
   finite subsystem with the same solutions; with at most one point, for instance with no
@@ -165,6 +167,45 @@ theorem V_union (S T : Set (GX G X)) : V ι (S ∪ T) = V ι S ∩ V ι T :=
 @[simp]
 theorem V_iUnion {κ : Sort*} (S : κ → Set (GX G X)) : V ι (⋃ k, S k) = ⋂ k, V ι (S k) :=
   upperPolar_iUnion _ S
+
+/-- Pulling an algebraic set back along a tuple of words substitutes those words into its
+equations. -/
+theorem wordMap_preimage_V {Y : Type*} (w : Y → GX G X) (S : Set (GX G Y)) :
+    wordMap ι w ⁻¹' V ι S =
+      V ι ((eval (inl : G →* GX G X) w) '' S) := by
+  ext v
+  simp only [Set.mem_preimage, mem_V, Set.mem_image]
+  constructor
+  · intro hv s hs
+    obtain ⟨t, ht, rfl⟩ := hs
+    rw [← MonoidHom.comp_apply, eval_substitution]
+    exact hv t ht
+  · intro hv t ht
+    have := hv _ ⟨t, ht, rfl⟩
+    rwa [← MonoidHom.comp_apply, eval_substitution] at this
+
+/-- The singleton of a tuple of coefficients is the solution set of the equations specifying
+all its coordinates. -/
+theorem singleton_coeff_eq_V (g : X → G) :
+    ({(ι ∘ g : X → H)} : Set (X → H)) =
+      V ι (Set.range fun x => inr (FreeGroup.of x) * (inl (g x))⁻¹) := by
+  ext v
+  simp only [Set.mem_singleton_iff, mem_V, Set.mem_range]
+  constructor
+  · rintro rfl s ⟨x, rfl⟩
+    simp
+  · intro hv
+    funext x
+    have hx := hv _ ⟨x, rfl⟩
+    simpa only [Function.comp_apply, map_mul, map_inv, eval_inl, eval_inr_of,
+      mul_inv_eq_one] using hx
+
+/-- If some coefficient remains nontrivial in `H`, an equation with that constant has no
+solutions. -/
+theorem V_singleton_coeff_eq_empty {g : G} (hg : ι g ≠ 1) :
+    V ι ({inl g} : Set (GX G X)) = ∅ := by
+  ext v
+  simp [hg]
 
 @[simp]
 theorem I_union (Y Z : Set (X → H)) : I ι (Y ∪ Z) = I ι Y ⊓ I ι Z :=
