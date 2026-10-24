@@ -74,6 +74,15 @@ theorem sq_sinThetaFrobenius (U V : Submodule 𝕜 E)
     exact Finsupp.sum_nonneg (fun _ _ => sq_nonneg _)
   rw [sinThetaFrobenius_eq_sqrt_sum_sq_principalSines, Real.sq_sqrt hs]
 
+/-- The Frobenius sine is symmetric for subspaces of equal finite dimension. -/
+theorem sinThetaFrobenius_comm (U V : Submodule 𝕜 E)
+    [U.HasOrthogonalProjection] [V.HasOrthogonalProjection]
+    (h : Module.finrank 𝕜 U = Module.finrank 𝕜 V) :
+    U.sinThetaFrobenius V = V.sinThetaFrobenius U := by
+  rw [U.sinThetaFrobenius_eq_sqrt_sum_sq_principalSines V,
+    V.sinThetaFrobenius_eq_sqrt_sum_sq_principalSines U,
+    U.principalSines_comm V h]
+
 /-- The directed projection gap is bounded by the Frobenius sine. -/
 theorem directedProjectionGap_le_sinThetaFrobenius (U V : Submodule 𝕜 E)
     [U.HasOrthogonalProjection] [V.HasOrthogonalProjection] :
