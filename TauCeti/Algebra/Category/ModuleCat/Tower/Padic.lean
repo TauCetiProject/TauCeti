@@ -150,6 +150,8 @@ def limOneMultiplicationTowerEquiv :
       ((QuotientAddGroup.mk' (Int.castAddHom ℤ_[p]).range).comp (padicSum p))
       ((QuotientAddGroup.mk'_surjective _).comp (padicSum_surjective p)))
 
+/-- `limOneMultiplicationTowerEquiv` sends the class in `lim¹` of a family `(aₙ)` to the class in
+`ℤ_[p] ⧸ ℤ` of its `p`-adic sum `∑ₙ pⁿ aₙ`. -/
 @[simp]
 theorem limOneMultiplicationTowerEquiv_mk (a : (multiplicationTower (p : ℤ)).Product) :
     limOneMultiplicationTowerEquiv p (Submodule.Quotient.mk a) = (padicSum p a : ℤ_[p] ⧸ _) :=
