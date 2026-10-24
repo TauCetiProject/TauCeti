@@ -9,7 +9,7 @@ public import Mathlib.Topology.Homotopy.Equiv
 public import Mathlib.Topology.Homotopy.Path
 
 /-!
-# Path connectedness is a homotopy invariant
+# Path connectedness is a homotopy invariant, and slices of a cylinder
 
 A homotopy equivalence `e : X ≃ₕ Y` is not surjective, so path connectedness of `Y` cannot be
 read off from the image of a path in `X`. What replaces surjectivity is the trace of the
@@ -21,10 +21,16 @@ This is the prerequisite for the base-point-free homotopy-group statements in
 `TauCeti.Topology.Homotopy.HomotopyGroup.HomotopyEquiv`, which need the target space to be path
 connected before base-point change is available there.
 
+The second part of the file records that a cylinder `X × [a, b]` is homotopy equivalent to `X`
+through any of its slices `X × {t}`: the interval deforms linearly onto the point `t`. This is how
+the two ends of a cylinder are seen to induce isomorphisms on homology.
+
 ## Main declarations
 
 * `ContinuousMap.HomotopyEquiv.pathConnectedSpace`: a space homotopy equivalent to a path
   connected space is path connected.
+* `ContinuousMap.HomotopyEquiv.prodIcc`: the slice `x ↦ (x, t)` is a homotopy equivalence
+  `X ≃ₕ X × [a, b]`, with homotopy inverse the projection.
 -/
 
 public section
@@ -48,5 +54,34 @@ theorem _root_.ContinuousMap.HomotopyEquiv.pathConnectedSpace [PathConnectedSpac
         (Joined.map ⟨PathConnectedSpace.somePath (e.invFun y₀) (e.invFun y₁)⟩
           e.toFun.continuous)).trans
       (trace y₁)
+
+/-- **A cylinder deforms onto each of its slices.** For a point `t` of the interval `[a, b]`, the
+slice `x ↦ (x, t)` is a homotopy equivalence `X ≃ₕ X × [a, b]`, with homotopy inverse the
+projection: at time `s` a point `(x, u)` is sent to `(x, t + s (u - t))`. -/
+def _root_.ContinuousMap.HomotopyEquiv.prodIcc {a b : ℝ} (t : Set.Icc a b) :
+    X ≃ₕ X × Set.Icc a b where
+  toFun := ⟨fun x ↦ (x, t), by fun_prop⟩
+  invFun := .fst
+  left_inv := ⟨.refl _⟩
+  right_inv := ⟨
+    { toFun p := (p.2.1, ⟨t + p.1 * (p.2.2 - t), by
+        obtain ⟨⟨s, hs₀, hs₁⟩, -, u, hu₀, hu₁⟩ := p
+        obtain ⟨t, ht₀, ht₁⟩ := t
+        constructor <;> nlinarith⟩)
+      continuous_toFun := by fun_prop
+      map_zero_left p := by simp
+      map_one_left p := by simp }⟩
+
+/-- The slice homotopy equivalence at `t` sends `x` to `(x, t)`. -/
+@[simp]
+theorem _root_.ContinuousMap.HomotopyEquiv.prodIcc_apply {a b : ℝ} (t : Set.Icc a b) (x : X) :
+    ContinuousMap.HomotopyEquiv.prodIcc t x = (x, t) :=
+  (rfl)
+
+/-- The homotopy inverse of a slice homotopy equivalence is the projection. -/
+@[simp]
+theorem _root_.ContinuousMap.HomotopyEquiv.prodIcc_symm_apply {a b : ℝ} (t : Set.Icc a b)
+    (p : X × Set.Icc a b) : (ContinuousMap.HomotopyEquiv.prodIcc t).symm p = p.1 :=
+  (rfl)
 
 end TauCeti
