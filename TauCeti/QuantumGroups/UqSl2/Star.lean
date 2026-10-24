@@ -61,12 +61,6 @@ namespace TauCeti.UqSl2
 
 variable (q : ℂ)
 
-@[local simp] private theorem k_mul_kInv_mul (x : UqSl2 q) : k q * (kInv q * x) = x := by
-  rw [← mul_assoc, k_mul_kInv, one_mul]
-
-@[local simp] private theorem kInv_mul_k_mul (x : UqSl2 q) : kInv q * (k q * x) = x := by
-  rw [← mul_assoc, kInv_mul_k, one_mul]
-
 /-! ### The conjugate opposite algebra -/
 
 /-- The opposite algebra of `UqSl2 q`, on which complex scalars act through complex conjugation.
@@ -129,9 +123,8 @@ private def starTuple : GeneratorTuple q (ConjOpposite q) where
     rw [mul_assoc, f_mul_k, mul_smul_comm])
   k_mul_f := ofConj_injective q (by
     simp only [ofConj_mul, ofConj_smul, ofConj_toConj, star_pow, star_inv₀, star_q]
-    -- `E = q⁻² K E K⁻¹`, obtained by multiplying `K⁻¹ E = q⁻² E K⁻¹` by `K`.
-    rw [mul_assoc, kInv_mul_k, mul_one, ← mul_smul_comm, ← kInv_mul_e, ← mul_assoc, k_mul_kInv,
-      one_mul])
+    rw [mul_assoc, kInv_mul_k, mul_one, ← mul_assoc, ← smul_mul_assoc, ← e_mul_k, mul_assoc,
+      k_mul_kInv, mul_one])
   e_mul_f_sub_f_mul_e := ofConj_injective q (by
     simp only [ofConj_mul, ofConj_sub, ofConj_smul, ofConj_toConj, star_inv₀, star_sub, star_q]
     rw [mul_assoc (e q), ← mul_assoc (kInv q), kInv_mul_k, one_mul, k_mul_f_mul_e_mul_kInv,
