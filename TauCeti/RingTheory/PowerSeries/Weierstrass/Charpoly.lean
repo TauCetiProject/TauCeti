@@ -9,10 +9,8 @@ public import Mathlib.LinearAlgebra.Charpoly.Basic
 public import Mathlib.RingTheory.PowerBasis
 public import Mathlib.RingTheory.PowerSeries.WeierstrassPreparation
 
-import Mathlib.NumberTheory.Padics.PadicIntegers
-import TauCeti.RingTheory.AdjoinRoot.Charpoly
 import TauCeti.RingTheory.AdjoinRoot.Minpoly
-import TauCeti.RingTheory.Polynomial.Distinguished
+import TauCeti.RingTheory.PowerBasis
 
 /-!
 # Multiplication by `X` on a quotient of a power series ring
@@ -140,25 +138,5 @@ theorem charpoly_lmul_mk_X_eq_weierstrassDistinguished [IsLocalRing A]
     (Algebra.lmul A (A⟦X⟧ ⧸ Ideal.span {g}) (Ideal.Quotient.mk _ X)).charpoly =
       g.weierstrassDistinguished hg :=
   (g.isWeierstrassFactorization_weierstrassDistinguished_weierstrassUnit hg).charpoly_lmul_mk_X
-
--- Over `ℤ_p`, the polynomial `ω_n = (1 + X) ^ (p ^ n) - 1` is distinguished, so the quotient
--- `ℤ_p⟦X⟧ ⧸ (ω_n)` is free of rank `p ^ n` over `ℤ_p` and multiplication by `X` on it has
--- characteristic polynomial `ω_n`.
-example (p n : ℕ) [Fact p.Prime]
-    [Module.Free ℤ_[p] (ℤ_[p]⟦X⟧ ⧸ Ideal.span {(((1 + Polynomial.X) ^ p ^ n - 1 :
-      Polynomial ℤ_[p]) : ℤ_[p]⟦X⟧)})]
-    [Module.Finite ℤ_[p] (ℤ_[p]⟦X⟧ ⧸ Ideal.span {(((1 + Polynomial.X) ^ p ^ n - 1 :
-      Polynomial ℤ_[p]) : ℤ_[p]⟦X⟧)})] :
-    Module.finrank ℤ_[p] (ℤ_[p]⟦X⟧ ⧸ Ideal.span {(((1 + Polynomial.X) ^ p ^ n - 1 :
-      Polynomial ℤ_[p]) : ℤ_[p]⟦X⟧)}) = p ^ n ∧
-    (Algebra.lmul ℤ_[p] _ (Ideal.Quotient.mk (Ideal.span {(((1 + Polynomial.X) ^ p ^ n - 1 :
-      Polynomial ℤ_[p]) : ℤ_[p]⟦X⟧)}) X)).charpoly = (1 + Polynomial.X) ^ p ^ n - 1 := by
-  have hω : ((1 + Polynomial.X) ^ p ^ n - 1 : Polynomial ℤ_[p]).IsDistinguishedAt
-      (IsLocalRing.maximalIdeal ℤ_[p]) := by
-    rw [PadicInt.maximalIdeal_eq_span_p]
-    exact TauCeti.Polynomial.isDistinguishedAt_one_add_X_pow_sub_one Fact.out n
-  refine ⟨?_, hω.isWeierstrassFactorizationAt.charpoly_lmul_mk_X⟩
-  rw [hω.isWeierstrassFactorizationAt.finrank_quotient,
-    TauCeti.Polynomial.natDegree_one_add_X_pow_sub_one]
 
 end PowerSeries

@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Charpoly.ToMatrix
-public import Mathlib.LinearAlgebra.Matrix.Charpoly.Minpoly
 public import Mathlib.RingTheory.AdjoinRoot
+public import TauCeti.RingTheory.PowerBasis
 
 import TauCeti.RingTheory.AdjoinRoot.Minpoly
 
@@ -20,15 +19,12 @@ of multiplication by `α` is the companion matrix of `f`, and its characteristic
 This holds for every monic `f`, including `f = 1`, where `AdjoinRoot f` is the zero module and the
 characteristic polynomial is `1`.
 
-The identity is the algebraic input to reading the characteristic polynomial of multiplication by
-`X` on a quotient of a power series ring off a Weierstrass factorization
-(`PowerSeries.IsWeierstrassFactorizationAt.charpoly_lmul_mk_X`).
+Both this identity and its transport to a quotient of a power series ring along a Weierstrass
+factorization (`PowerSeries.IsWeierstrassFactorizationAt.charpoly_lmul_mk_X`) are instances of
+`PowerBasis.charpoly_lmul_gen`.
 
 ## Main results
 
-* `PowerBasis.charpoly_lmul_gen`: for a power basis of `S` over `R`, multiplication by the
-  generator has characteristic polynomial the minimal polynomial of the generator. This is the
-  endomorphism form of Mathlib's `charpoly_leftMulMatrix`.
 * `AdjoinRoot.charpoly_lmul_root`: multiplication by the adjoined root of a monic `f` has
   characteristic polynomial `f`.
 -/
@@ -36,14 +32,6 @@ The identity is the algebraic input to reading the characteristic polynomial of 
 public section
 
 open Polynomial
-
-/-- For a power basis of `S` over `R`, the characteristic polynomial of multiplication by the
-generator is the minimal polynomial of the generator. -/
-theorem PowerBasis.charpoly_lmul_gen {R S : Type*} [CommRing R] [Ring S] [Algebra R S]
-    [Module.Free R S] [Module.Finite R S] (pb : PowerBasis R S) :
-    (Algebra.lmul R S pb.gen).charpoly = minpoly R pb.gen := by
-  rw [← LinearMap.charpoly_toMatrix _ pb.basis, ← Algebra.leftMulMatrix_apply,
-    charpoly_leftMulMatrix]
 
 namespace AdjoinRoot
 
