@@ -5,15 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.Combinatorics.Regularity.Strong.Counting
+import TauCeti.Combinatorics.Regularity.Graph.StrongRegularity.Counting
 import Mathlib.Combinatorics.SimpleGraph.Operations
 
 /-!
 # Three-vertex induced counting examples
 
 The strong counting estimate applies to both triangles and independent triples. Their predictions
-use three edge densities and three nonedge densities, respectively. Small exact counts distinguish
-induced embeddings from edge-preserving maps and from unlabelled copies.
+use three edge densities and three nonedge densities, respectively. Exact three-vertex counts
+are checked separately in `TauCeti/Examples/Combinatorics/Regularity/Graph/InducedCount.lean`.
 -/
 
 open Finset SimpleGraph
@@ -48,7 +48,7 @@ example (h : G.StrongRegular P Q ε F l₀) (hF : 0 < F #P.parts)
         (⊤ : SimpleGraph (Fin 3)).coarseInducedGraphEstimate3 G P| ≤
       (16 * F #P.parts + 3 * √ε) * (Fintype.card V : ℝ) ^ 3 +
         6 * m * (Fintype.card V : ℝ) ^ 2 :=
-  h.inducedGraphCount3_estimate ⊤ hF hm
+  SimpleGraph.StrongRegular.inducedGraphCount3_estimate h ⊤ hF hm
 
 example (h : G.StrongRegular P Q ε F l₀) (hF : 0 < F #P.parts)
     (hm : ∀ A ∈ P.parts, #A ≤ m) :
@@ -56,22 +56,6 @@ example (h : G.StrongRegular P Q ε F l₀) (hF : 0 < F #P.parts)
         (⊥ : SimpleGraph (Fin 3)).coarseInducedGraphEstimate3 G P| ≤
       (16 * F #P.parts + 3 * √ε) * (Fintype.card V : ℝ) ^ 3 +
         6 * m * (Fintype.card V : ℝ) ^ 2 :=
-  h.inducedGraphCount3_estimate ⊥ hF hm
-
--- Nonedges must be preserved, so there is no independent triple in the complete graph.
-example : (⊥ : SimpleGraph (Fin 3)).inducedGraphCount3 (⊤ : SimpleGraph (Fin 3)) = 0 := by
-  rw [inducedGraphCount3_def]
-  decide
-
--- The six permutations are distinct labelled copies of the triangle.
-example : (⊤ : SimpleGraph (Fin 3)).inducedGraphCount3 (⊤ : SimpleGraph (Fin 3)) = 6 := by
-  rw [inducedGraphCount3_def]
-  decide
-
--- Only swapping the endpoints of the edge preserves the one-edge pattern.
-example : (edge (0 : Fin 3) 1).inducedGraphCount3 (edge (0 : Fin 3) 1) = 2 := by
-  rw [inducedGraphCount3_def]
-  simp only [edge_adj]
-  decide
+  SimpleGraph.StrongRegular.inducedGraphCount3_estimate h ⊥ hF hm
 
 end TauCeti
