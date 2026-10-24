@@ -37,6 +37,10 @@ nonnegative point `x` it is the mass `μ` gives to the initial segment below the
   strict increase of the cdf;
 * `MeasureTheory.Measure.support_eq_univ_of_strictMono_cdf` shows that a strictly increasing cdf
   has full topological support;
+* `MeasureTheory.Measure.strictMonoOn_cdf_of_subset_support` proves strict increase on any
+  interval contained in the support;
+* `MeasureTheory.Measure.cdf_lt_one_of_strictMonoOn_Ici` gives a strict upper bound for cdfs
+  that increase strictly on a right half-line;
 * `MeasureTheory.Measure.cdf_sublevel_measure` evaluates the measure of a CDF sublevel set for
   an atomless real law;
 * `MeasureTheory.Measure.measureReal_Iio_neg` relates the lower tail of a symmetric real law to
@@ -258,6 +262,22 @@ theorem support_eq_univ_of_strictMono_cdf (ν : Measure ℝ) [IsProbabilityMeasu
   obtain ⟨a, b, hx, hab⟩ := mem_nhds_iff_exists_Ioo_subset.mp hU
   have hIoc : 0 < ν (Ioc a x) := (measure_Ioc_pos_iff_cdf_lt ν).mpr (hν hx.1)
   exact hIoc.trans_le (measure_mono fun y hy ↦ hab ⟨hy.1, hy.2.trans_lt hx.2⟩)
+
+/-- The cdf increases strictly on every order-connected set contained in the support. -/
+theorem strictMonoOn_cdf_of_subset_support (ν : Measure ℝ) [IsProbabilityMeasure ν]
+    {s : Set ℝ} (hs : s.OrdConnected) (hν : s ⊆ ν.support) : StrictMonoOn (cdf ν) s := by
+  intro a ha b hb hab
+  rw [← measure_Ioc_pos_iff_cdf_lt]
+  obtain ⟨c, hac, hcb⟩ := exists_between hab
+  exact ((mem_support_iff_forall _).mp (hν (hs.out ha hb ⟨hac.le, hcb.le⟩)) (Ioo a b)
+    (Ioo_mem_nhds hac hcb)).trans_le (measure_mono Ioo_subset_Ioc_self)
+
+/-- A cdf that increases strictly on a right half-line is below one at every finite cutoff. -/
+theorem cdf_lt_one_of_strictMonoOn_Ici (ν : Measure ℝ) {c : ℝ}
+    (hν : StrictMonoOn (cdf ν) (Ici c)) (x : ℝ) : cdf ν x < 1 := by
+  have hlt := hν (a := max x c) (b := max x c + 1) (le_max_right _ _)
+    ((le_max_right x c).trans (lt_add_one _).le) (lt_add_one _)
+  exact ((monotone_cdf ν (le_max_left x c)).trans_lt hlt).trans_le (cdf_le_one ν _)
 
 /-- The measure of the sublevel set `{x | cdf ν x ≤ y}` is `ENNReal.ofReal y` when
 `y < 1`. -/

@@ -119,14 +119,10 @@ theorem continuousOn_quantile_noncentralChiSquaredMeasure (hk : 0 ≤ k) (l : �
 theorem tendsto_quantile_noncentralChiSquaredMeasure_nhdsGT_zero (hk : 0 ≤ k) (l : ℝ≥0) :
     Tendsto (fun u ↦ ((noncentralChiSquaredMeasure k l).quantile u : EReal))
       (𝓝[>] 0) (𝓝 0) := by
-  apply EReal.tendsto_coe.2
-  refine tendsto_order.2 ⟨fun a ha ↦ ?_, fun b hb ↦ ?_⟩
-  · filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with u hu
-    exact ha.trans_le (quantile_noncentralChiSquaredMeasure_nonneg hk l hu)
-  · have hc := cdf_noncentralChiSquaredMeasure_pos hk l (half_pos hb)
-    filter_upwards [Ioo_mem_nhdsGT hc] with u hu
-    exact ((Measure.quantile_le_iff _ hu.1 (hu.2.trans_le (cdf_le_one _ _))).2 hu.2.le).trans_lt
-      (half_lt_self hb)
+  have := isProbabilityMeasure_noncentralChiSquaredMeasure hk l
+  exact Measure.tendsto_quantile_nhdsGT_zero_of_ae_le_of_cdf_pos _
+    (ae_nonneg_noncentralChiSquaredMeasure k l)
+    (fun _ hx ↦ cdf_noncentralChiSquaredMeasure_pos hk l hx)
 
 /-- The upper endpoint is infinite except for the double-zero Dirac law. -/
 theorem tendsto_quantile_noncentralChiSquaredMeasure_nhdsLT_one (hk : 0 ≤ k) (l : ℝ≥0) :
