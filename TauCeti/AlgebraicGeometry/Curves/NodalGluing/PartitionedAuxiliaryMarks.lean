@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Curves.NodalGluing.AuxiliaryMarks
+public import TauCeti.GroupTheory.Perm.FiberSubgroup
 public import Mathlib.CategoryTheory.Groupoid.Subgroupoid
 
 /-!
@@ -101,10 +102,17 @@ theorem preservesColors_iff (e : AuxiliaryIso I n m m') :
     e.PreservesColors κ ↔ ∀ j, κ (e.perm j) = κ j :=
   Iff.rfl
 
-/-- An arrow preserves the colours exactly when its permutation is constant on colours. -/
+/-- An arrow preserves the colours exactly when the colouring is invariant under its
+permutation, `κ ∘ π = κ`. -/
 theorem preservesColors_iff_comp_eq (e : AuxiliaryIso I n m m') :
     e.PreservesColors κ ↔ κ ∘ e.perm = κ :=
   funext_iff.symm
+
+/-- An arrow preserves the colours exactly when its permutation preserves the fibers of `κ`,
+that is, lies in `TauCeti.fiberSubgroup κ`. -/
+theorem preservesColors_iff_mem_fiberSubgroup (e : AuxiliaryIso I n m m') :
+    e.PreservesColors κ ↔ e.perm ∈ fiberSubgroup κ :=
+  mem_fiberSubgroup.symm
 
 variable (I n m κ) in
 /-- The identity arrow preserves the colours. -/
@@ -135,8 +143,9 @@ theorem PreservesColors.comp {e : AuxiliaryIso I n m m'} (h : e.PreservesColors 
 /-- **Relabelling the colours.**  For an injective relabelling `σ` of the colours, an arrow
 preserves `σ ∘ κ` exactly when it preserves `κ`. -/
 theorem preservesColors_comp_iff {σ : Cl → Cl'} (hσ : Function.Injective σ)
-    (e : AuxiliaryIso I n m m') : e.PreservesColors (σ ∘ κ) ↔ e.PreservesColors κ :=
-  ⟨fun h j ↦ hσ (h j), fun h ↦ h.comp σ⟩
+    (e : AuxiliaryIso I n m m') : e.PreservesColors (σ ∘ κ) ↔ e.PreservesColors κ := by
+  rw [preservesColors_iff_mem_fiberSubgroup, preservesColors_iff_mem_fiberSubgroup,
+    fiberSubgroup_comp_of_injective hσ]
 
 /-- **One colour class.**  If there is at most one colour, every arrow preserves the colours. -/
 theorem preservesColors_of_subsingleton [Subsingleton Cl] (e : AuxiliaryIso I n m m') :
@@ -146,17 +155,14 @@ theorem preservesColors_of_subsingleton [Subsingleton Cl] (e : AuxiliaryIso I n 
 /-- **Singleton colour classes.**  For an injective colouring, an arrow preserves the colours
 exactly when its permutation of the auxiliary labels is trivial. -/
 theorem preservesColors_iff_perm_eq_one (hκ : Function.Injective κ)
-    (e : AuxiliaryIso I n m m') : e.PreservesColors κ ↔ e.perm = 1 :=
-  ⟨fun h ↦ Equiv.ext fun j ↦ hκ (h j), fun h j ↦ by rw [h, Equiv.Perm.one_apply]⟩
+    (e : AuxiliaryIso I n m m') : e.PreservesColors κ ↔ e.perm = 1 := by
+  rw [preservesColors_iff_mem_fiberSubgroup, fiberSubgroup_eq_bot_of_injective hκ,
+    Subgroup.mem_bot]
 
 /-- A colour-preserving arrow maps each union of colour classes onto itself. -/
 theorem PreservesColors.perm_image_preimage {e : AuxiliaryIso I n m m'}
-    (h : e.PreservesColors κ) (T : Set Cl) : e.perm '' (κ ⁻¹' T) = κ ⁻¹' T := by
-  ext j
-  refine ⟨?_, fun hj ↦ ⟨e.perm.symm j, ?_, e.perm.apply_symm_apply j⟩⟩
-  · rintro ⟨k, hk, rfl⟩
-    rwa [mem_preimage, h k]
-  · rwa [mem_preimage, ← h (e.perm.symm j), Equiv.apply_symm_apply]
+    (h : e.PreservesColors κ) (T : Set Cl) : e.perm '' (κ ⁻¹' T) = κ ⁻¹' T :=
+  image_preimage_of_mem_fiberSubgroup ((preservesColors_iff_mem_fiberSubgroup e).mp h) T
 
 /-- **Colour classes are transported.**  A colour-preserving arrow carries the auxiliary marks of
 any union of colour classes exactly onto the auxiliary marks of the same colours. -/
@@ -172,19 +178,7 @@ preserves the colours exactly when its permutation lies in `S(R₁) × S(R₂)`,
 theorem preservesColors_isLeft_iff {R₁ R₂ : Type*} {m : Marking d (N ⊕ (R₁ ⊕ R₂))}
     {m' : Marking d' (N ⊕ (R₁ ⊕ R₂))} (e : AuxiliaryIso I n m m') :
     e.PreservesColors Sum.isLeft ↔ e.perm ∈ (Equiv.Perm.sumCongrHom R₁ R₂).range := by
-  constructor
-  · intro h
-    have hl (x : R₁ ⊕ R₂) : (e.perm x).isLeft ↔ x.isLeft := by rw [h x]
-    have hr (x : R₁ ⊕ R₂) : (e.perm x).isRight ↔ x.isRight := by
-      rw [← Sum.not_isLeft, ← Sum.not_isLeft, h x]
-    refine ⟨(Equiv.sumIsLeft.permCongr (e.perm.subtypePerm hl),
-      Equiv.sumIsRight.permCongr (e.perm.subtypePerm hr)), Equiv.ext ?_⟩
-    rintro (a | b)
-    · obtain ⟨a', ha'⟩ := Sum.isLeft_iff.mp ((hl (.inl a)).mpr rfl)
-      simp [ha']
-    · obtain ⟨b', hb'⟩ := Sum.isRight_iff.mp ((hr (.inr b)).mpr rfl)
-      simp [hb']
-  · rintro ⟨⟨σ₁, σ₂⟩, hσ⟩ (a | b) <;> simp [← hσ]
+  rw [preservesColors_iff_mem_fiberSubgroup, fiberSubgroup_isLeft]
 
 end AuxiliaryIso
 
@@ -261,60 +255,57 @@ variable {m : Marking d (N ⊕ R)}
 variable (I n m) in
 /-- **The colour-preserving automorphisms** of a curve with auxiliary marks coloured by
 `κ : R → Cl`: the automorphisms whose permutation of the auxiliary labels preserves every colour
-class. -/
-def partitioned (κ : R → Cl) : Subgroup (AuxiliaryAut I n m) where
-  carrier := {e | e.PreservesColors κ}
-  one_mem' := AuxiliaryIso.preservesColors_refl I n m κ
-  mul_mem' h h' := AuxiliaryIso.PreservesColors.trans h' h
-  inv_mem' h := AuxiliaryIso.PreservesColors.symm h
+class, the preimage of `TauCeti.fiberSubgroup κ` under the permutation action `auxiliaryPerm`. -/
+def partitioned (κ : R → Cl) : Subgroup (AuxiliaryAut I n m) :=
+  (fiberSubgroup κ).comap auxiliaryPerm
 
 variable {κ : R → Cl}
 
 /-- An automorphism is colour-preserving exactly when its permutation preserves the colours. -/
 @[simp] theorem mem_partitioned_iff (e : AuxiliaryAut I n m) :
-    e ∈ partitioned I n m κ ↔ e.PreservesColors κ :=
-  Iff.rfl
+    e ∈ partitioned I n m κ ↔ e.PreservesColors κ := by
+  rw [partitioned, Subgroup.mem_comap, auxiliaryPerm_apply,
+    AuxiliaryIso.preservesColors_iff_mem_fiberSubgroup]
 
 variable (κ) in
 /-- Every ordered automorphism preserves the colours. -/
-theorem ordered_le_partitioned : ordered I n m ≤ partitioned I n m κ := fun e he j ↦ by
-  rw [(mem_ordered_iff e).mp he, Equiv.Perm.one_apply]
+theorem ordered_le_partitioned : ordered I n m ≤ partitioned I n m κ := fun e he ↦
+  (mem_partitioned_iff e).mpr fun j ↦ by rw [(mem_ordered_iff e).mp he, Equiv.Perm.one_apply]
 
 variable (κ) in
 /-- **Merging colour classes** enlarges the colour-preserving automorphisms. -/
 theorem partitioned_le_comp (σ : Cl → Cl') : partitioned I n m κ ≤ partitioned I n m (σ ∘ κ) :=
-  fun _ h ↦ AuxiliaryIso.PreservesColors.comp h σ
+  Subgroup.comap_mono (fiberSubgroup_le_comp σ κ)
 
 /-- **Relabelling the colours** injectively does not change the colour-preserving
 automorphisms. -/
 theorem partitioned_comp_of_injective {σ : Cl → Cl'} (hσ : Function.Injective σ) :
     partitioned I n m (σ ∘ κ) = partitioned I n m κ :=
-  Subgroup.ext fun e ↦ AuxiliaryIso.preservesColors_comp_iff hσ e
+  congrArg (Subgroup.comap auxiliaryPerm) (fiberSubgroup_comp_of_injective hσ κ)
 
 /-- **One colour class**: every automorphism preserves the colours. -/
-theorem partitioned_eq_top [Subsingleton Cl] : partitioned I n m κ = ⊤ :=
-  eq_top_iff.mpr fun e _ ↦ AuxiliaryIso.preservesColors_of_subsingleton e
+theorem partitioned_eq_top [Subsingleton Cl] : partitioned I n m κ = ⊤ := by
+  rw [partitioned, fiberSubgroup_eq_top, Subgroup.comap_top]
 
 /-- **Singleton colour classes**: for an injective colouring, the colour-preserving automorphisms
 are the ordered automorphisms. -/
 theorem partitioned_eq_ordered (hκ : Function.Injective κ) :
     partitioned I n m κ = ordered I n m :=
-  Subgroup.ext fun e ↦ (AuxiliaryIso.preservesColors_iff_perm_eq_one hκ e).trans
+  Subgroup.ext fun e ↦ (mem_partitioned_iff e).trans <|
+    (AuxiliaryIso.preservesColors_iff_perm_eq_one hκ e).trans
     (mem_ordered_iff e).symm
 
 /-- **The action on the colour classes.**  A colour-preserving automorphism permutes each colour
-class `κ ⁻¹' {c}`; this is its image in `∏_c S(κ ⁻¹' {c})`. -/
-def blockPerm : partitioned I n m κ →* ∀ c, Equiv.Perm {j // κ j = c} where
-  toFun e c := e.1.perm.subtypePerm fun j ↦ by rw [e.2 j]
-  map_one' := funext fun _ ↦ Equiv.ext fun _ ↦ Subtype.ext <| by
-    simp [OneMemClass.coe_one, one_def]
-  map_mul' _ _ := funext fun _ ↦ Equiv.ext fun _ ↦ Subtype.ext <| by
-    simp [Subgroup.coe_mul, mul_def, -Equiv.Perm.subtypePerm_mul]
+class `κ ⁻¹' {c}`; this is its image in `∏_c S(κ ⁻¹' {c})`, obtained from its permutation by the
+restriction isomorphism `TauCeti.fiberSubgroupMulEquivPiPerm κ`. -/
+def blockPerm : partitioned I n m κ →* ∀ c, Equiv.Perm {j // κ j = c} :=
+  (fiberSubgroupMulEquivPiPerm κ).toMonoidHom.comp (auxiliaryPerm.subgroupComap _)
 
 /-- The action of a colour-preserving automorphism on a colour class is its permutation. -/
 @[simp] theorem coe_blockPerm_apply (e : partitioned I n m κ) (c : Cl) (j : {j // κ j = c}) :
     (blockPerm e c j : R) = e.1.perm j :=
-  (rfl)
+  (fiberSubgroupMulEquivPiPerm_apply_coe κ (auxiliaryPerm.subgroupComap _ e) c j).trans
+    (DFunLike.congr_fun (auxiliaryPerm_apply e.1) (j : R))
 
 /-- A colour-preserving automorphism acts trivially on every colour class exactly when it is
 ordered: the kernel of the action on the colour classes is the subgroup of ordered
