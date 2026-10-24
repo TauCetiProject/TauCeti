@@ -18,11 +18,11 @@ component when the prime spectrum is locally connected.
 
 ## Main declarations
 
-* `TauCeti.AlgHom.map_connectedComponentIdempotent_kernelPoint_eq_one`: the augmentation maps the
+* `AlgHom.map_connectedComponentIdempotent_kernelPoint_eq_one`: the augmentation maps the
   component idempotent of its kernel point to one.
-* `TauCeti.AlgHom.kernelPointConnectedComponentAlgHom`: the augmentation factored through the
+* `AlgHom.kernelPointConnectedComponentAlgHom`: the augmentation factored through the
   quotient cutting out the connected component of its kernel point.
-* `TauCeti.AlgHom.kernelPoint_comp_connectedComponentQuotient_mem`: a point of the component
+* `AlgHom.kernelPoint_comp_connectedComponentQuotient_mem`: a point of the component
   quotient maps into the selected connected component.
 
 ## References
@@ -39,7 +39,7 @@ public section
 
 open AlgebraicGeometry
 
-namespace TauCeti.AlgHom
+namespace AlgHom
 
 universe u v
 
@@ -115,4 +115,4 @@ theorem kernelPoint_comp_connectedComponentQuotient_mem (z : PrimeSpectrum H)
   rw [hcomap] at hy
   exact hy
 
-end TauCeti.AlgHom
+end AlgHom

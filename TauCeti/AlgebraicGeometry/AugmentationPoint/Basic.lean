@@ -15,8 +15,8 @@ of the algebra's prime spectrum. This file records that point and its underlying
 
 ## Main declarations
 
-* `TauCeti.AlgHom.kernelPoint`: the point cut out by the kernel of an augmentation.
-* `TauCeti.AlgHom.comap_kernelPoint`: contraction of a kernel point is the kernel point of the
+* `AlgHom.kernelPoint`: the point cut out by the kernel of an augmentation.
+* `AlgHom.comap_kernelPoint`: contraction of a kernel point is the kernel point of the
   composite algebra homomorphism.
 -/
 
@@ -24,7 +24,7 @@ public section
 
 open AlgebraicGeometry IsLocalRing
 
-namespace TauCeti.AlgHom
+namespace AlgHom
 
 universe u v w
 
@@ -49,7 +49,7 @@ theorem kernelPoint_asIdeal :
 /-- A kernel point belongs to a basic open exactly when its defining homomorphism is
 nonzero on the defining element. -/
 @[simp]
-theorem _root_.AlgHom.kernelPoint_mem_basicOpen_iff (a : H) :
+theorem kernelPoint_mem_basicOpen_iff (a : H) :
     (kernelPoint f : PrimeSpectrum H) ∈ PrimeSpectrum.basicOpen a ↔ f a ≠ 0 := by
   -- Expose ideal membership to bridge the scheme carrier and the prime-spectrum basic open.
   change a ∉ (kernelPoint f).asIdeal ↔ f a ≠ 0
@@ -63,4 +63,4 @@ theorem comap_kernelPoint {A : Type w} [CommRing A] [Algebra k A] (g : A →ₐ[
     PrimeSpectrum.comap (g : A →+* H) (kernelPoint f) = kernelPoint (f.comp g) :=
   PrimeSpectrum.comap_comp_apply (g : A →+* H) (f : H →+* k) (closedPoint k)
 
-end TauCeti.AlgHom
+end AlgHom

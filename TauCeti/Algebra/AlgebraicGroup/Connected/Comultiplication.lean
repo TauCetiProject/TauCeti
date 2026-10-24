@@ -219,7 +219,7 @@ noncomputable def identityComponentHopfIdeal : HopfIdeal k H := by
       (fun x hx ↦ by
         have hx' : x ∈ RingHom.ker
             (_root_.Bialgebra.counitAlgHom k H).toRingHom :=
-          TauCeti.AlgHom.connectedComponentIdeal_kernelPoint_le_ker
+          AlgHom.connectedComponentIdeal_kernelPoint_le_ker
             (_root_.Bialgebra.counitAlgHom k H) hx
         rw [← Bialgebra.counitAlgHom_apply]
         exact RingHom.mem_ker.mp hx')
