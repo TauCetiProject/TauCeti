@@ -29,8 +29,8 @@ such as Banach-algebra resolvents.
 
 * `TauCeti.Contour.Cycle.integral_circleCycle`: its cycle integral is the circle integral.
 * `TauCeti.Contour.Cycle.trace_circleCycle`: its trace is the sphere.
-* `TauCeti.Contour.Cycle.windingNumber_circleCycle_of_dist_lt`,
-  `TauCeti.Contour.Cycle.windingNumber_circleCycle_of_lt_dist`: its winding numbers.
+* `TauCeti.Contour.Cycle.windingNumber_circleCycle_eq_one_of_dist_lt`,
+  `TauCeti.Contour.Cycle.windingNumber_circleCycle_eq_zero_of_lt_dist`: its winding numbers.
 -/
 
 public section
@@ -67,13 +67,13 @@ theorem trace_circleCycle (c : ℂ) (R : ℝ) : trace (circleCycle c R) = sphere
   rw [circleCycle, circleCurve, trace_of_raw, Complex.image_circleMap_uIcc]
 
 /-- The circle cycle winds once around every point inside its disc. -/
-theorem windingNumber_circleCycle_of_dist_lt {c w : ℂ} {R : ℝ} (hw : dist w c < R) :
+theorem windingNumber_circleCycle_eq_one_of_dist_lt {c w : ℂ} {R : ℝ} (hw : dist w c < R) :
     windingNumber w (circleCycle c R) = 1 := by
   rw [circleCycle, circleCurve, windingNumber_of_raw,
     Contour.windingNumber_circleMap_eq_one_of_dist_lt hw]
 
 /-- The circle cycle does not wind around points outside its closed disc. -/
-theorem windingNumber_circleCycle_of_lt_dist {c w : ℂ} {R : ℝ} (hR : 0 ≤ R)
+theorem windingNumber_circleCycle_eq_zero_of_lt_dist {c w : ℂ} {R : ℝ} (hR : 0 ≤ R)
     (hw : R < dist w c) : windingNumber w (circleCycle c R) = 0 := by
   rw [circleCycle, circleCurve, windingNumber_of_raw,
     Contour.windingNumber_circleMap_eq_zero_of_lt_dist hR hw]

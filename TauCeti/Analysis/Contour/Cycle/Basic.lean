@@ -473,6 +473,11 @@ theorem IsNullHomologous.zero (Ω : Set ℂ) : IsNullHomologous (0 : Cycle) Ω :
   intro z _
   simp
 
+/-- Every cycle is null-homologous in the whole plane, since there are no exterior points. -/
+@[simp]
+theorem isNullHomologous_univ (C : Cycle) : IsNullHomologous C univ :=
+  fun _ hz ↦ (hz trivial).elim
+
 /-- A sum of null-homologous cycles is null-homologous. -/
 theorem IsNullHomologous.add {C D : Cycle} {Ω : Set ℂ} (hC : IsNullHomologous C Ω)
     (hD : IsNullHomologous D Ω) : IsNullHomologous (C + D) Ω := by
