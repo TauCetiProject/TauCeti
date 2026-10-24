@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.AlgebraicIndependent.Defs
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Coinvariants.Basic
 public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.RootSubgroup.ClosedImmersion
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.UnipotentCharts
 import Mathlib.Algebra.MonoidAlgebra.MapDomain
 import Mathlib.RingTheory.Localization.Away.Basic
 
@@ -148,17 +149,27 @@ private theorem coe_pointsMulEquiv_toConv {L : Type u} [CommRing L] [Algebra R L
       τ (entry R k l) := by
   rw [coe_pointsMulEquiv_apply, ofConv_toConv, entry]
 
+/-- The invertible first coordinate on the Laurent chart `D(a)`. -/
+private noncomputable def chartUnitA : (AddMonoidAlgebra R (ℤ × ℕ))ˣ :=
+  ⟨single (1, 0) 1, single (-1, 0) 1,
+    by simp [single_mul_single, one_def, Prod.mk_zero_zero],
+    by simp [single_mul_single, one_def, Prod.mk_zero_zero]⟩
+
+/-- The invertible second coordinate on the Laurent chart `D(c)`. -/
+private noncomputable def chartUnitC : (AddMonoidAlgebra R (ℕ × ℤ))ˣ :=
+  ⟨single (0, 1) 1, single (0, -1) 1,
+    by simp [single_mul_single, one_def, Prod.mk_zero_zero],
+    by simp [single_mul_single, one_def, Prod.mk_zero_zero]⟩
+
 /-- The section of the first-column torsor over the chart `D(a)`. -/
 private noncomputable def chartPointA :
     Matrix.SpecialLinearGroup (Fin 2) (AddMonoidAlgebra R (ℤ × ℕ)) :=
-  ⟨!![single (1, 0) 1, 0; single (0, 1) 1, single (-1, 0) 1], by
-    simp [Matrix.det_fin_two_of, single_mul_single, one_def, Prod.mk_zero_zero]⟩
+  Matrix.SpecialLinearGroup.firstColumnSectionA chartUnitA (single (0, 1) 1)
 
 /-- The section of the first-column torsor over the chart `D(c)`. -/
 private noncomputable def chartPointC :
     Matrix.SpecialLinearGroup (Fin 2) (AddMonoidAlgebra R (ℕ × ℤ)) :=
-  ⟨!![single (1, 0) 1, single (0, -1) (-1); single (0, 1) 1, 0], by
-    simp [Matrix.det_fin_two_of, single_mul_single, one_def, Prod.mk_zero_zero]⟩
+  Matrix.SpecialLinearGroup.firstColumnSectionC (single (1, 0) 1) chartUnitC
 
 /-- Evaluation at the section over `D(a)`. -/
 private noncomputable def chartEvalA :
@@ -206,13 +217,11 @@ private theorem map_chartPointC :
       Matrix.SpecialLinearGroup.map (mapDomainAlgHom R R inclA).toRingHom chartPointA *
         Matrix.SpecialLinearGroup.transvection (zero_ne_one : (0 : Fin 2) ≠ 1)
           (single (-1, -1) (-1)) := by
-  refine Matrix.SpecialLinearGroup.ext _ _ fun k l ↦ ?_
-  rw [Matrix.SpecialLinearGroup.coe_mul, Matrix.SpecialLinearGroup.map_apply_coe,
-    Matrix.SpecialLinearGroup.map_apply_coe]
-  fin_cases k <;> fin_cases l <;>
-    simp [chartPointA, chartPointC, inclA, inclC, Matrix.mul_apply, Fin.sum_univ_two,
-      Matrix.SpecialLinearGroup.transvection_coe, single_mul_single, mapDomain_single,
-      ← single_add, -single_neg]
+  have h := Matrix.SpecialLinearGroup.firstColumnSectionC_eq_sectionA_mul_transvection
+    (Units.map (mapDomainAlgHom R R inclA).toMonoidHom (chartUnitA (R := R)))
+    (Units.map (mapDomainAlgHom R R inclC).toMonoidHom (chartUnitC (R := R)))
+  simpa [chartPointA, chartPointC, chartUnitA, chartUnitC, inclA, inclC,
+    single_mul_single, ← single_neg] using h
 
 /-- A right invariant takes the same value at the two sections, compared in `R[ℤ × ℤ]`. -/
 private theorem mapDomain_chartEvalC {h : coordinateHopfAlgebra R 2}
@@ -261,9 +270,9 @@ private theorem chartEvalA_aeval (p : MvPolynomial (Fin 2) R) :
     rw [AlgHom.comp_apply, MvPolynomial.aeval_X, mapDomainAlgHom_apply, MvPolynomial.X,
       ← MvPolynomial.single_eq_monomial, mapDomain_single]
   · rw [Matrix.cons_val_zero, chartEvalA_entry]
-    simp [chartPointA, monomialA]
+    simp [chartPointA, chartUnitA, monomialA]
   · rw [Matrix.cons_val_one, Matrix.cons_val_zero, chartEvalA_entry]
-    simp [chartPointA, monomialA]
+    simp [chartPointA, chartUnitA, monomialA]
 
 /-- If the tautological point over `L` is `M` translated by the root subgroup, then a right
 invariant vanishing at `M` vanishes in `L`. -/
@@ -304,7 +313,7 @@ private theorem algebraMap_away_eq_zero_of_chartEvalA {h : coordinateHopfAlgebra
   rw [coe_pointsMulEquiv_toConv, Matrix.SpecialLinearGroup.coe_mul,
     Matrix.SpecialLinearGroup.map_apply_coe]
   fin_cases k <;> fin_cases l <;>
-    simp [chartPointA, lift_single, Matrix.mul_apply, Fin.sum_univ_two,
+    simp [chartPointA, chartUnitA, lift_single, Matrix.mul_apply, Fin.sum_univ_two,
       Matrix.SpecialLinearGroup.transvection_coe, ← hu, hd]
 
 /-- A right invariant vanishing at the section over `D(c)` vanishes after inverting `c`. -/
@@ -327,7 +336,7 @@ private theorem algebraMap_away_eq_zero_of_chartEvalC {h : coordinateHopfAlgebra
   rw [coe_pointsMulEquiv_toConv, Matrix.SpecialLinearGroup.coe_mul,
     Matrix.SpecialLinearGroup.map_apply_coe]
   fin_cases k <;> fin_cases l <;>
-    simp [chartPointC, lift_single, Matrix.mul_apply, Fin.sum_univ_two,
+    simp [chartPointC, chartUnitC, lift_single, Matrix.mul_apply, Fin.sum_univ_two,
       Matrix.SpecialLinearGroup.transvection_coe, ← hv, hb, sub_eq_add_neg]
 
 /-- A right invariant vanishing at the section over `D(a)` is zero. -/
