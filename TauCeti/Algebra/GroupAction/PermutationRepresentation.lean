@@ -107,7 +107,8 @@ theorem permutationEmbedding_apply [FaithfulSMul G α] (e : α ≃ β) (g : G) :
   (rfl)
 
 /-- **Replacing the equivalence conjugates the representation**, by the re-indexing permutation
-`e.symm.trans e'`. The subgroup of `Equiv.Perm β` is therefore well defined only up to conjugacy, while the action on `α` itself is canonical. -/
+`e.symm.trans e'`. The subgroup of `Equiv.Perm β` is therefore well defined only up to
+conjugacy, while the action on `α` itself is canonical. -/
 theorem permutationRepresentation_eq_conj (e e' : α ≃ β) (g : G) :
     permutationRepresentation e' g =
       (e.symm.trans e') * permutationRepresentation e g * (e.symm.trans e')⁻¹ := by
