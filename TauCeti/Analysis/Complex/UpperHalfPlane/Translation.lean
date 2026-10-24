@@ -25,6 +25,7 @@ distance constraints near a parabolic fixed point to a bounded horizontal range.
 
 ## Main results
 
+* `UpperHalfPlane.sinh_half_dist_vadd`: the hyperbolic displacement of a real translation.
 * `UpperHalfPlane.normSq_coe_vadd_of_re_eq`, `UpperHalfPlane.norm_coe_vadd_of_re_eq`: on the
   line `re = -r / 2`, translation by `r` preserves the squared norm and the norm.
 * `UpperHalfPlane.dist_le_dist_vadd_and_neg_vadd_iff`: the two adjacent distance constraints
@@ -51,6 +52,13 @@ lemma normSq_coe_vadd_of_re_eq {r : ℝ} {p : ℍ} (hre : p.re = -r / 2) :
 lemma norm_coe_vadd_of_re_eq {r : ℝ} {p : ℍ} (hre : p.re = -r / 2) :
     ‖((r +ᵥ p : ℍ) : ℂ)‖ = ‖(p : ℂ)‖ := by
   rw [Complex.norm_def, Complex.norm_def, normSq_coe_vadd_of_re_eq hre]
+
+/-- A real translation by `r` moves `z` a hyperbolic distance `d` with
+`sinh (d / 2) = |r| / (2 * z.im)`. -/
+theorem sinh_half_dist_vadd (r : ℝ) (z : ℍ) :
+    Real.sinh (dist (r +ᵥ z) z / 2) = |r| / (2 * z.im) := by
+  rw [sinh_half_dist, vadd_im, Real.sqrt_mul_self z.im_pos.le, coe_vadd, Complex.dist_eq,
+    add_sub_cancel_right, Complex.norm_real, Real.norm_eq_abs]
 
 /-- The distance constraints from translations by `±w` cut out the vertical strip of
 half-width `w / 2` centred at `p.re`. -/

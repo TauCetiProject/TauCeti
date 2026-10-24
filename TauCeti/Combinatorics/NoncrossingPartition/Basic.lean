@@ -30,6 +30,8 @@ only a meet, not a join, so the join in `NC(s)` is characterised by its universa
 * `Finpartition.IsNoncrossing P` — the finite partition `P` of `s` is noncrossing.
 * `TauCeti.NoncrossingPartition s` — the noncrossing partitions of `s`, with the refinement order
   inherited from `Finpartition s`.
+* `TauCeti.NoncrossingPartition.singletonPartEquiv` — the noncrossing partitions of `s` in which
+  `i` forms a part on its own correspond to the noncrossing partitions of `s.erase i`.
 
 ## Main results
 
@@ -43,6 +45,8 @@ only a meet, not a join, so the join in `NC(s)` is characterised by its universa
   of `s` gives a noncrossing partition.
 * `Finpartition.IsNoncrossing.bind` — juxtaposing noncrossing partitions of the parts of a
   noncrossing partition gives a noncrossing partition.
+* `Finpartition.IsNoncrossing.extend_singleton` — adding a singleton part to a noncrossing
+  partition gives a noncrossing partition.
 * `TauCeti.NoncrossingPartition.instLattice` — the noncrossing partitions of `s` form a lattice,
   with meets computed in `Finpartition s`; it is bounded, and locally finite so that its
   incidence algebra is available.
@@ -149,6 +153,20 @@ theorem IsNoncrossing.bind {Q : ∀ B ∈ P.parts, Finpartition B} (hP : P.IsNon
     ((Q B hB).le hXB hc) d ((Q C hC).le hYC hd) hab hbc hcd
   exact isNoncrossing_iff.1 (hQ B hB) X hXB Y hYC a ha b hb c hc d hd hab hbc hcd
 
+/-- Adding a singleton part to a noncrossing partition gives a noncrossing partition. -/
+theorem IsNoncrossing.extend_singleton {P : Finpartition t} (hP : P.IsNoncrossing) {i : α}
+    (hi : ({i} : Finset α) ≠ ⊥) (hti : Disjoint t {i}) (hts : t ⊔ {i} = s) :
+    (P.extend hi hti hts).IsNoncrossing := by
+  intro B hB C hC a ha b hb c hc d hd hab hbc hcd
+  rw [extend_parts, mem_insert] at hB hC
+  obtain rfl | hB := hB
+  · rw [mem_singleton] at ha hc
+    exact absurd (hab.trans hbc) (ha ▸ hc ▸ lt_irrefl i)
+  obtain rfl | hC := hC
+  · rw [mem_singleton] at hb hd
+    exact absurd (hbc.trans hcd) (hb ▸ hd ▸ lt_irrefl i)
+  exact hP B hB C hC a ha b hb c hc d hd hab hbc hcd
+
 end Finpartition
 
 namespace TauCeti
@@ -254,6 +272,34 @@ theorem univ_eq_bot_top_of_pair {i j : α} :
     (univ : Finset (NoncrossingPartition ({i, j} : Finset α))) = {⊥, ⊤} := by
   ext P
   simpa using eq_bot_or_eq_top_of_pair P
+
+/-- The noncrossing partitions of `s` in which `i` forms a part on its own correspond to the
+noncrossing partitions of `s.erase i`: delete the part `{i}`, or insert it back. -/
+noncomputable def singletonPartEquiv {i : α} (hi : i ∈ s) :
+    {π : NoncrossingPartition s // {i} ∈ π.1.parts} ≃ NoncrossingPartition (s.erase i) where
+  toFun π := ⟨π.1.1.restrict (s.erase_subset i), π.1.2.restrict _⟩
+  invFun τ :=
+    ⟨⟨τ.1.extend (singleton_ne_empty i) (disjoint_singleton_right.2 (s.notMem_erase i))
+        (by rw [sup_eq_union, union_singleton, insert_erase hi]),
+      τ.2.extend_singleton _ _ _⟩, mem_insert_self _ _⟩
+  left_inv π := Subtype.ext <| Subtype.ext <| Finpartition.ext <| by
+    rw [Finpartition.extend_parts, Finpartition.parts_restrict_erase_of_singleton_mem π.2,
+      insert_erase π.2]
+  right_inv τ := Subtype.ext <| by simp
+
+/-- Deleting the singleton part `{i}` leaves the other parts. -/
+@[simp]
+theorem parts_singletonPartEquiv_apply {i : α} (hi : i ∈ s)
+    (π : {π : NoncrossingPartition s // {i} ∈ π.1.parts}) :
+    (singletonPartEquiv hi π).1.parts = π.1.1.parts.erase {i} :=
+  Finpartition.parts_restrict_erase_of_singleton_mem π.2
+
+/-- Inserting the singleton part `{i}` adds it to the parts. -/
+@[simp]
+theorem parts_singletonPartEquiv_symm_apply {i : α} (hi : i ∈ s)
+    (τ : NoncrossingPartition (s.erase i)) :
+    ((singletonPartEquiv hi).symm τ).1.1.parts = insert {i} τ.1.parts := by
+  simp [singletonPartEquiv]
 
 end NoncrossingPartition
 
