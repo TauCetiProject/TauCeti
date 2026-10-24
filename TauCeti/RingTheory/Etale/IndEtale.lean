@@ -7,9 +7,8 @@ module
 
 public import Mathlib.Algebra.Category.CommAlgCat.Basic
 public import Mathlib.CategoryTheory.Filtered.Basic
+public import Mathlib.CategoryTheory.ObjectProperty.Ind
 public import Mathlib.RingTheory.Etale.Basic
-import Mathlib.CategoryTheory.Filtered.Connected
-import Mathlib.CategoryTheory.Limits.Connected
 import Mathlib.RingTheory.Flat.TorsionFree
 import Mathlib.RingTheory.Smooth.Flat
 import TauCeti.Algebra.Category.AlgCat.FilteredColimits
@@ -60,10 +59,9 @@ namespace TauCeti.Algebra
 /-- An `R`-algebra `S` is *ind-étale* if it is the colimit, in the category of commutative
 `R`-algebras, of a small filtered diagram of étale `R`-algebras. -/
 class IndEtale (R S : Type u) [CommRing R] [CommRing S] [Algebra R S] : Prop where
-  /-- `S` is the point of a colimit cocone of a small filtered diagram of étale algebras. -/
-  exists_isColimit : ∃ (J : Type u) (_ : SmallCategory J) (_ : IsFiltered J)
-    (D : J ⥤ CommAlgCat.{u} R) (ι : D ⟶ (Functor.const J).obj (CommAlgCat.of R S)),
-      (∀ j, Algebra.Etale R (D.obj j)) ∧ Nonempty (IsColimit (Cocone.mk _ ι))
+  /-- `S` is a small filtered colimit of étale algebras in `CommAlgCat R`. -/
+  ind_etale : ObjectProperty.ind.{u} (fun A : CommAlgCat.{u} R => Algebra.Etale R A)
+    (CommAlgCat.of R S)
 
 namespace IndEtale
 
@@ -74,30 +72,28 @@ and so is every `R`-algebra isomorphic to it. -/
 theorem of_isColimit {J : Type u} [SmallCategory J] [IsFiltered J] {D : J ⥤ CommAlgCat.{u} R}
     (hD : ∀ j, Algebra.Etale R (D.obj j)) {c : Cocone D} (hc : IsColimit c) (e : c.pt ≃ₐ[R] S) :
     IndEtale R S :=
-  ⟨⟨J, inferInstance, inferInstance, D, _, hD,
-    ⟨hc.ofIsoColimit (c.extendIso (CommAlgCat.isoMk e))⟩⟩⟩
+  ⟨ObjectProperty.prop_of_iso _ (CommAlgCat.isoMk e)
+    ⟨J, inferInstance, inferInstance, ⟨D, _, hc⟩, hD⟩⟩
 
 /-- An étale algebra is ind-étale, as the colimit of the diagram consisting of itself. -/
 instance of_etale [Algebra.Etale R S] : IndEtale R S :=
-  of_isColimit (D := (Functor.const (Discrete PUnit.{u + 1})).obj (CommAlgCat.of R S))
-    (fun _ => ‹_›) (isColimitConstCocone _ _) AlgEquiv.refl
+  ⟨ObjectProperty.le_ind _ _ ‹_›⟩
 
 /-- Being ind-étale is invariant under isomorphism of algebras. -/
-theorem of_equiv [IndEtale R S] (e : S ≃ₐ[R] S') : IndEtale R S' := by
-  obtain ⟨J, _, _, D, _, hD, ⟨hc⟩⟩ := IndEtale.exists_isColimit (R := R) (S := S)
-  exact of_isColimit hD hc e
+theorem of_equiv [IndEtale R S] (e : S ≃ₐ[R] S') : IndEtale R S' :=
+  ⟨ObjectProperty.prop_of_iso _ (CommAlgCat.isoMk e) (IndEtale.ind_etale (R := R) (S := S))⟩
 
 /-- An ind-étale algebra is flat: it is a filtered colimit of étale, hence flat, modules. -/
 instance flat [IndEtale R S] : Module.Flat R S := by
-  obtain ⟨J, _, _, D, _, hD, ⟨hc⟩⟩ := IndEtale.exists_isColimit (R := R) (S := S)
+  obtain ⟨J, _, _, pres, hD⟩ := IndEtale.ind_etale (R := R) (S := S)
   -- The forgetful functors to algebras and to modules do not change the underlying type or the
   -- `R`-module structure, so the stages and the colimit below are the original algebras with
   -- their `R`-module structures.
   let G := forget₂ (CommAlgCat.{u} R) (AlgCat.{u} R) ⋙ forget₂ (AlgCat.{u} R) (ModuleCat.{u} R)
-  have (j : J) : Module.Flat R ((D ⋙ G).obj j) :=
+  have (j : J) : Module.Flat R ((pres.diag ⋙ G).obj j) :=
     have := hD j
-    inferInstanceAs (Module.Flat R (D.obj j))
-  exact Module.Flat.of_isColimit (isColimitOfPreserves G hc)
+    inferInstanceAs (Module.Flat R (pres.diag.obj j))
+  exact Module.Flat.of_isColimit (isColimitOfPreserves G pres.isColimit)
 
 end IndEtale
 

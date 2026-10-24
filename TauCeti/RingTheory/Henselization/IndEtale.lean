@@ -35,15 +35,15 @@ namespace TauCeti.Henselization
 
 variable {R : Type u} [CommRing R]
 
-/-- The henselization of `(R, I)` is an ind-étale `R`-algebra: it is the colimit of the small
-filtered diagram `diagram I` of étale neighbourhoods of `(R, I)`. -/
+/-- The henselization of `(R, I)` is an ind-étale `R`-algebra: it is the colimit of the étale
+neighbourhoods of `(R, I)`, indexed by their essentially small filtered category. -/
 instance indEtale (I : Ideal R) : Algebra.IndEtale R (algebra I) :=
-  have : IsFiltered (SmallModel.{u} (Neighbourhood.{u, u} I)) :=
-    IsFiltered.of_equivalence (equivSmallModel.{u} (Neighbourhood.{u, u} I))
-  Algebra.IndEtale.of_isColimit
-    (fun j => ((isNeighbourhood_iff I _).mp
-      ((equivSmallModel.{u} (Neighbourhood.{u, u} I)).inverse.obj j).property).1)
-    (colimit.isColimit (diagram I)) (CommAlgCat.algEquivOfIso (algebraIsoColimitDiagram I).symm)
+  -- `diagram I` is indexed by a small model; reindexing along the equivalence with the small model
+  -- returns to the filtered category of neighbourhoods itself.
+  ⟨ObjectProperty.of_essentiallySmall_index
+    (((ColimitPresentation.colimit (diagram I)).ofIso (algebraIsoColimitDiagram I).symm).reindex
+      (equivSmallModel.{u} (Neighbourhood.{u, u} I)).functor)
+    fun _ => ((isNeighbourhood_iff I _).mp (ObjectProperty.FullSubcategory.property _)).1⟩
 
 -- The henselization is flat over the base ring.
 example (I : Ideal R) : Module.Flat R (algebra I) := inferInstance

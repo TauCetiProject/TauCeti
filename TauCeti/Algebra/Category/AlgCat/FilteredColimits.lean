@@ -29,7 +29,7 @@ namespace AlgCat
 variable {R : Type u} [CommRing R]
 
 /-- The forgetful functor from algebras to modules preserves small filtered colimits. -/
-noncomputable instance forget₂ModuleCat_preservesFilteredColimits :
+noncomputable instance forget₂Module_preservesFilteredColimits :
     PreservesFilteredColimits (forget₂ (AlgCat.{u} R) (ModuleCat.{u} R)) where
   preserves_filtered_colimits J _ _ :=
     have : PreservesColimitsOfShape J
