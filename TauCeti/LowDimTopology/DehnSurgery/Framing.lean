@@ -63,7 +63,7 @@ public section
 
 noncomputable section
 
-open ContinuousMap (firstHomologyMap firstHomologyMap_torusClass)
+open ContinuousMap (singularHomologyMap singularHomologyMap_torusClass)
 
 open CategoryTheory unitInterval TauCeti.HurewiczOne
 
@@ -91,19 +91,19 @@ variable (e : Circle × Circle ≃ₜ Y)
 framed by `e`: the image under `e` of the class `TauCeti.torusClass p q` of the `(p, q)` curve of
 `S¹ × S¹`. -/
 def torusCurveClass (p q : ℤ) : (ofHomeomorph e).H :=
-  firstHomologyMap (e : C(Circle × Circle, Y)) (torusClass p q)
+  singularHomologyMap ℤ 1 (e : C(Circle × Circle, Y)) (torusClass p q)
 
 /-- The class of the `(p, q)` curve on the torus framed by `e` is the image under `e` of the class
 of the `(p, q)` curve of `S¹ × S¹`. -/
-theorem torusCurveClass_eq_firstHomologyMap (p q : ℤ) :
-    torusCurveClass e p q = firstHomologyMap (e : C(Circle × Circle, Y)) (torusClass p q) :=
+theorem torusCurveClass_eq_singularHomologyMap (p q : ℤ) :
+    torusCurveClass e p q = singularHomologyMap ℤ 1 (e : C(Circle × Circle, Y)) (torusClass p q) :=
   (rfl)
 
 /-- The class of the `(p, q)` curve is its Hurewicz class in `H₁(Y; ℤ)`. -/
 theorem torusCurveClass_def (p q : ℤ) :
     torusCurveClass e p q =
       H₁AddEquivHomology (TopCat.of Y) (loopClass ((torusCurve p q).map e.continuous)) :=
-  firstHomologyMap_torusClass (e : C(Circle × Circle, Y)) p q
+  singularHomologyMap_torusClass (e : C(Circle × Circle, Y)) p q
 
 /-- **The coordinates of the `(p, q)` curve.** For the torus framed by a parametrization `e`, the
 homology class of the curve `t ↦ e (exp (2πipt), exp (2πiqt))` has `(μ, λ)`-coordinates

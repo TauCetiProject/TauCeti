@@ -31,7 +31,7 @@ and vanishing on boundaries.
 * `TauCeti.chainsDesc f`: the linear map out of the singular `n`-chains with the given values on
   singular simplices.
 * `TauCeti.singularAugment k X`: the augmentation of the simplicial singular chains.
-* `ContinuousMap.firstHomologyMap`: the induced linear map on first integral singular homology.
+* `ContinuousMap.singularHomologyMap`: the induced linear map on singular homology.
 
 ## Main results
 
@@ -227,17 +227,23 @@ namespace ContinuousMap
 
 open TauCeti
 
-/-- The map induced on first integral singular homology by a continuous map. -/
-abbrev firstHomologyMap {Y Z : Type} [TopologicalSpace Y] [TopologicalSpace Z] (g : C(Y, Z)) :
-    ((singularChains ℤ).obj (TopCat.of Y)).homology 1 →ₗ[ℤ]
-      ((singularChains ℤ).obj (TopCat.of Z)).homology 1 :=
-  (HomologicalComplex.homologyMap ((singularChains ℤ).map (TopCat.ofHom g)) 1).hom
+variable (k : Type u) [Ring k] (n : ℕ)
 
-/-- First integral singular homology respects composition of continuous maps. -/
-theorem firstHomologyMap_comp {Y Z W : Type} [TopologicalSpace Y] [TopologicalSpace Z]
+/-- The map induced on degree-`n` singular homology with coefficients in `k` by a continuous
+map. -/
+abbrev singularHomologyMap {Y Z : Type u} [TopologicalSpace Y] [TopologicalSpace Z]
+    (g : C(Y, Z)) :
+    ((singularChains k).obj (TopCat.of Y)).homology n →ₗ[k]
+      ((singularChains k).obj (TopCat.of Z)).homology n :=
+  (HomologicalComplex.homologyMap ((singularChains k).map (TopCat.ofHom g)) n).hom
+
+variable {k n} in
+/-- Singular homology respects composition of continuous maps. -/
+theorem singularHomologyMap_comp {Y Z W : Type u} [TopologicalSpace Y] [TopologicalSpace Z]
     [TopologicalSpace W] (g : C(Z, W)) (g' : C(Y, Z)) (x) :
-    firstHomologyMap (g.comp g') x = firstHomologyMap g (firstHomologyMap g' x) := by
-  rw [firstHomologyMap, TopCat.ofHom_comp, Functor.map_comp, HomologicalComplex.homologyMap_comp,
-    ModuleCat.hom_comp, LinearMap.comp_apply]
+    singularHomologyMap k n (g.comp g') x =
+      singularHomologyMap k n g (singularHomologyMap k n g' x) := by
+  rw [singularHomologyMap, TopCat.ofHom_comp, Functor.map_comp,
+    HomologicalComplex.homologyMap_comp, ModuleCat.hom_comp, LinearMap.comp_apply]
 
 end ContinuousMap

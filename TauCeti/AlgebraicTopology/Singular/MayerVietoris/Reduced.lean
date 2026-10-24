@@ -41,8 +41,8 @@ Coefficients are an object `R` of an abelian category with coproducts.
   `A` and in `B` is zero, by exactness of the Mayer–Vietoris sequence at `Hₖ(A ∩ B)`.
 * `TopCat.reducedMayerVietorisIsoOfIsZero`: for open subsets `A` and `B` of a space with vanishing
   reduced homology in degrees `k` and `k + 1`, the isomorphism `H_redₖ₊₁(A ∪ B) ≅ H_redₖ(A ∩ B)`.
-* `TauCeti.bijective_firstHomologyMap_inclusion_prod_neg`: for an open cover `X = U ∪ V` with
-  `H₁(X) = H₂(X) = 0`, the map `(i_U, -i_V)` on first integral homology is bijective.
+* `TauCeti.bijective_singularHomologyMap_inclusion_prod_neg`: for an open cover `X = U ∪ V` with
+  `Hₙ₊₁(X) = Hₙ₊₂(X) = 0`, the map `(i_U, -i_V)` on `Hₙ₊₁` is bijective.
 
 ## References
 
@@ -336,46 +336,51 @@ end TopCat
 namespace TauCeti
 
 open Set Function
-open ContinuousMap (firstHomologyMap)
+open ContinuousMap (singularHomologyMap)
 
-/-- For an open cover `X = U ∪ V` of a space with `H₁(X) = H₂(X) = 0`, the map
-`H₁(U ∩ V) → H₁(U) × H₁(V)` given by the first inclusion and the negative of the second
-is bijective. -/
-theorem bijective_firstHomologyMap_inclusion_prod_neg {X : Type} [TopologicalSpace X]
-    {U V : Set X} (hU : IsOpen U) (hV : IsOpen V) (hUV : U ∪ V = univ)
-    (h₁ : IsZero ((reducedSingularHomologyFunctor (ModuleCat.of ℤ ℤ) 1).obj (TopCat.of X)))
-    (h₂ : IsZero ((reducedSingularHomologyFunctor (ModuleCat.of ℤ ℤ) 2).obj (TopCat.of X))) :
-    Bijective (fun x ↦
-      (firstHomologyMap (ContinuousMap.inclusion (inter_subset_left (t := V))) x,
-        -firstHomologyMap (ContinuousMap.inclusion (inter_subset_right (s := U))) x)) := by
+/-- For an open cover `X = U ∪ V` of a space whose reduced homology vanishes in degrees `n + 1`
+and `n + 2`, the map `Hₙ₊₁(U ∩ V) → Hₙ₊₁(U) × Hₙ₊₁(V)` given by the first inclusion and the
+negative of the second is bijective. -/
+theorem bijective_singularHomologyMap_inclusion_prod_neg {k : Type w} [Ring k] {n : ℕ}
+    {X : Type w} [TopologicalSpace X] {U V : Set X} (hU : IsOpen U) (hV : IsOpen V)
+    (hUV : U ∪ V = univ)
+    (h₁ : IsZero ((reducedSingularHomologyFunctor (ModuleCat.of k k) (n + 1)).obj (TopCat.of X)))
+    (h₂ : IsZero ((reducedSingularHomologyFunctor (ModuleCat.of k k) (n + 2)).obj (TopCat.of X))) :
+    Bijective fun x ↦
+      (singularHomologyMap k (n + 1) (ContinuousMap.inclusion (inter_subset_left (t := V))) x,
+        -singularHomologyMap k (n + 1)
+          (ContinuousMap.inclusion (inter_subset_right (s := U))) x) := by
   rw [reducedSingularHomologyFunctor_succ] at h₁ h₂
   have hiso := TopCat.isIso_mayerVietorisToBiprod_of_isZero (X := TopCat.of X)
-    (ModuleCat.of ℤ ℤ) hU hV hUV 1 h₂ h₁
-  set M := SSet.mayerVietorisToBiprod (ModuleCat.of ℤ ℤ)
+    (ModuleCat.of k k) hU hV hUV (n + 1) h₂ h₁
+  set M := SSet.mayerVietorisToBiprod (ModuleCat.of k k)
       (TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.inclusion (inter_subset_left (t := V)))))
-      (TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.inclusion (inter_subset_right (s := U))))) 1
-  -- Read the biproduct `H₁(U) ⊞ H₁(V)` as the product module, where elements have coordinates.
+      (TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.inclusion (inter_subset_right (s := U)))))
+      (n + 1)
+  -- Read the biproduct `Hₙ₊₁(U) ⊞ Hₙ₊₁(V)` as the product module, where elements have
+  -- coordinates.
   set P := M ≫ (ModuleCat.biprodIsoProd _ _).hom
   have hP : Bijective P.hom := ConcreteCategory.bijective_of_isIso P
-  have hfst : ∀ x, (P.hom x).1 =
-      firstHomologyMap (ContinuousMap.inclusion (inter_subset_left (t := V))) x := fun x ↦ by
+  have hfst : ∀ x, (P.hom x).1 = singularHomologyMap k (n + 1)
+      (ContinuousMap.inclusion (inter_subset_left (t := V))) x := fun x ↦ by
     have hc : P ≫ (ModuleCat.biprodIsoProd _ _).inv ≫ biprod.fst = SSet.homologyMap
         (TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.inclusion (inter_subset_left (t := V)))))
-        (ModuleCat.of ℤ ℤ) 1 := by
+        (ModuleCat.of k k) (n + 1) := by
       simp only [P, M, Category.assoc, Iso.hom_inv_id_assoc, SSet.mayerVietorisToBiprod_fst]
     rw [ModuleCat.biprodIsoProd_inv_comp_fst] at hc
     exact congr($(hc).hom x)
-  have hsnd : ∀ x, (P.hom x).2 =
-      -firstHomologyMap (ContinuousMap.inclusion (inter_subset_right (s := U))) x := fun x ↦ by
+  have hsnd : ∀ x, (P.hom x).2 = -singularHomologyMap k (n + 1)
+      (ContinuousMap.inclusion (inter_subset_right (s := U))) x := fun x ↦ by
     have hc : P ≫ (ModuleCat.biprodIsoProd _ _).inv ≫ biprod.snd = -SSet.homologyMap
         (TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.inclusion (inter_subset_right (s := U)))))
-        (ModuleCat.of ℤ ℤ) 1 := by
+        (ModuleCat.of k k) (n + 1) := by
       simp only [P, M, Category.assoc, Iso.hom_inv_id_assoc, SSet.mayerVietorisToBiprod_snd]
     rw [ModuleCat.biprodIsoProd_inv_comp_snd] at hc
     exact congr($(hc).hom x)
   have hP_eq : ⇑P.hom = fun x ↦
-      (firstHomologyMap (ContinuousMap.inclusion (inter_subset_left (t := V))) x,
-        -firstHomologyMap (ContinuousMap.inclusion (inter_subset_right (s := U))) x) := by
+      (singularHomologyMap k (n + 1) (ContinuousMap.inclusion (inter_subset_left (t := V))) x,
+        -singularHomologyMap k (n + 1)
+          (ContinuousMap.inclusion (inter_subset_right (s := U))) x) := by
     funext x
     exact Prod.ext (hfst x) (hsnd x)
   rwa [hP_eq] at hP

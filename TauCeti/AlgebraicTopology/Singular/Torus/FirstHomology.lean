@@ -58,7 +58,7 @@ public section
 
 noncomputable section
 
-open ContinuousMap (firstHomologyMap)
+open ContinuousMap (singularHomologyMap)
 
 open CategoryTheory Matrix TauCeti.HurewiczOne
 
@@ -193,9 +193,9 @@ namespace ContinuousMap
 open TauCeti
 
 /-- The induced map sends the class of a torus curve to the class of its image. -/
-theorem firstHomologyMap_torusClass {Y : Type} [TopologicalSpace Y] (g : C(Circle × Circle, Y))
+theorem singularHomologyMap_torusClass {Y : Type} [TopologicalSpace Y] (g : C(Circle × Circle, Y))
     (p q : ℤ) :
-    firstHomologyMap g (torusClass p q) =
+    singularHomologyMap ℤ 1 g (torusClass p q) =
       H₁AddEquivHomology (TopCat.of Y) (loopClass ((torusCurve p q).map g.continuous)) :=
   homologyMap_H₁AddEquivHomology_loopClass (TopCat.ofHom g) _
 

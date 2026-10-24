@@ -86,8 +86,8 @@ public section
 
 noncomputable section
 
-open ContinuousMap (firstHomologyMap firstHomologyMap_comp firstHomologyMap_eq_of_homotopic
-  firstHomologyMap_torusClass)
+open ContinuousMap (singularHomologyMap singularHomologyMap_comp singularHomologyMap_eq_of_homotopic
+  singularHomologyMap_torusClass)
 
 open CategoryTheory Limits Set Metric Function Topology TauCeti.HurewiczOne
 
@@ -270,10 +270,10 @@ private theorem openToTorus_puncturedToOpen (h : IsSolidTorusNeighborhood f Φ)
 /-- The meridian at radius `1 / 2` dies in the open solid torus. -/
 private theorem H1map_puncturedToOpen_torusClass_zero (h : IsSolidTorusNeighborhood f Φ)
     (p : ℤ) :
-    firstHomologyMap (puncturedToOpen f Φ)
-      (firstHomologyMap h.torusHomotopyEquiv.toFun (torusClass p 0)) = 0 := by
-  rw [← firstHomologyMap_comp, firstHomologyMap_eq_of_homotopic ⟨h.contractHomotopy⟩,
-    firstHomologyMap_torusClass,
+    singularHomologyMap ℤ 1 (puncturedToOpen f Φ)
+      (singularHomologyMap ℤ 1 h.torusHomotopyEquiv.toFun (torusClass p 0)) = 0 := by
+  rw [← singularHomologyMap_comp, singularHomologyMap_eq_of_homotopic ℤ 1 ⟨h.contractHomotopy⟩,
+    singularHomologyMap_torusClass,
     loopClass_eq_of_apply_eq _ (Path.refl (h.coreMap (1, 1))) fun t ↦ Subtype.ext (by
       rw [Path.map_coe, comp_apply, Path.refl_apply, torusCurve_apply]
       simp [coreMap]),
@@ -283,16 +283,16 @@ private theorem H1map_puncturedToOpen_torusClass_zero (h : IsSolidTorusNeighborh
 torus. -/
 private theorem eq_zero_of_H1map_puncturedToOpen_eq_zero (h : IsSolidTorusNeighborhood f Φ)
     {p q : ℤ}
-    (hpq : firstHomologyMap (puncturedToOpen f Φ)
-      (firstHomologyMap h.torusHomotopyEquiv.toFun (torusClass p q)) = 0) :
+    (hpq : singularHomologyMap ℤ 1 (puncturedToOpen f Φ)
+      (singularHomologyMap ℤ 1 h.torusHomotopyEquiv.toFun (torusClass p q)) = 0) :
     q = 0 := by
   have hprojection : (h.openToTorus.comp (puncturedToOpen f Φ)).comp
       h.torusHomotopyEquiv.toFun = ⟨fun q ↦ (1, q.2), by fun_prop⟩ :=
     ContinuousMap.ext h.openToTorus_puncturedToOpen
-  have hq : firstHomologyMap h.openToTorus (firstHomologyMap (puncturedToOpen f Φ)
-      (firstHomologyMap h.torusHomotopyEquiv.toFun (torusClass p q))) = torusClass 0 q := by
-    rw [← firstHomologyMap_comp, ← firstHomologyMap_comp,
-      hprojection, firstHomologyMap_torusClass, torusClass_def]
+  have hq : singularHomologyMap ℤ 1 h.openToTorus (singularHomologyMap ℤ 1 (puncturedToOpen f Φ)
+      (singularHomologyMap ℤ 1 h.torusHomotopyEquiv.toFun (torusClass p q))) = torusClass 0 q := by
+    rw [← singularHomologyMap_comp, ← singularHomologyMap_comp,
+      hprojection, singularHomologyMap_torusClass, torusClass_def]
     exact congrArg _ (loopClass_eq_of_apply_eq _ _ fun t ↦ by simp)
   rw [hpq, map_zero, eq_comm, torusClass_eq_zero_iff] at hq
   exact hq.2
@@ -330,11 +330,11 @@ private def expandHomotopy (h : IsSolidTorusNeighborhood f Φ) :
 
 include h₁ h₂ in
 private theorem mayerVietoris (h : IsSolidTorusNeighborhood f Φ) :
-    (∀ x, firstHomologyMap (puncturedToOpen f Φ) x = 0 →
-      firstHomologyMap (puncturedToComplement f Φ) x = 0 → x = 0) ∧
-    ∀ c, ∃ x, firstHomologyMap (puncturedToOpen f Φ) x = 0 ∧
-      firstHomologyMap (puncturedToComplement f Φ) x = c := by
-  have hP := bijective_firstHomologyMap_inclusion_prod_neg (X := X)
+    (∀ x, singularHomologyMap ℤ 1 (puncturedToOpen f Φ) x = 0 →
+      singularHomologyMap ℤ 1 (puncturedToComplement f Φ) x = 0 → x = 0) ∧
+    ∀ c, ∃ x, singularHomologyMap ℤ 1 (puncturedToOpen f Φ) x = 0 ∧
+      singularHomologyMap ℤ 1 (puncturedToComplement f Φ) x = c := by
+  have hP := bijective_singularHomologyMap_inclusion_prod_neg (X := X)
     h.isOpen_image h.isClosed_range.isOpen_compl
     (eq_univ_of_forall fun x ↦ (em (x ∈ range f)).imp (fun hx ↦ h.range_subset_image hx) id)
     h₁ h₂
@@ -348,10 +348,10 @@ include h₁ h₂ in
 /-- Every class of the knot complement is a multiple of the meridian at radius `1 / 2`. -/
 private theorem exists_zsmul_eq (h : IsSolidTorusNeighborhood f Φ)
     (c : ((singularChains ℤ).obj (TopCat.of ↥(range f)ᶜ)).homology 1) :
-    ∃ k : ℤ, k • firstHomologyMap (puncturedToComplement f Φ)
-      (firstHomologyMap h.torusHomotopyEquiv.toFun (torusClass 1 0)) = c := by
+    ∃ k : ℤ, k • singularHomologyMap ℤ 1 (puncturedToComplement f Φ)
+      (singularHomologyMap ℤ 1 h.torusHomotopyEquiv.toFun (torusClass 1 0)) = c := by
   obtain ⟨x, hxU, rfl⟩ := (h.mayerVietoris h₁ h₂).2 c
-  obtain ⟨y, rfl⟩ := (h.torusHomotopyEquiv.bijective_firstHomologyMap).2 x
+  obtain ⟨y, rfl⟩ := (h.torusHomotopyEquiv.bijective_singularHomologyMap ℤ 1).2 x
   obtain ⟨p, q, rfl⟩ := exists_eq_torusClass y
   obtain rfl := h.eq_zero_of_H1map_puncturedToOpen_eq_zero hxU
   refine ⟨p, ?_⟩
@@ -360,16 +360,16 @@ private theorem exists_zsmul_eq (h : IsSolidTorusNeighborhood f Φ)
 include h₁ h₂ in
 /-- The meridian at radius `1 / 2` has infinite order in the knot complement. -/
 private theorem eq_zero_of_zsmul_eq_zero (h : IsSolidTorusNeighborhood f Φ) {k : ℤ}
-    (hk : k • firstHomologyMap (puncturedToComplement f Φ)
-      (firstHomologyMap h.torusHomotopyEquiv.toFun (torusClass 1 0)) = 0) : k = 0 := by
+    (hk : k • singularHomologyMap ℤ 1 (puncturedToComplement f Φ)
+      (singularHomologyMap ℤ 1 h.torusHomotopyEquiv.toFun (torusClass 1 0)) = 0) : k = 0 := by
   have hx := (h.mayerVietoris h₁ h₂).1
-    (firstHomologyMap h.torusHomotopyEquiv.toFun (k • torusClass 1 0))
+    (singularHomologyMap ℤ 1 h.torusHomotopyEquiv.toFun (k • torusClass 1 0))
     (by rw [map_zsmul, map_zsmul, h.H1map_puncturedToOpen_torusClass_zero]; exact zsmul_zero k)
     (by rw [map_zsmul, map_zsmul, hk])
-  rw [← map_zero (firstHomologyMap h.torusHomotopyEquiv.toFun)] at hx
+  rw [← map_zero (singularHomologyMap ℤ 1 h.torusHomotopyEquiv.toFun)] at hx
   have hk0 : torusClass k 0 = 0 := by
     rw [torusClass_eq, zero_smul, add_zero]
-    exact (h.torusHomotopyEquiv.bijective_firstHomologyMap).1 hx
+    exact (h.torusHomotopyEquiv.bijective_singularHomologyMap ℤ 1).1 hx
   exact ((torusClass_eq_zero_iff k 0).1 hk0).1
 
 /-! ### The meridian generates the homology of the knot complement -/
@@ -378,7 +378,7 @@ private theorem eq_zero_of_zsmul_eq_zero (h : IsSolidTorusNeighborhood f Φ) {k 
 exterior of the knot `K = range f` into the knot complement. -/
 def boundaryHomologyMap (h : IsSolidTorusNeighborhood f Φ) :
     h.framedBoundaryTorus.H →ₗ[ℤ] ((singularChains ℤ).obj (TopCat.of ↥(range f)ᶜ)).homology 1 :=
-  firstHomologyMap h.frontierToComplement
+  singularHomologyMap ℤ 1 h.frontierToComplement
 
 /-- `TauCeti.IsSolidTorusNeighborhood.boundaryHomologyMap` is induced by the inclusion of the
 boundary torus of the exterior into the knot complement. -/
@@ -392,19 +392,19 @@ theorem boundaryHomologyMap_def (h : IsSolidTorusNeighborhood f Φ) :
 private theorem boundaryHomologyMap_torusCurveClass (h : IsSolidTorusNeighborhood f Φ)
     (p q : ℤ) :
     h.boundaryHomologyMap (FramedBoundaryTorus.torusCurveClass h.exteriorFrontierHomeomorph p q) =
-      firstHomologyMap (puncturedToComplement f Φ)
-        (firstHomologyMap h.torusHomotopyEquiv.toFun (torusClass p q)) := by
-  have hH := LinearMap.congr_fun (firstHomologyMap_eq_of_homotopic ⟨h.expandHomotopy⟩)
+      singularHomologyMap ℤ 1 (puncturedToComplement f Φ)
+        (singularHomologyMap ℤ 1 h.torusHomotopyEquiv.toFun (torusClass p q)) := by
+  have hH := LinearMap.congr_fun (singularHomologyMap_eq_of_homotopic ℤ 1 ⟨h.expandHomotopy⟩)
     (torusClass p q)
-  rw [firstHomologyMap_comp, firstHomologyMap_comp] at hH
-  rw [FramedBoundaryTorus.torusCurveClass_eq_firstHomologyMap]
+  rw [singularHomologyMap_comp, singularHomologyMap_comp] at hH
+  rw [FramedBoundaryTorus.torusCurveClass_eq_singularHomologyMap]
   exact hH.symm
 
 /-- The boundary meridian represents the meridian at radius `1 / 2` in the complement. -/
 private theorem boundaryHomologyMap_basis_zero (h : IsSolidTorusNeighborhood f Φ) :
     h.boundaryHomologyMap (h.framedBoundaryTorus.basis 0) =
-      firstHomologyMap (puncturedToComplement f Φ)
-        (firstHomologyMap h.torusHomotopyEquiv.toFun (torusClass 1 0)) := by
+      singularHomologyMap ℤ 1 (puncturedToComplement f Φ)
+        (singularHomologyMap ℤ 1 h.torusHomotopyEquiv.toFun (torusClass 1 0)) := by
   rw [FramedBoundaryTorus.ofHomeomorph_basis_zero, h.boundaryHomologyMap_torusCurveClass]
 
 include h₁ h₂ in

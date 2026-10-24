@@ -152,17 +152,20 @@ namespace ContinuousMap
 
 open TauCeti
 
-/-- Homotopic continuous maps induce the same map on first integral singular homology. -/
-theorem firstHomologyMap_eq_of_homotopic {Y Z : Type} [TopologicalSpace Y] [TopologicalSpace Z]
-    {g g' : C(Y, Z)} (H : g.Homotopic g') : firstHomologyMap g = firstHomologyMap g' :=
+variable (k : Type w) [Ring k] (n : ℕ)
+
+/-- Homotopic continuous maps induce the same map on singular homology. -/
+theorem singularHomologyMap_eq_of_homotopic {Y Z : Type w} [TopologicalSpace Y]
+    [TopologicalSpace Z] {g g' : C(Y, Z)} (H : g.Homotopic g') :
+    singularHomologyMap k n g = singularHomologyMap k n g' :=
   congrArg ModuleCat.Hom.hom
     (TopCat.Homotopy.congr_homologyMap_singularChainComplexFunctor
-      (f := TopCat.ofHom g) (g := TopCat.ofHom g') H.some (ModuleCat.of ℤ ℤ) 1)
+      (f := TopCat.ofHom g) (g := TopCat.ofHom g') H.some (ModuleCat.of k k) n)
 
-/-- A homotopy equivalence induces a bijection on first homology. -/
-theorem HomotopyEquiv.bijective_firstHomologyMap {Y Z : Type}
+/-- A homotopy equivalence induces a bijection on singular homology. -/
+theorem HomotopyEquiv.bijective_singularHomologyMap {Y Z : Type w}
     [TopologicalSpace Y] [TopologicalSpace Z]
-    (e : ContinuousMap.HomotopyEquiv Y Z) : Function.Bijective (firstHomologyMap e.toFun) :=
-  ConcreteCategory.bijective_of_isIso (e.singularHomologyIso (ModuleCat.of ℤ ℤ) 1).hom
+    (e : ContinuousMap.HomotopyEquiv Y Z) : Function.Bijective (singularHomologyMap k n e.toFun) :=
+  ConcreteCategory.bijective_of_isIso (e.singularHomologyIso (ModuleCat.of k k) n).hom
 
 end ContinuousMap
