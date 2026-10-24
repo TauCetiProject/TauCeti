@@ -55,7 +55,8 @@ degree-zero morphism `u : P ⟶ Q` of twisted objects, along the closed degree-o
 * `TauCeti.DGTwistedObject.dgDifferential_toShift` and
   `TauCeti.DGTwistedObject.dgDifferential_fromShift`: the comparison morphisms are closed.
 * `TauCeti.DGTwistedObject.dgComp_toShift_fromShift` and
-  `TauCeti.DGTwistedObject.dgComp_fromShift_toShift`: they are mutually inverse.
+  `TauCeti.DGTwistedObject.dgComp_fromShift_toShift`: they are mutually inverse (with `_assoc`
+  forms for reassociated composites).
 * `TauCeti.DGTwistedObject.dgComp_toShift` and `TauCeti.DGTwistedObject.dgComp_fromShift`: they
   are natural up to the Koszul sign.
 
@@ -196,6 +197,24 @@ theorem dgComp_fromShift_toShift :
   (dgHomEquiv R _ _ 0).injective <| by
     rw [dgHomEquiv_dgComp, dgHomEquiv_dgId, dgHomEquiv_toShift,
       dgHomEquiv_fromShift, DGAdditiveClosure.dgComp_fromShift_toShift]
+
+/-- The comparison morphisms `P ⟶ P⟦n⟧ ⟶ P` followed by `x` compose to `x`. -/
+@[simp↓]
+theorem dgComp_toShift_fromShift_assoc
+    {Z : DGTwistedObject R (DGAdditiveClosure (DGShiftClosure C))} {q m : ℤ} (x : DGHom R q P Z)
+    (h : n + q = m) (h' : -n + m = q) :
+    dgComp R (toShift P n) (dgComp R (fromShift P n) x h) h' = x := by
+  rw [← dgComp_assoc R _ _ x (neg_add_cancel n) h (by omega), dgComp_toShift_fromShift,
+    dgId_dgComp]
+
+/-- The comparison morphisms `P⟦n⟧ ⟶ P ⟶ P⟦n⟧` followed by `x` compose to `x`. -/
+@[simp↓]
+theorem dgComp_fromShift_toShift_assoc
+    {Z : DGTwistedObject R (DGAdditiveClosure (DGShiftClosure C))} {q m : ℤ}
+    (x : DGHom R q ((shiftFunctor R n).obj P) Z) (h : -n + q = m) (h' : n + m = q) :
+    dgComp R (fromShift P n) (dgComp R (toShift P n) x h) h' = x := by
+  rw [← dgComp_assoc R _ _ x (add_neg_cancel n) h (by omega), dgComp_fromShift_toShift,
+    dgId_dgComp]
 
 /-- The comparison morphism `P⟦n⟧ ⟶ P` is closed, as the inverse of a closed morphism. -/
 @[simp↓]
