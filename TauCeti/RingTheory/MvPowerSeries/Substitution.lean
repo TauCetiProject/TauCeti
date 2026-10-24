@@ -346,7 +346,7 @@ theorem coeff_subst_X_one_X_zero (f : MvPowerSeries (Fin 2) O) (d : Fin 2 →₀
   -- Substituting `![X 1, X 0]` is renaming the variables along the swap of `0` and `1`.
   have hX : ![(X 1 : MvPowerSeries (Fin 2) O), X 0] = X ∘ (Equiv.swap 0 1).toEmbedding := by
     funext s
-    fin_cases s <;> rfl
+    fin_cases s <;> simp
   have hd : (Finsupp.single (0 : Fin 2) (d 1) + Finsupp.single 1 (d 0)).embDomain
       (Equiv.swap (0 : Fin 2) 1).toEmbedding = d := by
     ext i
