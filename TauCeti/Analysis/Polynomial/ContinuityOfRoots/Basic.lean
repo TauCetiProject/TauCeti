@@ -91,83 +91,6 @@ private theorem C_mul_prod_X_sub_C_eq_of_ofFn_eq {d : ℕ} {p : K[X]} (hp : p.de
 
 section Matching
 
-open scoped Classical in
-/-- **Matching roots versus counting them in discs.** Let `f` and `g` be monic of the same degree,
-and suppose the `ε`-discs around the distinct roots of `f` are pairwise disjoint. Then the roots of
-`f` and `g`, with multiplicity, can be enumerated so that matched roots are at distance less than
-`ε` exactly when each disc around a root `z` of `f` contains `rootMultiplicity z f` roots of `g`,
-counted with multiplicity, and every root of `g` lies in one of these discs. -/
-theorem Monic.exists_prod_X_sub_C_norm_sub_lt_iff {f g : K[X]} (hf : f.Monic) (hg : g.Monic)
-    (hdeg : g.natDegree = f.natDegree) {ε : ℝ}
-    (hsep : ∀ z ∈ f.roots, ∀ w ∈ f.roots, z ≠ w → 2 * ε ≤ ‖z - w‖) :
-    (∃ a b : Fin f.natDegree → K,
-        f = ∏ i, (X - C (a i)) ∧ g = ∏ i, (X - C (b i)) ∧ ∀ i, ‖a i - b i‖ < ε) ↔
-      (∀ z ∈ f.roots, g.roots.countP (· ∈ ball z ε) = f.rootMultiplicity z) ∧
-        ∀ w ∈ g.roots, ∃ z ∈ f.roots, ‖w - z‖ < ε := by
-  -- Forward, a matched root of `g` lies in the disc of its partner and in no other disc. Backward,
-  -- send each root of `g` to the centre of its disc, compare occurrence counts with an enumeration
-  -- of the roots of `f`, and permute that enumeration to match.
-  have hmem : ∀ (a : Fin f.natDegree → K) i, a i ∈ Finset.univ.val.map a := fun a i =>
-    Multiset.mem_map_of_mem _ (Finset.mem_univ i)
-  -- a point of `K` is within `ε` of at most one root of `f`
-  have huniq : ∀ w, ∀ z ∈ f.roots, ∀ z' ∈ f.roots, ‖w - z‖ < ε → ‖w - z'‖ < ε → z = z' := by
-    intro w z hz z' hz' h h'
-    by_contra hne
-    have := hsep z hz z' hz' hne
-    have := norm_sub_le_norm_sub_add_norm_sub z w z'
-    have := norm_sub_rev z w
-    linarith
-  -- both sides compare `b` with `a` through the counting identity below
-  have hcard : ∀ (b u : Fin f.natDegree → K) (z : K),
-      (∀ i, u i = z ↔ ‖b i - z‖ < ε) →
-        (Finset.univ.filter fun i => u i = z).card =
-          ((Finset.univ.val.map b).countP (· ∈ ball z ε)) := fun b u z h => by
-    rw [Multiset.countP_map, Finset.card_def, Finset.filter_val]
-    exact congrArg Multiset.card (Multiset.filter_congr fun i _ => by
-      simpa [dist_eq_norm] using h i)
-  constructor
-  · rintro ⟨a, b, hfa, hgb, hab⟩
-    have hfr : f.roots = Finset.univ.val.map a :=
-      (congrArg roots hfa).trans (roots_prod_X_sub_C_map _ a)
-    rw [hfr] at huniq ⊢
-    rw [(congrArg roots hgb).trans (roots_prod_X_sub_C_map _ b)]
-    refine ⟨fun z hz => ?_, ?_⟩
-    · rw [← count_roots, hfr, Multiset.count_map, ← hcard b a z fun i => ?_]
-      · simp only [eq_comm (a := z), Finset.card_def, Finset.filter_val]
-      · refine ⟨fun h => h ▸ by rw [norm_sub_rev]; exact hab i, fun h => ?_⟩
-        exact huniq (b i) _ (hmem a i) z hz (by rw [norm_sub_rev]; exact hab i) h
-    · rintro w hw
-      obtain ⟨i, -, rfl⟩ := Multiset.mem_map.1 hw
-      exact ⟨a i, hmem a i, by rw [norm_sub_rev]; exact hab i⟩
-  · rintro ⟨hcount, hin⟩
-    obtain ⟨a, ha⟩ := Sym.ofFn_surjective ((Sym.coeffEquiv K _).symm fun i => f.coeff i)
-    obtain ⟨b, hb⟩ := Sym.ofFn_surjective ((Sym.coeffEquiv K _).symm fun i => g.coeff i)
-    have hfa := (prod_X_sub_C_eq_of_ofFn_eq hf rfl ha).symm
-    have hgb := (prod_X_sub_C_eq_of_ofFn_eq hg hdeg hb).symm
-    have hfr : f.roots = Finset.univ.val.map a :=
-      (congrArg roots hfa).trans (roots_prod_X_sub_C_map _ a)
-    have hgr : g.roots = Finset.univ.val.map b :=
-      (congrArg roots hgb).trans (roots_prod_X_sub_C_map _ b)
-    -- send each root of `g` to the root of `f` whose disc contains it
-    choose! φ hφ hφε using hin
-    have hb_mem : ∀ i, b i ∈ g.roots := fun i => hgr ▸ hmem b i
-    -- `φ ∘ b` takes each value as often as `a` does
-    have hocc : ∀ z, Function.occCount (φ ∘ b) z = Function.occCount a z := by
-      intro z
-      rw [Function.occCount_eq_card_filter, Function.occCount_eq_card_filter]
-      by_cases hz : z ∈ f.roots
-      · rw [hcard b (φ ∘ b) z fun i => ⟨fun h => h ▸ hφε _ (hb_mem i),
-          fun h => huniq (b i) _ (hφ _ (hb_mem i)) z hz (hφε _ (hb_mem i)) h⟩, ← hgr, hcount z hz,
-          ← count_roots, hfr, Multiset.count_map]
-        simp only [eq_comm (a := z), Finset.card_def, Finset.filter_val]
-      · rw [Finset.filter_false_of_mem fun i _ (h : (φ ∘ b) i = z) => hz (h ▸ hφ _ (hb_mem i)),
-          Finset.filter_false_of_mem fun i _ (h : a i = z) => hz (h ▸ hfr ▸ hmem a i)]
-    obtain ⟨σ, hσ⟩ := Function.exists_perm_of_occCount_eq hocc
-    refine ⟨a ∘ σ, b, hfa.trans (Equiv.prod_comp σ fun i => X - C (a i)).symm, hgb, fun i => ?_⟩
-    have hσi : a (σ i) = φ (b i) := congrFun hσ i
-    rw [Function.comp_apply, hσi, norm_sub_rev]
-    exact hφε _ (hb_mem i)
-
 omit [IsAlgClosed K] in
 open scoped Classical in
 /-- **The multiset and disc forms of a matching agree.** Suppose the `ε`-discs around the distinct
@@ -191,6 +114,23 @@ theorem rel_roots_iff_countP_roots_mem_ball {f g : K[X]} {ε : ℝ}
     linarith
   rw [Multiset.rel_iff_forall_countP_eq_count huniq]
   simp only [mem_ball, dist_eq_norm, norm_sub_rev _ (_ : K), count_roots]
+
+open scoped Classical in
+/-- **Matching roots versus counting them in discs.** Let `f` and `g` be monic,
+and suppose the `ε`-discs around the distinct roots of `f` are pairwise disjoint. Then the roots of
+`f` and `g`, with multiplicity, can be enumerated so that matched roots are at distance less than
+`ε` exactly when each disc around a root `z` of `f` contains `rootMultiplicity z f` roots of `g`,
+counted with multiplicity, and every root of `g` lies in one of these discs. -/
+theorem Monic.exists_prod_X_sub_C_norm_sub_lt_iff {f g : K[X]} (hf : f.Monic) (hg : g.Monic)
+    {ε : ℝ}
+    (hsep : ∀ z ∈ f.roots, ∀ w ∈ f.roots, z ≠ w → 2 * ε ≤ ‖z - w‖) :
+    (∃ a b : Fin f.natDegree → K,
+        f = ∏ i, (X - C (a i)) ∧ g = ∏ i, (X - C (b i)) ∧ ∀ i, ‖a i - b i‖ < ε) ↔
+      (∀ z ∈ f.roots, g.roots.countP (· ∈ ball z ε) = f.rootMultiplicity z) ∧
+        ∀ w ∈ g.roots, ∃ z ∈ f.roots, ‖w - z‖ < ε := by
+  exact (hf.rel_roots_iff_exists_prod_X_sub_C hg
+    (IsAlgClosed.splits f) (IsAlgClosed.splits g)).symm.trans
+      (rel_roots_iff_countP_roots_mem_ball hsep)
 
 omit [IsAlgClosed K] in
 /-- **Distinct roots under a matching of roots.** Let `a` and `b` enumerate the roots of `f` and
@@ -281,7 +221,7 @@ theorem Monic.exists_countP_roots_mem_ball_eq_rootMultiplicity {f : K[X]} (hf : 
         ∀ w ∈ g.roots, ∃ z ∈ f.roots, ‖w - z‖ < ε := by
   obtain ⟨δ, hδ, h⟩ := hf.exists_prod_X_sub_C_norm_sub_lt hε
   exact ⟨δ, hδ, fun g hg hdeg hcoeff =>
-    (hf.exists_prod_X_sub_C_norm_sub_lt_iff hg hdeg hsep).1 (h g hg hdeg hcoeff)⟩
+    (hf.exists_prod_X_sub_C_norm_sub_lt_iff hg hsep).1 (h g hg hdeg hcoeff)⟩
 
 /-- **Continuity of roots as multisets.** For a monic polynomial `f` and `ε > 0`, every monic
 polynomial `g` of the same degree with coefficients close enough to those of `f` has its root
