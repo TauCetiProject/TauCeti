@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Geometry.Manifold.ContMDiffMap.WeakWhitney
 public import Mathlib.Geometry.Manifold.ContMDiff.Atlas
+public import Mathlib.Geometry.Manifold.Algebra.SmoothFunctions
+public import Mathlib.Topology.ContinuousMap.Algebra
 import Mathlib.Geometry.Manifold.MFDeriv.FDeriv
 
 /-!
@@ -110,5 +112,49 @@ theorem chartIteratedFDeriv_self_apply
     PartialEquiv.refl_target, iteratedFDerivWithin_univ,
     ContMDiffMap.iteratedFDerivContinuousMap_apply]
   rw [writtenInExtChartAt_model_space]
+
+/-- Coordinate differentiation of vector-valued maps, as a linear map into continuous maps
+on the extended chart target. -/
+noncomputable def chartIteratedFDerivLinearMap (x : M) (m : ℕ) (hm : m ≤ n) :
+    C^n⟮I, M; 𝓘(𝕜, F), F⟯ →ₗ[𝕜] C((extChartAt I x).target, E [×m]→L[𝕜] F) where
+  toFun f := chartIteratedFDeriv f x m hm
+  map_add' f g := by
+    apply ContinuousMap.ext
+    intro z
+    simp only [ContinuousMap.add_apply, chartIteratedFDeriv_self_target_apply]
+    simpa only [ContMDiffMap.coe_add, Function.comp_def, Pi.add_def] using
+      iteratedFDerivWithin_add_apply
+      (((f.contMDiff.comp_contMDiffOn (contMDiffOn_extChartAt_symm x)).contDiffOn).of_le hm z z.2)
+      (((g.contMDiff.comp_contMDiffOn (contMDiffOn_extChartAt_symm x)).contDiffOn).of_le hm z z.2)
+      (uniqueDiffOn_extChartAt_target x) z.2
+  map_smul' c f := by
+    apply ContinuousMap.ext
+    intro z
+    simp only [ContinuousMap.smul_apply, chartIteratedFDeriv_self_target_apply]
+    simpa only [ContMDiffMap.coe_smul, Function.comp_def, Pi.smul_def, RingHom.id_apply] using
+      (iteratedFDerivWithin_const_smul_apply (a := c)
+      (((f.contMDiff.comp_contMDiffOn (contMDiffOn_extChartAt_symm x)).contDiffOn).of_le hm z z.2)
+      (uniqueDiffOn_extChartAt_target x) z.2)
+
+/-- The linear coordinate-derivative map agrees with the existing chart jet. -/
+-- Spell out the chart target in the coercion type, as for `chartIteratedFDeriv_apply`.
+@[simp]
+theorem chartIteratedFDerivLinearMap_apply (x : M) (m : ℕ) (hm : m ≤ n)
+    (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯) :
+    DFunLike.coe (F := C^n⟮I, M; 𝓘(𝕜, F), F⟯ →ₗ[𝕜]
+      C(↥(I.target ∩ I.symm ⁻¹' (chartAt H x).target), E [×m]→L[𝕜] F))
+      (chartIteratedFDerivLinearMap x m hm) f = chartIteratedFDeriv f x m hm :=
+  (rfl)
+
+/-- Coordinate differentiation commutes with subtraction of vector-valued maps. -/
+@[simp]
+theorem chartIteratedFDeriv_sub
+    (f g : C^n⟮I, M; 𝓘(𝕜, F), F⟯) (x : M) (m : ℕ) (hm : m ≤ n) :
+    chartIteratedFDeriv (f - g) x m hm =
+      chartIteratedFDeriv f x m hm - chartIteratedFDeriv g x m hm := by
+  exact (chartIteratedFDerivLinearMap_apply x m hm (f - g)).symm.trans
+    ((map_sub (chartIteratedFDerivLinearMap (F := F) x m hm) f g).trans
+      (congrArg₂ (· - ·) (chartIteratedFDerivLinearMap_apply x m hm f)
+        (chartIteratedFDerivLinearMap_apply x m hm g)))
 
 end ContMDiffMap
