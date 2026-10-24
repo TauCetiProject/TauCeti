@@ -65,6 +65,12 @@ variable {α : Type u} {β : Type v} {G H : Graph α β} {e f : β} {x y u w : �
 
 /-! ### Bridges and deletion -/
 
+/-- The set of all bridges of a multigraph. -/
+def bridgeSet (G : Graph α β) : Set β := {e | G.IsBridge e}
+
+@[simp]
+theorem mem_bridgeSet {e : β} : e ∈ G.bridgeSet ↔ G.IsBridge e := Iff.rfl
+
 /-- The ends of a link of a bridge are not reachable from each other once the bridge is
 deleted. -/
 theorem IsBridge.not_reachable_deleteEdges (he : G.IsBridge e) (h : G.IsLink e x y) :
