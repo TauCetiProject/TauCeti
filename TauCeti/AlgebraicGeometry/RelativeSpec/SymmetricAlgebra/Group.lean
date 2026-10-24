@@ -31,9 +31,9 @@ projections. The group structure is natural in `F`.
   the group `Hom(F, q_* 𝒪_T)`, naturally in `T` and in `F`;
 * `TauCeti.AlgebraicGeometry.relativeSpecSymmetricAlgebraPullbackHomAddEquiv`: equivalently, the
   group `Hom(q^* F, 𝒪_T)` of linear functionals on `q^* F`;
-* `TauCeti.AlgebraicGeometry.relativeSpecSymmetricAlgebraHomAddEquiv_zero_hom` and
-  `TauCeti.AlgebraicGeometry.relativeSpecSymmetricAlgebraHomAddEquiv_add_hom`: the zero section and
-  the addition morphism in terms of module maps;
+* `TauCeti.AlgebraicGeometry.relativeSpecSymmetricAlgebraHomAddEquiv_zero_eq_zero` and
+  `TauCeti.AlgebraicGeometry.relativeSpecSymmetricAlgebraHomAddEquiv_add_eq_add_fst_snd`: the zero
+  section and the addition morphism in terms of module maps;
 * `TauCeti.AlgebraicGeometry.isAddMonHom_relativeSpec_map` and
   `TauCeti.AlgebraicGeometry.relativeSpecSymmetricAlgebraAddGrp`: a map `F' ⟶ F` induces a
   homomorphism of group schemes `Spec_X (Sym F) ⟶ Spec_X (Sym F')`, functorially.
@@ -148,7 +148,7 @@ lemma relativeSpecSymmetricAlgebraHomAddEquiv_comp {T' T : Over X} (g : T' ⟶ T
 
 /-- The zero section `X ⟶ Spec_X (Sym F)` corresponds to the zero module map from `F` to the
 pushforward of `𝒪_X` along the identity. -/
-lemma relativeSpecSymmetricAlgebraHomAddEquiv_zero_hom :
+lemma relativeSpecSymmetricAlgebraHomAddEquiv_zero_eq_zero :
     relativeSpecSymmetricAlgebraHomAddEquiv F (𝟙_ (Over X))
       (ζ : 𝟙_ (Over X) ⟶ (MorphismProperty.Over.forget _ _ X).obj
         ((relativeSpec X).obj (op ((symmetricAlgebra X).obj F)))) = 0 :=
@@ -157,7 +157,7 @@ lemma relativeSpecSymmetricAlgebraHomAddEquiv_zero_hom :
 
 /-- The addition morphism `Spec_X (Sym F) ×_X Spec_X (Sym F) ⟶ Spec_X (Sym F)` corresponds to the
 sum of the module maps of the two projections. -/
-lemma relativeSpecSymmetricAlgebraHomAddEquiv_add_hom :
+lemma relativeSpecSymmetricAlgebraHomAddEquiv_add_eq_add_fst_snd :
     relativeSpecSymmetricAlgebraHomAddEquiv F _
       (σ : _ ⟶ (MorphismProperty.Over.forget _ _ X).obj
         ((relativeSpec X).obj (op ((symmetricAlgebra X).obj F)))) =
@@ -173,7 +173,7 @@ instance isCommAddMonObjRelativeSpecSymmetricAlgebra :
       ((relativeSpec X).obj (op ((symmetricAlgebra X).obj F)))) where
   add_comm := (relativeSpecSymmetricAlgebraHomAddEquiv F _).injective (by
     rw [relativeSpecSymmetricAlgebraHomAddEquiv_comp,
-      relativeSpecSymmetricAlgebraHomAddEquiv_add_hom, map_add,
+      relativeSpecSymmetricAlgebraHomAddEquiv_add_eq_add_fst_snd, map_add,
       ← relativeSpecSymmetricAlgebraHomAddEquiv_comp,
       ← relativeSpecSymmetricAlgebraHomAddEquiv_comp, braiding_hom_fst, braiding_hom_snd, add_comm])
 
@@ -197,13 +197,14 @@ instance isAddMonHom_relativeSpec_map {F' F : QuasicoherentSheaf X} (a : F' ⟶ 
       ((relativeSpec X).map ((symmetricAlgebra X).map a).op)) where
   zero_hom := (relativeSpecSymmetricAlgebraHomAddEquiv F' _).injective (by
     rw [relativeSpecSymmetricAlgebraHomAddEquiv_comp_relativeSpec_map,
-      relativeSpecSymmetricAlgebraHomAddEquiv_zero_hom,
-      relativeSpecSymmetricAlgebraHomAddEquiv_zero_hom, map_zero])
+      relativeSpecSymmetricAlgebraHomAddEquiv_zero_eq_zero,
+      relativeSpecSymmetricAlgebraHomAddEquiv_zero_eq_zero, map_zero])
   add_hom := (relativeSpecSymmetricAlgebraHomAddEquiv F' _).injective (by
     -- both sides have module map `a ≫ φ₁ + a ≫ φ₂`, for `φᵢ` the module maps of the projections
     rw [relativeSpecSymmetricAlgebraHomAddEquiv_comp_relativeSpec_map,
-      relativeSpecSymmetricAlgebraHomAddEquiv_comp, relativeSpecSymmetricAlgebraHomAddEquiv_add_hom,
-      relativeSpecSymmetricAlgebraHomAddEquiv_add_hom, map_add, map_add,
+      relativeSpecSymmetricAlgebraHomAddEquiv_comp,
+      relativeSpecSymmetricAlgebraHomAddEquiv_add_eq_add_fst_snd,
+      relativeSpecSymmetricAlgebraHomAddEquiv_add_eq_add_fst_snd, map_add, map_add,
       ← relativeSpecSymmetricAlgebraHomAddEquiv_comp_relativeSpec_map,
       ← relativeSpecSymmetricAlgebraHomAddEquiv_comp_relativeSpec_map,
       ← relativeSpecSymmetricAlgebraHomAddEquiv_comp,
@@ -214,7 +215,8 @@ variable (X) in
 schemes over `X`: the relative-spectrum map of `Sym a` for `a : F' ⟶ F` is a homomorphism of group
 schemes by `isAddMonHom_relativeSpec_map`. Each object is moreover commutative, by
 `isCommAddMonObjRelativeSpecSymmetricAlgebra`. -/
--- exposed so that its underlying objects and morphisms are seen to be those of relative Spec
+-- exposed so that its underlying objects are seen to be those of relative Spec: without this, the
+-- statement of `relativeSpecSymmetricAlgebraAddGrp_map_hom_hom` does not typecheck
 @[expose]
 def relativeSpecSymmetricAlgebraAddGrp : (QuasicoherentSheaf X)ᵒᵖ ⥤ AddGrp (Over X) where
   obj F := .mk ((MorphismProperty.Over.forget _ _ X).obj
