@@ -53,6 +53,8 @@ private def rightFactorsLinearEquiv (i : V) :
   exact
     { (zigzagBraidBimoduleRightFactorsEquiv k G i).toAddEquiv with
       map_smul' := fun a m ↦ by
+        change zigzagBraidBimoduleRightFactorsEquiv k G i (a • m) =
+          a • zigzagBraidBimoduleRightFactorsEquiv k G i m
         simpa only [op_unop] using
           zigzagBraidBimoduleRightFactorsEquiv_op_smul k G i (unop a) m }
 
@@ -60,16 +62,16 @@ private def rightFactorsLinearEquiv (i : V) :
 theorem projective_zigzagGradedBraidBimodule_right (i : V) :
     letI := TauCeti.Algebra.TensorProduct.moduleRight (k := k) (A := Z) (B := Zᵐᵒᵖ) (U i)
     Module.Projective Zᵐᵒᵖ (U i) := by
-  letI := TauCeti.Algebra.TensorProduct.moduleRight (k := k) (A := Z) (B := Zᵐᵒᵖ) (U i)
+  let := TauCeti.Algebra.TensorProduct.moduleRight (k := k) (A := Z) (B := Zᵐᵒᵖ) (U i)
   have he := isIdempotentElem_zigzagAlgebraBasis_inl k G i
-  letI : Module.Projective k Z := Module.Projective.of_basis (zigzagAlgebraBasis k G)
-  letI : Module.Projective k (L i) := by
+  let : Module.Projective k Z := Module.Projective.of_basis (zigzagAlgebraBasis k G)
+  let : Module.Projective k (L i) := by
     apply Module.Projective.of_split ((L i).subtype.restrictScalars k)
       ((LinearMap.toSpanSingleton Z (L i) (spanSingletonGenerator (e i))).restrictScalars k)
     apply LinearMap.ext
     intro x
     exact smul_spanSingletonGenerator he x
-  letI : Module.Projective Zᵐᵒᵖ (R i) :=
+  let : Module.Projective Zᵐᵒᵖ (R i) :=
     (show IsIdempotentElem (op (e i)) from by
       rw [IsIdempotentElem, ← op_mul, he.eq]).projective_span_singleton
   exact Module.Projective.of_equiv' (rightFactorsLinearEquiv k G i).symm
@@ -80,12 +82,13 @@ private def regularRightLinearEquiv :
     zigzagGradedBimodule k G ≃ₗ[Zᵐᵒᵖ] Zᵐᵒᵖ := by
   letI := TauCeti.Algebra.TensorProduct.moduleRight
     (k := k) (A := Z) (B := Zᵐᵒᵖ) (zigzagGradedBimodule k G)
+  change Bimodule (AlgHom.id k Z) ≃ₗ[Zᵐᵒᵖ] Zᵐᵒᵖ
   exact
     { toFun := fun m ↦ op ((Bimodule.of (AlgHom.id k Z)).symm m)
       invFun := fun a ↦ Bimodule.of (AlgHom.id k Z) (unop a)
       left_inv := fun m ↦ by simp
       right_inv := fun a ↦ by simp
-      map_add' := fun m n ↦ by simp only [map_add, op_add]
+      map_add' := fun m n ↦ by simp only [map_add, MulOpposite.op_add]
       map_smul' := fun a m ↦ by
         change op ((Bimodule.of (AlgHom.id k Z)).symm (((1 : Z) ⊗ₜ[k] a) • m)) =
           a * op ((Bimodule.of (AlgHom.id k Z)).symm m)
@@ -96,7 +99,7 @@ private theorem regular_projective_right :
     letI := TauCeti.Algebra.TensorProduct.moduleRight
       (k := k) (A := Z) (B := Zᵐᵒᵖ) (zigzagGradedBimodule k G)
     Module.Projective Zᵐᵒᵖ (zigzagGradedBimodule k G) := by
-  letI := TauCeti.Algebra.TensorProduct.moduleRight
+  let := TauCeti.Algebra.TensorProduct.moduleRight
     (k := k) (A := Z) (B := Zᵐᵒᵖ) (zigzagGradedBimodule k G)
   exact Module.Projective.of_equiv' (regularRightLinearEquiv k G).symm
 
@@ -106,9 +109,9 @@ private theorem projective_of_graded_iso
       Module.Projective Zᵐᵒᵖ N) :
     letI := TauCeti.Algebra.TensorProduct.moduleRight (k := k) (A := Z) (B := Zᵐᵒᵖ) M
     Module.Projective Zᵐᵒᵖ M := by
-  letI := TauCeti.Algebra.TensorProduct.moduleRight (k := k) (A := Z) (B := Zᵐᵒᵖ) M
-  letI := TauCeti.Algebra.TensorProduct.moduleRight (k := k) (A := Z) (B := Zᵐᵒᵖ) N
-  letI : Module.Projective Zᵐᵒᵖ N := hN
+  let := TauCeti.Algebra.TensorProduct.moduleRight (k := k) (A := Z) (B := Zᵐᵒᵖ) M
+  let := TauCeti.Algebra.TensorProduct.moduleRight (k := k) (A := Z) (B := Zᵐᵒᵖ) N
+  let : Module.Projective Zᵐᵒᵖ N := hN
   let g := (GradedModuleCat.toModuleCat.mapIso f).toLinearEquiv
   let g' : M ≃ₗ[Zᵐᵒᵖ] N :=
     { g.toAddEquiv with
@@ -122,8 +125,8 @@ private theorem projective_of_graded_isZero
     (hM : Limits.IsZero M) :
     letI := TauCeti.Algebra.TensorProduct.moduleRight (k := k) (A := Z) (B := Zᵐᵒᵖ) M
     Module.Projective Zᵐᵒᵖ M := by
-  letI := TauCeti.Algebra.TensorProduct.moduleRight (k := k) (A := Z) (B := Zᵐᵒᵖ) M
-  letI : Subsingleton M :=
+  let := TauCeti.Algebra.TensorProduct.moduleRight (k := k) (A := Z) (B := Zᵐᵒᵖ) M
+  let : Subsingleton M :=
     ModuleCat.subsingleton_of_isZero (GradedModuleCat.toModuleCat.map_isZero hM)
   infer_instance
 
