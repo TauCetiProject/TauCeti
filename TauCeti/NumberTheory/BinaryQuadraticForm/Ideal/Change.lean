@@ -9,7 +9,6 @@ public import TauCeti.NumberTheory.BinaryQuadraticForm.Ideal.Proper
 public import Mathlib.RingTheory.QuadraticAlgebra
 public import Mathlib.RingTheory.ClassGroup.Basic
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
-import TauCeti.Algebra.QuadraticAlgebra.Discriminant
 import Mathlib.RingTheory.Norm.Basic
 import Mathlib.Tactic.Linarith
 
