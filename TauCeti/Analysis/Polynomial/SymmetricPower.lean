@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Polynomial.CauchyBound
 public import Mathlib.Analysis.Analytic.Basic
 public import Mathlib.Topology.Algebra.Polynomial
 public import TauCeti.RingTheory.Polynomial.SymmetricPower
+public import TauCeti.Topology.Algebra.Polynomial.Basic
 public import TauCeti.Topology.Sym.Disjoint
 import Mathlib.Analysis.Analytic.Constructions
 import Mathlib.Analysis.Analytic.Linear
@@ -112,7 +113,7 @@ theorem analyticAt_linearMap_monicOfCoeff {F : Type*} [NormedAddCommGroup F] [No
 /-- The coefficients of `∏ i ∈ s, (X - C (v i))` depend analytically on the tuple `v` of roots.
 
 This is the elementary half of the chart, and the analytic counterpart of
-`TauCeti.Sym.continuous_coeff_prod_X_sub_C`: each coefficient is, up to sign, an elementary
+`TauCeti.Polynomial.continuous_coeff_prod_X_sub_C`: each coefficient is, up to sign, an elementary
 symmetric function of the roots, so the analyticity of the ring operations is all that is used. -/
 theorem analyticAt_coeff_prod_X_sub_C {ι : Type*} [Fintype ι] (s : Finset ι) (k : ℕ)
     (v₀ : ι → 𝕜) : AnalyticAt 𝕜 (fun v : ι → 𝕜 => (∏ i ∈ s, (X - C (v i))).coeff k) v₀ := by
@@ -181,42 +182,6 @@ theorem analyticOnNhd_coeffEquiv_map_eval_coeffEquiv_symm (q : 𝕜[X]) :
 
 end Analyticity
 
-/-! ### Continuity of the coefficients -/
-
-section Continuity
-
-variable {ι R : Type*} [CommRing R] [TopologicalSpace R] [IsTopologicalRing R]
-
-/-- The coefficients of `∏ i ∈ s, (X - C (f i))` depend continuously on the tuple `f` of roots.
-
-This is the elementary half of the chart: each coefficient is, up to sign, an elementary symmetric
-function of the roots, so continuity of the ring operations is all that is used. -/
-theorem continuous_coeff_prod_X_sub_C (s : Finset ι) (k : ℕ) :
-    Continuous fun f : ι → R => (∏ i ∈ s, (X - C (f i))).coeff k := by
-  classical
-  induction s using Finset.induction_on generalizing k with
-  | empty => simpa using continuous_const
-  | @insert a s ha ih =>
-    cases k with
-    | zero =>
-      have hpt : (fun f : ι → R => (∏ i ∈ insert a s, (X - C (f i))).coeff 0) =
-          fun f => -f a * (∏ i ∈ s, (X - C (f i))).coeff 0 := by
-        funext f
-        rw [Finset.prod_insert ha, mul_coeff_zero]
-        simp
-      rw [hpt]
-      exact (continuous_apply a).neg.mul (ih 0)
-    | succ k =>
-      have hpt : (fun f : ι → R => (∏ i ∈ insert a s, (X - C (f i))).coeff (k + 1)) =
-          fun f => (∏ i ∈ s, (X - C (f i))).coeff k
-            - f a * (∏ i ∈ s, (X - C (f i))).coeff (k + 1) := by
-        funext f
-        rw [Finset.prod_insert ha, sub_mul, coeff_sub, coeff_X_mul, coeff_C_mul]
-      rw [hpt]
-      exact (ih k).sub ((continuous_apply a).mul (ih (k + 1)))
-
-end Continuity
-
 section Chart
 
 variable {K : Type*} [NormedField K] [IsAlgClosed K] {n : ℕ}
@@ -228,7 +193,7 @@ theorem continuous_coeffEquiv_comp_ofFn :
     Continuous fun f : Fin n → K => coeffEquiv K n (ofFn f) := by
   refine continuous_pi fun i => ?_
   simp only [coeffEquiv_ofFn_apply]
-  exact continuous_coeff_prod_X_sub_C Finset.univ i
+  exact Polynomial.continuous_coeff_prod_X_sub_C Finset.univ i
 
 /-- **Cauchy's bound** on the symmetric power: the points of an unordered tuple are bounded by one
 more than the sup-norm of its elementary symmetric chart, because each of them is a root of the
