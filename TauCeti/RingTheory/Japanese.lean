@@ -12,6 +12,7 @@ public import Mathlib.RingTheory.DedekindDomain.IntegralClosure
 import Mathlib.Algebra.Algebra.Shrink
 import Mathlib.Algebra.Field.Shrink
 import Mathlib.FieldTheory.Normal.Closure
+import Mathlib.RingTheory.FractionalIdeal.Operations
 import Mathlib.RingTheory.Finiteness.Small
 import TauCeti.FieldTheory.Normal.FixedField
 import TauCeti.RingTheory.IntegralClosure.Transfer
@@ -55,6 +56,9 @@ need to be tested.
 * `TauCeti.Ring.isN1_of_isLocalization`, `TauCeti.Ring.isJapanese_of_isLocalization`: a
   localization of an N-1, respectively Japanese, domain is N-1, respectively Japanese (Stacks,
   Lemma 10.161.3 (032G)).
+* `TauCeti.Ring.IsN1.exists_isIntegrallyClosed_localization_away`: an N-1 domain becomes
+  integrally closed after inverting a single nonzero element, so the normal locus of its spectrum
+  contains a nonempty open.
 * `TauCeti.Ring.IsN1.of_span_eq_top`, `TauCeti.Ring.IsJapanese.of_span_eq_top`: being N-1,
   respectively Japanese, is local on `Spec R`: a domain is N-1, respectively Japanese, as soon as
   its localizations `R_{f_i}` are, for elements `f_i` generating the unit ideal (Stacks,
@@ -370,6 +374,37 @@ theorem IsJapanese.of_span_eq_top [IsDomain R] {t : Set R} (ht : Ideal.span t = 
   have (f : ↥(t \ {0})) := H f.1 f.2.1
   exact finite_integralClosure_of_span_eq_top L (Ideal.span_sdiff_singleton_zero.trans ht)
     fun f ↦ IsJapanese.finite_integralClosure (R := Localization.Away f.1) K L
+
+/-- **An N-1 domain is generically integrally closed.** If `R` is an N-1 domain, there is a
+nonzero `f : R` such that `R_f` is integrally closed: a common denominator `f` of the finite
+`R`-module `R'` of elements of the fraction field integral over `R` satisfies `f • R' ⊆ R`, so
+`R_f = R'_f` is integrally closed. -/
+theorem IsN1.exists_isIntegrallyClosed_localization_away [IsDomain R] [IsN1 R] :
+    ∃ f : R, f ≠ 0 ∧ IsIntegrallyClosed (Localization.Away f) := by
+  let K := FractionRing R
+  have hfg : (integralClosure R K).toSubmodule.FG :=
+    Module.Finite.iff_fg.mp (IsN1.finite_integralClosure (R := R) K)
+  obtain ⟨f, hf, hint⟩ := FractionalIdeal.isFractional_of_fg (S := nonZeroDivisors R) hfg
+  have hf0 : f ≠ 0 := nonZeroDivisors.ne_zero hf
+  refine ⟨f, hf0, ?_⟩
+  let := Localization.Away.algebraOfIsFractionRing K hf0
+  have := Localization.Away.isScalarTower_of_isFractionRing K hf0
+  have := Localization.Away.isFractionRing K hf0
+  refine (isIntegrallyClosed_iff K).mpr fun {x} hx ↦ ?_
+  -- Some `y = f ^ n` makes `y • x` integral over `R`, and then `f • y • x = z` lies in `R`.
+  obtain ⟨⟨y, hy⟩, hyx⟩ := hx.exists_multiple_integral_of_isLocalization (Submonoid.powers f) _
+  obtain ⟨z, hz⟩ := hint _ (show y • x ∈ integralClosure R K from hyx)
+  have hm : f * y ∈ Submonoid.powers f := mul_mem (Submonoid.mem_powers f) hy
+  refine ⟨IsLocalization.mk' _ z ⟨f * y, hm⟩, mul_right_cancel₀ (b := algebraMap R K (f * y))
+    (IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors
+      (mul_mem hf (powers_le_nonZeroDivisors_of_noZeroDivisors hf0 hy))) ?_⟩
+  calc algebraMap _ K (IsLocalization.mk' _ z ⟨f * y, hm⟩) * algebraMap R K (f * y)
+      = algebraMap R K z := by
+        rw [IsScalarTower.algebraMap_apply R (Localization.Away f) K (f * y), ← map_mul,
+          IsLocalization.mk'_spec, ← IsScalarTower.algebraMap_apply]
+    _ = x * algebraMap R K (f * y) := by
+        rw [hz, Algebra.smul_def, Algebra.smul_def, map_mul]
+        ring
 
 /-- The localization of an N-1 domain at a prime is N-1. -/
 instance IsN1.localization_atPrime [IsDomain R] [IsN1 R] (p : Ideal R) [p.IsPrime] :

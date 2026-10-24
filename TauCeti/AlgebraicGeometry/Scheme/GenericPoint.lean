@@ -23,7 +23,10 @@ irreducible scheme with its generic point. On an irreducible scheme of dimension
 every other point then has codimension exactly one.
 
 On an integral scheme `X`, the morphism `Spec k(X) ⟶ X` from the spectrum of the function field
-to the generic point is quasi-compact, since `Spec k(X)` is a single point.
+to the generic point is quasi-compact, since `Spec k(X)` is a single point. Over a nonempty affine
+open `U`, the preimage of `U` is all of `Spec k(X)`, and the induced ring map from `Γ(X, U)` to
+its sections `k(X)` makes them a fraction field of `Γ(X, U)`. This is how the normalization of `X`
+in its function field is computed on affine opens.
 
 ## Main results
 
@@ -38,6 +41,9 @@ to the generic point is quasi-compact, since `Spec k(X)` is a single point.
   than the generic point.
 * `TauCeti.AlgebraicGeometry.Scheme.quasiCompact_fromSpecStalk_genericPoint`: the generic point
   `Spec k(X) ⟶ X` of an integral scheme is quasi-compact.
+* `TauCeti.AlgebraicGeometry.Scheme.isFractionRing_app_fromSpecStalk_genericPoint`: on an integral
+  scheme, the sections of `Spec k(X)` over the preimage of a nonempty affine open `U` are a
+  fraction field of `Γ(X, U)`.
 -/
 
 public section
@@ -83,6 +89,33 @@ instance quasiCompact_fromSpecStalk_genericPoint {X : Scheme.{u}} [IsIntegral X]
     QuasiCompact (X.fromSpecStalk (genericPoint X)) :=
   have : Finite (Spec X.functionField) := inferInstanceAs (Finite (PrimeSpectrum X.functionField))
   ⟨fun _ _ _ ↦ (Set.toFinite _).isCompact⟩
+
+open CategoryTheory in
+/-- On an integral scheme `X`, the sections of `Spec k(X)` over the preimage of a nonempty affine
+open `U` under `Spec k(X) ⟶ X` are a fraction field of `Γ(X, U)`: the preimage is all of
+`Spec k(X)`, whose ring of global sections is `k(X)`. -/
+theorem isFractionRing_app_fromSpecStalk_genericPoint {X : Scheme.{u}} [IsIntegral X]
+    {U : X.Opens} (hU : IsAffineOpen U) [Nonempty U] :
+    letI := ((X.fromSpecStalk (genericPoint X)).app U).hom.toAlgebra
+    IsFractionRing Γ(X, U) Γ(Spec X.functionField, X.fromSpecStalk (genericPoint X) ⁻¹ᵁ U) := by
+  set f := X.fromSpecStalk (genericPoint X)
+  let := (f.app U).hom.toAlgebra
+  have hη : genericPoint X ∈ U :=
+    ((genericPoint_spec X).mem_open_set_iff U.isOpen).mpr (by simpa using ‹Nonempty U›)
+  -- Every point of `Spec k(X)` specializes to the closed point, which lies over `genericPoint X`.
+  have htop : f ⁻¹ᵁ U = ⊤ :=
+    top_le_iff.mp fun y _ ↦ (IsLocalRing.specializes_closedPoint y).mem_open (f ⁻¹ᵁ U).isOpen
+      ((Scheme.Hom.mem_preimage _).mpr (by rwa [Scheme.fromSpecStalk_closedPoint]))
+  let ι := (Scheme.ΓSpecIso X.functionField).inv ≫
+    (Spec X.functionField).presheaf.map (homOfLE (le_top : f ⁻¹ᵁ U ≤ ⊤)).op
+  have hι : Function.Bijective ι.hom := by
+    have : homOfLE (le_top : f ⁻¹ᵁ U ≤ ⊤) = eqToHom htop := Subsingleton.elim _ _
+    simp only [ι, this, eqToHom_op, eqToHom_map]
+    exact ConcreteCategory.bijective_of_isIso _
+  have key : f.app U = X.germToFunctionField U ≫ ι := Scheme.fromSpecStalk_app hη
+  have := functionField_isFractionRing_of_isAffineOpen X U hU
+  exact IsLocalization.isLocalization_of_algEquiv _ <|
+    AlgEquiv.ofBijective ⟨ι.hom, fun a ↦ (ConcreteCategory.congr_hom key a).symm⟩ hι
 
 end Scheme
 
