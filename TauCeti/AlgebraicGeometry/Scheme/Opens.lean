@@ -20,6 +20,8 @@ This file records general-purpose facts about open subsets of schemes.
   structure-sheaf sections along the affine chart `Spec Γ(X, U)`.
 * `AlgebraicGeometry.Scheme.Hom.appLE_eq_id_of_eq_id` identifies the restriction maps of a scheme
   endomorphism equal to the identity.
+* `AlgebraicGeometry.Scheme.Hom.appLE_top_top` reads the restriction map between the whole spaces
+  as the map on global sections.
 * `AlgebraicGeometry.Scheme.forall_affineOpens_map_of_le`: a condition on the restrictions of a
   section over `V` to all affine opens inside `V` is inherited by its restriction to any smaller
   open.
@@ -56,6 +58,12 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.appLE_eq_id_of_eq_id {f : X ⟶ X}
   subst hf
   rw [Scheme.Hom.appLE, Scheme.Hom.id_app]
   exact (Category.id_comp _).trans (X.presheaf.map_id _)
+
+/-- The restriction map of a morphism between the whole spaces is its map on global sections. -/
+theorem _root_.AlgebraicGeometry.Scheme.Hom.appLE_top_top {Y : Scheme.{u}} (f : X ⟶ Y)
+    (e : (⊤ : X.Opens) ≤ f ⁻¹ᵁ ⊤) : f.appLE ⊤ ⊤ e = f.appTop :=
+  -- `f ⁻¹ᵁ ⊤` is `⊤` by definition (`Scheme.Hom.preimage_top`)
+  Scheme.Hom.appLE_eq_app f
 
 /-- A condition imposed on the restrictions of a section `b` over `V` to all affine opens inside `V`
 is inherited by the restriction of `b` to any smaller open `V'`. -/
