@@ -217,26 +217,15 @@ theorem exists_gaussCode_rotate_eq_relabel_rotateBasepoint_pow (hs : poly.IsSimp
   have hedge (j) : finRotate n (edgeIndexAt n (visitTime hs' hπ' (Fin.cast h2 j))) =
       edgeIndexAt n (visitTime hs hπ (σ j)) := by
     rw [hvt, finRotate_edgeIndexAt_rotateTime]
-  -- Their partner visits are at the same point.
-  have hpp (j) : poly.rotate.boundaryParam (visitTime hs' hπ' (D'.partner.val (Fin.cast h2 j))) =
-      poly.boundaryParam (visitTime hs hπ (D.partner.val (σ j))) := by
-    rw [boundaryParam_visitTime_partner, boundaryParam_visitTime_partner, hbp]
-    have hx := (mem_crossingTimes.1 (visitTime_mem_crossingTimes hs hπ (σ j))).2
-    have hx' : poly.boundaryParam (visitTime hs hπ (σ j)) ∈ poly.rotate.doublePoints ℝ π := by
-      rwa [hDP]
-    exact hπ.eq_doublePointPartner (doublePoints_subset_boundary hx)
-      (hb ▸ doublePointPartner_mem_boundary (doublePoints_subset_boundary hx'))
-      (doublePointPartner_ne hx') (apply_doublePointPartner _)
+  -- Their partner visits correspond in the same way.
   have hpartner (j) : D'.partner.val (Fin.cast h2 j) = Fin.cast h2 (σ.symm (D.partner.val (σ j))) :=
-    (strictMono_visitTime hs' hπ').injective (hs'.injOn_boundaryParam
-      (mem_crossingTimes.1 (visitTime_mem_crossingTimes hs' hπ' _)).1
-      (mem_crossingTimes.1 (visitTime_mem_crossingTimes hs' hπ' _)).1
-      (by rw [hpp, hbp, Equiv.apply_symm_apply]))
+    gaussCode_partner_cast_eq_of_boundaryParam_eq b hs hπ hs' hπ' hb h2 σ hbp j
   have hvisit (i j) : D.visit (σ i) = D.visit (σ j) ↔
       D'.visit (Fin.cast h2 i) = D'.visit (Fin.cast h2 j) := by
     rw [gaussCode_visit_eq_visit_iff, gaussCode_visit_eq_visit_iff, hbp, hbp]
   have hover (i) : D.over (σ i) = D'.over (Fin.cast h2 i) := by
-    rw [Bool.eq_iff_iff, gaussCode_over_eq_true_iff, gaussCode_over_eq_true_iff, hbp, hpp]
+    rw [Bool.eq_iff_iff, gaussCode_over_eq_true_iff, gaussCode_over_eq_true_iff, hbp, hpartner,
+      hbp, Equiv.apply_symm_apply]
   -- The crossing signs agree at an over visit.
   have hsign (i) (hi : D.over (σ i) = true) :
       D.sign (D.visit (σ i)) = D'.sign (D'.visit (Fin.cast h2 i)) := by
