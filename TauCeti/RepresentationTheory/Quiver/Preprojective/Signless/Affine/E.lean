@@ -40,7 +40,7 @@ E₆ :  (3), (3), (3)        E₇ :  (2, 2), (4), (4)        E₈ :  (2, 2, 2), 
 ```
 
 so that the matrix `B` of an arm with `L` edges has `c = m / (L + 1)` Jordan blocks of size
-`L + 1`. Write `N` for the shift sending each basis vector `e_{i+c}` to `e_i` and the last `c`
+`L + 1`. Write `N` for the shift sending each basis vector `e_{i+c}` to `e_i` and the first `c`
 basis vectors to zero, `Eᵣ` for the coordinate projection onto the first `r` basis vectors, and
 `B = P N P⁻¹` with `P` invertible over `ℤ`. Along the arm, the first arrow away from the trivalent
 node is `N P⁻¹` and the arrow back is `P E_{m-c}`, so that the backtrack at the trivalent node is
@@ -93,7 +93,7 @@ universe u w
 
 /-! ### The arm matrices -/
 
-/-- The shift `N` on `ℤᵐ` sending the basis vector `e_{i+c}` to `e_i` and the last `c` basis
+/-- The shift `N` on `ℤᵐ` sending the basis vector `e_{i+c}` to `e_i` and the first `c` basis
 vectors to zero. -/
 private def armShift (m c : ℕ) : Matrix (Fin m) (Fin m) ℤ :=
   of fun i j => if (j : ℕ) = i + c then 1 else 0
@@ -101,48 +101,6 @@ private def armShift (m c : ℕ) : Matrix (Fin m) (Fin m) ℤ :=
 /-- The coordinate projection of `ℤᵐ` onto the span of its first `r` basis vectors. -/
 private def armProj (m r : ℕ) : Matrix (Fin m) (Fin m) ℤ :=
   of fun i j => if i = j ∧ (i : ℕ) < r then 1 else 0
-
-/-! ### Integer matrices satisfying the signless relations -/
-
-section Integer
-
-variable (k : Type w) [CommRing k] {W : Type*} [Fintype W] {H : SimpleGraph W}
-  {m : Type*} [Fintype m] [DecidableEq m]
-
-/-- An integer matrix family which vanishes off the edges of `H` and satisfies the signless
-relations, as sums over all vertices, satisfies them over every commutative ring. -/
-private theorem sum_mapMatrix_intCast_mul_mapMatrix_intCast [DecidableRel H.Adj]
-    (β : W → W → Matrix m m ℤ)
-    (h₀ : ∀ v w, ¬H.Adj v w → β v w = 0) (h : ∀ v, ∑ w, β w v * β v w = 0) (v : W) :
-    ∑ w ∈ H.neighborFinset v,
-      (Int.castRingHom k).mapMatrix (β w v) * (Int.castRingHom k).mapMatrix (β v w) = 0 := by
-  rw [Finset.sum_subset (Finset.subset_univ _) fun w _ hw => by
-      rw [h₀ v w (by simpa using hw), map_zero, mul_zero]]
-  simp_rw [← map_mul, ← map_sum, h, map_zero]
-
-variable {V : Type u} [Fintype V] {G : SimpleGraph V} [DecidableRel G.Adj]
-
-/-- An integer matrix family on `H` satisfying the signless relations, together with a nonempty
-product of backtracks at a vertex of trace one, gives a nonzero cyclic class of `Π⁺(G)` along any
-copy of `H` in `G`. -/
-private theorem exists_notMem_commutatorSubmodule_of_intMatrix [Nontrivial k] (f : H.Copy G)
-    (β : W → W → Matrix m m ℤ) (h₀ : ∀ v w, ¬H.Adj v w → β v w = 0)
-    (h : ∀ v, ∑ w, β w v * β v w = 0) {c : W} (l : List {a // H.Adj c a}) (hl : l ≠ [])
-    (htr : trace (l.map fun a => β a.1 c * β c a.1).prod = 1) :
-    ∃ x ∈ signlessPreprojectiveGrade k (DoubledQuiver G) (2 * l.length),
-      x ∉ commutatorSubmodule k (signlessPreprojectiveAlgebra k (DoubledQuiver G)) := by
-  classical
-  refine exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_of_trace_ne_zero f
-    (fun i j => (Int.castRingHom k).mapMatrix (β i j))
-    (sum_mapMatrix_intCast_mul_mapMatrix_intCast k β h₀ h) l hl ?_
-  have hmap : (l.map fun a => (Int.castRingHom k).mapMatrix (β a.1 c) *
-      (Int.castRingHom k).mapMatrix (β c a.1)) =
-      (l.map fun a => β a.1 c * β c a.1).map (Int.castRingHom k).mapMatrix := by
-    simp only [List.map_map, Function.comp_def, map_mul]
-  rw [hmap, ← map_list_prod, RingHom.mapMatrix_apply, ← AddMonoidHom.map_trace, htr, map_one]
-  exact one_ne_zero
-
-end Integer
 
 variable {k : Type w} [CommRing k] {V : Type u} [Fintype V] {G : SimpleGraph V}
   [DecidableRel G.Adj]
@@ -180,8 +138,8 @@ theorem exists_mem_signlessPreprojectiveGrade_six_notMem_commutatorSubmodule [No
     ∃ x ∈ signlessPreprojectiveGrade k (DoubledQuiver G) 6,
       x ∉ commutatorSubmodule k (signlessPreprojectiveAlgebra k (DoubledQuiver G)) := by
   obtain ⟨f⟩ := hG
-  simpa using exists_notMem_commutatorSubmodule_of_intMatrix k f affineE6Matrix
-    (by simp only [AffineDynkinType.graph_E6_adj]; decide) (by decide) (c := 0)
+  simpa using exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_of_trace_eq_one
+    k f affineE6Matrix (by simp only [AffineDynkinType.graph_E6_adj]; decide) (by decide) (c := 0)
     [⟨1, (AffineDynkinType.graph_E6_adj _ _).2 (by decide)⟩,
       ⟨1, (AffineDynkinType.graph_E6_adj _ _).2 (by decide)⟩,
       ⟨3, (AffineDynkinType.graph_E6_adj _ _).2 (by decide)⟩] (by simp)
@@ -222,8 +180,8 @@ theorem exists_mem_signlessPreprojectiveGrade_eight_notMem_commutatorSubmodule [
     ∃ x ∈ signlessPreprojectiveGrade k (DoubledQuiver G) 8,
       x ∉ commutatorSubmodule k (signlessPreprojectiveAlgebra k (DoubledQuiver G)) := by
   obtain ⟨f⟩ := hG
-  simpa using exists_notMem_commutatorSubmodule_of_intMatrix k f affineE7Matrix
-    (by simp only [AffineDynkinType.graph_E7_adj]; decide) (by decide) (c := 0)
+  simpa using exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_of_trace_eq_one
+    k f affineE7Matrix (by simp only [AffineDynkinType.graph_E7_adj]; decide) (by decide) (c := 0)
     [⟨2, (AffineDynkinType.graph_E7_adj _ _).2 (by decide)⟩,
       ⟨2, (AffineDynkinType.graph_E7_adj _ _).2 (by decide)⟩,
       ⟨2, (AffineDynkinType.graph_E7_adj _ _).2 (by decide)⟩,
@@ -296,8 +254,8 @@ theorem exists_mem_signlessPreprojectiveGrade_twelve_notMem_commutatorSubmodule 
     ∃ x ∈ signlessPreprojectiveGrade k (DoubledQuiver G) 12,
       x ∉ commutatorSubmodule k (signlessPreprojectiveAlgebra k (DoubledQuiver G)) := by
   obtain ⟨f⟩ := hG
-  simpa using exists_notMem_commutatorSubmodule_of_intMatrix k f affineE8Matrix
-    (by simp only [AffineDynkinType.graph_E8_adj]; decide) (by decide) (c := 0)
+  simpa using exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_of_trace_eq_one
+    k f affineE8Matrix (by simp only [AffineDynkinType.graph_E8_adj]; decide) (by decide) (c := 0)
     [⟨1, (AffineDynkinType.graph_E8_adj _ _).2 (by decide)⟩,
       ⟨2, (AffineDynkinType.graph_E8_adj _ _).2 (by decide)⟩,
       ⟨4, (AffineDynkinType.graph_E8_adj _ _).2 (by decide)⟩,
