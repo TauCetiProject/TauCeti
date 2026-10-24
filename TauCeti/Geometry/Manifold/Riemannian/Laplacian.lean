@@ -166,29 +166,9 @@ theorem hessian_apply_eq_mvfderiv_sub [IsManifold I 2 M]
     simpa only [one_add_one_eq_two] using (inferInstance : IsManifold I 2 M)
   have hG : ContMDiffAt I I.tangent 1
       (fun y ↦ (⟨y, mgradient I f y⟩ : TangentBundle I M)) x := by
-    rcases hf.contMDiffOn' (m := (2 : ℕ∞ω)) le_rfl (by simp) with
-      ⟨u, hu, hxu, hfu⟩
-    have hfu' : ContMDiffOn I 𝓘(ℝ) 2 f u := by simpa using hfu
-    have hopen : IsOpen (chartAt H x).source := (chartAt H x).open_source
-    have hG' : ContMDiffAt I (I.prod 𝓘(ℝ, E)) 1
-        (fun y : M ↦ TotalSpace.mk' E y
-          ((Riemannian.Tensor.rieszDual (I := I) y) (mvfderiv I f y))) x := by
-      refine Riemannian.Tensor.contMDiffAt_rieszDual (I := I) (E := E) (H := H) (M := M) x
-        (mem_chart_source H x) (n := (1 : ℕ∞ω)) (Φ := fun y ↦ mvfderiv I f y) ?_
-      intro j
-      let s := u ∩ (chartAt H x).source
-      have hs : IsOpen s := hu.inter hopen
-      have hfs : ContMDiffOn I 𝓘(ℝ) 2 f s := hfu'.mono Set.inter_subset_left
-      have hframe := Riemannian.Tensor.contMDiffOn_chartLocalFrame
-        (I := I) (n := (1 : ℕ∞ω)) x j
-      rw [TangentBundle.trivializationAt_baseSet] at hframe
-      have hframes : ContMDiffOn I (I.prod 𝓘(ℝ, E)) 1
-          (fun y : M ↦ TotalSpace.mk' E y
-            (Riemannian.Tensor.chartLocalFrame (I := I) x j y)) s :=
-        hframe.mono Set.inter_subset_right
-      exact (hfs.contMDiffOn_mvfderiv_apply hs hframes le_rfl).contMDiffAt
-        (hs.mem_nhds ⟨hxu, mem_chart_source H x⟩)
-    simpa only [mgradient_def] using hG'
+    simpa only [one_add_one_eq_two] using
+      (contMDiffAt_mgradient (I := I) (f := f) (x := x) (n := 1)
+        (by simpa only [one_add_one_eq_two] using hf))
   have hG' : MDiffAt (T% (mgradient I f)) x := hG.mdifferentiableAt (by simp)
   have hinner :=
     (CovariantDerivative.isMetricCompatible_leviCivitaConnection I).mvfderiv_inner_eq
