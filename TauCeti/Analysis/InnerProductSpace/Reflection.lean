@@ -12,7 +12,8 @@ import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
 # Reflections in inner product spaces
 
 For a submodule `K` admitting an orthogonal projection, `Submodule.coe_reflection` expresses the
-reflection across `K`, as a bounded operator, as `2 P_K - 1`.
+reflection across `K`, as a bounded operator, as `2 P_K - 1`, and a linear isometry mapping `K`
+onto itself commutes with that reflection (`Submodule.reflection_apply_of_map_eq`).
 
 The remaining lemmas describe reflection across the hyperplane perpendicular to a vector in a real
 inner product space. They supply the reflection identities used by the half-space Green kernel,
@@ -37,6 +38,15 @@ theorem coe_reflection (K : Submodule 𝕜 E) [K.HasOrthogonalProjection] :
     (K.reflection : E →L[𝕜] E) = 2 • K.starProjection - 1 := by
   ext x
   simp [reflection_apply]
+
+/-- A linear isometry equivalence mapping `K` onto itself commutes with the reflection across
+`K`. -/
+theorem reflection_apply_of_map_eq (K : Submodule 𝕜 E) [K.HasOrthogonalProjection]
+    {e : E ≃ₗᵢ[𝕜] E} (he : K.map (e.toLinearEquiv : E →ₗ[𝕜] E) = K) (x : E) :
+    K.reflection (e x) = e (K.reflection x) := by
+  have h := reflection_map_apply e K (e x)
+  simp only [he, LinearIsometryEquiv.symm_apply_apply] at h
+  exact h
 
 end Submodule
 
