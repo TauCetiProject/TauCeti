@@ -51,7 +51,9 @@ and the disc are constructed once on the shared data.
 
 The **genus** of a slice surface (`TauCeti.SliceSurfaceData.genus`) is read off its rational
 singular homology: a compact, connected, orientable surface of genus `g` with one boundary circle
-has `H₁(S; ℚ) ≅ ℚ²ᵍ`, so its genus is half the dimension of `H₁(S; ℚ)`. The slice genus
+has `H₁(S; ℚ) ≅ ℚ²ᵍ`, so its genus is half the dimension of `H₁(S; ℚ)`. The one-circle hypothesis
+needs the embedding: the shared data alone asks no injectivity of the map, so this reading of the
+genus is meant for smooth and topological slice surfaces. The slice genus
 (`TauCeti.sliceGenus K`) is the infimum of the genera of the slice surfaces of `K`, valued in `ℕ∞`
 so that it is `⊤` rather than `0` should `K` have no slice surface at all. (Every knot in `S³`
 bounds a Seifert surface, whose interior can be pushed into `D⁴`, so `g_s(K)` is finite for
@@ -67,7 +69,8 @@ compact surfaces and is not proved here.
 
 * `TauCeti.SliceSurfaceData K`: a compact, connected, orientable surface properly mapped into the
   ball with boundary onto `K`, the data shared by smooth and topological slice surfaces.
-* `TauCeti.SliceSurfaceData.genus`: the genus `dim H₁(S; ℚ) / 2` of a slice surface.
+* `TauCeti.SliceSurfaceData.genus`: the genus `dim H₁(S; ℚ) / 2` of a slice surface, valid when
+  its boundary is a single circle, as for embedded slice surfaces.
 * `TauCeti.SliceSurfaceData.ofClosedBall`: the closed unit disc as slice surface data.
 * `TauCeti.SmoothSliceSurface K`: a smooth slice surface for `K`.
 * `TauCeti.sliceGenus K`: the smooth slice genus of `K`, in `ℕ∞`.
@@ -119,7 +122,9 @@ boundary, together with a map into the closed unit ball of `E` which is proper i
 preimage of the boundary sphere is the boundary of the surface, and which carries the boundary of
 the surface onto the image of `K`. No regularity is asked of the map: smooth slice surfaces
 (`TauCeti.SmoothSliceSurface`) add that it is a smooth embedding, topological slice surfaces
-(`TauCeti.TopologicalSliceSurface`) that it is locally flat. -/
+(`TauCeti.TopologicalSliceSurface`) that it is locally flat. Without an embedding the surface may
+have several boundary circles, so `TauCeti.SliceSurfaceData.genus` is the genus of the surface only
+for the extending structures. -/
 structure SliceSurfaceData (K : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)) where
   /-- The underlying surface. -/
   carrier : Type
@@ -155,7 +160,11 @@ abbrev firstHomology (S : SliceSurfaceData K) : Type :=
 
 /-- The **genus** of a slice surface: half the dimension of its first rational homology. A
 compact, connected, orientable surface of genus `g` with one boundary circle has
-`H₁(S; ℚ) ≅ ℚ²ᵍ`. -/
+`H₁(S; ℚ) ≅ ℚ²ᵍ`, so this is its genus whenever the boundary of `S` is a single circle. That holds
+when `S.toFun` is an embedding, as for `TauCeti.SmoothSliceSurface` and
+`TauCeti.TopologicalSliceSurface`, since the boundary is then homeomorphic to the image of `K`.
+For arbitrary slice surface data, whose map need not be injective, `S` may have `b` boundary
+circles, and then `dim H₁(S; ℚ) = 2g + b - 1` and this value need not be the genus. -/
 def genus (S : SliceSurfaceData K) : ℕ :=
   finrank ℚ S.firstHomology / 2
 
