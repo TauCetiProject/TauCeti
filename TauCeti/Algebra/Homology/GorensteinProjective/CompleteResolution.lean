@@ -70,8 +70,9 @@ noncomputable abbrev completeResolution (hP : P.IsTotallyAcyclic) :
   ι_π n := ObjectProperty.hom_ext _ (P.iCycles_toCycles n (n + 1))
   conflation n := by
     rw [GorensteinProjectiveModuleCat.exactStructure_conflation_iff]
-    exact P.cyclesShortComplex_shortExact_of_iso rfl (hP.acyclic (n + 1)) (Iso.refl _)
-      (Iso.refl _)
+    exact ShortComplex.shortExact_of_iso
+      (ShortComplex.isoMk (Iso.refl _) (Iso.refl _) (Iso.refl _) (by simp) (by simp))
+      (P.cyclesShortComplex_shortExact_of_iso rfl (hP.acyclic (n + 1)) (Iso.refl _) (Iso.refl _))
   projectiveInjective n := (projectiveInjective_iff _ _).mpr
     ⟨(GorensteinProjectiveModuleCat.exactStructure_isProjective_iff _).mpr (hP.projective n),
       (GorensteinProjectiveModuleCat.exactStructure_isInjective_iff _).mpr (hP.projective n)⟩
