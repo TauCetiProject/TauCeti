@@ -174,9 +174,7 @@ theorem unblockedHomologyCommutationMap_mem_bigradedUnblockedHomologyPiece
     {g : ℤ × ℤ} {y : G.1.unblockedHomology R}
     (hy : y ∈ G.bigradedUnblockedHomologyPiece R g) :
     G.1.unblockedHomologyCommutationMap R C y ∈
-      bigradedUnblockedHomologyPiece
-        ⟨G.1.swapColumns C.column (finRotate n C.column),
-          C.isColumnCommutation.componentCount_eq.symm ▸ G.2⟩ R g := by
+      (G.swapColumns C).bigradedUnblockedHomologyPiece R g := by
   simpa using G.unblockedHomologyCommutationMap_mem_bigradedUnblockedHomologyPiece_add R C hy
 
 /-- The commutation map on `GH⁻` preserves the Alexander grading. -/
@@ -184,9 +182,7 @@ theorem unblockedHomologyCommutationMap_mem_alexanderUnblockedHomologyGrading_pi
     {a : ℤ} {y : G.1.unblockedHomology R}
     (hy : y ∈ (G.alexanderUnblockedHomologyGrading R).piece a) :
     G.1.unblockedHomologyCommutationMap R C y ∈
-      (alexanderUnblockedHomologyGrading
-        ⟨G.1.swapColumns C.column (finRotate n C.column),
-          C.isColumnCommutation.componentCount_eq.symm ▸ G.2⟩ R).piece a := by
+      ((G.swapColumns C).alexanderUnblockedHomologyGrading R).piece a := by
   simpa using
     G.unblockedHomologyCommutationMap_mem_alexanderUnblockedHomologyGrading_piece_add R C hy
 
