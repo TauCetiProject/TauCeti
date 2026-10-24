@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.FormalGroup.NSMul.Basic
+public import TauCeti.RingTheory.FormalGroup.CoordinateChange.NSMul
 public import TauCeti.RingTheory.FormalGroup.SymmetricCocycle.Basic
 import Mathlib.Algebra.CharP.Algebra
 import Mathlib.Data.Nat.Factorization.PrimePow
@@ -34,8 +34,9 @@ since the linear coefficient of `[p]_F` is `p = 0`.
 Over a field `K` of characteristic `p` this exponent is the **height** of `F`; it is `⊤` when
 `[p]_F = 0`, as for the additive formal group law. The multiplicative formal group law has
 height one, since `[p](T) = (1 + T) ^ p - 1 = T ^ p`. The height is unchanged by extension of
-the base field. Over a ring, the leading coefficient of `[p]_F` need not be a unit, and the
-exponent no longer measures the height in the usual sense; so the height is defined over fields.
+the base field and by changes of formal coordinate. Over a ring, the leading coefficient of `[p]_F`
+need not be a unit, and the exponent no longer measures the height in the usual sense; so the height
+is defined over fields.
 
 ## Main definitions
 
@@ -55,6 +56,7 @@ exponent no longer measures the height in the usual sense; so the height is defi
 * `FormalGroup.height_map`: the height is invariant under extension of the base field.
 * `FormalGroup.height_𝔾ₐ` and `FormalGroup.height_𝔾ₘ`: the additive formal group law has height
   `⊤` and the multiplicative one has height `1`.
+* `TauCeti.FormalCoordinate.height_smul`: height is independent of the coordinate.
 
 ## References
 
@@ -240,3 +242,16 @@ theorem height_𝔾ₘ [Fact p.Prime] [CharP K p] : (𝔾ₘ : FormalGroup K).he
 end Height
 
 end FormalGroup
+
+namespace TauCeti.FormalCoordinate
+
+/-- Height is unchanged by a change of coordinate, including non-strict coordinates and infinite
+height. The identity holds for every index `p` in the definition of height, without additional
+characteristic or commutativity hypotheses. -/
+@[simp]
+theorem height_smul {K : Type*} [Field K] (φ : FormalCoordinate K) (F : FormalGroup K) (p : ℕ) :
+    (φ • F).height p = F.height p := by
+  unfold FormalGroup.height
+  rw [φ.nsmulSeries_smul_eq_zero_iff F p, φ.order_nsmulSeries_smul]
+
+end TauCeti.FormalCoordinate
