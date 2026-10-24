@@ -189,6 +189,11 @@ noncomputable def lift (f : r.Z 0 ⟶ r'.Z 0) : r.complex ⟶ r'.complex where
 theorem ι_lift_f_zero (f : r.Z 0 ⟶ r'.Z 0) : r.ι 0 ≫ (lift r r' f).f 0 = f ≫ r'.ι 0 :=
   ι_liftX r r' f 0
 
+/-- The morphism of the objects of cycles induced by the lift of `f` is `f`. -/
+@[simp]
+theorem cyclesMap_lift (f : r.Z 0 ⟶ r'.Z 0) : cyclesMap (lift r r' f) = f := by
+  simp [← cancel_mono (r'.ι 0)]
+
 end Lift
 
 section Homotopy
