@@ -139,6 +139,10 @@ theorem apply_mem_carrier_iff (e : Isometry L M) (x : V) :
 theorem ext {e f : Isometry L M} (h : ∀ x, e x = f x) : e = f :=
   DFunLike.coe_injective (funext h)
 
+/-- Into a trivial ambient space there is at most one isometry. -/
+instance [Subsingleton W] : Subsingleton (Isometry L M) :=
+  ⟨fun _ _ ↦ Isometry.ext fun _ ↦ Subsingleton.elim _ _⟩
+
 /-- The identity isometry of an integral lattice. -/
 @[refl]
 def refl (L : IntegralLattice V) : Isometry L L where

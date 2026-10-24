@@ -29,7 +29,10 @@ its determinant is `(-1) ^ rank L`; so `SO(L)` is a proper subgroup in odd rank.
 A self-isometry is the same as a rational isometry of the ambient form which, together with its
 inverse, preserves the carrier; `toIsometryGroup` and `ofIsometryGroup` pass between the two. The
 self-isometries acting trivially on the finite quotient `L / d L` form the principal congruence
-subgroup of level `d`, which has finite index for `d ≠ 0`.
+subgroup of level `d`, which has finite index for `d ≠ 0`. The determinant of a self-isometry is
+also the determinant of the rational automorphism of the ambient space that it extends, and
+conjugation by an isometry `L ≅ M` identifies `O(L)` with `O(M)`, preserving determinants. In
+rank one `SO(L)` is trivial and `O(L) = {±1}`.
 
 ## Main definitions
 
@@ -48,6 +51,8 @@ subgroup of level `d`, which has finite index for `d ≠ 0`.
   `TauCeti.IntegralLattice.Isometry.ofIsometryGroup`.
 * `TauCeti.IntegralLattice.Isometry.reductionHom`: the action of `O(L)` on `L / d L`, and
   `TauCeti.IntegralLattice.Isometry.congruenceSubgroup`: its kernel.
+* `TauCeti.IntegralLattice.Isometry.conjMulEquiv`: conjugation by an isometry `L ≅ M`, as a group
+  isomorphism `O(L) ≃* O(M)`.
 
 ## Main results
 
@@ -66,6 +71,12 @@ subgroup of level `d`, which has finite index for `d ≠ 0`.
   subgroup has finite index.
 * `TauCeti.IntegralLattice.Isometry.mem_range_toIsometryGroup_iff`: a rational isometry comes from
   a self-isometry exactly when it preserves membership in the carrier.
+* `TauCeti.IntegralLattice.Isometry.det_toLinearMap`: the determinant of a self-isometry is the
+  determinant of its ambient rational automorphism.
+* `TauCeti.IntegralLattice.Isometry.det_conjMulEquiv` and
+  `TauCeti.IntegralLattice.Isometry.natCard_specialOrthogonalGroup_eq`: conjugation preserves the
+  determinant, so isometric lattices have special isometry groups of the same order.
+* `TauCeti.IntegralLattice.natCard_isometry_of_finrank_eq_one`: in rank one `O(L)` has order two.
 
 ## References
 
@@ -295,6 +306,25 @@ theorem toMatrix_injective (b : Module.Basis ι ℤ L) : Function.Injective (toM
 
 end specialOrthogonalGroup
 
+/-- In rank one `SO(L)` is trivial, since the special linear group of a free module of rank one
+is trivial. -/
+theorem specialOrthogonalGroup_eq_bot_of_finrank_eq_one (h : Module.finrank ℤ L = 1) :
+    specialOrthogonalGroup L = ⊥ := by
+  have := _root_.SpecialLinearGroup.subsingleton_of_finrank_eq_one (R := ℤ) (V := L) h
+  refine (Subgroup.eq_bot_iff_forall _).mpr fun g hg ↦ ?_
+  have h₁ : (⟨g, hg⟩ : specialOrthogonalGroup L) = 1 :=
+    specialOrthogonalGroup.toSpecialLinearGroup_injective L (Subsingleton.elim _ _)
+  exact congrArg Subtype.val h₁
+
+/-- In rank one the isometry group is `{±1}`, of order two. -/
+theorem natCard_isometry_of_finrank_eq_one (h : Module.finrank ℤ L = 1) :
+    Nat.card (Isometry L L) = 2 := by
+  have hi : (specialOrthogonalGroup L).index = 2 :=
+    (index_specialOrthogonalGroup_eq_two_iff L).mpr ⟨Isometry.neg L, by
+      rw [Isometry.det_neg, h, pow_one]⟩
+  rw [← (specialOrthogonalGroup L).card_mul_index, hi,
+    specialOrthogonalGroup_eq_bot_of_finrank_eq_one h, Subgroup.card_bot, one_mul]
+
 namespace Isometry
 
 open LinearMap (BilinForm)
@@ -428,6 +458,64 @@ theorem finiteIndex_congruenceSubgroup (L : IntegralLattice V) {d : ℤ} (hd : d
   · infer_instance
   · rw [congruenceSubgroup_neg]
     infer_instance
+
+/-! ### The ambient determinant and conjugation -/
+
+/-- The determinant of a self-isometry of `L` is the determinant of the rational linear
+automorphism of the ambient space that it extends. -/
+theorem det_toLinearMap (g : Isometry L L) :
+    LinearMap.det ((g : V ≃ₗ[ℚ] V) : V →ₗ[ℚ] V) = ((det L g : ℤ) : ℚ) := by
+  classical
+  set b := Module.Free.chooseBasis ℤ L
+  have hg : ((g : V ≃ₗ[ℚ] V) : V →ₗ[ℚ] V) = Matrix.toLin L.rationalBasis L.rationalBasis
+      ((LinearMap.toMatrix b b (g.carrierEquiv : L →ₗ[ℤ] L)).map (Int.cast : ℤ → ℚ)) := by
+    refine L.rationalBasis.ext fun j ↦ ?_
+    have hj : (g : V ≃ₗ[ℚ] V) (L.rationalBasis j) = (g.carrierEquiv (b j) : V) := by
+      rw [rationalBasis_apply, coe_carrierEquiv_apply, coe_toLinearEquiv]
+    rw [Matrix.toLin_self, LinearEquiv.coe_coe, hj]
+    conv_lhs => rw [← b.sum_repr (g.carrierEquiv (b j))]
+    rw [Submodule.coe_sum]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    rw [Submodule.coe_smul, Matrix.map_apply, LinearMap.toMatrix_apply, LinearEquiv.coe_coe,
+      rationalBasis_apply, Int.cast_smul_eq_zsmul]
+  rw [hg, LinearMap.det_toLin, coe_det, ← LinearMap.det_toMatrix b, Int.cast_det]
+
+variable {W : Type*} [AddCommGroup W] [Module ℚ W] {M : IntegralLattice W}
+
+/-- Conjugation by an isometry `e : L ≅ M` identifies the isometry groups `O(L)` and `O(M)`:
+a self-isometry `g` of `L` goes to `e ∘ g ∘ e⁻¹`. -/
+def conjMulEquiv (e : Isometry L M) : Isometry L L ≃* Isometry M M where
+  toFun g := (e.symm.trans g).trans e
+  invFun g := (e.trans g).trans e.symm
+  left_inv g := Isometry.ext fun x ↦ by simp [trans_apply, symm_apply_apply]
+  right_inv g := Isometry.ext fun x ↦ by simp [trans_apply, apply_symm_apply]
+  map_mul' f g := Isometry.ext fun x ↦ by simp [mul_apply, trans_apply, symm_apply_apply]
+
+@[simp]
+theorem conjMulEquiv_apply (e : Isometry L M) (g : Isometry L L) (y : W) :
+    e.conjMulEquiv g y = e (g (e.symm y)) := by
+  simp [conjMulEquiv, trans_apply]
+
+@[simp]
+theorem conjMulEquiv_symm_apply (e : Isometry L M) (g : Isometry M M) (x : V) :
+    e.conjMulEquiv.symm g x = e.symm (g (e x)) := by
+  simp [conjMulEquiv, trans_apply]
+
+/-- Conjugation by an isometry preserves the determinant. -/
+@[simp]
+theorem det_conjMulEquiv (e : Isometry L M) (g : Isometry L L) :
+    det M (e.conjMulEquiv g) = det L g := by
+  have h : (e.conjMulEquiv g).carrierEquiv =
+      (e.carrierEquiv.symm.trans g.carrierEquiv).trans e.carrierEquiv := by
+    ext x
+    simp [coe_carrierEquiv_apply, coe_carrierEquiv_symm_apply]
+  rw [det_apply, det_apply, h, LinearEquiv.det_conj]
+
+/-- Isometric lattices have special isometry groups of the same cardinality. -/
+theorem natCard_specialOrthogonalGroup_eq (e : Isometry L M) :
+    Nat.card (specialOrthogonalGroup L) = Nat.card (specialOrthogonalGroup M) :=
+  Nat.card_congr <| e.conjMulEquiv.toEquiv.subtypeEquiv fun g ↦ by
+    simp [mem_specialOrthogonalGroup_iff]
 
 end Isometry
 

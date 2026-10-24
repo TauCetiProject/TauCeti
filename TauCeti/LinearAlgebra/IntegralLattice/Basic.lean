@@ -137,6 +137,11 @@ theorem ext {L M : IntegralLattice V} (hcarrier : L.carrier = M.carrier)
   cases hform
   rfl
 
+/-- Over a trivial ambient space there is only one integral lattice. -/
+instance [Subsingleton V] : Subsingleton (IntegralLattice V) :=
+  ⟨fun _ _ ↦ IntegralLattice.ext (Subsingleton.elim _ _) <| LinearMap.ext fun x ↦
+    LinearMap.ext fun _ ↦ by simp [Subsingleton.elim x 0]⟩
+
 /-- An integral lattice is nondegenerate when its ambient rational bilinear form is
 nondegenerate. This is a mixin rather than a field of `IntegralLattice`, so degenerate lattices
 remain objects of the same type. -/
