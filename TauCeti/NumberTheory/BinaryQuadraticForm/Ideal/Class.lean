@@ -33,10 +33,6 @@ Consequently the proper equivalence classes of primitive positive definite forms
 `-n` inject into `Pic(O_{-n})` (`posDefProperClassToPic_injective`). This is the injective half
 of the form-ideal correspondence of Cox, Theorem 7.7.
 
-The positive-norm ideal comparison used below is proved in
-`TauCeti.NumberTheory.BinaryQuadraticForm.Ideal.Change`; it also applies to the
-positive-discriminant narrow correspondence.
-
 ## Main definitions and results
 
 * `TauCeti.BinaryQuadraticForm.picClass`: the Picard class of a primitive form.
