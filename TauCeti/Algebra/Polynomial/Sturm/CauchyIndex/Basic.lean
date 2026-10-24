@@ -196,6 +196,14 @@ theorem cauchyIndex_eq_sum (p q : R[X]) (s : Set R) [DecidablePred (· ∈ s)] :
   exact ⟨fun h => ⟨⟨support_cauchyJump_subset p q h.2, h.1⟩, h.2⟩,
     fun h => ⟨h.1.2, h.2⟩⟩
 
+/-- The Cauchy index on a set depends only on which roots of `p` the set contains. -/
+theorem cauchyIndex_congr_of_isRoot {p : R[X]} (q : R[X]) {s t : Set R}
+    (h : ∀ r, p.IsRoot r → (r ∈ s ↔ r ∈ t)) : cauchyIndex p q s = cauchyIndex p q t := by
+  classical
+  rw [cauchyIndex_eq_sum, cauchyIndex_eq_sum]
+  exact Finset.sum_congr (Finset.filter_congr fun r hr =>
+    h r (isRoot_of_mem_roots (Multiset.mem_toFinset.mp hr))) fun _ _ => rfl
+
 /-- The Cauchy index is additive over disjoint sets. -/
 theorem cauchyIndex_union (p q : R[X]) {s t : Set R} (h : Disjoint s t) :
     cauchyIndex p q (s ∪ t) = cauchyIndex p q s + cauchyIndex p q t :=
