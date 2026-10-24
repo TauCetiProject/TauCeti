@@ -65,9 +65,7 @@ def onArc (D : PDCode n) (x : Fin (4 * n)) : D.Mark := .inl ⟦x⟧
 theorem onArc_eq_onArc_iff (x y : Fin (4 * n)) :
     onArc D x = onArc D y ↔ x = y ∨ x = D.edgePair.val y := by
   rw [onArc, onArc, Sum.inl.injEq, Quotient.eq]
-  have he : Function.Involutive.toPerm D.edgePair.val D.edgePair.apply_apply = D.edgePair.val :=
-    Equiv.ext fun _ ↦ rfl
-  exact he ▸ sameCycle_toPerm_iff _ D.edgePair.apply_apply x y
+  exact D.edgePair.prop.sameCycle_iff x y
 
 /-- Choosing the other end of an arc does not change its mark. -/
 @[simp]
@@ -75,7 +73,7 @@ theorem onArc_edgePair (x : Fin (4 * n)) : onArc D (D.edgePair.val x) = onArc D 
   exact (onArc_eq_onArc_iff _ _).mpr (Or.inr rfl)
 
 /-- Every mark lies on an arc or is a crossing-free circle label. -/
-theorem cases (p : D.Mark) {P : D.Mark → Prop}
+theorem induction_on (p : D.Mark) {P : D.Mark → Prop}
     (ha : ∀ x, P (onArc D x)) (hi : ∀ i, P (.inr i)) : P p := by
   rcases p with a | i
   · induction a using Quotient.inductionOn with | h x => exact ha x
@@ -85,9 +83,7 @@ theorem cases (p : D.Mark) {P : D.Mark → Prop}
 def resolvedCircle (p : D.Mark) (s : Fin n → Bool) : D.ResolvedCircle s :=
   Sum.elim
     (Quotient.lift (fun x ↦ Sum.inl (⟦x⟧ : D.CrossingCircle s)) fun x y h ↦ by
-      have he : Function.Involutive.toPerm D.edgePair.val D.edgePair.apply_apply =
-          D.edgePair.val := Equiv.ext fun _ ↦ rfl
-      rcases (he ▸ sameCycle_toPerm_iff _ D.edgePair.apply_apply x y).mp h with h | h
+      rcases (D.edgePair.prop.sameCycle_iff x y).mp h with h | h
       · subst h
         rfl
       · subst h
@@ -118,17 +114,15 @@ that same mark. For a split, use this statement with the source and target state
 theorem saddleResolvedCircleMap_resolvedCircle (p : D.Mark) {s t : Fin n → Bool} {c : Fin n}
     (hst : ∀ j, j ≠ c → s j = t j) (ht : (D.circlesAt t c).card = 1) :
     D.saddleResolvedCircleMap hst ht (p.resolvedCircle s) = p.resolvedCircle t := by
-  induction p using Mark.cases <;> simp
+  induction p using Mark.induction_on <;> simp
 
 end Mark
 
 /-- There is one mark for each of the `2 * n` arcs and each labelled crossing-free circle. -/
 theorem card_mark (D : PDCode n) :
     Fintype.card D.Mark = 2 * n + D.crossinglessComponentCount := by
-  have h := D.edgePair.prop.two_mul_orbitCount
-  rw [Nat.card_eq_fintype_card, Fintype.card_fin] at h
-  rw [Fintype.card_eq_nat_card, Mark, Nat.card_sum, Nat.card_fin, ← orbitCount_def]
-  omega
+  rw [Fintype.card_eq_nat_card, Mark, Nat.card_sum, Nat.card_fin, ← orbitCount_def,
+    orbitCount_edgePair]
 
 namespace SmoothingEquiv
 
@@ -139,12 +133,7 @@ variable {D : PDCode n} {s : Fin n → Bool} {D' : PDCode m} {s' : Fin m → Boo
 bijection of crossing-free labels. -/
 def markCongr (e : D.SmoothingEquiv s D' s') : D.Mark ≃ D'.Mark :=
   (Quotient.congr e.halfEdgeEquiv fun x y ↦ by
-    have hσ : D'.edgePair.val = e.halfEdgeEquiv.permCongr D.edgePair.val :=
-      Equiv.ext fun z ↦ by
-        obtain ⟨z, rfl⟩ := e.halfEdgeEquiv.surjective z
-        exact (e.edgePair_apply z).trans (by simp)
-    exact (hσ.symm ▸ sameCycle_permCongr D.edgePair.val e.halfEdgeEquiv
-      (x := x) (y := y)).symm).sumCongr e.crossinglessEquiv
+    rw [e.edgePair_val_eq_permCongr, sameCycle_permCongr]).sumCongr e.crossinglessEquiv
 
 /-- The transported arc mark is incident to the transported half-edge. -/
 @[simp]
@@ -160,20 +149,20 @@ theorem markCongr_inr (e : D.SmoothingEquiv s D' s') (i : Fin D.crossinglessComp
 @[simp]
 theorem resolvedCircleCongr_resolvedCircle (e : D.SmoothingEquiv s D' s') (p : D.Mark) :
     e.resolvedCircleCongr (p.resolvedCircle s) = (e.markCongr p).resolvedCircle s' := by
-  induction p using Mark.cases <;> simp
+  induction p using Mark.induction_on <;> simp
 
 /-- The identity smoothing equivalence fixes every mark. -/
 @[simp]
 theorem markCongr_refl : (refl D s).markCongr = Equiv.refl _ := by
   ext p
-  induction p using Mark.cases <;> simp
+  induction p using Mark.induction_on <;> simp
 
 /-- A composite smoothing equivalence composes the mark transports. -/
 @[simp]
 theorem markCongr_trans (e : D.SmoothingEquiv s D' s') (f : D'.SmoothingEquiv s' D'' s'') :
     (e.trans f).markCongr = e.markCongr.trans f.markCongr := by
   ext p
-  induction p using Mark.cases <;> simp
+  induction p using Mark.induction_on <;> simp
 
 /-- Inverting a smoothing equivalence inverts its transport of marks. -/
 @[simp]
@@ -184,81 +173,134 @@ theorem markCongr_symm (e : D.SmoothingEquiv s D' s') :
 
 end SmoothingEquiv
 
+/-- Marks of a disjoint union decompose into the marks of the two summands. -/
+def disjointUnionMarkEquiv (D : PDCode n) (E : PDCode m) :
+    (D.disjointUnion E).Mark ≃ D.Mark ⊕ E.Mark :=
+  (((Quotient.congr (disjointUnionHalfEdgeEquiv n m).symm fun x y ↦ by
+    rw [D.disjointUnion_edgePair_val E]
+    simpa only [apply_symm_apply] using
+      (sameCycle_permCongr (Perm.sumCongr D.edgePair.val E.edgePair.val)
+        (disjointUnionHalfEdgeEquiv n m)
+        (x := (disjointUnionHalfEdgeEquiv n m).symm x)
+        (y := (disjointUnionHalfEdgeEquiv n m).symm y))).trans
+      (sameCycleQuotientSumCongrEquiv D.edgePair.val E.edgePair.val)).sumCongr
+        ((finCongr (D.disjointUnion_crossinglessComponentCount E)).trans
+          finSumFinEquiv.symm)).trans (sumSumSumComm _ _ _ _)
+
 namespace Mark
 
 variable {D : PDCode n}
 
-/-- Include a mark from the first diagram into a disjoint union. Crossing-free labels of the
-first summand precede those of the second. -/
-def disjointUnionLeft (p : D.Mark) (E : PDCode m) : (D.disjointUnion E).Mark :=
-  p.map
-    (Quotient.map (fun x ↦ disjointUnionHalfEdgeEquiv n m (.inl x)) fun x y h ↦ by
-      exact D.disjointUnion_edgePair_val E ▸
-        (sameCycle_permCongr _ (disjointUnionHalfEdgeEquiv n m)).mpr
-          (sameCycle_sumCongr_inl.mpr h))
-    (fun i ↦ finCongr (D.disjointUnion_crossinglessComponentCount E).symm
-      (Fin.castAdd E.crossinglessComponentCount i))
+/-- Decomposition sends an arc in the first summand to that summand's mark. -/
+@[simp]
+theorem disjointUnionMarkEquiv_onArc_inl (D : PDCode n) (E : PDCode m) (x : Fin (4 * n)) :
+    disjointUnionMarkEquiv D E
+      (onArc (D.disjointUnion E) (disjointUnionHalfEdgeEquiv n m (.inl x))) =
+      .inl (onArc D x) := by
+  simp [disjointUnionMarkEquiv, onArc]
 
-/-- Include a mark from the second diagram into a disjoint union. Each crossing-free label
-is offset by the number of crossing-free circles in the first summand. -/
+/-- Decomposition sends an arc in the second summand to that summand's mark. -/
+@[simp]
+theorem disjointUnionMarkEquiv_onArc_inr (D : PDCode n) (E : PDCode m) (x : Fin (4 * m)) :
+    disjointUnionMarkEquiv D E
+      (onArc (D.disjointUnion E) (disjointUnionHalfEdgeEquiv n m (.inr x))) =
+      .inr (onArc E x) := by
+  simp [disjointUnionMarkEquiv, onArc]
+
+/-- The inverse includes an arc mark from the first summand. -/
+@[simp]
+theorem disjointUnionMarkEquiv_symm_inl_onArc (D : PDCode n) (E : PDCode m)
+    (x : Fin (4 * n)) :
+    (disjointUnionMarkEquiv D E).symm (.inl (onArc D x)) =
+      onArc (D.disjointUnion E) (disjointUnionHalfEdgeEquiv n m (.inl x)) := by
+  apply (disjointUnionMarkEquiv D E).injective
+  simp
+
+/-- The inverse includes an arc mark from the second summand. -/
+@[simp]
+theorem disjointUnionMarkEquiv_symm_inr_onArc (D : PDCode n) (E : PDCode m)
+    (x : Fin (4 * m)) :
+    (disjointUnionMarkEquiv D E).symm (.inr (onArc E x)) =
+      onArc (D.disjointUnion E) (disjointUnionHalfEdgeEquiv n m (.inr x)) := by
+  apply (disjointUnionMarkEquiv D E).injective
+  simp
+
+/-- The inverse includes a crossing-free mark in the first block of labels. -/
+@[simp]
+theorem disjointUnionMarkEquiv_symm_inl_inr (D : PDCode n) (E : PDCode m)
+    (i : Fin D.crossinglessComponentCount) :
+    (disjointUnionMarkEquiv D E).symm (.inl (.inr i)) =
+      .inr (finCongr (D.disjointUnion_crossinglessComponentCount E).symm
+        (Fin.castAdd E.crossinglessComponentCount i)) := by
+  simp [disjointUnionMarkEquiv]
+
+/-- The inverse includes a crossing-free mark in the second block of labels. -/
+@[simp]
+theorem disjointUnionMarkEquiv_symm_inr_inr (D : PDCode n) (E : PDCode m)
+    (i : Fin E.crossinglessComponentCount) :
+    (disjointUnionMarkEquiv D E).symm (.inr (.inr i)) =
+      .inr (finCongr (D.disjointUnion_crossinglessComponentCount E).symm
+        (Fin.natAdd D.crossinglessComponentCount i)) := by
+  simp [disjointUnionMarkEquiv]
+
+/-- Include a mark from the first diagram using the inverse decomposition. -/
+def disjointUnionLeft (p : D.Mark) (E : PDCode m) : (D.disjointUnion E).Mark :=
+  (disjointUnionMarkEquiv D E).symm (.inl p)
+
+/-- Include a mark from the second diagram using the inverse decomposition. -/
 def disjointUnionRight (p : D.Mark) (E : PDCode m) : (E.disjointUnion D).Mark :=
-  p.map
-    (Quotient.map (fun x ↦ disjointUnionHalfEdgeEquiv m n (.inr x)) fun x y h ↦ by
-      exact E.disjointUnion_edgePair_val D ▸
-        (sameCycle_permCongr _ (disjointUnionHalfEdgeEquiv m n)).mpr
-          (sameCycle_sumCongr_inr.mpr h))
-    (fun i ↦ finCongr (E.disjointUnion_crossinglessComponentCount D).symm
-      (Fin.natAdd E.crossinglessComponentCount i))
+  (disjointUnionMarkEquiv E D).symm (.inr p)
 
 /-- The first inclusion carries an arc mark along the native half-edge inclusion. -/
 @[simp]
 theorem disjointUnionLeft_onArc (x : Fin (4 * n)) (E : PDCode m) :
     (onArc D x).disjointUnionLeft E =
-      onArc (D.disjointUnion E) (disjointUnionHalfEdgeEquiv n m (.inl x)) := (rfl)
+      onArc (D.disjointUnion E) (disjointUnionHalfEdgeEquiv n m (.inl x)) :=
+  disjointUnionMarkEquiv_symm_inl_onArc D E x
 
 /-- The second inclusion carries an arc mark along the native half-edge inclusion. -/
 @[simp]
 theorem disjointUnionRight_onArc (x : Fin (4 * n)) (E : PDCode m) :
     (onArc D x).disjointUnionRight E =
-      onArc (E.disjointUnion D) (disjointUnionHalfEdgeEquiv m n (.inr x)) := (rfl)
+      onArc (E.disjointUnion D) (disjointUnionHalfEdgeEquiv m n (.inr x)) :=
+  disjointUnionMarkEquiv_symm_inr_onArc E D x
 
 /-- The first inclusion retains the initial block of crossing-free labels. -/
 @[simp]
 theorem disjointUnionLeft_inr (i : Fin D.crossinglessComponentCount) (E : PDCode m) :
     disjointUnionLeft (D := D) (.inr i) E =
       .inr (finCongr (D.disjointUnion_crossinglessComponentCount E).symm
-        (Fin.castAdd E.crossinglessComponentCount i)) := (rfl)
+        (Fin.castAdd E.crossinglessComponentCount i)) :=
+  disjointUnionMarkEquiv_symm_inl_inr D E i
 
 /-- The second inclusion uses the final block of crossing-free labels. -/
 @[simp]
 theorem disjointUnionRight_inr (i : Fin D.crossinglessComponentCount) (E : PDCode m) :
     disjointUnionRight (D := D) (.inr i) E =
       .inr (finCongr (E.disjointUnion_crossinglessComponentCount D).symm
-        (Fin.natAdd E.crossinglessComponentCount i)) := (rfl)
+        (Fin.natAdd E.crossinglessComponentCount i)) :=
+  disjointUnionMarkEquiv_symm_inr_inr E D i
 
-/-- Circle selection in a disjoint union agrees with circle selection in its first summand. -/
+/-- Circle selection commutes with the decomposition of marks of a disjoint union. -/
 @[simp]
-theorem disjointUnionResolvedCircleEquiv_resolvedCircle_left (p : D.Mark) (E : PDCode m)
-    (s : Fin (n + m) → Bool) :
-    D.disjointUnionResolvedCircleEquiv E s ((p.disjointUnionLeft E).resolvedCircle s) =
-      .inl (p.resolvedCircle (s ∘ Fin.castAdd m)) := by
-  induction p using Mark.cases with
-  | ha x => simp
-  | hi i =>
-    apply (D.disjointUnionResolvedCircleEquiv E s).symm.injective
-    simp
-
-/-- Circle selection in a disjoint union agrees with circle selection in its second summand. -/
-@[simp]
-theorem disjointUnionResolvedCircleEquiv_resolvedCircle_right (p : D.Mark) (E : PDCode m)
-    (s : Fin (m + n) → Bool) :
-    E.disjointUnionResolvedCircleEquiv D s ((p.disjointUnionRight E).resolvedCircle s) =
-      .inr (p.resolvedCircle (s ∘ Fin.natAdd m)) := by
-  induction p using Mark.cases with
-  | ha x => simp
-  | hi i =>
-    apply (E.disjointUnionResolvedCircleEquiv D s).symm.injective
-    simp
+theorem disjointUnionResolvedCircleEquiv_resolvedCircle (D : PDCode n) (E : PDCode m)
+    (p : (D.disjointUnion E).Mark) (s : Fin (n + m) → Bool) :
+    D.disjointUnionResolvedCircleEquiv E s (p.resolvedCircle s) =
+      Sum.map (fun q : D.Mark ↦ q.resolvedCircle (s ∘ Fin.castAdd m))
+        (fun q : E.Mark ↦ q.resolvedCircle (s ∘ Fin.natAdd n))
+        (disjointUnionMarkEquiv D E p) := by
+  obtain ⟨p, rfl⟩ := (disjointUnionMarkEquiv D E).symm.surjective p
+  rcases p with p | p
+  · induction p using Mark.induction_on with
+    | ha x => simp
+    | hi i =>
+      apply (D.disjointUnionResolvedCircleEquiv E s).symm.injective
+      simp
+  · induction p using Mark.induction_on with
+    | ha x => simp
+    | hi i =>
+      apply (D.disjointUnionResolvedCircleEquiv E s).symm.injective
+      simp
 
 end Mark
 
