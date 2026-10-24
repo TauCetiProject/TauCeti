@@ -132,10 +132,8 @@ theorem cellularIncidence_realization_map_face
 
 end Naturality
 
-/-- **The incidence coefficient of the `j`-th face of a cell depends only on its dimension.**
-Any two cells of the same dimension have the same incidence coefficient with their `j`-th faces.
-Both are compared with cells of the full simplicial complex on the vertex type, which contains a
-simplicial map carrying one cell increasingly onto the other. -/
+/-- Any two cells of the same dimension have equal incidence coefficients with their
+respective `j`-th deleted-vertex faces. -/
 theorem cellularIncidence_realization_face_eq (c c' : RealizationCell K (n + 1))
     (j : Fin (n + 2)) :
     letI := realizationCWComplex K
@@ -143,6 +141,7 @@ theorem cellularIncidence_realization_face_eq (c c' : RealizationCell K (n + 1))
         ((realizationCellEquiv K n).symm (c'.face j)) ((realizationCellEquiv K (n + 1)).symm c') =
       cellularIncidence (univ : Set (Realization K)) R n
         ((realizationCellEquiv K n).symm (c.face j)) ((realizationCellEquiv K (n + 1)).symm c) := by
+  -- Compare the two cells in the full simplicial complex, using an increasing vertex map.
   let ι' := PreAbstractSimplicialComplex.SimplicialMap.inclusion
     (le_top : K.toPreAbstractSimplicialComplex ≤ (⊤ : _root_.AbstractSimplicialComplex ι).1)
   have hι'v (v : ι) : ι' v = v :=
@@ -180,14 +179,14 @@ theorem cellularIncidence_realization_face_eq (c c' : RealizationCell K (n + 1))
     ← cellularIncidence_realization_map_face (L := ⊤) R ι' c (hι' c) j,
     ← cellularIncidence_realization_map_face (L := ⊤) R g _ hg j, hcc']
 
-/-- **Deleted-vertex faces have unit incidence numbers**, in every dimension. In positive
-dimensions of the face this is `TauCeti.isUnit_cellularIncidence_realization_of_subset`; for a
-`1`-cell it follows from the injectivity of its attaching map. -/
+/-- Every codimension-one deleted-vertex face has a unit incidence coefficient,
+including the endpoint faces of a `1`-cell. -/
 theorem isUnit_cellularIncidence_realization_face (c : RealizationCell K (n + 1))
     (j : Fin (n + 2)) :
     letI := realizationCWComplex K
     IsUnit (cellularIncidence (univ : Set (Realization K)) R n
       ((realizationCellEquiv K n).symm (c.face j)) ((realizationCellEquiv K (n + 1)).symm c)) := by
+  -- In positive face dimension use the subset criterion; for endpoints use attaching injectivity.
   let := realizationCWComplex K
   cases n with
   | zero =>
