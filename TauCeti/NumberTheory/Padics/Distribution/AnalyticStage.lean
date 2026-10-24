@@ -5,12 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.Padics.ProperSpace
-public import Mathlib.NumberTheory.Padics.RingHoms
 public import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
-public import Mathlib.Topology.Instances.ZMod
 public import Mathlib.Topology.MetricSpace.Ultra.ContinuousMaps
 public import TauCeti.Analysis.Normed.Module.InfiniteSum
+public import TauCeti.NumberTheory.Padics.Disc
+public import TauCeti.NumberTheory.Padics.PadicIntegers
 public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Discrete
 
 /-!
@@ -41,13 +40,11 @@ classes `a' = a + pʰ b`, `0 ≤ b < p`, in `ZMod (p ^ (h + 1))`. On the smaller
 The transition `TauCeti.AnalyticStage.transition` is this re-expansion. It does not increase norms
 and it is compatible with evaluation.
 
-The disc decomposition itself is the homeomorphism `PadicInt.discHomeomorph`, which sends
-`(a, w)` to `a.val + pʰ w`.
+The disc decomposition itself is the homeomorphism `PadicInt.discHomeomorph` of
+`TauCeti.NumberTheory.Padics.Disc`, which sends `(a, w)` to `a.val + pʰ w`.
 
 ## Main definitions
 
-* `PadicInt.discHomeomorph p h`: the homeomorphism `ZMod (pʰ) × ℤ_p ≃ₜ ℤ_p`,
-  `(a, w) ↦ a.val + pʰ w`.
 * `TauCeti.AnalyticStage p h E`: the analytic stage `C₀(ZMod (pʰ) × ℕ, E)`.
 * `TauCeti.AnalyticStage.eval S`: evaluation `LA_h(E) →L[S] C(ℤ_p, E)`.
 * `TauCeti.AnalyticStage.transition S`: the re-expansion `LA_h(E) →L[S] LA_{h+1}(E)`.
@@ -75,68 +72,6 @@ open Filter Topology
 open scoped ZeroAtInfty
 
 variable {p : ℕ} [hp : Fact p.Prime]
-
-/-! ### The disc decomposition of `ℤ_p` -/
-
-namespace PadicInt
-
-private theorem toZModPow_natCast_val_add_mul (h : ℕ) (a : ZMod (p ^ h)) (w : ℤ_[p]) :
-    toZModPow h ((a.val : ℤ_[p]) + (p : ℤ_[p]) ^ h * w) = a := by
-  rw [map_add, map_mul, map_pow, map_natCast, map_natCast, ZMod.natCast_zmod_val, ← Nat.cast_pow,
-    ZMod.natCast_self, zero_mul, add_zero]
-
-private theorem bijective_discMap (h : ℕ) :
-    Function.Bijective fun y : ZMod (p ^ h) × ℤ_[p] ↦
-      (y.1.val : ℤ_[p]) + (p : ℤ_[p]) ^ h * y.2 := by
-  refine ⟨fun y z hyz ↦ ?_, fun x ↦ ?_⟩
-  · have h1 : y.1 = z.1 := by
-      simpa only [toZModPow_natCast_val_add_mul] using
-        congrArg (toZModPow h) hyz
-    refine Prod.ext h1 (mul_left_cancel₀ (pow_ne_zero h (Nat.cast_ne_zero.mpr hp.out.ne_zero)) ?_)
-    simpa [h1] using hyz
-  · set a := toZModPow h x
-    have hmem : x - (a.val : ℤ_[p]) ∈ RingHom.ker (toZModPow (p := p) h) := by
-      rw [RingHom.mem_ker, map_sub, map_natCast, ZMod.natCast_zmod_val, sub_self]
-    rw [ker_toZModPow, Ideal.mem_span_singleton] at hmem
-    obtain ⟨w, hw⟩ := hmem
-    exact ⟨(a, w), by simp [← hw]⟩
-
-variable (p) in
-/-- The decomposition of `ℤ_p` into the discs `a + pʰℤ_p`, `a ∈ ZMod (pʰ)`: the homeomorphism
-`ZMod (pʰ) × ℤ_p ≃ₜ ℤ_p` sending `(a, w)` to `a.val + pʰ w`, where `a.val < pʰ` is the natural
-representative of `a`. Its inverse sends `x` to its residue class modulo `pʰ` and to the disc
-coordinate `w = (x - a.val) / pʰ`. -/
-noncomputable def discHomeomorph (h : ℕ) : ZMod (p ^ h) × ℤ_[p] ≃ₜ ℤ_[p] :=
-  Continuous.homeoOfEquivCompactToT2 (f := Equiv.ofBijective _ (bijective_discMap h)) <|
-    continuous_prod_of_discrete_left.mpr fun _ ↦ by
-      simp only [Equiv.ofBijective_apply]
-      fun_prop
-
-@[simp]
-theorem discHomeomorph_apply (h : ℕ) (y : ZMod (p ^ h) × ℤ_[p]) :
-    discHomeomorph p h y = (y.1.val : ℤ_[p]) + (p : ℤ_[p]) ^ h * y.2 := by
-  simp only [discHomeomorph, Continuous.homeoOfEquivCompactToT2, Homeomorph.homeomorph_mk_coe,
-    Equiv.ofBijective_apply]
-
-/-- The first component of the inverse disc decomposition is reduction modulo `pʰ`. -/
-@[simp]
-theorem fst_discHomeomorph_symm (h : ℕ) (x : ℤ_[p]) :
-    ((discHomeomorph p h).symm x).1 = toZModPow h x := by
-  conv_rhs => rw [← (discHomeomorph p h).apply_symm_apply x, discHomeomorph_apply]
-  rw [toZModPow_natCast_val_add_mul]
-
-/-- The second component of the inverse disc decomposition is the disc coordinate: `x` is the
-natural representative of its residue class modulo `pʰ` plus `pʰ` times it. -/
-theorem natCast_val_toZModPow_add_mul_snd_discHomeomorph_symm (h : ℕ) (x : ℤ_[p]) :
-    ((toZModPow h x).val : ℤ_[p]) + (p : ℤ_[p]) ^ h * ((discHomeomorph p h).symm x).2 = x := by
-  conv_rhs => rw [← (discHomeomorph p h).apply_symm_apply x]
-  rw [discHomeomorph_apply, fst_discHomeomorph_symm]
-
-theorem discHomeomorph_symm_natCast_val_add_mul (h : ℕ) (a : ZMod (p ^ h)) (w : ℤ_[p]) :
-    (discHomeomorph p h).symm ((a.val : ℤ_[p]) + (p : ℤ_[p]) ^ h * w) = (a, w) :=
-  (discHomeomorph p h).symm_apply_eq.mpr (discHomeomorph_apply h (a, w)).symm
-
-end PadicInt
 
 namespace TauCeti
 
@@ -289,9 +224,6 @@ theorem norm_eval_le (c : AnalyticStage p h E) : ‖eval S c‖ ≤ ‖c‖ :=
 private noncomputable def transitionScalar (b : ℤ_[p]) (j k : ℕ) : ℤ_[p] :=
   (k.choose j : ℤ_[p]) * b ^ (k - j) * (p : ℤ_[p]) ^ j
 
-private theorem norm_p_lt_one : ‖(p : ℤ_[p])‖ < 1 :=
-  (PadicInt.norm_lt_one_iff_dvd _).mpr dvd_rfl
-
 private theorem norm_transitionScalar_le (b : ℤ_[p]) (j k : ℕ) :
     ‖transitionScalar b j k‖ ≤ ‖(p : ℤ_[p])‖ ^ j := by
   rw [transitionScalar, norm_mul, norm_mul, norm_pow (p : ℤ_[p])]
@@ -310,7 +242,7 @@ private theorem tendsto_norm_pow_mul_cofinite {ι : Type*} [Finite ι] (C : ℝ)
     Tendsto (fun i : ι × ℕ ↦ ‖(p : ℤ_[p])‖ ^ i.2 * C) cofinite (𝓝 0) := by
   have hpow : Tendsto (fun n : ℕ ↦ ‖(p : ℤ_[p])‖ ^ n * C) atTop (𝓝 0) := by
     simpa using (tendsto_pow_atTop_nhds_zero_of_lt_one (norm_nonneg _)
-      (norm_p_lt_one (p := p))).mul_const C
+      (PadicInt.norm_p_lt_one (p := p))).mul_const C
   rw [← Nat.cofinite_eq_atTop] at hpow
   rw [← Filter.coprod_cofinite, Filter.coprod, Filter.cofinite_eq_bot, Filter.comap_bot,
     bot_sup_eq]
@@ -366,7 +298,7 @@ noncomputable def transition : AnalyticStage p h E →L[S] AnalyticStage p (h + 
       refine (ZeroAtInftyContinuousMap.norm_le (norm_nonneg c)).mpr fun i ↦ ?_
       simp only [L, LinearMap.coe_mk, AddHom.coe_mk, ZeroAtInftyContinuousMap.coe_mkOfDiscrete]
       refine (norm_transitionCoeff_le c i).trans (mul_le_of_le_one_left (norm_nonneg c) ?_)
-      exact pow_le_one₀ (norm_nonneg _) norm_p_lt_one.le }
+      exact pow_le_one₀ (norm_nonneg _) PadicInt.norm_p_lt_one.le }
 
 private theorem coe_transition (c : AnalyticStage p h E) :
     ⇑(transition S c) = transitionCoeff c :=
@@ -380,8 +312,7 @@ theorem transition_apply (c : AnalyticStage p h E) (a' : ZMod (p ^ (h + 1))) (j 
   rw [coe_transition]
   rfl
 
-/-- The coefficient of `vʲ` after the transition is divisible by `pʲ`: its norm is at most
-`‖p‖ʲ ‖c‖`. -/
+/-- The coefficient of `vʲ` after the transition has norm at most `‖p‖ʲ ‖c‖`. -/
 theorem norm_transition_apply_le (c : AnalyticStage p h E) (a' : ZMod (p ^ (h + 1))) (j : ℕ) :
     ‖transition S c (a', j)‖ ≤ ‖(p : ℤ_[p])‖ ^ j * ‖c‖ := by
   rw [coe_transition]
@@ -391,7 +322,8 @@ theorem norm_transition_apply_le (c : AnalyticStage p h E) (a' : ZMod (p ^ (h + 
 theorem norm_transition_le (c : AnalyticStage p h E) : ‖transition S c‖ ≤ ‖c‖ :=
   (ZeroAtInftyContinuousMap.norm_le (norm_nonneg c)).mpr fun i ↦
     (coe_transition S c ▸ norm_transitionCoeff_le c i).trans <|
-      mul_le_of_le_one_left (norm_nonneg c) <| pow_le_one₀ (norm_nonneg _) norm_p_lt_one.le
+      mul_le_of_le_one_left (norm_nonneg c) <|
+        pow_le_one₀ (norm_nonneg _) PadicInt.norm_p_lt_one.le
 
 /-- The transition is compatible with evaluation: a coefficient vector and its re-expansion on
 the smaller discs define the same function. -/
@@ -423,7 +355,7 @@ theorem eval_transition (c : AnalyticStage p h E) : eval S (transition S c) = ev
     · refine Filter.Tendsto.smul_cofinite_nhds_zero (f := fun j ↦ ‖(p : ℤ_[p])‖ ^ j)
         (g := fun k ↦ ‖c (a, k)‖) ?_ ?_
       · rw [Nat.cofinite_eq_atTop]
-        exact tendsto_pow_atTop_nhds_zero_of_lt_one (norm_nonneg _) norm_p_lt_one
+        exact tendsto_pow_atTop_nhds_zero_of_lt_one (norm_nonneg _) PadicInt.norm_p_lt_one
       · rw [Nat.cofinite_eq_atTop]
         simpa using (tendsto_apply_mk_atTop c a).norm
   calc ∑' j, v ^ j • transition S c (a', j)
