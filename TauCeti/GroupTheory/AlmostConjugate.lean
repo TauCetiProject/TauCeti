@@ -56,6 +56,9 @@ Through the classification of permutation representations by fixed-point counts 
 ## Main statements
 
 * `Subgroup.AlmostConjugate.refl`, `.symm`, `.trans`: almost-conjugacy is an equivalence relation.
+* `Subgroup.AlmostConjugate.of_equiv` and `Subgroup.almostConjugate_iff_exists_equiv_isConj`:
+  subgroups of a finite group are almost conjugate exactly when there is a bijection between them
+  sending every element to a conjugate of it.
 * `Subgroup.AlmostConjugate.map` and `Subgroup.AlmostConjugate.comap`: it is transported along
   group isomorphisms, by `Subgroup.natCard_mem_carrier_map_and_mem_map`. The matching statement
   for conjugacy itself is `Subgroup.exists_map_conj_comap_eq_iff`, in
@@ -150,6 +153,44 @@ theorem equivalence : Equivalence (AlmostConjugate (G := G)) :=
   ⟨refl, symm, trans⟩
 
 end AlmostConjugate
+
+/-! ### Class-preserving bijections -/
+
+/-- The elements of `L` conjugate to `g`, read in `G` or in `L`. -/
+private def isConjSubtypeEquiv (g : G) (L : Subgroup G) :
+    {x : G // IsConj g x ∧ x ∈ L} ≃ {h : L // IsConj g h} :=
+  (Equiv.subtypeEquivRight fun _ ↦ and_comm).trans
+    (Equiv.subtypeSubtypeEquivSubtypeInter (· ∈ L) (IsConj g)).symm
+
+/-- **A class-preserving bijection gives almost-conjugacy.** If a bijection `f : H ≃ K` sends every
+element of `H` to a conjugate of it in `G`, then `H` and `K` are almost conjugate. -/
+theorem AlmostConjugate.of_equiv (f : H ≃ K) (hf : ∀ h : H, IsConj (h : G) (f h)) :
+    H.AlmostConjugate K := by
+  rw [almostConjugate_iff_forall_natCard_isConj]
+  exact fun g ↦ Nat.card_congr <| (isConjSubtypeEquiv g H).trans <|
+    (f.subtypeEquiv fun h ↦ ⟨fun hg ↦ hg.trans (hf h), fun hg ↦ hg.trans (hf h).symm⟩).trans
+      (isConjSubtypeEquiv g K).symm
+
+/-- **Almost-conjugacy is the existence of a class-preserving bijection.** Two finite subgroups
+`H` and `K` of a group `G` are almost conjugate exactly when there is a bijection `H ≃ K` sending
+every element to a conjugate of it in `G`. -/
+theorem almostConjugate_iff_exists_equiv_isConj [Finite H] [Finite K] :
+    H.AlmostConjugate K ↔ ∃ f : H ≃ K, ∀ h : H, IsConj (h : G) (f h) := by
+  refine ⟨fun hHK ↦ ?_, fun ⟨f, hf⟩ ↦ .of_equiv f hf⟩
+  rw [almostConjugate_iff_forall_natCard_isConj] at hHK
+  -- Match the fibres of `h ↦ [h]` on `H` and on `K` over each conjugacy class.
+  have hfib (C : ConjClasses G) : Nonempty ({h : H // ConjClasses.mk (h : G) = C} ≃
+      {k : K // ConjClasses.mk (k : G) = C}) := by
+    obtain ⟨g, rfl⟩ := ConjClasses.mk_surjective C
+    have hc (L : Subgroup G) : Nat.card {h : L // ConjClasses.mk (h : G) = ConjClasses.mk g} =
+        Nat.card {x : G // IsConj g x ∧ x ∈ L} :=
+      (Nat.card_congr <| (isConjSubtypeEquiv g L).trans <| Equiv.subtypeEquivRight fun h ↦ by
+        rw [ConjClasses.mk_eq_mk_iff_isConj, isConj_comm]).symm
+    exact Finite.card_eq.1 ((hc H).trans ((hHK g).trans (hc K).symm))
+  refine ⟨Equiv.ofFiberEquiv (f := fun h : H ↦ ConjClasses.mk (h : G))
+    (g := fun k : K ↦ ConjClasses.mk (k : G)) fun C ↦ (hfib C).some, fun h ↦ ?_⟩
+  exact ConjClasses.mk_eq_mk_iff_isConj.1
+    (Equiv.ofFiberEquiv_map (fun C ↦ (hfib C).some) h).symm
 
 /-! ### Transport along isomorphisms and conjugation -/
 
