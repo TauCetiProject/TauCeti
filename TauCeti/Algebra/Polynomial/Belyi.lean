@@ -143,6 +143,7 @@ theorem eval_div_belyiPolynomial (m n : ℕ) :
   field_simp
 
 /-- In characteristic zero, the Belyi polynomial `B_{m,n}` has degree `m + n`. -/
+@[simp]
 theorem natDegree_belyiPolynomial (m n : ℕ) : (belyiPolynomial K m n).natDegree = m + n := by
   have hc := belyiConstant_ne_zero (K := K) m n
   have h1 : (1 - X : K[X]).natDegree = 1 := by
