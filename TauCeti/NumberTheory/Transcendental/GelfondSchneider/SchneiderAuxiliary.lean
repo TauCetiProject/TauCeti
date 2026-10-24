@@ -22,7 +22,7 @@ Gelfond–Schneider theorem the auxiliary function is the exponential polynomial
 
 whose integer coefficients are chosen so that `F` vanishes at the points `u + v σ β` of the grid
 `1 ≤ u, v ≤ L`. Since `exp (j λ (u + v σ β)) = σ (α ^ (u j) γ ^ (v j))`
-(`TauCeti.map_pow_mul_pow_eq_exp`), the value `F(u + v σ β)` is the image under `σ` of
+(`RingHom.map_pow_mul_pow_eq_exp`), the value `F(u + v σ β)` is the image under `σ` of
 
 `y_{uv} = ∑_{i, j} a_{ij} (u + v β) ^ i α ^ (u j) γ ^ (v j) ∈ K`,
 
@@ -33,15 +33,15 @@ so the vanishing conditions are `L²` linear equations over `K` in the `D₁ D�
 it, each equation is multiplied by `m ^ (D₁ + 2 L D₂)` for a nonzero integer `m` such that
 `m α`, `m β` and `m γ` are algebraic integers.
 
-The zero estimate for real exponential polynomials and Schwarz's lemma with prescribed zeros then
-show that such an `F` cannot vanish at too many further grid points when `α` and `β` are real.
+Schneider's proof continues by applying a zero estimate for exponential polynomials and Schwarz's
+lemma with prescribed zeros to `F`; those steps are not part of this file.
 
 ## Main results
 
 * `TauCeti.exists_schneider_auxiliary_algebraic`: a nonzero integer coefficient matrix with the
   bound above for which every `y_{uv}`, `1 ≤ u, v ≤ L`, vanishes in `K`.
-* `TauCeti.map_pow_mul_pow_eq_exp`: `σ (α ^ (u j) γ ^ (v j)) = exp (j λ (u + v σ β))`.
-* `TauCeti.exists_schneider_auxiliary`: the auxiliary function `F` vanishes at the grid points
+* `RingHom.map_pow_mul_pow_eq_exp`: `σ (α ^ (u j) γ ^ (v j)) = exp (j λ (u + v σ β))`.
+* `RingHom.exists_schneider_auxiliary`: the auxiliary function `F` vanishes at the grid points
   `u + v σ β`, `1 ≤ u, v ≤ L`.
 
 ## References
@@ -54,18 +54,6 @@ public section
 open Finset Module NumberField
 
 namespace TauCeti
-
-/-- If `σ α = exp λ` and `σ γ = exp (σ β λ)`, then
-`σ (α ^ (u j) γ ^ (v j)) = exp (j λ (u + v σ β))`: the value of the exponential `exp (j λ z)` at
-`z = u + v σ β` lies in the image of `σ`. -/
-theorem map_pow_mul_pow_eq_exp {R : Type*} [Semiring R] (σ : R →+* ℂ) {l : ℂ} {α β γ : R}
-    (hα : σ α = Complex.exp l) (hγ : σ γ = Complex.exp (σ β * l)) (u v j : ℕ) :
-    σ (α ^ (u * j) * γ ^ (v * j)) = Complex.exp (j * l * (u + v * σ β)) := by
-  rw [map_mul, map_pow, map_pow, hα, hγ, ← Complex.exp_nat_mul, ← Complex.exp_nat_mul,
-    ← Complex.exp_add]
-  congr 1
-  push_cast
-  ring
 
 /-- The coefficient bound of Schneider's auxiliary function: with `N = D₁ D₂` unknowns and
 entries of house at most `L ^ D₁ H ^ (D₁ + 2 L D₂)`, the quantity `3 N A` of Siegel's lemma is at
@@ -153,6 +141,9 @@ theorem exists_schneider_auxiliary_algebraic (α β γ : K) :
     have h₃ : ((p.2 : ℕ) + 1) * q.2 ≤ L * D₂ := Nat.mul_le_mul p.2.is_lt q.2.is_lt.le
     simp only [k, N]
     linarith
+  -- Name the exponent `r = N - k p q` of the power of `m`, so that `N = k p q + r` can be
+  -- substituted and `ring` can combine the powers of `m`.
+  have hNk (p q) : ∃ r, N - k p q = r ∧ N = k p q + r := ⟨N - k p q, rfl, by have := hk p q; omega⟩
   let w : Fin L × Fin L → K := fun p ↦ (((p.1 : ℕ) + 1 : ℕ) : K) + (((p.2 : ℕ) + 1 : ℕ) : K) * β
   let e : Fin L × Fin L → Fin D₁ × Fin D₂ → K := fun p q ↦
     (m : K) ^ (N - k p q) * ((m : K) * w p) ^ (q.1 : ℕ) *
@@ -196,8 +187,8 @@ theorem exists_schneider_auxiliary_algebraic (α β γ : K) :
       (by positivity)
     refine h.trans (le_of_eq_of_le ?_ (mul_le_mul_of_nonneg_right
       (pow_le_pow_right₀ (by exact_mod_cast (by omega : 1 ≤ L)) q.1.is_lt.le) (by positivity)))
-    obtain ⟨r, hr⟩ := Nat.exists_eq_add_of_le (hk p q)
-    rw [show N - k p q = r by omega, hr, mul_pow]
+    obtain ⟨r, hNr, hr⟩ := hNk p q
+    rw [hNr, hr, mul_pow]
     simp only [k]
     ring
   let a' : Matrix (Fin L × Fin L) (Fin D₁ × Fin D₂) (𝓞 K) := fun p q ↦ ⟨e p q, he p q⟩
@@ -233,9 +224,9 @@ theorem exists_schneider_auxiliary_algebraic (α β γ : K) :
         (α ^ ((u + 1) * q.2) * γ ^ ((v + 1) * q.2))) := by
       -- The coercion of the algebraic integer `a' p q = ⟨e p q, _⟩` to `K` is `e p q`.
       change e p q = _
-      obtain ⟨r, hr⟩ := Nat.exists_eq_add_of_le (hk p q)
+      obtain ⟨r, hNr, hr⟩ := hNk p q
       simp only [e]
-      rw [show N - k p q = r by omega, hr]
+      rw [hNr, hr]
       simp only [k, p, mul_pow]
       ring
     simp only [hep, Fintype.sum_prod_type] at hrow
@@ -248,6 +239,24 @@ theorem exists_schneider_auxiliary_algebraic (α β γ : K) :
     simp only [w, p]
     push_cast
     ring
+
+end TauCeti
+
+namespace RingHom
+
+/-- If `σ α = exp λ` and `σ γ = exp (σ β λ)`, then
+`σ (α ^ (u j) γ ^ (v j)) = exp (j λ (u + v σ β))`: the value of the exponential `exp (j λ z)` at
+`z = u + v σ β` lies in the image of `σ`. -/
+theorem map_pow_mul_pow_eq_exp {R : Type*} [Semiring R] (σ : R →+* ℂ) {l : ℂ} {α β γ : R}
+    (hα : σ α = Complex.exp l) (hγ : σ γ = Complex.exp (σ β * l)) (u v j : ℕ) :
+    σ (α ^ (u * j) * γ ^ (v * j)) = Complex.exp (j * l * (u + v * σ β)) := by
+  rw [map_mul, map_pow, map_pow, hα, hγ, ← Complex.exp_nat_mul, ← Complex.exp_nat_mul,
+    ← Complex.exp_add]
+  congr 1
+  push_cast
+  ring
+
+variable {K : Type*} [Field K] [NumberField K]
 
 /-- **Schneider's auxiliary function** (Evertse, Lemma 4.22). Let `K` be a number field of degree
 `d` with an embedding `σ : K →+* ℂ`, let `λ ∈ ℂ` and `α, β, γ ∈ K` with `σ α = exp λ` and
@@ -263,7 +272,7 @@ theorem exists_schneider_auxiliary (σ : K →+* ℂ) {l : ℂ} {α β γ : K} (
         ∀ u v : ℕ, 1 ≤ u → u ≤ L → 1 ≤ v → v ≤ L →
           ∑ i, ∑ j, (a i j : ℂ) * ((u : ℂ) + v * σ β) ^ (i : ℕ) *
             Complex.exp (j * l * (u + v * σ β)) = 0 := by
-  obtain ⟨c, hc, h⟩ := exists_schneider_auxiliary_algebraic α β γ
+  obtain ⟨c, hc, h⟩ := TauCeti.exists_schneider_auxiliary_algebraic α β γ
   refine ⟨c, hc, fun L D₁ D₂ hL hD ↦ ?_⟩
   obtain ⟨a, ha, hbound, hzero⟩ := h L D₁ D₂ hL hD
   refine ⟨a, ha, hbound, fun u v hu₁ hu hv₁ hv ↦ ?_⟩
@@ -271,4 +280,4 @@ theorem exists_schneider_auxiliary (σ : K →+* ℂ) {l : ℂ} {α β γ : K} (
   simpa only [map_sum, map_mul, map_pow, map_add, map_intCast, map_natCast, map_zero,
     map_pow_mul_pow_eq_exp σ hα hγ] using this
 
-end TauCeti
+end RingHom
