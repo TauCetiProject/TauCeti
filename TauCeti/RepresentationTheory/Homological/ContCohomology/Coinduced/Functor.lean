@@ -10,6 +10,7 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.Coinduced.
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete.Basic
 
 import all TauCeti.RepresentationTheory.Homological.ContCohomology.Coinduced.Discrete
+import TauCeti.RepresentationTheory.Coinduced
 import TauCeti.RepresentationTheory.Continuous.TopRep.EqToHom
 import TauCeti.Topology.Algebra.GroupAction.Discrete
 
@@ -36,6 +37,8 @@ multiplication on `G`.
   `G`-representations;
 * `TauCeti.discreteCoindEquivAlgebraic`: for an open subgroup `U`, the linear equivalence between
   locally constant coinduction and Mathlib's `Representation.coindV`;
+* `TauCeti.discreteCoindAddEquivAlgebraic`: the additive comparison for a discrete group,
+  preserving the caller's coefficient action;
 * `TauCeti.algebraicCoindCounit`: evaluation at `1` on algebraic coinduction with its discrete
   topology, for comparing the two restriction–evaluation Shapiro maps.
 
@@ -548,12 +551,57 @@ theorem algebraicCoindCounit_toLinearMap :
   ext f
   let f' : Representation.coindV U.toSubgroup.subtype
     (Representation.ofDistribMulAction R U.toSubgroup A.obj.V) := f
-  -- Mathlib has no point-evaluation lemma for the counit (its generated simps lemmas were
-  -- removed), so unfold only the adjunction and its hom equivalence at this boundary.
-  exact (algebraicCoindCounit_apply R G U A f').trans (by
-    simp [Rep.resCoindAdjunction, Rep.resCoindHomEquiv]
-    rfl)
+  exact (algebraicCoindCounit_apply R G U A f').trans
+    (Rep.resCoindAdjunction_counit_app_hom_apply (k := R) U.toSubgroup.subtype
+      (Rep.of (Representation.ofDistribMulAction R U.toSubgroup A.obj.V)) f').symm
 
 end AlgebraicCounit
+
+section DiscreteAlgebraicComparison
+
+variable (G M : Type) [Group G] [TopologicalSpace G] [DiscreteTopology G]
+  [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
+  (U : Subgroup G) [DistribMulAction U M] [ContinuousSMul U M]
+
+/-- For a discrete group, locally constant coinduction is additively equivalent to algebraic
+coinduction of the caller's coefficient action. -/
+noncomputable def discreteCoindAddEquivAlgebraic :
+    DiscreteCoind G U M ≃+ Rep.coind U.subtype
+      (Rep.ofDistribMulAction ℤ U M) :=
+  (discreteCoindEquivAlgebraic ℤ G ⟨U, isOpen_discrete _⟩
+    ⟨ofDiscreteModule ℤ U M, ofDiscreteModule_isSmoothDiscrete ℤ U M⟩).toAddEquiv
+
+/-- The additive coinduction comparison preserves every value of the underlying function. -/
+theorem discreteCoindAddEquivAlgebraic_apply (f : DiscreteCoind G U M) (g : G) :
+    (discreteCoindAddEquivAlgebraic G M U f).1 g = f g :=
+  discreteCoindEquivAlgebraic_apply ℤ G ⟨U, isOpen_discrete _⟩
+    ⟨ofDiscreteModule ℤ U M, ofDiscreteModule_isSmoothDiscrete ℤ U M⟩ f g
+
+/-- The inverse additive coinduction comparison preserves every value of the underlying
+algebraically coinduced function. -/
+theorem discreteCoindAddEquivAlgebraic_symm_apply
+    (f : Rep.coind U.subtype (Rep.ofDistribMulAction ℤ U M)) (g : G) :
+    (discreteCoindAddEquivAlgebraic G M U).symm f g = f.1 g :=
+  discreteCoindEquivAlgebraic_symm_apply ℤ G ⟨U, isOpen_discrete _⟩
+    ⟨ofDiscreteModule ℤ U M, ofDiscreteModule_isSmoothDiscrete ℤ U M⟩ f g
+
+/-- The additive coinduction comparison intertwines right translation. -/
+@[simp↓]
+theorem discreteCoindAddEquivAlgebraic_smul (g : G) (f : DiscreteCoind G U M) :
+    discreteCoindAddEquivAlgebraic G M U (g • f) =
+      (Rep.coind U.subtype (Rep.ofDistribMulAction ℤ U M)).ρ g
+        (discreteCoindAddEquivAlgebraic G M U f) :=
+  discreteCoindEquivAlgebraic_smul ℤ G ⟨U, isOpen_discrete _⟩
+    ⟨ofDiscreteModule ℤ U M, ofDiscreteModule_isSmoothDiscrete ℤ U M⟩ g f
+
+/-- The algebraic restriction–coinduction counit evaluates at the identity after the additive
+coinduction comparison. -/
+theorem discreteCoindAddEquivAlgebraic_eval (f : DiscreteCoind G U M) :
+    ((Rep.resCoindAdjunction ℤ U.subtype).counit.app
+      (Rep.ofDistribMulAction ℤ U M)).hom (discreteCoindAddEquivAlgebraic G M U f) = f 1 := by
+  exact (Rep.resCoindAdjunction_counit_app_hom_apply U.subtype _ _).trans
+    (discreteCoindAddEquivAlgebraic_apply G M U f 1)
+
+end DiscreteAlgebraicComparison
 
 end TauCeti
