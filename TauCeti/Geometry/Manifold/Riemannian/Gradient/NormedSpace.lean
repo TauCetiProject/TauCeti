@@ -39,6 +39,31 @@ theorem inner_tangentSpace_vectorSpace {F : Type*} [NormedAddCommGroup F]
   -- Mathlib's `norm_tangentSpace_vectorSpace`.
   rfl
 
+/-- The canonical linear isometry from a tangent space of a real inner-product space to its model
+space. -/
+noncomputable def tangentSpaceToModelIsometry {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace ℝ F] (x : F) : TangentSpace 𝓘(ℝ, F) x ≃ₗᵢ[ℝ] F :=
+  (NormedSpace.fromTangentSpace x).toLinearEquiv.isometryOfInner
+    (fun v w : TangentSpace 𝓘(ℝ, F) x ↦ by
+      simpa using (inner_tangentSpace_vectorSpace v w).symm)
+
+@[simp]
+theorem tangentSpaceToModelIsometry_apply {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace ℝ F] (x : F) (v : TangentSpace 𝓘(ℝ, F) x) :
+    tangentSpaceToModelIsometry x v = NormedSpace.fromTangentSpace x v := by
+  rfl
+
+@[simp]
+theorem tangentSpaceToModelIsometry_symm_apply {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace ℝ F] (x : F) (u : F) :
+    (tangentSpaceToModelIsometry x).symm u = (NormedSpace.fromTangentSpace x).symm u := by
+  -- Expose the underlying linear equivalence so Mathlib's conversion lemma applies.
+  change (tangentSpaceToModelIsometry x).toLinearEquiv.symm u = _
+  rw [show (tangentSpaceToModelIsometry x).toLinearEquiv =
+      (NormedSpace.fromTangentSpace x).toLinearEquiv by
+    exact LinearEquiv.isometryOfInner_toLinearEquiv _ _]
+  rfl
+
 /-- On a flat inner product space with its standard Riemannian metric, the manifold gradient is
 Mathlib's `gradient`. -/
 theorem mgradient_eq_gradient {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]

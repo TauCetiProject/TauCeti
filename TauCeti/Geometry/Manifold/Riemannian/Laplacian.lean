@@ -16,7 +16,6 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCiv
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
-import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
 import TauCeti.Analysis.InnerProductSpace.SquaredDistance
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import TauCeti.Geometry.Manifold.Riemannian.Gradient.ChainRule
@@ -650,15 +649,6 @@ theorem hessian_eq_iteratedFDeriv_model_space
         _ = _ := (iteratedFDeriv_two_apply f x
           ![NormedSpace.fromTangentSpace x v, NormedSpace.fromTangentSpace x w]).symm
 
-private def tangentSpaceToModelIsometry
-    {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
-    (x : F) : TangentSpace (modelWithCornersSelf ℝ F) x ≃ₗᵢ[ℝ] F :=
-  (NormedSpace.fromTangentSpace x).toLinearEquiv.isometryOfInner
-    (fun v w : TangentSpace (modelWithCornersSelf ℝ F) x ↦ by
-      change inner ℝ (NormedSpace.fromTangentSpace x v) (NormedSpace.fromTangentSpace x w) =
-        inner ℝ v w
-      exact (inner_tangentSpace_vectorSpace v w).symm)
-
 private def tangentSpaceStdOrthonormalBasis
     {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
     [FiniteDimensional ℝ F] (x : F) :
@@ -670,19 +660,9 @@ private theorem fromTangentSpace_tangentSpaceStdOrthonormalBasis_apply
     [FiniteDimensional ℝ F] (x : F) (i : Fin (Module.finrank ℝ F)) :
     NormedSpace.fromTangentSpace x (tangentSpaceStdOrthonormalBasis x i) =
       stdOrthonormalBasis ℝ F i := by
-  -- Expose the inverse LinearEquiv carried by the isometry equivalence.
-  change NormedSpace.fromTangentSpace x
-      ((tangentSpaceToModelIsometry x).symm (stdOrthonormalBasis ℝ F i)) = _
+  rw [tangentSpaceStdOrthonormalBasis, OrthonormalBasis.map_apply,
+    tangentSpaceToModelIsometry_symm_apply]
   exact (NormedSpace.fromTangentSpace x).apply_symm_apply _
-
-private theorem laplaceBeltrami_eq_sum_hessian_model_space
-    {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
-    [FiniteDimensional ℝ F] {f : F → ℝ} (x : F) :
-    laplaceBeltrami (modelWithCornersSelf ℝ F) f x =
-      ∑ i, hessian (modelWithCornersSelf ℝ F) f x
-        (tangentSpaceStdOrthonormalBasis x i) (tangentSpaceStdOrthonormalBasis x i) := by
-  exact laplaceBeltrami_eq_sum_hessian (modelWithCornersSelf ℝ F) f x
-    (tangentSpaceStdOrthonormalBasis x)
 
 /-- The Laplace–Beltrami operator of the standard Riemannian metric is Mathlib's flat Laplacian.
 This fixes the sign convention as `Δ = div ∘ grad`. -/
@@ -690,11 +670,11 @@ theorem laplaceBeltrami_eq_laplacian
     {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
     {f : F → ℝ} {x : F} (hgrad : DifferentiableAt ℝ (∇ f) x) :
     laplaceBeltrami (modelWithCornersSelf ℝ F) f x = Δ f x := by
-  rw [laplaceBeltrami_eq_sum_hessian_model_space,
+  rw [laplaceBeltrami_eq_sum_hessian (modelWithCornersSelf ℝ F) f x
+      (tangentSpaceStdOrthonormalBasis x),
     InnerProductSpace.laplacian_eq_iteratedFDeriv_orthonormalBasis f (stdOrthonormalBasis ℝ F)]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  simpa only [OrthonormalBasis.map_apply,
-    fromTangentSpace_tangentSpaceStdOrthonormalBasis_apply] using
+  simpa only [fromTangentSpace_tangentSpaceStdOrthonormalBasis_apply] using
     hessian_eq_iteratedFDeriv_model_space hgrad (tangentSpaceStdOrthonormalBasis x i)
       (tangentSpaceStdOrthonormalBasis x i)
 
@@ -720,14 +700,9 @@ theorem hessian_norm_sq_model_space
     [FiniteDimensional ℝ F] (x : F) :
     laplaceBeltrami (modelWithCornersSelf ℝ F) (fun y ↦ ‖y‖ ^ 2) x =
       2 * Module.finrank ℝ F := by
-  rw [laplaceBeltrami_eq_sum_hessian_model_space]
-  simp only [hessian_norm_sq_model_space]
-  simp_rw [fromTangentSpace_tangentSpaceStdOrthonormalBasis_apply]
-  calc
-    ∑ i, 2 * inner ℝ ((stdOrthonormalBasis ℝ F) i) ((stdOrthonormalBasis ℝ F) i) =
-        2 * ∑ i, inner ℝ ((stdOrthonormalBasis ℝ F) i) ((stdOrthonormalBasis ℝ F) i) := by
-          rw [Finset.mul_sum]
-    _ = 2 * Module.finrank ℝ F := by
-      rw [OrthonormalBasis.sum_inner_self, Fintype.card_fin]
+  rw [laplaceBeltrami_eq_laplacian]
+  · exact TauCeti.laplacian_norm_sq x
+  · exact (((contDiff_norm_sq ℝ (E := F) (n := 2)).gradient_right (m := 1)
+      (by norm_num)).differentiable (by norm_num)) x
 
 end TauCeti.Manifold
