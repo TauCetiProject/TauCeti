@@ -344,13 +344,13 @@ theorem span_image_eq_extendedIdealOfDefinition (P : PairOfDefinition A)
   simp
 
 /-- Each `Iⁿ` is open in `A`. -/
-theorem isOpen_idealImage [IsTopologicalRing A] (P : PairOfDefinition A) (n : ℕ) :
+theorem isOpen_idealImage (P : PairOfDefinition A) (n : ℕ) :
     IsOpen (P.idealImage n : Set A) :=
   P.isOpen_ringOfDefinition.isOpenEmbedding_subtypeVal.isOpenMap _
-    ((isAdic_iff.mp P.isAdic_idealOfDefinition).1 n)
+    (P.isAdic_idealOfDefinition.isOpen_pow n)
 
 /-- The image of `Iⁿ` as an open additive subgroup of `A`. -/
-private def openAddSubgroup [IsTopologicalRing A] (P : PairOfDefinition A) (n : ℕ) :
+private def openAddSubgroup (P : PairOfDefinition A) (n : ℕ) :
     OpenAddSubgroup A where
   toAddSubgroup := P.idealImage n
   isOpen' := P.isOpen_idealImage n
