@@ -175,8 +175,8 @@ theorem smoothTensorInducedGradedResolutionAugmentationApp_hom_apply
       PiTensorProduct.map (fun _ ↦ A.obj.gradedResolutionAugmentation) x := by
   have hf : ((ofSmoothDiscrete R U).map (smoothGradedResolutionAugmentationApp A)).toLinearMap =
       A.obj.gradedResolutionAugmentation :=
-    LinearMap.ext fun y ↦ (ofSmoothDiscrete_map_toLinearMap_apply _ _ _ y).trans
-      (smoothGradedResolutionAugmentationApp_hom_apply A y)
+    (ofSmoothDiscrete_map_toLinearMap _ _ _).trans
+      (LinearMap.ext (smoothGradedResolutionAugmentationApp_hom_apply A))
   -- The bundled augmentation is tensor induction of the augmentation, through the dictionary
   -- functors, whose round trips on maps are the identity by definition.
   exact (LinearMap.congr_fun (Representation.IntertwiningMap.tensorInduced_toLinearMap
@@ -240,8 +240,8 @@ theorem smoothTensorInducedGradedResolutionDifferential_apply [DecidableEq (G �
   let := Classical.decEq (G ⧸ U)
   have hf : ((ofSmoothDiscrete R U).map (smoothGradedResolutionDifferential A)).toLinearMap =
       A.obj.gradedResolutionDifferential :=
-    LinearMap.ext fun x ↦ (ofSmoothDiscrete_map_toLinearMap_apply _ _ _ x).trans
-      (smoothGradedResolutionDifferential_hom_apply A x)
+    (ofSmoothDiscrete_map_toLinearMap _ _ _).trans
+      (LinearMap.ext (smoothGradedResolutionDifferential_hom_apply A))
   exact (toSmoothDiscrete_map_hom_hom_apply R G _ z).trans <|
     (LinearMap.congr_fun (Representation.IntertwiningMap.tensorInducedSlotSum_toLinearMap _ s)
       z).trans (congrArg (fun φ ↦ PiTensorProduct.slotSum (G ⧸ U) φ z) hf)

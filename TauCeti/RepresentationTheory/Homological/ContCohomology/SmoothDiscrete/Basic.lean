@@ -836,6 +836,12 @@ module, with the action read off from its operators by `TopRep.distribMulAction`
     (φ : X ⟶ Y) (x : X.obj.V) :
     ((ofSmoothDiscrete R G).map φ).toLinearMap x = φ.hom.hom x := (rfl)
 
+/-- `ofSmoothDiscrete` sends a morphism `φ` to its underlying linear map, as an equality of
+linear maps. -/
+lemma ofSmoothDiscrete_map_toLinearMap {X Y : SmoothDiscreteTopRep.{u, v, w} R G}
+    (φ : X ⟶ Y) :
+    ((ofSmoothDiscrete R G).map φ).toLinearMap = φ.hom.hom.toLinearMap := (rfl)
+
 /-- The action carried by the module read off a smooth discrete object is the object's own
 action. -/
 @[simp] lemma ofSmoothDiscrete_obj_smul (X : SmoothDiscreteTopRep.{u, v, w} R G) (g : G)
