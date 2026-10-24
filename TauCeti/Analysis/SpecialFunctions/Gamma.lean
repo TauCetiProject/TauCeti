@@ -85,11 +85,11 @@ theorem continuous_Gamma_sum_div_prod {ι : Type*} [Fintype ι] :
       Real.Gamma (∑ i, (a i : ℝ)) / ∏ i, Real.Gamma (a i)) := by
   cases isEmpty_or_nonempty ι with
   | inl h =>
-    letI := h
+    let := h
     -- With no parameters, the quotient is constant.
     simpa using (continuous_const : Continuous (fun _ : ι → Set.Ioi (0 : ℝ) ↦ Real.Gamma 0))
   | inr h =>
-    letI := h
+    let := h
     have hΓ := Real.differentiableOn_Gamma_Ioi.continuousOn
     have hc (i : ι) : Continuous (fun a : ι → Set.Ioi (0 : ℝ) ↦ (a i : ℝ)) := by
       fun_prop
