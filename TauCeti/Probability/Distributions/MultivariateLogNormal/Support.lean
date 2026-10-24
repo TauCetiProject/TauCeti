@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Distributions.MultivariateLogNormal.PDF
+public import TauCeti.MeasureTheory.Measure.Support
 
 /-!
 # Support and singularity of multivariate log-normal laws
@@ -65,20 +66,9 @@ theorem support_multivariateLogNormalMeasure (m : EuclideanSpace ℝ ι)
       closure ((fun y : EuclideanSpace ℝ ι ↦ WithLp.toLp 2 (fun i ↦ Real.exp (y i))) ''
         (AffineSubspace.mk' m (LinearMap.range S.toEuclideanLin) :
           Set (EuclideanSpace ℝ ι))) := by
-  apply Subset.antisymm
-  · apply Measure.support_subset_of_isClosed isClosed_closure
-    exact Filter.eventually_mem_set.mpr <|
-      (ae_mem_exp_affineRange_multivariateLogNormalMeasure m S).mono
-        fun _ hx ↦ subset_closure hx
-  · refine closure_minimal ?_ Measure.isClosed_support
-    rintro _ ⟨y, hy, rfl⟩
-    rw [← support_multivariateGaussian hS m, Measure.support_eq_forall_isOpen] at hy
-    rw [multivariateLogNormalMeasure_def, Measure.support_eq_forall_isOpen]
-    intro U hyU hU
-    have he : Continuous (fun y : EuclideanSpace ℝ ι ↦
-        WithLp.toLp 2 (fun i ↦ Real.exp (y i))) := by fun_prop
-    rw [Measure.map_apply he.measurable hU.measurableSet]
-    exact hy _ hyU (hU.preimage he)
+  rw [multivariateLogNormalMeasure_def,
+    TauCeti.MeasureTheory.support_map_eq_closure_image Measure.support_mem_ae
+      (by fun_prop), support_multivariateGaussian hS m]
 
 /-- Invalid log-covariance gives singleton support at the coordinatewise exponential of `m`. -/
 theorem support_multivariateLogNormalMeasure_of_not_posSemidef (m : EuclideanSpace ℝ ι)

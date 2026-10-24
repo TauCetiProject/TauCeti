@@ -11,11 +11,14 @@ public import Mathlib.MeasureTheory.Measure.Support
 # Topological support under continuous maps
 
 This file identifies the support of a pushforward by a continuous map when the source measure has
-full support. It also shows that pushing a measure forward along a homeomorphism transports its
-topological support onto the image of the original support.
+conull support, with a specialization to full support. It also shows that pushing a measure
+forward along a homeomorphism transports its topological support onto the image of the original
+support.
 
 ## Main result
 
+* `TauCeti.MeasureTheory.support_map_eq_closure_image` — a continuous pushforward of a measure
+  with conull support has support equal to the closure of the image of its support.
 * `MeasureTheory.Measure.support_map_eq_closure_range` — a continuous image of a full-support
   measure has support equal to the closure of the map's range.
 * `MeasureTheory.Measure.support_map_homeomorph` — the support of a pushforward by a homeomorphism
@@ -25,6 +28,31 @@ topological support onto the image of the original support.
 public section
 
 open Set
+
+namespace TauCeti.MeasureTheory
+
+open _root_.MeasureTheory
+
+variable {X Y : Type*} [TopologicalSpace X] [MeasurableSpace X] [BorelSpace X]
+  [TopologicalSpace Y] [MeasurableSpace Y] [BorelSpace Y]
+
+/-- The support of a continuous pushforward is the closure of the image of the original support,
+provided that the original support is conull. -/
+theorem support_map_eq_closure_image {μ : Measure X} {f : X → Y}
+    (hμ : μ.support ∈ ae μ) (hf : Continuous f) :
+    (μ.map f).support = closure (f '' μ.support) := by
+  apply Subset.antisymm
+  · apply Measure.support_subset_of_isClosed isClosed_closure
+    exact (ae_map_iff hf.measurable.aemeasurable isClosed_closure.measurableSet).2 <|
+      (Filter.eventually_mem_set.mpr hμ).mono fun x hx ↦ subset_closure ⟨x, hx, rfl⟩
+  · refine closure_minimal ?_ Measure.isClosed_support
+    rintro _ ⟨x, hx, rfl⟩
+    rw [Measure.support_eq_forall_isOpen] at hx ⊢
+    intro U hxU hU
+    rw [Measure.map_apply hf.measurable hU.measurableSet]
+    exact hx _ hxU (hU.preimage hf)
+
+end TauCeti.MeasureTheory
 
 namespace MeasureTheory.Measure
 
