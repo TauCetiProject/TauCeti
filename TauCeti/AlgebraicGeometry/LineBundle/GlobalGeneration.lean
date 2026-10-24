@@ -230,8 +230,6 @@ theorem IsGloballyGenerated.nonempty_generatingSections {L : InvertibleSheaf X}
   refine ⟨fun {N : X.Modules} f g hfg ↦ hL.hom_ext f g fun s ↦ ?_⟩
   have h := congrArg
     (fun p ↦ SheafOfModules.sectionsMap p (SheafOfModules.freeSection s)) hfg
-  simp only [SheafOfModules.sectionsMap_comp,
-    SheafOfModules.sectionsMap_freeHomEquiv_symm_freeSection] at h
   have htop := congrArg (fun t ↦ t.val (op ⊤)) h
   simpa only [SheafOfModules.sectionsMap, PresheafOfModules.sectionsMap_coe,
     compatibleSection_val, L.obj.presheaf.map_id] using htop
