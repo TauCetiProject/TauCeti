@@ -7,7 +7,6 @@ module
 
 public import TauCeti.NumberTheory.LocalField.FiniteExtension.IntermediateField
 public import TauCeti.RingTheory.DiscreteValuationRing.Hensel
-import Mathlib.RingTheory.Polynomial.Resultant.Basic
 import TauCeti.NumberTheory.LocalField.Henselian
 import TauCeti.NumberTheory.LocalField.IntegerRing.Basic
 import TauCeti.RingTheory.DiscreteValuationRing.Basic
