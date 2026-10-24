@@ -102,16 +102,20 @@ noncomputable def raiseIter : ℕ → PLPath 𝕜 V → Option (PLPath 𝕜 V) :
   Option.iterate (raise f x)
 
 @[simp]
-theorem lowerIter_zero (p : PLPath 𝕜 V) : lowerIter f x 0 p = some p := (rfl)
+theorem lowerIter_zero (p : PLPath 𝕜 V) : lowerIter f x 0 p = some p :=
+  Option.iterate_zero (lower f x) p
 
 @[simp]
-theorem raiseIter_zero (p : PLPath 𝕜 V) : raiseIter f x 0 p = some p := (rfl)
+theorem raiseIter_zero (p : PLPath 𝕜 V) : raiseIter f x 0 p = some p :=
+  Option.iterate_zero (raise f x) p
 
 theorem lowerIter_succ (n : ℕ) (p : PLPath 𝕜 V) :
-    lowerIter f x (n + 1) p = (lower f x p).bind (lowerIter f x n) := (rfl)
+    lowerIter f x (n + 1) p = (lower f x p).bind (lowerIter f x n) :=
+  Option.iterate_succ (lower f x) n p
 
 theorem raiseIter_succ (n : ℕ) (p : PLPath 𝕜 V) :
-    raiseIter f x (n + 1) p = (raise f x p).bind (raiseIter f x n) := (rfl)
+    raiseIter f x (n + 1) p = (raise f x p).bind (raiseIter f x n) :=
+  Option.iterate_succ (raise f x) n p
 
 @[simp]
 theorem lowerIter_one (p : PLPath 𝕜 V) : lowerIter f x 1 p = lower f x p :=

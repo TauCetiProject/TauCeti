@@ -246,14 +246,18 @@ def fIter (i : b.support) : ℕ → B → Option B := Option.iterate (c.f i)
 variable {i : b.support} {n : ℕ} {x y : B}
 
 @[simp]
-theorem eIter_zero (x : B) : c.eIter i 0 x = some x := (rfl)
+theorem eIter_zero (x : B) : c.eIter i 0 x = some x :=
+  Option.iterate_zero (c.e i) x
 
-theorem eIter_succ (n : ℕ) (x : B) : c.eIter i (n + 1) x = (c.e i x).bind (c.eIter i n) := (rfl)
+theorem eIter_succ (n : ℕ) (x : B) : c.eIter i (n + 1) x = (c.e i x).bind (c.eIter i n) :=
+  Option.iterate_succ (c.e i) n x
 
 @[simp]
-theorem fIter_zero (x : B) : c.fIter i 0 x = some x := (rfl)
+theorem fIter_zero (x : B) : c.fIter i 0 x = some x :=
+  Option.iterate_zero (c.f i) x
 
-theorem fIter_succ (n : ℕ) (x : B) : c.fIter i (n + 1) x = (c.f i x).bind (c.fIter i n) := (rfl)
+theorem fIter_succ (n : ℕ) (x : B) : c.fIter i (n + 1) x = (c.f i x).bind (c.fIter i n) :=
+  Option.iterate_succ (c.f i) n x
 
 @[simp]
 theorem eIter_one (x : B) : c.eIter i 1 x = c.e i x :=
@@ -399,7 +403,7 @@ theorem f_apply : d.f i (ψ x) = (c.f i x).map ψ :=
 @[simp]
 theorem eIter_apply (n : ℕ) : d.eIter i n (ψ x) = (c.eIter i n x).map ψ := by
   induction n generalizing x with
-  | zero => rfl
+  | zero => simp
   | succ n ih =>
     rw [eIter_succ, eIter_succ, e_apply]
     cases c.e i x <;> simp [ih]
@@ -407,7 +411,7 @@ theorem eIter_apply (n : ℕ) : d.eIter i n (ψ x) = (c.eIter i n x).map ψ := b
 @[simp]
 theorem fIter_apply (n : ℕ) : d.fIter i n (ψ x) = (c.fIter i n x).map ψ := by
   induction n generalizing x with
-  | zero => rfl
+  | zero => simp
   | succ n ih =>
     rw [fIter_succ, fIter_succ, f_apply]
     cases c.f i x <;> simp [ih]
