@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.IntegralLattice.CoordinatePower
+public import TauCeti.LinearAlgebra.IntegralLattice.Even
 public import TauCeti.LinearAlgebra.IntegralLattice.Signature
 
 /-!
@@ -24,8 +24,8 @@ This is the `ι`-indexed analogue of the binary orthogonal sum
 `TauCeti.FiniteQuadraticModule.pi` of finite quadratic modules.  Unlike a coordinate power, the
 summands may live in different ambient spaces: this is the shape of an orthogonal sum of root
 lattices of an ordered list of Dynkin components, indexed by `Fin n`, as used in gluing
-constructions of lattices.  For a constant family the orthogonal sum is the coordinate power
-(`TauCeti.IntegralLattice.pi_const`).
+constructions of lattices.  The coordinate power `TauCeti.IntegralLattice.coordinatePower` is the
+orthogonal sum of a constant family.
 
 The orthogonal sum is nondegenerate when every summand is, and it is even, respectively positive
 definite, exactly when every summand is.  Its rank is the sum of the ranks.
@@ -37,12 +37,14 @@ definite, exactly when every summand is.  Its rank is the sum of the ranks.
 * `TauCeti.IntegralLattice.isEven_pi_iff`, `TauCeti.IntegralLattice.isPosDef_pi_iff`: evenness
   and positive-definiteness are detected summandwise.
 * `TauCeti.IntegralLattice.finrank_pi`: the rank of the orthogonal sum is the sum of the ranks.
-* `TauCeti.IntegralLattice.pi_const`: a constant family recovers the coordinate power.
 
 ## References
 
 * J. H. Conway and N. J. A. Sloane, *Sphere Packings, Lattices and Groups*, Chapter 4, §3.
 * W. Ebeling, *Lattices and Codes*, Chapter 1.
+* `TauCeti/LinearAlgebra/IntegralLattice/CoordinatePower.lean`: the coordinate power `L^ι`, the
+  constant-family case. The constructions and proofs here are adapted from those for `L^ι`,
+  generalised from a constant family to arbitrary families.
 -/
 
 public section
@@ -82,37 +84,13 @@ theorem piForm_single_left [DecidableEq ι] (i : ι) (v : V i) (y : ∀ i, V i) 
 
 /-! ## The orthogonal sum -/
 
-omit [Fintype ι] in
-/-- The families all of whose values lie in full integral carriers form a full integral carrier
-of the product space. -/
-private theorem isLattice_pi [Finite ι] :
-    (Submodule.pi Set.univ fun i ↦ (L i).carrier).IsLattice ℚ := by
-  classical
-  cases nonempty_fintype ι
-  constructor
-  · exact Submodule.fg_pi fun _ ↦ (Submodule.IsLattice.fg (A := ℚ))
-  · rw [eq_top_iff]
-    intro x _
-    rw [← Finset.univ_sum_single x]
-    refine Submodule.sum_mem _ fun i _ ↦ ?_
-    have hx : x i ∈ Submodule.span ℚ ((L i).carrier : Set (V i)) := by
-      rw [Submodule.IsLattice.span_eq_top]
-      exact Submodule.mem_top
-    have hmap : Submodule.map (LinearMap.single ℚ V i)
-        (Submodule.span ℚ ((L i).carrier : Set (V i))) ≤
-        Submodule.span ℚ (Submodule.pi Set.univ fun i ↦ (L i).carrier : Set (∀ i, V i)) := by
-      rw [Submodule.map_span, Submodule.span_le]
-      rintro _ ⟨v, hv, rfl⟩
-      exact Submodule.subset_span (Submodule.le_comap_single_pi (fun i ↦ (L i).carrier) hv)
-    exact hmap (Submodule.mem_map_of_mem hx)
-
 /-- **The orthogonal sum of a finite family of integral lattices**: the integral lattice in
 `Π i, V i` whose carrier consists of the families with `x i ∈ L i` for every `i`, with the summed
 form `∑ i, L_i(x i, y i)`. -/
 def pi : IntegralLattice (∀ i, V i) where
   carrier := Submodule.pi Set.univ fun i ↦ (L i).carrier
   form := piForm L
-  isLattice := isLattice_pi L
+  isLattice := inferInstance
   isSymm := ⟨fun x y ↦ by
     simp only [piForm_apply]
     exact Finset.sum_congr rfl fun i _ ↦ (L i).isSymm.eq (x i) (y i)⟩
@@ -147,11 +125,6 @@ theorem single_mem_pi_carrier [DecidableEq ι] (i : ι) {v : V i} (hv : v ∈ (L
 @[simp]
 theorem norm_pi_apply (x : ∀ i, V i) : (pi L).norm x = ∑ i, (L i).norm (x i) := by
   simp [norm_apply]
-
-/-- For a constant family, the orthogonal sum is the coordinate power. -/
-theorem pi_const {W : Type u} [AddCommGroup W] [Module ℚ W] (M : IntegralLattice W) :
-    pi (fun _ : ι ↦ M) = M.coordinatePower ι :=
-  ext (by simp) (LinearMap.ext₂ fun x y ↦ by simp)
 
 /-! ## Nondegeneracy -/
 
@@ -208,6 +181,7 @@ theorem isEven_pi {L : ∀ i, IntegralLattice (V i)} (hL : ∀ i, (L i).IsEven) 
   (isEven_pi_iff L).mpr hL
 
 /-- An orthogonal sum is positive definite exactly when every summand is. -/
+@[simp]
 theorem isPosDef_pi_iff : (pi L).IsPosDef ↔ ∀ i, (L i).IsPosDef := by
   classical
   simp only [isPosDef_iff]
