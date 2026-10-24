@@ -143,7 +143,7 @@ theorem exists_isAcyclic_le (H : AddSubgroup K) {f : Assignment Q K} (hf : 0 ≤
     exact hacyc
   have hne : c.arrows ≠ [] := hc.arrows_ne_nil
   obtain ⟨hq, -, hf'₀, hf'H, hcard⟩ :=
-    sub_walkAssignment_bottleneck_properties H hf hH hc.nodup_arrows hne hpos
+    sub_walkAssignment_bottleneck_spec H hf hH hc.nodup_arrows hne hpos
   obtain ⟨g, hg, hg₀, hgf, hexc, hgH⟩ :=
     ih _ hcard _ hf'₀ hf'H rfl
   refine ⟨g, hg, hg₀, hgf.trans <| sub_le_self _ <|
@@ -186,11 +186,8 @@ variable [PartialOrder K] [IsOrderedAddMonoid K] {f : Assignment Q K}
 theorem PathCycleDecomposition.cycles_eq_nil_of_isAcyclic (D : PathCycleDecomposition f)
     (hf : f.IsAcyclic) : D.cycles = [] :=
   List.eq_nil_iff_forall_not_mem.2 fun c hc ↦
-    (Assignment.isAcyclic_def f).1 hf c.walk (D.isCycle_walk c hc) fun a ha ↦ by
-      have hle := D.assignment_le_of_mem_cycles hc a.1 a.2.1 a.2.2
-      rw [WeightedClosedWalk.assignment_def,
-        walkAssignment_eq_of_mem (D.isCycle_walk c hc).nodup_arrows _ ha] at hle
-      exact (D.weight_pos_of_mem_cycles c hc).trans_le hle
+    (Assignment.isAcyclic_def f).1 hf c.walk (D.isCycle_walk c hc) fun _ ha ↦
+      D.pos_of_mem_arrows_of_mem_cycles hc ha
 
 /-- The paths of a path–cycle decomposition of an acyclic assignment add up to the assignment. -/
 theorem PathCycleDecomposition.pathAssignment_eq_of_isAcyclic (D : PathCycleDecomposition f)

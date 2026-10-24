@@ -278,6 +278,14 @@ theorem assignment_le_of_mem_cycles {c : WeightedClosedWalk Q K} (hc : c ∈ D.c
   (List.single_le_sum (by simpa using fun c hc ↦ D.assignment_nonneg_of_mem_cycles hc) _
     (List.mem_map_of_mem hc)).trans D.cycleAssignment_le
 
+/-- Every arrow of a cycle component has positive value in the decomposed assignment. -/
+theorem pos_of_mem_arrows_of_mem_cycles {c : WeightedClosedWalk Q K} (hc : c ∈ D.cycles)
+    {a : Σ x y, Q x y} (ha : a ∈ c.walk.arrows) : 0 < f a.2.2 := by
+  have hle := D.assignment_le_of_mem_cycles hc a.1 a.2.1 a.2.2
+  rw [WeightedClosedWalk.assignment_def,
+    walkAssignment_eq_of_mem (D.isCycle_walk c hc).nodup_arrows _ ha] at hle
+  exact (D.weight_pos_of_mem_cycles c hc).trans_le hle
+
 /-- A decomposition has no components exactly when it decomposes the zero assignment. -/
 theorem paths_eq_nil_and_cycles_eq_nil_iff : D.paths = [] ∧ D.cycles = [] ↔ f = 0 := by
   constructor
@@ -287,11 +295,8 @@ theorem paths_eq_nil_and_cycles_eq_nil_iff : D.paths = [] ∧ D.cycles = [] ↔ 
   · rintro rfl
     refine ⟨D.paths_eq_nil isCirculation_zero, List.eq_nil_iff_forall_not_mem.2 fun c hc ↦ ?_⟩
     have hcyc := D.isCycle_walk c hc
-    obtain ⟨⟨x, y, e⟩, he⟩ := List.exists_mem_of_ne_nil c.walk.arrows fun h ↦
-      ((ArrowWalk.isCycle_def _).1 hcyc).1.ne' (ArrowWalk.arrows_eq_nil_iff.1 h)
-    have hle := D.assignment_le_of_mem_cycles hc x y e
-    rw [WeightedClosedWalk.assignment_def, walkAssignment_eq_of_mem hcyc.nodup_arrows _ he] at hle
-    exact (D.weight_pos_of_mem_cycles c hc).not_ge hle
+    obtain ⟨a, ha⟩ := List.exists_mem_of_ne_nil c.walk.arrows hcyc.arrows_ne_nil
+    simpa using D.pos_of_mem_arrows_of_mem_cycles hc ha
 
 end PartialOrder
 
@@ -456,7 +461,7 @@ theorem exists_pathCycleDecomposition (H : AddSubgroup K) (hf : 0 ≤ f)
           (∀ p ∈ D.paths, p.weight ∈ H) ∧ (∀ c ∈ D.cycles, c.weight ∈ H) ∧
           D.paths.length + D.cycles.length + 1 ≤ #{a : Σ x y, Q x y | 0 < f a.2.2} := by
     obtain ⟨hq, hqH, hg, hgH, hcard⟩ :=
-      sub_walkAssignment_bottleneck_properties H hf hH hnd hne hpos
+      sub_walkAssignment_bottleneck_spec H hf hH hnd hne hpos
     obtain ⟨D, hP, hC, hlen⟩ := ih _ hcard _ hg hgH rfl
     exact ⟨_, hq, hqH, hg, D, hP, hC, by omega⟩
   by_cases hz : ∀ ⦃x y : V⦄ (e : Q x y), f e ≤ 0
