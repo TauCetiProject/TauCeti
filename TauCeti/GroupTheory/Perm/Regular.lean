@@ -72,7 +72,7 @@ theorem almostConjugate_permutationRepresentation_range_iff [Finite α]
         (permutationRepresentation (G := G') e').range ↔
       ∃ f : G ≃ G', ∀ g, orderOf (f g) = orderOf g := by
   classical
-  letI := Fintype.ofFinite α
+  let := Fintype.ofFinite α
   have hφ := permutationRepresentation_injective (G := G) e
   have hψ := permutationRepresentation_injective (G := G') e'
   set φ := permutationRepresentation (G := G) e
