@@ -55,6 +55,8 @@ degree `s`. This is the route to noetherianity of the Tate algebra.
   `TauCeti.PowerSeries.IsMulDistinguished.existsUnique_isNormMulUnit_isMonicOfDegree_mul_eq`:
   Weierstrass preparation over a Banach ring, in its existence, uniqueness and unique-existence
   forms.
+* `TauCeti.PowerSeries.IsMulDistinguished.exists_isUnit_isMonicOfDegree_isMulDistinguished_mul_eq`:
+  Weierstrass preparation with the polynomial factor itself multiplicatively distinguished.
 * `TauCeti.PowerSeries.IsMulDistinguished.eq_and_eq_of_mul_eq_of_mul_eq`: a multiplicatively
   distinguished series has at most one factorization as a unit of the ring of restricted series
   times a monic polynomial of its distinguished degree, with no normalisation of the polynomial.
@@ -103,7 +105,8 @@ theorem isDistinguished_zero_of_isUnit [Nontrivial R] (hc : 0 < c)
     {x : PowerSeries.IsRestricted.subring (R := R) c} (hx : IsUnit x) :
     IsDistinguished c 0 (x : PowerSeries R) := by
   obtain ⟨y, hxy⟩ := hx.exists_right_inv
-  have hxy' : (x : PowerSeries R) * (y : PowerSeries R) = 1 := coe_mul_coe_eq_one hxy
+  have hxy' : (x : PowerSeries R) * (y : PowerSeries R) = 1 := by
+    exact_mod_cast hxy
   have hx0 : (x : PowerSeries R) ≠ 0 := by
     intro h
     rw [h, zero_mul] at hxy'
@@ -259,6 +262,23 @@ theorem IsMulDistinguished.exists_isNormMulUnit_isMonicOfDegree_mul_eq [Complete
   exact ⟨⟨e, he⟩, ω, hg.isNormMulUnit_of_mul_eq hωd heu her',
     hωm, (isMulDistinguished_iff_gaussNorm_eq hc hωm).mp hωd, her'⟩
 
+/-- **Weierstrass preparation over a Banach ring** (Martin, Corollary 1.28), with the
+normalisation of the polynomial factor stated as distinguishedness: over a complete ultrametric
+normed commutative ring, a restricted series `g` multiplicatively distinguished of degree `s` at a
+positive radius `c` is `e * ω`, with `e` a unit of the ring of restricted series and `ω` a monic
+polynomial of degree `s` which is itself multiplicatively distinguished of degree `s`. This is
+`TauCeti.PowerSeries.IsMulDistinguished.exists_isNormMulUnit_isMonicOfDegree_mul_eq` read through
+`TauCeti.PowerSeries.isMulDistinguished_iff_gaussNorm_eq`. -/
+theorem IsMulDistinguished.exists_isUnit_isMonicOfDegree_isMulDistinguished_mul_eq
+    [CompleteSpace R] (hg : IsMulDistinguished c s g) (hc : 0 < c) (hgr : g.IsRestricted c) :
+    ∃ (e : PowerSeries.IsRestricted.subring (R := R) c) (ω : Polynomial R), IsUnit e ∧
+      ω.IsMonicOfDegree s ∧ IsMulDistinguished c s (ω : PowerSeries R) ∧
+      (e : PowerSeries R) * (ω : PowerSeries R) = g := by
+  have : Fact (0 < c) := ⟨hc⟩
+  have : NormOneClass R := hg.normOneClass
+  obtain ⟨e, ω, he, hω, hn, heω⟩ := hg.exists_isNormMulUnit_isMonicOfDegree_mul_eq hgr
+  exact ⟨e, ω, he.isUnit, hω, (isMulDistinguished_iff_gaussNorm_eq hc hω).mpr hn, heω⟩
+
 /-- **Uniqueness in Weierstrass preparation over a Banach ring** (Martin, Corollary 1.28). Over an
 ultrametric normed commutative ring, let `ω` be a monic polynomial of degree `s` which is
 multiplicatively distinguished of degree `s` at a positive radius `c`, that is, has Gauss norm
@@ -272,7 +292,8 @@ theorem IsMulDistinguished.eq_and_eq_of_mul_eq_mul {ω ω' : Polynomial R}
     (h : (e : PowerSeries R) * (ω : PowerSeries R) = (e' : PowerSeries R) * (ω' : PowerSeries R)) :
     e = e' ∧ ω = ω' := by
   obtain ⟨v, hv⟩ := he'.exists_right_inv
-  have hv' : (e' : PowerSeries R) * (v : PowerSeries R) = 1 := coe_mul_coe_eq_one hv
+  have hv' : (e' : PowerSeries R) * (v : PowerSeries R) = 1 := by
+    exact_mod_cast hv
   have hquot : (ω : PowerSeries R)
       * ((v * e : PowerSeries.IsRestricted.subring (R := R) c) : PowerSeries R)
       = (ω' : PowerSeries R) := by
@@ -314,7 +335,7 @@ theorem IsMulDistinguished.eq_and_eq_of_mul_eq_of_mul_eq (hg : IsMulDistinguishe
           ((Polynomial.X ^ s : Polynomial R) : PowerSeries R) := by
     intro e ω he hω h
     obtain ⟨v, hv⟩ := he.exists_right_inv
-    have hv' : (e : PowerSeries R) * (v : PowerSeries R) = 1 := coe_mul_coe_eq_one hv
+    have hv' : (e : PowerSeries R) * (v : PowerSeries R) = 1 := by exact_mod_cast hv
     refine ⟨v, hv, fun m hm ↦ ?_, ?_⟩
     · rw [Polynomial.coeff_coe, Polynomial.coeff_sub,
         (Polynomial.isMonicOfDegree_X_pow R s).coeff_eq hω hm, sub_self]

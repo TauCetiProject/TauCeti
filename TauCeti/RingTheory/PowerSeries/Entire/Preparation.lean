@@ -183,17 +183,6 @@ theorem IsEntirePreparation.mono (h : IsEntirePreparation c d F P G) (hc' : |c'|
     IsEntirePreparation c' d F P G :=
   { h with isUnit := h.isUnit.map (Subring.inclusion (isRestrictedSubring_le_of_abs_le hc')) }
 
-/-- Weierstrass preparation `F = e * ω` of a series restricted at `c > 0`, with the monic
-polynomial `ω` itself multiplicatively distinguished. -/
-private theorem IsMulDistinguished.exists_isUnit_isMonicOfDegree_isMulDistinguished_mul_eq
-    [CompleteSpace R] (hF : IsMulDistinguished c d F) (hc : 0 < c) (hFr : F.IsRestricted c) :
-    ∃ (e : IsRestricted.subring (R := R) c) (ω : Polynomial R), IsUnit e ∧
-      ω.IsMonicOfDegree d ∧ IsMulDistinguished c d (ω : R⟦X⟧) ∧ (e : R⟦X⟧) * ω = F := by
-  have : Fact (0 < c) := ⟨hc⟩
-  have : NormOneClass R := hF.normOneClass
-  obtain ⟨e, ω, he, hω, hn, heω⟩ := hF.exists_isNormMulUnit_isMonicOfDegree_mul_eq hFr
-  exact ⟨e, ω, he.isUnit, hω, (isMulDistinguished_iff_gaussNorm_eq hc hω).mpr hn, heω⟩
-
 /-- **Normalised preparation of entire series.** Over a complete ultrametric normed commutative
 ring, an entire series `F` with `F(0) = 1` which is multiplicatively distinguished of degree `d`
 at a positive radius `c` is `P * G`, with `P` a polynomial of degree `d` whose leading
@@ -258,7 +247,7 @@ theorem IsEntirePreparation.isCoprime [CompleteSpace R] (h : IsEntirePreparation
   -- Divide the inverse `H` of `G` at `c` by `ω`: `H = ω * q + b`. Then `1 = ω * (G * q) + G * b`,
   -- so `ω * (G * q)` is entire, and hence so is `G * q`.
   obtain ⟨H, hGH⟩ := h.isUnit.exists_right_inv
-  have hGH' : G * (H : R⟦X⟧) = 1 := coe_mul_coe_eq_one hGH
+  have hGH' : G * (H : R⟦X⟧) = 1 := congrArg Subtype.val hGH
   obtain ⟨q, b, hq, hb, hqb⟩ := hωd.exists_mul_add_eq hc (isRestricted_polynomial ω) H.2
   have hbE : b.IsEntire := isEntire_iff.mpr fun _ ↦ isRestricted_of_forall_coeff_eq_zero hb
   have hωGq : (ω : R⟦X⟧) * (G * q) = 1 - G * b := by linear_combination hGH' + G * hqb

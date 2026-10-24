@@ -70,13 +70,6 @@ theorem isRestrictedSubring_le_of_abs_le [IsUltrametricDist R] {c' : ℝ} (h : |
     PowerSeries.IsRestricted.subring (R := R) c' ≤ PowerSeries.IsRestricted.subring c :=
   fun _ hf ↦ isRestricted_of_abs_le hf h
 
-/-- An inverse pair `x * y = 1` in the ring of series restricted at `c` is an inverse pair of
-power series. -/
-theorem coe_mul_coe_eq_one [IsUltrametricDist R]
-    {x y : PowerSeries.IsRestricted.subring (R := R) c} (h : x * y = 1) :
-    (x : PowerSeries R) * (y : PowerSeries R) = 1 := by
-  rw [← Subring.coe_mul, h, Subring.coe_one]
-
 /-- Every polynomial is restricted at every radius. -/
 theorem isRestricted_polynomial (p : Polynomial R) : (p : PowerSeries R).IsRestricted c :=
   isRestricted_of_forall_coeff_eq_zero (n := p.natDegree + 1) fun m hm ↦ by
