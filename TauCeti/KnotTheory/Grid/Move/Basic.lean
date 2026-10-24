@@ -127,6 +127,21 @@ theorem IsCommutation.movesTo {n : ℕ} {G G' : GridDiagram n}
     (h : IsCommutation G G') : MovesTo G G' :=
   IsMove.movesTo (.commutation h)
 
+/-- Swapping a cyclically adjacent non-interleaving pair of rows gives a grid-move relation. -/
+theorem movesTo_swapRows {n : ℕ} (G : GridDiagram n) (a : Fin n) (ha : a ≠ finRotate n a)
+    (h : G.RowsNoninterleaving a (finRotate n a)) :
+    MovesTo G (G.swapRows a (finRotate n a)) :=
+  IsCommutation.movesTo
+    ((isCommutation_iff _ _).mpr (Or.inl (G.isRowCommutation_swapRows a ha h)))
+
+/-- Swapping a cyclically adjacent non-interleaving pair of columns gives a grid-move
+relation. -/
+theorem movesTo_swapColumns {n : ℕ} (G : GridDiagram n) (a : Fin n) (ha : a ≠ finRotate n a)
+    (h : G.ColumnsNoninterleaving a (finRotate n a)) :
+    MovesTo G (G.swapColumns a (finRotate n a)) :=
+  IsCommutation.movesTo
+    ((isCommutation_iff _ _).mpr (Or.inr (G.isColumnCommutation_swapColumns a ha h)))
+
 /-- An elementary stabilization gives a grid-move relation. -/
 theorem IsStabilization.movesTo {n : ℕ} {G : GridDiagram n} {G' : GridDiagram (n + 1)}
     (h : IsStabilization G G') : MovesTo G G' :=
