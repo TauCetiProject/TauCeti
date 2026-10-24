@@ -54,11 +54,11 @@ homotopy category.
 * `TauCeti.DGTwistedObject.dgDifferential_coneMorphism`: the degree-one morphism underlying a
   closed morphism is closed.
 * `TauCeti.DGTwistedObject.dgDifferential_dgComp_toShift_extensionInr_cone` and
-  `TauCeti.DGTwistedObject.homOf_comp_homOf_extensionInl_cone`: `u` followed by the inclusion of
-  `Q` into the cone is a boundary, so it vanishes in the homotopy category.
+  `TauCeti.DGTwistedObject.homOf_comp_homOf_extensionInl_cone_eq_zero`: `u` followed by the
+  inclusion of `Q` into the cone is a boundary, so it vanishes in the homotopy category.
 * `TauCeti.DGTwistedObject.dgDifferential_dgComp_extensionFst_toShift_cone` and
-  `TauCeti.DGTwistedObject.homOf_extensionSnd_cone_comp_map_homOf`: the projection of the cone
-  onto `P⟦1⟧` followed by the shift of `u` is a boundary, so it vanishes in the homotopy
+  `TauCeti.DGTwistedObject.homOf_extensionSnd_cone_comp_map_homOf_eq_zero`: the projection of the
+  cone onto `P⟦1⟧` followed by the shift of `u` is a boundary, so it vanishes in the homotopy
   category.
 * `TauCeti.DGTwistedObject.dgDifferential_neg_dgComp_fromShift`: a homotopy from `u` to `u'`
   gives a homotopy between the twisting entries of their cones.
@@ -141,15 +141,13 @@ theorem dgDifferential_dgComp_toShift_extensionInr_cone :
     dgComp_toShift_fromShift, dgId_dgComp]
 
 /-- **The composite `P ⟶ Q ⟶ cone u` vanishes in the homotopy category.** -/
-theorem homOf_comp_homOf_extensionInl_cone :
+theorem homOf_comp_homOf_extensionInl_cone_eq_zero :
     DGHomotopyCategory.homOf R u ((mem_dgCycles R).mpr hu) ≫
         DGHomotopyCategory.homOf R (extensionInl R (dgDifferential_coneMorphism hu))
           ((mem_dgCycles R).mpr (dgDifferential_extensionInl R _)) =
-      0 := by
-  rw [DGHomotopyCategory.homOf_comp, DGHomotopyCategory.homOf_eq_zero_iff, mem_dgBoundaries,
-    dgCompZero_def]
-  exact ⟨_, (map_neg _ _).trans
-    ((congrArg Neg.neg (dgDifferential_dgComp_toShift_extensionInr_cone hu)).trans (neg_neg _))⟩
+      0 :=
+  DGHomotopyCategory.homOf_comp_eq_zero_of_dgDifferential_eq_neg R _ _
+    (dgDifferential_dgComp_toShift_extensionInr_cone hu)
 
 /-- **The composite `cone u ⟶ P⟦1⟧ ⟶ Q⟦1⟧` is null-homotopic**: the projection of the cone onto
 `Q` followed by the comparison morphism `Q ⟶ Q⟦1⟧` has differential minus the projection onto
@@ -170,7 +168,7 @@ theorem dgDifferential_dgComp_extensionFst_toShift_cone :
     dgComp_fromShift_toShift, dgId_dgComp]
 
 /-- **The composite `cone u ⟶ P⟦1⟧ ⟶ Q⟦1⟧` vanishes in the homotopy category.** -/
-theorem homOf_extensionSnd_cone_comp_map_homOf :
+theorem homOf_extensionSnd_cone_comp_map_homOf_eq_zero :
     DGHomotopyCategory.homOf R (extensionSnd R (dgDifferential_coneMorphism hu))
         ((mem_dgCycles R).mpr (dgDifferential_extensionSnd R _)) ≫
         (shiftFunctor R 1).mapDGHomotopyCategory.map (X := DGHomotopyCategory.of R P)
@@ -180,11 +178,9 @@ theorem homOf_extensionSnd_cone_comp_map_homOf :
   have h : DGHomotopyCategory.homOf R (extensionSnd R (dgDifferential_coneMorphism hu))
         ((mem_dgCycles R).mpr (dgDifferential_extensionSnd R _)) ≫
       DGHomotopyCategory.homOf R ((shiftFunctor R 1).dgMap 0 u)
-        ((shiftFunctor R 1).dgMap_mem_dgCycles ((mem_dgCycles R).mpr hu)) = 0 := by
-    rw [DGHomotopyCategory.homOf_comp, DGHomotopyCategory.homOf_eq_zero_iff, mem_dgBoundaries,
-      dgCompZero_def]
-    exact ⟨_, (map_neg _ _).trans
-      ((congrArg Neg.neg (dgDifferential_dgComp_extensionFst_toShift_cone hu)).trans (neg_neg _))⟩
+        ((shiftFunctor R 1).dgMap_mem_dgCycles ((mem_dgCycles R).mpr hu)) = 0 :=
+    DGHomotopyCategory.homOf_comp_eq_zero_of_dgDifferential_eq_neg R _ _
+      (dgDifferential_dgComp_extensionFst_toShift_cone hu)
   rw [(shiftFunctor R 1).mapDGHomotopyCategory_map_homOf u]
   -- `h` is the claim up to `TauCeti.EnrichedFunctor.mapDGHomotopyCategory_obj_of`, which holds by
   -- `rfl` but cannot be rewritten inside the implicit object of the composite.
