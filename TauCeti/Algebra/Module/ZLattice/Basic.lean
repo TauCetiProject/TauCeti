@@ -25,6 +25,7 @@ the image.
   fundamental domain are equal.
 * `ZLattice.exists_basis_span_eq`: a full lattice is the `ℤ`-span of a basis of the ambient space.
 * `ZLattice.mem_comap`: `x ∈ ZLattice.comap K L e` if and only if `e x ∈ L`.
+* `TauCeti.discreteTopology_span_one`: the integer span of `1` in `ℝ` is discrete.
 -/
 
 public section
@@ -32,6 +33,12 @@ public section
 open Module Set
 
 namespace TauCeti
+
+/-- The integer lattice in the real line has the discrete topology. -/
+instance discreteTopology_span_one :
+    DiscreteTopology (Submodule.span ℤ {1} : Submodule ℤ ℝ) := by
+  rw [← Set.range_eq_singleton (Module.Basis.singleton_apply Unit ℝ)]
+  infer_instance
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {ι : Type*}
 

@@ -48,17 +48,11 @@ theorem thetaSeries_sqrt_two_smul_span_one (τ : ℍ) :
   congr 1
   simp [Complex.real_smul]
 
-private theorem discreteTopology_span_one :
-    DiscreteTopology (span ℤ {1} : Submodule ℤ ℝ) := by
-  rw [← Set.range_eq_singleton (Module.Basis.singleton_apply Unit ℝ)]
-  infer_instance
-
 /-- The period-two coefficients of the rank-one lattice theta series, explicitly supported at
 the squares. -/
 theorem qExpansion_two_thetaSeries_span_one_coeff (m : ℕ) :
     (qExpansion 2 (thetaSeries (span ℤ {1} : Submodule ℤ ℝ))).coeff m =
       if m = 0 then 1 else if IsSquare m then 2 else 0 := by
-  let := discreteTopology_span_one
   rw [isUnimodular_span_one.isIntegral.qExpansion_two_thetaSeries_coeff,
     representationNumber_span_one]
   split_ifs <;> norm_num
@@ -70,7 +64,6 @@ theorem hasSum_thetaSeries_span_one_qParam (τ : ℍ) :
       (if m = 0 then 1 else if IsSquare m then 2 else 0 : ℂ) * Periodic.qParam 2 τ ^ m)
       (thetaSeries (span ℤ {1} : Submodule ℤ ℝ) τ) := by
   classical
-  let := discreteTopology_span_one
   simpa only [representationNumber_span_one, smul_eq_mul, Nat.cast_ite, Nat.cast_one,
     Nat.cast_ofNat, Nat.cast_zero] using
     isUnimodular_span_one.isIntegral.hasSum_thetaSeries_qParam_two τ
