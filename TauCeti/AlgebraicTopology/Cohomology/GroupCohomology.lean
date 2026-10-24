@@ -78,8 +78,8 @@ private def singularCochainLinearEquiv (n : ℕ) :
       (HomologicalComplex.Hom.isoApp (hG.singularChainsRepCoinvariantsTensorIso k) n).symm
       (Iso.refl _) ≪≫ₗ
     { (Rep.coinvariantsAdjunction k G).homEquiv _ (ModuleCat.of k M) with
-      map_add' _ _ := by ext; simp; rfl
-      map_smul' _ _ := by ext; simp; rfl } ≪≫ₗ
+      map_add' _ _ := by ext; simp [Rep.add_hom, Adjunction.homEquiv_unit]
+      map_smul' _ _ := by ext; simp [Rep.smul_hom, Adjunction.homEquiv_unit] } ≪≫ₗ
     Linear.homCongr k (λ_ _) (Iso.refl _)
 
 /-- The pulled-back cochain evaluates a chain of the total space on its image in the base. -/
@@ -89,7 +89,13 @@ private lemma singularCochainLinearEquiv_apply_hom_apply (n : ℕ)
     (singularCochainLinearEquiv hG k M n f).hom c = f (((singularChains k).map p).f n c) := by
   have := hG.toContinuousConstSMul
   -- The equivalence sends `f` to the cochain `c ↦ f (φ (1 ⊗ c))`, where `φ` is the comparison
-  -- `(k ⊗ Cₙ(E))_G ≅ Cₙ(B)`, which sends the class of `1 ⊗ c` to `p_* c`.
+  -- `(k ⊗ Cₙ(E))_G ≅ Cₙ(B)`, which sends the class of `1 ⊗ c` to `p_* c`. The equivalence is
+  -- unfolded by `change` rather than rewritten with `Linear.homCongr_apply` and the unitor's simp
+  -- lemmas: `λ_` is stated for `𝟙_ (Rep k G) ⊗ Cₙ(E)`, while the coinvariants of
+  -- `singularChainsRepCoinvariantsTensorIso` are taken of `Rep.trivial k G k ⊗ Cₙ(E)`, and of
+  -- `Rep.of (singularChainsRepresentation k E G n)` rather than `(singularChainsRep k E G).X n`.
+  -- These objects agree only by definition, so the composite is not type-correct at reducible
+  -- transparency and those lemmas do not fire on it.
   change f ((HomologicalComplex.Hom.isoApp (hG.singularChainsRepCoinvariantsTensorIso k) n).hom
     (Rep.coinvariantsTensorMk _ _ 1 c)) = _
   exact congrArg f.hom
