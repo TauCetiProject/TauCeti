@@ -292,6 +292,20 @@ theorem rectifiableCurveIntegral_comp_of_antitoneOn (hcont : ContinuousOn γ (Ic
   exact
     hγ.locallyBoundedVariationOn.naturalParameterization_variationOnFromTo (left_mem_Icc.2 hab) hφt
 
+/-- Along a continuous curve, the integrand of the geometric integral of a 1-form continuous on
+the trace is integrable on the length interval. -/
+private theorem intervalIntegrable_oneForm_naturalParameterization [FiniteDimensional ℝ E]
+    (hcont : ContinuousOn γ (Icc a b)) (hω : ContinuousOn ω (γ '' Icc a b)) :
+    IntervalIntegrable (fun u ↦ ω (naturalParameterization γ (Icc a b) a u)
+      (deriv (naturalParameterization γ (Icc a b) a) u)) volume 0
+      (eVariationOn γ (Icc a b)).toReal := by
+  by_cases h : BoundedVariationOn γ (Icc a b) ∧ a ≤ b
+  · obtain ⟨hγ, hab⟩ := h
+    refine (hγ.absolutelyContinuousOnInterval_naturalParameterization hcont hab
+      ).intervalIntegrable_oneForm_of_continuousOn ?_
+    rwa [uIcc_of_le ENNReal.toReal_nonneg, hγ.image_naturalParameterization_Icc hcont hab]
+  · rw [toReal_eVariationOn_eq_zero_of_not h]
+
 end TauCeti
 
 namespace AbsolutelyContinuousOnInterval
@@ -324,12 +338,11 @@ theorem rectifiableCurveIntegral_eq_intervalIntegral_deriv
   have hη : AbsolutelyContinuousOnInterval η (θ a) (θ b) := by
     rw [hθa, hθb]
     exact hBV.absolutelyContinuousOnInterval_naturalParameterization hcont hab
-  have hωη : ContinuousOn ω (η '' uIcc (θ a) (θ b)) := by
-    rwa [hθa, hθb, uIcc_of_le ENNReal.toReal_nonneg, ← hBV.image_variationOnFromTo_Icc hcont hab,
-      hBV.locallyBoundedVariationOn.image_naturalParameterization (left_mem_Icc.2 hab)]
+  have hint : IntervalIntegrable (fun u ↦ ω (η u) (deriv η u)) volume (θ a) (θ b) := by
+    rw [hθa, hθb]
+    exact intervalIntegrable_oneForm_naturalParameterization hcont hω
   rw [← integral_oneForm_congr (uIcc_of_le hab ▸ hfactor),
-    integral_oneForm_comp hη hθ hab (Or.inl hθm)
-      (hη.intervalIntegrable_oneForm_of_continuousOn hωη), hθa, hθb, rectifiableCurveIntegral_def]
+    integral_oneForm_comp hη hθ hab (Or.inl hθm) hint, hθa, hθb, rectifiableCurveIntegral_def]
 
 end AbsolutelyContinuousOnInterval
 
@@ -358,21 +371,6 @@ theorem rectifiableCurveIntegral_eq_of_eqOn_comp {η : ℝ → E} {ψ : ℝ → 
     exact image_congr fun t ht ↦ h ht
   rw [← rectifiableCurveIntegral_congr h, hcomp,
     hη.rectifiableCurveIntegral_eq_intervalIntegral_deriv hcd (htrace ▸ hω)]
-
-/-- Along a continuous curve, the integrand of the geometric integral of a 1-form continuous on
-the trace is integrable on the length interval. -/
-private theorem intervalIntegrable_oneForm_naturalParameterization
-    (hcont : ContinuousOn γ (Icc a b)) (hω : ContinuousOn ω (γ '' Icc a b)) :
-    IntervalIntegrable (fun u ↦ ω (naturalParameterization γ (Icc a b) a u)
-      (deriv (naturalParameterization γ (Icc a b) a) u)) volume 0
-      (eVariationOn γ (Icc a b)).toReal := by
-  by_cases h : BoundedVariationOn γ (Icc a b) ∧ a ≤ b
-  · obtain ⟨hγ, hab⟩ := h
-    refine (hγ.absolutelyContinuousOnInterval_naturalParameterization hcont hab
-      ).intervalIntegrable_oneForm_of_continuousOn ?_
-    rwa [uIcc_of_le ENNReal.toReal_nonneg, ← hγ.image_variationOnFromTo_Icc hcont hab,
-      hγ.locallyBoundedVariationOn.image_naturalParameterization (left_mem_Icc.2 hab)]
-  · rw [toReal_eVariationOn_eq_zero_of_not h]
 
 /-- The geometric integral along a continuous curve is additive in 1-forms continuous on the
 trace. -/

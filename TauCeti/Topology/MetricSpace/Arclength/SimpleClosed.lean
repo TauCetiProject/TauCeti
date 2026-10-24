@@ -93,9 +93,7 @@ theorem exists_simple_closed_arclength_parametrization
   have hginj : InjOn g (Ico 0 L) := by
     rw [← himageco]
     exact (hinj.congr (hfactor.mono Ico_subset_Icc_self).symm).image_of_comp
-  have htrace : g '' Icc 0 L = γ '' Icc a b := by
-    rw [← himage]
-    exact hγ.locallyBoundedVariationOn.image_naturalParameterization ha
+  have htrace : g '' Icc 0 L = γ '' Icc a b := hγ.image_naturalParameterization_Icc hcont hab
   refine ⟨g, hg, hunit, hfactor, hg0, hgL, htrace, ?_⟩
   -- The right endpoint is the only parameter omitted by half-open injectivity.
   -- Separating it out also handles a length interval consisting of one point.
