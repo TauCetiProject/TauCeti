@@ -84,8 +84,8 @@ theorem hasProjectiveDimensionLT_restrictScalars_of_projective (hx : x ∈ nonZe
       map_add' := map_add qR
       map_smul' := fun s m ↦ by
         obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective s
-        rw [← Ideal.Quotient.algebraMap_eq, algebraMap_smul, map_smul, restrictScalars.smul_def]
-        rfl }
+        rw [← Ideal.Quotient.algebraMap_eq, algebraMap_smul, map_smul, restrictScalars.smul_def,
+          RingHom.id_apply, Ideal.Quotient.algebraMap_eq] }
   have hq : Epi q := by
     refine (ModuleCat.epi_iff_surjective q).mpr fun y ↦ ?_
     obtain ⟨g, hg⟩ := hp y

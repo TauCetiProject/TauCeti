@@ -118,8 +118,7 @@ private theorem hasProjectiveDimensionLE_of_ringKrullDim_eq (d : ℕ) :
           (Submodule.quotEquivOfEq _ _ (Submodule.ideal_span_singleton_smul x ⊤)).toModuleIso
             (d + 1 + 1)
       rw [ModuleCat.projectiveDimension_quotSMulTop_eq_succ_of_isSMulRegular (ModuleCat.of R N)
-        x hNreg hxm, Nat.cast_add, Nat.cast_one, ← Nat.cast_one,
-        ENat.WithBot.add_le_add_natCast_right_iff] at hQ
+        x hNreg hxm, Nat.cast_succ, ENat.WithBot.add_le_add_one_right_iff] at hQ
       exact (projectiveDimension_le_iff _ d).mp hQ
     exact hS.hasProjectiveDimensionLT_X₃ (d + 1) hN
       (hasProjectiveDimensionLT_of_ge _ 1 (d + 1 + 1) (by omega))
