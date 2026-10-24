@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Tilted
-public import Mathlib.Probability.BrownianMotion.Basic
 public import Mathlib.Probability.Martingale.Basic
+public import TauCeti.Probability.BrownianMotion.Filtered
 import Mathlib.Probability.ConditionalExpectation
 import Mathlib.Probability.Distributions.Gaussian.IsGaussianProcess.Basic
 import Mathlib.Probability.Moments.Basic
@@ -28,19 +28,12 @@ known at time `t ≤ T` this measure has density `Z_t`. With `θ = -κ` for a ma
 as such requires Girsanov's theorem and the martingale property of discounted prices under `Q`,
 which are not proved here.
 
-Mathlib's `ProbabilityTheory.IsPreBrownianReal` prescribes only the finite-dimensional laws of
-`W`. A martingale statement needs a filtration, and the law of `W` alone does not say how `W`
-interacts with it: `TauCeti.Probability.IsFilteredPreBrownianReal ℱ W P` adds that `W` is adapted
-to `ℱ` and that every increment `W_t - W_s`, `s ≤ t`, is independent of `ℱ_s`. A pre-Brownian
-motion is a pre-Brownian motion relative to its own natural filtration
-(`ProbabilityTheory.IsPreBrownianReal.isFilteredPreBrownianReal_natural`).
+Brownian motion relative to a filtration is
+`TauCeti.Probability.IsFilteredPreBrownianReal`, from
+`TauCeti.Probability.BrownianMotion.Filtered`.
 
 ## Main declarations
 
-* `TauCeti.Probability.IsFilteredPreBrownianReal`: a pre-Brownian motion relative to a
-  filtration.
-* `ProbabilityTheory.IsPreBrownianReal.isFilteredPreBrownianReal_natural`: the natural
-  filtration.
 * `TauCeti.Probability.exponentialMartingale`: the process `exp (θ W_t - θ² t / 2)`.
 * `ProbabilityTheory.IsPreBrownianReal.integral_exponentialMartingale`: `E[Z_t] = 1`.
 * `TauCeti.Probability.IsFilteredPreBrownianReal.martingale_exponentialMartingale`: `Z` is a
@@ -72,16 +65,6 @@ namespace TauCeti.Probability
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} {ℱ : Filtration ℝ≥0 mΩ}
   {W : ℝ≥0 → Ω → ℝ}
-
-/-- `W` is a **pre-Brownian motion relative to the filtration `ℱ`** under `P`: its
-finite-dimensional laws are those of Brownian motion, it is adapted to `ℱ`, and for `s ≤ t` the
-increment `W t - W s` is independent of `ℱ s`. -/
-structure IsFilteredPreBrownianReal (ℱ : Filtration ℝ≥0 mΩ) (W : ℝ≥0 → Ω → ℝ)
-    (P : Measure Ω := by volume_tac) : Prop extends IsPreBrownianReal W P where
-  /-- `W t` is `ℱ t`-measurable. -/
-  adapted : Adapted ℱ W
-  /-- The increment `W t - W s` is independent of `ℱ s`. -/
-  indep_sub ⦃s t : ℝ≥0⦄ : s ≤ t → Indep (.comap (W t - W s) inferInstance) (ℱ s) P
 
 /-- The **exponential martingale** `exp (θ W_t - θ² t / 2)` of a Brownian motion `W` with
 parameter `θ`. -/
@@ -170,23 +153,6 @@ theorem tilted_mul_eval_eq_withDensity (hB : IsPreBrownianReal B P) (θ : ℝ) (
   congr with ω
   rw [exponentialMartingale_def, ← exp_sub]
   ring_nf
-
-/-- A pre-Brownian motion is a pre-Brownian motion relative to its natural filtration: by the weak
-Markov property `ProbabilityTheory.IsPreBrownianReal.indepFun_shift`, the increments after time
-`s` are independent of `(B u, u ≤ s)`. -/
-theorem isFilteredPreBrownianReal_natural (hB : IsPreBrownianReal B P)
-    (hmeas : ∀ t, StronglyMeasurable (B t)) :
-    IsFilteredPreBrownianReal (Filtration.natural B hmeas) B P where
-  toIsPreBrownianReal := hB
-  adapted t := (Filtration.stronglyAdapted_natural hmeas t).measurable
-  indep_sub s t hst := by
-    rw [Filtration.natural_eq_comap]
-    refine indep_of_indep_of_le_left ((IndepFun_iff_Indep _ _ _).mp (hB.indepFun_shift s)) ?_
-    have : B t - B s = (fun x : ℝ≥0 → ℝ ↦ x (t - s)) ∘ fun ω u ↦ B (s + u) ω - B s ω := by
-      ext ω
-      simp [add_tsub_cancel_of_le hst]
-    rw [this, ← MeasurableSpace.comap_comp]
-    exact MeasurableSpace.comap_mono (measurable_pi_apply _).comap_le
 
 end ProbabilityTheory.IsPreBrownianReal
 
