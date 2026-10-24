@@ -252,6 +252,12 @@ theorem symmetricBilinearMaps_apply
     e.symmetricBilinearMaps 𝕜 G p = (p.1, (e.symmL 𝕜 p.1).symmetricBilinearMapsComp p.2) :=
   (rfl)
 
+theorem symmetricBilinearMaps_symm_apply {b : B} (hb : b ∈ e.baseSet)
+    (β : TauCeti.symmetricBilinearMaps 𝕜 F G) :
+    (e.symmetricBilinearMaps 𝕜 G).symm b β =
+      (e.continuousLinearMapAt 𝕜 b).symmetricBilinearMapsComp β :=
+  Pretrivialization.symmetricBilinearMaps_symm_apply G hb β
+
 end Bundle.Trivialization
 
 namespace TauCeti
@@ -283,6 +289,21 @@ theorem baseSet_trivializationAt_symmetricBilinearMaps (x₀ : B) :
     (trivializationAt (symmetricBilinearMaps 𝕜 F G)
         (fun x ↦ symmetricBilinearMaps 𝕜 (V x) G) x₀).baseSet =
       (trivializationAt F V x₀).baseSet :=
+  (rfl)
+
+@[simp, mfld_simps]
+theorem source_trivializationAt_symmetricBilinearMaps (x₀ : B) :
+    (trivializationAt (symmetricBilinearMaps 𝕜 F G)
+        (fun x ↦ symmetricBilinearMaps 𝕜 (V x) G) x₀).source =
+      π (symmetricBilinearMaps 𝕜 F G) (fun x ↦ symmetricBilinearMaps 𝕜 (V x) G) ⁻¹'
+        (trivializationAt F V x₀).baseSet :=
+  (rfl)
+
+@[simp, mfld_simps]
+theorem target_trivializationAt_symmetricBilinearMaps (x₀ : B) :
+    (trivializationAt (symmetricBilinearMaps 𝕜 F G)
+        (fun x ↦ symmetricBilinearMaps 𝕜 (V x) G) x₀).target =
+      (trivializationAt F V x₀).baseSet ×ˢ univ :=
   (rfl)
 
 end TauCeti

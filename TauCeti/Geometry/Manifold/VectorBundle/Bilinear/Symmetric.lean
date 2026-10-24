@@ -79,9 +79,13 @@ theorem ContMDiffOn.symmetricBilinearMapsComp {P : M → F' →L[𝕜] F} {s : S
     (g := fun _ ↦ ContinuousLinearMap.symmetrizeBilinear (V := F') (G := G)) contMDiffOn_const
     hsym
   refine h.congr fun x _ ↦ ?_
-  ext b v w
-  have hb := (mem_symmetricBilinearMaps 𝕜 F G b.1).1 b.2 (P x w) (P x v)
-  simp [hb, ← two_smul 𝕜, smul_smul, NeZero.ne (2 : 𝕜)]
+  -- Symmetrization fixes the symmetric pullback.
+  ext1 b
+  rw [ContinuousLinearMap.comp_apply,
+    ← ContinuousLinearMap.symmetrizeBilinear_coe ((P x).symmetricBilinearMapsComp b)]
+  congr 1
+  ext v w
+  simp
 
 end Pullback
 
