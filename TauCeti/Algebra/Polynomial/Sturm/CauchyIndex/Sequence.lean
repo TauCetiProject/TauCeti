@@ -159,8 +159,7 @@ theorem _root_.Polynomial.cauchyIndex_eq_sub_signVariations_Ioc (p q : R[X]) {a 
     cauchyIndex p q (Ioc a b) =
       (signVariationsRight (sturmSeq p q) a : ℤ) - signVariationsRight (sturmSeq p q) b := by
   rcases hab.lt_or_eq with hab | rfl
-  · rw [← Ioo_insert_right hab, insert_eq, union_comm,
-      cauchyIndex_union _ _ (disjoint_singleton_right.mpr (by simp)), cauchyIndex_singleton,
+  · rw [← Ioo_insert_right hab, cauchyIndex_insert _ _ (by simp),
       cauchyIndex_eq_sub_signVariations_Ioo _ _ hab, cauchyJump_eq_sub_signVariations]
     ring
   · simp
@@ -171,8 +170,7 @@ theorem _root_.Polynomial.cauchyIndex_eq_sub_signVariations_Icc (p q : R[X]) {a 
     (hab : a ≤ b) :
     cauchyIndex p q (Icc a b) =
       (signVariationsLeft (sturmSeq p q) a : ℤ) - signVariationsRight (sturmSeq p q) b := by
-  rw [← Ioc_insert_left hab, insert_eq,
-    cauchyIndex_union _ _ (disjoint_singleton_left.mpr (by simp)), cauchyIndex_singleton,
+  rw [← Ioc_insert_left hab, cauchyIndex_insert _ _ (by simp),
     cauchyIndex_eq_sub_signVariations_Ioc _ _ hab, cauchyJump_eq_sub_signVariations]
   ring
 
@@ -182,8 +180,7 @@ theorem _root_.Polynomial.cauchyIndex_eq_sub_signVariations_Ico (p q : R[X]) {a 
     cauchyIndex p q (Ico a b) =
       (signVariationsLeft (sturmSeq p q) a : ℤ) - signVariationsLeft (sturmSeq p q) b := by
   have h := cauchyIndex_eq_sub_signVariations_Icc p q hab
-  rw [← Ico_insert_right hab, insert_eq, union_comm,
-    cauchyIndex_union _ _ (disjoint_singleton_right.mpr (by simp)), cauchyIndex_singleton,
+  rw [← Ico_insert_right hab, cauchyIndex_insert _ _ (by simp),
     cauchyJump_eq_sub_signVariations] at h
   linarith only [h]
 
@@ -210,8 +207,7 @@ at `+∞`. -/
 theorem _root_.Polynomial.cauchyIndex_eq_sub_signVariations_Ici (p q : R[X]) (a : R) :
     cauchyIndex p q (Ici a) =
       (signVariationsLeft (sturmSeq p q) a : ℤ) - signVariationsAtTop (sturmSeq p q) := by
-  rw [← Ioi_insert, insert_eq, cauchyIndex_union _ _ (disjoint_singleton_left.mpr (by simp)),
-    cauchyIndex_singleton, cauchyIndex_eq_sub_signVariations_Ioi,
+  rw [← Ioi_insert, cauchyIndex_insert _ _ (by simp), cauchyIndex_eq_sub_signVariations_Ioi,
     cauchyJump_eq_sub_signVariations]
   ring
 
@@ -238,9 +234,8 @@ at `b`. -/
 theorem _root_.Polynomial.cauchyIndex_eq_sub_signVariations_Iic (p q : R[X]) (b : R) :
     cauchyIndex p q (Iic b) =
       (signVariationsAtBot (sturmSeq p q) : ℤ) - signVariationsRight (sturmSeq p q) b := by
-  rw [← Iio_insert, insert_eq, union_comm,
-    cauchyIndex_union _ _ (disjoint_singleton_right.mpr (by simp)), cauchyIndex_singleton,
-    cauchyIndex_eq_sub_signVariations_Iio, cauchyJump_eq_sub_signVariations]
+  rw [← Iio_insert, cauchyIndex_insert _ _ (by simp), cauchyIndex_eq_sub_signVariations_Iio,
+    cauchyJump_eq_sub_signVariations]
   ring
 
 /-- The Cauchy index of `q / p` on the whole ordered real closed field is

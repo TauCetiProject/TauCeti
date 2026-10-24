@@ -210,6 +210,11 @@ theorem cauchyIndex_union (p q : R[X]) {s t : Set R} (h : Disjoint s t) :
   finsum_mem_union' h ((finite_support_cauchyJump p q).inter_of_right s)
     ((finite_support_cauchyJump p q).inter_of_right t)
 
+/-- Adding a point to a set adds the jump at that point to the Cauchy index. -/
+theorem cauchyIndex_insert (p q : R[X]) {a : R} {s : Set R} (h : a ∉ s) :
+    cauchyIndex p q (insert a s) = cauchyJump p q a + cauchyIndex p q s :=
+  finsum_mem_insert' _ h ((finite_support_cauchyJump p q).inter_of_right s)
+
 /-- Splitting an open interval at an interior point adds the jump at that point. -/
 theorem cauchyIndex_Ioo_eq_add {p q : R[X]} {a b c : R} (hab : a < b) (hbc : b < c) :
     cauchyIndex p q (Ioo a c) =
@@ -217,8 +222,8 @@ theorem cauchyIndex_Ioo_eq_add {p q : R[X]} {a b c : R} (hab : a < b) (hbc : b <
   have hdisj : Disjoint (Ioc a b) (Ioo b c) :=
     disjoint_left.mpr fun _ hx hx' ↦ hx'.1.not_ge hx.2
   rw [← Ioc_union_Ioo_eq_Ioo hab.le hbc, cauchyIndex_union _ _ hdisj,
-    ← Ioo_insert_right hab, insert_eq, union_comm,
-    cauchyIndex_union _ _ (disjoint_singleton_right.mpr (by simp)), cauchyIndex_singleton]
+    ← Ioo_insert_right hab, cauchyIndex_insert _ _ (by simp)]
+  ring
 
 /-- Cancelling a common nonzero factor of `p` and `q` does not change the jumps of `q / p`. -/
 theorem cauchyJump_mul_right (p q : R[X]) {r : R[X]} (hr : r ≠ 0) (a : R) :
