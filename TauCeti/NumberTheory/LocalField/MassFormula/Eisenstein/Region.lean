@@ -198,8 +198,9 @@ theorem measure_eisensteinSet {n : ℕ} (hn : 0 < n) [MeasurableSpace (Fin n →
     simp only [e, Finset.sum_update_of_mem (Finset.mem_univ _), Finset.sum_const,
       Finset.card_univ_sdiff, Finset.card_singleton, smul_eq_mul, mul_one, Fintype.card_fin]
     omega
-  have h₁ := Measure.measure_univ_pi_image_maximalIdeal_pow μ hμ fun _ ↦ 1
-  have h₂ := Measure.measure_univ_pi_image_maximalIdeal_pow μ hμ e
+  have h₁ := Measure.measure_univ_pi_image_maximalIdeal_pow μ fun _ ↦ 1
+  have h₂ := Measure.measure_univ_pi_image_maximalIdeal_pow μ e
+  rw [hμ, mul_one] at h₁ h₂
   simp only [pow_one, Fin.sum_const, smul_eq_mul, mul_one] at hsub h₁
   rw [he] at h₂
   have hq : (Nat.card 𝓀[K] : ℝ≥0∞) ≠ 0 := by simp [Nat.card_pos.ne']
