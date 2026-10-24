@@ -71,6 +71,18 @@ theorem _root_.Polynomial.iterate_derivative_comp_C_mul_X [CommSemiring R] (p : 
       Function.iterate_succ_apply', pow_succ, C_mul]
     ring
 
+/-- The `k`-th derivative of `p (a X + b)` is `a ^ k p⁽ᵏ⁾ (a X + b)`. -/
+theorem _root_.Polynomial.iterate_derivative_comp_C_mul_X_add_C [CommSemiring R] (p : R[X])
+    (a b : R) (k : ℕ) :
+    derivative^[k] (p.comp (C a * X + C b)) =
+      C (a ^ k) * (derivative^[k] p).comp (C a * X + C b) := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    rw [Function.iterate_succ_apply', ih, derivative_C_mul, derivative_comp, derivative_add,
+      derivative_C_mul_X, derivative_C, add_zero, Function.iterate_succ_apply', pow_succ, C_mul]
+    ring
+
 /-- **Reciprocal-polynomial identity.** A polynomial `p` of degree at most `2 g` which is its own
 reflection at `2 g`, that is `X ^ (2 g) p (1 / X) = p (X)`, satisfies `p' (1) = g p (1)`. -/
 theorem _root_.Polynomial.derivative_eval_one_of_reflect_eq [CommRing R] {p : R[X]} {g : ℕ}
