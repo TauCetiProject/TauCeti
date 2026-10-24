@@ -44,11 +44,21 @@ open TauCeti
 variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
   (Q : QuadraticForm R M) [Invertible (2 : R)]
 
-private def spinToLipschitz : spinGroup Q →* lipschitzGroup Q :=
+/-- The canonical inclusion of the Spin group into the Lipschitz group. -/
+def spinToLipschitz : spinGroup Q →* lipschitzGroup Q :=
   (pinToLipschitz Q).comp (spinToPin Q)
 
 omit [Invertible (2 : R)] in
-private theorem coe_spinToLipschitz_apply (x : spinGroup Q) :
+/-- The canonical Spin-to-Lipschitz map applied to an element is the composite of the
+Pin and Spin inclusions. -/
+@[simp]
+theorem spinToLipschitz_apply (x : spinGroup Q) :
+    spinToLipschitz Q x = pinToLipschitz Q (spinToPin Q x) := by
+  rfl
+
+omit [Invertible (2 : R)] in
+/-- The canonical Spin-to-Lipschitz inclusion has the expected Clifford value. -/
+theorem coe_spinToLipschitz_apply (x : spinGroup Q) :
     (((spinToLipschitz Q x : lipschitzGroup Q) : (CliffordAlgebra Q)ˣ) :
         CliffordAlgebra Q) = (x : CliffordAlgebra Q) := by
   simp [spinToLipschitz]
