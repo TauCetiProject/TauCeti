@@ -35,9 +35,10 @@ The three cases of interest are the following.
   when `L` is a full lattice, the level of `L` is such an `N` for every `γ ∈ L^∨`), in
   `q_N = exp (2 π i τ / N)`, `θ_{γ+L}(τ) = ∑_{m ≥ 0} r_{γ+L}(2m / N) q_N^m`. The coefficient
   of `q_N^m` vanishes unless `m ≡ N ‖γ‖² / 2 (mod N)`, because `‖γ + v‖² ≡ ‖γ‖² (mod 2)` for
-  `v ∈ L` (`ZLattice.IsEven.cosetShell_eq_empty`). This support condition describes the
-  expansion at the cusp `∞` only; the analysis at the other cusps also needs the theta
-  transformation formulas.
+  `v ∈ L` (`ZLattice.IsEven.cosetShell_eq_empty`,
+  `ZLattice.IsEven.cosetRepresentationNumber_div_eq_zero_of_not_modEq`). This support condition
+  describes the expansion at the cusp `∞` only; the analysis at the other cusps also needs the
+  theta transformation formulas.
 
 ## Main statements
 
@@ -227,14 +228,7 @@ theorem qExpansion_thetaCoset_coeff_eq_zero (hL : IsEven L) (hγ : γ ∈ dual L
     (hN : 0 < N) {n : ℤ} (hn : N * ‖γ‖ ^ 2 = 2 * n) {m : ℕ} (hm : ¬ (m : ℤ) ≡ n [ZMOD N]) :
     (qExpansion N (thetaCoset L γ)).coeff m = 0 := by
   rw [hL.qExpansion_thetaCoset_coeff hγ hN ⟨n, hn⟩, Nat.cast_eq_zero]
-  refine hL.cosetRepresentationNumber_eq_zero hγ ?_
-  rintro ⟨j, hj⟩
-  -- `2m / N = ‖γ‖² + 2j` gives `m = n + N j`.
-  rw [div_eq_iff (Nat.cast_ne_zero.mpr hN.ne')] at hj
-  have h2 : ((m : ℤ) : ℝ) = ((n + N * j : ℤ) : ℝ) := by
-    push_cast
-    linear_combination hj / 2 + hn / 2
-  exact hm (Int.modEq_iff_dvd.mpr ⟨j, by linarith [Int.cast_injective h2]⟩).symm
+  simpa using hL.cosetRepresentationNumber_div_eq_zero_of_not_modEq hγ hN hn hm
 
 end IsEven
 

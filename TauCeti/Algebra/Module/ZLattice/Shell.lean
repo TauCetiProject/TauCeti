@@ -60,7 +60,9 @@ lattice `L` in a real normed space of dimension `n` the representation numbers g
 * `ZLattice.IsEven.shell_eq_empty`, `ZLattice.IsIntegral.shell_eq_empty`: an even lattice has no
   vector of squared norm outside `2ℕ`, an integral lattice none outside `ℕ`.
 * `ZLattice.IsEven.cosetShell_eq_empty`: for even `L` and `γ ∈ L^∨`, the translate `γ + L` has
-  no vector of squared norm outside `‖γ‖² + 2ℤ`.
+  no vector of squared norm outside `‖γ‖² + 2ℤ`;
+  `ZLattice.IsEven.cosetRepresentationNumber_div_eq_zero_of_not_modEq`: if moreover
+  `N ‖γ‖² = 2 n`, then `r_{γ+L}(2m / N) = 0` unless `m ≡ n (mod N)`.
 * `ZLattice.representationNumber_isBigO`: `r_L(t) = O(t^{n/2})` as `t → ∞`.
 
 ## References
@@ -327,6 +329,20 @@ theorem IsEven.cosetShell_eq_empty (h : IsEven L) {γ : E} (hγ : γ ∈ dual L)
 theorem IsEven.cosetRepresentationNumber_eq_zero (h : IsEven L) {γ : E} (hγ : γ ∈ dual L)
     (ht : ¬ ∃ j : ℤ, t = ‖γ‖ ^ 2 + 2 * j) : cosetRepresentationNumber L γ t = 0 := by
   rw [cosetRepresentationNumber_def, h.cosetShell_eq_empty hγ ht, Set.ncard_empty]
+
+/-- For an even lattice `L`, `γ ∈ L^∨` and a positive integer `N` with `N ‖γ‖² = 2 n`, the
+representation number `r_{γ+L}(2m / N)` vanishes unless `m ≡ n (mod N)`. -/
+theorem IsEven.cosetRepresentationNumber_div_eq_zero_of_not_modEq (h : IsEven L) {γ : E}
+    (hγ : γ ∈ dual L) {N : ℕ} (hN : 0 < N) {n : ℤ} (hn : N * ‖γ‖ ^ 2 = 2 * n) {m : ℤ}
+    (hm : ¬ m ≡ n [ZMOD N]) : cosetRepresentationNumber L γ (2 * m / N) = 0 := by
+  refine h.cosetRepresentationNumber_eq_zero hγ ?_
+  rintro ⟨j, hj⟩
+  -- `2m / N = ‖γ‖² + 2j` gives `m = n + N j`.
+  rw [div_eq_iff (Nat.cast_ne_zero.mpr hN.ne')] at hj
+  have h2 : (m : ℝ) = ((n + N * j : ℤ) : ℝ) := by
+    push_cast
+    linear_combination hj / 2 + hn / 2
+  exact hm (Int.modEq_iff_dvd.mpr ⟨j, by linarith [Int.cast_injective h2]⟩).symm
 
 end Inner
 
