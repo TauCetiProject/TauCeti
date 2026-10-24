@@ -31,6 +31,31 @@ by approximating `u` by a finite-rank `v` with `‖u - v‖ < 1`: Neumann invers
 
 public section
 
+namespace TauCeti
+
+open ContinuousLinearMap
+
+variable {K E : Type*} [NontriviallyNormedField K]
+  [NormedAddCommGroup E] [NormedSpace K E] [CompleteSpace E]
+  {u : E →L[K] E}
+
+private theorem exists_equiv_add_hasFiniteRange (hu : u.IsCompletelyContinuous) :
+    ∃ (e : E ≃L[K] E) (w : E →L[K] E),
+      LinearMap.HasFiniteRange (w : E →ₗ[K] E) ∧ (e : E →L[K] E) + w = 1 - u := by
+  obtain ⟨v, hv, huv⟩ := isCompletelyContinuous_iff.mp hu (1 / 2) one_half_pos
+  have huv' : ‖u - v‖ < 1 :=
+    (opNorm_le_bound _ (by positivity) (by simpa using huv)).trans_lt one_half_lt_one
+  let e := ContinuousLinearEquiv.ofUnit (Units.oneSub (u - v) huv')
+  -- The forward map of ofUnit is the unit's value, identified by val_oneSub.
+  have he : (e : E →L[K] E) = 1 - (u - v) := by
+    ext x
+    exact congrArg (fun f : E →L[K] E ↦ f x) (Units.val_oneSub (u - v) huv')
+  refine ⟨e, -v, by simpa using hv.hasFiniteRange.neg, ?_⟩
+  rw [he]
+  abel
+
+end TauCeti
+
 namespace ContinuousLinearMap
 
 variable {K E : Type*} [NontriviallyNormedField K] [CompleteSpace K]
@@ -41,29 +66,16 @@ variable {K E : Type*} [NontriviallyNormedField K] [CompleteSpace K]
 complete nontrivially normed field. -/
 theorem IsCompletelyContinuous.isFredholm_one_sub (hu : u.IsCompletelyContinuous) :
     IsFredholm (1 - u) := by
-  obtain ⟨v, hv, huv⟩ := isCompletelyContinuous_iff.mp hu (1 / 2) one_half_pos
-  have huv' : ‖u - v‖ < 1 :=
-    (opNorm_le_bound _ (by positivity) (by simpa using huv)).trans_lt one_half_lt_one
-  let e := ContinuousLinearEquiv.ofUnit (Units.oneSub (u - v) huv')
-  have he : (e : E →L[K] E) = 1 - (u - v) := rfl
-  have h := e.isFredholm.add_hasFiniteRange (v := -v) (by
-    simpa using hv.hasFiniteRange.neg)
-  have he' : (e : E →L[K] E) + -v = 1 - u := by rw [he]; abel
-  rwa [he'] at h
+  obtain ⟨e, w, hw, he⟩ := TauCeti.exists_equiv_add_hasFiniteRange hu
+  rw [← he]
+  exact e.isFredholm.add_hasFiniteRange hw
 
 /-- A completely continuous perturbation of the identity has Fredholm index zero. -/
 @[simp]
 theorem IsCompletelyContinuous.index_one_sub_eq_zero (hu : u.IsCompletelyContinuous) :
     (1 - u).index = 0 := by
-  obtain ⟨v, hv, huv⟩ := isCompletelyContinuous_iff.mp hu (1 / 2) one_half_pos
-  have huv' : ‖u - v‖ < 1 :=
-    (opNorm_le_bound _ (by positivity) (by simpa using huv)).trans_lt one_half_lt_one
-  let e := ContinuousLinearEquiv.ofUnit (Units.oneSub (u - v) huv')
-  have he : (e : E →L[K] E) = 1 - (u - v) := rfl
-  have h := index_add_of_hasFiniteRange e.isFredholm (K := -v) (by
-    simpa using hv.hasFiniteRange.neg)
-  have he' : (e : E →L[K] E) + -v = 1 - u := by rw [he]; abel
-  rwa [he', e.index_eq_zero] at h
+  obtain ⟨e, w, hw, he⟩ := TauCeti.exists_equiv_add_hasFiniteRange hu
+  rw [← he, index_add_of_hasFiniteRange e.isFredholm hw, e.index_eq_zero]
 
 /-- For a completely continuous `u`, injectivity of `1 - u` is equivalent to invertibility. -/
 theorem IsCompletelyContinuous.isUnit_one_sub_iff_injective (hu : u.IsCompletelyContinuous) :
