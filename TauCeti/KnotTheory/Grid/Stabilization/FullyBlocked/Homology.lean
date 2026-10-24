@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Bigraded.Stabilization
 public import TauCeti.KnotTheory.Grid.Homology.FullyBlockedBigraded
-public import TauCeti.KnotTheory.Grid.SmallGrid.Homology
 public import TauCeti.KnotTheory.Grid.Stabilization.FullyBlocked.Grading
 
 /-!
@@ -26,9 +25,8 @@ equivalence
 So `GH~(G') ≅ GH~(G) ⊗ W` as bigraded vector spaces, with `W` the two-dimensional space with
 generators in bidegrees `(0, 0)` and `(-1, -1)`: the Poincaré series of fully blocked homology is
 multiplied by `TauCeti.Bigraded.W`. Its class modulo `⊗ W`-stabilization is therefore unchanged by
-this stabilization. Starting from the standard `2 × 2` grid, whose series is `W`, the resulting
-`3 × 3` unknot grid has series `W ^ 2`, so the dependence of fully blocked homology on the grid
-size is visible in the bigrading.
+this stabilization. The worked `3 × 3` unknot example, with series `W ^ 2`, is in
+`TauCeti.KnotTheory.Grid.SmallGrid.Stabilization`.
 
 ## Main definitions
 
@@ -42,10 +40,10 @@ size is visible in the bigrading.
   the center component.
 * `TauCeti.OddComponentGridDiagram.finrank_bigradedFullyBlockedHomologyPiece_stabilizeX`: the
   dimension of a piece of `GH~(G')` is the sum of the dimensions of two pieces of `GH~(G)`.
-* `TauCeti.OddComponentGridDiagram.fullyBlockedHomologySeries_stabilizeX`: stabilization
-  multiplies the Poincaré series by `W`.
-* `TauCeti.OddComponentGridDiagram.isStablyEquiv_fullyBlockedHomologySeries_stabilizeX`: the
-  stable class of the Poincaré series is unchanged by stabilization.
+* `TauCeti.OddComponentGridDiagram.bigradedFullyBlockedHomologyPoincareSeries_stabilizeX`:
+  stabilization multiplies the Poincaré series by `W`.
+* `OddComponentGridDiagram.isStablyEquiv_bigradedFullyBlockedHomologyPoincareSeries_stabilizeX`:
+  the stable class of the Poincaré series is unchanged by stabilization.
 
 ## References
 
@@ -61,54 +59,6 @@ namespace TauCeti.OddComponentGridDiagram
 variable {n : ℕ} (G : OddComponentGridDiagram n) (s : Fin n)
 
 local notation "F" => ZMod 2
-
-/-- The center component of the chain comparison sends the part of bidegree `g` of a stabilized
-chain to the part of bidegree `g + (1, 1)` of its image. -/
-private theorem fst_fullyBlockedStabilizeXMap_bigradedChainInclusion (g : ℤ × ℤ)
-    (c : GridChain F (n + 1)) :
-    (G.1.fullyBlockedStabilizeXMap s ((G.stabilizeX s).bigradedChainInclusion F g
-        ((G.stabilizeX s).bigradedChainProjection F g c))).1 =
-      G.bigradedChainInclusion F (g + (1, 1))
-        (G.bigradedChainProjection F (g + (1, 1)) (G.1.fullyBlockedStabilizeXMap s c).1) := by
-  refine (G.stabilizeX s).map_bigradedChainInclusion_bigradedChainProjection G
-    (LinearMap.fst F _ _ ∘ₗ G.1.fullyBlockedStabilizeXMap s) (1, 1) (fun x y hy => ?_) g c
-  have h := G.fullyBlockedStabilizeXMap_fst_bigradedChainInclusion_eq_zero_of_ne s
-    ((G.stabilizeX s).bidegree x)
-    ((G.stabilizeX s).bigradedChainProjection F ((G.stabilizeX s).bidegree x) (Finsupp.single x 1))
-    hy
-  simpa only [bigradedChainInclusion_bigradedChainProjection_single, ↓reduceIte,
-    LinearMap.comp_apply, LinearMap.fst_apply] using h
-
-/-- The off-center component of the chain comparison preserves homogeneous parts. -/
-private theorem snd_fullyBlockedStabilizeXMap_bigradedChainInclusion (g : ℤ × ℤ)
-    (c : GridChain F (n + 1)) :
-    (G.1.fullyBlockedStabilizeXMap s ((G.stabilizeX s).bigradedChainInclusion F g
-        ((G.stabilizeX s).bigradedChainProjection F g c))).2 =
-      G.bigradedChainInclusion F g
-        (G.bigradedChainProjection F g (G.1.fullyBlockedStabilizeXMap s c).2) := by
-  have h := (G.stabilizeX s).map_bigradedChainInclusion_bigradedChainProjection G
-    (LinearMap.snd F _ _ ∘ₗ G.1.fullyBlockedStabilizeXMap s) 0 (fun x y hy => ?_) g c
-  · rw [add_zero] at h
-    simpa only [LinearMap.comp_apply, LinearMap.snd_apply] using h
-  have h := G.fullyBlockedStabilizeXMap_snd_bigradedChainInclusion_eq_zero_of_ne s
-    ((G.stabilizeX s).bidegree x)
-    ((G.stabilizeX s).bigradedChainProjection F ((G.stabilizeX s).bidegree x) (Finsupp.single x 1))
-    (x := y) (by rwa [← add_zero ((G.stabilizeX s).bidegree x)])
-  simpa only [bigradedChainInclusion_bigradedChainProjection_single, ↓reduceIte,
-    LinearMap.comp_apply, LinearMap.snd_apply] using h
-
-/-- The center cycle of the comparison is the center component of the chain comparison. -/
-private theorem coe_fst_fullyBlockedStabilizeXCycles (z : (G.stabilizeX s).1.fullyBlockedCycles) :
-    ((G.1.fullyBlockedStabilizeXCycles s z).1 : GridChain F n) =
-      (G.1.fullyBlockedStabilizeXMap s z).1 :=
-  (G.1.fullyBlockedStabilizeXCycles_fst s z).trans (G.1.fullyBlockedStabilizeXMap_fst s z).symm
-
-/-- The off-center cycle of the comparison is the off-center component of the chain
-comparison. -/
-private theorem coe_snd_fullyBlockedStabilizeXCycles (z : (G.stabilizeX s).1.fullyBlockedCycles) :
-    ((G.1.fullyBlockedStabilizeXCycles s z).2 : GridChain F n) =
-      (G.1.fullyBlockedStabilizeXMap s z).2 :=
-  (G.1.fullyBlockedStabilizeXCycles_snd s z).trans (G.1.fullyBlockedStabilizeXMap_snd s z).symm
 
 /-- The stabilization comparison intertwines the homogeneous projections of fully blocked
 homology: the center component shifts the bidegree by `(1, 1)` and the off-center component
@@ -132,10 +82,12 @@ theorem fullyBlockedHomologyStabilizeXEquivProd_bigradedFullyBlockedHomologyProj
     refine (G.1.fullyBlockedHomologyStabilizeXEquivProd_mk s _).trans ?_
     simp only [bigradedFullyBlockedHomologyProjection_mk, Prod.mk.injEq]
     constructor <;> congr 1 <;> ext1
-    · simp only [coe_fst_fullyBlockedStabilizeXCycles]
-      exact G.fst_fullyBlockedStabilizeXMap_bigradedChainInclusion s g z
-    · simp only [coe_snd_fullyBlockedStabilizeXCycles]
-      exact G.snd_fullyBlockedStabilizeXMap_bigradedChainInclusion s g z
+    · refine (G.1.coe_fst_fullyBlockedStabilizeXCycles s _).trans
+        ((G.fst_fullyBlockedStabilizeXMap_bigradedChainInclusion s g z).trans ?_)
+      simp only [G.1.coe_fst_fullyBlockedStabilizeXCycles s z]
+    · refine (G.1.coe_snd_fullyBlockedStabilizeXCycles s _).trans
+        ((G.snd_fullyBlockedStabilizeXMap_bigradedChainInclusion s g z).trans ?_)
+      simp only [G.1.coe_snd_fullyBlockedStabilizeXCycles s z]
 
 /-- The center component of the stabilization comparison sends the bidegree-`g` piece into the
 bidegree-`(g + (1, 1))` piece. -/
@@ -227,25 +179,21 @@ theorem finrank_bigradedFullyBlockedHomologyPiece_stabilizeX (g : ℤ × ℤ) :
 /-- **Stabilization multiplies the Poincaré series by `W`.** The Poincaré series of the fully
 blocked homology of the stabilization splitting an `X`-marking is that of the original diagram
 times the series `W` of the stabilization factor. -/
-theorem fullyBlockedHomologySeries_stabilizeX :
-    (G.stabilizeX s).fullyBlockedHomologySeries = G.fullyBlockedHomologySeries * Bigraded.W := by
+theorem bigradedFullyBlockedHomologyPoincareSeries_stabilizeX :
+    (G.stabilizeX s).bigradedFullyBlockedHomologyPoincareSeries =
+      G.bigradedFullyBlockedHomologyPoincareSeries * Bigraded.W := by
   refine AddMonoidAlgebra.coeff_injective (Finsupp.ext fun g => ?_)
-  rw [Bigraded.coeff_mul_W, coeff_fullyBlockedHomologySeries, coeff_fullyBlockedHomologySeries,
-    coeff_fullyBlockedHomologySeries, finrank_bigradedFullyBlockedHomologyPiece_stabilizeX,
-    add_comm]
+  rw [Bigraded.coeff_mul_W, coeff_bigradedFullyBlockedHomologyPoincareSeries,
+    coeff_bigradedFullyBlockedHomologyPoincareSeries,
+    coeff_bigradedFullyBlockedHomologyPoincareSeries,
+    finrank_bigradedFullyBlockedHomologyPiece_stabilizeX, add_comm]
 
 /-- The class of the Poincaré series of fully blocked homology modulo `⊗ W`-stabilization is
 unchanged by the stabilization splitting an `X`-marking. -/
-theorem isStablyEquiv_fullyBlockedHomologySeries_stabilizeX :
-    Bigraded.IsStablyEquiv (G.stabilizeX s).fullyBlockedHomologySeries
-      G.fullyBlockedHomologySeries := by
-  rw [fullyBlockedHomologySeries_stabilizeX, ← pow_one Bigraded.W]
+theorem isStablyEquiv_bigradedFullyBlockedHomologyPoincareSeries_stabilizeX :
+    Bigraded.IsStablyEquiv (G.stabilizeX s).bigradedFullyBlockedHomologyPoincareSeries
+      G.bigradedFullyBlockedHomologyPoincareSeries := by
+  rw [bigradedFullyBlockedHomologyPoincareSeries_stabilizeX, ← pow_one Bigraded.W]
   exact Bigraded.isStablyEquiv_mul_W_pow _ 1
-
-/-- The `3 × 3` unknot grids obtained by stabilizing the standard `2 × 2` grid have Poincaré
-series `W ^ 2`: their fully blocked homology is `W ⊗ W`. -/
-theorem fullyBlockedHomologySeries_twoByTwo_stabilizeX (s : Fin 2) :
-    (twoByTwo.stabilizeX s).fullyBlockedHomologySeries = Bigraded.W ^ 2 := by
-  rw [fullyBlockedHomologySeries_stabilizeX, fullyBlockedHomologySeries_twoByTwo, sq]
 
 end TauCeti.OddComponentGridDiagram

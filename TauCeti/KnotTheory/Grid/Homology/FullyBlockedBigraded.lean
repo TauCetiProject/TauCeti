@@ -37,7 +37,8 @@ two-dimensional bigraded space `W`. So the Poincaré series is the object on whi
   `GH~`.
 * `TauCeti.OddComponentGridDiagram.bigradedFullyBlockedHomologyGrading`: the bundled internal
   grading of `GH~`.
-* `TauCeti.OddComponentGridDiagram.fullyBlockedHomologySeries`: the Poincaré series of `GH~`.
+* `TauCeti.OddComponentGridDiagram.bigradedFullyBlockedHomologyPoincareSeries`: the Poincaré
+  series of `GH~`.
 
 ## Main results
 
@@ -45,8 +46,8 @@ two-dimensional bigraded space `W`. So the Poincaré series is the object on whi
   homogeneous of bidegree `g` exactly when it is the class of a cycle of bidegree `g`.
 * `TauCeti.OddComponentGridDiagram.isInternal_bigradedFullyBlockedHomologyPiece`: `GH~` is the
   internal direct sum of its homogeneous pieces.
-* `TauCeti.OddComponentGridDiagram.totalDim_fullyBlockedHomologySeries`: the total dimension of
-  the Poincaré series is the dimension of `GH~`.
+* `TauCeti.OddComponentGridDiagram.totalDim_bigradedFullyBlockedHomologyPoincareSeries`: the
+  total dimension of the Poincaré series is the dimension of `GH~`.
 
 ## References
 
@@ -119,6 +120,7 @@ theorem bigradedFullyBlockedHomologyProjection_apply_self (g : ℤ × ℤ)
   | H z => simp
 
 /-- Projections onto two different bidegrees are orthogonal. -/
+@[simp]
 theorem bigradedFullyBlockedHomologyProjection_apply_of_ne {g h : ℤ × ℤ} (hgh : g ≠ h)
     (y : G.1.fullyBlockedHomology) :
     G.bigradedFullyBlockedHomologyProjection g (G.bigradedFullyBlockedHomologyProjection h y) =
@@ -190,6 +192,7 @@ theorem bigradedFullyBlockedHomologyProjection_eq_zero_of_mem {g h : ℤ × ℤ}
   exact G.bigradedFullyBlockedHomologyProjection_apply_of_ne hgh y
 
 /-- Only the bidegrees occupied by grid states carry homology. -/
+@[simp]
 theorem bigradedFullyBlockedHomologyPiece_eq_bot {g : ℤ × ℤ} (hg : g ∉ G.bidegreeSupport) :
     G.bigradedFullyBlockedHomologyPiece g = ⊥ := by
   rw [eq_bot_iff]
@@ -235,11 +238,31 @@ theorem bigradedFullyBlockedHomologyGrading_piece (g : ℤ × ℤ) :
     G.bigradedFullyBlockedHomologyGrading.piece g = G.bigradedFullyBlockedHomologyPiece g :=
   (rfl)
 
+/-- The homogeneous components of a class under the bundled grading are its homogeneous
+projections. -/
+@[simp]
+theorem coe_decompose_bigradedFullyBlockedHomologyGrading (y : G.1.fullyBlockedHomology)
+    (g : ℤ × ℤ) :
+    (DirectSum.decompose G.bigradedFullyBlockedHomologyGrading.piece y g :
+        G.1.fullyBlockedHomology) =
+      G.bigradedFullyBlockedHomologyProjection g y := by
+  conv_lhs => rw [← G.sum_bigradedFullyBlockedHomologyProjection y]
+  rw [DirectSum.decompose_sum, DirectSum.sum_apply, Submodule.coe_sum]
+  refine (Finset.sum_eq_single g (fun h _ hhg => DirectSum.decompose_of_mem_ne
+    G.bigradedFullyBlockedHomologyGrading.piece
+    (G.bigradedFullyBlockedHomologyProjection_mem h y) hhg) fun hg => ?_).trans
+    (DirectSum.decompose_of_mem_same G.bigradedFullyBlockedHomologyGrading.piece
+      (G.bigradedFullyBlockedHomologyProjection_mem g y))
+  have h0 := G.bigradedFullyBlockedHomologyProjection_mem g y
+  rw [G.bigradedFullyBlockedHomologyPiece_eq_bot hg, Submodule.mem_bot] at h0
+  rw [h0, DirectSum.decompose_zero (ℳ := G.bigradedFullyBlockedHomologyGrading.piece),
+    DirectSum.zero_apply, ZeroMemClass.coe_zero]
+
 /-! ### The Poincaré series -/
 
 /-- The bigraded Poincaré series of fully blocked grid homology: its coefficient in bidegree `g`
 is the dimension of the bidegree-`g` piece. -/
-noncomputable def fullyBlockedHomologySeries : Bigraded.Series :=
+noncomputable def bigradedFullyBlockedHomologyPoincareSeries : Bigraded.Series :=
   AddMonoidAlgebra.ofCoeff <| Finsupp.onFinset G.bidegreeSupport
     (fun g => Module.finrank F (G.bigradedFullyBlockedHomologyPiece g)) fun g hg => by
       by_contra h
@@ -249,8 +272,8 @@ noncomputable def fullyBlockedHomologySeries : Bigraded.Series :=
 /-- The coefficient of the Poincaré series in bidegree `g` is the dimension of the bidegree-`g`
 piece of fully blocked homology. -/
 @[simp]
-theorem coeff_fullyBlockedHomologySeries (g : ℤ × ℤ) :
-    G.fullyBlockedHomologySeries.coeff g =
+theorem coeff_bigradedFullyBlockedHomologyPoincareSeries (g : ℤ × ℤ) :
+    G.bigradedFullyBlockedHomologyPoincareSeries.coeff g =
       Module.finrank F (G.bigradedFullyBlockedHomologyPiece g) :=
   (rfl)
 
@@ -269,9 +292,11 @@ theorem sum_finrank_bigradedFullyBlockedHomologyPiece :
 
 /-- The total dimension of the Poincaré series is the dimension of fully blocked homology. -/
 @[simp]
-theorem totalDim_fullyBlockedHomologySeries :
-    Bigraded.totalDim G.fullyBlockedHomologySeries = Module.finrank F G.1.fullyBlockedHomology := by
-  rw [Bigraded.totalDim_apply, fullyBlockedHomologySeries, AddMonoidAlgebra.coeff_ofCoeff,
-    Finsupp.onFinset_sum _ fun _ => rfl, sum_finrank_bigradedFullyBlockedHomologyPiece]
+theorem totalDim_bigradedFullyBlockedHomologyPoincareSeries :
+    Bigraded.totalDim G.bigradedFullyBlockedHomologyPoincareSeries =
+      Module.finrank F G.1.fullyBlockedHomology := by
+  rw [Bigraded.totalDim_apply, bigradedFullyBlockedHomologyPoincareSeries,
+    AddMonoidAlgebra.coeff_ofCoeff, Finsupp.onFinset_sum _ fun _ => rfl,
+    sum_finrank_bigradedFullyBlockedHomologyPiece]
 
 end TauCeti.OddComponentGridDiagram

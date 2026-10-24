@@ -53,8 +53,8 @@ diagram is the series `TauCeti.Bigraded.W` of the stabilization factor.
   nonzero and pairwise distinct.
 * `TauCeti.OddComponentGridDiagram.finrank_bigradedFullyBlockedHomologyPiece_of_le_two`: each
   homogeneous piece has dimension the number of states of its bidegree.
-* `TauCeti.OddComponentGridDiagram.fullyBlockedHomologySeries_twoByTwo`: the standard two-by-two
-  diagram has Poincaré series `W`.
+* `TauCeti.OddComponentGridDiagram.bigradedFullyBlockedHomologyPoincareSeries_twoByTwo`: the
+  standard two-by-two diagram has Poincaré series `W`.
 
 ## References
 
@@ -188,13 +188,14 @@ theorem finrank_bigradedFullyBlockedHomologyPiece_of_le_two (hn : n ≤ 2) (g : 
 
 /-- The standard two-by-two diagram has fully blocked Poincaré series `W`: its two states give
 one generator in bidegree `(-1, -1)` and one in bidegree `(0, 0)`. -/
-theorem fullyBlockedHomologySeries_twoByTwo : twoByTwo.fullyBlockedHomologySeries = Bigraded.W := by
+theorem bigradedFullyBlockedHomologyPoincareSeries_twoByTwo :
+    twoByTwo.bigradedFullyBlockedHomologyPoincareSeries = Bigraded.W := by
   have huniv : (Finset.univ : Finset (GridState 2)) =
       {GridState.twoByTwoId, GridState.twoByTwoSwap} :=
     (Finset.eq_univ_of_forall fun x => by
       rcases GridState.eq_twoByTwoId_or_eq_twoByTwoSwap x with rfl | rfl <;> simp).symm
   refine AddMonoidAlgebra.coeff_injective (Finsupp.ext fun g => ?_)
-  rw [coeff_fullyBlockedHomologySeries,
+  rw [coeff_bigradedFullyBlockedHomologyPoincareSeries,
     finrank_bigradedFullyBlockedHomologyPiece_of_le_two _ le_rfl, Finset.card_filter, huniv,
     Finset.sum_pair GridState.twoByTwoId_ne_twoByTwoSwap, bidegree_twoByTwo_twoByTwoId,
     bidegree_twoByTwo_twoByTwoSwap]
