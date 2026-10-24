@@ -22,6 +22,8 @@ defines the words and the braid each word represents.
 * `TauCeti.BraidWord.strandIncl`: the same word on one strand more, the new strand uncrossed.
 * `TauCeti.BraidWord.stabilize`: the Markov stabilization of a word, which adds a strand and
   crosses it once with the previous last strand.
+* `TauCeti.BraidWord.levelAt` and `TauCeti.BraidWord.signAt`: the level and the sign of the letter
+  at a given position of a word.
 
 ## Main results
 
@@ -157,6 +159,50 @@ of the braid `b` of the word, as in `TauCeti.IsMarkovMove.stabilize` and
 theorem toBraid_stabilize (w : BraidWord (n + 1)) (ε : ℤˣ) :
     (w.stabilize ε).toBraid = BraidGroup.strandIncl w.toBraid * sigma (Fin.last n) ^ (ε : ℤ) := by
   rw [stabilize_def, toBraid_append, toBraid_strandIncl, toBraid_cons, toBraid_nil, mul_one]
+
+/-! ### Letters at a position -/
+
+section Positions
+
+variable (w : BraidWord n)
+
+/-- The level `i` of the letter `σ i ^ ε` at position `k` of a braid word, or `none` if the word
+has no position `k`. In the closure of the braid, the letters of level `i` are the crossings of
+the strand positions `i` and `i + 1`. -/
+@[expose] def levelAt (k : ℕ) : Option ℕ :=
+  w[k]?.map fun x ↦ (x.1 : ℕ)
+
+/-- The sign `ε` of the letter `σ i ^ ε` at position `k` of a braid word, or `0` if the word has no
+position `k`. -/
+@[expose] def signAt (k : ℕ) : ℤ :=
+  (w[k]?.map fun x ↦ (x.2 : ℤ)).getD 0
+
+/-- The level of a letter of the word. -/
+@[simp]
+theorem levelAt_of_lt {k : ℕ} (hk : k < w.length) : w.levelAt k = some (w[k].1 : ℕ) := by
+  simp [levelAt, hk]
+
+/-- Past the end of the word there is no level. -/
+@[simp]
+theorem levelAt_of_le {k : ℕ} (hk : w.length ≤ k) : w.levelAt k = none := by
+  simp [levelAt, hk]
+
+/-- A position carries a level exactly when it lies in the word. -/
+@[simp]
+theorem levelAt_ne_none_iff {k : ℕ} : w.levelAt k ≠ none ↔ k < w.length := by
+  simp [levelAt]
+
+/-- The sign of a letter of the word. -/
+@[simp]
+theorem signAt_of_lt {k : ℕ} (hk : k < w.length) : w.signAt k = (w[k].2 : ℤ) := by
+  simp [signAt, hk]
+
+/-- Past the end of the word the sign is `0`. -/
+@[simp]
+theorem signAt_of_le {k : ℕ} (hk : w.length ≤ k) : w.signAt k = 0 := by
+  simp [signAt, hk]
+
+end Positions
 
 end BraidWord
 

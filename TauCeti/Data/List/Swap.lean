@@ -26,6 +26,8 @@ after exchanging two adjacent entries.
 
 * `List.val_swapIndexEquiv`: the swap exchanges the positions `u.length` and `u.length + 1`.
 * `List.getElem_swapIndexEquiv`: the identification sends each entry to the same entry.
+* `List.getElem?_swap_append_cons_cons`: the same statement for optional lookups at arbitrary
+  natural-number positions, translated by the swap of `u.length` and `u.length + 1`.
 -/
 
 public section
@@ -70,5 +72,21 @@ theorem swapIndexEquiv_symm (u v : List α) (a b : α) :
   ext
   simp only [val_swapIndexEquiv]
   split_ifs <;> omega
+
+/-- Looking up position `k` of `u ++ a :: b :: v` gives the same result as looking up the swapped
+position of `u ++ b :: a :: v`, where the swap exchanges `u.length` and `u.length + 1`. -/
+theorem getElem?_swap_append_cons_cons (u v : List α) (a b : α) (k : ℕ) :
+    (u ++ b :: a :: v)[Equiv.swap u.length (u.length + 1) k]? = (u ++ a :: b :: v)[k]? := by
+  rcases lt_trichotomy k u.length with hk | rfl | hk
+  · rw [Equiv.swap_apply_of_ne_of_ne (by omega) (by omega), getElem?_append_left hk,
+      getElem?_append_left hk]
+  · simp
+  · obtain ⟨j, rfl⟩ : ∃ j, k = u.length + 1 + j := ⟨k - u.length - 1, by omega⟩
+    rcases j with _ | j
+    · simp
+    · rw [Equiv.swap_apply_of_ne_of_ne (by omega) (by omega)]
+      rw [getElem?_append_right (by omega), getElem?_append_right (by omega),
+        show u.length + 1 + (j + 1) - u.length = j + 2 by omega]
+      simp
 
 end List

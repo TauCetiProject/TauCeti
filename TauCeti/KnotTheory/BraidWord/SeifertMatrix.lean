@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Data.List.Swap
 public import TauCeti.GroupTheory.SpecificGroups.Braid.Word
 public import TauCeti.KnotTheory.Signature
 public import TauCeti.KnotTheory.TristramLevine.Basic
@@ -51,10 +52,17 @@ and signature `-2`, and `σ₁ σ₂⁻¹ σ₁ σ₂⁻¹` (the figure-eight kn
 
 Up to relabelling the loops, the Seifert matrix does not change when two letters on distant levels
 are exchanged, nor under the Markov stabilization `w ↦ w σₙ^{±1}`, which adds one disc and one
-band and no new loop. The remaining moves generating Markov equivalence of braid words (cyclic
-rotation, the braid relation and free cancellation) change the matrix only up to S-equivalence, as
-for any two Seifert matrices of isotopic links; that is what makes its Alexander polynomial and
-Tristram–Levine signatures invariants of the closure. Those comparisons are not made here.
+band and no new loop.
+
+The canonical surface is connected exactly when every level `0, …, n - 2` carries a letter, and
+only then is the matrix a Seifert matrix of the closure in the sense of S-equivalence. If some
+level carries no letter, the surface is disconnected and the matrix forgets the splitting: on two
+strands, the empty word gives the `0 × 0` matrix while `σ₁ σ₁⁻¹` gives `[0]`, although both close
+to the two-component unlink. Among words using every level, the remaining moves generating Markov
+equivalence of braid words (cyclic rotation, the braid relation, and free cancellation that keeps
+every level used) change the matrix only up to S-equivalence, as for any two Seifert matrices of
+isotopic links; that is what makes its Alexander polynomial and Tristram–Levine signatures
+invariants of the closure. Those comparisons are not made here.
 
 ## Main definitions
 
@@ -98,33 +106,6 @@ variable {n m : ℕ}
 section Defs
 
 variable (w : BraidWord n)
-
-/-- The level `i` of the letter `σ i ^ ε` at position `k` of a braid word, or `none` if the word
-has no position `k`. The bands of level `i` of the canonical Seifert surface of the closure join
-the discs of the strand positions `i` and `i + 1`. -/
-def levelAt (k : ℕ) : Option ℕ :=
-  w[k]?.map fun x ↦ (x.1 : ℕ)
-
-/-- The sign `ε` of the letter `σ i ^ ε` at position `k` of a braid word, or `0` if the word has no
-position `k`. -/
-def signAt (k : ℕ) : ℤ :=
-  (w[k]?.map fun x ↦ (x.2 : ℤ)).getD 0
-
-/-- The level of a letter of the word. -/
-theorem levelAt_of_lt {k : ℕ} (hk : k < w.length) : w.levelAt k = some (w[k].1 : ℕ) := by
-  simp [levelAt, hk]
-
-/-- Past the end of the word there is no level. -/
-theorem levelAt_of_le {k : ℕ} (hk : w.length ≤ k) : w.levelAt k = none := by
-  simp [levelAt, hk]
-
-/-- A position carries a level exactly when it lies in the word. -/
-theorem levelAt_ne_none_iff {k : ℕ} : w.levelAt k ≠ none ↔ k < w.length := by
-  simp [levelAt]
-
-/-- The sign of a letter of the word. -/
-theorem signAt_of_lt {k : ℕ} (hk : k < w.length) : w.signAt k = (w[k].2 : ℤ) := by
-  simp [signAt, hk]
 
 /-- The pair of positions `p = (t, t')` labels a loop of the canonical Seifert surface: `t < t'`
 are positions of the word holding letters of the same level, with no letter of that level in
@@ -303,27 +284,13 @@ section Commute
 
 variable (u v : BraidWord n) {a b : Fin (n - 1) × ℤˣ}
 
-private theorem getElem?_swap_append_cons_cons (k : ℕ) :
-    (u ++ b :: a :: v)[Equiv.swap u.length (u.length + 1) k]? = (u ++ a :: b :: v)[k]? := by
-  rcases lt_trichotomy k u.length with hk | rfl | hk
-  · rw [Equiv.swap_apply_of_ne_of_ne (by omega) (by omega), List.getElem?_append_left hk,
-      List.getElem?_append_left hk]
-  · simp
-  · obtain ⟨j, rfl⟩ : ∃ j, k = u.length + 1 + j := ⟨k - u.length - 1, by omega⟩
-    rcases j with _ | j
-    · simp
-    · rw [Equiv.swap_apply_of_ne_of_ne (by omega) (by omega)]
-      rw [List.getElem?_append_right (by omega), List.getElem?_append_right (by omega),
-        show u.length + 1 + (j + 1) - u.length = j + 2 by omega]
-      simp
-
 /-- **Exchanging two adjacent letters on distant levels relabels the Seifert matrix.** The two
 bands lie between disjoint pairs of discs, so exchanging them moves no loop across another. -/
 theorem exists_seifertMatrix_append_cons_cons_comm
     (h : (a.1 : ℕ) + 2 ≤ b.1 ∨ (b.1 : ℕ) + 2 ≤ a.1) :
     ∃ ι : (u ++ b :: a :: v).seifertLoops ≃ (u ++ a :: b :: v).seifertLoops,
       (u ++ b :: a :: v).seifertMatrix = (u ++ a :: b :: v).seifertMatrix.submatrix ι ι := by
-  have hget := getElem?_swap_append_cons_cons u v (a := a) (b := b)
+  have hget := List.getElem?_swap_append_cons_cons u v a b
   refine exists_seifertMatrix_eq_submatrix_of_equiv (Equiv.swap u.length (u.length + 1))
     (fun k ↦ by rw [levelAt, levelAt, hget]) (fun j k hj hk hjk ↦ ?_)
     (fun k ↦ by rw [signAt, signAt, hget])
