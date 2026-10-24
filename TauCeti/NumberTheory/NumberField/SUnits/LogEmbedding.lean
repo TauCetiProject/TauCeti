@@ -139,18 +139,14 @@ theorem sum_mult_mul_log_add_sum_log_finitePlace
 example : (2 : K) ∈ (∅ : Set (HeightOneSpectrum (𝓞 K))).integer K :=
   (Set.mem_integer_empty_iff K).2 ⟨2, map_ofNat _ 2⟩
 
-/-- The weighted logarithms of `2` at the infinite places sum to `[K : ℚ] * log 2`, not `0`. -/
-private theorem sum_mult_mul_log_two :
-    ∑ w : InfinitePlace K, w.mult * Real.log (w (2 : K)) = Module.finrank ℚ K * Real.log 2 := by
-  have h (w : InfinitePlace K) : w (2 : K) = 2 := by simpa using w.map_natCast 2
-  simp_rw [h, ← Finset.sum_mul, ← Nat.cast_sum, sum_mult_eq]
-
--- So the product formula rules out `2` as an `∅`-unit.
+-- The weighted logarithms of `2` at the infinite places sum to `[K : ℚ] * log 2`, not `0`,
+-- so the product formula rules out `2` as an `∅`-unit.
 example : Units.mk0 (2 : K) two_ne_zero ∉ (∅ : Set (HeightOneSpectrum (𝓞 K))).unit K := by
   intro h
   have h0 := sum_mult_mul_log_add_sum_log_finitePlace ∅ ⟨_, by rwa [Finset.coe_empty]⟩
-  simp only [Units.val_mk0, sum_mult_mul_log_two, Finset.univ_eq_empty, Finset.sum_empty,
-    add_zero] at h0
+  have h2 (w : InfinitePlace K) : w (2 : K) = 2 := by simpa using w.map_natCast 2
+  simp only [Units.val_mk0, h2, Finset.univ_eq_empty, Finset.sum_empty, add_zero] at h0
+  rw [← Finset.sum_mul, ← Nat.cast_sum, sum_mult_eq] at h0
   have : 0 < Module.finrank ℚ K * Real.log 2 :=
     mul_pos (Nat.cast_pos.2 Module.finrank_pos) (Real.log_pos one_lt_two)
   exact this.ne' h0

@@ -198,8 +198,8 @@ height is `2 ^ [K : ℚ]`, all of it carried by the finite places above `2`.
 -- `1 / 2` has absolute value `1 / 2` at every infinite place, so its infinite factor is `1`.
 example : ∏ w : InfinitePlace K, max (w (2⁻¹ : K)) 1 ^ w.mult = 1 := by
   refine Finset.prod_eq_one fun w _ ↦ ?_
-  rw [map_inv₀, show w (2 : K) = 2 by simpa using w.map_natCast 2,
-    max_eq_right (by norm_num), one_pow]
+  have h : w (2 : K) = 2 := by simpa using w.map_natCast 2
+  rw [map_inv₀, h, max_eq_right (by norm_num), one_pow]
 
 -- The height of `1 / 2` is that of `2`, which is `2 ^ [K : ℚ]`.
 example : mulHeight₁ (2⁻¹ : K) = 2 ^ Module.finrank ℚ K := by
