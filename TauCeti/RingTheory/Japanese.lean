@@ -393,7 +393,8 @@ theorem IsN1.exists_isIntegrallyClosed_localization_away [IsDomain R] [IsN1 R] :
   refine (isIntegrallyClosed_iff K).mpr fun {x} hx ↦ ?_
   -- Some `y = f ^ n` makes `y • x` integral over `R`, and then `f • y • x = z` lies in `R`.
   obtain ⟨⟨y, hy⟩, hyx⟩ := hx.exists_multiple_integral_of_isLocalization (Submonoid.powers f) _
-  obtain ⟨z, hz⟩ := hint _ (show y • x ∈ integralClosure R K from hyx)
+  simp only [Submonoid.smul_def] at hyx
+  obtain ⟨z, hz⟩ := hint _ ((mem_integralClosure_iff R K).mpr hyx)
   have hm : f * y ∈ Submonoid.powers f := mul_mem (Submonoid.mem_powers f) hy
   refine ⟨IsLocalization.mk' _ z ⟨f * y, hm⟩, mul_right_cancel₀ (b := algebraMap R K (f * y))
     (IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors

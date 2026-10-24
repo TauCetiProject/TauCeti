@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.Morphisms.Finite
 public import Mathlib.AlgebraicGeometry.Normalization
 public import TauCeti.AlgebraicGeometry.Morphisms.Modification
+public import TauCeti.AlgebraicGeometry.Normalization.IsIso
 public import TauCeti.AlgebraicGeometry.Scheme.GenericPoint
 public import TauCeti.RingTheory.Japanese
 
@@ -18,10 +19,12 @@ Let `Y` be an integral scheme and `ν : Y^ν ⟶ Y` its normalization in its fun
 `Spec k(Y) ⟶ Y`. Over an affine open `U = Spec A` of `Y`, the scheme `Y^ν` is the spectrum of the
 integral closure of `A` in `k(Y)`, the fraction field of `A`.
 
-So `ν` is an isomorphism over every affine open whose ring is integrally closed. When `ν` is
-finite, these rings are N-1, and an N-1 domain becomes integrally closed after inverting one
-nonzero element. Hence `ν` is an isomorphism over a nonempty, so dense, basic open of `Y`, and being
-finite it is proper: `ν` is a modification. Together with
+So `ν` is an isomorphism over every affine open whose ring is integrally closed
+(`TauCeti.AlgebraicGeometry.isIso_morphismRestrict_fromNormalization_of_isIntegrallyClosed`, in
+`TauCeti.AlgebraicGeometry.Normalization.IsIso`). When `ν` is finite, these rings are N-1, and
+an N-1 domain becomes integrally closed after inverting one nonzero element. Hence `ν` is an
+isomorphism over a nonempty, so dense, basic open of `Y`, and being finite it is proper: `ν` is a
+modification. Together with
 `TauCeti.AlgebraicGeometry.isRegular_normalization_fromSpecStalk_genericPoint`, this shows that the
 finite normalization of an integral locally Noetherian scheme of dimension at most one is a
 resolution of singularities: a regular scheme with a finite modification to `Y` (Stacks,
@@ -29,9 +32,6 @@ Lemma 33.41.1 (0C45) over a field).
 
 ## Main results
 
-* `TauCeti.AlgebraicGeometry.isIso_morphismRestrict_fromNormalization_of_isIntegrallyClosed`:
-  the normalization of an integral scheme in its function field is an isomorphism over every
-  affine open with integrally closed ring of sections.
 * `TauCeti.AlgebraicGeometry.isN1_of_isFinite_fromNormalization`: if this normalization is finite,
   the ring of sections of every nonempty affine open is N-1.
 * `TauCeti.AlgebraicGeometry.isModification_fromNormalization_fromSpecStalk_genericPoint`: if this
@@ -52,40 +52,6 @@ namespace TauCeti.AlgebraicGeometry
 universe u
 
 variable {Y : Scheme.{u}} [IsIntegral Y]
-
-/-- The normalization of an integral scheme `Y` in its function field, along `Spec k(Y) ⟶ Y`, is an
-isomorphism over every affine open `U` whose ring of sections is integrally closed: the integral
-closure of `Γ(Y, U)` in its fraction field `k(Y)` is `Γ(Y, U)` itself. -/
-theorem isIso_morphismRestrict_fromNormalization_of_isIntegrallyClosed {U : Y.Opens}
-    (hU : IsAffineOpen U) [IsIntegrallyClosed Γ(Y, U)] :
-    IsIso ((Y.fromSpecStalk (genericPoint Y)).fromNormalization ∣_ U) := by
-  set f := Y.fromSpecStalk (genericPoint Y)
-  rw [isIso_morphismRestrict_iff_isIso_app _ hU, Scheme.Hom.fromNormalization_app _ hU]
-  let := (f.app U).hom.toAlgebra
-  suffices h : Function.Bijective
-      (algebraMap Γ(Y, U) (integralClosure Γ(Y, U) Γ(Spec Y.functionField, f ⁻¹ᵁ U))) by
-    have : IsIso (CommRingCat.ofHom (algebraMap Γ(Y, U)
-        (integralClosure Γ(Y, U) Γ(Spec Y.functionField, f ⁻¹ᵁ U)))) :=
-      (ConcreteCategory.isIso_iff_bijective _).mpr h
-    infer_instance
-  by_cases hη : genericPoint Y ∈ U
-  · have : Nonempty U := ⟨⟨_, hη⟩⟩
-    have := Scheme.isFractionRing_app_fromSpecStalk_genericPoint hU
-    refine ⟨fun a b hab ↦ IsFractionRing.injective Γ(Y, U) _ (congrArg Subtype.val hab),
-      fun ⟨x, hx⟩ ↦ ?_⟩
-    obtain ⟨a, rfl⟩ := IsIntegrallyClosed.isIntegral_iff.mp hx
-    exact ⟨a, rfl⟩
-  · -- Otherwise `U` is empty and all the rings involved are zero.
-    have hU : U = ⊥ := by
-      ext x
-      exact ⟨fun hx ↦ hη ((genericPoint_specializes x).mem_open U.isOpen hx), fun hx ↦ hx.elim⟩
-    have : Subsingleton Γ(Y, U) := by
-      rw [hU]
-      infer_instance
-    have : Subsingleton Γ(Spec Y.functionField, f ⁻¹ᵁ U) := by
-      rw [hU, Scheme.Hom.preimage_bot]
-      infer_instance
-    exact ⟨fun a b _ ↦ Subsingleton.elim a b, fun _ ↦ ⟨0, Subsingleton.elim _ _⟩⟩
 
 /-- If the normalization of an integral scheme `Y` in its function field is finite over `Y`, then
 the ring of sections of every nonempty affine open of `Y` is N-1: over `U` the normalization is the

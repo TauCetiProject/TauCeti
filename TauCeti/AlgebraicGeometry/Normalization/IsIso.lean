@@ -34,6 +34,9 @@ the function field of `T`, along the generic point `Spec k(T) ⟶ T ⟶ Y`. On a
 * `TauCeti.AlgebraicGeometry.isIso_normalizationDesc_fromSpecStalk_genericPoint`: an integral
   scheme with integrally closed local rings, integral over `Y`, is the normalization of `Y` in its
   function field.
+* `TauCeti.AlgebraicGeometry.isIso_morphismRestrict_fromNormalization_of_isIntegrallyClosed`:
+  the normalization of an integral scheme in its function field is an isomorphism over every
+  affine open with integrally closed ring of sections.
 
 ## References
 
@@ -196,5 +199,39 @@ theorem isIso_normalizationDesc_fromSpecStalk_genericPoint [IsIntegral T]
       rw [Scheme.Hom.comp_preimage, hV, Scheme.Hom.preimage_bot]
       infer_instance
     exact ⟨fun a b _ ↦ Subsingleton.elim a b, fun _ _ ↦ ⟨0, Subsingleton.elim _ _⟩⟩
+
+/-- The normalization of an integral scheme `Y` in its function field, along `Spec k(Y) ⟶ Y`, is an
+isomorphism over every affine open `U` whose ring of sections is integrally closed: the integral
+closure of `Γ(Y, U)` in its fraction field `k(Y)` is `Γ(Y, U)` itself. -/
+theorem isIso_morphismRestrict_fromNormalization_of_isIntegrallyClosed [IsIntegral Y]
+    {U : Y.Opens} (hU : IsAffineOpen U) [IsIntegrallyClosed Γ(Y, U)] :
+    IsIso ((Y.fromSpecStalk (genericPoint Y)).fromNormalization ∣_ U) := by
+  set f := Y.fromSpecStalk (genericPoint Y)
+  rw [isIso_morphismRestrict_iff_isIso_app _ hU, Scheme.Hom.fromNormalization_app _ hU]
+  let := (f.app U).hom.toAlgebra
+  suffices h : Function.Bijective
+      (algebraMap Γ(Y, U) (integralClosure Γ(Y, U) Γ(Spec Y.functionField, f ⁻¹ᵁ U))) by
+    have : IsIso (CommRingCat.ofHom (algebraMap Γ(Y, U)
+        (integralClosure Γ(Y, U) Γ(Spec Y.functionField, f ⁻¹ᵁ U)))) :=
+      (ConcreteCategory.isIso_iff_bijective _).mpr h
+    infer_instance
+  by_cases hη : genericPoint Y ∈ U
+  · have : Nonempty U := ⟨⟨_, hη⟩⟩
+    have := Scheme.isFractionRing_app_fromSpecStalk_genericPoint hU
+    refine ⟨fun a b hab ↦ IsFractionRing.injective Γ(Y, U) _ (congrArg Subtype.val hab),
+      fun ⟨x, hx⟩ ↦ ?_⟩
+    obtain ⟨a, rfl⟩ := IsIntegrallyClosed.isIntegral_iff.mp hx
+    exact ⟨a, rfl⟩
+  · -- Otherwise `U` is empty and all the rings involved are zero.
+    have hU : U = ⊥ := by
+      ext x
+      exact ⟨fun hx ↦ hη ((genericPoint_specializes x).mem_open U.isOpen hx), fun hx ↦ hx.elim⟩
+    have : Subsingleton Γ(Y, U) := by
+      rw [hU]
+      infer_instance
+    have : Subsingleton Γ(Spec Y.functionField, f ⁻¹ᵁ U) := by
+      rw [hU, Scheme.Hom.preimage_bot]
+      infer_instance
+    exact ⟨fun a b _ ↦ Subsingleton.elim a b, fun _ ↦ ⟨0, Subsingleton.elim _ _⟩⟩
 
 end TauCeti.AlgebraicGeometry
