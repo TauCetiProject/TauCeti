@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Subgroup.Map
-public import TauCeti.LinearAlgebra.CliffordAlgebra.VectorNormalizer
+public import TauCeti.LinearAlgebra.CliffordAlgebra.VectorNormalizer.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Zero
 
 /-!
