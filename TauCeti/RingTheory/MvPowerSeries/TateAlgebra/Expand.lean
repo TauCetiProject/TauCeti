@@ -271,11 +271,8 @@ end Finite
 
 section Rescale
 
-variable (p : ℕ) (hp : p ≠ 0) [∀ i, Fact (0 < r i)] (u : σ → Rˣ)
+variable (p : ℕ) (hp : p ≠ 0) (u : σ → Rˣ)
   (hu : ∀ i, IsNormMulUnit (u i : R)) (hr : ∀ i, ‖(u i : R)‖ * r i ^ p = 1)
-
-/-- The polyradii `r ^ p` are positive. -/
-private theorem fact_pow_pos (i : σ) : Fact (0 < r i ^ p) := ⟨pow_pos Fact.out p⟩
 
 /-- If the multiplicative units `u i` satisfy `‖u i‖ * r i ^ p = 1`, substituting
 `Y i ↦ u i * X i ^ p` is an algebra map from the unit-radius algebra `R⟨Y⟩` to the restricted
@@ -283,7 +280,6 @@ series `R{X/r}`: the rescaling by `u` from the unit radii to the radii `r ^ p`, 
 expansion. In finitely many variables it is finite (`restrictedRescaleExpand_finite`). -/
 noncomputable def restrictedRescaleExpand :
     IsRestricted.subring (R := R) (fun _ : σ ↦ (1 : ℝ)) →ₐ[R] IsRestricted.subring (R := R) r :=
-  letI := fact_pow_pos (r := r) p
   (restrictedExpand p hp fun _ ↦ rfl).comp (restrictedRescaleEquiv u hu hr).toAlgHom
 
 /-- The underlying formal series of `restrictedRescaleExpand u f` is `f(u X^p)`. -/
@@ -291,7 +287,6 @@ noncomputable def restrictedRescaleExpand :
 theorem coe_restrictedRescaleExpand (f : IsRestricted.subring (R := R) (fun _ : σ ↦ (1 : ℝ))) :
     (restrictedRescaleExpand p hp u hu hr f : MvPowerSeries σ R) =
       expand p hp (MvPowerSeries.rescale (fun i ↦ (u i : R)) f) := by
-  let _ := fact_pow_pos (r := r) p
   simp [restrictedRescaleExpand]
 
 /-- The map `restrictedRescaleExpand` sends `Y i` to `u i * X i ^ p`. -/
@@ -301,8 +296,12 @@ theorem restrictedRescaleExpand_X (i : σ) :
         (⟨X i, isRestricted_X _ i⟩ : IsRestricted.subring (R := R) (fun _ : σ ↦ (1 : ℝ))) =
       algebraMap R (IsRestricted.subring (R := R) r) (u i : R) *
         (⟨X i, isRestricted_X r i⟩ : IsRestricted.subring (R := R) r) ^ p := by
-  let _ := fact_pow_pos (r := r) p
   simp [restrictedRescaleExpand]
+
+variable [∀ i, Fact (0 < r i)]
+
+/-- The polyradii `r ^ p` are positive. -/
+private theorem fact_pow_pos (i : σ) : Fact (0 < r i ^ p) := ⟨pow_pos Fact.out p⟩
 
 /-- The map `restrictedRescaleExpand` preserves the Gauss norms. -/
 @[simp]
@@ -326,7 +325,6 @@ theorem restrictedRescaleExpand_injective :
 `Y i ↦ u i * X i ^ p`, in finitely many variables. -/
 theorem restrictedRescaleExpand_finite [Finite σ] :
     (restrictedRescaleExpand (R := R) p hp u hu hr).Finite := by
-  let _ := fact_pow_pos (r := r) p
   exact (restrictedExpand_finite hp fun _ ↦ rfl).comp
     (AlgHom.Finite.of_surjective _ (restrictedRescaleEquiv u hu hr).surjective)
 
