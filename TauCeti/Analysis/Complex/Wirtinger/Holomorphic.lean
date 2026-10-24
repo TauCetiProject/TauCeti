@@ -14,8 +14,9 @@ public import Mathlib.Analysis.Complex.Conformal
 For a real-differentiable map from `ℂ` to a complex normed space, vanishing of the conjugate
 Wirtinger derivative characterizes complex differentiability. The real-differentiability
 hypothesis is essential because the totalized real derivative vanishes at nondifferentiable
-points. In one variable the real differential has coefficients `∂f(1)` and `∂̄f(1)` in the
-basis `dz`, `dbar z`; testing the latter coefficient alone detects its vanishing.
+points. In one variable the real differential has coefficients `wirtingerDeriv f x 1` and
+`conjWirtingerDeriv f x 1` in the basis `dz`, `dbar z`; testing the latter coefficient alone
+detects its vanishing.
 
 These statements connect the real differential and its type decomposition with holomorphy.
 
@@ -44,7 +45,7 @@ theorem fderiv_eq_wirtingerDeriv_smul_add {f : ℂ → W} (x v : ℂ) :
   · simpa only [smul_eq_mul, mul_one] using (conjWirtingerDeriv f x).map_smulₛₗ v (1 : ℂ)
 
 /-- For a real-differentiable function of one complex variable, the single equation
-`∂̄f(1) = 0` characterizes complex differentiability. -/
+`conjWirtingerDeriv f x 1 = 0` characterizes complex differentiability. -/
 theorem differentiableAt_iff_conjWirtingerDeriv_apply_one_eq_zero {f : ℂ → W} {x : ℂ}
     (hf : DifferentiableAt ℝ f x) :
     DifferentiableAt ℂ f x ↔ conjWirtingerDeriv f x 1 = 0 := by
