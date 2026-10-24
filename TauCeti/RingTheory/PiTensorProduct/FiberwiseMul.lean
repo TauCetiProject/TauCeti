@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.PiTensorProduct
+import Mathlib.Data.Fintype.Sum
 
 /-!
 # Multiplying the factors of a tensor product of commutative algebras along fibres
@@ -37,6 +38,8 @@ Frobenius algebra acting on tensor products indexed by finite sets of circles.
   tensor is the pure tensor of the products over the fibres.
 * `PiTensorProduct.toLinearMap_fiberwiseMul_equiv`: along a bijection it is
   `PiTensorProduct.reindex`.
+* `PiTensorProduct.fiberwiseMul_sum_map`: multiplication on a disjoint union is the tensor
+  product of the multiplications on its two summands.
 -/
 
 public section
@@ -133,6 +136,30 @@ theorem toLinearMap_fiberwiseMul_equiv (e : σ ≃ τ) :
   funext j
   rw [Finset.prod_eq_single (e.symm j) (fun i hij hi ↦ ?_) (by simp)]
   exact absurd (e.eq_symm_apply.mpr (Finset.mem_filter.mp hij).2) hi
+
+/-- Multiplication along a disjoint union of index maps acts separately on its two tensor
+factors, through the native sum-indexed tensor equivalence. -/
+theorem fiberwiseMul_sum_map {σ' τ' : Type*} [Fintype σ'] [Finite τ] [Finite τ']
+    [DecidableEq τ'] (f : σ → τ) (g : σ' → τ')
+    (x : ⨂[R] _ : σ, B) (y : ⨂[R] _ : σ', B) :
+    fiberwiseMul (R := R) (A := fun _ ↦ B) (Sum.map f g)
+      (tmulEquiv R B (x ⊗ₜ y)) =
+      tmulEquiv R B (fiberwiseMul (A := fun _ ↦ B) f x ⊗ₜ
+        fiberwiseMul (A := fun _ ↦ B) g y) := by
+  have := Fintype.ofFinite τ
+  have := Fintype.ofFinite τ'
+  induction x using PiTensorProduct.induction_on with
+  | smul_tprod r a =>
+    induction y using PiTensorProduct.induction_on with
+    | smul_tprod s b =>
+      simp only [TensorProduct.smul_tmul, TensorProduct.tmul_smul, map_smul,
+        tmulEquiv_apply, fiberwiseMul_tprod_eq_tprod_prod]
+      congr 2
+      congr 1
+      funext i
+      cases i <;> simp [Finset.prod_filter, Fintype.prod_sum_type]
+    | add y z hy hz => simp [TensorProduct.tmul_add, hy, hz]
+  | add x z hx hz => simp [TensorProduct.add_tmul, hx, hz]
 
 end Constant
 

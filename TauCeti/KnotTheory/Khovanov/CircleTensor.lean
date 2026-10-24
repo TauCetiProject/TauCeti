@@ -51,6 +51,8 @@ any ordering of the circles or parenthesization of the tensor product, and it is
   carries two `X`s.
 * `TauCeti.Khovanov.isHomogeneous_fiberwiseMul`: the merge map along `f : σ → τ` has quantum
   degree `|τ| - |σ|`; in particular merging two circles into one has degree `-1`.
+* `TauCeti.Khovanov.isHomogeneous_reindex`: relabelling the circle factors preserves quantum
+  degree.
 
 ## References
 
@@ -263,6 +265,15 @@ theorem isHomogeneous_fiberwiseMul (f : σ → τ) :
   · rw [← hx l hl, ← labelingQuantumDegree_merge h]
     exact circleBasis_mem_circleQuantumGrading_piece _
   · exact zero_mem _
+
+omit [DecidableEq τ] in
+/-- Reindexing the circle factors preserves their total quantum degree. -/
+theorem isHomogeneous_reindex (e : σ ≃ τ) :
+    TauCeti.LinearMap.IsHomogeneous (reindex R (fun _ ↦ R[ε]) e).toLinearMap
+      (circleQuantumGrading R σ).piece (circleQuantumGrading R τ).piece 0 := by
+  classical
+  simpa only [toLinearMap_fiberwiseMul_equiv, Fintype.card_congr e, sub_self] using
+    (isHomogeneous_fiberwiseMul (R := R) e)
 
 end Grading
 
