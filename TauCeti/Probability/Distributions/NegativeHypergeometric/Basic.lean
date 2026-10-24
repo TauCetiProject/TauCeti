@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Integral.Bochner.SumMeasure
+public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 public import Mathlib.Probability.Moments.Basic
 public import Mathlib.Probability.Moments.IntegrableExpMul
 public import Mathlib.Probability.Moments.Variance
@@ -28,7 +29,8 @@ measure at zero.
 This file defines the law as a finite weighted sum of Dirac measures, proves its normalization
 from the weighted upper-index Vandermonde convolution
 `Nat.sum_range_ascFactorial_mul_choose_mul_choose`, and
-provides its mass, support, integration, rising factorial moment, mean and variance APIs.
+provides its mass, support, integration, transform, rising factorial moment, mean and variance
+APIs.
 Outside the parameter range `r ≤ K ≤ N` the measure is zero.
 
 ## Main definitions and results
@@ -38,9 +40,15 @@ Outside the parameter range `r ≤ K ≤ N` the measure is zero.
   measure on `ℕ`.
 * `TauCeti.Probability.isProbabilityMeasure_negativeHypergeometricMeasure`: normalization in the
   valid parameter range.
-* `TauCeti.Probability.negativeHypergeometricMeasure_singleton` and
+* `TauCeti.Probability.negativeHypergeometricMeasure_singleton`,
+  `TauCeti.Probability.negativeHypergeometricWeight_ne_zero_iff` and
   `TauCeti.Probability.negativeHypergeometricMeasure_singleton_ne_zero_iff`: the singleton masses
   and the exact support.
+* `TauCeti.Probability.integral_map_cast_negativeHypergeometricMeasure`,
+  `TauCeti.Probability.mgf_id_map_cast_negativeHypergeometricMeasure`,
+  `TauCeti.Probability.cgf_id_map_cast_negativeHypergeometricMeasure` and
+  `TauCeti.Probability.charFun_map_cast_negativeHypergeometricMeasure`: integrals and transforms
+  of the real cast law as finite sums.
 * `TauCeti.Probability.negativeHypergeometricMeasure_zero_successes`: waiting for no success
   gives the Dirac law at zero.
 * `TauCeti.Probability.integral_ascFactorial_negativeHypergeometricMeasure`: the rising factorial
@@ -196,17 +204,24 @@ theorem negativeHypergeometricMeasure_real_singleton (hr : r ≤ K) (hK : K ≤ 
   rw [measureReal_def, negativeHypergeometricMeasure_singleton hr hK,
     negativeHypergeometricWeight_toReal]
 
-/-- A valid negative hypergeometric law charges exactly the failure counts `k ≤ N - K`, except
-that waiting for no success (`r = 0`) charges only `k = 0`. -/
-theorem negativeHypergeometricMeasure_singleton_ne_zero_iff (hr : r ≤ K) (hK : K ≤ N) (k : ℕ) :
-    negativeHypergeometricMeasure N K r {k} ≠ 0 ↔ k ≤ N - K ∧ (k = 0 ∨ 0 < r) := by
-  rw [negativeHypergeometricMeasure_singleton hr hK]
+/-- When the success count does not exceed the population size, a negative hypergeometric weight
+is nonzero exactly at the failure counts `k ≤ N - K`, except that waiting for no success
+(`r = 0`) leaves only `k = 0`. -/
+@[simp]
+theorem negativeHypergeometricWeight_ne_zero_iff (hK : K ≤ N) (k : ℕ) :
+    negativeHypergeometricWeight N K r k ≠ 0 ↔ k ≤ N - K ∧ (k = 0 ∨ 0 < r) := by
   by_cases hk : k ≤ N - K
   · rw [negativeHypergeometricWeight_of_le hk]
     simp only [ne_eq, ENNReal.div_eq_zero_iff, mul_eq_zero, Nat.cast_eq_zero,
       Nat.choose_eq_zero_iff, ENNReal.natCast_ne_top, or_false, not_or, not_lt, hk, true_and]
     omega
   · simp [hk]
+
+/-- A valid negative hypergeometric law charges exactly the failure counts `k ≤ N - K`, except
+that waiting for no success (`r = 0`) charges only `k = 0`. -/
+theorem negativeHypergeometricMeasure_singleton_ne_zero_iff (hr : r ≤ K) (hK : K ≤ N) (k : ℕ) :
+    negativeHypergeometricMeasure N K r {k} ≠ 0 ↔ k ≤ N - K ∧ (k = 0 ∨ 0 < r) := by
+  rw [negativeHypergeometricMeasure_singleton hr hK, negativeHypergeometricWeight_ne_zero_iff hK]
 
 /-- Waiting for no success gives the Dirac law at zero failures. -/
 @[simp]
@@ -257,6 +272,49 @@ theorem integral_negativeHypergeometricMeasure {E : Type*} [NormedAddCommGroup E
   · simp
   · exact fun _ _ ↦
       (integrable_dirac (by simp)).smul_measure (negativeHypergeometricWeight_ne_top hK r _)
+
+/-- Integration against the real-valued cast of a valid negative hypergeometric law is a finite
+weighted sum. -/
+theorem integral_map_cast_negativeHypergeometricMeasure {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [CompleteSpace E] (f : ℝ → E) (hr : r ≤ K) (hK : K ≤ N) :
+    ∫ x, f x ∂(negativeHypergeometricMeasure N K r).map (Nat.cast : ℕ → ℝ) =
+      ∑ k ∈ Finset.range (N - K + 1),
+        (negativeHypergeometricWeight N K r k).toReal • f (k : ℝ) := by
+  rw [integral_map Measurable.of_discrete.aemeasurable
+      (integrable_map_cast_negativeHypergeometricMeasure f N K r).aestronglyMeasurable,
+    integral_negativeHypergeometricMeasure (fun k ↦ f (k : ℝ)) hr hK]
+
+/-- The moment-generating function of the real-valued cast of a valid negative hypergeometric
+law, as the finite sum of its masses against the exponential kernel. -/
+theorem mgf_id_map_cast_negativeHypergeometricMeasure (hr : r ≤ K) (hK : K ≤ N) (t : ℝ) :
+    mgf id ((negativeHypergeometricMeasure N K r).map (Nat.cast : ℕ → ℝ)) t =
+      ∑ k ∈ Finset.range (N - K + 1),
+        (negativeHypergeometricWeight N K r k).toReal * Real.exp (t * (k : ℝ)) := by
+  rw [mgf, integral_map_cast_negativeHypergeometricMeasure _ hr hK]
+  simp only [id_eq, smul_eq_mul]
+
+/-- The cumulant-generating function of the real-valued cast of a valid negative hypergeometric
+law is the real logarithm of its finite-sum moment-generating function. -/
+theorem cgf_id_map_cast_negativeHypergeometricMeasure (hr : r ≤ K) (hK : K ≤ N) (t : ℝ) :
+    cgf id ((negativeHypergeometricMeasure N K r).map (Nat.cast : ℕ → ℝ)) t =
+      Real.log (∑ k ∈ Finset.range (N - K + 1),
+        (negativeHypergeometricWeight N K r k).toReal * Real.exp (t * (k : ℝ))) := by
+  rw [cgf, mgf_id_map_cast_negativeHypergeometricMeasure hr hK]
+
+/-- The characteristic function of the real-valued cast of a valid negative hypergeometric law, as
+the finite sum of its masses against the complex exponential kernel. -/
+theorem charFun_map_cast_negativeHypergeometricMeasure (hr : r ≤ K) (hK : K ≤ N) (t : ℝ) :
+    charFun ((negativeHypergeometricMeasure N K r).map (Nat.cast : ℕ → ℝ)) t =
+      ∑ k ∈ Finset.range (N - K + 1),
+        (negativeHypergeometricWeight N K r k).toReal *
+          Complex.exp (((k : ℝ) * t) * Complex.I) := by
+  rw [charFun_apply, integral_map_cast_negativeHypergeometricMeasure _ hr hK]
+  refine Finset.sum_congr rfl fun k _ ↦ ?_
+  rw [Complex.real_smul]
+  simp only [Real.inner_apply]
+  congr 2
+  push_cast
+  ring
 
 /-! ## Moments -/
 
