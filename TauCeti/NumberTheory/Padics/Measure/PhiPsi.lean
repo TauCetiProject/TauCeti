@@ -199,6 +199,22 @@ theorem unitRestriction_eq_id_sub_phiMeasure_comp_psiMeasure :
     unitRestriction (p := p) (R := R) = LinearMap.id - phiMeasure ∘ₗ psiMeasure := by
   rw [phiMeasure_comp_psiMeasure, unitRestriction_eq_sub]
 
+/-- Vanishing of psi is equivalent to vanishing of restriction to multiples of `p`. -/
+theorem psiMeasure_eq_zero_iff_restrictMultiples_eq_zero (μ : D(ℤ_[p], R)) :
+    psiMeasure μ = 0 ↔ restrictMultiples μ = 0 := by
+  constructor
+  · intro h
+    rw [← phiMeasure_psiMeasure, h, map_zero]
+  · intro h
+    apply phiMeasure_injective
+    rw [phiMeasure_psiMeasure, h, map_zero]
+
+/-- The unit projector fixes exactly the kernel of psi. -/
+theorem unitRestriction_eq_self_iff_psi_eq_zero (μ : D(ℤ_[p], R)) :
+    unitRestriction μ = μ ↔ psiMeasure μ = 0 := by
+  rw [unitRestriction_eq_self_iff_restrictMultiples_eq_zero,
+    psiMeasure_eq_zero_iff_restrictMultiples_eq_zero]
+
 /-- **`ψ` is determined by `φ`**: it is the unique linear map `ψ` for which `φ ψ` is the
 restriction to `pℤ_p`. Such a map is automatically a left inverse of `φ`
 (`psiMeasure_comp_phiMeasure`). -/
