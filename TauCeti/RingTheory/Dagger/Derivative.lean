@@ -22,9 +22,10 @@ preserves restrictedness at every positive radius, with the Cauchy estimate
 `MvPowerSeries.norm_restrictedHasseDeriv_le`). Since this holds at each radius `ρ > 1`
 separately, Hasse derivatives, and in particular the partial derivatives `∂/∂Xᵢ = ∂^(eᵢ)`,
 preserve the Monsky–Washnitzer algebra `W = R⟨X⟩†` of overconvergent series. Only natural-number
-multiples of coefficients occur, so no assumption on the characteristic is needed; in
-characteristic zero `∂^(k eᵢ)` is `(∂/∂Xᵢ)ᵏ / k!`, but in characteristic `p` this division is not
-available for `k ≥ p` while `∂^(k eᵢ)` still is.
+multiples of coefficients occur, so no assumption on the characteristic is needed. The identity
+`k! • ∂^(k eᵢ) = (∂/∂Xᵢ)^[k]` holds over every `R`; when `k!` is invertible in `R` it exhibits
+`∂^(k eᵢ)` as `(∂/∂Xᵢ)ᵏ / k!`, but in characteristic `p` this division is not available for
+`k ≥ p` while `∂^(k eᵢ)` still is.
 
 The partial derivatives are packaged as `R`-derivations of `W`. They are the derivations through
 which the differential `dg = ∑ᵢ (∂g/∂Xᵢ) dXᵢ` of the overconvergent de Rham complex is written.
@@ -48,7 +49,8 @@ The Hasse derivatives `∂^d` are `R`-linear endomorphisms of `W` satisfying
   algebra intertwines the Hasse derivatives, which do not increase the Gauss norm.
 * `TauCeti.Dagger.washnitzerAlgebra.hasseDeriv_mul`: the Leibniz rule
   `∂^d (f g) = ∑_{a + b = d} ∂^a f · ∂^b g`, and
-  `TauCeti.Dagger.washnitzerAlgebra.hasseDeriv_comp`: the composition rule.
+  `TauCeti.Dagger.washnitzerAlgebra.hasseDeriv_comp`: the composition rule, from which
+  `TauCeti.Dagger.washnitzerAlgebra.hasseDeriv_comm` shows that Hasse derivatives commute.
 * `TauCeti.Dagger.washnitzerAlgebra.factorial_smul_hasseDeriv_single`:
   `k! • ∂^(k eᵢ) f = (∂/∂Xᵢ)^[k] f`.
 * `TauCeti.Dagger.washnitzerAlgebra.pderiv_X`: `∂Xⱼ/∂Xᵢ = δᵢⱼ`, and
@@ -105,6 +107,18 @@ theorem coe_hasseDeriv (d : σ →₀ ℕ) (f : washnitzerAlgebra σ R) :
 theorem hasseDeriv_zero : hasseDeriv σ R 0 = LinearMap.id :=
   LinearMap.ext fun f ↦ Subtype.ext (by simp [MvPowerSeries.hasseDeriv_zero])
 
+/-- Every Hasse derivative of positive order kills the constant `1` of `W`. -/
+@[simp]
+theorem hasseDeriv_one {d : σ →₀ ℕ} (hd : d ≠ 0) :
+    hasseDeriv σ R d (1 : washnitzerAlgebra σ R) = 0 :=
+  Subtype.ext (by simp [hd])
+
+/-- Every Hasse derivative of positive order kills the constants of `W`. -/
+@[simp]
+theorem hasseDeriv_algebraMap {d : σ →₀ ℕ} (hd : d ≠ 0) (a : R) :
+    hasseDeriv σ R d (algebraMap R (washnitzerAlgebra σ R) a) = 0 :=
+  Subtype.ext (by simp [MvPowerSeries.algebraMap_apply, hd])
+
 variable (σ R) in
 /-- The partial derivative `∂/∂Xᵢ`, as an `R`-derivation of the Monsky–Washnitzer algebra. -/
 noncomputable def pderiv (i : σ) :
@@ -127,13 +141,20 @@ theorem hasseDeriv_single_one (i : σ) (f : washnitzerAlgebra σ R) :
     hasseDeriv σ R (Finsupp.single i 1) f = pderiv σ R i f :=
   Subtype.ext (by simp)
 
-/-- The Hasse derivative `∂^(k eᵢ)` is the `k`-th partial derivative in `Xᵢ` divided by `k!`:
-`k! • ∂^(k eᵢ) f = (∂/∂Xᵢ)^[k] f`. -/
+/-- `k!` times the Hasse derivative `∂^(k eᵢ)` is the `k`-th iterated partial derivative in
+`Xᵢ`: `k! • ∂^(k eᵢ) f = (∂/∂Xᵢ)^[k] f`. -/
 theorem factorial_smul_hasseDeriv_single (i : σ) (k : ℕ) (f : washnitzerAlgebra σ R) :
     k.factorial • hasseDeriv σ R (Finsupp.single i k) f = (pderiv σ R i)^[k] f :=
   Subtype.ext <| by
     rw [Subalgebra.coe_smul, coe_hasseDeriv, MvPowerSeries.factorial_smul_hasseDeriv_single]
     exact ((Function.Semiconj.iterate_right (f := Subtype.val) (coe_pderiv i) k).eq f).symm
+
+/-- Differentiating `∂^(k eᵢ) f` in `Xᵢ` gives `(k + 1) ∂^((k + 1) eᵢ) f` in `W`. -/
+@[simp]
+theorem pderiv_hasseDeriv_single (i : σ) (k : ℕ) (f : washnitzerAlgebra σ R) :
+    pderiv σ R i (hasseDeriv σ R (Finsupp.single i k) f) =
+      (k + 1) • hasseDeriv σ R (Finsupp.single i (k + 1)) f :=
+  Subtype.ext (by simp)
 
 /-- The **Leibniz rule** for Hasse derivatives in `W`: `∂^d (f g) = ∑_{a + b = d} ∂^a f · ∂^b g`. -/
 theorem hasseDeriv_mul [DecidableEq σ] (d : σ →₀ ℕ) (f g : washnitzerAlgebra σ R) :
@@ -150,6 +171,12 @@ theorem hasseDeriv_comp (a b : σ →₀ ℕ) :
     simpa only [LinearMap.comp_apply, LinearMap.smul_apply, coe_hasseDeriv,
       Subalgebra.coe_smul] using
       LinearMap.congr_fun (MvPowerSeries.hasseDeriv_comp a b) f.1)
+
+/-- Hasse derivatives in `W` commute: `∂^a ∘ ∂^b = ∂^b ∘ ∂^a`. -/
+theorem hasseDeriv_comm (a b : σ →₀ ℕ) :
+    (hasseDeriv σ R a).comp (hasseDeriv σ R b) = (hasseDeriv σ R b).comp (hasseDeriv σ R a) :=
+  LinearMap.ext fun f ↦ Subtype.ext
+    (LinearMap.congr_fun (MvPowerSeries.hasseDeriv_comm (R := R) a b) f.1)
 
 /-- Hasse derivatives of polynomials in `W` are the polynomial Hasse derivatives. -/
 @[simp]
@@ -182,6 +209,7 @@ theorem pderiv_X [DecidableEq σ] (i j : σ) :
 
 /-- The inclusion into the Tate algebra intertwines the Hasse derivatives of `W` and of the
 unit-radius Tate algebra. -/
+@[simp]
 theorem toTate_hasseDeriv (d : σ →₀ ℕ) (f : washnitzerAlgebra σ R) :
     toTate σ R (hasseDeriv σ R d f) = restrictedHasseDeriv d (toTate σ R f) :=
   Subtype.ext (by simp)
