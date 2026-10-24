@@ -10,6 +10,7 @@ public import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 public import TauCeti.Geometry.Manifold.ContMDiff.Defs
 public import TauCeti.Geometry.Manifold.ExtChartAt
+import TauCeti.Geometry.Manifold.MFDeriv.Chart
 
 /-!
 # Analytic maps on manifolds, read in charts
@@ -41,8 +42,6 @@ The model is assumed boundaryless throughout, so that chart images of open sets 
 * `ContMDiffAt.analyticAt_extend_comp_extend_symm`, `ContMDiffAt.analyticAt_writtenInExtChartAt`,
   `TauCeti.contMDiffAt_omega_iff_of_mem_maximalAtlas` and `TauCeti.contMDiffAt_omega_iff`: `C^ω`
   maps between manifolds in arbitrary and in preferred charts.
-* `TauCeti.contMDiffAt_iff_contDiffAt_comp_extend_symm`: `C^n` functions with values in a normed
-  space are those with a `C^n` coordinate expression.
 * `ContMDiffAt.analyticAt_comp_extend_symm`,
   `TauCeti.contMDiffAt_omega_iff_analyticAt_of_mem_maximalAtlas` and
   `TauCeti.contMDiffAt_omega_iff_analyticAt`: `C^ω` functions with values in a normed space.
@@ -100,15 +99,6 @@ theorem TauCeti.analyticOnNhd_ext_coord_change [IsManifold I ω M] (x x' : M) :
   I.analyticOnNhd_extendCoordChange (chart_mem_maximalAtlas x') (chart_mem_maximalAtlas x)
 
 /-! ### `C^ω` maps in charts -/
-
-/-- For a boundaryless model, a function with values in a normed space is `C^n` at `x` if and only
-if its coordinate expression in a chart `e` at `x` of the maximal `C^n` atlas is `C^n` at the
-coordinate of `x`. -/
-theorem TauCeti.contMDiffAt_iff_contDiffAt_comp_extend_symm {n : ℕ∞ω} {f : M → F}
-    (he : e ∈ maximalAtlas I n M) (hx : x ∈ e.source) :
-    ContMDiffAt I 𝓘(𝕜, F) n f x ↔ ContDiffAt 𝕜 n (f ∘ (e.extend I).symm) (e.extend I x) := by
-  rw [ContMDiffAt, contMDiffWithinAt_iff_source_of_mem_maximalAtlas he hx]
-  simp [I.range_eq_univ, contMDiffWithinAt_univ, contMDiffAt_iff_contDiffAt]
 
 /-- A function with values in a normed space that is `C^ω` at `x` has an analytic coordinate
 expression at the coordinate of `x` in any chart at `x` of the maximal `C^ω` atlas. -/
@@ -170,9 +160,9 @@ complete normed space is `C^ω` at `x` if and only if its coordinate expression 
 chart at `x` is analytic at the coordinate of `x`. -/
 theorem contMDiffAt_omega_iff_analyticAt [CompleteSpace F] {f : M → F} :
     ContMDiffAt I 𝓘(𝕜, F) ω f x ↔
-      AnalyticAt 𝕜 (f ∘ (extChartAt I x).symm) (extChartAt I x x) := by
-  rw [contMDiffAt_iff_source, I.range_eq_univ, contMDiffWithinAt_univ, contMDiffAt_iff_contDiffAt]
-  exact ⟨ContDiffAt.analyticAt, AnalyticAt.contDiffAt⟩
+      AnalyticAt 𝕜 (f ∘ (extChartAt I x).symm) (extChartAt I x x) :=
+  contMDiffAt_iff_contDiffAt_comp_extChartAt_symm.trans
+    ⟨ContDiffAt.analyticAt, AnalyticAt.contDiffAt⟩
 
 /-- **Analytic functions on a chart domain.** For a boundaryless model and an open subset `U` of
 the domain of a chart `e` of the maximal `C^ω` atlas, a function with values in a normed space is
