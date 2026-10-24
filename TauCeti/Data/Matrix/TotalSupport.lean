@@ -81,9 +81,7 @@ theorem exists_perm_ne_zero_of_mem_doublyStochastic (hK : K ∈ doublyStochastic
     rw [hentry]
     exact lt_of_le_of_ne (nonneg_of_mem_doublyStochastic hK) (Ne.symm hij)
   obtain ⟨σ, -, hσ⟩ := Finset.sum_pos_iff_of_nonneg
-    (fun σ _ ↦ mul_nonneg (hw σ) (by
-      simp only [PEquiv.toMatrix_toPEquiv_apply]
-      exact (Pi.single_nonneg (α := fun _ : n ↦ R)).2 zero_le_one _)) |>.1 hpos
+    (fun σ _ ↦ mul_nonneg (hw σ) (σ.permMatrix_nonneg i j)) |>.1 hpos
   have hσij : σ i = j := by
     by_contra hne
     simp only [PEquiv.toMatrix_toPEquiv_apply] at hσ
