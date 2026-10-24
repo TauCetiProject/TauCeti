@@ -18,9 +18,9 @@ import Mathlib.Algebra.Module.LocalizedModule.Int
 This file provides generic results about full submodules over fraction fields. It relates bases and
 ranks of full submodules to their ambient spaces. It also extends integral linear equivalences
 between full submodules to rational linear equivalences of their ambient spaces, and proves that
-surjective linear maps preserve full lattices over commutative-ring algebras. Finally, a free
-full lattice over an integral domain rationalizes to its ambient vector space over the fraction
-field.
+surjective linear maps preserve full lattices over commutative-ring algebras, as do finite
+products. Finally, a free full lattice over an integral domain rationalizes to its ambient vector
+space over the fraction field.
 
 ## Main declarations
 
@@ -34,6 +34,7 @@ field.
   with restricting a submodule to another submodule.
 * `Submodule.finrank_eq_finrank`: a full lattice and its ambient space have the
   same finrank.
+* `Submodule.IsLattice.pi`: the product of a finite family of full lattices is a full lattice.
 * `LinearEquiv.extendOfIsLattice`: extension of an `R`-linear equivalence between
   full submodules to their ambient `K`-vector spaces.
 * `Submodule.isBaseChange_subtype`: the inclusion of a free full lattice
@@ -260,6 +261,35 @@ theorem isLattice_map (S : Submodule R V) [S.IsLattice A] (f : V →ₗ[A] W)
       LinearMap.range_eq_top.mpr hf]
 
 end Map
+
+section Pi
+
+variable {R A : Type*} [CommRing R] [CommRing A] [Algebra R A]
+variable {ι : Type*} [Finite ι] {V : ι → Type*} [∀ i, AddCommGroup (V i)] [∀ i, Module R (V i)]
+  [∀ i, Module A (V i)] [∀ i, IsScalarTower R A (V i)]
+
+/-- The families all of whose values lie in full lattices form a full lattice of the product. -/
+instance IsLattice.pi (M : ∀ i, Submodule R (V i)) [∀ i, (M i).IsLattice A] :
+    (Submodule.pi Set.univ M).IsLattice A where
+  fg := Submodule.fg_pi fun _ ↦ _root_.Submodule.IsLattice.fg
+  span_eq_top := by
+    classical
+    cases nonempty_fintype ι
+    rw [eq_top_iff]
+    intro x _
+    rw [← Finset.univ_sum_single x]
+    refine Submodule.sum_mem _ fun i _ ↦ ?_
+    have hx : x i ∈ Submodule.span A (M i : Set (V i)) := by
+      rw [_root_.Submodule.IsLattice.span_eq_top]
+      exact Submodule.mem_top
+    have hmap : Submodule.map (LinearMap.single A V i) (Submodule.span A (M i : Set (V i))) ≤
+        Submodule.span A (Submodule.pi Set.univ M : Set (∀ i, V i)) := by
+      rw [Submodule.map_span, Submodule.span_le]
+      rintro _ ⟨v, hv, rfl⟩
+      exact Submodule.subset_span (Submodule.le_comap_single_pi M hv)
+    exact hmap (Submodule.mem_map_of_mem hx)
+
+end Pi
 
 end Submodule
 
