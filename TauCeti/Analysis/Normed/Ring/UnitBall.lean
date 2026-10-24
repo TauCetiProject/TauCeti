@@ -25,7 +25,8 @@ If `R` is moreover a normed ring in which geometric series converge (for instanc
 one), the inverse of `1 - x` for `‖x‖ < 1` is controlled exactly by the ultrametric inequality:
 `‖(1 - x)⁻¹‖ = 1` and `‖(1 - x)⁻¹ - 1‖ = ‖x‖`. Consequently elements of `R⁰` within distance
 less than one of `1` are units of `R⁰`, the ideal `R⁰⁰` lies in the Jacobson radical of `R⁰`
-when `R` is commutative, and units of the reduction `R⁰ ⧸ R⁰⁰` lift to units of `R⁰`. For an
+when `R` is commutative, and units of the reduction `R⁰ ⧸ R⁰⁰` lift to units of `R⁰`. When the
+norm of `R` is multiplicative, the units of `R⁰` are exactly the units of `R` of norm one. For an
 ultrametric normed field `K` the ring `K⁰` is local with maximal ideal `K⁰⁰`, so its reduction
 is the residue field. These are the facts about the unit ball that underlie reduction arguments
 for Banach modules over nonarchimedean Banach rings.
@@ -45,6 +46,8 @@ for Banach modules over nonarchimedean Banach rings.
 * `TauCeti.unitBallIdeal_le_jacobson_bot`: the open-ball ideal lies in the Jacobson radical of
   the unit ball, so the reduction map is a local homomorphism
   (`TauCeti.isLocalHom_quotientMk_unitBallIdeal`).
+* `TauCeti.isUnit_unitClosedBall_iff`: for a multiplicative norm, the units of the unit ball are
+  the units of norm one.
 * `TauCeti.isUnit_unitClosedBall_iff_norm_eq_one`, `TauCeti.isLocalRing_unitClosedBall` and
   `TauCeti.maximalIdeal_unitClosedBall`: over an ultrametric normed division ring the unit ball
   is a local ring, and over an ultrametric normed field its maximal ideal is the open-ball ideal.
@@ -174,6 +177,35 @@ instance isLocalHom_quotientMk_unitBallIdeal :
 
 end Jacobson
 
+section NormMulClass
+
+variable {R : Type*} [SeminormedRing R] [IsUltrametricDist R] [NormOneClass R] [NormMulClass R]
+
+/-- **Units of the unit ball for a multiplicative norm.** An element of the closed unit ball is a
+unit of the unit ball exactly when it is a unit of the ambient ring and has norm one. A unit of
+norm less than one, such as a nonzero scalar of small norm, is therefore not a unit of the unit
+ball. -/
+theorem isUnit_unitClosedBall_iff {x : Subring.unitClosedBall R} :
+    IsUnit x ↔ IsUnit (x : R) ∧ ‖(x : R)‖ = 1 := by
+  have hx1 : ‖(x : R)‖ ≤ 1 := Subring.mem_unitClosedBall.mp x.2
+  constructor
+  · rintro ⟨v, rfl⟩
+    have hb1 : ‖((v⁻¹ : (Subring.unitClosedBall R)ˣ) : R)‖ ≤ 1 :=
+      Subring.mem_unitClosedBall.mp (v⁻¹ : (Subring.unitClosedBall R)ˣ).1.2
+    have hmul : ‖(v : R)‖ * ‖((v⁻¹ : (Subring.unitClosedBall R)ˣ) : R)‖ = 1 := by
+      rw [← norm_mul, ← Subring.coe_mul, v.mul_inv, Subring.coe_one, norm_one]
+    exact ⟨v.isUnit.map (Subring.unitClosedBall R).subtype,
+      by nlinarith [norm_nonneg (v : R), norm_nonneg ((v⁻¹ : (Subring.unitClosedBall R)ˣ) : R)]⟩
+  · rintro ⟨⟨u, hu⟩, hx⟩
+    have hinv : ‖((u⁻¹ : Rˣ) : R)‖ = 1 := by
+      have h := congrArg norm u.mul_inv
+      rwa [norm_mul, hu, hx, one_mul, norm_one] at h
+    refine isUnit_iff_exists.mpr
+      ⟨⟨_, Subring.mem_unitClosedBall.mpr hinv.le⟩, Subtype.ext ?_, Subtype.ext ?_⟩ <;>
+    simp only [Subring.coe_mul, Subring.coe_one, ← hu, u.mul_inv, u.inv_mul]
+
+end NormMulClass
+
 section DivisionRing
 
 variable {K : Type*} [NormedDivisionRing K] [IsUltrametricDist K]
@@ -181,20 +213,9 @@ variable {K : Type*} [NormedDivisionRing K] [IsUltrametricDist K]
 /-- Over an ultrametric normed division ring, an element of the closed unit ball is a unit of the
 unit ball exactly when its norm is one. -/
 theorem isUnit_unitClosedBall_iff_norm_eq_one {x : Subring.unitClosedBall K} :
-    IsUnit x ↔ ‖(x : K)‖ = 1 := by
-  have hx1 : ‖(x : K)‖ ≤ 1 := Subring.mem_unitClosedBall.mp x.2
-  constructor
-  · intro hu
-    obtain ⟨b, hb⟩ := hu.exists_right_inv
-    have hb1 : ‖(b : K)‖ ≤ 1 := Subring.mem_unitClosedBall.mp b.2
-    have hmul : ‖(x : K)‖ * ‖(b : K)‖ = 1 := by
-      rw [← norm_mul, ← Subring.coe_mul, hb, Subring.coe_one, norm_one]
-    nlinarith [norm_nonneg (x : K), norm_nonneg (b : K)]
-  · intro hx
-    have hx0 : (x : K) ≠ 0 := norm_ne_zero_iff.mp (by simp [hx])
-    have hinv : ‖(x : K)⁻¹‖ ≤ 1 := by simp [hx]
-    refine isUnit_iff_exists_inv.mpr ⟨⟨_, Subring.mem_unitClosedBall.mpr hinv⟩, Subtype.ext ?_⟩
-    simp [hx0]
+    IsUnit x ↔ ‖(x : K)‖ = 1 :=
+  isUnit_unitClosedBall_iff.trans <| and_iff_right_of_imp fun hx ↦
+    isUnit_iff_ne_zero.mpr <| norm_ne_zero_iff.mp (by simp [hx])
 
 /-- **The unit ball of an ultrametric normed division ring is a local ring.** For `x` in the unit
 ball, either `‖x‖ = 1` or `‖1 - x‖ = 1`, so `x` or `1 - x` is a unit. -/

@@ -118,7 +118,7 @@ full-weight type-`C_(n+1)` carrier along `ℤ → A`. -/
 noncomputable def baseChangeDefiningIdeal :
     HopfIdeal A (GeneralLinear.coordinateHopfAlgebra A ((n + 1) + (n + 1))) :=
   kostantToralBaseChangePresentationIdeal (rootGenerator n) (cartanGenerator n) (rep n)
-    (lattice n).toAddSubgroup (fun _ hu _ hv => rep_kostantForm_mem_lattice n hu hv)
+    (lattice n).toAddSubgroup (rep_kostantForm_mem_lattice n)
     (isNilpotent_rep_rootGenerator n) (latticeBasis n) (basisWeight n) A
 
 /-- The transported defining ideal is the one supplied by the generic Kostant toral-closure base
@@ -127,7 +127,7 @@ the form in which downstream files rewrite with the definition. -/
 theorem baseChangeDefiningIdeal_def :
     baseChangeDefiningIdeal n A =
       kostantToralBaseChangePresentationIdeal (rootGenerator n) (cartanGenerator n) (rep n)
-        (lattice n).toAddSubgroup (fun _ hu _ hv => rep_kostantForm_mem_lattice n hu hv)
+        (lattice n).toAddSubgroup (rep_kostantForm_mem_lattice n)
         (isNilpotent_rep_rootGenerator n) (latticeBasis n) (basisWeight n) A := by
   rw [baseChangeDefiningIdeal]
 
@@ -153,7 +153,7 @@ theorem map_tmul_mem_baseChangeDefiningIdeal_of_mem (s : A)
   rw [baseChangeDefiningIdeal_def]
   exact map_tmul_mem_kostantToralBaseChangePresentationIdeal_of_mem (rootGenerator n)
     (cartanGenerator n) (rep n) (lattice n).toAddSubgroup
-    (fun _ hu _ hv => rep_kostantForm_mem_lattice n hu hv)
+    (rep_kostantForm_mem_lattice n)
     (isNilpotent_rep_rootGenerator n) (latticeBasis n) (basisWeight n) A s
     (definingIdeal_def n ▸ hy)
 
@@ -166,7 +166,7 @@ noncomputable def baseChangeCoordinateIso :
         (CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra ℤ ((n + 1) + (n + 1)))
           (definingIdeal n)) :=
   kostantToralBaseChangePresentationIsoOfEq (rootGenerator n) (cartanGenerator n) (rep n)
-    (lattice n).toAddSubgroup (fun _ hu _ hv => rep_kostantForm_mem_lattice n hu hv)
+    (lattice n).toAddSubgroup (rep_kostantForm_mem_lattice n)
     (isNilpotent_rep_rootGenerator n) (latticeBasis n) (basisWeight n) A (definingIdeal_def n)
 
 /-- The base-change coordinate isomorphism is compatible with the quotient presentation inside
@@ -183,7 +183,7 @@ theorem mkQuotient_comp_baseChangeCoordinateIso_hom :
   rw [baseChangeCoordinateIso]
   exact mkQuotient_comp_kostantToralBaseChangePresentationIsoOfEq_hom (rootGenerator n)
     (cartanGenerator n) (rep n) (lattice n).toAddSubgroup
-    (fun _ hu _ hv => rep_kostantForm_mem_lattice n hu hv)
+    (rep_kostantForm_mem_lattice n)
     (isNilpotent_rep_rootGenerator n) (latticeBasis n) (basisWeight n) A (definingIdeal_def n)
 
 /-! ## The carrier group scheme after base change -/
@@ -303,7 +303,7 @@ noncomputable def rootSubgroupIntegralCoordinateMap (k : Fin (n + 1) ⊕ Fin (n 
         (definingIdeal n) ⟶
       AdditiveGroup.coordinateHopfAlgebra ℤ :=
   kostantRootSubgroupToralCoordinateMapOfEq (rootGenerator n) (cartanGenerator n) (rep n)
-    (lattice n).toAddSubgroup (fun _ hu _ hv => rep_kostantForm_mem_lattice n hu hv)
+    (lattice n).toAddSubgroup (rep_kostantForm_mem_lattice n)
     (isNilpotent_rep_rootGenerator n) (latticeBasis n) (basisWeight n) (definingIdeal_def n) k
 
 /-- The integral root-subgroup coordinate map is the generic Kostant one, read through the named
@@ -311,7 +311,7 @@ type-`C_(n+1)` defining ideal. -/
 theorem rootSubgroupIntegralCoordinateMap_def (k : Fin (n + 1) ⊕ Fin (n + 1)) :
     rootSubgroupIntegralCoordinateMap n k =
       kostantRootSubgroupToralCoordinateMapOfEq (rootGenerator n) (cartanGenerator n) (rep n)
-        (lattice n).toAddSubgroup (fun _ hu _ hv => rep_kostantForm_mem_lattice n hu hv)
+        (lattice n).toAddSubgroup (rep_kostantForm_mem_lattice n)
         (isNilpotent_rep_rootGenerator n) (latticeBasis n) (basisWeight n)
         (definingIdeal_def n) k := by
   rw [rootSubgroupIntegralCoordinateMap]
@@ -324,12 +324,12 @@ theorem mkQuotient_comp_rootSubgroupIntegralCoordinateMap (k : Fin (n + 1) ⊕ F
           (definingIdeal n) ≫
         rootSubgroupIntegralCoordinateMap n k =
       kostantRootSubgroupCoordinateMap (rootGenerator n) (cartanGenerator n) (rep n)
-        (lattice n).toAddSubgroup (fun _ hu _ hv => rep_kostantForm_mem_lattice n hu hv) k
+        (lattice n).toAddSubgroup (rep_kostantForm_mem_lattice n) k
         (isNilpotent_rep_rootGenerator n k) (latticeBasis n) := by
   rw [rootSubgroupIntegralCoordinateMap]
   exact mkQuotient_comp_kostantRootSubgroupToralCoordinateMapOfEq (rootGenerator n)
     (cartanGenerator n) (rep n) (lattice n).toAddSubgroup
-    (fun _ hu _ hv => rep_kostantForm_mem_lattice n hu hv)
+    (rep_kostantForm_mem_lattice n)
     (isNilpotent_rep_rootGenerator n) (latticeBasis n) (basisWeight n) (definingIdeal_def n) k
 
 /-- The integral factored root-subgroup coordinate map represents the carrier's `k`th numbered
@@ -346,7 +346,7 @@ theorem hopfSpec_map_rootSubgroupIntegralCoordinateMap_op (k : Fin (n + 1) ⊕ F
   rw [rootSubgroupIntegralCoordinateMap, rootSubgroup_def]
   exact hopfSpec_map_kostantRootSubgroupToralCoordinateMapOfEq_op (rootGenerator n)
     (cartanGenerator n) (rep n) (lattice n).toAddSubgroup
-    (fun _ hu _ hv => rep_kostantForm_mem_lattice n hu hv)
+    (rep_kostantForm_mem_lattice n)
     (isNilpotent_rep_rootGenerator n) (latticeBasis n) (basisWeight n) (definingIdeal_def n) k
 
 /-- The base-changed `k`th root-subgroup coordinate map factored through the transported
@@ -357,7 +357,7 @@ noncomputable def rootSubgroupToBaseChangeCoordinateMap (k : Fin (n + 1) ⊕ Fin
       AdditiveGroup.coordinateHopfAlgebra A :=
   kostantRootSubgroupToralBaseChangePresentationCoordinateMap (rootGenerator n)
     (cartanGenerator n) (rep n) (lattice n).toAddSubgroup
-    (fun _ hu _ hv => rep_kostantForm_mem_lattice n hu hv)
+    (rep_kostantForm_mem_lattice n)
     (isNilpotent_rep_rootGenerator n) (latticeBasis n) (basisWeight n) A k
 
 /-- The factored root-subgroup map recovers its ambient transported coordinate map.
@@ -373,12 +373,12 @@ theorem mkQuotient_comp_rootSubgroupToBaseChangeCoordinateMap
         rootSubgroupToBaseChangeCoordinateMap n A k =
       kostantRootSubgroupBaseChangePresentationCoordinateMap (rootGenerator n)
         (cartanGenerator n) (rep n) (lattice n).toAddSubgroup
-        (fun _ hu _ hv => rep_kostantForm_mem_lattice n hu hv)
+        (rep_kostantForm_mem_lattice n)
         (isNilpotent_rep_rootGenerator n) (latticeBasis n) A k := by
   unfold baseChangeDefiningIdeal rootSubgroupToBaseChangeCoordinateMap
   exact mkQuotient_comp_kostantRootSubgroupToralBaseChangePresentationCoordinateMap
     (rootGenerator n) (cartanGenerator n) (rep n) (lattice n).toAddSubgroup
-    (fun _ hu _ hv => rep_kostantForm_mem_lattice n hu hv)
+    (rep_kostantForm_mem_lattice n)
     (isNilpotent_rep_rootGenerator n) (latticeBasis n) (basisWeight n) A k
 
 /-- Under the base-change coordinate isomorphism, the factored `k`th root-subgroup map is the
@@ -395,7 +395,7 @@ theorem baseChangeCoordinateIso_hom_comp_rootSubgroupBaseChangeMap
     rootSubgroupToBaseChangeCoordinateMap]
   exact kostantToralBaseChangePresentationIsoOfEq_hom_comp_rootSubgroupBaseChangeMap
     (rootGenerator n) (cartanGenerator n) (rep n) (lattice n).toAddSubgroup
-    (fun _ hu _ hv => rep_kostantForm_mem_lattice n hu hv)
+    (rep_kostantForm_mem_lattice n)
     (isNilpotent_rep_rootGenerator n) (latticeBasis n) (basisWeight n) A (definingIdeal_def n) k
 
 /-! ## The transported weight torus -/
@@ -408,7 +408,7 @@ noncomputable def weightTorusIntegralCoordinateMap :
       (DiagonalizableGroup.coordinateRing ℤ
         (SplitTorus.characterGroup (Fin (n + 1)))).obj :=
   kostantWeightTorusToralCoordinateMapOfEq (rootGenerator n) (cartanGenerator n) (rep n)
-    (lattice n).toAddSubgroup (fun _ hu _ hv => rep_kostantForm_mem_lattice n hu hv)
+    (lattice n).toAddSubgroup (rep_kostantForm_mem_lattice n)
     (isNilpotent_rep_rootGenerator n) (latticeBasis n) (basisWeight n) (definingIdeal_def n)
 
 /-- The integral weight-torus coordinate map is the generic Kostant one, read through the named
@@ -416,7 +416,7 @@ type-`C_(n+1)` defining ideal. -/
 theorem weightTorusIntegralCoordinateMap_def :
     weightTorusIntegralCoordinateMap n =
       kostantWeightTorusToralCoordinateMapOfEq (rootGenerator n) (cartanGenerator n) (rep n)
-        (lattice n).toAddSubgroup (fun _ hu _ hv => rep_kostantForm_mem_lattice n hu hv)
+        (lattice n).toAddSubgroup (rep_kostantForm_mem_lattice n)
         (isNilpotent_rep_rootGenerator n) (latticeBasis n) (basisWeight n)
         (definingIdeal_def n) := by
   rw [weightTorusIntegralCoordinateMap]
@@ -432,7 +432,7 @@ theorem mkQuotient_comp_weightTorusIntegralCoordinateMap :
   rw [weightTorusIntegralCoordinateMap]
   exact mkQuotient_comp_kostantWeightTorusToralCoordinateMapOfEq (rootGenerator n)
     (cartanGenerator n) (rep n) (lattice n).toAddSubgroup
-    (fun _ hu _ hv => rep_kostantForm_mem_lattice n hu hv)
+    (rep_kostantForm_mem_lattice n)
     (isNilpotent_rep_rootGenerator n) (latticeBasis n) (basisWeight n) (definingIdeal_def n)
 
 /-- The integral factored weight-torus coordinate map represents the carrier's weight torus: its
@@ -447,7 +447,7 @@ theorem hopfSpec_map_weightTorusIntegralCoordinateMap_op :
   rw [weightTorusIntegralCoordinateMap, weightTorus_def]
   exact hopfSpec_map_kostantWeightTorusToralCoordinateMapOfEq_op (rootGenerator n)
     (cartanGenerator n) (rep n) (lattice n).toAddSubgroup
-    (fun _ hu _ hv => rep_kostantForm_mem_lattice n hu hv)
+    (rep_kostantForm_mem_lattice n)
     (isNilpotent_rep_rootGenerator n) (latticeBasis n) (basisWeight n) (definingIdeal_def n)
 
 /-- The base-changed weight-torus coordinate map factored through the transported type-`C_(n+1)`
@@ -459,7 +459,7 @@ noncomputable def weightTorusToBaseChangeCoordinateMap :
         (SplitTorus.characterGroup (Fin (n + 1)))).obj :=
   kostantWeightTorusToralBaseChangePresentationCoordinateMap (rootGenerator n)
     (cartanGenerator n) (rep n) (lattice n).toAddSubgroup
-    (fun _ hu _ hv => rep_kostantForm_mem_lattice n hu hv)
+    (rep_kostantForm_mem_lattice n)
     (isNilpotent_rep_rootGenerator n) (latticeBasis n) (basisWeight n) A
 
 /-- The factored weight-torus map recovers its ambient transported coordinate map, and so
@@ -473,7 +473,7 @@ theorem mkQuotient_comp_weightTorusToBaseChangeCoordinateMap :
   unfold baseChangeDefiningIdeal weightTorusToBaseChangeCoordinateMap
   exact mkQuotient_comp_kostantWeightTorusToralBaseChangePresentationCoordinateMap
     (rootGenerator n) (cartanGenerator n) (rep n) (lattice n).toAddSubgroup
-    (fun _ hu _ hv => rep_kostantForm_mem_lattice n hu hv)
+    (rep_kostantForm_mem_lattice n)
     (isNilpotent_rep_rootGenerator n) (latticeBasis n) (basisWeight n) A
 
 /-- Under the base-change coordinate isomorphism, the factored weight-torus map is the scalar
@@ -494,7 +494,7 @@ theorem baseChangeCoordinateIso_hom_comp_weightTorusBaseChangeMap :
     weightTorusToBaseChangeCoordinateMap]
   exact kostantToralBaseChangePresentationIsoOfEq_hom_comp_weightTorusBaseChangeMap
     (rootGenerator n) (cartanGenerator n) (rep n) (lattice n).toAddSubgroup
-    (fun _ hu _ hv => rep_kostantForm_mem_lattice n hu hv)
+    (rep_kostantForm_mem_lattice n)
     (isNilpotent_rep_rootGenerator n) (latticeBasis n) (basisWeight n) A (definingIdeal_def n)
 
 /-- The closed subgroup of `GL_(2n+2)/A` generated by the transported numbered root subgroups and
@@ -512,12 +512,12 @@ theorem baseChangeDefiningIdeal_le_commonKernel :
         (fun j => match j with
           | .inl k => kostantRootSubgroupBaseChangePresentationCoordinateMap (rootGenerator n)
               (cartanGenerator n) (rep n) (lattice n).toAddSubgroup
-              (fun _ hu _ hv => rep_kostantForm_mem_lattice n hu hv)
+              (rep_kostantForm_mem_lattice n)
               (isNilpotent_rep_rootGenerator n) (latticeBasis n) A k
           | .inr _ => GeneralLinear.weightTorusBaseChangeCoordinateMap ℤ A (basisWeight n)) := by
   have h := kostantToralBaseChangePresentationIdeal_le_commonKernelHopfIdeal (rootGenerator n)
     (cartanGenerator n) (rep n) (lattice n).toAddSubgroup
-    (fun _ hu _ hv => rep_kostantForm_mem_lattice n hu hv)
+    (rep_kostantForm_mem_lattice n)
     (isNilpotent_rep_rootGenerator n) (latticeBasis n) (basisWeight n) A
   -- The generic containment indexes its generators by a `match` of its own, and neither that
   -- matcher nor `CommHopfAlgCat.commonKernelHopfIdeal` is exposed for unfolding, so the two

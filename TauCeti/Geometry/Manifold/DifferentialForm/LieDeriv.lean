@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.Calculus.DifferentialForm.LieDeriv
 public import TauCeti.Geometry.Manifold.DifferentialForm.Interior
+public import TauCeti.Geometry.Manifold.DifferentialForm.Closed
+public import TauCeti.Geometry.Manifold.DifferentialForm.Smooth
 public import TauCeti.Geometry.Manifold.DifferentialForm.VectorField
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
 import TauCeti.Geometry.Manifold.VectorField.Regularity
@@ -42,6 +44,8 @@ The two characterizations below show that the definition is intrinsic.
   `TauCeti.mlieDerivForm_eq_mextDeriv_interior`: on closed forms, `L_V φ = d (ι_V φ)`.
 * `TauCeti.mlieDerivFormWithin_eq_lieDerivFormWithin`: over the model space, the manifold Lie
   derivative is the flat one.
+* `TauCeti.SmoothForm.mlieDerivForm_eq_interior_mextDeriv_add`,
+  `TauCeti.SmoothForm.mlieDerivForm_eq_mextDeriv_interior`: bundled smooth-form entry points.
 
 ## References
 
@@ -309,5 +313,27 @@ theorem mlieDerivForm_eq_interior_mextDeriv (V : (x : M) → TangentSpace I x)
   funext x
   simpa only [mlieDerivFormWithin_univ, mextDerivWithin_univ] using
     mlieDerivFormWithin_eq_interior_mextDerivWithin V φ univ x
+
+namespace SmoothForm
+
+/-- Cartan's magic formula for a smooth fixed-coefficient form, exposed through the bundled
+`SmoothForm` carrier. The vector field is supplied as a differentiable tangent-valued map. -/
+theorem mlieDerivForm_eq_interior_mextDeriv_add {φ : SmoothForm I M F (k + 1)}
+    {V : (x : M) → TangentSpace I x}
+    (hV : MDifferentiable I I.tangent (fun y ↦ (V y : TangentBundle I M))) :
+    mlieDerivForm V φ.1 = (mextDeriv φ.1).interior V + mextDeriv (φ.1.interior V) := by
+  exact TauCeti.mlieDerivForm_eq_interior_mextDeriv_add φ.mdifferentiable hV
+
+/-- On a smooth closed form, along a differentiable vector field, the Lie derivative is the exterior
+derivative of its contraction. -/
+theorem mlieDerivForm_eq_mextDeriv_interior {φ : SmoothForm I M F (k + 1)}
+    {V : (x : M) → TangentSpace I x}
+    (hV : MDifferentiable I I.tangent (fun y ↦ (V y : TangentBundle I M)))
+    (hφ : φ.IsClosed) :
+    mlieDerivForm V φ.1 = mextDeriv (φ.1.interior V) := by
+  exact TauCeti.mlieDerivForm_eq_mextDeriv_interior φ.mdifferentiable hV
+    ((SmoothForm.isClosed_def φ).mp hφ)
+
+end SmoothForm
 
 end TauCeti

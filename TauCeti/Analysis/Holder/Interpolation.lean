@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.MeanValue
 public import Mathlib.Analysis.Normed.Operator.Mul
 public import Mathlib.Topology.MetricSpace.Holder
+public import TauCeti.Topology.MetricSpace.Holder
 
 /-!
 # Interpolation inequalities for derivatives
@@ -40,6 +41,16 @@ On a closed interval `[a, b]` the same argument applies to one-sided derivatives
 in one of the two directions stays in the interval. With temporal Hölder exponent `α / 2` and
 `h = ε²`, this is the estimate for time derivatives on a slab used in parabolic Hölder spaces.
 
+For a function `u (x, t)` of space and time, the same Taylor bound at the spatial scale
+`h = √|t - s|`, applied to the difference `u (·, t) - u (·, s)`, gives
+
+`‖D_x u (x, t) - D_x u (x, s)‖ ≤ (C₂ + Cₜ) |t - s|^((1 + α) / 2)`,
+
+where `C₂` is the `α / 2`-Hölder constant in time of `D_x² u` and `Cₜ` is the `α`-Hölder constant
+in space of `∂ₜ u`. The increment of the difference over a spatial step of length `h` is
+controlled by the mean value inequality in time and the spatial Hölder bound on `∂ₜ u`, and its
+linear approximation error by the difference of the Hessians.
+
 ## Main declarations
 
 * `HolderOnWith.norm_image_sub_sub_le_of_hasFDerivWithinAt`: the first-order Taylor bound for a
@@ -54,12 +65,16 @@ in one of the two directions stays in the interval. With temporal Hölder expone
   derivatives above `D^k f`.
 * `HolderOnWith.norm_le_of_hasDerivWithinAt_Icc`: the interpolation inequality for derivatives
   within a closed interval.
+* `TauCeti.holderOnWith_Icc_of_hasFDerivAt_of_hasDerivWithinAt`: the temporal
+  `(1 + α) / 2`-Hölder continuity of the spatial derivative.
 
 ## References
 
 * D. Gilbarg, N. S. Trudinger, *Elliptic Partial Differential Equations of Second Order*,
   Section 6.8 (interpolation inequalities).
 * A. Lunardi, *Analytic Semigroups and Optimal Regularity in Parabolic Problems*, Chapter 0.
+* O. A. Ladyzhenskaya, V. A. Solonnikov, N. N. Ural'tseva, *Linear and Quasi-linear Equations of
+  Parabolic Type*, Chapter II (parabolic Hölder spaces).
 -/
 
 public section
@@ -268,3 +283,82 @@ theorem norm_iteratedFDeriv_succ_le_of_norm_le_of_bddAbove {f : E → F} {k : �
     _ = 34 * M / ε + 2 * H * ε ^ (1 + (α : ℝ)) := heq
 
 end HolderWith
+
+namespace TauCeti
+
+/-- **Temporal Hölder continuity of the spatial derivative.** Let `u (x, t)` be twice
+differentiable in `x ∈ E` and differentiable in `t ∈ [a, b]` within `[a, b]`, with spatial
+derivatives `u'`, `u''` and time derivative `uₜ`. If the Hessian `u'' (x, ·)` is `α / 2`-Hölder in
+time with constant `C₂` and the time derivative `uₜ (·, t)` is `α`-Hölder in space with constant
+`Cₜ`, then the gradient `u' (x, ·)` is `(1 + α) / 2`-Hölder in time with constant `C₂ + Cₜ`.
+
+This controls the temporal `(1 + α) / 2` seminorm of the spatial gradient, which appears in the
+norm of the parabolic Hölder space `C^{2+α, 1+α/2}`, by the parabolic seminorms of the Hessian
+and of the time derivative. -/
+theorem holderOnWith_Icc_of_hasFDerivAt_of_hasDerivWithinAt {u : E → ℝ → F}
+    {u' : E → ℝ → E →L[ℝ] F} {u'' : E → ℝ → E →L[ℝ] E →L[ℝ] F} {uₜ : E → ℝ → F}
+    {a b : ℝ} {C₂ Cₜ α : ℝ≥0}
+    (hu' : ∀ t ∈ Icc a b, ∀ y, HasFDerivAt (u · t) (u' y t) y)
+    (hu'' : ∀ t ∈ Icc a b, ∀ y, HasFDerivAt (u' · t) (u'' y t) y)
+    (huₜ : ∀ y, ∀ t ∈ Icc a b, HasDerivWithinAt (u y) (uₜ y t) (Icc a b) t)
+    (hC₂ : ∀ y, HolderOnWith C₂ (α / 2) (u'' y) (Icc a b))
+    (hCₜ : ∀ t ∈ Icc a b, HolderWith Cₜ α (uₜ · t)) (x : E) :
+    HolderOnWith (C₂ + Cₜ) ((1 + α) / 2) (u' x) (Icc a b) := by
+  refine HolderOnWith.of_dist_le fun t ht s hs => ?_
+  rw [dist_eq_norm, Real.dist_eq]
+  rcases eq_or_ne t s with rfl | hts
+  · simp only [sub_self, norm_zero, abs_zero]
+    positivity
+  -- Work at the spatial scale `h = √|t - s|`.
+  obtain ⟨h, h_def⟩ : ∃ h, h = √|t - s| := ⟨_, rfl⟩
+  have hh : 0 < h := h_def ▸ Real.sqrt_pos.2 (abs_pos.2 (sub_ne_zero.2 hts))
+  have hsq : h ^ 2 = |t - s| := h_def ▸ Real.sq_sqrt (abs_nonneg _)
+  have hrpow : ∀ r : ℝ, |t - s| ^ (r / 2) = h ^ r := fun r => by
+    simpa only [h_def] using Real.rpow_div_two_eq_sqrt r (abs_nonneg (t - s))
+  -- At the times `t` and `s` the Hessians differ by at most `K = C₂ h^α` everywhere in space, so
+  -- the difference of the gradients is `K`-Lipschitz in space.
+  obtain ⟨K, hKcoe⟩ : ∃ K : ℝ≥0, (K : ℝ) = C₂ * h ^ (α : ℝ) :=
+    ⟨_, Real.coe_toNNReal _ (by positivity)⟩
+  have hK : ∀ y, ‖u'' y t - u'' y s‖ ≤ K := fun y => by
+    have := (hC₂ y).dist_le ht hs
+    rwa [dist_eq_norm, Real.dist_eq, NNReal.coe_div, NNReal.coe_ofNat, hrpow, ← hKcoe] at this
+  have hlip : HolderOnWith K 1 (fun y => u' y t - u' y s) univ :=
+    HolderOnWith.of_dist_le fun y _ z _ => by
+      rw [NNReal.coe_one, Real.rpow_one, dist_eq_norm, dist_eq_norm]
+      exact Convex.norm_image_sub_le_of_norm_hasFDerivWithin_le
+        (fun y _ => ((hu'' t ht y).sub (hu'' s hs y)).hasFDerivWithinAt) (fun y _ => hK y)
+        convex_univ (mem_univ z) (mem_univ y)
+  refine ContinuousLinearMap.opNorm_le_of_unit_norm (by positivity) fun v hv => ?_
+  -- Test the difference `u (·, t) - u (·, s)` on the step `w = h v` of length `h`. Its linear
+  -- approximation error is at most `K h²` by the Taylor bound.
+  set w := h • v with hw_def
+  have hw : ‖w‖ = h := by rw [hw_def, norm_smul, hv, Real.norm_of_nonneg hh.le, mul_one]
+  have hT := hlip.norm_image_sub_sub_le_of_hasFDerivWithinAt
+    (fun y _ => ((hu' t ht y).sub (hu' s hs y)).hasFDerivWithinAt) (subset_univ _) (x := x)
+    (w := w)
+  simp only [Pi.sub_apply, NNReal.coe_one, show (1 : ℝ) + 1 = 2 by norm_num,
+    Real.rpow_two] at hT
+  -- Its increment from `x` to `x + w` is, by the mean value inequality in time, at most
+  -- `Cₜ h^α |t - s|`.
+  have hincr : ‖(u (x + w) t - u x t) - (u (x + w) s - u x s)‖ ≤
+      Cₜ * ‖w‖ ^ (α : ℝ) * ‖t - s‖ :=
+    Convex.norm_image_sub_le_of_norm_hasDerivWithin_le
+      (fun τ hτ => (huₜ (x + w) τ hτ).sub (huₜ x τ hτ))
+      (fun τ hτ => by simpa [dist_eq_norm] using (hCₜ τ hτ).dist_le (x + w) x)
+      (convex_Icc a b) hs ht
+  have key : h * ‖(u' x t - u' x s) v‖ ≤ (C₂ + Cₜ) * h ^ (α : ℝ) * h ^ 2 := by
+    have hsplit : (u' x t - u' x s) w = ((u (x + w) t - u x t) - (u (x + w) s - u x s)) -
+        ((u (x + w) t - u (x + w) s) - (u x t - u x s) - (u' x t - u' x s) w) := by abel
+    have happ : (u' x t - u' x s) w = h • (u' x t - u' x s) v := by rw [hw_def, map_smul]
+    have hle := norm_sub_le_of_le hincr hT
+    rw [← hsplit, happ, norm_smul, Real.norm_of_nonneg hh.le, Real.norm_eq_abs, ← hsq, hw,
+      hKcoe] at hle
+    linarith
+  -- Divide by `h`, using `h^(1 + α) = |t - s|^((1 + α) / 2)`.
+  have hexp : (((1 + α) / 2 : ℝ≥0) : ℝ) = (1 + α) / 2 := by push_cast; ring
+  rw [hexp, hrpow, Real.rpow_add hh, Real.rpow_one]
+  refine le_of_mul_le_mul_left (key.trans_eq ?_) hh
+  push_cast
+  ring
+
+end TauCeti

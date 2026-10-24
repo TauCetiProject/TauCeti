@@ -336,6 +336,26 @@ theorem wedgeWith_zero_right (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
   simpa only [wedgeWith] using
     (bundleWedgeWith_zero_right (fun _ ↦ μ) (fun _ ↦ μ.continuous₂) φ)
 
+/-- The paired rough-form wedge is supported in the support of its first form. -/
+theorem tsupport_wedgeWith_subset_left (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+    (φ : RoughForm I M F₁ k) (ψ : RoughForm I M F₂ l) :
+    _root_.tsupport (α := E [⋀^Fin (k + l)]→L[ℝ] F₃) (φ.wedgeWith μ ψ) ⊆
+      _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] F₁) φ := by
+  refine closure_mono fun x hx hφ ↦ hx ?_
+  rw [wedgeWith_apply']
+  exact (congrArg (ContinuousAlternatingMap.pairedWedge μ μ.continuous₂ · (ψ x)) hφ).trans
+    (ContinuousAlternatingMap.pairedWedge_zero_left μ μ.continuous₂ (ψ x))
+
+/-- The paired rough-form wedge is supported in the support of its second form. -/
+theorem tsupport_wedgeWith_subset_right (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+    (φ : RoughForm I M F₁ k) (ψ : RoughForm I M F₂ l) :
+    _root_.tsupport (α := E [⋀^Fin (k + l)]→L[ℝ] F₃) (φ.wedgeWith μ ψ) ⊆
+      _root_.tsupport (α := E [⋀^Fin l]→L[ℝ] F₂) ψ := by
+  refine closure_mono fun x hx hψ ↦ hx ?_
+  rw [wedgeWith_apply']
+  exact (congrArg (ContinuousAlternatingMap.pairedWedge μ μ.continuous₂ (φ x)) hψ).trans
+    (ContinuousAlternatingMap.pairedWedge_zero_right μ μ.continuous₂ (φ x))
+
 /-- Swapping the factors of a paired rough-form wedge flips the pairing and contributes the
 graded sign. The argument reindexing is the canonical cast between the two degree sums. -/
 theorem wedgeWith_flip (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)

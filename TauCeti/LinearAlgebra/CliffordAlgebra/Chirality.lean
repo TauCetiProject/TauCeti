@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Oriented
 -- Private: the orthogonal-basis computations are used only inside proofs.
 import TauCeti.Algebra.CharP.Invertible
@@ -58,6 +58,8 @@ two-forms to trace-free endomorphisms of `W⁺`; that trace statement is not mad
 ## Main definitions
 
 * `CliffordAlgebra.chirality Q o`: the chirality element `Γ` of `CliffordAlgebra Q`.
+* `CliffordAlgebra.positiveHalfSpinors o ρ`: the positive half-spinors `W⁺`, the `+1` eigenspace
+  of `Γ` acting on a Clifford module `ρ : CliffordAlgebra Q → End_K W`.
 
 ## Main results
 
@@ -69,7 +71,8 @@ two-forms to trace-free endomorphisms of `W⁺`; that trace statement is not mad
 * `CliffordAlgebra.chirality_mul_ι`: `Γ c(v) = -c(v) Γ`.
 * `CliffordAlgebra.reverse_chirality`, `CliffordAlgebra.involute_chirality`: `Γ` is
   fixed by reversal and by the grade involution.
-* `CliffordAlgebra.commute_chirality_bivectorExterior`: two-forms commute with `Γ`.
+* `CliffordAlgebra.commute_chirality_bivectorExterior`: two-forms commute with `Γ`, and
+  `CliffordAlgebra.mapsTo_positiveHalfSpinors`: such elements preserve `W⁺`.
 * `CliffordAlgebra.bivectorExterior_hodgeStar`: the self-duality relation
   `c₂(⋆α) = Γ c₂(α)`.
 * `CliffordAlgebra.bivectorExterior_smul_eq_zero_of_hodgeStar_eq_neg` and
@@ -517,5 +520,28 @@ theorem bivectorExterior_smul_eq_zero_iff_of_hodgeStar_eq_neg (hkl : 2 + 2 = fin
 end RealModule
 
 end Form
+
+section HalfSpinors
+
+variable {K W : Type*} [CommRing K] [Algebra ℝ K] [AddCommGroup W] [Module K W] [Module ℝ W]
+  [IsScalarTower ℝ K W] (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End K W)
+
+/-- The positive half-spinors `W⁺ = {ψ | Γ ψ = ψ}` of a Clifford module `W`. -/
+def positiveHalfSpinors : Submodule K W :=
+  Module.End.eigenspace (ρ (chirality Q o)) 1
+
+variable {o ρ} in
+/-- A vector is a positive half-spinor exactly when `Γ ψ = ψ`. -/
+@[simp]
+theorem mem_positiveHalfSpinors {ψ : W} :
+    ψ ∈ positiveHalfSpinors o ρ ↔ ρ (chirality Q o) ψ = ψ := by
+  simp [positiveHalfSpinors]
+
+/-- Clifford elements commuting with `Γ`, such as two-forms, preserve `W⁺`. -/
+theorem mapsTo_positiveHalfSpinors {a : CliffordAlgebra Q} (ha : Commute (chirality Q o) a) :
+    ∀ ψ ∈ positiveHalfSpinors o ρ, ρ a ψ ∈ positiveHalfSpinors o ρ := fun _ hψ ↦
+  Module.End.mapsTo_genEigenspace_of_comm (ha.map ρ) 1 1 hψ
+
+end HalfSpinors
 
 end CliffordAlgebra

@@ -46,6 +46,8 @@ every such `g` satisfies `g j ≤ λ_j`.
 * `ZLattice.prod_successiveMin_mul_measure_le_two_pow_mul_covolume`: the classical form
   `λ₀ ⋯ λₙ₋₁ · μ K ≤ 2ⁿ · covolume L μ` for a symmetric convex body `K` with `0` in its interior,
   and its real-valued form `ZLattice.prod_successiveMin_mul_measureReal_le_two_pow_mul_covolume`.
+* `ZLattice.prod_successiveMin_le_covolume_of_two_pow_finrank_le`: `λ₀ ⋯ λₙ₋₁ ≤ covolume L μ`
+  for a symmetric convex body `K` with `2ⁿ ≤ μ K`.
 
 ## Proof
 
@@ -568,5 +570,23 @@ theorem prod_successiveMin_mul_measureReal_le_two_pow_mul_covolume (L : Submodul
   rwa [ENNReal.toReal_mul, ENNReal.toReal_mul, ENNReal.toReal_ofReal
     (Finset.prod_nonneg fun i _ ↦ successiveMin_nonneg L K i), ENNReal.toReal_ofReal
     (ZLattice.covolume_pos L μ).le, ENNReal.toReal_pow, ENNReal.toReal_ofNat] at h
+
+/-- **Minkowski's second theorem for bodies of measure at least `2ⁿ`.** If a convex body `K`
+symmetric about `0`, with `0` in its interior, has `2ⁿ ≤ μ K`, then the successive minima of `L`
+with respect to `K` satisfy `λ₀ ⋯ λₙ₋₁ ≤ covolume L μ`. This applies, for instance, to the central
+slices of the cube `[-1, 1]ⁿ`, whose volume is at least `2ⁿ` by Vaaler's theorem. -/
+theorem prod_successiveMin_le_covolume_of_two_pow_finrank_le (L : Submodule ℤ E)
+    [DiscreteTopology L] [IsZLattice ℝ L] (μ : Measure E := by volume_tac) [μ.IsAddHaarMeasure]
+    {K : ConvexBody E} (hK : 0 ∈ interior (K : Set E)) (hKs : ∀ x ∈ K, -x ∈ K)
+    (hμK : 2 ^ finrank ℝ E ≤ μ K) :
+    ∏ i, successiveMin L K i ≤ ZLattice.covolume L μ := by
+  rw [← ENNReal.ofReal_le_ofReal_iff (ZLattice.covolume_pos L μ).le,
+    ← ENNReal.mul_le_mul_iff_left (pow_ne_zero (finrank ℝ E) two_ne_zero)
+      (ENNReal.pow_ne_top ENNReal.ofNat_ne_top)]
+  calc ENNReal.ofReal (∏ i, successiveMin L K i) * 2 ^ finrank ℝ E
+      ≤ ENNReal.ofReal (∏ i, successiveMin L K i) * μ K := by gcongr
+    _ ≤ 2 ^ finrank ℝ E * ENNReal.ofReal (ZLattice.covolume L μ) :=
+      prod_successiveMin_mul_measure_le_two_pow_mul_covolume L μ hK hKs
+    _ = ENNReal.ofReal (ZLattice.covolume L μ) * 2 ^ finrank ℝ E := mul_comm _ _
 
 end ZLattice

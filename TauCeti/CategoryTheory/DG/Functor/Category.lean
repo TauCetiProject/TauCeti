@@ -60,7 +60,7 @@ natural family, a family indexed by the objects of `C`, is again a module in tha
 
 ## References
 
-* `TauCeti.CategoryTheory.DG.AdditiveClosure`, whose explicit construction through
+* `TauCeti.CategoryTheory.DG.AdditiveClosure.Basic`, whose explicit construction through
   `DGCategoryData.toDGCategory` is followed here.
 * B. Keller, *Deriving DG categories*, Section 1.
 * V. Drinfeld, *DG quotients of DG categories*, Section 2.
