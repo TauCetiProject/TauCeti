@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.RingHom.Etale
 public import TauCeti.RingTheory.Huber.ModuleTopology.FiniteAlgebra
 public import TauCeti.RingTheory.Huber.Pair
 import Mathlib.Topology.Algebra.Algebra
+import TauCeti.RingTheory.IntegralClosure.IntegrallyClosed
 
 /-!
 # The Huber pair of a finite algebra
@@ -19,8 +20,8 @@ carrying its natural topology (`IsModuleTopology A B`), so that `B` is a Huber r
 `A⁺` in `B` is a ring of integral elements, which makes `(B, B⁺)` a Huber pair and
 `A → B` a morphism of Huber pairs. Every `A`-algebra map from `B` to a Huber pair under `(A, A⁺)`
 is a morphism of Huber pairs, so `(B, B⁺)` is the pair that finite étale geometry attaches to a
-finite étale algebra. The plus ring is the integral closure of `A⁺`, never `B°`: already for
-`B = A` they differ when `A⁺ ≠ A°`.
+finite étale algebra. The plus ring is the integral closure of the image of `A⁺`, which need not
+equal `B°`: already for `B = A` they differ when `A⁺ ≠ A°`.
 
 No completeness, separatedness, noetherian or étaleness hypothesis is needed for the construction
 and its universal property; completeness of `B` over a complete base is
@@ -87,6 +88,12 @@ theorem finiteAlgebra_plus :
     (S.finiteAlgebra B).plus = (integralClosure (S.plus.map (algebraMap A B)) B).toSubring :=
   (rfl)
 
+/-- An element of `B` lies in the plus ring of `finiteAlgebra S B` iff it is integral over the
+image of `A⁺`. -/
+theorem mem_finiteAlgebra_plus {b : B} :
+    b ∈ (S.finiteAlgebra B).plus ↔ IsIntegral (S.plus.map (algebraMap A B)) b :=
+  Iff.rfl
+
 /-- The structure morphism `(A, A⁺) → (B, B⁺)` of the Huber pair of a finite algebra. -/
 noncomputable def finiteAlgebra.algebraHom : Hom S (S.finiteAlgebra B) where
   toRingHom := algebraMap A B
@@ -124,16 +131,10 @@ noncomputable def finiteAlgebra.lift (χ : Hom S V) (hχ : χ.toRingHom = algebr
     have : ContinuousSMul A D := continuousSMul_of_algebraMap A D (hχ ▸ χ.continuous_toRingHom)
     IsModuleTopology.continuous_of_linearMap f.toLinearMap
   map_mem_plus b hb := by
-    let R : Subring B := S.plus.map (algebraMap A B)
-    -- `f` restricts to a ring map from the image of `A⁺` to `D⁺`
-    let φ : R →+* V.plus := (f.toRingHom.comp R.subtype).codRestrict V.plus fun x ↦ by
-      obtain ⟨a, ha, hax⟩ := Subring.mem_map.mp x.2
-      rw [RingHom.comp_apply, Subring.coe_subtype, ← hax, AlgHom.toRingHom_eq_coe,
-        RingHom.coe_coe, AlgHom.commutes, ← hχ]
-      exact χ.map_mem_plus a ha
-    apply Subring.isIntegrallyClosedIn_iff.mp V.isRingOfIntegralElements.isIntegrallyClosedIn
-    rw [finiteAlgebra_plus, Subalgebra.mem_toSubring, mem_integralClosure_iff] at hb
-    exact hb.map_of_comp_eq φ f.toRingHom (RingHom.ext fun _ ↦ rfl)
+    have := V.isRingOfIntegralElements.isIntegrallyClosedIn
+    refine (Subring.integralClosure_subring_le_iff (T := V.plus.comap f.toRingHom)).mpr ?_ hb
+    rintro _ ⟨a, ha, rfl⟩
+    simpa [← hχ] using χ.map_mem_plus a ha
 
 /-- The underlying map of `finiteAlgebra.lift χ hχ f` is `f`. -/
 @[simp]
@@ -221,12 +222,16 @@ theorem Hom.IsFiniteEtale.exists_hom {φ : Hom S T} (hφ : φ.IsFiniteEtale) {D 
     ∃ ψ' : Hom T V, ψ'.toRingHom = ψ := by
   let := φ.toRingHom.toAlgebra
   let := χ.toRingHom.toAlgebra
+  have hφA : algebraMap A B = φ.toRingHom := RingHom.algebraMap_toAlgebra _
+  have hχA : algebraMap A D = χ.toRingHom := RingHom.algebraMap_toAlgebra _
   have : Module.Finite A B := hφ.finite
   have : IsModuleTopology A B := hφ.isModuleTopology
   -- `T` is the Huber pair of the finite algebra `B`, so `ψ` is a lift out of it
-  let ψ' := finiteAlgebra.lift (B := B) χ rfl { ψ with commutes' := fun a ↦ congrArg (· a) hψ }
+  let ψ' := finiteAlgebra.lift (B := B) χ hχA.symm
+    { ψ with commutes' := fun a ↦ by simpa [hφA, hχA] using congrArg (· a) hψ }
   refine ⟨⟨ψ, ψ'.continuous_toRingHom, fun b hb ↦ ψ'.map_mem_plus b ?_⟩, rfl⟩
-  rwa [hφ.plus_eq] at hb
+  rw [finiteAlgebra_plus]
+  rwa [hφ.plus_eq, ← hφA] at hb
 
 end FiniteEtale
 

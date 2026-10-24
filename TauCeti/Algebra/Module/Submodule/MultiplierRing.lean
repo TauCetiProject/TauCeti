@@ -129,9 +129,7 @@ theorem isIntegral_of_mem_multiplierRing {M : Submodule R B} (hM : M.FG) (h1 : (
       Polynomial.aeval b q := by
     induction q using Polynomial.induction_on' with
     | add p q hp hq => simp only [map_add, LinearMap.add_apply, Submodule.coe_add, hp, hq]
-    | monomial n a =>
-      rw [Polynomial.aeval_monomial, Polynomial.aeval_monomial, Module.End.mul_apply,
-        Module.algebraMap_end_apply, Submodule.coe_smul, hpow, mul_one, Algebra.smul_def]
+    | monomial n a => simp [Polynomial.aeval_monomial, hpow, Algebra.smul_def]
   rw [← Polynomial.aeval_def, ← heval, hpf, LinearMap.zero_apply, Submodule.coe_zero]
 
 end Submodule
