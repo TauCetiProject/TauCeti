@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Distribution.TestFunction.Postcomp
-public import TauCeti.Analysis.Normed.Module.Alternating.TopDegree
+public import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 
 /-!
 # Top-degree test forms and scalar tests

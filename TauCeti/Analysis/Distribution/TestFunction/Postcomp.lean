@@ -49,13 +49,36 @@ theorem _root_.TestFunction.postcompCLE_apply (e : F ≃L[𝕜] G) (φ : 𝓓^{n
 theorem _root_.TestFunction.postcompCLE_symm (e : F ≃L[𝕜] G) :
     (TestFunction.postcompCLE (Ω := Ω) (n := n) e).symm = TestFunction.postcompCLE e.symm := by rfl
 
+/-- The underlying continuous linear map is Mathlib's coefficient postcomposition map. -/
+@[simp]
+theorem _root_.TestFunction.coe_postcompCLE (e : F ≃L[𝕜] G) :
+    (TestFunction.postcompCLE (Ω := Ω) (n := n) e :
+      𝓓^{n}(Ω, F) →L[𝕜] 𝓓^{n}(Ω, G)) = TestFunction.postcompCLM e.toContinuousLinearMap := by
+  rfl
+
+/-- The identity coefficient change acts as the identity on test functions. -/
+@[simp]
+theorem _root_.TestFunction.postcompCLE_refl :
+    TestFunction.postcompCLE (Ω := Ω) (n := n) (ContinuousLinearEquiv.refl 𝕜 F) =
+      ContinuousLinearEquiv.refl 𝕜 𝓓^{n}(Ω, F) := by
+  ext φ x
+  simp
+
+/-- Successive coefficient changes compose as continuous linear equivalences. -/
+theorem _root_.TestFunction.postcompCLE_trans {H : Type*} [NormedAddCommGroup H]
+    [NormedSpace ℝ H] [NormedSpace 𝕜 H] [IsScalarTower ℝ 𝕜 H]
+    (e : F ≃L[𝕜] G) (e' : G ≃L[𝕜] H) :
+    TestFunction.postcompCLE (Ω := Ω) (n := n) (e.trans e') =
+      (TestFunction.postcompCLE e).trans (TestFunction.postcompCLE e') := by
+  ext φ x
+  simp
+
 /-- An invertible coefficient change preserves the topological support exactly. -/
 @[simp]
 theorem _root_.TestFunction.tsupport_postcompCLE (e : F ≃L[𝕜] G) (φ : 𝓓^{n}(Ω, F)) :
     tsupport (TestFunction.postcompCLE e φ) = tsupport φ := by
-  apply congrArg closure
-  ext x
-  simp [Function.mem_support]
+  simpa only [Function.comp_def, TestFunction.postcompCLE_apply] using
+    (tsupport_comp_eq (g := e) (fun {_} ↦ e.map_eq_zero_iff) φ)
 
 /-- Coefficient changes commute with extension and lowering regularity, including the zero-map
 case of `monoCLM` when the domains or orders are incompatible. -/
