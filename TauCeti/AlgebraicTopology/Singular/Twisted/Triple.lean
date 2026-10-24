@@ -74,6 +74,8 @@ private def isColimitCompositeCokernel :
     (inv (TopPair.twistedSubspaceChainComplexMap (innerToTotal.app T) L))
     (twistedChainComplexMap T.totalMap L) ht
     (T.composite_comp_twistedChainComplexπ L) (by
+      -- By `innerToTotal_app_fst`, `erw` reduces the ambient pair component to
+      -- `T.outerMap` inside the pullback types, and the source pair map to `T.innerMap`.
       erw [TopPair.twistedChainComplexMap_naturality_pair (innerToTotal.app T) L,
         IsIso.inv_hom_id_assoc])
 
@@ -89,17 +91,23 @@ lemma twistedChainComplexπ_comp_totalToOuter :
     dsimp% ((totalPair.obj T).twistedChainComplexπ L ≫ T.twistedChainComplexTotalToOuter L =
       (outerPair.obj T).twistedChainComplexπ L) := by
   dsimp only [twistedChainComplexTotalToOuter]
+  -- By `totalToOuter_app_fst`, `erw` reduces the ambient pair component to the
+  -- identity on `T.fst` inside the dependent coefficient pullback.
   erw [TopPair.twistedChainComplexπ_comp_twistedChainComplexCoefficientMap_assoc,
     TopPair.twistedChainComplexπ_comp_twistedChainComplexMap]
   erw [twistedChainComplexMap_id, ← twistedChainComplexCoefficientMap_comp_assoc]
-  simp
+  simp only [Iso.inv_hom_id_app, Functor.id_obj,
+    LocalCoefficientSystem.twistedChainComplexCoefficientMap_id,
+    Category.id_comp]
 
 @[reassoc (attr := simp)]
-lemma twistedChainComplexInnerToTotal_comp_totalToOuter :
+lemma twistedChainComplexMap_innerToTotal_comp_totalToOuter :
     TopPair.twistedChainComplexMap (innerToTotal.app T) L ≫
       T.twistedChainComplexTotalToOuter L = 0 := by
   apply (cancel_epi ((innerPair.obj T).twistedChainComplexπ
     ((outerPair.obj T).subspaceSystem L))).1
+  -- By `innerToTotal_app_fst`, `erw` identifies the pair map's coefficient pullback
+  -- with restriction along `T.outerMap` in the quotient's source.
   erw [← Category.assoc, TopPair.twistedChainComplexπ_comp_twistedChainComplexMap, Category.assoc,
     T.twistedChainComplexπ_comp_totalToOuter L, comp_zero]
   exact (outerPair.obj T).twistedChainComplexMap_comp_twistedChainComplexπ L
@@ -107,7 +115,7 @@ lemma twistedChainComplexInnerToTotal_comp_totalToOuter :
 /-- The relative twisted chain sequence of a triple. -/
 abbrev twistedChainComplexShortComplex :
     ShortComplex (ChainComplex (ModuleCat.{max v w} R) ℕ) :=
-  ShortComplex.mk _ _ (T.twistedChainComplexInnerToTotal_comp_totalToOuter L)
+  ShortComplex.mk _ _ (T.twistedChainComplexMap_innerToTotal_comp_totalToOuter L)
 
 /-- The relative twisted chain sequence of a triple is short exact. -/
 lemma shortExact_twistedChainComplexShortComplex :
@@ -135,6 +143,8 @@ lemma twistedChainComplexTotalToOuter_naturality :
       (totalPair.obj T).twistedChainComplexCoefficientMap η ≫
         T.twistedChainComplexTotalToOuter K := by
   dsimp only [twistedChainComplexTotalToOuter]
+  -- By `totalToOuter_app_fst`, `erw` identifies the pair naturality equation's
+  -- coefficient pullback with the identity used by `pullbackIdIso`.
   erw [Category.assoc, TopPair.twistedChainComplexMap_naturality,
     ← TopPair.twistedChainComplexCoefficientMap_comp_assoc,
     ← TopPair.twistedChainComplexCoefficientMap_comp_assoc]
@@ -208,11 +218,11 @@ lemma twistedHomologyδ_def (n m : ℕ) (h : m + 1 = n := by lia) :
       (T.shortExact_twistedChainComplexShortComplex L).δ n m (by simpa) := (rfl)
 
 @[reassoc (attr := simp)]
-lemma twistedHomologyInnerToTotal_comp_totalToOuter (k : ℕ) :
+lemma twistedHomologyMap_innerToTotal_comp_totalToOuter (k : ℕ) :
     TopPair.twistedHomologyMap (innerToTotal.app T) L k ≫
       T.twistedHomologyTotalToOuter L k = 0 := by
   rw [← HomologicalComplex.homologyMap_comp,
-    T.twistedChainComplexInnerToTotal_comp_totalToOuter L, HomologicalComplex.homologyMap_zero]
+    T.twistedChainComplexMap_innerToTotal_comp_totalToOuter L, HomologicalComplex.homologyMap_zero]
 
 @[simp]
 lemma twistedHomologyδ_comp (n m : ℕ) (h : m + 1 = n := by lia) :
@@ -240,7 +250,7 @@ lemma twistedHomology_exact_inner (n m : ℕ) (h : m + 1 = n := by lia) :
 
 /-- Exactness at `Hₙ(X,B;L)` in the triple sequence. -/
 lemma twistedHomology_exact_total (n : ℕ) :
-    (ShortComplex.mk _ _ (T.twistedHomologyInnerToTotal_comp_totalToOuter L n)).Exact :=
+    (ShortComplex.mk _ _ (T.twistedHomologyMap_innerToTotal_comp_totalToOuter L n)).Exact :=
   (T.shortExact_twistedChainComplexShortComplex L).homology_exact₂ n
 
 /-- Exactness at `Hₙ(X,A;L)` in the triple sequence. -/
