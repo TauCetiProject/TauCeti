@@ -32,8 +32,10 @@ On the whole Clifford algebra it is visible in odd dimension. There the volume e
 spanning orthogonal list is central, odd, and squares to a scalar `c`, so whenever `W` is finite
 free it acts on `S` by a scalar `λ` with `λ² = c` under `c_P`, and by `-λ` under `c_{P⁻}`.
 
-For finite-dimensional `V` over a field of characteristic not two, `c` is nonzero, so `λ ≠ -λ` and
-the two Fock actions are the two distinct characters of the centre `F ⊕ F ω`. Each of them alone
+The scalar `c` vanishes for some spanning orthogonal lists, such as those containing zero vectors.
+For finite-dimensional `V` over a field of characteristic not two, take instead an orthogonal basis
+of the nondegenerate form `Q`, so that every `Q vᵢ` is nonzero. Then `c` is nonzero, so `λ ≠ -λ`
+and the two Fock actions are the two distinct characters of the centre `F ⊕ F ω`. Each of them alone
 kills one of the two central idempotents `(1 ± λ⁻¹ ω) / 2`, so neither is faithful, but together
 they are: the combined action `x ↦ (c_P(x), c_{P⁻}(x))` is an algebra isomorphism from the
 Clifford algebra onto `End S × End S`. This is the operator form of the odd structure theorem
