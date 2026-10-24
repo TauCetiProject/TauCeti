@@ -73,13 +73,12 @@ private theorem integral_polarizedComplexMeasure_ofSimpleFunc (P : ProjValMeasur
           c • BoundedBorelFunction.indicator B hB 1 := by
       ext x
       by_cases hx : x ∈ B <;> simp [hx]
-    rw [hs, VectorMeasure.integral_indicator_const _ hB, h, map_smul, integral_indicator,
-      smul_apply, inner_smul_right, ← polarizedComplexMeasure_apply,
-      ContinuousLinearMap.mul_apply']
+    rw [hs, VectorMeasure.integral_indicator_const _ hB, h]
+    simp [integral_indicator, inner_smul_right, polarizedComplexMeasure_apply _ _ _ _ hB]
   | @add s t _ hs ht =>
     rw [SimpleFunc.coe_add, VectorMeasure.integral_add (SimpleFunc.integrable_of_isFiniteMeasure s)
-      (SimpleFunc.integrable_of_isFiniteMeasure t), hs, ht, map_add, map_add,
-      add_apply, inner_add_right]
+      (SimpleFunc.integrable_of_isFiniteMeasure t), hs, ht]
+    simp [inner_add_right]
 
 /-- **Matrix elements of the integral against a projection-valued measure.** For a bounded Borel
 symbol `f`, `⟪ψ, (∫ f dP) ξ⟫` is the integral of `f` against the polarized complex measure
@@ -128,6 +127,7 @@ measure. -/
 theorem integral_polarizedComplexMeasure_self (P : ProjValMeasure X H) (f : X → ℂ) (ξ : H) :
     ∫ᵛ x, f x ∂[ContinuousLinearMap.mul ℝ ℂ; P.polarizedComplexMeasure ξ ξ] =
       ∫ x, f x ∂(P.diag ξ) := by
+  -- Following the proof of Mathlib's `MeasureTheory.VectorMeasure.integral_toSignedMeasure`.
   rw [VectorMeasure.integral_eq_setToFun, MeasureTheory.integral_eq_setToFun]
   simp only [variation_polarizedComplexMeasure_self]
   refine setToFun_congr_left' _ _ (fun B hB _ => ?_) f
