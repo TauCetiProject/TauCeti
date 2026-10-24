@@ -6,8 +6,6 @@ Authors: Codex
 module
 
 public import TauCeti.AlgebraicGeometry.GroupAction.Orbit.Translation
-public import Mathlib.AlgebraicGeometry.Morphisms.Immersion
-public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Locus
 
 /-!
 # Scheme models of locally closed orbits
@@ -16,14 +14,14 @@ For a finite-type group scheme acting on a finite-type scheme over an algebraica
 closed field, restrict the scheme-theoretic orbit closure to the open complement of
 the orbit boundary. This gives a locally closed immersion with exactly the geometric
 orbit as its image and a surjective factorization of the orbit morphism. If the group
-is reduced, this orbit scheme is reduced and smooth, even when the ambient scheme is not.
+is reduced, this orbit scheme is reduced, even when the ambient scheme is not.
 Translation by rational group points restricts to automorphisms of the orbit scheme,
 transitive on its closed points.
 
 This construction uses the full scheme-theoretic image and Mathlib's open subschemes.
 It does not assume that a quotient by the stabilizer is represented, and does not
-assert that the orbit morphism is smooth. Smoothness of the orbit scheme uses
-`Scheme.Hom.smooth_of_transitive_on_closedPoints`, which spreads the smooth locus.
+assert that the orbit morphism is smooth. Smoothness of the orbit scheme is proved
+in `TauCeti.AlgebraicGeometry.GroupAction.Orbit.Smooth`.
 
 ## References
 
@@ -59,7 +57,9 @@ theorem mem_orbitOpen (p : orbitClosureScheme G x) :
   have hp : orbitClosureι G x p ∈ closure (orbit G x) := by
     rw [← orbitClosure_def, ← range_orbitClosureι]
     exact ⟨p, rfl⟩
-  exact (mem_coborder_iff_imp.trans (imp_iff_right hp))
+  rw [orbitOpen, Scheme.Hom.mem_preimage, TopologicalSpace.Opens.mem_mk,
+    mem_coborder_iff_imp]
+  exact imp_iff_right hp
 
 /-- The orbit scheme is the open subscheme of its scheme-theoretic closure obtained
 by removing the boundary. For a reduced acting group it is the reduced orbit model. -/
@@ -154,17 +154,12 @@ instance [IsReduced G.left] : IsReduced (orbitScheme G x) := by
 @[simp]
 theorem preimage_orbitOpen (g : 𝟙_ (Over (Spec (.of k))) ⟶ G) :
     (orbitClosureTranslation G x g).hom ⁻¹ᵁ orbitOpen G x = orbitOpen G x := by
-  have heq : (translation X g).hom.left ⁻¹' orbit G x = orbit G x := by
-    rw [← image_translation_orbit G g x, Set.preimage_image_eq _
-      (translation X g).hom.left.isEmbedding.injective]
-    exact (image_translation_orbit G g x).symm
+  let := translationMulAction G X
   ext p
   simp only [SetLike.mem_coe, Scheme.Hom.mem_preimage, mem_orbitOpen]
-  have h := congrArg (fun f : orbitClosureScheme G x ⟶ X.left ↦ f p)
-    (orbitClosureTranslation_hom_ι G x g)
-  simp only [Scheme.Hom.comp_apply] at h
-  rw [h]
-  exact Set.ext_iff.mp heq _
+  rw [← Scheme.Hom.comp_apply, orbitClosureTranslation_hom_ι, Scheme.Hom.comp_apply]
+  simpa only [Set.mem_preimage, translationMulAction_smul] using
+    Set.ext_iff.mp (preimage_smul_orbit g x) (orbitClosureι G x p)
 
 /-- Translation by a rational group point on the locally closed orbit scheme. -/
 def orbitTranslation (g : 𝟙_ (Over (Spec (.of k))) ⟶ G) :
@@ -255,33 +250,7 @@ theorem orbitTranslation_inv_toBase (g : 𝟙_ (Over (Spec (.of k))) ⟶ G) :
 theorem exists_orbitTranslation_eq {y z : orbitScheme G x}
     (hy : y ∈ closedPoints _) (hz : z ∈ closedPoints _) :
     ∃ g : 𝟙_ (Over (Spec (.of k))) ⟶ G, (orbitTranslation G x g).hom y = z := by
-  have : JacobsonSpace X.left := LocallyOfFiniteType.jacobsonSpace X.hom
-  have hp (p : orbitScheme G x) (hp : p ∈ closedPoints _) :
-      orbitι G x p ∈ orbit G x ∩ closedPoints X.left := by
-    have h : orbitι G x p ∈ (orbitι G x) '' closedPoints (orbitScheme G x) := ⟨p, hp, rfl⟩
-    rwa [Scheme.Hom.image_closedPoints_eq_range_inter_closedPoints, range_orbitι] at h
-  have hy' := hp y hy
-  have hz' := hp z hz
-  rw [orbit_inter_closedPoints] at hy' hz'
-  obtain ⟨g, a, ha⟩ := Set.mem_iUnion.mp hy'
-  obtain ⟨h, b, hb⟩ := Set.mem_iUnion.mp hz'
-  rw [Subsingleton.elim (α := Spec (.of k)) b a] at hb
-  refine ⟨h * g⁻¹, (orbitι G x).isEmbedding.injective ?_⟩
-  have heq : (g • x) ≫ (translation X (h * g⁻¹)).hom = h • x := by
-    simp only [comp_translation_hom, toUnit_unit, Category.id_comp, mul_smul,
-      inv_smul_smul]
-  have ht := congrArg (fun f : orbitScheme G x ⟶ X.left ↦ f y)
-    (orbitTranslation_hom_ι G x (h * g⁻¹))
-  simp only [Scheme.Hom.comp_apply] at ht
-  rw [ht, ← ha, ← hb]
-  exact congrArg (fun f : 𝟙_ (Over (Spec (.of k))) ⟶ X ↦ f.left a) heq
-
-/-- Every orbit scheme of a reduced finite-type group over an algebraically closed field
-is smooth. The stabilizer and orbit morphism need not be smooth. -/
-instance [IsReduced G.left] : Smooth (orbitToBase G x) := by
-  apply Scheme.Hom.smooth_of_transitive_on_closedPoints
-  intro y hy z hz
-  obtain ⟨g, hg⟩ := exists_orbitTranslation_eq G x hy hz
-  exact ⟨orbitTranslation G x g, orbitTranslation_hom_toBase G x g, hg⟩
+  exact exists_eq_of_equivariant_of_range_subset_orbit G x (orbitι G x)
+    (range_orbitι G x).le (orbitTranslation G x) (orbitTranslation_hom_ι G x) hy hz
 
 end TauCeti.SchemeAction

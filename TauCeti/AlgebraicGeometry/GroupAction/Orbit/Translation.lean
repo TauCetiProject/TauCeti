@@ -161,28 +161,9 @@ theorem exists_orbitClosureTranslation_eq_of_isClosed (hc : IsClosed (orbit G x)
     {y z : orbitClosureScheme G x} (hy : y ∈ closedPoints _) (hz : z ∈ closedPoints _) :
     ∃ g : 𝟙_ (Over (Spec (.of k))) ⟶ G,
       (orbitClosureTranslation G x g).hom y = z := by
-  have : JacobsonSpace X.left := LocallyOfFiniteType.jacobsonSpace X.hom
-  have hp (p : orbitClosureScheme G x) (hp : p ∈ closedPoints _) :
-      orbitClosureι G x p ∈ orbit G x ∩ closedPoints X.left := by
-    have h : orbitClosureι G x p ∈
-        (orbitClosureι G x) '' closedPoints (orbitClosureScheme G x) := ⟨p, hp, rfl⟩
-    rwa [Scheme.Hom.image_closedPoints_eq_range_inter_closedPoints,
-      range_orbitClosureι, orbitClosure_def, hc.closure_eq] at h
-  have hy' := hp y hy
-  have hz' := hp z hz
-  rw [orbit_inter_closedPoints] at hy' hz'
-  obtain ⟨g, a, ha⟩ := Set.mem_iUnion.mp hy'
-  obtain ⟨h, b, hb⟩ := Set.mem_iUnion.mp hz'
-  rw [Subsingleton.elim (α := Spec (.of k)) b a] at hb
-  refine ⟨h * g⁻¹, (orbitClosureι G x).isEmbedding.injective ?_⟩
-  have heq : (g • x) ≫ (translation X (h * g⁻¹)).hom = h • x := by
-    simp only [comp_translation_hom, toUnit_unit, Category.id_comp, mul_smul,
-      inv_smul_smul]
-  have ht := congrArg (fun f : orbitClosureScheme G x ⟶ X.left ↦ f y)
-    (orbitClosureTranslation_hom_ι G x (h * g⁻¹))
-  simp only [Scheme.Hom.comp_apply] at ht
-  rw [ht, ← ha, ← hb]
-  exact congrArg (fun f : 𝟙_ (Over (Spec (.of k))) ⟶ X ↦ f.left a) heq
+  apply exists_eq_of_equivariant_of_range_subset_orbit G x (orbitClosureι G x)
+    (e := orbitClosureTranslation G x) _ (orbitClosureTranslation_hom_ι G x) hy hz
+  rw [range_orbitClosureι, orbitClosure_def, hc.closure_eq]
 
 end FiniteType
 
