@@ -14,6 +14,10 @@ public import Mathlib.Algebra.Algebra.Operations
 Extension of scalars commutes with taking images of submodules under linear maps, and preserves
 powers of submodules of an algebra. The latter applies, in particular, to the homogeneous pieces of
 tensor and exterior algebras, defined as powers of their generators.
+
+For submodules `p` and `q`, every element of `(p ⊔ q) ⊗[R] M` is the sum of images of elements of
+`p ⊗[R] M` and `q ⊗[R] M` under the maps induced by the inclusions
+(`Submodule.exists_eq_rTensor_inclusion_add`).
 -/
 
 public section
@@ -42,6 +46,27 @@ theorem _root_.LinearMap.baseChange_range (f : M →ₗ[R] N) :
   rw [← Submodule.map_top, baseChange_map, baseChange_top, Submodule.map_top]
 
 end Map
+
+section Inclusion
+
+variable {R M N : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+  [AddCommMonoid N] [Module R N]
+
+/-- The images of `p ⊗[R] M` and `q ⊗[R] M` span `(p ⊔ q) ⊗[R] M`. -/
+theorem exists_eq_rTensor_inclusion_add (p q : Submodule R N) (t : ↥(p ⊔ q) ⊗[R] M) :
+    ∃ a b, t = (inclusion le_sup_left).rTensor M a + (inclusion le_sup_right).rTensor M b := by
+  induction t with
+  | tmul x m =>
+    obtain ⟨y, hy, z, hz, hyz⟩ := mem_sup.mp x.2
+    refine ⟨⟨y, hy⟩ ⊗ₜ m, ⟨z, hz⟩ ⊗ₜ m, ?_⟩
+    rw [LinearMap.rTensor_tmul, LinearMap.rTensor_tmul, ← TensorProduct.add_tmul]
+    exact congrArg (· ⊗ₜ m) (Subtype.ext hyz.symm)
+  | add t₁ t₂ h₁ h₂ =>
+    obtain ⟨a₁, b₁, rfl⟩ := h₁
+    obtain ⟨a₂, b₂, rfl⟩ := h₂
+    exact ⟨a₁ + a₂, b₁ + b₂, by rw [map_add, map_add, add_add_add_comm]⟩
+
+end Inclusion
 
 variable {R A B : Type*} [CommSemiring R] [CommSemiring A] [Semiring B]
 variable [Algebra R A] [Algebra R B]
