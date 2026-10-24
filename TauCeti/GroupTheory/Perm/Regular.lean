@@ -66,9 +66,12 @@ theorem fullCycleType_permutationRepresentation (e : G ≃ Fin n) (g : G) :
 /-- The regular image of `G` in `Equiv.Perm (Fin n)` has the order of `G`. -/
 @[simp]
 theorem natCard_permutationRepresentation_range (e : G ≃ Fin n) :
-    Nat.card (permutationRepresentation (G := G) e).range = Nat.card G :=
-  (Nat.card_congr
-    (MonoidHom.ofInjective (permutationRepresentation_injective (G := G) e)).toEquiv).symm
+    Nat.card {p : Perm (Fin n) // ∃ g : G, permutationRepresentation e g = p} =
+      Nat.card G := by
+  -- Explicit range membership matches the simplifier's normal form.
+  simpa only [MonoidHom.mem_range] using
+    (Nat.card_congr
+      (MonoidHom.ofInjective (permutationRepresentation_injective (G := G) e)).toEquiv).symm
 
 /-- **Almost-conjugacy of regular images.** Number two groups `G` and `G'` by `Fin n`. Their
 regular images in `Equiv.Perm (Fin n)` are almost conjugate exactly when there is a bijection
