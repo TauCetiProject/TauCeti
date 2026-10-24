@@ -50,21 +50,16 @@ theorem isGloballyGenerated_of_smooth_of_two_mul_genus_le_eulerDegree (L : Inver
     (hL : 2 * (finrank k (Scheme.Modules.Cohomology (trivial X).obj 1) : ℤ) ≤ L.eulerDegree k) :
     L.IsGloballyGenerated := by
   have := SmoothOfRelativeDimension.smooth 1 (X ↘ Spec (.of k))
-  have : IsIntegral X := GeometricallyIntegral.isIntegral_of_subsingleton (X ↘ Spec (.of k))
+  obtain ⟨hI, h⟩ := high_degree_hypotheses_of_smooth (k := k) (X := X)
+  have := hI
+  obtain ⟨hDVR, hcoheight, hF, hk⟩ := h
+  have := hDVR
   have : IsLocallyNoetherian X := LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
   have : CompactSpace X := compactSpace_of_universallyClosed (X ↘ Spec (.of k))
   have : IsNoetherian X := {}
-  have : ∀ x : X, IsRegularLocalRing (X.presheaf.stalk x) :=
-    isRegularLocalRing_stalk_of_smooth (X ↘ Spec (.of k))
-  have : ∀ y : CodimensionOnePoint X,
-      IsDiscreteValuationRing (X.presheaf.stalk (y : X)) := fun y ↦ inferInstance
   have hdim : topologicalKrullDim X = 1 :=
     topologicalKrullDim_eq_of_smoothOfRelativeDimension (X ↘ Spec (.of k))
   have : X.IsCurveOver k := { topologicalKrullDim_eq_one := hdim }
-  have hcoheight (x : X) : coheight x ≤ 1 := Scheme.IsCurveOver.coheight_le_one (k := k) x
-  have hF : IsFunctionField k X.functionField := (isFunctionField_functionField_iff k).mpr hdim
-  have hk : IsIntegrallyClosedIn k X.functionField :=
-    isIntegrallyClosedIn_functionField_of_geometricallyIntegral
   have := finiteDimensional_cohomology_one_trivial_of_isProper k hdim
   have : JacobsonSpace X := LocallyOfFiniteType.jacobsonSpace (X ↘ Spec (.of k))
   obtain ⟨D, ⟨e⟩⟩ := SchemeWeilDivisor.exists_nonempty_iso_sheaf hcoheight L
