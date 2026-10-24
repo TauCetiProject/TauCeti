@@ -222,6 +222,14 @@ theorem mem_weightedRingOfDefinition (P : PairOfDefinition A) (hT : IsWeightFami
     f ∈ P.weightedRingOfDefinition hT ↔ f ∈ weightedNhd T hT P.ringOfDefinition.toAddSubgroup :=
   mem_weightedSubring
 
+/-- With trivial weights, a ring of definition equal to the whole coefficient ring gives
+all restricted series as the ring of definition. -/
+theorem weightedRingOfDefinition_one_weight_eq_top (P : PairOfDefinition A)
+    (hP : P.ringOfDefinition = ⊤) :
+    P.weightedRingOfDefinition (k := k) isWeightFamily_one_weight = ⊤ := by
+  ext f
+  simp [mem_weightedNhd, weightMul_one_weight, hP]
+
 /-- The constant series `A₀ → A₀⟨X⟩_T`, the structure map of the ring of definition. -/
 noncomputable def weightedRingOfDefinitionC (P : PairOfDefinition A) (hT : IsWeightFamily T) :
     P.ringOfDefinition →+* P.weightedRingOfDefinition hT :=

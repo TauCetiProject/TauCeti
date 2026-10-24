@@ -247,3 +247,12 @@ theorem Ideal.adicTopology_eq_of_radical_eq {R : Type*} [CommRing R] {I J : Idea
   letI := I.adicTopology
   -- for the `I`-adic topology, `IsAdic I` is `rfl` by the definition of `IsAdic`
   IsAdic.of_radical_eq (I := I) rfl hIfg hJfg h
+
+namespace TauCeti
+
+/-- An ideal defining an adic topology is open. -/
+theorem IsAdic.isOpen_ideal {R : Type*} [CommRing R] [TopologicalSpace R] {I : Ideal R}
+    (hI : IsAdic I) : IsOpen (I : Set R) := by
+  simpa only [pow_one] using hI.isOpen_pow 1
+
+end TauCeti
