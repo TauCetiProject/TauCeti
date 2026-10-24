@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.LaurentSeries
+public import TauCeti.RingTheory.HahnSeries.Map
 public import TauCeti.RingTheory.HahnSeries.PowerSeries
 public import TauCeti.RingTheory.PowerSeries.Derivative
 public import TauCeti.RingTheory.PowerSeries.HasseDeriv.Basic
@@ -25,7 +26,8 @@ fraction-field constructions such as `IsFractionRing.algEquivOfAlgEquiv` require
 `R`-algebra equivalence with `A⟦X⟧` to one with `A⸨X⸩`. This file shows that the algebra action
 of `R` on `A⸨X⸩` agrees with the coefficientwise action, and records that, over a field `K`, a
 nonzero Laurent series `f ∈ K⸨X⸩` has valuation `exp (-ord f)`, since its power series part is a
-unit of `K⟦X⟧`.
+unit of `K⟦X⟧`. Consequently a field embedding `K → L`, applied to every coefficient, preserves
+valuations.
 
 The second part proves the product rule for the derivative of Laurent series,
 `(f * g)' = f' * g + f * g'`. Mathlib defines `LaurentSeries.derivative` only as a linear map,
@@ -34,13 +36,14 @@ with a ring homomorphism into `R⸨X⸩` gives a derivation, as for Laurent expa
 It is reduced to the product rule for power series by writing a Laurent series as a monomial
 times a power series.
 
-The third part computes the residue, the coefficient of `X⁻¹`, of `φ ^ n * φ'` for a power
-series `φ` of order one over a field and every integer `n`: it is `1` for `n = -1` and `0`
-otherwise. This is the formal statement that the residue is unchanged by the substitution
-`X ↦ φ`. For `n ≠ -1` in characteristic zero, `φ ^ n * φ'` is the derivative of
-`φ ^ (n + 1) / (n + 1)`; in characteristic `p` this fails when `p ∣ n + 1`, and the proof
-uses `PowerSeries.coeff_succ_pow_succ_eq_coeff_pow_mul_derivative` instead. By linearity this
-extends to every Laurent series: a substitution `X ↦ φ` preserves the residue of `f(X) dX`.
+The third part computes the residue of the formal one-form `φ ^ n * φ' dX`
+for any power series `φ` over a field and every integer `n`:
+it is `(φ.order.toNat : k)` for `n = -1` and `0` otherwise. For `n ≠ -1` in characteristic zero,
+`φ ^ n * φ'` is the derivative of `φ ^ (n + 1) / (n + 1)`; in characteristic `p` this fails when
+`p ∣ n + 1`, and the proof uses
+`PowerSeries.nsmul_coeff_mul_succ_pow_succ_eq_coeff_X_mul_pow_mul_derivative` instead. By linearity
+this extends to every Laurent series: a substitution `X ↦ φ` multiplies the residue of `f(X) dX`
+by `φ.order.toNat`, and in particular preserves the residue when `φ.order = 1`.
 
 ## Main results
 
@@ -53,15 +56,22 @@ extends to every Laurent series: a substitution `X ↦ φ` preserves the residue
   scalar towers from the coefficientwise action to the algebra action.
 * `TauCeti.LaurentSeries.valuation_eq_exp_neg_order`: a nonzero Laurent series `f` has valuation
   `exp (-ord f)`; `TauCeti.LaurentSeries.valuation_coe` gives the same for a nonzero power series.
+* `TauCeti.LaurentSeries.valuation_mapRingHom`: applying a field embedding to the coefficients
+  preserves the valuation.
+* `PowerSeries.order_coe` and `PowerSeries.orderTop_coe_of_ne_zero`: the order of a power series in
+  `R⸨X⸩` agrees with its power series order.
 * `LaurentSeries.derivative_mul`: the product rule for the derivative of Laurent series.
 * `PowerSeries.coe_derivative` and `PowerSeries.coe_hasseDeriv`: the derivative and the Hasse
   derivatives of Laurent series extend those of power series.
 * `LaurentSeries.valuation_derivative_sub_zsmul_single_mul_le`: if `f` vanishes to order at least
   `m`, so does `f' - m X⁻¹ f`.
-* `PowerSeries.coeff_neg_one_coe_zpow_mul_derivative`: the residue of `φ ^ n * φ'` for a power
-  series `φ` of order one is `1` if `n = -1` and `0` otherwise.
-* `LaurentSeries.coeff_neg_one_map_mul_derivative`: the residue of `f(φ) φ'` is the residue of
-  `f`, for the substitution `X ↦ φ`.
+* `PowerSeries.coeff_neg_one_coe_zpow_mul_derivative_eq_ite` and
+  `PowerSeries.coeff_neg_one_coe_zpow_mul_derivative`: the residue of `φ ^ n * φ'` for a power
+  series `φ` is `φ.order.toNat` if `n = -1` and `0` otherwise (in particular `1` vs `0` when
+  `φ.order = 1`).
+* `LaurentSeries.coeff_neg_one_map_mul_derivative_eq_nsmul` and
+  `LaurentSeries.coeff_neg_one_map_mul_derivative`: for a substitution `X ↦ φ`, the residue of
+  `f(φ) φ'` is `φ.order.toNat • f.coeff (-1)` (and `f.coeff (-1)` when `φ.order = 1`).
 
 ## References
 
@@ -72,6 +82,39 @@ extends to every Laurent series: a substitution `X ↦ φ` preserves the residue
 public section
 
 open scoped LaurentSeries PowerSeries
+
+namespace PowerSeries
+
+open HahnSeries LaurentSeries
+
+/-- The `WithTop ℤ`-valued order of a nonzero power series coerced to `R⸨X⸩` is
+`(f.order.toNat : ℤ)`. -/
+theorem orderTop_coe_of_ne_zero {R : Type*} [Semiring R] {f : R⟦X⟧} (hf : f ≠ 0) :
+    (f : R⸨X⸩).orderTop = (f.order.toNat : ℤ) := by
+  have hord : f.order = (f.order.toNat : ℕ∞) :=
+    (ENat.natCast_toNat_eq_self.mpr (order_eq_top.not.mpr hf)).symm
+  refine orderTop_eq_of_le ?_ fun g hg ↦ ?_
+  · rw [mem_support, coeff_coe]
+    simpa using coeff_order hf
+  · rw [mem_support, coeff_coe] at hg
+    split_ifs at hg with hg0
+    · exact (hg rfl).elim
+    · have hle : f.order.toNat ≤ g.natAbs := by
+        rw [← Nat.cast_le (α := ℕ∞), ← hord]
+        exact order_le g.natAbs hg
+      omega
+
+/-- The integer order of a power series coerced to `R⸨X⸩` is `(f.order.toNat : ℤ)`. -/
+@[simp]
+theorem order_coe {R : Type*} [Semiring R] (f : R⟦X⟧) :
+    (f : R⸨X⸩).order = f.order.toNat := by
+  rcases eq_or_ne f 0 with rfl | hf
+  · simp
+  · have hf' : (f : R⸨X⸩) ≠ 0 := (map_ne_zero_iff _ ofPowerSeries_injective).mpr hf
+    exact WithTop.coe_inj.mp
+      ((order_eq_orderTop_of_ne_zero hf').trans (orderTop_coe_of_ne_zero hf))
+
+end PowerSeries
 
 namespace TauCeti.LaurentSeries
 
@@ -127,12 +170,17 @@ theorem valuation_eq_exp_neg_order {f : K⸨X⸩} (hf : f ≠ 0) : Valued.v f = 
 /-- A nonzero power series `g` has valuation `exp (-ord g)` in `K⸨X⸩`. -/
 theorem valuation_coe {g : K⟦X⟧} (hg : g ≠ 0) :
     Valued.v (g : K⸨X⸩) = exp (-(g.order.toNat : ℤ)) := by
-  have hu : IsUnit g.divXPowOrder := by
-    rw [isUnit_iff_constantCoeff, isUnit_iff_ne_zero]
-    exact constantCoeff_divXPowOrder_eq_zero_iff.not.mpr hg
-  nth_rw 1 [← X_pow_order_mul_divXPowOrder (f := g)]
-  rw [PowerSeries.coe_mul, map_mul, PowerSeries.coe_pow, _root_.LaurentSeries.valuation_X_pow,
-    valuation_coe_of_isUnit hu, mul_one]
+  rw [valuation_eq_exp_neg_order ((map_ne_zero_iff _ ofPowerSeries_injective).mpr hg), order_coe]
+
+/-- Applying a field embedding `σ : K →+* L` to the coefficients preserves the valuation. -/
+@[simp]
+theorem valuation_mapRingHom {L : Type*} [Field L] (σ : K →+* L) (f : K⸨X⸩) :
+    Valued.v (mapRingHom σ f) = Valued.v f := by
+  obtain rfl | hf := eq_or_ne f 0
+  · simp only [map_zero]
+  rw [valuation_eq_exp_neg_order hf,
+    valuation_eq_exp_neg_order ((map_ne_zero_iff _ (mapRingHom_injective σ.injective)).mpr hf),
+    mapRingHom_apply, order_map_of_injective f σ.injective]
 
 end Valuation
 
@@ -277,9 +325,95 @@ theorem valuation_derivative_sub_zsmul_single_mul_le {K : Type*} [Field K] {m : 
 
 end LaurentSeries
 
+namespace TauCeti
+
+open HahnSeries _root_.LaurentSeries PowerSeries
+
+private theorem inv_pow_coe_X_pow_mul {k : Type*} [Field k] (u : k⟦X⟧)
+    (hu0 : constantCoeff u ≠ 0) (e m : ℕ) : (((X ^ e * u : k⟦X⟧) : k⸨X⸩) ^ (m + 1))⁻¹ =
+    single (-((e * (m + 1) : ℕ) : ℤ)) (1 : k) * ((u⁻¹ ^ (m + 1) : k⟦X⟧) : k⸨X⸩) := by
+  refine inv_eq_of_mul_eq_one_right ?_
+  have hX : (X ^ e * u) ^ (m + 1) * u⁻¹ ^ (m + 1) = X ^ (e * (m + 1)) := by
+    rw [mul_pow, ← pow_mul, mul_assoc, ← mul_pow, mul_comm u,
+      PowerSeries.inv_mul_cancel u hu0, one_pow, mul_one]
+  rw [← coe_pow, mul_left_comm, ← coe_mul, hX, ofPowerSeries_X_pow]
+  simp
+
+private theorem inv_pow_mul_X_derivative_X_pow_mul {k : Type*} [Field k]
+    (u : k⟦X⟧) (hvu : u⁻¹ * u = 1) (e m : ℕ) : u⁻¹ ^ (m + 1) * (X * d⁄dX (X ^ e * u)) =
+    X ^ e * (e • u⁻¹ ^ m + X * (u⁻¹ ^ (m + 1) * d⁄dX u)) := by
+  have hXe : (X : k⟦X⟧) * d⁄dX (X ^ e) = e • X ^ e := by
+    rcases e with _ | d
+    · simp
+    · rw [derivative_pow, derivative_X, mul_one, nsmul_eq_mul, Nat.add_sub_cancel]
+      ring
+  calc u⁻¹ ^ (m + 1) * (X * d⁄dX (X ^ e * u))
+      = u⁻¹ ^ m * (u⁻¹ * u) * (X * d⁄dX (X ^ e)) +
+          X ^ e * (X * (u⁻¹ ^ (m + 1) * d⁄dX u)) := by
+        rw [Derivation.leibniz, smul_eq_mul, smul_eq_mul, pow_succ]
+        ring
+    _ = X ^ e * (e • u⁻¹ ^ m + X * (u⁻¹ ^ (m + 1) * d⁄dX u)) := by
+        rw [hvu, mul_one, hXe, nsmul_eq_mul, nsmul_eq_mul]
+        ring
+
+private theorem coeff_neg_one_eq_coeff_zero_X_mul {R : Type*} [CommRing R] (f : R⸨X⸩) :
+    f.coeff (-1) = (((X : R⟦X⟧) : R⸨X⸩) * f).coeff 0 := by
+  rw [ofPowerSeries_X, coeff_single_mul, zero_sub, one_mul]
+
+private theorem coeff_zero_single_neg_mul_X_pow_mul_coe {k : Type*} [Field k]
+    (e m : ℕ) (f : k⟦X⟧) :
+    (single (-((e * (m + 1) : ℕ) : ℤ)) (1 : k) *
+      ((X ^ e * f : k⟦X⟧) : k⸨X⸩)).coeff 0 = coeff (e * m) f := by
+  have hexp : -((e * (m + 1) : ℕ) : ℤ) + (e : ℤ) = -((e * m : ℕ) : ℤ) := by
+    push_cast
+    ring
+  rw [coe_mul, ofPowerSeries_X_pow, ← mul_assoc, single_mul_single, one_mul, hexp]
+  rw [coeff_single_mul, one_mul, zero_sub, neg_neg, coeff_coe,
+    ite_eq_right (show ¬((e * m : ℕ) : ℤ) < 0 by omega), Int.natAbs_natCast]
+
+end TauCeti
+
 namespace PowerSeries
 
 open HahnSeries LaurentSeries
+
+/-- **The residue of `φ ^ n dφ` for a power series `φ` of arbitrary order.** Over a field `k`, for
+any power series `φ : k⟦X⟧` and integer `n : ℤ`, the coefficient of `X⁻¹` in `φ ^ n * φ'` is
+`(φ.order.toNat : k)` if `n = -1` and `0` otherwise. -/
+theorem coeff_neg_one_coe_zpow_mul_derivative_eq_ite {k : Type*} [Field k] (φ : k⟦X⟧) (n : ℤ) :
+    ((φ : k⸨X⸩) ^ n * LaurentSeries.derivative k (φ : k⸨X⸩)).coeff (-1) =
+      if n = -1 then (φ.order.toNat : k) else 0 := by
+  rcases eq_or_ne φ 0 with rfl | hφ0
+  · simp
+  rw [← coe_derivative]
+  rcases n with m | m
+  · -- For `n ≥ 0` the product is a power series.
+    rw [Int.ofNat_eq_natCast, zpow_natCast, ← coe_pow, ← coe_mul, coeff_coe]
+    simp [show (m : ℤ) ≠ -1 by omega]
+  · -- Write `φ = X ^ e * u` with `e = φ.order.toNat` and `u = φ.divXPowOrder` a unit power series.
+    set e := φ.order.toNat
+    set u := φ.divXPowOrder
+    have hu0 : constantCoeff u ≠ 0 := constantCoeff_divXPowOrder_eq_zero_iff.not.mpr hφ0
+    have hvu : u⁻¹ * u = 1 := PowerSeries.inv_mul_cancel u hu0
+    have hφ : φ = X ^ e * u := (X_pow_order_mul_divXPowOrder (f := φ)).symm
+    rw [TauCeti.coeff_neg_one_eq_coeff_zero_X_mul, hφ, zpow_negSucc,
+      TauCeti.inv_pow_coe_X_pow_mul u hu0]
+    have hproduct : ((X : k⟦X⟧) : k⸨X⸩) *
+        (single (-((e * (m + 1) : ℕ) : ℤ)) (1 : k) * ((u⁻¹ ^ (m + 1) : k⟦X⟧) : k⸨X⸩) *
+          ((d⁄dX (X ^ e * u) : k⟦X⟧) : k⸨X⸩)) =
+        single (-((e * (m + 1) : ℕ) : ℤ)) (1 : k) *
+          ((u⁻¹ ^ (m + 1) * (X * d⁄dX (X ^ e * u)) : k⟦X⟧) : k⸨X⸩) := by
+      rw [coe_mul, coe_mul]
+      ring
+    rw [hproduct, TauCeti.inv_pow_mul_X_derivative_X_pow_mul u hvu,
+      TauCeti.coeff_zero_single_neg_mul_X_pow_mul_coe, map_add, map_nsmul]
+    rcases m with _ | m
+    · simp
+    · rw [ite_eq_right (show Int.negSucc (m + 1) ≠ -1 by omega)]
+      let U : k⟦X⟧ˣ := ⟨u, u⁻¹, by rwa [mul_comm], hvu⟩
+      simpa only [U, Units.val_mk, Units.inv_mk] using
+        nsmul_coeff_val_inv_pow_succ_add_coeff_X_mul_val_inv_pow_add_two_mul_derivative_eq_zero
+          U e m
 
 /-- **The residue of `φ ^ n dφ`.** For a power series `φ` of order one over a field, the
 coefficient of `X⁻¹` in the Laurent series `φ ^ n * φ'` is `1` if `n = -1` and `0` otherwise.
@@ -288,46 +422,7 @@ theorem coeff_neg_one_coe_zpow_mul_derivative {k : Type*} [Field k] {φ : k⟦X�
     (n : ℤ) :
     ((φ : k⸨X⸩) ^ n * LaurentSeries.derivative k (φ : k⸨X⸩)).coeff (-1) =
       if n = -1 then 1 else 0 := by
-  rw [← coe_derivative]
-  rcases n with m | m
-  · -- For `n ≥ 0` the product is a power series.
-    rw [Int.ofNat_eq_natCast, zpow_natCast, ← coe_pow, ← coe_mul, coeff_coe]
-    simp [show (m : ℤ) ≠ -1 by omega]
-  · -- Write `φ = X * u` with `u` a unit power series.
-    obtain ⟨u, hu0, rfl⟩ : ∃ u : k⟦X⟧, constantCoeff u ≠ 0 ∧ φ = X * u := by
-      refine ⟨φ.divXPowOrder, ?_, ?_⟩
-      · rw [Ne, constantCoeff_divXPowOrder_eq_zero_iff]
-        rintro rfl
-        simp at hφ
-      · conv_lhs => rw [← X_pow_order_mul_divXPowOrder (f := φ)]
-        simp [hφ]
-    have hvu : u⁻¹ * u = 1 := PowerSeries.inv_mul_cancel u hu0
-    have hinv : (((X * u : k⟦X⟧) : k⸨X⸩) ^ (m + 1))⁻¹ =
-        single (-((m + 1 : ℕ) : ℤ)) (1 : k) * ((u⁻¹ ^ (m + 1) : k⟦X⟧) : k⸨X⸩) := by
-      refine inv_eq_of_mul_eq_one_right ?_
-      -- Cancel `u` in `k⟦X⟧`, then cancel `X ^ (m + 1)` against `single (-(m + 1)) 1`.
-      have hX : (X * u) ^ (m + 1) * u⁻¹ ^ (m + 1) = X ^ (m + 1) := by
-        rw [mul_pow, mul_assoc, ← mul_pow, mul_comm u, hvu, one_pow, mul_one]
-      rw [← coe_pow, mul_left_comm, ← coe_mul, hX, ofPowerSeries_X_pow]
-      simp
-    rw [zpow_negSucc, hinv, mul_assoc, ← coe_mul, coeff_single_mul, one_mul, coeff_coe,
-      ite_eq_right (show ¬(-1 - -((m + 1 : ℕ) : ℤ) < 0) by omega),
-      show (-1 - -((m + 1 : ℕ) : ℤ)).natAbs = m by omega]
-    -- Since `u⁻¹ * u = 1`, `u⁻¹ ^ (m + 1) * (X * u)'` is `u⁻¹ ^ m + X * u⁻¹ ^ (m + 1) * u'`.
-    have hd : u⁻¹ ^ (m + 1) * d⁄dX (X * u) = u⁻¹ ^ m + X * (u⁻¹ ^ (m + 1) * d⁄dX u) := by
-      rw [Derivation.leibniz, derivative_X, smul_eq_mul, smul_eq_mul, mul_one, pow_succ]
-      linear_combination u⁻¹ ^ m * hvu
-    rw [hd, map_add]
-    rcases m with _ | m
-    · simp
-    · -- Since `(u⁻¹)' = -(u⁻¹) ^ 2 * u'`, the remaining coefficient is that of
-      -- `u⁻¹ ^ (m + 1) - X * u⁻¹ ^ m * (u⁻¹)'`, which vanishes by
-      -- `coeff_succ_pow_succ_eq_coeff_pow_mul_derivative`.
-      have hv : u⁻¹ ^ (m + 2) * d⁄dX u = -(u⁻¹ ^ m * d⁄dX u⁻¹) := by
-        rw [derivative_inv']
-        ring
-      rw [hv, coeff_succ_X_mul, map_neg, ← coeff_succ_pow_succ_eq_coeff_pow_mul_derivative]
-      simp [show Int.negSucc (m + 1) ≠ -1 by omega]
+  rw [coeff_neg_one_coe_zpow_mul_derivative_eq_ite, hφ, ENat.toNat_one, Nat.cast_one]
 
 end PowerSeries
 
@@ -335,18 +430,18 @@ namespace LaurentSeries
 
 open HahnSeries
 
-/-- **Residues are invariant under substitution.** Let `ψ` be a ring endomorphism of `K⸨X⸩`
-fixing the constants, sending power series to power series, and sending `X` to a power series `φ`
-of order one, such as the substitution `X ↦ φ`. Then the coefficient of `X⁻¹` in `ψ f * φ'` is
-the coefficient of `X⁻¹` in `f`: the residue of `f(X) dX` equals that of `f(φ) dφ`. -/
-theorem coeff_neg_one_map_mul_derivative {K : Type*} [Field K] (ψ : K⸨X⸩ →+* K⸨X⸩)
+/-- **The residue under a general-order substitution.** Let `ψ` be a ring endomorphism of `K⸨X⸩`
+fixing the constants, sending power series to power series, and sending `X` to a power series `φ`,
+such as the substitution `X ↦ φ`. Then the coefficient of `X⁻¹` in `ψ f * φ'` is `φ.order.toNat`
+times the coefficient of `X⁻¹` in `f`. -/
+theorem coeff_neg_one_map_mul_derivative_eq_nsmul {K : Type*} [Field K] (ψ : K⸨X⸩ →+* K⸨X⸩)
     (hC : ∀ c : K, ψ (C c) = C c)
-    (hψ : ∀ f : K⸨X⸩, Valued.v f ≤ 1 → Valued.v (ψ f) ≤ 1) {φ : K⟦X⟧} (hφ : φ.order = 1)
+    (hψ : ∀ f : K⸨X⸩, Valued.v f ≤ 1 → Valued.v (ψ f) ≤ 1) {φ : K⟦X⟧}
     (hX : ψ (single 1 1) = φ) (f : K⸨X⸩) :
-    (ψ f * derivative K (φ : K⸨X⸩)).coeff (-1) = f.coeff (-1) := by
+    (ψ f * derivative K (φ : K⸨X⸩)).coeff (-1) = φ.order.toNat • f.coeff (-1) := by
   -- Both sides vanish on power series.
   have base (f : K⸨X⸩) (hf : Valued.v f ≤ 1) :
-      (ψ f * derivative K (φ : K⸨X⸩)).coeff (-1) = f.coeff (-1) := by
+      (ψ f * derivative K (φ : K⸨X⸩)).coeff (-1) = φ.order.toNat • f.coeff (-1) := by
     obtain ⟨F, rfl⟩ := (val_le_one_iff_eq_coe K f).mp hf
     obtain ⟨G, hG⟩ := (val_le_one_iff_eq_coe K (ψ F)).mp (hψ F hf)
     rw [← hG, ← PowerSeries.coe_derivative, ← PowerSeries.coe_mul, PowerSeries.coeff_coe,
@@ -354,17 +449,20 @@ theorem coeff_neg_one_map_mul_derivative {K : Type*} [Field K] (ψ : K⸨X⸩ �
     simp
   -- Both sides agree on monomials, by the residue of `φ ^ j * φ'`.
   have mono (j : ℤ) (c : K) :
-      (ψ (single j c) * derivative K (φ : K⸨X⸩)).coeff (-1) = (single j c : K⸨X⸩).coeff (-1) := by
+      (ψ (single j c) * derivative K (φ : K⸨X⸩)).coeff (-1) =
+        φ.order.toNat • (single j c : K⸨X⸩).coeff (-1) := by
     -- The substitution sends `c X ^ j` to `c φ ^ j`.
     have h : ψ (single j c) = C c * (φ : K⸨X⸩) ^ j := by
       rw [← hC, ← hX, ← map_zpow₀, ← map_mul]
       simp [← RatFunc.single_zpow]
     rw [h, mul_assoc, C_mul_eq_smul, coeff_smul,
-      PowerSeries.coeff_neg_one_coe_zpow_mul_derivative hφ]
-    simp [coeff_single, eq_comm]
+      PowerSeries.coeff_neg_one_coe_zpow_mul_derivative_eq_ite φ j, coeff_single]
+    rcases eq_or_ne j (-1) with rfl | hj
+    · simp [nsmul_eq_mul, mul_comm]
+    · simp [hj, hj.symm]
   -- Induction on the order of the pole.
   have key (d : ℕ) (f : K⸨X⸩) (hf : Valued.v f ≤ WithZero.exp (d : ℤ)) :
-      (ψ f * derivative K (φ : K⸨X⸩)).coeff (-1) = f.coeff (-1) := by
+      (ψ f * derivative K (φ : K⸨X⸩)).coeff (-1) = φ.order.toNat • f.coeff (-1) := by
     induction d generalizing f with
     | zero => exact base f (by simpa using hf)
     | succ d ih =>
@@ -381,9 +479,22 @@ theorem coeff_neg_one_map_mul_derivative {K : Type*} [Field K] (ψ : K⸨X⸩ �
           = (ψ (f - s) * derivative K (φ : K⸨X⸩)).coeff (-1) +
               (ψ s * derivative K (φ : K⸨X⸩)).coeff (-1) := by
             rw [map_sub, sub_mul, coeff_sub, sub_add_cancel]
-        _ = f.coeff (-1) := by rw [ih _ hg, mono, coeff_sub, sub_add_cancel]
+        _ = φ.order.toNat • f.coeff (-1) := by
+            rw [ih _ hg, mono, ← smul_add, ← coeff_add, sub_add_cancel]
   refine key (-f.order).toNat f ?_
   rw [← neg_neg ((-f.order).toNat : ℤ), valuation_le_iff_coeff_lt_eq_zero]
   exact fun n hn ↦ coeff_eq_zero_of_lt_order (by omega)
+
+/-- **Residues are invariant under a coordinate-change substitution (`ord φ = 1`).** Let `ψ` be a
+ring endomorphism of `K⸨X⸩` fixing the constants, sending power series to power series, and sending
+`X` to a power series `φ` of order one, such as the substitution `X ↦ φ`. Then the coefficient of
+`X⁻¹` in `ψ f * φ'` is the coefficient of `X⁻¹` in `f`: the residue of `f(X) dX` equals that of
+`f(φ) dφ`. -/
+theorem coeff_neg_one_map_mul_derivative {K : Type*} [Field K] (ψ : K⸨X⸩ →+* K⸨X⸩)
+    (hC : ∀ c : K, ψ (C c) = C c)
+    (hψ : ∀ f : K⸨X⸩, Valued.v f ≤ 1 → Valued.v (ψ f) ≤ 1) {φ : K⟦X⟧} (hφ : φ.order = 1)
+    (hX : ψ (single 1 1) = φ) (f : K⸨X⸩) :
+    (ψ f * derivative K (φ : K⸨X⸩)).coeff (-1) = f.coeff (-1) := by
+  rw [coeff_neg_one_map_mul_derivative_eq_nsmul ψ hC hψ hX f, hφ, ENat.toNat_one, one_smul]
 
 end LaurentSeries

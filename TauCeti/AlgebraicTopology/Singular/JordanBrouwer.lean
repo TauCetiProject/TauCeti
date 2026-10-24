@@ -229,12 +229,10 @@ theorem natCard_zerothHomotopy_sphere_compl_range_eq_two (hEF : finrank ℝ F = 
     exact not_subsingleton K (ModuleCat.subsingleton_of_isZero
       ((isZero_reducedSingularHomologyFunctor_of_isEmpty (ModuleCat.of K K) _ 0).of_iso e.symm))
   -- By `TauCeti.reducedSingularHomologySphereComplRangeSphereIso`, the reduced zeroth homology is
-  -- `K`. It is also the direct sum of copies of `K` indexed by the path components other than
-  -- that of `x`, so there is exactly one of them.
-  have hrank := ((ModuleCat.coprodIsoDirectSum _).symm ≪≫
-    (reducedSingularHomology₀Iso (ModuleCat.of K K) (X := of ↥(range h)ᶜ) x).symm ≪≫
-      e).toLinearEquiv.rank_eq
-  simp only [rank_directSum, rank_self, Cardinal.sum_const', mul_one] at hrank
+  -- `K`. Its rank also counts the path components other than that of `x`, so there is exactly one
+  -- of them.
+  have hrank := (rank_reducedSingularHomologyFunctor_zero (X := of ↥(range h)ᶜ) x).symm.trans
+    (e.toLinearEquiv.rank_eq.trans (Module.rank_self K))
   obtain ⟨hsub, hne⟩ := Cardinal.eq_one_iff_unique.1 hrank
   have : Unique {c : ZerothHomotopy ↥(range h)ᶜ // c ≠ ZerothHomotopy.mk x} :=
     @Unique.mk' _ ⟨Classical.arbitrary _⟩ hsub

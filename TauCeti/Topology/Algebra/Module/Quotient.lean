@@ -26,6 +26,11 @@ search cannot use it, so this file records it for `M ⧸ p` as a theorem, and th
 an instance. This is the same bridge from `QuotientAddGroup` to `Submodule.Quotient` that
 Mathlib's own `Submodule.isTopologicalAddGroup_quotient` and `Submodule.t3_quotient_of_isClosed`
 provide.
+
+The orbit space `AddAction.orbitRel.Quotient p M` of translation by a submodule, the standard
+carrier for quotients such as complex tori, is second countable when `M` is
+(`Submodule.instSecondCountableTopologyOrbitRelQuotient`), by Mathlib's
+`ContinuousConstVAdd.secondCountableTopology`.
 -/
 
 public section
@@ -46,6 +51,14 @@ instance discreteTopology [DiscreteTopology M] (p : Submodule R M) : DiscreteTop
   discreteTopology_of_isOpen p (isOpen_discrete _)
 
 end Submodule.Quotient
+
+/-- The quotient of a second countable topological module by translations by a submodule is
+second countable. -/
+instance Submodule.instSecondCountableTopologyOrbitRelQuotient {R M : Type*} [Ring R]
+    [AddCommGroup M] [Module R M] [TopologicalSpace M] [ContinuousAdd M]
+    [SecondCountableTopology M] (p : Submodule R M) :
+    SecondCountableTopology (AddAction.orbitRel.Quotient p M) :=
+  ContinuousConstVAdd.secondCountableTopology
 
 namespace ContinuousLinearEquiv
 

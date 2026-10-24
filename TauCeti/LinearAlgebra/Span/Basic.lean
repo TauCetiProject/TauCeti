@@ -6,13 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Span.Basic
+import Mathlib.Algebra.Field.Basic
+import Mathlib.Algebra.Module.Torsion.Field
 
 /-!
 # Finite spans and singleton spans
 
 A generator with a unit coefficient in a linear combination can be replaced by that combination
 without changing the span. Over a division semiring, a nonzero vector in a singleton span can be
-used to recover the generator's membership in any submodule.
+used to recover the generator's membership in any submodule. Acting on a line gives the line
+through the image of its generator, so a group element stabilizes the line through a vector
+exactly when it sends that vector to a multiple of itself.
 -/
 
 public section
@@ -51,5 +55,40 @@ theorem mem_of_mem_span_singleton_of_ne_zero (P : Submodule K V) {x y : V}
     (hx : x ∈ P) (hx0 : x ≠ 0) (hxy : x ∈ K ∙ y) : y ∈ P := by
   obtain ⟨c, rfl⟩ := mem_span_singleton.mp hxy
   exact (P.smul_mem_iff (left_ne_zero_of_smul hx0)).mp hx
+
+section Action
+
+open Pointwise
+
+variable {R M G : Type*} [Semiring R] [AddCommMonoid M] [Module R M] [Monoid G]
+  [DistribMulAction G M] [SMulCommClass G R M]
+
+/-- Acting on the line through `v` gives the line through the image of `v`. -/
+theorem smul_span_singleton (g : G) (v : M) : g • (R ∙ v) = R ∙ (g • v) := by
+  rw [smul_span, Set.smul_set_singleton]
+
+end Action
+
+section GroupAction
+
+open Pointwise
+
+variable {D W G : Type*} [DivisionRing D] [AddCommGroup W] [Module D W] [Group G]
+  [DistribMulAction G W] [SMulCommClass G D W]
+
+/-- A group element stabilizes the line through `v` exactly when `g • v` is a multiple of `v`. -/
+theorem smul_span_singleton_eq_iff {g : G} {v : W} :
+    g • (D ∙ v) = D ∙ v ↔ ∃ c : D, g • v = c • v := by
+  rcases eq_or_ne v 0 with rfl | hv
+  · simp
+  rw [smul_span_singleton, span_singleton_eq_span_singleton]
+  constructor
+  · rintro ⟨z, hz⟩
+    exact ⟨((z⁻¹ : Dˣ) : D), by rw [← Units.smul_def]; exact eq_inv_smul_iff.mpr hz⟩
+  · rintro ⟨c, hc⟩
+    have hc0 : c ≠ 0 := left_ne_zero_of_smul (hc ▸ (smul_ne_zero_iff_ne g).mpr hv)
+    exact ⟨(Units.mk0 c hc0)⁻¹, by simp [hc, Units.smul_def, smul_smul, hc0]⟩
+
+end GroupAction
 
 end Submodule

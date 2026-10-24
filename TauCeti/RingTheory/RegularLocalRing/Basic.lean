@@ -12,6 +12,7 @@ public import Mathlib.RingTheory.DiscreteValuationRing.TFAE
 public import Mathlib.RingTheory.Localization.LocalizationLocalization
 public import Mathlib.RingTheory.Localization.Submodule
 import Mathlib.RingTheory.Ideal.Quotient.Noetherian
+import Mathlib.RingTheory.LocalProperties.Reduced
 
 /-!
 # Regular local rings are domains, and localizations of regular rings
@@ -44,6 +45,7 @@ is a regular ring, so that every `Localization M` of a regular ring, including
   dimension at most one is a valuation ring.
 * `TauCeti.IsRegularRing.of_isLocalization`: a localization of a regular ring is a regular ring,
   with the instance `TauCeti.IsRegularRing.isRegularRing_localization` for `Localization M`.
+* `TauCeti.IsRegularRing.isReduced`: a regular ring is reduced, since its local rings are domains.
 
 ## References
 
@@ -249,6 +251,11 @@ theorem of_isLocalization (S : Type*) [CommRing S] [Algebra R S] [IsLocalization
 
 instance isRegularRing_localization : IsRegularRing (Localization M) :=
   of_isLocalization M _
+
+/-- A regular ring is reduced: its localizations at maximal ideals are regular local rings, hence
+domains. -/
+instance (priority := 100) isReduced : IsReduced R :=
+  isReduced_ofLocalizationMaximal _ fun _ _ ↦ inferInstance
 
 end IsRegularRing
 

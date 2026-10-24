@@ -27,7 +27,9 @@ space over `S` that fix every marking.
 Base change along `g : T ⟶ S` and reindexing the markings are functors. Base change along the
 identity and along a composite agree with the identity and with iterated base change up to
 canonical natural isomorphisms, built from the canonical isomorphisms of pullbacks; these are
-specified isomorphisms, not equalities of chosen pullbacks.
+specified isomorphisms, not equalities of chosen pullbacks. Base change does not depend on the
+chosen pullback either: a pointed family over `T` whose total space is a fibre product, compatibly
+with the markings, is canonically isomorphic to the chosen base change.
 
 ## Main definitions
 
@@ -44,6 +46,8 @@ specified isomorphisms, not equalities of chosen pullbacks.
 * `TauCeti.AlgebraicGeometry.PointedPrestableFamily.pullbackFunctorId`,
   `TauCeti.AlgebraicGeometry.PointedPrestableFamily.pullbackFunctorComp`: the canonical
   isomorphisms for base change along the identity and along a composite.
+* `TauCeti.AlgebraicGeometry.PointedPrestableFamily.isoPullback`: the canonical isomorphism from
+  a pointed family over `T` presented by a fibre product to the chosen base change.
 * `TauCeti.AlgebraicGeometry.PointedPrestableFamily.reindexFunctor`: reindexing as a functor.
 
 ## Main results
@@ -63,8 +67,8 @@ change follows Mathlib's `CategoryTheory.Over.pullback` and uses its canonical i
 
 Only the functors `toOver`, `pullbackFunctor` and `reindexFunctor` expose their bodies, so that
 their `simps` lemmas are definitional and the statements about `pullbackFunctor` typecheck.
-`isoMk`, `pullbackMap`, the canonical isomorphisms and `autToOver` keep their bodies private
-and are used through their characteristic lemmas.
+`isoMk`, `pullbackMap`, the canonical isomorphisms, `isoPullback` and `autToOver` keep their
+bodies private and are used through their characteristic lemmas.
 
 ## References
 
@@ -317,6 +321,38 @@ def pullbackFunctorComp (g : T ⟶ S) (h : U ⟶ T) :
 theorem pullbackFunctorComp_app (g : T ⟶ S) (h : U ⟶ T) (P : PointedPrestableFamily S n) :
     (pullbackFunctorComp g h).app P = (pullbackCompIso P g h).symm := by
   unfold pullbackFunctorComp
+  rfl
+
+/-- **Base change does not depend on the chosen pullback.** Let `Q` be a pointed prestable family
+over `T` and `a : Q.total ⟶ P.total` a morphism making `Q.total` a fibre product of `P.toBase`
+and `g : T ⟶ S`, which carries each marking of `Q` to `g` followed by the corresponding marking
+of `P`. Then `Q` is canonically isomorphic to the chosen base change `P.pullback g`; on total
+spaces the isomorphism is the canonical isomorphism of fibre products. -/
+def isoPullback (P : PointedPrestableFamily S n) (g : T ⟶ S) (Q : PointedPrestableFamily T n)
+    (a : Q.total ⟶ P.total) (ha : IsPullback a Q.toBase P.toBase g)
+    (hm : ∀ i, Q.marking i ≫ a = g ≫ P.marking i) : Q ≅ P.pullback g :=
+  isoMk ha.isoPullback
+    (by
+      dsimp only [pullback]
+      simp)
+    (fun i ↦ by
+      dsimp only [pullback]
+      ext <;> simp [hm])
+
+@[simp]
+theorem isoPullback_hom_hom (P : PointedPrestableFamily S n) (g : T ⟶ S)
+    (Q : PointedPrestableFamily T n) (a : Q.total ⟶ P.total)
+    (ha : IsPullback a Q.toBase P.toBase g) (hm : ∀ i, Q.marking i ≫ a = g ≫ P.marking i) :
+    (isoPullback P g Q a ha hm).hom.hom = ha.isoPullback.hom := by
+  unfold isoPullback
+  rfl
+
+@[simp]
+theorem isoPullback_inv_hom (P : PointedPrestableFamily S n) (g : T ⟶ S)
+    (Q : PointedPrestableFamily T n) (a : Q.total ⟶ P.total)
+    (ha : IsPullback a Q.toBase P.toBase g) (hm : ∀ i, Q.marking i ≫ a = g ≫ P.marking i) :
+    (isoPullback P g Q a ha hm).inv.hom = ha.isoPullback.inv := by
+  unfold isoPullback
   rfl
 
 /-- Reindexing the markings along an injection `e : Fin m ↪ Fin n` as a functor; a morphism of

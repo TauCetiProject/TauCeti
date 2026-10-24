@@ -51,6 +51,8 @@ not have admissible heights; its `newtonPolygon` is then the all-infinite fallba
   over a division ring), a nonzero polynomial has a polygon whose finite domain is the
   interval from its order of vanishing at zero to its degree; in particular the polygon is
   nonempty by `Polynomial.newtonPolygon_ne_top_of_ne_zero`.
+* `Polynomial.Monic.newtonPolygon_ne_top`: a monic polynomial has a nonempty Newton polygon,
+  whatever the valuation.
 * `Polynomial.newtonPolygon_natTrailingDegree` and `Polynomial.newtonPolygon_natDegree`:
   the polygon begins at the trailing coefficient and ends at the leading coefficient.
 * `Polynomial.ncard_finiteEdges_newtonPolygon`: if only zero has infinite valuation, a
@@ -332,6 +334,12 @@ Over a division ring the hypothesis on `v` is `AddValuation.top_iff`. -/
 theorem newtonPolygon_ne_top_of_ne_zero (hv : ∀ x, v x = ⊤ → x = 0) (hf : f ≠ 0) :
     f.newtonPolygon v ≠ ⊤ := fun h =>
   leadingCoeff_ne_zero.mpr hf (hv _ ((newtonPolygon_eq_top_iff f v).mp h f.natDegree))
+
+variable {f} in
+/-- A monic polynomial has a nonempty Newton polygon: its leading coefficient has valuation
+zero. -/
+theorem Monic.newtonPolygon_ne_top (hf : f.Monic) : f.newtonPolygon v ≠ ⊤ := fun h => by
+  simpa [hf.leadingCoeff] using (newtonPolygon_eq_top_iff f v).mp h f.natDegree
 
 /-- If only zero has infinite valuation, the finite unit edges of the Newton polygon of a
 polynomial are those between its order of vanishing at zero and its degree. -/

@@ -40,6 +40,8 @@ The rationalization uses `IntegralLattice.ofIntegralForm` and Mathlib's
 * `TauCeti.IntegralLattice.restrictMap`: the rational extension of the inclusion, characterized by
   `restrictMap_injective`, `range_restrictMap`, `form_restrictMap`, and
   `map_restrictMap_restrict_carrier`.
+* `TauCeti.IntegralLattice.restrictIsometry`: `restrictMap` as an isometric embedding of rational
+  forms; `anisotropic_restrict` passes anisotropy of the rational norm form to restrictions.
 * `TauCeti.IntegralLattice.restrictFull`: restriction to a full ambient submodule contained in the
   original carrier, retaining the original rational ambient space; it inherits nondegeneracy and,
   by `isEven_restrictFull`, evenness.
@@ -173,6 +175,23 @@ theorem form_restrictMap (L : IntegralLattice V) (S : Submodule ℤ L) (x y : �
   rw [restrict_form]
   exact (L.integralForm.restrict S).liftBaseChange L.form
     (fun s t ↦ (L.integralForm_cast s t).symm) x y
+
+/-- The rational extension of the inclusion, as an isometric embedding of rational forms. -/
+def restrictIsometry (L : IntegralLattice V) (S : Submodule ℤ L) :
+    (L.restrict S).form →bᵢ L.form :=
+  ⟨L.restrictMap S, fun a b ↦ L.form_restrictMap S a b⟩
+
+@[simp]
+theorem restrictIsometry_apply (L : IntegralLattice V) (S : Submodule ℤ L) (z : ℚ ⊗[ℤ] S) :
+    L.restrictIsometry S z = L.restrictMap S z :=
+  (rfl)
+
+/-- The restriction of a lattice with anisotropic rational norm form is anisotropic. -/
+theorem anisotropic_restrict {L : IntegralLattice V} (h : L.norm.Anisotropic)
+    (S : Submodule ℤ L) : (L.restrict S).norm.Anisotropic := fun z hz ↦
+  L.restrictMap_injective S <| by
+    rw [map_zero]
+    exact h _ (by rw [norm_apply, form_restrictMap, ← norm_apply, hz])
 
 /-- The restricted integral carrier maps onto the embedded submodule, not merely onto its
 rational span. -/
