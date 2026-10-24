@@ -38,15 +38,6 @@ universe u v
 
 variable {p : ℝ≥0∞} {Z : Type v} [MetricSpace Z] [Fact (1 ≤ p)]
 
-/-- A measured-kernel presentation is the one-point class at `z` exactly when its kernel
-is almost everywhere equal to `z`. -/
-@[simp]
-theorem mk_eq_point_iff {K : GromovWassersteinPresentation.{u} p Z} {z : Z} :
-    mk K = point z ↔ K.kernel =ᵐ[K.measure.prod K.measure] fun _ ↦ z := by
-  rw [← edist_eq_zero, edist_mk_point, eLpNorm_eq_zero_iff
-    (ne_of_gt (lt_of_lt_of_le zero_lt_one (Fact.out : 1 ≤ p)))]
-  simp only [EventuallyEq, Pi.zero_apply, edist_eq_zero]
-
 /-- One-point kernels form a closed subset of the Gromov–Wasserstein space, even for an
 incomplete or nonseparable target. -/
 theorem isClosed_range_point :
@@ -87,9 +78,10 @@ theorem isClosedEmbedding_point :
     Topology.IsClosedEmbedding (point.{u} (p := p) (Z := Z)) :=
   ⟨isometry_point.isEmbedding, isClosed_range_point⟩
 
+variable (p) in
 /-- Completeness of the Gromov–Wasserstein space implies completeness of the metric target.
 No global separability hypothesis is required, including at exponent `∞`. -/
-theorem completeSpace_of_completeSpace
+theorem completeSpace_of_completeSpace_gromovWassersteinSpace
     [CompleteSpace (GromovWassersteinSpace.{u} p Z)] : CompleteSpace Z :=
   (isometry_point.{u} (p := p) (Z := Z)).isUniformInducing.completeSpace
     (isClosed_range_point (p := p) (Z := Z)).isComplete
