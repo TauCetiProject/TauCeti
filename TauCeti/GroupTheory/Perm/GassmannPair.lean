@@ -14,14 +14,16 @@ import TauCeti.GroupTheory.Perm.Regular
 # A Gassmann pair in the symmetric group on sixteen points
 
 The groups `C₄ × C₄` and `Q₈ × C₂` both have order `16`, and both have one element of order `1`,
-three of order `2` and twelve of order `4`. By `Equiv.almostConjugate_map_range_toPermHom_iff`
-their left-regular actions, numbered by `Fin 16`, are almost-conjugate subgroups of
+three of order `2` and twelve of order `4`. By
+`Equiv.almostConjugate_permutationRepresentation_range_iff` their left-regular actions, numbered
+by `Fin 16`, are almost-conjugate subgroups of
 `Equiv.Perm (Fin 16)`. The left-regular images contain one permutation of full cycle type
 `1 ^ 16` (the identity, whose raw `Equiv.Perm.cycleType` is empty), three of cycle type `2 ^ 8`
-and twelve of cycle type `4 ^ 4`. By `Equiv.exists_map_conj_map_range_toPermHom_eq_iff` the two
-images are not conjugate, because `C₄ × C₄` is abelian and `Q₈ × C₂` is not.
+and twelve of cycle type `4 ^ 4`. By
+`Equiv.exists_map_conj_permutationRepresentation_range_eq_iff` the two images are not conjugate,
+because `C₄ × C₄` is abelian and `Q₈ × C₂` is not.
 
-This is Gassmann's pair of almost-conjugate but non-conjugate subgroups. For a Galois extension of
+This is a Gassmann pair: almost-conjugate but non-conjugate subgroups. For a Galois extension of
 number fields with group `S₁₆`, the fixed fields of such a pair are non-isomorphic but have the
 same Dedekind zeta function (Perlis).
 
@@ -77,13 +79,13 @@ theorem exists_S16_gassmann_pair :
           H.map (MulAut.conj σ : Equiv.Perm (Fin 16) →* Equiv.Perm (Fin 16)) = K := by
   let eA : C4C4 ≃ Fin 16 := Fintype.equivFinOfCardEq (by decide)
   let eB : Q8C2 ≃ Fin 16 := Fintype.equivFinOfCardEq (by decide)
-  refine ⟨_, _, ?_, ?_, (Equiv.almostConjugate_map_range_toPermHom_iff eA eB).2
+  refine ⟨_, _, ?_, ?_, (Equiv.almostConjugate_permutationRepresentation_range_iff eA eB).2
     exists_equiv_orderOf_eq, ?_⟩
-  · rw [Equiv.natCard_map_range_toPermHom, Nat.card_eq_fintype_card]
+  · rw [Equiv.natCard_permutationRepresentation_range, Nat.card_eq_fintype_card]
     decide
-  · rw [Equiv.natCard_map_range_toPermHom, Nat.card_eq_fintype_card]
+  · rw [Equiv.natCard_permutationRepresentation_range, Nat.card_eq_fintype_card]
     decide
-  · rw [Equiv.exists_map_conj_map_range_toPermHom_eq_iff]
+  · rw [Equiv.exists_map_conj_permutationRepresentation_range_eq_iff]
     rintro ⟨i⟩
     have hB : ¬ ∀ x y : Q8C2, x * y = y * x := by decide
     exact hB fun x y ↦ i.symm.injective (by rw [map_mul, map_mul, mul_comm])
