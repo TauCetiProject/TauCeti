@@ -10,7 +10,7 @@ public import Mathlib.RingTheory.Extension.Basic
 /-!
 # Cotangent spaces of ideals and augmented algebras
 
-Elements of an ideal `I` whose images span the cotangent space `I ⧸ I ^ 2` over the coefficients
+Elements of an ideal `I` of `A` whose images span the cotangent space `I ⧸ I ^ 2` over `A`
 generate `I` modulo `I ^ 2`. For an augmentation `f : A →ₐ[R] R`, if the augmentation ideal is
 finitely generated over `A`, then its cotangent space is finite over `R`.
 
@@ -32,24 +32,22 @@ public section
 
 namespace Ideal
 
-variable {R A : Type*} [CommSemiring R] [CommRing A] [Algebra R A]
+variable {A : Type*} [CommRing A]
 
-/-- Elements of an ideal `I` whose images span the cotangent space `I ⧸ I ^ 2` over the
-coefficients generate `I` modulo `I ^ 2`. -/
+/-- Elements of an ideal `I` whose images span the cotangent space `I ⧸ I ^ 2` over `A` generate
+`I` modulo `I ^ 2`. -/
 theorem le_span_sup_sq_of_span_toCotangent_eq_top (I : Ideal A) {ι : Type*} {f : ι → I}
-    (h : Submodule.span R (Set.range (I.toCotangent ∘ f)) = ⊤) :
+    (h : Submodule.span A (Set.range (I.toCotangent ∘ f)) = ⊤) :
     I ≤ span (Set.range fun i ↦ (f i : A)) ⊔ I ^ 2 := by
   set J := span (Set.range fun i ↦ (f i : A)) ⊔ I ^ 2
   -- The image of `J ∩ I` in the cotangent space contains every generator, so is everything.
   let P : Submodule A I.Cotangent := (Submodule.comap I.subtype J).map I.toCotangent
-  have hP : P.restrictScalars R = ⊤ := by
+  have hP : P = ⊤ := by
     refine eq_top_iff.2 (h ▸ Submodule.span_le.2 ?_)
     rintro _ ⟨i, rfl⟩
     exact ⟨f i, mem_sup_left (subset_span ⟨i, rfl⟩), rfl⟩
   intro y hy
-  obtain ⟨z, hzJ, hz⟩ : I.toCotangent ⟨y, hy⟩ ∈ P := by
-    rw [← Submodule.restrictScalars_mem R, hP]
-    exact Submodule.mem_top
+  obtain ⟨z, hzJ, hz⟩ : I.toCotangent ⟨y, hy⟩ ∈ P := hP ▸ Submodule.mem_top
   rw [toCotangent_eq] at hz
   rw [← sub_sub_cancel (z : A) y]
   exact J.sub_mem hzJ (mem_sup_right hz)

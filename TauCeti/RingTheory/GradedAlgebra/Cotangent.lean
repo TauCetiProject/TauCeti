@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.KrullDimension.NonZeroDivisors
 public import Mathlib.RingTheory.KrullDimension.Polynomial
 public import Mathlib.RingTheory.MvPolynomial.Basic
 public import TauCeti.RingTheory.Ideal.Cotangent.Basic
+public import TauCeti.RingTheory.KrullDimension.Basic
 
 /-!
 # The cotangent space of the irrelevant ideal and polynomial presentations
@@ -181,21 +182,13 @@ theorem bijective_aeval_of_irrelevant_le (h𝒜 : ∀ x ∈ 𝒜 0, x ∈ (⊥ :
     (h : (irrelevant 𝒜).toIdeal ≤ Ideal.span (Set.range f) ⊔ (irrelevant 𝒜).toIdeal ^ 2)
     (hdim : (Nat.card ι : WithBot ℕ∞) ≤ ringKrullDim A) :
     Function.Bijective (MvPolynomial.aeval (R := k) f) := by
-  have hsurj := surjective_aeval_of_irrelevant_le 𝒜 h𝒜 hf h
   have hpoly : ringKrullDim (MvPolynomial ι k) = Nat.card ι := by
     rw [MvPolynomial.ringKrullDim_of_isNoetherianRing_of_finite, ringKrullDim_eq_zero_of_field,
       zero_add]
-  refine ⟨(injective_iff_map_eq_zero _).2 fun p hp ↦ ?_, hsurj⟩
-  by_contra hp0
-  -- A nonzero kernel element is a nonzerodivisor, so it would lower the dimension below `#ι`.
-  have hlt := ringKrullDim_succ_le_of_surjective (MvPolynomial.aeval f).toRingHom hsurj
-    (mem_nonZeroDivisors_of_ne_zero hp0) hp
-  have hle := ringKrullDim_le_of_surjective (MvPolynomial.aeval f).toRingHom hsurj
-  rw [hpoly] at hlt hle
-  obtain ⟨d, hd⟩ : ∃ d : ℕ, ringKrullDim A = d :=
-    ⟨Nat.card ι, le_antisymm hle hdim⟩
-  rw [hd] at hlt hdim
-  exact absurd (hlt.trans hdim) (by norm_cast; omega)
+  have := FiniteRingKrullDim.of_ringKrullDim_eq_natCast hpoly
+  have hsurj := surjective_aeval_of_irrelevant_le 𝒜 h𝒜 hf h
+  exact ⟨(MvPolynomial.aeval f).toRingHom.injective_of_surjective_of_ringKrullDim_le hsurj
+    (hpoly ▸ hdim), hsurj⟩
 
 variable [Module.Finite k (irrelevant 𝒜).toIdeal.Cotangent]
 
@@ -225,7 +218,8 @@ theorem ringKrullDim_le_finrank_cotangent (h𝒜 : ∀ x ∈ 𝒜 0, x ∈ (⊥ 
     ringKrullDim A ≤ Module.finrank k (irrelevant 𝒜).toIdeal.Cotangent := by
   obtain ⟨f, hf, hspan⟩ := exists_homogeneous_span_toCotangent_eq_top 𝒜
   have hsurj := surjective_aeval_of_irrelevant_le (R := k) (f := fun i ↦ (f i : A)) 𝒜 h𝒜 hf
-    ((irrelevant 𝒜).toIdeal.le_span_sup_sq_of_span_toCotangent_eq_top hspan)
+    ((irrelevant 𝒜).toIdeal.le_span_sup_sq_of_span_toCotangent_eq_top
+      (Submodule.span_eq_top_of_span_eq_top k A _ hspan))
   refine (ringKrullDim_le_of_surjective (MvPolynomial.aeval _).toRingHom hsurj).trans ?_
   rw [MvPolynomial.ringKrullDim_of_isNoetherianRing_of_finite, ringKrullDim_eq_zero_of_field,
     zero_add, Nat.card_eq_fintype_card, Fintype.card_fin]
@@ -242,7 +236,8 @@ theorem exists_bijective_aeval_of_finrank_cotangent_le
       (∀ i, ∃ n, 0 < n ∧ f i ∈ 𝒜 n) ∧ Function.Bijective (MvPolynomial.aeval (R := k) f) := by
   obtain ⟨f, hf, hspan⟩ := exists_homogeneous_span_toCotangent_eq_top 𝒜
   refine ⟨fun i ↦ f i, hf, bijective_aeval_of_irrelevant_le 𝒜 h𝒜 hf
-    ((irrelevant 𝒜).toIdeal.le_span_sup_sq_of_span_toCotangent_eq_top hspan) ?_⟩
+    ((irrelevant 𝒜).toIdeal.le_span_sup_sq_of_span_toCotangent_eq_top
+      (Submodule.span_eq_top_of_span_eq_top k A _ hspan)) ?_⟩
   rwa [Nat.card_eq_fintype_card, Fintype.card_fin]
 
 end Field
