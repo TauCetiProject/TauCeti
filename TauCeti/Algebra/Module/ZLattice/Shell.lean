@@ -53,6 +53,8 @@ lattice `L` in a real normed space of dimension `n` the representation numbers g
 * `ZLattice.finite_shell`, `ZLattice.finite_cosetShell`: shells of a discrete subgroup of a
   proper space are finite.
 * `ZLattice.representationNumber_zero`: `r_L(0) = 1`.
+* `ZLattice.representationNumber_span_one`: the integer lattice represents each positive square
+  twice and no nonsquare natural number.
 * `ZLattice.cosetRepresentationNumber_add_mem`, `ZLattice.cosetRepresentationNumber_neg`:
   `r_{γ+L}` depends only on the coset `γ + L`, and `r_{-γ+L} = r_{γ+L}`.
 * `ZLattice.representationNumber_comap`, `ZLattice.cosetRepresentationNumber_comap`: invariance
@@ -212,6 +214,47 @@ theorem cosetRepresentationNumber_neg (γ : E) (t : ℝ) :
     cosetRepresentationNumber L (-γ) t = cosetRepresentationNumber L γ t := by
   rw [cosetRepresentationNumber_def, cosetShell_neg, ← Set.image_neg_eq_neg,
     Set.ncard_image_of_injective _ neg_injective, cosetRepresentationNumber_def]
+
+/-- The integer lattice represents zero once, each positive square twice, and no other natural
+number. These are the coefficients for the period-two expansion. -/
+theorem representationNumber_span_one (m : ℕ) :
+    representationNumber (Submodule.span ℤ {1} : Submodule ℤ ℝ) m =
+      if m = 0 then 1 else if IsSquare m then 2 else 0 := by
+  classical
+  by_cases hm : m = 0
+  · simp [hm]
+  simp only [ite_eq_right hm]
+  have hmem (z : ℤ) : (z : ℝ) ∈ (Submodule.span ℤ {1} : Submodule ℤ ℝ) :=
+    Submodule.mem_span_singleton.mpr ⟨z, by simp⟩
+  by_cases hs : IsSquare m
+  · obtain ⟨n, rfl⟩ := hs
+    have hn : n ≠ 0 := by aesop
+    have hpair : shell (Submodule.span ℤ {1} : Submodule ℤ ℝ) (n * n) = {(n : ℝ), -(n : ℝ)} := by
+      ext x
+      simp only [mem_shell, Real.norm_eq_abs, sq_abs, Set.mem_insert_iff,
+        Set.mem_singleton_iff]
+      constructor
+      · intro hx
+        exact sq_eq_sq_iff_eq_or_eq_neg.mp (by nlinarith [hx.2])
+      · rintro (rfl | rfl)
+        · exact ⟨hmem n, by ring⟩
+        · exact ⟨by simpa using hmem (-(n : ℤ)), by ring⟩
+    rw [representationNumber_def, Nat.cast_mul, hpair,
+      Set.ncard_pair (by exact_mod_cast (by omega : (n : ℤ) ≠ -n))]
+    simp [show IsSquare (n * n) from ⟨n, rfl⟩]
+  · have hempty : shell (Submodule.span ℤ {1} : Submodule ℤ ℝ) m = ∅ := by
+      apply Set.eq_empty_iff_forall_notMem.mpr
+      intro x hx
+      rw [mem_shell] at hx
+      obtain ⟨z, rfl⟩ := Submodule.mem_span_singleton.mp hx.1
+      have hsq : (z.natAbs : ℝ) ^ 2 = m := by
+        have hz : ((z.natAbs : ℤ) : ℝ) ^ 2 = (z : ℝ) ^ 2 := by
+          exact_mod_cast Int.natAbs_sq z
+        have hx' : (z : ℝ) ^ 2 = m := by
+          simpa only [zsmul_eq_mul, mul_one, Real.norm_eq_abs, sq_abs] using hx.2
+        exact hz.trans hx'
+      exact hs ⟨z.natAbs, by exact_mod_cast (by nlinarith [hsq] : (m : ℝ) = z.natAbs * z.natAbs)⟩
+    simp [representationNumber_def, hempty, hs]
 
 /-! ### Invariance under isometries -/
 
