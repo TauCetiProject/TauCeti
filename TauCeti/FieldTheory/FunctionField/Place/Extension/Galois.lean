@@ -7,6 +7,7 @@ module
 
 public import Mathlib.FieldTheory.Galois.Basic
 public import Mathlib.RingTheory.Norm.Transitivity
+public import TauCeti.FieldTheory.FunctionField.Place.Equiv
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Degree
 -- `TauCeti.Place.restrict_surjective_of_finiteDimensional` is what makes the fibre of a place of a
 -- function field nonempty, hence its ramification index positive.
@@ -47,6 +48,8 @@ decomposition group, and is identified with Mathlib's `ValuationSubring.decompos
 
 ## Main results
 
+* `TauCeti.Place.equivOfRingEquiv_autCongr_smul`: transport of places along an isomorphism of
+  fields intertwines the actions of the corresponding automorphism groups.
 * `TauCeti.Place.restrictScalars_smul`: the automorphisms of `F'` over an intermediate field of
   `F' / F` act on the places of `F' / k` through the action of the automorphisms over `F`.
 * `TauCeti.Place.valuation_apply_sub_lt_one_of_smul_eq_of_degree_eq_one`: an automorphism fixing
@@ -165,6 +168,17 @@ theorem integers_smul : (σ • P).integers = σ • P.integers := by
   ext x
   rw [mem_integers_smul_iff, ValuationSubring.mem_pointwise_smul_iff_inv_smul_mem]
   rfl
+
+/-- **Transport of places intertwines the actions**: transporting places along the inverse of an
+`F`-isomorphism `e : L ≃ₐ[F] F'` carries the action of `e.autCongr τ` on the places of `F'` to
+the action of `τ` on the places of `L`. -/
+theorem equivOfRingEquiv_autCongr_smul {L : Type*} [Field L] [Algebra k L] [Algebra F L]
+    [IsScalarTower k F L] (e : L ≃ₐ[F] F') (τ : L ≃ₐ[F] L) (Q : Place k F') :
+    equivOfRingEquiv (RingEquiv.refl k) e.symm.toRingEquiv
+        e.symm.toRingEquiv_algebraMap_of_tower (e.autCongr τ • Q) =
+      τ • equivOfRingEquiv (RingEquiv.refl k) e.symm.toRingEquiv
+        e.symm.toRingEquiv_algebraMap_of_tower Q :=
+  Place.ext (Valuation.ext fun z ↦ by simp)
 
 /-- **The two actions on places agree**: restricting the scalars of an automorphism of `F'` over
 an intermediate field `E` down to `F` does not change the place it produces. -/

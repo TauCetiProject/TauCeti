@@ -29,8 +29,8 @@ the automorphism group `Aut(F / k)` is finite. The proof splits into two cases.
   `1` and `3` are distinct in `k`.
 
 The genus hypothesis cannot be dropped: `Aut(k(x) / k) ≅ PGL₂(k)` is infinite
-(`RatFunc.pglEquivAlgEquiv`), and so is the automorphism group of an elliptic function field over
-an algebraically closed field.
+(`RatFunc.pglEquivAlgEquiv`), and so is the automorphism group of a function field of genus one over
+an algebraically closed field (`TauCeti.infinite_algEquiv_of_genus_eq_one`).
 
 ## Main results
 

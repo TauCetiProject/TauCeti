@@ -51,6 +51,16 @@ noncomputable def equivOfRingEquiv (σ : k ≃+* k') (τ : L ≃+* L')
   left_inv P := Place.ext (Valuation.ext fun z ↦ by simp)
   right_inv Q := Place.ext (Valuation.ext fun z ↦ by simp)
 
+/-- **An isomorphism of `F`-algebras fixes the constants** of a scalar tower `k → F`, in the form
+of the compatibility hypothesis of `equivOfRingEquiv` along `RingEquiv.refl k`. So any
+`e : L ≃ₐ[F] L'` transports places by `equivOfRingEquiv (RingEquiv.refl k) e.toRingEquiv
+e.toRingEquiv_algebraMap_of_tower`. -/
+theorem _root_.AlgEquiv.toRingEquiv_algebraMap_of_tower {F M M' : Type*} [CommSemiring F]
+    [Semiring M] [Semiring M'] [Algebra k F] [Algebra F M] [Algebra F M'] [Algebra k M]
+    [Algebra k M'] [IsScalarTower k F M] [IsScalarTower k F M'] (e : M ≃ₐ[F] M') (c : k) :
+    e.toRingEquiv (algebraMap k M c) = algebraMap k M' (RingEquiv.refl k c) :=
+  (e.restrictScalars k).commutes c
+
 variable (σ : k ≃+* k') (τ : L ≃+* L')
   (h : ∀ c, τ (algebraMap k L c) = algebraMap k' L' (σ c))
 

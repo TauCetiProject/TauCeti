@@ -231,6 +231,13 @@ lemma pushforward_ofPoint (f : X → Y) (x : X) :
     pushforward f (ofPoint x) = ofPoint (f x) := by
   simp [pushforward, ofPoint, Finsupp.mapDomain_single]
 
+-- Runs before `Finsupp.domCongr_apply` expands the reindexing.
+/-- Reindexing a point divisor along a bijection of points moves its point. -/
+@[simp↓]
+lemma domCongr_ofPoint (e : X ≃ Y) (x : X) :
+    Finsupp.domCongr e (ofPoint x) = ofPoint (e x) := by
+  simp [ofPoint]
+
 @[simp]
 lemma pushforward_id : pushforward (fun x : X => x) = AddMonoidHom.id (WeilDivisor X) := by
   ext D x
