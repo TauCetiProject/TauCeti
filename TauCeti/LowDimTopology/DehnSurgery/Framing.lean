@@ -28,8 +28,11 @@ the knot exterior, this frames the boundary torus of the exterior by `Φ`
 (`TauCeti.IsSolidTorusNeighborhood.framedBoundaryTorus`). Its meridian is the boundary
 `t ↦ Φ (exp (2πit), 1)` of a disc fibre of the solid torus, and its longitude is the push-off
 `t ↦ Φ (1, exp (2πit))` of the knot. This is the framed torus along which a Dehn filling of the
-exterior is specified by a slope. The longitude is the one determined by `Φ`; it is the preferred
-(Seifert) longitude only for a suitable choice of `Φ`, which is not addressed here.
+exterior is specified by a slope. The longitude determined by `Φ` is generally not the preferred
+(Seifert) longitude. Under vanishing first and second integral homology of the ambient space,
+`TauCeti.IsSolidTorusNeighborhood.preferredFramedBoundaryTorus` in
+`TauCeti/LowDimTopology/DehnSurgery/SeifertFraming.lean` constructs the preferred framing
+`(μ, λ - n · μ)`, where `n` is the framing number of `Φ`.
 
 ## Main definitions
 
