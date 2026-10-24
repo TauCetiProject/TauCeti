@@ -6,10 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.QuadraticForm.StiefelWhitney.QuadraticExtension
-public import TauCeti.NumberTheory.LocalField.AbsoluteRamificationIndex
-public import TauCeti.NumberTheory.LocalField.QuadraticForm.Cup.Basic
-public import TauCeti.NumberTheory.LocalField.QuadraticForm.UnramifiedClass
-public import TauCeti.NumberTheory.LocalField.Squares
+public import TauCeti.NumberTheory.LocalField.QuadraticForm.Cup.Unramified
 
 import TauCeti.FieldTheory.QuadraticForm.StiefelWhitney.Evens.Kummer.Value
 import TauCeti.FieldTheory.Separable.Quadratic
@@ -21,7 +18,7 @@ Let `K` be a nonarchimedean local field in which `2` is invertible, and let `Δ 
 unramified quadratic class: `b ∈ Kˣ` is a norm from `K(√Δ)` exactly when `v_K(b)` is even
 (`TauCeti.exists_unramified_class`). Then `L = K(√Δ)` is the unramified quadratic extension of
 `K`, and the Hilbert symbol against `Δ` is `(Δ, b)_K = (-1)^{v_K(b)}`
-(`TauCeti.hilbertSymbol_unramified`). At `b = 2` this is
+(`TauCeti.hilbertSymbol_unramified`). At `b = 2` this is `TauCeti.hilbertSymbol_two_unramified`:
 
 ```text
 (2, Δ)_K = (-1)^{v_K(2)}.
@@ -45,7 +42,6 @@ nonzero class `w₂(Tr_*⟨1⟩) = (2) ∪ (5)` of `ℚ₂(√5)`.
 
 ## Main results
 
-* `TauCeti.hilbertSymbol_two_unramified`: `(2, Δ)_K = (-1)^{v_K(2)}`.
 * `TauCeti.sw2Class_formClass_traceTransfer_sq_unramified`: `w₂(Tr_*⟨1⟩) = v_K(2) • κ` for
   `L = K(√Δ)` and `κ = (c) ∪ (e)` with `(c, e)_K = -1`.
 * `TauCeti.galoisEvens_kummerClass_sqrt_unramified`: `N^{Ev}((√Δ)) = v_K(2) • κ`.
@@ -85,25 +81,6 @@ private theorem not_mem_range_of_sq_eq_unramified [Field L] [Algebra K L] {x : L
   exact not_isSquare_of_unramified_class (isUnit_of_invertible (2 : K)).ne_zero hΔ
     ⟨Units.mk0 c hc0, Units.ext (by rw [Units.val_mul, Units.val_mk0, ← hc]; ring)⟩
 
-/-- **The Hilbert symbol of `2` against the unramified class** is `(2, Δ)_K = (-1)^{v_K(2)}`,
-where `v_K(2)` is the dyadic level `TauCeti.dyadicLevel`. In odd residue characteristic it is
-`1`; over a finite extension of `ℚ₂` it is `-1` exactly when the absolute ramification index is
-odd. -/
-theorem hilbertSymbol_two_unramified {Δ : Kˣ}
-    (hΔ : ∀ b : Kˣ, (∃ x y : K, (b : K) = x ^ 2 - Δ * y ^ 2) ↔
-      Even (normalizedValuation K b).toAdd) :
-    hilbertSymbol (unitOfInvertible (2 : K)) Δ =
-      (-1) ^ dyadicLevel K (isUnit_of_invertible (2 : K)).ne_zero := by
-  have h2 : (2 : K) ≠ 0 := (isUnit_of_invertible (2 : K)).ne_zero
-  have hunit : unitOfInvertible (2 : K) = Units.mk0 ((2 : ℕ) : K) (by exact_mod_cast h2) :=
-    Units.ext (by simp)
-  rw [hilbertSymbol_comm, hilbertSymbol_unramified hΔ, hunit, normalizedValuation_natCast,
-    toAdd_ofAdd]
-  simp only [Int.even_coe_nat, dyadicLevel_def]
-  rcases Nat.even_or_odd (natCastValuation K 2 (by exact_mod_cast h2)) with h | h
-  · simp [h, h.neg_one_pow]
-  · simp [Nat.not_even_iff_odd.2 h, h.neg_one_pow]
-
 variable [Field L] [Algebra K L] [FiniteDimensional K L]
 
 /-- **The trace form of the unramified quadratic extension**: if `L` is generated over a local
@@ -141,19 +118,6 @@ theorem galoisEvens_kummerClass_sqrt_unramified [Invertible (2 : L)]
   rw [galoisEvens2_kummerClass_sqrt σ hfin Δ (not_mem_range_of_sq_eq_unramified hΔ hx2) hx2 b hb,
     cup_kummerClass_eq_hilbertSymbol_smul hce _ Δ, hilbertSymbol_two_unramified hΔ,
     additiveIntUnitsAddEquiv_ofMul_neg_one_pow]
-
-/-- Over a finite extension of `ℚ₂`, the class `(2) ∪ (Δ)` of the unramified class `Δ` is nonzero
-exactly when the absolute ramification index is odd. -/
-private theorem cup_kummerClass_two_unramified_ne_zero_iff [Fact (Nat.Prime 2)]
-    [FinitePadicExtension K 2] {Δ : Kˣ}
-    (hΔ : ∀ b : Kˣ, (∃ x y : K, (b : K) = x ^ 2 - Δ * y ^ 2) ↔
-      Even (normalizedValuation K b).toAdd) :
-    (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1
-        (kummerClass (unitOfInvertible (2 : K))) (kummerClass Δ) ≠ 0 ↔
-      Odd (absoluteRamificationIndex K 2) := by
-  rw [Ne, cup_kummerClass_eq_zero_iff_hilbertSymbol_eq_one, hilbertSymbol_two_unramified hΔ,
-    dyadicLevel_def, ← absoluteRamificationIndex_eq_natCastValuation,
-    neg_one_pow_eq_one_iff_even (by decide), Nat.not_even_iff_odd]
 
 /-- **The trace form of the unramified quadratic extension of a finite extension of `ℚ₂`**: if
 `K` is a finite extension of `ℚ₂` and `L = K(√Δ)` its unramified quadratic extension, then
