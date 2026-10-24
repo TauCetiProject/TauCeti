@@ -27,6 +27,7 @@ independent of the chosen path.
 It also records the element-level behaviour of the transport: path-quotient formulas, its
 compatibility with concatenation of paths and with induced maps, and the comparison of the maps
 induced by freely homotopic maps, which differ by basepoint change along the trace of the homotopy.
+Surjectivity of an induced fundamental-group map transports along a path in its source.
 
 Mathlib already supplies the fundamental-group isomorphism
 `FundamentalGroup.fundamentalGroupMulEquivOfPath`; the declarations here are the computation
@@ -610,3 +611,21 @@ lemma basepointChangeNormalizerQuotientEquiv_mk_coe (γ : Path x₀ x₁)
     Subgroup.normalizerQuotientCongr_mk]
 
 end FundamentalGroup
+
+namespace TauCeti
+
+open _root_.FundamentalGroup
+
+/-- Surjectivity on fundamental groups at the end of a path implies surjectivity at its start. -/
+lemma fundamentalGroupMap_surjective_of_path
+    {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] {x y : X}
+    (f : C(X, Y)) (p : Path x y) (h : Function.Surjective (FundamentalGroup.map f y)) :
+    Function.Surjective (FundamentalGroup.map f x) := by
+  intro g
+  obtain ⟨k, hk⟩ := h (fundamentalGroupMulEquivOfPath (p.map f.continuous) g)
+  refine ⟨(fundamentalGroupMulEquivOfPath p).symm k, ?_⟩
+  apply (fundamentalGroupMulEquivOfPath (p.map f.continuous)).injective
+  rw [← _root_.FundamentalGroup.map_fundamentalGroupMulEquivOfPath, MulEquiv.apply_symm_apply]
+  exact hk
+
+end TauCeti
