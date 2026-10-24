@@ -120,12 +120,9 @@ the colimit of pointed étale neighbourhoods. -/
 @[stacks 04GP "(5), kernel"]
 theorem ker_toTarget_eq_maximalIdeal :
     RingHom.ker (toTarget R Ω).toRingHom = IsLocalRing.maximalIdeal (algebra R Ω) := by
-  refine le_antisymm (IsLocalRing.le_maximalIdeal (RingHom.ker_ne_top (toTarget R Ω).toRingHom)) ?_
-  intro x hx
-  rw [RingHom.mem_ker]
-  by_contra hx0
-  have hnu : ¬ IsUnit x := mem_nonunits_iff.mp ((IsLocalRing.mem_maximalIdeal x).mp hx)
-  exact hnu ((isUnit_iff_isUnit_toTarget R Ω x).mpr (isUnit_iff_ne_zero.mpr hx0))
+  have : IsLocalHom (toTarget R Ω).toRingHom := isLocalHom_toRingHom (f := toTarget R Ω)
+  simpa only [RingHom.ker_eq_comap_bot, IsLocalRing.maximalIdeal_eq_bot] using
+    IsLocalRing.maximalIdeal_comap (toTarget R Ω).toRingHom
 
 end TargetField
 
