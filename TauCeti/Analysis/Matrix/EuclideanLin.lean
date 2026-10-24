@@ -24,6 +24,10 @@ The rank of a matrix is the rank of the linear map it induces, in both the `ℕ`
 `Cardinal`-valued sense; this is what lets a matrix-rank statement be read off an operator-rank
 one.
 
+Normal square matrices induce normal operators on Euclidean space.
+The instance `TauCeti.isStarNormal_toEuclideanLin` supplies this normality automatically
+from `IsStarNormal A`.
+
 An invertible square matrix induces not just a map but a continuous linear equivalence, whose
 inverse is the map of the inverse matrix. That is the form a substitution needs: it supplies the
 inverse substitution and, through `LinearMap.det_toLpLin`, the Jacobian.
@@ -152,3 +156,19 @@ theorem inner_sum_smul_basisFun_mul_norm_sq {ι : Type*} [Fintype ι]
   exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
 
 end Matrix
+
+namespace TauCeti
+
+open Matrix
+
+variable {n : Type*} [Fintype n] [DecidableEq n]
+
+/-- The operator of a normal matrix on `EuclideanSpace 𝕜 n` is normal. -/
+instance isStarNormal_toEuclideanLin {𝕜 : Type*} [RCLike 𝕜] (A : Matrix n n 𝕜) [IsStarNormal A] :
+    IsStarNormal (toEuclideanLin A) where
+  star_comm_self := by
+    have h : Aᴴ * A = A * Aᴴ := star_comm_self' A
+    rw [commute_iff_eq, LinearMap.star_eq_adjoint, ← toEuclideanLin_conjTranspose_eq_adjoint,
+      Module.End.mul_eq_comp, Module.End.mul_eq_comp, ← toLpLin_mul_same, ← toLpLin_mul_same, h]
+
+end TauCeti

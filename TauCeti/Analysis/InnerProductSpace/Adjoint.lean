@@ -33,6 +33,10 @@ If a linear map vanishes on `Tᗮ`, its adjoint takes values in `T`
 endomorphism is the conjugate of its determinant (`LinearMap.det_adjoint`). For a surjective
 linear map, the orthogonal complement of its kernel has the dimension of the codomain
 (`LinearMap.finrank_orthogonal_ker_of_surjective`).
+
+Passing a finite-dimensional operator to continuous linear maps preserves its adjoint
+(`TauCeti.toContinuousLinearMap_star`) and its normality
+(the instance `TauCeti.isStarNormal_toContinuousLinearMap`).
 -/
 
 public section
@@ -141,3 +145,25 @@ theorem adjoint_apply_mem_of_forall_mem_orthogonal {A : E →ₗ[𝕜] F} {T : S
     (A.orthogonal_ker ▸ mem_range_self _ y)
 
 end LinearMap
+
+namespace TauCeti
+
+/-- Passing a finite-dimensional operator to continuous linear maps preserves its adjoint. -/
+theorem toContinuousLinearMap_star {𝕜 E : Type*} [RCLike 𝕜]
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [FiniteDimensional 𝕜 E] [CompleteSpace E]
+    (T : E →ₗ[𝕜] E) :
+    (star T).toContinuousLinearMap = star T.toContinuousLinearMap := by
+  rw [LinearMap.star_eq_adjoint, ContinuousLinearMap.star_eq_adjoint,
+    LinearMap.adjoint_toContinuousLinearMap]
+
+/-- A finite-dimensional linear operator remains normal when regarded as continuous. -/
+instance isStarNormal_toContinuousLinearMap {𝕜 E : Type*} [RCLike 𝕜]
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [FiniteDimensional 𝕜 E] [CompleteSpace E]
+    (T : E →ₗ[𝕜] E) [IsStarNormal T] :
+    IsStarNormal T.toContinuousLinearMap where
+  star_comm_self := by
+    rw [← toContinuousLinearMap_star]
+    ext x
+    exact congrArg (fun f : E →ₗ[𝕜] E => f x) (star_comm_self (x := T)).eq
+
+end TauCeti
