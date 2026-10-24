@@ -5,7 +5,9 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Transvection
+public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
+import Mathlib.Tactic.FinCases
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # Two upper-unipotent charts of `SL₂`
