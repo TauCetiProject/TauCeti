@@ -96,72 +96,6 @@ namespace GridDiagram
 
 variable {n : ℕ}
 
-/-! ### Cyclic bookkeeping at the turn of a pentagon -/
-
-/-- The grid line `s` lies in the band of lines `α + 1, …, β` unless it is the line `α` or lies
-strictly between `β` and `α` going up: the band is the complement of the lines `β + 1, …, α`. -/
-private theorem ite_mem_cIco_finRotate_eq {s α β : Fin n} (hαβ : α ≠ β) :
-    (if s ∈ Grid.cIco (finRotate n α) (finRotate n β) then 1 else 0 : ℤ) =
-      1 - (if α = s then 1 else 0) - if s ∈ Grid.cIoo β α then 1 else 0 := by
-  have hband := Grid.mem_cIco_finRotate_iff_mem_insert_cIoo (x := s) hαβ
-  have hαα : α ∉ Grid.cIoo β α := Grid.right_notMem_cIoo β α
-  have hα : α ∉ insert β (Grid.cIoo α β) := by
-    rw [Finset.mem_insert, not_or]
-    exact ⟨hαβ, Grid.left_notMem_cIoo α β⟩
-  by_cases hsα : α = s
-  · subst hsα
-    simp only [mt hband.mp hα, hαα, ite_true, ite_false]
-    ring
-  by_cases hs : s ∈ Grid.cIoo β α
-  · have hs' : s ∉ insert β (Grid.cIoo α β) := by
-      rw [Finset.mem_insert]
-      rintro (rfl | h)
-      · exact Grid.left_notMem_cIoo _ _ hs
-      · exact Finset.disjoint_left.mp (Grid.disjoint_cIoo_swap α β) h hs
-    simp only [mt hband.mp hs', hsα, hs, ite_true, ite_false]
-    ring
-  · have hs' : s ∈ insert β (Grid.cIoo α β) := by
-      rcases (Grid.not_mem_cIoo_iff hαβ.symm).mp hs with h | h | h
-      · exact h ▸ Finset.mem_insert_self _ _
-      · exact absurd h.symm hsα
-      · exact Finset.mem_insert_of_mem h
-    simp only [hband.mpr hs', hsα, hs, ite_true, ite_false]
-    ring
-
-/-- The cyclic bookkeeping of a pentagon at the replaced grid line. The pentagon's terminal side
-runs from row `B` up to row `T`, through the turn row `s`, and `α ≠ β` are the square rows of two
-markings next to the line. The total vanishes unless `s` lies strictly between `β` and `α` going
-up, which never happens when `α` and `β` lie in the two bigons below and above the turn of a
-column commutation. -/
-private theorem pentagon_ite_identity {B T s α β : Fin n} (hs : s ∈ Grid.cIco B T)
-    (hαβ : α ≠ β) :
-    (if T ∈ Grid.cIco (finRotate n α) (finRotate n β) then 1 else -1 : ℤ) - 1 +
-      2 * ((if β ∈ Grid.cIco B T then 1 else 0) - (if α ∈ Grid.cIoo s T then 1 else 0) -
-        (if β ∈ Grid.cIco B s then 1 else 0)) =
-      -2 * if s ∈ Grid.cIoo β α then 1 else 0 := by
-  have hsT : s ≠ T := fun h => Grid.right_notMem_cIco B T (h ▸ hs)
-  have hcross := Grid.ite_mem_cIco_finRotate_sub_ite_mem_cIco_finRotate hsT hαβ
-  have hline := ite_mem_cIco_finRotate_eq (s := s) hαβ
-  have hα₁ := congrArg (Nat.cast : ℕ → ℤ) (Grid.ite_mem_cIco_eq_add_add (Grid.left_mem_cIco hsT) α)
-  have hβ₁ := congrArg (Nat.cast : ℕ → ℤ) (Grid.ite_mem_cIco_eq_add_add (Grid.left_mem_cIco hsT) β)
-  have hβ₂ := congrArg (Nat.cast : ℕ → ℤ) (Grid.ite_mem_cIco_eq_add_add hs β)
-  simp only [Grid.cIco_self, Finset.notMem_empty, ite_false, Nat.cast_add, Nat.cast_ite,
-    Nat.cast_one, Nat.cast_zero, zero_add] at hα₁ hβ₁ hβ₂
-  have hT : (if T ∈ Grid.cIco (finRotate n α) (finRotate n β) then 1 else -1 : ℤ) =
-      2 * (if T ∈ Grid.cIco (finRotate n α) (finRotate n β) then 1 else 0) - 1 := by
-    split_ifs <;> norm_num
-  rw [hT]
-  linarith
-
-/-- If the square rows `α ≠ β` lie in the two bigons below and above the turn row `s`, going up
-from `s` first `β` is reached, at the latest at the other turn row `t`, and then `α`, at the
-latest back at `s`. So `s` does not lie strictly between `β` and `α`. -/
-private theorem notMem_cIoo_of_mem_insert_cIco {s t α β : Fin n}
-    (hα : α ∈ insert s (Grid.cIco t s)) (hβ : β ∈ insert t (Grid.cIco s t)) :
-    s ∉ Grid.cIoo β α := by
-  simp only [Finset.mem_insert, Grid.mem_cIco, Grid.mem_cIoo, ne_eq, ← Fin.val_inj] at hα hβ ⊢
-  split_ifs at hα hβ ⊢ <;> omega
-
 /-! ### The `O`-Maslov grading under an adjacent column swap -/
 
 /-- The number of `O`-markings in a set of squares, as a sum over the columns. -/
@@ -369,8 +303,8 @@ the bigon below the turn and those of the next column in the bigon above it. -/
 @[simp]
 theorem ColumnCommutationData.commutationBidegree_eq_zero (C : ColumnCommutationData G) :
     G.commutationBidegree C = 0 := by
-  have hO := notMem_cIoo_of_mem_insert_cIco C.O_column_below C.O_next_above
-  have hX := notMem_cIoo_of_mem_insert_cIco C.X_column_below C.X_next_above
+  have hO := Grid.notMem_cIoo_of_mem_insert_cIco C.O_column_below C.O_next_above
+  have hX := Grid.notMem_cIoo_of_mem_insert_cIco C.X_column_below C.X_next_above
   simp only [commutationBidegree, hO, hX, ite_false, add_zero]
 
 /-! ### The gradings across a pentagon -/
@@ -420,7 +354,8 @@ private theorem maslovOℤ_swapColumns_of_isEmpty_aux {a s : Fin n} {x y : GridS
   -- position of the `O`-markings of those two columns relative to the turn row accounts for the
   -- rest, together with the change of diagram at the state `x`.
   have hD := G.maslovOℤ_swapColumns_finRotate hab x
-  have hid := pentagon_ite_identity (B := x P.left) (T := x b) P.turn_mem_cIco hOab
+  have hid := Grid.ite_mem_cIco_finRotate_sub_one_add_two_mul_eq (B := x P.left) (T := x b)
+    P.turn_mem_cIco hOab
   linarith
 
 variable (C : ColumnTurn n) {x y : GridState n}
@@ -514,7 +449,8 @@ private theorem maslovOℤ_swapColumns_initialPentagon_of_isEmpty_aux {a s : Fin
   have hD := G.maslovOℤ_swapColumns_finRotate hab y
   have hyb : y b = x P.right := by simpa only [P.left_eq] using P.map_left
   rw [hyb] at hD
-  have hid := pentagon_ite_identity P.turn_mem_cIco (G.O.toPerm.injective.ne hab)
+  have hid := Grid.ite_mem_cIco_finRotate_sub_one_add_two_mul_eq P.turn_mem_cIco
+    (G.O.toPerm.injective.ne hab)
   linarith
 
 /-- An empty pentagon turning on its initial side raises the target `O`-Maslov grading by twice

@@ -101,6 +101,12 @@ directions before taking products.
 * `TauCeti.Grid.ite_mem_cIco_finRotate_sub_ite_mem_cIco_finRotate`: moving from `p` to `q` enters
   the arc from `finRotate n α` to `finRotate n β` when passing `α` and leaves it when passing
   `β`.
+* `TauCeti.Grid.ite_mem_cIco_finRotate_eq`: the arc from `finRotate n α` to `finRotate n β` is
+  the complement of `α` and of the open arc from `β` to `α`.
+* `TauCeti.Grid.ite_mem_cIco_finRotate_sub_one_add_two_mul_eq`: the crossing count for a shifted
+  arc after cutting a half-open arc at an interior point.
+* `TauCeti.Grid.notMem_cIoo_of_mem_insert_cIco`: `s` does not lie strictly between a point of the
+  closed arc from `s` to `t` and a point of the closed arc from `t` to `s`.
 * `TauCeti.Grid.notMem_cIco_of_cIco_union`: a point missing both halves of a half-open arc
   cut at an interior point misses the whole arc.
 * `TauCeti.Grid.cyclicPosition_lt_of_notMem_cIco`: two distinct points whose half-open arc
@@ -839,6 +845,76 @@ theorem ite_mem_cIco_finRotate_sub_ite_mem_cIco_finRotate {p q α β : Fin n}
     have := p.isLt
     have := q.isLt
     split_ifs <;> omega
+
+/-- For distinct `α` and `β`, a point `s` lies on the half-open arc from `finRotate n α` to
+`finRotate n β` unless it is `α` or lies strictly between `β` and `α`. On a grid, with `α` and `β`
+naming rows of squares, the band of lines `α + 1, …, β` is the complement of the lines
+`β + 1, …, α`. -/
+theorem ite_mem_cIco_finRotate_eq {s α β : Fin n} (hαβ : α ≠ β) :
+    (if s ∈ cIco (finRotate n α) (finRotate n β) then 1 else 0 : ℤ) =
+      1 - (if α = s then 1 else 0) - if s ∈ cIoo β α then 1 else 0 := by
+  have hband := mem_cIco_finRotate_iff_mem_insert_cIoo (x := s) hαβ
+  have hαα : α ∉ cIoo β α := right_notMem_cIoo β α
+  have hα : α ∉ insert β (cIoo α β) := by
+    rw [Finset.mem_insert, not_or]
+    exact ⟨hαβ, left_notMem_cIoo α β⟩
+  by_cases hsα : α = s
+  · subst hsα
+    simp only [mt hband.mp hα, hαα, ite_true, ite_false]
+    omega
+  by_cases hs : s ∈ cIoo β α
+  · have hs' : s ∉ insert β (cIoo α β) := by
+      rw [Finset.mem_insert]
+      rintro (rfl | h)
+      · exact left_notMem_cIoo _ _ hs
+      · exact Finset.disjoint_left.mp (disjoint_cIoo_swap α β) h hs
+    simp only [mt hband.mp hs', hsα, hs, ite_true, ite_false]
+    omega
+  · have hs' : s ∈ insert β (cIoo α β) := by
+      rcases (not_mem_cIoo_iff hαβ.symm).mp hs with h | h | h
+      · exact h ▸ Finset.mem_insert_self _ _
+      · exact absurd h.symm hsα
+      · exact Finset.mem_insert_of_mem h
+    simp only [hband.mpr hs', hsα, hs, ite_true, ite_false]
+    omega
+
+/-- **Cutting a half-open arc at an interior point.** Let `s` lie on the half-open arc from `B`
+to `T` and let `α ≠ β`. The crossing count of `T` for the arc from `finRotate n α` to
+`finRotate n β`, corrected by the positions of `α` and `β` relative to the cut at `s`, vanishes
+unless `s` lies strictly between `β` and `α`. On a grid this is the bookkeeping of a pentagon at
+the replaced grid line: its terminal side runs from row `B` up to row `T` through the turn row
+`s`, and `α`, `β` are the square rows of two markings next to the line. The total also vanishes
+when `α` and `β` lie in the two bigons below and above the turn of a column commutation. -/
+theorem ite_mem_cIco_finRotate_sub_one_add_two_mul_eq {B T s α β : Fin n} (hs : s ∈ cIco B T)
+    (hαβ : α ≠ β) :
+    (if T ∈ cIco (finRotate n α) (finRotate n β) then 1 else -1 : ℤ) - 1 +
+      2 * ((if β ∈ cIco B T then 1 else 0) - (if α ∈ cIoo s T then 1 else 0) -
+        (if β ∈ cIco B s then 1 else 0)) =
+      -2 * if s ∈ cIoo β α then 1 else 0 := by
+  have hsT : s ≠ T := fun h => right_notMem_cIco B T (h ▸ hs)
+  have hcross := ite_mem_cIco_finRotate_sub_ite_mem_cIco_finRotate hsT hαβ
+  have hline := ite_mem_cIco_finRotate_eq (s := s) hαβ
+  have hα₁ := congrArg (Nat.cast : ℕ → ℤ) (ite_mem_cIco_eq_add_add (left_mem_cIco hsT) α)
+  have hβ₁ := congrArg (Nat.cast : ℕ → ℤ) (ite_mem_cIco_eq_add_add (left_mem_cIco hsT) β)
+  have hβ₂ := congrArg (Nat.cast : ℕ → ℤ) (ite_mem_cIco_eq_add_add hs β)
+  simp only [cIco_self, Finset.notMem_empty, ite_false, Nat.cast_add, Nat.cast_ite,
+    Nat.cast_one, Nat.cast_zero, zero_add] at hα₁ hβ₁ hβ₂
+  have hT : (if T ∈ cIco (finRotate n α) (finRotate n β) then 1 else -1 : ℤ) =
+      2 * (if T ∈ cIco (finRotate n α) (finRotate n β) then 1 else 0) - 1 := by
+    split_ifs <;> omega
+  rw [hT]
+  omega
+
+/-- If `α` lies on the arc from `t` up to `s`, both ends included, and `β` lies on the arc from
+`s` up to `t`, both ends included, then going up from `s` first `β` is reached, at the latest at
+`t`, and then `α`, at the latest back at `s`. So `s` does not lie strictly between `β` and `α`. On
+a grid, these are square rows in the two bigons below and above the turn rows `s` and `t` of a
+column commutation. -/
+theorem notMem_cIoo_of_mem_insert_cIco {s t α β : Fin n}
+    (hα : α ∈ insert s (cIco t s)) (hβ : β ∈ insert t (cIco s t)) :
+    s ∉ cIoo β α := by
+  simp only [Finset.mem_insert, mem_cIco, mem_cIoo, ne_eq, ← Fin.val_inj] at hα hβ ⊢
+  split_ifs at hα hβ ⊢ <;> omega
 
 /-- On a cycle of length at least two, no point is fixed by the cyclic successor `finRotate n`. -/
 theorem finRotate_ne_self (hn : 1 < n) (a : Fin n) : finRotate n a ≠ a := by

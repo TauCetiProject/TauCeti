@@ -45,10 +45,6 @@ change of `τ` across a crossing change once the composites are known.
 
 ## Main results
 
-* `TauCeti.GridDiagram.ColumnsInterleaving.O_mem_columnArc_iff`: for interleaving segments,
-  exactly one `O`-marking lies on the arc of the other column.
-* `TauCeti.GridDiagram.ColumnsInterleaving.O_swapColumns_mem_columnArc_iff`: exchanging the two
-  columns exchanges the two orders of the markings.
 * `TauCeti.GridDiagram.commutationBidegree_eq_zero_of_mem_columnArc` and
   `TauCeti.GridDiagram.commutationBidegree_eq_of_notMem_columnArc`: turn rows at which the
   commutation map of a cross-commutation has bidegree `(0, 0)`, respectively `(-2, -1)`.
@@ -72,31 +68,6 @@ namespace TauCeti
 namespace GridDiagram
 
 variable {n : ℕ} {G : GridDiagram n}
-
-/-- For interleaving segments in columns `a` and `b`, exactly one of the two `O`-markings lies on
-the open arc of the other column: the `O`-marking of `b` lies on the arc of `a` exactly when that
-of `a` does not lie on the arc of `b`. -/
-theorem ColumnsInterleaving.O_mem_columnArc_iff {a b : Fin n} (h : G.ColumnsInterleaving a b) :
-    G.O b ∈ G.columnArc a ↔ G.O a ∉ G.columnArc b := by
-  by_cases hO : G.O a ∈ G.columnArc b
-  · rcases (columnsInterleaving_iff G _ _).mp h with ⟨h₁, h₂⟩ | ⟨h₁, -⟩
-    · refine iff_of_false (fun h₃ => ?_) (not_not.mpr hO)
-      exact Finset.disjoint_left.mp (Grid.disjoint_cIoo_swap _ _) h₃
-        (Grid.mem_cIoo_of_mem_cIoo_of_mem_cIoo_swap h₂ h₁)
-    · exact absurd h₁ (Finset.disjoint_left.mp (Grid.disjoint_cIoo_swap _ _) hO)
-  · rcases (columnsInterleaving_iff G _ _).mp h with ⟨h₁, -⟩ | ⟨h₁, h₂⟩
-    · exact absurd h₁ hO
-    · exact iff_of_true (Grid.mem_cIoo_of_mem_cIoo_of_mem_cIoo_swap h₁ h₂) hO
-
-/-- A cross-commutation exchanges the two orders of the markings of interleaving columns: after
-the columns `a` and `b` are exchanged, the `O`-marking of `a` lies on the arc of `b` exactly when
-it did not before. -/
-theorem ColumnsInterleaving.O_swapColumns_mem_columnArc_iff {a b : Fin n}
-    (h : G.ColumnsInterleaving a b) :
-    (G.swapColumns a b).O a ∈ (G.swapColumns a b).columnArc b ↔ G.O a ∉ G.columnArc b := by
-  simp only [columnArc, swapColumns_O, swapColumns_X, GridState.swapColumns_apply,
-    Equiv.swap_apply_left, Equiv.swap_apply_right]
-  exact h.O_mem_columnArc_iff
 
 variable (C : ColumnTurn n)
 
