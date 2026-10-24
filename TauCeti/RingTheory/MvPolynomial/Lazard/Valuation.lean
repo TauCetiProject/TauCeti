@@ -342,6 +342,16 @@ theorem le_lazardValuation_mul (p q : MvPolynomial σ R) (a : σ → R) :
     p.lazardValuation a + q.lazardValuation a ≤ (p * q).lazardValuation a := by
   simpa [lazardValuation_def] using MvPowerSeries.le_lexOrder_mul _ _
 
+/-- Associated polynomials have the same Lazard valuation at every point. -/
+theorem _root_.TauCeti.lazardValuation_eq_of_associated (h : Associated p q) (a : σ → R) :
+    p.lazardValuation a = q.lazardValuation a := by
+  have hle {f g : MvPolynomial σ R} (hfg : f ∣ g) :
+      f.lazardValuation a ≤ g.lazardValuation a := by
+    obtain ⟨r, rfl⟩ := hfg
+    exact (le_add_of_nonneg_right (MvPolynomial.zero_le_lazardValuation r a)).trans
+      (MvPolynomial.le_lazardValuation_mul f r a)
+  exact le_antisymm (hle h.dvd) (hle h.symm.dvd)
+
 /-- Over a domain, the Lazard valuation of a product is the sum of the Lazard valuations. -/
 theorem lazardValuation_mul [NoZeroDivisors R] (p q : MvPolynomial σ R) (a : σ → R) :
     (p * q).lazardValuation a = p.lazardValuation a + q.lazardValuation a := by
