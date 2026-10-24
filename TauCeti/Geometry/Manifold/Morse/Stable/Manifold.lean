@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Local
 public import TauCeti.Geometry.Manifold.LinearSlice
-import TauCeti.Geometry.Manifold.Immersion.Basic
+import TauCeti.Geometry.Manifold.PullbackGroupoid
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import Mathlib.Analysis.Normed.Module.Complemented
 
@@ -147,7 +147,7 @@ theorem exists_stableSet_chart (hX : IsAdaptedPseudoGradient f X)
   · rw [Homeomorph.transOpenPartialHomeomorph_source, OpenPartialHomeomorph.restr_source,
       hD.interior_eq, mem_preimage, Diffeomorph.coe_toHomeomorph, flowDiffeomorph_apply]
     exact ⟨hT.1, hT⟩
-  · exact mem_maximalAtlas_diffeomorph_transOpenPartialHomeomorph _
+  · exact (hX.flowDiffeomorph T).transOpenPartialHomeomorph_mem_maximalAtlas
       (restr_mem_maximalAtlas _ φ.mem_maximalAtlas hD)
   · intro z hz
     simp only [Homeomorph.transOpenPartialHomeomorph_source, OpenPartialHomeomorph.restr_source,

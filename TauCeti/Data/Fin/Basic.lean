@@ -43,7 +43,8 @@ range, so the value is a `dite` rather than a plain application.
   backward rotation and conversely.
 * `Fin.finRotate_rev_finRotate_rev`: negation modulo `n`, written as `i ↦ finRotate n i.rev`, is
   an involution.
-* `Fin.coe_finRotate_pow`: a power of the rotation `finRotate n` adds its exponent modulo `n`.
+* `Fin.coe_finRotate_pow`: a power of the rotation `finRotate n` adds its exponent modulo `n`;
+  `Fin.coe_finRotate_of_add_one_lt` is the step away from the last index, where no wrapping occurs.
 * `Finset.sum_range_const_sub_succ`: the sum of a reversed initial segment of natural numbers.
 * `Fin.sum_rev_castLE`: the sum of the values of a reversed embedded finite ordinal.
 * `Fin.castSucc_add_one_of_ne_last`, `Fin.castSucc_sub_one_of_ne_zero`: how `Fin.castSucc`
@@ -71,6 +72,7 @@ range, so the value is a `dite` rather than a plain application.
 * `Fin.finRotate_succ_eq_succ_succAbove` and `Fin.finRotate_succ_succAbove_of_ne`: the cyclic
   successor of `Fin (n + 1)` against the embeddings `Fin.succ` and `i.succ.succAbove` of `Fin n`,
   as used when a new entry is inserted into a cyclic sequence.
+* `Fin.finRotate_castSucc`: the cyclic successor of a non-last index `i.castSucc` is `i.succ`.
 * `Fin.succAbove_adjacent_cases`: the positions `p` of `Fin (n + 1)` cyclically adjacent to
   `p.succAbove i`.
 * `Fin.swap_castSucc_succ_succAbove`: the transposition of `k.castSucc` and `k.succ` exchanges the
@@ -232,6 +234,13 @@ theorem coe_finRotate_pow {n : ℕ} (k : ℕ) (c : Fin n) :
     rw [pow_succ', Equiv.Perm.mul_apply, finRotate_apply, Fin.val_add, ih, Fin.val_one',
       ← Nat.add_mod, ← add_assoc]
 
+/-- Away from the last index, the cyclic permutation `finRotate n` adds one without wrapping
+around. -/
+theorem coe_finRotate_of_add_one_lt {n : ℕ} {i : Fin n} (h : (i : ℕ) + 1 < n) :
+    (finRotate n i : ℕ) = i + 1 := by
+  have := coe_finRotate_pow 1 i
+  rwa [pow_one, Nat.mod_eq_of_lt h] at this
+
 /-- Collapsing the hole opened immediately after `p` back onto `p` inverts the embedding
 `p.succ.succAbove`. -/
 @[simp]
@@ -297,6 +306,10 @@ theorem finRotate_succ_succAbove_of_ne {n : ℕ} {i k : Fin n} (hk : k ≠ i) :
   simp only [succAbove]
   split_ifs <;> simp only [lt_def, val_castSucc, val_succ, coe_finRotate, Fin.ext_iff,
     val_last] at * <;> split_ifs at * <;> omega
+
+/-- The cyclic successor of a non-last index `i.castSucc` of `Fin (n + 1)` is `i.succ`. -/
+theorem finRotate_castSucc {n : ℕ} (i : Fin n) : finRotate (n + 1) i.castSucc = i.succ :=
+  finRotate_of_lt i.isLt
 
 /-- A position `p` of `Fin (n + 1)` cyclically adjacent to `p.succAbove i` is `i.castSucc` or
 `i.succ`, or wraps around: `p` is last and `p.succAbove i` is `0`, or `p` is `0` and

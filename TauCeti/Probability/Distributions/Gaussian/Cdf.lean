@@ -36,6 +36,10 @@ over `Set.Iic x` is then the limit of those interval integrals, using
 * `TauCeti.Probability.cdf_gaussianReal_zero` — the cdf at the singular boundary `v = 0`.
 * `TauCeti.Probability.cdf_gaussianReal_zero_one_neg` — the symmetry `Φ (-x) = 1 - Φ x` of the
   standard Gaussian cdf.
+* `TauCeti.Probability.cdf_gaussianReal_self` — for a nonzero variance the cdf equals `1 / 2` at
+  the mean.
+* `TauCeti.Probability.cdf_gaussianReal_pos`, `TauCeti.Probability.cdf_gaussianReal_lt_one` — for
+  a nonzero variance the cdf takes values strictly between `0` and `1`.
 * `TauCeti.Probability.hasDerivAt_cdf_gaussianReal` — the cdf has the Gaussian density as its
   derivative.
 * `TauCeti.Probability.measureReal_Ioi_gaussianReal` — the upper tail, in terms of
@@ -141,6 +145,26 @@ theorem cdf_gaussianReal_zero_one_neg (x : ℝ) :
     cdf (gaussianReal 0 1) (-x) = 1 - cdf (gaussianReal 0 1) x := by
   rw [cdf_gaussianReal_zero_one, cdf_gaussianReal_zero_one, neg_div, Real.erf_neg]
   ring
+
+/-- A Gaussian law with nonzero variance has its mean as median: its cumulative distribution
+function takes the value `1 / 2` at the mean. -/
+@[simp]
+theorem cdf_gaussianReal_self (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0) :
+    cdf (gaussianReal m v) m = 1 / 2 := by
+  simp [cdf_gaussianReal_eq m hv, Real.erf_zero]
+
+/-- The cumulative distribution function of a Gaussian law with nonzero variance is positive. -/
+theorem cdf_gaussianReal_pos (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0) (x : ℝ) :
+    0 < cdf (gaussianReal m v) x := by
+  rw [cdf_gaussianReal_eq m hv]
+  linarith [Real.neg_one_lt_erf ((x - m) / √(2 * (v : ℝ)))]
+
+/-- The cumulative distribution function of a Gaussian law with nonzero variance is less than
+one. -/
+theorem cdf_gaussianReal_lt_one (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0) (x : ℝ) :
+    cdf (gaussianReal m v) x < 1 := by
+  rw [cdf_gaussianReal_eq m hv]
+  linarith [Real.erf_lt_one ((x - m) / √(2 * (v : ℝ)))]
 
 /-- The cumulative distribution function of a Gaussian law with nonzero variance has the Gaussian
 density as its derivative. -/

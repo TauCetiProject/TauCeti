@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
+public import Mathlib.Algebra.Category.ModuleCat.Biproducts
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.CategoryTheory.Limits.Preserves.Shapes.AbelianImages
 public import TauCeti.Algebra.Category.GradedModuleCat.Basic
@@ -48,9 +49,14 @@ graded abelian category, whose canonical exact structure is
   `TauCeti.GradedModuleCat.mem_productFan_pt_piece_iff`: the homogeneous elements of kernels,
   cokernels and finite products.
 * The instance `Abelian (TauCeti.GradedModuleCat 𝒜)`.
-* `TauCeti.GradedModuleCat.epi_iff_surjective` and `TauCeti.GradedModuleCat.mono_iff_injective`:
-  epimorphisms and monomorphisms are precisely the maps whose underlying linear maps are surjective
-  and injective, respectively.
+* `TauCeti.GradedModuleCat.epi_iff_surjective`, `TauCeti.GradedModuleCat.mono_iff_injective` and
+  `TauCeti.GradedModuleCat.isIso_iff_bijective`: epimorphisms, monomorphisms and isomorphisms are
+  precisely the maps whose underlying linear maps are surjective, injective and bijective,
+  respectively.
+* `TauCeti.GradedModuleCat.isIso_biprod_desc_of_bijective`: a map out of a binary biproduct is an
+  isomorphism when the induced map out of the product of underlying modules is bijective.
+* `TauCeti.GradedModuleCat.shortExact_cokernelπ`: a monomorphism and the projection onto its
+  cokernel form a short exact sequence.
 -/
 
 public section
@@ -316,6 +322,34 @@ theorem mono_iff_injective (f : M ⟶ N) : Mono f ↔ Function.Injective f.hom :
     have : Mono (toModuleCat.map f) := (ModuleCat.mono_iff_injective _).mpr hf
     exact (toModuleCat (𝒜 := 𝒜)).mono_of_mono_map inferInstance
 
+/-- A morphism of graded modules is an isomorphism exactly when its underlying map is
+bijective: the inverse of a bijective map of degree zero again has degree zero. -/
+theorem isIso_iff_bijective (f : M ⟶ N) : IsIso f ↔ Function.Bijective f.hom := by
+  rw [Function.Bijective, ← mono_iff_injective, ← epi_iff_surjective]
+  exact ⟨fun _ ↦ ⟨inferInstance, inferInstance⟩, fun ⟨_, _⟩ ↦ isIso_of_mono_of_epi f⟩
+
+/-- A morphism out of a binary biproduct of graded modules is an isomorphism when the induced
+map out of the product of the underlying modules is bijective. -/
+theorem isIso_biprod_desc_of_bijective {Q : GradedModuleCat.{v} 𝒜} (f : M ⟶ Q) (g : N ⟶ Q)
+    (h : Function.Bijective (f.hom.coprod g.hom)) : IsIso (biprod.desc f g) := by
+  let F := toModuleCat (𝒜 := 𝒜)
+  let q : ModuleCat.of A ((F.obj M) × (F.obj N)) ≅ F.obj Q :=
+    (LinearEquiv.ofBijective _ h).toModuleIso
+  have hq : (ModuleCat.biprodIsoProd (F.obj M) (F.obj N)).inv ≫
+      biprod.desc (F.map f) (F.map g) = q.hom := by
+    rw [biprod.desc_eq]
+    simp only [Preadditive.comp_add, ← Category.assoc, ModuleCat.biprodIsoProd_inv_comp_fst,
+      ModuleCat.biprodIsoProd_inv_comp_snd]
+    refine ModuleCat.hom_ext (LinearMap.ext fun ⟨x, y⟩ ↦ ?_)
+    simp only [ModuleCat.hom_add, ModuleCat.hom_comp, LinearMap.add_apply, LinearMap.comp_apply,
+      ModuleCat.hom_ofHom, LinearMap.fst_apply, LinearMap.snd_apply]
+    -- `toModuleCat` leaves underlying linear maps unchanged: both sides are `coprod` at `(x, y)`.
+    exact (LinearMap.coprod_apply f.hom g.hom (x, y)).symm
+  have : IsIso (biprod.desc (F.map f) (F.map g)) := IsIso.of_isIso_fac_left hq
+  have : PreservesBinaryBiproduct M N F := preservesBinaryBiproduct_of_preservesBiproduct F M N
+  have : IsIso (F.map (biprod.desc f g)) := biprod.mapBiprod_hom_desc F M N f g ▸ inferInstance
+  exact isIso_of_reflects_iso _ F
+
 /-- The forgetful functor preserves homology because kernels and cokernels are formed on
 underlying modules. -/
 instance : (toModuleCat (𝒜 := 𝒜)).PreservesHomology where
@@ -337,5 +371,12 @@ theorem exact_iff {S : ShortComplex (GradedModuleCat.{v} 𝒜)} :
   rw [← S.exact_map_iff_of_faithful toModuleCat,
     ShortComplex.ShortExact.moduleCat_exact_iff_function_exact]
   rfl
+
+/-- A monomorphism of graded modules followed by the projection onto its cokernel is a short
+exact sequence. -/
+theorem shortExact_cokernelπ [Mono f] :
+    (ShortComplex.mk f (cokernelπ f) (comp_cokernelπ f)).ShortExact where
+  exact := exact_iff.mpr (LinearMap.exact_map_mkQ_range f.hom)
+  epi_g := (epi_iff_surjective _).mpr (Submodule.mkQ_surjective _)
 
 end TauCeti.GradedModuleCat

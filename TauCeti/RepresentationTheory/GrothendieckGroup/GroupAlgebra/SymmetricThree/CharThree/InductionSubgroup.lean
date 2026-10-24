@@ -44,8 +44,6 @@ local notation "G" => Equiv.Perm (Fin 3)
 local notation "K₀" => ExactK0 (finiteModulesExactStructure k[G])
 local notation "s" => fdRepK0RingEquiv k G
   (ExactK0.of (FDRep.ofLinearCharacter (signLinearCharacter k (Fin 3))))
-local notation "I" => ⨆ (S : Subgroup G) (_ : IsCyclic S ∧ ¬ 3 ∣ Nat.card S),
-  AddMonoidHom.range (indK0 k S)
 
 private theorem three_nsmul_one_mem_range_indK0_stabilizer (a : Fin 3) :
     3 • (1 : K₀) ∈ (indK0 k (MulAction.stabilizer G a)).range := by
@@ -109,38 +107,40 @@ theorem mem_range_indK0_stabilizer_perm_fin_three_char_three_iff (a : Fin 3) (x 
 /-- The cyclic prime-to-three induction subgroup of S₃ consists exactly of the virtual
 classes whose integral dimension is divisible by three. A single point stabilizer suffices. -/
 @[simp]
-theorem mem_iSup_range_indK0_cyclic_coprime_perm_fin_three_char_three_iff (x : K₀) :
-    x ∈ I ↔ (3 : ℤ) ∣ finrankK0 k k[G] x := by
+theorem mem_indCyclicCoprimeK0_perm_fin_three_char_three_iff (x : K₀) :
+    x ∈ indCyclicCoprimeK0 k G 3 ↔ (3 : ℤ) ∣ finrankK0 k k[G] x := by
   constructor
   · intro hx
-    have h := ordProj_dvd_finrankK0_of_mem_iSup_range_indK0 (k := k)
-      (by decide : Nat.Prime 3) (fun S hS ↦ hS.2) hx
+    have hp : Nat.Prime 3 := by decide
+    have h := ordProj_dvd_finrankK0_of_mem_indClassesK0 (k := k) hp
+      (fun S hS ↦ hp.coprime_iff_not_dvd.mp hS.2) hx
     have hg : Nat.card G = 6 := by
       norm_num [Nat.card_eq_fintype_card, Fintype.card_perm, Nat.factorial]
     exact (Int.natCast_dvd_natCast.mpr (Nat.dvd_ordProj_of_dvd Nat.card_pos.ne'
       (by decide) (by rw [hg]; decide))).trans h
   · intro hx
-    let H := MulAction.stabilizer G (0 : Fin 3)
-    have hcard : Nat.card H = 2 := card_stabilizer_perm_fin_three 0
-    have hH : IsCyclic H := isCyclic_of_prime_card (p := 2) hcard
-    exact AddSubgroup.mem_iSup_of_mem H (AddSubgroup.mem_iSup_of_mem
-      ⟨hH, by rw [hcard]; decide⟩
-      ((mem_range_indK0_stabilizer_perm_fin_three_char_three_iff k 0 x).mpr hx))
+    obtain ⟨y, rfl⟩ :=
+      (mem_range_indK0_stabilizer_perm_fin_three_char_three_iff k 0 x).mpr hx
+    have hcard : Nat.card (MulAction.stabilizer G (0 : Fin 3)) = 2 :=
+      card_stabilizer_perm_fin_three 0
+    exact indK0_mem_indCyclicCoprimeK0 k (isCyclic_of_prime_card (p := 2) hcard)
+      (by rw [hcard]; decide) y
 
 /-- The induction subgroup is the kernel of dimension reduced modulo three. Thus its
 quotient records exactly the dimension obstruction to prime-to-three cyclic induction. -/
-theorem iSup_range_indK0_cyclic_coprime_perm_fin_three_char_three_eq_ker :
-    I = ((Int.castAddHom (ZMod 3)).comp (finrankK0 k k[G])).ker := by
+theorem indCyclicCoprimeK0_perm_fin_three_char_three_eq_ker :
+    indCyclicCoprimeK0 k G 3 = ((Int.castAddHom (ZMod 3)).comp (finrankK0 k k[G])).ker := by
   ext x
-  simp only [mem_iSup_range_indK0_cyclic_coprime_perm_fin_three_char_three_iff,
+  simp only [mem_indCyclicCoprimeK0_perm_fin_three_char_three_iff,
     AddMonoidHom.mem_ker, AddMonoidHom.comp_apply, Int.coe_castAddHom,
     ZMod.intCast_zmod_eq_zero_iff_dvd]
   norm_num
 
 /-- The cyclic prime-to-three induction subgroup of S₃ has index three in its exact
 Grothendieck group over every field of characteristic three. -/
-theorem index_iSup_range_indK0_cyclic_coprime_perm_fin_three_char_three : (I).index = 3 := by
-  rw [iSup_range_indK0_cyclic_coprime_perm_fin_three_char_three_eq_ker,
+theorem index_indCyclicCoprimeK0_perm_fin_three_char_three :
+    (indCyclicCoprimeK0 k G 3).index = 3 := by
+  rw [indCyclicCoprimeK0_perm_fin_three_char_three_eq_ker,
     AddSubgroup.index_ker]
   have hf : Function.Surjective ((Int.castAddHom (ZMod 3)).comp (finrankK0 k k[G])) := by
     intro z
@@ -156,9 +156,9 @@ theorem index_iSup_range_indK0_cyclic_coprime_perm_fin_three_char_three : (I).in
 /-- A multiple of the trivial S₃-class is induced from cyclic subgroups of order prime
 to three exactly when its multiplier is divisible by three. In particular the least
 positive multiplier is three, and the trivial class itself is not induced. -/
-theorem nsmul_one_mem_iSup_range_indK0_cyclic_coprime_perm_fin_three_char_three_iff (n : ℕ) :
-    n • (1 : K₀) ∈ I ↔ 3 ∣ n := by
-  rw [mem_iSup_range_indK0_cyclic_coprime_perm_fin_three_char_three_iff,
+theorem nsmul_one_mem_indCyclicCoprimeK0_perm_fin_three_char_three_iff (n : ℕ) :
+    n • (1 : K₀) ∈ indCyclicCoprimeK0 k G 3 ↔ 3 ∣ n := by
+  rw [mem_indCyclicCoprimeK0_perm_fin_three_char_three_iff,
     map_nsmul, finrankK0_one]
   simpa using (Int.natCast_dvd_natCast (m := 3) (n := n))
 

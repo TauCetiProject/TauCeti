@@ -45,6 +45,7 @@ determines a unique module map from `L_m^ε` that sends `v₀` to `v`, and more 
 
 ## Main results
 
+* `TauCeti.UqSl2.LadderModule.basis_repr_vec`: the coordinates of `v_j` in the ladder basis.
 * `TauCeti.UqSl2.LadderModule.e_smul_vec`, `f_smul_vec`, `k_smul_vec`, `kInv_smul_vec`:
   the action of the generators.
 * `TauCeti.UqSl2.LadderModule.e_pow_smul_vec`, `f_pow_smul_vec`: the action of their powers.
@@ -125,6 +126,18 @@ theorem vec_eq_zero_of_neg {j : ℤ} (hj : j < 0) : vec q m ε j = 0 :=
 @[simp]
 theorem vec_eq_zero_of_lt {j : ℤ} (hj : (m : ℤ) < j) : vec q m ε j = 0 :=
   vec_eq_zero_iff.mpr (.inr hj)
+
+/-- The coordinates of a ladder vector in the ladder basis: `v_j` has coordinate `1` at `j` and
+`0` elsewhere, and all its coordinates vanish when `j` is out of range. -/
+@[simp]
+theorem basis_repr_vec (j : ℤ) (i : Fin (m + 1)) :
+    (basis q m ε).repr (vec q m ε j) i = if (i : ℤ) = j then 1 else 0 := by
+  by_cases hj : 0 ≤ j ∧ j ≤ m
+  · obtain ⟨k, rfl⟩ : ∃ k : Fin (m + 1), (k : ℤ) = j := ⟨⟨j.toNat, by omega⟩, by simp; omega⟩
+    rw [vec_coe, Basis.repr_self, Finsupp.single_apply]
+    exact if_congr (by rw [eq_comm, Fin.ext_iff]; omega) rfl rfl
+  · rw [vec_eq_zero_iff.mpr (by omega), map_zero, Finsupp.coe_zero, Pi.zero_apply,
+      ite_eq_right (by omega)]
 
 /-- The complex dimension of `L_m^ε` is `m + 1`. -/
 @[simp]
@@ -370,15 +383,11 @@ theorem isSimpleModule (hq : IsGenericQuantumParameter q) :
 
 /-- At a generic parameter, a `UqSl2 q`-module map out of `L_m^ε` is determined by its value at
 the highest vector `v₀`. -/
-theorem hom_ext (hq : IsGenericQuantumParameter q) {V : Type*} [AddCommGroup V]
+theorem hom_ext (hq : IsGenericQuantumParameter q) {V : Type*} [AddCommMonoid V]
     [Module (UqSl2 q) V] {φ ψ : LadderModule q m ε →ₗ[UqSl2 q] V}
     (h : φ (vec q m ε 0) = ψ (vec q m ε 0)) : φ = ψ := by
-  refine LinearMap.ext fun x => ?_
-  have hx : x ∈ Submodule.span (UqSl2 q) {vec q m ε 0} := by
-    rw [span_singleton_eq_top hq (by simp)]
-    exact Submodule.mem_top
-  obtain ⟨a, rfl⟩ := Submodule.mem_span_singleton.mp hx
-  rw [map_smul, map_smul, h]
+  refine LinearMap.ext_on (span_singleton_eq_top hq (x := vec q m ε 0) (by simp)) ?_
+  simpa only [Set.eqOn_singleton] using h
 
 /-! ### Universal property -/
 
@@ -428,11 +437,8 @@ include hq hv he in
 private theorem e_smul_string (j : ℕ) :
     e q • string q v (j + 1) = (ε * quantumInteger q (m - j)) • string q v j := by
   have hq0 := hq.ne_zero
-  have hμ : (ε * q ^ m : ℂ) ≠ 0 := mul_ne_zero (by simp) (pow_ne_zero _ hq0)
   have hk : k q • v = (ε * q ^ m : ℂ) • v := mem_weightSpace_iff.mp hv
-  have hkInv : kInv q • v = (ε * q ^ m : ℂ)⁻¹ • v := by
-    rw [← inv_smul_smul₀ hμ (kInv q • v), smul_comm _ (kInv q), ← hk, ← mul_smul, kInv_mul_k,
-      one_smul]
+  have hkInv := kInv_smul_of_mem_weightSpace hv
   -- Apply the commutator formula to `v`; only its `K`, `K⁻¹` term survives.
   have h := congrArg (· • v) (e_mul_f_pow hq.sub_inv_ne_zero (j + 1))
   simp only [add_smul, mul_smul, he, smul_zero, zero_add, smul_assoc, sub_smul, hk, hkInv,

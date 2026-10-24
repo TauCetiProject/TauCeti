@@ -27,6 +27,9 @@ The resultant with `1 - t X` at a degree bound `n` for `f` is the value at `t` o
 arbitrary valid degree bounds, the bounds adding. These are the identities behind Coleman's
 spectral transform, whose rank is a specified degree bound rather than an actual degree.
 
+Finally, resultants taken at the actual degrees commute with any coefficient map preserving both
+degrees, the form of base change used when comparing a resultant with its specializations.
+
 ## Main results
 
 * `Polynomial.resultant_C_sub_X_right`
@@ -34,6 +37,8 @@ spectral transform, whose rank is a specified degree bound rather than an actual
 * `Polynomial.resultant_one_sub_C_mul_X_right`: `Res_(n,1)(f, 1 - t X) = (reflect n f)(t)`.
 * `Polynomial.resultant_mul_left_of_natDegree_le`: multiplicativity in the left argument at
   arbitrary degree bounds.
+* `Polynomial.resultant_map_of_natDegree_eq`: resultants at the actual degrees commute with a
+  coefficient map that preserves both degrees.
 * `Polynomial.Monic.resultant_of_le`: for a monic left argument, the resultant is independent of
   the valid degree bound supplied for the right argument.
 
@@ -121,6 +126,15 @@ theorem resultant_one_sub_C_mul_X_right (f : R[X]) (t : R) {n : ℕ} (hf : f.nat
   rw [← resultant_add_mul_left f ℓ p (n + 1) 1 hp hℓ, hfp, resultant_C_mul_left,
     resultant_X_pow_left _ _ _ hℓ]
   simp [ℓ]
+
+/-- Resultants at the actual degrees commute with a coefficient map that preserves both degrees,
+for instance an injective one or one that does not kill the leading coefficients
+(`Polynomial.natDegree_map_of_leadingCoeff_ne_zero`). Without this hypothesis the original
+degrees must be kept as explicit bounds, as in `Polynomial.resultant_map_map`. -/
+theorem resultant_map_of_natDegree_eq {S : Type*} [CommRing S] (φ : R →+* S) {f g : R[X]}
+    (hf : (f.map φ).natDegree = f.natDegree) (hg : (g.map φ).natDegree = g.natDegree) :
+    (f.map φ).resultant (g.map φ) = φ (f.resultant g) := by
+  rw [hf, hg, resultant_map_map]
 
 end Polynomial
 

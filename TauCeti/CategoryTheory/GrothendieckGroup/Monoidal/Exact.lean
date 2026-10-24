@@ -26,7 +26,7 @@ not split.
 
 The construction parallels `TauCeti/CategoryTheory/GrothendieckGroup/Monoidal/Basic.lean` for
 split `K₀`, with the biproduct relations replaced by conflations: the multiplication is the
-two-variable descent `TauCeti.ExactK0.BiadditiveInvariant.bilift` of `(X, Y) ↦ [X ⊗ Y]`. The
+biadditive map `TauCeti.ExactK0.map₂` induced by the tensor product bifunctor. The
 canonical comparison `TauCeti.ExactK0.fromSplit` from split `K₀` is a ring homomorphism,
 `TauCeti.ExactK0.fromSplitRingHom`.
 
@@ -75,25 +75,17 @@ variable {C : Type u} [Category.{v} C] [Preadditive C] [HasZeroObject C] [HasBin
   [MonoidalCategory C] [MonoidalPreadditive C] [EssentiallySmall.{w} C]
   (E : ExactStructure C) [E.IsMonoidal]
 
-/-- The class of a tensor product, as an invariant additive on conflations in each variable: this
-is the datum that descends the tensor product to a multiplication on exact `K₀`. -/
-private noncomputable def mulInvariant : BiadditiveInvariant E E (ExactK0 E) where
-  obj X Y := of (X ⊗ Y)
-  map_iso₁ e Y := of_congr (whiskerRightIso e Y)
-  map_conflation₂ X _ hS :=
-    of_conflation ((ExactStructure.IsMonoidal.isConflationExact_tensorLeft X).map_conflation hS)
-  map_conflation₁ hS Y :=
-    of_conflation ((ExactStructure.IsMonoidal.isConflationExact_tensorRight Y).map_conflation hS)
-
-/-- Multiplication on exact `K₀`, as a biadditive map. -/
+/-- Multiplication on exact `K₀`, as a biadditive map: the map induced by the tensor product,
+which is conflation-exact in each variable. -/
 noncomputable def mulHom : ExactK0 E →+ ExactK0 E →+ ExactK0 E :=
-  (mulInvariant E).bilift
+  map₂ (curriedTensor C) ExactStructure.IsMonoidal.isConflationExact_tensorRight
+    ExactStructure.IsMonoidal.isConflationExact_tensorLeft
 
 variable {E}
 
 /-- Multiplication evaluates on classes of objects as the class of their tensor product. -/
 private lemma mulHom_of_of (X Y : C) : mulHom E (of X) (of Y) = of (X ⊗ Y) :=
-  (mulInvariant E).bilift_of_of X Y
+  map₂_of_of (curriedTensor C) _ _ X Y
 
 /-- The multiplication on exact `K₀` induced by the tensor product. -/
 noncomputable instance instMul : Mul (ExactK0 E) where

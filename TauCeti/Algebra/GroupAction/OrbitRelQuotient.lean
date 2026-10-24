@@ -25,6 +25,8 @@ This file records small generic additions to Mathlib's `MulAction.orbitRel.Quoti
 * `TauCeti.MulAction.transversalEquivOrbitRelQuotient`: a set meeting every orbit, such that a
   group element carrying one of its points into it fixes that point, is a set of orbit
   representatives.
+* `TauCeti.MulAction.exists_smul_out_eq`: every point of an orbit is a translate of the chosen
+  representative `Quotient.out` of that orbit.
 * `TauCeti.MulAction.card_orbitRelQuotient_eq_one`: a pretransitive action on a nonempty type
   has exactly one orbit.
 * `TauCeti.MulAction.card_orbitRelQuotient_anti`: enlarging the acting subgroup can only
@@ -53,6 +55,11 @@ This file records small generic additions to Mathlib's `MulAction.orbitRel.Quoti
   action is free, then the descended `N(H) / H` action on the `H`-orbit quotient is free.
 * `TauCeti.MulAction.orbitRelQuotientCongr`: an equivalence carrying one action to another along
   a group isomorphism induces an equivalence of orbit spaces.
+* `TauCeti.MulAction.orbitRelQuotientLift`: a `G`-invariant map descends to the orbit space,
+  uniquely (`TauCeti.MulAction.eq_orbitRelQuotientLift_iff`).
+* `MulActionHom.orbitRelQuotientMap`: an equivariant map induces a map of orbit spaces,
+  functorially, and descent is natural along it
+  (`MulActionHom.orbitRelQuotientLift_comp_orbitRelQuotientMap`).
 * `TauCeti.MulAction.stabilizer_sigma_mk`: the stabilizer of a sigma point is its fibre
   stabilizer.
 * `TauCeti.MulAction.orbitRelQuotientSigmaEquiv`: the orbit space of a componentwise sigma
@@ -62,6 +69,9 @@ This file records small generic additions to Mathlib's `MulAction.orbitRel.Quoti
 * `TauCeti.MulAction.equivSubgroupOrbitsQuotientGroup_symm_mk` and
   `TauCeti.MulAction.equivSubgroupOrbitsQuotientGroup_mapOfLE`: the representative convention of
   Mathlib's `equivSubgroupOrbitsQuotientGroup` and its naturality in subgroup inclusions.
+* `MulAction.orbitRel.Quotient.instMulActionQuotientGroup`: for a normal subgroup `H`, the
+  quotient group `G ⧸ H` acts on the space of `H`-orbits by translating representatives
+  (`MulAction.orbitRel.Quotient.mk_smul_mk`), and its additive version.
 -/
 
 public section
@@ -164,6 +174,13 @@ lemma MulAction.orbitRel_le_of_subgroup_le {H K : Subgroup G} (hHK : H ≤ K) :
   rw [MulAction.orbitRel_apply] at h ⊢
   rcases h with ⟨g, hg⟩
   exact ⟨⟨g.1, hHK g.2⟩, hg⟩
+
+/-- **Every point of an orbit is a translate of its chosen representative.** This is Mathlib's
+`MulAction.orbitRel.Quotient.orbit_eq_orbit_out` in existential form. -/
+lemma MulAction.exists_smul_out_eq {y : X} {ω : MulAction.orbitRel.Quotient G X}
+    (h : (Quotient.mk'' y : MulAction.orbitRel.Quotient G X) = ω) : ∃ g : G, g • ω.out = y :=
+  MulAction.mem_orbit_iff.1 <| MulAction.orbitRel.Quotient.orbit_eq_orbit_out ω Quotient.out_eq' ▸
+    MulAction.orbitRel.Quotient.mem_orbit.2 h
 
 /-- **A pretransitive action on a nonempty type has one orbit.** This is Mathlib's
 `MulAction.pretransitive_iff_unique_quotient_of_nonempty` in counting form. -/
@@ -738,4 +755,164 @@ theorem MulAction.orbitRelQuotientSigmaEquiv_symm_mk (i : ι) (y : Y i) :
 
 end Sigma
 
+section Lift
+
+variable {Y Z : Type*}
+
+/-- **Descent of an invariant map to the orbit space.** A map `f : X → Y` that is invariant under
+the action of `G` factors through the orbit projection `X → MulAction.orbitRel.Quotient G X`. -/
+def MulAction.orbitRelQuotientLift (f : X → Y) (hf : ∀ (g : G) (x : X), f (g • x) = f x) :
+    MulAction.orbitRel.Quotient G X → Y :=
+  Quotient.lift f <| by
+    rintro _ x ⟨g, rfl⟩
+    exact hf g x
+
+variable {f : X → Y} {hf : ∀ (g : G) (x : X), f (g • x) = f x}
+
+/-- The descent of `f` sends the orbit of `x` to `f x`. -/
+@[simp]
+theorem MulAction.orbitRelQuotientLift_mk (x : X) :
+    MulAction.orbitRelQuotientLift f hf (Quotient.mk (MulAction.orbitRel G X) x) = f x :=
+  (rfl)
+
+/-- The descent of `f` composed with the orbit projection is `f`. -/
+@[simp]
+theorem MulAction.orbitRelQuotientLift_comp_mk :
+    MulAction.orbitRelQuotientLift f hf ∘ Quotient.mk (MulAction.orbitRel G X) = f :=
+  (rfl)
+
+/-- **Uniqueness of the descent**: a map out of the orbit space is the descent of `f` exactly when
+its composite with the orbit projection is `f`. -/
+theorem MulAction.eq_orbitRelQuotientLift_iff {φ : MulAction.orbitRel.Quotient G X → Y} :
+    φ = MulAction.orbitRelQuotientLift f hf ↔ φ ∘ Quotient.mk (MulAction.orbitRel G X) = f := by
+  refine ⟨fun h ↦ h ▸ MulAction.orbitRelQuotientLift_comp_mk, fun h ↦ funext fun q ↦ ?_⟩
+  induction q using Quotient.inductionOn with
+  | h x => exact congrFun h x
+
+/-- Postcomposing the descent of `f` with a map `h` gives the descent of `h ∘ f`. -/
+theorem MulAction.comp_orbitRelQuotientLift (h : Y → Z) :
+    h ∘ MulAction.orbitRelQuotientLift f hf =
+      MulAction.orbitRelQuotientLift (h ∘ f) fun g x ↦ congrArg h (hf g x) :=
+  MulAction.eq_orbitRelQuotientLift_iff.2 (rfl)
+
+/-- The descent of a pair of invariant maps is the pair of their descents. -/
+theorem MulAction.orbitRelQuotientLift_prodMk {f' : X → Z}
+    (hf' : ∀ (g : G) (x : X), f' (g • x) = f' x) :
+    MulAction.orbitRelQuotientLift (fun x ↦ (f x, f' x))
+        (fun g x ↦ Prod.ext (hf g x) (hf' g x)) =
+      fun q ↦ (MulAction.orbitRelQuotientLift f hf q, MulAction.orbitRelQuotientLift f' hf' q) :=
+  funext fun q ↦ Quotient.inductionOn q fun _ ↦ rfl
+
+end Lift
+
 end TauCeti
+
+/-! ### The quotient group action on orbits of a normal subgroup -/
+
+namespace MulAction.orbitRel.Quotient
+
+variable {G P : Type*} [Group G] (H : Subgroup G) [MulAction G P] [H.Normal]
+
+/-- Translating by elements of `G` that agree modulo the normal subgroup `H` sends points in the
+same `H`-orbit to points in the same `H`-orbit. -/
+@[to_additive /-- Translating by elements of `G` that agree modulo the normal subgroup `H` sends
+points in the same `H`-orbit to points in the same `H`-orbit. -/]
+theorem orbitRel_smul_smul {g g' : G} {p q : P} (hg : g⁻¹ * g' ∈ H)
+    (hpq : orbitRel H P p q) : orbitRel H P (g • p) (g' • q) := by
+  rw [orbitRel_apply, mem_orbit_iff] at hpq ⊢
+  obtain ⟨⟨h, hh⟩, rfl⟩ := hpq
+  refine ⟨⟨g * h * g'⁻¹, ?_⟩, ?_⟩
+  · have hk : g * (h * (g⁻¹ * g')⁻¹) * g⁻¹ ∈ H :=
+      ‹H.Normal›.conj_mem _ (H.mul_mem hh (H.inv_mem hg)) g
+    simpa [mul_assoc] using hk
+  · simp [subgroup_smul_def, smul_smul, mul_assoc]
+
+/-- The quotient group `G ⧸ H` acts on the space of `H`-orbits by translating representatives. -/
+@[to_additive /-- The quotient group `G ⧸ H` acts on the space of `H`-orbits by translating
+representatives. -/]
+instance instSMulQuotientGroup : SMul (G ⧸ H) (orbitRel.Quotient H P) where
+  smul := Quotient.map₂ (· • ·) fun _ _ hg _ _ hpq =>
+    orbitRel_smul_smul H (QuotientGroup.leftRel_apply.1 hg) hpq
+
+/-- The action of `G ⧸ H` on `H`-orbits is computed on representatives. -/
+@[to_additive (attr := simp) /-- The action of `G ⧸ H` on `H`-orbits is computed on
+representatives. -/]
+theorem mk_smul_mk (g : G) (p : P) :
+    (g : G ⧸ H) • (Quotient.mk'' p : orbitRel.Quotient H P) = Quotient.mk'' (g • p) :=
+  rfl
+
+/-- The quotient group `G ⧸ H` acts on the space of `H`-orbits. -/
+@[to_additive /-- The quotient group `G ⧸ H` acts on the space of `H`-orbits. -/]
+instance instMulActionQuotientGroup : MulAction (G ⧸ H) (orbitRel.Quotient H P) where
+  one_smul x := by
+    induction x using Quotient.inductionOn' with
+    | h p => rw [← QuotientGroup.mk_one, mk_smul_mk, one_smul]
+  mul_smul g g' x := by
+    induction g using QuotientGroup.induction_on with | H g =>
+    induction g' using QuotientGroup.induction_on with | H g' =>
+    induction x using Quotient.inductionOn' with
+    | h p => rw [← QuotientGroup.mk_mul, mk_smul_mk, mk_smul_mk, mk_smul_mk, mul_smul]
+
+end MulAction.orbitRel.Quotient
+
+namespace MulActionHom
+
+open TauCeti
+
+variable {G X : Type*} [Group G] [MulAction G X] {H Y : Type*} [Group H] [MulAction H Y]
+  {σ : G → H}
+
+/-- **The map of orbit spaces induced by an equivariant map.** A map `φ : X → Y` carrying the
+`G`-action to the `H`-action along `σ : G → H` sends `G`-orbits into `H`-orbits, so it descends to
+a map of orbit spaces. -/
+def orbitRelQuotientMap (φ : X →ₑ[σ] Y) :
+    MulAction.orbitRel.Quotient G X → MulAction.orbitRel.Quotient H Y :=
+  MulAction.orbitRelQuotientLift (fun x ↦ Quotient.mk (MulAction.orbitRel H Y) (φ x))
+    fun g x ↦ by
+      rw [map_smulₛₗ]
+      exact MulAction.orbitRel.Quotient.quotient_smul_eq
+
+/-- The map induced by `φ` sends the orbit of `x` to the orbit of `φ x`. -/
+@[simp]
+theorem orbitRelQuotientMap_mk (φ : X →ₑ[σ] Y) (x : X) :
+    orbitRelQuotientMap φ (Quotient.mk (MulAction.orbitRel G X) x) =
+      Quotient.mk (MulAction.orbitRel H Y) (φ x) :=
+  (rfl)
+
+/-- The map induced by `φ` composed with the orbit projection of `X` is the orbit projection of
+`Y` composed with `φ`. -/
+@[simp]
+theorem orbitRelQuotientMap_comp_mk (φ : X →ₑ[σ] Y) :
+    orbitRelQuotientMap φ ∘ Quotient.mk (MulAction.orbitRel G X) =
+      Quotient.mk (MulAction.orbitRel H Y) ∘ φ :=
+  (rfl)
+
+/-- The identity map induces the identity of the orbit space. -/
+@[simp]
+theorem orbitRelQuotientMap_id :
+    orbitRelQuotientMap (MulActionHom.id G (X := X)) = id := by
+  ext q
+  induction q using Quotient.inductionOn with
+  | h x => rfl
+
+/-- The map induced by a composite of equivariant maps is the composite of the induced maps. -/
+theorem orbitRelQuotientMap_comp {K Z : Type*} [Group K] [MulAction K Z] {τ : H → K}
+    {χ : G → K} [CompTriple σ τ χ] (ψ : Y →ₑ[τ] Z) (φ : X →ₑ[σ] Y) :
+    orbitRelQuotientMap (ψ.comp φ) = orbitRelQuotientMap ψ ∘ orbitRelQuotientMap φ := by
+  ext q
+  induction q using Quotient.inductionOn with
+  | h x => rfl
+
+/-- **Naturality of descent.** For a `σ`-equivariant map `φ : X → Y` and an `H`-invariant map
+`f : Y → Z`, the descent of the `G`-invariant map `f ∘ φ` factors through the map of orbit spaces
+induced by `φ`. -/
+theorem orbitRelQuotientLift_comp_orbitRelQuotientMap {Z : Type*} (φ : X →ₑ[σ] Y)
+    {f : Y → Z} (hf : ∀ (h : H) (y : Y), f (h • y) = f y) :
+    MulAction.orbitRelQuotientLift f hf ∘ orbitRelQuotientMap φ =
+      MulAction.orbitRelQuotientLift (f ∘ φ) fun g x ↦ by
+        simp only [Function.comp_apply, map_smulₛₗ, hf] := by
+  ext q
+  induction q using Quotient.inductionOn with
+  | h x => rfl
+
+end MulActionHom

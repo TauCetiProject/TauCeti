@@ -51,7 +51,7 @@ Maslov statement needs the rectangle to be empty; the Alexander statement holds 
 
 The differential is defined over an arbitrary commutative coefficient ring. It squares to zero
 only in characteristic two: over a general ring the rectangle counts must be corrected by a sign
-assignment, a later stage of the roadmap.
+assignment, which `SignAssignment/Differential.lean` does.
 
 ## Main definitions
 
@@ -63,6 +63,8 @@ assignment, a later stage of the roadmap.
   relabels columns and renames the coefficient variables.
 * `TauCeti.GridChain.renameMatrixMap`: the semilinear map on `GC⁻` over a renaming of the
   variables with prescribed matrix coefficients.
+* `TauCeti.GridChain.gaugeEquiv`: the diagonal automorphism `x ↦ f(x) x` of `GC⁻` for a sign
+  `f(x) ∈ ℤˣ` on each grid state.
 * `TauCeti.GridDiagram.unblockedDifferential`: the unblocked differential, as a linear map over
   the polynomial ring.
 
@@ -221,6 +223,67 @@ theorem exists_eq_mapDomain_add_of_mem_support_sum_rename_mul (c : GridChainMinu
   rw [support_rename_of_injective σ.injective, Finset.mem_image] at hd'
   obtain ⟨d, hd, rfl⟩ := hd'
   exact ⟨x, d, hd, w, hw, rfl⟩
+
+end GridChain
+
+/-! ### The diagonal gauge automorphism -/
+
+namespace GridChain
+
+variable {n : ℕ} (R : Type*) [CommRing R]
+
+/-- The linear map underlying `gaugeEquiv`. -/
+private noncomputable def gaugeMap (f : GridState n → ℤˣ) :
+    GridChainMinus R n →ₗ[MvPolynomial (Fin n) R] GridChainMinus R n :=
+  Finsupp.linearCombination (MvPolynomial (Fin n) R) fun x =>
+    Finsupp.single x ((f x : ℤ) • (1 : MvPolynomial (Fin n) R))
+
+private theorem gaugeMap_single (f : GridState n → ℤˣ) (x : GridState n)
+    (a : MvPolynomial (Fin n) R) :
+    gaugeMap R f (Finsupp.single x a) = Finsupp.single x ((f x : ℤ) • a) := by
+  rw [gaugeMap, Finsupp.linearCombination_single, Finsupp.smul_single, smul_eq_mul,
+    mul_smul_comm, mul_one]
+
+private theorem gaugeMap_involutive (f : GridState n → ℤˣ) :
+    Function.Involutive (gaugeMap R f) := fun c => by
+  induction c using Finsupp.induction_linear with
+  | zero => rw [map_zero, map_zero]
+  | add c d hc hd => rw [map_add, map_add, hc, hd]
+  | single x a =>
+      rw [gaugeMap_single, gaugeMap_single, smul_smul, ← Units.val_mul, Int.units_mul_self,
+        Units.val_one, one_smul]
+
+/-- The diagonal automorphism of `GC⁻` multiplying the generator of each grid state `x` by the
+sign `f x`. It is its own inverse. -/
+noncomputable def gaugeEquiv (f : GridState n → ℤˣ) :
+    GridChainMinus R n ≃ₗ[MvPolynomial (Fin n) R] GridChainMinus R n :=
+  LinearEquiv.ofInvolutive (gaugeMap R f) (gaugeMap_involutive R f)
+
+/-- The gauge automorphism multiplies the generator of a grid state by its sign. -/
+@[simp]
+theorem gaugeEquiv_single (f : GridState n → ℤˣ) (x : GridState n)
+    (a : MvPolynomial (Fin n) R) :
+    gaugeEquiv R f (Finsupp.single x a) = Finsupp.single x ((f x : ℤ) • a) :=
+  gaugeMap_single R f x a
+
+/-- The gauge automorphism multiplies the coefficient of each grid state `y` by its sign. -/
+@[simp]
+theorem gaugeEquiv_apply_apply (f : GridState n → ℤˣ) (c : GridChainMinus R n) (y : GridState n) :
+    gaugeEquiv R f c y = (f y : ℤ) • c y := by
+  induction c using Finsupp.induction_linear with
+  | zero => simp
+  | add c d hc hd => rw [map_add, Finsupp.add_apply, Finsupp.add_apply, hc, hd, smul_add]
+  | single x a =>
+      rw [gaugeEquiv_single]
+      rcases eq_or_ne x y with rfl | hxy
+      · simp
+      · rw [Finsupp.single_eq_of_ne hxy.symm, Finsupp.single_eq_of_ne hxy.symm, smul_zero]
+
+/-- The gauge automorphism is its own inverse. -/
+@[simp]
+theorem gaugeEquiv_symm (f : GridState n → ℤˣ) : (gaugeEquiv R f).symm = gaugeEquiv R f :=
+  LinearEquiv.ext fun c => (gaugeEquiv R f).symm_apply_eq.mpr <| by
+    rw [gaugeEquiv, LinearEquiv.coe_ofInvolutive, gaugeMap_involutive R f c]
 
 end GridChain
 
@@ -463,6 +526,13 @@ theorem disjoint_XSet_of_mem_unblockedRectangles {x y : GridState n}
     {r : GridRectangleBetween x y} (hr : r ∈ G.unblockedRectangles x y) :
     Disjoint r.toGridRectangle.coveredSquares G.XSet :=
   ((G.mem_unblockedRectangles r).mp hr).2
+
+/-- A rectangle the unblocked differential counts covers no `X`-marking square. -/
+theorem X_notMem_toGridRectangle_coveredSquares_of_mem_unblockedRectangles {x y : GridState n}
+    {r : GridRectangleBetween x y} (hr : r ∈ G.unblockedRectangles x y) (c : Fin n) :
+    (c, G.X c) ∉ r.toGridRectangle.coveredSquares := fun h =>
+  Finset.disjoint_left.mp (G.disjoint_XSet_of_mem_unblockedRectangles hr) h
+    ((G.mk_mem_XSet _ _).mpr rfl)
 
 /-- The rectangles the unblocked differential counts are empty rectangles. -/
 theorem unblockedRectangles_subset_emptyRectangles (x y : GridState n) :
@@ -718,6 +788,14 @@ theorem constantCoeffReduction_unblockedDifferential_eq_fullyBlockedDifferential
     LinearMap.constantCoeffReduction_single_apply, one_mul]
   rw [G.unblockedDifferential_single_apply,
     ← G.fullyBlockedRectangleCount_eq_constantCoeff, G.fullyBlockedDifferential_single_apply]
+
+/-- Taking constant coefficients intertwines the unblocked and fully blocked differentials. -/
+@[simp]
+theorem fullyBlockedDifferential_mapRange_constantCoeff (c : GridChainMinus (ZMod 2) n) :
+    G.fullyBlockedDifferential (c.mapRange constantCoeff (map_zero _)) =
+      (G.unblockedDifferential (ZMod 2) c).mapRange constantCoeff (map_zero _) := by
+  rw [← G.constantCoeffReduction_unblockedDifferential_eq_fullyBlockedDifferential,
+    LinearMap.constantCoeffReduction_mapRange_constantCoeff]
 
 /-- A grid state that no counted rectangle leaves is a cycle of `GC⁻`. -/
 theorem unblockedDifferential_single_eq_zero {z : GridState n}

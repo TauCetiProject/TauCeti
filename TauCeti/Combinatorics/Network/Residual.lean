@@ -46,10 +46,13 @@ lower bounds. We prove:
 * `TauCeti.excessAt_residualNet`: passing from residual arrows to net changes preserves excess.
 * `TauCeti.residualUpdate_mem_Icc`: feasible residual updates are feasible.
 * `TauCeti.excessAt_residualUpdate`: excess is additive under residual updates.
+* `TauCeti.residualCapacity_residualUpdate`: the residual capacities after a residual update.
 * `TauCeti.excessAt_residualUpdate_source`: a residual assignment conserved away from `s` and `t`
   lowers the excess at `s` by its value at `t`.
 * `TauCeti.image_residualUpdate_Icc`: the residual updates of a feasible `f` by feasible residual
   assignments are exactly the feasible assignments.
+* `TauCeti.Assignment.map_residualCapacity` and `TauCeti.Assignment.map_residualUpdate`:
+  residual capacities and residual updates commute with additive coefficient maps.
 
 ## Implementation notes
 
@@ -105,6 +108,47 @@ theorem residualCapacity_inr (lo hi f : Assignment Q K) {v w : V} (e : Q w v) :
 
 end Sub
 
+section AddGroup
+
+variable [AddGroup K]
+
+/-- Residual capacities commute with additive coefficient maps. -/
+theorem Assignment.map_residualCapacity {L F : Type*} [SubtractionMonoid L] [FunLike F K L]
+    [AddMonoidHomClass F K L] (φ : F) (lo hi f : Assignment Q K) :
+    (residualCapacity lo hi f).map φ = residualCapacity (lo.map φ) (hi.map φ) (f.map φ) := by
+  funext _ _ e
+  rcases e with e | e <;> simp
+
+/-- Residual capacities take values in an additive subgroup containing the bounds and the
+assignment. -/
+theorem residualCapacity_mem {S : Type*} [SetLike S K] [AddSubgroupClass S K] (H : S)
+    {lo hi f : Assignment Q K} (hlo : ∀ ⦃v w⦄ (e : Q v w), lo e ∈ H)
+    (hhi : ∀ ⦃v w⦄ (e : Q v w), hi e ∈ H) (hf : ∀ ⦃v w⦄ (e : Q v w), f e ∈ H) {v w : V}
+    (e : ResidualHom Q v w) : residualCapacity lo hi f e ∈ H := by
+  rcases e with e | e
+  · exact sub_mem (hhi e) (hf e)
+  · exact sub_mem (hf e) (hlo e)
+
+/-- The residual capacities of a feasible assignment are nonnegative. -/
+theorem residualCapacity_nonneg [Preorder K] [AddRightMono K] {lo hi f : Assignment Q K}
+    (hf : f ∈ Set.Icc lo hi) : 0 ≤ residualCapacity lo hi f := by
+  intro v w e
+  rcases e with e | e
+  · exact sub_nonneg.mpr (hf.2 v w e)
+  · exact sub_nonneg.mpr (hf.1 w v e)
+
+end AddGroup
+
+/-- The residual capacity on the residual arrows from `S` to `T` is the room left on the arrows
+from `S` to `T` plus the room left to decrease the arrows from `T` to `S`. -/
+theorem arrowSum_residualCapacity [AddCommMonoid K] [Sub K] [∀ v w, Fintype (Q v w)]
+    (lo hi f : Assignment Q K) (S T : Finset V) :
+    arrowSum (residualCapacity lo hi f) S T = arrowSum (hi - f) S T + arrowSum (f - lo) T S := by
+  simp only [arrowSum_def, Fintype.sum_sum_type, residualCapacity_inl, residualCapacity_inr,
+    sum_add_distrib, Pi.sub_apply]
+  congr 1
+  exact sum_comm
+
 section AddCommGroup
 
 variable [AddCommGroup K]
@@ -148,34 +192,41 @@ theorem residualUpdate_residualUpdate (f : Assignment Q K) (r r' : Assignment (R
     residualUpdate (residualUpdate f r) r' = residualUpdate f (r + r') := by
   simp [residualUpdate_def, add_assoc]
 
+section Map
+
+variable {L F : Type*} [AddCommGroup L] [FunLike F K L] [AddMonoidHomClass F K L]
+
+theorem Assignment.map_residualNet (φ : F) (r : Assignment (ResidualHom Q) K) :
+    (residualNet r).map φ = residualNet (r.map φ) := by
+  funext _ _ e
+  simp
+
+/-- Residual updates commute with additive coefficient maps. -/
+theorem Assignment.map_residualUpdate (φ : F) (f : Assignment Q K)
+    (r : Assignment (ResidualHom Q) K) :
+    (residualUpdate f r).map φ = residualUpdate (f.map φ) (r.map φ) := by
+  rw [residualUpdate_def, residualUpdate_def, map_add, map_residualNet]
+
+end Map
+
 /-- Residual updates preserve values in an additive subgroup: if `f` and `r` take values in `H`,
 so does the residual update of `f` by `r`. -/
-theorem residualUpdate_mem (H : AddSubgroup K) {f : Assignment Q K}
-    {r : Assignment (ResidualHom Q) K} (hf : ∀ ⦃v w⦄ (e : Q v w), f e ∈ H)
+theorem residualUpdate_mem {S : Type*} [SetLike S K] [AddSubgroupClass S K] (H : S)
+    {f : Assignment Q K} {r : Assignment (ResidualHom Q) K} (hf : ∀ ⦃v w⦄ (e : Q v w), f e ∈ H)
     (hr : ∀ ⦃v w⦄ (e : ResidualHom Q v w), r e ∈ H) {v w : V} (e : Q v w) :
     residualUpdate f r e ∈ H := by
   rw [residualUpdate_apply]
-  exact H.sub_mem (H.add_mem (hf e) (hr _)) (hr _)
+  exact sub_mem (add_mem (hf e) (hr _)) (hr _)
 
-/-- Residual capacities take values in an additive subgroup containing the bounds and the
-assignment. -/
-theorem residualCapacity_mem (H : AddSubgroup K) {lo hi f : Assignment Q K}
-    (hlo : ∀ ⦃v w⦄ (e : Q v w), lo e ∈ H) (hhi : ∀ ⦃v w⦄ (e : Q v w), hi e ∈ H)
-    (hf : ∀ ⦃v w⦄ (e : Q v w), f e ∈ H) {v w : V} (e : ResidualHom Q v w) :
-    residualCapacity lo hi f e ∈ H := by
-  rcases e with e | e
-  · exact H.sub_mem (hhi e) (hf e)
-  · exact H.sub_mem (hf e) (hlo e)
-
-/-- The residual capacity on the residual arrows from `S` to `T` is the room left on the arrows
-from `S` to `T` plus the room left to decrease the arrows from `T` to `S`. -/
-theorem arrowSum_residualCapacity [∀ v w, Fintype (Q v w)] (lo hi f : Assignment Q K)
-    (S T : Finset V) :
-    arrowSum (residualCapacity lo hi f) S T = arrowSum (hi - f) S T + arrowSum (f - lo) T S := by
-  simp only [arrowSum_def, Fintype.sum_sum_type, residualCapacity_inl, residualCapacity_inr,
-    sum_add_distrib, Pi.sub_apply]
-  congr 1
-  exact sum_comm
+/-- **Residual capacities after a residual update.** Updating `f` by `r` lowers the residual
+capacity of a residual arrow `a` by the value of `r` on `a` and raises it by the value of `r` on the
+reverse residual arrow `a.swap`, the other residual copy of the same arrow. -/
+theorem residualCapacity_residualUpdate (lo hi f : Assignment Q K)
+    (r : Assignment (ResidualHom Q) K) {v w : V} (a : ResidualHom Q v w) :
+    residualCapacity lo hi (residualUpdate f r) a =
+      residualCapacity lo hi f a - r a + r (a.swap : ResidualHom Q w v) := by
+  rcases a with e | e <;> simp only [residualCapacity_inl, residualCapacity_inr, Sum.swap_inl,
+    Sum.swap_inr, residualUpdate_apply] <;> abel
 
 section Excess
 
@@ -215,15 +266,7 @@ end Excess
 
 section Order
 
-variable [PartialOrder K] [IsOrderedAddMonoid K]
-
-/-- The residual capacities of a feasible assignment are nonnegative. -/
-theorem residualCapacity_nonneg {lo hi f : Assignment Q K} (hf : f ∈ Set.Icc lo hi) :
-    0 ≤ residualCapacity lo hi f := by
-  intro v w e
-  rcases e with e | e
-  · exact sub_nonneg.mpr (hf.2 v w e)
-  · exact sub_nonneg.mpr (hf.1 w v e)
+variable [Preorder K] [AddLeftMono K]
 
 /-- **Feasibility of residual updates.** Updating an assignment by a residual assignment between
 zero and its residual capacities gives an assignment within the bounds. Such a residual assignment

@@ -6,11 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.ClassField
+public import TauCeti.NumberTheory.ClassFieldTheory.Formation.NormLimitation
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Refinement
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.IdeleClass.Norm
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.Norm.Open
-
-import TauCeti.NumberTheory.ClassFieldTheory.Formation.NormLimitation
 
 /-!
 # Global norm subgroups
@@ -34,6 +33,9 @@ inclusion of class fields, and the layer `G_K` itself, which cuts out `K`, has n
 
 * `TauCeti.ClassFieldTheory.globalNormSubgroup`: the norm subgroup of `C_K` cut out by an open
   normal subgroup of `G_K`.
+* `TauCeti.ClassFieldTheory.globalGroundOrderIso`: subgroups of `C_K` are the subgroups of the
+  ground level of the idele-class formation; it carries `globalNormSubgroup K V` to the norm
+  subgroup of the layer `V` (`globalGroundOrderIso_globalNormSubgroup`).
 
 ## Main results
 
@@ -118,6 +120,14 @@ theorem globalNormSubgroup_eq_range_classField (V : OpenNormalSubgroup (Absolute
   conv_lhs => rw [← fixingOpenNormalSubgroup_classField V]
   exact globalNormSubgroup_fixingOpenNormalSubgroup (classField K V)
 
+variable (K) in
+/-- The global norm subgroup of `V` is normal in the commutative group `C_K`, so the norm quotient
+`C_K / N_{E/K}(C_E)` is a group. -/
+instance normal_globalNormSubgroup (V : OpenNormalSubgroup (AbsoluteGaloisGroup K)) :
+    (globalNormSubgroup K V).Normal := by
+  rw [globalNormSubgroup_eq_range_classField]
+  infer_instance
+
 /-- An idele class lies in the global norm subgroup of `V` exactly when it is the norm of an idele
 class of the class field of `V`. -/
 @[simp]
@@ -128,6 +138,36 @@ theorem mem_globalNormSubgroup_iff_exists {V : OpenNormalSubgroup (AbsoluteGaloi
         GlobalNumberFields.ideleClassNormMap K (classField K V) d = c := by
   rw [globalNormSubgroup_eq_range_classField, MonoidHom.mem_range]
   rfl
+
+variable (K) in
+/-- **Subgroups of `C_K` are the subgroups of the ground level of the idele-class formation.** The
+level of the whole group `G_K` is `C_K`, written additively (`globalGroundEquiv`), so taking
+preimages along that identification is an order isomorphism. It carries the global norm subgroups
+to the norm subgroups of the idele-class formation (`globalGroundOrderIso_globalNormSubgroup`),
+which transports the laws of the norm subgroups of a class formation to `C_K`. -/
+def globalGroundOrderIso :
+    Subgroup (IdeleClassGroup (𝓞 K) K) ≃o Submodule ℤ ((globalFormation K).level ⊤) :=
+  Subgroup.toAddSubgroup.trans <|
+    (globalGroundEquiv K).symm.comapAddSubgroup.trans AddSubgroup.toIntSubmodule
+
+/-- An element of the ground level lies in the image of a subgroup `H ≤ C_K` under
+`globalGroundOrderIso` exactly when the corresponding idele class lies in `H`. -/
+@[simp]
+theorem mem_globalGroundOrderIso {H : Subgroup (IdeleClassGroup (𝓞 K) K)}
+    {a : (globalFormation K).level ⊤} :
+    a ∈ globalGroundOrderIso K H ↔ ((globalGroundEquiv K).symm a).toMul ∈ H :=
+  Iff.rfl
+
+variable (K) in
+/-- `globalGroundOrderIso` carries the global norm subgroup of `V` to the norm subgroup of the
+layer `V ◁ G_K` of the idele-class formation. -/
+@[simp]
+theorem globalGroundOrderIso_globalNormSubgroup (V : OpenNormalSubgroup (AbsoluteGaloisGroup K)) :
+    globalGroundOrderIso K (globalNormSubgroup K V) = (globalFormation K).normSubgroup V := by
+  ext a
+  obtain ⟨c, rfl⟩ : ∃ c, globalGroundEquiv K c = a := (globalGroundEquiv K).surjective a
+  rw [mem_globalGroundOrderIso, AddEquiv.symm_apply_apply, mem_globalNormSubgroup_iff, ofMul_toMul,
+    Formation.mem_normSubgroup]
 
 variable (K) in
 /-- **Global norm subgroups are open.** -/

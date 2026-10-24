@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.Trace
 public import Mathlib.Algebra.Group.Conj
 import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 import TauCeti.RingTheory.MvPolynomial.Finrank
+import TauCeti.Data.Finsupp.Weight
 import TauCeti.LinearAlgebra.Matrix.RationalCanonicalFormFinTwo
 import Mathlib.Algebra.Group.Units.Opposite
 import Mathlib.RingTheory.Localization.FractionRing
@@ -50,10 +51,6 @@ theorem trace_linearSubstRep_eq_sum {σ R : Type*} [Fintype σ] [DecidableEq σ]
       ∑ s ∈ (Finset.univ : Finset σ).finsuppAntidiag w,
         (linearSubst M (monomial s 1)).coeff s := by
   classical
-  have : Fintype {s : σ →₀ ℕ // s.degree = w} :=
-    Fintype.ofFinset (p := {s : σ →₀ ℕ | s.degree = w})
-      ((Finset.univ : Finset σ).finsuppAntidiag w) (fun s ↦ by
-        simp [Finset.mem_finsuppAntidiag, Finsupp.degree_eq_sum])
   rw [LinearMap.trace_eq_matrix_trace R (homogeneousMonomialBasis (R := R) w), Matrix.trace]
   simp only [Matrix.diag_apply, LinearMap.toMatrix_apply, homogeneousMonomialBasis_repr_apply,
     coe_linearSubstRep_apply, unop_op, coe_homogeneousMonomialBasis]

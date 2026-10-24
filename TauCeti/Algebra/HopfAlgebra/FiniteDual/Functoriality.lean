@@ -11,10 +11,10 @@ public import TauCeti.Algebra.HopfAlgebra.FiniteDual.Basic
 /-!
 # Functoriality and reflexivity of the finite Hopf dual
 
-Dualizing a bialgebra morphism between finite projective bialgebras gives a morphism in the
-opposite direction between their convolution duals. Evaluation identifies a finite projective
-bialgebra with its double convolution dual, compatibly with multiplication, comultiplication,
-unit, and counit.
+Dualizing a bialgebra morphism between finite projective bialgebras over a commutative semiring
+gives a morphism in the opposite direction between their convolution duals. Evaluation identifies a
+finite projective bialgebra with its double convolution dual, compatibly with multiplication,
+comultiplication, unit, and counit.
 
 These are the algebraic functoriality and involutivity statements needed to promote the finite
 Hopf dual constructed in `TauCeti.Algebra.HopfAlgebra.FiniteDual.Basic` to Cartier duality. The
@@ -34,8 +34,6 @@ scheme-level duality remains a separate step.
 
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Chapter 2.
 * J. S. Milne, *Algebraic Groups* (2017), Section 11.c, with Aside 11.17 for a base ring.
-
-This advances Layer 4, "Cartier duality", of the ReductiveGroups roadmap.
 -/
 
 public section
@@ -48,67 +46,32 @@ universe u v w
 
 section Map
 
-variable (k : Type u) [CommRing k]
+variable (k : Type u) [CommSemiring k]
 variable {H : Type v} {K : Type w}
 variable [Semiring H] [Bialgebra k H]
 variable [Semiring K] [Bialgebra k K]
-
-/-- The linear dual of a bialgebra morphism, with convolution wrappers on its source and target. -/
-private noncomputable def mapLinear (f : H →ₐc[k] K) :
-    ConvolutionDual k K →ₗ[k] ConvolutionDual k H :=
-  (WithConv.linearEquiv k _).symm.toLinearMap ∘ₗ
-    f.toLinearMap.dualMap ∘ₗ (WithConv.linearEquiv k _).toLinearMap
-
-private theorem mapLinear_apply_apply (f : H →ₐc[k] K)
-    (phi : ConvolutionDual k K) (x : H) :
-    (mapLinear k f phi).ofConv x = phi.ofConv (f x) :=
-  rfl
-
-/-- Precomposition by a bialgebra morphism as an algebra morphism between convolution duals. -/
-private noncomputable def mapAlgHom (f : H →ₐc[k] K) :
-    ConvolutionDual k K →ₐ[k] ConvolutionDual k H where
-  toFun := mapLinear k f
-  map_zero' := map_zero (mapLinear k f)
-  map_add' := map_add (mapLinear k f)
-  commutes' r := by
-    apply WithConv.ofConv_injective
-    ext x
-    simp [mapLinear_apply_apply]
-  map_one' := by
-    apply WithConv.ofConv_injective
-    ext x
-    simp [mapLinear_apply_apply, LinearMap.convOne_apply]
-  map_mul' phi psi := by
-    apply WithConv.ofConv_injective
-    exact LinearMap.convMul_comp_coalgHom_distrib phi psi f.toCoalgHom
-
-@[simp]
-private theorem mapAlgHom_apply_apply (f : H →ₐc[k] K)
-    (phi : ConvolutionDual k K) (x : H) :
-    (mapAlgHom k f phi).ofConv x = phi.ofConv (f x) :=
-  rfl
-
 variable [Module.Finite k H] [Module.Projective k H]
 variable [Module.Finite k K] [Module.Projective k K]
 
 private theorem dualDistribEquiv_tensor_map_apply (f : H →ₐc[k] K)
     (z : ConvolutionDual k K ⊗[k] ConvolutionDual k K) (x y : H) :
     dualDistribEquiv k H
-        (Algebra.TensorProduct.map (mapAlgHom k f) (mapAlgHom k f) z) (x ⊗ₜ[k] y) =
+        (Algebra.TensorProduct.map f.toCoalgHom.convPrecomp f.toCoalgHom.convPrecomp z)
+        (x ⊗ₜ[k] y) =
       dualDistribEquiv k K z (f x ⊗ₜ[k] f y) := by
   induction z using TensorProduct.inductionOn with
   | add z₁ z₂ hz₁ hz₂ =>
       simpa only [map_add, LinearMap.add_apply] using congrArg₂ (fun a b => a + b) hz₁ hz₂
-  | tmul phi psi => simp
+  | tmul phi psi => simp [BialgHom.toCoalgHom_apply]
 
 /-- **The finite dual is contravariantly functorial.** A bialgebra morphism `H → K` induces
 the bialgebra morphism `K* → H*` given by precomposition. -/
 noncomputable def map (f : H →ₐc[k] K) :
     ConvolutionDual k K →ₐc[k] ConvolutionDual k H :=
-  BialgHom.ofAlgHom (mapAlgHom k f)
+  BialgHom.ofAlgHom f.toCoalgHom.convPrecomp
     (by
       ext phi
-      simp [mapAlgHom_apply_apply, counit_apply])
+      simp [counit_apply, BialgHom.toCoalgHom_apply])
     (by
       ext phi
       apply (dualDistribEquiv k H).injective
@@ -122,15 +85,14 @@ noncomputable def map (f : H →ₐc[k] K) :
           simp only [AlgHom.comp_apply]
           simp only [Bialgebra.comulAlgHom, AlgHom.ofLinearMap_apply]
           rw [dualDistribEquiv_tensor_map_apply,
-            dualDistribEquiv_comul_apply, dualDistribEquiv_comul_apply,
-            mapAlgHom_apply_apply]
-          exact congrArg phi.ofConv (f.map_mul x y).symm)
+            dualDistribEquiv_comul_apply, dualDistribEquiv_comul_apply]
+          simp [BialgHom.toCoalgHom_apply])
 
 /-- The dual morphism evaluates by precomposition. -/
 @[simp, grind =]
 theorem map_apply_apply (f : H →ₐc[k] K) (phi : ConvolutionDual k K) (x : H) :
     (map k f phi).ofConv x = phi.ofConv (f x) :=
-  mapAlgHom_apply_apply k f phi x
+  (rfl)
 
 /-- Dualizing the identity bialgebra morphism gives the identity. -/
 @[simp]
@@ -174,24 +136,20 @@ end Map
 
 section Evaluation
 
-variable (k : Type u) [CommRing k]
+variable (k : Type u) [CommSemiring k]
 variable (H : Type v) [Semiring H] [Bialgebra k H] [Module.Finite k H]
   [Module.Projective k H]
 
 /-- Evaluation into the double convolution dual as a linear equivalence. -/
 private noncomputable def evalLinearEquiv :
-    H ≃ₗ[k] ConvolutionDual k (ConvolutionDual k H) := by
-  letI : Ring H := Algebra.semiringToRing k
-  exact
-    (Module.evalEquiv k H).trans
-      ((WithConv.linearEquiv k (Module.Dual k H)).dualMap.trans
-        (WithConv.linearEquiv k (Module.Dual k (ConvolutionDual k H))).symm)
+    H ≃ₗ[k] ConvolutionDual k (ConvolutionDual k H) :=
+  (Module.evalEquiv k H).trans
+    ((WithConv.linearEquiv k (Module.Dual k H)).dualMap.trans
+      (WithConv.linearEquiv k (Module.Dual k (ConvolutionDual k H))).symm)
 
 private theorem evalLinearEquiv_apply_apply (x : H) (phi : ConvolutionDual k H) :
     (evalLinearEquiv k H x).ofConv phi = phi.ofConv x :=
-  by
-    let _ : Ring H := Algebra.semiringToRing k
-    rfl
+  (rfl)
 
 /-- Evaluation into the double finite dual as an algebra morphism. -/
 private noncomputable def evalAlgHom :
@@ -228,9 +186,7 @@ private noncomputable def evalAlgHom :
 @[simp]
 private theorem evalAlgHom_apply_apply (x : H) (phi : ConvolutionDual k H) :
     (evalAlgHom k H x).ofConv phi = phi.ofConv x :=
-  by
-    let _ : Ring H := Algebra.semiringToRing k
-    rfl
+  (rfl)
 
 private theorem convMul_apply_eq_dualDistribEquiv
     (phi psi : ConvolutionDual k H) (x : H) :

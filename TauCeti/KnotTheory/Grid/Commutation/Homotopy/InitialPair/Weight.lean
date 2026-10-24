@@ -298,7 +298,7 @@ private theorem
   generalize hCr : C.reverse = Cr at *
   have hcolumn : Cr.column = a := hCr ▸ C.reverse_column
   have hturn : Cr.turnRow = C.oppositeTurnRow := hCr ▸ C.reverse_turnRow
-  rcases Cr with ⟨column, turn, opposite, hne, hnon, hOa, hXa, hOb, hXb⟩
+  rcases Cr with ⟨⟨column, turn, hne⟩, opposite, hnon, hOa, hXa, hOb, hXb⟩
   simp only at hcolumn hturn
   subst column turn
   obtain ⟨hp, hpX⟩ := (G.mem_initialPentagons P).mp hP
@@ -344,7 +344,7 @@ private theorem
   generalize hCr : C.reverse = Cr at *
   have hcolumn : Cr.column = a := hCr ▸ C.reverse_column
   have hturn : Cr.turnRow = C.oppositeTurnRow := hCr ▸ C.reverse_turnRow
-  rcases Cr with ⟨column, turn, opposite, hne, hnon, hOa, hXa, hOb, hXb⟩
+  rcases Cr with ⟨⟨column, turn, hne⟩, opposite, hnon, hOa, hXa, hOb, hXb⟩
   simp only at hcolumn hturn
   subst column turn
   obtain ⟨hp, hpX⟩ := (G.mem_initialPentagons P).mp hP
