@@ -11,7 +11,9 @@ public import Mathlib.Algebra.Polynomial.Taylor
 public import Mathlib.FieldTheory.Separable
 public import Mathlib.RingTheory.MvPowerSeries.NoZeroDivisors
 public import TauCeti.Algebra.MvPolynomial.Equiv
+public import TauCeti.RingTheory.MvPolynomial.Homogeneous
 public import TauCeti.RingTheory.MvPowerSeries.Derivative
+public import TauCeti.RingTheory.MvPowerSeries.Order
 
 /-!
 # The order of vanishing of a multivariate polynomial at a point
@@ -57,11 +59,20 @@ The Taylor shift itself preserves the degree in each variable (`MvPolynomial.deg
 * `MvPolynomial.orderAt_eq_of_forall_eval_foldl_pderiv_eq_zero_iff`: the order at a point is
   determined by which iterated partial derivatives, up to the total degree, vanish there.
 * `MvPolynomial.orderAt_le_orderAt_aeval`: substitution does not decrease the order.
+* `MvPolynomial.homogeneousComponent_aeval_of_le_order`: if `q` has no terms of degree below `n`
+  and the `h i` have no constant terms, the degree-`n` component of `q(h)` is the degree-`n`
+  component of `q` evaluated at the linear parts of the `h i`.
 * `MvPolynomial.orderAt_taylor`, `MvPolynomial.orderAt_map`: the order is unchanged by Taylor
   shifts, after translating the point, and by injective coefficient maps.
 * `Polynomial.orderAt_comp_X_add_C`: translating the distinguished variable of a polynomial
   family translates its ambient order.
+* `MvPolynomial.coeff_single_one_taylor`, `MvPolynomial.homogeneousComponent_one_taylor`: the
+  linear Taylor coefficients of `p` at `a` are the values `(∂p/∂Xᵢ)(a)` of its partial
+  derivatives, so the linear part of `p(a + Y)` is the differential `∑ᵢ (∂p/∂Xᵢ)(a) Yᵢ`.
 * `MvPolynomial.taylor_rename`: Taylor shifts commute with renaming the variables.
+* `MvPolynomial.taylor_aeval`: the Taylor shift of a substitution `p(g)` at `b` substitutes the
+  Taylor shifts of the `g i` at `b`, without their constant terms, into the Taylor shift of `p`
+  at the image point `(g i (b))ᵢ`.
 * `MvPolynomial.orderAt_rename`: renaming along an injective map preserves the order.
 * `MvPolynomial.finSuccEquiv_taylor`, `MvPolynomial.coeff_taylor_cons`: singling out the
   variable `X₀` turns the Taylor shift at `a` into the univariate Taylor shift at `a₀` followed by
@@ -179,6 +190,20 @@ theorem pderiv_taylor (a : σ → R) (i : σ) (p : MvPolynomial σ R) :
     · simp [hp]
     · simp [hp, pderiv_X_of_ne hj]
 
+/-- The linear Taylor coefficients of `p` at `a` are the values of its partial derivatives:
+`[Yᵢ] p(a + Y) = (∂p/∂Xᵢ)(a)`. -/
+theorem coeff_single_one_taylor (a : σ → R) (i : σ) (p : MvPolynomial σ R) :
+    (taylor a p).coeff (Finsupp.single i 1) = eval a (pderiv i p) := by
+  classical
+  rw [← constantCoeff_taylor, ← pderiv_taylor, constantCoeff_eq, coeff_pderiv]
+  simp
+
+/-- The linear part of the Taylor shift of `p` at `a` is the differential of `p` at `a`: the
+degree-one component of `p(a + Y)` is `∑ᵢ (∂p/∂Xᵢ)(a) Yᵢ`. -/
+theorem homogeneousComponent_one_taylor [Fintype σ] (a : σ → R) (p : MvPolynomial σ R) :
+    homogeneousComponent 1 (taylor a p) = ∑ i, eval a (pderiv i p) • X i := by
+  simp [homogeneousComponent_one_eq_sum, coeff_single_one_taylor]
+
 /-- The Taylor shift does not increase the degree in any variable. -/
 theorem degreeOf_taylor_le (a : σ → R) (i : σ) (p : MvPolynomial σ R) :
     (taylor a p).degreeOf i ≤ p.degreeOf i := by
@@ -286,6 +311,18 @@ theorem degreeOf_taylor (a : σ → R) (i : σ) (p : MvPolynomial σ R) :
   (degreeOf_taylor_le a i p).antisymm <| by
     simpa using degreeOf_taylor_le (-a) i (taylor a p)
 
+/-- **The Taylor shift of a substitution.** Writing `a i = g i (b)` for the image point, the Taylor
+shift of `p(g)` at `b` is obtained by substituting `g i (X + b) - a i`, polynomials without
+constant term, into the Taylor shift of `p` at `a`: in Taylor coordinates the substitution fixes
+the origin. -/
+theorem taylor_aeval (g : σ → MvPolynomial τ R) (b : τ → R) (p : MvPolynomial σ R) :
+    taylor b (aeval g p) =
+      aeval (fun i ↦ taylor b (g i) - C (eval b (g i))) (taylor (fun i ↦ eval b (g i)) p) := by
+  rw [← AlgHom.comp_apply, ← AlgHom.comp_apply]
+  congr 1
+  ext i : 1
+  simp [taylor]
+
 end TaylorRing
 
 section Substitution
@@ -319,7 +356,43 @@ theorem order_coe_le_order_coe_aeval {h : σ → MvPolynomial τ R}
   refine MvPowerSeries.le_order_pow_of_constantCoeff_eq_zero _ ?_
   rw [constantCoeff_coe, hh i]
 
+/-- The homogeneous components of a polynomial are those of the power series it defines. -/
+@[simp]
+theorem coe_homogeneousComponent (n : ℕ) (q : MvPolynomial σ R) :
+    ((homogeneousComponent n q : MvPolynomial σ R) : MvPowerSeries σ R) =
+      MvPowerSeries.homogeneousComponent n (q : MvPowerSeries σ R) := by
+  ext d
+  simp [MvPowerSeries.coeff_homogeneousComponent, coeff_homogeneousComponent]
+
 end Substitution
+
+section SubstitutionRing
+
+variable [CommRing R]
+
+/-- Substituting polynomials into a polynomial and viewing the result as a power series is the
+power-series substitution of the corresponding power series. -/
+theorem coe_aeval_eq_subst (h : σ → MvPolynomial τ R) (q : MvPolynomial σ R) :
+    ((aeval h q : MvPolynomial τ R) : MvPowerSeries τ R) =
+      MvPowerSeries.subst (fun i ↦ (h i : MvPowerSeries τ R)) (q : MvPowerSeries σ R) := by
+  rw [MvPowerSeries.subst_coe]
+  simpa using comp_aeval_apply (coeToMvPowerSeries.algHom R) q (f := h)
+
+/-- **The lowest-degree component of a substitution.** If `q` has order at least `n` and the
+polynomials `h i` have no constant terms, the degree-`n` component of `q(h)` is the degree-`n`
+component of `q` evaluated at the linear parts of the `h i`. -/
+theorem homogeneousComponent_aeval_of_le_order [Finite σ] {q : MvPolynomial σ R} {n : ℕ}
+    (hq : n ≤ (q : MvPowerSeries σ R).order) {h : σ → MvPolynomial τ R}
+    (hh : ∀ i, constantCoeff (h i) = 0) :
+    homogeneousComponent n (aeval h q) =
+      aeval (fun i ↦ homogeneousComponent 1 (h i)) (homogeneousComponent n q) := by
+  rw [← coe_inj, coe_homogeneousComponent, coe_aeval_eq_subst, coe_aeval_eq_subst,
+    coe_homogeneousComponent,
+    MvPowerSeries.homogeneousComponent_subst_of_le_order hq
+      (MvPowerSeries.hasSubst_of_constantCoeff_zero fun i ↦ by simp [hh i]) fun i ↦ by simp [hh i]]
+  simp only [coe_homogeneousComponent]
+
+end SubstitutionRing
 
 section OrderAt
 
@@ -467,13 +540,9 @@ theorem orderAt_rename {f : σ → τ} (hf : Function.Injective f) (p : MvPolyno
 /-- A zero at which some partial derivative is nonzero has ambient order one. -/
 theorem orderAt_eq_one_of_eval_pderiv_ne_zero (hp : eval a p = 0) {i : σ}
     (hi : eval a (pderiv i p) ≠ 0) : p.orderAt a = 1 := by
-  classical
-  have hcoeff : (taylor a p).coeff (single i 1) = eval a (pderiv i p) := by
-    rw [← constantCoeff_taylor, ← pderiv_taylor, constantCoeff_eq, coeff_pderiv]
-    simp
   refine le_antisymm ?_ (by simpa only [Order.one_le_iff_pos, orderAt_pos_iff] using hp)
   simpa only [degree_single, Nat.cast_one] using
-    orderAt_le (d := single i 1) (hcoeff ▸ hi)
+    orderAt_le (d := single i 1) (coeff_single_one_taylor a i p ▸ hi)
 
 open Classical in
 /-- If the fiber through a point is separable, its ambient order is one at a zero
@@ -525,17 +594,8 @@ theorem orderAt_X_sub_C [Nontrivial R] (a : σ → R) (i : σ) : (X i - C (a i))
 of `p` at `a`. -/
 theorem orderAt_le_orderAt_aeval (g : σ → MvPolynomial τ R) (b : τ → R)
     (p : MvPolynomial σ R) : p.orderAt (fun i ↦ eval b (g i)) ≤ (aeval g p).orderAt b := by
-  set a : σ → R := fun i ↦ eval b (g i)
-  -- The Taylor shift of `aeval g p` at `b` is a substitution, without constant terms, into the
-  -- Taylor shift of `p` at `a`.
-  set h : σ → MvPolynomial τ R := fun i ↦ taylor b (g i) - C (a i)
-  have key : taylor b (aeval g p) = aeval h (taylor a p) := by
-    rw [← AlgHom.comp_apply, ← AlgHom.comp_apply]
-    congr 1
-    ext i : 1
-    simp [h, taylor]
-  rw [orderAt_def, orderAt_def, key]
-  exact order_coe_le_order_coe_aeval (fun i ↦ by simp [h, a]) _
+  rw [orderAt_def, orderAt_def, taylor_aeval]
+  exact order_coe_le_order_coe_aeval (fun i ↦ by simp) _
 
 end CommRing
 
