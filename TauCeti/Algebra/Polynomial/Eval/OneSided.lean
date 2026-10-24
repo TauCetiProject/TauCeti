@@ -23,7 +23,9 @@ formulas to include multiple roots without choosing nearby evaluation points.
 
 Both signs are zero for the zero polynomial. Over any ordered field they agree
 with evaluation on sufficiently small open intervals on the appropriate side.
-No completeness or Archimedean assumption is needed.
+No completeness or Archimedean assumption is needed. The two signs agree exactly when the root
+multiplicity is even, so a nonzero polynomial changes sign at a point exactly when its root
+multiplicity there is odd.
 
 In characteristic zero, the one-sided signs of the derivative at `a` are those of the increment
 `p - p(a)` on the right and their negatives on the left. In particular, at a root the
@@ -275,6 +277,32 @@ theorem derivSignLeft_eq_neg_derivSignRight_of_odd (p : R[X]) (a : R)
     (h : Odd (p.rootMultiplicity a)) : p.derivSignLeft a = -p.derivSignRight a := by
   rw [derivSignLeft_def, h.neg_one_pow, neg_one_mul]
 
+/-- The one-sided signs agree exactly when the root multiplicity is even. This includes the zero
+polynomial, whose one-sided signs are both zero. -/
+theorem derivSignLeft_eq_derivSignRight_iff (p : R[X]) (a : R) :
+    p.derivSignLeft a = p.derivSignRight a ↔ Even (p.rootMultiplicity a) := by
+  rcases Nat.even_or_odd (p.rootMultiplicity a) with h | h
+  · simp [derivSignLeft_eq_derivSignRight_of_even p a h, h]
+  by_cases hp : p = 0
+  · simp [hp] at h
+  have hs : p.derivSignRight a ≠ 0 := by simpa using hp
+  rw [derivSignLeft_eq_neg_derivSignRight_of_odd p a h, iff_false_intro (Nat.not_even_iff_odd.2 h),
+    iff_false]
+  generalize p.derivSignRight a = s at hs
+  cases s <;> simp_all
+
+/-- For a nonzero polynomial, the one-sided signs are opposite exactly when the root multiplicity
+is odd. -/
+theorem derivSignLeft_eq_neg_derivSignRight_iff {p : R[X]} (hp : p ≠ 0) (a : R) :
+    p.derivSignLeft a = -p.derivSignRight a ↔ Odd (p.rootMultiplicity a) := by
+  rcases Nat.even_or_odd (p.rootMultiplicity a) with h | h
+  · have hs : p.derivSignRight a ≠ 0 := by simpa using hp
+    rw [derivSignLeft_eq_derivSignRight_of_even p a h,
+      iff_false_intro (Nat.not_odd_iff_even.2 h), iff_false]
+    generalize p.derivSignRight a = s at hs
+    cases s <;> simp_all
+  · simp [derivSignLeft_eq_neg_derivSignRight_of_odd p a h, h]
+
 /-- Multiplication multiplies right-hand signs, including when a factor is zero. -/
 @[simp]
 theorem derivSignRight_mul (p q : R[X]) (a : R) :
@@ -348,6 +376,22 @@ theorem exists_derivSignLeft_derivSignRight (p : R[X]) (a : R) :
   · intro x hx
     rw [hf, sign_pos (sub_pos.mpr hx.1), one_pow, one_mul,
       hlu ⟨hla.trans hx.1, hx.2⟩, hs]
+
+/-- A nonzero polynomial changes sign at `a` exactly when its root multiplicity at `a` is odd:
+its signs immediately to the left of `a` are the negatives of those immediately to the right. -/
+theorem odd_rootMultiplicity_iff_exists_sign_eval_eq_neg {p : R[X]} (hp : p ≠ 0) (a : R) :
+    Odd (p.rootMultiplicity a) ↔ ∃ l u, l < a ∧ a < u ∧
+      ∀ x ∈ Ioo l a, ∀ y ∈ Ioo a u, sign (p.eval x) = -sign (p.eval y) := by
+  obtain ⟨l, u, hl, hu, hL, hR⟩ := p.exists_derivSignLeft_derivSignRight a
+  rw [← derivSignLeft_eq_neg_derivSignRight_iff hp]
+  constructor
+  · intro h
+    exact ⟨l, u, hl, hu, fun x hx y hy => by rw [hL x hx, hR y hy, h]⟩
+  · rintro ⟨l', u', hl', hu', h⟩
+    obtain ⟨x, hx, hxa⟩ := exists_between (max_lt hl hl')
+    obtain ⟨y, hay, hy⟩ := exists_between (lt_min hu hu')
+    rw [← hL x ⟨(le_max_left _ _).trans_lt hx, hxa⟩, ← hR y ⟨hay, hy.trans_le (min_le_left _ _)⟩]
+    exact h x ⟨(le_max_right _ _).trans_lt hx, hxa⟩ y ⟨hay, hy.trans_le (min_le_right _ _)⟩
 
 /-- Immediately to the right of a point `a`, the derivative has the sign of `p(x) - p(a)`, and
 immediately to the left it has the opposite sign. This includes points where `p - p(a)` has a
