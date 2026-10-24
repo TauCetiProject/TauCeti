@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Integral.Average
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import Mathlib.MeasureTheory.Group.LIntegral
 import TauCeti.MeasureTheory.Integral.Average
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # The Poincaré inequality for functions of bounded variation
@@ -26,7 +27,9 @@ radius `R`, averaging over the ball itself, it is at most `2 ^ (n + 1) R`. These
 of the Poincaré–Wirtinger inequality on `W^{1,p}`,
 `TauCeti.W1p.eLpNorm_value_sub_setAverage_le_of_convex`, whose case `p = 1` the present statements
 extend to functions of bounded variation: no derivative, no integrability on `Ω` and no
-finiteness of `|Du|(Ω)` is assumed, and both sides may be infinite.
+finiteness of `|Du|(Ω)` is assumed, both sides may be infinite, and `S` need not be measurable.
+For a `W^{1,1}` function the variation is the `L¹` norm of the weak gradient
+(`TauCeti.HasWeakFDerivOn.totalVariationOn_eq_setLIntegral_enorm`).
 
 The proof averages the translation estimate
 `TauCeti.setLIntegral_enorm_comp_add_sub_le_mul_totalVariationOn`. Writing `y = x + h`,
@@ -43,10 +46,10 @@ deviation of `u x` from the mean of `u` over `S`.
   estimate `∫_Ω ∫_Ω |u x - u y| ≤ (∫_{Ω - Ω} ‖h‖) |Du|(Ω)` on a convex open set.
 * `TauCeti.setLIntegral_enorm_sub_setAverage_le_mul_totalVariationOn`: the Poincaré inequality on
   a convex open set, with constant `(∫_{Ω - Ω} ‖h‖) / μ(S)`.
-* `TauCeti.setLIntegral_enorm_sub_setAverage_le_of_convex`: the Poincaré inequality on a bounded
-  convex open set, with constant `μ(B(0, 1)) (diam Ω) ^ (n + 1) / μ(S)`.
-* `TauCeti.setLIntegral_enorm_sub_setAverage_le_of_eq_ball`: the Poincaré inequality on a ball of
-  radius `R`, with constant `2 ^ (n + 1) R`.
+* `TauCeti.setLIntegral_enorm_sub_setAverage_le_mul_totalVariationOn_of_convex`: the Poincaré
+  inequality on a bounded convex open set, with constant `μ(B(0, 1)) (diam Ω) ^ (n + 1) / μ(S)`.
+* `TauCeti.setLIntegral_enorm_sub_setAverage_le_mul_totalVariationOn_of_eq_ball`: the Poincaré
+  inequality on a ball of radius `R`, with constant `2 ^ (n + 1) R`.
 
 ## References
 
@@ -192,9 +195,9 @@ private theorem setLIntegral_enorm_sub_le {D : ℝ} {B : Set E}
 `u` be locally integrable on a bounded convex open set `Ω` of dimension `n`, and let `S ⊆ Ω` have
 positive measure. Then `u` deviates from its mean over `S` in `L¹(Ω)` by at most
 `μ(B(0, 1)) (diam Ω) ^ (n + 1) / μ(S)` times its total variation on `Ω`. -/
-theorem setLIntegral_enorm_sub_setAverage_le_of_convex (hconv : Convex ℝ (Ω : Set E))
-    (hb : Bornology.IsBounded (Ω : Set E)) (hu : LocallyIntegrableOn u Ω μ) (hS : S ⊆ Ω)
-    (hS₀ : μ S ≠ 0) :
+theorem setLIntegral_enorm_sub_setAverage_le_mul_totalVariationOn_of_convex
+    (hconv : Convex ℝ (Ω : Set E)) (hb : Bornology.IsBounded (Ω : Set E))
+    (hu : LocallyIntegrableOn u Ω μ) (hS : S ⊆ Ω) (hS₀ : μ S ≠ 0) :
     ∫⁻ x in Ω, ‖u x - ⨍ y in S, u y ∂μ‖ₑ ∂μ ≤
       ENNReal.ofReal (μ.real (ball 0 1) * diam (Ω : Set E) ^ (finrank ℝ E + 1) / μ.real S) *
         totalVariationOn μ Ω u := by
@@ -227,35 +230,20 @@ theorem setLIntegral_enorm_sub_setAverage_le_of_convex (hconv : Convex ℝ (Ω :
 integrable on a ball of radius `R` in a space of dimension `n` deviates from its mean over the
 ball in `L¹` by at most `2 ^ (n + 1) R` times its total variation on the ball. The constant is
 proportional to `R`, as the scaling of both sides forces. -/
-theorem setLIntegral_enorm_sub_setAverage_le_of_eq_ball {c : E} {R : ℝ}
-    (hΩ : (Ω : Set E) = ball c R) (hu : LocallyIntegrableOn u Ω μ) :
-    ∫⁻ x in Ω, ‖u x - ⨍ y in (Ω : Set E), u y ∂μ‖ₑ ∂μ ≤
+theorem setLIntegral_enorm_sub_setAverage_le_mul_totalVariationOn_of_eq_ball {c : E} {R : ℝ}
+    (hΩ : (Ω : Set E) = ball c R) (hu : LocallyIntegrableOn u (ball c R) μ) :
+    ∫⁻ x in ball c R, ‖u x - ⨍ y in ball c R, u y ∂μ‖ₑ ∂μ ≤
       ENNReal.ofReal (2 ^ (finrank ℝ E + 1) * R) * totalVariationOn μ Ω u := by
   rcases le_or_gt R 0 with hR | hR
   · -- An empty ball carries no integral.
-    rw [hΩ, ball_eq_empty.2 hR, Measure.restrict_empty, lintegral_zero_measure]
+    rw [ball_eq_empty.2 hR, Measure.restrict_empty, lintegral_zero_measure]
     exact zero_le
-  have hmeas : μ (Ω : Set E) = μ (ball (0 : E) R) := by
-    rw [hΩ, Measure.addHaar_ball_center]
-  have hpos : μ (Ω : Set E) ≠ 0 := hmeas ▸ (measure_ball_pos μ 0 hR).ne'
-  have hfin : μ (Ω : Set E) ≠ ⊤ := hmeas ▸ measure_ball_lt_top.ne
-  refine (setLIntegral_enorm_sub_setAverage_le_mul_totalVariationOn (hΩ ▸ convex_ball c R) hu
-    subset_rfl hpos hfin).trans (mul_le_mul_left ?_ _)
-  -- Every `h ∈ B(c, R) - B(c, R)` has `‖h‖ < 2 R`.
-  have hnorm : ∀ h ∈ (Ω : Set E) - Ω, ‖h‖ < 2 * R := by
-    rintro _ ⟨x, hx, y, hy, rfl⟩
-    rw [hΩ, mem_ball] at hx hy
-    rw [← dist_eq_norm]
-    linarith [dist_triangle_right x y c]
-  calc (∫⁻ h in (Ω : Set E) - Ω, ‖h‖ₑ ∂μ) / μ (Ω : Set E)
-      ≤ ENNReal.ofReal (2 * R) * μ (ball (0 : E) (2 * R)) / μ (Ω : Set E) := by
-        gcongr
-        exact setLIntegral_enorm_sub_le (fun h hh => (hnorm h hh).le)
-          fun h hh => mem_ball_zero_iff.2 (hnorm h hh)
-    _ = ENNReal.ofReal (2 ^ (finrank ℝ E + 1) * R) := by
-        rw [Measure.addHaar_ball_mul_of_pos μ 0 two_pos, ← hmeas, ← mul_assoc,
-          ENNReal.mul_div_cancel_right hpos hfin, ← ENNReal.ofReal_mul (by positivity)]
-        congr 1
-        ring
+  have h := setLIntegral_enorm_sub_setAverage_le_mul_totalVariationOn_of_convex (Ω := Ω)
+    (S := ball c R) (hΩ ▸ convex_ball c R) (hΩ ▸ isBounded_ball) (hΩ ▸ hu) hΩ.symm.subset
+    (measure_ball_pos μ c hR).ne'
+  rw [hΩ] at h
+  refine h.trans ?_
+  gcongr
+  exact μ.addHaar_real_ball_mul_diam_ball_pow_div_le c hR
 
 end TauCeti
