@@ -365,7 +365,12 @@ private theorem le_radius_factorialInvSeries {w : ℕ → CircleSobolev s ℂ} {
       simpa only [mul_def] using norm_mul_le_mulConst (w k) b
   have hm : ‖ContinuousMultilinearMap.mkPiAlgebraFin ℂ k (CircleSobolev s ℂ)‖ ≤ C ^ k :=
     ContinuousMultilinearMap.opNorm_le_bound (by positivity) fun m ↦ by
-      simpa [List.map_ofFn, List.prod_ofFn] using norm_list_prod_le (List.ofFn m)
+      simp only [ContinuousMultilinearMap.mkPiAlgebraFin_apply]
+      refine (norm_list_prod_le (List.ofFn m)).trans ?_
+      simp only [List.length_ofFn, List.map_ofFn, List.prod_ofFn]
+      exact mul_le_mul_of_nonneg_right
+        (pow_le_pow_right₀ one_le_mulConst (Nat.sub_le k 1))
+        (Finset.prod_nonneg fun _ _ ↦ norm_nonneg _)
   have hqn : ‖factorialInvSeries w k‖ ≤ (k.factorial : ℝ)⁻¹ * (C * ‖w k‖) * C ^ k := by
     rw [factorialInvSeries, norm_smul, norm_inv, Complex.norm_natCast, mul_assoc]
     gcongr
