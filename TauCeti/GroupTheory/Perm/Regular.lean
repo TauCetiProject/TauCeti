@@ -66,12 +66,13 @@ theorem fullCycleType_permutationRepresentation [Fintype α] [DecidableEq α]
 `α`. Their regular images in `Equiv.Perm α` are almost conjugate exactly when there is a bijection
 `G ≃ G'` preserving the orders of elements, that is, when `G` and `G'` have the same number of
 elements of each order. -/
-theorem almostConjugate_permutationRepresentation_range_iff [Fintype α]
+theorem almostConjugate_permutationRepresentation_range_iff [Finite α]
     (e : G ≃ α) (e' : G' ≃ α) :
     (permutationRepresentation (G := G) e).range.AlmostConjugate
         (permutationRepresentation (G := G') e').range ↔
       ∃ f : G ≃ G', ∀ g, orderOf (f g) = orderOf g := by
   classical
+  letI := Fintype.ofFinite α
   have hφ := permutationRepresentation_injective (G := G) e
   have hψ := permutationRepresentation_injective (G := G') e'
   set φ := permutationRepresentation (G := G) e
