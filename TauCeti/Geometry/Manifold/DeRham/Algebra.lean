@@ -43,25 +43,6 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSp
 
 namespace deRhamCohomology
 
-variable (I M) in
-/-- The degree-zero de Rham class of a constant real function, as a linear map. -/
-def const : ℝ →ₗ[ℝ] deRhamCohomology I M 0 :=
-  (deRhamCohomologyZeroEquiv I M).symm.toLinearMap.comp (LocallyConstant.constₗ ℝ)
-
-/-- A constant cohomology class is represented by the corresponding constant closed zero-form. -/
-theorem const_eq_mk (r : ℝ) :
-    const I M r = mk I 0 ((closedFormsZeroEquiv I M).symm (LocallyConstant.const M r)) := by
-  rw [const, LinearMap.comp_apply, LinearEquiv.coe_coe,
-    deRhamCohomologyZeroEquiv_symm_apply]
-  rfl
-
-/-- The degree-zero identification takes a constant class to its constant function. -/
-@[simp]
-theorem deRhamCohomologyZeroEquiv_const (r : ℝ) :
-    deRhamCohomologyZeroEquiv I M (const I M r) = LocallyConstant.const M r := by
-  rw [const, LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply]
-  rfl
-
 -- Equality of degrees transports both the tangent tuple and the selected homology carrier.
 private theorem mk_heq_of_apply_eq {a b : ℕ} (h : a = b)
     (φ : closedForms I M a) (ψ : closedForms I M b)

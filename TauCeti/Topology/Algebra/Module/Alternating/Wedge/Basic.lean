@@ -143,8 +143,7 @@ theorem pairedWedge_apply {k l : ℕ} (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     wedgeWithUnalternatedContinuous_apply]
   simp only [Function.comp_apply]
 
-/-- Wedge with a degree-zero form is the coefficient pairing with its value on the empty tuple.
-The factorial normalization cancels the alternatization of an already alternating map. -/
+/-- Wedge with a degree-zero form is the coefficient pairing with its value on the empty tuple. -/
 @[simp]
 theorem pairedWedge_apply_zero_right {k : ℕ} (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (hμ : Continuous (Function.uncurry fun x y ↦ μ x y))
