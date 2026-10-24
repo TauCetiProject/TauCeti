@@ -12,6 +12,7 @@ public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Quadratic
 public import TauCeti.LinearAlgebra.IntegralLattice.Signature
 
 import Mathlib.Algebra.BigOperators.Field
+import TauCeti.Algebra.Group.Subgroup.ZPowers
 
 /-!
 # The checkerboard lattice and the type `Dₙ` discriminant form
@@ -88,6 +89,9 @@ representative.  The identification of this coordinate model with the *root* lat
 * `TauCeti.IntegralLattice.isEven_checkerboardLattice`: the checkerboard lattice is even.
 * `TauCeti.IntegralLattice.isPosDef_checkerboardLattice`: it is positive definite.
 * `TauCeti.IntegralLattice.mem_checkerboardLattice_dualCarrier_iff`: the dual lattice.
+* `TauCeti.IntegralLattice.mk_eq_checkerboardVectorClass_iff`,
+  `mk_eq_checkerboardSpinorClass_iff`, `mk_eq_checkerboardCospinorClass_iff`: a dual vector lies
+  in one of the three classes exactly when it differs from the representative by a lattice vector.
 * `checkerboardDiscriminantGroup_eq_zero_or_vectorClass_or_spinorClass_or_cospinorClass`:
   the four classes exhaust the discriminant group.
 * `TauCeti.IntegralLattice.natCard_discriminantGroup_checkerboardLattice` and
@@ -185,16 +189,6 @@ private theorem checkerboardCarrier_le_intSpan :
   obtain ⟨z, hz⟩ := hx.1 i
   exact ⟨z, by simp [Pi.basisFun_repr, hz]⟩
 
-/-- The checkerboard carrier is finitely generated: it is a submodule of the finitely generated
-module `ℤⁿ` over the Noetherian ring `ℤ`. -/
-private theorem checkerboardCarrier_fg : (checkerboardCarrier n).FG := by
-  set M := Submodule.span ℤ (Set.range (Pi.basisFun ℚ (Fin n)))
-  have : IsNoetherian ℤ M := isNoetherian_span_of_finite ℤ (Set.finite_range _)
-  have hfg : ((checkerboardCarrier n).comap M.subtype).FG := IsNoetherian.noetherian _
-  have hmap : ((checkerboardCarrier n).comap M.subtype).map M.subtype = checkerboardCarrier n := by
-    rw [Submodule.map_comap_subtype, inf_eq_right.mpr (checkerboardCarrier_le_intSpan n)]
-  exact hmap ▸ hfg.map _
-
 /-- The checkerboard carrier spans the ambient rational space, since it contains every `2 eᵢ`. -/
 private theorem checkerboardCarrier_span_eq_top :
     Submodule.span ℚ (checkerboardCarrier n : Set (Fin n → ℚ)) = ⊤ := by
@@ -210,8 +204,10 @@ private theorem checkerboardCarrier_span_eq_top :
   exact Submodule.smul_mem _ _ h2
 
 /-- The checkerboard carrier is a full lattice in `ℚⁿ`. -/
-instance instIsLatticeCheckerboardCarrier : (checkerboardCarrier n).IsLattice ℚ :=
-  ⟨checkerboardCarrier_fg n, checkerboardCarrier_span_eq_top n⟩
+instance instIsLatticeCheckerboardCarrier : (checkerboardCarrier n).IsLattice ℚ where
+  -- a submodule of the finitely generated module `ℤⁿ` over the Noetherian ring `ℤ`
+  fg := (Submodule.fg_span (Set.finite_range _)).of_le (checkerboardCarrier_le_intSpan n)
+  span_eq_top := checkerboardCarrier_span_eq_top n
 
 /-! ## The lattice -/
 
@@ -543,6 +539,22 @@ theorem mem_checkerboardCarrier_of {u : Fin n → ℚ} (w : Fin n → ℤ) (hw :
   push_cast
   ring
 
+/-- A rational vector with integral coordinates `w` is a checkerboard lattice vector exactly when
+the integer sum of `w` is even. -/
+theorem mem_checkerboardCarrier_iff_even_sum {u : Fin n → ℚ} (w : Fin n → ℤ)
+    (hw : ∀ i, u i = (w i : ℚ)) : u ∈ checkerboardCarrier n ↔ Even (∑ i, w i) := by
+  refine ⟨fun h ↦ ?_, mem_checkerboardCarrier_of w hw⟩
+  obtain ⟨-, m, hm⟩ := (mem_checkerboardCarrier_iff u).mp h
+  refine ⟨m, ?_⟩
+  have hsum : ∑ i, u i = ((∑ i, w i : ℤ) : ℚ) := by
+    push_cast
+    exact Finset.sum_congr rfl fun i _ ↦ hw i
+  have hcast : ((∑ i, w i : ℤ) : ℚ) = ((m + m : ℤ) : ℚ) := by
+    rw [← hsum, hm]
+    push_cast
+    ring
+  exact_mod_cast hcast
+
 /-- Two dual vectors define the same discriminant class as soon as their difference is an
 integer vector with even coordinate sum. -/
 theorem checkerboard_mk_eq_mk_of {u v : Fin n → ℚ} (hu : u ∈ (checkerboardLattice n).dualCarrier)
@@ -552,6 +564,34 @@ theorem checkerboard_mk_eq_mk_of {u v : Fin n → ℚ} (hu : u ∈ (checkerboard
       Submodule.Quotient.mk ⟨v, hv⟩ := by
   rw [discriminantGroup_mk_eq_iff, checkerboardLattice_carrier]
   exact mem_checkerboardCarrier_of w hw hsum
+
+/-- A dual vector lies in the vector class exactly when it differs from `v` by a lattice
+vector. -/
+theorem mk_eq_checkerboardVectorClass_iff [NeZero n] (x : (checkerboardLattice n).dualCarrier) :
+    (Submodule.Quotient.mk x : (checkerboardLattice n).DiscriminantGroup) =
+        checkerboardVectorClass n ↔
+      (x : Fin n → ℚ) - checkerboardVector n ∈ checkerboardCarrier n := by
+  rw [checkerboardVectorClass, discriminantGroup_mk_eq_iff, checkerboardLattice_carrier,
+    Submodule.coe_sub]
+
+/-- A dual vector lies in the spinor class exactly when it differs from `s` by a lattice
+vector. -/
+theorem mk_eq_checkerboardSpinorClass_iff (x : (checkerboardLattice n).dualCarrier) :
+    (Submodule.Quotient.mk x : (checkerboardLattice n).DiscriminantGroup) =
+        checkerboardSpinorClass n ↔
+      (x : Fin n → ℚ) - checkerboardSpinor n ∈ checkerboardCarrier n := by
+  rw [checkerboardSpinorClass, discriminantGroup_mk_eq_iff, checkerboardLattice_carrier,
+    Submodule.coe_sub]
+
+/-- A dual vector lies in the cospinor class exactly when it differs from `c` by a lattice
+vector. -/
+theorem mk_eq_checkerboardCospinorClass_iff [NeZero n]
+    (x : (checkerboardLattice n).dualCarrier) :
+    (Submodule.Quotient.mk x : (checkerboardLattice n).DiscriminantGroup) =
+        checkerboardCospinorClass n ↔
+      (x : Fin n → ℚ) - checkerboardCospinor n ∈ checkerboardCarrier n := by
+  rw [checkerboardCospinorClass, discriminantGroup_mk_eq_iff, checkerboardLattice_carrier,
+    Submodule.coe_sub]
 
 /-- **The four Conway–Sloane classes exhaust the checkerboard discriminant group.** -/
 theorem checkerboardDiscriminantGroup_eq_zero_or_vectorClass_or_spinorClass_or_cospinorClass
@@ -811,32 +851,14 @@ theorem addOrderOf_checkerboardSpinorClass_of_even [NeZero n] (hn : Even n) :
       exact two_zsmul_checkerboardSpinorClass_of_even n hn)
     (checkerboardSpinorClass_ne_zero n)
 
-private theorem mem_zmultiples_iff_eq_zero_or_eq_of_two_zsmul_eq_zero
-    {A : Type*} [AddGroup A] (a x : A) (ha : (2 : ℤ) • a = 0) :
-    x ∈ AddSubgroup.zmultiples a ↔ x = 0 ∨ x = a := by
-  constructor
-  · intro hx
-    obtain ⟨k, rfl⟩ := AddSubgroup.mem_zmultiples_iff.mp hx
-    have hmul (m : ℤ) : (2 * m : ℤ) • a = 0 := by
-      rw [mul_comm, mul_zsmul, ha, zsmul_zero]
-    obtain hk | hk := Int.even_or_odd k
-    · obtain ⟨m, rfl⟩ := hk
-      left
-      simpa only [two_mul] using hmul m
-    · obtain ⟨m, rfl⟩ := hk
-      right
-      rw [add_zsmul, hmul m, one_zsmul, zero_add]
-  · rintro (rfl | rfl)
-    · exact (AddSubgroup.zmultiples a).zero_mem
-    · exact AddSubgroup.mem_zmultiples_iff.mpr ⟨1, by rw [one_zsmul]⟩
-
 /-- For even `n`, the multiples of the spinor class are exactly zero and the spinor class. -/
 theorem mem_zmultiples_checkerboardSpinorClass_iff (hn : Even n)
     (x : (checkerboardLattice n).DiscriminantGroup) :
     x ∈ AddSubgroup.zmultiples (checkerboardSpinorClass n) ↔
       x = 0 ∨ x = checkerboardSpinorClass n := by
-  exact mem_zmultiples_iff_eq_zero_or_eq_of_two_zsmul_eq_zero
-    (checkerboardSpinorClass n) x (two_zsmul_checkerboardSpinorClass_of_even n hn)
+  refine AddSubgroup.mem_zmultiples_iff_of_two_nsmul_eq_zero ?_
+  rw [two_nsmul, ← two_zsmul]
+  exact two_zsmul_checkerboardSpinorClass_of_even n hn
 
 /-- **For odd `n` the vector class is twice the spinor class**, so the discriminant group is
 cyclic of order four. -/
@@ -898,6 +920,25 @@ theorem zmodFourAddEquivCheckerboardDiscriminantGroup_apply_one (hn : Odd n) :
     zmodFourAddEquivCheckerboardDiscriminantGroup n hn 1 = checkerboardSpinorClass n := by
   rw [zmodFourAddEquivCheckerboardDiscriminantGroup]
   exact zmodAddEquivOfGenerator_apply_one _ _
+
+/-- The odd-rank identification sends `2 ∈ ℤ/4` to the vector class. -/
+@[simp]
+theorem zmodFourAddEquivCheckerboardDiscriminantGroup_apply_two (hn : Odd n) :
+    letI : NeZero n := NeZero.of_pos hn.pos
+    zmodFourAddEquivCheckerboardDiscriminantGroup n hn 2 = checkerboardVectorClass n := by
+  have h2 : (2 : ZMod 4) = 1 + 1 := by decide
+  rw [h2, map_add, zmodFourAddEquivCheckerboardDiscriminantGroup_apply_one, ← two_zsmul,
+    two_zsmul_checkerboardSpinorClass_of_odd n hn]
+
+/-- The odd-rank identification sends `3 ∈ ℤ/4` to the cospinor class. -/
+@[simp]
+theorem zmodFourAddEquivCheckerboardDiscriminantGroup_apply_three (hn : Odd n) :
+    letI : NeZero n := NeZero.of_pos hn.pos
+    zmodFourAddEquivCheckerboardDiscriminantGroup n hn 3 = checkerboardCospinorClass n := by
+  have h3 : (3 : ZMod 4) = 2 + 1 := by decide
+  rw [h3, map_add, zmodFourAddEquivCheckerboardDiscriminantGroup_apply_one,
+    zmodFourAddEquivCheckerboardDiscriminantGroup_apply_two,
+    checkerboardVectorClass_add_checkerboardSpinorClass]
 
 variable {n} in
 /-- The homomorphism `ℤ/2 → A_L` determined by an element of order dividing two. -/
@@ -1199,13 +1240,8 @@ Together with `checkerboardCyclicQuadraticModule_quadratic_two` this reads the v
 theorem checkerboardCyclicQuadraticIsometry_two (hn : Odd n) :
     letI : NeZero n := NeZero.of_pos hn.pos
     checkerboardCyclicQuadraticIsometry n hn (2 : ZMod 4) = checkerboardVectorClass n := by
-  let _ : NeZero n := NeZero.of_pos hn.pos
-  have h2 : (2 : ℤ) • (1 : ZMod 4) = (2 : ZMod 4) := by
-    rw [zsmul_eq_mul, mul_one]
-    norm_num
-  rw [checkerboardCyclicQuadraticIsometry_apply, ← h2, map_zsmul,
-    zmodFourAddEquivCheckerboardDiscriminantGroup_apply_one,
-    two_zsmul_checkerboardSpinorClass_of_odd n hn]
+  rw [checkerboardCyclicQuadraticIsometry_apply,
+    zmodFourAddEquivCheckerboardDiscriminantGroup_apply_two]
 
 /-- **The cyclic `ℤ/4` model is nondegenerate**, since the discriminant form of a nondegenerate
 lattice is. -/

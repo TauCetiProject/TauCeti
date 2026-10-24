@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Distribution.SchwartzSpace.WeightedPlancherel
 import TauCeti.Analysis.Distribution.SchwartzSpace.Deriv
 import TauCeti.Analysis.SpecificLimits.DyadicSum
+import TauCeti.MeasureTheory.Function.LpSeminorm.Support
 import TauCeti.MeasureTheory.Integral.CalderonZygmund.TranslationTail
 
 /-!
@@ -85,10 +86,9 @@ theorem norm_toLp_two_le_of_support_subset_closedBall (f : 𝓢(V, H)) {t M : �
       ENNReal.ofReal (t ^ finrank ℝ V * volume.real (ball (0 : V) 1)) := by
     rw [Measure.addHaar_closedBall _ _ ht, ← ofReal_measureReal,
       ← ENNReal.ofReal_mul (by positivity)]
-  have hle := eLpNorm_le_of_ae_bound (p := 2) (μ := volume.restrict (closedBall (0 : V) t))
-    f.continuous.aestronglyMeasurable (.of_forall hfM)
-  rw [eLpNorm_restrict_eq_of_support_subset f.continuous.aestronglyMeasurable hf,
-    Measure.restrict_apply_univ, hvol, ENNReal.toReal_ofNat,
+  have hle := eLpNorm_le_of_ae_bound_of_support_subset (p := 2) (μ := volume)
+    f.continuous.aestronglyMeasurable hf (.of_forall hfM)
+  rw [hvol, ENNReal.toReal_ofNat,
     ENNReal.ofReal_rpow_of_nonneg (by positivity) (by norm_num),
     ← ENNReal.ofReal_mul (by positivity)] at hle
   rw [norm_toLp]

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Diffeomorphism.Sphere
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Concordance
-public import TauCeti.KnotTheory.Slice.Genus
+public import TauCeti.KnotTheory.Slice.TopologicalGenus
 
 /-!
 # The mirror image of a knot
@@ -29,9 +29,9 @@ the elementary properties of mirroring that this rests on:
 
 * mirroring is an involution which commutes with rotation and reversal of the parametrization;
 * the unknot, the great circle of the first coordinate plane of `ℝ⁴`, is its own mirror image;
-* smooth and topological sliceness, and the slice genus, are invariant under mirroring, since a
-  slice disc or slice surface in the four-ball is reflected along with the knot
-  (`TauCeti.isSmoothlySlice_congr_linearIsometryEquiv` and its companions);
+* smooth and topological sliceness, and the smooth and topological slice genera, are invariant
+  under mirroring, since a slice disc or slice surface in the four-ball is reflected along with
+  the knot (`TauCeti.isSmoothlySlice_congr_linearIsometryEquiv` and its companions);
 * smooth concordance is preserved and reflected by mirroring, since the reflection is an ambient
   diffeomorphism.
 
@@ -50,7 +50,8 @@ independence is not formalized here.
   mirroring commutes with reversal and rotation.
 * `TauCeti.SmoothCircleEmbedding.mirror_unknot`: the unknot is its own mirror image.
 * `TauCeti.isSmoothlySlice_mirror_iff`, `TauCeti.isTopologicallySlice_mirror_iff`,
-  `TauCeti.sliceGenus_mirror`: sliceness and the slice genus are invariant under mirroring.
+  `TauCeti.sliceGenus_mirror`, `TauCeti.topologicalSliceGenus_mirror`: sliceness and the slice
+  genera are invariant under mirroring.
 * `TauCeti.SmoothEmbedding.concordant_mirror_iff`: mirroring preserves and reflects smooth
   concordance.
 
@@ -170,6 +171,11 @@ theorem isTopologicallySlice_mirror_iff : IsTopologicallySlice K.mirror ↔ IsTo
 @[simp]
 theorem sliceGenus_mirror : sliceGenus K.mirror = sliceGenus K :=
   sliceGenus_congr_linearIsometryEquiv _ K.coe_mirror_apply
+
+/-- A knot and its mirror image have the same topological slice genus. -/
+@[simp]
+theorem topologicalSliceGenus_mirror : topologicalSliceGenus K.mirror = topologicalSliceGenus K :=
+  topologicalSliceGenus_congr_linearIsometryEquiv _ K.coe_mirror_apply
 
 /-! ### Concordance -/
 

@@ -69,61 +69,6 @@ theorem signature_snd (g : ContMDiffNondegenerateMetric (I := I) (M := M)) (x : 
     (g.signature x).2 = sigNeg (g x).toBilinForm.toQuadraticMap :=
   (rfl)
 
-private abbrev inCoordinates
-    (g : ContMDiffNondegenerateMetric (I := I) (M := M)) (a x : M) :
-    E →L[ℝ] E →L[ℝ] ℝ :=
-  ContinuousLinearMap.inCoordinates E (fun y : M ↦ TangentSpace I y)
-    (E →L[ℝ] ℝ) (fun y : M ↦ TangentSpace I y →L[ℝ] ℝ) a x a x (g x)
-
-private theorem continuousAt_inCoordinates_self
-    (g : ContMDiffNondegenerateMetric (I := I) (M := M)) (a : M) :
-    ContinuousAt (g.inCoordinates a) a := by
-  have hg := g.contMDiff.continuous.continuousAt (x := a)
-  have hcoord := (FiberBundle.continuousAt_section
-    (E →L[ℝ] E →L[ℝ] ℝ) a).mp hg
-  simpa only [hom_trivializationAt_apply] using hcoord
-
-private theorem inCoordinates_apply
-    (g : ContMDiffNondegenerateMetric (I := I) (M := M)) (a : M) {x : M}
-    (hx : x ∈ (trivializationAt E (fun y : M ↦ TangentSpace I y) a).baseSet) (v w : E) :
-    g.inCoordinates a x v w =
-      g x ((trivializationAt E (fun y : M ↦ TangentSpace I y) a).symm x v)
-        ((trivializationAt E (fun y : M ↦ TangentSpace I y) a).symm x w) := by
-  simpa only [inCoordinates, Trivial.fiberBundle_trivializationAt',
-    Trivial.linearMapAt_trivialization, LinearMap.id_coe, id_eq] using
-    (inCoordinates_apply_eq₂ (F₁ := E) (F₂ := E) (F₃ := ℝ)
-      (E₁ := fun y : M ↦ TangentSpace I y) (E₂ := fun y : M ↦ TangentSpace I y)
-      (E₃ := Bundle.Trivial M ℝ) (x₀ := a) (x := x)
-      (ϕ := g x) hx hx (by simp) (v := v) (w := w))
-
-private theorem inCoordinates_toBilinForm
-    (g : ContMDiffNondegenerateMetric (I := I) (M := M)) (a : M) {x : M}
-    (hx : x ∈ (trivializationAt E (fun y : M ↦ TangentSpace I y) a).baseSet) :
-    (g.inCoordinates a x).toBilinForm =
-      LinearMap.BilinForm.congr
-        ((trivializationAt E (fun y : M ↦ TangentSpace I y) a).continuousLinearEquivAt ℝ x hx
-          |>.toLinearEquiv) (g x).toBilinForm := by
-  ext v w
-  rw [ContinuousLinearMap.toBilinForm_apply, LinearMap.BilinForm.congr_apply,
-    inCoordinates_apply g a hx]
-  rfl
-
-private theorem isSymm_inCoordinates
-    (g : ContMDiffNondegenerateMetric (I := I) (M := M)) (a : M) {x : M}
-    (hx : x ∈ (trivializationAt E (fun y : M ↦ TangentSpace I y) a).baseSet) :
-    (g.inCoordinates a x).toBilinForm.IsSymm := by
-  constructor
-  intro v w
-  simp only [ContinuousLinearMap.toBilinForm_apply, inCoordinates_apply g a hx]
-  exact g.apply_comm x _ _
-
-private theorem nondegenerate_inCoordinates
-    (g : ContMDiffNondegenerateMetric (I := I) (M := M)) (a : M) {x : M}
-    (hx : x ∈ (trivializationAt E (fun y : M ↦ TangentSpace I y) a).baseSet) :
-    (g.inCoordinates a x).toBilinForm.Nondegenerate := by
-  rw [inCoordinates_toBilinForm g a hx]
-  exact (g.nondegenerate x).congr _
-
 private theorem signature_inCoordinates
     (g : ContMDiffNondegenerateMetric (I := I) (M := M)) (a : M) {x : M}
     (hx : x ∈ (trivializationAt E (fun y : M ↦ TangentSpace I y) a).baseSet) :
@@ -151,7 +96,7 @@ theorem isLocallyConstant_signature
   let V := g.inCoordinates x
   have hx : x ∈ e.baseSet := mem_baseSet_trivializationAt E _ x
   have he : e.baseSet ∈ nhds x := e.open_baseSet.mem_nhds hx
-  have hV : ContinuousAt V x := g.continuousAt_inCoordinates_self x
+  have hV : ContinuousAt V x := (g.contMDiffAt_inCoordinates x hx).continuousAt
   have hsymm : ∀ᶠ y in nhds x, (V y).toBilinForm.IsSymm := by
     filter_upwards [he] with y hy
     exact g.isSymm_inCoordinates x hy

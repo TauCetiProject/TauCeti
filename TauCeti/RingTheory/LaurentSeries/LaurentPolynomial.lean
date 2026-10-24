@@ -74,6 +74,12 @@ theorem toLaurentSeries_T (n : ℤ) : toLaurentSeries (T n : R[T;T⁻¹]) = Hahn
   rw [T, toLaurentSeries, AddMonoidAlgebra.liftNCRingHom_single]
   simp [monomialHom]
 
+/-- The monomial `a Tⁿ` is sent to `a Xⁿ`. -/
+theorem toLaurentSeries_single (n : ℤ) (a : R) :
+    toLaurentSeries (AddMonoidAlgebra.single n a : R[T;T⁻¹]) = HahnSeries.single n a := by
+  rw [toLaurentSeries, AddMonoidAlgebra.liftNCRingHom_single]
+  simp [monomialHom, HahnSeries.C_apply]
+
 /-- Constants are sent to constants. -/
 @[simp]
 theorem toLaurentSeries_C (r : R) : toLaurentSeries (C r) = HahnSeries.C r := by

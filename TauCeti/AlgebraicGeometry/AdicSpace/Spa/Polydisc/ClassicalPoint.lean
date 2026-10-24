@@ -86,9 +86,9 @@ theorem weightedX_sub_weightedC_dvd_sub_weightedC_evalAtHom (a : Fin 1 → K)
         PowerSeries.IsRestricted.subring (R := K) 1) : PowerSeries K) =
           PowerSeries.X - PowerSeries.C (a 0) := by
     simp
-  obtain ⟨q, r, hr, hqr⟩ := (hlin ▸ TauCeti.PowerSeries.isDistinguished_X_sub_C one_pos
+  obtain ⟨q, r, hr, hqr⟩ := (hlin ▸ TauCeti.PowerSeries.isMulDistinguished_X_sub_C one_pos
     (isPowerBounded_iff_norm_le_one.mp (ha 0))).exists_mul_add_eq_subring one_pos
-      (by simp [PowerSeries.coeff_X]) (weightedRestrictedSubringOneEquiv f)
+      (weightedRestrictedSubringOneEquiv f)
   -- the remainder has no coefficient in positive degree, so it is the constant `r₀`
   set r₀ := PowerSeries.coeff 0 (r : PowerSeries K)
   have hrC : r = weightedRestrictedSubringOneEquiv (weightedC _ isWeightFamily_one_weight r₀) := by

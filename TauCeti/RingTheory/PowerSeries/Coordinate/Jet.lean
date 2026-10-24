@@ -34,6 +34,7 @@ groups is then an isomorphism of topological groups.
 * `TauCeti.FormalCoordinate.Jet R N`: the group of `N`-jets of formal coordinates.
 * `TauCeti.FormalCoordinate.jet N`: the `N`-jet of a coordinate, as a homomorphism.
 * `TauCeti.FormalCoordinate.Jet.truncate`: truncation `Jet R M →* Jet R N` for `N ≤ M`.
+* `TauCeti.FormalCoordinate.Jet.map f N`: base change of `N`-jets along `f : R →+* S`.
 * `TauCeti.FormalCoordinate.jetLimit R`: the compatible families of jets, a closed subgroup of
   the product of the jet groups.
 * `TauCeti.FormalCoordinate.jetLimitEquiv R`: the isomorphism of topological groups between the
@@ -46,6 +47,9 @@ groups is then an isomorphism of topological groups.
 * `TauCeti.FormalCoordinate.tendsto_iff_X_pow_dvd`: convergence of coordinates is eventual
   agreement modulo each power of `X`.
 * `TauCeti.FormalCoordinate.isClosed_jetLimit`: the compatible families form a closed subgroup.
+* `TauCeti.FormalCoordinate.Jet.map_jet`, `TauCeti.FormalCoordinate.Jet.truncate_map`: passing to
+  jets and truncating jets are natural in the coefficients.
+* `TauCeti.FormalCoordinate.continuous_map`: base change of formal coordinates is continuous.
 -/
 
 public section
@@ -182,6 +186,74 @@ theorem truncate_truncate {N M L : ℕ} (h₁ : N ≤ M) (h₂ : M ≤ L) (x : J
 
 end Jet
 
+/-! ### Base change of jets -/
+
+section map
+
+variable {S : Type*} [CommRing S] (f : R →+* S)
+
+/-- Base change of coefficients preserves agreement with `X` modulo `X ^ (N + 1)`. -/
+theorem jetKernel_le_comap_map (N : ℕ) : jetKernel R N ≤ (jetKernel S N).comap (map f) := by
+  intro φ hφ
+  rw [Subgroup.mem_comap, mem_jetKernel, toPowerSeries_map, ← PowerSeries.map_X f,
+    ← map_sub, ← map_pow]
+  exact _root_.map_dvd (PowerSeries.map f) hφ
+
+namespace Jet
+
+/-- Base change of `N`-jets along a ring homomorphism `f : R →+* S`, induced by base change of
+formal coordinates. -/
+noncomputable def map (N : ℕ) : Jet R N →* Jet S N :=
+  QuotientGroup.map _ _ (FormalCoordinate.map f) (jetKernel_le_comap_map f N)
+
+@[simp]
+theorem map_jet (N : ℕ) (φ : FormalCoordinate R) :
+    Jet.map f N (jet N φ) = jet N (FormalCoordinate.map f φ) :=
+  (rfl)
+
+theorem map_comp_jet (N : ℕ) :
+    (Jet.map f N).comp (jet N) = (jet N).comp (FormalCoordinate.map f) :=
+  MonoidHom.ext (map_jet f N)
+
+/-- Jet truncation is natural in the coefficients. -/
+@[simp]
+theorem truncate_map {N M : ℕ} (h : N ≤ M) (x : Jet R M) :
+    truncate h (Jet.map f M x) = Jet.map f N (truncate h x) := by
+  obtain ⟨φ, rfl⟩ := jet_surjective M x
+  simp
+
+theorem truncate_comp_map {N M : ℕ} (h : N ≤ M) :
+    (truncate h).comp (Jet.map f M) = (Jet.map f N).comp (truncate h) :=
+  MonoidHom.ext (truncate_map f h)
+
+@[simp]
+theorem map_id (N : ℕ) : Jet.map (RingHom.id R) N = MonoidHom.id (Jet R N) :=
+  MonoidHom.ext fun x ↦ by
+    obtain ⟨φ, rfl⟩ := jet_surjective N x
+    simp
+
+@[simp]
+theorem map_map {T : Type*} [CommRing T] (g : S →+* T) (N : ℕ) (x : Jet R N) :
+    Jet.map g N (Jet.map f N x) = Jet.map (g.comp f) N x := by
+  obtain ⟨φ, rfl⟩ := jet_surjective N x
+  simp [FormalCoordinate.map_comp]
+
+/-- Base change of jets along an injective ring homomorphism is injective. -/
+theorem map_injective {f : R →+* S} (hf : Function.Injective f) (N : ℕ) :
+    Function.Injective (Jet.map f N) := by
+  refine (injective_iff_map_eq_one _).mpr fun x hx ↦ ?_
+  obtain ⟨φ, rfl⟩ := jet_surjective N x
+  rw [map_jet, jet_eq_one_iff, X_pow_dvd_iff] at hx
+  rw [jet_eq_one_iff, X_pow_dvd_iff]
+  intro m hm
+  apply hf
+  rw [map_zero, ← coeff_map, map_sub, PowerSeries.map_X, ← toPowerSeries_map]
+  exact hx m hm
+
+end Jet
+
+end map
+
 /-! ### The inverse limit of the jet groups -/
 
 variable (R) in
@@ -254,6 +326,13 @@ instance : T2Space (FormalCoordinate R) :=
 
 theorem continuous_jet (N : ℕ) : Continuous (jet (R := R) N) :=
   (continuous_apply N).comp isInducing_jets.continuous
+
+/-- Base change of formal coordinates is continuous for the topologies of agreement modulo
+powers of `X`. -/
+theorem continuous_map {S : Type*} [CommRing S] (f : R →+* S) : Continuous (map f) :=
+  isInducing_jets.continuous_iff.mpr <| continuous_pi fun N ↦ by
+    simpa [Function.comp_def] using
+      (continuous_of_discreteTopology (f := Jet.map f N)).comp (continuous_jet N)
 
 /-- The coordinates congruent to `X` modulo `X ^ (N + 1)` form an open subgroup. -/
 theorem isOpen_jetKernel (N : ℕ) : IsOpen (jetKernel R N : Set (FormalCoordinate R)) := by

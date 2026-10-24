@@ -231,41 +231,10 @@ multiplies its scalar curvature by `c⁻¹`. -/
 theorem scalarCurvature_rescale_const (x : M) :
     (g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).scalarCurvature x =
       c⁻¹ * g.scalarCurvature x := by
-  rw [scalarCurvature_def, scalarCurvature_def]
-  -- A `g`-orthonormal basis, recorded through the inner products of `g` itself.
-  obtain ⟨d, b, hb, hs⟩ : ∃ (d : ℕ) (b : Module.Basis (Fin d) ℝ (TangentSpace I x)),
-      (∀ i j, g.inner x (b i) (b j) = if i = j then 1 else 0) ∧
-      (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
-        (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x) =
-      ∑ j, (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
-        (CovariantDerivative.leviCivitaConnection I M).ricciTensor x) (b j) (b j) := by
-    let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
-    let b := stdOrthonormalBasis ℝ (TangentSpace I x)
-    refine ⟨_, b.toBasis, fun i j ↦ ?_, ?_⟩
-    · rw [b.coe_toBasis, ← inner_riemannianBundle]
-      exact orthonormal_iff_ite.1 b.orthonormal i j
-    · rw [b.coe_toBasis]
-      exact CovariantDerivative.scalarCurvature_eq_sum _ x b
-  set s := Real.sqrt c
-  have hs0 : 0 < s := Real.sqrt_pos.2 hc
-  have hss : s⁻¹ * s⁻¹ = c⁻¹ := by rw [← mul_inv, Real.mul_self_sqrt hc.le]
-  let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
-    ⟨(g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).toRiemannianMetric⟩
-  -- Dividing it by `√c` gives a basis orthonormal for the rescaled metric.
-  have hon : Orthonormal ℝ (b.unitsSMul fun _ ↦ Units.mk0 s⁻¹ (inv_ne_zero hs0.ne')) := by
-    rw [orthonormal_iff_ite]
-    intro i j
-    simp only [Module.Basis.unitsSMul_apply, Units.smul_def, Units.val_mk0,
-      inner_riemannianBundle, rescale_inner, map_smul, smul_apply, smul_eq_mul, hb]
-    split_ifs
-    · field_simp
-      exact (Real.sq_sqrt hc.le).symm
-    · simp
-  rw [CovariantDerivative.scalarCurvature_eq_sum _ x ((b.unitsSMul _).toOrthonormalBasis hon),
-    ricciTensor_leviCivitaConnection_rescale_const g hc x, hs, Finset.mul_sum]
-  refine Finset.sum_congr rfl fun j _ ↦ ?_
-  simp only [Module.Basis.coe_toOrthonormalBasis, Module.Basis.unitsSMul_apply, Units.smul_def,
-    Units.val_mk0, map_smul, LinearMap.smul_apply, smul_eq_mul, ← mul_assoc, hss]
+  let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+  let b := stdOrthonormalBasis ℝ (TangentSpace I x)
+  rw [scalarCurvature_rescale_eq_sum g _ _ b, ricciTensor_leviCivitaConnection_rescale_const g hc x,
+    scalarCurvature_def, CovariantDerivative.scalarCurvature_eq_sum _ x b]
 
 end Curvature
 

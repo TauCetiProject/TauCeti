@@ -5,20 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Basic
-public import TauCeti.Geometry.Manifold.DifferentialForm.Smooth
-public import TauCeti.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap
-public import TauCeti.Analysis.Normed.Module.Alternating.Wedge.ContinuousLinearMap
-public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
+public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth.Bundle
+import TauCeti.Geometry.Manifold.VectorBundle.Hom
 
 /-!
 # Regularity of wedge products of differential forms
 
 The paired wedge of two fixed-coefficient forms of class `C^n` is again of class `C^n`, for
-every continuous bilinear pairing of the coefficient spaces. In the fibre coordinates of the
-alternating bundle, the wedge of two forms is the wedge of their coordinates, because both
-coordinate expressions precompose with the same inverse tangent trivialization. Regularity then
-follows from the continuity and bilinearity of the paired wedge.
+every continuous bilinear pairing of the coefficient spaces. These results specialize the
+bundle-valued smooth wedge to trivial coefficient bundles and a constant pairing. The constant
+pairing defines a smooth section of the bundle of bilinear maps.
 
 The relative statements use no derivative, so they hold within arbitrary subsets and at
 boundary and corner points. In particular smooth forms are closed under the paired wedge, and
@@ -47,29 +43,6 @@ variable {E H M F₁ F₂ F₃ : Type*}
   [NormedAddCommGroup F₃] [NormedSpace ℝ F₃]
   [IsManifold I 1 M] {k l : ℕ} {n : WithTop ℕ∞} {s : Set M} {x : M}
 
-namespace RoughForm
-
-/-- In the fibre coordinates of the alternating bundle, the paired wedge of two
-fixed-coefficient forms is the paired wedge of their coordinates. -/
-theorem inCoordinates_wedgeWith (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (φ : RoughForm I M F₁ k)
-    (ψ : RoughForm I M F₂ l) (x₀ y : M) :
-    ContinuousAlternatingMap.inCoordinates E F₃ x₀ y x₀ y (φ.wedgeWith μ ψ y) =
-      ContinuousAlternatingMap.pairedWedge μ μ.continuous₂
-        (ContinuousAlternatingMap.inCoordinates E F₁ x₀ y x₀ y (φ y))
-        (ContinuousAlternatingMap.inCoordinates E F₂ x₀ y x₀ y (ψ y)) := by
-  -- The coefficient bundles are trivial, so their coordinate maps are identities and each
-  -- coordinate expression precomposes with the same inverse tangent trivialization.
-  -- Postcomposition with the identity is definitionally trivial, so the precomposition law for
-  -- paired wedges closes the goal.
-  simp only [ContinuousAlternatingMap.inCoordinates,
-    Bundle.Trivial.eq_trivialization M F₁ (trivializationAt F₁ (Trivial M F₁) x₀),
-    Bundle.Trivial.eq_trivialization M F₂ (trivializationAt F₂ (Trivial M F₂) x₀),
-    Bundle.Trivial.eq_trivialization M F₃ (trivializationAt F₃ (Trivial M F₃) x₀),
-    Bundle.Trivial.continuousLinearMapAt_trivialization, wedgeWith_apply']
-  exact ContinuousAlternatingMap.pairedWedge_compContinuousLinearMap _ _ _ _ _
-
-end RoughForm
-
 /-- The paired wedge of two `C^n` sections of the alternating bundle is a `C^n` section,
 within an arbitrary subset. -/
 theorem _root_.ContMDiffWithinAt.wedgeWith_form
@@ -81,13 +54,9 @@ theorem _root_.ContMDiffWithinAt.wedgeWith_form
       (fun y ↦ TotalSpace.mk' (E [⋀^Fin l]→L[ℝ] F₂) y (ψ y)) s x) :
     ContMDiffWithinAt I (I.prod 𝓘(ℝ, E [⋀^Fin (k + l)]→L[ℝ] F₃)) n
       (fun y ↦ TotalSpace.mk' (E [⋀^Fin (k + l)]→L[ℝ] F₃) y (φ.wedgeWith μ ψ y)) s x := by
-  rw [contMDiffWithinAt_continuousAlternatingMap_bundle] at hφ hψ ⊢
-  refine ⟨hφ.1, ?_⟩
-  have h := (contMDiffWithinAt_const
-    (c := ContinuousAlternatingMap.pairedWedgeCLM (E := E) (k := k) (l := l) μ)).clm_apply
-      hφ.2 |>.clm_apply hψ.2
-  simpa only [RoughForm.inCoordinates_wedgeWith,
-    ContinuousAlternatingMap.pairedWedgeCLM_apply] using h
+  simpa only [bundleWedgeWith_trivial] using
+    ContMDiffWithinAt.bundleWedgeWith_form (fun _ ↦ μ.continuous₂)
+      ((contMDiff_const_bundlePairing μ x).contMDiffWithinAt) hφ hψ
 
 /-- The paired wedge of two `C^n` sections of the alternating bundle is a `C^n` section on an
 arbitrary subset. -/
@@ -120,7 +89,9 @@ theorem IsSmoothForm.wedgeWith (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) {φ : R
     {ψ : RoughForm I M F₂ l} (hφ : IsSmoothForm I n φ) (hψ : IsSmoothForm I n ψ) :
     IsSmoothForm I n (φ.wedgeWith μ ψ) := by
   rw [isSmoothForm_def] at hφ hψ ⊢
-  exact fun x ↦ (hφ x).wedgeWith_form μ (hψ x)
+  simpa only [isSmoothBundleForm_def, bundleWedgeWith_trivial] using
+    IsSmoothBundleForm.bundleWedgeWith (fun _ ↦ μ.continuous₂) (contMDiff_const_bundlePairing μ)
+      ((isSmoothBundleForm_def n φ).mpr hφ) ((isSmoothBundleForm_def n ψ).mpr hψ)
 
 /-- The real wedge of two real-valued forms of class `C^n` is of class `C^n`. -/
 theorem IsSmoothForm.wedge {φ : RoughForm I M ℝ k} {ψ : RoughForm I M ℝ l}
@@ -134,10 +105,10 @@ theorem smoothForms_wedgeWith_mem (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (φ 
     (ψ : SmoothForm I M F₂ l) :
     RoughForm.wedgeWith μ (φ : RoughForm I M F₁ k) (ψ : RoughForm I M F₂ l) ∈
       smoothForms I M F₃ (k + l) := by
-  have hφ := φ.contMDiff
-  have hψ := ψ.contMDiff
-  exact mem_smoothForms.mpr <| (isSmoothBundleForm_def ∞ _).mpr fun x ↦
-    (hφ x).wedgeWith_form μ (hψ x)
+  apply mem_smoothForms.mpr
+  simpa only [bundleWedgeWith_trivial] using
+    IsSmoothBundleForm.bundleWedgeWith (fun _ ↦ μ.continuous₂)
+      (contMDiff_const_bundlePairing μ) φ.isSmoothBundleForm ψ.isSmoothBundleForm
 
 /-- Smooth real-valued forms are closed under the real wedge. -/
 theorem smoothForms_wedge_mem (φ : SmoothForm I M ℝ k) (ψ : SmoothForm I M ℝ l) :

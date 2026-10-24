@@ -56,6 +56,8 @@ and under limits in operator norm (`ContinuousLinearMap.isRowCompact_of_tendsto`
   scalars.
 * `ContinuousLinearMap.isRowCompact_iff_tendsto_ringOpNorm_sub_indicatorCLM_comp`: row compactness
   is norm convergence of the output truncations.
+* `ContinuousLinearMap.IsRowCompact.tendsto_ringOpNorm_indicatorCLM_comp_sub`: the output
+  truncations of a row-compact map converge to it in operator norm.
 * `ContinuousLinearMap.IsRowCompact.isCompletelyContinuous`: row-compact maps are completely
   continuous.
 
@@ -279,6 +281,16 @@ theorem ringOpNorm_eq_iSup_rowNorm (u : C₀(J, R) →L[R] C₀(I, R)) : ‖u‖
   · exact (u.norm_matrixCoeff_le_rowNorm i j).trans (le_ciSup hbdd i)
   · exact Real.iSup_le u.rowNorm_le_ringOpNorm (ringOpNorm_nonneg u)
 
+/-- Over ultrametric Tate scalars, the `i`-th coordinate of `u x` is bounded by the row norm
+`rᵢ(u)` times `‖x‖`. -/
+theorem norm_apply_apply_le_rowNorm_mul (u : C₀(J, R) →L[R] C₀(I, R)) (x : C₀(J, R)) (i : I) :
+    ‖u x i‖ ≤ u.rowNorm i * ‖x‖ := by
+  rw [← (u.hasSum_mul_matrixCoeff x i).tsum_eq, mul_comm]
+  refine IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg
+    (mul_nonneg (norm_nonneg x) (u.rowNorm_nonneg i)) fun j ↦ (norm_mul_le _ _).trans ?_
+  exact mul_le_mul (norm_coe_le_norm x j) (u.norm_matrixCoeff_le_rowNorm i j) (norm_nonneg _)
+    (norm_nonneg _)
+
 end Ultrametric
 
 section Truncation
@@ -377,6 +389,14 @@ theorem isRowCompact_iff_tendsto_ringOpNorm_sub_indicatorCLM_comp
     have := ((indicatorCLM R (S : Set I)ᶜ).comp u).rowNorm_le_ringOpNorm i
     rwa [rowNorm_indicatorCLM_comp, Set.indicator_of_mem (by simpa using hiS),
       ← sub_indicatorCLM_comp] at this
+
+/-- Over ultrametric Tate scalars, the output truncations `π_S ∘ u` of a row-compact `u` converge
+to `u` in operator norm as the finite set `S` grows. -/
+theorem IsRowCompact.tendsto_ringOpNorm_indicatorCLM_comp_sub {u : C₀(J, R) →L[R] C₀(I, R)}
+    (hu : u.IsRowCompact) :
+    Tendsto (fun S : Finset I ↦ ‖(indicatorCLM R (S : Set I)).comp u - u‖) atTop (𝓝 0) := by
+  simpa only [← neg_sub u, ringOpNorm_neg] using
+    isRowCompact_iff_tendsto_ringOpNorm_sub_indicatorCLM_comp.1 hu
 
 end Truncation
 

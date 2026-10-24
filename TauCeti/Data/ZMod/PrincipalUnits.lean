@@ -12,6 +12,7 @@ import Mathlib.GroupTheory.OrderOfElement
 import Mathlib.RingTheory.Artinian.Module
 -- Supplies completeness of Artinian local rings, needed by the Henselian instance.
 import Mathlib.RingTheory.AdicCompletion.Noetherian
+import Mathlib.RingTheory.ZMod.LocalRing
 import TauCeti.Data.ZMod.LocalRing
 import TauCeti.RingTheory.Henselian.Basic
 
@@ -132,7 +133,6 @@ theorem natCard_nthRoots_prime_pow_eq_natCard_nthRoots {p n k : ℕ} [Fact p.Pri
     -- lift of the simple root `z` of `X ^ n - a` modulo `p` lifts to a root.
     simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hz
     have : NeZero (p ^ (k + 1)) := ⟨pow_ne_zero _ (Fact.out : p.Prime).ne_zero⟩
-    let : IsLocalRing (ZMod (p ^ (k + 1))) := isLocalRing_prime_pow p (k + 1) k.succ_pos
     let : IsArtinianRing (ZMod (p ^ (k + 1))) := isArtinian_of_finite
     set x₀ : ZMod (p ^ (k + 1)) := (z.val : ZMod (p ^ (k + 1)))
     have hπx₀ : π x₀ ^ n = a := by rw [map_natCast, natCast_zmod_val, hz]

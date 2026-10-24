@@ -17,8 +17,8 @@ import TauCeti.RingTheory.Smooth.GeometricallyReduced
 /-!
 # Semisimplicity and finiteness of the center
 
-Over a field of characteristic zero, an affine group of finite type is semisimple if and
-only if it is reductive and its scheme-theoretic center is finite. In particular, this
+Over any field and in every characteristic, an affine group of finite type is semisimple if
+and only if it is reductive and its scheme-theoretic center is finite. In particular, this
 criterion distinguishes the semisimple part of reductive structure theory from central
 torus factors. No splitting or algebraic-closedness assumption is imposed on the field.
 
@@ -40,11 +40,11 @@ namespace TauCeti
 
 universe u
 
-variable {k : Type u} [Field k] [CharZero k]
+variable {k : Type u} [Field k]
 variable {H : FiniteTypeCommHopfAlgCat.{u, u} k}
 
-/-- A reductive affine group with finite scheme-theoretic center is semisimple in
-characteristic zero, over an arbitrary ground field. -/
+/-- A reductive affine group with finite scheme-theoretic center is semisimple, over an arbitrary
+ground field and in every characteristic. -/
 theorem reductiveCommHopfAlgProperty.semisimple_of_moduleFinite_centerCoordinate
     (hH : reductiveCommHopfAlgProperty k H)
     (hfinite : Module.Finite k (CommHopfAlgCat.centerCoordinateHopfAlgebra H.obj)) :
@@ -79,8 +79,8 @@ theorem reductiveCommHopfAlgProperty.semisimple_of_moduleFinite_centerCoordinate
   rw [htrivial, HopfIdeal.mem_bot] at hxR
   exact (CommHopfAlgCat.mkQuotient_eq_zero_iff G.obj I x).mp hxR
 
-/-- In characteristic zero, semisimplicity is equivalent to reductivity together with
-finiteness of the full scheme-theoretic center. -/
+/-- Semisimplicity is equivalent to reductivity together with finiteness of the full
+scheme-theoretic center, in every characteristic. -/
 theorem semisimpleCommHopfAlgProperty_iff_reductive_and_moduleFinite_centerCoordinate
     (H : FiniteTypeCommHopfAlgCat.{u, u} k) :
     semisimpleCommHopfAlgProperty k H ↔

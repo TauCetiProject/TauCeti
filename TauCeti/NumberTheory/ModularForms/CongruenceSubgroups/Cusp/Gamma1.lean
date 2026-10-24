@@ -369,9 +369,6 @@ theorem card_cuspOrbit_Gamma1 (hN : 2 < N) (hN4 : N ≠ 4) :
         Set.mem_singleton_iff, eq_comm, eq_comm (b := x)]
     rw [← Set.coe_ofPred, Nat.card_coe_set_eq, h,
       Set.ncard_pair (gamma1CuspLabel_neg_ne hN hN4 γ).symm]
-  have : Finite ((Gamma1 N).map sl2zToPSL2R).CuspOrbit :=
-    Finite.of_surjective f fun C ↦
-      (Nat.card_pos_iff.mp (hfib C ▸ two_pos)).1.elim fun x ↦ ⟨x.1, x.2⟩
   have := Fintype.ofFinite ((Gamma1 N).map sl2zToPSL2R).CuspOrbit
   calc 2 * Nat.card ((Gamma1 N).map sl2zToPSL2R).CuspOrbit
       = ∑ C, Nat.card {x // f x = C} := by
