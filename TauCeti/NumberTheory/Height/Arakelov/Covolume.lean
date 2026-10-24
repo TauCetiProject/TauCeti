@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Module.ZLattice.Covolume
 public import TauCeti.Algebra.Module.ZLattice.RationalSubspace
-public import TauCeti.NumberTheory.Height.Arakelov.Subspace
+public import TauCeti.NumberTheory.Height.Arakelov.Subspace.Basic
 
 /-!
 # The covolume of the lattice of integral points of a rational subspace
