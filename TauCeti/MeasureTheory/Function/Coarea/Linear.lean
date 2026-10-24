@@ -42,6 +42,14 @@ The restriction of `L` to `(ker L)ᗮ` is an isomorphism onto `F`, whose Jacobia
   measurable sets.
 * `LinearMap.measurable_setLIntegral_preimage_singleton`: measurability of the fibre integrals
   of a surjective linear map.
+* `TauCeti.ae_euclideanHausdorffMeasure_inter_preimage_singleton_eq_zero`: almost every fibre
+  of a Lebesgue-null set is Hausdorff-null.
+* `TauCeti.ae_ae_eq_restrict_preimage_singleton`: ambient a.e. equality descends to almost
+  every fibre.
+* `TauCeti.aemeasurable_setLIntegral_preimage_singleton`: a.e.-measurable
+  weights have a.e.-measurable fibre integrals.
+* `TauCeti.ae_nullMeasurableSet_restrict_preimage_singleton`: Lebesgue-measurable sets are
+  Hausdorff measurable on almost every fibre.
 * `Submodule.lintegral_setLIntegral_preimage_orthogonalProjectionOnto`: slicing by orthogonal
   projections.
 
@@ -135,16 +143,6 @@ theorem measurable_setLIntegral_preimage_singleton (L : E →ₗ[ℝ] F) (hL : F
     (hg.comp (measurable_fst.subtype_coe.add measurable_snd.subtype_coe))).comp
     e.symm.continuous.measurable
 
-/-- The fibre integrals of a measurable function along any linear map are almost everywhere
-measurable functions of the fibre. -/
-theorem aemeasurable_setLIntegral_preimage_singleton (L : E →ₗ[ℝ] F) {g : E → ℝ≥0∞}
-    (hg : Measurable g) :
-    AEMeasurable fun y ↦ ∫⁻ x in L ⁻¹' {y}, g x ∂μHE[finrank ℝ E - finrank ℝ F] := by
-  by_cases hL : Function.Surjective L
-  · exact (L.measurable_setLIntegral_preimage_singleton hL hg).aemeasurable
-  · exact (aemeasurable_const (b := (0 : ℝ≥0∞))).congr
-      ((L.ae_preimage_singleton_eq_empty volume hL).mono fun y hy ↦ by simp [hy])
-
 /-- **The coarea formula for linear maps.** Integrating over the fibres of `L`, each with the
 normalized Hausdorff measure of dimension `dim E - dim F`, gives the Jacobian `normDet` of the
 adjoint of `L` times the Lebesgue integral. Both sides vanish when `L` is not surjective. -/
@@ -166,6 +164,56 @@ theorem lintegral_setLIntegral_preimage_singleton (L : E →ₗ[ℝ] F) {g : E �
     exact lintegral_congr_ae
       ((L.ae_preimage_singleton_eq_empty volume hL).mono fun y hy ↦ by simp [hy])
 
+end LinearMap
+
+namespace TauCeti
+
+variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+  [FiniteDimensional ℝ F] [MeasurableSpace F] [BorelSpace F]
+
+/-- The measurable-set form of linear coarea, used to pass to null sets and
+Lebesgue-measurable sets. -/
+private theorem lintegral_euclideanHausdorffMeasure_inter_preimage_singleton_of_measurableSet
+    (L : E →ₗ[ℝ] F) {t : Set E} (ht : MeasurableSet t) :
+    ∫⁻ y, μHE[finrank ℝ E - finrank ℝ F] (t ∩ L ⁻¹' {y}) =
+      ENNReal.ofReal L.adjoint.normDet * volume t := by
+  have hind (y : F) :
+      ∫⁻ x in L ⁻¹' {y}, t.indicator 1 x ∂μHE[finrank ℝ E - finrank ℝ F] =
+        μHE[finrank ℝ E - finrank ℝ F] (t ∩ L ⁻¹' {y}) := by
+    rw [lintegral_indicator_one ht, Measure.restrict_apply ht]
+  simpa only [hind, lintegral_indicator_one ht] using
+    L.lintegral_setLIntegral_preimage_singleton (measurable_one.indicator ht).aemeasurable
+
+/-- Almost every fibre of a Lebesgue-null set is null for Hausdorff measure of dimension
+`dim E - dim F`. No measurability assumption on the set is needed. -/
+theorem ae_euclideanHausdorffMeasure_inter_preimage_singleton_eq_zero (L : E →ₗ[ℝ] F)
+    {s : Set E} (hs : volume s = 0) :
+    ∀ᵐ y : F, μHE[finrank ℝ E - finrank ℝ F] (s ∩ L ⁻¹' {y}) = 0 := by
+  by_cases hL : Function.Surjective L
+  · let t := toMeasurable (volume : Measure E) s
+    have ht : MeasurableSet t := measurableSet_toMeasurable _ _
+    have htzero : volume t = 0 := by simpa only [t, measure_toMeasurable] using hs
+    have hco := lintegral_euclideanHausdorffMeasure_inter_preimage_singleton_of_measurableSet L ht
+    have hmeas : Measurable fun y : F ↦
+        μHE[finrank ℝ E - finrank ℝ F] (t ∩ L ⁻¹' {y}) := by
+      simpa only [lintegral_indicator_one ht, Measure.restrict_apply ht] using
+        L.measurable_setLIntegral_preimage_singleton hL (measurable_one.indicator ht)
+    have hzero : (∫⁻ y : F, μHE[finrank ℝ E - finrank ℝ F] (t ∩ L ⁻¹' {y})) = 0 := by
+      simpa only [htzero, mul_zero] using hco
+    filter_upwards [(lintegral_eq_zero_iff hmeas).mp hzero] with y hy
+    exact measure_mono_null (inter_subset_inter_left _ (subset_toMeasurable volume s)) hy
+  · filter_upwards [L.ae_preimage_singleton_eq_empty volume hL] with y hy
+    simp [hy]
+
+end TauCeti
+
+namespace LinearMap
+
+variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+  [FiniteDimensional ℝ F] [MeasurableSpace F] [BorelSpace F]
+
 /-- **The coarea formula for linear maps**, for Lebesgue-measurable sets: integrating the
 `(dim E - dim F)`-dimensional measures of the fibres of a set gives the Jacobian of the adjoint
 times its volume. -/
@@ -173,29 +221,15 @@ theorem lintegral_euclideanHausdorffMeasure_inter_preimage_singleton (L : E →�
     (hs : NullMeasurableSet s) :
     ∫⁻ y, μHE[finrank ℝ E - finrank ℝ F] (s ∩ L ⁻¹' {y}) =
       ENNReal.ofReal L.adjoint.normDet * volume s := by
-  have hind {t : Set E} (ht : MeasurableSet t) (y : F) :
-      ∫⁻ x in L ⁻¹' {y}, t.indicator 1 x ∂μHE[finrank ℝ E - finrank ℝ F] =
-        μHE[finrank ℝ E - finrank ℝ F] (t ∩ L ⁻¹' {y}) := by
-    rw [lintegral_indicator_one ht, Measure.restrict_apply ht]
-  have key {t : Set E} (ht : MeasurableSet t) :
-      ∫⁻ y, μHE[finrank ℝ E - finrank ℝ F] (t ∩ L ⁻¹' {y}) =
-        ENNReal.ofReal L.adjoint.normDet * volume t := by
-    simpa [hind ht, lintegral_indicator_one ht] using
-      L.lintegral_setLIntegral_preimage_singleton (measurable_one.indicator ht).aemeasurable
   -- Squeeze `s` between measurable sets `t ⊆ s ⊆ u` differing by a null set.
   obtain ⟨t, hts, ht, hst⟩ := hs.exists_measurable_subset_ae_eq
   set u := toMeasurable volume s
-  have hu : MeasurableSet u := measurableSet_toMeasurable _ _
   have hut : volume (u \ t) = 0 :=
     (ae_eq_set.1 (hs.toMeasurable_ae_eq.trans hst.symm)).1
   -- Almost every fibre of the null set `u \ t` is null.
-  have hnull : ∀ᵐ y, μHE[finrank ℝ E - finrank ℝ F] ((u \ t) ∩ L ⁻¹' {y}) = 0 := by
-    have h := key (hu.diff ht)
-    rw [hut, mul_zero] at h
-    refine (lintegral_eq_zero_iff' ?_).1 h
-    simpa [hind (hu.diff ht)] using
-      L.aemeasurable_setLIntegral_preimage_singleton (measurable_one.indicator (hu.diff ht))
-  rw [← measure_congr hst, ← key ht]
+  have hnull := TauCeti.ae_euclideanHausdorffMeasure_inter_preimage_singleton_eq_zero L hut
+  rw [← measure_congr hst,
+    ← TauCeti.lintegral_euclideanHausdorffMeasure_inter_preimage_singleton_of_measurableSet L ht]
   refine lintegral_congr_ae (hnull.mono fun y hy ↦ le_antisymm ?_ (measure_mono ?_))
   · calc μHE[finrank ℝ E - finrank ℝ F] (s ∩ L ⁻¹' {y})
         ≤ μHE[finrank ℝ E - finrank ℝ F] (t ∩ L ⁻¹' {y} ∪ (u \ t) ∩ L ⁻¹' {y}) := by
@@ -225,3 +259,46 @@ theorem lintegral_setLIntegral_preimage_orthogonalProjectionOnto (K : Submodule 
   simpa using h
 
 end Submodule
+
+namespace TauCeti
+
+open Function
+
+variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+  [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
+  [MeasurableSpace F] [BorelSpace F]
+
+/-- Ambient almost-everywhere equality descends to Hausdorff-almost-everywhere equality
+on almost every fibre of a linear map. -/
+theorem ae_ae_eq_restrict_preimage_singleton (L : E →ₗ[ℝ] F)
+    {G : Type*} {f g : E → G} (hfg : f =ᵐ[volume] g) :
+    ∀ᵐ y : F, f =ᵐ[μHE[finrank ℝ E - finrank ℝ F].restrict (L ⁻¹' {y})] g := by
+  filter_upwards [ae_euclideanHausdorffMeasure_inter_preimage_singleton_eq_zero L
+    (ae_iff.mp hfg)] with y hy
+  apply ae_iff.mpr
+  simpa only [Measure.restrict_apply'
+    ((measurableSet_singleton y).preimage L.continuous_of_finiteDimensional.measurable)] using hy
+
+/-- The fibre integrals of an a.e.-measurable nonnegative weight along any linear map
+are a.e.-measurable functions of the fibre. No finiteness assumption is imposed on either
+integral. -/
+theorem aemeasurable_setLIntegral_preimage_singleton (L : E →ₗ[ℝ] F)
+    {f : E → ℝ≥0∞} (hf : AEMeasurable f volume) :
+    AEMeasurable fun y : F ↦ ∫⁻ x in L ⁻¹' {y}, f x ∂μHE[finrank ℝ E - finrank ℝ F] := by
+  by_cases hL : Surjective L
+  · apply (L.measurable_setLIntegral_preimage_singleton hL hf.measurable_mk).aemeasurable.congr
+    filter_upwards [ae_ae_eq_restrict_preimage_singleton L hf.ae_eq_mk] with y hy
+    exact (lintegral_congr_ae hy).symm
+  · exact (aemeasurable_const (b := (0 : ℝ≥0∞))).congr
+      ((L.ae_preimage_singleton_eq_empty volume hL).mono fun y hy ↦ by simp [hy])
+
+/-- A Lebesgue-measurable set is Hausdorff measurable on almost every linear fibre.
+This permits null modifications of Borel representatives before taking sections. -/
+theorem ae_nullMeasurableSet_restrict_preimage_singleton (L : E →ₗ[ℝ] F)
+    {s : Set E} (hs : NullMeasurableSet s volume) :
+    ∀ᵐ y : F, NullMeasurableSet s (μHE[finrank ℝ E - finrank ℝ F].restrict (L ⁻¹' {y})) := by
+  filter_upwards [ae_ae_eq_restrict_preimage_singleton L hs.toMeasurable_ae_eq] with y hy
+  exact (measurableSet_toMeasurable volume s).nullMeasurableSet.congr hy
+
+end TauCeti
