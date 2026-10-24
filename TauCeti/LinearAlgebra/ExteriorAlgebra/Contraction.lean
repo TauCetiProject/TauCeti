@@ -646,7 +646,8 @@ theorem map_fst_contractLeft_coprod (φ : Module.Dual R M) (x : R)
   conv_lhs => rw [← map_inl_map_fst_add_ι_inr_mul_contractLeft_snd z]
   rw [map_add, contractLeft_coprod_map_inl, contractLeft_coprod_ι_inr_mul,
     contractLeft_coprod_map_inl]
-  simp [hFI]
+  simp
+  rw [hFI, hFI]
 
 /-- The `e`-component of the contraction by `φ + x · snd`: writing `z = a + e ∧ b` as in
 `map_inl_map_fst_add_ι_inr_mul_contractLeft_snd`, the contraction `d b` is minus the
