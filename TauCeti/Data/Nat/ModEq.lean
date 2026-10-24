@@ -10,13 +10,15 @@ public import Mathlib.Data.Nat.ModEq
 /-!
 # Distinct residues modulo `p`
 
-Two distinct residues `a, b < p` never differ by a multiple of `p`: the difference
-`p * m + a - b` is not divisible by `p`. This is the arithmetic behind the uniqueness of the
-decomposition of an exponent as `p • μ + ν` with `ν i < p`.
+Two distinct residues `a, b < p` never differ by a multiple of `p`: if `b ≤ p * m + a`, so that
+the natural subtraction does not truncate, the difference `p * m + a - b` is not divisible by `p`.
+This is the arithmetic behind the uniqueness of the decomposition of an exponent as `p • μ + ν`
+with `ν i < p`.
 
 ## Main results
 
-* `Nat.not_dvd_mul_add_sub`: for distinct `a, b < p`, `p` does not divide `p * m + a - b`.
+* `Nat.not_dvd_mul_add_sub`: for distinct `a, b < p` with `b ≤ p * m + a`, `p` does not divide
+  `p * m + a - b`.
 -/
 
 public section

@@ -261,7 +261,6 @@ theorem restrictedExpand_finite [Finite σ] : (restrictedExpand (R := R) p hp ht
   refine Submodule.eq_top_iff'.mpr fun f ↦ ?_
   rw [← sum_monomial_mul_restrictedExpand_component hp ht f]
   refine Submodule.sum_mem _ fun ν _ ↦ ?_
-  -- `g • X^ν` is `restrictedExpand g * X^ν` for the module structure induced by the expansion
   rw [mul_comm]
   -- for the module structure induced by the expansion, `g • m` is `restrictedExpand g * m` by
   -- `RingHom.smul_toAlgebra`, which holds by definition
@@ -277,10 +276,10 @@ variable (p : ℕ) (hp : p ≠ 0) [∀ i, Fact (0 < r i)] (u : σ → Rˣ)
 /-- The polyradii `r ^ p` are positive. -/
 private theorem fact_pow_pos (i : σ) : Fact (0 < r i ^ p) := ⟨pow_pos Fact.out p⟩
 
-/-- **Finite presentation over the unit Tate algebra.** If the multiplicative units `u i` satisfy
-`‖u i‖ * r i ^ p = 1`, substituting `Y i ↦ u i * X i ^ p` is an algebra map from the unit-radius
-algebra `R⟨Y⟩` to the restricted series `R{X/r}`: the rescaling by `u` from the unit radii to the
-radii `r ^ p`, followed by the expansion. -/
+/-- If the multiplicative units `u i` satisfy `‖u i‖ * r i ^ p = 1`, substituting
+`Y i ↦ u i * X i ^ p` is an algebra map from the unit-radius algebra `R⟨Y⟩` to the restricted
+series `R{X/r}`: the rescaling by `u` from the unit radii to the radii `r ^ p`, followed by the
+expansion. In finitely many variables it is finite (`restrictedRescaleExpand_finite`). -/
 noncomputable def restrictedRescaleExpand :
     IsRestricted.subring (R := R) (fun _ : σ ↦ (1 : ℝ)) →ₐ[R] IsRestricted.subring (R := R) r :=
   letI := fact_pow_pos (r := r) p
