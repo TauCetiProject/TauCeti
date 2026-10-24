@@ -42,6 +42,8 @@ theorem.
 
 * `TauCeti.absoluteProjectiveTupleHeight_eq`: for a tuple `x` in a number field `K`, the absolute
   height is `H_K(x) ^ (1 / [K : ℚ])`.
+* `TauCeti.absoluteProjectiveTupleHeight_le_of_forall_le`: a nonzero tuple of algebraic integers
+  whose coordinates are at most `c` at every infinite place has absolute height at most `c`.
 * `TauCeti.absoluteProjectiveTupleHeight_comp`: invariance under homomorphisms of fields of
   characteristic zero.
 * `TauCeti.absoluteProjectiveTupleHeight_smul`: invariance under nonzero algebraic scalars.
@@ -108,6 +110,20 @@ theorem absoluteProjectiveTupleHeight_eq {K : Type*} [Field K] [NumberField K] (
   have : (finrank (adjoin ℚ (Set.range x)) K : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr finrank_pos.ne'
   push_cast
   field_simp
+
+/-- A nonzero tuple of algebraic integers whose coordinates have absolute value at most `c` at
+every infinite place has absolute height at most `c`. -/
+theorem absoluteProjectiveTupleHeight_le_of_forall_le {K : Type*} [Field K] [NumberField K]
+    {y : ι → 𝓞 K} (hy : y ≠ 0) {c : ℝ} (hc : ∀ i (w : InfinitePlace K), w (y i) ≤ c) :
+    absoluteProjectiveTupleHeight (fun i ↦ (y i : K)) ≤ c := by
+  obtain ⟨i₀, -⟩ := Function.ne_iff.mp hy
+  have hc0 : 0 ≤ c := (apply_nonneg _ _).trans (hc i₀ (Classical.arbitrary _))
+  rw [absoluteProjectiveTupleHeight_eq]
+  calc mulHeight (fun i ↦ (y i : K)) ^ (finrank ℚ K : ℝ)⁻¹
+      ≤ (c ^ finrank ℚ K) ^ (finrank ℚ K : ℝ)⁻¹ :=
+        Real.rpow_le_rpow (mulHeight_pos _).le (mulHeight_le_pow_finrank_of_forall_le hy hc)
+          (by positivity)
+    _ = c := Real.pow_rpow_inv_natCast hc0 finrank_pos.ne'
 
 /-- The absolute height is invariant under homomorphisms of fields of characteristic zero. -/
 @[simp]
