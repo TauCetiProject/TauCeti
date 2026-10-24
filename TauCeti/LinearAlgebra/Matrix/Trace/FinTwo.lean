@@ -193,7 +193,7 @@ theorem abs_trace_pow_le_two {A : Matrix (Fin 2) (Fin 2) R} (hdet : A.det = 1)
 `det (1 - A ^ n) < 0` for every `n ≠ 0`. -/
 theorem det_one_sub_pow_neg_of_two_lt_trace {A : Matrix (Fin 2) (Fin 2) R} (hdet : A.det = 1)
     (htr : 2 < A.trace) {n : ℕ} (hn : n ≠ 0) : (1 - A ^ n).det < 0 := by
-  rw [TauCeti.Matrix.det_one_sub_fin_two, det_pow, hdet, one_pow]
+  rw [det_one_sub_fin_two, det_pow, hdet, one_pow]
   linarith [two_lt_trace_pow hdet htr hn]
 
 /-- If a `2 × 2` matrix `A` of determinant one has trace less than `-2`, then
@@ -213,14 +213,14 @@ theorem det_one_sub_pow_pos_of_trace_lt_neg_two {A : Matrix (Fin 2) (Fin 2) R}
   have h := two_lt_trace_pow (A := -A) (by simp [det_neg, hdet]) (by rw [trace_neg]; linarith)
     (n := n) (by rintro rfl; simp at hn)
   rw [hn.neg_pow, trace_neg] at h
-  rw [TauCeti.Matrix.det_one_sub_fin_two, det_pow, hdet, one_pow]
+  rw [det_one_sub_fin_two, det_pow, hdet, one_pow]
   linarith
 
 /-- If a `2 × 2` matrix `A` of determinant one has trace of absolute value at most `2`, then
 `0 ≤ det (1 - A ^ n)` for every `n`. -/
 theorem det_one_sub_pow_nonneg_of_abs_trace_le_two {A : Matrix (Fin 2) (Fin 2) R}
     (hdet : A.det = 1) (htr : |A.trace| ≤ 2) (n : ℕ) : 0 ≤ (1 - A ^ n).det := by
-  rw [TauCeti.Matrix.det_one_sub_fin_two, det_pow, hdet, one_pow]
+  rw [det_one_sub_fin_two, det_pow, hdet, one_pow]
   linarith [(abs_le.1 (abs_trace_pow_le_two hdet htr n)).2]
 
 end Ordered

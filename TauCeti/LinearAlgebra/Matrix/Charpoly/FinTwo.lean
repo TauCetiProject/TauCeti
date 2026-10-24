@@ -34,7 +34,7 @@ middle coefficient `-M.trace` and constant coefficient `1`, so its discriminant 
 * `TauCeti.Matrix.det_smul_sub_smul_one_of_card_eq_two`: the same for a square matrix on any
   index type of cardinality two, matching the relationship Mathlib's
   `Matrix.charpoly_of_card_eq_two` bears to `Matrix.charpoly_fin_two`.
-* `TauCeti.Matrix.det_one_sub_fin_two`, `TauCeti.Matrix.det_one_add_fin_two`: the values
+* `Matrix.det_one_sub_fin_two`, `Matrix.det_one_add_fin_two`: the values
   `det (1 ∓ M) = 1 ∓ trace M + det M` of the pencil at `r = s = ∓1`, which govern the eigenvalues
   `± 1` of `M`.
 
@@ -89,11 +89,15 @@ theorem det_smul_sub_smul_one_of_card_eq_two {n R : Type*} [Fintype n] [Decidabl
   rw [← det_submatrix_equiv_self e.symm, hsub, det_smul_sub_smul_one_fin_two,
     det_submatrix_equiv_self e.symm, htr]
 
+end TauCeti.Matrix
+
+namespace Matrix
+
 /-- The determinant of `1 - M` for a `2 × 2` matrix `M`: `det (1 - M) = 1 - trace M + det M`. It
 vanishes exactly when `1` is a root of the characteristic polynomial of `M`. -/
 theorem det_one_sub_fin_two {R : Type*} [CommRing R] (M : Matrix (Fin 2) (Fin 2) R) :
     (1 - M).det = 1 - M.trace + M.det := by
-  have h := det_smul_sub_smul_one_fin_two M (-1) (-1)
+  have h := TauCeti.Matrix.det_smul_sub_smul_one_fin_two M (-1) (-1)
   simp only [neg_smul, one_smul, sub_neg_eq_add, neg_add_eq_sub] at h
   rw [h]
   ring
@@ -102,9 +106,9 @@ theorem det_one_sub_fin_two {R : Type*} [CommRing R] (M : Matrix (Fin 2) (Fin 2)
 vanishes exactly when `-1` is a root of the characteristic polynomial of `M`. -/
 theorem det_one_add_fin_two {R : Type*} [CommRing R] (M : Matrix (Fin 2) (Fin 2) R) :
     (1 + M).det = 1 + M.trace + M.det := by
-  have h := det_smul_sub_smul_one_fin_two M 1 (-1)
+  have h := TauCeti.Matrix.det_smul_sub_smul_one_fin_two M 1 (-1)
   simp only [one_smul, neg_smul, sub_neg_eq_add, add_comm M] at h
   rw [h]
   ring
 
-end TauCeti.Matrix
+end Matrix

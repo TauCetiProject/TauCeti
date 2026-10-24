@@ -160,10 +160,10 @@ theorem X_mul_derivative_torusWeightSeries_of_det_eq_one (hdet : P.det = 1)
       torusWeightSeries (decide (0 < (1 - P).det)) (if (1 + P).det < 0 then 1 else 0) *
         mk fun k ↦ if k = 0 then 0 else (SignType.sign (1 - P ^ k).det : ℤ) := by
   have h₁ : (1 - P).det = 2 - P.trace := by
-    rw [TauCeti.Matrix.det_one_sub_fin_two, hdet]
+    rw [Matrix.det_one_sub_fin_two, hdet]
     ring
   have h₂ : (1 + P).det = 2 + P.trace := by
-    rw [TauCeti.Matrix.det_one_add_fin_two, hdet]
+    rw [Matrix.det_one_add_fin_two, hdet]
     ring
   rw [h₁, h₂]
   rcases lt_or_ge 2 P.trace with htr | htr
