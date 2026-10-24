@@ -42,8 +42,10 @@ identity `derivCurvatureTensor_cyclic_eq_zero`.
   fields and sections.
 * `CovariantDerivative.derivCurvatureTensor_antisymm`: `∇R` is antisymmetric in its two curvature
   arguments.
+* `CovariantDerivative.derivCurvatureTensor_eq_zero_of_curvatureTensor_eq_zero`: `∇R = 0` for a
+  flat connection `∇`.
 * `CovariantDerivative.derivCurvatureTensor_cyclic_eq_zero`: the **second Bianchi identity**
-  `(∇_u R)(v, w) + (∇_v R)(w, u) + (∇_w R)(u, v) = 0`, for a torsion-free `∇ᵀ`.
+  `(∇_u R)(v, w) + (∇_v R)(w, u) + (∇_w R)(u, v) = 0`, for a smooth torsion-free `∇ᵀ`.
 
 ## References
 
@@ -395,6 +397,17 @@ theorem derivCurvatureTensor_self (x : M) (v u : TangentSpace I x) :
     cov.derivCurvatureTensor covT x v u u = 0 := by
   have h := derivCurvatureTensor_antisymm cov covT x v u u
   rwa [eq_neg_iff_add_eq_zero, ← two_smul ℝ, smul_eq_zero, or_iff_right two_ne_zero] at h
+
+/-- The covariant derivative of the curvature tensor of a flat connection vanishes. -/
+theorem derivCurvatureTensor_eq_zero_of_curvatureTensor_eq_zero
+    (h : ∀ x : M, cov.curvatureTensor x = 0) (x : M) : cov.derivCurvatureTensor covT x = 0 := by
+  ext v u w s
+  obtain ⟨Y, hY, rfl⟩ := exists_contMDiff_section_eq I E u
+  obtain ⟨Z, hZ, rfl⟩ := exists_contMDiff_section_eq I E w
+  obtain ⟨σ, hσ, rfl⟩ := exists_contMDiff_section_eq I F s
+  have hR : curvatureOperator cov Y Z σ = 0 :=
+    funext fun y ↦ by simp [← curvatureTensor_apply cov y hY hZ hσ, h y]
+  simp [derivCurvatureTensor_apply cov covT x v hY hZ hσ, hR, h x]
 
 /-- **The second Bianchi identity**, pointwise: for a smooth connection `∇` on `V` and a smooth
 torsion-free connection `∇ᵀ` on the tangent bundle,

@@ -104,15 +104,8 @@ theorem isLocallySymmetric_iff_curvatureOperator :
 
 /-- A flat connection on the tangent bundle is locally symmetric. -/
 theorem isLocallySymmetric_of_curvatureTensor_eq_zero (h : ∀ x : M, cov.curvatureTensor x = 0) :
-    cov.IsLocallySymmetric := by
-  intro x
-  ext v u w s
-  obtain ⟨Y, hY, rfl⟩ := exists_contMDiff_section_eq I E u
-  obtain ⟨Z, hZ, rfl⟩ := exists_contMDiff_section_eq I E w
-  obtain ⟨W, hW, rfl⟩ := exists_contMDiff_section_eq I E s
-  have hR : curvatureOperator cov Y Z W = 0 :=
-    funext fun y ↦ by simp [← curvatureTensor_apply cov y hY hZ hW, h y]
-  simp [derivCurvatureTensor_apply cov cov x v hY hZ hW, hR, h x]
+    cov.IsLocallySymmetric :=
+  derivCurvatureTensor_eq_zero_of_curvatureTensor_eq_zero cov cov h
 
 end Affine
 
