@@ -7,14 +7,15 @@ module
 
 public import TauCeti.RingTheory.CohenMacaulay.Basic
 public import TauCeti.RingTheory.KrullDimension.Regular
+import TauCeti.Data.ENat.Monoid
 import TauCeti.RingTheory.KrullDimension.Module
 
 /-!
 # Regular sequences in Cohen–Macaulay modules
 
-Let `M` be a finite Cohen–Macaulay module over a Noetherian local ring `(R, 𝔪)`. A sequence
-`r₁, …, rₙ` of elements of `𝔪` is `M`-regular if and only if it cuts the dimension of the
-support down by its length, `dim M ⧸ (r₁, …, rₙ) M + n = dim M` (Stacks, Proposition 10.103.4
+Let `M` be a nonzero finite Cohen–Macaulay module over a Noetherian local ring `(R, 𝔪)`. A
+sequence `r₁, …, rₙ` of elements of `𝔪` is `M`-regular if and only if it cuts the dimension of
+the support down by its length, `dim M ⧸ (r₁, …, rₙ) M + n = dim M` (Stacks, Proposition 10.103.4
 (00N6)). One direction holds for every finite module
 (`Module.supportDim_add_length_eq_supportDim_of_isRegular`); the content is the converse, for
 which the Cohen–Macaulay hypothesis is essential.
@@ -38,9 +39,9 @@ dimension formula `dim S = dim R + dim S ⧸ 𝔪_R S` of miracle flatness (Stac
   this is a characterization of `M`-regular elements.
 * `Module.IsCohenMacaulay.quotSMulTop`: under the same hypothesis `M ⧸ x M` is again
   Cohen–Macaulay (Stacks, Lemma 10.103.3 (00N5), part (b)).
-* `Module.IsCohenMacaulay.isRegular_iff_supportDim_add_length_eq_supportDim`: a sequence in `𝔪`
-  is `M`-regular if and only if it cuts the dimension of the support down by its length (Stacks,
-  Proposition 10.103.4 (00N6)).
+* `Module.IsCohenMacaulay.isRegular_iff_supportDim_add_length_eq_supportDim`: for `M ≠ 0`, a
+  sequence in `𝔪` is `M`-regular if and only if it cuts the dimension of the support down by its
+  length (Stacks, Proposition 10.103.4 (00N6)).
 * `Module.IsCohenMacaulay.isRegular_map_algebraMap`: generators of the maximal ideal of `R` whose
   number is `dim S - dim S ⧸ 𝔪_R S` map to an `S`-regular sequence.
 
@@ -57,11 +58,6 @@ public section
 universe u v
 
 open IsLocalRing RingTheory.Sequence Ideal
-
-/-- In `WithBot ℕ∞`, an element whose successor is a natural number is smaller than it. -/
-private lemma WithBot.lt_natCast_of_add_one_eq {c : WithBot ℕ∞} {k : ℕ} (h : c + 1 = k) :
-    c < k :=
-  (le_add_of_nonneg_right zero_le_one).trans_eq h |>.lt_of_ne (by rintro rfl; norm_cast at h; omega)
 
 namespace Module.IsCohenMacaulay
 
@@ -102,7 +98,8 @@ theorem isSMulRegular_iff_supportDim_quotSMulTop_lt [Nontrivial M] (h : IsCohenM
   refine ⟨fun reg ↦ ?_, h.isSMulRegular_of_supportDim_quotSMulTop_lt⟩
   obtain ⟨k, hk⟩ := exists_supportDim_eq_natCast (R := R) (M := M)
   rw [hk]
-  exact WithBot.lt_natCast_of_add_one_eq (hk ▸ supportDim_quotSMulTop_succ_eq_supportDim reg hx)
+  exact ENat.WithBot.lt_natCast_of_add_one_eq
+    (hk ▸ supportDim_quotSMulTop_succ_eq_supportDim reg hx)
 
 /-- If `x ∈ 𝔪` satisfies `dim M ⧸ x M < dim M` for a finite Cohen–Macaulay module `M` over a
 Noetherian local ring, then `M ⧸ x M` is Cohen–Macaulay. Stacks, Lemma 10.103.3 (00N5),
@@ -135,7 +132,7 @@ theorem isRegular_iff_supportDim_add_length_eq_supportDim [Nontrivial M]
     -- Each of `r₂, …, rₙ` drops the dimension by at most one, so `dim N ≤ a + (n - 1) < dim M`.
     have hlt : supportDim R (QuotSMulTop x M) < supportDim R M :=
       (supportDim_le_supportDim_quotient_add_length rs hrs').trans_lt
-        (hk ▸ WithBot.lt_natCast_of_add_one_eq (hdim.trans hk))
+        (hk ▸ ENat.WithBot.lt_natCast_of_add_one_eq (hdim.trans hk))
     have reg := h.isSMulRegular_of_supportDim_quotSMulTop_lt hlt
     have := nontrivial_quotSMulTop_of_mem_maximalIdeal M hx
     -- Now `dim N + 1 = dim M`, and the induction hypothesis applies to `N`.
