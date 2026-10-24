@@ -17,9 +17,8 @@ Every such functional is uniquely `f ↦ Res(g f dX)` for a Laurent series `g`. 
 at exponent `n` is the value of the functional on `X^(-1-n)`.
 
 The linear equivalence `TauCeti.LaurentSeries.residueDualEquiv` expresses this self-duality.
-The discrete topology on `K` is an explicit hypothesis, independent of any other topology a
-coefficient field may carry. There is no new topology instance, and the statement holds in
-all characteristics. The lattice annihilator calculation also identifies the functionals
+Throughout, `K` carries the discrete topology (`[DiscreteTopology K]`); no characteristic
+assumption is needed. The lattice annihilator calculation also identifies the functionals
 vanishing on `U_a` with the series in `U_(-a)`.
 
 The construction uses the residue form and its lattice orthogonals from
@@ -74,6 +73,17 @@ theorem residueDual_single (g : K⸨X⸩) (n : ℤ) :
     residueDual g (single n 1) = g.coeff (-1 - n) := by
   simp only [residueDual_apply, coeff_mul_single, mul_one]
 
+/-- The coefficient at `n` is recovered by residue pairing with `X^(-1-n)`. -/
+theorem coeff_eq_residueDual_single (g : K⸨X⸩) (n : ℤ) :
+    g.coeff n = residueDual g (single (-1 - n) 1) := by
+  rw [residueDual_single, sub_sub_cancel]
+
+/-- A Laurent series is determined by its continuous residue functional. -/
+theorem residueDual_injective : Function.Injective (residueDual (K := K)) := by
+  intro g h heq
+  ext n
+  rw [coeff_eq_residueDual_single, coeff_eq_residueDual_single, heq]
+
 /-- Every continuous functional is residue pairing with a unique Laurent series. -/
 theorem existsUnique_residueDual (ℓ : K⸨X⸩ →L[K] K) :
     ∃! g : K⸨X⸩, residueDual g = ℓ := by
@@ -87,10 +97,7 @@ theorem existsUnique_residueDual (ℓ : K⸨X⸩ →L[K] K) :
     apply continuousLinearMap_ext_single
     intro n
     simp only [residueDual_single, g, coeff_ofSuppBddBelow, sub_sub_cancel]
-  refine ⟨g, hg, fun f hf ↦ ?_⟩
-  ext n
-  have h := congrArg (fun m : K⸨X⸩ →L[K] K ↦ m (single (-1 - n) 1)) (hf.trans hg.symm)
-  simpa only [residueDual_single, sub_sub_cancel] using h
+  exact ⟨g, hg, fun f hf ↦ residueDual_injective (hf.trans hg.symm)⟩
 
 /-- Residue pairing identifies Laurent series with their continuous `K`-linear dual to the
 discrete coefficient field. -/
@@ -99,20 +106,16 @@ noncomputable def residueDualEquiv : K⸨X⸩ ≃ₗ[K] (K⸨X⸩ →L[K] K) :=
     { toFun := residueDual
       map_add' := fun g h ↦ by ext f; simp [residueDual_apply, add_mul]
       map_smul' := fun c g ↦ by ext f; simp [residueDual_apply, smul_mul_assoc] }
-    ⟨fun g h heq ↦ (existsUnique_residueDual (residueDual h)).unique heq rfl,
-      fun ℓ ↦ (existsUnique_residueDual ℓ).exists⟩
+    ⟨residueDual_injective, fun ℓ ↦ (existsUnique_residueDual ℓ).exists⟩
 
 -- Keeping the equivalence bundled lets simp cancel it against its inverse.
 theorem residueDualEquiv_apply (g : K⸨X⸩) : residueDualEquiv g = residueDual g := (rfl)
 
-/-- The coefficients of the series representing a continuous functional are its values on
-the opposite monomials. -/
+/-- The coefficient at `n` of the series representing `ℓ` is `ℓ (X^(-1-n))`. -/
 @[simp]
 theorem coeff_residueDualEquiv_symm (ℓ : K⸨X⸩ →L[K] K) (n : ℤ) :
     (residueDualEquiv.symm ℓ).coeff n = ℓ (single (-1 - n) 1) := by
-  have h := congrArg (fun m : K⸨X⸩ →L[K] K ↦ m (single (-1 - n) 1))
-    (residueDualEquiv.apply_symm_apply ℓ)
-  simpa only [residueDualEquiv_apply, residueDual_single, sub_sub_cancel] using h
+  rw [coeff_eq_residueDual_single, ← residueDualEquiv_apply, LinearEquiv.apply_symm_apply]
 
 /-- The functional represented by `g` vanishes on `U_a` exactly when `g` belongs to `U_(-a)`. -/
 theorem lattice_le_ker_residueDual_iff (g : K⸨X⸩) (a : ℤ) :
