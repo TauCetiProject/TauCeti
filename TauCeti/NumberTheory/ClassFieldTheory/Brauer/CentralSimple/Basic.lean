@@ -44,18 +44,20 @@ noncomputable section
 
 namespace TauCeti.ClassFieldTheory
 
-variable (F : Type) [Field F]
+universe u
+
+variable (F : Type u) [Field F]
 
 /-- **The Brauer group of central simple algebras is the cohomological Brauer group.** The
 crossed-product comparison `TauCeti.brauerExplicitH2Equiv F` into the explicit model of
 `H²(G_F, (Fˢ)ˣ)`, transported to the carrier `Br F` of class field theory. Multiplication of
 Brauer classes goes to addition of cohomology classes. -/
-def brauerGroupEquivBr : Additive (BrauerGroup F) ≃+ Br F :=
+def brauerGroupEquivBr : Additive (BrauerGroup.{u, u} F) ≃+ Br F :=
   (brauerExplicitH2Equiv F).trans (unitsRepH2Equiv F)
 
 /-- `brauerGroupEquivBr` is the crossed-product comparison followed by the change of model to
 `Br F`. -/
-theorem brauerGroupEquivBr_apply (x : Additive (BrauerGroup F)) :
+theorem brauerGroupEquivBr_apply (x : Additive (BrauerGroup.{u, u} F)) :
     brauerGroupEquivBr F x = unitsRepH2Equiv F (brauerExplicitH2Equiv F x) :=
   (rfl)
 
