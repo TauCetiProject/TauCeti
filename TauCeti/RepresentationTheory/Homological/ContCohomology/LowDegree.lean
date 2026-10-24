@@ -381,18 +381,21 @@ theorem coe_explicitMap0 {H : Type*} [Monoid H] {N : Type*} [AddCommGroup N]
     (explicitMap0 G M φ f hequiv m : N) = f (m : M) :=
   (rfl)
 
-/-- **The degree-zero pullback along an isomorphism is bijective**: for a surjective
-`φ : H →* G` and an additive equivalence `f : M ≃+ N` with `f (φ h • m) = h • f m`, the
-`H`-invariants of `N` are exactly the images of the `G`-invariants of `M`. -/
+/-- **The degree-zero pullback is bijective** when the monoid homomorphism is surjective and
+the coefficient map is bijective: for `φ : H →* G` and `f : M →+ N` satisfying
+`f (φ h • m) = h • f m`, the `H`-invariants of `N` are exactly the images of the
+`G`-invariants of `M`. -/
 theorem explicitMap0_bijective {H : Type*} [Monoid H] {N : Type*} [AddCommGroup N]
-    [DistribMulAction H N] (φ : H →* G) (hφ : Function.Surjective φ) (f : M ≃+ N)
-    (hequiv : ∀ (h : H) (m : M), f (φ h • m) = h • f m) :
-    Function.Bijective (explicitMap0 G M φ f.toAddMonoidHom hequiv) := by
-  refine ⟨fun x y hxy => Subtype.ext (f.injective (congrArg Subtype.val hxy)), fun m => ?_⟩
-  refine ⟨⟨f.symm m, (FixedPoints.mem_addSubgroup G M _).2 fun g => f.injective ?_⟩,
-    Subtype.ext (f.apply_symm_apply _)⟩
-  obtain ⟨h, rfl⟩ := hφ g
-  rw [hequiv, f.apply_symm_apply, (FixedPoints.mem_addSubgroup H N m).1 m.2]
+    [DistribMulAction H N] (φ : H →* G) (hφ : Function.Surjective φ) (f : M →+ N)
+    (hf : Function.Bijective f) (hequiv : ∀ (h : H) (m : M), f (φ h • m) = h • f m) :
+    Function.Bijective (explicitMap0 G M φ f hequiv) := by
+  refine ⟨fun x y hxy => Subtype.ext (hf.1 ?_), fun n => ?_⟩
+  · simpa only [coe_explicitMap0] using congrArg Subtype.val hxy
+  · obtain ⟨m, hm⟩ := hf.2 (n : N)
+    refine ⟨⟨m, (FixedPoints.mem_addSubgroup G M m).2 fun g => hf.1 ?_⟩, Subtype.ext ?_⟩
+    · obtain ⟨h, rfl⟩ := hφ g
+      rw [hequiv, hm, (FixedPoints.mem_addSubgroup H N n).1 n.2]
+    · simpa only [coe_explicitMap0] using hm
 
 /-- Pullback along the identity compatible pair is the identity on degree-zero cohomology. -/
 @[simp]
@@ -448,14 +451,9 @@ theorem explicitCoeff0_comp {N : Type*} [AddCommGroup N] [DistribMulAction G N]
 /-- A bijective equivariant homomorphism of coefficients induces a bijection on degree-zero
 cohomology. -/
 theorem explicitCoeff0_bijective {N : Type*} [AddCommGroup N] [DistribMulAction G N]
-    {f : M →+[G] N} (hf : Function.Bijective f) : Function.Bijective (explicitCoeff0 G M f) := by
-  refine ⟨fun x y h => Subtype.ext (hf.1 ?_), fun y => ?_⟩
-  · simpa only [coe_explicitCoeff0] using congrArg Subtype.val h
-  · obtain ⟨m, hm⟩ := hf.2 (y : N)
-    refine ⟨⟨m, (FixedPoints.mem_addSubgroup G M m).2 fun g => hf.1 ?_⟩, Subtype.ext ?_⟩
-    · rw [map_smul f, hm]
-      exact (FixedPoints.mem_addSubgroup G N (y : N)).1 y.2 g
-    · simpa only [coe_explicitCoeff0] using hm
+    {f : M →+[G] N} (hf : Function.Bijective f) : Function.Bijective (explicitCoeff0 G M f) :=
+  explicitMap0_bijective G M (MonoidHom.id G) Function.surjective_id f.toAddMonoidHom hf
+    (fun g m => f.map_smul g m)
 
 end CompatiblePairDegreeZero
 
