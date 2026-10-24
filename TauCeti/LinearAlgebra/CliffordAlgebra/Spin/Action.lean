@@ -25,6 +25,8 @@ Cartan--Dieudonné argument and are deliberately not asserted here.
 
 * `CliffordAlgebra.spinVectorAction Q x` is the restriction of
   `CliffordAlgebra.lipschitzVectorAction` along the canonical Spin inclusion.
+* `CliffordAlgebra.spinToLipschitz Q` is the canonical inclusion of the Spin group into the
+  Lipschitz group, through Pin.
 * `CliffordAlgebra.spinToOrthogonal Q` is the resulting homomorphism into `O(Q)`.
 
 ## References
@@ -62,6 +64,14 @@ theorem coe_spinToLipschitz_apply (x : spinGroup Q) :
     (((spinToLipschitz Q x : lipschitzGroup Q) : (CliffordAlgebra Q)ˣ) :
         CliffordAlgebra Q) = (x : CliffordAlgebra Q) := by
   simp [spinToLipschitz]
+
+omit [Invertible (2 : R)] in
+/-- The canonical Spin-to-Lipschitz inclusion is injective. -/
+theorem spinToLipschitz_injective : Function.Injective (spinToLipschitz Q) := by
+  intro x y h
+  exact Subtype.ext (by
+    simpa only [coe_spinToLipschitz_apply] using congrArg
+      (fun z : lipschitzGroup Q => ((z : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q)) h)
 
 /-- The action of a spin element on the generating vectors of its Clifford algebra, transported
 back to the underlying module. It is characterized by
