@@ -49,6 +49,8 @@ homology concordant to itself through the cylinder over the target
   homology concordance from `f` to itself in the cylinder over a compact boundaryless target.
 * `TauCeti.SmoothEmbedding.HomologyConcordant.refl`: every embedding of a boundaryless manifold
   into a compact Hausdorff boundaryless manifold is homology concordant to itself.
+* `TauCeti.SmoothEmbedding.HomologyConcordant.transDiffeomorph`: homology concordance is preserved
+  by transporting the second embedding along a diffeomorphism of its target.
 * `TauCeti.SmoothEmbedding.homologyConcordant_transDiffeomorph`: every embedding of a boundaryless
   manifold into a compact Hausdorff boundaryless manifold is homology concordant to its transport
   along a diffeomorphism of the target.
@@ -132,6 +134,46 @@ theorem IsHomologyConcordance.homologyConcordant [T2Space W] [IsManifold J n W]
     HomologyConcordant R J n f₀ f₁ :=
   ⟨W, _, ‹_›, _, ‹_›, ι₀, ι₁, A, h⟩
 
+/-- **Transport of the second end.** A homology concordance from `f₀` to `f₁ : M → Y₁` is one
+from `f₀` to the transport `e ∘ f₁ : M → Y₁'` along a diffeomorphism `e : Y₁ ≃ₘ Y₁'`, when the
+second end of the cobordism is reparametrised to `ι₁ ∘ e⁻¹`. -/
+theorem IsHomologyConcordance.transDiffeomorph {Y₁' : Type u} [TopologicalSpace Y₁']
+    [ChartedSpace H Y₁'] [IsManifold I n Y₁'] {ι₀ : SmoothEmbedding I J n Y₀ W}
+    {ι₁ : SmoothEmbedding I J n Y₁ W} {f₀ : SmoothEmbedding I' I n M Y₀}
+    {f₁ : SmoothEmbedding I' I n M Y₁} {A : M × Icc (0 : ℝ) 1 → W}
+    (h : IsHomologyConcordance R J n ι₀ ι₁ f₀ f₁ A) (e : Y₁ ≃ₘ^n⟮I, I⟯ Y₁') :
+    IsHomologyConcordance R J n ι₀ (ι₁.compDiffeomorph e.symm) f₀ (f₁.transDiffeomorph e) A := by
+  refine
+    { h with
+      disjoint_range := by
+        rw [SmoothEmbedding.range_compDiffeomorph]
+        exact h.disjoint_range
+      range_union_range := by
+        rw [SmoothEmbedding.range_compDiffeomorph]
+        exact h.range_union_range
+      isIso_right k := ?_
+      apply_top x := by simp [h.apply_top] }
+  have hcomp : (ι₁.compDiffeomorph e.symm).toContinuousMap =
+      ι₁.toContinuousMap.comp (e.symm.toHomeomorph : C(Y₁', Y₁)) := by
+    ext1 y
+    simp
+  have := h.isIso_right k
+  have : CategoryTheory.IsIso (TopCat.ofHom (e.symm.toHomeomorph : C(Y₁', Y₁))) :=
+    (TopCat.isoOfHomeo (X := .of Y₁') (Y := .of Y₁) e.symm.toHomeomorph).isIso_hom
+  rw [hcomp, TopCat.ofHom_comp, CategoryTheory.Functor.map_comp]
+  infer_instance
+
+/-- **Homology concordance across a diffeomorphism of the second target.** If `f₀` and
+`f₁ : M → Y₁` are `R`-homology concordant, then so are `f₀` and the transport `e ∘ f₁ : M → Y₁'`
+along a diffeomorphism `e : Y₁ ≃ₘ Y₁'`. -/
+theorem HomologyConcordant.transDiffeomorph {Y₁' : Type u} [TopologicalSpace Y₁']
+    [ChartedSpace H Y₁'] [IsManifold I n Y₁'] {f₀ : SmoothEmbedding I' I n M Y₀}
+    {f₁ : SmoothEmbedding I' I n M Y₁} (h : HomologyConcordant R J n f₀ f₁)
+    (e : Y₁ ≃ₘ^n⟮I, I⟯ Y₁') :
+    HomologyConcordant R J n f₀ (f₁.transDiffeomorph e) := by
+  obtain ⟨W, _, _, _, _, ι₀, ι₁, A, h⟩ := h
+  exact (h.transDiffeomorph e).homologyConcordant
+
 /-! ### The product concordance -/
 
 section Cylinder
@@ -168,29 +210,8 @@ its transport `e ∘ f : M → Y'` along a diffeomorphism `e : Y ≃ₘ Y'`, thr
 theorem homologyConcordant_transDiffeomorph [T2Space Y] {Y' : Type u} [TopologicalSpace Y']
     [ChartedSpace H Y'] [IsManifold I n Y'] (f : SmoothEmbedding I' I n M Y)
     (e : Y ≃ₘ^n⟮I, I⟯ Y') :
-    HomologyConcordant R (I.prod (𝓡∂ 1)) n f (f.transDiffeomorph e) := by
-  have h := isHomologyConcordance_cylinder R f
-  refine IsHomologyConcordance.homologyConcordant (A := Prod.map f _root_.id)
-    (ι₁ := (SmoothEmbedding.cylinderTop I n 0 1 Y).compDiffeomorph e.symm)
-    { h with
-      disjoint_range := by
-        rw [SmoothEmbedding.range_compDiffeomorph]
-        exact h.disjoint_range
-      range_union_range := by
-        rw [SmoothEmbedding.range_compDiffeomorph]
-        exact h.range_union_range
-      isIso_right k := ?_
-      apply_top x := by simp }
-  have hcomp : ((SmoothEmbedding.cylinderTop I n 0 1 Y).compDiffeomorph e.symm).toContinuousMap =
-      (SmoothEmbedding.cylinderTop I n 0 1 Y).toContinuousMap.comp
-        (e.symm.toHomeomorph : C(Y', Y)) := by
-    ext1 y
-    simp
-  have := h.isIso_right k
-  have : CategoryTheory.IsIso (TopCat.ofHom (e.symm.toHomeomorph : C(Y', Y))) :=
-    (TopCat.isoOfHomeo (X := .of Y') (Y := .of Y) e.symm.toHomeomorph).isIso_hom
-  rw [hcomp, TopCat.ofHom_comp, CategoryTheory.Functor.map_comp]
-  infer_instance
+    HomologyConcordant R (I.prod (𝓡∂ 1)) n f (f.transDiffeomorph e) :=
+  (HomologyConcordant.refl R f).transDiffeomorph e
 
 end Cylinder
 

@@ -36,7 +36,7 @@ later tubular-neighbourhood and surgery interfaces.
 
 ## Main results
 
-* `TauCeti.isSmoothEmbedding_prodMk_of_extChartAt_eq_zero`: the slice `x ↦ (x, c)` of a product
+* `TauCeti.isSmoothEmbedding_prodMkLeft_of_extChartAt_eq_zero`: the slice `x ↦ (x, c)` of a product
   `M × M'` is a smooth embedding when the preferred chart of `M'` at `c` sends `c` to `0`.
 
 The construction is a thin wrapper around Mathlib's
@@ -286,7 +286,7 @@ end SmoothEmbedding
 open Manifold in
 /-- **Slices of a product.** If the preferred chart of `M'` at `c` sends `c` to `0`, then the slice
 `x ↦ (x, c)` of the product `M × M'` is a smooth embedding: in product charts it is `u ↦ (u, 0)`. -/
-theorem isSmoothEmbedding_prodMk_of_extChartAt_eq_zero [IsManifold I n M] [IsManifold I' n M']
+theorem isSmoothEmbedding_prodMkLeft_of_extChartAt_eq_zero [IsManifold I n M] [IsManifold I' n M']
     {c : M'} (hc : extChartAt I' c c = 0) :
     IsSmoothEmbedding I (I.prod I') n (fun x : M ↦ (x, c)) := by
   refine ⟨IsImmersionOfComplement.isImmersion (F := F) fun x ↦ ?_, isEmbedding_prodMkLeft c⟩

@@ -45,11 +45,11 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {H : Type*} [Top
 
 /-- The inclusion `y ↦ (y, a)` of a manifold as the bottom end of the cylinder `Y × [a, b]`. -/
 def SmoothEmbedding.cylinderBot : SmoothEmbedding I (I.prod (𝓡∂ 1)) n Y (Y × Icc a b) :=
-  .ofIsSmoothEmbedding _ (isSmoothEmbedding_prodMk_of_extChartAt_eq_zero extChartAt_Icc_bot)
+  .ofIsSmoothEmbedding _ (isSmoothEmbedding_prodMkLeft_of_extChartAt_eq_zero extChartAt_Icc_bot)
 
 /-- The inclusion `y ↦ (y, b)` of a manifold as the top end of the cylinder `Y × [a, b]`. -/
 def SmoothEmbedding.cylinderTop : SmoothEmbedding I (I.prod (𝓡∂ 1)) n Y (Y × Icc a b) :=
-  .ofIsSmoothEmbedding _ (isSmoothEmbedding_prodMk_of_extChartAt_eq_zero extChartAt_Icc_top)
+  .ofIsSmoothEmbedding _ (isSmoothEmbedding_prodMkLeft_of_extChartAt_eq_zero extChartAt_Icc_top)
 
 variable {I n a b Y}
 
