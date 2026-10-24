@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Calculus.FDeriv.Mul
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Basic
 
 import Mathlib.Topology.Bornology.BoundedOperation
+import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
 
 /-!
 # Changing the centre of an inverted boundary coordinate
@@ -30,7 +31,8 @@ nonzero, so the recentered coordinate remains continuous up to the boundary and 
 upper half-plane.
 
 These facts let a single globally continuous inverted coordinate be recentered separately at the
-vertices at infinity of a polygonal domain.
+vertices at infinity of a polygonal domain. Precomposition by `z ↦ x₀ - z⁻¹` also moves a real
+boundary parameter to infinity while preserving the coordinate properties.
 
 ## Main results
 
@@ -42,6 +44,7 @@ vertices at infinity of a polygonal domain.
   inverted coordinate is not a value of the original map.
 * `TauCeti.exists_ball_recenterInvertedCoordinate` supplies all analytic properties near a
   boundary zero.
+* `TauCeti.exists_inverted_coordinate_comp_sub_inv` moves a real boundary parameter to infinity.
 -/
 
 public section
@@ -192,6 +195,69 @@ theorem exists_ball_recenterInvertedCoordinate {f g : ℂ → ℂ} {q c b : ℂ}
     exact fun hzq => hgne z hz.2 (by simp [hgf hz.2, hzq])
   · intro z hz hzero
     exact hgne z hz.2 (by simpa [hb, hpole z (hopen hz)] using hzero)
+
+/-- **Moving a real parameter to infinity.**  Compose a coordinate `g`, continuous on the closed
+upper half-plane, holomorphic and nonzero in the open one, injective away from its zeros and
+tending to `0` at infinity, with the automorphism `z ↦ x₀ - z⁻¹` of the upper half-plane, and fill
+in the value `0` at `z = 0`.  The result has the same properties, the same image of the upper
+half-plane, and the limit `g x₀` at infinity. -/
+theorem exists_inverted_coordinate_comp_sub_inv {g : ℂ → ℂ}
+    (hgc : ContinuousOn g {z : ℂ | 0 ≤ z.im}) (hgd : DifferentiableOn ℂ g upperHalfPlaneSet)
+    (hgne : ∀ z ∈ upperHalfPlaneSet, g z ≠ 0)
+    (hgi : InjOn g {z : ℂ | 0 ≤ z.im ∧ g z ≠ 0})
+    (hg0 : Tendsto g (cobounded ℂ ⊓ 𝓟 {z : ℂ | 0 ≤ z.im}) (𝓝 0)) (x₀ : ℝ) :
+    ∃ g₁ : ℂ → ℂ, g₁ 0 = 0 ∧ (∀ z, z ≠ 0 → g₁ z = g (x₀ - z⁻¹)) ∧
+      ContinuousOn g₁ {z : ℂ | 0 ≤ z.im} ∧ DifferentiableOn ℂ g₁ upperHalfPlaneSet ∧
+      (∀ z ∈ upperHalfPlaneSet, g₁ z ≠ 0) ∧ InjOn g₁ {z : ℂ | 0 ≤ z.im ∧ g₁ z ≠ 0} ∧
+      g₁ '' upperHalfPlaneSet = g '' upperHalfPlaneSet ∧
+      Tendsto g₁ (cobounded ℂ ⊓ 𝓟 {z : ℂ | 0 ≤ z.im}) (𝓝 (g x₀)) := by
+  classical
+  set φ : ℂ → ℂ := fun z => (x₀ : ℂ) - z⁻¹
+  have hφim (z : ℂ) : (φ z).im = (-z⁻¹).im := by simp [φ]
+  have hφH {z : ℂ} (hz : 0 ≤ z.im) : 0 ≤ (φ z).im := hφim z ▸ im_neg_inv_nonneg.mpr hz
+  have hφH' {z : ℂ} (hz : 0 < z.im) : 0 < (φ z).im := hφim z ▸ im_neg_inv_pos.mpr hz
+  have hne {z : ℂ} (hz : 0 < z.im) : z ≠ 0 := fun h => by simp [h] at hz
+  -- `φ` is an automorphism of the upper half-plane, with inverse `w ↦ -(w - x₀)⁻¹`
+  have hφimage : φ '' upperHalfPlaneSet = upperHalfPlaneSet := by
+    refine (mapsTo_iff_image_subset.mp fun z hz => hφH' hz).antisymm fun w hw => ?_
+    refine ⟨-(w - x₀)⁻¹, im_neg_inv_pos.mpr (by simpa using hw), ?_⟩
+    simp [φ]
+  set g₁ : ℂ → ℂ := update (fun z => g (φ z)) 0 0
+  have hg₁ {z : ℂ} (hz : z ≠ 0) : g₁ z = g (φ z) := update_of_ne hz _ _
+  refine ⟨g₁, update_self _ _ _, fun z hz => hg₁ hz, ?_, ?_, fun z hz => ?_, ?_, ?_, ?_⟩
+  · refine continuousOn_update_iff.mpr ⟨fun z hz => ?_, fun _ => ?_⟩
+    · have hz0 : z ≠ 0 := by simpa using hz.2
+      exact (hgc _ (hφH hz.1)).comp
+        (continuousAt_const.sub (continuousAt_inv₀ hz0)).continuousWithinAt
+        fun w hw => hφH hw.1
+    · -- at `0`, the map `φ` tends to infinity in the closed upper half-plane
+      refine hg0.comp (tendsto_inf.mpr ⟨?_, tendsto_principal.mpr ?_⟩)
+      · exact (tendsto_const_sub_cobounded (x₀ : ℂ)).comp
+          (tendsto_inv₀_nhdsNE_zero.mono_left (nhdsWithin_mono _ fun w hw => hw.2))
+      · exact eventually_nhdsWithin_of_forall fun w hw => hφH hw.1
+  · have hφd : DifferentiableOn ℂ φ upperHalfPlaneSet :=
+      (differentiableOn_const _).sub (differentiableOn_id.inv fun z (hz : 0 < z.im) => hne hz)
+    exact (hgd.comp hφd fun z hz => hφH' hz).congr fun z hz => hg₁ (hne hz)
+  · rw [hg₁ (hne hz)]
+    exact hgne _ (hφH' hz)
+  · rintro z ⟨hz, hgz⟩ z' ⟨hz', hgz'⟩ h
+    have hz0 : z ≠ 0 := by rintro rfl; exact hgz (update_self _ _ _)
+    have hz0' : z' ≠ 0 := by rintro rfl; exact hgz' (update_self _ _ _)
+    rw [hg₁ hz0] at h hgz
+    rw [hg₁ hz0'] at h hgz'
+    simpa [φ] using hgi ⟨hφH hz, hgz⟩ ⟨hφH hz', hgz'⟩ h
+  · calc g₁ '' upperHalfPlaneSet = (fun z => g (φ z)) '' upperHalfPlaneSet :=
+        image_congr fun z hz => hg₁ (hne hz)
+      _ = g '' upperHalfPlaneSet := by rw [← image_image, hφimage]
+  · have hφinf : Tendsto φ (cobounded ℂ ⊓ 𝓟 {z : ℂ | 0 ≤ z.im})
+        (𝓝[{z : ℂ | 0 ≤ z.im}] (x₀ : ℂ)) := by
+      refine tendsto_nhdsWithin_iff.mpr ⟨?_, eventually_inf_principal.mpr
+        (Eventually.of_forall fun z hz => hφH hz)⟩
+      simpa using (tendsto_const_nhds.sub tendsto_inv₀_cobounded).mono_left
+        (inf_le_left (b := 𝓟 {z : ℂ | 0 ≤ z.im}))
+    refine ((hgc _ (by simp)).tendsto.comp hφinf).congr' ?_
+    filter_upwards [(eventually_ne_cobounded (0 : ℂ)).filter_mono inf_le_left] with z hz
+    exact (hg₁ hz).symm
 
 end TauCeti
 

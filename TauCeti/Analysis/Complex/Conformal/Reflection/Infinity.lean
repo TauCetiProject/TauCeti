@@ -41,6 +41,10 @@ straight edge through `0` in the inverse coordinate, and the map is a logarithm 
 reflection, which gives `z * f''(z) / f'(z) → -1`
 (`TauCeti.tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_exp_neg_inv`).
 
+The straight side may also be found at a finite real point `x₀` rather than at infinity: then the
+map `z ↦ f (x₀ - 1 / z)`, which moves `x₀` to infinity, has the same limit `-2`
+(`TauCeti.tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_comp_sub_inv`).
+
 More generally, the limit of `z * f''(z) / f'(z)` at infinity does not change when `f` is
 replaced by `f ∘ φ` for a map `φ` that fixes infinity and is conformal across it
 (`TauCeti.tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_comp_neg_inv`).  This compares an
@@ -166,6 +170,40 @@ theorem tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_neg_inv
     simp only [deriv_div_const, deriv_sub_const]
   rw [(logDeriv_congr_nhds heq.deriv).eq_of_nhds, hderiv]
   simp only [div_eq_mul_inv, logDeriv_mul_const z b⁻¹ (inv_ne_zero hb)]
+
+/-- **The pre-Schwarzian after moving a side point to infinity.** Suppose that near the real
+point `x₀` a map `f` of the upper half-plane has a straight side: after normalizing the target by
+`w ↦ (w - q) / b`, it is continuous and injective on the closed upper half-disc about `x₀`, real on
+its diameter and upper half-plane valued above it.  Then the map `z ↦ f (x₀ - 1 / z)`, which moves
+`x₀` to infinity, satisfies `z * F''(z) / F'(z) → -2` as `z` tends to infinity in the upper
+half-plane, for every `F` agreeing with it there. -/
+theorem tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_comp_sub_inv {f F : ℂ → ℂ} {x₀ : ℝ}
+    (hF : EqOn F (fun z => f (x₀ - z⁻¹)) upperHalfPlaneSet) {q b : ℂ} {r : ℝ} (hr : 0 < r)
+    (hf : DifferentiableOn ℂ f (Metric.ball (x₀ : ℂ) r ∩ upperHalfPlaneSet))
+    (hb : b ≠ 0) (hcont : ContinuousOn f (Metric.ball (x₀ : ℂ) r ∩ {z : ℂ | 0 ≤ z.im}))
+    (hinj : InjOn f (Metric.ball (x₀ : ℂ) r ∩ {z : ℂ | 0 ≤ z.im}))
+    (hreal : ∀ z ∈ Metric.ball (x₀ : ℂ) r, z.im = 0 → ((f z - q) / b).im = 0)
+    (hupper : ∀ z ∈ Metric.ball (x₀ : ℂ) r, 0 < z.im → 0 < ((f z - q) / b).im) :
+    Tendsto (fun z => z * logDeriv (deriv F) z) (cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet)
+      (𝓝 (-2)) := by
+  -- in the coordinate `w ↦ -1 / w` at infinity, `F` is the translate `w ↦ f (x₀ + w)`
+  have hball {w : ℂ} (hw : w ∈ Metric.ball (0 : ℂ) r) : (x₀ : ℂ) + w ∈ Metric.ball (x₀ : ℂ) r := by
+    simpa using hw
+  have hmaps : MapsTo (fun w => (x₀ : ℂ) + w) (Metric.ball 0 r ∩ {z : ℂ | 0 ≤ z.im})
+      (Metric.ball (x₀ : ℂ) r ∩ {z : ℂ | 0 ≤ z.im}) := fun w hw =>
+    ⟨hball hw.1, by simpa using hw.2⟩
+  refine tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_neg_inv
+    (g := fun w => (f (x₀ + w) - q) / b) (q := q) hr hb (fun w hw => ?_) ?_ ?_
+    (fun z hz hz0 => hreal _ (hball hz) (by simpa using hz0))
+    (fun z hz => hupper _ (hball hz.1) (by simpa using hz.2)) fun z hz z' hz' h => ?_
+  · simp [hF (im_neg_inv_pos.mpr hw.2)]
+  · exact ((hcont.comp (continuousOn_const.add continuousOn_id) hmaps).sub
+      continuousOn_const).div_const b
+  · exact ((hf.comp ((differentiableOn_const _).add differentiableOn_id)
+      fun w (hw : w ∈ Metric.ball 0 r ∩ upperHalfPlaneSet) =>
+        ⟨hball hw.1, by simpa using hw.2⟩).sub_const
+      q).div_const b
+  · simpa using hinj (hmaps hz) (hmaps hz') (by simpa [div_left_inj' hb] using h)
 
 /-- **Decay of a continued pre-Schwarzian derivative at infinity.** Read the map `f` of the upper
 half-plane in the coordinate `w ↦ -1 / w` at infinity and normalize the target by `w ↦ (w - q) / b`.
