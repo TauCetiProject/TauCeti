@@ -176,6 +176,8 @@ def finTwoEquivProd : EuclideanSpace 𝕜 (Fin 2) ≃ₗᵢ[𝕜] WithLp 2 (𝕜
     fin_cases k <;> rfl
   right_inv _ := rfl
   norm_map' x := by
+    -- `simp` does not unfold the coercion of the linear equivalence under construction, so state
+    -- its value `WithLp.toLp 2 (x 0, x 1)` first.
     change ‖WithLp.toLp 2 (x 0, x 1)‖ = ‖x‖
     simp [WithLp.prod_norm_eq_of_L2, EuclideanSpace.norm_eq, Fin.sum_univ_two]
 
@@ -187,6 +189,11 @@ theorem finTwoEquivProd_apply_fst (x : EuclideanSpace 𝕜 (Fin 2)) :
 @[simp]
 theorem finTwoEquivProd_apply_snd (x : EuclideanSpace 𝕜 (Fin 2)) :
     (finTwoEquivProd 𝕜 x).snd = x 1 :=
+  (rfl)
+
+@[simp]
+theorem finTwoEquivProd_symm_apply (p : WithLp 2 (𝕜 × 𝕜)) :
+    (finTwoEquivProd 𝕜).symm p = WithLp.toLp 2 ![p.fst, p.snd] :=
   (rfl)
 
 end EuclideanSpace

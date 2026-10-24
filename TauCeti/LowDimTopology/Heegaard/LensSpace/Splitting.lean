@@ -23,7 +23,8 @@ The three-dimensional lens space `L(m; ℓ₀, ℓ₁)` is the orbit space of th
 `‖z‖ ≤ ‖w‖` and `‖w‖ ≤ ‖z‖` of the genus-one Heegaard splitting of `S³`
 (`TauCeti.cliffordHeegaardSplitting`), so their images are two pieces covering the lens space and
 meeting along the image of the Clifford torus. Each image is again a solid torus. On
-`‖z‖ ≤ ‖w‖` the rotation acts on the coordinates `(u, v) = (z / ‖w‖, w / ‖w‖) ∈ D² × S¹` by
+`‖z‖ ≤ ‖w‖` the rotation acts on the coordinates `(u, v) = (z / ‖w‖, w / ‖w‖) ∈ D² × S¹`
+(`TauCeti.sphereProdFstLeHomeomorph`) by
 `(u, v) ↦ (ζ ^ ℓ₀ u, ζ ^ ℓ₁ v)`, freely on the core circle; choosing `c` with `c ℓ₁ = ℓ₀` modulo
 `m`, the map `(u, v) ↦ (u conj(v) ^ c, v ^ m)` is invariant, and its fibres are exactly the orbits,
 so it identifies the quotient with `D² × S¹`. This gives the genus-one Heegaard splitting
@@ -68,29 +69,37 @@ open Metric Set Module Function
 
 namespace TauCeti
 
-/-! ### The two solid tori of a lens space -/
-
 namespace LensSpace
 
 variable (m : ℕ) [NeZero m] (ℓ : Fin 2 → (ZMod m)ˣ)
 
-/-- The coordinates of a point of the unit sphere of `ℂ²` have squared norms summing to one. -/
-private theorem norm_sq_add_norm_sq {i j : Fin 2} (hij : i ≠ j)
-    (x : sphere (0 : EuclideanSpace ℂ (Fin 2)) 1) :
-    ‖(x : EuclideanSpace ℂ (Fin 2)) i‖ ^ 2 + ‖(x : EuclideanSpace ℂ (Fin 2)) j‖ ^ 2 = 1 := by
-  have h := EuclideanSpace.norm_sq_eq (x : EuclideanSpace ℂ (Fin 2))
-  rw [Fin.sum_univ_two, norm_eq_of_mem_sphere x, one_pow] at h
-  fin_cases i <;> fin_cases j <;> simp_all [add_comm]
+/-- A complex number `z` of norm one satisfies `z ^ n * conj(z) ^ n = 1`. -/
+private theorem pow_mul_conj_pow_eq_one {z : ℂ} (hz : ‖z‖ = 1) (n : ℕ) :
+    z ^ n * starRingEnd ℂ z ^ n = 1 := by
+  rw [← mul_pow, Complex.mul_conj', hz]
+  norm_num
 
-/-- On the solid torus `‖x i‖ ≤ ‖x j‖`, the core coordinate `x j` does not vanish. -/
-private theorem norm_pos_of_le {i j : Fin 2} (hij : i ≠ j)
-    {x : sphere (0 : EuclideanSpace ℂ (Fin 2)) 1}
-    (hx : ‖(x : EuclideanSpace ℂ (Fin 2)) i‖ ≤ ‖(x : EuclideanSpace ℂ (Fin 2)) j‖) :
-    0 < ‖(x : EuclideanSpace ℂ (Fin 2)) j‖ := by
-  have h := norm_sq_add_norm_sq hij x
-  have := norm_nonneg ((x : EuclideanSpace ℂ (Fin 2)) i)
-  by_contra! h0
-  nlinarith
+/-- If `‖ω‖ = 1` and `v ≠ 0`, then `u conj(ω v) ^ c = u' conj(v) ^ c` exactly when
+`u = ω ^ c u'`. -/
+private theorem mul_conj_pow_eq_iff {u u' v ω : ℂ} (hv : v ≠ 0) (hω : ‖ω‖ = 1) (c : ℕ) :
+    u * starRingEnd ℂ (ω * v) ^ c = u' * starRingEnd ℂ v ^ c ↔ u = ω ^ c * u' := by
+  have e := pow_mul_conj_pow_eq_one hω c
+  rw [map_mul, mul_pow, ← mul_assoc, mul_left_inj' (pow_ne_zero _ ((map_ne_zero _).2 hv))]
+  constructor
+  · intro h
+    linear_combination ω ^ c * h - u * e
+  · rintro rfl
+    linear_combination u' * e
+
+/-- Every `m`-th root of unity in `ℂ` is a rotation `ZMod.toCircle b`. -/
+private theorem exists_toCircle_eq_of_pow_eq_one {ω : ℂ} (hω : ω ^ m = 1) :
+    ∃ b : ZMod m, (ZMod.toCircle b : ℂ) = ω := by
+  have h0 : ω ≠ 0 := by
+    rintro rfl
+    simp [NeZero.ne m] at hω
+  obtain ⟨b, hb⟩ := surjective_rootsOfUnityCircleEquiv_comp_rootsOfUnityAddChar m
+    ⟨Units.mk0 ω h0, (mem_rootsOfUnity' m _).2 hω⟩
+  exact ⟨b, by simpa using congrArg (fun u : rootsOfUnity m ℂ ↦ ((u : ℂˣ) : ℂ)) hb⟩
 
 /-- The exponent `c = ℓᵢ ℓⱼ⁻¹` of the invariant `u conj(v) ^ c` on the solid torus
 `‖x i‖ ≤ ‖x j‖`. -/
@@ -102,6 +111,83 @@ private theorem toCircle_pow_twist (i j : Fin 2) (t : ZMod m) :
     ZMod.toCircle ((ℓ j : ZMod m) * t) ^ twist m ℓ i j = ZMod.toCircle ((ℓ i : ZMod m) * t) := by
   rw [← AddChar.map_nsmul_eq_pow, nsmul_eq_mul, twist, ZMod.natCast_zmod_val, ← mul_assoc,
     Units.val_mul, Units.inv_mul_cancel_right]
+
+/-! ### The quotient of the model solid torus -/
+
+/-- The quotient map `(u, v) ↦ (u conj(v) ^ c, v ^ m)` of `D² × S¹` by the rotations
+`(u, v) ↦ (ζ ^ ℓᵢ u, ζ ^ ℓⱼ v)`, `ζ ^ m = 1`, where `c` is the twist exponent. -/
+private def modelQuotient (i j : Fin 2) (p : closedBall (0 : ℂ) 1 × sphere (0 : ℂ) 1) :
+    SolidTorus :=
+  (⟨p.1 * starRingEnd ℂ p.2 ^ twist m ℓ i j, by
+      rw [mem_closedBall_zero_iff, norm_mul, norm_pow, Complex.norm_conj,
+        norm_eq_of_mem_sphere p.2, one_pow, mul_one]
+      exact mem_closedBall_zero_iff.1 p.1.2⟩,
+    ⟨p.2 ^ m, mem_sphere_zero_iff_norm.2 (by rw [norm_pow, norm_eq_of_mem_sphere p.2, one_pow])⟩)
+
+omit [NeZero m] in
+private theorem continuous_modelQuotient (i j : Fin 2) : Continuous (modelQuotient m ℓ i j) := by
+  refine .prodMk (.subtype_mk ?_ _) (.subtype_mk ?_ _)
+  · exact (continuous_subtype_val.comp continuous_fst).mul
+      ((Complex.continuous_conj.comp (continuous_subtype_val.comp continuous_snd)).pow _)
+  · exact (continuous_subtype_val.comp continuous_snd).pow _
+
+omit [NeZero m] in
+private theorem coe_modelQuotient_fst (i j : Fin 2) (p : closedBall (0 : ℂ) 1 × sphere (0 : ℂ) 1) :
+    ((modelQuotient m ℓ i j p).1 : ℂ) = p.1 * starRingEnd ℂ p.2 ^ twist m ℓ i j :=
+  (rfl)
+
+omit [NeZero m] in
+private theorem coe_modelQuotient_snd (i j : Fin 2) (p : closedBall (0 : ℂ) 1 × sphere (0 : ℂ) 1) :
+    ((modelQuotient m ℓ i j p).2 : ℂ) = (p.2 : ℂ) ^ m :=
+  (rfl)
+
+/-- The quotient map of `D² × S¹` is surjective: `(u, v)` is the image of `(u w ^ c, w)` for any
+`m`-th root `w` of `v`. -/
+private theorem modelQuotient_surjective (i j : Fin 2) : Surjective (modelQuotient m ℓ i j) := by
+  rintro ⟨⟨u, hu⟩, v⟩
+  rw [mem_closedBall_zero_iff] at hu
+  obtain ⟨w, hw⟩ := IsAlgClosed.exists_pow_nat_eq (v : ℂ) (Nat.pos_of_ne_zero (NeZero.ne m))
+  have hw1 : ‖w‖ = 1 := by
+    rw [← pow_left_inj₀ (norm_nonneg w) zero_le_one (NeZero.ne m), ← norm_pow, hw,
+      Circle.norm_coe, one_pow]
+  refine ⟨(⟨u * w ^ twist m ℓ i j, by
+      rwa [mem_closedBall_zero_iff, norm_mul, norm_pow, hw1, one_pow, mul_one]⟩,
+    ⟨w, mem_sphere_zero_iff_norm.2 hw1⟩), Prod.ext (Subtype.ext ?_) (Circle.ext ?_)⟩
+  · rw [coe_modelQuotient_fst, mul_assoc, pow_mul_conj_pow_eq_one hw1, mul_one]
+  · rw [coe_modelQuotient_snd, hw]
+
+/-- The fibres of the quotient map of `D² × S¹` are the orbits of the rotations
+`(u, v) ↦ (ζ ^ ℓᵢ u, ζ ^ ℓⱼ v)`. -/
+private theorem modelQuotient_eq_iff (i j : Fin 2) (p q : closedBall (0 : ℂ) 1 × sphere (0 : ℂ) 1) :
+    modelQuotient m ℓ i j p = modelQuotient m ℓ i j q ↔
+      ∃ b : ZMod m, (p.1 : ℂ) = ZMod.toCircle ((ℓ i : ZMod m) * b) * q.1 ∧
+        (p.2 : ℂ) = ZMod.toCircle ((ℓ j : ZMod m) * b) * q.2 := by
+  have hq : (q.2 : ℂ) ≠ 0 := ne_zero_of_mem_unit_sphere q.2
+  constructor
+  · intro h
+    have h1 := congrArg (fun r : SolidTorus ↦ ((r.1 : closedBall (0 : ℂ) 1) : ℂ)) h
+    have h2 := congrArg (fun r : SolidTorus ↦ ((r.2 : Circle) : ℂ)) h
+    simp only [coe_modelQuotient_fst, coe_modelQuotient_snd] at h1 h2
+    -- The ratio of the core coordinates is an `m`-th root of unity, hence a rotation.
+    obtain ⟨b, hb⟩ := exists_toCircle_eq_of_pow_eq_one m (ω := p.2 / q.2)
+      (by rw [div_pow, h2, div_self (pow_ne_zero _ hq)])
+    have hω : ‖(p.2 / q.2 : ℂ)‖ = 1 := by
+      rw [norm_div, norm_eq_of_mem_sphere p.2, norm_eq_of_mem_sphere q.2, div_one]
+    have hp : (p.2 : ℂ) = p.2 / q.2 * q.2 := (div_mul_cancel₀ _ hq).symm
+    refine ⟨((ℓ j)⁻¹ : (ZMod m)ˣ) * b, ?_, ?_⟩
+    · rw [← toCircle_pow_twist, Units.mul_inv_cancel_left, Circle.coe_pow, hb]
+      rw [hp] at h1
+      exact (mul_conj_pow_eq_iff hq hω _).1 h1
+    · rw [Units.mul_inv_cancel_left, hb, ← hp]
+  · rintro ⟨b, h1, h2⟩
+    refine Prod.ext (Subtype.ext ?_) (Circle.ext ?_)
+    · rw [coe_modelQuotient_fst, coe_modelQuotient_fst, h2,
+        mul_conj_pow_eq_iff hq (Circle.norm_coe _), h1, ← Circle.coe_pow, toCircle_pow_twist]
+    · rw [coe_modelQuotient_snd, coe_modelQuotient_snd, h2, mul_pow, ← Circle.coe_pow,
+        ← AddChar.map_nsmul_eq_pow, nsmul_eq_mul, ZMod.natCast_self, zero_mul,
+        AddChar.map_zero_eq_one, Circle.coe_one, one_mul]
+
+/-! ### The two solid tori of a lens space -/
 
 /-- The solid torus `‖x i‖ ≤ ‖x j‖` of the unit sphere of `ℂ²`. -/
 private def piece (i j : Fin 2) : Set (sphere (0 : EuclideanSpace ℂ (Fin 2)) 1) :=
@@ -115,218 +201,94 @@ private theorem preimage_image_piece (i j : Fin 2) :
   obtain ⟨a, ha⟩ := (mk_eq_mk_iff m ℓ y x).1 hxy
   simpa [piece, ← ha] using hy
 
-/-- The disc coordinate `x i / ‖x j‖` of a point of the solid torus `‖x i‖ ≤ ‖x j‖`. -/
-private def discCoord (i j : Fin 2) (x : sphere (0 : EuclideanSpace ℂ (Fin 2)) 1) : ℂ :=
-  (x : EuclideanSpace ℂ (Fin 2)) i / (‖(x : EuclideanSpace ℂ (Fin 2)) j‖ : ℂ)
-
-/-- The core coordinate `x j / ‖x j‖` of a point of the solid torus `‖x i‖ ≤ ‖x j‖`. -/
-private def coreCoord (j : Fin 2) (x : sphere (0 : EuclideanSpace ℂ (Fin 2)) 1) : ℂ :=
-  (x : EuclideanSpace ℂ (Fin 2)) j / (‖(x : EuclideanSpace ℂ (Fin 2)) j‖ : ℂ)
-
-private theorem norm_coreCoord {i j : Fin 2} (hij : i ≠ j) (x : piece i j) :
-    ‖coreCoord j x‖ = 1 := by
-  have h := norm_pos_of_le hij x.2
-  rw [coreCoord, norm_div, Complex.norm_real, Real.norm_of_nonneg h.le, div_self h.ne']
-
-private theorem norm_discCoord {i j : Fin 2} (hij : i ≠ j) (x : piece i j) :
-    ‖discCoord i j x‖ ≤ 1 := by
-  have h := norm_pos_of_le hij x.2
-  rw [discCoord, norm_div, Complex.norm_real, Real.norm_of_nonneg h.le, div_le_one h]
-  exact x.2
-
-/-- The quotient map of the solid torus `‖x i‖ ≤ ‖x j‖` onto `D² × S¹`:
-`x ↦ (u conj(v) ^ c, v ^ m)` for the disc and core coordinates `u = x i / ‖x j‖`,
-`v = x j / ‖x j‖`. -/
-private def pieceQuotient {i j : Fin 2} (hij : i ≠ j) (x : piece i j) : SolidTorus :=
-  (⟨discCoord i j x * (starRingEnd ℂ (coreCoord j x)) ^ twist m ℓ i j, by
-      rw [mem_closedBall_zero_iff, norm_mul, norm_pow, Complex.norm_conj, norm_coreCoord hij,
-        one_pow, mul_one]
-      exact norm_discCoord hij x⟩,
-    ⟨coreCoord j x ^ m, mem_sphere_zero_iff_norm.2 (by rw [norm_pow, norm_coreCoord hij, one_pow])⟩)
-
-omit [NeZero m] in
-private theorem continuous_pieceQuotient {i j : Fin 2} (hij : i ≠ j) :
-    Continuous (pieceQuotient m ℓ hij) := by
-  have hne (x : piece i j) : (‖(x : EuclideanSpace ℂ (Fin 2)) j‖ : ℂ) ≠ 0 :=
-    Complex.ofReal_ne_zero.2 (norm_pos_of_le hij x.2).ne'
-  have hc : Continuous fun x : piece i j ↦ coreCoord j x :=
-    .div (by fun_prop) (by fun_prop) hne
-  have hd : Continuous fun x : piece i j ↦ discCoord i j x :=
-    .div (by fun_prop) (by fun_prop) hne
-  refine .prodMk (.subtype_mk ?_ _) (.subtype_mk ?_ _)
-  · exact hd.mul ((Complex.continuous_conj.comp hc).pow _)
-  · exact hc.pow _
-
-omit [NeZero m] in
-private theorem coe_pieceQuotient_fst {i j : Fin 2} (hij : i ≠ j) (x : piece i j) :
-    ((pieceQuotient m ℓ hij x).1 : ℂ) =
-      discCoord i j x * (starRingEnd ℂ (coreCoord j x)) ^ twist m ℓ i j :=
-  (rfl)
-
-omit [NeZero m] in
-private theorem coe_pieceQuotient_snd {i j : Fin 2} (hij : i ≠ j) (x : piece i j) :
-    ((pieceQuotient m ℓ hij x).2 : ℂ) = coreCoord j x ^ m :=
-  (rfl)
-
-/-- Points of the solid torus `‖x i‖ ≤ ‖x j‖` whose disc coordinates have the same norm have core
-coordinates of the same norm, since the squared norms of the two coordinates sum to one. -/
-private theorem norm_eq_of_norm_discCoord_eq {i j : Fin 2} (hij : i ≠ j) {x y : piece i j}
-    (h : ‖discCoord i j x‖ = ‖discCoord i j y‖) :
-    ‖(x : EuclideanSpace ℂ (Fin 2)) j‖ = ‖(y : EuclideanSpace ℂ (Fin 2)) j‖ := by
-  have hxj := norm_pos_of_le hij x.2
-  have hyj := norm_pos_of_le hij y.2
-  simp only [discCoord, norm_div, Complex.norm_real, Real.norm_of_nonneg hxj.le,
-    Real.norm_of_nonneg hyj.le] at h
-  rw [div_eq_div_iff hxj.ne' hyj.ne'] at h
-  have hx2 := norm_sq_add_norm_sq hij x
-  have hy2 := norm_sq_add_norm_sq hij y
-  refine (pow_left_inj₀ hxj.le hyj.le two_ne_zero).1 ?_
-  linear_combination (‖(y : EuclideanSpace ℂ (Fin 2)) j‖ ^ 2) * hx2 -
-    (‖(x : EuclideanSpace ℂ (Fin 2)) j‖ ^ 2) * hy2 -
-    (‖(x : EuclideanSpace ℂ (Fin 2)) i‖ * ‖(y : EuclideanSpace ℂ (Fin 2)) j‖ +
-      ‖(y : EuclideanSpace ℂ (Fin 2)) i‖ * ‖(x : EuclideanSpace ℂ (Fin 2)) j‖) * h
-
-/-- For points of the solid torus `‖x i‖ ≤ ‖x j‖` with core coordinates of the same norm, a
-relation between the normalised coordinates `x k / ‖x j‖` is a relation between the coordinates. -/
-private theorem div_norm_eq_mul_div_norm_iff {i j : Fin 2} (hij : i ≠ j) {x y : piece i j}
-    (hρ : ‖(x : EuclideanSpace ℂ (Fin 2)) j‖ = ‖(y : EuclideanSpace ℂ (Fin 2)) j‖) (k : Fin 2)
-    (ω : ℂ) :
-    (x : EuclideanSpace ℂ (Fin 2)) k / (‖(x : EuclideanSpace ℂ (Fin 2)) j‖ : ℂ) =
-        ω * ((y : EuclideanSpace ℂ (Fin 2)) k / (‖(y : EuclideanSpace ℂ (Fin 2)) j‖ : ℂ)) ↔
-      (x : EuclideanSpace ℂ (Fin 2)) k = ω * (y : EuclideanSpace ℂ (Fin 2)) k := by
-  rw [hρ, ← mul_div_assoc,
-    div_left_inj' (Complex.ofReal_ne_zero.2 (norm_pos_of_le hij y.2).ne')]
-
-/-- The fibres of the quotient map of a solid torus onto `D² × S¹` are the orbits of the lens
-group. -/
-private theorem pieceQuotient_eq_iff {i j : Fin 2} (hij : i ≠ j) (x y : piece i j) :
-    pieceQuotient m ℓ hij x = pieceQuotient m ℓ hij y ↔ mk m ℓ x = mk m ℓ y := by
-  have hk (k : Fin 2) : k = i ∨ k = j := by
-    fin_cases i <;> fin_cases j <;> fin_cases k <;> simp_all
-  have hcy : coreCoord j y ≠ 0 := norm_ne_zero_iff.1 (by rw [norm_coreCoord hij y]; norm_num)
-  set c := twist m ℓ i j
-  constructor
-  · intro h
-    have h1 := congrArg (fun p : SolidTorus ↦ ((p.1 : closedBall (0 : ℂ) 1) : ℂ)) h
-    have h2 := congrArg (fun p : SolidTorus ↦ ((p.2 : Circle) : ℂ)) h
-    simp only [coe_pieceQuotient_fst, coe_pieceQuotient_snd] at h1 h2
-    have hρ := norm_eq_of_norm_discCoord_eq hij (by
-      simpa [norm_mul, norm_pow, Complex.norm_conj, norm_coreCoord hij] using congrArg norm h1)
-    -- The ratio of the core coordinates is an `m`-th root of unity `ω`.
-    set ω := coreCoord j x / coreCoord j y
-    have hω1 : ‖ω‖ = 1 := by rw [norm_div, norm_coreCoord hij, norm_coreCoord hij, div_one]
-    have hωm : ω ^ m = 1 := by rw [div_pow, h2, div_self (pow_ne_zero _ hcy)]
-    have hcore : coreCoord j x = ω * coreCoord j y := by rw [div_mul_cancel₀ _ hcy]
-    have hdisc : discCoord i j x = ω ^ c * discCoord i j y := by
-      rw [hcore, map_mul, mul_pow] at h1
-      have hc : (starRingEnd ℂ (coreCoord j y)) ^ c ≠ 0 :=
-        pow_ne_zero _ ((map_ne_zero _).2 hcy)
-      have h1' : discCoord i j x * (starRingEnd ℂ ω) ^ c = discCoord i j y :=
-        mul_right_cancel₀ hc (by rw [← h1]; ring)
-      have hωc : ω ^ c * (starRingEnd ℂ ω) ^ c = 1 := by
-        rw [← mul_pow, Complex.mul_conj', hω1]
-        norm_num
-      rw [← h1']
-      linear_combination (-discCoord i j x) * hωc
-    -- Every `m`-th root of unity is a rotation `ZMod.toCircle b`.
-    obtain ⟨b, hb⟩ := surjective_rootsOfUnityCircleEquiv_comp_rootsOfUnityAddChar m
-      ⟨Units.mk0 ω (norm_ne_zero_iff.1 (by rw [hω1]; norm_num)), (mem_rootsOfUnity' m _).2 hωm⟩
-    replace hb : (ZMod.toCircle b : ℂ) = ω := by
-      simpa using congrArg (fun u : rootsOfUnity m ℂ ↦ ((u : ℂˣ) : ℂ)) hb
-    refine (mk_eq_mk_iff m ℓ x y).2 ⟨Multiplicative.ofAdd (((ℓ j)⁻¹ : (ZMod m)ˣ) * b), ?_⟩
-    ext k
-    rw [lensRotation_apply, toAdd_ofAdd]
-    rcases hk k with rfl | rfl
-    · rw [← toCircle_pow_twist, Units.mul_inv_cancel_left, Circle.coe_pow, hb]
-      rw [discCoord, discCoord, div_norm_eq_mul_div_norm_iff hij hρ] at hdisc
-      exact hdisc.symm
-    · rw [Units.mul_inv_cancel_left, hb]
-      rw [coreCoord, coreCoord, div_norm_eq_mul_div_norm_iff hij hρ] at hcore
-      exact hcore.symm
-  · intro h
-    obtain ⟨a, ha⟩ := (mk_eq_mk_iff m ℓ x y).1 h
-    have hxk (k : Fin 2) : (x : EuclideanSpace ℂ (Fin 2)) k =
-        (ZMod.toCircle ((ℓ k : ZMod m) * a.toAdd) : ℂ) * (y : EuclideanSpace ℂ (Fin 2)) k := by
-      rw [← ha, lensRotation_apply]
-    have hρ : ‖(x : EuclideanSpace ℂ (Fin 2)) j‖ = ‖(y : EuclideanSpace ℂ (Fin 2)) j‖ := by
-      rw [← ha, norm_lensRotation_apply]
-    set z : ℂ := (ZMod.toCircle ((ℓ j : ZMod m) * a.toAdd) : ℂ)
-    have hz : z ^ c * (starRingEnd ℂ z) ^ c = 1 := by
-      rw [← mul_pow, Complex.mul_conj', Circle.norm_coe]
-      norm_num
-    have hzm : z ^ m = 1 := by
-      rw [← Circle.coe_pow, ← AddChar.map_nsmul_eq_pow, nsmul_eq_mul, ZMod.natCast_self, zero_mul,
-        AddChar.map_zero_eq_one, Circle.coe_one]
-    have hcore : coreCoord j x = z * coreCoord j y := by
-      rw [coreCoord, coreCoord, div_norm_eq_mul_div_norm_iff hij hρ]
-      exact hxk j
-    have hdisc : discCoord i j x = z ^ c * discCoord i j y := by
-      rw [discCoord, discCoord, div_norm_eq_mul_div_norm_iff hij hρ, hxk i, ← toCircle_pow_twist,
-        Circle.coe_pow]
-    refine Prod.ext (Subtype.ext ?_) (Circle.ext ?_)
-    · rw [coe_pieceQuotient_fst, coe_pieceQuotient_fst, hdisc, hcore, map_mul, mul_pow]
-      linear_combination (discCoord i j y * (starRingEnd ℂ (coreCoord j y)) ^ c) * hz
-    · rw [coe_pieceQuotient_snd, coe_pieceQuotient_snd, hcore, mul_pow, hzm, one_mul]
-
-/-- Every disc value `u` and core value `w` of norm one are the coordinates of a point of the solid
-torus `‖x i‖ ≤ ‖x j‖`, namely of the unit vector in the direction of `(u, w)`. -/
-private theorem exists_discCoord_coreCoord {i j : Fin 2} (hij : i ≠ j) {u w : ℂ} (hu : ‖u‖ ≤ 1)
-    (hw : ‖w‖ = 1) : ∃ x : piece i j, discCoord i j x = u ∧ coreCoord j x = w := by
-  set ρ : ℝ := (√(1 + ‖u‖ ^ 2))⁻¹
-  have hρ : 0 < ρ := inv_pos.2 (Real.sqrt_pos.2 (by positivity))
-  have hρ2 : ρ ^ 2 * (1 + ‖u‖ ^ 2) = 1 := by
-    rw [inv_pow, Real.sq_sqrt (by positivity), inv_mul_cancel₀ (by positivity)]
-  let z : EuclideanSpace ℂ (Fin 2) :=
-    WithLp.toLp 2 fun k ↦ if k = i then (ρ : ℂ) * u else (ρ : ℂ) * w
-  have hzi : z i = (ρ : ℂ) * u := by simp [z]
-  have hzj : z j = (ρ : ℂ) * w := by simp [z, hij.symm]
-  have hnzi : ‖z i‖ = ρ * ‖u‖ := by
-    rw [hzi, norm_mul, Complex.norm_real, Real.norm_of_nonneg hρ.le]
-  have hnzj : ‖z j‖ = ρ := by
-    rw [hzj, norm_mul, hw, mul_one, Complex.norm_real, Real.norm_of_nonneg hρ.le]
-  have hz : z ∈ sphere (0 : EuclideanSpace ℂ (Fin 2)) 1 := by
-    rw [mem_sphere_zero_iff_norm, ← pow_left_inj₀ (norm_nonneg z) zero_le_one two_ne_zero,
-      EuclideanSpace.norm_sq_eq, Fin.sum_univ_two, one_pow]
-    have : ‖z i‖ ^ 2 + ‖z j‖ ^ 2 = 1 := by
-      rw [hnzi, hnzj]
-      linear_combination hρ2
-    fin_cases i <;> fin_cases j <;> simp_all [add_comm]
-  have hzp : (⟨z, hz⟩ : sphere (0 : EuclideanSpace ℂ (Fin 2)) 1) ∈ piece i j := by
-    rw [piece, mem_ofPred_eq, hnzi, hnzj]
-    exact mul_le_of_le_one_right hρ.le hu
-  have hρ' : (ρ : ℂ) ≠ 0 := Complex.ofReal_ne_zero.2 hρ.ne'
-  refine ⟨⟨⟨z, hz⟩, hzp⟩, ?_, ?_⟩
-  · rw [discCoord, hzi, hnzj, mul_div_cancel_left₀ _ hρ']
-  · rw [coreCoord, hnzj, hzj, mul_div_cancel_left₀ _ hρ']
-
-/-- The quotient map of a solid torus onto `D² × S¹` is surjective. -/
-private theorem pieceQuotient_surjective {i j : Fin 2} (hij : i ≠ j) :
-    Surjective (pieceQuotient m ℓ hij) := by
-  rintro ⟨⟨u, hu⟩, v⟩
-  rw [mem_closedBall_zero_iff] at hu
-  obtain ⟨w, hw⟩ := IsAlgClosed.exists_pow_nat_eq (v : ℂ) (Nat.pos_of_ne_zero (NeZero.ne m))
-  have hw1 : ‖w‖ = 1 := by
-    rw [← pow_left_inj₀ (norm_nonneg w) zero_le_one (NeZero.ne m), ← norm_pow, hw,
-      Circle.norm_coe, one_pow]
-  have hwc : w * starRingEnd ℂ w = 1 := by
-    rw [Complex.mul_conj', hw1]
-    norm_num
-  set c := twist m ℓ i j
-  obtain ⟨x, hxd, hxc⟩ := exists_discCoord_coreCoord hij (u := u * w ^ c)
-    (by rwa [norm_mul, norm_pow, hw1, one_pow, mul_one]) hw1
-  refine ⟨x, Prod.ext (Subtype.ext ?_) (Circle.ext ?_)⟩
-  · rw [coe_pieceQuotient_fst, hxd, hxc, mul_assoc, ← mul_pow, hwc, one_pow, mul_one]
-  · rw [coe_pieceQuotient_snd, hxc, hw]
-
 /-- The solid torus `‖x i‖ ≤ ‖x j‖` is compact. -/
 private theorem isCompact_piece (i j : Fin 2) : IsCompact (piece i j) :=
   (isClosed_le (by fun_prop) (by fun_prop)).isCompact
+
+/-- The coordinates `x ↦ (x i, x j)` of `ℂ²`, for `j ≠ i`, as a linear isometry equivalence onto
+`WithLp 2 (ℂ × ℂ)`. -/
+private def coordEquiv (i : Fin 2) : EuclideanSpace ℂ (Fin 2) ≃ₗᵢ[ℂ] WithLp 2 (ℂ × ℂ) :=
+  (LinearIsometryEquiv.piLpCongrLeft 2 ℂ ℂ (Equiv.swap 0 i)).trans
+    (EuclideanSpace.finTwoEquivProd ℂ)
+
+private theorem coordEquiv_apply_fst (i : Fin 2) (x : EuclideanSpace ℂ (Fin 2)) :
+    (coordEquiv i x).fst = x i := by
+  simp [coordEquiv, Equiv.piCongrLeft']
+
+private theorem coordEquiv_apply_snd {i j : Fin 2} (hij : i ≠ j) (x : EuclideanSpace ℂ (Fin 2)) :
+    (coordEquiv i x).snd = x j := by
+  fin_cases i <;> fin_cases j <;> simp_all [coordEquiv, Equiv.piCongrLeft']
+
+/-- The solid torus `‖x i‖ ≤ ‖x j‖` is a copy of `D² × S¹` through the disc and core coordinates
+`x ↦ (x i / ‖x j‖, x j / ‖x j‖)`: in the coordinates `(z, w) = (x i, x j)` it is the solid torus
+`‖z‖ ≤ ‖w‖` of `TauCeti.sphereProdFstLeHomeomorph`. -/
+private def pieceHomeomorph {i j : Fin 2} (hij : i ≠ j) :
+    piece i j ≃ₜ closedBall (0 : ℂ) 1 × sphere (0 : ℂ) 1 :=
+  ((coordEquiv i).unitSphereIsometryEquiv.toHomeomorph.sets
+      (t := {x : sphere (0 : WithLp 2 (ℂ × ℂ)) 1 |
+        ‖(x : WithLp 2 (ℂ × ℂ)).fst‖ ≤ ‖(x : WithLp 2 (ℂ × ℂ)).snd‖}) (by
+        ext x
+        simp [piece, coordEquiv_apply_fst, coordEquiv_apply_snd hij])).trans
+    (sphereProdFstLeHomeomorph ℂ ℂ)
+
+private theorem coe_pieceHomeomorph_fst {i j : Fin 2} (hij : i ≠ j) (x : piece i j) :
+    ((pieceHomeomorph hij x).1 : ℂ) =
+      ‖(x : EuclideanSpace ℂ (Fin 2)) j‖⁻¹ • (x : EuclideanSpace ℂ (Fin 2)) i := by
+  simp [pieceHomeomorph, coordEquiv_apply_fst, coordEquiv_apply_snd hij]
+
+private theorem coe_pieceHomeomorph_snd {i j : Fin 2} (hij : i ≠ j) (x : piece i j) :
+    ((pieceHomeomorph hij x).2 : ℂ) =
+      ‖(x : EuclideanSpace ℂ (Fin 2)) j‖⁻¹ • (x : EuclideanSpace ℂ (Fin 2)) j := by
+  simp [pieceHomeomorph, coordEquiv_apply_snd hij]
+
+/-- The rotation by a residue `a` of a point of the solid torus `‖x i‖ ≤ ‖x j‖`. -/
+private def rotatePiece {i j : Fin 2} (a : Multiplicative (ZMod m)) (x : piece i j) : piece i j :=
+  ⟨⟨lensRotation m ℓ a x, by
+      rw [mem_sphere_zero_iff_norm, LinearIsometryEquiv.norm_map, norm_eq_of_mem_sphere]⟩, by
+    simpa [piece, norm_lensRotation_apply] using x.2⟩
+
+private theorem coe_rotatePiece {i j : Fin 2} (a : Multiplicative (ZMod m)) (x : piece i j) :
+    (rotatePiece m ℓ a x : EuclideanSpace ℂ (Fin 2)) = lensRotation m ℓ a x :=
+  (rfl)
+
+/-- The rotation by `a` multiplies each normalised coordinate `x k / ‖x j‖` of a point of the solid
+torus `‖x i‖ ≤ ‖x j‖` by `ζ ^ ℓₖ`. -/
+private theorem norm_inv_smul_rotatePiece {i j : Fin 2} (a : Multiplicative (ZMod m))
+    (x : piece i j) (k : Fin 2) :
+    ‖(rotatePiece m ℓ a x : EuclideanSpace ℂ (Fin 2)) j‖⁻¹ •
+        (rotatePiece m ℓ a x : EuclideanSpace ℂ (Fin 2)) k =
+      ZMod.toCircle ((ℓ k : ZMod m) * a.toAdd) *
+        (‖(x : EuclideanSpace ℂ (Fin 2)) j‖⁻¹ • (x : EuclideanSpace ℂ (Fin 2)) k) := by
+  rw [coe_rotatePiece, norm_lensRotation_apply, lensRotation_apply, mul_smul_comm]
+
+/-- The fibres of the quotient map `x ↦ (u conj(v) ^ c, v ^ m)` of the solid torus `‖x i‖ ≤ ‖x j‖`
+onto `D² × S¹`, for the disc and core coordinates `u = x i / ‖x j‖`, `v = x j / ‖x j‖`, are the
+orbits of the lens group. -/
+private theorem pieceQuotient_eq_iff {i j : Fin 2} (hij : i ≠ j) (x y : piece i j) :
+    modelQuotient m ℓ i j (pieceHomeomorph hij x) = modelQuotient m ℓ i j (pieceHomeomorph hij y) ↔
+      mk m ℓ x = mk m ℓ y := by
+  rw [modelQuotient_eq_iff, mk_eq_mk_iff, coe_pieceHomeomorph_fst, coe_pieceHomeomorph_fst,
+    coe_pieceHomeomorph_snd, coe_pieceHomeomorph_snd]
+  constructor
+  · rintro ⟨b, h1, h2⟩
+    have : rotatePiece m ℓ (.ofAdd b) y = x := by
+      refine (pieceHomeomorph hij).injective (Prod.ext (Subtype.ext ?_) (Subtype.ext ?_))
+      · rw [coe_pieceHomeomorph_fst, coe_pieceHomeomorph_fst, h1, norm_inv_smul_rotatePiece,
+          toAdd_ofAdd]
+      · rw [coe_pieceHomeomorph_snd, coe_pieceHomeomorph_snd, h2, norm_inv_smul_rotatePiece,
+          toAdd_ofAdd]
+    exact ⟨.ofAdd b, congrArg (fun z : piece i j ↦ (z : EuclideanSpace ℂ (Fin 2))) this⟩
+  · rintro ⟨a, ha⟩
+    obtain rfl : x = rotatePiece m ℓ a y := Subtype.ext (Subtype.ext ha.symm)
+    exact ⟨a.toAdd, norm_inv_smul_rotatePiece m ℓ a y i, norm_inv_smul_rotatePiece m ℓ a y j⟩
 
 /-- **The image of each solid torus in a lens space is a solid torus.** -/
 private theorem nonempty_homeomorph_image_piece {i j : Fin 2} (hij : i ≠ j) :
     Nonempty (mk m ℓ '' piece i j ≃ₜ handlebody 1) :=
   (nonempty_homeomorph_image_of_forall_eq_iff (continuous_mk m ℓ) (isCompact_piece i j)
-    (pieceQuotient m ℓ hij) (continuous_pieceQuotient m ℓ hij) (pieceQuotient_surjective m ℓ hij)
+    (modelQuotient m ℓ i j ∘ pieceHomeomorph hij)
+    ((continuous_modelQuotient m ℓ i j).comp (pieceHomeomorph hij).continuous)
+    ((modelQuotient_surjective m ℓ i j).comp (pieceHomeomorph hij).surjective)
     (pieceQuotient_eq_iff m ℓ hij)).map fun e ↦ e.trans nonempty_homeomorph_handlebody_one.some.symm
 
 /-! ### The genus-one splitting -/
@@ -338,18 +300,14 @@ private def sphereHeegaardSplitting : HeegaardSplitting (sphere (0 : EuclideanSp
     ((EuclideanSpace.finTwoEquivProd ℂ).unitSphereIsometryEquiv.toHomeomorph.symm)
 
 private theorem sphereHeegaardSplitting_left : sphereHeegaardSplitting.left = piece 0 1 := by
+  rw [sphereHeegaardSplitting, HeegaardSplitting.transHomeomorph_left, Homeomorph.image_symm]
   ext x
-  rw [sphereHeegaardSplitting, HeegaardSplitting.transHomeomorph_left, Homeomorph.image_symm,
-    mem_preimage, IsometryEquiv.coe_toHomeomorph, cliffordHeegaardSplitting_left, mem_ofPred_eq,
-    LinearIsometryEquiv.coe_unitSphereIsometryEquiv_apply, EuclideanSpace.finTwoEquivProd_apply_fst,
-    EuclideanSpace.finTwoEquivProd_apply_snd, piece, mem_ofPred_eq]
+  simp [piece]
 
 private theorem sphereHeegaardSplitting_right : sphereHeegaardSplitting.right = piece 1 0 := by
+  rw [sphereHeegaardSplitting, HeegaardSplitting.transHomeomorph_right, Homeomorph.image_symm]
   ext x
-  rw [sphereHeegaardSplitting, HeegaardSplitting.transHomeomorph_right, Homeomorph.image_symm,
-    mem_preimage, IsometryEquiv.coe_toHomeomorph, cliffordHeegaardSplitting_right, mem_ofPred_eq,
-    LinearIsometryEquiv.coe_unitSphereIsometryEquiv_apply, EuclideanSpace.finTwoEquivProd_apply_fst,
-    EuclideanSpace.finTwoEquivProd_apply_snd, piece, mem_ofPred_eq]
+  simp [piece]
 
 /-- **The genus-one Heegaard splitting of a lens space.** The lens space `L(m; ℓ₀, ℓ₁)` is the
 union of the images of the solid tori `‖z‖ ≤ ‖w‖` and `‖w‖ ≤ ‖z‖` of the unit sphere of `ℂ²`,
