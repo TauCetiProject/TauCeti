@@ -18,11 +18,13 @@ The Jacobson radical of a local ring `R` — not assumed commutative — is its 
 the noncommutative counterpart of Mathlib's `IsLocalRing.ResidueField`, which is a `Field` but is
 available only over a commutative base.
 
-The residue division ring is what counts the arrows of an Auslander-Reiten quiver: the space of
-irreducible morphisms `rad(X, Y) / rad²(X, Y)` between two objects with local endomorphism rings is
-a bimodule over `End X ⧸ rad(End X)` and `End Y ⧸ rad(End Y)`, and it is the dimension over one of
-those division rings — the target's, by the convention used there — not over an ambient base ring,
-that is the arrow multiplicity. The bimodule is built in
+The residue division ring is the coefficient ring the irreducible morphisms of a category are
+counted over: the space of irreducible morphisms `rad(X, Y) / rad²(X, Y)` between two objects with
+local endomorphism rings is a bimodule over `End X ⧸ rad(End X)` and `End Y ⧸ rad(End Y)`, and the
+textbook convention recalled in the references below counts the arrows of a *valued*
+Auslander-Reiten quiver by the rank over one of those division rings, the target's, rather than by
+a rank over an ambient base ring. The two ranks are different invariants in general, and neither
+this file nor the bimodule file computes either of them. The bimodule is built in
 `TauCeti/CategoryTheory/Preadditive/Radical/Bimodule.lean`.
 
 ## Main results
