@@ -30,6 +30,8 @@ sum of squares along an equivalence of its index type, which complements Mathlib
   equivalence of the kernels of polarization against corresponding vectors.
 * `QuadraticMap.IsometryEquiv.trans_apply`: composition of isometries acts by composition.
 * `QuadraticMap.IsometryEquiv.nondegenerate_iff`: nondegeneracy is invariant under isometry.
+* `QuadraticMap.isometryEquivNeg`: if `u * u = -1`, multiplication by `u` is an isometry from
+  `Q` to `-Q`.
 * `QuadraticForm.isometryEquivWeightedSumSquaresReindex`: reindexing the weights of a weighted sum
   of squares along an equivalence of index types gives an isometric quadratic form.
 * `QuadraticForm.equivalent_weightedSumSquares_of_comp_eq`: weighted sums of squares whose weights
@@ -168,6 +170,44 @@ theorem _root_.QuadraticMap.IsometryEquiv.nondegenerate_iff
     apply Cardinal.lift_le_one_iff.mp
     rw [← e.toLinearEquiv.lift_rank_map_eq Q₁.polarBilin.ker, hpolar]
     exact Cardinal.lift_le_one_iff.mpr hQ₂.rank_rad_polar_le
+
+section Neg
+
+variable {R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N]
+  [Module R N] {Q Q' : QuadraticMap R M N} {u : R}
+
+/-- If `u * u = -1`, multiplication by `u` is an isometry from `Q` to `Q' = -Q`, with inverse
+multiplication by `-u`. -/
+def _root_.QuadraticMap.isometryEquivNeg (h : Q' = -Q) (hu : u * u = -1) :
+    Q.IsometryEquiv Q' where
+  toLinearEquiv := LinearEquiv.smulOfUnit ⟨u, -u, by rw [mul_neg, hu, neg_neg],
+    by rw [neg_mul, hu, neg_neg]⟩
+  map_app' m := by
+    simp [LinearEquiv.smulOfUnit, h, QuadraticMap.map_smul, hu]
+
+/-- The isometry `QuadraticMap.isometryEquivNeg` multiplies each vector by `u`. -/
+@[simp]
+theorem _root_.QuadraticMap.isometryEquivNeg_apply (h : Q' = -Q) (hu : u * u = -1) (m : M) :
+    QuadraticMap.isometryEquivNeg h hu m = u • m :=
+  -- The parentheses keep the proof opaque, so the definition need not be exposed.
+  (rfl)
+
+/-- The inverse of `QuadraticMap.isometryEquivNeg` for `u` is the same construction for `-u`, in
+the opposite direction. -/
+theorem _root_.QuadraticMap.isometryEquivNeg_symm (h : Q' = -Q) (hu : u * u = -1) :
+    (QuadraticMap.isometryEquivNeg h hu).symm =
+      QuadraticMap.isometryEquivNeg (by rw [h, neg_neg]) (u := -u) (by rw [neg_mul_neg, hu]) := by
+  dsimp only [IsometryEquiv.symm, QuadraticMap.isometryEquivNeg]
+  congr 1
+  exact LinearEquiv.ext fun _ ↦ rfl
+
+/-- The inverse of `QuadraticMap.isometryEquivNeg` multiplies each vector by `-u`. -/
+@[simp]
+theorem _root_.QuadraticMap.isometryEquivNeg_symm_apply (h : Q' = -Q) (hu : u * u = -1) (m : M) :
+    (QuadraticMap.isometryEquivNeg h hu).symm m = -(u • m) := by
+  rw [QuadraticMap.isometryEquivNeg_symm, QuadraticMap.isometryEquivNeg_apply, neg_smul]
+
+end Neg
 
 section Reindex
 
