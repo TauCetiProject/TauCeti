@@ -22,7 +22,7 @@ containing `√5` in `TauCeti.RingTheory.Polynomial.Cyclotomic.SqrtFive`, and to
 `TauCeti.FieldTheory.GaloisGroups.Quartic.Examples`, where its Galois group over `ℚ` is
 computed as `(ℤ/5)ˣ`.
 
-Over a commutative ring, `Polynomial.monic_cyclotomic_comp_X_add_one` and
+Over any ring, `Polynomial.monic_cyclotomic_comp_X_add_one` and
 `Polynomial.natDegree_cyclotomic_comp_X_add_one` record that the shifted cyclotomic polynomial
 `Φ_n(X + 1)` is monic of degree `φ(n)`. They are used for the shifted prime-power cyclotomic
 polynomials in `TauCeti.RingTheory.Polynomial.Cyclotomic.PrimePow`.
@@ -40,9 +40,9 @@ theorem cyclotomic_five (R : Type*) [Ring R] : cyclotomic 5 R = X ^ 4 + X ^ 3 + 
   simp only [Finset.sum_range_succ, Finset.sum_range_zero, pow_zero, pow_one, zero_add]
   abel
 
-section CommRing
+section Ring
 
-variable {R : Type*} [CommRing R]
+variable {R : Type*} [Ring R]
 
 /-- `Φ_n(X + 1)` has degree `φ(n)`. -/
 @[simp]
@@ -57,6 +57,6 @@ theorem natDegree_cyclotomic_comp_X_add_one [Nontrivial R] (n : ℕ) :
 theorem monic_cyclotomic_comp_X_add_one (n : ℕ) : ((cyclotomic n R).comp (X + 1)).Monic := by
   simpa using (cyclotomic.monic n R).comp_X_add_C 1
 
-end CommRing
+end Ring
 
 end Polynomial
