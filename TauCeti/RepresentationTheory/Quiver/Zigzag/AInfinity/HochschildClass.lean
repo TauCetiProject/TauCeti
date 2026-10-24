@@ -46,7 +46,7 @@ On a word of four arrows the Hochschild differential of a suspended cochain `φ`
                        - φ(x₀, x₁, x₂) x₃ - x₀ φ(x₁, x₂, x₃)
 ```
 
-(`TauCeti.zigzagStrictAInfinityAlgebra_hochschildDifferential_zero_of_tprod`), and on the words
+(`TauCeti.zigzagStrictAInfinityAlgebra_hochschildDifferential_apply_of_tprod`), and on the words
 above the only nonzero products of consecutive arrows are the backtracks at `v`, all equal to the
 volume class `x_v`. The outer terms of `B' i j` cancel against those of `B i j` and `B j i` by the
 trace property `tr(xy) = tr(yx)` and the symmetry of `a`, and the terms containing `x_v` cancel
@@ -88,7 +88,7 @@ than a coboundary.
 
 ## Main results
 
-* `TauCeti.zigzagStrictAInfinityAlgebra_hochschildDifferential_zero_of_tprod`: the Hochschild
+* `TauCeti.zigzagStrictAInfinityAlgebra_hochschildDifferential_apply_of_tprod`: the Hochschild
   differential of a degree-zero suspended cochain on a word of four letters of path length one.
 * `TauCeti.zigzagBacktrackPairing_hochschildDifferential_eq_zero`: `Λ` vanishes on coboundaries.
 * `TauCeti.zigzagBacktrackPairing_obstruction`: the value of `Λ` on the quartic operation of a loop
@@ -179,47 +179,42 @@ private theorem splice_four_two_zero (z : Fin 4 → nonisolatedZigzagQuotient k 
     (e : nonisolatedZigzagQuotient k G) :
     splice k z 0 4 0 2 e = of k _ ⟨3, by norm_num⟩ (PiTensorProduct.tprod k ![e, z 2, z 3]) := by
   rw [splice_eq_of_tprod k z e (by norm_num) (by norm_num) (by norm_num)]
-  congr 2
-  funext i
-  fin_cases i <;> rfl
+  refine of_tprod_congr k _ _ (by norm_num) fun j ↦ ?_
+  fin_cases j <;> simp
 
 /-- Collapsing the middle two letters of a word of length four. -/
 private theorem splice_four_two_one (z : Fin 4 → nonisolatedZigzagQuotient k G)
     (e : nonisolatedZigzagQuotient k G) :
     splice k z 0 4 1 2 e = of k _ ⟨3, by norm_num⟩ (PiTensorProduct.tprod k ![z 0, e, z 3]) := by
   rw [splice_eq_of_tprod k z e (by norm_num) (by norm_num) (by norm_num)]
-  congr 2
-  funext i
-  fin_cases i <;> rfl
+  refine of_tprod_congr k _ _ (by norm_num) fun j ↦ ?_
+  fin_cases j <;> simp
 
 /-- Collapsing the last two letters of a word of length four. -/
 private theorem splice_four_two_two (z : Fin 4 → nonisolatedZigzagQuotient k G)
     (e : nonisolatedZigzagQuotient k G) :
     splice k z 0 4 2 2 e = of k _ ⟨3, by norm_num⟩ (PiTensorProduct.tprod k ![z 0, z 1, e]) := by
   rw [splice_eq_of_tprod k z e (by norm_num) (by norm_num) (by norm_num)]
-  congr 2
-  funext i
-  fin_cases i <;> rfl
+  refine of_tprod_congr k _ _ (by norm_num) fun j ↦ ?_
+  fin_cases j <;> simp
 
 /-- The first three letters of a word of length four. -/
 private theorem subword_four_three_zero (x : Fin 4 → nonisolatedZigzagQuotient k G) :
     subword k x 0 3 = of k _ ⟨3, by norm_num⟩ (PiTensorProduct.tprod k ![x 0, x 1, x 2]) := by
   rw [subword_eq_of_tprod k x (by norm_num) (by norm_num)]
-  congr 2
-  funext i
-  fin_cases i <;> rfl
+  refine of_tprod_congr k _ _ (by norm_num) fun j ↦ ?_
+  fin_cases j <;> simp
 
 /-- The last three letters of a word of length four. -/
 private theorem subword_four_three_one (x : Fin 4 → nonisolatedZigzagQuotient k G) :
     subword k x 1 3 = of k _ ⟨3, by norm_num⟩ (PiTensorProduct.tprod k ![x 1, x 2, x 3]) := by
   rw [subword_eq_of_tprod k x (by norm_num) (by norm_num)]
-  congr 2
-  funext i
-  fin_cases i <;> rfl
+  refine of_tprod_congr k _ _ (by norm_num) fun j ↦ ?_
+  fin_cases j <;> simp
 
 /-- The Hochschild differential of the strict zigzag algebra on a word of four letters, with the
 Koszul twists of the suspension. -/
-private theorem hochschildDifferential_zero_of_tprod_koszulTwist
+private theorem hochschildDifferential_apply_of_tprod_koszulTwist
     (φ : ReducedTensorWords k (nonisolatedZigzagQuotient k G) →ₗ[k] nonisolatedZigzagQuotient k G)
     (x : Fin 4 → nonisolatedZigzagQuotient k G) :
     (𝒵).hochschildDifferential 0 φ (of k _ ⟨4, by norm_num⟩ (PiTensorProduct.tprod k x)) =
@@ -234,9 +229,9 @@ private theorem hochschildDifferential_zero_of_tprod_koszulTwist
         φ (of k _ ⟨3, by norm_num⟩ (PiTensorProduct.tprod k
           ![-(𝒵).grading.koszulTwist 1 (x 0), -(𝒵).grading.koszulTwist 1 (x 1),
             (𝒵).grading.koszulTwist 1 (x 2) * x 3]))) := by
-  rw [AInfinityAlgebra.hochschildDifferential_eq_brace_sub, LinearMap.sub_apply,
-    LinearMap.smul_apply, brace_def, brace_def, LinearMap.comp_apply, LinearMap.comp_apply,
-    gradedCoderiv_of_tprod, gradedCoderiv_of_tprod, map_sum]
+  simp only [AInfinityAlgebra.hochschildDifferential_eq_brace_sub, LinearMap.sub_apply,
+    LinearMap.smul_apply, brace_def, LinearMap.comp_apply]
+  rw [gradedCoderiv_of_tprod, gradedCoderiv_of_tprod, map_sum]
   -- In `φ{m}` only the collapses of two letters survive, since `m` is concentrated in arity two;
   -- in `m{φ}` only the collapses of three letters at the two ends do.
   rw [Finset.sum_congr rfl fun p _ ↦ Finset.sum_eq_single 2
@@ -272,7 +267,7 @@ cochain `φ` of degree zero and letters `x₀, x₁, x₂, x₃` of path length 
 δφ(x₀, x₁, x₂, x₃) = φ(x₀x₁, x₂, x₃) + φ(x₀, x₁x₂, x₃) + φ(x₀, x₁, x₂x₃)
                        - φ(x₀, x₁, x₂) x₃ - x₀ φ(x₁, x₂, x₃).
 ``` -/
-theorem zigzagStrictAInfinityAlgebra_hochschildDifferential_zero_of_tprod
+theorem zigzagStrictAInfinityAlgebra_hochschildDifferential_apply_of_tprod
     {φ : ReducedTensorWords k (nonisolatedZigzagQuotient k G) →ₗ[k] nonisolatedZigzagQuotient k G}
     (hφ : LinearMap.IsHomogeneous φ (gradedPiece ((𝒵).grading.shift 1))
       ((𝒵).grading.shift 1).piece 0)
@@ -296,7 +291,7 @@ theorem zigzagStrictAInfinityAlgebra_hochschildDifferential_zero_of_tprod
         rw [InternalGrading.shift_piece, zigzagStrictAInfinityAlgebra_grading_piece, zero_add]
         fin_cases i <;> exact hx _)
     simpa [InternalGrading.shift_piece] using h
-  rw [hochschildDifferential_zero_of_tprod_koszulTwist, htw _ hφx, htw _ (hx 0), htw _ (hx 1),
+  rw [hochschildDifferential_apply_of_tprod_koszulTwist, htw _ hφx, htw _ (hx 0), htw _ (hx 1),
     htw _ (hx 2)]
   simp only [neg_neg, neg_mul, tprod_three_neg_zero, tprod_three_neg_one, tprod_three_neg_two,
     map_neg]
@@ -373,7 +368,7 @@ private theorem trace_hochschildDifferential_rotate
           (PiTensorProduct.tprod k ![𝔞 e.symm, 𝔞 d, 𝔞 d.symm])) * 𝔞 e) -
         zigzagTrace k G hns (𝔞 e.symm * φ (of k _ ⟨3, by norm_num⟩
           (PiTensorProduct.tprod k ![𝔞 d, 𝔞 d.symm, 𝔞 e]))) := by
-  rw [zigzagStrictAInfinityAlgebra_hochschildDifferential_zero_of_tprod hφ _
+  rw [zigzagStrictAInfinityAlgebra_hochschildDifferential_apply_of_tprod hφ _
     (arrows_mem e.symm d d.symm e)]
   simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
     Matrix.cons_val_three, Matrix.head_cons, Matrix.tail_cons]
@@ -401,7 +396,7 @@ private theorem trace_hochschildDifferential_backtrack
           (PiTensorProduct.tprod k ![𝔞 e, 𝔞 e.symm, 𝔞 d])) * 𝔞 d.symm) -
         zigzagTrace k G hns (𝔞 e * φ (of k _ ⟨3, by norm_num⟩
           (PiTensorProduct.tprod k ![𝔞 e.symm, 𝔞 d, 𝔞 d.symm]))) := by
-  rw [zigzagStrictAInfinityAlgebra_hochschildDifferential_zero_of_tprod hφ _
+  rw [zigzagStrictAInfinityAlgebra_hochschildDifferential_apply_of_tprod hφ _
     (arrows_mem e e.symm d d.symm)]
   simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
     Matrix.cons_val_three, Matrix.head_cons, Matrix.tail_cons]
@@ -481,8 +476,8 @@ private theorem trace_obstruction_ofArrow (c : (Fin 4 → G.Dart) →₀ k)
     (hc : ∀ w ∈ c.support, ∀ i, (w i).fst = (w (i + 1)).snd) (w : Fin 4 → G.Dart) :
     zigzagTrace k G hns ((zigzagLoopAInfinityAlgebra hns c hc).obstruction 𝒵 ⟨4, by norm_num⟩
       (of k _ ⟨4, by norm_num⟩ (PiTensorProduct.tprod k fun t ↦ 𝔞 (w t)))) = c w := by
-  rw [AInfinityAlgebra.obstruction_def, LinearMap.comp_apply, lengthProj_of_self,
-    LinearMap.sub_apply, AInfinityAlgebra.taylor_of_tprod, AInfinityAlgebra.taylor_of_tprod,
+  simp only [AInfinityAlgebra.obstruction_def, LinearMap.comp_apply, LinearMap.sub_apply]
+  rw [lengthProj_of_self, AInfinityAlgebra.taylor_of_tprod, AInfinityAlgebra.taylor_of_tprod,
     zigzagStrictAInfinityAlgebra_m_eq_zero (by norm_num), _root_.zero_apply, sub_zero]
   -- The suspension twists the first and third arrows, each by a sign.
   have htw : (fun i : Fin 4 ↦ (zigzagLoopAInfinityAlgebra hns c hc).grading.koszulTwist
