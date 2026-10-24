@@ -154,10 +154,8 @@ theorem IsJordanCurve.natCard_connectedComponents_compl_eq_two {C : Set ℂ}
     hC.isClosed.isClosed_filledHull.isOpen_compl.preimage continuous_subtype_val
   have hconn : ∀ {S : Set ℂ}, IsConnected S → S ⊆ Cᶜ → IsConnected ((↑) ⁻¹' S : Set ↥Cᶜ) := by
     intro S hS hSC
-    obtain ⟨z, hz⟩ := hS.nonempty
-    refine ⟨⟨⟨z, hSC hz⟩, hz⟩, IsInducing.subtypeVal.isPreconnected_image.mp ?_⟩
-    rw [Subtype.image_preimage_coe, inter_eq_right.mpr hSC]
-    exact hS.isPreconnected
+    exact hS.preimage_of_isOpenMap Subtype.val_injective
+      hC.isClosed.isOpen_compl.isOpenMap_subtype_val (by simpa only [Subtype.range_val] using hSC)
   let U : Fin 2 → Set ↥Cᶜ := ![I, O]
   have hI : IsClopen I := ⟨by rw [← isOpen_compl_iff, hIO]; exact hOo, hIo⟩
   have hO : IsClopen O := ⟨by rw [← isOpen_compl_iff, ← hIO, compl_compl]; exact hIo, hOo⟩
