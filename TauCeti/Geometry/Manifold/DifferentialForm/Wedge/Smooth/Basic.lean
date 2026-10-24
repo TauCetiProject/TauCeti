@@ -150,6 +150,15 @@ theorem wedgeWith_apply (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (φ : SmoothFo
             (ψ.1 x (fun j ↦ v (σ (Fin.natAdd k j)))) := by
   rw [coe_wedgeWith, RoughForm.wedgeWith_apply]
 
+/-- Pairing a smooth form with a degree-zero form pairs its value with the function value. -/
+@[simp]
+theorem wedgeWith_apply_zero_right (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+    (φ : SmoothForm I M F₁ k) (ψ : SmoothForm I M F₂ 0)
+    (x : M) (v : Fin k → TangentSpace I x) :
+    (wedgeWith μ φ ψ).1 x v = μ (φ.1 x v) (ψ.1 x 0) := by
+  rw [coe_wedgeWith]
+  exact RoughForm.wedgeWith_apply_zero_right μ φ.1 ψ.1 x v
+
 /-- Evaluation of the smooth paired wedge on two one-forms. -/
 theorem wedgeWith_apply_one_one (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (φ : SmoothForm I M F₁ 1) (ψ : SmoothForm I M F₂ 1) (x : M)
