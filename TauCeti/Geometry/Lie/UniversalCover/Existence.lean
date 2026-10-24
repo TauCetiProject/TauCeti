@@ -54,13 +54,23 @@ theorem exists_universalCover [ConnectedSpace G] :
   let q : ContMDiffMonoidMorphism I I ∞ Gt G :=
     ContinuousMonoidHom.toContMDiffMonoidMorphism I I
       (UniversalCover.projHom : UniversalCover (1 : G) →ₜ* G)
+  -- The existential stores the underlying monoid hom, while the covering theorem uses the
+  -- bundled morphism's function coercion; this records their canonical coercion equality.
+  have hq_coe : (q.toMonoidHom : Gt → G) = (UniversalCover.projHom : Gt → G) := by
+    change (q : Gt → G) = (UniversalCover.projHom : Gt → G)
+    simp only [q, Gt, ContinuousMonoidHom.coe_toContMDiffMonoidMorphism]
+  -- The separate homomorphism and smoothness witnesses in the existential reconstruct `q`.
+  have hq_bundle :
+      (⟨q.toMonoidHom, q.contMDiff_toFun⟩ : ContMDiffMonoidMorphism I I ∞ Gt G) = q := by
+    rfl
   exact ⟨Gt, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance,
     q.toMonoidHom,
     q.contMDiff_toFun, UniversalCover.simplyConnectedSpace (1 : G),
     by
-      change IsCoveringMap (q : Gt → G)
-      simpa only [q, Gt, ContinuousMonoidHom.coe_toContMDiffMonoidMorphism] using
-        (UniversalCover.isCoveringMap_projHom (G := G)),
-    UniversalCover.lieMap_projHom_bijective I G⟩
+      rw [hq_coe]
+      exact UniversalCover.isCoveringMap_projHom (G := G),
+    by
+      rw [hq_bundle]
+      exact UniversalCover.lieMap_projHom_bijective I G⟩
 
 end TauCeti.UniversalCover
