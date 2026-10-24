@@ -43,7 +43,8 @@ cells `TauCeti.stackCells` of the stack in the ambient space.
 * `TauCeti.sectorSet_castSucc_succ_eq_image`, `TauCeti.sectorSet_zero_eq_image`,
   `TauCeti.sectorSet_last_eq_image`: a bounded sector is the image of `X × (0, 1)`, and the lowest
   and highest sectors are the images of `X × (-∞, 0)` and `X × (0, ∞)`, under explicit maps that
-  are continuous whenever the functions of the stack are.
+  are continuous whenever the functions of the stack are, for a topological ring `α` (continuous
+  addition suffices for the two unbounded sectors).
 * `TauCeti.exists_continuous_forall_mem_sectorSet`: every sector of a continuous strictly ordered
   stack contains the graph of a continuous function.
 * `TauCeti.isConnected_sectionSet`, `TauCeti.isConnected_sectorSet`: over a connected base, the
@@ -276,8 +277,8 @@ theorem sectorSet_nonempty [Nonempty X] [Nonempty α] [DenselyOrdered α] [NoMin
 
 /-- For pointwise strictly monotone `θ` with values in an ordered field, the bounded sector between
 sections `i` and `i + 1` is the image of `X × (0, 1)` under the map sending `(x, s)` to the point
-`AffineMap.lineMap (θ i x) (θ (i + 1) x) s` of the fibre over `x`. By `Continuous.lineMap`, this
-map is continuous whenever the functions of the stack are. -/
+`AffineMap.lineMap (θ i x) (θ (i + 1) x) s` of the fibre over `x`. When `α` is a topological ring,
+`Continuous.lineMap` shows that this map is continuous whenever the functions of the stack are. -/
 theorem sectorSet_castSucc_succ_eq_image [Field α] [IsStrictOrderedRing α]
     {θ : Fin (k + 1) → X → α} (hθ : ∀ x, StrictMono fun i ↦ θ i x) (i : Fin k) :
     sectorSet θ i.castSucc.succ =
@@ -293,8 +294,8 @@ theorem sectorSet_castSucc_succ_eq_image [Field α] [IsStrictOrderedRing α]
   exact ⟨fun ⟨s, hs, h⟩ ↦ ⟨x, s, hs, rfl, h⟩, fun ⟨_, s, hs, rfl, h⟩ ↦ ⟨s, hs, h⟩⟩
 
 /-- For pointwise monotone `θ` with values in an ordered additive group, the lowest sector is the
-image of `X × (-∞, 0)` under the map translating the height `s` by `θ 0 x`. This map is continuous
-whenever `θ 0` is. -/
+image of `X × (-∞, 0)` under the map translating the height `s` by `θ 0 x`. When addition on `α`
+is continuous, this map is continuous whenever `θ 0` is. -/
 theorem sectorSet_zero_eq_image [AddCommGroup α] [IsOrderedAddMonoid α] {θ : Fin (k + 1) → X → α}
     (hθ : ∀ x, Monotone fun i ↦ θ i x) :
     sectorSet θ 0 = (fun z : X × α ↦ (z.1, θ 0 z.1 + z.2)) '' (univ ×ˢ Iio 0) := by
@@ -306,8 +307,8 @@ theorem sectorSet_zero_eq_image [AddCommGroup α] [IsOrderedAddMonoid α] {θ : 
   exact ⟨fun ⟨s, hs, h⟩ ↦ ⟨x, s, hs, rfl, h⟩, fun ⟨_, s, hs, rfl, h⟩ ↦ ⟨s, hs, h⟩⟩
 
 /-- For pointwise monotone `θ` with values in an ordered additive group, the highest sector is the
-image of `X × (0, ∞)` under the map translating the height `s` by `θ k x`. This map is continuous
-whenever `θ k` is. -/
+image of `X × (0, ∞)` under the map translating the height `s` by `θ k x`. When addition on `α`
+is continuous, this map is continuous whenever `θ k` is. -/
 theorem sectorSet_last_eq_image [AddCommGroup α] [IsOrderedAddMonoid α] {θ : Fin (k + 1) → X → α}
     (hθ : ∀ x, Monotone fun i ↦ θ i x) :
     sectorSet θ (Fin.last (k + 1)) =
