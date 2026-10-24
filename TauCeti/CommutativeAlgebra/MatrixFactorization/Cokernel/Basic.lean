@@ -22,6 +22,11 @@ Composing scalar extension with this functor gives cokernels over a target ring 
 image potential. In particular, reduction modulo the potential gives the finite module used in
 hypersurface comparisons; no vanishing condition is required for the cokernel construction.
 
+For a factorization of the zero potential, `d₀ ≫ d₁ = 0`, so `d₁` descends to a map
+`coker d₀ ⟶ X₀` (`TauCeti.MatrixFactorization.cokernelDesc`). On cokernels, the boundary of an
+odd map `(h₀, h₁)` is this descent followed by `h₀` and the projection
+(`TauCeti.MatrixFactorization.cokernelFunctor_map_hom_eq`).
+
 This construction requires only commutative rings; it does not assert that its values are maximal
 Cohen–Macaulay, which requires additional hypotheses. After reduction modulo the potential, the
 cokernel descends to a functor from the homotopy category to a stable module category; that
@@ -129,5 +134,41 @@ instance cokernelFunctor_additive :
     apply (cancel_epi (cokernelπ X)).mp
     simp only [ObjectProperty.add_hom, Preadditive.comp_add, cokernelπ_naturality,
       CurvedDuplex.add_f₁, Preadditive.add_comp]
+
+/-! ### The zero potential
+
+The potential is only assumed to be propositionally zero, so that these results apply to the
+base change of a factorization along a ring map killing its potential. -/
+
+/-- For a factorization of a zero potential, `d₀ ≫ d₁ = 0`. -/
+private theorem d₀_hom_comp_d₁_hom (hw : w = 0) (X : MatrixFactorization S w) :
+    X.obj.d₀.hom ≫ X.obj.d₁.hom = 0 := by
+  subst hw
+  rw [← ObjectProperty.FullSubcategory.comp_hom, X.obj.d₀_comp_d₁, zero_smul,
+    ObjectProperty.zero_hom]
+
+/-- For a factorization of a zero potential, the odd-to-even differential `d₁` kills the image
+of `d₀`, so it descends to a map `coker d₀ ⟶ X₀`. -/
+def cokernelDesc (hw : w = 0) (X : MatrixFactorization S w) :
+    cokernelFunctor.obj X ⟶ X.obj.X₀ :=
+  ObjectProperty.homMk
+    ((isColimitCokernelπ X).desc (CokernelCofork.ofπ X.obj.d₁.hom (d₀_hom_comp_d₁_hom hw X)))
+
+/-- The descent of `d₁` restricts to `d₁` along the cokernel projection. -/
+@[reassoc (attr := simp)]
+theorem cokernelπ_cokernelDesc_hom (hw : w = 0) (X : MatrixFactorization S w) :
+    cokernelπ X ≫ (cokernelDesc hw X).hom = X.obj.d₁.hom :=
+  (isColimitCokernelπ X).fac _ WalkingParallelPair.one
+
+/-- For a zero potential, the cokernel of the boundary `d h + h d` of an odd map `(h₀, h₁)` is
+the descent `coker d₀ ⟶ X₀` of `d₁`, followed by `h₀ : X₀ ⟶ Y₁` and the projection
+`Y₁ ⟶ coker d₀`. The summand `h₁ ≫ d₀` of the odd component is killed by the projection. -/
+theorem cokernelFunctor_map_hom_eq (hw : w = 0) {X Y : MatrixFactorization S w}
+    (g : X ⟶ Y) (h₀ : X.obj.X₀ ⟶ Y.obj.X₁) (h₁ : X.obj.X₁ ⟶ Y.obj.X₀)
+    (hg : CurvedDuplex.nullHomotopicMap h₀ h₁ = g.hom) :
+    (cokernelFunctor.map g).hom = (cokernelDesc hw X).hom ≫ h₀.hom ≫ cokernelπ Y := by
+  apply (cancel_epi (cokernelπ X)).mp
+  rw [cokernelπ_naturality, cokernelπ_cokernelDesc_hom_assoc, ← hg]
+  simp
 
 end TauCeti.MatrixFactorization

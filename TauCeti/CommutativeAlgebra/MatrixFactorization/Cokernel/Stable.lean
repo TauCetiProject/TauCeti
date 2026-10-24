@@ -16,11 +16,12 @@ public import Mathlib.RingTheory.Ideal.Quotient.Noetherian
 
 Let `X = (X₀ --d₀--> X₁ --d₁--> X₀)` be a finite-projective matrix factorization of the zero
 potential. Then `d₀ ≫ d₁ = 0`, so `d₁` descends to a map `coker d₀ ⟶ X₀`
-(`TauCeti.MatrixFactorization.cokernelDesc`). If a closed even map `g = d h + h d` is the
-boundary of an odd map `(h₀, h₁)`, then on cokernels `g` acts as `coker d₀ ⟶ X₀ ⟶ Y₁ ⟶ coker d₀`,
-the descent of `d₁`, then `h₀`, then the projection: the summand `h₁ ≫ d₀` is killed by the
-projection. Since `X₀` is a finitely generated projective module, the cokernel of a
-null-homotopic map factors through a projective module.
+(`TauCeti.MatrixFactorization.cokernelDesc`, in
+`TauCeti.CommutativeAlgebra.MatrixFactorization.Cokernel.Basic`). If a closed even map
+`g = d h + h d` is the boundary of an odd map `(h₀, h₁)`, then on cokernels `g` acts as
+`coker d₀ ⟶ X₀ ⟶ Y₁ ⟶ coker d₀`, the descent of `d₁`, then `h₀`, then the projection: the
+summand `h₁ ≫ d₀` is killed by the projection. Since `X₀` is a finitely generated projective
+module, the cokernel of a null-homotopic map factors through a projective module.
 
 For an arbitrary potential `w : S` and a ring map `f : S →+* T` with `f w = 0`, extension of
 scalars carries factorizations of `w` to factorizations of the zero potential `f w`. Composing
@@ -40,8 +41,6 @@ finitely generated modules is formed with the canonical exact structure of the a
 
 ## Main definitions
 
-* `TauCeti.MatrixFactorization.cokernelDesc`: for the zero potential, the map
-  `coker d₀ ⟶ X₀` induced by `d₁`.
 * `TauCeti.MatrixFactorization.HomotopyCategory.stableCokernel`: the cokernel of the base change
   along `f`, as a functor from the matrix-factorization homotopy category to the stable category
   of finitely generated `T`-modules.
@@ -50,8 +49,6 @@ finitely generated modules is formed with the canonical exact structure of the a
 
 ## Main results
 
-* `TauCeti.MatrixFactorization.cokernelFunctor_map_hom_eq`: for the zero potential, the cokernel
-  of the boundary of `(h₀, h₁)` is the descent of `d₁`, then `h₀`, then the projection.
 * `TauCeti.MatrixFactorization.cokernelFunctor_map_mem_projectiveStableIdeal`: for the zero
   potential, the cokernel of a null-homotopic map factors through a projective module.
 
@@ -77,37 +74,6 @@ variable {S T : Type u} [CommRing S] [CommRing T] {w : S}
 
 The potential is only assumed to be propositionally zero, so that these results apply to the
 base change of a factorization along a ring map killing its potential. -/
-
-/-- For a factorization of a zero potential, `d₀ ≫ d₁ = 0`. -/
-private theorem d₀_hom_comp_d₁_hom (hw : w = 0) (X : MatrixFactorization S w) :
-    X.obj.d₀.hom ≫ X.obj.d₁.hom = 0 := by
-  subst hw
-  rw [← ObjectProperty.FullSubcategory.comp_hom, X.obj.d₀_comp_d₁, zero_smul,
-    ObjectProperty.zero_hom]
-
-/-- For a factorization of a zero potential, the odd-to-even differential `d₁` kills the image
-of `d₀`, so it descends to a map `coker d₀ ⟶ X₀`. -/
-def cokernelDesc (hw : w = 0) (X : MatrixFactorization S w) :
-    cokernelFunctor.obj X ⟶ X.obj.X₀ :=
-  ObjectProperty.homMk
-    ((isColimitCokernelπ X).desc (CokernelCofork.ofπ X.obj.d₁.hom (d₀_hom_comp_d₁_hom hw X)))
-
-/-- The descent of `d₁` restricts to `d₁` along the cokernel projection. -/
-@[reassoc (attr := simp)]
-theorem cokernelπ_cokernelDesc_hom (hw : w = 0) (X : MatrixFactorization S w) :
-    cokernelπ X ≫ (cokernelDesc hw X).hom = X.obj.d₁.hom :=
-  (isColimitCokernelπ X).fac _ WalkingParallelPair.one
-
-/-- For a zero potential, the cokernel of the boundary `d h + h d` of an odd map `(h₀, h₁)` is
-the descent `coker d₀ ⟶ X₀` of `d₁`, followed by `h₀ : X₀ ⟶ Y₁` and the projection
-`Y₁ ⟶ coker d₀`. The summand `h₁ ≫ d₀` of the odd component is killed by the projection. -/
-theorem cokernelFunctor_map_hom_eq (hw : w = 0) {X Y : MatrixFactorization S w}
-    (g : X ⟶ Y) (h₀ : X.obj.X₀ ⟶ Y.obj.X₁) (h₁ : X.obj.X₁ ⟶ Y.obj.X₀)
-    (hg : CurvedDuplex.nullHomotopicMap h₀ h₁ = g.hom) :
-    (cokernelFunctor.map g).hom = (cokernelDesc hw X).hom ≫ h₀.hom ≫ cokernelπ Y := by
-  apply (cancel_epi (cokernelπ X)).mp
-  rw [cokernelπ_naturality, cokernelπ_cokernelDesc_hom_assoc, ← hg]
-  simp
 
 /-- For a zero potential, the cokernel functor sends a null-homotopic map of finite-projective
 matrix factorizations to a map factoring through a projective module, namely the even component
