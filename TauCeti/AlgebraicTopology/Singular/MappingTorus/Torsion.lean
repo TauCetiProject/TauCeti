@@ -11,7 +11,6 @@ public import TauCeti.LinearAlgebra.FreeModule.CardQuotient
 public import TauCeti.LinearAlgebra.Determinant.Basic
 public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.RingTheory.Ideal.Int
-public import Mathlib.RingTheory.Int.Basic
 
 /-!
 # The torsion of the homology of a mapping torus
