@@ -7,7 +7,6 @@ module
 
 public import Mathlib.RingTheory.TensorProduct.Maps
 public import Mathlib.Algebra.Algebra.Operations
-import Mathlib.LinearAlgebra.TensorProduct.RightExactness
 
 /-!
 # Scalar extension of images and powers of submodules
