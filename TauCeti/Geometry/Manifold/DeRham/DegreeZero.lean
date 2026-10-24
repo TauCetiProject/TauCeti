@@ -26,6 +26,7 @@ separation or completeness hypotheses on the model.
   function is locally constant.
 * `TauCeti.closedFormsZeroEquiv`: closed smooth `0`-forms are locally constant functions.
 * `TauCeti.deRhamCohomologyZeroEquiv`: `H⁰_dR(M) ≃ₗ[ℝ] LocallyConstant M ℝ`.
+* `TauCeti.deRhamCohomology.const`: the degree-zero class of a constant real function.
 * `TauCeti.finrank_deRhamCohomology_zero`: `H⁰_dR(M)` has dimension one when `M` is connected.
 
 ## References
@@ -117,6 +118,34 @@ theorem deRhamCohomologyZeroEquiv_symm_apply (f : LocallyConstant M ℝ) :
       deRhamCohomology.mk I 0 ((closedFormsZeroEquiv I M).symm f) := by
   rw [deRhamCohomologyZeroEquiv, LinearEquiv.symm_trans_apply, LinearEquiv.symm_symm]
   exact LinearEquiv.ofBijective_apply _ _
+
+namespace deRhamCohomology
+
+variable {I}
+
+variable (I M) in
+/-- The degree-zero de Rham class of a constant real function, as a linear map. -/
+def const : ℝ →ₗ[ℝ] deRhamCohomology I M 0 :=
+  (deRhamCohomologyZeroEquiv I M).symm.toLinearMap.comp (LocallyConstant.constₗ ℝ)
+
+/-- A constant cohomology class is represented by the corresponding constant closed zero-form. -/
+theorem const_eq_mk (r : ℝ) :
+    const I M r = mk I 0 ((closedFormsZeroEquiv I M).symm (LocallyConstant.const M r)) := by
+  have hconst : LocallyConstant.constₗ ℝ r = LocallyConstant.const M r := by
+    ext x
+    exact LocallyConstant.constₗ_apply_apply ℝ r x
+  rw [const, LinearMap.comp_apply, LinearEquiv.coe_coe, hconst,
+    deRhamCohomologyZeroEquiv_symm_apply]
+
+/-- The degree-zero identification takes a constant class to its constant function. -/
+@[simp]
+theorem deRhamCohomologyZeroEquiv_const (r : ℝ) :
+    deRhamCohomologyZeroEquiv I M (const I M r) = LocallyConstant.const M r := by
+  rw [const, LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply]
+  ext x
+  exact LocallyConstant.constₗ_apply_apply ℝ r x
+
+end deRhamCohomology
 
 variable (M) in
 /-- On a connected manifold, degree-zero de Rham cohomology is one-dimensional. -/
