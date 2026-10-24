@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.ZModFourLift
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.Equiv
-import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.RankParity
+import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.Rank.Parity
 import TauCeti.Topology.Algebra.Group.Profinite.ProP.ElementaryAbelian
 import TauCeti.Topology.Algebra.Group.Profinite.Free.PadicInt
 import TauCeti.Topology.Algebra.Group.Profinite.ProP.Procyclic
