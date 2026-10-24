@@ -56,6 +56,8 @@ in which mixed separators may as well contain no vertices.
 
 * `TauCeti.SplitHom.isMixedSeparator_cutVertices_cutArrows`: the arrows leaving a cut of the split
   network form a mixed separator.
+* `TauCeti.SplitHom.arrowSum_assignment_compl_eq_weight`: the capacity of a cut of the split
+  network equals the weight of that mixed separator.
 * `TauCeti.IsMixedSeparator.exists_cutVertices_subset`: every mixed separator contains the arrows
   leaving some cut of the split network.
 * `TauCeti.Flow.RespectsVertexCapacity.val_le`: weak duality between flows and mixed separators.
@@ -156,6 +158,24 @@ theorem SplitHom.isMixedSeparator_cutVertices_cutArrows (hst : s ≠ t) {S : Fin
       exact ⟨not_not.1 fun h ↦ hX _ (.inr rfl) ((mem_cutVertices S).2 ⟨hentrance, h⟩),
         .inr hentrance⟩
   exact ht ((key p hp.1 hp.2).2.resolve_left hst.symm)
+
+/-- **Cuts give mixed separators of equal weight.** For a vertex set `S` of the split network
+containing the exit of `s` but not the entrance of `t`, and split capacities `φ` agreeing with the
+vertex capacities `c` away from the terminals, the cut capacity of `S` equals the weight of the
+mixed separator formed by the vertices whose split arrows leave `S` and the original arrows leaving
+`S` (`TauCeti.SplitHom.isMixedSeparator_cutVertices_cutArrows`). -/
+theorem SplitHom.arrowSum_assignment_compl_eq_weight [AddCommMonoid K] {S : Finset (V × Bool)}
+    (hs : (s, true) ∈ S) (ht : (t, false) ∉ S) {cap : Assignment Q K} {φ c : V → K}
+    (hφ : ∀ v, v ≠ s → v ≠ t → φ v = c v) :
+    arrowSum (assignment cap φ) S Sᶜ =
+      ∑ v ∈ cutVertices S, c v + ∑ a ∈ cutArrows Q S, cap a.2.2 := by
+  rw [arrowSum_assignment_compl]
+  congr 1
+  refine sum_congr rfl fun v hv ↦ hφ v ?_ ?_
+  · rintro rfl
+    exact ((mem_cutVertices S).1 hv).2 hs
+  · rintro rfl
+    exact ht ((mem_cutVertices S).1 hv).1
 
 /-- **Mixed separators give cuts.** Every mixed separator `(X, F)` between `s` and `t` contains the
 crossing arrows of some vertex set of the split network containing the exit of `s` but not the
@@ -468,13 +488,8 @@ theorem Flow.exists_respectsVertexCapacity_val_eq_mem (hst : s ≠ t) (hcap : 0 
     ?_⟩
   · rw [Flow.mixedSplitEquiv_symm_apply_toFun, originalAssignment_apply]
     exact hgH (original e)
-  rw [← Flow.val_mixedSplitEquiv hst, Equiv.apply_symm_apply, hval, arrowSum_assignment_compl]
-  congr 1
-  refine sum_congr rfl fun v hv ↦ mixedSplitCapacity_of_ne ?_ ?_
-  · rintro rfl
-    exact ((mem_cutVertices S).1 hv).2 hs
-  · rintro rfl
-    exact ht ((mem_cutVertices S).1 hv).1
+  rw [← Flow.val_mixedSplitEquiv hst, Equiv.apply_symm_apply, hval,
+    arrowSum_assignment_compl_eq_weight hs ht fun _ ↦ mixedSplitCapacity_of_ne]
 
 /-- **Max-flow/min-cut for mixed capacities.** For distinct terminals, nonnegative arrow
 capacities and nonnegative capacities on the nonterminal vertices, some ordinary flow respecting
