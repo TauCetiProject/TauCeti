@@ -7,6 +7,7 @@ module
 
 public import TauCeti.GroupTheory.AlmostConjugate
 import Mathlib.GroupTheory.SpecificGroups.Quaternion
+import TauCeti.GroupTheory.OrderOfElement.Basic
 import TauCeti.GroupTheory.Perm.Regular
 
 /-!
@@ -51,15 +52,6 @@ private abbrev Q8C2 : Type := QuaternionGroup 2 × Multiplicative (ZMod 2)
 private def trivialPowers {M : Type*} [Monoid M] [DecidableEq M] (x : M) : Fin 4 → Bool :=
   fun k ↦ decide (x ^ (k : ℕ) = 1)
 
-/-- Two elements of exponent dividing four have the same order when the same powers among
-`x ^ 0, …, x ^ 3` are trivial. -/
-private theorem orderOf_eq_of_trivialPowers_eq {M N : Type*} [Monoid M] [Monoid N]
-    [DecidableEq M] [DecidableEq N] {x : M} {y : N} (hx : x ^ 4 = 1) (hy : y ^ 4 = 1)
-    (h : trivialPowers x = trivialPowers y) : orderOf x = orderOf y := by
-  refine orderOf_eq_orderOf_iff.2 fun n ↦ ?_
-  rw [pow_eq_pow_mod n hx, pow_eq_pow_mod n hy]
-  simpa [trivialPowers] using congrFun h ⟨n % 4, Nat.mod_lt n (by norm_num)⟩
-
 /-- An order-preserving bijection `C₄ × C₄ ≃ Q₈ × C₂`. Both groups have exponent four, and they
 have equally many elements with each pattern of trivial powers. -/
 private theorem exists_equiv_orderOf_eq :
@@ -68,8 +60,11 @@ private theorem exists_equiv_orderOf_eq :
       Fintype.card {b : Q8C2 // trivialPowers b = c} := by decide
   have hA : ∀ a : C4C4, a ^ 4 = 1 := by decide
   have hB : ∀ b : Q8C2, b ^ 4 = 1 := by decide
-  exact ⟨Equiv.ofFiberEquiv fun c ↦ Fintype.equivOfCardEq (hcard c), fun g ↦
-    orderOf_eq_of_trivialPowers_eq (hB _) (hA g) (Equiv.ofFiberEquiv_map _ g)⟩
+  let e : ∀ c, {a // trivialPowers a = c} ≃ {b // trivialPowers b = c} := fun c ↦
+    Fintype.equivOfCardEq (hcard c)
+  exact ⟨Equiv.ofFiberEquiv e, fun g ↦
+    orderOf_eq_orderOf_of_forall_lt_pow_eq_one_iff (by norm_num) (hB _) (hA g) fun k hk ↦ by
+      simpa [trivialPowers] using congrFun (Equiv.ofFiberEquiv_map e g) ⟨k, hk⟩⟩
 
 /-- **A Gassmann pair in `S₁₆`.** There are subgroups `H` and `K` of order `16` of the symmetric
 group on sixteen points which are almost conjugate, that is, meet every conjugacy class in the
