@@ -31,6 +31,10 @@ holomorphy argument is adapted from `Mathlib.NumberTheory.ModularForms.DedekindE
   converges.
 * `TauCeti.tprod_one_sub_pow_mul_eq`: `∏_{n ≥ 1} (1 - qⁿ w) = (1 - q w) ∏_{n ≥ 1} (1 - qⁿ (q w))`.
 * `TauCeti.tprod_one_sub_pow_mul_ne_zero`: the product is nonzero when all of its factors are.
+* `TauCeti.tprod_one_sub_pow_ne_zero`: the Euler function `∏_{n ≥ 1} (1 - qⁿ)` is nonzero.
+* `TauCeti.multipliable_one_add_pow`, `TauCeti.multipliable_one_sub_pow_odd`,
+  `TauCeti.multipliable_one_add_pow_odd`: for `‖q‖ < 1` the products `∏_{n ≥ 1} (1 + qⁿ)` and
+  `∏_{n ≥ 0} (1 ∓ q^{2n+1})` converge.
 * `TauCeti.qTheta`: the theta product `θ_q(w) = (1 - w) ∏_{n ≥ 1} (1 - qⁿ w) (1 - qⁿ w⁻¹)`.
 * `TauCeti.multipliable_qTheta`, `TauCeti.qTheta_ne_zero`: for `‖q‖ < 1` the product in
   `θ_q(w)` converges, and `θ_q(w) ≠ 0` when `w` is not an integral power of `q`.
@@ -54,6 +58,16 @@ namespace TauCeti
 section NormedField
 
 variable {𝕜 : Type*} [NormedField 𝕜]
+
+/-- For `‖q‖ < 1` also `‖qⁿ‖ < 1` for every `n ≠ 0`. -/
+theorem norm_pow_lt_one {R : Type*} [SeminormedRing R] {q : R} (hq : ‖q‖ < 1) {n : ℕ}
+    (hn : n ≠ 0) : ‖q ^ n‖ < 1 :=
+  (norm_pow_le' q (Nat.pos_of_ne_zero hn)).trans_lt (pow_lt_one₀ (norm_nonneg q) hq hn)
+
+/-- `1 - (-x)^{2n+1} = 1 + x^{2n+1}`. -/
+theorem one_sub_neg_pow_odd {R : Type*} [Ring R] (x : R) (n : ℕ) :
+    1 - (-x) ^ (2 * n + 1) = 1 + x ^ (2 * n + 1) := by
+  rw [Odd.neg_pow (by simp), sub_neg_eq_add]
 
 /-- For `‖q‖ < 1` the norms `‖qⁿ⁺¹ w‖` are summable. -/
 theorem summable_norm_pow_succ_mul {q : 𝕜} (hq : ‖q‖ < 1) (w : 𝕜) :
@@ -104,6 +118,19 @@ theorem tprod_one_sub_pow_mul_ne_zero {q : 𝕜} (hq : ‖q‖ < 1) {w : 𝕜}
   simp_rw [sub_eq_add_neg] at h ⊢
   exact tprod_one_add_ne_zero_of_summable h (by simpa using summable_norm_pow_succ_mul hq w)
 
+/-- For `‖q‖ < 1` the Euler function `∏_{n ≥ 1} (1 - qⁿ)` is nonzero. -/
+theorem tprod_one_sub_pow_ne_zero {q : 𝕜} (hq : ‖q‖ < 1) : ∏' n : ℕ, (1 - q ^ (n + 1)) ≠ 0 := by
+  refine (tprod_congr fun n ↦ by rw [mul_one]).symm.trans_ne
+    (tprod_one_sub_pow_mul_ne_zero hq (w := 1) fun n h ↦ ?_)
+  have h1 := norm_pow_lt_one hq n.succ_ne_zero
+  rw [mul_one, sub_eq_zero] at h
+  simp [← h] at h1
+
+/-- For `‖q‖ < 1` the product `∏_{n ≥ 1} (1 + qⁿ)` converges. -/
+theorem multipliable_one_add_pow {q : 𝕜} (hq : ‖q‖ < 1) :
+    Multipliable fun n : ℕ ↦ 1 + q ^ (n + 1) := by
+  simpa using multipliable_one_sub_pow_mul hq (-1)
+
 /-- For `‖q‖ < 1` the product `∏_{n ≥ 1} (1 - qⁿ w) (1 - qⁿ w⁻¹)` in the theta product
 converges. -/
 theorem multipliable_qTheta {q : 𝕜} (hq : ‖q‖ < 1) (w : 𝕜) :
@@ -139,43 +166,33 @@ theorem qTheta_mul_left {q : 𝕜} (hq : ‖q‖ < 1) (hq₀ : q ≠ 0) {w : �
 theorem multipliable_one_sub_pow_odd {q : 𝕜} (hq : ‖q‖ < 1) :
     Multipliable fun n : ℕ ↦ 1 - q ^ (2 * n + 1) := by
   refine multipliable_one_sub_of_summable ?_
-  have h2 : ‖q‖ ^ 2 < 1 := pow_lt_one₀ (norm_nonneg q) hq two_ne_zero
-  exact ((summable_geometric_of_lt_one (by positivity) h2).mul_left ‖q‖).congr fun n ↦ by
-    rw [norm_pow]
-    ring
+  exact ((summable_geometric_of_lt_one (norm_nonneg _) (norm_pow_lt_one hq two_ne_zero)).mul_left
+    ‖q‖).congr fun n ↦ by
+      simp only [norm_pow]
+      ring
+
+/-- For `‖q‖ < 1` the product `∏_{n ≥ 0} (1 + q^{2n+1})` over the odd powers of `q` converges. -/
+theorem multipliable_one_add_pow_odd {q : 𝕜} (hq : ‖q‖ < 1) :
+    Multipliable fun n : ℕ ↦ 1 + q ^ (2 * n + 1) :=
+  (multipliable_one_sub_pow_odd (q := -q) (by rwa [norm_neg])).congr (one_sub_neg_pow_odd q)
 
 /-- `∏_{n ≥ 0} (1 - q^{2n+1}) ∏_{n ≥ 0} (1 + q^{2n+1}) = ∏_{n ≥ 0} (1 - (q²)^{2n+1})` for
 `‖q‖ < 1`. -/
 theorem tprod_one_sub_pow_odd_mul_tprod_one_add_pow_odd {q : 𝕜} (hq : ‖q‖ < 1) :
     (∏' n : ℕ, (1 - q ^ (2 * n + 1))) * ∏' n : ℕ, (1 + q ^ (2 * n + 1)) =
       ∏' n : ℕ, (1 - (q ^ 2) ^ (2 * n + 1)) := by
-  have h : Multipliable fun n : ℕ ↦ 1 + q ^ (2 * n + 1) :=
-    (multipliable_one_sub_pow_odd (q := -q) (by rwa [norm_neg])).congr fun n ↦ by
-      rw [Odd.neg_pow (by simp), sub_neg_eq_add]
-  rw [← (multipliable_one_sub_pow_odd hq).tprod_mul h]
+  rw [← (multipliable_one_sub_pow_odd hq).tprod_mul (multipliable_one_add_pow_odd hq)]
   exact tprod_congr fun n ↦ by ring
 
 /-- **Euler's identity** `∏_{n ≥ 1} (1 + qⁿ) ∏_{n ≥ 0} (1 - q^{2n+1}) = 1` for `‖q‖ < 1`. Comparing
 coefficients, partitions into distinct parts and partitions into odd parts are equinumerous. -/
 theorem tprod_one_add_pow_mul_tprod_one_sub_pow_odd {q : 𝕜} (hq : ‖q‖ < 1) :
     (∏' n : ℕ, (1 + q ^ (n + 1))) * ∏' n : ℕ, (1 - q ^ (2 * n + 1)) = 1 := by
-  have hq2 : ‖q ^ 2‖ < 1 := by
-    rw [norm_pow]
-    exact pow_lt_one₀ (norm_nonneg q) hq two_ne_zero
-  have hE : Multipliable fun n : ℕ ↦ 1 + q ^ (n + 1) := by
-    simpa using multipliable_one_sub_pow_mul hq (-1)
+  have hq2 := norm_pow_lt_one hq two_ne_zero
   have hP : Multipliable fun n : ℕ ↦ 1 - q ^ (n + 1) := by
     simpa using multipliable_one_sub_pow_mul hq 1
   have hP₂ : Multipliable fun n : ℕ ↦ 1 - (q ^ 2) ^ (n + 1) := by
     simpa using multipliable_one_sub_pow_mul hq2 1
-  have hne : ∏' n : ℕ, (1 - (q ^ 2) ^ (n + 1)) ≠ 0 := by
-    refine (tprod_congr fun n ↦ by rw [mul_one]).symm.trans_ne
-      (tprod_one_sub_pow_mul_ne_zero hq2 (w := 1) fun n h ↦ ?_)
-    have h1 : ‖(q ^ 2) ^ (n + 1)‖ < 1 := by
-      rw [norm_pow]
-      exact pow_lt_one₀ (norm_nonneg _) hq2 (by omega)
-    rw [mul_one, sub_eq_zero] at h
-    simp [← h] at h1
   -- Split `∏ (1 - qⁿ)` into its odd and even factors.
   have hsplit : ∏' n : ℕ, (1 - q ^ (n + 1)) =
       (∏' n : ℕ, (1 - q ^ (2 * n + 1))) * ∏' n : ℕ, (1 - (q ^ 2) ^ (n + 1)) := by
@@ -185,17 +202,15 @@ theorem tprod_one_add_pow_mul_tprod_one_sub_pow_odd {q : 𝕜} (hq : ‖q‖ < 1
   -- `(1 + qⁿ) (1 - qⁿ) = 1 - q²ⁿ`.
   have hmul : (∏' n : ℕ, (1 + q ^ (n + 1))) * ∏' n : ℕ, (1 - q ^ (n + 1)) =
       ∏' n : ℕ, (1 - (q ^ 2) ^ (n + 1)) := by
-    rw [← hE.tprod_mul hP]
+    rw [← (multipliable_one_add_pow hq).tprod_mul hP]
     exact tprod_congr fun n ↦ by ring
   rw [hsplit, ← mul_assoc] at hmul
-  exact mul_right_cancel₀ hne (hmul.trans (one_mul _).symm)
+  exact mul_right_cancel₀ (tprod_one_sub_pow_ne_zero hq2) (hmul.trans (one_mul _).symm)
 
 /-- The theta product at `w = -1`: `θ_q(-1) = 2 (∏_{n ≥ 1} (1 + qⁿ))²` for `‖q‖ < 1`. -/
 theorem qTheta_neg_one {q : 𝕜} (hq : ‖q‖ < 1) :
     qTheta q (-1) = 2 * (∏' n : ℕ, (1 + q ^ (n + 1))) ^ 2 := by
-  have hE : Multipliable fun n : ℕ ↦ 1 + q ^ (n + 1) := by
-    simpa using multipliable_one_sub_pow_mul hq (-1)
-  rw [qTheta_def, sq, ← hE.tprod_mul hE]
+  rw [qTheta_def, sq, ← (multipliable_one_add_pow hq).tprod_mul (multipliable_one_add_pow hq)]
   norm_num
 
 /-- The theta product with nome the square of its argument:
@@ -204,9 +219,7 @@ theorem qTheta_sq_self {s : 𝕜} (hs : ‖s‖ < 1) :
     qTheta (s ^ 2) s = (∏' n : ℕ, (1 - s ^ (2 * n + 1))) ^ 2 := by
   rcases eq_or_ne s 0 with rfl | hs₀
   · simp [qTheta_def]
-  have hs2 : ‖s ^ 2‖ < 1 := by
-    rw [norm_pow]
-    exact pow_lt_one₀ (norm_nonneg s) hs two_ne_zero
+  have hs2 := norm_pow_lt_one hs two_ne_zero
   rw [qTheta_def, (multipliable_one_sub_pow_mul hs2 _).tprod_mul
     (multipliable_one_sub_pow_mul hs2 _), ← mul_assoc]
   have hf : Multipliable fun n : ℕ ↦ 1 - s ^ (2 * (n + 1) + 1) :=

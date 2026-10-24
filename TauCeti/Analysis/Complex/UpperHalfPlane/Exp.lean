@@ -15,6 +15,7 @@ for `τ` in the upper half-plane, complementing `Mathlib.Analysis.Complex.UpperH
 
 ## Main results
 
+* `TauCeti.UpperHalfPlane.exp_two_pi_I_eq_exp_pi_I_sq`: `e^{2π i τ} = (e^{π i τ})²`.
 * `TauCeti.UpperHalfPlane.norm_exp_pi_I_lt_one`: `‖e^{π i τ}‖ < 1` on the upper half-plane.
 * `TauCeti.UpperHalfPlane.one_sub_exp_two_pi_I_ne_zero`: `1 - e^{2π i (x τ + y)}` has no zero in
   the upper half-plane unless `x = 0` and `y ∈ ℤ`.
@@ -29,6 +30,13 @@ open UpperHalfPlane hiding I
 open scoped Real
 
 namespace TauCeti.UpperHalfPlane
+
+/-- `q = e^{2π i τ}` is the square of `e^{π i τ}`. -/
+theorem exp_two_pi_I_eq_exp_pi_I_sq (τ : ℂ) : cexp (2 * π * I * τ) = cexp (π * I * τ) ^ 2 := by
+  rw [← Complex.exp_nat_mul]
+  congr 1
+  push_cast
+  ring
 
 /-- The square root `e^{π i τ}` of `q = e^{2π i τ}` has norm less than one on the upper
 half-plane. -/

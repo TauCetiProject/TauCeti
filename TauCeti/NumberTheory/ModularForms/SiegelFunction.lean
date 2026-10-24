@@ -362,11 +362,6 @@ where `s = e^{π i τ}`. -/
 theorem siegelFunction_half_zero {τ : ℂ} (hτ : 0 < τ.im) :
     siegelFunction ![1 / 2, 0] τ =
       -cexp (-(π * I * τ / 12)) * (∏' n : ℕ, (1 - cexp (π * I * τ) ^ (2 * n + 1))) ^ 2 := by
-  have hq : cexp (2 * π * I * τ) = cexp (π * I * τ) ^ 2 := by
-    rw [← Complex.exp_nat_mul]
-    congr 1
-    push_cast
-    ring
   have hw : cexp (2 * π * I * (((1 / 2 : ℝ) : ℂ) * τ + ((0 : ℝ) : ℂ))) = cexp (π * I * τ) := by
     congr 1
     push_cast
@@ -378,7 +373,8 @@ theorem siegelFunction_half_zero {τ : ℂ} (hτ : 0 < τ.im) :
     ring
   rw [siegelFunction_eq_qTheta]
   simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one]
-  rw [hq, hw, hB, qTheta_sq_self (UpperHalfPlane.norm_exp_pi_I_lt_one hτ)]
+  rw [UpperHalfPlane.exp_two_pi_I_eq_exp_pi_I_sq τ, hw, hB,
+    qTheta_sq_self (UpperHalfPlane.norm_exp_pi_I_lt_one hτ)]
   simp
 
 /-- `g_{(1/2, 1/2)}(τ) = -e^{-π i / 4} e^{-π i τ / 12} (∏_{n ≥ 0} (1 + s^{2n+1}))²` on the upper
@@ -391,10 +387,7 @@ theorem siegelFunction_half_half {τ : ℂ} (hτ : 0 < τ.im) :
     rw [norm_neg]
     exact UpperHalfPlane.norm_exp_pi_I_lt_one hτ
   have hq : cexp (2 * π * I * τ) = (-cexp (π * I * τ)) ^ 2 := by
-    rw [neg_sq, ← Complex.exp_nat_mul]
-    congr 1
-    push_cast
-    ring
+    rw [neg_sq, UpperHalfPlane.exp_two_pi_I_eq_exp_pi_I_sq]
   have hw : cexp (2 * π * I * (((1 / 2 : ℝ) : ℂ) * τ + ((1 / 2 : ℝ) : ℂ))) =
       -cexp (π * I * τ) := by
     rw [← mul_neg_one, ← exp_pi_mul_I, ← Complex.exp_add]
@@ -411,13 +404,10 @@ theorem siegelFunction_half_half {τ : ℂ} (hτ : 0 < τ.im) :
     congr 1
     push_cast
     ring
-  have hodd : ∀ n : ℕ,
-      1 - (-cexp (π * I * τ)) ^ (2 * n + 1) = 1 + cexp (π * I * τ) ^ (2 * n + 1) :=
-    fun n ↦ by rw [Odd.neg_pow (by simp), sub_neg_eq_add]
   rw [siegelFunction_eq_qTheta]
   simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one]
   rw [hq, hw, hB, hph, qTheta_sq_self hs]
-  simp only [hodd]
+  simp only [one_sub_neg_pow_odd]
   ring
 
 /-- **The product of the level-two Siegel functions**: `g₀ g₁ g₂ = 2 ζ₈` on the upper half-plane,
@@ -425,16 +415,12 @@ where `g₀ = g_{(0, 1/2)}`, `g₁ = g_{(1/2, 0)}`, `g₂ = g_{(1/2, 1/2)}` and 
 theorem siegelFunction_zero_half_mul_half_zero_mul_half_half {τ : ℂ} (hτ : 0 < τ.im) :
     siegelFunction ![0, 1 / 2] τ * siegelFunction ![1 / 2, 0] τ *
       siegelFunction ![1 / 2, 1 / 2] τ = 2 * cexp (2 * π * I / 8) := by
-  set s := cexp (π * I * τ) with hs_def
-  have hq : cexp (2 * π * I * τ) = s ^ 2 := by
-    rw [hs_def, ← Complex.exp_nat_mul]
-    congr 1
-    push_cast
-    ring
-  -- Euler's identity in `q = s²`, with the odd product in `q` split into two odd products in `s`.
+  -- Euler's identity in `q = s²` with `s = e^{π i τ}`, the odd product in `q` split into two odd
+  -- products in `s`: `E O O⁺ = 1` with `E = ∏ (1 + qⁿ)` and `O, O⁺ = ∏ (1 ∓ s^{2n+1})`.
   have heuler := tprod_one_add_pow_mul_tprod_one_sub_pow_odd (norm_exp_two_pi_I_lt_one ⟨τ, hτ⟩)
-  rw [hq, ← tprod_one_sub_pow_odd_mul_tprod_one_add_pow_odd
-    (UpperHalfPlane.norm_exp_pi_I_lt_one hτ)] at heuler
+  rw [UpperHalfPlane.exp_two_pi_I_eq_exp_pi_I_sq τ,
+    ← tprod_one_sub_pow_odd_mul_tprod_one_add_pow_odd (UpperHalfPlane.norm_exp_pi_I_lt_one hτ),
+    ← mul_assoc] at heuler
   -- The exponential prefactors multiply to `2 ζ₈`.
   have hexp : 2 * I * cexp (π * I * τ / 6) * cexp (-(π * I * τ / 12)) * cexp (-(π * I / 4)) *
       cexp (-(π * I * τ / 12)) = 2 * cexp (2 * π * I / 8) := by
@@ -442,12 +428,11 @@ theorem siegelFunction_zero_half_mul_half_zero_mul_half_half {τ : ℂ} (hτ : 0
       -(π * I * τ / 12) by ring]
     simp only [Complex.exp_add, exp_pi_div_two_mul_I]
     ring
-  rw [siegelFunction_zero_half hτ, siegelFunction_half_zero hτ, siegelFunction_half_half hτ, hq,
-    ← hexp]
-  linear_combination (2 * I * cexp (π * I * τ / 6) * cexp (-(π * I * τ / 12)) *
-    cexp (-(π * I / 4)) * cexp (-(π * I * τ / 12))) *
-    ((∏' n : ℕ, (1 + (s ^ 2) ^ (n + 1))) * (∏' n : ℕ, (1 - s ^ (2 * n + 1))) *
-      ∏' n : ℕ, (1 + s ^ (2 * n + 1)) + 1) * heuler
+  rw [siegelFunction_zero_half hτ, siegelFunction_half_zero hτ, siegelFunction_half_half hτ,
+    UpperHalfPlane.exp_two_pi_I_eq_exp_pi_I_sq τ, ← hexp]
+  -- Write the right-hand side as the prefactor times `(E O O⁺)² = 1`.
+  conv_rhs => rw [← mul_one (2 * I * _ * _ * _ * _), ← (one_pow 2 : (1 : ℂ) ^ 2 = 1), ← heuler]
+  ring
 
 end LevelTwo
 
