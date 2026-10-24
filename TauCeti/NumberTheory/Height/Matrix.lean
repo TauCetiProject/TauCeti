@@ -45,6 +45,8 @@ computed from its maximal minors (`Submodule.relativeSubspaceHeight`).
 * `Matrix.mulHeight_mul_le` and `Matrix.logHeight_mul_le`: the entry height of a product.
 * `Matrix.mulHeight_map_algebraMap`: over number fields, the entry height in an extension
   `L / K` is the `[L : K]`-th power of the entry height over `K`.
+* `Matrix.mulHeight_map_intCast_eq`: over `ℚ`, an integer matrix with coprime entries has entry
+  height the largest absolute value of its entries.
 
 ## References
 
@@ -266,21 +268,33 @@ theorem logHeight_map_algebraMap (A : Matrix m n F) :
 
 end NumberField
 
-/-! ### Examples -/
+/-! ### Integer matrices over `ℚ` -/
 
 omit [Finite m] [Finite n] in
-/-- Over `ℚ`, a matrix with coprime integer entries has entry height the largest absolute value
-`M` of its entries, given as a bound `hle` on every entry attained at the entry `(i, j)`. -/
-private theorem mulHeight_map_intCast_eq [Fintype m] [Fintype n] {A : Matrix m n ℤ}
-    (hA : Finset.univ.gcd (fun q : m × n ↦ A q.1 q.2) = 1) {M : ℤ} (hle : ∀ i j, |A i j| ≤ M)
-    (i : m) (j : n) (hM : |A i j| = M) : (A.map ((↑) : ℤ → ℚ)).mulHeight = M := by
-  have : Nonempty (m × n) := ⟨(i, j)⟩
+/-- Over `ℚ`, the entry height of an integer matrix with coprime entries is the largest absolute
+value of its entries. -/
+theorem mulHeight_map_intCast_eq [Fintype m] [Fintype n] {A : Matrix m n ℤ}
+    (hA : Finset.univ.gcd (fun q : m × n ↦ A q.1 q.2) = 1) :
+    (A.map ((↑) : ℤ → ℚ)).mulHeight = ((⨆ q : m × n, |A q.1 q.2| : ℤ) : ℝ) := by
+  -- The greatest common divisor of an empty tuple is `0`, so there is an entry.
+  have : Nonempty (m × n) := by
+    by_contra h
+    rw [not_nonempty_iff] at h
+    simp at hA
   have hcomp : (fun q : m × n ↦ A.map ((↑) : ℤ → ℚ) q.1 q.2) =
       ((↑) : ℤ → ℚ) ∘ fun q ↦ A q.1 q.2 :=
     funext fun q ↦ map_apply ..
   rw [mulHeight_def, hcomp, Rat.mulHeight_eq_max_abs_of_gcd_eq_one hA]
-  exact_mod_cast le_antisymm (ciSup_le fun q ↦ hle q.1 q.2)
-    (le_ciSup_of_le (Finite.bddAbove_range _) (i, j) hM.ge)
+
+omit [Finite m] [Finite n] in
+/-- Over `ℚ`, the logarithmic entry height of an integer matrix with coprime entries is the
+logarithm of the largest absolute value of its entries. -/
+theorem logHeight_map_intCast_eq [Fintype m] [Fintype n] {A : Matrix m n ℤ}
+    (hA : Finset.univ.gcd (fun q : m × n ↦ A q.1 q.2) = 1) :
+    (A.map ((↑) : ℤ → ℚ)).logHeight = Real.log ((⨆ q : m × n, |A q.1 q.2| : ℤ) : ℝ) := by
+  rw [logHeight_eq_log_mulHeight, mulHeight_map_intCast_eq hA]
+
+/-! ### Examples -/
 
 -- A matrix with an empty index type is zero, so it has entry height one.
 example (A : Matrix (Fin 0) (Fin 3) ℚ) : A.mulHeight = 1 := by
@@ -300,8 +314,9 @@ example (L : Type*) [Field L] [NumberField L] :
   have h : !![(1 : ℚ), 2] = !![(1 : ℤ), 2].map (↑) := by
     ext i j; fin_cases i; fin_cases j <;> simp
   have h2 : !![(1 : ℚ), 2].mulHeight = 2 := by
-    rw [h, mulHeight_map_intCast_eq (M := 2) (by decide) (by decide) 0 1 (by decide)]
-    norm_num
+    rw [h, mulHeight_map_intCast_eq (by decide)]
+    exact_mod_cast le_antisymm (ciSup_le (by decide))
+      (le_ciSup_of_le (Finite.bddAbove_range _) (0, 1) (by decide))
   rw [mulHeight_map_algebraMap, h2]
 
 /-- **The constant of `Matrix.mulHeight_mul_le` is attained.** Over `ℚ`, the matrices `[1 1]`
@@ -318,13 +333,15 @@ example : !![(1 : ℚ), 1].mulHeight = 1 ∧ !![(1 : ℚ), 0; 1, 1].mulHeight = 
   have hB : !![(1 : ℚ), 0; 1, 1].mulHeight = 1 := by
     have h : !![(1 : ℚ), 0; 1, 1] = !![(1 : ℤ), 0; 1, 1].map (↑) := by
       ext i j; fin_cases i <;> fin_cases j <;> simp
-    rw [h, mulHeight_map_intCast_eq (M := 1) (by decide) (by decide) 0 0 (by decide)]
-    norm_num
+    rw [h, mulHeight_map_intCast_eq (by decide)]
+    exact_mod_cast le_antisymm (ciSup_le (by decide))
+      (le_ciSup_of_le (Finite.bddAbove_range _) (0, 0) (by decide))
   have hAB : (!![(1 : ℚ), 1] * !![(1 : ℚ), 0; 1, 1]).mulHeight = 2 := by
     have h : !![(1 : ℚ), 1] * !![(1 : ℚ), 0; 1, 1] = !![(2 : ℤ), 1].map (↑) := by
       ext i j; fin_cases i; fin_cases j <;> norm_num [mul_apply, Fin.sum_univ_two]
-    rw [h, mulHeight_map_intCast_eq (M := 2) (by decide) (by decide) 0 0 (by decide)]
-    norm_num
+    rw [h, mulHeight_map_intCast_eq (by decide)]
+    exact_mod_cast le_antisymm (ciSup_le (by decide))
+      (le_ciSup_of_le (Finite.bddAbove_range _) (0, 0) (by decide))
   refine ⟨hA, hB, ?_⟩
   rw [hA, hB, hAB]
   simp [NumberField.totalWeight_eq_finrank]
