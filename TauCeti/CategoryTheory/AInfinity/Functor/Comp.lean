@@ -48,8 +48,8 @@ sides to the corresponding sides of the `A∞` equation of `𝒢`.
 * `TauCeti.AInfinityFunctor.inducedHom_id` and `TauCeti.AInfinityFunctor.inducedHom_comp`: the
   morphism induced by the identity functor is the identity, and the morphism induced by a composite
   is the composite of the induced morphisms.
-* `TauCeti.AInfinityFunctor.comp_map`: the map of a composite on Hom modules is the composite of
-  the maps.
+* `TauCeti.AInfinityFunctor.comp_map` and `TauCeti.AInfinityFunctor.comp_map_apply`: the map of a
+  composite on Hom modules is the composite of the maps.
 * `TauCeti.AInfinityFunctor.id_comp`, `TauCeti.AInfinityFunctor.comp_id` and
   `TauCeti.AInfinityFunctor.comp_assoc`: the unit and associativity laws.
 
@@ -445,6 +445,13 @@ theorem comp_map (X Y : A) :
     ℱ.toAInfinityHom) (homInclusion X Y f)).trans ?_
   rw [LinearMap.comp_apply, ← homInclusion_map, linearPart_inducedHom_homInclusion]
   rfl
+
+/-- The map of a composite on a morphism is the composite of the maps.  Unlike
+`TauCeti.AInfinityFunctor.comp_map`, this can be used to rewrite where the objects of the
+composite are only definitionally the images of the objects under the two functors. -/
+theorem comp_map_apply {X Y : A} (f : homModule (R := R) X Y) :
+    (𝒢.comp ℱ).map X Y f = 𝒢.map (ℱ.obj X) (ℱ.obj Y) (ℱ.map X Y f) :=
+  LinearMap.congr_fun (𝒢.comp_map ℱ X Y) f
 
 /-- Composing with the identity `A∞` functor on the left leaves an `A∞` functor unchanged. -/
 @[simp]
