@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.ContMDiff.Curve
 public import TauCeti.Geometry.Manifold.DeRham.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Interval.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
@@ -29,9 +30,12 @@ Line integrals are the basic tool for detecting de Rham cohomology classes in de
 integral of the differential of a `C¹` function is its endpoint difference
 (`TauCeti.pathIntegral_mextDeriv_ofFunction`, `TauCeti.pathIntegral_mextDeriv`), so exact forms
 integrate to zero around closed curves (`TauCeti.pathIntegral_eq_zero_of_mem_exactForms`). The
-integral is invariant under `C¹` reparametrization (`TauCeti.pathIntegral_comp`), natural under
-pullback (`TauCeti.pathIntegral_mpullback`), and only depends on the values of the form along the
-curve (`TauCeti.pathIntegral_congr`).
+integral is invariant under `C¹` reparametrization (`TauCeti.pathIntegral_comp`), changes sign
+when the curve is reversed (`TauCeti.pathIntegral_comp_sub_left`), is additive under
+concatenation of curves (`TauCeti.pathIntegral_curveConcat`), is natural under pullback
+(`TauCeti.pathIntegral_mpullback`), and only depends on the values of the form along the curve
+(`TauCeti.pathIntegral_congr`) and on the curve away from the endpoints
+(`TauCeti.pathIntegral_congr_of_eqOn_uIoo`).
 
 ## Main declarations
 
@@ -43,6 +47,7 @@ curve (`TauCeti.pathIntegral_congr`).
 * `TauCeti.pathIntegral_eq_zero_of_mem_exactForms`: exact `1`-forms integrate to zero around
   closed `C¹` curves.
 * `TauCeti.pathIntegral_comp`: invariance under `C¹` reparametrization.
+* `TauCeti.pathIntegral_curveConcat`: additivity under concatenation of curves.
 * `TauCeti.pathIntegral_mpullback`: naturality under pullback.
 
 ## References
@@ -55,8 +60,8 @@ public section
 
 noncomputable section
 
-open Set MeasureTheory
-open scoped Manifold ContDiff
+open Set MeasureTheory Filter
+open scoped Manifold ContDiff Topology
 
 namespace TauCeti
 
@@ -90,6 +95,22 @@ theorem pathIntegral_congr {φ ψ : RoughForm I M F 1} {γ : ℝ → M} {a b : �
   simp only [pathIntegral_def]
   exact intervalIntegral.integral_congr fun t ht ↦ by simp only [h t ht]
 
+/-- Line integrals along two curves agree when the curves agree on the open interval between the
+endpoints: the velocities then agree there, and the endpoints are a null set. -/
+theorem pathIntegral_congr_of_eqOn_uIoo {φ : RoughForm I M F 1} {γ γ' : ℝ → M} {a b : ℝ}
+    (h : EqOn γ γ' (uIoo a b)) : pathIntegral φ γ a b = pathIntegral φ γ' a b := by
+  simp only [pathIntegral_def]
+  refine intervalIntegral.integral_congr_ae ?_
+  filter_upwards [(countable_singleton (a ⊔ b)).ae_notMem volume] with t hne ht
+  have hev : γ =ᶠ[𝓝 t] γ' :=
+    h.eventuallyEq_of_mem (isOpen_Ioo.mem_nhds ⟨ht.1, lt_of_le_of_ne ht.2 hne⟩)
+  simp only [Manifold.curveVelocity_apply, hev.mfderiv_eq]
+  -- `tangentSpaceCast` identifies two tangent spaces at the same point, both of which are `E`.
+  have key (p q : M) (hpq : p = q) (v : TangentSpace I q) :
+      φ p (fun _ ↦ tangentSpaceCast I q p v) = φ q fun _ ↦ v := by
+    subst hpq; rfl
+  exact key _ _ hev.eq_of_nhds _
+
 /-! ### The interval of integration -/
 
 /-- The line integral over a degenerate interval vanishes. -/
@@ -111,6 +132,14 @@ theorem pathIntegral_add_adjacent {φ : RoughForm I M F 1} {γ : ℝ → M} {a b
     (hbc : IntervalIntegrable (fun t ↦ φ (γ t) fun _ ↦ Manifold.curveVelocity I γ t) volume b c) :
     pathIntegral φ γ a b + pathIntegral φ γ b c = pathIntegral φ γ a c :=
   intervalIntegral.integral_add_adjacent_intervals hab hbc
+
+/-- The line integral along a constant curve vanishes. -/
+@[simp]
+theorem pathIntegral_const_curve (φ : RoughForm I M F 1) (x : M) (a b : ℝ) :
+    pathIntegral φ (fun _ ↦ x) a b = 0 := by
+  simp only [pathIntegral_def, Manifold.curveVelocity_const]
+  exact (intervalIntegral.integral_congr fun _ _ ↦ (φ x).map_zero).trans
+    intervalIntegral.integral_zero
 
 /-! ### Linearity in the form -/
 
@@ -187,6 +216,54 @@ theorem pathIntegral_comp {φ : RoughForm I M F 1} (hφ : IsSmoothForm I 0 φ) {
   rw [Function.comp_apply, Manifold.curveVelocity_comp (hσ t ht)
     ((hγ (σ t)).mdifferentiableAt one_ne_zero)]
   simpa using (φ (γ (σ t))).map_smul_univ (fun _ ↦ σ' t) fun _ ↦ Manifold.curveVelocity I γ (σ t)
+
+/-- The line integral along an affine reparametrization `t ↦ γ (c * t + d)` is the line integral
+along `γ` between the image endpoints. -/
+theorem pathIntegral_comp_mul_add {φ : RoughForm I M F 1} (hφ : IsSmoothForm I 0 φ)
+    {γ : ℝ → M} (hγ : ContMDiff 𝓘(ℝ, ℝ) I 1 γ) (c d a b : ℝ) :
+    pathIntegral φ (fun t ↦ γ (c * t + d)) a b = pathIntegral φ γ (c * a + d) (c * b + d) :=
+  pathIntegral_comp hφ hγ (σ := fun t ↦ c * t + d) (σ' := fun _ ↦ c)
+    (fun t _ ↦ by simpa using ((hasDerivAt_id t).const_mul c).add_const d) continuousOn_const
+
+/-- The line integral along the reversed curve `t ↦ γ (d - t)` is the negative of the line integral
+along `γ` between the image endpoints. -/
+theorem pathIntegral_comp_sub_left {φ : RoughForm I M F 1} (hφ : IsSmoothForm I 0 φ)
+    {γ : ℝ → M} (hγ : ContMDiff 𝓘(ℝ, ℝ) I 1 γ) (d a b : ℝ) :
+    pathIntegral φ (fun t ↦ γ (d - t)) a b = -pathIntegral φ γ (d - b) (d - a) := by
+  have h := pathIntegral_comp_mul_add hφ hγ (-1) d a b
+  simp only [neg_one_mul, neg_add_eq_sub] at h
+  rw [h, pathIntegral_symm]
+
+/-- The line integral along a concatenation of two `C¹` curves, constant near the junction point,
+is the sum of the line integrals. -/
+theorem pathIntegral_curveConcat {φ : RoughForm I M F 1} (hφ : IsSmoothForm I 0 φ)
+    {γ₁ γ₂ : ℝ → M} {y : M} (hγ₁ : ContMDiff 𝓘(ℝ, ℝ) I 1 γ₁)
+    (hγ₂ : ContMDiff 𝓘(ℝ, ℝ) I 1 γ₂) (h₁ : ∀ t, 1 ≤ t → γ₁ t = y) (h₂ : ∀ t ≤ 0, γ₂ t = y) :
+    pathIntegral φ (curveConcat γ₁ γ₂) 0 1 = pathIntegral φ γ₁ 0 1 + pathIntegral φ γ₂ 0 1 := by
+  have hi := hφ.intervalIntegrable_apply_curveVelocity
+    (ContMDiff.curveConcat (n := 1) hγ₁ hγ₂ h₁ h₂)
+  rw [← pathIntegral_add_adjacent (hi 0 (1 / 3)) (hi (1 / 3) 1),
+    ← pathIntegral_add_adjacent (hi (1 / 3) (2 / 3)) (hi (2 / 3) 1)]
+  -- The concatenation runs through `γ₁` on `[0, 1/3]`, rests on `[1/3, 2/3]`, and runs through
+  -- `γ₂` on `[2/3, 1]`.
+  have hl : pathIntegral φ (curveConcat γ₁ γ₂) 0 (1 / 3) = pathIntegral φ γ₁ 0 1 := by
+    rw [pathIntegral_congr_of_eqOn_uIoo (γ' := fun t ↦ γ₁ (3 * t + 0)) fun t ht ↦ by
+        rw [uIoo_of_le (by norm_num)] at ht
+        simpa using eqOn_curveConcat_left h₁ h₂ (lt_trans ht.2 (by norm_num)),
+      pathIntegral_comp_mul_add hφ hγ₁]
+    norm_num
+  have hm : pathIntegral φ (curveConcat γ₁ γ₂) (1 / 3) (2 / 3) = 0 := by
+    rw [pathIntegral_congr_of_eqOn_uIoo (γ' := fun _ ↦ y) fun t ht ↦
+        curveConcat_eq_of_mem_Icc h₁ h₂ (by
+          rw [uIoo_of_le (by norm_num)] at ht; exact Ioo_subset_Icc_self ht),
+      pathIntegral_const_curve]
+  have hr : pathIntegral φ (curveConcat γ₁ γ₂) (2 / 3) 1 = pathIntegral φ γ₂ 0 1 := by
+    rw [pathIntegral_congr_of_eqOn_uIoo (γ' := fun t ↦ γ₂ (3 * t + -2)) fun t ht ↦ by
+        rw [uIoo_of_le (by norm_num)] at ht
+        simpa [sub_eq_add_neg] using eqOn_curveConcat_right h₁ h₂ (lt_trans (by norm_num) ht.1),
+      pathIntegral_comp_mul_add hφ hγ₂]
+    norm_num
+  rw [hl, hm, hr, zero_add]
 
 end Continuous
 
