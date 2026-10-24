@@ -32,7 +32,7 @@ residue field, so the global dimension of a regular local ring is its Krull dime
   ring.
 * `TauCeti.IsRegularRing.hasProjectiveDimensionLE`: over a regular ring of dimension at most `n`,
   every module has projective dimension at most `n`.
-* `TauCeti.IsRegularRing.projectiveDimension_le_ringKrullDim`: over a regular ring, the
+* `ModuleCat.projectiveDimension_le_ringKrullDim`: over a regular ring, the
   projective dimension of every module is at most the Krull dimension of the ring.
 
 ## Proof
@@ -191,7 +191,7 @@ theorem hasProjectiveDimensionLE {n : ℕ} (hn : ringKrullDim R ≤ n) (M : Modu
 
 /-- Over a regular ring, the projective dimension of every module is at most the Krull dimension
 of the ring. -/
-theorem projectiveDimension_le_ringKrullDim (M : ModuleCat.{v} R) :
+theorem _root_.ModuleCat.projectiveDimension_le_ringKrullDim (M : ModuleCat.{v} R) :
     projectiveDimension M ≤ ringKrullDim R := by
   induction h : ringKrullDim R with
   | bot =>
