@@ -30,11 +30,14 @@ for parameters in the closed unit ball.
   the critical points of `f`; `ContDiffBump.isAdmissiblePerturbation_mul`: a bump times a
   `C²` function is admissible when the bump's support avoids the critical points.
 * `TauCeti.perturb f h s`: the perturbed function, with `TauCeti.fderiv_perturb`,
-  `TauCeti.gradient_perturb` and `TauCeti.contDiff_perturb`.
+  `TauCeti.gradient_perturb` and `TauCeti.contDiff_perturb`; `TauCeti.perturb_perturb`: perturbing
+  by the same family adds the parameters.
 * `TauCeti.perturb_eventuallyEq_of_fderiv_eq_zero`: near each critical point of `f` the
   perturbation agrees with `f`.
 * `TauCeti.exists_pos_forall_fderiv_perturb_eq_zero_iff`: for small parameters the critical
-  points of `perturb f h s` are those of `f`.
+  points of `perturb f h s` are those of `f`; consequently
+  `TauCeti.exists_pos_forall_isAdmissiblePerturbation_perturb`: an admissible family for `f` stays
+  admissible for `perturb f h s` for small `s`.
 * `TauCeti.perturbedFlow f h hf hh hc`: the flow of the field
   `(x, s) ↦ (-∇ f x - ∑ᵢ a(s)ᵢ ∇ hᵢ x, 0)` on `E × EuclideanSpace ℝ ι`, where `a` is the cutoff of
   the parameter. `TauCeti.contDiff_perturbedFlow` says it is `C¹` jointly in time, space and
@@ -49,7 +52,9 @@ for parameters in the closed unit ball.
   `u' = -D(∇f)(φₜ x) u - ∑ᵢ eᵢ ∇hᵢ(φₜ x)` along the negative-gradient orbit of `x`, with
   `TauCeti.perturbedFlow_apply_zero` and `TauCeti.snd_fderiv_perturbedFlow_apply`.
 * `TauCeti.fst_fderiv_perturbedFlow_apply_eq_neg_integral`: Duhamel's formula for the derivative
-  of the perturbed flow in a parameter direction at the parameter `0`.
+  of the perturbed flow in a parameter direction at the parameter `0`, and
+  `TauCeti.fst_fderiv_perturbedFlow_apply_eq_neg_integral_of_norm_lt` at any parameter of norm
+  less than `1`, with the flow of the perturbation in place of the flow of `f`.
 * `TauCeti.negativeGradientFlow_perturb_apply_eq`, `TauCeti.mem_stableSet_perturb_iff`,
   `TauCeti.mem_unstableSet_perturb_iff`: away from the supports of the family, the perturbed flow,
   and membership in stable and unstable sets, are those of `f`.
@@ -99,6 +104,16 @@ omit [NormedAddCommGroup E] [NormedSpace ℝ E] in
 theorem perturb_zero (f : E → ℝ) (h : ι → E → ℝ) : perturb f h 0 = f := by
   ext x
   simp [perturb_apply]
+
+omit [NormedAddCommGroup E] [NormedSpace ℝ E] in
+/-- Perturbing a perturbation by the same family adds the parameters: `f_{s₀}` perturbed by `s` is
+`f_{s₀ + s}`. -/
+@[simp]
+theorem perturb_perturb (f : E → ℝ) (h : ι → E → ℝ) (s₀ s : EuclideanSpace ℝ ι) :
+    perturb (perturb f h s₀) h s = perturb f h (s₀ + s) := by
+  ext x
+  simp only [perturb_apply, PiLp.add_apply, add_mul, Finset.sum_add_distrib]
+  ring
 
 end Perturb
 
@@ -195,6 +210,21 @@ theorem exists_pos_forall_fderiv_perturb_eq_zero_iff (hfs : ContDiff ℝ 1 f)
     have hev : perturb f h s =ᶠ[𝓝 x] f :=
       perturb_eventuallyEq_of_forall_notMem_tsupport s fun i hmem ↦ hx (mem_iUnion.2 ⟨i, hmem⟩)
     rw [hev.fderiv_eq]
+
+/-- **Admissibility persists under small perturbations.** A family admissible for `f` stays
+admissible for `perturb f h s` for all sufficiently small `s`, since the critical points do not
+change. -/
+theorem exists_pos_forall_isAdmissiblePerturbation_perturb (hfs : ContDiff ℝ 1 f)
+    (hadm : ∀ i, IsAdmissiblePerturbation f (h i)) :
+    ∃ δ > 0, ∀ s : EuclideanSpace ℝ ι, ‖s‖ < δ →
+      ∀ i, IsAdmissiblePerturbation (perturb f h s) (h i) := by
+  obtain ⟨δ, hδ, hcrit⟩ := exists_pos_forall_fderiv_perturb_eq_zero_iff hfs
+    (fun i ↦ (hadm i).contDiff.of_le (by norm_num)) (fun i ↦ (hadm i).hasCompactSupport)
+    fun i ↦ (hadm i).disjoint
+  refine ⟨δ, hδ, fun s hs i ↦ ⟨(hadm i).contDiff, (hadm i).hasCompactSupport, ?_⟩⟩
+  rw [show {x | fderiv ℝ (perturb f h s) x = 0} = {x | fderiv ℝ f x = 0} from
+    Set.ext fun x ↦ hcrit s hs x]
+  exact (hadm i).disjoint
 
 end Differential
 
@@ -644,6 +674,63 @@ theorem fst_fderiv_perturbedFlow_apply_eq_neg_integral (hfs : ContDiff ℝ 2 f)
   rw [hu0, map_zero, sub_zero, intervalIntegral.integral_neg, hinv] at hFTC
   calc u T = M T (N T (u T)) := (hMN T _).symm
     _ = -M T (∫ σ in (0 : ℝ)..T, N σ (b σ)) := by rw [← hFTC, map_neg]
+
+/-- **The re-centred perturbed flow.** For a parameter `s₀` of norm less than `1`, the first
+component of the perturbed flow of `f` near `(x, s₀)` is the first component of the perturbed flow
+of `f_{s₀}` near `(x, 0)`, shifted by `s₀` in the parameter. -/
+private theorem fst_perturbedFlow_apply_eventuallyEq (hfs : ContDiff ℝ 2 f)
+    (hf : LipschitzWith K (∇ f)) (hh : ∀ i, ContDiff ℝ 2 (h i))
+    (hc : ∀ i, HasCompactSupport (h i)) {s₀ : EuclideanSpace ℝ ι} (hs₀ : ‖s₀‖ < 1) {K' : ℝ≥0}
+    (hf' : LipschitzWith K' (∇ (perturb f h s₀))) (t : ℝ) (x : E) :
+    (fun p : E × EuclideanSpace ℝ ι ↦ (perturbedFlow f h hf hh hc t (((0 : E), s₀) + p)).1)
+      =ᶠ[𝓝 (x, 0)] fun p ↦ (perturbedFlow (perturb f h s₀) h hf' hh hc t p).1 := by
+  have hnear : ∀ᶠ p : E × EuclideanSpace ℝ ι in 𝓝 (x, 0), ‖p.2‖ < 1 - ‖s₀‖ :=
+    (continuous_norm.comp continuous_snd).continuousAt.eventually_lt continuousAt_const
+      (by simpa using sub_pos.2 hs₀)
+  filter_upwards [hnear] with p hp
+  have hshift : ((0 : E), s₀) + p = (p.1, s₀ + p.2) := Prod.ext (zero_add p.1) (Prod.snd_add _ _)
+  have hn : ‖s₀ + p.2‖ ≤ 1 := by linarith [norm_add_le s₀ p.2]
+  obtain ⟨K₁, hK₁⟩ := exists_lipschitzWith_gradient_perturb
+    (hfs.differentiable (by norm_num)) hf hh hc (s₀ + p.2)
+  obtain ⟨K₂, hK₂⟩ := exists_lipschitzWith_gradient_perturb
+    ((contDiff_perturb hfs hh s₀).differentiable (by norm_num)) hf' hh hc p.2
+  rw [hshift, perturbedFlow_apply_of_norm_le (hfs.differentiable (by norm_num)) hf hh hc hn hK₁,
+    perturbedFlow_apply_of_norm_le ((contDiff_perturb hfs hh s₀).differentiable (by norm_num)) hf'
+      hh hc (by linarith [norm_nonneg s₀]) hK₂]
+  dsimp only
+  have hrec := perturb_perturb f h s₀ p.2
+  -- The Lipschitz witness `hK₂` depends on the function, so the function is generalized together
+  -- with it before the equation `hrec` is substituted.
+  generalize perturb (perturb f h s₀) h p.2 = g at hrec hK₂ ⊢
+  subst hrec
+  rw [negativeGradientFlow_congr _ hK₂ hK₁]
+
+/-- **Duhamel's formula at a small parameter.** For a parameter `s₀` of norm less than `1`, the
+derivative of the perturbed flow of `f` at `(x, s₀)` in a parameter direction `e` is
+`-Dφ_T(x) ∫₀ᵀ Dφ_{-σ}(φ_σ x) (∑ᵢ eᵢ ∇hᵢ(φ_σ x)) dσ`, where `φ` is now the negative-gradient flow
+of the perturbation `f_{s₀}`. -/
+theorem fst_fderiv_perturbedFlow_apply_eq_neg_integral_of_norm_lt (hfs : ContDiff ℝ 2 f)
+    (hf : LipschitzWith K (∇ f)) (hh : ∀ i, ContDiff ℝ 2 (h i))
+    (hc : ∀ i, HasCompactSupport (h i)) {s₀ : EuclideanSpace ℝ ι} (hs₀ : ‖s₀‖ < 1) {K' : ℝ≥0}
+    (hf' : LipschitzWith K' (∇ (perturb f h s₀))) (x : E) (e : EuclideanSpace ℝ ι) (T : ℝ) :
+    (fderiv ℝ (perturbedFlow f h hf hh hc T) (x, s₀) (0, e)).1 =
+      -fderiv ℝ (negativeGradientFlow (perturb f h s₀) hf' T) x
+        (∫ σ in (0 : ℝ)..T, fderiv ℝ (negativeGradientFlow (perturb f h s₀) hf' (-σ))
+          (negativeGradientFlow (perturb f h s₀) hf' σ x)
+          (∑ i, e i • ∇ (h i) (negativeGradientFlow (perturb f h s₀) hf' σ x))) := by
+  rw [← fst_fderiv_perturbedFlow_apply_eq_neg_integral (contDiff_perturb hfs hh s₀) hf' hh hc x e T]
+  set Φ := perturbedFlow f h hf hh hc T
+  set Ψ := perturbedFlow (perturb f h s₀) h hf' hh hc T
+  have hΦ : DifferentiableAt ℝ Φ (x, s₀) := differentiableAt_perturbedFlow hfs hf hh hc T _
+  have hΨ : DifferentiableAt ℝ Ψ (x, 0) :=
+    differentiableAt_perturbedFlow (contDiff_perturb hfs hh s₀) hf' hh hc T _
+  have hpt : ((0 : E), s₀) + (x, 0) = (x, s₀) := by simp
+  have hshift := fderiv_comp_add_left (𝕜 := ℝ) (f := fun p : E × EuclideanSpace ℝ ι ↦ (Φ p).1)
+    (x := (x, 0)) ((0 : E), s₀)
+  rw [hpt, fderiv.fst hΦ] at hshift
+  rw [(fst_perturbedFlow_apply_eventuallyEq hfs hf hh hc hs₀ hf' T x).fderiv_eq,
+    fderiv.fst hΨ] at hshift
+  exact (congrArg (· (0, e)) hshift).symm
 
 end ParameterDerivative
 

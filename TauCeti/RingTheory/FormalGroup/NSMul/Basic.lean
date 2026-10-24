@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RingTheory.FormalGroup.AddInv
 public import TauCeti.RingTheory.FormalGroup.Logarithm
 -- Proof-only: splitting a power series into its truncation and its tail.
 import Mathlib.RingTheory.PowerSeries.Trunc
@@ -48,6 +49,7 @@ IV.6.1).
 * `FormalGroup.subst_nsmulSeries_invariantDifferential_mul_derivative`:
   `P([n]_F(T)) · [n]_F'(T) = n · P(T)`.
 * `FormalGroup.coeff_one_nsmulSeries`: `[n]_F(T) = n T + ⋯`.
+* `FormalGroup.natCast_eq_zero_of_nsmulSeries_eq_zero`: if `[n]_F = 0` then `n = 0` in `R`.
 * `FormalGroup.natCast_dvd_derivative_nsmulSeries`: `n` divides the derivative of `[n]_F`.
 * `FormalGroup.natCast_dvd_coeff_nsmulSeries`: `n` divides the coefficient of `Tᵏ` in `[n]_F`
   for `k` coprime to `n`.
@@ -65,12 +67,6 @@ open MvPowerSeries
 namespace FormalGroup
 
 variable {R : Type*} [CommRing R] (F : FormalGroup R)
-
-/-- The tautological point `T` of `F`, with values in the power series ring `R⟦T⟧`. -/
-private noncomputable def tautologicalPoint : F.Point Unit :=
-  ⟨PowerSeries.X, PowerSeries.HasSubst.X'⟩
-
-private theorem val_tautologicalPoint : F.tautologicalPoint.val = PowerSeries.X := (rfl)
 
 /-- **Multiplication by `n`** on a formal group law `F`: the power series `[n]_F(T)`, which is `n`
 times the tautological point `T` in the monoid `F.Point Unit` of power-series points of `F`. -/
@@ -205,6 +201,10 @@ theorem coeff_one_nsmulSeries (n : ℕ) :
       ← PowerSeries.coeff_zero_eq_constantCoeff_apply, PowerSeries.coeff_derivative,
       PowerSeries.coeff_derivative, ih] at h
     simpa [F.lin_coeff_X, F.lin_coeff_Y] using h
+
+/-- If `[n]_F = 0` then `n = 0` in `R`, as `n` is the linear coefficient of `[n]_F`. -/
+theorem natCast_eq_zero_of_nsmulSeries_eq_zero {n : ℕ} (h : F.nsmulSeries n = 0) : (n : R) = 0 := by
+  simpa [h] using (F.coeff_one_nsmulSeries n).symm
 
 /-- **The derivative of `[n]_F` is divisible by `n`**, for a commutative formal group law `F`. -/
 theorem natCast_dvd_derivative_nsmulSeries [F.IsComm] (n : ℕ) :

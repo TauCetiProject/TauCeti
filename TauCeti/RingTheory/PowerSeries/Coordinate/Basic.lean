@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Opposite
+public import Mathlib.Data.PNat.Defs
 public import Mathlib.RingTheory.PowerSeries.Substitution
 import Mathlib.RingTheory.PowerSeries.Inverse
 import TauCeti.RingTheory.PowerSeries.SubstInv
@@ -20,7 +21,9 @@ formal coordinates form a group `TauCeti.FormalCoordinate R`: the identity is `X
 of `φ` is Mathlib's compositional inverse `PowerSeries.substInvOfIsUnit`, whose coefficients are
 determined recursively from the linear coefficient (`PowerSeries.substInvFun`) and which is the
 unique compositional inverse (`PowerSeries.eq_substInvOfIsUnit_of_subst_eq_X`). The linear
-coefficient is a group homomorphism to `Rˣ`.
+coefficient is a group homomorphism to `Rˣ`; its kernel consists of the strict coordinates
+`X + ∑_{i ≥ 1} bᵢ X^(i + 1)`, which correspond to arbitrary families `(bᵢ)` of coefficients.
+Applying a ring homomorphism to the coefficients is a group homomorphism of formal coordinates.
 
 Each formal coordinate `φ` gives the substitution automorphism `σ_φ : f ↦ f (φ)` of the
 `R`-algebra `R⟦X⟧`. Since `f (ψ) (φ) = f (ψ (φ))`, the automorphisms compose as
@@ -40,6 +43,10 @@ coordinates over `K` and the opposite of `K⟦X⟧ ≃ₐ[K] K⟦X⟧`, with inv
 
 * `TauCeti.FormalCoordinate R`: the group of formal coordinates under composition.
 * `TauCeti.FormalCoordinate.linearCoeff`: the linear coefficient, as a homomorphism to `Rˣ`.
+* `TauCeti.FormalCoordinate.map f`: base change of formal coordinates along `f : R →+* S`.
+* `TauCeti.FormalCoordinate.ofStrictCoeffs b`: the strict coordinate `X + ∑ bᵢ X^(i + 1)`.
+* `TauCeti.FormalCoordinate.strictCoeffsEquiv`: strict coordinates correspond to their
+  coefficient families `ℕ+ → R`.
 * `TauCeti.FormalCoordinate.substAlgEquiv φ`: the substitution automorphism `f ↦ f (φ)`.
 * `TauCeti.FormalCoordinate.substAlgEquivHom`: the antihomomorphism `φ ↦ σ_φ`.
 * `TauCeti.FormalCoordinate.ofAlgEquiv σ`: over a field, the formal coordinate `σ X`.
@@ -48,7 +55,11 @@ coordinates over `K` and the opposite of `K⟦X⟧ ≃ₐ[K] K⟦X⟧`, with inv
 
 ## Main results
 
+* `TauCeti.FormalCoordinate.subst_subst_inv`, `TauCeti.FormalCoordinate.subst_inv_subst`:
+  `φ (φ⁻¹ (x)) = x = φ⁻¹ (φ (x))` for every substitutable multivariate series `x`.
 * `TauCeti.FormalCoordinate.substAlgEquiv_mul`: `σ_(φ ∘ ψ) = σ_ψ ∘ σ_φ`.
+* `TauCeti.FormalCoordinate.map_substAlgEquiv`: substitution commutes with base change of the
+  coefficients.
 * `TauCeti.FormalCoordinate.constantCoeff_substAlgEquiv`: substitution automorphisms preserve
   constant coefficients.
 * `TauCeti.FormalCoordinate.substAlgEquiv_ofAlgEquiv`: over a field, every automorphism of
@@ -84,6 +95,16 @@ theorem hasSubst (φ : FormalCoordinate R) : HasSubst φ.toPowerSeries :=
 theorem X_subst_toPowerSeries (φ : FormalCoordinate R) :
     (X : R⟦X⟧).subst φ.toPowerSeries = φ.toPowerSeries :=
   subst_X φ.hasSubst
+
+/-- Over a nontrivial ring a formal coordinate has order one. -/
+@[simp]
+theorem order_toPowerSeries [Nontrivial R] (φ : FormalCoordinate R) : φ.toPowerSeries.order = 1 :=
+  order_eq_nat.mpr ⟨φ.isUnit_coeff_one.ne_zero, fun i hi ↦ by
+    simp [Nat.lt_one_iff.mp hi]⟩
+
+/-- Over a nontrivial ring a formal coordinate is a nonzero power series. -/
+theorem toPowerSeries_ne_zero [Nontrivial R] (φ : FormalCoordinate R) : φ.toPowerSeries ≠ 0 :=
+  fun h ↦ by simpa [h] using φ.isUnit_coeff_one
 
 /-- The product `φ * ψ` of formal coordinates is the composite `φ ∘ ψ`, the series `φ (ψ)`. -/
 noncomputable instance : Mul (FormalCoordinate R) where
@@ -134,6 +155,41 @@ noncomputable instance : Group (FormalCoordinate R) where
   inv_mul_cancel φ := by
     ext1
     simp [subst_substInvOfIsUnit_left _ φ.constantCoeff_toPowerSeries]
+
+/-- A formal coordinate composed with its inverse is `X`. -/
+theorem toPowerSeries_mul_inv (φ : FormalCoordinate R) : (φ * φ⁻¹).toPowerSeries = X := by
+  rw [mul_inv_cancel, toPowerSeries_one]
+
+/-- The inverse of a formal coordinate composed with it is `X`. -/
+theorem toPowerSeries_inv_mul (φ : FormalCoordinate R) : (φ⁻¹ * φ).toPowerSeries = X := by
+  rw [inv_mul_cancel, toPowerSeries_one]
+
+section Points
+
+variable {σ : Type*} {x : MvPowerSeries σ R}
+
+/-- A formal coordinate evaluated at a substitutable series `x` is again substitutable. -/
+theorem hasSubst_subst (φ : FormalCoordinate R) (hx : HasSubst x) :
+    HasSubst (PowerSeries.subst x φ.toPowerSeries) := by
+  simpa [coe_substAlgHom] using φ.hasSubst.comp hx
+
+/-- Evaluating the composite `φ ∘ ψ` at `x` is evaluating `φ` at `ψ (x)`. -/
+theorem subst_toPowerSeries_mul (φ ψ : FormalCoordinate R) (hx : HasSubst x) :
+    PowerSeries.subst x (φ * ψ).toPowerSeries =
+      PowerSeries.subst (PowerSeries.subst x ψ.toPowerSeries) φ.toPowerSeries := by
+  rw [toPowerSeries_mul, subst_comp_subst_apply ψ.hasSubst hx]
+
+/-- `φ (φ⁻¹ (x)) = x`. -/
+theorem subst_subst_inv (φ : FormalCoordinate R) (hx : HasSubst x) :
+    PowerSeries.subst (PowerSeries.subst x φ⁻¹.toPowerSeries) φ.toPowerSeries = x := by
+  rw [← subst_toPowerSeries_mul _ _ hx, mul_inv_cancel, toPowerSeries_one, subst_X hx]
+
+/-- `φ⁻¹ (φ (x)) = x`. -/
+theorem subst_inv_subst (φ : FormalCoordinate R) (hx : HasSubst x) :
+    PowerSeries.subst (PowerSeries.subst x φ.toPowerSeries) φ⁻¹.toPowerSeries = x := by
+  rw [← subst_toPowerSeries_mul _ _ hx, inv_mul_cancel, toPowerSeries_one, subst_X hx]
+
+end Points
 
 /-- The linear coefficient of a formal coordinate, as a homomorphism to the units of `R`. -/
 noncomputable def linearCoeff : FormalCoordinate R →* Rˣ where
@@ -214,6 +270,105 @@ theorem substAlgEquivHom_apply (φ : FormalCoordinate R) :
 theorem substAlgEquivHom_injective :
     Function.Injective (substAlgEquivHom : FormalCoordinate R →* (R⟦X⟧ ≃ₐ[R] R⟦X⟧)ᵐᵒᵖ) :=
   MulOpposite.op_injective.comp substAlgEquiv_injective
+
+section map
+
+variable {S : Type*} [CommRing S]
+
+/-- Base change of formal coordinates along a ring homomorphism `f : R →+* S`, applying `f` to
+every coefficient. It is a group homomorphism since base change commutes with composition. -/
+noncomputable def map (f : R →+* S) : FormalCoordinate R →* FormalCoordinate S where
+  toFun φ :=
+    { toPowerSeries := PowerSeries.map f φ.toPowerSeries
+      constantCoeff_toPowerSeries := by
+        rw [← coeff_zero_eq_constantCoeff_apply, coeff_map, coeff_zero_eq_constantCoeff_apply,
+          φ.constantCoeff_toPowerSeries, map_zero]
+      isUnit_coeff_one := by simpa using φ.isUnit_coeff_one.map f }
+  map_one' := FormalCoordinate.ext (map_X f)
+  map_mul' φ ψ := FormalCoordinate.ext (map_subst ψ.hasSubst _)
+
+@[simp]
+theorem toPowerSeries_map (f : R →+* S) (φ : FormalCoordinate R) :
+    (map f φ).toPowerSeries = PowerSeries.map f φ.toPowerSeries := (rfl)
+
+/-- Base change of formal coordinates along the identity changes nothing. -/
+@[simp]
+theorem map_id : map (RingHom.id R) = MonoidHom.id (FormalCoordinate R) :=
+  MonoidHom.ext fun _ ↦ FormalCoordinate.ext rfl
+
+/-- Successive base changes of a formal coordinate agree with base change along the composite. -/
+theorem map_comp {T : Type*} [CommRing T] (f : R →+* S) (g : S →+* T) (φ : FormalCoordinate R) :
+    map (g.comp f) φ = map g (map f φ) :=
+  FormalCoordinate.ext rfl
+
+/-- Substitution is natural in the coefficients: base change along `f` carries `p (φ)` to the
+substitution of the base-changed coordinate into the base-changed series. -/
+theorem map_substAlgEquiv (f : R →+* S) (φ : FormalCoordinate R) (p : R⟦X⟧) :
+    PowerSeries.map f (φ.substAlgEquiv p) = (map f φ).substAlgEquiv (PowerSeries.map f p) := by
+  rw [substAlgEquiv_apply, substAlgEquiv_apply, toPowerSeries_map]
+  -- `PowerSeries.map` is by definition `MvPowerSeries.map` over `Unit`, the form in which
+  -- Mathlib states `PowerSeries.map_subst`
+  exact map_subst φ.hasSubst p
+
+end map
+
+section Strict
+
+/-- The strict formal coordinate `X + ∑_{i ≥ 1} bᵢ X^(i + 1)` with coefficients `b`. -/
+noncomputable def ofStrictCoeffs (b : ℕ+ → R) : FormalCoordinate R where
+  toPowerSeries :=
+    PowerSeries.mk fun n ↦ if n = 0 then 0 else if n = 1 then 1 else b (n - 1).toPNat'
+  constantCoeff_toPowerSeries := by
+    rw [← coeff_zero_eq_constantCoeff_apply, coeff_mk]
+    simp
+  isUnit_coeff_one := by simp
+
+@[simp]
+theorem coeff_succ_ofStrictCoeffs (b : ℕ+ → R) (i : ℕ+) :
+    coeff (i + 1) (ofStrictCoeffs b).toPowerSeries = b i := by
+  simp [ofStrictCoeffs, i.ne_zero]
+
+@[simp]
+theorem coeff_one_ofStrictCoeffs (b : ℕ+ → R) : coeff 1 (ofStrictCoeffs b).toPowerSeries = 1 := by
+  simp [ofStrictCoeffs]
+
+/-- The coordinates `X + ∑ bᵢ X^(i + 1)` are strict: their linear coefficient is `1`. -/
+theorem ofStrictCoeffs_mem_ker_linearCoeff (b : ℕ+ → R) :
+    ofStrictCoeffs b ∈ (linearCoeff (R := R)).ker :=
+  MonoidHom.mem_ker.mpr <| Units.ext <| coeff_one_ofStrictCoeffs b
+
+/-- A strict formal coordinate, one with linear coefficient `1`, is determined by the coefficients
+`bᵢ` of `X^(i + 1)`, `i ≥ 1`, and every family of them occurs: strict coordinates are the series
+`X + ∑ bᵢ X^(i + 1)`. -/
+noncomputable def strictCoeffsEquiv : (ℕ+ → R) ≃ (linearCoeff (R := R)).ker where
+  toFun b := ⟨ofStrictCoeffs b, ofStrictCoeffs_mem_ker_linearCoeff b⟩
+  invFun φ i := coeff (i + 1) φ.1.toPowerSeries
+  left_inv b := funext (coeff_succ_ofStrictCoeffs b)
+  right_inv φ := by
+    have h1 : coeff 1 φ.1.toPowerSeries = 1 := congrArg Units.val (MonoidHom.mem_ker.mp φ.2)
+    refine Subtype.ext <| FormalCoordinate.ext <| PowerSeries.ext fun n ↦ ?_
+    rcases n with _ | _ | n
+    · simp [ofStrictCoeffs, coeff_zero_eq_constantCoeff_apply]
+    · simp [ofStrictCoeffs, h1]
+    · simp [ofStrictCoeffs, Nat.toPNat']
+
+@[simp]
+theorem coe_strictCoeffsEquiv_apply (b : ℕ+ → R) :
+    (strictCoeffsEquiv b : FormalCoordinate R) = ofStrictCoeffs b := (rfl)
+
+@[simp]
+theorem strictCoeffsEquiv_symm_apply (φ : (linearCoeff (R := R)).ker) (i : ℕ+) :
+    strictCoeffsEquiv.symm φ i = coeff (i + 1) φ.1.toPowerSeries := (rfl)
+
+/-- Base change of `X + ∑ bᵢ X^(i + 1)` along `f` is `X + ∑ f(bᵢ) X^(i + 1)`. -/
+@[simp]
+theorem map_ofStrictCoeffs {S : Type*} [CommRing S] (f : R →+* S) (b : ℕ+ → R) :
+    map f (ofStrictCoeffs b) = ofStrictCoeffs (f ∘ b) :=
+  FormalCoordinate.ext <| PowerSeries.ext fun n ↦ by
+    simp only [toPowerSeries_map, coeff_map, ofStrictCoeffs, coeff_mk, Function.comp_apply]
+    split_ifs <;> simp
+
+end Strict
 
 section Field
 

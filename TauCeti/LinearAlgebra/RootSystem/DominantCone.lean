@@ -40,6 +40,11 @@ dominant member of the set
 (`TauCeti.exists_weylGroup_smul_dominant_of_forall_reflection_mem_of_sub_mem_posRootCone`).
 Finiteness is the corollary obtained by forgetting which translate was used.
 
+## Main definitions
+
+* `RootPairing.dominantWeightsBelow`: the finite set of the dominant integral weights `mu` below a
+  weight `lam`, that is with `lam - mu` in the positive root cone.
+
 ## Main results
 
 * `TauCeti.finite_setOf_dominant_sub_mem_posRootCone`: **only finitely many dominant weights lie
@@ -345,3 +350,36 @@ theorem eq_zero_of_mem_posRootCone_of_forall_coroot'_nonpos [LinearOrder R]
     (finite_setOf_dominant_sub_mem_posRootCone b 0)
 
 end TauCeti
+
+namespace RootPairing
+
+open TauCeti
+
+variable {ι : Type*} {R : Type*} {M : Type*} {N : Type*}
+  [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+  (P : RootPairing ι R M N) [Finite ι] [CharZero R] [IsDomain R]
+  [P.IsRootSystem] [P.IsCrystallographic] (b : P.Base)
+
+/-- The **dominant integral weights below `lam`**: the weights `mu` with `lam - mu` in the positive
+root cone of `b`, on which every simple coroot takes a natural value. There are only finitely many
+of them (`TauCeti.finite_setOf_dominant_sub_mem_posRootCone`), and this is that finite set. -/
+noncomputable def dominantWeightsBelow (lam : M) : Finset M :=
+  (finite_setOf_dominant_sub_mem_posRootCone b lam).toFinset
+
+variable {P b}
+
+/-- Membership in `RootPairing.dominantWeightsBelow`: `mu` lies below `lam` and is dominant
+integral. -/
+@[simp]
+theorem mem_dominantWeightsBelow {lam mu : M} :
+    mu ∈ P.dominantWeightsBelow b lam ↔
+      lam - mu ∈ posRootCone P b ∧ ∀ i ∈ b.support, ∃ n : ℕ, P.coroot' i mu = (n : R) := by
+  simp [dominantWeightsBelow]
+
+/-- A dominant integral weight is one of the dominant integral weights below itself. -/
+theorem self_mem_dominantWeightsBelow {lam : M}
+    (hlam : ∀ i ∈ b.support, ∃ n : ℕ, P.coroot' i lam = (n : R)) :
+    lam ∈ P.dominantWeightsBelow b lam :=
+  mem_dominantWeightsBelow.mpr ⟨by simp, hlam⟩
+
+end RootPairing

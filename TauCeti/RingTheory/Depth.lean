@@ -6,8 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Depth.Basic
+public import Mathlib.RingTheory.Ideal.AssociatedPrime.Localization
 public import Mathlib.RingTheory.KrullDimension.Regular
 public import Mathlib.RingTheory.Regular.Category
+public import TauCeti.RingTheory.Ideal.AssociatedPrime.Basic
+public import TauCeti.RingTheory.Ideal.AssociatedPrime.Localization
+public import TauCeti.RingTheory.KrullDimension.Quotient
 public import TauCeti.RingTheory.Regular.LinearMap
 
 /-!
@@ -32,6 +36,16 @@ The regular-sequence transfer lemmas for linear maps live in
   sequence `r₁, …, rₙ` lowers the depth by exactly `n`.
 * `IsLocalRing.depth_hom_ge`: depth at least one or two passes from the target
   module to the module of linear maps (Stacks, Lemma 15.24.10 (0AV5)).
+* `IsLocalRing.depth_le_ringKrullDim_quotient_of_isAssociatedPrime`: the depth of a finite module
+  is at most `dim (R ⧸ p)` for every associated prime `p` of the module (Matsumura, Theorem 17.2).
+* `IsLocalRing.depth_eq_zero_iff_nontrivial_linearMap` and
+  `IsLocalRing.depth_eq_zero_iff_maximalIdeal_mem_associatedPrimes`: the depth vanishes exactly
+  when the residue field maps nontrivially to the module, that is, when the maximal ideal is an
+  associated prime.
+* `TauCeti.depth_localizedModule_eq_zero_iff`: `M_p` has depth zero exactly when `p` is an
+  associated prime of `M`; this combines the depth-zero criterion with
+  `TauCeti.maximalIdeal_mem_associatedPrimes_localizedModule_iff` from
+  `TauCeti.RingTheory.Ideal.AssociatedPrime.Localization`.
 
 The two quotient-depth results, together with Mathlib's
 `Module.supportDim_add_length_eq_supportDim_of_isRegular`, make Cohen–Macaulayness stable under
@@ -121,6 +135,75 @@ theorem depth_add_length_eq_depth_of_isRegular [IsNoetherianRing R] [Module.Fini
       ← depth_quotSMulTop_succ_eq_depth hx (reg.mem_maximalIdeal List.mem_cons_self), ← ih hrs,
       List.length_cons, Nat.cast_succ, add_assoc]
 
+omit [Small.{v} R] in
+/-- The length of an `M`-regular sequence is at most `dim (R ⧸ p)` for every associated prime `p`
+of `M`. -/
+private theorem length_le_ringKrullDim_quotient_of_isRegular [IsNoetherianRing R]
+    [Module.Finite R M] {rs : List R} (reg : IsRegular M rs) {p : Ideal R}
+    (hp : IsAssociatedPrime p M) : (rs.length : WithBot ℕ∞) ≤ ringKrullDim (R ⧸ p) := by
+  induction rs generalizing M p with
+  | nil =>
+    have := hp.isPrime
+    simpa using ringKrullDim_nonneg_of_nontrivial (R := R ⧸ p)
+  | cons x rs ih =>
+    obtain ⟨hx, hrs⟩ := (isRegular_cons_iff M x rs).1 reg
+    -- `p` lies in an associated prime `q` of `M ⧸ x M`. As `x` kills `M ⧸ x M` but is
+    -- `M`-regular, `x ∈ q ∖ p`, so `dim (R ⧸ q) + 1 ≤ dim (R ⧸ p)`.
+    obtain ⟨q, hq, hpq⟩ := hp.exists_le_isAssociatedPrime_quotSMulTop hx
+      (maximalIdeal_le_jacobson _ (reg.mem_maximalIdeal List.mem_cons_self))
+    have hxq : x ∈ q := hq.annihilator_le <| by
+      rw [Submodule.annihilator_top]
+      exact QuotSMulTop.mem_annihilator M x
+    have hxp : x ∉ p := fun hxp ↦ by
+      have hmem : x ∈ ⋃ p ∈ associatedPrimes R M, (p : Set R) := Set.mem_biUnion hp hxp
+      rw [biUnion_associatedPrimes_eq_compl_regular R M] at hmem
+      exact hmem hx
+    have := hp.isPrime
+    calc ((x :: rs).length : WithBot ℕ∞) = rs.length + 1 := by simp
+      _ ≤ ringKrullDim (R ⧸ q) + 1 := by gcongr; exact ih hrs hq
+      _ ≤ ringKrullDim (R ⧸ p) := TauCeti.ringKrullDim_quotient_add_one_le_of_lt <|
+        lt_of_le_of_ne hpq fun h ↦ hxp (h ▸ hxq)
+
+/-- The depth of a finite module `M` over a Noetherian local ring is at most `dim (R ⧸ p)` for
+every associated prime `p` of `M`. H. Matsumura, *Commutative Ring Theory*, Theorem 17.2. -/
+theorem depth_le_ringKrullDim_quotient_of_isAssociatedPrime [IsNoetherianRing R]
+    [Module.Finite R M] {p : Ideal R} (hp : IsAssociatedPrime p M) :
+    (depth (ModuleCat.of R M) : WithBot ℕ∞) ≤ ringKrullDim (R ⧸ p) := by
+  have : Nontrivial M :=
+    not_subsingleton_iff_nontrivial.1 fun _ ↦ not_isAssociatedPrime_of_subsingleton hp
+  have := hp.isPrime
+  obtain ⟨d, hd⟩ := WithBot.ne_bot_iff_exists.1 <|
+    ne_bot_of_le_ne_bot WithBot.zero_ne_bot (ringKrullDim_nonneg_of_nontrivial (R := R ⧸ p))
+  rw [← hd, WithBot.coe_le_coe, depth_eq_sSup_length_isRegular]
+  refine sSup_le ?_
+  rintro _ ⟨rs, reg, -, rfl⟩
+  exact WithBot.coe_le_coe.1 (hd ▸ length_le_ringKrullDim_quotient_of_isRegular reg hp)
+
+/-- The depth of a module over a local ring is zero exactly when there is a nonzero linear map to
+it from the residue field `R ⧸ 𝔪`. This is Mathlib's
+`ModuleCat.depth_eq_zero_iff_nontrivial_linearMap` with the universe-adjusting `Shrink` in the
+definition of `IsLocalRing.depth` removed. -/
+theorem depth_eq_zero_iff_nontrivial_linearMap :
+    depth (ModuleCat.of R M) = 0 ↔ Nontrivial (R ⧸ maximalIdeal R →ₗ[R] M) := by
+  rw [depth, Ideal.depth, ModuleCat.depth_eq_zero_iff_nontrivial_linearMap]
+  exact ((Shrink.linearEquiv R (R ⧸ maximalIdeal R)).arrowCongr
+    (LinearEquiv.refl R M)).nontrivial_congr
+
+/-- The depth of a module over a Noetherian local ring is zero exactly when the maximal ideal is
+an associated prime of the module, that is, when some nonzero element is killed by the maximal
+ideal. -/
+theorem depth_eq_zero_iff_maximalIdeal_mem_associatedPrimes [IsNoetherianRing R] :
+    depth (ModuleCat.of R M) = 0 ↔ maximalIdeal R ∈ associatedPrimes R M := by
+  have : IsSimpleModule R (R ⧸ maximalIdeal R) :=
+    isSimpleModule_iff_quot_maximal.2 ⟨_, inferInstance, ⟨LinearEquiv.refl _ _⟩⟩
+  rw [depth_eq_zero_iff_nontrivial_linearMap, AssociatedPrimes.mem_iff,
+    isAssociatedPrime_iff_exists_injective_linearMap,
+    and_iff_right (maximalIdeal.isMaximal R).isPrime]
+  -- A nonzero linear map out of the simple module `R ⧸ 𝔪` is injective.
+  refine ⟨fun ⟨f, g, hfg⟩ ↦ ⟨f - g, ?_⟩, fun ⟨f, hf⟩ ↦ ⟨f, 0, fun h ↦ ?_⟩⟩
+  · exact (f - g).injective_or_eq_zero.resolve_right (sub_ne_zero.2 hfg)
+  · exact zero_ne_one (hf (by simp [h]) : (0 : R ⧸ maximalIdeal R) = 1)
+
 /-- Over a Noetherian local ring, depth at least `n ≤ 2` passes from a finite target module
 to the module of linear maps from a finite module. Stacks, Lemma 15.24.10 (0AV5). -/
 @[stacks 0AV5]
@@ -160,3 +243,19 @@ theorem depth_hom_ge {R : Type u} [CommRing R] [IsLocalRing R] [IsNoetherianRing
       by simp [List.length_take, Nat.min_eq_left length]⟩
 
 end IsLocalRing
+
+namespace TauCeti
+
+variable {R : Type u} [CommRing R] [IsNoetherianRing R] {M : Type v} [AddCommGroup M] [Module R M]
+
+open Module
+
+/-- For a module `M` over a Noetherian ring `R` and a prime `p`, the localization `M_p` has depth
+zero over `R_p` exactly when `p` is an associated prime of `M`. -/
+theorem depth_localizedModule_eq_zero_iff {p : Ideal R} [p.IsPrime] :
+    depth (ModuleCat.of (Localization.AtPrime p) (LocalizedModule p.primeCompl M)) = 0 ↔
+      p ∈ associatedPrimes R M :=
+  depth_eq_zero_iff_maximalIdeal_mem_associatedPrimes.trans
+    maximalIdeal_mem_associatedPrimes_localizedModule_iff
+
+end TauCeti

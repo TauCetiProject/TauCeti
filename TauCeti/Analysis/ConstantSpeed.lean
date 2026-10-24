@@ -64,20 +64,20 @@ theorem variationOnFromTo.ediam_image_le {α E : Type*} [LinearOrder α] [Topolo
     ← ENNReal.ofReal_toReal hf]
   exact ENNReal.ofReal_le_ofReal (variationOnFromTo.abs_le_eVariationOn hf)
 
-/-- A curve of locally bounded variation on `s` factors, on `s`, through its natural
-parameterization restricted to the set of cumulative variations from a base point. -/
-theorem LocallyBoundedVariationOn.image_subset_image_naturalParameterization {α E : Type*}
-    [LinearOrder α] [EMetricSpace E] {f : α → E} {s : Set α}
+/-- The natural parameterization of a curve of locally bounded variation has the same trace
+when restricted to the set of cumulative variations from a base point. -/
+@[simp]
+theorem LocallyBoundedVariationOn.image_naturalParameterization {α E : Type*}
+    [LinearOrder α] [TopologicalSpace E] [WeakEMetricSpace E] {f : α → E} {s : Set α}
     (hf : LocallyBoundedVariationOn f s) {a : α} (ha : a ∈ s) :
-    f '' s ⊆ naturalParameterization f s a '' (variationOnFromTo f s a '' s) := by
-  rintro _ ⟨x, hx, rfl⟩
-  exact ⟨variationOnFromTo f s a x, ⟨x, hx, rfl⟩,
-    edist_eq_zero.mp (edist_naturalParameterization_eq_zero hf ha hx)⟩
+    naturalParameterization f s a '' (variationOnFromTo f s a '' s) = f '' s := by
+  rw [image_image]
+  exact image_congr fun x hx ↦ edist_eq_zero.mp (edist_naturalParameterization_eq_zero hf ha hx)
 
 /-- The image of a curve of locally bounded variation has Hausdorff dimension at most one,
 because its natural parameterization is Lipschitz on a subset of the real line. -/
 theorem LocallyBoundedVariationOn.dimH_image_le_one {α E : Type*} [LinearOrder α]
-    [MetricSpace E] {f : α → E} {s : Set α} (hf : LocallyBoundedVariationOn f s) :
+    [EMetricSpace E] {f : α → E} {s : Set α} (hf : LocallyBoundedVariationOn f s) :
     dimH (f '' s) ≤ 1 := by
   rcases s.eq_empty_or_nonempty with rfl | ⟨a, ha⟩
   · simp
@@ -86,8 +86,8 @@ theorem LocallyBoundedVariationOn.dimH_image_le_one {α E : Type*} [LinearOrder 
   have hφ : LipschitzOnWith 1 φ (v '' s) :=
     (has_unit_speed_naturalParameterization f hf ha).lipschitzOnWith
   calc
-    dimH (f '' s) ≤ dimH (φ '' (v '' s)) :=
-      dimH_mono (hf.image_subset_image_naturalParameterization ha)
+    dimH (f '' s) = dimH (φ '' (v '' s)) := by
+      rw [hf.image_naturalParameterization ha]
     _ ≤ dimH (v '' s) := hφ.dimH_image_le
     _ ≤ dimH (univ : Set ℝ) := dimH_mono (subset_univ _)
     _ = 1 := Real.dimH_univ
@@ -112,8 +112,8 @@ theorem hausdorffMeasure_image_le (f : α → E) (s : Set α) :
   have hφ : LipschitzOnWith 1 φ (v '' s) :=
     (has_unit_speed_naturalParameterization f hf.locallyBoundedVariationOn ha).lipschitzOnWith
   calc
-    μH[1] (f '' s) ≤ μH[1] (φ '' (v '' s)) :=
-      measure_mono (hf.locallyBoundedVariationOn.image_subset_image_naturalParameterization ha)
+    μH[1] (f '' s) = μH[1] (φ '' (v '' s)) := by
+      rw [hf.locallyBoundedVariationOn.image_naturalParameterization ha]
     _ ≤ μH[1] (v '' s) := by
       simpa using hφ.hausdorffMeasure_image_le zero_le_one
     _ = volume (v '' s) := by rw [hausdorffMeasure_real]

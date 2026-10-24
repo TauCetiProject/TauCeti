@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 public import Mathlib.Analysis.Calculus.Gradient.Basic
+public import Mathlib.Topology.MetricSpace.Holder
 import Mathlib.Topology.Compactness.SigmaCompact
 import Mathlib.Topology.Sets.Opens
 import Mathlib.Analysis.Calculus.Deriv.Support
@@ -24,8 +25,12 @@ compact exhaustions in domain arguments. Taking differences of consecutive cutof
 exhaustion gives a decomposition of unity (not necessarily nonnegative) of an open set by
 compactly supported smooth functions, together with cutoffs equal to one on their supports which
 are locally finite in the open set (`IsOpen.exists_contDiff_decomposition_cutoff`); this is the
-gluing device for global approximation on a domain. Locally finite sums of smooth functions are
-smooth (`contDiffAt_tsum_of_eventually_eq_zero`).
+gluing device for global approximation on a domain. Multiplying by a cutoff turns a function which
+is `C^k` on an open set containing its support into a `C^k` function on the whole space
+(`ContDiffOn.contDiff_smul_of_tsupport_subset`). Locally finite sums of smooth functions are
+smooth (`contDiffAt_tsum_of_eventually_eq_zero`). A compactly supported `C¹` function is bounded
+and Hölder continuous with every exponent at most one
+(`ContDiff.exists_holderWith_and_norm_le_of_hasCompactSupport`).
 
 It also provides radial cutoffs between two concentric closed balls of radii `r < R` whose
 gradient is at most `c / (R - r)` and whose second derivative is at most `c / (R - r)²` for a
@@ -40,7 +45,7 @@ with shrinking gaps.
 public section
 
 open Function Set TopologicalSpace
-open scoped ContDiff Gradient InnerProductSpace Topology
+open scoped ContDiff Gradient InnerProductSpace NNReal Topology
 
 namespace TauCeti
 
@@ -120,6 +125,42 @@ theorem _root_.ContDiff.exists_abs_le_and_norm_gradient_le [InnerProductSpace �
     exact (hC ⟨x, rfl⟩).trans ((le_max_left _ _).trans (le_max_right _ _))
   · rw [_root_.gradient, LinearIsometryEquiv.norm_map]
     exact (hD ⟨x, rfl⟩).trans ((le_max_right _ _).trans (le_max_right _ _))
+
+/-- A product `ψ • g` is `C^k` on the whole space when `ψ` and `g` are `C^k` on an open set `s`
+containing the topological support of `ψ`: this is how a cutoff `ψ` globalizes a function given
+on `s`. -/
+theorem _root_.ContDiffOn.contDiff_smul_of_tsupport_subset {𝕜 F : Type*}
+    [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    {k : WithTop ℕ∞} {ψ : E → 𝕜} {g : E → F} {s : Set E}
+    (hg : ContDiffOn 𝕜 k g s) (hs : IsOpen s) (hψ : ContDiffOn 𝕜 k ψ s)
+    (hψs : tsupport ψ ⊆ s) : ContDiff 𝕜 k (fun x => ψ x • g x) := by
+  refine contDiff_iff_contDiffAt.2 fun x => ?_
+  by_cases hx : x ∈ s
+  · exact (hψ.contDiffAt (hs.mem_nhds hx)).smul (hg.contDiffAt (hs.mem_nhds hx))
+  · have h0 : (fun x => ψ x • g x) =ᶠ[𝓝 x] 0 := by
+      filter_upwards [notMem_tsupport_iff_eventuallyEq.1 fun h => hx (hψs h)] with y hy
+      simp [hy]
+    exact contDiffAt_const.congr_of_eventuallyEq h0
+
+/-- A compactly supported `C¹` function is bounded, and Hölder continuous with every exponent
+`α ≤ 1`, with one constant `C` for both: it is Lipschitz and of bounded oscillation. -/
+theorem _root_.ContDiff.exists_holderWith_and_norm_le_of_hasCompactSupport [NormedSpace ℝ E]
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {φ : E → F} (hφ : ContDiff ℝ 1 φ)
+    (hc : HasCompactSupport φ) {α : ℝ≥0} (hα : α ≤ 1) :
+    ∃ C : ℝ≥0, HolderWith C α φ ∧ ∀ x, ‖φ x‖ ≤ C := by
+  obtain ⟨K, hK⟩ := hφ.lipschitzWith_of_hasCompactSupport hc one_ne_zero
+  obtain ⟨B, hB⟩ := hφ.continuous.bounded_above_of_compact_support hc
+  have hB' (x : E) : ‖φ x‖ ≤ (2 * B.toNNReal : ℝ≥0) := by
+    push_cast
+    linarith [hB x, Real.le_coe_toNNReal B, B.toNNReal.coe_nonneg]
+  have h₀ : HolderWith (2 * B.toNNReal) 0 φ := fun x y => by
+    rw [NNReal.coe_zero, ENNReal.rpow_zero, mul_one, edist_dist]
+    refine ENNReal.ofReal_le_of_le_toReal ?_
+    rw [ENNReal.coe_toReal]
+    push_cast
+    linarith [dist_le_norm_add_norm (φ x) (φ y), hB x, hB y, Real.le_coe_toNNReal B]
+  exact ⟨_, h₀.of_le_of_le (holderWith_one.2 hK) zero_le hα,
+    fun x => (hB' x).trans (by exact_mod_cast le_max_left _ _)⟩
 
 /-- A compact-exhaustion term in an open set admits a smooth cutoff supported in the interior of
 the next term. -/

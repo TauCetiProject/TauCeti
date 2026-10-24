@@ -16,17 +16,18 @@ import Mathlib.Algebra.MvPolynomial.Division
 # Order-invariant cylindrical algebraic decompositions by McCallum projection
 
 McCallum's projection replaces the Collins projection by the contents, coefficients,
-discriminants and pairwise resultants of an irreducible basis
+discriminants and pairwise resultants of a squarefree basis
 (`Finset.mcCallumProjection`). It is correct under a well-orientedness assumption, and it then
 produces a cylindrical algebraic decomposition whose cells are analytic submanifolds and on
 whose cells every input polynomial is *order-invariant*: its ambient order of vanishing
 `MvPolynomial.orderAt` is constant on each cell. Order-invariance implies sign-invariance on
 connected cells (`IsPreconnected.signInvariant_eval_of_orderAt_eq`).
 
-The lifting step takes a CAD of `ℝ ^ n` with analytic submanifold cells, on which the McCallum
-projection of the family is order-invariant. Over a cell with more than one point, no basis
+The lifting step works with any squarefree, pairwise relatively prime primitive basis. It takes
+a CAD of `ℝ ^ n` with analytic submanifold cells, on which the McCallum projection of the family
+is order-invariant. Over a cell with more than one point, no basis
 polynomial may be nullified; the cell then carries a common delineation of the basis
-(`Finset.IsIrreducibleBasis.exists_delineation_orderAt_eq_of_mcCallumProjection`). Over a
+(`Finset.IsSquarefreeBasis.exists_delineation_orderAt_eq_of_mcCallumProjection`). Over a
 single point, basis polynomials may be nullified, and the line over the point is refined by the
 roots of the delineating polynomials of the inputs
 (`Finset.exists_isSemialgebraicStack_orderAt_eq`). In both cases every input is order-invariant
@@ -83,14 +84,14 @@ section Lifting
 variable [NormalizedGCDMonoid (MvPolynomial (Fin n) ℝ)]
   {F : Finset (MvPolynomial (Fin (n + 1)) ℝ)} {B : Finset (MvPolynomial (Fin n) ℝ)[X]}
 
-/-- **McCallum lifting over one cell.** Let `B` be an irreducible basis of a finite family `F` of
+/-- **McCallum lifting over one cell.** Let `B` be a squarefree basis of a finite family `F` of
 real polynomials in `n + 1` variables, with the distinguished variable `X 0` singled out, and let
 `C ⊆ ℝ ^ n` be a semialgebraic, preconnected analytic submanifold on which every element of the
 McCallum projection is order-invariant. If no member of `B` is nullified over `C` whenever `C` has
 more than one point, then there is a semialgebraic stack over `C` whose cells are analytic
 submanifolds, on each of which every member of `F` is order-invariant. -/
 theorem exists_isSemialgebraicStack_orderAt_eq_of_mcCallumProjection
-    (hB : (F.map (finSuccEquiv ℝ n).toEquiv.toEmbedding).IsIrreducibleBasis B)
+    (hB : (F.map (finSuccEquiv ℝ n).toEquiv.toEmbedding).IsSquarefreeBasis B)
     {C : Set (Fin n → ℝ)} {d : ℕ} (hC : IsSemialgebraic C) (hCa : IsAnalyticSubmanifold d C)
     (hconn : IsPreconnected C)
     (hproj : ∀ q ∈ (F.map (finSuccEquiv ℝ n).toEquiv.toEmbedding).mcCallumProjection B,
@@ -107,19 +108,20 @@ theorem exists_isSemialgebraicStack_orderAt_eq_of_mcCallumProjection
     exact ⟨k, _, hstack, fun E hE ↦
       ⟨(hcells E hE).1.imp fun _ h ↦ h.2, fun f hf ↦ ((hcells E hE).2 f hf).1⟩⟩
   · obtain ⟨D, hD⟩ :=
-      hB.exists_delineation_orderAt_eq_of_mcCallumProjection hCa hconn (hfiber hnt) hproj
+      hB.exists_delineation_orderAt_eq_of_mcCallumProjection hCa hconn
+        (hfiber hnt) hproj
     refine ⟨D.count, D.root, D.isSemialgebraicStack (φ := RingHom.id ℝ) hC, fun E hE ↦
       ⟨(hD E hE).1.imp fun _ h ↦ h.2, fun f hf ↦ ?_⟩⟩
     simpa using ((hD E hE).2 (finSuccEquiv ℝ n f) (by simpa using hf)).1
 
-/-- **McCallum lifting of a cylindrical algebraic decomposition.** Let `B` be an irreducible basis
+/-- **McCallum lifting of a cylindrical algebraic decomposition.** Let `B` be a squarefree basis
 of a finite family `F` of real polynomials in `n + 1` variables, with the distinguished variable
 `X 0` singled out. Let `𝒟` be a CAD of `ℝ ^ n` into analytic submanifolds, on whose cells every
 element of the McCallum projection is order-invariant, such that no member of `B` is nullified
 over a cell with more than one point. Then `𝒟` lifts to a CAD of `ℝ ^ (n + 1)` into analytic
 submanifolds, on whose cells every member of `F` is order-invariant. -/
 theorem IsCAD.exists_isCAD_orderAt_eq_of_mcCallumProjection {𝒟 : Set (Set (Fin n → ℝ))}
-    (h𝒟 : IsCAD n 𝒟) (hB : (F.map (finSuccEquiv ℝ n).toEquiv.toEmbedding).IsIrreducibleBasis B)
+    (h𝒟 : IsCAD n 𝒟) (hB : (F.map (finSuccEquiv ℝ n).toEquiv.toEmbedding).IsSquarefreeBasis B)
     (hanalytic : ∀ C ∈ 𝒟, ∃ d, IsAnalyticSubmanifold d C)
     (hproj : ∀ q ∈ (F.map (finSuccEquiv ℝ n).toEquiv.toEmbedding).mcCallumProjection B,
       ∀ C ∈ 𝒟, ∀ x ∈ C, ∀ y ∈ C, q.orderAt x = q.orderAt y)
@@ -376,7 +378,7 @@ theorem exists_isCAD_orderAt_eq_of_isMcCallumWellOriented {F : Finset (MvPolynom
         (F := F.map (finSuccEquiv ℝ n).toEquiv.toEmbedding) (fun q hq ↦ ?_) hb).1 hbx
       rw [← MvPolynomial.orderAt_pos_iff, hproj q hq C hC x hx y hy, MvPolynomial.orderAt_pos_iff]
     obtain ⟨𝒞, h𝒞, -, h𝒞a, h𝒞o⟩ :=
-      h𝒟.exists_isCAD_orderAt_eq_of_mcCallumProjection hB hanalytic hproj hfiber
+      h𝒟.exists_isCAD_orderAt_eq_of_mcCallumProjection hB.isSquarefreeBasis hanalytic hproj hfiber
     exact ⟨𝒞, h𝒞, h𝒞a, h𝒞o⟩
 
 end WellOriented
