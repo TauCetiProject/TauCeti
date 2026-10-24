@@ -188,17 +188,38 @@ the live documentation describes.
 
 ## Building
 
+Run this from the repository root:
+
 ```bash
-lake exe cache get                 # Mathlib's oleans
-bash scripts/lake-cache-get.sh .   # Tau Ceti's own oleans
-lake build
+(
+  set -e
+  lake exe cache get  # Mathlib's oleans
+
+  export LAKE_ARTIFACT_CACHE=true LAKE_RESTORE_ARTIFACTS=true
+  export LAKE_CACHE_DIR="$PWD/.lake/cache"
+  RUNNER_TEMP="$(mktemp -d "${TMPDIR:-/tmp}/tauceti-cache.XXXXXX")"
+  export RUNNER_TEMP
+  export GITHUB_ENV="$RUNNER_TEMP/lake-cache.env"
+  trap 'rm -rf "$RUNNER_TEMP"' EXIT
+  : > "$GITHUB_ENV"
+
+  bash scripts/lake-cache-get.sh .  # Tau Ceti's own oleans
+  while IFS= read -r cache_setting; do
+    export "$cache_setting"
+  done < "$GITHUB_ENV"
+  lake build
+)
 ```
 
-Both fetches matter, and they come from different places. `lake exe cache get` is Mathlib's own
-cache and covers only Mathlib. Tau Ceti's oleans live in a separate public cache that
-`scripts/lake-cache-get.sh` reads, anonymously and with no setup; without that second line
-`lake build` compiles the whole library from source, which takes hours. A miss is never fatal: the
-script discards a partial fetch and leaves you exactly where a from-scratch build would.
+Both fetches matter: `lake exe cache get` covers Mathlib, while the helper reads Tau Ceti's own
+built modules from a separate public, anonymous cache. No credentials are needed. The environment
+settings select this checkout's `.lake/cache` and tell Lake to restore cached outputs into
+`.lake/build`. The subshell keeps those settings out of your shell. A unique temporary directory
+holds the helper's configuration, logs, and environment file; the exit trap removes it.
+
+On a cache miss or exhausted fetch retries, the helper discards the partial cache and writes
+settings to `GITHUB_ENV` that disable caching and restoration. The loop exports them before
+`lake build`, allowing missing outputs to be compiled from source.
 
 The cache stores each revision's outputs under the toolchain that built them, and the script looks
 back through ancestors of your checkout to find the nearest published one. So expect a full rebuild
