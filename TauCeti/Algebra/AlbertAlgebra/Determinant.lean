@@ -57,8 +57,8 @@ to be invertible as well.
 
 ## Main results
 
-* `TauCeti.AlbertAlgebra.det_smul` and `TauCeti.AlbertAlgebra.spur_smul`: the determinant is a
-  cubic and the spur a quadratic form.
+* `TauCeti.AlbertAlgebra.det_smul` and `TauCeti.AlbertAlgebra.spur_smul`: the determinant is
+  homogeneous of degree three and the spur homogeneous of degree two.
 * `TauCeti.AlbertAlgebra.two_mul_spur` and `TauCeti.AlbertAlgebra.spur_eq_invOf_two_mul`: the
   spur is `(T(A)² - T(A ∘ A)) / 2`.
 * `TauCeti.AlbertAlgebra.mul_mul_self`: **the cubic equation** satisfied by every element.
@@ -120,13 +120,15 @@ theorem det_eq_rotate (A : AlbertAlgebra R) (i : Fin 3) :
       - A.diag (i + 2) * Octonion.norm (A.offDiag (i + 2))
       + Octonion.trace (A.offDiag i * A.offDiag (i + 1) * A.offDiag (i + 2)) := by
   rw [trace_offDiag_mul_offDiag_mul_offDiag, det_def]
-  fin_cases i <;> simp <;> ring
+  fin_cases i <;>
+    simp only [Fin.isValue, Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk, Fin.reduceAdd, zero_add] <;>
+    ring
 
 @[simp] theorem det_zero : det (0 : AlbertAlgebra R) = 0 := by simp [det_def]
 
 @[simp] theorem det_one : det (1 : AlbertAlgebra R) = 1 := by simp [det_def]
 
-/-- **The determinant is a cubic form**: `det (r • A) = r ^ 3 * det A`. -/
+/-- **The determinant is homogeneous of degree three**: `det (r • A) = r ^ 3 * det A`. -/
 @[simp] theorem det_smul (r : R) (A : AlbertAlgebra R) : det (r • A) = r ^ 3 * det A := by
   simp only [det_def, smul_diag, smul_offDiag, Pi.smul_apply, smul_eq_mul, Octonion.norm_smul,
     smul_mul_assoc, mul_smul_comm, smul_smul, map_smul]
@@ -157,7 +159,9 @@ theorem spur_eq_rotate (A : AlbertAlgebra R) (i : Fin 3) :
       + A.diag (i + 2) * A.diag i - Octonion.norm (A.offDiag i)
       - Octonion.norm (A.offDiag (i + 1)) - Octonion.norm (A.offDiag (i + 2)) := by
   rw [spur_def]
-  fin_cases i <;> simp <;> ring
+  fin_cases i <;>
+    simp only [Fin.isValue, Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk, Fin.reduceAdd, zero_add] <;>
+    ring
 
 @[simp] theorem spur_zero : spur (0 : AlbertAlgebra R) = 0 := by simp [spur_def]
 
@@ -165,7 +169,7 @@ theorem spur_eq_rotate (A : AlbertAlgebra R) (i : Fin 3) :
 @[simp] theorem spur_one : spur (1 : AlbertAlgebra R) = 3 := by
   norm_num [spur_def]
 
-/-- **The spur is a quadratic form**: `spur (r • A) = r ^ 2 * spur A`. -/
+/-- **The spur is homogeneous of degree two**: `spur (r • A) = r ^ 2 * spur A`. -/
 @[simp] theorem spur_smul (r : R) (A : AlbertAlgebra R) : spur (r • A) = r ^ 2 * spur A := by
   simp only [spur_def, smul_diag, smul_offDiag, Pi.smul_apply, smul_eq_mul, Octonion.norm_smul]
   ring
