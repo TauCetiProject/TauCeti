@@ -21,8 +21,7 @@ whose length interval is a singleton.
 For curves injective on the interior of their parameter interval, cumulative variation induces
 an increasing homeomorphism between the original parameter interval and the length interval.
 This includes injective arcs and simple closed curves.
-On its length interval, the factor is Mathlib's `naturalParameterization`, and it traces the same
-set as the curve.
+On its length interval, the factor is Mathlib's `naturalParameterization`.
 
 We use Mathlib's `variationOnFromTo`, its continuity criterion, and the exact variation formula
 for composition with a monotone map. Length is always `eVariationOn`; its conversion to a real
@@ -124,16 +123,6 @@ theorem eqOn_naturalParameterization (hγ : BoundedVariationOn γ (Icc a b))
   rw [← hγ.image_variationOnFromTo_Icc hcont hab]
   rintro _ ⟨t, ht, rfl⟩
   exact (hg ht).trans <| .symm <|
-    hγ.locallyBoundedVariationOn.naturalParameterization_variationOnFromTo (left_mem_Icc.2 hab) ht
-
-/-- The natural parameterization of a continuous rectifiable curve on its length interval traces
-the same set as the curve. -/
-theorem image_naturalParameterization (hγ : BoundedVariationOn γ (Icc a b))
-    (hcont : ContinuousOn γ (Icc a b)) (hab : a ≤ b) :
-    naturalParameterization γ (Icc a b) a '' Icc 0 (eVariationOn γ (Icc a b)).toReal =
-      γ '' Icc a b := by
-  rw [← hγ.image_variationOnFromTo_Icc hcont hab, image_image]
-  exact image_congr fun t ht ↦
     hγ.locallyBoundedVariationOn.naturalParameterization_variationOnFromTo (left_mem_Icc.2 hab) ht
 
 /-- For a continuous rectifiable curve injective on the interior of its parameter interval,

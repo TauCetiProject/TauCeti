@@ -241,7 +241,8 @@ theorem rectifiableCurveIntegral_eq_intervalIntegral_deriv
     rw [hθa, hθb]
     exact absolutelyContinuousOnInterval_naturalParameterization hBV hcont hab
   have hωη : ContinuousOn ω (η '' uIcc (θ a) (θ b)) := by
-    rwa [hθa, hθb, uIcc_of_le ENNReal.toReal_nonneg, hBV.image_naturalParameterization hcont hab]
+    rwa [hθa, hθb, uIcc_of_le ENNReal.toReal_nonneg, ← hBV.image_variationOnFromTo_Icc hcont hab,
+      hBV.locallyBoundedVariationOn.image_naturalParameterization (left_mem_Icc.2 hab)]
   rw [← integral_oneForm_congr (uIcc_of_le hab ▸ hfactor),
     integral_oneForm_comp hη hθ hab (Or.inl hθm)
       (hη.intervalIntegrable_oneForm_of_continuousOn hωη), hθa, hθb, rectifiableCurveIntegral_def]
@@ -291,7 +292,8 @@ private theorem intervalIntegrable_oneForm_naturalParameterization
   rcases le_or_gt a b with hab | hba
   · refine (absolutelyContinuousOnInterval_naturalParameterization hγ hcont hab
       ).intervalIntegrable_oneForm_of_continuousOn ?_
-    rwa [uIcc_of_le ENNReal.toReal_nonneg, hγ.image_naturalParameterization hcont hab]
+    rwa [uIcc_of_le ENNReal.toReal_nonneg, ← hγ.image_variationOnFromTo_Icc hcont hab,
+      hγ.locallyBoundedVariationOn.image_naturalParameterization (left_mem_Icc.2 hab)]
   · rw [eVariationOn.subsingleton γ ((Icc_eq_empty hba.not_ge).symm ▸ subsingleton_empty)]
     exact IntervalIntegrable.refl
 
