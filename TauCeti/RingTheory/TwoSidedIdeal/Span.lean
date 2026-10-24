@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.TwoSidedIdeal.Operations
 public import Mathlib.RingTheory.Jacobson.Radical
-import TauCeti.RingTheory.Jacobson.MulOpposite
+import TauCeti.RingTheory.Jacobson.Basic
 
 /-!
 # Two-sided spans and generation modulo the radical
