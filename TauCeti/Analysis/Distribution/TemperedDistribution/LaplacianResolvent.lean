@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Distribution.Sobolev
 public import TauCeti.Analysis.Distribution.SchwartzSpace.LaplacianResolvent
 public import TauCeti.Analysis.Distribution.TemperedDistribution.FourierMultiplier
+import TauCeti.Analysis.Distribution.Sobolev
 
 /-!
 # The resolvent of the Laplacian on tempered distributions
@@ -173,9 +174,9 @@ theorem MemSobolev.laplacianResolvent {c s : ℝ} (hc : 0 < c) {f : 𝓢'(E, F)}
       laplacianResolvent_eq_fourierMultiplierCLM]
     congr 2
     ext ξ
-    have h₁ : (1 + ‖ξ‖ ^ 2 : ℝ) ≠ 0 := by positivity
-    rw [Pi.mul_apply, ← Complex.ofReal_mul, show (-2 : ℝ) / 2 = -1 by norm_num,
-      Real.rpow_neg_one, mul_comm (1 + ‖ξ‖ ^ 2), mul_assoc, mul_inv_cancel₀ h₁, mul_one]
+    have h₁ : (1 + ‖ξ‖ ^ 2 : ℂ) ≠ 0 := by exact_mod_cast (by positivity : (1 + ‖ξ‖ ^ 2 : ℝ) ≠ 0)
+    norm_num [m, Real.rpow_neg_one]
+    field_simp
   rw [heq, memSobolev_besselPotential_iff, show -2 + (s + 2) = s by ring]
   exact hf.fourierMultiplierCLM_of_bounded hm hmb
 
@@ -186,8 +187,7 @@ theorem memSobolev_add_two_iff_neg_laplacian_add_smul {c s : ℝ} (hc : 0 < c) {
   refine ⟨fun hf ↦ ?_, fun hf ↦ ?_⟩
   · have hΔ := hf.laplacian
     rw [add_sub_cancel_right] at hΔ
-    rw [← Complex.coe_smul]
-    exact hΔ.neg.add ((hf.mono (by linarith)).smul _)
+    exact hΔ.neg.add ((hf.mono (by linarith)).smul_of_tower c)
   · have h := hf.laplacianResolvent (F := F) hc
     rwa [laplacianResolvent_neg_laplacian_add_smul hc] at h
 

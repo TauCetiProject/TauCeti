@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Distribution.TemperedDistribution.LaplacianResolvent
 public import TauCeti.Analysis.PDE.Vortex.VacuumOperator.Basic
+import TauCeti.Analysis.Distribution.Sobolev
 import TauCeti.Analysis.Distribution.TemperedDistribution.Deriv
 
 /-!
@@ -288,9 +289,8 @@ variable {s : ℝ} {x y}
 theorem memSobolev_temperedVacuumOperator (hx : ∀ i, MemSobolev s 2 (x i)) (i : Fin 4) :
     MemSobolev (s - 1) 2 (temperedVacuumOperator x i) := by
   have hd (j : Fin 4) (v : ℂ) : MemSobolev (s - 1) 2 (∂_{v} (x j)) := (hx j).lineDerivOp
-  have h₀ (j : Fin 4) : MemSobolev (s - 1) 2 ((1 / 2 : ℝ) • x j) := by
-    have h := ((hx j).mono (s' := s - 1) (by linarith)).smul ((1 / 2 : ℝ) : ℂ)
-    rwa [Complex.coe_smul] at h
+  have h₀ (j : Fin 4) : MemSobolev (s - 1) 2 ((1 / 2 : ℝ) • x j) :=
+    ((hx j).mono (s' := s - 1) (by linarith)).smul_of_tower _
   fin_cases i
   exacts [((hd 0 1).add (hd 1 I)).add (h₀ 3), ((hd 0 I).sub (hd 1 1)).add (h₀ 2),
     ((hd 2 1).sub (hd 3 I)).sub (h₀ 1), ((hd 2 I).add (hd 3 1)).add (h₀ 0)]
@@ -299,9 +299,8 @@ theorem memSobolev_temperedVacuumOperator (hx : ∀ i, MemSobolev s 2 (x i)) (i 
 theorem memSobolev_temperedVacuumAdjoint (hy : ∀ i, MemSobolev s 2 (y i)) (i : Fin 4) :
     MemSobolev (s - 1) 2 (temperedVacuumAdjoint y i) := by
   have hd (j : Fin 4) (v : ℂ) : MemSobolev (s - 1) 2 (∂_{v} (y j)) := (hy j).lineDerivOp
-  have h₀ (j : Fin 4) : MemSobolev (s - 1) 2 ((1 / 2 : ℝ) • y j) := by
-    have h := ((hy j).mono (s' := s - 1) (by linarith)).smul ((1 / 2 : ℝ) : ℂ)
-    rwa [Complex.coe_smul] at h
+  have h₀ (j : Fin 4) : MemSobolev (s - 1) 2 ((1 / 2 : ℝ) • y j) :=
+    ((hy j).mono (s' := s - 1) (by linarith)).smul_of_tower _
   fin_cases i
   exacts [((hd 0 1).neg.sub (hd 1 I)).add (h₀ 3), ((hd 0 I).neg.add (hd 1 1)).sub (h₀ 2),
     ((hd 2 1).neg.sub (hd 3 I)).add (h₀ 1), ((hd 2 I).sub (hd 3 1)).add (h₀ 0)]
@@ -322,17 +321,20 @@ theorem memSobolev_temperedVacuumAdjointEquiv_symm (hy : ∀ i, MemSobolev s 2 (
   exact memSobolev_temperedVacuumOperator
     (fun j ↦ (hy j).laplacianResolvent (c := 1 / 4) (by norm_num)) i
 
-/-- **The vacuum operator is an isomorphism `H^s ≃ H^{s-1}`**: a tempered field `x` lies in `H^s`
-if and only if `L₀ x` lies in `H^{s-1}`. Together with `temperedVacuumOperatorEquiv`, this says
-that `L₀` restricts to a bijection from `H^s` onto `H^{s-1}`, for every real `s`. -/
+/-- **The vacuum operator restricts to a bijection `H^s → H^{s-1}`**: a tempered field `x` lies in
+`H^s` if and only if `L₀ x` lies in `H^{s-1}`. Since `L₀` is bijective on tempered fields
+(`temperedVacuumOperatorEquiv`), it restricts to a bijection from `H^s` onto `H^{s-1}`, for every
+real `s`. -/
 theorem memSobolev_temperedVacuumOperator_iff :
     (∀ i, MemSobolev (s - 1) 2 (temperedVacuumOperator x i)) ↔ ∀ i, MemSobolev s 2 (x i) := by
   refine ⟨fun h i ↦ ?_, memSobolev_temperedVacuumOperator⟩
   simpa only [sub_add_cancel, ContinuousLinearEquiv.symm_apply_apply] using
     memSobolev_temperedVacuumOperatorEquiv_symm (y := temperedVacuumOperatorEquiv x) h i
 
-/-- The adjoint of the vacuum operator is an isomorphism `H^s ≃ H^{s-1}`: a tempered field `y`
-lies in `H^s` if and only if `L₀* y` lies in `H^{s-1}`. -/
+/-- The adjoint of the vacuum operator restricts to a bijection `H^s → H^{s-1}`: a tempered field
+`y` lies in `H^s` if and only if `L₀* y` lies in `H^{s-1}`. Since `L₀*` is bijective on tempered
+fields (`temperedVacuumAdjointEquiv`), it restricts to a bijection from `H^s` onto `H^{s-1}`, for
+every real `s`. -/
 theorem memSobolev_temperedVacuumAdjoint_iff :
     (∀ i, MemSobolev (s - 1) 2 (temperedVacuumAdjoint y i)) ↔ ∀ i, MemSobolev s 2 (y i) := by
   refine ⟨fun h i ↦ ?_, memSobolev_temperedVacuumAdjoint⟩
