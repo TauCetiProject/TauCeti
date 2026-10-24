@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.Positive
+public import TauCeti.LinearAlgebra.RootSystem.DominantCone
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Invariant
-import TauCeti.LinearAlgebra.RootSystem.DominantCone
 import TauCeti.LinearAlgebra.RootSystem.Weyl.DominantIntegral
 
 /-!
@@ -49,8 +48,9 @@ contributes `f(y)`.
 * `RootPairing.weylWeightOrbit`: the finite set of the distinct weights in the Weyl orbit of a
   weight.
 * `RootPairing.weightOrbitSum`: the orbit sum `m_x = ∑_{y ∈ W x} e^y`.
-* `RootPairing.dominantWeightsBelow`: the finite set of the dominant integral weights `mu` below a
-  weight `lam`, that is with `lam - mu` in the positive root cone.
+
+The finite set of the dominant integral weights below `lam` over which the expansion runs is
+`RootPairing.dominantWeightsBelow`, from `TauCeti/LinearAlgebra/RootSystem/DominantCone.lean`.
 
 ## Main results
 
@@ -184,37 +184,6 @@ theorem isWeylInvariant_weightOrbitSum (x : M) : IsWeylInvariant P (P.weightOrbi
   simp only [coeff_weightOrbitSum, smul_mem_weylWeightOrbit_iff]
 
 end OrbitSum
-
-/-! ### The dominant integral weights below a weight -/
-
-section Dominant
-
-variable [Finite ι] [CharZero R] [IsDomain R] [P.IsRootSystem] [P.IsCrystallographic]
-  (b : P.Base)
-
-/-- The **dominant integral weights below `lam`**: the weights `mu` with `lam - mu` in the positive
-root cone of `b`, on which every simple coroot takes a natural value. There are only finitely many
-of them (`TauCeti.finite_setOf_dominant_sub_mem_posRootCone`), and this is that finite set. -/
-noncomputable def dominantWeightsBelow (lam : M) : Finset M :=
-  (finite_setOf_dominant_sub_mem_posRootCone b lam).toFinset
-
-variable {P b}
-
-/-- Membership in `RootPairing.dominantWeightsBelow`: `mu` lies below `lam` and is dominant
-integral. -/
-@[simp]
-theorem mem_dominantWeightsBelow {lam mu : M} :
-    mu ∈ P.dominantWeightsBelow b lam ↔
-      lam - mu ∈ posRootCone P b ∧ ∀ i ∈ b.support, ∃ n : ℕ, P.coroot' i mu = (n : R) := by
-  simp [dominantWeightsBelow]
-
-/-- A dominant integral weight is one of the dominant integral weights below itself. -/
-theorem self_mem_dominantWeightsBelow {lam : M}
-    (hlam : ∀ i ∈ b.support, ∃ n : ℕ, P.coroot' i lam = (n : R)) :
-    lam ∈ P.dominantWeightsBelow b lam :=
-  mem_dominantWeightsBelow.mpr ⟨by simp, hlam⟩
-
-end Dominant
 
 end RootPairing
 
