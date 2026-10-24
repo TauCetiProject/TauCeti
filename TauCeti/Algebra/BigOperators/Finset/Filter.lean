@@ -17,7 +17,7 @@ interval.
 
 For a family `u` of square roots of `1` with levels `k : ι → ℕ`, the products
 `∏_{i ∈ s} u i ^ (k i - j)` for all `j` determine the products of the `u i` of each level `m ≥ 1`:
-if they all vanish, so do the level products.
+if they all equal one, so do the level products.
 
 ## Main results
 
