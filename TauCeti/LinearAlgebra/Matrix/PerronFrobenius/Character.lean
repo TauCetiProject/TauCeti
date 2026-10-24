@@ -12,11 +12,11 @@ public import TauCeti.LinearAlgebra.Matrix.PerronFrobenius.Positive
 /-!
 # The Frobenius–Perron character of a transitive ℤ₊-ring
 
-Let `R` be a ring with a finite `ℤ`-basis `b` whose structure constants are nonnegative: every
-product `b i * b j` is a nonnegative integer combination of basis elements (a **ℤ₊-ring** in the
-sense of Etingof–Gelaki–Nikshych–Ostrik). Suppose it is **transitive** on one side, in the sense
-that every basis element occurs in `b j * s` for every `j`, where `s = ∑ i, b i` is the sum of the
-basis. Then `R` has exactly one character `χ : R →+* ℝ` taking nonnegative values on the basis, and
+Let `R` be a ring with a finite nonempty `ℤ`-basis `b` whose structure constants are nonnegative:
+every product `b i * b j` is a nonnegative integer combination of basis elements (a **ℤ₊-ring**
+in the sense of Etingof–Gelaki–Nikshych–Ostrik). Suppose it is **transitive** on one side: every
+basis element occurs in `b j * s` for every `j`, where `s = ∑ i, b i` is the sum of the basis.
+Then `R` has exactly one character `χ : R →+* ℝ` taking nonnegative values on the basis, and
 its values on the basis are strictly positive. Its value at an element `x` with nonnegative
 coordinates is the spectral radius of the matrix of left multiplication by `x`.
 
@@ -155,9 +155,9 @@ variable (hb : ∀ i j l, 0 ≤ b.repr (b i * b j) l) (ht : ∀ j l, 0 < ∑ i, 
 
 include hb ht
 
-/-- A ring with a finite `ℤ`-basis with nonnegative structure constants, such that every basis
-element occurs in `b j * ∑ i, b i` for every `j`, has a character to `ℝ` taking positive values on
-the basis. -/
+/-- A ring with a finite nonempty `ℤ`-basis with nonnegative structure constants, such that every
+basis element occurs in `b j * ∑ i, b i` for every `j`, has a character to `ℝ` taking positive
+values on the basis. -/
 theorem exists_ringHom_apply_pos [Nonempty ι] : ∃ χ : R →+* ℝ, ∀ i, 0 < χ (b i) := by
   classical
   have hQ := rightMulSum_pos b ht
