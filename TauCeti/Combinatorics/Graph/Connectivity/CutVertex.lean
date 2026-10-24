@@ -19,13 +19,14 @@ previously reachable.  This definition is insensitive to loops and parallel edge
 in the native walk-based connectivity API for `Graph`.
 
 The map `Graph.deleteVertexComponentMap` sends each component after deleting a vertex to its
-original component.  A vertex is a cut vertex exactly when this map is not injective.  When the
-actual vertex set is finite, this gives the component-count characterization
-`Graph.isCutVertex_iff_componentCount_lt`: deleting a cut vertex increases the number of connected
-components, while deleting a non-cut vertex does not increase it.
+original component.  A vertex is a cut vertex exactly when this map is not injective.  With the
+relevant component types finite, this gives the component-count characterization
+`Graph.isCutVertex_iff_componentCount_lt_componentCount_deleteVerts`: deleting a cut vertex
+increases the number of connected components, while deleting a non-cut vertex does not increase
+it.
 
-These are the standard equivalent definitions of an articulation vertex; see R. Diestel,
-*Graph Theory*, 5th ed., Graduate Texts in Mathematics 173, Springer, 2017, Section 3.1.
+The definition follows R. Diestel, *Graph Theory*, 5th ed., Graduate Texts in Mathematics 173,
+Springer, 2017, Section 1.4; the other characterizations are proved here.
 -/
 
 public section
@@ -51,22 +52,17 @@ theorem isCutVertex_def : G.IsCutVertex v ↔
   Iff.rfl
 
 /-- The map from components after deleting `v` to components of the original graph. -/
-def deleteVertexComponentMap (G : Graph α β) (v : α) :
-    (G.deleteVerts {v}).toSimpleGraph.ConnectedComponent →
-      G.toSimpleGraph.ConnectedComponent :=
-  SimpleGraph.ConnectedComponent.map (toSimpleGraphHomOfLE deleteVerts_le)
+noncomputable def deleteVertexComponentMap (G : Graph α β) (v : α) :
+    (G.deleteVerts {v}).ConnectedComponent → G.ConnectedComponent :=
+  ConnectedComponent.mapOfLE deleteVerts_le
 
 /-- The component of a vertex after deletion maps to its component in the original graph. -/
 @[simp]
-theorem deleteVertexComponentMap_connectedComponentMk (G : Graph α β) (v : α)
-    (z : V(G.deleteVerts {v})) :
-    G.deleteVertexComponentMap v ((G.deleteVerts {v}).toSimpleGraph.connectedComponentMk z) =
-      G.toSimpleGraph.connectedComponentMk
-        ⟨z, deleteVerts_le.vertexSet_mono z.2⟩ := by
-  rw [deleteVertexComponentMap, SimpleGraph.ConnectedComponent.map_mk,
-    toSimpleGraph_connectedComponentMk_eq_iff]
-  simpa only [coe_toSimpleGraphHomOfLE_apply] using
-    Reachable.refl (deleteVerts_le.vertexSet_mono z.2)
+theorem deleteVertexComponentMap_connectedComponentOf (G : Graph α β) (v x : α)
+    (hx : x ∈ V(G.deleteVerts {v})) :
+    G.deleteVertexComponentMap v ((G.deleteVerts {v}).connectedComponentOf x hx) =
+      G.connectedComponentOf x (deleteVerts_le.vertexSet_mono hx) :=
+  ConnectedComponent.mapOfLE_connectedComponentOf deleteVerts_le hx
 
 /-- A vertex is a cut vertex exactly when two components created by its deletion map to the same
 original component. -/
@@ -74,32 +70,65 @@ theorem isCutVertex_iff_not_injective_deleteVertexComponentMap :
     G.IsCutVertex v ↔ ¬Function.Injective (G.deleteVertexComponentMap v) := by
   constructor
   · rintro ⟨u, w, huv, hwv, huw, hdel⟩ hinj
-    let u' : V(G.deleteVerts {v}) := ⟨u, by simp [huv, huw.left_mem]⟩
-    let w' : V(G.deleteVerts {v}) := ⟨w, by simp [hwv, huw.right_mem]⟩
+    have hu' : u ∈ V(G.deleteVerts {v}) := by simp [huv, huw.left_mem]
+    have hw' : w ∈ V(G.deleteVerts {v}) := by simp [hwv, huw.right_mem]
     have hmap : G.deleteVertexComponentMap v
-        ((G.deleteVerts {v}).toSimpleGraph.connectedComponentMk u') =
+        ((G.deleteVerts {v}).connectedComponentOf u hu') =
         G.deleteVertexComponentMap v
-          ((G.deleteVerts {v}).toSimpleGraph.connectedComponentMk w') := by
-      rw [deleteVertexComponentMap_connectedComponentMk,
-        deleteVertexComponentMap_connectedComponentMk,
-        toSimpleGraph_connectedComponentMk_eq_iff]
+          ((G.deleteVerts {v}).connectedComponentOf w hw') := by
+      rw [deleteVertexComponentMap_connectedComponentOf,
+        deleteVertexComponentMap_connectedComponentOf,
+        connectedComponentOf_eq_connectedComponentOf_iff]
       exact huw
     have hcomp := hinj hmap
-    exact hdel (toSimpleGraph_connectedComponentMk_eq_iff.mp hcomp)
+    exact hdel ((connectedComponentOf_eq_connectedComponentOf_iff hu' hw').mp hcomp)
   · intro hninj
     obtain ⟨C, D, hmap, hCD⟩ := Function.not_injective_iff.mp hninj
-    induction C using SimpleGraph.ConnectedComponent.ind with | h u' => ?_
-    induction D using SimpleGraph.ConnectedComponent.ind with | h w' => ?_
-    refine ⟨u', w', ?_, ?_, ?_, ?_⟩
-    · have hu : (u' : α) ∈ V(G) ∧ (u' : α) ≠ v := by
-        simpa only [vertexSet_deleteVerts, mem_sdiff, mem_singleton_iff] using u'.2
-      exact hu.2
-    · have hw : (w' : α) ∈ V(G) ∧ (w' : α) ≠ v := by
-        simpa only [vertexSet_deleteVerts, mem_sdiff, mem_singleton_iff] using w'.2
-      exact hw.2
-    · exact (map_toSimpleGraphHomOfLE_connectedComponentMk_eq_map_iff deleteVerts_le).mp hmap
+    obtain ⟨u, huC⟩ := C.property.nonempty
+    obtain ⟨w, hwD⟩ := D.property.nonempty
+    have hu' : u ∈ V(G.deleteVerts {v}) := C.property.le.vertexSet_mono huC
+    have hw' : w ∈ V(G.deleteVerts {v}) := D.property.le.vertexSet_mono hwD
+    have hu := C.eq_connectedComponentOf huC
+    have hw := D.eq_connectedComponentOf hwD
+    refine ⟨u, w, ?_, ?_, ?_, ?_⟩
+    · have h : u ∈ V(G) ∧ u ≠ v := by
+        simpa only [vertexSet_deleteVerts, mem_sdiff, mem_singleton_iff] using hu'
+      exact h.2
+    · have h : w ∈ V(G) ∧ w ≠ v := by
+        simpa only [vertexSet_deleteVerts, mem_sdiff, mem_singleton_iff] using hw'
+      exact h.2
+    · rw [hu, hw, deleteVertexComponentMap_connectedComponentOf,
+        deleteVertexComponentMap_connectedComponentOf,
+        connectedComponentOf_eq_connectedComponentOf_iff] at hmap
+      exact hmap
     · intro huw
-      exact hCD (toSimpleGraph_connectedComponentMk_eq_iff.mpr huw)
+      apply hCD
+      rw [hu, hw, connectedComponentOf_eq_connectedComponentOf_iff]
+      exact huw
+
+/-- The component map after deleting `v` is surjective if another vertex is reachable from
+`v`. -/
+theorem deleteVertexComponentMap_surjective
+    (h : ∃ u, u ≠ v ∧ G.Reachable u v) :
+    Function.Surjective (G.deleteVertexComponentMap v) := by
+  obtain ⟨u, huv, huvReach⟩ := h
+  intro C
+  obtain ⟨z, hzC⟩ := C.property.nonempty
+  have hzG : z ∈ V(G) := C.property.le.vertexSet_mono hzC
+  by_cases hzv : z = v
+  · subst z
+    have hu' : u ∈ V(G.deleteVerts {v}) := by simp [huv, huvReach.left_mem]
+    refine ⟨(G.deleteVerts {v}).connectedComponentOf u hu', ?_⟩
+    rw [deleteVertexComponentMap_connectedComponentOf]
+    apply ConnectedComponent.eq_of_mem_of_mem
+    · rw [mem_vertexSet_connectedComponentOf_iff]
+      exact huvReach
+    · exact hzC
+  · have hz' : z ∈ V(G.deleteVerts {v}) := by simp [hzv, hzG]
+    refine ⟨(G.deleteVerts {v}).connectedComponentOf z hz', ?_⟩
+    rw [deleteVertexComponentMap_connectedComponentOf]
+    exact ConnectedComponent.eq_of_mem_of_mem
+      (mem_vertexSet_connectedComponentOf_self hzG) hzC
 
 /-- A cut vertex is reachable from one of the two vertices it separates. -/
 theorem IsCutVertex.exists_ne_and_reachable (h : G.IsCutVertex v) :
@@ -109,21 +138,8 @@ theorem IsCutVertex.exists_ne_and_reachable (h : G.IsCutVertex v) :
   have hvp : v ∈ p.support := by
     by_contra hvp
     apply hdel
-    refine (p.transfer deleteVerts_le ?_).reachable (by simp [huw.left_mem, huv])
-    intro e he
-    obtain ⟨a, b, hab, q, r, rfl⟩ := Walk.mem_edges_iff_exists_append.mp he
-    rw [edgeSet_deleteVerts]
-    refine ⟨a, b, hab, ?_, ?_⟩
-    · intro hav
-      apply hvp
-      subst a
-      rw [Walk.support_append]
-      exact List.mem_append_left _ q.end_mem_support
-    · intro hbv
-      apply hvp
-      subst b
-      rw [Walk.support_append]
-      exact List.mem_append_right _ (by simp)
+    exact reachable_deleteVerts_iff_exists_walk.mpr
+      ⟨p, huw.left_mem, fun z hz hzv ↦ hvp (hzv ▸ hz)⟩
   obtain ⟨q, r, hp⟩ := Walk.mem_support_iff_exists_append.mp hvp
   exact ⟨u, huv, q.reachable huw.left_mem⟩
 
@@ -131,38 +147,57 @@ theorem IsCutVertex.exists_ne_and_reachable (h : G.IsCutVertex v) :
 theorem IsCutVertex.mem_vertexSet (h : G.IsCutVertex v) : v ∈ V(G) :=
   h.exists_ne_and_reachable.choose_spec.2.right_mem
 
-/-! ### Finite component counts -/
+/-! ### Component counts -/
 
-/-- **Cut vertices by component counts.** If the actual vertex set is finite, a vertex is a cut
-vertex exactly when deleting it strictly increases the number of connected components. -/
-theorem isCutVertex_iff_componentCount_lt [Finite V(G)] :
+private theorem finite_connectedComponent_of_finite_deleteVerts_singleton
+    [Finite (G.deleteVerts {v}).ConnectedComponent] : Finite G.ConnectedComponent := by
+  classical
+  by_cases hv : v ∈ V(G)
+  · let f : Option (G.deleteVerts {v}).ConnectedComponent → G.ConnectedComponent
+      | none => G.connectedComponentOf v hv
+      | some C => G.deleteVertexComponentMap v C
+    apply Finite.of_surjective f
+    intro C
+    obtain ⟨z, hzC⟩ := C.property.nonempty
+    have hzG : z ∈ V(G) := C.property.le.vertexSet_mono hzC
+    by_cases hzv : z = v
+    · subst z
+      refine ⟨none, ?_⟩
+      exact ConnectedComponent.eq_of_mem_of_mem
+        (mem_vertexSet_connectedComponentOf_self hv) hzC
+    · have hz' : z ∈ V(G.deleteVerts {v}) := by simp [hzG, hzv]
+      refine ⟨some ((G.deleteVerts {v}).connectedComponentOf z hz'), ?_⟩
+      change G.deleteVertexComponentMap v
+        ((G.deleteVerts {v}).connectedComponentOf z hz') = C
+      rw [deleteVertexComponentMap_connectedComponentOf]
+      exact ConnectedComponent.eq_of_mem_of_mem
+        (mem_vertexSet_connectedComponentOf_self hzG) hzC
+  · apply Finite.of_surjective (G.deleteVertexComponentMap v)
+    intro C
+    obtain ⟨z, hzC⟩ := C.property.nonempty
+    have hzG : z ∈ V(G) := C.property.le.vertexSet_mono hzC
+    have hzv : z ≠ v := fun hzv ↦ hv (hzv ▸ hzG)
+    have hz' : z ∈ V(G.deleteVerts {v}) := by simp [hzG, hzv]
+    refine ⟨(G.deleteVerts {v}).connectedComponentOf z hz', ?_⟩
+    rw [deleteVertexComponentMap_connectedComponentOf]
+    exact ConnectedComponent.eq_of_mem_of_mem
+      (mem_vertexSet_connectedComponentOf_self hzG) hzC
+
+/-- **Cut vertices by component counts.** If deletion leaves finitely many components, a vertex is
+a cut vertex exactly when deleting it strictly increases the number of connected components. -/
+theorem isCutVertex_iff_componentCount_lt_componentCount_deleteVerts
+    [Finite (G.deleteVerts {v}).ConnectedComponent] :
     G.IsCutVertex v ↔ G.componentCount < (G.deleteVerts {v}).componentCount := by
-  rw [isCutVertex_iff_not_injective_deleteVertexComponentMap,
-    componentCount_eq_natCard_toSimpleGraph, componentCount_eq_natCard_toSimpleGraph]
+  let _ : Finite G.ConnectedComponent :=
+    finite_connectedComponent_of_finite_deleteVerts_singleton (G := G) (v := v)
+  rw [isCutVertex_iff_not_injective_deleteVertexComponentMap, componentCount_def,
+    componentCount_def]
   let f := G.deleteVertexComponentMap v
-  have : Finite V(G.deleteVerts {v}) :=
-    Finite.of_injective (fun z : V(G.deleteVerts {v}) ↦
-      (⟨z, deleteVerts_le.vertexSet_mono z.2⟩ : V(G))) fun _ _ h ↦ Subtype.ext (Subtype.mk.inj h)
   constructor
   · intro hninj
     have hcut := isCutVertex_iff_not_injective_deleteVertexComponentMap.mpr hninj
-    obtain ⟨u, huv, huvReach⟩ := hcut.exists_ne_and_reachable
-    have hsurj : Function.Surjective f := by
-      intro C
-      induction C using SimpleGraph.ConnectedComponent.ind with | h z => ?_
-      by_cases hzv : (z : α) = v
-      · let u' : V(G.deleteVerts {v}) := ⟨u, by simp [huv, huvReach.left_mem]⟩
-        refine ⟨(G.deleteVerts {v}).toSimpleGraph.connectedComponentMk u', ?_⟩
-        dsimp only [f]
-        rw [deleteVertexComponentMap_connectedComponentMk,
-          toSimpleGraph_connectedComponentMk_eq_iff]
-        simpa only [hzv] using huvReach
-      · let z' : V(G.deleteVerts {v}) := ⟨z, by simp [hzv, z.2]⟩
-        refine ⟨(G.deleteVerts {v}).toSimpleGraph.connectedComponentMk z', ?_⟩
-        dsimp only [f]
-        rw [deleteVertexComponentMap_connectedComponentMk,
-          toSimpleGraph_connectedComponentMk_eq_iff]
-        exact Reachable.refl z.2
+    have hsurj : Function.Surjective f :=
+      deleteVertexComponentMap_surjective hcut.exists_ne_and_reachable
     have hle := Nat.card_le_card_of_surjective f hsurj
     exact lt_of_le_of_ne hle fun hcard ↦
       hninj ((Nat.bijective_iff_surjective_and_card f).mpr ⟨hsurj, hcard.symm⟩).1
@@ -170,10 +205,16 @@ theorem isCutVertex_iff_componentCount_lt [Finite V(G)] :
     exact (not_le_of_gt hlt) (Nat.card_le_card_of_injective f hinj)
 
 /-- Deleting a non-cut vertex cannot increase the number of connected components. -/
-theorem componentCount_deleteVerts_singleton_le_of_not_isCutVertex [Finite V(G)]
+theorem componentCount_deleteVerts_singleton_le_of_not_isCutVertex
+    [Finite G.ConnectedComponent]
     (h : ¬G.IsCutVertex v) :
     (G.deleteVerts {v}).componentCount ≤ G.componentCount := by
-  rw [← not_lt, ← isCutVertex_iff_componentCount_lt]
-  exact h
+  rw [componentCount_def, componentCount_def]
+  have hinj : Function.Injective (G.deleteVertexComponentMap v) := by
+    by_contra hninj
+    exact h (isCutVertex_iff_not_injective_deleteVertexComponentMap.mpr hninj)
+  let _ : Finite (G.deleteVerts {v}).ConnectedComponent :=
+    Finite.of_injective (G.deleteVertexComponentMap v) hinj
+  exact Nat.card_le_card_of_injective (G.deleteVertexComponentMap v) hinj
 
 end Graph
