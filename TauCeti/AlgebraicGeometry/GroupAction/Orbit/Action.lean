@@ -149,7 +149,7 @@ instance : IsModHom G (orbitInclusion G x) where
   smul_hom := orbitAction_inclusion G x
 
 /-- The orbit immersion determines the restricted action morphism uniquely. -/
-theorem orbitAction_unique (a : G ⊗ orbitOver G x ⟶ orbitOver G x)
+theorem eq_smul_of_comp_orbitInclusion (a : G ⊗ orbitOver G x ⟶ orbitOver G x)
     (ha : a ≫ orbitInclusion G x = G ◁ orbitInclusion G x ≫ γ[G,X]) :
     a = γ[G, orbitOver G x] := by
   apply (cancel_mono (orbitInclusion G x)).mp
