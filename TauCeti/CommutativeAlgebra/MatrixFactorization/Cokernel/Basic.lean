@@ -158,7 +158,7 @@ def cokernelDesc (hw : w = 0) (X : MatrixFactorization S w) :
 @[reassoc (attr := simp)]
 theorem cokernelπ_cokernelDesc_hom (hw : w = 0) (X : MatrixFactorization S w) :
     cokernelπ X ≫ (cokernelDesc hw X).hom = X.obj.d₁.hom :=
-  (isColimitCokernelπ X).fac _ WalkingParallelPair.one
+  Cofork.IsColimit.π_desc (isColimitCokernelπ X)
 
 /-- For a zero potential, the cokernel of the boundary `d h + h d` of an odd map `(h₀, h₁)` is
 the descent `coker d₀ ⟶ X₀` of `d₁`, followed by `h₀ : X₀ ⟶ Y₁` and the projection
