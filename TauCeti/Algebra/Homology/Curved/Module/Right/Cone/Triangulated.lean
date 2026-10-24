@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.Curved.Module.Right.Cone.Triangle
 public import TauCeti.Algebra.Homology.Curved.Module.Right.Triangulated
+public import TauCeti.CategoryTheory.Triangulated.Signs
 
 /-!
 # Distinguished mapping-cone triangles of curved DG right modules
@@ -52,23 +53,6 @@ variable {R A : Type u} [CommRing R] [Ring A] [Algebra R A]
   {S : ShortComplex (ForgetEnrichment (CochainComplex (ModuleCat R) ℤ)
     (CurvedDGRightModuleCat.{u, u, u} h))}
 
-/-- The induced quotient-shift comparison keeps the underlying shifted module. -/
-private theorem quotientCommShift_hom_app
-    (X : ForgetEnrichment (CochainComplex (ModuleCat R) ℤ)
-      (CurvedDGRightModuleCat.{u, u, u} h)) :
-    ((dgClosedToHomotopy R).commShiftIso (1 : ℤ)).hom.app X = eqToHom (by rfl) := by
-  simp only [Functor.commShiftIso_eq_ofInduced, Iso.symm_hom, Iso.symm_inv,
-    EnrichedFunctor.forgetCompDgClosedToHomotopyIso_hom_app]
-  rfl
-
-/-- Negating the third object changes the two adjacent arrows of a triangle. -/
-private noncomputable def negThirdTriangleIso
-    {X Y Z : DGHomotopyCategory R (CurvedDGRightModuleCat.{u, u, u} h)}
-    (a : X ⟶ Y) (b : Y ⟶ Z) (c : Z ⟶ X⟦(1 : ℤ)⟧) :
-    Triangle.mk a (-b) (-c) ≅ Triangle.mk a b c :=
-  Triangle.isoMk _ _ (Iso.refl _) (Iso.refl _) (-Iso.refl _)
-    (by simp) (by simp) (by simp)
-
 /-- The identity-cone connecting map gives the transported stable conflation triangle. -/
 private noncomputable def mapStableConflationTriangleIso
     (hS : (gradedSplitExact (h := h)).Conflation S)
@@ -112,7 +96,7 @@ private noncomputable def mapStableConflationTriangleIso
     rw [eqToHom_comp_iff, comp_eqToHom_iff] at key
     simp only [key, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp, Category.assoc,
       eqToHom_map]
-    simp only [quotientCommShift_hom_app, eqToHom_trans]
+    simp only [dgClosedToHomotopy_commShiftIso_hom_app, eqToHom_trans]
 
 /-- A graded-split conflation gives a distinguished triangle whose third arrow is the class of
 the cokernel map induced by an extension to the first object's identity cone. The canonical
@@ -134,59 +118,93 @@ theorem mk_distinguished_of_conflation
   exact isomorphic_distinguished _ (map_stableConflationTriangle_mem_distTriang S hS) _
     (mapStableConflationTriangleIso hS a δ ha hδ)
 
+private theorem coneShortComplex_mk_conflation {M N : CurvedDGRightModuleCat.{u, u, u} h}
+    (f : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M ⟶
+      ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N) :
+    (gradedSplitExact (h := h)).Conflation
+      (ShortComplex.mk (coneInclusion f) (coneProjection f)
+        (coneInclusion_comp_coneProjection f)) :=
+  (gradedSplitExact (h := h)).conflation_of_iso
+    (ShortComplex.isoMk
+      (eqToIso (coneShortComplex_X₁ f))
+      (eqToIso (coneShortComplex_X₂ f))
+      (eqToIso (coneShortComplex_X₃ f))
+      (by
+        apply (cancel_epi (eqToHom (coneShortComplex_X₁ f).symm)).mp
+        simpa only [eqToIso.hom, ← Category.assoc, eqToHom_trans,
+          eqToHom_refl, Category.id_comp] using (coneShortComplex_f f).symm)
+      (by
+        apply (cancel_epi (eqToHom (coneShortComplex_X₂ f).symm)).mp
+        simpa only [eqToIso.hom, ← Category.assoc, eqToHom_trans,
+          eqToHom_refl, Category.id_comp] using (coneShortComplex_g f).symm))
+    (coneShortComplex_conflation f)
+
+private noncomputable def coneIdentityExtension {M N : CurvedDGRightModuleCat.{u, u, u} h}
+    (f : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M ⟶
+      ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N) :
+    ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (cone f) ⟶
+      (coneIdentityInjectivePresentation N).I :=
+  coneMap f (𝟙 (ForgetEnrichment.of _ N)) f (𝟙 _) 0 (by intro x; simp) ≫
+    eqToHom (coneIdentityInjectivePresentation_I N).symm
+
+private noncomputable def coneShiftConnecting {M N : CurvedDGRightModuleCat.{u, u, u} h}
+    (f : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M ⟶
+      ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N) :
+    (closedShiftFunctor 1).obj (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M) ⟶
+      (coneIdentityInjectivePresentation N).K :=
+  (closedShiftFunctor 1).map f ≫ eqToHom (coneIdentityInjectivePresentation_K N).symm
+
+private theorem coneIdentityExtension_inclusion {M N : CurvedDGRightModuleCat.{u, u, u} h}
+    (f : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M ⟶
+      ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N) :
+    coneInclusion f ≫ coneIdentityExtension f = (coneIdentityInjectivePresentation N).i := by
+  apply (cancel_mono (eqToHom (coneIdentityInjectivePresentation_I N))).mp
+  simpa only [coneIdentityExtension, Category.assoc, eqToHom_trans, eqToHom_refl,
+    Category.comp_id, coneInclusion_comp_coneMap, Category.id_comp] using
+    (coneIdentityInjectivePresentation_i N).symm
+
+private theorem coneIdentityExtension_projection {M N : CurvedDGRightModuleCat.{u, u, u} h}
+    (f : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M ⟶
+      ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N) :
+    coneProjection f ≫ coneShiftConnecting f =
+      coneIdentityExtension f ≫ (coneIdentityInjectivePresentation N).p := by
+  apply (cancel_mono (eqToHom (coneIdentityInjectivePresentation_K N))).mp
+  dsimp only [coneIdentityExtension, coneShiftConnecting]
+  simp only [Category.assoc]
+  rw [coneIdentityInjectivePresentation_p]
+  simpa only [eqToHom_trans, eqToHom_refl, Category.comp_id] using
+    (coneMap_comp_coneProjection f (𝟙 (ForgetEnrichment.of _ N)) f (𝟙 _) 0
+      (by intro x; simp)).symm
+
+private theorem coneInclusion_coneProjection_shift_distinguished
+    {M N : CurvedDGRightModuleCat.{u, u, u} h}
+    (f : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M ⟶
+      ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N) :
+    Triangle.mk ((dgClosedToHomotopy R).map (coneInclusion f))
+        ((dgClosedToHomotopy R).map (coneProjection f))
+        ((dgClosedToHomotopy R).map ((closedShiftFunctor 1).map f)) ∈
+      distTriang (DGHomotopyCategory R (CurvedDGRightModuleCat.{u, u, u} h)) := by
+  have hT := mk_distinguished_of_conflation (coneShortComplex_mk_conflation f)
+    (coneIdentityExtension f) (coneShiftConnecting f)
+    (coneIdentityExtension_inclusion f) (coneIdentityExtension_projection f)
+  -- The target of the connecting map is the identity-cone cokernel N[1], identified by its
+  -- public K equation with the closed shift of N. Expose the composite before mapping it,
+  -- then cancel the resulting object transports.
+  dsimp only [coneShiftConnecting] at hT
+  rw [Functor.map_comp, eqToHom_map] at hT
+  simpa only [Category.assoc, eqToHom_trans,
+    eqToHom_refl, Category.comp_id] using hT
+
 /-- Every mapping-cone triangle with its negative projection is distinguished, for arbitrary
 curvature, in the canonical triangulation of the curved homotopy category. -/
 theorem coneTriangle_distinguished {M N : CurvedDGRightModuleCat.{u, u, u} h}
     (f : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M ⟶
       ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N) :
     coneTriangle f ∈ distTriang (DGHomotopyCategory R (CurvedDGRightModuleCat.{u, u, u} h)) := by
-  let S := ShortComplex.mk (coneInclusion f) (coneProjection f)
-    (coneInclusion_comp_coneProjection f)
-  have hS : (gradedSplitExact (h := h)).Conflation S :=
-    (gradedSplitExact (h := h)).conflation_of_iso
-      (ShortComplex.isoMk
-        (eqToIso (coneShortComplex_X₁ f))
-        (eqToIso (coneShortComplex_X₂ f))
-        (eqToIso (coneShortComplex_X₃ f))
-        (by
-          apply (cancel_epi (eqToHom (coneShortComplex_X₁ f).symm)).mp
-          simpa only [S, eqToIso.hom, ← Category.assoc, eqToHom_trans, eqToHom_refl,
-            Category.id_comp] using (coneShortComplex_f f).symm)
-        (by
-          apply (cancel_epi (eqToHom (coneShortComplex_X₂ f).symm)).mp
-          simpa only [S, eqToIso.hom, ← Category.assoc, eqToHom_trans, eqToHom_refl,
-            Category.id_comp] using (coneShortComplex_g f).symm))
-      (coneShortComplex_conflation f)
-  let a := coneMap f (𝟙 (ForgetEnrichment.of _ N)) f (𝟙 _) 0 (by intro x; simp) ≫
-    eqToHom (coneIdentityInjectivePresentation_I N).symm
-  let δ := (closedShiftFunctor 1).map f ≫
-    eqToHom (coneIdentityInjectivePresentation_K N).symm
-  have ha : S.f ≫ a = (coneIdentityInjectivePresentation N).i := by
-    apply (cancel_mono (eqToHom (coneIdentityInjectivePresentation_I N))).mp
-    simp [S, a]
-    simpa only [coneIdentityInjectivePresentation_I, eqToHom_refl, Category.comp_id] using
-      (coneIdentityInjectivePresentation_i N).symm
-  have hδ : S.g ≫ δ = a ≫ (coneIdentityInjectivePresentation N).p := by
-    apply (cancel_mono (eqToHom (coneIdentityInjectivePresentation_K N))).mp
-    simp only [S, a, δ, eqToHom_refl, Category.comp_id]
-    change coneProjection f ≫ (closedShiftFunctor 1).map f =
-      coneMap f (𝟙 (ForgetEnrichment.of _ N)) f (𝟙 _) 0 _ ≫
-        coneProjection (𝟙 (ForgetEnrichment.of _ N))
-    exact (coneMap_comp_coneProjection f (𝟙 (ForgetEnrichment.of _ N)) f (𝟙 _) 0 _).symm
-  have hT := mk_distinguished_of_conflation hS a δ ha hδ
-  have hT' : Triangle.mk ((dgClosedToHomotopy R).map (coneInclusion f))
-      ((dgClosedToHomotopy R).map (coneProjection f))
-      ((dgClosedToHomotopy R).map ((closedShiftFunctor 1).map f)) ∈
-        distTriang (DGHomotopyCategory R (CurvedDGRightModuleCat.{u, u, u} h)) := by
-    dsimp only [δ] at hT
-    erw [Functor.map_comp, eqToHom_map] at hT
-    simpa only [S, Category.assoc, eqToHom_trans,
-      eqToHom_refl, Category.comp_id] using hT
   apply (rotate_distinguished_triangle (coneTriangle f)).mpr
-  refine isomorphic_distinguished _ hT' _ ?_
+  refine isomorphic_distinguished _ (coneInclusion_coneProjection_shift_distinguished f) _ ?_
   rw [coneTriangle_rotate]
-  -- Negating the third object changes both the projection and the shifted connecting map.
-  exact negThirdTriangleIso _ _ _
+  exact Triangle.isoNegThird _ _ _
 
 /-- Distinguished triangles are precisely those isomorphic to the concrete mapping-cone
 triangles of closed maps, with the negative cone projection as third arrow. -/
