@@ -74,7 +74,7 @@ variable {E : Type*} [NormedAddCommGroup E] {L : Submodule ℤ E} {γ : E} {h : 
 
 /-- The squared norms of an even lattice satisfy the hypothesis of the expansion in
 `q = exp (2 π i τ)`. -/
-private theorem IsEven.one_mul_norm_zero_add_sq_eq (hL : IsEven L) {v : E} (hv : v ∈ L) :
+private theorem IsEven.exists_one_mul_norm_zero_add_sq_eq (hL : IsEven L) {v : E} (hv : v ∈ L) :
     ∃ m : ℤ, 1 * ‖0 + v‖ ^ 2 = 2 * m := by
   obtain ⟨m, hm⟩ := isEven_iff.mp hL v hv
   exact ⟨m, by rw [zero_add, one_mul, hm]⟩
@@ -143,7 +143,7 @@ namespace IsEven
 theorem hasSum_thetaSeries_qParam (hL : IsEven L) (τ : ℍ) :
     HasSum (fun m : ℕ ↦ (representationNumber L (2 * m) : ℂ) • Periodic.qParam 1 τ ^ m)
       (thetaSeries L τ) := by
-  have := hasSum_thetaCoset_qParam one_pos (fun _ hv ↦ hL.one_mul_norm_zero_add_sq_eq hv) τ
+  have := hasSum_thetaCoset_qParam one_pos (fun _ hv ↦ hL.exists_one_mul_norm_zero_add_sq_eq hv) τ
   simp_rw [thetaCoset_zero, cosetRepresentationNumber_zero_left, div_one] at this
   exact this
 
@@ -152,7 +152,7 @@ coefficient in `q = exp (2 π i τ)` is the number `r_L(2m)` of vectors of half-
 theorem qExpansion_thetaSeries_coeff (hL : IsEven L) (m : ℕ) :
     (qExpansion 1 (thetaSeries L)).coeff m = representationNumber L (2 * m) := by
   rw [← thetaCoset_zero,
-    qExpansion_thetaCoset_coeff one_pos (fun _ hv ↦ hL.one_mul_norm_zero_add_sq_eq hv) m,
+    qExpansion_thetaCoset_coeff one_pos (fun _ hv ↦ hL.exists_one_mul_norm_zero_add_sq_eq hv) m,
     cosetRepresentationNumber_zero_left, div_one]
 
 end IsEven
@@ -165,8 +165,8 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {L : Submo
 
 /-- The squared norms of an integral lattice are integers, which is the hypothesis of the
 expansion in `q^{1/2} = exp (π i τ)`. -/
-private theorem IsIntegral.two_mul_norm_zero_add_sq_eq (hL : IsIntegral L) {v : E} (hv : v ∈ L) :
-    ∃ m : ℤ, 2 * ‖0 + v‖ ^ 2 = 2 * m := by
+private theorem IsIntegral.exists_two_mul_norm_zero_add_sq_eq (hL : IsIntegral L)
+    {v : E} (hv : v ∈ L) : ∃ m : ℤ, 2 * ‖0 + v‖ ^ 2 = 2 * m := by
   obtain ⟨m, hm⟩ := isIntegral_iff.mp hL v hv v hv
   exact ⟨m, by rw [zero_add, ← real_inner_self_eq_norm_sq, hm]⟩
 
@@ -181,7 +181,7 @@ namespace IsIntegral
 theorem hasSum_thetaSeries_qParam_two (hL : IsIntegral L) (τ : ℍ) :
     HasSum (fun m : ℕ ↦ (representationNumber L m : ℂ) • Periodic.qParam 2 τ ^ m)
       (thetaSeries L τ) := by
-  have := hasSum_thetaCoset_qParam two_pos (fun _ hv ↦ hL.two_mul_norm_zero_add_sq_eq hv) τ
+  have := hasSum_thetaCoset_qParam two_pos (fun _ hv ↦ hL.exists_two_mul_norm_zero_add_sq_eq hv) τ
   simp_rw [thetaCoset_zero, cosetRepresentationNumber_zero_left,
     mul_div_cancel_left₀ _ (two_ne_zero (α := ℝ))] at this
   exact this
@@ -192,7 +192,7 @@ squared norm `m`. -/
 theorem qExpansion_two_thetaSeries_coeff (hL : IsIntegral L) (m : ℕ) :
     (qExpansion 2 (thetaSeries L)).coeff m = representationNumber L m := by
   rw [← thetaCoset_zero,
-    qExpansion_thetaCoset_coeff two_pos (fun _ hv ↦ hL.two_mul_norm_zero_add_sq_eq hv) m,
+    qExpansion_thetaCoset_coeff two_pos (fun _ hv ↦ hL.exists_two_mul_norm_zero_add_sq_eq hv) m,
     cosetRepresentationNumber_zero_left, mul_div_cancel_left₀ _ (two_ne_zero (α := ℝ))]
 
 end IsIntegral
@@ -209,7 +209,7 @@ theorem hasSum_thetaCoset_qParam (hL : IsEven L) (hγ : γ ∈ dual L) {N : ℕ}
     HasSum (fun m : ℕ ↦ (cosetRepresentationNumber L γ (2 * m / N) : ℂ) •
       Periodic.qParam N τ ^ m) (thetaCoset L γ τ) :=
   ZLattice.hasSum_thetaCoset_qParam (Nat.cast_pos.mpr hN)
-    (fun _ hv ↦ hL.natCast_mul_norm_add_sq_eq hγ hNγ hv) τ
+    (fun _ hv ↦ hL.exists_natCast_mul_norm_add_sq_eq hγ hNγ hv) τ
 
 /-- The coefficients of the `q_N`-expansion of a coset theta series of an even lattice: for
 `γ ∈ L^∨` and a positive integer `N` with `N ‖γ‖² / 2 ∈ ℤ`, the `m`-th coefficient in
@@ -218,7 +218,7 @@ theorem qExpansion_thetaCoset_coeff (hL : IsEven L) (hγ : γ ∈ dual L) {N : �
     (hNγ : ∃ n : ℤ, N * ‖γ‖ ^ 2 = 2 * n) (m : ℕ) :
     (qExpansion N (thetaCoset L γ)).coeff m = cosetRepresentationNumber L γ (2 * m / N) :=
   ZLattice.qExpansion_thetaCoset_coeff (Nat.cast_pos.mpr hN)
-    (fun _ hv ↦ hL.natCast_mul_norm_add_sq_eq hγ hNγ hv) m
+    (fun _ hv ↦ hL.exists_natCast_mul_norm_add_sq_eq hγ hNγ hv) m
 
 /-- **The support of the `q_N`-expansion of a coset theta series.** For an even lattice `L`,
 `γ ∈ L^∨` and a positive integer `N` with `N ‖γ‖² = 2 n`, the coefficient of `q_N^m` in the
