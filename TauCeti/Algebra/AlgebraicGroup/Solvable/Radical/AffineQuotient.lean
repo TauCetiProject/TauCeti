@@ -10,7 +10,7 @@ public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Coinvariants.FiniteType
 
 import TauCeti.Algebra.AlgebraicGroup.Connected.Extension
 import TauCeti.Algebra.AlgebraicGroup.Solvable.Extension
-import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Kernel.Composite
+import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Kernel.Preimage
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Kernel.Smooth
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Coinvariants.Exactness
 
@@ -27,9 +27,9 @@ These statements hold over every field. They concern the radical over the ground
 identifying a quotient as semisimple additionally requires the corresponding geometric
 statement after scalar extension. No commutation of radicals with scalar extension is assumed.
 
-The preimage argument uses `CommHopfAlgCat.kernelCompositeMap` to express the inverse image
-as an extension of the given subgroup by the original kernel. Smoothness and connectedness
-follow from the kernel criteria; solvability follows from extension closure.
+The preimage argument uses `CommHopfAlgCat.prop_quotient_map_of_kernel` to express the inverse
+image as an extension of the given subgroup by the original kernel. Smoothness, connectedness and
+solvability each follow from closure under such extensions.
 
 ## References
 
@@ -60,60 +60,23 @@ theorem map [Algebra.IsGeometricallyReduced k Q]
     (p : Q.obj ⟶ G.obj) (hp : p.hom.toAlgHom.toRingHom.FaithfullyFlat)
     (hN : IsSolvableRadicalCandidate G (CommHopfAlgCat.kernelHopfIdeal p)) :
     IsSolvableRadicalCandidate G (J.map p.hom) := by
-  -- Realize the subgroup and its inverse image as kernels of a composite.
-  let f := CommHopfAlgCat.coinvariantsι hJ.isNormal
-  have hf : CommHopfAlgCat.kernelHopfIdeal f = J :=
-    CommHopfAlgCat.kernelHopfIdeal_coinvariantsι_eq hJ.isNormal
-  let r := CommHopfAlgCat.kernelCompositeMap f p
-  have hr := CommHopfAlgCat.faithfullyFlat_kernelCompositeMap f p hp
-  let e := CommHopfAlgCat.kernelCompositeKernelIso f p
-  have hkernelConnected : geometricallyConnectedCommHopfAlgProperty k
-      (CommHopfAlgCat.quotient _ (CommHopfAlgCat.kernelHopfIdeal r)) :=
-    (geometricallyConnectedCommHopfAlgProperty k).prop_of_iso e.symm hN.geometricallyConnected
-  have hkernelSolvable : geometricallySolvablePointsCommHopfAlgProperty k
-      (CommHopfAlgCat.quotient _ (CommHopfAlgCat.kernelHopfIdeal r)) :=
-    (geometricallySolvablePointsCommHopfAlgProperty k).prop_of_iso e.symm hN.geometricallySolvable
-  have hkernelSmooth : Algebra.Smooth k
-      (CommHopfAlgCat.quotient _ (CommHopfAlgCat.kernelHopfIdeal r)) :=
-    (smoothCommHopfAlgProperty_iff _).mp <|
-      (smoothCommHopfAlgProperty k).prop_of_iso e.symm
+  refine .mk (hJ.isNormal.map p.hom) ?_ ?_ ?_
+  · exact CommHopfAlgCat.prop_quotient_map_of_kernel (geometricallyConnectedCommHopfAlgProperty k)
+      (fun r hr hA hker ↦ hA.of_kernel r hr hker) hJ.isNormal p hp hJ.geometricallyConnected
+      hN.geometricallyConnected
+  · refine (smoothCommHopfAlgProperty_iff _).mp <|
+      CommHopfAlgCat.prop_quotient_map_of_kernel (smoothCommHopfAlgProperty k)
+        (fun r hr hA hker ↦ ?_) hJ.isNormal p hp
+        ((smoothCommHopfAlgProperty_iff _).mpr hJ.smooth)
         ((smoothCommHopfAlgProperty_iff _).mpr hN.smooth)
-  -- Transport the three extension hypotheses through the exact-kernel identifications.
-  have htargetConnected : geometricallyConnectedCommHopfAlgProperty k
-      (CommHopfAlgCat.quotient Q.obj (CommHopfAlgCat.kernelHopfIdeal f)) := by
-    rw [hf]
-    exact hJ.geometricallyConnected
-  have htargetSolvable : geometricallySolvablePointsCommHopfAlgProperty k
-      (CommHopfAlgCat.quotient Q.obj (CommHopfAlgCat.kernelHopfIdeal f)) := by
-    rw [hf]
-    exact hJ.geometricallySolvable
-  have htargetSmooth : Algebra.Smooth k
-      (CommHopfAlgCat.quotient Q.obj (CommHopfAlgCat.kernelHopfIdeal f)) := by
-    rw [hf]
-    exact hJ.smooth
-  -- Each closure theorem now applies to the same faithfully flat restriction.
-  have hconnected := htargetConnected.of_kernel r hr hkernelConnected
-  have hsolvable := geometricallySolvablePointsCommHopfAlgProperty_of_kernel k r
-    htargetSolvable hkernelSolvable
-  have hsmooth : Algebra.Smooth k
-      (CommHopfAlgCat.quotient G.obj (CommHopfAlgCat.kernelHopfIdeal (f ≫ p))) := by
-    let := r.hom.toAlgHom.toAlgebra
-    let _ : IsScalarTower k
-        (CommHopfAlgCat.quotient Q.obj (CommHopfAlgCat.kernelHopfIdeal f))
-        (CommHopfAlgCat.quotient G.obj (CommHopfAlgCat.kernelHopfIdeal (f ≫ p))) :=
-      IsScalarTower.of_algebraMap_eq fun a ↦ (r.hom.toAlgHom.commutes a).symm
-    let _ := htargetSmooth
-    let _ : Algebra.Smooth
-        (CommHopfAlgCat.quotient Q.obj (CommHopfAlgCat.kernelHopfIdeal f))
-        (CommHopfAlgCat.quotient G.obj (CommHopfAlgCat.kernelHopfIdeal (f ≫ p))) :=
-      (_root_.CommHopfAlgCat.smooth_iff_algebraSmooth_quotient_kernelHopfIdeal r hr).mpr
-        hkernelSmooth
-    exact Algebra.Smooth.comp k
-      (CommHopfAlgCat.quotient Q.obj (CommHopfAlgCat.kernelHopfIdeal f)) _
-  have hpre : CommHopfAlgCat.kernelHopfIdeal (f ≫ p) = J.map p.hom := by
-    rw [CommHopfAlgCat.kernelHopfIdeal_comp, hf]
-  rw [hpre] at hconnected hsolvable hsmooth
-  exact .mk (hJ.isNormal.map p.hom) hconnected hsmooth hsolvable
+    let _ := (smoothCommHopfAlgProperty_iff _).mp hA
+    exact (smoothCommHopfAlgProperty_iff _).mpr
+      (algebraSmooth_of_algebraSmooth_quotient_kernelHopfIdeal r hr
+        ((smoothCommHopfAlgProperty_iff _).mp hker))
+  · exact CommHopfAlgCat.prop_quotient_map_of_kernel
+      (geometricallySolvablePointsCommHopfAlgProperty k)
+      (fun r _ hA hker ↦ geometricallySolvablePointsCommHopfAlgProperty_of_kernel k r hA hker)
+      hJ.isNormal p hp hJ.geometricallySolvable hN.geometricallySolvable
 
 end HopfIdeal.IsSolvableRadicalCandidate
 
@@ -133,18 +96,9 @@ theorem solvableRadicalDefiningIdeal_eq_augmentation_of_kernel_eq_solvableRadica
   intro J hJ
   have hN : HopfIdeal.IsSolvableRadicalCandidate G (CommHopfAlgCat.kernelHopfIdeal p) :=
     hker ▸ isSolvableRadicalCandidate_solvableRadicalDefiningIdeal G
-  have hle := solvableRadicalDefiningIdeal_le G _ (hJ.map p hp hN)
-  rw [← hker, CommHopfAlgCat.kernelHopfIdeal_def] at hle
-  let := p.hom.toAlgHom.toAlgebra
-  let _ : Module.FaithfullyFlat Q G := hp
-  apply le_antisymm (HopfIdeal.le_augmentation k Q J)
-  intro x hx
-  have hmap : p.hom x ∈ (J.map p.hom).toIdeal :=
-    hle (HopfIdeal.mem_map_of_mem p.hom hx)
-  rw [HopfIdeal.map_toIdeal] at hmap
-  have hx' : x ∈ Ideal.comap (algebraMap Q G) (J.toIdeal.map (algebraMap Q G)) := by
-    exact hmap
-  rwa [Ideal.comap_map_eq_self_of_faithfullyFlat J.toIdeal] at hx'
+  apply CommHopfAlgCat.eq_augmentation_of_kernelHopfIdeal_le_map p hp
+  rw [hker]
+  exact solvableRadicalDefiningIdeal_le G _ (hJ.map p hp hN)
 
 /-- The affine quotient of a geometrically reduced finite-type group by its solvable radical
 has trivial solvable radical over the ground field, in every characteristic. -/

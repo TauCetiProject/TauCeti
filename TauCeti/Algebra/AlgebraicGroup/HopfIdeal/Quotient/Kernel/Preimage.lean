@@ -66,7 +66,8 @@ theorem eq_augmentation_of_kernelHopfIdeal_le_map (p : H ⟶ K)
   have hmap : p.hom x ∈ (J.map p.hom).toIdeal :=
     hJ (HopfIdeal.mem_map_of_mem p.hom hx)
   rw [HopfIdeal.map_toIdeal] at hmap
-  have hx' : x ∈ Ideal.comap (algebraMap H K) (J.toIdeal.map (algebraMap H K)) := hmap
+  have hx' : x ∈ (J.toIdeal.map (algebraMap H K)).comap (algebraMap H K) := by
+    rwa [Ideal.mem_comap, RingHom.algebraMap_toAlgebra]
   rwa [Ideal.comap_map_eq_self_of_faithfullyFlat J.toIdeal] at hx'
 
 end CommRing

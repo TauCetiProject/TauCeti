@@ -54,7 +54,8 @@ unipotent radical, is not proved here.
   by the `k`-unipotent radical is pseudo-reductive.
 * `TauCeti.FiniteTypeCommHopfAlgCat.reductive_coinvariants_unipotentRadical`: over an
   algebraically closed field, the quotient by the unipotent radical is reductive.
-* `TauCeti.AdditiveGroup.not_pseudoReductiveCommHopfAlgProperty`: `𝔾ₐ` is not pseudo-reductive.
+* `TauCeti.AdditiveGroup.not_pseudoReductiveCommHopfAlgProperty_coordinateHopfAlgebra`: `𝔾ₐ` is
+  not pseudo-reductive.
 
 ## References
 
@@ -217,7 +218,7 @@ namespace AdditiveGroup
 
 /-- **The additive group is not pseudo-reductive**: it is itself a nontrivial smooth connected
 unipotent group, hence equal to its own unipotent radical. -/
-theorem not_pseudoReductiveCommHopfAlgProperty :
+theorem not_pseudoReductiveCommHopfAlgProperty_coordinateHopfAlgebra :
     ¬ pseudoReductiveCommHopfAlgProperty k
       (FiniteTypeCommHopfAlgCat.of k (SymmetricAlgebra k k)) := by
   rintro ⟨-, -, hradical⟩
