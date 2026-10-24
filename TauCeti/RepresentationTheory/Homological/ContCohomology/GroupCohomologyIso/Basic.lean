@@ -350,7 +350,7 @@ private def transport₂ (f : G × G → M) : H × H → B := fun h ↦ ψ (f (�
 include hψ in
 /-- Transport along an action-compatible group and additive equivalence preserves the
 `2`-cocycle condition. -/
-theorem transport₂_mem_cocycles₂_iff (f : G × G → M) :
+theorem mem_cocycles₂_iff_of_equiv (f : G × G → M) :
     (fun h : H × H ↦ ψ (f (φ.symm h.1, φ.symm h.2))) ∈ cocycles₂ B ↔
       groupCohomology.IsCocycle₂ f := by
   rw [mem_cocycles₂_iff]
@@ -389,7 +389,7 @@ a group isomorphism `φ : G ≃* H` and an additive isomorphism `ψ : M ≃+ B` 
 class of a cocycle `z` goes to the class of `(h, h') ↦ ψ (z (φ⁻¹ h, φ⁻¹ h'))`. -/
 noncomputable def explicitH2AddEquivGroupCohomology : H2 G M ≃+ groupCohomology B 2 := by
   let c : Z2 G M →+ cocycles₂ B :=
-    { toFun z := ⟨transport₂ φ ψ z, (transport₂_mem_cocycles₂_iff φ ψ hψ z).2
+    { toFun z := ⟨transport₂ φ ψ z, (mem_cocycles₂_iff_of_equiv φ ψ hψ z).2
         (mem_Z2_iff.1 z.2).2⟩
       map_zero' := Subtype.ext (funext fun _ ↦ map_zero ψ)
       map_add' _ _ := Subtype.ext (funext fun _ ↦ map_add ψ _ _) }
@@ -401,7 +401,7 @@ noncomputable def explicitH2AddEquivGroupCohomology : H2 G M ≃+ groupCohomolog
       have hz : (fun h : H × H ↦ ψ (z (φ.symm h.1, φ.symm h.2))) = x :=
         funext fun h ↦ by simp [z]
       have hzc : groupCohomology.IsCocycle₂ z :=
-        (transport₂_mem_cocycles₂_iff φ ψ hψ z).1 (hz ▸ x.2)
+        (mem_cocycles₂_iff_of_equiv φ ψ hψ z).1 (hz ▸ x.2)
       exact ⟨⟨z, mem_Z2_iff.2 ⟨continuous_of_discreteTopology, hzc⟩⟩,
         congrArg (H2π B) (Subtype.ext hz)⟩
   have hker : (B2 G M).addSubgroupOf (Z2 G M) = f.ker := by
@@ -432,7 +432,7 @@ theorem explicitH2AddEquivGroupCohomology_explicitRes2
   induction x using QuotientAddGroup.induction_on with
   | H z =>
     let c : cocycles₂ B := ⟨fun h ↦ ψ ((z : G × G → M) (φ.symm h.1, φ.symm h.2)),
-      (transport₂_mem_cocycles₂_iff φ ψ hψ z).2 (mem_Z2_iff.1 z.2).2⟩
+      (mem_cocycles₂_iff_of_equiv φ ψ hψ z).2 (mem_Z2_iff.1 z.2).2⟩
     rw [explicitRes2_mk, explicitH2AddEquivGroupCohomology_mk φ ψ hψ z c (fun _ ↦ rfl)]
     have hmap := ConcreteCategory.congr_hom
       (groupCohomology.H2π_comp_map S.subtype (𝟙 (Rep.res S.subtype B))) c

@@ -35,7 +35,11 @@ The coefficient ring is `ℤ`, and the group and coefficient carrier lie in `Typ
 
 ## Main results
 
-* `TauCeti.discreteCoindAddEquivAlgebraic_trace`: the additive coinduction comparison identifies
+* `TauCeti.ContCohomology.explicitH2IsoGroupCohomology_explicitCor2`: the degree-two comparison
+  preserves corestriction from every subgroup of a finite discrete group.
+* `TauCeti.ContCohomology.explicitH2IsoGroupCohomology_explicitShapiroMap2`: the degree-two
+  comparison preserves Shapiro's map after identifying the coinduced coefficients.
+* `TauCeti.discreteCoindAddEquivAlgebraic_trace`: the auxiliary coefficient comparison identifies
   the algebraic coinduction–restriction counit with the discrete trace.
 
 ## References
@@ -105,7 +109,7 @@ private theorem coindH2Equiv_shapiro (x : H2 G (DiscreteCoind G U M)) :
     let c : cocycles₂ (Rep.coind U.subtype
         (Rep.ofDistribMulAction ℤ U M)) :=
       ⟨fun p ↦ discreteCoindAddEquivAlgebraic G M U ((z : G × G → DiscreteCoind G U M) p),
-        (transport₂_mem_cocycles₂_iff (MulEquiv.refl G)
+        (mem_cocycles₂_iff_of_equiv (MulEquiv.refl G)
           (discreteCoindAddEquivAlgebraic G M U)
           (discreteCoindAddEquivAlgebraic_smul G M U) z).2 (mem_Z2_iff.1 z.2).2⟩
     have hc : coindH2Equiv G M U (z : H2 G (DiscreteCoind G U M)) = H2π _ c :=

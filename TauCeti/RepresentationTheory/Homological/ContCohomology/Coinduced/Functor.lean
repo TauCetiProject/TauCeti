@@ -637,19 +637,13 @@ theorem discreteCoindAddEquivAlgebraic_smul (g : G) (f : DiscreteCoind G U M) :
   discreteCoindEquivAlgebraic_smul ℤ G ⟨U, isOpen_discrete _⟩
     ⟨ofDiscreteModule ℤ U M, ofDiscreteModule_isSmoothDiscrete ℤ U M⟩ g f
 
-variable [Finite G]
-
 /-- The algebraic restriction–coinduction counit evaluates at the identity after the additive
 coinduction comparison. -/
 theorem discreteCoindAddEquivAlgebraic_eval (f : DiscreteCoind G U M) :
     ((Rep.resCoindAdjunction ℤ U.subtype).counit.app
       (Rep.ofDistribMulAction ℤ U M)).hom (discreteCoindAddEquivAlgebraic G M U f) = f 1 := by
-  let A : SmoothDiscreteTopRep ℤ U :=
-    ⟨ofDiscreteModule ℤ U M, ofDiscreteModule_isSmoothDiscrete ℤ U M⟩
-  exact (LinearMap.congr_fun (algebraicCoindCounit_toLinearMap
-    (R := ℤ) ⟨U, isOpen_discrete _⟩ A) _).symm.trans
-      ((algebraicCoindCounit_apply ℤ G ⟨U, isOpen_discrete _⟩ A _).trans
-        (discreteCoindAddEquivAlgebraic_apply G M U f 1))
+  refine Eq.trans ?_ (discreteCoindAddEquivAlgebraic_apply G M U f 1)
+  simp [Rep.resCoindAdjunction, Rep.resCoindHomEquiv]
 
 end DiscreteAlgebraicComparison
 
