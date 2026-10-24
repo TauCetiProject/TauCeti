@@ -77,7 +77,7 @@ when the rows themselves do not decay.
 The summability hypotheses in `Matrix.charPowerSeries_map` and
 `Matrix.charPowerSeries_smul` are needed because the coefficients are unconditional sums: the
 image of a non-summable family of minors may be summable with a nonzero
-sum.
+sum. The scaling identities require only continuity of multiplication by each fixed scalar.
 
 ## Main definitions
 
@@ -191,7 +191,7 @@ theorem charCoeff_map {S : Type*} [CommRing S] [TopologicalSpace S] [T2Space S] 
 
 /-- **Scaling.** Scaling `A` by `c` multiplies the `n`-th coefficient of its principal-minor
 series by `c ^ n`, provided the principal minors of `A` of size `n` are summable. -/
-theorem charCoeff_smul [ContinuousMul R] [T2Space R] (c : R) {A : Matrix ι ι R} {n : ℕ}
+theorem charCoeff_smul [ContinuousConstSMul R R] [T2Space R] (c : R) {A : Matrix ι ι R} {n : ℕ}
     (hA : Summable fun s : {s : Finset ι // s.card = n} ↦ A.principalMinor s) :
     (c • A).charCoeff n = c ^ n * A.charCoeff n := by
   have hsum : ∑' s : {s : Finset ι // s.card = n}, (c • A).principalMinor s =
@@ -257,7 +257,7 @@ theorem charPowerSeries_map {S : Type*} [CommRing S] [TopologicalSpace S] [T2Spa
 
 /-- **Scaling.** If the principal minors of `A` of each size are summable, the principal-minor
 series of `c • A` is that of `A` with the variable rescaled by `c`: `H_{c A}(T) = H_A(c T)`. -/
-theorem charPowerSeries_smul [ContinuousMul R] [T2Space R] (c : R) {A : Matrix ι ι R}
+theorem charPowerSeries_smul [ContinuousConstSMul R R] [T2Space R] (c : R) {A : Matrix ι ι R}
     (hA : ∀ n, Summable fun s : {s : Finset ι // s.card = n} ↦ A.principalMinor s) :
     (c • A).charPowerSeries = PowerSeries.rescale c A.charPowerSeries := by
   ext n
