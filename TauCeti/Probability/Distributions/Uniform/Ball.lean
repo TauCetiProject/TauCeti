@@ -440,6 +440,15 @@ theorem HasLaw.norm_sub_div_uniformBallMeasure [Nontrivial E]
     HasLaw (fun ω ↦ ‖X ω - c‖ / r) (betaMeasure (finrank ℝ E) 1) P :=
   HasLaw.comp ⟨(by fun_prop), map_norm_sub_div_uniformBallMeasure c hr⟩ hX
 
+/-- The direction `(X - c) / ‖X - c‖` of a random vector uniform on a ball of center `c` and
+radius `r > 0` is uniform on the unit sphere. -/
+theorem HasLaw.sphereDirection_uniformBallMeasure (hX : HasLaw X (uniformBallMeasure c r) P)
+    (hr : 0 < r) (e : sphere (0 : E) 1) :
+    HasLaw (fun ω ↦ sphereDirection e (X ω - c)) (uniformSphereMeasure E) P :=
+  HasLaw.comp (Y := fun x ↦ sphereDirection e (x - c))
+    ⟨((measurable_sphereDirection e).comp (measurable_sub_const c)).aemeasurable,
+      map_sphereDirection_uniformBallMeasure e c hr⟩ hX
+
 /-- The direction of a random vector uniform on a ball about its center is independent of its
 normalized distance from the center. -/
 theorem HasLaw.indepFun_sphereDirection_norm_uniformBallMeasure
@@ -449,8 +458,7 @@ theorem HasLaw.indepFun_sphereDirection_norm_uniformBallMeasure
   have := isProbabilityMeasure_uniformBallMeasure (c := c) hr.le
   have := hX.isProbabilityMeasure
   have hdir : Measurable (sphereDirection e) := measurable_sphereDirection e
-  refine (indepFun_iff_hasLaw_prodMk_prod
-    (HasLaw.comp ⟨(by fun_prop), map_sphereDirection_uniformBallMeasure e c hr⟩ hX)
+  refine (indepFun_iff_hasLaw_prodMk_prod (hX.sphereDirection_uniformBallMeasure hr e)
     (hX.norm_sub_div_uniformBallMeasure hr)).2 ?_
   exact HasLaw.comp ⟨(by fun_prop), map_sphereDirection_prod_uniformBallMeasure e c hr⟩ hX
 
