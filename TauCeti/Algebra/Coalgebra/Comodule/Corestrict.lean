@@ -102,6 +102,14 @@ morphism `f : C →ₗc[R] D`. -/
 @[expose] def corestrictCoact (f : C →ₗc[R] D) : M →ₗ[R] M ⊗[R] D :=
   TensorProduct.map LinearMap.id f.toLinearMap ∘ₗ coact (R := R) (C := C) (M := M)
 
+/-- The corestricted coaction is the original coaction postcomposed with the
+left tensor of the coalgebra map. -/
+theorem corestrictCoact_eq_lTensor (f : C →ₗc[R] D) :
+    corestrictCoact (M := M) f =
+      f.toLinearMap.lTensor M ∘ₗ coact (R := R) (C := C) (M := M) := by
+  rw [LinearMap.lTensor_def]
+  rfl
+
 /-- Corestrict a right comodule along a coalgebra morphism.
 
 If `M` is a right `C`-comodule and `f : C →ₗc[R] D`, the new right `D`-coaction is
@@ -120,9 +128,9 @@ def Corestrict (f : C →ₗc[R] D) : Comodule R D M where
             (TensorProduct.assoc R M C C
               ((coact (R := R) (C := C) (M := M)).rTensor C
                 (coact (R := R) (C := C) (M := M) m))) := by
-          simpa only [corestrictCoact, LinearMap.comp_apply, LinearMap.lTensor_def] using
-            f.assoc_rTensor_lTensor_comp (coact (R := R) (C := C) (M := M))
-              (coact (R := R) (C := C) (M := M) m)
+          rw [corestrictCoact_eq_lTensor]
+          exact f.assoc_rTensor_lTensor_comp (coact (R := R) (C := C) (M := M))
+            (coact (R := R) (C := C) (M := M) m)
       _ =
           TensorProduct.map LinearMap.id (TensorProduct.map f.toLinearMap f.toLinearMap)
             (Coalgebra.comul.lTensor M (coact (R := R) (C := C) (M := M) m)) := by
@@ -130,16 +138,16 @@ def Corestrict (f : C →ₗc[R] D) : Comodule R D M where
       _ =
           Coalgebra.comul.lTensor M
             (corestrictCoact (R := R) (C := C) (D := D) (M := M) f m) := by
-          simpa only [corestrictCoact, LinearMap.comp_apply, LinearMap.lTensor_def] using
-            (f.comul_lTensor_lTensor (coact (R := R) (C := C) (M := M) m)).symm
+          rw [corestrictCoact_eq_lTensor]
+          exact (f.comul_lTensor_lTensor (coact (R := R) (C := C) (M := M) m)).symm
   lTensor_counit_comp_coact := by
     ext m
     calc
       Coalgebra.counit.lTensor M
           (corestrictCoact (R := R) (C := C) (D := D) (M := M) f m)
         = Coalgebra.counit.lTensor M (coact (R := R) (C := C) (M := M) m) := by
-          simpa only [corestrictCoact, LinearMap.comp_apply, LinearMap.lTensor_def] using
-            f.counit_lTensor_lTensor (coact (R := R) (C := C) (M := M) m)
+          rw [corestrictCoact_eq_lTensor]
+          exact f.counit_lTensor_lTensor (coact (R := R) (C := C) (M := M) m)
       _ = m ⊗ₜ[R] 1 := by
           exact lTensor_counit_coact (R := R) (C := C) (M := M) m
 

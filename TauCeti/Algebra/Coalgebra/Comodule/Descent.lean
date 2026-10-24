@@ -101,7 +101,7 @@ theorem corestrict_eq_of_factor (f : C →ₗc[R] D) (σ : Comodule R C M)
     (hσ : f.toLinearMap.lTensor M ∘ₗ σ.coact = coact (R := R) (C := D)) :
     (letI := σ; Corestrict f) = (inferInstance : Comodule R D M) := by
   apply Comodule.ext
-  rw [corestrict_coact]
-  simpa only [corestrictCoact, ← LinearMap.lTensor_def] using hσ
+  rw [corestrict_coact, corestrictCoact_eq_lTensor]
+  exact hσ
 
 end CoalgHom
