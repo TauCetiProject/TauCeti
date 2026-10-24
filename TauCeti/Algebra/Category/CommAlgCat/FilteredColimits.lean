@@ -51,9 +51,7 @@ noncomputable instance forget₂AlgCat_preservesFilteredColimits :
   preserves_filtered_colimits J _ _ :=
     have : PreservesColimitsOfShape J
         (forget₂ (CommAlgCat.{u} Base) (AlgCat.{u} Base) ⋙ forget (AlgCat.{u} Base)) :=
-      preservesColimitsOfShape_of_natIso (NatIso.ofComponents fun _ => Iso.refl _ :
-        forget (CommAlgCat.{u} Base) ≅
-          forget₂ (CommAlgCat.{u} Base) (AlgCat.{u} Base) ⋙ forget (AlgCat.{u} Base))
+      preservesColimitsOfShape_of_natIso (eqToIso HasForget₂.forget_comp).symm
     have : ReflectsColimitsOfShape J (forget (AlgCat.{u} Base)) :=
       reflectsColimitsOfShape_of_reflectsIsomorphisms
     preservesColimitsOfShape_of_reflects_of_preserves _ (forget (AlgCat.{u} Base))

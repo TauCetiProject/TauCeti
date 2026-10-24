@@ -34,8 +34,7 @@ noncomputable instance forget₂ModuleCat_preservesFilteredColimits :
   preserves_filtered_colimits J _ _ :=
     have : PreservesColimitsOfShape J
         (forget₂ (AlgCat.{u} R) (ModuleCat.{u} R) ⋙ forget (ModuleCat.{u} R)) :=
-      preservesColimitsOfShape_of_natIso (NatIso.ofComponents fun _ => Iso.refl _ :
-        forget (AlgCat.{u} R) ≅ forget₂ (AlgCat.{u} R) (ModuleCat.{u} R) ⋙ forget (ModuleCat.{u} R))
+      preservesColimitsOfShape_of_natIso (eqToIso HasForget₂.forget_comp).symm
     preservesColimitsOfShape_of_reflects_of_preserves _ (forget (ModuleCat.{u} R))
 
 end AlgCat
