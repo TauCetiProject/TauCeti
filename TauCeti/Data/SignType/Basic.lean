@@ -42,17 +42,14 @@ theorem sign_eq_div_abs {α : Type*} [DivisionRing α] [LinearOrder α] [IsStric
 /-- In a linearly ordered division ring, inverting does not change the sign. -/
 @[simp]
 theorem sign_inv {α : Type*} [DivisionRing α] [LinearOrder α] [IsStrictOrderedRing α] (x : α) :
-    SignType.sign x⁻¹ = SignType.sign x := by
-  rcases lt_trichotomy x 0 with h | rfl | h
-  · rw [sign_neg h, sign_neg (inv_lt_zero.2 h)]
-  · simp
-  · rw [sign_pos h, sign_pos (inv_pos.2 h)]
+    SignType.sign x⁻¹ = SignType.sign x :=
+  map_inv₀ signHom x
 
 /-- In a linearly ordered division ring, the sign of a quotient is the product of the signs. -/
 @[simp]
 theorem sign_div {α : Type*} [DivisionRing α] [LinearOrder α] [IsStrictOrderedRing α] (x y : α) :
-    SignType.sign (x / y) = SignType.sign x * SignType.sign y := by
-  rw [div_eq_mul_inv, sign_mul, sign_inv]
+    SignType.sign (x / y) = SignType.sign x * SignType.sign y :=
+  map_div₀ signHom x y
 
 /-- Prescribed signs `ε` of the entries of `a` amount to a single equation, the vanishing of the sum
 of the squares of the `a i` with `ε i = 0`, together with the positivity of `ε i * a i` for the

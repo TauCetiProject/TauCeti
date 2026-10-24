@@ -28,7 +28,7 @@ roots, and the index of `p' * q / p` on the whole line is the Tarski query `TaQ(
 
 The index depends only on the rational function `q / p`: cancelling a common factor does not
 change it, and neither does reducing `q` modulo `p`. Negating the numerator or the denominator
-reverses it, and scaling either by a nonzero constant multiplies it by the sign of the constant.
+reverses it, and scaling either by a constant multiplies it by the sign of the constant.
 Jumps and indices are unchanged when the polynomials and the points are mapped through a strictly
 monotone ring homomorphism. Over a real closed field, if `a < b` and neither `a` nor `b` is a
 root of `p * q`, the indices of `q / p` and `p / q` on `(a, b)` sum to half the change of sign of
@@ -183,10 +183,7 @@ theorem finite_support_cauchyJump (p q : R[X]) : (Function.support (cauchyJump p
 @[simp]
 theorem cauchyJump_neg_right (p q : R[X]) (a : R) :
     cauchyJump p (-q) a = -cauchyJump p q a := by
-  classical
-  have hm : (-q).rootMultiplicity a = q.rootMultiplicity a := by
-    rw [← count_roots, roots_neg, count_roots]
-  simp only [cauchyJump_def, hm, mul_neg, derivSignRight_neg, SignType.coe_neg]
+  simp only [cauchyJump_def, rootMultiplicity_neg, mul_neg, derivSignRight_neg, SignType.coe_neg]
   split_ifs <;> simp
 
 /-- Negating the numerator reverses the Cauchy index on any set. -/
@@ -199,10 +196,7 @@ theorem cauchyIndex_neg_right (p q : R[X]) (s : Set R) :
 @[simp]
 theorem cauchyJump_neg_left (p q : R[X]) (a : R) :
     cauchyJump (-p) q a = -cauchyJump p q a := by
-  classical
-  have hm : (-p).rootMultiplicity a = p.rootMultiplicity a := by
-    rw [← count_roots, roots_neg, count_roots]
-  simp only [cauchyJump_def, hm, neg_mul, derivSignRight_neg, SignType.coe_neg]
+  simp only [cauchyJump_def, rootMultiplicity_neg, neg_mul, derivSignRight_neg, SignType.coe_neg]
   split_ifs <;> simp
 
 /-- Negating the denominator reverses the Cauchy index on any set. -/
@@ -211,37 +205,41 @@ theorem cauchyIndex_neg_left (p q : R[X]) (s : Set R) :
     cauchyIndex (-p) q s = -cauchyIndex p q s := by
   simp_rw [cauchyIndex_def, cauchyJump_neg_left, finsum_neg_distrib]
 
-/-- Scaling the denominator by a nonzero constant `c` multiplies every Cauchy jump by the sign
+/-- Scaling the denominator by a constant `c` multiplies every Cauchy jump by the sign
 of `c`. -/
-theorem cauchyJump_C_mul_left {c : R} (hc : c ≠ 0) (p q : R[X]) (a : R) :
+theorem cauchyJump_C_mul_left (c : R) (p q : R[X]) (a : R) :
     cauchyJump (C c * p) q a = sign c * cauchyJump p q a := by
+  by_cases hc : c = 0
+  · simp [hc]
   by_cases hp : p = 0
   · simp [hp]
   rw [cauchyJump_def, cauchyJump_def, rootMultiplicity_mul (mul_ne_zero (C_ne_zero.2 hc) hp),
     rootMultiplicity_C, zero_add, mul_assoc, derivSignRight_mul, derivSignRight_C]
   split_ifs <;> simp
 
-/-- Scaling the denominator by a nonzero constant `c` multiplies the Cauchy index on any set by
+/-- Scaling the denominator by a constant `c` multiplies the Cauchy index on any set by
 the sign of `c`. -/
-theorem cauchyIndex_C_mul_left {c : R} (hc : c ≠ 0) (p q : R[X]) (s : Set R) :
+theorem cauchyIndex_C_mul_left (c : R) (p q : R[X]) (s : Set R) :
     cauchyIndex (C c * p) q s = sign c * cauchyIndex p q s := by
-  simp_rw [cauchyIndex_def, cauchyJump_C_mul_left hc, mul_finsum_mem]
+  simp_rw [cauchyIndex_def, cauchyJump_C_mul_left, mul_finsum_mem]
 
-/-- Scaling the numerator by a nonzero constant `c` multiplies every Cauchy jump by the sign
+/-- Scaling the numerator by a constant `c` multiplies every Cauchy jump by the sign
 of `c`. -/
-theorem cauchyJump_C_mul_right {c : R} (hc : c ≠ 0) (p q : R[X]) (a : R) :
+theorem cauchyJump_C_mul_right (c : R) (p q : R[X]) (a : R) :
     cauchyJump p (C c * q) a = sign c * cauchyJump p q a := by
+  by_cases hc : c = 0
+  · simp [hc]
   by_cases hq : q = 0
   · simp [hq]
   rw [cauchyJump_def, cauchyJump_def, rootMultiplicity_mul (mul_ne_zero (C_ne_zero.2 hc) hq),
     rootMultiplicity_C, zero_add, mul_left_comm, derivSignRight_mul, derivSignRight_C]
   split_ifs <;> simp
 
-/-- Scaling the numerator by a nonzero constant `c` multiplies the Cauchy index on any set by
+/-- Scaling the numerator by a constant `c` multiplies the Cauchy index on any set by
 the sign of `c`. -/
-theorem cauchyIndex_C_mul_right {c : R} (hc : c ≠ 0) (p q : R[X]) (s : Set R) :
+theorem cauchyIndex_C_mul_right (c : R) (p q : R[X]) (s : Set R) :
     cauchyIndex p (C c * q) s = sign c * cauchyIndex p q s := by
-  simp_rw [cauchyIndex_def, cauchyJump_C_mul_right hc, mul_finsum_mem]
+  simp_rw [cauchyIndex_def, cauchyJump_C_mul_right, mul_finsum_mem]
 
 /-- **The sign convention of the Cauchy jump.** The jump of `q / p` at `a` is `1` exactly when
 `a` is a pole of `q / p` across which its sign, which is the sign of `p * q`, changes from
@@ -274,10 +272,8 @@ right. -/
 theorem cauchyJump_eq_neg_one_iff {p q : R[X]} {a : R} :
     cauchyJump p q a = -1 ↔ q.rootMultiplicity a < p.rootMultiplicity a ∧
       (p * q).derivSignLeft a = 1 ∧ (p * q).derivSignRight a = -1 := by
-  have hm : (-q).rootMultiplicity a = q.rootMultiplicity a := by
-    classical
-    rw [← count_roots, roots_neg, count_roots]
-  rw [← neg_inj, ← cauchyJump_neg_right, neg_neg, cauchyJump_eq_one_iff, hm, mul_neg,
+  rw [← neg_inj, ← cauchyJump_neg_right, neg_neg, cauchyJump_eq_one_iff, rootMultiplicity_neg,
+    mul_neg,
     derivSignLeft_neg, derivSignRight_neg, neg_inj, neg_eq_iff_eq_neg]
 
 /-- The Cauchy index as a finite sum over the distinct roots of `p` in `s`. -/

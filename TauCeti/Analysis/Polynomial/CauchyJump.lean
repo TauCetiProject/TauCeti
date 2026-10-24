@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Polynomial.Sturm.CauchyIndex.Basic
 public import TauCeti.Data.SignType.Basic
-public import Mathlib.Topology.Algebra.Order.Field
+public import TauCeti.Topology.Algebra.Order.Field
 public import Mathlib.Topology.Algebra.Polynomial
 
 /-! # The Cauchy jump as the jump of a rational function
@@ -105,9 +105,7 @@ private theorem derivSignLeft_mul_eq (hpole : q.rootMultiplicity a < p.rootMulti
     (hq : q ≠ 0) :
     (p * q).derivSignLeft a =
       (-1) ^ (p.rootMultiplicity a - q.rootMultiplicity a) * (p * q).derivSignRight a := by
-  have hp : p ≠ 0 := by
-    rintro rfl
-    simp at hpole
+  have hp : p ≠ 0 := (rootMultiplicity_pos'.1 (Nat.zero_lt_of_lt hpole)).1
   rw [derivSignLeft_def, rootMultiplicity_mul (mul_ne_zero hp hq)]
   congr 1
   -- The exponents `m + n` and `m - n` differ by `2 n`.
@@ -139,65 +137,43 @@ theorem exists_tendsto_div_nhdsNE_of_rootMultiplicity_le
   filter_upwards [self_mem_nhdsWithin] with x hx
   exact (eval_div_eval_eq_pow_mul h hx).symm
 
-/-- The reciprocal of `(x - a) ^ k`, for `k ≠ 0`, tends to `+∞` from the right of `a`. -/
-private theorem tendsto_inv_pow_sub_nhdsGT {k : ℕ} (hk : k ≠ 0) :
-    Tendsto (fun x ↦ ((x - a) ^ k)⁻¹) (𝓝[>] a) atTop := by
-  refine tendsto_inv_nhdsGT_zero.comp (tendsto_nhdsWithin_iff.2 ⟨?_, ?_⟩)
-  · exact (Continuous.tendsto' (f := fun x : R ↦ (x - a) ^ k) (by fun_prop) a 0
-      (by simp [zero_pow hk])).mono_left nhdsWithin_le_nhds
-  · filter_upwards [self_mem_nhdsWithin] with x hx
-    exact pow_pos (sub_pos.2 hx) k
-
-/-- The reciprocal of `(a - x) ^ k`, for `k ≠ 0`, tends to `+∞` from the left of `a`. -/
-private theorem tendsto_inv_pow_sub_nhdsLT {k : ℕ} (hk : k ≠ 0) :
-    Tendsto (fun x ↦ ((a - x) ^ k)⁻¹) (𝓝[<] a) atTop := by
-  refine tendsto_inv_nhdsGT_zero.comp (tendsto_nhdsWithin_iff.2 ⟨?_, ?_⟩)
-  · exact (Continuous.tendsto' (f := fun x : R ↦ (a - x) ^ k) (by fun_prop) a 0
-      (by simp [zero_pow hk])).mono_left nhdsWithin_le_nhds
-  · filter_upwards [self_mem_nhdsWithin] with x hx
-    exact pow_pos (sub_pos.2 hx) k
-
-/-- A product of a function tending to `+∞` and a function tending to a nonzero constant `c`
-tends to the infinity of the sign of `c`. -/
-private theorem tendsto_of_eventuallyEq_mul {l : Filter R} {f h g : R → R} {c : R}
-    (hh : Tendsto h l atTop) (hg : Tendsto g l (𝓝 c)) (hf : (fun x ↦ h x * g x) =ᶠ[l] f) :
-    (sign c = 1 → Tendsto f l atTop) ∧ (sign c = -1 → Tendsto f l atBot) :=
-  ⟨fun hc ↦ (hh.atTop_mul_pos (sign_eq_one_iff.1 hc) hg).congr' hf,
-    fun hc ↦ (hh.atTop_mul_neg (sign_eq_neg_one_iff.1 hc) hg).congr' hf⟩
-
 /-- To the right of a pole, `q / p` tends to the infinity of the right-hand sign of `p * q`. -/
 private theorem tendsto_div_nhdsGT (hpole : q.rootMultiplicity a < p.rootMultiplicity a) :
     ((p * q).derivSignRight a = 1 → Tendsto (fun x ↦ q.eval x / p.eval x) (𝓝[>] a) atTop) ∧
       ((p * q).derivSignRight a = -1 →
         Tendsto (fun x ↦ q.eval x / p.eval x) (𝓝[>] a) atBot) := by
-  have hp : p ≠ 0 := by
-    rintro rfl
-    simp at hpole
-  rw [← sign_cofactorDiv]
-  refine tendsto_of_eventuallyEq_mul (tendsto_inv_pow_sub_nhdsGT (Nat.sub_ne_zero_of_lt hpole))
-    ((tendsto_cofactorDiv hp q a).mono_left nhdsWithin_le_nhds) ?_
-  filter_upwards [self_mem_nhdsWithin] with x hx
-  exact (eval_div_eval_eq_inv_mul hpole (ne_of_gt hx)).symm
+  have hp : p ≠ 0 := (rootMultiplicity_pos'.1 (Nat.zero_lt_of_lt hpole)).1
+  have hh := TauCeti.tendsto_inv_pow_sub_nhdsGT (a := a) (Nat.sub_ne_zero_of_lt hpole)
+  have hg := (tendsto_cofactorDiv hp q a).mono_left (nhdsWithin_le_nhds (s := Ioi a))
+  have hf : (fun x ↦ ((x - a) ^ (p.rootMultiplicity a - q.rootMultiplicity a))⁻¹ *
+      cofactorDiv p q a x) =ᶠ[𝓝[>] a] fun x ↦ q.eval x / p.eval x := by
+    filter_upwards [self_mem_nhdsWithin] with x hx
+    exact (eval_div_eval_eq_inv_mul hpole (ne_of_gt hx)).symm
+  rw [← sign_cofactorDiv, sign_eq_one_iff, sign_eq_neg_one_iff]
+  exact ⟨fun hc ↦ (hh.atTop_mul_pos hc hg).congr' hf, fun hc ↦ (hh.atTop_mul_neg hc hg).congr' hf⟩
 
 /-- To the left of a pole, `q / p` tends to the infinity of the left-hand sign of `p * q`. -/
 private theorem tendsto_div_nhdsLT (hpole : q.rootMultiplicity a < p.rootMultiplicity a) :
     ((p * q).derivSignLeft a = 1 → Tendsto (fun x ↦ q.eval x / p.eval x) (𝓝[<] a) atTop) ∧
       ((p * q).derivSignLeft a = -1 →
         Tendsto (fun x ↦ q.eval x / p.eval x) (𝓝[<] a) atBot) := by
-  have hp : p ≠ 0 := by
-    rintro rfl
-    simp at hpole
+  have hp : p ≠ 0 := (rootMultiplicity_pos'.1 (Nat.zero_lt_of_lt hpole)).1
   by_cases hq : q = 0
   · simp [hq]
   have hs : sign ((-1) ^ (p.rootMultiplicity a - q.rootMultiplicity a) * cofactorDiv p q a a) =
       (p * q).derivSignLeft a := by
     rw [sign_mul, sign_pow, sign_neg (neg_one_lt_zero), sign_cofactorDiv,
       derivSignLeft_mul_eq hpole hq]
-  rw [← hs]
-  refine tendsto_of_eventuallyEq_mul (tendsto_inv_pow_sub_nhdsLT (Nat.sub_ne_zero_of_lt hpole))
-    (tendsto_const_nhds.mul ((tendsto_cofactorDiv hp q a).mono_left nhdsWithin_le_nhds)) ?_
-  filter_upwards [self_mem_nhdsWithin] with x hx
-  exact (eval_div_eval_eq_inv_mul' hpole (ne_of_lt hx)).symm
+  have hh := TauCeti.tendsto_inv_pow_sub_nhdsLT (a := a) (Nat.sub_ne_zero_of_lt hpole)
+  have hg := tendsto_const_nhds (x := ((-1 : R) ^ (p.rootMultiplicity a - q.rootMultiplicity a)))
+    |>.mul ((tendsto_cofactorDiv hp q a).mono_left (nhdsWithin_le_nhds (s := Iio a)))
+  have hf : (fun x ↦ ((a - x) ^ (p.rootMultiplicity a - q.rootMultiplicity a))⁻¹ *
+      ((-1) ^ (p.rootMultiplicity a - q.rootMultiplicity a) * cofactorDiv p q a x)) =ᶠ[𝓝[<] a]
+      fun x ↦ q.eval x / p.eval x := by
+    filter_upwards [self_mem_nhdsWithin] with x hx
+    exact (eval_div_eval_eq_inv_mul' hpole (ne_of_lt hx)).symm
+  rw [← hs, sign_eq_one_iff, sign_eq_neg_one_iff]
+  exact ⟨fun hc ↦ (hh.atTop_mul_pos hc hg).congr' hf, fun hc ↦ (hh.atTop_mul_neg hc hg).congr' hf⟩
 
 /-- At a pole of `q / p` where `p * q` is positive to the right, `q / p` tends to `+∞` from the
 right. -/
@@ -248,7 +224,7 @@ theorem cauchyJump_eq_one_iff_tendsto :
     tendsto_div_nhdsGT_atTop hpole hr⟩, fun ⟨hl, hr⟩ ↦ ?_⟩
   obtain ⟨hpole, hq⟩ := rootMultiplicity_lt_of_tendsto
     (nhdsWithin_mono _ fun _ hx ↦ ne_of_gt hx) (fun c ↦ (disjoint_nhds_atTop c).symm) hr
-  have hpq : p * q ≠ 0 := mul_ne_zero (by rintro rfl; simp at hpole) hq
+  have hpq : p * q ≠ 0 := mul_ne_zero (rootMultiplicity_pos'.1 (Nat.zero_lt_of_lt hpole)).1 hq
   refine ⟨hpole, ?_, ?_⟩
   · -- The left-hand sign is nonzero, and it cannot be `1`, since then `q / p` would tend to `+∞`.
     rcases hs : (p * q).derivSignLeft a with _ | _ | _
