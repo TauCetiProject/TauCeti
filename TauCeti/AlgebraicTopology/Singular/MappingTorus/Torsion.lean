@@ -59,16 +59,6 @@ namespace TauCeti.MappingTorus
 
 variable {k : Type w} [CommRing k] {F : Type w} [TopologicalSpace F] (φ : F ≃ₜ F)
 
-/-- The zeroth homology of the singular chain complex is free on path components.
-Mathlib's `singularHomologyFunctor` is the composite of the singular-chain functor with
-`HomologicalComplex.homologyFunctor`; evaluating that composite gives this chain-homology
-module by definitional equality. -/
-instance free_singularChainComplex_homology_zero :
-    Module.Free k ((((singularChainComplexFunctor (ModuleCat.{w} k)).obj
-      (ModuleCat.of k k)).obj (TopCat.of F)).homology 0) :=
-  inferInstanceAs (Module.Free k
-    (((singularHomologyFunctor (ModuleCat.{w} k) 0).obj (ModuleCat.of k k)).obj (TopCat.of F)))
-
 /-- If `Hₙ(F)` is torsion-free, every torsion class of `Hₙ₊₁(T_φ)` comes from the fibre: the Wang
 connecting morphism sends it to a torsion class of `Hₙ(F)`, hence to zero. -/
 theorem torsion_homology_le_range_homologyMap_fibreInclusionChainMap (n : ℕ)

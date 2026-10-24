@@ -384,6 +384,15 @@ instance free_singularHomology_zero [Module.Free k M] :
   classical
   exact .of_equiv (X.singularHomology₀Iso M ≪≫ coprodIsoDirectSum _).toLinearEquiv.symm
 
+/-- The zeroth homology of the singular chain complex with free module coefficients is free.
+Mathlib's `singularHomologyFunctor` is the composite of the singular-chain functor with
+`HomologicalComplex.homologyFunctor`; evaluating that composite gives this chain-homology
+module by definitional equality. -/
+instance free_singularChainComplex_homology_zero [Module.Free k M] :
+    Module.Free k ((((singularChainComplexFunctor (ModuleCat.{w} k)).obj M).obj X).homology 0) :=
+  inferInstanceAs (Module.Free k
+    (((singularHomologyFunctor (ModuleCat.{w} k) 0).obj M).obj X))
+
 variable [Nonempty X]
 
 /-- The singular homology of a nonempty space with coefficients in a free module is free in each
