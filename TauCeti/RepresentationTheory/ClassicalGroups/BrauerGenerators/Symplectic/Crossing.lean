@@ -133,9 +133,10 @@ theorem symplecticPermTensorAction_swap {i j : Fin d} (hij : i ≠ j) :
     symplecticPermTensorAction k n d (Equiv.swap i j) =
       -(PiTensorProduct.reindex k (fun _ : Fin d => (Fin n ⊕ Fin n) → k)
         (Equiv.swap i j)).toLinearMap := by
-  rw [symplecticPermTensorAction_apply, Equiv.Perm.sign_swap hij, Units.val_neg, Units.val_one,
-    Int.cast_neg, Int.cast_one, neg_smul (M := Module.End k (⨂[k]^d ((Fin n ⊕ Fin n) → k))),
-    one_smul]
+  rw [symplecticPermTensorAction_apply, Equiv.Perm.sign_swap hij]
+  push_cast
+  exact neg_one_smul k
+    (PiTensorProduct.reindex k (fun _ : Fin d => (Fin n ⊕ Fin n) → k) (Equiv.swap i j)).toLinearMap
 
 /-- **A transposition of two distinct strands on a pure tensor** exchanges the two factors and
 changes the sign. -/
@@ -153,7 +154,7 @@ theorem symplecticPermTensorAction_swap_zero_one :
   refine PiTensorProduct.ext (MultilinearMap.ext fun v => ?_)
   have hv : (fun t => v (Equiv.swap 0 1 t)) = ![v 1, v 0] := by
     funext t
-    fin_cases t <;> rfl
+    fin_cases t <;> simp
   rw [LinearMap.compMultilinearMap_apply, LinearMap.compMultilinearMap_apply,
     symplecticPermTensorAction_swap_tprod (by decide), symplecticCrossing_tprod, hv]
 
@@ -187,14 +188,12 @@ theorem symplecticPermTensorAction_mul_symplecticCupCapAt (σ : Equiv.Perm (Fin 
   refine PiTensorProduct.ext (MultilinearMap.ext fun v => ?_)
   rw [LinearMap.compMultilinearMap_apply, LinearMap.compMultilinearMap_apply,
     Module.End.mul_apply, Module.End.mul_apply, symplecticPermTensorAction_tprod, map_smul]
-  rcases eq_or_ne i j with rfl | hij
-  · rw [symplecticCupCapAt_self_tprod, symplecticCupCapAt_self_tprod, Equiv.symm_apply_apply]
-    simp only [map_smul, map_neg, map_sum, symplecticPermTensorAction_tprod,
-      Function.update_apply_equiv_apply, Equiv.symm_symm, Function.comp_def]
-    simp only [Finset.smul_sum, smul_neg, smul_comm ((Equiv.Perm.sign σ : ℤ) : k)]
-  · rw [symplecticCupCapAt_tprod hij, symplecticCupCapAt_tprod (σ.injective.ne hij),
-      Equiv.symm_apply_apply, Equiv.symm_apply_apply]
-    simp only [map_smul, map_neg, map_sum, symplecticPermTensorAction_tprod,
+  -- only the evaluation of the arc differs between coincident and distinct strands
+  rcases eq_or_ne i j with rfl | hij <;>
+    [rw [symplecticCupCapAt_self_tprod, symplecticCupCapAt_self_tprod, Equiv.symm_apply_apply];
+      rw [symplecticCupCapAt_tprod hij, symplecticCupCapAt_tprod (σ.injective.ne hij),
+        Equiv.symm_apply_apply, Equiv.symm_apply_apply]] <;>
+  · simp only [map_smul, map_neg, map_sum, symplecticPermTensorAction_tprod,
       Function.update_apply_equiv_apply, Equiv.symm_symm, Function.comp_def]
     simp only [Finset.smul_sum, smul_neg, smul_comm ((Equiv.Perm.sign σ : ℤ) : k)]
 
