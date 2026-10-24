@@ -56,15 +56,14 @@ variable {R : Type*} [CommRing R] (ι : Type*) [LinearOrder ι] (q : Rˣ) {n : �
 noncomputable def jimbo : TypeAHeckeAlgebra R q n →ₐ[R] Module.End R ((Fin n → ι) →₀ R) :=
   lift (fun i ↦ KnotTheory.jimboGenerator q (BraidGroup.strand i) (BraidGroup.strandSucc i))
     (fun i ↦ KnotTheory.jimboGenerator_mul_self q (BraidGroup.strand_ne_strandSucc i))
-    (fun {i j} h ↦ by
-      have hij : i ≠ j := by
-        rintro rfl
-        omega
-      rw [BraidGroup.strand_eq_strandSucc_of_succ h]
-      exact KnotTheory.jimboGenerator_braid q (BraidGroup.strand_ne_strandSucc i)
-        (BraidGroup.strandSucc_ne_strandSucc hij) (BraidGroup.strand_ne_strandSucc_of_succ h))
-    (fun h ↦ KnotTheory.jimboGenerator_mul_comm q
-      (BraidGroup.nodup_strand_strandSucc_strand_strandSucc (Or.inl h)))
+    (fun h ↦ by
+      simpa only [map_mul, Units.val_mul, KnotTheory.jimbo_sigma, KnotTheory.jimboUnit_val] using
+        congrArg (fun b ↦ (KnotTheory.jimbo ι q b : Module.End R ((Fin n → ι) →₀ R)))
+          (BraidGroup.sigma_braid (Or.inl h)))
+    (fun h ↦ by
+      simpa only [map_mul, Units.val_mul, KnotTheory.jimbo_sigma, KnotTheory.jimboUnit_val] using
+        congrArg (fun b ↦ (KnotTheory.jimbo ι q b : Module.End R ((Fin n → ι) →₀ R)))
+          (BraidGroup.sigma_mul_sigma_comm (Or.inl h)))
 
 /-- In the Jimbo representation, the generator `T i` acts by the Jimbo R-matrix on the strands `i`
 and `i + 1`. -/
