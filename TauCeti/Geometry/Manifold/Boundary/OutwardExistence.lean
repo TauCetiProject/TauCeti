@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Boundary.Orientation
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
+public import TauCeti.Topology.FiberBundle.Extension
 public import Mathlib.Geometry.Manifold.PartitionOfUnity
 
 /-!
