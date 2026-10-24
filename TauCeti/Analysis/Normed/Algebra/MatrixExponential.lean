@@ -47,7 +47,7 @@ constant `1`. Evaluating at `t = 1` gives the identity.
 * `Matrix.exp_mul_exp_neg`, `Matrix.exp_neg_mul_exp`, `Matrix.exp_mul_exp_neg_mul`,
   `Matrix.exp_neg_mul_exp_mul`: the reciprocal laws for the exponential of an arbitrary matrix,
   in both orientations.
-* `Matrix.trace_exp_neg_mul_exp`, `Matrix.trace_exp_mul_exp_neg`: conjugating by the two
+* `Matrix.trace_exp_neg_mul_mul_exp`, `Matrix.trace_exp_mul_mul_exp_neg`: conjugating by the two
   exponential weights preserves the trace, in both orientations.
 * `Matrix.exp_eq_mul_exp_half`: the exponential of a matrix is the square of its half.
 * `Matrix.IsHermitian.trace_exp_mul_nonneg` and `Matrix.IsHermitian.trace_exp_pos`: positivity of
@@ -163,14 +163,14 @@ variable {𝔸 : Type*} [NormedCommRing 𝔸] [NormedAlgebra ℚ 𝔸] [Complete
 
 /-- Conjugating by the two exponential weights preserves the trace. -/
 @[simp]
-theorem trace_exp_neg_mul_exp (A x : Matrix m m 𝔸) :
+theorem trace_exp_neg_mul_mul_exp (A x : Matrix m m 𝔸) :
     (NormedSpace.exp (-A) * x * NormedSpace.exp A).trace = x.trace := by
   rw [Matrix.trace_mul_comm (NormedSpace.exp (-A) * x) (NormedSpace.exp A),
     exp_mul_exp_neg_mul]
 
 /-- Conjugating by the two exponential weights, in the other order, preserves the trace. -/
 @[simp]
-theorem trace_exp_mul_exp_neg (A x : Matrix m m 𝔸) :
+theorem trace_exp_mul_mul_exp_neg (A x : Matrix m m 𝔸) :
     (NormedSpace.exp A * x * NormedSpace.exp (-A)).trace = x.trace := by
   rw [Matrix.trace_mul_comm (NormedSpace.exp A * x) (NormedSpace.exp (-A)), exp_neg_mul_exp_mul]
 

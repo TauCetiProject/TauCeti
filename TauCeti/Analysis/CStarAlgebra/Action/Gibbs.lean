@@ -10,8 +10,8 @@ public import Mathlib.Analysis.Matrix.Order
 public import TauCeti.Analysis.CStarAlgebra.Action.Inner
 public import TauCeti.Analysis.CStarAlgebra.Action.KMS.Dense
 public import TauCeti.LinearAlgebra.Matrix.Trace.Duality
+import TauCeti.Analysis.CStarAlgebra.PositiveLinearFunctional
 import TauCeti.Analysis.Normed.Algebra.MatrixExponential
-import Mathlib.Analysis.CStarAlgebra.PositiveLinearFunctional
 
 /-!
 # Gibbs states of matrix Hamiltonians
@@ -83,10 +83,10 @@ theorem Matrix.IsHermitian.isKMSState_gibbsState (hK : K.IsHermitian) (β : ℝ)
     exact hKβ.trace_exp_pos.ne'
   refine (isKMSState_iff_forall_isEntireAnalytic
     (α := selfAdjoint.cstarAction ⟨K, hK⟩)).mpr ⟨?_, fun a _ b _ => ?_⟩
-  · -- the state is normalised: `‖ω‖ = ω 1` for a positive functional
-    have h1 := PositiveContinuousLinearMap.ofReal_opNorm_eq_map_one (Matrix.gibbsState K hK β)
-    rw [hK.gibbsState_apply, Matrix.mul_one, div_self htr] at h1
-    exact_mod_cast h1
+  · -- the state is normalised: a positive functional of norm `1` maps `1` to `1`
+    have h1 : (Matrix.gibbsState K hK β) 1 = 1 := by
+      rw [hK.gibbsState_apply, Matrix.mul_one, div_self htr]
+    exact_mod_cast (PositiveContinuousLinearMap.ofReal_opNorm_eq_one_iff_map_one _).mpr h1
   · -- the KMS identity reduces to the invariance of the trace under conjugation
     rw [selfAdjoint.entireExtension_cstarAction_mul_I, hK.gibbsState_apply,
       hK.gibbsState_apply]
@@ -101,7 +101,7 @@ theorem Matrix.IsHermitian.isKMSState_gibbsState (hK : K.IsHermitian) (β : ℝ)
             (a * (NormedSpace.exp (-((β : ℂ) • K)) * b)) *
             NormedSpace.exp ((β : ℂ) • K)).trace := by simp only [Matrix.mul_assoc]
       _ = (a * (NormedSpace.exp (-((β : ℂ) • K)) * b)).trace :=
-          Matrix.trace_exp_neg_mul_exp (A := (β : ℂ) • K) _
+          Matrix.trace_exp_neg_mul_mul_exp (A := (β : ℂ) • K) _
       _ = (NormedSpace.exp (-((β : ℂ) • K)) * (b * a)).trace := by
           rw [Matrix.trace_mul_comm a (NormedSpace.exp (-((β : ℂ) • K)) * b), Matrix.mul_assoc]
 
@@ -150,9 +150,8 @@ theorem Matrix.IsHermitian.isKMSState_iff_eq_gibbsState (hK : K.IsHermitian) (β
       _ = c • NormedSpace.exp (-((β : ℂ) • K)) := by
           rw [hQρ, Matrix.mul_smul, Matrix.mul_one]
   have hω1 : ω 1 = 1 := by
-    have h1 := PositiveContinuousLinearMap.ofReal_opNorm_eq_map_one ω
-    rw [hnorm] at h1
-    exact_mod_cast h1.symm
+    rw [← PositiveContinuousLinearMap.ofReal_opNorm_eq_one_iff_map_one ω]
+    exact_mod_cast hnorm
   have hc1 : c * (NormedSpace.exp (-((β : ℂ) • K))).trace = 1 := by
     rw [← hω1, hρ, Matrix.mul_one, hEρ, Matrix.trace_smul, smul_eq_mul]
   ext x
