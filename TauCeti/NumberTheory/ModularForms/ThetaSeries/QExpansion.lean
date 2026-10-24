@@ -132,7 +132,7 @@ theorem hasSum_thetaCoset_qParam (hh : 0 < h)
   rw [tsum_congr (fun v : g ⁻¹' {m} ↦ ?_), tsum_const, cosetRepresentationNumber_def,
     ← hfib, Set.ncard_image_of_injective _ Subtype.val_injective, Nat.card_coe_set_eq,
     ← Nat.cast_smul_eq_nsmul ℂ]
-  rw [cexp_pi_mul_I_mul_eq_qParam_pow hh (hg v) τ, show g v = m from v.2]
+  rw [cexp_pi_mul_I_mul_eq_qParam_pow hh (hg v) τ, Set.mem_singleton_iff.mp v.2]
 
 /-- The coefficients of the `q`-expansion of a coset theta series: if `h ‖γ + v‖² ∈ 2ℤ` for every
 `v ∈ L`, with `h > 0`, the `m`-th coefficient of the expansion of `θ_{γ+L}` in
