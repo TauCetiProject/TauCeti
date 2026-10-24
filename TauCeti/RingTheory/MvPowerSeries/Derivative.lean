@@ -37,6 +37,7 @@ series only; here the substituted series may have any number of variables.
   `f` vanishes and `n ≤ (pderiv i f).order` for every `i`.
 * `MvPowerSeries.eq_zero_of_pderiv_eq_zero_of_subst_eq_zero`: over a ring without additive
   torsion, a series vanishes if its partial derivative in `X i` and its value at `X i = 0` do.
+* `MvPowerSeries.pderiv_map`: partial differentiation commutes with coefficient maps.
 * `MvPowerSeries.WithPiTopology.continuous_pderiv`: a partial derivative is continuous for the
   coefficientwise topology.
 * `MvPowerSeries.pderiv_subst`: the chain rule for substitution into a multivariate power series.
@@ -116,6 +117,17 @@ theorem eq_zero_of_pderiv_eq_zero_of_subst_eq_zero [DecidableEq σ] {i : σ}
     exact (nsmul_eq_zero_iff.mp this).resolve_right (Nat.succ_ne_zero _)
 
 end MvPowerSeries
+
+/-! ### Coefficient maps -/
+
+/-- Coefficient maps commute with partial differentiation of formal power series. -/
+@[simp]
+theorem MvPowerSeries.pderiv_map {σ R S : Type*} [CommSemiring R] [CommSemiring S]
+    (f : R →+* S) (g : MvPowerSeries σ R) (i : σ) :
+    MvPowerSeries.pderiv i (MvPowerSeries.map f g) =
+      MvPowerSeries.map f (MvPowerSeries.pderiv i g) := by
+  ext n
+  simp [MvPowerSeries.coeff_pderiv]
 
 /-! ### The chain rule -/
 
