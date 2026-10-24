@@ -414,7 +414,7 @@ structure Marking (d : FlagPairData ι Flag X) (L : Type*) where
   /-- Distinct labels mark distinct points. -/
   point_injective : Function.Injective point
   /-- No mark is a flag point. -/
-  point_not_mem_flagPointSet (l : L) : point l ∉ flagPointSet d
+  point_notMem_flagPointSet (l : L) : point l ∉ flagPointSet d
 
 /-- The generated relation relates two points of the disjoint union only when they are equal or
 when both of them are flag points. -/
