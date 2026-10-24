@@ -24,6 +24,9 @@ norm of `K` is dense, for instance if its value group is all of `ℝ_{>0}`, the 
 ## Main results
 
 * `Valued.integer.mem_maximalIdeal_iff`: the maximal ideal of `𝒪[K]` is the open unit ball.
+* `Valued.integer.dvd_of_norm_le`: divisibility in `𝒪[K]` is comparison of norms.
+* `Valued.integer.submodule_mem_of_norm_le`: an `𝒪[K]`-submodule of `K` contains every element
+  of norm at most that of one of its elements.
 * `LinearMap.continuous_of_integer`: an `𝒪[K]`-linear map from `ι → K`, `ι` finite, to a normed
   `K`-space is continuous.
 * `LinearEquiv.isBounded_image_iff_of_integer`: `𝒪[K]`-linear equivalences between finite
@@ -47,6 +50,24 @@ theorem Valued.integer.mem_maximalIdeal_iff {x : Valued.integer K} :
     x ∈ IsLocalRing.maximalIdeal (Valued.integer K) ↔ ‖x‖ < 1 := by
   rw [mem_maximalIdeal, mem_nonunits_iff, Valued.integer.isUnit_iff_norm_eq_one,
     (Valued.integer.norm_le_one x).lt_iff_ne]
+
+/-- In the valuation ring of a nonarchimedean field, `b` divides `a` as soon as `‖a‖ ≤ ‖b‖`. -/
+theorem Valued.integer.dvd_of_norm_le {a b : Valued.integer K} (h : ‖(a : K)‖ ≤ ‖(b : K)‖) :
+    b ∣ a :=
+  (Valuation.integer.integers _).dvd_of_le (by
+    simpa [NormedField.v_eq_valuation, Algebra.algebraMap_ofSubsemiring_apply,
+      ← NNReal.coe_le_coe] using h)
+
+/-- An `𝒪[K]`-submodule of `K` containing `y` contains every `x` with `‖x‖ ≤ ‖y‖`. -/
+theorem Valued.integer.submodule_mem_of_norm_le {M : Submodule (Valued.integer K) K} {x y : K}
+    (hy : y ∈ M) (h : ‖x‖ ≤ ‖y‖) : x ∈ M := by
+  rcases eq_or_ne y 0 with rfl | hy0
+  · rw [norm_zero, norm_le_zero_iff] at h
+    exact h ▸ M.zero_mem
+  have hc : x / y ∈ Valued.integer K :=
+    Valued.integer.mem_iff.2 (by rw [norm_div]; exact div_le_one_of_le₀ h (norm_nonneg _))
+  have := M.smul_mem ⟨x / y, hc⟩ hy
+  rwa [Subring.smul_def, smul_eq_mul, div_mul_cancel₀ _ hy0] at this
 
 variable {ι F : Type*} [NormedAddCommGroup F] [NormedSpace K F] [Module (Valued.integer K) F]
   [IsScalarTower (Valued.integer K) K F]
