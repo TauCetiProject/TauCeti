@@ -10,33 +10,36 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Trivia
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Evens.Character
 
 import TauCeti.RepresentationTheory.Homological.ContCohomology.Coinduced.Pairing
-import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.ConnectingMap.Basic
+import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.ConnectingMap.AllDegrees
+import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Unit
 import TauCeti.RepresentationTheory.Homological.ContCohomology.ConnectingMapComparison
 
 /-!
 # The index-two cup--restriction exact sequence
 
 For an open subgroup `U` of index two in a profinite group `G`, let `χ_U` be the associated
-class in `H¹(G, 𝔽₂)`. This file identifies the degree-one connecting map of the coinduced
+class in `H¹(G, 𝔽₂)`. This file identifies every connecting map of the coinduced
 coefficient sequence with cup product by `χ_U`. The long exact sequence then gives
 
 ```text
-H¹(G, 𝔽₂) --χ_U ⌣ -→ H²(G, 𝔽₂) --res→ H²(U, 𝔽₂).
+Hⁿ(U, 𝔽₂) --cor→ Hⁿ(G, 𝔽₂) --(- ⌣ χ_U)→ Hⁿ⁺¹(G, 𝔽₂) --res→ Hⁿ⁺¹(U, 𝔽₂).
 ```
 
 ## Main results
 
 * `OpenSubgroup.indexTwoDelta0_one`: the degree-zero connecting morphism sends `1` to the
   subgroup character.
-* `OpenSubgroup.indexTwoDelta1_eq_cup_character`: the degree-one connecting morphism is cup
-  product by the subgroup character.
-* `OpenSubgroup.exact_cup_res2_of_index_two`: the displayed sequence is exact.
+* `OpenSubgroup.indexTwoDelta_eq_cup_character`: every connecting morphism is cup product
+  by the subgroup character.
+* `OpenSubgroup.exact_cor_cup_of_index_two` and `OpenSubgroup.exact_cup_res_of_index_two`:
+  the displayed sequence is exact.
 
 ## References
 
 * J. Kr. Arason, *Cohomologische Invarianten quadratischer Formen*, J. Algebra **36** (1975),
   448--491.
-* J. Neukirch, A. Schmidt, K. Wingberg, *Cohomology of Number Fields*, 2nd ed., (1.6.5).
+* J. Neukirch, A. Schmidt, K. Wingberg, *Cohomology of Number Fields*, 2nd ed.,
+  (1.4.5) and (1.6.5).
 -/
 
 public section
@@ -60,19 +63,6 @@ private noncomputable def f2One : H0 G (trivialF2 G).V :=
   ⟨(trivialF2Equiv G).symm 1, fun g => by
     rw [TopRep.distribMulAction_smul, trivialF2_ρ_apply_apply]⟩
 
-omit [CompactSpace G] [TotallyDisconnectedSpace G] in
-private theorem explicitCup10_f2One (x : H1 G (trivialF2 G).V) :
-    explicitCup10 G _ _ _ (trivialF2Pairing G) continuous_of_discreteTopology
-      (trivialF2Pairing_smul_smul G) x (f2One (G := G)) = x := by
-  induction x using QuotientAddGroup.induction_on with
-  | _ a =>
-    rw [explicitCup10_mk]
-    apply congrArg (fun z : Z1 G (trivialF2 G).V => (z : H1 G (trivialF2 G).V))
-    apply Subtype.ext
-    funext g
-    apply (trivialF2Equiv G).injective
-    simp [f2One]
-
 omit [TotallyDisconnectedSpace G] in
 private theorem explicitDelta0_f2One (U : OpenSubgroup G) (hU : U.toSubgroup.index = 2) :
     letI : U.toSubgroup.FiniteIndex := ⟨by omega⟩
@@ -89,69 +79,6 @@ private theorem explicitDelta0_f2One (U : OpenSubgroup G) (hU : U.toSubgroup.ind
   by_cases hg : g ∈ U.toSubgroup
   · simp [indexTwoConnectingCocycle_apply, hg, f2One]
   · simp [indexTwoConnectingCocycle_apply, hg, f2One]
-
-omit [TotallyDisconnectedSpace G] in
-private theorem explicitDelta1_eq_cup_character (U : OpenSubgroup G)
-    (hU : U.toSubgroup.index = 2) (x : H1 G (trivialF2 G).V) :
-    letI : U.toSubgroup.FiniteIndex := ⟨by omega⟩
-    (DiscreteCoind.indexTwoShortExact G U.toSubgroup (trivialF2 G).V hU U.isOpen'
-      (trivialF2_two_nsmul_eq_zero G)).explicitDelta1 x =
-      explicitCup11 G _ _ _ (trivialF2Pairing G) continuous_of_discreteTopology
-        (trivialF2Pairing_smul_smul G)
-        (evensHomCocycle (U.toSubgroup.indexTwoCharacter hU)
-          (Subgroup.continuous_indexTwoCharacter hU U.isOpen') : H1 G (trivialF2 G).V) x := by
-  let _ : U.toSubgroup.FiniteIndex := ⟨by omega⟩
-  let S := DiscreteCoind.indexTwoShortExact G U.toSubgroup (trivialF2 G).V hU U.isOpen'
-    (trivialF2_two_nsmul_eq_zero G)
-  let mu := DiscreteCoind.pairing U.toSubgroup U.isOpen' (trivialF2Pairing G)
-    (trivialF2Pairing_smul_smul G)
-  have hcup := explicitDelta1_explicitCup10_right S S mu (trivialF2Pairing G)
-    (trivialF2Pairing G) continuous_of_discreteTopology continuous_of_discreteTopology
-    continuous_of_discreteTopology
-    (DiscreteCoind.pairing_smul U.toSubgroup U.isOpen' (trivialF2Pairing G)
-      (trivialF2Pairing_smul_smul G))
-    (trivialF2Pairing_smul_smul G) (trivialF2Pairing_smul_smul G)
-    (fun a b => by
-      -- The general connecting-map lemma exposes the coefficient maps through `S`; unfolding
-      -- that wrapper presents exactly the coinduction unit identity proved by `pairing_apply`.
-      simp only [S, mu, DiscreteCoind.indexTwoShortExact_incl]
-      change DiscreteCoind.pairing U.toSubgroup U.isOpen' (trivialF2Pairing G)
-        (trivialF2Pairing_smul_smul G) a (DiscreteCoind.unit G U.toSubgroup _ b) =
-          DiscreteCoind.unit G U.toSubgroup _ (trivialF2Pairing G a b)
-      ext g
-      rw [DiscreteCoind.pairing_apply, DiscreteCoind.unit_apply, DiscreteCoind.unit_apply,
-        trivialF2Pairing_smul_smul])
-    (fun a b => by
-      -- As above, unfolding the short-exact-sequence wrapper exposes the trace identity needed
-      -- by the generic compatibility theorem.
-      simp only [S, mu, DiscreteCoind.indexTwoShortExact_proj]
-      change trivialF2Pairing G a (DiscreteCoind.trace G U.toSubgroup _ b) =
-        DiscreteCoind.trace G U.toSubgroup _
-          (DiscreteCoind.pairing U.toSubgroup U.isOpen' (trivialF2Pairing G)
-            (trivialF2Pairing_smul_smul G) a b)
-      exact (DiscreteCoind.trace_pairing U.toSubgroup U.isOpen'
-        (trivialF2Pairing G) (trivialF2Pairing_smul_smul G) a b).symm)
-    x (f2One (G := G))
-  rw [explicitCup10_f2One, explicitDelta0_f2One] at hcup
-  rw [hcup]
-  have hneg : ∀ y : H2 G (trivialF2 G).V, -y = y := fun y => by
-    rw [eq_comm, eq_neg_iff_add_eq_zero, ← two_nsmul]
-    exact nsmul_H2_eq_zero (trivialF2_two_nsmul_eq_zero G) y
-  rw [hneg]
-  have hflip : (trivialF2Pairing G).flip = trivialF2Pairing G := by
-    apply AddMonoidHom.ext
-    intro a
-    apply AddMonoidHom.ext
-    intro b
-    apply (trivialF2Equiv G).injective
-    simp [mul_comm]
-  simpa only [hflip] using explicitCup11_comm_of_neg_eq_self G _ _ _ (trivialF2Pairing G)
-    continuous_of_discreteTopology (trivialF2Pairing_smul_smul G)
-    (fun z => by
-      apply (trivialF2Equiv G).injective
-      simp)
-    x (evensHomCocycle (U.toSubgroup.indexTwoCharacter hU)
-      (Subgroup.continuous_indexTwoCharacter hU U.isOpen') : H1 G (trivialF2 G).V)
 
 omit [CompactSpace G] [TotallyDisconnectedSpace G] in
 /-- Transport of the unit class along `ofDiscreteModule_trivialF2` is the explicit unit
@@ -208,91 +135,167 @@ theorem indexTwoDelta0_one (U : OpenSubgroup G) (hU : U.toSubgroup.index = 2) :
 
 omit [TotallyDisconnectedSpace G] in
 /-- **The connecting map of the index-two coinduced sequence is cup product by the subgroup
-character.** This is the canonical continuous-cohomology form of the explicit cochain identity.
-The transports identify the discrete coefficient module with `trivialF2 G`. -/
-theorem indexTwoDelta1_eq_cup_character (U : OpenSubgroup G)
-    (hU : U.toSubgroup.index = 2)
-    (x : continuousCohomology 1 (ofDiscreteModule ℤ G (trivialF2 G).V)) :
+character in every degree.** The transports identify the discrete coefficient module with
+`trivialF2 G`. Placing the character on the right keeps the resulting degree `n + 1`. -/
+theorem indexTwoDelta_eq_cup_character (U : OpenSubgroup G)
+    (hU : U.toSubgroup.index = 2) (n : ℕ)
+    (x : continuousCohomology n (ofDiscreteModule ℤ G (trivialF2 G).V)) :
     letI : U.toSubgroup.FiniteIndex := ⟨by omega⟩
-    (eqToHom (congrArg (continuousCohomology 2) (ofDiscreteModule_trivialF2 G))).hom
+    (eqToHom (congrArg (continuousCohomology (n + 1)) (ofDiscreteModule_trivialF2 G))).hom
         (((DiscreteCoind.indexTwoShortExact G U.toSubgroup (trivialF2 G).V hU U.isOpen'
-          (trivialF2_two_nsmul_eq_zero G)).delta 1).hom x) =
-      (trivialF2TopPairing G).cup 1 1 (U.indexTwoCharacterClass hU)
-        ((eqToHom (congrArg (continuousCohomology 1)
-          (ofDiscreteModule_trivialF2 G))).hom x) := by
+          (trivialF2_two_nsmul_eq_zero G)).delta n).hom x) =
+      (trivialF2TopPairing G).cup n 1
+        ((eqToHom (congrArg (continuousCohomology n)
+          (ofDiscreteModule_trivialF2 G))).hom x) (U.indexTwoCharacterClass hU) := by
   let _ : U.toSubgroup.FiniteIndex := ⟨by omega⟩
   let S := DiscreteCoind.indexTwoShortExact G U.toSubgroup (trivialF2 G).V hU U.isOpen'
     (trivialF2_two_nsmul_eq_zero G)
-  obtain ⟨a, rfl⟩ := (explicitH1AddEquivContinuousCohomology G (trivialF2 G).V).surjective x
-  let a' : DiscreteH1 G (trivialF2 G).V :=
-    (discreteH1Equiv G (trivialF2 G).V).symm a
-  have ha : (explicitH1IsoContinuousCohomology G (trivialF2 G).V).hom a' =
-      explicitH1AddEquivContinuousCohomology G (trivialF2 G).V a := by
-    rw [explicitH1IsoContinuousCohomology_hom_apply]
-    simp [a']
-  rw [← ha, S.explicitIso_delta1, explicitH2IsoContinuousCohomology_hom_apply,
-    explicitH1IsoContinuousCohomology_hom_apply]
-  simp only [a', AddEquiv.apply_symm_apply]
-  rw [indexTwoCharacterClass_def,
-    trivialF2TopPairing_cup_one_one_explicitH1, explicitDelta1_eq_cup_character]
+  let P := ofDiscreteModulePairing (trivialF2Pairing G) (trivialF2Pairing_smul_smul G)
+  -- State coefficient equations on the original carrier before using its discrete presentation.
+  have hbil (a b : (trivialF2 G).V) : P.bil a b = trivialF2Pairing G a b :=
+    ofDiscreteModulePairing_bil_apply (trivialF2Pairing G) (trivialF2Pairing_smul_smul G) a b
+  let μ := DiscreteCoind.pairing U.toSubgroup U.isOpen' (trivialF2Pairing G)
+    (trivialF2Pairing_smul_smul G)
+  let Q := ofDiscreteModulePairing μ (DiscreteCoind.pairing_smul U.toSubgroup U.isOpen'
+    (trivialF2Pairing G) (trivialF2Pairing_smul_smul G))
+  let u := (eqToHom (congrArg (continuousCohomology 0)
+    (ofDiscreteModule_trivialF2 G).symm)).hom (cohomF2.one G)
+  have hunit : P.cup n 0 x u = x := by
+    dsimp only [u]
+    rw [eqToHom_cohomF2_one, explicitH0IsoContinuousCohomology_hom_eq_degreeZeroClass]
+    apply P.cup_one_right
+    intro a
+    have hright (b : (trivialF2 G).V) : P.bil b ((trivialF2Equiv G).symm 1) = b := by
+      refine (hbil b _).trans ?_
+      apply (trivialF2Equiv G).injective
+      simp only [trivialF2Pairing_apply, AddEquiv.apply_symm_apply, mul_one]
+    exact hright a
+  have hcup := S.delta_cup_right S Q P P
+    (fun a b => by
+      -- The short exact sequence exposes its unit through this defining equation.
+      simp only [S, Q, P, DiscreteCoind.indexTwoShortExact_incl,
+        ofDiscreteModulePairing_bil_apply]
+      -- Restricting to the underlying coefficient carriers identifies the bundled unit.
+      change DiscreteCoind.unit G U.toSubgroup _ (trivialF2Pairing G a b) =
+        DiscreteCoind.pairing U.toSubgroup U.isOpen' (trivialF2Pairing G)
+          (trivialF2Pairing_smul_smul G) a (DiscreteCoind.unit G U.toSubgroup _ b)
+      ext g
+      rw [DiscreteCoind.pairing_apply, DiscreteCoind.unit_apply, DiscreteCoind.unit_apply,
+        trivialF2Pairing_smul_smul])
+    (fun a b => by
+      simp only [S, Q, P, DiscreteCoind.indexTwoShortExact_proj,
+        ofDiscreteModulePairing_bil_apply]
+      -- The short exact sequence records the underlying additive map of the trace.
+      change DiscreteCoind.trace G U.toSubgroup _
+        (DiscreteCoind.pairing U.toSubgroup U.isOpen' (trivialF2Pairing G)
+          (trivialF2Pairing_smul_smul G) a b) =
+        trivialF2Pairing G a (DiscreteCoind.trace G U.toSubgroup _ b)
+      exact DiscreteCoind.trace_pairing U.toSubgroup U.isOpen'
+        (trivialF2Pairing G) (trivialF2Pairing_smul_smul G) a b)
+    n 0 x u
+  rw [hunit] at hcup
+  dsimp only [S] at hcup
+  simp only [Nat.add_zero] at hcup
+  have hcompat (a b : (trivialF2 G).V) :
+      eqToHom (ofDiscreteModule_trivialF2 G) (P.bil a b) =
+        (trivialF2TopPairing G).bil (eqToHom (ofDiscreteModule_trivialF2 G) a)
+          (eqToHom (ofDiscreteModule_trivialF2 G) b) := by
+    rw [hbil, eqToHom_ofDiscreteModule_trivialF2_apply,
+      eqToHom_ofDiscreteModule_trivialF2_apply, eqToHom_ofDiscreteModule_trivialF2_apply,
+      trivialF2TopPairing_bil_apply, trivialF2Pairing_apply]
+  have hnat := P.cup_coeffMap (trivialF2TopPairing G)
+    (eqToHom (ofDiscreteModule_trivialF2 G)) (eqToHom (ofDiscreteModule_trivialF2 G))
+    (eqToHom (ofDiscreteModule_trivialF2 G))
+    hcompat
+    n 1 x ((S.delta 0).hom u)
+  rw [ContinuousCohomology.coeffMap_eqToHom, ContinuousCohomology.coeffMap_eqToHom,
+    ContinuousCohomology.coeffMap_eqToHom] at hnat
+  -- Every mod-two class is its own negative, so the degree sign is invisible.
+  obtain h | h := neg_one_pow_eq_or ℤ n
+  · rw [h, one_smul] at hcup
+    rw [hcup, hnat, indexTwoDelta0_one U hU]
+  · rw [h, neg_one_zsmul] at hcup
+    rw [hcup, map_neg, hnat, indexTwoDelta0_one U hU]
+    exact ZModModule.neg_eq_self _
 
-/-- **The index-two cup--restriction sequence is exact in degree two.** A class in
-`H²(G, 𝔽₂)` restricts to zero on an open subgroup `U` of index two exactly when it is the
-cup product of the character class `χ_U` with a class in `H¹(G, 𝔽₂)`. -/
-theorem exact_cup_res2_of_index_two (U : OpenSubgroup G) (hU : U.toSubgroup.index = 2) :
+/-- **The index-two cup--restriction sequence is exact in every degree.** A class in
+`Hⁿ⁺¹(G, 𝔽₂)` restricts to zero on `U` exactly when it is the cup product of a class in
+`Hⁿ(G, 𝔽₂)` with the subgroup character. -/
+theorem exact_cup_res_of_index_two (U : OpenSubgroup G) (hU : U.toSubgroup.index = 2) (n : ℕ) :
     letI : U.toSubgroup.FiniteIndex := ⟨by omega⟩
     Function.Exact
-      ((trivialF2TopPairing G).cup 1 1 (U.indexTwoCharacterClass hU))
-      (trivialF2ResMap G U.toSubgroup 2) := by
+      (fun x => (trivialF2TopPairing G).cup n 1 x (U.indexTwoCharacterClass hU))
+      (trivialF2ResMap G U.toSubgroup (n + 1)) := by
   let _ : U.toSubgroup.FiniteIndex := ⟨by omega⟩
-  -- Generalize the coefficient object so that the equality identifying the discrete module with
-  -- `trivialF2 G` can be eliminated before applying the long exact sequence.
+  -- Eliminate the coefficient equality before transporting the long exact sequence.
   have key : ∀ (X : TopRep ℤ G) (hX : ofDiscreteModule ℤ G (trivialF2 G).V = X),
       Function.Exact
-        (fun x => (eqToHom (congrArg (continuousCohomology 2) hX)).hom
+        (fun x => (eqToHom (congrArg (continuousCohomology (n + 1)) hX)).hom
           (((DiscreteCoind.indexTwoShortExact G U.toSubgroup (trivialF2 G).V hU U.isOpen'
-            (trivialF2_two_nsmul_eq_zero G)).delta 1).hom
-            ((eqToHom (congrArg (continuousCohomology 1) hX.symm)).hom x)))
-        (fun x => (ContinuousCohomology.res U.toSubgroup X 2).hom x) := by
+            (trivialF2_two_nsmul_eq_zero G)).delta n).hom
+            ((eqToHom (congrArg (continuousCohomology n) hX.symm)).hom x)))
+        (fun x => (ContinuousCohomology.res U.toSubgroup X (n + 1)).hom x) := by
     rintro X rfl
-    simpa only [eqToHom_refl, ConcreteCategory.id_apply, one_add_one_eq_two] using
+    simpa only [eqToHom_refl, ConcreteCategory.id_apply] using
       (ContinuousCohomology.exact_delta_res_of_index_two U.toSubgroup U.isOpen'
-        (trivialF2 G).V hU (trivialF2_two_nsmul_eq_zero G) 1)
+        (trivialF2 G).V hU (trivialF2_two_nsmul_eq_zero G) n)
   have h := key (trivialF2 G) (ofDiscreteModule_trivialF2 G)
-  have hf (x : cohomF2 G 1) :
-      (eqToHom (congrArg (continuousCohomology 2)
+  have hf (x : cohomF2 G n) :
+      (eqToHom (congrArg (continuousCohomology (n + 1))
           (ofDiscreteModule_trivialF2 G))).hom
         (((DiscreteCoind.indexTwoShortExact G U.toSubgroup (trivialF2 G).V hU U.isOpen'
-          (trivialF2_two_nsmul_eq_zero G)).delta 1).hom
-            ((eqToHom (congrArg (continuousCohomology 1)
+          (trivialF2_two_nsmul_eq_zero G)).delta n).hom
+            ((eqToHom (congrArg (continuousCohomology n)
               (ofDiscreteModule_trivialF2 G).symm)).hom x)) =
-        (trivialF2TopPairing G).cup 1 1 (U.indexTwoCharacterClass hU) x := by
-    have hx : (eqToHom (congrArg (continuousCohomology 1)
+        (trivialF2TopPairing G).cup n 1 x (U.indexTwoCharacterClass hU) := by
+    have hx : (eqToHom (congrArg (continuousCohomology n)
           (ofDiscreteModule_trivialF2 G))).hom
-        ((eqToHom (congrArg (continuousCohomology 1)
+        ((eqToHom (congrArg (continuousCohomology n)
           (ofDiscreteModule_trivialF2 G).symm)).hom x) = x := by
       rw [← ConcreteCategory.comp_apply (eqToHom _) (eqToHom _), eqToHom_trans,
         eqToHom_refl, ConcreteCategory.id_apply]
-    calc
-      _ = (trivialF2TopPairing G).cup 1 1 (U.indexTwoCharacterClass hU)
-          ((eqToHom (congrArg (continuousCohomology 1)
-            (ofDiscreteModule_trivialF2 G))).hom
-              ((eqToHom (congrArg (continuousCohomology 1)
-                (ofDiscreteModule_trivialF2 G).symm)).hom x)) :=
-        indexTwoDelta1_eq_cup_character U hU _
-      _ = _ := congrArg ((trivialF2TopPairing G).cup 1 1
-        (U.indexTwoCharacterClass hU)) hx
+    rw [indexTwoDelta_eq_cup_character U hU n, hx]
   intro y
   constructor
   · intro hy
-    have hy' : (ContinuousCohomology.res U.toSubgroup (trivialF2 G) 2).hom y = 0 := by
+    have hy' : (ContinuousCohomology.res U.toSubgroup (trivialF2 G) (n + 1)).hom y = 0 := by
       apply (ConcreteCategory.bijective_of_isIso (eqToHom
-        (congrArg (continuousCohomology 2) (res_trivialF2 G U.toSubgroup)))).injective
+        (congrArg (continuousCohomology (n + 1)) (res_trivialF2 G U.toSubgroup)))).injective
       simpa only [map_zero, trivialF2ResMap_def, ConcreteCategory.comp_apply] using hy
     obtain ⟨x, hxy⟩ := (h y).1 hy'
     exact ⟨x, (hf x).symm.trans hxy⟩
   · rintro ⟨x, hxy⟩
     have hy' := (h y).2 ⟨x, (hf x).trans hxy⟩
     simp only [trivialF2ResMap_def, ConcreteCategory.comp_apply, hy', map_zero]
+
+/-- **The index-two corestriction--cup sequence is exact in every degree.** The kernel of
+cupping with the subgroup character consists exactly of the corestrictions from `U`. -/
+theorem exact_cor_cup_of_index_two (U : OpenSubgroup G) (hU : U.toSubgroup.index = 2) (n : ℕ) :
+    letI : U.toSubgroup.FiniteIndex := ⟨by omega⟩
+    Function.Exact (trivialF2CorMap G U.toSubgroup U.isOpen' n)
+      (fun x => (trivialF2TopPairing G).cup n 1 x (U.indexTwoCharacterClass hU)) := by
+  let _ : U.toSubgroup.FiniteIndex := ⟨by omega⟩
+  let e := (eqToIso (congrArg (continuousCohomology n)
+    (ofDiscreteModule_trivialF2 G))).toContinuousLinearEquiv.toLinearEquiv
+  let eU := (eqToIso (congrArg (continuousCohomology n)
+    (ofDiscreteModule_subgroup_trivialF2 G U.toSubgroup))).toContinuousLinearEquiv.toLinearEquiv
+  let e' := (eqToIso (congrArg (continuousCohomology (n + 1))
+    (ofDiscreteModule_trivialF2 G))).toContinuousLinearEquiv.toLinearEquiv
+  have h := ContinuousCohomology.exact_corestriction_delta_of_index_two U.toSubgroup U.isOpen'
+    (trivialF2 G).V hU (trivialF2_two_nsmul_eq_zero G) n
+  have h' := (LinearEquiv.conj_exact_iff_exact _ _ e).2 h
+  have h'' := (LinearEquiv.precomp_exact_iff_exact (e := eU.symm)).2 h'
+  have h''' := (LinearEquiv.postcomp_exact_iff_exact (e := e')).2 h''
+  convert h''' using 1
+  · ext x
+    simp only [trivialF2CorMap_def, ConcreteCategory.comp_apply]
+    rfl
+  · ext x
+    have hx : (eqToHom (congrArg (continuousCohomology n)
+        (ofDiscreteModule_trivialF2 G))).hom (e.symm x) = x :=
+      e.apply_symm_apply x
+    have hd := indexTwoDelta_eq_cup_character U hU n (e.symm x)
+    rw [hx] at hd
+    exact hd.symm
 
 end OpenSubgroup
