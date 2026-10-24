@@ -25,8 +25,6 @@ simple coroots in `{-1, 0, 1}`.
 
 ## Main declarations
 
-* `TauCeti.TypeDSpinCarrier.basisReflection`: a simple reflection on finite-ordinal spin-basis
-  indices.
 * `TauCeti.TypeDSpinCarrier.exists_rootSubgroupPoints_inl_mulVec_single_sub` and its negative
   counterpart: the root subgroup move of a coordinate vector.
 * `TauCeti.TypeDSpinCarrier.rootIntMatrix_inl_eq_zero_of_ne_basisReflection`: a positive numbered
@@ -49,16 +47,6 @@ namespace TauCeti.TypeDSpinCarrier
 universe v
 
 variable (n : ℕ) (hn : 4 ≤ n)
-
-/-- The `i`-th simple reflection on the finite-ordinal spin-basis indices. -/
-noncomputable def basisReflection (i : Fin n) (a : Fin (dimension n)) : Fin (dimension n) :=
-  Fintype.equivFin (Finset (Fin n)) (DynkinType.typeDSpinReflection i (signSet n a))
-
-/-- Enumerating a reflected basis index recovers the reflected sign set. -/
-@[simp]
-theorem signSet_basisReflection (i : Fin n) (a : Fin (dimension n)) :
-    signSet n (basisReflection n i a) = DynkinType.typeDSpinReflection i (signSet n a) := by
-  simp [basisReflection, signSet]
 
 /-- A signed root-generator column gives the root subgroup's displacement of the corresponding
 coordinate vector, at every parameter over every commutative ring. -/
