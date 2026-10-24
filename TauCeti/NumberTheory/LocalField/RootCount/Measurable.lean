@@ -114,6 +114,7 @@ theorem isCompact_setOf_le_card_aroots (n k : ℕ) :
   constructor
   · rintro ⟨ha, hcard⟩
     set α : Fin n → 𝒪[K] := fun i ↦ ⟨a i, mem_integerBox.1 ha i⟩
+    -- Coercing the coordinatewise integral lift `α` recovers `a` definitionally.
     rw [show a = fun i ↦ (α i : K) from rfl, card_aroots_monicOfCoeff_coe] at hcard
     obtain ⟨x, b, h⟩ := (hfac α).1 hcard
     exact ⟨((x, b), α), h, rfl⟩
