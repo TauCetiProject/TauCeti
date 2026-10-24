@@ -193,6 +193,13 @@ theorem trans_assoc {r' : ℕ} {D₃ : PDCode r'} {s₃ : Fin r' → Bool}
 
 /-! ### The induced bijection of circles -/
 
+/-- A smoothing equivalence transports the native arc matching by conjugation. -/
+theorem edgePair_val_eq_permCongr (e : D.SmoothingEquiv s D' s') :
+    D'.edgePair.val = e.halfEdgeEquiv.permCongr D.edgePair.val := by
+  ext x
+  obtain ⟨x, rfl⟩ := e.halfEdgeEquiv.surjective x
+  rw [e.edgePair_apply, permCongr_apply, symm_apply_apply]
+
 /-- A smoothing equivalence transports the smoothed traversal. -/
 theorem statePerm_eq_permCongr (e : D.SmoothingEquiv s D' s') :
     D'.statePerm s' = e.halfEdgeEquiv.permCongr (D.statePerm s) := by

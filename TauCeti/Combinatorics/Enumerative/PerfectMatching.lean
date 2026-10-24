@@ -57,6 +57,7 @@ travel.
   matchings.
 * `TauCeti.IsPerfectMatching.sign_eq`: a perfect matching of a type of cardinality `2 * m` has
   sign `(-1) ^ m`.
+* `TauCeti.IsPerfectMatching.sameCycle_iff`: a matching cycle consists of a point and its partner.
 * `TauCeti.IsPerfectMatching.two_mul_orbitCount`: a perfect matching has half as many orbits as
   points.
 * `TauCeti.IsPerfectMatching.even_orbitCount_mul`: the product of two perfect matchings has an even
@@ -588,6 +589,12 @@ section CycleReversal
 open Equiv Equiv.Perm
 
 variable {f g : Equiv.Perm α}
+
+/-- Two points of a perfect matching lie in one cycle exactly when they coincide or are paired. -/
+theorem IsPerfectMatching.sameCycle_iff (hf : IsPerfectMatching f) (x y : α) :
+    f.SameCycle x y ↔ x = y ∨ x = f y := by
+  have he : Function.Involutive.toPerm f hf.involutive = f := Equiv.ext fun _ ↦ rfl
+  exact he ▸ sameCycle_toPerm_iff _ hf.involutive x y
 
 /-- **No cycle of a product of two perfect matchings is its own reverse.** -/
 theorem IsPerfectMatching.not_sameCycle_self_apply (hf : IsPerfectMatching f)
