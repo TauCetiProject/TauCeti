@@ -200,8 +200,8 @@ theorem branchValues_spherePolynomial_subset (hp : 0 < p.natDegree) :
   | infty => simp
   | coe z =>
     rw [coe_spherePolynomial, one_lt_localMultiplicity_onePointMap_eval_coe_iff hp] at hx
-    refine mem_insert_of_mem _ ⟨_, aeval_mem_criticalValues (x := z) ?_, by simp⟩
-    exact (mem_rootSet_of_ne (derivative_ne_zero.mpr hp.ne')).mpr (by simpa using hx)
+    exact mem_insert_of_mem _
+      ⟨_, (mem_criticalValues_self_iff (derivative_ne_zero.mpr hp.ne')).2 ⟨z, hx, rfl⟩, by simp⟩
 
 /-- **The branch values of a polynomial map of the Riemann sphere.** For a polynomial `p` of
 degree at least `2`, the branch values of its extension to the Riemann sphere are exactly `∞`,
@@ -213,11 +213,11 @@ theorem branchValues_spherePolynomial (hp : 1 < p.natDegree) :
   · refine (mem_branchValues_iff _ _).2 ⟨∞, by simp, ?_⟩
     rwa [coe_spherePolynomial, localMultiplicity_onePointMap_eval_infty (zero_lt_one.trans hp)]
   · rintro _ ⟨_, hy, rfl⟩
-    obtain ⟨z, hz, rfl⟩ := mem_criticalValues.mp hy
+    obtain ⟨z, hz, rfl⟩ :=
+      (mem_criticalValues_self_iff (derivative_ne_zero.mpr (zero_lt_one.trans hp).ne')).1 hy
     refine (mem_branchValues_iff _ _).2 ⟨z, by simp, ?_⟩
-    rw [coe_spherePolynomial,
+    rwa [coe_spherePolynomial,
       one_lt_localMultiplicity_onePointMap_eval_coe_iff (zero_lt_one.trans hp)]
-    simpa using aeval_eq_zero_of_mem_rootSet hz
 
 end FiniteHolomorphicMap
 

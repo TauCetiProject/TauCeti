@@ -36,6 +36,8 @@ rational ones.
 
 * `TauCeti.belyiPolynomial`: the Belyi polynomial `B_{m,n}` over a field; `B_{1,1}` is
   `4 X (1 - X)` (`TauCeti.belyiPolynomial_one_one`).
+* `TauCeti.X_mul_one_sub_X_mul_derivative_belyiPolynomial`: the derivative of `B_{m,n}`,
+  multiplied by `X (1 - X)`.
 * `TauCeti.rootSet_derivative_belyiPolynomial_subset`: the critical points of `B_{m,n}` lie in
   `{0, 1, m / (m + n)}`.
 * `TauCeti.criticalValues_belyiPolynomial_subset`: the critical values of `B_{m,n}` lie in
@@ -102,6 +104,18 @@ theorem eval_one_belyiPolynomial (m : ℕ) {n : ℕ} (hn : n ≠ 0) :
     (belyiPolynomial K m n).eval 1 = 0 := by
   simp [eval_belyiPolynomial, hn]
 
+/-- The derivative of the Belyi polynomial: `X (1 - X) B′_{m,n} = B_{m,n} (m - (m + n) X)`.
+Multiplying by `X (1 - X)` avoids the exponents `m - 1` and `n - 1`. -/
+theorem X_mul_one_sub_X_mul_derivative_belyiPolynomial (m n : ℕ) :
+    X * (1 - X) * derivative (belyiPolynomial K m n) =
+      belyiPolynomial K m n * (C (m : K) - C ((m : K) + n) * X) := by
+  rw [belyiPolynomial]
+  generalize ((m : K) + n) ^ (m + n) / ((m : K) ^ m * (n : K) ^ n) = c
+  -- Split off `m = 0` and `n = 0` so that the exponents `m - 1` and `n - 1` simplify.
+  rcases m with _ | m <;> rcases n with _ | n <;>
+    simp only [derivative_mul, derivative_pow, derivative_C, derivative_sub, derivative_one,
+      derivative_X, Nat.add_sub_cancel, map_add, map_natCast] <;> ring
+
 variable [CharZero K]
 
 /-- In characteristic zero, the normalizing constant `(m + n) ^ (m + n) / (m ^ m * n ^ n)` of the
@@ -146,24 +160,16 @@ theorem rootSet_derivative_belyiPolynomial_subset (L : Type*) [Field L] [Algebra
   rw [← rootSet_map L (T := L), ← derivative_map, map_belyiPolynomial, mem_rootSet] at hx
   obtain ⟨hne, hx⟩ := hx
   rw [coe_aeval_eq_eval] at hx
-  simp only [belyiPolynomial, derivative_mul, derivative_pow, derivative_C,
-    derivative_sub, derivative_one, derivative_X, eval_add, eval_mul, eval_C, eval_pow, eval_X,
-    eval_sub, eval_neg, eval_one, zero_mul, zero_add, zero_sub, mul_neg, mul_one] at hx
-  set c := ((m : L) + n) ^ (m + n) / ((m : L) ^ m * (n : L) ^ n)
+  -- Evaluate `X (1 - X) B′ = B (m - (m + n) X)` at the critical point `x`.
+  have key := congr_arg (eval x) (X_mul_one_sub_X_mul_derivative_belyiPolynomial (K := L) m n)
+  simp only [eval_mul, eval_sub, eval_X, eval_one, eval_C, hx, mul_zero] at key
   simp only [Set.mem_insert_iff, Set.mem_singleton_iff]
   by_contra! h
   obtain ⟨h0, h1, hr⟩ := h
-  have hc : c ≠ 0 := belyiConstant_ne_zero m n
-  have e1 : (m : L) * x ^ (m - 1) * x = m * x ^ m := by
-    cases m <;> simp [pow_succ, mul_assoc]
-  have e2 : (n : L) * (1 - x) ^ (n - 1) * (1 - x) = n * (1 - x) ^ n := by
-    cases n <;> simp [pow_succ, mul_assoc]
-  -- Multiplying the vanishing derivative by `x * (1 - x)` clears the lowered exponents.
-  have key : c * x ^ m * (1 - x) ^ n * ((m : L) * (1 - x) - n * x) = 0 := by
-    linear_combination (x * (1 - x)) * hx - c * (1 - x) ^ (n + 1) * e1 + c * x ^ (m + 1) * e2
-  have hx1 : (1 : L) - x ≠ 0 := sub_ne_zero.mpr (Ne.symm h1)
-  rcases mul_eq_zero.mp key with h | h
-  · exact mul_ne_zero (mul_ne_zero hc (pow_ne_zero _ h0)) (pow_ne_zero _ hx1) h
+  rcases mul_eq_zero.mp key.symm with h | h
+  · rw [eval_belyiPolynomial] at h
+    exact mul_ne_zero (mul_ne_zero (belyiConstant_ne_zero m n) (pow_ne_zero _ h0))
+      (pow_ne_zero _ (sub_ne_zero.mpr (Ne.symm h1))) h
   rcases eq_or_ne ((m : L) + n) 0 with hmn | hmn
   · obtain ⟨rfl, rfl⟩ : m = 0 ∧ n = 0 := Nat.add_eq_zero_iff.mp (by exact_mod_cast hmn)
     simp [belyiPolynomial] at hne

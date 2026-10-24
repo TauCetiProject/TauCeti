@@ -117,8 +117,7 @@ theorem branchValues_spherePow_subset (hn : n ≠ 0) :
     (spherePow hn).branchValues ⊆ {((0 : ℂ) : OnePoint ℂ), ∞} := by
   refine (branchValues_spherePolynomial_subset _).trans (insert_subset_iff.2 ⟨by simp, ?_⟩)
   rintro _ ⟨_, hy, rfl⟩
-  obtain ⟨z, hz, rfl⟩ := mem_criticalValues.mp hy
-  rw [mem_rootSet_of_ne (by simp [derivative_X_pow, hn])] at hz
+  obtain ⟨z, hz, rfl⟩ := (mem_criticalValues_self_iff (by simp [derivative_X_pow, hn])).1 hy
   simp [derivative_X_pow, hn] at hz
   simp [hz, zero_pow hn]
 

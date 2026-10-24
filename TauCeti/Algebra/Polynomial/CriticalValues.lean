@@ -28,6 +28,8 @@ field of characteristic zero when `p` and `q` are nonconstant.
 ## Main declarations
 
 * `Polynomial.criticalValues`: the critical values of `p` in `S`.
+* `Polynomial.mem_criticalValues_self_iff`: membership in the critical values of a polynomial
+  over a domain, computed in the domain itself, via roots of `p′`.
 * `Polynomial.criticalValues_comp_subset`: the critical values of a composite.
 * `Polynomial.criticalValues_comp`: equality for nonconstant polynomials over a field of
   characteristic zero, computed in an algebraically closed field.
@@ -65,6 +67,12 @@ theorem criticalValues_def (p : R[X]) :
 theorem mem_criticalValues {p : R[X]} {y : S} :
     y ∈ p.criticalValues S ↔ ∃ x ∈ (derivative p).rootSet S, aeval x p = y :=
   Iff.rfl
+
+/-- For a polynomial over a domain with nonzero derivative, its critical values in the domain
+itself are the values `p(x)` at the roots `x` of `p′`. -/
+theorem mem_criticalValues_self_iff {p : S[X]} (hp : derivative p ≠ 0) {y : S} :
+    y ∈ p.criticalValues S ↔ ∃ x, (derivative p).IsRoot x ∧ p.eval x = y := by
+  simp [mem_rootSet_of_ne hp]
 
 theorem aeval_mem_criticalValues {p : R[X]} {x : S} (hx : x ∈ (derivative p).rootSet S) :
     aeval x p ∈ p.criticalValues S :=
