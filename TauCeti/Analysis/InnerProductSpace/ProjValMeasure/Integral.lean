@@ -265,11 +265,9 @@ theorem integral_ofSimpleFunc (P : ProjValMeasure X H) (s : SimpleFunc X ℂ) :
 @[simp]
 theorem integral_indicator (P : ProjValMeasure X H) {B : Set X} (hB : MeasurableSet B) :
     P.integral (BoundedBorelFunction.indicator B hB 1) = P.proj B hB := by
-  have h : BoundedBorelFunction.indicator B hB 1 = BoundedBorelFunction.ofSimpleFunc
-      (SimpleFunc.piecewise B hB (SimpleFunc.const X 1) (SimpleFunc.const X 0)) := by
-    ext x
-    by_cases hx : x ∈ B <;> simp [SimpleFunc.piecewise_apply, hx]
-  rw [h, integral_ofSimpleFunc_eq_simpleIntegral]
+  rw [← one_smul ℂ (BoundedBorelFunction.indicator B hB 1),
+    ← BoundedBorelFunction.ofSimpleFunc_piecewise_const_zero,
+    integral_ofSimpleFunc_eq_simpleIntegral]
   exact (P.setToSimpleFunc_smulProj_piecewise 1 hB).trans (one_smul ℂ _)
 
 /-- Diagonal matrix elements of the integral are integrals against the diagonal measures:

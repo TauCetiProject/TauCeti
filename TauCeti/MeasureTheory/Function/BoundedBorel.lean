@@ -311,6 +311,14 @@ noncomputable def ofSimpleFunc : MeasureTheory.SimpleFunc X ℂ →⋆ₐ[ℂ] B
 @[simp] theorem ofSimpleFunc_apply (f : MeasureTheory.SimpleFunc X ℂ) (x : X) :
     ofSimpleFunc f x = f x := (rfl)
 
+/-- The simple function equal to `c` on a measurable set `s` and to zero off `s` is the symbol
+`c • indicator s hs 1`. -/
+theorem ofSimpleFunc_piecewise_const_zero (s : Set X) (hs : MeasurableSet s) (c : ℂ) :
+    ofSimpleFunc (MeasureTheory.SimpleFunc.piecewise s hs (MeasureTheory.SimpleFunc.const X c) 0) =
+      c • indicator s hs 1 := by
+  ext x
+  by_cases hx : x ∈ s <;> simp [MeasureTheory.SimpleFunc.piecewise_apply, hx]
+
 /-- **Uniform approximation by simple symbols.** Every bounded Borel symbol is the limit, in the
 supremum norm, of simple symbols whose values are bounded by its norm. -/
 theorem exists_seq_tendsto_ofSimpleFunc (f : BoundedBorelFunction X) :
