@@ -131,8 +131,7 @@ private def triangleToDouble : TriangleGroup p.exponent q.exponent r.exponent �
     (PresentedGroup.of 0 * PresentedGroup.of 2)
     (by simpa only [inv_pow, inv_eq_one, PresentedGroup.of] using hpow0)
     (by simpa only [inv_pow, inv_eq_one, PresentedGroup.of] using hpow2) ?_ (by group)
-  change (PresentedGroup.of 1 * PresentedGroup.of 3 :
-    (P.doubleTriangleSidePairing h₀ h₁).RelatorQuotient) ^ r.exponent = 1 at hpow3
+  rw [← PresentedGroup.of, ← PresentedGroup.of] at hpow3
   rw [double_relatorQuotient_of_one, double_relatorQuotient_of_three,
     ← mul_inv_rev, inv_pow, inv_eq_one] at hpow3
   exact hpow3
@@ -152,7 +151,7 @@ private def doubleToTriangle : (P.doubleTriangleSidePairing h₀ h₁).RelatorQu
     rcases hw with ⟨i, rfl⟩ | ⟨j, z, hj, rfl⟩
     · fin_cases i <;> simp [SidePairing.sideRelator_def, Fin.rev]
     · rw [doubleTriangleSidePairing_cycleWord, ho j]
-      fin_cases j <;> simp [inv_pow, TriangleGroup.x_mul_y_pow]
+      fin_cases j <;> simp [inv_pow]
 
 variable (h₀ h₁)
 

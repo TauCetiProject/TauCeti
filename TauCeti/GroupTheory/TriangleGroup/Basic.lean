@@ -133,6 +133,7 @@ theorem y_mul_x_pow : (y a b c * x a b c) ^ c = 1 := by
   rw [← inv_inj, ← inv_pow, ← z_eq, z_pow, inv_one]
 
 /-- The product `x * y` has order dividing `c`. -/
+@[simp]
 theorem x_mul_y_pow : (x a b c * y a b c) ^ c = 1 := by
   apply mul_right_cancel (b := x a b c)
   simp only [mul_pow_mul, y_mul_x_pow, mul_one, one_mul]
