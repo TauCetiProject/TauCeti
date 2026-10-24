@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Group.Continuity
 public import Mathlib.Analysis.Normed.Ring.Basic
-public import Mathlib.Topology.ApproximateUnit
+public import TauCeti.Topology.ApproximateUnit
 public import TauCeti.Topology.MetricSpace.SimultaneousApproximation
 
 /-!
@@ -65,22 +65,13 @@ theorem exists_tendsto_mul_left_iff_forall_finset :
     exists_neBot_tendsto_iff_forall_finset_dist_lt (p := fun e : A ↦ ‖e‖ ≤ C)
       (F := fun a e ↦ a * e) (x := id)
 
-/-- The two one-sided convergences of an approximate unit, as one convergence in `A × A`; this
-lets the two-sided criteria below be read off from the single-family ones. -/
-private theorem isApproximateUnit_iff_tendsto_prod {l : Filter A} :
-    l.IsApproximateUnit ↔
-      l.NeBot ∧ ∀ a, Tendsto (fun e ↦ (e * a, a * e)) l (𝓝 (a, a)) := by
-  simp only [nhds_prod_eq, tendsto_prod_iff']
-  exact ⟨fun h ↦ ⟨h.neBot, fun a ↦ ⟨h.tendsto_mul_right a, h.tendsto_mul_left a⟩⟩,
-    fun ⟨_, h⟩ ↦ ⟨fun a ↦ (h a).2, fun a ↦ (h a).1⟩⟩
-
 /-- A normed ring has a two-sided approximate identity bounded by `C` iff every finite set of
 elements is approximately fixed under both left and right multiplication, to any accuracy, by a
 single element of norm at most `C`. -/
 theorem exists_isApproximateUnit_iff_forall_finset :
     (∃ l : Filter A, l.IsApproximateUnit ∧ ∀ᶠ e in l, ‖e‖ ≤ C) ↔
       ∀ s : Finset A, ∀ ε > 0, ∃ e, ‖e‖ ≤ C ∧ ∀ a ∈ s, ‖e * a - a‖ < ε ∧ ‖a * e - a‖ < ε := by
-  simp only [isApproximateUnit_iff_tendsto_prod, and_assoc]
+  simp only [IsApproximateUnit.iff_neBot_and_tendsto_prod, and_assoc]
   refine (exists_congr fun _ ↦ and_congr_right fun _ ↦ and_comm).trans ?_
   simpa [Prod.dist_eq, dist_eq_norm] using
     exists_neBot_tendsto_iff_forall_finset_dist_lt (p := fun e : A ↦ ‖e‖ ≤ C)
@@ -110,9 +101,9 @@ theorem exists_isApproximateUnit_iff_exists_net :
     (∃ l : Filter A, l.IsApproximateUnit ∧ ∀ᶠ e in l, ‖e‖ ≤ C) ↔
       ∃ e : Finset A × ℕ → A, (∀ i, ‖e i‖ ≤ C) ∧ (map e atTop).IsApproximateUnit := by
   classical
-  simp only [isApproximateUnit_iff_tendsto_prod, and_assoc]
+  simp only [IsApproximateUnit.iff_neBot_and_tendsto_prod, and_assoc]
   refine (exists_congr fun _ ↦ and_congr_right fun _ ↦ and_comm).trans ?_
-  simpa [isApproximateUnit_iff_tendsto_prod, tendsto_map'_iff, Function.comp_def,
+  simpa [IsApproximateUnit.iff_neBot_and_tendsto_prod, tendsto_map'_iff, Function.comp_def,
     atTop_neBot.map] using
     exists_neBot_tendsto_iff_exists_net (p := fun e : A ↦ ‖e‖ ≤ C)
       (F := fun a e ↦ (e * a, a * e)) (x := fun a ↦ (a, a))
@@ -154,26 +145,26 @@ theorem eventually_norm_add_sub_mul_le (hC : ∀ᶠ e in l₁, ‖e‖ ≤ C) (h
   exact (norm_add_sub_mul_le e f).trans <| add_le_add (add_le_add he hf) <|
     mul_le_mul he hf (norm_nonneg f) ((norm_nonneg e).trans he)
 
-/-- If `l₁` is a left approximate identity and `l₂` is eventually bounded, then Dixon's
-combination `e + f - f * e` is a left approximate identity along `l₁ ×ˢ l₂`. -/
-theorem tendsto_add_sub_mul_mul (h₁ : ∀ a, Tendsto (· * a) l₁ (𝓝 a))
-    (hD : ∀ᶠ f in l₂, ‖f‖ ≤ D) (a : A) :
+/-- If `e * a → a` along `l₁` and `l₂` is eventually bounded, then Dixon's combination
+`u = e + f - f * e` satisfies `u * a → a` along `l₁ ×ˢ l₂`. -/
+theorem tendsto_add_sub_mul_mul {a : A} (h₁ : Tendsto (· * a) l₁ (𝓝 a))
+    (hD : ∀ᶠ f in l₂, ‖f‖ ≤ D) :
     Tendsto (fun p : A × A ↦ (p.1 + p.2 - p.2 * p.1) * a) (l₁ ×ˢ l₂) (𝓝 a) := by
   rw [tendsto_iff_norm_sub_tendsto_zero]
   have h : Tendsto (fun p : A × A ↦ (1 + D) * ‖p.1 * a - a‖) (l₁ ×ˢ l₂) (𝓝 0) := by
-    simpa using ((tendsto_iff_norm_sub_tendsto_zero.1 (h₁ a)).comp tendsto_fst).const_mul (1 + D)
+    simpa using ((tendsto_iff_norm_sub_tendsto_zero.1 h₁).comp tendsto_fst).const_mul (1 + D)
   refine squeeze_zero' (.of_forall fun _ ↦ norm_nonneg _) ?_ h
   filter_upwards [tendsto_snd.eventually hD] with ⟨e, f⟩ hf
   exact (norm_add_sub_mul_mul_sub_le e f a).trans (by gcongr)
 
-/-- If `l₂` is a right approximate identity and `l₁` is eventually bounded, then Dixon's
-combination `e + f - f * e` is a right approximate identity along `l₁ ×ˢ l₂`. -/
-theorem tendsto_mul_add_sub_mul (h₂ : ∀ a, Tendsto (a * ·) l₂ (𝓝 a))
-    (hC : ∀ᶠ e in l₁, ‖e‖ ≤ C) (a : A) :
+/-- If `a * f → a` along `l₂` and `l₁` is eventually bounded, then Dixon's combination
+`u = e + f - f * e` satisfies `a * u → a` along `l₁ ×ˢ l₂`. -/
+theorem tendsto_mul_add_sub_mul {a : A} (h₂ : Tendsto (a * ·) l₂ (𝓝 a))
+    (hC : ∀ᶠ e in l₁, ‖e‖ ≤ C) :
     Tendsto (fun p : A × A ↦ a * (p.1 + p.2 - p.2 * p.1)) (l₁ ×ˢ l₂) (𝓝 a) := by
   rw [tendsto_iff_norm_sub_tendsto_zero]
   have h : Tendsto (fun p : A × A ↦ (1 + C) * ‖a * p.2 - a‖) (l₁ ×ˢ l₂) (𝓝 0) := by
-    simpa using ((tendsto_iff_norm_sub_tendsto_zero.1 (h₂ a)).comp tendsto_snd).const_mul (1 + C)
+    simpa using ((tendsto_iff_norm_sub_tendsto_zero.1 h₂).comp tendsto_snd).const_mul (1 + C)
   refine squeeze_zero' (.of_forall fun _ ↦ norm_nonneg _) ?_ h
   filter_upwards [tendsto_fst.eventually hC] with ⟨e, f⟩ he
   exact (norm_mul_add_sub_mul_sub_le e f a).trans (by gcongr)
@@ -185,8 +176,8 @@ theorem isApproximateUnit_map_add_sub_mul [l₁.NeBot] [l₂.NeBot]
     (h₁ : ∀ a, Tendsto (· * a) l₁ (𝓝 a)) (hC : ∀ᶠ e in l₁, ‖e‖ ≤ C)
     (h₂ : ∀ a, Tendsto (a * ·) l₂ (𝓝 a)) (hD : ∀ᶠ f in l₂, ‖f‖ ≤ D) :
     (map (fun p : A × A ↦ p.1 + p.2 - p.2 * p.1) (l₁ ×ˢ l₂)).IsApproximateUnit where
-  tendsto_mul_left a := tendsto_map'_iff.2 (tendsto_mul_add_sub_mul h₂ hC a)
-  tendsto_mul_right a := tendsto_map'_iff.2 (tendsto_add_sub_mul_mul h₁ hD a)
+  tendsto_mul_left a := tendsto_map'_iff.2 (tendsto_mul_add_sub_mul (h₂ a) hC)
+  tendsto_mul_right a := tendsto_map'_iff.2 (tendsto_add_sub_mul_mul (h₁ a) hD)
 
 /-- A normed ring with a left approximate identity bounded by `C` and a right approximate
 identity bounded by `D` has a two-sided approximate identity bounded by `C + D + C * D`. -/

@@ -44,8 +44,7 @@ theorem exists_forall_mem_dist_lt_of_tendsto {l : Filter α} [l.NeBot] (hp : ∀
 
 /-- If finitely many of the convergences `F k → x k` can always be met simultaneously by a
 point satisfying `p`, then they hold along a net indexed by `Finset κ × ℕ` whose values all
-satisfy `p`. At the index `(s, n)` the net brings each `F k` with `k ∈ s` within `1 / (n + 1)`
-of `x k`. -/
+satisfy `p`. -/
 theorem exists_net_tendsto_of_forall_finset_dist_lt
     (h : ∀ s : Finset κ, ∀ ε > 0, ∃ e, p e ∧ ∀ k ∈ s, dist (F k e) (x k) < ε) :
     ∃ e : Finset κ × ℕ → α, (∀ i, p (e i)) ∧ ∀ k, Tendsto (fun i ↦ F k (e i)) atTop (𝓝 (x k)) := by
