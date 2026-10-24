@@ -27,8 +27,9 @@ No map on a total quotient ring is asserted.
 Use `TauCeti.AbstractMeasure.extendCoefficientsRingHom j hj`, or open
 `TauCeti.AbstractMeasure` and write `extendCoefficientsRingHom j hj`.
 Use `TauCeti.ContinuousMonoidHom.extendedCharacterRingHom χ j hj`, or open
-`TauCeti.ContinuousMonoidHom` and write `extendedCharacterRingHom χ j hj`. Character dot notation
-does not resolve this namespace because the character type is Mathlib's `ContinuousMonoidHom`.
+`TauCeti.ContinuousMonoidHom` and write `extendedCharacterRingHom χ j hj`.
+The spelling `χ.extendedCharacterRingHom j hj` does not elaborate even after opening this namespace,
+because the character type is Mathlib's `ContinuousMonoidHom`.
 
 The extension is `AbstractMeasure.extendCoefficients`, and convolution and character integration
 are the existing `AbstractMeasure` and `ContinuousMonoidHom` constructions. No topology or norm
