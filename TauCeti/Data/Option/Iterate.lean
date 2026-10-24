@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Nat.Notation
 public import Mathlib.Data.Option.Basic
 
 /-!
