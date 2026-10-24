@@ -27,8 +27,9 @@ characteristic zero `∂^(k eᵢ)` is `(∂/∂Xᵢ)ᵏ / k!`, but in characteri
 available for `k ≥ p` while `∂^(k eᵢ)` still is.
 
 The partial derivatives are packaged as `R`-derivations of `W`. They are the derivations through
-which the differential `dg = ∑ᵢ (∂g/∂Xᵢ) dXᵢ` of the overconvergent de Rham complex is written, and
-the Hasse derivatives are the divided-power differential operators of `W`.
+which the differential `dg = ∑ᵢ (∂g/∂Xᵢ) dXᵢ` of the overconvergent de Rham complex is written.
+The Hasse derivatives `∂^d` are `R`-linear endomorphisms of `W` satisfying
+`k! • ∂^(k eᵢ) = (∂/∂Xᵢ)^[k]`, and they remain available in characteristic `p`.
 
 ## Main definitions
 
@@ -53,6 +54,8 @@ the Hasse derivatives are the divided-power differential operators of `W`.
 * `TauCeti.Dagger.washnitzerAlgebra.pderiv_X`: `∂Xⱼ/∂Xᵢ = δᵢⱼ`, and
   `TauCeti.Dagger.washnitzerAlgebra.pderiv_ofMvPolynomial`: on polynomials the partial derivatives
   are the polynomial ones.
+* `TauCeti.Dagger.washnitzerAlgebra.pderiv_primitive`: over a field of characteristic zero,
+  `∂/∂Xᵢ` is a left inverse of the termwise primitive in `Xᵢ`.
 
 ## References
 
@@ -127,14 +130,10 @@ theorem hasseDeriv_single_one (i : σ) (f : washnitzerAlgebra σ R) :
 /-- The Hasse derivative `∂^(k eᵢ)` is the `k`-th partial derivative in `Xᵢ` divided by `k!`:
 `k! • ∂^(k eᵢ) f = (∂/∂Xᵢ)^[k] f`. -/
 theorem factorial_smul_hasseDeriv_single (i : σ) (k : ℕ) (f : washnitzerAlgebra σ R) :
-    k.factorial • hasseDeriv σ R (Finsupp.single i k) f = (pderiv σ R i)^[k] f := by
-  induction k with
-  | zero => simp
-  | succ k ih =>
-    rw [Function.iterate_succ_apply', ← ih, map_nsmul]
-    refine Subtype.ext ?_
-    simp only [Subalgebra.coe_smul, coe_hasseDeriv, coe_pderiv,
-      MvPowerSeries.pderiv_hasseDeriv_single, smul_smul, Nat.factorial_succ, mul_comm]
+    k.factorial • hasseDeriv σ R (Finsupp.single i k) f = (pderiv σ R i)^[k] f :=
+  Subtype.ext <| by
+    rw [Subalgebra.coe_smul, coe_hasseDeriv, MvPowerSeries.factorial_smul_hasseDeriv_single]
+    exact ((Function.Semiconj.iterate_right (f := Subtype.val) (coe_pderiv i) k).eq f).symm
 
 /-- The **Leibniz rule** for Hasse derivatives in `W`: `∂^d (f g) = ∑_{a + b = d} ∂^a f · ∂^b g`. -/
 theorem hasseDeriv_mul [DecidableEq σ] (d : σ →₀ ℕ) (f g : washnitzerAlgebra σ R) :
@@ -170,6 +169,7 @@ theorem pderiv_X_self (i : σ) : pderiv σ R i (X σ R i) = 1 :=
   Subtype.ext (by simp)
 
 /-- The partial derivative of `Xⱼ` in `Xᵢ` is `0` for `j ≠ i`. -/
+@[simp]
 theorem pderiv_X_of_ne {i j : σ} (h : j ≠ i) : pderiv σ R i (X σ R j) = 0 :=
   Subtype.ext (by simp [MvPowerSeries.pderiv_X_of_ne h])
 
@@ -178,7 +178,7 @@ theorem pderiv_X [DecidableEq σ] (i j : σ) :
     pderiv σ R i (X σ R j) = Pi.single (M := fun _ ↦ washnitzerAlgebra σ R) i 1 j := by
   obtain rfl | h := eq_or_ne j i
   · simp
-  · simp [pderiv_X_of_ne h, h]
+  · simp [h]
 
 /-- The inclusion into the Tate algebra intertwines the Hasse derivatives of `W` and of the
 unit-radius Tate algebra. -/
@@ -191,6 +191,18 @@ overconvergent series. -/
 theorem norm_toTate_hasseDeriv_le (d : σ →₀ ℕ) (f : washnitzerAlgebra σ R) :
     ‖toTate σ R (hasseDeriv σ R d f)‖ ≤ ‖toTate σ R f‖ := by
   simpa [toTate_hasseDeriv] using norm_restrictedHasseDeriv_le d (toTate σ R f)
+
+section Primitive
+
+variable {σ K : Type*} [NormedField K] [IsUltrametricDist K] [CharZero K]
+
+/-- **The derivative of the primitive**: in `W`, `∂/∂Xᵢ (∫ f dXᵢ) = f`. -/
+@[simp]
+theorem pderiv_primitive (i : σ) (f : washnitzerAlgebra σ K) :
+    pderiv σ K i (primitive σ K i f) = f :=
+  Subtype.ext (by simp)
+
+end Primitive
 
 end washnitzerAlgebra
 
