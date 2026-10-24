@@ -297,17 +297,22 @@ private theorem isValuationSaturated_map_proj {ι : Type*}
   -- A point `z` over `q`: `z = a⁻¹ • m₀` for some `m₀ ∈ M` over `a * q`.
   obtain ⟨m₀, hm₀, hm₀i⟩ := Submodule.mem_map.1 (f ⟨a, ham⟩).2
   rw [hq, LinearMap.proj_apply] at hm₀i
+  -- Every `c • z` with `c ∈ 𝓂[K]` lies in `M` modulo the span of the kernel basis `e`.
   have hz (c : Valued.integer K) (hc : c ∈ maximalIdeal (Valued.integer K)) :
       ∃ t : Fin k → K, c • (a : K)⁻¹ • m₀ + ∑ j, t j • e j ∈ M := by
     rcases le_total ‖(c : K)‖ ‖(a : K)‖ with hle | hle
-    · obtain ⟨d, hd⟩ := Valued.integer.dvd_iff_norm_le.2 hle
+    · -- If `‖c‖ ≤ ‖a‖`, then `c = a * d` with `d ∈ 𝒪[K]`, so `c • a⁻¹ • m₀ = d • m₀ ∈ M`.
+      obtain ⟨d, hd⟩ := Valued.integer.dvd_iff_norm_le.2 hle
       refine ⟨0, ?_⟩
       have h : c • (a : K)⁻¹ • m₀ = d • m₀ := by
         simp only [Valued.integer.smul_def, hd, Subring.coe_mul, smul_smul]
         congr 1
         field_simp
       simpa [h] using M.smul_mem d hm₀
-    · have hc0 : (c : K) ≠ 0 := norm_pos_iff.1 ((norm_pos_iff.2 ha).trans_le hle)
+    · -- If `‖a‖ ≤ ‖c‖`, then `a = d * c` with `d ∈ 𝒪[K]`. Lift `c • q` to `mc ∈ M`. Then
+      -- `d • mc - m₀ ∈ M` has vanishing `i`-th coordinate, so it is `∑ j, s j • e j`, and since
+      -- `(c / a) * d = 1` we get `c • a⁻¹ • m₀ + ∑ j, (c / a * s j) • e j = mc ∈ M`.
+      have hc0 : (c : K) ≠ 0 := norm_pos_iff.1 ((norm_pos_iff.2 ha).trans_le hle)
       obtain ⟨d, hd⟩ := Valued.integer.dvd_iff_norm_le.2 hle
       have hd' : (d : K) * c = a := by rw [hd, Subring.coe_mul, mul_comm]
       obtain ⟨mc, hmc, hmci⟩ := Submodule.mem_map.1 (f ⟨c, hc⟩).2
