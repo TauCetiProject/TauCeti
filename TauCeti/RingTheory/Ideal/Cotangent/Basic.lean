@@ -8,13 +8,16 @@ module
 public import Mathlib.RingTheory.Extension.Basic
 
 /-!
-# Cotangent spaces of augmented algebras
+# Cotangent spaces of ideals and augmented algebras
 
-For an augmentation `f : A →ₐ[R] R`, if the augmentation ideal is finitely generated over
-`A`, then its cotangent space is finite over `R`.
+Elements of an ideal `I` of `A` whose images span the cotangent space `I ⧸ I ^ 2` over `A`
+generate `I` modulo `I ^ 2`. For an augmentation `f : A →ₐ[R] R`, if the augmentation ideal is
+finitely generated over `A`, then its cotangent space is finite over `R`.
 
 ## Main declarations
 
+* `Ideal.le_span_sup_sq_of_span_toCotangent_eq_top`: elements whose images span the cotangent
+  space generate the ideal modulo its square.
 * `TauCeti.AlgHom.finite_cotangent_ker_of_fg`: finite generation of the augmentation ideal gives
   finiteness of its cotangent space over the base.
 * `TauCeti.AlgHom.finite_cotangent_ker`: the noetherian specialization.
@@ -26,6 +29,30 @@ For an augmentation `f : A →ₐ[R] R`, if the augmentation ideal is finitely g
 -/
 
 public section
+
+namespace Ideal
+
+variable {A : Type*} [CommRing A]
+
+/-- Elements of an ideal `I` whose images span the cotangent space `I ⧸ I ^ 2` over `A` generate
+`I` modulo `I ^ 2`. -/
+theorem le_span_sup_sq_of_span_toCotangent_eq_top (I : Ideal A) {ι : Type*} {f : ι → I}
+    (h : Submodule.span A (Set.range (I.toCotangent ∘ f)) = ⊤) :
+    I ≤ span (Set.range fun i ↦ (f i : A)) ⊔ I ^ 2 := by
+  set J := span (Set.range fun i ↦ (f i : A)) ⊔ I ^ 2
+  -- The image of `J ∩ I` in the cotangent space contains every generator, so is everything.
+  let P : Submodule A I.Cotangent := (Submodule.comap I.subtype J).map I.toCotangent
+  have hP : P = ⊤ := by
+    refine eq_top_iff.2 (h ▸ Submodule.span_le.2 ?_)
+    rintro _ ⟨i, rfl⟩
+    exact ⟨f i, mem_sup_left (subset_span ⟨i, rfl⟩), rfl⟩
+  intro y hy
+  obtain ⟨z, hzJ, hz⟩ : I.toCotangent ⟨y, hy⟩ ∈ P := hP ▸ Submodule.mem_top
+  rw [toCotangent_eq] at hz
+  rw [← sub_sub_cancel (z : A) y]
+  exact J.sub_mem hzJ (mem_sup_right hz)
+
+end Ideal
 
 namespace TauCeti
 
