@@ -31,7 +31,7 @@ than the number of its coefficients.
 
 ## Main results
 
-* `TauCeti.hasDerivAt_sum_eval_mul_exp`: the derivative of `∑ₖ pₖ(x) exp(γₖ x)` is again an
+* `Finset.hasDerivAt_sum_eval_mul_exp`: the derivative of `∑ₖ pₖ(x) exp(γₖ x)` is again an
   exponential polynomial, `∑ₖ (pₖ' + γₖ pₖ)(x) exp(γₖ x)`.
 * `TauCeti.card_lt_of_sum_eval_mul_exp_eq_zero`: for a nonempty finite index set, pairwise
   distinct exponents `γₖ` and nonzero `pₖ`, a finite set of zeros of `∑ₖ pₖ(x) exp(γₖ x)` has
@@ -48,7 +48,7 @@ public section
 
 open Finset Polynomial
 
-namespace TauCeti
+namespace Finset
 
 /-- The derivative of `∑ₖ pₖ(x) exp(γₖ x)` is `∑ₖ (pₖ' + γₖ pₖ)(x) exp(γₖ x)`. -/
 theorem hasDerivAt_sum_eval_mul_exp {ι : Type*} (s : Finset ι) (γ : ι → ℝ)
@@ -59,6 +59,10 @@ theorem hasDerivAt_sum_eval_mul_exp {ι : Type*} (s : Finset ι) (γ : ι → �
   refine (((p i).hasDerivAt x).fun_mul ((hasDerivAt_id' x).const_mul (γ i)).exp).congr_deriv ?_
   simp only [eval_add, eval_mul, eval_C, mul_one]
   ring
+
+end Finset
+
+namespace TauCeti
 
 /-- **Zero estimate for real exponential polynomials** (Evertse, Lemma 4.23). Let `s` be a
 nonempty finite index set, `γ` exponents that are pairwise distinct on `s`, and `p` nonzero real
@@ -96,7 +100,7 @@ theorem card_lt_of_sum_eval_mul_exp_eq_zero {ι : Type*} {s : Finset ι} (hs : s
       ∑ i ∈ cons a t hat, ((D (δ i))^[n] (p i)).eval x * Real.exp (δ i * x)
     have hF : ∀ n < N, ∀ x, HasDerivAt (F n) (F (n + 1) x) x := fun n _ x ↦ by
       simpa only [F, Function.iterate_succ_apply'] using
-        hasDerivAt_sum_eval_mul_exp (cons a t hat) δ (fun i ↦ (D (δ i))^[n] (p i)) x
+        (cons a t hat).hasDerivAt_sum_eval_mul_exp δ (fun i ↦ (D (δ i))^[n] (p i)) x
     have hF₀ : ∀ x ∈ Z, F 0 x = 0 := fun x hx ↦ by
       have h : F 0 x = Real.exp (-(γ a * x)) *
           ∑ i ∈ cons a t hat, (p i).eval x * Real.exp (γ i * x) := by

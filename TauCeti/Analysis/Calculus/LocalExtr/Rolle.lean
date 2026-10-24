@@ -13,9 +13,10 @@ import Mathlib.Analysis.Calculus.LocalExtr.Rolle
 /-!
 # Rolle's theorem for finitely many zeros
 
-Rolle's theorem places a zero of `f'` strictly between any two zeros of a continuous function
-`f : ℝ → ℝ`. Applied to consecutive points of a finite set `Z` of zeros of `f`, it gives a set of
-`#Z - 1` zeros of `f'` separating the points of `Z` (`TauCeti.exists_finset_deriv_eq_zero`).
+Rolle's theorem places a zero of `f'` strictly between any two zeros of a function `f : ℝ → ℝ`
+continuous between them. Applied to consecutive points of a finite set `Z` of zeros of `f`, it
+gives a set of `#Z - 1` zeros of `f'` separating the points of `Z`
+(`TauCeti.exists_finset_deriv_eq_zero`).
 Iterating along a sequence of functions, each the derivative of the previous one, a finite set of
 zeros of `f` has at most `k` more points than some finite set of zeros of the `k`-th function
 (`TauCeti.exists_card_le_card_add_of_hasDerivAt`).
@@ -25,8 +26,8 @@ zero estimate for real exponential polynomials `∑ pₖ(x) exp(γₖ x)`.
 
 ## Main results
 
-* `TauCeti.exists_finset_deriv_eq_zero`: a nonempty finite set `Z` of zeros of a continuous `f`
-  is separated by a set of `#Z - 1` zeros of `deriv f`.
+* `TauCeti.exists_finset_deriv_eq_zero`: a nonempty finite set `Z` of zeros of `f`, continuous on
+  `[min Z, max Z]`, is separated by a set of `#Z - 1` zeros of `deriv f`.
 * `TauCeti.exists_card_le_card_add_of_hasDerivAt`: if `F (n + 1)` is the derivative of `F n` for
   `n < k`, a finite set `Z` of zeros of `F 0` gives a finite set `Z'` of zeros of `F k` with
   `#Z ≤ #Z' + k`.
@@ -42,12 +43,13 @@ open Finset
 
 namespace TauCeti
 
-/-- **Rolle's theorem for finitely many zeros.** If a continuous function `f : ℝ → ℝ` vanishes on
-a nonempty finite set `Z`, then `deriv f` vanishes on a finite set `Z'` with one point fewer that
-separates the points of `Z`: every point of `Z'` lies strictly between two points of `Z`, and
-strictly between any two points of `Z` lies a point of `Z'`. -/
-theorem exists_finset_deriv_eq_zero {f : ℝ → ℝ} (hf : Continuous f) {Z : Finset ℝ}
-    (hZ : Z.Nonempty) (hfZ : ∀ x ∈ Z, f x = 0) :
+/-- **Rolle's theorem for finitely many zeros.** If a function `f : ℝ → ℝ`, continuous between
+the smallest and largest points of a nonempty finite set `Z`, vanishes on `Z`, then `deriv f`
+vanishes on a finite set `Z'` with one point fewer that separates the points of `Z`: every point of
+`Z'` lies strictly between two points of `Z`, and strictly between any two points of `Z` lies a
+point of `Z'`. -/
+theorem exists_finset_deriv_eq_zero {f : ℝ → ℝ} {Z : Finset ℝ} (hZ : Z.Nonempty)
+    (hf : ContinuousOn f (Set.Icc (Z.min' hZ) (Z.max' hZ))) (hfZ : ∀ x ∈ Z, f x = 0) :
     ∃ Z' : Finset ℝ, #Z' + 1 = #Z ∧ (∀ z ∈ Z', deriv f z = 0) ∧
       (∀ z ∈ Z', ∃ x ∈ Z, ∃ y ∈ Z, x < z ∧ z < y) ∧
       ∀ x ∈ Z, ∀ y ∈ Z, x < y → ∃ z ∈ Z', x < z ∧ z < y := by
@@ -60,11 +62,15 @@ theorem exists_finset_deriv_eq_zero {f : ℝ → ℝ} (hf : Continuous f) {Z : F
       simp only [insert_empty, mem_singleton]
       rintro x rfl y rfl h
       exact absurd h (lt_irrefl _)
-    obtain ⟨Z', hcard, hderiv, hbetween, hsep⟩ :=
-      ih hZ₀ fun x hx ↦ hfZ x (mem_insert_of_mem hx)
-    -- A zero `c` of `deriv f` between the largest point `m₀` of `Z` and the new point `m`.
     have hm₀Z := Z.max'_mem hZ₀
-    obtain ⟨c, ⟨hc₀, hc⟩, hdc⟩ := exists_deriv_eq_zero (hm _ hm₀Z) hf.continuousOn
+    obtain ⟨Z', hcard, hderiv, hbetween, hsep⟩ := ih hZ₀
+      (hf.mono (Set.Icc_subset_Icc (min'_le _ _ (mem_insert_of_mem (Z.min'_mem hZ₀)))
+        (le_max' _ _ (mem_insert_of_mem hm₀Z))))
+      fun x hx ↦ hfZ x (mem_insert_of_mem hx)
+    -- A zero `c` of `deriv f` between the largest point `m₀` of `Z` and the new point `m`.
+    obtain ⟨c, ⟨hc₀, hc⟩, hdc⟩ := exists_deriv_eq_zero (hm _ hm₀Z)
+      (hf.mono (Set.Icc_subset_Icc (min'_le _ _ (mem_insert_of_mem hm₀Z))
+        (le_max' _ _ (mem_insert_self m Z))))
       ((hfZ _ (mem_insert_of_mem hm₀Z)).trans (hfZ m (mem_insert_self m Z)).symm)
     have hcZ' : c ∉ Z' := fun hc' ↦ by
       obtain ⟨-, -, y, hy, -, hcy⟩ := hbetween c hc'
@@ -98,8 +104,8 @@ theorem exists_card_le_card_add_of_hasDerivAt {F : ℕ → ℝ → ℝ} {k : ℕ
     rcases Z'.eq_empty_or_nonempty with rfl | hne
     · exact ⟨∅, by simp, by simp only [card_empty, zero_add] at hcard; omega⟩
     have hk := hF k k.lt_succ_self
-    obtain ⟨Z'', hcard', hderiv, -, -⟩ := exists_finset_deriv_eq_zero
-      (continuous_iff_continuousAt.2 fun x ↦ (hk x).continuousAt) hne hZ'
+    obtain ⟨Z'', hcard', hderiv, -, -⟩ := exists_finset_deriv_eq_zero hne
+      (fun x _ ↦ (hk x).continuousAt.continuousWithinAt) hZ'
     refine ⟨Z'', fun x hx ↦ (hk x).deriv ▸ hderiv x hx, ?_⟩
     omega
 
