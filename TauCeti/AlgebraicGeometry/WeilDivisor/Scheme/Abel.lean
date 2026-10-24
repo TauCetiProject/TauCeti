@@ -41,7 +41,7 @@ namespace TauCeti.AlgebraicGeometry.SchemeWeilDivisor
 universe u
 
 variable {k : Type u} [Field k] {X : Scheme.{u}} [X.Over (Spec (.of k))]
-  [IsIntegral X] [IsLocallyNoetherian X] [IsProper (X ↘ Spec (.of k))]
+  [IsIntegral X] [IsProper (X ↘ Spec (.of k))]
   [∀ x : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (x : X))]
   (hdim : ∀ x : X, coheight x ≤ 1)
   [FiniteDimensional k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1)]
@@ -55,13 +55,13 @@ theorem exists_isEffective_toLineBundleClass_div_eq (B : SchemeWeilDivisor X)
       relativeDegree (X ↘ Spec (.of k)) B)
     (a : LineBundleClass X) (ha : LineBundleClass.eulerDegree k a = 0) :
     letI : IsNoetherian X :=
-      { toIsLocallyNoetherian := inferInstance
+      { toIsLocallyNoetherian := LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
         toCompactSpace := compactSpace_of_universallyClosed (X ↘ Spec (.of k)) }
     ∃ E : SchemeWeilDivisor X, WeilDivisor.IsEffective E ∧
       relativeDegree (X ↘ Spec (.of k)) E = relativeDegree (X ↘ Spec (.of k)) B ∧
         toLineBundleClass hdim E / toLineBundleClass hdim B = a := by
   have : IsNoetherian X :=
-    { toIsLocallyNoetherian := inferInstance
+    { toIsLocallyNoetherian := LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
       toCompactSpace := compactSpace_of_universallyClosed (X ↘ Spec (.of k)) }
   obtain ⟨L, hL⟩ := LineBundleClass.mk_surjective (a * toLineBundleClass hdim B)
   have hdegree : L.eulerDegree k = relativeDegree (X ↘ Spec (.of k)) B := by

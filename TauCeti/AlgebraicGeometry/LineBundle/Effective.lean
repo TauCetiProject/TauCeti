@@ -40,7 +40,7 @@ namespace TauCeti.AlgebraicGeometry.InvertibleSheaf
 
 universe u
 
-variable {X : Scheme.{u}} [IsIntegral X] [IsLocallyNoetherian X]
+variable {X : Scheme.{u}} [IsIntegral X]
   [∀ x : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (x : X))]
 
 variable {k : Type u} [Field k] [X.Over (Spec (.of k))]
@@ -56,7 +56,7 @@ line-bundle class. -/
 theorem exists_isEffective_iso_sheaf_of_genus_le_eulerDegree (L : InvertibleSheaf X)
     (hL : (finrank k (Scheme.Modules.Cohomology (trivial X).obj 1) : ℤ) ≤ L.eulerDegree k) :
     letI : IsNoetherian X :=
-      { toIsLocallyNoetherian := inferInstance
+      { toIsLocallyNoetherian := LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
         toCompactSpace := compactSpace_of_universallyClosed (X ↘ Spec (.of k)) }
     ∃ D : SchemeWeilDivisor X, WeilDivisor.IsEffective D ∧
       Nonempty (L.obj ≅ SchemeWeilDivisor.sheaf D) ∧
