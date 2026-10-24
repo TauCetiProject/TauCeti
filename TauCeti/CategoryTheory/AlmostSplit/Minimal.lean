@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.AlmostSplit.Uniqueness
+import TauCeti.Algebra.Homology.ShortComplex.ShortExact
 import TauCeti.CategoryTheory.Exact.Abelian
 
 /-!
@@ -18,8 +19,10 @@ only one of its two lifting properties.
 
 Minimality is stated explicitly: an endomorphism fixing the specified map is invertible.
 This agrees with the convention in `TauCeti.CategoryTheory.AlmostSplit.Irreducible`.
-No finite-length or locality hypothesis is needed for either criterion. Conversely, the maps
-of an almost-split sequence are minimal when the opposite end has a local endomorphism ring.
+No finite-length or locality hypothesis is needed when minimality is supplied. If the opposite
+end has a local endomorphism ring, non-splitness already implies minimality, so a single
+almost-split lifting property suffices. Conversely, the maps of an almost-split sequence are
+minimal when the opposite end has a local endomorphism ring.
 
 The pushout argument uses `TauCeti.shortExact_cobaseChange`.
 
@@ -44,12 +47,8 @@ theorem IsRightAlmostSplit.isLeftAlmostSplit_of_minimal (hg : IsRightAlmostSplit
     (hS : S.ShortExact) (hmin : ∀ b : S.X₂ ⟶ S.X₂, b ≫ S.g = S.g → IsIso b) :
     IsLeftAlmostSplit S.f := by
   have := hS.mono_f
-  have := hS.epi_g
   refine isLeftAlmostSplit_iff.mpr ⟨?_, fun X h hh ↦ ?_⟩
-  · intro hf
-    exact hg.not_isSplitEpi
-      (ShortComplex.Splitting.ofExactOfRetraction S hS.exact
-        (retraction S.f) (IsSplitMono.id S.f) inferInstance).isSplitEpi_g
+  · exact fun hf ↦ hg.not_isSplitEpi ((isSplitMono_f_iff_isSplitEpi_g hS).mp hf)
   · let sq := IsPushout.of_hasPushout S.f h
     let q := cobaseChangeπ S sq
     have hT := shortExact_cobaseChange hS sq
@@ -108,22 +107,14 @@ namespace IsAlmostSplit
 /-- The final map of an almost-split sequence is right minimal when the left-hand end has
 a local endomorphism ring. -/
 theorem isIso_of_comp_g_eq (hS : S.IsAlmostSplit) [IsLocalRing (End S.X₁)]
-    (b : S.X₂ ⟶ S.X₂) (hb : b ≫ S.g = S.g) : IsIso b := by
-  have := hS.shortExact.mono_f
-  obtain ⟨a, ha⟩ := hS.shortExact.exact.lift' (S.f ≫ b) (by simp [hb])
-  let φ : S ⟶ S := ⟨a, b, 𝟙 S.X₃, ha, by simp [hb]⟩
-  have : IsIso φ := hS.isLeftAlmostSplit_f.isIso_of_τ₃_eq_id hS.shortExact φ (by rfl)
-  exact ((ShortComplex.π₂ : ShortComplex C ⥤ C).mapIso (asIso φ)).isIso_hom
+    (b : S.X₂ ⟶ S.X₂) (hb : b ≫ S.g = S.g) : IsIso b :=
+  hS.shortExact.isIso_of_comp_g_eq hS.isLeftAlmostSplit_f.not_isSplitMono b hb
 
 /-- The initial map of an almost-split sequence is left minimal when the right-hand end has
 a local endomorphism ring. -/
 theorem isIso_of_f_comp_eq (hS : S.IsAlmostSplit) [IsLocalRing (End S.X₃)]
-    (b : S.X₂ ⟶ S.X₂) (hb : S.f ≫ b = S.f) : IsIso b := by
-  have := hS.shortExact.epi_g
-  obtain ⟨c, hc⟩ := hS.shortExact.exact.desc' (b ≫ S.g) (by simp [← Category.assoc, hb])
-  let φ : S ⟶ S := ⟨𝟙 S.X₁, b, c, by simp [hb], hc.symm⟩
-  have : IsIso φ := hS.isRightAlmostSplit_g.isIso_of_τ₁_eq_id hS.shortExact φ (by rfl)
-  exact ((ShortComplex.π₂ : ShortComplex C ⥤ C).mapIso (asIso φ)).isIso_hom
+    (b : S.X₂ ⟶ S.X₂) (hb : S.f ≫ b = S.f) : IsIso b :=
+  hS.shortExact.isIso_of_f_comp_eq hS.isRightAlmostSplit_g.not_isSplitEpi b hb
 
 end IsAlmostSplit
 
@@ -144,6 +135,24 @@ theorem ShortExact.isAlmostSplit_of_isLeftAlmostSplit (hS : S.ShortExact)
     (hf : TauCeti.IsLeftAlmostSplit S.f)
     (hmin : ∀ b : S.X₂ ⟶ S.X₂, S.f ≫ b = S.f → IsIso b) : S.IsAlmostSplit :=
   ⟨hS, hf, hf.isRightAlmostSplit_of_minimal hS hmin⟩
+
+/-- A short exact sequence with local left-hand endomorphism ring is almost split exactly
+when its final map is right almost split. No separate minimality assumption is needed. -/
+theorem ShortExact.isAlmostSplit_iff_isRightAlmostSplit (hS : S.ShortExact)
+    [IsLocalRing (End S.X₁)] : S.IsAlmostSplit ↔ TauCeti.IsRightAlmostSplit S.g := by
+  refine ⟨fun h ↦ h.isRightAlmostSplit_g, fun hg ↦ ?_⟩
+  have hf : ¬ IsSplitMono S.f := fun hf ↦
+    hg.not_isSplitEpi ((TauCeti.isSplitMono_f_iff_isSplitEpi_g hS).mp hf)
+  exact hS.isAlmostSplit_of_isRightAlmostSplit hg (hS.isIso_of_comp_g_eq hf)
+
+/-- A short exact sequence with local right-hand endomorphism ring is almost split exactly
+when its initial map is left almost split. No separate minimality assumption is needed. -/
+theorem ShortExact.isAlmostSplit_iff_isLeftAlmostSplit (hS : S.ShortExact)
+    [IsLocalRing (End S.X₃)] : S.IsAlmostSplit ↔ TauCeti.IsLeftAlmostSplit S.f := by
+  refine ⟨fun h ↦ h.isLeftAlmostSplit_f, fun hf ↦ ?_⟩
+  have hg : ¬ IsSplitEpi S.g := fun hg ↦
+    hf.not_isSplitMono ((TauCeti.isSplitMono_f_iff_isSplitEpi_g hS).mpr hg)
+  exact hS.isAlmostSplit_of_isLeftAlmostSplit hf (hS.isIso_of_f_comp_eq hg)
 
 end CategoryTheory.ShortComplex
 
