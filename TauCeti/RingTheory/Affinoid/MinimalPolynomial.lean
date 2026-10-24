@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Affinoid.SupSeminorm
-public import Mathlib.FieldTheory.Minpoly.IsIntegrallyClosed
+public import TauCeti.FieldTheory.Minpoly.TorsionFree
 
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 import Mathlib.RingTheory.Ideal.GoingUp
@@ -32,11 +32,12 @@ ideal of `A[f]` lying under a classical point `y` of `B`, at which `|f(y)| = |α
 root of the reduction of `p` at `x` has absolute value at most `|f|sup`, and so do the
 coefficients `|aᵢ(x)| ^ (1 / (d - i))` of the reduction.
 
-When `A` is an integrally closed domain and `B` is a torsion-free domain, the minimal polynomial
+When `A` is an integrally closed domain and `B` is a torsion-free algebra, the minimal polynomial
 of `f` over `A` satisfies these hypotheses. This applies to a finite injective map from a Tate
 algebra into an affinoid domain, as in a Noether normalisation, since Tate algebras are unique
 factorisation domains and hence integrally closed. The statement with a divisibility hypothesis
-also applies to targets which are not domains.
+also applies without torsion-freeness when an annihilating polynomial with the required
+divisibility property is supplied. Nilpotents in `B` are retained throughout.
 
 ## Main results
 
@@ -181,16 +182,16 @@ theorem supSeminorm_eq_iSup_coeff_rpow_of_dvd (hB : IsAffinoidAlgebra K B)
     exact hle
 
 /-- **The supremum seminorm is the spectral value of the minimal polynomial.** Let `B` be an
-affinoid domain which is integral and torsion-free over an integrally closed domain `A`. For
+affinoid algebra which is integral and torsion-free over an integrally closed domain `A`. For
 `f : B` with minimal polynomial `X ^ d + ∑_{i < d} aᵢ X ^ i` over `A`,
 `|f|sup = max_{i < d} |aᵢ|sup ^ (1 / (d - i))`. -/
 theorem supSeminorm_eq_iSup_minpoly_coeff_rpow (hB : IsAffinoidAlgebra K B) [IsDomain A]
-    [IsIntegrallyClosed A] [IsDomain B] [Module.IsTorsionFree A B] [Algebra.IsIntegral A B]
+    [IsIntegrallyClosed A] [Module.IsTorsionFree A B] [Algebra.IsIntegral A B]
     (f : B) :
     supSeminorm K f = ⨆ i : Fin (minpoly A f).natDegree,
       supSeminorm K ((minpoly A f).coeff i) ^ (1 / ((minpoly A f).natDegree - i : ℝ)) :=
   have hf := Algebra.IsIntegral.isIntegral (R := A) f
   hB.supSeminorm_eq_iSup_coeff_rpow_of_dvd (minpoly.monic hf) (minpoly.aeval A f)
-    fun _ ↦ minpoly.isIntegrallyClosed_dvd hf
+    fun _ ↦ minpoly.isIntegrallyClosed_dvd_of_isTorsionFree hf
 
 end TauCeti.IsAffinoidAlgebra
