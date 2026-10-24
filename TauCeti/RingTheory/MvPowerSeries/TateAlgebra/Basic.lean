@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.MvPowerSeries.Rename
 public import Mathlib.RingTheory.MvPowerSeries.Restricted
 public import Mathlib.RingTheory.MvPowerSeries.GaussNorm
+public import Mathlib.RingTheory.MvPowerSeries.NoZeroDivisors
 public import Mathlib.Analysis.Normed.Unbundled.RingSeminorm
 public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.Data.Finsupp.MonomialOrder
@@ -69,6 +70,12 @@ largest summand, so Mathlib's dominant-antidiagonal theorem applies.
 -/
 
 public section
+
+/-- Restricted series over a normed domain form a domain at any polyradius. -/
+instance TauCeti.instIsDomainIsRestrictedSubring {σ R : Type*}
+    [NormedRing R] [IsUltrametricDist R] [IsDomain R] (c : σ → ℝ) :
+    IsDomain (MvPowerSeries.IsRestricted.subring (R := R) c) :=
+  NoZeroDivisors.to_isDomain _
 
 namespace MvPowerSeries
 
