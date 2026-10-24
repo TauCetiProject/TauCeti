@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.DividedPowerAlgebra.Grading
 public import TauCeti.RingTheory.PolynomialLaw.Homogeneous
 public import Mathlib.RingTheory.PowerSeries.Basic
 public import Mathlib.RingTheory.TensorProduct.Maps
+public import TauCeti.RingTheory.PowerSeries.DividedPowerSequence
 import Mathlib.Data.Nat.Choose.Sum
 import Mathlib.LinearAlgebra.TensorProduct.Finiteness
 import TauCeti.RingTheory.TensorProduct.Basic
@@ -31,6 +32,12 @@ maps `Γ^d_R(M) → N`, by composition with `γ_d`.
 
 ## Main declarations
 
+* `DividedPowerAlgebra.exp`: the divided-power exponential `∑_d γ_d(x) X ^ d`, a power series
+  with coefficients in `S ⊗[R] Γ_R(M)`; `DividedPowerAlgebra.coeff_exp_tmul`, `exp_zero`,
+  `exp_add`, `exp_smul` and `exp_rTensor` characterize it.
+* `DividedPowerAlgebra.constantCoeff_exp` and `DividedPowerAlgebra.coeff_exp_mul_coeff_exp`: the
+  coefficients of the exponential satisfy the divided-power relations `γ₀ = 1` and
+  `γₘ * γₙ = (m + n).choose m • γₘ₊ₙ`.
 * `DividedPowerAlgebra.gamma R M d`: the universal homogeneous polynomial law of degree `d`.
 * `DividedPowerAlgebra.isHomogeneousOfDegree_gamma`: it is homogeneous of degree `d`.
 * `DividedPowerAlgebra.gamma_toFun_tmul`: `γ_d(s ⊗ m) = s ^ d ⊗ dp R d m`.
@@ -149,21 +156,33 @@ private def expAddHom : S ⊗[R] M →+ Additive ((S ⊗[R] DividedPowerAlgebra 
   liftAddHom (expTmulHom R M S) fun r s m ↦ by
     rw [expTmulHom_apply_apply, expTmulHom_apply_apply, expTmul_smul]
 
-/-- The divided-power exponential `exp(x) = ∑_d γ_d(x) X ^ d` of `x : S ⊗[R] M`. -/
-private def exp (x : S ⊗[R] M) : (S ⊗[R] DividedPowerAlgebra R M)⟦X⟧ :=
+/-- The divided-power exponential `exp(x) = ∑_d γ_d(x) X ^ d` of `x : S ⊗[R] M`, a power series
+with coefficients in `S ⊗[R] Γ_R(M)`. It is the additive-to-multiplicative map determined by
+`exp(s ⊗ m) = ∑ₙ (s ^ n ⊗ dp R n m) X ^ n` (`coeff_exp_tmul`, `exp_zero`, `exp_add`). -/
+def exp (x : S ⊗[R] M) : (S ⊗[R] DividedPowerAlgebra R M)⟦X⟧ :=
   (expAddHom R M S x).toMul
 
 private theorem exp_tmul (s : S) (m : M) : exp (s ⊗ₜ[R] m) = expTmul R s m := by
   rw [exp, expAddHom, liftAddHom_tmul, expTmulHom_apply_apply, toMul_ofMul]
 
-private theorem exp_zero : exp (0 : S ⊗[R] M) = 1 := by
+/-- The coefficients of the exponential of a pure tensor:
+`exp(s ⊗ m) = ∑ₙ (s ^ n ⊗ dp R n m) X ^ n`. -/
+@[simp]
+theorem coeff_exp_tmul (s : S) (m : M) (n : ℕ) :
+    coeff n (exp (s ⊗ₜ[R] m)) = (s ^ n) ⊗ₜ[R] dp R n m := by
+  rw [exp_tmul, coeff_expTmul]
+
+/-- The exponential of `0` is `1`. -/
+@[simp]
+theorem exp_zero : exp (0 : S ⊗[R] M) = 1 := by
   rw [exp, map_zero, toMul_zero]
 
-private theorem exp_add (x y : S ⊗[R] M) : exp (x + y) = exp x * exp y := by
+/-- The exponential turns sums into products. -/
+theorem exp_add (x y : S ⊗[R] M) : exp (x + y) = exp x * exp y := by
   simp only [exp, map_add, toMul_add]
 
 /-- The exponential is natural in the algebra `S`. -/
-private theorem exp_rTensor {T : Type*} [CommSemiring T] [Algebra R T] (φ : S →ₐ[R] T)
+theorem exp_rTensor {T : Type*} [CommSemiring T] [Algebra R T] (φ : S →ₐ[R] T)
     (x : S ⊗[R] M) :
     exp (φ.toLinearMap.rTensor M x) =
       PowerSeries.map (Algebra.TensorProduct.rTensor (DividedPowerAlgebra R M) φ).toRingHom
@@ -177,7 +196,7 @@ private theorem exp_rTensor {T : Type*} [CommSemiring T] [Algebra R T] (φ : S �
   | add x y hx hy => rw [map_add, exp_add, exp_add, hx, hy, map_mul]
 
 /-- Scalar multiplication by `s` rescales the exponential by `s ⊗ 1`. -/
-private theorem exp_smul (s : S) (x : S ⊗[R] M) :
+theorem exp_smul (s : S) (x : S ⊗[R] M) :
     exp (s • x) = rescale (s ⊗ₜ[R] (1 : DividedPowerAlgebra R M)) (exp x) := by
   induction x using TensorProduct.inductionOn with
   | tmul s' m =>
@@ -195,24 +214,38 @@ private theorem exp_sum_tmul {ι : Type*} (t : Finset ι) (s : ι → S) (m : ι
   | empty => rw [Finset.sum_empty, Finset.prod_empty, exp_zero]
   | insert j t hj ih => rw [Finset.sum_insert hj, Finset.prod_insert hj, exp_add, exp_tmul, ih]
 
+/-- The constant coefficient of the exponential is `1`: the divided-power relation `γ₀ = 1`. -/
+@[simp]
+theorem constantCoeff_exp (x : S ⊗[R] M) : constantCoeff (exp x) = 1 := by
+  induction x using TensorProduct.inductionOn with
+  | tmul s m =>
+      rw [← coeff_zero_eq_constantCoeff_apply, coeff_exp_tmul, pow_zero, dp_zero,
+        Algebra.TensorProduct.one_def]
+  | add x y hx hy => rw [exp_add, map_mul, hx, hy, mul_one]
+
+/-- The coefficients of the exponential multiply like divided powers:
+`γₘ(x) * γₙ(x) = (m + n).choose m • γₘ₊ₙ(x)`. -/
+theorem coeff_exp_mul_coeff_exp (x : S ⊗[R] M) (m n : ℕ) :
+    coeff m (exp x) * coeff n (exp x) = (m + n).choose m • coeff (m + n) (exp x) := by
+  induction x using TensorProduct.inductionOn generalizing m n with
+  | tmul s a =>
+      rw [coeff_exp_tmul, coeff_exp_tmul, coeff_exp_tmul, Algebra.TensorProduct.tmul_mul_tmul,
+        ← pow_add, dp_mul, tmul_smul]
+  | add x y hx hy =>
+      rw [exp_add]
+      -- Elaborating the closure lemma before unifying it with the goal avoids a slow unification
+      -- of the instance paths on the coefficient ring.
+      have h := coeff_mul_coeff_mul_eq_choose_nsmul (A := S ⊗[R] DividedPowerAlgebra R M)
+        (f := exp x) (g := exp y)
+      exact h hx hy m n
+
 end Exp
-
-variable (R M) in
-/-- The projection of `Γ_R(M)` onto its degree-`d` piece. -/
-private def proj (d : ℕ) :
-    DividedPowerAlgebra R M →ₗ[R] homogeneousSubmodule (R := R) (M := M) d :=
-  DirectSum.component R ℕ _ d ∘ₗ
-    (DirectSum.decomposeLinearEquiv (homogeneousSubmodule (R := R) (M := M))).toLinearMap
-
-private theorem proj_apply (d : ℕ) (x : DividedPowerAlgebra R M) :
-    proj R M d x = DirectSum.decompose (homogeneousSubmodule (R := R) (M := M)) x d :=
-  rfl
 
 /-- The value of the law `γ_d` on `x : S ⊗[R] M`: the `X ^ d`-coefficient of the exponential,
 projected to the degree-`d` piece. -/
 private def gammaFun (d : ℕ) {S : Type*} [CommSemiring S] [Algebra R S] (x : S ⊗[R] M) :
     S ⊗[R] homogeneousSubmodule (R := R) (M := M) d :=
-  (proj R M d).lTensor S (coeff d (exp x))
+  (homogeneousProj R M d).lTensor S (coeff d (exp x))
 
 private theorem gammaFun_rTensor (d : ℕ) {S T : Type*} [CommSemiring S] [Algebra R S]
     [CommSemiring T] [Algebra R T] (φ : S →ₐ[R] T) (x : S ⊗[R] M) :
@@ -260,15 +293,15 @@ theorem gamma_toFun_sum_tmul (d : ℕ) {S : Type*} [CommSemiring S] [Algebra R S
     map_sum]
   refine Finset.sum_congr rfl fun l _ ↦ ?_
   simp_rw [coeff_expTmul]
-  rw [Algebra.TensorProduct.prod_tmul, LinearMap.lTensor_tmul, proj_apply]
+  rw [Algebra.TensorProduct.prod_tmul, LinearMap.lTensor_tmul, homogeneousProj_apply]
 
 /-- The value of `γ_d` on a pure tensor: `γ_d(s ⊗ m) = s ^ d ⊗ dp R d m`. -/
 @[simp]
 theorem gamma_toFun_tmul (d : ℕ) {S : Type*} [CommSemiring S] [Algebra R S] (s : S) (m : M) :
     (gamma R M d).toFun S (s ⊗ₜ[R] m) =
       (s ^ d) ⊗ₜ[R] ⟨dp R d m, dp_mem_homogeneousSubmodule d m⟩ := by
-  rw [gamma_toFun, gammaFun, exp_tmul, coeff_expTmul, LinearMap.lTensor_tmul, proj_apply,
-    decompose_dp, DirectSum.of_eq_same]
+  rw [gamma_toFun, gammaFun, exp_tmul, coeff_expTmul, LinearMap.lTensor_tmul,
+    homogeneousProj_apply, decompose_dp, DirectSum.of_eq_same]
 
 /-- The ground value of `γ_d` at `m` is `dp R d m`. -/
 @[simp]
