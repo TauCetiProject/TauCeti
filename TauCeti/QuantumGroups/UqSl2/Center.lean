@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Adjoin.Polynomial.Transcendental
-public import TauCeti.QuantumGroups.UqSl2.Casimir
+public import TauCeti.QuantumGroups.UqSl2.Casimir.Basic
 public import TauCeti.QuantumGroups.UqSl2.PBW
 
 import Mathlib.Tactic
