@@ -13,8 +13,8 @@ public import TauCeti.Algebra.Homology.LinearHomComplex.Composition
 
 Let `C` be an `R`-linear preadditive category.  This file enriches
 `CochainComplex C ℤ` in `CochainComplex (ModuleCat R) ℤ`.  The enriched Hom object from `F` to
-`G` is `TauCeti.linearHomComplex R F G`, and the enriched identity is the degree-zero cocycle
-associated to the identity morphism of `F`.
+`G` is `CochainComplex.linearHomComplex R F G`, and the enriched identity is the degree-zero
+cocycle associated to the identity morphism of `F`.
 
 Mathlib's enriched-category convention orders composition as
 
@@ -57,7 +57,7 @@ composition map and Koszul braiding are the preceding Tau Ceti stages of this ro
 
 public section
 
-open CategoryTheory MonoidalCategory CochainComplex.HomComplex
+open CategoryTheory MonoidalCategory CochainComplex CochainComplex.HomComplex
 
 namespace TauCeti
 
@@ -101,15 +101,15 @@ lemma ι_linearHomComplexEnrichedComp (F G K : CochainComplex C ℤ) (p q j : �
 Keller composition with the Koszul sign converting from Mathlib's factor order. -/
 @[simp]
 lemma cochainCompTensor_braiding_tmul (F G K : CochainComplex C ℤ) (p q j : ℤ)
-    (h : ComplexShape.π (ComplexShape.up ℤ) (ComplexShape.up ℤ)
-      (ComplexShape.up ℤ) (p, q) = j)
+    (h : p + q = j)
     (z₁ : ModuleCat.of R (Cochain F G p)) (z₂ : ModuleCat.of R (Cochain G K q)) :
-    (p * q).negOnePow • ModuleCat.Hom.hom (cochainCompTensor R F G K q p j
-        (by dsimp at h ⊢; omega))
-      (ModuleCat.Hom.hom
-        ((β_ (ModuleCat.of R (Cochain F G p)) (ModuleCat.of R (Cochain G K q))).hom)
-        (z₁ ⊗ₜ z₂)) =
-      ((p * q).negOnePow • z₁.comp z₂ (by dsimp at h; omega) :
+    (dsimp% only [linearHomComplex_X]
+      (p * q).negOnePow • ModuleCat.Hom.hom (cochainCompTensor R F G K q p j
+        (by dsimp; omega))
+        (ModuleCat.Hom.hom
+          ((β_ (ModuleCat.of R (Cochain F G p)) (ModuleCat.of R (Cochain G K q))).hom)
+          (z₁ ⊗ₜ z₂))) =
+      ((p * q).negOnePow • z₁.comp z₂ h :
         ModuleCat.of R (Cochain F K j)) := by
   rw [ModuleCat.MonoidalCategory.braiding_hom_apply]
   -- `cochainCompTensor` is indexed by `.X`, while its element-level API is normalized to the
@@ -119,7 +119,6 @@ lemma cochainCompTensor_braiding_tmul (F G K : CochainComplex C ℤ) (p q j : �
         ModuleCat.of R (Cochain F K j)) =
     ((p * q).negOnePow • z₁.comp z₂ _ : ModuleCat.of R (Cochain F K j))
   rw [cochainCompTensor_tmul]
-  rfl
 
 /-- Cochain complexes in an `R`-linear preadditive category are enriched in cochain complexes of
 `R`-modules through their `R`-linear Hom complexes. -/
