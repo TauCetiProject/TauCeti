@@ -52,6 +52,10 @@ universe v u
 
 variable (C : Type u) [Category.{v} C] [Preadditive C] [HasZeroObject C] [HasBinaryBiproducts C]
 
+local notation "hP" => ExactStructure.homologicalComplex_split_isFrobenius
+  (C := C) (c := ComplexShape.up (ZMod 1))
+  (fun j ↦ ⟨j - 1, sub_add_cancel j 1⟩) (fun i ↦ ⟨i + 1, rfl⟩)
+
 /-- Passing to one-periodic complexes is stable conflation-exact for the componentwise split
 exact structures. -/
 theorem stableConflationExact_onePeriodicComplexEquivalence_functor :
@@ -61,8 +65,7 @@ theorem stableConflationExact_onePeriodicComplexEquivalence_functor :
   (ExactStructure.split C).isConflationExact_onePeriodicComplexEquivalence_functor
     |>.stableConflationExact_of_equivalence
       (ExactStructure.split C).isConflationExact_onePeriodicComplexEquivalence_inverse
-      (ExactStructure.homologicalComplex_split_isFrobenius
-        (fun j ↦ ⟨j - 1, sub_add_cancel j 1⟩) (fun i ↦ ⟨i + 1, rfl⟩))
+      (hP)
 
 /-- Passing from one-periodic complexes to differential modules is stable conflation-exact for
 the componentwise split exact structures. -/
@@ -88,8 +91,7 @@ noncomputable abbrev stableOnePeriodicComplexEquivalence :
     (stableConflationExact_onePeriodicComplexEquivalence_functor C)
     (stableConflationExact_onePeriodicComplexEquivalence_inverse C)
     ExactStructure.differentialModule_split_isFrobenius
-    (ExactStructure.homologicalComplex_split_isFrobenius
-      (fun j ↦ ⟨j - 1, sub_add_cancel j 1⟩) (fun i ↦ ⟨i + 1, rfl⟩))
+    (hP)
 
 /-- The canonical comparison from the split stable category of differential modules to the
 homotopy category `K₁(C)` of one-periodic complexes, sending the stable class of a morphism of
@@ -127,13 +129,12 @@ the homotopy class of the same morphism of one-periodic complexes. -/
 @[simp]
 theorem stableToHomotopy_map {M N : DifferentialModule C} (φ : M ⟶ N) :
     (stableToHomotopy C).map
-        ((ExactStructure.split C).differentialModule.projectiveStableFunctor.map φ) ≫
-        eqToHom (stableToHomotopy_obj C N) =
+        ((ExactStructure.split C).differentialModule.projectiveStableFunctor.map φ) =
       eqToHom (stableToHomotopy_obj C M) ≫
         (HomotopyCategory.quotient C (ComplexShape.up (ZMod 1))).map
-          ((toOnePeriodicComplex C).map φ) := by
-  rw [← Functor.comp_map, Functor.congr_hom (projectiveStableFunctor_comp_stableToHomotopy C) φ]
-  simp
+          ((toOnePeriodicComplex C).map φ) ≫
+        eqToHom (stableToHomotopy_obj C N).symm :=
+  Functor.congr_hom (projectiveStableFunctor_comp_stableToHomotopy C) φ
 
 /-- The stable-to-homotopy comparison preserves addition of morphisms. -/
 instance : (stableToHomotopy C).Additive := by
@@ -170,17 +171,37 @@ noncomputable def stableToHomotopyCommShift :
     letI := ExactStructure.differentialModule_split_isFrobenius (C := C) |>.stableHasShift
     (stableToHomotopy C).CommShift ℤ := by
   letI := ExactStructure.differentialModule_split_isFrobenius (C := C) |>.stableHasShift
-  letI := ExactStructure.homologicalComplex_split_isFrobenius (C := C)
-    (c := ComplexShape.up (ZMod 1)) (fun j ↦ ⟨j - 1, sub_add_cancel j 1⟩)
-    (fun i ↦ ⟨i + 1, rfl⟩) |>.stableHasShift
+  letI := (hP) |>.stableHasShift
   letI := StableConflationExact.stableEquivalenceFunctorCommShift
     (stableConflationExact_onePeriodicComplexEquivalence_functor C)
     (stableConflationExact_onePeriodicComplexEquivalence_inverse C)
     ExactStructure.differentialModule_split_isFrobenius
-    (ExactStructure.homologicalComplex_split_isFrobenius
-      (fun j ↦ ⟨j - 1, sub_add_cancel j 1⟩) (fun i ↦ ⟨i + 1, rfl⟩))
+    (hP)
   letI := PeriodicComplex.stableToHomotopyCommShift C 1
   exact inferInstanceAs ((_ ⋙ _).CommShift ℤ)
+
+/-- The shift comparison is the composite of the comparisons for the stable equivalence
+and the periodic stable-to-homotopy functor, with the functor associators made explicit. -/
+theorem stableToHomotopy_commShiftIso (n : ℤ) :
+    letI := ExactStructure.differentialModule_split_isFrobenius (C := C) |>.stableHasShift
+    letI := (hP).stableHasShift
+    letI := StableConflationExact.stableEquivalenceFunctorCommShift
+      (stableConflationExact_onePeriodicComplexEquivalence_functor C)
+      (stableConflationExact_onePeriodicComplexEquivalence_inverse C)
+      ExactStructure.differentialModule_split_isFrobenius (hP)
+    letI := PeriodicComplex.stableToHomotopyCommShift C 1
+    letI := stableToHomotopyCommShift C
+    (stableToHomotopy C).commShiftIso n =
+      (Functor.associator _ _ _).symm ≪≫
+      Functor.isoWhiskerRight
+        ((stableOnePeriodicComplexEquivalence C).functor.commShiftIso n) _ ≪≫
+      Functor.associator _ _ _ ≪≫
+      Functor.isoWhiskerLeft _
+        ((ExactStructure.homologicalComplexSplitStableToHomotopy C
+          (ComplexShape.up (ZMod 1)) (fun i ↦ ⟨i + 1, rfl⟩)).commShiftIso n) ≪≫
+      (Functor.associator _ _ _).symm :=
+  -- The composite CommShift instance stores precisely this chain of associators and factors.
+  (rfl)
 
 /-- **Happel's triangulation of differential modules is the cone triangulation of `K₁(C)`.**
 The comparison from the stable category of differential modules to the homotopy category of
@@ -194,18 +215,16 @@ theorem stableToHomotopy_isTriangulated :
     letI := stableToHomotopyCommShift C
     (stableToHomotopy C).IsTriangulated := by
   let hE := ExactStructure.differentialModule_split_isFrobenius (C := C)
-  let hP := ExactStructure.homologicalComplex_split_isFrobenius (C := C)
-    (c := ComplexShape.up (ZMod 1)) (fun j ↦ ⟨j - 1, sub_add_cancel j 1⟩) (fun i ↦ ⟨i + 1, rfl⟩)
   let hF := stableConflationExact_onePeriodicComplexEquivalence_functor C
   let hG := stableConflationExact_onePeriodicComplexEquivalence_inverse C
   -- Install the stable triangulations of both Frobenius categories and the shift comparisons of
   -- the two factors; each factor is a triangle functor, hence so is their composite.
   let := hE.stableHasShift
-  let := hP.stableHasShift
+  let := (hP).stableHasShift
   let := hE.stableShiftFunctor_additive
-  let := hP.stableShiftFunctor_additive
+  let := (hP).stableShiftFunctor_additive
   let := hE.stablePretriangulated
-  let := hP.stablePretriangulated
+  let := (hP).stablePretriangulated
   let := StableConflationExact.stableEquivalenceFunctorCommShift hF hG hE hP
   let := PeriodicComplex.stableToHomotopyCommShift C 1
   have := StableConflationExact.stableEquivalenceIsTriangulated hF hG hE hP
