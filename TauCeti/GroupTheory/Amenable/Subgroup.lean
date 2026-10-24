@@ -56,7 +56,7 @@ theorem subgroup_apply (m : Mean G) (T : H.RightTransversal) (f : UCB H) :
 theorem subgroup_eval (T : H.RightTransversal) (x : G) :
     (eval G x).subgroup T = eval H (T.2.equiv x).1 := by
   ext f
-  simp
+  simp [UCB.extendSubgroup_apply]
 
 /-- Extending a mean along the subgroup inclusion and then averaging back returns the
 original mean, provided the transversal represents `H` by `1`. -/

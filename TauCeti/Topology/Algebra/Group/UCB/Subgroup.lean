@@ -54,8 +54,9 @@ def extendSubgroup (T : H.RightTransversal) : UCB H →ₐ[ℝ] UCB G where
   map_add' _ _ := rfl
   commutes' _ := rfl
 
-/-- The extension evaluates on the subgroup coordinate of the coset decomposition. -/
-@[simp]
+/-- The extension evaluates on the subgroup coordinate of the coset decomposition.
+Use this formula explicitly so simplification can retain the specialized subgroup
+evaluation rules below. -/
 theorem extendSubgroup_apply (T : H.RightTransversal) (f : UCB H) (x : G) :
     (extendSubgroup T f : G →ᵇ ℝ) x = (f : H →ᵇ ℝ) (T.2.equiv x).1 :=
   (rfl)
@@ -89,7 +90,7 @@ theorem monotone_extendSubgroup (T : H.RightTransversal) : Monotone (extendSubgr
 /-- Extension preserves the supremum norm, for any right transversal. -/
 @[simp]
 theorem norm_extendSubgroup (T : H.RightTransversal) (f : UCB H) :
-    ‖extendSubgroup T f‖ = ‖f‖ := by
+    ‖(extendSubgroup T f : G →ᵇ ℝ)‖ = ‖(f : H →ᵇ ℝ)‖ := by
   refine le_antisymm ((f : H →ᵇ ℝ).norm_compContinuous_le _) ?_
   let t := (T.2.equiv 1).2
   refine (BoundedContinuousFunction.norm_le (norm_nonneg _)).2 fun h => ?_
