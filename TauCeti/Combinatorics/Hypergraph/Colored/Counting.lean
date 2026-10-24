@@ -47,6 +47,17 @@ theorem k_const (k : ℕ) (c : κ) : (const k c).k = k := (rfl)
 theorem graph_const (k : ℕ) (c : κ) :
     (const k c).graph = Colored3Graph.const c := (rfl)
 
+/-- The color of the triple `{i, j, l}` of pattern vertices, given in increasing order. -/
+def tripleColor (F : FiniteColored3Pattern κ) (i j l : Fin F.k) (hij : i < j) (hjl : j < l) : κ :=
+  F.graph.color (Set.powersetCard.ofCard (s := {i, j, l})
+    (Finset.card_eq_three.2 ⟨i, j, l, hij.ne, (hij.trans hjl).ne, hjl.ne, rfl⟩))
+
+theorem tripleColor_def (F : FiniteColored3Pattern κ) (i j l : Fin F.k) (hij : i < j)
+    (hjl : j < l) :
+    F.tripleColor i j l hij hjl = F.graph.color (Set.powersetCard.ofCard (s := {i, j, l})
+      (Finset.card_eq_three.2 ⟨i, j, l, hij.ne, (hij.trans hjl).ne, hjl.ne, rfl⟩)) :=
+  (rfl)
+
 end FiniteColored3Pattern
 
 namespace Colored3Graph
