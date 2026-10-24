@@ -7,14 +7,14 @@ module
 
 public import TauCeti.RepresentationTheory.Induction.Inertia
 public import TauCeti.RepresentationTheory.ProjectiveRepresentation.Basic
-import TauCeti.RepresentationTheory.Irreducible
+import TauCeti.RepresentationTheory.FDRep.Schur
 import Mathlib.LinearAlgebra.GeneralLinearGroup.Basic
 
 /-!
 # Projective extension to the inertia group
 
-An irreducible finite-dimensional representation of a normal subgroup over an algebraically
-closed field extends to a normalized projective representation of its inertia group. The
+A nonzero finite-dimensional representation of a normal subgroup with scalar endomorphisms
+extends to a normalized projective representation of its inertia group over any field. The
 extension agrees exactly with the original action on the normal subgroup, and its operators
 implement conjugation on that subgroup.
 
@@ -36,25 +36,23 @@ open CategoryTheory _root_.Representation
 
 universe u v
 
-variable {k : Type u} {G : Type v} [Field k] [IsAlgClosed k] [Group G]
-  {N : Subgroup G} [N.Normal] (A : FDRep k N) [Simple A]
+variable {k : Type u} {G : Type v} [Field k] [Group G]
+  {N : Subgroup G} [N.Normal] (A : FDRep k N) [Nontrivial A]
 
-/-- **Operators implementing conjugation on `N` form a projective representation.** Over an
-algebraically closed field, a normalized family of automorphisms of `A`, indexed by the inertia
-group, in which `ρ g` carries the action of `n` to the action of `g n g⁻¹`, is a projective
-representation. -/
-theorem exists_isProjectiveRep_of_apply_apply_conjNormal {ρ : inertia A → A ≃ₗ[k] A}
+/-- **Operators implementing conjugation on `N` form a projective representation.** If every
+endomorphism of `A` is scalar, a normalized family of automorphisms implementing conjugation
+has a unit-valued factor set over the coefficient field. -/
+theorem exists_isProjectiveRep_of_apply_apply_conjNormal
+    (hScalar : ∀ f : A ⟶ A, ∃ c : k, f = c • 𝟙 A) {ρ : inertia A → A ≃ₗ[k] A}
     (hone : ρ 1 = 1)
     (hinter : ∀ (g : inertia A) (n : N) (x : A),
       ρ g (A.ρ n x) = A.ρ (MulAut.conjNormal (g : G) n) (ρ g x)) :
     ∃ α : inertia A → inertia A → kˣ, IsProjectiveRep ρ α := by
-  have hA := FDRep.isIrreducible_of_simple A
-  have : Nontrivial A := hA.nontrivial
   -- By Schur's lemma `ρ g ∘ ρ h` and `ρ (g * h)` differ by a nonzero scalar, since both
   -- carry the action of `n` to the action of `(g * h) n (g * h)⁻¹`.
   have hmul (g h : inertia A) : ∃ c : kˣ, ∀ x,
       ρ g (ρ h x) = (c : k) • ρ (g * h) x := by
-    refine IsIrreducible.exists_unit_smul_of_intertwines
+    refine FDRep.exists_unit_smul_of_intertwines A hScalar
       (σ := A.ρ.comp (MulAut.conjNormal ((g : G) * h)).toMonoidHom)
       ((ρ h).trans (ρ g)) (ρ (g * h)) (fun n x ↦ ?_) (hinter (g * h))
     have hc : MulAut.conjNormal ((g : G) * h) n =
@@ -65,11 +63,12 @@ theorem exists_isProjectiveRep_of_apply_apply_conjNormal {ρ : inertia A → A �
   choose α hα using hmul
   exact ⟨α, IsProjectiveRep.of_map_one_mul_apply hone hα⟩
 
-/-- Every irreducible finite-dimensional representation of a normal subgroup over an
-algebraically closed field extends projectively to its inertia group. The lift restricts
-exactly to the original representation and implements the ambient conjugation action.
-No finiteness assumption on `G`, and no restriction on the characteristic of `k`, is needed. -/
-theorem exists_isProjectiveRep_inertia_restrict_eq :
+/-- Every nonzero finite-dimensional representation of a normal subgroup with scalar
+endomorphisms extends projectively to its inertia group. The lift restricts exactly to the
+original representation and implements the ambient conjugation action. No finiteness assumption
+on `G`, algebraic closure of `k`, or restriction on its characteristic is needed. -/
+theorem exists_isProjectiveRep_inertia_restrict_eq
+    (hScalar : ∀ f : A ⟶ A, ∃ c : k, f = c • 𝟙 A) :
     ∃ (ρ : inertia A → A ≃ₗ[k] A) (α : inertia A → inertia A → kˣ),
       IsProjectiveRep ρ α ∧
       (∀ (n : N) (x : A), ρ ⟨n, le_inertia A n.property⟩ x = A.ρ n x) ∧
@@ -94,7 +93,7 @@ theorem exists_isProjectiveRep_inertia_restrict_eq :
   have hone : ρ 1 = 1 := by
     simp only [ρ, Subgroup.coe_one, dite_eq_left N.one_mem]
     exact r.map_one
-  obtain ⟨α, hα⟩ := exists_isProjectiveRep_of_apply_apply_conjNormal A hone hinter
+  obtain ⟨α, hα⟩ := exists_isProjectiveRep_of_apply_apply_conjNormal A hScalar hone hinter
   exact ⟨ρ, α, hα, hres, hinter⟩
 
 end TauCeti

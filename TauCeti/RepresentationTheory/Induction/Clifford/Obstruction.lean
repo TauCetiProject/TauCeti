@@ -7,15 +7,18 @@ module
 
 public import TauCeti.RepresentationTheory.Induction.Clifford.ProjectiveExtension
 public import TauCeti.RepresentationTheory.ProjectiveRepresentation.SchurMultiplier
-import TauCeti.RepresentationTheory.Irreducible
+import TauCeti.RepresentationTheory.FDRep.Schur
 
 /-!
 # The Clifford obstruction
 
-Let `N` be a normal subgroup of `G`, let `A` be an irreducible finite-dimensional representation of
-`N` over an algebraically closed field `k`, and let `T = inertia A` be its inertia group. Whether
-`A` extends to an ordinary representation of `T` is governed by a class in the Schur multiplier
-`H²(T/N, kˣ)` of the *quotient* `T/N`, the **Clifford obstruction** `TauCeti.cliffordObstruction A`.
+Let `N` be a normal subgroup of `G`, let `A` be a nonzero finite-dimensional representation of
+`N` over a field `k`, and let `T = inertia A` be its inertia group. Assume explicitly that every
+endomorphism of `A` is scalar. Whether `A` extends to an ordinary representation of `T` is governed
+by a class in the Schur multiplier `H²(T/N, kˣ)` of the *quotient* `T/N`, the
+**Clifford obstruction**
+`TauCeti.cliffordObstruction A hScalar`. For simple `A`, algebraic closure supplies `hScalar`
+through `CategoryTheory.endomorphism_simple_eq_smul_id`, but is not needed for the construction.
 
 The class comes from a projective extension of `A` to `T` chosen compatibly with `N`
 (`TauCeti.IsProjectiveInertiaExtension`): a projective representation `ρ` of `T` on `A` that agrees
@@ -38,7 +41,7 @@ when `A` extends to a representation of its inertia group
   `inertia A` on `A` that restricts to `A` on `N` and whose factor set is inflated from `β`.
 * `TauCeti.IsProjectiveInertiaExtension.factorSet`: the factor set `β` on the inertia quotient,
   bundled as a `TauCeti.FactorSet`.
-* `TauCeti.cliffordObstruction A`: the Clifford obstruction in `H²(inertia A ⧸ N, kˣ)`.
+* `TauCeti.cliffordObstruction A hScalar`: the obstruction in `H²(inertia A ⧸ N, kˣ)`.
 
 ## Main results
 
@@ -153,20 +156,20 @@ end Extension
 
 section Existence
 
-variable {k : Type u} {G : Type v} [Field k] [IsAlgClosed k] [Group G] {N : Subgroup G}
-  [N.Normal] (A : FDRep k N) [Simple A]
+variable {k : Type u} {G : Type v} [Field k] [Group G] {N : Subgroup G}
+  [N.Normal] (A : FDRep k N) [Nontrivial A]
 
-/-- **An irreducible representation of a normal subgroup extends to a compatible projective
-representation of its inertia group** over an algebraically closed field: one that agrees with
-`A` on `N` and whose factor set is inflated from the inertia quotient. -/
-theorem exists_isProjectiveInertiaExtension :
+/-- **A nonzero representation with scalar endomorphisms extends to a compatible projective
+representation of its inertia group** over any field: one that agrees with `A` on `N` and whose
+factor set is inflated from the inertia quotient. -/
+theorem exists_isProjectiveInertiaExtension
+    (hScalar : ∀ f : A ⟶ A, ∃ c : k, f = c • 𝟙 A) :
     ∃ ρ β, IsProjectiveInertiaExtension A ρ β := by
   classical
-  have : Nontrivial A := (FDRep.isIrreducible_of_simple A).nontrivial
   set M := N.subgroupOf (inertia A)
   set ι : N →* inertia A := Subgroup.inclusion (le_inertia A) with hι
   have hιM (n : N) : ι n ∈ M := Subgroup.mem_subgroupOf.2 n.2
-  obtain ⟨ρ₀, -, -, hres, hinter⟩ := exists_isProjectiveRep_inertia_restrict_eq A
+  obtain ⟨ρ₀, -, -, hres, hinter⟩ := exists_isProjectiveRep_inertia_restrict_eq A hScalar
   -- `Subgroup.inclusion` sends `n` to `⟨n, _⟩` by definition, the form in which `hres` is stated.
   have hres' (n : N) (x : A) : ρ₀ (ι n) x = A.ρ n x := hres n x
   -- Fix a representative `s t` of each coset `tN`; then `t = s t * m t` with `m t ∈ N`.
@@ -212,7 +215,7 @@ theorem exists_isProjectiveInertiaExtension :
       simp
     rw [hn, hρmul, hρconj, hc]
   -- By Schur's lemma `ρ` is a projective representation.
-  obtain ⟨α, hproj⟩ := exists_isProjectiveRep_of_apply_apply_conjNormal A hρ1 hρconj
+  obtain ⟨α, hproj⟩ := exists_isProjectiveRep_of_apply_apply_conjNormal A hScalar hρ1 hρconj
   -- Its factor set is trivial as soon as one argument lies in `N`, so it descends to `T/N`.
   have hone (a : kˣ) (t : inertia A) (ha : ∀ x, (a : k) • ρ t x = ρ t x) : a = 1 := by
     refine FaithfulSMul.eq_of_smul_eq_smul (α := A) fun y ↦ ?_
@@ -237,8 +240,8 @@ section Obstruction
 
 attribute [local instance] trivialMulDistribMulAction
 
-variable {k G : Type} [Field k] [IsAlgClosed k] [Group G] {N : Subgroup G} [N.Normal]
-  {A : FDRep k N} [Simple A]
+variable {k G : Type} [Field k] [Group G] {N : Subgroup G} [N.Normal]
+  {A : FDRep k N} [Nontrivial A]
 
 namespace IsProjectiveInertiaExtension
 
@@ -248,14 +251,13 @@ variable {ρ ρ' : inertia A → A ≃ₗ[k] A}
 /-- **Any two compatible projective extensions of `A` to its inertia group have the same class in
 the Schur multiplier of the inertia quotient.** -/
 theorem cohomologyClass_factorSet_eq (h : IsProjectiveInertiaExtension A ρ β)
-    (h' : IsProjectiveInertiaExtension A ρ' β') :
+    (h' : IsProjectiveInertiaExtension A ρ' β')
+    (hScalar : ∀ f : A ⟶ A, ∃ c : k, f = c • 𝟙 A) :
     h'.factorSet.cohomologyClass = h.factorSet.cohomologyClass := by
-  have hA := FDRep.isIrreducible_of_simple A
-  have : Nontrivial A := hA.nontrivial
   set ι : N →* inertia A := Subgroup.inclusion (le_inertia A)
   -- The two extensions differ by scalars, by Schur's lemma.
   have hc (t : inertia A) : ∃ c : kˣ, ∀ x, ρ' t x = (c : k) • ρ t x :=
-    IsIrreducible.exists_unit_smul_of_intertwines
+    FDRep.exists_unit_smul_of_intertwines A hScalar
       (σ := A.ρ.comp (MulAut.conjNormal (t : G)).toMonoidHom) (ρ' t) (ρ t)
       (h'.apply_apply_conjNormal t) (h.apply_apply_conjNormal t)
   choose c hc using hc
@@ -294,32 +296,37 @@ theorem cohomologyClass_factorSet_eq (h : IsProjectiveInertiaExtension A ρ β)
 end IsProjectiveInertiaExtension
 
 variable (A) in
-/-- **The Clifford obstruction** of an irreducible representation `A` of a normal subgroup `N`: the
-class in the Schur multiplier `H²(inertia A ⧸ N, kˣ)` of the factor set of any compatible projective
+/-- **The Clifford obstruction** of a nonzero representation `A` of a normal subgroup `N`
+with scalar endomorphisms: the class in the Schur multiplier `H²(inertia A ⧸ N, kˣ)` of the
+factor set of any compatible projective
 extension of `A` to its inertia group (`TauCeti.IsProjectiveInertiaExtension`). It does not depend
 on the extension
 (`TauCeti.IsProjectiveInertiaExtension.cohomologyClass_factorSet_eq_cliffordObstruction`), and it
 vanishes exactly when `A` extends to a representation of its inertia group
 (`TauCeti.cliffordObstruction_eq_zero_iff`). -/
-noncomputable def cliffordObstruction :
+noncomputable def cliffordObstruction
+    (hScalar : ∀ f : A ⟶ A, ∃ c : k, f = c • 𝟙 A) :
     schurMultiplier k (inertia A ⧸ N.subgroupOf (inertia A)) :=
-  (exists_isProjectiveInertiaExtension A).choose_spec.choose_spec.factorSet.cohomologyClass
+  (exists_isProjectiveInertiaExtension A hScalar).choose_spec.choose_spec.factorSet.cohomologyClass
 
 /-- **The Clifford obstruction is the class of every compatible projective extension.** -/
 theorem IsProjectiveInertiaExtension.cohomologyClass_factorSet_eq_cliffordObstruction
     {ρ : inertia A → A ≃ₗ[k] A}
     {β : inertia A ⧸ N.subgroupOf (inertia A) → inertia A ⧸ N.subgroupOf (inertia A) → kˣ}
-    (h : IsProjectiveInertiaExtension A ρ β) :
-    h.factorSet.cohomologyClass = cliffordObstruction A :=
-  (exists_isProjectiveInertiaExtension A).choose_spec.choose_spec.cohomologyClass_factorSet_eq h
+    (h : IsProjectiveInertiaExtension A ρ β)
+    (hScalar : ∀ f : A ⟶ A, ∃ c : k, f = c • 𝟙 A) :
+    h.factorSet.cohomologyClass = cliffordObstruction A hScalar :=
+  IsProjectiveInertiaExtension.cohomologyClass_factorSet_eq
+    (exists_isProjectiveInertiaExtension A hScalar).choose_spec.choose_spec h hScalar
 
-/-- **An irreducible representation of a normal subgroup extends to a representation of its
+/-- **A nonzero representation with scalar endomorphisms extends to a representation of its
 inertia group exactly when its Clifford obstruction vanishes.** -/
-theorem cliffordObstruction_eq_zero_iff :
-    cliffordObstruction A = 0 ↔
+theorem cliffordObstruction_eq_zero_iff
+    (hScalar : ∀ f : A ⟶ A, ∃ c : k, f = c • 𝟙 A) :
+    cliffordObstruction A hScalar = 0 ↔
       ∃ σ : Representation k (inertia A) A, σ.comp (Subgroup.inclusion (le_inertia A)) = A.ρ := by
-  obtain ⟨ρ, β, h⟩ := exists_isProjectiveInertiaExtension A
-  rw [← h.cohomologyClass_factorSet_eq_cliffordObstruction]
+  obtain ⟨ρ, β, h⟩ := exists_isProjectiveInertiaExtension A hScalar
+  rw [← h.cohomologyClass_factorSet_eq_cliffordObstruction hScalar]
   constructor
   · intro h0
     -- The factor set on the quotient is a coboundary; rescaling `ρ` by it linearizes `ρ`.
@@ -345,7 +352,7 @@ theorem cliffordObstruction_eq_zero_iff :
     have hπ : IsProjectiveInertiaExtension A π 1 :=
       ⟨IsProjectiveRep.of_monoidHom π, fun n x ↦ by simp [π, ← hσ]⟩
     have htriv : hπ.factorSet = FactorSet.trivial _ _ := FactorSet.ext fun _ ↦ by simp
-    rw [hπ.cohomologyClass_factorSet_eq h, htriv]
+    rw [hπ.cohomologyClass_factorSet_eq h hScalar, htriv]
     exact FactorSet.cohomologyClass_trivial
 
 end Obstruction

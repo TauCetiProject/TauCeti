@@ -37,7 +37,7 @@ density theorem; if moreover `σ` is irreducible and lies over `A`, that is, adm
 irreducible representation of the inertia group lying over `A` is `A ⊗ U` for a projective
 representation `U` of `T/N` whose factor set is `β⁻¹`
 (`TauCeti.IsProjectiveInertiaExtension.tensorRepEquiv`); in this setting the class of `β` is the
-Clifford obstruction `TauCeti.cliffordObstruction A`.
+Clifford obstruction `TauCeti.cliffordObstruction`.
 
 The converse, that `A ⊗ U` is irreducible exactly when `U` is and that `U` is recovered from
 `A ⊗ U`, is in `TauCeti/RepresentationTheory/Induction/Clifford/ProjectiveCorrespondence.lean`.
