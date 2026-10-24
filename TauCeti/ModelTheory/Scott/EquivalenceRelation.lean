@@ -250,7 +250,7 @@ theorem internalScottRank_fromRel_eq_one (hr : ∀ x : V, {x' | r x x'}.Infinite
 
 /-- Tuples with the same atomic type have equally many entries in the classes of matching
 entries. -/
-private theorem encard_setOf_rel_inter_range_eq {n : ℕ} {a : Fin n → V} {b : Fin n → W}
+private theorem encard_ofPred_rel_inter_range_eq {n : ℕ} {a : Fin n → V} {b : Fin n → W}
     (h : letI := (fromRel r).structure; letI := (fromRel s).structure
       SameAtomicType (L := Language.graph) a b) (i : Fin n) :
     ({x | r x (a i)} ∩ Set.range a).encard = ({y | s y (b i)} ∩ Set.range b).encard := by
@@ -261,7 +261,7 @@ private theorem encard_setOf_rel_inter_range_eq {n : ℕ} {a : Fin n → V} {b :
 
 /-- Extending a tuple by `w` removes `w` from the elements of the class of an old entry that are
 not entries of the tuple. -/
-private theorem setOf_rel_snoc_sdiff_range {α : Type*} {t : Setoid α} {n : ℕ} (c : Fin n → α)
+private theorem ofPred_rel_snoc_sdiff_range {α : Type*} {t : Setoid α} {n : ℕ} (c : Fin n → α)
     (w : α) (i : Fin n) :
     {z | t z ((snoc c w : Fin (n + 1) → α) i.castSucc)} \
         Set.range (snoc c w : Fin (n + 1) → α) = ({z | t z (c i)} \ Set.range c) \ {w} := by
@@ -269,7 +269,7 @@ private theorem setOf_rel_snoc_sdiff_range {α : Type*} {t : Setoid α} {n : ℕ
 
 /-- A tuple back-and-forth system from `r` to `s` transfers every lower bound on the number of
 elements of the class of an entry that are not entries of the tuple. -/
-private theorem le_encard_setOf_rel_sdiff_range {S : Set (Σ n, (Fin n → V) × (Fin n → W))}
+private theorem le_encard_ofPred_rel_sdiff_range {S : Set (Σ n, (Fin n → V) × (Fin n → W))}
     (hS : letI := (fromRel r).structure; letI := (fromRel s).structure
       IsTupleBFSystem (L := Language.graph) S) (m : ℕ) {n : ℕ} {a : Fin n → V} {b : Fin n → W}
     (hab : ⟨n, a, b⟩ ∈ S) (i : Fin n) (hm : (m : ℕ∞) ≤ ({x | r x (a i)} \ Set.range a).encard) :
@@ -291,10 +291,10 @@ private theorem le_encard_setOf_rel_sdiff_range {S : Set (Σ n, (Fin n → V) ×
       exact hxa ⟨j, by simpa using (heq j.castSucc (last n)).mpr (by simp)⟩
     have hsy : s y (b i) := by simpa using (hrel (last n) i.castSucc).mp (by simpa using hx)
     have h := ih hy i.castSucc (by
-      rw [setOf_rel_snoc_sdiff_range, ← ENat.add_le_add_iff_right ENat.one_ne_top,
+      rw [ofPred_rel_snoc_sdiff_range, ← ENat.add_le_add_iff_right ENat.one_ne_top,
         Set.encard_sdiff_singleton_add_one hxA]
       exact_mod_cast hm)
-    rw [setOf_rel_snoc_sdiff_range] at h
+    rw [ofPred_rel_snoc_sdiff_range] at h
     rw [← Set.encard_sdiff_singleton_add_one
       (⟨hsy, hyb⟩ : y ∈ {y | s y (b i)} \ Set.range b)]
     push_cast
@@ -302,7 +302,7 @@ private theorem le_encard_setOf_rel_sdiff_range {S : Set (Σ n, (Fin n → V) ×
 
 /-- A tuple back-and-forth system from `r` to `s` matches entries of a tuple with entries in
 classes of the same size, counted in `ℕ∞`. -/
-private theorem encard_setOf_rel_eq_of_isTupleBFSystem
+private theorem encard_ofPred_rel_eq_of_isTupleBFSystem
     {S : Set (Σ n, (Fin n → V) × (Fin n → W))}
     (hS : letI := (fromRel r).structure; letI := (fromRel s).structure
       IsTupleBFSystem (L := Language.graph) S) {n : ℕ} {a : Fin n → V} {b : Fin n → W}
@@ -315,10 +315,10 @@ private theorem encard_setOf_rel_eq_of_isTupleBFSystem
     ← Set.encard_sdiff_add_encard_inter _ (Set.range b)]
   congr 1
   · exact le_antisymm
-      (ENat.forall_natCast_le_iff_le.mp fun m => le_encard_setOf_rel_sdiff_range hS m hab i)
+      (ENat.forall_natCast_le_iff_le.mp fun m => le_encard_ofPred_rel_sdiff_range hS m hab i)
       (ENat.forall_natCast_le_iff_le.mp fun m =>
-        le_encard_setOf_rel_sdiff_range (r := s) (s := r) hS.symm m (a := b) (b := a) hab i)
-  · exact encard_setOf_rel_inter_range_eq (hS.sameAtomicType hab) i
+        le_encard_ofPred_rel_sdiff_range (r := s) (s := r) hS.symm m (a := b) (b := a) hab i)
+  · exact encard_ofPred_rel_inter_range_eq (hS.sameAtomicType hab) i
 
 /-- A tuple back-and-forth system from `r` to `s` matches every finite family of classes of `r`
 with sizes in `K` with as many classes of `s` with sizes in `K`. -/
@@ -342,11 +342,11 @@ private theorem encard_classes_le_of_isTupleBFSystem {S : Set (Σ n, (Fin n → 
     rintro ⟨i, -, rfl⟩
     simp [ha]
   rw [← htm, ← hrange, Set.encard_image_eq_encard_image_of_eq_iff
-    (g := fun i => {y | s y (b i)}) fun i j => by rw [setOf_rel_eq_iff, setOf_rel_eq_iff, hrel] ]
+    (g := fun i => {y | s y (b i)}) fun i j => by rw [ofPred_rel_eq_iff, ofPred_rel_eq_iff, hrel] ]
   refine Set.encard_le_encard ?_
   rintro _ ⟨i, -, rfl⟩
   refine ⟨s.mem_classes (b i), ?_⟩
-  rw [← encard_setOf_rel_eq_of_isTupleBFSystem hS hab i, ha]
+  rw [← encard_ofPred_rel_eq_of_isTupleBFSystem hS hab i, ha]
   exact (ht (t.equivFin.symm i).2).2
 
 /-- Potentially isomorphic equivalence relations have equally many classes in `ℕ∞`, whatever
@@ -375,8 +375,12 @@ theorem infinite_of_potentialIso (hr : ∀ x : V, {x' | r x x'}.Infinite)
   let := (fromRel s).structure
   obtain ⟨S, hS⟩ := h.exists_isTupleBFSystem
   obtain ⟨a, hab⟩ := hS.exists_fst_mem ![y]
-  simpa [← Set.encard_eq_top_iff, r.comm', s.comm', encard_setOf_rel_eq_of_isTupleBFSystem hS hab 0]
-    using hr (a 0)
+  -- Write both classes in the orientation of `encard_ofPred_rel_eq_of_isTupleBFSystem`.
+  have hx : {x' | r (a 0) x'} = {x | r x (a 0)} := Set.ext fun _ => r.comm'
+  have hy : {y' | s y y'} = {y' | s y' (![y] 0)} := Set.ext fun _ => s.comm'
+  rw [hy, ← Set.encard_eq_top_iff, ← encard_ofPred_rel_eq_of_isTupleBFSystem hS hab 0,
+    Set.encard_eq_top_iff, ← hx]
+  exact hr (a 0)
 
 variable (s) in
 /-- The Scott sentence of a countable equivalence relation with infinite classes holds in an
@@ -415,7 +419,7 @@ private theorem exists_forall_not_rel_encard_eq
   let I := {i | {x' | r x' (a i)}.encard = {x' | r x' x}.encard}
   have hfg (i j) : {x' | r x' (a i)} = {x' | r x' (a j)} ↔
       {y' | s y' (b i)} = {y' | s y' (b j)} := by
-    rw [setOf_rel_eq_iff, setOf_rel_eq_iff, hrel]
+    rw [ofPred_rel_eq_iff, ofPred_rel_eq_iff, hrel]
   have hlt : ((fun i => {y' | s y' (b i)}) '' I).encard <
       {c ∈ r.classes | c.encard = {x' | r x' x}.encard}.encard := by
     rw [← Set.encard_image_eq_encard_image_of_eq_iff hfg]
@@ -424,12 +428,12 @@ private theorem exists_forall_not_rel_encard_eq
     · rintro _ ⟨i, hi, rfl⟩
       exact ⟨r.mem_classes _, hi⟩
     · rintro ⟨i, -, hi⟩
-      exact hx i (setOf_rel_eq_iff.mp hi)
+      exact hx i (ofPred_rel_eq_iff.mp hi)
   obtain ⟨_, ⟨⟨y, rfl⟩, hyκ⟩, hyI⟩ := Set.not_subset.mp fun hsub =>
     (hlt.trans_le (hcount _)).not_ge (Set.encard_le_encard hsub)
-  refine ⟨y, fun i hi => hyI ⟨i, ?_, setOf_rel_eq_iff.mpr hi⟩, hyκ.symm⟩
+  refine ⟨y, fun i hi => hyI ⟨i, ?_, ofPred_rel_eq_iff.mpr hi⟩, hyκ.symm⟩
   simp only [I, Set.mem_ofPred_eq]
-  rw [hsize i, setOf_rel_eq_iff.mpr hi, hyκ]
+  rw [hsize i, ofPred_rel_eq_iff.mpr hi, hyκ]
 
 /-- If no size of class occurs more often in `r` than in `s`, tuples with the same atomic type
 whose matching entries lie in classes of equal sizes have matching one-point extensions on the `r`
@@ -462,7 +466,7 @@ private theorem exists_snoc_of_encard_classes_le
     -- has the same size and as many entries of `b`.
     obtain ⟨i, hi⟩ := hc
     have hlt : ({y | s y (b i)} ∩ Set.range b).encard < {y | s y (b i)}.encard := by
-      rw [← encard_setOf_rel_inter_range_eq h, ← hsize i]
+      rw [← encard_ofPred_rel_inter_range_eq h, ← hsize i]
       exact ((Set.finite_range a).inter_of_right _).encard_lt_encard
         ((Set.ssubset_iff_of_subset Set.inter_subset_left).mpr
           ⟨x, r.symm' hi, fun ⟨_, j, hj⟩ => hx j hj⟩)
@@ -471,7 +475,7 @@ private theorem exists_snoc_of_encard_classes_le
     refine ⟨y, fun j => iff_of_false (hx j) fun hj => hyb ⟨j, hj⟩, fun j => ?_, ?_⟩
     · exact ⟨fun h => s.trans' ((hrel j i).mp (r.trans' h (r.symm' hi))) (s.symm' hy),
         fun h => r.trans' ((hrel j i).mpr (s.trans' h hy)) hi⟩
-    · rw [setOf_rel_eq_iff.mpr (r.symm' hi), setOf_rel_eq_iff.mpr hy]
+    · rw [ofPred_rel_eq_iff.mpr (r.symm' hi), ofPred_rel_eq_iff.mpr hy]
       exact hsize i
   · -- An element of a new class is answered by an element of a class of the same size that `b`
     -- does not meet.
