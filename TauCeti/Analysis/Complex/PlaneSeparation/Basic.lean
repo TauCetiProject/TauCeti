@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 public import TauCeti.Analysis.Complex.ContinuousLog.Basic
 import TauCeti.Topology.ConnectedComponents
 import TauCeti.Topology.Connected.LocallyPathConnected
@@ -95,6 +96,15 @@ compact connected set `L` off `S ∪ T`. Then `Z_S ∪ L` misses the connected s
 their connected overlap `L`. The argument is the Mayer–Vietoris sequence for `Sᶜ` and `Tᶜ`, read in
 degree zero through continuous logarithms.
 
+## Filled hulls and simply connected sets
+
+Taking for `b` a point far to the left of a bounded closed set `K`, Borsuk's theorem says that
+`z ↦ z - a` has a continuous logarithm on `K` exactly when `a` lies outside the filled hull of `K`.
+On a simply connected open set `U` every zero-free continuous function has a continuous logarithm,
+by Mathlib's `Complex.exists_continuousOn_eqOn_exp_comp`; for `a` in a bounded component of `Uᶜ`
+that component is cut out by an open set whose frontier is a compact subset of `U` enclosing `a`,
+which is impossible. So a simply connected open set has no holes.
+
 ## Main results
 
 * `TauCeti.not_hasContinuousLogOn_sub_sphere` — `z ↦ z - a` has no continuous logarithm on a circle
@@ -109,6 +119,9 @@ degree zero through continuous logarithms.
   continuous logarithm on every compact set missing their intersection.
 * `TauCeti.not_isPreconnected_compl_union_of_not_isPreconnected_inter` — **Janiszewski's second
   theorem**: two closed connected sets with bounded disconnected intersection separate the plane.
+* `TauCeti.hasContinuousLogOn_sub_iff_notMem_filledHull` — a point lies outside the filled hull of a
+  bounded closed set exactly when the map to it has a continuous logarithm there.
+* `IsSimplyConnected.filledHull_subset` — a simply connected open subset of the plane has no holes.
 
 ## References
 
@@ -116,6 +129,7 @@ degree zero through continuous logarithms.
 * S. Janiszewski, *Sur les coupures du plan faites par les continus*, Prace Mat.-Fiz. **26** (1913).
 * R. B. Burckel, *An Introduction to Classical Complex Analysis I*, §4.
 * J. R. Munkres, *Topology*, §61–63.
+* W. Rudin, *Real and Complex Analysis*, 3rd ed., Theorem 13.11.
 -/
 
 public section
@@ -383,5 +397,71 @@ theorem not_isPreconnected_compl_union_of_not_isPreconnected_inter {S T : Set �
         hZST))))
   by_contra hzW'
   exact connectedComponentIn_subset _ _ hz (hZW ▸ ⟨hzW, hzW'⟩)
+
+
+/-! ## Filled hulls through logarithms -/
+
+/-- Some point `b` outside the filled hull of a bounded set `K ⊆ ℂ` makes `z ↦ z - b` have a
+continuous logarithm on `K`: far to the left of `K`, the values `z - b` lie in the right
+half-plane. -/
+private theorem exists_notMem_filledHull_hasContinuousLogOn_sub (hKb : IsBounded K) :
+    ∃ b ∉ filledHull K, HasContinuousLogOn (fun z => z - b) K := by
+  obtain ⟨R, hR⟩ := (isBounded_filledHull.mpr hKb).subset_closedBall 0
+  refine ⟨-((|R| + 1 : ℝ) : ℂ), fun hb => ?_,
+    hasContinuousLogOn_of_mapsTo_slitPlane (by fun_prop) fun z hz => ?_⟩
+  · have hnorm := mem_closedBall_zero_iff.mp (hR hb)
+    rw [norm_neg, Complex.norm_real, Real.norm_of_nonneg (by positivity)] at hnorm
+    linarith [le_abs_self R]
+  · have hz' := mem_closedBall_zero_iff.mp (hR (subset_filledHull hz))
+    refine mem_slitPlane_iff.mpr (Or.inl ?_)
+    simp only [sub_re, neg_re, ofReal_re]
+    linarith [neg_abs_le z.re, abs_re_le_norm z, le_abs_self R]
+
+/-- **A point lies outside the filled hull of a bounded closed set exactly when the map to it has a
+continuous logarithm there.** For `K ⊆ ℂ` bounded and closed, `z ↦ z - a` has a continuous
+logarithm on `K` if and only if `a` lies in the unbounded component of `Kᶜ`. -/
+theorem hasContinuousLogOn_sub_iff_notMem_filledHull (hK : IsClosed K) (hKb : IsBounded K) :
+    HasContinuousLogOn (fun z => z - a) K ↔ a ∉ filledHull K := by
+  obtain ⟨b, hb, hlogb⟩ := exists_notMem_filledHull_hasContinuousLogOn_sub hKb
+  have hbK : b ∉ K := fun h => hb (subset_filledHull h)
+  refine ⟨fun hlog ha => hb ?_, fun ha => ?_⟩
+  · -- `K` does not separate `a` from `b`, so they share a component, bounded since `a` is enclosed
+    have hab := mem_connectedComponentIn_of_hasContinuousLogOn hK hKb (hlog.div hlogb)
+    rw [mem_filledHull_iff, ← connectedComponentIn_eq hab]
+    exact mem_filledHull_iff.mp ha
+  · -- `a` and `b` lie in the unbounded component of `Kᶜ`, so their Borsuk map has a logarithm
+    have hrank : (1 : Cardinal) < Module.rank ℝ ℂ := by
+      rw [Complex.rank_real_complex]; norm_num
+    have hab : b ∈ connectedComponentIn Kᶜ a := by
+      rw [connectedComponentIn_compl_eq_of_unbounded_component hrank hKb
+        (mt mem_filledHull_iff.mpr ha) (mt mem_filledHull_iff.mpr hb)]
+      exact mem_connectedComponentIn hbK
+    refine ((hasContinuousLogOn_sub_div_sub hK hab).mul hlogb).congr fun z hz => ?_
+    exact div_mul_cancel₀ _ (sub_ne_zero.mpr fun h => hbK (h ▸ hz))
+
+/-- **A simply connected open subset of the plane has no holes**: it contains its filled hull, that
+is, every connected component of its complement is unbounded. Consequently `filledHull K ⊆ U`
+for every `K ⊆ U`, by `TauCeti.filledHull_mono`. -/
+theorem _root_.IsSimplyConnected.filledHull_subset {U : Set ℂ} (hUc : IsSimplyConnected U)
+    (hUo : IsOpen U) : filledHull U ⊆ U := by
+  intro a ha
+  by_contra haU
+  -- `z ↦ z - a` has a continuous logarithm on the simply connected set `U`
+  obtain ⟨L, hLc, hL⟩ := Complex.exists_continuousOn_eqOn_exp_comp hUc hUo
+    (g := fun z => z - a) (by fun_prop) (by rintro ⟨z, hz, h0⟩; exact haU (sub_eq_zero.mp h0 ▸ hz))
+  -- the bounded component of `Uᶜ` through `a` is cut out by an open set `V` with frontier in `U`
+  obtain ⟨V, -, haV, hVc, hVU⟩ :=
+    hUo.isClosed_compl.exists_isOpen_isCompact_closure_disjoint_frontier
+      (isCompact_of_isClosed_isBounded hUo.isClosed_compl.connectedComponentIn
+        (mem_filledHull_iff.mp ha))
+  have hKU : frontier V ⊆ U := fun z hz => by
+    by_contra hzU
+    exact disjoint_left.mp hVU hz hzU
+  -- so `frontier V` encloses `a` while carrying a logarithm of `z ↦ z - a`
+  refine (hasContinuousLogOn_sub_iff_notMem_filledHull isClosed_frontier
+    (hVc.isBounded.subset frontier_subset_closure)).mp
+      (hasContinuousLogOn_iff.mpr ⟨L, hLc.mono hKU, fun z hz => hL (hKU hz)⟩) ?_
+  exact subset_filledHull_of_frontier_subset (hVc.isBounded.subset subset_closure) subset_rfl
+    (haV (mem_connectedComponentIn haU))
 
 end TauCeti

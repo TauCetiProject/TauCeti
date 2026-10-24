@@ -33,6 +33,10 @@ space by them.
   the connected component of the image point.
 * `TauCeti.frontier_connectedComponentIn_subset_compl`: in a locally connected space, a connected
   component of an open set has its frontier in the complement of that set.
+* `IsClosed.connectedComponentIn`: a connected component of a closed set is closed.
+* `IsClosed.exists_isOpen_isCompact_closure_disjoint_frontier`: in a locally compact Hausdorff
+  space, a compact connected component of a closed set `F` has an open neighbourhood with compact
+  closure whose frontier misses `F`.
 * `TauCeti.connectedComponentIn_eq_of_lt`: a preconnected set on which a function stays on one
   side of a value it never takes is a connected component.
 * `TauCeti.isPreconnected_compl_of_isPreconnected_frontier`: in a preconnected, locally connected
@@ -126,6 +130,67 @@ theorem frontier_connectedComponentIn_subset_compl [LocallyConnectedSpace X] {F 
     rw [connectedComponentIn_eq hzx, ← connectedComponentIn_eq hzy]
     exact mem_connectedComponentIn hyF
   exact hy.2 (by rwa [hC.interior_eq])
+
+/-- A connected component of a closed set is closed. -/
+protected theorem _root_.IsClosed.connectedComponentIn {F : Set X} {x : X} (hF : IsClosed F) :
+    IsClosed (connectedComponentIn F x) := by
+  refine closure_subset_iff_isClosed.mp fun y hy => ?_
+  by_cases hx : x ∈ F
+  · exact isPreconnected_connectedComponentIn.closure.subset_connectedComponentIn
+      (subset_closure (mem_connectedComponentIn hx))
+      (closure_minimal (connectedComponentIn_subset F x) hF) hy
+  · rw [connectedComponentIn_eq_empty hx, closure_empty] at hy
+    exact hy.elim
+
+/-- **A compact component of a closed set is cut out by an open set.** In a locally compact
+Hausdorff space, if the connected component of `x` in a closed set `F` is compact, then it has an
+open neighbourhood `V` with compact closure whose frontier misses `F`. -/
+theorem _root_.IsClosed.exists_isOpen_isCompact_closure_disjoint_frontier [T2Space X]
+    [LocallyCompactSpace X] {F : Set X} (hF : IsClosed F) {x : X}
+    (hx : IsCompact (connectedComponentIn F x)) :
+    ∃ V, IsOpen V ∧ connectedComponentIn F x ⊆ V ∧ IsCompact (closure V) ∧
+      Disjoint (frontier V) F := by
+  by_cases hxF : x ∈ F
+  swap
+  · exact ⟨∅, isOpen_empty, by simp [connectedComponentIn_eq_empty hxF], by simp, by simp⟩
+  -- a compact neighbourhood `Y` of the component inside `F`, in which the component is the same
+  obtain ⟨W, hWo, hQW, -, hWc⟩ :=
+    exists_open_between_and_isCompact_closure hx isOpen_univ (subset_univ _)
+  set Y := F ∩ closure W
+  have hxY : x ∈ Y := ⟨hxF, subset_closure (hQW (mem_connectedComponentIn hxF))⟩
+  have hQY : connectedComponentIn Y x = connectedComponentIn F x :=
+    (connectedComponentIn_mono x inter_subset_left).antisymm
+      (isPreconnected_connectedComponentIn.subset_connectedComponentIn
+        (mem_connectedComponentIn hxF)
+        fun y hy => ⟨connectedComponentIn_subset _ _ hy, subset_closure (hQW hy)⟩)
+  have : CompactSpace Y := isCompact_iff_compactSpace.mp (hWc.inter_left hF)
+  set y : Y := ⟨x, hxY⟩
+  have himage : ((↑) : Y → X) '' connectedComponent y = connectedComponentIn F x := by
+    rw [← connectedComponentIn_eq_image hxY, hQY]
+  -- finitely many clopen subsets of `Y` around `y` already cut the component down into `W`
+  obtain ⟨u, hu⟩ := (hWo.preimage continuous_subtype_val).isClosed_compl.isCompact
+    |>.elim_finite_subfamily_closed (fun s : {s : Set Y // IsClopen s ∧ y ∈ s} => s.1)
+      (fun s => s.2.1.1) (by
+        rw [← connectedComponent_eq_iInter_isClopen, disjoint_compl_left_iff_subset]
+        exact fun z hz => hQW (himage ▸ mem_image_of_mem _ hz))
+  set s : Set Y := ⋂ i ∈ u, i.1
+  have hs : IsClopen s := isClopen_biInter_finset fun i _ => i.2.1
+  have hsW : s ⊆ (↑) ⁻¹' W := disjoint_compl_left_iff_subset.mp hu
+  obtain ⟨O, hOo, hOs⟩ := isOpen_induced_iff.mp hs.isOpen
+  -- a neighbourhood `V` of the image of `s` whose closure stays in `W ∩ O`
+  obtain ⟨V, hVo, hsV, hVWO, hVc⟩ := exists_open_between_and_isCompact_closure
+    (hs.isClosed.isCompact.image continuous_subtype_val) (hWo.inter hOo)
+    (image_subset_iff.mpr fun z hz => ⟨hsW hz, by rw [← hOs] at hz; exact hz⟩)
+  refine ⟨V, hVo, ?_, hVc, disjoint_left.mpr fun z hz hzF => ?_⟩
+  · rw [← himage]
+    exact (image_mono (hs.connectedComponent_subset
+      (mem_iInter₂.mpr fun i _ => i.2.2))).trans hsV
+  · -- a frontier point of `V` in `F` lies in `Y ∩ O`, hence in the image of `s ⊆ V`
+    have hzWO := hVWO hz.1
+    have hzs : (⟨z, hzF, subset_closure hzWO.1⟩ : Y) ∈ s := by
+      rw [← hOs]
+      exact hzWO.2
+    exact hz.2 (by rw [hVo.interior_eq]; exact hsV ⟨_, hzs, rfl⟩)
 
 /-- **A strict superlevel set cuts out a connected component.** Let `φ` be continuous on `D` and
 never equal to `c` there. A preconnected subset `H ⊆ D` containing every point of `D` where `φ`

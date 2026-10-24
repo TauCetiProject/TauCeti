@@ -10,9 +10,10 @@ public import TauCeti.Analysis.Complex.Conformal.SquareRoots
 public import TauCeti.Topology.FilledHull
 import TauCeti.Analysis.Complex.Conformal.RiemannMapping.Existence
 import TauCeti.Analysis.Contour.Primitive
+import TauCeti.Analysis.Complex.PlaneSeparation.Basic
 
 /-!
-# Plane domains without holes are simply connected
+# Plane domains are simply connected exactly when they have no holes
 
 An open set `U ⊆ ℂ` *has no holes* when every connected component of `ℂ \ U` is unbounded, that
 is, when `TauCeti.filledHull U ⊆ U`. This file proves that a connected open set without holes is
@@ -30,7 +31,9 @@ Together these are the implications (d) ⇒ (i) ⇒ (a) ⇒ (b) of Rudin's chara
 connected plane domains, where (d) is connectedness of the complement in the Riemann sphere and (i)
 the existence of holomorphic square roots. The topological input,
 that the complement of an open set with preconnected frontier is preconnected, is
-`TauCeti.isPreconnected_compl_of_isPreconnected_frontier`.
+`TauCeti.isPreconnected_compl_of_isPreconnected_frontier`. The converse implication, that a simply
+connected open set has no holes, is `IsSimplyConnected.filledHull_subset`, so a connected open set
+is simply connected exactly when it has no holes.
 
 ## Main results
 
@@ -38,6 +41,8 @@ that the complement of an open set with preconnected frontier is preconnected, i
   holomorphic square roots.
 * `TauCeti.isSimplyConnected_of_filledHull_subset` — a connected open set without holes is simply
   connected.
+* `TauCeti.isSimplyConnected_iff_filledHull_subset` — a connected open set is simply connected
+  exactly when it has no holes.
 * `TauCeti.isSimplyConnected_of_isPreconnected_frontier` — a connected open set with preconnected
   frontier and unbounded complement is simply connected.
 
@@ -69,6 +74,12 @@ every connected component of `ℂ \ U` is unbounded, then `U` is simply connecte
 theorem isSimplyConnected_of_filledHull_subset (hUo : IsOpen U) (hUc : IsConnected U)
     (hUf : filledHull U ⊆ U) : IsSimplyConnected U :=
   (hasHolomorphicSquareRoots_of_filledHull_subset hUo hUf).isSimplyConnected hUo hUc
+
+/-- **A plane domain is simply connected exactly when it has no holes**: a connected open set
+`U ⊆ ℂ` is simply connected if and only if every connected component of `ℂ \ U` is unbounded. -/
+theorem isSimplyConnected_iff_filledHull_subset (hUo : IsOpen U) (hUc : IsConnected U) :
+    IsSimplyConnected U ↔ filledHull U ⊆ U :=
+  ⟨fun h => h.filledHull_subset hUo, isSimplyConnected_of_filledHull_subset hUo hUc⟩
 
 /-- **A plane domain with connected frontier is simply connected**, provided its complement is
 unbounded. Such a domain has no holes (`TauCeti.filledHull_eq_self_of_isPreconnected_frontier`).
