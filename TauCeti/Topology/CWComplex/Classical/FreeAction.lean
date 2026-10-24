@@ -69,17 +69,6 @@ variable (hcell : ∀ (g : G) (n : ℕ) (i : cell (univ : Set E) n),
   (hfree : ∀ (g : G) (n : ℕ) (i : cell (univ : Set E) n),
     g • openCell n i = openCell n i → g = 1)
 
-include hcell in
-/-- Translation by a group element that permutes the open cells preserves every skeleton. -/
-lemma smul_mem_skeletonLT [T2Space E] (g : G) {n : ℕ∞} {z : E}
-    (hz : z ∈ (skeletonLT (univ : Set E) n : Set E)) :
-    g • z ∈ (skeletonLT (univ : Set E) n : Set E) := by
-  rw [← CWComplex.iUnion_openCell_eq_skeletonLT] at hz ⊢
-  simp only [mem_iUnion] at hz ⊢
-  obtain ⟨m, hm, i, hi⟩ := hz
-  obtain ⟨j, hj⟩ := hcell g m i
-  exact ⟨m, hm, j, hj ▸ smul_mem_smul_set hi⟩
-
 variable (G) in
 /-- Two `n`-cells are related when a group element carries the open cell of one onto the open
 cell of the other. -/
@@ -146,13 +135,6 @@ private lemma subsingleton_openCell_inter_orbit {n : ℕ} (r : cell (univ : Set 
   exact ((map_eq_map_iff hv hw).1 h1).2
 
 variable [T2Space E]
-
-/-- A translation carrying an open cell onto an open cell carries the closed cell onto the
-closed cell. -/
-lemma smul_closedCell_of_smul_openCell [ContinuousConstSMul G E] {n : ℕ} {g : G}
-    {i j : cell (univ : Set E) n} (h : g • openCell n i = openCell n j) :
-    g • closedCell n i = closedCell n j := by
-  rw [← closure_openCell_eq_closedCell, ← closure_openCell_eq_closedCell, ← closure_smul, h]
 
 variable (G) in
 /-- A stage of the construction of a separating invariant function: a continuous function on the
