@@ -71,21 +71,6 @@ section Normed
 
 variable {E : Type*} [NormedAddCommGroup E] {L : Submodule ℤ E} {γ : E} {h : ℝ}
 
-/-- If `h ‖γ + v‖² = 2 m` with `m ∈ ℕ`, the term `exp (π i ‖γ + v‖² τ)` of the theta series is
-`q_h ^ m` with `q_h = exp (2 π i τ / h)`. -/
-private theorem cexp_pi_mul_I_mul_eq_qParam_pow (hh : 0 < h) {v : E} {m : ℕ}
-    (hm : h * ‖γ + v‖ ^ 2 = 2 * m) (τ : ℍ) :
-    cexp (π * I * (‖γ + v‖ ^ 2 : ℝ) * τ) = Periodic.qParam h τ ^ m := by
-  rw [Periodic.qParam, ← exp_nat_mul]
-  congr 1
-  have hv : (‖γ + v‖ ^ 2 : ℝ) = 2 * m / h := by
-    rw [eq_div_iff hh.ne']
-    linarith
-  have hh' : (h : ℂ) ≠ 0 := ofReal_ne_zero.mpr hh.ne'
-  rw [hv]
-  push_cast
-  field_simp
-
 /-- The squared norms of an even lattice satisfy the hypothesis of the expansion in
 `q = exp (2 π i τ)`. -/
 private theorem IsEven.one_mul_norm_zero_add_sq_eq (hL : IsEven L) {v : E} (hv : v ∈ L) :
@@ -133,7 +118,8 @@ theorem hasSum_thetaCoset_qParam (hh : 0 < h)
   rw [tsum_congr (fun v : g ⁻¹' {m} ↦ ?_), tsum_const, cosetRepresentationNumber_def,
     ← hfib, Set.ncard_image_of_injective _ Subtype.val_injective, Nat.card_coe_set_eq,
     ← Nat.cast_smul_eq_nsmul ℂ]
-  rw [cexp_pi_mul_I_mul_eq_qParam_pow hh (hg v) τ, Set.mem_singleton_iff.mp v.2]
+  rw [TauCeti.Periodic.exp_pi_mul_I_mul_eq_qParam_pow hh.ne' (hg v),
+    Set.mem_singleton_iff.mp v.2]
 
 /-- The coefficients of the `q`-expansion of a coset theta series: if `h ‖γ + v‖² ∈ 2ℤ` for every
 `v ∈ L`, with `h > 0`, the `m`-th coefficient of the expansion of `θ_{γ+L}` in
