@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Cubical
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Based.HomotopyClass
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Based.Retraction
+public import TauCeti.Topology.Homotopy.HomotopyGroup.Basic
 
 /-!
 # The cubical Hurewicz isomorphism
@@ -21,10 +22,16 @@ This file carries out that last step when `m ≥ 2`. Retraction onto based cubes
 surjectivity, while applying the based-cube class map to a bounding chain proves injectivity.
 The resulting bijection is packaged as an additive equivalence.
 
+The inductive Hurewicz criterion
+`TauCeti.subsingleton_homotopyGroup_of_isZero_homology_normalizedCubicalChainComplex` shows
+that a simply connected space with vanishing integral normalized cubical homology in degrees
+at least two has trivial homotopy groups in every degree.
+
 ## References
 
 * S. Eilenberg, *Singular homology theory*, Ann. of Math. (2) 45 (1944), 407--447.
 * W. S. Massey, *Singular Homology Theory*, GTM 70, Springer, 1980, Chapter II.
+* A. Hatcher, *Algebraic Topology*, Cambridge University Press, 2002, Theorem 4.32.
 -/
 
 public section
@@ -288,3 +295,31 @@ theorem cubicalHurewiczAddEquiv_apply
   exact AddEquiv.ofBijective_apply _ _ _
 
 end HomotopyGroup
+
+namespace TauCeti
+
+open HomotopyGroup CategoryTheory.Limits
+
+variable {X : Type} [TopologicalSpace X]
+
+/-- **Inductive Hurewicz vanishing criterion (normalized cubical homology).** If `X` is path
+connected with trivial `π_ 1 X x` and its integral normalized cubical homology vanishes in every
+degree `n + 2`, then all homotopy groups `π_ k X x` are trivial. -/
+theorem subsingleton_homotopyGroup_of_isZero_homology_normalizedCubicalChainComplex (x : X)
+    [PathConnectedSpace X] [Subsingleton (π_ 1 X x)]
+    (hH : ∀ n : ℕ,
+      IsZero (((normalizedCubicalChainComplex ℤ).obj (TopCat.of X)).homology (n + 2)))
+    (k : ℕ) : Subsingleton (π_ k X x) := by
+  induction k using Nat.strong_induction_on with
+  | h k ih =>
+    match k with
+    | 0 => exact (pathConnectedSpace_iff_subsingleton_homotopyGroup_zero x).mp inferInstance
+    | 1 => exact inferInstance
+    | n + 2 =>
+      let hHomology : Subsingleton
+          (((normalizedCubicalChainComplex ℤ).obj (TopCat.of X)).homology (n + 2)) :=
+        ModuleCat.subsingleton_of_isZero (hH n)
+      exact (Additive.ofMul.trans (cubicalHurewiczAddEquiv ih).toEquiv).subsingleton_congr.mpr
+        hHomology
+
+end TauCeti
