@@ -18,7 +18,8 @@ public import TauCeti.RingTheory.NormTrace.Prod
 Multiplication by a fixed point `c` of the mixed space is an `ℝ`-linear endomorphism whose
 determinant is the `ℝ`-algebra norm of `c`, so it scales Lebesgue measure by the absolute value
 of that norm.  The norm is computed here as one factor per real place and one `Complex.normSq`
-per complex place, and its absolute value is `mixedEmbedding.norm c`.
+per complex place. This algebra-norm calculation holds for any field with finitely many infinite
+places. For a number field, its absolute value is `mixedEmbedding.norm c`.
 
 Specialising to the image of a unit, which has mixed norm one, gives that the unit action on the
 mixed space leaves the volume of every set unchanged.
@@ -43,15 +44,17 @@ open scoped Pointwise
 
 namespace NumberField.mixedEmbedding
 
-variable {K : Type*} [Field K] [NumberField K]
+variable {K : Type*} [Field K]
 
 open scoped Classical in
 /-- **The `ℝ`-algebra norm of a point of the mixed space.**  Each real coordinate contributes
 its own factor and each complex coordinate contributes the norm of multiplication by a complex
 number, namely `Complex.normSq`. -/
-theorem algebraNorm_apply (c : mixedSpace K) :
+theorem algebraNorm_apply [Fintype (InfinitePlace K)] (c : mixedSpace K) :
     Algebra.norm ℝ c = (∏ w, c.1 w) * ∏ w, Complex.normSq (c.2 w) := by
   simp [TauCeti.Algebra.norm_prod, TauCeti.Algebra.norm_pi, Algebra.norm_complex_apply]
+
+variable [NumberField K]
 
 /-- **The absolute `ℝ`-algebra norm of `c` is the mixed norm of `c`.**  Reach for this rather
 than `algebraNorm_apply` when the norm feeds a measure-scaling lemma such as
