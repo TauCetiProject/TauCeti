@@ -152,6 +152,14 @@ theorem UniformContDiffOn.of_succ {n : ℕ} (h : UniformContDiffOn 𝕜 (n + 1) 
     exact uniformContDiffOn_succ_iff.2
       ⟨hu, G', hG', hC, uniformContDiffOn_of_succ_aux.{u, v, w} hG'n⟩
 
+/-- A Lipschitz function with a derivative `G' x` at every point of `s`, where `G'` is uniformly
+continuous on `s`, is uniformly `C^1` on `s`. -/
+theorem _root_.LipschitzWith.uniformContDiffOn_one {C : NNReal} (hG : LipschitzWith C G)
+    {G' : X → X →L[𝕜] Y} (hGs : ∀ x ∈ s, HasFDerivAt G (G' x) x)
+    (hG' : UniformContinuousOn G' s) : UniformContDiffOn 𝕜 1 G s :=
+  uniformContDiffOn_succ_iff.2 ⟨hG.uniformContinuous.uniformContinuousOn, G', hGs,
+    ⟨C, fun x hx ↦ (hGs x hx).le_of_lipschitz hG⟩, uniformContDiffOn_zero_iff.2 hG'⟩
+
 /-- Uniform `C^n` regularity implies uniform `C^m` regularity for `m ≤ n`. -/
 theorem UniformContDiffOn.of_le {m n : ℕ} (hmn : m ≤ n) (h : UniformContDiffOn 𝕜 n G s) :
     UniformContDiffOn 𝕜 m G s := by

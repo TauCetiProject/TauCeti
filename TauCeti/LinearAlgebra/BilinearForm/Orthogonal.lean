@@ -496,6 +496,24 @@ theorem isCompl_span_singleton_orthogonal_of_isUnit
     IsCompl (R ∙ x) (B.orthogonal (R ∙ x)) :=
   B.isCompl_span_singleton_orthogonal_of_dvd hx.mem_nonZeroDivisors fun _ ↦ hx.dvd
 
+/-- Adjoining a vector `x` with unit self-pairing to an orthogonal basis `t` of its orthogonal
+complement with unit self-pairings gives an orthogonal basis of the whole module with unit
+self-pairings, for a reflexive form. Its diagonal is `B x x` followed by the diagonal of `t`. -/
+theorem IsRefl.exists_orthogonal_basis_isUnit_apply_self_eq_cons {B : LinearMap.BilinForm R M}
+    (hB : B.IsRefl) {x : M} (hx : IsUnit (B x x)) {d : ℕ}
+    {t : Basis (Fin d) R (B.orthogonal (R ∙ x))}
+    (ht : (B.restrict (B.orthogonal (R ∙ x))).iIsOrtho t) (htu : ∀ i, IsUnit (B (t i) (t i))) :
+    ∃ c : Basis (Fin (d + 1)) R M, B.iIsOrtho c ∧ (∀ i, IsUnit (B (c i) (c i))) ∧
+      ∀ i, B (c i) (c i) = (Fin.cons (B x x) fun j ↦ B (t j) (t j) : Fin (d + 1) → R) i := by
+  obtain ⟨c, hc, hc0, hcs⟩ := hB.exists_orthogonal_basis_of_orthogonal_span_singleton
+    hx.mem_nonZeroDivisors (fun _ ↦ hx.dvd) ht
+  have hcd (i : Fin (d + 1)) :
+      B (c i) (c i) = (Fin.cons (B x x) fun j ↦ B (t j) (t j) : Fin (d + 1) → R) i :=
+    Fin.cases (by rw [hc0, Fin.cons_zero]) (fun j ↦ by rw [hcs, Fin.cons_succ]) i
+  refine ⟨c, hc, fun i ↦ ?_, hcd⟩
+  rw [hcd]
+  exact Fin.cases hx htu i
+
 end LinearMap.BilinForm
 
 namespace LinearMap.BilinForm

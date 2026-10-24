@@ -9,12 +9,15 @@ public import Mathlib.Algebra.Group.Subgroup.Actions
 public import Mathlib.Topology.MetricSpace.IsometricSMul
 
 /-!
-# Isometric actions of submonoids and subgroups
+# Isometric actions of submonoids and subgroups, and of conjugates
 
 A submonoid or subgroup of a monoid acting by isometries acts by isometries through the
 restricted action. Mathlib registers the restricted action itself, but not this property of it;
 these instances let theorems about isometric actions apply directly to a subgroup, for example to
 a discrete subgroup of `PSL(2, ℝ)` acting on the upper half-plane.
+
+For a group acting by isometries, `TauCeti.dist_conj_smul` computes the displacement of a point
+`y` by a conjugate `σ g σ⁻¹`: it is the displacement of `σ⁻¹ • y` by `g`.
 -/
 
 public section
@@ -34,3 +37,14 @@ isometries. -/]
 instance Subgroup.isIsometricSMul [Group M] [SMul M X] [IsIsometricSMul M X]
     (S : Subgroup M) : IsIsometricSMul S X :=
   ⟨fun s ↦ isometry_smul X (s : M)⟩
+
+namespace TauCeti
+
+/-- In a group acting by isometries, a conjugate `σ g σ⁻¹` moves `y` as far as `g` moves
+`σ⁻¹ • y`. -/
+theorem dist_conj_smul {G Y : Type*} [Group G] [PseudoMetricSpace Y] [MulAction G Y]
+    [IsIsometricSMul G Y] (σ g : G) (y : Y) :
+    dist ((σ * g * σ⁻¹) • y) y = dist (g • σ⁻¹ • y) (σ⁻¹ • y) := by
+  rw [← dist_smul σ⁻¹, mul_smul, mul_smul, inv_smul_smul]
+
+end TauCeti

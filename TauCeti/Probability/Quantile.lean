@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
+public import Mathlib.Topology.Instances.EReal.Lemmas
 public import TauCeti.MeasureTheory.Function.Monotone
 public import TauCeti.MeasureTheory.Measure.Mod0MeasureIso
 public import TauCeti.Probability.Cdf
@@ -64,6 +65,9 @@ makes the monotone rearrangement of two real laws a transport plan between them.
   `MeasureTheory.Measure.continuousOn_quantile`;
 * `MeasureTheory.Measure.quantile_eq_of_le_cdf_iff` — two quantiles agree when their defining cdf
   level sets agree;
+* `MeasureTheory.Measure.tendsto_quantile_nhdsGT_zero_of_cdf_pos` and
+  `MeasureTheory.Measure.tendsto_quantile_nhdsLT_one_of_cdf_lt_one` — the infinite endpoint
+  limits when the cdf is everywhere positive or everywhere less than one, respectively;
 * `MeasureTheory.Measure.quantile_map_abs` — the quantile of the image of a symmetric law under
   absolute value;
 * `MeasureTheory.Measure.le_upperQuantile_iff` and `MeasureTheory.Measure.upperQuantile_lt_iff`
@@ -263,6 +267,26 @@ yet reached that level. -/
 theorem lt_quantile_iff (μ : Measure ℝ) (h0 : 0 < t) (h1 : t < 1) :
     x < μ.quantile t ↔ cdf μ x < t := by
   simpa only [not_le] using (quantile_le_iff (x := x) μ h0 h1).not
+
+/-- If the cdf is everywhere positive, quantiles tend to minus infinity as the level decreases
+to zero. -/
+theorem tendsto_quantile_nhdsGT_zero_of_cdf_pos (μ : Measure ℝ)
+    (hpos : ∀ x, 0 < cdf μ x) :
+    Tendsto (fun u ↦ (μ.quantile u : EReal)) (𝓝[>] 0) (𝓝 ⊥) := by
+  apply EReal.tendsto_coe_nhds_bot_iff.mpr
+  refine tendsto_atBot.mpr fun b ↦ ?_
+  filter_upwards [Ioo_mem_nhdsGT (hpos b)] with u hu
+  exact (quantile_le_iff μ hu.1 (hu.2.trans_le (cdf_le_one μ b))).mpr hu.2.le
+
+/-- If the cdf is everywhere less than one, quantiles tend to plus infinity as the level increases
+to one. -/
+theorem tendsto_quantile_nhdsLT_one_of_cdf_lt_one (μ : Measure ℝ)
+    (hlt : ∀ x, cdf μ x < 1) :
+    Tendsto (fun u ↦ (μ.quantile u : EReal)) (𝓝[<] 1) (𝓝 ⊤) := by
+  apply EReal.tendsto_coe_nhds_top_iff.mpr
+  refine tendsto_atTop.mpr fun b ↦ ?_
+  filter_upwards [Ioo_mem_nhdsLT (hlt b)] with u hu
+  exact ((lt_quantile_iff μ ((cdf_nonneg μ b).trans_lt hu.1) hu.2).mpr hu.1).le
 
 /-- The quantile function is monotone on the levels where it is the honest generalized
 inverse. -/

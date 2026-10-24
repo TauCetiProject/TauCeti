@@ -203,6 +203,24 @@ end ContinuousMap
 
 namespace TauCeti
 
+/-- The `Lp` class of a Fourier monomial has modulus one almost everywhere. -/
+theorem ae_norm_fourierLp_eq_one (p : ℝ≥0∞) [Fact (1 ≤ p)] (n : ℤ) :
+    ∀ᵐ x ∂haarAddCircle (T := T), ‖fourierLp (T := T) p n x‖ = 1 := by
+  filter_upwards [coeFn_fourierLp (T := T) p n] with x hx
+  rw [hx]
+  exact Circle.norm_coe _
+
+/-- Multiplying the `L²` Fourier mode `e_n` by the bounded monomial `e_m` gives `e_(m+n)`. -/
+theorem fourierLp_smul_fourierBasis (m n : ℤ) :
+    (fourierLp (T := T) ∞ m • fourierBasis (T := T) n : Lp ℂ 2 (haarAddCircle (T := T))) =
+      fourierBasis (T := T) (m + n) := by
+  apply Lp.ext
+  filter_upwards [Lp.coeFn_lpSMul (r := 2) (fourierLp (T := T) ∞ m) (fourierBasis (T := T) n),
+    coeFn_fourierLp (T := T) ∞ m, coeFn_fourierLp (T := T) 2 n,
+    coeFn_fourierLp (T := T) 2 (m + n)] with x hx hm hn hmn
+  rw [hx, Pi.smul_apply', coe_fourierBasis, hm, hn, hmn, fourier_add,
+    smul_eq_mul]
+
 /-- Multiplying an `L²` Fourier mode `e_m` by an essentially bounded function `a` shifts the
 Fourier coefficients of `a` by `m`. -/
 theorem fourierCoeff_smul_fourierBasis (a : Lp ℂ ∞ (haarAddCircle (T := T))) (m n : ℤ) :

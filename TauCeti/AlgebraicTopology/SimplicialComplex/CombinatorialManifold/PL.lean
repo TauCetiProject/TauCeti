@@ -5,21 +5,23 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Star.PL.Chart
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Star.PL.HalfSpace
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Star.ChartedSpace
 public import TauCeti.Geometry.Manifold.PLGroupoid.Transition
 
 /-!
-# PL structures from combinatorial sphere links
+# PL structures on combinatorial manifolds
 
-If every vertex link of a complex is a combinatorial `n`-sphere, its weak realization
-has a PL atlas modeled on `ℝ^(n + 1)`. The charts have exactly the open vertex stars
-as their sources. Their PL compatibility follows by composing their ambient forward
-and inverse barycentric formulas on overlapping stars.
+The weak realization of a combinatorial `(n + 1)`-manifold has a PL atlas modelled on the
+half-space in `(Fin n → ℝ) × ℝ`. If every vertex link is a combinatorial `n`-sphere, it
+also has a PL atlas without boundary, modelled on `ℝ^(n + 1)`. Both atlases are assembled
+from charts on the open vertex stars. In the half-space atlas, vertices with sphere links
+get charts into the open half-space, and vertices with ball links get charts sending them
+to the boundary. PL compatibility follows by composing the ambient forward and inverse
+barycentric formulas of the charts on overlapping stars.
 
 No finiteness or countability of the ambient complex is required. Each link is finite,
-so its closed star supplies the local simplex model. This result concerns sphere links;
-manifolds with boundary also require charts at vertices with ball links.
+so its closed star supplies the local simplex model.
 
 ## References
 
@@ -29,7 +31,7 @@ manifolds with boundary also require charts at vertices with ball links.
 
 public noncomputable section
 
-open Set TauCeti PreAbstractSimplicialComplex
+open AbstractSimplicialComplex Set TauCeti PreAbstractSimplicialComplex
 open scoped Manifold
 
 namespace AbstractSimplicialComplex
@@ -58,3 +60,47 @@ theorem exists_chartedSpace_hasGroupoid_of_isCombinatorialSphere_link
   · simpa using hG v
 
 end AbstractSimplicialComplex
+
+namespace PreAbstractSimplicialComplex
+
+/-- The weak realization of a positive-dimensional combinatorial manifold is a PL manifold,
+possibly with boundary: it has an atlas modelled on the half-space in `(Fin n → ℝ) × ℝ` whose
+chart transitions lie in the PL groupoid. No finiteness or countability of the complex is
+assumed. -/
+theorem IsCombinatorialManifold.exists_chartedSpace_hasGroupoid_PLGroupoid
+    {ι : Type*} [DecidableEq ι] {K : AbstractSimplicialComplex ι} {n : ℕ}
+    (h : IsCombinatorialManifold K.toPreAbstractSimplicialComplex (n + 1)) :
+    ∃ C : ChartedSpace {q : (Fin n → ℝ) × ℝ | 0 ≤ q.2} (Realization K),
+      let := C
+      HasGroupoid (Realization K) (PLGroupoid (modelWithCornersHalfSpace (Fin n → ℝ))) := by
+  -- Each vertex has a half-space chart with PL formulas, of the sphere or the ball kind.
+  have hchart (v : ι) : ∃ c : OpenPartialHomeomorph (Realization K)
+      {q : (Fin n → ℝ) × ℝ | 0 ≤ q.2},
+      c.source = openStarRealization K v ∧
+      ∃ f : (ι → ℝ) → (Fin n → ℝ) × ℝ, ∃ g : ((Fin n → ℝ) × ℝ) → (ι → ℝ),
+        IsPLOn f (range fun x : closedStarRealization K {v} => (x.1.1 : ι → ℝ)) ∧
+        IsPLOn g ((modelWithCornersHalfSpace (Fin n → ℝ)).symm ⁻¹' c.target ∩
+          range (modelWithCornersHalfSpace (Fin n → ℝ))) ∧
+        (∀ x ∈ c.source, f (x.1 : ι → ℝ) = (c x).1) ∧
+        ∀ y ∈ c.target, g y.1 = ((c.symm y).1 : ι → ℝ) := by
+    rcases isCombinatorialManifold_succ_iff.mp h (K.singleton_mem v) with hs | hb
+    · obtain ⟨c, hcs, -, hrest⟩ := hs.exists_openPartialHomeomorph_openStar_halfSpace_isPL
+      exact ⟨c, hcs, hrest⟩
+    · obtain ⟨c, hcs, -, -, hrest⟩ := hb.exists_openPartialHomeomorph_openStar_isPL
+      exact ⟨c, hcs, hrest⟩
+  choose c hs f g hf hg hfc hgc using hchart
+  let C := K.starChartedSpace c hs
+  let := C
+  refine ⟨C, hasGroupoid_PLGroupoid_of_coordinateFormulas
+    (fun x : Realization K => (x.1 : ι → ℝ)) ?_⟩
+  intro d hd
+  rw [starChartedSpace_atlas] at hd
+  obtain ⟨v, rfl⟩ := hd
+  refine ⟨closedStarRealization K {v}, f v, g v, ?_, ?_, hg v, ?_, ?_⟩
+  · rw [hs]
+    exact K.openStarRealization_subset_closedStarRealization v
+  · simpa only [image_eq_range] using hf v
+  · simpa only [modelWithCornersHalfSpace_apply] using hfc v
+  · simpa only [modelWithCornersHalfSpace_apply] using hgc v
+
+end PreAbstractSimplicialComplex

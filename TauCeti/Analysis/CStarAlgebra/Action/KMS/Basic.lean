@@ -7,6 +7,9 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.Analytic
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Positive
+public import TauCeti.Analysis.CStarAlgebra.Action.Hom
+public import TauCeti.Analysis.CStarAlgebra.PositiveLinearFunctional
+public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Range
 import Mathlib.Analysis.CStarAlgebra.ApproximateUnit
 import Mathlib.Analysis.Complex.Liouville
 import Mathlib.Analysis.Complex.PhragmenLindelof
@@ -25,7 +28,8 @@ the real axis and the line `im z = β`, holomorphic on the open strip, with boun
 
 A *β-KMS state* is a state, that is a positive continuous functional of norm one, admitting a
 KMS function for every pair `a, b`. Positivity refers to the C⋆-algebra order on `A`, the
-order making it a `StarOrderedRing`; no result here uses positivity.
+order making it a `StarOrderedRing`. The positivity of a state is used only for pullback along
+surjective equivariant homomorphisms, where it guarantees that the norm is preserved.
 
 The strip lies above the real axis for `β > 0` and below it for `β < 0`. For `β = 0` it is the
 real axis itself, and the `0`-KMS states are exactly the tracial states, `isKMSState_zero_iff`;
@@ -45,6 +49,15 @@ for entire analytic `b`, so `z ↦ ω (α_z(b))` is an entire function with peri
 bounded on a strip, hence on `ℂ`, and therefore constant by Liouville's theorem,
 `IsKMSState.apply_entireExtension`. Invariance on all of `A` follows by density of the entire
 analytic elements. No identity element is needed.
+
+KMS functions and KMS states pull back along an equivariant homomorphism `π`: a KMS function of
+the pair `π a, π b` for `φ` is one of the pair `a, b` for `φ ∘ π`, `Hom.isKMSFunction_iff`, so
+`ω ∘ π` is a β-KMS state whenever `ω` is and `ω ∘ π` has norm one, `IsKMSState.comp`. Along a
+surjective `π`, for instance a quotient map by an invariant ideal, the norm condition is automatic,
+and a positive functional `ω` of the quotient dynamics is a β-KMS state exactly when `ω ∘ π` is,
+`isKMSState_comp_iff_of_surjective`. For the inclusion of a closed invariant star subalgebra this
+gives restriction of KMS states, `IsKMSState.restrict`, which needs the norm condition: the
+restriction of a state need not be a state.
 
 ## References
 
@@ -182,6 +195,27 @@ theorem isKMSFunction_apply_mul_entireExtension_iff (hb : α.IsEntireAnalytic b)
       (hb.isBounded_image_im_preimage (s := uIcc 0 β) (Metric.isBounded_Icc _ _))
   · exact fun t => by rw [hb.entireExtension_ofReal]
 
+section Pullback
+
+variable {B : Type*} [NonUnitalCStarAlgebra B] {γ : CStarAction (Multiplicative ℝ) B}
+
+/-- **Pullback of KMS functions.** Let `π` be an equivariant homomorphism and let `ψ` be the
+pullback `φ ∘ π` of a functional `φ`. Then `F` is a KMS function of the pair `a, b` for `ψ`
+exactly when it is a KMS function of the pair `π a, π b` for `φ`. -/
+theorem Hom.isKMSFunction_iff (π : Hom α γ) {φ : B →L[ℂ] ℂ} {ψ : A →L[ℂ] ℂ}
+    (hψ : ∀ x, ψ x = φ (π x)) :
+    α.IsKMSFunction β ψ a b F ↔ γ.IsKMSFunction β φ (π a) (π b) F := by
+  have h₁ (t : ℝ) : ψ (a * α (.ofAdd t) b) = φ (π a * γ (.ofAdd t) (π b)) := by simp [hψ]
+  have h₂ (t : ℝ) : ψ (α (.ofAdd t) b * a) = φ (γ (.ofAdd t) (π b) * π a) := by simp [hψ]
+  exact ⟨fun hF => ⟨hF.continuousOn, hF.differentiableOn, hF.isBounded_image,
+      fun t => (hF.apply_ofReal t).trans (h₁ t),
+      fun t => (hF.apply_ofReal_add_mul_I t).trans (h₂ t)⟩,
+    fun hF => ⟨hF.continuousOn, hF.differentiableOn, hF.isBounded_image,
+      fun t => (hF.apply_ofReal t).trans (h₁ t).symm,
+      fun t => (hF.apply_ofReal_add_mul_I t).trans (h₂ t).symm⟩⟩
+
+end Pullback
+
 variable [PartialOrder A]
 
 /-- A *β-KMS state* of the real action `α` is a state `ω`, a positive continuous functional of
@@ -273,5 +307,50 @@ theorem IsKMSState.apply_action (hω : α.IsKMSState β ω) (hβ : β ≠ 0) (t 
   have hb := mem_entireAnalytic.mp hb
   have := hω.apply_entireExtension hβ hb (Multiplicative.toAdd t : ℝ)
   rwa [hb.entireExtension_ofReal, ofAdd_toAdd] at this
+
+/-! ### Pullback along equivariant homomorphisms -/
+
+section Pullback
+
+variable {B : Type*} [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
+  {γ : CStarAction (Multiplicative ℝ) B}
+
+/-- **Pullback of KMS states.** If `π` is an equivariant homomorphism and `ω` is a β-KMS state,
+then `ω ∘ π` is a β-KMS state as soon as it has norm one. -/
+theorem IsKMSState.comp {ω : B →P[ℂ] ℂ} (hω : γ.IsKMSState β ω) (π : Hom α γ)
+    (hnorm : ‖((ω.comp (.ofClass π) : A →P[ℂ] ℂ) : A →L[ℂ] ℂ)‖ = 1) :
+    α.IsKMSState β (ω.comp (.ofClass π)) where
+  norm_eq_one := hnorm
+  exists_isKMSFunction a b :=
+    (hω.exists_isKMSFunction (π a) (π b)).imp fun _ => (π.isKMSFunction_iff fun _ => rfl).mpr
+
+/-- **Pullback of KMS states along quotients.** If `π` is a surjective equivariant homomorphism and
+`ω` is a β-KMS state, then `ω ∘ π` is a β-KMS state. -/
+theorem IsKMSState.comp_of_surjective {ω : B →P[ℂ] ℂ} (hω : γ.IsKMSState β ω) (π : Hom α γ)
+    (hπ : Function.Surjective π) : α.IsKMSState β (ω.comp (.ofClass π)) :=
+  hω.comp π <| (PositiveContinuousLinearMap.opNorm_comp_ofClass_of_surjective ω π hπ).trans
+    hω.norm_eq_one
+
+/-- Along a surjective equivariant homomorphism `π`, the β-KMS states of the quotient dynamics
+are exactly the positive functionals `ω` whose pullback `ω ∘ π` is a β-KMS state. -/
+theorem isKMSState_comp_iff_of_surjective {ω : B →P[ℂ] ℂ} (π : Hom α γ)
+    (hπ : Function.Surjective π) :
+    α.IsKMSState β (ω.comp (.ofClass π)) ↔ γ.IsKMSState β ω := by
+  refine ⟨fun hω => ⟨?_, fun x y => ?_⟩, fun hω => hω.comp_of_surjective π hπ⟩
+  · rw [← PositiveContinuousLinearMap.opNorm_comp_ofClass_of_surjective ω π hπ]
+    exact hω.norm_eq_one
+  obtain ⟨a, rfl⟩ := hπ x
+  obtain ⟨b, rfl⟩ := hπ y
+  exact (hω.exists_isKMSFunction a b).imp fun _ => (π.isKMSFunction_iff fun _ => rfl).mp
+
+/-- **Restriction of KMS states.** The restriction of a β-KMS state to a closed invariant star
+subalgebra `S` is a β-KMS state of the restricted dynamics as soon as it has norm one. -/
+theorem IsKMSState.restrict (hω : α.IsKMSState β ω) {S : NonUnitalStarSubalgebra ℂ A}
+    (hS : _root_.IsInvariant (fun t a => α t a) (S : Set A)) [IsClosed (S : Set A)]
+    (hωS : ‖((ω.comp (.ofClass hS.subtypeHom) : S →P[ℂ] ℂ) : S →L[ℂ] ℂ)‖ = 1) :
+    hS.restrict.IsKMSState β (ω.comp (.ofClass hS.subtypeHom)) :=
+  hω.comp hS.subtypeHom hωS
+
+end Pullback
 
 end TauCeti.CStarAction

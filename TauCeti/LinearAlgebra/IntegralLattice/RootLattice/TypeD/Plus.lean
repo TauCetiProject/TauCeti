@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.IntegralLattice.Overlattice.Index
 public import TauCeti.LinearAlgebra.IntegralLattice.Overlattice.Dual
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeD.Basic
+import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeD.CosetMinimum
 
 /-!
 # Spinor glue lattices `Dₙ⁺`
@@ -218,22 +219,9 @@ theorem mem_checkerboardLattice_carrier_of_mem_vectorsOfNorm_two (hn : 8 ∣ n) 
     checkerboardPlusLattice_carrier n hn ▸ x.2
   rw [mem_checkerboardPlusCarrier_iff n (even_iff_two_dvd.mpr (dvd_trans (by decide) hn))] at hmem
   refine hmem.resolve_right fun hs ↦ ?_
-  -- Every coordinate is an integer plus one half, so its square is at least one quarter.
-  have hquarter (i : Fin n) : 1 / 4 ≤ (x : Fin n → ℚ) i ^ 2 := by
-    obtain ⟨z, hz⟩ := ((mem_checkerboardLattice_carrier_iff _).mp hs).1 i
-    rw [Pi.sub_apply, checkerboardSpinor_apply, sub_eq_iff_eq_add] at hz
-    rw [hz]
-    rcases le_or_gt 0 z with h | h
-    · have h' : (0 : ℚ) ≤ z := by exact_mod_cast h
-      nlinarith
-    · have h' : (z : ℚ) ≤ -1 := by exact_mod_cast Int.le_sub_one_of_lt h
-      nlinarith
-  have hnorm : ∑ i, (x : Fin n → ℚ) i ^ 2 = 2 := by
-    rw [mem_vectorsOfNorm, norm_apply, checkerboardPlusLattice_form,
-      checkerboardLattice_form_apply] at hx
-    simpa only [sq] using hx
-  have hsum := Finset.sum_le_sum fun i (_ : i ∈ Finset.univ) ↦ hquarter i
-  rw [hnorm, Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul] at hsum
+  rw [checkerboardLattice_carrier] at hs
+  have hbound := div_four_le_checkerboardLattice_form_self_of_sub_checkerboardSpinor_mem hs
+  rw [mem_vectorsOfNorm, norm_apply, checkerboardPlusLattice_form] at hx
   have hn8' : (8 : ℚ) < n := by exact_mod_cast hn8
   linarith
 

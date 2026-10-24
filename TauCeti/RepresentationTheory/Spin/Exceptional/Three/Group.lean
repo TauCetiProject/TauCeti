@@ -349,6 +349,22 @@ theorem exists_spinGroup_mulEquiv_specialLinearGroup_and_spinRep_equiv_stdSLRep_
       (hV ▸ by decide) (spinThreeExteriorBasis P b) g
 
 /-- A nondegenerate three-dimensional quadratic space over a separably closed field of
+characteristic different from two admits polarization data identifying its Spin group with
+`SL₂`, under which the spin representation is standard. -/
+theorem
+    exists_spinGroup_mulEquiv_specialLinearGroup_and_spinRep_equiv_stdSLRep_of_isSepClosed
+    [NeZero (2 : K)] [IsSepClosed K] (hQ : Q.Nondegenerate) (hV : finrank K V = 3) :
+    ∃ P : SpinPolarizationData Q, ∃ f : spinGroup Q ≃* Matrix.SpecialLinearGroup (Fin 2) K,
+      Nonempty ((spinRep Q P).Equiv ((stdSLRep K 2).comp f.toMonoidHom)) := by
+  let _ : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
+  let _ : Invertible (2 : K) := invertibleOfNonzero (NeZero.ne (2 : K))
+  let P := SpinPolarizationData.ofNondegenerate Q hQ
+  obtain ⟨f, hf⟩ :=
+    exists_spinGroup_mulEquiv_specialLinearGroup_and_spinRep_equiv_stdSLRep_of_finrank_eq_three
+      P hV
+  exact ⟨P, f, hf⟩
+
+/-- A nondegenerate three-dimensional quadratic space over a separably closed field of
 characteristic not two has Spin group isomorphic to `SL₂`. The equivalence is noncanonical because
 its construction chooses a polarization and a basis. -/
 theorem nonempty_spinGroup_mulEquiv_specialLinearGroup_of_finrank_eq_three
