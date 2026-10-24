@@ -150,11 +150,6 @@ theorem siegelFunction_half_half_apply_neg_one_div {τ : ℂ} (hτ : 0 < τ.im) 
 
 /-! ### The action of `SL₂(ℤ)` on the twelfth powers -/
 
-/-- `e^{π i / 6}` is a twelfth root of unity. -/
-private theorem exp_pi_I_div_six_pow_twelve : cexp (π * I / 6) ^ 12 = 1 := by
-  rw [← Complex.exp_nat_mul, show ((12 : ℕ) : ℂ) * (π * I / 6) = 2 * π * I by push_cast; ring,
-    exp_two_pi_mul_I]
-
 /-- The cubic `(X - g₀¹²)(X - g₁¹²)(X - g₂¹²)` is fixed by `S`. -/
 private theorem prod_X_sub_C_siegelFunction_pow_twelve_S_smul (τ : ℍ) :
     (X - C (siegelFunction ![0, 1 / 2] ↑(ModularGroup.S • τ) ^ 12)) *
@@ -181,13 +176,16 @@ private theorem prod_X_sub_C_siegelFunction_pow_twelve_T_smul (τ : ℍ) :
         (X - C (siegelFunction ![1 / 2, 1 / 2] τ ^ 12)) := by
   have hT : ((ModularGroup.T • τ : ℍ) : ℂ) = τ + 1 := by
     rw [modular_T_smul, coe_vadd, add_comm, ofReal_one]
+  have h₆ : cexp (π * I / 6) ^ 12 = 1 := by
+    rw [← Complex.exp_nat_mul, show ((12 : ℕ) : ℂ) * (π * I / 6) = 2 * π * I by push_cast; ring,
+      exp_two_pi_mul_I]
   have h₃ : cexp (-(π * I / 3)) ^ 12 = 1 := by
     rw [← Complex.exp_nat_mul,
       show ((12 : ℕ) : ℂ) * -(π * I / 3) = ((-2 : ℤ) : ℂ) * (2 * π * I) by push_cast; ring,
       exp_int_mul_two_pi_mul_I]
   rw [hT, siegelFunction_zero_half_apply_add_one, siegelFunction_half_zero_apply_add_one,
     siegelFunction_half_half_apply_add_one τ.im_pos, mul_pow, mul_pow, mul_pow,
-    exp_pi_I_div_six_pow_twelve, h₃]
+    h₆, h₃]
   simp only [one_mul]
   ring
 
