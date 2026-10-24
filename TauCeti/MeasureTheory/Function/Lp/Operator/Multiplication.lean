@@ -70,12 +70,13 @@ def mulLp (F : X →ᵇ (E →L[𝕜] E')) : Lp E p μ →L[𝕜] Lp E' p μ :=
         rw [← MemLp.toLp_add]
         refine MemLp.toLp_congr _ _ ?_
         filter_upwards [Lp.coeFn_add f g] with x hx
-        rw [hx, Pi.add_apply, map_add, Pi.add_apply]
+        rw [hx]
+        simp
       map_smul' c f := by
         rw [RingHom.id_apply, ← MemLp.toLp_const_smul]
         refine MemLp.toLp_congr _ _ ?_
         filter_upwards [Lp.coeFn_smul c f] with x hx
-        rw [hx, Pi.smul_apply, map_smul, Pi.smul_apply] }
+        simp [hx] }
     ‖F‖ fun f ↦ Lp.norm_le_mul_norm_of_ae_le_mul <| by
       filter_upwards [MemLp.coeFn_toLp (F.memLp_apply (zero_lt_one.trans_le Fact.out).ne' hp f)]
         with x hx
@@ -104,7 +105,8 @@ theorem mulLp_zero : (0 : X →ᵇ (E →L[𝕜] E')).mulLp μ p hp = 0 := by
   ext1 f
   rw [mulLp_eq_iff, _root_.zero_apply]
   filter_upwards [Lp.coeFn_zero E' p μ] with x hx
-  rw [hx, coe_zero, Pi.zero_apply, _root_.zero_apply, Pi.zero_apply]
+  rw [hx]
+  simp
 
 @[simp]
 theorem mulLp_add (F G : X →ᵇ (E →L[𝕜] E')) :
@@ -113,7 +115,8 @@ theorem mulLp_add (F G : X →ᵇ (E →L[𝕜] E')) :
   rw [mulLp_eq_iff, _root_.add_apply]
   filter_upwards [Lp.coeFn_add (F.mulLp μ p hp f) (G.mulLp μ p hp f), F.coeFn_mulLp hp f,
     G.coeFn_mulLp hp f] with x hx hF hG
-  rw [hx, Pi.add_apply, hF, hG, coe_add, Pi.add_apply, _root_.add_apply]
+  rw [hx]
+  simp [hF, hG]
 
 @[simp]
 theorem mulLp_smul (c : 𝕜) (F : X →ᵇ (E →L[𝕜] E')) :
@@ -121,8 +124,7 @@ theorem mulLp_smul (c : 𝕜) (F : X →ᵇ (E →L[𝕜] E')) :
   ext1 f
   rw [mulLp_eq_iff, _root_.smul_apply]
   filter_upwards [Lp.coeFn_smul c (F.mulLp μ p hp f), F.coeFn_mulLp hp f] with x hx hF
-  rw [hx, Pi.smul_apply, hF]
-  simp
+  simp [hx, hF]
 
 /-- Multiplication by the constant identity function is the identity operator. -/
 @[simp]

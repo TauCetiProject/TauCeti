@@ -93,8 +93,8 @@ private theorem leftRegular_mulLp_regularSymbol (g : G) (a : A) (ξ : Lp H 2 μ)
   filter_upwards [μ.coeFn_leftRegular (𝕜 := ℂ) 2 g ξ, hcomp,
     μ.coeFn_leftRegular (𝕜 := ℂ) 2 g ((regularSymbol α ρ a).mulLp μ 2 ENNReal.ofNat_ne_top ξ)]
     with r hξ hcomp hL
-  rw [Function.comp_apply, Function.comp_apply] at hcomp
-  rw [hξ, hL, hcomp, regularSymbol_apply, regularSymbol_apply, mul_inv_rev, inv_inv, mul_apply]
+  simp only [Function.comp_apply] at hcomp
+  simp [hξ, hL, hcomp, regularSymbol_apply, mul_apply]
 
 /-- The regular covariant representation on `L²(G, H)` induced by a representation `ρ` of `A` on
 `H`: `a` acts by `ξ ↦ (r ↦ ρ (α_{r⁻¹}(a)) (ξ r))` and `s` by left translation
