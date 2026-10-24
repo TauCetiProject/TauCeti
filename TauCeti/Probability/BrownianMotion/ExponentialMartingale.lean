@@ -24,7 +24,9 @@ For a real parameter `θ` and a Brownian motion `W`, the process
 process of the change of measure in Girsanov's theorem: tilting the reference measure `P` by
 `θ W_T`, that is `dQ = Z_T dP`, gives a probability measure equivalent to `P`, and on the events
 known at time `t ≤ T` this measure has density `Z_t`. With `θ = -κ` for a market price of risk
-`κ`, `Q` is the risk-neutral measure of the Black–Scholes market.
+`κ`, `Q` is the candidate for the risk-neutral measure of the Black–Scholes market; identifying it
+as such requires Girsanov's theorem and the martingale property of discounted prices under `Q`,
+which are not proved here.
 
 Mathlib's `ProbabilityTheory.IsPreBrownianReal` prescribes only the finite-dimensional laws of
 `W`. A martingale statement needs a filtration, and the law of `W` alone does not say how `W`
@@ -45,10 +47,10 @@ motion is a pre-Brownian motion relative to its own natural filtration
   martingale.
 * `ProbabilityTheory.IsPreBrownianReal.tilted_mul_eval_eq_withDensity`: tilting by `θ W_T` is
   the change of measure with density `Z_T`.
-* `ProbabilityTheory.IsPreBrownianReal.isProbabilityMeasure_tilted_mul_eval`,
-  `ProbabilityTheory.IsPreBrownianReal.absolutelyContinuous_tilted_mul_eval`: the tilted measure
-  is a probability measure equivalent to `P` (the other absolute continuity is
-  `MeasureTheory.tilted_absolutelyContinuous`).
+* `ProbabilityTheory.IsPreBrownianReal.integrable_exp_mul_eval`: `exp (θ W_T)` is integrable, so
+  Mathlib's `MeasureTheory.isProbabilityMeasure_tilted`, `MeasureTheory.absolutelyContinuous_tilted`
+  and `MeasureTheory.tilted_absolutelyContinuous` show that the tilted measure is a probability
+  measure equivalent to `P`.
 * `TauCeti.Probability.IsFilteredPreBrownianReal.tilted_mul_eval_apply`: on `ℱ_t`, `t ≤ T`, the
   tilted measure has density `Z_t`.
 
@@ -114,6 +116,19 @@ theorem exponentialMartingale_eq_mul (θ : ℝ) (W : ℝ≥0 → Ω → ℝ) (s 
 
 end TauCeti.Probability
 
+namespace MeasureTheory.Adapted
+
+open TauCeti.Probability
+
+variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 mΩ} {W : ℝ≥0 → Ω → ℝ}
+
+/-- The exponential martingale of a process adapted to `ℱ` is adapted to `ℱ`. -/
+theorem stronglyAdapted_exponentialMartingale (hW : Adapted ℱ W) (θ : ℝ) :
+    StronglyAdapted ℱ (exponentialMartingale θ W) := fun t ↦
+  (measurable_exp.comp (((hW t).const_mul θ).sub_const _)).stronglyMeasurable
+
+end MeasureTheory.Adapted
+
 namespace ProbabilityTheory.IsPreBrownianReal
 
 open TauCeti.Probability
@@ -156,18 +171,6 @@ theorem tilted_mul_eval_eq_withDensity (hB : IsPreBrownianReal B P) (θ : ℝ) (
   rw [exponentialMartingale_def, ← exp_sub]
   ring_nf
 
-/-- Tilting `P` by `θ B_T` gives a probability measure. -/
-theorem isProbabilityMeasure_tilted_mul_eval (hB : IsPreBrownianReal B P) (θ : ℝ) (T : ℝ≥0) :
-    IsProbabilityMeasure (P.tilted fun ω ↦ θ * B T ω) :=
-  have := hB.isGaussianProcess.isProbabilityMeasure
-  isProbabilityMeasure_tilted (hB.integrable_exp_mul_eval θ T)
-
-/-- `P` is absolutely continuous with respect to its tilt by `θ B_T`; together with
-`MeasureTheory.tilted_absolutelyContinuous`, the two measures are equivalent. -/
-theorem absolutelyContinuous_tilted_mul_eval (hB : IsPreBrownianReal B P) (θ : ℝ) (T : ℝ≥0) :
-    P ≪ P.tilted fun ω ↦ θ * B T ω :=
-  absolutelyContinuous_tilted (hB.integrable_exp_mul_eval θ T)
-
 /-- A pre-Brownian motion is a pre-Brownian motion relative to its natural filtration: by the weak
 Markov property `ProbabilityTheory.IsPreBrownianReal.indepFun_shift`, the increments after time
 `s` are independent of `(B u, u ≤ s)`. -/
@@ -192,17 +195,12 @@ namespace TauCeti.Probability.IsFilteredPreBrownianReal
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} {ℱ : Filtration ℝ≥0 mΩ}
   {W : ℝ≥0 → Ω → ℝ}
 
-/-- The exponential martingale of a Brownian motion relative to `ℱ` is adapted to `ℱ`. -/
-theorem stronglyAdapted_exponentialMartingale (hW : IsFilteredPreBrownianReal ℱ W P) (θ : ℝ) :
-    StronglyAdapted ℱ (exponentialMartingale θ W) := fun t ↦
-  (measurable_exp.comp (((hW.adapted t).const_mul θ).sub_const _)).stronglyMeasurable
-
 /-- The exponential martingale `exp (θ W_t - θ² t / 2)` of a Brownian motion relative to `ℱ` is a
 martingale relative to `ℱ`. -/
 theorem martingale_exponentialMartingale (hW : IsFilteredPreBrownianReal ℱ W P) (θ : ℝ) :
     Martingale (exponentialMartingale θ W) ℱ P := by
   have := hW.isGaussianProcess.isProbabilityMeasure
-  refine ⟨hW.stronglyAdapted_exponentialMartingale θ, fun s t hst ↦ ?_⟩
+  refine ⟨hW.adapted.stronglyAdapted_exponentialMartingale θ, fun s t hst ↦ ?_⟩
   -- The factor carrying `Z` from time `s` to time `t` is the exponential martingale, at time
   -- `t - s`, of the Brownian motion `u ↦ W (s + u) - W s` restarted at time `s`.
   let Y := exponentialMartingale θ (fun u ω ↦ W (s + u) ω - W s ω) (t - s)
@@ -222,7 +220,7 @@ theorem martingale_exponentialMartingale (hW : IsFilteredPreBrownianReal ℱ W P
     rw [← hZ]
     exact hW.integrable_exponentialMartingale θ t
   have hpull := condExp_mul_of_stronglyMeasurable_left (m := ℱ s)
-    (hW.stronglyAdapted_exponentialMartingale θ s) hZint
+    (hW.adapted.stronglyAdapted_exponentialMartingale θ s) hZint
     ((hW.shift s).integrable_exponentialMartingale θ (t - s))
   have hindep : P[Y | ℱ s] =ᵐ[P] fun _ ↦ ∫ ω, Y ω ∂P :=
     condExp_indep_eq (m₂ := ℱ s) (hW.adapted.measurable.sub hW.adapted.measurable).comap_le
