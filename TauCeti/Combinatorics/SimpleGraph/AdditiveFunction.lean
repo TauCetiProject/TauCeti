@@ -17,7 +17,8 @@ semidefinite as soon as `G` carries a positive *additive function*, a vector `δ
 `∑_{j ∼ i} δ j = 2 * δ i`
 
 at every node, and that for a connected `G` the radical of the associated form is then exactly the
-line spanned by `δ`.
+line spanned by `δ`. The matrix and its symmetry require only an additive group with one;
+the vector action formulas hold over a nonassociative ring.
 
 The proof is a weighted version of the Laplacian identity
 `SimpleGraph.lapMatrix_toLinearMap₂'`. Writing a vector as `x = δ * y`, the additive condition
@@ -88,22 +89,23 @@ variable {V : Type*} [DecidableEq V] (G : SimpleGraph V) [DecidableRel G.Adj]
 `2` on the diagonal, `-1` at an edge and `0` elsewhere. Unlike the Laplacian
 `SimpleGraph.lapMatrix`, whose diagonal records the degrees, this matrix has a constant
 diagonal. -/
-def graphCartanMatrix (R : Type*) [Ring R] : Matrix V V R := (2 : R) • 1 - G.adjMatrix R
+def graphCartanMatrix (R : Type*) [AddGroupWithOne R] : Matrix V V R :=
+  Matrix.diagonal (fun _ ↦ 2) - G.adjMatrix R
 
 variable {R : Type*}
 
 /-- `2I - A` spelled out as a matrix, for a consumer outside this file: the body of
 `SimpleGraph.graphCartanMatrix` is not exposed. -/
-theorem graphCartanMatrix_eq_two_smul_one_sub_adjMatrix [Ring R] :
-    graphCartanMatrix G R = (2 : R) • 1 - G.adjMatrix R := by rw [graphCartanMatrix]
+theorem graphCartanMatrix_eq_two_smul_one_sub_adjMatrix [NonAssocRing R] :
+    graphCartanMatrix G R = (2 : R) • 1 - G.adjMatrix R := by
+  rw [graphCartanMatrix, Matrix.smul_one_eq_diagonal]
 
 /-- The entries of `2I - A`: `2` on the diagonal, `-1` at an edge and `0` elsewhere. -/
 @[simp]
-theorem graphCartanMatrix_apply [Ring R] (i j : V) :
+theorem graphCartanMatrix_apply [AddGroupWithOne R] (i j : V) :
     graphCartanMatrix G R i j = if i = j then 2 else if G.Adj i j then -1 else 0 := by
   rw [graphCartanMatrix]
-  simp only [Matrix.sub_apply, Matrix.smul_apply, Matrix.one_apply, smul_eq_mul,
-    SimpleGraph.adjMatrix_apply]
+  simp only [Matrix.sub_apply, Matrix.diagonal_apply, SimpleGraph.adjMatrix_apply]
   rcases eq_or_ne i j with rfl | hij
   · simp
   · rw [ite_eq_right hij, ite_eq_right hij]
@@ -111,7 +113,7 @@ theorem graphCartanMatrix_apply [Ring R] (i j : V) :
 
 /-- `2I - A` is compatible with a change of coefficient ring. -/
 @[simp]
-theorem graphCartanMatrix_map {S : Type*} [Ring R] [Ring S] (f : R →+* S) :
+theorem graphCartanMatrix_map {S : Type*} [NonAssocRing R] [NonAssocRing S] (f : R →+* S) :
     (graphCartanMatrix G R).map f = graphCartanMatrix G S := by
   ext i j
   rw [Matrix.map_apply, graphCartanMatrix_apply, graphCartanMatrix_apply]
@@ -121,21 +123,21 @@ theorem graphCartanMatrix_map {S : Type*} [Ring R] [Ring S] (f : R →+* S) :
   · exact map_zero f
 
 /-- `2I - A` is symmetric. -/
-theorem isSymm_graphCartanMatrix [Ring R] : (graphCartanMatrix G R).IsSymm := by
+theorem isSymm_graphCartanMatrix [AddGroupWithOne R] : (graphCartanMatrix G R).IsSymm := by
   rw [graphCartanMatrix]
-  exact (Matrix.isSymm_one.smul (2 : R)).sub (SimpleGraph.isSymm_adjMatrix _)
+  exact (Matrix.isSymm_diagonal _).sub (SimpleGraph.isSymm_adjMatrix _)
 
 variable [Fintype V]
 
 /-- Multiplying a vector by `2I - A` doubles it and subtracts the sum over its neighbours. -/
-theorem graphCartanMatrix_mulVec_apply [Ring R] (x : V → R) (i : V) :
+theorem graphCartanMatrix_mulVec_apply [NonAssocRing R] (x : V → R) (i : V) :
     (graphCartanMatrix G R *ᵥ x) i = 2 * x i - ∑ j ∈ G.neighborFinset i, x j := by
   rw [graphCartanMatrix, Matrix.sub_mulVec]
-  simp [Matrix.smul_mulVec, SimpleGraph.adjMatrix_mulVec_apply]
+  simp [SimpleGraph.adjMatrix_mulVec_apply]
 
 /-- **An additive function is a null vector of `2I - A`.** Positivity is not needed: the balance
 condition alone says that `2 δ i` is the sum of the neighbouring values. -/
-theorem graphCartanMatrix_mulVec_eq_zero [Ring R] {δ : V → R}
+theorem graphCartanMatrix_mulVec_eq_zero [NonAssocRing R] {δ : V → R}
     (hδ : ∀ i, ∑ j ∈ G.neighborFinset i, δ j = 2 * δ i) : graphCartanMatrix G R *ᵥ δ = 0 := by
   funext i
   rw [graphCartanMatrix_mulVec_apply, hδ i, sub_self, Pi.zero_apply]
@@ -343,16 +345,19 @@ theorem Connected.exists_pos_smul_le_sum (hG : G.Connected) {c : C} {δ : V → 
 
 omit [DecidableEq V] in
 /-- **A positive superadditive weight on a graph excludes isolated vertices.** If a weight `δ` on
-the vertices of a finite simple graph, over a strictly ordered commutative ring, is positive at
+the vertices of a finite simple graph, over an ordered semiring, is positive at
 every vertex and satisfies `2 δ i ≤ ∑_{j ∼ i} δ j` at every vertex, then every vertex of the graph
 has a neighbour. -/
 theorem exists_adj_of_pos_two_mul_le_sum
-    {S : Type*} [CommRing S] [LinearOrder S] [IsStrictOrderedRing S]
+    {S : Type*} [Semiring S] [PartialOrder S] [IsOrderedRing S]
     (δ : V → S) (hδ : ∀ i, 0 < δ i)
     (hδle : ∀ i, 2 * δ i ≤ ∑ j ∈ G.neighborFinset i, δ j)
     (i : V) : ∃ j, G.Adj i j := by
+  have hpos : 0 < 2 * δ i := by
+    rw [two_mul]
+    exact (hδ i).trans_le (le_add_of_nonneg_right (hδ i).le)
   obtain ⟨j, hj, -⟩ :=
-    Finset.exists_ne_zero_of_sum_ne_zero ((mul_pos two_pos (hδ i)).trans_le (hδle i)).ne'
+    Finset.exists_ne_zero_of_sum_ne_zero (hpos.trans_le (hδle i)).ne'
   exact ⟨j, (G.mem_neighborFinset i j).1 hj⟩
 
 end Superadditive

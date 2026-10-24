@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Toric.Algebraic.Cone.Basic
 public import TauCeti.Geometry.Toric.Algebraic.Lattice
+public import TauCeti.Geometry.Toric.Algebraic.Ray.Primitive
 public import Mathlib.Geometry.Convex.Cone.Dual
 public import Mathlib.NumberTheory.Real.Irrational
 
@@ -22,10 +23,18 @@ containing no nonzero image of a lattice vector. For an integral lattice, inters
 cones are toric, by `TauCeti.Toric.IsToricCone.inf`.
 
 Salience is a genuinely independent condition: the full line of the rank-one lattice `ℤ ⊆ ℝ` is a
-finitely generated, lattice-rational pointed cone that is not toric.
+finitely generated, lattice-rational pointed cone that is not toric. For any integral lattice
+the dual semigroup of the whole space is trivial (`TauCeti.Toric.dualSemigroup_top`), so the
+monoid algebra of the full line is `ℂ` and its affine chart is a point, not a curve containing a
+one-dimensional torus.
 
 The same map `ℤ⁴ →+ ℝ³` also shows that `TauCeti.Toric.IsIntegralLattice` is strictly stronger
-than injectivity together with a full real span.
+than injectivity together with a full real span. The smallest instance of this is the map
+`ℤ² →+ ℝ`, `(a, b) ↦ a + √2 * b`: it is injective with full real span but is not an integral
+lattice. It also shows what the integral-lattice hypothesis of
+`TauCeti.Toric.IsToricCone.existsUnique_primitiveGenerator` prevents. The half-line `[0, ∞)` is
+a toric cone for this map, and it is its own only ray, yet both `(1, 0)` and `(0, 1)` are
+primitive lattice vectors mapping into it, so the ray has two competing primitive generators.
 
 ## Main declarations
 
@@ -36,6 +45,10 @@ than injectivity together with a full real span.
   that is not toric, because it is a line.
 * `TauCeti.Toric.not_isIntegralLattice_sqrtTwoMap`: the same map `ℤ⁴ →+ ℝ³` is injective with
   full real span, by `TauCeti.Toric.span_range_sqrtTwoMap`, but is not an integral lattice.
+* `TauCeti.Toric.not_isIntegralLattice_sqrtTwoLineMap`: the map `ℤ² →+ ℝ`,
+  `(a, b) ↦ a + √2 * b`, is injective with full real span but is not an integral lattice.
+* `TauCeti.Toric.not_existsUnique_isPrimitiveGenerator_sqrtTwoLineMap`: for that map, the ray
+  `[0, ∞)` of a toric cone has two distinct primitive generators.
 
 ## References
 
@@ -309,5 +322,71 @@ theorem not_isIntegralLattice_sqrtTwoMap : ¬ IsIntegralLattice sqrtTwoMap := by
   intro h
   have hrank := h.finrank_eq
   simp [Module.finrank_prod] at hrank
+
+/-! ### Competing primitive generators without an integral lattice -/
+
+/-- The additive map `ℤ² →+ ℝ`, `(a, b) ↦ a + √2 * b`. It is injective and its image spans `ℝ`,
+but its image is dense. -/
+noncomputable def sqrtTwoLineMap : (ℤ × ℤ) →+ ℝ where
+  toFun v := (v.1 : ℝ) + Real.sqrt 2 * (v.2 : ℝ)
+  map_zero' := by simp
+  map_add' x y := by
+    simp only [Prod.fst_add, Prod.snd_add, Int.cast_add]
+    ring
+
+@[simp]
+theorem sqrtTwoLineMap_apply (v : ℤ × ℤ) :
+    sqrtTwoLineMap v = (v.1 : ℝ) + Real.sqrt 2 * (v.2 : ℝ) := (rfl)
+
+/-- `sqrtTwoLineMap` is injective, because `√2` is irrational. -/
+theorem sqrtTwoLineMap_injective : Function.Injective sqrtTwoLineMap := by
+  refine (injective_iff_map_eq_zero sqrtTwoLineMap).2 fun v hv ↦ ?_
+  obtain ⟨h₁, h₂⟩ := eq_zero_of_add_sqrtTwo_mul _ _ hv
+  exact Prod.ext h₁ h₂
+
+/-- The image of `sqrtTwoLineMap` spans `ℝ` over `ℝ`: it contains `1`. -/
+theorem span_range_sqrtTwoLineMap : Submodule.span ℝ (Set.range sqrtTwoLineMap) = ⊤ := by
+  refine top_unique fun x _ ↦ ?_
+  have h : (1 : ℝ) ∈ Submodule.span ℝ (Set.range sqrtTwoLineMap) :=
+    Submodule.subset_span ⟨(1, 0), by simp⟩
+  simpa using Submodule.smul_mem _ x h
+
+/-- Although `sqrtTwoLineMap` is injective and its image spans `ℝ`, it is not an integral
+lattice: its source has integral rank `2` while its target has real dimension `1`. -/
+theorem not_isIntegralLattice_sqrtTwoLineMap : ¬ IsIntegralLattice sqrtTwoLineMap := by
+  intro h
+  have hrank := h.finrank_eq
+  simp [Module.finrank_prod] at hrank
+
+/-- The half-line `[0, ∞)` is a toric cone for `sqrtTwoLineMap`: it is spanned by the image of
+the lattice vector `(1, 0)`. -/
+theorem isToricCone_sqrtTwoLineMap_hull_one :
+    IsToricCone sqrtTwoLineMap (PointedCone.hull ℝ {(1 : ℝ)}) := by
+  simpa using isToricCone_hull_singleton sqrtTwoLineMap (1, 0)
+
+/-- The lattice vector `(1, 0)` is a primitive generator of the ray `[0, ∞)` for
+`sqrtTwoLineMap`. -/
+theorem isPrimitiveGenerator_sqrtTwoLineMap_one_zero :
+    IsPrimitiveGenerator sqrtTwoLineMap (ToricRay.hullSingleton one_ne_zero) ((1, 0) : ℤ × ℤ) :=
+  isPrimitiveGenerator_iff.2 ⟨by simp, isPrimitive_def.2 ⟨LinearMap.fst ℤ ℤ ℤ, rfl⟩⟩
+
+/-- The lattice vector `(0, 1)`, whose image is `√2`, is also a primitive generator of the ray
+`[0, ∞)` for `sqrtTwoLineMap`. -/
+theorem isPrimitiveGenerator_sqrtTwoLineMap_zero_one :
+    IsPrimitiveGenerator sqrtTwoLineMap (ToricRay.hullSingleton one_ne_zero) ((0, 1) : ℤ × ℤ) :=
+  isPrimitiveGenerator_iff.2
+    ⟨by simp [PointedCone.mem_hull_singleton],
+      isPrimitive_def.2 ⟨LinearMap.snd ℤ ℤ ℤ, rfl⟩⟩
+
+/-- **The integral-lattice hypothesis of `IsToricCone.existsUnique_primitiveGenerator` is
+necessary.** For the injective map `sqrtTwoLineMap`, whose image spans `ℝ`, the ray `[0, ∞)` of
+the toric cone `[0, ∞)` has no unique primitive generator: `(1, 0)` and `(0, 1)` both are. -/
+theorem not_existsUnique_isPrimitiveGenerator_sqrtTwoLineMap :
+    ¬ ∃! v : ℤ × ℤ,
+      IsPrimitiveGenerator sqrtTwoLineMap (ToricRay.hullSingleton (one_ne_zero (α := ℝ))) v := by
+  rintro ⟨v, -, hv⟩
+  have h := (hv _ isPrimitiveGenerator_sqrtTwoLineMap_one_zero).trans
+    (hv _ isPrimitiveGenerator_sqrtTwoLineMap_zero_one).symm
+  simp at h
 
 end TauCeti.Toric

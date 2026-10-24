@@ -49,6 +49,13 @@ theorem mem_euclideanDual {C : _root_.Submodule R (ι → R)} {y : ι → R} :
   simp only [euclideanDual, LinearMap.BilinForm.mem_orthogonal_iff,
     dotProductBilin_apply_apply]
 
+/-- The Euclidean dual is the orthogonal complement `orthogonalBilin` for the dot-product
+bilinear form. -/
+theorem euclideanDual_eq_orthogonalBilin (C : _root_.Submodule R (ι → R)) :
+    euclideanDual C = C.orthogonalBilin (dotProductBilin R R) := by
+  ext
+  simp
+
 /-- Membership in the Euclidean dual can equivalently put the codeword on the right. -/
 theorem mem_euclideanDual' {C : _root_.Submodule R (ι → R)} {y : ι → R} :
     y ∈ euclideanDual C ↔ ∀ x ∈ C, y ⬝ᵥ x = 0 := by

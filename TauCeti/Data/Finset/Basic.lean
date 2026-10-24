@@ -14,10 +14,10 @@ public import Mathlib.Data.Finset.Interval
 public import Mathlib.Data.Finset.Prod
 public import Mathlib.Data.Finset.SymmDiff
 import Mathlib.Data.Nat.Choose.Sum
-import Mathlib.Data.Set.PowersetCard
 public import Mathlib.Data.Fintype.Card
 public import Mathlib.SetTheory.Cardinal.Finite
 import Mathlib.Tactic.NoncommRing
+import TauCeti.Data.Set.PowersetCard
 
 /-!
 # Finite-set infrastructure
@@ -39,10 +39,11 @@ import Mathlib.Tactic.NoncommRing
   `Finset.sum_Icc_neg_one_pow_card_sub_card_right` compute the Möbius function of the Boolean
   lattice of finsets: the signed sum over an interval `[s, t]` is `1` if `s = t` and `0`
   otherwise.
-* `Finset.neg_one_pow_card_filter_lt_mul_insert` and
-  `Finset.neg_one_pow_card_filter_lt_mul_erase` show that inserting a new element and deleting an
-  existing element of an ordered finset in either order, or deleting two distinct elements in
-  either order, gives opposite Koszul signs.
+* `Finset.neg_one_pow_card_filter_lt_mul_insert`, `Finset.neg_one_pow_card_filter_lt_mul_erase`
+  and `Finset.neg_one_pow_card_filter_lt_mul_insert_insert` show that inserting a new element and
+  deleting an existing element of an ordered finset in either order, deleting two distinct
+  elements in either order, or inserting two distinct new elements in either order, gives
+  opposite Koszul signs.
 * `Finset.card_symmDiff_add_two_mul_card_inter` and `Finset.even_card_symmDiff_iff` compare the
   cardinality of a symmetric difference with the cardinalities of its two arguments: exactly, and
   modulo two.
@@ -51,6 +52,9 @@ import Mathlib.Tactic.NoncommRing
   `Finset.mem_map_swap_symmDiff_pair_iff`, `Finset.involutive_map_swap_symmDiff_pair` and
   `Finset.map_swap_symmDiff_pair_eq_self_iff` do the same for a transposition composed with the
   toggle of the two transposed points.
+* `Finset.mem_map_swap_prodCongr_refl_iff_of_ne` and
+  `Finset.mk_mem_map_swap_prodCongr_refl_iff` describe membership in a finset of pairs whose
+  first coordinates are transposed.
 * `Finset.sum_filter_le_sum_filter_le` reindexes a double sum over chains in a finite type with a
   `≤` relation.
 * `Finset.sum_eq_two` and `Finset.sum_eq_four` reduce a sum over a finite type, and a double sum
@@ -230,6 +234,25 @@ theorem map_swap_eq_self_iff {α : Type*} [DecidableEq α] (a b : α) (s : Finse
       · rw [Equiv.swap_apply_right]
         exact h
       · rw [Equiv.swap_apply_of_ne_of_ne hx hx']
+
+/-- A pair whose first coordinate is neither transposed point lies in a finset of pairs with
+the first coordinates transposed exactly when it lies in the finset. -/
+theorem mem_map_swap_prodCongr_refl_iff_of_ne {α β : Type*} [DecidableEq α] {a b : α}
+    (s : Finset (α × β)) {p : α × β} (ha : p.1 ≠ a) (hb : p.1 ≠ b) :
+    p ∈ s.map ((Equiv.swap a b).prodCongr (Equiv.refl β)).toEmbedding ↔ p ∈ s := by
+  rcases p with ⟨x, y⟩
+  simp only [mem_map_equiv, Equiv.prodCongr_symm, Equiv.symm_swap, Equiv.refl_symm,
+    Equiv.prodCongr_apply, Prod.map_apply, Equiv.refl_apply]
+  rw [Equiv.swap_apply_of_ne_of_ne ha hb]
+
+/-- A pair lies in a finset of pairs with the first coordinates transposed exactly when the pair
+with its first coordinate transposed lies in the finset. -/
+theorem mk_mem_map_swap_prodCongr_refl_iff {α β : Type*} [DecidableEq α] (a b : α)
+    (s : Finset (α × β)) (x : α) (y : β) :
+    (x, y) ∈ s.map ((Equiv.swap a b).prodCongr (Equiv.refl β)).toEmbedding ↔
+      (Equiv.swap a b x, y) ∈ s := by
+  simp only [mem_map_equiv, Equiv.prodCongr_symm, Equiv.symm_swap, Equiv.refl_symm,
+    Equiv.prodCongr_apply, Prod.map_apply, Equiv.refl_apply]
 
 /-- Membership in a transposed finset with the two transposed points toggled. -/
 theorem mem_map_swap_symmDiff_pair_iff {α : Type*} [DecidableEq α] (a b : α) (s : Finset α)
@@ -437,6 +460,20 @@ theorem neg_one_pow_card_filter_lt_mul_erase {α R : Type*} [LinearOrder α] [Mo
     simp only [filter_erase, erase_eq_of_notMem hi', ← card_erase_add_one hj', pow_succ]
     simp [← pow_add, add_comm]
 
+/-- **Inserting two distinct new elements into an ordered finset in either order gives opposite
+Koszul signs.** -/
+theorem neg_one_pow_card_filter_lt_mul_insert_insert {α R : Type*} [LinearOrder α] [Monoid R]
+    [HasDistribNeg R] {s : Finset α} {i j : α} (hi : i ∉ s) (hj : j ∉ s) (hij : i ≠ j) :
+    (-1 : R) ^ ({k ∈ s | k < i}).card * (-1) ^ ({k ∈ insert i s | k < j}).card =
+      -((-1) ^ ({k ∈ s | k < j}).card * (-1) ^ ({k ∈ insert j s | k < i}).card) := by
+  rcases hij.lt_or_gt with hij | hji
+  · have hi' : i ∉ {k ∈ s | k < j} := by simp [hi]
+    simp only [filter_insert, hij, hij.not_gt, ↓reduceIte, card_insert_of_notMem hi', pow_succ]
+    simp [← pow_add, add_comm]
+  · have hj' : j ∉ {k ∈ s | k < i} := by simp [hj]
+    simp only [filter_insert, hji, hji.not_gt, ↓reduceIte, card_insert_of_notMem hj', pow_succ]
+    simp [← pow_add, add_comm]
+
 /-- The sum over a finite type of a function that vanishes away from two distinct points is the sum
 of its values at those two points. -/
 theorem sum_eq_two {α M : Type*} [Fintype α] [AddCommMonoid M] (f : α → M) (a b : α)
@@ -477,12 +514,6 @@ end Finset
 
 namespace TauCeti
 
-/-- The underlying `Finset` of `Set.powersetCard.ofSingleton a` is `{a}`. Mathlib states
-`ofSingleton` by its defining data rather than through a coercion lemma, so name the one step of
-definitional unfolding here instead of reducing a whole composite equivalence in place. -/
-private lemma coe_ofSingleton {ι : Type*} (a : ι) :
-    ((Set.powersetCard.ofSingleton a : Set.powersetCard ι 1) : Finset ι) = {a} := rfl
-
 -- The bijection below is Mathlib's, taken from the inline argument in
 -- `ContinuousMultilinearMap.changeOrigin_toFormalMultilinearSeries`.
 /-- **Summing over the subsets of size one less than `card ι` is summing over the points.** Such a
@@ -500,7 +531,7 @@ theorem sum_piecewise_eq_sum_update_of_card_eq_succ {ι : Type*} {α : ι → Ty
     (Set.powersetCard.compl hm.symm)).trans
       (Equiv.subtypeEquivRight fun _ ↦ Set.powersetCard.mem_iff)) _ _ fun i ↦ ?_).symm
   rw [Equiv.trans_apply, Equiv.trans_apply, Equiv.subtypeEquivRight_apply,
-    Set.powersetCard.coe_compl, coe_ofSingleton, Finset.compl_singleton,
+    Set.powersetCard.coe_compl, Set.powersetCard.coe_ofSingleton, Finset.compl_singleton,
     Finset.piecewise_erase_univ]
 
 end TauCeti

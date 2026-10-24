@@ -110,6 +110,11 @@ theorem exactForms_le_closedForms (k : ℕ) : exactForms I M k ≤ closedForms I
   | succ k =>
     exact LinearMap.range_le_ker_iff.mpr (mextDerivₗ_comp_mextDerivₗ I (F := ℝ) k)
 
+/-- On a manifold of finite dimension at most `k`, every smooth `k`-form is closed. -/
+theorem mem_closedForms_of_finrank_le [FiniteDimensional ℝ E] {k : ℕ}
+    (h : Module.finrank ℝ E ≤ k) (φ : SmoothForm I M ℝ k) : φ ∈ closedForms I M k :=
+  (mem_closedForms I φ).mpr (mextDeriv_eq_zero_of_finrank_le h _)
+
 variable (M) in
 /-- De Rham cohomology is the categorical homology of the de Rham complex. -/
 abbrev deRhamCohomology (k : ℕ) : Type _ :=

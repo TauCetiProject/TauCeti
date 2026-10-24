@@ -19,7 +19,11 @@ field-degree power, with the usual projective junk value one at the zero tuple.
 
 The local formula and its normalization follow Evertse--Ferretti, where this Euclidean height is
 used for Plücker coordinates of subspaces. The elementary API here records the zero convention,
-reindexing, and the corresponding logarithmic and affine heights.
+reindexing, sign changes of coordinates, and the corresponding logarithmic and affine heights.
+Over `ℚ`, the Euclidean height of a tuple of coprime integers is its Euclidean norm
+(`TauCeti.height2_intCast_eq_sqrt_of_gcd_eq_one`), and for any tuple of integers it is the
+Euclidean norm divided by the greatest common divisor of the entries
+(`TauCeti.gcd_mul_height2_intCast`).
 
 ## Main definitions
 
@@ -33,6 +37,14 @@ reindexing, and the corresponding logarithmic and affine heights.
 
 * J.-H. Evertse and R. G. Ferretti, *A further improvement of the quantitative Subspace
   Theorem*, Ann. of Math. 177 (2013), §6.1 and §6.3.
+
+`TauCeti.height2_intCast_eq_sqrt_of_gcd_eq_one` is adapted from Ralf Stephan's
+`NumberField.arakelovMulHeight_intCast_of_gcd_eq_one` in `ArithmeticHeights/RationalLattice.lean`
+of [`rwst/Subspace-Theorems`](https://github.com/rwst/Subspace-Theorems/blob/9894a1c4baf805296b249e95575f0e16e8e1afa3/ArithmeticHeights/RationalLattice.lean),
+commit `9894a1c4baf805296b249e95575f0e16e8e1afa3` (Apache 2.0), and
+`TauCeti.gcd_mul_height2_intCast` from his `NumberField.gcd_mul_arakelovMulHeight_intCast` in
+`ArithmeticHeights/BombieriVaaler.lean` of the same repository at
+[commit `09835cb23557ae5ae0cf55a9c4ab9055f5d60338`](https://github.com/rwst/Subspace-Theorems/blob/09835cb23557ae5ae0cf55a9c4ab9055f5d60338/ArithmeticHeights/BombieriVaaler.lean).
 -/
 
 public noncomputable section
@@ -176,6 +188,20 @@ theorem arakelovMulHeight_eq {ι : Type*} [Finite ι] {y : ι → K} (hy : y ≠
     simpa [one_div] using Real.rpow_inv_natCast_pow
       (Real.iSup_nonneg_of_nonnegHomClass v _) hD
 
+/-- For a nonzero integral tuple, multiplying its relative Euclidean height by the norm of
+its coordinate ideal leaves precisely the archimedean Euclidean factors. -/
+theorem arakelovMulHeight_mul_absNorm_span_range {ι : Type*} [Finite ι]
+    {y : ι → 𝓞 K} (hy : y ≠ 0) :
+    arakelovMulHeight (fun i ↦ (y i : K)) * (Ideal.span (Set.range y)).absNorm =
+      letI := Fintype.ofFinite ι
+      ∏ w : InfinitePlace K, (∑ i, ‖w.embedding (y i)‖ ^ 2) ^ ((w.mult : ℝ) / 2) := by
+  have hy' : (fun i ↦ (y i : K)) ≠ 0 := by
+    contrapose hy
+    ext i
+    exact congrFun hy i
+  rw [arakelovMulHeight_eq hy', mul_assoc, mul_comm (∏ᶠ _, _),
+    NumberField.absNorm_mul_finprod_finitePlace_eq_one hy, mul_one]
+
 /-- Multiplication by a nonzero number-field scalar preserves the relative Euclidean projective
 height. -/
 @[simp]
@@ -310,6 +336,31 @@ theorem arakelovMulHeight_comp_equiv {ι ι' : Type*} [Finite ι] [Finite ι'] (
     rw [arakelovMulHeight_of_ne_zero hye, arakelovMulHeight_of_ne_zero hy,
       height2_comp_equiv]
 
+/-- The Euclidean height is unchanged by changing the signs of some coordinates. -/
+theorem height2_eq_of_forall_eq_or_eq_neg {ι : Type*} [Finite ι] {x y : ι → K}
+    (h : ∀ i, y i = x i ∨ y i = -x i) : height2 y = height2 x := by
+  let _ := Fintype.ofFinite ι
+  simp only [height2]
+  congr 1
+  · refine Finset.prod_congr rfl fun w _ ↦ ?_
+    congr 1
+    exact Finset.sum_congr rfl fun i _ ↦ by rcases h i with h | h <;> simp [h]
+  · refine finprod_congr fun v ↦ ?_
+    congr 1
+    exact iSup_congr fun i ↦ by rcases h i with h | h <;> simp [h]
+
+/-- The relative Euclidean projective height is unchanged by changing the signs of some
+coordinates. -/
+theorem arakelovMulHeight_eq_of_forall_eq_or_eq_neg {ι : Type*} [Finite ι] {x y : ι → K}
+    (h : ∀ i, y i = x i ∨ y i = -x i) : arakelovMulHeight y = arakelovMulHeight x := by
+  have hy : y = 0 ↔ x = 0 := by
+    simp only [funext_iff, Pi.zero_apply]
+    exact forall_congr' fun i ↦ by rcases h i with h | h <;> simp [h]
+  rcases eq_or_ne x 0 with hx | hx
+  · rw [hy.2 hx, hx]
+  · rw [arakelovMulHeight_of_ne_zero hx, arakelovMulHeight_of_ne_zero (hy.not.2 hx),
+      height2_eq_of_forall_eq_or_eq_neg h]
+
 /-- The logarithmic projective height of the zero tuple is zero. -/
 @[simp]
 theorem arakelovLogHeight_zero {ι : Type*} [Finite ι] :
@@ -336,6 +387,12 @@ theorem arakelovLogHeight_smul {ι : Type*} [Finite ι] (y : ι → K) {c : K} (
 theorem arakelovLogHeight_comp_equiv {ι ι' : Type*} [Finite ι] [Finite ι'] (e : ι ≃ ι')
     (y : ι' → K) : arakelovLogHeight (y ∘ e) = arakelovLogHeight y := by
   simp [arakelovLogHeight]
+
+/-- The logarithmic projective height is unchanged by changing the signs of some coordinates. -/
+theorem arakelovLogHeight_eq_of_forall_eq_or_eq_neg {ι : Type*} [Finite ι] {x y : ι → K}
+    (h : ∀ i, y i = x i ∨ y i = -x i) : arakelovLogHeight y = arakelovLogHeight x := by
+  rw [arakelovLogHeight_eq_log_arakelovMulHeight, arakelovLogHeight_eq_log_arakelovMulHeight,
+    arakelovMulHeight_eq_of_forall_eq_or_eq_neg h]
 
 /-- The affine multiplicative and logarithmic heights agree by definition. -/
 theorem arakelovLogHeightAff_eq_log_arakelovMulHeightAff {ι : Type*} [Finite ι] (x : ι → K) :
@@ -401,5 +458,47 @@ theorem arakelovMulHeightAff_zero {ι : Type*} [Finite ι] :
 theorem arakelovLogHeightAff_zero {ι : Type*} [Finite ι] :
     arakelovLogHeightAff (0 : ι → K) = 0 := by
   simp [arakelovLogHeightAff]
+
+/-- Over `ℚ`, the Euclidean height of a tuple of coprime integers is its Euclidean norm: the finite
+places do not contribute. This is the Euclidean analogue of Mathlib's
+`Rat.mulHeight_eq_max_abs_of_gcd_eq_one`. -/
+theorem height2_intCast_eq_sqrt_of_gcd_eq_one {ι : Type*} [Fintype ι] {x : ι → ℤ}
+    (hx : Finset.univ.gcd x = 1) :
+    height2 (((↑) : ℤ → ℚ) ∘ x) = √(∑ i, (x i : ℝ) ^ 2) := by
+  have : Nonempty ι := by
+    by_contra h
+    rw [not_nonempty_iff] at h
+    simp at hx
+  have hw : (default : InfinitePlace ℚ).IsReal := by
+    rw [Subsingleton.elim default Rat.infinitePlace]
+    exact Rat.isReal_infinitePlace
+  rw [height2_eq, finprod_eq_one_of_forall_eq_one fun v ↦ by
+    rw [Function.comp_def, Rat.iSup_finitePlace_apply_eq_one_of_gcd_eq_one v hx, Real.one_rpow]]
+  simp only [Finset.univ_unique, comp_apply, map_intCast, Complex.norm_intCast, sq_abs,
+    finrank_self, Nat.cast_one, mul_one, Finset.prod_singleton, InfinitePlace.mult, hw, ite_true,
+    one_div, Real.sqrt_eq_rpow]
+  -- The two sides differ only in the `Fintype` instance on `ι` used to form the sums.
+  convert rfl
+
+/-- Over `ℚ`, the Euclidean height of a tuple of integers, multiplied by the greatest common divisor
+of its entries, is its Euclidean norm. Both sides vanish for the zero tuple. This is the Euclidean
+analogue of the sup-norm statement that the height of an integer tuple is its largest absolute value
+divided by the greatest common divisor of its entries. -/
+theorem gcd_mul_height2_intCast {ι : Type*} [Fintype ι] (x : ι → ℤ) :
+    ((Finset.univ.gcd x : ℤ) : ℝ) * height2 (((↑) : ℤ → ℚ) ∘ x) = √(∑ i, (x i : ℝ) ^ 2) := by
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp [Finset.gcd_eq_zero_iff.mpr]
+  obtain ⟨i₀, hi₀⟩ := Function.ne_iff.mp hx
+  -- Write `x = g • y` with `g = gcd(x) ≠ 0` and `gcd(y) = 1`.
+  obtain ⟨y, hxy, hy⟩ := Finset.univ.extract_gcd x ⟨i₀, Finset.mem_univ _⟩
+  have hg : Finset.univ.gcd x ≠ 0 := fun h ↦
+    hi₀ (Finset.gcd_eq_zero_iff.mp h i₀ (Finset.mem_univ _))
+  have hcast : ((↑) : ℤ → ℚ) ∘ x = ((Finset.univ.gcd x : ℤ) : ℚ) • (((↑) : ℤ → ℚ) ∘ y) := by
+    ext i
+    simp [hxy i (Finset.mem_univ i)]
+  have hnn : (0 : ℝ) ≤ (Finset.univ.gcd x : ℤ) := mod_cast Finset.Int.finsetGcd_nonneg
+  rw [hcast, height2_smul _ (Int.cast_ne_zero.mpr hg), height2_intCast_eq_sqrt_of_gcd_eq_one hy,
+    ← Real.sqrt_sq hnn, ← Real.sqrt_mul (sq_nonneg _), Finset.mul_sum]
+  simp_rw [hxy _ (Finset.mem_univ _), Int.cast_mul, mul_pow]
 
 end TauCeti

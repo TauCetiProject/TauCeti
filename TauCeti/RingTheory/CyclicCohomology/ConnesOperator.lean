@@ -190,6 +190,25 @@ theorem cyclicNorm_mem_cyclicCochains (φ : MultilinearMap R (fun _ : Fin (n + 1
   rw [mem_cyclicCochains_iff_cyclicOperator_apply_eq_self, ← Module.End.mul_apply,
     cyclicOperator_mul_cyclicNorm]
 
+/-- On a cyclic cochain, the cyclic norm is multiplication by the number of arguments. -/
+theorem cyclicNorm_apply_of_mem_cyclicCochains
+    {φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M}
+    (hφ : φ ∈ cyclicCochains R A M n) :
+    cyclicNorm R A M n φ = (n + 1 : R) • φ := by
+  have hfix := mem_cyclicCochains_iff_cyclicOperator_apply_eq_self.1 hφ
+  simp only [cyclicNorm_def, LinearMap.sum_apply, Module.End.pow_apply,
+    Function.iterate_fixed hfix]
+  rw [Finset.sum_const, Finset.card_range, ← Nat.cast_smul_eq_nsmul R,
+    Nat.cast_add, Nat.cast_one]
+
+/-- The fixed-point submodule of the cyclic operator is the kernel of `1 - λ`. -/
+theorem ker_one_sub_cyclicOperator :
+    LinearMap.ker (1 - cyclicOperator R A M n) = cyclicCochains R A M n := by
+  ext φ
+  simp only [LinearMap.mem_ker, LinearMap.sub_apply, Module.End.one_apply, sub_eq_zero,
+    mem_cyclicCochains_iff_cyclicOperator_apply_eq_self]
+  exact eq_comm
+
 end CyclicOperator
 
 /-! ### Hochschild faces of tuples starting with a given entry -/

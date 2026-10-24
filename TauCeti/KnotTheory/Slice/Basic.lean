@@ -73,7 +73,10 @@ Both kinds of sliceness are invariant under the two canonical reparametrizations
 rotation and reversal: each reparametrizes the slice disc by the corresponding linear isometry of
 the plane, which is a diffeomorphism of the disc (`LinearIsometryEquiv.unitClosedBallDiffeomorph`).
 In particular sliceness does not depend on the orientation of the knot. Invariance under arbitrary
-diffeomorphisms of the circle is not proved here.
+diffeomorphisms of the circle is not proved here. Dually, both kinds of sliceness are invariant
+under linear isometries `e : E ≃ₗᵢ[ℝ] F` of the ambient spaces, which carry a slice disc `Φ` for
+`K` to the slice disc `e ∘ Φ` for `e ∘ K`; this is what makes sliceness invariant under taking
+mirror images.
 
 ## Main results
 
@@ -83,6 +86,9 @@ diffeomorphisms of the circle is not proved here.
   isometry of the plane gives a slice disc for the correspondingly reparametrized knot.
 * `TauCeti.isSmoothlySlice_rotate_iff`, `TauCeti.isSmoothlySlice_reverse_iff`: sliceness is
   invariant under rotation and reversal of the parametrization.
+* `TauCeti.IsSmoothSliceDisc.unitClosedBallMap_comp`,
+  `TauCeti.isSmoothlySlice_congr_linearIsometryEquiv`: sliceness is invariant under linear
+  isometries of the ambient spaces.
 * `TauCeti.isSmoothSliceDisc_greatCircle_unitClosedBallMap`: the flat disc `ι D²` is a slice disc
   for the great circle `ι S¹`.
 * `TauCeti.isSmoothlySlice_greatCircle`, `TauCeti.isSmoothlySlice_unknot`: great circles, and in
@@ -91,6 +97,9 @@ diffeomorphisms of the circle is not proved here.
   `TauCeti.IsSmoothlySlice.isTopologicallySlice`: smoothly slice knots are topologically slice.
 * `TauCeti.isTopologicallySlice_rotate_iff`, `TauCeti.isTopologicallySlice_reverse_iff`: topological
   sliceness is invariant under rotation and reversal of the parametrization.
+* `TauCeti.IsTopologicalSliceDisc.unitClosedBallMap_comp`,
+  `TauCeti.isTopologicallySlice_congr_linearIsometryEquiv`: topological sliceness is invariant
+  under linear isometries of the ambient spaces.
 * `TauCeti.isTopologicalSliceDisc_greatCircle_unitClosedBallMap`: the flat disc `ι D²` is a
   locally flat slice disc for the great circle `ι S¹`.
 * `TauCeti.isTopologicallySlice_greatCircle`, `TauCeti.isTopologicallySlice_unknot`: great circles,
@@ -119,8 +128,9 @@ namespace TauCeti
 
 attribute [local instance] Complex.finrank_real_complex_fact
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
-  [Fact (finrank ℝ E = n + 1)]
+variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
+  [Fact (finrank ℝ E = n + 1)] [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+  [Fact (finrank ℝ F = n + 1)]
 
 /-- A **smooth slice disc** for a smooth circle embedding `K : S¹ → Sⁿ` in the unit sphere of `E`:
 a smooth embedding `Φ` of the closed unit disc of `ℂ` into the closed unit ball of `E`, in the sense
@@ -204,6 +214,21 @@ theorem comp_unitClosedBallMap (h : IsSmoothSliceDisc K Φ) (e : ℂ ≃ₗᵢ[�
       Subtype.ext (by simp [hσ])
     rw [Function.comp_apply, hz, h.apply_inclusion, hK']
 
+/-- Transporting a smooth slice disc for `K` along a linear isometry `e : E ≃ₗᵢ[ℝ] F` of the
+ambient spaces gives a smooth slice disc for the transported knot: if `K' = e ∘ K`, then `e ∘ Φ` is
+a smooth slice disc for `K'`. -/
+theorem unitClosedBallMap_comp (h : IsSmoothSliceDisc K Φ) (e : E ≃ₗᵢ[ℝ] F)
+    {K' : SmoothCircleEmbedding (𝓡 n) (sphere (0 : F) 1)} (hK' : ∀ z, (K' z : F) = e (K z)) :
+    IsSmoothSliceDisc K' (e.toLinearIsometry.unitClosedBallMap ∘ Φ) where
+  isSmoothEmbedding := by
+    have := isSmoothEmbedding_diffeomorph_comp h.isSmoothEmbedding
+      (e.unitClosedBallDiffeomorph (k := ∞))
+    rwa [LinearIsometryEquiv.coe_unitClosedBallDiffeomorph] at this
+  preimage_boundary := by
+    ext x
+    simpa [boundary_closedBall] using h.norm_eq_one_iff x
+  apply_inclusion z := by simp [h.apply_inclusion, hK']
+
 end IsSmoothSliceDisc
 
 /-! ### Invariance under rotation and reversal -/
@@ -231,6 +256,22 @@ theorem IsSmoothlySlice.reverse (h : IsSmoothlySlice K) : IsSmoothlySlice K.reve
 @[simp]
 theorem isSmoothlySlice_reverse_iff : IsSmoothlySlice K.reverse ↔ IsSmoothlySlice K :=
   ⟨fun h ↦ by simpa using h.reverse, fun h ↦ h.reverse⟩
+
+/-- Transporting a smoothly slice knot along a linear isometry of the ambient spaces gives a
+smoothly slice knot. -/
+theorem IsSmoothlySlice.of_linearIsometryEquiv (h : IsSmoothlySlice K) (e : E ≃ₗᵢ[ℝ] F)
+    {K' : SmoothCircleEmbedding (𝓡 n) (sphere (0 : F) 1)} (hK' : ∀ z, (K' z : F) = e (K z)) :
+    IsSmoothlySlice K' := by
+  obtain ⟨Φ, hΦ⟩ := h
+  exact (hΦ.unitClosedBallMap_comp e hK').isSmoothlySlice
+
+/-- Smooth sliceness is invariant under linear isometries of the ambient spaces: if `K' = e ∘ K`
+for a linear isometry `e : E ≃ₗᵢ[ℝ] F`, then `K'` is smoothly slice exactly when `K` is. -/
+theorem isSmoothlySlice_congr_linearIsometryEquiv (e : E ≃ₗᵢ[ℝ] F)
+    {K' : SmoothCircleEmbedding (𝓡 n) (sphere (0 : F) 1)} (hK' : ∀ z, (K' z : F) = e (K z)) :
+    IsSmoothlySlice K' ↔ IsSmoothlySlice K :=
+  ⟨fun h ↦ h.of_linearIsometryEquiv e.symm fun z ↦ by simp [hK'],
+    fun h ↦ h.of_linearIsometryEquiv e hK'⟩
 
 /-- The flat disc `ι D²` is a smooth slice disc for the great circle `ι S¹`. -/
 theorem isSmoothSliceDisc_greatCircle_unitClosedBallMap (ι : ℂ →ₗᵢ[ℝ] E) :
@@ -331,6 +372,19 @@ theorem comp_unitClosedBallMap (h : IsTopologicalSliceDisc K Φ) (e : ℂ ≃ₗ
       Subtype.ext (by simp [hσ])
     rw [Function.comp_apply, hz, h.apply_inclusion, hK']
 
+/-- Transporting a locally flat slice disc for `K` along a linear isometry `e : E ≃ₗᵢ[ℝ] F` of the
+ambient spaces gives a locally flat slice disc for the transported knot: if `K' = e ∘ K`, then
+`e ∘ Φ` is a locally flat slice disc for `K'`. -/
+theorem unitClosedBallMap_comp (h : IsTopologicalSliceDisc K Φ) (e : E ≃ₗᵢ[ℝ] F)
+    {K' : SmoothCircleEmbedding (𝓡 n) (sphere (0 : F) 1)} (hK' : ∀ z, (K' z : F) = e (K z)) :
+    IsTopologicalSliceDisc K' (e.toLinearIsometry.unitClosedBallMap ∘ Φ) where
+  isLocallyFlat := by
+    have := h.isLocallyFlat.homeomorph_comp
+      (e.unitClosedBallDiffeomorph (m := n + 1) (n := n + 1) (k := ∞)).toHomeomorph
+    rwa [Diffeomorph.coe_toHomeomorph, LinearIsometryEquiv.coe_unitClosedBallDiffeomorph] at this
+  norm_eq_one_iff x := by simp [h.norm_eq_one_iff]
+  apply_inclusion z := by simp [h.apply_inclusion, hK']
+
 end IsTopologicalSliceDisc
 
 /-- **A smooth slice disc is a locally flat slice disc.** A smooth slice disc is a neat smooth
@@ -390,6 +444,23 @@ theorem IsTopologicallySlice.reverse (h : IsTopologicallySlice K) :
 theorem isTopologicallySlice_reverse_iff :
     IsTopologicallySlice K.reverse ↔ IsTopologicallySlice K :=
   ⟨fun h ↦ by simpa using h.reverse, fun h ↦ h.reverse⟩
+
+/-- Transporting a topologically slice knot along a linear isometry of the ambient spaces gives a
+topologically slice knot. -/
+theorem IsTopologicallySlice.of_linearIsometryEquiv (h : IsTopologicallySlice K)
+    (e : E ≃ₗᵢ[ℝ] F) {K' : SmoothCircleEmbedding (𝓡 n) (sphere (0 : F) 1)}
+    (hK' : ∀ z, (K' z : F) = e (K z)) : IsTopologicallySlice K' := by
+  obtain ⟨Φ, hΦ⟩ := h
+  exact (hΦ.unitClosedBallMap_comp e hK').isTopologicallySlice
+
+/-- Topological sliceness is invariant under linear isometries of the ambient spaces: if
+`K' = e ∘ K` for a linear isometry `e : E ≃ₗᵢ[ℝ] F`, then `K'` is topologically slice exactly when
+`K` is. -/
+theorem isTopologicallySlice_congr_linearIsometryEquiv (e : E ≃ₗᵢ[ℝ] F)
+    {K' : SmoothCircleEmbedding (𝓡 n) (sphere (0 : F) 1)} (hK' : ∀ z, (K' z : F) = e (K z)) :
+    IsTopologicallySlice K' ↔ IsTopologicallySlice K :=
+  ⟨fun h ↦ h.of_linearIsometryEquiv e.symm fun z ↦ by simp [hK'],
+    fun h ↦ h.of_linearIsometryEquiv e hK'⟩
 
 /-- The flat disc `ι D²` is a locally flat slice disc for the great circle `ι S¹`. -/
 theorem isTopologicalSliceDisc_greatCircle_unitClosedBallMap (ι : ℂ →ₗᵢ[ℝ] E) :

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Combinatorics.Graph.Basic
+public import Mathlib.Combinatorics.Graph.Subgraph
 
 /-!
 # Walks in multigraphs
@@ -56,6 +56,11 @@ instance (x : α) : Inhabited (G.Walk x x) := ⟨.nil⟩
 /-- The one-edge walk associated to an edge linking two vertices. -/
 def _root_.Graph.IsLink.toWalk {e : β} (h : G.IsLink e x y) : G.Walk x y :=
   .cons e h .nil
+
+/-- A one-edge walk is the corresponding `cons` followed by the empty walk. -/
+theorem _root_.Graph.IsLink.toWalk_eq_cons {e : β} (h : G.IsLink e x y) :
+    h.toWalk = .cons e h .nil :=
+  (rfl)
 
 /-- The number of edge traversals in a walk. -/
 def length {x y : α} : G.Walk x y → ℕ
@@ -167,6 +172,10 @@ theorem not_nil_cons {e : β} {h : G.IsLink e x y} {p : G.Walk y z} :
 
 @[simp, grind .]
 theorem length_eq_zero_iff {p : G.Walk x y} : p.length = 0 ↔ p.Nil := by
+  cases p <;> simp
+
+@[simp]
+theorem edges_eq_nil {p : G.Walk x y} : p.edges = [] ↔ p.Nil := by
   cases p <;> simp
 
 @[grind .]
@@ -510,9 +519,23 @@ theorem trans (hxy : G.Reachable x y) (hyz : G.Reachable y z) : G.Reachable x z 
 
 end Reachable
 
+/-- A point is reachable from itself exactly when it is an actual vertex. -/
+@[simp]
+theorem reachable_self_iff {x : α} : G.Reachable x x ↔ x ∈ V(G) :=
+  ⟨Reachable.left_mem, Reachable.refl⟩
+
 /-- Reachability is an equivalence relation on the actual vertices of a graph. -/
 theorem reachable_is_equivalence (G : Graph α β) :
     Equivalence (fun x y : V(G) => G.Reachable x y) :=
   ⟨fun x => Reachable.refl x.property, Reachable.symm, Reachable.trans⟩
+
+/-- Membership in a closed subgraph propagates along reachability. -/
+theorem IsClosedSubgraph.mem_vertexSet_of_reachable {H : Graph α β} (hHG : H ≤c G) {x y : α}
+    (hx : x ∈ V(H)) (hxy : G.Reachable x y) : y ∈ V(H) := by
+  obtain ⟨-, ⟨p⟩⟩ := reachable_def.mp hxy
+  clear hxy
+  induction p with
+  | nil => exact hx
+  | cons e hxy p ih => exact ih ((hHG.mem_iff_of_isLink hxy).mp hx)
 
 end Graph

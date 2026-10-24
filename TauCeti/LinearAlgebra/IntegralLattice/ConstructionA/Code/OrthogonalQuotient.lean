@@ -57,7 +57,7 @@ public section
 
 namespace TauCeti.ConstructionA
 
-variable (m : ℕ+) (ι : Type*) [Fintype ι]
+variable (m : ℕ) [NeZero m] (ι : Type*) [Fintype ι]
 
 /-! ## The bilinear isometry -/
 
@@ -79,7 +79,7 @@ orthogonal quotient of `C` in the coordinate alphabet `(ℤ/m)^ι`. -/
 noncomputable def discriminantBilinearOrthogonalQuotientIsometry (C : AdditiveCode (ZMod m) ι)
     (hC : AddSubgroup.toZModSubmodule m C ≤ (AddSubgroup.toZModSubmodule m C).euclideanDual) :
     FiniteBilinearModule.Isometry (integralLattice m C hC).discriminantBilinearModule
-      (((FiniteBilinearModule.zmodStandard (m : ℕ)).coordinatePower ι).orthogonalQuotient C) :=
+      (((FiniteBilinearModule.zmodStandard m).coordinatePower ι).orthogonalQuotient C) :=
   (IntegralLattice.Isometry.ofEq
       (toIntegralLattice_codeInZeroLatticeDiscriminantGroup_eq_integralLattice m ι C hC).symm
     ).discriminantBilinearIsometry.trans
@@ -97,7 +97,7 @@ theorem discriminantBilinearOrthogonalQuotientIsometry_mk_intCast (C : AdditiveC
     (hC : AddSubgroup.toZModSubmodule m C ≤ (AddSubgroup.toZModSubmodule m C).euclideanDual)
     (z : ι → ℤ) (hz : (fun i ↦ (z i : ℚ)) ∈ (integralLattice m C hC).dualCarrier) :
     discriminantBilinearOrthogonalQuotientIsometry m ι C hC (Submodule.Quotient.mk ⟨_, hz⟩) =
-      ((FiniteBilinearModule.zmodStandard (m : ℕ)).coordinatePower ι).orthogonalQuotientMk C
+      ((FiniteBilinearModule.zmodStandard m).coordinatePower ι).orthogonalQuotientMk C
         ⟨fun i ↦ (z i : ZMod m),
           (intCast_mem_integralLattice_dualCarrier_iff m ι C hC z).mp hz⟩ := by
   rw [discriminantBilinearOrthogonalQuotientIsometry]
@@ -116,7 +116,7 @@ theorem discriminantBilinearOrthogonalQuotientIsometry_mk_intCast (C : AdditiveC
 theorem natCard_orthogonalQuotient_coordinatePower_zmodStandard (C : AdditiveCode (ZMod m) ι)
     (hC : AddSubgroup.toZModSubmodule m C ≤ (AddSubgroup.toZModSubmodule m C).euclideanDual) :
     Nat.card
-        (((FiniteBilinearModule.zmodStandard (m : ℕ)).coordinatePower ι).orthogonalQuotient C) =
+        (((FiniteBilinearModule.zmodStandard m).coordinatePower ι).orthogonalQuotient C) =
       (integralLattice m C hC).discriminant :=
   (Nat.card_congr
       (discriminantBilinearOrthogonalQuotientIsometry m ι C hC).toAddEquiv.toEquiv).symm.trans
@@ -128,7 +128,7 @@ theorem subsingleton_orthogonalQuotient_coordinatePower_zmodStandard_iff_isUnimo
     (C : AdditiveCode (ZMod m) ι)
     (hC : AddSubgroup.toZModSubmodule m C ≤ (AddSubgroup.toZModSubmodule m C).euclideanDual) :
     Subsingleton
-        (((FiniteBilinearModule.zmodStandard (m : ℕ)).coordinatePower ι).orthogonalQuotient C) ↔
+        (((FiniteBilinearModule.zmodStandard m).coordinatePower ι).orthogonalQuotient C) ↔
       (integralLattice m C hC).IsUnimodular := by
   rw [(integralLattice m C hC).isUnimodular_iff_subsingleton_discriminantGroup]
   exact Equiv.subsingleton_congr
@@ -136,20 +136,20 @@ theorem subsingleton_orthogonalQuotient_coordinatePower_zmodStandard_iff_isUnimo
 
 /-! ## The quadratic isometry for an even modulus -/
 
-variable (hm : Even (m : ℕ))
+variable (hm : Even m)
 
 /-- **The discriminant quadratic module of an even Construction A lattice is `C⊥ / C`.** Over an
 even modulus, for a quadratically isotropic code `C`, the discriminant quadratic module of the
 even lattice `P_m(C)` is the quadratic orthogonal quotient of `C` in the coordinate alphabet
 `(ℤ/m)^ι`, in the half-norm convention. -/
 noncomputable def discriminantOrthogonalQuotientIsometry (C : AdditiveCode (ZMod m) ι)
-    (hC : ((FiniteQuadraticModule.zmodStandard (m : ℕ) hm).coordinatePower ι).IsIsotropic C) :
+    (hC : ((FiniteQuadraticModule.zmodStandard m hm).coordinatePower ι).IsIsotropic C) :
     FiniteQuadraticModule.Isometry
       ((integralLattice m C
-          ((isIsotropic_coordinatePower_zmodStandard_iff_le_euclideanDual (m : ℕ) C).mp
+          ((isIsotropic_coordinatePower_zmodStandard_iff_le_euclideanDual m C).mp
             hC.toFiniteBilinearModule)).discriminantQuadraticModule
         ((isEven_integralLattice_iff_isIsotropic m hm C _).mpr hC))
-      (((FiniteQuadraticModule.zmodStandard (m : ℕ) hm).coordinatePower ι).orthogonalQuotient
+      (((FiniteQuadraticModule.zmodStandard m hm).coordinatePower ι).orthogonalQuotient
         C hC) :=
   ((IntegralLattice.Isometry.ofEq
       (toIntegralLattice_codeInZeroLatticeDiscriminantGroup_eq_integralLattice m ι C _).symm
@@ -171,13 +171,13 @@ of an integer vector of the dual lattice goes to the class in `C⊥ / C` of its 
 reduction modulo `m`. -/
 @[simp]
 theorem discriminantOrthogonalQuotientIsometry_mk_intCast (C : AdditiveCode (ZMod m) ι)
-    (hC : ((FiniteQuadraticModule.zmodStandard (m : ℕ) hm).coordinatePower ι).IsIsotropic C)
+    (hC : ((FiniteQuadraticModule.zmodStandard m hm).coordinatePower ι).IsIsotropic C)
     (z : ι → ℤ)
     (hz : (fun i ↦ (z i : ℚ)) ∈ (integralLattice m C
-      ((isIsotropic_coordinatePower_zmodStandard_iff_le_euclideanDual (m : ℕ) C).mp
+      ((isIsotropic_coordinatePower_zmodStandard_iff_le_euclideanDual m C).mp
         hC.toFiniteBilinearModule)).dualCarrier) :
     discriminantOrthogonalQuotientIsometry m ι hm C hC (Submodule.Quotient.mk ⟨_, hz⟩) =
-      ((FiniteQuadraticModule.zmodStandard (m : ℕ) hm).coordinatePower ι).orthogonalQuotientMk C hC
+      ((FiniteQuadraticModule.zmodStandard m hm).coordinatePower ι).orthogonalQuotientMk C hC
         ⟨fun i ↦ (z i : ZMod m),
           (intCast_mem_integralLattice_dualCarrier_iff m ι C _ z).mp hz⟩ := by
   rw [discriminantOrthogonalQuotientIsometry]

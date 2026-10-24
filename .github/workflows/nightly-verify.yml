@@ -66,6 +66,7 @@ jobs:
     uses: ./.github/workflows/pick-runner.yml
     permissions:
       actions: read
+      contents: read
 
   # No secrets reach this job. It builds and executes repository code, including a build restored
   # from the public cache, so anything it can read is code-reachable. Reporting lives in a separate
@@ -73,23 +74,9 @@ jobs:
   verify:
     needs: pick-runner
     if: ${{ !cancelled() && github.repository == 'TauCetiProject/TauCeti' }}
-    # `container.privileged` is required and documented by Namespace for this case: without it
-    # the job container's seccomp profile denies `pivot_root`, and bwrap cannot build its sandbox
-    # at all, for root as well as for the job user. The `-with-features` suffix on the machine
-    # label is what makes the feature label apply.
-    #
-    # Both the provisioning and the feature are per-organisation configuration. A job whose
-    # labels this organisation does not serve is not rejected: it sits queued with an empty
-    # runner name until it expires, taking the required builds with it. Before changing these
-    # labels, confirm them in the organisation that will run the job.
-    #
-    # The pick-runner job chooses between GitHub and Namespace; see pick-runner.yml. Anything but
-    # an explicit `true` from it, including a picker that failed or never ran, means Namespace.
-    runs-on: >-
-      ${{ needs.pick-runner.outputs.github == 'true' && 'ubuntu-24.04' || fromJSON('[
-        "nscloud-ubuntu-24.04-amd64-8x16-with-features",
-        "namespace-features:container.privileged=true"
-      ]') }}
+    # Use only this attempt's capacity decision; a missing picker answer queues
+    # on GitHub and cannot bypass the shared Namespace build cap.
+    runs-on: ${{ fromJSON(needs.pick-runner.outputs.attempt == format('{0}', github.run_attempt) && needs.pick-runner.outputs.runner || '"ubuntu-24.04"') }}
     # The from-scratch build alone ran about 49 minutes as ci.yml's Build step before #3715, and the
     # cache-restored build adds roughly 15. Generous headroom, but bounded; a run that hits this
     # still reports, because the report job keys off the job result.
@@ -123,6 +110,13 @@ jobs:
           # Enough history for `lake cache get` to backtrack to a published ancestor in the
           # reference workspace below.
           fetch-depth: 100
+
+      - name: Prepare pinned shared tools
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@472566310e766bbc7933579a1f7743f41960046e
+        with:
+          tools-repository: TauCetiProject/TauCetiTools
+          tools-ref: 472566310e766bbc7933579a1f7743f41960046e
+          project-directory: fresh
 
       - name: Resolve the commit under test
         id: rev

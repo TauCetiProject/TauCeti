@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.QuadraticForm.Basic
+public import Mathlib.LinearAlgebra.Dual.Lemmas
+public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 
 /-!
 # Totally isotropic submodules
@@ -25,6 +26,11 @@ vector of `W`, that is, when the restriction of `Q` to `W` is zero.
   the image under `f`.
 * `QuadraticMap.maximal_isTotallyIsotropic_bot_iff`: the zero submodule is maximal totally
   isotropic exactly when the form is anisotropic.
+* `QuadraticMap.IsTotallyIsotropic.eq_zero_of_polar_eq_zero`: for a nondegenerate form and
+  `W ⊔ W' = ⊤` with `W'` totally isotropic, a vector of `W'` which is polar-orthogonal to `W`
+  vanishes.
+* `QuadraticMap.IsTotallyIsotropic.finrank_eq_of_codisjoint`: two totally isotropic subspaces
+  spanning a finite-dimensional nondegenerate quadratic space have the same dimension.
 
 The Witt-index comparison for maximal totally isotropic subspaces (Lam I.4.4) is in
 `TauCeti.LinearAlgebra.QuadraticForm.Witt.TotallyIsotropic`.
@@ -126,5 +132,52 @@ theorem IsTotallyIsotropic.polar_eq_zero (hW : Q.IsTotallyIsotropic W) {v w : M}
   rw [polar, hW _ (W.add_mem hv hw), hW v hv, hW w hw, sub_zero, sub_zero]
 
 end Group
+
+section Ring
+
+variable {R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+  [AddCommGroup N] [Module R N] {Q : QuadraticMap R M N} {W W' : Submodule R M}
+
+/-- For a nondegenerate `Q`, if `W ⊔ W' = ⊤` with `W'` totally isotropic, a vector of `W'`
+which is polar-orthogonal to `W` vanishes: it is then polar-orthogonal to all of `M = W + W'`,
+hence lies in the radical. -/
+theorem IsTotallyIsotropic.eq_zero_of_polar_eq_zero (hW' : Q.IsTotallyIsotropic W')
+    (hQ : Q.Nondegenerate) (hWW' : Codisjoint W W') {y : M} (hy : y ∈ W')
+    (hyW : ∀ x ∈ W, polar Q x y = 0) : y = 0 := by
+  have hpolar (z : M) : polar Q y z = 0 := by
+    obtain ⟨x, hx, z', hz', rfl⟩ := Submodule.mem_sup.mp (hWW'.eq_top ▸
+      Submodule.mem_top : z ∈ W ⊔ W')
+    rw [polar_add_right, hW'.polar_eq_zero hy hz', polar_comm, hyW x hx, add_zero]
+  have hrad : y ∈ Q.radical := ⟨hW'.apply_eq_zero hy, LinearMap.ext hpolar⟩
+  simpa [hQ.radical_eq_bot] using hrad
+
+/-- For a nondegenerate `Q` and `W ⊔ W' = ⊤` with `W'` totally isotropic, the polar pairing of
+`W'` with `W` is injective in the `W'` variable. -/
+theorem IsTotallyIsotropic.polarBilin_compl₁₂_flip_injective (hW' : Q.IsTotallyIsotropic W')
+    (hQ : Q.Nondegenerate) (hWW' : Codisjoint W W') :
+    Function.Injective ((polarBilin Q).compl₁₂ W.subtype W'.subtype).flip := by
+  refine (injective_iff_map_eq_zero _).mpr fun y hy => Subtype.ext ?_
+  refine hW'.eq_zero_of_polar_eq_zero hQ hWW' y.2 fun x hx => ?_
+  simpa using LinearMap.congr_fun hy ⟨x, hx⟩
+
+end Ring
+
+section Field
+
+variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V] [FiniteDimensional K V]
+  {Q : QuadraticForm K V} {W W' : Submodule K V}
+
+/-- Two totally isotropic subspaces spanning a finite-dimensional nondegenerate quadratic space
+have the same dimension: the polar pairing embeds each into the dual of the other. -/
+theorem IsTotallyIsotropic.finrank_eq_of_codisjoint (hW : Q.IsTotallyIsotropic W)
+    (hW' : Q.IsTotallyIsotropic W') (hQ : Q.Nondegenerate) (hWW' : Codisjoint W W') :
+    Module.finrank K W' = Module.finrank K W := by
+  apply le_antisymm
+  · simpa [Subspace.dual_finrank_eq] using
+      LinearMap.finrank_le_finrank_of_injective (hW'.polarBilin_compl₁₂_flip_injective hQ hWW')
+  · simpa [Subspace.dual_finrank_eq] using
+      LinearMap.finrank_le_finrank_of_injective (hW.polarBilin_compl₁₂_flip_injective hQ hWW'.symm)
+
+end Field
 
 end QuadraticMap

@@ -108,6 +108,27 @@ theorem cdf_generalizedParetoMeasure_eq (hs : 0 < s) (ξ x : ℝ) :
     have := (div_le_iff₀ hs).1 (show ξ * x / s ≤ -1 by linarith)
     nlinarith
 
+/-- On the nonnegative half-line, generalized Pareto survival is positive exactly below
+the upper endpoint, when there is one. -/
+@[simp]
+theorem cdf_generalizedParetoMeasure_lt_one_iff (hs : 0 < s) (hx : 0 ≤ x) :
+    cdf (generalizedParetoMeasure s ξ) x < 1 ↔ 0 < s + ξ * x := by
+  have hb : 0 < 1 + ξ * x / s ↔ 0 < s + ξ * x := by
+    have h : 1 + ξ * x / s = (s + ξ * x) / s := by field_simp
+    rw [h]
+    exact div_pos_iff_of_pos_right hs
+  rcases hx.eq_or_lt with rfl | hx
+  · simp [cdf_generalizedParetoMeasure_of_nonpos hs ξ le_rfl, hs]
+  by_cases hξ : ξ = 0
+  · subst ξ
+    simp [generalizedParetoMeasure_zero hs, cdf_expMeasure_eq (inv_pos.mpr hs),
+      hx.le, Real.exp_pos, hs]
+  rw [cdf_generalizedParetoMeasure_eq hs]
+  simp only [hx.not_ge, hξ, ↓reduceIte]
+  split_ifs with h
+  · exact iff_of_true (by linarith [Real.rpow_pos_of_pos h (-1 / ξ)]) (hb.1 h)
+  · simp [not_lt.mp (mt hb.2 h)]
+
 /-- The generalized Pareto cdf is continuous at every real point, including both support
 endpoints. -/
 theorem continuous_cdf_generalizedParetoMeasure (hs : 0 < s) (ξ : ℝ) :

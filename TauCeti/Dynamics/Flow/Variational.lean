@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Dynamics.Flow.OfLipschitz
+public import TauCeti.Dynamics.Flow.TimeDependent
 -- Private: parametric integrals and the chain rule are used only inside proofs.
 import Mathlib.Analysis.Calculus.ParametricIntegral
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
@@ -37,6 +38,9 @@ compute the first-order dependence of the flow on parameters of the vector field
   along.
 * `TauCeti.continuous_fderiv_flowOfLipschitz`, `TauCeti.continuous_fderiv_flowOfLipschitz_neg`:
   for a `C¹` field, `τ ↦ Dφ_τ(x)` and its inverse `σ ↦ Dφ_{-σ}(φ_σ x)` are continuous.
+* `TauCeti.contDiff_timeDependentFlow` and `TauCeti.hasDerivAt_fderiv_timeDependentFlow`: the
+  time-dependent flow `φ(s, t)` of a jointly `C^(n+1)` field (`TauCeti.timeDependentFlow`) is
+  `C^(n+1)` in `(s, t, x)`, and `∂ₜ Dφ(s, t)(x) = Dvₜ(φ(s, t) x) ∘ Dφ(s, t)(x)`.
 -/
 
 public section
@@ -232,5 +236,118 @@ theorem continuous_fderiv_flowOfLipschitz_neg (x : E) :
     ((flowOfLipschitz v hv).continuous continuous_id continuous_const)
 
 end Inverse
+
+end TauCeti
+
+namespace TauCeti
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E] {K : ℝ≥0}
+
+/-! ### Time-dependent flows
+
+The time-dependent flow is the space component of the flow of the suspended autonomous field
+`(t, x) ↦ (1, v t x)`, so its smoothness and its variational equation follow from those of
+autonomous flows. -/
+
+section TimeDependent
+
+variable {v : ℝ → E → E} (hv : LipschitzWith K (timeDependentSuspension v))
+
+omit [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E] in
+private theorem timeDependentSuspension_eq (v : ℝ → E → E) :
+    timeDependentSuspension v = fun p ↦ (1, v p.1 p.2) :=
+  funext fun p ↦ timeDependentSuspension_apply v p.1 p.2
+
+/-- A time-dependent field which is jointly `C^(n+1)` has a `C^(n+1)` time-dependent flow,
+jointly in the initial time, the final time and the initial point. -/
+theorem contDiff_timeDependentFlow (n : ℕ)
+    (hvs : ContDiff ℝ (n + 1) fun p : ℝ × E ↦ v p.1 p.2) :
+    ContDiff ℝ (n + 1) fun p : (ℝ × ℝ) × E ↦ timeDependentFlow v hv p.1.1 p.1.2 p.2 := by
+  have hS : ContDiff ℝ (n + 1) (timeDependentSuspension v) := by
+    rw [timeDependentSuspension_eq]; exact contDiff_const.prodMk hvs
+  have h := (contDiff_flowOfLipschitz n _ hv hS).comp
+    (by fun_prop : ContDiff ℝ (n + 1) fun p : (ℝ × ℝ) × E ↦ (p.1.2 - p.1.1, (p.1.1, p.2)))
+  convert contDiff_snd.comp h using 1
+  funext p
+  simp [globalSolution_timeDependentSuspension]
+
+variable (hvs : ContDiff ℝ 1 fun p : ℝ × E ↦ v p.1 p.2)
+include hvs
+
+omit [CompleteSpace E] in
+private theorem contDiff_timeDependentSuspension :
+    ContDiff ℝ 1 (timeDependentSuspension v) := by
+  rw [timeDependentSuspension_eq]; exact contDiff_const.prodMk hvs
+
+/-- The derivative of the time-dependent flow in the initial point, through the flow of the
+suspension. -/
+private theorem hasFDerivAt_timeDependentFlow (s t : ℝ) (x : E) :
+    HasFDerivAt (timeDependentFlow v hv s t)
+      ((ContinuousLinearMap.snd ℝ ℝ E).comp
+        ((fderiv ℝ (flowOfLipschitz _ hv (t - s)) (s, x)).comp (ContinuousLinearMap.inr ℝ ℝ E)))
+      x := by
+  have hΦ := (differentiable_flowOfLipschitz_apply hv (contDiff_timeDependentSuspension hvs)
+    (t - s) (s, x)).hasFDerivAt
+  have hι : HasFDerivAt (fun y : E ↦ (s, y)) (ContinuousLinearMap.inr ℝ ℝ E) x :=
+    (hasFDerivAt_const s x).prodMk (hasFDerivAt_id x)
+  have h := (ContinuousLinearMap.snd ℝ ℝ E).hasFDerivAt.comp x (hΦ.comp x hι)
+  refine h.congr_of_eventuallyEq (Eventually.of_forall fun y ↦ ?_)
+  simp [globalSolution_timeDependentSuspension]
+
+/-- The derivative of the flow of the suspension does not move the clock in the space
+directions. -/
+private theorem fst_fderiv_flowOfLipschitz_inr (s t : ℝ) (x w : E) :
+    (fderiv ℝ (flowOfLipschitz _ hv (t - s)) (s, x) (0, w)).1 = 0 := by
+  have hΦ := (differentiable_flowOfLipschitz_apply hv (contDiff_timeDependentSuspension hvs)
+    (t - s) (s, x)).hasFDerivAt
+  have hι : HasFDerivAt (fun y : E ↦ (s, y)) (ContinuousLinearMap.inr ℝ ℝ E) x :=
+    (hasFDerivAt_const s x).prodMk (hasFDerivAt_id x)
+  have h := (ContinuousLinearMap.fst ℝ ℝ E).hasFDerivAt.comp x (hΦ.comp x hι)
+  have hc : HasFDerivAt (fun y : E ↦ (flowOfLipschitz _ hv (t - s) (s, y)).1) (0 : E →L[ℝ] ℝ) x :=
+    (hasFDerivAt_const t x).congr_of_eventuallyEq (Eventually.of_forall fun y ↦ by
+      simp [globalSolution_timeDependentSuspension])
+  simpa using congrArg (fun L : E →L[ℝ] ℝ ↦ L w) (h.unique hc)
+
+omit [CompleteSpace E] in
+/-- The space derivative of the suspension in the space directions is the space derivative of
+the time-dependent field. -/
+private theorem snd_fderiv_timeDependentSuspension_inr (t : ℝ) (y w : E) :
+    (fderiv ℝ (timeDependentSuspension v) (t, y) (0, w)).2 = fderiv ℝ (v t) y w := by
+  have hV := (hvs.differentiable one_ne_zero (t, y)).hasFDerivAt
+  have hS : HasFDerivAt (timeDependentSuspension v)
+      ((0 : ℝ × E →L[ℝ] ℝ).prod (fderiv ℝ (fun p : ℝ × E ↦ v p.1 p.2) (t, y))) (t, y) := by
+    rw [timeDependentSuspension_eq]
+    exact (hasFDerivAt_const (1 : ℝ) _).prodMk hV
+  have hι : HasFDerivAt (fun y : E ↦ (t, y)) (ContinuousLinearMap.inr ℝ ℝ E) y :=
+    (hasFDerivAt_const t y).prodMk (hasFDerivAt_id y)
+  have hv' : HasFDerivAt (v t) ((fderiv ℝ (fun p : ℝ × E ↦ v p.1 p.2) (t, y)).comp
+      (ContinuousLinearMap.inr ℝ ℝ E)) y := hV.comp y hι
+  rw [hS.fderiv, hv'.fderiv]
+  simp
+
+/-- **The variational equation of a time-dependent flow.** For a jointly `C¹` time-dependent
+field whose suspension is globally Lipschitz, `u ↦ Dφ(s, u)(x)` is differentiable with derivative
+`D(v t)(φ(s, t) x) ∘ Dφ(s, t)(x)` at `t`. -/
+theorem hasDerivAt_fderiv_timeDependentFlow (s t : ℝ) (x : E) :
+    HasDerivAt (fun u ↦ fderiv ℝ (timeDependentFlow v hv s u) x)
+      ((fderiv ℝ (v t) (timeDependentFlow v hv s t x)).comp
+        (fderiv ℝ (timeDependentFlow v hv s t) x)) t := by
+  have h := (hasDerivAt_fderiv_flowOfLipschitz hv (contDiff_timeDependentSuspension hvs)
+    (s, x) (t - s)).comp_sub_const t s
+  have h' := (hasDerivAt_const t (ContinuousLinearMap.snd ℝ ℝ E)).clm_comp
+    (h.clm_comp (hasDerivAt_const t (ContinuousLinearMap.inr ℝ ℝ E)))
+  refine (h'.congr_of_eventuallyEq (Eventually.of_forall fun u ↦
+    (hasFDerivAt_timeDependentFlow hv hvs s u x).fderiv)).congr_deriv ?_
+  rw [(hasFDerivAt_timeDependentFlow hv hvs s t x).fderiv]
+  ext w
+  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.inr_apply,
+    ContinuousLinearMap.coe_snd', zero_add, ContinuousLinearMap.zero_comp,
+    ContinuousLinearMap.comp_zero, add_zero]
+  rw [flowOfLipschitz_apply, globalSolution_timeDependentSuspension]
+  conv_lhs => rw [← Prod.mk.eta (p := fderiv ℝ (flowOfLipschitz _ hv (t - s)) (s, x) (0, w)),
+    fst_fderiv_flowOfLipschitz_inr hv hvs]
+  exact snd_fderiv_timeDependentSuspension_inr hvs t _ _
+
+end TimeDependent
 
 end TauCeti

@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Calculus.ContDiff.FinInsertNth
 public import TauCeti.Topology.ComplexProjectiveSpace.Charts
-public import Mathlib.Geometry.Manifold.IsManifold.Basic
+public import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 
 /-!
 # The standard complex manifold structure on complex projective space
@@ -53,21 +54,11 @@ theorem mem_atlas_iff (e : OpenPartialHomeomorph (ComplexProjectiveSpace n) (Fin
 theorem contDiffOn_affineChart_transition (k l : Fin (n + 1)) (r : ℕ∞ω) :
     ContDiffOn ℂ r ((affineChart k).symm.trans (affineChart l))
       ((affineChart k).symm.trans (affineChart l)).source := by
-  have hcoord (j : Fin (n + 1)) :
-      ContDiff ℂ r (fun z : Fin n → ℂ ↦ Fin.insertNth (α := fun _ ↦ ℂ) k 1 z j) := by
-    induction j using k.succAboveCases with
-    | x => simpa only [Fin.insertNth_apply_same] using
-        (contDiff_const : ContDiff ℂ r (fun _ : Fin n → ℂ ↦ (1 : ℂ)))
-    | p j => simpa only [Fin.insertNth_apply_succAbove] using contDiff_apply ℂ (fun _ ↦ ℂ) j
-  apply contDiffOn_pi.2
-  intro j
-  have hden (z) (hz : z ∈ ((affineChart k).symm.trans (affineChart l)).source) :
-      Fin.insertNth (α := fun _ ↦ ℂ) k 1 z l ≠ 0 := by
-    apply (affineParam_mem_affineOpen_iff k l z).1
-    simpa only [OpenPartialHomeomorph.symm_symm, Set.mem_preimage,
-      affineChart_symm_apply, affineChart_source] using hz.2
-  exact ((hcoord (l.succAbove j)).contDiffOn.div (hcoord l).contDiffOn hden).congr
-    (fun z _ ↦ affineChart_transition k l z j)
+  refine (Fin.contDiffOn_insertNth_one_div k l).mono (fun z hz ↦ ?_) |>.congr
+    fun z _ ↦ funext (affineChart_transition k l z)
+  apply (affineParam_mem_affineOpen_iff k l z).1
+  simpa only [OpenPartialHomeomorph.symm_symm, Set.mem_preimage,
+    affineChart_symm_apply, affineChart_source] using hz.2
 
 /-- Complex projective space with its standard homogeneous-coordinate atlas is a complex
 manifold, at every differentiability order. -/
@@ -78,6 +69,20 @@ instance instIsManifold (r : ℕ∞ω) :
   obtain ⟨k, rfl⟩ := (mem_atlas_iff e).1 he
   obtain ⟨l, rfl⟩ := (mem_atlas_iff e').1 he'
   simpa using contDiffOn_affineChart_transition k l r
+
+/-- Each homogeneous-ratio chart is holomorphic on its affine open. -/
+theorem contMDiffOn_affineChart (k : Fin (n + 1)) (r : ℕ∞ω) :
+    ContMDiffOn 𝓘(ℂ, Fin n → ℂ) 𝓘(ℂ, Fin n → ℂ) r (affineChart k) (affineOpen k) := by
+  rw [← affineChart_source k]
+  exact contMDiffOn_of_mem_maximalAtlas
+    (IsManifold.subset_maximalAtlas ((mem_atlas_iff _).2 ⟨k, rfl⟩))
+
+/-- The inverse of each homogeneous-ratio chart is holomorphic. -/
+theorem contMDiff_affineChart_symm (k : Fin (n + 1)) (r : ℕ∞ω) :
+    ContMDiff 𝓘(ℂ, Fin n → ℂ) 𝓘(ℂ, Fin n → ℂ) r (affineChart k).symm := by
+  rw [← contMDiffOn_univ, ← affineChart_target k]
+  exact contMDiffOn_symm_of_mem_maximalAtlas
+    (IsManifold.subset_maximalAtlas ((mem_atlas_iff _).2 ⟨k, rfl⟩))
 
 end
 

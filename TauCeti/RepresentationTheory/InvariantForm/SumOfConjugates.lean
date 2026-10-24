@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.LinearAlgebra.Matrix.DotProduct
+public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 public import TauCeti.RepresentationTheory.InvariantForm
 
 /-!
@@ -36,6 +37,9 @@ the field, not a division by `|G|`, that does the work.
   for the conjugation action of `G` on bilinear forms.
 * `Representation.isInvariantForm_sumOfConjugatesForm`: that sum is invariant.
 * `Representation.isSymm_sumOfConjugatesForm`: that sum is symmetric if the form is.
+* `Representation.le_sumOfConjugatesForm_apply_self`,
+  `Representation.posDef_toQuadraticMap_sumOfConjugatesForm`: over an ordered semiring, that sum
+  dominates the form on the diagonal, and is positive definite if the form is.
 * `Representation.exists_isInvariantForm_isSymm_ne_zero`: **a representation of a finite group on a
   nontrivial finite-dimensional space over an ordered field carries a nonzero invariant symmetric
   form.**
@@ -86,6 +90,34 @@ theorem isSymm_sumOfConjugatesForm {σ : Representation k G W} {B : BilinForm k 
       Finset.sum_congr rfl fun g (_ : g ∈ Finset.univ) => hB.eq (σ g x) (σ g y)⟩
 
 end Monoid
+
+/-! ### Positivity of the sum over the conjugates -/
+
+section OrderedMonoid
+
+variable {k G W : Type*} [CommSemiring k] [PartialOrder k] [IsOrderedAddMonoid k] [Monoid G]
+  [Fintype G] [AddCommMonoid W] [Module k W]
+
+/-- The sum over the conjugates of a form with nonnegative diagonal dominates its term at `g = 1`,
+which is the value of the form itself. -/
+theorem le_sumOfConjugatesForm_apply_self {σ : Representation k G W} {B : BilinForm k W}
+    (hB : ∀ y, 0 ≤ B y y) (x : W) : B x x ≤ sumOfConjugatesForm σ B x x := by
+  rw [sumOfConjugatesForm_apply]
+  have h := Finset.single_le_sum (f := fun g : G => B (σ g x) (σ g x)) (fun g _ => hB _)
+    (Finset.mem_univ 1)
+  rwa [map_one, Module.End.one_apply] at h
+
+/-- The sum over the conjugates of a positive-definite form is positive definite. -/
+theorem posDef_toQuadraticMap_sumOfConjugatesForm {σ : Representation k G W} {B : BilinForm k W}
+    (hB : B.toQuadraticMap.PosDef) : (sumOfConjugatesForm σ B).toQuadraticMap.PosDef := by
+  have hnonneg (y : W) : 0 ≤ B y y := by
+    simpa only [LinearMap.BilinMap.toQuadraticMap_apply] using hB.nonneg y
+  intro x hx
+  have hpos := hB x hx
+  rw [LinearMap.BilinMap.toQuadraticMap_apply] at hpos ⊢
+  exact hpos.trans_le (le_sumOfConjugatesForm_apply_self hnonneg x)
+
+end OrderedMonoid
 
 section Group
 
@@ -149,10 +181,7 @@ theorem exists_isInvariantForm_isSymm_ne_zero (σ : Representation k G W)
     refine (hB₀nonneg x).lt_of_ne (Ne.symm ?_)
     rw [hB₀apply, ne_eq, dotProduct_self_eq_zero, Finsupp.coe_eq_zero]
     exact fun h => hx (b.repr.map_eq_zero_iff.mp h)
-  have hle : B₀ x x ≤ sumOfConjugatesForm σ B₀ x x := by
-    rw [sumOfConjugatesForm_apply]
-    simpa using Finset.single_le_sum (f := fun g : G => B₀ (σ g x) (σ g x))
-      (fun g _ => hB₀nonneg _) (Finset.mem_univ 1)
+  have hle : B₀ x x ≤ sumOfConjugatesForm σ B₀ x x := le_sumOfConjugatesForm_apply_self hB₀nonneg x
   intro hzero
   rw [hzero] at hle
   simp only [LinearMap.zero_apply] at hle

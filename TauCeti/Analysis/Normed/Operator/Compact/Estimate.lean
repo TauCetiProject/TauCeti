@@ -24,7 +24,7 @@ cokernel: that requires a corresponding estimate for the adjoint or another argu
 
 The sequential form says that a bounded sequence whose `T`-images converge has a convergent
 subsequence. Its limit solves the limiting equation. No completeness of either target space
-is needed.
+is needed; the compact-error target may even be seminormed.
 
 The argument uses Mathlib's Riesz lemma and uniform-inducing maps, and the compact-operator
 subsequence API in `TauCeti.Analysis.Normed.Operator.Compact.Basic`.
@@ -47,13 +47,14 @@ open scoped Topology
 
 variable {𝕜 E F G : Type*} [NontriviallyNormedField 𝕜]
 variable [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-variable [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-variable [NormedAddCommGroup G] [NormedSpace 𝕜 G]
-variable (T : E →L[𝕜] F) {K : E →L[𝕜] G} {C : ℝ}
+variable [SeminormedAddCommGroup G] [NormedSpace 𝕜 G]
+variable {C : ℝ}
 
 /-- An operator satisfying an a priori estimate with a compact error has finite-dimensional
-kernel. The domain and the target spaces need not be complete. -/
+kernel. The domain and the target spaces need not be complete, and the target spaces need
+only be seminormed. -/
 theorem finiteDimensional_ker_of_compact_estimate [CompleteSpace 𝕜]
+    [SeminormedAddCommGroup F] [Module 𝕜 F] (T : E →L[𝕜] F) {K : E →L[𝕜] G}
     (hK : IsCompactOperator K) (hbound : ∀ x, ‖x‖ ≤ C * ‖T x‖ + ‖K x‖) :
     FiniteDimensional 𝕜 T.ker := by
   by_contra hfinite
@@ -74,6 +75,7 @@ variable [CompleteSpace E]
 /-- Under a compact-error estimate, a bounded sequence whose operator images converge has a
 convergent subsequence. The subsequential limit maps to the prescribed limit of the images. -/
 theorem exists_subseq_tendsto_of_compact_estimate
+    [NormedAddCommGroup F] [Module 𝕜 F] (T : E →L[𝕜] F) {K : E →L[𝕜] G}
     (hK : IsCompactOperator K)
     (hbound : ∀ x, ‖x‖ ≤ C * ‖T x‖ + ‖K x‖)
     {R : ℝ} {v : ℕ → E} (hvbound : ∀ n, ‖v n‖ ≤ R) {y : F}
@@ -101,6 +103,8 @@ theorem exists_subseq_tendsto_of_compact_estimate
   exact ⟨x, ψ, hψ, hx,
     tendsto_nhds_unique (T.continuous.continuousAt.tendsto.comp hx)
       (hTv.comp hψ.tendsto_atTop)⟩
+
+variable [NormedAddCommGroup F] [NormedSpace 𝕜 F] (T : E →L[𝕜] F) {K : E →L[𝕜] G}
 
 /-- A compact-error estimate makes an operator bounded below on every closed subspace
 disjoint from its kernel. -/

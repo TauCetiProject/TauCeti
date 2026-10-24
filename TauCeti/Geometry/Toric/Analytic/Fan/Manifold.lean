@@ -434,6 +434,21 @@ theorem analyticAffineChartPartialDiffeomorph_apply (n : ℕ∞ω)
     Φ.analyticAffineChartPartialDiffeomorph hΦ σ hB κ g n x = Φ.analyticAffineChartι hΦ σ x :=
   Φ.piecePartialDiffeomorph_apply hΦ σ n x
 
+/-- The inverse chart-inclusion biholomorphism recovers each affine chart point from its image. -/
+@[simp]
+theorem analyticAffineChartPartialDiffeomorph_symm_analyticAffineChartι (n : ℕ∞ω)
+    (x : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1)) :
+    let _ := affinePointTopology g
+    let _ := coneChartedSpace Φ.lattice ((isRegular_iff.mp hΦ) σ.1 σ.2).toIsToricCone hB κ g
+    letI := Φ.analyticChartedSpace hΦ
+    (Φ.analyticAffineChartPartialDiffeomorph hΦ σ hB κ g n).toPartialEquiv.symm
+      (Φ.analyticAffineChartι hΦ σ x) = x := by
+  intro _ _
+  let _ := Φ.analyticChartedSpace hΦ
+  rw [← Φ.analyticAffineChartPartialDiffeomorph_apply hΦ σ hB κ g n x]
+  exact (Φ.analyticAffineChartPartialDiffeomorph hΦ σ hB κ g n).toPartialEquiv.left_inv
+    (by simp)
+
 /-- The inclusion of the affine analytic chart of a cone into the analytic realization is
 holomorphic, for the complex structure of any extending basis of the cone. -/
 theorem contMDiff_analyticAffineChartι (n : ℕ∞ω) :

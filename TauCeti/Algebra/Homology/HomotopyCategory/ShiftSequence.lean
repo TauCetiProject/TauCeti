@@ -50,6 +50,13 @@ noncomputable def shiftCyclesIso (n i i' : ℤ) (hi : n + i = i') :
     (K⟦n⟧).cycles i ≅ K.cycles i' :=
   ShortComplex.cyclesMapIso ((shiftShortComplexFunctorIso C n i i' hi).app K)
 
+/-- The isomorphism `CochainComplex.shiftCyclesIso` is the map on cycles induced by the
+isomorphism of short complexes `shiftShortComplexFunctorIso`. -/
+lemma shiftCyclesIso_hom (n i i' : ℤ) (hi : n + i = i') :
+    (K.shiftCyclesIso n i i' hi).hom =
+      ShortComplex.cyclesMap ((shiftShortComplexFunctorIso C n i i' hi).hom.app K) :=
+  (rfl)
+
 /-- The isomorphism `CochainComplex.shiftCyclesIso` commutes with the inclusions of the cycles,
 up to the identification `(K⟦n⟧).X i = K.X (i + n)`. -/
 @[reassoc (attr := simp)]

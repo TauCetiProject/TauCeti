@@ -26,8 +26,15 @@ jobs:
           ref: ${{ github.sha }}
           persist-credentials: false
           sparse-checkout: |
+            tauceti.toml
             scripts/cancel_bors_candidate.py
           sparse-checkout-cone-mode: false
+      - name: Prepare pinned shared tools
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+        with:
+          tools-repository: TauCetiProject/TauCetiTools
+          tools-ref: ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+          project-directory: .
       - name: Request normal cancellation after fresh exact authority checks
         env:
           GH_TOKEN: ${{ github.token }}

@@ -7,34 +7,24 @@ module
 
 public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.Subspace
 public import TauCeti.NumberTheory.ArithmeticFunction.DivisorBounds
-public import TauCeti.NumberTheory.ModularForms.QExpansion.Basic
-public import Mathlib.NumberTheory.LSeries.Convergence
-import TauCeti.NumberTheory.ModularForms.Cusps.Basic
 
 /-!
-# Fourier coefficient bounds on Eisenstein subspaces
+# Fourier coefficient bounds for the Eisenstein series with character
 
 For weight `k ≥ 3`, the positive Fourier coefficients of each normalized raised character
 Eisenstein series are bounded by `n^(k-1) ∑' d, d^(-(k-1))`. The constant is independent
-of the characters and the raising parameter. Finite linear combinations consequently have
-coefficients `O(n^(k-1))`, and their coefficient L-series have abscissa of absolute
-convergence at most `k`.
-
-The estimate applies to the entire fixed-nebentypus Eisenstein subspace, defined as the span
-of the normalized raised character series. Membership means being a finite linear combination
-of these generators and does not require a decomposition of the ambient modular-form space.
-Extending the abscissa bound to arbitrary modular forms requires a cusp–Eisenstein decomposition
-and the cusp-form coefficient bound. We do not assert this power bound in weight two, where
-the untwisted divisor sum is not `O(n)`.
+of the characters and the raising parameter, so the coefficients are `O(n^(k-1))`. At levels
+`N ∉ {1, 2, 4}` these series span the Eisenstein part of `M_k(Γ₁(N))`, so this is the Eisenstein
+half of the bound `aₙ = O(n^(k-1))` for all modular forms on `Γ₁(N)`
+(`TauCeti.ModularFormClass.qExpansion_isBigO_of_Gamma1_le`). We do not assert this power bound
+in weight two, where the untwisted divisor sum is not `O(n)`.
 
 ## Main results
 
 * `TauCeti.EisensteinSeries.CharIndex.norm_qExpansion_form_coeff_le`: a uniform bound for
   the generators at positive indices.
-* `TauCeti.isBigO_qExpansion_coeff_of_mem_eisensteinSubspace`: the coefficient bound on
-  the whole span.
-* `TauCeti.abscissaOfAbsConv_qExpansion_coeff_le_of_mem_eisensteinSubspace`: absolute
-  convergence of the coefficient L-series for `Re s > k`.
+* `TauCeti.EisensteinSeries.CharIndex.isBigO_qExpansion_form_coeff`: the generators have
+  coefficients `O(n^(k-1))`.
 
 ## References
 
@@ -85,56 +75,5 @@ theorem isBigO_qExpansion_form_coeff (hk : 3 ≤ (k : ℤ)) :
     mul_comm] using a.norm_qExpansion_form_coeff_le hk hn
 
 end EisensteinSeries.CharIndex
-
-variable {N k : ℕ} [NeZero N] {chi : (ZMod N)ˣ →* ℂˣ}
-
-/-- Every form in the fixed-nebentypus Eisenstein subspace of weight `k ≥ 3` has Fourier
-coefficients `O(n^(k-1))`. -/
-theorem isBigO_qExpansion_coeff_of_mem_eisensteinSubspace (hk : 3 ≤ (k : ℤ))
-    {f : modFormCharSpace (k : ℤ) chi} (hf : f ∈ eisensteinSubspace chi hk) :
-    (fun n ↦ (qExpansion 1 (f : ModularForm ((Gamma1 N).map (mapGL ℝ)) (k : ℤ))).coeff n) =O[atTop]
-      (fun n : ℕ ↦ (n : ℝ) ^ (k - 1)) := by
-  let Q : modFormCharSpace (k : ℤ) chi →ₗ[ℂ] PowerSeries ℂ :=
-    (ModularForm.qExpansionLinearMap one_pos (one_mem_strictPeriods_Gamma1_map N) (k : ℤ)).comp
-      (modFormCharSpace (k : ℤ) chi).subtype
-  have hQ (g : modFormCharSpace (k : ℤ) chi) :
-      Q g = qExpansion 1 (g : ModularForm ((Gamma1 N).map (mapGL ℝ)) (k : ℤ)) := by
-    simp [Q, ModularForm.qExpansionLinearMap_apply]
-  rw [eisensteinSubspace_def] at hf
-  suffices (fun n ↦ (Q f).coeff n) =O[atTop] (fun n : ℕ ↦ (n : ℝ) ^ (k - 1)) by
-    simpa only [hQ] using this
-  induction hf using Submodule.span_induction with
-  | mem g hg =>
-      obtain ⟨⟨a, ha⟩, rfl⟩ := hg
-      simpa only [hQ, EisensteinSeries.CharIndex.coe_inCharSpace]
-        using a.isBigO_qExpansion_form_coeff hk
-  | zero => simpa using (isBigO_zero (fun n : ℕ ↦ (n : ℝ) ^ (k - 1)) atTop)
-  | add g h _ _ hg hh => simpa using hg.add hh
-  | smul c g _ hg => simpa using hg.const_mul_left c
-
-/-- The coefficient L-series of an Eisenstein form of weight `k ≥ 3` has abscissa of
-absolute convergence at most `k`. -/
-theorem abscissaOfAbsConv_qExpansion_coeff_le_of_mem_eisensteinSubspace
-    (hk : 3 ≤ (k : ℤ)) {f : modFormCharSpace (k : ℤ) chi}
-    (hf : f ∈ eisensteinSubspace chi hk) :
-    LSeries.abscissaOfAbsConv
-      (fun n ↦ (qExpansion 1 (f : ModularForm ((Gamma1 N).map (mapGL ℝ)) (k : ℤ))).coeff n) ≤
-        (k : EReal) := by
-  have hO := isBigO_qExpansion_coeff_of_mem_eisensteinSubspace hk hf
-  have hO' :
-      (fun n ↦
-        (qExpansion 1 (f : ModularForm ((Gamma1 N).map (mapGL ℝ)) (k : ℤ))).coeff n) =O[atTop]
-      (fun n : ℕ ↦ (n : ℝ) ^ ((k - 1 : ℕ) : ℝ)) := by
-    simpa only [Real.rpow_natCast] using hO
-  have h := LSeries.abscissaOfAbsConv_le_of_isBigO_rpow hO'
-  have hk1 : 1 ≤ k := by omega
-  have hweight : ((k - 1 : ℕ) : ℝ) + 1 = (k : ℝ) := by
-    exact_mod_cast Nat.sub_add_cancel hk1
-  have heq : (((k - 1 : ℕ) : ℝ) : EReal) + 1 = (k : EReal) := by
-    calc
-      _ = ((((k - 1 : ℕ) : ℝ) + 1 : ℝ) : EReal) := (EReal.coe_add _ 1).symm
-      _ = ((k : ℝ) : EReal) := congrArg (fun x : ℝ ↦ (x : EReal)) hweight
-      _ = (k : EReal) := EReal.coe_natCast
-  exact h.trans_eq heq
 
 end TauCeti

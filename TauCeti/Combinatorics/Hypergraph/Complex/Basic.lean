@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.SimplicialComplex.Basic
-public import Mathlib.Data.Finset.Powerset
+public import Mathlib.Data.Finset.Union
+public import Mathlib.Data.Set.Finite.Basic
 
 /-!
 # Finite bounded hypergraph complexes
@@ -14,8 +15,11 @@ public import Mathlib.Data.Finset.Powerset
 This file defines finite augmented complexes whose faces have cardinality at most a fixed rank.
 Unlike Mathlib's `PreAbstractSimplicialComplex`, a `HypergraphComplex` includes the empty face and
 records faces in finite cardinality levels. The conversions in this file identify bounded
-pre-abstract simplicial complexes on finite vertex types with these finite graded complexes after
-forgetting or adjoining the empty face.
+pre-abstract simplicial complexes with finitely many faces with these finite graded complexes after
+forgetting or adjoining the empty face. Neither conversion requires a finite ambient vertex type.
+
+Use `HypergraphComplex.ofPreAbstractSimplicialComplex` to construct a finite graded complex and
+`HypergraphComplex.toPreAbstractSimplicialComplex` to forget its empty face and grading.
 
 The grading uses face cardinality: a triple lies in level `3`, corresponding to simplicial
 dimension `2`.
@@ -95,90 +99,99 @@ theorem card_le_of_mem_toPreAbstractSimplicialComplex (C : HypergraphComplex r V
     (hs : s ∈ C.toPreAbstractSimplicialComplex) : s.card ≤ r :=
   hs.2.choose
 
-end HypergraphComplex
+/-- Forgetting the empty face leaves finitely many faces, even on an infinite ambient type. -/
+theorem finite_faces_toPreAbstractSimplicialComplex (C : HypergraphComplex r V) :
+    C.toPreAbstractSimplicialComplex.faces.Finite := by
+  classical
+  let allFaces := (univ : Finset (Fin (r + 1))).biUnion
+    (fun k => C.faces k (Nat.le_of_lt_succ k.isLt))
+  apply allFaces.finite_toSet.subset
+  intro s hs
+  obtain ⟨-, hle, hface⟩ := hs
+  exact mem_biUnion.mpr ⟨⟨s.card, Nat.lt_succ_of_le hle⟩, mem_univ _, hface⟩
 
-end TauCeti
+private theorem mem_preAbstractSimplicialComplex_faces (K : PreAbstractSimplicialComplex V)
+    {s : Finset V} : s ∈ K.faces ↔ s ∈ K :=
+  Iff.rfl
 
-namespace PreAbstractSimplicialComplex
-
-open TauCeti
-
-variable {V : Type*}
-
-/-- The rank-`r` hypergraph complex of a pre-abstract simplicial complex on a finite vertex type:
-its faces of cardinality at most `r`, together with the adjoined empty face. -/
-noncomputable def toHypergraphComplex [Fintype V] (K : PreAbstractSimplicialComplex V) (r : ℕ) :
-    HypergraphComplex r V := by
+/-- Keep the faces of cardinality at most `r` of a finite precomplex and adjoin the empty face.
+On a finite ambient type, the finiteness proof can be supplied by `Set.toFinite _`.
+With an expected `HypergraphComplex r V` type, use `.ofPreAbstractSimplicialComplex K hfinite`. -/
+noncomputable def ofPreAbstractSimplicialComplex (K : PreAbstractSimplicialComplex V)
+    (hfinite : K.faces.Finite) : HypergraphComplex r V := by
   classical
   exact {
-    faces := fun k _ ↦ (univ.powersetCard k).filter fun s ↦ s = ∅ ∨ s ∈ K
+    faces := fun k _ => (insert ∅ hfinite.toFinset).filter (fun s => s.card = k)
     face_card := by
       intro k hk s hs
-      exact (Finset.mem_powersetCard.mp (Finset.mem_filter.mp hs).1).2
+      exact (mem_filter.mp hs).2
     down_closed := by
       intro k hk s hs t hts htr
-      refine Finset.mem_filter.mpr ⟨Finset.mem_powersetCard.mpr ⟨subset_univ _, rfl⟩, ?_⟩
-      rcases (Finset.mem_filter.mp hs).2 with rfl | hs
-      · exact Or.inl (Finset.subset_empty.mp hts)
+      refine mem_filter.mpr ⟨?_, rfl⟩
+      rcases mem_insert.mp (mem_filter.mp hs).1 with rfl | hs
+      · simp [subset_empty.mp hts]
       · by_cases ht : t = ∅
-        · exact Or.inl ht
-        · exact Or.inr ((K.isRelLowerSet_faces hs).2 hts (Finset.nonempty_iff_ne_empty.mpr ht))
+        · simp [ht]
+        · have hsK := (mem_preAbstractSimplicialComplex_faces K).mp
+            (hfinite.mem_toFinset.mp hs)
+          have htK := (K.isRelLowerSet_faces hsK).2 hts (nonempty_iff_ne_empty.mpr ht)
+          exact mem_insert_of_mem (hfinite.mem_toFinset.mpr
+            ((mem_preAbstractSimplicialComplex_faces K).mpr htK))
     empty_mem := by simp }
 
-/-- Membership in the rank-`r` hypergraph complex of a pre-abstract simplicial complex is
-membership in the original complex, except that the empty face is adjoined. -/
+/-- The finite conversion adds exactly the empty face and groups faces by cardinality. -/
 @[simp]
-theorem mem_faces_toHypergraphComplex [Fintype V] (K : PreAbstractSimplicialComplex V) (r : ℕ)
-    (k : ℕ) (hk : k ≤ r) (s : Finset V) :
-    s ∈ (K.toHypergraphComplex r).faces k hk ↔ s.card = k ∧ (s = ∅ ∨ s ∈ K) := by
+theorem mem_faces_ofPreAbstractSimplicialComplex (K : PreAbstractSimplicialComplex V)
+    (hfinite : K.faces.Finite) (k : ℕ) (hk : k ≤ r) {s : Finset V} :
+    s ∈ (ofPreAbstractSimplicialComplex K hfinite).faces k hk ↔
+      (s = ∅ ∨ s ∈ K) ∧ s.card = k := by
   classical
-  simp only [toHypergraphComplex, mem_filter, mem_powersetCard, subset_univ, true_and]
+  simp only [ofPreAbstractSimplicialComplex, mem_filter, mem_insert, Set.Finite.mem_toFinset,
+    mem_preAbstractSimplicialComplex_faces]
 
-/-- Forgetting the adjoined empty face recovers a pre-abstract simplicial complex whose faces have
-cardinality at most the rank. -/
+/-- Adjoining and then forgetting the empty face recovers the original finite precomplex. -/
 @[simp]
-theorem toPreAbstractSimplicialComplex_toHypergraphComplex [Fintype V] {r : ℕ}
-    (K : PreAbstractSimplicialComplex V) (hK : ∀ s ∈ K, s.card ≤ r) :
-    (K.toHypergraphComplex r).toPreAbstractSimplicialComplex = K := by
-  ext s
+theorem toPreAbstractSimplicialComplex_ofPreAbstractSimplicialComplex
+    (K : PreAbstractSimplicialComplex V) (hfinite : K.faces.Finite)
+    (hcard : ∀ s ∈ K, s.card ≤ r) :
+    (ofPreAbstractSimplicialComplex (r := r) K hfinite).toPreAbstractSimplicialComplex = K := by
+  apply SetLike.ext
+  intro s
   constructor
-  · rintro ⟨hs, hle, hface⟩
-    rcases (K.mem_faces_toHypergraphComplex r s.card hle s).mp hface with ⟨-, hs0 | hsK⟩
-    · exact ((hs0 ▸ hs).ne_empty rfl).elim
-    · exact hsK
+  · rintro ⟨hne, hle, hs⟩
+    rcases (mem_faces_ofPreAbstractSimplicialComplex K hfinite s.card hle).mp hs with
+      ⟨rfl | hs, -⟩
+    · exact (not_nonempty_empty hne).elim
+    · exact hs
   · intro hs
-    refine ⟨(K.isRelLowerSet_faces hs).1, hK s hs, ?_⟩
-    exact (K.mem_faces_toHypergraphComplex r s.card (hK s hs) s).mpr ⟨rfl, Or.inr hs⟩
+    refine ⟨(K.isRelLowerSet_faces
+      ((mem_preAbstractSimplicialComplex_faces K).mpr hs)).1, hcard s hs, ?_⟩
+    exact (mem_faces_ofPreAbstractSimplicialComplex K hfinite s.card (hcard s hs)).mpr
+      ⟨Or.inr hs, rfl⟩
 
-end PreAbstractSimplicialComplex
-
-namespace TauCeti.HypergraphComplex
-
-variable {r : ℕ} {V : Type*}
-
-/-- Adjoining the empty face after forgetting the grading recovers the original hypergraph
-complex. -/
+/-- Forgetting and then adjoining the empty face recovers the finite graded complex,
+including rank zero. -/
 @[simp]
-theorem toHypergraphComplex_toPreAbstractSimplicialComplex [Fintype V]
-    (C : HypergraphComplex r V) : C.toPreAbstractSimplicialComplex.toHypergraphComplex r = C := by
+theorem ofPreAbstractSimplicialComplex_toPreAbstractSimplicialComplex (C : HypergraphComplex r V) :
+    ofPreAbstractSimplicialComplex C.toPreAbstractSimplicialComplex
+      C.finite_faces_toPreAbstractSimplicialComplex = C := by
   ext k hk s
+  rw [mem_faces_ofPreAbstractSimplicialComplex]
   constructor
-  · intro hface
-    rcases (C.toPreAbstractSimplicialComplex.mem_faces_toHypergraphComplex r k hk s).mp hface with
-      ⟨hcard, rfl | ⟨-, hle, hs⟩⟩
+  · rintro ⟨rfl | ⟨-, hle, hs⟩, hcard⟩
     · simp only [card_empty] at hcard
       subst k
       exact C.empty_mem
     · simpa only [hcard] using hs
   · intro hs
     have hcard := C.face_card k hk s hs
-    subst k
-    apply (C.toPreAbstractSimplicialComplex.mem_faces_toHypergraphComplex r s.card hk s).mpr
-    refine ⟨rfl, ?_⟩
-    by_cases hs0 : s = ∅
-    · exact Or.inl hs0
-    · exact Or.inr ⟨Finset.nonempty_iff_ne_empty.mpr hs0, ⟨hk, hs⟩⟩
+    refine ⟨?_, hcard⟩
+    rcases s.eq_empty_or_nonempty with rfl | hne
+    · exact Or.inl rfl
+    · exact Or.inr ⟨hne, hcard ▸ hk, by simpa only [hcard] using hs⟩
 
-end TauCeti.HypergraphComplex
+end HypergraphComplex
+
+end TauCeti
 
 end

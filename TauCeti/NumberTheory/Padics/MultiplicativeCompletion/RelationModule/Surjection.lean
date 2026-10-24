@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Padics.MultiplicativeCompletion.RelationModule.Presentation
-import TauCeti.NumberTheory.LocalField.ClassModule
+import TauCeti.NumberTheory.LocalField.ClassModule.Basic
 import TauCeti.NumberTheory.LocalField.Generation.Presentation
 import TauCeti.NumberTheory.Padics.MultiplicativeCompletion.RelationModule.Cohomology
 import TauCeti.NumberTheory.Padics.MultiplicativeCompletion.RelationModule.ProjectiveKernel

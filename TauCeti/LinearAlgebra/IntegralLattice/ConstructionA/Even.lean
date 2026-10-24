@@ -54,7 +54,7 @@ namespace TauCeti.ConstructionA
 
 open Matrix
 
-variable (m : ℕ+) {ι : Type*} [Fintype ι]
+variable (m : ℕ) [NeZero m] {ι : Type*} [Fintype ι]
 
 /-- **A Construction A lattice is even exactly when `2m` divides the sum of the squares of every
 integer lift of a codeword.** -/
@@ -62,7 +62,7 @@ theorem isEven_integralLattice_iff_intCast (C : AddSubgroup (ι → ZMod m))
     (hC : AddSubgroup.toZModSubmodule m C ≤ (AddSubgroup.toZModSubmodule m C).euclideanDual) :
     (integralLattice m C hC).IsEven ↔
       ∀ z : ι → ℤ, (fun i ↦ ((z i : ZMod m))) ∈ C → (2 * m : ℤ) ∣ ∑ i, z i ^ 2 := by
-  have hm0 : ((m : ℕ) : ℚ) ≠ 0 := NeZero.ne _
+  have hm0 : (m : ℚ) ≠ 0 := NeZero.ne _
   rw [IntegralLattice.isEven_iff_forall_norm]
   constructor
   · intro h z hz
@@ -85,34 +85,34 @@ theorem isEven_integralLattice_iff_intCast (C : AddSubgroup (ι → ZMod m))
 
 /-- **Over an even modulus, a Construction A lattice is even exactly when its code is
 quadratically isotropic** in the standard coordinate discriminant module over `ℤ/m`. -/
-theorem isEven_integralLattice_iff_isIsotropic (hm : Even (m : ℕ))
+theorem isEven_integralLattice_iff_isIsotropic (hm : Even m)
     (C : AddSubgroup (ι → ZMod m))
     (hC : AddSubgroup.toZModSubmodule m C ≤ (AddSubgroup.toZModSubmodule m C).euclideanDual) :
     (integralLattice m C hC).IsEven ↔
-      ((FiniteQuadraticModule.zmodStandard (m : ℕ) hm).coordinatePower ι).IsIsotropic C := by
+      ((FiniteQuadraticModule.zmodStandard m hm).coordinatePower ι).IsIsotropic C := by
   rw [isEven_integralLattice_iff_intCast,
     isIsotropic_coordinatePower_zmodStandard_quadratic_intCast_iff]
 
 /-- Over an even modulus, a Construction A lattice is even exactly when `2m` divides the sum of
 the squares of the canonical representatives of every codeword. -/
-theorem isEven_integralLattice_iff (hm : Even (m : ℕ)) (C : AddSubgroup (ι → ZMod m))
+theorem isEven_integralLattice_iff (hm : Even m) (C : AddSubgroup (ι → ZMod m))
     (hC : AddSubgroup.toZModSubmodule m C ≤ (AddSubgroup.toZModSubmodule m C).euclideanDual) :
-    (integralLattice m C hC).IsEven ↔ ∀ x ∈ C, 2 * (m : ℕ) ∣ ∑ i, (x i).val ^ 2 := by
+    (integralLattice m C hC).IsEven ↔ ∀ x ∈ C, 2 * m ∣ ∑ i, (x i).val ^ 2 := by
   rw [isEven_integralLattice_iff_isIsotropic m hm,
     isIsotropic_coordinatePower_zmodStandard_quadratic_iff]
 
 /-- Over an even modulus, a Construction A lattice is even exactly when every codeword has
 Euclidean weight divisible by `2m`. -/
-theorem isEven_integralLattice_iff_euclideanWeight (hm : Even (m : ℕ))
+theorem isEven_integralLattice_iff_euclideanWeight (hm : Even m)
     (C : AddSubgroup (ι → ZMod m))
     (hC : AddSubgroup.toZModSubmodule m C ≤ (AddSubgroup.toZModSubmodule m C).euclideanDual) :
-    (integralLattice m C hC).IsEven ↔ ∀ x ∈ C, 2 * (m : ℕ) ∣ euclideanWeight x := by
+    (integralLattice m C hC).IsEven ↔ ∀ x ∈ C, 2 * m ∣ euclideanWeight x := by
   rw [isEven_integralLattice_iff_isIsotropic m hm,
     isIsotropic_coordinatePower_zmodStandard_quadratic_iff_euclideanWeight]
 
 /-- Over an odd modulus a Construction A lattice is never even: the coordinate vector `m eᵢ`
 has norm `m`. -/
-theorem not_isEven_integralLattice_of_odd (hm : Odd (m : ℕ)) [Nonempty ι]
+theorem not_isEven_integralLattice_of_odd (hm : Odd m) [Nonempty ι]
     (C : AddSubgroup (ι → ZMod m))
     (hC : AddSubgroup.toZModSubmodule m C ≤ (AddSubgroup.toZModSubmodule m C).euclideanDual) :
     ¬ (integralLattice m C hC).IsEven := by
@@ -128,12 +128,25 @@ theorem not_isEven_integralLattice_of_odd (hm : Odd (m : ℕ)) [Nonempty ι]
   simp only [integralLattice_norm, dotProduct_single, Pi.single_eq_same, mul_div_assoc,
     div_self hm0, mul_one] at hk
   rw [Nat.odd_iff] at hm
-  have hdvd : (2 : ℕ) ∣ (m : ℕ) := by
-    have h2 : (2 : ℤ) ∣ ((m : ℕ) : ℤ) := ⟨k, by exact_mod_cast hk⟩
+  have hdvd : 2 ∣ m := by
+    have h2 : (2 : ℤ) ∣ (m : ℤ) := ⟨k, by exact_mod_cast hk⟩
     exact_mod_cast h2
   omega
 
 /-! ## The binary case -/
+
+/-- Every Construction A vector of an even binary code has an even coordinate sum. -/
+theorem exists_sum_eq_two_mul (C : LinearCode (ZMod 2) ι) (hC : BinaryCode.IsEven C)
+    {x : ι → ℚ} (hx : x ∈ lattice 2 C.toAddSubgroup) : ∃ k : ℤ, ∑ i, x i = 2 * k := by
+  obtain ⟨z, hz, rfl⟩ := (mem_lattice 2).mp hx
+  have hpar : ((∑ i, z i : ℤ) : ZMod 2) = 0 := by
+    have h := dotProduct_one_eq_hammingNorm (fun i ↦ (z i : ZMod 2))
+    simp only [dotProduct, Pi.one_apply, mul_one] at h
+    push_cast
+    rw [h, ZMod.natCast_eq_zero_iff_even]
+    exact BinaryCode.isEven_iff.mp hC _ hz
+  obtain ⟨k, hk⟩ := (ZMod.intCast_zmod_eq_zero_iff_dvd _ 2).mp hpar
+  exact ⟨k, by beta_reduce; exact_mod_cast hk⟩
 
 /-- A Construction A lattice at modulus two is even exactly when every codeword weight is
 divisible by four. -/
@@ -187,20 +200,8 @@ theorem isEven_and_isUnimodular_integralLattice_iff_isTypeII (hr : r ≠ 0)
       (AddSubgroup.toZModSubmodule (2 ^ r) C).euclideanDual) :
     (integralLattice (2 ^ r) C hC).IsEven ∧ (integralLattice (2 ^ r) C hC).IsUnimodular ↔
       TwoPowCode.IsTypeII r C := by
-  -- The lattice is built over `ℤ/↑(2 ^ r : ℕ+)`, which is `ℤ/2^r` only up to unfolding the
-  -- coercion `ℕ+ → ℕ`, so the criteria are chained in term mode rather than rewritten.
-  have hm : Even ((2 ^ r : ℕ+) : ℕ) := by
-    rw [PNat.pow_coe, PNat.val_ofNat]
-    exact (Nat.even_pow' hr).mpr even_two
-  have h2 : 2 * ((2 ^ r : ℕ+) : ℕ) = 2 ^ (r + 1) := by
-    rw [PNat.pow_coe, PNat.val_ofNat, pow_succ']
-  refine ((isEven_integralLattice_iff_euclideanWeight (2 ^ r) hm C hC).and
-    (isUnimodular_integralLattice_iff (2 ^ r) C hC)).trans ?_
-  refine (and_comm.trans (Iff.rfl.and (forall₂_congr fun x _ ↦ ?_))).trans
-    TwoPowCode.isTypeII_iff.symm
-  -- the two sides differ only in `2 * ↑(2 ^ r)` and in how the alphabet of `x` is written
-  rw [h2]
-  rfl
+  rw [isEven_integralLattice_iff_euclideanWeight (2 ^ r) ((Nat.even_pow' hr).mpr even_two),
+    isUnimodular_integralLattice_iff, TwoPowCode.isTypeII_iff, ← pow_succ', and_comm]
 
 /-- The Construction A lattice of a Type II code over `ℤ/2^r`, `r ≥ 1`, is even. -/
 theorem isEven_integralLattice_of_isTypeII (hr : r ≠ 0) {C : AdditiveCode (ZMod (2 ^ r)) ι}

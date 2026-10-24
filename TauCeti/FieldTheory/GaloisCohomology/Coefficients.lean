@@ -14,13 +14,14 @@ public import TauCeti.FieldTheory.Galois.Restriction
 public import TauCeti.FieldTheory.KrullTopology
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.ShortExact
 public import TauCeti.RingTheory.RootsOfUnity.Action
+public import TauCeti.RingTheory.RootsOfUnity.Basic
 public import TauCeti.RingTheory.RootsOfUnity.ZMod
 -- Non-public: the roots of unity of a separably closed field are used only inside a proof.
 import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 -- Non-public: the nonvanishing of `n` in `Kˢ` is used only inside a proof.
 import TauCeti.Algebra.Algebra.NatCast
 -- Non-public: lifting a unit of `Kˢ` lying in `K` to a unit of `K` is used only inside a proof.
-import TauCeti.Algebra.GroupWithZero.Units.Basic
+import TauCeti.Algebra.Group.Units.Basic
 
 /-!
 # The multiplicative coefficient modules of Galois cohomology
@@ -86,6 +87,8 @@ are strictly larger than `Kˣ`.
 * `TauCeti.smul_kummerCoeff_eq_self`: the action on `μₙ` is trivial when `K` contains a primitive
   `n`th root of unity.
 * `TauCeti.mem_H0_unitsCoeff_iff`: a unit of `Kˢ` fixed by `G_K` comes from `Kˣ`.
+* `TauCeti.baseRootsOfUnityEquivInvariants`: the roots of unity of `K` identify with the
+  Galois invariants of the roots of unity of `Kˢ`.
 * `TauCeti.mem_H0_fixingSubgroup_unitsCoeff_iff`: a unit of `Kˢ` fixed by the subgroup fixing
   `σ(L)` comes from `Lˣ`.
 
@@ -362,6 +365,58 @@ def baseUnitsEquivInvariants :
 theorem toMul_coe_baseUnitsEquivInvariants (a : Additive Kˣ) :
     ((baseUnitsEquivInvariants K a : UnitsCoeff K).toMul : (SeparableClosure K)ˣ) =
       Units.map (algebraMap K (SeparableClosure K)).toMonoidHom a.toMul :=
+  (rfl)
+
+/-! ### The invariants of the roots of unity -/
+
+variable {K} (n : ℕ)
+
+/-- A root of unity of the separable closure is fixed by `G_K` exactly when it comes from
+an `n`-th root of unity of the base field. No invertibility hypothesis on `n` is needed. -/
+theorem mem_H0_kummerCoeff_iff {x : KummerCoeff K n} :
+    x ∈ H0 (AbsoluteGaloisGroup K) (KummerCoeff K n) ↔
+      ∃ a : rootsOfUnity n K,
+        restrictRootsOfUnity (algebraMap K (SeparableClosure K)) n a = x.toMul := by
+  constructor
+  · intro hx
+    have hu : kummerCoeffIncl K n x ∈ H0 (AbsoluteGaloisGroup K) (UnitsCoeff K) := by
+      rw [FixedPoints.mem_addSubgroup] at hx ⊢
+      intro σ
+      rw [← kummerCoeffIncl_equivariant, hx σ]
+    obtain ⟨a, ha⟩ := mem_H0_unitsCoeff_iff.mp hu
+    rw [toMul_kummerCoeffIncl] at ha
+    have hpow : a ^ n = 1 := Units.map_injective (algebraMap K (SeparableClosure K)).injective
+      (by rw [map_pow, map_one, ha]; exact (mem_rootsOfUnity n _).mp x.toMul.2)
+    exact ⟨⟨a, (mem_rootsOfUnity n a).mpr hpow⟩, Subtype.ext ha⟩
+  · rintro ⟨a, ha⟩
+    rw [FixedPoints.mem_addSubgroup]
+    intro σ
+    apply Additive.toMul.injective
+    apply Subtype.ext
+    simp only [Additive.toMul_smul, rootsOfUnity.coe_smul, ← ha]
+    exact smul_units_map_algebraMap σ a
+
+variable (K)
+
+/-- The roots of unity of `K` are canonically the Galois invariants of those of `Kˢ`. -/
+def baseRootsOfUnityEquivInvariants :
+    Additive (rootsOfUnity n K) ≃+ H0 (AbsoluteGaloisGroup K) (KummerCoeff K n) :=
+  AddEquiv.ofBijective
+    ((MonoidHom.toAdditive (restrictRootsOfUnity (algebraMap K (SeparableClosure K)) n)).codRestrict
+      _ fun a ↦ (mem_H0_kummerCoeff_iff n).mpr ⟨a.toMul, rfl⟩)
+    ⟨fun a b h ↦ Additive.toMul.injective <|
+        restrictRootsOfUnity_injective _ n (algebraMap K (SeparableClosure K)).injective
+          (congrArg (fun x : H0 (AbsoluteGaloisGroup K) (KummerCoeff K n) ↦
+            (x : KummerCoeff K n).toMul) h),
+      fun x ↦ by
+        obtain ⟨a, ha⟩ := (mem_H0_kummerCoeff_iff n).mp x.2
+        exact ⟨Additive.ofMul a, Subtype.ext (Additive.toMul.injective ha)⟩⟩
+
+/-- The invariant associated to a base-field root of unity is its usual image in `Kˢ`. -/
+@[simp]
+theorem coe_baseRootsOfUnityEquivInvariants (a : Additive (rootsOfUnity n K)) :
+    (baseRootsOfUnityEquivInvariants K n a : KummerCoeff K n) =
+      Additive.ofMul (restrictRootsOfUnity (algebraMap K (SeparableClosure K)) n a.toMul) :=
   (rfl)
 
 section Embedded

@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Distribution.TestFunction.Translation
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Analysis.Normed.Module.Trace
 import Mathlib.Analysis.InnerProductSpace.Trace
+import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 
 /-!
 # The divergence of a test vector field
@@ -29,17 +30,24 @@ total variation of a function and the perimeter of a set are suprema of the pair
 * `TestFunction.divergenceCLM_apply`: pointwise, it is the trace of the Fréchet derivative.
 * `TestFunction.divergenceCLM_monoCLM`: the divergence commutes with extending a test vector
   field from `Ω'` to a larger open set `Ω`.
+* `TestFunction.divergenceCLM_postcompCLM_toSpanSingleton`: the divergence of the vector field
+  `φ v` is the directional derivative `∂_v φ`.
+* `TestFunction.divergenceCLM_apply_eq_deriv`: on the real line, the divergence of a test
+  function is its derivative.
 * `TestFunction.divergenceCLM_apply_eq_sum`: in an orthonormal basis `b`, it is the sum of the
   derivatives of the components `⟪b i, φ⟫` in the directions `b i`.
 * `TauCeti.divergenceCLM_translateTestFunction`: the divergence of a translated test vector field
   is the translate of its divergence.
+* `TauCeti.trace_fderiv_smul` and `TauCeti.trace_fderiv_smul_const`: the Leibniz rule
+  `div (χ φ) = χ div φ + Dχ φ` for the divergence `tr (D ·)` of a vector field multiplied by a
+  scalar function.
 -/
 
 public section
 
 namespace TestFunction
 
-open TopologicalSpace
+open LineDeriv TopologicalSpace
 open scoped ContDiff Distributions InnerProductSpace
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
@@ -64,6 +72,29 @@ theorem divergenceCLM_monoCLM (h : Ω' ≤ Ω) (φ : 𝓓(Ω', E)) :
     (divergenceCLM (monoCLM ℝ φ : 𝓓(Ω, E)) : E → ℝ) = divergenceCLM φ := by
   ext x
   simp [monoCLM_apply, h]
+
+/-- The divergence of the test vector field `φ v`, for a scalar test function `φ` and a fixed
+vector `v`, is the directional derivative `∂_v φ`. -/
+@[simp]
+theorem divergenceCLM_postcompCLM_toSpanSingleton (φ : 𝓓(Ω, ℝ)) (v : E) :
+    divergenceCLM (postcompCLM (ContinuousLinearMap.toSpanSingleton ℝ v) φ) = ∂_{v} φ := by
+  ext x
+  have hφ : DifferentiableAt ℝ (φ : E → ℝ) x := φ.contDiff.differentiable (by simp) x
+  have hcoe : ⇑(postcompCLM (ContinuousLinearMap.toSpanSingleton ℝ v) φ) = fun y => φ y • v := by
+    ext y
+    simp
+  rw [divergenceCLM_apply, hcoe, fderiv_smul_const hφ, lineDerivOp_eq_lineDerivCLM ℝ,
+    lineDerivCLM_apply_of_le le_top, hφ.lineDeriv_eq_fderiv]
+  exact LinearMap.trace_smulRight _ _
+
+/-- On the real line, a test function is a test vector field whose divergence is its
+derivative. -/
+theorem divergenceCLM_apply_eq_deriv {Ω : Opens ℝ} (φ : 𝓓(Ω, ℝ)) (x : ℝ) :
+    divergenceCLM φ x = deriv φ x := by
+  have hφ : postcompCLM (ContinuousLinearMap.toSpanSingleton ℝ (1 : ℝ)) φ = φ := by
+    ext; simp
+  conv_lhs => rw [← hφ]
+  rw [divergenceCLM_postcompCLM_toSpanSingleton, lineDerivOp_one_apply_eq_deriv]
 
 section InnerProductSpace
 
@@ -91,15 +122,6 @@ namespace TauCeti
 open Set TestFunction TopologicalSpace
 open scoped Distributions
 
-/-- On the real line, the divergence of a test vector field is its ordinary derivative. -/
-theorem _root_.TestFunction.divergenceCLM_apply_eq_deriv {Ω : Opens ℝ} (φ : 𝓓(Ω, ℝ)) (x : ℝ) :
-    divergenceCLM φ x = deriv φ x := by
-  rw [divergenceCLM_apply_eq_sum (OrthonormalBasis.singleton Unit ℝ)]
-  simp only [OrthonormalBasis.singleton_apply, RCLike.inner_apply, mul_one,
-    conj_trivial, Finset.univ_unique, Finset.sum_singleton]
-  rw [(φ.contDiff.differentiable (by simp) x).lineDeriv_eq_fderiv,
-    fderiv_apply_one_eq_deriv]
-
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {Ω V : Opens E} {h : E}
 
@@ -110,5 +132,18 @@ theorem divergenceCLM_translateTestFunction (hVO : MapsTo (· + h) V Ω) (φ : �
       translateTestFunction hVO (divergenceCLM φ) := by
   ext y
   simp only [divergenceCLM_apply, fderiv_translateTestFunction, translateTestFunction_apply]
+
+/-- **Leibniz rule for the divergence**: `div (χ φ) = χ div φ + Dχ φ`, where the divergence of a
+vector field is the trace of its Fréchet derivative. -/
+theorem trace_fderiv_smul {χ : E → ℝ} {φ : E → E} {x : E} (hχ : DifferentiableAt ℝ χ x)
+    (hφ : DifferentiableAt ℝ φ x) :
+    LinearMap.trace ℝ E (fderiv ℝ (fun y => χ y • φ y) x : E →ₗ[ℝ] E) =
+      χ x * LinearMap.trace ℝ E (fderiv ℝ φ x : E →ₗ[ℝ] E) + fderiv ℝ χ x (φ x) := by
+  simp [fderiv_fun_smul hχ hφ, LinearMap.trace_smulRight]
+
+/-- **Divergence of a scalar function times a constant vector**: `div (χ v) = Dχ v`. -/
+theorem trace_fderiv_smul_const {χ : E → ℝ} {x : E} (hχ : DifferentiableAt ℝ χ x) (v : E) :
+    LinearMap.trace ℝ E (fderiv ℝ (fun y => χ y • v) x : E →ₗ[ℝ] E) = fderiv ℝ χ x v := by
+  simpa using trace_fderiv_smul hχ (differentiableAt_const v)
 
 end TauCeti

@@ -13,33 +13,34 @@ import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 /-!
 # Functions of zero trace on a Lipschitz domain
 
-Let `Ω ⊆ ℝ × E` be open. Functions in `H¹₀(Ω)` have zero local trace in every Lipschitz boundary
-chart (`TauCeti.W1p.lipschitzChartTrace_eq_zero_of_mem_w1p0Submodule`). This file proves the
-converse: zero local traces in the charts of a partition of unity force zero boundary values.
+Let `Ω ⊆ ℝ × E` be open and `1 ≤ p < ∞`. Functions in `W^{1,p}_0(Ω)` have zero local trace in
+every Lipschitz boundary chart (`TauCeti.W1p.lipschitzChartTrace_eq_zero_of_mem_w1p0Submodule`).
+This file proves the converse: zero local traces in the charts of a partition of unity force zero
+boundary values.
 
-The key step is local. If the trace of `u ∈ H¹(Ω)` through one chart, localized by a cutoff `ψ`,
-vanishes, then `ψ u ∈ H¹₀(Ω)`. In chart coordinates the localized function lies above a Lipschitz
-graph and has zero graph trace, so it lies in `H¹₀` of the epigraph
+The key step is local. If the trace of `u ∈ W^{1,p}(Ω)` through one chart, localized by a cutoff
+`ψ`, vanishes, then `ψ u ∈ W^{1,p}_0(Ω)`. In chart coordinates the localized function lies above a
+Lipschitz graph and has zero graph trace, so it lies in `W^{1,p}_0` of the epigraph
 (`TauCeti.W1p.mem_w1p0Submodule_iff_normalEpigraphTrace_eq_zero`). A second cutoff, equal to one
-near the support of `ψ` and supported in the chart cylinder, carries it back to `H¹₀(Ω)`, because
-`Ω` and the epigraph agree inside the cylinder. Writing `u = ψ₀ u + ∑ ψᵢ u` with `ψ₀` compactly
-supported in `Ω` then gives `u ∈ H¹₀(Ω)` whenever every chart trace vanishes.
+near the support of `ψ` and supported in the chart cylinder, carries it back to `W^{1,p}_0(Ω)`,
+because `Ω` and the epigraph agree inside the cylinder. Writing `u = ψ₀ u + ∑ ψᵢ u` with `ψ₀`
+compactly supported in `Ω` then gives `u ∈ W^{1,p}_0(Ω)` whenever every chart trace vanishes.
 
 Every bounded Lipschitz domain carries such a partition of unity
 (`Set.IsLipschitzDomainWith.exists_contDiff_partitionOfUnity`). Hence on a bounded Lipschitz
-domain, `H¹₀(Ω)` is the common kernel of finitely many local chart traces. These traces are
-measured by tangential Lebesgue measure in each chart; no surface measure on `frontier Ω` is
-involved.
+domain, `W^{1,p}_0(Ω)` is the common kernel of finitely many local chart traces
+`W^{1,p}(Ω) → Lᵖ(E)`. These traces are measured by tangential Lebesgue measure in each chart; no
+surface measure on `frontier Ω` is involved.
 
 ## Main declarations
 
 * `TauCeti.W1p.contDiffSMul_mem_w1p0Submodule_of_lipschitzChartTrace_eq_zero`: a cutoff product
-  with zero local chart trace lies in `H¹₀(Ω)`.
+  with zero local chart trace lies in `W^{1,p}_0(Ω)`.
 * `TauCeti.W1p.mem_w1p0Submodule_iff_forall_lipschitzChartTrace_eq_zero` and
-  `TauCeti.W1p.iInf_ker_lipschitzChartTrace`: for the charts of a partition of unity, `H¹₀(Ω)` is
-  the common kernel of the local traces.
+  `TauCeti.W1p.iInf_ker_lipschitzChartTrace`: for the charts of a partition of unity,
+  `W^{1,p}_0(Ω)` is the common kernel of the local traces.
 * `TauCeti.W1p.exists_iInf_ker_lipschitzChartTrace_eq_of_isLipschitzDomainWith`: on a bounded
-  Lipschitz domain, `H¹₀(Ω)` is the common kernel of finitely many local chart traces.
+  Lipschitz domain, `W^{1,p}_0(Ω)` is the common kernel of finitely many local chart traces.
 
 ## References
 
@@ -59,36 +60,37 @@ namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
-  {Ω : Opens (WithLp 2 (ℝ × E))}
+  {Ω : Opens (WithLp 2 (ℝ × E))} {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
 section Chart
 
 variable {L : ℝ≥0} {e : WithLp 2 (ℝ × E) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)} {φ : E → ℝ} {a b : ℝ}
   {ψ : WithLp 2 (ℝ × E) → ℝ} {M : ℝ}
 
-/-- **Zero local trace gives zero boundary values.** If the trace of `u ∈ H¹(Ω)` through a
-Lipschitz boundary chart, localized by the cutoff `ψ`, vanishes, then `ψ u ∈ H¹₀(Ω)`. -/
-theorem W1p.contDiffSMul_mem_w1p0Submodule_of_lipschitzChartTrace_eq_zero
+/-- **Zero local trace gives zero boundary values.** Let `1 ≤ p < ∞`. If the trace of
+`u ∈ W^{1,p}(Ω)` through a Lipschitz boundary chart, localized by the cutoff `ψ`, vanishes, then
+`ψ u ∈ W^{1,p}_0(Ω)`. -/
+theorem W1p.contDiffSMul_mem_w1p0Submodule_of_lipschitzChartTrace_eq_zero (hp : p ≠ (∞ : ℝ≥0∞))
     (h : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzChartWith L e φ a b)
     (hψ : ContDiff ℝ ∞ ψ) (hM : 0 ≤ M)
     (hψM : ∀ x ∈ Ω, |ψ x| ≤ M) (hgM : ∀ x ∈ Ω, ‖∇ ψ x‖ ≤ M)
-    (hs : tsupport ψ ⊆ e ⁻¹' normalCylinder a b) {u : W1p volume Ω 2}
-    (hu : W1p.lipschitzChartTrace h ψ hψ hM hψM hgM hs u = 0) :
-    W1p.contDiffSMul ψ hψ hM hψM hgM u ∈ w1p0Submodule volume Ω 2 := by
+    (hs : tsupport ψ ⊆ e ⁻¹' normalCylinder a b) {u : W1p volume Ω p}
+    (hu : W1p.lipschitzChartTrace hp h ψ hψ hM hψM hgM hs u = 0) :
+    W1p.contDiffSMul ψ hψ hM hψM hgM u ∈ w1p0Submodule volume Ω p := by
   let V := chartEpigraph e h.lipschitzWith.continuous
   let G := normalEpigraph ⟨φ, h.lipschitzWith.continuous⟩
   let w := W1p.lipschitzChartLocalizeL h ψ hψ hM hψM hgM hs u
-  -- In chart coordinates the localized function has zero graph trace, so it lies in `H¹₀`.
-  have hw : w ∈ w1p0Submodule volume G 2 :=
-    (W1p.mem_w1p0Submodule_iff_normalEpigraphTrace_eq_zero _ _).2
+  -- In chart coordinates the localized function has zero graph trace, so it lies in `W^{1,p}_0`.
+  have hw : w ∈ w1p0Submodule volume G p :=
+    (W1p.mem_w1p0Submodule_iff_normalEpigraphTrace_eq_zero hp _ _).2
       (by rwa [W1p.lipschitzChartTrace_apply] at hu)
   -- Return to the original coordinates, on the chart epigraph `V = e⁻¹' G`.
   have hVG : (V : Set (WithLp 2 (ℝ × E))) = e ⁻¹' (G : Set (WithLp 2 (ℝ × E))) := by
     ext x
     simp [V, G, coe_normalEpigraph_eq_preimage e h.lipschitzWith.continuous]
   let w' := W1p.compAffineIsometryEquivL e hVG w
-  have hw' : w' ∈ w1p0Submodule volume V 2 :=
-    W1p.compAffineIsometryEquivL_mem_w1p0Submodule ENNReal.ofNat_ne_top e hVG hw
+  have hw' : w' ∈ w1p0Submodule volume V p :=
+    W1p.compAffineIsometryEquivL_mem_w1p0Submodule hp e hVG hw
   -- A cutoff `χ`, equal to one near `tsupport ψ` and supported in the chart cylinder.
   have hcyl : IsOpen (e ⁻¹' normalCylinder (E := E) a b) :=
     (isOpen_normalCylinder a b).preimage e.continuous
@@ -97,9 +99,10 @@ theorem W1p.contDiffSMul_mem_w1p0Submodule_of_lipschitzChartTrace_eq_zero
       ((e.antilipschitzWith.isBounded_preimage (isBounded_normalCylinder a b)).subset hs)
   obtain ⟨χ, N, hχ, -, hχ1, -, hχs, hN, hχN, hgN⟩ :=
     hK.exists_contDiff_cutoff_with_bounds hcyl hs
-  -- Inside the cylinder `Ω` and `V` agree, so `χ` carries `w'` from `H¹₀(V)` to `H¹₀(Ω)`.
+  -- Inside the cylinder `Ω` and `V` agree, so `χ` carries `w'` from `W^{1,p}_0(V)` to
+  -- `W^{1,p}_0(Ω)`.
   have hmem := W1p.localizeL_restrictL_mem_w1p0Submodule (Ω := V) (V := Ω)
-    ENNReal.ofNat_ne_top hχ hN (fun x _ => hχN x) (fun x _ => hgN x)
+    hp hχ hN (fun x _ => hχN x) (fun x _ => hgN x)
     (inter_tsupport_subset_chartEpigraph h hχs) (chartEpigraph_inter_tsupport_subset h hχs) hw'
   convert hmem using 1
   -- Both sides are `ψ u` on `Ω`.
@@ -114,7 +117,7 @@ theorem W1p.contDiffSMul_mem_w1p0Submodule_of_lipschitzChartTrace_eq_zero
   have hw'V := (ae_restrict_iff' V.isOpen.measurableSet).1
     (W1p.value_compAffineIsometryEquivL_ae e hVG w)
   have hres := (ae_restrict_iff' (V ⊓ Ω).isOpen.measurableSet).1
-    (W1p.value_restrictL_ae (p := 2) (inf_le_left : V ⊓ Ω ≤ V) w')
+    (W1p.value_restrictL_ae (inf_le_left : V ⊓ Ω ≤ V) w')
   filter_upwards [W1p.value_contDiffSMul_ae hψ hM hψM hgM u,
     W1p.value_localizeL_ae (inf_le_right : V ⊓ Ω ≤ Ω) hχ hN (fun x _ => hχN x)
       (fun x _ => hgN x) (fun _ hx => ⟨inter_tsupport_subset_chartEpigraph h hχs hx, hx.1⟩)
@@ -141,20 +144,20 @@ variable {ι : Type*} [Fintype ι] {L : ι → ℝ≥0} {e : ι → WithLp 2 (�
   {φ : ι → E → ℝ} {a b : ι → ℝ} {ψ₀ : WithLp 2 (ℝ × E) → ℝ}
   {ψ : ι → WithLp 2 (ℝ × E) → ℝ} {M : ι → ℝ}
 
-/-- **The functions of zero trace on a chart-covered domain are those of `H¹₀`.** Let `ψ₀` be a
-smooth cutoff compactly supported in `Ω`, and let each `ψ i` be supported in the cylinder of a
-Lipschitz boundary chart, with `ψ₀ + ∑ i, ψ i = 1` on `Ω`. Then `u ∈ H¹(Ω)` lies in `H¹₀(Ω)` if
-and only if all of its local chart traces vanish. -/
-theorem W1p.mem_w1p0Submodule_iff_forall_lipschitzChartTrace_eq_zero
+/-- **The functions of zero trace on a chart-covered domain are those of `W^{1,p}_0`.** Let
+`1 ≤ p < ∞`, let `ψ₀` be a smooth cutoff compactly supported in `Ω`, and let each `ψ i` be
+supported in the cylinder of a Lipschitz boundary chart, with `ψ₀ + ∑ i, ψ i = 1` on `Ω`. Then
+`u ∈ W^{1,p}(Ω)` lies in `W^{1,p}_0(Ω)` if and only if all of its local chart traces vanish. -/
+theorem W1p.mem_w1p0Submodule_iff_forall_lipschitzChartTrace_eq_zero (hp : p ≠ (∞ : ℝ≥0∞))
     (h : ∀ i, (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzChartWith (L i) (e i) (φ i) (a i) (b i))
     (hψ₀ : ContDiff ℝ ∞ ψ₀) (hψ₀c : HasCompactSupport ψ₀) (hψ₀Ω : tsupport ψ₀ ⊆ Ω)
     (hψ : ∀ i, ContDiff ℝ ∞ (ψ i)) (hM : ∀ i, 0 ≤ M i)
     (hψM : ∀ i, ∀ x ∈ Ω, |ψ i x| ≤ M i) (hgM : ∀ i, ∀ x ∈ Ω, ‖∇ (ψ i) x‖ ≤ M i)
     (hs : ∀ i, tsupport (ψ i) ⊆ e i ⁻¹' normalCylinder (a i) (b i))
-    (hsum : ∀ x ∈ Ω, ψ₀ x + ∑ i, ψ i x = 1) (u : W1p volume Ω 2) :
-    u ∈ w1p0Submodule volume Ω 2 ↔
-      ∀ i, W1p.lipschitzChartTrace (h i) (ψ i) (hψ i) (hM i) (hψM i) (hgM i) (hs i) u = 0 := by
-  refine ⟨fun hu i => W1p.lipschitzChartTrace_eq_zero_of_mem_w1p0Submodule (h i) (hψ i) (hM i)
+    (hsum : ∀ x ∈ Ω, ψ₀ x + ∑ i, ψ i x = 1) (u : W1p volume Ω p) :
+    u ∈ w1p0Submodule volume Ω p ↔
+      ∀ i, W1p.lipschitzChartTrace hp (h i) (ψ i) (hψ i) (hM i) (hψM i) (hgM i) (hs i) u = 0 := by
+  refine ⟨fun hu i => W1p.lipschitzChartTrace_eq_zero_of_mem_w1p0Submodule hp (h i) (hψ i) (hM i)
     (hψM i) (hgM i) (hs i) hu, fun hu => ?_⟩
   obtain ⟨M₀, hM₀, hψ₀M, hgM₀⟩ :=
     (hψ₀.of_le (by simp)).exists_abs_le_and_norm_gradient_le hψ₀c
@@ -174,15 +177,15 @@ theorem W1p.mem_w1p0Submodule_iff_forall_lipschitzChartTrace_eq_zero
     rw [hadd, Pi.add_apply, h₀, hsumx]
     simp only [hi, smul_eq_mul, ← Finset.sum_mul, ← add_mul, hsum x hxΩ, one_mul]
   rw [hsplit]
-  exact add_mem (W1p.contDiffSMul_mem_w1p0Submodule_of_hasCompactSupport ENNReal.ofNat_ne_top
+  exact add_mem (W1p.contDiffSMul_mem_w1p0Submodule_of_hasCompactSupport hp
     hψ₀ hM₀ _ _ hψ₀c hψ₀Ω u) (Submodule.sum_mem _ fun i _ =>
-      W1p.contDiffSMul_mem_w1p0Submodule_of_lipschitzChartTrace_eq_zero (h i) (hψ i) (hM i)
+      W1p.contDiffSMul_mem_w1p0Submodule_of_lipschitzChartTrace_eq_zero hp (h i) (hψ i) (hM i)
         (hψM i) (hgM i) (hs i) (hu i))
 
-/-- **The common kernel of the local traces is `H¹₀`.** For the charts of a partition of unity
-as in `TauCeti.W1p.mem_w1p0Submodule_iff_forall_lipschitzChartTrace_eq_zero`, the local traces
-`H¹(Ω) → L²(E)` vanish simultaneously exactly on `H¹₀(Ω)`. -/
-theorem W1p.iInf_ker_lipschitzChartTrace
+/-- **The common kernel of the local traces is `W^{1,p}_0`.** For `1 ≤ p < ∞` and the charts of
+a partition of unity as in `TauCeti.W1p.mem_w1p0Submodule_iff_forall_lipschitzChartTrace_eq_zero`,
+the local traces `W^{1,p}(Ω) → Lᵖ(E)` vanish simultaneously exactly on `W^{1,p}_0(Ω)`. -/
+theorem W1p.iInf_ker_lipschitzChartTrace (hp : p ≠ (∞ : ℝ≥0∞))
     (h : ∀ i, (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzChartWith (L i) (e i) (φ i) (a i) (b i))
     (hψ₀ : ContDiff ℝ ∞ ψ₀) (hψ₀c : HasCompactSupport ψ₀) (hψ₀Ω : tsupport ψ₀ ⊆ Ω)
     (hψ : ∀ i, ContDiff ℝ ∞ (ψ i)) (hM : ∀ i, 0 ≤ M i)
@@ -190,18 +193,19 @@ theorem W1p.iInf_ker_lipschitzChartTrace
     (hs : ∀ i, tsupport (ψ i) ⊆ e i ⁻¹' normalCylinder (a i) (b i))
     (hsum : ∀ x ∈ Ω, ψ₀ x + ∑ i, ψ i x = 1) :
     ⨅ i, LinearMap.ker
-        (W1p.lipschitzChartTrace (h i) (ψ i) (hψ i) (hM i) (hψM i) (hgM i) (hs i)).toLinearMap =
-      w1p0Submodule volume Ω 2 := by
+        (W1p.lipschitzChartTrace hp (h i) (ψ i) (hψ i) (hM i) (hψM i) (hgM i)
+          (hs i)).toLinearMap =
+      w1p0Submodule volume Ω p := by
   ext u
   simp only [Submodule.mem_iInf, LinearMap.mem_ker, ContinuousLinearMap.coe_coe]
-  exact (W1p.mem_w1p0Submodule_iff_forall_lipschitzChartTrace_eq_zero h hψ₀ hψ₀c hψ₀Ω hψ hM
+  exact (W1p.mem_w1p0Submodule_iff_forall_lipschitzChartTrace_eq_zero hp h hψ₀ hψ₀c hψ₀Ω hψ hM
     hψM hgM hs hsum u).symm
 
 end Partition
 
 /-- **Zero trace on a bounded Lipschitz domain.** A bounded Lipschitz domain has finitely many
-boundary charts with cutoffs whose local traces `H¹(Ω) → L²(E)` vanish simultaneously exactly on
-`H¹₀(Ω)`. -/
+boundary charts with cutoffs such that, for every `1 ≤ p < ∞`, the local traces
+`W^{1,p}(Ω) → Lᵖ(E)` vanish simultaneously exactly on `W^{1,p}_0(Ω)`. -/
 theorem W1p.exists_iInf_ker_lipschitzChartTrace_eq_of_isLipschitzDomainWith {L : ℝ≥0}
     (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
     (hb : Bornology.IsBounded (Ω : Set (WithLp 2 (ℝ × E)))) :
@@ -212,21 +216,17 @@ theorem W1p.exists_iInf_ker_lipschitzChartTrace_eq_of_isLipschitzDomainWith {L :
       (hM : ∀ i, 0 ≤ M i) (hψM : ∀ i, ∀ x ∈ Ω, |ψ i x| ≤ M i)
       (hgM : ∀ i, ∀ x ∈ Ω, ‖∇ (ψ i) x‖ ≤ M i)
       (hs : ∀ i, tsupport (ψ i) ⊆ e i ⁻¹' normalCylinder (a i) (b i)),
-      ⨅ i, LinearMap.ker
-          (W1p.lipschitzChartTrace (h i) (ψ i) (hψ i) (hM i) (hψM i) (hgM i) (hs i)).toLinearMap =
-        w1p0Submodule volume Ω 2 := by
-  obtain ⟨t, e, φ, a, b, ψ₀, ψ, hchart, ⟨hψ₀, -, hψ₀c, hψ₀Ω⟩, hψ, hsum⟩ :=
-    hΩ.exists_contDiff_partitionOfUnity hb
-  choose M hM hψM hgM using fun i : t =>
-    ((hψ i i.2).1.of_le (by simp)).exists_abs_le_and_norm_gradient_le (hψ i i.2).2.2.1
-  have hs (i : t) : tsupport (ψ i) ⊆ e i ⁻¹' normalCylinder (a i) (b i) :=
-    (hψ i i.2).2.2.2.trans (preimage_mono (normalCylinder_mono (by
-      nlinarith [(hchart i i.2).2.2.2, L.coe_nonneg,
-        ((Set.isLipschitzChartWith_iff ..).1 (hchart i i.2).2.2.1).2.1]) le_rfl))
-  refine ⟨t, fun i => e i, fun i => φ i, fun i => a i, fun i => b i,
-    fun i => (hchart i i.2).2.2.1, fun i => ψ i, fun i => (hψ i i.2).1, M, hM,
-    fun i x _ => hψM i x, fun i x _ => hgM i x, hs, ?_⟩
-  exact W1p.iInf_ker_lipschitzChartTrace _ hψ₀ hψ₀c hψ₀Ω _ _ _ _ _
-    fun x hx => by rw [← hsum x (subset_closure hx), Finset.sum_coe_sort t (fun i => ψ i x)]
+      ∀ (q : ℝ≥0∞) [Fact (1 ≤ q)] (hq : q ≠ (∞ : ℝ≥0∞)),
+        ⨅ i, LinearMap.ker
+            (W1p.lipschitzChartTrace hq (h i) (ψ i) (hψ i) (hM i) (hψM i) (hgM i)
+              (hs i)).toLinearMap =
+          w1p0Submodule volume Ω q := by
+  obtain ⟨t, e, φ, a, b, ψ₀, ψ, M, hchart, ⟨hψ₀, hψ₀c, hψ₀Ω⟩, hψ, hsum⟩ :=
+    hΩ.exists_lipschitzChart_cutoffs hb
+  choose hψ hM hψM hgM hs using hψ
+  refine ⟨t, e, φ, a, b, hchart, ψ, hψ, M, hM, fun i x _ => hψM i x, fun i x _ => hgM i x, hs,
+    fun q _ hq => ?_⟩
+  exact W1p.iInf_ker_lipschitzChartTrace hq _ hψ₀ hψ₀c hψ₀Ω _ _ _ _ _
+    fun x hx => hsum x (subset_closure hx)
 
 end TauCeti

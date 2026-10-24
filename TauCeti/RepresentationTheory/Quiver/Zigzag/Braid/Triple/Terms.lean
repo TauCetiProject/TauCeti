@@ -31,7 +31,9 @@ namespace TauCeti
 open CategoryTheory CategoryTheory.Limits
 universe u w
 variable (k : Type w) [CommRing k] {V : Type u} (G : SimpleGraph V) [Finite V]
-local notation "F" => zigzagBimoduleTensor k G
+local notation "Γ" => zigzagAlgebraInternalGrading k G
+local notation "F" => (GradedModuleCat.bimoduleTensor Γ Γ Γ :
+  GradedBimoduleCat k Γ ⥤ GradedBimoduleCat k Γ ⥤ GradedBimoduleCat k Γ)
 local notation "Z" => zigzagGradedBimodule k G
 local notation "U" => zigzagGradedBraidBimodule k G
 local notation "B" => zigzagBraidComplex k G
