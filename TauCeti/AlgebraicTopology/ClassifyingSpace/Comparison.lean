@@ -60,6 +60,8 @@ group.
 * `TauCeti.classifyingSpaceFundamentalGroupMulEquiv_mapOfEq_cellularHomotopyEquivClassifyingSpace`
   and its counterpart for the inverse: the comparison of the two models induces `e` and `e⁻¹`
   under the identifications of both fundamental groups with `G`.
+* `TauCeti.homotopicRel_cellularHomotopyEquivClassifyingSpace_toFun`: the comparison of the two
+  models is determined by `e` up to homotopy relative to the base point.
 
 ## References
 
@@ -186,9 +188,11 @@ variable {G : Type u} [Group G] (e : PresentedGroup R ≃* G)
 /-- **The cellular and the simplicial classifying spaces agree.** For a presentation
 `e : PresentedGroup R ≃* G` of `G`, this is a homotopy equivalence from the cellular classifying
 space `cellularClassifyingSpace R` to Milnor's classifying space `classifyingSpace G`. Its forward
-map is pointed and induces `e` under the identifications of both fundamental groups
+map is pointed, induces `e` under the identifications of both fundamental groups
 (`TauCeti.classifyingSpaceFundamentalGroupMulEquiv_mapOfEq_cellularHomotopyEquivClassifyingSpace`),
-and its homotopy inverse induces `e⁻¹` up to a change of base point
+and is unique up to pointed homotopy
+(`TauCeti.homotopicRel_cellularHomotopyEquivClassifyingSpace_toFun`). Its homotopy inverse
+induces `e⁻¹` up to a change of base point
 (`TauCeti.exists_path_map_cellularHomotopyEquivClassifyingSpace_invFun`). -/
 def cellularHomotopyEquivClassifyingSpace :
     cellularClassifyingSpace R ≃ₕ classifyingSpace G :=
@@ -216,6 +220,20 @@ theorem classifyingSpaceFundamentalGroupMulEquiv_mapOfEq_cellularHomotopyEquivCl
           (cellularHomotopyEquivClassifyingSpace_toFun_basepoint R e) a) =
       e (cellularClassifyingSpaceFundamentalGroupMulEquiv R a) := by
   simp [cellularHomotopyEquivClassifyingSpace]
+
+/-- **The comparison of the two models is determined by `e` up to pointed homotopy.** Every map
+from the cellular classifying space to `classifyingSpace G` that preserves the base points and
+induces `e` under the identifications of both fundamental groups is homotopic to it relative to the
+base point. -/
+theorem homotopicRel_cellularHomotopyEquivClassifyingSpace_toFun
+    {f : C(cellularClassifyingSpace R, classifyingSpace G)}
+    (hf : f (cellularClassifyingSpaceBasepoint R) = classifyingSpaceBasepoint G)
+    (hfe : ∀ a, classifyingSpaceFundamentalGroupMulEquiv G (FundamentalGroup.mapOfEq f hf a) =
+      e (cellularClassifyingSpaceFundamentalGroupMulEquiv R a)) :
+    f.HomotopicRel (cellularHomotopyEquivClassifyingSpace R e).toFun
+      {cellularClassifyingSpaceBasepoint R} :=
+  homotopicRel_cellularClassifyingSpaceHomotopyEquiv_toFun R _ _ hf fun a ↦
+    (classifyingSpaceFundamentalGroupMulEquiv G).injective (by simp [hfe])
 
 /-- **The homotopy inverse of the comparison of the two models induces `e⁻¹`**, up to a change of
 base point: there is a path `γ` from its value at the base point of `classifyingSpace G` to the base
