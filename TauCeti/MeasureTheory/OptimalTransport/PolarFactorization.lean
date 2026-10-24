@@ -50,6 +50,9 @@ monotone rearrangement is `TauCeti.gradient_ae_eq_gradient_of_hasLaw`.
 * `TauCeti.ae_eq_gradient_fenchelConjugate_comp_of_ae_eq_gradient_comp`: the measure-preserving
   factor is determined by the convex one; if `U = ∇u ∘ s` with `s` of law `P`, then
   `s = ∇u⋆ ∘ U` almost everywhere;
+* `TauCeti.integral_inner_le_of_ae_eq_comp`: if `U = T ∘ s` almost everywhere for an optimal
+  quadratic transport map `T` and a map `s` of law `μ`, then `s` maximises the correlation
+  `∫ ⟪s', U⟫` among maps `s'` of law `μ`;
 * `TauCeti.ae_eq_of_lintegral_norm_sub_sq_div_two_le` and `TauCeti.ae_eq_of_integral_inner_le`:
   the measure-preserving factor is the unique map of law `P` minimising the quadratic cost to `U`,
   and, for laws with finite second moments, the unique one maximising the correlation with `U`.
@@ -66,6 +69,38 @@ open Filter MeasureTheory ProbabilityTheory
 open scoped ENNReal Topology Gradient RealInnerProductSpace
 
 namespace TauCeti
+
+section Correlation
+
+variable {α E : Type*} [MeasurableSpace α] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [MeasurableSpace E] [OpensMeasurableSpace (E × E)] {μ : Measure E}
+
+/-- **A factor through an optimal map maximises the correlation.** On a real inner product space,
+let `μ` and the law of `U : α → E` have finite second moments, and let `T` be an optimal transport
+map for the cost `‖x - y‖ ^ 2 / 2` from `μ` to the law of `U`. If `s` has law `μ` and `U = T ∘ s`
+almost everywhere, then among all maps `s'` of law `μ`, `s` maximises the correlation
+`∫ ⟪s', U⟫ dm`. -/
+theorem integral_inner_le_of_ae_eq_comp {m : Measure α} {T : E → E} {U s s' : α → E}
+    (hμ : MemLp id 2 μ) (hν : MemLp id 2 (m.map U))
+    (hT : IsKantorovichOptimalTransportMap (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2))
+      μ (m.map U) T)
+    (hs : HasLaw s μ m) (h : U =ᵐ[m] T ∘ s) (hs' : HasLaw s' μ m) :
+    ∫ ω, ⟪s' ω, U ω⟫ ∂m ≤ ∫ ω, ⟪s ω, U ω⟫ ∂m := by
+  have hUm : AEMeasurable U m := hs.aemeasurable_of_ae_eq_comp hT.aemeasurable h
+  have hle :=
+    lintegral_le_of_ae_eq_comp continuous_ofReal_norm_sub_sq_div_two.measurable hT hs h hs'
+  beta_reduce at hle
+  have hle' : ∫ ω, ⟪s' ω, U ω⟫ ∂m ≤ (∫ x, ‖x‖ ^ 2 ∂μ + ∫ y, ‖y‖ ^ 2 ∂m.map U) / 2 :=
+    (integral_map (hs'.aemeasurable.prodMk hUm)
+      (continuous_fst.inner continuous_snd).aestronglyMeasurable).symm.trans_le
+      ((isCoupling_map_prodMk_of_aemeasurable hs'.aemeasurable hUm hs'.map_eq rfl).integral_inner_le
+        hμ hν)
+  rw [hs.lintegral_norm_sub_sq_div_two (hasLaw_map hUm) hμ hν,
+    hs'.lintegral_norm_sub_sq_div_two (hasLaw_map hUm) hμ hν,
+    ENNReal.ofReal_le_ofReal_iff (sub_nonneg.2 hle')] at hle
+  linarith
+
+end Correlation
 
 section FiniteDimensional
 
@@ -197,28 +232,20 @@ theorem ae_eq_of_lintegral_norm_sub_sq_div_two_le [IsFiniteMeasure m] (hUρ : m.
 
 /-- **The measure-preserving factor is the unique correlation maximiser.** Let `P` and the law of
 `U : α → E` have finite second moments, the law of `U` being absolutely continuous with respect
-to an additive Haar measure. Let `u : E → EReal` be convex and never `⊥`, finite with
-differentiable real representative at `P`-almost every point, and let `s` have law `P` with
-`U = ∇u ∘ s` almost everywhere. By `TauCeti.integral_inner_le_of_ae_eq_comp`, `s` maximises the
-correlation `∫ ⟪s', U⟫ dm` among maps `s'` of law `P`; it is the unique maximiser: if `s'` has law
-`P` and `∫ ⟪s, U⟫ dm ≤ ∫ ⟪s', U⟫ dm`, then `s' = s` almost everywhere. -/
+to an additive Haar measure. Let `T : E → E` be an optimal transport map for `‖x - y‖ ^ 2 / 2`
+from `P` to the law of `U`, and let `s` have law `P` with `U = T ∘ s` almost everywhere. By
+`TauCeti.integral_inner_le_of_ae_eq_comp`, `s` maximises the correlation `∫ ⟪s', U⟫ dm` among maps
+`s'` of law `P`; it is the unique maximiser: if `s'` has law `P` and `∫ ⟪s, U⟫ dm ≤ ∫ ⟪s', U⟫ dm`,
+then `s' = s` almost everywhere. For the polar factorization, `T` is the gradient `∇u`, optimal by
+`TauCeti.isKantorovichOptimalTransportMap_gradient`. -/
 theorem ae_eq_of_integral_inner_le [IsFiniteMeasure m] (hP2 : MemLp id 2 P)
-    (hν : MemLp id 2 (m.map U)) (hUρ : m.map U ≪ ρ)
-    (hconv : Convex ℝ {p : E × ℝ | u p.1 ≤ p.2}) (hbot : ∀ x, u x ≠ ⊥)
-    (hdiff : ∀ᵐ x ∂P, u x ≠ ⊤ ∧ DifferentiableAt ℝ (fun x' => (u x').toReal) x)
-    (hs : HasLaw s P m) (h : U =ᵐ[m] (∇ fun x => (u x).toReal) ∘ s) (hs' : HasLaw s' P m)
+    (hν : MemLp id 2 (m.map U)) (hUρ : m.map U ≪ ρ) {T : E → E}
+    (hT : IsKantorovichOptimalTransportMap (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2))
+      P (m.map U) T)
+    (hs : HasLaw s P m) (h : U =ᵐ[m] T ∘ s) (hs' : HasLaw s' P m)
     (hle : ∫ ω, ⟪s ω, U ω⟫ ∂m ≤ ∫ ω, ⟪s' ω, U ω⟫ ∂m) :
     s' =ᵐ[m] s := by
-  have hT' := measurable_gradient fun x => (u x).toReal
-  have hUm : AEMeasurable U m := hs.aemeasurable_of_ae_eq_comp hT'.aemeasurable h
-  have : IsFiniteMeasure P := hs.map_eq ▸ inferInstance
-  -- `∇u` pushes `P` to the law of `U`, so it is an optimal transport map, both laws having
-  -- finite second moments.
-  have hT : IsKantorovichOptimalTransportMap
-      (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) P (m.map U)
-      (∇ fun x => (u x).toReal) :=
-    isKantorovichOptimalTransportMap_gradient hP2 hν hconv hbot hdiff
-      ⟨hT'.aemeasurable, (((hasLaw_map hT'.aemeasurable).comp hs).congr h).map_eq.symm⟩
+  have hUm : AEMeasurable U m := hs.aemeasurable_of_ae_eq_comp hT.aemeasurable h
   have h₁ := hs.lintegral_norm_sub_sq_div_two (hasLaw_map hUm) hP2 hν
   have h₂ := hs'.lintegral_norm_sub_sq_div_two (hasLaw_map hUm) hP2 hν
   have hfin : transportCost (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) P (m.map U)

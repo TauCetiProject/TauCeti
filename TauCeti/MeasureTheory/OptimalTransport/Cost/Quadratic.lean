@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Cost.Pairing
-public import TauCeti.MeasureTheory.OptimalTransport.Monge
 public import Mathlib.MeasureTheory.Function.L2Space
 
 /-!
@@ -42,10 +41,7 @@ half-squared cost to a minimizer of squared ground distance, as used by `W₂`.
   `TauCeti.IsCoupling.integral_inner_le` — for marginals with finite second moments, the quadratic
   cost of a plan is a second-moment term minus its correlation, and the correlation is at most
   that term; `ProbabilityTheory.HasLaw.lintegral_norm_sub_sq_div_two` is the identity for a pair
-  of random variables;
-* `TauCeti.integral_inner_le_of_ae_eq_comp` — if `U = T ∘ s` almost everywhere for an optimal
-  quadratic transport map `T` and a map `s` of law `μ`, then `s` maximises the correlation
-  `∫ ⟪s', U⟫` among maps `s'` of law `μ`.
+  of random variables.
 
 ## References
 
@@ -221,31 +217,6 @@ theorem _root_.ProbabilityTheory.HasLaw.lintegral_norm_sub_sq_div_two {α : Type
   rw [(isCoupling_map_prodMk_of_aemeasurable hs.aemeasurable hU.aemeasurable hs.map_eq
       hU.map_eq).lintegral_norm_sub_sq_div_two hμ hν,
     integral_map hpair (continuous_fst.inner continuous_snd).aestronglyMeasurable]
-
-/-- **A factor through an optimal map maximises the correlation.** On a real inner product space,
-let `μ` and the law of `U : α → E` have finite second moments, and let `T` be an optimal transport
-map for the cost `‖x - y‖ ^ 2 / 2` from `μ` to the law of `U`. If `s` has law `μ` and `U = T ∘ s`
-almost everywhere, then among all maps `s'` of law `μ`, `s` maximises the correlation
-`∫ ⟪s', U⟫ dm`. -/
-theorem integral_inner_le_of_ae_eq_comp {α : Type*} [MeasurableSpace α] {m : Measure α}
-    {T : E → E} {U s s' : α → E} (hμ : MemLp id 2 μ) (hν : MemLp id 2 (m.map U))
-    (hT : IsKantorovichOptimalTransportMap (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2))
-      μ (m.map U) T)
-    (hs : HasLaw s μ m) (h : U =ᵐ[m] T ∘ s) (hs' : HasLaw s' μ m) :
-    ∫ ω, ⟪s' ω, U ω⟫ ∂m ≤ ∫ ω, ⟪s ω, U ω⟫ ∂m := by
-  have hUm : AEMeasurable U m := hs.aemeasurable_of_ae_eq_comp hT.aemeasurable h
-  have hle :=
-    lintegral_le_of_ae_eq_comp continuous_ofReal_norm_sub_sq_div_two.measurable hT hs h hs'
-  beta_reduce at hle
-  have hle' : ∫ ω, ⟪s' ω, U ω⟫ ∂m ≤ (∫ x, ‖x‖ ^ 2 ∂μ + ∫ y, ‖y‖ ^ 2 ∂m.map U) / 2 :=
-    (integral_map (hs'.aemeasurable.prodMk hUm)
-      (continuous_fst.inner continuous_snd).aestronglyMeasurable).symm.trans_le
-      ((isCoupling_map_prodMk_of_aemeasurable hs'.aemeasurable hUm hs'.map_eq rfl).integral_inner_le
-        hμ hν)
-  rw [hs.lintegral_norm_sub_sq_div_two (hasLaw_map hUm) hμ hν,
-    hs'.lintegral_norm_sub_sq_div_two (hasLaw_map hUm) hμ hν,
-    ENNReal.ofReal_le_ofReal_iff (sub_nonneg.2 hle')] at hle
-  linarith
 
 end TauCeti
 
