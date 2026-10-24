@@ -94,6 +94,7 @@ lemma twistedChainComplexπ_comp_totalToOuter :
   erw [twistedChainComplexMap_id, ← twistedChainComplexCoefficientMap_comp_assoc]
   simp
 
+@[reassoc (attr := simp)]
 lemma twistedChainComplexInnerToTotal_comp_totalToOuter :
     TopPair.twistedChainComplexMap (innerToTotal.app T) L ≫
       T.twistedChainComplexTotalToOuter L = 0 := by
@@ -213,10 +214,19 @@ lemma twistedHomologyInnerToTotal_comp_totalToOuter (k : ℕ) :
   rw [← HomologicalComplex.homologyMap_comp,
     T.twistedChainComplexInnerToTotal_comp_totalToOuter L, HomologicalComplex.homologyMap_zero]
 
-@[simp, reassoc]
+@[simp]
 lemma twistedHomologyδ_comp (n m : ℕ) (h : m + 1 = n := by lia) :
     T.twistedHomologyδ L n m h ≫ TopPair.twistedHomologyMap (innerToTotal.app T) L m = 0 :=
   (T.shortExact_twistedChainComplexShortComplex L).δ_comp n m (by simpa)
+
+-- The pair map's coefficient pullback needs semireducible unfolding, so `reassoc` does not
+-- normalize this composite. State the right-associated form explicitly for `simp`.
+@[simp]
+lemma twistedHomologyδ_comp_assoc (n m : ℕ) (h : m + 1 = n)
+    {M : ModuleCat.{max v w} R} (f : (totalPair.obj T).twistedHomology L m ⟶ M) :
+    T.twistedHomologyδ L n m h ≫
+      TopPair.twistedHomologyMap (innerToTotal.app T) L m ≫ f = 0 := by
+  erw [← Category.assoc, T.twistedHomologyδ_comp L n m h, zero_comp]
 
 @[reassoc (attr := simp)]
 lemma comp_twistedHomologyδ (n m : ℕ) (h : m + 1 = n := by lia) :
