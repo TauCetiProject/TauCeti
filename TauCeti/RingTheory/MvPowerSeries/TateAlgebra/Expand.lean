@@ -47,7 +47,7 @@ positive power in `|K×|`.
 ## Main results
 
 * `TauCeti.MvPowerSeries.norm_restrictedExpand`: the expansion preserves Gauss norms.
-* `TauCeti.MvPowerSeries.sum_monomial_mul_restrictedExpand_component` and
+* `TauCeti.MvPowerSeries.sum_monomial_mul_restrictedExpand_restrictedExpandComponent` and
   `TauCeti.MvPowerSeries.restrictedExpandComponent_sum_monomial_mul_restrictedExpand`: existence
   and uniqueness of the decomposition `f = ∑ X^ν f_ν(X^p)` in finitely many variables.
 * `TauCeti.MvPowerSeries.exists_norm_restrictedExpandComponent_mul_prod_eq`: the Gauss norm of `f`
@@ -210,7 +210,8 @@ variable [Fintype σ] [DecidableEq σ] {p : ℕ} (hp : p ≠ 0) (ht : ∀ i, r i
 /-- **Existence of the decomposition.** Every restricted series at the polyradii `r` in finitely
 many variables is the sum `∑ X^ν f_ν(X^p)` over the exponents `ν` with `ν i < p`, where `f_ν`
 are its components. -/
-theorem sum_monomial_mul_restrictedExpand_component (f : IsRestricted.subring (R := R) r) :
+theorem sum_monomial_mul_restrictedExpand_restrictedExpandComponent
+    (f : IsRestricted.subring (R := R) r) :
     ∑ ν : σ → Fin p, (⟨monomial (Finsupp.equivFunOnFinite.symm (Fin.val ∘ ν)) 1,
       isRestricted_monomial r _ 1⟩ : IsRestricted.subring (R := R) r) * restrictedExpand p hp ht
       (restrictedExpandComponent hp ht (Finsupp.equivFunOnFinite.symm (Fin.val ∘ ν)) f) = f := by
@@ -259,7 +260,7 @@ theorem restrictedExpand_finite [Finite σ] : (restrictedExpand (R := R) p hp ht
     (⟨monomial (Finsupp.equivFunOnFinite.symm (Fin.val ∘ ν)) 1, isRestricted_monomial r _ 1⟩ :
       IsRestricted.subring (R := R) r), ?_⟩⟩
   refine Submodule.eq_top_iff'.mpr fun f ↦ ?_
-  rw [← sum_monomial_mul_restrictedExpand_component hp ht f]
+  rw [← sum_monomial_mul_restrictedExpand_restrictedExpandComponent hp ht f]
   refine Submodule.sum_mem _ fun ν _ ↦ ?_
   rw [mul_comm]
   -- for the module structure induced by the expansion, `g • m` is `restrictedExpand g * m` by
