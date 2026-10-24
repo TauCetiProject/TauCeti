@@ -37,6 +37,8 @@ to manifolds, including manifolds with boundary or corners.
 * `TauCeti.isRegularPoint_iff_surjective_fderivWithin`: regularity read in arbitrary charts.
 * `TauCeti.isRegularPoint_iff_surjective_fderiv`: for maps between normed spaces, regularity is
   surjectivity of the Fréchet derivative.
+* `TauCeti.isRegularPoint_iff_injective_mfderiv`: between models of the same finite dimension,
+  regularity is injectivity of the manifold derivative.
 * `TauCeti.IsRegularPoint.surjective_fderiv_comp_extChartAt_symm` and
   `TauCeti.IsRegularPoint.finrank_ker_fderiv_comp_extChartAt_symm`: on a boundaryless manifold, at
   a regular point of a map into a normed space the derivative in the preferred extended chart is
@@ -146,6 +148,16 @@ theorem isRegularPoint_iff_surjective_fderiv {f : E → E'} {x : E} :
   rw [isRegularPoint_iff, mfderiv_eq_fderiv]
   exact (EquivLike.comp_surjective _ (NormedSpace.fromTangentSpace (f x)).symm).trans
     (EquivLike.surjective_comp (NormedSpace.fromTangentSpace x) _)
+
+/-- Between manifolds modelled on finite-dimensional spaces of the same dimension, a point is
+regular exactly when the manifold derivative there is injective. -/
+theorem isRegularPoint_iff_injective_mfderiv [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 E']
+    (hdim : Module.finrank 𝕜 E = Module.finrank 𝕜 E') :
+    IsRegularPoint I J f x ↔ Injective (mfderiv I J f x) :=
+  -- `TangentSpace I x` is `E` and `TangentSpace J (f x)` is `E'` by definition, so `hdim` and
+  -- the `FiniteDimensional` instances apply to the tangent spaces.
+  isRegularPoint_iff.trans (LinearMap.injective_iff_surjective_of_finrank_eq_finrank
+    (f := (mfderiv I J f x : TangentSpace I x →ₗ[𝕜] TangentSpace J (f x))) hdim).symm
 
 section Boundaryless
 
