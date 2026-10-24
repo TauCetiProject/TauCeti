@@ -63,6 +63,8 @@ such a family of affine pieces.
   `TauCeti.IsPLOn.comp`: the four closure properties a `Pregroupoid` property must have.
 * `ContinuousAffineMap.isPLOn_affineGraph`: the graph of a continuous affine map is piecewise
   affine on every subset of its domain.
+* `TauCeti.IsPLOn.exists_eqOn_Icc`: a piecewise-linear map of the line is affine on each side of
+  every point of the interior of its domain.
 * `TauCeti.isPLOn_abs` and `TauCeti.not_exists_continuousAffineMap_eq_abs`: the absolute value is
   piecewise linear and is not affine, so the predicate is strictly weaker than affineness.
 
@@ -302,10 +304,11 @@ theorem isPLOn_of_locallyFinite {ι : Type*} {C : ι → Set E} {A : ι → (E �
 
 /-! ### Piecewise-linear maps of the line
 
-The two-piece criterion on `ℝ`, and the absolute value as a piecewise-linear map that is not
-affine. The criterion is what the concrete examples of the PL groupoid are built from, and the
-absolute value pins down that `TauCeti.IsPLOn` is strictly weaker than affineness rather than a
-roundabout way of saying it. -/
+The two-piece criterion on `ℝ`, its local converse, and the absolute value as a piecewise-linear
+map that is not affine. The criterion is what the concrete examples of the PL groupoid are built
+from; the converse, that a piecewise-linear map of the line has two affine pieces at each point, is
+the local picture of a piecewise-linear curve; and the absolute value pins down that
+`TauCeti.IsPLOn` is strictly weaker than affineness rather than a roundabout way of saying it. -/
 
 /-- A map of `ℝ` that agrees with a continuous affine map on each of the two closed half-lines is
 piecewise linear. -/
@@ -336,6 +339,43 @@ theorem isPLOn_of_eqOn_Iic_of_eqOn_Ici {h : ℝ → ℝ} {A B : ℝ →ᴬ[ℝ] 
   · rintro (_ | _) x ⟨-, hx⟩
     · exact hB hx
     · exact hA hx
+
+/-- **A piecewise-linear map of the line is affine on each side of a point.** If `g` is piecewise
+linear on a neighbourhood of `t`, then for some `ε > 0` it agrees with a continuous affine map on
+`[t - ε, t]` and with another on `[t, t + ε]`. -/
+theorem IsPLOn.exists_eqOn_Icc {g : ℝ → F} {s : Set ℝ} {t : ℝ} (hg : IsPLOn g s)
+    (hs : s ∈ 𝓝 t) :
+    ∃ ε > 0, ∃ A B : ℝ →ᴬ[ℝ] F, EqOn g A (Icc (t - ε) t) ∧ EqOn g B (Icc t (t + ε)) := by
+  obtain ⟨V, hV, n, C, A, hC, hcov, heq⟩ := hg t (mem_of_mem_nhds hs)
+  rw [nhdsWithin_eq_nhds.2 hs] at hV
+  obtain ⟨δ, hδ, hδV⟩ := Metric.mem_nhds_iff.1 hV
+  rw [Real.ball_eq_Ioo] at hδV
+  -- Along either one-sided neighbourhood filter of `t` some cell is met frequently; being closed,
+  -- that cell contains `t`.
+  have key (l : Filter ℝ) (hl : l ≤ 𝓝 t) (hlt : Ioo (t - δ) (t + δ) ∈ l) [l.NeBot] :
+      ∃ i, t ∈ C i ∧ ∃ᶠ x in l, x ∈ Ioo (t - δ) (t + δ) ∩ C i := by
+    have hev : ∀ᶠ x in l, ∃ i, x ∈ Ioo (t - δ) (t + δ) ∩ C i :=
+      mem_of_superset hlt fun x hx => (mem_iUnion.1 (hcov (hδV hx))).imp fun _ hi => ⟨hx, hi⟩
+    obtain ⟨i, hi⟩ := frequently_exists.1 hev.frequently
+    exact ⟨i, (hC i).isClosed.mem_of_frequently_of_tendsto (hi.mono fun _ h => h.2) hl, hi⟩
+  -- Being convex, a cell containing `t` and a nearby point `x` contains the interval between
+  -- them, on which `g` is therefore affine.
+  have hcell {i : Fin n} {x : ℝ} (ht : t ∈ C i) (hx : x ∈ Ioo (t - δ) (t + δ) ∩ C i) :
+      EqOn g (A i) (uIcc t x) := fun y hy =>
+    heq i ⟨hδV ((ordConnected_Ioo.uIcc_subset ⟨by linarith, by linarith⟩ hx.1) hy),
+      (convex_iff_ordConnected.1 (hC i).convex).uIcc_subset ht hx.2 hy⟩
+  have hIoo : Ioo (t - δ) (t + δ) ∈ 𝓝 t := Ioo_mem_nhds (by linarith) (by linarith)
+  obtain ⟨i, hti, hi⟩ := key (𝓝[<] t) nhdsWithin_le_nhds (nhdsWithin_le_nhds hIoo)
+  obtain ⟨j, htj, hj⟩ := key (𝓝[>] t) nhdsWithin_le_nhds (nhdsWithin_le_nhds hIoo)
+  obtain ⟨a, ha, hat⟩ := (hi.and_eventually self_mem_nhdsWithin).exists
+  obtain ⟨b, hb, htb⟩ := (hj.and_eventually self_mem_nhdsWithin).exists
+  refine ⟨min (t - a) (b - t), lt_min (sub_pos.2 hat) (sub_pos.2 htb), A i, A j, ?_, ?_⟩
+  · refine (hcell hti ha).mono fun y hy => ?_
+    rw [uIcc_of_ge (le_of_lt hat)]
+    exact ⟨by linarith [hy.1, min_le_left (t - a) (b - t)], hy.2⟩
+  · refine (hcell htj hb).mono fun y hy => ?_
+    rw [uIcc_of_le (le_of_lt htb)]
+    exact ⟨hy.1, by linarith [hy.2, min_le_right (t - a) (b - t)]⟩
 
 /-- A map that fails to send a midpoint to the corresponding midpoint agrees with no continuous
 affine map. This is the certificate used below to show that a piecewise-linear map need not be
