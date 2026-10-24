@@ -6,12 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Wirtinger.Basic
-public import Mathlib.Analysis.Complex.Conformal
 
 /-!
 # Holomorphy and the conjugate Wirtinger derivative
 
-For a real-differentiable map from `ℂ` to a complex normed space, vanishing of the conjugate
+For a real-differentiable map between complex normed spaces, vanishing of the conjugate
 Wirtinger derivative characterizes complex differentiability. The real-differentiability
 hypothesis is essential because the totalized real derivative vanishes at nondifferentiable
 points. In one variable the real differential has coefficients `wirtingerDeriv f x 1` and
@@ -32,11 +31,12 @@ open scoped ComplexConjugate
 
 namespace TauCeti
 
-variable {W : Type*} [NormedAddCommGroup W] [NormedSpace ℂ W]
+variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
+  [NormedAddCommGroup W] [NormedSpace ℂ W]
 
 /-- In one variable the real differential is the sum of its `dz` and `dbar z` terms.
 This identity also holds for the totalized derivative, without a differentiability assumption. -/
-theorem fderiv_eq_wirtingerDeriv_smul_add {f : ℂ → W} (x v : ℂ) :
+theorem fderiv_apply_eq_smul_wirtingerDeriv_add_smul_conjWirtingerDeriv {f : ℂ → W} (x v : ℂ) :
     fderiv ℝ f x v =
       v • wirtingerDeriv f x 1 + conj v • conjWirtingerDeriv f x 1 := by
   rw [← wirtingerDeriv_add_conjWirtingerDeriv f x v]
@@ -44,21 +44,38 @@ theorem fderiv_eq_wirtingerDeriv_smul_add {f : ℂ → W} (x v : ℂ) :
   · simpa only [smul_eq_mul, mul_one] using (wirtingerDeriv f x).map_smul v (1 : ℂ)
   · simpa only [smul_eq_mul, mul_one] using (conjWirtingerDeriv f x).map_smulₛₗ v (1 : ℂ)
 
+/-- A real-differentiable map between complex normed spaces is complex differentiable
+exactly when its conjugate Wirtinger derivative vanishes. -/
+theorem differentiableAt_iff_conjWirtingerDeriv_eq_zero {g : V → W} {x : V}
+    (hg : DifferentiableAt ℝ g x) :
+    DifferentiableAt ℂ g x ↔ conjWirtingerDeriv g x = 0 := by
+  constructor
+  · exact fun h ↦ h.conjWirtingerDeriv_eq_zero
+  · intro h
+    apply (differentiableAt_iff_restrictScalars ℝ hg).mpr
+    refine ⟨wirtingerDeriv g x, ?_⟩
+    ext v
+    simpa only [ContinuousLinearMap.coe_restrictScalars', h, zero_apply, add_zero] using
+      wirtingerDeriv_add_conjWirtingerDeriv g x v
+
+/-- In one variable the conjugate Wirtinger derivative vanishes exactly when its value
+at `1` vanishes, since it is complex-antilinear. -/
+theorem conjWirtingerDeriv_eq_zero_iff_apply_one_eq_zero {f : ℂ → W} {x : ℂ} :
+    conjWirtingerDeriv f x = 0 ↔ conjWirtingerDeriv f x 1 = 0 := by
+  constructor
+  · intro h
+    simp only [h, zero_apply]
+  · intro h
+    ext v
+    simpa only [smul_eq_mul, mul_one, h, smul_zero, zero_apply] using
+      (conjWirtingerDeriv f x).map_smulₛₗ v (1 : ℂ)
+
 /-- For a real-differentiable function of one complex variable, the single equation
 `conjWirtingerDeriv f x 1 = 0` characterizes complex differentiability. -/
 theorem differentiableAt_iff_conjWirtingerDeriv_apply_one_eq_zero {f : ℂ → W} {x : ℂ}
     (hf : DifferentiableAt ℝ f x) :
     DifferentiableAt ℂ f x ↔ conjWirtingerDeriv f x 1 = 0 := by
-  rw [differentiableAt_complex_iff_differentiableAt_real, and_iff_right hf,
-    conjWirtingerDeriv_apply, smul_eq_zero_iff_right (by norm_num : (2 : ℂ)⁻¹ ≠ 0)]
-  simp only [smul_eq_mul, mul_one]
-  constructor
-  · intro h
-    simp [h, smul_smul]
-  · intro h
-    have hi := congrArg (fun w : W ↦ I • w) h
-    have he : I • fderiv ℝ f x 1 - fderiv ℝ f x I = 0 := by
-      simpa [smul_add, smul_smul, sub_eq_add_neg] using hi
-    exact (sub_eq_zero.mp he).symm
+  rw [differentiableAt_iff_conjWirtingerDeriv_eq_zero hf,
+    conjWirtingerDeriv_eq_zero_iff_apply_one_eq_zero]
 
 end TauCeti
