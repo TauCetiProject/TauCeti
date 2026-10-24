@@ -43,8 +43,9 @@ main result of this file is that the operators do not depend on the chosen prese
 elementary moves (subdividing a segment, inserting a stationary segment) commute with them up to
 the same moves. The weight changes by `-α` under `f_α` and by `α` under `e_α`.
 
-This file works with the ambient operators on all paths. It does not prove that `e_α` and `f_α`
-are partial inverses, nor the integral string-length identities of Littelmann's path crystals.
+This file works with the ambient operators on all paths. That `e_α` and `f_α` are partial
+inverses is proved in `TauCeti.RepresentationTheory.LSPath.PartialInverse`; the integral
+string-length identities of Littelmann's path crystals are not proved here.
 
 ## Main definitions
 
@@ -59,6 +60,10 @@ are partial inverses, nor the integral string-length identities of Littelmann's 
 * `TauCeti.PLPath.minHeight_ofSegments`, `TauCeti.PLPath.minHeight_mul`,
   `TauCeti.PLPath.minHeight_reverse`: the minimal height is independent of the presentation, and
   its behaviour under concatenation and reversal.
+* `TauCeti.PLPath.reflectRecords_append`: capped reflection `TauCeti.PLPath.reflectRecords` of a
+  concatenation.
+* `TauCeti.PLPath.reflectRecords_of_le_listMinHeight`: capped reflection is the identity when
+  the cap is at most the minimal height.
 * `TauCeti.PLPath.lower_ofSegments`: the lowering operator may be computed on any presentation.
 * `TauCeti.PLPath.lower_eq_none_iff`, `TauCeti.PLPath.raise_eq_none_iff`: `f_α π = 0` exactly when
   `f (π 1) - h < 1`, and `e_α π = 0` exactly when `-1 < h`.
@@ -356,6 +361,45 @@ theorem sum_of_listLower_eq_some (h : listLower f x l₁ = some l₂) : l₂.sum
   split_ifs at h with h₁
   rw [← Option.some.inj h, sum_reflectRecords, min_eq_right (by linarith),
     min_eq_left (by linarith), add_sub_cancel_left, one_smul]
+
+/-- Reflecting the records of a concatenation `l₁ ++ l₂` up to the cap `c`: on `l₁`, the later
+heights in `l₂` act as a further cap. -/
+theorem reflectRecords_append (c : 𝕜) (l₁ l₂ : List V) :
+    reflectRecords f x c (l₁ ++ l₂) =
+      reflectRecords f x (min c (f l₁.sum + listMinHeight f l₂)) l₁ ++
+        reflectRecords f x (c - f l₁.sum) l₂ := by
+  induction l₁ generalizing c with
+  | nil => simp
+  | cons v l ih =>
+    have key : min (f v + listMinHeight f (l ++ l₂)) c =
+        min (f v + listMinHeight f l) (min c (f (v :: l).sum + listMinHeight f l₂)) := by
+      rw [listMinHeight_append, List.sum_cons, map_add, ← min_add_add_left, add_assoc]
+      ac_rfl
+    have hcap : min (c - f v) (f l.sum + listMinHeight f l₂) =
+        min c (f (v :: l).sum + listMinHeight f l₂) - f v := by
+      rw [← min_sub_sub_right, List.sum_cons, map_add]
+      congr 1
+      abel
+    have hrest : c - f v - f l.sum = c - f (v :: l).sum := by
+      rw [List.sum_cons, map_add, sub_sub]
+    rw [List.cons_append]
+    by_cases h : 0 < min (f v + listMinHeight f (l ++ l₂)) c
+    · rw [reflectRecords_cons_of_pos h, reflectRecords_cons_of_pos (key ▸ h), key, ih, hcap,
+        hrest, List.cons_append, List.cons_append]
+    · rw [not_lt] at h
+      rw [reflectRecords_cons_of_nonpos h, reflectRecords_cons_of_nonpos (key ▸ h), ih, hcap,
+        hrest, List.cons_append]
+
+/-- Reflecting the records up to a cap that is at most the minimal height does nothing. -/
+@[simp]
+theorem reflectRecords_of_le_listMinHeight (h : c ≤ listMinHeight f l) :
+    reflectRecords f x c l = l := by
+  induction l generalizing c with
+  | nil => exact reflectRecords_nil c
+  | cons v l ih =>
+    rw [listMinHeight_cons] at h
+    rw [reflectRecords_cons_of_nonpos (min_le_of_right_le (h.trans (min_le_left _ _))),
+      ih (by linarith [min_le_right 0 (f v + listMinHeight f l)])]
 
 /-! ### Independence of the presentation -/
 
