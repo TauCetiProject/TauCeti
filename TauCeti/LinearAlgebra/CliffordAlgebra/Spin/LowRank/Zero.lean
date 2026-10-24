@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.EvenUnitary
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Zero
+public import TauCeti.LinearAlgebra.CliffordAlgebra.VectorNormalizer
 public import TauCeti.RingTheory.RootsOfUnity.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Basic
 
@@ -22,6 +23,9 @@ group: Mathlib's Lipschitz-defined Spin group is trivial in dimension zero, wher
 unitary carrier generally has the two scalar elements `1` and `-1`.
 
 ## Main results
+
+* `CliffordAlgebra.vectorNormalizerEquivUnitsOfSubsingleton` identifies the dimension-zero vector
+  normalizer with all scalar units.
 
 * `CliffordAlgebra.evenUnitaryGroupEquivRootsOfUnityOfSubsingleton` identifies the even unitary
   group with `rootsOfUnity 2 K`.
@@ -43,6 +47,40 @@ universe u v
 
 variable {K : Type u} {V : Type v} [CommRing K] [AddCommGroup V] [Module K V]
   (Q : QuadraticForm K V)
+
+/-- In dimension zero every Clifford unit preserves the vector range in both directions. -/
+@[simp]
+theorem vectorNormalizer_eq_top_of_subsingleton [Subsingleton V] :
+    vectorNormalizer Q = ⊤ := by
+  rw [eq_top_iff]
+  intro x _
+  constructor <;> intro m <;> simp [Subsingleton.elim m 0]
+
+/-- The dimension-zero Clifford vector normalizer is the full scalar unit group. -/
+noncomputable def vectorNormalizerEquivUnitsOfSubsingleton [Subsingleton V] :
+    vectorNormalizer Q ≃* Kˣ :=
+  ((MulEquiv.subgroupCongr (vectorNormalizer_eq_top_of_subsingleton Q)).trans
+    Subgroup.topEquiv).trans (unitsEquivOfSubsingleton Q)
+
+/-- The dimension-zero normalizer equivalence sends a Clifford unit to its scalar coordinate. -/
+@[simp]
+theorem vectorNormalizerEquivUnitsOfSubsingleton_apply [Subsingleton V]
+    (x : vectorNormalizer Q) :
+    vectorNormalizerEquivUnitsOfSubsingleton Q x =
+      unitsEquivOfSubsingleton Q (x : (CliffordAlgebra Q)ˣ) := by
+  simp only [vectorNormalizerEquivUnitsOfSubsingleton, MulEquiv.trans_apply,
+    MulEquiv.subgroupCongr_apply, Subgroup.topEquiv_apply]
+
+/-- The inverse dimension-zero normalizer equivalence sends a scalar unit to its Clifford unit. -/
+@[simp]
+theorem coe_vectorNormalizerEquivUnitsOfSubsingleton_symm_apply [Subsingleton V] (u : Kˣ) :
+    ((vectorNormalizerEquivUnitsOfSubsingleton Q).symm u : (CliffordAlgebra Q)ˣ) =
+      (unitsEquivOfSubsingleton Q).symm u := by
+  apply (unitsEquivOfSubsingleton Q).injective
+  have hx : unitsEquivOfSubsingleton Q
+      ((vectorNormalizerEquivUnitsOfSubsingleton Q).symm u : (CliffordAlgebra Q)ˣ) = u := by
+    rw [← vectorNormalizerEquivUnitsOfSubsingleton_apply, MulEquiv.apply_symm_apply]
+  rw [hx, MulEquiv.apply_symm_apply]
 
 private theorem map_evenUnitaryGroup_unitsEquivOfSubsingleton [Subsingleton V] :
     (evenUnitaryGroup Q).map (unitsEquivOfSubsingleton Q).toMonoidHom = rootsOfUnity 2 K := by
