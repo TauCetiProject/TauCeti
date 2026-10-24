@@ -44,6 +44,8 @@ discussion in `TauCeti/Geometry/Manifold/SmoothEmbedding/HomologyConcordance.lea
 
 * `TauCeti.not_forall_not_homologyConcordant_sphere`: every knot in `S³` is homology concordant to
   some knot in `S³`, so the boundary in Levine's theorem is not `S³`.
+* `TauCeti.LevineHomologyConcordanceTheorem.exists_isEmpty_diffeomorph_sphere`: by Levine's
+  theorem, some smooth compact contractible `4`-manifold has boundary not diffeomorphic to `S³`.
 
 ## References
 
@@ -104,5 +106,24 @@ theorem not_forall_not_homologyConcordant_sphere
     ¬ ∀ K' : SmoothCircleEmbedding (𝓡 3) (sphere (0 : EuclideanSpace ℝ (Fin 4)) 1),
       ¬ HomologyConcordant ℤ ((𝓡 3).prod (𝓡∂ 1)) ∞ K K' :=
   fun h ↦ h K (.refl ℤ K)
+
+/-- **Levine's theorem gives a boundary that is not `S³`.** Assuming Levine's theorem, some smooth
+compact contractible `4`-manifold `X` has as boundary a closed `3`-manifold `Y` not diffeomorphic to
+`S³`. A diffeomorphism `e : Y ≃ₘ S³` would make the knot `K` of Levine's theorem homology concordant
+to the knot `e ∘ K` in `S³` (`TauCeti.homologyConcordant_transDiffeomorph`). -/
+theorem LevineHomologyConcordanceTheorem.exists_isEmpty_diffeomorph_sphere
+    (h : LevineHomologyConcordanceTheorem) :
+    ∃ (Y : Type) (_ : TopologicalSpace Y) (_ : T2Space Y) (_ : CompactSpace Y)
+      (_ : ChartedSpace (EuclideanSpace ℝ (Fin 3)) Y) (_ : IsManifold (𝓡 3) ∞ Y)
+      (X : Type) (_ : TopologicalSpace X) (_ : T2Space X) (_ : CompactSpace X)
+      (_ : ContractibleSpace X)
+      (_ : ChartedSpace (ModelProd (EuclideanSpace ℝ (Fin 3)) (EuclideanHalfSpace 1)) X)
+      (_ : IsManifold ((𝓡 3).prod (𝓡∂ 1)) ∞ X)
+      (κ : SmoothEmbedding (𝓡 3) ((𝓡 3).prod (𝓡∂ 1)) ∞ Y X),
+      range κ = ((𝓡 3).prod (𝓡∂ 1)).boundary X ∧
+        IsEmpty (Y ≃ₘ⟮𝓡 3, 𝓡 3⟯ sphere (0 : EuclideanSpace ℝ (Fin 4)) 1) := by
+  obtain ⟨Y, _, _, _, _, _, X, _, _, _, _, _, _, κ, K, hκ, hK⟩ := h
+  exact ⟨Y, ‹_›, ‹_›, ‹_›, ‹_›, ‹_›, X, ‹_›, ‹_›, ‹_›, ‹_›, ‹_›, ‹_›, κ, hκ,
+    ⟨fun e ↦ hK _ (homologyConcordant_transDiffeomorph ℤ K e)⟩⟩
 
 end TauCeti
