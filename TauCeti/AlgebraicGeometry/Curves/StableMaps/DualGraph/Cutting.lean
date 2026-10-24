@@ -60,8 +60,6 @@ namespace DualGraph
 
 namespace DegreeDecoration
 
-open Finset
-
 universe u v
 
 variable {ι : Type v} {G : DualGraph.{u} ι} (S : Finset G.Edge) (D D' : G.DegreeDecoration)
@@ -126,20 +124,12 @@ lemma componentDegree_cutComponentAddEquiv_symm_apply
       (D (G.smoothingVertex Sᶜ v)).componentDegree ⟨v, rfl⟩ :=
   (rfl)
 
-/-- A sum over the vertices of all pieces of a partial normalization is a sum over the vertices
-of `G`. -/
-private lemma sum_sum_vertex_cutComponent {M : Type*} [AddCommMonoid M] (f : G.Vertex → M) :
-    ∑ x : (G.smoothing Sᶜ).Vertex, ∑ v : (G.cutComponent S x).Vertex, f v.1 = ∑ v, f v := by
-  rw [← Fintype.sum_sigma (fun p : Σ x, (G.cutComponent S x).Vertex ↦ f p.2.1)]
-  rw [← (G.sigmaVertexCutComponentEquiv S).sum_comp f]
-  exact sum_congr rfl fun p _ ↦ by rw [sigmaVertexCutComponentEquiv_apply]
-
 /-- The total degrees of the pieces of a partial normalization add up to the total degree. -/
 @[simp]
 theorem sum_totalDegree_cutComponent :
     ∑ x : (G.smoothing Sᶜ).Vertex, (D.cutComponent S x).totalDegree = D.totalDegree := by
   simp only [totalDegree_def, componentDegree_cutComponent]
-  exact sum_sum_vertex_cutComponent S D.componentDegree
+  exact Fintype.sum_fiberwise (G.smoothingVertex Sᶜ) D.componentDegree
 
 variable [Fintype ι]
 
@@ -169,7 +159,7 @@ theorem sum_two_mul_arithmeticGenus_sub_two_add_card_add_three_mul_totalDegree_c
           3 * (D.cutComponent S x).totalDegree) =
       2 * G.arithmeticGenus - 2 + Fintype.card ι + 3 * D.totalDegree := by
   simp_rw [← sum_weightedLogCanonicalDegree, weightedLogCanonicalDegree_cutComponent]
-  exact sum_sum_vertex_cutComponent S D.weightedLogCanonicalDegree
+  exact Fintype.sum_fiberwise (G.smoothingVertex Sᶜ) D.weightedLogCanonicalDegree
 
 end DegreeDecoration
 
