@@ -90,13 +90,15 @@ private theorem normalize_reflectRecords_reverse_cut (hx : f x = 2) {v : V} {r :
       (div_nonneg hr.le (hr.trans_le hrv).le)
   simp only [List.map_cons, List.map_nil, List.reverse_cons, List.reverse_nil, List.nil_append,
     List.cons_append]
-  -- The kept piece stays, the formerly reflected piece is reflected back entirely, and the two
-  -- resulting pieces merge into `-v`.
-  rw [reflectRecords_cons_of_nonpos h₁, hcap, reflectRecords_cons_of_pos (h₂.symm ▸ hr), h₂,
-    hneg, div_self hr.ne', one_smul, sub_self, zero_smul, map_neg,
-    involutive_preReflection hx, reflectRecords_nil]
-  simp only [normalize_cons, normalize_nil, consMerge_zero]
-  rw [consMerge_consMerge hsame, ← neg_add, ← add_smul, sub_add_cancel, one_smul]
+  -- The kept piece stays.
+  rw [reflectRecords_cons_of_nonpos h₁, hcap]
+  -- The formerly reflected piece is reflected back entirely.
+  rw [reflectRecords_cons_of_pos (h₂.symm ▸ hr), h₂, hneg, div_self hr.ne']
+  simp only [one_smul, sub_self, zero_smul, map_neg, involutive_preReflection hx _,
+    reflectRecords_nil, normalize_cons, normalize_nil, consMerge_zero]
+  -- The two resulting pieces merge into `-v`.
+  have hmerge : -((1 - r / f v) • v) + -((r / f v) • v) = -v := by module
+  rw [consMerge_consMerge hsame, hmerge]
 
 /-- Reflecting the records of a reversed concatenation `P ++ l` splits into the reflections of the
 two reversed pieces, as `TauCeti.PLPath.reflectRecords_append` dictates. -/
@@ -106,9 +108,17 @@ private theorem normalize_reflectRecords_reverse_append {P l A B : List V} {k : 
     (hP : normalize 𝕜 (reflectRecords f x (k + f l.sum) (P.map Neg.neg).reverse) =
         normalize 𝕜 A) :
     normalize 𝕜 (reflectRecords f x k ((P ++ l).map Neg.neg).reverse) = normalize 𝕜 (B ++ A) := by
-  rw [List.map_append, List.reverse_append, reflectRecords_append, ← List.sum_neg_reverse,
-    map_neg, sub_neg_eq_add, ← normalize_normalize_append, hl, normalize_normalize_append,
-    ← normalize_append_normalize, hP, normalize_append_normalize]
+  calc
+    _ = normalize 𝕜 (reflectRecords f x (min k (-f l.sum + listMinHeight f
+          (P.map Neg.neg).reverse)) (l.map Neg.neg).reverse ++
+            reflectRecords f x (k + f l.sum) (P.map Neg.neg).reverse) := by
+      simp only [List.map_append, List.reverse_append, reflectRecords_append,
+        ← List.sum_neg_reverse, map_neg, sub_neg_eq_add]
+    -- Each of the two pieces may be normalized separately.
+    _ = normalize 𝕜 (normalize 𝕜 B ++ normalize 𝕜 A) := by
+      rw [← hl, ← hP, normalize_normalize_append, normalize_append_normalize]
+    _ = normalize 𝕜 (B ++ A) := by
+      rw [normalize_normalize_append, normalize_append_normalize]
 
 /-- Reflecting the records of a reversed path undoes the reflection of the records up to any cap
 `c`: if `l'` is obtained from `l` by reflecting its records up to `c`, then reflecting the records
@@ -228,9 +238,13 @@ private theorem raise_eq_some_of_lower_eq_some (hx : f x = 2) {p q : PLPath 𝕜
     have hends : f (reflectRecords f x k (l'.map Neg.neg).reverse).sum =
         f (l.map Neg.neg).reverse.sum := by
       rw [← sum_normalize (𝕜 := 𝕜), hinv, sum_normalize]
-    rw [sum_reflectRecords, map_sub, map_smul, smul_eq_mul, hx, ← List.sum_neg_reverse,
-      ← List.sum_neg_reverse, map_neg, map_neg, hsum, map_sub, hx,
-      min_eq_right (by rw [hk, hsum, map_sub, hx]; linarith)] at hends
+    -- Lowering moves the final height down by `f x = 2`, and the cap `k` is at most minus the
+    -- final height of the lowered path, so the endpoint identity becomes linear.
+    have hsum' : f l'.sum = f l.sum - 2 := by simp [hsum, hx]
+    have hcap : k ≤ -f l'.sum := by linarith
+    simp only [sum_reflectRecords, map_sub, map_smul, smul_eq_mul, hx, ← List.sum_neg_reverse,
+      map_neg] at hends
+    rw [min_eq_right hcap] at hends
     rcases le_total k (listMinHeight f (l'.map Neg.neg).reverse) with h' | h'
     · rw [min_eq_right h'] at hends
       linarith

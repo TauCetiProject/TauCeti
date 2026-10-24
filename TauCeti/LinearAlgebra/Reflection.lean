@@ -61,6 +61,7 @@ theorem det_reflection [Module.Free R M] [Module.Finite R M] :
 
 include h in
 /-- The reflection `Module.preReflection x f` negates the linear form `f` defining it. -/
+@[simp]
 theorem apply_preReflection (y : M) : f (preReflection x f y) = -f y := by
   rw [preReflection_apply, map_sub, map_smul, smul_eq_mul, h]
   ring
