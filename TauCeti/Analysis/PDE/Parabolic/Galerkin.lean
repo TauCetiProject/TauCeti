@@ -10,8 +10,6 @@ public import Mathlib.Analysis.Calculus.ContDiff.Deriv
 public import TauCeti.Analysis.InnerProductSpace.GelfandTriple
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
-import Mathlib.Analysis.InnerProductSpace.Dual
-import Mathlib.Analysis.Normed.Module.FiniteDimension
 import TauCeti.Analysis.ODE.Caratheodory
 import TauCeti.Analysis.Sobolev.WeakDeriv.Interval
 import TauCeti.MeasureTheory.Function.StronglyMeasurable.FiniteDimensional
@@ -20,7 +18,7 @@ import TauCeti.Topology.Algebra.Module.BilinearForm
 /-!
 # Galerkin approximations of linear parabolic equations
 
-Let `ι : V →L[ℝ] H` map a real normed space into a real inner product space, as for a Gelfand
+Let `ι : V →L[ℝ] H` map a real seminormed space into a real inner product space, as for a Gelfand
 triple `V ↪ H ↪ V*` (`ContinuousLinearMap.gelfandDual`), and consider the abstract linear parabolic
 equation
 
@@ -35,16 +33,15 @@ is needed for either.
 
 ### Autonomous operator, continuous forcing
 
-For a bounded operator `A : V → V*`, a finite-dimensional real inner product space `F` and a
+For a bounded operator `A : V → V*`, a finite-dimensional real normed space `F` and a
 continuous linear map `e : F → V` whose composite with `ι` is injective, the Galerkin equation is
 
 `⟪ι(e c'(t)), ι(e v)⟫ + A(e c(t))(e v) = f(t)(e v)` for every `v : F`.
 
 For continuous `f : ℝ → V*`, this equation has a unique global `C¹` solution for any initial
 coordinate vector (`TauCeti.PDE.existsUnique_galerkinSolution`). Injectivity into the pivot space
-makes the finite-dimensional mass operator invertible. Mathlib's
-`ContinuousLinearMap.bilinearComp` restricts the forms, and
-`InnerProductSpace.continuousLinearMapOfBilin` represents them as operators.
+makes the finite-dimensional Gram operator `F → F*` invertible, so no inner product on the
+coordinate space is needed. Mathlib's `ContinuousLinearMap.bilinearComp` restricts the forms.
 
 ### Measurable coefficients
 
@@ -84,50 +81,33 @@ public section
 
 noncomputable section
 
-open InnerProductSpace
 open scoped InnerProductSpace
 
 namespace TauCeti.PDE
 
-variable {V H F : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+variable {V H F : Type*} [SeminormedAddCommGroup V] [NormedSpace ℝ V]
   [NormedAddCommGroup H] [InnerProductSpace ℝ H]
-  [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
 
 /-- **Existence and uniqueness of Galerkin approximations.** For a bounded autonomous energy
 operator, continuous forcing and a finite-dimensional trial map injective into the pivot space,
 the projected parabolic equation has a unique global `C¹` solution with prescribed value at
-any time `t₀`. The coordinates need not be orthonormal in the pivot space. -/
+any time `t₀`. The coordinate space needs only a norm, with no chosen inner product. -/
 theorem existsUnique_galerkinSolution (ι : V →L[ℝ] H) (A : V →L[ℝ] StrongDual ℝ V)
     (e : F →L[ℝ] V) (he : Function.Injective (ι.comp e)) {f : ℝ → StrongDual ℝ V}
     (hf : Continuous f) (x : F) (t₀ : ℝ) :
     ∃! c : ℝ → F, c t₀ = x ∧ ContDiff ℝ 1 c ∧ ∀ t v,
       ⟪ι (e (deriv c t)), ι (e v)⟫_ℝ + A (e (c t)) (e v) = f t (e v) := by
-  -- Represent the restricted mass and energy forms by operators on the coordinate space.
+  have := FiniteDimensional.complete ℝ F
+  -- The Gram map into the coordinate dual is invertible, independently of the energy form.
   let j := ι.comp e
-  let M := continuousLinearMapOfBilin (j.gelfandDual.comp j)
-  let D := continuousLinearMapOfBilin (A.bilinearComp e e)
-  let R : StrongDual ℝ V →L[ℝ] F :=
-    (toDual ℝ F).symm.toContinuousLinearEquiv.toContinuousLinearMap.comp
-      ((ContinuousLinearMap.compL ℝ F V ℝ).flip e)
-  have hM (z v : F) : ⟪M z, v⟫_ℝ = ⟪j z, j v⟫_ℝ := by
-    simp [M]
-  have hD (z v : F) : ⟪D z, v⟫_ℝ = A (e z) (e v) := by
-    simp [D]
-  have hR (g : StrongDual ℝ V) (v : F) : ⟪R g, v⟫_ℝ = g (e v) := by
-    simp [R]
-  -- Testing the mass operator on its argument proves injectivity; finite dimension gives an
-  -- inverse, without any coercivity assumption on the energy form.
-  have hMinj : Function.Injective M := by
-    refine (injective_iff_map_eq_zero M).2 fun z hz ↦ ?_
-    have hjz : j z = 0 := by
-      have hnorm : ‖j z‖ ^ 2 = 0 := by
-        simpa [hz, real_inner_self_eq_norm_sq] using (hM z z).symm
-      exact norm_eq_zero.mp (sq_eq_zero_iff.mp hnorm)
-    exact he (by simpa only [map_zero] using hjz)
-  let Q : F ≃L[ℝ] F :=
-    (LinearEquiv.ofInjectiveEndo M.toLinearMap hMinj).toContinuousLinearEquiv
-  have hQ (z : F) : Q z = M z := by
-    simp [Q]
+  obtain ⟨Q, hQ⟩ := ContinuousLinearMap.isInvertible_of_injective
+    (j.gelfandDual_comp_injective he)
+  replace hQ : ∀ z v, Q z v = ⟪ι (e z), ι (e v)⟫_ℝ := by
+    intro z v
+    simpa [j] using congr($hQ z v)
+  let D := A.bilinearComp e e
+  let R : StrongDual ℝ V →L[ℝ] StrongDual ℝ F := (ContinuousLinearMap.compL ℝ F V ℝ).flip e
   let B : F →L[ℝ] F := -(Q.symm.toContinuousLinearMap.comp D)
   let g : ℝ → F := fun t ↦ Q.symm (R (f t))
   have hg : Continuous g := Q.symm.continuous.comp (R.continuous.comp hf)
@@ -137,20 +117,16 @@ theorem existsUnique_galerkinSolution (ι : V →L[ℝ] H) (A : V →L[ℝ] Stro
     constructor
     · intro h
       have hmass : Q d = R (f t) - D z := by
-        apply ext_inner_right ℝ
-        intro v
-        simp only [hQ, hM, inner_sub_left, hR, hD]
-        exact eq_sub_of_add_eq (h v)
+        ext v
+        simpa [hQ, R, D] using eq_sub_of_add_eq (h v)
       have := congrArg Q.symm hmass
       simpa [B, g, map_sub, sub_eq_add_neg, add_comm] using this
     · rintro rfl
-      have hmass : M (B z + g t) = R (f t) - D z := by
-        rw [← hQ]
+      have hmass : Q (B z + g t) = R (f t) - D z := by
         simp [B, g, sub_eq_add_neg, add_comm]
       intro v
-      have hv := congrArg (fun w : F ↦ ⟪w, v⟫_ℝ) hmass
-      simp only [hM, inner_sub_left, hR, hD] at hv
-      exact (eq_sub_iff_add_eq).1 hv
+      have hv := congr($hmass v)
+      simpa [hQ, R, D, inner_add_left] using (eq_sub_iff_add_eq).1 hv
   -- Solve the reduced ODE, then transfer both its equation and its uniqueness back.
   obtain ⟨c, hc, huniq⟩ := B.existsUnique_hasDerivAt_add hg x t₀
   have hderiv : deriv c = fun t ↦ B (c t) + g t := by
