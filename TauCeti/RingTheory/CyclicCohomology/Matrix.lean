@@ -45,6 +45,8 @@ The construction uses `MultilinearMap.compLinearMapₗ` and `Matrix.entryLinearM
 * `TauCeti.matrixCochainExtension_cyclic`: matrix extension preserves signed cyclicity.
 * `TauCeti.matrixCochainExtension_fromBlocks_zero₁₂_zero₂₁`: matrix extension is additive on
   block-diagonal matrices, the cochain-level input to additivity of the pairings on direct sums.
+* `TauCeti.matrixCochainExtension_diagonal`: on diagonal matrices, matrix extension is the sum of
+  the original cochain over the diagonal positions.
 * `TauCeti.matrixCochainExtension_hochschildCoface`,
   `TauCeti.matrixCochainExtension_hochschildCoboundary`: compatibility with the cofaces and the
   Hochschild coboundary.
@@ -243,6 +245,23 @@ theorem matrixCochainExtension_fromBlocks_zero₁₂_zero₂₁ (ι κ : Type*) 
     matrixCochainExtension (ι ⊕ κ) n φ (fun j => Matrix.fromBlocks (a j) 0 0 0) =
       matrixCochainExtension ι n φ a := by
   simpa using matrixCochainExtension_fromBlocks_zero₁₂_zero₂₁ ι κ n φ a 0
+
+/-- The matrix extension of a tuple of diagonal matrices is the sum, over the diagonal positions,
+of the original cochain on the diagonal entries. -/
+theorem matrixCochainExtension_diagonal (ι : Type*) [Fintype ι] [DecidableEq ι] (n : ℕ)
+    (φ : MultilinearMap R (fun _ : Fin (n + 1) => A) M) (d : Fin (n + 1) → ι → A) :
+    matrixCochainExtension ι n φ (fun j => Matrix.diagonal (d j)) =
+      ∑ i, φ (fun j => d j i) := by
+  simp only [matrixCochainExtension_apply]
+  -- Only the constant closed paths contribute.
+  refine (Fintype.sum_of_injective (fun i _ ↦ i) (fun i i' h ↦ congrFun h 0) _ _
+    (fun p hp ↦ ?_) fun i ↦ by simp).symm
+  -- A nonconstant closed path leaves the diagonal somewhere.
+  obtain ⟨j, hj⟩ : ∃ j, p (finRotate (n + 1) j) ≠ p j := by
+    by_contra! h
+    exact hp ⟨p 0, funext fun j ↦ (apply_eq_apply_zero_of_add_one
+      (fun j ↦ by simpa only [finRotate_apply] using h j) j).symm⟩
+  exact φ.map_coord_zero j (Matrix.diagonal_apply_ne _ hj.symm)
 
 /-- Restricting to a diagonal matrix corner recovers the original cochain in every degree. -/
 @[simp] theorem matrixCochainExtension_single (ι : Type*) [Fintype ι] [DecidableEq ι]

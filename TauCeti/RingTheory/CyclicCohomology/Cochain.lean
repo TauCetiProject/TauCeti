@@ -501,6 +501,24 @@ theorem mem_cyclicCochains_two_iff {φ : MultilinearMap R (fun _ : Fin 3 ↦ A) 
 
 end Cyclic
 
+section QuasiInverse
+
+variable {R A M ι : Type*} [Semiring R] [NonUnitalNonAssocSemiring A] [Module R A]
+  [AddCommGroup M] [Module R M] [DecidableEq ι]
+
+/-- A multilinear map evaluated on a product `pq` of quasi-inverse elements, `q + p + pq = 0`, in
+one slot is minus the sum of its values on `p` and on `q` in that slot. -/
+theorem _root_.MultilinearMap.map_update_mul_of_add_add_mul_eq_zero
+    (f : MultilinearMap R (fun _ : ι ↦ A) M) (r : ι → A) (j : ι) {p q : A}
+    (h : q + p + p * q = 0) :
+    f (Function.update r j (p * q)) =
+      -(f (Function.update r j p) + f (Function.update r j q)) := by
+  have h0 := f.map_update_zero r j
+  rw [← h, f.map_update_add, f.map_update_add, add_comm (f _) (f (Function.update r j p))] at h0
+  exact eq_neg_of_add_eq_zero_right h0
+
+end QuasiInverse
+
 section Coboundary
 
 section NonAssoc
@@ -667,20 +685,14 @@ theorem hochschildCoboundary_apply_eq_zero_of_add_add_mul_eq_zero
     {x : Fin (n + 2) → A}
     (hx : ∀ i, x (finRotate (n + 2) i) + x i + x i * x (finRotate (n + 2) i) = 0) :
     hochschildCoboundary R A M n ψ x = 0 := by
-  -- A product `yz` of quasi-inverse entries in one slot splits into the values on `y` and on `z`.
-  have hsplit (r : Fin (n + 1) → A) (j : Fin (n + 1)) {y z : A} (h : z + y + y * z = 0) :
-      ψ (Function.update r j (y * z)) =
-        -(ψ (Function.update r j y) + ψ (Function.update r j z)) := by
-    have h0 := ψ.map_update_zero r j
-    rw [← h, ψ.map_update_add, ψ.map_update_add, add_comm (ψ _) (ψ (Function.update r j y))] at h0
-    exact eq_neg_of_add_eq_zero_right h0
   -- With `g i = (-1)ⁱ ψ(x with entry i deleted)`, the inner faces contribute `g (j + 1) - g j`.
   set g : Fin (n + 2) → M := fun i ↦ (-1 : ℤ) ^ (i : ℕ) • ψ (Fin.removeNth i x) with hg
   have hinner (j : Fin (n + 1)) : (-1 : ℤ) ^ (j : ℕ) • ψ (Fin.contractNth j.castSucc (· * ·) x) =
       g j.succ - g j.castSucc := by
     have hj := hx j.castSucc
     rw [Fin.finRotate_castSucc] at hj
-    rw [Fin.contractNth_castSucc_eq_update_removeNth_succ, hsplit _ _ hj,
+    rw [Fin.contractNth_castSucc_eq_update_removeNth_succ,
+      ψ.map_update_mul_of_add_add_mul_eq_zero _ _ hj,
       Fin.update_removeNth_succ_eq_removeNth_castSucc,
       Function.update_eq_self_iff.2 (by simp [Fin.removeNth_apply])]
     simp only [hg, Fin.val_succ, Fin.val_castSucc, pow_succ, mul_neg_one, neg_smul, smul_neg,
@@ -703,8 +715,9 @@ theorem hochschildCoboundary_apply_eq_zero_of_add_add_mul_eq_zero
       funext k
       rw [Function.comp_apply, Equiv.apply_symm_apply]
       rfl
-    rw [← Fin.update_cons_zero (x (Fin.last (n + 1))), hsplit _ _ hl, Fin.update_cons_zero,
-      Fin.update_cons_zero, hinit, htail, mem_cyclicCochains_iff.1 hψ]
+    rw [← Fin.update_cons_zero (x (Fin.last (n + 1))),
+      ψ.map_update_mul_of_add_add_mul_eq_zero _ _ hl, Fin.update_cons_zero, Fin.update_cons_zero,
+      hinit, htail, mem_cyclicCochains_iff.1 hψ]
     have hsign : (-1 : ℤ) ^ (n + 1) * (-1) ^ n = -1 := by
       rw [← pow_add]
       exact Odd.neg_one_pow ⟨n, by omega⟩
