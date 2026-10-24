@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Conjugation
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Stabilizer
 public import TauCeti.Algebra.Coalgebra.Comodule.Product
 public import TauCeti.Algebra.Coalgebra.Comodule.Trivial
 import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Product
 import TauCeti.LinearAlgebra.TensorProduct.Separation
+import TauCeti.Algebra.AlgebraicGroup.Representation.PointConjugation
 
 /-!
 # The stabilizer of a vector in a representation
@@ -43,6 +45,8 @@ centralizer of an element `x` of the Lie algebra is the kernel of `ad x`.
 * `TauCeti.Comodule.matrixCoefficient_sub_algebraMap_mem_stabilizerHopfIdeal` and
   `TauCeti.Comodule.stabilizerHopfIdeal_le_iff`: its defining equations, and its universal property
   among Hopf ideals.
+* `TauCeti.Comodule.stabilizerHopfIdeal_basePointsRepresentation`: acting on the vector
+  conjugates its scheme-theoretic stabilizer.
 * `TauCeti.Comodule.stabilizerHopfIdeal_eq_bot_iff`: it vanishes exactly when `v` is fixed.
 * `TauCeti.Comodule.mem_lieSubalgebra_stabilizerHopfIdeal_iff`: its Lie algebra is the
   annihilator of `v` under the differentiated representation.
@@ -158,16 +162,23 @@ theorem stabilizerHopfIdeal_le_ker_iff (v : M) {A : Type*} [CommRing A] [Algebra
   have ha1 : a = 1 := by simpa using congrArg (TensorProduct.rid k A) h1
   rw [← ha, ha1, one_smul]
 
+/-- An algebra-valued point lies in the stabilizer precisely when it fixes the constant
+extension of the vector. The value algebra may be nonreduced. -/
+theorem mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff_endOfPoint (v : M)
+    {A : Type*} [CommRing A] [Algebra k A] (g : WithConv (H →ₐ[k] A)) :
+    g ∈ CommHopfAlgCat.quotientPointsSubgroup (_root_.CommHopfAlgCat.of k H)
+        (stabilizerHopfIdeal k H v) (CommAlgCat.of k A) ↔
+      endOfPoint M g.ofConv (1 ⊗ₜ[k] v) = 1 ⊗ₜ[k] v := by
+  rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff, ← stabilizerHopfIdeal_le_ker_iff]
+  exact ⟨fun h _ hx ↦ h _ hx, fun h _ hx ↦ h hx⟩
+
 /-- A rational point lies in the stabilizer of `v` exactly when it fixes `v`. -/
 theorem mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff (v : M)
     (g : WithConv (H →ₐ[k] k)) :
     g ∈ CommHopfAlgCat.quotientPointsSubgroup (_root_.CommHopfAlgCat.of k H)
         (stabilizerHopfIdeal k H v) (CommAlgCat.of k k) ↔
       basePointsRepresentation (H := H) M g v = v := by
-  have hker : (∀ h ∈ stabilizerHopfIdeal k H v, g.ofConv h = 0) ↔
-      (stabilizerHopfIdeal k H v).toIdeal ≤ RingHom.ker g.ofConv :=
-    ⟨fun h _ hx ↦ h _ hx, fun h _ hx ↦ h hx⟩
-  rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff, hker, stabilizerHopfIdeal_le_ker_iff,
+  rw [mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff_endOfPoint,
     basePointsRepresentation_apply, ← (TensorProduct.lid k M).injective.eq_iff,
     TensorProduct.lid_tmul, one_smul]
 
@@ -259,5 +270,35 @@ theorem mem_lieSubalgebra_stabilizerHopfIdeal_iff (v : M)
     obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.mp hw
     rw [map_smul, hd, h, Prod.mk_zero_zero, smul_zero]
     exact zero_mem _
+
+/-- Acting on a vector by a rational point conjugates its scheme-theoretic stabilizer.
+This is an equality of defining Hopf ideals, including their equations on nonreduced
+coefficient algebras. -/
+theorem stabilizerHopfIdeal_basePointsRepresentation (v : M)
+    (g : WithConv (H →ₐ[k] k)) :
+    stabilizerHopfIdeal k H (basePointsRepresentation (H := H) M g v) =
+      (stabilizerHopfIdeal k H v).conjugate g := by
+  apply HopfIdeal.eq_conjugate_of_forall_mem_iff g
+  intro A p
+  rw [mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff_endOfPoint,
+    mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff_endOfPoint]
+  have hconj (q : WithConv (H →ₐ[k] A)) (a : WithConv (H →ₐ[k] k)) :
+      (AlgHom.mapValue (H := H) (Algebra.ofId k A) a * q *
+        (AlgHom.mapValue (H := H) (Algebra.ofId k A) a)⁻¹).ofConv =
+      q.ofConv.comp (HopfAlgebra.pointConjugationAlgHom a) := by
+    exact congrArg WithConv.ofConv (HopfAlgebra.comp_pointConjugationAlgHom a q).symm
+  constructor
+  · intro hp
+    rw [hconj] at hp
+    have hp' := endOfPoint_one_tmul_basePointsRepresentation_of_conj
+      (V := M) p.ofConv g⁻¹ (y := 1) (by simpa only [inv_inv] using hp)
+    simpa only [← Module.End.mul_apply, ← map_mul, inv_mul_cancel, map_one,
+      Module.End.one_apply] using hp'
+  · intro hp
+    apply endOfPoint_one_tmul_basePointsRepresentation_of_conj
+      (V := M) _ g (y := 1)
+    rw [← hconj]
+    simpa only [map_inv, inv_inv, mul_assoc, inv_mul_cancel_left, inv_mul_cancel,
+      mul_one] using hp
 
 end TauCeti.Comodule
