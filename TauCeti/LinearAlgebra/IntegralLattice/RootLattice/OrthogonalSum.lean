@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Pi
-public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.GlueAlphabet
+public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.GlueAlphabet.Basic
 
 /-!
 # Orthogonal sums of root lattices and their glue words
