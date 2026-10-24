@@ -17,10 +17,15 @@ useful before projection closure is available: semialgebraicity of a graph alone
 us recover its projection onto the input coordinates.
 
 This file gives the graph predicate its basic API.  It proves restriction, congruence, and
-piecewise-gluing laws and shows that polynomial maps are semialgebraic.  It deliberately does not
-assert closure under arbitrary composition, whose graph generally requires eliminating the
-intermediate coordinates; images, inverse images, and composition are derived from projection
-closure in `TauCeti.Geometry.RealAlgebraic.Semialgebraic.Image`.
+piecewise-gluing laws and shows that polynomial maps are semialgebraic.  It also proves the
+operations whose graphs are inverse images of the given graphs, so that no coordinate has to be
+eliminated: pairing two functions on the same domain (`TauCeti.IsSemialgebraicOn.sumElim`),
+precomposition with a polynomial map (`TauCeti.IsSemialgebraicOn.comp_eval`), and bijective
+changes of the input or output coordinates (`TauCeti.isSemialgebraicOn_preimage_comp_equiv_iff`,
+`TauCeti.isSemialgebraicOn_comp_equiv_iff`).  It deliberately does not assert closure under
+arbitrary composition, whose graph generally requires eliminating the intermediate coordinates;
+images, inverse images, composition, and pointwise arithmetic are derived from projection closure
+in `TauCeti.Geometry.RealAlgebraic.Semialgebraic.Image`.
 
 ## References
 
@@ -211,5 +216,86 @@ theorem isSemialgebraicMap_id [Finite σ] :
   simp
 
 end PolynomialMap
+
+section Operations
+
+variable {σ' τ' : Type*}
+
+/-- Pairing two semialgebraic functions on the same domain gives a semialgebraic function into
+the coordinate space indexed by the disjoint union of their output coordinates.  No projection is
+needed: the graph of the pair is the intersection of the inverse images of the two graphs. -/
+theorem IsSemialgebraicOn.sumElim {f : (σ → R) → (τ → R)} {g : (σ → R) → (τ' → R)}
+    {s : Set (σ → R)} (hf : IsSemialgebraicOn f s) (hg : IsSemialgebraicOn g s) :
+    IsSemialgebraicOn (fun x => Sum.elim (f x) (g x)) s := by
+  refine ⟨hf.isSemialgebraic, ?_⟩
+  convert (hf.graph.preimage_comp (Sum.elim Sum.inl (Sum.inr ∘ Sum.inl))).inter
+    (hg.graph.preimage_comp (Sum.elim Sum.inl (Sum.inr ∘ Sum.inr))) using 1
+  ext z
+  simp only [mem_inter_iff, mem_preimage_sumArrowEquivProdArrow_graphOn,
+    mem_preimage (f := fun x : σ ⊕ τ ⊕ τ' → R => x ∘ Sum.elim Sum.inl (Sum.inr ∘ Sum.inl)),
+    mem_preimage (f := fun x : σ ⊕ τ ⊕ τ' → R => x ∘ Sum.elim Sum.inl (Sum.inr ∘ Sum.inr)),
+    Function.comp_assoc, Sum.elim_comp_inl, Sum.elim_comp_inr]
+  rw [← Sum.elim_comp_inl_inr (z ∘ Sum.inr), Sum.elim_eq_iff]
+  tauto
+
+/-- Pairing two semialgebraic maps gives a semialgebraic map. -/
+theorem IsSemialgebraicMap.sumElim {f : (σ → R) → (τ → R)} {g : (σ → R) → (τ' → R)}
+    (hf : IsSemialgebraicMap f) (hg : IsSemialgebraicMap g) :
+    IsSemialgebraicMap fun x => Sum.elim (f x) (g x) :=
+  isSemialgebraicOn_univ.1 <| (isSemialgebraicOn_univ.2 hf).sumElim (isSemialgebraicOn_univ.2 hg)
+
+/-- Precomposing a semialgebraic function with a polynomial map gives a semialgebraic function on
+the inverse image of its domain.  No projection is needed: the new graph is the inverse image of
+the old one under a polynomial map. -/
+theorem IsSemialgebraicOn.comp_eval {f : (σ → R) → (τ → R)} {s : Set (σ → R)}
+    (hf : IsSemialgebraicOn f s) (p : σ → MvPolynomial σ' R) :
+    IsSemialgebraicOn (f ∘ fun x i => eval x (p i)) ((fun x i => eval x (p i)) ⁻¹' s) := by
+  refine ⟨hf.isSemialgebraic.preimage_eval p, ?_⟩
+  convert hf.graph.preimage_eval (Sum.elim (fun i => rename Sum.inl (p i)) fun j => X (Sum.inr j))
+    using 1
+  ext z
+  simp only [mem_preimage_sumArrowEquivProdArrow_graphOn,
+    mem_preimage (f := fun (x : σ' ⊕ τ → R) (i : σ ⊕ τ) => eval x _), Function.comp_def,
+    Sum.elim_inl, Sum.elim_inr, eval_rename, eval_X]
+  simp only [mem_preimage]
+
+/-- Precomposing a semialgebraic map with a polynomial map gives a semialgebraic map. -/
+theorem IsSemialgebraicMap.comp_eval {f : (σ → R) → (τ → R)} (hf : IsSemialgebraicMap f)
+    (p : σ → MvPolynomial σ' R) : IsSemialgebraicMap (f ∘ fun x i => eval x (p i)) := by
+  simpa using (isSemialgebraicOn_univ.2 hf).comp_eval p
+
+/-- Semialgebraicity of a function is invariant under a bijective change of input coordinates,
+such as a permutation, applied to both the function and its domain. -/
+@[simp]
+theorem isSemialgebraicOn_preimage_comp_equiv_iff {f : (σ → R) → (τ → R)} {s : Set (σ → R)}
+    (e : σ ≃ σ') :
+    IsSemialgebraicOn (fun x : σ' → R => f (x ∘ e)) ((fun x : σ' → R => x ∘ e) ⁻¹' s) ↔
+      IsSemialgebraicOn f s := by
+  refine ⟨fun h => ?_, fun h => ?_⟩
+  · simpa [Function.comp_def, preimage_preimage] using h.comp_eval fun i => X (e.symm i)
+  · simpa [Function.comp_def] using h.comp_eval fun i => X (e i)
+
+/-- Changing the output coordinates of a semialgebraic function by a bijection preserves
+semialgebraicity. -/
+private theorem IsSemialgebraicOn.comp_equiv {f : (σ → R) → (τ → R)} {s : Set (σ → R)}
+    (hf : IsSemialgebraicOn f s) (e : τ' ≃ τ) : IsSemialgebraicOn (fun x => f x ∘ e) s := by
+  refine ⟨hf.isSemialgebraic, ?_⟩
+  convert hf.graph.preimage_comp (Sum.elim Sum.inl (Sum.inr ∘ e.symm)) using 1
+  ext z
+  simp only [mem_preimage_sumArrowEquivProdArrow_graphOn,
+    mem_preimage (f := fun x : σ ⊕ τ' → R => x ∘ Sum.elim Sum.inl (Sum.inr ∘ e.symm)),
+    Function.comp_assoc, Sum.elim_comp_inl, Sum.elim_comp_inr]
+  rw [← Function.comp_assoc z Sum.inr, Equiv.eq_comp_symm]
+
+/-- Semialgebraicity of a function is invariant under a bijective change of output coordinates,
+such as a permutation. -/
+@[simp]
+theorem isSemialgebraicOn_comp_equiv_iff {f : (σ → R) → (τ → R)} {s : Set (σ → R)}
+    (e : τ' ≃ τ) :
+    IsSemialgebraicOn (fun x => f x ∘ e) s ↔ IsSemialgebraicOn f s := by
+  refine ⟨fun h => ?_, fun h => h.comp_equiv e⟩
+  simpa [Function.comp_assoc] using h.comp_equiv e.symm
+
+end Operations
 
 end TauCeti
