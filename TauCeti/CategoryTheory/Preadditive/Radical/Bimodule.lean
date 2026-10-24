@@ -31,9 +31,10 @@ a rank over each of them. These are two genuinely different invariants of it, an
 agree when the two residue division rings are `k` itself, as happens for instance over an
 algebraically closed `k` when the two endomorphism algebras are finite-dimensional over it, and
 also, vacuously, whenever `Irr(X, Y)` vanishes. The textbook convention recalled in the references
-below counts the arrows `X → Y` of a *valued* Auslander-Reiten quiver by one of these ranks, the
-target-side one, and nothing is proved here about the value of either rank. What is proved is their
-positivity: each of the two ranks is positive exactly when an irreducible morphism `X ⟶ Y` exists.
+below puts a single arrow `X → Y` in a *valued* Auslander-Reiten quiver exactly when `Irr(X, Y)` is
+nonzero and takes the pair of these two ranks as the valuation of that arrow; nothing is proved
+here about the value of either rank. What is proved is their positivity: each of the two ranks is
+positive exactly when an irreducible morphism `X ⟶ Y` exists.
 
 The left action is antimultiplicative — `(a₁ ≫ a₂) ≫ f` is `a₁` applied after `a₂` — so it is
 recorded as an action of `(End X)ᵐᵒᵖ`, and it descends to `(End X)ᵐᵒᵖ ⧸ rad((End X)ᵐᵒᵖ)`, which is
@@ -75,11 +76,12 @@ again a division ring because the opposite of a local ring is local
 ## References
 
 * M. Auslander, I. Reiten, S. O. Smalø, *Representation Theory of Artin Algebras*, Cambridge
-  University Press (1995), V.7 and VII.1.
+  University Press (1995), V.7 and VII.1, the source of the valued Auslander-Reiten quiver whose
+  arrows are valued by the pair of ranks of `rad / rad²` over the two residue division rings.
 * I. Assem, D. Simson, A. Skowroński, *Elements of the Representation Theory of Associative
-  Algebras, Vol. 1*, LMS Student Texts 65, CUP (2006), IV.1 and VII.1, where the arrows of the
-  Auslander-Reiten quiver are counted by the dimensions of `rad / rad²` over the residue division
-  rings.
+  Algebras, Vol. 1*, LMS Student Texts 65, CUP (2006), IV.1, which works over an algebraically
+  closed field and counts the arrows of the Auslander-Reiten quiver by the `k`-dimension of
+  `rad / rad²` instead.
 -/
 
 public section
@@ -100,11 +102,9 @@ variable (k : Type*) [Ring k] [Linear k C] (X Y : C)
 
 /-- **Postcomposition by an endomorphism of the target**, on the radical morphisms `X ⟶ Y`. -/
 def jacobsonRadicalPostcomp (g : End Y) :
-    jacobsonRadicalSubmodule k X Y →ₗ[k] jacobsonRadicalSubmodule k X Y where
-  toFun f := ⟨(f : X ⟶ Y) ≫ g.asHom, mem_jacobsonRadicalSubmodule.mpr
-    (comp_mem_jacobsonRadical_right (mem_jacobsonRadicalSubmodule.mp f.2) g.asHom)⟩
-  map_add' _ _ := by ext; simp [Preadditive.add_comp]
-  map_smul' _ _ := by ext; simp [Linear.smul_comp]
+    jacobsonRadicalSubmodule k X Y →ₗ[k] jacobsonRadicalSubmodule k X Y :=
+  (Linear.rightComp k X g.asHom).restrict fun _ hf => mem_jacobsonRadicalSubmodule.mpr
+    (comp_mem_jacobsonRadical_right (mem_jacobsonRadicalSubmodule.mp hf) g.asHom)
 
 @[simp]
 theorem coe_jacobsonRadicalPostcomp (g : End Y) (f : jacobsonRadicalSubmodule k X Y) :
@@ -177,11 +177,9 @@ theorem irreducibleMorphismPostcomp_eq_zero_of_mem_jacobson {g : End Y}
 
 /-- **Precomposition by an endomorphism of the source**, on the radical morphisms `X ⟶ Y`. -/
 def jacobsonRadicalPrecomp (a : End X) :
-    jacobsonRadicalSubmodule k X Y →ₗ[k] jacobsonRadicalSubmodule k X Y where
-  toFun f := ⟨a.asHom ≫ (f : X ⟶ Y), mem_jacobsonRadicalSubmodule.mpr
-    (comp_mem_jacobsonRadical_left a.asHom (mem_jacobsonRadicalSubmodule.mp f.2))⟩
-  map_add' _ _ := by ext; simp [Preadditive.comp_add]
-  map_smul' _ _ := by ext; simp [Linear.comp_smul]
+    jacobsonRadicalSubmodule k X Y →ₗ[k] jacobsonRadicalSubmodule k X Y :=
+  (Linear.leftComp k Y a.asHom).restrict fun _ hf => mem_jacobsonRadicalSubmodule.mpr
+    (comp_mem_jacobsonRadical_left a.asHom (mem_jacobsonRadicalSubmodule.mp hf))
 
 @[simp]
 theorem coe_jacobsonRadicalPrecomp (a : End X) (f : jacobsonRadicalSubmodule k X Y) :
@@ -360,10 +358,11 @@ variable {X Y : C} [IsLocalRing (End X)] [IsLocalRing (End Y)]
 /-- **The target-side rank is positive exactly when an irreducible morphism exists.**
 
 The residue ring of a local endomorphism ring is a division ring, so the space of irreducible
-morphisms is a vector space over the residue ring of the target and has a rank there. That is the
-rank the textbook convention recalled in the module docstring reads a valued arrow `X → Y` of the
-Auslander-Reiten quiver off. Nothing is claimed here about the value of the rank: what is proved is
-that it is positive exactly when there is an irreducible morphism `X ⟶ Y`. -/
+morphisms is a vector space over the residue ring of the target and has a rank there. That is one
+of the two ranks the textbook convention recalled in the module docstring takes as the valuation of
+a valued arrow `X → Y` of the Auslander-Reiten quiver. Nothing is claimed here about the value of
+the rank: what is proved is that it is positive exactly when there is an irreducible morphism
+`X ⟶ Y`. -/
 theorem rank_irreducibleMorphismSpace_pos_iff :
     0 < Module.rank (End Y ⧸ Ring.jacobson (End Y)) (irreducibleMorphismSpace k X Y) ↔
       ∃ f : X ⟶ Y, IsIrreducibleMorphism f := by

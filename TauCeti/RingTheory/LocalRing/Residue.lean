@@ -21,10 +21,11 @@ available only over a commutative base.
 The residue division ring is the coefficient ring the irreducible morphisms of a category are
 counted over: the space of irreducible morphisms `rad(X, Y) / rad²(X, Y)` between two objects with
 local endomorphism rings is a bimodule over `End X ⧸ rad(End X)` and `End Y ⧸ rad(End Y)`, and the
-textbook convention recalled in the references below counts the arrows of a *valued*
-Auslander-Reiten quiver by the rank over one of those division rings, the target's, rather than by
-a rank over an ambient base ring. The two ranks are different invariants in general, and neither
-this file nor the bimodule file computes either of them. The bimodule is built in
+textbook convention recalled in the references below puts a single arrow `X → Y` in a *valued*
+Auslander-Reiten quiver exactly when that space is nonzero and values that arrow by the pair of its
+ranks over those two division rings, rather than by a rank over an ambient base ring. The two ranks
+are different invariants in general, and neither this file nor the bimodule file computes either of
+them. The bimodule is built in
 `TauCeti/CategoryTheory/Preadditive/Radical/Bimodule.lean`.
 
 ## Main results
