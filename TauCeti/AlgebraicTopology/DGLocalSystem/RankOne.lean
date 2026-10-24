@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Basic
+public import TauCeti.AlgebraicTopology.DGLocalSystem.Homology
+public import TauCeti.Algebra.Homology.DG.Module.Right.Restriction.Cohomology
+public import TauCeti.RepresentationTheory.CharacterTwist
 public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.Twist
 public import TauCeti.Algebra.Homology.DG.Twisted.Map
 public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
@@ -33,12 +36,27 @@ twisted complex of `𝓕` with the cocycle `m^L`
 (`TauCeti.RankOneLocalSystem.twistedCochainComplexIso`, the source's Proposition
 `prop:FotimesL-mL`), so the two have isomorphic homology.
 
+As a classical local system, `L` is the representation of `π₁(B, b)` on `R` through its monodromy
+`TauCeti.RankOneLocalSystem.monodromy`, the character sending the inverse of the class of a Moore
+loop `γ` to `ρ γ`. On homology, twisting by `L` tensors with this representation:
+`H(𝓕 ⊗ L) ≅ H(𝓕) ⊗ L` as representations of the fundamental group
+(`TauCeti.RankOneLocalSystem.cohomologyRepresentationEquivTprod`), through the identification of
+the homology of the restriction of `𝓕` along `Φ^L` with that of `𝓕`. Equivalently, the
+representation on `H(𝓕 ⊗ L)` is the one on `H(𝓕)` rescaled by the monodromy
+(`TauCeti.RankOneLocalSystem.cohomologyRepresentationEquivCharTwist`). The point is that the class
+of the point chain of `γ` in `H(C_*(Ω_b B))` is scaled by `ρ γ` under `Φ^L`. These statements
+concern the total homology `H(𝓕)`, the direct sum of the `H_q(𝓕)`.
+
 ## Main definitions
 
 * `TauCeti.RankOneLocalSystem B b R`: rank-one local systems on `(B, b)`.
 * `TauCeti.RankOneLocalSystem.twist L`: the DG algebra automorphism `Φ^L` of `C_*(Ω_b B)`.
 * `TauCeti.RankOneLocalSystem.tensor L`: the functor `𝓕 ↦ 𝓕 ⊗ L` on DG local systems.
 * `TauCeti.RankOneLocalSystem.twistCocycle L m`: the twisted cocycle `m^L`.
+* `TauCeti.RankOneLocalSystem.monodromy L`: the monodromy character `π₁(B, b) →* Rˣ`.
+* `TauCeti.RankOneLocalSystem.cohomologyRepresentationEquivTprod`: `H(𝓕 ⊗ L) ≅ H(𝓕) ⊗ L`.
+* `TauCeti.RankOneLocalSystem.cohomologyRepresentationEquivCharTwist`: the same, with `L` absorbed
+  into the twist of the representation on `H(𝓕)` by the monodromy.
 
 ## Main results
 
@@ -170,6 +188,40 @@ theorem tensor_smul_lof_ofCube (𝓕 : DGLocalSystem.{uM} B b R) {n : ℕ}
         DGRightModuleCat.restrictScalarsEquiv L.twist 𝓕 x) := by
   rw [DGRightModuleCat.restrictScalarsEquiv_smul, unop_op, twist_lof_ofCube, op_smul, smul_assoc]
 
+/-- Moore loops with the same class in the fundamental group act by the same unit. -/
+theorem ρ_eq_of_fundamentalGroupHom_eq {γ δ : MooreLoopSpace B b}
+    (h : MooreLoopSpace.fundamentalGroupHom b γ = MooreLoopSpace.fundamentalGroupHom b δ) :
+    L.ρ γ = L.ρ δ := by
+  rw [← MooreLoopSpace.zerothHomotopyEquivFundamentalGroup_mk,
+    ← MooreLoopSpace.zerothHomotopyEquivFundamentalGroup_mk] at h
+  exact L.eq_of_joined
+    (Quotient.exact ((MooreLoopSpace.zerothHomotopyEquivFundamentalGroup b).injective h))
+
+/-- **The monodromy of a rank-one local system**: the character of the fundamental group by
+which it is a classical local system, sending the inverse of the class
+`MooreLoopSpace.fundamentalGroupHom b γ` of a Moore loop to the unit `ρ γ` by which `γ` acts
+(`TauCeti.RankOneLocalSystem.monodromy_fundamentalGroupHom_inv`). This is the convention of
+`TauCeti.DGRightModuleCat.IsConcentratedInDegreeZero.representation`. -/
+def monodromy : FundamentalGroup B b →* Rˣ where
+  toFun g := L.ρ (Function.surjInv (MooreLoopSpace.fundamentalGroupHom_surjective b) g⁻¹)
+  map_one' := by
+    rw [inv_one, ← map_one L.ρ]
+    exact L.ρ_eq_of_fundamentalGroupHom_eq (by
+      rw [Function.surjInv_eq (MooreLoopSpace.fundamentalGroupHom_surjective b), map_one])
+  map_mul' g g' := by
+    rw [mul_comm, ← map_mul L.ρ]
+    exact L.ρ_eq_of_fundamentalGroupHom_eq (by
+      rw [map_mul, Function.surjInv_eq (MooreLoopSpace.fundamentalGroupHom_surjective b),
+        Function.surjInv_eq (MooreLoopSpace.fundamentalGroupHom_surjective b),
+        Function.surjInv_eq (MooreLoopSpace.fundamentalGroupHom_surjective b), mul_inv_rev])
+
+/-- The monodromy of the inverse of the class of a Moore loop `γ` is the unit by which `γ`
+acts. -/
+theorem monodromy_fundamentalGroupHom_inv (γ : MooreLoopSpace B b) :
+    L.monodromy (MooreLoopSpace.fundamentalGroupHom b γ)⁻¹ = L.ρ γ :=
+  L.ρ_eq_of_fundamentalGroupHom_eq (by
+    rw [Function.surjInv_eq (MooreLoopSpace.fundamentalGroupHom_surjective b), inv_inv])
+
 end RankOneLocalSystem
 
 /-- A **twisting cocycle with values in `C_*(Ω_b B; R)`**, on the generators `P` graded by `ind`. -/
@@ -224,6 +276,134 @@ def twistedHomologyIso (hM : IsDGRightModule (loopChain_isDGAlgebra B b R) ℳ d
   (HomologicalComplex.homologyFunctor _ _ q).mapIso (L.twistedCochainComplexIso hM m)
 
 end RankOneLocalSystem
+
+section Homology
+
+universe u
+
+namespace RankOneLocalSystem
+
+variable {B : Type u} [TopologicalSpace B] {b : B} {R : Type u} [CommRing R]
+  (L : RankOneLocalSystem B b R)
+  {M : Type uM} [AddCommGroup M] [Module R M] [Module (loopChainAlgebra B b R)ᵐᵒᵖ M]
+  [IsScalarTower R (loopChainAlgebra B b R)ᵐᵒᵖ M] {ℳ : ℤ → Submodule R M}
+  [DirectSum.Decomposition ℳ]
+  [SetLike.GradedSMul
+    (InternalGrading.ofDecomposition (cubicalChainGrading (MooreLoopSpace B b) R)).opposite.piece ℳ]
+  {dM : M →ₗ[R] M}
+
+/-- On cohomology, `Φ^L` scales the class of the point chain of a Moore loop `γ` by `ρ γ`. -/
+private theorem cohomologyMap_twist_groupAlgebraToLoopChainCohomology (γ : MooreLoopSpace B b) :
+    L.twist.cohomologyMap (groupAlgebraToLoopChainCohomology B b R
+        (MonoidAlgebra.of R _ (MooreLoopSpace.fundamentalGroupHom b γ))) =
+      (L.ρ γ : R) • groupAlgebraToLoopChainCohomology B b R
+        (MonoidAlgebra.of R _ (MooreLoopSpace.fundamentalGroupHom b γ)) := by
+  rw [groupAlgebraToLoopChainCohomology_of_fundamentalGroupHom, DGAlgHom.cohomologyMap_mk,
+    ← Ideal.Quotient.mkₐ_eq_mk R, ← map_smul]
+  congr 1
+  apply Subtype.ext
+  rw [DGAlgHom.cyclesMap_apply_coe, twist_lof_ofCube, SingularCube.point_apply]
+  -- Scalar multiplication of cycles is computed on their underlying chains.
+  rfl
+
+/-- The class of `Φ^L` applied to the point chain of `γ` acts as `ρ γ` times the point chain. -/
+private theorem cohomologyAction_cohomologyMap_twist
+    (hM : IsDGRightModule (loopChain_isDGAlgebra B b R) ℳ dM) (γ : MooreLoopSpace B b)
+    (y : hM.Cohomology) :
+    (hM.cohomologyAction (L.twist.cohomologyMap (groupAlgebraToLoopChainCohomology B b R
+        (MonoidAlgebra.of R _ (MooreLoopSpace.fundamentalGroupHom b γ))))).unop y =
+      (L.ρ γ : R) • (hM.cohomologyAction (groupAlgebraToLoopChainCohomology B b R
+        (MonoidAlgebra.of R _ (MooreLoopSpace.fundamentalGroupHom b γ)))).unop y := by
+  rw [cohomologyMap_twist_groupAlgebraToLoopChainCohomology]
+  exact congrArg (fun f : (Module.End R hM.Cohomology)ᵐᵒᵖ ↦ f.unop y) (map_smul _ _ _)
+
+/- The steps below are explicit equations rather than one chain of rewrites: rewriting inside these
+terms makes the unifier compare instance arguments of `H(𝓕 ⊗ L)` and `H(𝓕)` elaborated in
+different contexts, which exhausts the heartbeat budget. -/
+/-- On homology, the inverse of the class of a Moore loop `γ` acts on `H(𝓕 ⊗ L)` as `ρ γ` times
+its action on `H(𝓕)`. -/
+private theorem restrictScalarsCohomologyEquiv_cohomologyRepresentation
+    (hM : IsDGRightModule (loopChain_isDGAlgebra B b R) ℳ dM) (γ : MooreLoopSpace B b)
+    (x : (hM.restrictScalars L.twist).Cohomology) :
+    hM.restrictScalarsCohomologyEquiv L.twist
+        ((hM.restrictScalars L.twist).cohomologyRepresentation
+          (MooreLoopSpace.fundamentalGroupHom b γ)⁻¹ x) =
+      (L.ρ γ : R) • hM.cohomologyRepresentation (MooreLoopSpace.fundamentalGroupHom b γ)⁻¹
+        (hM.restrictScalarsCohomologyEquiv L.twist x) :=
+  calc hM.restrictScalarsCohomologyEquiv L.twist
+        ((hM.restrictScalars L.twist).cohomologyRepresentation
+          (MooreLoopSpace.fundamentalGroupHom b γ)⁻¹ x)
+      = hM.restrictScalarsCohomologyEquiv L.twist
+          (((hM.restrictScalars L.twist).cohomologyAction (groupAlgebraToLoopChainCohomology B b R
+            (MonoidAlgebra.of R _ (MooreLoopSpace.fundamentalGroupHom b γ)))).unop x) :=
+        congrArg (fun φ ↦ hM.restrictScalarsCohomologyEquiv L.twist (φ x))
+          ((hM.restrictScalars L.twist).cohomologyRepresentation_fundamentalGroupHom_inv γ)
+    _ = (hM.cohomologyAction (L.twist.cohomologyMap (groupAlgebraToLoopChainCohomology B b R
+            (MonoidAlgebra.of R _ (MooreLoopSpace.fundamentalGroupHom b γ))))).unop
+          (hM.restrictScalarsCohomologyEquiv L.twist x) :=
+        hM.restrictScalarsCohomologyEquiv_cohomologyAction L.twist _ x
+    _ = (L.ρ γ : R) • (hM.cohomologyAction (groupAlgebraToLoopChainCohomology B b R
+            (MonoidAlgebra.of R _ (MooreLoopSpace.fundamentalGroupHom b γ)))).unop
+          (hM.restrictScalarsCohomologyEquiv L.twist x) :=
+        L.cohomologyAction_cohomologyMap_twist hM γ _
+    _ = _ := congrArg (fun φ : Module.End R hM.Cohomology ↦
+          (L.ρ γ : R) • φ (hM.restrictScalarsCohomologyEquiv L.twist x))
+        (hM.cohomologyRepresentation_fundamentalGroupHom_inv γ).symm
+
+/-- **The homology of `𝓕 ⊗ L` is the homology of `𝓕` twisted by the monodromy of `L`**: the
+identification of the homology of the restriction of `𝓕` along `Φ^L` with that of `𝓕` is an
+equivalence from the representation of the fundamental group on `H(𝓕 ⊗ L)` to the representation
+on `H(𝓕)` rescaled by the monodromy of `L`. Here `𝓕 = (ℳ, dM)`. -/
+noncomputable def cohomologyRepresentationEquivCharTwist
+    (hM : IsDGRightModule (loopChain_isDGAlgebra B b R) ℳ dM) :
+    (hM.restrictScalars L.twist).cohomologyRepresentation.Equiv
+      (hM.cohomologyRepresentation.charTwist L.monodromy) :=
+  .mk (hM.restrictScalarsCohomologyEquiv L.twist) fun g ↦ LinearMap.ext fun x ↦ by
+    obtain ⟨γ, hγ⟩ := MooreLoopSpace.fundamentalGroupHom_surjective b g⁻¹
+    obtain rfl : g = (MooreLoopSpace.fundamentalGroupHom b γ)⁻¹ := by rw [hγ, inv_inv]
+    have hr : (L.ρ γ : R) = (L.monodromy (MooreLoopSpace.fundamentalGroupHom b γ)⁻¹ : R) := by
+      rw [monodromy_fundamentalGroupHom_inv]
+    exact (L.restrictScalarsCohomologyEquiv_cohomologyRepresentation hM γ x).trans
+      ((congrArg (fun r : R ↦ r • hM.cohomologyRepresentation
+        (MooreLoopSpace.fundamentalGroupHom b γ)⁻¹ (hM.restrictScalarsCohomologyEquiv L.twist x))
+        hr).trans (Representation.charTwist_apply_apply _ _ _ _).symm)
+
+/-- The equivalence `H(𝓕 ⊗ L) ≅ H(𝓕)` sends a class to the class of the same cycle. -/
+@[simp]
+theorem cohomologyRepresentationEquivCharTwist_apply
+    (hM : IsDGRightModule (loopChain_isDGAlgebra B b R) ℳ dM)
+    (x : (hM.restrictScalars L.twist).Cohomology) :
+    L.cohomologyRepresentationEquivCharTwist hM x = hM.restrictScalarsCohomologyEquiv L.twist x :=
+  (rfl)
+
+/-- **The homology of `𝓕 ⊗ L` is the homology of `𝓕` tensored with `L`**, `H(𝓕 ⊗ L) ≅ H(𝓕) ⊗ L`
+as representations of the fundamental group (the source's §2.3), where `L` is the free module `R`
+on which the fundamental group acts through the monodromy of `L`. A class is sent to the class of
+the same cycle, tensored with `1`
+(`TauCeti.RankOneLocalSystem.cohomologyRepresentationEquivTprod_apply`). -/
+noncomputable def cohomologyRepresentationEquivTprod
+    (hM : IsDGRightModule (loopChain_isDGAlgebra B b R) ℳ dM) :
+    (hM.restrictScalars L.twist).cohomologyRepresentation.Equiv
+      (hM.cohomologyRepresentation.tprod (Representation.ofLinearCharacter L.monodromy)) :=
+  (L.cohomologyRepresentationEquivCharTwist hM).trans
+    (Representation.tprodOfLinearCharacterEquivCharTwist _ _).symm
+
+/-- The equivalence `H(𝓕 ⊗ L) ≅ H(𝓕) ⊗ L` sends a class to the class of the same cycle, tensored
+with `1`. -/
+@[simp]
+theorem cohomologyRepresentationEquivTprod_apply
+    (hM : IsDGRightModule (loopChain_isDGAlgebra B b R) ℳ dM)
+    (x : (hM.restrictScalars L.twist).Cohomology) :
+    L.cohomologyRepresentationEquivTprod hM x =
+      hM.restrictScalarsCohomologyEquiv L.twist x ⊗ₜ[R] (1 : R) := by
+  have h := (Representation.tprodOfLinearCharacterEquivCharTwist L.monodromy
+    hM.cohomologyRepresentation).symm_apply_apply (hM.restrictScalarsCohomologyEquiv L.twist x ⊗ₜ 1)
+  rw [Representation.tprodOfLinearCharacterEquivCharTwist_tmul, one_smul] at h
+  exact h
+
+end RankOneLocalSystem
+
+end Homology
 
 end TauCeti
 
