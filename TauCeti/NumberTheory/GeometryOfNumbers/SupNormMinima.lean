@@ -136,8 +136,8 @@ theorem exists_linearIndependent_prod_norm_ofLp_le_covolume (L : Submodule ℤ W
     exact Submodule.smul_mem _ _ hspan
   · -- Minkowski's second theorem against Vaaler's bound `2 ^ k ≤ vol (cubeSlice W)`.
     rw [Finset.prod_congr rfl fun i _ ↦ hnorm i]
-    exact prod_successiveMin_le_covolume_of_setOf_forall_abs_le_one_subset L subset_rfl
-      fun _ ↦ Submodule.neg_mem_cubeSlice.2
+    exact prod_successiveMin_le_covolume_of_setOf_forall_abs_le_one_subset L
+      Submodule.coe_cubeSlice.ge fun _ ↦ Submodule.neg_mem_cubeSlice.2
 
 end ZLattice
 
