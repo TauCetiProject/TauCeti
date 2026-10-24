@@ -331,6 +331,15 @@ theorem castDegree_apply {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   cases h
   rfl
 
+/-- Evaluating the underlying rough form of a degree transport evaluates transported vectors. -/
+@[simp]
+theorem coe_castDegree {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {n m : ℕ} (h : n = m) (α : SmoothForm I M F n) (x : M) :
+    (castDegree h α : RoughForm I M F m) x =
+      (fun v ↦ α.1 x (v ∘ Fin.cast h)) := by
+  funext v
+  exact castDegree_apply h α x v
+
 /-- Transporting across reflexivity leaves a smooth form unchanged. -/
 @[simp]
 theorem castDegree_rfl {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]

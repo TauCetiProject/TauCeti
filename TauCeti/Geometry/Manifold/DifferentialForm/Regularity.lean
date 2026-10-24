@@ -429,6 +429,20 @@ theorem mextDerivₗ_apply [IsManifold I 2 M] (k : ℕ) (φ : SmoothForm I M F k
     (mextDerivₗ I k φ : RoughForm I M F (k + 1)) = mextDeriv φ.1 :=
   (rfl)
 
+namespace SmoothForm
+
+/-- The exterior derivative commutes with transport across an equality of degrees. -/
+@[simp]
+theorem mextDerivₗ_castDegree [IsManifold I 2 M]
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {n m : ℕ} (h : n = m) (α : SmoothForm I M F n) :
+    mextDerivₗ I m (SmoothForm.castDegree h α) =
+      SmoothForm.castDegree (congrArg (fun q : ℕ ↦ q + 1) h) (mextDerivₗ I n α) := by
+  cases h
+  simp
+
+end SmoothForm
+
 /-- A coordinate form supported compactly inside the chart extends with the same regularity
 within the model range. Regularity outside the model range is unnecessary. -/
 theorem RoughForm.contDiffOn_indicator_inChartAt {r : WithTop ℕ∞}
