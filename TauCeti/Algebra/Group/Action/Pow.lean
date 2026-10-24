@@ -13,9 +13,10 @@ import Mathlib.Data.Nat.Find
 
 For a monoid `M` acting on a type `V` with a zero, an element `x : M` and a vector `w : V`, the
 `x`-string of `w` is the sequence `w, x • w, x² • w, …`. This file shows that if the string
-reaches `0` and `w ≠ 0`, then it has a last nonzero vector, which `x` sends to `0`. Raising and
-lowering operators of representations, such as `E` and `F` for `U_q(sl₂)`, use this to produce
-highest- and lowest-weight vectors.
+contains `0` and `w ≠ 0`, then some nonzero term `xⁿ • w` is immediately followed by the zero
+term `x • xⁿ • w`. The action need not fix `0`, so later terms of the string may be nonzero
+again. Raising and lowering operators of representations, such as `E` and `F` for `U_q(sl₂)`,
+use this to produce highest- and lowest-weight vectors.
 
 ## Main results
 
@@ -29,8 +30,8 @@ namespace TauCeti
 
 variable {M V : Type*} [Monoid M] [MulAction M V] [Zero V]
 
-/-- If some power of `x` kills a nonzero vector `w`, then the string `w, x • w, x² • w, …` ends
-in a nonzero vector `xⁿ • w` killed by `x`. -/
+/-- If some power of `x` kills a nonzero vector `w`, then the string `w, x • w, x² • w, …` has a
+nonzero term `xⁿ • w` immediately followed by the zero term `x • xⁿ • w`. -/
 theorem exists_pow_smul_ne_zero_and_smul_eq_zero {x : M} {w : V} (hw0 : w ≠ 0)
     (h : ∃ n : ℕ, x ^ n • w = 0) : ∃ n : ℕ, x ^ n • w ≠ 0 ∧ x • x ^ n • w = 0 := by
   classical
