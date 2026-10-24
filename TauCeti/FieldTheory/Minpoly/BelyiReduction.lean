@@ -15,8 +15,9 @@ public import TauCeti.RingTheory.AdjoinRoot.Minpoly
 Let `F` be a perfect field, for instance `ℚ`. Every finite set `S` of elements algebraic over `F`
 is carried into `F` by a polynomial `q ∈ F[X]` with nonzero derivative whose critical values,
 the values of `q` at the roots of `q′` in any field extension, also lie in `F`. This is the first
-half of Belyi's construction of a Belyi map on a curve over `ℚ̄`. A polynomial also fixes `∞`, so
-a finite subset of `ℙ¹(ℚ̄)` is carried into `ℙ¹(ℚ)` together with the critical values of `q`.
+half of Belyi's construction of a Belyi map on a curve over `AlgebraicClosure ℚ`. A polynomial
+also fixes `∞`, so a finite subset of `ℙ¹(AlgebraicClosure ℚ)` is carried into `ℙ¹(ℚ)` together
+with the critical values of `q`.
 
 ## Main results
 
@@ -224,9 +225,9 @@ private theorem aeval_mem_range_of_minpoly_dvd {L : Type*} [Field L] [Algebra F 
 universe w
 
 /-- **Belyi's degree reduction.** Every finite set `S` of elements algebraic over a perfect field
-`F`, such as a finite subset of `ℚ̄`, is carried into `F` by a polynomial `q ∈ F[X]` with
-`q′ ≠ 0`, in particular nonconstant, whose critical values in every field extension of `F` also
-lie in `F`. -/
+`F`, such as a finite subset of `AlgebraicClosure ℚ`, is carried into `F` by a polynomial
+`q ∈ F[X]` with `q′ ≠ 0`, in particular nonconstant, whose critical values in every field
+extension of `F` also lie in `F`. -/
 theorem exists_polynomial_aeval_mem_range [PerfectField F] {K : Type*} [Field K] [Algebra F K]
     (S : Finset K) (hS : ∀ s ∈ S, IsIntegral F s) :
     ∃ q : F[X], derivative q ≠ 0 ∧ (∀ s ∈ S, aeval s q ∈ Set.range (algebraMap F K)) ∧
