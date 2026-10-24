@@ -131,14 +131,11 @@ theorem exists_abelianLayer_globalNormSubgroup_eq_of_pow_mem
   -- places above `p`, and generating the class group.
   obtain ⟨𝔪, h𝔪⟩ := exists_raySubgroup_le_of_isOpen N hN
   obtain ⟨S, hS₀S, hcl, hpS⟩ := ClassGroup.exists_finset_superset_closure_classGroupMk_image_eq_top
-    (Ideal.finite_factors 𝔪.finitePart_ne_bot).toFinset
-    (a := (p : 𝓞 K)) (by exact_mod_cast (Fact.out : p.Prime).ne_zero)
-  have h𝔪S (v : HeightOneSpectrum (𝓞 K)) (hv : v.asIdeal ∣ 𝔪.finitePart) : v ∈ S :=
-    hS₀S ((Ideal.finite_factors 𝔪.finitePart_ne_bot).mem_toFinset.2 hv)
+    𝔪.support (a := (p : 𝓞 K)) (by exact_mod_cast (Fact.out : p.Prime).ne_zero)
   -- `N` contains the norm subgroup of `K(U_S^{1/p})/K`, so upward closure applies.
   refine exists_abelianLayer_globalNormSubgroup_eq_of_le
     (V := kummerLayer p ((S : Set (HeightOneSpectrum (𝓞 K))).unit K)) ?_
   rw [globalNormSubgroup_kummerLayer_sUnits hcl hpS]
-  exact auxiliaryKummerIdeleClassSubgroup_le_of_raySubgroup_le hpow h𝔪 h𝔪S
+  exact auxiliaryKummerIdeleClassSubgroup_le_of_raySubgroup_le hpow h𝔪 hS₀S
 
 end TauCeti.ClassFieldTheory

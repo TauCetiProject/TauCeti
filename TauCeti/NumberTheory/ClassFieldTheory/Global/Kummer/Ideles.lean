@@ -281,7 +281,7 @@ finite part is supported in `S`. Then `N` contains the image in `C_K` of the Kum
 theorem auxiliaryKummerIdeleClassSubgroup_le_of_raySubgroup_le {n : ℕ}
     {N : Subgroup (IdeleClassGroup (𝓞 K) K)} (hpow : ∀ c, c ^ n ∈ N) {𝔪 : Modulus K}
     (h𝔪 : raySubgroup 𝔪 ≤ N) {S : Finset (HeightOneSpectrum (𝓞 K))}
-    (hS : ∀ v : HeightOneSpectrum (𝓞 K), v.asIdeal ∣ 𝔪.finitePart → v ∈ S) :
+    (hS : 𝔪.support ⊆ S) :
     auxiliaryKummerIdeleClassSubgroup S ∅ n ≤ N := by
   classical
   intro c hc
@@ -310,7 +310,7 @@ theorem auxiliaryKummerIdeleClassSubgroup_le_of_raySubgroup_le {n : ℕ}
       · simp [hzS v hv]
       · rw [hzS' v hv]
         exact hxunit v hv (Finset.notMem_empty v)
-    · simp [hzS v (hS v hv)]
+    · simp [hzS v (hS ((Modulus.mem_support_iff 𝔪 v).2 hv))]
     · simp [hzinf]
   -- Hence the class of `x = z * yⁿ` lies in `N`.
   have hxz : x = z * y ^ n := by rw [hz, inv_mul_cancel_right]
