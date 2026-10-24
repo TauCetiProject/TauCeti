@@ -7,7 +7,7 @@ module
 
 public import Mathlib.GroupTheory.Subgroup.Center
 public import TauCeti.LinearAlgebra.CliffordAlgebra.OrthogonalBasis
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Basic
+import TauCeti.LinearAlgebra.CliffordAlgebra.Basic
 import Mathlib.Algebra.GroupWithZero.Units.Fintype
 import Mathlib.Data.Fintype.Powerset
 import Mathlib.LinearAlgebra.CliffordAlgebra.Inversion
@@ -208,8 +208,8 @@ theorem natCard_monomialGroup [Fintype I] [Nontrivial R]
 
 
 /-- A signed basis monomial is central in the finite monomial subgroup exactly when its support is
-empty, or when it is the full index set of odd cardinality. The proof uses the generator crossing
-signs, so the result applies to any nontrivial commutative coefficient ring with `2` invertible. -/
+empty, or when it is the full index set of odd cardinality. This holds over any nontrivial
+commutative coefficient ring in which `2` is invertible. -/
 theorem mem_center_monomialGroup_iff [Fintype I] [Nontrivial R]
     (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
     (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1)
