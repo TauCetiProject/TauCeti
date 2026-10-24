@@ -143,10 +143,12 @@ theorem _root_.CategoryTheory.CommMon.adjoin_gradedSectionsGrading_zero_union_on
       ((A.gradedSectionsGrading U 0 : Set (⨁ n, Γ(A.X n, U))) ∪ A.gradedSectionsGrading U 1) ≤
       ((Algebra.adjoin Γ(X, V) T).restrictScalars Γ(X, U)).comap
         (IsScalarTower.toAlgHom Γ(X, U) (⨁ n, Γ(A.X n, U)) (⨁ n, Γ(A.X n, V))) :=
-    Algebra.adjoin_le_iff.mpr fun y hy ↦ Algebra.subset_adjoin <| by
-      change A.restrictGradedSections (homOfLE hVU) y ∈ T
-      rw [← CommMon.restrictGradedSectionsGradedHom_apply]
-      exact hy.imp (A.restrictGradedSectionsGradedHom (homOfLE hVU)).map_mem
+    Algebra.adjoin_le_iff.mpr fun y hy ↦ by
+      rw [SetLike.mem_coe, Subalgebra.mem_comap, Subalgebra.mem_restrictScalars,
+        IsScalarTower.toAlgHom_apply, RingHom.algebraMap_toAlgebra,
+        ← CommMon.restrictGradedSectionsGradedHom_apply]
+      exact Algebra.subset_adjoin <| hy.imp
+        (A.restrictGradedSectionsGradedHom (homOfLE hVU)).map_mem
         (A.restrictGradedSectionsGradedHom (homOfLE hVU)).map_mem
   have hmap (y : ⨁ n, Γ(A.X n, U)) :
       A.restrictGradedSections (homOfLE hVU) y ∈ Algebra.adjoin Γ(X, V) T :=
