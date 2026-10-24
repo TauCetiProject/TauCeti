@@ -133,7 +133,7 @@ theorem lsCategoryCount_sublevel_le_encard (hf : ContMDiff I 𝓘(ℝ) ∞ f) {t
     have hempty : {x | f x ≤ t} = ∅ := by
       by_contra hne
       obtain ⟨x, hx, hxt⟩ := exists_mem_criticalPoints_of_isCompact_sublevel (I := I)
-        hf.continuous (hcpt isClosed_Iic (Iic_subset_Iic.mpr htb.le))
+        hf.continuous.continuousOn (hcpt isClosed_Iic (Iic_subset_Iic.mpr htb.le))
         (nonempty_iff_ne_empty.mpr hne)
       exact hC.subset ⟨hx, hxt⟩
     simp [hempty]

@@ -225,12 +225,12 @@ theorem criticalPoints_nonempty [CompactSpace M] [Nonempty M] (hf : Continuous f
   obtain ⟨x, -, hx⟩ := isCompact_univ.exists_isMinOn univ_nonempty hf.continuousOn
   exact ⟨x, (hx.isLocalMin univ_mem).mem_criticalPoints⟩
 
-/-- A continuous function on a boundaryless manifold has a critical point in each nonempty compact
-sublevel `{f ≤ t}`, for instance a point where it attains its minimum. -/
-theorem exists_mem_criticalPoints_of_isCompact_sublevel (hf : Continuous f) {t : ℝ}
-    (hK : IsCompact {x | f x ≤ t}) (hne : {x | f x ≤ t}.Nonempty) :
-    ∃ x ∈ criticalPoints I f, f x ≤ t := by
-  obtain ⟨x, hx, hmin⟩ := hK.exists_isMinOn hne hf.continuousOn
+/-- A function on a boundaryless manifold has a critical point in each nonempty compact sublevel
+`{f ≤ t}` on which it is continuous, for instance a point where it attains its minimum. -/
+theorem exists_mem_criticalPoints_of_isCompact_sublevel {t : ℝ}
+    (hf : ContinuousOn f {x | f x ≤ t}) (hK : IsCompact {x | f x ≤ t})
+    (hne : {x | f x ≤ t}.Nonempty) : ∃ x ∈ criticalPoints I f, f x ≤ t := by
+  obtain ⟨x, hx, hmin⟩ := hK.exists_isMinOn hne hf
   -- Points outside the sublevel have values above `t ≥ f x`, so `x` is a global minimum.
   have hglobal : IsMinOn f univ x := fun y _ ↦
     (le_or_gt (f y) t).elim (fun hy ↦ hmin hy) fun hy ↦ (hx.trans hy.le : f x ≤ f y)
