@@ -247,16 +247,30 @@ theorem setLAverage_le_div_mul_setLAverage_of_subset {g : X → ℝ≥0∞} (hst
 
 /-- The average of `f` over a subset `s` of `t` differs from a constant `c` by at most `μ t / μ s`
 times the average of `‖f - c‖ₑ` over `t`. This is the extended-norm form of
-`TauCeti.norm_setAverage_sub_le_of_subset`; it needs `f` to be integrable only on `s`. -/
+`TauCeti.norm_setAverage_sub_le_of_subset`. No integrability is assumed: if `f` is not integrable
+on `s`, the right-hand side is infinite. -/
 theorem enorm_setAverage_sub_le_of_subset (hst : s ⊆ t) (hs : μ s ≠ 0) (ht : μ t ≠ ⊤)
-    (hf : IntegrableOn f s μ) (c : F) :
+    (hf : AEStronglyMeasurable f (μ.restrict s)) (c : F) :
     ‖(⨍ x in s, f x ∂μ) - c‖ₑ ≤ μ t / μ s * ⨍⁻ x in t, ‖f x - c‖ₑ ∂μ := by
   have hs' : μ s ≠ ⊤ := ne_top_of_le_ne_top ht (measure_mono hst)
-  calc ‖(⨍ x in s, f x ∂μ) - c‖ₑ = ‖⨍ x in s, (f x - c) ∂μ‖ₑ := by
-        rw [setAverage_fun_sub hf (integrableOn_const hs'), setAverage_const hs hs']
-    _ ≤ ⨍⁻ x in s, ‖f x - c‖ₑ ∂μ := enorm_setAverage_le_setLAverage _ _ _
-    _ ≤ μ t / μ s * ⨍⁻ x in t, ‖f x - c‖ₑ ∂μ :=
-        setLAverage_le_div_mul_setLAverage_of_subset hst ht
+  by_cases hfi : IntegrableOn f s μ
+  · calc ‖(⨍ x in s, f x ∂μ) - c‖ₑ = ‖⨍ x in s, (f x - c) ∂μ‖ₑ := by
+          rw [setAverage_fun_sub hfi (integrableOn_const hs'), setAverage_const hs hs']
+      _ ≤ ⨍⁻ x in s, ‖f x - c‖ₑ ∂μ := enorm_setAverage_le_setLAverage _ _ _
+      _ ≤ μ t / μ s * ⨍⁻ x in t, ‖f x - c‖ₑ ∂μ :=
+          setLAverage_le_div_mul_setLAverage_of_subset hst ht
+  -- If `f` is not integrable on `s`, then `‖f - c‖ₑ` has infinite integral over `s ⊆ t`.
+  have htop : ∫⁻ x in t, ‖f x - c‖ₑ ∂μ = ⊤ := by
+    refine top_le_iff.1 ((top_le_iff.2 ?_).trans (lintegral_mono_set hst))
+    by_contra h
+    have hfc : IntegrableOn (fun x => f x - c) s μ :=
+      ⟨hf.sub aestronglyMeasurable_const, lt_top_iff_ne_top.2 h⟩
+    exact hfi ((hfc.add (integrableOn_const hs')).congr (.of_forall fun x => by simp))
+  have hts : μ t / μ s ≠ 0 := by
+    rw [Ne, ENNReal.div_eq_zero_iff, not_or]
+    exact ⟨fun h => hs (measure_mono_null hst h), hs'⟩
+  rw [setLAverage_eq, htop, ENNReal.top_div_of_ne_top ht, ENNReal.mul_top hts]
+  exact le_top
 
 /-- On a set of finite positive measure, the average of an almost everywhere strongly measurable
 `f` differs from a constant `c` by at most the average of `‖f - c‖ₑ`. No integrability is assumed:
@@ -264,16 +278,7 @@ if `f` is not integrable on `s`, the right-hand side is infinite. -/
 theorem enorm_setAverage_sub_le_setLAverage (hf : AEStronglyMeasurable f (μ.restrict s))
     (hs : μ s ≠ 0) (hs' : μ s ≠ ⊤) (c : F) :
     ‖(⨍ x in s, f x ∂μ) - c‖ₑ ≤ ⨍⁻ x in s, ‖f x - c‖ₑ ∂μ := by
-  by_cases hfi : IntegrableOn f s μ
-  · simpa [ENNReal.div_self hs hs'] using
-      enorm_setAverage_sub_le_of_subset subset_rfl hs hs' hfi c
-  have htop : ∫⁻ x in s, ‖f x - c‖ₑ ∂μ = ⊤ := by
-    by_contra h
-    have hfc : IntegrableOn (fun x => f x - c) s μ :=
-      ⟨hf.sub aestronglyMeasurable_const, lt_top_iff_ne_top.2 h⟩
-    exact hfi ((hfc.add (integrableOn_const hs')).congr (.of_forall fun x => by simp))
-  rw [setLAverage_eq, htop, ENNReal.top_div_of_ne_top hs']
-  exact le_top
+  simpa [ENNReal.div_self hs hs'] using enorm_setAverage_sub_le_of_subset subset_rfl hs hs' hf c
 
 /-- The average of `f` over a subset `s` of `t` differs from a constant `c` by at most
 `μ t / μ s` times the average of `‖f - c‖` over `t`. -/
@@ -287,7 +292,7 @@ theorem norm_setAverage_sub_le_of_subset (hst : s ⊆ t) (hs : μ s ≠ 0) (ht :
     ← ENNReal.toReal_mul]
   exact ENNReal.toReal_mono
     (ENNReal.mul_ne_top (ENNReal.div_ne_top ht hs) (setLAverage_lt_top hfc.2.ne).ne)
-    (enorm_setAverage_sub_le_of_subset hst hs ht (hf.mono_set hst) c)
+    (enorm_setAverage_sub_le_of_subset hst hs ht (hf.mono_set hst).1 c)
 
 /-- The square mean oscillation of `f` on a set `s` of finite measure about its own average is at
 most four times its square mean oscillation about any constant `c`:
