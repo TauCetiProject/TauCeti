@@ -57,8 +57,8 @@ resolution.  That cohomologous cocycles have the same norm is not proved here.
 * `TauCeti.smoothTensorInducedGradedResolutionDifferential_sq`: in characteristic two the
   differential squares to zero.
 * `TauCeti.slotSum_smoothTensorInducedGradedResolutionHomotopy_add`: the contraction identity.
-* `TauCeti.smoothTensorInducedDiagonalClass_eq`: the class of the diagonal tensor through the
-  contraction for any order on the cosets.
+* `TauCeti.smoothTensorInducedDiagonalClass_eq`: the class of the diagonal tensor does not depend
+  on the order on the cosets: it equals the class computed through the contraction for any order.
 
 ## References
 
