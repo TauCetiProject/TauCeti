@@ -33,7 +33,7 @@ example {p : ℤ[X]} (hp : aeval ((0, 1) : ℤ × ℤ) p = 0) :
   have hs : IsIntegral ℤ ((0, 1) : ℤ × ℤ) :=
     ⟨X * (X - 1), monic_X.mul (monic_X_sub_C 1), by
       ext <;> simp⟩
-  exact minpoly.isIntegrallyClosed_dvd_of_isTorsionFree hs hp
+  exact TauCeti.minpoly.isIntegrallyClosed_dvd_of_isTorsionFree hs hp
 
 end Product
 
@@ -66,7 +66,7 @@ theorem tateDualNumbers_minpoly_and_supSeminorm :
     (AdjoinRoot.root ((X : T[X]) ^ 2))
   have hs := AdjoinRoot.isIntegral_root' (monic_X_pow (R := T) 2)
   have hmin : minpoly T (AdjoinRoot.root ((X : T[X]) ^ 2)) = X ^ 2 := by
-    have hdiv := minpoly.isIntegrallyClosed_dvd_of_isTorsionFree (p := X ^ 2) hs (by simp)
+    have hdiv := TauCeti.minpoly.isIntegrallyClosed_dvd_of_isTorsionFree (p := X ^ 2) hs (by simp)
     have hrev : X ^ 2 ∣ minpoly T (AdjoinRoot.root ((X : T[X]) ^ 2)) := by
       rw [← AdjoinRoot.mk_eq_zero, ← AdjoinRoot.aeval_eq]
       exact minpoly.aeval _ _

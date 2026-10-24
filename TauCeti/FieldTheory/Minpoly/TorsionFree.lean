@@ -25,9 +25,10 @@ No irreducibility of the minimal polynomial is asserted.
 public section
 
 open Polynomial
+open minpoly (monic)
 open scoped TensorProduct
 
-namespace minpoly
+namespace TauCeti.minpoly
 
 variable {R S : Type*} [CommRing R] [IsIntegrallyClosed R]
   [CommRing S] [Algebra R S]
@@ -79,4 +80,4 @@ theorem isIntegrallyClosed_dvd_of_isTorsionFree [IsDomain R] [Module.IsTorsionFr
   exact minpoly.dvd K (φ s) (by
     rw [aeval_map_algebraMap, aeval_algHom_apply, hp, map_zero])
 
-end minpoly
+end TauCeti.minpoly

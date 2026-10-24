@@ -192,6 +192,6 @@ theorem supSeminorm_eq_iSup_minpoly_coeff_rpow (hB : IsAffinoidAlgebra K B) [IsD
       supSeminorm K ((minpoly A f).coeff i) ^ (1 / ((minpoly A f).natDegree - i : ℝ)) :=
   have hf := Algebra.IsIntegral.isIntegral (R := A) f
   hB.supSeminorm_eq_iSup_coeff_rpow_of_dvd (minpoly.monic hf) (minpoly.aeval A f)
-    fun _ ↦ minpoly.isIntegrallyClosed_dvd_of_isTorsionFree hf
+    fun _ ↦ TauCeti.minpoly.isIntegrallyClosed_dvd_of_isTorsionFree hf
 
 end TauCeti.IsAffinoidAlgebra
