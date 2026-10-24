@@ -37,4 +37,15 @@ theorem coeff_det_sum_eq_of_natDegree_le (A : Matrix n n R[X]) (e : n → ℕ)
   refine Finset.sum_congr rfl fun σ _ ↦ ?_
   rw [coeff_prod_sum_eq_of_natDegree_le _ _ _ fun j _ ↦ h (σ j) j]
 
+/-- If the `j`-th column of a polynomial matrix `A` has degree at most `e j`, then `det A` has
+degree at most `∑ j, e j`. -/
+theorem natDegree_det_le_of_natDegree_le (A : Matrix n n R[X]) (e : n → ℕ)
+    (h : ∀ i j, (A i j).natDegree ≤ e j) :
+    A.det.natDegree ≤ ∑ j, e j := by
+  rw [det_apply']
+  refine natDegree_sum_le_of_forall_le _ _ fun σ _ ↦ ?_
+  refine natDegree_mul_le.trans ?_
+  rw [natDegree_intCast, zero_add]
+  exact (natDegree_prod_le _ _).trans (Finset.sum_le_sum fun j _ ↦ h (σ j) j)
+
 end Matrix
