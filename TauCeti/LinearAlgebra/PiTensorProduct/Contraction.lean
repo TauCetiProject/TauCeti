@@ -19,6 +19,13 @@ with `d - 2` factors.
 `LinearMap.contractTensorPair` is characterized on pure tensors and commutes with diagonal
 maps preserving the pairing. These are the trace maps used to define harmonic tensors for
 orthogonal and symplectic representations.
+
+In the other direction, `PiTensorProduct.insertPair` raises the degree by two: it places two
+chosen vectors in the two slots and keeps the other factors. Contracting the same two slots
+afterwards multiplies by the pairing of the two inserted vectors
+(`LinearMap.contractTensorPair_comp_insertPair`). Inserting a copairing this way is how a cup
+re-expands two contracted slots, so a single arc of a Brauer diagram factors as an insertion after
+a contraction.
 -/
 
 public section
@@ -126,5 +133,54 @@ theorem contractTensorPair_reindex (B : LinearMap.BilinForm R M) (i j : ι) (hij
     rw [e.symm_apply_apply i, e.symm_apply_apply j]
     rfl
   | add x y hx hy => simp only [map_add, hx, hy]
+
+end LinearMap
+
+/-! ### Inserting two vectors into two slots -/
+
+namespace PiTensorProduct
+
+variable (R : Type*) [CommSemiring R] {M : Type*} [AddCommMonoid M] [Module R M]
+  {ι : Type*} [DecidableEq ι]
+
+/-- Insert two vectors into two slots of a tensor power: `p` into the slot `i`, `q` into the slot
+`j`, and every other factor kept at its index. Against a bilinear form, contracting the same two
+distinct slots undoes it up to the pairing of `p` and `q`
+(`LinearMap.contractTensorPair_comp_insertPair`). -/
+noncomputable def insertPair (i j : ι) (p q : M) :
+    (⨂[R] _ : {a : ι // a ≠ i ∧ a ≠ j}, M) →ₗ[R] ⨂[R] _ : ι, M :=
+  lift <| (tprod R (s := fun _ : ι => M)).domDomRestrict (fun a => a ≠ i ∧ a ≠ j)
+    fun a => if a.val = i then p else q
+
+variable {R}
+
+/-- On a pure tensor, insertion fills the slot `i` with `p`, the slot `j` with `q`, and every
+other slot with the corresponding factor. -/
+@[simp]
+theorem insertPair_tprod (i j : ι) (p q : M) (w : {a : ι // a ≠ i ∧ a ≠ j} → M) :
+    insertPair R i j p q (tprod R w) =
+      tprod R fun a => if h : a ≠ i ∧ a ≠ j then w ⟨a, h⟩ else if a = i then p else q := by
+  rw [insertPair, lift.tprod, MultilinearMap.domDomRestrict_apply]
+
+end PiTensorProduct
+
+namespace LinearMap
+
+variable {R : Type*} [CommSemiring R] {M : Type*} [AddCommMonoid M] [Module R M]
+  {ι : Type*} [DecidableEq ι]
+
+/-- **Contraction after insertion.** Inserting `p` and `q` into two distinct slots and then
+contracting those slots against `B` is multiplication by `B p q`. -/
+theorem contractTensorPair_comp_insertPair (B : LinearMap.BilinForm R M) {i j : ι} (hij : i ≠ j)
+    (p q : M) :
+    B.contractTensorPair i j hij ∘ₗ PiTensorProduct.insertPair R i j p q =
+      B p q • LinearMap.id := by
+  refine PiTensorProduct.ext <| MultilinearMap.ext fun w => ?_
+  have hw : (fun a : {a : ι // a ≠ i ∧ a ≠ j} =>
+      if h : (a : ι) ≠ i ∧ (a : ι) ≠ j then w ⟨a, h⟩ else if (a : ι) = i then p else q) = w :=
+    funext fun a => dite_eq_left a.2
+  simp only [compMultilinearMap_apply, comp_apply, PiTensorProduct.insertPair_tprod,
+    contractTensorPair_tprod, hw, smul_apply, id_apply]
+  simp [hij.symm]
 
 end LinearMap
