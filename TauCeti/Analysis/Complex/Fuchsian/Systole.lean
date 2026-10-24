@@ -67,8 +67,8 @@ public section
 open Filter Metric TauCeti UpperHalfPlane Topology
 open scoped MatrixGroups
 
-open Matrix.SpecialLinearGroup (abs_le_dist_dilation_smul dilation dilation_inv
-  dist_dilation_smul_I)
+open Matrix.SpecialLinearGroup (abs_le_dist_conj_dilation_smul dilation dilation_inv
+  dist_conj_dilation_smul_smul_I dist_dilation_smul_I)
 open Matrix.ProjectiveSpecialLinearGroup (IsParabolic)
 
 namespace Subgroup
@@ -108,8 +108,7 @@ private theorem exists_min_dilation [DiscreteTopology Γ] (σ : PSL(2, ℝ)) {s 
       refine ⟨⟨_, htΓ⟩, ?_, rfl⟩
       refine ⟨_, ⟨σ • I, mem_closedBall_self hs.le, rfl⟩, ?_⟩
       dsimp only
-      rw [mem_closedBall, Subgroup.mk_smul, dist_conj_smul, inv_smul_smul, pslMk_smul,
-        dist_dilation_smul_I, abs_of_pos ht]
+      rw [mem_closedBall, Subgroup.mk_smul, dist_conj_dilation_smul_smul_I, abs_of_pos ht]
       exact hts
     · intro t ht t' ht' h
       have hD : ((dilation t : SL(2, ℝ)) : PSL(2, ℝ)) = dilation t' := by
@@ -177,8 +176,8 @@ private theorem exists_mem_thickPart_dist_eq [DiscreteTopology Γ] (σ : PSL(2, 
   obtain ⟨y, hy₀, hyt, hyX⟩ := exists_dist_dilation_smul_eq hs₀ hsmall
   have hfix : ∀ w : ℍ, (σ * ((dilation s₀ : SL(2, ℝ)) : PSL(2, ℝ)) * σ⁻¹) • w ≠ w := by
     intro w hw
-    have h := abs_le_dist_dilation_smul s₀ (σ⁻¹ • w)
-    rw [← pslMk_smul, ← dist_conj_smul, hw, dist_self, abs_of_pos hs₀] at h
+    have h := abs_le_dist_conj_dilation_smul σ s₀ w
+    rw [hw, dist_self, abs_of_pos hs₀] at h
     exact hs₀.not_ge h
   have hdist :
       dist ((σ * ((dilation s₀ : SL(2, ℝ)) : PSL(2, ℝ)) * σ⁻¹) • σ • y) (σ • y) = 1 / 4 := by
@@ -259,11 +258,10 @@ private theorem IsCofinite.exists_pos_le_of_mem_thickPart (hΓ : Γ.IsCofinite) 
   -- `f` moves every point at least `s₀`, and moves `(γ σ) • I` exactly `s₀`
   have hP : ∃ c > 0, ∀ w : ℍ, c ≤ dist (f • w) w := by
     refine ⟨s₀, hs₀, fun w ↦ ?_⟩
-    rw [Subgroup.smul_def, hf, dist_conj_smul]
-    simpa only [pslMk_smul, abs_of_pos hs₀] using abs_le_dist_dilation_smul s₀ _
+    rw [Subgroup.smul_def, hf]
+    simpa only [abs_of_pos hs₀] using abs_le_dist_conj_dilation_smul _ s₀ w
   have h := hεF f hfF hP (((γ : PSL(2, ℝ)) * σ) • I)
-  rwa [Subgroup.smul_def, hf, dist_conj_smul, inv_smul_smul, pslMk_smul, dist_dilation_smul_I,
-    abs_of_pos hs₀] at h
+  rwa [Subgroup.smul_def, hf, dist_conj_dilation_smul_smul_I, abs_of_pos hs₀] at h
 
 /-- **Hyperbolic elements of a cofinite group move every point far.** For a cofinite
 `Γ ≤ PSL(2, ℝ)` there is `δ > 0` such that the class of every `A ∈ SL(2, ℝ)` with `|tr A| > 2`
@@ -291,8 +289,8 @@ theorem IsCofinite.exists_pos_le_dist_smul_of_two_lt_abs_trace (hΓ : Γ.IsCofin
   obtain ⟨s₀, hs₀, hs₀s, hmem₀, hmin⟩ :=
     exists_min_dilation σ (abs_pos.2 hs) (conj_dilation_abs_mem hA hAeq hs)
   have hAz : |s| ≤ dist (A • z) z := by
-    rw [← pslMk_smul, hAeq, dist_conj_smul, pslMk_smul]
-    exact abs_le_dist_dilation_smul s _
+    rw [← pslMk_smul, hAeq]
+    exact abs_le_dist_conj_dilation_smul σ s z
   refine le_trans ?_ (hs₀s.trans hAz)
   by_contra! hlt
   -- otherwise `s₀` is small, so the minimal dilation moves a thick point exactly `1 / 4`

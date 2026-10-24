@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Metric
+public import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Action
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Dilation
 import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic
 import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Affine
@@ -61,6 +62,9 @@ by both kinds of element, except by dilations with `s` close to `0`.
   element fixing `z`.
 * `Matrix.SpecialLinearGroup.cosh_dist_dilation_smul`: the displacement of a point by a dilation,
   at least `|s|` by `Matrix.SpecialLinearGroup.abs_le_dist_dilation_smul`.
+* `Matrix.SpecialLinearGroup.abs_le_dist_conj_dilation_smul`,
+  `Matrix.SpecialLinearGroup.dist_conj_dilation_smul_smul_I`: the same for a conjugate
+  `σ (z ↦ exp s * z) σ⁻¹` in `PSL(2, ℝ)`, translating along the geodesic through `σ • I`.
 * `Matrix.SpecialLinearGroup.one_add_two_mul_sq_le_cosh_dist_smul`: a lower bound for the
   displacement of a point by an antidiagonal matrix.
 * `Matrix.SpecialLinearGroup.trace_commutatorElement_of_smul_eq_self`: the trace of a commutator
@@ -309,6 +313,18 @@ theorem dist_dilation_smul_I (s : ℝ) : dist (dilation s • I) I = |s| := by
   rw [← TauCeti.UpperHalfPlane.geodesicLine_one_eq_dilation_smul_I, ← one_smul PSL(2, ℝ) I,
     ← TauCeti.UpperHalfPlane.geodesicLine_zero, TauCeti.UpperHalfPlane.dist_geodesicLine, sub_zero]
 
+/-- A conjugate `σ (z ↦ exp s * z) σ⁻¹` in `PSL(2, ℝ)` moves every point of `ℍ` at least the
+distance `|s|`. -/
+theorem abs_le_dist_conj_dilation_smul (σ : PSL(2, ℝ)) (s : ℝ) (z : ℍ) :
+    |s| ≤ dist ((σ * ((dilation s : SL(2, ℝ)) : PSL(2, ℝ)) * σ⁻¹) • z) z := by
+  rw [TauCeti.dist_conj_smul, UpperHalfPlane.pslMk_smul]
+  exact abs_le_dist_dilation_smul s _
+
+/-- A conjugate `σ (z ↦ exp s * z) σ⁻¹` in `PSL(2, ℝ)` moves `σ • I` exactly the distance `|s|`. -/
+theorem dist_conj_dilation_smul_smul_I (σ : PSL(2, ℝ)) (s : ℝ) :
+    dist ((σ * ((dilation s : SL(2, ℝ)) : PSL(2, ℝ)) * σ⁻¹) • σ • I) (σ • I) = |s| := by
+  rw [TauCeti.dist_conj_smul, inv_smul_smul, UpperHalfPlane.pslMk_smul, dist_dilation_smul_I]
+
 /-- **Displacement by an antidiagonal matrix.** A matrix `g = !![0, b; c, 0] ∈ SL(2, ℝ)`, acting as
 `z ↦ -b² / z` and so exchanging the endpoints `0` and `∞` of the imaginary axis, moves `z ∈ ℍ` a
 hyperbolic distance `δ` with `cosh δ ≥ 1 + 2 (Re z / Im z)²`. -/
@@ -335,11 +351,14 @@ theorem one_add_two_mul_sq_le_cosh_dist_smul {g : SL(2, ℝ)} (h₀₀ : g 0 0 =
     linear_combination (z : ℂ) * (g 0 1 : ℂ) * this
   have hre : (g • z).re = -(g 0 1 ^ 2) * z.re / (z.re ^ 2 + z.im ^ 2) := by
     rw [← UpperHalfPlane.coe_re, hcoe]
-    simp [Complex.div_re, Complex.normSq_apply, -Complex.ofReal_pow]
+    simp only [Complex.div_re, Complex.neg_re, Complex.ofReal_re, coe_re, neg_mul,
+      Complex.normSq_apply, coe_im, Complex.neg_im, Complex.ofReal_im, neg_zero, zero_mul,
+      zero_div, add_zero]
     ring
   have him : (g • z).im = g 0 1 ^ 2 * z.im / (z.re ^ 2 + z.im ^ 2) := by
     rw [← UpperHalfPlane.coe_im, hcoe]
-    simp [Complex.div_im, Complex.normSq_apply, -Complex.ofReal_pow]
+    simp only [Complex.div_im, Complex.neg_im, Complex.ofReal_im, neg_zero, coe_re, zero_mul,
+      Complex.normSq_apply, coe_im, zero_div, Complex.neg_re, Complex.ofReal_re, neg_mul, zero_sub]
     ring
   have hy := z.im_pos
   have hb2 : 0 < g 0 1 ^ 2 := by positivity
