@@ -7,7 +7,6 @@ module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Conjugation
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Action
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.ReverseNorm
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Pin.Basic
 
 /-!
@@ -63,11 +62,6 @@ theorem coe_spinToLipschitz_apply (x : spinGroup Q) :
     (((spinToLipschitz Q x : lipschitzGroup Q) : (CliffordAlgebra Q)ˣ) :
         CliffordAlgebra Q) = (x : CliffordAlgebra Q) := by
   simp [spinToLipschitz]
-
-theorem cliffordNorm_spinToLipschitz (x : spinGroup Q) :
-    cliffordNorm Q (spinToLipschitz Q x) = 1 := by
-  rw [spinToLipschitz]
-  exact cliffordNorm_pinToLipschitz_spinToPin x
 
 /-- The action of a spin element on the generating vectors of its Clifford algebra, transported
 back to the underlying module. It is characterized by

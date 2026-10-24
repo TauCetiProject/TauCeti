@@ -72,7 +72,8 @@ def spinToCliffordFullCover (Q : QuadraticForm R M) :
     spinGroup Q →* cliffordFullCover Q :=
   (spinToLipschitz Q).codRestrict _ fun x => by
     rw [mem_cliffordFullCover_iff]
-    exact Or.inl (cliffordNorm_spinToLipschitz Q x)
+    rw [spinToLipschitz_apply]
+    exact Or.inl (cliffordNorm_pinToLipschitz_spinToPin x)
 
 /-- The underlying Lipschitz element of the Spin-to-full-cover inclusion. -/
 @[simp]
@@ -83,13 +84,12 @@ theorem coe_spinToCliffordFullCover_apply (Q : QuadraticForm R M) (x : spinGroup
 /-- The Spin-to-full-cover inclusion is injective. -/
 theorem spinToCliffordFullCover_injective (Q : QuadraticForm R M) :
     Function.Injective (spinToCliffordFullCover Q) := by
-  intro x y h
-  apply Subtype.ext
-  have h' := congrArg (fun z : cliffordFullCover Q => (z : lipschitzGroup Q)) h
-  have h'' : spinToLipschitz Q x = spinToLipschitz Q y := by
-    simpa only [coe_spinToCliffordFullCover_apply] using h'
-  simpa only [coe_spinToLipschitz_apply] using congrArg
-    (fun z : lipschitzGroup Q => ((z : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q)) h''
+  have hinj : Function.Injective (spinToLipschitz Q) := by
+    intro x y h
+    exact Subtype.ext (by
+      simpa only [coe_spinToLipschitz_apply] using congrArg
+        (fun z : lipschitzGroup Q => ((z : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q)) h)
+  exact (MonoidHom.injective_codRestrict _ _ _).mpr hinj
 
 /-- The Spin action is the restriction of the full-cover action pointwise. -/
 @[simp 1100]
