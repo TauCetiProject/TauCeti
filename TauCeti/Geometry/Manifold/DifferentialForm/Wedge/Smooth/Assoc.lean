@@ -14,6 +14,9 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth.Basic
 The scalar wedge on smooth forms is associative after the canonical reassociation of its finite
 argument tuple.  This specializes rough-form associativity to the smooth scalar product and gives
 its pointwise reassociation law for products used in de Rham cohomology.
+The file also gives pointwise associativity for paired wedges of smooth bundle-valued forms when
+the fibrewise pairings are smooth sections with matching composites, specializing
+`bundleWedgeWith_assoc`.
 -/
 
 public section
