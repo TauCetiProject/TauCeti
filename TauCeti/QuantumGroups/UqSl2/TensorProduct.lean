@@ -38,7 +38,7 @@ variable [IsScalarTower ℂ (UqSl2 q) N]
       tmul ℂ (UqSl2 q) (e q • m) n +
         tmul ℂ (UqSl2 q) (k q • m) (e q • n) := by
   apply (tensorEquiv ℂ (UqSl2 q) M N).injective
-  simp [tensorEquiv_smul, tensorAction_apply]
+  simp [tensorAction_apply]
 
 /-- The lowering generator acts through `F ⊗ K⁻¹ + 1 ⊗ F`. -/
 @[simp] theorem f_smul_tmul (m : M) (n : N) :
@@ -46,20 +46,20 @@ variable [IsScalarTower ℂ (UqSl2 q) N]
       tmul ℂ (UqSl2 q) (f q • m) (kInv q • n) +
         tmul ℂ (UqSl2 q) m (f q • n) := by
   apply (tensorEquiv ℂ (UqSl2 q) M N).injective
-  simp [tensorEquiv_smul, tensorAction_apply]
+  simp [tensorAction_apply]
 
 /-- The weight generator acts on both tensor factors. -/
 @[simp] theorem k_smul_tmul (m : M) (n : N) :
     k q • tmul ℂ (UqSl2 q) m n =
       tmul ℂ (UqSl2 q) (k q • m) (k q • n) := by
   apply (tensorEquiv ℂ (UqSl2 q) M N).injective
-  simp [tensorEquiv_smul, tensorAction_apply]
+  simp [tensorAction_apply]
 
 /-- The inverse weight generator acts on both tensor factors. -/
 @[simp] theorem kInv_smul_tmul (m : M) (n : N) :
     kInv q • tmul ℂ (UqSl2 q) m n =
       tmul ℂ (UqSl2 q) (kInv q • m) (kInv q • n) := by
   apply (tensorEquiv ℂ (UqSl2 q) M N).injective
-  simp [tensorEquiv_smul, tensorAction_apply]
+  simp [tensorAction_apply]
 
 end TauCeti.UqSl2

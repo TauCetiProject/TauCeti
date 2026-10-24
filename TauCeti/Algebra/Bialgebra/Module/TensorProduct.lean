@@ -167,8 +167,8 @@ variable {M N} in
 
 variable {M N} in
 /-- Base scalars may be applied to the first factor. -/
-@[simp] theorem smul_tmul (r : R) (m : M) (n : N) :
-    tmul R H (r • m) n = r • tmul R H m n := by
+theorem smul_tmul' (r : R) (m : M) (n : N) :
+    r • tmul R H m n = tmul R H (r • m) n := by
   apply (tensorEquiv R H M N).injective
   simp [TensorProduct.smul_tmul']
 
@@ -191,7 +191,17 @@ variable {R H M N} in
     | add y z hy hz => simpa only [map_add] using hadd _ _ hy hz
   simpa using h (tensorEquiv R H M N x)
 
+variable {R H M N} in
+/-- Two `H`-linear maps from the coproduct tensor carrier agree if they agree on pure tensors. -/
+@[ext] theorem Tensor.ext {P : Type*} [AddCommMonoid P] [Module H P]
+    {f g : Tensor R H M N →ₗ[H] P}
+    (h : ∀ m n, f (tmul R H m n) = g (tmul R H m n)) : f = g := by
+  apply LinearMap.ext
+  intro x
+  exact Tensor.inductionOn x h fun x y hx hy ↦ by simp only [map_add, hx, hy]
+
 /-- The underlying equivalence expresses the action through the coproduct representation. -/
+@[simp]
 theorem tensorEquiv_smul (h : H) (x : Tensor R H M N) :
     tensorEquiv R H M N (h • x) =
       tensorAction R H M N h (tensorEquiv R H M N x) := (rfl)
@@ -209,7 +219,7 @@ noncomputable def tensorMap (f : M →ₗ[H] M') (g : N →ₗ[H] N') :
       (tensorEquiv R H M N).toLinearMap)).toAddHom
   map_smul' h x := by
     apply (tensorEquiv R H M' N').injective
-    simpa [tensorEquiv_smul, tensorAction_apply] using
+    simpa [tensorAction_apply] using
       tensorPairAction_natural R H f g (Coalgebra.comul h) (tensorEquiv R H M N x)
 
 variable {M N} in
@@ -231,8 +241,8 @@ variable {M N} in
 @[simp] theorem tensorMap_id :
     tensorMap R H (LinearMap.id : M →ₗ[H] M) (LinearMap.id : N →ₗ[H] N) =
       LinearMap.id := by
-  ext x
-  apply (tensorEquiv R H M N).injective
+  apply Tensor.ext
+  intro m n
   simp
 
 variable {M'' N'' : Type*}
@@ -245,9 +255,9 @@ variable {M N} in
     (g : N →ₗ[H] N') (g' : N' →ₗ[H] N'') :
     tensorMap R H (f'.comp f) (g'.comp g) =
       (tensorMap R H f' g').comp (tensorMap R H f g) := by
-  ext x
-  apply (tensorEquiv R H M'' N'').injective
-  simp [TensorProduct.map_comp]
+  apply Tensor.ext
+  intro m n
+  simp
 
 end Action
 
