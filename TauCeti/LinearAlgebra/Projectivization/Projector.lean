@@ -39,7 +39,10 @@ properties are in `TauCeti.Geometry.RealAlgebraic.ProjectorEmbedding`.
 * `TauCeti.rankOneProjector_mem_projectorLocus`: the projector of a vector with `xᵀ x ≠ 0` lies
   in the locus.
 * `TauCeti.rankOneProjector_row_eq_self`: a matrix in the locus is the projector of each of its
-  rows with nonzero diagonal entry.
+  rows with nonzero diagonal entry. Its proof uses two matrix facts proved here:
+  `Matrix.IsSymm.mulVec_row_of_isIdempotentElem` (a symmetric idempotent fixes its rows) and
+  `Matrix.IsIdempotentElem.eq_zero_of_trace_eq_zero` (in characteristic zero an idempotent of
+  trace zero vanishes).
 * `Projectivization.projector_injective` and `Projectivization.range_projector`: the projector
   map is a bijection from `ℙ K (ι → K)` onto the projector locus.
 
@@ -55,6 +58,30 @@ public section
 
 open Matrix
 open scoped LinearAlgebra.Projectivization
+
+namespace Matrix
+
+variable {ι K : Type*} [Fintype ι]
+
+/-- A symmetric idempotent matrix fixes each of its rows, since the row `A i` is also the column
+`A *ᵥ Pi.single i 1`. -/
+theorem IsSymm.mulVec_row_of_isIdempotentElem [Semiring K] {A : Matrix ι ι K} (hS : A.IsSymm)
+    (hI : IsIdempotentElem A) (i : ι) : A *ᵥ A i = A i := by
+  classical
+  rw [← row_apply' A i, ← col_transpose, hS.eq, ← mulVec_single_one, mulVec_mulVec, hI.eq]
+
+/-- Over a field of characteristic zero, an idempotent matrix of trace zero is zero: the trace of
+an idempotent is the dimension of its range. This is the matrix form of
+`LinearMap.IsIdempotentElem.eq_zero_of_trace_eq_zero`. -/
+theorem IsIdempotentElem.eq_zero_of_trace_eq_zero [Field K] [CharZero K] {A : Matrix ι ι K}
+    (hA : IsIdempotentElem A) (htr : A.trace = 0) : A = 0 := by
+  classical
+  refine toLinAlgEquiv'.injective ?_
+  rw [map_zero]
+  exact LinearMap.IsIdempotentElem.eq_zero_of_trace_eq_zero (hA.map toLinAlgEquiv')
+    ((trace_toLin'_eq A).trans htr)
+
+end Matrix
 
 namespace TauCeti
 
@@ -132,6 +159,7 @@ theorem rankOneProjector_eq_rankOneProjector_iff {x y : ι → K} (hx : x ⬝ᵥ
   · rintro ⟨c, rfl⟩
     exact rankOneProjector_smul (by rintro rfl; simp at hx) y
 
+/-- The rank-one projector of a vector with `xᵀ x ≠ 0` lies in the projector locus. -/
 theorem rankOneProjector_mem_projectorLocus {x : ι → K} (hx : x ⬝ᵥ x ≠ 0) :
     rankOneProjector x ∈ projectorLocus ι K :=
   ⟨isSymm_rankOneProjector x, isIdempotentElem_rankOneProjector x, trace_rankOneProjector hx⟩
@@ -146,15 +174,9 @@ theorem rankOneProjector_row_eq_self {A : Matrix ι ι K} (hA : A ∈ projectorL
   obtain ⟨hS, hI, htr⟩ := hA
   -- The symmetric idempotent `A` fixes its row `A i`, which is also its column; in particular
   -- `A i ⬝ᵥ A i = A i i ≠ 0`.
-  have hAv : A *ᵥ A i = A i := by
-    ext k
-    have h := congr_fun (congr_fun hI k) i
-    rw [mul_apply] at h
-    rw [mulVec, dotProduct, ← hS.apply i k]
-    simpa only [hS.apply i] using h
+  have hAv : A *ᵥ A i = A i := hS.mulVec_row_of_isIdempotentElem hI i
   have hv : A i ⬝ᵥ A i ≠ 0 := by
-    rw [← congr_fun hAv i] at hi
-    simpa only [mulVec] using hi
+    rwa [← congr_fun hAv i, mulVec_apply, row_apply'] at hi
   -- So `A` fixes the line of `P = rankOneProjector (A i)`: `A * P = P`, and transposing gives
   -- `P * A = P`.
   have hAP : A * rankOneProjector (A i) = rankOneProjector (A i) := by
@@ -162,17 +184,13 @@ theorem rankOneProjector_row_eq_self {A : Matrix ι ι K} (hA : A ∈ projectorL
   have hPA : rankOneProjector (A i) * A = rankOneProjector (A i) := by
     simpa only [transpose_mul, (isSymm_rankOneProjector (A i)).eq, hS.eq] using
       congr_arg transpose hAP
-  -- Hence `A - P` is an idempotent of trace zero. Its linear map is then zero, since the trace of
-  -- an idempotent endomorphism is the dimension of its range.
+  -- Hence `A - P` is an idempotent of trace zero, so it is zero.
   have hB : IsIdempotentElem (A - rankOneProjector (A i)) := by
     rw [IsIdempotentElem, sub_mul, mul_sub, mul_sub, hI.eq, hAP, hPA,
       (isIdempotentElem_rankOneProjector (A i)).eq]
     abel
-  classical
-  have h0 := LinearMap.IsIdempotentElem.eq_zero_of_trace_eq_zero (hB.map toLinAlgEquiv')
-    ((trace_toLin'_eq _).trans (by rw [trace_sub, htr, trace_rankOneProjector hv, sub_self]))
-  rw [← map_zero toLinAlgEquiv'] at h0
-  exact (sub_eq_zero.mp (toLinAlgEquiv'.injective h0)).symm
+  exact (sub_eq_zero.mp (Matrix.IsIdempotentElem.eq_zero_of_trace_eq_zero hB
+    (by rw [trace_sub, htr, trace_rankOneProjector hv, sub_self]))).symm
 
 /-- Every matrix in the projector locus is the rank-one projector of a nonzero vector. -/
 theorem exists_rankOneProjector_eq_of_mem_projectorLocus {A : Matrix ι ι K}
@@ -202,10 +220,13 @@ theorem projector_mk (x : ι → K) (hx : x ≠ 0) : projector (mk K x hx) = ran
 
 variable [LinearOrder K] [IsStrictOrderedRing K]
 
+/-- Over an ordered field the projector of every line lies in the projector locus. -/
 theorem projector_mem_projectorLocus (p : ℙ K (ι → K)) : projector p ∈ projectorLocus ι K := by
   induction p using ind with
   | h x hx => exact rankOneProjector_mem_projectorLocus (dotProduct_self_eq_zero.not.mpr hx)
 
+/-- Over an ordered field the projector map is injective: distinct lines of `ι → K` have distinct
+projectors. -/
 theorem projector_injective : Function.Injective (projector : ℙ K (ι → K) → Matrix ι ι K) := by
   intro p q h
   induction p using ind with | h x hx =>
