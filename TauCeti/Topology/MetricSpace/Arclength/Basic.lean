@@ -46,6 +46,16 @@ theorem LocallyBoundedVariationOn.naturalParameterization_variationOnFromTo {α 
     naturalParameterization f s a (variationOnFromTo f s a b) = f b :=
   edist_eq_zero.mp (edist_naturalParameterization_eq_zero hf ha hb)
 
+/-- The natural parameterization of a curve of locally bounded variation has the same trace
+when restricted to the set of cumulative variations from a base point. -/
+@[simp]
+theorem LocallyBoundedVariationOn.image_naturalParameterization {α E : Type*}
+    [LinearOrder α] [TopologicalSpace E] [WeakEMetricSpace E] {f : α → E} {s : Set α}
+    (hf : LocallyBoundedVariationOn f s) {a : α} (ha : a ∈ s) :
+    naturalParameterization f s a '' (variationOnFromTo f s a '' s) = f '' s := by
+  rw [image_image]
+  exact image_congr fun x hx ↦ edist_eq_zero.mp (edist_naturalParameterization_eq_zero hf ha hx)
+
 namespace BoundedVariationOn
 
 variable {X : Type*} [MetricSpace X] {γ : ℝ → X} {a b : ℝ}
@@ -131,9 +141,8 @@ theorem image_naturalParameterization_Icc (hγ : BoundedVariationOn γ (Icc a b)
     (hcont : ContinuousOn γ (Icc a b)) (hab : a ≤ b) :
     naturalParameterization γ (Icc a b) a '' Icc 0 (eVariationOn γ (Icc a b)).toReal =
       γ '' Icc a b := by
-  rw [← hγ.image_variationOnFromTo_Icc hcont hab, image_image]
-  exact image_congr fun t ht ↦
-    hγ.locallyBoundedVariationOn.naturalParameterization_variationOnFromTo (left_mem_Icc.2 hab) ht
+  rw [← hγ.image_variationOnFromTo_Icc hcont hab]
+  exact hγ.locallyBoundedVariationOn.image_naturalParameterization (left_mem_Icc.2 hab)
 
 /-- For a continuous rectifiable curve injective on the interior of its parameter interval,
 cumulative variation is an increasing homeomorphism onto the length interval. The endpoint
