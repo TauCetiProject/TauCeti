@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Modules.Algebra.Sections
 public import TauCeti.AlgebraicGeometry.Modules.Sheaf
+public import TauCeti.CategoryTheory.Monoidal.EqToHom
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.GradedAlgebra.DirectSum
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.GradedAlgebra.SymmetricAlgebra.Basic
 
@@ -323,13 +324,6 @@ private lemma one_liftTotal (φ : F.obj ⟶ B.X) :
   -- only up to unfolding, so they are cancelled with `erw`.
   erw [Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
   exact liftDegree_one φ
-
--- Stated in `X.Modules`: for the transports of `mul_gradedSymmetricAlgebra`, whose sources are
--- typed in `SheafOfModules X.ringCatSheaf`, the generic monoidal rewrites time out.
-private lemma eqToHom_tensorHom_eqToHom {M M' N N' : X.Modules} (h : M = M') (h' : N = N') :
-    (eqToHom h ⊗ₘ eqToHom h') = eqToHom (congrArg₂ (· ⊗ ·) h h') := by
-  subst h h'
-  simp
 
 private lemma mul_liftTotal (φ : F.obj ⟶ B.X) :
     μ[((symmetricAlgebra X).obj F).obj.X] ≫ liftTotal φ =
