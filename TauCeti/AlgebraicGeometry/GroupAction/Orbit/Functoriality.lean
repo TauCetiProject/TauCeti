@@ -46,12 +46,18 @@ variable {k : Type u} [Field k] [IsAlgClosed k]
   (f : X ⟶ Y) [IsModHom G f] (h : x ≫ f = y)
 
 include h in
+private theorem toOrbit_orbitι_comp_left :
+    toOrbit G x ≫ orbitι G x ≫ f.left = (orbitMap G y).left := by
+  rw [toOrbit_ι_assoc, ← Over.comp_left, orbitMap_comp, h]
+
+include h in
 private theorem existsUnique_orbitSchemeMap :
     ∃! l : orbitScheme G x ⟶ orbitScheme G y,
       l ≫ orbitι G y = orbitι G x ≫ f.left := by
   refine (orbitι G y).existsUnique_lift_of_surjective_of_isSchemeTheoreticallyDominant
     (orbitι G x ≫ f.left) (toOrbit G x) (toOrbit G y) ?_
-  rw [toOrbit_ι, toOrbit_ι_assoc, ← Over.comp_left, orbitMap_comp, h]
+  rw [toOrbit_ι]
+  exact toOrbit_orbitι_comp_left G x y f h
 
 /-- The restriction of an equivariant morphism to the orbit schemes of specified
 rational points that it carries to one another. -/
@@ -76,8 +82,7 @@ theorem orbitSchemeMap_unique (l : orbitScheme G x ⟶ orbitScheme G y)
 theorem toOrbit_orbitSchemeMap :
     toOrbit G x ≫ orbitSchemeMap G x y f h = toOrbit G y := by
   apply (cancel_mono (orbitι G y)).mp
-  rw [Category.assoc, orbitSchemeMap_ι, toOrbit_ι_assoc,
-    ← Over.comp_left, orbitMap_comp, h, toOrbit_ι]
+  rw [Category.assoc, orbitSchemeMap_ι, toOrbit_orbitι_comp_left G x y f h, toOrbit_ι]
 
 /-- The restriction is a morphism over the ground field. -/
 @[reassoc (attr := simp)]
@@ -94,7 +99,7 @@ theorem orbitTranslation_hom_orbitSchemeMap
   apply (cancel_mono (orbitι G y)).mp
   simp only [Category.assoc, orbitSchemeMap_ι, orbitTranslation_hom_ι,
     orbitTranslation_hom_ι_assoc, orbitSchemeMap_ι_assoc]
-  exact congrArg (fun a : X ⟶ Y ↦ orbitι G x ≫ a.left) (translation_hom_comp g f)
+  rw [← Over.comp_left, translation_hom_comp, Over.comp_left]
 
 variable {x y f h}
 
@@ -204,6 +209,12 @@ theorem toOrbit_orbitSchemeIsoSmul_hom (g : 𝟙_ (Over (Spec (.of k))) ⟶ G) :
 theorem orbitSchemeIsoSmul_hom_toBase (g : 𝟙_ (Over (Spec (.of k))) ⟶ G) :
     (orbitSchemeIsoSmul G x g).hom ≫ orbitToBase G x = orbitToBase G (g • x) := by
   simp only [orbitToBase_def, orbitSchemeIsoSmul_hom_ι_assoc]
+
+/-- The inverse base-point change also respects the ground-field structure. -/
+@[reassoc (attr := simp)]
+theorem orbitSchemeIsoSmul_inv_toBase (g : 𝟙_ (Over (Spec (.of k))) ⟶ G) :
+    (orbitSchemeIsoSmul G x g).inv ≫ orbitToBase G (g • x) = orbitToBase G x := by
+  simp only [orbitToBase_def, orbitSchemeIsoSmul_inv_ι_assoc]
 
 end ChangeBasePoint
 
