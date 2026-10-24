@@ -36,6 +36,8 @@ a second notion of an ideal prime to `S`.
 * `TauCeti.toIdealsAway_surjective` and `TauCeti.ker_toIdealsAway`: `toIdealsAway` is surjective,
   with kernel the everywhere-integral units, so `idealsAway K S` is the quotient of the finite
   ideles that are local units on `S` by `∏_v 𝒪_vˣ`.
+* `TauCeti.toIdealsAway_eq_iff`: two such finite ideles define the same ideal away from `S`
+  exactly when their quotient is an everywhere-integral unit.
 * `TauCeti.integralIdealsAwayHom_toIntegralIdealsAway`: compatibility with the integral map
   `toIntegralIdealsAway`.
 
@@ -99,6 +101,15 @@ theorem toIdealsAway_eq_one_iff (S : Finset (HeightOneSpectrum R)) (x : finiteId
     toIdealsAway K S x = 1 ↔ (x : 𝔸ᶠ[R, K]ˣ) ∈ integralUnits R K := by
   rw [← MonoidHom.mem_ker, ker_toIdealsAway, Subgroup.mem_comap, Subgroup.subtype_apply]
 
+/-- Two finite ideles that are local units on `S` define the same ideal away from `S` exactly
+when their quotient is an everywhere-integral unit. -/
+@[simp]
+theorem toIdealsAway_eq_iff (S : Finset (HeightOneSpectrum R)) (x y : finiteIdelesAway K S) :
+    toIdealsAway K S x = toIdealsAway K S y ↔
+      (x : 𝔸ᶠ[R, K]ˣ) / (y : 𝔸ᶠ[R, K]ˣ) ∈ integralUnits R K := by
+  rw [← Subtype.coe_inj, coe_toIdealsAway, coe_toIdealsAway, ← div_eq_one, ← map_div,
+    ← MonoidHom.mem_ker, ker_toFractionalIdeal]
+
 /-- Every fractional ideal away from `S` is the ideal of a finite idele that is a local unit at
 every place of `S`. -/
 theorem toIdealsAway_surjective (S : Finset (HeightOneSpectrum R)) :
@@ -109,19 +120,6 @@ theorem toIdealsAway_surjective (S : Finset (HeightOneSpectrum R)) :
     rw [finiteIdelesAway, Subgroup.mem_comap, hx]
     exact I.property
   exact ⟨⟨x, hx_mem⟩, Subtype.ext hx⟩
-
-variable (K) in
-/-- The finite-idele orders of a representative of an integral ideal are its ideal multiplicities.
-
-In particular, these orders are nonnegative everywhere and vanish on the excluded finite set. -/
-theorem exists_forall_adicOrd_eq_count_integralIdealsAway (S : Finset (HeightOneSpectrum R))
-    (I : NumberFieldArithmetic.integralIdealsAway (R := R) S) :
-    ∃ x : 𝔸ᶠ[R, K]ˣ, ∀ v : HeightOneSpectrum R,
-      adicOrd x v = FractionalIdeal.count K v (I : FractionalIdeal R⁰ K) := by
-  obtain ⟨x, hx⟩ := exists_forall_adicOrd_eq_count
-    (NumberFieldArithmetic.integralIdealsAwayHom K S I : (FractionalIdeal R⁰ K)ˣ)
-  exact ⟨x, fun v ↦ (hx v).trans (congrArg (FractionalIdeal.count K v)
-    (NumberFieldArithmetic.coe_integralIdealsAwayHom S I))⟩
 
 /-- Passing from integral to fractional prime-to ideals turns the integral finite-idele map
 `toIntegralIdealsAway` into `toIdealsAway`. -/
