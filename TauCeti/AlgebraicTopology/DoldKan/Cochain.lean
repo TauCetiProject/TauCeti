@@ -37,9 +37,9 @@ noncomputable section
 
 variable (R : Type u) [CommRing R]
 
-/-- The underlying Kan complex of the Dold–Kan image of the good homological truncation.
+/-- Send a cochain complex to the underlying simplicial set of the Dold–Kan image of its
+good homological truncation. The values of this functor are Kan complexes.
 Its nonnegative chain degree `n` corresponds to cochain degree `-n`. -/
-@[expose]
 def cochainToSSet : CochainComplex (ModuleCat.{u} R) ℤ ⥤ SSet.{u} :=
   ComplexShape.embeddingDownNat.truncLE'Functor (ModuleCat.{u} R) ⋙
     Idempotents.DoldKan.Γ ⋙
@@ -53,12 +53,53 @@ theorem cochainToSSet_obj (K : CochainComplex (ModuleCat.{u} R) ℤ) :
         forget (ModuleCat.{u} R) :=
   (rfl)
 
+/-- On morphisms, apply good truncation, Dold–Kan, and then forget the module structure. -/
+theorem cochainToSSet_map {K L : CochainComplex (ModuleCat.{u} R) ℤ} (f : K ⟶ L) :
+    (cochainToSSet R).map f = (by
+      simp only [cochainToSSet_obj]
+      exact Functor.whiskerRight
+        (Idempotents.DoldKan.Γ.map
+          ((ComplexShape.embeddingDownNat.truncLE'Functor (ModuleCat.{u} R)).map f))
+        (forget (ModuleCat.{u} R))) :=
+  (rfl)
+
 /-- The functor to simplicial sets uses the Alexander–Whitney lax monoidal structure
 on Dold–Kan and the lax monoidal good truncation. -/
 instance cochainToSSetLaxMonoidal : (cochainToSSet R).LaxMonoidal :=
   inferInstanceAs ((ComplexShape.embeddingDownNat.truncLE'Functor (ModuleCat.{u} R) ⋙
     Idempotents.DoldKan.Γ ⋙
       (Functor.whiskeringRight _ _ _).obj (forget (ModuleCat.{u} R))).LaxMonoidal)
+
+/-- The lax unit combines the forgetful, Alexander–Whitney, and good-truncation units. -/
+theorem cochainToSSet_ε :
+    Functor.LaxMonoidal.ε (cochainToSSet R) = (by
+      simp only [cochainToSSet_obj]
+      exact Functor.LaxMonoidal.ε
+          ((Functor.whiskeringRight _ _ _).obj (forget (ModuleCat.{u} R))) ≫
+        Functor.whiskerRight (Functor.LaxMonoidal.ε Idempotents.DoldKan.Γ)
+          (forget (ModuleCat.{u} R)) ≫
+        Functor.whiskerRight (Idempotents.DoldKan.Γ.map
+          (Functor.LaxMonoidal.ε
+            (ComplexShape.embeddingDownNat.truncLE'Functor (ModuleCat.{u} R))))
+          (forget (ModuleCat.{u} R))) :=
+  (rfl)
+
+/-- The tensor comparison combines the forgetful, Alexander–Whitney, and truncation maps. -/
+theorem cochainToSSet_μ (K L : CochainComplex (ModuleCat.{u} R) ℤ) :
+    Functor.LaxMonoidal.μ (cochainToSSet R) K L = (by
+      simp only [cochainToSSet_obj]
+      exact Functor.LaxMonoidal.μ
+          ((Functor.whiskeringRight _ _ _).obj (forget (ModuleCat.{u} R)))
+          (Idempotents.DoldKan.Γ.obj (K.truncLE' ComplexShape.embeddingDownNat))
+          (Idempotents.DoldKan.Γ.obj (L.truncLE' ComplexShape.embeddingDownNat)) ≫
+        Functor.whiskerRight (Functor.LaxMonoidal.μ Idempotents.DoldKan.Γ
+          (K.truncLE' ComplexShape.embeddingDownNat) (L.truncLE' ComplexShape.embeddingDownNat))
+          (forget (ModuleCat.{u} R)) ≫
+        Functor.whiskerRight (Idempotents.DoldKan.Γ.map
+          (Functor.LaxMonoidal.μ
+            (ComplexShape.embeddingDownNat.truncLE'Functor (ModuleCat.{u} R)) K L))
+          (forget (ModuleCat.{u} R))) :=
+  (rfl)
 
 /-- The simplicial set assigned to every cochain complex is a Kan complex. -/
 instance (K : CochainComplex (ModuleCat.{u} R) ℤ) :

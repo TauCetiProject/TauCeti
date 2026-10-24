@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Basic
-public import Mathlib.CategoryTheory.Monoidal.Types.Basic
+public import Mathlib.Algebra.Category.ModuleCat.Adjunctions
 
 /-!
 # The lax monoidal forgetful functor on modules
@@ -27,25 +26,27 @@ universe u
 variable (R : Type u) [CommRing R]
 
 /-- Forgetting modules is lax monoidal: the tensor comparison is the pure tensor map. -/
-instance moduleCatForgetLaxMonoidal : (forget (ModuleCat.{u} R)).LaxMonoidal :=
-  Functor.LaxMonoidal.ofTensorHom
-    (ε := ↾fun _ ↦ (1 : R))
-    (μ := fun _ _ ↦ ↾fun p ↦ p.1 ⊗ₜ[R] p.2)
-    (μ_natural := by intros; rfl)
-    (associativity := fun _ _ _ ↦ by ext ⟨⟨x, y⟩, z⟩; rfl)
-    (left_unitality := fun _ ↦ by ext ⟨⟨⟩, x⟩; exact (one_smul R x).symm)
-    (right_unitality := fun _ ↦ by ext ⟨x, ⟨⟩⟩; exact (one_smul R x).symm)
+noncomputable instance moduleCatForgetLaxMonoidal : (forget (ModuleCat.{u} R)).LaxMonoidal :=
+  (ModuleCat.adj R).rightAdjointLaxMonoidal
 
 /-- The lax unit of the module forgetful functor selects `1`. -/
 @[simp]
 lemma moduleCatForget_ε (x : 𝟙_ (Type u)) :
-    dsimp% Functor.LaxMonoidal.ε (forget (ModuleCat.{u} R)) x = (1 : R) :=
-  (rfl)
+    dsimp% Functor.LaxMonoidal.ε (forget (ModuleCat.{u} R)) x = (1 : R) := by
+  dsimp [moduleCatForgetLaxMonoidal, Adjunction.rightAdjointLaxMonoidal_ε]
+  rw [ModuleCat.adj_homEquiv]
+  cases x
+  exact ModuleCat.free_η_freeMk R PUnit.unit
 
 /-- The tensor comparison of the module forgetful functor forms a pure tensor. -/
 @[simp]
 lemma moduleCatForget_μ (M N : ModuleCat.{u} R) (x : M) (y : N) :
-    dsimp% Functor.LaxMonoidal.μ (forget (ModuleCat.{u} R)) M N (x, y) = x ⊗ₜ[R] y :=
-  (rfl)
+    dsimp% Functor.LaxMonoidal.μ (forget (ModuleCat.{u} R)) M N (x, y) = x ⊗ₜ[R] y := by
+  dsimp [moduleCatForgetLaxMonoidal, Adjunction.rightAdjointLaxMonoidal_μ]
+  rw [ModuleCat.adj_homEquiv]
+  dsimp [ModuleCat.freeHomEquiv]
+  rw [ModuleCat.free_δ_freeMk]
+  simp [← (ModuleCat.adj R).homEquiv_symm_id, ModuleCat.adj_homEquiv,
+    ModuleCat.freeHomEquiv]
 
 end TauCeti
