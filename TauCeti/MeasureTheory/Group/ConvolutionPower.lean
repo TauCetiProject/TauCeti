@@ -15,7 +15,9 @@ public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 This file defines the additive convolution powers of a measure on a measurable additive monoid.
 It records their algebraic, measure-theoretic, measurability, and integration properties, the
 compatibility of mixtures of a convolution-additive family with convolution (`bind_conv_bind`),
-and the characteristic function of a convolution power (`charFun_convolutionPower`).
+and the characteristic function of a convolution power (`charFun_convolutionPower`). It also
+shows that convolution distributes over countable sums of measures (`conv_sum`, `sum_conv`), so
+that series of convolution powers can be convolved termwise.
 -/
 
 public section
@@ -26,6 +28,27 @@ open MeasureTheory ProbabilityTheory
 open scoped ENNReal MeasureTheory
 
 namespace MeasureTheory.Measure
+
+section Sum
+
+variable {M : Type*} [Monoid M] [MeasurableSpace M] [MeasurableMul₂ M]
+
+/-- Convolution distributes over a countable sum of s-finite measures on the right. -/
+@[to_additive /-- Convolution distributes over a countable sum of s-finite measures on the
+right. -/]
+theorem mconv_sum {ι : Type*} [Countable ι] (μ : Measure M) (ν : ι → Measure M)
+    [∀ i, SFinite (ν i)] : μ ∗ₘ Measure.sum ν = Measure.sum fun i ↦ μ ∗ₘ ν i := by
+  simp only [mconv, prod_sum_right]
+  exact map_sum (by fun_prop)
+
+/-- Convolution distributes over an arbitrary sum of measures on the left. -/
+@[to_additive /-- Convolution distributes over an arbitrary sum of measures on the left. -/]
+theorem sum_mconv {ι : Type*} (μ : ι → Measure M) (ν : Measure M) [SFinite ν] :
+    Measure.sum μ ∗ₘ ν = Measure.sum fun i ↦ μ i ∗ₘ ν := by
+  simp only [mconv, prod_sum_left]
+  exact map_sum (by fun_prop)
+
+end Sum
 
 variable {α : Type*} [MeasurableSpace α] [AddMonoid α]
 
