@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.DividedPowerAlgebra.UniversalLaw
+public import TauCeti.RingTheory.DividedPowerAlgebra.Exp
+public import TauCeti.RingTheory.DividedPowerAlgebra.Grading
 
 /-!
 # Base change of divided power algebras
@@ -20,8 +21,8 @@ For a commutative `R`-algebra `S` and an `R`-module `M`, the canonical map
 
 * `DividedPowerAlgebra.baseChangeEquiv`: the `S`-algebra isomorphism
   `S ⊗[R] Γ_R(M) ≃ₐ[S] Γ_S(S ⊗[R] M)`.
-* `DividedPowerAlgebra.baseChangeEquiv_tmul` and `DividedPowerAlgebra.baseChangeEquiv_symm_dp`:
-  its values in both directions.
+* `DividedPowerAlgebra.baseChangeEquiv_tmul`, `DividedPowerAlgebra.baseChangeEquiv_pow_tmul_dp`
+  and `DividedPowerAlgebra.baseChangeEquiv_symm_dp`: its values in both directions.
 * `DividedPowerAlgebra.baseChangeHomogeneousEquiv`: the `S`-linear isomorphism
   `S ⊗[R] Γ^d_R(M) ≃ₗ[S] Γ^d_S(S ⊗[R] M)` on homogeneous pieces.
 
@@ -65,15 +66,18 @@ private def baseChangeInverse :
   lift' (f := fun nx ↦ coeff nx.1 (exp nx.2))
     (fun x ↦ by rw [coeff_zero_eq_constantCoeff_apply, constantCoeff_exp])
     (fun n s x ↦ by
-      rw [exp_smul, coeff_rescale (R := S ⊗[R] DividedPowerAlgebra R M),
-        Algebra.TensorProduct.tmul_pow, one_pow, Algebra.smul_def,
-        Algebra.TensorProduct.algebraMap_apply, Algebra.algebraMap_self, RingHom.id_apply])
+      rw [exp_smul, coeff_rescale (R := S ⊗[R] DividedPowerAlgebra R M)]
+      simp [Algebra.smul_def])
     (fun m n x ↦ coeff_exp_mul_coeff_exp x m n)
     (fun n x y ↦ by rw [exp_add, coeff_mul])
 
 private theorem baseChangeForward_tmul (s : S) (z : DividedPowerAlgebra R M) :
     baseChangeForward R M S (s ⊗ₜ[R] z) = s • map S (TensorProduct.mk R S M 1) z := by
   rw [baseChangeForward, Algebra.TensorProduct.lift_tmul, Algebra.ofId_apply, Algebra.smul_def]
+
+private theorem baseChangeForward_pow_tmul_dp (s : S) (n : ℕ) (m : M) :
+    baseChangeForward R M S ((s ^ n) ⊗ₜ[R] dp R n m) = dp S n (s ⊗ₜ[R] m) := by
+  rw [baseChangeForward_tmul, map_apply_dp, mk_apply, ← dp_smul, smul_tmul', smul_eq_mul, mul_one]
 
 private theorem baseChangeInverse_dp (n : ℕ) (x : S ⊗[R] M) :
     baseChangeInverse R M S (dp S n x) = coeff n (exp x) := by
@@ -85,8 +89,7 @@ private theorem baseChangeForward_coeff_exp (x : S ⊗[R] M) (n : ℕ) :
     baseChangeForward R M S (coeff n (exp x)) = dp S n x := by
   induction x using TensorProduct.inductionOn generalizing n with
   | tmul s m =>
-      rw [coeff_exp_tmul, baseChangeForward_tmul, map_apply_dp, mk_apply, ← dp_smul, smul_tmul',
-        smul_eq_mul, mul_one]
+      rw [coeff_exp_tmul, baseChangeForward_pow_tmul_dp]
   | add x y hx hy =>
       rw [exp_add, coeff_mul, map_sum, dp_add]
       exact Finset.sum_congr rfl fun k _ ↦ by rw [map_mul, hx, hy]
@@ -120,10 +123,15 @@ theorem baseChangeEquiv_tmul (s : S) (z : DividedPowerAlgebra R M) :
     baseChangeEquiv R M S (s ⊗ₜ[R] z) = s • map S (TensorProduct.mk R S M 1) z :=
   (baseChangeEquiv_apply R M S _).trans (baseChangeForward_tmul R M S s z)
 
+/-- The base change isomorphism sends `s ^ n ⊗ dp R n m` to `dp S n (s ⊗ m)`. -/
+theorem baseChangeEquiv_pow_tmul_dp (s : S) (n : ℕ) (m : M) :
+    baseChangeEquiv R M S ((s ^ n) ⊗ₜ[R] dp R n m) = dp S n (s ⊗ₜ[R] m) :=
+  (baseChangeEquiv_apply R M S _).trans (baseChangeForward_pow_tmul_dp R M S s n m)
+
 /-- The base change isomorphism sends `1 ⊗ dp R n m` to `dp S n (1 ⊗ m)`. -/
 theorem baseChangeEquiv_one_tmul_dp (n : ℕ) (m : M) :
     baseChangeEquiv R M S (1 ⊗ₜ[R] dp R n m) = dp S n (1 ⊗ₜ[R] m) := by
-  simp
+  rw [← baseChangeEquiv_pow_tmul_dp, one_pow]
 
 /-- The inverse of the base change isomorphism sends `dp S n x` to the `X ^ n`-coefficient of
 the divided-power exponential of `x`. -/
@@ -235,7 +243,7 @@ theorem baseChangeHomogeneousEquiv_symm_dp_tmul (s : S) (m : M) :
   rw [LinearEquiv.symm_apply_eq]
   ext
   rw [coe_baseChangeHomogeneousEquiv_apply, LinearMap.baseChange_tmul, Submodule.subtype_apply,
-    baseChangeEquiv_tmul, map_apply_dp, mk_apply, ← dp_smul, smul_tmul', smul_eq_mul, mul_one]
+    baseChangeEquiv_pow_tmul_dp]
 
 end Homogeneous
 

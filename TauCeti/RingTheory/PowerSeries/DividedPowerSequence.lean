@@ -66,8 +66,8 @@ theorem coeff_mul_coeff_mul_eq_choose_nsmul {f g : A⟦X⟧}
         coeff x.1 f * coeff x.2 g * (coeff y.1 f * coeff y.2 g)
       = ∑ x ∈ antidiagonal m, ∑ y ∈ antidiagonal n, F x (x + y) := by
         refine sum_congr rfl fun x _ ↦ sum_congr rfl fun y _ ↦ ?_
-        rw [hF, mul_mul_mul_comm, hf, hg, smul_mul_smul_comm]
-        rfl
+        simp only [hF, Prod.fst_add, Prod.snd_add]
+        rw [mul_mul_mul_comm, hf, hg, smul_mul_smul_comm]
     _ = ∑ p ∈ antidiagonal (m + n), ∑ x ∈ antidiagonal m, F x p := by
         rw [sum_congr rfl hx, sum_comm]
     _ = _ := by
