@@ -202,6 +202,13 @@ def inCoordinates (g : ContMDiffNondegenerateMetric (I := I) (M := M)) (a x : M)
     E →L[ℝ] E →L[ℝ] ℝ :=
   tangentBilinFormInCoordinates a x (g x)
 
+/-- Reading the metric in a trivialization is the general tangent bilinear-form coordinate
+construction applied to its value at the point. -/
+theorem inCoordinates_eq_tangentBilinFormInCoordinates
+    (g : ContMDiffNondegenerateMetric (I := I) (M := M)) (a x : M) :
+    g.inCoordinates a x = tangentBilinFormInCoordinates a x (g x) :=
+  (rfl)
+
 /-- On the base set of the trivialization at `a`, the metric read in that trivialization pairs two
 vectors of the model space as `g` pairs the tangent vectors with these coordinates. -/
 theorem inCoordinates_apply
