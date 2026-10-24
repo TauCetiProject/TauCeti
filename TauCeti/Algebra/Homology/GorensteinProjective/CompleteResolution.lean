@@ -58,9 +58,9 @@ variable {A : Type u} [Ring A] [Small.{v} A] {P Q : CochainComplex (ModuleCat.{v
 
 /-- A totally acyclic complex as a complete resolution in the exact category of finitely
 generated Gorenstein-projective modules: the conflations are the cycle sequences
-`Zⁿ(P) ↪ Pⁿ ↠ Zⁿ⁺¹(P)`. Its body is exposed so that its fields are the cycles, terms and maps of
-`P` by definition, as the lemmas below record. -/
-@[expose] noncomputable def completeResolution (hP : P.IsTotallyAcyclic) :
+`Zⁿ(P) ↪ Pⁿ ↠ Zⁿ⁺¹(P)`. It is an abbreviation, so that its fields reduce to the cycles, terms and
+maps of `P`. -/
+noncomputable abbrev completeResolution (hP : P.IsTotallyAcyclic) :
     (GorensteinProjectiveModuleCat.exactStructure.{v} A).CompleteResolution where
   Z n := ⟨P.cycles n, hP.isGorensteinProjective_cycles n⟩
   X n := ⟨P.X n, have := hP.finite n; have := hP.projective n
@@ -76,29 +76,9 @@ generated Gorenstein-projective modules: the conflations are the cycle sequences
     ⟨(GorensteinProjectiveModuleCat.exactStructure_isProjective_iff _).mpr (hP.projective n),
       (GorensteinProjectiveModuleCat.exactStructure_isInjective_iff _).mpr (hP.projective n)⟩
 
-@[simp]
-theorem completeResolution_Z_obj (hP : P.IsTotallyAcyclic) (n : ℤ) :
-    (hP.completeResolution.Z n).obj = P.cycles n :=
-  rfl
-
-@[simp]
-theorem completeResolution_X_obj (hP : P.IsTotallyAcyclic) (n : ℤ) :
-    (hP.completeResolution.X n).obj = P.X n :=
-  rfl
-
-@[simp]
-theorem completeResolution_ι_hom (hP : P.IsTotallyAcyclic) (n : ℤ) :
-    (hP.completeResolution.ι n).hom = P.iCycles n :=
-  rfl
-
-@[simp]
-theorem completeResolution_π_hom (hP : P.IsTotallyAcyclic) (n : ℤ) :
-    (hP.completeResolution.π n).hom = P.toCycles n (n + 1) :=
-  rfl
-
 /-- The complex of `CochainComplex.IsTotallyAcyclic.completeResolution`, as a complex of modules,
 is the given totally acyclic complex; its components are identities. -/
-@[expose] noncomputable def completeResolutionComplexIso (hP : P.IsTotallyAcyclic) :
+noncomputable def completeResolutionComplexIso (hP : P.IsTotallyAcyclic) :
     ((IsGorensteinProjective.{v} A).ι.mapHomologicalComplex _).obj
       hP.completeResolution.complex ≅ P :=
   HomologicalComplex.Hom.isoOfComponents (fun _ => Iso.refl _) (by
@@ -107,13 +87,13 @@ is the given totally acyclic complex; its components are identities. -/
 
 @[simp]
 theorem completeResolutionComplexIso_hom_f (hP : P.IsTotallyAcyclic) (n : ℤ) :
-    (completeResolutionComplexIso hP).hom.f n = 𝟙 _ :=
-  rfl
+    (completeResolutionComplexIso hP).hom.f n = 𝟙 _ := by
+  simp [completeResolutionComplexIso]
 
 @[simp]
 theorem completeResolutionComplexIso_inv_f (hP : P.IsTotallyAcyclic) (n : ℤ) :
-    (completeResolutionComplexIso hP).inv.f n = 𝟙 _ :=
-  rfl
+    (completeResolutionComplexIso hP).inv.f n = 𝟙 _ := by
+  simp [completeResolutionComplexIso]
 
 /-- A map of totally acyclic complexes as a map of the complexes of their complete resolutions,
 by the fullness of the inclusion of Gorenstein-projective modules on complexes. -/
@@ -150,10 +130,8 @@ theorem iCycles_lift_f_zero (hP : P.IsTotallyAcyclic) (hQ : Q.IsTotallyAcyclic)
       (ObjectProperty.homMk f))
   rw [Functor.map_comp, Functor.map_comp] at h
   simp only [lift, HomologicalComplex.comp_f, completeResolutionComplexIso_hom_f,
-    completeResolutionComplexIso_inv_f, Functor.mapHomologicalComplex_map_f]
-  -- The goal is `h` up to `ObjectProperty.ι_map` and a composite with the identity component of
-  -- `completeResolutionComplexIso hQ`, both of which hold by definition.
-  exact h
+    completeResolutionComplexIso_inv_f, Functor.mapHomologicalComplex_map_f, Category.comp_id]
+  simpa using h
 
 /-- Two maps of totally acyclic complexes lifting the same morphism of the cycles in degree zero
 are homotopic. -/
@@ -164,8 +142,8 @@ noncomputable def liftHomotopy (hP : P.IsTotallyAcyclic) (hQ : Q.IsTotallyAcycli
   -- inclusion and transported along the identifications of the complexes.
   let H := (IsGorensteinProjective.{v} A).ι.mapHomotopy
     (CompleteResolution.liftHomotopy (ObjectProperty.homMk f) (preimageHom hP hQ φ)
-      (preimageHom hP hQ ψ) (ObjectProperty.hom_ext _ (by simpa [preimageHom_f_hom]))
-      (ObjectProperty.hom_ext _ (by simpa [preimageHom_f_hom])))
+      (preimageHom hP hQ ψ) (ObjectProperty.hom_ext _ (by simpa [preimageHom_f_hom] using hφ))
+      (ObjectProperty.hom_ext _ (by simpa [preimageHom_f_hom] using hψ)))
   (Homotopy.ofEq (by simp [map_preimageHom])).trans
     (((H.compLeft (completeResolutionComplexIso hP).inv).compRight
       (completeResolutionComplexIso hQ).hom).trans (Homotopy.ofEq (by simp [map_preimageHom])))
