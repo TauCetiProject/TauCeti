@@ -252,7 +252,8 @@ def stabilizerMap {H : Type*} [Group H] [MulAction H α] (f : G →* H) (a : α)
     (hcompat : ∀ g : G, f g • a = g • a) :
     MulAction.stabilizer G a →* MulAction.stabilizer H a :=
   (f.comp (MulAction.stabilizer G a).subtype).codRestrict _ fun g ↦ by
-    simpa only [MulAction.mem_stabilizer_iff, hcompat] using g.2
+    simpa only [MonoidHom.comp_apply, Subgroup.subtype_apply,
+      MulAction.mem_stabilizer_iff, hcompat] using g.2
 
 /-- The restricted homomorphism has the same underlying value as the original map. -/
 @[simp]
