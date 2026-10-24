@@ -9,6 +9,8 @@ public import TauCeti.ModelTheory.BackAndForth.Countable
 public import TauCeti.ModelTheory.BackAndForth.Presentation
 public import TauCeti.ModelTheory.Infinitary.QuantifierRank
 
+import TauCeti.ModelTheory.Syntax
+
 /-!
 # Infinitary equivalence and Karp's theorem
 
@@ -151,21 +153,13 @@ section Atomic
 
 variable {κ : Type uκ} {n : ℕ} {a : Fin n → M} {b : Fin n → N}
 
-/-- In a relational language, a term with no free variables is a bound variable. -/
-private theorem exists_eq_var (t : L.Term (Empty ⊕ Fin n)) : ∃ i, t = Term.var (Sum.inr i) := by
-  cases t with
-  | var x => rcases x with x | i
-             · exact x.elim
-             · exact ⟨i, rfl⟩
-  | func f _ => exact isEmptyElim f
-
 /-- Tuples of the same atomic type satisfy the same equations between terms. -/
 private theorem SameAtomicType.realize_equal_iff (h : SameAtomicType (L := L) a b)
     (t₁ t₂ : L.Term (Empty ⊕ Fin n)) (v : Empty → M) (w : Empty → N) :
     (BoundedFormulaInf.equal t₁ t₂ : L.BoundedFormulaInf κ Empty n).Realize v a ↔
       (BoundedFormulaInf.equal t₁ t₂ : L.BoundedFormulaInf κ Empty n).Realize w b := by
-  obtain ⟨i, rfl⟩ := exists_eq_var t₁
-  obtain ⟨j, rfl⟩ := exists_eq_var t₂
+  obtain ⟨i, rfl⟩ := Term.exists_eq_var_inr_of_isRelational t₁
+  obtain ⟨j, rfl⟩ := Term.exists_eq_var_inr_of_isRelational t₂
   simpa using ((sameAtomicType_iff a b).1 h).1 i j
 
 /-- Tuples of the same atomic type satisfy the same relations applied to terms. -/
@@ -173,7 +167,7 @@ private theorem SameAtomicType.realize_rel_iff (h : SameAtomicType (L := L) a b)
     (R : L.Relations l) (ts : Fin l → L.Term (Empty ⊕ Fin n)) (v : Empty → M) (w : Empty → N) :
     (BoundedFormulaInf.rel R ts : L.BoundedFormulaInf κ Empty n).Realize v a ↔
       (BoundedFormulaInf.rel R ts : L.BoundedFormulaInf κ Empty n).Realize w b := by
-  choose g hg using fun i => exists_eq_var (ts i)
+  choose g hg using fun i => Term.exists_eq_var_inr_of_isRelational (ts i)
   obtain rfl : ts = fun i => Term.var (Sum.inr (g i)) := funext hg
   simpa [Function.comp_def] using ((sameAtomicType_iff a b).1 h).2 R g
 

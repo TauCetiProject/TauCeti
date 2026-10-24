@@ -54,11 +54,11 @@ instance succOrder : SuccOrder (α ⊕ₗ β) where
 
 /-- The successor of an element of the left summand is its successor there. -/
 @[simp]
-theorem succ_toLex_inl (a : α) : succ (toLex (inl a : α ⊕ β)) = toLex (inl (succ a)) := (rfl)
+theorem succ_inl (a : α) : succ (toLex (inl a : α ⊕ β)) = toLex (inl (succ a)) := (rfl)
 
 /-- The successor of an element of the right summand is its successor there. -/
 @[simp]
-theorem succ_toLex_inr (b : β) : succ (toLex (inr b : α ⊕ β)) = toLex (inr (succ b)) := (rfl)
+theorem succ_inr (b : β) : succ (toLex (inr b : α ⊕ β)) = toLex (inr (succ b)) := (rfl)
 
 end Succ
 
@@ -89,11 +89,11 @@ instance predOrder : PredOrder (α ⊕ₗ β) where
 
 /-- The predecessor of an element of the left summand is its predecessor there. -/
 @[simp]
-theorem pred_toLex_inl (a : α) : pred (toLex (inl a : α ⊕ β)) = toLex (inl (pred a)) := (rfl)
+theorem pred_inl (a : α) : pred (toLex (inl a : α ⊕ β)) = toLex (inl (pred a)) := (rfl)
 
 /-- The predecessor of an element of the right summand is its predecessor there. -/
 @[simp]
-theorem pred_toLex_inr (b : β) : pred (toLex (inr b : α ⊕ β)) = toLex (inr (pred b)) := (rfl)
+theorem pred_inr (b : β) : pred (toLex (inr b : α ⊕ β)) = toLex (inr (pred b)) := (rfl)
 
 end Pred
 
