@@ -184,12 +184,8 @@ theorem character_indFDRep_sum_quotient {k : Type u} {G : Type v} [Field k] [Gro
       apply Fintype.sum_equiv e
       intro q
       refine Function.indTerm_eq_of_mk_eq _ (Rep.character_mem_classFunction A'.ρ) _ _ _ ?_
-      have heq : e q = QuotientGroup.mk q.out⁻¹ := by
-        calc
-          e q = e (Quotient.mk'' q.out) :=
-            congrArg e (Quotient.out_eq' q).symm
-          _ = QuotientGroup.mk q.out⁻¹ :=
-            QuotientGroup.quotientRightRelEquivQuotientLeftRel_mk q.out
+      have heq : e q = QuotientGroup.mk q.out⁻¹ :=
+        QuotientGroup.quotientRightRelEquivQuotientLeftRel_apply q
       exact heq.symm.trans (Quotient.out_eq' (e q)).symm
     _ = _ := by
       apply Finset.sum_congr rfl

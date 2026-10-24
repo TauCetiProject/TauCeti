@@ -73,8 +73,7 @@ theorem indLeftCosetCoinvariantEquiv_ρ_apply (A : Rep.{max w u} k S) (g : G)
     indLeftCosetCoinvariantEquiv_apply]
   let e := QuotientGroup.quotientRightRelEquivQuotientLeftRel S
   have hq : q = (((e.symm q).out⁻¹ : G) : G ⧸ S) := by
-    rw [← QuotientGroup.quotientRightRelEquivQuotientLeftRel_mk, Quotient.out_eq',
-      e.apply_symm_apply]
+    rw [← QuotientGroup.quotientRightRelEquivQuotientLeftRel_apply, e.apply_symm_apply]
   congr 2
   apply congrArg (indSubtypeEquivPi A x)
   conv_rhs => rw [hq]
@@ -128,7 +127,6 @@ theorem indLeftCosetCoinvariantEquiv_symm_single (A : Rep.{max w u} k S)
   rw [LinearEquiv.apply_symm_apply]
   simp only [Representation.IndV.mk, LinearMap.comp_apply, TensorProduct.mk_apply,
     indLeftCosetCoinvariantEquiv_mk, rightCosetFactor_out, inv_one, map_one, Module.End.one_apply]
-  rw [← QuotientGroup.quotientRightRelEquivQuotientLeftRel_mk, Quotient.out_eq',
-    Equiv.apply_symm_apply]
+  rw [← QuotientGroup.quotientRightRelEquivQuotientLeftRel_apply, Equiv.apply_symm_apply]
 
 end Rep

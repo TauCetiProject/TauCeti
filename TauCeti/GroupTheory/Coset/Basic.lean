@@ -203,6 +203,14 @@ theorem quotientRightRelEquivQuotientLeftRel_mk (x : G) :
     quotientRightRelEquivQuotientLeftRel H (Quotient.mk'' x) = (x⁻¹ : G) :=
   rfl
 
+/-- The right-to-left-coset equivalence sends a right coset to the left coset of the inverse
+of its chosen representative. -/
+@[to_additive /-- The right-to-left-coset equivalence sends a right coset to the left coset of
+the negative of its chosen representative. -/]
+theorem quotientRightRelEquivQuotientLeftRel_apply (q : Quotient (rightRel H)) :
+    quotientRightRelEquivQuotientLeftRel H q = (q.out⁻¹ : G) := by
+  rw [← quotientRightRelEquivQuotientLeftRel_mk, Quotient.out_eq']
+
 /-- The inverse of the right-to-left-coset equivalence sends the left coset of `x` to the right
 coset of `x⁻¹`. -/
 @[to_additive (attr := simp) /-- The inverse of the right-to-left-coset equivalence sends the left
