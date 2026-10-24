@@ -52,6 +52,8 @@ labels.
   the empty family, is free.
 * `TauCeti.isFreelyIndependent_domRestrict_iff` — for a normalised functional, members equal to the
   scalars may be added to or removed from a free family.
+* `TauCeti.isFreelyIndependent_iff_centered_prod` — for a normalised functional, test arbitrary
+  alternating words by subtracting each letter's expectation.
 * `TauCeti.IsFreelyIndependent.apply_mul_of_ne` — the first mixed moment factorises,
   `φ (a * b) = φ a * φ b`; `TauCeti.IsFreelyIndependent.apply_mul_mul_of_ne` and
   `TauCeti.IsFreelyIndependent.apply_mul_mul_mul_of_ne` compute the alternating mixed moments of
@@ -99,6 +101,34 @@ theorem isFreelyIndependent_iff {φ : A →ₗ[R] R} {B : ι → Subalgebra R A}
       ∀ w : List (ι × A), w ≠ [] → (w.map Prod.fst).IsChain (· ≠ ·) →
         (∀ x ∈ w, x.2 ∈ B x.1) → (∀ x ∈ w, φ x.2 = 0) → φ (w.map Prod.snd).prod = 0 :=
   Iff.rfl
+
+/-- For a normalised functional over a ring, freeness can be tested on arbitrary alternating
+words by subtracting each letter's scalar expectation. No centring hypothesis on the letters is
+needed. -/
+theorem isFreelyIndependent_iff_centered_prod {R A ι : Type*} [CommRing R] [Ring A]
+    [Algebra R A] {φ : A →ₗ[R] R} (hφ : φ 1 = 1) {B : ι → Subalgebra R A} :
+    IsFreelyIndependent φ B ↔
+      ∀ w : List (ι × A), w ≠ [] → (w.map Prod.fst).IsChain (· ≠ ·) →
+        (∀ x ∈ w, x.2 ∈ B x.1) →
+          φ (w.map fun x ↦ x.2 - algebraMap R A (φ x.2)).prod = 0 := by
+  constructor
+  · intro h w hne halt hw
+    let v := w.map fun x ↦ (x.1, x.2 - algebraMap R A (φ x.2))
+    have hvfst : v.map Prod.fst = w.map Prod.fst := by simp [v, List.map_map]
+    have hv := h v (by simpa [v] using hne) (hvfst ▸ halt) (by
+      rintro _ hx
+      simp only [v, List.mem_map] at hx
+      obtain ⟨x, hx, rfl⟩ := hx
+      exact (B x.1).sub_mem (hw x hx) ((B x.1).algebraMap_mem _)) (by
+      rintro _ hx
+      simp only [v, List.mem_map] at hx
+      obtain ⟨x, _, rfl⟩ := hx
+      simp [Algebra.algebraMap_eq_smul_one, hφ])
+    simpa only [v, List.map_map, Function.comp_def] using hv
+  · intro h w hne halt hw hc
+    have heq : (w.map fun x ↦ x.2 - algebraMap R A (φ x.2)) = w.map Prod.snd :=
+      List.map_congr_left fun x hx ↦ by simp [hc x hx]
+    simpa only [heq] using h w hne halt hw
 
 /-- The values `a₁ * ⋯ * aₙ` of the nonempty words `[(i₁, a₁), …, (iₙ, aₙ)]` whose consecutive
 labels are distinct and whose letters satisfy `aⱼ ∈ B iⱼ` and `φ aⱼ = 0`: the values of the

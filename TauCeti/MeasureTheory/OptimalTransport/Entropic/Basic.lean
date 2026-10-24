@@ -634,7 +634,7 @@ private theorem eq_withDensity_tilted_of_eq_withDensity [IsProbabilityMeasure μ
   rw [hexponent, Real.exp_sub, Real.exp_add, Real.exp_log hZ, div_mul_eq_mul_div]
 
 /-- Changing the potentials on null sets does not change a Gibbs density against `μ.prod ν`. -/
-private theorem withDensity_exp_congr_ae [SFinite ν] {φ₀ : X → ℝ} {ψ₀ : Y → ℝ}
+private theorem withDensity_exp_congr_ae {φ₀ : X → ℝ} {ψ₀ : Y → ℝ}
     (hφ : φ =ᵐ[μ] φ₀) (hψ : ψ =ᵐ[ν] ψ₀) :
     ((μ.prod ν).withDensity fun z ↦
       ENNReal.ofReal (Real.exp ((φ z.1 + ψ z.2 - (c z).toReal) / ε))) =
