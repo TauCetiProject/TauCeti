@@ -23,6 +23,15 @@ free group and under the quotient map to a presented group.
 
 public section
 
+namespace TauCeti.PresentedGroup
+
+/-- The quotient map sends a free generator to the corresponding presented generator. -/
+@[simp]
+theorem mk_of {α : Type*} (rels : Set (FreeGroup α)) (x : α) :
+    _root_.PresentedGroup.mk rels (FreeGroup.of x) = _root_.PresentedGroup.of x := (rfl)
+
+end TauCeti.PresentedGroup
+
 namespace MonoidHom
 
 /-- A homomorphism out of a free group evaluates on the word `L` as the product of the images of

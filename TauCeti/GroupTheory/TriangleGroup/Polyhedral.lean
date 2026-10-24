@@ -312,16 +312,12 @@ private def polyhedralRelators (n : ℕ) : List (List (Fin 2)) :=
 
 private theorem prod_polyhedralRelators (n : ℕ) :
     ∀ r ∈ polyhedralRelators n, (r.map ![x 2 3 n, y 2 3 n]).prod = 1 := by
-  have hxy : (x 2 3 n * y 2 3 n) ^ n = 1 := by
-    -- Express `(x * y) ^ n` as the conjugate by `x` of the known relation `(y * x) ^ n`.
-    rw [show x 2 3 n * y 2 3 n = x 2 3 n * (y 2 3 n * x 2 3 n) * (x 2 3 n)⁻¹ by group,
-      conj_pow, y_mul_x_pow, mul_one, mul_inv_cancel]
   simp only [polyhedralRelators, List.mem_cons, List.not_mem_nil, or_false]
   rintro r (rfl | rfl | rfl | rfl)
   · simpa [pow_two] using x_pow 2 3 n
   · simpa [pow_three] using y_pow 2 3 n
   · simp [List.map_flatten, List.prod_flatten]
-  · simpa [List.map_flatten, List.prod_flatten] using hxy
+  · simp [List.map_flatten, List.prod_flatten]
 
 /-- A certified coset table for `⟨y⟩` in `Δ(2, 3, n)` on `k` cosets shows that `Δ(2, 3, n)` is
 finite of order at most `3 * k`. -/

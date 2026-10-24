@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.SidePairing.Relations
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.SidePairing.Tessellation
-public import Mathlib.GroupTheory.PresentedGroup
+public import TauCeti.GroupTheory.PresentedGroup
 import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.SidePairing.Macbeath
 import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.SidePairing.Neighbours
 
@@ -100,6 +100,14 @@ theorem relatorQuotient_sideRelator (i : Fin n) :
     PresentedGroup.mk σ.relators (σ.sideRelator i) = 1 :=
   PresentedGroup.one_of_mem (σ.sideRelator_mem_relators i)
 
+/-- Paired sides give inverse generators in the relator quotient. -/
+@[simp]
+theorem relatorQuotient_of_pair (i : Fin n) :
+    (PresentedGroup.of (σ.pair i) : σ.RelatorQuotient) = (PresentedGroup.of i)⁻¹ := by
+  apply eq_inv_of_mul_eq_one_left
+  simpa only [sideRelator_def, map_mul, TauCeti.PresentedGroup.mk_of] using
+    σ.relatorQuotient_sideRelator i
+
 /-- A finite-vertex cycle word has order dividing that of its cycle transformation in the
 relator quotient. -/
 @[simp]
@@ -153,7 +161,7 @@ theorem relatorQuotientTo_mk {Γ : Subgroup PSL(2, ℝ)} (hmap : ∀ i, σ.map i
       FreeGroup.lift (σ.generatorsIn hmap) w := by
   exact FreeGroup.lift_unique
     ((σ.relatorQuotientTo hmap).comp (PresentedGroup.mk σ.relators))
-    (fun i => by simpa [PresentedGroup.of] using σ.relatorQuotientTo_of hmap i)
+    (fun i => by simp)
 
 /-- The cycle word at a finite vertex has exactly the same order in the relator quotient as
 its transformation. Relations at other sides and vertices cannot shorten this order. -/
@@ -251,7 +259,7 @@ private theorem of_eq_inv_mk_partialCycleWord {i j : Fin n} {z : ℍ} (hj : P.ve
       rw [h1, h, inv_inv]
     rw [σ.relatorQuotient_partialCycleWord_eq_of_partialCycleMap_eq hj hm1, partialCycleWord_succ,
       Function.iterate_zero_apply, partialCycleWord_zero, mul_one, eq_inv_iff_mul_eq_one]
-    simpa [sideRelator_def, PresentedGroup.of] using σ.relatorQuotient_sideRelator (σ.pair i)
+    simp
   · -- the vertex ends side `pair i`, so the map of side `i` closes the cycle at `vertex i`
     have hi : P.vertex i = .inl ((σ.map i)⁻¹ • z) := by
       rw [← Sum.smul_inl, ← hj, ← σ.map_smul_vertex, inv_smul_smul]
@@ -399,7 +407,7 @@ private theorem sideWord_mul_sideWord_inv (hmap : ∀ i, σ.map i ∈ Γ)
   · rw [inv_one, σ.sideWord_one hmap hdisj, one_mul]
   · rw [← map_pair, σ.sideWord_eq hmap hdisj (Or.inr (Or.inl ⟨i, rfl, rfl⟩)),
       σ.sideWord_eq hmap hdisj (Or.inr (Or.inl ⟨_, rfl, rfl⟩))]
-    simpa [sideRelator_def, PresentedGroup.of] using σ.relatorQuotient_sideRelator (σ.pair i)
+    simp
   · simpa [σ.sideWord_one hmap hdisj] using σ.sideWord_inv_partialCycleMap_mul hmap hdisj hj hm 0
 
 /-- The Macbeath relations hold between side words: if the polygon meets `s • P` and

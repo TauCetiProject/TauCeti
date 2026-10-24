@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex.DoubleTriangle
-public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.SidePairing.Basic
+public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.SidePairing.Relations
 import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.SidePairing.CycleOrder
 
 /-!
@@ -43,6 +43,7 @@ relations of the triangle group.
   the vertex cycles.
 * `ConvexPolygon.doubleTriangleSidePairing_cycleAngleSum_zero` and its companions: the cycle angle
   sums are twice the angles of `P`.
+* `ConvexPolygon.doubleTriangleSidePairing_cycleWord`: the words read along the vertex cycles.
 * `ConvexPolygon.doubleTriangleSidePairing_cycleMap_zero` and its companions: the cycle
   transformations as products of reflections.
 * `ConvexPolygon.orderOf_doubleTriangleSidePairing_cycleMap_zero`,
@@ -162,6 +163,16 @@ theorem doubleTriangleSidePairing_cycleAngleSum_three :
     (P.doubleTriangleSidePairing h₀ h₁).cycleAngleSum 3 = 2 * P.interiorAngle 2 := by
   simp [SidePairing.cycleAngleSum_eq_sum_range, Finset.sum_range_succ,
     interiorAngle_doubleTriangle_one, interiorAngle_doubleTriangle_three, two_mul]
+
+/-- The four cycle words of the doubled triangle, in vertex order. -/
+@[simp]
+theorem doubleTriangleSidePairing_cycleWord :
+    (P.doubleTriangleSidePairing h₀ h₁).cycleWord =
+      ![FreeGroup.of 0, FreeGroup.of 3 * FreeGroup.of 1,
+        FreeGroup.of 2, FreeGroup.of 1 * FreeGroup.of 3] := by
+  funext j
+  fin_cases j <;> simp [SidePairing.cycleWord_def, SidePairing.partialCycleWord_succ,
+    SidePairing.next_apply, Fin.rev]
 
 /-- The cycle transformation at `P 0` is the product of the reflections in the sides `0` and `2`
 of `P` meeting there. -/
