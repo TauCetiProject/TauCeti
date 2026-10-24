@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Distribution.TestFunction.Translation
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Analysis.Normed.Module.Trace
 import Mathlib.Analysis.InnerProductSpace.Trace
+import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 
 /-!
 # The divergence of a test vector field
@@ -31,6 +32,8 @@ total variation of a function and the perimeter of a set are suprema of the pair
   field from `Ω'` to a larger open set `Ω`.
 * `TestFunction.divergenceCLM_postcompCLM_toSpanSingleton`: the divergence of the vector field
   `φ v` is the directional derivative `∂_v φ`.
+* `TestFunction.divergenceCLM_apply_eq_deriv`: on the real line, the divergence of a test
+  function is its derivative.
 * `TestFunction.divergenceCLM_apply_eq_sum`: in an orthonormal basis `b`, it is the sum of the
   derivatives of the components `⟪b i, φ⟫` in the directions `b i`.
 * `TauCeti.divergenceCLM_translateTestFunction`: the divergence of a translated test vector field
@@ -83,6 +86,15 @@ theorem divergenceCLM_postcompCLM_toSpanSingleton (φ : 𝓓(Ω, ℝ)) (v : E) :
   rw [divergenceCLM_apply, hcoe, fderiv_smul_const hφ, lineDerivOp_eq_lineDerivCLM ℝ,
     lineDerivCLM_apply_of_le le_top, hφ.lineDeriv_eq_fderiv]
   exact LinearMap.trace_smulRight _ _
+
+/-- On the real line, a test function is a test vector field whose divergence is its
+derivative. -/
+theorem divergenceCLM_apply_eq_deriv {Ω : Opens ℝ} (φ : 𝓓(Ω, ℝ)) (x : ℝ) :
+    divergenceCLM φ x = deriv φ x := by
+  have hφ : postcompCLM (ContinuousLinearMap.toSpanSingleton ℝ (1 : ℝ)) φ = φ := by
+    ext; simp
+  conv_lhs => rw [← hφ]
+  rw [divergenceCLM_postcompCLM_toSpanSingleton, lineDerivOp_one_apply_eq_deriv]
 
 section InnerProductSpace
 

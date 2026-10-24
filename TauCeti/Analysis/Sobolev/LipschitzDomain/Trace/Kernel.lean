@@ -221,18 +221,12 @@ theorem W1p.exists_iInf_ker_lipschitzChartTrace_eq_of_isLipschitzDomainWith {L :
             (W1p.lipschitzChartTrace hq (h i) (ψ i) (hψ i) (hM i) (hψM i) (hgM i)
               (hs i)).toLinearMap =
           w1p0Submodule volume Ω q := by
-  obtain ⟨t, e, φ, a, b, ψ₀, ψ, hchart, ⟨hψ₀, -, hψ₀c, hψ₀Ω⟩, hψ, hsum⟩ :=
-    hΩ.exists_contDiff_partitionOfUnity hb
-  choose M hM hψM hgM using fun i : t =>
-    ((hψ i i.2).1.of_le (by simp)).exists_abs_le_and_norm_gradient_le (hψ i i.2).2.2.1
-  have hs (i : t) : tsupport (ψ i) ⊆ e i ⁻¹' normalCylinder (a i) (b i) :=
-    (hψ i i.2).2.2.2.trans (preimage_mono (normalCylinder_mono (by
-      nlinarith [(hchart i i.2).2.2.2, L.coe_nonneg,
-        ((Set.isLipschitzChartWith_iff ..).1 (hchart i i.2).2.2.1).2.1]) le_rfl))
-  refine ⟨t, fun i => e i, fun i => φ i, fun i => a i, fun i => b i,
-    fun i => (hchart i i.2).2.2.1, fun i => ψ i, fun i => (hψ i i.2).1, M, hM,
-    fun i x _ => hψM i x, fun i x _ => hgM i x, hs, fun q _ hq => ?_⟩
+  obtain ⟨t, e, φ, a, b, ψ₀, ψ, M, hchart, ⟨hψ₀, hψ₀c, hψ₀Ω⟩, hψ, hsum⟩ :=
+    hΩ.exists_lipschitzChart_cutoffs hb
+  choose hψ hM hψM hgM hs using hψ
+  refine ⟨t, e, φ, a, b, hchart, ψ, hψ, M, hM, fun i x _ => hψM i x, fun i x _ => hgM i x, hs,
+    fun q _ hq => ?_⟩
   exact W1p.iInf_ker_lipschitzChartTrace hq _ hψ₀ hψ₀c hψ₀Ω _ _ _ _ _
-    fun x hx => by rw [← hsum x (subset_closure hx), Finset.sum_coe_sort t (fun i => ψ i x)]
+    fun x hx => hsum x (subset_closure hx)
 
 end TauCeti

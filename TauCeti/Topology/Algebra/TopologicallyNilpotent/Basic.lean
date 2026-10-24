@@ -5,6 +5,7 @@ Authors: Chris Birkbeck
 -/
 module
 
+public import Mathlib.RingTheory.Jacobson.Ideal
 public import Mathlib.Topology.Algebra.TopologicallyNilpotent
 
 /-!
@@ -29,8 +30,15 @@ parity `n` has.
   topologically nilpotent.
 * `eventually_mul_pow_mem_of_isTopologicallyNilpotent`, and its `.exists` form: a topologically
   nilpotent element absorbs any fixed element into any open subring.
+* `IsTopologicallyNilpotent.of_pow` : an element with a topologically nilpotent positive power is
+  topologically nilpotent.
 * `Prod.isTopologicallyNilpotent_iff` : an element of a product is topologically nilpotent exactly
   when both of its components are.
+* `IsTopologicallyNilpotent.mem_jacobson_bot`, `topologicalNilradical_le_jacobson_bot` : if an
+  open ideal lies in the Jacobson radical (for instance, the ring is adically complete with respect
+  to it), so does every topologically nilpotent element.
+* `IsTopologicallyNilpotent.isUnit_add_left` : when the topological nilradical lies in the
+  Jacobson radical, a unit plus a topologically nilpotent element is a unit.
 
 ## Provenance
 
@@ -115,6 +123,29 @@ theorem exists_mul_pow_mem_of_isTopologicallyNilpotent {s : A}
 
 end Absorb
 
+section Pow
+
+variable {M : Type*} [MonoidWithZero M] [TopologicalSpace M] [SeparatelyContinuousMul M]
+
+/-- **An element with a topologically nilpotent positive power is topologically nilpotent.** -/
+theorem IsTopologicallyNilpotent.of_pow {a : M} {m : ℕ} (hm : m ≠ 0)
+    (h : IsTopologicallyNilpotent (a ^ m)) : IsTopologicallyNilpotent a := by
+  -- write `a ^ k = a ^ (k % m) * (a ^ m) ^ (k / m)`; the finitely many factors `a ^ r` with
+  -- `r < m` are absorbed by continuity of multiplication by a constant
+  intro U hU
+  -- eventually in `q`, every `a ^ r * (a ^ m) ^ q` with `r < m` lies in `U`
+  have hr : ∀ᶠ q : ℕ in atTop, ∀ r ∈ Set.Iio m, a ^ r * (a ^ m) ^ q ∈ U :=
+    (eventually_all_finite (Set.finite_Iio m)).mpr fun r _ ↦
+      h ((continuous_const_mul (a ^ r)).tendsto' 0 0 (mul_zero _) hU)
+  obtain ⟨N, hN⟩ := eventually_atTop.mp hr
+  rw [Filter.mem_map, mem_atTop_sets]
+  refine ⟨m * N, fun k hk ↦ ?_⟩
+  have hq : N ≤ k / m := (Nat.le_div_iff_mul_le (Nat.pos_of_ne_zero hm)).mpr (by rwa [mul_comm])
+  have hk' := hN (k / m) hq (k % m) (Nat.mod_lt k (Nat.pos_of_ne_zero hm))
+  rwa [← pow_mul, ← pow_add, Nat.mod_add_div] at hk'
+
+end Pow
+
 section Prod
 
 variable {M N : Type*} [MonoidWithZero M] [MonoidWithZero N] [TopologicalSpace M]
@@ -130,5 +161,38 @@ theorem Prod.isTopologicallyNilpotent_iff {x : M × N} :
     Prod.snd_zero]
 
 end Prod
+
+section Jacobson
+
+variable {R : Type*} [CommRing R] [TopologicalSpace R]
+
+/-- **Topologically nilpotent elements lie in the Jacobson radical** as soon as some open ideal
+`I` does, for instance when `R` is `I`-adically complete (`IsAdicComplete.le_jacobson_bot`): a
+power of a topologically nilpotent element lies in `I`, and the Jacobson radical is radical. -/
+theorem IsTopologicallyNilpotent.mem_jacobson_bot {I : Ideal R} (hI : IsOpen (I : Set R))
+    (hIJ : I ≤ (⊥ : Ideal R).jacobson) {a : R} (ha : IsTopologicallyNilpotent a) :
+    a ∈ (⊥ : Ideal R).jacobson :=
+  (Ideal.isRadical_jacobson ⊥).radical_le_iff.mpr hIJ
+    (ha.exists_pow_mem_of_mem_nhds (hI.mem_nhds I.zero_mem))
+
+/-- In a linearly topologized ring, the topological nilradical lies in the Jacobson radical as soon
+as some open ideal does. -/
+theorem topologicalNilradical_le_jacobson_bot [IsLinearTopology R R] {I : Ideal R}
+    (hI : IsOpen (I : Set R)) (hIJ : I ≤ (⊥ : Ideal R).jacobson) :
+    topologicalNilradical R ≤ (⊥ : Ideal R).jacobson := fun _ ha ↦
+  (IsTopologicallyNilpotent.mem_topologicalNilradical_iff.mp ha).mem_jacobson_bot hI hIJ
+
+/-- When the topological nilradical lies in the Jacobson radical (for instance, by
+`topologicalNilradical_le_jacobson_bot`), a unit plus a topologically nilpotent element is a unit.
+Compare `IsNilpotent.isUnit_add_left_of_commute`. -/
+theorem IsTopologicallyNilpotent.isUnit_add_left [IsLinearTopology R R]
+    (hR : topologicalNilradical R ≤ (⊥ : Ideal R).jacobson) {t u : R}
+    (ht : IsTopologicallyNilpotent t) (hu : IsUnit u) : IsUnit (u + t) := by
+  obtain ⟨u, rfl⟩ := hu
+  have h := Ideal.mem_jacobson_bot.mp
+    (hR (IsTopologicallyNilpotent.mem_topologicalNilradical_iff.mpr ht)) ↑u⁻¹
+  simpa [mul_add, mul_left_comm (u : R) t, add_comm] using u.isUnit.mul h
+
+end Jacobson
 
 end

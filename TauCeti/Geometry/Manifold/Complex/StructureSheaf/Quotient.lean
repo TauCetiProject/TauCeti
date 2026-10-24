@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.NodeLocalRing
 public import TauCeti.Topology.Category.TopCat.Quotient
 import Mathlib.Algebra.Category.Ring.FilteredColimits
+import TauCeti.Topology.Sheaves.CommRingCat
 
 /-!
 # Holomorphic functions on normalization quotients
@@ -21,7 +22,15 @@ hypersurface charts or stability assumptions enter this construction.
 `quotientSheaf` is a subsheaf of the direct image of the native holomorphic structure sheaf.
 `quotientStalkBranch` restricts its germs to a point of the normalization. At two identified
 points, `quotientStalkToNode` combines these restrictions into the existing branch-pair node
-ring. This file constructs that comparison homomorphism, not an isomorphism of node stalks.
+ring.
+
+When the identifications are isolated, these maps are isomorphisms. At a point near which no two
+points are identified, `quotientStalkBranch_bijective` shows that the stalk of the quotient sheaf
+is the holomorphic stalk of the normalization. At two distinct points `x` and `y` identified only
+with each other, near which nothing else is identified, `quotientStalkToNode_bijective` shows
+that the stalk is the branch-pair node ring: a germ on the quotient is the same as a pair of
+holomorphic germs at `x` and `y` with equal values. The node case needs the normalization to be
+Hausdorff, so that the two branch germs can be glued on disjoint neighbourhoods.
 
 The construction works for arbitrary equivalence relations: the sheaf and the comparison maps
 do not need finiteness of the flags, compactness, or connectedness of the curve. It makes no
@@ -249,5 +258,205 @@ theorem snd_quotientStalkToNode (x y : X) (hxy : s x y)
     nodeLocalRing.snd I I x y (quotientStalkToNode I s x y hxy f) =
       quotientStalkBranch I s _ y (Quotient.sound hxy).symm f :=
   nodeLocalRing.snd_lift _ _ _ _
+
+/-! ### Stalks at smooth points and at nodes
+
+Away from the identified points, and at a pair of points identified only with each other, the
+stalks of the quotient sheaf are the expected local rings. The hypotheses are local: near the
+relevant points no other identifications occur. -/
+
+section Stalk
+
+open Topology
+
+variable {I s}
+
+/-- On `N`, a point is identified only with itself, or else both points lie in `{x, y}`. -/
+private def IsPairNhd (s : Setoid X) (x y : X) (N : Set X) : Prop :=
+  ∀ w ∈ N, ∀ v, s w v → v = w ∨ ((w = x ∨ w = y) ∧ (v = x ∨ v = y))
+
+/-- The local hypotheses at an identified pair give an open neighbourhood of both points on
+which nothing else is identified. -/
+private theorem exists_isPairNhd {x y : X} (hclass : ∀ w, s x w → w = x ∨ w = y)
+    (hx : ∀ᶠ w in 𝓝 x, ∀ v, s w v → v = w ∨ s x w)
+    (hy : ∀ᶠ w in 𝓝 y, ∀ v, s w v → v = w ∨ s x w) :
+    ∃ N : Opens X, x ∈ N ∧ y ∈ N ∧ IsPairNhd s x y N := by
+  obtain ⟨A, hA, hAo, hxA⟩ := eventually_nhds_iff.mp hx
+  obtain ⟨B, hB, hBo, hyB⟩ := eventually_nhds_iff.mp hy
+  refine ⟨⟨A ∪ B, hAo.union hBo⟩, Or.inl hxA, Or.inr hyB, fun w hw v hwv ↦ ?_⟩
+  have key : v = w ∨ s x w := hw.elim (fun h ↦ hA w h v hwv) (fun h ↦ hB w h v hwv)
+  exact key.imp_right fun hxw ↦ ⟨hclass w hxw, hclass v (s.trans' hxw hwv)⟩
+
+/-- An open subset of a pair neighbourhood containing both points of the pair is saturated. -/
+private theorem saturated_of_isPairNhd {x y : X} {N : Set X} (hN : IsPairNhd s x y N)
+    {V : Opens X} (hVN : (V : Set X) ⊆ N) (hxV : x ∈ V) (hyV : y ∈ V) :
+    ∀ ⦃w v⦄, w ∈ V → s w v → v ∈ V := by
+  intro w v hw hwv
+  rcases hN w (hVN hw) v hwv with rfl | ⟨-, rfl | rfl⟩
+  exacts [hw, hxV, hyV]
+
+/-- A holomorphic function on an open set of a pair neighbourhood descends to the quotient as
+soon as it takes equal values at the two points of the pair. -/
+private def descendSection {x y : X} {N : Set X} (hN : IsPairNhd s x y N) (V : Opens X)
+    (hVN : (V : Set X) ⊆ N) (hxV : x ∈ V) (hyV : y ∈ V)
+    (τ : (holomorphicStructureSheaf I X).obj.obj (op V)) (hτ : τ ⟨x, hxV⟩ = τ ⟨y, hyV⟩) :
+    (quotientSheaf I s).obj.obj
+      (op (V.imageQuotientMk (saturated_of_isPairNhd hN hVN hxV hyV))) :=
+  (quotientSheafSectionsEquiv I s _).symm
+    ⟨(holomorphicStructureSheaf I X).obj.map
+      (homOfLE fun _ hw ↦ (Opens.mem_map_imageQuotientMk V _).mp hw).op τ, by
+      intro w v hw hv hwv
+      simp only [map_apply]
+      rcases hN w (hVN ((Opens.mem_map_imageQuotientMk V
+        (saturated_of_isPairNhd hN hVN hxV hyV)).mp hw)) v hwv with rfl | ⟨hw' | hw', hv' | hv'⟩ <;>
+        (try subst w) <;> (try subst v) <;> first | rfl | exact hτ | exact hτ.symm⟩
+
+/-- The branch germs of a descended section are the germs of the original function. -/
+private theorem quotientStalkBranch_germ_descendSection {x y : X} {N : Set X}
+    (hN : IsPairNhd s x y N) (V : Opens X) (hVN : (V : Set X) ⊆ N) (hxV : x ∈ V) (hyV : y ∈ V)
+    (τ : (holomorphicStructureSheaf I X).obj.obj (op V)) (hτ : τ ⟨x, hxV⟩ = τ ⟨y, hyV⟩)
+    (z : Quotient s) (w : X) (hw : Quotient.mk s w = z) (hwV : w ∈ V) :
+    quotientStalkBranch I s z w hw
+      (ConcreteCategory.hom ((quotientSheaf I s).presheaf.germ _ z
+        (hw ▸ (Opens.mem_map_imageQuotientMk V
+          (saturated_of_isPairNhd hN hVN hxV hyV)).mpr hwV))
+        (descendSection hN V hVN hxV hyV τ hτ)) =
+      (holomorphicStructureSheaf I X).presheaf.germ V w hwV τ := by
+  rw [quotientStalkBranch_germ, descendSection, RingEquiv.apply_symm_apply]
+  exact TopCat.Presheaf.germ_res_apply _ _ _ _ _
+
+/-- A germ on the quotient vanishes if its two branch germs at an identified pair vanish. -/
+private theorem eq_zero_of_quotientStalkBranch {x y : X} (hxy : s x y) {N : Opens X}
+    (hN : IsPairNhd s x y N) (hxN : x ∈ N) (hyN : y ∈ N)
+    (f : (quotientSheaf I s).presheaf.stalk (Quotient.mk s x))
+    (hfx : quotientStalkBranch I s _ x rfl f = 0)
+    (hfy : quotientStalkBranch I s _ y (Quotient.sound hxy).symm f = 0) : f = 0 := by
+  obtain ⟨U, hzU, σ, rfl⟩ := (quotientSheaf I s).presheaf.exists_germ_eq f
+  rw [quotientStalkBranch_germ] at hfx hfy
+  have hxU : x ∈ (Opens.map (TopCat.quotientMk s)).obj U := by
+    rw [Opens.mem_map, TopCat.quotientMk_apply]
+    exact hzU
+  have hyU : y ∈ (Opens.map (TopCat.quotientMk s)).obj U := by
+    rw [Opens.mem_map, TopCat.quotientMk_apply, ← Quotient.sound hxy]
+    exact hzU
+  obtain ⟨A, hxA, iA, _, hA⟩ := (holomorphicStructureSheaf I X).presheaf.germ_eq x hxU hxU _ 0
+    (hfx.trans (map_zero _).symm)
+  obtain ⟨B, hyB, iB, _, hB⟩ := (holomorphicStructureSheaf I X).presheaf.germ_eq y hyU hyU _ 0
+    (hfy.trans (map_zero _).symm)
+  rw [map_zero] at hA hB
+  let V : Opens X := (A ⊓ N) ⊔ (B ⊓ N)
+  have hVN : (V : Set X) ⊆ N := sup_le inf_le_right inf_le_right
+  have hxV : x ∈ V := Or.inl ⟨hxA, hxN⟩
+  have hyV : y ∈ V := Or.inr ⟨hyB, hyN⟩
+  have hV := saturated_of_isPairNhd hN hVN hxV hyV
+  have hWU : V.imageQuotientMk hV ≤ U := by
+    intro z hz
+    obtain ⟨w, hw | hw, rfl⟩ := (Opens.mem_imageQuotientMk V hV).mp hz
+    exacts [iA.le hw.1, iB.le hw.1]
+  have hxW : Quotient.mk s x ∈ V.imageQuotientMk hV :=
+    (Opens.mem_map_imageQuotientMk V hV).mpr hxV
+  have h0 : (quotientSheaf I s).presheaf.map (homOfLE hWU).op σ = 0 := by
+    ext w
+    rw [quotientSheaf_map_val, map_zero]
+    obtain hw | hw := (Opens.mem_map_imageQuotientMk V hV).mp w.2
+    · simpa using congrArg (fun t ↦ t ⟨w, hw.1⟩) hA
+    · simpa using congrArg (fun t ↦ t ⟨w, hw.1⟩) hB
+  rw [← TopCat.Presheaf.germ_res_apply _ (homOfLE hWU) _ hxW, h0, map_zero]
+
+/-- A holomorphic function near an identified pair, with equal values at the two points, is the
+common branch restriction of a germ on the quotient. -/
+private theorem exists_quotientStalkBranch_eq {x y : X} (hxy : s x y) {N : Opens X}
+    (hN : IsPairNhd s x y N) (V : Opens X) (hVN : V ≤ N) (hxV : x ∈ V) (hyV : y ∈ V)
+    (τ : (holomorphicStructureSheaf I X).obj.obj (op V)) (hτ : τ ⟨x, hxV⟩ = τ ⟨y, hyV⟩) :
+    ∃ f : (quotientSheaf I s).presheaf.stalk (Quotient.mk s x),
+      quotientStalkBranch I s _ x rfl f =
+        (holomorphicStructureSheaf I X).presheaf.germ V x hxV τ ∧
+      quotientStalkBranch I s _ y (Quotient.sound hxy).symm f =
+        (holomorphicStructureSheaf I X).presheaf.germ V y hyV τ :=
+  ⟨_, quotientStalkBranch_germ_descendSection hN V hVN hxV hyV τ hτ _ x rfl hxV,
+    quotientStalkBranch_germ_descendSection hN V hVN hxV hyV τ hτ _ y _ hyV⟩
+
+/-- **Stalks at smooth points.** At a point of the normalization near which no two points are
+identified, restriction to the branch is an isomorphism from the stalk of the quotient sheaf to
+the holomorphic stalk of the normalization. -/
+theorem quotientStalkBranch_bijective (x : X) (hx : ∀ᶠ w in 𝓝 x, ∀ v, s w v → v = w) :
+    Function.Bijective (quotientStalkBranch I s (Quotient.mk s x) x rfl) := by
+  have hx' : ∀ᶠ w in 𝓝 x, ∀ v, s w v → v = w ∨ s x w :=
+    hx.mono fun w hw v hwv ↦ Or.inl (hw v hwv)
+  obtain ⟨N, hxN, -, hN⟩ := exists_isPairNhd (fun w hxw ↦ Or.inl (hx.self_of_nhds w hxw)) hx' hx'
+  refine ⟨(injective_iff_map_eq_zero _).mpr fun f hf ↦
+    eq_zero_of_quotientStalkBranch (s.refl' x) hN hxN hxN f hf hf, fun g ↦ ?_⟩
+  obtain ⟨V, hxV, σ, rfl⟩ := (holomorphicStructureSheaf I X).presheaf.exists_germ_eq g
+  obtain ⟨f, hf, -⟩ := exists_quotientStalkBranch_eq (s.refl' x) hN (V ⊓ N) inf_le_right
+    ⟨hxV, hxN⟩ ⟨hxV, hxN⟩ ((holomorphicStructureSheaf I X).obj.map
+      (homOfLE inf_le_left).op σ) rfl
+  exact ⟨f, hf.trans (TopCat.Presheaf.germ_res_apply _ _ _ _ _)⟩
+
+/-- At two points identified with each other and with no other point, near which nothing else
+is identified, a germ on the quotient is determined by its two branch germs. -/
+theorem quotientStalkToNode_injective {x y : X} (hxy : s x y)
+    (hclass : ∀ w, s x w → w = x ∨ w = y)
+    (hx : ∀ᶠ w in 𝓝 x, ∀ v, s w v → v = w ∨ s x w)
+    (hy : ∀ᶠ w in 𝓝 y, ∀ v, s w v → v = w ∨ s x w) :
+    Function.Injective (quotientStalkToNode I s x y hxy) := by
+  obtain ⟨N, hxN, hyN, hN⟩ := exists_isPairNhd hclass hx hy
+  refine (injective_iff_map_eq_zero _).mpr fun f hf ↦
+    eq_zero_of_quotientStalkBranch hxy hN hxN hyN f ?_ ?_
+  · simpa using congrArg (nodeLocalRing.fst I I x y) hf
+  · simpa using congrArg (nodeLocalRing.snd I I x y) hf
+
+/-- At two distinct points of a Hausdorff normalization, identified with each other and with no
+other point, near which nothing else is identified, every pair of holomorphic branch germs with
+equal values comes from a germ on the quotient. -/
+theorem quotientStalkToNode_surjective [T2Space X] {x y : X} (hxy : s x y) (hne : x ≠ y)
+    (hclass : ∀ w, s x w → w = x ∨ w = y)
+    (hx : ∀ᶠ w in 𝓝 x, ∀ v, s w v → v = w ∨ s x w)
+    (hy : ∀ᶠ w in 𝓝 y, ∀ v, s w v → v = w ∨ s x w) :
+    Function.Surjective (quotientStalkToNode I s x y hxy) := by
+  obtain ⟨N, hxN, hyN, hN⟩ := exists_isPairNhd hclass hx hy
+  intro p
+  obtain ⟨V₁, hx₁, σ, hσ⟩ :=
+    (holomorphicStructureSheaf I X).presheaf.exists_germ_eq (nodeLocalRing.fst I I x y p)
+  obtain ⟨V₂, hy₂, ρ, hρ⟩ :=
+    (holomorphicStructureSheaf I X).presheaf.exists_germ_eq (nodeLocalRing.snd I I x y p)
+  obtain ⟨u, v, hu, hv, hxu, hyv, huv⟩ := t2_separation hne
+  -- Glue the two branch representatives on disjoint neighbourhoods of `x` and `y`.
+  obtain ⟨A, hxA, hA₁, hAu, hAN⟩ : ∃ A : Opens X, x ∈ A ∧ A ≤ V₁ ∧ (A : Set X) ⊆ u ∧ A ≤ N :=
+    ⟨V₁ ⊓ ⟨u, hu⟩ ⊓ N, ⟨⟨hx₁, hxu⟩, hxN⟩, inf_le_left.trans inf_le_left, fun _ h ↦ h.1.2,
+      inf_le_right⟩
+  obtain ⟨B, hyB, hB₂, hBv, hBN⟩ : ∃ B : Opens X, y ∈ B ∧ B ≤ V₂ ∧ (B : Set X) ⊆ v ∧ B ≤ N :=
+    ⟨V₂ ⊓ ⟨v, hv⟩ ⊓ N, ⟨⟨hy₂, hyv⟩, hyN⟩, inf_le_left.trans inf_le_left, fun _ h ↦ h.1.2,
+      inf_le_right⟩
+  have hxV : x ∈ A ⊔ B := Opens.mem_sup.mpr (Or.inl hxA)
+  have hyV : y ∈ A ⊔ B := Opens.mem_sup.mpr (Or.inr hyB)
+  obtain ⟨τ, hτA, hτB⟩ := (holomorphicStructureSheaf I X).exists_section_sup_of_disjoint
+    (Opens.coe_disjoint.mp (huv.mono hAu hBv))
+    ((holomorphicStructureSheaf I X).obj.map (homOfLE hA₁).op σ)
+    ((holomorphicStructureSheaf I X).obj.map (homOfLE hB₂).op ρ)
+  have hσρ : σ ⟨x, hx₁⟩ = ρ ⟨y, hy₂⟩ := by
+    rw [← eval_germ, ← eval_germ, hσ, hρ, nodeLocalRing.eval_fst, nodeLocalRing.eval_snd]
+  have h₁ := congrArg (fun t ↦ t ⟨x, hxA⟩) hτA
+  have h₂ := congrArg (fun t ↦ t ⟨y, hyB⟩) hτB
+  simp only [map_apply] at h₁ h₂
+  obtain ⟨f, hfx, hfy⟩ := exists_quotientStalkBranch_eq hxy hN (A ⊔ B)
+    (sup_le hAN hBN) hxV hyV τ (h₁.trans (hσρ.trans h₂.symm))
+  refine ⟨f, nodeLocalRing.ext ?_ ?_⟩
+  · rw [fst_quotientStalkToNode, hfx, ← hσ]
+    exact TopCat.Presheaf.germ_ext _ A hxA _ _ hτA
+  · rw [snd_quotientStalkToNode, hfy, ← hρ]
+    exact TopCat.Presheaf.germ_ext _ B hyB _ _ hτB
+
+/-- **Stalks at nodes.** Let `x ≠ y` be identified with each other and with no other point, and
+suppose no further identifications occur near `x` and `y`. Then the branch restrictions identify
+the stalk of the quotient sheaf at their common image with the branch-pair node ring. -/
+theorem quotientStalkToNode_bijective [T2Space X] {x y : X} (hxy : s x y) (hne : x ≠ y)
+    (hclass : ∀ w, s x w → w = x ∨ w = y)
+    (hx : ∀ᶠ w in 𝓝 x, ∀ v, s w v → v = w ∨ s x w)
+    (hy : ∀ᶠ w in 𝓝 y, ∀ v, s w v → v = w ∨ s x w) :
+    Function.Bijective (quotientStalkToNode I s x y hxy) :=
+  ⟨quotientStalkToNode_injective hxy hclass hx hy,
+    quotientStalkToNode_surjective hxy hne hclass hx hy⟩
+
+end Stalk
 
 end TauCeti.holomorphicStructureSheaf

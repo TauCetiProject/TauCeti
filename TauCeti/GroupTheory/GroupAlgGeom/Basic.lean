@@ -282,6 +282,17 @@ theorem map_eval {ιK : G →* K} (φ : GHom ι ιK) (w : GX G X) :
     φ (eval ι v w) = eval ιK (φ ∘ v) w :=
   DFunLike.congr_fun (comp_eval φ) w
 
+/-- Changing the coefficients along `f : K →* G` and renaming the variables along `e : Y → X`
+before evaluating at `v` is evaluation at `v ∘ e` with coefficients `ι ∘ f`. -/
+theorem eval_comp_map {Y : Type*} (f : K →* G) (e : Y → X) :
+    (eval ι v).comp (Monoid.Coprod.map f (FreeGroup.map e)) = eval (ι.comp f) (v ∘ e) :=
+  hom_ext (MonoidHom.ext fun _ => by simp) (FreeGroup.ext_hom _ _ fun _ => by simp)
+
+@[simp]
+theorem eval_map {Y : Type*} (f : K →* G) (e : Y → X) (w : GX K Y) :
+    eval ι v (Monoid.Coprod.map f (FreeGroup.map e) w) = eval (ι.comp f) (v ∘ e) w :=
+  DFunLike.congr_fun (eval_comp_map f e) w
+
 /-! ### Degenerate cases and noncommutativity of `G[X]` -/
 
 namespace GX

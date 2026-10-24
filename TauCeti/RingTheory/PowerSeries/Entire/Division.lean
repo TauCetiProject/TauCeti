@@ -19,7 +19,7 @@ import TauCeti.RingTheory.PowerSeries.Trunc
 import TauCeti.RingTheory.PowerSeries.Weierstrass.Division
 
 /-!
-# Division of entire power series by monic polynomials
+# Division of entire power series by polynomials with invertible leading coefficient
 
 Let `p` be a monic polynomial of degree `d` over a complete normed commutative ring `R`, and let
 `∑ bₖ Xᵏ` be the inverse of its reverse `Xᵈ p(1/X)`, a power series with constant coefficient
@@ -36,6 +36,11 @@ inner sums converge however fast the radius of `f` is tested
 quotient and remainder of ordinary polynomial division. Over an ultrametric ring with `‖1‖ = 1`,
 a monic polynomial is distinguished of its degree at every large radius, so the Weierstrass
 division estimate makes `q` and `r` unique among divisions with entire quotient.
+
+Normalising a polynomial with invertible leading coefficient reduces division to the monic
+case. The resulting entire quotient and polynomial remainder of smaller degree exist without
+an ultrametric hypothesis and are unique over an ultrametric ring with `‖1‖ = 1`. The
+coefficient norm need not be multiplicative, and the coefficient ring may have nilpotents.
 
 This is the division of entire series by polynomials used in the Fredholm theory of compact
 operators, whose Fredholm determinants are entire series.
@@ -76,6 +81,11 @@ operators, whose Fredholm determinants are entire series.
   the remainder of `g + p * q`, for a polynomial `g` and entire `q`, is `g %ₘ p`.
 * `PowerSeries.IsEntire.modByMonic_eq_zero_iff`: over an ultrametric ring with `‖1‖ = 1`, the
   remainder vanishes exactly when `p` divides `f` with entire quotient.
+* `TauCeti.PowerSeries.exists_entire_mul_add_eq`: division by a polynomial with invertible
+  leading coefficient, with entire quotient and polynomial remainder of smaller degree.
+* `TauCeti.PowerSeries.eq_and_eq_of_entire_mul_add_eq` and
+  `TauCeti.PowerSeries.existsUnique_entire_mul_add_eq`: uniqueness over an ultrametric ring
+  with `‖1‖ = 1`.
 
 ## References
 
@@ -562,3 +572,70 @@ end Ultrametric
 end NormedCommRing
 
 end PowerSeries
+
+namespace TauCeti.PowerSeries
+
+open _root_.PowerSeries
+
+variable {R : Type*} [NormedCommRing R] [CompleteSpace R]
+  {f : R⟦X⟧} {p : Polynomial R}
+
+/-- An entire series admits division by a polynomial with invertible leading coefficient,
+with entire quotient and polynomial remainder of degree less than the divisor. No ultrametric
+hypothesis is needed for existence. -/
+theorem exists_entire_mul_add_eq (hf : f.IsEntire) (hp : IsUnit p.leadingCoeff)
+    [Nontrivial R] :
+    ∃ (q : R⟦X⟧) (b : Polynomial R),
+      q.IsEntire ∧ b.degree < p.degree ∧ (p : R⟦X⟧) * q + b = f := by
+  let u := hp.unit
+  let P : Polynomial R := u⁻¹ • p
+  have hP : P.Monic := Polynomial.monic_of_isUnit_leadingCoeff_inv_smul hp
+  have hdeg : P.degree = p.degree :=
+    Polynomial.degree_smul_of_smul_regular p (IsSMulRegular.all _)
+  have hcoe : (P : R⟦X⟧) = u⁻¹ • (p : R⟦X⟧) := by
+    simp [P, Units.smul_def]
+  refine ⟨u⁻¹ • f.divByMonic P, f.modByMonic P,
+    (hf.divByMonic P).smul _, ?_, ?_⟩
+  · rw [← hdeg]
+    exact PowerSeries.degree_modByMonic_lt f hP.ne_zero
+  · rw [mul_smul_comm, ← smul_mul_assoc, ← hcoe, add_comm]
+    exact hf.modByMonic_add_divByMonic hP
+
+variable [IsUltrametricDist R] [NormOneClass R]
+
+/-- Entire quotients and polynomial remainders of degree less than a polynomial with invertible
+leading coefficient are unique, over a complete ultrametric norm-one ring. -/
+theorem eq_and_eq_of_entire_mul_add_eq (hp : IsUnit p.leadingCoeff)
+    {q q' : R⟦X⟧} {b b' : Polynomial R} (hq : q.IsEntire) (hq' : q'.IsEntire)
+    (hb : b.degree < p.degree) (hb' : b'.degree < p.degree)
+    (h : (p : R⟦X⟧) * q + b = f) (h' : (p : R⟦X⟧) * q' + b' = f) :
+    q = q' ∧ b = b' := by
+  let u := hp.unit
+  let P : Polynomial R := u⁻¹ • p
+  have hP : P.Monic := Polynomial.monic_of_isUnit_leadingCoeff_inv_smul hp
+  have hdeg : P.degree = p.degree :=
+    Polynomial.degree_smul_of_smul_regular p (IsSMulRegular.all _)
+  have hcoe : (P : R⟦X⟧) = u⁻¹ • (p : R⟦X⟧) := by
+    simp [P, Units.smul_def]
+  have hdiv (x : R⟦X⟧) : (P : R⟦X⟧) * (u • x) = (p : R⟦X⟧) * x := by
+    rw [hcoe, smul_mul_smul_comm, inv_mul_cancel, one_smul]
+  have h₁ := PowerSeries.divByMonic_modByMonic_unique (f := f) (u • q) b hP (hq.smul _)
+    ⟨by rw [hdiv, add_comm]; exact h, hdeg.symm ▸ hb⟩
+  have h₂ := PowerSeries.divByMonic_modByMonic_unique (f := f) (u • q') b' hP (hq'.smul _)
+    ⟨by rw [hdiv, add_comm]; exact h', hdeg.symm ▸ hb'⟩
+  exact ⟨(MulAction.injective u) (h₁.1.symm.trans h₂.1), h₁.2.symm.trans h₂.2⟩
+
+/-- **Entire division by a polynomial with invertible leading coefficient.** Over a complete
+ultrametric norm-one ring, every entire series has exactly one decomposition as the divisor
+times an entire quotient plus a polynomial remainder of smaller degree. This includes constant
+unit divisors, whose remainders are zero. -/
+theorem existsUnique_entire_mul_add_eq (hf : f.IsEntire) (hp : IsUnit p.leadingCoeff) :
+    ∃! qb : R⟦X⟧ × Polynomial R,
+      qb.1.IsEntire ∧ qb.2.degree < p.degree ∧ (p : R⟦X⟧) * qb.1 + qb.2 = f := by
+  have : Nontrivial R := NormOneClass.nontrivial
+  obtain ⟨q, b, hq, hb, h⟩ := exists_entire_mul_add_eq hf hp
+  refine ⟨(q, b), ⟨hq, hb, h⟩, fun qb ⟨hq', hb', h'⟩ ↦ ?_⟩
+  obtain ⟨rfl, rfl⟩ := eq_and_eq_of_entire_mul_add_eq hp hq' hq hb' hb h' h
+  rfl
+
+end TauCeti.PowerSeries
