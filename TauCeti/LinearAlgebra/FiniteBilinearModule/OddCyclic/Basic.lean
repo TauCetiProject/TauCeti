@@ -75,6 +75,11 @@ prime, `k ≥ 1` and `θ` prime to `p`, this is **Nikulin's odd cyclic generator
       push_cast
       field_simp)
 
+/-- The order of `oddCyclic m hm θ` is `m`: its carrier is `ZMod m` by definition. -/
+@[simp]
+theorem natCard_oddCyclic : Nat.card (oddCyclic m hm θ) = m :=
+  Nat.card_zmod m
+
 /-- The quadratic form of `oddCyclic m hm θ` on the reduction of an integer `j` is
 `θ(m + 1)j² / (2m)`. -/
 @[simp]

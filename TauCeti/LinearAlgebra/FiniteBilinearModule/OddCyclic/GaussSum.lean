@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.FiniteBilinearModule.OddCyclic.Basic
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Orthogonal.GaussSum
 public import Mathlib.NumberTheory.LegendreSymbol.QuadraticReciprocity
 import TauCeti.Data.ZMod.Torsion
+import TauCeti.GroupTheory.Coset.Fiber
 import TauCeti.NumberTheory.LegendreSymbol.QuadraticChar.GaussSum
 import TauCeti.NumberTheory.ModularForms.JacobiTheta.GaussSum
 
@@ -34,12 +35,20 @@ the trivial module. At exponent `1` the form is `x ↦ θx²/(2p)`, with divisio
 (`TauCeti.sum_range_cexp_two_pi_I_sq_div`) and the second supplementary law
 `(2/p) = χ₈(p)` give the value `(1 - p) + 4η`.
 
+The Gauss-sum values also give the Gauss sums of the scaled forms `p^j • q`: scaling the form of
+`q_θ^{(p)}(p^{j+e})` by `p^j` is the form of `q_θ^{(p)}(p^e)` read through the `p^j`-to-one
+reduction modulo `p^e`, and scaling by `p^j` with `j ≥ k` kills the form of `q_θ^{(p)}(p^k)`.
+
 ## Main declarations
 
 * `TauCeti.FiniteQuadraticModule.gaussSign_oddCyclic_pow_add_two`: increasing the exponent
   of an odd-base cyclic form by two does not change its Gauss-sum invariant.
 * `TauCeti.FiniteQuadraticModule.gaussSign_oddCyclic`:
   `sign q_θ^{(p)}(p^k) = k²(1 - p) + 2k(1 - (θ/p))`.
+* `TauCeti.FiniteQuadraticModule.gaussSum_oddCyclic_eq_legendreSym_pow_mul`:
+  `G(q_θ^{(p)}(p^k)) = (θ/p)^k · G(q_1^{(p)}(p^k))`.
+* `TauCeti.FiniteQuadraticModule.scaledGaussSum_oddCyclic`: the Gauss sum of the form of
+  `q_θ^{(p)}(p^k)` scaled by `p^j` is `(θ/p)^{k - j}` times that of `q_1^{(p)}(p^k)`.
 
 ## References
 
@@ -232,8 +241,7 @@ private theorem gaussSign_oddCyclic_prime {p : ℕ} [Fact p.Prime] (hp : Odd p) 
     (oddCyclic p hp θ).gaussSign = ((1 - p + 2 * (1 - legendreSym p θ) : ℤ) : ZMod 8) := by
   have hθ0 : (θ : ZMod p) ≠ 0 :=
     (isCoprime_zero_left.1 (by simpa using hθ.intCast (R := ZMod p))).ne_zero
-  -- The carrier of `oddCyclic p hp θ` is `ℤ/p` by definition.
-  have hcard : Nat.card (oddCyclic p hp θ) = p := Nat.card_zmod p
+  have hcard : Nat.card (oddCyclic p hp θ) = p := natCard_oddCyclic p hp θ
   refine gaussSign_eq_of_gaussSum_eq _ ?_
   rw [gaussSum_oddCyclic_prime hp hθ, sum_range_cexp_two_pi_I_sq_div, hcard, Int.cast_add,
     map_add, AddChar.map_add_eq_mul, ← chi_eight_mul_gaussFactor hp, ← legendreSym_eq_expCircle hθ0]
@@ -242,8 +250,7 @@ private theorem gaussSign_oddCyclic_prime {p : ℕ} [Fact p.Prime] (hp : Odd p) 
 /-- The Gauss-sum invariant of the trivial module `oddCyclic 1` is `0`. -/
 private theorem gaussSign_oddCyclic_one (h1 : Odd 1) (θ : ℤ) :
     (oddCyclic 1 h1 θ).gaussSign = 0 := by
-  -- The carrier of `oddCyclic 1 h1 θ` is `ℤ/1` by definition.
-  have hcard : Nat.card (oddCyclic 1 h1 θ) = 1 := Nat.card_zmod 1
+  have hcard : Nat.card (oddCyclic 1 h1 θ) = 1 := natCard_oddCyclic 1 h1 θ
   have := (Nat.card_eq_one_iff_unique.1 hcard).1
   let _ : Fintype (oddCyclic 1 h1 θ) := Fintype.ofFinite _
   refine gaussSign_eq_of_gaussSum_eq _ ?_
@@ -271,5 +278,125 @@ theorem gaussSign_oddCyclic {p : ℕ} [Fact p.Prime] (hp : Odd p) (k : ℕ) {θ 
       rw [h, ht] <;> push_cast
     · linear_combination (t * (k + 1) : ZMod 8) * h8
     · linear_combination (t * (k + 1) - 1 : ZMod 8) * h8
+
+/-! ### Scaled Gauss sums of the generators -/
+
+/-- Scaling the form of `q_θ^{(p)}(p^{j+e})` by `p^j` is the form of `q_θ^{(p)}(p^e)` read
+through the reduction modulo `p^e`. -/
+theorem pow_nsmul_oddCyclic_quadratic {p : ℕ} (hp : Odd p) (j e : ℕ) (θ : ℤ)
+    (x : ZMod (p ^ (j + e))) :
+    p ^ j • (oddCyclic (p ^ (j + e)) hp.pow θ).quadratic x =
+      (oddCyclic (p ^ e) hp.pow θ).quadratic
+        (ZMod.castHom (pow_dvd_pow p (Nat.le_add_left e j)) (ZMod (p ^ e)) x) := by
+  obtain ⟨t, rfl⟩ := ZMod.intCast_surjective x
+  rw [map_intCast, oddCyclic_quadratic_intCast, oddCyclic_quadratic_intCast, ← AddCircle.coe_nsmul,
+    ← sub_eq_zero, ← AddCircle.coe_sub]
+  -- The difference of the representatives is `θ t² (p^j - 1) / 2`, an integer since `p` is odd.
+  obtain ⟨s, hs⟩ := hp.pow (n := j)
+  refine (AddCircle.coe_eq_zero_iff (1 : ℚ)).2 ⟨θ * t ^ 2 * (s : ℤ), ?_⟩
+  have hp0 : (p : ℚ) ≠ 0 := Nat.cast_ne_zero.2 hp.pos.ne'
+  have hsQ : (p : ℚ) ^ j = 2 * s + 1 := by exact_mod_cast hs
+  rw [zsmul_eq_mul, nsmul_eq_mul, pow_add]
+  push_cast
+  rw [hsQ]
+  field_simp
+  ring
+
+/-- **The `p^j`-scaled Gauss sum of `q_θ^{(p)}(p^{j+e})`** is `p^j` times the Gauss sum of
+`q_θ^{(p)}(p^e)`: reduction modulo `p^e` is `p^j`-to-one. -/
+theorem scaledGaussSum_oddCyclic_pow_add {p : ℕ} (hp : Odd p) (j e : ℕ) (θ : ℤ) :
+    scaledGaussSum (oddCyclic (p ^ (j + e)) hp.pow θ) (p ^ j) =
+      p ^ j * (oddCyclic (p ^ e) hp.pow θ).gaussSum := by
+  have : NeZero p := ⟨hp.pos.ne'⟩
+  have hdvd : p ^ e ∣ p ^ (j + e) := pow_dvd_pow p (Nat.le_add_left e j)
+  let r := (ZMod.castHom hdvd (ZMod (p ^ e))).toAddMonoidHom
+  have hr : Function.Surjective r := ZMod.castHom_surjective hdvd
+  have hker : Nat.card r.ker = p ^ j := by
+    have h := AddSubgroup.card_ker_mul_card_range r
+    rw [AddMonoidHom.range_eq_top.2 hr, AddSubgroup.card_top, Nat.card_zmod, Nat.card_zmod] at h
+    exact Nat.eq_of_mul_eq_mul_right (pow_pos hp.pos e) (h.trans (pow_add p j e))
+  let _ : Fintype (oddCyclic (p ^ (j + e)) hp.pow θ) := inferInstanceAs (Fintype (ZMod _))
+  let _ : Fintype (oddCyclic (p ^ e) hp.pow θ) := inferInstanceAs (Fintype (ZMod _))
+  rw [scaledGaussSum_eq_sum, gaussSum_eq_sum]
+  have hsum := AddMonoidHom.sum_comp_of_surjective r hr
+    fun y ↦ expCircle ((oddCyclic (p ^ e) hp.pow θ).quadratic y)
+  rw [hker, nsmul_eq_mul, Nat.cast_pow] at hsum
+  refine Eq.trans ?_ hsum
+  exact Finset.sum_congr rfl fun x _ ↦ congrArg expCircle (pow_nsmul_oddCyclic_quadratic hp j e θ x)
+
+/-- Scaling by `p^j` with `k ≤ j` kills the form of `q_θ^{(p)}(p^k)`, so the scaled Gauss sum is
+the order `p^k`. -/
+theorem scaledGaussSum_oddCyclic_of_le {p : ℕ} (hp : Odd p) {k j : ℕ} (hkj : k ≤ j) (θ : ℤ) :
+    scaledGaussSum (oddCyclic (p ^ k) hp.pow θ) (p ^ j) = p ^ k := by
+  have : NeZero p := ⟨hp.pos.ne'⟩
+  let _ : Fintype (oddCyclic (p ^ k) hp.pow θ) := inferInstanceAs (Fintype (ZMod _))
+  have hcard : Nat.card (oddCyclic (p ^ k) hp.pow θ) = p ^ k := natCard_oddCyclic _ _ θ
+  have hzero (x : oddCyclic (p ^ k) hp.pow θ) :
+      p ^ j • (oddCyclic (p ^ k) hp.pow θ).quadratic x = 0 := by
+    obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le hkj
+    have hodd : Odd (Nat.card (oddCyclic (p ^ k) hp.pow θ)) := by rw [hcard]; exact hp.pow
+    have h := natCard_nsmul_quadratic_of_odd _ hodd x
+    rw [hcard] at h
+    rw [pow_add, mul_nsmul, h, nsmul_zero]
+  rw [scaledGaussSum_eq_sum]
+  simp only [hzero, AddChar.map_zero_eq_one, Finset.sum_const, Finset.card_univ, nsmul_eq_mul,
+    mul_one, ← Nat.card_eq_fintype_card, hcard, Nat.cast_pow]
+
+/-- **The Gauss sum of `q_θ^{(p)}(p^e)`** is `(θ/p)^e` times that of `q_1^{(p)}(p^e)`: by
+Nikulin's values, the Gauss-sum invariants differ by `4eη`, where `(θ/p) = (-1)^η`. -/
+theorem gaussSum_oddCyclic_eq_legendreSym_pow_mul {p : ℕ} [Fact p.Prime] (hp : Odd p) (e : ℕ)
+    {θ : ℤ} (hθ : IsCoprime (p : ℤ) θ) :
+    (oddCyclic (p ^ e) hp.pow θ).gaussSum =
+      legendreSym p θ ^ e * (oddCyclic (p ^ e) hp.pow 1).gaussSum := by
+  have hθ0 : (θ : ZMod p) ≠ 0 := ((ZMod.coe_int_isUnit_iff_isCoprime θ p).2 hθ).ne_zero
+  have hnd (t : ℤ) (ht : IsCoprime (p : ℤ) t) : (oddCyclic (p ^ e) hp.pow t).IsNondegenerate := by
+    rw [isNondegenerate_oddCyclic_iff]
+    simpa only [Nat.cast_pow] using ht.pow_left
+  -- The `e`-th power of `(θ/p) = e^{2πi · 2(1 - (θ/p))/8}`.
+  have hpow : expCircle (ZMod.toRatAddCircle 8 ((2 * e * (1 - legendreSym p θ) : ℤ) : ZMod 8)) =
+      (legendreSym p θ : ℂ) ^ e := by
+    rw [legendreSym_eq_expCircle hθ0, ← AddChar.map_nsmul_eq_pow, ← map_nsmul, nsmul_eq_mul]
+    congr 2
+    push_cast
+    ring
+  rw [(hnd θ hθ).gaussSum_eq, (hnd 1 isCoprime_one_right).gaussSum_eq, natCard_oddCyclic,
+    natCard_oddCyclic,
+    gaussSign_oddCyclic hp e hθ, gaussSign_oddCyclic hp e isCoprime_one_right, legendreSym.at_one,
+    show (e : ℤ) ^ 2 * (1 - p) + 2 * e * (1 - legendreSym p θ) =
+      (e ^ 2 * (1 - p) + 2 * e * (1 - 1)) + 2 * e * (1 - legendreSym p θ) by ring,
+    Int.cast_add, map_add, AddChar.map_add_eq_mul, hpow]
+  push_cast
+  ring
+
+/-- **The scaled Gauss sums of `q_θ^{(p)}(p^k)`**: scaling by `p^j` multiplies the scaled Gauss
+sum of `q_1^{(p)}(p^k)` by `(θ/p)^{k - j}`, with truncated subtraction. -/
+theorem scaledGaussSum_oddCyclic {p : ℕ} [Fact p.Prime] (hp : Odd p) (k j : ℕ) {θ : ℤ}
+    (hθ : IsCoprime (p : ℤ) θ) :
+    scaledGaussSum (oddCyclic (p ^ k) hp.pow θ) (p ^ j) =
+      legendreSym p θ ^ (k - j) * scaledGaussSum (oddCyclic (p ^ k) hp.pow 1) (p ^ j) := by
+  rcases le_total k j with hkj | hjk
+  · rw [scaledGaussSum_oddCyclic_of_le hp hkj, scaledGaussSum_oddCyclic_of_le hp hkj,
+      Nat.sub_eq_zero_of_le hkj, pow_zero, one_mul]
+  · obtain ⟨e, rfl⟩ := Nat.exists_eq_add_of_le hjk
+    rw [scaledGaussSum_oddCyclic_pow_add hp, scaledGaussSum_oddCyclic_pow_add hp,
+      gaussSum_oddCyclic_eq_legendreSym_pow_mul hp e hθ, Nat.add_sub_cancel_left]
+    ring
+
+/-- The scaled Gauss sums of `q_1^{(p)}(p^k)` do not vanish. -/
+theorem scaledGaussSum_oddCyclic_one_ne_zero {p : ℕ} (hp : Odd p) (k j : ℕ) :
+    scaledGaussSum (oddCyclic (p ^ k) hp.pow 1) (p ^ j) ≠ 0 := by
+  have hp0 : (p : ℂ) ≠ 0 := Nat.cast_ne_zero.2 hp.pos.ne'
+  rcases le_total k j with hkj | hjk
+  · rw [scaledGaussSum_oddCyclic_of_le hp hkj]
+    exact pow_ne_zero _ hp0
+  · obtain ⟨e, rfl⟩ := Nat.exists_eq_add_of_le hjk
+    rw [scaledGaussSum_oddCyclic_pow_add hp]
+    refine mul_ne_zero (pow_ne_zero _ hp0) fun h ↦ ?_
+    have hnd : (oddCyclic (p ^ e) hp.pow 1).IsNondegenerate := by
+      rw [isNondegenerate_oddCyclic_iff]
+      exact isCoprime_one_right
+    have := hnd.norm_gaussSum
+    rw [h, norm_zero] at this
+    exact (Real.sqrt_pos.2 (Nat.cast_pos.2 Nat.card_pos)).ne this
 
 end TauCeti.FiniteQuadraticModule

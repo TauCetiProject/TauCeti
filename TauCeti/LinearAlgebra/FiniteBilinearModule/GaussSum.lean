@@ -30,7 +30,7 @@ classification is available:
 
 * it is an isometry invariant, it is multiplicative over orthogonal sums, and negating `q`
   conjugates it; the scaled Gauss sums `∑_{a ∈ A} e^{2πi n q(a)}` of the forms `n • q` are
-  isometry invariants too, and multiplicative over orthogonal sums of finite families;
+  isometry invariants too, and multiplicative over orthogonal sums;
 * restricting to the orthogonal complement of a quadratic-isotropic subgroup leaves `G(q)`
   unchanged;
 * quotienting by a subgroup `K` in the quadratic radical gives `G(q) = #K · G(q/K)`;
@@ -73,6 +73,7 @@ pairing vanishes, while its Gauss sum is `(1 + i)² = 2i ≠ 2`, so it is not me
 * `TauCeti.FiniteQuadraticModule.scaledGaussSum`: the Gauss sum `∑_{a ∈ A} e^{2πi n q(a)}` of the
   scaled form `n • q`, with its isometry invariance
   `TauCeti.FiniteQuadraticModule.Isometry.scaledGaussSum_eq` and multiplicativity
+  `TauCeti.FiniteQuadraticModule.scaledGaussSum_prod` and
   `TauCeti.FiniteQuadraticModule.scaledGaussSum_pi`.
 * `TauCeti.FiniteQuadraticModule.IsNondegenerate.gaussSum_mul_conj` and
   `TauCeti.FiniteQuadraticModule.IsNondegenerate.norm_gaussSum`: `|G(q)|² = #A`.
@@ -129,16 +130,6 @@ theorem Isometry.gaussSum_eq {B : FiniteQuadraticModule} (f : Isometry A B) :
   exact Fintype.sum_equiv f.toLinearEquiv.toEquiv _ _ fun x ↦
     congrArg expCircle (f.map_app x).symm
 
-/-- **The Gauss sum is multiplicative** over orthogonal sums. -/
-@[simp]
-theorem gaussSum_prod (B : FiniteQuadraticModule) :
-    (A.prod B).gaussSum = A.gaussSum * B.gaussSum := by
-  obtain ⟨_⟩ := nonempty_fintype A
-  obtain ⟨_⟩ := nonempty_fintype B
-  rw [gaussSum_eq_sum, gaussSum_eq_sum, gaussSum_eq_sum, Fintype.sum_prod_type,
-    Finset.sum_mul_sum]
-  simp only [QuadraticMap.prod_apply, AddChar.map_add_eq_mul]
-
 /-- **The scaled Gauss sum** `∑_{a ∈ A} e^{2πi n q(a)}`, the Gauss sum of the scaled quadratic
 form `n • q`. -/
 noncomputable def scaledGaussSum (n : ℕ) : ℂ :=
@@ -163,6 +154,22 @@ theorem Isometry.scaledGaussSum_eq {B : FiniteQuadraticModule} (f : Isometry A B
   rw [scaledGaussSum_eq_sum, scaledGaussSum_eq_sum]
   exact Fintype.sum_equiv f.toLinearEquiv.toEquiv _ _ fun x ↦
     congrArg (fun t ↦ expCircle (n • t)) (f.map_app x).symm
+
+/-- **The scaled Gauss sums are multiplicative** over orthogonal sums. -/
+@[simp]
+theorem scaledGaussSum_prod (B : FiniteQuadraticModule) (n : ℕ) :
+    (A.prod B).scaledGaussSum n = A.scaledGaussSum n * B.scaledGaussSum n := by
+  obtain ⟨_⟩ := nonempty_fintype A
+  obtain ⟨_⟩ := nonempty_fintype B
+  rw [scaledGaussSum_eq_sum, scaledGaussSum_eq_sum, scaledGaussSum_eq_sum, Fintype.sum_prod_type,
+    Finset.sum_mul_sum]
+  simp only [QuadraticMap.prod_apply, smul_add, AddChar.map_add_eq_mul]
+
+/-- **The Gauss sum is multiplicative** over orthogonal sums. -/
+@[simp]
+theorem gaussSum_prod (B : FiniteQuadraticModule) :
+    (A.prod B).gaussSum = A.gaussSum * B.gaussSum := by
+  simpa only [scaledGaussSum_one] using A.scaledGaussSum_prod B 1
 
 /-- **The scaled Gauss sums are multiplicative** over orthogonal sums of finite families. -/
 @[simp]

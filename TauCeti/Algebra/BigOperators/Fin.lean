@@ -15,7 +15,8 @@ import Mathlib.Data.Finset.Max
 
 Successive differences along a finite sequence sum to the difference of its endpoints,
 including the empty edge sequence. Reversing every difference reverses the endpoint difference.
-The equivalence omitting the last index also reindexes sums by the preceding indices.
+The equivalence omitting the last index also reindexes sums by the preceding indices, and a
+filtered product over `Fin (n + 1)` splits off its first index.
 
 Along a divisibility chain `d₀ ∣ d₁ ∣ ⋯`, the product of the first `k` entries divides the
 product of the entries at any `k` distinct positions. This is what makes the leading `k × k`
@@ -69,6 +70,15 @@ theorem prod_castLE_dvd_prod_of_injective {M : Type*} [CommMonoid M] {n : ℕ} {
     rw [Fin.prod_univ_castSucc, Fin.prod_univ_succAbove _ j₀, mul_comm (d (f j₀))]
     exact mul_dvd_mul (ih (by omega) (hf.comp Fin.succAbove_right_injective))
       (hd (Fin.le_def.mpr hge))
+
+/-- A product over the indices of `Fin (n + 1)` satisfying a predicate splits off the first
+index. -/
+@[to_additive /-- A sum over the indices of `Fin (n + 1)` satisfying a predicate splits off the
+first index. -/]
+theorem prod_filter_univ_succ {M : Type*} [CommMonoid M] {n : ℕ} (P : Fin (n + 1) → Prop)
+    [DecidablePred P] (f : Fin (n + 1) → M) :
+    ∏ i with P i, f i = (if P 0 then f 0 else 1) * ∏ i : Fin n with P i.succ, f i.succ := by
+  rw [Finset.prod_filter, prod_univ_succ, Finset.prod_filter]
 
 end Fin
 
