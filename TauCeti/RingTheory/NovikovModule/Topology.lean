@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RingTheory.NovikovModule.Basic
 public import TauCeti.RingTheory.NovikovSeries.TopologicalRing
-public import Mathlib.Topology.Algebra.Module.Equiv.Basic
+public import Mathlib.Topology.Algebra.Module.TransferInstance
 
 /-!
 # The potential-cutoff topology on completed modules
@@ -244,12 +244,7 @@ theorem continuousSMul_module :
     ContinuousSMul (NovikovSeries R H N) (NovikovModule R F) := by
   let := module (R := R) hF
   let r := fun i => Classical.arbitrary (P i)
-  refine ⟨?_⟩
-  have hc : Continuous (fun p : NovikovSeries R H N × NovikovModule R F =>
-      p.1 • coordinates hF r p.2) :=
-    continuous_fst.smul ((continuous_coordinates hF r).comp continuous_snd)
-  exact ((continuous_coordinates_symm hF r).comp hc).congr fun p => by
-    simp only [Function.comp_apply, ← coordinates_smul, LinearEquiv.symm_apply_apply]
+  exact (coordinatesContinuousLinearEquiv hF r).continuousSMul
 
 end Coordinates
 
