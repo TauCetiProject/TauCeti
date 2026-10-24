@@ -8,7 +8,6 @@ module
 public import Mathlib.AlgebraicGeometry.AlgClosed.Basic
 public import TauCeti.AlgebraicGeometry.Curves.Basic
 public import TauCeti.AlgebraicGeometry.Curves.HighDegree
-public import TauCeti.AlgebraicGeometry.RationalPoint.Basic
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.GlobalGeneration
 
 /-!
