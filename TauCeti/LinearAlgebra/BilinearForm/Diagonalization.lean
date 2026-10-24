@@ -284,45 +284,31 @@ theorem IsSymm.exists_orthogonal_basis_isUnit_of_isUnit_det [IsLocalRing R] (hB 
     let N := B.orthogonal (R ∙ x)
     have hc := B.isCompl_span_singleton_orthogonal_of_isUnit x hxx
     obtain ⟨hfinite, hfree⟩ := N.finite_free_of_isCompl hc.symm
-    have hli : ∀ a : R, ∀ y ∈ N, a • x + y = 0 → a = 0 := by
-      intro a y hy hay
-      have hxy : B x y = 0 := by simpa [N, orthogonal] using hy
-      have := congrArg (B x) hay
-      simp only [map_add, map_smul, smul_eq_mul, hxy, add_zero, map_zero] at this
-      exact (mem_nonZeroDivisors_iff_right.mp hxx.mem_nonZeroDivisors) a this
-    have hsp : ∀ z : M, ∃ a : R, z + a • x ∈ N := by
-      intro z
-      obtain ⟨a, ha⟩ := (hxx.dvd : B x x ∣ B x z)
-      refine ⟨-a, ?_⟩
-      simp only [N, orthogonal, Submodule.mem_orthogonalBilin_span]
-      rintro _ rfl
-      simp only [map_add, map_smul, smul_eq_mul, ha]
-      ring
-    -- The split basis also computes the complement's rank and its unit Gram determinant.
-    let v₀ := Module.finBasis R N
-    let c₀ := Basis.mkFinCons x v₀ hli hsp
     have hn : finrank R N = n := by
-      have h₀ := Module.finrank_eq_card_basis c₀
-      have h₁ := Module.finrank_eq_card_basis b
-      simp only [Fintype.card_fin] at h₀ h₁
+      have h : finrank R N + 1 = finrank R M :=
+        TauCeti.finrank_orthogonal_span_singleton_add_one_of_dvd B
+          hxx.mem_nonZeroDivisors (fun _ ↦ hxx.dvd)
+      have hb := Module.finrank_eq_card_basis b
+      simp only [Fintype.card_fin] at hb
       omega
     let v := Module.finBasisOfFinrankEq R N hn
-    let c₁ := Basis.mkFinCons x v hli hsp
+    obtain ⟨c₁, hc₁zero, hc₁succ⟩ :=
+      TauCeti.exists_basis_of_orthogonal_span_singleton B
+        hxx.mem_nonZeroDivisors (fun _ ↦ hxx.dvd) v
     have hsplit : (B.toMatrix c₁).det = B x x * ((B.restrict N).toMatrix v).det := by
       rw [Matrix.det_succ_row_zero, Fin.sum_univ_succ]
       have hzero : ∀ j : Fin n, (B.toMatrix c₁) 0 j.succ = 0 := by
         intro j
-        simpa only [toMatrix_apply, c₁, Basis.coe_mkFinCons, Fin.cons_zero,
-          Fin.cons_succ, Function.comp_apply] using
+        simpa only [toMatrix_apply, hc₁zero, hc₁succ] using
           mem_orthogonal_iff.1 (v j).property x (Submodule.mem_span_singleton_self x)
       simp only [hzero, mul_zero, zero_mul, Finset.sum_const_zero, add_zero,
         Fin.val_zero, pow_zero, one_mul, Fin.succAbove_zero]
       congr 1
-      · simp only [toMatrix_apply, c₁, Basis.coe_mkFinCons, Fin.cons_zero]
+      · simp only [toMatrix_apply, hc₁zero]
       · congr 1
         ext i j
-        simp only [Matrix.submatrix_apply, toMatrix_apply, c₁, Basis.coe_mkFinCons,
-          Fin.cons_succ, Function.comp_apply, restrict_apply, LinearMap.domRestrict_apply]
+        simp only [Matrix.submatrix_apply, toMatrix_apply, hc₁succ, restrict_apply,
+          LinearMap.domRestrict_apply]
     have hvdet : IsUnit ((B.restrict N).toMatrix v).det := by
       have hu : IsUnit (B.toMatrix c₁).det := by
         rw [det_toMatrix_eq_det_sq_mul_det b c₁]

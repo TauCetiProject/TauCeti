@@ -87,7 +87,7 @@ theorem ofMul_symmAt (i : N) (p : Ω^ N X x) :
   rfl
 
 /-- The class of the constant loop is zero in `Additive (HomotopyGroup N X x)`. -/
-@[simp]
+@[simp↓]
 theorem ofMul_const : Additive.ofMul (α := HomotopyGroup N X x) ⟦GenLoop.const⟧ = 0 := by
   rw [← one_def]
   rfl

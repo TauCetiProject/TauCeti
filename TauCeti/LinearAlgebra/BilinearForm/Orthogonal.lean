@@ -42,6 +42,11 @@ structural step used when a Cartan--Dieudonne argument enlarges a fixed subspace
 * `LinearMap.BilinForm.iIsOrtho.isSymm`: a form with an orthogonal basis is symmetric.
 * `LinearMap.BilinForm.equivalent_of_isInternal`: orthogonal internal direct sums of isometric
   forms are isometric.
+* `TauCeti.exists_basis_of_orthogonal_span_singleton`: adjoin a vector to any finite
+  basis of its orthogonal complement when its self-pairing is a non-zero-divisor dividing all
+  its pairings.
+* `TauCeti.finrank_orthogonal_span_singleton_add_one_of_dvd`: compute the rank of
+  that complement when it is finite free.
 * `LinearMap.BilinForm.IsRefl.exists_orthogonal_basis_of_orthogonal_span_singleton`: an
   orthogonal basis of `x^⊥` extends by `x` to an orthogonal basis of the whole space.
 * `LinearMap.BilinForm.IsSymm.exists_orthogonal_basis_apply_zero_eq` and
@@ -450,16 +455,21 @@ theorem isCompl_span_singleton_orthogonal_of_dvd (B : LinearMap.BilinForm R M) {
     simp only [map_smul, map_sub, LinearMap.smul_apply, smul_eq_mul, hk]
     ring
 
-/-- Adjoining a vector `x` to an orthogonal basis of the orthogonal complement of `x` gives an
-orthogonal basis of the whole module, for a reflexive form, provided the self-pairing `B x x` is a
-non-zero-divisor dividing every pairing `B x y`. Over a field this says `B x x ≠ 0`.
-The resulting basis starts with `x`, followed by the supplied basis of its complement. -/
-theorem IsRefl.exists_orthogonal_basis_of_orthogonal_span_singleton {B : LinearMap.BilinForm R M}
-    (hB : B.IsRefl) {x : M} (hx : B x x ∈ nonZeroDivisors R) (hdvd : ∀ y, B x x ∣ B x y)
-    {d : ℕ} {v : Basis (Fin d) R (B.orthogonal (R ∙ x))}
-    (hv : (B.restrict (B.orthogonal (R ∙ x))).iIsOrtho v) :
-    ∃ b : Basis (Fin (d + 1)) R M, B.iIsOrtho b ∧
-      b 0 = x ∧ ∀ i, b i.succ = (v i : M) := by
+end LinearMap.BilinForm
+
+namespace TauCeti
+
+open Module LinearMap.BilinForm
+
+variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
+
+/-- Adjoin `x` to any finite basis of its orthogonal complement when its self-pairing is a
+non-zero-divisor dividing every pairing with `x`. The resulting basis starts with `x` and
+continues with the supplied basis; no symmetry or orthogonality of that basis is required. -/
+theorem exists_basis_of_orthogonal_span_singleton (B : LinearMap.BilinForm R M) {x : M}
+    (hx : B x x ∈ nonZeroDivisors R) (hdvd : ∀ y, B x x ∣ B x y)
+    {d : ℕ} (v : Basis (Fin d) R (B.orthogonal (R ∙ x))) :
+    ∃ b : Basis (Fin (d + 1)) R M, b 0 = x ∧ ∀ i, b i.succ = (v i : M) := by
   have hc := B.isCompl_span_singleton_orthogonal_of_dvd hx hdvd
   have hli : ∀ c : R, ∀ y ∈ B.orthogonal (R ∙ x), c • x + y = 0 → c = 0 := fun c y hy hcy ↦ by
     have hcx : c • x ∈ B.orthogonal (R ∙ x) := by
@@ -476,15 +486,47 @@ theorem IsRefl.exists_orthogonal_basis_of_orthogonal_span_singleton {B : LinearM
       (hc.sup_eq_top ▸ (Submodule.mem_top : z ∈ (⊤ : Submodule R M)))
     obtain ⟨k, rfl⟩ := Submodule.mem_span_singleton.mp hw
     exact ⟨-k, by simpa [← hwy, add_comm, add_left_comm, add_assoc] using hy⟩
-  refine ⟨Basis.mkFinCons x v hli hsp, ?_, ?_, ?_⟩
-  rotate_left
+  refine ⟨Basis.mkFinCons x v hli hsp, ?_, ?_⟩
   · simp [Basis.coe_mkFinCons]
   · intro i
     simp [Basis.coe_mkFinCons]
-  rw [iIsOrtho_def, Basis.coe_mkFinCons]
+
+/-- A vector whose self-pairing is a non-zero-divisor dividing all its pairings has an
+orthogonal complement of codimension one, provided the complement is finite free. -/
+theorem finrank_orthogonal_span_singleton_add_one_of_dvd [StrongRankCondition R]
+    (B : LinearMap.BilinForm R M) {x : M} (hx : B x x ∈ nonZeroDivisors R)
+    (hdvd : ∀ y, B x x ∣ B x y)
+    [Free R (B.orthogonal (R ∙ x))] [Module.Finite R (B.orthogonal (R ∙ x))] :
+    finrank R (B.orthogonal (R ∙ x)) + 1 = finrank R M := by
+  obtain ⟨b, -, -⟩ := exists_basis_of_orthogonal_span_singleton B hx hdvd
+    (Module.finBasis R (B.orthogonal (R ∙ x)))
+  simpa only [Fintype.card_fin] using (Module.finrank_eq_card_basis b).symm
+
+end TauCeti
+
+namespace LinearMap.BilinForm
+
+open Module
+
+variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
+
+/-- Adjoining a vector `x` to an orthogonal basis of the orthogonal complement of `x` gives an
+orthogonal basis of the whole module, for a reflexive form, provided the self-pairing `B x x` is a
+non-zero-divisor dividing every pairing `B x y`. Over a field this says `B x x ≠ 0`.
+The resulting basis starts with `x`, followed by the supplied basis of its complement. -/
+theorem IsRefl.exists_orthogonal_basis_of_orthogonal_span_singleton {B : LinearMap.BilinForm R M}
+    (hB : B.IsRefl) {x : M} (hx : B x x ∈ nonZeroDivisors R) (hdvd : ∀ y, B x x ∣ B x y)
+    {d : ℕ} {v : Basis (Fin d) R (B.orthogonal (R ∙ x))}
+    (hv : (B.restrict (B.orthogonal (R ∙ x))).iIsOrtho v) :
+    ∃ b : Basis (Fin (d + 1)) R M, B.iIsOrtho b ∧
+      b 0 = x ∧ ∀ i, b i.succ = (v i : M) := by
+  obtain ⟨b, hzero, hsucc⟩ :=
+    TauCeti.exists_basis_of_orthogonal_span_singleton B hx hdvd v
+  refine ⟨b, ?_, hzero, hsucc⟩
+  rw [iIsOrtho_def]
   intro i j
   refine Fin.cases ?_ (fun i => ?_) i <;> refine Fin.cases ?_ (fun j => ?_) j <;> intro hij <;>
-    simp only [Fin.cons_zero, Fin.cons_succ, Function.comp_apply]
+    simp only [hzero, hsucc]
   · exact (hij rfl).elim
   · simpa [orthogonal] using (v j).2
   · exact hB.eq_zero (by simpa [orthogonal] using (v i).2)
