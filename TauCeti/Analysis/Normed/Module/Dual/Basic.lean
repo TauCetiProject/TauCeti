@@ -30,9 +30,11 @@ public section
 
 open Metric RCLike
 
-variable {𝕜 E : Type*} [RCLike 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+variable {𝕜 E : Type*}
 
 namespace StrongDual
+
+variable [RCLike 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
 
 /-- If the real part of a continuous linear functional `f` is at most `u` on the closed ball of
 radius `r ≥ 0` about `x`, then `re (f x) + r * ‖f‖ ≤ u`. -/

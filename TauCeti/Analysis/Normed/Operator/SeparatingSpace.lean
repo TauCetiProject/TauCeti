@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Group.InfiniteSum
 public import Mathlib.Analysis.Normed.Group.Quotient
 public import Mathlib.Analysis.Normed.Operator.Banach
+public import Mathlib.Analysis.SpecificLimits.Basic
+public import Mathlib.Order.Filter.EventuallyConst
+public import Mathlib.Topology.Algebra.InfiniteSum.Module
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Quotient
-import TauCeti.Analysis.Normed.Operator.GlidingHump
-import TauCeti.Analysis.SpecificLimits.GeometricWeights
 
 /-!
 # The separating space of a linear map
@@ -27,13 +29,13 @@ closed graph theorem turns this into the criterion `Continuous T ↔ T.separatin
 more precisely the separating space is the smallest closed subspace modulo which `T` becomes
 continuous.
 
-The stability lemma says that along a tower of continuous linear maps between Banach spaces the
-decreasing sequence of separating spaces of the composites with `T` is eventually constant. Its
-gliding-hump proof sums a series of ever smaller vectors chosen at the places where the
-sequence drops. Applied to continuous linear maps that intertwine `T` up to continuous errors,
-it shows that the closures of the images of the separating space under the successive
-products stabilize; these are the stabilization statements behind separating ideals in
-automatic continuity theory.
+Sinclair's stability lemma controls separating spaces along a sequence of composites. Given
+Banach spaces `E n` and `F`, continuous linear maps `R n : E (n + 1) → E n`, and linear maps
+`T n : E n → F` with `T (n + 1) = T n ∘ R n`, the separating spaces of the `T n` form a decreasing
+sequence that is eventually constant. This is the analytic input to the theory of separating
+ideals in automatic continuity. Applied to continuous linear maps that intertwine `T` up to
+continuous errors, it shows that the closures of the images of the separating space under the
+successive products stabilize.
 
 ## Main definitions
 
@@ -55,9 +57,6 @@ automatic continuity theory.
   modulo its separating space.
 * `LinearMap.continuous_comp_iff_separatingSpace_le_ker`: for a continuous linear map `W`,
   the composite `W ∘ T` is continuous exactly when `W` kills the separating space of `T`.
-* `LinearMap.continuous_mkQ_comp_iff_separatingSpace_le`: a linear map between Banach spaces
-  is continuous modulo a closed subspace exactly when the subspace contains the separating
-  space.
 * `LinearMap.separatingSpace_comp`: the separating space of `U ∘ T` is the closure of the
   image under `U` of the separating space of `T`.
 * `LinearMap.map_separatingSpace_le_of_continuous_sub`: a continuous linear map `U` with
@@ -67,9 +66,12 @@ automatic continuity theory.
   continuous linear map up to a continuous error preserves the separating space of `T`.
 * `LinearMap.continuous_comp_sub_comp_of_continuous_sub`: products of maps intertwining `T`
   up to continuous errors again intertwine `T` up to a continuous error.
-* `LinearMap.exists_separatingSpace_comp_eq`: the stability lemma.
-* `LinearMap.exists_topologicalClosure_map_separatingSpace_eq`: stabilization of the closed
-  images of the separating space under successive intertwining products.
+* `LinearMap.exists_norm_le_le_norm_mkQ_apply`: modulo a closed subspace not containing the
+  separating space, `T` sends arbitrarily small vectors to arbitrarily large ones.
+* `TauCeti.antitone_separatingSpace`, `TauCeti.eventuallyConst_separatingSpace`: Sinclair's
+  stability lemma.
+* `LinearMap.eventuallyConst_topologicalClosure_map_separatingSpace`: stabilization of the
+  closed images of the separating space under successive intertwining products.
 
 ## References
 
@@ -245,24 +247,11 @@ theorem isClosed_graph_mkQ_comp :
 
 end Topological
 
-section Tower
+section Products
 
 variable {R E F : Type*} [Ring R] [AddCommGroup E] [Module R E] [TopologicalSpace E]
   [AddCommGroup F] [Module R F] [TopologicalSpace F] [IsTopologicalAddGroup F]
-  [ContinuousConstSMul R F]
 
-/-- Along a tower of continuous linear maps `P n : X (n + 1) → X n` and compatible maps
-`U n : X n → E` with `U (n + 1) = U n ∘ P n`, the separating spaces of `T ∘ U n` decrease. -/
-theorem antitone_separatingSpace_comp {X : ℕ → Type*} [∀ n, AddCommGroup (X n)]
-    [∀ n, Module R (X n)] [∀ n, TopologicalSpace (X n)] [∀ n, IsTopologicalAddGroup (X n)]
-    [∀ n, ContinuousConstSMul R (X n)] (T : E →ₗ[R] F) (P : ∀ n, X (n + 1) →L[R] X n)
-    {U : ∀ n, X n →L[R] E} (hU : ∀ n, U (n + 1) = (U n).comp (P n)) :
-    Antitone fun n ↦ (T ∘ₗ (U n : X n →ₗ[R] E)).separatingSpace := by
-  refine antitone_nat_of_succ_le fun n ↦ ?_
-  rw [hU, ContinuousLinearMap.toLinearMap_comp, ← LinearMap.comp_assoc]
-  exact separatingSpace_comp_le _ (P n)
-
-omit [ContinuousConstSMul R F] in
 /-- If continuous linear maps `Q n` on `F` intertwine `T` with continuous linear maps `P n` on
 `E` up to continuous errors `Q n ∘ T - T ∘ P n`, then so do the products
 `V n = Q 0 ∘ ⋯ ∘ Q (n - 1)` and `U n = P 0 ∘ ⋯ ∘ P (n - 1)`. -/
@@ -295,7 +284,7 @@ theorem continuous_comp_sub_comp_of_continuous_sub (T : E →ₗ[R] F) (P : ℕ 
     rw [this]
     exact h₁.add h₂
 
-end Tower
+end Products
 
 section Banach
 
@@ -332,13 +321,6 @@ theorem continuous_comp_iff_separatingSpace_le_ker [AddCommGroup G] [Module 𝕜
   rw [hW, coe_comp]
   exact (T.separatingSpace.liftQL W h).continuous.comp T.continuous_mkQ_comp
 
-/-- A linear map between Banach spaces becomes continuous modulo a closed subspace `K` exactly
-when `K` contains its separating space. -/
-theorem continuous_mkQ_comp_iff_separatingSpace_le (K : Submodule 𝕜 F) [IsClosed (K : Set F)] :
-    Continuous (K.mkQ ∘ₗ T) ↔ T.separatingSpace ≤ K := by
-  rw [← Submodule.toLinearMap_mkQL, continuous_comp_iff_separatingSpace_le_ker,
-    Submodule.toLinearMap_mkQL, Submodule.ker_mkQ]
-
 /-- The separating space of `U ∘ T` is the closure of the image under `U` of the separating
 space of `T`. -/
 theorem separatingSpace_comp [NormedAddCommGroup G] [NormedSpace 𝕜 G] (U : F →L[𝕜] G) :
@@ -356,119 +338,228 @@ theorem separatingSpace_comp [NormedAddCommGroup G] [NormedSpace 𝕜 G] (U : F 
   have hcont := (T.continuous_comp_iff_separatingSpace_le_ker (K.mkQL ∘L U)).2 hKU
   simpa using ((U : F →ₗ[𝕜] G) ∘ₗ T).separatingSpace_le_ker_of_continuous_comp K.mkQL hcont
 
+/-- If the separating space of a linear map `T` between Banach spaces is not contained in a
+closed subspace `N`, then modulo `N` the map `T` sends arbitrarily small vectors to arbitrarily
+large ones. -/
+theorem exists_norm_le_le_norm_mkQ_apply {N : Submodule 𝕜 F} [IsClosed (N : Set F)]
+    (hT : ¬T.separatingSpace ≤ N) {δ : ℝ} (hδ : 0 < δ) (c : ℝ) :
+    ∃ x, ‖x‖ ≤ δ ∧ c ≤ ‖N.mkQ (T x)‖ := by
+  by_contra! h
+  obtain ⟨C, hC⟩ :=
+    (N.mkQ ∘ₗ T).bound_of_ball_bound hδ c fun x hx ↦ (h x (mem_ball_zero_iff.1 hx).le).le
+  refine hT ?_
+  simpa using (T.continuous_comp_iff_separatingSpace_le_ker N.mkQL).1
+    (AddMonoidHomClass.continuous_of_bound _ C hC)
+
 end Banach
 
-section Stability
+end LinearMap
 
-variable {𝕜 G F : Type*} [NontriviallyNormedField 𝕜] {E : ℕ → Type*}
-  [∀ n, NormedAddCommGroup (E n)] [∀ n, NormedSpace 𝕜 (E n)]
-  [NormedAddCommGroup G] [NormedSpace 𝕜 G] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-  (T : G →ₗ[𝕜] F) (R : ∀ n, E (n + 1) →L[𝕜] E n) {U : ∀ n, E n →L[𝕜] G}
+/-! ### The stability lemma -/
 
-variable [∀ n, CompleteSpace (E n)] [CompleteSpace F]
+namespace TauCeti
 
-/-- **The stability lemma** for separating spaces. Let `T : G → F` be a linear map into a
-Banach space, let `R n : E (n + 1) → E n` be continuous linear maps between Banach spaces, and
-let `U n : E n → G` be continuous linear maps with `U (n + 1) = U n ∘ R n`, so that
-`U n = U 0 ∘ R 0 ∘ ⋯ ∘ R (n - 1)`. Then the decreasing sequence of separating spaces of
-`T ∘ U n` is eventually constant. -/
-theorem exists_separatingSpace_comp_eq (hU : ∀ n, U (n + 1) = (U n).comp (R n)) :
-    ∃ N, ∀ n ≥ N, (T ∘ₗ (U n : E n →ₗ[𝕜] G)).separatingSpace =
-      (T ∘ₗ (U N : E N →ₗ[𝕜] G)).separatingSpace := by
-  -- The gliding hump: if the sequence dropped at infinitely many `n`, we could choose small
-  -- `y n : E n` at each drop with `T (U n (y n))` large modulo the next separating space, sum
-  -- the series `x = ∑ U n (y n)`, and obtain `n ≤ ‖T x‖` at every drop `n`.
-  set S : ℕ → Submodule 𝕜 F := fun n ↦ (T ∘ₗ (U n : E n →ₗ[𝕜] G)).separatingSpace
-  have hSc : ∀ n, IsClosed (S n : Set F) := fun n ↦ isClosed_separatingSpace _
-  -- `T ∘ U m` becomes continuous modulo `S m`, with operator norm `c m`.
-  let C : ∀ m, E m →L[𝕜] F ⧸ S m := fun m ↦
-    ⟨(S m).mkQ ∘ₗ T ∘ₗ (U m : E m →ₗ[𝕜] G), (T ∘ₗ (U m : E m →ₗ[𝕜] G)).continuous_mkQ_comp⟩
-  -- Evaluating `C` unfolds its definition.
-  have hC : ∀ m v, C m v = (S m).mkQ (T (U m v)) := fun _ _ ↦ rfl
-  -- `T ∘ U n` modulo the next separating space `S (n + 1)` is discontinuous whenever the
-  -- sequence drops at `n`.
-  let V : ∀ n, E n →ₗ[𝕜] F ⧸ S (n + 1) := fun n ↦ (S (n + 1)).mkQ ∘ₗ T ∘ₗ (U n : E n →ₗ[𝕜] G)
-  have hV : ∀ n, S (n + 1) ≠ S n → ¬ Continuous (V n) := by
-    intro n hne hcont
-    -- `continuous_mkQ_comp_iff_separatingSpace_le` takes closedness of `S (n + 1)` as an instance.
-    have := hSc (n + 1)
-    exact hne (le_antisymm (antitone_separatingSpace_comp T R hU n.le_succ)
-      ((continuous_mkQ_comp_iff_separatingSpace_le _ _).1 hcont))
-  -- The admissible sizes `η n` of the humps.
-  set c : ℕ → ℝ := fun m ↦ ‖C m‖
-  have hc : ∀ m, 0 ≤ c m := fun m ↦ norm_nonneg _
-  obtain ⟨η, hηpos, hη⟩ := TauCeti.exists_pos_mul_le_half_pow
-    (fun m k ↦ (1 + c m) * ‖TauCeti.towerComp R m k‖) fun m k ↦
-      mul_nonneg (by linarith [hc m]) (norm_nonneg _)
-  -- At each drop, choose a hump of size at most `η n` whose image is large.
-  have hpick : ∀ n (s : G), ∃ y : E n, ‖y‖ ≤ η n ∧
-      (S (n + 1) ≠ S n → ‖T s‖ + n + 2 ≤ ‖V n y‖) := by
+open Finset LinearMap
+
+section Topological
+
+variable {𝕜 F : Type*} [Ring 𝕜]
+  [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F] [IsTopologicalAddGroup F]
+  [ContinuousConstSMul 𝕜 F]
+  {E : ℕ → Type*} [∀ n, AddCommGroup (E n)] [∀ n, Module 𝕜 (E n)]
+  [∀ n, TopologicalSpace (E n)] [∀ n, IsTopologicalAddGroup (E n)]
+  [∀ n, ContinuousConstSMul 𝕜 (E n)]
+
+/-- For linear maps `T n : E n →ₗ F` with `T (n + 1) = T n ∘ R n` for continuous linear maps
+`R n : E (n + 1) → E n`, the separating spaces of the `T n` decrease. -/
+theorem antitone_separatingSpace {T : ∀ n, E n →ₗ[𝕜] F} {R : ∀ n, E (n + 1) →L[𝕜] E n}
+    (hT : ∀ n, T (n + 1) = T n ∘ₗ (R n : E (n + 1) →ₗ[𝕜] E n)) :
+    Antitone fun n ↦ (T n).separatingSpace :=
+  antitone_nat_of_succ_le fun n ↦ hT n ▸ (T n).separatingSpace_comp_le (R n)
+
+end Topological
+
+section Banach
+
+variable {𝕜 F : Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {E : ℕ → Type*} [∀ n, NormedAddCommGroup (E n)] [∀ n, NormedSpace 𝕜 (E n)]
+  (R : ∀ n, E (n + 1) →L[𝕜] E n)
+
+/-- The composite `R m ∘ R (m + 1) ∘ ⋯ ∘ R (m + k - 1) : E (m + k) → E m`. -/
+private noncomputable def descend (m : ℕ) : ∀ k, E (m + k) →L[𝕜] E m
+  | 0 => ContinuousLinearMap.id 𝕜 (E m)
+  | k + 1 => (descend m k).comp (R (m + k))
+
+/-- The composite `R 0 ∘ R 1 ∘ ⋯ ∘ R (n - 1) : E n → E 0`. -/
+private noncomputable def toBase : ∀ n, E n →L[𝕜] E 0
+  | 0 => ContinuousLinearMap.id 𝕜 (E 0)
+  | n + 1 => (toBase n).comp (R n)
+
+private theorem descend_succ (m k : ℕ) :
+    descend R m (k + 1) = (descend R m k).comp (R (m + k)) := rfl
+
+private theorem toBase_succ (n : ℕ) : toBase R (n + 1) = (toBase R n).comp (R n) := rfl
+
+private theorem toBase_add (m : ℕ) : ∀ k, toBase R (m + k) = (toBase R m).comp (descend R m k)
+  | 0 => (ContinuousLinearMap.comp_id _).symm
+  | k + 1 => by
+    rw [descend_succ, ← ContinuousLinearMap.comp_assoc, ← toBase_add m k]
+    -- `m + (k + 1)` is definitionally `m + k + 1`.
+    exact toBase_succ R (m + k)
+
+private theorem apply_toBase {T : ∀ n, E n →ₗ[𝕜] F}
+    (hT : ∀ n, T (n + 1) = T n ∘ₗ (R n : E (n + 1) →ₗ[𝕜] E n)) :
+    ∀ n (v : E n), T 0 (toBase R n v) = T n v
+  | 0, _ => rfl
+  | n + 1, v => by
+    rw [hT, LinearMap.comp_apply, ← apply_toBase hT n, toBase_succ,
+      ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_coe]
+
+/-- Splitting off the first `m` terms of `∑ⱼ R 0 ⋯ R (j - 1) (x j)`: the tail lies in the image
+of `R 0 ⋯ R (m - 1)`. -/
+private theorem tsum_toBase_eq (x : ∀ n, E n) (m : ℕ)
+    (hx : Summable fun j ↦ toBase R j (x j))
+    (hxm : Summable fun k ↦ descend R m k (x (m + k))) :
+    ∑' j, toBase R j (x j) = ∑ j ∈ range m, toBase R j (x j) +
+      toBase R m (∑' k, descend R m k (x (m + k))) := by
+  set f : ℕ → E 0 := fun j ↦ toBase R j (x j)
+  have htail : ∀ k, toBase R m (descend R m k (x (m + k))) = f (k + m) := fun k ↦ by
+    rw [add_comm k m, ← ContinuousLinearMap.comp_apply, ← toBase_add]
+  rw [(toBase R m).map_tsum hxm, tsum_congr htail]
+  exact (hx.sum_add_tsum_nat_add m).symm
+
+/-- Positive weights `ε j` for the gliding hump: `ε j` is small against `toBase R j` and against
+every composite `descend R (n + 1) k` ending at index `j = n + 1 + k`, scaled by `a n ≥ 0`. -/
+private theorem exists_pos_weights_toBase_descend (a : ℕ → ℝ) (ha : ∀ n, 0 ≤ a n) :
+    ∃ ε : ℕ → ℝ, (∀ j, 0 < ε j) ∧ (∀ j, ‖toBase R j‖ * ε j ≤ (1 / 2) ^ j) ∧
+      ∀ n k, a n * ‖descend R (n + 1) k‖ * ε (n + 1 + k) ≤ (1 / 2) ^ (n + 1 + k) := by
+  -- `B j` dominates every coefficient that meets the weight at `j`.
+  let c : ℕ → ℕ → ℝ := fun m k ↦ a m * ‖descend R (m + 1) k‖
+  let B : ℕ → ℝ := fun j ↦ ‖toBase R j‖ + ∑ m ∈ range j, c m (j - (m + 1))
+  choose ε hε hεB using fun j ↦ exists_pos_mul_lt (pow_pos (one_half_pos (α := ℝ)) j) (B j)
+  have hcoef : ∀ m k, 0 ≤ c m k := fun m k ↦ mul_nonneg (ha m) (norm_nonneg _)
+  refine ⟨ε, hε, fun j ↦ ?_, fun n k ↦ ?_⟩
+  · exact (mul_le_mul_of_nonneg_right (le_add_of_nonneg_right (sum_nonneg fun m _ ↦ hcoef m _))
+      (hε j).le).trans (hεB j).le
+  · have h := single_le_sum (f := fun m ↦ c m (n + 1 + k - (m + 1)))
+      (fun m _ ↦ hcoef m _) (mem_range.2 (by omega : n < n + 1 + k))
+    simp only [Nat.add_sub_cancel_left] at h
+    refine (mul_le_mul_of_nonneg_right ?_ (hε _).le).trans (hεB _).le
+    exact h.trans (le_add_of_nonneg_left (norm_nonneg _))
+
+variable {R} in
+/-- The gliding-hump estimate at step `n`. Let `L` agree with `N.mkQ ∘ T (n + 1)`, and let the
+summands of `y = ∑ⱼ R 0 ⋯ R (j - 1) (x j)` beyond `n` be small against `‖L‖ + 1`. Then modulo `N`
+the image of the `n`-th summand is bounded by `‖T 0 y‖`, the partial sum before `n`, and `1`. -/
+private theorem norm_mkQ_apply_le [∀ n, CompleteSpace (E n)] {T : ∀ n, E n →ₗ[𝕜] F}
+    (hT : ∀ n, T (n + 1) = T n ∘ₗ (R n : E (n + 1) →ₗ[𝕜] E n)) {N : Submodule 𝕜 F} (n : ℕ)
+    (L : E (n + 1) →L[𝕜] F ⧸ N) (hL : ∀ w, L w = N.mkQ (T (n + 1) w))
+    {x : ∀ j, E j} {ε : ℕ → ℝ} (hx : ∀ j, ‖x j‖ ≤ ε j)
+    (hε : ∀ k, (‖L‖ + 1) * ‖descend R (n + 1) k‖ * ε (n + 1 + k) ≤ (1 / 2) ^ (n + 1 + k))
+    (hfs : Summable fun j ↦ toBase R j (x j)) :
+    ‖N.mkQ (T n (x n))‖ ≤ ‖T 0 (∑' j, toBase R j (x j))‖ +
+      ‖N.mkQ (T 0 (∑ j ∈ range n, toBase R j (x j)))‖ + 1 := by
+  set g : ℕ → E (n + 1) := fun k ↦ descend R (n + 1) k (x (n + 1 + k))
+  have hg : ∀ k, (‖L‖ + 1) * ‖g k‖ ≤ (1 / 2) ^ (k + 1) := by
+    intro k
+    calc (‖L‖ + 1) * ‖g k‖ ≤ (‖L‖ + 1) * (‖descend R (n + 1) k‖ * ε (n + 1 + k)) :=
+          mul_le_mul_of_nonneg_left (((descend R (n + 1) k).le_opNorm _).trans
+            (mul_le_mul_of_nonneg_left (hx _) (norm_nonneg _))) (by positivity)
+      _ = (‖L‖ + 1) * ‖descend R (n + 1) k‖ * ε (n + 1 + k) := by ring
+      _ ≤ (1 / 2) ^ (n + 1 + k) := hε k
+      _ ≤ (1 / 2) ^ (k + 1) := pow_le_pow_of_le_one (by norm_num) (by norm_num) (by omega)
+  have hgeom : HasSum (fun k : ℕ ↦ ((1 : ℝ) / 2) ^ (k + 1)) 1 := by
+    have := hasSum_geometric_two.mul_right (1 / 2)
+    norm_num [← pow_succ] at this
+    exact this
+  have hgle : ∀ k, ‖g k‖ ≤ (1 / 2) ^ (k + 1) := fun k ↦
+    (le_mul_of_one_le_left (norm_nonneg _) (by linarith [norm_nonneg L])).trans (hg k)
+  have hgs : Summable g := Summable.of_norm_bounded hgeom.summable hgle
+  have hLw : ‖L (∑' k, g k)‖ ≤ 1 :=
+    (hgs.hasSum.mapL L).norm_le_of_bounded hgeom fun k ↦ (L.le_opNorm _).trans <|
+      (mul_le_mul_of_nonneg_right (by linarith) (norm_nonneg _)).trans (hg k)
+  set y := ∑' j, toBase R j (x j) with hy
+  set s := ∑ j ∈ range n, toBase R j (x j) with hs
+  -- Split `y` into the summands before `n`, the `n`-th summand, and the tail through `R n`.
+  have hdec : T 0 y = T 0 s + T n (x n) + T (n + 1) (∑' k, g k) := by
+    rw [hy, tsum_toBase_eq R x (n + 1) hfs hgs, sum_range_succ, ← hs, map_add, map_add,
+      apply_toBase R hT, apply_toBase R hT]
+  set Q := N.mkQ
+  have hQ : Q (T n (x n)) = Q (T 0 y) - Q (T 0 s) - L (∑' k, g k) := by
+    rw [hdec, map_add, map_add, hL]
+    abel
+  have h1 : ‖Q (T 0 y)‖ ≤ ‖T 0 y‖ := Submodule.Quotient.norm_mk_le N (T 0 y)
+  rw [hQ]
+  linarith [norm_sub_le (Q (T 0 y) - Q (T 0 s)) (L (∑' k, g k)),
+    norm_sub_le (Q (T 0 y)) (Q (T 0 s))]
+
+variable {R} in
+/-- **Sinclair's stability lemma.** Let `E n` and `F` be Banach spaces, let
+`R n : E (n + 1) → E n` be continuous linear maps, and let `T n : E n →ₗ F` be linear maps, not
+assumed continuous, with `T (n + 1) = T n ∘ R n`, so that `T n = T 0 ∘ R 0 ∘ ⋯ ∘ R (n - 1)`.
+Then the decreasing sequence of separating spaces of the `T n` is eventually constant. -/
+theorem eventuallyConst_separatingSpace [CompleteSpace F] [∀ n, CompleteSpace (E n)]
+    {T : ∀ n, E n →ₗ[𝕜] F} (hT : ∀ n, T (n + 1) = T n ∘ₗ (R n : E (n + 1) →ₗ[𝕜] E n)) :
+    Filter.EventuallyConst (fun n ↦ (T n).separatingSpace) Filter.atTop := by
+  set S : ℕ → Submodule 𝕜 F := fun n ↦ (T n).separatingSpace
+  have hanti : Antitone S := antitone_separatingSpace hT
+  -- The quotient map modulo `S (n + 1)` makes `T (n + 1)` continuous, giving `K n`, but it does
+  -- not make `T n` continuous when `S (n + 1) ≠ S n`.
+  let K : ∀ n, E (n + 1) →L[𝕜] F ⧸ S (n + 1) := fun n ↦
+    ⟨(S (n + 1)).mkQ ∘ₗ T (n + 1), (T (n + 1)).continuous_mkQ_comp⟩
+  have hK : ∀ n w, K n w = (S (n + 1)).mkQ (T (n + 1) w) := fun _ _ ↦ rfl
+  -- The `j`-th summand is chosen of norm at most `ε j`, small against the composites used below.
+  obtain ⟨ε, hε, hεb, hεK⟩ :=
+    exists_pos_weights_toBase_descend R (fun m ↦ ‖K m‖ + 1) fun m ↦ by positivity
+  -- At a strict step `n`, a small vector of `E n` has a large image modulo `S (n + 1)`.
+  have hchoice : ∀ n (s : E 0), ∃ v : E n, ‖v‖ ≤ ε n ∧ (S (n + 1) ≠ S n →
+      n + 2 + ‖(S (n + 1)).mkQ (T 0 s)‖ ≤ ‖(S (n + 1)).mkQ (T n v)‖) := by
     intro n s
-    by_cases hne : S (n + 1) = S n
-    · exact ⟨0, by simpa using (hηpos n).le, fun h ↦ (h hne).elim⟩
-    · obtain ⟨y, hy, hVy⟩ := (V n).exists_norm_le_le_norm_of_not_continuous (hV n hne)
-        (hηpos n) (‖T s‖ + n + 2)
-      exact ⟨y, hy, fun _ ↦ hVy⟩
-  choose pick hpick_le hpick_big using hpick
-  -- The partial sums `s n = ∑ k < n, U k (y k)` of the gliding hump series.
-  obtain ⟨s, hs0, hs_succ⟩ : ∃ s : ℕ → G, s 0 = 0 ∧ ∀ n, s (n + 1) = s n + U n (pick n (s n)) :=
-    ⟨fun n ↦ Nat.rec 0 (fun n sn ↦ sn + U n (pick n sn)) n, rfl, fun _ ↦ rfl⟩
-  set y : ∀ n, E n := fun n ↦ pick n (s n)
-  have hs : ∀ n, s n = ∑ k ∈ Finset.range n, U k (y k) := by
+    by_cases hn : S (n + 1) = S n
+    · exact ⟨0, by simpa using (hε n).le, fun h ↦ (h hn).elim⟩
+    have := (T (n + 1)).isClosed_separatingSpace
+    obtain ⟨v, hv, hv'⟩ := (T n).exists_norm_le_le_norm_mkQ_apply
+      (fun h ↦ hn (le_antisymm (hanti n.le_succ) h)) (hε n) (n + 2 + ‖(S (n + 1)).mkQ (T 0 s)‖)
+    exact ⟨v, hv, fun _ ↦ hv'⟩
+  -- Choose the summands recursively, each one large compared with the partial sum before it.
+  choose v hv hv' using hchoice
+  let s : ℕ → E 0 := fun n ↦
+    Nat.rec (motive := fun _ ↦ E 0) 0 (fun j acc ↦ acc + toBase R j (v j acc)) n
+  let x : ∀ n, E n := fun n ↦ v n (s n)
+  -- The defining recursion of the partial sums `s`.
+  have hs_succ : ∀ n, s (n + 1) = s n + toBase R n (x n) := fun _ ↦ rfl
+  have hs : ∀ n, s n = ∑ j ∈ range n, toBase R j (x j) := by
     intro n
     induction n with
-    | zero => rw [hs0, Finset.sum_range_zero]
-    | succ n ih => rw [hs_succ, Finset.sum_range_succ, ← ih]
-  have hy : ∀ m k, ‖TauCeti.towerComp R m k (y (m + k))‖ ≤ 1 / (1 + c m) * (1 / 2) ^ k := by
-    intro m k
-    have hcm : 0 < 1 + c m := by linarith [hc m]
-    refine ((TauCeti.towerComp R m k).le_opNorm _).trans ?_
-    calc ‖TauCeti.towerComp R m k‖ * ‖y (m + k)‖
-        ≤ ‖TauCeti.towerComp R m k‖ * η (m + k) := by
-          gcongr
-          exact hpick_le _ _
-      _ = (1 + c m) * ‖TauCeti.towerComp R m k‖ * η (m + k) / (1 + c m) := by
-          field_simp
-      _ ≤ (1 / 2) ^ k / (1 + c m) := by
-          gcongr
-          exact hη m k
-      _ = 1 / (1 + c m) * (1 / 2) ^ k := by ring
-  obtain ⟨x, hx⟩ := TauCeti.exists_norm_le_and_apply_eq_sub_sum R hU y _ hy
-  -- The sequence cannot drop at any `n > ‖T x‖`.
-  have hstab : ∀ n, ⌊‖T x‖⌋₊ + 1 ≤ n → S (n + 1) = S n := by
-    intro n hn
-    by_contra hne
-    obtain ⟨z, hz, hUz⟩ := hx (n + 1)
-    have hx' : x = s n + U n (y n) + U (n + 1) z := by
-      rw [hUz, ← hs, hs_succ, add_sub_cancel]
-    have key : V n (y n) =
-        (S (n + 1)).mkQ (T x) - (S (n + 1)).mkQ (T (s n)) - C (n + 1) z := by
-      simp only [V, hC, comp_apply, hx', map_add]
-      abel
-    have hCz : ‖C (n + 1) z‖ ≤ 2 := by
-      calc ‖C (n + 1) z‖ ≤ c (n + 1) * (2 * (1 / (1 + c (n + 1)))) :=
-            (C (n + 1)).le_opNorm_of_le hz
-        _ = 2 * (c (n + 1) / (1 + c (n + 1))) := by ring
-        _ ≤ 2 * 1 := by
-          gcongr
-          exact div_le_one_of_le₀ (by linarith) (by linarith [hc (n + 1)])
-        _ = 2 := mul_one 2
-    have hVy : ‖V n (y n)‖ ≤ ‖T x‖ + ‖T (s n)‖ + 2 := by
-      rw [key]
-      refine (norm_sub_le _ _).trans ?_
-      gcongr
-      refine (norm_sub_le _ _).trans ?_
-      gcongr <;> exact Submodule.Quotient.norm_mk_le _ _
-    have hbig := hpick_big n (s n) hne
-    have hn' : (n : ℝ) ≤ ‖T x‖ := by linarith
-    have := Nat.le_floor hn'
-    omega
-  refine ⟨⌊‖T x‖⌋₊ + 1, fun n hn ↦ ?_⟩
-  induction n, hn using Nat.le_induction with
-  | base => rfl
-  | succ n hn ih => exact (hstab n hn).trans ih
+    | zero => simp [s]
+    | succ n ih => rw [hs_succ, sum_range_succ, ih]
+  have hx : ∀ j, ‖x j‖ ≤ ε j := fun j ↦ hv j (s j)
+  have hfx : ∀ j, ‖toBase R j (x j)‖ ≤ (1 / 2) ^ j := fun j ↦
+    ((toBase R j).le_opNorm _).trans <|
+      (mul_le_mul_of_nonneg_left (hx j) (norm_nonneg _)).trans (hεb j)
+  have hfs : Summable fun j ↦ toBase R j (x j) :=
+    Summable.of_norm_bounded summable_geometric_two hfx
+  set y := ∑' j, toBase R j (x j) with hy
+  -- Gliding hump: at every strict step `n`, the norm of `T 0 y` is at least `n + 1`.
+  have hkey : ∀ n, S (n + 1) ≠ S n → (n : ℝ) + 1 ≤ ‖T 0 y‖ := fun n hn ↦ by
+    have h := norm_mkQ_apply_le hT n (K n) (hK n) hx (hεK n) hfs
+    rw [← hs, ← hy] at h
+    linarith [hv' n (s n) hn]
+  -- Strict steps are unbounded unless the sequence stabilizes, contradicting `hkey`.
+  rw [Filter.eventuallyConst_atTop_nat]
+  by_contra! hne
+  obtain ⟨m, hm, hm'⟩ := hne ⌈‖T 0 y‖⌉₊
+  have h : (⌈‖T 0 y‖⌉₊ : ℝ) ≤ m := by exact_mod_cast hm
+  linarith [hkey m hm', Nat.le_ceil ‖T 0 y‖]
 
-end Stability
+end Banach
+
+end TauCeti
+
+/-! ### Stability of the images of the separating space -/
+
+namespace LinearMap
 
 section Intertwining
 
@@ -480,22 +571,23 @@ variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
 between Banach spaces, and let `R n` on `E` and `S n` on `F` be continuous linear maps such that
 each `S n ∘ T - T ∘ R n` is continuous. If `V n = S 0 ∘ ⋯ ∘ S (n - 1)`, then the closures of the
 images of the separating space of `T` under `V n` are eventually constant. -/
-theorem exists_topologicalClosure_map_separatingSpace_eq (T : E →ₗ[𝕜] F)
+theorem eventuallyConst_topologicalClosure_map_separatingSpace (T : E →ₗ[𝕜] F)
     (R : ℕ → E →L[𝕜] E) (S : ℕ → F →L[𝕜] F)
     (hRS : ∀ n, Continuous ((S n : F →ₗ[𝕜] F) ∘ₗ T - T ∘ₗ (R n : E →ₗ[𝕜] E)))
     {V : ℕ → F →L[𝕜] F} (hV0 : V 0 = ContinuousLinearMap.id 𝕜 F)
     (hV : ∀ n, V (n + 1) = (V n).comp (S n)) :
-    ∃ N, ∀ n ≥ N, (T.separatingSpace.map (V n : F →ₗ[𝕜] F)).topologicalClosure =
-      (T.separatingSpace.map (V N : F →ₗ[𝕜] F)).topologicalClosure := by
+    Filter.EventuallyConst
+      (fun n ↦ (T.separatingSpace.map (V n : F →ₗ[𝕜] F)).topologicalClosure) Filter.atTop := by
   obtain ⟨U, hU0, hU⟩ : ∃ U : ℕ → E →L[𝕜] E,
       U 0 = ContinuousLinearMap.id 𝕜 E ∧ ∀ n, U (n + 1) = (U n).comp (R n) :=
     ⟨fun n ↦ Nat.rec (ContinuousLinearMap.id 𝕜 E) (fun n Un ↦ Un.comp (R n)) n, rfl, fun _ ↦ rfl⟩
-  have hsep : ∀ n, (T.separatingSpace.map (V n : F →ₗ[𝕜] F)).topologicalClosure =
-      (T ∘ₗ (U n : E →ₗ[𝕜] E)).separatingSpace := fun n ↦ by
+  have hsep : (fun n ↦ (T.separatingSpace.map (V n : F →ₗ[𝕜] F)).topologicalClosure) =
+      fun n ↦ (T ∘ₗ (U n : E →ₗ[𝕜] E)).separatingSpace := funext fun n ↦ by
     rw [← separatingSpace_comp, separatingSpace_eq_of_continuous_sub
       (continuous_comp_sub_comp_of_continuous_sub T R S hRS hU0 hU hV0 hV n)]
-  obtain ⟨N, hN⟩ := exists_separatingSpace_comp_eq (E := fun _ ↦ E) T R hU
-  exact ⟨N, fun n hn ↦ by rw [hsep, hsep, hN n hn]⟩
+  rw [hsep]
+  exact TauCeti.eventuallyConst_separatingSpace (E := fun _ ↦ E) (R := R) fun n ↦ by
+    rw [hU, ContinuousLinearMap.toLinearMap_comp, LinearMap.comp_assoc]
 
 end Intertwining
 

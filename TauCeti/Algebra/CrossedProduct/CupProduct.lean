@@ -280,7 +280,7 @@ private theorem inflateZ2_quadratic_sub_mem_B2 {a b : Kˣ} {α β : (SeparableCl
     simp only [hg, hk, or_self, ↓reduceIte]
     ext
     simp
-  simp only [Pi.sub_apply, hW, TwoCocycle.coe_inflateZ2, TwoCocycle.coe_toCocycles₂,
+  simp only [Pi.sub_apply, hW, TwoCocycle.coe_inflateZ2,
     TwoCocycle.inflate_toFun, hq]
   apply Additive.toMul.injective
   simp only [toMul_add, toMul_sub, Additive.toMul_smul, toMul_ofMul, apply_ite Additive.toMul,
@@ -306,7 +306,7 @@ theorem TwoCocycle.inflateClass_quadratic_eq_h2MuToUnits_cup {a b : Kˣ}
         (kummerClass a) (kummerClass b)) := by
   obtain ⟨β, hβ⟩ := exists_pow_eq_units_map (n := 2) (isUnit_of_invertible (2 : K)) b
   obtain ⟨W, hW, hWv⟩ := exists_h2MuToUnits_cup_kummerClass hα hβ
-  rw [TwoCocycle.inflateClass_def, hW]
+  rw [TwoCocycle.inflateClass_def, TwoCocycle.inflateH2_def, hW]
   exact congrArg _ (H2pi_eq_iff.2
     (inflateZ2_quadratic_sub_mem_B2 hα hβ L hcard hr W hWv))
 

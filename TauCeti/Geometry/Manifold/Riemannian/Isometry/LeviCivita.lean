@@ -83,29 +83,13 @@ theorem koszul_mpullback [CompleteSpace E] (hf : IsLocalRiemannianIsometry I J f
     (hY : MDiffAt (T% Y) (f x)) (hZ : MDiffAt (T% Z) (f x)) :
     koszul I (mpullback I J f X) (mpullback I J f Y) (mpullback I J f Z) x =
       koszul J X Y Z (f x) := by
-  -- Directional derivatives of inner products: the chain rule through `f`.
-  have hd : ∀ {V W : Π y : N, TangentSpace J y} (U : Π y : N, TangentSpace J y),
-      MDiffAt (T% V) (f x) → MDiffAt (T% W) (f x) →
-      mvfderiv I (fun y ↦ inner ℝ (mpullback I J f V y) (mpullback I J f W y)) x
-          (mpullback I J f U x) =
-        mvfderiv J (fun y ↦ inner ℝ (V y) (W y)) (f x) (U (f x)) := by
-    intro V W U hV hW
-    have hcomp : (fun y ↦ inner ℝ (mpullback I J f V y) (mpullback I J f W y)) =
-        (fun y ↦ inner ℝ (V y) (W y)) ∘ f := funext fun y ↦ hf.inner_mpullback V W y
-    rw [hcomp, mvfderiv_comp_apply x (mdifferentiableAt_inner hV hW) (hf.mdifferentiableAt x)]
-    exact congrArg _ (hf.mfderiv_apply_mpullback U x)
-  -- Lie brackets: Mathlib's naturality of the Lie bracket under pullback.
-  have hb : ∀ {V W : Π y : N, TangentSpace J y}, MDiffAt (T% V) (f x) →
-      MDiffAt (T% W) (f x) →
-      mlieBracket I (mpullback I J f V) (mpullback I J f W) x =
-        mpullback I J f (mlieBracket J V W) x := fun hV hW ↦ by
-    let _ : IsManifold I (minSmoothness ℝ 2) M := by
-      rw [minSmoothness_of_isRCLikeNormedField]; infer_instance
-    let _ : IsManifold J (minSmoothness ℝ 2) N := by
-      rw [minSmoothness_of_isRCLikeNormedField]; infer_instance
-    exact (mpullback_mlieBracket hV hW hf.contMDiff.contMDiffAt (by simp)).symm
-  rw [koszul_apply, koszul_apply, hd X hY hZ, hd Y hZ hX, hd Z hX hY, hb hX hY, hb hX hZ,
-    hb hY hZ, hf.inner_mpullback, hf.inner_mpullback, hf.inner_mpullback]
+  have h := koszulBilinear_mpullback (b := fun _ ↦ innerSL ℝ) (b' := fun _ ↦ innerSL ℝ)
+    (hf.contMDiff.contMDiffAt.of_le (by simp)) hf.isInvertible_mfderiv
+    (fun y v w ↦ by simp only [innerSL_apply_apply ℝ, hf.inner_mfderiv])
+    (fun _ _ hV hW ↦ by simpa only [innerSL_apply_apply ℝ] using mdifferentiableAt_inner hV hW)
+    hX hY hZ
+  rw [koszul_apply, koszul_apply]
+  simpa only [koszulBilinear_apply, innerSL_apply_apply ℝ] using h
 
 variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ F]
   [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]

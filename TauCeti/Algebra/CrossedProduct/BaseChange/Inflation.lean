@@ -62,7 +62,7 @@ theorem inflateZ2_restriction_apply (g h : AbsoluteGaloisGroup L) :
       (d.inflateZ2 F : _ → UnitsCoeff L) (g, h) := by
   apply Additive.toMul.injective
   apply Units.ext
-  simp only [coe_inflateZ2, coe_toCocycles₂, inflate_toFun, toMul_unitsCoeffMap,
+  simp only [coe_inflateZ2, inflate_toFun, toMul_unitsCoeffMap,
     toMul_ofMul, Units.coe_map, hd]
   rw [← restrictNormalHom_equivFixingSubgroup K L σ E F ι π hι hπ g,
     ← restrictNormalHom_equivFixingSubgroup K L σ E F ι π hι hπ h]
@@ -85,7 +85,7 @@ theorem inflateClass_galoisResUnits :
       (absoluteGaloisGroupEquivFixingSubgroup K L σ)
   have hf : ∀ g m, unitsCoeffMap K L σ (φ g • m) = g • unitsCoeffMap K L σ m :=
     unitsCoeffMap_smul K L σ
-  rw [galoisResUnits_def, inflateClass_def, inflateClass_def]
+  rw [galoisResUnits_def, inflateClass_def, inflateClass_def, inflateH2_def, inflateH2_def]
   -- Apply the comparison equations as terms: this keeps the compatible-pair proof typed
   -- at its declared group map instead of unfolding subtype and linear-map coercions.
   refine (explicitH2AddEquivContinuousCohomology_map (AbsoluteGaloisGroup K) (UnitsCoeff K)

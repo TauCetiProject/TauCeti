@@ -45,7 +45,7 @@ independently pinned simply connected group scheme.
 * J. S. Milne, *Algebraic Groups* (2017), Chapter 17.
 
 The argument follows the positive short-root type-`G₂` subgroup in
-`TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.Positive.BorelCandidate`; the weight basis of the
+`TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.Positive.Borel.Candidate`; the weight basis of the
 twenty-six-dimensional module is already ordered so that raising never increases the index, so no
 reordering is needed.
 -/

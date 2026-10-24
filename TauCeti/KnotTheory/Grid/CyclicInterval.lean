@@ -101,6 +101,9 @@ directions before taking products.
   `β`.
 * `TauCeti.Grid.notMem_cIco_of_cIco_union`: a point missing both halves of a half-open arc
   cut at an interior point misses the whole arc.
+* `TauCeti.Grid.mem_cIco_of_mem_insert_cIco`, `TauCeti.Grid.notMem_cIoo_of_mem_insert_cIco`,
+  `TauCeti.Grid.notMem_cIco_of_mem_insert_cIco`, `TauCeti.Grid.notMem_cIco_of_noninterleaving`:
+  the cyclic order of points on the two closed arcs between `a` and `b`.
 * `TauCeti.Grid.cyclicPosition_lt_of_notMem_cIco`: two distinct points whose half-open arc
   avoids the basepoint come in increasing order of cyclic position.
 
@@ -1012,6 +1015,13 @@ theorem insert_cIco_subset_cIco {A C s s' : Fin n} (hs : s ∈ cIco A C) (hs' : 
   simp only [mem_cIco, mem_cIoo, ne_eq, ← Fin.val_inj] at hs hs' hr' ⊢
   split_ifs at hs hs' hr' ⊢ <;> omega
 
+/-- A point strictly between `s` and an interior point `b` of `cIoo a c`, where `s` lies in the
+initial piece `cIco a b`, also lies strictly between `s` and `c`. -/
+theorem mem_cIoo_of_mem_cIco_of_mem_cIoo {a b c s s' : Fin n} (hb : b ∈ cIoo a c)
+    (hs : s ∈ cIco a b) (hs' : s' ∈ cIoo s b) : s' ∈ cIoo s c := by
+  simp only [mem_cIco, mem_cIoo, ne_eq, ← Fin.val_inj] at hb hs hs' ⊢
+  split_ifs at hb hs hs' ⊢ <;> omega
+
 /-- A point is never in the half-open cyclic interval starting at its own successor.
 Going clockwise from `c + 1`, the point `c` is the last point reached — only after a full
 cycle. The half-open arc `cIco (c + 1) r` stops before `r`, hence before completing the
@@ -1069,6 +1079,40 @@ theorem notMem_cIco_of_cIco_union {p r₀ r₁ s : Fin n}
   rcases Finset.mem_union.mp hmem with h | h
   · exact h₁ h
   · exact h₂ h
+
+/-- If `c` lies on the closed arc from `b` to `a` and `d` lies on the closed arc from `a` to `b`,
+with `c ≠ d`, then `a` lies on the half-open arc from `c` to `d` unless `a = d`. -/
+theorem mem_cIco_of_mem_insert_cIco {a b c d : Fin n}
+    (hc : c ∈ insert a (cIco b a)) (hd : d ∈ insert b (cIco a b))
+    (hcd : c ≠ d) (ha : a ≠ d) : a ∈ cIco c d := by
+  simp only [Finset.mem_insert, mem_cIco, ne_eq, ← Fin.val_inj] at *
+  split_ifs at * <;> omega
+
+/-- A point `c` of the closed arc from `b` to `a` is not strictly between `a` and any point `d`
+of the closed arc from `a` to `b`. -/
+theorem notMem_cIoo_of_mem_insert_cIco {a b c d : Fin n} (hc : c ∈ insert a (cIco b a))
+    (hd : d ∈ insert b (cIco a b)) : c ∉ cIoo a d := by
+  simp only [Finset.mem_insert, mem_cIco, mem_cIoo, ne_eq, ← Fin.val_inj] at *
+  split_ifs at * <;> omega
+
+/-- If `c` lies on the closed arc from `b` to `a` and `d ≠ c` lies on the closed arc from `a`
+to `b`, then `d` is not on the half-open arc from `c` to `a`. -/
+theorem notMem_cIco_of_mem_insert_cIco {a b c d : Fin n} (hc : c ∈ insert a (cIco b a))
+    (hd : d ∈ insert b (cIco a b)) (h : c ≠ d) : d ∉ cIco c a := by
+  simp only [Finset.mem_insert, mem_cIco, ne_eq, ← Fin.val_inj] at *
+  split_ifs at * <;> omega
+
+/-- Let the distinct points `c₀`, `c₁` lie on the closed arc from `b` to `a` and the distinct
+points `d₀`, `d₁` on the closed arc from `a` to `b`. If the pairs do not interleave and `a ≠ d₁`,
+then `d₀` is not on the half-open arc from `c₁` to `a`. -/
+theorem notMem_cIco_of_noninterleaving {a b c₀ c₁ d₀ d₁ : Fin n}
+    (hc₀ : c₀ ∈ insert a (cIco b a)) (hc₁ : c₁ ∈ insert a (cIco b a))
+    (hd₀ : d₀ ∈ insert b (cIco a b)) (hd₁ : d₁ ∈ insert b (cIco a b))
+    (hnon : Noninterleaving c₀ c₁ d₀ d₁) (hc : c₀ ≠ c₁) (hd : d₀ ≠ d₁) (ha : a ≠ d₁) :
+    d₀ ∉ cIco c₁ a := by
+  rw [noninterleaving_iff] at hnon
+  simp only [Finset.mem_insert, mem_cIco, mem_cIoo, ne_eq, ← Fin.val_inj] at *
+  split_ifs at * <;> omega
 
 /-! ### Positions on the cycle -/
 
