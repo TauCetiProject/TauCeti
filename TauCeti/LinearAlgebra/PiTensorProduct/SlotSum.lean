@@ -78,8 +78,7 @@ representing cocycle in the tensor-induced resolution.
 * `TauCeti.PiTensorProduct.slotSum_comp_slotSum`: if every element of `M` is its own additive
   inverse, the slot sum of a square-zero endomorphism squares to zero.
 * `TauCeti.PiTensorProduct.slotSum_comp_slotHomotopy_add`: if every element of `M` is its own
-  additive inverse, the slot homotopy contracts the tensor power, `D H + H D = 1 - e ⊗ ⋯ ⊗ e`;
-  `TauCeti.PiTensorProduct.slotSum_slotHomotopy_add_apply` is its value at a vector.
+  additive inverse, the slot homotopy contracts the tensor power, `D H + H D = 1 - e ⊗ ⋯ ⊗ e`.
 * `TauCeti.PiTensorProduct.slotSum_comp_map` and `TauCeti.PiTensorProduct.slotSum_comp_reindex`:
   the slot sum commutes with factorwise maps and with reindexing.
 * `TauCeti.PiTensorProduct.isHomogeneous_slotSum`, `TauCeti.PiTensorProduct.isHomogeneous_map`,
@@ -442,14 +441,6 @@ theorem slotSum_comp_slotHomotopy_add (hM : ∀ m : M, m + m = 0) {d e h : Modul
   · simp [hj, hj.ne]
   · simp
   · simp [hj.ne, hj.ne', hj.not_gt]
-
-/-- The contraction identity `D H + H D = 1 - e ⊗ ⋯ ⊗ e` of
-`TauCeti.PiTensorProduct.slotSum_comp_slotHomotopy_add`, evaluated at a vector. -/
-theorem slotSum_slotHomotopy_add_apply (hM : ∀ m : M, m + m = 0) {d e h : Module.End R M}
-    (hde : d ∘ₗ e = e ∘ₗ d) (hdh : d ∘ₗ h + h ∘ₗ d = LinearMap.id - e) (v : ⨂[R] _ : ι, M) :
-    slotSum ι d (slotHomotopy ι e h v) + slotHomotopy ι e h (slotSum ι d v) =
-      v - PiTensorProduct.map (fun _ ↦ e) v := by
-  simpa using LinearMap.congr_fun (slotSum_comp_slotHomotopy_add hM hde hdh) v
 
 end Ring
 

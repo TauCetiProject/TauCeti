@@ -107,6 +107,17 @@ theorem smoothTensorInducedGradedResolutionFunctor_map
       (smoothTensorInductionFunctor R G U hU s).map (smoothGradedResolutionFunctor.map f) :=
   rfl
 
+/-- The action of `G` on the tensor-induced total resolution is tensor induction of the action of
+`U` on the total resolution. -/
+theorem smoothTensorInducedGradedResolutionFunctor_obj_ρ_apply
+    (A : SmoothDiscreteTopRep.{u, v, max v w} R U) (g : G)
+    (x : ((smoothTensorInducedGradedResolutionFunctor U hU s).obj A).obj.V) :
+    ((smoothTensorInducedGradedResolutionFunctor U hU s).obj A).obj.ρ g x =
+      U.tensorInducedRepresentation s
+        ((ofSmoothDiscrete R U).obj (smoothGradedResolutionFunctor.obj A)).ρ g x :=
+  -- `toSmoothDiscrete` keeps the action of the discrete tensor induction.
+  DiscreteRep.tensorInduced_ρ_apply U hU s _ g x
+
 /-- Tensor induction of the coefficient augmentation into the total shifted coinduced
 resolution.
 
@@ -197,11 +208,13 @@ theorem smoothTensorInducedGradedResolutionPiece_ρ_mem (n : ℤ) (g : G)
       TauCeti.LinearMap.IsHomogeneous (B.ρ u) A.obj.gradedResolutionPiece
         A.obj.gradedResolutionPiece 0 :=
     TauCeti.LinearMap.isHomogeneous_def.2 fun p y hy ↦
+      -- `B.ρ u` is the action of `U` on the total resolution, the object of the smooth
+      -- total-resolution functor by `smoothGradedResolutionFunctor_obj`.
       (congrArg (B.ρ u y ∈ A.obj.gradedResolutionPiece ·) (add_zero p)).mpr
         (A.obj.gradedResolutionTopRep_ρ_mem p u y hy)
   have h := (B.ρ.isHomogeneous_wreathTensor hB (U.monomialHom s g)).map_mem hx
   rw [add_zero] at h
-  -- The action on the tensor-induced object is tensor induction of the action on `B`.
+  rw [smoothTensorInducedGradedResolutionFunctor_obj_ρ_apply]
   exact (congrArg (· ∈ smoothTensorInducedGradedResolutionPiece U hU s A n)
     (Subgroup.tensorInducedRepresentation_apply U s B.ρ g x)).mpr h
 
@@ -270,6 +283,16 @@ noncomputable def smoothTensorInducedGradedResolutionProjection :
   PiTensorProduct.map fun _ ↦ A.obj.gradedResolutionProjection
 
 omit [DiscreteTopology R] [U.FiniteIndex] [CompactSpace U] [Fintype (G ⧸ U)] in
+/-- On a pure tensor, the projection applies the projection of the total resolution in every
+coset factor. -/
+@[simp]
+theorem smoothTensorInducedGradedResolutionProjection_tprod
+    (m : G ⧸ U → A.obj.gradedResolutionModule) :
+    smoothTensorInducedGradedResolutionProjection U A (PiTensorProduct.tprod R m) =
+      PiTensorProduct.tprod R fun i ↦ A.obj.gradedResolutionProjection (m i) :=
+  PiTensorProduct.map_tprod _ _
+
+omit [DiscreteTopology R] [U.FiniteIndex] [CompactSpace U] [Fintype (G ⧸ U)] in
 /-- The projection retracts the tensor-induced augmentation. -/
 theorem smoothTensorInducedGradedResolutionProjection_augmentation (x : ⨂[R] _ : G ⧸ U, A.obj.V) :
     smoothTensorInducedGradedResolutionProjection U A
@@ -279,6 +302,17 @@ theorem smoothTensorInducedGradedResolutionProjection_augmentation (x : ⨂[R] _
     LinearMap.ext A.obj.gradedResolutionProjection_augmentation
   rw [smoothTensorInducedGradedResolutionProjection, ← LinearMap.comp_apply,
     ← PiTensorProduct.map_comp, h, PiTensorProduct.map_id, LinearMap.id_apply]
+
+/-- The tensor-induced augmentation lands in total degree zero. -/
+theorem smoothTensorInducedGradedResolutionAugmentationApp_mem
+    (x : ((toSmoothDiscrete R G).obj
+      (DiscreteRep.tensorInduced U hU s ((ofSmoothDiscrete R U).obj A))).obj.V) :
+    (smoothTensorInducedGradedResolutionAugmentationApp U hU s A).hom.hom x ∈
+      smoothTensorInducedGradedResolutionPiece U hU s A 0 :=
+  (congrArg (· ∈ smoothTensorInducedGradedResolutionPiece U hU s A 0)
+    (smoothTensorInducedGradedResolutionAugmentationApp_hom_apply U hU s A x)).mpr
+      (PiTensorProduct.map_mem_totalDegreePiece_zero
+        (fun _ ↦ A.obj.gradedResolutionAugmentation_mem) x)
 
 variable [LinearOrder (G ⧸ U)]
 
@@ -291,6 +325,17 @@ noncomputable def smoothTensorInducedGradedResolutionHomotopy :
   PiTensorProduct.slotHomotopy (G ⧸ U)
     (A.obj.gradedResolutionAugmentation ∘ₗ A.obj.gradedResolutionProjection)
     A.obj.gradedResolutionHomotopy
+
+omit [DiscreteTopology R] [U.FiniteIndex] [CompactSpace U] in
+/-- The contracting homotopy of the tensor-induced total resolution is the slot homotopy of the
+projection followed by the augmentation, and of the contracting homotopy of the total
+resolution. -/
+theorem smoothTensorInducedGradedResolutionHomotopy_def :
+    smoothTensorInducedGradedResolutionHomotopy U A =
+      PiTensorProduct.slotHomotopy (G ⧸ U)
+        (A.obj.gradedResolutionAugmentation ∘ₗ A.obj.gradedResolutionProjection)
+        A.obj.gradedResolutionHomotopy :=
+  (rfl)
 
 omit [DiscreteTopology R] [U.FiniteIndex] [CompactSpace U] in
 /-- The contracting homotopy of the tensor-induced total resolution lowers the total degree by
@@ -323,15 +368,14 @@ theorem slotSum_smoothTensorInducedGradedResolutionHomotopy_add (hA : ∀ a : A.
         (smoothTensorInducedGradedResolutionProjection U A v) := by
   rw [smoothTensorInducedGradedResolutionProjection,
     ← LinearMap.comp_apply (PiTensorProduct.map fun _ ↦ A.obj.gradedResolutionAugmentation),
-    ← PiTensorProduct.map_comp]
-  exact PiTensorProduct.slotSum_slotHomotopy_add_apply
+    ← PiTensorProduct.map_comp, smoothTensorInducedGradedResolutionHomotopy_def]
+  exact LinearMap.congr_fun (PiTensorProduct.slotSum_comp_slotHomotopy_add
     (A.obj.gradedResolutionModule_add_self_eq_zero hA)
     (LinearMap.ext fun x ↦ by
-      rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearMap.comp_apply, LinearMap.comp_apply,
-        TopRep.gradedResolutionDifferential_augmentation,
+      simp only [LinearMap.comp_apply, TopRep.gradedResolutionDifferential_augmentation,
         TopRep.gradedResolutionProjection_differential, map_zero])
     (LinearMap.ext fun x ↦ by
-      simpa using A.obj.gradedResolutionDifferential_gradedResolutionHomotopy_add x) v
+      simpa using A.obj.gradedResolutionDifferential_gradedResolutionHomotopy_add x)) v
 
 /-- **The contraction of the tensor-induced total resolution** onto the tensor induction of the
 coefficients, in characteristic two and for an order on the cosets: the tensor-induced
@@ -351,10 +395,7 @@ noncomputable def smoothTensorInducedGradedResolutionContraction
         (smoothTensorInducedGradedResolutionDifferential_sq U hU s A hA)) :=
   TopRep.ResolutionContraction.ofGraded.{u, v, max u w} _
     (smoothTensorInducedGradedResolutionAugmentationApp U hU s A).hom
-    (fun x ↦ (congrArg (· ∈ smoothTensorInducedGradedResolutionPiece U hU s A 0)
-      (smoothTensorInducedGradedResolutionAugmentationApp_hom_apply U hU s A x)).mpr
-        (PiTensorProduct.map_mem_totalDegreePiece_zero
-          (fun _ ↦ A.obj.gradedResolutionAugmentation_mem) x))
+    (smoothTensorInducedGradedResolutionAugmentationApp_mem U hU s A)
     (smoothTensorInducedGradedResolutionProjection U A)
     (smoothTensorInducedGradedResolutionHomotopy U A)
     (isHomogeneous_smoothTensorInducedGradedResolutionHomotopy U A)
@@ -391,11 +432,50 @@ theorem smoothTensorInducedGradedResolutionContraction_ι (hA : ∀ a : A.obj.V,
         (isHomogeneous_smoothTensorInducedGradedResolutionDifferential U hU s A)
         (smoothTensorInducedGradedResolutionDifferential_sq U hU s A hA) 0
         (smoothTensorInducedGradedResolutionAugmentationApp U hU s A).hom
-        (fun x ↦ (congrArg (· ∈ smoothTensorInducedGradedResolutionPiece U hU s A 0)
-          (smoothTensorInducedGradedResolutionAugmentationApp_hom_apply U hU s A x)).mpr
-            (PiTensorProduct.map_mem_totalDegreePiece_zero
-              (fun _ ↦ A.obj.gradedResolutionAugmentation_mem) x)) :=
+        (smoothTensorInducedGradedResolutionAugmentationApp_mem U hU s A) :=
   TopRep.ResolutionContraction.ofGraded_ι ..
+
+/-- The augmentation of the contraction of the tensor-induced total resolution applies the
+coinduced-resolution augmentation in every coset factor. -/
+@[simp]
+theorem smoothTensorInducedGradedResolutionContraction_ι_apply (hA : ∀ a : A.obj.V, a + a = 0)
+    (x : ((toSmoothDiscrete R G).obj
+      (DiscreteRep.tensorInduced U hU s ((ofSmoothDiscrete R U).obj A))).obj.V) :
+    ((smoothTensorInducedGradedResolutionContraction U hU s A hA).ι.hom x).1 =
+      PiTensorProduct.map (fun _ ↦ A.obj.gradedResolutionAugmentation) x := by
+  rw [smoothTensorInducedGradedResolutionContraction_ι]
+  exact (TopRep.gradedCochainComplexLift_apply _ _ _ _ _ _ 0 _ _ x).trans
+    (smoothTensorInducedGradedResolutionAugmentationApp_hom_apply U hU s A x)
+
+/-- The retraction of the contraction of the tensor-induced total resolution is
+`TauCeti.smoothTensorInducedGradedResolutionProjection`. -/
+@[simp]
+theorem smoothTensorInducedGradedResolutionContraction_proj_apply
+    (hA : ∀ a : A.obj.V, a + a = 0)
+    (v : ((((smoothTensorInducedGradedResolutionFunctor U hU s).obj A).obj.gradedCochainComplex
+      (smoothTensorInducedGradedResolutionPiece U hU s A)
+      (smoothTensorInducedGradedResolutionPiece_ρ_mem U hU s A)
+      (smoothTensorInducedGradedResolutionDifferential U hU s A).hom
+      (isHomogeneous_smoothTensorInducedGradedResolutionDifferential U hU s A)
+      (smoothTensorInducedGradedResolutionDifferential_sq U hU s A hA)).X 0).V) :
+    (smoothTensorInducedGradedResolutionContraction U hU s A hA).proj v =
+      smoothTensorInducedGradedResolutionProjection U A v.1 :=
+  TopRep.ResolutionContraction.ofGraded_proj_apply ..
+
+/-- The contracting homotopy of the contraction of the tensor-induced total resolution is
+`TauCeti.smoothTensorInducedGradedResolutionHomotopy`. -/
+@[simp]
+theorem smoothTensorInducedGradedResolutionContraction_hom_apply
+    (hA : ∀ a : A.obj.V, a + a = 0) (n : ℕ)
+    (v : ((((smoothTensorInducedGradedResolutionFunctor U hU s).obj A).obj.gradedCochainComplex
+      (smoothTensorInducedGradedResolutionPiece U hU s A)
+      (smoothTensorInducedGradedResolutionPiece_ρ_mem U hU s A)
+      (smoothTensorInducedGradedResolutionDifferential U hU s A).hom
+      (isHomogeneous_smoothTensorInducedGradedResolutionDifferential U hU s A)
+      (smoothTensorInducedGradedResolutionDifferential_sq U hU s A hA)).X (n + 1)).V) :
+    ((smoothTensorInducedGradedResolutionContraction U hU s A hA).hom n v).1 =
+      smoothTensorInducedGradedResolutionHomotopy U A v.1 :=
+  TopRep.ResolutionContraction.ofGraded_hom_apply ..
 
 omit [LinearOrder (G ⧸ U)]
 
@@ -420,13 +500,15 @@ theorem smoothTensorInducedGradedResolutionFunctor_obj_ρ_tprod_const
         (PiTensorProduct.tprod R (fun _ : G ⧸ U ↦ z)) =
       PiTensorProduct.tprod R (fun _ : G ⧸ U ↦ z) := by
   let B := (ofSmoothDiscrete R U).obj ((smoothGradedResolutionFunctor (R := R)).obj A)
+  -- `B.ρ u` is the action of `U` on the total resolution, the object of the smooth
+  -- total-resolution functor by `smoothGradedResolutionFunctor_obj`, so `z` is `B.ρ`-invariant.
   have h := (B.ρ.tensorInducedDiagonal s ⟨z, hinv⟩).property g
   rw [Representation.coe_tensorInducedDiagonal] at h
-  exact h
+  exact (smoothTensorInducedGradedResolutionFunctor_obj_ρ_apply U hU s A g _).trans h
 
 /-- The diagonal tensor `z ⊗ ⋯ ⊗ z` of a cocycle is a cocycle: each term of the slot sum
 applies the differential to a factor. -/
-theorem smoothTensorInducedGradedResolutionDifferential_tprod_const
+theorem smoothTensorInducedGradedResolutionDifferential_tprod_const_eq_zero
     {z : A.obj.gradedResolutionModule} (hdz : A.obj.gradedResolutionDifferential z = 0) :
     (smoothTensorInducedGradedResolutionDifferential U hU s A).hom.hom
       (PiTensorProduct.tprod R (fun _ : G ⧸ U ↦ z)) = 0 := by
@@ -453,7 +535,7 @@ noncomputable def smoothTensorInducedDiagonalClass (hA : ∀ a : A.obj.V, a + a 
     (smoothTensorInducedGradedResolutionContraction U hU s A hA) _
     (tprod_const_mem_smoothTensorInducedGradedResolutionPiece U hU s A hz)
     (smoothTensorInducedGradedResolutionFunctor_obj_ρ_tprod_const U hU s A hinv)
-    (smoothTensorInducedGradedResolutionDifferential_tprod_const U hU s A hdz)
+    (smoothTensorInducedGradedResolutionDifferential_tprod_const_eq_zero U hU s A hdz)
 
 /-- **The norm of a cocycle does not depend on the order on the cosets**: it is the class of the
 diagonal tensor through the contraction of the tensor-induced resolution for any order. -/
@@ -466,7 +548,7 @@ theorem smoothTensorInducedDiagonalClass_eq [LinearOrder (G ⧸ U)]
         (smoothTensorInducedGradedResolutionContraction U hU s A hA) _
         (tprod_const_mem_smoothTensorInducedGradedResolutionPiece U hU s A hz)
         (smoothTensorInducedGradedResolutionFunctor_obj_ρ_tprod_const U hU s A hinv)
-        (smoothTensorInducedGradedResolutionDifferential_tprod_const U hU s A hdz) := by
+        (smoothTensorInducedGradedResolutionDifferential_tprod_const_eq_zero U hU s A hdz) := by
   have : LocallyCompactSpace G :=
     (isCompact_iff_compactSpace.2 ‹CompactSpace U›).locallyCompactSpace_of_mem_nhds_of_group
       (hU.mem_nhds U.one_mem)

@@ -346,16 +346,9 @@ noncomputable def gradedResolutionContraction :
     (fun x ↦ by
       rw [gradedResolutionTopRepAugmentation_apply]
       exact X.gradedResolutionProjection_augmentation x)
-    (fun n v hv ↦ by
-      classical
-      rw [X.gradedResolutionPiece_natCast] at hv
-      obtain ⟨F, rfl⟩ := hv
-      exact X.gradedResolutionProjection_lof_succ n F)
-    (fun v hv ↦ by
-      classical
-      rw [← Nat.cast_zero, X.gradedResolutionPiece_natCast] at hv
-      obtain ⟨F, rfl⟩ := hv
-      exact X.gradedResolutionHomotopy_lof_zero F)
+    (fun n _ hv ↦
+      X.gradedResolutionProjection_eq_zero_of_mem (Int.natCast_pos.2 n.succ_pos).ne' hv)
+    (fun _ hv ↦ X.gradedResolutionHomotopy_eq_zero_of_mem_zero hv)
     (fun v ↦ by
       rw [gradedResolutionTopRepDifferential_apply X v, gradedResolutionTopRepAugmentation_apply]
       exact (congrArg (· + _) (gradedResolutionTopRepDifferential_apply X _)).trans
