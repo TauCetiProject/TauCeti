@@ -77,7 +77,7 @@ namespace ConnectedFiberNumberedCover
 
 /-- The subgroup of the marked monodromy triple is precisely the subgroup recovered from the
 point of the cover carrying that label. -/
-theorem subgroup_markedClass (c : ConnectedFiberNumberedCover
+theorem subgroup_mk_connectedTriple (c : ConnectedFiberNumberedCover
     (X := TopCat.of ThricePuncturedSphere) basePt n) (i : Fin n) :
     (MarkedIsoClass.mk c.connectedTriple i).subgroup =
       (mapOfEq ⟨c.cover.proj, c.cover.isCoveringMap_proj.continuous⟩ (c.ν.symm i).2).range := by
@@ -95,50 +95,34 @@ end ConnectedFiberNumberedCover
 
 namespace MarkedIsoClass
 
-/-- The subgroup of a marked connected triple has index equal to its degree. -/
-theorem index_subgroup (c : MarkedIsoClass n) : c.subgroup.index = n := by
+/-- Every marked class is represented by the monodromy triple of a numbered cover. -/
+theorem exists_eq_mk_connectedTriple (c : MarkedIsoClass n) :
+    ∃ (d : ConnectedFiberNumberedCover (X := TopCat.of ThricePuncturedSphere) basePt n)
+      (i : Fin n), mk d.connectedTriple i = c := by
   obtain ⟨t, i, rfl⟩ := mk_surjective c
   obtain ⟨C, hC⟩ := ConnectedFiberNumberedCoverClass.triple_surjective t
   obtain ⟨d, rfl⟩ := ConnectedFiberNumberedCoverClass.mk_surjective C
   rw [ConnectedFiberNumberedCoverClass.triple_mk] at hC
-  rw [← hC, ConnectedFiberNumberedCover.subgroup_markedClass]
-  have := d.cover.isCoveringMap_proj.isLocalHomeomorph.locallyPathConnectedSpace
-  have : PathConnectedSpace (d.cover : TopCat) := PathConnectedSpace.of_locallyPathConnectedSpace
+  exact ⟨d, i, congrArg (fun t ↦ mk t i) hC⟩
+
+/-- The subgroup of a marked connected triple has index equal to its degree. -/
+theorem index_subgroup (c : MarkedIsoClass n) : c.subgroup.index = n := by
+  obtain ⟨d, i, rfl⟩ := c.exists_eq_mk_connectedTriple
+  rw [ConnectedFiberNumberedCover.subgroup_mk_connectedTriple]
   rw [← d.cover.isCoveringMap_proj.card_fiber_eq_index (d.ν.symm i), Nat.card_congr d.ν,
     Nat.card_fin]
 
 /-- A marked connected triple is determined up to marked relabeling by its subgroup. -/
 theorem subgroup_injective : Function.Injective (subgroup : MarkedIsoClass n → _) := by
   intro c c' h
-  obtain ⟨t, i, rfl⟩ := mk_surjective c
-  obtain ⟨t', i', rfl⟩ := mk_surjective c'
-  obtain ⟨C, hC⟩ := ConnectedFiberNumberedCoverClass.triple_surjective t
-  obtain ⟨C', hC'⟩ := ConnectedFiberNumberedCoverClass.triple_surjective t'
-  obtain ⟨d, rfl⟩ := ConnectedFiberNumberedCoverClass.mk_surjective C
-  obtain ⟨d', rfl⟩ := ConnectedFiberNumberedCoverClass.mk_surjective C'
-  rw [ConnectedFiberNumberedCoverClass.triple_mk] at hC hC'
-  subst t
-  subst t'
-  rw [ConnectedFiberNumberedCover.subgroup_markedClass,
-    ConnectedFiberNumberedCover.subgroup_markedClass] at h
-  have := d.cover.isCoveringMap_proj.isLocalHomeomorph.locallyPathConnectedSpace
-  have := d'.cover.isCoveringMap_proj.isLocalHomeomorph.locallyPathConnectedSpace
-  have : PathConnectedSpace (d.cover : TopCat) := PathConnectedSpace.of_locallyPathConnectedSpace
-  have : PathConnectedSpace (d'.cover : TopCat) := PathConnectedSpace.of_locallyPathConnectedSpace
-  obtain ⟨e, he, hp⟩ := (IsCoveringMap.exists_homeomorph_comp_eq_iff_range_eq
-    d.cover.isCoveringMap_proj d'.cover.isCoveringMap_proj
-    (d.ν.symm i).2 (d'.ν.symm i').2).2 h
+  obtain ⟨d, i, rfl⟩ := c.exists_eq_mk_connectedTriple
+  obtain ⟨d', i', rfl⟩ := c'.exists_eq_mk_connectedTriple
+  rw [ConnectedFiberNumberedCover.subgroup_mk_connectedTriple,
+    ConnectedFiberNumberedCover.subgroup_mk_connectedTriple] at h
   have hpointed : ConnectedPointedCoverClass.mk (d.markLabel i) =
-      ConnectedPointedCoverClass.mk (d'.markLabel i') := by
-    apply ConnectedPointedCoverClass.mk_eq_mk_iff.2
-    apply connectedPointedCoverIso_def.2
-    let f : d.cover ≅ d'.cover := CoveringSpace.FullSubcategory.isoMk (TopCat.isoOfHomeo e)
-      (by ext x : 1; exact congrFun hp x)
-    refine ⟨f, ?_⟩
-    -- The marked point's type depends on the projected cover; expose this constructor only.
-    dsimp only [ConnectedFiberNumberedCover.markLabel]
-    rw [CoveringSpace.FullSubcategory.isoMk_hom_hom_left]
-    exact he
+      ConnectedPointedCoverClass.mk (d'.markLabel i') :=
+    -- `markLabel` exposes its cover and point, so the recovered-subgroup equality is `h`.
+    ConnectedPointedCoverClass.mk_eq_mk_of_range_eq (d.markLabel i) (d'.markLabel i') h
   have hmarked := congrArg ConnectedPointedCoverClass.markedClass hpointed
   simpa only [← ConnectedFiberNumberedCoverClass.markLabel_mk,
     ConnectedFiberNumberedCoverClass.markedClass_markLabel,
@@ -170,9 +154,7 @@ theorem exists_subgroup_eq [NeZero n]
     Fintype.equivFinOfCardEq (Nat.card_eq_fintype_card.symm.trans hcard)
   let d : ConnectedFiberNumberedCover (X := TopCat.of ThricePuncturedSphere) basePt n := ⟨p, ν⟩
   refine ⟨mk d.connectedTriple (ν e), ?_⟩
-  rw [ConnectedFiberNumberedCover.subgroup_markedClass, ν.symm_apply_apply]
-  have := p.isCoveringMap_proj.isLocalHomeomorph.locallyPathConnectedSpace
-  have : PathConnectedSpace (p : TopCat) := PathConnectedSpace.of_locallyPathConnectedSpace
+  rw [ConnectedFiberNumberedCover.subgroup_mk_connectedTriple, ν.symm_apply_apply]
   apply (IsCoveringMap.exists_homeomorph_comp_eq_iff_range_eq p.isCoveringMap_proj
     (UniversalCover.isCoveringMap_subgroupQuotientProj basePt H) e.2
     (UniversalCover.subgroupQuotientProj_basepoint basePt H)).1
@@ -204,7 +186,7 @@ noncomputable def subgroupEquiv [NeZero n] :
 
 /-- The classification sends a marked class to its fixed-sheet subgroup. -/
 @[simp]
-theorem coe_subgroupEquiv [NeZero n] (c : MarkedIsoClass n) :
+theorem coe_subgroupEquiv_apply [NeZero n] (c : MarkedIsoClass n) :
     (subgroupEquiv c).1 = c.subgroup :=
   (rfl)
 
