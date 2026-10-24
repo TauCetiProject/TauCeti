@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Ring.Finset
 public import Mathlib.Algebra.Group.Action.Pointwise.Set.Basic
 public import Mathlib.Algebra.Group.Subgroup.Ker
 public import Mathlib.Algebra.Group.Submonoid.BigOperators
@@ -270,6 +271,14 @@ theorem sum_sum_single_out [Fintype V] [DecidableEq V] {x y : V} (e : Q x y) (q 
       Assignment.single_apply_of_ne e q fun h ↦ hv (congrArg Sigma.fst h)
 
 end AddCommMonoid
+
+/-- The unit assignment counts arrows: its total value on the arrows from `S` to `T` is the
+number of these arrows, with parallel arrows counted separately. -/
+theorem arrowSum_one [AddCommMonoidWithOne K] [Fintype V] [DecidableEq V]
+    [∀ v w, Fintype (Q v w)] (S T : Finset V) :
+    arrowSum (1 : Assignment Q K) S T = #{a : Σ x y, Q x y | a.1 ∈ S ∧ a.2.1 ∈ T} := by
+  rw [arrowSum_eq_sum_ite, natCast_card_filter]
+  simp only [Fintype.sum_sigma, Pi.one_apply]
 
 section SubtractionCommMonoid
 
