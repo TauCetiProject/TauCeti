@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Boundary.Orientation
+public import TauCeti.Geometry.Manifold.VectorBundle.Tangent
 public import TauCeti.Topology.FiberBundle.Extension
 public import Mathlib.Geometry.Manifold.PartitionOfUnity
 
@@ -33,16 +34,6 @@ variable {n : ℕ} {M : Type*} [TopologicalSpace M]
   [IsManifold (𝓡∂ (n + 1)) ∞ M]
 
 omit [T2Space M] [SigmaCompactSpace M] in
-private theorem tangent_trivializationAt_apply {x y : M}
-    (v : TangentSpace (𝓡∂ (n + 1)) y) :
-    (trivializationAt (EuclideanSpace ℝ (Fin (n + 1)))
-      (TangentSpace (𝓡∂ (n + 1))) x ⟨y, v⟩).2 =
-      tangentCoordChange (𝓡∂ (n + 1)) y x y v := by
-  rw [TangentBundle.trivializationAt_apply]
-  change tangentCoordChange (𝓡∂ (n + 1)) y x y v = _
-  rfl
-
-omit [T2Space M] [SigmaCompactSpace M] in
 private theorem local_extension_outward {x : (𝓡∂ (n + 1)).boundary M}
     {y : M} (hy : y ∈ (chartAt (EuclideanHalfSpace (n + 1)) (x : M)).source)
     (hby : y ∈ (𝓡∂ (n + 1)).boundary M) :
@@ -64,9 +55,9 @@ private theorem local_extension_outward {x : (𝓡∂ (n + 1)).boundary M}
       simpa using hy
     have hvalue : (trivializationAt (EuclideanSpace ℝ (Fin (n + 1)))
         (TangentSpace (𝓡∂ (n + 1))) (x : M) ⟨(x : M), v₀⟩).2 = v₀ := by
-      rw [tangent_trivializationAt_apply]
+      rw [TangentBundle.trivializationAt_apply_tangentCoordChange]
       rw [tangentCoordChange_self (x := (x : M)) (mem_extChartAt_source (I := 𝓡∂ (n + 1)) (x : M))]
-    rw [← tangent_trivializationAt_apply]
+    rw [← TangentBundle.trivializationAt_apply_tangentCoordChange]
     exact (FiberBundle.trivializationAt_extend_apply hybase v₀).trans hvalue
   rw [hext]
   simp [v₀]

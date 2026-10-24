@@ -96,6 +96,23 @@ open scoped Bundle Manifold Topology ContDiff
 
 noncomputable section
 
+namespace TangentBundle
+
+variable
+  {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+
+/-- The preferred tangent-bundle trivialization reads a tangent vector as its tangent coordinate
+change between the chart at the vector's base point and the chart at the trivialization centre. -/
+theorem trivializationAt_apply_tangentCoordChange [IsManifold I 1 M] {x y : M}
+    (v : TangentSpace I y) :
+    (trivializationAt E (TangentSpace I) x ⟨y, v⟩).2 =
+      tangentCoordChange I y x y v := rfl
+
+end TangentBundle
+
 namespace TauCeti.Manifold
 
 variable
