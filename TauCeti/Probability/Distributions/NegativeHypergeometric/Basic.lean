@@ -9,7 +9,6 @@ public import Mathlib.MeasureTheory.Integral.Bochner.SumMeasure
 public import Mathlib.Probability.Moments.Basic
 public import Mathlib.Probability.Moments.IntegrableExpMul
 public import Mathlib.Probability.Moments.Variance
-import TauCeti.Data.Nat.Choose.Basic
 import TauCeti.Data.Nat.Choose.Sum
 
 /-!
@@ -27,7 +26,8 @@ and it vanishes for `k > N - K`. When `r = 0` no draw is needed, and the law is 
 measure at zero.
 
 This file defines the law as a finite weighted sum of Dirac measures, proves its normalization
-from the upper-index Vandermonde convolution `Nat.sum_antidiagonal_choose_add_mul_choose_add`, and
+from the weighted upper-index Vandermonde convolution
+`Nat.sum_range_ascFactorial_mul_choose_mul_choose`, and
 provides its mass, support, integration, rising factorial moment, mean and variance APIs.
 Outside the parameter range `r ≤ K ≤ N` the measure is zero.
 
@@ -146,43 +146,10 @@ theorem negativeHypergeometricMeasure_eq_sum_dirac (hr : r ≤ K) (hK : K ≤ N)
 
 /-! ## Normalization -/
 
-/-- The rising-factorial-weighted sum of the negative hypergeometric numerators. For `m = 0` it
-is the normalization `∑ₖ C(k + r - 1, k) * C(N - r - k, K - r) = C(N, K)`. -/
-private theorem sum_ascFactorial_mul_choose_mul_choose (hr : r ≤ K) (hK : K ≤ N) (m : ℕ) :
-    ∑ k ∈ Finset.range (N - K + 1),
-        (k + r).ascFactorial m * ((k + r - 1).choose k * (N - r - k).choose (K - r)) =
-      r.ascFactorial m * (N + m).choose (K + m) := by
-  have hterm : ∀ k ∈ Finset.range (N - K + 1),
-      (k + r).ascFactorial m * ((k + r - 1).choose k * (N - r - k).choose (K - r)) =
-        r.ascFactorial m * ((k + r + m - 1).choose k * (N - r - k).choose (K - r)) := by
-    intro k _
-    have h := Nat.add_ascFactorial_mul_multichoose r m k
-    rw [Nat.multichoose_eq, Nat.multichoose_eq] at h
-    rw [← mul_assoc, ← mul_assoc, Nat.add_comm k r, h,
-      show r + k + m - 1 = r + m + k - 1 by omega]
-  rw [Finset.sum_congr rfl hterm, ← Finset.mul_sum]
-  congr 1
-  rcases Nat.eq_zero_or_pos (r + m) with hrm | hrm
-  · -- With `r = m = 0`, only the term `k = 0` survives.
-    obtain ⟨rfl, rfl⟩ : r = 0 ∧ m = 0 := by omega
-    rw [Finset.sum_range_succ']
-    simp [Nat.choose_succ_self]
-  · -- Otherwise this is the upper-index Vandermonde convolution with lower indices
-    -- `r + m - 1` and `K - r`.
-    have h := Nat.sum_antidiagonal_choose_add_mul_choose_add (r + m - 1) (K - r) (N - K)
-    rw [Finset.Nat.sum_antidiagonal_eq_sum_range_succ
-      (fun i j ↦ (r + m - 1 + i).choose (r + m - 1) * (K - r + j).choose (K - r))] at h
-    rw [show N + m = r + m - 1 + (K - r) + 1 + (N - K) by omega,
-      show K + m = r + m - 1 + (K - r) + 1 by omega, ← h]
-    refine Finset.sum_congr rfl fun k hk ↦ ?_
-    have hk : k ≤ N - K := Nat.lt_succ_iff.mp (Finset.mem_range.mp hk)
-    rw [show k + r + m - 1 = r + m - 1 + k by omega, Nat.choose_symm_add,
-      show N - r - k = K - r + (N - K - k) by omega]
-
 /-- The negative hypergeometric weights sum to one in the valid parameter range. -/
 theorem sum_negativeHypergeometricWeight (hr : r ≤ K) (hK : K ≤ N) :
     ∑ k ∈ Finset.range (N - K + 1), negativeHypergeometricWeight N K r k = 1 := by
-  have hsum := sum_ascFactorial_mul_choose_mul_choose hr hK 0
+  have hsum := Nat.sum_range_ascFactorial_mul_choose_mul_choose hr hK 0
   simp only [Nat.ascFactorial_zero, one_mul, Nat.add_zero] at hsum
   calc _ = ∑ k ∈ Finset.range (N - K + 1),
         ((k + r - 1).choose k : ℝ≥0∞) * ((N - r - k).choose (K - r) : ℝ≥0∞) /
@@ -300,7 +267,8 @@ rising factorial. -/
 theorem integral_ascFactorial_negativeHypergeometricMeasure (hr : r ≤ K) (hK : K ≤ N) (m : ℕ) :
     ∫ k, ((k + r).ascFactorial m : ℝ) ∂negativeHypergeometricMeasure N K r =
       (r.ascFactorial m : ℝ) * ((N + m).choose (K + m) : ℝ) / (N.choose K : ℝ) := by
-  have hsum := congrArg (Nat.cast : ℕ → ℝ) (sum_ascFactorial_mul_choose_mul_choose hr hK m)
+  have hsum :=
+    congrArg (Nat.cast : ℕ → ℝ) (Nat.sum_range_ascFactorial_mul_choose_mul_choose hr hK m)
   push_cast at hsum
   rw [integral_negativeHypergeometricMeasure _ hr hK, ← hsum, Finset.sum_div]
   refine Finset.sum_congr rfl fun k hk ↦ ?_

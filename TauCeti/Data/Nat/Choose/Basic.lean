@@ -120,10 +120,10 @@ theorem descFactorial_mul_choose {m i : ℕ} (hmi : m ≤ i) (A : ℕ) :
 `(r + k)⁽ᵐ⁾ * multichoose r k = r⁽ᵐ⁾ * multichoose (r + m) k`, where `n⁽ᵐ⁾` is the rising
 factorial `n.ascFactorial m` and `multichoose r k = C(r + k - 1, k)`.
 
-Multiplying by `k !` turns both sides into `r⁽ᵏ⁺ᵐ⁾`, since `k ! * multichoose r k = r⁽ᵏ⁾`.
 No hypothesis is needed: for `r = 0` both sides vanish unless `k = m = 0`. -/
 theorem add_ascFactorial_mul_multichoose (r m k : ℕ) :
     (r + k).ascFactorial m * r.multichoose k = r.ascFactorial m * (r + m).multichoose k := by
+  -- Multiplying by `k !` turns both sides into `r⁽ᵏ⁺ᵐ⁾`, since `k ! * multichoose r k = r⁽ᵏ⁾`.
   apply Nat.eq_of_mul_eq_mul_left (Nat.factorial_pos k)
   calc k ! * ((r + k).ascFactorial m * r.multichoose k)
       = r.ascFactorial k * (r + k).ascFactorial m := by
