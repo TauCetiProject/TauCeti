@@ -72,6 +72,7 @@ linear maps `X` and `Y` between two free modules of finite rank, possibly of dif
   `det (1 + X ∘ₗ Y) = det (1 + Y ∘ₗ X)` for linear maps between free modules of finite rank.
 * `LinearEquiv.det_ker_eq_bot_of_finrank_le_one`: the determinant kernel is trivial in
   dimension at most one.
+* `LinearEquiv.exists_det_eq_neg_one`: in positive rank some automorphism has determinant `-1`.
 * `Module.Basis.prod_det_sumElim`: the determinant in a product basis of a family split between
   the two factors is the product of the two determinants.
 * `Module.Basis.exists_prod_det_eq_sign_smul_mul`: the same up to sign for a family with exactly
@@ -292,6 +293,24 @@ theorem det_ker_eq_bot_of_finrank_le_one {R V : Type*} [CommRing R] [AddCommGrou
     exact Subsingleton.elim _ _
   · have := SpecialLinearGroup.subsingleton_of_finrank_eq_one (R := R) (V := V) hV
     exact congrArg Subtype.val (Subsingleton.elim (⟨g, hg⟩ : SpecialLinearGroup R V) 1)
+
+/-- A finite free module of positive rank has a linear automorphism of determinant `-1`. -/
+theorem exists_det_eq_neg_one {R V : Type*} [CommRing R] [AddCommGroup V] [Module R V]
+    [Module.Free R V] [Module.Finite R V] (hV : 0 < Module.finrank R V) :
+    ∃ f : V ≃ₗ[R] V, LinearEquiv.det f = -1 := by
+  classical
+  nontriviality R
+  let b := Module.finBasis R V
+  let D : Matrix (Fin (Module.finrank R V)) (Fin (Module.finrank R V)) R :=
+    Matrix.diagonal (Function.update 1 ⟨0, hV⟩ (-1))
+  have hD : D.det = -1 := by
+    simp [D, Matrix.det_diagonal, Finset.prod_update_of_mem]
+  have hu : IsUnit (LinearMap.toMatrix b b (Matrix.toLin b b D)).det := by
+    rw [LinearMap.toMatrix_toLin, hD]
+    exact isUnit_one.neg
+  refine ⟨LinearEquiv.ofIsUnitDet hu, Units.val_injective ?_⟩
+  rw [LinearEquiv.coe_det, LinearEquiv.coe_ofIsUnitDet, LinearMap.det_toLin, hD, Units.val_neg,
+    Units.val_one]
 
 end LinearEquiv
 
