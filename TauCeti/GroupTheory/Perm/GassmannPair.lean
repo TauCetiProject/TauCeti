@@ -81,10 +81,16 @@ theorem exists_S16_gassmann_pair :
   let eB : Q8C2 ≃ Fin 16 := Fintype.equivFinOfCardEq (by decide)
   refine ⟨_, _, ?_, ?_, (Equiv.almostConjugate_permutationRepresentation_range_iff eA eB).2
     exists_equiv_orderOf_eq, ?_⟩
-  · rw [Equiv.natCard_permutationRepresentation_range, Nat.card_eq_fintype_card]
-    decide
-  · rw [Equiv.natCard_permutationRepresentation_range, Nat.card_eq_fintype_card]
-    decide
+  · have hcard : Nat.card C4C4 = 16 := by
+      rw [Nat.card_eq_fintype_card]
+      decide
+    simpa only [MonoidHom.mem_range] using
+      (Equiv.natCard_permutationRepresentation_range eA).trans hcard
+  · have hcard : Nat.card Q8C2 = 16 := by
+      rw [Nat.card_eq_fintype_card]
+      decide
+    simpa only [MonoidHom.mem_range] using
+      (Equiv.natCard_permutationRepresentation_range eB).trans hcard
   · rw [Equiv.exists_map_conj_permutationRepresentation_range_eq_iff]
     rintro ⟨i⟩
     have hB : ¬ ∀ x y : Q8C2, x * y = y * x := by decide
