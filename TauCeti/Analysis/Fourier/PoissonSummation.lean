@@ -6,32 +6,40 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Fourier.AddCircleMulti
+public import TauCeti.Algebra.Module.ZLattice.ChangeOfVariables
 public import TauCeti.Analysis.Distribution.SchwartzSpace.ZLattice
+public import TauCeti.Analysis.Fourier.ChangeOfVariables
 import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!
-# Poisson summation over the lattice spanned by an orthonormal basis
+# Poisson summation over a lattice
 
-Let `o` be an orthonormal basis of a finite-dimensional real inner product space `E`, indexed by
-a finite type `ι`, and let `L = span ℤ (range o)` be the lattice it spans; for
-`E = EuclideanSpace ℝ ι` and the standard basis this is `ℤ^ι`. For a Schwartz function
-`f : 𝓢(E, ℂ)` and `v : E`, **Poisson's summation formula** reads
+Let `L` be a full lattice in a finite-dimensional real inner product space `E`, with dual lattice
+`L^∨`. For a Schwartz function `f : 𝓢(E, ℂ)` and `v : E`, **Poisson's summation formula** reads
 
-`∑' ℓ : L, f (v + ℓ) = ∑' m : L, 𝓕 f m * exp (2πi ⟪v, m⟫)`
+`∑' ℓ : L, f (v + ℓ) = (covolume L)⁻¹ * ∑' m : L^∨, 𝓕 f m * exp (2πi ⟪v, m⟫)`
 
-(`SchwartzMap.tsum_eq_tsum_fourier_span_orthonormalBasis`), with Mathlib's Fourier transform
-`𝓕 f w = ∫ x, exp (-2πi ⟪x, w⟫) f x`. The lattice `L` is its own dual
-(`ZLattice.dual_span_orthonormalBasis`) and has covolume one, so this is the formula
-`∑' ℓ : L, f (v + ℓ) = (covolume L)⁻¹ * ∑' m : L^∨, 𝓕 f m * exp (2πi ⟪v, m⟫)` for this `L`. Every
-full lattice is the image of `L` under a linear automorphism
-(`ZLattice.exists_comap_span_orthonormalBasis_eq`), and the Fourier transform changes under it by
-`ContinuousLinearEquiv.fourier_comp`, so this is the base case of that formula for every full
-lattice.
+(`SchwartzMap.tsum_eq_tsum_dual_fourier`), with Mathlib's Fourier transform
+`𝓕 f w = ∫ x, exp (-2πi ⟪x, w⟫) f x`. Both sides are summable
+(`ZLattice.summable_poisson_left`, `ZLattice.summable_poisson_right`).
 
-The proof is the classical one, in all dimensions at once rather than one coordinate at a time.
-The periodization `P x = ∑' ℓ : L, f (x + ℓ)` is continuous and `L`-periodic, so it descends to a
-continuous function on the torus `UnitAddTorus ι = (ℝ/ℤ)^ι` through the coordinates of `o`. Its
-`n`-th Fourier coefficient is an integral over the fundamental domain `D` of `L`; unfolding the
+The sign of the phase is fixed by this convention for `𝓕`. Reindexing the dual side by
+`m ↦ -m` reflects the transform as well as the phase, which gives the reflected form
+`∑' m : L^∨, 𝓕 f (-m) * exp (-2πi ⟪v, m⟫)` of the right-hand side for every `f`. The form
+`∑' m : L^∨, 𝓕 f m * exp (-2πi ⟪v, m⟫)` used in sources with the opposite sign convention for the
+Fourier transform holds when `f` is even, such as a Gaussian. Evenness is sufficient, not
+necessary: the periodization can be even although `f` is not. For a general `f` the expression
+is the formula at `-v`, so it need not equal the periodization at `v`.
+
+The base case is the lattice `Λ = span ℤ (range o)` spanned by an orthonormal basis `o`, indexed
+by a finite type `ι`; for `E = EuclideanSpace ℝ ι` and the standard basis this is `ℤ^ι`. It is
+its own dual (`ZLattice.dual_span_orthonormalBasis`) and has covolume one, so the formula reads
+`∑' ℓ : Λ, f (v + ℓ) = ∑' m : Λ, 𝓕 f m * exp (2πi ⟪v, m⟫)`
+(`SchwartzMap.tsum_eq_tsum_fourier_span_orthonormalBasis`). Its proof is the classical one, in
+all dimensions at once rather than one coordinate at a time. The periodization
+`P x = ∑' ℓ : Λ, f (x + ℓ)` is continuous and `Λ`-periodic, so it descends to a continuous
+function on the torus `UnitAddTorus ι = (ℝ/ℤ)^ι` through the coordinates of `o`. Its `n`-th
+Fourier coefficient is an integral over the fundamental domain `D` of `Λ`; unfolding the
 periodization and reassembling the translates `ℓ + D` into `E`
 (`MeasureTheory.IsAddFundamentalDomain.integral_eq_tsum''`) shows that this coefficient is the
 value of `𝓕 f` at the lattice point with coordinates `n`. These coefficients are summable, since
@@ -39,10 +47,21 @@ value of `𝓕 f` at the lattice point with coordinates `n`. These coefficients 
 converges to it pointwise (`UnitAddTorus.hasSum_mFourier_series_apply_of_summable`). The
 one-dimensional case of this argument is Mathlib's `Real.tsum_eq_tsum_fourier`.
 
+A general full lattice is reduced to the base case by a linear change of variables rather than
+by induction on the dimension. Every full lattice is the image `A Λ` of `Λ` under a linear
+automorphism `A` with `|det A| = covolume L`, and its dual is carried onto `Λ` by the adjoint of
+`A` (`ZLattice.exists_comap_span_orthonormalBasis_eq`). Applying the base case to `f ∘ A` and
+the Fourier change of variables `ContinuousLinearEquiv.fourier_comp`, which introduces the factor
+`|det A|⁻¹`, gives the formula for `L`.
+
 ## Main statements
 
 * `SchwartzMap.tsum_eq_tsum_fourier_span_orthonormalBasis`: Poisson summation over the lattice
   spanned by an orthonormal basis.
+* `SchwartzMap.tsum_eq_tsum_dual_fourier`: Poisson summation over a full lattice.
+* `SchwartzMap.tsum_eq_tsum_dual_fourier_neg`: its reflected form, for every `f`.
+* `SchwartzMap.tsum_eq_tsum_dual_fourier_of_even`: the form with phase `exp (-2πi ⟪v, m⟫)`, for
+  even `f`.
 
 ## References
 
@@ -272,5 +291,91 @@ theorem tsum_eq_tsum_fourier_span_orthonormalBasis (v : E) :
   congr 2
   push_cast
   ring
+
+end SchwartzMap
+
+/-! ### Poisson summation over a full lattice -/
+
+namespace SchwartzMap
+
+variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+  (f : 𝓢(E, ℂ)) (L : Submodule ℤ E) [DiscreteTopology L] [IsZLattice ℝ L]
+
+/-- **Poisson's summation formula** over a full lattice `L` of a finite-dimensional real inner
+product space: for a Schwartz function `f` and `v : E`,
+`∑' ℓ : L, f (v + ℓ) = (covolume L)⁻¹ * ∑' m : L^∨, 𝓕 f m * exp (2πi ⟪v, m⟫)`.
+The sign of the phase is the one forced by Mathlib's `𝓕 f w = ∫ x, exp (-2πi ⟪x, w⟫) f x`. -/
+theorem tsum_eq_tsum_dual_fourier (v : E) :
+    ∑' ℓ : L, f (v + ℓ) = (ZLattice.covolume L : ℂ)⁻¹ *
+      ∑' m : ZLattice.dual L, 𝓕 (f : E → ℂ) m * cexp (2 * π * I * ⟪v, (m : E)⟫) := by
+  let o := stdOrthonormalBasis ℝ E
+  -- `A` carries the lattice `Λ` spanned by `o` onto `L`, and the adjoint `B` of `A` carries `L^∨`
+  -- onto `Λ`, with inverse the adjoint `B'` of `A⁻¹`.
+  obtain ⟨A, hA, hAd, hdet⟩ := ZLattice.exists_comap_span_orthonormalBasis_eq L o
+  let B : E →L[ℝ] E := ContinuousLinearMap.adjoint (A : E →L[ℝ] E)
+  let B' : E →L[ℝ] E := ContinuousLinearMap.adjoint (A.symm : E →L[ℝ] E)
+  have hBB' (x : E) : B (B' x) = x := by
+    simp [B, B', ← ContinuousLinearMap.comp_apply, ← ContinuousLinearMap.adjoint_comp,
+      ContinuousLinearMap.adjoint_id]
+  have hB'B (x : E) : B' (B x) = x := by
+    simp [B, B', ← ContinuousLinearMap.comp_apply, ← ContinuousLinearMap.adjoint_comp,
+      ContinuousLinearMap.adjoint_id]
+  have hmemL (x : E) : x ∈ L ↔ A.symm x ∈ span ℤ (Set.range o) := by
+    rw [← hA]
+    exact Iff.rfl
+  have hmemD (x : E) : x ∈ ZLattice.dual L ↔ B x ∈ span ℤ (Set.range o) := by
+    rw [← hAd]
+    exact Iff.rfl
+  let eL : span ℤ (Set.range o) ≃ L := A.toEquiv.subtypeEquiv fun μ ↦ by simp [hmemL]
+  let eD : ZLattice.dual L ≃ span ℤ (Set.range o) :=
+    { toFun m := ⟨B m, (hmemD m).1 m.2⟩
+      invFun n := ⟨B' n, (hmemD _).2 (by simp [hBB'])⟩
+      left_inv m := Subtype.ext (hB'B m)
+      right_inv n := Subtype.ext (hBB' n) }
+  -- Apply Poisson summation over `Λ` to `g = f ∘ A` at `A⁻¹ v`, and reindex both sides.
+  let g := compCLMOfContinuousLinearEquiv ℂ A f
+  calc ∑' ℓ : L, f (v + ℓ) = ∑' μ : span ℤ (Set.range o), g (A.symm v + μ) := by
+        rw [← eL.tsum_eq]
+        simp [g, eL]
+    _ = ∑' m : ZLattice.dual L, 𝓕 (g : E → ℂ) (eD m) *
+          cexp (2 * π * I * ⟪A.symm v, (eD m : E)⟫) := by
+        rw [tsum_eq_tsum_fourier_span_orthonormalBasis]
+        exact (eD.tsum_eq fun n ↦ 𝓕 (g : E → ℂ) n * cexp (2 * π * I * ⟪A.symm v, (n : E)⟫)).symm
+    _ = ∑' m : ZLattice.dual L, (ZLattice.covolume L : ℂ)⁻¹ *
+          (𝓕 (f : E → ℂ) m * cexp (2 * π * I * ⟪v, (m : E)⟫)) := by
+        congr 1 with m
+        -- The Fourier change of variables turns `𝓕 g (B m)` into `|det A|⁻¹ • 𝓕 f m`.
+        have hinner : ⟪A.symm v, B m⟫ = ⟪v, (m : E)⟫ := by
+          simp [B, ContinuousLinearMap.adjoint_inner_right]
+        have hm : ContinuousLinearMap.adjoint (A.symm : E →L[ℝ] E) (B m) = m := hB'B m
+        simp only [g, eD, Equiv.coe_fn_mk, compCLMOfContinuousLinearEquiv_apply, hinner,
+          ContinuousLinearEquiv.fourier_comp]
+        rw [hm, Complex.real_smul, mul_assoc]
+        simp [← hdet]
+    _ = _ := tsum_mul_left
+
+/-- Poisson's summation formula in **reflected form**: reindexing the dual side by `m ↦ -m`
+reflects both the Fourier transform and the phase,
+`∑' ℓ : L, f (v + ℓ) = (covolume L)⁻¹ * ∑' m : L^∨, 𝓕 f (-m) * exp (-2πi ⟪v, m⟫)`. -/
+theorem tsum_eq_tsum_dual_fourier_neg (v : E) :
+    ∑' ℓ : L, f (v + ℓ) = (ZLattice.covolume L : ℂ)⁻¹ *
+      ∑' m : ZLattice.dual L, 𝓕 (f : E → ℂ) (-m) * cexp (-(2 * π * I * ⟪v, (m : E)⟫)) := by
+  rw [tsum_eq_tsum_dual_fourier, ← (Equiv.neg (ZLattice.dual L)).tsum_eq]
+  simp [inner_neg_right]
+
+/-- Poisson's summation formula with the **phase `exp (-2πi ⟪v, m⟫)`**, for an even Schwartz
+function `f`:
+`∑' ℓ : L, f (v + ℓ) = (covolume L)⁻¹ * ∑' m : L^∨, 𝓕 f m * exp (-2πi ⟪v, m⟫)`.
+Evenness is a sufficient hypothesis. In general the right-hand side is
+`∑' ℓ : L, f (-v + ℓ)`, by `SchwartzMap.tsum_eq_tsum_dual_fourier` at `-v`, so equality
+holds whenever the periodization is even and need not hold for an arbitrary `f`. -/
+theorem tsum_eq_tsum_dual_fourier_of_even (hf : ∀ x, f (-x) = f x) (v : E) :
+    ∑' ℓ : L, f (v + ℓ) = (ZLattice.covolume L : ℂ)⁻¹ *
+      ∑' m : ZLattice.dual L, 𝓕 (f : E → ℂ) m * cexp (-(2 * π * I * ⟪v, (m : E)⟫)) := by
+  -- The Fourier transform of an even function is even.
+  have h (m : E) : 𝓕 (f : E → ℂ) (-m) = 𝓕 (f : E → ℂ) m := by
+    rw [← Real.fourierInv_eq_fourier_neg, Real.fourierInv_eq_fourier_comp_neg]
+    simp [hf]
+  simpa [h] using tsum_eq_tsum_dual_fourier_neg f L v
 
 end SchwartzMap
