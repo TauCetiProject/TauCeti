@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Bounds
 public import Mathlib.Analysis.Distribution.TemperateGrowth
 public import TauCeti.Analysis.PDE.HeatKernel.Basic
+import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.SpecialFunctions.Gaussian.Bounds
 
 /-!
@@ -24,9 +25,8 @@ used to differentiate heat convolutions under the integral sign:
 * derivatives of every order: `‖D^k K_t(x)‖ ≤ C K_{2t}(x)`, so that each derivative is
   dominated, uniformly on unit translates, by an integrable function.
 
-The derivative bound comes from Mathlib's Faà di Bruno estimate
-`norm_iteratedFDeriv_comp_le` for `exp ∘ (-‖·‖² / (4t))`, together with the temperate growth of
-`‖·‖²`.
+The derivative bound comes from Faà di Bruno's estimate for `exp ∘ (-‖·‖² / (4t))`, using the
+temperate growth of `‖·‖²` (`Function.HasTemperateGrowth.exists_norm_iteratedFDeriv_comp_le`).
 
 ## Main declarations
 
@@ -138,25 +138,22 @@ theorem exists_norm_iteratedFDeriv_heatKernel_le {t : ℝ} (ht : 0 < t) (k : ℕ
       funext fun x => by simp only [q, Pi.mul_apply]; ring
     rw [this]
     exact (Function.HasTemperateGrowth.const _).mul (Function.hasTemperateGrowth_norm_sq E)
-  obtain ⟨j, C₀, hC₀, hj⟩ := hq.norm_iteratedFDeriv_le_uniform k
+  obtain ⟨j, C₀, hC₀, hcomp⟩ := hq.exists_norm_iteratedFDeriv_comp_le contDiff_exp k
   obtain ⟨C₁, hC₁⟩ := exists_one_add_norm_pow_mul_heatKernel_le (E := E) ht (j * k)
   refine ⟨k ! * (1 + C₀) ^ k * C₁, fun x => ?_⟩
-  -- Faà di Bruno: `‖D^k (exp ∘ q)(x)‖ ≤ k! exp(q x) D^k` with `D = (1 + C₀)(1 + ‖x‖)^j`.
-  set D : ℝ := (1 + C₀) * (1 + ‖x‖) ^ j
-  have hD₁ : 1 ≤ D := one_le_mul_of_one_le_of_one_le (by linarith) (one_le_pow₀ (by simp))
-  have hcomp : ‖iteratedFDeriv ℝ k (exp ∘ q) x‖ ≤ k ! * exp (q x) * D ^ k := by
-    refine norm_iteratedFDeriv_comp_le contDiff_exp hq.1 (by exact_mod_cast le_top) x
-      (fun i _ => ?_) (fun i hi hik => ?_)
-    · rw [norm_iteratedFDeriv_eq_norm_iteratedDeriv, iteratedDeriv_eq_iterate, iter_deriv_exp,
-        norm_of_nonneg (exp_pos _).le]
-    · exact (hj i hik x).trans ((mul_le_mul_of_nonneg_right (by linarith) (by positivity) :
-        C₀ * (1 + ‖x‖) ^ j ≤ D).trans (le_self_pow₀ hD₁ (by omega)))
+  -- Faà di Bruno, with every derivative of `exp` at `q x` equal to `exp (q x)`.
+  have hexp : ∀ i ≤ k, ‖iteratedFDeriv ℝ i exp (q x)‖ ≤ exp (q x) := fun i _ => by
+    rw [norm_iteratedFDeriv_eq_norm_iteratedDeriv, iteratedDeriv_eq_iterate, iter_deriv_exp,
+      norm_of_nonneg (exp_pos _).le]
   rw [hKq, iteratedFDeriv_const_smul_apply ((contDiff_exp.comp hq.1).contDiffAt.of_le
     (by exact_mod_cast le_top)), norm_smul, norm_of_nonneg (by positivity)]
-  calc c * ‖iteratedFDeriv ℝ k (exp ∘ q) x‖ ≤ c * (k ! * exp (q x) * D ^ k) := by gcongr
+  calc c * ‖iteratedFDeriv ℝ k (exp ∘ q) x‖
+      ≤ c * (k ! * exp (q x) * (1 + C₀) ^ k * (1 + ‖x‖) ^ (j * k)) := by
+        gcongr
+        exact hcomp x _ hexp
     _ = k ! * (1 + C₀) ^ k * ((1 + ‖x‖) ^ (j * k) * heatKernel t x) := by
-        rw [heatKernel_apply, pow_mul]
-        simp only [D, q, c, mul_pow]
+        rw [heatKernel_apply]
+        simp only [q, c]
         ring
     _ ≤ k ! * (1 + C₀) ^ k * (C₁ * heatKernel (2 * t) x) :=
         mul_le_mul_of_nonneg_left (hC₁ x) (by positivity)

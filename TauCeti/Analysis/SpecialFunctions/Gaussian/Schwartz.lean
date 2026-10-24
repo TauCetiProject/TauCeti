@@ -8,8 +8,8 @@ module
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Basic
 public import Mathlib.Analysis.Distribution.SchwartzSpace.Basic
 public import Mathlib.Analysis.SpecialFunctions.Gaussian.FourierTransform
-import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Analysis.Distribution.TemperateGrowth
+import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.SpecialFunctions.Exp.IteratedFDeriv
 import TauCeti.Analysis.SpecialFunctions.Gaussian.Bounds
 
@@ -36,15 +36,16 @@ lattice, which by the formula above is a theta series at `-1/τ`. The Gaussian i
 matter for it. Its translates `x ↦ gaussian τ (x + v)`, whose lattice sums are the theta series of
 the translates `v + L`, are Schwartz functions by `SchwartzMap.compSubConstCLM`.
 
-The Schwartz bounds come from Faà di Bruno's estimate `norm_iteratedFDeriv_comp_le` for the
-composite of `exp` with the quadratic `x ↦ π i τ ‖x‖²`, whose derivatives grow at most
-polynomially; every real iterated derivative of `exp : ℂ → ℂ` at `z` has norm `‖exp z‖`
-(`Complex.norm_iteratedFDeriv_real_exp`), and the polynomial weight is absorbed by the Gaussian
-through `Real.one_add_pow_mul_exp_neg_mul_sq_le`. This decay argument follows the heat-kernel
-bounds `TauCeti.exists_one_add_norm_pow_mul_heatKernel_le` and
+The Schwartz bounds come from Faà di Bruno's estimate for the composite of `exp` with the
+quadratic `x ↦ π i τ ‖x‖²`, which has temperate growth
+(`Function.HasTemperateGrowth.exists_norm_iteratedFDeriv_comp_le`); every real iterated
+derivative of `exp : ℂ → ℂ` at `z` has norm `‖exp z‖` (`Complex.norm_iteratedFDeriv_real_exp`),
+and the polynomial weight is absorbed by the Gaussian through
+`Real.one_add_pow_mul_exp_neg_mul_sq_le`. This decay argument follows the heat-kernel bounds
+`TauCeti.exists_one_add_norm_pow_mul_heatKernel_le` and
 `TauCeti.exists_norm_iteratedFDeriv_heatKernel_le` in
-`TauCeti/Analysis/PDE/HeatKernel/Bounds.lean`. The Fourier transform is Mathlib's
-`fourier_gaussian_innerProductSpace` at `b = -π i τ`.
+`TauCeti/Analysis/PDE/HeatKernel/Bounds.lean`, which use the same two estimates. The Fourier
+transform is Mathlib's `fourier_gaussian_innerProductSpace` at `b = -π i τ`.
 
 ## Main definitions
 
@@ -95,22 +96,15 @@ noncomputable def gaussian (τ : ℍ) : 𝓢(E, ℂ) where
       rw [norm_exp_pi_mul_I_mul_ofReal_mul, UpperHalfPlane.coe_im]
       congr 1
       ring
-    obtain ⟨j, C₀, hC₀, hj⟩ := hq.norm_iteratedFDeriv_le_uniform n
+    obtain ⟨j, C₀, hC₀, hcomp⟩ := hq.exists_norm_iteratedFDeriv_comp_le contDiff_exp n
     refine ⟨n ! * (1 + C₀) ^ n * ((k + j * n) ! * Real.exp (1 + 1 / (4 * a))), fun x ↦ ?_⟩
-    -- Faà di Bruno: `‖D^n (exp ∘ q) x‖ ≤ n! ‖exp (q x)‖ D^n` with `D = (1 + C₀) (1 + ‖x‖)^j`.
-    set D : ℝ := (1 + C₀) * (1 + ‖x‖) ^ j
-    have hD₁ : 1 ≤ D := one_le_mul_of_one_le_of_one_le (by linarith) (one_le_pow₀ (by simp))
-    have hcomp : ‖iteratedFDeriv ℝ n (cexp ∘ q) x‖ ≤ n ! * ‖cexp (q x)‖ * D ^ n := by
-      refine norm_iteratedFDeriv_comp_le contDiff_exp hq.1 (by exact_mod_cast le_top) x
-        (fun i _ ↦ (Complex.norm_iteratedFDeriv_real_exp i (q x)).le) (fun i hi hin ↦ ?_)
-      exact (hj i hin x).trans ((mul_le_mul_of_nonneg_right (by linarith) (by positivity) :
-        C₀ * (1 + ‖x‖) ^ j ≤ D).trans (le_self_pow₀ hD₁ (by omega)))
     have hk : ‖x‖ ^ k ≤ (1 + ‖x‖) ^ k := by gcongr; linarith
     calc ‖x‖ ^ k * ‖iteratedFDeriv ℝ n (cexp ∘ q) x‖
-        ≤ (1 + ‖x‖) ^ k * (n ! * ‖cexp (q x)‖ * D ^ n) := by gcongr
+        ≤ (1 + ‖x‖) ^ k * (n ! * ‖cexp (q x)‖ * (1 + C₀) ^ n * (1 + ‖x‖) ^ (j * n)) := by
+          gcongr
+          exact hcomp x _ fun i _ ↦ (Complex.norm_iteratedFDeriv_real_exp i (q x)).le
       _ = n ! * (1 + C₀) ^ n * ((1 + ‖x‖) ^ (k + j * n) * Real.exp (-a * ‖x‖ ^ 2)) := by
-        rw [hnorm, pow_add, pow_mul]
-        simp only [D, mul_pow]
+        rw [hnorm, pow_add]
         ring
       _ ≤ _ := mul_le_mul_of_nonneg_left
         (Real.one_add_pow_mul_exp_neg_mul_sq_le ha _ (norm_nonneg x)) (by positivity)
