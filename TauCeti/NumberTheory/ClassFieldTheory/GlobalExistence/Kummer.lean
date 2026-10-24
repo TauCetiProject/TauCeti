@@ -49,9 +49,6 @@ of the global existence theorem.
 
 ## Main results
 
-* `TauCeti.ClassFieldTheory.auxiliaryKummerIdeleClassSubgroup_le_of_raySubgroup_le`: a subgroup of
-  `C_K` containing the `n`-th powers and the ray subgroup of a modulus supported in `S` contains
-  the image of `E_S`.
 * `TauCeti.ClassFieldTheory.globalNormSubgroup_kummerLayer_sUnits`: the norm subgroup of
   `K(U_S^{1/p})/K` is the image of `E_S`.
 * `TauCeti.ClassFieldTheory.exists_abelianLayer_globalNormSubgroup_eq_of_pow_mem`: the Kummer case
@@ -72,49 +69,6 @@ namespace TauCeti.ClassFieldTheory
 open GlobalNumberFields
 
 variable {K : Type} [Field K] [NumberField K]
-
-/-- **A subgroup containing the `n`-th powers and a ray subgroup contains a Kummer idele-class
-subgroup.** Let `N ≤ C_K` contain the `n`-th powers and the ray subgroup of a modulus `𝔪` whose
-finite part is supported in `S`. Then `N` contains the image in `C_K` of the Kummer idele subgroup
-`E_S` of ideles that are `n`-th powers at `S` and at every infinite place and units elsewhere. -/
-theorem auxiliaryKummerIdeleClassSubgroup_le_of_raySubgroup_le {n : ℕ}
-    {N : Subgroup (IdeleClassGroup (𝓞 K) K)} (hpow : ∀ c, c ^ n ∈ N) {𝔪 : Modulus K}
-    (h𝔪 : raySubgroup 𝔪 ≤ N) {S : Finset (HeightOneSpectrum (𝓞 K))}
-    (hS : ∀ v : HeightOneSpectrum (𝓞 K), v.asIdeal ∣ 𝔪.finitePart → v ∈ S) :
-    auxiliaryKummerIdeleClassSubgroup S ∅ n ≤ N := by
-  classical
-  intro c hc
-  obtain ⟨x, hx, rfl⟩ := (mem_auxiliaryKummerIdeleClassSubgroup_iff S ∅ n c).1 hc
-  obtain ⟨hxS, hxinf, hxunit⟩ := (mem_auxiliaryKummerIdeleSubgroup_iff S ∅ n x).1 hx
-  -- Write `x = z * yⁿ`, where `y` is supported on `S` and the infinite places and `z` is `1` there
-  -- and a unit elsewhere, hence congruent to one modulo `𝔪`. First choose the `n`-th roots of the
-  -- coordinates of `x` at `S` and at the infinite places.
-  choose yS hyS using hxS
-  choose yinf hyinf using hxinf
-  let y : IdeleGroup (𝓞 K) K := ideleOfUnits yinf (fun v ↦ if hv : v ∈ S then yS v hv else 1)
-    (Filter.eventually_cofinite.2 <| S.finite_toSet.subset fun v (hv : ¬ _) ↦
-      by_contra fun (hvS : v ∉ S) ↦ hv (by simp only [hvS, dite_false]; exact one_mem _))
-  -- The quotient `z = x / yⁿ` is `1` at `S` and at infinity, and agrees with `x` elsewhere.
-  set z := x * (y ^ n)⁻¹ with hz
-  have hzS (v : HeightOneSpectrum (𝓞 K)) (hv : v ∈ S) : v.ideleFiniteCoord z = 1 := by
-    simp [hz, y, hv, ← hyS v hv]
-  have hzS' (v : HeightOneSpectrum (𝓞 K)) (hv : v ∉ S) :
-      v.ideleFiniteCoord z = v.ideleFiniteCoord x := by
-    simp [hz, y, hv]
-  have hzinf (w : InfinitePlace K) : w.ideleInfiniteCoord z = 1 := by
-    simp [hz, y, ← hyinf w]
-  have hzmem : z ∈ ideleCongruenceSubgroup 𝔪 := by
-    refine mem_ideleCongruenceSubgroup_iff.2 ⟨fun v _ ↦ ?_, fun v hv ↦ ?_, fun w _ ↦ ?_⟩
-    · by_cases hv : v ∈ S
-      · simp [hzS v hv]
-      · rw [hzS' v hv]
-        exact hxunit v hv (Finset.notMem_empty v)
-    · simp [hzS v (hS v hv)]
-    · simp [hzinf]
-  -- Hence the class of `x = z * yⁿ` lies in `N`.
-  have hxz : x = z * y ^ n := by rw [hz, inv_mul_cancel_right]
-  rw [hxz, QuotientGroup.mk_mul, QuotientGroup.mk_pow]
-  exact N.mul_mem (h𝔪 (mem_raySubgroup_iff.2 ⟨z, hzmem, rfl⟩)) (hpow _)
 
 variable {p : ℕ} [Fact p.Prime] [HasEnoughRootsOfUnity K p]
 
@@ -145,16 +99,22 @@ theorem globalNormSubgroup_kummerLayer_sUnits {S : Finset (HeightOneSpectrum (�
     exact auxiliaryKummerIdeleClassSubgroup_le_range_ideleClassNormMap_of_ramifiedSupport K M
       exponent_algEquiv_kummerField_dvd S ∅ (by simp)
       (TauCeti.NumberField.ramifiedSupport_kummerField_sUnits_subset S hpS)
-  -- Both subgroups have index `p ^ (#S + r₁ + r₂)`.
+  -- Both subgroups have index `p ^ (#S + r₁ + r₂)`: the image of `E_S` by the product formula
+  -- and the `S`-unit theorem, and the norm subgroup by the norm index theorem and the Kummer
+  -- degree of `M`.
+  have haux : (auxiliaryKummerIdeleClassSubgroup S ∅ p).index =
+      p ^ (S.card + Fintype.card (InfinitePlace K)) := by
+    simpa using index_auxiliaryKummerIdeleClassSubgroup_mul_pow_card (T := ∅) Fact.out
+      (by simp) hcl hpS fun b ↦ ⟨1, funext fun v ↦ absurd v.2 (by simp)⟩
+  have hnorm : (globalNormSubgroup K V).index = Module.finrank K M := by
+    rw [hVM, Subgroup.index_eq_card, card_ideleClassNormQuotient]
+  have hdeg : Module.finrank K M = p ^ (S.card + Fintype.card (InfinitePlace K)) := by
+    rw [finrank_kummerField fun a _ ↦ IsSepClosed.exists_pow_nat_eq _ p,
+      relIndex_range_powMonoidHom_sUnits_numberField]
+    simp [add_comm]
   have hindex : (globalNormSubgroup K V).index =
       (auxiliaryKummerIdeleClassSubgroup S ∅ p).index := by
-    have haux := index_auxiliaryKummerIdeleClassSubgroup_mul_pow_card (T := ∅) Fact.out
-      (by simp) hcl hpS fun b ↦ ⟨1, funext fun v ↦ absurd v.2 (by simp)⟩
-    rw [Finset.card_empty, pow_zero, mul_one] at haux
-    rw [haux, hVM, Subgroup.index_eq_card, card_ideleClassNormQuotient,
-      finrank_kummerField fun a _ ↦ IsSepClosed.exists_pow_nat_eq _ p,
-      relIndex_range_powMonoidHom_sUnits_numberField, Nat.card_coe_set_eq, Set.ncard_coe_finset,
-      add_comm]
+    rw [hnorm, hdeg, haux]
   have : (globalNormSubgroup K V).FiniteIndex := finiteIndex_globalNormSubgroup K V
   exact (Subgroup.eq_of_index_dvd_index hle (hindex ▸ dvd_rfl)).symm
 
