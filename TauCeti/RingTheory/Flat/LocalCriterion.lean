@@ -23,8 +23,9 @@ Let `R` be a Noetherian ring, `S` a Noetherian `R`-algebra, `M` a finite `S`-mod
 element whose image in `S` lies in the Jacobson radical. If `x` is a nonzerodivisor on `M` and
 `M ⧸ x M` is flat over `R ⧸ (x)`, then `M` is flat over `R` (`Module.Flat.of_flat_quotSMulTop`).
 This is the case `I = (x)` of the variant of the local criterion for flatness (Stacks, Lemma
-10.99.10 (00ML)) together with the remark following it: for a principal ideal, the vanishing of
-`Tor₁ᴿ(M, R ⧸ (x))` is regularity of `x` on `M`. No regularity of `x` on `R` is needed. Conversely,
+10.99.10 (00ML)) together with the remark following it: for a principal ideal, regularity of `x`
+on `M` implies the vanishing of `Tor₁ᴿ(M, R ⧸ (x))`, and the two are equivalent when `x` is also
+`R`-regular. No regularity of `x` on `R` is needed for the criterion. Conversely,
 `M ⧸ x M` is flat over `R ⧸ (x)` whenever `M` is flat over `R`, so for an `M`-regular `x` the two
 conditions are equivalent (`Module.flat_quotSMulTop_iff_flat`), the flat counterpart of Mathlib's
 `Module.free_quotSMulTop_iff_free`.
