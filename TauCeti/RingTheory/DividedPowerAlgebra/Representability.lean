@@ -7,8 +7,8 @@ module
 
 public import TauCeti.RingTheory.DividedPowerAlgebra.UniversalLaw
 public import TauCeti.RingTheory.PolynomialLaw.Coeff
-import Mathlib.Data.Multiset.Fintype
 import TauCeti.Data.Finsupp.Multiset
+import TauCeti.Data.Multiset.Fintype
 
 /-!
 # Roby representability
@@ -271,16 +271,8 @@ private theorem famMultiset_cons_cons (q q' : ℕ × M) (s : Multiset (ℕ × M)
 private theorem famMultiset_map_univ {ι : Type*} [Fintype ι] (p : ι → ℕ × M) :
     famMultiset f (Finset.univ.val.map p) = famCoeff f p := by
   classical
-  have hinj : Function.Injective fun x : (Finset.univ.val : Multiset ι) ↦ (x : ι) := by
-    intro x y hxy
-    apply (Multiset.coeEmbedding _).injective
-    have hx := x.2.2
-    have hy := y.2.2
-    simp only [Multiset.count_eq_one_of_mem Finset.univ.nodup (Finset.mem_univ _)] at hx hy
-    simp only [Multiset.coeEmbedding_apply, Prod.mk.injEq]
-    exact ⟨hxy, by lia⟩
   let U := Equiv.ofBijective _ ((Fintype.bijective_iff_injective_and_card _).mpr
-    ⟨hinj, by simp [Multiset.card_coe]⟩)
+    ⟨(Finset.univ (α := ι)).nodup.coe_injective, by simp [Multiset.card_coe]⟩)
   rw [famMultiset, ← famCoeff_comp_equiv f (Multiset.mapEquiv _ p), ← famCoeff_comp_equiv f U]
   congr 1
   funext x
