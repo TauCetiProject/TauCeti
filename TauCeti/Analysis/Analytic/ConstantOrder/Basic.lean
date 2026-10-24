@@ -42,6 +42,27 @@ public section
 
 open Filter Set Topology
 
+section NontriviallyNormedField
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
+
+/-- **Shrinking to a nowhere-vanishing unit.** A local factorization
+`G (x, y) = (y - y₀) ^ m • u (x, y)` with `u` analytic at `(x₀, y₀)` and `u (x₀, y₀) ≠ 0` holds on
+a product of balls `ball x₀ r ×ˢ ball y₀ r` on which `u` is analytic and nowhere zero. When `E` is
+`ι → 𝕜` with its sup norm, this product is a polydisc. -/
+theorem AnalyticAt.exists_ball_prod_eq_pow_smul {G u : E × 𝕜 → F} {x₀ : E} {y₀ : 𝕜} {m : ℕ}
+    (hu : AnalyticAt 𝕜 u (x₀, y₀)) (hu0 : u (x₀, y₀) ≠ 0)
+    (hGu : ∀ᶠ p in 𝓝 (x₀, y₀), G p = (p.2 - y₀) ^ m • u p) :
+    ∃ r > 0, AnalyticOnNhd 𝕜 u (Metric.ball x₀ r ×ˢ Metric.ball y₀ r) ∧
+      ∀ p ∈ Metric.ball x₀ r ×ˢ Metric.ball y₀ r, u p ≠ 0 ∧ G p = (p.2 - y₀) ^ m • u p := by
+  obtain ⟨r, hr, h⟩ := Metric.eventually_nhds_iff_ball.1
+    (hu.eventually_analyticAt.and ((hu.continuousAt.eventually_ne hu0).and hGu))
+  rw [← ball_prod_same] at h
+  exact ⟨r, hr, fun p hp ↦ (h p hp).1, fun p hp ↦ (h p hp).2⟩
+
+end NontriviallyNormedField
+
 variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
 
@@ -167,20 +188,6 @@ theorem AnalyticAt.eventually_analyticOrderAt_eq_natCast_iff {G : E × 𝕜 → 
     filter_upwards [hGu.curry, hG.eventually_analyticAt_curry_right,
       hu.eventually_analyticAt_curry_right, hne] with x hGux hGx hux hnex
     exact hGx.analyticOrderAt_eq_natCast.2 ⟨_, hux, hnex, hGux⟩
-
-/-- **Shrinking to a nowhere-vanishing unit.** A local factorization
-`G (x, y) = (y - y₀) ^ m • u (x, y)` with `u` analytic at `(x₀, y₀)` and `u (x₀, y₀) ≠ 0` holds on
-a product of balls `ball x₀ r ×ˢ ball y₀ r` on which `u` is analytic and nowhere zero. When `E` is
-`ι → 𝕜` with its sup norm, this product is a polydisc. -/
-theorem AnalyticAt.exists_ball_prod_eq_pow_smul {G u : E × 𝕜 → F} {x₀ : E} {y₀ : 𝕜} {m : ℕ}
-    (hu : AnalyticAt 𝕜 u (x₀, y₀)) (hu0 : u (x₀, y₀) ≠ 0)
-    (hGu : ∀ᶠ p in 𝓝 (x₀, y₀), G p = (p.2 - y₀) ^ m • u p) :
-    ∃ r > 0, AnalyticOnNhd 𝕜 u (Metric.ball x₀ r ×ˢ Metric.ball y₀ r) ∧
-      ∀ p ∈ Metric.ball x₀ r ×ˢ Metric.ball y₀ r, u p ≠ 0 ∧ G p = (p.2 - y₀) ^ m • u p := by
-  obtain ⟨r, hr, h⟩ := Metric.eventually_nhds_iff_ball.1
-    (hu.eventually_analyticAt.and ((hu.continuousAt.eventually_ne hu0).and hGu))
-  rw [← ball_prod_same] at h
-  exact ⟨r, hr, fun p hp ↦ (h p hp).1, fun p hp ↦ (h p hp).2⟩
 
 /-- **Order in a distinguished variable on a product of balls.** A function `G` analytic at
 `(x₀, y₀)` vanishes to order exactly `m` in `y` at `y₀` along every slice `x = const` near `x₀` if
