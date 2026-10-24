@@ -151,41 +151,29 @@ theorem isIso_normalizationDesc_fromSpecStalk_genericPoint [IsIntegral T]
   by_cases hη : genericPoint T ∈ g ⁻¹ᵁ U
   · have : Nonempty (g ⁻¹ᵁ U) := ⟨⟨_, hη⟩⟩
     have hV := hU.preimage g
-    let ι := (Scheme.ΓSpecIso T.functionField).inv ≫
-      (Spec T.functionField).presheaf.map (homOfLE (le_top :
-        T.fromSpecStalk (genericPoint T) ⁻¹ᵁ g ⁻¹ᵁ U ≤ ⊤)).op
-    have := Scheme.isIso_presheaf_map_fromSpecStalk_preimage_le_top hη
-    have hι : Function.Bijective ι.hom := ConcreteCategory.bijective_of_isIso _
-    have key : (T.fromSpecStalk (genericPoint T)).appLE (g ⁻¹ᵁ U)
-        ((T.fromSpecStalk (genericPoint T) ≫ g) ⁻¹ᵁ U)
-        (by simp) = T.germToFunctionField (g ⁻¹ᵁ U) ≫ ι := by
-      rw [← Scheme.fromSpecStalk_app hη, Scheme.Hom.app_eq_appLE]
+    set f := T.fromSpecStalk (genericPoint T)
+    let := (f.app (g ⁻¹ᵁ U)).hom.toAlgebra
+    have := Scheme.isFractionRing_app_fromSpecStalk_genericPoint hV
+    have := hV.isIntegrallyClosed fun x _ ↦ hT x
+    have key : f.appLE (g ⁻¹ᵁ U) ((f ≫ g) ⁻¹ᵁ U) (by simp) = f.app (g ⁻¹ᵁ U) := by
+      rw [Scheme.Hom.app_eq_appLE]
       simp only [Scheme.Hom.comp_preimage]
-    refine ⟨?_, fun s hs ↦ ?_⟩
+    refine ⟨?_, fun (s : Γ(Spec T.functionField, f ⁻¹ᵁ g ⁻¹ᵁ U)) hs ↦ ?_⟩
     · rw [key]
-      exact hι.1.comp (Scheme.germToFunctionField_injective T _)
-    · obtain ⟨t, rfl⟩ := hι.2 s
-      have happ : (T.fromSpecStalk (genericPoint T) ≫ g).app U =
-          g.app U ≫ T.germToFunctionField (g ⁻¹ᵁ U) ≫ ι := by
-        rw [Scheme.Hom.comp_app, Scheme.fromSpecStalk_app hη]
-      rw [happ] at hs
-      have ht : _root_.IsIntegral Γ(T, g ⁻¹ᵁ U) t := by
+      exact IsFractionRing.injective Γ(T, g ⁻¹ᵁ U) Γ(Spec T.functionField, f ⁻¹ᵁ g ⁻¹ᵁ U)
+    · rw [Scheme.Hom.comp_app] at hs
+      have ht : _root_.IsIntegral Γ(T, g ⁻¹ᵁ U) s := by
         obtain ⟨p, hp, hpe⟩ := hs
-        refine ⟨p.map (g.app U).hom, hp.map _, hι.1 ?_⟩
-        rw [Polynomial.eval₂_map, map_zero, Polynomial.hom_eval₂]
+        refine ⟨p.map (g.app U).hom, hp.map _, ?_⟩
+        -- `algebraMap` after `g.app U` is the composite `g.app U ≫ f.app (g ⁻¹ᵁ U)` of `hs`.
+        rw [Polynomial.eval₂_map]
         exact hpe
-      have := hV.isIntegrallyClosed fun x _ ↦ hT x
-      have := functionField_isFractionRing_of_isAffineOpen T _ hV
-      obtain ⟨b, rfl⟩ := (IsIntegrallyClosed.isIntegral_iff (K := T.functionField)).mp ht
-      -- The algebra structure of `Γ(T, V)` on `k(T)` is the germ map, so this is `key` at `b`.
-      exact ⟨b, by rw [key]; rfl⟩
-  · have hV : g ⁻¹ᵁ U = ⊥ := Scheme.eq_bot_of_genericPoint_notMem hη
-    have : Subsingleton Γ(T, g ⁻¹ᵁ U) := by
-      rw [hV]
-      infer_instance
-    have : Subsingleton Γ(Spec T.functionField, (T.fromSpecStalk (genericPoint T) ≫ g) ⁻¹ᵁ U) := by
-      rw [Scheme.Hom.comp_preimage, hV, Scheme.Hom.preimage_bot]
-      infer_instance
+      obtain ⟨b, hb⟩ := IsIntegrallyClosed.isIntegral_iff.mp ht
+      -- The algebra structure is `f.app (g ⁻¹ᵁ U)`, so this is `key` at `b`.
+      exact ⟨b, by rw [key]; exact hb⟩
+  · have := Scheme.subsingleton_of_genericPoint_notMem hη
+    have : Subsingleton Γ(Spec T.functionField, (T.fromSpecStalk (genericPoint T) ≫ g) ⁻¹ᵁ U) :=
+      Scheme.subsingleton_preimage_of_genericPoint_notMem (T.fromSpecStalk (genericPoint T)) hη
     exact ⟨fun a b _ ↦ Subsingleton.elim a b, fun _ _ ↦ ⟨0, Subsingleton.elim _ _⟩⟩
 
 /-- The normalization of an integral scheme `Y` in its function field, along `Spec k(Y) ⟶ Y`, is an
@@ -209,15 +197,10 @@ theorem isIso_morphismRestrict_fromNormalization_of_isIntegrallyClosed [IsIntegr
     refine ⟨fun a b hab ↦ IsFractionRing.injective Γ(Y, U) _ (congrArg Subtype.val hab),
       fun ⟨x, hx⟩ ↦ ?_⟩
     obtain ⟨a, rfl⟩ := IsIntegrallyClosed.isIntegral_iff.mp hx
-    exact ⟨a, rfl⟩
+    exact ⟨a, Subtype.ext (IsScalarTower.algebraMap_apply _ _ _ a).symm⟩
   · -- Otherwise `U` is empty and all the rings involved are zero.
-    have hU : U = ⊥ := Scheme.eq_bot_of_genericPoint_notMem hη
-    have : Subsingleton Γ(Y, U) := by
-      rw [hU]
-      infer_instance
-    have : Subsingleton Γ(Spec Y.functionField, f ⁻¹ᵁ U) := by
-      rw [hU, Scheme.Hom.preimage_bot]
-      infer_instance
-    exact ⟨fun a b _ ↦ Subsingleton.elim a b, fun _ ↦ ⟨0, Subsingleton.elim _ _⟩⟩
+    have := Scheme.subsingleton_of_genericPoint_notMem hη
+    have := Scheme.subsingleton_preimage_of_genericPoint_notMem f hη
+    exact Function.bijective_of_subsingleton' _
 
 end TauCeti.AlgebraicGeometry

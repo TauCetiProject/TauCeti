@@ -97,10 +97,8 @@ instance isModification_fromNormalization_fromSpecStalk_genericPoint
     have : IsIntegrallyClosed Γ(Y, Y.basicOpen s) := .of_equiv
       (IsLocalization.algEquiv (Submonoid.powers s) (Localization.Away s) _).toRingEquiv
     have hiso := isIso_morphismRestrict_fromNormalization_of_isIntegrallyClosed (hV.basicOpen s)
-    obtain ⟨y, hy⟩ : (Y.basicOpen s : Set Y).Nonempty := by
-      rw [Set.nonempty_iff_ne_empty, ← TopologicalSpace.Opens.coe_bot, ne_eq,
-        SetLike.coe_set_eq, basicOpen_eq_bot_iff]
-      exact hs
+    obtain ⟨y, hy⟩ : (Y.basicOpen s : Set Y).Nonempty :=
+      (TopologicalSpace.Opens.ne_bot_iff_nonempty _).mp ((basicOpen_eq_bot_iff _).not.mpr hs)
     refine ⟨Y.basicOpen s, (Y.basicOpen s).isOpen.dense ⟨y, hy⟩,
       (ν ⁻¹ᵁ Y.basicOpen s).isOpen.dense ⟨_, ((asIso (ν ∣_ Y.basicOpen s)).inv ⟨y, hy⟩).2⟩, hiso⟩
 

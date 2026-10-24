@@ -41,6 +41,9 @@ in its function field is computed on affine opens.
   than the generic point.
 * `TauCeti.AlgebraicGeometry.Scheme.eq_bot_of_genericPoint_notMem`: on an irreducible scheme, an
   open missing the generic point is empty.
+* `TauCeti.AlgebraicGeometry.Scheme.subsingleton_of_genericPoint_notMem` and
+  `TauCeti.AlgebraicGeometry.Scheme.subsingleton_preimage_of_genericPoint_notMem`: the sections
+  over such an open, or over its preimage under any morphism, form the zero ring.
 * `TauCeti.AlgebraicGeometry.Scheme.fromSpecStalk_preimage_eq_top`: the preimage under
   `Spec 𝒪_{X,x} ⟶ X` of an open containing `x` is everything.
 * `TauCeti.AlgebraicGeometry.Scheme.quasiCompact_fromSpecStalk_genericPoint`: the generic point
@@ -92,6 +95,21 @@ generic point generizes every point, so it lies in every nonempty open. -/
 theorem eq_bot_of_genericPoint_notMem {U : X.Opens} (h : genericPoint X ∉ U) : U = ⊥ := by
   ext x
   exact ⟨fun hx ↦ h ((genericPoint_specializes x).mem_open U.isOpen hx), fun hx ↦ hx.elim⟩
+
+/-- On an irreducible scheme, the ring of sections over an open missing the generic point is the
+zero ring, since the open is empty. -/
+theorem subsingleton_of_genericPoint_notMem {U : X.Opens} (h : genericPoint X ∉ U) :
+    Subsingleton Γ(X, U) := by
+  rw [eq_bot_of_genericPoint_notMem h]
+  infer_instance
+
+open CategoryTheory in
+/-- On an irreducible scheme `X`, the ring of sections of any `Z ⟶ X` over the preimage of an open
+missing the generic point is the zero ring, since the preimage is empty. -/
+theorem subsingleton_preimage_of_genericPoint_notMem {Z : Scheme.{u}} (φ : Z ⟶ X) {U : X.Opens}
+    (h : genericPoint X ∉ U) : Subsingleton Γ(Z, φ ⁻¹ᵁ U) := by
+  rw [eq_bot_of_genericPoint_notMem h, Scheme.Hom.preimage_bot]
+  infer_instance
 
 /-- The preimage under `Spec 𝒪_{X,x} ⟶ X` of an open containing `x` is all of `Spec 𝒪_{X,x}`: every
 point of `Spec 𝒪_{X,x}` specializes to the closed point, which lies over `x`. -/
