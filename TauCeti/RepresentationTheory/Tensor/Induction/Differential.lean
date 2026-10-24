@@ -242,8 +242,8 @@ theorem wreathTensorCochainComplex_d (n : ℤ) :
     Subsingleton.elim _ _
   rw [hn, hn']
   unfold wreathTensorCochainComplex
-  simp only [CochainComplex.of_d, eqToHom_refl, Category.id_comp, Category.comp_id]
-  rfl
+  simp only [CochainComplex.of_d, eqToHom_refl, Category.id_comp, Category.comp_id,
+    Rep.hom_ofHom]
 
 /-- Forgetting the wreath action recovers the total-degree tensor complex of modules. -/
 @[simp]
@@ -255,20 +255,17 @@ theorem wreathTensorCochainComplex_forget :
           simpa only [Representation.IntertwiningMap.comp_toLinearMap,
             Representation.IntertwiningMap.zero_toLinearMap] using
             congrArg Representation.IntertwiningMap.toLinearMap hd) := by
-  apply HomologicalComplex.ext (funext fun n ↦
-    (PiTensorProduct.cochainComplex_X (fun _ : ι ↦ ℳ) (fun _ ↦ d.toLinearMap)
-      (fun _ ↦ hdeg) (fun _ ↦ by
-          simpa only [Representation.IntertwiningMap.comp_toLinearMap,
-            Representation.IntertwiningMap.zero_toLinearMap] using
-            congrArg Representation.IntertwiningMap.toLinearMap hd) n).symm)
+  refine HomologicalComplex.ext ?_ ?_
+  · funext n
+    exact (PiTensorProduct.cochainComplex_X _ _ _ _ n).symm
   intro i j hij
   obtain rfl : i + 1 = j := hij
   rw [PiTensorProduct.cochainComplex_d]
   simp only [eqToHom_trans_assoc]
   congr 1
   unfold wreathTensorCochainComplex
-  simp only [Functor.mapHomologicalComplex_obj_d, CochainComplex.of_d]
-  rfl
+  simp only [Functor.mapHomologicalComplex_obj_d, CochainComplex.of_d,
+    Rep.forget₂_moduleCat_map, Rep.hom_ofHom]
 
 variable {G : Type v} [Group G] {U : Subgroup G} {τ : Representation R U M}
 
@@ -323,6 +320,9 @@ theorem tensorInducedCochainComplex_forget (ℳ : ℤ → Submodule R M)
             congrArg Representation.IntertwiningMap.toLinearMap hd) := by
   unfold tensorInducedCochainComplex
   rw [← wreathTensorCochainComplex_forget ℳ hτ d hdeg hd (G ⧸ U)]
+  -- Rep.resFunctor changes only the action: res and resMap retain the module and
+  -- linear map. mapHomologicalComplex therefore has the same terms and differentials
+  -- after forgetting either action.
   rfl
 
 end Complex
