@@ -150,6 +150,12 @@ theorem apply_point (e : AuxiliaryIso I n m m') (l : N ⊕ R) :
     e (m.point l) = m'.point (Sum.map id e.perm l) := by
   cases l <;> simp
 
+/-- An arrow carries the auxiliary marks labelled by a set `S` exactly to the auxiliary marks
+labelled by the image of `S` under its permutation. -/
+theorem image_image_point_inr (e : AuxiliaryIso I n m m') (S : Set R) :
+    e '' ((fun j ↦ m.point (.inr j)) '' S) = (fun j ↦ m'.point (.inr j)) '' (e.perm '' S) := by
+  simp only [image_image, apply_inr]
+
 variable (I n m) in
 /-- The identity arrow, with the identity permutation. -/
 protected def refl : AuxiliaryIso I n m m where
