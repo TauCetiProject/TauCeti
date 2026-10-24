@@ -222,17 +222,16 @@ theorem contMDiffAt_mgradient {n : ℕ∞ω} [IsManifold I (n + 1) M]
     IsContMDiffRiemannianBundle.of_le hmn
   have hfm : ContMDiffAt I 𝓘(ℝ) (m + 1) f x := hf.of_le hmn'
   have hm' : m + 1 ≠ ∞ := by simpa using hm
-  rcases hfm.contMDiffOn' (m := m + 1) le_rfl (by
-    intro h
-    exact (hm' h).elim) with ⟨u, hu, hxu, hfu⟩
-  have hfu' : ContMDiffOn I 𝓘(ℝ) (m + 1) f u := by simpa using hfu
+  rcases (contMDiffWithinAt_univ.2 hfm).contMDiffOn'
+      (m := m + 1) le_rfl (fun h ↦ (hm' h).elim) with ⟨u, hu, hxu, hfu⟩
+  simp only [Set.insert_eq_of_mem, Set.mem_univ, Set.univ_inter] at hfu
   have hopen : IsOpen (chartAt H x).source := (chartAt H x).open_source
   refine contMDiffAt_rieszDual x (mem_chart_source H x) fun j ↦ ?_
   have hframe := contMDiffOn_chartLocalFrame (I := I) (n := m) x j
   rw [TangentBundle.trivializationAt_baseSet] at hframe
   let s := u ∩ (chartAt H x).source
   have hs : IsOpen s := hu.inter hopen
-  have hfs : ContMDiffOn I 𝓘(ℝ) (m + 1) f s := hfu'.mono Set.inter_subset_left
+  have hfs : ContMDiffOn I 𝓘(ℝ) (m + 1) f s := hfu.mono Set.inter_subset_left
   have hframes : ContMDiffOn I (I.prod 𝓘(ℝ, E)) m
       (fun y : M ↦ TotalSpace.mk' E y
         (Riemannian.Tensor.chartLocalFrame (I := I) x j y)) s :=
