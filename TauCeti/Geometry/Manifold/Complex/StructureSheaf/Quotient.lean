@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.NodeLocalRing
 public import TauCeti.Topology.Category.TopCat.Quotient
 import Mathlib.Algebra.Category.Ring.FilteredColimits
-import Mathlib.Topology.Sheaves.CommRingCat
+import TauCeti.Topology.Sheaves.CommRingCat
 
 /-!
 # Holomorphic functions on normalization quotients
@@ -405,15 +405,6 @@ theorem quotientStalkToNode_injective {x y : X} (hxy : s x y)
   · simpa using congrArg (nodeLocalRing.fst I I x y) hf
   · simpa using congrArg (nodeLocalRing.snd I I x y) hf
 
-/-- Sections of a sheaf of rings on two disjoint opens glue to a section on their union. -/
-private theorem exists_section_sup_of_disjoint (F : TopCat.Sheaf CommRingCat (TopCat.of X))
-    {A B : Opens X} (hAB : Disjoint A B) (σ : F.obj.obj (op A)) (ρ : F.obj.obj (op B)) :
-    ∃ τ : F.obj.obj (op (A ⊔ B)),
-      F.obj.map (homOfLE le_sup_left).op τ = σ ∧ F.obj.map (homOfLE le_sup_right).op τ = ρ :=
-  ⟨_, TopCat.Sheaf.objSupIsoProdEqLocus_inv_fst F A B ⟨(σ, ρ),
-      (CommRingCat.subsingleton_of_isTerminal (F.isTerminalOfEqEmpty hAB.eq_bot)).elim _ _⟩,
-    TopCat.Sheaf.objSupIsoProdEqLocus_inv_snd F A B _⟩
-
 /-- At two distinct points of a Hausdorff normalization, identified with each other and with no
 other point, near which nothing else is identified, every pair of holomorphic branch germs with
 equal values comes from a germ on the quotient. -/
@@ -438,7 +429,7 @@ theorem quotientStalkToNode_surjective [T2Space X] {x y : X} (hxy : s x y) (hne 
       inf_le_right⟩
   have hxV : x ∈ A ⊔ B := Opens.mem_sup.mpr (Or.inl hxA)
   have hyV : y ∈ A ⊔ B := Opens.mem_sup.mpr (Or.inr hyB)
-  obtain ⟨τ, hτA, hτB⟩ := exists_section_sup_of_disjoint (holomorphicStructureSheaf I X)
+  obtain ⟨τ, hτA, hτB⟩ := (holomorphicStructureSheaf I X).exists_section_sup_of_disjoint
     (Opens.coe_disjoint.mp (huv.mono hAu hBv))
     ((holomorphicStructureSheaf I X).obj.map (homOfLE hA₁).op σ)
     ((holomorphicStructureSheaf I X).obj.map (homOfLE hB₂).op ρ)
