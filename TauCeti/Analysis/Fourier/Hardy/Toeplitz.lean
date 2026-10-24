@@ -185,7 +185,7 @@ private theorem norm_multiplicationOperator_le_norm_toeplitz
     refine (hD.prod hD).induction (fun p hp ↦ ?_) (isClosed_le (by fun_prop) (by fun_prop))
     rw [Lp.multiplicationOperator_apply]
     exact norm_inner_smul_le_of_mem_span a hp.1 hp.2
-  refine ContinuousLinearMap.opNorm_le_of_re_inner_le (norm_nonneg _) ?_
+  refine ContinuousLinearMap.opNorm_le_of_re_inner_le (norm_nonneg (toeplitz a)) ?_
   intro x y hx hy
   calc
     RCLike.re ⟪Lp.multiplicationOperator a x, y⟫_ℂ ≤
