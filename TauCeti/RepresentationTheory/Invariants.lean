@@ -67,6 +67,7 @@ finite-dimensional representations.
   `Representation.norm` scaled by the inverse of the group order.
 * `Representation.averageMap_apply`: the same identity evaluated at a vector.
 * `Representation.averageMap_comp_ρ`: the averaging projection does not see the action.
+* `Representation.IntertwiningMap.map_averageMap`: intertwining maps commute with averaging.
 * `Representation.range_norm_eq_invariants`: the group sum `Representation.norm ρ` has the
   invariants as its range.
 * `Representation.range_norm_eq_invariants_of_projective`: the same conclusion without
@@ -130,6 +131,14 @@ in the group algebra (`GroupAlgebra.mul_average_right`). -/
 theorem averageMap_comp_ρ (g : G) : ρ.averageMap ∘ₗ ρ g = ρ.averageMap := by
   rw [averageMap, ← asAlgebraHom_single_one, ← Module.End.mul_eq_comp, ← map_mul,
     GroupAlgebra.mul_average_right]
+
+variable {ρ} in
+/-- **Intertwining maps commute with averaging**: an intertwining map `f : ρ → σ` carries the
+averaging projection of `ρ` to that of `σ`. -/
+theorem IntertwiningMap.map_averageMap {W : Type*} [AddCommGroup W] [Module k W]
+    {σ : Representation k G W} (f : IntertwiningMap ρ σ) (v : V) :
+    f (ρ.averageMap v) = σ.averageMap (f v) := by
+  simp only [averageMap_apply, map_smul, map_sum, IntertwiningMap.isIntertwining]
 
 /-- **The group sum has the invariants as its range.** When `#G` is invertible in `k`, the operator
 `Representation.norm ρ = ∑ g, ρ g` maps onto the invariants of `ρ`: it agrees with the averaging

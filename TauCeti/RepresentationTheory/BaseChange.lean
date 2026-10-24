@@ -72,6 +72,8 @@ to torsion modules and do not require the coefficient algebra to be flat.
 * `Representation.baseChange`: scalar extension of a representation.
 * `Representation.invariantsBaseChangeEquiv`: flat scalar extension commutes with taking the
   invariants of a finite group.
+* `Representation.averageMap_baseChange`: the averaging projection commutes with scalar
+  extension.
 * `Representation.exists_common_fixed_vector_of_baseChange`: descent of a nonzero common
   fixed vector.
 * `Representation.character_baseChange`: the character of a base-changed representation is the
@@ -246,6 +248,29 @@ theorem _root_.Representation.coe_invariantsBaseChangeEquiv [Finite G]
         Submodule.subtype_apply]
 
 end Invariants
+
+section Average
+
+variable {G : Type w} [Group G] [Fintype G]
+variable {R : Type u} {A : Type v} [CommRing R] [CommRing A] [Algebra R A]
+variable [Invertible (Fintype.card G : R)] [Invertible (Fintype.card G : A)]
+variable [AddCommGroup V] [Module R V]
+
+/-- **Averaging commutes with scalar extension.** When `#G` is invertible, the averaging
+projection of the scalar-extended representation is the scalar extension of the averaging
+projection. No flatness of `A` over `R` is needed. -/
+theorem _root_.Representation.averageMap_baseChange (ρ : _root_.Representation R G V) :
+    (_root_.Representation.baseChange A ρ).averageMap = ρ.averageMap.baseChange A := by
+  -- The inverse of `#G` in `A` is the image of its inverse in `R`.
+  have hinv : (⅟(Fintype.card G : A)) = algebraMap R A ⅟(Fintype.card G : R) :=
+    invOf_eq_right_inv <| by rw [← map_natCast (algebraMap R A), ← map_mul, mul_invOf_self, map_one]
+  simp only [_root_.Representation.averageMap, GroupAlgebra.average, MonoidAlgebra.of_apply]
+  rw [map_smul, map_smul, map_sum, map_sum]
+  simp only [_root_.Representation.asAlgebraHom_single_one,
+    _root_.Representation.baseChange_apply, LinearMap.baseChange_smul, hinv, algebraMap_smul]
+  exact congrArg _ (map_sum (LinearMap.baseChangeHom R A V V) _ _).symm
+
+end Average
 
 variable {K : Type u} {L : Type v} [Field K] [Semiring L] [Algebra K L]
 variable [AddCommGroup V] [Module K V]
