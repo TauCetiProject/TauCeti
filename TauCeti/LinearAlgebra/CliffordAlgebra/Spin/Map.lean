@@ -280,7 +280,7 @@ variable {R : Type u} [CommRing R]
 
 /-- The vector action is natural for the Spin-group equivalence induced by an isometry. -/
 @[simp]
-theorem spinGroupEquiv_spinVectorAction [Invertible (2 : R)] (e : Q₁.IsometryEquiv Q₂)
+theorem apply_spinVectorAction_symm_spinGroupMap [Invertible (2 : R)] (e : Q₁.IsometryEquiv Q₂)
     (s : spinGroup Q₂) (m : M₁) :
     e (CliffordAlgebra.spinVectorAction Q₁ (e.symm.toIsometry.spinGroupMap s) m) =
       CliffordAlgebra.spinVectorAction Q₂ s (e m) := by

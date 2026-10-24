@@ -281,7 +281,7 @@ theorem spinSixWedgeIsometryEquivPolarSplit_spinVectorAction
           ((spinSixWedgeQuadraticIsometryEquivSplit K).symm.toIsometry.spinGroupMap s) x) =
       spinVectorAction (splitEvenForm K 3) s
         (spinSixWedgeIsometryEquivPolarSplit K x) := by
-  have h := QuadraticMap.IsometryEquiv.spinGroupEquiv_spinVectorAction
+  have h := QuadraticMap.IsometryEquiv.apply_spinVectorAction_symm_spinGroupMap
     (spinSixWedgeQuadraticIsometryEquivSplit K) s x
   simpa only [QuadraticMap.IsometryEquiv.toIsometry_apply,
     QuadraticMap.IsometryEquiv.spinGroupEquiv_apply,
