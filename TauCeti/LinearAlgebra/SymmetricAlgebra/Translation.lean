@@ -15,15 +15,15 @@ Let `M` be a module over a commutative ring `R`. An element `p` of the symmetric
 being `SymmetricAlgebra.lift g p`. Translating the argument by a fixed linear form `f`,
 `g ↦ p (g + f)`, is again such a function, and it is induced by an algebra automorphism of the
 symmetric algebra: the one sending each generator `m` to `m + f m`. This file constructs it,
-`TauCeti.SymmetricAlgebra.translation f`, and proves its evaluation formula
-`p ↦ (g ↦ p (g + f))` (`TauCeti.SymmetricAlgebra.lift_translation`), its group laws in `f`, and its
+`SymmetricAlgebra.translation f`, and proves its evaluation formula
+`p ↦ (g ↦ p (g + f))` (`SymmetricAlgebra.lift_translation`), its group laws in `f`, and its
 interaction with the degree filtration.
 
 The degree filtration is the word filtration `TauCeti.Algebra.wordFiltration` of the generator map,
 whose step `n` is spanned by the products of at most `n` generators. A translation sends a
 generator to itself plus a scalar, so it preserves every step; and on an element homogeneous of
 degree `n` it changes nothing in degree `n`, the difference `translation f p - p` lying in degree
-strictly less than `n` (`TauCeti.SymmetricAlgebra.translation_sub_self_mem_wordFiltrationPrevious`).
+strictly less than `n` (`SymmetricAlgebra.translation_sub_self_mem_wordFiltrationPrevious`).
 That is, a translation is unipotent for the filtration, with identity associated graded map.
 
 For a Cartan subalgebra `H` of a semisimple Lie algebra, `S(H)` is the algebra of polynomial
@@ -33,20 +33,20 @@ linear one.
 
 ## Main definitions
 
-* `TauCeti.SymmetricAlgebra.translation f`: the algebra automorphism of `SymmetricAlgebra R M`
+* `SymmetricAlgebra.translation f`: the algebra automorphism of `SymmetricAlgebra R M`
   sending each generator `m` to `m + f m`.
 
 ## Main results
 
-* `TauCeti.SymmetricAlgebra.translation_ι`: its value on a generator.
-* `TauCeti.SymmetricAlgebra.lift_translation`: evaluation after translating by `f` is evaluation at
+* `SymmetricAlgebra.translation_ι`: its value on a generator.
+* `SymmetricAlgebra.lift_translation`: evaluation after translating by `f` is evaluation at
   the translated linear form.
-* `TauCeti.SymmetricAlgebra.translation_zero`, `TauCeti.SymmetricAlgebra.translation_trans` and
-  `TauCeti.SymmetricAlgebra.translation_symm`: translation is a homomorphism from the additive
+* `SymmetricAlgebra.translation_zero`, `SymmetricAlgebra.translation_trans` and
+  `SymmetricAlgebra.translation_symm`: translation is a homomorphism from the additive
   group of linear forms to the automorphisms.
-* `TauCeti.SymmetricAlgebra.translation_mem_wordFiltration_iff`: translation preserves every step
+* `SymmetricAlgebra.translation_mem_wordFiltration_iff`: translation preserves every step
   of the degree filtration.
-* `TauCeti.SymmetricAlgebra.translation_sub_self_mem_wordFiltrationPrevious`: on a homogeneous
+* `SymmetricAlgebra.translation_sub_self_mem_wordFiltrationPrevious`: on a homogeneous
   element of degree `n` it agrees with the identity up to degree strictly less than `n`.
 
 ## References
@@ -58,19 +58,19 @@ linear one.
 
 public section
 
-namespace TauCeti.SymmetricAlgebra
+namespace SymmetricAlgebra
 
-open _root_.SymmetricAlgebra TauCeti.Algebra
+open TauCeti.Algebra TauCeti.SymmetricAlgebra
 
 universe u v w
 
 variable {R : Type u} {M : Type v} [CommRing R] [AddCommMonoid M] [Module R M]
 
 /-- **Translation by a linear form** `f`: the algebra automorphism of the symmetric algebra sending
-each generator `m` to `m + f m` (`TauCeti.SymmetricAlgebra.translation_ι`). Reading an element `p`
+each generator `m` to `m + f m` (`SymmetricAlgebra.translation_ι`). Reading an element `p`
 of `SymmetricAlgebra R M` as a polynomial function on the dual of `M`, `translation f p` is the
-function `g ↦ p (g + f)` (`TauCeti.SymmetricAlgebra.lift_translation`). Its inverse is translation
-by `-f` (`TauCeti.SymmetricAlgebra.translation_symm`). -/
+function `g ↦ p (g + f)` (`SymmetricAlgebra.lift_translation`). Its inverse is translation
+by `-f` (`SymmetricAlgebra.translation_symm`). -/
 noncomputable def translation (f : M →ₗ[R] R) :
     SymmetricAlgebra R M ≃ₐ[R] SymmetricAlgebra R M :=
   AlgEquiv.ofAlgHom (lift (ι R M + Algebra.linearMap R (SymmetricAlgebra R M) ∘ₗ f))
@@ -112,7 +112,7 @@ theorem translation_translation (f g : M →ₗ[R] R) (p : SymmetricAlgebra R M)
 theorem translation_zero : translation (0 : M →ₗ[R] R) = AlgEquiv.refl :=
   AlgEquiv.coe_toAlgHom_injective <| algHom_ext <| LinearMap.ext fun m ↦ by simp
 
-/-- The bundled form of `TauCeti.SymmetricAlgebra.translation_translation`: translating by `f` and
+/-- The bundled form of `SymmetricAlgebra.translation_translation`: translating by `f` and
 then by `g` is translating by `f + g`. -/
 @[simp]
 theorem translation_trans (f g : M →ₗ[R] R) :
@@ -173,4 +173,4 @@ theorem translation_sub_self_mem_wordFiltrationPrevious (f : M →ₗ[R] R) {n :
       (apply_mem_wordFiltration_one (ι R M) a) ih
     rwa [Nat.add_comm, wordFiltrationPrevious_succ] at h
 
-end TauCeti.SymmetricAlgebra
+end SymmetricAlgebra

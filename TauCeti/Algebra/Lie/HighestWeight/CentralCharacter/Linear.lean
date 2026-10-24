@@ -24,7 +24,7 @@ are invariant under the **dot action** `w · λ = w(λ + ρ) - ρ` of the Weyl g
 (`TauCeti.hcProjection_mem_dotInvariants`). This file passes to the **linear** normalization, in
 which the invariance is under the ordinary linear action of the Weyl group on the weights.
 
-The passage is translation by `-ρ`, `TauCeti.SymmetricAlgebra.translation`, the automorphism of
+The passage is translation by `-ρ`, `SymmetricAlgebra.translation`, the automorphism of
 `S(H)` with `(translation μ p)(λ) = p(λ + μ)`. Since `w · (λ - ρ) = w λ - ρ`, translation by `-ρ`
 carries the dot-invariants `S(H)^{W·}` (`TauCeti.dotInvariants`) onto the linear invariants
 `S(H)^W` (`TauCeti.linearInvariants`), the polynomial functions `p` with `p(w λ) = p(λ)`; this is
@@ -78,7 +78,7 @@ public section
 
 namespace TauCeti
 
-open LieAlgebra LieModule Module TauCeti.SymmetricAlgebra
+open LieAlgebra LieModule Module _root_.SymmetricAlgebra TauCeti.SymmetricAlgebra
 
 universe u v
 
