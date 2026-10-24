@@ -29,10 +29,10 @@ module sheaves is not assumed to be lax monoidal.
 
 ## Main declarations
 
-* `isIso_pullbackIhomComparison_app_of_presentation`: invertibility from a finite global
-  presentation, without an affineness hypothesis;
-* `isIso_pullbackIhomComparison_app_of_isAffine`: invertibility for finitely presented sources
-  over an affine base.
+* `AlgebraicGeometry.Scheme.Hom.isIso_pullbackIhomComparison_app_of_presentation`:
+  invertibility from a finite global presentation, without an affineness hypothesis;
+* `AlgebraicGeometry.Scheme.Hom.isIso_pullbackIhomComparison_app_of_isAffine`:
+  invertibility for finitely presented sources over an affine base.
 
 ## References
 
@@ -55,7 +55,7 @@ variable {X Y : Scheme.{u}} (f : X ⟶ Y) [Flat f]
 
 /-- A finite global presentation of the source makes the canonical internal-Hom comparison
 invertible under flat pullback into a quasicoherent target, without assuming the base affine. -/
-theorem isIso_pullbackIhomComparison_app_of_presentation
+theorem _root_.AlgebraicGeometry.Scheme.Hom.isIso_pullbackIhomComparison_app_of_presentation
     (M N : Y.Modules) [M.IsQuasicoherent] [N.IsQuasicoherent]
     (P : M.Presentation) [P.IsFinite] :
     IsIso ((pullbackIhomComparison M f).app N) := by
@@ -105,14 +105,15 @@ theorem isIso_pullbackIhomComparison_app_of_presentation
 
 /-- Over an affine base, flat pullback commutes with internal Hom from a finitely presented
 sheaf into a quasicoherent sheaf. The source scheme is arbitrary. -/
-theorem isIso_pullbackIhomComparison_app_of_isAffine [IsAffine Y]
+theorem _root_.AlgebraicGeometry.Scheme.Hom.isIso_pullbackIhomComparison_app_of_isAffine
+    [IsAffine Y]
     (M N : Y.Modules) [M.IsFinitePresentation] [N.IsQuasicoherent] :
     letI := SheafOfModules.instIsQuasicoherentOfIsFinitePresentation M
     IsIso ((pullbackIhomComparison M f).app N) := by
   let := SheafOfModules.instIsQuasicoherentOfIsFinitePresentation M
   obtain ⟨P, hP⟩ := Scheme.Modules.exists_isFinite_presentation_of_isAffine M
   have : P.IsFinite := hP
-  exact isIso_pullbackIhomComparison_app_of_presentation f M N P
+  exact f.isIso_pullbackIhomComparison_app_of_presentation M N P
 
 end
 
