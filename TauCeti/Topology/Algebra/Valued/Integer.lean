@@ -24,6 +24,8 @@ norm of `K` is dense, for instance if its value group is all of `ℝ_{>0}`, the 
 ## Main results
 
 * `Valued.integer.mem_maximalIdeal_iff`: the maximal ideal of `𝒪[K]` is the open unit ball.
+* `Valued.integer.exists_mem_maximalIdeal_coe_ne_zero`: the maximal ideal of `𝒪[K]` contains a
+  nonzero element.
 * `Valued.integer.smul_def`: on a `K`-module, `𝒪[K]` acts through the inclusion `𝒪[K] → K`.
 * `Valued.integer.dvd_iff_norm_le`: divisibility in `𝒪[K]` is comparison of norms.
 * `Valued.integer.submodule_mem_of_norm_le`: an `𝒪[K]`-submodule of `K` contains every element
@@ -56,6 +58,13 @@ theorem Valued.integer.mem_maximalIdeal_iff {x : Valued.integer K} :
   rw [mem_maximalIdeal, mem_nonunits_iff, Valued.integer.isUnit_iff_norm_eq_one,
     (Valued.integer.norm_le_one x).lt_iff_ne]
 
+/-- The maximal ideal of the valuation ring of a nontrivially normed nonarchimedean field
+contains a nonzero element. -/
+theorem Valued.integer.exists_mem_maximalIdeal_coe_ne_zero :
+    ∃ a ∈ IsLocalRing.maximalIdeal (Valued.integer K), (a : K) ≠ 0 := by
+  obtain ⟨a, ha0, ha1⟩ := Valued.integer.exists_norm_coe_lt_one (K := K)
+  exact ⟨a, Valued.integer.mem_maximalIdeal_iff.2 ha1, norm_pos_iff.1 ha0⟩
+
 /-- On a `K`-module `E` with a compatible `𝒪[K]`-module structure, `𝒪[K]` acts through the
 inclusion `𝒪[K] → K`. -/
 theorem Valued.integer.smul_def {E : Type*} [AddCommMonoid E] [Module K E]
@@ -81,16 +90,14 @@ theorem Valued.integer.exists_eq_mul_of_linearMap_maximalIdeal
     (f : IsLocalRing.maximalIdeal (Valued.integer K) →ₗ[Valued.integer K] K) :
     ∃ q : K, ∀ c : IsLocalRing.maximalIdeal (Valued.integer K),
       f c = ((c : Valued.integer K) : K) * q := by
-  obtain ⟨a, ha0, ha1⟩ := Valued.integer.exists_norm_coe_lt_one (K := K)
-  have ham : a ∈ IsLocalRing.maximalIdeal (Valued.integer K) :=
-    Valued.integer.mem_maximalIdeal_iff.2 ha1
+  obtain ⟨a, ham, ha⟩ := Valued.integer.exists_mem_maximalIdeal_coe_ne_zero (K := K)
   refine ⟨f ⟨a, ham⟩ / a, fun c ↦ ?_⟩
   -- `f` is linear, so `a * f c = f (a * c) = c * f a`.
   have h : (a : K) * f c = (c : K) * f ⟨a, ham⟩ := by
     have hac : a • c = (c : Valued.integer K) • (⟨a, ham⟩ : IsLocalRing.maximalIdeal _) :=
       Subtype.ext (mul_comm _ _)
     simpa only [map_smul, Valued.integer.smul_def, smul_eq_mul] using congrArg f hac
-  field_simp [norm_pos_iff.1 ha0]
+  field_simp [ha]
   linear_combination h
 
 variable {ι F : Type*} [NormedAddCommGroup F] [NormedSpace K F] [Module (Valued.integer K) F]

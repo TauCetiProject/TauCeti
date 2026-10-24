@@ -272,24 +272,24 @@ private theorem isValuationSaturated_map_proj {ι : Type*}
   -- Injectivity holds since `K` is torsion-free. A linear map `f : 𝓂[K] → M.map (proj i)` is
   -- multiplication by some `q ∈ K`; lifting each `c • q` to `M` and applying
   -- `IsValuationSaturated.exists_add_sum_smul_mem` to the basis of the kernel part lifts `q`.
-  obtain ⟨a, ha0, ha1⟩ := Valued.integer.exists_norm_coe_lt_one (K := K)
-  have ham : a ∈ maximalIdeal (Valued.integer K) := Valued.integer.mem_maximalIdeal_iff.2 ha1
-  have ha : (a : K) ≠ 0 := norm_pos_iff.1 ha0
+  obtain ⟨a, ham, ha⟩ := Valued.integer.exists_mem_maximalIdeal_coe_ne_zero (K := K)
   refine isValuationSaturated_def.2
     ⟨valuationSaturationMap_injective_iff.2 fun x hx ↦ ?_, fun f ↦ ?_⟩
   · have h := congrArg Subtype.val (hx a ham)
-    rw [Submodule.coe_smul, Valued.integer.smul_def, smul_eq_mul, ZeroMemClass.coe_zero] at h
-    exact Subtype.ext ((mul_eq_zero.1 h).resolve_left ha)
+    rw [Submodule.coe_smul, Valued.integer.smul_def, ZeroMemClass.coe_zero] at h
+    exact Subtype.ext ((smul_eq_zero_iff_right ha).1 h)
   obtain ⟨q, hq⟩ := Valued.integer.exists_eq_mul_of_linearMap_maximalIdeal
     ((M.map (LinearMap.proj i)).subtype ∘ₗ f)
   simp only [LinearMap.comp_apply, Submodule.subtype_apply] at hq
   -- The basis vectors `e j` span the part of `M` on which the `i`-th coordinate vanishes.
+  have hN (x : ι → K) : x ∈ M ⊓ LinearMap.ker (LinearMap.proj i) ↔ x ∈ M ∧ x i = 0 := by simp
   let e : Fin k → ι → K := fun j ↦ (b j : ι → K)
-  have he (j : Fin k) : e j ∈ M := (b j).2.1
-  have hei (j : Fin k) : e j i = 0 := (b j).2.2
+  have he (j : Fin k) : e j ∈ M := ((hN _).1 (b j).2).1
+  have hei (j : Fin k) : e j i = 0 := ((hN _).1 (b j).2).2
   have hrepr (y : ι → K) (hy : y ∈ M) (hyi : y i = 0) :
-      ∃ s : Fin k → Valued.integer K, y = ∑ j, s j • e j :=
-    ⟨b.repr ⟨y, hy, hyi⟩, (congrArg Subtype.val (b.sum_repr ⟨y, hy, hyi⟩)).symm.trans
+      ∃ s : Fin k → Valued.integer K, y = ∑ j, s j • e j := by
+    have hyN := (hN y).2 ⟨hy, hyi⟩
+    exact ⟨b.repr ⟨y, hyN⟩, (congrArg Subtype.val (b.sum_repr ⟨y, hyN⟩)).symm.trans
       (by simp only [Submodule.coe_sum, Submodule.coe_smul, e])⟩
   have hspan (t : Fin k → K) (ht : ∑ j, t j • e j ∈ M) :
       ∃ s : Fin k → Valued.integer K, ∑ j, t j • e j = ∑ j, s j • e j :=
@@ -307,7 +307,7 @@ private theorem isValuationSaturated_map_proj {ι : Type*}
         congr 1
         field_simp
       simpa [h] using M.smul_mem d hm₀
-    · have hc0 : (c : K) ≠ 0 := norm_pos_iff.1 (ha0.trans_le hle)
+    · have hc0 : (c : K) ≠ 0 := norm_pos_iff.1 ((norm_pos_iff.2 ha).trans_le hle)
       obtain ⟨d, hd⟩ := Valued.integer.dvd_iff_norm_le.2 hle
       have hd' : (d : K) * c = a := by rw [hd, Subring.coe_mul, mul_comm]
       obtain ⟨mc, hmc, hmci⟩ := Submodule.mem_map.1 (f ⟨c, hc⟩).2
@@ -349,8 +349,7 @@ theorem exists_basis_of_isValuationSaturated (hK : ∀ r : ℝ, 0 < r → ∃ x 
   classical
   -- The value-group hypothesis makes the norm of `K` dense.
   let _ : DenselyNormedField K := DenselyNormedField.ofForallExistsNormEq hK
-  obtain ⟨a, ha0, ha1⟩ := Valued.integer.exists_norm_coe_lt_one (K := K)
-  have ham : a ∈ maximalIdeal (Valued.integer K) := Valued.integer.mem_maximalIdeal_iff.2 ha1
+  obtain ⟨a, ham, ha⟩ := Valued.integer.exists_mem_maximalIdeal_coe_ne_zero (K := K)
   -- Induct on a finite set `s` of coordinates outside which `M` vanishes.
   suffices h : ∀ s : Finset ι, ∀ M : Submodule (Valued.integer K) (ι → K),
       (∀ x ∈ M, ∀ j ∉ s, x j = 0) → Bornology.IsBounded (M : Set (ι → K)) →
@@ -368,15 +367,18 @@ theorem exists_basis_of_isValuationSaturated (hK : ∀ r : ℝ, 0 < r → ∃ x 
     intro M hMs hb hM
     -- The part `N` of `M` on which the `i`-th coordinate vanishes is free by induction.
     set N := M ⊓ LinearMap.ker (LinearMap.proj i : (ι → K) →ₗ[Valued.integer K] K)
+    have hN (x : ι → K) : x ∈ N ↔ x ∈ M ∧ x i = 0 := by simp [N]
     have hNs (x : ι → K) (hx : x ∈ N) (j : ι) (hj : j ∉ s) : x j = 0 := by
+      obtain ⟨hxM, hxi⟩ := (hN x).1 hx
       by_cases hji : j = i
-      · exact hji ▸ hx.2
-      · exact hMs x hx.1 j (by simp [hji, hj])
+      · rw [hji]
+        exact hxi
+      · exact hMs x hxM j (by simp [hji, hj])
     have hNsat : IsValuationSaturated (Valued.integer K) (maximalIdeal (Valued.integer K)) N :=
-      hM.of_le_of_forall_smul_mem inf_le_left fun x hx hxa ↦ ⟨hx, by
+      hM.of_le_of_forall_smul_mem inf_le_left fun x hx hxa ↦ (hN x).2 ⟨hx, by
         have h : (a : K) * x i = 0 := by
-          simpa [Valued.integer.smul_def] using (hxa a ham).2
-        exact (mul_eq_zero.1 h).resolve_left (norm_pos_iff.1 ha0)⟩
+          simpa [Valued.integer.smul_def] using ((hN _).1 (hxa a ham)).2
+        exact (mul_eq_zero_iff_left ha).1 h⟩
     obtain ⟨k, hk, ⟨bN⟩⟩ := ih N hNs (hb.subset inf_le_left) hNsat
     -- The image `Q` of the `i`-th coordinate is a bounded saturated lattice in `K`, so principal.
     have hQb : Bornology.IsBounded
@@ -387,7 +389,8 @@ theorem exists_basis_of_isValuationSaturated (hK : ∀ r : ℝ, 0 < r → ∃ x 
       (isValuationSaturated_map_proj hM i bN)
     rcases eq_or_ne q 0 with rfl | hq0
     · have hNM : N = M := inf_eq_left.2 fun x hx ↦ by
-        have h : x i ∈ M.map (LinearMap.proj i) := Submodule.mem_map_of_mem hx
+        have h : x i ∈ M.map (LinearMap.proj i) :=
+          Submodule.mem_map.2 ⟨x, hx, LinearMap.proj_apply i x⟩
         rwa [hq, Submodule.span_singleton_eq_bot.2 rfl, Submodule.mem_bot] at h
       exact ⟨k, hk.trans (Finset.card_le_card (Finset.subset_insert i s)),
         ⟨bN.map (LinearEquiv.ofEq N M hNM)⟩⟩
@@ -397,12 +400,14 @@ theorem exists_basis_of_isValuationSaturated (hK : ∀ r : ℝ, 0 < r → ∃ x 
     rw [LinearMap.proj_apply] at hyi
     refine ⟨k + 1, by rw [Finset.card_insert_of_notMem hi]; omega,
       ⟨Module.Basis.mkFinConsOfLE y hy bN inf_le_left (fun c x hx hcx ↦ ?_) fun z hz ↦ ?_⟩⟩
-    · have hxi : x i = 0 := hx.2
+    · have hxi : x i = 0 := ((hN x).1 hx).2
       have h := congrFun hcx i
       simp only [Pi.add_apply, Pi.smul_apply, Valued.integer.smul_def, smul_eq_mul, hyi, hxi,
         Pi.zero_apply, add_zero] at h
-      exact Subtype.ext ((mul_eq_zero.1 h).resolve_right hq0)
-    · have hzi : z i ∈ Valued.integer K ∙ q := hq ▸ Submodule.mem_map_of_mem hz
+      exact Subtype.ext ((mul_eq_zero_iff_right hq0).1 h)
+    · have hzi : z i ∈ Valued.integer K ∙ q := by
+        rw [← hq]
+        exact Submodule.mem_map.2 ⟨z, hz, LinearMap.proj_apply i z⟩
       obtain ⟨d, hd⟩ := Submodule.mem_span_singleton.1 hzi
       refine ⟨-d, M.add_mem hz (M.smul_mem _ hy), ?_⟩
       simp [Valued.integer.smul_def, hyi, ← hd]
