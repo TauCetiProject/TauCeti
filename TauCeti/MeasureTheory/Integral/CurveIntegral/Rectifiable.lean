@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Integral.CurveIntegral.Basic
-public import TauCeti.Analysis.ConstantSpeed
-public import TauCeti.MeasureTheory.Function.MetricDerivative.Variation
+public import TauCeti.MeasureTheory.Function.MetricDerivative.ConstantSpeed
 public import TauCeti.MeasureTheory.Integral.CurveIntegral.Convergence
 public import TauCeti.MeasureTheory.Integral.CurveIntegral.Reparam
 public import TauCeti.Topology.MetricSpace.Arclength.Basic
@@ -33,7 +32,9 @@ differentiable almost everywhere and is the integral of its derivative. In an
 infinite-dimensional space a Lipschitz curve can be nowhere differentiable (for instance
 `t ↦ fun x ↦ |t - x|` in `C([0, 1], ℝ)`), and the formula then gives a junk value. The
 comparison theorems below therefore assume `[FiniteDimensional ℝ E]`; the invariance theorems
-are identities of the formula and hold in every normed space.
+are identities of the formula and hold in every normed space. They also need no
+bounded-variation hypothesis: for a curve of infinite length on `[a, b]`, or for `b < a`, the
+length interval is `[0, 0]` and the integral is zero.
 
 The main results are:
 
@@ -92,36 +93,40 @@ theorem rectifiableCurveIntegral_def (ω : E → E →L[ℝ] F) (γ : ℝ → E)
           (deriv (naturalParameterization γ (Icc a b) a) u) :=
   (rfl)
 
-/-- The geometric integral along a continuous rectifiable curve is the integral along any curve
-`g` through which the curve factors by cumulative variation. -/
-theorem rectifiableCurveIntegral_eq_of_eqOn_comp_variationOnFromTo
-    (hγ : BoundedVariationOn γ (Icc a b)) (hcont : ContinuousOn γ (Icc a b)) (hab : a ≤ b)
-    {g : ℝ → E} (hg : EqOn (g ∘ variationOnFromTo γ (Icc a b) a) γ (Icc a b)) :
-    rectifiableCurveIntegral ω γ a b =
-      ∫ u in 0..(eVariationOn γ (Icc a b)).toReal, ω (g u) (deriv g u) :=
-  integral_oneForm_congr <| uIcc_of_le ENNReal.toReal_nonneg ▸
-    (hγ.eqOn_naturalParameterization hcont hab hg).symm
-
 omit [NormedSpace ℝ E] in
-/-- The natural parameterization of a continuous rectifiable curve is absolutely continuous on its
-length interval, because it is 1-Lipschitz there. -/
-private theorem absolutelyContinuousOnInterval_naturalParameterization
-    (hγ : BoundedVariationOn γ (Icc a b)) (hcont : ContinuousOn γ (Icc a b)) (hab : a ≤ b) :
-    AbsolutelyContinuousOnInterval (naturalParameterization γ (Icc a b) a) 0
-      (eVariationOn γ (Icc a b)).toReal := by
-  refine LipschitzOnWith.absolutelyContinuousOnInterval (K := 1) ?_
-  rw [uIcc_of_le ENNReal.toReal_nonneg, ← hγ.image_variationOnFromTo_Icc hcont hab]
-  exact HasConstantSpeedOnWith.lipschitzOnWith
-    (has_unit_speed_naturalParameterization γ hγ.locallyBoundedVariationOn (left_mem_Icc.2 hab))
+/-- The length interval is `[0, 0]` unless the curve has bounded variation on `[a, b]` and
+`a ≤ b`: the variation is infinite in the first case and the interval is empty in the second. -/
+private theorem toReal_eVariationOn_eq_zero_of_not
+    (h : ¬(BoundedVariationOn γ (Icc a b) ∧ a ≤ b)) : (eVariationOn γ (Icc a b)).toReal = 0 := by
+  rcases not_and_or.1 h with hγ | hba
+  · rw [BoundedVariationOn, not_ne_iff] at hγ
+    rw [hγ, ENNReal.toReal_top]
+  · rw [eVariationOn.subsingleton γ ((Icc_eq_empty hba).symm ▸ subsingleton_empty),
+      ENNReal.toReal_zero]
+
+/-- The geometric integral along a continuous curve is the integral along any curve `g` through
+which the curve factors by cumulative variation. -/
+theorem rectifiableCurveIntegral_eq_of_eqOn_comp_variationOnFromTo
+    (hcont : ContinuousOn γ (Icc a b)) {g : ℝ → E}
+    (hg : EqOn (g ∘ variationOnFromTo γ (Icc a b) a) γ (Icc a b)) :
+    rectifiableCurveIntegral ω γ a b =
+      ∫ u in 0..(eVariationOn γ (Icc a b)).toReal, ω (g u) (deriv g u) := by
+  by_cases h : BoundedVariationOn γ (Icc a b) ∧ a ≤ b
+  · exact integral_oneForm_congr <| uIcc_of_le ENNReal.toReal_nonneg ▸
+      (h.1.eqOn_naturalParameterization hcont h.2 hg).symm
+  · simp only [rectifiableCurveIntegral_def, toReal_eVariationOn_eq_zero_of_not h,
+      intervalIntegral.integral_same]
 
 /-- The geometric integral of the negative of a 1-form is the negative of the geometric
 integral. -/
+@[simp]
 theorem rectifiableCurveIntegral_neg :
     rectifiableCurveIntegral (-ω) γ a b = -rectifiableCurveIntegral ω γ a b := by
   simp only [rectifiableCurveIntegral_def, Pi.neg_apply, neg_apply,
     intervalIntegral.integral_neg]
 
 /-- The geometric integral is homogeneous in the 1-form. -/
+@[simp]
 theorem rectifiableCurveIntegral_smul {𝕜 : Type*} [NormedField 𝕜] [NormedSpace 𝕜 F]
     [SMulCommClass ℝ 𝕜 F] (k : 𝕜) :
     rectifiableCurveIntegral (k • ω) γ a b = k • rectifiableCurveIntegral ω γ a b := by
@@ -129,12 +134,16 @@ theorem rectifiableCurveIntegral_smul {𝕜 : Type*} [NormedField 𝕜] [NormedS
     intervalIntegral.integral_smul]
 
 /-- The geometric integral only depends on the curve on `[a, b]`. -/
-theorem rectifiableCurveIntegral_congr {γ' : ℝ → E} (hγ : BoundedVariationOn γ (Icc a b))
-    (hcont : ContinuousOn γ (Icc a b)) (hab : a ≤ b) (h : EqOn γ γ' (Icc a b)) :
+theorem rectifiableCurveIntegral_congr {γ' : ℝ → E} (hcont : ContinuousOn γ (Icc a b))
+    (h : EqOn γ γ' (Icc a b)) :
     rectifiableCurveIntegral ω γ' a b = rectifiableCurveIntegral ω γ a b := by
   have hL : eVariationOn γ' (Icc a b) = eVariationOn γ (Icc a b) := eVariationOn.eq_of_eqOn h.symm
-  have hγ' : BoundedVariationOn γ' (Icc a b) := by rwa [BoundedVariationOn, hL]
-  rw [rectifiableCurveIntegral_eq_of_eqOn_comp_variationOnFromTo hγ' (hcont.congr h.symm) hab
+  by_cases hγab : BoundedVariationOn γ (Icc a b) ∧ a ≤ b
+  swap
+  · simp only [rectifiableCurveIntegral_def, hL, toReal_eVariationOn_eq_zero_of_not hγab,
+      intervalIntegral.integral_same]
+  obtain ⟨hγ, hab⟩ := hγab
+  rw [rectifiableCurveIntegral_eq_of_eqOn_comp_variationOnFromTo (hcont.congr h.symm)
     (g := naturalParameterization γ (Icc a b) a), hL, rectifiableCurveIntegral_def]
   intro t ht
   rw [Function.comp_apply, variationOnFromTo.eq_of_le _ _ ht.1,
@@ -144,8 +153,8 @@ theorem rectifiableCurveIntegral_congr {γ' : ℝ → E} (hγ : BoundedVariation
 
 /-- The geometric integral is invariant under increasing continuous reparametrizations of
 `[c, d]` onto `[a, b]`. The reparametrization need not be absolutely continuous. -/
-theorem rectifiableCurveIntegral_comp_of_monotoneOn (hγ : BoundedVariationOn γ (Icc a b))
-    (hcont : ContinuousOn γ (Icc a b)) {φ : ℝ → ℝ} (hcd : c ≤ d) (hφ : ContinuousOn φ (Icc c d))
+theorem rectifiableCurveIntegral_comp_of_monotoneOn (hcont : ContinuousOn γ (Icc a b)) {φ : ℝ → ℝ}
+    (hcd : c ≤ d) (hφ : ContinuousOn φ (Icc c d))
     (hφm : MonotoneOn φ (Icc c d)) (hφc : φ c = a) (hφd : φ d = b) :
     rectifiableCurveIntegral ω (γ ∘ φ) c d = rectifiableCurveIntegral ω γ a b := by
   have hab : a ≤ b := hφc ▸ hφd ▸ hφm (left_mem_Icc.2 hcd) (right_mem_Icc.2 hcd) hcd
@@ -153,10 +162,13 @@ theorem rectifiableCurveIntegral_comp_of_monotoneOn (hγ : BoundedVariationOn γ
     rw [hφ.image_Icc_of_monotoneOn hcd hφm, hφc, hφd]
   have hL : eVariationOn (γ ∘ φ) (Icc c d) = eVariationOn γ (Icc a b) := by
     rw [eVariationOn.comp_eq_of_monotoneOn _ _ hφm, himage]
-  have hγφ : BoundedVariationOn (γ ∘ φ) (Icc c d) := by rwa [BoundedVariationOn, hL]
+  by_cases hγ : BoundedVariationOn γ (Icc a b)
+  swap
+  · simp only [rectifiableCurveIntegral_def, hL,
+      toReal_eVariationOn_eq_zero_of_not fun h ↦ hγ h.1, intervalIntegral.integral_same]
   have hcontφ : ContinuousOn (γ ∘ φ) (Icc c d) :=
     hcont.comp hφ (himage ▸ mapsTo_image φ (Icc c d))
-  rw [rectifiableCurveIntegral_eq_of_eqOn_comp_variationOnFromTo hγφ hcontφ hcd
+  rw [rectifiableCurveIntegral_eq_of_eqOn_comp_variationOnFromTo hcontφ
     (g := naturalParameterization γ (Icc a b) a), hL, rectifiableCurveIntegral_def]
   intro t ht
   have hφt : φ t ∈ Icc a b := himage ▸ mem_image_of_mem φ ht
@@ -167,8 +179,8 @@ theorem rectifiableCurveIntegral_comp_of_monotoneOn (hγ : BoundedVariationOn γ
 
 /-- The geometric integral changes sign under decreasing continuous reparametrizations of
 `[c, d]` onto `[a, b]`. The reparametrization need not be absolutely continuous. -/
-theorem rectifiableCurveIntegral_comp_of_antitoneOn (hγ : BoundedVariationOn γ (Icc a b))
-    (hcont : ContinuousOn γ (Icc a b)) {φ : ℝ → ℝ} (hcd : c ≤ d) (hφ : ContinuousOn φ (Icc c d))
+theorem rectifiableCurveIntegral_comp_of_antitoneOn (hcont : ContinuousOn γ (Icc a b)) {φ : ℝ → ℝ}
+    (hcd : c ≤ d) (hφ : ContinuousOn φ (Icc c d))
     (hφm : AntitoneOn φ (Icc c d)) (hφc : φ c = b) (hφd : φ d = a) :
     rectifiableCurveIntegral ω (γ ∘ φ) c d = -rectifiableCurveIntegral ω γ a b := by
   have hab : a ≤ b := hφc ▸ hφd ▸ hφm (left_mem_Icc.2 hcd) (right_mem_Icc.2 hcd) hcd
@@ -176,13 +188,16 @@ theorem rectifiableCurveIntegral_comp_of_antitoneOn (hγ : BoundedVariationOn γ
     rw [hφ.image_Icc_of_antitoneOn hcd hφm, hφc, hφd]
   have hL : eVariationOn (γ ∘ φ) (Icc c d) = eVariationOn γ (Icc a b) := by
     rw [eVariationOn.comp_eq_of_antitoneOn _ _ hφm, himage]
-  have hγφ : BoundedVariationOn (γ ∘ φ) (Icc c d) := by rwa [BoundedVariationOn, hL]
+  by_cases hγ : BoundedVariationOn γ (Icc a b)
+  swap
+  · simp only [rectifiableCurveIntegral_def, hL,
+      toReal_eVariationOn_eq_zero_of_not fun h ↦ hγ h.1, intervalIntegral.integral_same, neg_zero]
   have hcontφ : ContinuousOn (γ ∘ φ) (Icc c d) :=
     hcont.comp hφ (himage ▸ mapsTo_image φ (Icc c d))
   set L := (eVariationOn γ (Icc a b)).toReal
   set η := naturalParameterization γ (Icc a b) a
   -- The reversed curve `u ↦ η (L - u)` is the arclength factor of `γ ∘ φ`.
-  rw [rectifiableCurveIntegral_eq_of_eqOn_comp_variationOnFromTo hγφ hcontφ hcd
+  rw [rectifiableCurveIntegral_eq_of_eqOn_comp_variationOnFromTo hcontφ
     (g := fun u ↦ η (L - u)), hL, rectifiableCurveIntegral_def]
   · simp only [deriv_comp_const_sub, map_neg, intervalIntegral.integral_neg]
     rw [intervalIntegral.integral_comp_sub_left (fun v ↦ ω (η v) (deriv η v)) L, sub_self,
@@ -239,7 +254,7 @@ theorem rectifiableCurveIntegral_eq_intervalIntegral_deriv
     hBV.locallyBoundedVariationOn.naturalParameterization_variationOnFromTo (left_mem_Icc.2 hab) ht
   have hη : AbsolutelyContinuousOnInterval η (θ a) (θ b) := by
     rw [hθa, hθb]
-    exact absolutelyContinuousOnInterval_naturalParameterization hBV hcont hab
+    exact hBV.absolutelyContinuousOnInterval_naturalParameterization hcont hab
   have hωη : ContinuousOn ω (η '' uIcc (θ a) (θ b)) := by
     rwa [hθa, hθb, uIcc_of_le ENNReal.toReal_nonneg, ← hBV.image_variationOnFromTo_Icc hcont hab,
       hBV.locallyBoundedVariationOn.image_naturalParameterization (left_mem_Icc.2 hab)]
@@ -266,19 +281,15 @@ theorem rectifiableCurveIntegral_eq_of_eqOn_comp {η : ℝ → E} {ψ : ℝ → 
   have hcd : c ≤ d := hψa ▸ hψb ▸ hψm (left_mem_Icc.2 hab) (right_mem_Icc.2 hab) hab
   have himage : ψ '' Icc a b = Icc c d := by
     rw [hψ.image_Icc_of_monotoneOn hab hψm, hψa, hψb]
-  have hBV : BoundedVariationOn η (Icc c d) := uIcc_of_le hcd ▸ hη.boundedVariationOn
   have hcont : ContinuousOn η (Icc c d) := uIcc_of_le hcd ▸ hη.continuousOn
   have hcomp : rectifiableCurveIntegral ω (η ∘ ψ) a b = rectifiableCurveIntegral ω η c d :=
-    rectifiableCurveIntegral_comp_of_monotoneOn hBV hcont hab hψ hψm hψa hψb
-  have hBVψ : BoundedVariationOn (η ∘ ψ) (Icc a b) := by
-    rw [BoundedVariationOn, eVariationOn.comp_eq_of_monotoneOn _ _ hψm, himage]
-    exact hBV
+    rectifiableCurveIntegral_comp_of_monotoneOn hcont hab hψ hψm hψa hψb
   have hcontψ : ContinuousOn (η ∘ ψ) (Icc a b) :=
     hcont.comp hψ (himage ▸ mapsTo_image ψ (Icc a b))
   have htrace : η '' Icc c d = γ '' Icc a b := by
     rw [← himage, image_image]
     exact image_congr fun t ht ↦ h ht
-  rw [rectifiableCurveIntegral_congr hBVψ hcontψ hab h, hcomp,
+  rw [rectifiableCurveIntegral_congr hcontψ h, hcomp,
     hη.rectifiableCurveIntegral_eq_intervalIntegral_deriv hcd (htrace ▸ hω)]
 
 /-- Along a continuous rectifiable curve, the integrand of the geometric integral of a 1-form
@@ -290,7 +301,7 @@ private theorem intervalIntegrable_oneForm_naturalParameterization
       (deriv (naturalParameterization γ (Icc a b) a) u)) volume 0
       (eVariationOn γ (Icc a b)).toReal := by
   rcases le_or_gt a b with hab | hba
-  · refine (absolutelyContinuousOnInterval_naturalParameterization hγ hcont hab
+  · refine (hγ.absolutelyContinuousOnInterval_naturalParameterization hcont hab
       ).intervalIntegrable_oneForm_of_continuousOn ?_
     rwa [uIcc_of_le ENNReal.toReal_nonneg, ← hγ.image_variationOnFromTo_Icc hcont hab,
       hγ.locallyBoundedVariationOn.image_naturalParameterization (left_mem_Icc.2 hab)]
