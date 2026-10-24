@@ -18,8 +18,8 @@ the knot, but it moves the point from which `Polygon.gaussCode` starts traversin
 This file proves that this is all that changes: the Gauss code of a regular projection of
 `poly.rotate` is obtained from that of `poly` by moving the base point forward past the visits
 between vertices `0` and `1` and relabelling the crossings
-(`Polygon.exists_gaussCode_rotate_eq_relabel`). Forgetting the base point, the two unbased oriented
-Gauss codes differ only by a relabelling of the crossings
+(`Polygon.exists_gaussCode_rotate_eq_relabel_rotateBasepoint_pow`). Forgetting the base point,
+the two unbased oriented Gauss codes differ only by a relabelling of the crossings
 (`Polygon.exists_forgetBasepoint_gaussCode_rotate_eq_relabel`).
 
 Cyclic relabelling keeps a polygon simple (`Polygon.isSimple_rotate_iff`) and a projection regular
@@ -36,8 +36,8 @@ have the same crossings, over/under data and signs at corresponding visits.
 
 ## Main results
 
-* `Polygon.exists_gaussCode_rotate_eq_relabel`: the Gauss code of `poly.rotate` is a basepoint
-  rotation of that of `poly`, with the crossings relabelled.
+* `Polygon.exists_gaussCode_rotate_eq_relabel_rotateBasepoint_pow`: the Gauss code of
+  `poly.rotate` is a basepoint rotation of that of `poly`, with the crossings relabelled.
 * `Polygon.exists_forgetBasepoint_gaussCode_rotate_eq_relabel`: the unbased oriented Gauss codes of
   `poly` and `poly.rotate` differ by a relabelling of the crossings.
 
@@ -90,7 +90,7 @@ private theorem strictMono_rotateTime_finRotate_pow {N k : ℕ} {τ : Fin N → 
   by_cases h₁ : (j : ℕ) + k < N <;> by_cases h₂ : (j' : ℕ) + k < N
   · have e₁ : ((finRotate N ^ k) j : ℕ) = j + k := by rw [hσ, Nat.mod_eq_of_lt h₁]
     have e₂ : ((finRotate N ^ k) j' : ℕ) = j' + k := by rw [hσ, Nat.mod_eq_of_lt h₂]
-    have hv := hτ (show (finRotate N ^ k) j < (finRotate N ^ k) j' from Fin.lt_def.2 (by omega))
+    have hv : τ ((finRotate N ^ k) j) < τ ((finRotate N ^ k) j') := hτ (Fin.lt_def.2 (by omega))
     rw [ite_eq_right (by rw [hk]; omega), ite_eq_right (by rw [hk]; omega)]
     linarith
   · have e₁ : ((finRotate N ^ k) j : ℕ) = j + k := by rw [hσ, Nat.mod_eq_of_lt h₁]
@@ -104,7 +104,7 @@ private theorem strictMono_rotateTime_finRotate_pow {N k : ℕ} {τ : Fin N → 
       rw [hσ, Nat.mod_eq_sub_mod (by omega), Nat.mod_eq_of_lt (by omega)]
     have e₂ : ((finRotate N ^ k) j' : ℕ) = j' + k - N := by
       rw [hσ, Nat.mod_eq_sub_mod (by omega), Nat.mod_eq_of_lt (by omega)]
-    have hv := hτ (show (finRotate N ^ k) j < (finRotate N ^ k) j' from Fin.lt_def.2 (by omega))
+    have hv : τ ((finRotate N ^ k) j) < τ ((finRotate N ^ k) j') := hτ (Fin.lt_def.2 (by omega))
     rw [ite_eq_left (by rw [hk]; omega), ite_eq_left (by rw [hk]; omega)]
     linarith
 
@@ -186,7 +186,7 @@ projection along `d` be regular. Then the Gauss code of its cyclic relabelling `
 which starts the traversal at vertex `1` instead of vertex `0`, is obtained from the Gauss code of
 `poly` by moving the base point forward `k` visits, for some `k`, and relabelling the crossings.
 The numbers of crossings agree, and the codes are compared together with them. -/
-theorem exists_gaussCode_rotate_eq_relabel (hs : poly.IsSimple ℝ)
+theorem exists_gaussCode_rotate_eq_relabel_rotateBasepoint_pow (hs : poly.IsSimple ℝ)
     (hπ : poly.IsRegularProjection ℝ (projAlong ℝ p₀ d)) (b : Basis (Fin 3) ℝ V) :
     ∃ (k : ℕ) (e : Equiv.Perm (Fin ((poly.doublePoints ℝ (projAlong ℝ p₀ d)).ncard / 2))),
       (⟨_, gaussCode ((isSimple_rotate_iff poly).2 hs) (isRegularProjection_rotate_iff.2 hπ) b⟩ :
@@ -235,43 +235,31 @@ theorem exists_gaussCode_rotate_eq_relabel (hs : poly.IsSimple ℝ)
     rw [gaussCode_visit_eq_visit_iff, gaussCode_visit_eq_visit_iff, hbp, hbp]
   have hover (i) : D.over (σ i) = D'.over (Fin.cast h2 i) := by
     rw [Bool.eq_iff_iff, gaussCode_over_eq_true_iff, gaussCode_over_eq_true_iff, hbp, hpp]
-  -- The crossing signs agree, first at an over visit and then at its partner.
-  have hsign_over (i) (hi : D.over (σ i) = true) :
+  -- The crossing signs agree at an over visit.
+  have hsign (i) (hi : D.over (σ i) = true) :
       D.sign (D.visit (σ i)) = D'.sign (D'.visit (Fin.cast h2 i)) := by
     have hi' : D'.over (Fin.cast h2 i) = true := by rw [← hover, hi]
     refine Units.ext ?_
     rw [gaussCode_sign_visit b hs hπ hi, gaussCode_sign_visit b hs' hπ' hi', hpartner]
     simp only [rotate_apply, hedge, Equiv.apply_symm_apply, D]
-  set E := (BasedOrientedGaussCode.rotateBasepoint _ ^ k) D
-  have hsign (i) : E.sign (E.visit i) = D'.sign (D'.visit (Fin.cast h2 i)) := by
-    simp only [E, BasedOrientedGaussCode.sign_rotateBasepoint_pow,
-      BasedOrientedGaussCode.visit_rotateBasepoint_pow]
-    cases hi : D.over (σ i)
-    · -- The partner visit of `E` is over, and meets the same crossing.
-      set i₂ := E.partner.val i
-      have hv : E.visit i₂ = E.visit i := E.visit_partner i
-      have ho : E.over i₂ = true := by
-        rw [E.over_partner, BasedOrientedGaussCode.over_rotateBasepoint_pow, hi, Bool.not_false]
-      simp only [E, BasedOrientedGaussCode.visit_rotateBasepoint_pow,
-        BasedOrientedGaussCode.over_rotateBasepoint_pow] at hv ho
-      rw [← hv, hsign_over i₂ ho, (hvisit i₂ i).1 hv]
-    · exact hsign_over i hi
   exact BasedOrientedGaussCode.exists_sigma_mk_eq_relabel_of_visit_eq_visit_iff hm
-    (fun i j ↦ by simpa only [E, BasedOrientedGaussCode.visit_rotateBasepoint_pow] using hvisit i j)
-    (fun i ↦ by simpa only [E, BasedOrientedGaussCode.over_rotateBasepoint_pow] using hover i)
-    hsign
+    (fun i j ↦ by simpa only [BasedOrientedGaussCode.visit_rotateBasepoint_pow] using hvisit i j)
+    (fun i ↦ by simpa only [BasedOrientedGaussCode.over_rotateBasepoint_pow] using hover i)
+    (fun i ↦ by simpa only [BasedOrientedGaussCode.over_rotateBasepoint_pow,
+      BasedOrientedGaussCode.visit_rotateBasepoint_pow,
+      BasedOrientedGaussCode.sign_rotateBasepoint_pow] using hsign i)
 
 /-- **Relabelling the vertices changes the unbased Gauss code only by relabelling crossings.**
-Under the hypotheses of `Polygon.exists_gaussCode_rotate_eq_relabel`, the unbased oriented Gauss
-codes of `poly` and of its cyclic relabelling `poly.rotate` differ by a relabelling of the
-crossings. -/
+Under the hypotheses of `Polygon.exists_gaussCode_rotate_eq_relabel_rotateBasepoint_pow`, the
+unbased oriented Gauss codes of `poly` and of its cyclic relabelling `poly.rotate` differ by a
+relabelling of the crossings. -/
 theorem exists_forgetBasepoint_gaussCode_rotate_eq_relabel (hs : poly.IsSimple ℝ)
     (hπ : poly.IsRegularProjection ℝ (projAlong ℝ p₀ d)) (b : Basis (Fin 3) ℝ V) :
     ∃ e : Equiv.Perm (Fin ((poly.doublePoints ℝ (projAlong ℝ p₀ d)).ncard / 2)),
       (⟨_, (gaussCode ((isSimple_rotate_iff poly).2 hs) (isRegularProjection_rotate_iff.2 hπ)
           b).forgetBasepoint⟩ : Σ m, OrientedGaussCode m) =
         ⟨_, (gaussCode hs hπ b).forgetBasepoint.relabel e⟩ := by
-  obtain ⟨k, e, h⟩ := exists_gaussCode_rotate_eq_relabel hs hπ b
+  obtain ⟨k, e, h⟩ := exists_gaussCode_rotate_eq_relabel_rotateBasepoint_pow hs hπ b
   refine ⟨e, ?_⟩
   have := congrArg (fun D : Σ m, BasedOrientedGaussCode m ↦
     (⟨D.1, D.2.forgetBasepoint⟩ : Σ m, OrientedGaussCode m)) h

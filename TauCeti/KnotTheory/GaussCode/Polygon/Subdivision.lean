@@ -98,8 +98,8 @@ theorem gaussCode_insertVertex (hs : poly.IsSimple ℝ)
     rw [hpartner, hbp]
   have hover (j) : D'.over (Fin.cast h2 j) = D.over j := by
     rw [Bool.eq_iff_iff, gaussCode_over_eq_true_iff, gaussCode_over_eq_true_iff, hbp, hbp']
-  -- The crossing signs agree, first at an over visit and then at its partner.
-  have hsign_over (j) (hj : D.over j = true) :
+  -- The crossing signs agree at an over visit.
+  have hsign (j) (hj : D.over j = true) :
       D'.sign (D'.visit (Fin.cast h2 j)) = D.sign (D.visit j) := by
     have hj' : D'.over (Fin.cast h2 j) = true := by rw [hover, hj]
     obtain ⟨-, -, r, hr, hdir⟩ := hφt _ (hmem j)
@@ -114,13 +114,8 @@ theorem gaussCode_insertVertex (hs : poly.IsSimple ℝ)
     refine Units.ext ?_
     rw [gaussCode_sign_visit b hs' hπ' hj', gaussCode_sign_visit b hs hπ hj, hvt, hvt', hdir,
       hdir', hdet, sign_mul, sign_mul, sign_pos hr, sign_pos hr', one_mul, one_mul]
-  have hsign (j) : D'.sign (D'.visit (Fin.cast h2 j)) = D.sign (D.visit j) := by
-    cases hj : D.over j
-    · have hp : D.over (D.partner.val j) = true := by rw [D.over_partner, hj, Bool.not_false]
-      rw [← D.visit_partner, ← hsign_over _ hp, ← hpartner, D'.visit_partner]
-    · exact hsign_over j hj
   refine (BasedOrientedGaussCode.sigma_mk_eq_of_visit_lt_visit_iff hm (fun j k ↦ ?_)
-    (fun j ↦ (hover j).symm) (fun j ↦ (hsign j).symm)).symm
+    (fun j ↦ (hover j).symm) (fun j hj ↦ (hsign j hj).symm)).symm
   rw [gaussCode_visit_lt_visit_iff, gaussCode_visit_lt_visit_iff, hvt, hvt, hvt', hvt',
     ← hφ.monotone.map_min, ← hφ.monotone.map_min, hφ.lt_iff_lt]
 

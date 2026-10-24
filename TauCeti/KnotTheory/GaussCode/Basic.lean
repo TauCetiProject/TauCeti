@@ -151,14 +151,27 @@ theorem over_partner_ne {D : BasedOrientedGaussCode n} (i : Fin (2 * n)) :
   rw [D.over_partner]
   exact Bool.not_ne_self _
 
+/-- Two codes whose visits meet a common crossing in the same pairs have the same signs of the
+crossings met at every visit once they have them at the over visits: an under visit meets the same
+crossing as its partner, which is over. -/
+private theorem sign_visit_eq_of_over {D E : BasedOrientedGaussCode n}
+    (hvisit : ∀ i j, D.visit i = D.visit j ↔ E.visit i = E.visit j)
+    (hsign : ∀ i, D.over i = true → D.sign (D.visit i) = E.sign (E.visit i)) (i : Fin (2 * n)) :
+    D.sign (D.visit i) = E.sign (E.visit i) := by
+  cases hi : D.over i
+  · have hp : D.over (D.partner.val i) = true := by rw [D.over_partner, hi, Bool.not_false]
+    rw [← D.visit_partner, hsign _ hp, (hvisit _ i).1 (D.visit_partner i)]
+  · exact hsign i hi
+
 /-- A Gauss code is determined by the relative order of the crossing labels of its visits, its
-over/under data, and the signs of the crossings met at each visit: two codes whose labels compare
-in the same way at every pair of visits have the same labels. -/
+over/under data, and the signs of the crossings met at its over visits: two codes whose labels
+compare in the same way at every pair of visits have the same labels. -/
 theorem ext_of_visit_lt_visit_iff {D E : BasedOrientedGaussCode n}
     (hvisit : ∀ i j, D.visit i < D.visit j ↔ E.visit i < E.visit j) (hover : D.over = E.over)
-    (hsign : ∀ i, D.sign (D.visit i) = E.sign (E.visit i)) : D = E := by
+    (hsign : ∀ i, D.over i = true → D.sign (D.visit i) = E.sign (E.visit i)) : D = E := by
   have heq (i j : Fin (2 * n)) : D.visit i = D.visit j ↔ E.visit i = E.visit j := by
     simp only [le_antisymm_iff, ← not_lt, hvisit]
+  replace hsign := sign_visit_eq_of_over heq hsign
   -- Reading the labels of `D` through those of `E` gives a strictly monotone permutation.
   let e : Fin n → Fin n := fun c ↦ E.visit (Function.surjInv D.visit_surjective c)
   have he (i : Fin (2 * n)) : e (D.visit i) = E.visit i :=
@@ -185,7 +198,8 @@ theorem sigma_mk_eq_of_visit_lt_visit_iff {m : ℕ} (h : n = m) {D : BasedOrient
     (hvisit : ∀ i j, D.visit i < D.visit j ↔
       E.visit (Fin.cast (congrArg (2 * ·) h) i) < E.visit (Fin.cast (congrArg (2 * ·) h) j))
     (hover : ∀ i, D.over i = E.over (Fin.cast (congrArg (2 * ·) h) i))
-    (hsign : ∀ i, D.sign (D.visit i) = E.sign (E.visit (Fin.cast (congrArg (2 * ·) h) i))) :
+    (hsign : ∀ i, D.over i = true →
+      D.sign (D.visit i) = E.sign (E.visit (Fin.cast (congrArg (2 * ·) h) i))) :
     (⟨n, D⟩ : Σ n, BasedOrientedGaussCode n) = ⟨m, E⟩ := by
   subst h
   simp only [Fin.cast_eq_self] at hvisit hover hsign
@@ -538,10 +552,12 @@ def relabel (D : BasedOrientedGaussCode n) (e : Fin n ≃ Fin n) : BasedOriented
 
 /-- Two Gauss codes differ only by a relabelling of their crossings when the same pairs of visits
 belong to a common crossing, and the codes have the same over/under data and the same signs of the
-crossings met at each visit. -/
+crossings met at each over visit. -/
 theorem exists_relabel_eq_of_visit_eq_visit_iff {D E : BasedOrientedGaussCode n}
     (hvisit : ∀ i j, D.visit i = D.visit j ↔ E.visit i = E.visit j) (hover : D.over = E.over)
-    (hsign : ∀ i, D.sign (D.visit i) = E.sign (E.visit i)) : ∃ e, D.relabel e = E := by
+    (hsign : ∀ i, D.over i = true → D.sign (D.visit i) = E.sign (E.visit i)) :
+    ∃ e, D.relabel e = E := by
+  replace hsign := sign_visit_eq_of_over hvisit hsign
   -- Read the labels of `D` through those of `E`; this is injective, hence a permutation.
   let f : Fin n → Fin n := fun c ↦ E.visit (Function.surjInv D.visit_surjective c)
   have hf (i : Fin (2 * n)) : f (D.visit i) = E.visit i :=
@@ -566,7 +582,8 @@ theorem exists_sigma_mk_eq_relabel_of_visit_eq_visit_iff {m : ℕ} (h : n = m)
     (hvisit : ∀ i j, D.visit i = D.visit j ↔
       E.visit (Fin.cast (congrArg (2 * ·) h) i) = E.visit (Fin.cast (congrArg (2 * ·) h) j))
     (hover : ∀ i, D.over i = E.over (Fin.cast (congrArg (2 * ·) h) i))
-    (hsign : ∀ i, D.sign (D.visit i) = E.sign (E.visit (Fin.cast (congrArg (2 * ·) h) i))) :
+    (hsign : ∀ i, D.over i = true →
+      D.sign (D.visit i) = E.sign (E.visit (Fin.cast (congrArg (2 * ·) h) i))) :
     ∃ e, (⟨m, E⟩ : Σ n, BasedOrientedGaussCode n) = ⟨n, D.relabel e⟩ := by
   subst h
   simp only [Fin.cast_eq_self] at hvisit hover hsign
