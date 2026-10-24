@@ -27,9 +27,10 @@ built into `TauCeti.IsMorseOn`, so a Morse function is exactly a smooth function
 critical points are nondegenerate.
 
 Local extrema are critical points, so a continuous function on a nonempty compact manifold has a
-critical point. The critical set of a `C¹` function is closed, and a nondegenerate critical point
-is isolated in it, so a Morse function has finitely many critical points in
-every compact set; for a proper function bounded below, this applies to every sublevel set.
+critical point, and so does each nonempty compact sublevel of a continuous function. The critical
+set of a `C¹` function is closed, and a nondegenerate critical point is isolated in it, so a Morse
+function has finitely many critical points in every compact set; for a proper function bounded
+below, this applies to every sublevel set.
 
 Critical points are counted, in total and by Morse index, with values in `ℕ∞`: an infinite
 critical set has count `⊤`, never a junk natural number. The counts of a Morse function on a
@@ -43,8 +44,9 @@ polynomial in the Morse inequalities.
   and, on boundaryless manifolds,
   `TauCeti.mem_criticalPoints_iff_fderiv_comp_extChartAt_symm_eq_zero`.
 * `TauCeti.isMorseOn_iff_criticalPoints`: Morse functions in terms of the critical set.
-* `IsLocalExtr.mem_criticalPoints` and `TauCeti.criticalPoints_nonempty`: Fermat's theorem on a
-  manifold and the existence of critical points on compact manifolds.
+* `IsLocalExtr.mem_criticalPoints`, `TauCeti.criticalPoints_nonempty` and
+  `TauCeti.exists_mem_criticalPoints_of_isCompact_sublevel`: Fermat's theorem on a manifold and the
+  existence of critical points on compact manifolds and in compact sublevels.
 * `TauCeti.isClosed_criticalPoints` and
   `TauCeti.IsManifoldNondegenerateCriticalPoint.eventually_notMem_criticalPoints`: the critical
   set of a `C¹` function is closed, and nondegenerate critical points are isolated in it.
@@ -222,6 +224,17 @@ theorem criticalPoints_nonempty [CompactSpace M] [Nonempty M] (hf : Continuous f
     (criticalPoints I f).Nonempty := by
   obtain ⟨x, -, hx⟩ := isCompact_univ.exists_isMinOn univ_nonempty hf.continuousOn
   exact ⟨x, (hx.isLocalMin univ_mem).mem_criticalPoints⟩
+
+/-- A continuous function on a boundaryless manifold has a critical point in each nonempty compact
+sublevel `{f ≤ t}`, for instance a point where it attains its minimum. -/
+theorem exists_mem_criticalPoints_of_isCompact_sublevel (hf : Continuous f) {t : ℝ}
+    (hK : IsCompact {x | f x ≤ t}) (hne : {x | f x ≤ t}.Nonempty) :
+    ∃ x ∈ criticalPoints I f, f x ≤ t := by
+  obtain ⟨x, hx, hmin⟩ := hK.exists_isMinOn hne hf.continuousOn
+  -- Points outside the sublevel have values above `t ≥ f x`, so `x` is a global minimum.
+  have hglobal : IsMinOn f univ x := fun y _ ↦
+    (le_or_gt (f y) t).elim (fun hy ↦ hmin hy) fun hy ↦ (hx.trans hy.le : f x ≤ f y)
+  exact ⟨x, (hglobal.isLocalMin univ_mem).mem_criticalPoints, hx⟩
 
 /-! ### Closedness, isolation and finiteness -/
 
