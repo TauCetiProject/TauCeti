@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Basic
+public import TauCeti.FieldTheory.RatFunc.Basic
 
 /-!
 # Orders at the finite places of the rational function field
@@ -171,18 +172,6 @@ theorem ord_X_sub_C_eq_zero_of_ne (a : k) {P : Place k (RatFunc k)}
   · exact absurd rfl hPinf
   · exact ord_adicOfIrreducible_X_sub_C_of_not_associated hq fun h ↦
       hPa ((adicOfIrreducible_eq_adicOfIrreducible_iff hq (irreducible_X_sub_C a)).mpr h)
-
-/-- `X - a` is a nonzero element of `k(X)`. -/
-theorem _root_.RatFunc.X_sub_C_ne_zero (a : k) : (RatFunc.X - RatFunc.C a : RatFunc k) ≠ 0 := by
-  rw [← RatFunc.algebraMap_X, ← RatFunc.algebraMap_C, ← map_sub, Ne,
-    map_eq_zero_iff _ (IsFractionRing.injective k[X] (RatFunc k))]
-  exact Polynomial.X_sub_C_ne_zero a
-
-/-- `c X ^ a (X - 1) ^ b` is a nonzero element of `k(X)` for `c ≠ 0`. -/
-theorem _root_.RatFunc.algebraMap_mul_X_zpow_mul_X_sub_one_zpow_ne_zero {c : k} (hc : c ≠ 0)
-    (a b : ℤ) : algebraMap k (RatFunc k) c * RatFunc.X ^ a * (RatFunc.X - 1) ^ b ≠ 0 :=
-  mul_ne_zero (mul_ne_zero ((_root_.map_ne_zero _).mpr hc) (zpow_ne_zero a RatFunc.X_ne_zero))
-    (zpow_ne_zero b (by simpa using RatFunc.X_sub_C_ne_zero (1 : k)))
 
 /-- **The order of `c X ^ a (X - 1) ^ b`** at a place `P` of `k(X)` is
 `a · ord_P X + b · ord_P (X - 1)`. -/
