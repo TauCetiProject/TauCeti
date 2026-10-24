@@ -70,40 +70,6 @@ namespace GridDiagram
 
 variable {n : ℕ} (G : GridDiagram n)
 
-/-! ### Cyclic order of the markings around the turn points -/
-
-/-- The turn row lies on the arc from `X_a` up to `X_b`, unless it is the row of `X_b`. -/
-private theorem turn_mem_cIco_of_mem {s s' xa xb : Fin n}
-    (hxa : xa ∈ insert s (Grid.cIco s' s)) (hxb : xb ∈ insert s' (Grid.cIco s s'))
-    (hxab : xa ≠ xb) (hs : s ≠ xb) : s ∈ Grid.cIco xa xb := by
-  simp only [Finset.mem_insert, Grid.mem_cIco, ne_eq, ← Fin.val_inj] at *
-  split_ifs at * <;> omega
-
-/-- A row of the bigon below the turn is not strictly between the turn row and a row of the
-bigon above it. -/
-private theorem notMem_cIoo_of_mem {s s' r xb : Fin n} (hr : r ∈ insert s (Grid.cIco s' s))
-    (hxb : xb ∈ insert s' (Grid.cIco s s')) : r ∉ Grid.cIoo s xb := by
-  simp only [Finset.mem_insert, Grid.mem_cIco, Grid.mem_cIoo, ne_eq, ← Fin.val_inj] at *
-  split_ifs at * <;> omega
-
-/-- A row of the bigon above the turn other than `X_a` is not on the arc from `X_a` up to the turn
-row. -/
-private theorem notMem_cIco_of_mem {s s' xa r : Fin n} (hxa : xa ∈ insert s (Grid.cIco s' s))
-    (hr : r ∈ insert s' (Grid.cIco s s')) (h : xa ≠ r) : r ∉ Grid.cIco xa s := by
-  simp only [Finset.mem_insert, Grid.mem_cIco, ne_eq, ← Fin.val_inj] at *
-  split_ifs at * <;> omega
-
-/-- For non-interleaving columns `a` and `b`, the row of `O_b` is not on the arc from `X_a` up to
-the turn row, unless the turn row is the row of `X_b`. -/
-private theorem notMem_cIco_of_noninterleaving {s s' oa xa ob xb : Fin n}
-    (hoa : oa ∈ insert s (Grid.cIco s' s)) (hxa : xa ∈ insert s (Grid.cIco s' s))
-    (hob : ob ∈ insert s' (Grid.cIco s s')) (hxb : xb ∈ insert s' (Grid.cIco s s'))
-    (hnon : Grid.Noninterleaving oa xa ob xb) (hoxa : oa ≠ xa) (hoxb : ob ≠ xb) (hs : s ≠ xb) :
-    ob ∉ Grid.cIco xa s := by
-  rw [Grid.noninterleaving_iff] at hnon
-  simp only [Finset.mem_insert, Grid.mem_cIco, Grid.mem_cIoo, ne_eq, ← Fin.val_inj] at *
-  split_ifs at * <;> omega
-
 /-! ### The counted pentagons leaving the `X`-marking state -/
 
 /-- If the turn row is not the row of the `X`-marking of the column after the replaced line, no
@@ -155,7 +121,8 @@ theorem pentagonCoefficient_X_swapColumns_X (C : ColumnCommutationData G)
   have hab : a ≠ b := C.column_ne_next
   have hXab : G.X a ≠ G.X b := fun h => hab (G.X.toPerm.injective h)
   let P : GridPentagonBetween a C.turnRow G.X (G.X.swapColumns a b) :=
-    .ofSwapColumns G.X a hab (turn_mem_cIco_of_mem C.X_column_below C.X_next_above hXab hs)
+    .ofSwapColumns G.X a hab
+      (Grid.mem_cIco_of_mem_insert_cIco C.X_column_below C.X_next_above hXab hs)
   have hPleft : P.left = a := GridPentagonBetween.ofSwapColumns_left _ _ _ _
   have hPbottom : P.bottom = G.X a := by rw [GridRectangleBetween.bottom_def, hPleft]
   have hPtop : P.top = G.X b := by rw [GridRectangleBetween.top_def, P.right_eq]
@@ -169,18 +136,18 @@ theorem pentagonCoefficient_X_swapColumns_X (C : ColumnCommutationData G)
     refine (P.disjoint_coveredSquares_XSet_iff G).mpr
       ⟨fun c hca hc => (hcols c hca hc).elim, ?_, ?_⟩
     · rw [hPtop]
-      exact notMem_cIoo_of_mem C.X_column_below C.X_next_above
+      exact Grid.notMem_cIoo_of_mem_insert_cIco C.X_column_below C.X_next_above
     · rw [hPbottom]
-      exact notMem_cIco_of_mem C.X_column_below C.X_next_above hXab
+      exact Grid.notMem_cIco_of_mem_insert_cIco C.X_column_below C.X_next_above hXab
   have hO : G.pentagonOColumns C P = ∅ := by
     refine Finset.eq_empty_of_forall_notMem fun c hc => ?_
     rw [mem_pentagonOColumns, P.mem_coveredSquares] at hc
     rcases hc with ⟨hca, hc, -⟩ | ⟨rfl, hO⟩ | ⟨rfl, hO⟩
     · exact hcols _ hca hc
     · rw [hPtop] at hO
-      exact notMem_cIoo_of_mem C.O_column_below C.X_next_above hO
+      exact Grid.notMem_cIoo_of_mem_insert_cIco C.O_column_below C.X_next_above hO
     · rw [hPbottom] at hO
-      exact notMem_cIco_of_noninterleaving C.O_column_below C.X_column_below C.O_next_above
+      exact Grid.notMem_cIco_of_noninterleaving C.O_column_below C.X_column_below C.O_next_above
         C.X_next_above C.noninterleaving (G.disjoint a) (G.disjoint b) hs hO
   rw [pentagonCoefficient_def, swapColumns_X,
     Finset.eq_singleton_iff_unique_mem.mpr ⟨hPmem, fun Q _ => Subsingleton.elim Q P⟩,
