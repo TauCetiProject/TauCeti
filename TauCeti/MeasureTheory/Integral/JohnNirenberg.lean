@@ -33,9 +33,9 @@ supersolution has bounded mean oscillation.
 
 Both statements hold on every cube, not only on dyadic ones. In the sup norm of `ι → ℝ`, for
 `r ≥ 0` the cube `∏ᵢ [cᵢ - r, cᵢ + r]` is the closed ball `closedBall c r`. If `f` has mean
-oscillation at most `M` on every closed ball inside it, then the same two bounds hold on
-`closedBall c r`
-(`TauCeti.volume_lt_norm_sub_setAverage_closedBall_le`,
+oscillation at most `M` on every closed ball inside it, then the same two bounds hold for any
+additive Haar measure on `closedBall c r`
+(`TauCeti.measure_lt_norm_sub_setAverage_closedBall_le`,
 `TauCeti.setLIntegral_exp_mul_norm_sub_setAverage_closedBall_le`). For `0 < r` this follows from
 the dyadic case by the affine change of variables carrying the unit dyadic cube onto
 `closedBall c r`, which rescales Lebesgue measure by a constant and so preserves averages.
@@ -65,7 +65,7 @@ step of size `2ⁿ⁺¹ M` in the level therefore halves the measure of the supe
 * `TauCeti.volume_lt_norm_sub_setAverage_le`: the **John–Nirenberg inequality**, exponential
   decay of the distribution function of `‖f - f_{Q₀}‖`.
 * `TauCeti.setLIntegral_exp_mul_norm_sub_setAverage_le`: exponential integrability.
-* `TauCeti.volume_lt_norm_sub_setAverage_closedBall_le`,
+* `TauCeti.measure_lt_norm_sub_setAverage_closedBall_le`,
   `TauCeti.setLIntegral_exp_mul_norm_sub_setAverage_closedBall_le`: the same two statements on an
   arbitrary cube `closedBall c r`.
 * `TauCeti.exists_setLIntegral_exp_mul_norm_sub_setAverage_ball_le`: exponential integrability
@@ -508,7 +508,7 @@ private theorem setLAverage_comp_cubeEquiv_le (hr : 0 < r)
 
 `|{x ∈ closedBall c r : ‖f x - f_{closedBall c r}‖ > s}| ≤
   2 exp (-(log 2) s / (2ⁿ⁺¹ M)) |closedBall c r|`. -/
-theorem volume_lt_norm_sub_setAverage_closedBall_le [CompleteSpace E]
+private theorem volume_lt_norm_sub_setAverage_closedBall_le [CompleteSpace E]
     (hf : IntegrableOn f (closedBall c r))
     (hM : ∀ y ρ, closedBall y ρ ⊆ closedBall c r →
       ⨍⁻ x in closedBall y ρ, ‖f x - ⨍ z in closedBall y ρ, f z ∂volume‖ₑ ∂volume ≤ M)
@@ -558,7 +558,7 @@ integrable on the closed sup-norm ball `closedBall c r ⊆ ℝⁿ`, with mean os
 `⨍_B ‖f - f_B‖ ≤ M` on every closed ball `B ⊆ closedBall c r`. If `ρ = exp (2ⁿ⁺¹ σ M) < 2`, then
 
 `∫_{closedBall c r} exp (σ ‖f - f_{closedBall c r}‖) ≤ (1 + 2ρ / (2 - ρ)) |closedBall c r|`. -/
-theorem setLIntegral_exp_mul_norm_sub_setAverage_closedBall_le [CompleteSpace E]
+private theorem setLIntegral_exp_mul_norm_sub_setAverage_closedBall_volume_le [CompleteSpace E]
     (hf : IntegrableOn f (closedBall c r))
     (hM : ∀ y ρ, closedBall y ρ ⊆ closedBall c r →
       ⨍⁻ x in closedBall y ρ, ‖f x - ⨍ z in closedBall y ρ, f z ∂volume‖ₑ ∂volume ≤ M)
@@ -603,6 +603,80 @@ theorem setLIntegral_exp_mul_norm_sub_setAverage_closedBall_le [CompleteSpace E]
         setLIntegral_congr hB
     _ ≤ _ := hJN
     _ = _ := by rw [measure_congr hB]
+
+/-- **The John–Nirenberg inequality** on a cube, for any additive Haar measure. Let `f` be
+integrable on the closed sup-norm ball `closedBall c r ⊆ ℝⁿ`, with mean oscillation
+`⨍_B ‖f - f_B‖ ≤ M` on every closed ball `B ⊆ closedBall c r`. Then for every `s`,
+
+`μ {x ∈ closedBall c r : ‖f x - f_{closedBall c r}‖ > s} ≤
+  2 exp (-(log 2) s / (2ⁿ⁺¹ M)) μ (closedBall c r)`. -/
+theorem measure_lt_norm_sub_setAverage_closedBall_le [CompleteSpace E]
+    {μ : Measure (ι → ℝ)} [μ.IsAddHaarMeasure]
+    (hf : IntegrableOn f (closedBall c r) μ)
+    (hM : ∀ y ρ, closedBall y ρ ⊆ closedBall c r →
+      ⨍⁻ x in closedBall y ρ, ‖f x - ⨍ z in closedBall y ρ, f z ∂μ‖ₑ ∂μ ≤ M)
+    (s : ℝ) :
+    μ {x ∈ closedBall c r | s < ‖f x - ⨍ y in closedBall c r, f y ∂μ‖} ≤
+      ENNReal.ofReal (2 * Real.exp (-(Real.log 2 * s / (2 ^ (Fintype.card ι + 1) * M)))) *
+        μ (closedBall c r) := by
+  let a := Measure.addHaarScalarFactor μ volume
+  have ha : (a : ℝ≥0∞) ≠ 0 := ENNReal.coe_ne_zero.2
+    (Measure.addHaarScalarFactor_pos_of_isAddHaarMeasure μ volume).ne'
+  have hμ : μ = (a : ℝ≥0∞) • volume := by
+    simpa only [Measure.coe_nnreal_smul] using Measure.isAddLeftInvariant_eq_smul μ volume
+  have he : μ.map (MeasurableEquiv.refl (ι → ℝ)) = (a : ℝ≥0∞) • volume := by
+    simpa [MeasurableEquiv.refl] using hμ
+  have havg (S : Set (ι → ℝ)) : ⨍ x in S, f x ∂μ = ⨍ x in S, f x ∂volume := by
+    simpa [MeasurableEquiv.refl] using
+      setAverage_comp_preimage_of_map_eq_smul he ha ENNReal.coe_ne_top f S
+  have hlavg (g : (ι → ℝ) → ℝ≥0∞) (S : Set (ι → ℝ)) :
+      ⨍⁻ x in S, g x ∂μ = ⨍⁻ x in S, g x ∂volume := by
+    simpa [MeasurableEquiv.refl] using
+      setLAverage_comp_preimage_of_map_eq_smul he ha ENNReal.coe_ne_top g S
+  simp_rw [havg, hlavg] at hM
+  simp_rw [havg]
+  rw [hμ, IntegrableOn, Measure.restrict_smul, integrable_smul_measure ha ENNReal.coe_ne_top] at hf
+  simpa only [hμ, Measure.smul_apply, smul_eq_mul, mul_left_comm] using
+    mul_le_mul_right (volume_lt_norm_sub_setAverage_closedBall_le hf hM s) (a : ℝ≥0∞)
+
+/-- **Exponential integrability of functions of bounded mean oscillation** on a cube, for any
+additive Haar measure. Let `f` be integrable on the closed sup-norm ball `closedBall c r ⊆ ℝⁿ`,
+with mean oscillation `⨍_B ‖f - f_B‖ ≤ M` on every closed ball `B ⊆ closedBall c r`.
+If `ρ = exp (2ⁿ⁺¹ σ M) < 2`, then
+
+`∫_{closedBall c r} exp (σ ‖f - f_{closedBall c r}‖) ∂μ ≤
+  (1 + 2ρ / (2 - ρ)) μ (closedBall c r)`. -/
+theorem setLIntegral_exp_mul_norm_sub_setAverage_closedBall_le [CompleteSpace E]
+    {μ : Measure (ι → ℝ)} [μ.IsAddHaarMeasure]
+    (hf : IntegrableOn f (closedBall c r) μ)
+    (hM : ∀ y ρ, closedBall y ρ ⊆ closedBall c r →
+      ⨍⁻ x in closedBall y ρ, ‖f x - ⨍ z in closedBall y ρ, f z ∂μ‖ₑ ∂μ ≤ M)
+    {σ : ℝ} (hρ : Real.exp (σ * (2 ^ (Fintype.card ι + 1) * M)) < 2) :
+    ∫⁻ x in closedBall c r,
+        ENNReal.ofReal (Real.exp (σ * ‖f x - ⨍ y in closedBall c r, f y ∂μ‖)) ∂μ ≤
+      ENNReal.ofReal (1 + 2 * Real.exp (σ * (2 ^ (Fintype.card ι + 1) * M)) /
+        (2 - Real.exp (σ * (2 ^ (Fintype.card ι + 1) * M)))) * μ (closedBall c r) := by
+  let a := Measure.addHaarScalarFactor μ volume
+  have ha : (a : ℝ≥0∞) ≠ 0 := ENNReal.coe_ne_zero.2
+    (Measure.addHaarScalarFactor_pos_of_isAddHaarMeasure μ volume).ne'
+  have hμ : μ = (a : ℝ≥0∞) • volume := by
+    simpa only [Measure.coe_nnreal_smul] using Measure.isAddLeftInvariant_eq_smul μ volume
+  have he : μ.map (MeasurableEquiv.refl (ι → ℝ)) = (a : ℝ≥0∞) • volume := by
+    simpa [MeasurableEquiv.refl] using hμ
+  have havg (S : Set (ι → ℝ)) : ⨍ x in S, f x ∂μ = ⨍ x in S, f x ∂volume := by
+    simpa [MeasurableEquiv.refl] using
+      setAverage_comp_preimage_of_map_eq_smul he ha ENNReal.coe_ne_top f S
+  have hlavg (g : (ι → ℝ) → ℝ≥0∞) (S : Set (ι → ℝ)) :
+      ⨍⁻ x in S, g x ∂μ = ⨍⁻ x in S, g x ∂volume := by
+    simpa [MeasurableEquiv.refl] using
+      setLAverage_comp_preimage_of_map_eq_smul he ha ENNReal.coe_ne_top g S
+  simp_rw [havg, hlavg] at hM
+  simp_rw [havg]
+  rw [hμ, IntegrableOn, Measure.restrict_smul, integrable_smul_measure ha ENNReal.coe_ne_top] at hf
+  simpa only [hμ, Measure.restrict_smul, lintegral_smul_measure, Measure.smul_apply,
+    smul_eq_mul, mul_left_comm] using
+    mul_le_mul_right (setLIntegral_exp_mul_norm_sub_setAverage_closedBall_volume_le hf hM hρ)
+      (a : ℝ≥0∞)
 
 end ClosedBall
 
