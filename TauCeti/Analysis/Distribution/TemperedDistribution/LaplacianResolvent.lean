@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Distribution.Sobolev
 public import TauCeti.Analysis.Distribution.SchwartzSpace.LaplacianResolvent
+public import TauCeti.Analysis.Distribution.TemperedDistribution.FourierMultiplier
 
 /-!
 # The resolvent of the Laplacian on tempered distributions
@@ -25,7 +26,6 @@ constant-coefficient first-order operator `L` satisfying a Weitzenböck identity
 
 ## Main declarations
 
-* `TemperedDistribution.fourierMultiplierCLM_add`: Fourier multipliers are additive in the symbol.
 * `TemperedDistribution.neg_laplacian_add_smul_eq_fourierMultiplierCLM`: `-Δ + c` is the Fourier
   multiplier with symbol `(2π)² ‖ξ‖² + c`.
 * `TemperedDistribution.laplacianResolvent c`: the Fourier multiplier with symbol
@@ -33,6 +33,8 @@ constant-coefficient first-order operator `L` satisfying a Weitzenböck identity
   characterized for `c > 0` as the two-sided inverse of `-Δ + c` by
   `TemperedDistribution.laplacianResolvent_neg_laplacian_add_smul` and
   `TemperedDistribution.neg_laplacian_laplacianResolvent_add_smul`.
+* `TemperedDistribution.eq_zero_of_neg_laplacian_add_smul_eq_zero`: for `c > 0`, `-Δ + c` has
+  trivial kernel on tempered distributions.
 * `TemperedDistribution.laplacianResolvent_toTemperedDistributionCLM_eq`: on Schwartz functions it
   is `SchwartzMap.laplacianResolvent`.
 * `TemperedDistribution.MemSobolev.laplacianResolvent`: the resolvent maps `H^s` to `H^{s+2}`.
@@ -74,13 +76,6 @@ variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [NormedAdd
 section normed
 
 variable [NormedSpace ℂ F]
-
-/-- Fourier multipliers on tempered distributions are additive in the symbol. -/
-theorem fourierMultiplierCLM_add {g₁ g₂ : E → ℂ} (hg₁ : g₁.HasTemperateGrowth)
-    (hg₂ : g₂.HasTemperateGrowth) :
-    fourierMultiplierCLM F (g₁ + g₂) = fourierMultiplierCLM F g₁ + fourierMultiplierCLM F g₂ := by
-  ext f u
-  simp [SchwartzMap.smulLeftCLM_add hg₁ hg₂]
 
 /-- The shifted Laplacian `-Δ + c` is the Fourier multiplier with symbol `(2π)² ‖ξ‖² + c`. -/
 theorem neg_laplacian_add_smul_eq_fourierMultiplierCLM (c : ℝ) (f : 𝓢'(E, F)) :
@@ -126,6 +121,11 @@ theorem neg_laplacian_laplacianResolvent_add_smul {c : ℝ} (hc : 0 < c) (f : �
     fourierMultiplierCLM_fourierMultiplierCLM_apply (hasTemperateGrowth_resolventSymbol hc)
       (by fun_prop), mul_comm, resolventSymbol_mul hc]
   simp
+
+/-- For `c > 0`, the shifted Laplacian `-Δ + c` has trivial kernel on tempered distributions. -/
+theorem eq_zero_of_neg_laplacian_add_smul_eq_zero {c : ℝ} (hc : 0 < c) {f : 𝓢'(E, F)}
+    (hf : -Δ f + c • f = 0) : f = 0 := by
+  rw [← laplacianResolvent_neg_laplacian_add_smul hc f, hf, map_zero]
 
 /-- The resolvent of the Laplacian on tempered distributions extends the resolvent
 `SchwartzMap.laplacianResolvent` on Schwartz space, for `c > 0`. -/

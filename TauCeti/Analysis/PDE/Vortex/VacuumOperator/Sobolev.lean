@@ -223,23 +223,19 @@ private theorem temperedVacuumAdjoint_temperedVacuumOperator_laplacianResolvent 
   ext1 i
   exact neg_laplacian_laplacianResolvent_add_smul (by norm_num) (y i)
 
-/-- A field annihilated by `-Δ + 1 / 4` in each component vanishes. -/
-private theorem eq_zero_of_neg_laplacian_add_smul_eq_zero
-    (hx : (fun i ↦ -Δ (x i) + (1 / 4 : ℝ) • x i) = 0) : x = 0 := by
-  ext1 i
-  rw [← laplacianResolvent_neg_laplacian_add_smul (c := 1 / 4) (by norm_num) (x i),
-    congrFun hx i]
-  simp
-
 /-- The vacuum operator has trivial kernel on tempered fields. -/
 theorem temperedVacuumOperator_injective : Function.Injective temperedVacuumOperator :=
-  (injective_iff_map_eq_zero _).2 fun x hx ↦ eq_zero_of_neg_laplacian_add_smul_eq_zero x <| by
-    rw [← temperedVacuumAdjoint_temperedVacuumOperator, hx, map_zero]
+  (injective_iff_map_eq_zero _).2 fun x hx ↦ funext fun i ↦
+    eq_zero_of_neg_laplacian_add_smul_eq_zero (c := 1 / 4) (by norm_num) <| by
+      rw [← congrFun (temperedVacuumAdjoint_temperedVacuumOperator x) i, hx, map_zero,
+        Pi.zero_apply]
 
 /-- The adjoint of the vacuum operator has trivial kernel on tempered fields. -/
 theorem temperedVacuumAdjoint_injective : Function.Injective temperedVacuumAdjoint :=
-  (injective_iff_map_eq_zero _).2 fun x hx ↦ eq_zero_of_neg_laplacian_add_smul_eq_zero x <| by
-    rw [← temperedVacuumOperator_temperedVacuumAdjoint, hx, map_zero]
+  (injective_iff_map_eq_zero _).2 fun x hx ↦ funext fun i ↦
+    eq_zero_of_neg_laplacian_add_smul_eq_zero (c := 1 / 4) (by norm_num) <| by
+      rw [← congrFun (temperedVacuumOperator_temperedVacuumAdjoint x) i, hx, map_zero,
+        Pi.zero_apply]
 
 /-- **The vacuum operator is invertible on tempered fields**: `L₀` as a continuous linear
 automorphism of the fields of tempered distributions. Its inverse is `L₀⁻¹ = L₀* (-Δ + 1 / 4)⁻¹`
@@ -283,26 +279,6 @@ theorem temperedVacuumAdjointEquiv_symm_apply :
     temperedVacuumAdjointEquiv.symm y =
       temperedVacuumOperator fun i ↦ laplacianResolvent ℂ (1 / 4) (y i) :=
   (rfl)
-
-@[simp]
-theorem temperedVacuumOperator_temperedVacuumOperatorEquiv_symm :
-    temperedVacuumOperator (temperedVacuumOperatorEquiv.symm y) = y :=
-  temperedVacuumOperatorEquiv.apply_symm_apply y
-
-@[simp]
-theorem temperedVacuumOperatorEquiv_symm_temperedVacuumOperator :
-    temperedVacuumOperatorEquiv.symm (temperedVacuumOperator x) = x :=
-  temperedVacuumOperatorEquiv.symm_apply_apply x
-
-@[simp]
-theorem temperedVacuumAdjoint_temperedVacuumAdjointEquiv_symm :
-    temperedVacuumAdjoint (temperedVacuumAdjointEquiv.symm y) = y :=
-  temperedVacuumAdjointEquiv.apply_symm_apply y
-
-@[simp]
-theorem temperedVacuumAdjointEquiv_symm_temperedVacuumAdjoint :
-    temperedVacuumAdjointEquiv.symm (temperedVacuumAdjoint x) = x :=
-  temperedVacuumAdjointEquiv.symm_apply_apply x
 
 /-! ### The Sobolev scale -/
 
@@ -352,13 +328,15 @@ that `L₀` restricts to a bijection from `H^s` onto `H^{s-1}`, for every real `
 theorem memSobolev_temperedVacuumOperator_iff :
     (∀ i, MemSobolev (s - 1) 2 (temperedVacuumOperator x i)) ↔ ∀ i, MemSobolev s 2 (x i) := by
   refine ⟨fun h i ↦ ?_, memSobolev_temperedVacuumOperator⟩
-  simpa using memSobolev_temperedVacuumOperatorEquiv_symm h i
+  simpa only [sub_add_cancel, ContinuousLinearEquiv.symm_apply_apply] using
+    memSobolev_temperedVacuumOperatorEquiv_symm (y := temperedVacuumOperatorEquiv x) h i
 
 /-- The adjoint of the vacuum operator is an isomorphism `H^s ≃ H^{s-1}`: a tempered field `y`
 lies in `H^s` if and only if `L₀* y` lies in `H^{s-1}`. -/
 theorem memSobolev_temperedVacuumAdjoint_iff :
     (∀ i, MemSobolev (s - 1) 2 (temperedVacuumAdjoint y i)) ↔ ∀ i, MemSobolev s 2 (y i) := by
   refine ⟨fun h i ↦ ?_, memSobolev_temperedVacuumAdjoint⟩
-  simpa using memSobolev_temperedVacuumAdjointEquiv_symm h i
+  simpa only [sub_add_cancel, ContinuousLinearEquiv.symm_apply_apply] using
+    memSobolev_temperedVacuumAdjointEquiv_symm (y := temperedVacuumAdjointEquiv y) h i
 
 end TauCeti.Vortex
