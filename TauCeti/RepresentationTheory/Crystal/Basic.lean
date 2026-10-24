@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.RootSystem.Base
 public import TauCeti.Logic.Equiv.Option
-public import TauCeti.Logic.Option
+public import TauCeti.Data.Option.Basic
 
 /-!
 # Normal crystals over a root datum

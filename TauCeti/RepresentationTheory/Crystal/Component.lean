@@ -109,8 +109,15 @@ raising or a lowering operator, that is, when they are joined by an arrow of the
 def Adj (x y : B) : Prop :=
   ∃ i : b.support, c.e i x = some y ∨ c.f i x = some y
 
+/-- The defining characterization of adjacency: `x` and `y` are adjacent when a raising or a
+lowering operator sends one to the other. -/
+theorem adj_iff {x y : B} :
+    c.Adj x y ↔ ∃ i : b.support, c.e i x = some y ∨ c.f i x = some y :=
+  (Iff.rfl)
+
 /-- Adjacency in the crystal graph is symmetric. -/
 theorem adj_comm {x y : B} : c.Adj x y ↔ c.Adj y x := by
+  rw [adj_iff, adj_iff]
   constructor <;> rintro ⟨i, h | h⟩
   · exact ⟨i, Or.inr (c.f_eq_some_iff.2 h)⟩
   · exact ⟨i, Or.inl (c.e_eq_some_iff.2 h)⟩
