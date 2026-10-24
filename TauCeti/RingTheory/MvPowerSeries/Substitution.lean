@@ -419,11 +419,12 @@ theorem coeff_subst_X_X_of_ne {a b c : Fin 3} (hab : a ≠ b) (hac : a ≠ c) (h
     coeff d (g.subst ![(X a : MvPowerSeries (Fin 3) O), X c]) =
       if d b = 0 then coeff (single 0 (d a) + single 1 (d c)) g else 0 := by
   -- Substituting `![X a, X c]` is renaming the variables along the embedding `![a, c]`.
-  let e : Fin 2 ↪ Fin 3 :=
-    ⟨![a, c], fun i j h ↦ by fin_cases i <;> fin_cases j <;> simp_all [eq_comm]⟩
+  have he : Function.Injective ![a, c] := fun i j h ↦ by
+    fin_cases i <;> fin_cases j <;> simp_all [eq_comm]
+  let e : Fin 2 ↪ Fin 3 := ⟨![a, c], he⟩
   have hX : ![(X a : MvPowerSeries (Fin 3) O), X c] = X ∘ e := by
     funext s
-    fin_cases s <;> rfl
+    fin_cases s <;> simp [e]
   have hb : b ∉ Set.range e := by
     rintro ⟨i, hi⟩
     fin_cases i
