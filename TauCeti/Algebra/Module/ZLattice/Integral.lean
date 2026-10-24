@@ -54,6 +54,8 @@ unimodular lattice has a theta series of level one.
   is well defined modulo `ℤ` on `L^∨ / L` in the first case.
 * `ZLattice.IsEven.exists_natCast_mul_norm_add_sq_eq`: for even `L`, `γ ∈ L^∨` and `N ‖γ‖² ∈ 2ℤ`,
   `N ‖γ + v‖² ∈ 2ℤ` for every `v ∈ L`.
+* `ZLattice.smul_mem_of_mem_dual`: for a full lattice `L`, if `c ‖x‖² ∈ 2ℤ` for every `x ∈ L^∨`,
+  then `c • L^∨ ≤ L`.
 -/
 
 public section
@@ -175,6 +177,22 @@ theorem IsEven.exists_natCast_mul_norm_add_sq_eq {L : Submodule ℤ E} (hL : IsE
   obtain ⟨n, hn⟩ := hNγ
   obtain ⟨j, hj⟩ := hL.exists_norm_add_sq_sub_norm_sq_eq hγ hv
   exact ⟨n + N * j, by push_cast; linear_combination (N : ℝ) * hj + hn⟩
+
+/-- If `c ‖x‖² ∈ 2ℤ` for every vector `x` of the dual `L^∨` of a full lattice `L`, then
+`c • L^∨ ≤ L`: by polarization `c ⟪x, y⟫ ∈ ℤ` for `x, y ∈ L^∨`, so `c • x ∈ (L^∨)^∨ = L`. For an
+even lattice the least positive integer `c` with this property is the level of `L`. -/
+theorem smul_mem_of_mem_dual [FiniteDimensional ℝ E] {L : Submodule ℤ E} [DiscreteTopology L]
+    [IsZLattice ℝ L] {c : ℝ} (hc : ∀ x ∈ dual L, ∃ k : ℤ, c * ‖x‖ ^ 2 = 2 * k) {x : E}
+    (hx : x ∈ dual L) : c • x ∈ L := by
+  rw [← dual_dual L, mem_dual]
+  intro y hy
+  obtain ⟨a, ha⟩ := hc x hx
+  obtain ⟨b, hb⟩ := hc y hy
+  obtain ⟨d, hd⟩ := hc (x + y) (add_mem hx hy)
+  refine ⟨d - a - b, ?_⟩
+  rw [real_inner_smul_left]
+  push_cast
+  linear_combination (hd - ha - hb) / 2 - c / 2 * norm_add_sq_real x y
 
 /-! ### Unimodular lattices -/
 
