@@ -5,13 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Henselian
-public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 public import TauCeti.RingTheory.Henselization.Lift
 import TauCeti.RingTheory.Henselian.Basic
 import TauCeti.RingTheory.Henselization.Henselian
-import TauCeti.RingTheory.Henselization.Jacobson
-import TauCeti.RingTheory.Henselization.Residue
 
 /-!
 # The henselization of a local ring
