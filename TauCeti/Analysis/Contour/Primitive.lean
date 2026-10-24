@@ -17,6 +17,7 @@ import TauCeti.Analysis.Contour.Curve.Approximation
 import TauCeti.Analysis.Contour.Curve.Concat
 import TauCeti.Analysis.Contour.Curve.Integrability
 import TauCeti.Analysis.Contour.HomologyCauchy
+import TauCeti.Analysis.Contour.Winding.StarConvex
 import TauCeti.Analysis.Contour.Winding.UnboundedComponent
 
 /-!
@@ -53,6 +54,8 @@ set without holes has holomorphic square roots.
   on an open set in which every closed curve is null-homologous.
 * `TauCeti.Contour.isExactOn_of_filledHull_subset` — a holomorphic function has a primitive on an
   open set without holes.
+* `TauCeti.Contour.isExactOn_of_starConvex` — a holomorphic function has a primitive on an open
+  star-shaped set.
 * `TauCeti.Contour.exists_differentiableOn_eqOn_exp_comp_of_isExactOn` — a nowhere-zero
   holomorphic function whose logarithmic derivative has a primitive has a holomorphic logarithm.
 * `TauCeti.Contour.exists_differentiableOn_eqOn_exp_comp_of_filledHull_subset`,
@@ -246,6 +249,13 @@ theorem isExactOn_of_filledHull_subset {f : ℂ → ℂ} (hU : IsOpen U) (hUf : 
     (hf : DifferentiableOn ℂ f U) : Complex.IsExactOn f U :=
   isExactOn_of_forall_isNullHomologous hU hf fun _ _ _ hγ hγU hclosed =>
     hγ.isNullHomologous_of_filledHull_subset hclosed hγU hUf
+
+/-- **Holomorphic functions have primitives on a star-shaped set.** If `U` is open and
+star-shaped about some point, then every function holomorphic on `U` has a primitive on `U`. -/
+theorem isExactOn_of_starConvex {f : ℂ → ℂ} {x : ℂ} (hU : IsOpen U) (hstar : StarConvex ℝ x U)
+    (hf : DifferentiableOn ℂ f U) : Complex.IsExactOn f U :=
+  isExactOn_of_forall_isNullHomologous hU hf fun _ _ _ hγ hγU hclosed =>
+    isNullHomologous_of_starConvex hstar hγ hclosed fun _ ht => hγU ht
 
 /-- **A holomorphic logarithm from a primitive of the logarithmic derivative.** If `g` is
 holomorphic and nowhere zero on an open set `U` and `g' / g` has a primitive `h` on `U`, then `g`

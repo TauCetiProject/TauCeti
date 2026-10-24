@@ -14,7 +14,7 @@ import TauCeti.Data.Finset.Jumps
 
 Signs are constant on root-free intervals. At a simple root, the signs
 on either side are determined by the sign of the derivative. Between two
-nonroots, the change of sign is the sum of the jumps `signRight - signLeft`
+nonroots, the change of sign is the sum of the jumps `derivSignRight - derivSignLeft`
 of the one-sided signs at the roots in between.
 -/
 
@@ -77,7 +77,7 @@ theorem sign_eval_sub_sign_eval_eq_sum (p : R[X]) {a b : R} (hab : a < b) (ha : 
     (hb : p.eval b ≠ 0) :
     (SignType.sign (p.eval b) : ℤ) - SignType.sign (p.eval a) =
       ∑ x ∈ p.roots.toFinset.filter (fun x => a < x ∧ x < b),
-        ((p.signRight x : ℤ) - p.signLeft x) := by
+        ((p.derivSignRight x : ℤ) - p.derivSignLeft x) := by
   classical
   have hp : p ≠ 0 := fun h => ha (by simp [h])
   have hS (x : R) : x ∈ p.roots.toFinset ↔ p.eval x = 0 := by simp [mem_roots hp]
@@ -89,11 +89,11 @@ theorem sign_eval_sub_sign_eval_eq_sum (p : R[X]) {a b : R} (hab : a < b) (ha : 
   -- Telescope the negated sign over the roots: it is constant on root-free intervals, and at a
   -- root it changes by the jump of the one-sided signs, realized at nearby points.
   have h := Finset.sum_jumps p.roots.toFinset (fun x => -(SignType.sign (p.eval x) : ℤ))
-    (fun x => (p.signRight x : ℤ) - p.signLeft x)
+    (fun x => (p.derivSignRight x : ℤ) - p.derivSignLeft x)
     (fun c d _ _ hcd hn => by
       rw [p.sign_eval_const hcd.le fun x hx hx0 => hn x ((hS x).2 hx0) hx])
     (fun c r d _ _ hcr hrd _ hn => by
-      obtain ⟨l, u, hl, hu, hL, hR⟩ := p.exists_signLeft_signRight r
+      obtain ⟨l, u, hl, hu, hL, hR⟩ := p.exists_derivSignLeft_derivSignRight r
       obtain ⟨x, hx, hxr⟩ := exists_between (max_lt hl hcr)
       obtain ⟨y, hry, hy⟩ := exists_between (lt_min hu hrd)
       have hcx : SignType.sign (p.eval c) = SignType.sign (p.eval x) :=

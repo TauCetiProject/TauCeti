@@ -37,6 +37,8 @@ a time.
 * `TauCeti.Manifold.symmL_basis_eq_localFrame` and
   `TauCeti.Manifold.continuousLinearMapAt_localFrame`: a trivialization transports basis vectors
   to its local frame and reads those frame vectors back as basis vectors.
+* `TauCeti.Manifold.contMDiffOn_symm_baseSet`: the section with constant coordinates in a
+  trivialization is smooth on its base set.
 * `TauCeti.Manifold.coordChangeL_toMatrix`: a trivialization coordinate change has the
   change-of-basis matrix between the corresponding local frames.
 * `TauCeti.Manifold.contMDiffOn_hom_of_localFrame`: a section of the bundle of continuous linear
@@ -96,6 +98,13 @@ vector. -/
 theorem continuousLinearMapAt_localFrame (hx : x ∈ e.baseSet) (i : ι) :
     e.continuousLinearMapAt 𝕜 x (e.localFrame b i x) = b i := by
   rw [← symmL_basis_eq_localFrame b hx i, e.continuousLinearMapAt_symmL hx]
+
+/-- The section with constant coordinates `v` in a trivialization `e` is `C^n` on the base set of
+`e`. -/
+theorem contMDiffOn_symm_baseSet {n : ℕ∞ω} [ContMDiffVectorBundle n F V I] (v : F) :
+    CMDiff[e.baseSet] n (T% (fun y ↦ e.symm y v)) :=
+  e.contMDiffOn_section_baseSet_iff.2 <| (contMDiffOn_const (c := v)).congr fun y hy ↦ by
+    simp only [e.apply_mk_symm hy]
 
 /-- The matrix of a coordinate change between two vector-bundle trivializations is the
 change-of-basis matrix between the corresponding local frames. -/

@@ -5,12 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Finiteness.Nakayama
 public import Mathlib.RingTheory.Ideal.Operations
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import TauCeti.LinearAlgebra.Matrix.Adjugate.Basic
+-- Proof-only: the prime ideals of `ℤ`, and `ℤ` is not a field.
+import Mathlib.Algebra.Ring.Int.Field
+import Mathlib.RingTheory.Ideal.NatInt
 
 /-!
-# A Nakayama lemma with weighted generators
+# Nakayama's lemma with weighted generators, and over `ℤ`
 
 Let `M` be a module over a commutative ring `R`, spanned by a finite family `b`, and let `I` be an
 ideal. Mathlib's `Submodule.exists_sub_one_mem_and_smul_eq_zero_of_fg_of_le_smul` says that if
@@ -25,6 +29,12 @@ determinant of `diag e - θ` kills every `b k`, and it is `∏ᵢ e i` modulo `I
 This is the commutative-algebra step of the proof, due to Artin and Tate, that the transfer of a
 finite group into its commutator subgroup is trivial: there `R` is the integral group ring of a
 finite abelian group, `I` its augmentation ideal and `e i` the orders of a basis of the group.
+
+The file also records the global form of Nakayama's lemma: a finitely generated submodule `N` with
+`N = m • N` for every maximal ideal `m` is zero (`Submodule.eq_bot_of_forall_isMaximal_le_smul`).
+Over `ℤ` this passes from statements modulo every prime to integral statements: a finitely
+generated subgroup `N` of an abelian group with `N = p • N` for every prime `p` is zero
+(`Submodule.eq_bot_of_forall_prime_le_smul`).
 
 ## References
 
@@ -71,5 +81,27 @@ theorem exists_sub_prod_mem_and_smul_eq_zero (I : Ideal R) {b : ι → M}
     | zero => exact smul_zero _
     | add x y _ _ hx hy => rw [smul_add, hx, hy, add_zero]
     | smul r x _ hx => rw [smul_comm, hx, smul_zero]
+
+/-- **Nakayama's lemma, globally.** A finitely generated submodule `N` with `N ≤ m • N` for every
+maximal ideal `m` is zero. -/
+theorem eq_bot_of_forall_isMaximal_le_smul {N : Submodule R M} (hN : N.FG)
+    (h : ∀ m : Ideal R, m.IsMaximal → N ≤ m • N) : N = ⊥ := by
+  rw [← annihilator_eq_top_iff]
+  by_contra hne
+  -- Some `r ≡ 1 (mod m)` kills `N`, for a maximal ideal `m` containing the annihilator.
+  obtain ⟨m, hm, hle⟩ := Ideal.exists_le_maximal _ hne
+  obtain ⟨r, hr1, hr⟩ := exists_sub_one_mem_and_smul_eq_zero_of_fg_of_le_smul m N hN (h m hm)
+  refine hm.ne_top ((Ideal.eq_top_iff_one _).2 ?_)
+  simpa using m.sub_mem (hle (mem_annihilator.2 hr)) hr1
+
+/-- **Nakayama's lemma over `ℤ`.** A finitely generated subgroup `N` of an abelian group with
+`N ≤ p • N` for every prime `p` is zero. -/
+theorem eq_bot_of_forall_prime_le_smul {M : Type*} [AddCommGroup M] {N : Submodule ℤ M}
+    (hN : N.FG) (h : ∀ p : ℕ, p.Prime → N ≤ Ideal.span {(p : ℤ)} • N) : N = ⊥ := by
+  refine eq_bot_of_forall_isMaximal_le_smul hN fun m hm => ?_
+  -- The maximal ideals of `ℤ` are the ideals `(p)` for primes `p`.
+  obtain rfl | ⟨p, hp, rfl⟩ := Ideal.isPrime_int_iff.1 hm.isPrime
+  · exact absurd rfl (Ring.ne_bot_of_isMaximal_of_not_isField hm Int.not_isField)
+  · exact h p hp
 
 end Submodule

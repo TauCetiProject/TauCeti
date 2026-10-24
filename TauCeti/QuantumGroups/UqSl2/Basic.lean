@@ -172,6 +172,18 @@ theorem kUnit_val : (kUnit q : UqSl2 q) = k q := (rfl)
 @[simp]
 theorem kUnit_inv : ↑(kUnit q)⁻¹ = kInv q := (rfl)
 
+/-- Multiplying an integer power of `K` by `K` on the left raises the exponent by one. -/
+theorem k_mul_kUnit_zpow (b : ℤ) :
+    k q * ((kUnit q ^ b : (UqSl2 q)ˣ) : UqSl2 q) =
+      ((kUnit q ^ (b + 1) : (UqSl2 q)ˣ) : UqSl2 q) := by
+  rw [← kUnit_val, ← Units.val_mul, add_comm, zpow_one_add]
+
+/-- Multiplying an integer power of `K` by `K⁻¹` on the left lowers the exponent by one. -/
+theorem kInv_mul_kUnit_zpow (b : ℤ) :
+    kInv q * ((kUnit q ^ b : (UqSl2 q)ˣ) : UqSl2 q) =
+      ((kUnit q ^ (b - 1) : (UqSl2 q)ˣ) : UqSl2 q) := by
+  rw [← kUnit_inv, ← Units.val_mul, ← zpow_neg_one, ← zpow_add, neg_add_eq_sub]
+
 /-- The relation `E K⁻¹ = q² K⁻¹ E`, obtained from the defining `K E` relation. -/
 theorem e_mul_kInv : e q * kInv q = q ^ 2 • (kInv q * e q) := by
   have h := (SemiconjBy.units_inv_symm_left (a := kUnit q) (x := e q) (y := q ^ 2 • e q)

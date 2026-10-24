@@ -19,7 +19,7 @@ import TauCeti.Topology.MetricSpace.Ekeland
 /-!
 # The Bishop–Phelps theorem
 
-Let `C` be a closed convex subset of a real or complex Banach space `E`. A *support functional*
+Let `C` be a complete convex subset of a real or complex normed space `E`. A *support functional*
 of `C` is a nonzero continuous linear functional `g` whose real part attains its supremum on `C`;
 a point of `C` at which this happens is a *support point*. The **Bishop–Phelps theorem** says
 that there are many of both:
@@ -32,7 +32,9 @@ that there are many of both:
 * taking for `C` the closed unit ball, the norm-attaining functionals are norm dense in the dual
   (`TauCeti.dense_setOf_exists_norm_apply_eq_norm`).
 
-The space `E` is assumed complete. Convexity is real convexity, also over `ℂ`.
+The support theorems assume only that `C` is complete; the norm-attainment theorem assumes
+that `E` is complete. Convexity is real convexity, also over `ℂ`. Cone convexity also holds on
+seminormed spaces, without a normed scalar action over `𝕜`.
 
 The proof follows Phelps. Ekeland's variational principle
 (`LowerSemicontinuous.exists_add_mul_dist_le_and_lt_add_mul_dist`), applied to minus the real
@@ -48,7 +50,7 @@ within `k * ‖f‖` of `f`.
 * `StrongDual.exists_pos_norm_sub_ofReal_smul_le`: the Bishop–Phelps lemma.
 * `StrongDual.convex_setOf_mul_norm_sub_lt_re`: the open Bishop–Phelps cones are convex.
 * `Convex.exists_isMaxOn_re_of_bddAbove`: support functionals at points reached through a cone.
-* `Convex.dense_setOf_ne_zero_isMaxOn_re`: support functionals of a bounded closed convex set are
+* `Convex.dense_setOf_ne_zero_isMaxOn_re`: support functionals of a bounded complete convex set are
   dense.
 * `Convex.frontier_subset_closure_setOf_isMaxOn_re`: support points are dense in the boundary.
 * `TauCeti.dense_setOf_exists_norm_apply_eq_norm`: norm-attaining functionals are dense.
@@ -66,7 +68,22 @@ public section
 
 open Filter Metric RCLike Set Topology
 
-variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+variable {𝕜 E : Type*} [RCLike 𝕜]
+
+section Seminormed
+
+variable [SeminormedAddCommGroup E] [Module 𝕜 E] [NormedSpace ℝ E] [IsScalarTower ℝ 𝕜 E]
+
+/-- For `0 ≤ r`, the open cone `{y | r * ‖y - x‖ < re (f (y - x))}` with vertex `x` is convex. -/
+theorem StrongDual.convex_setOf_mul_norm_sub_lt_re (f : StrongDual 𝕜 E) {r : ℝ} (hr : 0 ≤ r)
+    (x : E) : Convex ℝ {y | r * ‖y - x‖ < re (f (y - x))} := by
+  let F : E →ₗ[ℝ] ℝ := (reCLM.comp (f.restrictScalars ℝ)).toLinearMap
+  have h := ((convexOn_univ_norm (E := E)).smul hr |>.sub (F.concaveOn convex_univ)).convex_lt 0
+  simpa [F, sub_eq_add_neg] using h.translate_preimage_left (-x)
+
+end Seminormed
+
+variable [NormedAddCommGroup E] [NormedSpace 𝕜 E]
 
 namespace StrongDual
 
@@ -120,22 +137,17 @@ theorem exists_pos_norm_sub_ofReal_smul_le (f h : StrongDual 𝕜 E) {k : ℝ} (
       (F₁.le_opNorm x₀).trans (mul_le_mul_of_nonneg_right hF₁le (norm_nonneg _))
     have h₂ : 0 < c * H x₀ := by rw [← hc, hF]; linarith
     exact (pos_iff_pos_of_mul_pos h₂).2 (hpos x₀ hx₀)
-  refine ⟨c, hc₀, ContinuousLinearMap.opNorm_le_bound _ hkf fun x ↦ ?_⟩
-  -- The real part of `f - c • h` is `F₁`; rotate `x` so that `f - c • h` is real on it.
-  obtain ⟨a, ha, hax⟩ := exists_norm_eq_mul_self ((f - (c : 𝕜) • h) x)
-  have hre : ‖(f - (c : 𝕜) • h) x‖ = F₁ (a • x) := by
-    have h₁ := congrArg re hax
-    rw [ofReal_re, ← smul_eq_mul, ← map_smul] at h₁
-    have h₂ := hc (a • x)
-    rw [hF, hH] at h₂
-    rw [h₁, sub_apply, smul_apply, smul_eq_mul, map_sub,
-      re_ofReal_mul]
-    linarith
-  calc ‖(f - (c : 𝕜) • h) x‖ = F₁ (a • x) := hre
-    _ ≤ ‖F₁‖ * ‖a • x‖ := (le_abs_self _).trans (F₁.le_opNorm _)
-    _ ≤ k * ‖f‖ * ‖x‖ := by
-      rw [norm_smul, ha, one_mul]
-      exact mul_le_mul_of_nonneg_right hF₁le (norm_nonneg _)
+  refine ⟨c, hc₀, ?_⟩
+  -- The real part of `f - c • h` is `F₁`; real-part restriction preserves the dual norm.
+  have heq : (extendRCLikeₗᵢ (𝕜 := 𝕜) (F := E)).symm (f - (c : 𝕜) • h) = F₁ := by
+    ext x
+    simp only [extendRCLikeₗᵢ_symm_apply, ContinuousLinearMap.comp_apply,
+      ContinuousLinearMap.coe_restrictScalars', reCLM_apply, sub_apply, smul_apply, smul_eq_mul,
+      map_sub, re_ofReal_mul]
+    have hcx := hc x
+    rw [hF, hH] at hcx
+    linarith only [hcx]
+  rwa [← (extendRCLikeₗᵢ (𝕜 := 𝕜) (F := E)).symm.norm_map, heq]
 
 /-- A point at which the real part of a nonzero functional attains its maximum on `C` lies on the
 boundary of `C`. -/
@@ -159,34 +171,14 @@ end StrongDual
 
 section RealModule
 
-variable [NormedSpace ℝ E] [IsScalarTower ℝ 𝕜 E]
+variable [NormedSpace ℝ E] [IsScalarTower ℝ 𝕜 E] {C : Set E}
 
-/-- For `0 ≤ r`, the open cone `{y | r * ‖y - x‖ < re (f (y - x))}` with vertex `x` is convex. -/
-theorem StrongDual.convex_setOf_mul_norm_sub_lt_re (f : StrongDual 𝕜 E) {r : ℝ} (hr : 0 ≤ r)
-    (x : E) : Convex ℝ {y | r * ‖y - x‖ < re (f (y - x))} := by
-  refine convex_iff_forall_pos.2 fun y₁ hy₁ y₂ hy₂ a b ha hb hab ↦ ?_
-  simp only [mem_ofPred_eq] at hy₁ hy₂ ⊢
-  have hsub : a • y₁ + b • y₂ - x = a • (y₁ - x) + b • (y₂ - x) := by
-    calc a • y₁ + b • y₂ - x = a • y₁ + b • y₂ - (a + b) • x := by rw [hab, one_smul]
-      _ = a • (y₁ - x) + b • (y₂ - x) := by rw [add_smul, smul_sub, smul_sub]; abel
-  have hre (c : ℝ) (v : E) : re (f (c • v)) = c * re (f v) := by
-    rw [RCLike.real_smul_eq_coe_smul (K := 𝕜), map_smul, smul_eq_mul, re_ofReal_mul]
-  have hnorm : ‖a • (y₁ - x) + b • (y₂ - x)‖ ≤ a * ‖y₁ - x‖ + b * ‖y₂ - x‖ := by
-    refine (norm_add_le _ _).trans_eq ?_
-    rw [norm_smul, norm_smul, Real.norm_of_nonneg ha.le, Real.norm_of_nonneg hb.le]
-  rw [hsub, map_add, map_add, hre, hre]
-  have h₁ := mul_lt_mul_of_pos_left hy₁ ha
-  have h₂ := mul_lt_mul_of_pos_left hy₂ hb
-  nlinarith [mul_le_mul_of_nonneg_left hnorm hr]
-
-variable [CompleteSpace E] {C : Set E}
-
-/-- **Bishop–Phelps support lemma.** Let `C` be a closed convex subset of a Banach space, let `f`
+/-- **Bishop–Phelps support lemma.** Let `C` be a complete convex subset of a normed space, let `f`
 be a nonzero functional whose real part is bounded above on `C`, and let `0 < k < 1`. From every
 `z ∈ C` one reaches a point `x ∈ C` with `k * ‖f‖ * ‖x - z‖ ≤ re (f (x - z))` at which `C` has a
 support functional `h`, nonzero and with real part positive on the open cone
 `{w | k * ‖f‖ * ‖w‖ < re (f w)}`. -/
-theorem Convex.exists_isMaxOn_re_of_bddAbove (hconv : Convex ℝ C) (hC : IsClosed C)
+theorem Convex.exists_isMaxOn_re_of_bddAbove (hconv : Convex ℝ C) (hC : IsComplete C)
     {f : StrongDual 𝕜 E} (hf : f ≠ 0) (hbdd : BddAbove ((fun y ↦ re (f y)) '' C)) {k : ℝ}
     (hk₀ : 0 < k) (hk₁ : k < 1) {z : E} (hz : z ∈ C) :
     ∃ x ∈ C, k * ‖f‖ * ‖x - z‖ ≤ re (f (x - z)) ∧ ∃ h : StrongDual 𝕜 E, h ≠ 0 ∧
@@ -246,10 +238,10 @@ theorem Convex.exists_isMaxOn_re_of_bddAbove (hconv : Convex ℝ C) (hC : IsClos
   · simpa using hneg w hw
 
 /-- **The Bishop–Phelps theorem for support functionals.** The support functionals of a nonempty
-bounded closed convex subset `C` of a nonzero Banach space, namely the nonzero functionals whose
+bounded complete convex subset `C` of a nonzero normed space, namely the nonzero functionals whose
 real part attains its supremum on `C`, are norm dense in the dual. -/
 theorem Convex.dense_setOf_ne_zero_isMaxOn_re [Nontrivial E] (hconv : Convex ℝ C)
-    (hC : IsClosed C) (hb : Bornology.IsBounded C) (hne : C.Nonempty) :
+    (hC : IsComplete C) (hb : Bornology.IsBounded C) (hne : C.Nonempty) :
     Dense {g : StrongDual 𝕜 E | g ≠ 0 ∧ ∃ x ∈ C, IsMaxOn (fun y ↦ re (g y)) C x} := by
   set S := {g : StrongDual 𝕜 E | g ≠ 0 ∧ ∃ x ∈ C, IsMaxOn (fun y ↦ re (g y)) C x}
   obtain ⟨z, hz⟩ := hne
@@ -283,20 +275,21 @@ theorem Convex.dense_setOf_ne_zero_isMaxOn_re [Nontrivial E] (hconv : Convex ℝ
   have := Module.punctured_nhds_neBot 𝕜 (StrongDual 𝕜 E)
   exact dense_closure.1 ((dense_compl_singleton 0).mono hsub)
 
-/-- **The Bishop–Phelps theorem for support points.** The support points of a closed convex
-subset `C` of a Banach space, namely the points of `C` at which the real part of some nonzero
+/-- **The Bishop–Phelps theorem for support points.** The support points of a complete convex
+subset `C` of a normed space, namely the points of `C` at which the real part of some nonzero
 functional attains its supremum on `C`, are dense in the boundary of `C`. They all lie on the
 boundary by `StrongDual.mem_frontier_of_isMaxOn_re`. -/
-theorem Convex.frontier_subset_closure_setOf_isMaxOn_re (hconv : Convex ℝ C) (hC : IsClosed C) :
+theorem Convex.frontier_subset_closure_setOf_isMaxOn_re (hconv : Convex ℝ C) (hC : IsComplete C) :
     frontier C ⊆
       closure {x ∈ C | ∃ g : StrongDual 𝕜 E, g ≠ 0 ∧ IsMaxOn (fun y ↦ re (g y)) C x} := by
   intro x hx
-  have hxC : x ∈ C := hC.frontier_subset hx
+  have hxC : x ∈ C := hC.isClosed.frontier_subset hx
   refine Metric.mem_closure_iff.2 fun ε hε ↦ ?_
   -- A point `y ∉ C` close to `x` is strictly separated from `C` by some functional `f`.
   rw [frontier_eq_closure_inter_closure] at hx
   obtain ⟨y, hyC, hxy⟩ := Metric.mem_closure_iff.1 hx.2 (ε / 2) (half_pos hε)
-  obtain ⟨f, u, hfC, hfy⟩ := RCLike.geometric_hahn_banach_closed_point (𝕜 := 𝕜) hconv hC hyC
+  obtain ⟨f, u, hfC, hfy⟩ :=
+    RCLike.geometric_hahn_banach_closed_point (𝕜 := 𝕜) hconv hC.isClosed hyC
   have hf : f ≠ 0 := by
     rintro rfl
     have := hfC x hxC
@@ -328,15 +321,12 @@ theorem dense_setOf_exists_norm_apply_eq_norm [CompleteSpace E] :
   rcases subsingleton_or_nontrivial E with hE | hE
   · convert dense_univ using 1
     refine eq_univ_of_forall fun g ↦ ?_
-    rw [mem_ofPred_eq]
-    refine ⟨0, by simp, ?_⟩
-    rw [map_zero, norm_zero, eq_comm, norm_eq_zero]
-    ext x
-    rw [Subsingleton.elim x 0, map_zero, map_zero]
+    exact ⟨0, by simp, by simp [Subsingleton.elim g 0]⟩
   let : NormedSpace ℝ E := .restrictScalars ℝ 𝕜 E
   let : IsScalarTower ℝ 𝕜 E := .of_algebraMap_smul fun _ _ ↦ rfl
   refine (Convex.dense_setOf_ne_zero_isMaxOn_re (𝕜 := 𝕜) (convex_closedBall (0 : E) 1)
-    isClosed_closedBall isBounded_closedBall ⟨0, mem_closedBall_self zero_le_one⟩).mono ?_
+    isClosed_closedBall.isComplete isBounded_closedBall
+    ⟨0, mem_closedBall_self zero_le_one⟩).mono ?_
   rintro g ⟨-, x, hx, hmax⟩
   rw [mem_closedBall_zero_iff] at hx
   refine ⟨x, hx, le_antisymm ((g.le_opNorm x).trans (mul_le_of_le_one_right (norm_nonneg _) hx))

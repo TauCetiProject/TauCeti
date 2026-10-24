@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Charpoly.BaseChange
 public import Mathlib.RingTheory.Finiteness.Projective
+public import TauCeti.LinearAlgebra.End.Split
 import TauCeti.LinearAlgebra.Determinant.Basic
 
 /-!
@@ -71,29 +72,6 @@ section Split
 
 variable {F : Type*} [AddCommGroup F] [Module R F]
 
--- The endomorphism of `F` which is `f` on `σ(M)` and the identity on `ker π`, as a monoid
--- homomorphism in `f`.
-private noncomputable def splitEnd (π : F →ₗ[R] M) (σ : M →ₗ[R] F) (h : π ∘ₗ σ = id) :
-    Module.End R M →* Module.End R F where
-  toFun f := σ ∘ₗ f ∘ₗ π + (1 - σ ∘ₗ π)
-  map_one' := by rw [Module.End.one_eq_id, id_comp, add_sub_cancel]
-  map_mul' f g := by
-    have h' (x : M) : π (σ x) = x := congr($h x)
-    ext x
-    simp only [add_apply, comp_apply, sub_apply, Module.End.one_apply, Module.End.mul_apply,
-      map_add, map_sub, h']
-    abel
-
-private theorem splitEnd_apply (π : F →ₗ[R] M) (σ : M →ₗ[R] F) (h : π ∘ₗ σ = id)
-    (f : Module.End R M) : splitEnd π σ h f = σ ∘ₗ f ∘ₗ π + (1 - σ ∘ₗ π) :=
-  rfl
-
-private theorem splitEnd_eq_one_add (π : F →ₗ[R] M) (σ : M →ₗ[R] F) (h : π ∘ₗ σ = id)
-    (f : Module.End R M) : splitEnd π σ h f = 1 + σ ∘ₗ (f - 1) ∘ₗ π := by
-  ext x
-  simp only [splitEnd_apply, add_apply, comp_apply, sub_apply, Module.End.one_apply, map_sub]
-  abel
-
 -- The determinant of `splitEnd π σ h f` does not depend on the splitting.
 private theorem det_splitEnd_eq {F' : Type*} [AddCommGroup F'] [Module R F'] [Module.Free R F]
     [Module.Finite R F] [Module.Free R F'] [Module.Finite R F'] (π : F →ₗ[R] M)
@@ -137,8 +115,9 @@ free module `F` of finite rank with linear maps `π : F →ₗ[R] M` and `σ : M
 theorem projectiveDet_eq_det_of_comp_eq_id {F : Type*} [AddCommGroup F] [Module R F]
     [Module.Free R F] [Module.Finite R F] (π : F →ₗ[R] M) (σ : M →ₗ[R] F) (h : π ∘ₗ σ = id)
     (f : Module.End R M) :
-    projectiveDet f = LinearMap.det (σ ∘ₗ f ∘ₗ π + (1 - σ ∘ₗ π)) :=
-  det_splitEnd_eq _ _ _ π σ h f
+    projectiveDet f = LinearMap.det (σ ∘ₗ f ∘ₗ π + (1 - σ ∘ₗ π)) := by
+  rw [← splitEnd_apply π σ h]
+  exact det_splitEnd_eq _ _ _ π σ h f
 
 /-- The determinant of a composite is the product of the determinants. -/
 @[simp]
@@ -184,23 +163,7 @@ theorem isUnit_iff_isUnit_projectiveDet (f : Module.End R M) :
     IsUnit f ↔ IsUnit (projectiveDet f) := by
   obtain ⟨n, π, σ, -, -, h⟩ := Module.Finite.exists_comp_eq_id_of_projective R M
   rw [projectiveDet_eq_det_of_comp_eq_id π σ h, ← splitEnd_apply π σ h,
-    ← isUnit_iff_isUnit_det]
-  refine ⟨fun hf ↦ hf.map _, fun hg ↦ ?_⟩
-  -- an inverse `g'` of `g = splitEnd π σ h f` gives the inverse `π ∘ₗ g' ∘ₗ σ` of `f`, since
-  -- `π ∘ₗ g = f ∘ₗ π` and `g ∘ₗ σ = σ ∘ₗ f`
-  obtain ⟨g', hgg', hg'g⟩ := isUnit_iff_exists.mp hg
-  have hx (x : M) : π (σ x) = x := congr($h x)
-  have hgg'x (y : Fin n → R) : splitEnd π σ h f (g' y) = y := congr($hgg' y)
-  have hg'gx (y : Fin n → R) : g' (splitEnd π σ h f y) = y := congr($hg'g y)
-  have hπ (y : Fin n → R) : π (splitEnd π σ h f y) = f (π y) := by
-    simp [splitEnd_apply, hx]
-  have hσ (x : M) : splitEnd π σ h f (σ x) = σ (f x) := by
-    simp [splitEnd_apply, hx]
-  refine isUnit_iff_exists.mpr ⟨π ∘ₗ g' ∘ₗ σ, ?_, ?_⟩ <;> ext x
-  · simp only [Module.End.mul_apply, comp_apply, Module.End.one_apply]
-    rw [← hπ, hgg'x, hx]
-  · simp only [Module.End.mul_apply, comp_apply, Module.End.one_apply]
-    rw [← hσ, hg'gx, hx]
+    ← isUnit_iff_isUnit_det, isUnit_splitEnd_iff]
 
 end Projective
 
