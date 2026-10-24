@@ -93,15 +93,12 @@ theorem absoluteHeight2_comp (f : F →+* F') (x : ι → F) :
     have : NumberField E := {}
     have : FiniteDimensional ℚ E' := finiteDimensional_adjoin (by rintro _ ⟨i, rfl⟩; exact hfx i)
     have : NumberField E' := {}
-    have hE : E.map f.toRatAlgHom = E' := by
-      rw [adjoin_map, ← Set.range_comp]
-      rfl
-    let e : E ≃ₐ[ℚ] E' := (equivMap E f.toRatAlgHom).trans (equivOfEq hE)
+    let e : E ≃ₐ[ℚ] E' := adjoinRangeMapEquiv x f
     rw [absoluteHeight2, dite_eq_left hfx, absoluteHeight2, dite_eq_left hx,
       ← e.toRingEquiv.height2_comp]
     -- The restricted isomorphism sends each coordinate to its image under `f`.
     refine congrArg height2 (funext fun i ↦ Subtype.ext ?_)
-    simp [e]
+    exact (coe_adjoinRangeMapEquiv_apply x f ⟨x i, subset_adjoin ℚ _ (Set.mem_range_self i)⟩).symm
   · obtain ⟨i, hi⟩ := not_forall.mp hx
     have hi' : ¬IsAlgebraic ℚ (x i) := fun h ↦ hi h.isIntegral
     rw [absoluteHeight2_of_not_isAlgebraic hi',

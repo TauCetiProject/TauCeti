@@ -123,16 +123,13 @@ theorem absoluteProjectiveTupleHeight_comp (f : F →+* F') (x : ι → F) :
     have : NumberField E := {}
     have : FiniteDimensional ℚ E' := finiteDimensional_adjoin (by rintro _ ⟨i, rfl⟩; exact hfx i)
     have : NumberField E' := {}
-    have hE : E.map f.toRatAlgHom = E' := by
-      rw [adjoin_map, ← Set.range_comp]
-      rfl
     -- `f` restricts to an isomorphism `ℚ(x) ≃ ℚ(f ∘ x)` sending `x` to `f ∘ x`.
-    let e : E ≃ₐ[ℚ] E' := (equivMap E f.toRatAlgHom).trans (equivOfEq hE)
+    let e : E ≃ₐ[ℚ] E' := adjoinRangeMapEquiv x f
     rw [absoluteProjectiveTupleHeight, dite_eq_left hfx, absoluteProjectiveTupleHeight,
       dite_eq_left hx, ← e.toLinearEquiv.finrank_eq, ← mulHeight_ringEquiv e.toRingEquiv]
     -- `e` sends `⟨x i, _⟩` to `⟨f (x i), _⟩`.
     refine congrArg (· ^ _) (congrArg mulHeight (funext fun i ↦ Subtype.ext ?_))
-    simp [e]
+    exact (coe_adjoinRangeMapEquiv_apply x f ⟨x i, subset_adjoin ℚ _ (Set.mem_range_self i)⟩).symm
   · obtain ⟨i, hi⟩ := not_forall.mp hx
     rw [absoluteProjectiveTupleHeight_of_not_isIntegral hi,
       absoluteProjectiveTupleHeight_of_not_isIntegral (i := i) ((hint i).not.mpr hi)]
