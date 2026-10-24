@@ -16,6 +16,8 @@ free group and under the quotient map to a presented group.
 
 ## Main results
 
+* `TauCeti.PresentedGroup.mk_of`: the quotient map sends a free generator to its
+  presented generator.
 * `MonoidHom.apply_freeGroup_mk`: a homomorphism evaluates a signed word letter by letter.
 * `PresentedGroup.mk_mk`: the class of a word is the product of its signed generators.
 * `PresentedGroup.lift_inv_of_mk`: inverting every generator flips every sign in a word.
