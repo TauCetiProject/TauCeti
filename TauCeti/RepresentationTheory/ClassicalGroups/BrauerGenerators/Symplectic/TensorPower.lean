@@ -59,7 +59,8 @@ Writing `e i j` for the generator, the relations proved here are
 
 The relations involving a crossing are not stated here: the Brauer crossing on two of `d` strands
 is the sign-twisted transposition of those two slots, and the sign-twisted action of the symmetric
-group on `V^{⊗d}` is not built yet. Nothing below uses it.
+group on `V^{⊗d}` and its relations with the arcs are in
+`TauCeti/RepresentationTheory/ClassicalGroups/BrauerGenerators/Symplectic/Crossing.lean`.
 
 ## Implementation notes
 
@@ -435,15 +436,6 @@ theorem symplecticCupCapAt_mul_mul_self {i j l : Fin d} (hij : i ≠ j) (hjl : j
     (hil : i ≠ l) :
     symplecticCupCapAt k n d i j * symplecticCupCapAt k n d j l * symplecticCupCapAt k n d i j =
       symplecticCupCapAt k n d i j := by
-  -- the columns of `J` are orthonormal for the pairing by `J` itself, because `Jᵀ * J = 1`
-  have hcol : ∀ y p : Fin n ⊕ Fin n,
-      ∑ x : Fin n ⊕ Fin n, Matrix.J (Fin n) k x y * Matrix.J (Fin n) k x p =
-        if y = p then (1 : k) else 0 := by
-    have hJT : (Matrix.J (Fin n) k)ᵀ * Matrix.J (Fin n) k = 1 := by
-      rw [Matrix.J_transpose, Matrix.neg_mul, Matrix.J_squared, neg_neg]
-    intro y p
-    have h := congrFun (congrFun hJT y) p
-    simpa only [Matrix.mul_apply, Matrix.transpose_apply, Matrix.one_apply] using h
   refine PiTensorProduct.ext ?_
   ext v
   -- the middle arc pairs the strand `j`, carrying the `y`-th basis vector, against the strand `l`
@@ -576,7 +568,7 @@ theorem symplecticCupCapAt_mul_mul_self {i j l : Fin d} (hij : i ≠ j) (hjl : j
               stdSymplecticBilinForm k n (Pi.single y (1 : k)) (v l) * Matrix.J (Fin n) k p q *
                 (if y = p then (1 : k) else 0) := by
             refine Finset.sum_congr rfl fun p _ => ?_
-            rw [← Finset.mul_sum, hcol y p]
+            rw [← Finset.mul_sum, Matrix.sum_J_mul_J_eq_ite]
         _ = stdSymplecticBilinForm k n (Pi.single y (1 : k)) (v l) * Matrix.J (Fin n) k y q := by
             simp
     rw [Finset.sum_comm, Finset.sum_congr rfl fun y _ => key y]
@@ -592,7 +584,7 @@ theorem symplecticCupCapAt_mul_mul_self {i j l : Fin d} (hij : i ≠ j) (hjl : j
           rw [Finset.sum_comm]
           exact Finset.sum_congr rfl fun b _ => (Finset.mul_sum _ _ _).symm
       _ = v l q := by
-          simp only [hcol]
+          simp only [Matrix.sum_J_mul_J_eq_ite]
           simp
   -- summing the surviving coordinate over `q` rebuilds the strand `l`
   have hrestore : ∀ r s : Fin n ⊕ Fin n,
