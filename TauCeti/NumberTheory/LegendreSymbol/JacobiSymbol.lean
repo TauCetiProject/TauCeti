@@ -111,8 +111,8 @@ theorem jacobiSym_eq_jacobiSym_natAbs_of_emod_four_eq_one {a : ℤ} (ha : a % 4 
     -- The sign of reciprocity is `(-1) ^ (b / 2) = χ₄ b`, as `a.natAbs / 2` is odd.
     rw [h, Int.natAbs_neg, Int.natAbs_natCast, jacobiSym.neg _ hb,
       jacobiSym.quadratic_reciprocity hodd hb, pow_mul,
-      Odd.neg_one_pow (Nat.odd_iff.mpr (by omega)), χ₄_eq_neg_one_pow (Nat.odd_iff.mp hb),
-      ← mul_assoc, ← mul_pow, neg_one_mul, neg_neg, one_pow, one_mul]
+      Odd.neg_one_pow (Nat.odd_iff.mpr (by omega)), χ₄_eq_neg_one_pow (Nat.odd_iff.mp hb)]
+    simp [← mul_assoc, ← mul_pow]
 
 /-- For `a ≡ 0 (mod 4)`, the Jacobi symbol `J(a | b)` at odd `b` depends only on `b` modulo `|a|`,
 not merely modulo `4 |a|` as in `jacobiSym.mod_right`: the factor `J(4 | b) = 1` may be dropped. -/

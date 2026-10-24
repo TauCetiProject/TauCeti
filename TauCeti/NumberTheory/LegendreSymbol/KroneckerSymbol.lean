@@ -142,6 +142,14 @@ theorem kroneckerSym_one_left (b : ℤ) : kroneckerSym 1 b = 1 := by
 
 /-! ### Multiplicativity in the denominator -/
 
+/-- The sign factor `if p ∧ x < 0 then -1 else 1` of `kroneckerSym` is multiplicative in `x` over
+nonzero factors. It serves both `kroneckerSym_mul_right` and `kroneckerSym_mul_left`. -/
+private theorem ite_and_mul_neg {p : Prop} [Decidable p] {x y : ℤ} (hx : x ≠ 0) (hy : y ≠ 0) :
+    (if p ∧ x * y < 0 then -1 else 1 : ℤ) =
+      (if p ∧ x < 0 then -1 else 1) * (if p ∧ y < 0 then -1 else 1) := by
+  rcases hx.lt_or_gt with hx | hx <;> rcases hy.lt_or_gt with hy | hy <;> by_cases hp : p <;>
+    simp [hp, hx, hy, hx.not_gt, hy.not_gt, mul_neg_iff]
+
 /-- Multiplicativity of the Kronecker symbol in the denominator, over nonzero factors, as in
 `jacobiSym.mul_right'`. The hypotheses cannot be dropped: for `a = -1`, `b = 0`, `c = 3` the left
 side is `(-1 / 0) = 1` and the right side is `-1` (`kroneckerSym_zero_right`). -/
@@ -149,17 +157,11 @@ theorem kroneckerSym_mul_right (a : ℤ) {b c : ℤ} (hb : b ≠ 0) (hc : c ≠ 
     kroneckerSym a (b * c) = kroneckerSym a b * kroneckerSym a c := by
   have hb' : b.natAbs ≠ 0 := Int.natAbs_ne_zero.mpr hb
   have hc' : c.natAbs ≠ 0 := Int.natAbs_ne_zero.mpr hc
-  have hs : (if a < 0 ∧ b * c < 0 then -1 else 1 : ℤ) =
-      (if a < 0 ∧ b < 0 then -1 else 1) * (if a < 0 ∧ c < 0 then -1 else 1) := by
-    by_cases ha : a < 0
-    · simp only [ha, true_and]
-      rcases hb.lt_or_gt with hb | hb <;> rcases hc.lt_or_gt with hc | hc <;>
-        split_ifs <;> first | (norm_num; done) | nlinarith
-    · simp [ha]
   rw [kroneckerSym_of_ne_zero a (mul_ne_zero hb hc), kroneckerSym_of_ne_zero a hb,
     kroneckerSym_of_ne_zero a hc, Int.natAbs_mul, Nat.ordCompl_mul,
     Nat.factorization_mul hb' hc', Finsupp.add_apply, pow_add,
-    jacobiSym.mul_right' a (Nat.ordCompl_pos 2 hb').ne' (Nat.ordCompl_pos 2 hc').ne', hs]
+    jacobiSym.mul_right' a (Nat.ordCompl_pos 2 hb').ne' (Nat.ordCompl_pos 2 hc').ne',
+    ite_and_mul_neg hb hc]
   ring
 
 /-- For a numerator other than `-1`, the Kronecker symbol is completely multiplicative in the
@@ -250,11 +252,7 @@ theorem kroneckerSym_mul_left {a a' : ℤ} (ha : a ≠ 0) (ha' : a' ≠ 0) (b : 
     split_ifs <;> simp_all
   have hs : (if a * a' < 0 ∧ b < 0 then -1 else 1 : ℤ) =
       (if a < 0 ∧ b < 0 then -1 else 1) * (if a' < 0 ∧ b < 0 then -1 else 1) := by
-    by_cases hb' : b < 0
-    · simp only [hb', and_true]
-      rcases ha.lt_or_gt with ha | ha <;> rcases ha'.lt_or_gt with ha' | ha' <;>
-        split_ifs <;> first | (norm_num; done) | nlinarith
-    · simp [hb']
+    simpa only [and_comm] using ite_and_mul_neg (p := b < 0) ha ha'
   rw [kroneckerSym_of_ne_zero _ hb, kroneckerSym_of_ne_zero a hb, kroneckerSym_of_ne_zero a' hb,
     Int.cast_mul, map_mul, mul_pow, jacobiSym.mul_left, hs]
   ring
@@ -401,10 +399,17 @@ def kroneckerChar (D : ℤ) (hD : D ≡ 0 [ZMOD 4] ∨ D ≡ 1 [ZMOD 4]) (hD₀ 
 
 variable {R} (hD : D ≡ 0 [ZMOD 4] ∨ D ≡ 1 [ZMOD 4]) (hD₀ : D ≠ 0)
 
+/-- The Kronecker character at `x : ZMod |D|` is the Kronecker symbol `(D / x.val)`, by
+definition. -/
+theorem kroneckerChar_apply (x : ZMod D.natAbs) :
+    kroneckerChar R D hD hD₀ x = kroneckerSym D x.val := by
+  rfl
+
 /-- The Kronecker character at the class of an integer `a` is the Kronecker symbol `(D / a)`. -/
 @[simp]
 theorem kroneckerChar_intCast (a : ℤ) : kroneckerChar R D hD hD₀ a = kroneckerSym D a := by
   have : NeZero D.natAbs := ⟨Int.natAbs_ne_zero.mpr hD₀⟩
+  rw [kroneckerChar_apply]
   exact congrArg (Int.cast : ℤ → R) (kroneckerSym_val hD rfl)
 
 /-- The Kronecker character at the class of a natural number `n` is the Kronecker symbol
