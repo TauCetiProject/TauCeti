@@ -53,6 +53,9 @@ ordinary interval integrals.
   without lower semicontinuity.
 * `TauCeti.moreauYosida_add_lintegral_descendingSlope_le`: the discrete energy–dissipation
   inequality `φ_σ(x) + ∫₀^σ |∂φ|²(y_r) / 2 dr ≤ φ(x)`.
+* `TauCeti.apply_add_add_lintegral_descendingSlope_le`: the same inequality for a resolvent step
+  `z ∈ J_τ x`, as `φ z + d(x, z)² / (2τ) + ∫₀^τ |∂φ|²(y_r) / 2 dr ≤ φ(x)`, with no finiteness
+  hypotheses.
 
 ## References
 
@@ -501,6 +504,27 @@ theorem moreauYosida_add_lintegral_descendingSlope_le (hσ : 0 < σ)
   simp only [ENNReal.toReal_div, ENNReal.toReal_pow, ENNReal.coe_toReal,
     Real.coe_toNNReal _ hr.1.le, ENNReal.toReal_ofNat, g]
   ring
+
+/-- **Discrete energy–dissipation inequality for one resolvent step.** Let `z ∈ J_τ x` be a
+resolvent step with time step `τ > 0`, and let `y r ∈ J_r x` be a resolvent step for every time
+`r ∈ (0, τ]`. Then `φ z + d(x, z)² / (2τ) + ∫₀^τ |∂φ|²(y r) / 2 dr ≤ φ(x)`, where `|∂φ|` is the
+descending slope. Unlike `TauCeti.moreauYosida_add_lintegral_descendingSlope_le`, no finiteness
+hypothesis is needed: the inequality is trivial when `φ x = ⊤` or `φ z = ⊥`. -/
+theorem apply_add_add_lintegral_descendingSlope_le {τ : ℝ≥0} (hτ : 0 < τ) {z : X}
+    (hz : z ∈ moreauYosidaResolvent φ τ x)
+    (hy : ∀ r ∈ Ioc 0 (τ : ℝ), y r ∈ moreauYosidaResolvent φ r.toNNReal x) :
+    φ z + (edist x z ^ 2 / (2 * τ) : ℝ≥0∞) +
+      ((∫⁻ r in Ioc 0 (τ : ℝ), descendingSlope φ (y r) ^ 2 / 2 : ℝ≥0∞) : EReal) ≤ φ x := by
+  by_cases hx : φ x = ⊤
+  · exact hx ▸ le_top
+  by_cases hz' : φ z = ⊥
+  · simp [hz']
+  have hφτ := (mem_moreauYosidaResolvent_iff_eq_moreauYosida.1 hz).2
+  have hτ' : moreauYosida φ (τ : ℝ).toNNReal x ≠ ⊥ := by
+    rw [Real.toNNReal_coe, ← hφτ]
+    exact fun h ↦ (EReal.add_eq_bot_iff.1 h).elim hz' (EReal.coe_ennreal_ne_bot _)
+  simpa only [Real.toNNReal_coe, ← hφτ] using
+    moreauYosida_add_lintegral_descendingSlope_le (NNReal.coe_pos.2 hτ) hy hx hτ'
 
 end EMetricSpace
 
