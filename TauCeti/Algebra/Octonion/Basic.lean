@@ -61,7 +61,8 @@ nothing more.
 * `TauCeti.Octonion.self_mul_conj` and `TauCeti.Octonion.conj_mul_self`:
   `x * conj x = conj x * x = N x • 1`.
 * `TauCeti.Octonion.norm_mul`: the norm is **multiplicative**, so `𝕆` is a composition algebra.
-* `TauCeti.Octonion.trace_mul_assoc`: the trace of a triple product is independent of bracketing.
+* `TauCeti.Octonion.trace_mul_assoc` and `TauCeti.Octonion.trace_mul_cycle`: the trace of a
+  triple product is independent of bracketing and invariant under cyclic permutation.
 * `TauCeti.Octonion.polar_normQuadraticForm_mul_left` and
   `TauCeti.Octonion.polar_normQuadraticForm_mul_right`: multiplication is adjoint to multiplication
   by the conjugate for the polar form of the norm. The corresponding associated-form identities
@@ -70,7 +71,8 @@ nothing more.
   `QuadraticMap.polar` API supplies the associated symmetric bilinear form. That form is visible
   inside the algebra as `TauCeti.Octonion.mul_conj_add_mul_conj`,
   `x * conj y + y * conj x = QuadraticMap.polar (normQuadraticForm R) x y • 1`, and it is the trace
-  form of the composition algebra, `TauCeti.Octonion.trace_mul_conj`.
+  form of the composition algebra, `TauCeti.Octonion.trace_mul_conj`; when `2` is invertible the
+  associated form is half of it, `TauCeti.Octonion.associated_normQuadraticForm_apply`.
 * `TauCeti.Octonion.left_alternative`, `TauCeti.Octonion.right_alternative` and
   `TauCeti.Octonion.flexible`: `𝕆` is **alternative** and **flexible**.
 * `TauCeti.Octonion.conj_mul_mul` and `TauCeti.Octonion.mul_mul_conj`: multiplication by
@@ -476,6 +478,12 @@ theorem trace_mul_assoc (x y z : Octonion R) : trace (x * y * z) = trace (x * (y
     triple_product_permutation z.w x.w y.w, triple_product_permutation z.v x.v y.v]
   ring
 
+/-- **The trace of a triple octonion product is invariant under cyclic permutation** of the
+factors, `trace (x * y * z) = trace (z * x * y)`: it is symmetric in a product and independent of
+bracketing. Not a `simp` lemma, since it would loop. -/
+theorem trace_mul_cycle (x y z : Octonion R) : trace (x * y * z) = trace (z * x * y) := by
+  rw [trace_mul_comm, trace_mul_assoc]
+
 /-- **The norm** `⟨a, b, v, w⟩ ↦ a * b - v ⬝ᵥ w` of a vector matrix: the determinant of the matrix,
 and the norm form of the composition algebra `𝕆`. -/
 def norm (x : Octonion R) : R := x.a * x.b - x.v ⬝ᵥ x.w
@@ -615,6 +623,13 @@ theorem associated_normQuadraticForm_mul_right [Invertible (2 : R)] (x y z : Oct
   simpa only [QuadraticMap.associated_apply, QuadraticMap.polar] using
     congrArg (fun t : R => ⅟(2 : Module.End R R) • t)
       (polar_normQuadraticForm_mul_right x y z)
+
+/-- **The associated form of the norm is half the trace form** when `2` is invertible:
+`QuadraticMap.associated (normQuadraticForm R) x y = ⅟2 * trace (x * conj y)`. -/
+theorem associated_normQuadraticForm_apply [Invertible (2 : R)] (x y : Octonion R) :
+    QuadraticMap.associated (normQuadraticForm R) x y = ⅟2 * trace (x * conj y) := by
+  rw [trace_mul_conj, QuadraticMap.associated_apply, Module.End.smul_def,
+    QuadraticMap.half_moduleEnd_apply_eq_half_smul, smul_eq_mul, QuadraticMap.polar]
 
 /-- **The polar form of the norm is visible inside the algebra**: `x * conj y + y * conj x` is the
 scalar `QuadraticMap.polar (normQuadraticForm R) x y · 1`. Together with
