@@ -12,13 +12,16 @@ public import Mathlib.RingTheory.IsTensorProduct
 import Mathlib.RingTheory.TensorProduct.Finite
 
 /-!
-# Algebra homomorphisms out of a pushout over the base change
+# Algebra homomorphisms and ideals under pushout
 
 Let `S'` be the pushout of `R → S` along `R → R'`, as expressed by `Algebra.IsPushout R S R' S'`.
 Mathlib's `Algebra.pushoutDesc` describes the `R`-algebra homomorphisms out of `S'`. This file
 describes the `R'`-algebra homomorphisms out of `S'`: they are determined by their restrictions to
 `S`, and every `R`-algebra homomorphism out of `S` extends to one. It also records the naturality
 of `Algebra.IsPushout.cancelBaseChangeAlg` in the coefficient algebra.
+
+For an ideal of `R'`, its extension to the pushout `S'` is spanned over `S` by its image.
+This identifies extension of ideals with extension of the underlying submodule.
 
 ## Main definitions
 
@@ -30,6 +33,8 @@ of `Algebra.IsPushout.cancelBaseChangeAlg` in the coefficient algebra.
 * `Algebra.IsPushout.lift_algebraMap`: `lift f` restricts to `f` on `S`.
 * `Algebra.IsPushout.algHom_ext'`: `R'`-algebra homomorphisms out of `S'` agreeing on `S` are
   equal.
+* `Ideal.restrictScalars_map_eq_span`: an extended ideal is spanned over the base
+  change by the image of the original ideal.
 * `Module.Finite.of_isPushout`, `Module.Projective.of_isPushout`,
   `Algebra.FinitePresentation.of_isPushout`: finiteness, projectivity and finite presentation are
   stable under pushout.
@@ -47,7 +52,7 @@ section CommSemiring
 
 variable {R S R' S' : Type*} [CommSemiring R] [CommSemiring S] [CommSemiring R'] [CommSemiring S']
   [Algebra R S] [Algebra R R'] [Algebra R' S'] [Algebra R S'] [Algebra S S'] [IsScalarTower R R' S']
-  [IsScalarTower R S S'] [IsPushout R S R' S']
+  [IsScalarTower R S S'] [h : IsPushout R S R' S']
 
 section Lift
 
@@ -74,6 +79,35 @@ theorem algHom_ext' {f g : S' →ₐ[R'] A}
   AlgHom.restrictScalars_injective R <| IsPushout.algHom_ext (R' := R') S' (by ext; simp) h
 
 end Lift
+
+open Submodule in
+include h in
+/-- In a pushout `S' = S ⊗[R] R'`, the extension of an ideal `J` of `R'` is spanned over `S` by
+the image of `J`. -/
+theorem _root_.Ideal.restrictScalars_map_eq_span (J : Ideal R') :
+    (Ideal.map (algebraMap R' S') J).restrictScalars S = span S (algebraMap R' S' '' J) := by
+  refine le_antisymm (fun y hy ↦ ?_) (span_le.2 fun _ ⟨x, hx, hxy⟩ ↦ hxy ▸ J.mem_map_of_mem _ hx)
+  -- the `S`-span of the image of `J` is stable under multiplication by `S'`
+  have key (b : S') {y : S'} (hy : y ∈ span S (algebraMap R' S' '' J)) :
+      b * y ∈ span S (algebraMap R' S' '' J) := by
+    induction b using h.out.inductionOn with
+    | tmul b =>
+      induction hy using span_induction with
+      | mem y hy =>
+        obtain ⟨x, hx, rfl⟩ := hy
+        exact subset_span ⟨b * x, J.mul_mem_left b hx, by simp⟩
+      | zero => simp
+      | add y z _ _ hy hz => simpa [mul_add] using add_mem hy hz
+      | smul a y _ hy => simpa [mul_smul_comm] using smul_mem _ a hy
+    | smul a b hb => simpa [smul_mul_assoc] using smul_mem _ a hb
+    | add b c hb hc => simpa [add_mul] using add_mem hb hc
+  induction hy using span_induction with
+  | mem y hy =>
+    obtain ⟨x, hx, rfl⟩ := hy
+    exact subset_span ⟨x, hx, rfl⟩
+  | zero => exact zero_mem _
+  | add y z _ _ hy hz => exact add_mem hy hz
+  | smul b y _ hy => exact key b hy
 
 section Finiteness
 
