@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Polynomial.SymmetricPower
 public import TauCeti.Data.Fintype.Fiber
+public import TauCeti.RingTheory.Polynomial.Roots
 
 import TauCeti.Topology.MetricSpace.SeparatedBalls
 
@@ -36,9 +37,14 @@ continuous labelling of the roots; the matching is made separately for each near
   of `g` as the multiplicity of its centre, and no root of `g` lies outside the discs.
 * `Polynomial.Monic.exists_countP_roots_mem_ball_eq_rootMultiplicity`: the resulting disc form of
   continuity of roots.
+* `Polynomial.Monic.exists_rel_roots_norm_sub_lt`: the multiset form of continuity of roots, the
+  root multisets of `f` and `g` being related by `Multiset.Rel` for `‖z - w‖ < ε`.
+* `Polynomial.Monic.rel_roots_iff_countP_roots_mem_ball`: when the `ε`-discs around the distinct
+  roots of `f` are disjoint, the multiset form and the disc form are equivalent.
 * `Polynomial.eventually_exists_C_mul_prod_X_sub_C_norm_sub_lt`: the matching for a family of
   polynomials of fixed degree with continuous coefficients, normalized by its nonvanishing leading
   coefficient.
+* `Polynomial.eventually_rel_roots_norm_sub_lt`: the multiset form of the same matching.
 * `Polynomial.eventually_exists_bijOn_roots_toFinset`: if moreover no nearby member of the family
   has more distinct roots than the central one, the distinct roots of nearby members correspond
   bijectively to those of the central one, with matched roots close and of equal multiplicity.
@@ -161,6 +167,21 @@ theorem Monic.exists_prod_X_sub_C_norm_sub_lt_iff {f g : K[X]} (hf : f.Monic) (h
     rw [Function.comp_apply, hσi, norm_sub_rev]
     exact hφε _ (hb_mem i)
 
+open scoped Classical in
+/-- **The multiset and disc forms of a matching agree.** Let `f` and `g` be monic of the same
+degree, and suppose the `ε`-discs around the distinct roots of `f` are pairwise disjoint. Then the
+root multisets of `f` and `g` are related by `Multiset.Rel` for the relation `‖z - w‖ < ε` exactly
+when each disc around a root `z` of `f` contains `rootMultiplicity z f` roots of `g`, counted with
+multiplicity, and every root of `g` lies in one of these discs. -/
+theorem Monic.rel_roots_iff_countP_roots_mem_ball {f g : K[X]} (hf : f.Monic) (hg : g.Monic)
+    (hdeg : g.natDegree = f.natDegree) {ε : ℝ}
+    (hsep : ∀ z ∈ f.roots, ∀ w ∈ f.roots, z ≠ w → 2 * ε ≤ ‖z - w‖) :
+    f.roots.Rel (fun z w => ‖z - w‖ < ε) g.roots ↔
+      (∀ z ∈ f.roots, g.roots.countP (· ∈ ball z ε) = f.rootMultiplicity z) ∧
+        ∀ w ∈ g.roots, ∃ z ∈ f.roots, ‖w - z‖ < ε :=
+  (hf.rel_roots_iff_exists_prod_X_sub_C hg (IsAlgClosed.splits f) (IsAlgClosed.splits g)).trans
+    (hf.exists_prod_X_sub_C_norm_sub_lt_iff hg hdeg hsep)
+
 omit [IsAlgClosed K] in
 /-- **Distinct roots under a matching of roots.** Let `a` and `b` enumerate the roots of `f` and
 `g` with multiplicity, with `‖a i - b i‖ < ρ`, where the distinct roots of `f` are more than `2 * ρ`
@@ -252,6 +273,18 @@ theorem Monic.exists_countP_roots_mem_ball_eq_rootMultiplicity {f : K[X]} (hf : 
   exact ⟨δ, hδ, fun g hg hdeg hcoeff =>
     (hf.exists_prod_X_sub_C_norm_sub_lt_iff hg hdeg hsep).1 (h g hg hdeg hcoeff)⟩
 
+/-- **Continuity of roots as multisets.** For a monic polynomial `f` and `ε > 0`, every monic
+polynomial `g` of the same degree with coefficients close enough to those of `f` has its root
+multiset related to that of `f` by `Multiset.Rel` for the relation `‖z - w‖ < ε`: the roots, with
+multiplicity, pair off one-to-one with paired roots at distance less than `ε`. -/
+theorem Monic.exists_rel_roots_norm_sub_lt {f : K[X]} (hf : f.Monic) {ε : ℝ} (hε : 0 < ε) :
+    ∃ δ > 0, ∀ g : K[X], g.Monic → g.natDegree = f.natDegree →
+      (∀ i, ‖g.coeff i - f.coeff i‖ < δ) → f.roots.Rel (fun z w => ‖z - w‖ < ε) g.roots := by
+  obtain ⟨δ, hδ, h⟩ := hf.exists_prod_X_sub_C_norm_sub_lt hε
+  exact ⟨δ, hδ, fun g hg hdeg hcoeff =>
+    (hf.rel_roots_iff_exists_prod_X_sub_C hg (IsAlgClosed.splits f) (IsAlgClosed.splits g)).2
+      (h g hg hdeg hcoeff)⟩
+
 /-- **Continuity of roots in a family.** Let `F x` be polynomials of degree `d`, near `x₀`, whose
 coefficients of index at most `d` are continuous at `x₀`. Then for `x` near `x₀` the roots of
 `F x` are matched bijectively, with multiplicity, with those of `F x₀`: there are enumerations `a`
@@ -276,6 +309,31 @@ theorem eventually_exists_C_mul_prod_X_sub_C_norm_sub_lt {B : Type*} [Topologica
   exact ⟨a, b, (C_mul_prod_X_sub_C_eq_of_ofFn_eq hdeg₀ ha).symm,
     (C_mul_prod_X_sub_C_eq_of_ofFn_eq hx hb).symm, hab⟩
 
+omit [IsAlgClosed K] [ProperSpace K] in
+/-- The roots of a polynomial of degree `d` presented as its leading coefficient times the product
+of the linear factors of `c : Fin d → K` are the values of `c`. -/
+private theorem roots_eq_map_of_eq_C_mul_prod_X_sub_C {d : ℕ} {p : K[X]} {c : Fin d → K}
+    (hp : p.degree = d) (hpc : p = C p.leadingCoeff * ∏ i, (X - C (c i))) :
+    p.roots = Finset.univ.val.map c := by
+  have hlc : p.leadingCoeff ≠ 0 := leadingCoeff_ne_zero.2 (ne_zero_of_degree_gt (n := ⊥)
+    (hp ▸ WithBot.bot_lt_coe d))
+  rw [hpc]
+  exact roots_C_mul_prod_X_sub_C _ c hlc
+
+/-- **Continuity of roots in a family, as multisets.** Let `F x` be polynomials of degree `d`, near
+`x₀`, whose coefficients of index at most `d` are continuous at `x₀`. Then for `x` near `x₀` the
+root multisets of `F x₀` and `F x` are related by `Multiset.Rel` for the relation
+`‖z - w‖ < ε`. -/
+theorem eventually_rel_roots_norm_sub_lt {B : Type*} [TopologicalSpace B]
+    {F : B → K[X]} {x₀ : B} {d : ℕ} (hF : ∀ i ≤ d, ContinuousAt (fun x => (F x).coeff i) x₀)
+    (hdeg : ∀ᶠ x in 𝓝 x₀, (F x).degree = d) {ε : ℝ} (hε : 0 < ε) :
+    ∀ᶠ x in 𝓝 x₀, (F x₀).roots.Rel (fun z w => ‖z - w‖ < ε) (F x).roots := by
+  filter_upwards [eventually_exists_C_mul_prod_X_sub_C_norm_sub_lt hF hdeg hε, hdeg]
+    with x ⟨a, b, hfa, hgb, hab⟩ hx
+  exact Multiset.rel_iff_exists_fin.2 ⟨d, a, b,
+    roots_eq_map_of_eq_C_mul_prod_X_sub_C hdeg.self_of_nhds hfa,
+    roots_eq_map_of_eq_C_mul_prod_X_sub_C hx hgb, hab⟩
+
 open scoped Classical in
 /-- **Distinct roots in a family.** Let `F x` be polynomials of degree `d`, near `x₀`, whose
 coefficients of index at most `d` are continuous at `x₀`, and suppose that near `x₀` the polynomial
@@ -296,15 +354,9 @@ theorem eventually_exists_bijOn_roots_toFinset {B : Type*} [TopologicalSpace B]
     (T := (F x₀).roots.toFinset) (U := fun _ => Set.univ) fun _ _ => univ_mem
   filter_upwards [eventually_exists_C_mul_prod_X_sub_C_norm_sub_lt hF hdeg (lt_min hε hr), hdeg,
     hcard] with x ⟨a, b, hfa, hgb, hab⟩ hx hxcard
-  have hroots : ∀ {p : K[X]} (c : Fin d → K), p.degree = d →
-      p = C p.leadingCoeff * ∏ i, (X - C (c i)) → p.roots = Finset.univ.val.map c := by
-    intro p c hp hpc
-    have hlc : p.leadingCoeff ≠ 0 := leadingCoeff_ne_zero.2 (ne_zero_of_degree_gt (n := ⊥)
-      (hp ▸ WithBot.bot_lt_coe d))
-    rw [hpc, roots_C_mul _ hlc, Finset.prod_eq_multiset_prod,
-      ← roots_multiset_prod_X_sub_C (Finset.univ.val.map c), Multiset.map_map, Function.comp_def]
   obtain ⟨e, he, hed⟩ := exists_bijOn_roots_toFinset_of_norm_sub_lt
-    (hroots a hdeg.self_of_nhds hfa) (hroots b hx hgb) hab
+    (roots_eq_map_of_eq_C_mul_prod_X_sub_C hdeg.self_of_nhds hfa)
+    (roots_eq_map_of_eq_C_mul_prod_X_sub_C hx hgb) hab
     (fun z hz w hw hzw => by linarith [hsep z hz w hw hzw, min_le_right ε r]) hxcard
   exact ⟨e, he, fun z hz => ⟨(hed z hz).1.trans_le (min_le_left ε r), (hed z hz).2⟩⟩
 
