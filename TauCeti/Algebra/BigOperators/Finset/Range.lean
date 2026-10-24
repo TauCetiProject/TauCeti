@@ -295,18 +295,19 @@ theorem sum_sum_range_split_blocks {N : Type*} [AddCommMonoid N] (l n : ℕ) (g 
     have h₃ : ∑ d ∈ range (l - p + 1), (if p + d ≤ l then g p d else 0) =
         ∑ d ∈ range (l - p + 1), g p d :=
       sum_congr rfl fun d hd ↦ ite_eq_left (by rw [mem_range] at hd; omega)
-    rw [show l + 1 + n + 1 = (l - p + 1) + (n + 1) + p by omega,
-      sum_range_add (fun d ↦ g p d) (l - p + 1 + (n + 1)) p,
-      sum_range_add (fun d ↦ g p d) (l - p + 1) (n + 1),
-      show l + 1 + 1 = (l - p + 1) + (p + 1) by omega,
+    -- Cut the lengths of the blocks starting at `p` where they reach position `l` and the end.
+    have hlen : l + 1 + n + 1 = (l - p + 1) + (n + 1) + p := by omega
+    have hlen' : l + 1 + 1 = (l - p + 1) + (p + 1) := by omega
+    rw [hlen, sum_range_add (fun d ↦ g p d) (l - p + 1 + (n + 1)) p,
+      sum_range_add (fun d ↦ g p d) (l - p + 1) (n + 1), hlen',
       sum_range_add (fun d ↦ if p + d ≤ l then g p d else 0) (l - p + 1) (p + 1), h₁, h₂, h₃,
       add_zero, add_zero, add_comm]
   · refine sum_congr rfl fun p hp ↦ ?_
     rw [mem_range] at hp
     have h₁ : ∑ k ∈ range (l + 1), g (l + 1 + p) (n + 1 + k) = 0 :=
       sum_eq_zero fun k _ ↦ hg _ _ (by omega)
-    rw [show l + 1 + n + 1 = (n + 1) + (l + 1) by omega,
-      sum_range_add (fun d ↦ g (l + 1 + p) d) (n + 1) (l + 1), h₁, add_zero]
+    have hlen : l + 1 + n + 1 = (n + 1) + (l + 1) := by omega
+    rw [hlen, sum_range_add (fun d ↦ g (l + 1 + p) d) (n + 1) (l + 1), h₁, add_zero]
 
 
 

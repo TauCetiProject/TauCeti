@@ -153,9 +153,8 @@ theorem concatLetter_of_tprod {l n : ℕ} (w : Fin l → A) (x : A) (v : Fin n �
         of R A n (PiTensorProduct.tprod R v)) =
       ReducedTensorWords.of R A ⟨l + (n + 1), by omega⟩
         (PiTensorProduct.tprod R (Fin.append w (Fin.cons x v))) := by
-  rw [concatLetter_tmul, prepend_of_tprod, reducedInclusion_of, of_def, of_def,
-    DirectSum.lof_eq_of, DirectSum.lof_eq_of, DirectSum.of_mul_of, TensorPower.tprod_mul_tprod,
-    ← DirectSum.lof_eq_of R, ← of_def, reducedProjection_of_of_pos R A (by simp)]
+  rw [concatLetter_tmul, prepend_of_tprod, reducedInclusion_of, of_tprod_mul_of_tprod,
+    reducedProjection_of_of_pos R A (by simp)]
 
 /-- Concatenation around a letter, with the letters of the result given by position. -/
 private theorem concatLetter_of_tprod_eq {l n N : ℕ} (w : Fin l → A) (x : A) (v : Fin n → A)

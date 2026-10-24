@@ -179,6 +179,13 @@ theorem one_eq_of_zero :
       of R M 0 (PiTensorProduct.tprod R fun i : Fin 0 ↦ (i.elim0 : M)) := by
   rw [DirectSum.one_def, TensorPower.gOne_def, of_def, DirectSum.lof_eq_of]
 
+/-- The product of two pure tensor words appends their letter tuples. -/
+theorem of_tprod_mul_of_tprod {l n : ℕ} (x : Fin l → M) (y : Fin n → M) :
+    of R M l (PiTensorProduct.tprod R x) * of R M n (PiTensorProduct.tprod R y) =
+      of R M (l + n) (PiTensorProduct.tprod R (Fin.append x y)) := by
+  rw [of_def, of_def, of_def, DirectSum.lof_eq_of, DirectSum.lof_eq_of, DirectSum.lof_eq_of,
+    DirectSum.of_mul_of, TensorPower.tprod_mul_tprod]
+
 /-- The counit is a retraction of the coaugmentation given by the algebra map. -/
 @[simp]
 theorem counit_comp_algebraMap :
