@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Boundary.Collar.Local
+import Mathlib.Algebra.Order.Interval.Set.Group
 import TauCeti.Topology.ConnectedComponents
 
 /-!
@@ -71,10 +72,6 @@ open scoped Manifold
 open TauCeti.EuclideanHalfSpace
 
 namespace TauCeti
-
-/-- A point of `[t - δ, t + δ]` lies within `δ` of `t`. -/
-private theorem abs_sub_le_of_mem_Icc {s t δ : ℝ} (hs : s ∈ Icc (t - δ) (t + δ)) : |s - t| ≤ δ :=
-  abs_sub_le_iff.2 ⟨by linarith [hs.2], by linarith [hs.1]⟩
 
 section Chart
 
@@ -189,9 +186,10 @@ theorem ModelWithCorners.mem_boundary_euclideanHalfSpace_one_iff
     {e : OpenPartialHomeomorph M (EuclideanHalfSpace 1)} {y : M} (hy : y ∈ e.source) :
     y ∈ (𝓡∂ 1).boundary M ↔ (e y).1 0 = 0 := by
   have hy' := mem_chart_source (EuclideanHalfSpace 1) y
-  rw [ModelWithCorners.boundary, mem_ofPred_eq, ModelWithCorners.isBoundaryPoint_iff,
-    frontier_range_modelWithCornersEuclideanHalfSpace, mem_ofPred_eq, extChartAt_coe,
-    comp_apply, modelWithCornersEuclideanHalfSpace_toFun, eq_comm]
+  simp only [ModelWithCorners.boundary, mem_ofPred_eq, ModelWithCorners.isBoundaryPoint_iff,
+    frontier_range_modelWithCornersEuclideanHalfSpace, extChartAt_coe, comp_apply,
+    eq_comm (a := (0 : ℝ))]
+  rw [modelWithCornersEuclideanHalfSpace_toFun]
   exact ⟨coord_eq_zero_of_coord_eq_zero hy' hy, coord_eq_zero_of_coord_eq_zero hy hy'⟩
 
 /-- A point of a chart domain which is not a boundary point has positive coordinate. -/
@@ -356,7 +354,8 @@ private theorem forall_mem_coord_lt_of_isPreconnected [T2Space M]
     ∀ z ∈ K, z ∈ e.source ∧ |(e z).1 0 - t| < δ := by
   set W := e.source ∩ (fun z ↦ (e z).1 0) ⁻¹' {s | |s - t| < δ}
   set A := (fun s ↦ e.symm (normalRay s)) '' Icc (t - δ) (t + δ)
-  have hIcc : ∀ s ∈ Icc (t - δ) (t + δ), |s - t| ≤ δ := fun _ ↦ abs_sub_le_of_mem_Icc
+  have hIcc : ∀ s ∈ Icc (t - δ) (t + δ), |s - t| ≤ δ := fun s hs ↦
+    (abs_sub_comm s t).trans_le (mem_Icc_iff_abs_le.2 hs)
   have hW : IsOpen W := continuousOn_coord.isOpen_inter_preimage e.open_source
     (isOpen_lt (by fun_prop) continuous_const)
   have hA : IsClosed A := (isCompact_Icc.image_of_continuousOn
@@ -429,7 +428,7 @@ private theorem exists_cutSet [CompactSpace M] [T2Space M] :
         absurd (mem_iUnion₂.2 ⟨x, hxS, hze, hzδ⟩ : z ∈ P) (connectedComponentIn_subset _ _ hz))
       (mem_connectedComponentIn hyP) hy hyδ
     refine ⟨e x, (e x x).1 0 - δ x, (e x x).1 0 + δ x, fun s hs ↦ hδt x s
-      (abs_sub_le_of_mem_Icc hs), fun z hz ↦ ⟨(hball z hz).1, ?_⟩⟩
+      ((abs_sub_comm _ _).trans_le (mem_Icc_iff_abs_le.2 hs)), fun z hz ↦ ⟨(hball z hz).1, ?_⟩⟩
     have := abs_sub_lt_iff.1 (hball z hz).2
     exact ⟨by linarith, by linarith⟩
 
@@ -465,7 +464,7 @@ private theorem exists_isSides [T1Space M] {P : Set M} (hP : P.Finite) {p : M}
   have hγ : ∀ s ∈ Icc (t - η) (t + η), normalRay s ∈ e.target ∧
       (e (e.symm (normalRay s))).1 0 = s ∧ (e.symm (normalRay s) ∈ P → s = t) := by
     intro s hs
-    obtain ⟨hst, hsV⟩ := hηV s (abs_sub_le_of_mem_Icc hs)
+    obtain ⟨hst, hsV⟩ := hηV s ((abs_sub_comm _ _).trans_le (mem_Icc_iff_abs_le.2 hs))
     have hcoord := coord_symm_normalRay (by linarith [hs.1]) hst
     refine ⟨hst, hcoord, fun hsP ↦ ?_⟩
     by_contra hne
