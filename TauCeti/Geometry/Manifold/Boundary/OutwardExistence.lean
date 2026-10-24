@@ -32,8 +32,15 @@ variable {n : ℕ} {M : Type*} [TopologicalSpace M]
   [T2Space M] [SigmaCompactSpace M]
   [IsManifold (𝓡∂ (n + 1)) ∞ M]
 
-local instance : ContMDiffVectorBundle ∞ (EuclideanSpace ℝ (Fin (n + 1)))
-    (TangentSpace (𝓡∂ (n + 1)) : M → Type _) (𝓡∂ (n + 1)) := inferInstance
+omit [T2Space M] [SigmaCompactSpace M] in
+private theorem tangent_trivializationAt_apply {x y : M}
+    (v : TangentSpace (𝓡∂ (n + 1)) y) :
+    (trivializationAt (EuclideanSpace ℝ (Fin (n + 1)))
+      (TangentSpace (𝓡∂ (n + 1))) x ⟨y, v⟩).2 =
+      tangentCoordChange (𝓡∂ (n + 1)) y x y v := by
+  rw [TangentBundle.trivializationAt_apply]
+  change tangentCoordChange (𝓡∂ (n + 1)) y x y v = _
+  rfl
 
 omit [T2Space M] [SigmaCompactSpace M] in
 private theorem local_extension_outward {x : (𝓡∂ (n + 1)).boundary M}
@@ -52,28 +59,23 @@ private theorem local_extension_outward {x : (𝓡∂ (n + 1)).boundary M}
     hxy
     (g y)]
   have hext : tangentCoordChange (𝓡∂ (n + 1)) y x y (g y) = v₀ := by
-    let t := trivializationAt (EuclideanSpace ℝ (Fin (n + 1)))
-      (TangentSpace (𝓡∂ (n + 1))) (x : M)
-    have hybase : y ∈ t.baseSet := by
-      simpa [t] using hy
-    have hvalue : (t ⟨(x : M), v₀⟩).2 = v₀ := by
-      rw [TangentBundle.trivializationAt_apply]
-      -- Read the trivialization at its centre as the identity tangent coordinate change.
-      change tangentCoordChange (𝓡∂ (n + 1)) (x : M) (x : M) (x : M) v₀ = v₀
+    have hybase : y ∈ (trivializationAt (EuclideanSpace ℝ (Fin (n + 1)))
+        (TangentSpace (𝓡∂ (n + 1))) (x : M)).baseSet := by
+      simpa using hy
+    have hvalue : (trivializationAt (EuclideanSpace ℝ (Fin (n + 1)))
+        (TangentSpace (𝓡∂ (n + 1))) (x : M) ⟨(x : M), v₀⟩).2 = v₀ := by
+      rw [tangent_trivializationAt_apply]
       rw [tangentCoordChange_self (x := (x : M)) (mem_extChartAt_source (I := 𝓡∂ (n + 1)) (x : M))]
-    -- `TangentBundle.trivializationAt_apply` identifies this coordinate with
-    -- `tangentCoordChange`; the change exposes that definitional identification.
-    change (t (⟨y, g y⟩ : TangentBundle (𝓡∂ (n + 1)) M)).2 = v₀
+    rw [← tangent_trivializationAt_apply]
     exact (FiberBundle.trivializationAt_extend_apply hybase v₀).trans hvalue
   rw [hext]
   simp [v₀]
 
 /-- Every smooth finite-dimensional Hausdorff sigma-compact half-space manifold has a smooth field
 pointing outward along its boundary. -/
-theorem exists_isOutwardPointing :
+theorem exists_isOutwardPointingField :
     ∃ v : (x : M) → TangentSpace (𝓡∂ (n + 1)) x,
-      ContMDiff (𝓡∂ (n + 1)) (𝓡∂ (n + 1)).tangent ∞ (T% v) ∧
-        ∀ x ∈ (𝓡∂ (n + 1)).boundary M, IsOutwardPointing x (v x) := by
+      IsOutwardPointingField v := by
   let v₀ : EuclideanSpace ℝ (Fin (n + 1)) := -EuclideanSpace.single 0 1
   let B := (𝓡∂ (n + 1)).boundary M
   let t : (y : M) → Set (TangentSpace (𝓡∂ (n + 1)) y) :=
@@ -113,8 +115,6 @@ theorem exists_isOutwardPointing :
         exact (hy hby).elim
   obtain ⟨s, hs⟩ := exists_contMDiffSection_forall_mem_convex_of_local
     (𝓡∂ (n + 1)) (TangentSpace (𝓡∂ (n + 1))) t ht hloc
-  refine ⟨s, s.contMDiff, ?_⟩
-  intro y hy
-  exact hs y hy
+  exact ⟨s, IsOutwardPointingField.intro s.contMDiff fun y hy ↦ hs y hy⟩
 
 end TauCeti

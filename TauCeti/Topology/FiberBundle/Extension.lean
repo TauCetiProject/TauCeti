@@ -36,7 +36,6 @@ theorem trivializationAt_extend_apply {x y : B}
     (hy : y ∈ (trivializationAt F E x).baseSet) (v₀ : E x) :
     ((trivializationAt F E x) ⟨y, FiberBundle.extend F v₀ y⟩).2 =
       ((trivializationAt F E x) ⟨x, v₀⟩).2 := by
-  let t := trivializationAt F E x
   simp only [FiberBundle.extend]
   rwa [Trivialization.apply_mk_symm]
 
