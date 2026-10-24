@@ -38,7 +38,7 @@ Characteristic two is needed only of the module, not of the scalars: the identit
 that every element of `M` is its own additive inverse, which holds over a ring of characteristic two
 (`TauCeti.add_self_eq_zero_of_charTwo`) and also, for instance, for a module of `𝔽₂`-valued
 cochains regarded over `ℤ`. A tensor power with at least one factor then inherits the property
-(`TauCeti.PiTensorProduct.add_self_eq_zero`), so terms appearing twice cancel.
+(`PiTensorProduct.add_self_eq_zero`), so terms appearing twice cancel.
 
 A contraction also passes to the tensor power. If `h` is a homotopy with `d h + h d = 1 - e`, where
 `e` commutes with `d` (typically `e = ι ∘ π` for an augmentation `ι` and a retraction `π`), then for
@@ -193,7 +193,7 @@ theorem slotSum_comp_slotSum (hM : ∀ m : M, m + m = 0) {f : Module.End R M} (h
     rw [← LinearMap.comp_apply, hf, LinearMap.zero_apply, MultilinearMap.map_update_zero]
   · simp only [update_of_ne hij.symm, update_of_ne hij]
     have : Nonempty ι := ⟨i⟩
-    rw [update_comm hij, add_self_eq_zero hM]
+    rw [update_comm hij, PiTensorProduct.add_self_eq_zero _ hM]
 
 end SlotSum
 
@@ -371,7 +371,7 @@ private theorem slotSum_slotHomotopy_cross (hM : ∀ m : M, m + m = 0) {d e h : 
         PiTensorProduct.map (update (fun _ ↦ LinearMap.id) k d) = 0 := by
   rw [← PiTensorProduct.map_mul, ← PiTensorProduct.map_mul]
   refine (congrArg (· + _) (congrArg PiTensorProduct.map (funext fun j ↦ ?_))).trans
-    (LinearMap.ext fun x ↦ have : Nonempty ι := ⟨i⟩; add_self_eq_zero hM _)
+    (LinearMap.ext fun x ↦ have : Nonempty ι := ⟨i⟩; PiTensorProduct.add_self_eq_zero _ hM)
   rcases eq_or_ne j k with rfl | hjk
   · simp only [update_self, update_of_ne hki]
     split_ifs

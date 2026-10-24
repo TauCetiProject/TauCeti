@@ -17,7 +17,7 @@ appearing twice cancel in sign-free constructions on tensor powers.
 
 ## Main results
 
-* `TauCeti.PiTensorProduct.add_self_eq_zero`: if every element of `M` is its own additive inverse,
+* `PiTensorProduct.add_self_eq_zero`: if every element of `M` is its own additive inverse,
   so is every element of a tensor power of `M` with at least one factor.
 -/
 
@@ -28,22 +28,22 @@ open scoped TensorProduct
 
 universe uι uR uM
 
-namespace TauCeti.PiTensorProduct
+namespace PiTensorProduct
 
 variable {ι : Type uι} {R : Type uR} {M : Type uM} [CommSemiring R] [AddCommMonoid M] [Module R M]
 
 /-- If every element of `M` is its own additive inverse, then so is every element of a tensor
 power of `M` with at least one factor. With no factors the tensor power is `R`, about which the
 hypothesis on `M` says nothing. -/
-theorem add_self_eq_zero [Nonempty ι] (hM : ∀ m : M, m + m = 0) (x : ⨂[R] _ : ι, M) :
+theorem add_self_eq_zero [Nonempty ι] (x : ⨂[R] _ : ι, M) (hM : ∀ m : M, m + m = 0) :
     x + x = 0 := by
   classical
   induction x using PiTensorProduct.induction_on with
   | smul_tprod r m =>
     obtain ⟨i⟩ := ‹Nonempty ι›
-    have h := (PiTensorProduct.tprod R).map_update_add m i (m i) (m i)
+    have h := (tprod R).map_update_add m i (m i) (m i)
     rw [update_eq_self, hM, MultilinearMap.map_update_zero] at h
     rw [← smul_add, ← h, smul_zero]
   | add x y hx hy => rw [add_add_add_comm, hx, hy, add_zero]
 
-end TauCeti.PiTensorProduct
+end PiTensorProduct
