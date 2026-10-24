@@ -685,11 +685,6 @@ lemma comparisonNaturality_actComp (p : Γ) (a b ab : SingleObj.star H ⟶ Singl
         (L.comparisonNaturality p b).hom.app ((L.jointAct p a).obj Y) ≫
           (act actions p b).map ((L.comparisonNaturality p a).hom.app Y) := by
   subst hab
-  have key (Y' : ↑((L.joint.restrictFiber p).obj ⟨SingleObj.star H⟩)) :=
-    congrArg (·.toNatTrans.app Y') ((L.comparison p).naturality_comp a.toLoc b.toLoc)
-  simp only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_app,
-    Cat.whiskerRight_app, Cat.associator_hom_app, Cat.associator_inv_app, eqToHom_refl,
-    Category.id_comp, Category.comp_id] at key
   have e₁ : (actions p).mapComp' a.toLoc b.toLoc (a ≫ b).toLoc =
       (actions p).mapComp a.toLoc b.toLoc :=
     Pseudofunctor.mapComp'_eq_mapComp _ _ _
@@ -699,7 +694,14 @@ lemma comparisonNaturality_actComp (p : Γ) (a b ab : SingleObj.star H ⟶ Singl
       (by simp [← Quiver.Hom.comp_toLoc]) = (L.joint.restrictFiber p).mapComp a.toLoc b.toLoc :=
     rfl
   simp only [comparisonNaturality_hom_app, actComp_hom_app, jointActComp_hom_app, e₁, e₂]
-  exact key Y
+  -- Mathlib's component form of the composition axiom, with the composition comparison of
+  -- `actions p` cancelled; it matches the goal since `(a ≫ b).toLoc = a.toLoc ≫ b.toLoc` and
+  -- `L.jointFiber p = (L.joint.restrictFiber p).obj ⟨SingleObj.star H⟩` by definition.
+  have key := congrArg (· ≫ ((actions p).mapComp a.toLoc b.toLoc).hom.toNatTrans.app _)
+    (Pseudofunctor.StrongTrans.naturality_comp_hom_app (L.comparison p) a.toLoc b.toLoc Y)
+  simp only [Category.assoc, Cat.Hom.inv_hom_id_toNatTrans_app, Cat.Hom.comp_toFunctor,
+    Functor.comp_obj, Category.comp_id] at key
+  exact key
 
 /-- Compatibility of the naturality isomorphisms of the fiber comparison with the unit
 comparisons: the unit axiom of the strong transformation `L.comparison p`. Here
@@ -709,11 +711,6 @@ lemma comparisonNaturality_actId (p : Γ) (Y : L.jointFiber p) :
     (L.comparisonNaturality p (𝟙 (SingleObj.star H))).hom.app Y ≫
         (actId actions p).hom.app ((L.fiberEquivalence p).functor.obj Y) =
       (L.fiberEquivalence p).functor.map ((L.jointMapId p).hom.app Y) := by
-  have key (Y' : ↑((L.joint.restrictFiber p).obj ⟨SingleObj.star H⟩)) :=
-    congrArg (·.toNatTrans.app Y') ((L.comparison p).naturality_id ⟨SingleObj.star H⟩)
-  simp only [Cat.Hom.toNatTrans_comp, NatTrans.comp_app, Cat.whiskerLeft_app,
-    Cat.whiskerRight_app, Cat.leftUnitor_hom_app, Cat.rightUnitor_inv_app, eqToHom_refl,
-    Category.comp_id] at key
   -- The unit comparisons of `actions p` and of the restriction of the joint pseudofunctor are,
   -- by definition, the ones appearing in `actId` and `jointMapId`.
   have e₁ : (actions p).mapId' (𝟙 (SingleObj.star H)).toLoc =
@@ -723,7 +720,13 @@ lemma comparisonNaturality_actId (p : Γ) (Y : L.jointFiber p) :
       (L.joint.restrictFiber p).mapId ⟨SingleObj.star H⟩ :=
     rfl
   simp only [comparisonNaturality_hom_app, actId_hom_app, jointMapId_hom_app, e₁, e₂]
-  exact key Y
+  -- Mathlib's component form of the unit axiom, with the unit comparison of `actions p`
+  -- cancelled; it matches the goal since `(𝟙 (SingleObj.star H)).toLoc = 𝟙 ⟨SingleObj.star H⟩`
+  -- by definition.
+  have key := congrArg (· ≫ ((actions p).mapId ⟨SingleObj.star H⟩).hom.toNatTrans.app _)
+    (Pseudofunctor.StrongTrans.naturality_id_hom_app (L.comparison p) ⟨SingleObj.star H⟩ Y)
+  simp only [Category.assoc, Cat.Hom.inv_hom_id_toNatTrans_app] at key
+  exact key.trans (Category.comp_id _)
 
 /-- The image of `actInverseIso` under the fiber comparison, followed by its naturality
 isomorphism, is the conjugate of the counit of the fiber comparison by the action. -/
@@ -791,7 +794,7 @@ lemma actInverseIso_actId (p : Γ) (X : fiber actions p) :
   have := (actId actions p).hom.naturality ((L.fiberEquivalence p).counitInv.app X)
   dsimp only [Functor.id_map, Functor.id_obj, Functor.comp_obj] at this
   rw [this]
-  rfl
+  dsimp only [Functor.id_obj]
 
 /-- Mixed coherence of transport along `Γ`: the commuting isomorphism of `E_gh` with `T_a` is
 the composite of those of `E_g` and `E_h`, up to the composition isomorphism
