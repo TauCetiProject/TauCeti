@@ -34,6 +34,7 @@ variable {B F : Type*} {E : B → Type*} [TopologicalSpace B] [TopologicalSpace 
 This is the coordinate identity underlying the local smoothness of `FiberBundle.extend`; it is
 useful whenever a fibre-bundle section is compared with the constant coordinate section in the
 trivialization centred at the prescribed value. -/
+@[simp]
 theorem trivializationAt_extend_apply {x y : B}
     (hy : y ∈ (trivializationAt F E x).baseSet) (v₀ : E x) :
     ((trivializationAt F E x) ⟨y, FiberBundle.extend F v₀ y⟩).2 =
