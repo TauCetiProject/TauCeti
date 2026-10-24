@@ -21,13 +21,9 @@ differing by an explicit principal factor (`invertibleFractionalIdeal_smul`), so
 constant on proper equivalence classes.
 
 For negative `D` the converse holds on positive definite forms: two primitive forms with positive
-leading coefficients and the same Picard class are properly equivalent. If `I_g = μ I_f`, then
-`μ` carries the basis `a, (-b + √D)/2` of `I_f` to a basis of `I_g`, and the integral change of
-basis has determinant `1`. Its sign is read off the square-root coordinate of `u · star v`, which
-is multiplied by the norm `N(μ) > 0` and records the orientation of the pair `u, v`; its absolute
-value is `1` because the same argument applies to `μ⁻¹`. The matching proper change of variables
-then sends `f` to `g`, since a form of fixed discriminant is determined by the quotient of its
-two ideal generators.
+leading coefficients and the same Picard class are properly equivalent. Nonzero norms are positive,
+so `exists_smul_eq_of_fractionalIdeal_eq_of_norm_pos` turns equal Picard classes into proper
+equivalence. The general norm-positive comparison is proved in `Ideal.Change`.
 
 Consequently the proper equivalence classes of primitive positive definite forms of discriminant
 `-n` inject into `Pic(O_{-n})` (`posDefProperClassToPic_injective`). This is the injective half
