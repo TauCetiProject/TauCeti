@@ -57,6 +57,10 @@ noncomputable def generatedWeightTorusCoordinateMap :
       (DiagonalizableGroup.coordinateRing R (SplitTorus.characterGroup (Fin 4))).obj :=
   generatedCoordinateLift R (.inr ())
 
+/-- The weight-torus coordinate map is the stored torus generator lift. -/
+theorem generatedWeightTorusCoordinateMap_def :
+    generatedWeightTorusCoordinateMap R = generatedCoordinateLift R (.inr ()) := (rfl)
+
 /-- The generated subgroup's weight torus recovers the ambient tripled weight torus. -/
 @[reassoc (attr := simp)]
 theorem generatedCoordinateMap_comp_generatedWeightTorusCoordinateMap :
