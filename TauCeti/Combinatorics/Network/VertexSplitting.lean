@@ -862,8 +862,9 @@ theorem arrowSum_assignment_compl [AddCommMonoid K] (f : Assignment Q K) (φ : V
         ∑ e : Q v w, if (v, true) ∈ S ∧ (w, false) ∉ S then f e else 0 := by
     -- The arrows from an exit to an entrance are the original arrows, and the `Fintype` instance
     -- of the split arrow family is that of `Q` on them, as in `sum_original`.
-    simp only [mem_compl]
-    rfl
+    change ∑ e : Q v w,
+        (if (v, true) ∈ S ∧ (w, false) ∈ Sᶜ then assignment f φ (original e) else 0) = _
+    simp only [assignment_original, mem_compl]
   rw [arrowSum_eq_sum_ite, Fintype.sum_prod_type]
   simp only [Fintype.sum_prod_type, Fintype.sum_bool, univ_eq_empty, sum_empty, hsplit, horiginal,
     Fintype.sum_ite_eq, sum_add_distrib]
