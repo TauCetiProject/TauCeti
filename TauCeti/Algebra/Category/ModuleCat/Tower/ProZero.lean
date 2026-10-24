@@ -137,6 +137,17 @@ def multiplicationTowerProductEquiv (a : R) : (multiplicationTower a).Product �
   -- `(multiplicationTower a).obj (op n)` is `ModuleCat.of R R` by definition
   LinearEquiv.refl R (ℕ → R)
 
+/-- The `n`-th term of the sequence attached to a family `x` is its component `xₙ`. Not `@[simp]`:
+it would rewrite the left-hand side of `multiplicationTowerProductEquiv_shift`. -/
+theorem multiplicationTowerProductEquiv_apply (a : R) (x : (multiplicationTower a).Product)
+    (n : ℕ) : multiplicationTowerProductEquiv a x n = x n :=
+  (rfl)
+
+/-- The component `xₙ` of the family attached to a sequence `x` is its `n`-th term. -/
+theorem multiplicationTowerProductEquiv_symm_apply (a : R) (x : ℕ → R) (n : ℕ) :
+    (multiplicationTowerProductEquiv a).symm x n = x n :=
+  (rfl)
+
 /-- The shift map of `multiplicationTower a`, as a map of sequences:
 `δ(x)ₙ = xₙ - xₙ₊₁ * a`. -/
 @[simp]
