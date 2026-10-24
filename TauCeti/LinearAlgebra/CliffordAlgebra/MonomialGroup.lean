@@ -24,9 +24,9 @@ basis `e_i² = 1` of `ℂⁿ`. The subgroup `CliffordAlgebra.monomialGroup Q b` 
 
 where `e_s = ι Q (b i₁) * ⋯ * ι Q (b iₖ)` for `s = {i₁ < ⋯ < iₖ}` is the basis vector
 `CliffordAlgebra.basis Q b s`. Its multiplication is the sign rule
-`CliffordAlgebra.basis_mul_basis`: `e_s * e_t = ±e_{s ∆ t}`. Its element `ε = -1` is central, and
-when the index type is finite the group is finite. When the ring is nontrivial, `2` is invertible,
-and the index type has `n` elements, the group has order `2 ^ (n + 1)`.
+`CliffordAlgebra.basis_mul_basis`: `e_s * e_t = ±e_{s ∆ t}`. Its element `ε = -1` is central.
+When the ring is nontrivial, `2` is invertible, and the finite index type has `n` elements,
+the group is finite of order `2 ^ (n + 1)`.
 
 For a finite index type the group is a finite model of the Clifford algebra: the `e_s` form a basis
 of `CliffordAlgebra Q` and multiply as the elements of `G` do, so its group algebra modulo `ε + 1`
@@ -41,7 +41,6 @@ is the Clifford algebra. That comparison is not made in this file.
 
 * `CliffordAlgebra.mem_monomialGroup_iff`: **the normal form**: a unit lies in the group exactly
   when its value is `e_s` or `-e_s` for some finite index set `s`.
-* `CliffordAlgebra.isUnit_basis`: each `e_s` is a unit.
 * `CliffordAlgebra.neg_one_mem_center_monomialGroup`: `ε = -1` is central.
 * `CliffordAlgebra.natCard_monomialGroup`: **the order** is `2 ^ (n + 1)` over a nontrivial
   ring in which `2` is invertible.
