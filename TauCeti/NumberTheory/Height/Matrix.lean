@@ -167,6 +167,18 @@ private theorem mul_entries_eq_linearMap_apply [Fintype n] (A : Matrix m n K)
   ext q
   simp [mul_apply]
 
+/-- The pointwise product of the subtuples of the entries of `A` and of `B` appearing in
+`mul_entries_eq_linearMap_apply` has height at most the product of the entry heights of `A` and
+`B`. -/
+private theorem mulHeight_mul_entries_le [Finite p] (A : Matrix m n K)
+    (B : Matrix n p K) :
+    Height.mulHeight ((fun q : (m × p) × n ↦ A q.1.1 q.2) * fun q : (m × p) × n ↦ B q.2 q.1.2) ≤
+      A.mulHeight * B.mulHeight :=
+  (Height.mulHeight_mul_le _ _).trans <| mul_le_mul
+    (mulHeight_comp_le (fun q : (m × p) × n ↦ (q.1.1, q.2)) fun q : m × n ↦ A q.1 q.2)
+    (mulHeight_comp_le (fun q : (m × p) × n ↦ (q.2, q.1.2)) fun q : n × p ↦ B q.1 q.2)
+    (Height.mulHeight_pos _).le A.mulHeight_pos.le
+
 omit [Finite n] in
 /-- **The entry height of a matrix product.** For a nonempty inner index type `n`, the entry
 height of `A * B` is at most `(#n) ^ totalWeight K` times the product of the entry heights of `A`
@@ -177,11 +189,7 @@ theorem mulHeight_mul_le [Fintype n] [Nonempty n] [Finite p] (A : Matrix m n K)
   have hpos : 0 ≤ (Nat.card n : ℝ) ^ totalWeight K := by positivity
   let x : (m × p) × n → K := fun q ↦ A q.1.1 q.2
   let y : (m × p) × n → K := fun q ↦ B q.2 q.1.2
-  have hc : Height.mulHeight (x * y) ≤ A.mulHeight * B.mulHeight :=
-    (Height.mulHeight_mul_le x y).trans <| mul_le_mul
-      (mulHeight_comp_le (fun q : (m × p) × n ↦ (q.1.1, q.2)) fun q : m × n ↦ A q.1 q.2)
-      (mulHeight_comp_le (fun q : (m × p) × n ↦ (q.2, q.1.2)) fun q : n × p ↦ B q.1 q.2)
-      (Height.mulHeight_pos _).le A.mulHeight_pos.le
+  have hc : Height.mulHeight (x * y) ≤ A.mulHeight * B.mulHeight := mulHeight_mul_entries_le A B
   calc (A * B).mulHeight
       ≤ Nat.card n ^ totalWeight K * Height.mulHeight (x * y) * Height.mulHeight (1 : n → K) := by
         rw [mulHeight_def, mul_entries_eq_linearMap_apply]
@@ -197,10 +205,10 @@ theorem logHeight_mul_le [Fintype n] [Finite p] (A : Matrix m n K) (B : Matrix n
     (A * B).logHeight ≤ totalWeight K * Real.log (Nat.card n) + A.logHeight + B.logHeight := by
   let x : (m × p) × n → K := fun q ↦ A q.1.1 q.2
   let y : (m × p) × n → K := fun q ↦ B q.2 q.1.2
-  have hc : Height.logHeight (x * y) ≤ A.logHeight + B.logHeight :=
-    (Height.logHeight_mul_le x y).trans <| add_le_add
-      (logHeight_comp_le (fun q : (m × p) × n ↦ (q.1.1, q.2)) fun q : m × n ↦ A q.1 q.2)
-      (logHeight_comp_le (fun q : (m × p) × n ↦ (q.2, q.1.2)) fun q : n × p ↦ B q.1 q.2)
+  have hc : Height.logHeight (x * y) ≤ A.logHeight + B.logHeight := by
+    rw [logHeight_eq_log_mulHeight, logHeight_eq_log_mulHeight,
+      Height.logHeight_eq_log_mulHeight, ← Real.log_mul A.mulHeight_ne_zero B.mulHeight_ne_zero]
+    exact Real.log_le_log (Height.mulHeight_pos _) (mulHeight_mul_entries_le A B)
   calc (A * B).logHeight
       ≤ totalWeight K * Real.log (Nat.card n) + Height.logHeight (x * y) +
           Height.logHeight (1 : n → K) := by
@@ -234,6 +242,18 @@ end NumberField
 
 /-! ### Examples -/
 
+omit [Finite m] [Finite n] in
+/-- Over `ℚ`, a matrix with coprime integer entries has entry height the largest absolute value
+`M` of its entries, given as a bound `hle` on every entry attained at the entry `(i, j)`. -/
+private theorem mulHeight_map_intCast_eq [Fintype m] [Fintype n] {A : Matrix m n ℤ}
+    (hA : Finset.univ.gcd (fun q : m × n ↦ A q.1 q.2) = 1) {M : ℤ} (hle : ∀ i j, |A i j| ≤ M)
+    (i : m) (j : n) (hM : |A i j| = M) : (A.map ((↑) : ℤ → ℚ)).mulHeight = M := by
+  have : Nonempty (m × n) := ⟨(i, j)⟩
+  change Height.mulHeight (((↑) : ℤ → ℚ) ∘ fun q : m × n ↦ A q.1 q.2) = M
+  rw [Rat.mulHeight_eq_max_abs_of_gcd_eq_one hA]
+  exact_mod_cast le_antisymm (ciSup_le fun q ↦ hle q.1 q.2)
+    (le_ciSup_of_le (Finite.bddAbove_range _) (i, j) hM.ge)
+
 -- A matrix with an empty index type is zero, so it has entry height one.
 example (A : Matrix (Fin 0) (Fin 3) ℚ) : A.mulHeight = 1 := by
   rw [Subsingleton.elim A 0, mulHeight_zero]
@@ -249,13 +269,11 @@ example (A : Matrix (Fin 1) (Fin 0) ℚ) (B : Matrix (Fin 0) (Fin 1) ℚ) :
 -- instance `4` over `ℚ(i)`.
 example (L : Type*) [Field L] [NumberField L] :
     (!![(1 : ℚ), 2].map (algebraMap ℚ L)).mulHeight = 2 ^ Module.finrank ℚ L := by
-  have h : (fun q : Fin 1 × Fin 2 ↦ !![(1 : ℚ), 2] q.1 q.2) =
-      ((↑) : ℤ → ℚ) ∘ fun q ↦ !![(1 : ℤ), 2] q.1 q.2 := by
-    ext q; fin_cases q <;> simp
+  have h : !![(1 : ℚ), 2] = !![(1 : ℤ), 2].map (↑) := by
+    ext i j; fin_cases i; fin_cases j <;> simp
   have h2 : !![(1 : ℚ), 2].mulHeight = 2 := by
-    rw [mulHeight_def, h, Rat.mulHeight_eq_max_abs_of_gcd_eq_one (by decide)]
-    exact_mod_cast le_antisymm (ciSup_le fun q ↦ by fin_cases q <;> decide)
-      (le_ciSup_of_le (Finite.bddAbove_range _) (0, 1) (by decide))
+    rw [h, mulHeight_map_intCast_eq (M := 2) (by decide) (by decide) 0 1 (by decide)]
+    norm_num
   rw [mulHeight_map_algebraMap, h2]
 
 /-- **The constant of `Matrix.mulHeight_mul_le` is attained.** Over `ℚ`, the matrices `[1 1]`
@@ -270,19 +288,15 @@ example : !![(1 : ℚ), 1].mulHeight = 1 ∧ !![(1 : ℚ), 0; 1, 1].mulHeight = 
       ext q; fin_cases q <;> rfl
     rw [mulHeight_def, h, Height.mulHeight_one]
   have hB : !![(1 : ℚ), 0; 1, 1].mulHeight = 1 := by
-    have h : (fun q : Fin 2 × Fin 2 ↦ !![(1 : ℚ), 0; 1, 1] q.1 q.2) =
-        ((↑) : ℤ → ℚ) ∘ fun q ↦ !![(1 : ℤ), 0; 1, 1] q.1 q.2 := by
-      ext q; fin_cases q <;> simp
-    rw [mulHeight_def, h, Rat.mulHeight_eq_max_abs_of_gcd_eq_one (by decide)]
-    exact_mod_cast le_antisymm (ciSup_le fun q ↦ by fin_cases q <;> decide)
-      (le_ciSup_of_le (Finite.bddAbove_range _) (0, 0) (by decide))
+    have h : !![(1 : ℚ), 0; 1, 1] = !![(1 : ℤ), 0; 1, 1].map (↑) := by
+      ext i j; fin_cases i <;> fin_cases j <;> simp
+    rw [h, mulHeight_map_intCast_eq (M := 1) (by decide) (by decide) 0 0 (by decide)]
+    norm_num
   have hAB : (!![(1 : ℚ), 1] * !![(1 : ℚ), 0; 1, 1]).mulHeight = 2 := by
-    have h : (fun q : Fin 1 × Fin 2 ↦ (!![(1 : ℚ), 1] * !![(1 : ℚ), 0; 1, 1]) q.1 q.2) =
-        ((↑) : ℤ → ℚ) ∘ fun q ↦ !![(2 : ℤ), 1] q.1 q.2 := by
-      ext q; fin_cases q <;> simp [mul_apply, Fin.sum_univ_two]; norm_num
-    rw [mulHeight_def, h, Rat.mulHeight_eq_max_abs_of_gcd_eq_one (by decide)]
-    exact_mod_cast le_antisymm (ciSup_le fun q ↦ by fin_cases q <;> decide)
-      (le_ciSup_of_le (Finite.bddAbove_range _) (0, 0) (by decide))
+    have h : !![(1 : ℚ), 1] * !![(1 : ℚ), 0; 1, 1] = !![(2 : ℤ), 1].map (↑) := by
+      ext i j; fin_cases i; fin_cases j <;> norm_num [mul_apply, Fin.sum_univ_two]
+    rw [h, mulHeight_map_intCast_eq (M := 2) (by decide) (by decide) 0 0 (by decide)]
+    norm_num
   refine ⟨hA, hB, ?_⟩
   rw [hA, hB, hAB]
   simp [NumberField.totalWeight_eq_finrank]
