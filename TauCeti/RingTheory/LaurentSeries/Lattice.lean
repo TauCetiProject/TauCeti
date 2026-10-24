@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.LinearAlgebra.Isomorphisms
 public import Mathlib.RingTheory.LaurentSeries
 public import TauCeti.RingTheory.HahnSeries.Multiplication
+public import TauCeti.RingTheory.LaurentSeries.Convergence
 
 /-!
 # The lattices `U_a` of Laurent series
@@ -51,6 +52,8 @@ used together with the action of scalar Laurent series on module-valued Laurent 
 * `TauCeti.LaurentSeries.mul_mem_lattice`: `U_a U_b ⊆ U_{a + b}`.
 * `TauCeti.LaurentSeries.mem_lattice_iff_valuation_le`: over a field, `U_a` is a closed
   valuation ball.
+* `TauCeti.LaurentSeries.hasBasis_nhds_zero_lattice`: the lattices form a neighbourhood basis
+  of zero in the valuation topology.
 * `TauCeti.LaurentSeries.finrank_latticeQuotient`,
   `TauCeti.HahnModule.finrank_latticeQuotient`: finite jets have `finrank` equal to
   `(b - a).toNat * Module.finrank R V`.
@@ -58,7 +61,7 @@ used together with the action of scalar Laurent series on module-valued Laurent 
 
 public section
 
-open HahnSeries
+open HahnSeries Filter
 open scoped LaurentSeries PowerSeries
 
 namespace TauCeti.LaurentSeries
@@ -172,6 +175,24 @@ theorem mem_lattice_iff_valuation_le {K : Type*} [Field K] {a : ℤ} {f : K⸨X�
   (_root_.LaurentSeries.valuation_le_iff_coeff_lt_eq_zero K).symm
 
 end Ring
+
+/-- The lattices `U_a` form a neighbourhood basis of zero for the Laurent valuation topology. -/
+theorem hasBasis_nhds_zero_lattice {K : Type*} [Field K] :
+    (nhds (0 : K⸨X⸩)).HasBasis (fun _ : ℤ ↦ True)
+      (fun a ↦ (lattice K K a : Set K⸨X⸩)) := by
+  have heq : nhds (0 : K⸨X⸩) = ⨅ a : ℤ, 𝓟 (lattice K K a : Set K⸨X⸩) := by
+    apply le_antisymm
+    · refine le_iInf fun a ↦ le_principal_iff.mpr ?_
+      filter_upwards [(tendsto_laurentSeries_iff_orderTop_sub (K := K) id 0).mp
+        tendsto_id a] with f hf
+      exact mem_lattice_iff_le_orderTop.mpr (by simpa using hf)
+    · exact (tendsto_laurentSeries_iff_orderTop_sub id 0).mpr fun a ↦ by
+        simp only [id_eq, sub_zero]
+        exact mem_iInf_of_mem a (mem_principal.mpr fun _ hf ↦
+          mem_lattice_iff_le_orderTop.mp hf)
+  rw [heq]
+  exact Filter.hasBasis_iInf_principal fun a b ↦
+    ⟨max a b, lattice_antitone (le_max_left a b), lattice_antitone (le_max_right a b)⟩
 
 section Coefficients
 

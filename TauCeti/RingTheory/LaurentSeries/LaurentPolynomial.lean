@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.Laurent
+public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Basic
 public import TauCeti.RingTheory.LaurentSeries.Convergence
 
 /-!
@@ -42,6 +43,8 @@ Laurent polynomials are dense in the Laurent-series field for its valuation topo
 * `LaurentSeries.trunc`: truncation of a Laurent series above a given integer exponent.
 * `LaurentSeries.tendsto_toLaurentSeries_trunc`: the truncations converge to the original series.
 * `LaurentPolynomial.denseRange_toLaurentSeries`: Laurent polynomials are dense in Laurent series.
+* `TauCeti.LaurentSeries.continuousLinearMap_ext_single`: continuous linear maps into a Hausdorff
+  module are determined by their values on monomials.
 -/
 
 public section
@@ -272,3 +275,27 @@ theorem denseRange_toLaurentSeries :
     Filter.Eventually.of_forall fun N ↦ Set.mem_range_self (LaurentSeries.trunc N f)
 
 end LaurentPolynomial
+
+namespace TauCeti.LaurentSeries
+
+open HahnSeries
+
+/-- Continuous linear maps from a Laurent-series field to a Hausdorff module are determined by
+their values on the monomials with coefficient one. -/
+@[ext]
+theorem continuousLinearMap_ext_single {K M : Type*} [Field K] [AddCommMonoid M]
+    [Module K M] [TopologicalSpace M] [T2Space M] {ℓ m : K⸨X⸩ →L[K] M}
+    (h : ∀ n : ℤ, ℓ (single n 1) = m (single n 1)) : ℓ = m := by
+  apply DFunLike.ext'
+  refine LaurentPolynomial.denseRange_toLaurentSeries.equalizer ℓ.continuous m.continuous ?_
+  funext p
+  induction p using LaurentPolynomial.induction_on' with
+  | add p q hp hq => simp only [Function.comp_apply, map_add] at *; rw [hp, hq]
+  | C_mul_T n r =>
+    have hs : (single n r : K⸨X⸩) = r • single n 1 := by
+      ext m
+      by_cases hm : m = n <;> simp [hm]
+    simp only [Function.comp_apply, ← LaurentPolynomial.single_eq_C_mul_T,
+      LaurentPolynomial.toLaurentSeries_single, hs, map_smul, h]
+
+end TauCeti.LaurentSeries
