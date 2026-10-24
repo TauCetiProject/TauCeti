@@ -87,6 +87,8 @@ coincident strands too.
 
 * `TauCeti.symplecticCupCapAt_tprod`: the value of the generator on a pure tensor at distinct
   strands, the invariant form of the two chosen factors times the cup re-expanding those slots.
+* `TauCeti.symplecticCupCapAt_tprod_single`: the same on a monomial tensor of standard basis
+  vectors, where the form is an entry of `J`.
 * `TauCeti.symplecticCupCapAt_self_tprod`: the degenerate value at `i = j`, where the second plug
   is dead and the operator is not an arc.
 * `TauCeti.symplecticCupCapAt_comm`: **the generator depends only on the unordered pair of
@@ -222,6 +224,27 @@ theorem symplecticCupCapAt_tprod {i j : Fin d} (hij : i ≠ j)
   -- the cap scalars depend on `a` and `b` and the cup ones on `x` and `y`, so the fourfold sum is
   -- the product of the two double sums: distribute the scalar action over both of them
   simp_rw [Finset.sum_smul, Finset.smul_sum, smul_smul]
+
+/-- **The generator on a monomial tensor of standard basis vectors**, at distinct strands: the entry
+of `J` at the two labels, times the cup re-expanding the two slots as standard basis vectors. -/
+theorem symplecticCupCapAt_tprod_single {i j : Fin d} (hij : i ≠ j)
+    (f : Fin d → Fin n ⊕ Fin n) :
+    symplecticCupCapAt k n d i j (PiTensorProduct.tprod k fun t => Pi.single (f t) (1 : k)) =
+      -(Matrix.J (Fin n) k (f i) (f j) • ∑ x : Fin n ⊕ Fin n, ∑ y : Fin n ⊕ Fin n,
+        Matrix.J (Fin n) k x y • PiTensorProduct.tprod k fun t =>
+          (Pi.single (Function.update (Function.update f i x) j y t) (1 : k) :
+            (Fin n ⊕ Fin n) → k)) := by
+  have hplug : ∀ x y : Fin n ⊕ Fin n,
+      Function.update (Function.update (fun t => Pi.single (f t) (1 : k)) i (Pi.single x 1)) j
+          (Pi.single y 1) =
+        fun t => (Pi.single (Function.update (Function.update f i x) j y t) (1 : k) :
+          (Fin n ⊕ Fin n) → k) := by
+    intro x y
+    funext t
+    simp only [Function.update_apply]
+    split_ifs <;> rfl
+  rw [symplecticCupCapAt_tprod hij, stdSymplecticBilinForm_single_single, smul_neg]
+  simp only [hplug]
 
 /-- One summand of `TauCeti.symplecticCupCapAt` at coincident strands: the strand `i` wins the
 first branch of `TauCeti.symplecticCupCapStrand`, so the second plug is dead and only the `a`-th

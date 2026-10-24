@@ -82,7 +82,8 @@ theorem sum_J_mul_J (x : l ⊕ l) : ∑ y : l ⊕ l, J l R x y * J l R x y = 1 :
   have h := congrFun (congrFun hJ x) x
   simpa only [mul_apply, one_apply_eq, transpose_apply] using h
 
-/-- The columns of `J` are orthonormal for the pairing by `J` itself, because `Jᵀ * J = 1`. -/
+/-- The columns of `J` are orthonormal for the standard coordinate dot product, because
+`Jᵀ * J = 1`. -/
 theorem sum_J_mul_J_eq_ite (y p : l ⊕ l) :
     ∑ x : l ⊕ l, J l R x y * J l R x p = if y = p then 1 else 0 := by
   have hJ : (J l R)ᵀ * J l R = 1 := by

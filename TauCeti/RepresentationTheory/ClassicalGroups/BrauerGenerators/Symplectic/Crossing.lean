@@ -201,6 +201,7 @@ theorem symplecticPermTensorAction_mul_symplecticCupCapAt (σ : Equiv.Perm (Fin 
 /-- **The relation `s e = e`**: the crossing of the two strands of an arc is absorbed by the cup on
 top of it. The bare transposition negates the cup, because the copairing is antisymmetric, and the
 sign of the transposition cancels that. -/
+@[simp]
 theorem symplecticPermTensorAction_swap_mul_symplecticCupCapAt (i j : Fin d) :
     symplecticPermTensorAction k n d (Equiv.swap i j) * symplecticCupCapAt k n d i j =
       symplecticCupCapAt k n d i j := by
@@ -231,6 +232,7 @@ theorem symplecticPermTensorAction_swap_mul_symplecticCupCapAt (i j : Fin d) :
 the bottom of it. By the renaming relation the transposition of the two strands commutes with the
 arc, so this is `TauCeti.symplecticPermTensorAction_swap_mul_symplecticCupCapAt` read from the
 other side. -/
+@[simp]
 theorem symplecticCupCapAt_mul_symplecticPermTensorAction_swap (i j : Fin d) :
     symplecticCupCapAt k n d i j * symplecticPermTensorAction k n d (Equiv.swap i j) =
       symplecticCupCapAt k n d i j := by
@@ -251,27 +253,6 @@ theorem commute_symplecticPermTensorAction_symplecticCupCapAt {σ : Equiv.Perm (
   · rwa [hi, hj, symplecticCupCapAt_comm j i] at h
 
 /-! ### Two arcs sharing a strand -/
-
-/-- An arc on a monomial tensor of standard basis vectors, at distinct strands: the entry of `J` at
-the two labels, times the cup re-expanding the two slots. -/
-private theorem symplecticCupCapAt_tprod_single {i j : Fin d} (hij : i ≠ j)
-    (f : Fin d → Fin n ⊕ Fin n) :
-    symplecticCupCapAt k n d i j (PiTensorProduct.tprod k fun t => Pi.single (f t) (1 : k)) =
-      -(Matrix.J (Fin n) k (f i) (f j) • ∑ x : Fin n ⊕ Fin n, ∑ y : Fin n ⊕ Fin n,
-        Matrix.J (Fin n) k x y • PiTensorProduct.tprod k fun t =>
-          (Pi.single (Function.update (Function.update f i x) j y t) (1 : k) :
-            (Fin n ⊕ Fin n) → k)) := by
-  have hplug : ∀ x y : Fin n ⊕ Fin n,
-      Function.update (Function.update (fun t => Pi.single (f t) (1 : k)) i (Pi.single x 1)) j
-          (Pi.single y 1) =
-        fun t => (Pi.single (Function.update (Function.update f i x) j y t) (1 : k) :
-          (Fin n ⊕ Fin n) → k) := by
-    intro x y
-    funext t
-    simp only [Function.update_apply]
-    split_ifs <;> rfl
-  rw [symplecticCupCapAt_tprod hij, stdSymplecticBilinForm_single_single, smul_neg]
-  simp only [hplug]
 
 /-- **Two arcs sharing one strand compose to an arc after a crossing**: for three distinct strands,
 `e i l * e i j = e i l * s (j l)`. Both sides are the diagram with a cap on `i, j`, a cup on `i, l`
@@ -373,6 +354,7 @@ theorem symplecticCupCapAt_mul_symplecticCupCapAt_mul_symplecticPermTensorAction
 
 /-- **The mixed Brauer relation `eᵢ sᵢ₊₁ eᵢ = eᵢ`**, on any three distinct strands: a crossing
 between two copies of an arc, on a strand of the arc and a third strand, straightens out. -/
+@[simp]
 theorem symplecticCupCapAt_mul_symplecticPermTensorAction_swap_mul_symplecticCupCapAt
     {i j l : Fin d} (hij : i ≠ j) (hjl : j ≠ l) (hil : i ≠ l) :
     symplecticCupCapAt k n d i j * symplecticPermTensorAction k n d (Equiv.swap j l) *
