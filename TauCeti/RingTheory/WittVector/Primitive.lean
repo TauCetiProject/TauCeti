@@ -28,9 +28,9 @@ The remaining results assume that `S` has characteristic `p`, that every topolog
 element of `S` lies in the Jacobson radical (for instance, `S` is adically complete with respect to
 an open ideal, by `topologicalNilradical_le_jacobson_bot`), and that the topology of `S` is linear.
 In characteristic `p` the first Witt coordinate of a product is `(x y)₁ = x₀ ^ p y₁ + y₀ ^ p x₁`
-(`WittVector.mul_coeff_one`). Hence `p + [ϖ] α` is primitive for every topologically nilpotent `ϖ`
-and every `α`, primitivity is invariant under multiplication by units, and a multiple of a
-primitive element that is itself distinguished is a unit multiple. Over a perfect ring, every
+(`WittVector.mul_coeff_one_charP`). Hence `p + [ϖ] α` is primitive for every topologically
+nilpotent `ϖ` and every `α`, primitivity is invariant under multiplication by units, and a multiple
+of a primitive element that is itself distinguished is a unit multiple. Over a perfect ring, every
 primitive element is moreover a unit multiple of some `p + [ϖ] α`.
 
 ## Main definitions
@@ -111,6 +111,7 @@ theorem IsPrimitive.map [TopologicalSpace S] {S' : Type*} [CommRing S'] [Topolog
 
 /-- Over a nonzero ring, no Teichmüller representative is distinguished: its first Witt
 coordinate vanishes. -/
+@[simp]
 theorem not_isDistinguished_teichmuller [Nontrivial S] (a : S) :
     ¬ (teichmuller p a).IsDistinguished := by
   rw [isDistinguished_iff, teichmuller_coeff_pos p a 1 one_pos]
@@ -121,16 +122,19 @@ section CharP
 variable [CharP S p]
 
 /-- In characteristic `p`, `[a] + p u` is distinguished exactly when `u₀` is a unit. -/
+@[simp]
 theorem isDistinguished_teichmuller_add_p_mul_iff (a : S) (u : 𝕎 S) :
     (teichmuller p a + p * u).IsDistinguished ↔ IsUnit (u.coeff 0) := by
   rw [isDistinguished_iff, teichmuller_add_p_mul_coeff_succ, isUnit_pow_iff hp.out.ne_zero]
 
 /-- In characteristic `p`, the Witt vector `p = (0, 1, 0, …)` is distinguished. -/
+@[simp]
 theorem isDistinguished_natCast : (p : 𝕎 S).IsDistinguished := by
   rw [isDistinguished_iff, coeff_p_one]
   exact isUnit_one
 
 /-- In characteristic `p`, the Witt vector `p = (0, 1, 0, …)` is primitive. -/
+@[simp]
 theorem isPrimitive_natCast [TopologicalSpace S] : (p : 𝕎 S).IsPrimitive :=
   ⟨by rw [coeff_p_zero]; exact .zero, isDistinguished_natCast⟩
 
@@ -156,7 +160,9 @@ variable [TopologicalSpace S] [IsLinearTopology S S]
   (hS : topologicalNilradical S ≤ (⊥ : Ideal S).jacobson)
 include hS
 
-/-- **Elements of the form `p + [ϖ] α` are primitive.** If `ϖ` is topologically nilpotent, then
+/-- **Elements of the form `p + [ϖ] α` are primitive.** Let `S` have characteristic `p` and a linear
+topology, and suppose its topological nilradical lies in the Jacobson radical (for instance, `S` is
+adically complete with respect to an open ideal). If `ϖ` is topologically nilpotent, then
 `p + [ϖ] α` is primitive for every `α` (compare Scholze, *Étale cohomology of diamonds*,
 Definition 3.15). -/
 theorem isPrimitive_p_add_teichmuller_mul {ϖ : S} (hϖ : IsTopologicallyNilpotent ϖ)
@@ -172,28 +178,32 @@ theorem isPrimitive_p_add_teichmuller_mul {ϖ : S} (hϖ : IsTopologicallyNilpote
   refine ⟨?_, ?_⟩
   · rw [teichmuller_add_verschiebung_coeff_zero, mul_coeff_zero, teichmuller_coeff_zero]
     exact hϖ.mul_right _
-  · rw [isDistinguished_iff, teichmuller_add_verschiebung_coeff_succ, ← constantCoeff_apply,
-      map_add, map_one, constantCoeff_apply, hw₀, mul_coeff_one]
-    simp only [teichmuller_coeff_pos p ϖ 1 one_pos, mul_zero, zero_mul, add_zero]
+  · rw [isDistinguished_iff, teichmuller_add_verschiebung_coeff_succ, add_coeff_zero,
+      one_coeff_zero, hw₀, mul_coeff_one_charP, teichmuller_coeff_pos p ϖ 1 one_pos, mul_zero,
+      add_zero]
     exact ((hϖ.pow hp.out.ne_zero).mul_right _).isUnit_add_left hS isUnit_one
 
-/-- **Primitivity is invariant under multiplication by units.** -/
+/-- **Primitivity is invariant under multiplication by units.** This holds when `S` has
+characteristic `p` and a linear topology, and its topological nilradical lies in the Jacobson
+radical (for instance, `S` is adically complete with respect to an open ideal). -/
+@[simp]
 theorem isPrimitive_units_mul (u : (𝕎 S)ˣ) {ξ : 𝕎 S} :
     (u * ξ : 𝕎 S).IsPrimitive ↔ ξ.IsPrimitive := by
   suffices H : ∀ (u : (𝕎 S)ˣ) {ξ : 𝕎 S}, ξ.IsPrimitive → (u * ξ : 𝕎 S).IsPrimitive from
     ⟨fun h ↦ by simpa using H u⁻¹ h, H u⟩
   intro u ξ h
   refine ⟨by rw [mul_coeff_zero]; exact h.1.mul_left _, ?_⟩
-  rw [isDistinguished_iff, mul_coeff_one, CharP.cast_eq_zero, zero_mul, zero_mul, add_zero]
+  rw [isDistinguished_iff, mul_coeff_one_charP]
   exact ((h.1.pow hp.out.ne_zero).mul_right _).isUnit_add_left hS
     (((isUnit_iff_isUnit_coeff_zero.mp u.isUnit).pow p).mul h.2)
 
-/-- **The unit criterion.** If `ξ` is primitive and a multiple `ξ' = y ξ` is distinguished, then `y`
+/-- **The unit criterion.** Let `S` have characteristic `p` and a linear topology, and suppose its
+topological nilradical lies in the Jacobson radical (for instance, `S` is adically complete with
+respect to an open ideal). If `ξ` is primitive and a multiple `ξ' = y ξ` is distinguished, then `y`
 is a unit (Kedlaya, *Sheaves, stacks, and shtukas*, Remark 2.3.5). -/
 theorem IsPrimitive.isUnit_of_eq_mul {ξ ξ' y : 𝕎 S} (hξ : ξ.IsPrimitive)
     (hξ' : ξ'.IsDistinguished) (h : ξ' = y * ξ) : IsUnit y := by
-  rw [isDistinguished_iff, h, mul_coeff_one, CharP.cast_eq_zero, zero_mul, zero_mul,
-    add_zero] at hξ'
+  rw [isDistinguished_iff, h, mul_coeff_one_charP] at hξ'
   have hy := ((hξ.1.pow hp.out.ne_zero).mul_right (-y.coeff 1)).isUnit_add_left hS hξ'
   rw [mul_neg, add_neg_cancel_right] at hy
   exact isUnit_iff_isUnit_coeff_zero.mpr <|

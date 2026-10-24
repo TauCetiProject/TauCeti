@@ -15,7 +15,8 @@ A Teichmüller representative `[a]` and a Verschiebung `V x` have disjoint suppo
 has Witt coordinates `a, x₀, x₁, …`, and every Witt vector is `[x₀] + V u`
 (`WittVector.exists_eq_teichmuller_add_verschiebung`). Expanding a product of two such sums with
 the projection formula gives the first Witt coordinate of a product,
-`(x y)₁ = x₀ ^ p y₁ + y₀ ^ p x₁ + p x₁ y₁` (`WittVector.mul_coeff_one`).
+`(x y)₁ = x₀ ^ p y₁ + y₀ ^ p x₁ + p x₁ y₁` (`WittVector.mul_coeff_one`), which in characteristic `p`
+is `x₀ ^ p y₁ + y₀ ^ p x₁` (`WittVector.mul_coeff_one_charP`).
 
 Over a ring of characteristic `p`, `x` is a unit exactly when its zeroth Witt coordinate `x₀` is a
 unit of `R` (`WittVector.isUnit_iff_isUnit_coeff_zero`); the inverse is Mathlib's
@@ -30,8 +31,10 @@ unit of `R` (`WittVector.isUnit_iff_isUnit_coeff_zero`); the inverse is Mathlib'
 * `WittVector.teichmuller_add_verschiebung_coeff_zero`,
   `WittVector.teichmuller_add_verschiebung_coeff_succ`: the Witt coordinates of `[a] + V x`.
 * `WittVector.exists_eq_teichmuller_add_verschiebung`: every Witt vector is `[x₀] + V u`.
+* `WittVector.sub_coeff_zero`: the zeroth Witt coordinate of `x - y` is `x₀ - y₀`.
 * `WittVector.coeff_frobenius_zero`, `WittVector.mul_coeff_one`: the zeroth Witt coordinate of
   `F x` and the first Witt coordinate of `x y`.
+* `WittVector.mul_coeff_one_charP`: in characteristic `p`, `(x y)₁ = x₀ ^ p y₁ + y₀ ^ p x₁`.
 * `WittVector.teichmuller_add_p_mul_coeff_zero`, `WittVector.teichmuller_add_p_mul_coeff_succ`:
   the Witt coordinates of `[a] + p u` in characteristic `p`.
 * `WittVector.isUnit_iff_isUnit_coeff_zero`: in characteristic `p`, `x` is a unit iff `x₀` is.
@@ -49,6 +52,10 @@ namespace WittVector
 variable {p : ℕ} [hp : Fact p.Prime] {R : Type*} [CommRing R]
 
 local notation "𝕎" => WittVector p
+
+/-- The zeroth Witt coordinate of `x - y` is `x₀ - y₀`. -/
+theorem sub_coeff_zero (x y : 𝕎 R) : (x - y).coeff 0 = x.coeff 0 - y.coeff 0 :=
+  map_sub (constantCoeff (p := p) (R := R)) x y
 
 /-- The zeroth Witt coordinate of `[a] + V x` is `a`. -/
 @[simp]
@@ -73,14 +80,15 @@ theorem exists_eq_teichmuller_add_verschiebung (x : 𝕎 R) :
   refine ⟨(x - teichmuller p (x.coeff 0)).shift 1, ?_⟩
   rw [← Function.iterate_one verschiebung, ← eq_iterate_verschiebung, add_sub_cancel]
   intro i hi
-  rw [Nat.lt_one_iff.mp hi, ← constantCoeff_apply, map_sub, constantCoeff_apply,
-    constantCoeff_apply, teichmuller_coeff_zero, sub_self]
+  rw [Nat.lt_one_iff.mp hi, sub_coeff_zero, teichmuller_coeff_zero, sub_self]
 
 /-- The zeroth Witt coordinate of `F x` is `x₀ ^ p + p x₁`, the first ghost component of `x`. -/
 theorem coeff_frobenius_zero (x : 𝕎 R) :
     (frobenius x).coeff 0 = x.coeff 0 ^ p + p * x.coeff 1 := by
-  simpa [ghostComponent_apply, wittPolynomial, Finset.sum_range_succ, MvPolynomial.aeval_monomial,
-    mul_comm] using ghostComponent_frobenius 0 x
+  have h := ghostComponent_frobenius 0 x
+  rw [ghostComponent_apply, ghostComponent_apply, wittPolynomial_zero, wittPolynomial_one] at h
+  simp only [MvPolynomial.aeval_X, map_add, map_mul, map_pow, map_natCast] at h
+  rw [h, add_comm]
 
 /-- The first Witt coordinate of a product: `(x y)₁ = x₀ ^ p y₁ + y₀ ^ p x₁ + p x₁ y₁`. -/
 theorem mul_coeff_one (x y : 𝕎 R) :
@@ -118,6 +126,12 @@ theorem teichmuller_add_p_mul_coeff_succ (a : R) (u : 𝕎 R) (n : ℕ) :
   rw [mul_comm, ← verschiebung_frobenius, teichmuller_add_verschiebung_coeff_succ,
     coeff_frobenius_charP]
 
+/-- In characteristic `p`, the first Witt coordinate of a product is
+`(x y)₁ = x₀ ^ p y₁ + y₀ ^ p x₁`. -/
+theorem mul_coeff_one_charP (x y : 𝕎 R) :
+    (x * y).coeff 1 = x.coeff 0 ^ p * y.coeff 1 + y.coeff 0 ^ p * x.coeff 1 := by
+  simp [mul_coeff_one]
+
 /-- **Units of Witt vectors in characteristic `p`.** Over a ring `R` of characteristic `p`, a
 Witt vector is a unit exactly when its zeroth Witt coordinate is a unit of `R`. -/
 theorem isUnit_iff_isUnit_coeff_zero {x : 𝕎 R} : IsUnit x ↔ IsUnit (x.coeff 0) :=
@@ -131,8 +145,7 @@ theorem exists_eq_teichmuller_add_p_mul (x : 𝕎 R) :
     ∃ u : 𝕎 R, x = teichmuller p (x.coeff 0) + p * u := by
   obtain ⟨u, hu⟩ := Ideal.mem_span_singleton.mp <|
     (mem_span_p_iff_coeff_zero_eq_zero (x - teichmuller p (x.coeff 0))).mpr <| by
-      rw [← constantCoeff_apply, map_sub, constantCoeff_apply, constantCoeff_apply,
-        teichmuller_coeff_zero, sub_self]
+      rw [sub_coeff_zero, teichmuller_coeff_zero, sub_self]
   exact ⟨u, by rw [← hu, add_sub_cancel]⟩
 
 end CharP
