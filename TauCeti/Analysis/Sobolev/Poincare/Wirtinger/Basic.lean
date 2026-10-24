@@ -36,8 +36,9 @@ bound on the Riesz potential.
 Integrating the pointwise estimate over a subset `A ⊆ Ω` instead, the integral of the kernel
 over `A` is at most its integral over a ball of the same measure as `A`
 (`TauCeti.setLIntegral_enorm_sub_rpow_le`), which gives a factor `μ(A) ^ (1/n)`. The resulting
-bound on `∫_A ‖u - ⨍ S u‖` is the dual form of the Sobolev–Poincaré inequality at the exponent
-`n / (n - 1)`, and it is invariant under rescaling `Ω`.
+bound on `∫_A ‖u - ⨍ S u‖` is a weak-type `L^{n/(n-1)}` Poincaré inequality, implied by the
+strong `L^{n/(n-1)}` Sobolev–Poincaré inequality through Hölder's inequality, and it is invariant
+under rescaling `Ω`.
 
 ## Main declarations
 
@@ -151,8 +152,8 @@ theorem lintegral_enorm_sub_setAverage_rpow_le_of_convex (hΩ : IsOpen Ω) (hΩc
 `C¹` on a bounded convex open set `Ω` and `S ⊆ Ω` has positive measure, then for every `A ⊆ Ω` the
 integral over `A` of the deviation of `u` from its mean over `S` is at most
 `μ(B(0, 1)) ^ (1 - 1/n) * (diam Ω) ^ n / μ(S) * μ(A) ^ (1/n)` times the integral of `‖Du‖` over
-`Ω`, where `n` is the dimension of the space. The factor `μ(A) ^ (1/n)` makes this the dual form of
-the Sobolev–Poincaré inequality at the exponent `n / (n - 1)`. -/
+`Ω`, where `n` is the dimension of the space. The factor `μ(A) ^ (1/n)` makes this a weak-type
+`L^{n/(n-1)}` Poincaré inequality. -/
 theorem setLIntegral_enorm_sub_setAverage_le_mul_measure_rpow_mul_of_convex (hΩ : IsOpen Ω)
     (hΩc : Convex ℝ Ω) (hb : Bornology.IsBounded Ω) (hu : ContDiffOn ℝ 1 u Ω) (hS : S ⊆ Ω)
     (hS₀ : μ S ≠ 0) {A : Set E} (hA : A ⊆ Ω) :
