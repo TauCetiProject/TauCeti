@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.CliffordAlgebra.Star
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
 public import TauCeti.LinearAlgebra.CliffordAlgebra.ScalarTrace.Basic
 -- Private: the product, reversal and exterior-basis lemmas below are used only inside proofs.
@@ -66,6 +67,8 @@ of the pairing: if every `Q (b i)` is nonnegative then `τ (reverse x * x) ≥ 0
 * `CliffordAlgebra.scalarTrace_reverse_mul_self_nonneg` and
   `CliffordAlgebra.scalarTrace_reverse_mul_self_eq_zero_iff`: positivity and faithfulness of the
   pairing over an ordered ring.
+* `TauCeti.involute_basis`: the grade involution on an orthogonal ordered-product basis.
+* `TauCeti.scalarTrace_star_basis_mul_basis`: the conjugation pairing with negative weights.
 
 ## References
 
@@ -407,3 +410,31 @@ theorem scalarTrace_reverse_mul_self_eq_zero_iff [IsStrictOrderedRing R]
 end Ordered
 
 end CliffordAlgebra
+
+namespace TauCeti
+
+open CliffordAlgebra
+
+variable {R V I : Type*} [CommRing R] [AddCommGroup V] [Module R V] [Invertible (2 : R)]
+  [LinearOrder I] {Q : QuadraticForm R V} {b : Module.Basis I R V}
+
+/-- The grade involution multiplies an orthogonal ordered-product basis vector by the sign
+of its degree. -/
+theorem involute_basis (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (s : Finset I) :
+    involute (basis Q b s) = (-1 : R) ^ s.card • basis Q b s := by
+  rw [basis_eq_prod_map_sort hb, involute_prod_map_ι]
+  simp
+
+/-- In an orthogonal ordered-product basis, Clifford conjugation changes the diagonal weights
+of the reversion trace pairing from `Q (b i)` to `-Q (b i)`. -/
+theorem scalarTrace_star_basis_mul_basis (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
+    (s t : Finset I) :
+    scalarTrace Q (star (basis Q b s) * basis Q b t) =
+      if s = t then ∏ i ∈ s, -Q (b i) else 0 := by
+  rw [CliffordAlgebra.star_def, involute_basis hb, map_smul, smul_mul_assoc, map_smul,
+    scalarTrace_reverse_basis_mul_basis hb]
+  split_ifs with h
+  · simp [smul_eq_mul, Finset.prod_neg]
+  · simp
+
+end TauCeti
