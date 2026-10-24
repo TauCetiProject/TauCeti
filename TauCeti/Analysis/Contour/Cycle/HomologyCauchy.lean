@@ -32,9 +32,11 @@ scalar one: every continuous linear functional commutes with the cycle integral
 the Hahn–Banach theorem. For an incomplete `E`, every Bochner integral valued in `E` is zero, and
 hence so is the cycle integral.
 
-## Main result
+## Main results
 
 * `TauCeti.Contour.Cycle.homologyCauchyTheorem` — Cauchy's theorem for a null-homologous cycle.
+* `TauCeti.Contour.Cycle.integral_eq_of_windingNumber_eq` — cycles with the same winding numbers
+  about the singular set have the same integral.
 
 ## References
 
@@ -268,6 +270,25 @@ theorem homologyCauchyTheorem {E : Type*} [NormedAddCommGroup E] [NormedSpace �
     rw [integral_eq_sum_support]
     exact Finset.sum_eq_zero fun γ _ ↦ by
       simp [intervalIntegral, integral_of_not_completeSpace hE]
+
+/-- **Homologous cycles have equal integrals.** Let `f` be holomorphic on `U \ K`, with `U` open
+and `K` closed, and let `C` and `D` be cycles in `U \ K` that are null-homologous in `U`. If `C`
+and `D` have the same winding number about every point of `K`, then `f` has the same integral over
+`C` and over `D`. -/
+theorem integral_eq_of_windingNumber_eq {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    {f : ℂ → E} {U K : Set ℂ} (hU : IsOpen U) (hK : IsClosed K)
+    (hf : DifferentiableOn ℂ f (U \ K)) {C D : Cycle} (hC : IsIn C (U \ K))
+    (hD : IsIn D (U \ K)) (hCU : IsNullHomologous C U) (hDU : IsNullHomologous D U)
+    (hCD : ∀ z ∈ K, windingNumber z C = windingNumber z D) :
+    integral f C = integral f D := by
+  rw [← sub_eq_zero, ← map_sub]
+  refine homologyCauchyTheorem (hU.sdiff hK) ?_ hf (isNullHomologous_iff.mpr fun z hz ↦ ?_)
+  · rw [sub_eq_add_neg]
+    exact hC.add (isIn_neg_iff.mpr hD)
+  · rw [map_sub, sub_eq_zero]
+    by_cases hzU : z ∈ U
+    · exact hCD z (by simpa [hzU] using hz)
+    · rw [isNullHomologous_iff.mp hCU z hzU, isNullHomologous_iff.mp hDU z hzU]
 
 end TauCeti.Contour.Cycle
 
