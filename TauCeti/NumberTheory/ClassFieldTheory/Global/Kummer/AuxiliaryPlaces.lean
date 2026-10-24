@@ -12,6 +12,7 @@ public import TauCeti.RingTheory.Ideal.PrimesOver
 import TauCeti.NumberTheory.ClassFieldTheory.Global.FrobeniusGeneration
 import TauCeti.NumberTheory.NumberField.Frobenius.SplitBasis
 import TauCeti.NumberTheory.NumberField.Kummer.Unramified
+import TauCeti.RingTheory.RootsOfUnity.Basic
 
 /-!
 # Auxiliary places for the Kummer second inequality
@@ -74,9 +75,9 @@ theorem exists_auxiliaryPlaces_unitLocalPowerClassMap_surjective
             Module.finrank (v.adicCompletion K) (w.1.adicCompletion L) = 1 := by
   classical
   let _ : NeZero p := ⟨hp.ne_zero⟩
-  have hζK : IsPrimitiveRoot (algebraMap (𝓞 K) K ζ) p :=
-    hζ.map_of_injective (FaithfulSMul.algebraMap_injective (𝓞 K) K)
-  let _ : HasEnoughRootsOfUnity K p := .of_card_le hζK.card_rootsOfUnity.ge
+  let _ : HasEnoughRootsOfUnity K p :=
+    hasEnoughRootsOfUnity_of_isPrimitiveRoot
+      (hζ.map_of_injective (FaithfulSMul.algebraMap_injective (𝓞 K) K))
   let Δ := (S : Set (HeightOneSpectrum (𝓞 K))).unit K
   let M := kummerField E p Δ
   let _ : (powMonoidHom p : Kˣ →* Kˣ).range.IsFiniteRelIndex Δ :=
