@@ -152,6 +152,7 @@ lemma relativeSpecSymmetricAlgebraHomAddEquiv_zero_hom :
     relativeSpecSymmetricAlgebraHomAddEquiv F (𝟙_ (Over X))
       (ζ : 𝟙_ (Over X) ⟶ (MorphismProperty.Over.forget _ _ X).obj
         ((relativeSpec X).obj (op ((symmetricAlgebra X).obj F)))) = 0 :=
+  -- `ζ` is by definition `homEquiv'.symm 0`, the `zero` field of `AddMonObj.ofRepresentableBy`
   (relativeSpecSymmetricAlgebraRepresentableBy F).homEquiv'.apply_symm_apply 0
 
 /-- The addition morphism `Spec_X (Sym F) ×_X Spec_X (Sym F) ⟶ Spec_X (Sym F)` corresponds to the
@@ -162,6 +163,8 @@ lemma relativeSpecSymmetricAlgebraHomAddEquiv_add_hom :
         ((relativeSpec X).obj (op ((symmetricAlgebra X).obj F)))) =
       relativeSpecSymmetricAlgebraHomAddEquiv F _ (fst _ _) +
         relativeSpecSymmetricAlgebraHomAddEquiv F _ (snd _ _) :=
+  -- `σ` is by definition `homEquiv'.symm (homEquiv' (fst _ _) + homEquiv' (snd _ _))`, the `add`
+  -- field of `AddMonObj.ofRepresentableBy`
   (relativeSpecSymmetricAlgebraRepresentableBy F).homEquiv'.apply_symm_apply _
 
 /-- **The additive group structure of `Spec_X (Sym F)` is commutative.** -/
@@ -207,9 +210,10 @@ instance isAddMonHom_relativeSpec_map {F' F : QuasicoherentSheaf X} (a : F' ⟶ 
       ← relativeSpecSymmetricAlgebraHomAddEquiv_comp, tensorHom_fst, tensorHom_snd])
 
 variable (X) in
-/-- `F ↦ Spec_X (Sym F)` as a contravariant functor from quasicoherent sheaves on `X` to
-commutative group schemes over `X`: the relative-spectrum map of `Sym a` for `a : F' ⟶ F` is a
-homomorphism of group schemes by `isAddMonHom_relativeSpec_map`. -/
+/-- `F ↦ Spec_X (Sym F)` as a contravariant functor from quasicoherent sheaves on `X` to group
+schemes over `X`: the relative-spectrum map of `Sym a` for `a : F' ⟶ F` is a homomorphism of group
+schemes by `isAddMonHom_relativeSpec_map`. Each object is moreover commutative, by
+`isCommAddMonObjRelativeSpecSymmetricAlgebra`. -/
 -- exposed so that its underlying objects and morphisms are seen to be those of relative Spec
 @[expose]
 def relativeSpecSymmetricAlgebraAddGrp : (QuasicoherentSheaf X)ᵒᵖ ⥤ AddGrp (Over X) where
@@ -260,6 +264,14 @@ lemma relativeSpecSymmetricAlgebraPullbackHomAddEquiv_apply (T : Over X)
     relativeSpecSymmetricAlgebraPullbackHomAddEquiv F T t =
       relativeSpecSymmetricAlgebraPullbackHomEquiv F T t :=
   (relativeSpecSymmetricAlgebraPullbackHomEquiv_apply F T t).symm
+
+/-- The point of `Spec_X (Sym F)` of a linear functional in the group `Hom(q^* F, 𝒪_T)` is the one
+given by `relativeSpecSymmetricAlgebraPullbackHomEquiv`. -/
+lemma relativeSpecSymmetricAlgebraPullbackHomAddEquiv_symm_apply (T : Over X)
+    (φ : (Scheme.Modules.pullback T.hom).obj F.obj ⟶ 𝟙_ T.left.Modules) :
+    (relativeSpecSymmetricAlgebraPullbackHomAddEquiv F T).symm φ =
+      (relativeSpecSymmetricAlgebraPullbackHomEquiv F T).symm φ :=
+  (relativeSpecSymmetricAlgebraPullbackHomEquiv_symm_apply F T φ).symm
 
 end
 
