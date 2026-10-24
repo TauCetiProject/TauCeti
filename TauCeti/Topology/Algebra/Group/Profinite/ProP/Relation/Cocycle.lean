@@ -71,7 +71,7 @@ theorem exists_locallyConstant_cocycle_forall_apply_of_eq [Finite X] [DecidableE
       single y.1 (1 : ZMod p) * y.2)).comp (π.continuous.prodMap continuous_id)⟩
   have : Finite (MonoidAlgebra (ZMod p) G) := Module.finite_of_finite (ZMod p)
   have hM : IsProP p (Multiplicative (X → MonoidAlgebra (ZMod p) G)) :=
-    IsPGroup.isProP (ZModModule.isPGroup_multiplicative (n := p))
+    IsPGroup.isProP (ZModModule.isPGroup_multiplicative p (X → MonoidAlgebra (ZMod p) G))
   obtain ⟨D, hD, hDof⟩ := freeProP.exists_mem_Z1_forall_apply_of_eq hM fun i ↦ Pi.single i 1
   obtain ⟨hDc, hDcoc⟩ := mem_Z1_iff.1 hD
   exact ⟨D, IsLocallyConstant.iff_continuous D |>.2 hDc, hDcoc, hDof⟩

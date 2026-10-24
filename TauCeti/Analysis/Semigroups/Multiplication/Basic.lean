@@ -89,7 +89,7 @@ theorem StronglyContinuousSemigroup.ofMultiplication_apply_apply (m : α →ᵇ 
 /-- Pointwise action of the multiplication semigroup: `(S(t) f)(x) = e^{-t·m x} · f(x)`. -/
 theorem StronglyContinuousSemigroup.ofMultiplication_apply_apply_apply (m : α →ᵇ ℝ) (t : ℝ≥0)
     (f : α →ᵇ ℝ) (x : α) : ofMultiplication m t f x = Real.exp (-((t : ℝ) * m x)) * f x := by
-  rw [ofMultiplication_apply_apply, BoundedContinuousFunction.mul_apply,
+  rw [ofMultiplication_apply_apply, _root_.mul_apply,
     BoundedContinuousFunction.coe_expNegMul]
 
 /-- The real-time operator of the multiplication semigroup at `t ≥ 0` is multiplication by
@@ -170,7 +170,7 @@ theorem StronglyContinuousSemigroup.ofMultiplication_resolvent_eq (m : α →ᵇ
     dsimp only
     rw [hpt t, StronglyContinuousSemigroup.ofMultiplication_apply_apply_apply, hu]
     ring
-  rw [ContinuousLinearMap.mul_apply', BoundedContinuousFunction.mul_apply,
+  rw [ContinuousLinearMap.mul_apply', _root_.mul_apply,
     BoundedContinuousFunction.coe_addInv, hstep1,
     MeasureTheory.setIntegral_congr_fun measurableSet_Ioi
       fun t (_ : t ∈ Set.Ioi 0) => hnorm t,
@@ -242,7 +242,7 @@ theorem ContractionSemigroup.ofMultiplication_apply_apply_apply (m : α →ᵇ �
     (t : ℝ≥0) (f : α →ᵇ ℝ) (x : α) :
     ContractionSemigroup.ofMultiplication m hm t f x =
       Real.exp (-((t : ℝ) * m x)) * f x := by
-  rw [ofMultiplication_apply_apply, BoundedContinuousFunction.mul_apply,
+  rw [ofMultiplication_apply_apply, _root_.mul_apply,
     BoundedContinuousFunction.coe_expNegMul]
 
 /-- The resolvent of the multiplication contraction semigroup is multiplication by

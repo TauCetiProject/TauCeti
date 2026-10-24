@@ -286,14 +286,14 @@ theorem zero_apply (x : E) : (0 : C1HolderSpace α E F) x = 0 := by
 theorem add_apply (f g : C1HolderSpace α E F) (x : E) :
     (f + g) x = f x + g x := by
   rw [← toBoundedContinuousFunction_apply, toBoundedContinuousFunction_add,
-    BoundedContinuousFunction.add_apply, toBoundedContinuousFunction_apply,
+    _root_.add_apply, toBoundedContinuousFunction_apply,
     toBoundedContinuousFunction_apply]
 
 @[simp]
 theorem smul_apply (c : ℝ) (f : C1HolderSpace α E F) (x : E) :
     (c • f) x = c • f x := by
   rw [← toBoundedContinuousFunction_apply, toBoundedContinuousFunction_smul,
-    BoundedContinuousFunction.smul_apply, toBoundedContinuousFunction_apply]
+    _root_.smul_apply, toBoundedContinuousFunction_apply]
 
 /-- The `C^{1,α}` norm is the maximum of the supremum norm of the function and the
 supremum-plus-Hölder norm of its derivative. -/

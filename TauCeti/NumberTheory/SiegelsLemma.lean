@@ -129,9 +129,9 @@ theorem norm_geomRecurrence [NormedRing R] [NormOneClass R] (b : R) {m : ℕ} (h
     by_cases hc : j = i.castSucc
     · simp [hc, Fin.castSucc_lt_succ.ne]
     · by_cases hs : j = i.succ <;> simp [hc, hs, Fin.castSucc_lt_succ.ne']
-  · have hb := _root_.Matrix.norm_entry_le_entrywise_sup_norm (geomRecurrence b m)
+  · have hb := _root_.Matrix.norm_apply_le_norm (geomRecurrence b m)
       (i := ⟨0, hm⟩) (j := Fin.castSucc ⟨0, hm⟩)
-    have h₁ := _root_.Matrix.norm_entry_le_entrywise_sup_norm (geomRecurrence b m)
+    have h₁ := _root_.Matrix.norm_apply_le_norm (geomRecurrence b m)
       (i := ⟨0, hm⟩) (j := Fin.succ ⟨0, hm⟩)
     simp only [geomRecurrence_apply, Fin.castSucc_lt_succ.ne, Fin.castSucc_lt_succ.ne',
       ↓reduceIte, sub_zero, zero_sub, norm_neg, norm_one] at hb h₁

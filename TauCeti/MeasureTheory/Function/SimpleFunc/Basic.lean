@@ -42,7 +42,8 @@ theorem map_eq_sum_restrict_const (u : SimpleFunc α β) (ψ : β → M) :
     u.map ψ = ∑ c ∈ u.range, (const α (ψ c)).restrict (u ⁻¹' {c}) := by
   ext x
   rw [map_apply_eq_sum_restrict_const, ← Finset.sum_apply]
-  exact congrFun (map_sum (⟨⟨_, coe_zero⟩, coe_add⟩ : SimpleFunc α M →+ α → M) _ _).symm x
+  exact congrFun
+    (map_sum (⟨⟨_, FunLike.coe_zero⟩, FunLike.coe_add⟩ : SimpleFunc α M →+ α → M) _ _).symm x
 
 /-- A simple function is the sum, over its range, of its values `c` restricted to the fibres
 `u ⁻¹' {c}`. -/

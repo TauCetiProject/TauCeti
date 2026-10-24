@@ -73,7 +73,7 @@ private theorem exists_monomial_of_mem_closure [Fintype ι] [CompactSpace K] {g 
     ∃ n : ι → ℕ, ∀ x : K, g x = ∏ i, (x : ι → ℝ) i ^ n i := by
   obtain ⟨n, rfl⟩ := Submonoid.exists_of_mem_closure_range (coordBCF K) g hg
   exact ⟨n, fun x => by
-    simp only [BoundedContinuousFunction.prod_apply, BoundedContinuousFunction.pow_apply,
+    simp only [_root_.prod_apply, _root_.pow_apply,
       coordBCF_apply]⟩
 
 /-- **Multivariate moment determinacy on a compact set.** Two finite Borel measures on a compact

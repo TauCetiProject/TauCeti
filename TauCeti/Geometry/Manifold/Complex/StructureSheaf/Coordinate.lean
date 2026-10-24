@@ -165,7 +165,7 @@ theorem holomorphicCoordinateGerm_dvd_iff_eval_eq_zero (hx : x ∈ e.source)
     dsimp only [S]
     apply holomorphicStructureSheaf.ext
     intro y
-    simp only [mul_apply, map_apply]
+    simp only [holomorphicStructureSheaf.mul_apply, map_apply]
     rw [holomorphicCoordinateSection_apply e he (e x) (Opens.inclusion hWe y)]
     have hq : q y = dslope A (e x) (e y) :=
       ofMDifferentiable_apply (U := W) _ _ y

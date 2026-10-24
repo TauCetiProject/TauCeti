@@ -95,11 +95,11 @@ theorem ext_of_forall_mem_submonoid_integral_eq_of_polish [PolishSpace E] [Borel
   | mem f hf => exact heq f hf
   | zero => simp
   | add a b _ _ ha hb =>
-    simp only [BoundedContinuousFunction.add_apply]
+    simp only [_root_.add_apply]
     rw [integral_add (a.integrable P) (b.integrable P),
       integral_add (a.integrable P') (b.integrable P'), ha, hb]
   | smul c a _ ha =>
-    simp only [BoundedContinuousFunction.smul_apply, smul_eq_mul]
+    simp only [_root_.smul_apply, smul_eq_mul]
     rw [integral_const_mul, integral_const_mul, ha]
 
 section Tight

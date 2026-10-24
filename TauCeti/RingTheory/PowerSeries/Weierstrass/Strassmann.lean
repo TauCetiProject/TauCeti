@@ -61,7 +61,7 @@ theorem IsDistinguished.encard_setOf_evalAt_eq_zero_le (hf : IsDistinguished c s
   have : IsUltrametricDist L := .of_normedAlgebra K
   obtain ⟨e, ω, he, hω, rfl⟩ :=
     hf.exists_isUnit_isMonicOfDegree_mul_eq (isUnit_iff_ne_zero.mpr hf.coeff_ne_zero) hc hfr
-  have hω0 : ω.map (algebraMap K L) ≠ 0 := 
+  have hω0 : ω.map (algebraMap K L) ≠ 0 :=
     (Polynomial.map_ne_zero_iff (algebraMap K L).injective).mpr hω.ne_zero
   -- A zero of `f = e * ω` in the closed disc is a root of `ω`, since `e(x)` is a unit.
   have hsub : {x : L | ‖x‖ ≤ c ∧ ((e : PowerSeries K) * ω).evalAt x = 0} ⊆
