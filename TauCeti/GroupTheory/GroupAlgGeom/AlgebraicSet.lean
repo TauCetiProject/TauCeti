@@ -416,6 +416,14 @@ theorem homEquiv_apply_coe (φ : GHom (coeff ι S) ι) (x : X) :
 @[simp]
 theorem homEquiv_symm_apply (v : V ι S) : (homEquiv ι S).symm v = evalGHom v v.2 := (rfl)
 
+/-- Evaluation at a solution agrees with the corresponding coordinate-group homomorphism. -/
+@[simp]
+theorem homEquiv_eval_mk (S : Set (GX G X)) (φ : GHom (coeff ι S) ι) (w : GX G X) :
+    eval ι (homEquiv ι S φ) w = φ (w : CoordGroup ι S) := by
+  have he := congrArg (fun f : GHom (coeff ι S) ι => f (w : CoordGroup ι S))
+    ((homEquiv ι S).symm_apply_apply φ)
+  simpa only [homEquiv_symm_apply, evalGHom_mk] using he
+
 /-- A `G`-homomorphism out of `G_{R(S)}` is determined by its values on the variables. -/
 @[ext]
 theorem gHom_ext {φ ψ : GHom (coeff ι S) ι}

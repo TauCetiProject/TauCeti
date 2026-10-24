@@ -136,6 +136,37 @@ variable {M : Type*} [Group M] {ιM : G →* M} in
 theorem comp_assoc (χ : GHom ιL ιM) (ψ : GHom ιK ιL) (φ : GHom ιH ιK) :
     (χ.comp ψ).comp φ = χ.comp (ψ.comp φ) := (rfl)
 
+/-- The inverse of a bijective coefficient-preserving homomorphism preserves coefficients. -/
+noncomputable def symmOfBijective (φ : GHom ιH ιK) (hφ : Function.Bijective φ) :
+    GHom ιK ιH where
+  toMonoidHom := (MulEquiv.ofBijective φ.toMonoidHom hφ).symm.toMonoidHom
+  map_coeff' g := by
+    apply hφ.1
+    rw [φ.map_coeff g]
+    exact MulEquiv.ofBijective_apply_symm_apply φ.toMonoidHom hφ
+
+@[simp]
+theorem apply_symmOfBijective (φ : GHom ιH ιK) (hφ : Function.Bijective φ) (x : K) :
+    φ (φ.symmOfBijective hφ x) = x := by
+  exact MulEquiv.ofBijective_apply_symm_apply φ.toMonoidHom hφ
+
+@[simp]
+theorem symmOfBijective_apply (φ : GHom ιH ιK) (hφ : Function.Bijective φ) (x : H) :
+    φ.symmOfBijective hφ (φ x) = x := by
+  exact (MulEquiv.ofBijective φ.toMonoidHom hφ).symm_apply_apply x
+
+@[simp]
+theorem comp_symmOfBijective (φ : GHom ιH ιK) (hφ : Function.Bijective φ) :
+    φ.comp (φ.symmOfBijective hφ) = GHom.id ιK := by
+  ext x
+  exact φ.apply_symmOfBijective hφ x
+
+@[simp]
+theorem symmOfBijective_comp (φ : GHom ιH ιK) (hφ : Function.Bijective φ) :
+    (φ.symmOfBijective hφ).comp φ = GHom.id ιH := by
+  ext x
+  exact φ.symmOfBijective_apply hφ x
+
 end GHom
 
 /-! ### `G`-groups -/
