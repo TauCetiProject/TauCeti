@@ -9,6 +9,8 @@ public import TauCeti.Data.Fintype.Fiber
 public import Mathlib.Algebra.Polynomial.Roots
 public import Mathlib.Basic.Sign.Defs
 public import Mathlib.RingTheory.Polynomial.IntegralNormalization
+import Mathlib.Algebra.Order.Group.Finset
+import Mathlib.Basic.Sign.Basic
 import TauCeti.Algebra.Polynomial.Eval.Sign
 
 /-! # Polynomial sign counts and Tarski queries
@@ -24,6 +26,13 @@ Sign counts and sign sums are unchanged when the points and polynomials are mapp
 strictly monotone ring homomorphism (`Finset.signCount_map_image`, `Finset.signSum_map_image`).
 Over a field, `Polynomial.tarskiQuery_integralNormalization` clears the leading coefficient of
 the root polynomial, so Tarski queries can always be computed at a monic root polynomial.
+
+The algebraic laws of Tarski queries follow. In the queried polynomial, the query depends only on
+signs at the roots (`Polynomial.tarskiQuery_congr`), so it is unchanged by adding multiples of the
+root polynomial or reducing modulo it, changes sign under negation, is multiplied by the sign of a
+constant factor, and for a square counts the roots at which the polynomial does not vanish. In
+the root polynomial, it depends only on the set of distinct roots: it is unchanged under
+associates and positive powers, and is additive over products of coprime factors.
 
 ## References
 
@@ -151,6 +160,40 @@ end Map
 
 end Basic
 
+section OrderedRing
+
+variable {R : Type*} [Ring R] [LinearOrder R] [IsStrictOrderedRing R]
+
+@[simp]
+theorem signSum_neg (Z : Finset R) (p : R[X]) : signSum Z (-p) = -signSum Z p := by
+  simp [signSum_eq_sum, Left.sign_neg]
+
+/-- Scaling a polynomial by a constant multiplies its sign sums by the sign of the constant. -/
+@[simp]
+theorem signSum_C_mul (Z : Finset R) (c : R) (p : R[X]) :
+    signSum Z (C c * p) = sign c * signSum Z p := by
+  simp [signSum_eq_sum, sign_mul, Finset.mul_sum]
+
+end OrderedRing
+
+section CommOrderedRing
+
+variable {R : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
+
+/-- The sign sum of a square counts the points at which the polynomial does not vanish. -/
+theorem signSum_sq (Z : Finset R) (p : R[X]) :
+    signSum Z (p ^ 2) = (Z.filter fun x => p.eval x ≠ 0).card := by
+  classical
+  rw [signSum_eq_sum, Finset.card_filter, Nat.cast_sum]
+  refine Finset.sum_congr rfl fun x _ => ?_
+  rw [eval_pow, sign_pow]
+  rcases lt_trichotomy (p.eval x) 0 with h | h | h
+  · simp [h, h.ne]
+  · simp [h]
+  · simp [h, h.ne']
+
+end CommOrderedRing
+
 end Finset
 
 namespace Polynomial
@@ -202,6 +245,73 @@ theorem tarskiQuery_one_right [ZeroLEOneClass R] (p : R[X]) :
     tarskiQuery p 1 = p.roots.toFinset.card := by
   simp [tarskiQuery_eq_signSum]
 
+@[simp, grind =]
+theorem tarskiQuery_C_left (c : R) (q : R[X]) : tarskiQuery (C c) q = 0 := by
+  simp [tarskiQuery_eq_signSum]
+
+/-- A Tarski query depends only on the signs of the queried polynomial at the roots. -/
+theorem tarskiQuery_congr {p q r : R[X]}
+    (h : ∀ x ∈ p.roots, sign (q.eval x) = sign (r.eval x)) :
+    tarskiQuery p q = tarskiQuery p r := by
+  rw [tarskiQuery_eq_sum, tarskiQuery_eq_sum]
+  exact Finset.sum_congr rfl fun x hx => by rw [h x (Multiset.mem_toFinset.mp hx)]
+
+/-- Adding a multiple of `p` to the queried polynomial does not change the query, since it does
+not change the values at the roots of `p`. -/
+@[simp]
+theorem tarskiQuery_add_mul (p q r : R[X]) : tarskiQuery p (q + p * r) = tarskiQuery p q :=
+  tarskiQuery_congr fun x hx => by
+    rw [eval_add, eval_mul, (isRoot_of_mem_roots hx).eq_zero, zero_mul, add_zero]
+
+/-- Associated root polynomials have the same Tarski queries. -/
+theorem _root_.Associated.tarskiQuery_eq {p s : R[X]} (h : Associated p s) (q : R[X]) :
+    tarskiQuery p q = tarskiQuery s q := by
+  rw [tarskiQuery_eq_signSum, tarskiQuery_eq_signSum, h.roots_eq]
+
+@[simp]
+theorem tarskiQuery_C_mul_left {c : R} (hc : c ≠ 0) (p q : R[X]) :
+    tarskiQuery (C c * p) q = tarskiQuery p q := by
+  rw [tarskiQuery_eq_signSum, tarskiQuery_eq_signSum, roots_C_mul _ hc]
+
+@[simp]
+theorem tarskiQuery_neg_left (p q : R[X]) : tarskiQuery (-p) q = tarskiQuery p q := by
+  rw [tarskiQuery_eq_signSum, tarskiQuery_eq_signSum, roots_neg]
+
+/-- A positive power of `p` has the same distinct roots as `p`, hence the same Tarski queries. -/
+@[simp]
+theorem tarskiQuery_pow_left (p q : R[X]) {n : ℕ} (hn : n ≠ 0) :
+    tarskiQuery (p ^ n) q = tarskiQuery p q := by
+  rw [tarskiQuery_eq_signSum, tarskiQuery_eq_signSum, roots_pow, Multiset.toFinset_nsmul _ _ hn]
+
+/-- The query at the roots of a nonzero product of two polynomials without common roots is the
+sum of the queries at the roots of the factors. -/
+theorem tarskiQuery_mul_left_of_disjoint {p s : R[X]} (hps : p * s ≠ 0)
+    (h : Disjoint p.roots.toFinset s.roots.toFinset) (q : R[X]) :
+    tarskiQuery (p * s) q = tarskiQuery p q + tarskiQuery s q := by
+  classical
+  rw [tarskiQuery_eq_sum, tarskiQuery_eq_sum, tarskiQuery_eq_sum, roots_mul hps,
+    Multiset.toFinset_add, Finset.sum_union h]
+
+/-- The query at the roots of a product of coprime polynomials is the sum of the queries at the
+roots of the factors. No nonvanishing hypothesis is needed: if one factor is zero, the other is
+a unit and has no roots. -/
+theorem tarskiQuery_mul_left_of_isCoprime {p s : R[X]} (h : IsCoprime p s) (q : R[X]) :
+    tarskiQuery (p * s) q = tarskiQuery p q + tarskiQuery s q := by
+  rcases eq_or_ne p 0 with rfl | hp
+  · simp [tarskiQuery_eq_signSum,
+      (associated_one_iff_isUnit.mpr (isCoprime_zero_left.mp h)).roots_eq]
+  rcases eq_or_ne s 0 with rfl | hs
+  · simp [tarskiQuery_eq_signSum,
+      (associated_one_iff_isUnit.mpr (isCoprime_zero_right.mp h)).roots_eq]
+  refine tarskiQuery_mul_left_of_disjoint (mul_ne_zero hp hs)
+    (Finset.disjoint_left.mpr fun x hxp hxs => ?_) q
+  obtain ⟨a, b, hab⟩ := h
+  have := congr_arg (eval x) hab
+  rw [eval_add, eval_mul, eval_mul,
+    (isRoot_of_mem_roots (Multiset.mem_toFinset.mp hxp)).eq_zero,
+    (isRoot_of_mem_roots (Multiset.mem_toFinset.mp hxs)).eq_zero, eval_one] at this
+  simp at this
+
 /-- Counts at the roots of a nonzero polynomial count exactly its realizing zeros. -/
 theorem signCount_roots_eq_natCard {J : Type*} {p : R[X]} (hp : p ≠ 0)
     (Q : J → R[X]) (σ : J → SignType) :
@@ -231,6 +341,28 @@ theorem signCount_roots_pos {J : Type*}
 
 end Basic
 
+section OrderedRing
+
+variable {R : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
+
+@[simp]
+theorem tarskiQuery_neg_right (p q : R[X]) : tarskiQuery p (-q) = -tarskiQuery p q :=
+  signSum_neg _ _
+
+/-- Scaling the queried polynomial by a constant multiplies the query by the sign of the
+constant. -/
+@[simp]
+theorem tarskiQuery_C_mul_right (c : R) (p q : R[X]) :
+    tarskiQuery p (C c * q) = sign c * tarskiQuery p q :=
+  signSum_C_mul _ _ _
+
+/-- The query of a square counts the distinct roots of `p` at which `q` does not vanish. -/
+theorem tarskiQuery_sq_right (p q : R[X]) :
+    tarskiQuery p (q ^ 2) = (p.roots.toFinset.filter fun x => q.eval x ≠ 0).card :=
+  signSum_sq _ _
+
+end OrderedRing
+
 section Field
 
 variable {R : Type*} [Field R] [LinearOrder R]
@@ -251,6 +383,11 @@ theorem tarskiQuery_integralNormalization {p q r : R[X]} (hp : p ≠ 0)
     Finset.sum_image fun x _ y _ hxy => mul_left_cancel₀ ha hxy]
   refine Finset.sum_congr rfl fun x hx => ?_
   rw [h x (isRoot_of_mem_roots (Multiset.mem_toFinset.mp hx)).eq_zero]
+
+/-- Reducing the queried polynomial modulo `p` does not change the query. -/
+@[simp]
+theorem tarskiQuery_mod (p q : R[X]) : tarskiQuery p (q % p) = tarskiQuery p q := by
+  rw [EuclideanDomain.mod_eq_sub_mul_div, sub_eq_add_neg, ← mul_neg, tarskiQuery_add_mul]
 
 end Field
 
