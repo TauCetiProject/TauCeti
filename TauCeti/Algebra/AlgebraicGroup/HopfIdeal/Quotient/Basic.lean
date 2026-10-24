@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.FiniteType
+public import Mathlib.RingTheory.Nilpotent.Defs
 public import Mathlib.CategoryTheory.ConcreteCategory.EpiMono
 public import TauCeti.Algebra.AlgebraicGroup.FiniteType.CommHopfAlgCat
 public import TauCeti.Algebra.Bialgebra.Quotient
@@ -59,6 +60,9 @@ The same quotient of a finite-type commutative Hopf algebra is again an object o
   change a commutative Hopf algebra.
 * `CommHopfAlgCat.Hom.quotientIsoOfSurjective`: a surjective ambient morphism identifies
   the source quotient by an inverse-image Hopf ideal with the target quotient.
+* `CommHopfAlgCat.Hom.prop_quotient_comapOfSurjective_iff` and
+  `CommHopfAlgCat.Hom.isReduced_quotient_comapOfSurjective_iff`: isomorphism-closed properties
+  and reducedness transfer across that identification.
 * `TauCeti.CommHopfAlgCat.quotientIsoOfIso`: the specialization to an ambient isomorphism.
 * `CommHopfAlgCat.Hom.quotientKerOfSurjectiveIso`: the quotient by the kernel of a surjective
   morphism is its target.
@@ -252,6 +256,33 @@ lemma _root_.CommHopfAlgCat.Hom.quotientIsoOfSurjective_hom_mk
         (Ideal.Quotient.mk (I.comapOfSurjective f.hom hf).toIdeal x) =
       Ideal.Quotient.mkₐ R I.toIdeal (f.hom x) :=
   congr($(mkQuotient_comp_quotientIsoOfSurjective_hom f hf I).hom x)
+
+/-- The underlying bialgebra map of the forward quotient isomorphism induced by a surjective
+morphism commutes with the quotient maps. -/
+lemma _root_.CommHopfAlgCat.Hom.hom_quotientIsoOfSurjective_hom_comp_mkBialgHom (f : H ⟶ K)
+    (hf : Function.Surjective f.hom) (I : HopfIdeal R K) :
+    (quotientIsoOfSurjective f hf I).hom.hom.comp
+        (Bialgebra.Quotient.mkBialgHom (R := R) (I.comapOfSurjective f.hom hf).toIdeal) =
+      (Bialgebra.Quotient.mkBialgHom (R := R) I.toIdeal).comp f.hom := by
+  simpa only [_root_.CommHopfAlgCat.hom_comp, hom_mkQuotient] using
+    congrArg _root_.CommHopfAlgCat.Hom.hom (mkQuotient_comp_quotientIsoOfSurjective_hom f hf I)
+
+/-- An isomorphism-closed property holds for the quotient by the inverse image of a Hopf ideal
+along a surjective morphism exactly when it holds for the target quotient. -/
+theorem _root_.CommHopfAlgCat.Hom.prop_quotient_comapOfSurjective_iff
+    (P : ObjectProperty (_root_.CommHopfAlgCat.{v} R)) [P.IsClosedUnderIsomorphisms]
+    (f : H ⟶ K) (hf : Function.Surjective f.hom) (I : HopfIdeal R K) :
+    P (quotient H (I.comapOfSurjective f.hom hf)) ↔ P (quotient K I) :=
+  P.prop_iff_of_iso (quotientIsoOfSurjective f hf I)
+
+/-- The quotient by the inverse image of a Hopf ideal along a surjective morphism is reduced
+exactly when the target quotient is. -/
+theorem _root_.CommHopfAlgCat.Hom.isReduced_quotient_comapOfSurjective_iff (f : H ⟶ K)
+    (hf : Function.Surjective f.hom) (I : HopfIdeal R K) :
+    IsReduced (H ⧸ (I.comapOfSurjective f.hom hf).toIdeal) ↔ IsReduced (K ⧸ I.toIdeal) := by
+  let e := _root_.CommHopfAlgCat.ofIso (quotientIsoOfSurjective f hf I)
+  exact ⟨fun _ ↦ isReduced_of_injective e.symm.toAlgEquiv.toRingHom e.symm.injective,
+    fun _ ↦ isReduced_of_injective e.toAlgEquiv.toRingHom e.injective⟩
 
 /-- An isomorphism of commutative Hopf algebras induces an isomorphism from the quotient by
 the inverse-image Hopf ideal to the corresponding quotient of the target. -/
