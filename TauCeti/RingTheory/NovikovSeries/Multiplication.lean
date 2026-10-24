@@ -80,6 +80,13 @@ namespace NovikovSeries
 
 variable {R S H : Type*}
 
+/-- A coefficient of a finite sum of Novikov series is the sum of the coefficients. -/
+@[simp]
+theorem coeff_sum [AddZeroClass H] {N : H →+ ℝ} [AddCommMonoid R] {ι : Type*} (s : Finset ι)
+    (f : ι → NovikovSeries R H N) (h : H) : (∑ i ∈ s, f i).coeff h = ∑ i ∈ s, (f i).coeff h := by
+  have hs := congrFun (map_sum (coeffAddMonoidHom (R := R) (N := N)) f s) h
+  simpa only [coeffAddMonoidHom_apply, Finset.sum_apply] using hs
+
 section Mul
 
 variable [AddZeroClass H] {N : H →+ ℝ} [NonUnitalNonAssocSemiring R]
@@ -318,7 +325,7 @@ variable [AddMonoid H] {N : H →+ ℝ}
 /-- The coefficient at `h` of a triple product `a * b * c` is the sum of
 `a.coeff u * b.coeff v * c.coeff w` over the finitely many triples of support exponents with
 `u + v + w = h`. -/
-private theorem coeff_mul_mul_eq_sum [NonUnitalSemiring R] (a b c : NovikovSeries R H N) (h : H) :
+theorem coeff_mul_mul_eq_sum [NonUnitalSemiring R] (a b c : NovikovSeries R H N) (h : H) :
     (a * b * c).coeff h = ∑ t ∈ (finite_setOf_add_add_eq a b c h).toFinset,
       a.coeff t.1 * b.coeff t.2.1 * c.coeff t.2.2 := by
   classical
