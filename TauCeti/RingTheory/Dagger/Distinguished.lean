@@ -158,6 +158,13 @@ open TauCeti.PowerSeries
 
 variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R]
 
+/-- Every nonzero overconvergent series in one variable is distinguished of some degree at
+radius one. -/
+theorem washnitzerAlgebra.exists_isDistinguished_one {f : washnitzerAlgebra Unit R}
+    (hf : f ≠ 0) : ∃ s, IsDistinguished 1 s (f : PowerSeries R) :=
+  exists_isDistinguished one_pos
+    (isRestricted_of_mem_washnitzerAlgebra f.2 zero_le_one le_rfl) (by simpa using hf)
+
 /-- A one-variable overconvergent series distinguished at radius one remains distinguished of
 the same degree at some radius greater than one, within any prescribed upper bound. -/
 theorem exists_isDistinguished_of_isDistinguished_one

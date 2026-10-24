@@ -109,8 +109,7 @@ theorem exists_isUnit_isMonicOfDegree_mul_eq {f : washnitzerAlgebra Unit K} (hf 
     ∃ (e : washnitzerAlgebra Unit K) (ω : Polynomial K) (s : ℕ),
       IsUnit e ∧ ω.IsMonicOfDegree s ∧ IsDistinguished 1 s (ω : PowerSeries K) ∧
         e * washnitzerAlgebra.ofPolynomial K ω = f := by
-  obtain ⟨s, hs⟩ := exists_isDistinguished one_pos
-    (isRestricted_of_mem_washnitzerAlgebra f.2 zero_le_one le_rfl) (by simpa using hf)
+  obtain ⟨s, hs⟩ := washnitzerAlgebra.exists_isDistinguished_one hf
   obtain ⟨⟨e, ω⟩, ⟨he, hω, heω⟩, _⟩ :=
     existsUnique_isUnit_isMonicOfDegree_mul_eq_of_isDistinguished_one hs hs.coeff_ne_zero.isUnit
   have heω' : (e : PowerSeries K) * (ω : PowerSeries K) = f := by
@@ -135,8 +134,7 @@ theorem span_singleton_eq_of_forall_le
     exact sub_mem hg (I.mul_mem_left _ hfI)
   have hr0 : r = 0 := by
     by_contra hne
-    obtain ⟨t, ht⟩ := exists_isDistinguished one_pos
-      (isRestricted_of_mem_washnitzerAlgebra r.2 zero_le_one le_rfl) (by simpa using hne)
+    obtain ⟨t, ht⟩ := washnitzerAlgebra.exists_isDistinguished_one hne
     exact ht.coeff_ne_zero (hr t (hmin r hrI t ht))
   rw [← hqr, hr0, add_zero]
   exact Ideal.mem_span_singleton.mpr ⟨q, mul_comm q f⟩
@@ -151,8 +149,7 @@ instance washnitzerAlgebra.isPrincipalIdealRing_unit :
   · exact ⟨⟨0, by simp⟩⟩
   obtain ⟨g, hgI, hg⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hI
   have hex : ∃ s, ∃ f ∈ I, IsDistinguished 1 s (f : PowerSeries K) := by
-    obtain ⟨s, hs⟩ := exists_isDistinguished one_pos
-      (isRestricted_of_mem_washnitzerAlgebra g.2 zero_le_one le_rfl) (by simpa using hg)
+    obtain ⟨s, hs⟩ := washnitzerAlgebra.exists_isDistinguished_one hg
     exact ⟨s, g, hgI, hs⟩
   obtain ⟨f, hfI, hf⟩ := Nat.find_spec hex
   exact ⟨⟨f, (span_singleton_eq_of_forall_le hfI hf

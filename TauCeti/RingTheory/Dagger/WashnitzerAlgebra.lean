@@ -204,6 +204,15 @@ theorem coe_ofPolynomial (p : Polynomial R) :
     (ofPolynomial R p : PowerSeries R) = p := by
   simp [ofPolynomial, Polynomial.coeToPowerSeries.algHom_apply]
 
+/-- The one-variable polynomial inclusion sends `Polynomial.X` to the variable of `W`. -/
+@[simp]
+theorem ofPolynomial_X : ofPolynomial R Polynomial.X = X Unit R () :=
+  Subtype.ext (by simp [PowerSeries.X_apply])
+
+/-- Distinct one-variable polynomials are distinct overconvergent series. -/
+theorem ofPolynomial_injective : Function.Injective (ofPolynomial R) :=
+  fun p q h ↦ Polynomial.coe_injective R (by simpa using congrArg Subtype.val h)
+
 /-- The polynomial inclusion sends the polynomial variables to the variables of `W`. -/
 @[simp]
 theorem ofMvPolynomial_X (i : σ) : ofMvPolynomial σ R (MvPolynomial.X i) = X σ R i :=
