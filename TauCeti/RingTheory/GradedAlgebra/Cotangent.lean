@@ -163,7 +163,7 @@ theorem span_image_toCotangent_irrelevant_eq_top :
   refine Submodule.sum_mem _ fun n hn ↦ Submodule.subset_span ⟨_, ⟨n, ?_, SetLike.coe_mem _⟩, rfl⟩
   refine Nat.pos_of_ne_zero fun hn0 ↦ DFinsupp.mem_support_iff.1 hn ?_
   subst hn0
-  exact Subtype.ext x.2
+  exact Subtype.ext ((mem_irrelevant_iff 𝒜 _).1 x.2)
 
 end CommRing
 
@@ -182,9 +182,7 @@ theorem bijective_aeval_of_irrelevant_le (h𝒜 : ∀ x ∈ 𝒜 0, x ∈ (⊥ :
     (h : (irrelevant 𝒜).toIdeal ≤ Ideal.span (Set.range f) ⊔ (irrelevant 𝒜).toIdeal ^ 2)
     (hdim : (Nat.card ι : WithBot ℕ∞) ≤ ringKrullDim A) :
     Function.Bijective (MvPolynomial.aeval (R := k) f) := by
-  have hpoly : ringKrullDim (MvPolynomial ι k) = Nat.card ι := by
-    rw [MvPolynomial.ringKrullDim_of_isNoetherianRing_of_finite, ringKrullDim_eq_zero_of_field,
-      zero_add]
+  have hpoly : ringKrullDim (MvPolynomial ι k) = Nat.card ι := by simp
   have := FiniteRingKrullDim.of_ringKrullDim_eq_natCast hpoly
   have hsurj := surjective_aeval_of_irrelevant_le 𝒜 h𝒜 hf h
   exact ⟨(MvPolynomial.aeval f).toRingHom.injective_of_surjective_of_ringKrullDim_le hsurj
@@ -221,8 +219,9 @@ theorem ringKrullDim_le_finrank_cotangent (h𝒜 : ∀ x ∈ 𝒜 0, x ∈ (⊥ 
     ((irrelevant 𝒜).toIdeal.le_span_sup_sq_of_span_toCotangent_eq_top
       (Submodule.span_eq_top_of_span_eq_top k A _ hspan))
   refine (ringKrullDim_le_of_surjective (MvPolynomial.aeval _).toRingHom hsurj).trans ?_
-  rw [MvPolynomial.ringKrullDim_of_isNoetherianRing_of_finite, ringKrullDim_eq_zero_of_field,
-    zero_add, Nat.card_eq_fintype_card, Fintype.card_fin]
+  -- Unfolding `toIdeal_irrelevant` would change the type of the cotangent space in the goal,
+  -- leaving its module instance ill-typed.
+  simp [-toIdeal_irrelevant]
 
 /-- **A connected graded algebra with cotangent space of the right dimension is polynomial.** Let
 `A` be a graded algebra over a field `k` whose degree-zero part consists of scalars, and suppose
