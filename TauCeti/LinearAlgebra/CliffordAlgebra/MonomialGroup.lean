@@ -101,6 +101,13 @@ theorem mem_monomialGroup_of_val_eq_ι {u : (CliffordAlgebra Q)ˣ} {i : I}
     (h : (u : CliffordAlgebra Q) = ι Q (v i)) : u ∈ monomialGroup Q v :=
   Subgroup.subset_closure (Or.inr ⟨i, h⟩)
 
+/-- A generator `ι Q (v i)` with `Q (v i)` a unit is the value of an element of the group of signed
+monomials. -/
+theorem exists_monomialGroup_val_eq_ι {i : I} (h : IsUnit (Q (v i))) :
+    ∃ g : monomialGroup Q v, ((g : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) = ι Q (v i) := by
+  obtain ⟨w, hw⟩ := isUnit_ι_of_isUnit Q h
+  exact ⟨⟨w, mem_monomialGroup_of_val_eq_ι v hw⟩, hw⟩
+
 /-- **The element `ε = -1` is central** in the group of signed monomials. -/
 theorem neg_one_mem_center_monomialGroup :
     (⟨-1, neg_one_mem_monomialGroup v⟩ : monomialGroup Q v) ∈ Subgroup.center (monomialGroup Q v) :=
@@ -171,8 +178,8 @@ theorem monomialGroupAlgHom_surjective (hv : Submodule.span R (Set.range v) = �
       (Subalgebra.toSubmodule (monomialGroupAlgHom Q v).range).comap (ι Q) := by
     refine Submodule.span_le.mpr ?_
     rintro _ ⟨i, rfl⟩
-    obtain ⟨w, hw⟩ := isUnit_ι_of_isUnit Q (hQ i)
-    exact ⟨MonoidAlgebra.of R _ ⟨w, mem_monomialGroup_of_val_eq_ι v hw⟩, by simp [hw]⟩
+    obtain ⟨g, hg⟩ := exists_monomialGroup_val_eq_ι v (hQ i)
+    exact ⟨MonoidAlgebra.of R _ g, by simp [hg]⟩
   rintro _ ⟨m, rfl⟩
   exact hle (hv ▸ Submodule.mem_top)
 
@@ -245,6 +252,14 @@ theorem mem_monomialGroup_iff (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
         · exact Or.inr (by rw [hs, mul_neg, invOf_mul_cancel_left])
       simpa using mul_mem hg hgu
 
+/-- For an orthogonal basis whose generators square to `±1`, every basis vector `e_s` is the value
+of an element of the group of signed monomials. -/
+theorem exists_monomialGroup_val_eq_basis (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
+    (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1) (s : Finset I) :
+    ∃ u : monomialGroup Q b, ((u : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) = basis Q b s := by
+  obtain ⟨u, hu⟩ := isUnit_basis hb s fun i _ ↦ isUnit_of_eq_one_or_neg_one b hQ i
+  exact ⟨⟨u, (mem_monomialGroup_iff hb hQ).mpr ⟨s, Or.inl hu⟩⟩, hu⟩
+
 /-- **The order of the group of signed monomials**: for an orthogonal basis over a nontrivial ring
 in which `2` is invertible, indexed by a type with `n` elements and whose generators square to `±1`,
 the group has `2 ^ (n + 1)` elements, the `±e_s` for the `2 ^ n` index sets `s`. -/
@@ -283,11 +298,10 @@ theorem natCard_monomialGroup [Fintype I] [Nontrivial R]
       · exact ⟨1, s, by simp [f, hs]⟩
       · exact ⟨-1, s, by simp [f, hs]⟩
     · rintro ⟨ε, s, rfl⟩
-      obtain ⟨u, hu⟩ := isUnit_basis hb s fun i _ ↦ isUnit_of_eq_one_or_neg_one b hQ i
+      obtain ⟨u, hu⟩ := exists_monomialGroup_val_eq_basis hb hQ s
       rcases hsign ε with h | h
-      · exact ⟨u, (mem_monomialGroup_iff hb hQ).mpr ⟨s, Or.inl hu⟩, by simp [f, h, hu]⟩
-      · exact ⟨-u, (mem_monomialGroup_iff hb hQ).mpr ⟨s, Or.inr (by simp [hu])⟩,
-          by simp [f, h, hu]⟩
+      · exact ⟨u, u.2, by simp [f, h, hu]⟩
+      · exact ⟨-1 * u, mul_mem (neg_one_mem_monomialGroup b) u.2, by simp [f, h, hu]⟩
   have hcard : Nat.card (monomialGroup Q b) = Nat.card (ℤˣ × Finset I) := by
     rw [← SetLike.coe_sort_coe, ← Nat.card_image_of_injective Units.val_injective, hrange,
       Nat.card_range_of_injective hf]
@@ -309,11 +323,7 @@ theorem ker_monomialGroupAlgHom (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
   refine le_antisymm (fun y hy ↦ ?_) (Ideal.span_le.mpr (Set.singleton_subset_iff.mpr
     (monomialGroupAlgHom_of_neg_one_add_one_eq_zero b)))
   -- Every basis vector `e_s` is the value of a group element `u s`.
-  have hu (s : Finset I) : ∃ u : monomialGroup Q b,
-      ((u : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) = basis Q b s := by
-    obtain ⟨u, hu⟩ := isUnit_basis hb s fun i _ ↦ isUnit_of_eq_one_or_neg_one b hQ i
-    exact ⟨⟨u, (mem_monomialGroup_iff hb hQ).mpr ⟨s, Or.inl hu⟩⟩, hu⟩
-  choose u hu using hu
+  choose u hu using exists_monomialGroup_val_eq_basis hb hQ
   -- Lifting `e_s` back to `u s` is a linear section of the group algebra map, modulo `ε + 1`.
   let ψ : CliffordAlgebra Q →ₗ[R] MonoidAlgebra R (monomialGroup Q b) :=
     (basis Q b).constr R fun s ↦ MonoidAlgebra.of R _ (u s)
@@ -386,9 +396,9 @@ private theorem monomialGroupLiftAux_apply_coe (hb : (QuadraticMap.associated Q)
     (f : {f : monomialGroup Q b →* A // f ⟨-1, neg_one_mem_monomialGroup b⟩ = -1})
     (g : monomialGroup Q b) :
     monomialGroupLiftAux hb hQ f ((g : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) = f.1 g := by
-  rw [monomialGroupLiftAux, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
-    monomialGroupAlgebraQuotientEquiv_symm_apply_coe, ← Ideal.Quotient.mkₐ_eq_mk R,
-    ← AlgHom.comp_apply, Ideal.Quotient.liftₐ_comp, MonoidAlgebra.lift_of]
+  simp only [monomialGroupLiftAux, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
+    monomialGroupAlgebraQuotientEquiv_symm_apply_coe]
+  exact MonoidAlgebra.lift_of ..
 
 /-- **The universal property of the Clifford algebra in terms of its signed monomials**: for an
 orthogonal basis whose generators square to `±1`, algebra maps from the Clifford algebra to an
@@ -405,11 +415,10 @@ noncomputable def monomialGroupLift (hb : (QuadraticMap.associated Q).IsOrthoᵢ
   left_inv f := Subtype.ext <| MonoidHom.ext fun g ↦ monomialGroupLiftAux_apply_coe hb hQ f g
   right_inv F := by
     refine hom_ext (b.ext fun i ↦ ?_)
-    obtain ⟨w, hw⟩ := isUnit_ι_of_isUnit Q (isUnit_of_eq_one_or_neg_one b hQ i)
+    obtain ⟨g, hg⟩ := exists_monomialGroup_val_eq_ι b (isUnit_of_eq_one_or_neg_one b hQ i)
     have := monomialGroupLiftAux_apply_coe hb hQ ⟨(F : CliffordAlgebra Q →* A).comp
-      ((Units.coeHom (CliffordAlgebra Q)).comp (monomialGroup Q b).subtype), by simp⟩
-      ⟨w, mem_monomialGroup_of_val_eq_ι b hw⟩
-    simpa [hw] using this
+      ((Units.coeHom (CliffordAlgebra Q)).comp (monomialGroup Q b).subtype), by simp⟩ g
+    simpa [hg] using this
 
 /-- The algebra map `CliffordAlgebra.monomialGroupLift hb hQ f` sends the value of each group
 element `g` to `f g`. -/
