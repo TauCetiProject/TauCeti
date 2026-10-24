@@ -217,15 +217,13 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteS
 
 open TauCeti
 
-/-- The negative-gradient remainder is continuously differentiable at its base point when the
-function is twice continuously differentiable there. -/
-theorem contDiffAt_negativeGradientRemainder (hf : ContDiffAt ℝ 2 f x) :
-    ContDiffAt ℝ 1 (negativeGradientRemainder f x) x := by
-  have hgrad : ContDiffAt ℝ 1 (∇ f) x :=
-    (InnerProductSpace.toDual ℝ E).symm.contDiff.contDiffAt.comp x
-      (hf.fderiv_right (by norm_num))
-  exact hgrad.neg.add <|
-    (hessianOperator f x).contDiff.contDiffAt.comp x (contDiffAt_id.sub contDiffAt_const)
+/-- The negative-gradient remainder `negativeGradientRemainder f x` is `C^n` at any point `y` where
+`f` is `C^(n+1)`. -/
+theorem contDiffAt_negativeGradientRemainder {n : ℕ} {y : E} (hf : ContDiffAt ℝ (n + 1) f y) :
+    ContDiffAt ℝ n (negativeGradientRemainder f x) y := by
+  rw [funext (negativeGradientRemainder_apply f x)]
+  exact (hf.gradient_right le_rfl).neg.add <|
+    (hessianOperator f x).contDiff.contDiffAt.comp y (contDiffAt_id.sub contDiffAt_const)
 
 /-- At a twice continuously differentiable point, the derivative of the nonlinear
 negative-gradient remainder at its base point is zero. -/
@@ -246,8 +244,8 @@ strictly differentiable with zero derivative. This is the two-point estimate nee
 contraction argument for the local stable-manifold theorem. -/
 theorem hasStrictFDerivAt_negativeGradientRemainder (hf : ContDiffAt ℝ 2 f x) :
     HasStrictFDerivAt (negativeGradientRemainder f x) (0 : E →L[ℝ] E) x :=
-  hf.contDiffAt_negativeGradientRemainder.hasStrictFDerivAt'
-    hf.hasFDerivAt_negativeGradientRemainder one_ne_zero
+  (contDiffAt_negativeGradientRemainder (n := 1) (by simpa [one_add_one_eq_two] using hf)
+    ).hasStrictFDerivAt' hf.hasFDerivAt_negativeGradientRemainder one_ne_zero
 
 /-- On a sufficiently small closed ball about a twice continuously differentiable point, the
 nonlinear negative-gradient remainder has any prescribed positive Lipschitz constant.

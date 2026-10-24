@@ -28,16 +28,15 @@ confined to that ball form a Lipschitz graph over a ball in the stable linear su
 
 This is a local stable-manifold theorem at the equilibrium: the graph map is Lipschitz,
 differentiable at the origin with derivative zero, and hence tangent there to the stable linear
-subspace. It is moreover continuously differentiable at every point of the closed ball over which
-the set is a graph, since on a small enough ball the remainder is `C¹` with uniformly continuous
-derivative (`ContinuousLinearMap.contDiffAt_localStableGraphMap`). The embedded-submanifold
-structure carried by this `C¹` graph, and its globalization along the flow, are not established
-here. If `f` is `C^(n+1)` at `x`, the same argument, with uniform `C^n` regularity of the remainder
-(`TauCeti.UniformContDiffOn`), shows that the graph map is `C^n`.
+subspace. If `f` is `C^(n+1)` at `x`, then on a small enough ball the remainder is uniformly `C^n`
+(`TauCeti.UniformContDiffOn`), so the graph map is `C^n` at every point of the closed ball over
+which the set is a graph. A nondegenerate critical point is `C²` at `x`, which is the case
+`n = 1`: the graph is `C¹`. The embedded-submanifold structure carried by this graph, and its
+globalization along the flow, are not established here.
 
 Applying the same construction after reversing time gives the corresponding local unstable set
-as the graph of a Lipschitz, `C¹` map tangent at the origin to the unstable Hessian spectral
-subspace.
+as the graph of a Lipschitz map, `C¹` (and `C^n` when `f` is `C^(n+1)` at `x`), tangent at the
+origin to the unstable Hessian spectral subspace.
 
 Because the projection inverts the graph parameterization, each of the two sets is homeomorphic to
 a closed ball in the spectral subspace it is a graph over, hence to a Euclidean closed ball of the
@@ -205,13 +204,7 @@ private theorem exists_uniformContDiffOn_centered_remainder {n : ℕ}
       (closedBall 0 r) := by
   have hy : ∀ᶠ y in 𝓝 x, ContDiffAt ℝ n (negativeGradientRemainder f x) y := by
     filter_upwards [hf.eventually (by simp)] with y hy
-    have hgrad : ContDiffAt ℝ n (∇ f) y :=
-      (InnerProductSpace.toDual ℝ E).symm.contDiff.contDiffAt.comp y (hy.fderiv_right le_rfl)
-    rw [show negativeGradientRemainder f x =
-      fun y ↦ (-∇ f) y + hessianOperator f x (y - x) from
-        funext (negativeGradientRemainder_apply f x)]
-    exact hgrad.neg.add <|
-      (hessianOperator f x).contDiff.contDiffAt.comp y (contDiffAt_id.sub contDiffAt_const)
+    exact hy.contDiffAt_negativeGradientRemainder
   have hz : ∀ᶠ z in 𝓝 (0 : E), ContDiffAt ℝ n (fun z ↦ negativeGradientRemainder f x (x + z)) z :=
     ((continuous_const.add continuous_id).tendsto' (0 : E) x (by simp)).eventually hy
       |>.mono fun z hz ↦ hz.comp z (contDiffAt_const.add contDiffAt_id)
@@ -231,13 +224,15 @@ private theorem contDiffAt_one_add_one (h : IsNondegenerateCriticalPoint f x) :
 exponential dichotomy constants `K`, `alpha` for the linearization `-hessianOperator f x` along
 the stable projection, and a radius `r` on which the nonlinear remainder of the centred
 negative-gradient field is Lipschitz with a constant `epsilon` small enough both for the
-Lyapunov--Perron machinery and to make the resulting graph constant at most `C`. If `f` is
-moreover `C^(n+1)` at `x`, then on the open ball of that radius the remainder is uniformly `C^n`,
-which is what makes the resulting graph maps `C^n`, and the Lyapunov--Perron bound
-`K / (1 - 2 K (2 epsilon) / alpha)` on solutions in terms of their parameter is nonnegative.
+Lyapunov--Perron machinery and to make the resulting graph constant at most `C`. Given the
+hypothesis `hf` that `f` is `C^(n+1)` at `x`, on the open ball of that radius the remainder is
+uniformly `C^n`, which is what makes the resulting graph maps `C^n`, and the Lyapunov--Perron
+bound `K / (1 - 2 K (2 epsilon) / alpha)` on solutions in terms of their parameter is nonnegative.
 
-This is the setup shared by `IsNondegenerateCriticalPoint.exists_localStableSet_eq_lipschitzGraph`
-and `IsNondegenerateCriticalPoint.exists_localUnstableSet_eq_lipschitzGraph`. -/
+This is the setup shared by the `_of_contDiffAt` graph theorems,
+`IsNondegenerateCriticalPoint.exists_localStableSet_eq_lipschitzGraph_of_contDiffAt` and
+`IsNondegenerateCriticalPoint.exists_localUnstableSet_eq_lipschitzGraph_of_contDiffAt`, and of the
+two `homeomorph_closedBall` theorems. -/
 private theorem exists_lyapunovPerronData (h : IsNondegenerateCriticalPoint f x) {n : ℕ}
     (hf : ContDiffAt ℝ (n + 1) f x) (C : ℝ≥0) (hC : 0 < C) :
     ∃ (K alpha epsilon : ℝ≥0) (r : ℝ), 0 < r ∧
