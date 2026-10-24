@@ -234,6 +234,15 @@ theorem coe_weightedRingOfDefinitionC (P : PairOfDefinition A) (hT : IsWeightFam
     ((P.weightedRingOfDefinitionC hT a : P.weightedRingOfDefinition hT) :
       weightedRestrictedSubring T hT) = weightedC T hT (a : A) := (rfl)
 
+/-- `A₀⟨X⟩_T` contains the weighted variables `t Xᵢ` with `t ∈ Tᵢ`. -/
+theorem weightedC_mul_weightedX_mem_weightedRingOfDefinition (P : PairOfDefinition A)
+    (hT : IsWeightFamily T) {i : Fin k} {t : A} (ht : t ∈ T i) :
+    weightedC T hT t * weightedX T hT i ∈ P.weightedRingOfDefinition hT := by
+  rw [weightedRingOfDefinition_def, ← weightedPolynomialHom_C, ← weightedPolynomialHom_X,
+    ← map_mul, MvPolynomial.C_mul_X_eq_monomial, weightedPolynomialHom_monomial_mem_weightedSubring,
+    ← mul_one t]
+  exact mul_mem_weightMul T _ _ (by rwa [weightPow_single, pow_one]) P.ringOfDefinition.one_mem
+
 /-- `Iⁿ⟨X⟩_T`, an **ideal of `A₀⟨X⟩_T`**: the series all of whose coefficients meet the `Iⁿ`
 bound. The ideal of definition of `A⟨X⟩_T` is the case `n = 1`; the general `n` is named because
 the point of the file is that these are its powers
