@@ -11,8 +11,8 @@ public import Mathlib.CategoryTheory.Triangulated.Basic
 # Signs of triangle arrows
 
 Negating the identity on the third object gives an isomorphism between triangles differing
-by the signs of their second and third arrows. This comparison is used to identify the rotation
-of a curved DG right-module cone triangle in `StablePeriodicCurved`, Layer 5.
+by the signs of their second and third arrows. This comparison relates a rotated mapping-cone
+triangle to the triangle obtained by negating its second and third arrows.
 -/
 
 public section
