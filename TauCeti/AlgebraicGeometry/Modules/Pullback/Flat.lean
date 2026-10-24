@@ -154,8 +154,8 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.exact_map_pullback_of_flat
         dsimp
         rw [Category.id_comp, ← F.map_comp, cokernel.π_desc] }
   apply (ShortComplex.exact_iff_of_epi_of_isIso_of_mono φ).1
-  apply ShortComplex.exact_of_g_is_cokernel
-  exact CokernelCofork.mapIsColimit _ ((S.exact_iff_exact_coimage_π).1 hS).gIsCokernel F
+  exact ((S.exact_iff_exact_coimage_π).1 hS).map_of_epi_of_preservesCokernel F
+    inferInstance inferInstance
 
 /-- Pullback along a flat morphism preserves the ambient kernel of a morphism between
 quasicoherent module sheaves. -/
