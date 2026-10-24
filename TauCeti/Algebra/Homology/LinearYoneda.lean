@@ -222,6 +222,18 @@ lemma _root_.ChainComplex.linearYonedaObjMap_comp (X : ChainComplex C α)
     NatTrans.mapHomologicalComplex_comp, NatTrans.comp_app, op_comp]
   rfl
 
+/-- Precomposition with a chain map commutes with postcomposition with a coefficient map. -/
+@[reassoc]
+lemma _root_.ChainComplex.linearYonedaObjMap_naturality {X X' : ChainComplex C α}
+    (f : X' ⟶ X) {Y Z : C} (g : Y ⟶ Z) :
+    X.linearYonedaObjMap k g ≫ (linearYonedaFunctor k Z).map f.op =
+      (linearYonedaFunctor k Y).map f.op ≫ X'.linearYonedaObjMap k g := by
+  ext i (a : X.X i ⟶ Y)
+  -- Cochain components are morphisms only after unfolding `linearYonedaObj`; the
+  -- composition lemmas cannot rewrite the goal at reducible transparency.
+  change f.f i ≫ (a ≫ g) = (f.f i ≫ a) ≫ g
+  exact (Category.assoc _ _ _).symm
+
 /-- The coefficient map sends the class of a cocycle to the class of its image. -/
 @[simp]
 lemma _root_.ChainComplex.homologyMap_linearYonedaObjMap_homologyπ_apply

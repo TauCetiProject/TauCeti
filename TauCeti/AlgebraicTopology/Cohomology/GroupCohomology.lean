@@ -8,6 +8,7 @@ module
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.Basic
 public import TauCeti.AlgebraicTopology.Cohomology.Basic
 public import TauCeti.AlgebraicTopology.Singular.ModuleChains.GroupHomology
+public import TauCeti.RepresentationTheory.Homological.GroupCohomology.Naturality
 
 /-!
 # The singular cohomology of the base of a contractible free cover is group cohomology
@@ -31,6 +32,9 @@ trivial representation `M` (`IsQuotientCoveringMap.singularCohomologyIsoGroupCoh
 `Hⁿ(B; M) ≅ Hⁿ(G, M)`.
 
 This is the cohomological counterpart of `IsQuotientCoveringMap.singularHomologyIsoGroupHomology`.
+Both the cochain identification and the cohomology comparison commute with morphisms of
+coefficient modules (`singularCochainComplexIsoLinearYonedaObj_hom_naturality` and
+`singularCohomologyIsoGroupCohomology_hom_naturality`).
 
 ## Main definitions
 
@@ -179,5 +183,58 @@ def singularCohomologyIsoGroupCohomology [ContractibleSpace E] (n : ℕ) :
   (HomologicalComplex.homologyFunctor _ _ n).mapIso
       (hG.singularCochainComplexIsoLinearYonedaObj k M) ≪≫
     (groupCohomologyIso _ n (singularChainsResolution k E G)).symm
+
+variable {M} {N : Type u} [AddCommGroup N] [Module k N]
+
+/-- Pullback of invariant cochains commutes with a morphism of coefficient modules. -/
+@[reassoc]
+lemma singularCochainComplexIsoLinearYonedaObj_hom_naturality
+    (f : ModuleCat.of k M ⟶ ModuleCat.of k N) :
+    haveI := hG.toContinuousConstSMul
+    ((singularChains k).obj B).linearYonedaObjMap k f ≫
+        (hG.singularCochainComplexIsoLinearYonedaObj k N).hom =
+      (hG.singularCochainComplexIsoLinearYonedaObj k M).hom ≫
+        (singularChainsRep k E G).linearYonedaObjMap k ((Rep.trivialFunctor k G).map f) := by
+  have := hG.toContinuousConstSMul
+  ext n (a : ((singularChains k).obj B).X n ⟶ ModuleCat.of k M)
+  apply Rep.hom_ext
+  apply Representation.IntertwiningMap.ext
+  apply LinearMap.ext
+  intro c
+  -- The components of `linearYonedaObj` are morphisms only after unfolding, so the
+  -- evaluation formulas require elaborator transparency here.
+  erw [HomologicalComplex.comp_f, ModuleCat.comp_apply,
+    singularCochainComplexIsoLinearYonedaObj_hom_f_hom_apply,
+    ChainComplex.linearYonedaObjMap_f_hom_apply,
+    HomologicalComplex.comp_f, ModuleCat.comp_apply,
+    ChainComplex.linearYonedaObjMap_f_hom_apply]
+  -- `trivialFunctor` postcomposes with `f`; its source term is definitionally the
+  -- singular-chain representation, so ordinary composition rewriting does not apply.
+  change f (a (((singularChains k).map p).f n c)) =
+    f (((hG.singularCochainComplexIsoLinearYonedaObj k M).hom.f n a).hom c)
+  exact congrArg f.hom
+    (hG.singularCochainComplexIsoLinearYonedaObj_hom_f_hom_apply k M n a c).symm
+
+/-- The comparison between singular and group cohomology for a contractible free cover
+is natural in the coefficient module. -/
+@[reassoc]
+lemma singularCohomologyIsoGroupCohomology_hom_naturality [ContractibleSpace E]
+    (f : ModuleCat.of k M ⟶ ModuleCat.of k N) (n : ℕ) :
+    HomologicalComplex.homologyMap (((singularChains k).obj B).linearYonedaObjMap k f) n ≫
+        (hG.singularCohomologyIsoGroupCohomology k N n).hom =
+      (hG.singularCohomologyIsoGroupCohomology k M n).hom ≫
+        groupCohomology.map (MonoidHom.id G) ((Rep.trivialFunctor k G).map f) n := by
+  have := hG.toContinuousConstSMul
+  have := hG.isCancelSMul
+  dsimp only [singularCohomologyIsoGroupCohomology, Iso.trans_hom, Iso.symm_hom]
+  have h := congrArg (fun F ↦ HomologicalComplex.homologyMap F n)
+    (hG.singularCochainComplexIsoLinearYonedaObj_hom_naturality k f)
+  have hP := (singularChainsResolution k E G).groupCohomologyIso_inv_naturality
+    ((Rep.trivialFunctor k G).map f) n
+  exact (Category.assoc _ _ _).symm.trans
+    ((congrArg (· ≫ _) ((HomologicalComplex.homologyMap_comp _ _ n).symm.trans
+      (h.trans (HomologicalComplex.homologyMap_comp _ _ n)))).trans
+      ((Category.assoc _ _ _).trans
+        ((congrArg (_ ≫ ·) hP).trans (Category.assoc _ _ _).symm)))
 
 end IsQuotientCoveringMap
