@@ -50,6 +50,7 @@ pseudometrics and is measurable in both directions.
 
 * `TauCeti.WassersteinComponent p μ₀` — the finite-distance component of an anchor law;
 * `TauCeti.WassersteinSpace p X` — probability laws with finite `p`-moment;
+* `TauCeti.WassersteinSpace.inclusion` — the measurable inclusion into a lower-exponent space;
 * `TauCeti.WassersteinSpace.equivComponent` — identification with a Dirac-anchored component.
 * `TauCeti.WassersteinSpace.isometryEquivComponent` — the isometric form of that identification.
 * `TauCeti.WassersteinSpace.measurableEquivComponentOfFiniteMoment` — identification with the
@@ -282,6 +283,12 @@ instance instMeasurableSpace : MeasurableSpace (WassersteinSpace p X) :=
   inferInstanceAs (MeasurableSpace
     {μ : ProbabilityMeasure X // HasFiniteMoment p (μ : Measure X)})
 
+/-- The inherited measurable structure is the pullback from probability measures. -/
+theorem measurableSpace_eq_comap :
+    (inferInstance : MeasurableSpace (WassersteinSpace p X)) =
+      MeasurableSpace.comap toProbabilityMeasure inferInstance :=
+  (rfl)
+
 /-- The inclusion of finite-moment laws into probability measures is measurable. -/
 theorem measurable_toProbabilityMeasure :
     Measurable (toProbabilityMeasure : WassersteinSpace p X → ProbabilityMeasure X) :=
@@ -309,6 +316,23 @@ theorem hasFiniteMoment (μ : WassersteinSpace p X) :
 theorem mk_coe (μ : WassersteinSpace p X) :
     mk (μ : ProbabilityMeasure X) (hasFiniteMoment μ) = μ :=
   (rfl)
+
+/-- A finite `p`-moment law is a finite `q`-moment law whenever `q ≤ p`. -/
+def inclusion {q : ℝ≥0∞} (hqp : q ≤ p) (μ : WassersteinSpace p X) :
+    WassersteinSpace q X :=
+  mk (μ : ProbabilityMeasure X) (μ.hasFiniteMoment.mono_exponent hqp)
+
+/-- The inclusion into a lower-exponent space preserves the underlying probability measure. -/
+@[simp]
+theorem coe_inclusion {q : ℝ≥0∞} (hqp : q ≤ p) (μ : WassersteinSpace p X) :
+    toProbabilityMeasure (inclusion hqp μ) = (μ : ProbabilityMeasure X) :=
+  (rfl)
+
+/-- The inclusion into a lower-exponent Wasserstein space is inherited-measurable. -/
+@[fun_prop]
+theorem measurable_inclusion {q : ℝ≥0∞} (hqp : q ≤ p) :
+    Measurable (inclusion (X := X) hqp) :=
+  measurable_mk measurable_toProbabilityMeasure fun μ ↦ μ.hasFiniteMoment.mono_exponent hqp
 
 end Basic
 

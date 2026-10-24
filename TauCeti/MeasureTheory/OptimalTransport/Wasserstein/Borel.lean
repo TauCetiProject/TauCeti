@@ -38,10 +38,14 @@ The comparison goes through the weak topology, which is coarser than the Wassers
 
 Separability is the only property of the carrier that the argument uses. It holds for `P_p (X)`,
 hence for every component anchored at a law of finite `p`-moment, which is isometric to it. The
-exponent `p = ∞` is excluded: `P_∞ (X)` need not be separable.
+exponent `p = ∞` is excluded from the equality: `P_∞ (X)` need not be separable. The inclusion
+of the inherited σ-algebra into the Wasserstein Borel σ-algebra still holds at `p = ∞`, without
+completeness of the ground space.
 
 ## Main statements
 
+* `TauCeti.WassersteinSpace.measurableSpace_le_borel` — the inherited σ-algebra is contained in
+  the Wasserstein Borel σ-algebra for every `1 ≤ p`, including `p = ∞`;
 * `TauCeti.WassersteinSpace.borelSpace` — `P_p (X)` is a Borel space for `1 ≤ p < ∞`, with
   `TauCeti.WassersteinSpace.instBorelSpace` its instance form;
 * `TauCeti.WassersteinComponent.borelSpace` — a separable anchored component is a Borel space, with
@@ -64,6 +68,27 @@ open scoped ENNReal
 namespace TauCeti
 
 universe u
+
+namespace WassersteinSpace
+
+section StandardBorel
+
+variable {X : Type u} [PseudoMetricSpace X] [MeasurableSpace X] [BorelSpace X]
+  [SecondCountableTopology X] [StandardBorelSpace X] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+
+/-- The inherited σ-algebra on `P_p(X)` is contained in its Wasserstein Borel σ-algebra,
+including at `p = ∞`. This inclusion does not require completeness of the ground space. -/
+theorem measurableSpace_le_borel :
+    (inferInstance : MeasurableSpace (WassersteinSpace p X)) ≤
+      borel (WassersteinSpace p X) := by
+  rw [measurableSpace_eq_comap]
+  let : MeasurableSpace (WassersteinSpace p X) := borel (WassersteinSpace p X)
+  have : BorelSpace (WassersteinSpace p X) := ⟨rfl⟩
+  exact (continuous_toProbabilityMeasure (X := X) (p := p)).measurable_probabilityMeasure.comap_le
+
+end StandardBorel
+
+end WassersteinSpace
 
 variable {X : Type u} [PseudoMetricSpace X] [MeasurableSpace X] [BorelSpace X] [PolishSpace X]
   {p : ℝ≥0∞}

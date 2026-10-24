@@ -445,6 +445,12 @@ theorem hasFiniteMoment_def :
     HasFiniteMoment p ν ↔ ∃ x : X, MemLp (fun y ↦ edist x y) p ν :=
   Iff.rfl
 
+/-- For a finite measure, a finite moment implies every lower-exponent moment is finite. -/
+theorem HasFiniteMoment.mono_exponent {ν : Measure X} [IsFiniteMeasure ν]
+    (h : HasFiniteMoment p ν) (hqp : q ≤ p) : HasFiniteMoment q ν := by
+  obtain ⟨x, hx⟩ := h
+  exact ⟨x, hx.mono_exponent hqp⟩
+
 /-- Scaling a measure by a finite constant preserves finite `p`-moments. -/
 theorem HasFiniteMoment.smul_measure {ν : Measure X} (h : HasFiniteMoment p ν) {c : ℝ≥0∞}
     (hc : c ≠ ∞) : HasFiniteMoment p (c • ν) :=

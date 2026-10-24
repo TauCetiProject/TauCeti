@@ -17,10 +17,6 @@ for this structure, even when `p = ∞` and the Wasserstein space is not separab
 its balls and closed balls are measurable. These facts allow integration of distances between random
 laws and between measurable families of kernel section laws at the infinite-exponent endpoint.
 
-The inherited σ-algebra is contained in the Wasserstein Borel σ-algebra. We do not identify them
-at `p = ∞`, nor assert that every Wasserstein-open set is inherited-measurable. Measurability of
-balls alone does not imply that assertion in a nonseparable space.
-
 The distance measurability argument passes through finite first moments: every finite `p`-moment
 law with `1 ≤ p` has finite first moment, and `P₁(X)` has its inherited Borel structure. Weak lower
 semicontinuity makes every `W_q`, including `W_∞`, measurable on `P₁(X) × P₁(X)`.
@@ -42,25 +38,6 @@ namespace TauCeti
 
 namespace WassersteinSpace
 
-section StandardBorel
-
-variable {X : Type*} [PseudoMetricSpace X] [MeasurableSpace X] [BorelSpace X]
-  [SecondCountableTopology X] [StandardBorelSpace X] {p : ℝ≥0∞} [Fact (1 ≤ p)]
-
-/-- The inherited σ-algebra on `P_p(X)` is contained in its Wasserstein Borel σ-algebra,
-including at `p = ∞`. This inclusion does not require completeness of the ground space. -/
-theorem measurableSpace_le_borel :
-    (inferInstance : MeasurableSpace (WassersteinSpace p X)) ≤
-      borel (WassersteinSpace p X) := by
-  let : MeasurableSpace (WassersteinSpace p X) := borel (WassersteinSpace p X)
-  let : BorelSpace (WassersteinSpace p X) := ⟨rfl⟩
-  have h := @measurable_mk X p _ _ _ (borel (WassersteinSpace p X)) _
-    (continuous_toProbabilityMeasure.measurable_probabilityMeasure) hasFiniteMoment
-  intro s hs
-  simpa only [mk_coe, preimage_id'] using h hs
-
-end StandardBorel
-
 variable {X : Type*} [MetricSpace X] [MeasurableSpace X] [BorelSpace X]
   [SecondCountableTopology X] [CompleteSpace X] {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
@@ -71,19 +48,16 @@ variable {X : Type*} [MetricSpace X] [MeasurableSpace X] [BorelSpace X]
 theorem measurable_wassersteinEDist (q : ℝ≥0∞) :
     Measurable fun z : WassersteinSpace p X × WassersteinSpace p X ↦
       wassersteinEDist q (z.1 : Measure X) (z.2 : Measure X) := by
-  have hfirst (μ : WassersteinSpace p X) : HasFiniteMoment 1 (μ : Measure X) := by
-    obtain ⟨x, hx⟩ := hasFiniteMoment_def.mp μ.hasFiniteMoment
-    exact hasFiniteMoment_def.mpr ⟨x, hx.mono_exponent Fact.out⟩
   let f : WassersteinSpace p X → WassersteinSpace 1 X :=
-    fun μ ↦ mk (μ : ProbabilityMeasure X) (hfirst μ)
-  have hf : Measurable f := measurable_mk measurable_toProbabilityMeasure hfirst
+    inclusion Fact.out
+  have hf : Measurable f := measurable_inclusion Fact.out
   have hlsc : LowerSemicontinuous fun z : WassersteinSpace 1 X × WassersteinSpace 1 X ↦
       wassersteinEDist q (z.1 : Measure X) (z.2 : Measure X) :=
     (lowerSemicontinuous_wassersteinEDist q).comp
       (continuous_toProbabilityMeasure.prodMap continuous_toProbabilityMeasure)
   have : BorelSpace (WassersteinSpace 1 X) := borelSpace (by norm_num)
   have : SeparableSpace (WassersteinSpace 1 X) := separableSpace (by norm_num)
-  simpa only [Function.comp_def, Prod.map_fst, Prod.map_snd, f, coe_mk] using
+  simpa only [Function.comp_def, Prod.map_fst, Prod.map_snd, f, coe_inclusion] using
     hlsc.measurable.comp (hf.prodMap hf)
 
 /-- The extended metric of `P_p(X)` is jointly measurable for the inherited σ-algebra, including
