@@ -293,11 +293,12 @@ theorem basis_mul_self_eq_or (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
 theorem isUnit_basis (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (s : Finset I)
     (hQ : ∀ i ∈ s, IsUnit (Q (b i))) : IsUnit (basis Q b s) := by
   rw [basis_eq_prod_map_sort hb]
-  refine List.prod_induction IsUnit (fun _ _ hx hy ↦ hx.mul hy) isUnit_one ?_
+  apply isUnit_prod_map_ι
+  rw [List.prod_isUnit_iff]
   intro x hx
-  obtain ⟨m, hm, rfl⟩ := List.mem_map.mp hx
-  obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hm
-  exact isUnit_ι_of_isUnit Q (hQ i ((Finset.mem_sort _).mp hi))
+  obtain ⟨v, hv, rfl⟩ := List.mem_map.mp hx
+  obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hv
+  exact hQ i ((Finset.mem_sort _).mp hi)
 
 /-- The scalar part of a product of generators of an orthogonal basis vanishes as soon as one index
 occurs exactly once. -/
