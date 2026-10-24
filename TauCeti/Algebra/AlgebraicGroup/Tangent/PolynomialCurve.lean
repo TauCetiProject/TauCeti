@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Tangent
+public import TauCeti.Algebra.DualNumber.Polynomial
 
 /-!
 # Velocities of polynomial curves through the identity
@@ -39,7 +40,7 @@ subgroup of `GLₙ` lies in its Lie algebra.
 
 public section
 
-open Polynomial TrivSqZeroExt
+open Polynomial
 
 namespace TauCeti.Bialgebra
 
@@ -48,16 +49,6 @@ variable {R H : Type*} [CommRing R] [CommRing H]
 section Velocity
 
 variable [_root_.Bialgebra R H]
-
-/-- A polynomial evaluated at the dual-number unit `ε` has its constant coefficient as classical
-part and its linear coefficient as infinitesimal part. -/
-private theorem aeval_eps_eq {B : Type*} [CommRing B] [Algebra R B] (p : R[X]) :
-    aeval (DualNumber.eps : DualNumber B) p =
-      inl (algebraMap R B (p.coeff 0)) + inr (algebraMap R B (p.coeff 1)) := by
-  rw [← zero_add (DualNumber.eps : DualNumber B),
-    aeval_add_of_sq_eq_zero _ _ _ (by rw [sq, DualNumber.eps_mul_eps]),
-    ← coeff_zero_eq_aeval_zero', ← coeff_zero_eq_aeval_zero']
-  ext <;> simp [coeff_derivative, Algebra.algebraMap_eq_smul_one]
 
 /-- The velocity at `t = 0` of a polynomial curve `γ` through the identity: the tangent vector
 at the identity sending a coordinate function `h` to the coefficient of `t` in `γ h`. The
@@ -69,12 +60,8 @@ noncomputable def curveVelocity (γ : H →ₐ[R] R[X])
     (hγ : (aeval (0 : R)).comp γ = Bialgebra.counitAlgHom R H) :
     Derivation R H (CounitAlgebra R H R) :=
   (derivationToDualNumberEquivLift R H (CounitAlgebra R H R)).symm
-    ⟨(aeval DualNumber.eps).comp γ, by
-      ext h
-      rw [AlgHom.comp_apply, AlgHom.comp_apply, aeval_eps_eq, fstHom_apply, fst_add, fst_inl,
-        fst_inr, add_zero, coeff_zero_eq_aeval_zero, ← AlgHom.comp_apply, hγ,
-        IsScalarTower.coe_toAlgHom', CounitAlgebra.algebraMap_apply,
-        Bialgebra.counitAlgHom_apply, CounitAlgebra.algebraMap_base]⟩
+    ⟨(aeval DualNumber.eps).comp γ, AlgHom.ext fun h ↦ (DualNumber.fst_aeval_eps (γ h)).trans
+      ((coeff_zero_eq_aeval_zero (γ h)).trans (DFunLike.congr_fun hγ h))⟩
 
 /-- The velocity of a polynomial curve evaluates a coordinate function to the coefficient of
 `t` in its pullback, read through the identification of the counit coefficient algebra with
@@ -82,10 +69,8 @@ noncomputable def curveVelocity (γ : H →ₐ[R] R[X])
 @[simp]
 theorem curveVelocity_apply (γ : H →ₐ[R] R[X])
     (hγ : (aeval (0 : R)).comp γ = Bialgebra.counitAlgHom R H) (h : H) :
-    curveVelocity γ hγ h = (γ h).coeff 1 := by
-  rw [curveVelocity, derivationToDualNumberEquivLift_symm_apply, AlgHom.comp_apply,
-    aeval_eps_eq, snd_add, snd_inl, snd_inr, zero_add, CounitAlgebra.algebraMap_base,
-    Algebra.algebraMap_self, RingHom.id_apply]
+    curveVelocity γ hγ h = (γ h).coeff 1 :=
+  (derivationToDualNumberEquivLift_symm_apply ..).trans (DualNumber.snd_aeval_eps (γ h))
 
 /-- The velocity of a polynomial curve evaluates a coordinate function to the coefficient of
 `t` in its pullback.
