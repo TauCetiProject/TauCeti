@@ -78,8 +78,8 @@ is asserted here.
   zero as a matrix, hence on the standard module, and has nilpotency class exactly two.
 * `TauCeti.SpStd.intCast_latticeBasis_repr`: the coordinate-basis coefficients of a lattice vector
   are its rational coordinates.
-* `TauCeti.SpStd.rep_kostantForm_mem_lattice`: the Kostant `ℤ`-form preserves the standard
-  lattice, so the lattice is admissible.
+* `TauCeti.SpStd.rep_kostantForm_mem_lattice`: the Kostant `ℤ`-form preserves the standard lattice,
+  so the lattice is admissible.
 * `TauCeti.SpStd.span_range_weight_eq_top`: the weights of the standard module generate the full
   character lattice.
 * `TauCeti.SpStd.torusPoints_conj_rootSubgroupParam`: the pointwise pinning equation.
@@ -737,17 +737,19 @@ theorem rep_rootGenerator_mem_lattice (k : Fin (n + 1) ⊕ Fin (n + 1))
       · rw [rootAction_inr_of_ne_last n i hi]
         exact sub_mem (key _ _) (key _ _)
 
-/-- The standard coordinate lattice is stable under the Kostant integral form: the root generators
-square to zero and preserve it, and the coordinate vectors have integral weights. -/
-theorem rep_kostantForm_mem_lattice
-    {u : _root_.UniversalEnvelopingAlgebra ℚ (sp (Fin (n + 1)) ℚ)}
-    (hu : u ∈ TauCeti.UniversalEnvelopingAlgebra.kostantForm (rootGenerator n)
-      (cartanGenerator n))
-    {v : (Fin (n + 1) ⊕ Fin (n + 1)) → ℚ} (hv : v ∈ lattice n) :
-    rep n u v ∈ lattice n :=
-  TauCeti.UniversalEnvelopingAlgebra.kostantForm_apply_mem_coordinateLattice (rootGenerator n)
-    (cartanGenerator n) (rep n) (wt := weight n) (pow_two_rep_rootGenerator_eq_zero n)
-    (fun k _ hw => rep_rootGenerator_mem_lattice n k hw) (isCartanWeightVector_single n) hu hv
+/-- The standard coordinate lattice is stable under the Kostant integral form. This theorem is
+stated in the form of the lattice-stability hypothesis of
+`TauCeti.UniversalEnvelopingAlgebra.kostantToralGroupScheme` and the other generic Kostant
+constructions, which take the lattice as an additive subgroup, so it is passed to them as
+`rep_kostantForm_mem_lattice n`. -/
+theorem rep_kostantForm_mem_lattice :
+    ∀ u ∈ TauCeti.UniversalEnvelopingAlgebra.kostantForm (rootGenerator n) (cartanGenerator n),
+      ∀ v ∈ (lattice n).toAddSubgroup, rep n u v ∈ (lattice n).toAddSubgroup :=
+  -- The root generators square to zero and preserve the lattice, and the coordinate vectors have
+  -- integral weights.
+  fun _ hu _ hv ↦ TauCeti.UniversalEnvelopingAlgebra.kostantForm_apply_mem_coordinateLattice
+    (rootGenerator n) (cartanGenerator n) (rep n) (pow_two_rep_rootGenerator_eq_zero n)
+    (rep_rootGenerator_mem_lattice n) (isCartanWeightVector_single n) hu hv
 
 /-! ## The full weight lattice -/
 
@@ -823,7 +825,7 @@ noncomputable def rootSubgroupParam (k : Fin (n + 1) ⊕ Fin (n + 1)) (A : CommA
     Multiplicative A →* LinearMap.GeneralLinearGroup A (A ⊗[ℤ] (lattice n).toAddSubgroup) :=
   TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupParam (rootGenerator n)
     (cartanGenerator n) (rep n) (lattice n).toAddSubgroup
-    (fun _ hu _ hv => rep_kostantForm_mem_lattice n hu hv) k
+    (rep_kostantForm_mem_lattice n) k
     (isNilpotent_rep_rootGenerator n k) A
 
 /-- The split weight torus on points of a value algebra. -/

@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Cardinality
 public import TauCeti.LinearAlgebra.IntegralLattice.Dual.Finiteness
 public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Basic
+public import Mathlib.LinearAlgebra.PerfectPairing.Basic
 
 /-!
 # Unimodular integral lattices
@@ -31,6 +32,8 @@ than reproving Smith normal form.
   criterion.
 * `TauCeti.IntegralLattice.isUnimodular_iff_integralForm_bijective`: the perfect-pairing
   criterion.
+* `TauCeti.IntegralLattice.IsUnimodular.isPerfPair_integralForm`: the integral form of a
+  unimodular lattice is a perfect pairing.
 * `TauCeti.IntegralLattice.isUnimodular_iff_discriminant_eq_one`: the determinant criterion.
 * `TauCeti.IntegralLattice.integralPairingEquiv`: the restricted pairing as a linear equivalence.
 
@@ -170,6 +173,12 @@ theorem integralPairingEquiv_toLinearMap (hL : L.IsUnimodular) :
   exact LinearEquiv.ofBijective_apply L.integralForm x
 
 end Pairing
+
+/-- The integral form of a unimodular lattice is a perfect pairing. -/
+theorem IsUnimodular.isPerfPair_integralForm {L : IntegralLattice V} (hL : L.IsUnimodular) :
+    L.integralForm.IsPerfPair :=
+  let _ : L.IsNondegenerate := ⟨hL.nondegenerate⟩
+  .of_bijective _ (L.isUnimodular_iff_integralForm_bijective.mp hL)
 
 section DeterminantCriteria
 
