@@ -12,10 +12,10 @@ public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.Geometry.Manifold.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
 public import TauCeti.Analysis.Normed.Module.Trace
+public import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Regularity
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita
 import TauCeti.Analysis.Calculus.Gradient
-import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.InnerProductSpace.SquaredDistance
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import TauCeti.Geometry.Manifold.Riemannian.Gradient.ChainRule
@@ -649,6 +649,16 @@ theorem hessian_eq_iteratedFDeriv_model_space
         _ = _ := (iteratedFDeriv_two_apply f x
           ![NormedSpace.fromTangentSpace x v, NormedSpace.fromTangentSpace x w]).symm
 
+private theorem fromTangentSpace_isometry_symm_apply
+    {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+    [FiniteDimensional ℝ F] (x : F)
+    (e : TangentSpace (modelWithCornersSelf ℝ F) x ≃ₗᵢ[ℝ] F)
+    (he : e.toLinearEquiv = (NormedSpace.fromTangentSpace x).toLinearEquiv) (u : F) :
+    NormedSpace.fromTangentSpace x (e.symm u) = u := by
+  change (NormedSpace.fromTangentSpace x) (e.toLinearEquiv.symm u) = u
+  rw [he]
+  exact (NormedSpace.fromTangentSpace x).apply_symm_apply u
+
 /-- The Laplace–Beltrami operator of the standard Riemannian metric is Mathlib's flat Laplacian.
 This fixes the sign convention as `Δ = div ∘ grad`. -/
 theorem laplaceBeltrami_eq_laplacian
@@ -663,26 +673,13 @@ theorem laplaceBeltrami_eq_laplacian
     InnerProductSpace.laplacian_eq_iteratedFDeriv_orthonormalBasis f (stdOrthonormalBasis ℝ F)]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   have he (u : F) : NormedSpace.fromTangentSpace x (e.symm u) = u := by
-    -- Expose the inverse `LinearEquiv` carried by the isometry equivalence.
-    change (NormedSpace.fromTangentSpace x) (e.toLinearEquiv.symm u) = u
-    rw [show e.toLinearEquiv = (NormedSpace.fromTangentSpace x).toLinearEquiv by
+    exact fromTangentSpace_isometry_symm_apply x e (by
       dsimp [e]
-      exact LinearEquiv.isometryOfInner_toLinearEquiv _ _]
-    exact (NormedSpace.fromTangentSpace x).apply_symm_apply u
+      exact LinearEquiv.isometryOfInner_toLinearEquiv _ _) u
   simpa only [b, OrthonormalBasis.map_apply, he] using
     hessian_eq_iteratedFDeriv_model_space hgrad (b i) (b i)
 
 /-! ### The squared norm -/
-
-private theorem differentiable_gradient_norm_sq
-    {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
-    [FiniteDimensional ℝ F] :
-    Differentiable ℝ (∇ fun y : F ↦ ‖y‖ ^ 2) := by
-  have hgrad : ∇ (fun y : F ↦ ‖y‖ ^ 2) = fun y ↦ (2 : ℝ) • y := by
-    funext y
-    simpa using TauCeti.gradient_mul_norm_sq_add (E := F) 2 0 y
-  rw [hgrad]
-  fun_prop
 
 /-- The flat Riemannian Hessian of the squared norm is twice the inner product. -/
 @[simp]
@@ -690,14 +687,10 @@ theorem hessian_norm_sq_model_space
     {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
     [FiniteDimensional ℝ F] (x : F)
     (v w : TangentSpace (modelWithCornersSelf ℝ F) x) :
-    let _ : RiemannianBundle
-        (fun y : F ↦ TangentSpace (modelWithCornersSelf ℝ F) y) :=
-      ⟨(riemannianMetricVectorSpace F).toRiemannianMetric⟩
     hessian (modelWithCornersSelf ℝ F) (fun y ↦ ‖y‖ ^ 2) x v w =
       2 * inner ℝ (NormedSpace.fromTangentSpace x v) (NormedSpace.fromTangentSpace x w) := by
-  dsimp only
   have hgrad' : DifferentiableAt ℝ (∇ (fun y : F ↦ ‖y‖ ^ 2)) x := by
-    exact (differentiable_gradient_norm_sq (F := F)).differentiableAt
+    exact (TauCeti.differentiable_gradient_norm_sq (E := F)).differentiableAt
   rw [hessian_eq_iteratedFDeriv_model_space hgrad' v w]
   rw [iteratedFDeriv_two_apply, TauCeti.fderiv_fderiv_norm_sq_apply]
   simp [Matrix.cons_val_zero, Matrix.cons_val_one]
@@ -708,8 +701,22 @@ theorem hessian_norm_sq_model_space
     [FiniteDimensional ℝ F] (x : F) :
     laplaceBeltrami (modelWithCornersSelf ℝ F) (fun y ↦ ‖y‖ ^ 2) x =
       2 * Module.finrank ℝ F := by
-  rw [laplaceBeltrami_eq_laplacian]
-  · exact TauCeti.laplacian_norm_sq x
-  · exact (differentiable_gradient_norm_sq (F := F)).differentiableAt
+  let e : TangentSpace (modelWithCornersSelf ℝ F) x ≃ₗᵢ[ℝ] F :=
+    (NormedSpace.fromTangentSpace x).toLinearEquiv.isometryOfInner
+      inner_tangentSpace_vectorSpace
+  let b := (stdOrthonormalBasis ℝ F).map e.symm
+  rw [laplaceBeltrami_eq_sum_hessian (modelWithCornersSelf ℝ F) (fun y ↦ ‖y‖ ^ 2) x b]
+  simp only [hessian_norm_sq_model_space]
+  have he (u : F) : NormedSpace.fromTangentSpace x (e.symm u) = u := by
+    exact fromTangentSpace_isometry_symm_apply x e (by
+      dsimp [e]
+      exact LinearEquiv.isometryOfInner_toLinearEquiv _ _) u
+  simp only [b, OrthonormalBasis.map_apply, he]
+  calc
+    ∑ i, 2 * inner ℝ ((stdOrthonormalBasis ℝ F) i) ((stdOrthonormalBasis ℝ F) i) =
+        2 * ∑ i, inner ℝ ((stdOrthonormalBasis ℝ F) i) ((stdOrthonormalBasis ℝ F) i) := by
+          rw [Finset.mul_sum]
+    _ = 2 * Module.finrank ℝ F := by
+      rw [OrthonormalBasis.sum_inner_self, Fintype.card_fin]
 
 end TauCeti.Manifold
