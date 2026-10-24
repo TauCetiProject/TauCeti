@@ -12,11 +12,12 @@ public import TauCeti.Algebra.Lie.D4.Tripled.TrialityProduct
 # The tripled type-D₄ weight torus and its maximality on field-valued points
 
 Over every commutative ring, the weight-torus points of the tripled type-`D₄` carrier are exactly
-the carrier points whose matrices are diagonal in the weight basis of `8ᵥ ⊕ 8ₛ ⊕ 8꜀`. One inclusion
-is the shape of the torus. For the other, a diagonal carrier point preserves the triality product,
-so its diagonal entries are multiplicative along every nonzero structure constant of that product;
-so are the values of a torus character on the weights, and a function multiplicative along the
-product is determined by its values at four weights forming a basis of the weight lattice.
+the carrier points whose matrices are diagonal in the weight basis of `8_v ⊕ 8_s ⊕ 8_c`. One
+inclusion is the shape of the torus. For the other, a diagonal carrier point preserves the
+triality product, so its diagonal entries are multiplicative along every nonzero structure constant
+of that product; so are the values of a torus character on the weights, and a function
+multiplicative along the product is determined by its values at four weights forming a basis of
+the weight lattice.
 
 Over an infinite field the centralizer of the weight torus consists of the diagonal carrier points,
 by `TauCeti.D4Tripled.centralizer_range_weightTorusPoints_eq_comap_diagonalTorus`. The weight torus

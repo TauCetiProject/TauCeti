@@ -13,7 +13,7 @@ public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Schem
 /-!
 # The triality product on the tripled type-D₄ module
 
-The three eight-dimensional blocks `8ᵥ`, `8ₛ`, `8꜀` of the tripled type-`D₄` module carry the
+The three eight-dimensional blocks `8_v`, `8_s`, `8_c` of the tripled type-`D₄` module carry the
 triality trilinear form `TauCeti.D4Tripled.trialityCoefficient`. Reading its third argument
 through the pairing of each weight vector `e_a` with the weight vector `e_{a*}` of the opposite
 weight, with the signs `TauCeti.D4Tripled.pairingSign`, turns the symmetrized form into a
@@ -115,7 +115,7 @@ theorem pairingSign_oppositeIndex (a : Fin 24) : pairingSign (oppositeIndex a) =
   decide +kernel
 
 /-- The triality coefficient of three basis indices read in block order: the coefficient when `a`,
-`b`, `c` lie in the blocks `8ᵥ`, `8ₛ`, `8꜀` respectively, and zero otherwise. -/
+`b`, `c` lie in the blocks `8_v`, `8_s`, `8_c` respectively, and zero otherwise. -/
 private def blockTrialityCoefficient (a b c : Fin 24) : ℤ :=
   if h : d4TripledSummand a = (0 : Fin 3) ∧ d4TripledSummand b = (1 : Fin 3) ∧
       d4TripledSummand c = (2 : Fin 3) then
