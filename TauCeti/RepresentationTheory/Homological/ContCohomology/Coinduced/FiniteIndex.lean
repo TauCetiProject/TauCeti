@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Coinduced.Discrete
+public import Mathlib.RepresentationTheory.FiniteIndex
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Coinduced.Functor
 import TauCeti.GroupTheory.Coset.Basic
+import TauCeti.RepresentationTheory.FiniteIndex
 
 /-!
 # Coinduction along a subgroup of finite index
@@ -27,6 +29,8 @@ of left cosets. This is the permutation module `A[G ⧸ U]`, of order `|A| ^ [G 
 
 ## Main results
 
+* `TauCeti.discreteCoindAddEquivAlgebraic_trace`: the auxiliary coefficient comparison identifies
+  the algebraic coinduction–restriction counit with the discrete trace.
 * `TauCeti.DiscreteCoind.instFinite`: `Coind_U^G A` is finite for finite `A` and finite-index
   `U`, since restriction to a right transversal is injective.
 * `TauCeti.DiscreteCoind.sum_single`: for an open finite-index `U`, a coinduced function is the
@@ -255,5 +259,33 @@ theorem trace_eq_zero_of_forall_smul_eq (hVU : V ≤ U) (htriv : ∀ u ∈ U, �
 end TraceInvariants
 
 end DiscreteCoind
+
+section DiscreteAlgebraicComparison
+
+variable (G M : Type) [Group G] [TopologicalSpace G] [DiscreteTopology G]
+  [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
+  (U : Subgroup G) [U.FiniteIndex] [DistribMulAction G M] [ContinuousSMul G M]
+
+open Classical in
+/-- The algebraic coinduction–restriction counit agrees with the discrete trace after the
+additive coinduction comparison. -/
+theorem discreteCoindAddEquivAlgebraic_trace (f : DiscreteCoind G U M) :
+    ((Rep.coindResAdjunction ℤ U).counit.app (Rep.ofDistribMulAction ℤ G M)).hom
+        (discreteCoindAddEquivAlgebraic G M U f) = DiscreteCoind.trace G U M f := by
+  let e := QuotientGroup.quotientRightRelEquivQuotientLeftRel U
+  let t : G ⧸ U → G := fun q ↦ ((e.symm q).out)⁻¹
+  have ht (q : G ⧸ U) : (QuotientGroup.mk (t q) : G ⧸ U) = q :=
+    (congrArg e (Quotient.out_eq (e.symm q))).trans (e.apply_symm_apply q)
+  refine (Subgroup.coindResAdjunction_counit_app_hom_apply U
+    (Rep.ofDistribMulAction ℤ G M) (discreteCoindAddEquivAlgebraic G M U f)).trans ?_
+  rw [DiscreteCoind.trace_eq_sum_transversal t ht]
+  let : Fintype (G ⧸ U) := Subgroup.fintypeQuotientOfFiniteIndex
+  exact Fintype.sum_equiv e _ _ fun q ↦ by
+    simp only [t, e.symm_apply_apply, inv_inv]
+    exact (congrArg (fun m : M ↦ (Rep.ofDistribMulAction ℤ G M).ρ q.out⁻¹ m)
+      (discreteCoindAddEquivAlgebraic_apply G M U f q.out)).trans
+        (Rep.ofDistribMulAction_ρ_apply_apply ℤ G M q.out⁻¹ (f q.out))
+
+end DiscreteAlgebraicComparison
 
 end TauCeti

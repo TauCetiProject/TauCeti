@@ -10,6 +10,7 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestrict
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.Corestriction
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Coinduced.Functor
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Shapiro.Basic
+import TauCeti.RepresentationTheory.Homological.ContCohomology.Coinduced.FiniteIndex
 import TauCeti.RepresentationTheory.Homological.ContCohomology.GroupCohomologyIso.CoeffMap
 import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestriction.Trace.DegreeTwo
 import TauCeti.RepresentationTheory.Homological.GroupCohomology.Functoriality
@@ -40,8 +41,6 @@ The coefficient ring is `ℤ`, and the group and coefficient carrier lie in `Typ
   preserves corestriction from every subgroup of a finite discrete group.
 * `TauCeti.ContCohomology.explicitH2IsoGroupCohomology_explicitShapiroMap2`: the degree-two
   comparison preserves Shapiro's map after identifying the coinduced coefficients.
-* `TauCeti.discreteCoindAddEquivAlgebraic_trace`: the auxiliary coefficient comparison identifies
-  the algebraic coinduction–restriction counit with the discrete trace.
 
 ## References
 
@@ -52,34 +51,6 @@ The coefficient ring is `ℤ`, and the group and coefficient carrier lie in `Typ
 public noncomputable section
 
 open CategoryTheory _root_.groupCohomology
-
-namespace TauCeti
-
-variable (G M : Type) [Group G] [TopologicalSpace G] [DiscreteTopology G]
-  [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
-  (U : Subgroup G) [U.FiniteIndex] [DistribMulAction G M] [ContinuousSMul G M]
-
-open Classical in
-/-- The algebraic coinduction–restriction counit agrees with the discrete trace after the
-additive coinduction comparison. -/
-theorem discreteCoindAddEquivAlgebraic_trace (f : DiscreteCoind G U M) :
-    ((Rep.coindResAdjunction ℤ U).counit.app (Rep.ofDistribMulAction ℤ G M)).hom
-        (discreteCoindAddEquivAlgebraic G M U f) = DiscreteCoind.trace G U M f := by
-  let e := QuotientGroup.quotientRightRelEquivQuotientLeftRel U
-  let t : G ⧸ U → G := fun q ↦ ((e.symm q).out)⁻¹
-  have ht (q : G ⧸ U) : (QuotientGroup.mk (t q) : G ⧸ U) = q :=
-    (congrArg e (Quotient.out_eq (e.symm q))).trans (e.apply_symm_apply q)
-  refine (Subgroup.coindResAdjunction_counit_app_hom_apply U
-    (Rep.ofDistribMulAction ℤ G M) (discreteCoindAddEquivAlgebraic G M U f)).trans ?_
-  rw [DiscreteCoind.trace_eq_sum_transversal t ht]
-  let : Fintype (G ⧸ U) := Subgroup.fintypeQuotientOfFiniteIndex
-  exact Fintype.sum_equiv e _ _ fun q ↦ by
-    simp only [t, e.symm_apply_apply, inv_inv]
-    exact (congrArg (fun m : M ↦ (Rep.ofDistribMulAction ℤ G M).ρ q.out⁻¹ m)
-      (discreteCoindAddEquivAlgebraic_apply G M U f q.out)).trans
-        (Rep.ofDistribMulAction_ρ_apply_apply ℤ G M q.out⁻¹ (f q.out))
-
-end TauCeti
 
 namespace TauCeti.ContCohomology
 

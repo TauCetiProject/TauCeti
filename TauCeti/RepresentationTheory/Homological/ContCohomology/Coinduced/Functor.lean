@@ -10,6 +10,7 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.Coinduced.
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete.Basic
 
 import all TauCeti.RepresentationTheory.Homological.ContCohomology.Coinduced.Discrete
+import TauCeti.RepresentationTheory.Coinduced
 import TauCeti.RepresentationTheory.Continuous.TopRep.EqToHom
 import TauCeti.Topology.Algebra.GroupAction.Discrete
 
@@ -592,11 +593,9 @@ theorem algebraicCoindCounit_toLinearMap :
   ext f
   let f' : Representation.coindV U.toSubgroup.subtype
     (Representation.ofDistribMulAction R U.toSubgroup A.obj.V) := f
-  -- Mathlib has no point-evaluation lemma for the counit (its generated simps lemmas were
-  -- removed), so unfold only the adjunction and its hom equivalence at this boundary.
-  exact (algebraicCoindCounit_apply R G U A f').trans (by
-    simp [Rep.resCoindAdjunction, Rep.resCoindHomEquiv]
-    rfl)
+  exact (algebraicCoindCounit_apply R G U A f').trans
+    (Rep.resCoindAdjunction_counit_app_hom_apply (k := R) U.toSubgroup.subtype
+      (Rep.of (Representation.ofDistribMulAction R U.toSubgroup A.obj.V)) f').symm
 
 end AlgebraicCounit
 
@@ -642,8 +641,8 @@ coinduction comparison. -/
 theorem discreteCoindAddEquivAlgebraic_eval (f : DiscreteCoind G U M) :
     ((Rep.resCoindAdjunction ℤ U.subtype).counit.app
       (Rep.ofDistribMulAction ℤ U M)).hom (discreteCoindAddEquivAlgebraic G M U f) = f 1 := by
-  refine Eq.trans ?_ (discreteCoindAddEquivAlgebraic_apply G M U f 1)
-  simp [Rep.resCoindAdjunction, Rep.resCoindHomEquiv]
+  exact (Rep.resCoindAdjunction_counit_app_hom_apply U.subtype _ _).trans
+    (discreteCoindAddEquivAlgebraic_apply G M U f 1)
 
 end DiscreteAlgebraicComparison
 
