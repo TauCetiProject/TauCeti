@@ -28,6 +28,15 @@ namespace TauCeti.GeneralLinear
 
 variable (R : Type*) [CommRing R] (n : ℕ)
 
+/-- The determinant localization map is injective over every commutative ring,
+including the zero ring and matrices of size zero. -/
+theorem coordinateRingMap_injective : Function.Injective (coordinateRingMap R n) := by
+  intro p q h
+  apply IsLocalization.injective (CoordinateRing R n)
+    (Submonoid.powers_le.mpr (Matrix.det_mvPolynomialX_mem_nonZeroDivisors
+      (R := R) (n := Fin n)))
+  simpa only [coordinateRingMap_apply] using h
+
 /-- The determinant localization map transported across the bundled coordinate algebras. -/
 private noncomputable def polynomialCoordinateAlgHom :
     MatrixMonoid.coordinateBialgebra R n →ₐ[R] coordinateHopfAlgebra R n :=
@@ -82,17 +91,11 @@ theorem polynomialCoordinateBialgHom_apply (p : MatrixMonoid.CoordinateRing R n)
 determinant-localized coordinates. This includes size zero and the zero ring. -/
 theorem polynomialCoordinateBialgHom_injective :
     Function.Injective (polynomialCoordinateBialgHom R n) := by
-  have hi : Function.Injective (coordinateRingMap R n) := by
-    intro p q h
-    apply IsLocalization.injective (CoordinateRing R n)
-      (Submonoid.powers_le.mpr (Matrix.det_mvPolynomialX_mem_nonZeroDivisors
-        (R := R) (n := Fin n)))
-    simpa only [coordinateRingMap_apply] using h
   intro x y h
   obtain ⟨p, rfl⟩ := (MatrixMonoid.coordinateBialgebraAlgEquiv R n).surjective x
   obtain ⟨q, rfl⟩ := (MatrixMonoid.coordinateBialgebraAlgEquiv R n).surjective y
   rw [polynomialCoordinateBialgHom_apply, polynomialCoordinateBialgHom_apply] at h
   exact congrArg (MatrixMonoid.coordinateBialgebraAlgEquiv R n)
-    (hi ((coordinateHopfAlgebraAlgEquiv R n).injective h))
+    (coordinateRingMap_injective R n ((coordinateHopfAlgebraAlgEquiv R n).injective h))
 
 end TauCeti.GeneralLinear
