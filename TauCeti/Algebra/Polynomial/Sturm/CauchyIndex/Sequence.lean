@@ -18,6 +18,16 @@ whole line these variations depend only on leading coefficients and degree
 parities. The numerator need not be a multiple of the derivative of the
 denominator, and common factors and multiple roots are allowed.
 
+Write `V(a⁻)` and `V(a⁺)` for the left-hand and right-hand variations of the
+Sturm sequence at `a`, and `V(-∞)`, `V(+∞)` for its variations at infinity.
+The jump of `q / p` at `a` is the local contribution `V(a⁻) - V(a⁺)`
+(`Polynomial.cauchyJump_eq_sub_signVariations`). So every interval is handled
+by one rule, whether or not its endpoints are roots of `p` or `q`: an included
+endpoint contributes the variations just outside the interval, and an excluded
+endpoint the variations just inside it. For instance the index on `(a, b)` is
+`V(a⁺) - V(b⁻)`, on `[a, b]` it is `V(a⁻) - V(b⁺)`, and on `(a, ∞)` it is
+`V(a⁺) - V(+∞)`.
+
 This connects signed Euclidean remainder sequences to Cauchy indices, so
 coefficient formulas for the sequences can compute indices and Tarski queries.
 In particular, one Euclidean step changes the whole-line index of `q / p` only
@@ -130,6 +140,117 @@ theorem _root_.Polynomial.cauchyIndex_eq_sub_signVariations_Ioo (p q : R[X]) {a 
     signVariationsAt_eq_right (fun r hr => hu r hr a' ha'u),
     signVariationsAt_eq_left (fun r hr => hl r hr b' hb'l)]
 
+/-- **The jump as a local contribution.** The jump of `q / p` at `a` is the drop in the
+one-sided variations of its Sturm sequence across `a`. This holds at every point, including
+common roots of `p` and `q` and points that are not roots of `p`. -/
+theorem _root_.Polynomial.cauchyJump_eq_sub_signVariations (p q : R[X]) (a : R) :
+    cauchyJump p q a =
+      (signVariationsLeft (sturmSeq p q) a : ℤ) - signVariationsRight (sturmSeq p q) a := by
+  have h := cauchyIndex_Ioo_eq_add (p := p) (q := q) (sub_one_lt a) (lt_add_one a)
+  rw [cauchyIndex_eq_sub_signVariations_Ioo _ _ ((sub_one_lt a).trans (lt_add_one a)),
+    cauchyIndex_eq_sub_signVariations_Ioo _ _ (sub_one_lt a),
+    cauchyIndex_eq_sub_signVariations_Ioo _ _ (lt_add_one a)] at h
+  linarith only [h]
+
+/-- On `(a, b]` the Cauchy index is the drop in right-hand variations from `a` to `b`. The
+closed endpoint uses the variations on the far side of `b`. -/
+theorem _root_.Polynomial.cauchyIndex_eq_sub_signVariations_Ioc (p q : R[X]) {a b : R}
+    (hab : a ≤ b) :
+    cauchyIndex p q (Ioc a b) =
+      (signVariationsRight (sturmSeq p q) a : ℤ) - signVariationsRight (sturmSeq p q) b := by
+  rcases hab.lt_or_eq with hab | rfl
+  · rw [← Ioo_insert_right hab, insert_eq, union_comm,
+      cauchyIndex_union _ _ (disjoint_singleton_right.mpr (by simp)), cauchyIndex_singleton,
+      cauchyIndex_eq_sub_signVariations_Ioo _ _ hab, cauchyJump_eq_sub_signVariations]
+    ring
+  · simp
+
+/-- On `[a, b]` the Cauchy index is the left-hand variations at `a` minus the right-hand
+variations at `b`. For `a = b` this is the jump at `a`. -/
+theorem _root_.Polynomial.cauchyIndex_eq_sub_signVariations_Icc (p q : R[X]) {a b : R}
+    (hab : a ≤ b) :
+    cauchyIndex p q (Icc a b) =
+      (signVariationsLeft (sturmSeq p q) a : ℤ) - signVariationsRight (sturmSeq p q) b := by
+  rw [← Ioc_insert_left hab, insert_eq,
+    cauchyIndex_union _ _ (disjoint_singleton_left.mpr (by simp)), cauchyIndex_singleton,
+    cauchyIndex_eq_sub_signVariations_Ioc _ _ hab, cauchyJump_eq_sub_signVariations]
+  ring
+
+/-- On `[a, b)` the Cauchy index is the drop in left-hand variations from `a` to `b`. -/
+theorem _root_.Polynomial.cauchyIndex_eq_sub_signVariations_Ico (p q : R[X]) {a b : R}
+    (hab : a ≤ b) :
+    cauchyIndex p q (Ico a b) =
+      (signVariationsLeft (sturmSeq p q) a : ℤ) - signVariationsLeft (sturmSeq p q) b := by
+  have h := cauchyIndex_eq_sub_signVariations_Icc p q hab
+  rw [← Ico_insert_right hab, insert_eq, union_comm,
+    cauchyIndex_union _ _ (disjoint_singleton_right.mpr (by simp)), cauchyIndex_singleton,
+    cauchyJump_eq_sub_signVariations] at h
+  linarith only [h]
+
+/-- On `(a, ∞)` the Cauchy index is the right-hand variations at `a` minus the variations
+at `+∞`. -/
+theorem _root_.Polynomial.cauchyIndex_eq_sub_signVariations_Ioi (p q : R[X]) (a : R) :
+    cauchyIndex p q (Ioi a) =
+      (signVariationsRight (sturmSeq p q) a : ℤ) - signVariationsAtTop (sturmSeq p q) := by
+  classical
+  by_cases hp : p = 0
+  · simp [hp]
+  obtain ⟨B, hB, hR⟩ := exists_atTop (sturmSeq p q) (fun _ hr => ne_zero_of_mem_sturmSeq hr)
+  set b := max a B + 1
+  have hab : a < b := (le_max_left _ _).trans_lt (lt_add_one _)
+  have hBb : B < b := (le_max_right _ _).trans_lt (lt_add_one _)
+  -- Every root of `p` lies below `b`, so only `(a, b)` contributes.
+  have hindex : cauchyIndex p q (Ioi a) = cauchyIndex p q (Ioo a b) := by
+    rw [cauchyIndex_eq_sum, cauchyIndex_eq_sum]
+    refine Finset.sum_congr (Finset.filter_congr fun r hr => ?_) fun _ _ => rfl
+    have hr := hR p (mem_sturmSeq_self hp) r (isRoot_of_mem_roots (Multiset.mem_toFinset.mp hr))
+    simp only [mem_Ioi, mem_Ioo]
+    exact ⟨fun h => ⟨h, hr.trans_lt hBb⟩, And.left⟩
+  rw [hindex, cauchyIndex_eq_sub_signVariations_Ioo p q hab,
+    signVariationsLeft_eq_signVariationsAt fun r hr hz => (hR r hr b hz).not_gt hBb, hB b hBb]
+
+/-- On `[a, ∞)` the Cauchy index is the left-hand variations at `a` minus the variations
+at `+∞`. -/
+theorem _root_.Polynomial.cauchyIndex_eq_sub_signVariations_Ici (p q : R[X]) (a : R) :
+    cauchyIndex p q (Ici a) =
+      (signVariationsLeft (sturmSeq p q) a : ℤ) - signVariationsAtTop (sturmSeq p q) := by
+  rw [← Ioi_insert, insert_eq, cauchyIndex_union _ _ (disjoint_singleton_left.mpr (by simp)),
+    cauchyIndex_singleton, cauchyIndex_eq_sub_signVariations_Ioi,
+    cauchyJump_eq_sub_signVariations]
+  ring
+
+/-- On `(-∞, b)` the Cauchy index is the variations at `-∞` minus the left-hand variations
+at `b`. -/
+theorem _root_.Polynomial.cauchyIndex_eq_sub_signVariations_Iio (p q : R[X]) (b : R) :
+    cauchyIndex p q (Iio b) =
+      (signVariationsAtBot (sturmSeq p q) : ℤ) - signVariationsLeft (sturmSeq p q) b := by
+  classical
+  by_cases hp : p = 0
+  · simp [hp]
+  obtain ⟨A, hA, hR⟩ := exists_atBot (sturmSeq p q) (fun _ hr => ne_zero_of_mem_sturmSeq hr)
+  set a := min A b - 1
+  have hab : a < b := (sub_one_lt _).trans_le (min_le_right _ _)
+  have haA : a < A := (sub_one_lt _).trans_le (min_le_left _ _)
+  -- Every root of `p` lies above `a`, so only `(a, b)` contributes.
+  have hindex : cauchyIndex p q (Iio b) = cauchyIndex p q (Ioo a b) := by
+    rw [cauchyIndex_eq_sum, cauchyIndex_eq_sum]
+    refine Finset.sum_congr (Finset.filter_congr fun r hr => ?_) fun _ _ => rfl
+    have hr := hR p (mem_sturmSeq_self hp) r (isRoot_of_mem_roots (Multiset.mem_toFinset.mp hr))
+    simp only [mem_Iio, mem_Ioo]
+    exact ⟨fun h => ⟨haA.trans_le hr, h⟩, And.right⟩
+  rw [hindex, cauchyIndex_eq_sub_signVariations_Ioo p q hab,
+    signVariationsRight_eq_signVariationsAt fun r hr hz => (hR r hr a hz).not_gt haA, hA a haA]
+
+/-- On `(-∞, b]` the Cauchy index is the variations at `-∞` minus the right-hand variations
+at `b`. -/
+theorem _root_.Polynomial.cauchyIndex_eq_sub_signVariations_Iic (p q : R[X]) (b : R) :
+    cauchyIndex p q (Iic b) =
+      (signVariationsAtBot (sturmSeq p q) : ℤ) - signVariationsRight (sturmSeq p q) b := by
+  rw [← Iio_insert, insert_eq, union_comm,
+    cauchyIndex_union _ _ (disjoint_singleton_right.mpr (by simp)), cauchyIndex_singleton,
+    cauchyIndex_eq_sub_signVariations_Iio, cauchyJump_eq_sub_signVariations]
+  ring
+
 /-- The Cauchy index of `q / p` on the whole ordered real closed field is
 computed by the degree-parity and leading-coefficient variations of its Sturm
 sequence. No squarefreeness or coprimality assumption is needed. For a zero
@@ -137,29 +258,9 @@ denominator both sides are zero by convention. -/
 theorem _root_.Polynomial.cauchyIndex_eq_sub_signVariations_univ (p q : R[X]) :
     cauchyIndex p q univ =
       (signVariationsAtBot (sturmSeq p q) : ℤ) - signVariationsAtTop (sturmSeq p q) := by
-  classical
-  by_cases hp : p = 0
-  · simp [hp]
-  obtain ⟨A, hA, hRA⟩ := exists_atBot (sturmSeq p q)
-    (fun _ hr => ne_zero_of_mem_sturmSeq hr)
-  obtain ⟨B, hB, hRB⟩ := exists_atTop (sturmSeq p q)
-    (fun _ hr => ne_zero_of_mem_sturmSeq hr)
-  let a := min A B - 1
-  let b := max A B + 1
-  have haA : a < A := (sub_one_lt _).trans_le (min_le_left _ _)
-  have hBb : B < b := (le_max_right _ _).trans_lt (lt_add_one _)
-  have hab : a < b := (haA.trans_le (le_max_left _ _)).trans (lt_add_one _)
-  have hroots : ∀ r ∈ p.roots.toFinset, a < r ∧ r < b := by
-    intro r hr
-    have hr0 := isRoot_of_mem_roots (Multiset.mem_toFinset.mp hr)
-    exact ⟨haA.trans_le (hRA p (mem_sturmSeq_self hp) r hr0),
-      (hRB p (mem_sturmSeq_self hp) r hr0).trans_lt hBb⟩
-  have hindex : cauchyIndex p q univ = cauchyIndex p q (Ioo a b) := by
-    simp only [cauchyIndex_eq_sum, mem_univ, Finset.filter_true, mem_Ioo,
-      Finset.filter_true_of_mem hroots]
-  rw [hindex, cauchyIndex_Ioo_aux p q hab
-    (fun r hr hz => (hRA r hr a hz).not_gt haA)
-    (fun r hr hz => (hRB r hr b hz).not_gt hBb), hA a haA, hB b hBb]
+  rw [← Iic_union_Ioi (a := (0 : R)), cauchyIndex_union _ _ (Iic_disjoint_Ioi le_rfl),
+    cauchyIndex_eq_sub_signVariations_Iic, cauchyIndex_eq_sub_signVariations_Ioi]
+  ring
 
 /-- **Sturm–Tarski on the whole line.** The Tarski query of `q` at the distinct roots of `p` is
 the drop in sign variations from `-∞` to `+∞` of the Sturm sequence of `p` and `p' * q`. No
