@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Orientation.Lift
+public import TauCeti.Geometry.Manifold.IsManifold.Basic
 
 /-!
 # Orientations of manifolds with corners
@@ -81,6 +82,15 @@ theorem inductionOn {p : Orientation I M ι → Prop} (o : Orientation I M ι)
 /-- The index type has the dimension of the model space. -/
 theorem card_eq (o : Orientation I M ι) : Fintype.card ι = Module.finrank ℝ E :=
   Quotient.inductionOn o OrientationLift.card_eq
+
+/-- The tangent space has the dimension encoded by the orientation index. -/
+theorem finrank_tangentSpace_eq (o : Orientation I M ι) (x : M) :
+    Module.finrank ℝ (TangentSpace I x) = Fintype.card ι :=
+  (TauCeti.finrank_tangentSpace (I := I) x).trans o.card_eq.symm
+
+theorem fact_finrank_tangentSpace {m : ℕ} (o : Orientation I M (Fin m)) (x : M) :
+    Fact (Module.finrank ℝ (TangentSpace I x) = m) :=
+  ⟨by simpa using o.finrank_tangentSpace_eq x⟩
 
 /-- Reverse the tangent orientations by reversing the model orientation of a lift. -/
 def neg (o : Orientation I M ι) : Orientation I M ι :=

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.TopForm
+public import TauCeti.Analysis.InnerProductSpace.Orientation
 public import Mathlib.Analysis.InnerProductSpace.TwoDim
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 
@@ -30,38 +31,28 @@ namespace TauCeti.Green
 
 attribute [local instance] Complex.finrank_real_complex_fact
 
-/-- The existing oriented complex volume form as a continuous alternating map. -/
-def complexAreaForm : ℂ [⋀^Fin 2]→L[ℝ] ℝ :=
-  Complex.orientation.volumeForm.mkContinuous 1 fun v ↦ by
-    simpa only [Real.norm_eq_abs, one_mul] using Complex.orientation.abs_volumeForm_apply_le v
-
-/-- Evaluation retains the actual normalized orientation volume form. -/
-theorem complexAreaForm_apply (v : Fin 2 → ℂ) :
-    complexAreaForm v = Complex.orientation.volumeForm v := (rfl)
-
 /-- The normalized volume coefficient in the actual positive complex basis is one. -/
 @[simp]
-theorem complexAreaForm_one_I : complexAreaForm ![1, Complex.I] = 1 := by
+theorem complexAreaForm_one_I : Complex.orientation.volumeForm ![1, Complex.I] = 1 := by
   rw [← Complex.coe_basisOneI]
-  rw [complexAreaForm_apply,
-    Complex.orientation.volumeForm_robust Complex.orthonormalBasisOneI rfl]
-  exact Complex.basisOneI.det_self
+  rw [Complex.orientation.volumeForm_robust Complex.orthonormalBasisOneI rfl]
+  exact Complex.orthonormalBasisOneI.toBasis.det_self
 
 /-- The canonical complex volume form transported to the actual tangent fibers. -/
 def manifoldAreaForm : RoughForm 𝓘(ℝ, ℂ) ℂ ℝ 2 := fun z ↦
-  complexAreaForm.compContinuousLinearMap
+  Complex.orientation.volumeFormL.compContinuousLinearMap
     (NormedSpace.fromTangentSpace (𝕜 := ℝ) z).toContinuousLinearMap
 
 /-- Evaluation of the area form uses the actual canonical tangent-space identification. -/
 theorem manifoldAreaForm_apply (z : ℂ) (v : Fin 2 → TangentSpace 𝓘(ℝ, ℂ) z) :
-    manifoldAreaForm z v = complexAreaForm
+    manifoldAreaForm z v = Complex.orientation.volumeFormL
       (fun i ↦ NormedSpace.fromTangentSpace (𝕜 := ℝ) z (v i)) := (rfl)
 
 /-- The area form's coordinate expression is the existing constant normalized volume form. -/
 -- Normalize before the generic model-space chart rule erases the chart expression.
 @[simp↓]
 theorem manifoldAreaForm_inChartAt (c : ℂ) :
-    manifoldAreaForm.inChartAt c = fun _ ↦ complexAreaForm := by
+    manifoldAreaForm.inChartAt c = fun _ ↦ Complex.orientation.volumeFormL := by
   rw [RoughForm.inChartAt_modelSpace]
   rfl
 
@@ -77,11 +68,11 @@ theorem inChartAt_fun_smul_manifoldAreaForm (f : ℂ → ℝ) (c z : ℂ) :
     RoughForm.inChartAt (I := 𝓘(ℝ, ℂ)) (fun x ↦ f x • manifoldAreaForm x)
       c z Complex.basisOneI = f z := by
   have he : RoughForm.inChartAt (I := 𝓘(ℝ, ℂ)) (fun x ↦ f x • manifoldAreaForm x) c =
-      fun x ↦ f x • complexAreaForm := by
+      fun x ↦ f x • Complex.orientation.volumeFormL := by
     rw [RoughForm.inChartAt_modelSpace]
     rfl
   rw [he, ContinuousAlternatingMap.smul_apply, smul_eq_mul, Complex.coe_basisOneI,
-    complexAreaForm_one_I, mul_one]
+    Orientation.volumeFormL_apply, complexAreaForm_one_I, mul_one]
 
 /-- The actual normalized coordinate top-form integral agrees with ordinary planar area. -/
 theorem integral_manifoldAreaForm_coefficient (f : ℂ → ℝ) (c : ℂ) :

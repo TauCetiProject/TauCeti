@@ -30,6 +30,8 @@ open scoped Manifold
 
 namespace TauCeti.Green
 
+attribute [local instance] Complex.finrank_real_complex_fact
+
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M] [CompactSpace M]
@@ -43,7 +45,7 @@ theorem _root_.Module.Basis.integrableTopForm_mpullback_areaForm (b : Module.Bas
     apply IsSmoothForm.of_contDiffWithinAt_inChartAt_self
     intro x
     have he : RoughForm.inChartAt (I := 𝓘(ℝ, ℂ)) (fun z ↦ g z • manifoldAreaForm z) x =
-        fun z ↦ g z • complexAreaForm := by
+        fun z ↦ g z • Complex.orientation.volumeFormL := by
       funext z
       rw [RoughForm.inChartAt_fun_smul, manifoldAreaForm_inChartAt]
       simp only [extChartAt_model_space_eq_id, PartialEquiv.refl_symm,
@@ -126,7 +128,7 @@ theorem integralTopForm_mpullback_area_eq_integral_image
       simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
         ContinuousLinearEquiv.apply_symm_apply]
       exact e.apply_symm_apply _
-    rw [hv, Complex.coe_basisOneI, complexAreaForm_one_I, mul_one]
+    rw [hv, Complex.coe_basisOneI, Orientation.volumeFormL_apply, complexAreaForm_one_I, mul_one]
   have hi' : IntegrableTopForm (mpullback I 𝓘(ℝ, E) f' ω) := hpull.symm ▸ hi
   obtain ⟨hgi, hge⟩ := integralTopForm_mpullback_eq_integral_image l b hf'
     (e.symm.injective.comp hinj) F' hF' ho' ω hi'

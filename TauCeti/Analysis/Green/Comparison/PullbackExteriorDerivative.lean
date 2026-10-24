@@ -25,9 +25,12 @@ open scoped Manifold Topology
 
 namespace TauCeti.Green
 
+attribute [local instance] Complex.finrank_real_complex_fact
+
 private theorem extDeriv_manifoldOneForm_inChartAt {P Q : ℂ → ℝ} {z : ℂ}
     (hP : DifferentiableAt ℝ P z) (hQ : DifferentiableAt ℝ Q z) :
-    extDeriv ((manifoldOneForm P Q).inChartAt z) z = curl P Q z • complexAreaForm := by
+    extDeriv ((manifoldOneForm P Q).inChartAt z) z =
+      curl P Q z • Complex.orientation.volumeFormL := by
   have h := DifferentiableAt.mextDeriv_manifoldOneForm_eq_smul_area hP hQ
   rw [mextDeriv_def, extChartAt_model_space_eq_id] at h
   simp only [modelWithCornersSelf_coe, range_id, PartialEquiv.refl_coe, id_eq,
@@ -77,7 +80,8 @@ theorem _root_.ContMDiff.mextDeriv_mpullback_manifoldOneForm_apply {f : M → �
       ((hf _).mdifferentiableAt (by norm_num))]
   ext v
   -- Evaluate the composed alternating maps on v and identify the model tangent fiber with ℂ.
-  change curl P Q (f x) • complexAreaForm (fun i ↦ fderivWithin ℝ T (range I) z (v i)) =
+  change curl P Q (f x) • Complex.orientation.volumeFormL
+      (fun i ↦ fderivWithin ℝ T (range I) z (v i)) =
     curl P Q (f x) • manifoldAreaForm (f ((extChartAt I x).symm (extChartAt I x x)))
       (fun i ↦ (NormedSpace.fromTangentSpace (𝕜 := ℝ)
         (f ((extChartAt I x).symm (extChartAt I x x)))).symm
