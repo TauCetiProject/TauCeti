@@ -13,8 +13,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Restricti
 
 A morphism of elliptic curves acts on their discrete Galois coefficient modules and hence on
 first Galois cohomology. These maps respect identity, composition and multiplication by natural
-numbers, and commute with restriction to an extension of the ground field. In particular they
-preserve everywhere locally trivial classes.
+numbers, and commute with restriction to an extension of the ground field.
 
 ## References
 
@@ -53,6 +52,32 @@ theorem pointCoeffMap_comp (g : Hom W₂.toAffine W₃.toAffine)
   simp only [pointCoeffEquiv_symm_pointCoeffMap, DistribMulActionHom.comp_apply,
     mapSeparableClosure, comp_map]
   exact comp_pointMap _ _ _
+
+/-- Addition of morphisms adds their actions on the Galois coefficient module. -/
+@[simp]
+theorem pointCoeffMap_add (f g : Hom W₁.toAffine W₂.toAffine) (P : W₁.PointCoeff) :
+    (f + g).pointCoeffMap P = f.pointCoeffMap P + g.pointCoeffMap P := by
+  classical
+  apply W₂.pointCoeffEquiv.symm.injective
+  simp only [pointCoeffEquiv_symm_pointCoeffMap, _root_.map_add, mapSeparableClosure,
+    map_add]
+  exact add_pointMap _ _ _
+
+/-- Negating a morphism negates its action on the Galois coefficient module. -/
+@[simp]
+theorem pointCoeffMap_neg (f : Hom W₁.toAffine W₂.toAffine) (P : W₁.PointCoeff) :
+    (-f).pointCoeffMap P = -f.pointCoeffMap P := by
+  classical
+  apply W₂.pointCoeffEquiv.symm.injective
+  simp only [pointCoeffEquiv_symm_pointCoeffMap, _root_.map_neg, mapSeparableClosure,
+    map_neg]
+  exact neg_pointMap _ _
+
+/-- Subtraction of morphisms subtracts their actions on the Galois coefficient module. -/
+@[simp]
+theorem pointCoeffMap_sub (f g : Hom W₁.toAffine W₂.toAffine) (P : W₁.PointCoeff) :
+    (f - g).pointCoeffMap P = f.pointCoeffMap P - g.pointCoeffMap P := by
+  simp only [sub_eq_add_neg, pointCoeffMap_add, pointCoeffMap_neg]
 
 /-- Multiplication of a morphism by a natural number multiplies its action on coefficients. -/
 @[simp]
@@ -99,6 +124,48 @@ theorem pointH1Map_comp (g : Hom W₂.toAffine W₃.toAffine)
   simp only [pointH1Map, pointCoeffMap_comp]
   exact explicitCoeff1_comp _ _ _ _ _ _
 
+/-- Addition of morphisms adds their induced maps on first cohomology. -/
+@[simp]
+theorem pointH1Map_add (f g : Hom W₁.toAffine W₂.toAffine) :
+    (f + g).pointH1Map = f.pointH1Map + g.pointH1Map := by
+  apply AddMonoidHom.ext
+  intro c
+  induction c using QuotientAddGroup.induction_on with
+  | _ z =>
+    simp only [pointH1Map_def, explicitCoeff1_mk, AddMonoidHom.add_apply,
+      ← QuotientAddGroup.mk_add]
+    congr 1
+    ext σ
+    simp only [AddSubgroup.coe_add, Pi.add_apply]
+    refine (cocyclesMap1_apply _ _ _ _ _ _ _ _ z σ).trans ?_
+    refine (pointCoeffMap_add f g _).trans (congrArg₂ (· + ·) ?_ ?_) <;>
+      symm <;> exact cocyclesMap1_apply _ _ _ _ _ _ _ _ z σ
+
+/-- Negating a morphism negates its induced map on first cohomology. -/
+@[simp]
+theorem pointH1Map_neg (f : Hom W₁.toAffine W₂.toAffine) :
+    (-f).pointH1Map = -f.pointH1Map := by
+  apply AddMonoidHom.ext
+  intro c
+  induction c using QuotientAddGroup.induction_on with
+  | _ z =>
+    simp only [pointH1Map_def, explicitCoeff1_mk, AddMonoidHom.neg_apply,
+      ← QuotientAddGroup.mk_neg]
+    congr 1
+    ext σ
+    simp only [AddSubgroup.coe_neg, Pi.neg_apply]
+    refine (cocyclesMap1_apply _ _ _ _ _ _ _ _ z σ).trans ?_
+    refine (pointCoeffMap_neg f _).trans (congrArg Neg.neg ?_)
+    symm
+    exact cocyclesMap1_apply _ _ _ _ _ _ _ _ z σ
+
+/-- Subtraction of morphisms subtracts their induced maps on first cohomology. -/
+@[simp]
+theorem pointH1Map_sub (f g : Hom W₁.toAffine W₂.toAffine) :
+    (f - g).pointH1Map = f.pointH1Map - g.pointH1Map := by
+  rw [sub_eq_add_neg, pointH1Map_add, pointH1Map_neg]
+  exact (_root_.sub_eq_add_neg f.pointH1Map g.pointH1Map).symm
+
 /-- Multiplication by `n` on the curve induces multiplication by `n` on first cohomology. -/
 @[simp]
 theorem pointH1Map_natCast (n : ℕ) (c : H1 (AbsoluteGaloisGroup K) W₁.PointCoeff) :
@@ -136,7 +203,9 @@ theorem pointCoeffBaseChange_pointCoeffMap (f : Hom W₁.toAffine W₂.toAffine)
   rw [pointCoeffEquiv_symm_pointCoeffBaseChange, pointCoeffEquiv_symm_pointCoeffMap]
   -- The mapped morphism is indexed by `W.toAffine.map`, whereas the coefficients use `W⁄L`.
   erw [pointCoeffEquiv_symm_pointCoeffMap]
+  -- Expose the cast from the iterated base change; `erw` identifies the affine curve indices.
   erw [pointCoeffEquiv_symm_pointCoeffBaseChange]
+  -- Naturality is stated for `W.toAffine.map`; `erw` matches it with the `W⁄L` points here.
   erw [← pointMap_map_algebraMap_map f τ]
   symm
   apply pointMap_cast
@@ -144,6 +213,7 @@ theorem pointCoeffBaseChange_pointCoeffMap (f : Hom W₁.toAffine W₂.toAffine)
     (W₂.map_baseChange (IsScalarTower.toAlgHom K L (SeparableClosure L))).symm
   symm
   simp only [mapSeparableClosure]
+  -- The iterated morphism base change has the same affine/Weierstrass index mismatch.
   erw [map_map]
   exact congr_arg_heq (fun a ↦ f.map a) (IsScalarTower.algebraMap_eq K L (SeparableClosure L)).symm
 

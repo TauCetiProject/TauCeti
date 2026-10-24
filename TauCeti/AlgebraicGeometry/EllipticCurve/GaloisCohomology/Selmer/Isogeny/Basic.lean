@@ -77,6 +77,27 @@ theorem shafarevichTateMap_comp (g : Hom W₂.toAffine W₃.toAffine)
   ext c
   simp
 
+/-- Addition of morphisms adds their induced maps on Shafarevich–Tate groups. -/
+@[simp]
+theorem shafarevichTateMap_add (f g : Hom W₁.toAffine W₂.toAffine) :
+    (f + g).shafarevichTateMap τ = f.shafarevichTateMap τ + g.shafarevichTateMap τ := by
+  ext c
+  simp
+
+/-- Negating a morphism negates its induced map on Shafarevich–Tate groups. -/
+@[simp]
+theorem shafarevichTateMap_neg (f : Hom W₁.toAffine W₂.toAffine) :
+    (-f).shafarevichTateMap τ = -f.shafarevichTateMap τ := by
+  ext c
+  simp
+
+/-- Subtraction of morphisms subtracts their induced maps on Shafarevich–Tate groups. -/
+@[simp]
+theorem shafarevichTateMap_sub (f g : Hom W₁.toAffine W₂.toAffine) :
+    (f - g).shafarevichTateMap τ = f.shafarevichTateMap τ - g.shafarevichTateMap τ := by
+  rw [sub_eq_add_neg, shafarevichTateMap_add, shafarevichTateMap_neg]
+  exact (_root_.sub_eq_add_neg (f.shafarevichTateMap τ) (g.shafarevichTateMap τ)).symm
+
 /-- Multiplication by `n` induces multiplication by `n` on the Shafarevich–Tate group. -/
 @[simp]
 theorem shafarevichTateMap_natCast (n : ℕ) (c : W₁.shafarevichTateGroup τ) :

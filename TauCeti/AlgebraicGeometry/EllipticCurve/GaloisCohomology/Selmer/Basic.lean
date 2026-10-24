@@ -283,3 +283,44 @@ theorem selmerShaMap_surjective : Function.Surjective (W.selmerShaMap τ m) := b
 end Descent
 
 end WeierstrassCurve
+
+namespace TauCeti
+
+open WeierstrassCurve ContCohomology
+
+variable {K : Type*} [Field K] {W : WeierstrassCurve K}
+  {ι κ : Type*} {L : ι → Type*} [∀ i, Field (L i)] [∀ i, Algebra K (L i)]
+  (τ : ∀ i, SeparableClosure K →ₐ[K] SeparableClosure (L i)) (e : κ → ι)
+
+/-- Imposing local triviality at a family of places implies it at any subfamily. -/
+theorem shafarevichTateGroup_le_comp :
+    W.shafarevichTateGroup τ ≤ W.shafarevichTateGroup (fun j ↦ τ (e j)) := by
+  intro c hc
+  exact (W.mem_shafarevichTateGroup_iff _).mpr fun j ↦
+    (W.mem_shafarevichTateGroup_iff τ).mp hc (e j)
+
+/-- Restricting the family of local conditions includes the torsion in the larger Sha group. -/
+def shafarevichTateTorsionInclusion (n : ℕ) :
+    AddSubgroup.torsionBy (W.shafarevichTateGroup τ) n →+
+      AddSubgroup.torsionBy (W.shafarevichTateGroup (fun j ↦ τ (e j))) n :=
+  ((AddSubgroup.inclusion (shafarevichTateGroup_le_comp (W := W) τ e)).comp
+    (AddSubgroup.torsionBy (W.shafarevichTateGroup τ) n).subtype).codRestrict _ fun c ↦ by
+      rw [AddSubgroup.torsionBy.nsmul_iff, ← map_nsmul, AddSubgroup.torsionBy.nsmul,
+        map_zero]
+
+/-- Restriction of local conditions leaves the underlying first cohomology class unchanged. -/
+@[simp]
+theorem coe_shafarevichTateTorsionInclusion (n : ℕ)
+    (c : AddSubgroup.torsionBy (W.shafarevichTateGroup τ) n) :
+    ((shafarevichTateTorsionInclusion (W := W) τ e n c :
+      W.shafarevichTateGroup (fun j ↦ τ (e j))) : H1 (AbsoluteGaloisGroup K) W.PointCoeff) =
+      c.1.1 :=
+  (rfl)
+
+/-- The inclusion on torsion obtained by restricting local conditions is injective. -/
+theorem shafarevichTateTorsionInclusion_injective (n : ℕ) :
+    Function.Injective (shafarevichTateTorsionInclusion (W := W) τ e n) := by
+  intro c d h
+  exact Subtype.ext (Subtype.ext (congrArg (fun z ↦ z.1.1) h))
+
+end TauCeti
