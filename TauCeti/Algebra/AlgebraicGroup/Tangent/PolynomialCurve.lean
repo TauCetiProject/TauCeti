@@ -39,7 +39,7 @@ subgroup of `GLₙ` lies in its Lie algebra.
 
 public section
 
-open Polynomial
+open Polynomial TrivSqZeroExt
 
 namespace TauCeti.Bialgebra
 
@@ -49,33 +49,43 @@ section Velocity
 
 variable [_root_.Bialgebra R H]
 
-/-- The linear coefficient of a polynomial curve through the identity, as a map into the
-counit coefficient algebra. -/
-private noncomputable def curveVelocityLinearMap (γ : H →ₐ[R] R[X]) :
-    H →ₗ[R] CounitAlgebra R H R :=
-  (CounitAlgebra.algEquivSelf R H R).symm.toLinearMap ∘ₗ (lcoeff R 1) ∘ₗ γ.toLinearMap
-
-private theorem algEquivSelf_curveVelocityLinearMap_apply (γ : H →ₐ[R] R[X]) (h : H) :
-    CounitAlgebra.algEquivSelf R H R (curveVelocityLinearMap γ h) = (γ h).coeff 1 := by
-  simp only [curveVelocityLinearMap, LinearMap.coe_comp, Function.comp_apply,
-    AlgEquiv.toLinearMap_apply, AlgEquiv.apply_symm_apply, AlgHom.toLinearMap_apply,
-    lcoeff_apply]
+/-- A polynomial evaluated at the dual-number unit `ε` has its constant coefficient as classical
+part and its linear coefficient as infinitesimal part. -/
+private theorem aeval_eps_eq {B : Type*} [CommRing B] [Algebra R B] (p : R[X]) :
+    aeval (DualNumber.eps : DualNumber B) p =
+      inl (algebraMap R B (p.coeff 0)) + inr (algebraMap R B (p.coeff 1)) := by
+  rw [← zero_add (DualNumber.eps : DualNumber B),
+    aeval_add_of_sq_eq_zero _ _ _ (by rw [sq, DualNumber.eps_mul_eps]),
+    ← coeff_zero_eq_aeval_zero', ← coeff_zero_eq_aeval_zero']
+  ext <;> simp [coeff_derivative, Algebra.algebraMap_eq_smul_one]
 
 /-- The velocity at `t = 0` of a polynomial curve `γ` through the identity: the tangent vector
 at the identity sending a coordinate function `h` to the coefficient of `t` in `γ h`. The
-hypothesis says that `γ` passes through the identity at `t = 0`. -/
+hypothesis says that `γ` passes through the identity at `t = 0`.
+
+It is the derivation attached by `derivationToDualNumberEquivLift` to the dual-number point
+obtained by substituting `t = ε` into `γ`. -/
 noncomputable def curveVelocity (γ : H →ₐ[R] R[X])
     (hγ : (aeval (0 : R)).comp γ = Bialgebra.counitAlgHom R H) :
     Derivation R H (CounitAlgebra R H R) :=
-  Derivation.mk' (curveVelocityLinearMap γ) fun a b ↦ by
-    have hcoeff (h : H) : (γ h).coeff 0 = Coalgebra.counit h := by
-      rw [coeff_zero_eq_aeval_zero, ← AlgHom.comp_apply, hγ, Bialgebra.counitAlgHom_apply]
-    apply (CounitAlgebra.algEquivSelf R H R).injective
-    rw [map_add, CounitAlgebra.algEquivSelf_smul, CounitAlgebra.algEquivSelf_smul,
-      algEquivSelf_curveVelocityLinearMap_apply, algEquivSelf_curveVelocityLinearMap_apply,
-      algEquivSelf_curveVelocityLinearMap_apply, map_mul, mul_coeff_one]
-    simp only [hcoeff, Algebra.algebraMap_self, RingHom.id_apply]
-    ring
+  (derivationToDualNumberEquivLift R H (CounitAlgebra R H R)).symm
+    ⟨(aeval DualNumber.eps).comp γ, by
+      ext h
+      rw [AlgHom.comp_apply, AlgHom.comp_apply, aeval_eps_eq, fstHom_apply, fst_add, fst_inl,
+        fst_inr, add_zero, coeff_zero_eq_aeval_zero, ← AlgHom.comp_apply, hγ,
+        IsScalarTower.coe_toAlgHom', CounitAlgebra.algebraMap_apply,
+        Bialgebra.counitAlgHom_apply, CounitAlgebra.algebraMap_base]⟩
+
+/-- The velocity of a polynomial curve evaluates a coordinate function to the coefficient of
+`t` in its pullback, read through the identification of the counit coefficient algebra with
+`R`. -/
+@[simp]
+theorem curveVelocity_apply (γ : H →ₐ[R] R[X])
+    (hγ : (aeval (0 : R)).comp γ = Bialgebra.counitAlgHom R H) (h : H) :
+    curveVelocity γ hγ h = (γ h).coeff 1 := by
+  rw [curveVelocity, derivationToDualNumberEquivLift_symm_apply, AlgHom.comp_apply,
+    aeval_eps_eq, snd_add, snd_inl, snd_inr, zero_add, CounitAlgebra.algebraMap_base,
+    Algebra.algebraMap_self, RingHom.id_apply]
 
 /-- The velocity of a polynomial curve evaluates a coordinate function to the coefficient of
 `t` in its pullback.
@@ -84,17 +94,8 @@ This is not a `simp` lemma: `CounitAlgebra.algEquivSelf_apply` already rewrites 
 side. -/
 theorem algEquivSelf_curveVelocity_apply (γ : H →ₐ[R] R[X])
     (hγ : (aeval (0 : R)).comp γ = Bialgebra.counitAlgHom R H) (h : H) :
-    CounitAlgebra.algEquivSelf R H R (curveVelocity γ hγ h) = (γ h).coeff 1 :=
-  algEquivSelf_curveVelocityLinearMap_apply γ h
-
-/-- The velocity of a polynomial curve evaluates a coordinate function to the coefficient of
-`t` in its pullback, read through the identification of the counit coefficient algebra with
-`R`. -/
-@[simp]
-theorem curveVelocity_apply (γ : H →ₐ[R] R[X])
-    (hγ : (aeval (0 : R)).comp γ = Bialgebra.counitAlgHom R H) (h : H) :
-    curveVelocity γ hγ h = (γ h).coeff 1 :=
-  (CounitAlgebra.algEquivSelf_apply R H R _).symm.trans (algEquivSelf_curveVelocity_apply γ hγ h)
+    CounitAlgebra.algEquivSelf R H R (curveVelocity γ hγ h) = (γ h).coeff 1 := by
+  rw [CounitAlgebra.algEquivSelf_apply, curveVelocity_apply]
 
 end Velocity
 
