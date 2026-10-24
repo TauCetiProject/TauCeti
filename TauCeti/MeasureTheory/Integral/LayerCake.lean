@@ -49,10 +49,11 @@ the integral over all levels `t` of the indicators of its superlevel sets `{u > 
   nonnegative functions, as a double integral of intersections of superlevel sets;
 * `TauCeti.lintegral_enorm_sub_eq_lintegral_measure_symmDiff` — the `L¹` distance of two real
   functions, level by level;
-* `TauCeti.lintegral_enorm_sub_eq_lintegral_measure_symmDiff_setOf_lt` — the same identity with
-  strict superlevel sets;
-* `TauCeti.exists_pos_sum_measure_symmDiff_lt_mul_measure` — a superlevel set of `p` whose total
-  boundary relative to finitely many `L¹`-close functions is small compared with its measure;
+* `MeasureTheory.Measure.lintegral_enorm_sub_eq_lintegral_measure_symmDiff_setOf_lt` — the same
+  identity with strict superlevel sets;
+* `MeasureTheory.Measure.exists_pos_sum_measure_symmDiff_lt_mul_measure` — a superlevel set of
+  `p` whose total boundary relative to finitely many `L¹`-close functions is small compared with
+  its measure;
 * `MeasureTheory.Measure.exists_strictMono_ae_tendsto_measure_symmDiff_setOf_lt` — along a
   subsequence of an `L¹`-convergent sequence, the superlevel sets converge in measure at almost
   every level;
@@ -220,13 +221,19 @@ theorem lintegral_enorm_sub_eq_lintegral_measure_symmDiff (m : Measure α) [SFin
       simp only [Set.mem_symmDiff, Set.mem_ofPred_eq]
       rw [hfa, hga]
 
+end TauCeti
+
+namespace MeasureTheory.Measure
+
+variable {α : Type*} [MeasurableSpace α]
+
 /-- **The area between two graphs, through superlevel sets.** The `L¹` distance of two almost
 everywhere measurable real functions is the integral, over the levels `s`, of the measure of the
 set where exactly one of the two functions exceeds `s`. -/
 theorem lintegral_enorm_sub_eq_lintegral_measure_symmDiff_setOf_lt (m : Measure α) [SFinite m]
     {f g : α → ℝ} (hf : AEMeasurable f m) (hg : AEMeasurable g m) :
     ∫⁻ a, ‖f a - g a‖ₑ ∂m = ∫⁻ s, m ({a | s < f a} ∆ {a | s < g a}) := by
-  rw [lintegral_enorm_sub_eq_lintegral_measure_symmDiff m hf hg]
+  rw [TauCeti.lintegral_enorm_sub_eq_lintegral_measure_symmDiff m hf hg]
   refine lintegral_congr fun s ↦ ?_
   simp only [← compl_symmDiff_compl (a := {a | s < f a}), compl_ofPred, not_lt]
 
@@ -269,12 +276,6 @@ theorem exists_pos_sum_measure_symmDiff_lt_mul_measure (m : Measure α) [SFinite
         exact Finset.sum_congr rfl fun i hi ↦
           (lintegral_enorm_sub_eq_lintegral_measure_symmDiff_setOf_lt m (hq i hi) hp).symm
 
-end TauCeti
-
-namespace MeasureTheory.Measure
-
-variable {α : Type*} [MeasurableSpace α]
-
 open Filter Topology in
 /-- **Superlevel sets along an `L¹`-convergent sequence.** If `f n → g` in `L¹(m)`, then along a
 subsequence the strict superlevel sets `{f n > s}` converge in measure to `{g > s}` at almost every
@@ -287,8 +288,8 @@ theorem exists_strictMono_ae_tendsto_measure_symmDiff_setOf_lt (m : Measure α) 
   -- The defect `F n s` at level `s` is measurable in `s` and integrates to `∫ |f n - g|`.
   set F : ℕ → ℝ → ℝ≥0∞ := fun n s ↦ m ({a | s < f n a} ∆ {a | s < g a})
   have hF (n : ℕ) : ∫⁻ s, F n s = ∫⁻ a, ‖f n a - g a‖ₑ ∂m :=
-    (TauCeti.lintegral_enorm_sub_eq_lintegral_measure_symmDiff_setOf_lt m (hf n) hg).symm
-  have hFm (n : ℕ) : Measurable (F n) := TauCeti.measurable_measure_symmDiff_setOf_lt m (hf n) hg
+    (lintegral_enorm_sub_eq_lintegral_measure_symmDiff_setOf_lt m (hf n) hg).symm
+  have hFm (n : ℕ) : Measurable (F n) := measurable_measure_symmDiff_setOf_lt m (hf n) hg
   -- Along a subsequence with `∫ F (ns j) < 2⁻ʲ`, the sum `∑ⱼ F (ns j) s` is finite for almost
   -- every `s`, so its terms tend to zero.
   obtain ⟨ns, hns, hlt⟩ := extraction_forall_of_eventually fun j ↦
