@@ -379,16 +379,16 @@ section DoubleDualInverse
 
 /-! ### The double left and double right duals are inverse
 
-Write `R` and `L` for the right and left dual functors `C ⥤ (Cᵒᵖ)ᴹᵒᵖ`, and `R̄, L̄ : (Cᵒᵖ)ᴹᵒᵖ ⥤ C`
+Write `R` and `L` for the right and left dual functors `C ⥤ (Cᵒᵖ)ᴹᵒᵖ`, and `R', L' : (Cᵒᵖ)ᴹᵒᵖ ⥤ C`
 for the same functors applied through their opposite monoidal opposites and followed by the
-removal of the wrappers. Then the double right and double left dual functors are `R ⋙ R̄` and
-`L ⋙ L̄`, and the mixed composites of `C` are `R ⋙ L̄` and `L ⋙ R̄`. The functor `R̄ ⋙ L` of
+removal of the wrappers. Then the double right and double left dual functors are `R ⋙ R'` and
+`L ⋙ L'`, and the mixed composites of `C` are `R ⋙ L'` and `L ⋙ R'`. The functor `R' ⋙ L` of
 `(Cᵒᵖ)ᴹᵒᵖ` sends `Y` to `ᘁ(Yᘁ)`, and the opposite of the inverse of `leftDualRightDualIso C`
-trivializes it as a monoidal functor; likewise `L̄ ⋙ R` is trivialized by
+trivializes it as a monoidal functor; likewise `L' ⋙ R` is trivialized by
 `rightDualLeftDualIso C`. Inserting these trivializations into
 
 ```text
-(R ⋙ R̄) ⋙ (L ⋙ L̄) = R ⋙ (R̄ ⋙ L) ⋙ L̄,      (L ⋙ L̄) ⋙ (R ⋙ R̄) = L ⋙ (L̄ ⋙ R) ⋙ R̄
+(R ⋙ R') ⋙ (L ⋙ L') = R ⋙ (R' ⋙ L) ⋙ L',      (L ⋙ L') ⋙ (R ⋙ R') = L ⋙ (L' ⋙ R) ⋙ R'
 ```
 
 reduces the two composites of the double duals to the mixed composites, which are trivialized
