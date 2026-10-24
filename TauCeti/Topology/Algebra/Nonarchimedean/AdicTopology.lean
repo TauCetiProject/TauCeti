@@ -38,6 +38,8 @@ series evaluated at arguments of `I ^ n` is confined to `I ^ n`, in
   of `I`.
 * `IsAdic.isLinearTopology` : a ring whose topology is `I`-adic is linearly topologized, the
   `IsAdic` counterpart of `Ideal.isLinearTopology`.
+* `TauCeti.IsAdic.map_of_isOpenQuotientMap` : an open quotient ring map transports an adic
+  topology to the adic topology of the extended ideal, without finite generation or completeness.
 * `IsAdic.continuous_of_map_le_radical` : a ring homomorphism from an `I`-adic ring to a `J`-adic
   ring is continuous when it carries the finitely generated ideal `I` into the radical of `J`.
 * `IsAdic.continuous_iff_map_le_radical` and
@@ -62,6 +64,7 @@ which is the reading taken here.
 
 The ideal-of-definition criterion and the results about radicals additionally follow
 A. Grothendieck and J. Dieudonné, *Éléments de géométrie algébrique I*, Ch. 0, §§7.1.4–7.1.7.
+The open-quotient transport theorem follows Ch. 0, (7.3.5).
 -/
 
 public section
@@ -247,3 +250,28 @@ theorem Ideal.adicTopology_eq_of_radical_eq {R : Type*} [CommRing R] {I J : Idea
   letI := I.adicTopology
   -- for the `I`-adic topology, `IsAdic I` is `rfl` by the definition of `IsAdic`
   IsAdic.of_radical_eq (I := I) rfl hIfg hJfg h
+
+namespace TauCeti.IsAdic
+
+/-- An open quotient of an adic ring has the adic topology of the extended ideal. Neither
+finite generation nor completeness of the defining ideal is required.
+
+Use `TauCeti.IsAdic.map_of_isOpenQuotientMap hI f hf`, or
+`hI.map_of_isOpenQuotientMap f hf` with `open TauCeti`. -/
+theorem map_of_isOpenQuotientMap {R S : Type*} [CommRing R] [CommRing S]
+    [TopologicalSpace R] [TopologicalSpace S] [IsTopologicalRing S]
+    {I : Ideal R} (hI : IsAdic I) (f : R →+* S) (hf : IsOpenQuotientMap f) :
+    IsAdic (I.map f) := by
+  have hmap (n : ℕ) : (((I.map f) ^ n : Ideal S) : Set S) =
+      f '' ((I ^ n : Ideal R) : Set R) := by
+    rw [← Ideal.map_pow, Ideal.map_eq_image_of_surjective f hf.surjective]
+  refine isAdic_iff.mpr ⟨fun n ↦ ?_, fun s hs ↦ ?_⟩
+  · rw [hmap]
+    exact hf.isOpenMap _ (hI.isOpen_pow n)
+  · obtain ⟨n, -, hn⟩ := hI.hasBasis_nhds_zero.mem_iff.mp
+      (hf.continuous.continuousAt.preimage_mem_nhds (by simpa using hs))
+    refine ⟨n, ?_⟩
+    rw [hmap]
+    exact Set.image_subset_iff.mpr hn
+
+end TauCeti.IsAdic
