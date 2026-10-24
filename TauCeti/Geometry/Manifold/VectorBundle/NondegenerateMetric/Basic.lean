@@ -150,8 +150,9 @@ theorem inCoordinates_toBilinForm
           |>.toLinearEquiv) (g x).toBilinForm := by
   ext v w
   rw [ContinuousLinearMap.toBilinForm_apply, LinearMap.BilinForm.congr_apply,
-    inCoordinates_apply g a hx]
-  rfl
+    inCoordinates_apply g a hx, ContinuousLinearMap.toBilinForm_apply,
+    ContinuousLinearEquiv.coe_symm_toLinearEquiv,
+    Trivialization.continuousLinearEquivAt_symm_apply]
 
 /-- The metric read in a trivialization is symmetric on its base set. -/
 theorem isSymm_inCoordinates
