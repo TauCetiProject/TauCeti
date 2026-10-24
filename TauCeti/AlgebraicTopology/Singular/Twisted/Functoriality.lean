@@ -63,6 +63,14 @@ def twistedSubspaceChainComplexMap :
   LocalCoefficientSystem.twistedChainComplexCoefficientMap (subspaceSystemPullbackIso f L).hom ≫
     LocalCoefficientSystem.twistedChainComplexMap (Hom.snd f) (Q.subspaceSystem L)
 
+/-- The subspace chain map is the coefficient comparison followed by the map of subspaces. -/
+lemma twistedSubspaceChainComplexMap_def :
+    twistedSubspaceChainComplexMap f L =
+      LocalCoefficientSystem.twistedChainComplexCoefficientMap
+          (subspaceSystemPullbackIso f L).hom ≫
+        LocalCoefficientSystem.twistedChainComplexMap (Hom.snd f) (Q.subspaceSystem L) :=
+  (rfl)
+
 /-- The maps induced by a map of pairs on subspace and ambient twisted chains form a commutative
 square. -/
 @[reassoc]

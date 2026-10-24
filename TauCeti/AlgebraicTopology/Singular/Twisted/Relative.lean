@@ -98,6 +98,12 @@ def cokernelCoforkTwistedChainComplex :
     CokernelCofork (LocalCoefficientSystem.twistedChainComplexMap P.map L) :=
   CokernelCofork.ofπ _ (P.twistedChainComplexMap_comp_twistedChainComplexπ L)
 
+/-- The cokernel cofork is the cofork of the ambient-to-relative quotient map. -/
+lemma cokernelCoforkTwistedChainComplex_def :
+    P.cokernelCoforkTwistedChainComplex L =
+      CokernelCofork.ofπ (P.twistedChainComplexπ L)
+        (P.twistedChainComplexMap_comp_twistedChainComplexπ L) := (rfl)
+
 /-- The relative twisted chain complex of a pair is the cokernel of the inclusion of the twisted
 chains of its subspace. -/
 def isColimitCokernelCoforkTwistedChainComplex :
