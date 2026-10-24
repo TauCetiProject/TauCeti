@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Arsinh
+public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm.OneOne
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.RootsOfUnity
 import Mathlib.GroupTheory.NoncommCoprod
@@ -18,8 +19,9 @@ Let `e₁, e₂` be the coordinate generators of `Cliff(1, 1)`, so that `e₁² 
 
 `z² = 1`, `reverse z = -z`,
 
-and the even Clifford algebra is the two-dimensional algebra spanned by `1` and `z`. This file
-computes the Spin group `Spin(1, 1) = CliffordAlgebra.realCliffordSpinGroup 1 1` explicitly: its
+and the even Clifford algebra is the two-dimensional algebra spanned by `1` and `z`, as proved
+in `TauCeti.LinearAlgebra.CliffordAlgebra.RealForm.OneOne`. This file computes the Spin group
+`Spin(1, 1) = CliffordAlgebra.realCliffordSpinGroup 1 1` explicitly: its
 elements are exactly the even elements `a + b z` with `a² - b² = 1`, that is, exactly the elements
 `± (cosh t + sinh t z)` for `t : ℝ`. Since `z² = 1`, the hyperbolic rotations
 `cosh t + sinh t z` multiply by adding their parameters, so they form a subgroup isomorphic to
@@ -36,7 +38,6 @@ in which `a + b z` is the matrix `!![a, b; b, a]` and the even elements are exac
 
 ## Main definitions
 
-* `CliffordAlgebra.realCliffordOneOneVolume`: the product `z = e₁ e₂` of the two generators.
 * `CliffordAlgebra.realCliffordSpinOneOneHyperbolicRotation`: the homomorphism
   `t ↦ cosh t + sinh t z` from `(ℝ, +)` to `Spin(1, 1)`.
 * `CliffordAlgebra.realCliffordSpinOneOneEquiv`: the isomorphism `μ₂(ℝ) × ℝ ≃* Spin(1, 1)`,
@@ -47,9 +48,6 @@ in which `a + b z` is the matrix `!![a, b; b, a]` and the even elements are exac
 
 ## Main results
 
-* `CliffordAlgebra.exists_eq_algebraMap_add_smul_realCliffordOneOneVolume`: every even element of
-  `Cliff(1, 1)` is `a + b z`, with `a` and `b` unique by
-  `CliffordAlgebra.algebraMap_add_smul_realCliffordOneOneVolume_inj`.
 * `CliffordAlgebra.mem_realCliffordSpinGroup_one_one_iff`: `Spin(1, 1)` consists of the elements
   `a + b z` with `a² - b² = 1`.
 * `CliffordAlgebra.mem_realCliffordSpinGroup_one_one_iff_exists_cosh_sinh`: `Spin(1, 1)` consists
@@ -65,109 +63,6 @@ public section
 open TauCeti Real
 
 namespace CliffordAlgebra
-
-/-- The product `z = e₁ e₂` of the two coordinate generators of `Cliff(1, 1)`, the generator `e₁`
-squaring to `1` and `e₂` to `-1`. -/
-noncomputable def realCliffordOneOneVolume : CliffordAlgebra (realCliffordForm 1 1) :=
-  ι _ (Pi.single 0 1) * ι _ (Pi.single 1 1)
-
-/-- In the matrix model of `Cliff(1, 1)`, `z = e₁ e₂` is the swap matrix. -/
-@[simp]
-theorem realCliffordOneOneEquivMatrix_realCliffordOneOneVolume :
-    realCliffordOneOneEquivMatrix realCliffordOneOneVolume = !![0, 1; 1, 0] := by
-  rw [realCliffordOneOneVolume, map_mul, realCliffordOneOneEquivMatrix_ι,
-    realCliffordOneOneEquivMatrix_ι]
-  ext i j
-  fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_two]
-
-/-- In the matrix model of `Cliff(1, 1)`, `a + b z` is the matrix `!![a, b; b, a]`. -/
-theorem realCliffordOneOneEquivMatrix_algebraMap_add_smul_realCliffordOneOneVolume (a b : ℝ) :
-    realCliffordOneOneEquivMatrix
-        (algebraMap ℝ (CliffordAlgebra (realCliffordForm 1 1)) a + b • realCliffordOneOneVolume) =
-      !![a, b; b, a] := by
-  rw [map_add, map_smul, AlgEquiv.commutes, realCliffordOneOneEquivMatrix_realCliffordOneOneVolume]
-  ext i j
-  fin_cases i <;> fin_cases j <;> simp [Matrix.algebraMap_eq_diagonal]
-
-/-- `z² = 1`. -/
-@[simp]
-theorem realCliffordOneOneVolume_mul_self :
-    realCliffordOneOneVolume * realCliffordOneOneVolume = 1 := by
-  apply realCliffordOneOneEquivMatrix.injective
-  rw [map_mul, realCliffordOneOneEquivMatrix_realCliffordOneOneVolume, map_one]
-  ext i j
-  fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_two]
-
-/-- `z` is even: the grade involution fixes it. -/
-@[simp]
-theorem involute_realCliffordOneOneVolume :
-    involute realCliffordOneOneVolume = realCliffordOneOneVolume := by
-  rw [realCliffordOneOneVolume, map_mul, involute_ι, involute_ι, neg_mul_neg]
-
-/-- `star z = -z`. -/
-@[simp]
-theorem star_realCliffordOneOneVolume :
-    star realCliffordOneOneVolume = -realCliffordOneOneVolume := by
-  apply realCliffordOneOneEquivMatrix.injective
-  rw [realCliffordOneOneVolume, star_mul, star_ι, star_ι, neg_mul_neg, map_mul, map_neg, map_mul,
-    realCliffordOneOneEquivMatrix_ι, realCliffordOneOneEquivMatrix_ι]
-  ext i j
-  fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_two]
-
-/-- `reverse z = -z`. -/
-@[simp]
-theorem reverse_realCliffordOneOneVolume :
-    reverse realCliffordOneOneVolume = -realCliffordOneOneVolume := by
-  rw [← star_realCliffordOneOneVolume, star_def, involute_realCliffordOneOneVolume]
-
-/-- The coefficients `a` and `b` of `a + b z` are unique. -/
-theorem algebraMap_add_smul_realCliffordOneOneVolume_inj {a b a' b' : ℝ} :
-    algebraMap ℝ (CliffordAlgebra (realCliffordForm 1 1)) a + b • realCliffordOneOneVolume =
-        algebraMap ℝ _ a' + b' • realCliffordOneOneVolume ↔ a = a' ∧ b = b' := by
-  refine ⟨fun h ↦ ?_, fun ⟨ha, hb⟩ ↦ by rw [ha, hb]⟩
-  have h' := congrArg realCliffordOneOneEquivMatrix h
-  rw [realCliffordOneOneEquivMatrix_algebraMap_add_smul_realCliffordOneOneVolume,
-    realCliffordOneOneEquivMatrix_algebraMap_add_smul_realCliffordOneOneVolume] at h'
-  exact ⟨by simpa using congrFun (congrFun h' 0) 0, by simpa using congrFun (congrFun h' 0) 1⟩
-
-/-- **The even part of `Cliff(1, 1)`.** Every even element is `a + b z` for some real `a`, `b`. -/
-theorem exists_eq_algebraMap_add_smul_realCliffordOneOneVolume
-    {x : CliffordAlgebra (realCliffordForm 1 1)} (hx : x ∈ even (realCliffordForm 1 1)) :
-    ∃ a b : ℝ, x = algebraMap ℝ _ a + b • realCliffordOneOneVolume := by
-  -- In the matrix model the even elements are the matrices `!![a, b; b, a]`: this holds for the
-  -- scalars and is preserved by sums and by left multiplication by a product of two generators.
-  suffices ∃ a b : ℝ, realCliffordOneOneEquivMatrix x = !![a, b; b, a] by
-    obtain ⟨a, b, h⟩ := this
-    exact ⟨a, b, realCliffordOneOneEquivMatrix.injective (by
-      rw [h, realCliffordOneOneEquivMatrix_algebraMap_add_smul_realCliffordOneOneVolume])⟩
-  replace hx : x ∈ evenOdd (realCliffordForm 1 1) 0 := by
-    rwa [← even_toSubmodule, Subalgebra.mem_toSubmodule]
-  induction x, hx using even_induction with
-  | algebraMap r =>
-    refine ⟨r, 0, ?_⟩
-    rw [AlgEquiv.commutes]
-    ext i j
-    fin_cases i <;> fin_cases j <;> simp [Matrix.algebraMap_eq_diagonal]
-  | add x y _ _ ihx ihy =>
-    obtain ⟨a, b, hx⟩ := ihx
-    obtain ⟨c, d, hy⟩ := ihy
-    refine ⟨a + c, b + d, ?_⟩
-    rw [map_add, hx, hy]
-    ext i j
-    fin_cases i <;> fin_cases j <;> simp
-  | ι_mul_ι_mul m₁ m₂ x _ ih =>
-    obtain ⟨a, b, hx⟩ := ih
-    refine ⟨(m₁ 0 * m₂ 0 - m₁ 1 * m₂ 1) * a + (m₁ 0 * m₂ 1 - m₁ 1 * m₂ 0) * b,
-      (m₁ 0 * m₂ 0 - m₁ 1 * m₂ 1) * b + (m₁ 0 * m₂ 1 - m₁ 1 * m₂ 0) * a, ?_⟩
-    rw [map_mul, map_mul, hx, realCliffordOneOneEquivMatrix_ι, realCliffordOneOneEquivMatrix_ι]
-    ext i j
-    fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_two] <;> ring
-
-/-- The Clifford conjugate of `a + b z` is `a - b z`. -/
-theorem star_algebraMap_add_smul_realCliffordOneOneVolume (a b : ℝ) :
-    star (algebraMap ℝ (CliffordAlgebra (realCliffordForm 1 1)) a + b • realCliffordOneOneVolume) =
-      algebraMap ℝ _ a + (-b) • realCliffordOneOneVolume := by
-  rw [star_add, star_smul, star_realCliffordOneOneVolume, star_algebraMap, smul_neg, neg_smul]
 
 /-- **The elements of `Spin(1, 1)`.** They are the elements `a + b z` of `Cliff(1, 1)` with
 `a² - b² = 1`. -/
@@ -214,7 +109,8 @@ theorem mem_realCliffordSpinGroup_one_one_iff_exists_cosh_sinh
   · -- `|a| = √(1 + b²) = cosh (arsinh b)`, and the sign of `a` selects the sign.
     rintro ⟨a, b, hab, rfl⟩
     have ha : a ^ 2 = 1 + b ^ 2 := by linear_combination hab
-    rcases lt_or_gt_of_ne (show a ≠ 0 by rintro rfl; nlinarith) with ha0 | ha0
+    have ha_ne : a ≠ 0 := by rintro rfl; nlinarith
+    rcases lt_or_gt_of_ne ha_ne with ha0 | ha0
     · refine ⟨arsinh (-b), Or.inr ?_⟩
       rw [cosh_arsinh, sinh_arsinh, neg_sq, ← ha, Real.sqrt_sq_eq_abs, abs_of_neg ha0, map_neg,
         neg_smul, neg_add, neg_neg, neg_neg]
