@@ -22,15 +22,20 @@ that `Mₙ ≃ Mₙ₊₁ ⧸ I^{n+1} Mₙ₊₁` and `I^{n+1}` kills `Mₙ`. Th
 
 If `A` is `I`-adically precomplete and `M₀` is a finite `A`-module, then the limit `L = lim Mₙ` is
 a finite `A`-module, each projection `L → Mₙ` is surjective with kernel `I^{n+1} L`, and so
-`L ⧸ I^{n+1} L ≃ Mₙ` (EGA I, Ch. 0, 7.2.9). This reassembles a compatible system of finite modules
-over the truncations `A ⧸ I^{n+1}` of an adic ring into a single finite `A`-module; it is the
-algebraic input for coherent modules on formal schemes. Neither noetherianity of `A` nor finite
-generation of `I` is needed.
+`L ⧸ I^{n+1} L ≃ Mₙ` (EGA I, Ch. 0, 7.2.9). Moreover, the morphisms from such a system to any
+`I`-adic system `(Nₙ)` are the linear maps `lim Mₙ → lim Nₙ` (EGA I, Ch. 0, 7.2.10). This
+reassembles a compatible system of finite modules over the truncations `A ⧸ I^{n+1}` of an adic
+ring into a single finite `A`-module; it is the algebraic input for coherent modules on formal
+schemes. Neither noetherianity of `A` nor finite generation of `I` is needed.
 
 ## Main definitions
 
 * `TauCeti.ModuleTower.IsAdicSystem`: the tower is an `I`-adic system.
 * `TauCeti.ModuleTower.IsAdicSystem.limQuotientEquiv`: `L ⧸ I^{n+1} L ≃ Mₙ`.
+* `TauCeti.ModuleTower.IsAdicSystem.ofLimHom`: the morphism of adic systems induced by a linear map
+  of their limits.
+* `TauCeti.ModuleTower.IsAdicSystem.limMapEquiv`: morphisms of adic systems are the linear maps of
+  their limits.
 
 ## Main results
 
@@ -40,7 +45,7 @@ generation of `I` is needed.
 
 ## References
 
-* A. Grothendieck and J. Dieudonné, *Éléments de géométrie algébrique I*, Ch. 0, 7.2.9.
+* A. Grothendieck and J. Dieudonné, *Éléments de géométrie algébrique I*, Ch. 0, 7.2.9–7.2.10.
 -/
 
 public section
@@ -207,6 +212,70 @@ noncomputable def limQuotientEquiv (n : ℕ) :
 theorem limQuotientEquiv_mk (n : ℕ) (x : F.lim) :
     hF.limQuotientEquiv n (Submodule.Quotient.mk x) = F.limπ n x := by
   simp [limQuotientEquiv]
+
+/-! ### Morphisms of adic systems and linear maps of their limits -/
+
+variable {G : ModuleTower.{v} A} (hG : G.IsAdicSystem I) (φ : F.lim →ₗ[A] G.lim)
+
+/-- The `n`-th component of the morphism of `I`-adic systems induced by a linear map
+`φ : lim Mₙ → lim Nₙ`: the map `Mₙ ≃ lim Mₙ ⧸ I^{n+1} → lim Nₙ → Nₙ`. -/
+private noncomputable def ofLimHomApp (n : ℕ) : F.obj (op n) →ₗ[A] G.obj (op n) :=
+  (I ^ (n + 1) • ⊤ : Submodule A F.lim).liftQ (G.limπ n ∘ₗ φ) (hG.pow_smul_top_le_ker _) ∘ₗ
+    (hF.limQuotientEquiv n).symm.toLinearMap
+
+private theorem ofLimHomApp_limπ (n : ℕ) (x : F.lim) :
+    hF.ofLimHomApp hG φ n (F.limπ n x) = G.limπ n (φ x) := by
+  have hx : (hF.limQuotientEquiv n).symm (F.limπ n x) = Submodule.Quotient.mk x := by
+    rw [LinearEquiv.symm_apply_eq, limQuotientEquiv_mk]
+  simp only [ofLimHomApp, LinearMap.comp_apply, LinearEquiv.coe_coe, hx, Submodule.liftQ_apply]
+
+/-- The morphism of `I`-adic systems induced by a linear map `φ : lim Mₙ → lim Nₙ` of their limits,
+over an `I`-adically precomplete ring with `M₀` finite (EGA I, Ch. 0, 7.2.10). It is the inverse of
+`ModuleTower.limMap`, see `ModuleTower.IsAdicSystem.limMapEquiv`. -/
+noncomputable def ofLimHom : F ⟶ G :=
+  NatTrans.ofOpSequence (fun n ↦ ModuleCat.ofHom (hF.ofLimHomApp hG φ n)) fun n ↦ by
+    ext x
+    obtain ⟨y, rfl⟩ := F.limπ_surjective hF.transition_surjective (n + 1) x
+    simp only [ModuleCat.hom_comp, ModuleCat.hom_ofHom, LinearMap.comp_apply,
+      ← transition_def]
+    rw [← LinearMap.comp_apply (F.transition n), transition_comp_limπ, ofLimHomApp_limπ,
+      ofLimHomApp_limπ, ← LinearMap.comp_apply (G.transition n), transition_comp_limπ]
+
+/-- The morphism induced by `φ` sends the `n`-th term of `x ∈ lim Mₙ` to that of `φ x`. -/
+@[simp]
+theorem ofLimHom_app_coe_apply (n : ℕ) (x : F.lim) :
+    ((hF.ofLimHom hG φ).app (op n)).hom ((x : F.Product) n) = (φ x : G.Product) n := by
+  rw [← limπ_apply, ← limπ_apply, ofLimHom, NatTrans.ofOpSequence_app, ModuleCat.hom_ofHom,
+    ofLimHomApp_limπ]
+
+@[simp]
+theorem limMap_ofLimHom : limMap (hF.ofLimHom hG φ) = φ := by
+  ext n : 1
+  rw [limπ_comp_limMap]
+  ext x
+  simp
+
+@[simp]
+theorem ofLimHom_limMap (f : F ⟶ G) : hF.ofLimHom hG (limMap f) = f :=
+  (limMap_inj hF.transition_surjective).1 (hF.limMap_ofLimHom hG _)
+
+/-- **Morphisms of `I`-adic systems are the linear maps of their limits** (EGA I, Ch. 0, 7.2.10):
+over an `I`-adically precomplete ring, if `M₀` is finite, then `f ↦ lim f` is a bijection from
+morphisms of towers `(Mₙ) ⟶ (Nₙ)` to linear maps `lim Mₙ → lim Nₙ`, for every `I`-adic system
+`(Nₙ)`. -/
+noncomputable def limMapEquiv : (F ⟶ G) ≃ (F.lim →ₗ[A] G.lim) where
+  toFun := limMap
+  invFun := hF.ofLimHom hG
+  left_inv := hF.ofLimHom_limMap hG
+  right_inv := hF.limMap_ofLimHom hG
+
+@[simp]
+theorem limMapEquiv_apply (f : F ⟶ G) : hF.limMapEquiv hG f = limMap f :=
+  (rfl)
+
+@[simp]
+theorem limMapEquiv_symm_apply : (hF.limMapEquiv hG).symm φ = hF.ofLimHom hG φ :=
+  (rfl)
 
 end IsAdicSystem
 
