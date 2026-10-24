@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Convex.Sequence.Face
-public import TauCeti.Analysis.Convex.Sequence.SlopeData
+public import TauCeti.Analysis.Convex.Sequence.SlopeData.Basic
 import Mathlib.Algebra.BigOperators.Fin
+import Mathlib.Data.List.Sort
 
 /-!
 # Finite slope multisets
@@ -54,6 +55,25 @@ def slopeMultiset (d : FiniteSlopeData Γ) : Multiset Γ :=
 /-- The slope multiset lists the slopes of the unit edges from left to right. -/
 theorem slopeMultiset_def (d : FiniteSlopeData Γ) : d.slopeMultiset = List.ofFn d.slope :=
   (rfl)
+
+/-- A nondecreasing unit-slope presentation is determined by its anchor and slope multiset.
+In particular, different subdivisions of equal slopes do not give different unit data. -/
+theorem eq_of_multiset_eq {Γ : Type*} [PartialOrder Γ] {d e : FiniteSlopeData Γ}
+    (hs : d.start = e.start) (hy : d.initialHeight = e.initialHeight)
+    (hm : d.slopeMultiset = e.slopeMultiset) : d = e := by
+  simp only [slopeMultiset_def] at hm
+  have hl := (Multiset.coe_eq_coe.mp hm).eq_of_pairwise'
+    d.monotone.sortedLE_ofFn.pairwise e.monotone.sortedLE_ofFn.pairwise
+  obtain ⟨s, y, n, f, hf⟩ := d
+  obtain ⟨s', y', n', f', hf'⟩ := e
+  dsimp only at hs hy hl
+  subst s' y'
+  have hn := congrArg List.length hl
+  simp only [List.length_ofFn] at hn
+  subst n'
+  have hff := List.ofFn_injective hl
+  subst f'
+  rfl
 
 /-- A value occurs in the slope multiset exactly when it is the slope of a unit edge. -/
 @[simp]
