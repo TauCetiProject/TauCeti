@@ -9,6 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.FunctorOfPoints
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Tangent
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Exponential
 public import TauCeti.RingTheory.Nilpotent.Exp
+import TauCeti.Algebra.Lie.Derivation.LocallyNilpotent
 import TauCeti.RingTheory.Derivation.Matrix
 
 /-!
@@ -71,12 +72,12 @@ theorem map_leftInvariantDerivation_genericMatrix
     (genericMatrix R n).map (leftInvariantDerivation d) =
       genericMatrix R n * (tangentMatrix n d).map (algebraMap R (H R n)) := by
   ext i j
-  rw [Matrix.map_apply, genericMatrix_apply, leftInvariantDerivation_apply,
+  simp only [Matrix.map_apply, genericMatrix_apply, leftInvariantDerivation_apply,
     coordinateHopfAlgebra_comul_X, map_sum, Matrix.mul_apply]
   refine Finset.sum_congr rfl fun k _ => ?_
-  rw [LinearMap.tensorComponent_tmul, Matrix.map_apply, tangentMatrix_apply, genericMatrix_apply,
-    Algebra.smul_def, mul_comm, LinearMap.comp_apply, AlgEquiv.toLinearMap_apply,
-    Derivation.coeFn_coe]
+  simp only [LinearMap.tensorComponent_tmul, tangentMatrix_apply, LinearMap.comp_apply,
+    AlgEquiv.toLinearMap_apply, Derivation.coeFn_coe]
+  rw [Algebra.smul_def, mul_comm]
 
 /-- **Iterated invariant vector fields on the generic matrix**: `Dᵐ g = g Xᵐ`. -/
 @[simp]
@@ -88,8 +89,8 @@ theorem map_iterate_leftInvariantDerivation_genericMatrix
   | zero => simp
   | succ m ih =>
     rw [Function.iterate_succ', ← Matrix.map_map, ih, Derivation.matrix_map_mul,
-      Derivation.matrix_map_map_algebraMap, mul_zero, add_zero,
-      map_leftInvariantDerivation_genericMatrix, pow_succ', Matrix.map_mul, Matrix.mul_assoc]
+      Derivation.matrix_map_map_algebraMap]
+    simp [pow_succ', Matrix.map_mul, Matrix.mul_assoc]
 
 /-- **The invariant vector field of a tangent vector `X` on the inverse generic matrix**:
 `D (g⁻¹) = -X g⁻¹`. -/
@@ -140,8 +141,16 @@ private theorem map_counit_map_iterate_genericMatrix
   rw [map_iterate_leftInvariantDerivation_genericMatrix, Matrix.map_mul,
     map_counit_genericMatrix, Matrix.one_mul, Matrix.map_map]
   ext i j
-  rw [Matrix.map_apply, Function.comp_apply, AlgHom.commutes, Algebra.algebraMap_self,
-    RingHom.id_apply]
+  simp
+
+/-- If the tangent matrix satisfies `Xᴺ = 0`, then `Dᴺ` kills every entry of the generic
+matrix. -/
+private theorem iterate_leftInvariantDerivation_genericMatrix_eq_zero
+    (d : Derivation R (H R n) (Bialgebra.CounitAlgebra R (H R n) R)) {N : ℕ}
+    (hN : tangentMatrix n d ^ N = 0) (i j : Fin n) :
+    (leftInvariantDerivation d)^[N] (genericMatrix R n i j) = 0 := by
+  simpa [hN] using
+    congrFun (congrFun (map_iterate_leftInvariantDerivation_genericMatrix n d N) i) j
 
 /-- **Local nilpotence of invariant vector fields on `GLₙ`.** The left-invariant vector field of a
 tangent vector to `GLₙ` is locally nilpotent if and only if the matrix of the tangent vector is
@@ -153,12 +162,17 @@ theorem isNilpotent_tangentMatrix_iff
   constructor
   · rintro ⟨N, hN⟩ h
     -- The entries of `g` and of `g⁻¹ = S g` generate `O(GLₙ)`, and `D^N` kills both.
-    refine D.exists_iterate_eq_zero_of_mem_adjoin ?_
-      ((adjoin_coordinateHopfAlgebra_X_union_antipode_X R n).symm ▸ Algebra.mem_top)
-    rintro _ (⟨⟨i, j⟩, rfl⟩ | ⟨⟨i, j⟩, rfl⟩)
-    · refine ⟨N, ?_⟩
-      have := congrFun (congrFun (map_iterate_leftInvariantDerivation_genericMatrix n d N) i) j
-      simpa [hN] using this
+    have hD : ⇑(derivationEquivDerivationLieAlgebra D : Module.End R (H R n)) = D :=
+      funext (derivationEquivDerivationLieAlgebra_apply D)
+    refine (derivationLieAlgebra.exists_pow_apply_eq_zero_of_mem_adjoin
+      (derivationEquivDerivationLieAlgebra D) (fun x hx => ?_)
+      ((adjoin_coordinateHopfAlgebra_X_union_antipode_X R n).symm ▸ Algebra.mem_top)).imp
+      fun m hm => by simpa only [Module.End.pow_apply, hD] using hm
+    simp only [Module.End.pow_apply, hD]
+    rcases hx with ⟨⟨i, j⟩, rfl⟩ | ⟨⟨i, j⟩, rfl⟩
+    · dsimp only
+      rw [← genericMatrix_apply]
+      exact ⟨N, iterate_leftInvariantDerivation_genericMatrix_eq_zero n d hN i j⟩
     · refine ⟨N, ?_⟩
       have := congrFun (congrFun (map_iterate_leftInvariantDerivation_genericMatrix_inv n d N) i) j
       rw [neg_pow, hN, mul_zero, Matrix.map_zero _ (map_zero _), Matrix.zero_mul] at this
@@ -174,12 +188,11 @@ theorem isNilpotent_tangentMatrix_iff
     refine ⟨N, ?_⟩
     rw [← map_counit_map_iterate_genericMatrix]
     ext i j
-    have hle := Finset.single_le_sum (f := fun ij : Fin n × Fin n ↦
-      m (genericMatrix R n ij.1 ij.2)) (fun _ _ ↦ Nat.zero_le _) (Finset.mem_univ (i, j))
+    have hle : m (genericMatrix R n i j) ≤ N :=
+      Finset.single_le_sum (f := fun ij : Fin n × Fin n ↦ m (genericMatrix R n ij.1 ij.2))
+        (fun _ _ ↦ Nat.zero_le _) (Finset.mem_univ (i, j))
     have hij : D^[N] (genericMatrix R n i j) = 0 := by
-      simpa only [Module.End.pow_apply, Derivation.coeFn_coe] using
-        Module.End.pow_map_zero_of_le (f := D.toLinearMap) hle
-          (by simpa only [Module.End.pow_apply, Derivation.coeFn_coe] using hm _)
+      rw [← Nat.sub_add_cancel hle, Function.iterate_add_apply, hm, iterate_map_zero]
     rw [Matrix.map_apply, Matrix.map_apply, hij, map_zero, Matrix.zero_apply]
 
 variable [Algebra ℚ R] [Algebra ℚ (H R n)]
@@ -197,9 +210,7 @@ theorem pointToGeneralLinear_expPoint
   apply Units.ext
   rw [coe_nilpotentExpUnit, IsNilpotent.exp_eq_sum hN]
   ext i j
-  have hzero : (leftInvariantDerivation d)^[N] (genericMatrix R n i j) = 0 := by
-    have := congrFun (congrFun (map_iterate_leftInvariantDerivation_genericMatrix n d N) i) j
-    simpa [hN] using this
+  have hzero := iterate_leftInvariantDerivation_genericMatrix_eq_zero n d hN i j
   rw [Matrix.sum_apply, pointToGeneralLinear_apply, ofConv_toConv, ← genericMatrix_apply,
     Bialgebra.expPoint_apply, Derivation.taylorExp_apply_eq_sum _ hd hzero, map_sum]
   refine Finset.sum_congr rfl fun k _ => ?_
