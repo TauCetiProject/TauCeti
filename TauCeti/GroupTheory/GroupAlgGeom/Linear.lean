@@ -110,10 +110,11 @@ private abbrev CoordRing : Type _ :=
 private noncomputable def genPoint (x : X) : GL n (CoordRing R n X) :=
   have h : (Ideal.Quotient.mk _).mapMatrix (genMatrix R n X true x) *
       (Ideal.Quotient.mk _).mapMatrix (genMatrix R n X false x) = 1 := by
-    rw [← sub_eq_zero, ← map_mul, ← map_one (Ideal.Quotient.mk (relIdeal R n X)).mapMatrix,
-      ← map_sub]
-    ext i j
-    exact Ideal.Quotient.eq_zero_iff_mem.2 (Ideal.subset_span ⟨(x, i, j), rfl⟩)
+    have key : (Ideal.Quotient.mk (relIdeal R n X)).mapMatrix
+        (genMatrix R n X true x * genMatrix R n X false x - 1) = 0 := by
+      ext i j
+      exact Ideal.Quotient.eq_zero_iff_mem.2 (Ideal.subset_span ⟨(x, i, j), rfl⟩)
+    simpa [-RingHom.mapMatrix_apply, sub_eq_zero] using key
   ⟨_, _, h, mul_eq_one_comm.1 h⟩
 
 variable {R n X}
@@ -137,9 +138,7 @@ private theorem relIdeal_le_ker (v : X → GL n R) :
   rintro _ ⟨⟨x, i, j⟩, rfl⟩
   have key : (MvPolynomial.eval (coords v)).mapMatrix
       (genMatrix R n X true x * genMatrix R n X false x - 1) = 0 := by
-    rw [map_sub, map_mul, map_one, mapMatrix_eval_coords_genMatrix,
-      mapMatrix_eval_coords_genMatrix]
-    simp
+    simp [-RingHom.mapMatrix_apply, mapMatrix_eval_coords_genMatrix]
   simpa using congrFun₂ key i j
 
 /-- The specialization of the coordinate ring of `(GL n)^X` at a point `v : X → GL n R`, which
@@ -161,8 +160,7 @@ private theorem map_specialize_comp_eval (ι : G →* GL n R) (v : X → GL n R)
   rw [MonoidHom.comp_eval, ← MonoidHom.comp_assoc, ← GeneralLinearGroup.map_comp]
   have hR : (specialize v).comp (algebraMap R (CoordRing R n X)) = RingHom.id R := by
     ext r
-    rw [RingHom.comp_apply, ← Ideal.Quotient.mk_algebraMap, specialize_mk,
-      MvPolynomial.algebraMap_eq, MvPolynomial.eval_C, RingHom.id_apply]
+    simp [← Ideal.Quotient.mk_algebraMap, specialize_mk]
   have hv : GeneralLinearGroup.map (specialize v) ∘ genPoint R n X = v := by
     ext x i j
     simp [genPoint, specialize_mk, coords]
@@ -187,13 +185,10 @@ theorem isEquationallyNoetherian_generalLinearGroup (ι : G →* GL n R) :
   refine exists_finite_V_eq_of_isNoetherianRing
     (fun w => Set.range fun p : n × n => (↑(Φ w) - 1 : Matrix n n (CoordRing R n Y)) p.1 p.2)
     (fun v => ⟨RingHom.ker (specialize v), fun w => ?_⟩) S
-  rw [← map_specialize_comp_eval ι v, MonoidHom.comp_apply, ← Units.val_eq_one, ← Matrix.ext_iff,
-    Set.range_subset_iff, Prod.forall]
-  refine forall₂_congr fun i j => ?_
-  dsimp only
-  rw [GeneralLinearGroup.map_apply, SetLike.mem_coe, RingHom.mem_ker, Matrix.sub_apply, map_sub,
-    sub_eq_zero]
-  rcases eq_or_ne i j with rfl | h <;> simp [Φ, *]
+  have hΦ : (GeneralLinearGroup.map (specialize v)).comp Φ = eval ι v :=
+    map_specialize_comp_eval ι v
+  rw [← hΦ, ← Units.val_eq_one, ← Matrix.ext_iff]
+  simp [Set.range_subset_iff, Matrix.one_apply, apply_ite (specialize v), sub_eq_zero]
 
 /-- A group with an injective homomorphism into `GL n R`, for a commutative Noetherian ring `R`,
 is equationally Noetherian over any coefficients. -/
