@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.SymmetricAlgebra.Basis
 public import Mathlib.Data.Sym.NatCard
+public import TauCeti.Data.Sym.Finsupp
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Semilinear
 public import TauCeti.RingTheory.MvPolynomial.Finrank
 import TauCeti.Algebra.MvPolynomial.Monomial
@@ -26,7 +27,6 @@ the polynomial ring.
 * `map_homogeneousSubmodule_equivMvPolynomial`: the basis-induced equivalence carries the degree
   `n` part of a symmetric algebra to the degree `n` part of a multivariate polynomial ring.
 * `SymmetricAlgebra.equivMvPolynomial_isHomogeneous_iff`: the degreewise form of that comparison.
-* `Sym.equivFinsuppDegree`: degree-`n` multisets are exponent vectors of total degree `n`.
 * `Module.Basis.symmetricAlgebraHomogeneous`: the monomial basis of a homogeneous component of a
   symmetric algebra induced by a basis of the generating module.
 * `Module.Basis.coe_symmetricAlgebraHomogeneous_apply`: the monomial basis vector indexed by a
@@ -100,27 +100,6 @@ theorem coe_homogeneousSubmoduleEquivMvPolynomial_apply {ι : Type w} (b : Basis
         SymmetricAlgebra.equivMvPolynomial b x := by
   rfl
 
-/-- Degree-`n` multisets of basis indices are equivalent to exponent vectors of total degree
-`n`. -/
-noncomputable def _root_.Sym.equivFinsuppDegree (ι : Type w) (n : ℕ) :
-    Sym ι n ≃ {d : ι →₀ ℕ // d.degree = n} := by
-  classical
-  exact (Sym.equivNatSum ι n).trans
-    (Equiv.subtypeEquiv (Equiv.refl _) (fun d => by
-      simp [Finsupp.degree_eq_weight_one, Finsupp.weight_apply, Function.id_def]))
-
-/-- The exponent vector of a degree-`n` multiset is its multiplicity function. -/
-@[simp]
-theorem _root_.Sym.coe_equivFinsuppDegree_apply {ι : Type w} [DecidableEq ι] (n : ℕ)
-    (s : Sym ι n) :
-    ((Sym.equivFinsuppDegree ι n s : {d : ι →₀ ℕ // d.degree = n}) : ι →₀ ℕ) =
-      Multiset.toFinsupp (s : Multiset ι) := by
-  ext i
-  -- `Sym.equivFinsuppDegree` is built with classical decidable equality.
-  simp only [Sym.equivFinsuppDegree, Equiv.trans_apply, Equiv.subtypeEquiv_apply,
-    Sym.coe_equivNatSum_apply_apply, Equiv.refl_apply, Multiset.toFinsupp_apply]
-  convert rfl
-
 variable {R M} in
 /-- A basis of a module induces the monomial basis on each homogeneous component of its
 symmetric algebra. The basis vectors are indexed by degree-`n` multisets of basis indices. -/
@@ -129,7 +108,7 @@ noncomputable def _root_.Module.Basis.symmetricAlgebraHomogeneous {ι : Type w}
     Basis (Sym ι n) R (homogeneousSubmodule R M n) := by
   exact ((TauCeti.homogeneousMonomialBasis (R := R) n).map
     (homogeneousSubmoduleEquivMvPolynomial R M b n).symm).reindex
-      (Sym.equivFinsuppDegree ι n).symm
+      (TauCeti.symEquivFinsuppDegree ι n).symm
 
 /-- Under the polynomial equivalence, a homogeneous symmetric-algebra basis vector is the
 corresponding monomial. -/
@@ -139,7 +118,7 @@ theorem equivMvPolynomial_symmetricAlgebraHomogeneous_apply {ι : Type w}
     (d : Sym ι n) :
     SymmetricAlgebra.equivMvPolynomial b
         (Module.Basis.symmetricAlgebraHomogeneous b n d : SymmetricAlgebra R M) =
-      MvPolynomial.monomial (Sym.equivFinsuppDegree ι n d).1 1 := by
+      MvPolynomial.monomial (TauCeti.symEquivFinsuppDegree ι n d).1 1 := by
   classical
   rw [← coe_homogeneousSubmoduleEquivMvPolynomial_apply R M b n]
   simp [Module.Basis.symmetricAlgebraHomogeneous]
@@ -155,7 +134,7 @@ theorem _root_.Module.Basis.coe_symmetricAlgebraHomogeneous_apply {ι : Type w}
   apply (SymmetricAlgebra.equivMvPolynomial b).injective
   rw [equivMvPolynomial_symmetricAlgebraHomogeneous_apply, map_multiset_prod, Multiset.map_map]
   simp only [Function.comp_def, SymmetricAlgebra.equivMvPolynomial_ι_apply]
-  rw [TauCeti.prod_map_X_eq_monomial, Sym.coe_equivFinsuppDegree_apply]
+  rw [TauCeti.prod_map_X_eq_monomial, TauCeti.coe_symEquivFinsuppDegree_apply]
 
 section Semilinear
 
