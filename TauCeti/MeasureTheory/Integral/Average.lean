@@ -60,6 +60,9 @@ exponent restrictions `1 ≤ p < ∞` or `1 ≤ q`.
   over a subset `s ⊆ t` is at most `μ t / μ s` times its average over `t`.
 * `TauCeti.enorm_setAverage_sub_le_of_subset`: the extended-norm form of
   `TauCeti.norm_setAverage_sub_le_of_subset`.
+* `TauCeti.enorm_setAverage_sub_le_setLAverage`: on a set of finite positive measure, the average
+  differs from a constant `c` by at most the average of `‖f - c‖ₑ`, with no integrability
+  assumption.
 * `TauCeti.setIntegral_norm_sub_setAverage_sq_le`: the square mean oscillation of `f` about its
   average is at most four times its square mean oscillation about any constant.
 * `TauCeti.setIntegral_norm_sub_sq_eq_setIntegral_norm_sub_setAverage_sq_add` and
@@ -247,6 +250,23 @@ theorem enorm_setAverage_sub_le_of_subset (hst : s ⊆ t) (hs : μ s ≠ 0) (ht 
     _ ≤ ⨍⁻ x in s, ‖f x - c‖ₑ ∂μ := enorm_setAverage_le_setLAverage _ _ _
     _ ≤ μ t / μ s * ⨍⁻ x in t, ‖f x - c‖ₑ ∂μ :=
         setLAverage_le_div_mul_setLAverage_of_subset hst ht
+
+/-- On a set of finite positive measure, the average of an almost everywhere strongly measurable
+`f` differs from a constant `c` by at most the average of `‖f - c‖ₑ`. No integrability is assumed:
+if `f` is not integrable on `s`, the right-hand side is infinite. -/
+theorem enorm_setAverage_sub_le_setLAverage (hf : AEStronglyMeasurable f (μ.restrict s))
+    (hs : μ s ≠ 0) (hs' : μ s ≠ ⊤) (c : F) :
+    ‖(⨍ x in s, f x ∂μ) - c‖ₑ ≤ ⨍⁻ x in s, ‖f x - c‖ₑ ∂μ := by
+  by_cases hfi : IntegrableOn f s μ
+  · simpa [ENNReal.div_self hs hs'] using
+      enorm_setAverage_sub_le_of_subset subset_rfl hs hs' hfi c
+  have htop : ∫⁻ x in s, ‖f x - c‖ₑ ∂μ = ⊤ := by
+    by_contra h
+    have hfc : IntegrableOn (fun x => f x - c) s μ :=
+      ⟨hf.sub aestronglyMeasurable_const, lt_top_iff_ne_top.2 h⟩
+    exact hfi ((hfc.add (integrableOn_const hs')).congr (.of_forall fun x => by simp))
+  rw [setLAverage_eq, htop, ENNReal.top_div_of_ne_top hs']
+  exact le_top
 
 /-- The average of `f` over a subset `s` of `t` differs from a constant `c` by at most
 `μ t / μ s` times the average of `‖f - c‖` over `t`. -/
