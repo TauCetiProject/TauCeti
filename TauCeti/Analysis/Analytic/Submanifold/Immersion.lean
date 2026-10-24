@@ -8,9 +8,9 @@ module
 public import Mathlib.Analysis.Calculus.FDeriv.Defs
 public import TauCeti.Analysis.Analytic.Submanifold.Basic
 import Mathlib.Analysis.Calculus.FDeriv.Analytic
+import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 import Mathlib.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Analysis.Analytic.Inverse
-import TauCeti.LinearAlgebra.LinearEquiv.Extend
 
 /-!
 # Analytic immersions parametrize analytic submanifolds
@@ -25,9 +25,12 @@ The second hypothesis says that `p` is relatively open at `u₀` as a map into `
 dropped: near its crossing point, a figure-eight is not the image of a small interval.
 
 The chart is built by extending the injective derivative to a linear automorphism `L` of `𝕜ⁿ`
-(`LinearMap.exists_linearEquiv_comp_eq`) and inverting
+(`Submodule.exists_linearEquiv_restrict_eq`) and inverting
 `y ↦ p (y₁, …, y_d) + L y - L (y₁, …, y_d, 0)`, whose derivative at `(u₀, 0)` is `L`, by the
 analytic inverse function theorem.
+
+Conversely, the local parametrization `u ↦ e.symm (u, 0)` of a submanifold by an analytic chart
+`e` is an immersion (`TauCeti.IsAnalyticChart.injective_fderiv_symm_firstCoords`).
 
 ## References
 
@@ -41,7 +44,37 @@ open Set Filter Topology
 
 namespace TauCeti
 
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] {n d : ℕ}
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {n d : ℕ}
+
+/-- **Chart parametrizations are immersions.** If `d ≤ n`, the local parametrization
+`u ↦ e.symm (u, 0)` of `S` by an analytic chart `e` has injective derivative at the coordinates
+of each point of `S` in the source, since composing it with `e` gives the inclusion
+`u ↦ (u, 0)`. -/
+theorem IsAnalyticChart.injective_fderiv_symm_firstCoords {S : Set (Fin n → 𝕜)}
+    {e : OpenPartialHomeomorph (Fin n → 𝕜) (Fin n → 𝕜)} {x : Fin n → 𝕜}
+    (he : IsAnalyticChart d S e) (hx : x ∈ e.source) (hxS : x ∈ S) (hd : d ≤ n) :
+    Function.Injective
+      (fderiv 𝕜 (fun u ↦ e.symm (firstCoords 𝕜 d n u)) (firstCoords 𝕜 n d (e x))) := by
+  set u₀ := firstCoords 𝕜 n d (e x)
+  set φ : (Fin d → 𝕜) → Fin n → 𝕜 := fun u ↦ e.symm (firstCoords 𝕜 d n u)
+  have hφ : AnalyticAt 𝕜 φ u₀ := he.analyticAt_symm_firstCoords hx hxS
+  have heφ : (fun u ↦ e (φ u)) =ᶠ[𝓝 u₀] firstCoords 𝕜 d n := by
+    have hmem : e.target ∈ 𝓝 (firstCoords 𝕜 d n u₀) := by
+      rw [he.firstCoords_firstCoords_apply hx hxS]
+      exact e.open_target.mem_nhds (e.map_source hx)
+    filter_upwards [(firstCoords 𝕜 d n).continuous.continuousAt.preimage_mem_nhds hmem] with u hu
+    exact e.right_inv hu
+  have he' : DifferentiableAt 𝕜 e (φ u₀) := by
+    rw [show φ u₀ = x from he.symm_firstCoords_firstCoords_apply hx hxS]
+    exact (he.analyticOnNhd x hx).differentiableAt
+  have hD : (fderiv 𝕜 e (φ u₀)).comp (fderiv 𝕜 φ u₀) = firstCoords 𝕜 d n := by
+    rw [← fderiv_comp u₀ he' hφ.differentiableAt, ← (firstCoords 𝕜 d n).fderiv]
+    exact heφ.fderiv_eq
+  intro k k' hk
+  simpa only [← ContinuousLinearMap.comp_apply, hD, firstCoords_firstCoords_of_le hd] using
+    congrArg (firstCoords 𝕜 n d) (congrArg (fderiv 𝕜 e (φ u₀)) hk)
+
+variable [CompleteSpace 𝕜]
 
 /-- **Analytic immersions parametrize analytic submanifolds.** Let `p : 𝕜ᵈ → 𝕜ⁿ` be analytic at
 `u₀` with injective derivative there, and let `T ⊆ 𝕜ⁿ` contain `p u` for all `u` near `u₀`.
@@ -63,10 +96,15 @@ theorem exists_isAnalyticChart_of_injective_fderiv {T : Set (Fin n → 𝕜)}
   set π := firstCoords 𝕜 n d
   have hπι (u : Fin d → 𝕜) : π (ι u) = u := firstCoords_firstCoords_of_le hd u
   -- Extend the injective derivative `P` from the coordinate subspace to an automorphism `L`.
-  obtain ⟨L₀, hL₀⟩ := LinearMap.exists_linearEquiv_comp_eq ι.toLinearMap P.toLinearMap
-    (fun u v huv ↦ by simpa [hπι] using congrArg π huv) hinj rfl
+  have hιinj : Function.Injective ι := fun u v huv ↦ by simpa [hπι] using congrArg π huv
+  let ιP := (LinearEquiv.ofInjective ι.toLinearMap hιinj).symm.trans
+    (LinearEquiv.ofInjective P.toLinearMap hinj)
+  obtain ⟨L₀, hL₀⟩ := Submodule.exists_linearEquiv_restrict_eq ιP
   let L := L₀.toContinuousLinearEquiv
-  have hLι (u : Fin d → 𝕜) : L (ι u) = P u := LinearMap.congr_fun hL₀ u
+  have hLι (u : Fin d → 𝕜) : L (ι u) = P u := by
+    have hu : (LinearEquiv.ofInjective ι.toLinearMap hιinj).symm ⟨ι u, mem_range_self u⟩ = u :=
+      (LinearEquiv.ofInjective ι.toLinearMap hιinj).symm_apply_eq.2 rfl
+    simpa [ιP, hu, L] using (hL₀ ⟨ι u, mem_range_self u⟩).symm
   let G : (Fin n → 𝕜) → Fin n → 𝕜 := fun y ↦ p (π y) + (L y - P (π y))
   have hGι (u : Fin d → 𝕜) : G (ι u) = p u := by simp [G, hπι, hLι]
   have hp' : AnalyticAt 𝕜 (fun y ↦ p (π y)) (ι u₀) :=

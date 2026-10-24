@@ -26,7 +26,7 @@ Suppose that the heights of the points of a set `ψ ⊆ 𝕜ⁿ⁺¹` satisfy
 `dist (v 0) (w 0) ≤ A * dist (Fin.tail v) (Fin.tail w)`. Then `ψ` is the graph of an `A`-Lipschitz
 function over its projection `Fin.tail '' ψ`. If `ψ` is moreover a `d`-dimensional analytic
 submanifold, then its projection is a `d`-dimensional analytic submanifold of `𝕜ⁿ` and every height
-function of `ψ` is analytic on it, so `ψ` is topographic. The vertical shear
+function of `ψ` is analytic on it, so `ψ` is topographic. The horizontal shear
 `(t, u) ↦ (t, u + t • z)` preserves the inequality, with the worse constant `A / (1 - A * ‖z‖)`,
 as long as `A * ‖z‖ < 1`; so it keeps such submanifolds topographic.
 
@@ -42,11 +42,13 @@ coordinates.
   the height inequality is an analytic submanifold of the same dimension.
 * `TauCeti.IsAnalyticSubmanifold.analyticOnSubmanifold_image_tail`: its height functions are
   analytic on the projection.
-* `TauCeti.verticalShear z`: the linear automorphism `(t, u) ↦ (t, u + t • z)` of `𝕜ⁿ⁺¹`.
-* `TauCeti.mul_dist_tail_le_dist_tail_verticalShear`: the shear estimate
+* `TauCeti.IsAnalyticSubmanifold.exists_topographic`: such a submanifold is the graph of an
+  `A`-Lipschitz function which is analytic on its projection, an analytic submanifold.
+* `TauCeti.horizontalShear z`: the linear automorphism `(t, u) ↦ (t, u + t • z)` of `𝕜ⁿ⁺¹`.
+* `TauCeti.mul_dist_tail_le_dist_tail_horizontalShear`: the shear estimate
   `‖Δu + Δt • z‖ ≥ (1 - A * ‖z‖) * ‖Δu‖`.
-* `TauCeti.dist_le_mul_dist_tail_of_mem_image_verticalShear` and
-  `TauCeti.IsAnalyticSubmanifold.image_verticalShear`: the sheared set satisfies the height
+* `TauCeti.dist_le_mul_dist_tail_of_mem_image_horizontalShear` and
+  `TauCeti.IsAnalyticSubmanifold.image_horizontalShear`: the sheared set satisfies the height
   inequality with constant `A / (1 - A * ‖z‖)` and is again an analytic submanifold.
 
 ## References
@@ -67,11 +69,14 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {n d : ℕ} {ψ : Set (Fi
 /-! ### Graphs with Lipschitz height -/
 
 /-- A set of `𝕜ⁿ⁺¹` whose differences of heights are bounded by `A` times the distances of the base
-points is the graph of an `A`-Lipschitz function over its projection to the base. -/
+points is the graph of an `A`-Lipschitz function `f` over its projection to the base:
+`f (Fin.tail v) = v 0` for `v ∈ ψ`, and `ψ` consists of the points over the projection whose
+height is given by `f`. -/
 theorem exists_lipschitzOnWith_eq_graph
     (h : ∀ v ∈ ψ, ∀ w ∈ ψ, dist (v 0) (w 0) ≤ A * dist (Fin.tail v) (Fin.tail w)) :
     ∃ f : (Fin n → 𝕜) → 𝕜, LipschitzOnWith A f (Fin.tail '' ψ) ∧
-      ψ = {v : Fin (n + 1) → 𝕜 | Fin.tail v ∈ Fin.tail '' ψ ∧ v 0 = f (Fin.tail v)} := by
+      (∀ v ∈ ψ, f (Fin.tail v) = v 0) ∧
+        ψ = {v : Fin (n + 1) → 𝕜 | Fin.tail v ∈ Fin.tail '' ψ ∧ v 0 = f (Fin.tail v)} := by
   let f : (Fin n → 𝕜) → 𝕜 := fun u ↦
     Function.invFunOn (Fin.tail : (Fin (n + 1) → 𝕜) → Fin n → 𝕜) ψ u 0
   have hf (v : Fin (n + 1) → 𝕜) (hv : v ∈ ψ) : f (Fin.tail v) = v 0 := by
@@ -79,7 +84,7 @@ theorem exists_lipschitzOnWith_eq_graph
     have := h _ (Function.invFunOn_mem hv') v hv
     rw [Function.invFunOn_eq hv', dist_self, mul_zero] at this
     exact dist_le_zero.1 this
-  refine ⟨f, LipschitzOnWith.of_dist_le_mul ?_, ?_⟩
+  refine ⟨f, LipschitzOnWith.of_dist_le_mul ?_, hf, ?_⟩
   · rintro _ ⟨v, hv, rfl⟩ _ ⟨w, hw, rfl⟩
     rw [hf v hv, hf w hw]
     exact h v hv w hw
@@ -119,23 +124,8 @@ private theorem exists_isAnalyticChart_image_tail (hψ : IsAnalyticSubmanifold d
   have hp : AnalyticAt 𝕜 p u₀ := by
     simpa only [p, Function.comp_def, hτ] using (τ.analyticAt _).comp hφ
   -- The parametrization `φ` is an immersion, since `c ∘ φ` is the inclusion `u ↦ (u, 0)`.
-  have hDφ : Function.Injective (fderiv 𝕜 φ u₀) := by
-    have hcφ : (fun u ↦ c (φ u)) =ᶠ[𝓝 u₀] firstCoords 𝕜 d (n + 1) := by
-      have hmem : c.target ∈ 𝓝 (firstCoords 𝕜 d (n + 1) u₀) := by
-        rw [hc.firstCoords_firstCoords_apply hvc hv]
-        exact c.open_target.mem_nhds (c.map_source hvc)
-      filter_upwards [(firstCoords 𝕜 d (n + 1)).continuous.continuousAt.preimage_mem_nhds hmem]
-        with u hu
-      exact c.right_inv hu
-    have hc' : DifferentiableAt 𝕜 c (φ u₀) := by
-      rw [hφu₀]
-      exact (hc.analyticOnNhd v hvc).differentiableAt
-    have hD : (fderiv 𝕜 c (φ u₀)).comp (fderiv 𝕜 φ u₀) = firstCoords 𝕜 d (n + 1) := by
-      rw [← fderiv_comp u₀ hc' hφ.differentiableAt, ← (firstCoords 𝕜 d (n + 1)).fderiv]
-      exact hcφ.fderiv_eq
-    intro k k' hk
-    simpa only [← ContinuousLinearMap.comp_apply, hD, firstCoords_firstCoords_of_le hψ.le] using
-      congrArg (firstCoords 𝕜 (n + 1) d) (congrArg (fderiv 𝕜 c (φ u₀)) hk)
+  have hDφ : Function.Injective (fderiv 𝕜 φ u₀) :=
+    hc.injective_fderiv_symm_firstCoords hvc hv hψ.le
   -- By the height inequality, so is its projection `p`.
   have hDp : Function.Injective (fderiv 𝕜 p u₀) := by
     have hp' : HasFDerivAt p (τ.comp (fderiv 𝕜 φ u₀)) u₀ := by
@@ -159,9 +149,8 @@ private theorem exists_isAnalyticChart_image_tail (hψ : IsAnalyticSubmanifold d
     simpa using LinearMap.finrank_le_finrank_of_injective (f := (fderiv 𝕜 p u₀).toLinearMap) hDp
   -- Points of `Fin.tail '' ψ` near `Fin.tail v` lift to points of `ψ` near `v`, since the
   -- height is a Lipschitz function of the base point.
-  obtain ⟨f, hf, hψf⟩ := exists_lipschitzOnWith_eq_graph h
-  have hfψ {w : Fin (n + 1) → 𝕜} (hw : w ∈ ψ) : w 0 = f (Fin.tail w) :=
-    ((Set.ext_iff.1 hψf w).1 hw).2
+  obtain ⟨f, hf, hfψ', hψf⟩ := exists_lipschitzOnWith_eq_graph h
+  have hfψ {w : Fin (n + 1) → 𝕜} (hw : w ∈ ψ) : w 0 = f (Fin.tail w) := (hfψ' w hw).symm
   have hpu₀ : p u₀ = Fin.tail v := by rw [← hφu₀]
   have himage : ∀ V ∈ 𝓝 u₀, p '' V ∈ 𝓝[Fin.tail '' ψ] (p u₀) := by
     intro V hV
@@ -219,90 +208,106 @@ theorem IsAnalyticSubmanifold.analyticOnSubmanifold_image_tail (hψ : IsAnalytic
   filter_upwards [hev] with u hu
   simp [hu.2, hf _ hu.1]
 
+/-- **Lipschitz analytic submanifolds are topographic** (Łojasiewicz). If a `d`-dimensional
+analytic submanifold `ψ ⊆ 𝕜ⁿ⁺¹` satisfies `dist (v 0) (w 0) ≤ A * dist (Fin.tail v) (Fin.tail w)`
+for all its points, then it is the graph of an `A`-Lipschitz function `f` which is analytic on
+the `d`-dimensional analytic submanifold `Fin.tail '' ψ` of the base. -/
+theorem IsAnalyticSubmanifold.exists_topographic (hψ : IsAnalyticSubmanifold d ψ)
+    (h : ∀ v ∈ ψ, ∀ w ∈ ψ, dist (v 0) (w 0) ≤ A * dist (Fin.tail v) (Fin.tail w)) :
+    ∃ f : (Fin n → 𝕜) → 𝕜, LipschitzOnWith A f (Fin.tail '' ψ) ∧
+      AnalyticOnSubmanifold d f (Fin.tail '' ψ) ∧ IsAnalyticSubmanifold d (Fin.tail '' ψ) ∧
+        (∀ v ∈ ψ, f (Fin.tail v) = v 0) ∧
+          ψ = {v : Fin (n + 1) → 𝕜 | Fin.tail v ∈ Fin.tail '' ψ ∧ v 0 = f (Fin.tail v)} := by
+  obtain ⟨f, hfL, hf, hψf⟩ := exists_lipschitzOnWith_eq_graph h
+  exact ⟨f, hfL, hψ.analyticOnSubmanifold_image_tail h hf, hψ.image_tail h, hf, hψf⟩
+
 end Analytic
 
-/-! ### Vertical shears -/
+/-! ### Horizontal shears -/
 
-/-- The *vertical shear* of `𝕜ⁿ⁺¹` with slope `z ∈ 𝕜ⁿ` is the linear automorphism
+/-- The *horizontal shear* of `𝕜ⁿ⁺¹` with slope `z ∈ 𝕜ⁿ` is the linear automorphism
 `(t, u) ↦ (t, u + t • z)` in cylinder coordinates `Fin.cons t u`: it keeps the height and moves
 the base point along `z` in proportion to the height. -/
-def verticalShear (z : Fin n → 𝕜) : (Fin (n + 1) → 𝕜) ≃L[𝕜] Fin (n + 1) → 𝕜 :=
+def horizontalShear (z : Fin n → 𝕜) : (Fin (n + 1) → 𝕜) ≃L[𝕜] Fin (n + 1) → 𝕜 :=
   (Fin.consEquivL 𝕜 fun _ ↦ 𝕜).symm.trans <|
     ((ContinuousLinearEquiv.refl 𝕜 𝕜).skewProd (ContinuousLinearEquiv.refl 𝕜 (Fin n → 𝕜))
       ((ContinuousLinearMap.id 𝕜 𝕜).smulRight z)).trans (Fin.consEquivL 𝕜 fun _ ↦ 𝕜)
 
-/-- In cylinder coordinates, the vertical shear with slope `z` maps `(t, u)` to `(t, u + t • z)`. -/
-theorem verticalShear_apply (z : Fin n → 𝕜) (v : Fin (n + 1) → 𝕜) :
-    verticalShear z v = Fin.cons (v 0) (Fin.tail v + v 0 • z) := by
+/-- In cylinder coordinates, the horizontal shear with slope `z` maps `(t, u)` to
+`(t, u + t • z)`. -/
+theorem horizontalShear_apply (z : Fin n → 𝕜) (v : Fin (n + 1) → 𝕜) :
+    horizontalShear z v = Fin.cons (v 0) (Fin.tail v + v 0 • z) := by
   ext i
-  simp [verticalShear, Fin.consEquivL_apply]
+  simp [horizontalShear, Fin.consEquivL_apply]
 
 @[simp]
-theorem verticalShear_apply_zero (z : Fin n → 𝕜) (v : Fin (n + 1) → 𝕜) :
-    verticalShear z v 0 = v 0 := by
-  simp [verticalShear_apply]
+theorem horizontalShear_apply_zero (z : Fin n → 𝕜) (v : Fin (n + 1) → 𝕜) :
+    horizontalShear z v 0 = v 0 := by
+  simp [horizontalShear_apply]
 
 @[simp]
-theorem tail_verticalShear (z : Fin n → 𝕜) (v : Fin (n + 1) → 𝕜) :
-    Fin.tail (verticalShear z v) = Fin.tail v + v 0 • z := by
-  simp [verticalShear_apply]
+theorem tail_horizontalShear (z : Fin n → 𝕜) (v : Fin (n + 1) → 𝕜) :
+    Fin.tail (horizontalShear z v) = Fin.tail v + v 0 • z := by
+  simp [horizontalShear_apply]
 
-/-- The inverse of the vertical shear with slope `z` is the vertical shear with slope `-z`. -/
+/-- The inverse of the horizontal shear with slope `z` is the horizontal shear with slope
+`-z`. -/
 @[simp]
-theorem verticalShear_symm (z : Fin n → 𝕜) : (verticalShear z).symm = verticalShear (-z) := by
-  refine ContinuousLinearEquiv.ext <| funext fun v ↦ (verticalShear z).symm_apply_eq.2 ?_
-  rw [verticalShear_apply, tail_verticalShear, verticalShear_apply_zero, smul_neg,
+theorem horizontalShear_symm (z : Fin n → 𝕜) :
+    (horizontalShear z).symm = horizontalShear (-z) := by
+  refine ContinuousLinearEquiv.ext <| funext fun v ↦ (horizontalShear z).symm_apply_eq.2 ?_
+  rw [horizontalShear_apply, tail_horizontalShear, horizontalShear_apply_zero, smul_neg,
     neg_add_cancel_right, Fin.cons_self_tail]
 
-/-- A vertical shear maps analytic submanifolds of `𝕜ⁿ⁺¹` to analytic submanifolds of the same
+/-- A horizontal shear maps analytic submanifolds of `𝕜ⁿ⁺¹` to analytic submanifolds of the same
 dimension. -/
-theorem IsAnalyticSubmanifold.image_verticalShear (hψ : IsAnalyticSubmanifold d ψ)
-    (z : Fin n → 𝕜) : IsAnalyticSubmanifold d (verticalShear z '' ψ) := by
-  rw [ContinuousLinearEquiv.image_eq_preimage_symm, verticalShear_symm]
-  exact hψ.preimage (verticalShear (-z)).toHomeomorph (fun v _ ↦ (verticalShear (-z)).analyticAt v)
-    (fun v _ ↦ (verticalShear (-z)).symm.analyticAt v)
+theorem IsAnalyticSubmanifold.image_horizontalShear (hψ : IsAnalyticSubmanifold d ψ)
+    (z : Fin n → 𝕜) : IsAnalyticSubmanifold d (horizontalShear z '' ψ) := by
+  rw [ContinuousLinearEquiv.image_eq_preimage_symm, horizontalShear_symm]
+  exact hψ.preimage (horizontalShear (-z)).toHomeomorph
+    (fun v _ ↦ (horizontalShear (-z)).analyticAt v)
+    (fun v _ ↦ (horizontalShear (-z)).symm.analyticAt v)
 
-/-- **Shears of Lipschitz graphs.** If the heights of the points of `ψ` satisfy
-`dist (v 0) (w 0) ≤ A * dist (Fin.tail v) (Fin.tail w)`, then a vertical shear with slope `z`
-shrinks the distances of base points by at most the factor `1 - A * ‖z‖`:
+/-- **Shears of Lipschitz graphs.** If the heights of two points `v` and `w` satisfy
+`dist (v 0) (w 0) ≤ A * dist (Fin.tail v) (Fin.tail w)`, then a horizontal shear with slope `z`
+shrinks the distance of their base points by at most the factor `1 - A * ‖z‖`:
 `‖Δu + Δt • z‖ ≥ (1 - A * ‖z‖) * ‖Δu‖`. -/
-theorem mul_dist_tail_le_dist_tail_verticalShear
-    (h : ∀ v ∈ ψ, ∀ w ∈ ψ, dist (v 0) (w 0) ≤ A * dist (Fin.tail v) (Fin.tail w))
-    (z : Fin n → 𝕜) {v w : Fin (n + 1) → 𝕜} (hv : v ∈ ψ) (hw : w ∈ ψ) :
+theorem mul_dist_tail_le_dist_tail_horizontalShear (z : Fin n → 𝕜) {v w : Fin (n + 1) → 𝕜}
+    (hvw : dist (v 0) (w 0) ≤ A * dist (Fin.tail v) (Fin.tail w)) :
     (1 - A * ‖z‖) * dist (Fin.tail v) (Fin.tail w) ≤
-      dist (Fin.tail (verticalShear z v)) (Fin.tail (verticalShear z w)) := by
-  have hvw := h v hv w hw
+      dist (Fin.tail (horizontalShear z v)) (Fin.tail (horizontalShear z w)) := by
   rw [dist_eq_norm, dist_eq_norm] at hvw ⊢
   have hΔ : Fin.tail v + v 0 • z - (Fin.tail w + w 0 • z) =
       Fin.tail v - Fin.tail w + (v 0 - w 0) • z := by
     rw [sub_smul]
     abel
-  rw [tail_verticalShear, tail_verticalShear, hΔ]
+  rw [tail_horizontalShear, tail_horizontalShear, hΔ]
   have htri := norm_sub_le (Fin.tail v - Fin.tail w + (v 0 - w 0) • z) ((v 0 - w 0) • z)
   rw [add_sub_cancel_right, norm_smul] at htri
   nlinarith [norm_nonneg z, norm_nonneg (Fin.tail v - Fin.tail w)]
 
 /-- **Shears of Lipschitz graphs.** If the heights of the points of `ψ` satisfy
 `dist (v 0) (w 0) ≤ A * dist (Fin.tail v) (Fin.tail w)` and `A * ‖z‖ < 1`, then the heights of the
-points of the sheared set `verticalShear z '' ψ` satisfy the same inequality with the constant
+points of the sheared set `horizontalShear z '' ψ` satisfy the same inequality with the constant
 `A / (1 - A * ‖z‖)`. -/
-theorem dist_le_mul_dist_tail_of_mem_image_verticalShear
+theorem dist_le_mul_dist_tail_of_mem_image_horizontalShear
     (h : ∀ v ∈ ψ, ∀ w ∈ ψ, dist (v 0) (w 0) ≤ A * dist (Fin.tail v) (Fin.tail w))
     {z : Fin n → 𝕜} (hz : A * ‖z‖₊ < 1) :
-    ∀ v ∈ verticalShear z '' ψ, ∀ w ∈ verticalShear z '' ψ,
+    ∀ v ∈ horizontalShear z '' ψ, ∀ w ∈ horizontalShear z '' ψ,
       dist (v 0) (w 0) ≤ (A / (1 - A * ‖z‖₊) : ℝ≥0) * dist (Fin.tail v) (Fin.tail w) := by
   rintro _ ⟨v, hv, rfl⟩ _ ⟨w, hw, rfl⟩
   have hz' : 0 < 1 - (A : ℝ) * ‖z‖ := by
     rw [sub_pos]
     exact_mod_cast hz
-  rw [verticalShear_apply_zero, verticalShear_apply_zero, NNReal.coe_div,
+  rw [horizontalShear_apply_zero, horizontalShear_apply_zero, NNReal.coe_div,
     NNReal.coe_sub hz.le, NNReal.coe_mul, coe_nnnorm, NNReal.coe_one, div_mul_eq_mul_div,
     le_div_iff₀ hz']
   calc dist (v 0) (w 0) * (1 - A * ‖z‖)
       ≤ A * dist (Fin.tail v) (Fin.tail w) * (1 - A * ‖z‖) :=
         mul_le_mul_of_nonneg_right (h v hv w hw) hz'.le
     _ = A * ((1 - A * ‖z‖) * dist (Fin.tail v) (Fin.tail w)) := by ring
-    _ ≤ A * dist (Fin.tail (verticalShear z v)) (Fin.tail (verticalShear z w)) :=
-        mul_le_mul_of_nonneg_left (mul_dist_tail_le_dist_tail_verticalShear h z hv hw) A.2
+    _ ≤ A * dist (Fin.tail (horizontalShear z v)) (Fin.tail (horizontalShear z w)) :=
+        mul_le_mul_of_nonneg_left
+          (mul_dist_tail_le_dist_tail_horizontalShear z (h v hv w hw)) A.2
 
 end TauCeti
