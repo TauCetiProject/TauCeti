@@ -17,7 +17,7 @@ support as a reduced one. The zero ring admits the full boundary, unlike a nonze
 
 namespace TauCeti.SmoothPair
 
-open MvPolynomial
+open _root_.MvPolynomial
 
 variable (K : Type*) [Field K]
 

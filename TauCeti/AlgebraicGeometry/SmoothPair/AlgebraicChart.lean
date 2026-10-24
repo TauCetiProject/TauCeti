@@ -8,9 +8,7 @@ module
 public import Mathlib.RingTheory.RingHom.Etale
 public import Mathlib.RingTheory.Flat.TorsionFree
 public import Mathlib.RingTheory.TensorProduct.Quotient
-public import Mathlib.RingTheory.Polynomial.UniqueFactorization
-public import Mathlib.Algebra.MvPolynomial.Division
-public import Mathlib.Algebra.Squarefree.Basic
+public import TauCeti.RingTheory.MvPolynomial.Squarefree
 public import TauCeti.RingTheory.Smooth.GeometricallyReduced
 
 /-!
@@ -36,7 +34,7 @@ public section
 
 namespace TauCeti.SmoothPair
 
-open MvPolynomial
+open _root_.MvPolynomial
 open scoped TensorProduct
 
 variable (K : Type*) [Field K]
@@ -60,8 +58,9 @@ structure AlgebraicChart {R : Type*} [CommRing R] (σ : K →+* R) (I : Ideal R)
   /-- Equality of boundary ideals, without taking radicals. -/
   ideal_eq : I = Ideal.span {coord (∏ i : Fin r, X (Fin.castLE le i))}
 
-/-- The coordinate hyperplane model, with the identity as coordinate homomorphism.
-The body is exposed so its dimension-indexed coordinate map accepts polynomials in `Fin n`. -/
+/-- The coordinate hyperplane model on `K[X_0,…,X_{n-1}]` with boundary `X_0⋯X_{r-1}`
+and the identity as coordinate homomorphism. -/
+-- Expose the body so its dimension-indexed coordinate map accepts polynomials in `Fin n`.
 @[expose] noncomputable def modelAlgebraicChart (n r : ℕ) (hr : r ≤ n) :
     AlgebraicChart K (C : K →+* MvPolynomial (Fin n) K)
       (Ideal.span {∏ i : Fin r, X (Fin.castLE hr i)}) where
@@ -88,6 +87,10 @@ variable {K} {R : Type*} [CommRing R] {σ : K →+* R} {I : Ideal R}
     (f : MvPolynomial (Fin n) K) : (modelAlgebraicChart K n r hr).coord f = f := (rfl)
 
 namespace AlgebraicChart
+
+/-- The coordinate map sends a constant to its image under the specified scalar map. -/
+@[simp] theorem coord_C (c : AlgebraicChart K σ I) (a : K) : c.coord (C a) = σ a :=
+  RingHom.congr_fun c.coord_comp_C a
 
 /-- The displayed local equation of the boundary. -/
 noncomputable def generator (c : AlgebraicChart K σ I) : R :=
@@ -129,26 +132,19 @@ theorem generator_mem_nonZeroDivisors (c : AlgebraicChart K σ I) :
   apply h
   simpa only [Algebra.smul_def, c.coord.algebraMap_toAlgebra, mul_zero, generator] using hx
 
-/-- A coordinate boundary is reduced. The coordinate product is squarefree, and its
-quotient remains reduced under the étale coordinate map. -/
+/-- The boundary ideal of a chart is radical. -/
 theorem isRadical (c : AlgebraicChart K σ I) : I.IsRadical := by
   classical
   let A := MvPolynomial (Fin c.n) K
   let J : Ideal A := Ideal.span {∏ i : Fin c.r, X (Fin.castLE c.le i)}
-  have hsq : Squarefree (∏ i : Fin c.r, X (R := K) (Fin.castLE c.le i)) := by
-    apply Finset.squarefree_prod_of_pairwise_isCoprime
-    · intro i _ j _ hij
-      apply prime_X.irreducible.isRelPrime_iff_not_dvd.mpr
-      simpa only [X_dvd_X] using fun h ↦ hij ((Fin.castLE_injective c.le) h)
-    · intro i _
-      exact prime_X.squarefree
+  have hsq : Squarefree (∏ i : Fin c.r, X (R := K) (Fin.castLE c.le i)) :=
+    MvPolynomial.squarefree_prod_X_of_injective (Fin.castLE_injective c.le) Finset.univ
   have hJ : J.IsRadical := isRadical_iff_span_singleton.mp hsq.isRadical
   let _ : IsReduced (A ⧸ J) := (Ideal.isRadical_iff_quotient_reduced J).mp hJ
   let _ := c.coord.toAlgebra
   let _ : Algebra.Etale A R := c.etale
   have hred : IsReduced ((A ⧸ J) ⊗[A] R) :=
     isReduced_of_smooth (A ⧸ J) ((A ⧸ J) ⊗[A] R)
-  let _ := hred
   let e := (Algebra.TensorProduct.quotIdealMapEquivTensorQuot R J).toRingEquiv.trans
     (Algebra.TensorProduct.comm A R (A ⧸ J)).toRingEquiv
   have hquot : IsReduced (R ⧸ J.map (algebraMap A R)) :=
@@ -168,13 +164,13 @@ theorem ideal_ne_bot [Nontrivial R] (c : AlgebraicChart K σ I) : I ≠ ⊥ := b
   exact one_ne_zero ((mem_nonZeroDivisors_iff_left.mp h) 1 (by simp [hz]))
 
 /-- The full boundary has no algebraic normal crossings chart on a nonzero ring. -/
-instance [Nontrivial R] : IsEmpty (AlgebraicChart K σ (⊥ : Ideal R)) :=
+instance no_full_boundary [Nontrivial R] : IsEmpty (AlgebraicChart K σ (⊥ : Ideal R)) :=
   ⟨fun c ↦ c.ideal_ne_bot rfl⟩
 
 end AlgebraicChart
 
 /-- The model equation is the product of its distinct boundary coordinates. -/
-@[simp] theorem generator_modelAlgebraicChart (n r : ℕ) (hr : r ≤ n) :
+@[simp] theorem modelAlgebraicChart_generator (n r : ℕ) (hr : r ≤ n) :
     (modelAlgebraicChart K n r hr).generator = ∏ i : Fin r, X (Fin.castLE hr i) := (rfl)
 
 end TauCeti.SmoothPair
