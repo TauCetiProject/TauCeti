@@ -12,7 +12,9 @@ public import Mathlib.Algebra.Lie.Semisimple.Lemmas
 public import TauCeti.LinearAlgebra.Matrix.Alternating
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 import TauCeti.Algebra.Lie.BaseChange.Radical
+import TauCeti.Algebra.Lie.Orthogonal.Basic
 import TauCeti.Algebra.Lie.SkewAdjoint.BaseChange
+import TauCeti.LinearAlgebra.Matrix.SkewAdjoint
 
 /-!
 # The Killing form of the orthogonal Lie algebras
@@ -57,10 +59,6 @@ and `x ≠ 0` cannot be a multiple of both.
 * `TauCeti.isIrreducible_so_standard`, `TauCeti.hasTrivialRadical_so`: the definite case.
 * `TauCeti.isIrreducible_so'_standard`, `TauCeti.hasTrivialRadical_so'`: the indefinite case,
   in particular the semisimplicity of `so(p, q)` for `p + q ≥ 3`.
-* `Matrix.IsSkewAdjoint.trace_eq_zero`: a matrix skew-adjoint for an invertible matrix has trace
-  zero when `2` is invertible.
-* `LieAlgebra.Orthogonal.isUnit_indefiniteDiagonal`: the Gram matrix of the indefinite form is
-  invertible.
 
 ## References
 
@@ -77,45 +75,6 @@ public section
 open Matrix _root_.LieAlgebra LieModule
 open scoped TensorProduct
 
-namespace Matrix.IsSkewAdjoint
-
-variable {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R]
-
-/-- **A matrix skew-adjoint for an invertible matrix has trace zero** when `2` is invertible:
-skew-adjointness makes `Aᵀ` conjugate to `-A`. -/
-theorem trace_eq_zero [Invertible (2 : R)] {J A : Matrix n n R} (hJ : IsUnit J)
-    (hA : J.IsSkewAdjoint A) : A.trace = 0 := by
-  have := hJ.invertible
-  have h : A.trace = -A.trace := calc
-    A.trace = (Aᵀ * J * ⅟J).trace := by
-      rw [Matrix.mul_assoc, mul_invOf_self, Matrix.mul_one, trace_transpose]
-    _ = (J * (-A * ⅟J)).trace := by rw [show Aᵀ * J = J * -A from hA, Matrix.mul_assoc]
-    _ = -A.trace := by
-      rw [trace_mul_comm, Matrix.mul_assoc, invOf_mul_self, Matrix.mul_one, trace_neg]
-  have h2 : (2 : R) * A.trace = 0 := by
-    rw [two_mul]
-    nth_rewrite 1 [h]
-    exact neg_add_cancel _
-  rw [← invOf_mul_cancel_left (2 : R) A.trace, h2, mul_zero]
-
-end Matrix.IsSkewAdjoint
-
-namespace LieAlgebra.Orthogonal
-
-variable {p q R : Type*} [DecidableEq p] [DecidableEq q] [Fintype p] [Fintype q] [CommRing R]
-
-/-- The Gram matrix `diag(1, …, 1, -1, …, -1)` of the indefinite form is invertible; it is its
-own inverse. -/
-theorem isUnit_indefiniteDiagonal : IsUnit (indefiniteDiagonal p q R) := by
-  have h : indefiniteDiagonal p q R * indefiniteDiagonal p q R = 1 := by
-    rw [indefiniteDiagonal, diagonal_mul_diagonal, ← diagonal_one]
-    congr 1
-    ext (i | i) <;> simp
-  let := invertibleOfRightInverse _ _ h
-  exact isUnit_of_invertible _
-
-end LieAlgebra.Orthogonal
-
 namespace TauCeti
 
 attribute [local instance 100] LieRing.ofAssociativeRing
@@ -124,29 +83,15 @@ section Symmetric
 
 variable {n : Type*} [DecidableEq n] [Fintype n] {K : Type*} [Field K] {J : Matrix n n K}
 
-/-- For a symmetric matrix `J`, the matrix sending `x` to `(u ⬝ᵥ J x) • v - (v ⬝ᵥ J x) • u` is
-skew-adjoint for `J`. -/
-private theorem vecMulVec_sub_vecMulVec_mem (hJ : J.IsSymm) (u v : n → K) :
-    vecMulVec v (u ᵥ* J) - vecMulVec u (v ᵥ* J) ∈ skewAdjointMatricesLieSubalgebra J := by
-  have h (w : n → K) : J *ᵥ w = w ᵥ* J := by rw [← vecMul_transpose, hJ.eq]
-  rw [mem_skewAdjointMatricesLieSubalgebra, mem_skewAdjointMatricesSubmodule,
-    Matrix.IsSkewAdjoint, Matrix.IsAdjointPair, transpose_sub, transpose_vecMulVec,
-    transpose_vecMulVec, Matrix.sub_mul, vecMulVec_mul, vecMulVec_mul, Matrix.mul_neg,
-    Matrix.mul_sub, mul_vecMulVec, mul_vecMulVec, h, h, neg_sub]
-
-omit [DecidableEq n] in
-private theorem vecMulVec_sub_vecMulVec_mulVec (u v x : n → K) :
-    (vecMulVec v (u ᵥ* J) - vecMulVec u (v ᵥ* J)) *ᵥ x =
-      (u ⬝ᵥ J *ᵥ x) • v - (v ⬝ᵥ J *ᵥ x) • u := by
-  simp [sub_mulVec, vecMulVec_mulVec, dotProduct_mulVec]
-
 /-- A Lie submodule of the standard module of the orthogonal Lie algebra of a symmetric matrix `J`
 that contains a vector `x` with `J x ≠ 0` contains every vector `v` with `v ⬝ᵥ J x = 0`. -/
 private theorem mem_of_dotProduct_mulVec_eq_zero (hJ : J.IsSymm)
     (N : LieSubmodule K (skewAdjointMatricesLieSubalgebra J) (n → K)) {x v : n → K} (hx : x ∈ N)
     (hJx : J *ᵥ x ≠ 0) (hv : v ⬝ᵥ J *ᵥ x = 0) : v ∈ N := by
   obtain ⟨i, hi⟩ := Function.ne_iff.mp hJx
-  have h := N.lie_mem (x := ⟨_, vecMulVec_sub_vecMulVec_mem hJ (Pi.single i 1) v⟩) hx
+  have hmem := (mem_skewAdjointMatricesSubmodule J _).mpr
+    (isSkewAdjoint_vecMulVec_sub_vecMulVec hJ (Pi.single i 1) v)
+  have h := N.lie_mem (x := ⟨_, (mem_skewAdjointMatricesLieSubalgebra J _).mpr hmem⟩) hx
   rw [LieSubalgebra.coe_bracket_of_module, Matrix.lie_apply, vecMulVec_sub_vecMulVec_mulVec, hv,
     zero_smul, sub_zero, single_one_dotProduct] at h
   exact (N.toSubmodule.smul_mem_iff hi).mp h
