@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Bigraded.Basic
 public import TauCeti.Algebra.Module.GradedModule.Internal
 public import TauCeti.KnotTheory.Grid.Grading.Complex
 public import TauCeti.KnotTheory.Grid.Homology.Basic
+import TauCeti.LinearAlgebra.Dimension.DirectSum
 
 /-!
 # The bigrading of fully blocked grid homology
@@ -253,45 +254,18 @@ theorem coeff_fullyBlockedHomologySeries (g : ℤ × ℤ) :
       Module.finrank F (G.bigradedFullyBlockedHomologyPiece g) :=
   (rfl)
 
-/-- The projections onto the occupied bidegrees, assembled into a single map. -/
-private noncomputable def fullyBlockedHomologyToPi :
-    G.1.fullyBlockedHomology →ₗ[F]
-      ∀ g : G.bidegreeSupport, G.bigradedFullyBlockedHomologyPiece g :=
-  LinearMap.pi fun g : G.bidegreeSupport =>
-    (G.bigradedFullyBlockedHomologyProjection g).codRestrict _
-      (G.bigradedFullyBlockedHomologyProjection_mem g)
-
-private theorem coe_fullyBlockedHomologyToPi_apply (y : G.1.fullyBlockedHomology)
-    (g : G.bidegreeSupport) :
-    (G.fullyBlockedHomologyToPi y g : G.1.fullyBlockedHomology) =
-      G.bigradedFullyBlockedHomologyProjection g y :=
-  (rfl)
-
-/-- Fully blocked homology is the product of its pieces in the occupied bidegrees. -/
-private theorem fullyBlockedHomologyToPi_bijective :
-    Function.Bijective G.fullyBlockedHomologyToPi := by
-  constructor
-  · intro y y' h
-    rw [← G.sum_bigradedFullyBlockedHomologyProjection y,
-      ← G.sum_bigradedFullyBlockedHomologyProjection y', ← Finset.sum_coe_sort G.bidegreeSupport,
-      ← Finset.sum_coe_sort G.bidegreeSupport]
-    refine Finset.sum_congr rfl fun g _ => ?_
-    rw [← coe_fullyBlockedHomologyToPi_apply, ← coe_fullyBlockedHomologyToPi_apply, h]
-  · intro u
-    refine ⟨∑ g, (u g : G.1.fullyBlockedHomology), funext fun h => Subtype.ext ?_⟩
-    rw [coe_fullyBlockedHomologyToPi_apply, map_sum, Finset.sum_eq_single h ?_ (by simp),
-      (mem_bigradedFullyBlockedHomologyPiece_iff G).mp (u h).2]
-    intro g _ hg
-    exact G.bigradedFullyBlockedHomologyProjection_eq_zero_of_mem
-      (fun e => hg (Subtype.ext e.symm)) (u g).2
-
 /-- The dimension of fully blocked homology is the sum of the dimensions of its pieces. -/
 theorem sum_finrank_bigradedFullyBlockedHomologyPiece :
     ∑ g ∈ G.bidegreeSupport, Module.finrank F (G.bigradedFullyBlockedHomologyPiece g) =
       Module.finrank F G.1.fullyBlockedHomology := by
-  rw [(LinearEquiv.ofBijective _ G.fullyBlockedHomologyToPi_bijective).finrank_eq,
-    Module.finrank_pi_fintype, Finset.sum_coe_sort G.bidegreeSupport fun g =>
-      Module.finrank F (G.bigradedFullyBlockedHomologyPiece g)]
+  have hsupp : {g | G.bigradedFullyBlockedHomologyPiece g ≠ ⊥} ⊆ G.bidegreeSupport :=
+    fun _ hg => Classical.byContradiction fun h => hg (G.bigradedFullyBlockedHomologyPiece_eq_bot h)
+  rw [← finsum_finrank_eq_finrank_of_isInternal G.isInternal_bigradedFullyBlockedHomologyPiece
+    (G.bidegreeSupport.finite_toSet.subset hsupp)]
+  refine (finsum_eq_sum_of_support_subset _ fun g hg => ?_).symm
+  by_contra h
+  rw [Function.mem_support, G.bigradedFullyBlockedHomologyPiece_eq_bot h, finrank_bot] at hg
+  exact hg rfl
 
 /-- The total dimension of the Poincaré series is the dimension of fully blocked homology. -/
 @[simp]

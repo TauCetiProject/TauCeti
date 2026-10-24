@@ -97,16 +97,6 @@ private theorem snd_fullyBlockedStabilizeXMap_bigradedChainInclusion (g : ℤ ×
   simpa only [bigradedChainInclusion_bigradedChainProjection_single, ↓reduceIte,
     LinearMap.comp_apply, LinearMap.snd_apply] using h
 
-/-- The stabilization comparison on the class of a cycle of `G.stabilizeX s`, whose homology is
-definitionally that of the underlying stabilized diagram. -/
-private theorem fullyBlockedHomologyStabilizeXEquivProd_mk'
-    (z : (G.stabilizeX s).1.fullyBlockedCycles) :
-    G.1.fullyBlockedHomologyStabilizeXEquivProd s
-        (Submodule.Quotient.mk z : (G.stabilizeX s).1.fullyBlockedHomology) =
-      (Submodule.Quotient.mk (G.1.fullyBlockedStabilizeXCycles s z).1,
-        Submodule.Quotient.mk (G.1.fullyBlockedStabilizeXCycles s z).2) :=
-  G.1.fullyBlockedHomologyStabilizeXEquivProd_mk s z
-
 /-- The center cycle of the comparison is the center component of the chain comparison. -/
 private theorem coe_fst_fullyBlockedStabilizeXCycles (z : (G.stabilizeX s).1.fullyBlockedCycles) :
     ((G.1.fullyBlockedStabilizeXCycles s z).1 : GridChain F n) =
@@ -133,8 +123,14 @@ theorem fullyBlockedHomologyStabilizeXEquivProd_bigradedFullyBlockedHomologyProj
           (G.1.fullyBlockedHomologyStabilizeXEquivProd s y).2) := by
   induction y using Submodule.Quotient.induction_on with
   | H z =>
-    simp only [bigradedFullyBlockedHomologyProjection_mk,
-      fullyBlockedHomologyStabilizeXEquivProd_mk', Prod.mk.injEq]
+    -- The ascription states the computation lemma at `(G.stabilizeX s).1`, the diagram `z` lives
+    -- over; it is only definitionally the one in the lemma, so `rw` cannot match it unannotated.
+    rw [bigradedFullyBlockedHomologyProjection_mk,
+      show G.1.fullyBlockedHomologyStabilizeXEquivProd s
+          (Submodule.Quotient.mk z : (G.stabilizeX s).1.fullyBlockedHomology) = _ from
+        G.1.fullyBlockedHomologyStabilizeXEquivProd_mk s z]
+    refine (G.1.fullyBlockedHomologyStabilizeXEquivProd_mk s _).trans ?_
+    simp only [bigradedFullyBlockedHomologyProjection_mk, Prod.mk.injEq]
     constructor <;> congr 1 <;> ext1
     · simp only [coe_fst_fullyBlockedStabilizeXCycles]
       exact G.fst_fullyBlockedStabilizeXMap_bigradedChainInclusion s g z
