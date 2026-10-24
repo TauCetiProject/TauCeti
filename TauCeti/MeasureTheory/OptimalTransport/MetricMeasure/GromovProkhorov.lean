@@ -335,8 +335,12 @@ Gromov–Prokhorov distance is at most `δ`. -/
 theorem gromovProkhorovEDist_le_of_isCoupling (hf : IsMetricCoupling f) (hπ : IsCoupling π μ ν)
     (h : π {z | δ ≤ f z.1 z.2} ≤ δ) : gromovProkhorovEDist μ ν ≤ δ :=
   gromovProkhorovEDist_le_of_isMetricCoupling hf (fun _ ↦ hπ.measure_le_of_measure_setOf_le h)
-    fun _ ↦ hπ.swap.measure_le_of_measure_setOf_le (c := fun y x ↦ f x y)
-      ((MeasurableEquiv.prodComm.map_apply _).trans_le h)
+    fun _ ↦ hπ.swap.measure_le_of_measure_setOf_le (c := fun y x ↦ f x y) <| by
+      -- The set need not be measurable, so evaluate the pushforward along the measurable
+      -- equivalence `prodComm`, whose underlying map is `Prod.swap`.
+      have hswap : ⇑(MeasurableEquiv.prodComm : X × Y ≃ᵐ Y × X) = Prod.swap := rfl
+      rw [← hswap, MeasurableEquiv.map_apply, hswap, preimage_ofPred_eq]
+      simpa only [Prod.fst_swap, Prod.snd_swap] using h
 
 /-- For `0 < p < ∞`, the Gromov–Prokhorov distance is at most `‖f‖_{L^p (π)} ^ (p / (p + 1))` for
 every metric coupling `f` and every coupling `π` of the measures, by Markov's inequality. -/
