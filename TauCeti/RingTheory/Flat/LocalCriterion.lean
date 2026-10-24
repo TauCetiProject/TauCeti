@@ -14,9 +14,9 @@ import Mathlib.RingTheory.Filtration
 import Mathlib.RingTheory.Flat.EquationalCriterion
 import Mathlib.RingTheory.Flat.Stability
 import Mathlib.RingTheory.Flat.Tensor
+import TauCeti.LinearAlgebra.TensorProduct.Submodule
 import TauCeti.RingTheory.QuotSMulTop
 import TauCeti.RingTheory.TensorProduct.Finite
-import TauCeti.RingTheory.TensorProduct.IdealSMul
 
 /-!
 # The local criterion for flatness along a regular element

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.TensorProduct.Maps
 public import Mathlib.Algebra.Algebra.Operations
+public import Mathlib.RingTheory.Ideal.Operations
 
 /-!
 # Scalar extension of images and powers of submodules
@@ -17,7 +18,9 @@ tensor and exterior algebras, defined as powers of their generators.
 
 For submodules `p` and `q`, every element of `(p ⊔ q) ⊗[R] M` is the sum of images of elements of
 `p ⊗[R] M` and `q ⊗[R] M` under the maps induced by the inclusions
-(`Submodule.exists_eq_rTensor_inclusion_add`).
+(`Submodule.exists_eq_rTensor_inclusion_add`). For an ideal `I` and a submodule `J`, the image of
+`M ⊗[R] (I • J)` in `M ⊗[R] J` is contained in `I • (M ⊗[R] J)`
+(`LinearMap.range_lTensor_inclusion_smul_le`).
 -/
 
 public section
@@ -65,6 +68,25 @@ theorem exists_eq_rTensor_inclusion_add (p q : Submodule R N) (t : ↥(p ⊔ q) 
     obtain ⟨a₁, b₁, rfl⟩ := h₁
     obtain ⟨a₂, b₂, rfl⟩ := h₂
     exact ⟨a₁ + a₂, b₁ + b₂, by rw [map_add, map_add, add_add_add_comm]⟩
+
+/-- The image of `M ⊗[R] (I • J)` in `M ⊗[R] J` is contained in `I • (M ⊗[R] J)`. -/
+theorem _root_.LinearMap.range_lTensor_inclusion_smul_le (I : Ideal R) (J : Submodule R N) :
+    LinearMap.range ((inclusion (Submodule.smul_le_right : I • J ≤ J)).lTensor M) ≤
+      (I • ⊤ : Submodule R (M ⊗[R] J)) := by
+  rintro _ ⟨u, rfl⟩
+  induction u using TensorProduct.inductionOn with
+  | add u v hu hv => rw [map_add]; exact add_mem hu hv
+  | tmul m y =>
+    -- In `J`, the element `y` of `I • J` lies in `I • ⊤`, since `I • J` is the image of `I • ⊤`.
+    have hy : (y : N) ∈ (I • ⊤ : Submodule R J).map J.subtype := by
+      rw [map_smul'', map_top, range_subtype]
+      exact y.2
+    obtain ⟨z, hz, hzy⟩ := hy
+    have hz' : inclusion Submodule.smul_le_right y = z := Subtype.ext hzy.symm
+    rw [LinearMap.lTensor_tmul, hz']
+    have := mem_map_of_mem (f := TensorProduct.mk R M J m) hz
+    rw [map_smul''] at this
+    exact smul_mono le_rfl le_top this
 
 end Inclusion
 
