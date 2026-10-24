@@ -30,6 +30,9 @@ measurable space -- there is no `OpensMeasurableSpace` or `BorelSpace` assumptio
 compactness nor closedness of `K` carries any measurability with it. (Absent a separation axiom
 `K` need not even be closed, but that is the lesser obstacle.)
 
+Pointwise suprema and infima of locally integrable functions are locally integrable in a
+normed lattice with solid norm.
+
 Pairing a locally integrable function with a fixed vector in an inner product space gives a
 locally integrable scalar function, as Mathlib records for `Integrable` and `MemLp`.
 
@@ -71,6 +74,32 @@ compact support.
 public section
 
 open MeasureTheory Set TopologicalSpace
+
+namespace MeasureTheory.LocallyIntegrableOn
+
+variable {X F : Type*} [MeasurableSpace X] [TopologicalSpace X]
+  [NormedAddCommGroup F] [Lattice F] [HasSolidNorm F] [IsOrderedAddMonoid F]
+  {μ : Measure X} {s : Set X} {f g : X → F}
+
+/-- The pointwise supremum of two locally integrable functions is locally integrable. -/
+theorem sup (hf : LocallyIntegrableOn f s μ) (hg : LocallyIntegrableOn g s μ) :
+    LocallyIntegrableOn (f ⊔ g) s μ := by
+  intro x hx
+  obtain ⟨U, hU, hfU⟩ := hf x hx
+  obtain ⟨V, hV, hgV⟩ := hg x hx
+  exact ⟨U ∩ V, Filter.inter_mem hU hV,
+    (hfU.mono_set inter_subset_left).sup (hgV.mono_set inter_subset_right)⟩
+
+/-- The pointwise infimum of two locally integrable functions is locally integrable. -/
+theorem inf (hf : LocallyIntegrableOn f s μ) (hg : LocallyIntegrableOn g s μ) :
+    LocallyIntegrableOn (f ⊓ g) s μ := by
+  intro x hx
+  obtain ⟨U, hU, hfU⟩ := hf x hx
+  obtain ⟨V, hV, hgV⟩ := hg x hx
+  exact ⟨U ∩ V, Filter.inter_mem hU hV,
+    (hfU.mono_set inter_subset_left).inf (hgV.mono_set inter_subset_right)⟩
+
+end MeasureTheory.LocallyIntegrableOn
 
 namespace MeasureTheory
 
