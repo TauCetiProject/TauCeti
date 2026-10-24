@@ -55,27 +55,9 @@ unit of the colimit: localizing that neighbourhood at the element is a further p
 neighbourhood in which the element is a unit. -/
 theorem isUnit_stage_of_isUnit_point (B : Neighbourhood R Ω) (b : B.obj.left)
     (hpoint : IsUnit (B.obj.hom.hom b)) : IsUnit (stage R Ω B b) := by
-  -- étaleness of `B.obj.left` supplies Mathlib's
-  -- `instance (s : A) [Algebra.Etale R A] : Algebra.Etale R (Localization.Away s)` below.
-  have hetale : Algebra.Etale R B.obj.left := (isPointedNeighbourhood_iff R Ω _).mp B.property
-  let localized := Localization.Away b
-  let lifted : localized →ₐ[R] ULift.{u} Ω := IsLocalization.Away.liftAlgHom b hpoint
-  let target : Neighbourhood R Ω :=
-    ⟨Over.mk (CommAlgCat.ofHom lifted),
-      (isPointedNeighbourhood_iff R Ω _).mpr (inferInstanceAs (Algebra.Etale R localized))⟩
-  let refinementMap : B.obj.left →ₐ[R] localized :=
-    IsScalarTower.toAlgHom R B.obj.left localized
-  have hrefines : CommAlgCat.ofHom refinementMap ≫ CommAlgCat.ofHom lifted = B.obj.hom := by
-    apply CommAlgCat.hom_ext
-    apply AlgHom.ext
-    intro element
-    exact IsLocalization.Away.lift_eq (S := localized) b hpoint element
-  let morphism : B ⟶ target :=
-    ObjectProperty.homMk (Over.homMk (CommAlgCat.ofHom refinementMap) hrefines)
-  have hstage : stage R Ω B b = stage R Ω target (algebraMap B.obj.left localized b) :=
-    (stage_hom_apply R Ω morphism b).symm
-  rw [hstage]
-  exact (IsLocalization.Away.algebraMap_isUnit (S := localized) b).map (stage R Ω target).toRingHom
+  obtain ⟨target, refinement, hunit⟩ := Neighbourhood.exists_refinement_isUnit R Ω B b hpoint
+  rw [← stage_hom_apply R Ω refinement b]
+  exact hunit.map (stage R Ω target).toRingHom
 
 /-- An element of the colimit of pointed étale neighbourhoods is a unit exactly when its image
 under the induced map `toTarget` is a unit. -/
