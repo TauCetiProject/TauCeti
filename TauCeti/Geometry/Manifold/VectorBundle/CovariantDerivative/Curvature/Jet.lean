@@ -17,6 +17,7 @@ import TauCeti.Topology.Algebra.Module.BilinearForm
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Tensor
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Nondegenerate.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Regularity
+import TauCeti.LinearAlgebra.Matrix.BilinearForm
 
 /-!
 # Curvature as a function of the second-order jet of a metric
@@ -67,12 +68,15 @@ J. M. Lee, *Introduction to Riemannian Manifolds*, 2nd ed., Springer GTM 176 (20
   jet.
 * `ContinuousAt.scalarCurvatureOfJet`: the scalar curvature of a jet is continuous at jets with
   invertible Gram matrix.
-* `TauCeti.Manifold.repr_fderiv_christoffelSecondKind_eq_christoffelDerivOfJet`: the derivatives
-  of the Christoffel symbols of a field of symmetric nondegenerate bilinear forms on a vector space.
-* `ContMDiffNondegenerateMetric.IsLeviCivitaConnection.mvfderiv_christoffelSymbol` and
-  `ContMDiffNondegenerateMetric.IsLeviCivitaConnection.localFrameCoeff_curvatureOperator`, in the
-  namespace `TauCeti.Manifold`: the derivatives of the Christoffel symbols and the curvature
-  coefficients of a Levi-Civita connection in a chart.
+* `TauCeti.Manifold.repr_fderiv_christoffelSecondKind_eq_christoffelDerivOfJet` and
+  `TauCeti.Manifold.fderiv_repr_christoffelSecondKind_eq_christoffelDerivOfJet`: the derivatives
+  of the Christoffel symbols of a field of symmetric nondegenerate bilinear forms on a vector space,
+  and of their coordinates.
+* `IsLeviCivitaConnection.christoffelSymbol_eq_christoffelOfJet`,
+  `IsLeviCivitaConnection.mvfderiv_christoffelSymbol_eq_christoffelDerivOfJet` and
+  `IsLeviCivitaConnection.localFrameCoeff_curvatureOperator_eq_riemannOfJet`, in the namespace
+  `TauCeti.Manifold.ContMDiffNondegenerateMetric`: the Christoffel symbols, their derivatives and
+  the curvature coefficients of a Levi-Civita connection in a chart.
 * `Bundle.ContMDiffRiemannianMetric.scalarCurvature_eq_scalarCurvatureOfJet`: the scalar curvature
   of a smooth Riemannian metric in a chart.
 * `Bundle.ContMDiffRiemannianMetric.continuousAt_scalarCurvature_of_continuousAt_chartMetric`:
@@ -204,14 +208,6 @@ section VectorSpace
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {ι : Type*} [Fintype ι] [DecidableEq ι] {G : E → E →L[ℝ] E →L[ℝ] ℝ} {z : E}
 
-omit [FiniteDimensional ℝ E] in
-/-- At a point where it is differentiable, the derivative of a field of bilinear forms, applied to
-two vectors, is the derivative of the corresponding coefficient. -/
-private theorem fderiv_apply_apply_eq (hG : DifferentiableAt ℝ G z) (u v w : E) :
-    fderiv ℝ G z u v w = fderiv ℝ (fun y ↦ G y v w) z u := by
-  rw [fderiv_clm_apply_const_apply (hG.clm_apply (differentiableAt_const v)),
-    fderiv_clm_apply_const_apply hG]
-
 /-- In a basis, the Christoffel symbols of the second kind of a field `G` of symmetric
 nondegenerate bilinear forms are the Christoffel symbols of its coordinate jet. -/
 theorem repr_christoffelSecondKind_eq_christoffelOfJet (b : Basis ι ℝ E)
@@ -221,7 +217,7 @@ theorem repr_christoffelSecondKind_eq_christoffelOfJet (b : Basis ι ℝ E)
       christoffelOfJet (LinearMap.toMatrix₂ b b (G z).toBilinForm)
         (fun k i j ↦ fderiv ℝ (fun y ↦ G y (b i) (b j)) z (b k)) i j k := by
   rw [repr_christoffelSecondKind hsymm hnd, christoffelOfJet]
-  simp only [fderiv_apply_apply_eq hG]
+  simp only [← fderiv_clm_apply_const_apply₂ hG]
 
 /-- **The derivatives of the Christoffel symbols in a basis.** For a `C²` field `G` of symmetric
 nondegenerate bilinear forms near `z`, the `k`-th coordinate of `∂ₘ Γ(b i, b j)` is the derivative
@@ -236,7 +232,7 @@ theorem repr_fderiv_christoffelSecondKind_eq_christoffelDerivOfJet (b : Basis ι
         (fun m k i j ↦ fderiv ℝ (fun y ↦ fderiv ℝ (fun y' ↦ G y' (b i) (b j)) y (b k)) z (b m))
         m i j k := by
   have hΓ : DifferentiableAt ℝ (christoffelSecondKind G) z :=
-    (contDiffAt_christoffelSecondKind (n := 1) (by exact_mod_cast hG) hnd).differentiableAt
+    (contDiffAt_christoffelSecondKind (n := 1) hG (by norm_num) hnd.self_of_nhds).differentiableAt
       one_ne_zero
   -- On an open neighbourhood of `z`, `G` is `C²` and nondegenerate.
   obtain ⟨U, hU, hUo, hzU⟩ := eventually_nhds_iff.1 ((hG.eventually (by simp)).and hnd)
@@ -253,7 +249,8 @@ theorem repr_fderiv_christoffelSecondKind_eq_christoffelDerivOfJet (b : Basis ι
     filter_upwards [hUo.mem_nhds hzU] with y hy
     have hy' := (hU y hy).1.differentiableAt (by norm_num)
     rw [apply_christoffelSecondKind (hU y hy).2, christoffelFirstKind_apply,
-      ← fderiv_apply_apply_eq hy', ← fderiv_apply_apply_eq hy', ← fderiv_apply_apply_eq hy']
+      fderiv_clm_apply_const_apply₂ hy', fderiv_clm_apply_const_apply₂ hy',
+      fderiv_clm_apply_const_apply₂ hy']
     ring
   -- Differentiating that identity in the direction `b m` gives the pairings of `∂ₘ Γ(b i, b j)`.
   have hpair (l : ι) : G z (fderiv ℝ (christoffelSecondKind G) z (b m) (b i) (b j)) (b l) =
@@ -274,15 +271,51 @@ theorem repr_fderiv_christoffelSecondKind_eq_christoffelDerivOfJet (b : Basis ι
     simp only [smul_apply, add_apply, sub_apply, smul_eq_mul] at h
     linear_combination h
   -- Solve for the coordinates of `∂ₘ Γ(b i, b j)` with the inverse Gram matrix.
-  rw [repr_eq_sum_inv_toMatrix₂_mul_apply hnd.self_of_nhds, christoffelDerivOfJet]
+  rw [LinearMap.BilinForm.Nondegenerate.repr_eq_sum_inv_toMatrix₂_mul_apply hnd.self_of_nhds,
+    christoffelDerivOfJet]
   refine Finset.sum_congr rfl fun l _ ↦ ?_
-  rw [ContinuousLinearMap.isSymm_toBilinForm_iff.1 hsymm.self_of_nhds, hpair]
+  rw [ContinuousLinearMap.toBilinForm_apply,
+    ContinuousLinearMap.isSymm_toBilinForm_iff.1 hsymm.self_of_nhds, hpair]
   congr 2
   conv_lhs => rw [← b.sum_repr (christoffelSecondKind G z (b i) (b j))]
   simp only [map_sum, map_smul, sum_apply, smul_apply,
     smul_eq_mul, repr_christoffelSecondKind_eq_christoffelOfJet b hGd hsymm.self_of_nhds
-      hnd.self_of_nhds, fderiv_apply_apply_eq hGd]
+      hnd.self_of_nhds, ← fderiv_clm_apply_const_apply₂ hGd]
   exact Finset.sum_congr rfl fun q _ ↦ mul_comm _ _
+
+omit [Fintype ι] [DecidableEq ι] in
+/-- The coordinates of the Christoffel symbols of the second kind of a `C²` field `G` of bilinear
+forms, nondegenerate at `z`, are differentiable at `z`, with derivative the coordinates of the
+derivative of the Christoffel symbols. -/
+theorem hasFDerivAt_repr_christoffelSecondKind (b : Basis ι ℝ E) (hG : ContDiffAt ℝ 2 G z)
+    (hnd : (G z).toBilinForm.Nondegenerate) (i j k : ι) :
+    HasFDerivAt (fun y ↦ b.repr (christoffelSecondKind G y (b i) (b j)) k)
+      ((b.coord k).toContinuousLinearMap.comp
+        (fderiv ℝ (fun y ↦ christoffelSecondKind G y (b i) (b j)) z)) z := by
+  have hΓ : DifferentiableAt ℝ (christoffelSecondKind G) z :=
+    (contDiffAt_christoffelSecondKind (n := 1) hG (by norm_num) hnd).differentiableAt one_ne_zero
+  exact (b.coord k).toContinuousLinearMap.hasFDerivAt.comp z
+    ((hΓ.clm_apply (differentiableAt_const _)).clm_apply (differentiableAt_const _)).hasFDerivAt
+
+/-- **The derivatives of the coordinates of the Christoffel symbols.** For a `C²` field `G` of
+symmetric nondegenerate bilinear forms near `z`, the derivative along `b m` of the `k`-th
+coordinate of `Γ(b i, b j)` is `christoffelDerivOfJet` of the coordinate jet `(g, ∂g, ∂²g)` of `G`
+at `z`. -/
+theorem fderiv_repr_christoffelSecondKind_eq_christoffelDerivOfJet (b : Basis ι ℝ E)
+    (hG : ContDiffAt ℝ 2 G z) (hsymm : ∀ᶠ y in 𝓝 z, LinearMap.IsSymm (G y).toBilinForm)
+    (hnd : ∀ᶠ y in 𝓝 z, (G y).toBilinForm.Nondegenerate) (m i j k : ι) :
+    fderiv ℝ (fun y ↦ b.repr (christoffelSecondKind G y (b i) (b j)) k) z (b m) =
+      christoffelDerivOfJet (LinearMap.toMatrix₂ b b (G z).toBilinForm)
+        (fun k i j ↦ fderiv ℝ (fun y ↦ G y (b i) (b j)) z (b k))
+        (fun m k i j ↦ fderiv ℝ (fun y ↦ fderiv ℝ (fun y' ↦ G y' (b i) (b j)) y (b k)) z (b m))
+        m i j k := by
+  have hΓ : DifferentiableAt ℝ (christoffelSecondKind G) z :=
+    (contDiffAt_christoffelSecondKind (n := 1) hG (by norm_num) hnd.self_of_nhds).differentiableAt
+      one_ne_zero
+  rw [(hasFDerivAt_repr_christoffelSecondKind b hG hnd.self_of_nhds i j k).fderiv,
+    ← repr_fderiv_christoffelSecondKind_eq_christoffelDerivOfJet b hG hsymm hnd,
+    ← fderiv_clm_apply_const_apply₂ hΓ]
+  simp [Basis.coord_apply]
 
 end VectorSpace
 
@@ -315,13 +348,30 @@ theorem IsLeviCivitaConnection.christoffelSymbol_eventuallyEq [Finite ι]
     (by simpa using hy') i j k, h.christoffelMap_apply_eq_christoffelSecondKind b hy' hint',
     Basis.coord_apply]
 
+/-- At a point `y` of the chart domain at `x₀` whose chart image `z` is interior, the Christoffel
+symbol `Γᵏᵢⱼ` of a Levi-Civita connection of `g`, in the frame of `b`, is `christoffelOfJet` of the
+coordinate jet `(g, ∂g)` of the chart metric at `z`. -/
+theorem IsLeviCivitaConnection.christoffelSymbol_eq_christoffelOfJet
+    (h : g.IsLeviCivitaConnection cov) (hy : y ∈ (extChartAt I x₀).source)
+    (hint : extChartAt I x₀ y ∈ interior (range I)) (i j k : ι) :
+    christoffelSymbol I b (trivializationAt E (TangentSpace I) x₀) cov i j k y =
+      christoffelOfJet
+        (LinearMap.toMatrix₂ b b (g.chartMetric x₀ (extChartAt I x₀ y)).toBilinForm)
+        (fun k i j ↦ fderiv ℝ (fun z ↦ g.chartMetric x₀ z (b i) (b j)) (extChartAt I x₀ y) (b k))
+        i j k := by
+  rw [(h.christoffelSymbol_eventuallyEq b hy hint i j k).self_of_nhds]
+  exact repr_christoffelSecondKind_eq_christoffelOfJet b
+    ((g.contDiffAt_chartMetric hy hint).differentiableAt (by simp))
+    (g.isSymm_chartMetric ((extChartAt I x₀).map_source hy))
+    (g.nondegenerate_chartMetric ((extChartAt I x₀).map_source hy)) i j k
+
 /-- **The derivatives of the Christoffel symbols of a Levi-Civita connection in a chart.** At a
 point `y` of the chart domain at `x₀` whose chart image `z` is interior, the derivative of the
 Christoffel symbol `Γᵏᵢⱼ` of a Levi-Civita connection of `g` along the `m`-th frame vector is
 `christoffelDerivOfJet` of the coordinate jet `(g, ∂g, ∂²g)` of the chart metric at `z`. -/
-theorem IsLeviCivitaConnection.mvfderiv_christoffelSymbol (h : g.IsLeviCivitaConnection cov)
-    (hy : y ∈ (extChartAt I x₀).source) (hint : extChartAt I x₀ y ∈ interior (range I))
-    (m i j k : ι) :
+theorem IsLeviCivitaConnection.mvfderiv_christoffelSymbol_eq_christoffelDerivOfJet
+    (h : g.IsLeviCivitaConnection cov) (hy : y ∈ (extChartAt I x₀).source)
+    (hint : extChartAt I x₀ y ∈ interior (range I)) (m i j k : ι) :
     mvfderiv I (christoffelSymbol I b (trivializationAt E (TangentSpace I) x₀) cov i j k) y
         ((trivializationAt E (TangentSpace I) x₀).localFrame b m y) =
       christoffelDerivOfJet
@@ -329,62 +379,39 @@ theorem IsLeviCivitaConnection.mvfderiv_christoffelSymbol (h : g.IsLeviCivitaCon
         (fun k i j ↦ fderiv ℝ (fun z ↦ g.chartMetric x₀ z (b i) (b j)) (extChartAt I x₀ y) (b k))
         (fun m k i j ↦ fderiv ℝ (fun z ↦ fderiv ℝ (fun z' ↦ g.chartMetric x₀ z' (b i) (b j)) z
           (b k)) (extChartAt I x₀ y) (b m)) m i j k := by
-  set e := trivializationAt E (TangentSpace I) x₀
-  have hbase : y ∈ e.baseSet := by simpa [e] using hy
   have htarget : (extChartAt I x₀).target ∈ 𝓝 (extChartAt I x₀ y) := by
     rw [← nhdsWithin_eq_nhds.2 (mem_interior_iff_mem_nhds.1 hint)]
     exact extChartAt_target_mem_nhdsWithin' hy
-  have hG := g.contDiffAt_chartMetric hy hint
+  have hG : ContDiffAt ℝ 2 (g.chartMetric x₀) (extChartAt I x₀ y) :=
+    (g.contDiffAt_chartMetric hy hint).of_le (by simp)
   have hnd : ∀ᶠ z in 𝓝 (extChartAt I x₀ y), (g.chartMetric x₀ z).toBilinForm.Nondegenerate :=
     eventually_of_mem htarget fun _ hz ↦ g.nondegenerate_chartMetric hz
   have hsymm : ∀ᶠ z in 𝓝 (extChartAt I x₀ y), LinearMap.IsSymm (g.chartMetric x₀ z).toBilinForm :=
     eventually_of_mem htarget fun _ hz ↦ g.isSymm_chartMetric hz
-  have hΓ : DifferentiableAt ℝ (christoffelSecondKind (g.chartMetric x₀)) (extChartAt I x₀ y) :=
-    (contDiffAt_christoffelSecondKind (n := 1) (hG.of_le (by simp)) hnd).differentiableAt
-      one_ne_zero
-  -- The coordinate function `z ↦ Γᵏᵢⱼ(z)` of the chart metric, and its derivative.
-  let L := LinearMap.toContinuousLinearMap (b.coord k)
-  have hF : HasFDerivAt (fun z ↦ L (christoffelSecondKind (g.chartMetric x₀) z (b i) (b j)))
-      (L.comp (fderiv ℝ (fun z ↦ christoffelSecondKind (g.chartMetric x₀) z (b i) (b j))
-        (extChartAt I x₀ y))) (extChartAt I x₀ y) :=
-    L.hasFDerivAt.comp _ ((hΓ.clm_apply (differentiableAt_const _)).clm_apply
-      (differentiableAt_const _)).hasFDerivAt
-  have hφ : mfderiv% (extChartAt I x₀) y (e.localFrame b m y) = b m := by
-    rw [← symmL_basis_eq_localFrame b hbase m,
-      ← TangentBundle.continuousLinearMapAt_trivializationAt (by simpa using hy)]
-    exact e.continuousLinearMapAt_symmL hbase (b m)
-  -- Near `y`, the Christoffel symbol is the coordinate function composed with the chart.
-  set F := fun z ↦ L (christoffelSecondKind (g.chartMetric x₀) z (b i) (b j))
+  -- Near `y`, the Christoffel symbol is the coordinate function `F` of `Γ` composed with the chart.
+  set F := fun z ↦ b.repr (christoffelSecondKind (g.chartMetric x₀) z (b i) (b j)) k
   have hfun : (fun y' ↦ b.repr
       (christoffelSecondKind (g.chartMetric x₀) (extChartAt I x₀ y') (b i) (b j)) k) =
-      F ∘ extChartAt I x₀ := by
-    ext y'
-    simp [F, L, Basis.coord_apply]
+      F ∘ extChartAt I x₀ := rfl
   have hloc : (F ∘ extChartAt I x₀) ∘ (extChartAt I x₀).symm =ᶠ[𝓝 (extChartAt I x₀ y)] F :=
     eventually_of_mem htarget fun z hz ↦ by
       simp only [Function.comp_apply, (extChartAt I x₀).right_inv hz]
-  rw [Filter.EventuallyEq.mvfderiv_eq (h.christoffelSymbol_eventuallyEq b hy hint i j k), hfun,
-    mvfderiv_apply_eq_mfderiv_apply, TauCeti.mfderiv_eq_fderiv_comp_mfderiv_extChartAt hy
-      (hF.differentiableAt.congr_of_eventuallyEq hloc)]
+  rw [Filter.EventuallyEq.mvfderiv_eq (h.christoffelSymbol_eventuallyEq b hy hint i j k),
+    hfun, mvfderiv_apply_eq_mfderiv_apply, TauCeti.mfderiv_eq_fderiv_comp_mfderiv_extChartAt hy
+      ((hasFDerivAt_repr_christoffelSecondKind b hG hnd.self_of_nhds i j k).differentiableAt
+        |>.congr_of_eventuallyEq hloc)]
   -- The tangent space of the model is `E` itself, which the generic rewrites cannot see.
-  refine ((ContinuousLinearMap.comp_apply _ _ _).trans (congrArg _ hφ)).trans ?_
-  have hFb : fderiv ℝ F (extChartAt I x₀ y) (b m) =
-      b.repr (fderiv ℝ (christoffelSecondKind (g.chartMetric x₀)) (extChartAt I x₀ y) (b m) (b i)
-        (b j)) k := by
-    rw [hF.fderiv, ContinuousLinearMap.comp_apply,
-      fderiv_clm_apply_const_apply (hΓ.clm_apply (differentiableAt_const _)),
-      fderiv_clm_apply_const_apply hΓ]
-    simp only [L, LinearMap.coe_toContinuousLinearMap', Basis.coord_apply]
+  refine ((ContinuousLinearMap.comp_apply _ _ _).trans
+    (congrArg _ (mfderiv_extChartAt_localFrame_trivializationAt b x₀ hy m))).trans ?_
   rw [hloc.fderiv_eq]
-  refine hFb.trans ?_
-  exact repr_fderiv_christoffelSecondKind_eq_christoffelDerivOfJet b (hG.of_le (by simp)) hsymm
-    hnd m i j k
+  exact fderiv_repr_christoffelSecondKind_eq_christoffelDerivOfJet b hG hsymm hnd m i j k
 
 /-- **The curvature of a Levi-Civita connection in a chart.** At a point `y` of the chart domain
 at `x₀` whose chart image `z` is interior, the `l`-th coefficient of `R(∂ᵢ, ∂ⱼ)∂ₖ` in the frame of
 `b`, for a Levi-Civita connection of `g`, is `riemannOfJet` of the coordinate jet `(g, ∂g, ∂²g)` of
 the chart metric at `z`. -/
-theorem IsLeviCivitaConnection.localFrameCoeff_curvatureOperator (h : g.IsLeviCivitaConnection cov)
+theorem IsLeviCivitaConnection.localFrameCoeff_curvatureOperator_eq_riemannOfJet
+    (h : g.IsLeviCivitaConnection cov)
     [ContMDiffCovariantDerivativeOn E 1 cov.toFun
       (trivializationAt E (TangentSpace I) x₀).baseSet]
     (hy : y ∈ (extChartAt I x₀).source) (hint : extChartAt I x₀ y ∈ interior (range I))
@@ -400,20 +427,10 @@ theorem IsLeviCivitaConnection.localFrameCoeff_curvatureOperator (h : g.IsLeviCi
           (b k)) (extChartAt I x₀ y) (b m)) i j k l := by
   have : IsManifold I (minSmoothness ℝ 3) M := by
     rw [minSmoothness_of_isRCLikeNormedField]; infer_instance
-  have hΓ (a c d : ι) :
-      christoffelSymbol I b (trivializationAt E (TangentSpace I) x₀) cov a c d y =
-        christoffelOfJet
-          (LinearMap.toMatrix₂ b b (g.chartMetric x₀ (extChartAt I x₀ y)).toBilinForm)
-          (fun k i j ↦ fderiv ℝ (fun z ↦ g.chartMetric x₀ z (b i) (b j)) (extChartAt I x₀ y)
-            (b k)) a c d := by
-    rw [(h.christoffelSymbol_eventuallyEq b hy hint a c d).self_of_nhds]
-    exact repr_christoffelSecondKind_eq_christoffelOfJet b
-      ((g.contDiffAt_chartMetric hy hint).differentiableAt (by simp))
-      (g.isSymm_chartMetric ((extChartAt I x₀).map_source hy))
-      (g.nondegenerate_chartMetric ((extChartAt I x₀).map_source hy)) a c d
   rw [CovariantDerivative.localFrameCoeff_curvatureOperator cov b x₀ hy i j k l,
-    h.mvfderiv_christoffelSymbol b hy hint i j k l, h.mvfderiv_christoffelSymbol b hy hint j i k l]
-  simp only [hΓ, riemannOfJet]
+    h.mvfderiv_christoffelSymbol_eq_christoffelDerivOfJet b hy hint i j k l,
+    h.mvfderiv_christoffelSymbol_eq_christoffelDerivOfJet b hy hint j i k l]
+  simp only [h.christoffelSymbol_eq_christoffelOfJet b hy hint, riemannOfJet]
 
 end ContMDiffNondegenerateMetric
 
@@ -466,11 +483,10 @@ theorem scalarCurvature_eq_scalarCurvatureOfJet (hy : y ∈ (extChartAt I x₀).
   have hgram : Matrix.gram ℝ B = LinearMap.toMatrix₂ b b
       (g.toNondegenerateMetric.chartMetric x₀ (extChartAt I x₀ y)).toBilinForm := by
     ext i j
-    rw [Matrix.gram_apply, LinearMap.toMatrix₂_apply, ContinuousLinearMap.toBilinForm_apply,
-      ContMDiffNondegenerateMetric.chartMetric_extChartAt_apply _ hy, hB, hB,
-      ← symmL_basis_eq_localFrame b hbase, ← symmL_basis_eq_localFrame b hbase,
-      e.symmL_apply hbase, e.symmL_apply hbase]
-    exact (g.inner_riemannianBundle y _ _).trans (g.toNondegenerateMetric_apply y _ _).symm
+    simp only [Matrix.gram_apply, LinearMap.toMatrix₂_apply, ContinuousLinearMap.toBilinForm_apply,
+      ContMDiffNondegenerateMetric.chartMetric_extChartAt_apply_basis _ b hy, hB,
+      toNondegenerateMetric_apply, inner_riemannianBundle]
+    rfl
   rw [scalarCurvature_def, CovariantDerivative.scalarCurvature_apply,
     TauCeti.bilinFormTrace_eq_sum_inv_gram _ B, hgram, scalarCurvatureOfJet]
   refine Finset.sum_congr rfl fun j _ ↦ Finset.sum_congr rfl fun k _ ↦ ?_
@@ -485,7 +501,7 @@ theorem scalarCurvature_eq_scalarCurvatureOfJet (hy : y ∈ (extChartAt I x₀).
   rw [hB, hB, hB, CovariantDerivative.curvatureTensor_apply_of_contMDiffOn _ y e.open_baseSet
     hbase (hframe i) (hframe j) (hframe k),
     ← e.localFrameCoeff_apply_of_mem_baseSet (I := I) b hbase,
-    hlc.localFrameCoeff_curvatureOperator b hy hint]
+    hlc.localFrameCoeff_curvatureOperator_eq_riemannOfJet b hy hint]
 
 /-- **Scalar curvature is continuous along `C²`-continuous families of metrics.** Let `g p` be a
 family of smooth Riemannian metrics indexed by a topological space `P`, and `y₀` a point whose
