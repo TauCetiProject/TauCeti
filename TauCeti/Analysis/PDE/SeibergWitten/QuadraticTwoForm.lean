@@ -220,15 +220,14 @@ theorem quadraticTwoFormPolar_comm (ψ φ : positiveHalfSpinors o ρ) :
 @[simp]
 theorem quadraticTwoFormPolar_self (ψ : positiveHalfSpinors o ρ) :
     quadraticTwoFormPolar o ρ hQ hkl ψ ψ = (2 : ℝ) • quadraticTwoForm o ρ hQ hkl ψ := by
-  rw [quadraticTwoFormPolar_apply, quadraticEndPolar_self, two_nsmul, ← two_smul ℝ, map_smul,
-    quadraticTwoForm_def, smul_comm]
+  rw [quadraticTwoFormPolar_apply, quadraticEndPolar_self, map_nsmul, quadraticTwoForm_def]
+  module
 
 /-- Real polarization of `q`: `q(ψ + φ) = q(ψ) + q(φ) + q'(ψ, φ)`. -/
 theorem quadraticTwoForm_add (ψ φ : positiveHalfSpinors o ρ) :
     quadraticTwoForm o ρ hQ hkl (ψ + φ) = quadraticTwoForm o ρ hQ hkl ψ +
       quadraticTwoForm o ρ hQ hkl φ + quadraticTwoFormPolar o ρ hQ hkl ψ φ := by
-  rw [quadraticTwoForm_def, quadraticEnd_add, map_add, map_add, smul_add, smul_add,
-    ← quadraticTwoForm_def, ← quadraticTwoForm_def, ← quadraticTwoFormPolar_apply]
+  simp [quadraticTwoForm_def, quadraticTwoFormPolar_apply, quadraticEnd_add]
 
 /-- `q'(ψ, c ψ) = 2 Re(c) q(ψ)`. In particular the derivative of `q` vanishes along the
 infinitesimal gauge directions `ξ ψ` with `ξ` imaginary. -/
@@ -258,8 +257,9 @@ theorem norm_quadraticTwoFormPolar_le (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q 
 theorem quadraticTwoFormPolar_sub_add (ψ φ : positiveHalfSpinors o ρ) :
     quadraticTwoFormPolar o ρ hQ hkl (ψ - φ) (ψ + φ) =
       (2 : ℝ) • (quadraticTwoForm o ρ hQ hkl ψ - quadraticTwoForm o ρ hQ hkl φ) := by
-  rw [quadraticTwoFormPolar_apply, quadraticEndPolar_sub_add, two_nsmul, ← two_smul ℝ, map_smul,
-    map_sub, quadraticTwoForm_def, quadraticTwoForm_def, smul_comm, smul_sub]
+  rw [quadraticTwoFormPolar_apply, quadraticEndPolar_sub_add, map_nsmul, map_sub,
+    quadraticTwoForm_def, quadraticTwoForm_def]
+  module
 
 variable {ρ} in
 /-- `q` is locally Lipschitz: `‖q(ψ) - q(φ)‖ ≤ ‖ψ - φ‖ (‖ψ‖ + ‖φ‖) / (2 √2)`. -/

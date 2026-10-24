@@ -476,8 +476,8 @@ theorem cliffordRestrictionAdjoint_cliffordRestriction (hkl : 2 + 2 = finrank �
     cliffordRestrictionAdjoint o ρ hQ hkl (cliffordRestriction o ρ hQ α) = (4 : ℝ) • α :=
   ext_inner_right ℝ fun β ↦ by
     rw [inner_cliffordRestrictionAdjoint_left, trace_cliffordRestriction_mul o ρ hQ hkl,
-      o.hodgeStar_coe_of_mem_eigenspace_one hkl α, h₂, Complex.re_ofReal_mul, Complex.natCast_re,
-      Submodule.coe_inner, Submodule.coe_smul, real_inner_smul_left]
+      o.hodgeStar_coe_of_mem_eigenspace_one hkl α, h₂]
+    simp [real_inner_smul_left]
     ring
 
 variable {ρ} in
@@ -517,8 +517,10 @@ theorem cliffordRestriction_cliffordRestrictionAdjoint_eq_traceFreePart
     ext_inner_right ℝ fun β ↦ by
       rw [inner_cliffordRestrictionAdjoint_left, hPdef,
         trace_traceFreePart_mul (trace_cliffordRestriction o ρ hQ β)]
-      simpa [add_mul, inner_add_left, re_trace_adjoint_mul_cliffordRestriction o hQ hρ hkl] using
-        (inner_cliffordRestrictionAdjoint_left o ρ hQ hkl T β).symm
+      -- `Re tr ((T + T*) C(iβ)) = Re tr (T C(iβ)) + Re tr (T* C(iβ)) = ⟪τ T, β⟫ + ⟪τ T, β⟫`.
+      rw [ContinuousLinearMap.toLinearMap_add, add_mul, map_add, Complex.add_re,
+        ← inner_cliffordRestrictionAdjoint_left,
+        re_trace_adjoint_mul_cliffordRestriction o hQ hρ hkl, inner_add_left]
   have h := congrArg (fun x : Module.End.eigenspace (o.hodgeStar hkl : Module.End ℝ (⋀[ℝ]^2 V)) 1 ↦
     cliffordRestriction o ρ hQ x) hτ
   simp only [Submodule.coe_add, map_add,
