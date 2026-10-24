@@ -139,9 +139,9 @@ theorem not_isUnit_algebraMap_zero [Nontrivial A] :
     Ideal.Quotient.nontrivial_iff.mpr (h ▸ bot_ne_top)
   simp
 
-/-- **The ratios are power-bounded.** Each `fᵢ/g` is power-bounded for the quotient topology of
-`A⟨f/g⟩`, being the image of the power-bounded variable `Xᵢ`. -/
+/-- Each ratio `fᵢ/g` is power-bounded for the quotient topology of `A⟨f/g⟩`. -/
 theorem isPowerBounded_ratio (i : Fin m) : IsPowerBounded (ratio g f i) := by
+  -- Each ratio is the quotient image of a power-bounded variable.
   have hX := isPowerBounded_X (R := A) i
   exact hX.quotientMk (rationalIdeal g f)
 
@@ -162,10 +162,10 @@ variable {B : Type*} [NormedCommRing B] [NormedAlgebra K B] [IsUltrametricDist B
 
 /-- **The extension of `φ : A → B` to `A⟨f/g⟩` sending `fᵢ/g` to `bᵢ`**, for affinoid algebras
 `A` and `B` with complete ultrametric algebra norms and power-bounded `b₁, …, bₘ ∈ B` satisfying
-`φ g * bᵢ = φ fᵢ`. It is induced by `TauCeti.IsAffinoidAlgebra.restrictedLift`, which kills every
-`g Xᵢ - fᵢ`. -/
+`φ g * bᵢ = φ fᵢ`. -/
 noncomputable def lift (φ : A →ₐ[K] B) {b : Fin m → B} (hb : ∀ i, IsPowerBounded (b i))
     (hφ : ∀ i, φ g * b i = φ (f i)) : RationalFraction g f →ₐ[K] B :=
+  -- Descend restrictedLift to the quotient: it kills every relation g Xᵢ - fᵢ.
   Ideal.Quotient.liftₐ _ (hA.restrictedLift hB φ hb) fun _ hx ↦ RingHom.mem_ker.mp <|
     Ideal.span_le.mpr (by rintro _ ⟨i, rfl⟩; simp [hφ]) hx
 

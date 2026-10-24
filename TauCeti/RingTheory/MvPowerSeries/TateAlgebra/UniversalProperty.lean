@@ -73,11 +73,11 @@ theorem isRestricted_subring_ringHom_ext_of_continuous {T : Type*} [Semiring T]
   ext f
   simpa using congr($h (e.symm f))
 
-/-- Each variable `Xᵢ` of the Gauss-normed algebra `R⟨X₁, …, Xₖ⟩` is power-bounded. This is
-`TauCeti.Huber.isPowerBounded_weightedX_one_weight`, carried along the Gauss comparison. -/
+/-- Each variable `Xᵢ` of the Gauss-normed algebra `R⟨X₁, …, Xₖ⟩` is power-bounded. -/
 theorem isPowerBounded_X (i : Fin k) :
     IsPowerBounded
       (⟨X i, isRestricted_X _ i⟩ : IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1)) := by
+  -- Transport weighted-variable power-boundedness along the Gauss comparison.
   rw [← restrictedMvPowerSeriesGaussEquiv_weightedX, isPowerBounded_ringEquiv_iff _
     continuous_restrictedMvPowerSeriesGaussEquiv continuous_restrictedMvPowerSeriesGaussEquiv_symm]
   exact isPowerBounded_weightedX_one_weight i
