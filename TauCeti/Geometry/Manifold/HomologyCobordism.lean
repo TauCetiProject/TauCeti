@@ -8,9 +8,7 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Colimits
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
-public import TauCeti.Geometry.Manifold.Instances.Icc
-public import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
-public import TauCeti.Topology.Homotopy.HomotopyEquiv
+public import TauCeti.Geometry.Manifold.SmoothEmbedding.Cylinder
 
 /-!
 # Homology cobordisms
@@ -29,8 +27,8 @@ modelled on `J`, with disjoint images whose union is the manifold boundary `J.bo
 cobordism between integral homology spheres is automatically orientable, since its first homology
 vanishes.
 
-The cylinder `Y × [a, b]` over a boundaryless manifold `Y`, modelled on `I.prod (𝓡∂ 1)`, is a
-homology cobordism between two copies of `Y`, embedded as its bottom and top
+The cylinder `Y × [a, b]` over a compact boundaryless manifold `Y`, modelled on `I.prod (𝓡∂ 1)`, is
+a homology cobordism between two copies of `Y`, embedded as its bottom and top
 (`TauCeti.isHomologyCobordism_cylinder`), for every coefficient ring.
 
 ## Main definitions
@@ -39,9 +37,6 @@ homology cobordism between two copies of `Y`, embedded as its bottom and top
   cobordism between `Y₀` and `Y₁`.
 * `TauCeti.IsHomologyCobordism.singularHomologyIso`: the isomorphism `Hₖ(Y₀; R) ≅ Hₖ(Y₁; R)` that a
   homology cobordism induces.
-* `TauCeti.SmoothEmbedding.cylinderBot`, `TauCeti.SmoothEmbedding.cylinderTop`: the inclusions
-  `y ↦ (y, a)` and `y ↦ (y, b)` of a boundaryless manifold as the ends of the cylinder
-  `Y × [a, b]`.
 
 ## Main results
 
@@ -148,44 +143,7 @@ end IsHomologyCobordism
 
 section Cylinder
 
-variable (a b : ℝ) [Fact (a < b)] (Y : Type*) [TopologicalSpace Y] [ChartedSpace H Y]
-  [IsManifold I n Y]
-
-/-- The inclusion `y ↦ (y, a)` of a manifold as the bottom end of the cylinder `Y × [a, b]`. -/
-def SmoothEmbedding.cylinderBot : SmoothEmbedding I (I.prod (𝓡∂ 1)) n Y (Y × Icc a b) :=
-  .ofIsSmoothEmbedding _ (isSmoothEmbedding_prodMk_Icc_of_extChartAt_eq_zero extChartAt_Icc_bot)
-
-/-- The inclusion `y ↦ (y, b)` of a manifold as the top end of the cylinder `Y × [a, b]`. -/
-def SmoothEmbedding.cylinderTop : SmoothEmbedding I (I.prod (𝓡∂ 1)) n Y (Y × Icc a b) :=
-  .ofIsSmoothEmbedding _ (isSmoothEmbedding_prodMk_Icc_of_extChartAt_eq_zero extChartAt_Icc_top)
-
-variable {I n a b Y}
-
-/-- The bottom end of a cylinder sends `y` to `(y, a)`. -/
-@[simp]
-theorem SmoothEmbedding.cylinderBot_apply (y : Y) :
-    SmoothEmbedding.cylinderBot I n a b Y y = (y, ⊥) := by
-  simp [SmoothEmbedding.cylinderBot]
-
-/-- The top end of a cylinder sends `y` to `(y, b)`. -/
-@[simp]
-theorem SmoothEmbedding.cylinderTop_apply (y : Y) :
-    SmoothEmbedding.cylinderTop I n a b Y y = (y, ⊤) := by
-  simp [SmoothEmbedding.cylinderTop]
-
-/-- The bottom end of a cylinder is the slice homotopy equivalence `Y ≃ₕ Y × [a, b]` at `a`. -/
-theorem SmoothEmbedding.toContinuousMap_cylinderBot :
-    (SmoothEmbedding.cylinderBot I n a b Y).toContinuousMap =
-      (ContinuousMap.HomotopyEquiv.prodIcc ⊥).toFun := by
-  ext1 y
-  simp
-
-/-- The top end of a cylinder is the slice homotopy equivalence `Y ≃ₕ Y × [a, b]` at `b`. -/
-theorem SmoothEmbedding.toContinuousMap_cylinderTop :
-    (SmoothEmbedding.cylinderTop I n a b Y).toContinuousMap =
-      (ContinuousMap.HomotopyEquiv.prodIcc ⊤).toFun := by
-  ext1 y
-  simp
+variable {I n} {a b : ℝ} [Fact (a < b)]
 
 /-- **The cylinder is a homology cobordism.** For a compact boundaryless manifold `Y`, the cylinder
 `Y × [a, b]` is an `R`-homology cobordism between two copies of `Y`, embedded as its bottom and its
