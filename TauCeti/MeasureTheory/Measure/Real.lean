@@ -26,6 +26,14 @@ half-line, squaring is undone by `Real.sqrt`, so the pushforward determines the 
   absolute value into the two half-lines;
 * `MeasureTheory.Measure.map_abs_apply_zero` — the image under absolute value preserves the atom
   at zero;
+* `MeasureTheory.Measure.map_eq_map_map_add_of_forall_measure_setOf_le_add_eq` — translated
+  distribution functions of a real-valued function give translated laws;
+* `MeasureTheory.Measure.map_restrict_eq_map_map_add_of_forall_measure_sep_le_add_eq` — the same
+  for the restrictions of one measure to two sets;
+* `MeasureTheory.Measure.measure_eq_of_forall_measure_sep_le_add_eq` and
+  `MeasureTheory.Measure.integral_eq_add_mul_of_forall_measure_sep_le_add_eq` — translated
+  distribution functions on two sets give equal measures and shift the integral by the translation
+  times the measure;
 * `MeasureTheory.Measure.eq_of_map_sq_eq_of_map_neg_eq_self` — two symmetric finite real
   measures with the same pushforward after squaring are equal.
 * `MeasureTheory.Measure.map_sqrt_map_sq` — on the nonnegative half-line, taking square roots
@@ -64,6 +72,73 @@ theorem map_abs_apply_zero (μ : Measure ℝ) : μ.map (|·|) {0} = μ {0} := by
   congr 1
   ext x
   simp
+
+/-- **Translated distribution functions give translated laws.** If the distribution function of
+a real-valued measurable `f` under a finite measure `μ` is that under `ν` translated by `c`, then
+the law of `f` under `μ` is the law of `f` under `ν` translated by `c`. -/
+theorem map_eq_map_map_add_of_forall_measure_setOf_le_add_eq {α : Type*} [MeasurableSpace α]
+    {μ ν : Measure α} [IsFiniteMeasure μ] {f : α → ℝ} (hf : Measurable f) {c : ℝ}
+    (h : ∀ r : ℝ, μ {x | f x ≤ r + c} = ν {x | f x ≤ r}) :
+    μ.map f = (ν.map f).map (· + c) := by
+  refine Measure.ext_of_Iic _ _ fun a ↦ ?_
+  rw [Measure.map_map (measurable_add_const c) hf, Measure.map_apply hf measurableSet_Iic,
+    Measure.map_apply ((measurable_add_const c).comp hf) measurableSet_Iic]
+  convert h (a - c) using 2 <;> ext x <;> simp [le_sub_iff_add_le]
+
+/-- **Translated distribution functions on two sets give translated laws.** If the distribution
+function of a real-valued measurable `f` on a set `t` of finite `μ`-measure is that on `s`
+translated by `c`, then the law of `f` under `μ` restricted to `t` is the law of `f` under `μ`
+restricted to `s` translated by `c`. -/
+theorem map_restrict_eq_map_map_add_of_forall_measure_sep_le_add_eq {α : Type*}
+    [MeasurableSpace α] {μ : Measure α} {s t : Set α} (ht : μ t ≠ ⊤) {f : α → ℝ}
+    (hf : Measurable f) {c : ℝ} (h : ∀ r : ℝ, μ {x ∈ t | f x ≤ r + c} = μ {x ∈ s | f x ≤ r}) :
+    (μ.restrict t).map f = ((μ.restrict s).map f).map (· + c) := by
+  have : IsFiniteMeasure (μ.restrict t) := isFiniteMeasure_restrict.2 ht
+  refine map_eq_map_map_add_of_forall_measure_setOf_le_add_eq hf fun r ↦ ?_
+  rw [restrict_apply (measurableSet_le hf measurable_const),
+    restrict_apply (measurableSet_le hf measurable_const)]
+  convert h r using 2 <;> ext x <;> simp [and_comm]
+
+/-- **Translated distribution functions on two sets give equal measures.** If the distribution
+function of a real-valued `f` on a set `t` is that on `s` translated by `c`, then `s` and `t` have
+the same measure. -/
+theorem measure_eq_of_forall_measure_sep_le_add_eq {α : Type*} [MeasurableSpace α]
+    {μ : Measure α} {s t : Set α} {f : α → ℝ} {c : ℝ}
+    (h : ∀ r : ℝ, μ {x ∈ t | f x ≤ r + c} = μ {x ∈ s | f x ≤ r}) :
+    μ t = μ s := by
+  -- Each set is the increasing union of its parts below the levels `n + a`, `n : ℕ`.
+  have hU (u : Set α) (a : ℝ) : ⋃ n : ℕ, {x ∈ u | f x ≤ n + a} = u := by
+    refine Subset.antisymm (iUnion_subset fun _ ↦ sep_subset _ _) fun x hx ↦ ?_
+    obtain ⟨n, hn⟩ := exists_nat_ge (f x - a)
+    exact mem_iUnion.2 ⟨n, hx, by linarith⟩
+  have hmono (u : Set α) (a : ℝ) : Monotone fun n : ℕ ↦ {x ∈ u | f x ≤ n + a} :=
+    fun m n hmn x hx ↦ ⟨hx.1, hx.2.trans (by gcongr)⟩
+  calc μ t = ⨆ n : ℕ, μ {x ∈ t | f x ≤ n + c} := by rw [← (hmono t c).measure_iUnion, hU]
+    _ = ⨆ n : ℕ, μ {x ∈ s | f x ≤ n + 0} := by simp only [add_zero, h]
+    _ = μ s := by rw [← (hmono s 0).measure_iUnion, hU]
+
+/-- **Translated distribution functions shift the first moment.** If the distribution function of
+a real-valued measurable `f` on a set `t` of finite `μ`-measure is that on `s` translated by `c`,
+then the integral of `f` over `t` is its integral over `s` plus `c` times the measure of `s`. -/
+theorem integral_eq_add_mul_of_forall_measure_sep_le_add_eq {α : Type*} [MeasurableSpace α]
+    {μ : Measure α} {s t : Set α} (ht : μ t ≠ ⊤) {f : α → ℝ} (hf : Measurable f)
+    (hs : IntegrableOn f s μ) {c : ℝ}
+    (h : ∀ r : ℝ, μ {x ∈ t | f x ≤ r + c} = μ {x ∈ s | f x ≤ r}) :
+    ∫ x in t, f x ∂μ = ∫ x in s, f x ∂μ + c * μ.real s := by
+  have : IsFiniteMeasure (μ.restrict s) :=
+    isFiniteMeasure_restrict.2 (measure_eq_of_forall_measure_sep_le_add_eq h ▸ ht)
+  -- Both integrals are means of the laws of `f`, which differ by the translation `c`.
+  calc ∫ x in t, f x ∂μ = ∫ y, y ∂(μ.restrict t).map f :=
+        (integral_map (f := fun y ↦ y) hf.aemeasurable aestronglyMeasurable_id).symm
+    _ = ∫ y, y + c ∂(μ.restrict s).map f := by
+        rw [map_restrict_eq_map_map_add_of_forall_measure_sep_le_add_eq ht hf h,
+          integral_map (f := fun y ↦ y) (measurable_add_const c).aemeasurable
+            aestronglyMeasurable_id]
+    _ = ∫ x in s, f x + c ∂μ :=
+        integral_map hf.aemeasurable (measurable_id.add_const c).aestronglyMeasurable
+    _ = ∫ x in s, f x ∂μ + c * μ.real s := by
+        rw [integral_add hs (integrable_const c), integral_const, smul_eq_mul, mul_comm,
+          measureReal_restrict_apply_univ]
 
 end MeasureTheory.Measure
 
