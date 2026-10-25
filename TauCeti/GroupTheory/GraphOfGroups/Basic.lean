@@ -130,9 +130,12 @@ variable {A B : Type w} {C : Type x} [Group A] [Group B] [Group C] (f : C →* A
 
 @[simp] theorem segment_ω_true : (segment f g hf hg).ω true = f := (rfl)
 
-@[simp] theorem segment_α_false : (segment f g hf hg).α false = f := (rfl)
+-- `α false = α (rev true)`; the cast in `α_rev_apply` is along the constant family `C`.
+@[simp] theorem segment_α_false : (segment f g hf hg).α false = f :=
+  MonoidHom.ext fun c => (segment f g hf hg).α_rev_apply true c
 
-@[simp] theorem segment_α_true : (segment f g hf hg).α true = g := (rfl)
+@[simp] theorem segment_α_true : (segment f g hf hg).α true = g :=
+  MonoidHom.ext fun c => (segment f g hf hg).α_rev_apply false c
 
 end segment
 
@@ -159,9 +162,12 @@ variable {G : Type w} {C : Type x} [Group G] [Group C] (f g : C →* G)
 
 @[simp] theorem loop_ω_false : (loop f g hf hg).ω ((), false) = f := (rfl)
 
-@[simp] theorem loop_α_true : (loop f g hf hg).α ((), true) = f := (rfl)
+-- As for `segment_α_false`, `α ((), true) = α (rev ((), false))`.
+@[simp] theorem loop_α_true : (loop f g hf hg).α ((), true) = f :=
+  MonoidHom.ext fun c => (loop f g hf hg).α_rev_apply ((), false) c
 
-@[simp] theorem loop_α_false : (loop f g hf hg).α ((), false) = g := (rfl)
+@[simp] theorem loop_α_false : (loop f g hf hg).α ((), false) = g :=
+  MonoidHom.ext fun c => (loop f g hf hg).α_rev_apply ((), true) c
 
 end loop
 
