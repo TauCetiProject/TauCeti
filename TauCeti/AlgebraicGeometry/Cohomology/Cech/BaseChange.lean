@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Descent
 public import TauCeti.Algebra.Category.ModuleCat.ChangeOfRings
 public import TauCeti.AlgebraicGeometry.Cohomology.Cech.Linear
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.BaseChange
+public import TauCeti.CategoryTheory.Limits.Lattice
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Functor
 
 /-!
@@ -43,6 +44,9 @@ degree one, is in `TauCeti.AlgebraicGeometry.Cohomology.BaseChange`.
   flat base change for a finite cover with affine intersections.
 * `TauCeti.AlgebraicGeometry.nonempty_linearEquiv_tensor_cohomology_pullback`: flat base change
   for a Noetherian scheme with affine diagonal.
+* `TauCeti.AlgebraicGeometry.nonempty_linearEquiv_tensor_cohomology_pullback_of_field`: flat base
+  change along a field extension, for a quasi-compact scheme locally of finite type with affine
+  diagonal.
 * `TauCeti.AlgebraicGeometry.finrank_cohomology_pullback_eq_of_isPullback` and
   `TauCeti.AlgebraicGeometry.finiteDimensional_cohomology_pullback_of_isPullback`: invariance of
   the dimension and finite-dimensionality of `Hⁿ(X, M)` under extension of the base field.
@@ -173,17 +177,10 @@ private lemma isIso_sectionsPullbackExtend_app (M : X.Modules) [M.IsQuasicoheren
       ((g.pullbackSectionsBaseLinear_apply M W H.toCommSq x).symm.trans
         (ModuleCat.restrictScalarsAlgebraMapIso_inv_apply (R := R) (S := R')
           Γ((Scheme.Modules.pullback g).obj M, g ⁻¹ᵁ W) _).symm))
-  change IsIso (((ModuleCat.extendRestrictScalarsAdj (algebraMap R R')).homEquiv _ _).symm
-    ((sectionsPullback H M).app (op W)))
+  -- The component of `sectionsPullbackExtend` is the adjoint of that of `sectionsPullback`.
+  dsimp only [sectionsPullbackExtend]
   rw [e]
   exact h
-
-/-- A finite product of opens is their intersection. -/
-private lemma piObj_eq_finset_inf {Z : Scheme.{u}} {ι : Type u} [DecidableEq ι] (V : ι → Z.Opens)
-    {n : ℕ} (a : Fin (n + 1) → ι) : (∏ᶜ fun j ↦ V (a j)) = (Finset.univ.image a).inf V := by
-  rw [Finset.inf_image, Finset.inf_univ_eq_iInf]
-  exact (CompleteLattice.finite_limit_eq_finset_univ_inf _).trans <| by
-    rw [Finset.inf_univ_eq_iInf]; exact discreteEquiv.iInf_comp (g := fun j ↦ V (a j))
 
 include H in
 /-- **Flat base change for the cohomology of quasi-coherent sheaves**, for a finite cover with
@@ -220,7 +217,8 @@ theorem nonempty_linearEquiv_tensor_cohomology_pullback_of_iSup_eq_top [Module.F
       have (a : Fin (k + 1) → ι) :
           IsIso ((sectionsPullbackExtend H M).app (op (∏ᶜ fun j ↦ U (a j)))) :=
         isIso_sectionsPullbackExtend_app H M
-          (piObj_eq_finset_inf U a ▸ hU _ (Finset.univ_nonempty.image a))
+          (CompleteLattice.finite_product_eq_finset_image_inf U a ▸
+            hU _ (Finset.univ_nonempty.image a))
       -- In each degree the map of Čech complexes is the product of the components.
       change IsIso (Limits.Pi.map fun a : Fin (k + 1) → ι ↦
         (sectionsPullbackExtend H M).app (op (∏ᶜ fun j ↦ U (a j))))
@@ -228,8 +226,12 @@ theorem nonempty_linearEquiv_tensor_cohomology_pullback_of_iSup_eq_top [Module.F
     exact HomologicalComplex.Hom.isIso_of_components _
   have hG (k : ℕ) (a : Fin (k + 1) → ι) : Nonempty ((∏ᶜ fun j ↦ (Opens.map g.base).obj (U (a j))) ⟶
       (Opens.map g.base).obj (∏ᶜ fun j ↦ U (a j))) := by
+    have hV : (∏ᶜ fun j ↦ V (a j)) = (Finset.univ.image a).inf V :=
+      CompleteLattice.finite_product_eq_finset_image_inf V a
+    have hU : (∏ᶜ fun j ↦ U (a j)) = (Finset.univ.image a).inf U :=
+      CompleteLattice.finite_product_eq_finset_image_inf U a
     refine ⟨homOfLE ?_⟩
-    rw [piObj_eq_finset_inf V a, piObj_eq_finset_inf U a, hinf]
+    rw [hV, hU, hinf]
   let C := (cechComplexFunctor U).obj ((sectionsBasePresheafFunctor R).obj M)
   -- `R' ⊗[R] Hⁿ(Č(U, M)) ≅ Hⁿ(R' ⊗[R] Č(U, M)) ≅ Hⁿ(Č(U, R' ⊗[R] M)) ≅ Hⁿ(Č(g⁻¹ U, g^* M))`.
   let e : E.obj (C.homology n) ≅ ((cechComplexFunctor V).obj
@@ -271,7 +273,7 @@ include H in
 /-- Over a field, `Hⁿ(X_K, M_K) ≅ K ⊗_k Hⁿ(X, M)` for a quasi-compact scheme `X` locally of finite
 type over `k` with affine diagonal, a quasi-coherent sheaf `M` on `X` and a field extension
 `K / k`. -/
-private theorem nonempty_linearEquiv_tensor_cohomology_pullback_of_field
+theorem nonempty_linearEquiv_tensor_cohomology_pullback_of_field
     [LocallyOfFiniteType (X ↘ Spec (.of k))] [CompactSpace X]
     [IsAffineHom (pullback.diagonal (terminal.from X))] (M : X.Modules) [M.IsQuasicoherent]
     (n : ℕ) :

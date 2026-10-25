@@ -207,7 +207,6 @@ variable {R S : Type u} [CommRing R] [CommRing S] [Algebra R S]
 /-- Extension of scalars along `algebraMap R S` is the tensor product `S ⊗[R] M` with the algebra
 module structure of `S`. `ModuleCat.extendScalars` uses the `Module.compHom` structure of `S`;
 the two tensor products are identified by the identity of `S`. -/
-@[expose]
 noncomputable def _root_.ModuleCat.extendScalarsAlgebraMapIso (M : _root_.ModuleCat.{u} R) :
     (_root_.ModuleCat.extendScalars (algebraMap R S)).obj M ≅ _root_.ModuleCat.of S (S ⊗[R] M) :=
   let E := (_root_.ModuleCat.restrictScalars (algebraMap R S)).obj (_root_.ModuleCat.of S S)
@@ -224,7 +223,8 @@ noncomputable def _root_.ModuleCat.extendScalarsAlgebraMapIso (M : _root_.Module
 theorem _root_.ModuleCat.extendScalarsAlgebraMapIso_hom_tmul (M : _root_.ModuleCat.{u} R) (s : S)
     (m : M) :
     (_root_.ModuleCat.extendScalarsAlgebraMapIso M).hom (s ⊗ₜ[R, algebraMap R S] m) =
-      s ⊗ₜ[R] m :=
+      s ⊗ₜ[R] m := by
+  unfold _root_.ModuleCat.extendScalarsAlgebraMapIso
   rfl
 
 /-- The inverse of `extendScalarsAlgebraMapIso` sends `s ⊗ m` to `s ⊗ m`. -/
@@ -232,7 +232,8 @@ theorem _root_.ModuleCat.extendScalarsAlgebraMapIso_hom_tmul (M : _root_.ModuleC
 theorem _root_.ModuleCat.extendScalarsAlgebraMapIso_inv_tmul (M : _root_.ModuleCat.{u} R) (s : S)
     (m : M) :
     (_root_.ModuleCat.extendScalarsAlgebraMapIso M).inv (s ⊗ₜ[R] m) =
-      s ⊗ₜ[R, algebraMap R S] m :=
+      s ⊗ₜ[R, algebraMap R S] m := by
+  unfold _root_.ModuleCat.extendScalarsAlgebraMapIso
   rfl
 
 /-- **Base change and extension of scalars.** If an `R`-linear map `f : M → N` to an `S`-module
