@@ -14,12 +14,10 @@ public import Mathlib.CategoryTheory.Preadditive.Biproducts
 public import Mathlib.RingTheory.Jacobson.Radical
 -- Only the class `IsLocalRing` itself occurs in the statements below.
 public import Mathlib.RingTheory.LocalRing.Defs
--- Non-public: the local-ring API, and the Tau Ceti extension of it to a noncommutative base, are
--- used only inside the proofs of the statements about objects with local endomorphism rings.
-import TauCeti.RingTheory.LocalRing.Basic
--- Non-public: the trivial-idempotent criterion, categorical Jacobson's lemma and the elementwise
+-- Non-public: the local-ring API is used only inside proofs.
+import Mathlib.RingTheory.LocalRing.Basic
+-- Non-public: categorical Jacobson's lemma and the elementwise
 -- description of the Jacobson radical of a noncommutative ring are used only inside proofs.
-import TauCeti.CategoryTheory.Preadditive.Indecomposable
 import TauCeti.CategoryTheory.Preadditive.Jacobson
 import TauCeti.RingTheory.Jacobson.MulOpposite
 
@@ -332,16 +330,6 @@ theorem not_isIso_of_mem_jacobsonRadical {X Y : C} {f : X ⟶ Y} (hX : 𝟙 X �
 
 /-! ### Objects with local endomorphism rings -/
 
-/-- **The identity of an object with a local endomorphism ring is nonzero.** It is the `1` of that
-ring, and `IsLocalRing` carries `Nontrivial`.
-
-The underlying morphism of `(1 : End X)` is `𝟙 X`, as expressed by
-`CategoryTheory.End.one_asHom`; this lemma uses that projection, so that the proofs
-below can pass between the ring `End X` and the category without relying on the implementation of
-`CategoryTheory.End`. -/
-private theorem id_ne_zero (X : C) [IsLocalRing (End X)] : 𝟙 X ≠ 0 :=
-  fun h ↦ one_ne_zero (α := End X) (End.ext h)
-
 section Local
 
 variable {X Y : C} [IsLocalRing (End X)] [IsLocalRing (End Y)]
@@ -355,8 +343,8 @@ retraction of a radical `f` exhibits `𝟙 X` itself as radical, which forces `�
 theorem mem_jacobsonRadical_iff_not_isSplitMono {f : X ⟶ Y} :
     f ∈ jacobsonRadical X Y ↔ ¬ IsSplitMono f := by
   refine ⟨fun hf hsm => ?_, fun hf g => ?_⟩
-  · exact id_ne_zero X ((Limits.IsZero.iff_id_eq_zero X).mp
-      (isZero_of_isSplitMono_of_mem_jacobsonRadical hf))
+  · exact one_ne_zero (α := End X) (End.ext ((Limits.IsZero.iff_id_eq_zero X).mp
+      (isZero_of_isSplitMono_of_mem_jacobsonRadical hf)))
   · let e : End X := .of (f ≫ g)
     have hnu : ¬ IsUnit e := fun hu => by
       have : IsIso (f ≫ g) := (isUnit_iff_isIso e).1 hu
@@ -372,8 +360,8 @@ the target is constrained, and the defining condition is read in its left-hand f
 theorem mem_jacobsonRadical_iff_not_isSplitEpi {f : X ⟶ Y} :
     f ∈ jacobsonRadical X Y ↔ ¬ IsSplitEpi f := by
   refine ⟨fun hf hse => ?_, fun hf => mem_jacobsonRadical_iff_isIso_id_sub_comp_left.2 fun g => ?_⟩
-  · exact id_ne_zero Y ((Limits.IsZero.iff_id_eq_zero Y).mp
-      (isZero_of_isSplitEpi_of_mem_jacobsonRadical hf))
+  · exact one_ne_zero (α := End Y) (End.ext ((Limits.IsZero.iff_id_eq_zero Y).mp
+      (isZero_of_isSplitEpi_of_mem_jacobsonRadical hf)))
   · let e : End Y := .of (g ≫ f)
     have hnu : ¬ IsUnit e := fun hu => by
       have : IsIso (g ≫ f) := (isUnit_iff_isIso e).1 hu
@@ -390,19 +378,14 @@ theorem mem_jacobsonRadical_iff_not_isIso {f : X ⟶ Y} :
     f ∈ jacobsonRadical X Y ↔ ¬ IsIso f := by
   constructor
   · intro hf hiso
-    have := hiso
-    exact id_ne_zero X (id_eq_zero_of_isIso_of_mem_jacobsonRadical hf)
-  · -- A morphism that splits is invertible here, its retraction turning `𝟙 X` into a composite.
-    refine fun hf => mem_jacobsonRadical_iff_not_isSplitMono.2 fun hsm => hf ?_
-    have := hsm
-    -- Locality of `End Y` gives the trivial-idempotent hypothesis: an idempotent for the
-    -- multiplication of `End Y` is one for composition, `CategoryTheory.End.mul_asHom`, and the
-    -- ring `1` it is compared to is the identity, `CategoryTheory.End.one_asHom`.
-    have hY : ∀ e : Y ⟶ Y, e ≫ e = e → e = 0 ∨ e = 𝟙 Y := fun e he => by
-      exact (IsIdempotentElem.eq_zero_or_eq_one_of_isLocalRing (R := End Y)
-        (a := End.of e) (End.ext he)).imp (congrArg End.asHom) (congrArg End.asHom)
-    exact isIso_of_isIso_comp (id_ne_zero X) hY f (retraction f)
-      (by rw [IsSplitMono.id]; infer_instance)
+    exact mem_jacobsonRadical_iff_not_isSplitMono.1 hf inferInstance
+  · intro hf
+    by_contra hrad
+    have : IsSplitMono f := by
+      simpa only [mem_jacobsonRadical_iff_not_isSplitMono, not_not] using hrad
+    have : IsSplitEpi f := by
+      simpa only [mem_jacobsonRadical_iff_not_isSplitEpi, not_not] using hrad
+    exact hf (isIso_of_mono_of_isSplitEpi f)
 
 /-- **All morphisms between non-isomorphic objects with local endomorphism rings are radical.** -/
 theorem jacobsonRadical_eq_top (h : IsEmpty (X ≅ Y)) : jacobsonRadical X Y = ⊤ := by
