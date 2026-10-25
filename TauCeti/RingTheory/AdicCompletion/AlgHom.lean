@@ -23,18 +23,20 @@ at a prime.
 * `AdicCompletion.factor_evalₐ`: the projections `evalₐ I n` are compatible with the transition
   maps `S ⧸ I ^ n → S ⧸ I ^ m`.
 * `AdicCompletion.mapₐ`: the map of completions induced by an algebra homomorphism, with
-  `AdicCompletion.evalₐ_mapₐ` and `AdicCompletion.mapₐ_of`.
+  `AdicCompletion.evalₐ_mapₐ` and `AdicCompletion.mapₐ_of`, and the functoriality laws
+  `AdicCompletion.mapₐ_id` and `AdicCompletion.mapₐ_comp`.
 * `AdicCompletion.congrₐ`: the isomorphism of completions induced by an algebra isomorphism,
-  with `AdicCompletion.evalₐ_congrₐ`, `AdicCompletion.evalₐ_congrₐ_symm` and
-  `AdicCompletion.congrₐ_of`.
+  with `AdicCompletion.toAlgHom_congrₐ` (it is `mapₐ` of the underlying homomorphism),
+  `AdicCompletion.evalₐ_congrₐ`, `AdicCompletion.congrₐ_of`, and the laws
+  `AdicCompletion.congrₐ_refl`, `AdicCompletion.congrₐ_symm` and `AdicCompletion.congrₐ_trans`.
 -/
 
 public section
 
 namespace AdicCompletion
 
-variable {R S S' : Type*} [CommRing R] [CommRing S] [CommRing S'] [Algebra R S] [Algebra R S']
-  {I : Ideal S} {I' : Ideal S'}
+variable {R S S' S'' : Type*} [CommRing R] [CommRing S] [CommRing S'] [CommRing S'']
+  [Algebra R S] [Algebra R S'] [Algebra R S''] {I : Ideal S} {I' : Ideal S'} {I'' : Ideal S''}
 
 /-- The projections of the adic completion to `S ⧸ I ^ n` are compatible with the transition maps
 `S ⧸ I ^ n → S ⧸ I ^ m` for `m ≤ n`. -/
@@ -81,6 +83,29 @@ theorem mapₐ_of (f : S →ₐ[R] S') (hf : I ≤ I'.comap f) (x : S) :
     mapₐ f hf (of I S x) = of I' S' (f x) :=
   ext_evalₐ fun n ↦ by simp
 
+/-- The identity of `S` induces the identity of `AdicCompletion I S`. -/
+@[simp]
+theorem mapₐ_id (hf : I ≤ I.comap (AlgHom.id R S)) :
+    mapₐ (AlgHom.id R S) hf = AlgHom.id R (AdicCompletion I S) :=
+  AlgHom.ext fun x ↦ ext_evalₐ fun n ↦ by
+    obtain ⟨y, hy⟩ := Ideal.Quotient.mk_surjective (evalₐ I n x)
+    simp [← hy]
+
+/-- The map of completions induced by a composite is the composite of the induced maps. -/
+theorem mapₐ_comp (g : S' →ₐ[R] S'') (hg : I' ≤ I''.comap g) (f : S →ₐ[R] S')
+    (hf : I ≤ I'.comap f) :
+    (mapₐ g hg).comp (mapₐ f hf) = mapₐ (g.comp f) (hf.trans (Ideal.comap_mono hg)) :=
+  AlgHom.ext fun x ↦ ext_evalₐ fun n ↦ by
+    obtain ⟨y, hy⟩ := Ideal.Quotient.mk_surjective (evalₐ I n x)
+    simp [← hy]
+
+/-- Pointwise form of `AdicCompletion.mapₐ_comp`. -/
+@[simp]
+theorem mapₐ_mapₐ (g : S' →ₐ[R] S'') (hg : I' ≤ I''.comap g) (f : S →ₐ[R] S')
+    (hf : I ≤ I'.comap f) (x : AdicCompletion I S) :
+    mapₐ g hg (mapₐ f hf x) = mapₐ (g.comp f) (hf.trans (Ideal.comap_mono hg)) x :=
+  DFunLike.congr_fun (mapₐ_comp g hg f hf) x
+
 /-- An `R`-algebra isomorphism `e : S ≃ₐ[R] S'` carrying `I` onto `I'` induces an `R`-algebra
 isomorphism `AdicCompletion I S ≃ₐ[R] AdicCompletion I' S'`. -/
 noncomputable def congrₐ (e : S ≃ₐ[R] S') (he : I.map e = I') :
@@ -93,6 +118,46 @@ noncomputable def congrₐ (e : S ≃ₐ[R] S') (he : I.map e = I') :
     (AlgHom.ext fun x ↦ ext_evalₐ fun n ↦ by
       obtain ⟨y, hy⟩ := Ideal.Quotient.mk_surjective (evalₐ I n x)
       simp [← hy])
+
+/-- As an algebra homomorphism, `congrₐ e he` is the map of completions induced by `e`. -/
+@[simp]
+theorem toAlgHom_congrₐ (e : S ≃ₐ[R] S') (he : I.map e = I') :
+    (congrₐ e he : AdicCompletion I S →ₐ[R] AdicCompletion I' S') =
+      mapₐ (e : S →ₐ[R] S') (he ▸ Ideal.le_comap_map) :=
+  AlgHom.ext fun _ ↦ rfl
+
+/-- The identity isomorphism of `S` induces the identity isomorphism of `AdicCompletion I S`. -/
+@[simp]
+theorem congrₐ_refl (he : I.map (AlgEquiv.refl : S ≃ₐ[R] S) = I) :
+    congrₐ AlgEquiv.refl he = AlgEquiv.refl :=
+  AlgEquiv.coe_toAlgHom_injective (mapₐ_id fun _ h ↦ h)
+
+/-- The inverse of `congrₐ e he` is the isomorphism of completions induced by `e.symm`. -/
+@[simp]
+theorem congrₐ_symm (e : S ≃ₐ[R] S') (he : I.map e = I') :
+    (congrₐ e he).symm = congrₐ e.symm (he ▸ Ideal.map_of_equiv (e : S ≃+* S')) :=
+  AlgEquiv.ext fun _ ↦ rfl
+
+/-- The isomorphism of completions induced by a composite is the composite of the induced
+isomorphisms. -/
+@[simp]
+theorem congrₐ_trans (e : S ≃ₐ[R] S') (he : I.map e = I') (e' : S' ≃ₐ[R] S'')
+    (he' : I'.map e' = I'') :
+    (congrₐ e he).trans (congrₐ e' he') =
+      congrₐ (e.trans e') (by
+        subst he he'; exact (Ideal.map_map (e : S →+* S') (e' : S' →+* S'')).symm) :=
+  AlgEquiv.coe_toAlgHom_injective
+    (mapₐ_comp (e' : S' →ₐ[R] S'') (he' ▸ Ideal.le_comap_map) (e : S →ₐ[R] S')
+      (he ▸ Ideal.le_comap_map))
+
+/-- Pointwise form of `AdicCompletion.congrₐ_trans`. -/
+@[simp]
+theorem congrₐ_congrₐ (e : S ≃ₐ[R] S') (he : I.map e = I') (e' : S' ≃ₐ[R] S'')
+    (he' : I'.map e' = I'') (x : AdicCompletion I S) :
+    congrₐ e' he' (congrₐ e he x) =
+      congrₐ (e.trans e') (by
+        subst he he'; exact (Ideal.map_map (e : S →+* S') (e' : S' →+* S'')).symm) x :=
+  DFunLike.congr_fun (congrₐ_trans e he e' he') x
 
 /-- The isomorphism of completions extends `e` along the canonical maps into the completions. -/
 @[simp]
@@ -111,7 +176,6 @@ theorem evalₐ_congrₐ (e : S ≃ₐ[R] S') (he : I.map e = I') (n : ℕ) (x :
 
 /-- Modulo `I ^ n`, the inverse of `congrₐ e he` is the map `S' ⧸ I' ^ n → S ⧸ I ^ n` induced
 by `e.symm`. -/
-@[simp]
 theorem evalₐ_congrₐ_symm (e : S ≃ₐ[R] S') (he : I.map e = I') (n : ℕ)
     (x : AdicCompletion I' S') :
     evalₐ I n ((congrₐ e he).symm x) = Ideal.quotientMap (I ^ n) (e.symm : S' →+* S)
@@ -122,7 +186,6 @@ theorem evalₐ_congrₐ_symm (e : S ≃ₐ[R] S') (he : I.map e = I') (n : ℕ)
 
 /-- The inverse of `congrₐ e he` extends `e.symm` along the canonical maps into the
 completions. -/
-@[simp]
 theorem congrₐ_symm_of (e : S ≃ₐ[R] S') (he : I.map e = I') (x : S') :
     (congrₐ e he).symm (of I' S' x) = of I S (e.symm x) :=
   mapₐ_of (e.symm : S' →ₐ[R] S) (he ▸ (Ideal.comap_symm (e : S ≃+* S')).ge) x
