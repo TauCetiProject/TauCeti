@@ -97,12 +97,17 @@ structure IsNeighborBasisChange (A : Matrix ι ι ℚ) (p : ℕ) : Prop where
   /-- The column space of `p • A` modulo `p` has exactly `p` elements. -/
   natCard_range : Nat.card (Set.range (A.neighborReduction p).mulVec) = p
 
+/-- The edge test is the conjunction of its three conditions. -/
+theorem isNeighborBasisChange_iff {A : Matrix ι ι ℚ} {p : ℕ} :
+    A.IsNeighborBasisChange p ↔ (∀ i j, ((p : ℚ) * A i j).den = 1) ∧ |A.det| = 1 ∧
+      Nat.card (Set.range (A.neighborReduction p).mulVec) = p :=
+  ⟨fun ⟨h₁, h₂, h₃⟩ ↦ ⟨h₁, h₂, h₃⟩, fun ⟨h₁, h₂, h₃⟩ ↦ ⟨h₁, h₂, h₃⟩⟩
+
 /-- The edge test is decidable: each of its three conditions is a finite computation on `A`. -/
 instance (A : Matrix ι ι ℚ) (p : ℕ) [NeZero p] : Decidable (A.IsNeighborBasisChange p) :=
   decidable_of_iff ((∀ i j, ((p : ℚ) * A i j).den = 1) ∧ |A.det| = 1 ∧
       Fintype.card (Set.range (A.neighborReduction p).mulVec) = p) <| by
-    rw [← Nat.card_eq_fintype_card]
-    exact ⟨fun ⟨h₁, h₂, h₃⟩ ↦ ⟨h₁, h₂, h₃⟩, fun ⟨h₁, h₂, h₃⟩ ↦ ⟨h₁, h₂, h₃⟩⟩
+    rw [← Nat.card_eq_fintype_card, isNeighborBasisChange_iff]
 
 /-- For a prime `p`, the edge test asks that the reduction of `p • A` modulo `p` have rank one. -/
 theorem isNeighborBasisChange_iff_rank_eq_one {A : Matrix ι ι ℚ} {p : ℕ} [hp : Fact p.Prime] :
@@ -114,10 +119,9 @@ theorem isNeighborBasisChange_iff_rank_eq_one {A : Matrix ι ι ℚ} {p : ℕ} [
     have h := Module.card_eq_pow_finrank (K := ZMod p)
       (V := LinearMap.range (A.neighborReduction p).mulVecLin)
     rw [ZMod.card, ← Nat.card_eq_fintype_card] at h
-    rw [Matrix.rank, ← h, ← Matrix.coe_mulVecLin, ← LinearMap.coe_range]
-    rfl
-  rw [← (Nat.pow_right_injective hp.out.two_le).eq_iff, pow_one, ← hcard]
-  exact ⟨fun ⟨h₁, h₂, h₃⟩ ↦ ⟨h₁, h₂, h₃⟩, fun ⟨h₁, h₂, h₃⟩ ↦ ⟨h₁, h₂, h₃⟩⟩
+    rw [Matrix.rank, ← h, ← Matrix.coe_mulVecLin, ← LinearMap.coe_range, SetLike.coe_sort_coe]
+  rw [isNeighborBasisChange_iff, hcard,
+    (Nat.pow_right_injective hp.out.two_le).eq_iff' (pow_one p)]
 
 end Matrix
 
@@ -156,7 +160,10 @@ theorem relIndex_inf_span_eq_natCard_range (b c : Basis ι ℚ V) {p : ℕ} [NeZ
       congr 1
       ext j
       simp
+  -- By definition of `neighborReduction`, `R` is the reduction of `N` modulo `p`.
+  have hR : R = N.map (Int.castRingHom (ZMod p)) := rfl
   have hψ (x : span ℤ (Set.range c)) (i : ι) : ψ x i = ((N *ᵥ cZ.equivFun x) i : ℤ) := by
+    rw [AddMonoidHom.mk'_apply, hR]
     exact (RingHom.map_mulVec (Int.castRingHom (ZMod p)) N _ i).symm
   -- Its kernel is the intersection with `span b`.
   have hker : (span ℤ (Set.range b) ⊓ span ℤ (Set.range c)).toAddSubgroup.addSubgroupOf
@@ -187,8 +194,7 @@ theorem relIndex_inf_span_eq_natCard_range (b c : Basis ι ℚ V) {p : ℕ} [NeZ
     refine ⟨cZ.equivFun.symm fun j ↦ ((v j).cast : ℤ), funext fun j ↦ ?_⟩
     simp only [Function.comp_apply, LinearEquiv.apply_symm_apply, eq_intCast,
       ZMod.intCast_zmod_cast]
-  rw [AddSubgroup.relIndex, hker, AddSubgroup.index_ker, ← hrange]
-  rfl
+  rw [AddSubgroup.relIndex, hker, AddSubgroup.index_ker, ← hrange, SetLike.coe_sort_coe]
 
 end Module.Basis
 
@@ -200,8 +206,8 @@ variable {ι V : Type*} [Fintype ι] [DecidableEq ι] [AddCommGroup V] [Module �
 /-- **A decidable check for one neighbor edge.** Let `L` and `M` be integral lattices with the
 same form, spanned by rational bases `b` and `c`. Then `L` and `M` are `p`-neighbors exactly when
 the change-of-basis matrix `b.toMatrix c` passes the edge test `Matrix.IsNeighborBasisChange`:
-`p • b.toMatrix c` is integral, its determinant is `±1`, and its column space modulo `p` has `p`
-elements. -/
+`p • b.toMatrix c` is integral, `b.toMatrix c` has determinant `±1`, and the column space of
+`p • b.toMatrix c` modulo `p` has `p` elements. -/
 theorem isNeighbor_iff_isNeighborBasisChange [NeZero p] (b c : Basis ι ℚ V)
     (hL : L.carrier = span ℤ (Set.range b)) (hM : M.carrier = span ℤ (Set.range c))
     (hform : L.form = M.form) :
@@ -240,11 +246,12 @@ theorem isNeighbor_iff_isNeighborBasisChange [NeZero p] (b c : Basis ι ℚ V)
 
 end TauCeti.IntegralLattice
 
-/-- The lattices `ℤ²` and `ℤ (1/2, 0) + ℤ (0, 2)` are `2`-neighbors: their intersection
-`ℤ (1, 0) + ℤ (0, 2)` has index `2` in each. -/
+/-- The change of basis from the standard basis of `ℚ²` to `(1/2, 0), (0, 2)` passes the
+`2`-neighbor test: the intersection `ℤ (1, 0) + ℤ (0, 2)` of the two spans has index `2` in each.
+So these spans are `2`-neighbors under any form making both of them integral lattices. -/
 example : (!![1 / 2, 0; 0, 2] : Matrix (Fin 2) (Fin 2) ℚ).IsNeighborBasisChange 2 := by
   decide +kernel
 
-/-- The same pair is not a pair of `3`-neighbors. -/
+/-- The same change of basis fails the `3`-neighbor test. -/
 example : ¬ (!![1 / 2, 0; 0, 2] : Matrix (Fin 2) (Fin 2) ℚ).IsNeighborBasisChange 3 := by
   decide +kernel
