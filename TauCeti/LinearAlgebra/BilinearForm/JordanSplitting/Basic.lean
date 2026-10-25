@@ -8,15 +8,17 @@ module
 public import Mathlib.Algebra.DirectSum.Module
 public import Mathlib.LinearAlgebra.BilinearForm.IsometryEquiv
 public import Mathlib.RingTheory.Finiteness.Basic
+public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 public import TauCeti.LinearAlgebra.BilinearForm.Modular
 import TauCeti.Algebra.Module.Submodule.Finite
 import Mathlib.LinearAlgebra.Dimension.Localization
 import Mathlib.LinearAlgebra.FreeModule.PID
 import Mathlib.LinearAlgebra.Projection
-import Mathlib.RingTheory.LocalRing.Module
 import Mathlib.RingTheory.Nakayama
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
+import TauCeti.LinearAlgebra.SesquilinearForm.TorsionFree
+import TauCeti.LinearAlgebra.Submodule.Compl
 import TauCeti.Order.SupIndep
 import TauCeti.RingTheory.Valuation.FinsetDvd
 
@@ -71,7 +73,7 @@ isometric.
   are invariants of the isometry class of the form.
 * `LinearMap.BilinForm.IsJordanSplitting.finite`, `LinearMap.BilinForm.IsJordanSplitting.free`:
   the constituents of a Jordan splitting of a finite module are finite, and over a local ring the
-  constituents of a Jordan splitting of a finite free module are free.
+  constituents of a Jordan splitting of a finite flat module are free.
 * `LinearMap.BilinForm.IsJordanSplitting.exists_pow_succ_dvd_sub`: on the vectors pairing into
   `π ^ j R`, the form is congruent modulo `π ^ (j + 1)` to its pullback along the projection to
   the `j`-th constituent.
@@ -354,15 +356,7 @@ nondegenerate symmetric bilinear form on a finite module is an orthogonal direct
 theorem IsSymm.exists_isJordanSplitting [Module.Finite R M] (hB : B.IsSymm)
     (hnd : B.Nondegenerate) {π : R} (hπ : Irreducible π) :
     ∃ N : ℕ → Submodule R M, B.IsJordanSplitting π N := by
-  let : IsTorsionFree R M := Module.isTorsionFree_iff_smul_eq_zero.mpr fun r m h ↦ by
-    by_cases hr : r = 0
-    · exact Or.inl hr
-    · refine Or.inr (hnd.1 m fun y ↦ ?_)
-      have hb : r * B m y = 0 := by
-        simpa only [LinearMap.map_smul₂, smul_eq_mul, map_zero, LinearMap.zero_apply] using
-          congrArg (fun x ↦ B x y) h
-      exact (mul_eq_zero.mp hb).resolve_left hr
-  let : Free R M := inferInstance
+  have := hnd.1.isTorsionFree
   exact exists_isJordanSplitting_of_free hB hnd hπ
 
 section Uniqueness
@@ -494,15 +488,13 @@ theorem IsJordanSplitting.finite [Module.Finite R M] (h : B.IsJordanSplitting π
     h.isInternal.submodule_iSupIndep.isCompl_biSup_ne h.isInternal.submodule_iSup_eq_top j
   .of_surjective _ (Submodule.projectionOnto_surjective hc)
 
-/-- The constituents of a Jordan splitting of a finite free module over a local ring are free, being
-direct summands. -/
-theorem IsJordanSplitting.free [IsLocalRing R] [Module.Free R M] [Module.Finite R M]
+/-- The constituents of a Jordan splitting of a finite flat module over a local ring are free,
+being finite flat direct summands. -/
+theorem IsJordanSplitting.free [IsLocalRing R] [Module.Flat R M] [Module.Finite R M]
     (h : B.IsJordanSplitting π N) (j : ℕ) : Module.Free R (N j) :=
   have hc : IsCompl (N j) (⨆ (i) (_ : i ≠ j), N i) :=
     h.isInternal.submodule_iSupIndep.isCompl_biSup_ne h.isInternal.submodule_iSup_eq_top j
-  have := h.finite j
-  have := Module.Projective.of_split _ _ (Submodule.projectionOnto_comp_subtype hc)
-  Module.free_of_flat_of_isLocalRing
+  ((N j).finite_free_of_isCompl hc).2
 
 /-- Vectors of the constituents of index below `m ≤ j` of a Jordan splitting which pair into
 `π ^ j R` with these constituents pair with each other into `π ^ (j + 1) R`. -/
